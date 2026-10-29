@@ -13,13 +13,7 @@
 		type GameData,
 		type LoadedScript
 	} from '#lib/core/data/index.ts';
-	import {
-		builtScriptJson,
-		expectedScriptCounts,
-		MAX_EXPECTED_COUNT,
-		scriptFacts
-	} from '#lib/core/rules/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import { builtScriptJson, expectedScriptCounts, scriptFacts } from '#lib/core/rules/index.ts';
 	import CharacterDialog from '#lib/features/characters/CharacterDialog.svelte';
 	import CharacterPicker from '#lib/features/characters/CharacterPicker.svelte';
 	import CharacterSearchBox from '#lib/features/characters/CharacterSearchBox.svelte';
@@ -42,8 +36,6 @@
 	import { shareTargetFor } from '#lib/features/scripts/share-codes.ts';
 	import ShareControl from '#lib/features/scripts/ShareControl.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
-	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
-	import Icon from '#lib/ui/icons/Icon.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import AddScript from '#lib/features/scripts/AddScript.svelte';
 	import Page from '#lib/ui/layout/Page.svelte';
@@ -56,7 +48,6 @@
 	import type { ScriptRow } from '#lib/features/library/ScriptPane.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
-	import Stepper from '#lib/ui/primitives/Stepper.svelte';
 	import { fileNameFor } from '#lib/ui/download.ts';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import { errorMessage } from '#lib/features/errors/app-error.ts';
@@ -67,6 +58,8 @@
 	import type { SavedCharacter } from '#lib/features/character-builder/saved-characters.ts';
 	import { savedCharacters } from '#lib/features/character-builder/stores.svelte.ts';
 	import { scriptBuilderDraft as draft } from './draft.svelte.ts';
+	import ScriptCheck from './ScriptCheck.svelte';
+	import ExpectedCountsDialog from './ExpectedCountsDialog.svelte';
 	import { chosenHomebrew, isEmptyDraft, isTeensyville } from './draft.ts';
 	import { replaceBuilt } from './replace-saved.svelte.ts';
 	import type { HomebrewCollection } from './homebrew-wiki-api.ts';
@@ -214,8 +207,6 @@
 	let builderOpen = $state(false);
 	let builderSavedId = $state<string>();
 	let builderReplaces = $state<CharacterId>();
-	/** The saved character a homebrew character on the script came from, if made here. */
-	const savedFor = (id: CharacterId) => savedCharacters.list.find((c) => c.entry.id === id);
 	function buildCharacter(savedId?: string, replaces?: CharacterId) {
 		builderSavedId = savedId;
 		builderReplaces = replaces;
@@ -289,7 +280,6 @@
 	const isSaved = $derived(
 		!!savedRecord && !!builtJson && sameScript(savedRecord, { json: builtJson })
 	);
-	const missingNeeds = $derived(facts?.requirements.filter((r) => !r.onScript) ?? []);
 
 	/** Saves over the script being edited, or as a new script when `asNew` (the old one stays). */
 	async function save(asNew = false) {
@@ -530,122 +520,13 @@
 			<p class="source-error" role="status" data-testid="homebrew-error">
 				{source === 'homebrew' ? homebrewError : ''}
 			</p>
-			<section class="check" aria-label={t('script-builder.check')} data-testid="builder-check">
-				<Collapsible
-					title={t('script-builder.jinxes')}
-					level={3}
-					storageKey="script-builder:jinxes"
-					empty={!facts?.jinxes.length}
-				>
-					{#snippet aside()}<CountBadge
-							count={facts?.jinxes.length ?? 0}
-							testid="jinx-count"
-						/>{/snippet}
-					{#if facts?.jinxes.length}
-						<ul>
-							{#each facts.jinxes as jinx (jinx.characters.join('+'))}
-								<li>
-									<CharacterBadge
-										characterId={jinx.characters[0]}
-										character={onScript.get(jinx.characters[0])}
-									/>
-									{t('script-builder.and')}
-									<CharacterBadge
-										characterId={jinx.characters[1]}
-										character={onScript.get(jinx.characters[1])}
-									/>: {jinx.reason}
-								</li>
-							{/each}
-						</ul>
-					{:else}<p>{t('common.none')}</p>{/if}
-				</Collapsible>
-				<Collapsible
-					title={t('script-builder.setupChanges')}
-					level={3}
-					storageKey="script-builder:setup"
-					empty={!facts?.modifiers.length}
-				>
-					{#snippet aside()}<CountBadge count={facts?.modifiers.length ?? 0} />{/snippet}
-					{#if facts?.modifiers.length}
-						<ul>
-							{#each facts.modifiers as modifier (modifier.id)}
-								<li>
-									<CharacterBadge characterId={modifier.id} character={onScript.get(modifier.id)} />
-									{modifier.summary}
-								</li>
-							{/each}
-						</ul>
-					{:else}<p>{t('common.none')}</p>{/if}
-				</Collapsible>
-				<Collapsible
-					title={t('script-builder.needs')}
-					level={3}
-					storageKey="script-builder:needs"
-					empty={!missingNeeds.length}
-				>
-					{#snippet aside()}<CountBadge
-							count={missingNeeds.length}
-							warn={missingNeeds.length > 0}
-						/>{/snippet}
-					{#if missingNeeds.length}
-						<ul>
-							{#each missingNeeds as need (need.id)}
-								<li>
-									<CharacterBadge characterId={need.id} character={onScript.get(need.id)} />
-									{t('script-builder.needsChar')}
-									<CharacterBadge characterId={need.requires} />
-									<Button variant="quiet" onclick={() => draft.toggle(need.requires)}
-										>{t('script-builder.add')}</Button
-									>
-								</li>
-							{/each}
-						</ul>
-					{:else}<p>{t('common.none')}</p>{/if}
-				</Collapsible>
-				<Collapsible
-					title={t('script-builder.homebrew')}
-					level={3}
-					storageKey="script-builder:homebrew"
-					empty={!chosenHomebrewCharacters.length}
-				>
-					{#snippet aside()}<CountBadge
-							count={chosenHomebrewCharacters.length}
-							testid="homebrew-count"
-						/>{/snippet}
-					{#if chosenHomebrewCharacters.length}
-						<ul class="credits">
-							{#each chosenHomebrewCharacters as character (character.id)}
-								{@const credit = d.credits[character.id]}
-								{@const saved = savedFor(character.id)}
-								<li>
-									<CharacterBadge characterId={character.id} {character} />
-									<span class="creator">{credit?.creator || t('common.none')}</span>
-									{#if saved}
-										<IconButton
-											icon="edit"
-											label={t('character-builder.editCharacter', { name: character.name })}
-											onclick={() => buildCharacter(saved.savedId, character.id)}
-										/>
-									{/if}
-									{#if credit?.url}
-										<!-- eslint-disable svelte/no-navigation-without-resolve -->
-										<a
-											class="wiki"
-											href={credit.url}
-											target="_blank"
-											rel="noopener noreferrer"
-											aria-label={t('script-builder.wikiPage', { name: character.name })}
-											title={t('script-builder.wikiPage', { name: character.name })}
-											><Icon name="wiki" /></a
-										>
-										<!-- eslint-enable svelte/no-navigation-without-resolve -->
-									{/if}
-								</li>
-							{/each}
-						</ul>
-					{:else}<p>{t('common.none')}</p>{/if}
-				</Collapsible>
-			</section>
+			<ScriptCheck
+				{facts}
+				{onScript}
+				homebrew={chosenHomebrewCharacters}
+				credits={d.credits}
+				onEditCharacter={buildCharacter}
+			/>
 		</ErrorBoundary>
 	{/snippet}
 
@@ -753,30 +634,7 @@
 	</div>
 </Dialog>
 
-<Dialog bind:open={expectedOpen} title={t('script-builder.expected')}>
-	{#snippet headActions()}<IconButton
-			icon="reset"
-			label={t('script-builder.expectedReset')}
-			disabled={!d.expected}
-			onclick={() => draft.resetExpected()}
-		/>{/snippet}
-	<div class="expected-steppers">
-		{#each SEATED as type (type)}
-			<span class="label" data-type={type}>{TYPE_PLURALS[type]}</span>
-			<Stepper
-				value={expected[type]}
-				label={TYPE_PLURALS[type]}
-				lessLabel={t('script-builder.expectedLess', { type: TYPE_PLURALS[type] })}
-				moreLabel={t('script-builder.expectedMore', { type: TYPE_PLURALS[type] })}
-				min={0}
-				max={MAX_EXPECTED_COUNT}
-				typeable
-				testid="expected-set-{type}"
-				onchange={(n) => draft.setExpected(type, n)}
-			/>
-		{/each}
-	</div>
-</Dialog>
+<ExpectedCountsDialog bind:open={expectedOpen} {expected} types={SEATED} custom={!!d.expected} />
 
 <ConfirmDialog
 	bind:open={replaceOpen}
@@ -818,13 +676,6 @@
 		gap: var(--space-3);
 		min-height: var(--tap-target);
 		font-family: var(--font-control);
-	}
-	.expected-steppers {
-		display: grid;
-		grid-template-columns: auto auto;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-2) var(--space-4);
 	}
 	.variation {
 		display: flex;
@@ -936,43 +787,5 @@
 		min-height: 1.4em;
 		color: var(--evil-text);
 		font-size: 0.85rem;
-	}
-	.credits {
-		padding: 0;
-		list-style: none;
-	}
-	.credits li {
-		display: grid;
-		grid-template-columns: auto minmax(0, 1fr) auto;
-		align-items: center;
-		gap: var(--space-2);
-	}
-	.creator {
-		color: var(--on-surface-muted);
-		overflow-wrap: anywhere;
-	}
-	.wiki {
-		display: grid;
-		place-items: center;
-		width: var(--tap-target);
-		height: var(--tap-target);
-		color: inherit;
-	}
-	.check {
-		display: grid;
-		gap: var(--space-1);
-		padding: var(--space-1) var(--space-3) var(--space-3);
-		border-radius: var(--radius-md);
-		background: var(--surface-raised);
-		font-size: 0.9rem;
-	}
-	.check p,
-	.check ul {
-		margin: 0;
-	}
-	.check ul {
-		display: grid;
-		gap: var(--space-2);
-		padding-inline-start: 1.2em;
 	}
 </style>
