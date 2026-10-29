@@ -7,7 +7,7 @@
 	} from '#lib/core/rules/character-data.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
-	import { numericNightOrder, officialData } from '#lib/features/characters/game-data.svelte.ts';
+	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import Sentence from '#lib/features/characters/Sentence.svelte';
 	import { slot } from '#lib/features/characters/slots.ts';
 	import { cardsOfCharacter } from '#lib/features/info-tokens/character-cards.ts';
@@ -30,9 +30,7 @@
 
 	type Part = CharacterDataPart | 'cards';
 	const found = $derived(
-		officialData.current
-			? characterData(officialData.current, character.id, numericNightOrder.current)
-			: undefined
+		officialData.current ? characterData(officialData.current, character.id) : undefined
 	);
 	// The character's own info cards are a feature list, not core data, so they join here.
 	const cards = $derived({

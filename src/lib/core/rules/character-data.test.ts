@@ -5,25 +5,24 @@
  */
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { committedGameData, committedNumericNightOrder } from '#lib/core/testing/committed-data.ts';
+import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { characterData, characterDataFile, CHARACTER_DATA_PARTS } from './character-data.ts';
 
 const data = committedGameData();
-const numeric = committedNumericNightOrder();
-const piece = (id: string, part: string, withNumbers = true) =>
-	characterData(data, id, withNumbers ? numeric : undefined)!.sources.find((s) => s.part === part)!;
+const piece = (id: string, part: string) =>
+	characterData(data, id)!.sources.find((s) => s.part === part)!;
 
 describe('characterData', () => {
 	it('has every piece for every official character, each naming its file', () => {
 		for (const character of data.characters) {
-			const found = characterData(data, character.id, numeric)!;
+			const found = characterData(data, character.id)!;
 			expect(found.sources.map((s) => s.part)).toEqual([...CHARACTER_DATA_PARTS]);
 			expect(found.sources.every((s) => s.file.length > 0)).toBe(true);
 		}
 	});
 
 	it('has nothing for a character that is not official', () => {
-		expect(characterData(data, 'not-a-character', numeric)).toBeUndefined();
+		expect(characterData(data, 'not-a-character')).toBeUndefined();
 	});
 
 	it('shows the rules file exactly as written in the repository', () => {
@@ -42,13 +41,6 @@ describe('characterData', () => {
 		const sheet = piece('washerwoman', 'nightSheet').data as Record<string, number | null>;
 		expect(sheet.firstNight).toBe(data.nightSheet.firstNight.indexOf('washerwoman') + 1);
 		expect(sheet.otherNight).toBeNull();
-		const numbers = piece('washerwoman', 'nightNumbers').data as Record<string, number | null>;
-		expect(numbers.firstNight).toBe(numeric.firstNight.get('washerwoman'));
-		expect(numbers.otherNight).toBeNull();
-	});
-
-	it('leaves the provisional numbers null when they did not load', () => {
-		expect(piece('washerwoman', 'nightNumbers', false).data).toBeNull();
 	});
 
 	it('lists the jinxes that name the character', () => {
@@ -68,7 +60,7 @@ describe('characterData', () => {
 
 describe('characterDataFile', () => {
 	it('is one JSON object with each piece under its name and file', () => {
-		const file = characterDataFile(characterData(data, 'washerwoman', numeric)!);
+		const file = characterDataFile(characterData(data, 'washerwoman')!);
 		expect(Object.keys(file)).toEqual(['id', ...CHARACTER_DATA_PARTS]);
 		expect(file.rules).toMatchObject({ file: 'src/lib/core/data/rules/washerwoman.json' });
 		expect(JSON.parse(JSON.stringify(file))).toEqual(file);

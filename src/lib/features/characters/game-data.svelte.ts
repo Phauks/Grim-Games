@@ -1,9 +1,4 @@
-import {
-	loadGameData,
-	parseNumericNightOrder,
-	type GameData,
-	type NumericNightOrder
-} from '#lib/core/data/index.ts';
+import { loadGameData, type GameData } from '#lib/core/data/index.ts';
 import { fetchWithTimeout, SLOW_FETCH_TIMEOUT_MS } from '#lib/ui/fetch.ts';
 
 /**
@@ -32,26 +27,5 @@ export function loadOfficialData(): Promise<GameData> {
 export const officialData = {
 	get current() {
 		return data;
-	}
-};
-
-let numeric = $state<NumericNightOrder | undefined>(undefined);
-let numericLoading: Promise<NumericNightOrder> | undefined;
-
-/**
- * The provisional numeric night order (`night-order-provisional.json`), used to slot
- * homebrew night numbers and shown on the Character reference page. Fetched on demand.
- */
-export function loadNumericNightOrder(): Promise<NumericNightOrder> {
-	numericLoading ??= fetchJson('/data/night-order-provisional.json')
-		.then(parseNumericNightOrder)
-		.then((order) => (numeric = order));
-	return numericLoading;
-}
-
-/** The provisional numeric night order once `loadNumericNightOrder` has fetched it. */
-export const numericNightOrder = {
-	get current() {
-		return numeric;
 	}
 };
