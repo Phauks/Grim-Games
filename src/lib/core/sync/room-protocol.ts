@@ -193,8 +193,6 @@ export interface PlayerView {
 	 */
 	gameId?: string;
 	me: RoomMember;
-	/** This phone's avatar, frame and picture can't change until the game ends (room-look.ts). */
-	lookLocked?: true;
 	/** Seats someone in the room already sits in. */
 	takenSeats: SeatId[];
 	/** Which seats' phones are connected or away, and the phones with no seat (the candles). */

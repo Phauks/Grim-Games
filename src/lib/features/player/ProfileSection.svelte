@@ -7,6 +7,7 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import SeatDisc from '#lib/ui/seating/SeatDisc.svelte';
 	import SettingFrame from '#lib/ui/settings/SettingFrame.svelte';
+	import FairPlayNotice from '#lib/features/show/FairPlayNotice.svelte';
 	import { avatarPicture } from './avatar-picture.svelte.ts';
 	import AvatarPictureRow from './AvatarPictureRow.svelte';
 	import CharacterIconRow from './CharacterIconRow.svelte';
@@ -20,8 +21,6 @@
 	 */
 	const name = $derived(joinedRoom.player?.view?.me.name ?? savedPlayerName());
 	const frame = $derived(seatFrame(playerSettings.current.frame));
-	// Others see these on the seat, so they stay put while the game runs (Trevor, 2026-10-29).
-	const locked = $derived(!!joinedRoom.player?.view?.lookLocked);
 
 	// Tapping the seat shows it large, over the Profile (Trevor, 2026-10-28), so nothing moves.
 	let enlarged = $state(false);
@@ -52,10 +51,9 @@
 		data-testid="profile-preview"
 		onclick={() => (enlarged = true)}>{@render seat(112)}</button
 	>
-	<!-- One reserved line, so the lock coming and going never moves the rows below. -->
-	<p class="locked" role="status" data-testid="profile-look-locked">
-		{locked ? t('player.lookLocked') : ''}
-	</p>
+	<!-- Everyone at the table sees this look, so it mustn't hint at a character (Trevor,
+	     2026-10-29: a warning, not a lock). -->
+	<FairPlayNotice kind="profile" />
 </div>
 
 <Dialog bind:open={enlarged} title={t('player.bigPreview')} size="wide">
@@ -72,10 +70,10 @@
 <FlavourTextRow />
 
 <!-- The character that represents them, on top of their laurel (Trevor, 2026-10-28). -->
-<CharacterIconRow disabled={locked} />
+<CharacterIconRow />
 
 <!-- The player's own picture on their seat (2026-10-27). -->
-<AvatarPictureRow {name} disabled={locked} />
+<AvatarPictureRow {name} />
 
 <!-- The laurel round this player's seat token, sent with their initials (L4, A1). -->
 <SettingFrame
@@ -87,7 +85,6 @@
 	onChange={(frame) =>
 		playerSettings.update({ frame: frame === DEFAULT_FRAME ? undefined : frame })}
 	testid="player-frame-setting"
-	disabled={locked}
 />
 
 <style>
@@ -95,12 +92,6 @@
 		display: grid;
 		justify-items: center;
 		padding-block: var(--space-3);
-	}
-	.locked {
-		min-height: 1lh;
-		margin: var(--space-1) 0 0;
-		color: var(--on-surface-muted);
-		font-size: 0.9rem;
 	}
 	.enlarge {
 		padding: 0;

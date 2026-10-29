@@ -13,9 +13,7 @@
 	 * The character that represents the player (Trevor, 2026-10-28: "representative character
 	 * token"), picked from the official characters, or None. It sits on top of their laurel,
 	 * full colour here and engraved on seats; the face keeps their initials or picture.
-	 * `disabled` while a game locks it (room-look.ts).
 	 */
-	let { disabled = false }: { disabled?: boolean } = $props();
 	let open = $state(false);
 	let query = $state('');
 
@@ -50,7 +48,6 @@
 				label={t('player.editCharacterIcon')}
 				aria-haspopup="dialog"
 				aria-describedby={labelId}
-				{disabled}
 				onclick={() => (open = true)}
 			/>
 		</span>
