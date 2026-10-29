@@ -20,7 +20,7 @@ import {
 	testCharacters as characters,
 	testContext
 } from '#lib/core/model/fixtures.test-support.ts';
-import { becomesOffer, changeableSeats, characterChanger } from './becomes.ts';
+import { becomesOffer, changeableSeats, characterChanger, swappableSeats } from './becomes.ts';
 
 const isTheDemon = { characterId: 'scarletwoman', label: 'Is The Demon' };
 const turnsEvil = { characterId: 'mezepheles', label: 'Turns Evil' };
@@ -258,5 +258,32 @@ describe('a character that changes a chosen player (changesCharacter)', () => {
 		expect(characterChanger(session.game, 'tailor', all)).toBe(created.seats[0]);
 		const plain = new Map([...characters, [character!.id, { ...character!, rules: undefined }]]);
 		expect(characterChanger(session.game, 'tailor', plain)).toBeUndefined();
+	});
+});
+
+// https://wiki.bloodontheclocktower.com/Barber: if the Barber died today or tonight, the Demon
+// may choose 2 players (not another Demon) to swap characters; alignments stay.
+describe('a character whose step swaps two players (swapsCharacters)', () => {
+	it('is the Barber', () => {
+		const swappers = [...OFFICIAL_RULES].filter(([, r]) => r.swapsCharacters).map(([id]) => id);
+		expect(swappers).toEqual(['barber']);
+	});
+
+	it('offers every player but a Demon', () => {
+		const { session, seats } = castGame(['barber', 'chef', 'empath', 'imp']);
+		expect(swappableSeats(session.game, 'barber', characters)).toEqual(seats.slice(0, 3));
+		expect(swappableSeats(session.game, 'chef', characters)).toEqual([]);
+	});
+
+	it('swaps characters and keeps alignments', () => {
+		const { session, seats, ctx } = castGame(['barber', 'chef', 'poisoner']);
+		const { game } = run(session, ctx, {
+			type: 'SwapCharacters',
+			seatId: seats[1],
+			withSeatId: seats[2],
+			keepAlignments: true
+		});
+		expect(game.seats[seats[1]]).toMatchObject({ characterId: 'poisoner', alignment: 'good' });
+		expect(game.seats[seats[2]]).toMatchObject({ characterId: 'chef', alignment: 'evil' });
 	});
 });
