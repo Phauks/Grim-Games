@@ -446,8 +446,9 @@
 			<li class="none">None</li>
 		{/each}
 	</ul>
-	<!-- Pulls the bank up into a sheet of every token (Trevor, 2026-10-29), over the right end so
-	     it never meets a caption. -->
+	<!-- Pulls the bank up into a sheet of every token (Trevor, 2026-10-29), its own cell at the
+	     tray's end: clear of the captions, and not on the run button (Trevor: "a drag above the
+	     red button is bad placement"). -->
 	<button
 		type="button"
 		class="pull-up"
@@ -478,8 +479,6 @@
 	groups={binGroups}
 	keyOf={(item) => item.key}
 	lowered={!!drag}
-	--bin-bottom="calc(-1 * (var(--tray-h) + var(--space-2)))"
-	--bin-height="calc(60% + var(--tray-h))"
 >
 	{#snippet item(item)}{@render token(item, false)}{/snippet}
 </ReminderBinSheet>
@@ -727,29 +726,28 @@
 	.none {
 		color: var(--on-surface-muted);
 	}
-	/* On the bank's top edge over the right end, half over the board, as the captions sit. */
+	/* A cell between the tokens and the run button, so the sheet, which opens over the board
+	   only, leaves the bank, its run button and the night strip in place (Trevor, 2026-10-29:
+	   "where the night order button goes"). */
 	.pull-up {
-		position: absolute;
-		top: 0;
-		right: calc(2.75rem - var(--tap-target) / 2);
-		z-index: 3;
+		flex: none;
+		align-self: stretch;
 		display: grid;
 		place-items: center;
 		width: var(--tap-target);
-		height: var(--tap-target);
 		padding: 0;
 		border: 0;
+		border-inline-start: 1px solid var(--border);
 		background: none;
 		color: var(--on-surface);
 		cursor: pointer;
-		transform: translateY(-50%);
 	}
 	.pull-up :global(svg) {
-		padding: var(--space-1);
-		border: 1px solid var(--border);
-		border-radius: var(--radius-full);
-		background: var(--surface-raised);
 		rotate: 180deg;
+		transition: rotate var(--duration-fast) ease;
+	}
+	.pull-up[aria-pressed='true'] :global(svg) {
+		rotate: 0deg;
 	}
 	.floating {
 		position: absolute;

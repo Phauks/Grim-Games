@@ -5,7 +5,7 @@
 	/**
 	 * The reminder bin pulled up (Trevor, 2026-10-29: "a way to see more tokens without
 	 * scrolling"): every token at once, in rows under its stretch's caption, over the lower part
-	 * of the town. The Storyteller's bank pulls up into it; a player's Grim tab opens it from its
+	 * of the town, never over what sits under it (the bank and its run button, the night strip). The Storyteller's bank pulls up into it; a player's Grim tab opens it from its
 	 * reminder button. Not a dialog, so a token can be dragged out of it: while one is dragged the
 	 * sheet drops away (`lowered`), still there, and comes back when it is put down. A tap
 	 * outside it, Escape or its handle closes it.
@@ -33,8 +33,9 @@
 		// What opens it (`data-bin-opener`) toggles it itself.
 		const el = target as Element;
 		if (!target || sheet?.contains(target) || el.closest?.('[data-bin-opener]')) return;
-		// A dialog opened from the sheet (choosing a seat) isn't outside it.
-		if (el.closest?.('[role="dialog"], [role="alertdialog"]')) return;
+		// A dialog opened from the sheet (choosing a seat) isn't outside it, nor is its backdrop
+		// while it fades away.
+		if (el.closest?.('[role="dialog"], [role="alertdialog"], [data-part="backdrop"]')) return;
 		open = false;
 	}
 	const empty = $derived(groups.every((g) => g.items.length === 0));
@@ -84,11 +85,11 @@
 		position: absolute;
 		left: 0;
 		right: 0;
-		bottom: var(--bin-bottom, 0);
+		bottom: 0;
 		z-index: 3;
 		display: flex;
 		flex-direction: column;
-		max-height: var(--bin-height, 60%);
+		max-height: 60%;
 		box-sizing: border-box;
 		padding: 0 var(--space-2) var(--space-2);
 		border: 1px solid var(--border);

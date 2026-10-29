@@ -1538,6 +1538,13 @@ test('the bank fades at an end with more tokens past it, and its captions stay i
 	await tray.evaluate((el) => el.scrollTo({ left: el.scrollWidth }));
 	await expect(tray).toHaveAttribute('data-more-start', 'true');
 	await expect(tray).not.toHaveAttribute('data-more-end');
+	expect(await inside()).toBe(true);
+	// Its stretch at the row's start: the caption shows, inside the row. (At the far end a
+	// phone's row may give its place to the ∞'s caption, which it never overlaps.)
+	await tray.evaluate((el) => {
+		const line = el.querySelector<HTMLElement>('li.divider')!;
+		el.scrollTo({ left: line.offsetLeft - (el as HTMLElement).offsetLeft });
+	});
 	await expect(other).toHaveText('Reminders');
 	expect(await inside()).toBe(true);
 });
@@ -5783,6 +5790,8 @@ test('an Alive reminder put on a dead player asks whether to revive them', async
 		.getByRole('button', { name: 'Confirm', exact: true })
 		.tap();
 	await expect(seatLabelled(page, 'Seat 2: no name, no character, dead')).toBeAttached();
+	// Gone, not still fading over the board, before the next token is picked up.
+	await expect(page.locator('[data-part="backdrop"]')).toHaveCount(0);
 	await page.keyboard.press('Escape');
 	await closeSheet(page);
 
