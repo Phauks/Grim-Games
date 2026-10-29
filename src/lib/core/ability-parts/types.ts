@@ -283,6 +283,11 @@ export type Info =
 				| 'abnormal-abilities'
 				| 'statement-true';
 			token?: ReminderLabel;
+			/**
+			 * Reminders that record the answer on the player's own seat, so they never move (the
+			 * Flowergirl's Demon Voted and Demon Not Voted, the Juggler's Correct).
+			 */
+			records?: ReminderLabel[];
 	  }
 	| { kind: 'character-of'; who: Subject }
 	| { kind: 'alignment-of'; who: Subject }

@@ -10,7 +10,8 @@
 				{
 					"do": "learn",
 					"info": {
-						"question": "minion-nominated"
+						"question": "minion-nominated",
+						"records": ["Minions Not Nominated", "Minion Nominated"]
 					}
 				}
 			]

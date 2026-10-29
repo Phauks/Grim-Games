@@ -10,7 +10,8 @@
 				{
 					"do": "learn",
 					"info": {
-						"question": "demon-voted"
+						"question": "demon-voted",
+						"records": ["Demon Voted", "Demon Not Voted"]
 					}
 				}
 			]

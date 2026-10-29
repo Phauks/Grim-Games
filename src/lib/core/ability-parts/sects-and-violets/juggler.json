@@ -21,7 +21,7 @@
 							"do": "learn",
 							"info": {
 								"question": "correct-guesses",
-								"token": "Correct"
+								"records": ["Correct"]
 							}
 						}
 					]

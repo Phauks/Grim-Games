@@ -9,6 +9,7 @@
  * bug in the parts, a gap in today's rules, or a choice to record.
  */
 import type { CharacterRules } from '#lib/core/data/character-rules.ts';
+import { impairmentOfLabel } from '#lib/core/rules/ability.ts';
 import type { DeathCauseRule } from '#lib/core/data/death-cause-rules.ts';
 import type { EndsGame, HoldsGame } from '#lib/core/data/game-end-rules.ts';
 import type { CharacterType, ReminderLabel } from '#lib/core/data/types.ts';
@@ -245,8 +246,28 @@ export function deriveRules(parts: AbilityParts, type: CharacterType): Derived {
 
 		const choosesPlayer = choice && choice.what !== 'character';
 		const demonKill = type === 'demon' && effects.some((e) => e.do === 'kill');
+		// The Savant reads only Townsfolk and Minion choices, and only a reminder that marks the
+		// choice itself: not one for what happens to the chosen player only when the choice hits
+		// (Snake Charmer), on a later event (Acrobat), or that may sit on the chooser (Sailor).
+		const onlyOnHit =
+			has(clause.if, (c) => 'registers' in c && c.registers.who === 'chosen') &&
+			clause.effects.some((e) => 'who' in e && e.who === 'chosen');
+		const marksEveryChoice =
+			(type === 'townsfolk' || type === 'minion') &&
+			!onlyOnHit &&
+			clause.effects.every(
+				(e) => e.do !== 'later' && !('who' in e && (e.who === 'self' || e.who === 'self-or-chosen'))
+			);
 		// Carousel Demons: a choice someone else makes (Lil' Monsta's Minions) isn't its player's.
-		if (when.at === 'night' && choosesPlayer && clause.marks && !demonKill && !onSelf && !choice.by)
+		if (
+			when.at === 'night' &&
+			choosesPlayer &&
+			clause.marks &&
+			marksEveryChoice &&
+			!demonKill &&
+			!onSelf &&
+			!choice.by
+		)
 			marksChoice.push(clause.marks);
 		if (choice && clause.marks)
 			rules.targetSeats = {
@@ -307,7 +328,11 @@ function applyEffect(
 		case 'learn': {
 			const { info } = effect;
 			if ('measure' in info) rules.learns = { ...info };
-			else if ('question' in info) rules.answers = { ...info };
+			else if ('question' in info) {
+				const { records, ...answer } = info;
+				rules.answers = answer;
+				for (const label of records ?? []) acc.fixed.add(label);
+			}
 			const firstNight = when.at === 'night' && when.nights === 'first';
 			if ('measure' in info)
 				for (const label of Object.values(info.reminders ?? {}))
@@ -401,6 +426,15 @@ function applyEffect(
 			// Carousel Townsfolk (batch 2): impaired only if something holds (the Cannibal's evil
 			// lunch); its token's label does it, as the label fallback does today.
 			if (effect.who === 'self' && conds?.length) return;
+			// Its own Poisoned or Drunk token does it by its label (the Organ Grinder's Drunk); being
+			// one from setup (the Drunk) is the character's, whatever its marker says.
+			if (
+				effect.who === 'self' &&
+				marks &&
+				when.at !== 'setup' &&
+				impairmentOfLabel(marks) === effect.as
+			)
+				return;
 			if (effect.who === 'self') rules.impairs = { ...rules.impairs, self: { reason: effect.as } };
 			// Carousel Minions: every Townsfolk, while its token is out (the Xaan's X).
 			else if (marks && effect.who === 'each-townsfolk')
@@ -411,6 +445,20 @@ function applyEffect(
 						[marks]: { reason: effect.as, on: 'others', type: 'townsfolk', ...whileWorks }
 					}
 				};
+			// A Poisoned or Drunk token already impairs its carrier by its label, for as long as its
+			// source's ability works (`impairmentOfLabel`, rules/ability.ts). Only one that outlives
+			// its source needs an entry: even if dead (Puzzlemaster), on its death (Sweetheart), or
+			// once the source has swapped away (Snake Charmer).
+			else if (
+				marks &&
+				effect.who !== 'each-player' &&
+				impairmentOfLabel(marks) === effect.as &&
+				!effect.whileWorks &&
+				!clause.evenIfDead &&
+				clause.when.at !== 'death' &&
+				!clause.effects.some((e) => e.do === 'swap')
+			)
+				return;
 			else if (marks && ['chosen', 'another-player', 'each-player'].includes(effect.who))
 				rules.impairs = {
 					...rules.impairs,

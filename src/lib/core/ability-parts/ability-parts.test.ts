@@ -30,64 +30,16 @@ import type { AbilityParts } from './types.ts';
  * Each reason starts with its gap: the design doc's gap list counts them.
  */
 const DIFFERENCES: Record<string, Partial<Record<DerivedKey, string>>> = {
-	poisoner: {
-		impairs:
-			'label-only: today the token impairs by its label (impairmentOfLabel, rules/ability.ts); parts say it, so a custom token name works too'
-	},
-	butler: {
-		marksChoice:
-			'uneven marksChoice: parts list every night choice a reminder marks; today only some are (the Savant reads it)'
-	},
-	thief: {
-		marksChoice:
-			'uneven marksChoice: parts list every night choice a reminder marks; today only some are (the Savant reads it)'
-	},
-	bureaucrat: {
-		marksChoice:
-			'uneven marksChoice: parts list every night choice a reminder marks; today only some are (the Savant reads it)'
-	},
-	professor: {
-		marksChoice:
-			'uneven marksChoice: parts list every night choice a reminder marks; today only some are (the Savant reads it)'
-	},
-	sailor: {
-		marksChoice:
-			'uneven marksChoice: parts list every night choice a reminder marks; today only some are (the Savant reads it)'
-	},
-	harlot: {
-		marksChoice:
-			'uneven marksChoice: parts list every night choice a reminder marks; today only some are (the Savant reads it)'
-	},
-	snakecharmer: {
-		marksChoice:
-			'uneven marksChoice: parts list every night choice a reminder marks; today only some are (the Savant reads it); today it is choosesUnmarked'
-	},
 	bonecollector: {
-		marksChoice:
-			'uneven marksChoice: parts list every night choice a reminder marks; today only some are (the Savant reads it)',
 		targetSeats:
 			'seat judgement: a living Bone Collector picks a dead player, so never itself; today any'
 	},
 	courtier: {
-		impairs:
-			'label-only: today the token impairs by its label (impairmentOfLabel, rules/ability.ts); parts say it, so a custom token name works too',
 		fixedReminders: 'countdown tokens: Drunk 3, 2, 1 replace each other; parts have no countdown'
 	},
 	philosopher: {
-		impairs:
-			'label-only: today the token impairs by its label (impairmentOfLabel, rules/ability.ts); parts say it, so a custom token name works too',
 		targetSeats:
 			"seat judgement: a chosen character's player, who can't be the Philosopher; parts don't know a character choice lands on someone else"
-	},
-	flowergirl: {
-		fixedReminders: 'answer tokens: the yes and no tokens of an answer are not parts'
-	},
-	towncrier: {
-		fixedReminders: 'answer tokens: the yes and no tokens of an answer are not parts'
-	},
-	juggler: {
-		answers: "answer tokens: today's answer has no token, its Correct tokens are placed by day",
-		fixedReminders: 'answer tokens: Correct marks each right guess, placed by day'
 	},
 	zombuul: {
 		fixedReminders:
@@ -97,10 +49,6 @@ const DIFFERENCES: Record<string, Partial<Record<DerivedKey, string>>> = {
 		fixedReminders:
 			"movement judgement: a lasting drunkenness never moves; parts can't tell it from the No Dashii's, which moves with its neighbours"
 	},
-	ogre: {
-		marksChoice:
-			'uneven marksChoice: parts mark every night choice; the Savant reads only Townsfolk and Minion choices, so an Outsider needs none'
-	},
 	angel: {
 		fixedReminders:
 			"movement judgement: Something Bad stays on the player it lands on; parts can't tell it from a token that moves"
@@ -108,14 +56,6 @@ const DIFFERENCES: Record<string, Partial<Record<DerivedKey, string>>> = {
 	hellslibrarian: {
 		fixedReminders:
 			"movement judgement: Something Bad stays on the player it lands on; parts can't tell it from a token that moves"
-	},
-	widow: {
-		impairs:
-			'label-only: today the token impairs by its label (impairmentOfLabel, rules/ability.ts); parts say it, so a custom token name works too'
-	},
-	organgrinder: {
-		impairs:
-			'label-only: today its own Drunk token impairs it by its label (impairmentOfLabel, rules/ability.ts); parts say it'
 	},
 	boomdandy: {
 		actsWhenDead:
@@ -136,10 +76,6 @@ const DIFFERENCES: Record<string, Partial<Record<DerivedKey, string>>> = {
 		targetSeats: 'seat judgement: it never kills itself with a token it keeps'
 	},
 	// Carousel Townsfolk (batch 1).
-	acrobat: {
-		marksChoice:
-			'uneven marksChoice: Chosen always marks its night choice; today it is not listed (the Savant reads it)'
-	},
 	// Carousel Townsfolk (batch 2)
 	amnesiac: {
 		deathCause:
@@ -147,10 +83,6 @@ const DIFFERENCES: Record<string, Partial<Record<DerivedKey, string>>> = {
 	},
 	// Carousel Demons.
 	lleech: {
-		impairs:
-			'label-only: today the token impairs by its label (impairmentOfLabel, rules/ability.ts); parts say it, so a custom token name works too',
-		marksChoice:
-			"uneven marksChoice: parts list every night choice a reminder marks; a Demon's host choice isn't one the Savant reads",
 		protects:
 			'one-offs: parts say it survives any death while its host lives; today only an execution is offered as a save (night kills of a Demon are rare), the Storyteller deciding'
 	},
