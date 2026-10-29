@@ -245,6 +245,38 @@ test('New game and Continue game are screens of their own', async ({ page }) => 
 	await expect(page.getByTestId('seat')).toHaveCount(8);
 });
 
+test('Continue game folds As player and As Storyteller, and boxes the room code', async ({
+	page
+}) => {
+	// Trevor, 2026-10-28: the two lists are collapsible, and the join area has a border and its
+	// own background.
+	await startGame(page);
+	await page.goto('/join');
+	const saved = page.getByRole('link', { name: /Trouble Brewing.*Setting up/ });
+	await expect(saved).toBeVisible();
+	const storyteller = page.getByRole('button', { name: /As Storyteller/ });
+	await expect(storyteller).toHaveAttribute('aria-expanded', 'true');
+	await storyteller.tap();
+	await expect(saved).toBeHidden();
+	// Closed, it still says how many games it holds; remembered on the device.
+	await expect(storyteller).toContainText('1');
+	await page.reload();
+	await expect(page.getByRole('button', { name: /As Storyteller/ })).toHaveAttribute(
+		'aria-expanded',
+		'false'
+	);
+	const player = page.getByRole('button', { name: /As player/ });
+	await player.tap();
+	await expect(player).toHaveAttribute('aria-expanded', 'false');
+	await expect(page.getByText('None', { exact: true })).toBeHidden();
+
+	const form = page.locator('form.code-form');
+	await expect(form).toHaveCSS('border-top-style', 'solid');
+	const inside = await form.evaluate((el) => getComputedStyle(el).backgroundColor);
+	const outside = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+	expect(inside).not.toBe(outside);
+});
+
 test('a new game offers no "Is The Drunk" before anyone has a token', async ({ page }) => {
 	// Trevor (2026-10-18): the Drunk's reminder was offered before the bag was set up.
 	// https://wiki.bloodontheclocktower.com/Drunk : the Drunk is in play only if chosen.
