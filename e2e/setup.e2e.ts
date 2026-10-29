@@ -54,8 +54,8 @@ test('setup is one flow of two steps with the same bar on each', async ({ page }
 		expect(back!.x).toBeLessThan(next!.x);
 		return { back, next };
 	};
-	// Before any character is dealt, Back goes to Game settings; the board is one tap away.
-	await expect(bar.getByRole('button', { name: 'Game settings' })).toBeVisible();
+	// Before any character is dealt, Back goes to New game; the board is one tap away.
+	await expect(bar.getByRole('button', { name: 'New game' })).toBeVisible();
 	await expect(bar.getByTestId('setup-to-board')).toBeVisible();
 	await expect(bar.getByRole('button', { name: 'Build bag' })).toBeVisible();
 	const onCharacters = await barButtons();

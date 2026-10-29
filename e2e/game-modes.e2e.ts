@@ -1272,7 +1272,7 @@ test('A Script of Infinite Possibilities rolls hidden characters from off the sc
 		.locator('[data-character-id]')
 		.evaluateAll((els) => els.map((el) => el.getAttribute('data-character-id')!));
 	expect(hidden).toHaveLength(2);
-	await page.getByRole('button', { name: 'Game settings' }).tap();
+	await page.getByRole('button', { name: 'Choose characters' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 	// Off the script but chosen for the bag: listed under their own types (Trevor,
 	// 2026-10-18), and not marked as off the script, since the rule put them in play
@@ -1313,7 +1313,7 @@ test('with no hidden character, Infinite Possibilities can’t go on to the setu
 		const clear = extras.nth(i).getByRole('button', { name: `Clear the hidden ${type}` });
 		if (await clear.isEnabled()) await clear.tap();
 	}
-	await expect(page.getByRole('button', { name: 'Game settings' })).toBeDisabled();
+	await expect(page.getByRole('button', { name: 'Choose characters' })).toBeDisabled();
 });
 
 test('Flesh and Bone runs a campaign: the next game adds a Demon once the current game has ended', async ({
@@ -1986,7 +1986,7 @@ test('+1 adds exactly one character from off the script', async ({ page }) => {
 	const filled = extras.getByRole('button', { name: /^Roll again instead of / });
 	await expect(filled).toHaveCount(1);
 	await expect(page.getByTestId('extras-range')).toHaveCount(0);
-	const next = page.getByRole('button', { name: 'Game settings' });
+	const next = page.getByRole('button', { name: 'Choose characters' });
 	await expect(next).toBeEnabled();
 	// A second one is too many.
 	for (const [i, type] of ['Townsfolk', 'Outsider', 'Minion', 'Demon'].entries()) {
@@ -2040,7 +2040,7 @@ test('Game info’s Special rules opens the screen once the game is set up', asy
 	const picker = page.getByRole('dialog', { name: 'Choose a hidden Outsider' });
 	await picker.getByRole('searchbox').fill('Goon');
 	await picker.getByRole('button', { name: /^Goon\b/ }).tap();
-	await page.getByRole('button', { name: 'Game settings' }).tap();
+	await page.getByRole('button', { name: 'Choose characters' }).tap();
 	await expect(page).toHaveURL(`${board}/setup`);
 	for (let n = 8; n > 5; n--) await page.getByRole('button', { name: 'Fewer players' }).tap();
 	for (const name of ['Washerwoman', 'Empath', 'Poisoner', 'Imp'])
