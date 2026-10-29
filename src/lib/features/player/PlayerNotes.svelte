@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
@@ -104,6 +105,13 @@
 		noteId = id;
 		noteOpen = true;
 	}
+	// A note closed with nothing in it is not kept, as the Storyteller's game notes, so "+ New
+	// note" then X leaves no empty card behind (Trevor, 2026-10-29).
+	$effect(() => {
+		if (noteOpen || !noteId) return;
+		const id = noteId;
+		untrack(() => notebook?.dropIfBlank(id));
+	});
 </script>
 
 {#if !notebook}

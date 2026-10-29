@@ -36,6 +36,8 @@
 		defaultValue: FrameId;
 		onChange: (value: FrameId) => void;
 		testid?: string;
+		/** Locked, as a player's look is during a game (room-look.ts). */
+		disabled?: boolean;
 	}
 
 	let {
@@ -46,7 +48,8 @@
 		value,
 		defaultValue,
 		onChange,
-		testid
+		testid,
+		disabled = false
 	}: Props = $props();
 
 	const current = $derived(frameById(value) ?? frameById(defaultValue));
@@ -107,6 +110,7 @@
 		{options}
 		{defaultValue}
 		{onChange}
+		{disabled}
 		item={form}
 		selected={form}
 	/>
@@ -117,7 +121,7 @@
 		value={colour ?? ownColour}
 		options={colourOptions}
 		defaultValue={ownColour}
-		disabled={!styled}
+		disabled={disabled || !styled}
 		onChange={(next) => onChange(restyled({ colour: next }))}
 		item={tint}
 		selected={tint}
@@ -129,7 +133,7 @@
 		value={motion}
 		options={motionOptions}
 		defaultValue="none"
-		disabled={!styled}
+		disabled={disabled || !styled}
 		onChange={(next) => onChange(restyled({ motion: next }))}
 		item={moving}
 		selected={moving}

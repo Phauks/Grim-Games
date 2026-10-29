@@ -6,6 +6,7 @@
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import { roomHost } from './host.svelte.ts';
+	import VoteTimeLeft from './VoteTimeLeft.svelte';
 
 	/**
 	 * Players' own characters on their phones (Trevor, 2026-10-26: "Storyteller sees who has
@@ -44,6 +45,16 @@
 		disabled={!host.code}
 		onChange={(on) => host.showRoles(gameId, on)}
 	/>
+	<!-- How much longer players can see theirs (Trevor, 2026-10-29); the line is kept while
+	     the switch is off, so nothing below moves. -->
+	<div class="time-left">
+		<VoteTimeLeft
+			endsAt={shown ? host.rolesShown.until : undefined}
+			text={(time) => t('room.roles.timeLeft', { time })}
+			endedText=""
+			testid="roles-time-left"
+		/>
+	</div>
 	<h3 id="roles-seats">{t('room.roles.seats')}</h3>
 	<ul class="seats" aria-labelledby="roles-seats">
 		{#each seats as seat, i (seat.seatId)}
@@ -70,6 +81,13 @@
 	h2 {
 		margin: 0;
 		font-size: 1.1rem;
+	}
+	.time-left {
+		min-height: 1.5em;
+	}
+	.time-left :global([data-testid='roles-time-left']) {
+		margin: 0;
+		line-height: 1.5;
 	}
 	h3 {
 		margin: var(--space-2) 0 0;

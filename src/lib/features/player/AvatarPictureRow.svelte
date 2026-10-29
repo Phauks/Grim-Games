@@ -18,9 +18,11 @@
 	interface Props {
 		/** The name the initials come from; else the one this phone last gave a room. */
 		name?: string;
+		/** Locked while a game is under way (room-look.ts). */
+		disabled?: boolean;
 	}
 
-	let { name }: Props = $props();
+	let { name, disabled = false }: Props = $props();
 	let input = $state<HTMLInputElement>();
 	let error = $state('');
 
@@ -59,7 +61,7 @@
 				type="button"
 				class="token"
 				aria-label={t('player.pictureEdit')}
-				disabled={!avatarPicture.url}
+				disabled={disabled || !avatarPicture.url}
 				onclick={edit}
 				><AvatarFace
 					avatar="initials"
@@ -67,12 +69,12 @@
 					picture={avatarPicture.url}
 				/></button
 			>
-			<Button icon="add" onclick={() => input?.click()}
+			<Button icon="add" {disabled} onclick={() => input?.click()}
 				>{avatarPicture.url ? t('player.pictureChange') : t('player.pictureChoose')}</Button
 			>
 			<DeleteButton
 				label={t('player.pictureRemove')}
-				disabled={!avatarPicture.url}
+				disabled={disabled || !avatarPicture.url}
 				onclick={() => avatarPicture.clear()}
 			/>
 			<input

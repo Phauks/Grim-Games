@@ -176,3 +176,50 @@ test("players' phones show where the game is up to, with the day timer as a sun 
 	await expect(status).toContainText('Day 1');
 	await phoneContext.close();
 });
+
+// Who has connected (Trevor, 2026-10-29: "The setup area in character selection should have
+// the setup candle status ... In both views clicking the candle modal should show you which
+// players have connected").
+test('the candles beside Setup open who is connected, on phones and in character selection', async ({
+	page,
+	browser
+}, testInfo) => {
+	await page.goto('/new');
+	await page
+		.getByRole('radiogroup', { name: 'Script' })
+		.getByText('Trouble Brewing', { exact: true })
+		.tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
+	await toBoard(page);
+	const board = new URL(page.url()).pathname;
+	await page.goto(`${board}/room`);
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+	await page.getByRole('link', { name: 'Grimoire' }).tap();
+	const seatCount = await page.getByRole('button', { name: /^Seat \d+:/ }).count();
+
+	const phoneContext = await browser.newContext({ ...testInfo.project.use });
+	const phone = await phoneContext.newPage();
+	await phone.goto(`/join/${code}`);
+	await expect(phone.getByTestId('join-status')).toHaveText('');
+
+	// On the phone: every seat, nobody sitting yet, and this phone in the room without a seat.
+	await phone.getByRole('button', { name: 'Setup; see who is connected' }).tap();
+	const list = phone.getByRole('dialog', { name: 'Who is connected' });
+	await expect(list.getByTestId('connected-seat')).toHaveCount(seatCount);
+	await expect(list.getByTestId('connected-seat').first()).toContainText('No phone');
+	await expect(list.getByTestId('connected-unseated')).toContainText('1');
+	await phone.keyboard.press('Escape');
+	await expect(list).toBeHidden();
+
+	// In character selection's setup area, the same candles and the same list.
+	await page.goto(`${board}/setup`);
+	const candles = page.getByTestId('setup-candles');
+	await expect(candles.locator('.candle')).toHaveCount(seatCount);
+	await expect(candles).toContainText('+1');
+	await candles.getByRole('button', { name: 'Setup; see who is connected' }).tap();
+	const stList = page.getByRole('dialog', { name: 'Who is connected' });
+	await expect(stList.getByTestId('connected-seat')).toHaveCount(seatCount);
+	await expect(stList.getByTestId('connected-unseated')).not.toContainText('None');
+	await phoneContext.close();
+});

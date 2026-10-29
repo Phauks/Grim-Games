@@ -19,6 +19,7 @@ import ph_arrows_in_thin from '~icons/ph/arrows-in-thin';
 import ph_arrows_left_right_thin from '~icons/ph/arrows-left-right-thin';
 import ph_arrows_out_thin from '~icons/ph/arrows-out-thin';
 import ph_arrows_out_cardinal_thin from '~icons/ph/arrows-out-cardinal-thin';
+import ph_arrows_split_thin from '~icons/ph/arrows-split-thin';
 import ph_bag_simple_thin from '~icons/ph/bag-simple-thin';
 import ph_beer_bottle_thin from '~icons/ph/beer-bottle-thin';
 import ph_beer_stein_thin from '~icons/ph/beer-stein-thin';
@@ -35,6 +36,7 @@ import ph_books_thin from '~icons/ph/books-thin';
 import ph_bug_thin from '~icons/ph/bug-thin';
 import ph_calculator_thin from '~icons/ph/calculator-thin';
 import ph_camera_thin from '~icons/ph/camera-thin';
+import ph_cards_thin from '~icons/ph/cards-thin';
 import ph_caret_circle_down_thin from '~icons/ph/caret-circle-down-thin';
 import ph_caret_down_thin from '~icons/ph/caret-down-thin';
 import ph_caret_left_thin from '~icons/ph/caret-left-thin';
@@ -243,6 +245,7 @@ const icons: IconMap = {
 	'ph:arrows-left-right-thin': ph_arrows_left_right_thin,
 	'ph:arrows-out-thin': ph_arrows_out_thin,
 	'ph:arrows-out-cardinal-thin': ph_arrows_out_cardinal_thin,
+	'ph:arrows-split-thin': ph_arrows_split_thin,
 	'ph:bag-simple-thin': ph_bag_simple_thin,
 	'ph:beer-bottle-thin': ph_beer_bottle_thin,
 	'ph:beer-stein-thin': ph_beer_stein_thin,
@@ -259,6 +262,7 @@ const icons: IconMap = {
 	'ph:bug-thin': ph_bug_thin,
 	'ph:calculator-thin': ph_calculator_thin,
 	'ph:camera-thin': ph_camera_thin,
+	'ph:cards-thin': ph_cards_thin,
 	'ph:caret-circle-down-thin': ph_caret_circle_down_thin,
 	'ph:caret-down-thin': ph_caret_down_thin,
 	'ph:caret-left-thin': ph_caret_left_thin,

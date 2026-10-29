@@ -5,6 +5,7 @@
 	import { fallbackIconUrl, iconUrl } from '#lib/features/characters/icon-url.ts';
 	import { iconFallback } from '#lib/ui/token/icon-fallback.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
+	import BluffTag from '#lib/features/bluffs/BluffTag.svelte';
 	import { isBagDisabled } from '#lib/core/rules/bag-characters.ts';
 
 	interface Props {
@@ -110,10 +111,9 @@
 			at most less of a long name shows.
 		-->
 		<span class="check"
-			>{#if bluff}<span class="bluff" data-testid="bluff-tag"
-					>{#if selected}<Icon name="warning" />{/if}{t('setup.bluffShort')}</span
-				>{:else if selected}{#if outOfBag}<span class="out" data-testid="not-in-bag"
-						>{t('setup.notInBag')}</span
+			>{#if bluff}<BluffTag warn={selected} />{:else if selected}{#if outOfBag}<span
+						class="out"
+						data-testid="not-in-bag">{t('setup.notInBag')}</span
 					>{/if}<Icon name="check" />{/if}</span
 		>
 	{/snippet}
@@ -159,7 +159,6 @@
 
 <style>
 	.tag,
-	.bluff,
 	.out {
 		padding: 0 0.4em;
 		border-radius: var(--radius-full);
@@ -173,13 +172,6 @@
 	.out {
 		background: var(--surface);
 		color: var(--on-surface-muted);
-	}
-	.bluff {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.2em;
-		background: var(--evil);
-		color: var(--on-evil);
 	}
 	/* A fixed slot: a second partner overlaps the first, so nothing beside it moves. */
 	.jinx {

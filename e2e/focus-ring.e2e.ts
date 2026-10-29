@@ -5,7 +5,7 @@ import { expect, test } from '@playwright/test';
 test('a focused text field in a sheet draws one ring inside its own border', async ({ page }) => {
 	await page.goto('/play#e=tb');
 	await page.getByRole('tab', { name: 'Notes' }).tap();
-	await page.getByRole('button', { name: /^Untitled/ }).tap();
+	await page.getByRole('button', { name: 'New note' }).tap();
 	const title = page.getByRole('dialog', { name: 'Note' }).getByRole('textbox', { name: 'Title' });
 	await title.tap();
 	await expect(title).toBeFocused();
