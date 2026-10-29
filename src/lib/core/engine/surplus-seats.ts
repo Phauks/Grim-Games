@@ -26,3 +26,22 @@ export function surplusSeats(game: Game, players: number): SeatId[] {
 		.reverse()
 		.slice(0, extra);
 }
+
+/**
+ * The seats the game will have once it seats `players`, in seat order: the seats kept by
+ * {@link surplusSeats}, then a placeholder for each seat still to add. Character selection
+ * shows these before the count is seated, so its candles follow the player count.
+ */
+export function seatsForCount(
+	game: Game,
+	players: number
+): { seatId: SeatId; playerName?: string }[] {
+	const removed = new Set(surplusSeats(game, players));
+	const kept = game.seating
+		.filter((id) => !removed.has(id))
+		.map((id) => ({ seatId: id, playerName: game.seats[id]?.playerName }));
+	const added = Array.from({ length: Math.max(0, players - kept.length) }, (_, i) => ({
+		seatId: `planned-${kept.length + i + 1}`
+	}));
+	return [...kept, ...added];
+}
