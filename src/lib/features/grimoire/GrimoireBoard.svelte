@@ -4,13 +4,12 @@
 	import GuidedStep from './GuidedStep.svelte';
 	import NightStrip from './NightStrip.svelte';
 	import HistoryStrip from './HistoryStrip.svelte';
-	import { phaseText } from './phase-text.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { boardNightSteps, stepWakes } from './night-steps.ts';
 	import { changedCharacters, diedToday } from '#lib/core/engine/index.ts';
 	import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 	import AlignmentDraw from './AlignmentDraw.svelte';
-	import { endedGames, gameStarts, nightUnderway, type EndedGame } from './device-notes.ts';
+	import { endedGames, type EndedGame } from './device-notes.ts';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
 	import CallTownConfirm from '#lib/features/room/CallTownConfirm.svelte';
 	import RoomPanel from '#lib/features/room/RoomPanel.svelte';
@@ -31,8 +30,6 @@
 		charactersInPlay,
 		looseReminders,
 		scriptCharacterIds,
-		trueCharacter,
-		type Reminder,
 		type ReminderInstance,
 		type ReminderId,
 		type SeatId
@@ -40,7 +37,6 @@
 	import InfoTokensSheet from '#lib/features/info-tokens/InfoTokensSheet.svelte';
 	import {
 		dayNumber,
-		gamePhase,
 		livingByTeam,
 		setupComplete,
 		diedSinceNewDay,
@@ -93,13 +89,10 @@
 	import { markBoardShown } from '#lib/ui/board-cover.ts';
 	import InboxNotice from '#lib/features/room/InboxNotice.svelte';
 	import { fitReminders } from './reminder-fan.ts';
-	import { isOrphan, placingAlignment, seatMisfits } from './board.ts';
+	import { isOrphan, placingAlignment } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { fromScript, scriptLogo } from '#lib/core/data/index.ts';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
-	import { scriptVersion } from '#lib/features/player/player-script.ts';
-	import { playersLine, standardPlayersLine } from '#lib/features/modes/players-line.ts';
-	import { savedChoiceFor } from '#lib/features/modes/script-choices.svelte.ts';
 	import type { PublicLook } from '#lib/core/sync/public-projection.ts';
 	import { drawnLook } from './shared-look.ts';
 	import HistoryDialog from './HistoryDialog.svelte';
@@ -125,7 +118,6 @@
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
 	import HeldReminderDialog from './HeldReminderDialog.svelte';
 	import BoardCorner from './BoardCorner.svelte';
-	import { cornerLines } from './corner-lines.ts';
 	import LeaveGuard from './LeaveGuard.svelte';
 	import BoardMenu from './BoardMenu.svelte';
 	import BoardToolbar from './BoardToolbar.svelte';
@@ -133,7 +125,6 @@
 	import type { GameInfoChanges } from '#lib/features/modes/GameInfoEditDialog.svelte';
 	import ModeMenu from '#lib/features/modes/ModeMenu.svelte';
 	import NewGameSheet from '#lib/features/modes/NewGameSheet.svelte';
-	import { extraReminders } from './reminders.ts';
 	import AlignmentAsk from './AlignmentAsk.svelte';
 	import type { WatchedTimer } from '#lib/features/day/watched-timer.svelte.ts';
 	import ExportGameDialog from '#lib/features/history/ExportGameDialog.svelte';
@@ -147,6 +138,8 @@
 	import ReminderAsk from './ReminderAsk.svelte';
 	import { NightWalk, type NightWalkContext } from './night-walk.svelte.ts';
 	import { PhaseFlow } from './phase-flow.svelte.ts';
+	import { SeatHints } from './seat-hints.svelte.ts';
+	import { BoardStatus } from './board-status.svelte.ts';
 	import PhaseDialogs from './PhaseDialogs.svelte';
 	import NominationAsk from './NominationAsk.svelte';
 
@@ -552,45 +545,15 @@
 	// ── The reminder bank under the board (Trevor, 2026-10-16): setup suggestions until
 	// they are all placed or dismissed (or the first day starts), then every reminder left.
 	// The Storyteller can switch at any time.
-	let trayHints = $state<{ seats: SeatId[]; target?: SeatId; reminder?: Reminder }>({
-		seats: []
-	});
-	/**
-	 * While a reminder is dragged, the seats it doesn't fit are faded (Trevor, 2026-10-16:
-	 * reminder target rules). Warns only: it can still be dropped there.
-	 */
-	const misfits = $derived.by(() => {
-		// Loose mode marks no seats: nothing is given to one (Trevor, 2026-10-18).
-		const reminder = looseMode ? undefined : (dragOrigin?.reminder ?? trayHints.reminder);
-		if (!reminder) return new Set<SeatId>();
-		return seatMisfits(game, reminder, characters, grimoire.atDawn);
-	});
-	/**
-	 * Marks for the reminder in hand (Trevor, 2026-10-18): the seats whose character it is
-	 * (its source), the seats it fits (valid targets), or both. With no reminder in hand, a
-	 * walked night step marks its holders as sources.
-	 */
 	const looseMode = $derived(boardLooks.current.reminders === 'free');
-	/** Copies beyond what the game gives (Duplicate reminder): marked as unusual. */
-	const extras = $derived(extraReminders(game, characters, grimoire.copies));
-	const handReminder = $derived(
-		looseMode ? undefined : (dragOrigin?.reminder ?? trayHints.reminder)
-	);
-	const sourceSeats = $derived.by(() => {
-		const id = handReminder?.characterId;
-		if (id === undefined) return nw.holders;
-		return game.seating.filter(
-			(s) => game.seats[s].characterId === id || trueCharacter(game, s, characters) === id
-		);
-	});
-	const targetSeats = $derived(
-		handReminder ? game.seating.filter((s) => !misfits.has(s)) : trayHints.seats
-	);
-	function seatRole(seatId: SeatId): 'source' | 'target' | 'both' | undefined {
-		const source = sourceSeats.includes(seatId);
-		const target = targetSeats.includes(seatId);
-		return source && target ? 'both' : source ? 'source' : target ? 'target' : undefined;
-	}
+	const hints = new SeatHints(() => ({
+		grimoire,
+		game,
+		characters,
+		dragged: dragOrigin?.reminder,
+		loose: looseMode,
+		holders: nw.holders
+	}));
 	// The setup flow's last step lands here with its setup reminders in the bank.
 	onMount(() => {
 		// History's Export opens the board first, so the picture is the board (Trevor, 2026-10-26).
@@ -701,7 +664,7 @@
 		busy: seatArr.arranging || !!placing,
 		setDayOpen: (open) => (dayOpen = open),
 		closeSeat: () => (sheetOpen = false),
-		started: () => (startedRead += 1),
+		started: () => status.started(),
 		offerSavant
 	}));
 
@@ -826,53 +789,19 @@
 	);
 	// "These characters are not in play" shows a bluff set (Trevor, 2026-10-16).
 	const infoBluffSets = $derived(showableBluffSets(game, characters));
-	/** When Start game was tapped, for Game time in the corner; read again when it is. */
-	let startedRead = $state(0);
-	const startedAt = $derived((void startedRead, gameStarts.read(game.gameId)));
-	/**
-	 * The night or day in play, for the corner (Trevor, 2026-10-23): Setup until Start game,
-	 * then Night 1, and a night from End day (Dusk) until its Dawn starts the next day. A game
-	 * with days played is past Setup even where this device has no start time (gamePhase).
-	 */
-	const phaseNow = $derived(
-		gamePhase(game.pastDays.length, {
-			begun: startedAt !== undefined,
-			nightUnderway: ended
-				? nightUnderway(
-						{ day: grimoire.nightDay, done: grimoire.nightDone },
-						game.pastDays.length,
-						true
-					)
-				: grimoire.nightRunning || grimoire.nightUnderway
-		})
-	);
-	const phase = $derived(phaseText(phaseNow));
-	/** The corner's lines, which the room's phones show too (Trevor, 2026-10-24). */
-	const cornerInfo = $derived(
-		cornerLines({
-			gameId: game.gameId,
-			phase: phaseNow,
-			startedAt,
-			endedAt: ended?.endedAt,
-			watchers: watcherCount,
-			watching,
-			version: scriptVersion(undefined, game.script.meta) ?? savedChoiceFor(game.script)?.version,
-			players: playersLine(game, characters)
-		})
-	);
-	// Phones get the table's standard split, never the grimoire's: a Baron's extra Outsiders
-	// are the Storyteller's to know (https://wiki.bloodontheclocktower.com/Baron).
-	$effect(() => {
-		if (!watching)
-			roomHost().showCorner(game.gameId, {
-				...cornerInfo,
-				...(cornerInfo.players ? { players: standardPlayersLine(game.seating.length) } : {})
-			});
-	});
-	// Players see where the game is up to, and the day timer during the day (Trevor, 2026-10-26).
-	$effect(() => {
-		if (!watching) roomHost().showPhase(game.gameId, ended ? undefined : phaseNow);
-	});
+	// ── The corner and the phones: where the game is up to (board-status.svelte.ts) ──
+	const status = new BoardStatus(() => ({
+		grimoire,
+		game,
+		characters,
+		ended,
+		watching,
+		watchers: watcherCount
+	}));
+	const startedAt = $derived(status.startedAt);
+	const phaseNow = $derived(status.now);
+	const phase = $derived(status.text);
+	const cornerInfo = $derived(status.corner);
 	// Always shown, unless the script itself asks not to (Trevor, 2026-10-23: "always show
 	// script name and author on board, remove as an option").
 	const showTitle = $derived(!game.script.meta?.hideTitle);
@@ -1042,10 +971,10 @@
 						(remDrag.drag !== undefined &&
 							remDrag.drag.target === seat.seatId &&
 							remDrag.drag.from !== seat.seatId) ||
-						trayHints.target === seat.seatId}
+						hints.tray.target === seat.seatId}
 					dragFrom={remDrag.drag !== undefined && remDrag.drag.from === seat.seatId}
-					misfit={misfits.has(seat.seatId)}
-					role={seatRole(seat.seatId)}
+					misfit={hints.misfits.has(seat.seatId)}
+					role={hints.role(seat.seatId)}
 					onTap={(part) =>
 						!seatArr.arranging &&
 						(part === 'avatar'
@@ -1092,7 +1021,7 @@
 						seatNumber={i + 1}
 						onHeldSeat={heldSeat === seat.seatId}
 						dragging={dragged}
-						extra={extras.has(reminder.reminderId)}
+						extra={hints.extras.has(reminder.reminderId)}
 						now={nw.isStepReminder(reminder)}
 						onTap={() => openReminder(seat.seatId, reminder.reminderId)}
 						onDrag={(x, y, end) => remDrag.move(reminder.reminderId, seat.seatId, x, y, end)}
@@ -1117,7 +1046,7 @@
 				disabled={seatArr.arranging || watching}
 				loose
 				dragging={dragged}
-				extra={extras.has(reminder.reminderId)}
+				extra={hints.extras.has(reminder.reminderId)}
 				unassigned={!looseMode}
 				now={nw.isStepReminder(reminder)}
 				onTap={() => heldDialog?.show(reminder.reminderId)}
@@ -1187,7 +1116,7 @@
 				dropOver={!!remDrag.drag?.overNew}
 				onRule={(reminder, characterId, tokenId) =>
 					moveConfirm?.requestRule(reminder, characterId, tokenId)}
-				onHints={(h) => (trayHints = h)}
+				onHints={(h) => (hints.tray = h)}
 				run={flow.run}
 				disabled={watching}
 			/>
