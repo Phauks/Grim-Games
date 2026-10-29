@@ -1111,8 +1111,10 @@ test('the Demon bluffs are chosen on the Characters screen, not the Draw', async
 	const button = (await change.boundingBox())!;
 	expect(button.y + button.height / 2).toBeGreaterThan(title.y);
 	expect(button.y + button.height / 2).toBeLessThan(title.y + title.height + button.height / 2);
-	// Each bluff is tagged in the list above, and stays out of the bag (Trevor, 2026-10-18).
-	await expect(page.getByTestId('bluff-tag')).toHaveCount(3);
+	// Each bluff is tagged in the list above and in Demon bluffs (Trevor, 2026-10-18 and
+	// 2026-10-29), and stays out of the bag.
+	await expect(bluffs.getByTestId('bluff-tag')).toHaveCount(3);
+	await expect(page.getByTestId('bluff-tag')).toHaveCount(6);
 	await expect(choice(page, 'Soldier')).toHaveAccessibleDescription('Demon bluff');
 	await expect(choice(page, 'Soldier')).toHaveAttribute('aria-pressed', 'false');
 	await expect(choice(page, 'Empath').getByTestId('bluff-tag')).toHaveCount(0);

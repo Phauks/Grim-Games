@@ -12,6 +12,7 @@
 	} from '#lib/core/engine/index.ts';
 	import { scriptCharacterIds, type CharacterLookup, type Game } from '#lib/core/model/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import BluffTag from './BluffTag.svelte';
 	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
 	import Sentence from '#lib/features/characters/Sentence.svelte';
 	import { slot } from '#lib/features/characters/slots.ts';
@@ -211,6 +212,7 @@
 											{#snippet afterName()}{#if playing}<span class="flag"
 														><Icon name="warning" /> {t('bluffs.inPlayReplace')}</span
 													>{/if}{/snippet}
+											{#snippet marks()}<BluffTag />{/snippet}
 										</CharacterRow>
 									{:else}
 										<span class="none">{t('common.none')}</span>
@@ -255,6 +257,7 @@
 				label={t('bluffs.characters')}
 				{inPlay}
 				warnInPlay={blocks(editing)}
+				bluffs
 				hideInPlayFirst={blocks(editing)}
 				notInPlay
 			/>
