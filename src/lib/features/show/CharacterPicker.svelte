@@ -198,10 +198,13 @@
 		color: inherit;
 	}
 	/* The picker's own rows, in its columns. Every place is one row high whatever is in it: the
-	   band and two lines of ability, so choosing never moves the list (Trevor, 2026-10-20). */
+	   band and the start of the ability, so choosing never moves the list (Trevor, 2026-10-20).
+	   Smaller on phones, as the old rows were, so the pinned places leave the list room. */
 	.slots {
-		--slot-lines: 2;
-		--slot-height: calc(2 * var(--space-1) + 1.7em + var(--space-1) + var(--slot-lines) * 1.35em);
+		--slot-lines: 1;
+		--character-ring: 3em;
+		font-size: 0.85em;
+		--slot-height: calc(2 * var(--space-1) + 1.7em + var(--slot-lines) * 1.35em);
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(min(100%, calc(18 * var(--u))), 1fr));
 		gap: var(--space-1);
@@ -221,6 +224,7 @@
 	.slots :global(.ring-ability) {
 		display: -webkit-box;
 		min-height: 0;
+		padding-top: 0;
 		overflow: hidden;
 		-webkit-box-orient: vertical;
 		-webkit-line-clamp: var(--slot-lines);
@@ -242,6 +246,8 @@
 		}
 		.slots {
 			--slot-lines: 3;
+			--character-ring: 4.4em;
+			font-size: 1em;
 			grid-template-columns: minmax(0, 1fr);
 		}
 	}
