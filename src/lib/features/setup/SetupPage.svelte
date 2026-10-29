@@ -495,7 +495,7 @@
 	{#snippet side()}
 		<ErrorBoundary area="setup">
 			<!-- Who has connected, as players' phones see it (Trevor, 2026-10-29). -->
-			<SetupCandles {game} />
+			<SetupCandles {game} players={analysis.players} />
 			<div class="storyteller" onfocusout={saveStoryteller}>
 				<TextField
 					label={t('modes.storytellerName')}

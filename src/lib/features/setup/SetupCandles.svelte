@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { seatsInOrder, type Game } from '#lib/core/model/index.ts';
+	import { seatsForCount } from '#lib/core/engine/index.ts';
+	import type { Game } from '#lib/core/model/index.ts';
 	import { seatCandles, seatConnections } from '#lib/core/sync/seat-presence.ts';
 	import PlayersDayStatus from '#lib/features/day/PlayersDayStatus.svelte';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
@@ -8,12 +9,13 @@
 	 * The candles players' phones show beside Setup, in character selection's setup area, so the
 	 * Storyteller sees who has connected while choosing characters (Trevor, 2026-10-29). Always
 	 * the candles, whatever look phones are shown, and a tap lists who is connected. With no room
-	 * open nobody is, so every candle is a stub.
+	 * open nobody is, so every candle is a stub. One candle per seat the chosen player count
+	 * will seat, so the candles follow the count before it is seated.
 	 */
-	let { game }: { game: Game | undefined } = $props();
+	let { game, players }: { game: Game | undefined; players: number } = $props();
 
 	const host = roomHost();
-	const seats = $derived(game ? seatsInOrder(game) : []);
+	const seats = $derived(game ? seatsForCount(game, players) : []);
 	const presence = $derived(host.code ? host.seatPresence : { here: [], away: [], unseated: 0 });
 	// The phones the +1 counts, asleep too, as Share lists them (Trevor, 2026-10-29).
 	const unseatedNames = $derived(
