@@ -257,6 +257,28 @@
 			code, the sign-in link and your email address are written to our server log.
 		</p>
 	</PageSection>
+	<PageSection title="Friends">
+		<ul>
+			<li>
+				If you add friends, your account keeps a list of your friends, the friend requests you sent
+				and received, and the accounts you blocked. A request that is not answered is removed after
+				30 days.
+			</li>
+			<li>
+				Other people see only your username and profile icon, and only when you are friends or a
+				request is waiting between you; never your email address.
+			</li>
+			<li>
+				Someone can find you only by typing your exact username, and you can turn that off on the
+				<a href={resolve('/friends')}>Friends</a> page. There is no list or search of accounts.
+			</li>
+			<li>
+				Blocking someone is not shown to them. Requests are limited per account using Cloudflare's
+				rate limiter.
+			</li>
+			<li>Deleting your account removes it from everyone's friends, requests and blocks.</li>
+		</ul>
+	</PageSection>
 	<PageSection title="Reports">
 		<p>
 			"Report an issue", "Report a problem" and the problem log open a report form in the app.

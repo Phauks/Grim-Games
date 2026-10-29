@@ -62,6 +62,7 @@ export function boardNightSteps(
 	const { steps } = nightOrder({
 		night,
 		sheet: data.nightSheet,
+		official: data.byId,
 		inPlay,
 		players: inPlay.filter((c) => isSeatable(c.type) && c.type !== 'traveller').length,
 		customOrder: night === 'first' ? game.script.meta?.firstNight : game.script.meta?.otherNight,

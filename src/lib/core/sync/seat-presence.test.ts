@@ -29,6 +29,12 @@ describe('seatPresence', () => {
 		});
 	});
 
+	it('counts a phone with no seat that is away during this game, as a locked screen is', () => {
+		// Trevor, 2026-10-29: "they show up as player in the room, but not in the +1".
+		const here = new Set(['a', 'c']);
+		expect(seatPresence(members, (id) => here.has(id), ['d']).unseated).toBe(2);
+	});
+
 	it('reads only what it can trust from the room', () => {
 		expect(parseSeatPresence(undefined)).toBeUndefined();
 		expect(parseSeatPresence({ here: ['s1', 3], away: 'x', unseated: -2 })).toEqual({

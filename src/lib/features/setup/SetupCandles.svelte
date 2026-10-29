@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { seatsInOrder, type Game } from '#lib/core/model/index.ts';
-	import { seatCandles, seatConnections, seatPresence } from '#lib/core/sync/seat-presence.ts';
+	import { seatCandles, seatConnections } from '#lib/core/sync/seat-presence.ts';
 	import PlayersDayStatus from '#lib/features/day/PlayersDayStatus.svelte';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
 
@@ -14,13 +14,10 @@
 
 	const host = roomHost();
 	const seats = $derived(game ? seatsInOrder(game) : []);
-	const presence = $derived(
-		host.code
-			? seatPresence(host.members, (id) => host.isHere(id))
-			: { here: [], away: [], unseated: 0 }
-	);
+	const presence = $derived(host.code ? host.seatPresence : { here: [], away: [], unseated: 0 });
+	// The phones the +1 counts, asleep too, as Share lists them (Trevor, 2026-10-29).
 	const unseatedNames = $derived(
-		host.code ? host.connectedUnseated.flatMap((m) => (m.name ? [m.name] : [])) : []
+		host.code ? host.unseatedInGame.flatMap((m) => (m.name ? [m.name] : [])) : []
 	);
 </script>
 

@@ -71,6 +71,7 @@ export const ICON_SLOTS = {
 	home: { label: 'Home', choices: ['ph:house', 'ph:house-simple'] },
 	settings: { label: 'Settings', choices: ['ph:gear', 'ph:gear-six', 'ph:sliders'] },
 	account: { label: 'Account', choices: ['ph:user-circle', 'ph:user'] },
+	friends: { label: 'Friends', choices: ['ph:handshake', 'ph:address-book'] },
 	appearance: { label: 'Appearance', choices: ['ph:palette', 'ph:paint-brush'] },
 	language: { label: 'Language', choices: ['ph:translate', 'ph:globe'] },
 	fonts: { label: 'Fonts', choices: ['ph:text-aa', 'ph:text-t'] },

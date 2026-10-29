@@ -21,9 +21,10 @@ const KEPT = {
 		SCRIPT_MIRROR: 'ScriptMirror',
 		RECAPS: 'SharedRecap',
 		LIVE_GAMES: 'LiveGameIndex',
-		PUSH_KEYS: 'PushKeyStore'
+		PUSH_KEYS: 'PushKeyStore',
+		FRIEND_BOOKS: 'FriendBook'
 	} as Record<string, string>,
-	migrationTags: ['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9']
+	migrationTags: ['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10']
 };
 
 type Binding = { name: string; class_name: string };
@@ -81,16 +82,18 @@ describe('wrangler.jsonc keeps every Durable Object and its data', () => {
 	});
 });
 
-// The shared data Worker holds accounts, share codes and reports (wrangler.data.jsonc, Trevor 2026-10-19).
+// The shared data Worker holds accounts, share codes and reports (wrangler.data.jsonc, Trevor 2026-10-19),
+// and each account's friends (plan F1, 2026-10-29).
 const DATA_KEPT = {
 	bindings: {
 		ACCOUNT_USERS: 'AccountUser',
 		ACCOUNT_EMAILS: 'AccountEmail',
 		ACCOUNT_NAMES: 'AccountName',
 		SHARED_SCRIPTS: 'SharedScript',
-		REPORTS: 'ReportBox'
+		REPORTS: 'ReportBox',
+		FRIEND_BOOKS: 'FriendBook'
 	} as Record<string, string>,
-	migrationTags: ['v1']
+	migrationTags: ['v1', 'v2']
 };
 
 const dataText = readFileSync(new URL('../wrangler.data.jsonc', import.meta.url), 'utf8');

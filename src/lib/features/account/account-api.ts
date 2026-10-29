@@ -33,7 +33,8 @@ export class AccountApiError extends Error {
 	}
 }
 
-async function call<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
+/** One call to the Worker's signed-in API; friends (`features/friends/`) uses it too. */
+export async function call<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
 	let response: Response;
 	let data: unknown;
 	try {

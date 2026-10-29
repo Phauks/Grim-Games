@@ -22,6 +22,7 @@ export const shell = {
 	'shell.navReference': 'Character reference',
 	'shell.navInfoTokens': 'Info tokens',
 	'shell.navAccount': 'Account',
+	'shell.navFriends': 'Friends',
 	'shell.navSectionAdmin': 'Admin',
 	'shell.navReports': 'Reports',
 	'shell.navLiveGames': 'Live games',

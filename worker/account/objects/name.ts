@@ -26,6 +26,12 @@ export class AccountName extends DurableObject<AccountEnv> {
 		return true;
 	}
 
+	/** Who holds the name, if anyone (friend requests by username, worker/friends/). */
+	async holder(): Promise<string | undefined> {
+		return this.sql.exec<{ user_id: string }>('SELECT user_id FROM owner WHERE id = 1').toArray()[0]
+			?.user_id;
+	}
+
 	/** Frees the name if `userId` holds it. */
 	async release(userId: string): Promise<void> {
 		this.sql.exec('DELETE FROM owner WHERE user_id = ?', userId);

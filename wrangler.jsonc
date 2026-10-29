@@ -52,7 +52,9 @@
 			// The open rooms' codes, for the admins' Live games (worker/live-games.ts).
 			{ "name": "LIVE_GAMES", "class_name": "LiveGameIndex" },
 			// The push signing keys, made by the Worker itself (worker/push.ts).
-			{ "name": "PUSH_KEYS", "class_name": "PushKeyStore" }
+			{ "name": "PUSH_KEYS", "class_name": "PushKeyStore" },
+			// Each account's friends, requests and blocks (worker/friends/book.ts).
+			{ "name": "FRIEND_BOOKS", "class_name": "FriendBook" }
 		]
 	},
 	"migrations": [
@@ -64,7 +66,8 @@
 		{ "tag": "v6", "new_sqlite_classes": ["AccountName"] },
 		{ "tag": "v7", "new_sqlite_classes": ["SharedRecap"] },
 		{ "tag": "v8", "new_sqlite_classes": ["LiveGameIndex"] },
-		{ "tag": "v9", "new_sqlite_classes": ["PushKeyStore"] }
+		{ "tag": "v9", "new_sqlite_classes": ["PushKeyStore"] },
+		{ "tag": "v10", "new_sqlite_classes": ["FriendBook"] }
 	],
 	// Nightly refresh of the stored script copies (worker/mirror.ts). Previews run no
 	// schedule; there a copy is refreshed when it is asked for and over a day old.
@@ -82,7 +85,10 @@
 		{ "name": "ROOM_CREATES", "namespace_id": "1005", "simple": { "limit": 20, "period": 60 } },
 		{ "name": "REPORT_CREATES", "namespace_id": "1006", "simple": { "limit": 5, "period": 60 } },
 		// Password sign-ins tried per address, on top of the per-email limit in AccountEmail.
-		{ "name": "AUTH_PASSWORDS", "namespace_id": "1007", "simple": { "limit": 10, "period": 60 } }
+		{ "name": "AUTH_PASSWORDS", "namespace_id": "1007", "simple": { "limit": 10, "period": 60 } },
+		// Friend requests by username per account (worker/friends/routes.ts), so names can't be
+		// tried one after another.
+		{ "name": "FRIEND_LOOKUPS", "namespace_id": "1008", "simple": { "limit": 10, "period": 60 } }
 	],
 	// The site is served on grimbinder.com (Trevor, 2026-10-18), attached as a Custom Domain in
 	// the Cloudflare dashboard. It is deliberately not listed under "routes": wrangler only
@@ -120,7 +126,8 @@
 				{ "name": "SCRIPT_MIRROR", "class_name": "ScriptMirror" },
 				{ "name": "RECAPS", "class_name": "SharedRecap" },
 				{ "name": "LIVE_GAMES", "class_name": "LiveGameIndex" },
-				{ "name": "PUSH_KEYS", "class_name": "PushKeyStore" }
+				{ "name": "PUSH_KEYS", "class_name": "PushKeyStore" },
+				{ "name": "FRIEND_BOOKS", "class_name": "FriendBook" }
 			]
 		},
 		"ratelimits": [
@@ -130,7 +137,8 @@
 			{ "name": "ROOM_JOINS", "namespace_id": "1004", "simple": { "limit": 60, "period": 60 } },
 			{ "name": "ROOM_CREATES", "namespace_id": "1005", "simple": { "limit": 20, "period": 60 } },
 			{ "name": "REPORT_CREATES", "namespace_id": "1006", "simple": { "limit": 5, "period": 60 } },
-			{ "name": "AUTH_PASSWORDS", "namespace_id": "1007", "simple": { "limit": 10, "period": 60 } }
+			{ "name": "AUTH_PASSWORDS", "namespace_id": "1007", "simple": { "limit": 10, "period": 60 } },
+			{ "name": "FRIEND_LOOKUPS", "namespace_id": "1008", "simple": { "limit": 10, "period": 60 } }
 		]
 	}
 }

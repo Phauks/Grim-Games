@@ -8,5 +8,9 @@
 	"reminderMovement": {
 		"relocates": "changes a player’s character"
 	},
-	"createsDemon": true
+	"createsDemon": true,
+	"changesCharacter": {
+		"types": ["townsfolk", "outsider", "minion", "demon"],
+		"notInPlay": true
+	}
 }

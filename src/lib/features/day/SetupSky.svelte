@@ -16,7 +16,7 @@
 		look: SetupLook;
 		/** One per seat, in seat order (`seatCandles`); only for the candles. */
 		candles?: readonly Candle[];
-		/** Connected phones in the room with no seat. */
+		/** Phones in the room with no seat (`SeatPresence.unseated`). */
 		unseated?: number;
 	}
 
@@ -28,8 +28,11 @@
 	const SKY_H = 60;
 	const GROUND = SKY_H - 10;
 
-	/** Room on the right for the count of phones with no seat. */
-	const reserve = $derived(unseated > 0 ? 24 : 0);
+	/**
+	 * Room on the right for the count of phones with no seat, kept when there are none, so the
+	 * candles never move as a phone comes or goes (no reflow, Trevor).
+	 */
+	const reserve = 24;
 	const placed = $derived.by(() => {
 		const n = candles.length;
 		const x0 = 22;
