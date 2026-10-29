@@ -3,7 +3,7 @@
 	import StepIcon from './StepIcon.svelte';
 	import NightAlerts from './NightAlerts.svelte';
 	import StepAfflictions from './StepAfflictions.svelte';
-	import MakeDemonStep from './MakeDemonStep.svelte';
+	import ChangeCharacterStep from './ChangeCharacterStep.svelte';
 	import NightSuggested from './NightSuggested.svelte';
 	import NightYesNo from './NightYesNo.svelte';
 	import TravellerAlignment from './TravellerAlignment.svelte';
@@ -339,7 +339,7 @@
 			/>
 			{#if step.character}
 				<!-- Over the open step, as with a suggestion's Show to player. -->
-				<MakeDemonStep
+				<ChangeCharacterStep
 					{grimoire}
 					{step}
 					onShow={(id) => {

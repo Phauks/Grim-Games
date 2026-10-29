@@ -6625,6 +6625,47 @@ test('reminders keep a line back to their seat, and all of them stay on the boar
 	await expect(dialog.getByText('Stack crowded reminders')).toHaveCount(0);
 });
 
+// https://wiki.bloodontheclocktower.com/Huntsman: once per game it chooses a living player; the
+// Damsel, if chosen, becomes a not-in-play Townsfolk. Only the Damsel is offered, and only
+// Townsfolk no one plays.
+test("the Huntsman's step turns the Damsel into a not-in-play Townsfolk", async ({ page }) => {
+	await startGame(page);
+	for (const [seat, name] of [
+		[1, 'Huntsman'],
+		[2, 'Damsel'],
+		[3, 'Chef']
+	] as const) {
+		const sheet = await openSeat(page, seat);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		const picker = page.getByRole('dialog', { name: `Character for Seat ${seat}` });
+		const button = picker.getByRole('button', { name, exact: true });
+		// The picker keeps its "not on the script" switch between seats.
+		if (!(await button.count()))
+			await picker.getByText('Include characters not on the script').tap();
+		await button.tap();
+		await closeSheet(page);
+	}
+
+	// The step's middle is a character badge in its night text on a phone, which opens that
+	// character instead; its name opens the step.
+	const strip = await walkTo(page, 'Huntsman');
+	await strip.locator('button.step .name strong').tap();
+	const step = page.getByRole('dialog', { name: 'Huntsman' });
+	await expect(step).toBeVisible();
+	await expect(step.getByTestId('change-character')).toContainText('None');
+	await step.getByTestId('change-character').getByRole('button', { name: 'Choose' }).tap();
+	const seats = page.getByRole('dialog', { name: 'Changes character' });
+	await expect(seats.getByRole('button', { name: /Seat 1/ })).toHaveCount(0);
+	await seats.getByRole('button', { name: /Seat 2/ }).tap();
+	const townsfolk = page.getByRole('dialog', { name: 'Choose a character' });
+	await expect(townsfolk.getByRole('button', { name: 'Chef', exact: true })).toHaveCount(0);
+	await townsfolk.getByRole('button', { name: 'Empath', exact: true }).tap();
+	await expect(step.getByTestId('change-character')).toContainText('Empath');
+	await step.getByRole('button', { name: 'Close' }).first().tap();
+	const seat = await openSeat(page, 2);
+	await expect(seat).toContainText(/Empath\s*Townsfolk · Good · Seat 2/);
+});
+
 // https://wiki.bloodontheclocktower.com/Summoner: on the 3rd night it points at a player and at
 // a Demon on the character sheet; that player becomes the evil Demon.
 test("the Summoner's Night 3 step makes the chosen player the Demon it points at", async ({
@@ -6646,8 +6687,8 @@ test("the Summoner's Night 3 step makes the chosen player the Demon it points at
 	await closeSheet(page);
 
 	const step = await openStep(page, 'Summoner');
-	await expect(step.getByTestId('make-demon')).toContainText('None');
-	await step.getByTestId('make-demon').getByRole('button', { name: 'Choose' }).tap();
+	await expect(step.getByTestId('change-character')).toContainText('None');
+	await step.getByTestId('change-character').getByRole('button', { name: 'Choose' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Becomes the Demon' })
 		.getByRole('button', { name: /Seat 2/ })
@@ -6658,9 +6699,9 @@ test("the Summoner's Night 3 step makes the chosen player the Demon it points at
 	await expect(demons).not.toContainText('Seat');
 	await expect(demons.getByRole('button', { name: 'Summoner', exact: true })).toHaveCount(0);
 	await demons.getByRole('button', { name: 'Imp', exact: true }).tap();
-	await expect(step.getByTestId('make-demon')).toContainText('Imp');
+	await expect(step.getByTestId('change-character')).toContainText('Imp');
 	await expect(
-		step.getByTestId('make-demon').getByRole('button', { name: 'Show to player' })
+		step.getByTestId('change-character').getByRole('button', { name: 'Show to player' })
 	).toBeVisible();
 	await step.getByRole('button', { name: 'Close' }).first().tap();
 	const seat = await openSeat(page, 2);
