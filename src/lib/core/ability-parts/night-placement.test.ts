@@ -94,8 +94,8 @@ function leaveOneOut(night: Night) {
 describe('night placement from ability parts', () => {
 	// Measured 2026-10-29; raise a floor or lower a ceiling when the recommender gets better.
 	const EXPECT = {
-		firstNight: { fit: 66, misfits: 10, rightBand: 66, medianOff: 2, medianOffInBand: 2 },
-		otherNight: { fit: 95, misfits: 2, rightBand: 95, medianOff: 3, medianOffInBand: 3 }
+		firstNight: { fit: 71, misfits: 5, rightBand: 71, medianOff: 2, medianOffInBand: 2 },
+		otherNight: { fit: 97, misfits: 0, rightBand: 97, medianOff: 3, medianOffInBand: 3 }
 	};
 	for (const night of ['firstNight', 'otherNight'] as const) {
 		it(`puts official characters in TPI's ${night} bands`, () => {

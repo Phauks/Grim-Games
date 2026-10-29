@@ -43,6 +43,9 @@ const MARKERS = ['dusk', 'minioninfo', 'demoninfo', 'dawn'];
 
 export type Band =
 	| 'rules'
+	| 'watches'
+	| 'team-setup'
+	| 'travellers'
 	| 'changes'
 	| 'minion-info'
 	| 'demon-info'
@@ -60,6 +63,9 @@ const BANDS: Record<Night, readonly string[]> = {
 	firstNight: [
 		'dusk',
 		'rules',
+		'watches',
+		'team-setup',
+		'travellers',
 		'changes',
 		'minioninfo',
 		'minion-info',
@@ -78,6 +84,8 @@ const BANDS: Record<Night, readonly string[]> = {
 	otherNight: [
 		'dusk',
 		'rules',
+		'watches',
+		'travellers',
 		'changes',
 		'impairs',
 		'minions',
@@ -97,23 +105,35 @@ export function bandOf(signature: ReadonlySet<string>, night: Night): Band {
 	const first = night === 'firstNight';
 	// Told about the night's deaths: with the reactions to them (Tor).
 	if (has('to:died')) return 'reacts';
+	// Skips evil's first-night info, so it goes before it (Tor).
+	if (has('rule:skip-evil-info')) return 'changes';
+	if (has('type:fabled', 'type:loric')) return 'rules';
 	// Watches the whole night, so wakes before all of it (Wraith).
-	if (has('type:fabled', 'type:loric', 'type:traveller', 'info:watches-night')) return 'rules';
+	if (has('info:watches-night')) return 'watches';
+	// Sets up who the Minions are before anyone wakes (Lord of Typhon, Kazali).
+	if (first && has('type:demon') && has('do:become')) return 'team-setup';
+	if (has('type:traveller')) return 'travellers';
 	// Told to everyone once the night is over (Leviathan, Vizier).
 	if (has('do:end-game') || (first && has('when:setup') && has('to:each-player')))
 		return 'announces';
-	// Adds to what the Minions learn (Snitch, Summoner's bluffs, Damsel, Lunatic).
-	if (first && has('info:bluffs', 'to:each-minion', 'do:believe') && !has('do:gain-ability'))
+	// Adds to what the Minions learn (Snitch, Summoner's bluffs, Damsel, the Lunatic as Demon).
+	if (first && has('info:bluffs', 'to:each-minion', 'believe:demon') && !has('do:gain-ability'))
 		return 'minion-info';
 	// Changes who is on which team or who has which ability, before anyone acts on it.
 	if (
 		has('do:evil-info', 'who:become-alive-neighbours') ||
-		(has('do:gain-ability') && !has('when:always', 'when:death')) ||
-		(first && has('type:demon') && has('do:become'))
+		(has('do:gain-ability') && !has('when:always', 'when:death'))
 	)
 		return 'changes';
 	// Adds to what the Demon learns (King).
 	if (first && has('to:the-demon')) return 'demon-info';
+	// Rewrites the rules before anyone else acts (the Wizard's wish).
+	if (has('do:storyteller') && has('type:minion') && !has('do:become')) return 'impairs';
+	// Learns after a death it waited for: with the information, after what it reports on
+	// (Bounty Hunter).
+	if (has('when:event') && has('do:later') && has('do:learn')) return 'learns';
+	// Learns now and may take on an ability later: with those that may change (Pixie).
+	if (first && has('later:gain-ability') && has('do:learn')) return 'reacts';
 	if (has('do:stop-kills', 'who:skip-waking-the-demon')) return 'stops-kills';
 	// Sees the Grimoire: after everything it would report on (Spy).
 	if (has('info:grimoire') && !has('do:impair')) return 'learns';
@@ -199,6 +219,8 @@ function effectFeatures(effect: Effect): string[] {
 	if (effect.do === 'impair') out.push(`impair:${effect.as}`);
 	if (effect.do === 'learn') out.push(infoFeature(effect));
 	if (effect.do === 'learn' && effect.to) out.push(`to:${effect.to}`);
+	if (effect.do === 'believe') out.push(`believe:${effect.isA}`);
+	if (effect.do === 'game-rule') out.push(`rule:${effect.rule}`);
 	return out;
 }
 
@@ -224,10 +246,18 @@ export function nightSignature(
 		if (clause.optional) out.add('optional');
 		if (clause.evenIfDead) out.add('evenIfDead');
 		if (clause.marks) out.add('marks');
-		for (const effect of allEffects(clause.effects))
+		for (const effect of allEffects(clause.effects)) {
+			// The first night has no one chosen before (the Pukka's poisoned player dies later).
+			if (night === 'firstNight' && 'who' in effect && effect.who === 'last-chosen') continue;
 			for (const f of effectFeatures(effect)) out.add(f);
+		}
 	}
-	if (out.size) out.add(`type:${type}`);
+	if (!out.size) return out;
+	out.add(`type:${type}`);
+	// It may take on another ability later, in a clause that doesn't wake it (the Pixie).
+	const later = parts.clauses.filter((c) => !wakesOn(c, night));
+	if (later.some((c) => allEffects(c.effects).some((e) => e.do === 'gain-ability')))
+		out.add('later:gain-ability');
 	return out;
 }
 
@@ -316,7 +346,10 @@ const PHRASES: Record<string, string> = {
 
 /** Where each band sits, in words. */
 const BAND_PHRASES: Record<Band, string> = {
-	rules: 'With the Fabled, Loric and Travellers',
+	rules: 'With the Fabled and Loric',
+	watches: 'Before everything it watches',
+	'team-setup': 'Before anyone wakes, as it sets up the teams',
+	travellers: 'With the Travellers',
 	changes: 'Before anyone acts, as it changes teams or abilities',
 	'minion-info': 'After Minion info, as it adds to it',
 	'demon-info': 'After Demon info, as it adds to it',
