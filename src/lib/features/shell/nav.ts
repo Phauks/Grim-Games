@@ -19,6 +19,7 @@ export interface NavItem {
 		| '/reference'
 		| '/info-tokens'
 		| '/account'
+		| '/friends'
 		| '/reports'
 		| '/live-games'
 		| '/about'
@@ -96,6 +97,14 @@ export const ACCOUNT_ITEM: NavItem = {
 	path: '/account',
 	label: 'shell.navAccount',
 	icon: 'account'
+};
+
+/** Friends (plan F1), under Account in "You" (Trevor, 2026-10-29: "a new friends tab"). */
+export const FRIENDS_ITEM: NavItem = {
+	id: 'friends',
+	path: '/friends',
+	label: 'shell.navFriends',
+	icon: 'friends'
 };
 
 /**

@@ -229,6 +229,11 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	},
 	{ title: 'Co-Storytelling: two Storytellers on one game', parts: ['Y2'], later: true },
 	{
+		// Trevor approved the plan 2026-10-29 (https://claude.ai/artifact/8ahBpAozQZ3UUpxVQ5QVoT).
+		title: 'Friends: add friends, see who you played with, invite them to games',
+		parts: ['F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8']
+	},
+	{
 		title: 'Achievements and laurels, and History stats',
 		parts: ['A1a', 'A1d', 'A1'],
 		later: true
