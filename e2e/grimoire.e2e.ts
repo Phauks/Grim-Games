@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { pickScript, nameStoryteller, toBoard, pastGameSettings } from './new-game.ts';
+import { pickScript, nameStoryteller, toBoard } from './new-game.ts';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { openMenu } from './shell.ts';
 import { savesSettled, trackSaves } from './saves.ts';
@@ -3190,7 +3190,6 @@ test("on a crowded table one seat's reminders never cover another's", async ({ p
 		.getByText('Trouble Brewing', { exact: true })
 		.tap();
 	await page.getByRole('button', { name: 'Create game' }).tap();
-	await pastGameSettings(page);
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 	for (let i = 0; i < 7; i++) await page.getByRole('button', { name: 'More players' }).tap();
 	await toBoard(page);
@@ -4697,7 +4696,6 @@ test('the script name in the corner keeps clear of every seat, and a town names 
 		await page.reload();
 		await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
 		await page.getByRole('button', { name: 'Create game' }).tap();
-		await pastGameSettings(page);
 		await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 		const count = page.getByTestId('player-count');
 		for (let n = 8; n < players; n++)
@@ -4771,7 +4769,6 @@ test('the bank button starts the game, ends each night and day, and resumes a st
 	await page.goto('/new');
 	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
 	await page.getByRole('button', { name: 'Create game' }).tap();
-	await pastGameSettings(page);
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 	await page.getByRole('button', { name: 'Fewer players' }).tap();
 	await toBoard(page);

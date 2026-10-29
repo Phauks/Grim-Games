@@ -8,7 +8,7 @@
 		value?: string;
 		/** What picking one does; switches to it when not given. */
 		onChange?: (id: string) => void;
-		/** Shows its "Settings profile" label (New game); hidden in a section heading. */
+		/** Shows its "Settings profile" label; hidden in a section heading or a setting row. */
 		showLabel?: boolean;
 	}
 
@@ -17,7 +17,7 @@
 </script>
 
 <!-- One profile drop-down wherever a profile is picked (plan S18): Settings section headings,
-     the board's Board and Tokens sheets, and New game. Always shown, even with one profile. -->
+     the board's Board and Tokens sheets, and Character selection's Game settings. Always shown, even with one profile. -->
 <div class="profile-select" data-testid="profile-select">
 	<Select
 		label={t('settings.profile')}
