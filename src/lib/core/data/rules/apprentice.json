@@ -38,5 +38,10 @@
 				]
 			}
 		]
+	},
+	"swapsForAbility": {
+		"token": "Is The Apprentice",
+		"good": ["townsfolk"],
+		"evil": ["minion"]
 	}
 }
