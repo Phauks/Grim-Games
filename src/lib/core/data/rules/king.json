@@ -1,8 +1,16 @@
 {
+	"learns": {
+		"measure": "character-of",
+		"self": true,
+		"alive": true
+	},
 	"dayReminders": {
 		"none": "night info"
 	},
 	"deathCause": {
 		"none": "info"
+	},
+	"wakesWhen": {
+		"deadAtLeastLiving": true
 	}
 }

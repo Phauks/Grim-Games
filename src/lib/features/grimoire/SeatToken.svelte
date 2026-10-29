@@ -39,9 +39,10 @@
 		nightNumbers?: { first?: number; other?: number };
 		/**
 		 * `note` when the tap landed on the pen mark (it opens the Notes sheet at this seat),
-		 * `nominate` on the nomination marks (it asks who this player nominated).
+		 * `nominate` on the nomination marks (it asks who this player nominated), `avatar` on the
+		 * player's avatar mark (it opens their profile, Trevor 2026-10-28).
 		 */
-		onTap: (part?: 'note' | 'nominate') => void;
+		onTap: (part?: 'note' | 'nominate' | 'avatar') => void;
 		/** A tap on a dead player's badge: marks their ghost vote used, or gives it back. */
 		onGhostVote?: () => void;
 		/**
@@ -181,7 +182,9 @@
 						? 'note'
 						: target?.closest('.rim-pill')
 							? 'nominate'
-							: undefined
+							: target?.closest('.mark.avatar')
+								? 'avatar'
+								: undefined
 				);
 		}
 		down = null;
@@ -201,14 +204,15 @@
 {/snippet}
 
 {#snippet marks()}
-	<!-- Corner marks sit in fixed places, so one appearing never moves anything. -->
-	{#if orphan}<span class="mark orphan" title="Not on the script"><Icon name="warning" /></span
+	<!-- Corner marks sit in fixed places, so one appearing never moves anything (Trevor,
+	     2026-10-28: nominations top left, the orphan warning top middle, the avatar top right). -->
+	{#if orphan}<span class="mark orphan" data-testid="orphan-mark" title="Not on the script"
+			><Icon name="warning" /></span
 		>{/if}
-	<!-- The player's own avatar (plan R6), upper left, while a character covers the face. -->
-	{#if character && seat.avatar}<span
-			class="mark avatar"
-			data-testid="avatar-mark"
-			data-shifted={nominations ? '' : undefined}
+	<!-- The player's own avatar (plan R6), upper right, where a player's grim cycles it with
+	     their guesses, while a character covers the face. A tap opens the player's profile
+	     (Trevor, 2026-10-28). -->
+	{#if character && seat.avatar}<span class="mark avatar" data-testid="avatar-mark"
 			><AvatarFace avatar={seat.avatar} {name} {picture} /></span
 		>{/if}
 	<!-- Today's nominations: two marks side by side in one pill over the top-left rim, each
@@ -330,16 +334,19 @@
 		touch-action: none;
 	}
 	.mark {
+		--mark: max(1.125 * var(--u), calc(var(--size) * 0.3));
 		position: absolute;
 		display: grid;
 		place-items: center;
-		width: max(1.125 * var(--u), calc(var(--size) * 0.3));
-		height: max(1.125 * var(--u), calc(var(--size) * 0.3));
+		width: var(--mark);
+		height: var(--mark);
 		border-radius: 50%;
 		box-shadow: var(--shadow);
-		--icon-size: calc(max(1.125 * var(--u), calc(var(--size) * 0.3)) * 0.65);
+		--icon-size: calc(var(--mark) * 0.65);
 	}
-	/* The skull badge takes a full-size tap of its own, for the ghost vote. */
+	/* The skull badge takes a full-size tap of its own, for the ghost vote; the avatar mark
+	   one for the player's profile. */
+	.avatar::after,
 	.seat :global([data-testid='dead-mark'])::after {
 		content: '';
 		position: absolute;
@@ -348,22 +355,18 @@
 		height: var(--tap-target);
 		translate: -50% -50%;
 	}
-	/* Upper right. */
+	/* Top middle, in the gap between the nomination pill (ends 36% across) and the avatar
+	   (starts at 104% less its width), a little above the rim. */
 	.orphan {
-		right: -4%;
-		top: -4%;
+		left: calc(70% - var(--mark));
+		top: -14%;
 		background: var(--accent);
 		color: var(--on-accent);
 	}
-	/* Upper left; top middle while the nomination marks take the upper left. */
+	/* Upper right. */
 	.avatar {
-		left: -4%;
+		right: -4%;
 		top: -4%;
-	}
-	.avatar[data-shifted] {
-		left: 50%;
-		top: -10%;
-		translate: -50% 0;
 	}
 	/* The nomination marks, in their pill over the top-left rim (RimPill). */
 	.slot {

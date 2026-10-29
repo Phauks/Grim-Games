@@ -15,7 +15,7 @@ test("players' phones show where the game is up to, with the day timer as a sun 
 		.getByRole('radiogroup', { name: 'Script' })
 		.getByText('Trouble Brewing', { exact: true })
 		.tap();
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 	const board = new URL(page.url()).pathname;
 	await page.goto(`${board}/room`);
@@ -30,7 +30,30 @@ test("players' phones show where the game is up to, with the day timer as a sun 
 	await expect(phone.getByTestId('join-status')).toHaveText('');
 	const status = phone.getByTestId('players-status');
 	const shown = phone.getByTestId('players-timer');
-	await expect(status).toHaveText('Setup');
+	// Setup, and the count of phones in the room with no seat: this one.
+	await expect(status).toHaveText(/^Setup\s*\+1$/);
+	// Beside Setup, a candle for each seat by default (Trevor, 2026-10-28), lit once a phone sits
+	// there; nobody sits yet, and this phone is in the room without a seat.
+	const setupSky = phone.getByTestId('players-setup-sky');
+	await expect(setupSky).toHaveAttribute('data-look', 'candles');
+	const seatCount = await page.getByRole('button', { name: /^Seat \d+:/ }).count();
+	await expect(setupSky.locator('.candle')).toHaveCount(seatCount);
+	await expect(setupSky.locator('.candle[data-state="lit"]')).toHaveCount(0);
+	await expect(setupSky).toHaveAttribute(
+		'aria-label',
+		`0 of ${seatCount} seats with a player here. 1 more in the room without a seat`
+	);
+	// The Storyteller can show the town at dusk instead, from the timer's own controls.
+	await page.getByRole('button', { name: /^Day timer, .*; open its controls$/ }).tap();
+	const timerSheet = page.getByTestId('timer-sheet');
+	await timerSheet.getByRole('combobox', { name: 'Setup on players’ phones' }).tap();
+	await page.getByRole('option', { name: 'Town at dusk', exact: true }).tap();
+	await expect(setupSky).toHaveAttribute('data-look', 'town');
+	await timerSheet.getByRole('combobox', { name: 'Setup on players’ phones' }).tap();
+	await page.getByRole('option', { name: 'Candles for the seats', exact: true }).tap();
+	await expect(setupSky).toHaveAttribute('data-look', 'candles');
+	await page.keyboard.press('Escape');
+	await expect(timerSheet).toBeHidden();
 	// Alone on its row, across the whole of it (Trevor, 2026-10-27: "the game status bar should
 	// then take up the entire horizontal of that line area").
 	const across = (await phone.getByRole('tablist').boundingBox())!.width;
@@ -57,6 +80,10 @@ test("players' phones show where the game is up to, with the day timer as a sun 
 	const night = (await status.boundingBox())!;
 	const nightWidth = night.width;
 	await expect(shown).toHaveCount(0);
+	// The night fills the sun's space with its own sky, a moon and stars (Trevor, 2026-10-28:
+	// "at night, we should show some moons and stars, not just blank space").
+	await expect(phone.getByTestId('players-night-sky')).toBeVisible();
+	await expect(setupSky).toHaveCount(0);
 
 	// The day: a sun by default, rising on the left while the day's time is all to come.
 	await bank.getByRole('button', { name: 'End night', exact: true }).tap();
@@ -72,6 +99,7 @@ test("players' phones show where the game is up to, with the day timer as a sun 
 		'aria-label',
 		'Day timer: 100% of the day left'
 	);
+	await expect(phone.getByTestId('players-night-sky')).toHaveCount(0);
 	// The same box as at night, so neither the row nor anything below it moves as the phase
 	// changes.
 	const sun = (await status.boundingBox())!;
@@ -117,12 +145,10 @@ test("players' phones show where the game is up to, with the day timer as a sun 
 	await expect(shown).toHaveAttribute('data-look', 'timer');
 	await expect(shown.getByRole('timer')).toHaveText(/^3:[0-5]\d$/);
 
-	// Hidden keeps it to the Storyteller.
+	// Always shown: the Storyteller picks only its style (Trevor, 2026-10-28), so no Hidden.
 	await controls.getByRole('combobox', { name: 'Day timer on players’ phones' }).tap();
-	await page.getByRole('option', { name: 'Hidden', exact: true }).tap();
-	await expect(shown).toHaveCount(0);
-	// The status line still says which day it is.
-	await expect(status).toHaveText('Day 1');
+	await expect(page.getByRole('option')).toHaveText(['Sun', 'Timer']);
+	await page.keyboard.press('Escape');
 	await page.keyboard.press('Escape');
 	await expect(controls).toBeHidden();
 

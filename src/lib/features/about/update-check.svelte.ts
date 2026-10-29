@@ -43,15 +43,27 @@ class UpdateChecker {
 	 * "proffer the changes there"); null until fetched, or when offline.
 	 */
 	changes = $state<Changes | null>(null);
+	/** The first fetch of `changes` has finished, found or not, so the update card can show. */
+	changesSettled = $state(false);
 	#loadingChanges: Promise<void> | undefined;
 
 	/** Fetches what the waiting build changed, once per page unless the last try failed. */
 	loadChanges(): Promise<void> {
 		this.#loadingChanges ??= fetchChanges().then((changes) => {
 			this.changes = changes;
+			this.changesSettled = true;
 			if (!changes) this.#loadingChanges = undefined;
 		});
 		return this.#loadingChanges;
+	}
+
+	/**
+	 * A waiting build worth offering: not the running one built again or an older one (an
+	 * out-of-order deploy). Such a build is still taken silently at a safe moment
+	 * (auto-update.svelte.ts), since the server now serves it.
+	 */
+	get offered(): boolean {
+		return this.ready && !this.changes?.notNewer;
 	}
 
 	/** The download of each new build being followed, so a check and the watcher share one. */

@@ -32,7 +32,7 @@ test('the Savant seat offers one true and one false statement, each cycled or wr
 }) => {
 	await page.goto('/new');
 	await pickScript(page, 'Sects & Violets');
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 	await expect(page.getByTestId('seat')).toHaveCount(8);
 	for (const [i, name] of CAST.entries()) {
@@ -103,7 +103,7 @@ test('the day view recommends Savant information until it is set for today', asy
 	test.setTimeout(90_000);
 	await page.goto('/new');
 	await pickScript(page, 'Sects & Violets');
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 	await expect(page.getByTestId('seat')).toHaveCount(8);
 	for (const [i, name] of CAST.entries()) {
@@ -138,7 +138,7 @@ test('the end of the night offers to set the Savant’s information', async ({ p
 	test.setTimeout(90_000);
 	await page.goto('/new');
 	await pickScript(page, 'Sects & Violets');
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 	await expect(page.getByTestId('seat')).toHaveCount(8);
 	for (const [i, name] of CAST.entries()) {
@@ -172,7 +172,7 @@ test('Use these saves the statements: reopening shows them, true or false as giv
 	test.setTimeout(90_000);
 	await page.goto('/new');
 	await pickScript(page, 'Sects & Violets');
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 	for (const [i, name] of CAST.entries()) {
 		const sheet = await openSeat(page, i + 1);
@@ -223,7 +223,7 @@ test('earlier days’ Savant information sits beside today’s, which is edited 
 	test.setTimeout(120_000);
 	await page.goto('/new');
 	await pickScript(page, 'Sects & Violets');
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 	for (const [i, name] of CAST.entries()) {
 		const sheet = await openSeat(page, i + 1);

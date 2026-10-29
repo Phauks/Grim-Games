@@ -119,9 +119,16 @@ export interface AvoidInput {
 	note: boolean;
 	/** The badge offset (Board and tokens). */
 	nameOffset: number;
+	/** The marks over the top rim (SeatToken): the nomination pill, the orphan warning, the avatar. */
+	nominations?: boolean;
+	orphan?: boolean;
+	avatar?: boolean;
 }
 
-/** What a seat's reminders keep off: its name, a dead seat's skull (SeatDisc), its note mark. */
+/**
+ * What a seat's reminders keep off: its name, a dead seat's skull (SeatDisc), its note mark,
+ * and the marks over its top rim.
+ */
 export function avoidBoxes(input: AvoidInput): Box[] {
 	const { centre: c, size } = input;
 	const out: Box[] = [];
@@ -137,6 +144,18 @@ export function avoidBoxes(input: AvoidInput): Box[] {
 	// The note mark, lower right (SeatToken).
 	if (input.note) {
 		out.push({ x: c.x + 0.39 * size, y: c.y + 0.39 * size, w: 0.3 * size, h: 0.3 * size });
+	}
+	// The nomination pill, top left: two marks reaching past the token's left edge (RimPill).
+	if (input.nominations) {
+		out.push({ x: c.x - 0.44 * size, y: c.y - 0.43 * size, w: 0.62 * size, h: 0.32 * size });
+	}
+	// The orphan warning, top middle.
+	if (input.orphan) {
+		out.push({ x: c.x + 0.05 * size, y: c.y - 0.49 * size, w: 0.3 * size, h: 0.3 * size });
+	}
+	// The avatar, top right.
+	if (input.avatar) {
+		out.push({ x: c.x + 0.39 * size, y: c.y - 0.39 * size, w: 0.3 * size, h: 0.3 * size });
 	}
 	return out;
 }

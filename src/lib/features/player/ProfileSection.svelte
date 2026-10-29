@@ -65,7 +65,7 @@
 <!-- A line about themselves, kept for later uses (Trevor, 2026-10-28). -->
 <FlavourTextRow />
 
-<!-- A character's icon as their avatar (Trevor, 2026-10-27), engraved on seats. -->
+<!-- The character that represents them, on top of their laurel (Trevor, 2026-10-28). -->
 <CharacterIconRow />
 
 <!-- The player's own picture on their seat (2026-10-27). -->

@@ -6,6 +6,7 @@ import {
 	type PublicSeatLayout
 } from '#lib/core/sync/public-projection.ts';
 import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
+import { gameSettings } from '#lib/features/game-settings/game-settings.svelte.ts';
 import { gameSheetRules } from '#lib/features/modes/sheet-rules.ts';
 import { publicTravellerTest } from '#lib/features/player/travellers-in-play.ts';
 import type { RoomHost } from './host.svelte.ts';
@@ -35,6 +36,8 @@ export function tableState(
 		// By day, and in Town, where a sun shows set (Trevor, 2026-10-27).
 		now?.kind === 'day' || now?.kind === 'town' ? liveDayTimer.forPlayers : undefined,
 		now,
-		host.lookOf(game.gameId).look
+		host.lookOf(game.gameId).look,
+		// Beside Setup, the Storyteller's choice for this game (Trevor, 2026-10-28).
+		now?.kind === 'setup' ? gameSettings.of(game.gameId).setupForPlayers : undefined
 	);
 }

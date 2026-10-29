@@ -177,6 +177,14 @@
 			admin watches, the Storyteller's device sends the room the whole grimoire, and it is deleted
 			when they stop.
 		</p>
+		<p>
+			A player who turns on Alert while locked or closed (Settings, Sound) gives each room they are
+			in their phone's push address, which their browser makes: an address at Google, Apple, Mozilla
+			or Microsoft, depending on the browser. When the Storyteller calls Back to town, the room
+			sends that address a message, encrypted so only the phone can read it, and the phone shows it.
+			The push service sees only that a message was sent. Turning the alert off stops the address
+			working, and the room deletes it with the room.
+		</p>
 		<ul>
 			<li>Phones join with a name, and only the Storyteller sees it until they seat that phone.</li>
 			<li>Each device proves who it is with a random key, which the room keeps only as a hash.</li>

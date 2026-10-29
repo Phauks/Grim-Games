@@ -27,6 +27,8 @@ import {
 import { withoutMessages, type PlayerMessage } from './room-messages.ts';
 import { numberedNames, withNumberedNames } from './room-names.ts';
 import { MAX_MEMBERS } from './room-presence.ts';
+import { seatPresence } from './seat-presence.ts';
+import type { RoomTransfer } from './room-transfer.ts';
 
 export {
 	isSharedGrimoire,
@@ -112,6 +114,8 @@ export interface RoomState {
 	messages?: PlayerMessage[];
 	/** The Storyteller's app shows messages, so phones may send them. */
 	inbox?: true;
+	/** A room transfer the Storyteller has open (room-transfer.ts). */
+	transfer?: RoomTransfer;
 }
 
 /**
@@ -152,6 +156,7 @@ export * from './room-preview.ts';
 export { roleSeen, setRoles, type RoomRoles } from './room-roles.ts';
 export * from './room-version.ts';
 export * from './room-sound.ts';
+export * from './room-push.ts';
 export { setLook } from './room-look.ts';
 export { judgePicture, reportPicture } from './room-pictures.ts';
 export { readMessages, sendMessage, setInbox, type PlayerMessage } from './room-messages.ts';
@@ -163,6 +168,7 @@ export {
 	showScriptVoteTally
 } from './room-script-vote.ts';
 export type * from './room-protocol.ts';
+export * from './room-transfer.ts';
 
 /**
  * A light shape check of a script from the Storyteller's device: the room only stores and
@@ -214,6 +220,11 @@ export function hostView(room: RoomState, present?: ReadonlySet<string>): HostVi
 	const reports = pictureReports(room);
 	if (reports.length) view.pictureReports = reports;
 	if (room.messages?.length) view.messages = room.messages;
+	if (room.transfer) {
+		const { endsAt, tries, asking } = room.transfer;
+		view.transfer = { endsAt, tries };
+		if (asking) view.transfer.asking = asking.name ? { name: asking.name } : {};
+	}
 	return view;
 }
 
@@ -255,7 +266,8 @@ export function playerView(
 	const view: PlayerView = {
 		type: 'player-view',
 		me,
-		takenSeats: room.members.flatMap((m) => (m.seatId ? [m.seatId] : []))
+		takenSeats: room.members.flatMap((m) => (m.seatId ? [m.seatId] : [])),
+		presence: seatPresence(room.members, (id) => !present || present.has(id))
 	};
 	if (room.public) view.public = room.public;
 	if (room.gameId) view.gameId = room.gameId;

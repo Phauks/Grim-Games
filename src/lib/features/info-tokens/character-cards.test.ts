@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { CHARACTER_CARDS, characterCardsFor } from './character-cards.ts';
+import type { Character } from '#lib/core/data/index.ts';
+import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { cardsOfCharacter, characterCardsFor } from './character-cards.ts';
+
+const data = committedGameData();
 
 describe('character cards', () => {
 	it('load only for characters on the script, in script order', () => {
@@ -8,16 +12,33 @@ describe('character cards', () => {
 		expect(characterCardsFor(['chef'])).toEqual([]);
 	});
 
-	it('have unique ids that cannot clash with standard or custom ones', () => {
-		const ids = CHARACTER_CARDS.map((c) => c.id);
-		expect(new Set(ids).size).toBe(ids.length);
-		for (const id of ids) expect(id.startsWith('character:')).toBe(true);
+	it('have ids that cannot clash with standard or custom ones', () => {
+		expect(characterCardsFor(['mezepheles', 'yaggababble']).map((c) => c.id)).toEqual([
+			'character:mezepheles:secret-word',
+			'character:yaggababble:secret-phrase'
+		]);
 	});
 
 	it("are only the secret word and phrase, in Trevor's wording, until he approves more", () => {
-		expect(CHARACTER_CARDS.map((c) => [c.characterId, c.source])).toEqual([
+		const all = characterCardsFor([...data.byId.keys()]);
+		expect(all.map((c) => [c.characterId, c.source])).toEqual([
 			['mezepheles', 'own'],
 			['yaggababble', 'own']
 		]);
+	});
+
+	// The Mezepheles's rules block, given to a custom character.
+	it('come from a custom character’s own infoCard rule', () => {
+		const custom: Character = {
+			...data.byId.get('mezepheles')!,
+			id: 'whisperer',
+			name: 'Whisperer',
+			edition: undefined,
+			rules: { infoCard: 'secret-phrase' }
+		};
+		expect(cardsOfCharacter(custom)).toMatchObject([
+			{ id: 'character:whisperer:secret-phrase', fills: 'phrase' }
+		]);
+		expect(characterCardsFor(['whisperer'])).toEqual([]);
 	});
 });

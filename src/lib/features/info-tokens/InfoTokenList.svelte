@@ -4,15 +4,8 @@
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
-	import {
-		MAX_ASKED_CHARACTERS,
-		STANDARD_INFO_TOKENS,
-		type InfoToken,
-		type InfoTokenAsks,
-		type InfoTokenValue
-	} from '#lib/core/data/info-tokens.ts';
+	import { STANDARD_INFO_TOKENS, type InfoToken } from '#lib/core/data/info-tokens.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
-	import SharedPicker from '#lib/features/characters/CharacterPicker.svelte';
 	import ShownCard from '#lib/features/show/ShownCard.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -25,21 +18,14 @@
 	import InfoTokenTile from './InfoTokenTile.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import Stepper from '#lib/ui/primitives/Stepper.svelte';
-	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import { plainText } from './bold.ts';
 	import { tokenTitle } from './token-title.ts';
 	import type { CharacterCard } from './character-cards.ts';
-	import {
-		MAX_CHOICE_TEXT,
-		MAX_CHOICES,
-		MAX_CUSTOM_TEXT,
-		cleanChoices,
-		type CustomInfoToken
-	} from './custom-tokens.ts';
-	import TextListField from '#lib/ui/primitives/TextListField.svelte';
+	import { MAX_CUSTOM_TEXT, type CustomInfoToken } from './custom-tokens.ts';
 	import { customInfoTokens } from './custom-tokens.svelte.ts';
 	import InfoTokenText from './InfoTokenText.svelte';
+	import CustomTokenEditor from './CustomTokenEditor.svelte';
 
 	interface Props {
 		/** A card was tapped; `detail` is what was filled into a fill-in card. */
@@ -78,9 +64,6 @@
 		 */
 		quickInHeader?: boolean;
 	}
-
-	type InputKind = 'none' | InfoTokenValue['kind'];
-	type CharacterCount = 'none' | 'exact' | 'range';
 
 	let {
 		onchoose,
@@ -231,139 +214,10 @@
 		});
 	}
 
-	let editOpen = $state(false);
-	/** The edit dialog shows the card's text, or the characters it belongs to. */
-	let editView = $state<'text' | 'characters'>('text');
-	/** The editor's fields: each thing the card asks for is set on its own (Trevor, 2026-10-18). */
-	let editing = $state<{
-		id?: string;
-		text: string;
-		characterIds: CharacterId[];
-		input: InputKind;
-		min: string;
-		max: string;
-		choices: string[];
-		/** How many characters it shows: none, an exact count, or a range (Trevor, 2026-10-18). */
-		count: CharacterCount;
-		/** The exact count, or a range's most. */
-		characters: number;
-		/** A range's least. */
-		fewest: number;
-		notInPlay: boolean;
-		answerOnly: boolean;
-	}>(blankEditor());
-	const editOwners = $derived(
-		editing.characterIds.flatMap((id) => {
-			const character = byId.get(id);
-			return character ? [character] : [];
-		})
-	);
+	let editor = $state<ReturnType<typeof CustomTokenEditor>>();
+	const edit = (token?: CustomInfoToken) => editor?.edit(token);
 	let confirmOpen = $state(false);
 	let confirming = $state<InfoToken>();
-
-	function blankEditor() {
-		return {
-			text: '',
-			characterIds: [],
-			input: 'none' as InputKind,
-			min: '',
-			max: '',
-			choices: ['', ''],
-			count: 'none' as CharacterCount,
-			characters: 1,
-			fewest: 1,
-			notInPlay: false,
-			answerOnly: false
-		};
-	}
-
-	function edit(token?: CustomInfoToken) {
-		const value = token?.asks?.value;
-		editing = {
-			...blankEditor(),
-			id: token?.id,
-			text: token?.text ?? '',
-			characterIds: [...(token?.characterIds ?? [])],
-			input: value?.kind ?? 'none',
-			min: value?.kind === 'number' && value.min !== undefined ? String(value.min) : '',
-			max: value?.kind === 'number' && value.max !== undefined ? String(value.max) : '',
-			choices: value?.kind === 'choices' ? [...value.options] : ['', ''],
-			count: countOf(token?.asks),
-			characters: token?.asks?.characters ?? 1,
-			fewest: token?.asks?.fewest ?? 1,
-			notInPlay: token?.asks?.notInPlay === true,
-			answerOnly: token?.answerOnly === true
-		};
-		editView = 'text';
-		editOpen = true;
-	}
-
-	function toggleOwner(id: CharacterId) {
-		editing.characterIds = editing.characterIds.includes(id)
-			? editing.characterIds.filter((other) => other !== id)
-			: [...editing.characterIds, id];
-	}
-
-	function save() {
-		if (!plainText(editing.text).trim()) return;
-		customInfoTokens.save(editing.text, editing.id, {
-			characterIds: editing.characterIds,
-			asks: editorAsks(editing),
-			answerOnly: editing.answerOnly
-		});
-		editOpen = false;
-	}
-
-	/** A whole number as typed: digits, with a minus sign only in front. */
-	const wholeNumber = (text: string) =>
-		(text.trimStart().startsWith('-') ? '-' : '') + text.replace(/\D/g, '');
-
-	function countOf(asks: InfoTokenAsks | undefined): CharacterCount {
-		if (!asks?.characters) return 'none';
-		const from = asks.exactly ? asks.characters : (asks.fewest ?? 1);
-		return from < asks.characters ? 'range' : 'exact';
-	}
-
-	/** A range needs room for two numbers; switching keeps what was set where it can. */
-	function setCount(count: CharacterCount) {
-		editing.count = count;
-		if (count === 'range') {
-			editing.characters = Math.max(editing.characters, 2);
-			editing.fewest = Math.min(editing.fewest, editing.characters - 1);
-		}
-	}
-
-	/** What the editor's fields ask for; the store drops what can't be asked (one answer). */
-	function editorAsks(fields: typeof editing): InfoTokenAsks {
-		const whole = (text: string) => (/^-?\d+$/.test(text.trim()) ? Number(text) : undefined);
-		const value: InfoTokenValue | undefined =
-			fields.input === 'text'
-				? { kind: 'text' }
-				: fields.input === 'number'
-					? { kind: 'number', min: whole(fields.min), max: whole(fields.max) }
-					: fields.input === 'choices'
-						? { kind: 'choices', options: cleanChoices(fields.choices) }
-						: undefined;
-		const shows = fields.count !== 'none';
-		const range = fields.count === 'range' && fields.fewest < fields.characters;
-		return {
-			characters: shows ? fields.characters : undefined,
-			exactly: shows && !range ? true : undefined,
-			fewest: range && fields.fewest > 1 ? fields.fewest : undefined,
-			notInPlay: (shows && fields.notInPlay) || undefined,
-			value
-		};
-	}
-	/** The editor's preview shows where the filled-in part goes. */
-	const editorDetail = $derived(
-		editing.input === 'none'
-			? undefined
-			: editing.input === 'choices'
-				? (cleanChoices(editing.choices)[0] ?? '…')
-				: editing.input === 'number'
-					? editing.min.trim() || '0'
-					: '…'
-	);
 
 	function askDelete(token: InfoToken) {
 		confirming = token;
@@ -639,166 +493,7 @@
 	{/snippet}
 </Dialog>
 
-<Dialog
-	bind:open={editOpen}
-	size="full"
-	title={editView === 'characters'
-		? t('info-tokens.belongsTo')
-		: t(editing.id ? 'info-tokens.edit' : 'info-tokens.newLabel')}
->
-	{#if editView === 'characters'}
-		<SharedPicker
-			{characters}
-			mode="multi"
-			selected={editing.characterIds}
-			onSelect={toggleOwner}
-		/>
-	{:else}
-		<div class="editor">
-			<!-- The card as players will see it, updated while typing (Trevor, 2026-10-16). -->
-			<figure class="preview" aria-label={t('info-tokens.preview')}>
-				<div class="preview-card">
-					<ShownCard
-						title={editing.answerOnly && editorDetail
-							? undefined
-							: plainText(editing.text).trim()
-								? editing.text
-								: t('info-tokens.text')}
-						detail={editorDetail}
-						compact
-					/>
-				</div>
-			</figure>
-			<div class="fields">
-				<RichTextField
-					bind:value={editing.text}
-					label={t('info-tokens.text')}
-					maxlength={MAX_CUSTOM_TEXT}
-					onsubmit={save}
-				/>
-				<!-- Each thing it asks for, set on its own (Trevor, 2026-10-18). -->
-				<Select
-					label={t('info-tokens.input')}
-					value={editing.input}
-					options={(['none', 'text', 'number', 'choices'] as const).map((value) => ({
-						value,
-						label: t(`info-tokens.inputs.${value}`)
-					}))}
-					onChange={(value) => (editing.input = value)}
-				/>
-				{#if editing.input === 'number'}
-					<div class="range">
-						<TextField
-							label={t('info-tokens.min')}
-							inputmode="numeric"
-							filter={wholeNumber}
-							bind:value={editing.min}
-						/>
-						<TextField
-							label={t('info-tokens.max')}
-							inputmode="numeric"
-							filter={wholeNumber}
-							bind:value={editing.max}
-						/>
-					</div>
-				{:else if editing.input === 'choices'}
-					<TextListField
-						label={t('info-tokens.choices')}
-						values={editing.choices}
-						onChange={(values) => (editing.choices = values.slice(0, MAX_CHOICES))}
-						rowLabel={(number) => t('info-tokens.choiceNumber', { number })}
-						removeLabel={(number) => t('info-tokens.choiceRemove', { number })}
-						addLabel={t('info-tokens.choiceAdd')}
-						maxlength={MAX_CHOICE_TEXT}
-					/>
-				{/if}
-				<!-- Shown only while there is something to fill in, but always in place (no reflow). -->
-				<Toggle
-					label={t('info-tokens.answerOnly')}
-					checked={editing.answerOnly && editing.input !== 'none'}
-					disabled={editing.input === 'none'}
-					onChange={(checked) => (editing.answerOnly = checked)}
-				/>
-				<!-- None, exact or a range, then its numbers, always in place (no reflow). -->
-				<Select
-					label={t('info-tokens.askCharacters')}
-					value={editing.count}
-					options={(['none', 'exact', 'range'] as const).map((value) => ({
-						value,
-						label: t(`info-tokens.characterCount.${value}`)
-					}))}
-					onChange={setCount}
-				/>
-				<div class="count-field">
-					{#if editing.count === 'range'}
-						<span class="count-label">{t('info-tokens.from')}</span>
-						<Stepper
-							bind:value={editing.fewest}
-							label={t('info-tokens.from')}
-							lessLabel={t('info-tokens.fewerFrom')}
-							moreLabel={t('info-tokens.moreFrom')}
-							min={1}
-							max={editing.characters - 1}
-						/>
-						<span class="count-label">{t('info-tokens.to')}</span>
-						<Stepper
-							bind:value={editing.characters}
-							label={t('info-tokens.to')}
-							lessLabel={t('info-tokens.fewer')}
-							moreLabel={t('info-tokens.more')}
-							min={editing.fewest + 1}
-							max={MAX_ASKED_CHARACTERS}
-						/>
-					{:else}
-						<span class="count-label">{t('info-tokens.howMany')}</span>
-						<Stepper
-							bind:value={editing.characters}
-							label={t('info-tokens.howMany')}
-							lessLabel={t('info-tokens.fewer')}
-							moreLabel={t('info-tokens.more')}
-							min={1}
-							max={MAX_ASKED_CHARACTERS}
-							disabled={editing.count === 'none'}
-						/>
-					{/if}
-				</div>
-				<!-- As "These characters are not in play": chosen from those not in play. -->
-				<Toggle
-					label={t('info-tokens.notInPlay')}
-					checked={editing.notInPlay && editing.count !== 'none'}
-					disabled={editing.count === 'none'}
-					onChange={(checked) => (editing.notInPlay = checked)}
-				/>
-				{#if characters.length > 0}
-					<div class="belongs">
-						<span class="belongs-label">{t('info-tokens.belongsTo')}</span>
-						<span class="belongs-owners">
-							{#each editOwners as owner (owner.id)}<CharacterBadge
-									characterId={owner.id}
-									character={owner}
-									interactive={false}
-								/>{:else}{t('common.none')}{/each}
-						</span>
-						<Button icon="edit" onclick={() => (editView = 'characters')}
-							>{t('info-tokens.chooseCharacters')}</Button
-						>
-					</div>
-				{/if}
-			</div>
-		</div>
-	{/if}
-	{#snippet actions()}
-		{#if editView === 'characters'}
-			<Button variant="accent" onclick={() => (editView = 'text')}>{t('info-tokens.done')}</Button>
-		{:else}
-			<ModalActions
-				onCancel={() => (editOpen = false)}
-				onConfirm={save}
-				disabled={!plainText(editing.text).trim()}
-			/>
-		{/if}
-	{/snippet}
-</Dialog>
+<CustomTokenEditor bind:this={editor} {characters} />
 
 <ConfirmDialog
 	bind:open={confirmOpen}
@@ -868,69 +563,6 @@
 		background: var(--surface-hover);
 	}
 	/* Editor and preview: side by side when there is room, preview first on a phone. */
-	.editor {
-		display: grid;
-		gap: var(--space-3);
-	}
-	@media (min-width: 48rem) {
-		.editor {
-			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-			align-items: start;
-		}
-		.preview {
-			order: 2;
-		}
-	}
-	.fields {
-		display: grid;
-		gap: var(--space-3);
-		align-content: start;
-	}
-	/* A fixed box, so typing never moves the editor (no reflow, Trevor). */
-	.preview {
-		margin: 0;
-		height: calc(9 * var(--u));
-		overflow: hidden;
-		border: 1px solid var(--border);
-		border-radius: var(--card-radius);
-		background: var(--surface, Canvas);
-		color: var(--on-surface);
-	}
-	/* The card fills the box, so if it must scroll its scrollbar is at the box's edge, not
-	   beside the centred text (Trevor, 2026-10-18). */
-	.preview-card {
-		height: 100%;
-		display: grid;
-	}
-	.range {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-		gap: var(--space-2);
-	}
-	.count-field {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: var(--space-2) var(--space-3);
-	}
-	.count-label {
-		font-weight: 600;
-	}
-	.belongs {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: var(--space-2);
-	}
-	.belongs-label {
-		font-weight: 600;
-	}
-	.belongs-owners {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-1);
-		flex: 1;
-	}
 	.about :global(.icon-button) {
 		color: inherit;
 	}

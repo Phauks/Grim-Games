@@ -15,6 +15,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
+	import { gameSettings } from '#lib/features/game-settings/game-settings.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { findMode } from './custom-modes.svelte.ts';
@@ -79,7 +80,7 @@
 			pairs?.length ?? 0,
 			face,
 			`${groupId}:${pairs?.[0]?.tiles[0] ?? ''}`,
-			preferences.current.tileOrderRandom
+			gameSettings.current.tileOrderRandom
 		)
 	);
 	const markName = (number: number) => marks[number - 1]?.name ?? String(number);

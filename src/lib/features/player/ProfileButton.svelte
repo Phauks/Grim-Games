@@ -4,6 +4,7 @@
 	import { savedPlayerName } from '#lib/features/room/player.svelte.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import AvatarFace from '#lib/ui/seating/AvatarFace.svelte';
+	import CharacterEmblem from '#lib/ui/seating/CharacterEmblem.svelte';
 	import FrameDrawing from '#lib/ui/seating/FrameDrawing.svelte';
 	import { avatarPicture } from './avatar-picture.svelte.ts';
 	import { playerSettings } from './player-settings.svelte.ts';
@@ -25,10 +26,10 @@
 				avatar={playerSettings.current.avatar}
 				{name}
 				picture={avatarPicture.url}
-				fullColour
 			/></span
 		>
-		{#if frame.drawing.length}<span class="drawn"><FrameDrawing {frame} /></span>{/if}</span
+		{#if frame.drawing.length}<span class="drawn"><FrameDrawing {frame} /></span
+			>{/if}<CharacterEmblem avatar={playerSettings.current.avatar} fullColour /></span
 	>
 </button>
 

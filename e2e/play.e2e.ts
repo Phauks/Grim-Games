@@ -210,12 +210,12 @@ test("the player view's menu is the app's, and leaving it asks first", async ({ 
 
 	// Join game is still the player view, so it doesn't ask.
 	await menu.tap();
-	await drawer.getByRole('link', { name: 'Join or resume' }).tap();
+	await drawer.getByRole('link', { name: 'Continue game' }).tap();
 	await expect(page).toHaveURL(/\/join$/);
 	await expect(ask).toHaveCount(0);
 
 	// Join game shows none of the phone's script (plan J1), so leaving it has nothing to ask.
-	await expect(page.getByRole('heading', { name: 'Join or resume', level: 1 })).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Continue game', level: 1 })).toBeVisible();
 	await menu.tap();
 	await drawer.getByRole('link', { name: 'Library', exact: true }).tap();
 	await expect(page).toHaveURL(/\/library$/);
@@ -378,10 +378,16 @@ test('First night and Other nights each close from their header, remembered', as
 test("the night order shows who wakes, with TPI's night text", async ({ page }) => {
 	await page.getByRole('tab', { name: 'Night', exact: true }).tap();
 	const first = page.locator('section[data-night="first"]');
-	// Dusk, Minion info, Demon info and Dawn show their own icons (Trevor, 2026-10-16).
+	// Dusk, Minion info, Demon info and Dawn show their own icons (Trevor, 2026-10-16); Minion
+	// info and Demon info are a red M and D (Trevor, 2026-10-28).
 	const minionInfo = first.locator('li[data-step="minioninfo"]');
 	await expect(minionInfo).toContainText('Minion info');
 	await expect(minionInfo.locator('.token[data-marker="minioninfo"]')).toBeVisible();
+	await expect(minionInfo.locator('.token[data-marker="minioninfo"] text')).toHaveText('M');
+	await expect(first.locator('.token[data-marker="demoninfo"] text')).toHaveText('D');
+	// Each says what happens there, as the Storyteller's night step does (Trevor, 2026-10-28).
+	await expect(minionInfo.locator('.text')).toContainText('Wake the Minions');
+	await expect(first.locator('li[data-step="demoninfo"] .text')).toContainText('Wake the Demon');
 	const poisoner = first.locator('li[data-step="poisoner"]');
 	// Every step's number sits level with the middle of its icon, however long the text, and
 	// a line runs between steps (Trevor, 2026-10-19).
@@ -753,6 +759,10 @@ test('the sheet background colours the whole player screen, its dialogs included
 	// Other screens keep the app theme.
 	await page.goto('/about');
 	await expect(page_).toHaveCSS('background-color', 'rgb(20, 11, 11)');
+	// Continue game too, until a game is open (Trevor, 2026-10-28).
+	await page.goto('/join');
+	await expect(page.getByRole('heading', { name: 'Continue game', level: 1 })).toBeVisible();
+	await expect(page_).toHaveCSS('background-color', 'rgb(20, 11, 11)');
 });
 
 test('Print script prints the sheet, then the night order and player counts', async ({ page }) => {
@@ -929,7 +939,7 @@ test('the room this phone joined is one row over the tabs, and Share hands it on
 		.getByRole('radiogroup', { name: 'Script' })
 		.getByText('Trouble Brewing', { exact: true })
 		.tap();
-	await st.getByRole('button', { name: 'Start game' }).tap();
+	await st.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(st);
 	await st.goto(`${new URL(st.url()).pathname}/room`);
 	await expect(st.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();

@@ -4,13 +4,14 @@
  * info notes (`rules/night-order.ts`) and the Savant's statements (`rules/savant-*.ts`) read
  * them, so neither names a character.
  */
-import type { ReminderLabel } from './types.ts';
+import { SEATED_TYPES, type ReminderLabel, type SeatedType } from './types.ts';
 import { readToken } from './reminder-fields.ts';
 import {
 	checkKeys,
 	describe,
 	isObject,
 	readBoolean,
+	readEnum,
 	readString,
 	readStringArray,
 	type Issues
@@ -24,10 +25,13 @@ type EvilInfoStep = (typeof EVIL_INFO_STEPS)[number];
  * How it changes the Minion and Demon info steps: a note to remember at each step while it is
  * in play (the Snitch's extra bluffs at Demon info), and `hidesDemon` when a Minion may not
  * learn the Demon because of it (the Poppy Grower, Magician, Marionette, Lil' Monsta).
+ * `anyPlayerCount` gives the steps below 7 players too (the Toymaker: evil players get normal
+ * starting info, https://wiki.bloodontheclocktower.com/Toymaker).
  */
 interface EvilInfo {
 	notes?: Partial<Record<EvilInfoStep, string>>;
 	hidesDemon?: true;
+	anyPlayerCount?: true;
 }
 
 /** What its night information is like: a number (the Chef), only once per game (the Artist). */
@@ -48,9 +52,42 @@ export interface ChoiceRules {
 	choosesUnmarked?: boolean;
 	/** Its player is told they are another character (the Lunatic thinks they are the Demon). */
 	believesOtherCharacter?: boolean;
+	/**
+	 * The type of character its player is shown instead of its own (the Lunatic thinks they are
+	 * the Demon, https://wiki.bloodontheclocktower.com/Lunatic): its bag tile asks which, and a
+	 * second bluff set is theirs.
+	 */
+	believesType?: SeatedType;
 	infoKind?: InfoKind;
 	evilInfo?: EvilInfo;
+	/**
+	 * Its info card, filled in before it is shown: a secret word (the Mezepheles,
+	 * https://wiki.bloodontheclocktower.com/Mezepheles) or phrase (the Yaggababble,
+	 * https://wiki.bloodontheclocktower.com/Yaggababble). `features/info-tokens/character-cards.ts`.
+	 */
+	infoCard?: InfoCard;
+	/**
+	 * Its reminder makes whoever carries it the Demon while they do (Lil' Monsta's Is The
+	 * Demon on the babysitter, https://wiki.bloodontheclocktower.com/Lil%27_Monsta).
+	 */
+	carrierIsDemon?: ReminderLabel;
+	/**
+	 * Its player's token is swapped for a character whose ability they gain, of `good` types
+	 * when good and `evil` types when evil, with `token` on them to say who they really are
+	 * (the Apprentice: a Townsfolk or a Minion, https://wiki.bloodontheclocktower.com/Apprentice).
+	 * The seat's ⋯ menu offers the swap (`features/grimoire/SeatCharacterFlow.svelte`).
+	 */
+	swapsForAbility?: SwapsForAbility;
 }
+
+interface SwapsForAbility {
+	token: ReminderLabel;
+	good: readonly SeatedType[];
+	evil: readonly SeatedType[];
+}
+
+export const INFO_CARDS = ['secret-word', 'secret-phrase'] as const;
+export type InfoCard = (typeof INFO_CARDS)[number];
 
 export const CHOICE_RULE_KEYS = [
 	'marksChoice',
@@ -58,8 +95,12 @@ export const CHOICE_RULE_KEYS = [
 	'choosesLikeDemon',
 	'choosesUnmarked',
 	'believesOtherCharacter',
+	'believesType',
 	'infoKind',
-	'evilInfo'
+	'evilInfo',
+	'infoCard',
+	'carrierIsDemon',
+	'swapsForAbility'
 ] as const satisfies readonly (keyof ChoiceRules)[];
 
 /** Reads this file's keys from a rules block; labels must be the character's own reminders. */
@@ -86,6 +127,8 @@ export function readChoiceRules(
 	if (unmarked !== undefined) out.choosesUnmarked = unmarked;
 	const believes = readBoolean(raw, 'believesOtherCharacter', path, issues);
 	if (believes !== undefined) out.believesOtherCharacter = believes;
+	const believesType = readEnum(raw, 'believesType', SEATED_TYPES, path, issues, false);
+	if (believesType) out.believesType = believesType;
 	if (raw.infoKind !== undefined) {
 		const infoKind = readFlags(raw.infoKind, `${path}.infoKind`, issues, ['number', 'oncePerGame']);
 		if (infoKind) out.infoKind = infoKind;
@@ -94,7 +137,41 @@ export function readChoiceRules(
 		const evilInfo = readEvilInfo(raw.evilInfo, `${path}.evilInfo`, issues);
 		if (evilInfo) out.evilInfo = evilInfo;
 	}
+	const card = readString(raw, 'infoCard', path, issues, false);
+	if (card !== undefined && !(INFO_CARDS as readonly string[]).includes(card)) {
+		issues.add(`${path}.infoCard`, `expected one of ${INFO_CARDS.join(', ')}`);
+	} else if (card !== undefined) out.infoCard = card as InfoCard;
+	const demon = readToken(raw, 'carrierIsDemon', path, issues, reminders);
+	if (demon) out.carrierIsDemon = demon;
+	if (raw.swapsForAbility !== undefined) {
+		const swaps = readSwaps(raw.swapsForAbility, `${path}.swapsForAbility`, issues, reminders);
+		if (swaps) out.swapsForAbility = swaps;
+	}
 	return out;
+}
+
+function readSwaps(
+	raw: unknown,
+	path: string,
+	issues: Issues,
+	reminders: readonly ReminderLabel[] | undefined
+): SwapsForAbility | undefined {
+	if (!isObject(raw)) {
+		issues.add(path, `expected object, got ${describe(raw)}`);
+		return undefined;
+	}
+	checkKeys(raw, ['token', 'good', 'evil'], path, issues);
+	if (raw.token === undefined) issues.add(`${path}.token`, 'missing');
+	const token = readToken(raw, 'token', path, issues, reminders);
+	const types = (key: 'good' | 'evil') => {
+		const list = readStringArray(raw, key, path, issues) ?? [];
+		const bad = list.filter((t) => !(SEATED_TYPES as readonly string[]).includes(t));
+		if (bad.length > 0) issues.add(`${path}.${key}`, `expected types, got ${bad.join(', ')}`);
+		return list.filter((t): t is SeatedType => !bad.includes(t));
+	};
+	const good = types('good');
+	const evil = types('evil');
+	return token ? { token, good, evil } : undefined;
 }
 
 /** An object of `true` flags. */
@@ -119,9 +196,10 @@ function readEvilInfo(raw: unknown, path: string, issues: Issues): EvilInfo | un
 		issues.add(path, `expected object, got ${describe(raw)}`);
 		return undefined;
 	}
-	checkKeys(raw, ['notes', 'hidesDemon'], path, issues);
+	checkKeys(raw, ['notes', 'hidesDemon', 'anyPlayerCount'], path, issues);
 	const out: EvilInfo = {};
 	if (readBoolean(raw, 'hidesDemon', path, issues)) out.hidesDemon = true;
+	if (readBoolean(raw, 'anyPlayerCount', path, issues)) out.anyPlayerCount = true;
 	if (raw.notes !== undefined) {
 		const at = `${path}.notes`;
 		if (!isObject(raw.notes)) issues.add(at, `expected object, got ${describe(raw.notes)}`);

@@ -7,6 +7,8 @@ import {
 	castScriptBallot,
 	castVote,
 	closeScriptVote,
+	closeTransfer,
+	openTransfer,
 	endScriptVote,
 	closeVote,
 	gameOver,
@@ -64,8 +66,18 @@ import {
 } from '../src/lib/core/sync/room-images.ts';
 import { MAX_AVATAR_PICTURE_BYTES } from '../src/lib/core/sync/room-pictures.ts';
 import { liveGameIndex, type LiveGameIndex } from './live-games.ts';
+import { pushCallTown, setRoomPushAddress, type PushEnv } from './push.ts';
+import { closeSocket, send, sendText, type Attachment } from './room-sockets.ts';
+import {
+	answerTransfer,
+	claimGone,
+	claimMessage,
+	closeTransferGame,
+	keepsTransferGame,
+	type TransferRoom
+} from './room-transfer.ts';
 
-export interface RoomEnv {
+export interface RoomEnv extends PushEnv {
 	ROOMS: DurableObjectNamespace<Room>;
 	ROOM_JOINS: RateLimit;
 	ROOM_CREATES: RateLimit;
@@ -86,18 +98,6 @@ const ROOM_IDLE_MS = 24 * 60 * 60 * 1000;
  */
 const MAX_MESSAGE_BYTES = 64 * 1024;
 const KEY_PATTERN = /^[0-9a-f]{32,128}$/;
-
-/**
- * `admin`: an admin watching from Live games (plan J31). It sees the public table, the script
- * and the grimoire when the room has it, sends nothing, and is in no list or count, so the
- * Storyteller and the phones never know it is there.
- */
-type Attachment =
-	| { role: 'host' }
-	| { role: 'player'; memberId: string }
-	| { role: 'viewer' }
-	| { role: 'town' }
-	| { role: 'admin' };
 
 /** A room's picture as stored: its bytes and type (core/sync/room-images.ts). */
 interface ImageView {
@@ -328,6 +328,11 @@ export class Room extends DurableObject<RoomEnv> {
 				this.tellWatchers();
 				return;
 			}
+			if (message.role === 'claim') {
+				// A device taking the room over (room-transfer.ts): nothing until its code is right.
+				ws.serializeAttachment({ role: 'claim', keyHash: hash } satisfies Attachment);
+				return;
+			}
 			if (message.role === 'town') {
 				// A Public Town display: the public table and the script, as every phone has
 				// them, and no member, so it is in no list or count.
@@ -355,6 +360,10 @@ export class Room extends DurableObject<RoomEnv> {
 			// A phone joining after the Storyteller shared the finished grimoire gets it too.
 			const reveal = await this.ctx.storage.get<RevealView>('reveal');
 			if (reveal && canReveal(room, reveal.gameId)) send(ws, reveal);
+			return;
+		}
+		if (who?.role === 'claim') {
+			await claimMessage(this.transferRoom(), ws, who.keyHash, message, room);
 			return;
 		}
 		if (!who || who.role === 'viewer' || who.role === 'town') return;
@@ -399,6 +408,12 @@ export class Room extends DurableObject<RoomEnv> {
 				const next = roleSeen(room, id);
 				if (next === room) return;
 				room = next;
+			} else if (message.type === 'push') {
+				return setRoomPushAddress(this.ctx.storage, id, message.address);
+			} else if (message.type === 'showing') {
+				const showing = message.on === true;
+				ws.serializeAttachment({ role: 'player', memberId: id, showing } satisfies Attachment);
+				return;
 			} else return;
 			await this.save(room);
 			return;
@@ -457,9 +472,11 @@ export class Room extends DurableObject<RoomEnv> {
 				break;
 			}
 			case 'grimoire': {
-				const admins = this.admins() > 0;
-				if ((!room.viewerKeyHash && !admins) || !isSharedGrimoire(message.grimoire)) return;
+				if (!isSharedGrimoire(message.grimoire)) return;
 				const view: GrimoireView = { type: 'grimoire', grimoire: message.grimoire };
+				// A transfer that brings the game keeps the latest for the device taking over.
+				await keepsTransferGame(room, this.ctx.storage, view);
+				if (!room.viewerKeyHash && this.admins() === 0) return;
 				// Kept only for the view-only link; an admin's copy is passed on and never stored.
 				if (room.viewerKeyHash) await this.ctx.storage.put('grimoire', view);
 				const text = JSON.stringify(view);
@@ -469,6 +486,17 @@ export class Room extends DurableObject<RoomEnv> {
 				}
 				return;
 			}
+			case 'open-transfer':
+				room = openTransfer(room, message.codeHash, message.bringGame, Date.now());
+				await closeTransferGame(room, this.ctx.storage);
+				break;
+			case 'close-transfer':
+				room = closeTransfer(room);
+				await closeTransferGame(room, this.ctx.storage);
+				break;
+			case 'answer-transfer':
+				await answerTransfer(this.transferRoom(), room, message.allow);
+				return;
 			case 'unseat':
 				room = unseat(room, message.memberId);
 				break;
@@ -537,10 +565,15 @@ export class Room extends DurableObject<RoomEnv> {
 				if (!canCallTown(this.lastCallTown, now)) return;
 				this.lastCallTown = now;
 				const text = JSON.stringify({ type: 'call-town' } satisfies ServerMessage);
+				const showing = new Set<string>();
 				for (const socket of this.ctx.getWebSockets()) {
 					const to = socket.deserializeAttachment() as Attachment | null;
-					if (to?.role === 'player') sendText(socket, text);
+					if (to?.role !== 'player') continue;
+					sendText(socket, text);
+					if (to.showing && socket.readyState === WebSocket.OPEN) showing.add(to.memberId);
 				}
+				// Phones locked or with the app closed get it as a notification (plan U12).
+				this.ctx.waitUntil(pushCallTown(this.env, this.ctx.storage, showing));
 				return;
 			}
 			case 'town-sound': {
@@ -572,15 +605,19 @@ export class Room extends DurableObject<RoomEnv> {
 
 	/**
 	 * A viewer leaving changes the Storyteller's count of who is watching; a phone leaving
-	 * changes who is here now.
+	 * changes who is here now, which the other phones show as their seats' candles.
 	 */
 	async webSocketClose(ws: WebSocket): Promise<void> {
 		const who = ws.deserializeAttachment() as Attachment | null;
 		if (who?.role === 'viewer') this.tellWatchers(ws);
 		if (who?.role === 'admin') this.tellGrimoireWanted(ws);
-		if (who?.role === 'player') {
+		if (who?.role === 'player' || who?.role === 'claim') {
 			const room = await this.load();
-			if (room) this.tellHost(room, ws);
+			if (room && who.role === 'claim') await claimGone(this.transferRoom(), room, who.keyHash);
+			else if (room) {
+				this.tellHost(room, ws);
+				this.tellPlayers(room, ws);
+			}
 		}
 	}
 
@@ -601,6 +638,16 @@ export class Room extends DurableObject<RoomEnv> {
 		for (const socket of this.ctx.getWebSockets()) {
 			const who = socket.deserializeAttachment() as Attachment | null;
 			if (who?.role === 'host') sendText(socket, text);
+		}
+	}
+
+	/** Sends each phone its view again, without storing anything: who is here has changed. */
+	private tellPlayers(room: RoomState, going: WebSocket): void {
+		const present = this.present(going);
+		for (const socket of this.ctx.getWebSockets()) {
+			const who = socket.deserializeAttachment() as Attachment | null;
+			if (who?.role === 'player' && socket !== going)
+				sendText(socket, JSON.stringify(playerView(room, who.memberId, present)));
 		}
 	}
 
@@ -644,6 +691,15 @@ export class Room extends DurableObject<RoomEnv> {
 		}
 	}
 
+	/** What a transfer needs from this room (room-transfer.ts). */
+	private transferRoom(): TransferRoom {
+		return {
+			storage: this.ctx.storage,
+			sockets: () => this.ctx.getWebSockets(),
+			save: (room) => this.save(room)
+		};
+	}
+
 	/** Stores the room and sends every device its updated view. */
 	private async save(room: RoomState): Promise<void> {
 		await this.ctx.storage.put('room', room);
@@ -652,7 +708,7 @@ export class Room extends DurableObject<RoomEnv> {
 		const town = JSON.stringify(townView(room));
 		for (const socket of this.ctx.getWebSockets()) {
 			const who = socket.deserializeAttachment() as Attachment | null;
-			if (!who || who.role === 'viewer') continue;
+			if (!who || who.role === 'viewer' || who.role === 'claim') continue;
 			sendText(
 				socket,
 				who.role === 'host'
@@ -669,32 +725,6 @@ export class Room extends DurableObject<RoomEnv> {
 			send(socket, { type: 'closed' });
 			closeSocket(socket, 1000, reason);
 		}
-	}
-}
-
-function send(ws: WebSocket, message: ServerMessage): void {
-	sendText(ws, JSON.stringify(message));
-}
-
-/**
- * A socket that is closing is still listed by `getWebSockets()`, and sending to it throws,
- * which cut a broadcast short: the devices after it missed the update.
- */
-function sendText(ws: WebSocket, text: string): void {
-	if (ws.readyState !== WebSocket.OPEN) return;
-	try {
-		ws.send(text);
-	} catch {
-		// It closed between the check and the send; its close handler tidies up.
-	}
-}
-
-/** Closing a socket that has closed already throws too. */
-function closeSocket(ws: WebSocket, code: number, reason: string): void {
-	try {
-		ws.close(code, reason);
-	} catch {
-		// Already closed.
 	}
 }
 

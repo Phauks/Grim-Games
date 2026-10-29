@@ -15,6 +15,13 @@
 			"ambiguous": "The wiki says to swap Mad for Has Ability but doesn't name whose token it sits by; the swap implies the dead Townsfolk."
 		}
 	},
+	"learns": {
+		"measure": "character-of",
+		"types": ["townsfolk"],
+		"reminders": {
+			"target": "Mad"
+		}
+	},
 	"setupPrep": {
 		"reminders": [
 			{
@@ -68,5 +75,10 @@
 				"reason": "Says when the Has Ability token goes on and that the Pixie then wakes as that character."
 			}
 		}
+	},
+	"gainedFrom": {
+		"token": "Has Ability",
+		"pending": "Mad",
+		"wakes": true
 	}
 }

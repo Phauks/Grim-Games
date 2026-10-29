@@ -3,6 +3,7 @@
  * last). Our own wording, approved by Trevor; see `savant.ts`.
  */
 import type { CharacterType } from '#lib/core/data/types.ts';
+import { rulesOf } from '#lib/core/data/rules/index.ts';
 import { alignmentOf, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
 import type { Game } from '#lib/core/model/types.ts';
 import type { RegistrationWorld } from './ability.ts';
@@ -305,7 +306,7 @@ export const LOG_TEMPLATES: readonly Template[] = [
 		group: 'today',
 		instances: (f) =>
 			[...new Set(infoEntries(f.yesterday).map((e) => e.characterId))]
-				.filter((id) => id !== 'savant')
+				.filter((id) => rulesOf(id, f.characters)?.dayClaim !== 'statements')
 				.map((id) => ({
 					blanks: id,
 					parts: [

@@ -11,7 +11,7 @@ async function openRoom(page: Page) {
 		.getByRole('radiogroup', { name: 'Script' })
 		.getByText('Trouble Brewing', { exact: true })
 		.tap();
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 	await page.goto(`${new URL(page.url()).pathname}/room`);
 	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();

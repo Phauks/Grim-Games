@@ -17,6 +17,7 @@ import {
 	randomSelection,
 	selectedIds,
 	selectionProblems,
+	standInKind,
 	validRandomSelection,
 	travellerRange,
 	type BagSelection
@@ -553,5 +554,23 @@ describe('validRandomSelection', () => {
 			expect(result.ok).toBe(true);
 			if (result.ok && result.selection.huntsman) expect(result.selection.damsel).toBe(1);
 		}
+	});
+});
+
+// https://wiki.bloodontheclocktower.com/Lunatic: the Lunatic is shown a Demon token.
+describe('standInKind (its believesType rule)', () => {
+	it('asks for a Demon for the Lunatic, nothing for others', () => {
+		expect(standInKind(data.byId.get('lunatic')!)).toBe('demon');
+		expect(standInKind(data.byId.get('chef')!)).toBeUndefined();
+	});
+
+	it('asks for a Demon for a custom character with the same rule', () => {
+		const dreamer = {
+			...data.byId.get('chef')!,
+			id: 'daydreamer',
+			type: 'outsider' as const,
+			rules: { believesType: 'demon' as const }
+		};
+		expect(standInKind(dreamer)).toBe('demon');
 	});
 });

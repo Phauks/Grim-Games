@@ -73,14 +73,6 @@
 	/** The room this phone is in, whose name the You sheet sets. */
 	let joinedRoom = $state<string>();
 	let error = $state<string>();
-	// The whole player screen, its dialogs and sheets included, takes the sheet background
-	// (Trevor, 2026-10-25); leaving it brings back the app theme.
-	$effect.pre(() => {
-		screenTheme.current = sheetTheme(playerSettings.current.sheetBackground, preferences.theme);
-		return () => {
-			screenTheme.current = undefined;
-		};
-	});
 	// Joining lands on the script (Trevor, 2026-10-23); the room is the row above the tabs.
 	let tab = $state('script');
 	// The finished grimoire shows on the Grim tab (Share grim, R5): turn to it when it arrives.
@@ -162,6 +154,13 @@
 	const script = $derived(
 		!data ? undefined : join ? roomScript(joining || undefined) : currentScript.current
 	);
+	// The whole player screen, its dialogs and sheets included, takes the sheet background
+	// (Trevor, 2026-10-25); leaving it brings back the app theme. Continue game keeps the app
+	// theme until a game is open (Trevor, 2026-10-28).
+	$effect.pre(() => {
+		if (join && !script) return;
+		return screenTheme.show(sheetTheme(playerSettings.current.sheetBackground, preferences.theme));
+	});
 	const logo = $derived(script && scriptLogo(script));
 	let logoFailed = $state(false);
 	$effect(() => {

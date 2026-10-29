@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { pickScript, toBoard } from './new-game.ts';
+import { pickScript, toBoard, pastGameSettings } from './new-game.ts';
 import { expectMatchingIconRow } from './icon-row.ts';
 import { openSettingsDialog } from './shell.ts';
 import { savesSettled, trackSaves } from './saves.ts';
@@ -63,7 +63,8 @@ test('New game is one screen: Standard by default, a mode fills in its About and
 	await expect(page.getByTestId('inspect-about')).toHaveText(
 		'Normal rules for Blood on the Clocktower'
 	);
-	await expect(page.getByTestId('player-count')).toHaveCount(1);
+	// Standard's count is Character selection's (Trevor, 2026-10-28); a mode keeps its own.
+	await expect(page.getByTestId('player-count')).toHaveCount(0);
 	// Game mode, About and Script share the page's one section header (Trevor, 2026-10-19).
 	const headings = (names: string[]) =>
 		Promise.all(
@@ -78,7 +79,7 @@ test('New game is one screen: Standard by default, a mode fills in its About and
 	await headings(['Game mode', 'About', 'Game mode settings', 'Script']);
 	await chooseMode(page, 'Standard');
 	await expect(page.getByTestId('inspect-authors')).toHaveText('The Pandemonium Institute');
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 });
 
@@ -181,7 +182,8 @@ test('restricted characters stay out of the game, and the mode’s bans can be l
 	await dialog.getByRole('button', { name: 'Close' }).tap();
 	await expect(restricted.locator('.count-badge')).toHaveText('3');
 
-	await modesPanel(page).getByRole('button', { name: 'Start game' }).tap();
+	await modesPanel(page).getByRole('button', { name: 'Create game' }).tap();
+	await pastGameSettings(page);
 	// Whale Buffet opens on choosing; the setup list shows the game's characters all the same.
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/deal$/);
 	await page.goto(new URL(page.url()).pathname.replace(/\/deal$/, '/setup'));
@@ -206,7 +208,8 @@ async function startIn(page: Page, mode: string, setting?: string) {
 	if (await script.count()) await script.getByText('Trouble Brewing').tap();
 	for (let n = 8; n > 5; n--) await panel.getByRole('button', { name: 'Fewer players' }).tap();
 	if (setting) await panel.locator('[data-setting]').getByText(setting, { exact: true }).tap();
-	await panel.getByRole('button', { name: 'Start game' }).tap();
+	await panel.getByRole('button', { name: 'Create game' }).tap();
+	await pastGameSettings(page);
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/deal$/);
 }
 
@@ -809,7 +812,8 @@ test('Sushi Buffet has no script to choose: it drafts from every official charac
 	await expect(needed).toBeChecked();
 	await modesPanel(page).getByText('Deal needed characters', { exact: true }).tap();
 	await expect(needed).not.toBeChecked();
-	await modesPanel(page).getByRole('button', { name: 'Start game' }).tap();
+	await modesPanel(page).getByRole('button', { name: 'Create game' }).tap();
+	await pastGameSettings(page);
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/deal$/);
 	const gameId = new URL(page.url()).pathname.split('/')[2];
 	const record = await page.evaluate(
@@ -915,7 +919,7 @@ test('Two games at once: one setup for both bags, then one token for both games'
 	await panel.getByRole('combobox', { name: 'Town 2 script' }).tap();
 	await page.getByRole('option', { name: 'Bad Moon Rising', exact: true }).tap();
 	for (let n = 8; n > 5; n--) await panel.getByRole('button', { name: 'Fewer players' }).tap();
-	await panel.getByRole('button', { name: 'Start game' }).tap();
+	await panel.getByRole('button', { name: 'Create game' }).tap();
 
 	// Town 1's setup opens straight away; its bag opens town 2's setup.
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
@@ -1055,7 +1059,7 @@ test('Two Towns and a Boomdandy starts two towns with their own scripts', async 
 	await town2.getByRole('button', { name: 'Fewer players' }).tap();
 	await expect(panel.getByTestId('town-2-player-count')).toHaveText('5');
 	await expect(panel.getByTestId('town-1-player-count')).toHaveText('5');
-	await panel.getByRole('button', { name: 'Start game' }).tap();
+	await panel.getByRole('button', { name: 'Create game' }).tap();
 
 	// "Boomdandy and Mayor are guaranteed to be in play": the Boomdandy in the Zombuul town,
 	// the Mayor in the other, each already chosen when its setup opens. Town 1's setup opens
@@ -1065,7 +1069,7 @@ test('Two Towns and a Boomdandy starts two towns with their own scripts', async 
 	await expect(page.getByTestId('count-townsfolk')).toHaveText('0');
 	// Required by the mode, so it can't be taken out; its lock is on and says why (Trevor,
 	// 2026-10-22).
-	const boomdandy = page.locator('.row', {
+	const boomdandy = page.locator('.ring-row', {
 		has: page.locator('.main[data-character-id="boomdandy"]')
 	});
 	await boomdandy.locator('.main').tap();
@@ -1198,10 +1202,10 @@ test('A Script of Infinite Possibilities rolls hidden characters from off the sc
 	await chooseRules(page, 'A Script of Infinite Possibilities');
 	const panel = modesPanel(page);
 	await panel.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
-	await panel.getByRole('button', { name: 'Start game' }).tap();
+	await panel.getByRole('button', { name: 'Create game' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Special rules in this game' })
-		.getByRole('button', { name: 'Start game' })
+		.getByRole('button', { name: 'Create game' })
 		.tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/extras$/);
 	// Named for the rules, since the characters may not stay hidden; the rule that opened the
@@ -1271,7 +1275,8 @@ test('A Script of Infinite Possibilities rolls hidden characters from off the sc
 		.locator('[data-character-id]')
 		.evaluateAll((els) => els.map((el) => el.getAttribute('data-character-id')!));
 	expect(hidden).toHaveLength(2);
-	await page.getByRole('button', { name: 'Choose characters' }).tap();
+	await page.getByRole('button', { name: 'Game settings' }).tap();
+	await pastGameSettings(page);
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 	// Off the script but chosen for the bag: listed under their own types (Trevor,
 	// 2026-10-18), and not marked as off the script, since the rule put them in play
@@ -1279,10 +1284,10 @@ test('A Script of Infinite Possibilities rolls hidden characters from off the sc
 	await expect(page.getByTestId('count-townsfolk')).toHaveText('1');
 	await expect(page.getByTestId('count-outsider')).toHaveText('1');
 	await expect(page.getByTestId('count-minion')).toHaveText('0');
-	await expect(page.locator('.row[data-dashed]')).toHaveCount(0);
+	await expect(page.locator('.ring-row[data-dashed]')).toHaveCount(0);
 	const first = page.locator(`.main[data-character-id="${hidden[0]}"]`);
 	await expect(first).toHaveAttribute('aria-pressed', 'true');
-	await expect(page.locator('.row', { has: first })).not.toContainText('Not on script');
+	await expect(page.locator('.ring-row', { has: first })).not.toContainText('Not on script');
 	// Taking one out keeps it listed, so it can go back in.
 	await first.tap();
 	await expect(page.getByTestId('count-townsfolk')).toHaveText('0');
@@ -1295,10 +1300,10 @@ test('with no hidden character, Infinite Possibilities can’t go on to the setu
 }) => {
 	await page.goto('/new');
 	await chooseRules(page, 'A Script of Infinite Possibilities');
-	await modesPanel(page).getByRole('button', { name: 'Start game' }).tap();
+	await modesPanel(page).getByRole('button', { name: 'Create game' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Special rules in this game' })
-		.getByRole('button', { name: 'Start game' })
+		.getByRole('button', { name: 'Create game' })
 		.tap();
 	await expect(page).toHaveURL(/\/extras$/);
 	const extras = page.getByTestId('extras').locator('li');
@@ -1312,7 +1317,7 @@ test('with no hidden character, Infinite Possibilities can’t go on to the setu
 		const clear = extras.nth(i).getByRole('button', { name: `Clear the hidden ${type}` });
 		if (await clear.isEnabled()) await clear.tap();
 	}
-	await expect(page.getByRole('button', { name: 'Choose characters' })).toBeDisabled();
+	await expect(page.getByRole('button', { name: 'Game settings' })).toBeDisabled();
 });
 
 test('Flesh and Bone runs a campaign: the next game adds a Demon once the current game has ended', async ({
@@ -1325,7 +1330,8 @@ test('Flesh and Bone runs a campaign: the next game adds a Demon once the curren
 	// No campaign yet: a new one starts from the chosen script.
 	await expect(panel.getByRole('combobox', { name: 'Campaign' })).toHaveCount(0);
 	await panel.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
-	await panel.getByRole('button', { name: 'Start game' }).tap();
+	await panel.getByRole('button', { name: 'Create game' }).tap();
+	await pastGameSettings(page);
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+/);
 	const { campaignId, gameId } = await page.evaluate(() => {
 		const [c] = JSON.parse(localStorage.getItem('grim-games:campaigns:v1') ?? '[]');
@@ -1393,7 +1399,8 @@ test('Flesh and Bone runs a campaign: the next game adds a Demon once the curren
 	await expect(version).toContainText('Game 2');
 	await version.tap();
 	await page.getByRole('option', { name: /^Game 1/ }).tap();
-	await panel.getByRole('button', { name: 'Start game' }).tap();
+	await panel.getByRole('button', { name: 'Create game' }).tap();
+	await pastGameSettings(page);
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+/);
 	await page.goto(`/campaigns/${campaignId}`);
 	await expect(games).toHaveCount(3);
@@ -1408,11 +1415,12 @@ test('Specters: spectators vote on their phones and the Storyteller sees the cou
 	await chooseRules(page, 'Specters');
 	const panel = modesPanel(page);
 	await panel.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
-	await panel.getByRole('button', { name: 'Start game' }).tap();
+	await panel.getByRole('button', { name: 'Create game' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Special rules in this game' })
-		.getByRole('button', { name: 'Start game' })
+		.getByRole('button', { name: 'Create game' })
 		.tap();
+	await pastGameSettings(page);
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+/);
 	const gameId = new URL(page.url()).pathname.split('/')[2];
 
@@ -1597,7 +1605,7 @@ test('a BotC Scripts script offers every version it has, and Game info links its
 	await expect(
 		page.getByTestId('chosen-script').getByRole('link', { name: "Open the script's source page" })
 	).toHaveAttribute('href', /\/script\/7\/2\.2/);
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
@@ -1637,10 +1645,10 @@ test('Game info opens a special rule in full when tapped, and a base script shar
 	await page.goto('/new');
 	await pickScript(page, 'Trouble Brewing');
 	await chooseRules(page, 'Stowed Away');
-	await modesPanel(page).getByRole('button', { name: 'Start game' }).tap();
+	await modesPanel(page).getByRole('button', { name: 'Create game' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Special rules in this game' })
-		.getByRole('button', { name: 'Start game' })
+		.getByRole('button', { name: 'Create game' })
 		.tap();
 	await toBoard(page);
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
@@ -1786,11 +1794,12 @@ test('special rules stack on a mode: two at once, a conflict warns, and the game
 	await dialog.getByRole('button', { name: 'Close' }).tap();
 	await noSidewaysScroll(page);
 
-	await modesPanel(page).getByRole('button', { name: 'Start game' }).tap();
+	await modesPanel(page).getByRole('button', { name: 'Create game' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Special rules in this game' })
-		.getByRole('button', { name: 'Start game' })
+		.getByRole('button', { name: 'Create game' })
 		.tap();
+	await pastGameSettings(page);
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/deal$/);
 	// The game is named for its mode and rules wherever it is listed.
 	await page.goto('/join');
@@ -1912,10 +1921,10 @@ test('each special rule takes its own line under the script name in the board co
 	await page.goto('/new');
 	await pickScript(page, 'Trouble Brewing');
 	await chooseRules(page, 'Stowed Away', 'I See Dead People');
-	await modesPanel(page).getByRole('button', { name: 'Start game' }).tap();
+	await modesPanel(page).getByRole('button', { name: 'Create game' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Special rules in this game' })
-		.getByRole('button', { name: 'Start game' })
+		.getByRole('button', { name: 'Create game' })
 		.tap();
 	await toBoard(page);
 	const corner = page.getByTestId('script-title');
@@ -1942,10 +1951,10 @@ test('with I See Dead People a death is marked not to announce, its detail kept 
 	await page.goto('/new');
 	await pickScript(page, 'Trouble Brewing');
 	await chooseRules(page, 'I See Dead People');
-	await modesPanel(page).getByRole('button', { name: 'Start game' }).tap();
+	await modesPanel(page).getByRole('button', { name: 'Create game' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Special rules in this game' })
-		.getByRole('button', { name: 'Start game' })
+		.getByRole('button', { name: 'Create game' })
 		.tap();
 	await toBoard(page);
 	// The death is marked on the board (Trevor, 2026-10-20), then read in the day view.
@@ -1973,10 +1982,10 @@ test('+1 adds exactly one character from off the script', async ({ page }) => {
 	await chooseRules(page, '+1');
 	const panel = modesPanel(page);
 	await panel.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
-	await panel.getByRole('button', { name: 'Start game' }).tap();
+	await panel.getByRole('button', { name: 'Create game' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Special rules in this game' })
-		.getByRole('button', { name: 'Start game' })
+		.getByRole('button', { name: 'Create game' })
 		.tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/extras$/);
 	const extras = page.getByTestId('extras').locator('li');
@@ -1985,7 +1994,7 @@ test('+1 adds exactly one character from off the script', async ({ page }) => {
 	const filled = extras.getByRole('button', { name: /^Roll again instead of / });
 	await expect(filled).toHaveCount(1);
 	await expect(page.getByTestId('extras-range')).toHaveCount(0);
-	const next = page.getByRole('button', { name: 'Choose characters' });
+	const next = page.getByRole('button', { name: 'Game settings' });
 	await expect(next).toBeEnabled();
 	// A second one is too many.
 	for (const [i, type] of ['Townsfolk', 'Outsider', 'Minion', 'Demon'].entries()) {
@@ -2007,13 +2016,14 @@ test('+1 adds exactly one character from off the script', async ({ page }) => {
 	await noSidewaysScroll(page);
 
 	await next.tap();
+	await pastGameSettings(page);
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 	// Listed, but not marked as off the script: +1 put it in play (Trevor, 2026-10-23).
 	await expect(page.locator('.main[data-character-id="goon"]')).toHaveAttribute(
 		'aria-pressed',
 		'true'
 	);
-	await expect(page.locator('.row[data-dashed]')).toHaveCount(0);
+	await expect(page.locator('.ring-row[data-dashed]')).toHaveCount(0);
 });
 
 test('Game info’s Special rules opens the screen once the game is set up', async ({ page }) => {
@@ -2023,11 +2033,10 @@ test('Game info’s Special rules opens the screen once the game is set up', asy
 	await chooseRules(page, '+1');
 	const panel = modesPanel(page);
 	await panel.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
-	for (let n = 8; n > 5; n--) await panel.getByRole('button', { name: 'Fewer players' }).tap();
-	await panel.getByRole('button', { name: 'Start game' }).tap();
+	await panel.getByRole('button', { name: 'Create game' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Special rules in this game' })
-		.getByRole('button', { name: 'Start game' })
+		.getByRole('button', { name: 'Create game' })
 		.tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/extras$/);
 	const board = new URL(page.url()).pathname.replace(/\/extras$/, '');
@@ -2040,8 +2049,10 @@ test('Game info’s Special rules opens the screen once the game is set up', asy
 	const picker = page.getByRole('dialog', { name: 'Choose a hidden Outsider' });
 	await picker.getByRole('searchbox').fill('Goon');
 	await picker.getByRole('button', { name: /^Goon\b/ }).tap();
-	await page.getByRole('button', { name: 'Choose characters' }).tap();
+	await page.getByRole('button', { name: 'Game settings' }).tap();
+	await pastGameSettings(page);
 	await expect(page).toHaveURL(`${board}/setup`);
+	for (let n = 8; n > 5; n--) await page.getByRole('button', { name: 'Fewer players' }).tap();
 	for (const name of ['Washerwoman', 'Empath', 'Poisoner', 'Imp'])
 		await page
 			.getByTestId('character-picker')
@@ -2076,7 +2087,7 @@ test('Game info’s Special rules opens the screen once the game is set up', asy
 	await expect(page).toHaveURL(`${board}/extras`);
 	// Characters are chosen by now: the bar goes back to the board.
 	const bar = page.getByRole('navigation', { name: 'Setup', exact: true });
-	await expect(bar.getByRole('button', { name: 'Choose characters' })).toHaveCount(0);
+	await expect(bar.getByRole('button', { name: 'Game settings' })).toHaveCount(0);
 	await bar.getByRole('link', { name: 'Grimoire' }).tap();
 	await expect(page).toHaveURL(board);
 });
@@ -2090,11 +2101,12 @@ test('Duplicate Characters lets any character but a Demon be chosen twice and si
 	await chooseRules(page, 'Duplicate Characters');
 	const panel = modesPanel(page);
 	await panel.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
-	await panel.getByRole('button', { name: 'Start game' }).tap();
+	await panel.getByRole('button', { name: 'Create game' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Special rules in this game' })
-		.getByRole('button', { name: 'Start game' })
+		.getByRole('button', { name: 'Create game' })
 		.tap();
+	await pastGameSettings(page);
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 	const chef = page
 		.getByRole('button', { name: 'Chef', exact: true })
@@ -2136,7 +2148,7 @@ test('Start game restates the special rules first, and Back returns to New game'
 	await page.goto('/new');
 	await chooseRules(page, '+1', 'Binary Supernovae');
 	const panel = modesPanel(page);
-	await panel.getByRole('button', { name: 'Start game' }).tap();
+	await panel.getByRole('button', { name: 'Create game' }).tap();
 	const recap = page.getByRole('dialog', { name: 'Special rules in this game' });
 	const items = recap.getByTestId('rules-recap').locator('li');
 	await expect(items).toHaveCount(2);
@@ -2155,9 +2167,9 @@ test('Start game restates the special rules first, and Back returns to New game'
 	await expect(recap).toBeHidden();
 	await expect(page).toHaveURL(/\/new$/);
 	await expect(panel.getByRole('button', { name: /^Special rules/ })).toHaveText('Special rules 2');
-	await panel.getByRole('button', { name: 'Start game' }).tap();
+	await panel.getByRole('button', { name: 'Create game' }).tap();
 	await expect(announce).toBeChecked();
-	await recap.getByRole('button', { name: 'Start game' }).tap();
+	await recap.getByRole('button', { name: 'Create game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+/);
 });
 
@@ -2203,7 +2215,7 @@ test('+1 has a switch for naming its character on the Start game screen, shown i
 	await dialog.getByRole('button', { name: 'Close' }).tap();
 	await expect(dialog).toBeHidden();
 
-	await panel.getByRole('button', { name: 'Start game' }).tap();
+	await panel.getByRole('button', { name: 'Create game' }).tap();
 	const recap = page.getByRole('dialog', { name: 'Special rules in this game' });
 	const named = recap.getByRole('checkbox', {
 		name: 'Storyteller announces character',
@@ -2226,10 +2238,10 @@ test('Binary Supernovae asks for one more Demon, and an executed Demon wins it f
 	await page.goto('/new');
 	await pickScript(page, 'Trouble Brewing');
 	await chooseRules(page, 'Binary Supernovae');
-	await modesPanel(page).getByRole('button', { name: 'Start game' }).tap();
+	await modesPanel(page).getByRole('button', { name: 'Create game' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Special rules in this game' })
-		.getByRole('button', { name: 'Start game' })
+		.getByRole('button', { name: 'Create game' })
 		.tap();
 	await toBoard(page);
 	const gameId = new URL(page.url()).pathname.split('/')[2];
@@ -2347,7 +2359,7 @@ test('the Script sheet’s background choice sits beside Print and Share, and co
 }) => {
 	await page.goto('/new');
 	await pickScript(page, 'Trouble Brewing');
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 	await page.getByRole('button', { name: 'Script', exact: true }).tap();
 	const sheet = page.getByRole('dialog', { name: 'Trouble Brewing' });
@@ -2393,7 +2405,7 @@ test('the Script sheet has the players’ settings cog, opening the one Settings
 	// should always be parity and invoke same parts".
 	await page.goto('/new');
 	await pickScript(page, 'Trouble Brewing');
-	await page.getByRole('button', { name: 'Start game' }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 	await page.getByRole('button', { name: 'Script', exact: true }).tap();
 	const sheet = page.getByRole('dialog', { name: 'Trouble Brewing' });

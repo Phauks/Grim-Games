@@ -13,6 +13,8 @@
 		forceOpen?: boolean;
 		/** Extra content at the end of the header row (a count, a button). */
 		aside?: Snippet;
+		/** A collapsible section's item count, shown beside its title while closed. */
+		count?: number;
 		/** A collapsible section that starts closed. */
 		defaultOpen?: boolean;
 		/** Left out for a section that is only its header (a heading and its button). */
@@ -26,6 +28,7 @@
 		storageKey,
 		forceOpen = false,
 		aside,
+		count,
 		defaultOpen = true,
 		children
 	}: Props = $props();
@@ -34,7 +37,7 @@
 
 <!-- One section of a Page: a heading at the one section size, its optional aside, its content. -->
 {#if collapsible}
-	<Collapsible {title} {level} {storageKey} {forceOpen} {aside} {defaultOpen}>
+	<Collapsible {title} {level} {storageKey} {forceOpen} {aside} {count} {defaultOpen}>
 		{#if children}<div class="body">{@render children()}</div>{/if}
 	</Collapsible>
 {:else}

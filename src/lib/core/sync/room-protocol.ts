@@ -16,9 +16,12 @@ import type {
 	ScriptVoteTally
 } from './script-vote.ts';
 import type { SeatRole } from './room-roles.ts';
+import type { SeatPresence } from './seat-presence.ts';
 import type { PictureReportView } from './room-pictures.ts';
 import type { PlayerMessage } from './room-messages.ts';
 import type { GameOver, RoomMember, RoomRequest } from './room.ts';
+import type { TransferDetails, TransferStatus } from './room-transfer.ts';
+import type { PushAddress } from './web-push.ts';
 
 export type ClientMessage =
 	/**
@@ -27,8 +30,11 @@ export type ClientMessage =
 	 */
 	| {
 			type: 'hello';
-			/** `town`: a Public Town display (`TownView`); its key is ignored, as it sends nothing. */
-			role: 'host' | 'player' | 'viewer' | 'town';
+			/**
+			 * `town`: a Public Town display (`TownView`); its key is ignored, as it sends nothing.
+			 * `claim`: a device taking the room over (room-transfer.ts); its key is its new host key.
+			 */
+			role: 'host' | 'player' | 'viewer' | 'town' | 'claim';
 			key: string;
 			protocol?: number;
 			/** When this app's build was made (ISO); the Storyteller's is passed on to phones. */
@@ -55,6 +61,13 @@ export type ClientMessage =
 	 */
 	| { type: 'script-ballot'; voteId: string; choices: string[] }
 	| { type: 'role-seen' } // The player held their character to see it (2026-10-26).
+	/**
+	 * Back to town reaches this phone while it is locked or the app is closed (plan U12), at this
+	 * push address; none turns that off.
+	 */
+	| { type: 'push'; address?: PushAddress }
+	/** The app is (or no longer is) on this phone's screen, so a call isn't pushed too. */
+	| { type: 'showing'; on: boolean }
 	// From the Storyteller.
 	| { type: 'publish'; gameId: string; state: PublicGameState }
 	/**
@@ -112,6 +125,19 @@ export type ClientMessage =
 	/** Lets a reported picture stand, or takes that player's picture away for this game. */
 	| { type: 'judge-picture'; hash: string; allow: boolean }
 	| { type: 'read-messages'; ids: string[] } // The Storyteller opened these messages.
+	/** Opens a room transfer with this code's hash, or changes whether it brings the game. */
+	| { type: 'open-transfer'; codeHash: string; bringGame: boolean }
+	| { type: 'close-transfer' }
+	/** Allows, or turns down, the device asking to take over (`HostView.transfer.asking`). */
+	| { type: 'answer-transfer'; allow: boolean }
+	// From a device taking the room over (hello role `claim`).
+	/** Is this the transfer code? Answered with `transfer` or `transfer-refused`. */
+	| { type: 'check-transfer'; code: string }
+	/**
+	 * Asks to take the room with this transfer code, under this Profile name: the Storyteller's
+	 * device allows it (`transferred`) or turns it down (`transfer-denied`).
+	 */
+	| { type: 'take-room'; code: string; name?: string }
 	| { type: 'unread-messages'; ids: string[] } // The Storyteller marked them unread again.
 	| { type: 'close' };
 
@@ -143,6 +169,7 @@ export interface HostView {
 	rolesSeen?: SeatId[]; // Seats whose player has seen the character they have now.
 	pictureReports?: PictureReportView[]; // Pictures other phones reported, for a verdict.
 	messages?: PlayerMessage[]; // Players' messages this game, oldest first.
+	transfer?: TransferStatus; // The room transfer this device has open.
 }
 
 export interface VoteTally {
@@ -168,6 +195,8 @@ export interface PlayerView {
 	me: RoomMember;
 	/** Seats someone in the room already sits in. */
 	takenSeats: SeatId[];
+	/** Which seats' phones are connected or away, and the phones with no seat (the candles). */
+	presence?: SeatPresence;
 	/** The open vote, shown to spectators only. */
 	vote?: { voteId: string; options: SeatId[]; ability?: string; choice?: SeatId };
 	/** The game on the table is over, with who won and how. */
@@ -261,6 +290,16 @@ export type ServerMessage =
 	 * games (plan J31), or stop. The app shows nothing for it; older apps ignore it.
 	 */
 	| { type: 'grimoire-wanted'; on: boolean }
+	/** To a device taking over: the code is right, and this comes with the room. */
+	| { type: 'transfer'; details: TransferDetails }
+	/** To a device taking over: wrong code, or no transfer open (`triesLeft` 0). */
+	| { type: 'transfer-refused'; triesLeft: number }
+	/** To a device taking over: the Storyteller's device turned it down. */
+	| { type: 'transfer-denied' }
+	/** To the device that took over: the room is its now, with the game when it came along. */
+	| { type: 'transferred'; grimoire?: SharedGrimoire }
+	/** To the Storyteller's old device: another device took the room over. */
+	| { type: 'handed-over' }
 	/**
 	 * To the phone that sent a message to the Storyteller: whether the room took it (Trevor,
 	 * 2026-10-28). Says nothing of what was sent; older apps ignore it.

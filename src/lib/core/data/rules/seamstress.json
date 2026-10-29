@@ -45,5 +45,8 @@
 	},
 	"infoKind": {
 		"oncePerGame": true
+	},
+	"wakesWhen": {
+		"untilToken": "No Ability"
 	}
 }

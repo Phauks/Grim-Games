@@ -173,6 +173,8 @@ export const ICON_SLOTS = {
 	feedback: { label: 'Player feedback', choices: ['ph:star-half', 'ph:chat-centered-text'] },
 	/** Players' messages to the Storyteller, and the Storyteller's Messages (Trevor, 2026-10-27). */
 	messages: { label: 'Messages', choices: ['ph:chat-text', 'ph:envelope-simple'] },
+	/** Room transfer: the room goes to another Storyteller's device (Trevor, 2026-10-28). */
+	transfer: { label: 'Room transfer', choices: ['ph:hand-arrow-up', 'ph:arrow-square-out'] },
 	/** Marks an opened message unread again (Trevor, 2026-10-28: "an eyeball next to the x"). */
 	markUnread: { label: 'Mark as unread', choices: ['ph:eye', 'ph:eye-closed'] },
 	/** What an info token asks for when shown, on its tile (Trevor, 2026-10-18). */

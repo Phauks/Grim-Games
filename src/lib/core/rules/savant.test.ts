@@ -10,6 +10,7 @@ import { describe, expect, it } from 'vitest';
 import type { Command } from '#lib/core/engine/index.ts';
 import {
 	castGame,
+	castWith,
 	newGame,
 	run,
 	testCharacters as characters
@@ -23,6 +24,8 @@ import {
 	type SavantStatement
 } from './savant.ts';
 import { dawnGames } from '#lib/core/engine/index.ts';
+import { parseCharacter } from '#lib/core/data/parse.ts';
+import { Issues } from '#lib/core/data/validate.ts';
 
 const names = ['Ana', 'Ben', 'Cat', 'Dev', 'Eve', 'Fay', 'Gus', 'Hal'];
 
@@ -188,6 +191,48 @@ describe('Savant pairs', () => {
 	});
 });
 
+// Whether the Demon could pass to another player, from the rules data of the Demon and the
+// living players: https://wiki.bloodontheclocktower.com/Imp (to a Minion),
+// /Fang_Gu (to an Outsider), /Scarlet_Woman (with 5 or more alive), /Pit-Hag (makes a Demon).
+describe('The Demon cannot pass to another player', () => {
+	const truth = (castIds: string[], ...steps: ((seats: string[]) => Command)[]) => {
+		const { session, ctx, seats } = newGame(names.slice(0, castIds.length));
+		const s = run(
+			session,
+			ctx,
+			...castIds.map((characterId, i): Command => ({
+				type: 'AssignCharacter',
+				seatId: seats[i],
+				characterId
+			})),
+			...steps.map((f) => f(seats))
+		);
+		return byKey(savantStatements(s.game, seats[0], characters), 'demon-cannot-pass:')?.truth;
+	};
+	const dead =
+		(i: number) =>
+		(s: string[]): Command => ({ type: 'SetDead', seatId: s[i], dead: true });
+
+	it('is false while the Imp has a living Minion', () => {
+		expect(truth(['savant', 'chef', 'empath', 'poisoner', 'imp'])).toBe('false');
+	});
+	it('is true once the Imp has none', () => {
+		expect(truth(['savant', 'chef', 'empath', 'poisoner', 'imp'], dead(3))).toBe('true');
+	});
+	it('is false while the Fang Gu has a living Outsider', () => {
+		expect(truth(['savant', 'chef', 'empath', 'butler', 'fanggu'])).toBe('false');
+	});
+	it('is false while a Scarlet Woman lives with 4 others besides the Demon', () => {
+		expect(truth(['savant', 'chef', 'empath', 'scarletwoman', 'vigormortis'])).toBe('false');
+		expect(truth(['savant', 'chef', 'empath', 'scarletwoman', 'vigormortis'], dead(1))).toBe(
+			'true'
+		);
+	});
+	it('is false while a Pit-Hag lives', () => {
+		expect(truth(['savant', 'chef', 'empath', 'pithag', 'vigormortis'])).toBe('false');
+	});
+});
+
 describe('Savant statements from the game so far', () => {
 	/** Seats, then nights: each night's commands run, then New day. */
 	function played(castIds: string[], nights: ((seats: string[]) => Command)[][]) {
@@ -244,5 +289,48 @@ describe('Savant statements from the game so far', () => {
 			(s) => s.truth === 'check'
 		);
 		expect(checks.map((s) => s.template)).toEqual(['declined']);
+	});
+});
+
+// A homebrew character whose rules ask for the Savant's two statements a day
+// (https://wiki.bloodontheclocktower.com/Savant) is treated as the Savant, by its rules block.
+describe('a custom character with statements', () => {
+	const issues = new Issues();
+	const sage = parseCharacter(
+		{
+			id: 'sageofdays',
+			name: 'Sage of Days',
+			team: 'townsfolk',
+			ability: 'Each day, you may visit the Storyteller to learn 2 things in private.',
+			rules: { dayClaim: 'statements' }
+		},
+		'[0]',
+		issues,
+		{ strict: false, scriptFields: true }
+	)!;
+	const all = new Map([...characters, [sage.id, sage]]);
+	const castCustom = castWith({ characters: all });
+
+	it('parses without issues', () => {
+		expect(issues.list).toEqual([]);
+	});
+
+	it('hears statements about every other character, but not about itself', () => {
+		const { game: g, seats } = castCustom([sage.id, 'chef', 'empath', 'butler', 'poisoner', 'imp']);
+		const keys = savantStatements(g, seats[0], all).map((s) => s.key);
+		expect(keys).toContain('character-impaired:chef');
+		expect(keys.some((k) => k.endsWith(`:${sage.id}`) && k.startsWith('character-'))).toBe(false);
+	});
+
+	it('is both false with a working Vortox, as a Townsfolk', () => {
+		const { game: g, seats } = castCustom([
+			sage.id,
+			'chef',
+			'empath',
+			'butler',
+			'poisoner',
+			'vortox'
+		]);
+		expect(savantSituation(g, seats[0], all).mode).toBe('both-false');
 	});
 });

@@ -106,9 +106,8 @@ export async function startInMode<
 }
 
 /**
- * Where a new game opens: the draft or choose screen for a mode that doesn't use the bag
- * (Sushi Buffet, Whale Buffet), the hidden characters for one that adds them (the rule A Script
- * of Infinite Possibilities), otherwise the board.
+ * Where a new game opens: the hidden characters for a mode that adds them (the rule A Script of
+ * Infinite Possibilities, its Special rules step), otherwise Game settings.
  */
 export function startHref(
 	modeId: string,
@@ -116,12 +115,22 @@ export function startHref(
 	gameId: GameId
 ): ResolvedPathname {
 	const mode = withRules(findMode(modeId) ?? STANDARD, rules);
+	if (mode.parts.pool?.kind === 'script-plus-hidden')
+		return resolve('/grimoire/[gameId]/extras', { gameId });
+	return resolve('/grimoire/[gameId]/game-settings', { gameId });
+}
+
+/**
+ * Where Game settings goes on to: the draft or choose screen for a mode that doesn't use the
+ * bag (Sushi Buffet, Whale Buffet), otherwise Character selection, Standard too (Trevor,
+ * 2026-10-23).
+ */
+export function afterGameSettings(gameId: GameId): ResolvedPathname {
+	const record = readGameMode(gameId);
+	const mode = withRules(findMode(record?.modeId ?? '') ?? STANDARD, record?.rules ?? []);
 	const kind = mode.parts.assignment?.kind;
 	if (kind === 'draft' || kind === 'choose-own')
 		return resolve('/grimoire/[gameId]/deal', { gameId });
-	if (mode.parts.pool?.kind === 'script-plus-hidden')
-		return resolve('/grimoire/[gameId]/extras', { gameId });
-	// Every other start goes on to Character selection, Standard too (Trevor, 2026-10-23).
 	return resolve('/grimoire/[gameId]/setup', { gameId });
 }
 
@@ -217,10 +226,10 @@ export async function continueCampaign<
 }
 
 /**
- * The start-flow step before Character selection (Trevor, 2026-10-23: one start flow, Back
- * on every step): a mode's Extras where it hides characters, else New game.
+ * The start-flow step before Game settings (Trevor, 2026-10-23: one start flow, Back on every
+ * step): a mode's Special rules where it hides characters, else New game.
  */
-export function stepBeforeCharacters(gameId: GameId): 'extras' | 'new' {
+export function stepBeforeGameSettings(gameId: GameId): 'extras' | 'new' {
 	const record = readGameMode(gameId);
 	if (!record) return 'new';
 	const mode = withRules(findMode(record.modeId) ?? STANDARD, record.rules);

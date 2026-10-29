@@ -38,8 +38,7 @@
 	import StandInDialog from './StandInDialog.svelte';
 	import AddCharactersDialog from './AddCharactersDialog.svelte';
 	import SetupBluffs from '#lib/features/bluffs/SetupBluffs.svelte';
-	import { backToNewGame, notBegun } from '#lib/features/modes/new-game-draft.ts';
-	import { stepBeforeCharacters } from '#lib/features/modes/start.ts';
+	import { notBegun, saveDraft } from '#lib/features/modes/new-game-draft.ts';
 	import { DEMON_SET, randomBluffs, toggleDemonBluff } from '#lib/features/bluffs/bluffs.ts';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import PlayerCountSheet from './PlayerCountSheet.svelte';
@@ -74,9 +73,7 @@
 
 	const game = $derived(port.game);
 	/** Where this step's Back goes: the start flow's step before until the game begins. */
-	const backStep = $derived(
-		game && notBegun(game) ? stepBeforeCharacters(game.gameId) : ('board' as const)
-	);
+	const backStep = $derived(game && notBegun(game) ? ('settings' as const) : ('board' as const));
 	const data = $derived(officialData.current);
 	// The game's own script, so a homebrew character is found even if the Scripts page moved on.
 	const script = $derived(game && data ? fromScript(game.script, data).script : undefined);
@@ -392,20 +389,22 @@
 		else void buildBag();
 	}
 
-	/**
-	 * Seats the player count (adding seats, or taking away empty ones New game made for a
-	 * larger count), builds the bag and opens the draw.
-	 */
-	async function buildBag() {
-		replaceOpen = false;
-		if (!game) return;
+	/** Seats the player count, adding seats or taking away empty ones; false if refused. */
+	function seatPlayers(): boolean {
 		// A seat for each player, selected Travellers included.
 		for (let n = port.game?.seating.length ?? 0; n < analysis.players; n++) {
-			if (!send({ type: 'AddSeat' })) return;
+			if (!send({ type: 'AddSeat' })) return false;
 		}
 		for (const seatId of port.game ? surplusSeats(port.game, analysis.players) : []) {
-			if (!send({ type: 'RemoveSeat', seatId })) return;
+			if (!send({ type: 'RemoveSeat', seatId })) return false;
 		}
+		return true;
+	}
+
+	/** Seats the player count, builds the bag and opens the draw. */
+	async function buildBag() {
+		replaceOpen = false;
+		if (!game || !seatPlayers()) return;
 		const built = send({
 			type: 'BuildBag',
 			tiles: plan.tiles,
@@ -415,6 +414,19 @@
 		if (!built) return;
 		await port.flush();
 		await openDraw(game.gameId);
+	}
+
+	/** Back to Game settings, keeping this screen's count for New game should Back go on there. */
+	async function backToGameSettings(gameId: string) {
+		saveDraft({ players: s.players });
+		await goto(resolve('/grimoire/[gameId]/game-settings', { gameId }));
+	}
+
+	/** The board without a bag, seated for this screen's count (Trevor, 2026-10-28). */
+	async function toBoard(gameId: string) {
+		if (!seatPlayers()) return;
+		await port.flush();
+		await goto(resolve('/grimoire/[gameId]', { gameId }));
 	}
 
 	/** The draw, or for a town of a mode game the next town's setup (Alternative game modes). */
@@ -623,15 +635,9 @@
 		<SetupNav
 			backHref={backStep === 'board'
 				? resolve('/grimoire/[gameId]', { gameId: game.gameId })
-				: backStep === 'extras'
-					? resolve('/grimoire/[gameId]/extras', { gameId: game.gameId })
-					: undefined}
-			onBack={backStep === 'new' ? () => void backToNewGame(game.gameId) : undefined}
-			backLabel={backStep === 'board'
-				? t('setup.grimoire')
-				: backStep === 'extras'
-					? t('modes.extras.title')
-					: t('setup.newGame')}
+				: undefined}
+			onBack={backStep === 'settings' ? () => void backToGameSettings(game.gameId) : undefined}
+			backLabel={backStep === 'board' ? t('setup.grimoire') : t('setup.gameSettings')}
 		>
 			{#snippet next()}
 				<span class="next">
@@ -640,7 +646,7 @@
 					{#if backStep !== 'board'}<IconButton
 							icon="grimoire"
 							label={t('setup.grimoire')}
-							onclick={() => void goto(resolve('/grimoire/[gameId]', { gameId: game.gameId }))}
+							onclick={() => void toBoard(game.gameId)}
 							data-testid="setup-to-board"
 						/>{/if}
 					<Button

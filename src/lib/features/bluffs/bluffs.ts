@@ -1,4 +1,5 @@
 import type { CharacterId } from '#lib/core/data/index.ts';
+import { rulesOf } from '#lib/core/data/rules/index.ts';
 import { BLUFFS_PER_SET } from '#lib/core/engine/index.ts';
 import { t } from '#lib/i18n/locale.svelte.ts';
 import { trueCharacter, type CharacterLookup, type Game } from '#lib/core/model/index.ts';
@@ -39,8 +40,11 @@ export function charactersReallyInPlay(game: Game, characters: CharacterLookup):
 	return ids;
 }
 
+/** A player who believes they are the Demon (`believesType`: the Lunatic) is in play. */
 export function lunaticInPlay(game: Game, characters: CharacterLookup): boolean {
-	return charactersReallyInPlay(game, characters).has('lunatic');
+	return [...charactersReallyInPlay(game, characters)].some(
+		(id) => rulesOf(id, characters)?.believesType === 'demon'
+	);
 }
 
 /** The Demon's bluffs that are now in play (after a seat change), to be replaced. */

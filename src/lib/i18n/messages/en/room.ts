@@ -39,7 +39,7 @@ export const room = {
 	'room.refreshText':
 		"Everyone's phone leaves the room and the old code stops working. The grimoire is not changed.",
 	// Players' join pages
-	'room.joinTitle': 'Join or resume',
+	'room.joinTitle': 'Continue game',
 	'room.pageTitle': 'Room',
 	'room.notACode': 'That is not a room code. Codes are six digits.',
 	'room.closedOrWrong': 'This room is closed, or the code is wrong.',
@@ -72,6 +72,33 @@ export const room = {
 		'Every player in the room sees the whole finished grimoire: every seat’s character and reminders.',
 	'room.shareGrim.failed': 'The grimoire could not be shared. Check the room is connected.',
 	'room.shareGrim.atEnd': 'Share the final grimoire with players',
+	// Room transfer (Trevor, 2026-10-28).
+	'room.transfer.button': 'Room transfer',
+	'room.transfer.title': 'Room transfer',
+	'room.transfer.code': 'Transfer code',
+	'room.transfer.expires': 'Expires in {time}',
+	'room.transfer.expired': 'Expired',
+	'room.transfer.bringGame': 'Bring this game',
+	'room.transfer.joinAsPlayer': 'Join as a player',
+	'room.transfer.keepStorytelling': 'Keep storytelling',
+	'room.transfer.stop': 'Stop transfer',
+	'room.transfer.failed': 'The room could not be reached. Check it is connected.',
+	'room.transfer.take': 'Take over',
+	'room.transfer.newGame': '{players} and a new game',
+	'room.transfer.game': '{players} and the game: {phase}',
+	'room.transfer.gameSetup': '{players} and the game, in setup',
+	'room.transfer.from': 'From',
+	'room.transfer.wrong': {
+		one: 'Wrong code: {count} try left',
+		other: 'Wrong code: {count} tries left'
+	},
+	'room.transfer.none': 'This room has no transfer open.',
+	'room.transfer.takeFailed': 'The room could not be taken over. Try again.',
+	'room.transfer.waiting': 'Waiting for the Storyteller to allow it.',
+	'room.transfer.denied': 'The Storyteller turned it down.',
+	'room.transfer.asking': 'wants to take over this room as its Storyteller.',
+	'room.transfer.askingDevice': 'Another device wants to take over this room as its Storyteller.',
+	'room.transfer.handedOver': 'This room has a new Storyteller.',
 	'room.choosing': 'The Storyteller is choosing a script.',
 	'room.scriptVote.title': 'Vote on the next script',
 	'room.scriptVote.button': 'Room vote',
@@ -174,7 +201,8 @@ export const room = {
 	// Players' own characters on their phones (Trevor, 2026-10-26)
 	'room.roles.heading': 'Characters on phones',
 	'room.roles.toggle': 'Players can see their character',
-	'room.roles.hint': 'Each seated player holds to see their own character on their phone.',
+	'room.roles.hint':
+		'Each seated player holds to see their own character on their phone. It turns itself off after a minute.',
 	'room.roles.seats': 'Who has seen theirs',
 	'room.roles.seen': 'Seen',
 	'room.roles.notSeen': 'Not seen',

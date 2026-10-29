@@ -18,6 +18,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterEntry from '#lib/features/characters/CharacterEntry.svelte';
+	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
 	import { provideCharacters } from '#lib/features/characters/character-context.ts';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
@@ -388,20 +389,22 @@
 							{@const character = head ? game.characters.get(head.ref.characterId) : undefined}
 							<li data-character={reminder.characterId}>
 								{#if character}
-									<!-- The character's band, the ability under it, then a strip joined below with
-									     what is known and the button (Trevor, 2026-10-23). -->
-									<CharacterEntry
-										characterId={character.id}
+									<!-- As the script draws it (Trevor, 2026-10-28): the ring and band, the
+									     ability, then what is known and the button under it. -->
+									<CharacterRow
+										{character}
+										info
 										alignment={head?.ref.seatId ? g.seats[head.ref.seatId]?.alignment : undefined}
 										playerName={head?.ref.seatId ? game.seatName(head.ref.seatId) : undefined}
 									>
-										{#snippet footer()}{@const seatId =
-												buttonRows[reminder.key]}{@render sentence()}{#if seatId}{@render dayEnd(
+										{#snippet ability()}<GlossaryText text={character.ability} />{/snippet}
+										<span class="state-line"
+											>{@render sentence()}{#if buttonRows[reminder.key]}{@render dayEnd(
 													reminder.characterId,
-													seatId
-												)}{/if}{/snippet}
-										<span class="ability">{character.ability}</span>
-									</CharacterEntry>
+													buttonRows[reminder.key]
+												)}{/if}</span
+										>
+									</CharacterRow>
 								{:else}
 									<CharacterEntry characterId={head?.ref.characterId}>
 										{#snippet end()}{@const seatId =
@@ -455,25 +458,18 @@
 							: undefined}
 						<li data-character={seat.characterId}>
 							{#if character}
-								<!-- As the reminders above: band, ability, then the button's strip (Trevor, 2026-10-23). -->
-								{#if hasDayButton(seat.characterId)}
-									<CharacterEntry
-										characterId={character.id}
-										alignment={seat.alignment}
-										playerName={game.seatName(seat.seatId)}
-									>
-										{#snippet footer()}{@render dayEnd(seat.characterId, seat.seatId)}{/snippet}
-										<span class="ability">{character.ability}</span>
-									</CharacterEntry>
-								{:else}
-									<CharacterEntry
-										characterId={character.id}
-										alignment={seat.alignment}
-										playerName={game.seatName(seat.seatId)}
-									>
-										<span class="ability">{character.ability}</span>
-									</CharacterEntry>
-								{/if}
+								<!-- As the reminders above: ring, band, ability, then the button. -->
+								<CharacterRow
+									{character}
+									info
+									alignment={seat.alignment}
+									playerName={game.seatName(seat.seatId)}
+								>
+									{#snippet ability()}<GlossaryText text={character.ability} />{/snippet}
+									{#if hasDayButton(seat.characterId)}<span class="state-line"
+											>{@render dayEnd(seat.characterId, seat.seatId)}</span
+										>{/if}
+								</CharacterRow>
 							{/if}
 						</li>
 					{/each}
@@ -578,56 +574,46 @@
 		margin-inline-start: auto;
 	}
 	/*
-	 * In a row's strip, the state reads at the ability's size and the button is the strip's
-	 * square end, split off by a line (Trevor, 2026-10-24: option A).
+	 * Under the ability, a strip with what is known and the day's button as its square end,
+	 * split off by a line (Trevor, 2026-10-24: option A). A long button ("Minion nominated")
+	 * drops under the state on a narrow phone with large text, rather than widening the row.
 	 */
-	:global(.footer) .sentence {
+	.state-line {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: stretch;
+		gap: 0 var(--space-2);
+		min-height: var(--tap-target);
+		margin-top: var(--space-1);
+		padding-inline-start: var(--space-2);
+		border-radius: var(--radius-md);
+		/* A see-through tint of the text (the hover tint), so the list's edge still shows. */
+		background: var(--surface-hover);
+		overflow: hidden;
+	}
+	.state-line .sentence {
 		align-self: center;
 		padding-block: var(--space-1);
-		font-size: 0.8rem;
-		line-height: 1.3;
-		opacity: 0.9;
 	}
-	:global(.footer) .day-end {
+	.state-line .day-end {
 		align-items: stretch;
 	}
-	/*
-	 * A long button ("Minion nominated") drops under the state on a narrow phone with large
-	 * text, rather than widening the row past the screen.
-	 */
-	.reminders li :global(.footer) {
-		flex-wrap: wrap;
-	}
-	:global(.footer) .day-end :global(.chip) {
+	.state-line .day-end :global(.chip) {
 		border: 0;
 		border-inline-start: var(--card-border);
 		border-radius: 0;
 		padding-inline: var(--space-4);
 		font-size: 0.85rem;
 	}
-	.ability {
-		font-family: var(--font-ability);
-		font-size: 0.8rem;
-		line-height: 1.3;
-		opacity: 0.9;
-	}
 	/*
 	 * Character rows read as one list split by dividers, not boxes with the background showing
-	 * between them (Trevor, 2026-10-23: L44).
+	 * between them (Trevor, 2026-10-23: L44), and with no box around them, as the script's.
 	 */
-	.rows {
-		border-radius: var(--radius-md);
-		background: var(--choice-background);
-		box-shadow: inset 0 0 0 1px var(--border);
-		overflow: hidden;
+	.rows > li {
+		padding-block: var(--space-2);
 	}
 	.rows > li + li {
-		border-top: 1px solid var(--border); /* px-ok: hairline divider */
-	}
-	.rows > li > :global(.row) {
-		border-radius: 0;
-		background: none;
-		box-shadow: none;
+		border-top: var(--card-border);
 	}
 	/* The tick is always laid out, so pressing Used never changes the chip's width. */
 	.tick {

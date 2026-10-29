@@ -25,6 +25,18 @@ export type PlayersPhase = { kind: 'setup' } | { kind: 'night' | 'day' | 'town';
 
 const PLAYERS_PHASES = ['setup', 'night', 'day', 'town'] as const;
 
+/**
+ * What players' phones show beside Setup, as the Storyteller chooses (Trevor, 2026-10-28):
+ * a candle for each seat, the town at dusk, or the dusk sky.
+ */
+export const SETUP_LOOKS = ['candles', 'town', 'dusk'] as const;
+export type SetupLook = (typeof SETUP_LOOKS)[number];
+
+/** A Setup look from the room, or nothing when it isn't one. */
+export function parseSetupLook(value: unknown): SetupLook | undefined {
+	return SETUP_LOOKS.includes(value as SetupLook) ? (value as SetupLook) : undefined;
+}
+
 /** A players' phase from the room, or nothing when it isn't one. */
 export function parsePlayersPhase(value: unknown): PlayersPhase | undefined {
 	if (typeof value !== 'object' || value === null) return undefined;

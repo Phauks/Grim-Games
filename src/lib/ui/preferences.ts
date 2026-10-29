@@ -24,6 +24,7 @@ import {
 	DAY_SECONDS_PER_ALIVE_MAX,
 	DAY_SECONDS_PER_ALIVE_MIN
 } from '#lib/core/rules/day-timer.ts';
+import { SETUP_LOOKS, type SetupLook } from '#lib/core/rules/game-phase.ts';
 import { DEFAULT_AMBIENCE, parseAmbience } from '#lib/core/sound/ambience.ts';
 import {
 	DEFAULT_ACTION_SOUNDS,
@@ -141,6 +142,8 @@ export interface Preferences {
 	 * for players", the Storyteller decides).
 	 */
 	timerForPlayers: TimerForPlayers;
+	/** What players' phones show beside Setup (Trevor, 2026-10-28). */
+	setupForPlayers: SetupLook;
 	/**
 	 * Taking the grim cover off asks for the game's Storyteller PIN (Trevor, 2026-10-26),
 	 * the same PIN as the locked draw's.
@@ -181,8 +184,11 @@ export type QrFinders = (typeof QR_FINDERS)[number];
 const TIMER_MODES = ['down', 'up'] as const;
 export type TimerMode = (typeof TIMER_MODES)[number];
 
-/** How players' phones show the day timer: a sun, the clock, or not at all. */
-export const TIMER_FOR_PLAYERS = ['sun', 'timer', 'off'] as const;
+/**
+ * How players' phones show the day timer: a sun or the clock. Always shown; the Storyteller
+ * picks only its style (Trevor, 2026-10-28), so Hidden, saved by older builds, reads as Sun.
+ */
+export const TIMER_FOR_PLAYERS = ['sun', 'timer'] as const;
 export type TimerForPlayers = (typeof TIMER_FOR_PLAYERS)[number];
 
 /** The day timer's finishing sounds, made on the device (no audio files); or none. */
@@ -278,6 +284,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
 	timerKeepAwake: true,
 	timerPerPlayer: DAY_SECONDS_PER_ALIVE,
 	timerForPlayers: 'sun',
+	setupForPlayers: 'candles',
 	coverPin: false,
 	qrCentre: 'script',
 	qrPictureWhole: false,
@@ -391,6 +398,7 @@ export function parsePreferences(raw: unknown): Preferences {
 				? input.timerKeepAwake
 				: DEFAULT_PREFERENCES.timerKeepAwake,
 		timerForPlayers: oneOf(TIMER_FOR_PLAYERS, input.timerForPlayers, 'sun'),
+		setupForPlayers: oneOf(SETUP_LOOKS, input.setupForPlayers, 'candles'),
 		coverPin: input.coverPin === true,
 		timerPerPlayer:
 			Number.isInteger(input.timerPerPlayer) &&

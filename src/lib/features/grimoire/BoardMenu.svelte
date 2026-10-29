@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { gameSettings } from '#lib/features/game-settings/game-settings.svelte.ts';
+	import GameSettingsDialog from '#lib/features/game-settings/GameSettingsDialog.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { reportWithDiagnostics } from '#lib/features/errors/report-with-diagnostics.ts';
 	import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts';
@@ -74,6 +76,8 @@
 		onEnd
 	}: Props = $props();
 	let closeRoomOpen = $state(false);
+	let gameSettingsOpen = $state(false);
+	const gameId = $derived(gameSettings.gameId);
 	const host = roomHost();
 
 	function fromMenu(action: () => void) {
@@ -89,19 +93,18 @@
 	<div class="menu">
 		<section class="group" aria-labelledby="board-menu-game">
 			<h3 id="board-menu-game" class="group-title">Game</h3>
-			<!-- Players' messages: on a phone's toolbar there is no room for it (Trevor, 2026-10-27). -->
+			<!-- Players' messages, here on every screen (Trevor, 2026-10-28: "we should not have
+			     discrepancy, keep in ..."). -->
 			{#if host.code && !watching}
-				<span class="menu-messages">
-					<Button
-						variant="quiet"
-						icon="messages"
-						data-testid="menu-messages"
-						onclick={() => fromMenu(() => inboxDialog.show())}
-					>
-						{t('room.inbox.title')}
-						{#if host.inbox.unread}<CountBadge count={host.inbox.unread} warn />{/if}
-					</Button>
-				</span>
+				<Button
+					variant="quiet"
+					icon="messages"
+					data-testid="menu-messages"
+					onclick={() => fromMenu(() => inboxDialog.show())}
+				>
+					{t('room.inbox.title')}
+					{#if host.inbox.unread}<CountBadge count={host.inbox.unread} warn />{/if}
+				</Button>
 			{/if}
 			<Button variant="quiet" icon="history" onclick={() => fromMenu(onHistory)}>History</Button>
 			<Button disabled={watching} variant="quiet" icon="demon" onclick={() => fromMenu(onBluffs)}
@@ -123,6 +126,17 @@
 			{/if}
 			{#if gameInfo}
 				<Button variant="quiet" icon="info" onclick={() => fromMenu(onGameInfo)}>Game info</Button>
+			{/if}
+			<!-- This game's own settings, as the start flow's Game settings step set them. -->
+			{#if gameId}
+				<Button
+					disabled={watching}
+					variant="quiet"
+					icon="settings"
+					onclick={() => fromMenu(() => (gameSettingsOpen = true))}
+				>
+					{t('setup.gameSettings')}
+				</Button>
 			{/if}
 			{#if onCharacterSelection}
 				<Button
@@ -247,6 +261,8 @@
 	</div>
 </Dialog>
 
+{#if gameId}<GameSettingsDialog bind:open={gameSettingsOpen} {gameId} />{/if}
+
 <ConfirmDialog
 	bind:open={closeRoomOpen}
 	title={t('room.closeRoomTitle')}
@@ -296,15 +312,6 @@
 	}
 	.menu-nav {
 		display: none;
-	}
-	.menu-messages {
-		display: contents;
-	}
-	/* Wider screens have Messages on the toolbar. */
-	@media (min-width: 480px) {
-		.menu-messages {
-			display: none;
-		}
 	}
 	/* The narrowest phones keep the app's navigation here instead of on the toolbar. */
 	@media (max-width: 359.98px) {

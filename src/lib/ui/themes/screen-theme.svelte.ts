@@ -6,7 +6,29 @@ import type { Theme } from './types.ts';
  * on the page, so the screen's dialogs, sheets and toasts take it too.
  */
 class ScreenTheme {
-	current = $state<Theme | undefined>();
+	current = $state.raw<Theme | undefined>();
+	/**
+	 * Which screen showed `current`, kept outside Svelte's state: a page being torn down during
+	 * a move still reads the state as it was before the move, so it can't tell its own theme
+	 * from the next page's.
+	 */
+	#shownBy: object | undefined;
+
+	/**
+	 * Shows `theme` and returns what takes it away again. Taking it away leaves a newer screen's
+	 * theme alone: on a move between two themed pages the new page is set up before the old one
+	 * is torn down, so the old page's cleanup runs last.
+	 */
+	show(theme: Theme | undefined): () => void {
+		const screen = {};
+		this.#shownBy = screen;
+		this.current = theme;
+		return () => {
+			if (this.#shownBy !== screen) return;
+			this.#shownBy = undefined;
+			this.current = undefined;
+		};
+	}
 }
 
 export const screenTheme = new ScreenTheme();

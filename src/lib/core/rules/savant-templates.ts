@@ -685,7 +685,11 @@ export const SAVANT_TEMPLATES: readonly Template[] = [
 		group: 'characters',
 		instances: (f) =>
 			[...f.inPlay]
-				.filter((id) => id !== 'savant' && f.characters.get(id)?.type !== 'demon')
+				.filter(
+					(id) =>
+						rulesOf(id, f.characters)?.dayClaim !== 'statements' &&
+						f.characters.get(id)?.type !== 'demon'
+				)
 				.map((id) => ({
 					blanks: id,
 					parts: [text('The '), { character: id }, text(' is drunk or poisoned.')],

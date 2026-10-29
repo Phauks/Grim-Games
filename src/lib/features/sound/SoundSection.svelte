@@ -11,6 +11,7 @@
 	import AmbienceSettings from './AmbienceSettings.svelte';
 	import { playSound } from './sound.ts';
 	import VibrateToggle from './VibrateToggle.svelte';
+	import CallTownPushToggle from '#lib/features/room/CallTownPushToggle.svelte';
 
 	/**
 	 * Plays the timer sound once the volume slider rests, so a drag doesn't restart it every
@@ -69,6 +70,7 @@
 		playSound(callSound);
 	}}
 />
+<CallTownPushToggle />
 
 <AmbienceSettings />
 

@@ -34,6 +34,7 @@ import {
 } from '#lib/core/model/index.ts';
 import { reportError } from '#lib/features/errors/report.svelte.ts';
 import { endedGames, seatLayouts } from '#lib/features/grimoire/device-notes.ts';
+import { gameSettings } from '#lib/features/game-settings/game-settings.svelte.ts';
 import { allowedOffScriptIn, duplicatesAllowedIn } from '#lib/features/modes/game-mode.ts';
 import { IdbGameStore } from './idb-store.ts';
 import { markReplaced, takeNextGame } from './next-game.ts';
@@ -111,6 +112,7 @@ export class OpenGame {
 		if (next.drop) {
 			await store.delete(next.from);
 			seatLayouts.forget(next.from);
+			gameSettings.forget(next.from);
 			endedGames.reopen(next.from);
 		} else if (!endedGames.read()[next.from]) {
 			// An ended game keeps its end, winner and reason.

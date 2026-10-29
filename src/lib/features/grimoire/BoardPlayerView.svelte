@@ -13,6 +13,7 @@
 	import { travellersInPlay } from '#lib/features/player/travellers-in-play.ts';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
 	import { tableState } from '#lib/features/room/table-state.svelte.ts';
+	import { seatPresence } from '#lib/core/sync/seat-presence.ts';
 
 	/**
 	 * What players see on /play, drawn from the Storyteller's game: where the game is up to and
@@ -44,11 +45,16 @@
 	// The very state a phone in the room gets (Trevor, 2026-10-27: "Design it so that these
 	// additions move in automatically"), so the status row and the town show what phones show.
 	const town = $derived(tableState(roomHost(), game, characters, layout, corner));
+	// Who is connected, as the room tells the Storyteller; with no room, nothing to say.
+	const presence = $derived.by(() => {
+		const host = roomHost();
+		return host.code ? seatPresence(host.members, (id) => host.isHere(id)) : undefined;
+	});
 	const guessKey = $derived(notebook ?? `storyteller:${game.gameId}`);
 </script>
 
 <!-- The row over the tabs, as on /play: where the game is up to and the day timer. -->
-<PlayerStatusRow table={town} />
+<PlayerStatusRow table={town} {presence} />
 <PlayerScreen
 	{script}
 	players={dealtSeats(town.seats).dealt}

@@ -7,6 +7,7 @@
 		AnswerValue,
 		ChosenPlayers,
 		ChosenPlayersRow,
+		InfoChoice,
 		InfoPicker,
 		LearnedRole,
 		LearnedRoles,
@@ -29,9 +30,10 @@
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
+	import NightReasonTag from './NightReasonTag.svelte';
 	import NightWhy from './NightWhy.svelte';
 	import CharacterSet from './CharacterSet.svelte';
-	import { seatName } from './night-steps.ts';
+	import { answerValueText, seatName } from './night-steps.ts';
 
 	/**
 	 * What the game says for a night step (Trevor, 2026-10-16), from core's `withNightInfo`:
@@ -51,9 +53,19 @@
 		onShowCharacters?: (set: Extract<AnswerValue, { kind: 'characters' }>) => void;
 		/** Show the "Your number is" info token with a suggested number (a number step). */
 		onShowNumber?: (n: number) => void;
+		/** A picker's row was shown to the player: record it (`record-shown.ts`). */
+		onRecord?: (picker: InfoPicker, choice: InfoChoice) => void;
 	}
 
-	let { grimoire, step, compact = false, onShow, onShowCharacters, onShowNumber }: Props = $props();
+	let {
+		grimoire,
+		step,
+		compact = false,
+		onShow,
+		onShowCharacters,
+		onShowNumber,
+		onRecord
+	}: Props = $props();
 	const headingId = $props.id();
 
 	const game = $derived(grimoire.game);
@@ -61,23 +73,6 @@
 	const assistance = $derived(preferences.current.assistance);
 	const info = $derived(step.info);
 	const name = (seatId: SeatId) => seatName(game, seatId);
-
-	function valueText(v: AnswerValue): string {
-		switch (v.kind) {
-			case 'yes-no':
-				return v.value ? 'Yes' : 'No';
-			case 'character':
-				// Drawn as a badge (the value snippet); only its id here.
-				return v.value;
-			case 'characters':
-				// Drawn as badges (the characters snippet); only the ids here.
-				return v.value.join(', ');
-			case 'number':
-				return String(v.value);
-			case 'none':
-				return v.reason;
-		}
-	}
 
 	/**
 	 * Why an answer may not be the truth: the Vortox, registration. Allowed values are drawn
@@ -88,6 +83,8 @@
 		text: string;
 		/** A rule that changes what may be given (the Vortox), drawn as a warning. */
 		warn?: boolean;
+		/** The character it is about, shown before the text (the Vortox). */
+		character?: CharacterId;
 		/** Players named after the text, each with their character. */
 		seats?: readonly SeatId[];
 		allowed?: readonly AnswerValue[];
@@ -95,7 +92,7 @@
 	function flags(r: Reliability & { possible?: AnswerValue[] }, listed = false): Flag[] {
 		const out: Flag[] = [];
 		// A listed answer's rows already say which values the Vortox allows.
-		if (r.mustBeFalse && !listed) out.push({ text: 'Vortox: must be false', warn: true });
+		if (r.falseBy && !listed) out.push({ text: 'must be false', warn: true, character: r.falseBy });
 		if (r.misregister.length > 0)
 			out.push({ text: 'Might register falsely:', seats: r.misregister });
 		if (r.possible && r.possible.length > 1 && !listed)
@@ -179,6 +176,23 @@
 		JSON.stringify([p.seatId, row.target, row.reason, row.marked ?? false]);
 	/** The character picked for a row that offers several (a Recluse shown as a Minion). */
 	let shownAs = $state<Record<string, CharacterId>>({});
+	/**
+	 * Which rows' "Shown as" lists are open: Show to player with nothing picked opens the list
+	 * instead of doing nothing (Trevor, 2026-10-28: with the Investigator drunk it wasn't clear
+	 * a character had to be picked first).
+	 */
+	let listOpen = $state<Record<string, boolean>>({});
+	/** Show the picked character, or open the row's list to pick one. */
+	function showOrPick(key: string, id: CharacterId | undefined) {
+		if (id) onShow?.(id);
+		else listOpen = { ...listOpen, [key]: true };
+	}
+	/** Shows a role and records it: whole once the second player of a pair is known. */
+	function showRole(p: InfoPicker, row: LearnedRole, key: string, id: CharacterId | undefined) {
+		showOrPick(key, id);
+		const seats = row.other ? [row.target, row.other] : [row.target];
+		if (id) onRecord?.(p, { seats, characterId: id });
+	}
 	const shownRole = (p: InfoPicker, row: LearnedRole): CharacterId | undefined =>
 		row.characterIds.length === 1 ? row.characterIds[0] : shownAs[rowKey(p, row)];
 	/**
@@ -263,7 +277,7 @@
 				if (a.kind === 'characters') return { set: a, text: note };
 				return a.kind === 'character'
 					? { characterId: a.value, text: note }
-					: { text: `${valueText(a)}${note}` };
+					: { text: `${answerValueText(a)}${note}` };
 			}
 			if (info.kind === 'picker') {
 				return {
@@ -299,15 +313,20 @@
 {#snippet value(v: AnswerValue)}{#if v.kind === 'character'}<CharacterBadge
 			characterId={v.value}
 			character={characters.get(v.value)}
-		/>{:else if v.kind === 'characters'}<CharacterSet value={v} {characters} />{:else}{valueText(
-			v
-		)}{/if}{/snippet}
+		/>{:else if v.kind === 'characters'}<CharacterSet
+			value={v}
+			{characters}
+		/>{:else}{answerValueText(v)}{/if}{/snippet}
 
-{#snippet flagBody(flag: Flag)}{flag.text}{#each flag.seats ?? [] as seatId, n (seatId)}{n
-			? ', '
-			: ' '}{@render player(seatId)}{/each}{#each flag.allowed ?? [] as v, n (n)}{n
-			? ' / '
-			: ' '}{@render value(v)}{/each}{/snippet}
+{#snippet flagBody(flag: Flag)}{#if flag.character}<CharacterBadge
+			characterId={flag.character}
+			character={characters.get(flag.character)}
+		/>
+	{/if}{flag.text}{#each flag.seats ?? [] as seatId, n (seatId)}{n ? ', ' : ' '}{@render player(
+			seatId
+		)}{/each}{#each flag.allowed ?? [] as v, n (n)}{n ? ' / ' : ' '}{@render value(
+			v
+		)}{/each}{/snippet}
 
 {#snippet flagLines(list: Flag[])}{#each list as flag (flag.text)}
 		<span class="flag" class:warn={flag.warn}>
@@ -349,6 +368,8 @@
 					label="Shown as"
 					hideLabel
 					placeholder="Shown as"
+					attention={!id}
+					bind:open={() => listOpen[key] ?? false, (v) => (listOpen = { ...listOpen, [key]: v })}
 					value={id}
 					options={o.otherCharacters.map((c) => ({
 						value: c,
@@ -375,19 +396,18 @@
 			{:else if o.value.kind === 'characters'}
 				<CharacterSet value={o.value} {characters} />
 			{:else}
-				<strong>{valueText(o.value)}</strong>
+				<strong>{answerValueText(o.value)}</strong>
 			{/if}
 			{#if i === 0 && a.because.length > 0}<span class="because"
 					>({@render players(a.because)})</span
 				>{/if}
 		</span>
-		{@render reasonTag(o.reason)}
+		<NightReasonTag {grimoire} reason={o.reason} />
 		{#if o.value.kind === 'number' && onShowNumber}
 			{@const n = o.value.value}
 			<Button variant="quiet" onclick={() => onShowNumber(n)}>Show to player</Button>
 		{:else if o.value.kind === 'character' && onShow}
-			<Button variant="quiet" disabled={!id} onclick={() => id && onShow(id)}>Show to player</Button
-			>
+			<Button variant="quiet" onclick={() => showOrPick(key, id)}>Show to player</Button>
 		{:else if o.value.kind === 'characters' && !o.anyOther && onShowCharacters}
 			{@const v = o.value}
 			<Button variant="quiet" onclick={() => onShowCharacters(v)}>Show to player</Button>
@@ -405,7 +425,7 @@
 		{:else if a.kind === 'characters'}
 			<CharacterSet value={a} {characters} />
 		{:else}
-			<strong>{valueText(a)}</strong>
+			<strong>{answerValueText(a)}</strong>
 		{/if}
 		{#if a.because.length > 0}<span class="because">({@render players(a.because)})</span>{/if}
 	</span>
@@ -480,14 +500,16 @@
 											{#if v.seats.length > 0}<span class="with">and one of</span>{/if}{/if}
 										{@render players(v.seats)}
 									</span>
-									{#if v.reason === 'registers'}<span class="tag"
-											>Registers: {@render players(v.registered ?? [])}</span
-										>{:else if v.reason === 'unreliable'}<span class="tag warn"
-											><Icon name="warning" />Not reliable</span
-										>{:else if v.reason === 'vortox'}<span class="tag warn">Vortox</span>{/if}
+									<NightReasonTag {grimoire} reason={v.reason} registered={v.registered} />
 									{#if v.number !== undefined && onShowNumber}
 										{@const n = v.number}
-										<Button variant="quiet" onclick={() => onShowNumber(n)}>Show to player</Button>
+										<Button
+											variant="quiet"
+											onclick={() => {
+												onShowNumber(n);
+												onRecord?.(p, { seats: [], number: n });
+											}}>Show to player</Button
+										>
 									{/if}
 								</li>
 							{/each}
@@ -575,7 +597,7 @@
 	{#if roles.none}
 		<li data-reason={roles.none}>
 			<span class="main option"><strong>None</strong></span>
-			{@render reasonTag(roles.none)}
+			<NightReasonTag {grimoire} reason={roles.none} />
 			{#if onShowNumber}
 				<Button variant="quiet" onclick={() => onShowNumber(0)}>Show to player</Button>
 			{/if}
@@ -584,7 +606,7 @@
 	{#if roles.anyOther}
 		<li data-reason={roles.anyOther}>
 			<span class="main option"><strong>Any other</strong></span>
-			{@render reasonTag(roles.anyOther)}
+			<NightReasonTag {grimoire} reason={roles.anyOther} />
 		</li>
 	{/if}
 {/snippet}
@@ -598,7 +620,7 @@
 					{@render players(row.seats)}{/if}{/if}
 		</span>
 		{#if row.marked}<span class="tag marked"><Icon name="reminder" />Marked</span>{/if}
-		{@render reasonTag(row.reason, row.registered)}
+		<NightReasonTag {grimoire} reason={row.reason} registered={row.registered} />
 	</li>
 {/snippet}
 
@@ -606,22 +628,9 @@
 	{#if choices.anyOther}
 		<li data-reason={choices.anyOther}>
 			<span class="main option"><strong>Any other</strong></span>
-			{@render reasonTag(choices.anyOther)}
+			<NightReasonTag {grimoire} reason={choices.anyOther} />
 		</li>
 	{/if}
-{/snippet}
-
-{#snippet reasonTag(
-	reason: LearnedRole['reason'] | AnswerOption['reason'],
-	registered: readonly SeatId[] = []
-)}
-	{#if reason === 'registers'}<span class="tag"
-			>Registers{#if registered.length > 0}: {@render players(registered)}{/if}</span
-		>{:else if reason === 'unreliable'}<span class="tag warn"
-			><Icon name="warning" />Not reliable</span
-		>{:else if reason === 'vortox'}<span class="tag warn">Vortox</span
-		>{:else if reason === 'invalid'}<span class="tag warn"><Icon name="warning" />Not valid</span
-		>{/if}
 {/snippet}
 
 <!--
@@ -643,6 +652,8 @@
 					label="Shown as"
 					hideLabel
 					placeholder="Shown as"
+					attention={!id}
+					bind:open={() => listOpen[key] ?? false, (v) => (listOpen = { ...listOpen, [key]: v })}
 					value={id}
 					options={row.characterIds.map((c) => ({
 						value: c,
@@ -664,16 +675,17 @@
 				</Select>
 			{/if}
 			<PlayerBadge name={name(row.target)} />
-			<span class="with">and</span>
-			{#if row.other}<PlayerBadge name={name(row.other)} />{:else}<span class="with"
-					>any other player</span
-				>{/if}
+			{#if p.seatCount > 1}
+				<span class="with">and</span>
+				{#if row.other}<PlayerBadge name={name(row.other)} />{:else}<span class="with"
+						>any other player</span
+					>{/if}
+			{/if}
 		</span>
 		{#if row.marked}<span class="tag marked"><Icon name="reminder" />Marked</span>{/if}
-		{@render reasonTag(row.reason, row.registered)}
+		<NightReasonTag {grimoire} reason={row.reason} registered={row.registered} />
 		{#if onShow}
-			<Button variant="quiet" disabled={!id} onclick={() => id && onShow(id)}>Show to player</Button
-			>
+			<Button variant="quiet" onclick={() => showRole(p, row, key, id)}>Show to player</Button>
 		{/if}
 	</li>
 {/snippet}
@@ -749,9 +761,6 @@
 		gap: var(--space-1);
 		font-size: 0.85rem;
 		--icon-size: 1em;
-	}
-	.tag.warn {
-		color: var(--evil-text);
 	}
 	/*
 	 * A row the character's reminders on the board mark: the one the Storyteller already
