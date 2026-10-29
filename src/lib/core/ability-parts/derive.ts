@@ -76,14 +76,14 @@ const has = (conditions: Condition[] | undefined, test: (c: Condition) => boolea
 	!!conditions?.some(test);
 
 /** Every effect of a clause, with those an `arm` or `later` holds. */
-function allEffects(effects: readonly Effect[]): Effect[] {
+export function allEffects(effects: readonly Effect[]): Effect[] {
 	return effects.flatMap((e) =>
 		e.do === 'arm' || e.do === 'later' ? [e, ...allEffects(e.effects)] : [e]
 	);
 }
 
 /** Whether a clause wakes its player: on the first night, on other nights. */
-function clauseWakes(clause: Clause): { first: boolean; other: boolean } {
+export function clauseWakes(clause: Clause): { first: boolean; other: boolean } {
 	const { when } = clause;
 	const effects = allEffects(clause.effects);
 	if (when.at === 'night')
