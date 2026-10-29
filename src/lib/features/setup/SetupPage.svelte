@@ -34,6 +34,7 @@
 	import CharacterChoice from './CharacterChoice.svelte';
 	import CountsBar from './CountsBar.svelte';
 	import type { SetupGamePort } from './game-port.ts';
+	import SetupCandles from './SetupCandles.svelte';
 	import SetupCheckPanel from './SetupCheckPanel.svelte';
 	import StandInDialog from './StandInDialog.svelte';
 	import AddCharactersDialog from './AddCharactersDialog.svelte';
@@ -493,6 +494,8 @@
 		>{/snippet}
 	{#snippet side()}
 		<ErrorBoundary area="setup">
+			<!-- Who has connected, as players' phones see it (Trevor, 2026-10-29). -->
+			<SetupCandles {game} />
 			<div class="storyteller" onfocusout={saveStoryteller}>
 				<TextField
 					label={t('modes.storytellerName')}
