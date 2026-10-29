@@ -1,8 +1,9 @@
 import { expect, test, type Page } from '@playwright/test';
-import { pickScript, pastGameSettings } from './new-game.ts';
+import { pickScript } from './new-game.ts';
 
-// Game settings (Trevor, 2026-10-28): a start-flow step of its own, after Special rules, for
-// the settings kept per game. Each game keeps its own; Settings holds the default for new games.
+// Game settings (Trevor, 2026-10-28), the settings kept per game: each game keeps its own;
+// Settings holds the default for new games. Since 2026-10-29 it is no longer a start-flow step:
+// it opens over Character selection, with the settings profile the game starts with.
 
 const marks = (page: Page) => page.getByTestId('seat').first().getByTestId('nomination-marks');
 
@@ -10,21 +11,28 @@ async function startToGameSettings(page: Page) {
 	await page.goto('/new');
 	await pickScript(page, 'Trouble Brewing');
 	await page.getByRole('button', { name: 'Create game' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/game-settings$/);
-	return page.getByTestId('game-settings');
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
+	await page.getByTestId('game-options').getByRole('button', { name: 'Game settings' }).tap();
+	return page.getByRole('dialog', { name: 'Game settings' }).getByTestId('game-settings');
 }
 
 async function onToBoard(page: Page) {
-	await pastGameSettings(page);
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
+	await page
+		.getByRole('dialog', { name: 'Game settings' })
+		.getByRole('button', { name: 'Close' })
+		.tap();
 	await page.getByTestId('setup-to-board').tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
 }
 
-test('Game settings is its own start step, and a choice there is kept for that game only', async ({
+test('Game settings opens on Character selection, and a choice there is kept for that game only', async ({
 	page
 }) => {
 	const settings = await startToGameSettings(page);
+	// The profile the game starts with comes first, until the game begins.
+	await expect(settings.getByRole('combobox', { name: 'Settings profile' })).toHaveText(
+		/My settings/
+	);
 	const track = settings.getByRole('checkbox', { name: 'Track nominations', includeHidden: true });
 	await expect(track).not.toBeChecked();
 	// The day timer is always on players' phones: only its style is a choice (Trevor, 2026-10-28).
@@ -48,6 +56,7 @@ test('Game settings is its own start step, and a choice there is kept for that g
 		.getByRole('button', { name: 'Game settings' })
 		.tap();
 	const dialog = page.getByRole('dialog', { name: 'Game settings' });
+	await expect(dialog.getByRole('combobox', { name: 'Settings profile' })).toHaveCount(0);
 	await expect(
 		dialog.getByRole('checkbox', { name: 'Track nominations', includeHidden: true })
 	).toBeChecked();
@@ -65,14 +74,14 @@ test('Game settings is its own start step, and a choice there is kept for that g
 	).not.toBeChecked();
 });
 
-test('Back from Game settings returns to New game, and Character selection comes back to it', async ({
-	page
-}) => {
+test('Game settings is no step: Character selection goes back to New game', async ({ page }) => {
 	await startToGameSettings(page);
-	await pastGameSettings(page);
+	await page
+		.getByRole('dialog', { name: 'Game settings' })
+		.getByRole('button', { name: 'Close' })
+		.tap();
 	const bar = page.getByRole('navigation', { name: 'Setup', exact: true });
-	await bar.getByRole('button', { name: 'Game settings' }).tap();
-	await expect(page).toHaveURL(/\/game-settings$/);
+	await expect(bar.getByRole('button', { name: 'Game settings' })).toHaveCount(0);
 	await bar.getByRole('button', { name: 'New game' }).tap();
 	await expect(page).toHaveURL(/\/new#back$/);
 });

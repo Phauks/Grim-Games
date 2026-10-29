@@ -1,9 +1,11 @@
 <script lang="ts">
+	import type { Snippet } from 'svelte';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import type { MessageKey } from '#lib/i18n/catalog.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
+	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import { account } from '#lib/features/account/account.svelte.ts';
 	import ProfileIcon from '#lib/features/account/ProfileIcon.svelte';
 	import { friends } from '#lib/features/friends/friends.svelte.ts';
@@ -12,6 +14,7 @@
 		ACCOUNT_ITEM,
 		APP_ITEMS,
 		FRIENDS_ITEM,
+		HISTORY_ITEM,
 		HOME_ITEM,
 		isCurrent,
 		NAV_SECTIONS,
@@ -21,6 +24,8 @@
 	} from './nav.ts';
 	import { openSettings } from './shell.ts';
 	import BuildLine from '#lib/features/about/BuildLine.svelte';
+	import { buildInfo } from '#lib/build-info.ts';
+	import { buildSwitch } from '#lib/features/about/build-switch.ts';
 	import { reportWithDiagnostics } from '#lib/features/errors/report-with-diagnostics.ts';
 
 	interface Props {
@@ -31,7 +36,7 @@
 	let { onChoose }: Props = $props();
 
 	const label = (key: MessageKey): string => (t as (key: MessageKey) => string)(key);
-	const listId = $props.id();
+	const otherBuild = $derived(buildSwitch(buildInfo, page.url));
 </script>
 
 {#snippet link(item: NavItem)}
@@ -61,55 +66,88 @@
 	</li>
 {/snippet}
 
+<!-- Opens and closes from its heading, remembered on this device; the sidebar and the drawer
+     share the choice (Trevor, 2026-10-29: "items in the left sidebar should be collapsible"). -->
+{#snippet section(id: string, title: string, count: number, items: Snippet)}
+	<Collapsible {title} level={3} storageKey="nav-{id}" {count}>
+		<ul aria-label={title}>{@render items()}</ul>
+	</Collapsible>
+{/snippet}
+
 <!-- Plain links in labelled sections: a screen that must confirm leaving catches them in the root layout. -->
 <div class="nav-list">
 	<ul class="top">{@render link(HOME_ITEM)}</ul>
-	{#each NAV_SECTIONS as section (section.id)}
-		<h3 id="{listId}-{section.id}">{label(section.label)}</h3>
-		<ul aria-labelledby="{listId}-{section.id}">
-			{#each section.items as item (item.id)}{@render link(item)}{/each}
-		</ul>
-	{/each}
-	{#if account.admin}
-		<h3 id="{listId}-admin">{t('shell.navSectionAdmin')}</h3>
-		<ul aria-labelledby="{listId}-admin">
-			{@render link(REPORTS_ITEM)}{@render link(LIVE_GAMES_ITEM)}
-		</ul>
-	{/if}
-	<!-- Account and Settings, last in the sidebar and the drawer alike (2026-10-22). -->
-	<h3 id="{listId}-you">{t('shell.navSectionYou')}</h3>
-	<ul aria-labelledby="{listId}-you">
-		{@render link(ACCOUNT_ITEM)}
-		{@render link(FRIENDS_ITEM)}
-		<li>
-			<button
-				type="button"
-				onclick={() => {
-					onChoose?.();
-					openSettings();
-				}}
-			>
-				<Icon name="settings" />
-				<span>{t('shell.settings')}</span>
-			</button>
-		</li>
-	</ul>
-	<!-- The app's own pages, where the footer had them (2026-10-23). -->
-	<h3 id="{listId}-app">{t('shell.navSectionApp')}</h3>
-	<ul aria-labelledby="{listId}-app">
-		{#each APP_ITEMS as item (item.id)}{@render link(item)}{/each}
-	</ul>
-	<!-- Report an issue opens a form, not a page, so it reads as small text like the build line
-	     under it rather than as a link in the menu (Trevor, 2026-10-23). -->
-	<p class="report">
-		<button
-			type="button"
-			onclick={() => {
-				onChoose?.();
-				void reportWithDiagnostics();
-			}}>{t('shell.reportIssue')}</button
-		>
-	</p>
+	<div class="sections">
+		{#each NAV_SECTIONS as navSection (navSection.id)}
+			{#snippet items()}
+				{#each navSection.items as item (item.id)}{@render link(item)}{/each}
+			{/snippet}
+			{@render section(navSection.id, label(navSection.label), navSection.items.length, items)}
+		{/each}
+		{#if account.admin}
+			{#snippet adminItems()}
+				{@render link(REPORTS_ITEM)}{@render link(LIVE_GAMES_ITEM)}
+			{/snippet}
+			{@render section('admin', t('shell.navSectionAdmin'), 2, adminItems)}
+		{/if}
+		<!-- Account, Friends, History and Settings, last in the sidebar and the drawer alike (2026-10-22). -->
+		{#snippet youItems()}
+			{@render link(ACCOUNT_ITEM)}
+			{@render link(FRIENDS_ITEM)}
+			{@render link(HISTORY_ITEM)}
+			<li>
+				<button
+					type="button"
+					onclick={() => {
+						onChoose?.();
+						openSettings();
+					}}
+				>
+					<Icon name="settings" />
+					<span>{t('shell.settings')}</span>
+				</button>
+			</li>
+		{/snippet}
+		{@render section('you', t('shell.navSectionYou'), 4, youItems)}
+		<!-- The app's own pages, where the footer had them (2026-10-23), then Report an issue and the
+		     switch to the other build as menu rows, not small text (Trevor, 2026-10-29). -->
+		{#snippet appItems()}
+			{#each APP_ITEMS as item (item.id)}{@render link(item)}{/each}
+			<li>
+				<button
+					type="button"
+					onclick={() => {
+						onChoose?.();
+						void reportWithDiagnostics();
+					}}
+				>
+					<Icon name="report" />
+					<span>{t('shell.reportIssue')}</span>
+				</button>
+			</li>
+			{#if otherBuild}
+				<li>
+					<!-- Each build is its own origin, so its device data is separate (2026-10-19). An
+					     absolute link to the other build's host, so there is no app path to resolve. -->
+					<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+					<a href={otherBuild.href} title={t('shell.switchBuildTitle')} data-testid="switch-build">
+						<Icon name="switchBuild" />
+						<span
+							>{otherBuild.to === 'beta'
+								? t('shell.switchToBeta')
+								: t('shell.switchToProduction')}</span
+						>
+					</a>
+				</li>
+			{/if}
+		{/snippet}
+		{@render section(
+			'app',
+			t('shell.navSectionApp'),
+			APP_ITEMS.length + (otherBuild ? 2 : 1),
+			appItems
+		)}
+	</div>
 	<BuildLine />
 </div>
 
@@ -121,23 +159,24 @@
 		padding: 0;
 		list-style: none;
 	}
-	h3 {
-		margin: var(--space-4) 0 var(--space-1);
-		padding: 0 var(--space-3);
+	/* Section headings keep the menu's small capitals; the links under them don't. */
+	.sections {
+		--section-title-size: 0.75rem;
+		--collapsible-heading: var(--on-surface-muted);
+		margin-top: var(--space-2);
 		font-family: var(--font-control);
-		font-size: 0.75rem;
 		letter-spacing: 0.06em;
 		text-transform: uppercase;
-		color: var(--on-surface-muted);
+	}
+	.sections ul {
+		letter-spacing: normal;
+		text-transform: none;
 	}
 	.profile {
 		display: grid;
 		flex: none;
 		width: var(--icon-size);
 		height: var(--icon-size);
-	}
-	h3:first-child {
-		margin-top: 0;
 	}
 	a,
 	button {
@@ -162,24 +201,6 @@
 		background: var(--surface-raised);
 		color: var(--heading);
 		box-shadow: inset 3px 0 0 var(--accent-edge);
-	}
-	/* As BuildLine's text: small, muted and underlined. */
-	.report {
-		margin: var(--space-2) 0 0;
-		padding: 0 var(--space-3);
-		font-size: 0.8rem;
-	}
-	.report button {
-		display: inline-flex;
-		width: auto;
-		padding: 0;
-		color: var(--on-surface-muted);
-		font-family: inherit;
-		font-weight: inherit;
-		text-decoration: underline;
-	}
-	.report button:hover {
-		background: none;
 	}
 	@media (hover: hover) and (pointer: fine) {
 		a:not([aria-current='page']):hover,

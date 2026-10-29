@@ -22,7 +22,7 @@ longest cell, so two PRs that each added a row used to conflict over the whole t
 - A page reached from the sidebar: `ui/layout/Page.svelte` (title, actions, subtitle, toolbar, side; puts the hamburger before the title while no sidebar shows) (enforced by review)
 - A title whose words must not break in the middle: `fitWords` from `ui/fit-words.ts` (shrinks the text until its longest word fits; Page's title uses it) (enforced by `e2e/play.e2e.ts`)
 - A board drawn inside a dialog that must fit the room left under what sits above it: `fitInDialog` from `ui/fit-in-dialog.ts` (sets `--fit-height` in a wide box; the player grim uses it in the Storyteller's player view) (enforced by `e2e/player-view-parity.e2e.ts`)
-- The menu (You, App, build line, CCC logo): `features/shell/NavList.svelte`, in the sidebar (`AppNav`) and the drawer (`NavDrawer`) alike; there is no app header or footer (enforced by `e2e/navigation.e2e.ts`)
+- The menu (You, App, build line, CCC logo): `features/shell/NavList.svelte`, its sections each a `Collapsible` (Trevor, 2026-10-29), in the sidebar (`AppNav`) and the drawer (`NavDrawer`) alike; there is no app header or footer (enforced by `e2e/navigation.e2e.ts`)
 - A bottom sheet (a centred panel on a computer): `ui/primitives/BottomSheet.svelte`; `wide` for two columns, laid out by the sheet's own width (enforced by review)
 - A short menu of actions behind ⋯: `ui/primitives/Menu.svelte` (icon trigger, one row per action, disabled rows kept in place; Join game's ⋯) (enforced by `e2e/public-town.e2e.ts`)
 - The rooms this device joined as a player: `features/room/YourGames.svelte` (Join or resume's As player, above the saved games of `features/grimoire/SavedGamesSection.svelte`) (enforced by review)
@@ -41,7 +41,7 @@ longest cell, so two PRs that each added a row used to conflict over the whole t
 - A secret shown only while held (a character on the draw or on a phone): `ui/primitives/HoldToSee.svelte` (RevealDialog's hold to see, the player's Your character); `noLongPress` from `ui/no-long-press.ts` stops the phone's long-press buzz around it (enforced by review)
 - One choice among a few: `ui/primitives/Select.svelte` (enforced by `grim/dropdown-choice`)
 - One choice among many, found by typing: `ui/primitives/Combobox.svelte` (shares Select's list styles) (enforced by review)
-- A setting kept per game (track nominations, the day timer and the Setup look on players' phones, seconds per living player, the bag draw's switches): read and change it through `gameSettings` in `features/game-settings/game-settings.svelte.ts`, never `preferences`; Settings' rows call `setDefault`, a place of use calls `set`. The rows are `features/game-settings/GameSettingsRows.svelte` (the start flow's Game settings and Board ⋯ › Game) and `BagDrawRows.svelte` (also Settings and the bag's cog) (enforced by `e2e/game-settings.e2e.ts`)
+- A setting kept per game (track nominations, the day timer and the Setup look on players' phones, seconds per living player, the bag draw's switches): read and change it through `gameSettings` in `features/game-settings/game-settings.svelte.ts`, never `preferences`; Settings' rows call `setDefault`, a place of use calls `set`. The rows are `features/game-settings/GameSettingsRows.svelte` in `GameSettingsDialog.svelte` (Character selection's Game settings, with the settings profile before the game begins, and Board ⋯ › Game) and `BagDrawRows.svelte` (also Settings and the bag's cog) (enforced by `e2e/game-settings.e2e.ts`)
 - Choosing the script for a new game: `features/modes/ScriptPicker.svelte`: base three as chips, every other script by search, the Library in a dialog (enforced by review)
 - The rules behind a screen a mode or rule opens: `features/modes/RuleHeader.svelte` with `spawnedBy(gameId, has)` (`spawned-by.ts`): name, description, Inspect (enforced by review)
 - Cancel and Confirm in a modal: `ui/primitives/ModalActions.svelte` (enforced by `grim/modal-actions`)
@@ -180,7 +180,7 @@ character: a rule becomes a behaviour with parameters that any character can use
 - Own wake conditions (`rules/wakes-when.ts`, read by `night-steps.ts` `stepWakes`: the King once the dead equal or outnumber the living, the Choirboy when the Demon killed the King, the Seamstress until her No Ability): `wakesWhen`, new
 - Keeps its ability when dead (`dead-characters.ts`: the Vigormortis's Has Ability on a Minion it killed): `keepsAbility`, new
 - Abilities gained from another player (`gained-abilities.ts`, was the Pixie hard-code and `GAINED_FROM` in `death-causes.ts`: the Cannibal's Lunch, the Pixie's Mad and Has Ability, the Philosopher's swap or Drunk): `gainedFrom`, moved
-- Character and alignment changes (`becomes.ts`, was `BECOMES_DEMON`: the Scarlet Woman's Is The Demon, the Mezepheles's Turns Evil, the Snake Charmer's swap): `becomes`, moved. A Demon's death by its own kill passing it on (the Imp, the Fang Gu) is `gameEnd` `death-passes`, asked by `StarPassPrompt`. Changing a chosen player's character in a night step (the Pit-Hag's not-in-play character, the Summoner's Demon on its Night 3, the Huntsman's Damsel) is `changesCharacter` (`types`, `notInPlay`, `alignment`, `token`, `spent`, `onlyFrom`), asked by `ChangeCharacterStep`. Swapping two chosen players' characters, each keeping their alignment (the Barber's haircuts), is `swapsCharacters` (`notTypes`), asked by the same step.
+- Character and alignment changes (`becomes.ts`, was `BECOMES_DEMON`: the Scarlet Woman's Is The Demon, the Mezepheles's Turns Evil, the Snake Charmer's swap): `becomes`, moved. A Demon's death by its own kill passing it on (the Imp, the Fang Gu) is `gameEnd` `death-passes`, asked by `StarPassPrompt`. Changing a chosen player's character in a night step (the Pit-Hag's not-in-play character, the Summoner's Demon on its Night 3, the Huntsman's Damsel) is `changesCharacter` (`types`, `notInPlay`, `alignment`, `token`, `spent`, `onlyFrom`, and `sameType` for the Hatter's and the Engineer's Minions and Demon each becoming another of their type), asked by `ChangeCharacterStep`. Swapping two chosen players' characters, each keeping their alignment (the Barber's haircuts), is `swapsCharacters` (`notTypes`), asked by the same step.
 - Claims players make by day (Juggler guesses, Gossip and Savant statements; new, L56): `dayClaim` (`statements` also opens the Savant sheet and its end-of-night offer), `guessLimit`, moved
 - Day marks (`rules/day-marks.ts`: Demon voted, Minion nominated, with their tokens; new): `dayMark`, moved
 - Night information and answers (`night-info.ts`): `learns`, `answers`, moved
@@ -211,11 +211,11 @@ encodes, each with why. Give a new character the rule rather than an entry; take
 once its rule exists.
 
 `npm run lint:lines` (`scripts/check-lines.ts`) keeps every source file at 800 lines or fewer
-(tests, `*.data.ts` rules tables, i18n catalogs and generated files aside). Its
-`LARGE_FILE_TODO` holds the files that were longer when it began; split one into modules with a
-small surface and take it off the list (a stale entry is reported, not a failure, so
-parallel splits never break each other). The plan for each is in the project's
-`refactor/large-files.md`.
+(tests, `*.data.ts` rules tables, i18n catalogs and generated files aside). Its `LARGE_FILES`
+names the files kept longer on purpose (Trevor, 2026-10-29: the grimoire board and
+DataTable), each with why and a cap. A change that would take one past its cap splits a piece
+out instead of raising the cap; a file split under 800 comes off the list (a stale entry is
+reported, not a failure, so parallel splits never break each other).
 
 `npm run lint:knip` (`knip.jsonc`) fails on a file, an exported value or a dependency nothing
 uses. Delete it, or drop the `export` when only its own file uses it; an export kept on
