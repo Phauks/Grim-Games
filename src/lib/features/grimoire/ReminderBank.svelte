@@ -1,36 +1,21 @@
 <script lang="ts">
 	import type { CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
-	import type { GenericLook, GenericToken, Reminder, SeatId } from '#lib/core/model/index.ts';
-	import { characterNames } from '#lib/core/rules/character-names.ts';
-	import { deadCharacters, prepTextSegments } from '#lib/core/rules/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
-	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
-	import Button from '#lib/ui/primitives/Button.svelte';
+	import type { GenericLook, Reminder, SeatId } from '#lib/core/model/index.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
-	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import type { SeatPoint } from '#lib/ui/seating/seat-layout.ts';
 	import BoardReminder from './BoardReminder.svelte';
 	import ReminderCount from './ReminderCount.svelte';
-	import { placingAlignment, seatMisfits } from './board.ts';
+	import { placingAlignment } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import type { StepFocus } from './step-focus.svelte.ts';
 	import { boardLooks } from './board-looks.svelte.ts';
-	import {
-		bankOwners,
-		bankReminders,
-		byLabel,
-		copiedLook,
-		isGeneric,
-		type StepReminders
-	} from './reminders.ts';
-	import { GENERIC_REMINDER_ID, scriptCharacterIds } from '#lib/core/model/index.ts';
-	import SeatChooser from './SeatChooser.svelte';
-	import ReminderMoreButton from './ReminderMoreButton.svelte';
+	import { copiedLook, isGeneric, type StepReminders } from './reminders.ts';
+	import BankSeatChooser from './BankSeatChooser.svelte';
+	import SetupReminderDialog from './SetupReminderDialog.svelte';
 	import GenericTokenDialog from './GenericTokenDialog.svelte';
-	import IconButton from '#lib/ui/primitives/IconButton.svelte';
-	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
-	import { pendingSetup, traySeats, type TrayItem } from './setup-tray.ts';
+	import { traySeats, type TrayItem } from './setup-tray.ts';
+	import { BANK_CAPTIONS, bankItems, type BankGroup, type BankItem } from './bank-items.ts';
 	import { overNewToken } from './reminder-drag.svelte.ts';
 
 	/**
@@ -106,175 +91,20 @@
 
 	const game = $derived(grimoire.game);
 	const characters = $derived(grimoire.open.characters);
-	const names = $derived(characterNames([...characters.values()]));
 	/** The character whose art a generic copy shows (Trevor, 2026-10-27), if any. */
 	const artOf = (look: GenericLook | undefined) =>
 		look?.like ? characters.get(look.like.characterId) : undefined;
 
-	/**
-	 * The bank's stretches, left to right (Trevor, 2026-10-19): Setup (what the Storyteller
-	 * sees first), Reminders, the generic ∞ in a cell of its own, then the reminders of
-	 * characters whose players are all dead and whose ability ended with them.
-	 */
-	type Group = 'setup' | 'reminders' | 'generic' | 'dead';
-	const CAPTIONS: Partial<Record<Group, string>> = {
-		setup: 'Setup',
-		reminders: 'Reminders',
-		// Over the generic reminder's cell (Trevor, 2026-10-19).
-		generic: '∞',
-		dead: 'Dead players'
-	};
-
-	/** One token in the bank: a setup suggestion, or a reminder still off the board. */
-	interface Item {
-		key: string;
-		characterId: CharacterId;
-		label: ReminderLabel;
-		/** Shown once with ×count when "Stack duplicate reminders" is on. */
-		count: number;
-		setup?: TrayItem;
-		/** Whose copy it is, when its character is on more than one seat (`bankOwners`). */
-		ownerSeatId?: SeatId;
-		/** Used by the walked-through step tonight. */
-		now?: boolean;
-		/** Its stretch of the bank, each set off by a line. */
-		group: Group;
-		/** A copy beyond what the game gives, dashed as on the board (Trevor, 2026-10-22). */
-		extra?: boolean;
-		/** One of the bank's reusable ∞ tokens (plan B9): its copies start with its look. */
-		token?: GenericToken;
-		/** The "+ New token" cell at the end of the ∞ tokens (plan B9). */
-		makesToken?: boolean;
-	}
-
-	// Script order, then reminder name (Trevor, 2026-10-16), like every reminder list; a setup
-	// token too important to miss (the Drunk's) first (Trevor, 2026-10-27).
-	const scriptOrder = $derived(scriptCharacterIds(game.script));
-	const at = (id: CharacterId) => {
-		const i = scriptOrder.indexOf(id);
-		return i < 0 ? scriptOrder.length : i;
-	};
-	const setupItems = $derived(
-		pendingSetup(game, characters, grimoire.trayDismissed).sort(
-			(a, b) =>
-				Number(b.suggestion.first === true) - Number(a.suggestion.first === true) ||
-				at(a.suggestion.characterId) - at(b.suggestion.characterId) ||
-				byLabel(a.suggestion.label, b.suggestion.label)
-		)
-	);
-	const items = $derived.by((): Item[] => {
-		const stack = preferences.current.assistance.stackReminders;
-		const nowFor = (characterId: CharacterId, label: string) =>
-			focus?.characterId === characterId && focus.labels.includes(label);
-		const setup: Item[] = [];
-		for (const item of setupItems) {
-			const { characterId, label } = item.suggestion;
-			const same = stack
-				? setup.find((i) => i.characterId === characterId && i.label === label)
-				: undefined;
-			if (same) same.count += 1;
-			else
-				setup.push({
-					key: item.key,
-					characterId,
-					label,
-					count: 1,
-					setup: item,
-					now: nowFor(characterId, label),
-					group: 'setup'
-				});
-		}
-		// The setup reminders too (Trevor, 2026-10-17: the first night opens on Setup).
-		if (focusMode === 'front') setup.sort((a, b) => Number(!!b.now) - Number(!!a.now));
-		// The setup reminders still to place come first, captioned "Setup" (Trevor, 2026-10-18:
-		// no Setup/All switch), then a solid line and every other copy still off the board.
-		const pending: Record<string, number> = {};
-		for (const item of setupItems) {
-			// eslint-disable-next-line grim/names-as-badges -- an identity key, never shown
-			const k = `${item.suggestion.characterId}:${item.suggestion.label}`;
-			pending[k] = (pending[k] ?? 0) + 1;
-		}
-		const dead = deadCharacters(game, characters);
-		const rest = bankReminders(
-			game,
-			characters,
+	const items = $derived(
+		bankItems(game, characters, {
+			dismissed: grimoire.trayDismissed,
 			focus,
-			focusMode === 'front',
-			grimoire.copies,
-			grimoire.bankCopies
-		).flatMap(({ characterId, label, left, extra, now }) => {
-			const key = `${characterId}:${label}`;
-			const n = left - (pending[key] ?? 0);
-			if (n <= 0) return [];
-			const group: Group = dead.has(characterId) ? 'dead' : 'reminders';
-			// Each seat's own copies, when the character is on more than one (Trevor, 2026-10-19).
-			const owners = bankOwners(game, characters, { characterId, label }, n, grimoire.copies);
-			const list: Item[] = owners.flatMap(({ ownerSeatId, count }) => {
-				const k = ownerSeatId === undefined ? key : `${key}:${ownerSeatId}`;
-				// Prefixed: a setup suggestion's key has the same shape (setup-tray.ts).
-				if (stack)
-					return [{ key: `bank:${k}`, characterId, label, ownerSeatId, count, now, group }];
-				return Array.from({ length: count }, (_, i) => ({
-					key: `bank:${k}:${i}`,
-					characterId,
-					label,
-					ownerSeatId,
-					count: 1,
-					now,
-					group
-				}));
-			});
-			// The extras are the last copies placed, so the last in the bank.
-			let extras = Math.min(extra, n);
-			for (let j = list.length - 1; j >= 0 && extras > 0; j--) {
-				list[j].extra = true;
-				extras -= list[j].count;
-			}
-			return list;
-		});
-		// The generic ∞ reminder, as many as needed (Trevor, 2026-10-18), after the reminders.
-		const generic: Item = {
-			key: 'generic',
-			characterId: GENERIC_REMINDER_ID,
-			label: '',
-			count: 1,
-			group: 'generic'
-		};
-		// The game's own ∞ tokens, then "+ New token" (plan B9, Trevor 2026-10-23: "Tokens only").
-		const tokens: Item[] = (game.genericTokens ?? []).map((token) => ({
-			key: `token:${token.tokenId}`,
-			characterId: GENERIC_REMINDER_ID,
-			label: (token.note ?? '') as ReminderLabel,
-			count: 1,
-			group: 'generic',
-			token
-		}));
-		const makes: Item = {
-			key: 'new-token',
-			characterId: GENERIC_REMINDER_ID,
-			label: '',
-			count: 1,
-			group: 'generic',
-			makesToken: true
-		};
-		return only([
-			...setup,
-			...rest.filter((i) => i.group === 'reminders'),
-			generic,
-			...tokens,
-			makes,
-			...rest.filter((i) => i.group === 'dead')
-		]);
-	});
-	/**
-	 * "Only this character": the step's reminders, while a step is walked through, then the ∞
-	 * tokens, which any step can use (Trevor, 2026-10-23).
-	 */
-	function only(list: Item[]): Item[] {
-		return focus && focusMode === 'only'
-			? list.filter((i) => i.now || i.group === 'generic')
-			: list;
-	}
+			focusMode,
+			stack: preferences.current.assistance.stackReminders,
+			copies: grimoire.copies,
+			bankCopies: grimoire.bankCopies
+		})
+	);
 	const dimRest = $derived(focusMode === 'highlight' && items.some((i) => i.now));
 	/** A solid line goes before each stretch but the first. */
 	const startsGroup = (i: number) => i > 0 && items[i - 1].group !== items[i].group;
@@ -287,15 +117,15 @@
 	 */
 	let bankEl = $state<HTMLElement>();
 	let list = $state<HTMLElement>();
-	const dividers = $state<Partial<Record<Group, HTMLElement>>>({});
-	const captionW = $state<Partial<Record<Group, number>>>({});
+	const dividers = $state<Partial<Record<BankGroup, HTMLElement>>>({});
+	const captionW = $state<Partial<Record<BankGroup, number>>>({});
 	let scrolled = $state(0);
 	/**
 	 * Measured after the bank is drawn (Trevor, 2026-10-22: the ∞ sat over the Reminders, not
 	 * its own token): a stretch's line moves once the spacers and token widths are known, so
 	 * the captions are placed again whenever those or the bank's size change.
 	 */
-	let captions = $state<{ group: Group; text: string; left: number }[]>([]);
+	let captions = $state<{ group: BankGroup; text: string; left: number }[]>([]);
 	let resized = $state(0);
 	$effect(() => {
 		if (!bankEl || !list) return;
@@ -310,16 +140,16 @@
 		void resized;
 		captions = placeCaptions();
 	});
-	function placeCaptions(): { group: Group; text: string; left: number }[] {
+	function placeCaptions(): { group: BankGroup; text: string; left: number }[] {
 		const row = list;
 		if (!bankEl || !row) return [];
 		const width = bankEl.clientWidth || 1;
 		const start = row.offsetLeft;
 		const pct = (x: number) => (x / width) * 100;
-		const placed: { group: Group; text: string; left: number }[] = [];
+		const placed: { group: BankGroup; text: string; left: number }[] = [];
 		const groups = [...new Set(items.map((i) => i.group))];
 		groups.forEach((group, i) => {
-			const text = CAPTIONS[group];
+			const text = BANK_CAPTIONS[group];
 			if (!text) return;
 			if (i === 0) {
 				placed.push({ group, text, left: pct(start) });
@@ -351,8 +181,8 @@
 	 * on the stretch's last token, so the list holds only tokens.
 	 */
 	const spacers = $derived.by(() => {
-		const out: Partial<Record<Group, number>> = {};
-		for (const group of Object.keys(CAPTIONS) as Group[]) {
+		const out: Partial<Record<BankGroup, number>> = {};
+		for (const group of Object.keys(BANK_CAPTIONS) as BankGroup[]) {
 			const own = items.filter((i) => i.group === group);
 			const caption = captionW[group];
 			if (own.length === 0 || caption === undefined) continue;
@@ -386,12 +216,10 @@
 		list?.querySelector('li.now')?.scrollIntoView({ inline: 'center', block: 'nearest' });
 	});
 
-	const seatName = (seatId: SeatId) =>
-		game.seats[seatId]?.playerName ?? `Seat ${game.seating.indexOf(seatId) + 1}`;
-	const seatsFor = (item: Item) => (item.setup ? traySeats(item.setup.suggestion) : []);
+	const seatsFor = (item: BankItem) => (item.setup ? traySeats(item.setup.suggestion) : []);
 
 	function place(
-		item: Pick<Item, 'characterId' | 'label' | 'ownerSeatId' | 'token'>,
+		item: Pick<BankItem, 'characterId' | 'label' | 'ownerSeatId' | 'token'>,
 		seatId: SeatId
 	) {
 		const { characterId, ownerSeatId, token } = item;
@@ -429,12 +257,12 @@
 	});
 
 	// ── Drag a token from the bank onto a seat ──
-	let drag = $state<{ item: Item; at: SeatPoint; overNew: boolean } | undefined>();
+	let drag = $state<{ item: BankItem; at: SeatPoint; overNew: boolean } | undefined>();
 	/** "+ New token" glows while a reminder is dragged, brighter under it (Trevor, 2026-10-27). */
 	const newGlow = $derived(
 		drag?.overNew || dropOver ? 'over' : drag || dropping ? 'ready' : undefined
 	);
-	function dragItem(item: Item, x: number, y: number, end: boolean) {
+	function dragItem(item: BankItem, x: number, y: number, end: boolean) {
 		if (!board) return;
 		const rect = board.getBoundingClientRect();
 		const at = { x: ((x - rect.left) / rect.width) * 100, y: ((y - rect.top) / rect.height) * 100 };
@@ -493,13 +321,9 @@
 	// ── Tap: a setup suggestion says what it is for; any other token asks for a seat ──
 	let shown = $state<TrayItem | undefined>();
 	let shownOpen = $state(false);
-	let choosing = $state<Item | undefined>();
+	let choosing = $state<BankItem | undefined>();
 	let chooserOpen = $state(false);
-	/** The seats the token being put doesn't fit, faded in the list (Trevor, 2026-10-27). */
-	const misfits = $derived(
-		choosing ? seatMisfits(game, choosing, characters, grimoire.atDawn) : undefined
-	);
-	function tap(item: Item) {
+	function tap(item: BankItem) {
 		if (item.makesToken) return makeToken();
 		if (item.setup) {
 			shown = item.setup;
@@ -541,11 +365,11 @@
 	<!-- Every caption measured from the start, hidden, so each stretch has its room before its
 	     caption first shows (a caption measured only once shown widened the row as it was
 	     scrolled to its end). -->
-	{#each Object.entries(CAPTIONS) as [group, text] (group)}<span
+	{#each Object.entries(BANK_CAPTIONS) as [group, text] (group)}<span
 			class="caption measure"
 			data-group={group}
 			aria-hidden="true"
-			bind:offsetWidth={captionW[group as Group]}>{text}</span
+			bind:offsetWidth={captionW[group as BankGroup]}>{text}</span
 		>{/each}
 	{#each captions as caption (caption.group)}<span
 			class="caption"
@@ -653,147 +477,50 @@
 	</div>
 {/if}
 
-<SeatChooser
+<BankSeatChooser
+	{grimoire}
 	bind:open={chooserOpen}
-	title="Put on"
-	{game}
-	{characters}
-	{misfits}
+	item={choosing}
 	onChoose={(seatId) => {
 		chooserOpen = false;
 		if (choosing) place(choosing, seatId);
 		choosing = undefined;
 	}}
->
-	{#snippet heading()}
-		Put {#if choosing}<ReminderToken
-				label={isGeneric(choosing) ? choosing.label || '∞' : choosing.label}
-				character={characters.get(choosing.characterId)}
-			/>{/if} on
-	{/snippet}
-	{#snippet headActions()}
-		<!-- Duplicate from the bank too; the copy stays in the bank (Trevor, 2026-10-20). -->
-		{#if choosing && !isGeneric(choosing)}
-			<!-- A Duplicate copy goes back out of the bank, as one on the board does (Trevor,
-			     2026-10-24). -->
-			{#if choosing.extra && grimoire.bankCopyCount(choosing) > 0}
-				{@const copy = choosing}
-				<DeleteButton
-					label="Remove reminder"
-					onclick={() => {
-						grimoire.removeBankCopy(copy);
-						chooserOpen = false;
-						choosing = undefined;
-					}}
-				/>
-			{/if}
-			<ReminderMoreButton
-				{grimoire}
-				reminder={choosing}
-				onDone={() => {
-					chooserOpen = false;
-					choosing = undefined;
-				}}
-			/>
-		{:else if choosing?.token}
-			{@const tokenId = choosing.token.tokenId}
-			<IconButton
-				icon="edit"
-				label="Edit token"
-				onclick={() => {
-					chooserOpen = false;
-					editing = tokenId;
-					editorOpen = true;
-				}}
-			/>
-		{/if}
-	{/snippet}
-</SeatChooser>
+	onDone={() => {
+		chooserOpen = false;
+		choosing = undefined;
+	}}
+	onEditToken={(tokenId) => {
+		chooserOpen = false;
+		editing = tokenId;
+		editorOpen = true;
+	}}
+/>
 
 <GenericTokenDialog {grimoire} bind:open={editorOpen} tokenId={editing} />
 
-<Dialog bind:open={shownOpen} title="Setup reminder">
-	{#snippet heading()}
-		{#if shown}<ReminderToken
-				label={shown.suggestion.label}
-				character={characters.get(shown.suggestion.characterId)}
-			/>{/if}
-	{/snippet}
-	{#snippet subtitle()}
-		{#if shown}<CharacterBadge
-				characterId={shown.suggestion.characterId}
-				character={characters.get(shown.suggestion.characterId)}
-			/>{/if}
-	{/snippet}
-	{#if shown}
-		{@const s = shown.suggestion}
-		{@const owner = characters.get(s.characterId)}
-		<p class="text">
-			{#each prepTextSegments(s.text, names) as part, j (j)}{#if part.kind === 'reminder'}<ReminderToken
-						label={part.label}
-						character={owner}
-					/>{:else if part.kind === 'character'}<CharacterBadge
-						characterId={part.id}
-						character={characters.get(part.id)}
-					/>{:else}{part.text}{/if}{/each}
-		</p>
-		<!-- Loose mode gives nothing to a seat: it is dragged onto the board. -->
-		{#if !loose}
-			{@const seats = traySeats(s)}
-			<p class="hint">
-				{seats.length > 0
-					? 'Suggested seats, or drag it onto any seat.'
-					: 'Drag it onto any seat, or choose one.'}
-			</p>
-			<ul class="seats">
-				{#each seats as seatId (seatId)}
-					{@const id = game.seats[seatId]?.characterId}
-					<li>
-						{#if id}
-							<CharacterBadge
-								characterId={id}
-								character={characters.get(id)}
-								alignment={game.seats[seatId].alignment}
-								playerName={seatName(seatId)}
-							/>
-						{:else}
-							{seatName(seatId)}
-						{/if}
-						<span class="spacer"></span>
-						<Button
-							variant="quiet"
-							aria-label={`Place on ${seatName(seatId)}`}
-							onclick={() => placeShown(seatId)}>Place</Button
-						>
-					</li>
-				{/each}
-			</ul>
-		{/if}
-	{/if}
-	{#snippet actions()}
-		<Button variant="quiet" icon="close" onclick={dismissShown}>Dismiss</Button>
-		<!-- Any seat will do (a Drunk decided later goes anywhere). -->
-		<Button
-			variant="quiet"
-			disabled={loose}
-			onclick={() => {
-				const s = shown?.suggestion;
-				shownOpen = false;
-				if (s) {
-					choosing = {
-						key: shown!.key,
-						characterId: s.characterId,
-						label: s.label,
-						count: 1,
-						group: 'setup'
-					};
-					chooserOpen = true;
-				}
-			}}>Choose seat</Button
-		>
-		<Button variant="quiet" onclick={() => (shownOpen = false)}>Close</Button>
-	{/snippet}
-</Dialog>
+<SetupReminderDialog
+	{grimoire}
+	bind:open={shownOpen}
+	{shown}
+	{loose}
+	onPlace={placeShown}
+	onDismiss={dismissShown}
+	onChooseSeat={() => {
+		const s = shown?.suggestion;
+		shownOpen = false;
+		if (s) {
+			choosing = {
+				key: shown!.key,
+				characterId: s.characterId,
+				label: s.label,
+				count: 1,
+				group: 'setup'
+			};
+			chooserOpen = true;
+		}
+	}}
+/>
 
 <style>
 	/* Docked under the board (Trevor, 2026-10-16): a strip of tokens that scrolls sideways
@@ -1034,28 +761,5 @@
 		translate: -50% -50%;
 		scale: 1.15;
 		pointer-events: none;
-	}
-	.text {
-		margin: 0 0 var(--space-2);
-		line-height: 1.9;
-	}
-	.hint {
-		margin: 0 0 var(--space-1);
-		font-size: 0.9rem;
-		color: var(--on-surface-muted);
-	}
-	.seats {
-		margin: 0;
-		padding: 0;
-		list-style: none;
-	}
-	.seats li {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		border-bottom: 1px solid var(--border);
-	}
-	.spacer {
-		flex: 1;
 	}
 </style>

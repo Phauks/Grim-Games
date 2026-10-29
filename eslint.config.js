@@ -29,7 +29,6 @@ const PLAYER_BADGE_TODO = [];
  */
 const SEAT_NAME_TODO = [
 	'src/lib/features/grimoire/ReminderAsk.svelte',
-	'src/lib/features/grimoire/ReminderBank.svelte',
 	'src/lib/features/grimoire/ReminderOrigin.svelte',
 	'src/lib/features/grimoire/ReminderPicker.svelte',
 	'src/lib/features/grimoire/SeatStatusDialog.svelte',
