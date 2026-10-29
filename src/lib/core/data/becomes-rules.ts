@@ -74,7 +74,8 @@ export function readBecomes(
  * - `onlyFrom`: only a player of one of these characters changes (the Huntsman's Damsel,
  *   https://wiki.bloodontheclocktower.com/Huntsman);
  * - `sameType`: each player of one of `types` may change, into another character of their own
- *   type (the Hatter's tea party, https://wiki.bloodontheclocktower.com/Hatter). A character
+ *   type (the Hatter's tea party, https://wiki.bloodontheclocktower.com/Hatter; the Engineer,
+ *   https://wiki.bloodontheclocktower.com/Engineer). A character
  *   whose rules say it acts when dead (`actsWhenDead`) offers it from a dead player too.
  */
 export interface ChangesCharacter {

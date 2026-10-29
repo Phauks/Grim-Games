@@ -6776,6 +6776,43 @@ test("the Hatter's step lets each Minion and Demon become another of their type"
 	await expect(await openSeat(page, 3)).toContainText(/Spy\s*Minion · Evil · Seat 3/);
 });
 
+// https://wiki.bloodontheclocktower.com/Engineer: once per game it chooses which Minions or which
+// Demon are in play; the evil players keep their type.
+test("the Engineer's step changes a Minion into another Minion", async ({ page }) => {
+	await startGame(page);
+	for (const [seat, name] of [
+		[1, 'Engineer'],
+		[2, 'Chef'],
+		[3, 'Poisoner'],
+		[4, 'Imp']
+	] as const) {
+		const sheet = await openSeat(page, seat);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		const picker = page.getByRole('dialog', { name: `Character for Seat ${seat}` });
+		const button = picker.getByRole('button', { name, exact: true });
+		// The picker keeps its "not on the script" switch between seats.
+		if (!(await button.count()))
+			await picker.getByText('Include characters not on the script').tap();
+		await button.tap();
+		await closeSheet(page);
+	}
+	const strip = await walkTo(page, 'Engineer');
+	await strip.locator('button.step .name strong').tap();
+	const step = page.getByRole('dialog', { name: 'Engineer' });
+	const change = step.getByTestId('change-character');
+	await change.getByRole('button', { name: 'Choose' }).tap();
+	const seats = page.getByRole('dialog', { name: 'Changes character' });
+	await expect(seats.getByRole('button', { name: /Seat 2/ })).toHaveCount(0);
+	await seats.getByRole('button', { name: /Seat 3/ }).tap();
+	await page
+		.getByRole('dialog', { name: 'Choose a character' })
+		.getByRole('button', { name: 'Scarlet Woman', exact: true })
+		.tap();
+	await expect(change).toContainText('Scarlet Woman');
+	await step.getByRole('button', { name: 'Close' }).first().tap();
+	await expect(await openSeat(page, 3)).toContainText(/Scarlet Woman\s*Minion · Evil · Seat 3/);
+});
+
 // https://wiki.bloodontheclocktower.com/Summoner: on the 3rd night it points at a player and at
 // a Demon on the character sheet; that player becomes the evil Demon.
 test("the Summoner's Night 3 step makes the chosen player the Demon it points at", async ({
