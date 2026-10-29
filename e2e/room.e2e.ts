@@ -86,6 +86,8 @@ test("Your games shows each room's whole line on a phone, however long the Story
 	await expect(row).toContainText('Storyteller: Trevor Goldsmith');
 	// The code form names no Storyteller before a room is joined (Trevor, 2026-10-26).
 	await expect(phone.getByText('Storyteller: Trevor Goldsmith', { exact: true })).toHaveCount(0);
+	// Nor a settings cog: the sidebar opens Settings there (Trevor, 2026-10-29).
+	await expect(phone.getByTestId('you-button')).toHaveCount(0);
 	await expect(row).toContainText(String(new Date().getFullYear()));
 	// No line is cut short with an ellipsis.
 	const cut = await row
