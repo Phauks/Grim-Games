@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { findColourFunctions, findHexColours, findNamedColours } from './check-colors.ts';
 import { counted, lineCount, lineProblems, MAX_LINES } from './check-lines.ts';
 import { findPxSizes, svelteStyles } from './check-px.ts';
+import { previewsToDelete } from './delete-old-previews.ts';
 import { annotationText, flakyTests, pageSnapshot, summaryMarkdown } from './flaky-summary.ts';
 import { generatedFiles, missingIcons } from './generate-icons.ts';
 
@@ -263,5 +264,19 @@ describe('check-lines', () => {
 			{ file: 'src/new.ts', lines: MAX_LINES + 1, problem: 'too-long' },
 			{ file: 'src/split.ts', lines: MAX_LINES, problem: 'listed-short' }
 		]);
+	});
+});
+
+describe('delete-old-previews', () => {
+	it("deletes every Preview but beta's", () => {
+		const previews = [{ name: 'beta' }, { name: 'claude-project-thread-pyonuq' }, { name: 'e2' }];
+		expect(previewsToDelete(previews).map((p) => p.name)).toEqual([
+			'claude-project-thread-pyonuq',
+			'e2'
+		]);
+	});
+
+	it("deletes nothing when beta's Preview isn't listed", () => {
+		expect(previewsToDelete([{ name: 'claude-project-thread-pyonuq' }])).toEqual([]);
 	});
 });

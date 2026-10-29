@@ -1,0 +1,43 @@
+# Deletes every grim-games Worker Preview except beta's (scripts/delete-old-previews.ts), so
+# merged branches' Previews stop holding Durable Object namespaces. The account allows 500
+# namespaces and each Preview takes ten; when they run out, beta's own deploy fails with
+# code 10067 (Oct 27). Workers Builds' branch check (README, Deploying) should stop most
+# branch Previews being made; this deletes the ones that still are (Trevor, 2026-10-29:
+# 231 Durable Objects, e.g. grim-games_claude-project-thread-pyonuq_ScriptMirror).
+#
+# Needs the repository secret CLOUDFLARE_API_TOKEN (a Cloudflare API token with
+# Workers Scripts: Edit on the account). Without it the job runs and does nothing.
+name: Preview cleanup
+
+on:
+  pull_request:
+    types: [closed]
+  schedule:
+    - cron: '23 */6 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: List the Previews it would delete, and delete none
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: preview-cleanup
+  cancel-in-progress: false
+
+jobs:
+  delete:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - name: Delete old Previews
+        run: node scripts/delete-old-previews.ts --run ${{ inputs.dry_run && '--dry-run' || '' }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
