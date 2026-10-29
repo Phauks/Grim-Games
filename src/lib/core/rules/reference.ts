@@ -399,6 +399,7 @@ export function fullNightOrder(data: GameData, night: Night): NightOrder {
 	return nightOrder({
 		night,
 		sheet: data.nightSheet,
+		official: data.byId,
 		inPlay: data.characters,
 		players: MAX_DEALT_PLAYERS
 	});
