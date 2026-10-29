@@ -5,7 +5,7 @@ import { renderSVG } from 'uqr';
 import { nameStoryteller, openGameInfo, toBoard, pastGameSettings } from './new-game.ts';
 import { menuButton } from './shell.ts';
 import { aimCamera, qrSrc } from './camera.ts';
-import { openInbox } from './inbox.ts';
+import { openPlayerSheet } from './players.ts';
 
 // Share's Players tab in a live room (07-accounts-and-multi-device.md §4.2): a phone gives its
 // name, the Storyteller picks its seat, and the seat is named in the grimoire. There is no
@@ -139,8 +139,16 @@ test('a phone joins with a name, and the Storyteller seats it', async ({
 
 	// The phone is listed with no seat straight away. There is no seat picking (Trevor,
 	// 2026-10-26): naming a seat on the board with the phone's name seats it.
+	// Players, not Share, lists who is in the room (Trevor, 2026-10-29).
+	await page.goto(`${board}/players`);
 	const alex = page.getByRole('list', { name: 'Players in the room' }).getByRole('listitem');
-	await expect(alex).toHaveText(/^Alex\s*No seat$/);
+	await expect(alex).toContainText(/Alex\s*No seat · Here/);
+	// The avatar opens the player's profile, as on the board (Trevor, 2026-10-29).
+	await alex.getByTestId('sheet-avatar').tap();
+	const profile = page.getByRole('dialog', { name: 'Alex', exact: true });
+	await expect(profile.getByTestId('player-profile')).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(profile).toBeHidden();
 	await nameSeat(page, 3, 'Alex');
 
 	await expect(phone.getByTestId('you-row')).toHaveAttribute('data-seat', '3');
@@ -156,8 +164,8 @@ test('a phone joins with a name, and the Storyteller seats it', async ({
 	await phone.keyboard.press('Escape');
 	await expect(phone.getByTestId('you-row')).toHaveAttribute('data-seat', '3');
 	await expect(phone.getByRole('button', { name: 'Settings: Alex K' })).toBeVisible();
-	await page.goto(`${board}/room`);
-	await expect(alex).toHaveText(/^Alex K\s*Seat 3$/);
+	await page.goto(`${board}/players`);
+	await expect(alex).toContainText(/Alex K\s*Seat 3 · Here/);
 
 	// Coming back (Trevor, 2026-10-19: "it booted me out like I had not joined it yet"): Join
 	// game lists the room, and opening it shows the seat this phone already has. It is listed
@@ -2364,7 +2372,7 @@ test("a player's initials and frame go on their seat, and their avatar is in the
 	await expect(you.getByText('Initials on your seat', { exact: true })).toHaveCount(0);
 	await setPlayerName(phone, 'Alex Kim');
 	await phone.keyboard.press('Escape');
-	await expect(page.getByRole('list', { name: 'Players in the room' })).toContainText('Alex Kim');
+	await expect(page.getByTestId('status-players')).toHaveText('1 player');
 	await nameSeat(page, 3, 'Alex Kim');
 	await expect(phone.getByTestId('you-row')).toHaveAttribute('data-seat', '3');
 	await expect(phone.getByRole('button', { name: 'Settings: Alex Kim' })).toBeVisible();
@@ -2459,7 +2467,7 @@ test("a player's avatar opens their profile, never their character, on the board
 		localStorage.setItem(key, JSON.stringify({ ...settings, frame: 'ring-gold~pulse' }));
 	});
 	await phone.reload();
-	await expect(page.getByRole('list', { name: 'Players in the room' })).toContainText('Alex Kim');
+	await expect(page.getByTestId('status-players')).toHaveText('1 player');
 	await nameSeat(page, 3, 'Alex Kim');
 	const seat = page.locator('[data-testid="seat"][aria-label^="Seat 3: Alex Kim"]');
 	await expect(seat.locator('svg[data-frame="ring-gold~pulse"]')).toBeAttached();
@@ -2586,7 +2594,7 @@ test("a player's own picture goes on their seat, and a report lets the Storytell
 	await expect(crop).toBeHidden();
 	await setPlayerName(alex, 'Alex Kim');
 	await alex.keyboard.press('Escape');
-	await expect(page.getByRole('list', { name: 'Players in the room' })).toContainText('Alex Kim');
+	await expect(page.getByTestId('status-players')).toHaveText('1 player');
 	await nameSeat(page, 3, 'Alex Kim');
 
 	// The board and every phone show it in place of the initials.
@@ -2617,9 +2625,10 @@ test("a player's own picture goes on their seat, and a report lets the Storytell
 	await expect(sam.getByRole('menuitem', { name: 'Picture reported' })).toBeDisabled();
 	await sam.keyboard.press('Escape');
 
-	// The report waits in the Storyteller's Messages (Trevor, 2026-10-27: "Combine into a
-	// communication menu"), where the picture is removed for this game.
-	const report = (await openInbox(page)).getByTestId('inbox-item');
+	// The report waits on Alex's sheet in the Storyteller's Players (Trevor, 2026-10-27:
+	// "Combine into a communication menu"; 2026-10-29: into Players), where the picture is
+	// removed for this game.
+	const report = (await openPlayerSheet(page, 'Alex Kim')).getByTestId('inbox-item');
 	await expect(report).toContainText('Picture reported by 1 player');
 	await report.tap();
 	const opened = page.getByRole('dialog', { name: 'Reported picture' });
@@ -2627,6 +2636,7 @@ test("a player's own picture goes on their seat, and a report lets the Storytell
 	await opened.getByRole('button', { name: "Remove Alex Kim's picture for this game" }).tap();
 	await expect(opened).toBeHidden();
 	await expect(report).toHaveCount(0);
+	await page.keyboard.press('Escape');
 	await page.keyboard.press('Escape');
 	await expect(seat.getByTestId('avatar-face')).toHaveText('AK');
 	await expect(seat.getByTestId('avatar-face')).not.toHaveAttribute('data-picture');

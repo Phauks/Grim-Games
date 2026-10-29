@@ -33,11 +33,13 @@ test('a name two players share is numbered by join order until one changes it', 
 	browser
 }, testInfo) => {
 	const code = await openRoom(page);
+	// Players, not Share, lists who is in the room (Trevor, 2026-10-29).
+	await page.goto(page.url().replace(/\/room$/, '/players'));
 	const players = page.getByRole('list', { name: 'Players in the room' }).getByRole('listitem');
 	const first = await joinAs(browser, testInfo, code, 'John');
-	await expect(players).toHaveText([/^John\s*No seat$/]);
+	await expect(players).toHaveText([/John\s*No seat/]);
 	const second = await joinAs(browser, testInfo, code, 'John');
-	await expect(players).toHaveText([/^John\s*No seat$/, /^John 2\s*No seat$/]);
+	await expect(players).toHaveText([/John\s*No seat/, /John 2\s*No seat/]);
 
 	// The second phone is told, and its name row shows the name the Storyteller sees.
 	await expect(second.getByText('Another player is called John')).toBeVisible();
@@ -50,7 +52,7 @@ test('a name two players share is numbered by join order until one changes it', 
 	// Changing the name takes the number away.
 	await setPlayerName(second, 'Jon');
 	await expect(settings.getByTestId('player-name')).toHaveText('Jon');
-	await expect(players).toHaveText([/^John\s*No seat$/, /^Jon\s*No seat$/]);
+	await expect(players).toHaveText([/John\s*No seat/, /Jon\s*No seat/]);
 	await first.context().close();
 	await second.context().close();
 });

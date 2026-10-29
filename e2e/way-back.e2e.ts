@@ -35,7 +35,7 @@ const ANY_ID: Record<string, string> = {
 };
 
 /** A game's screens, opened on a real game (the start flow's own Back needs one). */
-const GAME = ['', '/deal', '/draw', '/extras', '/game-settings', '/room', '/setup'];
+const GAME = ['', '/deal', '/draw', '/extras', '/game-settings', '/players', '/room', '/setup'];
 
 /** Pages that are not screens: each opens another and is gone. */
 const NOT_SCREENS: Record<string, string> = {
