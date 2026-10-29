@@ -205,6 +205,11 @@ export interface CharacterRules extends ChoiceRules {
 	changesCharacter?: ChangesCharacter;
 	/** Its night step swaps two chosen players' characters (`becomes-rules.ts`). */
 	swapsCharacters?: SwapsCharacters;
+	/**
+	 * Each night its player becomes the alignment of a living neighbour (the Cult Leader,
+	 * https://wiki.bloodontheclocktower.com/Cult_Leader); its night step offers the change.
+	 */
+	takesNeighbourAlignment?: true;
 	/** The characters its night step's info tokens show, filled in (`rules/info-token-characters.ts`). */
 	infoTokenCharacters?: InfoTokenCharacterRules;
 	/**
@@ -347,6 +352,7 @@ const RULE_KEYS = [
 	'becomes',
 	'changesCharacter',
 	'swapsCharacters',
+	'takesNeighbourAlignment',
 	'infoTokenCharacters',
 	'makesExtraEvil',
 	'falseInfo',
@@ -581,6 +587,8 @@ export function parseCharacterRules(
 		const filled = readInfoTokenCharacters(raw.infoTokenCharacters, at, issues);
 		if (filled) rules.infoTokenCharacters = filled;
 	}
+	if (readBoolean(raw, 'takesNeighbourAlignment', path, issues))
+		rules.takesNeighbourAlignment = true;
 	const extraEvil = readBoolean(raw, 'makesExtraEvil', path, issues);
 	if (extraEvil !== undefined) rules.makesExtraEvil = extraEvil;
 	if (raw.falseInfo !== undefined) {
