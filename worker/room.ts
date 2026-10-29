@@ -28,7 +28,6 @@ import {
 	showScriptVoteTally,
 	openVote,
 	parseClientMessage,
-	lookLocked,
 	setLook,
 	playerView,
 	publish,
@@ -211,10 +210,8 @@ export class Room extends DurableObject<RoomEnv> {
 		const keyHash = await sha256(upload.key);
 		// The Storyteller's device, or a phone in the room with its own avatar picture.
 		const memberId = keyHash === room.hostKeyHash ? undefined : keyHash.slice(0, 24);
-		const member = memberId ? room.members.find((m) => m.memberId === memberId) : undefined;
-		if (memberId && !member) return new Response('Not the Storyteller', { status: 403 });
-		// A new picture would replace the one on the seat, which stays until the game ends.
-		if (member && lookLocked(room, member)) return new Response('Locked', { status: 409 });
+		if (memberId && !room.members.some((m) => m.memberId === memberId))
+			return new Response('Not the Storyteller', { status: 403 });
 		if ((await sha256(upload.image)) !== hash) return new Response('Wrong hash', { status: 400 });
 		if (memberId) {
 			// A player's own avatar picture (room-pictures.ts): one per phone in the room.

@@ -30,7 +30,7 @@
 	{label}
 	{description}
 	onReset={defaultValue === undefined ? undefined : () => select.onChange(defaultValue)}
-	isDefault={select.value === defaultValue || select.disabled}
+	isDefault={select.value === defaultValue}
 >
 	{#snippet control(labelId)}
 		<Select {label} labelledBy={labelId} {...select} />

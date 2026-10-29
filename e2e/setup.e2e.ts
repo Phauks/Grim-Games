@@ -1155,11 +1155,12 @@ test('each good character row sets or clears a Demon bluff, up to three', async 
 	await expect(bluffButton('monk')).toBeEnabled();
 });
 
-test('Demon bluffs: listed by Show only selected, warned when chosen, new on each Random selection', async ({
+test('Demon bluffs: left out of Show only selected, warned when chosen, new on each Random selection', async ({
 	page
 }) => {
-	// Trevor (2026-10-23): Show only selected and Random take in the bluffs; a bluff also
-	// chosen to be in play is a warning, never a lock.
+	// Trevor (2026-10-23): Random takes in the bluffs; a bluff also chosen to be in play is a
+	// warning, never a lock. Show only selected leaves them to their own section below
+	// (Trevor, 2026-10-29).
 	await selectionFor(page, 8);
 	// The bluff slots below have rows too: only the list's.
 	const row = (id: string) =>
@@ -1173,7 +1174,8 @@ test('Demon bluffs: listed by Show only selected, warned when chosen, new on eac
 
 	const only = page.getByRole('button', { name: 'Show only selected' });
 	await only.tap();
-	await expect(choice(page, 'Soldier')).toBeVisible();
+	await expect(row('soldier')).toHaveCount(0);
+	await expect(bluffs).toContainText('Soldier');
 	await expect(choice(page, 'Washerwoman')).toHaveCount(0);
 	await only.tap();
 

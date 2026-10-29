@@ -30,6 +30,9 @@ export const show = {
 	'show.fairPlay.title': 'Do Not Share With Players',
 	'show.fairPlay.message':
 		'Only send what the Storyteller needs to know. Never use this to get around the rules or pass on secret information.',
+	// The look on a player's seat (Trevor, 2026-10-29: a warning, not a lock during the game).
+	'show.fairPlay.profile':
+		'Everyone at the table sees this on your seat. Never change it during a game to hint at a character, or in any way that could compromise the integrity of this game.',
 	'show.fairPlay.watchLead':
 		'You will see everything the Storyteller sees: every character, reminder and note. You promise that:',
 	'show.fairPlay.watchCheat': 'You won’t use it to cheat, or to help anyone playing.',

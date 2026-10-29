@@ -177,13 +177,13 @@
 			.filter((c): c is Character => c !== undefined && !isRuleCharacter(c.type))
 	);
 	/**
-	 * Only the chosen characters, with the search still applying (Trevor, 2026-10-18), and the
-	 * Demon's bluffs (Trevor, 2026-10-23).
+	 * Only the chosen characters, with the search still applying (Trevor, 2026-10-18). The
+	 * Demon's bluffs stay in their own section below, not here (Trevor, 2026-10-29).
 	 */
 	let selectedOnly = $state(false);
 	const listed = $derived(
 		[...choices, ...editionTravellers, ...offScript, ...scriptRules, ...offScriptRules].filter(
-			(c) => !selectedOnly || (s.selection[c.id] ?? 0) > 0 || inRule.has(c.id) || bluffIds.has(c.id)
+			(c) => !selectedOnly || (s.selection[c.id] ?? 0) > 0 || inRule.has(c.id)
 		)
 	);
 	/** Characters a special rule put in play (+1, Infinite Possibilities) are not marked. */
