@@ -111,8 +111,6 @@ class SettingsProfiles {
 	#switching = $state(false);
 	/** Changes made here that the account's copy on this device doesn't show yet. */
 	#pending = $state(0);
-	/** The profile New game chose for the game about to start. */
-	#nextGame: string | undefined;
 
 	get list(): readonly SettingsProfile[] {
 		return this.#state.profiles;
@@ -341,20 +339,29 @@ class SettingsProfiles {
 
 	// ── Games ──
 
-	/** New game's choice for the game it is about to start. */
-	chooseForNextGame(id: string): void {
-		this.#nextGame = id;
+	/**
+	 * The profile a game starts with: the one chosen in its Game settings before it begins
+	 * (Trevor, 2026-10-29: on Character selection, no longer New game), else the default one.
+	 */
+	profileOfGame(gameId: string): string {
+		const saved = this.#games[gameId];
+		return saved && this.get(saved) ? saved : this.defaultId;
 	}
 
-	/** The Storyteller settings the game about to start begins with: New game's profile's. */
-	nextGamePreferences(): Preferences {
-		const chosen = this.#nextGame ? this.get(this.#nextGame) : undefined;
+	/** Chooses the profile a game that hasn't begun starts with, without switching to it yet. */
+	chooseForGame(gameId: string, id: string): void {
+		if (this.get(id)) this.#setGame(gameId, id);
+	}
+
+	/** The Storyteller settings a profile holds, for a game starting with it. */
+	preferencesOf(id: string): Preferences {
+		const chosen = this.get(id);
 		return chosen ? { ...preferences.current, ...chosen.values.preferences } : preferences.current;
 	}
 
 	/**
-	 * A board opened: a game uses the profile it was started or last played with, and a new
-	 * one the profile New game chose (else the one in use).
+	 * A board opened: a game uses the profile it was started or last played with, and one with
+	 * none (made before profiles) the one in use.
 	 */
 	openGame(gameId: string): void {
 		const saved = this.#games[gameId];
@@ -362,10 +369,8 @@ class SettingsProfiles {
 			void this.use(saved);
 			return;
 		}
-		const chosen = this.#nextGame && this.get(this.#nextGame) ? this.#nextGame : this.activeId;
-		this.#nextGame = undefined;
-		this.#setGame(gameId, chosen);
-		void this.use(chosen);
+		this.#setGame(gameId, this.activeId);
+		void this.use(this.activeId);
 	}
 
 	#setGame(gameId: string, profileId: string): void {
