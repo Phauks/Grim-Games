@@ -393,7 +393,6 @@
 									     ability, then what is known and the button under it. -->
 									<CharacterRow
 										{character}
-										look="ring"
 										info
 										alignment={head?.ref.seatId ? g.seats[head.ref.seatId]?.alignment : undefined}
 										playerName={head?.ref.seatId ? game.seatName(head.ref.seatId) : undefined}
@@ -462,7 +461,6 @@
 								<!-- As the reminders above: ring, band, ability, then the button. -->
 								<CharacterRow
 									{character}
-									look="ring"
 									info
 									alignment={seat.alignment}
 									playerName={game.seatName(seat.seatId)}

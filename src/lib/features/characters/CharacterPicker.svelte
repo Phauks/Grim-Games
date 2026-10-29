@@ -149,7 +149,7 @@
 				disabledReason: reasonFor(character, chosen.has(character.id))
 			}}
 			{@const note = state.disabledReason ?? marker?.(character)}
-			<li>
+			<li class:divided={!item}>
 				{#if item}
 					{@render item(character, state)}
 				{:else}
@@ -265,6 +265,12 @@
 		margin: 0;
 		padding: 0;
 		list-style: none;
+	}
+	/* Ring rows carry no box of their own, so a divider keeps one from running into the next
+	   (e2e/stacked-blocks.e2e.ts; Trevor: rows with dividers). */
+	.divided {
+		padding-bottom: var(--space-1);
+		border-bottom: var(--card-border);
 	}
 	/* The None row, drawn like a character's (CharacterRow). */
 	.row {

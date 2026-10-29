@@ -100,7 +100,7 @@
 	{@const own = jinxesOf[c.id]}
 	{@const who = playersOf(c.id)}
 	<li class="character" data-character={c.id}>
-		<CharacterRow character={c} look="ring" info>
+		<CharacterRow character={c} info>
 			{#snippet afterName()}
 				{#if own}{@render jinxMark(c, own)}{/if}
 				{#if who.length}<span class="in-play" data-testid="traveller-in-play"

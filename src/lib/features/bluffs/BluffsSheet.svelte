@@ -12,6 +12,7 @@
 	} from '#lib/core/engine/index.ts';
 	import { scriptCharacterIds, type CharacterLookup, type Game } from '#lib/core/model/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
 	import Sentence from '#lib/features/characters/Sentence.svelte';
 	import { slot } from '#lib/features/characters/slots.ts';
 	import CharacterPicker from '#lib/features/show/CharacterPicker.svelte';
@@ -154,6 +155,7 @@
 	bind:open
 	title={editing === undefined ? t('bluffs.title') : pickTitle(editing)}
 	height="85dvh"
+	wide
 >
 	<!-- The player view below sits outside this boundary, so a crash here never closes it. -->
 	<ErrorBoundary area="bluffs">
@@ -204,16 +206,12 @@
 									character !== undefined && blocks(index) && inPlay.has(character.id)}
 								<li data-in-play={playing ? '' : undefined}>
 									{#if character}
-										<CharacterBadge
-											characterId={character.id}
-											{character}
-											alignment="good"
-											interactive={false}
-										/>
-										<span class="flag"
-											>{#if playing}<Icon name="warning" /> {t('bluffs.inPlayReplace')}{/if}</span
-										>
-										<p class="ability">{character.ability}</p>
+										<!-- As the script draws it (Trevor, 2026-10-28); in play, a warning on the band. -->
+										<CharacterRow {character} alignment="good" info>
+											{#snippet afterName()}{#if playing}<span class="flag"
+														><Icon name="warning" /> {t('bluffs.inPlayReplace')}</span
+													>{/if}{/snippet}
+										</CharacterRow>
 									{:else}
 										<span class="none">{t('common.none')}</span>
 									{/if}
@@ -389,29 +387,19 @@
 		padding: 0;
 		list-style: none;
 	}
+	/* An empty place is as tall as a filled one, so choosing moves nothing. */
 	.rows li {
 		display: flex;
-		flex-wrap: wrap;
 		align-items: center;
-		gap: calc(0.125 * var(--u)) var(--space-2);
 		min-width: 0;
-		min-height: calc(2.5 * var(--u));
-	}
-	/* The script's ability text, on its own line under the name. */
-	.ability {
-		flex-basis: 100%;
-		margin: 0;
-		padding-left: var(--space-1);
-		font-family: var(--font-ability);
-		line-height: 1.35;
-	}
-	.rows li[data-in-play] {
-		color: var(--accent);
+		min-height: 4.4em;
 	}
 	.flag {
 		display: inline-flex;
+		flex: none;
 		align-items: center;
 		gap: var(--space-1);
+		margin-left: auto;
 		font-size: 0.85rem;
 	}
 	.none {

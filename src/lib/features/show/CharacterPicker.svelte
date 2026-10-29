@@ -198,9 +198,13 @@
 		color: inherit;
 	}
 	/* The picker's own rows, in its columns. Every place is one row high whatever is in it: the
-	   name and the start of the ability on a line each, so choosing never moves the list (Trevor, 2026-10-20). */
+	   band and the start of the ability, so choosing never moves the list (Trevor, 2026-10-20).
+	   Smaller on phones, as the old rows were, so the pinned places leave the list room. */
 	.slots {
-		--slot-height: calc(2 * var(--space-1) + 1.5rem + 1.3 * 0.8rem);
+		--slot-lines: 1;
+		--character-ring: 3em;
+		font-size: 0.85em;
+		--slot-height: calc(2 * var(--space-1) + 1.7em + var(--slot-lines) * 1.35em);
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(min(100%, calc(18 * var(--u))), 1fr));
 		gap: var(--space-1);
@@ -213,22 +217,20 @@
 		min-width: 0;
 		height: var(--slot-height);
 	}
-	.slots :global(.row) {
+	.slots :global(.ring-row) {
 		height: 100%;
 		overflow: hidden;
 	}
-	.slots :global(.name) {
+	.slots :global(.ring-ability) {
+		display: -webkit-box;
+		min-height: 0;
+		padding-top: 0;
 		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-		line-height: 1.5rem;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: var(--slot-lines);
+		line-clamp: var(--slot-lines);
 	}
-	.slots :global(.ability) {
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-	.slots li[data-blocked] :global(.row) {
+	.slots li[data-blocked] :global(.ring-row) {
 		box-shadow: inset 0 0 0 2px var(--accent);
 	}
 	.empty {
@@ -243,15 +245,10 @@
 			align-items: start;
 		}
 		.slots {
-			--slot-height: calc(2 * var(--space-1) + 1.5rem + 3 * 1.3 * 0.8rem);
+			--slot-lines: 3;
+			--character-ring: 4.4em;
+			font-size: 1em;
 			grid-template-columns: minmax(0, 1fr);
-		}
-		.slots :global(.ability) {
-			display: -webkit-box;
-			white-space: normal;
-			-webkit-box-orient: vertical;
-			-webkit-line-clamp: 3;
-			line-clamp: 3;
 		}
 	}
 </style>
