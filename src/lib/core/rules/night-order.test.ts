@@ -6,18 +6,17 @@
  * - https://wiki.bloodontheclocktower.com/Leviathan and /Vizier (announced after Dawn)
  */
 import { describe, expect, it } from 'vitest';
-import { committedGameData, committedNumericNightOrder } from '#lib/core/testing/committed-data.ts';
+import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { editionScript } from '#lib/core/data/script.ts';
 import type { Character } from '#lib/core/data/types.ts';
-import { nightOrder, sheetPositions, type NightOrderInput } from './night-order.ts';
+import { nightOrder, type NightOrderInput } from './night-order.ts';
 
 const data = committedGameData();
-const numeric = committedNumericNightOrder();
 const get = (...ids: string[]) => ids.map((id) => data.byId.get(id)!);
 const tb = editionScript('tb', data)!.characters;
 
 function order(input: Partial<NightOrderInput> & Pick<NightOrderInput, 'inPlay'>) {
-	return nightOrder({ night: 'first', sheet: data.nightSheet, players: 8, numeric, ...input });
+	return nightOrder({ night: 'first', sheet: data.nightSheet, players: 8, ...input });
 }
 const stepIds = (input: Parameters<typeof order>[0]) => order(input).steps.map((s) => s.id);
 
@@ -187,61 +186,29 @@ describe('custom order from _meta', () => {
 });
 
 describe('homebrew characters', () => {
-	// The provisional snapshot numbers Chef 126 and Empath 127 (05-spike-results.md S8).
-	it('slots a numeric first night between official characters', () => {
-		const custom = homebrew({ firstNight: 126.5, firstNightReminder: 'Wake the Storm Warden.' });
-		const steps = order({ inPlay: [...get('chef', 'empath'), custom] }).steps;
-		expect(steps.map((s) => s.id)).toEqual([
-			'dusk',
-			'minioninfo',
-			'demoninfo',
-			'chef',
-			'stormwarden',
-			'empath',
-			'dawn'
-		]);
-		expect(steps.find((s) => s.id === 'stormwarden')).toMatchObject({
-			placement: 'numeric',
-			reminder: 'Wake the Storm Warden.'
-		});
-	});
-
-	it('puts a number equal to an official one after it', () => {
-		const custom = homebrew({ firstNight: 126, firstNightReminder: 'x' });
-		expect(stepIds({ inPlay: [custom, ...get('chef', 'empath')] })).toEqual([
-			'dusk',
-			'minioninfo',
-			'demoninfo',
-			'chef',
-			'stormwarden',
-			'empath',
-			'dawn'
-		]);
-	});
-
-	it('keeps a number past every official step before Dawn', () => {
-		const custom = homebrew({ firstNight: 999, firstNightReminder: 'x' });
-		const steps = order({ inPlay: [custom, ...get('leviathan')] }).steps;
-		expect(steps.map((s) => s.id)).toEqual([
-			'dusk',
-			'minioninfo',
-			'demoninfo',
-			'stormwarden',
-			'dawn',
-			'leviathan'
-		]);
-	});
-
-	it('places homebrew without a number, or without the snapshot, before Dawn with a note', () => {
+	// TPI publishes no night numbers for official characters, so a homebrew number cannot be
+	// matched against them: the step goes before Dawn for the Storyteller to check.
+	it('places homebrew with or without a number before Dawn with a note', () => {
 		const noNumber = homebrew({ otherNightReminder: 'x' });
 		const r1 = order({ night: 'other', inPlay: [noNumber, ...get('imp')] });
 		expect(r1.steps.map((s) => s.id)).toEqual(['dusk', 'imp', 'stormwarden', 'dawn']);
 		expect(r1.steps[2]).toMatchObject({ placement: 'unplaced' });
-		const r2 = order({
-			inPlay: [homebrew({ firstNight: 3, firstNightReminder: 'x' })],
-			numeric: undefined
+		const numbered = homebrew({ firstNight: 3, firstNightReminder: 'Wake the Storm Warden.' });
+		const r2 = order({ inPlay: [numbered, ...get('chef', 'leviathan')] });
+		expect(r2.steps.map((s) => s.id)).toEqual([
+			'dusk',
+			'minioninfo',
+			'demoninfo',
+			'chef',
+			'stormwarden',
+			'dawn',
+			'leviathan'
+		]);
+		expect(r2.steps[4]).toMatchObject({
+			placement: 'unplaced',
+			reminder: 'Wake the Storm Warden.'
 		});
-		expect(r2.steps[3].notes[0]).toContain('no numbers for official characters');
+		expect(r2.steps[4].notes[0]).toContain('Check the order');
 	});
 
 	it('wakes on number alone, and notes the missing text', () => {
@@ -320,17 +287,6 @@ describe('Storyteller overrides', () => {
 	});
 });
 
-describe('sheetPositions', () => {
-	it('keeps TPI order when filling gaps in the provisional numbers', () => {
-		for (const night of ['firstNight', 'otherNight'] as const) {
-			const list = data.nightSheet[night];
-			const positions = list.map((id) => sheetPositions(list, numeric[night]).get(id)!);
-			for (let i = 1; i < positions.length; i++)
-				expect(positions[i], list[i]).toBeGreaterThan(positions[i - 1]);
-		}
-	});
-});
-
 describe('every character on the full sheet', () => {
 	it('appears once, in TPI order, for both nights', () => {
 		for (const night of ['first', 'other'] as const) {
@@ -338,8 +294,7 @@ describe('every character on the full sheet', () => {
 				night,
 				sheet: data.nightSheet,
 				inPlay: data.characters,
-				players: 15,
-				numeric
+				players: 15
 			}).steps;
 			expect(steps.map((s) => s.id)).toEqual(
 				night === 'first' ? data.nightSheet.firstNight : data.nightSheet.otherNight

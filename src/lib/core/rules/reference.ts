@@ -7,7 +7,6 @@
 import { defaultAlignment } from '#lib/core/data/character-type.ts';
 import type { GameData } from '#lib/core/data/game-data.ts';
 import { jinxesFor } from '#lib/core/data/jinxes.ts';
-import type { NumericNightOrder } from '#lib/core/data/night-order-numeric.ts';
 import {
 	type Alignment,
 	type Character,
@@ -63,16 +62,14 @@ export interface ReferenceDayReminder {
 	autoDetected?: boolean;
 }
 
-/** One night for one character: TPI's place, the provisional number, the Storyteller text. */
+/** One night for one character: TPI's place and the Storyteller text. */
 export interface ReferenceNight {
 	/** 1-based position on TPI's night sheet, counting Dusk as #1. */
 	position?: number;
-	/** Number in `night-order-provisional.json`. */
-	number?: number;
 	text?: string;
 	/** Our text shown instead of TPI's (Trevor's reviewed edit), with why. */
 	ours?: NightTextOverride;
-	/** Where the two orders disagree, or one is missing. */
+	/** Problems found with this night's data. */
 	issues: string[];
 }
 
@@ -168,60 +165,24 @@ function alignmentNote(type: CharacterType): string {
 	return 'None';
 }
 
-/**
- * Compares TPI's order with the provisional numbers for one night: each step's 1-based
- * position, its number, and any disagreement (no number, number but not on the sheet,
- * or a number out of order with its neighbours).
- */
-export function compareNightOrders(
-	list: readonly string[],
-	numbers: ReadonlyMap<CharacterId, number> | undefined
-): Map<string, { position?: number; number?: number; issues: string[] }> {
-	const out = new Map<string, { position?: number; number?: number; issues: string[] }>();
-	const markers: readonly string[] = ['dusk', 'minioninfo', 'demoninfo', 'dawn'];
-	list.forEach((id, i) => {
-		const number = numbers?.get(id);
-		const issues: string[] = [];
-		if (numbers && number === undefined && !markers.includes(id))
-			issues.push('On TPI’s night sheet but has no provisional number.');
-		out.set(id, { position: i + 1, ...(number !== undefined ? { number } : {}), issues });
-	});
-	if (!numbers) return out;
-	// Out of order: a numbered step whose number is not between its numbered neighbours.
-	const numbered = list.filter((id) => numbers.has(id));
-	numbered.forEach((id, i) => {
-		const n = numbers.get(id)!;
-		const prev = i > 0 ? numbers.get(numbered[i - 1])! : -Infinity;
-		const next = i < numbered.length - 1 ? numbers.get(numbered[i + 1])! : Infinity;
-		if (n <= prev || n >= next)
-			out
-				.get(id)!
-				.issues.push('Provisional number puts it in a different place from TPI’s night sheet.');
-	});
-	for (const [id, number] of numbers) {
-		if (!out.has(id))
-			out.set(id, {
-				number,
-				issues: ['Has a provisional number but is not on TPI’s night sheet.']
-			});
-	}
-	return out;
+/** Each step's 1-based position on TPI's night sheet for one night, counting Dusk as #1. */
+export function nightPositions(list: readonly string[]): Map<string, number> {
+	return new Map(list.map((id, i) => [id, i + 1]));
 }
 
 function nightFor(
 	character: Character,
 	night: Night,
-	compared: ReturnType<typeof compareNightOrders>
+	positions: ReadonlyMap<string, number>
 ): ReferenceNight {
 	const text = night === 'first' ? character.firstNightReminder : character.otherNightReminder;
-	const found = compared.get(character.id);
+	const position = positions.get(character.id);
 	const ours = text !== undefined ? nightTextOverride(character.id, night) : undefined;
 	return {
-		...(found?.position !== undefined ? { position: found.position } : {}),
-		...(found?.number !== undefined ? { number: found.number } : {}),
+		...(position !== undefined ? { position } : {}),
 		...(text !== undefined ? { text } : {}),
 		...(ours ? { ours } : {}),
-		issues: found ? [...found.issues] : []
+		issues: []
 	};
 }
 
@@ -301,11 +262,11 @@ function dayFor(character: Character, name: (id: CharacterId) => string, problem
 }
 
 /** The reference for every official character, in TPI's order. */
-export function characterReference(data: GameData, numeric?: NumericNightOrder): ReferenceEntry[] {
+export function characterReference(data: GameData): ReferenceEntry[] {
 	const name = (id: CharacterId) => data.byId.get(id)?.name ?? id;
 	const byName = new Map(data.characters.map((c) => [c.name.toLowerCase(), c.id]));
-	const first = compareNightOrders(data.nightSheet.firstNight, numeric?.firstNight);
-	const other = compareNightOrders(data.nightSheet.otherNight, numeric?.otherNight);
+	const first = nightPositions(data.nightSheet.firstNight);
+	const other = nightPositions(data.nightSheet.otherNight);
 	return data.characters.map((character) => {
 		const problems: string[] = [];
 		const wiki = wikiUrl(character);
@@ -434,17 +395,12 @@ export function matchesReference(entry: ReferenceEntry, query: ReferenceQuery): 
  * The night order with every official character in play and a full table (15 players),
  * exactly as the night-order engine builds it for a game.
  */
-export function fullNightOrder(
-	data: GameData,
-	night: Night,
-	numeric?: NumericNightOrder
-): NightOrder {
+export function fullNightOrder(data: GameData, night: Night): NightOrder {
 	return nightOrder({
 		night,
 		sheet: data.nightSheet,
 		inPlay: data.characters,
-		players: MAX_DEALT_PLAYERS,
-		...(numeric ? { numeric } : {})
+		players: MAX_DEALT_PLAYERS
 	});
 }
 
