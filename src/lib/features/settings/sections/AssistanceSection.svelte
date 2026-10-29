@@ -9,7 +9,6 @@
 	import { gameSettings } from '#lib/features/game-settings/game-settings.svelte.ts';
 	import BagDrawRows from '#lib/features/game-settings/BagDrawRows.svelte';
 	import { SETUP_LOOKS } from '#lib/core/rules/index.ts';
-	import { TIMER_FOR_PLAYERS } from '#lib/ui/preferences.ts';
 	import SettingSelect from '#lib/ui/settings/SettingSelect.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import { STORYTELLER_GROUPS } from './storyteller-groups.ts';
@@ -99,16 +98,6 @@
 	onChange={(timerMode) => preferences.update({ timerMode })}
 />
 <TimerPerPlayerRow />
-<SettingSelect
-	label={t('day.timerForPlayers')}
-	value={gameSettings.current.timerForPlayers}
-	options={TIMER_FOR_PLAYERS.map((value) => ({
-		value,
-		label: t(`day.timerForPlayers.${value}`)
-	}))}
-	defaultValue="sun"
-	onChange={(timerForPlayers) => gameSettings.setDefault({ timerForPlayers })}
-/>
 <SettingSelect
 	label={t('day.setupForPlayers')}
 	value={gameSettings.current.setupForPlayers}

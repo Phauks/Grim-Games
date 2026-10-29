@@ -94,7 +94,6 @@ test("players' phones show where the game is up to, with the day timer as a sun 
 	const day = page.getByRole('dialog', { name: 'Day 1' });
 	await expect(day).toBeVisible();
 	await expect(status).toContainText('Day 1');
-	await expect(shown).toHaveAttribute('data-look', 'sun');
 	await expect(shown.getByRole('img')).toHaveAttribute(
 		'aria-label',
 		'Day timer: 100% of the day left'
@@ -135,31 +134,20 @@ test("players' phones show where the game is up to, with the day timer as a sun 
 		{ timeout: 10_000 }
 	);
 
-	// The timer's own sheet on the board says how players see it: the clock itself.
+	// Always a sun (Trevor, 2026-10-29): the timer's own sheet on the board has no choice of
+	// how players see it.
 	await day.getByRole('button', { name: 'Close' }).tap();
 	await expect(day).toBeHidden();
 	await page.getByRole('button', { name: /^Day timer, .*; open its controls$/ }).tap();
 	const controls = page.getByTestId('timer-sheet');
-	await controls.getByRole('combobox', { name: 'Day timer on players’ phones' }).tap();
-	await page.getByRole('option', { name: 'Timer', exact: true }).tap();
-	await expect(shown).toHaveAttribute('data-look', 'timer');
-	await expect(shown.getByRole('timer')).toHaveText(/^3:[0-5]\d$/);
-
-	// Always shown: the Storyteller picks only its style (Trevor, 2026-10-28), so no Hidden.
-	await controls.getByRole('combobox', { name: 'Day timer on players’ phones' }).tap();
-	await expect(page.getByRole('option')).toHaveText(['Sun', 'Timer']);
-	await page.keyboard.press('Escape');
+	await expect(
+		controls.getByRole('combobox', { name: 'Day timer on players’ phones' })
+	).toHaveCount(0);
 	await page.keyboard.press('Escape');
 	await expect(controls).toBeHidden();
 
 	// Back to town, confirmed: the rest of the day is Town, still saying which day; the day
 	// timer stops and the players' sun has set (Trevor, 2026-10-27).
-	await page.getByRole('button', { name: /^Day timer, .*; open its controls$/ }).tap();
-	await controls.getByRole('combobox', { name: 'Day timer on players’ phones' }).tap();
-	await page.getByRole('option', { name: 'Sun', exact: true }).tap();
-	await expect(shown).toHaveAttribute('data-look', 'sun');
-	await page.keyboard.press('Escape');
-	await expect(controls).toBeHidden();
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	const menu = page.getByRole('dialog', { name: 'Grimoire' });
 	await menu.getByRole('button', { name: 'Back to town' }).tap();

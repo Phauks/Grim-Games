@@ -70,7 +70,7 @@ test("the Storyteller's player view has the players' status row and day timer", 
 
 	await page.getByRole('button', { name: 'Script', exact: true }).tap();
 	await expect(status).toContainText('Day 1');
-	await expect(script.getByTestId('players-timer')).toHaveAttribute('data-look', 'sun');
+	await expect(script.getByTestId('players-timer').getByRole('img')).toBeVisible();
 	// No Traveller yet, so the day's counts say nothing about exiles.
 	await status.tap();
 	const counts = page.getByTestId('players-counts');
@@ -123,7 +123,7 @@ test("the Storyteller's player view has the players' status row and day timer", 
 	await cover.getByRole('button', { name: 'Player view' }).tap();
 	const view = page.getByTestId('cover-player-view');
 	await expect(view.getByTestId('players-status')).toContainText('Day 1');
-	await expect(view.getByTestId('players-timer')).toHaveAttribute('data-look', 'sun');
+	await expect(view.getByTestId('players-timer').getByRole('img')).toBeVisible();
 });
 
 /** Every button on the player screen's title line and in its Grim tab's corner, by name. */

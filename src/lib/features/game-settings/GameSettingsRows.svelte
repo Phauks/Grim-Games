@@ -3,7 +3,6 @@
 	import { SETUP_LOOKS } from '#lib/core/rules/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { ASSIST_LABELS } from '#lib/ui/assistance.ts';
-	import { TIMER_FOR_PLAYERS } from '#lib/ui/preferences.ts';
 	import SettingHeading from '#lib/ui/settings/SettingHeading.svelte';
 	import SettingSelect from '#lib/ui/settings/SettingSelect.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
@@ -26,16 +25,6 @@
 	description={ASSIST_LABELS.trackNominations.description}
 	checked={values.trackNominations}
 	onChange={(trackNominations) => gameSettings.set(gameId, { trackNominations })}
-/>
-<SettingSelect
-	label={t('day.timerForPlayers')}
-	value={values.timerForPlayers}
-	options={TIMER_FOR_PLAYERS.map((value) => ({
-		value,
-		label: t(`day.timerForPlayers.${value}`)
-	}))}
-	defaultValue="sun"
-	onChange={(timerForPlayers) => gameSettings.set(gameId, { timerForPlayers })}
 />
 <TimerPerPlayerRow game />
 <SettingSelect
