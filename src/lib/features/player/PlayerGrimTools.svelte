@@ -2,6 +2,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import HideContentsButton from '#lib/ui/primitives/HideContentsButton.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import MatchShapeButton from './MatchShapeButton.svelte';
 	import { playerSettings } from './player-settings.svelte.ts';
 
@@ -10,7 +11,8 @@
 	 * 2026-10-27: "move any controls onto the grim so we remove wasted space"), all in its top
 	 * right beside Full screen ("All controls on a player grim should be in the top right, next
 	 * to the full screen button"): the eye, the board's shape and, once the Storyteller shares
-	 * it, the Final grimoire switch (plan R5). A row only: PlayerGrim places it.
+	 * it, the Final grimoire switch (plan R5); and the reminder bin (Trevor, 2026-10-29). A row
+	 * only: PlayerGrim places it.
 	 */
 	interface Props {
 		/** The board's shape has arrived, so the town can take it. */
@@ -19,6 +21,8 @@
 		final: boolean;
 		showFinal: boolean;
 		onFinal: (on: boolean) => void;
+		/** The reminder bin: open, and off while the eye hides the player's own reminders. */
+		bin?: { open: boolean; disabled: boolean; onToggle: () => void };
 		/** Placed in the town's top right itself, for a town without Full screen's corner. */
 		placed?: boolean;
 		/** Placed, the row's size, measured, so the ring of seats keeps clear of it. */
@@ -31,6 +35,7 @@
 		final,
 		showFinal,
 		onFinal,
+		bin,
 		placed = false,
 		width = $bindable(0),
 		height = $bindable(0)
@@ -53,6 +58,17 @@
 				testid="hide-guesses"
 			/></span
 		>
+		{#if bin}<span class="corner-button"
+				><IconButton
+					icon="reminder"
+					label={t('player.grim.reminderBin')}
+					aria-pressed={bin.open}
+					disabled={bin.disabled}
+					data-bin-opener
+					data-testid="reminder-bin-button"
+					onclick={bin.onToggle}
+				/></span
+			>{/if}
 		<span class="corner-button"><MatchShapeButton disabled={!shaped} /></span>
 	</div>{/snippet}
 

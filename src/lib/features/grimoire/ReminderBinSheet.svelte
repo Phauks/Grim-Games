@@ -21,29 +21,20 @@
 		lowered?: boolean;
 		/** Above the tokens, such as a search field. */
 		header?: Snippet;
-		/** What opens it, whose own tap isn't a tap outside. */
-		opener?: HTMLElement;
 	}
 
-	let {
-		open = $bindable(),
-		label,
-		groups,
-		keyOf,
-		item,
-		lowered = false,
-		header,
-		opener
-	}: Props = $props();
+	let { open = $bindable(), label, groups, keyOf, item, lowered = false, header }: Props = $props();
 
 	let sheet = $state<HTMLElement>();
 
 	function outside(event: PointerEvent) {
 		if (!open || lowered) return;
 		const target = event.target as Node | null;
-		if (!target || sheet?.contains(target) || opener?.contains(target)) return;
+		// What opens it (`data-bin-opener`) toggles it itself.
+		const el = target as Element;
+		if (!target || sheet?.contains(target) || el.closest?.('[data-bin-opener]')) return;
 		// A dialog opened from the sheet (choosing a seat) isn't outside it.
-		if ((target as Element).closest?.('[role="dialog"], [role="alertdialog"]')) return;
+		if (el.closest?.('[role="dialog"], [role="alertdialog"]')) return;
 		open = false;
 	}
 	const empty = $derived(groups.every((g) => g.items.length === 0));
@@ -52,7 +43,9 @@
 <svelte:window
 	onpointerdown={outside}
 	onkeydown={(event) => {
-		if (open && event.key === 'Escape') open = false;
+		// Escape in a dialog over the sheet closes only that dialog.
+		const over = document.querySelector('[role="dialog"], [role="alertdialog"]');
+		if (open && event.key === 'Escape' && !over) open = false;
 	}}
 />
 

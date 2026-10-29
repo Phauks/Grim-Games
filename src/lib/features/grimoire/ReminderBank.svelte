@@ -109,7 +109,6 @@
 	);
 	/** The bank pulled up into a sheet of every token at once, under the same captions. */
 	let binOpen = $state(false);
-	let pullUp = $state<HTMLElement>();
 	const binGroups = $derived(
 		[...new Set(items.map((i) => i.group))].map((group) => ({
 			key: group,
@@ -454,7 +453,7 @@
 		class="pull-up"
 		aria-label="Show every reminder"
 		aria-expanded={binOpen}
-		bind:this={pullUp}
+		data-bin-opener
 		onclick={() => (binOpen = !binOpen)}><Icon name="expand" /></button
 	>
 	{#if run}
@@ -479,7 +478,6 @@
 	groups={binGroups}
 	keyOf={(item) => item.key}
 	lowered={!!drag}
-	opener={pullUp}
 	--bin-bottom="calc(-1 * (var(--tray-h) + var(--space-2)))"
 	--bin-height="calc(60% + var(--tray-h))"
 >

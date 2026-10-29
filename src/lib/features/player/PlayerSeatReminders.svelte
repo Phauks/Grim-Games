@@ -13,6 +13,7 @@
 	import {
 		isGenericReminder,
 		placedKey,
+		reminderChip,
 		remindersOn,
 		type PlayerReminders
 	} from './player-reminders.ts';
@@ -56,14 +57,7 @@
 		held = $bindable()
 	}: Props = $props();
 
-	const chip = $derived(
-		Math.max(
-			44,
-			Math.round(
-				Math.max(30, Math.min(48, size * 0.5)) * preferences.current.tokenAppearance.reminderScale
-			)
-		)
-	);
+	const chip = $derived(reminderChip(size, preferences.current.tokenAppearance.reminderScale));
 	const fan = $derived.by(() => {
 		if (board.width <= 0 || board.height <= 0) return seats.map(() => []);
 		return fitReminders(
