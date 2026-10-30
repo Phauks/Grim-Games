@@ -19,7 +19,7 @@ import {
 	testCharacters as characters
 } from '#lib/core/model/fixtures.test-support.ts';
 import { alignmentOf } from '#lib/core/model/selectors.ts';
-import { reincarnatedBy } from '#lib/core/rules/reincarnation.ts';
+import { demonHeirs, reincarnatedBy } from '#lib/core/rules/reincarnation.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
 const hindu: Command = { type: 'AddRuleCharacter', characterId: 'hindu' };
@@ -82,10 +82,35 @@ describe('Hindu', () => {
 			expect(alignmentOf(game, seats[4])).toBe('evil');
 		});
 
-		// If the Demon is among the first four to die, good wins: there is no rebirth to offer.
-		it('offers the Demon none', () => {
+		// A Demon among the first four to die means good wins, unless the Storyteller uses the
+		// optional rule: the Demon becomes a Traveller too, and a Minion becomes the Demon.
+		it('offers the Demon a rebirth while a Minion lives to take it on', () => {
 			const { game, seats } = castGame(cast, hindu, dies(5));
+			expect(reincarnatedBy(game, seats[5], characters)).toBe('hindu');
+			expect(demonHeirs(game, seats[5], 'hindu', characters)).toEqual([seats[4]]);
+		});
+
+		it('offers the Demon none with no living Minion', () => {
+			const { game, seats } = castGame(cast, hindu, dies(4), reborn(4, 'gunslinger'), dies(5));
+			expect(demonHeirs(game, seats[5], 'hindu', characters)).toEqual([]);
 			expect(reincarnatedBy(game, seats[5], characters)).toBeUndefined();
+		});
+
+		it('passes no Demon on for a player who was no Demon', () => {
+			const { game, seats } = castGame(cast, hindu, dies(1));
+			expect(demonHeirs(game, seats[1], 'hindu', characters)).toEqual([]);
+		});
+
+		it('makes the Minion the Demon the reborn Demon was', () => {
+			const { game, seats } = castGame(cast, hindu, dies(5), reborn(5, 'gunslinger'), (s) => ({
+				type: 'AssignCharacter',
+				seatId: s[4],
+				characterId: 'imp',
+				alignment: 'evil'
+			}));
+			expect(game.seats[seats[5]]).toMatchObject({ characterId: 'gunslinger', dead: false });
+			expect(alignmentOf(game, seats[5])).toBe('evil');
+			expect(game.seats[seats[4]]).toMatchObject({ characterId: 'imp', dead: false });
 		});
 
 		it('offers a reborn player none when they die again', () => {
