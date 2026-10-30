@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { normaliseUsername, USERNAME_MAX } from '#lib/features/account/account-protocol.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import QrScanner from '#lib/ui/share/QrScanner.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
@@ -12,7 +12,7 @@
 	/**
 	 * Asks someone by their exact username (plan F1); Enter sends. A refusal stays in the
 	 * dialog; a request that went out just closes it, and shows under Sent or Friends.
-	 * Scan reads someone's friend code (Trevor, 2026-10-29) into the field.
+	 * The camera in the field reads someone's friend code into it (Trevor, 2026-10-29 and 30).
 	 */
 	let { open = $bindable(false), initial = '' }: { open?: boolean; initial?: string } = $props();
 
@@ -70,13 +70,13 @@
 		invalid={name.trim() !== '' && !valid}
 		disabled={busy}
 		oncommit={() => void send()}
+		end={scan}
 	/>
 	<!-- Always there, so an error never moves the buttons. -->
 	<p class="error" role="status">{error}</p>
 	{#snippet actions()}
 		<ModalActions
 			onCancel={() => (open = false)}
-			start={scan}
 			onConfirm={() => void send()}
 			confirmLabel={t('friends.addDialog.send')}
 			disabled={!valid || busy}
@@ -85,15 +85,16 @@
 </Dialog>
 
 {#snippet scan()}
-	<Button
-		variant="quiet"
+	<!-- The camera in the field, as on Join game (Trevor, 2026-10-30). -->
+	<IconButton
 		icon="scan"
+		label={t('share.scan')}
 		disabled={busy}
 		onclick={() => {
 			scanProblem = '';
 			scanning = true;
-		}}>{t('share.scan')}</Button
-	>
+		}}
+	/>
 {/snippet}
 
 <Dialog bind:open={scanning} title={t('share.scan')}>

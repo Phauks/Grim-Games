@@ -26,14 +26,20 @@ type EvilInfoStep = (typeof EVIL_INFO_STEPS)[number];
  * in play (the Snitch's extra bluffs at Demon info), and `hidesDemon` when a Minion may not
  * learn the Demon because of it (the Poppy Grower, Magician, Marionette, Lil' Monsta).
  * `anyPlayerCount` gives the steps below 7 players too (the Toymaker: evil players get normal
- * starting info, https://wiki.bloodontheclocktower.com/Toymaker). `none` leaves both steps out
- * at any player count (Tor: the Demon and Minions do not know each other,
+ * starting info, https://wiki.bloodontheclocktower.com/Toymaker). `hidesMinions` while a player
+ * with it lives: the Demon learns no Minions (the Poppy Grower,
+ * https://wiki.bloodontheclocktower.com/Poppy_Grower). `shownAsOtherEvil`: the Demon is shown
+ * its player as a Minion and the Minions as the Demon (the Magician,
+ * https://wiki.bloodontheclocktower.com/Magician). `none` leaves both steps out at any player
+ * count (Tor: the Demon and Minions do not know each other,
  * https://wiki.bloodontheclocktower.com/Tor).
  */
 interface EvilInfo {
 	notes?: Partial<Record<EvilInfoStep, string>>;
 	hidesDemon?: true;
 	anyPlayerCount?: true;
+	hidesMinions?: true;
+	shownAsOtherEvil?: true;
 	none?: true;
 }
 
@@ -199,11 +205,16 @@ function readEvilInfo(raw: unknown, path: string, issues: Issues): EvilInfo | un
 		issues.add(path, `expected object, got ${describe(raw)}`);
 		return undefined;
 	}
-	checkKeys(raw, ['notes', 'hidesDemon', 'anyPlayerCount', 'none'], path, issues);
+	const flags = [
+		'hidesDemon',
+		'anyPlayerCount',
+		'hidesMinions',
+		'shownAsOtherEvil',
+		'none'
+	] as const;
+	checkKeys(raw, ['notes', ...flags], path, issues);
 	const out: EvilInfo = {};
-	if (readBoolean(raw, 'hidesDemon', path, issues)) out.hidesDemon = true;
-	if (readBoolean(raw, 'anyPlayerCount', path, issues)) out.anyPlayerCount = true;
-	if (readBoolean(raw, 'none', path, issues)) out.none = true;
+	for (const flag of flags) if (readBoolean(raw, flag, path, issues)) out[flag] = true;
 	if (raw.notes !== undefined) {
 		const at = `${path}.notes`;
 		if (!isObject(raw.notes)) issues.add(at, `expected object, got ${describe(raw.notes)}`);

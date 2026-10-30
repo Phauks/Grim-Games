@@ -6,7 +6,7 @@
 	import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts';
 	import { navDrawer } from '#lib/features/shell/nav-drawer.svelte.ts';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
-	import { inboxDialog } from '#lib/features/room/inbox-dialog.svelte.ts';
+	import { playersDialog } from '#lib/features/room/players-dialog.svelte.ts';
 	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import { appFullScreen } from '#lib/ui/full-screen.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -93,16 +93,16 @@
 	<div class="menu">
 		<section class="group" aria-labelledby="board-menu-game">
 			<h3 id="board-menu-game" class="group-title">Game</h3>
-			<!-- Players' messages, here on every screen (Trevor, 2026-10-28: "we should not have
-			     discrepancy, keep in ..."). -->
+			<!-- Players and their messages, here on every screen (Trevor, 2026-10-28: "we should not
+			     have discrepancy"; 2026-10-29: Messages folded into Players). -->
 			{#if host.code && !watching}
 				<Button
 					variant="quiet"
-					icon="messages"
-					data-testid="menu-messages"
-					onclick={() => fromMenu(() => inboxDialog.show())}
+					icon="players"
+					data-testid="menu-players"
+					onclick={() => fromMenu(() => playersDialog.show())}
 				>
-					{t('room.inbox.title')}
+					{t('room.players.title')}
 					{#if host.inbox.unread}<CountBadge count={host.inbox.unread} warn />{/if}
 				</Button>
 			{/if}

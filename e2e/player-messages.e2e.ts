@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { openInbox } from './inbox.ts';
+import { openPlayers, openPlayerSheet } from './players.ts';
 import { toBoard } from './new-game.ts';
 import { openProfile, setPlayerName } from './player-name.ts';
 
@@ -8,7 +8,7 @@ import { openProfile, setPlayerName } from './player-name.ts';
 // images also goes"; "Players cannot see message once sent"; and on the grim cover, "don't
 // show who, but show notifications".
 
-test('a player messages the Storyteller, who reads it in Messages; the cover shows only a count', async ({
+test('a player messages the Storyteller, who reads it on Players; the cover shows only a count', async ({
 	page,
 	browser
 }, testInfo) => {
@@ -20,7 +20,7 @@ test('a player messages the Storyteller, who reads it in Messages; the cover sho
 	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 	const board = new URL(page.url()).pathname;
-	// Messages is only ever in ⋯, never on the toolbar (Trevor, 2026-10-28).
+	// Players (with its messages) is only ever in ⋯, never on the toolbar (Trevor, 2026-10-28).
 	await expect(page.getByTestId('toolbar-messages')).toHaveCount(0);
 	await page.goto(`${board}/room`);
 	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
@@ -70,19 +70,22 @@ test('a player messages the Storyteller, who reads it in Messages; the cover sho
 	await cover.getByRole('button', { name: 'Close' }).tap();
 	await expect(cover).toBeHidden();
 
-	// Messages shows who and what, each in its own box (Trevor, 2026-10-28); a message is read
-	// only once it is opened on its own, and can be marked unread again.
-	const inbox = await openInbox(page);
-	const item = inbox.getByTestId('inbox-item');
+	// Players shows who has sent something (Trevor, 2026-10-29: Messages folded into Players);
+	// a consult makes the count stand out.
+	const players = await openPlayers(page);
+	const row = players.getByTestId('room-player').filter({ hasText: 'Alex' });
+	await expect(row.getByTestId('room-player-waiting')).toHaveText('1');
+	await expect(row.getByTestId('room-player-waiting')).toHaveAttribute('data-warn', '');
+	await page.keyboard.press('Escape');
+	await expect(players).toBeHidden();
+	// Their sheet has what they sent, each in its own box (Trevor, 2026-10-28); a message is
+	// read only once it is opened on its own, and can be marked unread again.
+	const alexSheet = await openPlayerSheet(page, 'Alex');
+	const item = alexSheet.getByTestId('inbox-item');
 	await expect(item).toHaveCount(1);
-	await expect(item).toContainText('Alex');
 	await expect(item).toContainText('Can I swap seats with Sam?');
 	await expect(item.getByTestId('inbox-consult')).toHaveText('Consult requested');
 	await expect(item).toContainText('New');
-	await page.keyboard.press('Escape');
-	await expect(inbox).toBeHidden();
-	await expect(page.getByRole('button', { name: /1 new message/ }).first()).toBeVisible();
-	await openInbox(page);
 	await item.tap();
 	const opened = page.getByRole('dialog', { name: 'Message', exact: true });
 	await expect(opened.getByTestId('inbox-opened')).toContainText('Can I swap seats with Sam?');
@@ -94,23 +97,13 @@ test('a player messages the Storyteller, who reads it in Messages; the cover sho
 	await opened.getByRole('button', { name: 'Mark as unread' }).tap();
 	await expect(opened).toBeHidden();
 	await expect(item).toContainText('New');
-	// Filters by player, read or unread, and a request for a consult (Trevor, 2026-10-28).
-	const filters = inbox.getByTestId('inbox-filters');
-	await filters.getByRole('button', { name: 'Unread', exact: true }).tap();
-	await expect(item).toHaveCount(0);
-	await expect(inbox).toContainText('None');
-	await filters.getByRole('button', { name: 'Unread', exact: true }).tap();
-	await filters.getByRole('button', { name: 'Read', exact: true }).tap();
-	await expect(item).toHaveCount(1);
-	await filters.getByRole('combobox', { name: 'Player' }).tap();
-	await page.getByRole('option', { name: 'Alex', exact: true }).tap();
-	await expect(item).toHaveCount(1);
-	await filters.getByRole('button', { name: 'Consult requested', exact: true }).tap();
-	await expect(item).toHaveCount(1);
 	await item.tap();
 	await page.keyboard.press('Escape');
 	await page.keyboard.press('Escape');
-	await expect(inbox).toBeHidden();
+	await expect(alexSheet).toBeHidden();
+	await expect(row.getByTestId('room-player-waiting')).toHaveCount(0);
+	await page.keyboard.press('Escape');
+	await expect(players).toBeHidden();
 	await expect(page.getByRole('button', { name: /new message/ })).toHaveCount(0);
 	await page.getByTestId('cover-button').tap();
 	await expect(cover.getByTestId('cover-inbox')).toBeHidden();

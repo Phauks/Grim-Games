@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import { seatsInOrder, type SeatId } from '#lib/core/model/index.ts';
 	import { fromScript, scriptLogo } from '#lib/core/data/index.ts';
 	import { formatRoomCode } from '#lib/core/sync/room-code.ts';
 	import type { OpenGame } from '#lib/features/game/session.svelte.ts';
@@ -18,7 +17,6 @@
 	import { scriptVersion } from '#lib/features/player/player-script.ts';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { roomHost } from './host.svelte.ts';
-	import RolesPanel from './RolesPanel.svelte';
 	import RoomTransferDialog from './RoomTransferDialog.svelte';
 	import { roomTransfer } from './room-transfer.svelte.ts';
 
@@ -56,12 +54,6 @@
 		refreshKind = kind;
 		refreshOpen = true;
 	}
-	const seats = $derived(seatsInOrder(game.game));
-	/** A phone sits where its name is on the board, so the list only says which seat. */
-	const seatNumber = (seatId?: SeatId) => {
-		const i = seats.findIndex((s) => s.seatId === seatId);
-		return i < 0 ? t('room.noSeat') : t('common.seat', { number: i + 1 });
-	};
 	const connected = $derived(host.status === 'open');
 	// Seated players, and others from this game, stay listed while their phone sleeps; the room
 	// also keeps phones from earlier games, which are left out (2026-10-25).
@@ -251,20 +243,6 @@
 					>{t('room.transfer.button')}</Button
 				>
 			</div>
-			<h2 id="players-label">{t('room.playersInRoom')}</h2>
-			{#if seated.length === 0}
-				<p class="none">{t('common.none')}</p>
-			{:else}
-				<ul class="list" aria-labelledby="players-label">
-					{#each seated as member (member.memberId)}
-						<li class="member">
-							<strong>{member.name}</strong>
-							<span class="seat-number">{seatNumber(member.seatId)}</span>
-						</li>
-					{/each}
-				</ul>
-			{/if}
-			<RolesPanel {game} />
 		</section>
 	</div>
 {/snippet}
@@ -366,29 +344,5 @@
 		min-height: 1.4em;
 		margin: 0;
 		color: var(--on-surface-muted);
-	}
-	.none {
-		margin: 0 0 var(--space-4);
-		color: var(--on-surface-muted);
-	}
-	.list {
-		display: grid;
-		gap: var(--space-2);
-		margin: 0 0 var(--space-4);
-		padding: 0;
-		list-style: none;
-	}
-	.member {
-		padding: var(--space-3);
-		border: 1px solid var(--border);
-		border-radius: var(--radius-md);
-		background: var(--surface-raised);
-	}
-	.member {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-2);
 	}
 </style>

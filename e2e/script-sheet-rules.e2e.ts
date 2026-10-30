@@ -63,3 +63,30 @@ test("a phone in the room sees the game's special rules on its script", async ({
 	await expect(script.getByTestId('sheet-rule')).toContainText(STOWED_AWAY);
 	await phoneContext.close();
 });
+
+// Trevor, 2026-10-29: "what about special rules or game modes?" on the printed sheet: on the
+// back by default, or the front, each by its own switch.
+test("the printed sheet carries the game's special rules, on the back by default", async ({
+	page
+}) => {
+	await startWithStowedAway(page);
+	await page.getByRole('button', { name: 'Script', exact: true }).tap();
+	const sheet = page.getByRole('dialog', { name: 'Trouble Brewing' });
+	await sheet.getByRole('button', { name: 'Print script' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Print script' })
+		.getByRole('button', { name: /^Print .* Sheet$/ })
+		.tap();
+	const screen = page.getByRole('dialog', { name: /^Print .* Sheet$/ });
+	const preview = screen.getByTestId('print-preview');
+	await expect(preview.locator('.back').getByTestId('sheet-rule')).toContainText('Stowed Away');
+	await expect(preview.locator('.front').getByTestId('sheet-rule')).toHaveCount(0);
+	const fields = screen.getByTestId('print-settings');
+	const switches = fields.getByRole('checkbox', {
+		name: 'Game mode and special rules',
+		includeHidden: true
+	});
+	await expect(switches.first()).toBeEnabled();
+	await fields.getByText('Game mode and special rules', { exact: true }).first().tap();
+	await expect(preview.locator('.front').getByTestId('sheet-rule')).toContainText('Stowed Away');
+});

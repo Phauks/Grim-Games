@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { openMenu, openSettingsDialog } from './shell.ts';
+import { APP_NAME } from '../src/lib/core/app-name.ts';
 
 // Local runs use the preview email sender: no email is sent and the code is shown on screen.
 const homebrew = [
@@ -449,33 +450,45 @@ test('a code-only account can set a password in Account settings', async ({ page
 	await expect(page.getByTestId('account-email')).toHaveText(email);
 });
 
-test('the profile icon is picked from the characters and shows on Account in the menu', async ({
+// Account has no icon row of its own (Trevor, 2026-10-30): the Profile's character token is it.
+test("the Profile's character token is the account's icon on Account in the menu", async ({
 	page
 }) => {
 	await signInWithCode(page, uniqueEmail('icon'));
-	await expect(page.getByTestId('profile-icon').first()).not.toHaveAttribute('data-icon');
-	await page.getByRole('button', { name: 'Change icon' }).tap();
-	const dialog = page.getByRole('dialog', { name: 'Change icon' });
-	await dialog.getByRole('searchbox').fill('Fortune Teller');
-	await dialog
-		.getByRole('button', { name: /Fortune Teller/ })
-		.first()
-		.tap();
-	await expect(dialog).toBeHidden();
-	const inMenu = async () => (await openMenu(page)).getByRole('link', { name: 'Account' });
-	await expect((await inMenu()).getByTestId('profile-icon')).toHaveAttribute(
-		'data-icon',
-		'fortuneteller'
-	);
-	// It is kept on the account, not the device.
-	await page.reload();
-	const account = await inMenu();
-	await expect(account.getByTestId('profile-icon')).toHaveAttribute('data-icon', 'fortuneteller');
-	await account.tap();
+	await expect(page.getByRole('button', { name: 'Change icon' })).toHaveCount(0);
+	// Checks the icon on Account in the menu, then taps it, which closes the menu.
+	const expectIcon = async (icon: string | undefined) => {
+		const link = (await openMenu(page)).getByRole('link', { name: 'Account' });
+		const shown = link.getByTestId('profile-icon');
+		if (icon) await expect(shown).toHaveAttribute('data-icon', icon);
+		else await expect(shown).not.toHaveAttribute('data-icon');
+		await link.tap();
+		await expect(page.getByRole('dialog', { name: APP_NAME })).toBeHidden();
+	};
+	const pickToken = async (name: RegExp | 'None') => {
+		const settings = await openSettingsDialog(page);
+		await settings.getByRole('button', { name: 'Profile', exact: true }).tap();
+		await settings.getByRole('button', { name: 'Change character token' }).tap();
+		const picker = page.getByRole('dialog', { name: 'Character token' });
+		if (name === 'None') await picker.getByRole('button', { name: 'None' }).tap();
+		else {
+			await picker.getByRole('searchbox').fill('Fortune Teller');
+			await picker.getByRole('button', { name }).first().tap();
+		}
+		await expect(picker).toBeHidden();
+		await settings.getByRole('button', { name: 'Close' }).first().tap();
+		await expect(settings).toBeHidden();
+	};
 
-	await page.getByRole('button', { name: 'Change icon' }).tap();
-	await dialog.getByRole('button', { name: 'None' }).tap();
-	await expect((await inMenu()).getByTestId('profile-icon')).not.toHaveAttribute('data-icon');
+	await expectIcon(undefined);
+	await pickToken(/Fortune Teller/);
+	await expectIcon('fortuneteller');
+	// It is kept on the account too.
+	await page.reload();
+	await expectIcon('fortuneteller');
+
+	await pickToken('None');
+	await expectIcon(undefined);
 });
 
 // Trevor (2026-10-18): what Download my data saves, Import data reads back in.

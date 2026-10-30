@@ -13,6 +13,7 @@ import type {
 	CharacterGuess,
 	DayEntryId,
 	DeathCause,
+	FakeEvilInfo,
 	GenericLook,
 	OverrideField,
 	Reminder,
@@ -174,6 +175,11 @@ export type Command =
 	| { type: 'RemoveBluffSet'; set: number }
 	/** Names a bluff set after the Demon's; an empty name brings back its default. */
 	| { type: 'RenameBluffSet'; set: number; name: string }
+	/**
+	 * Replaces what a player who believes they are the Demon (the Lunatic) is shown: their
+	 * fake Minions, a decoy Lunatic and the decoy's picks. An empty one clears it.
+	 */
+	| { type: 'SetFakeEvilInfo'; seatId: SeatId; info: FakeEvilInfo }
 	/** Replaces the bag. Tiles are shuffled unless `shuffle` is false. */
 	| {
 			type: 'BuildBag';

@@ -1,6 +1,13 @@
 import { defaultAlignment, type CharacterId } from '#lib/core/data/index.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
-import { isKnownReminder, isOnScript, type Tile } from '#lib/core/model/index.ts';
+import {
+	isKnownReminder,
+	isOnScript,
+	trueCharacter,
+	type FakeEvilInfo,
+	type SeatId,
+	type Tile
+} from '#lib/core/model/index.ts';
 import type { GameEvent } from '../events.ts';
 import {
 	BLUFFS_PER_SET,
@@ -22,6 +29,7 @@ export const BLUFFS_BAG_DECIDERS: Deciders<
 	| 'SetBluffs'
 	| 'RemoveBluffSet'
 	| 'RenameBluffSet'
+	| 'SetFakeEvilInfo'
 	| 'BuildBag'
 	| 'ClearBag'
 	| 'DrawTile'
@@ -81,6 +89,34 @@ export const BLUFFS_BAG_DECIDERS: Deciders<
 			return [];
 		}
 		return [{ type: 'BluffSetRenamed', set, name }];
+	},
+
+	SetFakeEvilInfo(game, command, ctx, warn) {
+		const seatId = seatOf(game, command.seatId).seatId;
+		const id = trueCharacter(game, seatId, ctx.characters);
+		if (!id || rulesOf(id, ctx.characters)?.believesType !== 'demon') {
+			warn('not-a-believer', 'this player does not believe they are the Demon');
+		}
+		const seats = (ids: readonly SeatId[]) => [
+			...new Set(ids.map((s) => seatOf(game, s).seatId).filter((s) => s !== seatId))
+		];
+		const info: FakeEvilInfo = { minions: seats(command.info.minions) };
+		if (command.info.decoy !== undefined) {
+			const decoy = seatOf(game, command.info.decoy).seatId;
+			if (decoy === seatId) refuse('same-seat', 'the decoy must be another player');
+			info.decoy = decoy;
+		}
+		const chose = seats(command.info.decoyChose ?? []);
+		if (info.decoy && chose.length) info.decoyChose = chose;
+		const empty = !info.minions.length && !info.decoy;
+		const before = game.fakeEvilInfo?.[seatId];
+		if (empty ? !before : JSON.stringify(info) === JSON.stringify(before)) {
+			warn('no-change', 'nothing changed');
+			return [];
+		}
+		const event: GameEvent = { type: 'FakeEvilInfoSet', seatId };
+		if (!empty) event.info = info;
+		return [event];
 	},
 
 	BuildBag(game, command, ctx, warn) {

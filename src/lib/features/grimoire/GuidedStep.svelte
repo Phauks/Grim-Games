@@ -8,7 +8,7 @@
 	import NightYesNo from './NightYesNo.svelte';
 	import TravellerAlignment from './TravellerAlignment.svelte';
 	import { STANDARD_INFO_TOKENS, type CharacterId } from '#lib/core/data/index.ts';
-	import { TRAVELLER_ALIGNMENT_STEP } from '#lib/core/rules/index.ts';
+	import { believesDemon, TRAVELLER_ALIGNMENT_STEP } from '#lib/core/rules/index.ts';
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import type { InfoChoice, InfoPicker, Night, NightStep } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
@@ -101,6 +101,7 @@
 	const game = $derived(grimoire.game);
 	const characters = $derived(grimoire.open.characters);
 	const holders = $derived(step ? stepHolders(game, step, characters) : []);
+	const believers = $derived(holders.filter((s) => believesDemon(game, s, characters)));
 	/**
 	 * The character's own reminder tokens, one row per copy the game has (the Mathematician's
 	 * five "Abnormal", Trevor 2026-10-17), each placed or moved on its own.
@@ -385,6 +386,26 @@
 					}}
 				/>
 			{/if}
+			<!-- A player who believes they are the Demon is shown a fake world (Trevor, 2026-10-29). -->
+			{#each believers as seatId (seatId)}
+				<EvilInfoCards
+					{game}
+					{characters}
+					step="believer"
+					believer={seatId}
+					{night}
+					onShow={(card) => {
+						shownId = undefined;
+						shownCard = card;
+						showOpen = true;
+					}}
+					onChooseBluffs={() => {
+						open = false;
+						onChooseBluffs?.();
+					}}
+					onFakeChange={(info) => grimoire.run({ type: 'SetFakeEvilInfo', seatId, info })}
+				/>
+			{/each}
 			<!-- The info tokens the text names, ready to show (Trevor, 2026-10-19). -->
 			{#if step.character}
 				<!-- Over the open step, which stays open under the sheet, as with onShow above. -->

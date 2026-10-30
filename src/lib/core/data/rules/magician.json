@@ -10,6 +10,7 @@
 			"minioninfo": "also shown as a Minion to the Demon and as the Demon to Minions.",
 			"demoninfo": "also shown as a Minion to the Demon and as the Demon to Minions."
 		},
-		"hidesDemon": true
+		"hidesDemon": true,
+		"shownAsOtherEvil": true
 	}
 }

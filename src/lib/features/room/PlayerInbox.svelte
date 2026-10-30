@@ -1,49 +1,39 @@
 <script lang="ts">
-	import { seatNumber, type Game } from '#lib/core/model/index.ts';
+	import type { PlayerName } from '#lib/core/data/index.ts';
 	import { roomImagePath } from '#lib/core/sync/room-images.ts';
 	import type { PlayersPhase } from '#lib/core/rules/game-phase.ts';
 	import { phaseText } from '#lib/features/grimoire/phase-text.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
-	import Select from '#lib/ui/primitives/Select.svelte';
-	import Chip from '#lib/ui/primitives/Chip.svelte';
 	import { roomHost } from './host.svelte.ts';
-	import { inboxDialog } from './inbox-dialog.svelte.ts';
 	import type { InboxItem } from './inbox.svelte.ts';
-	import { ALL_INBOX, filterInbox, inboxSenders, type InboxFilter } from './inbox-filter.ts';
 
 	/**
-	 * The Storyteller's Messages (Trevor, 2026-10-27: "Combine into a communication menu where
-	 * notifications from players about bad images also goes"): players' messages and reported
-	 * pictures, newest first, each in its own box (Trevor, 2026-10-28: "Each message should be
-	 * a box"). Tapping a box opens it on its own; only then is a message read, and it can be
-	 * marked unread again ("only marked as read when entered"). A reported picture is judged
-	 * there: let it stand, or take that player's picture away until the next game.
+	 * One player's messages and reported picture, in their sheet on Players (Trevor,
+	 * 2026-10-29: "get rid of messages, and just fully integrate it into Players"). Newest
+	 * first, each in its own box (Trevor, 2026-10-28: "Each message should be a box"). Tapping a
+	 * box opens it on its own; only then is a message read, and it can be marked unread again
+	 * ("only marked as read when entered"). A reported picture is judged there: let it stand,
+	 * or take that player's picture away until the next game.
 	 */
 	interface Props {
-		/** The game on the board, for each sender's seat number. */
-		game: Game;
+		memberId: string;
+		/** The player's name, for the picture's label. */
+		name: PlayerName;
 	}
 
-	let { game }: Props = $props();
+	let { memberId, name }: Props = $props();
 	const host = roomHost();
 	const inbox = host.inbox;
-
-	/**
-	 * Which boxes show (Trevor, 2026-10-28: "filters to message menu to sort by player and if
-	 * requesting consultation and unread or read"); kept while the board is open.
-	 */
-	let filter = $state<InboxFilter>({ ...ALL_INBOX });
-	const shown = $derived(filterInbox(inbox.items, filter));
-	const playerOptions = $derived([
-		{ value: 'all', label: t('room.inbox.allPlayers') },
-		...inboxSenders(inbox.items).map((id) => ({ value: id, label: nameOf(id) }))
-	]);
+	const shown = $derived(inbox.items.filter((i) => i.memberId === memberId));
+	const removeLabel = $derived(
+		// eslint-disable-next-line grim/names-as-badges -- an accessible name, never shown
+		t('room.pictureReport.removeNamed', { name })
+	);
 
 	/** The box opened on its own, by kind and id. */
 	let openKey = $state<string>();
@@ -69,19 +59,9 @@
 		return item.kind === 'picture' || !item.read;
 	}
 
-	function nameOf(memberId: string): string {
-		return (
-			host.members.find((m) => m.memberId === memberId)?.name ?? t('room.pictureReport.someone')
-		);
-	}
-
-	/** "Seat 4 · Day 2", or as much of it as is known. */
+	/** When it was sent: "Day 2", or nothing for a reported picture. */
 	function when(item: InboxItem): string {
-		const seatId = host.members.find((m) => m.memberId === item.memberId)?.seatId;
-		const number = seatId ? seatNumber(game, seatId) : undefined;
-		const seat = number === undefined ? '' : t('common.seat', { number });
-		const phase = item.kind === 'message' && item.phase ? phaseName(item.phase) : '';
-		return seat && phase ? t('room.inbox.when', { seat, phase }) : seat || phase;
+		return item.kind === 'message' && item.phase ? phaseName(item.phase) : '';
 	}
 
 	function phaseName(phase: PlayersPhase): string {
@@ -92,7 +72,7 @@
 
 {#snippet who(item: InboxItem)}
 	<span class="who">
-		<PlayerBadge name={nameOf(item.memberId)} />
+		<span>{item.kind === 'picture' ? t('room.inbox.picture') : t('room.inbox.message')}</span>
 		{#if when(item)}<span class="when">{when(item)}</span>{/if}
 	</span>
 {/snippet}
@@ -103,64 +83,39 @@
 	>
 {/snippet}
 
-<!-- `full`, so the header stays in place and the filters pinned under it while the boxes
-     scroll (Trevor, 2026-10-28: "Pin top of message area with controls"). -->
-<Dialog bind:open={inboxDialog.open} title={t('room.inbox.title')} size="full">
-	<!-- Always in place, so nothing moves as messages come in or filters empty the list. -->
-	<div class="filters" data-testid="inbox-filters">
-		<Select
-			label={t('room.inbox.player')}
-			options={playerOptions}
-			value={filter.player}
-			onChange={(player) => (filter.player = player)}
-		/>
-		<!-- On/off chips, not a drop-down (Trevor, 2026-10-28: "buttons or something better than
-		     a dropdown"); each shows its kind of box while on. -->
-		<div class="chips" role="group" aria-label={t('room.inbox.show')}>
-			<Chip pressed={filter.unread} onclick={() => (filter.unread = !filter.unread)}
-				>{t('room.inbox.readUnread')}</Chip
-			>
-			<Chip pressed={filter.read} onclick={() => (filter.read = !filter.read)}
-				>{t('room.inbox.readRead')}</Chip
-			>
-			<Chip pressed={filter.consult} onclick={() => (filter.consult = !filter.consult)}
-				>{t('room.inbox.consultOnly')}</Chip
-			>
-		</div>
-	</div>
-	{#if shown.length === 0}
-		<p class="none">{t('room.inbox.none')}</p>
-	{:else}
-		<ul class="items" data-testid="inbox">
-			{#each shown as item (key(item))}
-				<li>
-					<button
-						type="button"
-						class="item"
-						data-kind={item.kind}
-						data-new={isNew(item) ? '' : undefined}
-						data-testid="inbox-item"
-						onclick={() => open(item)}
-					>
-						<span class="top">
-							<!-- The dot's place is kept when it is off, so nothing shifts as boxes are read. -->
-							<span class="dot" class:on={isNew(item)}>
-								{#if isNew(item)}<span class="visually-hidden">{t('room.inbox.new')}</span>{/if}
-							</span>
-							{@render who(item)}
+<h3 id="player-inbox-{memberId}">{t('room.inbox.title')}</h3>
+{#if shown.length === 0}
+	<p class="none">{t('common.none')}</p>
+{:else}
+	<ul class="items" data-testid="inbox" aria-labelledby="player-inbox-{memberId}">
+		{#each shown as item (key(item))}
+			<li>
+				<button
+					type="button"
+					class="item"
+					data-kind={item.kind}
+					data-new={isNew(item) ? '' : undefined}
+					data-testid="inbox-item"
+					onclick={() => open(item)}
+				>
+					<span class="top">
+						<!-- The dot's place is kept when it is off, so nothing shifts as boxes are read. -->
+						<span class="dot" class:on={isNew(item)}>
+							{#if isNew(item)}<span class="visually-hidden">{t('room.inbox.new')}</span>{/if}
 						</span>
-						{#if item.kind === 'message'}
-							{#if item.consult}{@render consultLine()}{/if}
-							{#if item.text}<span class="preview">{item.text}</span>{/if}
-						{:else}
-							<span class="preview">{t('room.inbox.reported', { count: item.count })}</span>
-						{/if}
-					</button>
-				</li>
-			{/each}
-		</ul>
-	{/if}
-</Dialog>
+						{@render who(item)}
+					</span>
+					{#if item.kind === 'message'}
+						{#if item.consult}{@render consultLine()}{/if}
+						{#if item.text}<span class="preview">{item.text}</span>{/if}
+					{:else}
+						<span class="preview">{t('room.inbox.reported', { count: item.count })}</span>
+					{/if}
+				</button>
+			</li>
+		{/each}
+	</ul>
+{/if}
 
 <!-- One message or reported picture on its own (Trevor, 2026-10-28: "allow ability to enter
      each individual message"). -->
@@ -179,7 +134,7 @@
 					<img
 						class="picture"
 						src={roomImagePath(host.code, opened.hash)}
-						alt={t('room.pictureReport.picture', { name: nameOf(opened.memberId) })}
+						alt={t('room.pictureReport.picture', { name })}
 					/>
 				{/if}
 				<p class="text">{t('room.inbox.reported', { count: opened.count })}</p>
@@ -207,36 +162,16 @@
 				<Button onclick={() => inbox.judgePicture(picture.hash, true)}
 					>{t('room.pictureReport.allow')}</Button
 				>
-				<DeleteButton
-					label={t('room.pictureReport.removeNamed', { name: nameOf(picture.memberId) })}
-					onclick={() => inbox.judgePicture(picture.hash, false)}
-				/>
+				<DeleteButton label={removeLabel} onclick={() => inbox.judgePicture(picture.hash, false)} />
 			</div>
 		{/if}
 	{/snippet}
 </Dialog>
 
 <style>
-	.filters {
-		position: sticky;
-		top: 0;
-		z-index: 1;
-		padding-bottom: var(--space-2);
-		background: var(--dialog-background);
-		display: flex;
-		flex-wrap: wrap;
-		align-items: flex-end;
-		gap: var(--space-2) var(--space-3);
-		margin-bottom: var(--space-3);
-	}
-	.filters > :global(*) {
-		flex: 1 1 calc(10 * var(--u));
-		min-width: 0;
-	}
-	.chips {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-2);
+	h3 {
+		margin: 0;
+		font-size: 1rem;
 	}
 	.none {
 		margin: 0;

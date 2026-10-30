@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { LoadedScript } from '#lib/core/data/index.ts';
+	import type { PublicRule } from '#lib/core/sync/public-projection.ts';
 	import { scriptLogo } from '#lib/core/data/script-logo.ts';
 	import ShareControl from '#lib/features/scripts/ShareControl.svelte';
 	import { shareTargetFor, type Shareable } from '#lib/features/scripts/share-codes.ts';
@@ -30,6 +31,8 @@
 		 * every button a phone in `room` has shows here too, without acting as a player of it.
 		 */
 		storyteller?: boolean;
+		/** The game mode and special rules the table plays by, for Print. */
+		rules?: readonly PublicRule[];
 		/**
 		 * Continue game's code form, before this phone is in a room, shows no cog: the app's
 		 * sidebar already opens Settings there (Trevor, 2026-10-29).
@@ -37,7 +40,16 @@
 		cog?: boolean;
 	}
 
-	let { script, version, share, room, joined, storyteller = false, cog = true }: Props = $props();
+	let {
+		script,
+		version,
+		share,
+		room,
+		joined,
+		storyteller = false,
+		rules,
+		cog = true
+	}: Props = $props();
 	const target = $derived.by(() => {
 		if (!share) return undefined;
 		const from = share;
@@ -50,7 +62,7 @@
 <!-- One switch for the Script and Night tabs, beside Print and Share (Trevor, 2026-10-23). -->
 {#if script}
 	<SheetBackgroundSelect compact />
-	<PrintScriptButton {script} {version} />
+	<PrintScriptButton {script} {version} {rules} />
 	<ShareControl
 		what="script"
 		title={script.name}

@@ -9,12 +9,10 @@ describe('settings for one game', () => {
 		const prefs = {
 			...DEFAULT_PREFERENCES,
 			assistance: { ...DEFAULT_PREFERENCES.assistance, trackNominations: true },
-			timerForPlayers: 'timer' as const,
 			holdToReveal: true
 		};
 		expect(settingsFrom(prefs)).toMatchObject({
 			trackNominations: true,
-			timerForPlayers: 'timer',
 			holdToReveal: true
 		});
 	});
@@ -37,7 +35,6 @@ describe('settings for one game', () => {
 		const read = parseGameSettings(
 			{
 				trackNominations: true,
-				timerForPlayers: 'clock',
 				setupForPlayers: 'noon',
 				timerPerPlayer: 9999,
 				slotMachine: 'yes'

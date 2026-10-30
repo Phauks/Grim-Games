@@ -241,6 +241,7 @@
 			share={shareable}
 			room={inRoom}
 			joined={joinedRoom}
+			rules={roomTable.rules}
 			cog={!join || !!joinedRoom}
 		/>
 	{/snippet}
