@@ -1,5 +1,12 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { readParsed, readStored, readStoredText, writeStored, writeStoredText } from './stored.ts';
+import {
+	PHONE_FRAME_PREFIX,
+	readParsed,
+	readStored,
+	readStoredText,
+	writeStored,
+	writeStoredText
+} from './stored.ts';
 
 const store = new Map<string, string>();
 beforeEach(() => {
@@ -46,5 +53,19 @@ describe('stored', () => {
 		expect(readStored('a')).toBeUndefined();
 		expect(writeStored('a', 1)).toBe(false);
 		expect(readStoredText('a')).toBeUndefined();
+	});
+
+	it('keeps the data of a Test room phone frame apart, under its window name', () => {
+		const name = `${PHONE_FRAME_PREFIX}2`;
+		(globalThis as { name?: string }).name = name;
+		try {
+			writeStored('key', 'frame');
+			expect(store.get(`${name}:key`)).toBe('"frame"');
+			expect(store.has('key')).toBe(false);
+			expect(readStored('key')).toBe('frame');
+		} finally {
+			(globalThis as { name?: string }).name = '';
+		}
+		expect(readStored('key')).toBeUndefined();
 	});
 });

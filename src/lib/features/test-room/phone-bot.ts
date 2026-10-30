@@ -1,10 +1,10 @@
 /**
- * A fake player's phone (room-bots.ts): joins the room, keeps its latest view, and answers it
+ * A fake player's phone (scripts/room-bots.ts, the Test room page): joins the room, keeps its latest view, and answers it
  * as brain.ts decides, after a pause like a person's. With `flaky` it drops now and then and
  * comes back with the same key, as a phone does when its screen locks.
  */
 import type { PlayerView, ServerMessage } from '#lib/core/sync/room-protocol.ts';
-import { replies, type BotMemory, type BotSelf } from './brain.ts';
+import { replies, type BotMemory, type BotSelf } from '#lib/core/sync/room-bots/brain.ts';
 import { JoinQueue, newKey, RoomSocket } from './socket.ts';
 
 export interface PhoneBotOptions {

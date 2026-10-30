@@ -201,6 +201,7 @@ describe('a character that changes a chosen player (changesCharacter)', () => {
 	it('is the Summoner, the Pit-Hag and the Huntsman', () => {
 		const changers = [...OFFICIAL_RULES].filter(([, r]) => r.changesCharacter).map(([id]) => id);
 		expect(changers.sort()).toEqual([
+			'cacklejack',
 			'engineer',
 			'hatter',
 			'huntsman',
