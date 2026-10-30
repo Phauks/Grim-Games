@@ -1,13 +1,14 @@
 <!--
 	Choosing who a seat is, for the seat sheet: the character picker and the confirmations a
-	change asks for, a Traveller's alignment, an alignment change from ⋯, and an ability gained
-	by a swap (the Apprentice's).
+	change asks for, a Traveller's alignment, an alignment change from ⋯, an ability gained
+	by a swap (the Apprentice's), and one held without a token (the Boffin's, on the Demon).
 -->
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Alignment, CharacterId } from '#lib/core/data/index.ts';
-	import { trueCharacter, type SeatId } from '#lib/core/model/index.ts';
+	import { charactersInPlay, trueCharacter, type SeatId } from '#lib/core/model/index.ts';
 	import { rulesOf } from '#lib/core/data/rules/index.ts';
+	import { abilityGivers } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import AlignmentPill from '#lib/features/grimoire/AlignmentPill.svelte';
@@ -53,6 +54,7 @@
 	let changeOpen = $state(false);
 	let clearOpen = $state(false);
 	let gainOpen = $state(false);
+	let heldOpen = $state(false);
 
 	/** Opens the character picker. */
 	export function choose() {
@@ -61,6 +63,10 @@
 	/** Opens the picker for the ability gained by a swap (the Apprentice's). */
 	export function chooseGain() {
 		gainOpen = true;
+	}
+	/** Opens the picker for an ability held without a token (the Boffin's, on the Demon). */
+	export function chooseHeld() {
+		heldOpen = true;
 	}
 	/** Changes the seat's alignment (the ⋯ menu). */
 	export function chooseAlignment() {
@@ -161,7 +167,40 @@
 		grimoire.run({ type: 'AssignCharacter', seatId, characterId: id, alignment: seat.alignment });
 		if (!marked) grimoire.run({ type: 'AddReminder', seatId, reminder });
 	}
+
+	// ── An ability held without a token ──
+	// Another character's `givesAbility` gives this player an ability: the Boffin's
+	// not-in-play good character on the Demon (https://wiki.bloodontheclocktower.com/Boffin).
+	const giver = $derived.by(() => {
+		const id = seatId === undefined ? undefined : abilityGivers(game, seatId, characters)[0];
+		const rule = id ? rulesOf(id, characters)?.givesAbility : undefined;
+		return id && rule ? { id, rule } : undefined;
+	});
+	const held = $derived(seat?.abilities?.find((a) => a.via === giver?.id)?.characterId);
+	const heldExclude = $derived.by(() => {
+		if (!giver?.rule.notInPlay) return [];
+		const tokens = charactersInPlay(game);
+		const truly = game.seating.flatMap((s) => trueCharacter(game, s, characters) ?? []);
+		return [...new Set([...tokens, ...truly])].filter((id) => id !== held);
+	});
+	function hold(characterId: CharacterId | undefined) {
+		heldOpen = false;
+		if (seatId && giver)
+			grimoire.run({ type: 'SetHeldAbility', seatId, via: giver.id, characterId });
+	}
 </script>
+
+<CharacterPicker
+	bind:open={heldOpen}
+	title={`Ability ${title} holds`}
+	{characters}
+	script={game.script}
+	types={giver?.rule.types ?? []}
+	current={held}
+	exclude={heldExclude}
+	onPick={hold}
+	onNone={held ? () => hold(undefined) : undefined}
+/>
 
 <CharacterPicker
 	bind:open={gainOpen}

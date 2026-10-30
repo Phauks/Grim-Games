@@ -16,7 +16,7 @@ import { scriptEdition } from '#lib/core/data/script.ts';
 import type { GameId } from '#lib/core/model/index.ts';
 import type { GameLog, GameSession } from './log.ts';
 
-export const SAVED_GAME_VERSION = 20;
+export const SAVED_GAME_VERSION = 21;
 
 export interface SavedGame {
 	schemaVersion: typeof SAVED_GAME_VERSION;
@@ -225,6 +225,14 @@ const migrateV18toV19: Migration = (doc) => ({ ...doc, schemaVersion: 19 });
  */
 const migrateV19toV20: Migration = (doc) => ({ ...doc, schemaVersion: 20 });
 
+/**
+ * Version 21 (2026-10-30) added abilities a player holds without their token (`Seat.abilities`,
+ * the `HeldAbilitySet` event: the Boffin's good ability on the Demon). The log needs no
+ * change: an older game has none. The bump makes older builds refuse a version 21 save
+ * instead of failing on the unknown event.
+ */
+const migrateV20toV21: Migration = (doc) => ({ ...doc, schemaVersion: 21 });
+
 /** `MIGRATIONS[n]` migrates version `n` to `n + 1`. Version 1 is the first saved shape. */
 export const MIGRATIONS: Readonly<Record<number, Migration>> = {
 	1: migrateV1toV2,
@@ -245,7 +253,8 @@ export const MIGRATIONS: Readonly<Record<number, Migration>> = {
 	16: migrateV16toV17,
 	17: migrateV17toV18,
 	18: migrateV18toV19,
-	19: migrateV19toV20
+	19: migrateV19toV20,
+	20: migrateV20toV21
 };
 
 export function toSavedGame(session: GameSession, savedAt: number): SavedGame {

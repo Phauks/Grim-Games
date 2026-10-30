@@ -6,6 +6,7 @@
 	import { seatFrame } from '#lib/core/frames/index.ts';
 	import type { Seat } from '#lib/core/model/index.ts';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
+	import { iconUrl } from '#lib/features/characters/icon-url.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import SeatDisc from '#lib/ui/seating/SeatDisc.svelte';
@@ -63,6 +64,12 @@
 		 * killed by the Demon): the badge is a plain skull, with no ghost vote to spend.
 		 */
 		tokenFreeVotes?: number;
+		/**
+		 * Abilities the player holds without a token (the Boffin's good ability on the Demon,
+		 * whose How to Run puts that token by the Demon's): each a small token on the left
+		 * rim, faded while it doesn't work (a drunk, poisoned or dead Boffin).
+		 */
+		heldAbilities?: { character: Character; works: boolean }[];
 	}
 
 	let {
@@ -80,7 +87,8 @@
 		onGhostVote,
 		onHold,
 		nominations,
-		tokenFreeVotes
+		tokenFreeVotes,
+		heldAbilities = []
 	}: Props = $props();
 
 	// The player's alignment is not the one their character type starts with (a good Minion,
@@ -233,6 +241,16 @@
 				><Icon name="nominated" /></span
 			></RimPill
 		>{/if}
+	<!-- Abilities held without a token, on the left rim between the nomination pill and the
+	     skull, so one appearing moves nothing. -->
+	{#each heldAbilities as { character: as, works }, i (as.id)}<span
+			class="mark held"
+			data-testid="held-ability"
+			data-off={works ? undefined : ''}
+			style:--i={i}
+			title={works ? `Holds the ${as.name} ability` : `Holds the ${as.name} ability (not now)`}
+			><img src={iconUrl(as)} alt="" /></span
+		>{/each}
 	<!-- The Storyteller's notes on this player, lower right (never shown to players). -->
 	{#if seat.notes?.length}<SeatNoteMark />{/if}
 {/snippet}
@@ -362,6 +380,31 @@
 		top: -14%;
 		background: var(--accent);
 		color: var(--on-accent);
+	}
+	/* Left rim, middle; a second one sits just below. */
+	.held {
+		left: -12%;
+		top: calc(36% + var(--i) * var(--mark) * 0.8);
+		/* The face of a token, like the reminders around the seat. */
+		background: var(--reminder-face);
+		overflow: hidden;
+	}
+	.held img {
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
+	}
+	/* Not now: faded and struck through, so it never rests on colour alone. */
+	.held[data-off] img {
+		opacity: 0.4;
+	}
+	.held[data-off]::before {
+		content: '';
+		position: absolute;
+		width: 120%;
+		height: calc(0.15 * var(--u));
+		background: var(--on-surface);
+		rotate: -45deg;
 	}
 	/* Upper right. */
 	.avatar {

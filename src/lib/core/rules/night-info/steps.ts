@@ -58,7 +58,8 @@ export function nightStepInfo(
  * (answers, pickers, death checks), `impaired` (waking players whose ability does not
  * work, such as a Minion the Preacher chose), and, given `night`, a step for each gained
  * ability (the Pixie's, `withGainedSteps`) and a first step for Travellers without an
- * alignment (`withTravellerAlignmentStep`). Steps get a copy; the order is not otherwise
+ * alignment (`withTravellerAlignmentStep`); `order` places a gained ability not in play.
+ * Steps get a copy; the order is not otherwise
  * changed.
  */
 export function withNightInfo<T extends NightStep>(
@@ -66,10 +67,11 @@ export function withNightInfo<T extends NightStep>(
 	game: Game,
 	characters: CharacterLookup,
 	night?: Night,
-	today?: NightToday
+	today?: NightToday,
+	order?: readonly string[]
 ): (T | NightStep)[] {
 	const all = withTravellerAlignmentStep(
-		night ? withGainedSteps(steps, game, characters, night) : steps,
+		night ? withGainedSteps(steps, game, characters, night, order) : steps,
 		game,
 		characters
 	);

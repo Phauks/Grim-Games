@@ -19,6 +19,7 @@ export const CHARACTERS_DECIDERS: Deciders<
 	| 'ClearCharacter'
 	| 'SwapCharacters'
 	| 'SetAlignment'
+	| 'SetHeldAbility'
 	| 'SetDead'
 	| 'SetDeathCause'
 	| 'SpendGhostVote'
@@ -115,6 +116,25 @@ export const CHARACTERS_DECIDERS: Deciders<
 			}
 		}
 		return [{ type: 'AlignmentSet', seatId: seat.seatId, alignment: command.alignment }];
+	},
+
+	SetHeldAbility(game, command, ctx, warn) {
+		const seat = seatOf(game, command.seatId);
+		characterOf(ctx, command.via);
+		if (command.characterId !== undefined) seatableCharacter(ctx, command.characterId);
+		const held = seat.abilities?.find((a) => a.via === command.via)?.characterId;
+		if (held === command.characterId) {
+			warn('no-change', command.characterId ? 'already has that ability' : 'has no such ability');
+			return [];
+		}
+		return [
+			{
+				type: 'HeldAbilitySet',
+				seatId: seat.seatId,
+				via: command.via,
+				...(command.characterId !== undefined ? { characterId: command.characterId } : {})
+			}
+		];
 	},
 
 	SetDead(game, command, ctx, warn) {
