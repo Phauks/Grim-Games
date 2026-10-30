@@ -6,7 +6,6 @@
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import { STANDARD_INFO_TOKENS, type InfoToken } from '#lib/core/data/info-tokens.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
-	import ShownCard from '#lib/features/show/ShownCard.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
@@ -14,6 +13,7 @@
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Popover from '#lib/ui/primitives/Popover.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
+	import CardEditorLayout from './CardEditorLayout.svelte';
 	import RichTextField from './RichTextField.svelte';
 	import InfoTokenTile from './InfoTokenTile.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
@@ -453,24 +453,14 @@
 </Dialog>
 
 <Dialog bind:open={quickOpen} size="full" title={t('info-tokens.quick')}>
-	<div class="editor">
-		<figure class="preview" aria-label={t('info-tokens.preview')}>
-			<div class="preview-card">
-				<ShownCard
-					title={plainText(quickText).trim() ? quickText : t('info-tokens.text')}
-					compact
-				/>
-			</div>
-		</figure>
-		<div class="fields">
-			<RichTextField
-				bind:value={quickText}
-				label={t('info-tokens.text')}
-				maxlength={MAX_CUSTOM_TEXT}
-				onsubmit={() => useQuick()}
-			/>
-		</div>
-	</div>
+	<CardEditorLayout title={plainText(quickText).trim() ? quickText : t('info-tokens.text')}>
+		<RichTextField
+			bind:value={quickText}
+			label={t('info-tokens.text')}
+			maxlength={MAX_CUSTOM_TEXT}
+			onsubmit={() => useQuick()}
+		/>
+	</CardEditorLayout>
 	{#snippet actions()}
 		<!-- Shown now, or added to the cards to show with others (Trevor, 2026-10-25), as each
 		     tile's + does; from the board sheet's header too, which has no tile. -->
@@ -562,7 +552,6 @@
 	.new-card:hover {
 		background: var(--surface-hover);
 	}
-	/* Editor and preview: side by side when there is room, preview first on a phone. */
 	.about :global(.icon-button) {
 		color: inherit;
 	}

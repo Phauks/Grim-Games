@@ -216,6 +216,21 @@ test("the board sheet's quick card opens from its header, beside the X", async (
 	await expect(shown(page).getByRole('heading')).toHaveText('You may not speak');
 });
 
+test("the quick card's preview shows the whole card", async ({ page }) => {
+	// Trevor (2026-10-30): the preview had lost its box and showed a clipped sliver.
+	await openSheet(page);
+	await page.getByRole('button', { name: 'Quick card', exact: true }).tap();
+	await page.getByRole('textbox', { name: 'Text' }).fill('You may not speak');
+	const preview = page.getByRole('figure', { name: 'Preview' });
+	const heading = preview.getByRole('heading', { name: 'You may not speak' });
+	await expect(heading).toBeVisible();
+	const box = (await preview.boundingBox())!;
+	const text = (await heading.boundingBox())!;
+	expect(text.y).toBeGreaterThanOrEqual(box.y);
+	expect(text.y + text.height).toBeLessThanOrEqual(box.y + box.height);
+	expect(box.height).toBeGreaterThan(2 * text.height);
+});
+
 test('a quick card can be added to the cards to show with others', async ({ page }) => {
 	// Trevor (2026-10-25): a quick card goes in with other cards, like each tile's +.
 	await openSheet(page);
