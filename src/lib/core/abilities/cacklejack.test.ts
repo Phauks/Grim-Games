@@ -12,7 +12,23 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
+import type { Command } from '#lib/core/engine/index.ts';
+import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
+import { alignmentOf } from '#lib/core/model/selectors.ts';
+import { changeableSeats, characterChanger } from '#lib/core/rules/becomes.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+
+// The Cacklejack's day choice: its Not Me token on seat `i`.
+const notMe =
+	(i: number) =>
+	(s: string[]): Command => ({
+		type: 'AddReminder',
+		seatId: s[i],
+		reminder: { characterId: 'cacklejack', label: 'Not Me' }
+	});
+const change =
+	(i: number, characterId: string) =>
+	(s: string[]): Command => ({ type: 'AssignCharacter', seatId: s[i], characterId });
 
 describe('Cacklejack', () => {
 	const character = committedCharacter('cacklejack');
@@ -43,9 +59,41 @@ describe('Cacklejack', () => {
 		});
 	});
 
+	// How to Run: each night but the first, the Storyteller changes one player's character, any
+	// player but the one marked Not Me, into any other character.
+	describe("tonight's character change", () => {
+		it('offers every player but the one marked Not Me', () => {
+			const cast = ['cacklejack', 'acrobat', 'chef', 'imp', 'poisoner'];
+			const { game, seats } = castGame(cast, notMe(2));
+			expect(characterChanger(game, 'cacklejack', characters)).toBe(seats[0]);
+			expect(changeableSeats(game, 'cacklejack', characters)).toEqual(
+				seats.filter((s) => s !== seats[2])
+			);
+		});
+	});
+
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Cacklejack#Examples)', () => {
-		it.todo('Example 1: Player becomes Clockmaker and gets a number');
+		// Another player is marked Not Me; the Acrobat becomes the Clockmaker and stays good.
+		it('Example 1: the Acrobat becomes the Clockmaker', () => {
+			const { game, seats } = castGame(
+				['cacklejack', 'acrobat', 'chef', 'imp', 'poisoner'],
+				notMe(2),
+				change(1, 'clockmaker')
+			);
+			expect(game.seats[seats[1]].characterId).toBe('clockmaker');
+			expect(alignmentOf(game, seats[1])).toBe('good');
+		});
 		it.todo('Example 2: Drunk player becomes Flowergirl unknowingly');
-		it.todo('Example 3: Leviathan swaps into Shabaloth');
+		// The Leviathan becomes the Shabaloth and stays evil.
+		it('Example 3: the Leviathan becomes the Shabaloth', () => {
+			const { game, seats } = castGame(
+				['cacklejack', 'acrobat', 'chef', 'leviathan', 'poisoner'],
+				notMe(1),
+				change(3, 'shabaloth')
+			);
+			expect(changeableSeats(game, 'cacklejack', characters)).toContain(seats[3]);
+			expect(game.seats[seats[3]].characterId).toBe('shabaloth');
+			expect(alignmentOf(game, seats[3])).toBe('evil');
+		});
 	});
 });
