@@ -22,6 +22,12 @@
 	let captionHeight = $state(0);
 	let nameHeight = $state(0);
 
+	/**
+	 * A one-word answer (a number, Yes, True) fills the space it has, sized by its length so
+	 * it never wraps (Trevor, 2026-10-30: "Your number is 1" was small and hard to read).
+	 */
+	const short = $derived(!!detail && detail.length <= 6 && !/\s/.test(detail));
+
 	const single = $derived(characters.length === 1 ? characters[0].character : undefined);
 	/**
 	 * The token never fills the screen (Trevor, 2026-10-17): at most three quarters of the
@@ -78,7 +84,13 @@
 		<h2 class="title"><InfoTokenText text={title} /></h2>
 	{/if}
 	{#if detail}
-		<p class="detail">{detail}</p>
+		<p
+			class="detail"
+			data-short={short ? '' : undefined}
+			style:--length={short ? Math.max(2, detail.length) : undefined}
+		>
+			{detail}
+		</p>
 	{/if}
 	{#if single}
 		<!-- The token, its name and its ability, together in the middle of the screen. -->
@@ -143,6 +155,8 @@
 		padding: calc(var(--tap-target) + var(--space-4) + env(safe-area-inset-top)) var(--space-4)
 			calc(var(--space-5) + env(safe-area-inset-bottom));
 		text-align: center;
+		/* A short answer is sized by the card's own space, also when it shares the screen. */
+		container-type: size;
 	}
 	/* Several cards on one screen (Trevor, 2026-10-16): each fits its own share. */
 	.content[data-compact] {
@@ -175,17 +189,26 @@
 		font-family: var(--font-heading);
 		font-size: clamp(2.4rem, 11vw, 5rem);
 		line-height: 1.1;
-		color: var(--accent);
+		/* Readable on every theme and sheet background, unlike the accent (Trevor, 2026-10-30). */
+		color: var(--on-surface);
 		overflow-wrap: anywhere;
-	}
-	/* A number on its own (the Number card): as big as the screen allows. */
-	.content:not([data-has-title]) .detail {
-		margin-block: auto;
-		font-size: clamp(6rem, 45vmin, 20rem);
-		line-height: 1;
 	}
 	.content[data-compact] .detail {
 		font-size: clamp(1.6rem, 7vw, 3rem);
+	}
+	/*
+	 * A number or one-word answer: as big as the card allows, each character taking about
+	 * 0.6em, under the title when there is one.
+	 */
+	.detail[data-short],
+	.content[data-compact] .detail[data-short] {
+		max-width: none;
+		font-size: min(calc(140cqi / var(--length)), 45cqb);
+		line-height: 1;
+		overflow-wrap: normal;
+	}
+	.content:not([data-has-title]) .detail {
+		margin-block: auto;
 	}
 	.content:not(:has(.area)) .title {
 		margin: auto 0;

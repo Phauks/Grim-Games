@@ -4475,6 +4475,12 @@ test('a number step offers the "Your number is" info token; a step icon opens it
 		.tap();
 	await expect(shown.locator('h2.title')).toHaveText('Your number is');
 	await expect(shown.locator('.detail')).toHaveText('0');
+	// The number fills the space under the title, on one line (Trevor, 2026-10-30).
+	const view = page.viewportSize()!;
+	const digit = (await shown.locator('.detail').boundingBox())!;
+	expect(digit.height).toBeGreaterThan(Math.min(view.width, view.height) * 0.3);
+	expect(digit.x).toBeGreaterThanOrEqual(0);
+	expect(digit.x + digit.width).toBeLessThanOrEqual(view.width);
 	await closeShown();
 	// Any other number from the step's own info token.
 	const number = chef.getByTestId('step-number');
