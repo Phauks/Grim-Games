@@ -222,6 +222,8 @@
 
 	// The Storyteller's background, vignette and logo, the same on every device whatever its own
 	// settings or theme (Trevor, 2026-10-26); the script's own image only as a web link.
+	/** The live room a seat's profile can add friends from (plan F2). */
+	const friendRoom = $derived(display ? undefined : town ? town.roomCode : code);
 	const look = $derived(drawnLook(parsePublicLook(table?.look)));
 	// The room's picture (Trevor, 2026-10-26: "Images should be uploaded and shared"), or the
 	// board's own one on the Storyteller's device.
@@ -550,6 +552,7 @@
 		name={nameOf(chosen!)}
 		picture={pictureOf(chosen!)}
 		frame={chosen!.frame}
+		friend={friendRoom ? { code: friendRoom, seatId: chosen!.seatId } : undefined}
 	/>{/snippet}
 <BottomSheet
 	bind:open
