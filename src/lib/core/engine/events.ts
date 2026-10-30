@@ -62,6 +62,8 @@ export type GameEvent =
 	| { type: 'HeldAbilitySet'; seatId: SeatId; via: CharacterId; characterId?: CharacterId }
 	/** Sets (or, without `characterId`, takes away) the ability `via` gives the Storyteller. */
 	| { type: 'StorytellerAbilitySet'; via: CharacterId; characterId?: CharacterId }
+	/** Joins `Game.reincarnated`; the character and life come from the events before it. */
+	| { type: 'SeatReincarnated'; seatId: SeatId }
 	/** `cause` only with `dead: true`; `dead: false` clears any cause. */
 	| { type: 'DeathSet'; seatId: SeatId; dead: boolean; cause?: DeathCause }
 	/** No `cause` clears it. */

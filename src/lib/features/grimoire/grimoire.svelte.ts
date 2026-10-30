@@ -1,6 +1,11 @@
 import type { PublicLook } from '#lib/core/sync/public-projection.ts';
 import { dawnGames, type Command } from '#lib/core/engine/index.ts';
-import { becomesOffer, survivesFirstDeath, type Night } from '#lib/core/rules/index.ts';
+import {
+	becomesOffer,
+	reincarnatedBy,
+	survivesFirstDeath,
+	type Night
+} from '#lib/core/rules/index.ts';
 import { doneKey } from './night-steps.ts';
 import { alignmentOf, replacedBy, scriptCharacterIds, type SeatId } from '#lib/core/model/index.ts';
 import type { Alignment, CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
@@ -293,13 +298,23 @@ export class Grimoire {
 			death.cause,
 			this.open.characters
 		);
-		if (saver)
+		if (saver) {
 			this.firstDeathAsk = {
 				seatId: death.seatId,
 				characterId: saver.source.characterId,
 				spentToken: saver.spentToken
 			};
+			return;
+		}
+		const via = reincarnatedBy(this.open.game, death.seatId, this.open.characters);
+		if (via) this.reincarnateAsk = { seatId: death.seatId, via };
 	}
+
+	/**
+	 * A player just marked dead who is reborn as a Traveller the Storyteller picks (the Hindu's
+	 * first four deaths, `reincarnatedBy`): the board offers the Travellers.
+	 */
+	reincarnateAsk = $state.raw<{ seatId: SeatId; via: CharacterId } | undefined>();
 
 	/**
 	 * Two seats to swap characters and alignments (the Snake Charmer's Poisoned put on the
