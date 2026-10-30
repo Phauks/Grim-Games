@@ -65,6 +65,8 @@ export class RoomSocket {
 	readonly #hello: ClientMessage;
 	readonly #events: RoomSocketEvents;
 	readonly #queue: JoinQueue;
+	/** The device's own key, sent in `hello`. */
+	readonly key: string;
 
 	constructor(
 		site: string,
@@ -75,6 +77,7 @@ export class RoomSocket {
 		queue: JoinQueue,
 		hello: Partial<Extract<ClientMessage, { type: 'hello' }>> = {}
 	) {
+		this.key = key;
 		this.#url = roomUrl(site, code);
 		this.#hello = { type: 'hello', role, key, protocol: ROOM_PROTOCOL, ...hello };
 		this.#events = events;
