@@ -55,6 +55,11 @@
 		 * a sentence).
 		 */
 		onTap?: () => void;
+		/**
+		 * A right-click or the menu key (Trevor, 2026-10-30): its actions. A touch's long press
+		 * stays a hold that picks it up, so it opens nothing.
+		 */
+		onMenu?: () => void;
 		/** Pointer position in client px while dragging; `end` true when released. */
 		onDrag?: (x: number, y: number, end: boolean) => void;
 		onCancel?: () => void;
@@ -80,6 +85,7 @@
 		disabled = false,
 		ariaLabel,
 		onTap,
+		onMenu,
 		onDrag,
 		onCancel,
 		panX = false
@@ -144,7 +150,8 @@
 	}
 
 	function pointerdown(event: PointerEvent) {
-		if (disabled) return;
+		// A right-click is its menu (onMenu), never a tap or a drag.
+		if (disabled || event.button !== 0) return;
 		cancelAnimationFrame(glide);
 		const node = event.currentTarget as HTMLElement;
 		const row = panX ? rowOf(node) : undefined;
@@ -247,6 +254,12 @@
 	onpointerup={onTap && pointerup}
 	onpointercancel={onTap && pointercancel}
 	onclick={onTap && ((event: MouseEvent) => event.detail === 0 && onTap())}
+	oncontextmenu={onMenu &&
+		((event: MouseEvent) => {
+			event.preventDefault();
+			const type = (event as MouseEvent & { pointerType?: string }).pointerType;
+			if (type !== 'touch' && type !== 'pen') onMenu();
+		})}
 >
 	{#if more}
 		<span class="more">+{more}</span>

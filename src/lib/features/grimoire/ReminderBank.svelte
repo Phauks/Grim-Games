@@ -15,10 +15,11 @@
 	import type { StepFocus } from './step-focus.svelte.ts';
 	import { boardLooks } from './board-looks.svelte.ts';
 	import { copiedLook, isGeneric, type StepReminders } from './reminders.ts';
-	import BankSeatChooser from './BankSeatChooser.svelte';
-	import SetupReminderDialog from './SetupReminderDialog.svelte';
+	import BankReminderDialog from './BankReminderDialog.svelte';
 	import GenericTokenDialog from './GenericTokenDialog.svelte';
-	import { traySeats, type TrayItem } from './setup-tray.ts';
+	import ReminderInHand from './ReminderInHand.svelte';
+	import { dropOnTap, heldTokenActions } from './reminder-in-hand.ts';
+	import { traySeats } from './setup-tray.ts';
 	import { BANK_CAPTIONS, bankItems, type BankGroup, type BankItem } from './bank-items.ts';
 	import { overNewToken } from './reminder-drag.svelte.ts';
 
@@ -26,8 +27,8 @@
 	 * The reminder bank (Trevor, 2026-10-16), always docked under the board. During setup it
 	 * holds core's suggested setup reminders; after that, every reminder of a character in
 	 * play still off the board, with the walked-through step's character first and marked.
-	 * Drag a token onto any seat, or tap it to choose one. Nothing is placed by itself, and a
-	 * reminder removed from a seat comes back. The Storyteller can switch views at any time.
+	 * Drag a token onto any seat, or tap it to hold it and then tap a seat (Trevor, 2026-10-30).
+	 * Nothing is placed by itself, and a reminder removed from a seat comes back. The Storyteller can switch views at any time.
 	 */
 	interface Props {
 		grimoire: Grimoire;
@@ -49,7 +50,6 @@
 		 * when it is a copy of one of the bank's ∞ tokens.
 		 */
 		onRule: (reminder: Reminder, characterId: CharacterId, tokenId?: string) => void;
-		/** Seats to mark while a token is dragged or open, and the one under the drag. */
 		/** Seats to mark: suggested ones, the one under a dragged token, and the token itself. */
 		onHints: (hints: { seats: SeatId[]; target?: SeatId; reminder?: Reminder }) => void;
 		/**
@@ -276,6 +276,15 @@
 	});
 
 	const seatsFor = (item: BankItem) => (item.setup ? traySeats(item.setup.suggestion) : []);
+	/** The seats marked for a token in hand, dragged or held; none in loose mode. */
+	const hintsFor = (item: BankItem, target?: SeatId) =>
+		loose
+			? { seats: [] }
+			: {
+					seats: seatsFor(item),
+					target,
+					reminder: item.token?.like ?? { characterId: item.characterId, label: item.label }
+				};
 
 	function place(
 		item: Pick<BankItem, 'characterId' | 'label' | 'ownerSeatId' | 'token'>,
@@ -311,28 +320,15 @@
 		const overNew = overNewToken(x, y);
 		const target = overNew ? undefined : seatAt(at);
 		if (!end) {
+			held = undefined;
 			drag = { item, at, overNew };
-			onHints(
-				loose || overNew
-					? { seats: [] }
-					: {
-							seats: seatsFor(item),
-							target,
-							reminder: item.token?.like ?? { characterId: item.characterId, label: item.label }
-						}
-			);
+			onHints(overNew ? { seats: [] } : hintsFor(item, target));
 			return;
 		}
 		drag = undefined;
 		onHints({ seats: [] });
 		// On "+ New token": a new ∞ token like it; the reminder stays in the bank.
-		if (overNew) {
-			grimoire.run({
-				type: 'AddGenericToken',
-				look: copiedLook({ characterId: item.characterId, label: item.label, ...item.token })
-			});
-			return;
-		}
+		if (overNew) return newTokenLike(item);
 		const tokenId = item.token?.tokenId;
 		const reminder = {
 			characterId: item.characterId,
@@ -355,34 +351,69 @@
 		// Any seat will do: the Storyteller can override the suggestion.
 		place(item, target);
 	}
+	function newTokenLike({ characterId, label, token }: BankItem) {
+		held = undefined;
+		grimoire.run({ type: 'AddGenericToken', look: copiedLook({ characterId, label, ...token }) });
+	}
 	function cancelDrag() {
 		drag = undefined;
 		onHints({ seats: [] });
 	}
 
-	// ── Tap: a setup suggestion says what it is for; any other token asks for a seat ──
-	let shown = $state<TrayItem | undefined>();
-	let shownOpen = $state(false);
-	let choosing = $state<BankItem | undefined>();
-	let chooserOpen = $state(false);
+	// ── Tap: the token is held, and goes where the board is tapped next (Trevor, 2026-10-30) ──
+	let held = $state<BankItem | undefined>();
+	let heldMenu = $state(false);
+	let about = $state<BankItem>();
+	let aboutOpen = $state(false);
 	function tap(item: BankItem) {
-		if (item.makesToken) return makeToken();
-		if (item.setup) {
-			shown = item.setup;
-			shownOpen = true;
-			if (!loose)
-				onHints({
-					seats: seatsFor(item),
-					reminder: { characterId: item.characterId, label: item.label }
-				});
-		} else if (!loose) {
-			choosing = item;
-			chooserOpen = true;
-		}
+		// Tapping the token in hand puts it down (Trevor: tapping an open item closes it).
+		if (!item.makesToken) held = held?.key === item.key ? undefined : item;
+		// Holding a reminder, "+ New token" takes it as a drop there does.
+		else if (held) newTokenLike(held);
+		else makeToken();
 	}
+	/** Marks the seats for the token in hand, as for one dragged. */
 	$effect(() => {
-		if (!shownOpen && !drag) onHints({ seats: [] });
+		if (drag) return;
+		const item = held;
+		onHints(item ? hintsFor(item) : { seats: [] });
 	});
+	// A held token that leaves the bank (dragged out, removed, the game moved on) is let go.
+	$effect(() => {
+		if (held && !items.some((i) => i.key === held?.key)) held = undefined;
+	});
+	/** The held token's ⋯ (Trevor, 2026-10-30): its details and what else it can do. */
+	const heldActions = $derived(
+		held
+			? heldTokenActions(grimoire, held, {
+					about: (item) => {
+						about = item;
+						aboutOpen = true;
+					},
+					edit: (tokenId) => {
+						editing = tokenId;
+						editorOpen = true;
+					},
+					putDown: () => (held = undefined)
+				})
+			: []
+	);
+	// While a token is held, a tap on the board is its drop, as a drag let go there.
+	$effect(() => {
+		const el = board;
+		if (!el || !held) return;
+		return dropOnTap(el, bankEl, (x, y) => {
+			const item = held;
+			held = undefined;
+			if (item) dragItem(item, x, y, true);
+		});
+	});
+	/** Right-click (desktop): the token in hand, its ⋯ open. Touch keeps hold-to-drag. */
+	function menuFor(item: BankItem) {
+		if (item.makesToken) return;
+		held = item;
+		heldMenu = true;
+	}
 
 	// ── The bank's reusable ∞ tokens (plan B9) ──
 	let editing = $state<string | undefined>();
@@ -393,15 +424,22 @@
 		editing = grimoire.game.genericTokens?.at(-1)?.tokenId;
 		editorOpen = true;
 	}
-	function placeShown(seatId: SeatId) {
-		if (shown) place(shown.suggestion, seatId);
-		shownOpen = false;
-	}
-	function dismissShown() {
-		if (shown) grimoire.dismissTray(shown.key);
-		shownOpen = false;
-	}
 </script>
+
+<!-- A token that only shows: dragged, or in hand. -->
+{#snippet still(item: BankItem)}
+	<BoardReminder
+		label={item.label}
+		character={characters.get(item.characterId)}
+		alignment={placingAlignment(game, item, characters)}
+		infinite={isGeneric(item)}
+		symbol={item.token?.symbol}
+		symbolColour={item.token?.symbolColour}
+		symbolFill={item.token?.symbolFill}
+		art={artOf(item.token)}
+		{size}
+	/>
+{/snippet}
 
 {#snippet binToken(item: BankItem)}{@render token(item, false)}{/snippet}
 
@@ -422,6 +460,7 @@
 			{size}
 			{disabled}
 			onTap={() => tap(item)}
+			onMenu={() => menuFor(item)}
 			onDrag={(x, y, end) => dragItem(item, x, y, end)}
 			onCancel={cancelDrag}
 			{panX}
@@ -431,10 +470,13 @@
 
 <svelte:window
 	onpointerdown={(event) => {
-		if (binOpen && !drag && pressedOutside(event, bankEl)) binOpen = false;
+		if (binOpen && !drag && !held && pressedOutside(event, bankEl)) binOpen = false;
 	}}
 	onkeydown={(event) => {
-		if (binOpen && escapeCloses(event)) binOpen = false;
+		if (!escapeCloses(event)) return;
+		// Escape puts the token in hand down first, then lowers the bank.
+		if (held) held = undefined;
+		else if (binOpen) binOpen = false;
 	}}
 />
 
@@ -442,7 +484,7 @@
 	class="bank"
 	class:tall
 	class:pulling={pullH !== undefined}
-	class:lowered={tall && !!drag}
+	class:lowered={tall && (!!drag || !!held)}
 	data-tray
 	bind:this={bankEl}
 	style:--reach={tall ? `${pullH ?? openH}px` : undefined}
@@ -492,7 +534,7 @@
 					></li>{/if}
 				<li
 					bind:offsetWidth={itemW[item.key]}
-					class:lifted={drag?.item.key === item.key && item.count === 1}
+					class:lifted={held?.key === item.key || (drag?.item.key === item.key && item.count === 1)}
 					class:extra={item.extra}
 					data-extra={item.extra ? '' : undefined}
 					class:now={item.now}
@@ -515,70 +557,26 @@
 		<SheetHandle label="Every reminder" expanded={binOpen} onToggle={toggleBin} onPull={pullBin} />
 	</div>
 	{#if run}<BankRunButton {run} />{/if}
+	<!-- Over the board's foot, above the handle bar (Trevor, 2026-10-30). -->
+	{#if held}{@const item = held}<ReminderInHand
+			actions={heldActions}
+			bind:menuOpen={heldMenu}
+			onPutDown={() => (held = undefined)}
+			--hand-bottom="calc(100% + var(--tap-target) / 2 + var(--space-2))"
+			>{#snippet token()}{@render still(item)}{/snippet}</ReminderInHand
+		>
+	{/if}
 </div>
 
 {#if drag}
 	<div class="floating" style:left="{drag.at.x}%" style:top="{drag.at.y}%" aria-hidden="true">
-		<BoardReminder
-			label={drag.item.label}
-			character={characters.get(drag.item.characterId)}
-			alignment={placingAlignment(game, drag.item, characters)}
-			infinite={isGeneric(drag.item)}
-			symbol={drag.item.token?.symbol}
-			symbolColour={drag.item.token?.symbolColour}
-			symbolFill={drag.item.token?.symbolFill}
-			art={artOf(drag.item.token)}
-			{size}
-			disabled
-			onTap={() => {}}
-		/>
+		{@render still(drag.item)}
 	</div>
 {/if}
 
-<BankSeatChooser
-	{grimoire}
-	bind:open={chooserOpen}
-	item={choosing}
-	onChoose={(seatId) => {
-		chooserOpen = false;
-		if (choosing) place(choosing, seatId);
-		choosing = undefined;
-	}}
-	onDone={() => {
-		chooserOpen = false;
-		choosing = undefined;
-	}}
-	onEditToken={(tokenId) => {
-		chooserOpen = false;
-		editing = tokenId;
-		editorOpen = true;
-	}}
-/>
-
 <GenericTokenDialog {grimoire} bind:open={editorOpen} tokenId={editing} />
 
-<SetupReminderDialog
-	{grimoire}
-	bind:open={shownOpen}
-	{shown}
-	{loose}
-	onPlace={placeShown}
-	onDismiss={dismissShown}
-	onChooseSeat={() => {
-		const s = shown?.suggestion;
-		shownOpen = false;
-		if (s) {
-			choosing = {
-				key: shown!.key,
-				characterId: s.characterId,
-				label: s.label,
-				count: 1,
-				group: 'setup'
-			};
-			chooserOpen = true;
-		}
-	}}
-/>
+<BankReminderDialog {grimoire} bind:open={aboutOpen} item={about} />
 
 <style>
 	/* Docked under the board (Trevor, 2026-10-16): a strip of tokens that scrolls sideways

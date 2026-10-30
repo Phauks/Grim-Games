@@ -22,11 +22,20 @@
 		label: string;
 		icon?: IconSlot;
 		items: Item[];
+		/** Open; bound to open it from elsewhere (a held reminder's right-click). */
+		open?: boolean;
+		/** Where the list opens from the button: below it, or above it near a screen's foot. */
+		placement?: 'bottom-end' | 'top';
 	}
 
-	let { label, icon = 'more', items }: Props = $props();
+	let {
+		label,
+		icon = 'more',
+		items,
+		open = $bindable(false),
+		placement = 'bottom-end'
+	}: Props = $props();
 
-	let open = $state(false);
 	// A dialog or sheet opening over the page closes the menu, as Select's list does.
 	$effect(() => {
 		if (open) return onLayerOpen(() => (open = false));
@@ -37,7 +46,7 @@
 	{open}
 	onOpenChange={(details) => (open = details.open)}
 	onSelect={(details) => items.find((item) => item.value === details.value)?.onSelect()}
-	positioning={{ strategy: 'fixed', placement: 'bottom-end', fitViewport: true, gutter: 4 }}
+	positioning={{ strategy: 'fixed', placement, fitViewport: true, gutter: 4 }}
 	lazyMount
 	unmountOnExit
 >

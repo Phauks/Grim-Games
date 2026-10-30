@@ -1,5 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
+import { tapToSeat } from './reminder-bank.ts';
 
 // Dragging a reminder onto the bank's "+ New token" makes a new ∞ token like it (Trevor,
 // 2026-10-27), and the + glows while a reminder is dragged.
@@ -80,10 +81,7 @@ test('a reminder dropped on "+ New token" becomes a new ∞ token with its words
 	await expect(herring.nth(1).locator('[data-symbol]')).toHaveAttribute('data-symbol', symbol!);
 
 	// One on the board: the + glows while it is carried, and the reminder stays on its seat.
-	await poisoned.tap();
-	const chooser = page.getByRole('dialog', { name: /^Put/ });
-	await chooser.getByRole('button', { name: /Seat 3/ }).tap();
-	await expect(chooser).toBeHidden();
+	await tapToSeat(page, poisoned, 3);
 	await expect(page.locator('[data-scope="dialog"][data-part="backdrop"]')).toHaveCount(0);
 	await expect(page.locator('[data-testid="seat"][aria-label^="Seat 3:"]')).toHaveAttribute(
 		'aria-label',
