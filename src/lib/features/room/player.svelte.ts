@@ -339,6 +339,11 @@ export class RoomPlayer {
 		return this.#socket.send(message);
 	}
 
+	/** Count off (plan J40): the number this player counted to, going clockwise. */
+	count(number: number): boolean {
+		return this.#socket.send({ type: 'count', number });
+	}
+
 	/** Tells the Storyteller this player has seen their character (Trevor, 2026-10-26). */
 	roleSeen(): void {
 		this.#socket.send({ type: 'role-seen' });
