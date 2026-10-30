@@ -1,13 +1,15 @@
 <script lang="ts">
 	import type { CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
 	import type { GenericLook, Reminder, SeatId } from '#lib/core/model/index.ts';
-	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import type { SeatPoint } from '#lib/ui/seating/seat-layout.ts';
 	import BoardReminder from './BoardReminder.svelte';
 	import ReminderCount from './ReminderCount.svelte';
 	import NewTokenButton from './NewTokenButton.svelte';
-	import ReminderBinSheet from './ReminderBinSheet.svelte';
+	import BankRunButton from './BankRunButton.svelte';
+	import ReminderGroups from './ReminderGroups.svelte';
+	import SheetHandle from '#lib/ui/primitives/SheetHandle.svelte';
+	import { escapeCloses, pressedOutside } from './bin-dismiss.ts';
 	import { placingAlignment } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import type { StepFocus } from './step-focus.svelte.ts';
@@ -107,8 +109,37 @@
 			bankCopies: grimoire.bankCopies
 		})
 	);
-	/** The bank pulled up into a sheet of every token at once, under the same captions. */
+	/**
+	 * The bank pulled up by its handle bar (Trevor, 2026-10-30: "a drag up with a handle bar",
+	 * one area, not a caret and a second sheet): it grows over the board to hold every token at
+	 * once, in rows under the same captions, its run button still at its foot.
+	 */
 	let binOpen = $state(false);
+	/** How far above its row the open bank reaches, in px: most of the board. */
+	let openH = $state(0);
+	/** While its handle is pulled, how far above its row it reaches, in px. */
+	let pullH = $state<number>();
+	const tall = $derived(binOpen || pullH !== undefined);
+	function reach() {
+		openH = Math.round((board?.clientHeight ?? 0) * 0.6);
+	}
+	function toggleBin() {
+		reach();
+		binOpen = !binOpen;
+	}
+	function pullBin(up: number, end: boolean) {
+		if (pullH === undefined) reach();
+		const h = Math.min(openH, Math.max(0, (binOpen ? openH : 0) + up));
+		if (!end) {
+			pullH = h;
+			return;
+		}
+		pullH = undefined;
+		// A short pull is enough either way: up opens it, down closes it.
+		if (binOpen ? up < -PULL : up > PULL) binOpen = !binOpen;
+	}
+	/** How far a pull goes before it opens or closes the bank, in px. */
+	const PULL = 24;
 	const binGroups = $derived(
 		[...new Set(items.map((i) => i.group))].map((group) => ({
 			key: group,
@@ -137,6 +168,8 @@
 	 * the captions are placed again whenever those or the bank's size change.
 	 */
 	let captions = $state<{ group: BankGroup; text: string; left: number }[]>([]);
+	/** The handle bar's width, kept clear of captions. */
+	let grabW = $state(0);
 	let resized = $state(0);
 	$effect(() => {
 		if (!bankEl || !list) return;
@@ -149,6 +182,7 @@
 		void items;
 		void spacers;
 		void resized;
+		void grabW;
 		captions = placeCaptions();
 	});
 	function placeCaptions(): { group: BankGroup; text: string; left: number }[] {
@@ -175,6 +209,19 @@
 			const end = start + row.clientWidth;
 			if (line + gap + (captionW[group] ?? 0) > end) return;
 			placed.push({ group, text, left: pct(Math.max(start, line)) });
+		});
+		// Clear of the handle bar in the middle of the row's top edge (Trevor, 2026-10-30).
+		const middle = start + row.clientWidth / 2;
+		const half = grabW * 0.3 + gap;
+		placed.forEach((c, i) => {
+			const x = (c.left / 100) * width + gap;
+			const w = captionW[c.group] ?? 0;
+			if (x >= middle + half || x + w <= middle - half) return;
+			// Moved past it unless that runs into the next caption: then it stays, drawn over
+			// the bar, rather than going.
+			const next = placed[i + 1];
+			const moved = middle + half - gap;
+			if (!next || (next.left / 100) * width >= moved + gap + w) c.left = pct(moved);
 		});
 		// A caption goes once the next one reaches it, so no two overlap (Trevor, 2026-10-19).
 		return placed.filter((c, i) => {
@@ -249,23 +296,6 @@
 	 * token goes where it is dropped, seats are not marked, and a tap doesn't offer seats.
 	 */
 	const loose = $derived(boardLooks.current.reminders === 'free');
-
-	// ── End night lights up when Next is tapped past the last step ──
-	let hinting = $state(false);
-	$effect(() => {
-		if (!run?.hint) return;
-		// Off for a frame first, so a second tap starts the pulse again.
-		hinting = false;
-		let off: ReturnType<typeof setTimeout> | undefined;
-		const on = requestAnimationFrame(() => {
-			hinting = true;
-			off = setTimeout(() => (hinting = false), 2000);
-		});
-		return () => {
-			cancelAnimationFrame(on);
-			clearTimeout(off);
-		};
-	});
 
 	// ── Drag a token from the bank onto a seat ──
 	let drag = $state<{ item: BankItem; at: SeatPoint; overNew: boolean } | undefined>();
@@ -372,6 +402,8 @@
 	}
 </script>
 
+{#snippet binToken(item: BankItem)}{@render token(item, false)}{/snippet}
+
 {#snippet token(item: BankItem, panX: boolean)}
 	{#if item.makesToken}
 		<NewTokenButton glow={newGlow} {size} {disabled} onclick={makeToken} />
@@ -396,7 +428,25 @@
 	{/if}
 {/snippet}
 
-<div class="bank" data-tray bind:this={bankEl}>
+<svelte:window
+	onpointerdown={(event) => {
+		if (binOpen && !drag && pressedOutside(event, bankEl)) binOpen = false;
+	}}
+	onkeydown={(event) => {
+		if (binOpen && escapeCloses(event)) binOpen = false;
+	}}
+/>
+
+<div
+	class="bank"
+	class:tall
+	class:pulling={pullH !== undefined}
+	class:lowered={tall && !!drag}
+	data-tray
+	bind:this={bankEl}
+	style:--reach={tall ? `${pullH ?? openH}px` : undefined}
+	style:--run-w={run ? '5.5rem' : undefined}
+>
 	<!-- Every caption measured from the start, hidden, so each stretch has its room before its
 	     caption first shows (a caption measured only once shown widened the row as it was
 	     scrolled to its end). -->
@@ -406,82 +456,65 @@
 			aria-hidden="true"
 			bind:offsetWidth={captionW[group as BankGroup]}>{text}</span
 		>{/each}
-	{#each captions as caption (caption.group)}<span
-			class="caption"
-			data-group={caption.group}
-			data-testid="bank-{caption.group}"
-			style:left="{caption.left}%">{caption.text}</span
-		>{/each}
-	<ul
-		class="tray"
-		bind:this={list}
-		aria-label="Reminder bank"
-		data-more-start={more.start || undefined}
-		data-more-end={more.end || undefined}
-		onscroll={(e) => {
-			scrolled = e.currentTarget.scrollLeft;
-			measure();
-		}}
-	>
-		{#each items as item, i (item.key)}
-			{#if startsGroup(i)}<li
-					class="divider"
-					aria-hidden="true"
-					bind:this={dividers[item.group]}
-				></li>{/if}
-			<li
-				bind:offsetWidth={itemW[item.key]}
-				class:lifted={drag?.item.key === item.key && item.count === 1}
-				class:extra={item.extra}
-				data-extra={item.extra ? '' : undefined}
-				class:now={item.now}
-				class:dim={dimRest && !item.now}
-				style:margin-inline-end={endsGroup(i) && spacers[item.group]
-					? `${spacers[item.group]}px`
-					: undefined}
-			>
-				{@render token(item, true)}
-			</li>
-		{:else}
-			<li class="none">None</li>
-		{/each}
-	</ul>
-	<!-- Pulls the bank up into a sheet of every token (Trevor, 2026-10-29), its own cell at the
-	     tray's end: clear of the captions, and not on the run button (Trevor: "a drag above the
-	     red button is bad placement"). -->
-	<button
-		type="button"
-		class="pull-up"
-		aria-label="Show every reminder"
-		aria-pressed={binOpen}
-		data-bin-opener
-		onclick={() => (binOpen = !binOpen)}><Icon name="expand" /></button
-	>
-	{#if run}
-		<!-- Rounded on the right like the box. -->
-		<button
-			type="button"
-			class="run"
-			aria-label={run.label}
-			data-hint={hinting ? '' : undefined}
-			disabled={run.disabled}
-			onclick={run.onclick}
+	{#if tall}
+		<div class="every" aria-label="Reminder bin" role="region" data-testid="reminder-bin">
+			<ReminderGroups
+				label="Reminder bin"
+				groups={binGroups}
+				keyOf={(item) => item.key}
+				item={binToken}
+			/>
+		</div>
+	{:else}
+		{#each captions as caption (caption.group)}<span
+				class="caption"
+				data-group={caption.group}
+				data-testid="bank-{caption.group}"
+				style:left="{caption.left}%">{caption.text}</span
+			>{/each}
+		<ul
+			class="tray"
+			bind:this={list}
+			aria-label="Reminder bank"
+			data-more-start={more.start || undefined}
+			data-more-end={more.end || undefined}
+			onscroll={(e) => {
+				scrolled = e.currentTarget.scrollLeft;
+				measure();
+			}}
 		>
-			<Icon name={run.icon} />
-			<span>{run.text}</span>
-		</button>
+			{#each items as item, i (item.key)}
+				{#if startsGroup(i)}<li
+						class="divider"
+						aria-hidden="true"
+						bind:this={dividers[item.group]}
+					></li>{/if}
+				<li
+					bind:offsetWidth={itemW[item.key]}
+					class:lifted={drag?.item.key === item.key && item.count === 1}
+					class:extra={item.extra}
+					data-extra={item.extra ? '' : undefined}
+					class:now={item.now}
+					class:dim={dimRest && !item.now}
+					style:margin-inline-end={endsGroup(i) && spacers[item.group]
+						? `${spacers[item.group]}px`
+						: undefined}
+				>
+					{@render token(item, true)}
+				</li>
+			{:else}
+				<li class="none">None</li>
+			{/each}
+		</ul>
 	{/if}
+	<!-- The handle bar on the row's top edge, over the middle of the tokens: pulls the bank up
+	     over the board, or back down (Trevor, 2026-10-30). Clear of the run button (Trevor,
+	     2026-10-29: "a drag above the red button is bad placement"). -->
+	<div class="grab" bind:clientWidth={grabW}>
+		<SheetHandle label="Every reminder" expanded={binOpen} onToggle={toggleBin} onPull={pullBin} />
+	</div>
+	{#if run}<BankRunButton {run} />{/if}
 </div>
-
-<ReminderBinSheet
-	bind:open={binOpen}
-	label="Reminder bin"
-	groups={binGroups}
-	keyOf={(item) => item.key}
-	lowered={!!drag}
->
-	{#snippet item(item)}{@render token(item, false)}{/snippet}
-</ReminderBinSheet>
 
 {#if drag}
 	<div class="floating" style:left="{drag.at.x}%" style:top="{drag.at.y}%" aria-hidden="true">
@@ -553,7 +586,8 @@
 		position: absolute;
 		left: 0;
 		right: 0;
-		top: calc(100% + var(--space-2));
+		/* Its foot fixed, so pulled up it grows over the board (Trevor, 2026-10-30). */
+		bottom: calc(-1 * (var(--tray-h) + var(--space-2)));
 		z-index: 2;
 		display: flex;
 		align-items: center;
@@ -563,47 +597,58 @@
 		border-radius: var(--radius-md);
 		background: var(--board-bar-background);
 	}
-	.run {
-		flex: none;
-		align-self: stretch;
-		display: grid;
-		place-items: center;
-		align-content: center;
-		gap: var(--space-1);
-		width: 5.5rem;
-		padding: 0 var(--space-1);
-		border: 0;
-		border-inline-start: 1px solid var(--border);
-		border-start-end-radius: calc(var(--radius-md) - 1px);
-		border-end-end-radius: calc(var(--radius-md) - 1px);
-		background: var(--accent);
-		/* The buttons' edge, so it never blends into the bank (Trevor, 2026-10-22). */
-		box-shadow: inset 0 0 0 1px var(--accent-edge);
-		color: var(--on-accent);
-		font: 600 0.8rem var(--font-control);
-		cursor: pointer;
+	/* Pulled up: every token in rows above the run button, which keeps its place at the foot. */
+	.bank.tall {
+		z-index: 3;
+		align-items: stretch;
+		/* As tall as its tokens need, up to most of the board, so no empty space sits above the
+		   run button. */
+		height: auto;
+		max-height: calc(var(--tray-h) + var(--reach));
+		background: var(--surface-raised);
+		box-shadow: var(--shadow);
 	}
-	.run :global(svg) {
-		width: 1.6em;
-		height: 1.6em;
+	/* Pulled by its handle: it follows the finger. */
+	.bank.pulling {
+		height: calc(var(--tray-h) + var(--reach));
 	}
-	/* Next past the last step points here (Trevor, 2026-10-19): a ring that pulses, or just
-	   shows under reduced motion (the duration tokens are 0ms then). An inset ring on the
-	   cell's own edge, so it follows its rounded corners (Trevor, 2026-10-20: it sat in from
-	   the edges). */
-	.run[data-hint] {
-		box-shadow: inset 0 0 0 0.2rem var(--on-accent);
-		animation: end-hint var(--duration-slow) ease-in-out 4 alternate;
+	.every {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+		padding: calc(var(--tap-target) / 2) var(--space-2) var(--space-2);
+		box-sizing: border-box;
 	}
-	@keyframes end-hint {
-		to {
-			box-shadow: inset 0 0 0 0.2rem transparent;
-		}
+	/* A token on its way out of it: back down to its row, the tokens still there to come back. */
+	.bank.tall.lowered {
+		height: var(--tray-h);
 	}
-	.run:disabled {
-		background: none;
-		color: var(--on-surface-muted);
-		cursor: default;
+	.bank.lowered .every {
+		opacity: 0;
+	}
+	/* The run button keeps its corner cell at the foot, the size it is in the row, its own
+	   rounded corner towards the tokens (Trevor, 2026-10-30: it looked bad pulled up). */
+	.bank.tall :global(.run) {
+		position: absolute;
+		right: 0;
+		bottom: 0;
+		height: calc(var(--tray-h) - 2px); /* px-ok: the bank's two borders */
+		border-start-start-radius: calc(var(--radius-md) - 1px);
+	}
+	/* The tokens to its left, so the last row sits beside it. */
+	.bank.tall .every {
+		min-height: calc(var(--tray-h) * 2);
+		padding-inline-end: calc(var(--run-w, 0rem) + var(--space-2));
+	}
+	/* The handle bar, on the top edge over the middle of the tokens, half over the board. */
+	.grab {
+		position: absolute;
+		top: 0;
+		left: calc((100% - var(--run-w, 0rem)) / 2);
+		/* Under the captions, which let a press through to it. */
+		z-index: 2;
+		translate: -50% -50%;
 	}
 	/*
 	 * On the bank's top edge, half over the board, so it is the seat name's pill (PlayerNameMark):
@@ -725,29 +770,6 @@
 	}
 	.none {
 		color: var(--on-surface-muted);
-	}
-	/* A cell between the tokens and the run button, so the sheet, which opens over the board
-	   only, leaves the bank, its run button and the night strip in place (Trevor, 2026-10-29:
-	   "where the night order button goes"). */
-	.pull-up {
-		flex: none;
-		align-self: stretch;
-		display: grid;
-		place-items: center;
-		width: var(--tap-target);
-		padding: 0;
-		border: 0;
-		border-inline-start: 1px solid var(--border);
-		background: none;
-		color: var(--on-surface);
-		cursor: pointer;
-	}
-	.pull-up :global(svg) {
-		rotate: 180deg;
-		transition: rotate var(--duration-fast) ease;
-	}
-	.pull-up[aria-pressed='true'] :global(svg) {
-		rotate: 0deg;
 	}
 	.floating {
 		position: absolute;

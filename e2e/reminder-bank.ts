@@ -2,23 +2,26 @@ import { expect, type Locator, type Page } from '@playwright/test';
 
 /**
  * Reminders go on seats from the bank only (Trevor, 2026-10-29: no list on the seat's sheet):
- * the bank pulled up into its sheet of every token, then a token dragged onto a seat.
+ * the bank pulled up by its handle bar to show every token, then a token dragged onto a seat.
  */
 
-/** The bank pulled up into its sheet of every token. */
+/** The bank's handle bar, which pulls it up or down (a tap toggles it). */
+export const bankHandle = (page: Page) => page.getByRole('button', { name: 'Every reminder' });
+
+/** The bank pulled up to show every token. */
 export async function openBin(page: Page): Promise<Locator> {
 	const bin = page.getByTestId('reminder-bin');
 	if (!(await bin.isVisible())) {
-		await page.getByRole('button', { name: 'Show every reminder' }).tap();
+		await bankHandle(page).tap();
 		await expect(bin).toBeVisible();
 	}
 	return bin;
 }
 
-/** Closes the bank's sheet, if it is open. */
+/** The bank back down to its row, if it is pulled up. */
 export async function closeBin(page: Page): Promise<void> {
 	const bin = page.getByTestId('reminder-bin');
-	if (await bin.isVisible()) await bin.getByRole('button', { name: 'Close Reminder bin' }).tap();
+	if (await bin.isVisible()) await bankHandle(page).tap();
 	await expect(bin).toBeHidden();
 }
 
@@ -48,6 +51,6 @@ export async function dragToSeat(page: Page, token: Locator, seat: number | stri
 /** Puts a reminder from the bank on a seat, and closes the bank's sheet unless a dialog asks. */
 export async function putReminder(page: Page, label: string, seat: number | string, nth = 0) {
 	await dragToSeat(page, await binToken(page, label, nth), seat);
-	await expect(page.getByTestId('reminder-bin')).not.toHaveClass(/lowered/);
+	await expect(page.locator('.lowered [data-testid="reminder-bin"]')).toHaveCount(0);
 	if ((await page.getByRole('alertdialog').count()) === 0) await closeBin(page);
 }
