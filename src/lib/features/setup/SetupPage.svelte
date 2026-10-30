@@ -234,6 +234,7 @@
 	];
 
 	const ready = $derived(script !== undefined && game !== undefined && s.gameId === game.gameId);
+	let extrasIncomplete = $state(false);
 	/** A mode that deals no bag (Sushi Buffet, Whale Buffet): its draft's name. */
 	const dealt = $derived(game ? dealStep(game.gameId) : undefined);
 	/**
@@ -546,7 +547,7 @@
 					}}
 				/>
 			{/if}
-			<SetupOffScript {port} />
+			<SetupOffScript {port} onincomplete={(off) => (extrasIncomplete = off)} />
 		</ErrorBoundary>
 	{/snippet}
 
@@ -664,7 +665,7 @@
 			{backStep}
 			players={s.players}
 			deal={dealt}
-			disabled={!ready || (!dealt && plan.tiles.length === 0)}
+			disabled={!ready || extrasIncomplete || (!dealt && plan.tiles.length === 0)}
 			{sameBag}
 			onNext={() => (dealt ? void seatAndGo(game.gameId, 'deal') : requestBuild())}
 			onBoard={() => void seatAndGo(game.gameId, 'board')}
