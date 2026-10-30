@@ -61,8 +61,8 @@
 		{:else}
 			<ErrorBoundary area="grimoire">
 				<GrimoireBoard grimoire={board} />
-				<!-- Players, their messages and reported pictures, from ⋯ (Trevor, 2026-10-29). -->
-				<PlayersDialog game={board.open} />
+				<!-- Players, their notes, messages and reported pictures, from ⋯ (Trevor, 2026-10-29). -->
+				<PlayersDialog game={board.open} run={(command) => board.run(command)} />
 			</ErrorBoundary>
 		{/if}
 	{/snippet}
