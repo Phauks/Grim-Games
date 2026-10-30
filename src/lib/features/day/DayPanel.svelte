@@ -13,7 +13,10 @@
 		dayClaim,
 		dayStateFromGame,
 		isOnceOnlyDayAbility,
-		daySentence
+		daySentence,
+		madnessOffer,
+		type DayReminder,
+		type MadnessOffer
 	} from '#lib/core/rules/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
@@ -38,6 +41,7 @@
 	import DayCounts from './DayCounts.svelte';
 	import type { DayPort } from './day-port.ts';
 	import NoteSheet, { type NoteTarget } from './NoteSheet.svelte';
+	import MadnessDeathDialog from './MadnessDeathDialog.svelte';
 
 	interface Props {
 		game: DayPort;
@@ -46,11 +50,16 @@
 		onOpenNight?: () => void;
 		/** Opens the Savant information sheet for a seat (the grimoire's); none in the spike. */
 		onSavant?: (seatId: SeatId) => void;
+		/**
+		 * A mad player broke madness that executes (L84): the grimoire's Execution asks, with them
+		 * chosen and executed by `cause`. Without it, they are executed here.
+		 */
+		onExecute?: (seatId: SeatId, cause: CharacterId) => void;
 	}
 
 	// No Undo or History here (Trevor, 2026-10-16): each day action is one entry in the
 	// game's History, in the grimoire's menu.
-	let { game, assistance, onOpenNight, onSavant }: Props = $props();
+	let { game, assistance, onOpenNight, onSavant, onExecute }: Props = $props();
 	// Every badge on the day screen names the script's own characters, homebrew included.
 	provideCharacters(() => game.characters);
 
@@ -271,6 +280,25 @@
 		}
 		return rows;
 	});
+	// ── Breaking madness (L84) ──
+	/** A madness row's offer for its mad player: the last player the row names. */
+	function madnessOf(reminder: DayReminder): MadnessOffer | undefined {
+		if (reminder.group !== 'madness' || !reminder.characterId) return undefined;
+		let seatId: SeatId | undefined;
+		for (const segment of reminder.segments)
+			if (segment.kind === 'character' && segment.ref.seatId) seatId = segment.ref.seatId;
+		return seatId ? madnessOffer(g, reminder.characterId, seatId, game.characters) : undefined;
+	}
+	let madnessOpen = $state(false);
+	let madness = $state<MadnessOffer>();
+	function breakMadness(offer: MadnessOffer) {
+		if (offer.breaking === 'death') {
+			madness = offer;
+			madnessOpen = true;
+		} else if (onExecute) onExecute(offer.seatId, offer.characterId);
+		else game.run({ type: 'Execute', seatId: offer.seatId, cause: offer.characterId });
+	}
+
 	/** Seats with a day button but no reminder row today, listed on their own under Abilities. */
 	const unlisted = $derived(
 		assistance.preDayReminders
@@ -292,6 +320,17 @@
 	{#if hasDayButton(characterId)}
 		<span class="day-end">{@render dayButton(characterId, seatId)}</span>
 	{/if}
+{/snippet}
+
+<!-- Broke madness on a madness row, where no day button is (L84). -->
+{#snippet madnessEnd(offer: MadnessOffer)}
+	<span class="day-end"
+		><Chip
+			data-testid="broke-madness"
+			aria-label={t('day.brokeMadnessLabel', { who: game.seatName(offer.seatId) })}
+			onclick={() => breakMadness(offer)}>{t('day.brokeMadness')}</Chip
+		></span
+	>
 {/snippet}
 
 {#snippet dayButton(characterId: CharacterId | undefined, seatId: SeatId)}
@@ -387,6 +426,7 @@
 								line.segments.map((s) => (s.kind === 'text' ? s.text : ''))
 							)}
 							{@const character = head ? game.characters.get(head.ref.characterId) : undefined}
+							{@const mad = buttonRows[reminder.key] ? undefined : madnessOf(reminder)}
 							<li data-character={reminder.characterId}>
 								{#if character}
 									<!-- As the script draws it (Trevor, 2026-10-28): the ring and band, the
@@ -402,7 +442,7 @@
 											>{@render sentence()}{#if buttonRows[reminder.key]}{@render dayEnd(
 													reminder.characterId,
 													buttonRows[reminder.key]
-												)}{/if}</span
+												)}{:else if mad}{@render madnessEnd(mad)}{/if}</span
 										>
 									</CharacterRow>
 								{:else}
@@ -411,7 +451,7 @@
 												buttonRows[reminder.key]}{#if seatId}{@render dayButton(
 													reminder.characterId,
 													seatId
-												)}{/if}{/snippet}
+												)}{:else if mad}{@render madnessEnd(mad)}{/if}{/snippet}
 										{@render sentence()}
 									</CharacterEntry>
 								{/if}
@@ -480,6 +520,7 @@
 </div>
 
 <NoteSheet bind:open={noteOpen} {game} target={noteTarget} />
+<MadnessDeathDialog bind:open={madnessOpen} {game} offer={madness} />
 
 <!-- A character as a badge; false inside a button, so it does not open the character. -->
 {#snippet badge(id: CharacterId | undefined, interactive = true)}{#if id}<CharacterBadge

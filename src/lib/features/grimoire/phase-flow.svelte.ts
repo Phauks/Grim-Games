@@ -48,6 +48,8 @@ export class PhaseFlow {
 	setupLeft = $state<TrayItem[]>([]);
 	/** A seat's status chose Executed: during the day, the day's Execution asks with them chosen. */
 	executeChosen = $state<SeatId>();
+	/** A mad player broke madness: the character whose madness executes them (L84). */
+	executeCause = $state<CharacterId>();
 	/** Counts Next taps past the walk-through's last step; each lights up End night. */
 	endHint = $state(0);
 	#context: () => PhaseFlowContext;
@@ -55,7 +57,9 @@ export class PhaseFlow {
 	constructor(context: () => PhaseFlowContext) {
 		this.#context = context;
 		$effect(() => {
-			if (!this.endDayOpen) this.executeChosen = undefined;
+			if (this.endDayOpen) return;
+			this.executeChosen = undefined;
+			this.executeCause = undefined;
 		});
 	}
 
@@ -85,6 +89,16 @@ export class PhaseFlow {
 	}
 
 	/**
+	 * A mad player broke madness that executes (L84): the day's Execution asks with them
+	 * chosen, executed by the character whose madness it is.
+	 */
+	executeForMadness(seatId: SeatId, cause: CharacterId): void {
+		this.executeChosen = seatId;
+		this.executeCause = cause;
+		this.endDayOpen = true;
+	}
+
+	/**
 	 * Execution ends the day (Trevor, 2026-10-22): the player chosen is executed first, unless
 	 * that execution is already logged, so the rules checked at dusk see it.
 	 */
@@ -98,11 +112,13 @@ export class PhaseFlow {
 		for (const [mark, value] of Object.entries(marks) as [DayMark, boolean][])
 			grimoire.run({ type: 'SetDayMark', mark, value });
 		const logged = game.today.entries.some((e) => e.kind === 'execution' && e.seatId === seatId);
+		const cause = seatId === this.executeChosen ? this.executeCause : undefined;
 		if (seatId && !logged)
 			grimoire.run({
 				type: 'Execute',
 				seatId,
-				...(save === 'dies' ? { dies: true } : save ? { savedBy: save } : {})
+				...(save === 'dies' ? { dies: true } : save ? { savedBy: save } : {}),
+				...(cause ? { cause } : {})
 			});
 		// Keep the day going (Trevor, 2026-10-26): a player may still nominate after it.
 		if (!keepGoing) this.endDay();

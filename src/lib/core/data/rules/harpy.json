@@ -93,5 +93,10 @@
 			"characters": ["self"]
 		}
 	},
-	"marksChoice": ["Mad"]
+	"marksChoice": ["Mad"],
+	"madness": {
+		"token": "Mad",
+		"breaking": "death",
+		"alsoDies": "2nd"
+	}
 }

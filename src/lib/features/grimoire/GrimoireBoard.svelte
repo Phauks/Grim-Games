@@ -1083,6 +1083,7 @@
 	{coverActions}
 	onSoundboard={watching ? undefined : () => (soundboardOpen = true)}
 	onEndDay={() => (flow.endDayOpen = true)}
+	onExecute={(seatId, cause) => flow.executeForMadness(seatId, cause)}
 	onSavant={(seatId) => {
 		savantSeat = seatId;
 		savantOpen = true;
