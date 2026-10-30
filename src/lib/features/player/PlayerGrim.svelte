@@ -26,6 +26,7 @@
 	import { cornerFit, cornerObstacles, nameBoxes } from '#lib/features/grimoire/board-geometry.ts';
 	import { watchRootFont } from '#lib/ui/root-font.svelte.ts';
 	import PlayerSeatReminders from './PlayerSeatReminders.svelte';
+	import PlayerSeating from './PlayerSeating.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import { placedKey, reminderChip, reminderWords, remindersOn } from './player-reminders.ts';
 	import { PlayerReminderState } from './player-reminders.svelte.ts';
@@ -92,10 +93,7 @@
 		script: LoadedScript;
 		/** The town from the Storyteller's board or Public Town; a phone reads its room. */
 		town?: PlayerGrimTown;
-		/**
-		 * A Public Town display (Trevor, 2026-10-26): the town as /play draws it, with nothing to
-		 * tap and nothing of this device's own on it (no guesses, notes or "you").
-		 */
+		/** A Public Town display (Trevor, 2026-10-26): nothing to tap, nothing of this device's. */
 		display?: boolean;
 		/** Full screen in the town's top right corner: the player screen's Grim (PlayerScreen) and Public Town. */
 		fullScreen?: boolean;
@@ -126,11 +124,10 @@
 	/** The reminder bin (Trevor, 2026-10-29), from the grim's controls. */
 	let binOpen = $state(false);
 	let bin = $state<ReturnType<typeof PlayerReminderBin>>();
+	let seating = $state<ReturnType<typeof PlayerSeating>>(); // Seating on the grim (plan J38).
 	let townEl = $state<HTMLElement>();
-	/** The seat a finger is on, whose reminder lines show under "While held". */
-	let held = $state<string>();
-	/** The seat this player marked as theirs; else the one the room gave them. */
-	let marked = $state<string>();
+	let held = $state<string>(); // The seat a finger is on, its reminder lines under "While held".
+	let marked = $state<string>(); // The seat this player marked as theirs, else the room's.
 	const mine = $derived(selfSeat(marked, player?.view?.me.seatId));
 	function markSelf(seatId: string, on: boolean) {
 		if (!kept) return;
@@ -254,7 +251,7 @@
 	let chosen = $state<PublicSeat>();
 	function choose(seat: PublicSeat, event?: MouseEvent) {
 		// A token tapped in the bin goes on the seat tapped next.
-		if (bin?.placeOn(seat)) return;
+		if (bin?.placeOn(seat) || seating?.claim(seat)) return;
 		// Hidden guesses never open in a sheet either.
 		if (hiding) return;
 		chosen = seat;
@@ -500,6 +497,15 @@
 					{size}
 					chip={reminderChip(size, preferences.current.tokenAppearance.reminderScale)}
 					onPlace={(seat, r) => reminders.place(seat.seatId, r)}
+				/>{/if}
+			{#if player}<PlayerSeating
+					bind:this={seating}
+					{player}
+					ring={{ seats, points, size }}
+					{board}
+					town={townEl}
+					{nameOf}
+					onTap={(seat) => choose(seat)}
 				/>{/if}
 			<!-- The Grim tab's controls, top right; with Full screen, in its corner. A Public
 			     Town display shows only public things. -->

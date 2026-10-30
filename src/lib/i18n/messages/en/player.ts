@@ -177,5 +177,10 @@ export const player = {
 	'player.printPreview': 'Preview',
 	'player.printConfirm': 'Print',
 	'player.printScriptTool': 'Open in the official Script Tool',
-	'player.jinxedWith': 'Jinxed with {names}'
+	'player.jinxedWith': 'Jinxed with {names}',
+	'player.seating.open': 'Seating is open',
+	'player.seating.drag': 'Your seat: drag it to where you sit',
+	'player.seating.between': 'Between',
+	'player.seating.and': 'and',
+	'player.seating.claim': 'Sit in Seat {number}?'
 } as const;

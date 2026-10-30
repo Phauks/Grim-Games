@@ -23,6 +23,7 @@ import type { GameOver, RoomMember, RoomRequest } from './room.ts';
 import type { TransferDetails, TransferStatus } from './room-transfer.ts';
 import type { PushAddress } from './web-push.ts';
 import type { RemovedMember } from './room-removed.ts';
+import type { SitWish } from './room-seating-open.ts';
 
 export type ClientMessage =
 	/**
@@ -62,6 +63,10 @@ export type ClientMessage =
 	 */
 	| { type: 'script-ballot'; voteId: string; choices: string[] }
 	| { type: 'role-seen' } // The player held their character to see it (2026-10-26).
+	/** Seating open (plan J38): the player dragged their disc to just after this seat. */
+	| { type: 'sit'; after: SeatId }
+	/** Seating locked: a player with no seat tapped this open one to sit in it. */
+	| { type: 'claim-seat'; seatId: SeatId }
 	/**
 	 * Back to town reaches this phone while it is locked or the app is closed (plan U12), at this
 	 * push address; none turns that off.
@@ -80,6 +85,8 @@ export type ClientMessage =
 	/** Removes a phone from the room for this game, or lets it back in (plan J37). */
 	| { type: 'remove'; memberId: string }
 	| { type: 'let-back-in'; memberId: string }
+	/** Lets phones move their own seat, or locks seating (plan J38). */
+	| { type: 'seating'; open: boolean }
 	/** Puts a named member in a seat (players join without approval, Trevor 2026-10-26). */
 	| { type: 'seat'; memberId: string; seatId: SeatId }
 	| { type: 'open-vote'; voteId: string; options: SeatId[]; ability?: string }
@@ -175,6 +182,7 @@ export interface HostView {
 	messages?: PlayerMessage[]; // Players' messages this game, oldest first.
 	transfer?: TransferStatus; // The room transfer this device has open.
 	removed?: RemovedMember[]; // Phones removed from the room this game (plan J37).
+	seatingOpen?: true; // Phones may move their own seat (plan J38).
 }
 
 export interface VoteTally {
@@ -239,6 +247,7 @@ export interface PlayerView {
 	role?: SeatRole; // This player's own character, while players may see theirs.
 	pictures?: Partial<Record<SeatId, string>>; // Each seat's player's picture (room-pictures.ts).
 	inbox?: true; // The Storyteller's app takes messages, so this phone may send one.
+	seatingOpen?: true; // This phone may drag its own disc (plan J38).
 }
 
 /**
@@ -310,6 +319,8 @@ export type ServerMessage =
 	 * 2026-10-28). Says nothing of what was sent; older apps ignore it.
 	 */
 	| { type: 'message-delivered'; delivered: boolean }
+	/** To the Storyteller's device: where a phone asks to sit (plan J38); never kept. */
+	| SitWish
 	| { type: 'refused'; reason: RefusedReason }
 	| { type: 'closed' };
 

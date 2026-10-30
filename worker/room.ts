@@ -25,6 +25,8 @@ import {
 	readMessages,
 	sendMessage,
 	setInbox,
+	setSeatingOpen,
+	sitWish,
 	MAX_GRIMOIRE_BYTES,
 	MAX_SCRIPT_BYTES,
 	openScriptVote,
@@ -348,6 +350,11 @@ export class Room extends DurableObject<RoomEnv> {
 				const next = roleSeen(room, id);
 				if (next === room) return;
 				room = next;
+			} else if (message.type === 'sit' || message.type === 'claim-seat') {
+				// Passed on to the Storyteller's device, which seats them on the board (plan J38).
+				const wish = sitWish(room, id, message);
+				if (wish) this.toHosts(JSON.stringify(wish));
+				return;
 			} else if (message.type === 'push') {
 				return setRoomPushAddress(this.ctx.storage, id, message.address);
 			} else if (message.type === 'showing') {
@@ -450,6 +457,9 @@ export class Room extends DurableObject<RoomEnv> {
 			}
 			case 'let-back-in':
 				room = letBackIn(room, message.memberId);
+				break;
+			case 'seating':
+				room = setSeatingOpen(room, message.open);
 				break;
 			case 'judge-picture': {
 				const next = judgePicture(room, message.hash, message.allow);
@@ -585,7 +595,10 @@ export class Room extends DurableObject<RoomEnv> {
 
 	/** Sends the Storyteller's device its view, without storing anything. */
 	private tellHost(room: RoomState, going?: WebSocket): void {
-		const text = JSON.stringify(hostView(room, this.present(going)));
+		this.toHosts(JSON.stringify(hostView(room, this.present(going))));
+	}
+
+	private toHosts(text: string): void {
 		for (const socket of this.ctx.getWebSockets()) {
 			const who = socket.deserializeAttachment() as Attachment | null;
 			if (who?.role === 'host') sendText(socket, text);

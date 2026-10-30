@@ -135,7 +135,9 @@ import ph_list_checks_duotone from '~icons/ph/list-checks-duotone';
 import ph_list_dashes_duotone from '~icons/ph/list-dashes-duotone';
 import ph_list_magnifying_glass_duotone from '~icons/ph/list-magnifying-glass-duotone';
 import ph_lock_duotone from '~icons/ph/lock-duotone';
+import ph_lock_open_duotone from '~icons/ph/lock-open-duotone';
 import ph_lock_simple_duotone from '~icons/ph/lock-simple-duotone';
+import ph_lock_simple_open_duotone from '~icons/ph/lock-simple-open-duotone';
 import ph_magnifying_glass_duotone from '~icons/ph/magnifying-glass-duotone';
 import ph_mask_sad_duotone from '~icons/ph/mask-sad-duotone';
 import ph_megaphone_duotone from '~icons/ph/megaphone-duotone';
@@ -365,7 +367,9 @@ const icons: IconMap = {
 	'ph:list-dashes-duotone': ph_list_dashes_duotone,
 	'ph:list-magnifying-glass-duotone': ph_list_magnifying_glass_duotone,
 	'ph:lock-duotone': ph_lock_duotone,
+	'ph:lock-open-duotone': ph_lock_open_duotone,
 	'ph:lock-simple-duotone': ph_lock_simple_duotone,
+	'ph:lock-simple-open-duotone': ph_lock_simple_open_duotone,
 	'ph:magnifying-glass-duotone': ph_magnifying_glass_duotone,
 	'ph:mask-sad-duotone': ph_mask_sad_duotone,
 	'ph:megaphone-duotone': ph_megaphone_duotone,

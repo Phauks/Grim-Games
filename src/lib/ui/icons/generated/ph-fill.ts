@@ -135,7 +135,9 @@ import ph_list_checks_fill from '~icons/ph/list-checks-fill';
 import ph_list_dashes_fill from '~icons/ph/list-dashes-fill';
 import ph_list_magnifying_glass_fill from '~icons/ph/list-magnifying-glass-fill';
 import ph_lock_fill from '~icons/ph/lock-fill';
+import ph_lock_open_fill from '~icons/ph/lock-open-fill';
 import ph_lock_simple_fill from '~icons/ph/lock-simple-fill';
+import ph_lock_simple_open_fill from '~icons/ph/lock-simple-open-fill';
 import ph_magnifying_glass_fill from '~icons/ph/magnifying-glass-fill';
 import ph_mask_sad_fill from '~icons/ph/mask-sad-fill';
 import ph_megaphone_fill from '~icons/ph/megaphone-fill';
@@ -365,7 +367,9 @@ const icons: IconMap = {
 	'ph:list-dashes-fill': ph_list_dashes_fill,
 	'ph:list-magnifying-glass-fill': ph_list_magnifying_glass_fill,
 	'ph:lock-fill': ph_lock_fill,
+	'ph:lock-open-fill': ph_lock_open_fill,
 	'ph:lock-simple-fill': ph_lock_simple_fill,
+	'ph:lock-simple-open-fill': ph_lock_simple_open_fill,
 	'ph:magnifying-glass-fill': ph_magnifying_glass_fill,
 	'ph:mask-sad-fill': ph_mask_sad_fill,
 	'ph:megaphone-fill': ph_megaphone_fill,
