@@ -1,9 +1,9 @@
 import { expect, test, type Page } from '@playwright/test';
-import { pickScript } from './new-game.ts';
+import { chooseRulesOnSetup, pickScript } from './new-game.ts';
 
-// One start flow for every game (Trevor, 2026-10-23): New game, the special rules when any
-// are on, then Character selection (Game settings opens there, Trevor 2026-10-29), each with a
-// Back to the step before that keeps what was chosen.
+// One start flow for every game (Trevor, 2026-10-23): New game, then Character selection, where
+// the special rules and Game settings open (Trevor, 2026-10-29), with a Back to New game that
+// keeps what was chosen.
 
 const setupBar = (page: Page) => page.getByRole('navigation', { name: 'Setup' });
 
@@ -31,27 +31,28 @@ test('a plain game goes to Character selection, and Back returns to New game as 
 	await expect(page.getByText('Bad Moon Rising')).toHaveCount(0);
 });
 
-test('a game with a special rule restates it, then Character selection; Back keeps the rule', async ({
+test('special rules are chosen on Character selection, and Back and Create game keep them', async ({
 	page
 }) => {
+	// Trevor, 2026-10-29: special rules on the Character selection screen, not a step of their own.
 	await page.goto('/new');
-	await page
-		.getByRole('main')
-		.getByRole('button', { name: /^Special rules/ })
-		.tap();
-	const rules = page.getByRole('dialog', { name: 'Special rules' });
-	await rules.getByTestId('special-rules').getByText('Stowed Away', { exact: true }).tap();
-	await rules.getByRole('button', { name: 'Close' }).tap();
+	await expect(page.getByRole('main').getByRole('button', { name: /^Special rules/ })).toHaveCount(
+		0
+	);
 	await page.getByRole('button', { name: 'Create game' }).tap();
-	const recap = page.getByRole('dialog', { name: 'Special rules in this game' });
-	await recap.getByRole('button', { name: 'Create game' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
+	await chooseRulesOnSetup(page, 'Stowed Away');
+	// The rules in the game come first, restated with their own switches.
+	await page.getByTestId('setup-special-rules').tap();
+	const rules = page.getByRole('dialog', { name: 'Special rules' });
+	await expect(rules.getByTestId('rules-in-game')).toContainText('Stowed Away');
+	await rules.getByRole('button', { name: 'Close' }).tap();
+	await expect(rules).toBeHidden();
 
 	await setupBar(page).getByRole('button', { name: 'New game' }).tap();
 	await expect(page).toHaveURL(/\/new#back$/);
-	await expect(page.getByRole('main').getByRole('button', { name: /^Special rules/ })).toHaveText(
-		'Special rules 1'
-	);
+	await page.getByRole('button', { name: 'Create game' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
+	await expect(page.getByTestId('setup-special-rules')).toHaveText('Special rules 1');
 });
 
 test('Character selection goes on to the board without a bag', async ({ page }) => {

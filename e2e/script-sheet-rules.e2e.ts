@@ -1,8 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
-import { pickScript, toBoard } from './new-game.ts';
+import { chooseRulesOnSetup, pickScript, toBoard } from './new-game.ts';
 
 // The game mode and special rules sit under Jinxes on every copy of the script (Trevor,
-// 2026-10-24): New game's preview, the board's Script sheet and the players' phones. Stowed
+// 2026-10-24): the board's Script sheet and the players' phones. Stowed
 // Away's text is its author's rule (https://beardytas.com/garden-of-djinn/stowed-away/).
 const STOWED_AWAY = 'Up to 2 recommended travellers might be in the bag';
 
@@ -16,23 +16,9 @@ async function startWithStowedAway(page: Page) {
 	// Standard with no rules lists none, and has no section for them.
 	await expect(preview.getByRole('button', { name: 'Jinxes' })).toBeVisible();
 	await expect(section(preview)).toHaveCount(0);
-	await page.getByRole('button', { name: /^Special rules/ }).tap();
-	const rules = page.getByRole('dialog', { name: 'Special rules' });
-	await rules.getByTestId('special-rules').getByText('Stowed Away', { exact: true }).tap();
-	await rules.getByRole('button', { name: 'Close' }).tap();
-	await expect(rules).toBeHidden();
-	await expect(preview.getByTestId('sheet-rule')).toHaveCount(1);
-	await expect(preview.getByTestId('sheet-rule')).toContainText('Stowed Away');
-	await expect(preview.getByTestId('sheet-rule')).toContainText(STOWED_AWAY);
-	// Under Jinxes.
-	const jinxes = (await preview.getByRole('button', { name: 'Jinxes' }).boundingBox())!;
-	expect((await section(preview).boundingBox())!.y).toBeGreaterThan(jinxes.y);
-
 	await page.getByRole('button', { name: 'Create game' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Special rules in this game' })
-		.getByRole('button', { name: 'Create game' })
-		.tap();
+	// Chosen on Character selection since 2026-10-29 (Trevor).
+	await chooseRulesOnSetup(page, 'Stowed Away');
 	await toBoard(page);
 }
 

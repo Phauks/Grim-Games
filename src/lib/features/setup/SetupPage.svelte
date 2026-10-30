@@ -498,7 +498,7 @@
 		>{/snippet}
 	{#snippet side()}
 		<ErrorBoundary area="setup">
-			<GameOptions {game} />
+			<GameOptions {port} />
 			<!-- Who has connected, as players' phones see it (Trevor, 2026-10-29). -->
 			<SetupCandles {game} players={analysis.players} />
 			<div class="storyteller" onfocusout={saveStoryteller}>
