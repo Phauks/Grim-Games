@@ -56,6 +56,7 @@ import ph_circles_three_thin from '~icons/ph/circles-three-thin';
 import ph_clipboard_thin from '~icons/ph/clipboard-thin';
 import ph_clipboard_text_thin from '~icons/ph/clipboard-text-thin';
 import ph_clock_thin from '~icons/ph/clock-thin';
+import ph_clock_clockwise_thin from '~icons/ph/clock-clockwise-thin';
 import ph_clock_counter_clockwise_thin from '~icons/ph/clock-counter-clockwise-thin';
 import ph_club_thin from '~icons/ph/club-thin';
 import ph_coffee_thin from '~icons/ph/coffee-thin';
@@ -134,6 +135,7 @@ import ph_list_bullets_thin from '~icons/ph/list-bullets-thin';
 import ph_list_checks_thin from '~icons/ph/list-checks-thin';
 import ph_list_dashes_thin from '~icons/ph/list-dashes-thin';
 import ph_list_magnifying_glass_thin from '~icons/ph/list-magnifying-glass-thin';
+import ph_list_numbers_thin from '~icons/ph/list-numbers-thin';
 import ph_lock_thin from '~icons/ph/lock-thin';
 import ph_lock_open_thin from '~icons/ph/lock-open-thin';
 import ph_lock_simple_thin from '~icons/ph/lock-simple-thin';
@@ -288,6 +290,7 @@ const icons: IconMap = {
 	'ph:clipboard-thin': ph_clipboard_thin,
 	'ph:clipboard-text-thin': ph_clipboard_text_thin,
 	'ph:clock-thin': ph_clock_thin,
+	'ph:clock-clockwise-thin': ph_clock_clockwise_thin,
 	'ph:clock-counter-clockwise-thin': ph_clock_counter_clockwise_thin,
 	'ph:club-thin': ph_club_thin,
 	'ph:coffee-thin': ph_coffee_thin,
@@ -366,6 +369,7 @@ const icons: IconMap = {
 	'ph:list-checks-thin': ph_list_checks_thin,
 	'ph:list-dashes-thin': ph_list_dashes_thin,
 	'ph:list-magnifying-glass-thin': ph_list_magnifying_glass_thin,
+	'ph:list-numbers-thin': ph_list_numbers_thin,
 	'ph:lock-thin': ph_lock_thin,
 	'ph:lock-open-thin': ph_lock_open_thin,
 	'ph:lock-simple-thin': ph_lock_simple_thin,

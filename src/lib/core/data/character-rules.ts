@@ -33,6 +33,7 @@ import {
 } from './becomes-rules.ts';
 import { ownReminder, readToken } from './reminder-fields.ts';
 import { readMadness, type Madness } from './madness-rules.ts';
+import { readGivesAbility, type GivesAbility } from './gives-ability-rules.ts';
 import { readAnswers, readLearns, type Answers, type Learns } from './night-info-rules.ts';
 import { readImpairs, type Impairs } from './impairs-rules.ts';
 import { readReminderMovement, type ReminderMovementRules } from './reminder-movement-rules.ts';
@@ -213,6 +214,8 @@ export interface CharacterRules extends ChoiceRules {
 	takesNeighbourAlignment?: true;
 	/** A player it makes mad may be executed or die for breaking it (`madness-rules.ts`). */
 	madness?: Madness;
+	/** It gives another player an ability held without its token (`gives-ability-rules.ts`). */
+	givesAbility?: GivesAbility;
 	/** The characters its night step's info tokens show, filled in (`rules/info-token-characters.ts`). */
 	infoTokenCharacters?: InfoTokenCharacterRules;
 	/**
@@ -363,6 +366,7 @@ const RULE_KEYS = [
 	'swapsCharacters',
 	'takesNeighbourAlignment',
 	'madness',
+	'givesAbility',
 	'infoTokenCharacters',
 	'makesExtraEvil',
 	'limitsExtraEvil',
@@ -603,6 +607,10 @@ export function parseCharacterRules(
 	if (raw.madness !== undefined) {
 		const madness = readMadness(raw.madness, `${path}.madness`, issues, reminders);
 		if (madness) rules.madness = madness;
+	}
+	if (raw.givesAbility !== undefined) {
+		const gives = readGivesAbility(raw.givesAbility, `${path}.givesAbility`, issues);
+		if (gives) rules.givesAbility = gives;
 	}
 	if (readBoolean(raw, 'limitsExtraEvil', path, issues)) rules.limitsExtraEvil = true;
 	const extraEvil = readBoolean(raw, 'makesExtraEvil', path, issues);

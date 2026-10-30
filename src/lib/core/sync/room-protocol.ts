@@ -24,6 +24,7 @@ import type { TransferDetails, TransferStatus } from './room-transfer.ts';
 import type { PushAddress } from './web-push.ts';
 import type { RemovedMember } from './room-removed.ts';
 import type { SitWish } from './room-seating-open.ts';
+import type { CountOffView } from './room-count-off.ts';
 
 export type ClientMessage =
 	/**
@@ -67,6 +68,7 @@ export type ClientMessage =
 	| { type: 'sit'; after: SeatId }
 	/** Seating locked: a player with no seat tapped this open one to sit in it. */
 	| { type: 'claim-seat'; seatId: SeatId }
+	| { type: 'count'; number: number } // Count off (plan J40): the number this player counted to.
 	/**
 	 * Back to town reaches this phone while it is locked or the app is closed (plan U12), at this
 	 * push address; none turns that off.
@@ -87,6 +89,11 @@ export type ClientMessage =
 	| { type: 'let-back-in'; memberId: string }
 	/** Lets phones move their own seat, or locks seating (plan J38). */
 	| { type: 'seating'; open: boolean }
+	/** Starts a count off (plan J40) with this phone or this name as number 1. */
+	| { type: 'count-off'; first: { memberId: string } | { name: string } }
+	| { type: 'end-count-off' } // Done (once the board has the order) or Cancel.
+	/** Names a number for a player without a phone; no name clears it. */
+	| { type: 'name-count'; number: number; name?: string }
 	/** Puts a named member in a seat (players join without approval, Trevor 2026-10-26). */
 	| { type: 'seat'; memberId: string; seatId: SeatId }
 	| { type: 'open-vote'; voteId: string; options: SeatId[]; ability?: string }
@@ -183,6 +190,7 @@ export interface HostView {
 	transfer?: TransferStatus; // The room transfer this device has open.
 	removed?: RemovedMember[]; // Phones removed from the room this game (plan J37).
 	seatingOpen?: true; // Phones may move their own seat (plan J38).
+	countOff?: CountOffView; // The count off, while one is open (plan J40).
 }
 
 export interface VoteTally {
@@ -246,6 +254,7 @@ export interface PlayerView {
 	pictures?: Partial<Record<SeatId, string>>; // Each seat's player's picture (room-pictures.ts).
 	inbox?: true; // The Storyteller's app takes messages, so this phone may send one.
 	seatingOpen?: true; // This phone may drag its own disc (plan J38).
+	countOff?: CountOffView; // The count off, with this phone's own number marked (plan J40).
 }
 
 /**
