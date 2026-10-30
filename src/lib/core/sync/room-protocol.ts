@@ -22,6 +22,7 @@ import type { PlayerMessage } from './room-messages.ts';
 import type { GameOver, RoomMember, RoomRequest } from './room.ts';
 import type { TransferDetails, TransferStatus } from './room-transfer.ts';
 import type { PushAddress } from './web-push.ts';
+import type { RemovedMember } from './room-removed.ts';
 
 export type ClientMessage =
 	/**
@@ -76,6 +77,9 @@ export type ClientMessage =
 	 */
 	| { type: 'script'; script: Script }
 	| { type: 'unseat'; memberId: string }
+	/** Removes a phone from the room for this game, or lets it back in (plan J37). */
+	| { type: 'remove'; memberId: string }
+	| { type: 'let-back-in'; memberId: string }
 	/** Puts a named member in a seat (players join without approval, Trevor 2026-10-26). */
 	| { type: 'seat'; memberId: string; seatId: SeatId }
 	| { type: 'open-vote'; voteId: string; options: SeatId[]; ability?: string }
@@ -170,6 +174,7 @@ export interface HostView {
 	pictureReports?: PictureReportView[]; // Pictures other phones reported, for a verdict.
 	messages?: PlayerMessage[]; // Players' messages this game, oldest first.
 	transfer?: TransferStatus; // The room transfer this device has open.
+	removed?: RemovedMember[]; // Phones removed from the room this game (plan J37).
 }
 
 export interface VoteTally {
@@ -312,6 +317,7 @@ export type ServerMessage =
  * `too-old`: the app must update before it can use the room; the room itself is fine.
  * `not-viewer`: the view-only link is off, or was replaced by a newer one, or the password
  * was wrong. `too-many-tries`: too many wrong keys lately; watching waits a while.
+ * `removed`: the Storyteller removed this phone for the current game (plan J37).
  */
 export type RefusedReason =
-	'no-room' | 'not-host' | 'room-full' | 'too-old' | 'not-viewer' | 'too-many-tries';
+	'no-room' | 'not-host' | 'room-full' | 'too-old' | 'not-viewer' | 'too-many-tries' | 'removed';

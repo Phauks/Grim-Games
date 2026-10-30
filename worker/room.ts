@@ -13,8 +13,11 @@ import {
 	closeVote,
 	gameOver,
 	hostView,
+	isRemoved,
 	isScript,
 	isSharedGrimoire,
+	letBackIn,
+	removeMember,
 	join,
 	markHere,
 	judgePicture,
@@ -56,18 +59,11 @@ import {
 } from '../src/lib/core/sync/room.ts';
 import { liveGame, type LiveGame } from '../src/lib/core/sync/live-games.ts';
 import { loadRoomState, newStoredRoom } from '../src/lib/core/sync/room-state.ts';
-import {
-	addRoomImage,
-	isRoomImageType,
-	MAX_ROOM_IMAGE_BYTES,
-	parseRoomImagePath,
-	splitUpload,
-	type StoredImage
-} from '../src/lib/core/sync/room-images.ts';
-import { MAX_AVATAR_PICTURE_BYTES } from '../src/lib/core/sync/room-pictures.ts';
+import { parseRoomImagePath } from '../src/lib/core/sync/room-images.ts';
+import { dropAvatarPicture, roomImage } from './room-image-store.ts';
 import { liveGameIndex, type LiveGameIndex } from './live-games.ts';
 import { pushCallTown, setRoomPushAddress, type PushEnv } from './push.ts';
-import { closeSocket, send, sendText, type Attachment } from './room-sockets.ts';
+import { closeSocket, refuseRemoved, send, sendText, type Attachment } from './room-sockets.ts';
 import {
 	accountTags,
 	linkAccount,
@@ -108,11 +104,6 @@ const MAX_MESSAGE_BYTES = 64 * 1024;
 const KEY_PATTERN = /^[0-9a-f]{32,128}$/;
 
 /** A room's picture as stored: its bytes and type (core/sync/room-images.ts). */
-interface ImageView {
-	type: string;
-	bytes: ArrayBuffer;
-}
-
 /**
  * One live room (07-accounts-and-multi-device.md §4.2). The rules live in
  * `core/sync/room.ts`; this object stores the state, checks who is talking, and sends
@@ -178,7 +169,7 @@ export class Room extends DurableObject<RoomEnv> {
 	async fetch(request: Request): Promise<Response> {
 		const room = await this.load();
 		const image = parseRoomImagePath(new URL(request.url).pathname);
-		if (image) return this.image(request, room, image.hash);
+		if (image) return roomImage(this.ctx.storage, request, room, image.hash, () => this.touch());
 		if (request.headers.get('Upgrade') !== 'websocket') {
 			const script = room && (await this.ctx.storage.get<ScriptView>('script'));
 			return Response.json(roomPreview(room, script?.script));
@@ -192,74 +183,6 @@ export class Room extends DurableObject<RoomEnv> {
 		this.ctx.acceptWebSocket(server, admin ? [] : accountTags(requestAccount(request)));
 		if (admin) server.serializeAttachment({ role: 'admin' } satisfies Attachment);
 		return new Response(null, { status: 101, webSocket: client });
-	}
-
-	/**
-	 * A picture for the table: the Storyteller's device uploads it (PUT, its room key ahead of
-	 * the bytes) and every device loads it (GET). Its name is the hash of its bytes, so a
-	 * stored picture never changes and can be cached for as long as the room lasts.
-	 */
-	private async image(request: Request, room: RoomState | undefined, hash: string) {
-		if (!room) return new Response('No such room', { status: 404 });
-		const key = `image:${hash}`;
-		if (request.method === 'GET') {
-			const view = await this.ctx.storage.get<ImageView>(key);
-			if (!view) return new Response('No such picture', { status: 404 });
-			return new Response(view.bytes, {
-				headers: {
-					'Content-Type': view.type,
-					'Cache-Control': 'private, max-age=86400, immutable',
-					'X-Content-Type-Options': 'nosniff'
-				}
-			});
-		}
-		if (request.method !== 'PUT') return new Response('Method not allowed', { status: 405 });
-		const type = request.headers.get('Content-Type');
-		if (!isRoomImageType(type)) return new Response('Not a picture', { status: 415 });
-		const body = new Uint8Array(await request.arrayBuffer());
-		if (body.length > MAX_ROOM_IMAGE_BYTES + 130) return new Response('Too large', { status: 413 });
-		const upload = splitUpload(body);
-		if (!upload) return new Response('Bad request', { status: 400 });
-		const keyHash = await sha256(upload.key);
-		// The Storyteller's device, or a phone in the room with its own avatar picture.
-		const memberId = keyHash === room.hostKeyHash ? undefined : keyHash.slice(0, 24);
-		if (memberId && !room.members.some((m) => m.memberId === memberId))
-			return new Response('Not the Storyteller', { status: 403 });
-		if ((await sha256(upload.image)) !== hash) return new Response('Wrong hash', { status: 400 });
-		if (memberId) {
-			// A player's own avatar picture (room-pictures.ts): one per phone in the room.
-			if (upload.image.length > MAX_AVATAR_PICTURE_BYTES)
-				return new Response('Too large', { status: 413 });
-			const avatars = (await this.ctx.storage.get<Record<string, string>>('avatars')) ?? {};
-			const old = avatars[memberId];
-			const bytes = upload.image.slice().buffer;
-			await this.ctx.storage.put({
-				[key]: { type, bytes } satisfies ImageView,
-				avatars: { ...avatars, [memberId]: hash }
-			});
-			if (old && old !== hash) await this.dropAvatarPicture(old, memberId);
-			await this.touch();
-			return new Response(null, { status: 204 });
-		}
-		const stored = (await this.ctx.storage.get<StoredImage[]>('images')) ?? [];
-		const { kept, dropped } = addRoomImage(stored, hash, Date.now());
-		const bytes = upload.image.slice().buffer;
-		await this.ctx.storage.put({ [key]: { type, bytes } satisfies ImageView, images: kept });
-		if (dropped.length) await this.ctx.storage.delete(dropped.map((h) => `image:${h}`));
-		await this.touch();
-		return new Response(null, { status: 204 });
-	}
-
-	/** Deletes an avatar picture no other phone or background uses (one replaced or taken away). */
-	private async dropAvatarPicture(hash: string, memberId: string): Promise<void> {
-		const avatars = (await this.ctx.storage.get<Record<string, string>>('avatars')) ?? {};
-		const backgrounds = (await this.ctx.storage.get<StoredImage[]>('images')) ?? [];
-		const { [memberId]: mine, ...others } = avatars;
-		const kept = mine === hash ? others : avatars;
-		if (mine === hash) await this.ctx.storage.put('avatars', kept);
-		const used =
-			Object.values(kept).includes(hash) || backgrounds.some((image) => image.hash === hash);
-		if (!used) await this.ctx.storage.delete(`image:${hash}`);
 	}
 
 	async webSocketMessage(ws: WebSocket, raw: string | ArrayBuffer): Promise<void> {
@@ -360,6 +283,8 @@ export class Room extends DurableObject<RoomEnv> {
 				return;
 			}
 			const memberId = hash.slice(0, 24);
+			// Removed by the Storyteller for this game (plan J37): turned away until let back in.
+			if (isRemoved(room, memberId)) return refuseRemoved(ws);
 			const joined = join(room, memberId, this.present());
 			if (!joined) {
 				send(ws, { type: 'refused', reason: 'room-full' });
@@ -515,13 +440,24 @@ export class Room extends DurableObject<RoomEnv> {
 			case 'unseat':
 				room = unseat(room, message.memberId);
 				break;
+			case 'remove': {
+				room = removeMember(room, message.memberId);
+				for (const socket of this.ctx.getWebSockets()) {
+					const to = socket.deserializeAttachment() as Attachment | null;
+					if (to?.role === 'player' && to.memberId === message.memberId) refuseRemoved(socket);
+				}
+				break;
+			}
+			case 'let-back-in':
+				room = letBackIn(room, message.memberId);
+				break;
 			case 'judge-picture': {
 				const next = judgePicture(room, message.hash, message.allow);
 				if (next === room) return;
 				// A picture taken away is deleted, so no grim can load it again.
 				const owner = room.members.find((m) => m.picture === message.hash && !message.allow);
 				room = next;
-				if (owner) await this.dropAvatarPicture(message.hash, owner.memberId);
+				if (owner) await dropAvatarPicture(this.ctx.storage, message.hash, owner.memberId);
 				break;
 			}
 			case 'read-messages':

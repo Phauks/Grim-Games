@@ -41,3 +41,9 @@ export function closeSocket(ws: WebSocket, code: number, reason: string): void {
 		// Already closed.
 	}
 }
+
+/** A phone the Storyteller removed from the room for this game (plan J37). */
+export function refuseRemoved(ws: WebSocket): void {
+	send(ws, { type: 'refused', reason: 'removed' });
+	closeSocket(ws, 4403, 'Removed from the room');
+}
