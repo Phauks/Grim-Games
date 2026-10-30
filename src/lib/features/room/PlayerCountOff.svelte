@@ -44,8 +44,8 @@
 	<Dialog bind:open title={t('room.countOff.title')}>
 		<div class="count-off" data-testid="count-off">
 			<p class="from">
-				{t('room.countOff.from')}
-				{#if first}<PlayerBadge name={first.name as PlayerName} />{/if}
+				{#if first}{t('room.countOff.from')}
+					<PlayerBadge name={first.name as PlayerName} />{:else}{t('room.countOff.fromOne')}{/if}
 			</p>
 			<CountOffTokens {view} onTap={tap} />
 		</div>

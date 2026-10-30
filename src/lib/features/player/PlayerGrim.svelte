@@ -4,7 +4,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { CharacterId, LoadedScript } from '#lib/core/data/index.ts';
 	import { parsePublicLook, type PublicSeat } from '#lib/core/sync/public-projection.ts';
-	import type { PlayerGrimTown } from './player-grim-town.ts';
+	import { finalGrimoireOf, type PlayerGrimTown } from './player-grim-town.ts';
 	import CharacterPicker from '#lib/features/characters/CharacterPicker.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
@@ -161,14 +161,14 @@
 	 * the town until switched off (Trevor, 2026-10-24); its History steps through on this
 	 * phone only.
 	 */
-	const final = $derived(player?.revealed);
+	const final = $derived(finalGrimoireOf(town, player, code));
 	let showFinal = $state(true);
 	let arrivedAt = $state(0);
 	$effect(() => {
 		if (final) arrivedAt = Date.now();
 	});
 	const over = $derived<EndedGame | undefined>(
-		final ? ({ endedAt: arrivedAt, ...player?.view?.ended } as EndedGame) : undefined
+		final ? ({ endedAt: arrivedAt, ...final.ended } as EndedGame) : undefined
 	);
 
 	const nameOf = (seat: PublicSeat) =>
@@ -361,7 +361,7 @@
 		/>
 	</div>
 	<div class="final" data-testid="final-grimoire">
-		<SharedBoard shared={final.grimoire} {over} room={code} />
+		<SharedBoard shared={final.grimoire} {over} room={final.room} />
 	</div>
 {:else if !code || seats.length === 0}
 	<p class="none" data-testid="grim-none">{t('common.none')}</p>
@@ -540,7 +540,7 @@
 		bind:width={toolsW}
 		bind:height={toolsH}
 		shaped={!!aspect}
-		final={!town && !!final}
+		final={!!final}
 		{showFinal}
 		onFinal={(on) => (showFinal = on)}
 		bin={{ open: binOpen, disabled: hiding, onToggle: () => (binOpen = !binOpen) }}

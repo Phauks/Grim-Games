@@ -77,8 +77,8 @@ const PLAIN_ATTRIBUTES = new Set([
 	'placeholder',
 	'value'
 ]);
-/** Component props that are accessible names only (`IconButton`'s `label`). */
-const PLAIN_PROPS = { IconButton: new Set(['label']) };
+/** Component props that are accessible names only (`IconButton`'s `label`, `BoardReminder`'s `ariaLabel`). */
+const PLAIN_PROPS = { IconButton: new Set(['label']), BoardReminder: new Set(['ariaLabel']) };
 const MESSAGE_FUNCTIONS = new Set(['t', 'say', 'formatMessage']);
 
 /** @param {import('typescript').Type} type */

@@ -286,6 +286,11 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['B6', 'L38', 'L39', 'L40', 'L15', 'L24', 'H1', 'H2']
 	},
 	{
+		title: 'Add a late player to the bag draw as one more player, not a Traveller',
+		area: 'storyteller',
+		parts: ['L96']
+	},
+	{
 		title:
 			'Crowded boards: reminders on spokes with a tether, duplicate from the bank, mark where a reminder came from',
 		area: 'storyteller',
@@ -330,6 +335,12 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		title: 'Friends: add friends, see who you played with, invite them to games',
 		area: 'friends',
 		parts: ['F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8']
+	},
+	{
+		// Trevor, 2026-10-30: "hey, use this script to a friend. Or ... point at their profile".
+		title: 'Friends: send a script to a friend, and show scripts on your profile',
+		area: 'friends',
+		parts: ['F9', 'F10']
 	},
 	{
 		title: 'Achievements and laurels, and History stats',

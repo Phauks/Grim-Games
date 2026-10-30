@@ -8,6 +8,7 @@ import {
 	parseSeatLayout,
 	pruneLayout,
 	seatPoints,
+	reminderTokenSize,
 	seatTokenSize,
 	withGap,
 	swapPlaces,
@@ -92,6 +93,13 @@ describe('gaps', () => {
 		expect(seatTokenSize(ids(30), DEFAULT_SEAT_LAYOUT, { width: 320, height: 400 })).toBe(44);
 		expect(seatTokenSize(ids(5), DEFAULT_SEAT_LAYOUT, { width: 1200, height: 900 })).toBe(96);
 		expect(seatTokenSize(ids(8), DEFAULT_SEAT_LAYOUT, { width: 0, height: 0 })).toBe(56);
+	});
+
+	it('sizes reminder tokens at half the seat token, between 30px and 48px, then by the setting', () => {
+		expect(reminderTokenSize(44)).toBe(30);
+		expect(reminderTokenSize(80)).toBe(40);
+		expect(reminderTokenSize(120)).toBe(48);
+		expect(reminderTokenSize(80, 1.5)).toBe(60);
 	});
 
 	it('follows the token size setting, but never past the spacing or below 44px', () => {

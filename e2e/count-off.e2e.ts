@@ -52,14 +52,19 @@ test('the table counts off round the clock, and Done seats everyone in that orde
 	const ana = await joinAs(browser, testInfo, code, 'Ana');
 	const bo = await joinAs(browser, testInfo, code, 'Bo');
 
-	// The Storyteller picks who is 1.
+	// Count off starts at once: whoever the table picks as 1 taps it (Trevor, 2026-10-30).
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	await page
 		.getByRole('dialog', { name: 'Grimoire' })
 		.getByRole('button', { name: 'Count off' })
 		.tap();
 	const host = page.getByTestId('count-off-host');
-	await host.getByTestId('count-off-first').filter({ hasText: 'Cy' }).tap();
+	await expect(host).toContainText('Count clockwise from 1');
+	// Cy has no phone, so the Storyteller names 1 for them.
+	await host.getByRole('button', { name: '1: free' }).tap();
+	const one = page.getByRole('alertdialog', { name: 'Player for 1' });
+	await one.getByRole('textbox').fill('Cy');
+	await one.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(host.getByRole('button', { name: '1: Cy' })).toBeVisible();
 
 	// Each phone gets the sheet, with no grim behind it, and taps its number.

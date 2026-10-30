@@ -4,6 +4,7 @@ import { aimCamera, qrSrc } from './camera.ts';
 import { nameStoryteller, toBoard } from './new-game.ts';
 import { openProfile, setPlayerName } from './player-name.ts';
 import { theMenu } from './shell.ts';
+import { encodeSharedScript } from '../src/lib/features/scripts/share.ts';
 
 // Friends (plan F1): two accounts, each in its own browser, find each other by username.
 // Local runs use the preview email sender, so each sign-in code is shown on screen.
@@ -298,4 +299,92 @@ test('a player adds the Storyteller from Game info', async ({ browser }) => {
 
 	await ann.page.goto('/friends');
 	await expect(ann.page.getByTestId('friend-incoming')).toContainText(bob.username);
+});
+
+/** Ann asks Bob by username and Bob accepts. */
+async function befriend(ann: { page: Page }, bob: { page: Page; username: string }) {
+	await ann.page.goto('/friends');
+	await expect(ann.page.getByTestId('friend-list-none')).toBeVisible();
+	await expect(await sendRequest(ann.page, bob.username)).toBeHidden();
+	await bob.page.goto('/friends');
+	await bob.page.getByTestId('friend-incoming').getByRole('button', { name: 'Accept' }).tap();
+	await expect(bob.page.getByTestId('friend-list')).toBeVisible();
+}
+
+// Trevor, 2026-10-30: "hey, use this script to a friend. Or instead of having to login, they
+// can just point at their profile" (plan F9, F10).
+test('a script sent to a friend, and one shown on a profile anyone can open', async ({
+	browser
+}) => {
+	const ann = await signedIn(browser, 'ann');
+	const bob = await signedIn(browser, 'bob');
+	await befriend(ann, bob);
+
+	const script = [{ id: '_meta', name: 'Friend Night', author: 'Ann' }, 'chef', 'empath', 'imp'];
+	await ann.page.goto(`/play#s=${await encodeSharedScript(script)}`);
+	await expect(ann.page.getByRole('heading', { name: 'Friend Night', level: 1 })).toBeVisible();
+	await ann.page.getByRole('button', { name: 'Share script' }).tap();
+	const share = ann.page.getByRole('dialog', { name: 'Share', exact: true });
+	await share.getByRole('button', { name: 'Send to a friend' }).tap();
+	const choose = ann.page.getByRole('dialog', { name: 'Send to a friend' });
+	const row = choose.getByTestId('send-script-friends').getByRole('listitem');
+	await expect(row).toContainText(bob.username);
+	await row.getByRole('button', { name: 'Send' }).tap();
+	await expect(row.getByRole('button', { name: 'Sent' })).toBeDisabled();
+	await choose.getByRole('button', { name: 'Close' }).tap();
+	const publish = share.getByRole('checkbox', { name: 'Show on my profile' });
+	await expect(publish).toBeEnabled();
+	await share.getByText('Show on my profile', { exact: true }).tap();
+	await expect(publish).toBeChecked();
+
+	// Bob finds it under Scripts from friends; Open loads it into his Library.
+	await bob.page.reload();
+	const inbox = bob.page.getByTestId('friend-scripts');
+	await expect(inbox).toContainText('Friend Night');
+	await expect(inbox).toContainText(`From ${ann.username}`);
+	await inbox.getByRole('link', { name: 'Open' }).tap();
+	await expect(bob.page).toHaveURL(/\/scripts$/);
+	// Search shows it once saved; leaving sooner would drop the save.
+	await expect(bob.page.getByText('Friend Night').first()).toBeVisible();
+	await bob.page.goto('/library');
+	await expect(bob.page.getByText('Friend Night').first()).toBeVisible();
+	await bob.page.goto('/friends');
+	await bob.page.getByTestId('friend-scripts').getByRole('button', { name: 'Dismiss' }).tap();
+	await expect(bob.page.getByTestId('friend-scripts-none')).toBeVisible();
+
+	// Tapping a friend opens their profile, with the scripts they show there.
+	await bob.page.getByTestId('friend-list').getByRole('link', { name: ann.username }).tap();
+	await expect(bob.page).toHaveURL(new RegExp(`/u/${ann.username}$`));
+	await expect(bob.page.getByRole('heading', { name: ann.username, level: 1 })).toBeVisible();
+	await expect(bob.page.getByTestId('profile-page-scripts')).toContainText('Friend Night');
+	await expect(bob.page.getByRole('button', { name: 'Add friend' })).toBeDisabled();
+
+	// Signed out, the same link opens it, with no Add friend.
+	const stranger = await (await browser.newContext(test.info().project.use)).newPage();
+	await stranger.goto(`/u/${ann.username.toUpperCase()}`);
+	const scripts = stranger.getByTestId('profile-page-scripts');
+	await expect(scripts).toContainText('Friend Night');
+	await expect(stranger.getByRole('button', { name: 'Add friend' })).toHaveCount(0);
+	await scripts.getByRole('link', { name: 'Open' }).tap();
+	await expect(stranger).toHaveURL(/\/scripts$/);
+
+	// Published means public (Trevor, 2026-10-30): hiding from search leaves the profile open.
+	await ann.page.goto('/friends');
+	await ann.page.getByText('Let people find me by username', { exact: true }).tap();
+	await expect(
+		ann.page.getByRole('checkbox', { name: 'Let people find me by username', includeHidden: true })
+	).not.toBeChecked();
+	await stranger.goto(`/u/${ann.username}`);
+	await expect(stranger.getByTestId('profile-page-scripts')).toContainText('Friend Night');
+
+	// Ann takes it off her profile on the Friends page.
+	await ann.page
+		.getByTestId('profile-scripts')
+		.getByRole('button', { name: 'Remove Friend Night from your profile' })
+		.tap();
+	await expect(ann.page.getByTestId('profile-scripts-none')).toBeVisible();
+	await stranger.goto(`/u/${ann.username}`);
+	await expect(stranger.getByTestId('profile-page-scripts-none')).toBeVisible();
+	await stranger.goto(`/u/${unique('nobody')}`);
+	await expect(stranger.getByRole('status')).toHaveText('No one can be found with that username.');
 });

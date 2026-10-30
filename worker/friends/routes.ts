@@ -28,6 +28,7 @@ import { remote, type DataBinding } from '../shared-data.ts';
 import { normaliseRoomCode } from '../../src/lib/core/sync/room-code.ts';
 import type { Room } from '../room.ts';
 import type { BookEntry, FriendBook } from './book.ts';
+import { handleFriendScripts } from './scripts.ts';
 
 export interface FriendsEnv extends AccountEnv {
 	FRIEND_BOOKS: DurableObjectNamespace<FriendBook>;
@@ -47,16 +48,16 @@ export function friendBook(env: BookEnv, accountId: string): DurableObjectStub<F
 	return env.FRIEND_BOOKS.get(env.FRIEND_BOOKS.idFromName(accountId));
 }
 
-function json(body: unknown, status = 200): Response {
+export function json(body: unknown, status = 200): Response {
 	return Response.json(body, { status, headers: { 'Cache-Control': 'no-store' } });
 }
 
-function fail(status: number, error: string): Response {
+export function fail(status: number, error: string): Response {
 	return json({ error } satisfies ApiError, status);
 }
 
 /** Each entry with its account's username and icon; accounts deleted since are left out. */
-async function describe(env: FriendsEnv, entries: BookEntry[]): Promise<FriendAccount[]> {
+export async function describe(env: FriendsEnv, entries: BookEntry[]): Promise<FriendAccount[]> {
 	const found = await Promise.all(
 		entries.map(async ({ id, at }) => {
 			const user = await userStub(env, id).profile();
@@ -228,6 +229,9 @@ export async function handleFriends(
 		await friendBook(env, accountId).setFindable(findable);
 		return json(await contents(env, accountId));
 	}
+
+	const scripts = await handleFriendScripts(request, env, path, accountId);
+	if (scripts) return scripts;
 
 	const action = path.slice(FRIENDS_API.length + 1);
 	if (method === 'POST' && isFriendAction(action) && path === friendActionApi(action)) {

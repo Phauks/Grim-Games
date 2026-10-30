@@ -2346,6 +2346,7 @@ test('the Alchemist gains a Minion ability and is marked "Is The Alchemist"', as
 // https://wiki.bloodontheclocktower.com/Boffin: the Demon has a not-in-play good character's
 // ability; its token goes by the Demon's.
 test("the Boffin gives the Demon a not-in-play good character's ability", async ({ page }) => {
+	test.slow();
 	await startGame(page);
 	const pickFor = async (number: number, name: string) => {
 		const sheet = await openSeat(page, number);
@@ -2370,6 +2371,34 @@ test("the Boffin gives the Demon a not-in-play good character's ability", async 
 	// The Chef's token sits by the Demon's on the board.
 	const mark = page.getByTestId('seat').nth(1).getByTestId('held-ability');
 	await expect(mark).toHaveAttribute('title', 'Holds the Chef ability');
+	// It shares a pill with the notes mark, bottom right (Trevor, 2026-10-30); the pen still
+	// opens the player's notes.
+	const demonSeat = page.getByTestId('seat').nth(1);
+	await expect(demonSeat.getByTestId('note-mark')).toHaveCount(0);
+	const again = await openSeat(page, 2);
+	await again.getByRole('button', { name: 'Seat actions' }).tap();
+	await page.getByRole('dialog', { name: 'Seat 2' }).getByRole('button', { name: 'Notes' }).tap();
+	const notes = page
+		.getByRole('dialog', { name: 'Seat 2', exact: true })
+		.filter({ has: page.getByTestId('room-player-sheet') });
+	await notes.getByTestId('new-note').tap();
+	const note = page.getByRole('dialog', { name: 'Note', exact: true });
+	await note.getByRole('textbox', { name: 'Title' }).fill('Claim');
+	await note.getByRole('button', { name: 'Close' }).tap();
+	await page.keyboard.press('Escape');
+	await page.keyboard.press('Escape');
+	await expect(notes).toBeHidden();
+	await closeSheet(page);
+	const pill = demonSeat.getByTestId('held-pill');
+	await expect(pill.getByTestId('held-ability')).toBeVisible();
+	await expect(pill.getByTestId('note-mark')).toBeVisible();
+	await pill.getByTestId('note-mark').tap();
+	await expect(notes).toBeVisible();
+	// Its notes open over the Players list, as the lone pen mark's do.
+	await page.keyboard.press('Escape');
+	await expect(notes).toBeHidden();
+	await page.keyboard.press('Escape');
+	await expect(page.getByRole('dialog', { name: 'Players' })).toBeHidden();
 	// A dead Boffin takes it away.
 	const boffin = await openSeat(page, 1);
 	await boffin.getByRole('button', { name: 'Status: Alive' }).tap();
@@ -4551,6 +4580,12 @@ test('a number step offers the "Your number is" info token; a step icon opens it
 		.tap();
 	await expect(shown.locator('h2.title')).toHaveText('Your number is');
 	await expect(shown.locator('.detail')).toHaveText('0');
+	// The number fills the space under the title, on one line (Trevor, 2026-10-30).
+	const view = page.viewportSize()!;
+	const digit = (await shown.locator('.detail').boundingBox())!;
+	expect(digit.height).toBeGreaterThan(Math.min(view.width, view.height) * 0.3);
+	expect(digit.x).toBeGreaterThanOrEqual(0);
+	expect(digit.x + digit.width).toBeLessThanOrEqual(view.width);
 	await closeShown();
 	// Any other number from the step's own info token.
 	const number = chef.getByTestId('step-number');
@@ -4578,8 +4613,8 @@ test('the board menu names its groups, in two columns beside a phone', async ({ 
 	await startGame(page);
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	const menu = page.getByRole('dialog', { name: 'Grimoire' });
-	// Trevor (2026-10-27): named groups ("the delineation is nice"), End game or New game under
-	// Game, and all of Settings from one item. Players holds the notes (2026-10-29), so it is
+	// Trevor (2026-10-27): named groups ("the delineation is nice"), and all of Settings from
+	// one item. Character selection and End game sit under Session, below Game (2026-10-30). Players holds the notes (2026-10-29), so it is
 	// there in every game, room or not.
 	const group = (name: string) => menu.getByRole('region', { name, exact: true });
 	const names = (name: string) =>
@@ -4589,8 +4624,10 @@ test('the board menu names its groups, in two columns beside a phone', async ({ 
 				els.filter((e) => e.checkVisibility()).map((e) => (e.textContent ?? '').trim())
 			);
 	expect((await names('Game')).join(' ')).toMatch(
-		/^Players History Demon bluffs( Game info)? Game settings( Character selection)? End game$/
+		/^Players History Demon bluffs( Game info)? Game settings$/
 	);
+	expect((await names('Session')).join(' ')).toMatch(/^(Character selection )?End game$/);
+	const session = (await group('Session').boundingBox())!;
 	// Open seating (plan J38) and Count off (J40) are there with no room open, disabled.
 	expect(await names('Seats')).toEqual([
 		'Add seat',
@@ -4608,6 +4645,8 @@ test('the board menu names its groups, in two columns beside a phone', async ({ 
 	if ((page.viewportSize()?.width ?? 0) >= 640) {
 		expect(seats.x).toBeGreaterThan(game.x + game.width - 1);
 		expect(Math.abs(seats.y - game.y)).toBeLessThan(2);
+		expect(Math.abs(session.x - game.x)).toBeLessThan(2);
+		expect(session.y).toBeGreaterThan(game.y + game.height - 1);
 	} else {
 		expect(seats.y).toBeGreaterThan(game.y + game.height - 1);
 	}
@@ -5597,49 +5636,33 @@ test('a big name badge beside a dialog title shrinks instead of squeezing the ti
 	expect(badge!.x + badge!.width).toBeLessThanOrEqual(close!.x);
 });
 
-test('the Storyteller is named on the Characters screen and renamed from the corner', async ({
-	page
-}) => {
-	// Trevor, 2026-10-19: the name goes "on the screen you pick characters, not on the new game
-	// screen", and is edited "in bottom left of screen" (the corner script name's Game info).
-	await page.goto('/new');
-	await expect(page.getByRole('textbox', { name: 'Storyteller' })).toHaveCount(0);
+test('the Storyteller is the Profile’s name, set nowhere else', async ({ page }) => {
+	// Trevor, 2026-10-30: "No longer allow setting storyteller name from app. All connected to
+	// profile name".
 	await startGame(page);
 	const board = new URL(page.url()).pathname;
 	await page.goto(`${board}/setup`);
-	const field = page.getByRole('textbox', { name: 'Storyteller' });
-	await expect(field).toHaveValue('');
-	await field.fill('Trev');
-	await field.press('Enter');
-	await page.reload();
-	await expect(field).toHaveValue('Trev');
-	// The ⋯ menu has no Storyteller entry; Game info has the name.
+	await expect(page.getByRole('textbox', { name: 'Storyteller' })).toHaveCount(0);
 	await page.goto(board);
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	const more = page.getByRole('dialog', { name: 'Grimoire' });
-	await expect(more.getByRole('button', { name: 'Storyteller', exact: true })).toHaveCount(0);
-	await page.keyboard.press('Escape');
-	await expect(more).toBeHidden();
 	await openGameInfo(page);
 	const info = page.getByRole('dialog', { name: 'Game info', exact: true });
-	// A small pencil by the Storyteller's name, and no buttons in Game info's header
-	// (Trevor, 2026-10-27).
-	await expect(info.locator('.head-actions')).toHaveCount(0);
-	await info.locator('tr[data-field="storyteller"]').getByTestId('game-info-edit').tap();
+	const name = info.locator('tr[data-field="storyteller"] td:last-child');
+	await expect(name).toHaveText('None');
+	await expect(info.getByTestId('game-info-edit')).toHaveCount(0);
+	await page.keyboard.press('Escape');
 	await expect(info).toBeHidden();
-	const dialog = page.getByRole('dialog', { name: 'Edit game info' });
-	const name = dialog.getByRole('textbox', { name: 'Storyteller' });
-	await expect(name).toHaveValue('Trev');
-	await name.fill('Sam');
-	await dialog.getByRole('button', { name: 'Confirm' }).tap();
-	await expect(dialog).toBeHidden();
-	await page.goto(`${board}/setup`);
-	await expect(field).toHaveValue('Sam');
-	// A new game offers the name typed last.
+
+	// Renaming the Profile renames the game in play.
+	await nameStoryteller(page, 'Trev');
+	await openGameInfo(page);
+	await expect(name).toHaveText('Trev');
+	await page.keyboard.press('Escape');
+
+	// A new game starts with it.
 	await page.goto('/new');
 	await startGame(page);
-	await page.goto(`${new URL(page.url()).pathname}/setup`);
-	await expect(field).toHaveValue('Trev');
+	await openGameInfo(page);
+	await expect(name).toHaveText('Trev');
 });
 
 test('the corner script name opens the game’s info, in a Standard game too', async ({ page }) => {

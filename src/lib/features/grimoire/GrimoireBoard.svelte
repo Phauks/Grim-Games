@@ -97,7 +97,7 @@
 	import BoardMenu from './BoardMenu.svelte';
 	import BoardToolbar from './BoardToolbar.svelte';
 	import RuleCharacters from './RuleCharacters.svelte';
-	import type { GameInfoChanges } from '#lib/features/modes/GameInfoEditDialog.svelte';
+	import { storytellerName } from '#lib/features/game/storyteller-name.svelte.ts';
 	import ModeMenu from '#lib/features/modes/ModeMenu.svelte';
 	import NewGameSheet from '#lib/features/modes/NewGameSheet.svelte';
 	import AlignmentAsk from './AlignmentAsk.svelte';
@@ -167,7 +167,8 @@
 		characters,
 		layout,
 		spacedFor: watching ? grimoire.aspect : undefined,
-		walking: !!nw.walk,
+		// Shown to a player, the board looks as it does with the night closed (Trevor, 2026-10-30).
+		walking: !!nw.walk && !showingGrim,
 		offScriptOk,
 		nominations: nominatedToday !== undefined,
 		shown: () => shown,
@@ -672,11 +673,16 @@
 		!(showTitle && game.script.meta?.name) || (width > 0 && corner < 2 * rootFont)
 	);
 	let modeMenuOpen = $state(false);
-	/** Game info's pencil: only what changed becomes a command, so undo stays meaningful. */
-	function editGameInfo(changes: GameInfoChanges) {
-		if (changes.storytellerName !== (game.storytellerName ?? ''))
-			grimoire.run({ type: 'SetStorytellerName', name: changes.storytellerName });
-	}
+	/**
+	 * The game's Storyteller is the Profile's name (Trevor, 2026-10-30: "All connected to
+	 * profile name"), kept in step while the game is in play, so a rename in the Profile
+	 * reaches the corner, the room and History. A finished game keeps the name it ended with.
+	 */
+	$effect(() => {
+		const name = storytellerName.current;
+		if (watching || watchedHistory || ended || name === (game.storytellerName ?? '')) return;
+		untrack(() => grimoire.run({ type: 'SetStorytellerName', name }));
+	});
 
 	// ── Fabled and Loric: their dialogs (RuleCharacters) ──
 	let rules = $state<ReturnType<typeof RuleCharacters>>();
@@ -751,12 +757,12 @@
 		class="board"
 		class:arranging={seatArr.arranging}
 		class:holding={heldSeat !== undefined}
-		class:walking={nw.walk !== undefined}
+		class:walking={nw.walk !== undefined && !showingGrim}
 		class:ended={!!ended}
 		class:showing={showingGrim}
 		inert={showingGrim}
 		style:--tray-h="{chip + 30}px"
-		style:--strip-h={nw.walk ? STRIP_H : undefined}
+		style:--strip-h={nw.walk && !showingGrim ? STRIP_H : undefined}
 		style:--name-scale={boardLooks.current.nameSize}
 		style:--name-offset={boardLooks.current.nameOffset}
 		bind:this={board}
@@ -854,7 +860,7 @@
 			{rootFont}
 			{startedAt}
 			endedAt={ended?.endedAt}
-			onEdit={editGameInfo}
+			editable
 			onShare={() => (phonesOpen = true)}
 			bind:titleW={sizing.titleW}
 			bind:titleH={sizing.titleH}
@@ -960,7 +966,7 @@
 <ModeMenu
 	{game}
 	bind:open={modeMenuOpen}
-	onEdit={watching ? undefined : editGameInfo}
+	editable={!watching}
 	{startedAt}
 	endedAt={ended?.endedAt}
 	{phase}

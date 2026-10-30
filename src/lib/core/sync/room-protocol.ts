@@ -90,8 +90,8 @@ export type ClientMessage =
 	| { type: 'let-back-in'; memberId: string }
 	/** Lets phones move their own seat, or locks seating (plan J38). */
 	| { type: 'seating'; open: boolean }
-	/** Starts a count off (plan J40) with this phone or this name as number 1. */
-	| { type: 'count-off'; first: { memberId: string } | { name: string } }
+	/** Starts a count off (plan J40); apps from before 2026-10-30 also name who is 1. */
+	| { type: 'count-off'; first?: { memberId: string } | { name: string } }
 	| { type: 'end-count-off' } // Done (once the board has the order) or Cancel.
 	/** Names a number for a player without a phone; no name clears it. */
 	| { type: 'name-count'; number: number; name?: string }

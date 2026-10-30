@@ -54,6 +54,21 @@ export interface ShareTarget {
 	offline: OfflineCode;
 	/** No code could be made (no internet, or the Worker refused): the long link is used. */
 	fellBack?: true;
+	/**
+	 * A share hash that never expires (`#e=`, `#bs=` or `#s=`, never `#c=`), for a script sent
+	 * to a friend or shown on a profile (plan F9, F10).
+	 */
+	lasting: string;
+}
+
+/** The share hash that never expires: a code's stored copy goes after 30 days unopened. */
+export async function lastingHash(saved: Shareable): Promise<string> {
+	if (saved.edition) return sharedRefHash({ kind: 'edition', edition: saved.edition });
+	if (saved.source.kind === 'botcscripts') {
+		const { scriptId, version } = saved.source;
+		return sharedRefHash({ kind: 'botcscripts', ref: { kind: 'script', scriptId, version } });
+	}
+	return sharedRefHash({ kind: 'inline', payload: await encodeSharedScript(saved.json) });
 }
 
 /** Fetches the script stored under a share code. */
@@ -169,24 +184,24 @@ export async function shareTargetFor(
 	path: SharePath = '/play'
 ): Promise<ShareTarget> {
 	const link = (ref: SharedRef) => `${origin}${path}${sharedRefHash(ref)}`;
-	const offline = await offlineCode(origin, saved);
+	const [offline, lasting] = await Promise.all([offlineCode(origin, saved), lastingHash(saved)]);
 	if (saved.edition) {
-		return { url: link({ kind: 'edition', edition: saved.edition }), offline };
+		return { url: link({ kind: 'edition', edition: saved.edition }), offline, lasting };
 	}
 	if (saved.source.kind === 'botcscripts') {
 		const { scriptId, version } = saved.source;
 		return {
 			url: link({ kind: 'botcscripts', ref: { kind: 'script', scriptId, version } }),
-			offline
+			offline,
+			lasting
 		};
 	}
 	try {
 		const code = await codeFor(saved);
-		return { url: link({ kind: 'code', code }), code, offline };
+		return { url: link({ kind: 'code', code }), code, offline, lasting };
 	} catch {
 		// Offline or refused: the long link needs no server.
-		const payload = await encodeSharedScript(saved.json);
-		return { url: link({ kind: 'inline', payload }), offline, fellBack: true };
+		return { url: `${origin}${path}${lasting}`, offline, lasting, fellBack: true };
 	}
 }
 

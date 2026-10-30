@@ -4,7 +4,8 @@ import { pickScript, toBoard } from './new-game.ts';
 /**
  * The Spy sees the Grimoire each night (https://wiki.bloodontheclocktower.com/Spy), so its night
  * step shows the board to that player clean: no reminder bank, no night order, and nothing in
- * the bar over it but the X, which goes back to the step (Trevor, 2026-10-30).
+ * the bar over it but the X, which goes back to the step, and seats laid out as with the night
+ * order closed (Trevor, 2026-10-30).
  */
 
 async function startGame(page: Page) {
@@ -50,6 +51,9 @@ test('the Spy is shown the Grimoire with nothing but the X over it', async ({ pa
 	await startGame(page);
 	await choose(page, 1, 'Spy');
 	await choose(page, 2, 'Imp');
+	// The Storyteller's usual board: the reminder bank open, the night order closed.
+	const seat = page.getByTestId('seat').nth(4);
+	const usual = await seat.boundingBox();
 	const step = await openStep(page, 'Spy');
 
 	await step.getByRole('button', { name: 'Show the Grimoire' }).tap();
@@ -60,6 +64,8 @@ test('the Spy is shown the Grimoire with nothing but the X over it', async ({ pa
 	await expect(page.getByRole('list', { name: 'Reminder bank' })).toBeHidden();
 	await expect(page.getByTestId('seat')).toHaveCount(8);
 	await expect(page.getByTestId('seat').first()).toBeVisible();
+	// Laid out as on that usual board, not drawn in for the night order (Trevor, 2026-10-30).
+	await expect.poll(() => seat.boundingBox()).toEqual(usual);
 
 	await toolbar.getByRole('button', { name: 'Close' }).tap();
 	await expect(page.getByRole('dialog', { name: 'Spy' })).toBeVisible();
