@@ -322,6 +322,35 @@ test('a second bluff set can be named Lunatic in one tap', async ({ page }) => {
 	await expect(page.locator('[data-testid="bluff-set"][data-set="Lunatic"]')).toContainText('Monk');
 });
 
+test('the set name and search share a pinned line, with the type being scrolled', async ({
+	page
+}) => {
+	// Trevor, 2026-10-29: what narrows the list stays put while it scrolls, as in setup.
+	await page.goto('/spikes/bluffs');
+	await page.getByRole('button', { name: 'Demon bluffs', exact: true }).tap();
+	await page.getByRole('button', { name: 'Add a set' }).tap();
+	const name = page.getByRole('textbox', { name: 'Set name' });
+	const search = page.getByRole('searchbox', { name: 'Search characters' });
+	const field = (await name.boundingBox())!;
+	const box = (await search.boundingBox())!;
+	expect(box.y).toBeLessThan(field.y + field.height);
+	expect(box.y + box.height).toBeGreaterThan(field.y);
+
+	// Scroll the sheet to the Outsiders: the search stays where it was, the header pins under it.
+	const outsiders = page.getByRole('heading', { name: /^Outsiders/ });
+	await outsiders.evaluate((el) => {
+		// e2e scrolls containers directly: just past the top of the Outsiders' group.
+		const body = el.closest('.body') as HTMLElement;
+		body.scrollTop += el.getBoundingClientRect().top - body.getBoundingClientRect().top + 60;
+	});
+	await page.waitForTimeout(100);
+	// Up by the sheet's top padding at most, as it pins.
+	expect(Math.abs((await search.boundingBox())!.y - box.y)).toBeLessThanOrEqual(5);
+	const head = (await outsiders.boundingBox())!;
+	expect(head.y).toBeGreaterThanOrEqual(box.y + box.height - 1);
+	await expect(outsiders).toBeInViewport();
+});
+
 test("a character's own card is filled in and shown, e.g. the Mezepheles's secret word", async ({
 	page
 }) => {

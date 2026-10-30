@@ -1,9 +1,10 @@
 <script lang="ts">
-	import { untrack } from 'svelte';
+	import { untrack, type Snippet } from 'svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Alignment, Character, CharacterId } from '#lib/core/data/index.ts';
 	import SharedPicker from '#lib/features/characters/CharacterPicker.svelte';
 	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
+	import CharacterSearchBox from '#lib/features/characters/CharacterSearchBox.svelte';
 	import BluffTag from '#lib/features/bluffs/BluffTag.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
@@ -42,6 +43,8 @@
 		onlyAlignment?: Alignment;
 		/** The places hold Demon bluffs, so each shows the Bluff badge (Trevor, 2026-10-29). */
 		bluffs?: boolean;
+		/** Beside the search, on its pinned line: a bluff set's name (Trevor, 2026-10-29). */
+		beforeSearch?: Snippet;
 	}
 
 	let {
@@ -54,13 +57,17 @@
 		notInPlay = false,
 		hideInPlayFirst = true,
 		onlyAlignment,
-		bluffs = false
+		bluffs = false,
+		beforeSearch
 	}: Props = $props();
 
 	// Read once: the Storyteller's own choice is kept while the picker is open.
 	let hideInPlay = $state(untrack(() => hideInPlayFirst));
 	/** Good characters only; with the toggle on, none in play unless already chosen. */
 	let alignmentOnly = $state(true);
+	let query = $state('');
+	/** The search line's height, so the chosen places and each type's header pin under it. */
+	let topHeight = $state(0);
 	const choices = $derived(
 		(notInPlay
 			? characters.filter(
@@ -107,11 +114,19 @@
 	A place for each character that can be chosen, drawn like the list's rows; tapping one
 	removes it (Trevor, 2026-10-18). Then the shared searchable character list.
 -->
-<div class="picker">
+<div class="picker" style:--top-height="{topHeight}px">
+	<!--
+		The search (and a set's name) on one line, pinned with the type being scrolled, so
+		nothing that narrows the list moves (Trevor, 2026-10-29).
+	-->
+	<div class="top" bind:offsetHeight={topHeight}>
+		{@render beforeSearch?.()}
+		<span class="search"><CharacterSearchBox bind:query /></span>
+	</div>
 	<div class="columns">
 		<!--
-		Pinned while the list scrolls, so what is chosen stays in view (Trevor, 2026-10-18). With
-		room for two columns it sits on the left and the list on the right (Trevor, 2026-10-22).
+		With room for two columns it sits on the left, pinned so what is chosen stays in view, and
+		the list on the right (Trevor, 2026-10-18 and 2026-10-22).
 	-->
 		<div class="pinned">
 			{#if notInPlay}
@@ -167,6 +182,9 @@
 				max={max > 1 ? max : undefined}
 				marker={inPlay ? marker : undefined}
 				contained={false}
+				showSearch={false}
+				bind:query
+				pinTop="calc(var(--top-height) - var(--space-1))"
 			/>
 		</div>
 	</div>
@@ -176,16 +194,32 @@
 	/* Lives in sheets, so it follows the sheet's colours rather than the page's. */
 	.picker {
 		container-type: inline-size;
+		display: grid;
+		gap: var(--space-2);
+	}
+	.top {
+		position: sticky;
+		/* The sheet body's top padding, so nothing shows above it while scrolling. */
+		top: calc(-1 * var(--space-1));
+		z-index: 2;
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		padding-block: var(--space-1);
+		background: var(--sheet-background);
+	}
+	.search {
+		flex: 1;
+		min-width: 0;
 	}
 	.columns {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-3);
 	}
+	/* Phones scroll the chosen places away: pinned too, they left the list one row (the title
+	   still counts them). */
 	.pinned {
-		position: sticky;
-		/* The sheet body's top padding, so nothing shows above it while scrolling. */
-		top: calc(-1 * var(--space-1));
 		z-index: 1;
 		display: grid;
 		gap: var(--space-2);
@@ -249,6 +283,11 @@
 		.columns {
 			grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
 			align-items: start;
+		}
+		/* Beside the list, the chosen places stay in view under the search line. */
+		.pinned {
+			position: sticky;
+			top: calc(var(--top-height) - var(--space-1));
 		}
 		.slots {
 			--slot-lines: 3;
