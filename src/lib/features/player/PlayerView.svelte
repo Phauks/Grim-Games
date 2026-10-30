@@ -234,7 +234,14 @@
 	     script loaded, there is nothing to print or share, so neither shows (Trevor, 2026-10-23);
 	     the settings cog always does (plan E2). -->
 	{#snippet actions()}
-		<PlayerScriptActions {script} {version} share={shareable} room={inRoom} joined={joinedRoom} />
+		<PlayerScriptActions
+			{script}
+			{version}
+			share={shareable}
+			room={inRoom}
+			joined={joinedRoom}
+			rules={roomTable.rules}
+		/>
 	{/snippet}
 	<!-- Author and version under the title, or a blank line so nothing moves (Trevor). The
 	     Storyteller only for the room this script came from: Join game's code form shows none

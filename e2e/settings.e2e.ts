@@ -762,9 +762,10 @@ test('Print has its own section with the printed sheet settings and a reset', as
 	const dialog = await openSettings(page, 'Print');
 	const fields = dialog.getByTestId('print-settings');
 	await expect(fields.getByRole('combobox', { name: 'Columns' })).toBeVisible();
-	const jinxes = fields.getByRole('checkbox', { name: 'Jinxes', includeHidden: true });
+	// The Front's Jinxes; the Back has its own (Trevor, 2026-10-29).
+	const jinxes = fields.getByRole('checkbox', { name: 'Jinxes', includeHidden: true }).first();
 	await expect(jinxes).toBeChecked();
-	await fields.getByText('Jinxes', { exact: true }).tap();
+	await fields.getByText('Jinxes', { exact: true }).first().tap();
 	await expect(jinxes).not.toBeChecked();
 	await page.reload();
 	const again = await openSettings(page, 'Player');
@@ -776,5 +777,6 @@ test('Print has its own section with the printed sheet settings and a reset', as
 		print
 			.getByTestId('print-settings')
 			.getByRole('checkbox', { name: 'Jinxes', includeHidden: true })
+			.first()
 	).not.toBeChecked();
 });
