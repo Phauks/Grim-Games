@@ -13,6 +13,9 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { rulesOf } from '#lib/core/data/rules/index.ts';
+import { alignmentOf, trueCharacter, typeOf } from '#lib/core/model/index.ts';
+import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
 
 describe('Alchemist', () => {
 	const character = committedCharacter('alchemist');
@@ -40,6 +43,36 @@ describe('Alchemist', () => {
 
 		it('has its special app hooks', () => {
 			expect(character.special).toEqual([{ type: 'reveal', name: 'replace-character' }]);
+		});
+	});
+
+	// How to Run: its token is swapped for the Minion whose ability it has, marked "Is The
+	// Alchemist"; the player is still the good Alchemist.
+	describe('a swapped token marked "Is The Alchemist"', () => {
+		it('offers only Minions to swap to, whatever its alignment', () => {
+			expect(rulesOf('alchemist', characters)?.swapsForAbility).toEqual({
+				token: 'Is The Alchemist',
+				good: ['minion'],
+				evil: ['minion']
+			});
+		});
+
+		it('is really the good Alchemist, a Townsfolk', () => {
+			// The swap keeps the Alchemist's good alignment (SeatCharacterFlow's gain).
+			const { session, seats } = castGame(
+				['poisoner', 'imp', 'chef'],
+				(s) => ({ type: 'SetAlignment', seatId: s[0], alignment: 'good' }),
+				(s) => ({
+					type: 'AddReminder',
+					seatId: s[0],
+					reminder: { characterId: 'alchemist', label: 'Is The Alchemist' }
+				})
+			);
+			const game = session.game;
+			expect(game.seats[seats[0]].characterId).toBe('poisoner');
+			expect(trueCharacter(game, seats[0], characters)).toBe('alchemist');
+			expect(typeOf(game, seats[0], characters)).toBe('townsfolk');
+			expect(alignmentOf(game, seats[0])).toBe('good');
 		});
 	});
 
