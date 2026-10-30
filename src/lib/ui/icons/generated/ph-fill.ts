@@ -56,6 +56,7 @@ import ph_circles_three_fill from '~icons/ph/circles-three-fill';
 import ph_clipboard_fill from '~icons/ph/clipboard-fill';
 import ph_clipboard_text_fill from '~icons/ph/clipboard-text-fill';
 import ph_clock_fill from '~icons/ph/clock-fill';
+import ph_clock_clockwise_fill from '~icons/ph/clock-clockwise-fill';
 import ph_clock_counter_clockwise_fill from '~icons/ph/clock-counter-clockwise-fill';
 import ph_club_fill from '~icons/ph/club-fill';
 import ph_coffee_fill from '~icons/ph/coffee-fill';
@@ -134,6 +135,7 @@ import ph_list_bullets_fill from '~icons/ph/list-bullets-fill';
 import ph_list_checks_fill from '~icons/ph/list-checks-fill';
 import ph_list_dashes_fill from '~icons/ph/list-dashes-fill';
 import ph_list_magnifying_glass_fill from '~icons/ph/list-magnifying-glass-fill';
+import ph_list_numbers_fill from '~icons/ph/list-numbers-fill';
 import ph_lock_fill from '~icons/ph/lock-fill';
 import ph_lock_open_fill from '~icons/ph/lock-open-fill';
 import ph_lock_simple_fill from '~icons/ph/lock-simple-fill';
@@ -288,6 +290,7 @@ const icons: IconMap = {
 	'ph:clipboard-fill': ph_clipboard_fill,
 	'ph:clipboard-text-fill': ph_clipboard_text_fill,
 	'ph:clock-fill': ph_clock_fill,
+	'ph:clock-clockwise-fill': ph_clock_clockwise_fill,
 	'ph:clock-counter-clockwise-fill': ph_clock_counter_clockwise_fill,
 	'ph:club-fill': ph_club_fill,
 	'ph:coffee-fill': ph_coffee_fill,
@@ -366,6 +369,7 @@ const icons: IconMap = {
 	'ph:list-checks-fill': ph_list_checks_fill,
 	'ph:list-dashes-fill': ph_list_dashes_fill,
 	'ph:list-magnifying-glass-fill': ph_list_magnifying_glass_fill,
+	'ph:list-numbers-fill': ph_list_numbers_fill,
 	'ph:lock-fill': ph_lock_fill,
 	'ph:lock-open-fill': ph_lock_open_fill,
 	'ph:lock-simple-fill': ph_lock_simple_fill,

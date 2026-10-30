@@ -1,7 +1,7 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import { renderSVG } from 'uqr';
 import { aimCamera, qrSrc } from './camera.ts';
-import { toBoard } from './new-game.ts';
+import { nameStoryteller, toBoard } from './new-game.ts';
 import { openProfile, setPlayerName } from './player-name.ts';
 import { theMenu } from './shell.ts';
 
@@ -195,7 +195,10 @@ test('a friend code, scanned or opened, fills in Add friend', async ({ browser }
 });
 
 /** Starts a Trouble Brewing game and opens its room; returns the board's path and the code. */
-async function liveRoom(page: Page): Promise<{ board: string; code: string }> {
+async function liveRoom(
+	page: Page,
+	storyteller?: string
+): Promise<{ board: string; code: string }> {
 	await page.goto('/new');
 	await page
 		.getByRole('radiogroup', { name: 'Script' })
@@ -204,6 +207,7 @@ async function liveRoom(page: Page): Promise<{ board: string; code: string }> {
 	await page.getByRole('button', { name: 'Create game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 	await toBoard(page);
+	if (storyteller) await nameStoryteller(page, storyteller);
 	const board = new URL(page.url()).pathname;
 	await page.goto(`${board}/room`);
 	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
@@ -265,4 +269,33 @@ test('a player in a live game is added from their profile', async ({ browser }) 
 	await expect(own).toHaveText('You');
 	await bob.page.goto('/friends');
 	await expect(bob.page.getByTestId('friend-incoming')).toContainText(ann.username);
+});
+
+test('a player adds the Storyteller from Game info', async ({ browser }) => {
+	// Trevor, 2026-10-30: players open Game info from their grim's corner, and the Storyteller's
+	// name there opens their profile, with Add friend.
+	test.slow();
+	const ann = await signedIn(browser, 'ann');
+	const bob = await signedIn(browser, 'bob');
+	const { code } = await liveRoom(ann.page, 'Ann the Storyteller');
+	await bob.page.goto(`/join/${code}`);
+	await openProfile(bob.page);
+	await setPlayerName(bob.page, 'Bob');
+	await bob.page.keyboard.press('Escape');
+
+	await bob.page.getByRole('tab', { name: 'Grim' }).tap();
+	// From the grim's top right: a phone's corner often has no room for the script's name.
+	await bob.page.getByTestId('grim-game-info').tap();
+	const info = bob.page.getByRole('dialog', { name: 'Game info', exact: true });
+	await expect(info.getByTestId('game-info')).toContainText('Trouble Brewing');
+	await info.getByTestId('info-storyteller').tap();
+	await expect(info).toBeHidden();
+	const profile = bob.page.getByRole('dialog', { name: 'Ann the Storyteller', exact: true });
+	const add = profile.getByTestId('seat-friend');
+	await expect(add).toHaveAttribute('data-state', 'add');
+	await add.tap();
+	await expect(add).toHaveAttribute('data-state', 'requested');
+
+	await ann.page.goto('/friends');
+	await expect(ann.page.getByTestId('friend-incoming')).toContainText(bob.username);
 });

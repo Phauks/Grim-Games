@@ -5,6 +5,8 @@ class PlayersDialog {
 	open = $state(false);
 	/** A seat whose sheet should open, from its pen mark or its ⋯ Notes. */
 	seat = $state<SeatId>();
+	/** Count off (plan J40), from the board's ⋯. */
+	countOff = $state(false);
 
 	show(): void {
 		this.open = true;

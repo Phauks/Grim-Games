@@ -401,6 +401,7 @@ function describeEntry(
 			text(' and '),
 			seatPart(before, swap.seatB)
 		];
+	if (entry.command === 'CountOff') return [text('Counted off the seats')]; // Plan J40.
 	const reorder = entry.events.find((e) => e.type === 'SeatingReordered');
 	if (reorder?.type === 'SeatingReordered' && before) {
 		const was = before.seating;
