@@ -15,6 +15,7 @@ import { defaultAlignment, type CharacterId } from '#lib/core/data/index.ts';
 import type { Command } from '#lib/core/engine/index.ts';
 import { castWith, run } from '#lib/core/model/fixtures.test-support.ts';
 import { dayClaim } from '#lib/core/rules/day-claims.ts';
+import type { DayEntry, Game } from '#lib/core/model/types.ts';
 import {
 	abilityGivers,
 	heldAbilitiesOf,
@@ -95,8 +96,8 @@ describe('Amnesiac', () => {
 			text: 'Is it about Minions?',
 			answer: 'hot'
 		});
-		const notes = (game: { today: { entries: { kind: string }[] } }) =>
-			game.today.entries.filter((e) => e.kind === 'note');
+		const notes = (game: Game) =>
+			game.today.entries.filter((e): e is Extract<DayEntry, { kind: 'note' }> => e.kind === 'note');
 
 		it('is a claim the day log keeps', () => {
 			expect(dayClaim('amnesiac', characters)).toBe('ability-guess');
@@ -105,7 +106,7 @@ describe('Amnesiac', () => {
 		it('keeps the Storyteller’s answer, and a later edit changes it', () => {
 			const { session, ctx, game, seats } = cast(PLAYERS, guess);
 			expect(notes(game)).toEqual([expect.objectContaining({ answer: 'hot' })]);
-			const [entry] = notes(game) as { entryId: string }[];
+			const [entry] = notes(game);
 			const edited = run(session, ctx, {
 				type: 'EditDayNote',
 				entryId: entry.entryId,
