@@ -56,6 +56,7 @@ import ph_circles_three_light from '~icons/ph/circles-three-light';
 import ph_clipboard_light from '~icons/ph/clipboard-light';
 import ph_clipboard_text_light from '~icons/ph/clipboard-text-light';
 import ph_clock_light from '~icons/ph/clock-light';
+import ph_clock_clockwise_light from '~icons/ph/clock-clockwise-light';
 import ph_clock_counter_clockwise_light from '~icons/ph/clock-counter-clockwise-light';
 import ph_club_light from '~icons/ph/club-light';
 import ph_coffee_light from '~icons/ph/coffee-light';
@@ -134,6 +135,7 @@ import ph_list_bullets_light from '~icons/ph/list-bullets-light';
 import ph_list_checks_light from '~icons/ph/list-checks-light';
 import ph_list_dashes_light from '~icons/ph/list-dashes-light';
 import ph_list_magnifying_glass_light from '~icons/ph/list-magnifying-glass-light';
+import ph_list_numbers_light from '~icons/ph/list-numbers-light';
 import ph_lock_light from '~icons/ph/lock-light';
 import ph_lock_open_light from '~icons/ph/lock-open-light';
 import ph_lock_simple_light from '~icons/ph/lock-simple-light';
@@ -288,6 +290,7 @@ const icons: IconMap = {
 	'ph:clipboard-light': ph_clipboard_light,
 	'ph:clipboard-text-light': ph_clipboard_text_light,
 	'ph:clock-light': ph_clock_light,
+	'ph:clock-clockwise-light': ph_clock_clockwise_light,
 	'ph:clock-counter-clockwise-light': ph_clock_counter_clockwise_light,
 	'ph:club-light': ph_club_light,
 	'ph:coffee-light': ph_coffee_light,
@@ -366,6 +369,7 @@ const icons: IconMap = {
 	'ph:list-checks-light': ph_list_checks_light,
 	'ph:list-dashes-light': ph_list_dashes_light,
 	'ph:list-magnifying-glass-light': ph_list_magnifying_glass_light,
+	'ph:list-numbers-light': ph_list_numbers_light,
 	'ph:lock-light': ph_lock_light,
 	'ph:lock-open-light': ph_lock_open_light,
 	'ph:lock-simple-light': ph_lock_simple_light,

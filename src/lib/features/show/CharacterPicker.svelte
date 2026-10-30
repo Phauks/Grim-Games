@@ -68,6 +68,8 @@
 	let query = $state('');
 	/** The search line's height, so the chosen places and each type's header pin under it. */
 	let topHeight = $state(0);
+	/** The chosen places' height: on phones each type's header pins under them too. */
+	let pinnedHeight = $state(0);
 	const choices = $derived(
 		(notInPlay
 			? characters.filter(
@@ -114,7 +116,12 @@
 	A place for each character that can be chosen, drawn like the list's rows; tapping one
 	removes it (Trevor, 2026-10-18). Then the shared searchable character list.
 -->
-<div class="picker" style:--top-height="{topHeight}px">
+<div
+	class="picker"
+	style:--top-height="{topHeight}px"
+	style:--pinned-height="{pinnedHeight}px"
+	style:--places={max}
+>
 	<!--
 		The search (and a set's name) on one line, pinned with the type being scrolled, so
 		nothing that narrows the list moves (Trevor, 2026-10-29).
@@ -125,10 +132,11 @@
 	</div>
 	<div class="columns">
 		<!--
-		With room for two columns it sits on the left, pinned so what is chosen stays in view, and
-		the list on the right (Trevor, 2026-10-18 and 2026-10-22).
+		Pinned so what is chosen stays in view (Trevor, 2026-10-18): on phones as one strip of small
+		tokens (Trevor, 2026-10-30), and with room for two columns as rows on the left, the list on
+		the right (Trevor, 2026-10-22).
 	-->
-		<div class="pinned">
+		<div class="pinned" bind:offsetHeight={pinnedHeight}>
 			{#if notInPlay}
 				<div class="filter">
 					<Toggle
@@ -184,7 +192,7 @@
 				contained={false}
 				showSearch={false}
 				bind:query
-				pinTop="calc(var(--top-height) - var(--space-1))"
+				pinTop="calc(var(--top-height) + var(--pinned-stack) - var(--space-1))"
 			/>
 		</div>
 	</div>
@@ -213,13 +221,16 @@
 		min-width: 0;
 	}
 	.columns {
+		/* One column: the chosen places sit above the list, so the type headers pin under them. */
+		--pinned-stack: var(--pinned-height);
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-3);
 	}
-	/* Phones scroll the chosen places away: pinned too, they left the list one row (the title
-	   still counts them). */
+	/* Under the search line. */
 	.pinned {
+		position: sticky;
+		top: calc(var(--top-height) - var(--space-1));
 		z-index: 1;
 		display: grid;
 		gap: var(--space-2);
@@ -237,16 +248,15 @@
 	.ink :global(.icon-button) {
 		color: inherit;
 	}
-	/* The picker's own rows, in its columns. Every place is one row high whatever is in it: the
-	   band and the start of the ability, so choosing never moves the list (Trevor, 2026-10-20).
-	   Smaller on phones, as the old rows were, so the pinned places leave the list room. */
+	/* Every place is one size whatever is in it, so choosing never moves the list (Trevor,
+	   2026-10-20). Phones: side by side, token and name only, so the pinned strip leaves the
+	   list room (Trevor, 2026-10-30: full rows left it one character). */
 	.slots {
-		--slot-lines: 1;
-		--character-ring: 3em;
-		font-size: 0.85em;
-		--slot-height: calc(2 * var(--space-1) + 1.7em + var(--slot-lines) * 1.35em);
+		--character-ring: 2.6em;
+		font-size: 0.8em;
+		--slot-height: var(--character-ring);
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(min(100%, calc(18 * var(--u))), 1fr));
+		grid-template-columns: repeat(var(--places), minmax(0, 1fr));
 		gap: var(--space-1);
 		margin: 0;
 		padding: 0;
@@ -261,14 +271,15 @@
 		height: 100%;
 		overflow: hidden;
 	}
-	.slots :global(.ring-ability) {
-		display: -webkit-box;
-		min-height: 0;
-		padding-top: 0;
-		overflow: hidden;
-		-webkit-box-orient: vertical;
-		-webkit-line-clamp: var(--slot-lines);
-		line-clamp: var(--slot-lines);
+	/* The strip: token and name, with no room for the Bluff badge beside a name. */
+	@container not (min-width: 36rem) {
+		.slots :global(.marks),
+		.slots :global(.ring-ability) {
+			display: none;
+		}
+		.slots :global(.band) {
+			padding-right: var(--space-2);
+		}
 	}
 	.slots li[data-blocked] :global(.ring-row) {
 		box-shadow: inset 0 0 0 2px var(--accent);
@@ -284,16 +295,26 @@
 			grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
 			align-items: start;
 		}
-		/* Beside the list, the chosen places stay in view under the search line. */
-		.pinned {
-			position: sticky;
-			top: calc(var(--top-height) - var(--space-1));
+		/* Beside the list: the type headers pin straight under the search line. */
+		.columns {
+			--pinned-stack: 0px; /* px-ok: a zero length in calc() needs a unit */
 		}
+		/* Rows down the left: the band and the start of the ability. */
 		.slots {
 			--slot-lines: 3;
 			--character-ring: 4.4em;
+			--slot-height: calc(2 * var(--space-1) + 1.7em + var(--slot-lines) * 1.35em);
 			font-size: 1em;
 			grid-template-columns: minmax(0, 1fr);
+		}
+		.slots :global(.ring-ability) {
+			display: -webkit-box;
+			min-height: 0;
+			padding-top: 0;
+			overflow: hidden;
+			-webkit-box-orient: vertical;
+			-webkit-line-clamp: var(--slot-lines);
+			line-clamp: var(--slot-lines);
 		}
 	}
 </style>

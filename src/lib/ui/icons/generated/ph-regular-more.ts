@@ -66,6 +66,7 @@ import ph_link_simple from '~icons/ph/link-simple';
 import ph_link_simple_break from '~icons/ph/link-simple-break';
 import ph_list_dashes from '~icons/ph/list-dashes';
 import ph_list_magnifying_glass from '~icons/ph/list-magnifying-glass';
+import ph_list_numbers from '~icons/ph/list-numbers';
 import ph_lock from '~icons/ph/lock';
 import ph_lock_open from '~icons/ph/lock-open';
 import ph_megaphone from '~icons/ph/megaphone';
@@ -179,6 +180,7 @@ const icons: IconMap = {
 	'ph:link-simple-break': ph_link_simple_break,
 	'ph:list-dashes': ph_list_dashes,
 	'ph:list-magnifying-glass': ph_list_magnifying_glass,
+	'ph:list-numbers': ph_list_numbers,
 	'ph:lock': ph_lock,
 	'ph:lock-open': ph_lock_open,
 	'ph:megaphone': ph_megaphone,

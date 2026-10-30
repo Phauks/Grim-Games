@@ -30,6 +30,7 @@
 	import YourGames from './YourGames.svelte';
 	import SavedGamesSection from '#lib/features/grimoire/SavedGamesSection.svelte';
 	import YourCharacter from './YourCharacter.svelte';
+	import PlayerCountOff from './PlayerCountOff.svelte';
 	import { finalGrimoire } from './final-grimoire.svelte.ts';
 	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
 	import ScriptByline from '#lib/features/player/ScriptByline.svelte';
@@ -492,6 +493,7 @@
 	</PlayerStatusRow>
 	<!-- Its own row under the status line (Trevor, 2026-10-28). -->
 	{#if player}<YourCharacter {player} />{/if}
+	{#if player}<PlayerCountOff {player} />{/if}
 	{#if player && balloting}<ScriptBallot {player} />{/if}
 {/if}
 

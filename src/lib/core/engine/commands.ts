@@ -165,6 +165,12 @@ export type Command =
 	| { type: 'RotateSeats'; direction: 'clockwise' | 'anticlockwise' }
 	/** Moves a player to `position` (0-based) in the seating order; the others close up. */
 	| { type: 'MoveSeat'; seatId: SeatId; position: number }
+	/**
+	 * Count off (plan J40): the whole table in its new order, seat 1 first, as the players
+	 * counted round the clock. An entry with no seat is a new one; a name renames its seat.
+	 * Every seat now at the table is listed once.
+	 */
+	| { type: 'CountOff'; seats: { seatId?: SeatId; playerName?: PlayerName }[] }
 	| { type: 'SetOverride'; seatId: SeatId; override: SeatOverride }
 	| { type: 'ClearOverride'; seatId: SeatId; field: OverrideField }
 	/**
