@@ -29,6 +29,7 @@ const ANY_ID: Record<string, string> = {
 	'/towns/[groupId]': '/towns/none',
 	'/towns/[groupId]/draw': '/towns/none/draw',
 	'/towns/[groupId]/review': '/towns/none/review',
+	'/u/[username]': '/u/nobody',
 	// No viewer key in the link: the "bad link" message and its Home button.
 	'/watch/[code]': '/watch/000000'
 };

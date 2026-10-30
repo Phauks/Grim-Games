@@ -57,7 +57,7 @@ export const room = {
 	'room.countOff.from': 'Count clockwise from',
 	'room.countOff.take': 'Take {number}?',
 	'room.countOff.takeFrom': 'taps again.',
-	'room.countOff.first': 'Who is 1?',
+	'room.countOff.fromOne': 'Count clockwise from 1',
 	'room.countOff.name': 'Player for {number}',
 	'room.countOff.done': 'Done',
 	'room.removedYou': 'The Storyteller removed you from this game.',

@@ -1,6 +1,6 @@
 /**
  * Count off (plan J40; Trevor, 2026-10-30: "a count off, ppl select, and call it a day if it
- * seems accurate"). The Storyteller names the player at the top of the clock, number 1, and
+ * seems accurate"). The table picks who is at the top of the clock, number 1, and
  * every phone taps the number it counts to going clockwise. Each number shows the name of who
  * holds it, phone or not: the Storyteller names numbers for players without a phone. Done, on
  * the Storyteller's device, puts that order and those names on the board (`countOffSeats`).
@@ -40,18 +40,24 @@ export function countOffSize(room: RoomState): number {
 	return Math.max(room.public?.seats.length ?? 0, counting(room).length, held);
 }
 
-/** Starts a count off with `first` (a phone, or a typed name) as number 1. */
+/**
+ * Starts a count off. Number 1 is whoever the table picks in real life, who taps it like
+ * anyone else (Trevor, 2026-10-30: "shouldn't require storyteller to select 1"). Apps built
+ * before that send a `first`, which still takes 1. A count off already open stays as it is.
+ */
 export function startCountOff(
 	room: RoomState,
-	first: { memberId?: unknown; name?: unknown }
+	first: { memberId?: unknown; name?: unknown } = {}
 ): RoomState {
+	if (room.countOff) return room;
 	const member = room.members.find((m) => m.memberId === first.memberId && m.name);
 	const name = cleanName(first.name);
-	if (!member && !name) return room;
-	const holder: CountHolder = member
+	const holder: CountHolder | undefined = member
 		? { number: 1, memberId: member.memberId }
-		: { number: 1, name };
-	return { ...room, countOff: { counts: [holder] } };
+		: name
+			? { number: 1, name }
+			: undefined;
+	return { ...room, countOff: { counts: holder ? [holder] : [] } };
 }
 
 /** Ends it, by Done or by Cancel; a new game ends it too. */
@@ -138,38 +144,4 @@ export function countOffSeats(
 	const rest = seating.filter((id) => !used.has(id));
 	const filled = [...order].map((entry) => entry ?? (rest.length ? { seatId: rest.shift()! } : {}));
 	return [...filled, ...rest.map((seatId) => ({ seatId }))];
-}
-
-/** Someone who can be number 1, keyed by their seat or phone so two with one name both show. */
-export interface CountOffFirst {
-	key: string;
-	name: string;
-	first: { memberId: string } | { name: string };
-}
-
-/**
- * Who can be 1 (CountOffDialog): the board's named players in seat order, then the phones at
- * the game with no seat whose name is not already on the board. Names repeat (two seats, or
- * two phones, called the same), so each is keyed by its seat or phone, never its name.
- */
-export function countOffFirsts(
-	seating: readonly SeatId[],
-	seats: Readonly<Record<SeatId, { playerName?: string }>>,
-	members: readonly { memberId: string; name?: string }[],
-	unseated: readonly { memberId: string; name?: string }[]
-): CountOffFirst[] {
-	const memberFor = (name: string) => members.find((m) => m.name && key(m.name) === key(name));
-	const board = seating.flatMap((id): CountOffFirst[] => {
-		const name = seats[id]?.playerName;
-		if (isOpenSeat(seats[id]) || !name) return [];
-		const member = memberFor(name);
-		return [{ key: `seat:${id}`, name, first: member ? { memberId: member.memberId } : { name } }];
-	});
-	const listed = new Set(board.map((c) => key(c.name)));
-	const phones = unseated.flatMap((m): CountOffFirst[] =>
-		m.name && !listed.has(key(m.name))
-			? [{ key: `member:${m.memberId}`, name: m.name, first: { memberId: m.memberId } }]
-			: []
-	);
-	return [...board, ...phones];
 }

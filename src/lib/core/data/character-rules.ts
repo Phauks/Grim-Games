@@ -87,11 +87,24 @@ export type DayClaim = (typeof DAY_CLAIMS)[number];
 
 /**
  * The player a day ability's use is about, asked when it is marked used: the player its
- * player `chosen` (the Slayer), the `nominator` who set it off (the Virgin), or the `nominee`
- * whose execution it decided (the Judge).
+ * player `chosen` (the Slayer), the `nominator` who set it off (the Virgin), the `nominee`
+ * of another player's nomination whose execution it decided (the Judge), the player its
+ * player `nominated` (the Golem), or the `guesser` who guessed them (the Damsel's Minion).
  */
-const DAY_USE_WHO = ['chosen', 'nominator', 'nominee'] as const;
+const DAY_USE_WHO = ['chosen', 'nominator', 'nominee', 'nominated', 'guesser'] as const;
 export type DayUseWho = (typeof DAY_USE_WHO)[number];
+
+/**
+ * A day ability's use (`dayUse`): who it was about (`who`); `kills` when that player dies
+ * straight away if the ability works (the Slayer, Psychopath, Gangster, Gunslinger, Golem),
+ * checked against the character's `deathCause`; `spentToken`, the reminder that marks it
+ * used when that is not "No Ability" (the Golem's May Not Nominate).
+ */
+export interface DayUse {
+	who: DayUseWho;
+	kills?: true;
+	spentToken?: ReminderLabel;
+}
 
 /**
  * Night deaths the ability itself decides (`rules/night-deaths.ts`):
@@ -176,7 +189,7 @@ export interface CharacterRules extends ChoiceRules {
 	/** At most this many guesses a day, for a `guesses` claim (the Juggler's 5). */
 	guessLimit?: number;
 	/** Who marking its day ability used asks for (Trevor, 2026-10-30). */
-	dayUse?: { who: DayUseWho };
+	dayUse?: DayUse;
 	/** How the ability leaves players drunk, poisoned or with no ability (`rules/ability.ts`). */
 	impairs?: Impairs;
 	/** Players who may register as another alignment or character type (`rules/ability.ts`). */
@@ -519,9 +532,19 @@ export function parseCharacterRules(
 		if (!isObject(raw.dayUse)) {
 			issues.add(at, `expected object, got ${describe(raw.dayUse)}`);
 		} else {
-			checkKeys(raw.dayUse, ['who'], at, issues);
+			checkKeys(raw.dayUse, ['who', 'kills', 'spentToken'], at, issues);
 			const who = readEnum(raw.dayUse, 'who', DAY_USE_WHO, at, issues, true);
-			if (who) rules.dayUse = { who };
+			const kills = readBoolean(raw.dayUse, 'kills', at, issues);
+			if (kills === false) issues.add(`${at}.kills`, 'expected true');
+			const token = readString(raw.dayUse, 'spentToken', at, issues, false);
+			const tokenOk = token === undefined || ownReminder(token, reminders);
+			if (!tokenOk) issues.add(`${at}.spentToken`, 'not one of this character’s reminders');
+			if (who && tokenOk)
+				rules.dayUse = {
+					who,
+					...(kills ? { kills: true as const } : {}),
+					...(token !== undefined ? { spentToken: token } : {})
+				};
 		}
 	}
 	if (raw.impairs !== undefined) {

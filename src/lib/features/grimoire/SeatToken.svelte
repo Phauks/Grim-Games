@@ -186,7 +186,7 @@
 				onGhostVote();
 			else
 				onTap(
-					target?.closest('.mark.note')
+					target?.closest('.mark.note, .note-slot')
 						? 'note'
 						: target?.closest('.rim-pill')
 							? 'nominate'
@@ -241,18 +241,20 @@
 				><Icon name="nominated" /></span
 			></RimPill
 		>{/if}
-	<!-- Abilities held without a token, on the left rim between the nomination pill and the
-	     skull, so one appearing moves nothing. -->
-	{#each heldAbilities as { character: as, works }, i (as.id)}<span
-			class="mark held"
-			data-testid="held-ability"
-			data-off={works ? undefined : ''}
-			style:--i={i}
-			title={works ? `Holds the ${as.name} ability` : `Holds the ${as.name} ability (not now)`}
-			><img src={iconUrl(as)} alt="" /></span
-		>{/each}
-	<!-- The Storyteller's notes on this player, lower right (never shown to players). -->
-	{#if seat.notes?.length}<SeatNoteMark />{/if}
+	<!-- Abilities held without a token share a pill with the notes mark over the bottom-right
+	     rim (Trevor, 2026-10-30: not the left side), mirroring the nominations top left. The
+	     Storyteller's notes alone keep their own mark, lower right (never shown to players). -->
+	{#if heldAbilities.length}<RimPill side="right" edge="bottom" testid="held-pill"
+			>{#each heldAbilities as { character: as, works } (as.id)}<span
+					class="held"
+					data-testid="held-ability"
+					data-off={works ? undefined : ''}
+					title={works ? `Holds the ${as.name} ability` : `Holds the ${as.name} ability (not now)`}
+					><img src={iconUrl(as)} alt="" /></span
+				>{/each}{#if seat.notes?.length}<span class="note-slot" data-testid="note-mark" title="Note"
+					><Icon name="notes" /></span
+				>{/if}</RimPill
+		>{:else if seat.notes?.length}<SeatNoteMark />{/if}
 {/snippet}
 
 <button
@@ -381,13 +383,27 @@
 		background: var(--accent);
 		color: var(--on-accent);
 	}
-	/* Left rim, middle; a second one sits just below. */
+	/* A held ability in the bottom-right pill: the face of a token, like the reminders. */
+	.held,
+	.note-slot {
+		position: relative;
+		display: grid;
+		place-items: center;
+		width: var(--slot);
+		height: var(--slot);
+		border-radius: 50%;
+		--icon-size: calc(var(--slot) * 0.65);
+	}
 	.held {
-		left: -12%;
-		top: calc(36% + var(--i) * var(--mark) * 0.8);
-		/* The face of a token, like the reminders around the seat. */
 		background: var(--reminder-face);
 		overflow: hidden;
+	}
+	/* A tap target bigger than the mark, as the lone notes mark has. */
+	.note-slot::after {
+		content: '';
+		position: absolute;
+		inset: calc(-0.875 * var(--u));
+		border-radius: 50%;
 	}
 	.held img {
 		width: 100%;

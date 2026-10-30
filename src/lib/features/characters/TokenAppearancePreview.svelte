@@ -11,6 +11,7 @@
 	import BoardReminder from '#lib/features/grimoire/BoardReminder.svelte';
 	import type { ReminderLabel } from '#lib/core/data/index.ts';
 	import { boardTokenSize } from '#lib/ui/seating/last-board.svelte.ts';
+	import { reminderTokenSize } from '#lib/ui/seating/seat-layout.ts';
 	import { boardLooks } from '#lib/features/grimoire/board-looks.svelte.ts';
 	import { innerHeight, innerWidth } from 'svelte/reactivity/window';
 
@@ -54,13 +55,9 @@
 	// The reminder as the board draws it, at the board's size for this token (GrimoireBoard:
 	// half the token, kept between 30 and 48px, times Reminder size). Trevor, 2026-10-17: the
 	// preview showed the inline chip, not the reminder token.
-	const reminderSize = $derived(
-		Math.round(Math.max(30, Math.min(48, tokenSize * 0.5)) * value.reminderScale)
-	);
+	const reminderSize = $derived(reminderTokenSize(tokenSize, value.reminderScale));
 
-	const largestReminder = $derived(
-		Math.round(Math.max(30, Math.min(48, largest * 0.5)) * TOKEN_SCALE.max)
-	);
+	const largestReminder = $derived(reminderTokenSize(largest, TOKEN_SCALE.max));
 </script>
 
 {#if kind === 'token'}

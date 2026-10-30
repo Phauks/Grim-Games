@@ -45,6 +45,8 @@
 		 */
 		art?: Character;
 		disabled?: boolean;
+		/** What a screen reader says for it, when tapping it does something else (opens its actions). */
+		ariaLabel?: string;
 		onTap: () => void;
 		/** Pointer position in client px while dragging; `end` true when released. */
 		onDrag?: (x: number, y: number, end: boolean) => void;
@@ -69,6 +71,7 @@
 		symbolFill = false,
 		art,
 		disabled = false,
+		ariaLabel,
 		onTap,
 		onDrag,
 		onCancel,
@@ -214,12 +217,14 @@
 	data-generic={infinite || undefined}
 	data-has-symbol={(infinite && (!!symbol || !!artSrc)) || undefined}
 	data-pan={panX ? 'x' : undefined}
+	data-still={disabled || !onDrag || undefined}
 	style:--d="{size}px"
-	aria-label={more
-		? `${more} more reminders`
-		: infinite
-			? `Generic reminder${label ? `: ${label}` : ''}`
-			: `${label} reminder`}
+	aria-label={ariaLabel ??
+		(more
+			? `${more} more reminders`
+			: infinite
+				? `Generic reminder${label ? `: ${label}` : ''}`
+				: `${label} reminder`)}
 	{disabled}
 	onpointerdown={pointerdown}
 	onpointermove={pointermove}
@@ -295,6 +300,11 @@
 	.reminder[data-pan='x'] {
 		/* The token scrolls its row itself (pointermove), so a drag at any angle stays a drag. */
 		touch-action: none;
+	}
+	/* Not draggable (shown in a dialog): a finger on it scrolls what it sits in. */
+	.reminder[data-still] {
+		cursor: pointer;
+		touch-action: manipulation;
 	}
 	.reminder:disabled {
 		cursor: default;

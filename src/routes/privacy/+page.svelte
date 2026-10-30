@@ -272,8 +272,14 @@
 				30 days.
 			</li>
 			<li>
-				Other people see only your username and profile icon, and only when you are friends or a
-				request is waiting between you; never your email address.
+				Other people see only your username and profile icon, and the scripts you chose to show on
+				your profile; never your email address.
+			</li>
+			<li>
+				Your profile page shows your username, profile icon and the scripts you chose to show on it,
+				to anyone with its link, even without an account, whether or not people can find you by
+				username. A script you send a friend is kept on their account until they dismiss it; only
+				the newest 50 are kept.
 			</li>
 			<li>
 				Someone can find you only by typing your exact username, and you can turn that off on the
@@ -289,7 +295,10 @@
 				Blocking someone is not shown to them. Requests are limited per account using Cloudflare's
 				rate limiter.
 			</li>
-			<li>Deleting your account removes it from everyone's friends, requests and blocks.</li>
+			<li>
+				Deleting your account removes it from everyone's friends, requests and blocks, and the
+				scripts you sent stop showing.
+			</li>
 		</ul>
 	</PageSection>
 	<PageSection title="Reports">

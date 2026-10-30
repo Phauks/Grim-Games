@@ -6,6 +6,7 @@
 import type { Character, CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
 import { GENERIC_REMINDER_ID, SYMBOL_COLOURS, type GenericLook } from '#lib/core/model/index.ts';
 import { byLabel } from '#lib/features/grimoire/reminders.ts';
+import { reminderTokenSize } from '#lib/ui/seating/seat-layout.ts';
 import { readStored, writeStored } from '#lib/ui/stored.ts';
 
 /**
@@ -139,7 +140,7 @@ export function scriptReminderGroups(characters: readonly Character[]): PlayerRe
  * and 48px and scaled by the Tokens setting, never under a finger's 44px tap target.
  */
 export const reminderChip = (size: number, scale: number): number =>
-	Math.max(44, Math.round(Math.max(30, Math.min(48, size * 0.5)) * scale));
+	Math.max(44, reminderTokenSize(size, scale));
 
 /** A placed reminder's key in a list: one of each token per seat, or a generic one's id. */
 export const placedKey = (r: PlayerReminder): string => r.id ?? [r.characterId, r.label].join(':');

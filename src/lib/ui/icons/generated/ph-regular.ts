@@ -116,6 +116,7 @@ import ph_upload_simple from '~icons/ph/upload-simple';
 import ph_user_circle from '~icons/ph/user-circle';
 import ph_user_gear from '~icons/ph/user-gear';
 import ph_user_list from '~icons/ph/user-list';
+import ph_user_plus from '~icons/ph/user-plus';
 import ph_users_four from '~icons/ph/users-four';
 import ph_users_three from '~icons/ph/users-three';
 import ph_warning from '~icons/ph/warning';
@@ -239,6 +240,7 @@ const icons: IconMap = {
 	'ph:user-circle': ph_user_circle,
 	'ph:user-gear': ph_user_gear,
 	'ph:user-list': ph_user_list,
+	'ph:user-plus': ph_user_plus,
 	'ph:users-four': ph_users_four,
 	'ph:users-three': ph_users_three,
 	'ph:warning': ph_warning,

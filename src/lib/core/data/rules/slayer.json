@@ -6,7 +6,8 @@
 		}
 	},
 	"dayUse": {
-		"who": "chosen"
+		"who": "chosen",
+		"kills": true
 	},
 	"setupPrep": {
 		"none": "its tokens are only used after the first night or when something happens"

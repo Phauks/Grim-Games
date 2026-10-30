@@ -1,8 +1,8 @@
 <script lang="ts">
 	import type { CharacterId } from '#lib/core/data/index.ts';
-	import type { DayUseWho } from '#lib/core/data/character-rules.ts';
+	import type { DayUse } from '#lib/core/data/character-rules.ts';
 	import type { SeatId } from '#lib/core/model/index.ts';
-	import { dayUseSuggestion } from '#lib/core/rules/index.ts';
+	import { dayUseDeath, dayUseSuggestion } from '#lib/core/rules/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
@@ -12,6 +12,7 @@
 	import ChangeList from '#lib/ui/primitives/ChangeList.svelte';
 	import Chip from '#lib/ui/primitives/Chip.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
+	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import type { DayPort } from './day-port.ts';
 
@@ -21,6 +22,11 @@
 	 * rules block). When today's nominations already name them, the confirm opens with them
 	 * filled in; otherwise the seats come first. Either way the player can be changed, or left
 	 * as None, before Confirm (warn, never lock).
+	 *
+	 * An ability that kills the player straight away (`dayUse.kills`: the Slayer, Psychopath,
+	 * Gangster, Gunslinger, Golem) adds Dies, switched on when its `deathCause` says the player
+	 * dies (`dayUseDeath`), off when it can't kill them or the Storyteller must decide (a
+	 * Recluse shot by the Slayer, a poisoned Slayer). Confirm then marks them dead by it.
 	 */
 	interface Props {
 		game: DayPort;
@@ -31,26 +37,37 @@
 	interface Use {
 		seatId: SeatId;
 		characterId: CharacterId;
-		who: DayUseWho;
+		rule: DayUse;
 	}
 	// TPI's reminder token text (game data, not interface text).
 	const NO_ABILITY = 'No Ability';
 
 	let use = $state<Use>();
 	let on = $state<SeatId>();
+	let dies = $state(false);
+	/** The token that marks it used: "No Ability", or its own (the Golem's May Not Nominate). */
+	const spent = $derived(use?.rule.spentToken ?? NO_ABILITY);
 	let chooserOpen = $state(false);
 	let confirmOpen = $state(false);
 
 	/** Starts asking for one seat's ability. */
 	export function ask(next: Use) {
 		use = next;
-		on = dayUseSuggestion(game.game, next.seatId, next.who);
+		pick(dayUseSuggestion(game.game, next.seatId, next.rule.who));
 		if (on) confirmOpen = true;
 		else chooserOpen = true;
 	}
 
-	function chose(seatId: SeatId | undefined) {
+	function pick(seatId: SeatId | undefined) {
 		on = seatId;
+		dies =
+			use?.rule.kills === true &&
+			seatId !== undefined &&
+			dayUseDeath(game.game, use.characterId, seatId, game.characters) === 'dies';
+	}
+
+	function chose(seatId: SeatId | undefined) {
+		pick(seatId);
 		chooserOpen = false;
 		confirmOpen = true;
 	}
@@ -64,18 +81,20 @@
 		if (!use) return;
 		const { seatId, characterId } = use;
 		game.run({ type: 'UseAbility', seatId, characterId, ...(on ? { on } : {}) });
+		if (on && dies && use.rule.kills)
+			game.run({ type: 'SetDead', seatId: on, dead: true, cause: characterId });
 	}
 
 	const who = t('day.who', { character: slot('character'), seat: slot('seat') });
 	const token = $derived(
-		use ? game.characters.get(use.characterId)?.reminders.includes(NO_ABILITY) : false
+		use ? game.characters.get(use.characterId)?.reminders.includes(spent) : false
 	);
 </script>
 
 {#snippet fill(name: string)}{#if !use}{:else if name === 'seat'}<PlayerBadge
 			name={game.seatName(use.seatId)}
 		/>{:else if name === 'reminder'}<ReminderToken
-			label={NO_ABILITY}
+			label={spent}
 			character={game.characters.get(use.characterId)}
 		/>{:else}<CharacterBadge
 			characterId={use.characterId}
@@ -85,15 +104,15 @@
 
 <SeatChooser
 	bind:open={chooserOpen}
-	title={use ? t(`day.useWho.${use.who}`, { who }) : ''}
+	title={use ? t(`day.useWho.${use.rule.who}`, { who }) : ''}
 	game={game.game}
 	characters={game.characters}
-	exclude={use?.who === 'chosen' ? undefined : use?.seatId}
+	exclude={use?.rule.who === 'chosen' ? undefined : use?.seatId}
 	onChoose={chose}
 	onNone={() => chose(undefined)}
 >
 	{#snippet heading()}
-		{#if use}<Sentence text={t(`day.useWho.${use.who}`, { who })} {fill} />{/if}
+		{#if use}<Sentence text={t(`day.useWho.${use.rule.who}`, { who })} {fill} />{/if}
 	{/snippet}
 </SeatChooser>
 
@@ -114,13 +133,13 @@
 					{fill}
 				/>
 			</dd>
-			<dt>{t(`day.useOn.${use.who}`)}</dt>
+			<dt>{t(`day.useOn.${use.rule.who}`)}</dt>
 			<dd>
 				<!-- eslint-disable grim/names-as-badges -- accessible name (aria-label) only -->
 				<Chip
 					data-testid="day-use-on"
 					aria-label={t('day.useOnChange', {
-						role: t(`day.useOn.${use.who}`),
+						role: t(`day.useOn.${use.rule.who}`),
 						name: on ? game.seatName(on) : t('day.useOnNone')
 					})}
 					onclick={change}
@@ -128,6 +147,19 @@
 				>
 				<!-- eslint-enable grim/names-as-badges -->
 			</dd>
+			{#if use.rule.kills && on}
+				<dt>{t('day.useDies')}</dt>
+				<dd>
+					<!-- eslint-disable grim/names-as-badges -- hidden label (accessible name) only -->
+					<Toggle
+						hideLabel
+						label={t('day.useDiesLabel', { name: game.seatName(on) })}
+						checked={dies}
+						onChange={(value) => (dies = value)}
+					/>
+					<!-- eslint-enable grim/names-as-badges -->
+				</dd>
+			{/if}
 		</ChangeList>
 	{/if}
 </ConfirmDialog>

@@ -1,6 +1,7 @@
 import { handleAccount, type Env as AccountRoutesEnv } from './account/routes.ts';
 import { handleAdminAccounts } from './admin-accounts.ts';
 import { handleFriends, type FriendsEnv } from './friends/routes.ts';
+import { handleProfiles } from './friends/scripts.ts';
 import { bloodstarSource, handleBloodstarScript } from './bloodstar.ts';
 import { handleBotcScripts } from './botcscripts.ts';
 import { collectionSource } from './collections.ts';
@@ -125,6 +126,8 @@ export default {
 		}
 		const reports = await handleReports(request, env, url);
 		if (reports) return reports;
+		const profile = await handleProfiles(request, env, url);
+		if (profile) return profile;
 		const friends = await handleFriends(request, env, url);
 		if (friends) return friends;
 		const account = await handleAccount(request, env, url);
