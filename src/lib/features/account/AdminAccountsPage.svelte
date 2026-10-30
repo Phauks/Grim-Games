@@ -1,41 +1,61 @@
 <script lang="ts">
 	import { intl, t } from '#lib/i18n/locale.svelte.ts';
 	import { openAccount } from '#lib/features/shell/shell.ts';
+	import FriendRows from '#lib/features/friends/FriendRows.svelte';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
+	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import SearchField from '#lib/ui/primitives/SearchField.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { account as me } from './account.svelte.ts';
-	import { changeAccount, deleteAccount, findAccount } from './admin-accounts-api.ts';
-	import type { AdminAccount, AdminAccountAction } from './admin-accounts-protocol.ts';
+	import { changeAccount, deleteAccount, listAccounts } from './admin-accounts-api.ts';
+	import {
+		adminAccountMatches,
+		sortAdminAccounts,
+		type AdminAccount,
+		type AdminAccountAction
+	} from './admin-accounts-protocol.ts';
 
-	// Accounts, at /accounts (plan S27, Trevor 2026-10-30): an admin finds one account by its
-	// exact email or username and acts on it. The Worker decides who may; nothing is listed.
+	// Accounts, at /accounts (plan S27, Trevor 2026-10-30): every account, by email; tapping one
+	// opens its details, where an admin acts on it. The Worker decides who may.
 
-	let query = $state('');
-	let found = $state<AdminAccount>();
+	let accounts = $state<AdminAccount[]>([]);
+	let filter = $state('');
+	let shown = $state<AdminAccount>();
+	let detailsOpen = $state(false);
 	let busy = $state(false);
 	let confirming = $state<AdminAccountAction | 'delete'>();
 	let confirmOpen = $state(false);
 
 	const none = t('common.none');
 	const date = (ms: number | undefined) => (ms === undefined ? none : intl.date(ms));
+	const visible = $derived(accounts.filter((account) => adminAccountMatches(account, filter)));
 
-	async function find() {
-		const wanted = query.trim();
-		if (!wanted || busy) return;
-		busy = true;
+	async function load() {
 		try {
-			found = (await findAccount(wanted)) ?? undefined;
-			if (!found) toast(t('account.admin.notFound'));
+			accounts = await listAccounts();
 		} catch {
-			found = undefined;
-			toast(t('account.admin.findFailed'), t('reports.sendFailedDetail'));
-		} finally {
-			busy = false;
+			toast(t('account.admin.listFailed'), t('reports.sendFailedDetail'));
 		}
+	}
+
+	$effect(() => {
+		if (me.admin) void load();
+	});
+
+	function open(account: AdminAccount) {
+		shown = account;
+		detailsOpen = true;
+	}
+
+	/** Puts the account as it is now in the list, or takes it out when it is gone. */
+	function replace(id: string, account: AdminAccount | undefined) {
+		const rest = accounts.filter((a) => a.id !== id);
+		accounts = sortAdminAccounts(account ? [...rest, account] : rest);
+		shown = account;
+		if (!account) detailsOpen = false;
 	}
 
 	function ask(action: AdminAccountAction | 'delete') {
@@ -44,16 +64,16 @@
 	}
 
 	async function confirm() {
-		const target = found;
+		const target = shown;
 		const action = confirming;
 		if (!target || !action) return;
 		busy = true;
 		try {
 			if (action === 'delete') {
 				await deleteAccount(target.id);
-				found = undefined;
+				replace(target.id, undefined);
 			} else {
-				found = (await changeAccount(target.id, action)) ?? undefined;
+				replace(target.id, (await changeAccount(target.id, action)) ?? undefined);
 			}
 		} catch {
 			toast(t('account.admin.actionFailed'), t('reports.sendFailedDetail'));
@@ -63,7 +83,7 @@
 	}
 
 	const dialog = $derived.by(() => {
-		const email = found?.email ?? '';
+		const email = shown?.email ?? '';
 		if (confirming === 'sign-out')
 			return {
 				title: t('account.admin.signOutTitle'),
@@ -72,7 +92,7 @@
 		if (confirming === 'remove-username')
 			return {
 				title: t('account.admin.removeUsernameTitle'),
-				text: t('account.admin.removeUsernameText', { username: found?.username ?? '' })
+				text: t('account.admin.removeUsernameText', { username: shown?.username ?? '' })
 			};
 		return {
 			title: t('account.admin.deleteTitle'),
@@ -81,8 +101,6 @@
 	});
 </script>
 
-<!-- Every row and button is always drawn, "None" and disabled until an account is found, so
-     nothing moves when one is. -->
 <Page title={t('account.admin.title')}>
 	{#if me.status === 'checking'}
 		<p class="none" aria-busy="true">{t('reports.checking')}</p>
@@ -92,63 +110,70 @@
 			<Button onclick={openAccount}>{t('account.signIn.title')}</Button>
 		</div>
 	{:else}
-		<div class="find">
+		<div class="filter">
 			<SearchField
-				label={t('account.admin.find')}
-				placeholder={t('account.admin.find')}
-				bind:value={query}
-				oncommit={() => void find()}
-				testid="admin-account-query"
+				label={t('account.admin.filter')}
+				placeholder={t('account.admin.filter')}
+				bind:value={filter}
+				testid="admin-account-filter"
 			/>
-			<Button onclick={find} disabled={busy || !query.trim()}
-				>{t('account.admin.findButton')}</Button
-			>
 		</div>
-		<!-- Label, value, and what removes it (or nothing), as Account settings. The account is
-		     its id, so deleting it sits on that row. -->
-		<dl data-testid="admin-account">
-			<dt>{t('account.you.email')}</dt>
-			<dd data-testid="admin-account-email">{found?.email ?? none}</dd>
-			<span></span>
-			<dt>{t('account.you.username')}</dt>
-			<dd data-testid="admin-account-username">{found?.username ?? none}</dd>
-			<DeleteButton
-				label={t('account.admin.removeUsername')}
-				onclick={() => ask('remove-username')}
-				disabled={busy || !found?.username}
-			/>
-			<dt>{t('account.you.type')}</dt>
-			<dd>
-				{found ? t(found.admin ? 'account.you.typeAdmin' : 'account.you.typeUser') : none}
-			</dd>
-			<span></span>
-			<dt>{t('account.you.password')}</dt>
-			<dd>{found?.hasPassword ? t('account.you.passwordSet') : none}</dd>
-			<span></span>
-			<dt>{t('account.admin.devices')}</dt>
-			<dd data-testid="admin-account-devices">{found ? found.devices : none}</dd>
-			<span></span>
-			<dt>{t('account.admin.lastUsed')}</dt>
-			<dd>{date(found?.lastSeenAt)}</dd>
-			<span></span>
-			<dt>{t('account.you.since')}</dt>
-			<dd>{date(found?.createdAt)}</dd>
-			<span></span>
-			<dt>{t('account.you.id')}</dt>
-			<dd>{found?.id ?? none}</dd>
-			<DeleteButton
-				label={t('account.admin.delete')}
-				onclick={() => ask('delete')}
-				disabled={busy || !found}
-			/>
-		</dl>
-		<div class="buttons">
-			<Button onclick={() => ask('sign-out')} disabled={busy || !found?.devices}
-				>{t('account.admin.signOut')}</Button
-			>
-		</div>
+		<FriendRows items={visible} key={(account) => account.id} testid="admin-accounts">
+			{#snippet label(account)}
+				<button type="button" class="open" onclick={() => open(account)}>
+					<span class="email">{account.email}</span>
+					<span class="username">{account.username ?? none}</span>
+				</button>
+			{/snippet}
+		</FriendRows>
 	{/if}
 </Page>
+
+<Dialog bind:open={detailsOpen} title={shown?.email ?? t('account.admin.title')}>
+	<!-- Label, value, and what removes it (or nothing), as Account settings. The account is
+	     its id, so deleting it sits on that row. -->
+	<dl data-testid="admin-account">
+		<dt>{t('account.you.email')}</dt>
+		<dd data-testid="admin-account-email">{shown?.email ?? none}</dd>
+		<span></span>
+		<dt>{t('account.you.username')}</dt>
+		<dd data-testid="admin-account-username">{shown?.username ?? none}</dd>
+		<DeleteButton
+			label={t('account.admin.removeUsername')}
+			onclick={() => ask('remove-username')}
+			disabled={busy || !shown?.username}
+		/>
+		<dt>{t('account.you.type')}</dt>
+		<dd>
+			{shown ? t(shown.admin ? 'account.you.typeAdmin' : 'account.you.typeUser') : none}
+		</dd>
+		<span></span>
+		<dt>{t('account.you.password')}</dt>
+		<dd>{shown?.hasPassword ? t('account.you.passwordSet') : none}</dd>
+		<span></span>
+		<dt>{t('account.admin.devices')}</dt>
+		<dd data-testid="admin-account-devices">{shown ? shown.devices : none}</dd>
+		<span></span>
+		<dt>{t('account.admin.lastUsed')}</dt>
+		<dd>{date(shown?.lastSeenAt)}</dd>
+		<span></span>
+		<dt>{t('account.you.since')}</dt>
+		<dd>{date(shown?.createdAt)}</dd>
+		<span></span>
+		<dt>{t('account.you.id')}</dt>
+		<dd>{shown?.id ?? none}</dd>
+		<DeleteButton
+			label={t('account.admin.delete')}
+			onclick={() => ask('delete')}
+			disabled={busy || !shown}
+		/>
+	</dl>
+	<div class="buttons">
+		<Button onclick={() => ask('sign-out')} disabled={busy || !shown?.devices}
+			>{t('account.admin.signOut')}</Button
+		>
+	</div>
+</Dialog>
 
 <ConfirmDialog
 	bind:open={confirmOpen}
@@ -160,15 +185,28 @@
 />
 
 <style>
-	.find {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: var(--space-2);
+	.filter {
 		margin-bottom: var(--space-3);
 	}
-	.find > :global(:first-child) {
-		flex: 1 1 15rem;
+	/* The whole row opens the account. */
+	.open {
+		display: grid;
+		width: 100%;
+		min-height: var(--tap-target);
+		padding: 0;
+		border: 0;
+		background: none;
+		color: inherit;
+		font: inherit;
+		text-align: start;
+		cursor: pointer;
+	}
+	.email {
+		font-family: var(--font-account);
+	}
+	.username {
+		color: var(--on-surface-muted);
+		font-weight: normal;
 	}
 	dl {
 		margin: 0 0 var(--space-3);

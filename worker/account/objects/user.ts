@@ -104,6 +104,8 @@ export class AccountUser extends DurableObject<AccountEnv> {
 				version TEXT NOT NULL,
 				accepted_at INTEGER NOT NULL
 			);
+			-- A row once this account is in the admins' list (objects/directory.ts).
+			CREATE TABLE IF NOT EXISTS listed (id INTEGER PRIMARY KEY CHECK (id = 1));
 			-- The profile icon: an official character's id (Trevor, 2026-10-18), never an image.
 			CREATE TABLE IF NOT EXISTS icon (
 				id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -217,6 +219,23 @@ export class AccountUser extends DurableObject<AccountEnv> {
 		return sameHash(await passwordHash(password, row.salt, row.iterations), row.hash);
 	}
 
+	/** The admins' list of every account, where this Worker binds it (objects/directory.ts). */
+	private directory() {
+		const directory = this.env.ACCOUNT_DIRECTORY;
+		return directory?.get(directory.idFromName('all'));
+	}
+
+	/**
+	 * Adds this account to the admins' list once: new accounts as they are made, older ones the
+	 * next time they are used.
+	 */
+	private async addToDirectory(): Promise<void> {
+		const directory = this.directory();
+		if (!directory || this.sql.exec('SELECT 1 FROM listed').toArray().length) return;
+		await directory.add(this.accountId());
+		this.sql.exec('INSERT OR IGNORE INTO listed (id) VALUES (1)');
+	}
+
 	private accountId(): string {
 		return (
 			this.sql
@@ -234,6 +253,7 @@ export class AccountUser extends DurableObject<AccountEnv> {
 		this.sql.exec('INSERT INTO account (id, account_id) VALUES (1, ?)', accountId);
 		this.sql.exec('INSERT INTO profile (id, email, created_at) VALUES (1, ?, ?)', email, now);
 		await this.acceptPrivacy(privacy, now);
+		await this.addToDirectory();
 		return true;
 	}
 
@@ -320,6 +340,7 @@ export class AccountUser extends DurableObject<AccountEnv> {
 		const short = this.sql
 			.exec<{ n: number }>('SELECT COUNT(*) AS n FROM short_session WHERE id = ?', row.id)
 			.one().n;
+		await this.addToDirectory();
 		return { user, sessionId: row.id, remember: short === 0 };
 	}
 
@@ -532,6 +553,7 @@ export class AccountUser extends DurableObject<AccountEnv> {
 	/** Deletes the user and everything stored for them. Returns the email and name to release. */
 	async deleteAccount(): Promise<{ email?: string; username?: string }> {
 		const user = this.user();
+		if (user) await this.directory()?.remove(user.id);
 		await this.ctx.storage.deleteAll();
 		this.createTables();
 		return { email: user?.email, username: user?.username ?? undefined };
