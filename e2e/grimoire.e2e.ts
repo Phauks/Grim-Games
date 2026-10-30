@@ -6818,3 +6818,42 @@ test("the Summoner's Night 3 step makes the chosen player the Demon it points at
 	const seat = await openSeat(page, 2);
 	await expect(seat).toContainText(/Imp\s*Demon · Evil · Seat 2/);
 });
+
+// https://wiki.bloodontheclocktower.com/Kazali: no Minions are dealt; on the first night the
+// Kazali makes players into evil Minions, one at a time, up to the usual number (one at 8).
+test("the Kazali's first night step makes the usual number of Minions", async ({ page }) => {
+	test.slow();
+	await startGame(page);
+	for (const [seat, name] of [
+		[1, 'Kazali'],
+		[2, 'Chef'],
+		[3, 'Empath']
+	] as const) {
+		const sheet = await openSeat(page, seat);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		const picker = page.getByRole('dialog', { name: `Character for Seat ${seat}` });
+		const button = picker.getByRole('button', { name, exact: true });
+		if (!(await button.count()))
+			await picker.getByText('Include characters not on the script').tap();
+		await button.tap();
+		await closeSheet(page);
+	}
+	const strip = await walkTo(page, 'Kazali');
+	await strip.locator('button.step .name strong').tap();
+	const step = page.getByRole('dialog', { name: 'Kazali' });
+	const change = step.getByTestId('change-character');
+	await expect(change).toContainText('None');
+	await change.getByRole('button', { name: 'Choose' }).tap();
+	const seats = page.getByRole('dialog', { name: 'Changes character' });
+	await expect(seats.getByRole('button', { name: /Seat 1/ })).toHaveCount(0);
+	await seats.getByRole('button', { name: /Seat 2/ }).tap();
+	await page
+		.getByRole('dialog', { name: 'Choose a character' })
+		.getByRole('button', { name: 'Poisoner', exact: true })
+		.tap();
+	await expect(change).toContainText('Poisoner');
+	// One Minion is the usual number for 8 players, so no more are made.
+	await expect(change.getByRole('button', { name: 'Choose' })).toHaveCount(0);
+	await step.getByRole('button', { name: 'Close' }).first().tap();
+	await expect(await openSeat(page, 2)).toContainText(/Poisoner\s*Minion · Evil · Seat 2/);
+});

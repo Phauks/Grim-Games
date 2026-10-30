@@ -53,5 +53,12 @@
 	"turnsPlayersInto": {
 		"type": "minion",
 		"players": "chosen"
+	},
+	"changesCharacter": {
+		"types": ["minion"],
+		"notInPlay": true,
+		"alignment": "evil",
+		"firstNight": true,
+		"upTo": "minions"
 	}
 }

@@ -5,6 +5,7 @@
  * Storyteller confirms it or leaves the player as they are.
  */
 import { rulesOf } from '#lib/core/data/rules/index.ts';
+import { baseCounts } from './distribution.ts';
 import type { Alignment, CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { aliveNeighbours, alignmentOf, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
@@ -87,6 +88,8 @@ export function characterChanger(
 	if (!rule) return undefined;
 	const carries = (id: SeatId, label: string) =>
 		game.seats[id].reminders.some((r) => r.characterId === characterId && r.label === label);
+	if (rule.firstNight && game.pastDays.length > 0) return undefined;
+	if (rule.upTo === 'minions' && minionsLeft(game, characters) <= 0) return undefined;
 	const changer = game.seating.find(
 		(id) =>
 			(!game.seats[id].dead || rules?.actsWhenDead === true) &&
@@ -96,6 +99,16 @@ export function characterChanger(
 	);
 	if (changer === undefined) return undefined;
 	return changeableSeats(game, characterId, characters).length > 0 ? changer : undefined;
+}
+
+/**
+ * How many more Minions the player count usually has than are in play (`upTo: 'minions'`,
+ * the Kazali's): Travellers are not counted.
+ */
+export function minionsLeft(game: Game, characters: CharacterLookup): number {
+	const dealt = game.seating.filter((id) => typeOf(game, id, characters) !== 'traveller');
+	const minions = dealt.filter((id) => typeOf(game, id, characters) === 'minion').length;
+	return baseCounts(dealt.length).minion - minions;
 }
 
 /**
@@ -110,6 +123,11 @@ export function changeableSeats(
 	const rule = rulesOf(characterId, characters)?.changesCharacter;
 	return game.seating.filter((id) => {
 		const own = trueCharacter(game, id, characters);
+		if (rule?.upTo) {
+			const type = typeOf(game, id, characters);
+			if (own === characterId || (type && (rule.types as readonly string[]).includes(type)))
+				return false;
+		}
 		if (rule?.onlyFrom && (own === undefined || !rule.onlyFrom.includes(own))) return false;
 		if (!rule?.sameType) return true;
 		const type = typeOf(game, id, characters);

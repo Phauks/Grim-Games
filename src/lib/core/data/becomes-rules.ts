@@ -79,7 +79,12 @@ export function readBecomes(
  * - `sameType`: each player of one of `types` may change, into another character of their own
  *   type (the Hatter's tea party, https://wiki.bloodontheclocktower.com/Hatter; the Engineer,
  *   https://wiki.bloodontheclocktower.com/Engineer). A character
- *   whose rules say it acts when dead (`actsWhenDead`) offers it from a dead player too.
+ *   whose rules say it acts when dead (`actsWhenDead`) offers it from a dead player too;
+ * - `firstNight`: only on the first night (the Kazali,
+ *   https://wiki.bloodontheclocktower.com/Kazali);
+ * - `upTo: 'minions'`: one player after another until there are as many Minions as the
+ *   player count usually has (the Kazali's Minions); a player already of one of `types` is not
+ *   offered.
  */
 export interface ChangesCharacter {
 	types: readonly SeatedType[];
@@ -89,6 +94,8 @@ export interface ChangesCharacter {
 	spent?: ReminderLabel;
 	onlyFrom?: readonly CharacterId[];
 	sameType?: true;
+	firstNight?: true;
+	upTo?: 'minions';
 }
 
 /** Reads a `changesCharacter` block; its tokens must be among the character's `reminders`. */
@@ -104,7 +111,17 @@ export function readChangesCharacter(
 	}
 	checkKeys(
 		raw,
-		['types', 'notInPlay', 'alignment', 'token', 'spent', 'onlyFrom', 'sameType'],
+		[
+			'types',
+			'notInPlay',
+			'alignment',
+			'token',
+			'spent',
+			'onlyFrom',
+			'sameType',
+			'firstNight',
+			'upTo'
+		],
 		path,
 		issues
 	);
@@ -120,6 +137,8 @@ export function readChangesCharacter(
 	const spent = readToken(raw, 'spent', path, issues, reminders);
 	const onlyFrom = readStringArray(raw, 'onlyFrom', path, issues);
 	const sameType = readBoolean(raw, 'sameType', path, issues);
+	const firstNight = readBoolean(raw, 'firstNight', path, issues);
+	const upTo = readEnum(raw, 'upTo', ['minions'] as const, path, issues, false);
 	if (types.length === 0) return undefined;
 	return {
 		types,
@@ -128,7 +147,9 @@ export function readChangesCharacter(
 		...(token ? { token } : {}),
 		...(spent ? { spent } : {}),
 		...(onlyFrom?.length ? { onlyFrom } : {}),
-		...(sameType ? { sameType: true as const } : {})
+		...(sameType ? { sameType: true as const } : {}),
+		...(firstNight ? { firstNight: true as const } : {}),
+		...(upTo ? { upTo } : {})
 	};
 }
 
