@@ -928,7 +928,9 @@ test('New game opens a room for the vote before any game or script', async ({
 	await playRules.tap();
 	await expect(page).toHaveURL(/\/new$/);
 	await expect(ruleBallot).toHaveCount(0);
-	await expect(page.getByRole('button', { name: 'Special rules 2' })).toBeVisible();
+	// They come with the game, shown on Character selection (Trevor, 2026-10-29).
+	await page.getByRole('button', { name: 'Create game' }).tap();
+	await expect(page.getByTestId('setup-special-rules')).toHaveText('Special rules 2');
 
 	await phoneContext.close();
 });
