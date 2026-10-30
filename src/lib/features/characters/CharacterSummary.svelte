@@ -5,7 +5,10 @@
 	import { EDITION_LABELS } from '#lib/features/reference/labels.ts';
 	import { fallbackIconUrl, iconUrl } from './icon-url.ts';
 	import { iconFallback } from '#lib/ui/token/icon-fallback.ts';
-	import ReminderToken from './ReminderToken.svelte';
+	import BoardReminder from '#lib/features/grimoire/BoardReminder.svelte';
+	import { preferences } from '#lib/ui/preferences.svelte.ts';
+	import { shownReminderSize } from '#lib/ui/seating/last-board.svelte.ts';
+	import { innerHeight, innerWidth } from 'svelte/reactivity/window';
 	import CharacterGroupDialog from './CharacterGroupDialog.svelte';
 	import { groupSourceOf } from '#lib/core/data/index.ts';
 
@@ -46,6 +49,13 @@
 					...character.remindersGlobal.map((label) => ({ label, global: true }))
 				]
 			: []
+	);
+	// The tokens as the board draws them (Trevor, 2026-10-30: the token, not its name inline).
+	const reminderSize = $derived(
+		shownReminderSize(preferences.current.tokenAppearance, {
+			width: innerWidth.current ?? 0,
+			height: innerHeight.current ?? 0
+		})
 	);
 	// The type and source open every character of that type from that source (Trevor,
 	// 2026-10-20); a homebrew character's has no official group.
@@ -95,14 +105,25 @@
 				type={character.type}
 			/>{/if}
 		<p class="ability"><GlossaryText text={character.ability} names={[character.name]} /></p>
-		<!-- Every reminder token, beside the ability on every section (Trevor, 2026-10-16). -->
+		<!-- Every reminder token, beside the ability on every section (Trevor, 2026-10-16), as
+		     the tokens themselves (Trevor, 2026-10-30). -->
 		{#if reminders.length}
-			<p class="reminders" data-testid="character-reminders">
-				{#each reminders as reminder, i (i)}<ReminderToken
-						label={reminder.label}
-						type={character.type}
-					/>{/each}
-			</p>
+			<ul
+				class="reminders"
+				data-testid="character-reminders"
+				style:--reminder-gap="{Math.round(reminderSize * 0.6)}px"
+			>
+				{#each reminders as reminder, i (i)}<li>
+						<BoardReminder
+							label={reminder.label}
+							{character}
+							alignment={seat?.alignment}
+							size={reminderSize}
+							disabled
+							onTap={() => {}}
+						/>
+					</li>{/each}
+			</ul>
 		{/if}
 	</div>
 </header>
@@ -154,10 +175,14 @@
 		font-size: 1.05rem;
 		line-height: 1.5;
 	}
+	/* Room beside each token for its words, which run wider than it, and under a row for the
+	   words' band. */
 	.reminders {
 		display: flex;
 		flex-wrap: wrap;
-		gap: var(--space-1);
-		margin: var(--space-2) 0 0;
+		gap: var(--space-3) var(--reminder-gap);
+		margin: var(--space-3) 0 0;
+		padding: 0 0 var(--space-2) calc(var(--reminder-gap) / 4);
+		list-style: none;
 	}
 </style>
