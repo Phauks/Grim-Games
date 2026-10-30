@@ -19,5 +19,8 @@
 	},
 	"deathCause": {
 		"none": "reincarnation"
+	},
+	"reincarnates": {
+		"first": 4
 	}
 }

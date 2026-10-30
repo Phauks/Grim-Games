@@ -46,6 +46,7 @@ export * from './becomes.ts';
 export * from './madness.ts';
 export * from './character-changes.ts';
 export * from './first-death.ts';
+export * from './reincarnation.ts';
 export * from './end-reason.ts';
 export * from './ability-parts.ts';
 export * from './savant.ts';

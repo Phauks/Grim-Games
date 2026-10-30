@@ -80,10 +80,26 @@ test('Deal gives every seat a character, and a seated phone holds to see its own
 	await hold.dispatchEvent('pointerdown', { pointerId: 1, isPrimary: true });
 	await expect(card.getByTestId('role-name')).toBeVisible();
 	await expect(card.getByTestId('role-name')).toHaveText(/Washerwoman|Empath|Monk|Poisoner|Imp/);
+	const phoneSees = (await card.getByTestId('role-name').textContent())!.trim();
 	await expect(fairPlay).toBeVisible();
 	expect(await card.boundingBox()).toEqual(before);
 	await hold.dispatchEvent('pointerup', { pointerId: 1, isPrimary: true });
 	await expect(card.getByTestId('role-name')).toBeHidden();
+
+	// The Storyteller's player view has the same row (Trevor, 2026-10-30): pick a seat, then
+	// see that seat's card as its phone does.
+	await page.goto(board);
+	await page.getByRole('button', { name: 'Script', exact: true }).tap();
+	const view = page.getByTestId('script-scroll');
+	await view.getByTestId('your-character').tap();
+	await page.getByTestId('role-seats').getByRole('button', { name: /Alex/ }).tap();
+	const stCard = page.getByRole('dialog').filter({ has: page.getByTestId('role-card') });
+	const stHold = stCard.getByTestId('role-hold');
+	await stHold.dispatchEvent('pointerdown', { pointerId: 1, isPrimary: true });
+	await expect(stCard.getByTestId('role-name')).toHaveText(phoneSees);
+	await stHold.dispatchEvent('pointerup', { pointerId: 1, isPrimary: true });
+	await page.keyboard.press('Escape');
+	await expect(stCard).toBeHidden();
 
 	// Each player's row on Players marks who has seen theirs (Trevor, 2026-10-30: combined
 	// with the list of players): seat 2 has, the others have no phone.
@@ -116,6 +132,10 @@ test('Deal gives every seat a character, and a seated phone holds to see its own
 	await expect(phone.getByTestId('your-character')).toBeEnabled();
 	await toggle.tap();
 	await expect(phone.getByTestId('your-character')).toBeDisabled();
+	// Off for the Storyteller's player view too.
+	await page.goto(board);
+	await page.getByRole('button', { name: 'Script', exact: true }).tap();
+	await expect(view.getByTestId('your-character')).toBeDisabled();
 	await phoneContext.close();
 });
 

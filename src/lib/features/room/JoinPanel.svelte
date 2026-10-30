@@ -24,7 +24,7 @@
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import { forgetRoom, type RoomPlayer } from './player.svelte.ts';
 	import { releaseRoom, useRoom } from './room-connection.ts';
-	import { followRoomScript } from './room-script.svelte.ts';
+	import { followRoomScript, roomScript } from './room-script.svelte.ts';
 	import { fetchRoomPreview, type GamePreview } from './room-preview.ts';
 	import { rememberRoom } from './recent-rooms.ts';
 	import YourGames from './YourGames.svelte';
@@ -480,7 +480,11 @@
 		{/snippet}
 	</PlayerStatusRow>
 	<!-- Its own row under the status line (Trevor, 2026-10-28). -->
-	{#if player}<YourCharacter {player} />{/if}
+	{#if player}<YourCharacter
+			role={view?.role}
+			characters={roomScript(player.code)?.characters}
+			onSeen={() => player?.roleSeen()}
+		/>{/if}
 	{#if player}<PlayerCountOff {player} />{/if}
 	{#if player && balloting}<ScriptBallot {player} />{/if}
 {/if}

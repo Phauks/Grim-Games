@@ -375,6 +375,11 @@ export interface Game {
 	 */
 	storytellerAbilities?: HeldAbility[];
 	/**
+	 * The players reborn as Travellers after dying, in the order they died (the Hindu's first
+	 * four, https://wiki.bloodontheclocktower.com/Hindu). Absent while none.
+	 */
+	reincarnated?: SeatId[];
+	/**
 	 * Reminders held by a Fabled or Loric in play, by its id (Trevor, 2026-10-17). Optional,
 	 * so older saved games read as before; removing the character takes its reminders away.
 	 */

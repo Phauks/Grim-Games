@@ -22,6 +22,7 @@ export interface NavItem {
 		| '/friends'
 		| '/reports'
 		| '/live-games'
+		| '/test-room'
 		| '/accounts'
 		| '/about'
 		| '/credits'
@@ -128,6 +129,17 @@ export const LIVE_GAMES_ITEM: NavItem = {
 	path: '/live-games',
 	label: 'shell.navLiveGames',
 	icon: 'watchers'
+};
+
+/**
+ * Phone-sized frames of the app and bots in one live room, to try a game at every size (Trevor,
+ * 2026-10-30); in the Admin group, for admins only.
+ */
+export const TEST_ROOM_ITEM: NavItem = {
+	id: 'test-room',
+	path: '/test-room',
+	label: 'shell.navTestRoom',
+	icon: 'phoneHere'
 };
 
 /** Find one account and act on it (plan S27); in the Admin group, for admins only. */

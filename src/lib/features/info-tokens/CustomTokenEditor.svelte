@@ -7,7 +7,6 @@
 	import { MAX_ASKED_CHARACTERS } from '#lib/core/data/info-tokens.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import SharedPicker from '#lib/features/characters/CharacterPicker.svelte';
-	import ShownCard from '#lib/features/show/ShownCard.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -33,6 +32,7 @@
 		type CustomInfoToken
 	} from './custom-tokens.ts';
 	import { customInfoTokens } from './custom-tokens.svelte.ts';
+	import CardEditorLayout from './CardEditorLayout.svelte';
 	import RichTextField from './RichTextField.svelte';
 
 	interface Props {
@@ -104,138 +104,129 @@
 			onSelect={toggleOwner}
 		/>
 	{:else}
-		<div class="editor">
-			<!-- The card as players will see it, updated while typing (Trevor, 2026-10-16). -->
-			<figure class="preview" aria-label={t('info-tokens.preview')}>
-				<div class="preview-card">
-					<ShownCard
-						title={editing.answerOnly && editorDetail
-							? undefined
-							: plainText(editing.text).trim()
-								? editing.text
-								: t('info-tokens.text')}
-						detail={editorDetail}
-						compact
+		<CardEditorLayout
+			title={editing.answerOnly && editorDetail
+				? undefined
+				: plainText(editing.text).trim()
+					? editing.text
+					: t('info-tokens.text')}
+			detail={editorDetail}
+		>
+			<RichTextField
+				bind:value={editing.text}
+				label={t('info-tokens.text')}
+				maxlength={MAX_CUSTOM_TEXT}
+				onsubmit={save}
+			/>
+			<!-- Each thing it asks for, set on its own (Trevor, 2026-10-18). -->
+			<Select
+				label={t('info-tokens.input')}
+				value={editing.input}
+				options={(['none', 'text', 'number', 'choices'] as const).map((value) => ({
+					value,
+					label: t(`info-tokens.inputs.${value}`)
+				}))}
+				onChange={(value) => (editing.input = value)}
+			/>
+			{#if editing.input === 'number'}
+				<div class="range">
+					<TextField
+						label={t('info-tokens.min')}
+						inputmode="numeric"
+						filter={wholeNumber}
+						bind:value={editing.min}
+					/>
+					<TextField
+						label={t('info-tokens.max')}
+						inputmode="numeric"
+						filter={wholeNumber}
+						bind:value={editing.max}
 					/>
 				</div>
-			</figure>
-			<div class="fields">
-				<RichTextField
-					bind:value={editing.text}
-					label={t('info-tokens.text')}
-					maxlength={MAX_CUSTOM_TEXT}
-					onsubmit={save}
+			{:else if editing.input === 'choices'}
+				<TextListField
+					label={t('info-tokens.choices')}
+					values={editing.choices}
+					onChange={(values) => (editing.choices = values.slice(0, MAX_CHOICES))}
+					rowLabel={(number) => t('info-tokens.choiceNumber', { number })}
+					removeLabel={(number) => t('info-tokens.choiceRemove', { number })}
+					addLabel={t('info-tokens.choiceAdd')}
+					maxlength={MAX_CHOICE_TEXT}
 				/>
-				<!-- Each thing it asks for, set on its own (Trevor, 2026-10-18). -->
-				<Select
-					label={t('info-tokens.input')}
-					value={editing.input}
-					options={(['none', 'text', 'number', 'choices'] as const).map((value) => ({
-						value,
-						label: t(`info-tokens.inputs.${value}`)
-					}))}
-					onChange={(value) => (editing.input = value)}
-				/>
-				{#if editing.input === 'number'}
-					<div class="range">
-						<TextField
-							label={t('info-tokens.min')}
-							inputmode="numeric"
-							filter={wholeNumber}
-							bind:value={editing.min}
-						/>
-						<TextField
-							label={t('info-tokens.max')}
-							inputmode="numeric"
-							filter={wholeNumber}
-							bind:value={editing.max}
-						/>
-					</div>
-				{:else if editing.input === 'choices'}
-					<TextListField
-						label={t('info-tokens.choices')}
-						values={editing.choices}
-						onChange={(values) => (editing.choices = values.slice(0, MAX_CHOICES))}
-						rowLabel={(number) => t('info-tokens.choiceNumber', { number })}
-						removeLabel={(number) => t('info-tokens.choiceRemove', { number })}
-						addLabel={t('info-tokens.choiceAdd')}
-						maxlength={MAX_CHOICE_TEXT}
+			{/if}
+			<!-- Shown only while there is something to fill in, but always in place (no reflow). -->
+			<Toggle
+				label={t('info-tokens.answerOnly')}
+				checked={editing.answerOnly && editing.input !== 'none'}
+				disabled={editing.input === 'none'}
+				onChange={(checked) => (editing.answerOnly = checked)}
+			/>
+			<!-- None, exact or a range, then its numbers, always in place (no reflow). -->
+			<Select
+				label={t('info-tokens.askCharacters')}
+				value={editing.count}
+				options={(['none', 'exact', 'range'] as const).map((value) => ({
+					value,
+					label: t(`info-tokens.characterCount.${value}`)
+				}))}
+				onChange={setCount}
+			/>
+			<div class="count-field">
+				{#if editing.count === 'range'}
+					<span class="count-label">{t('info-tokens.from')}</span>
+					<Stepper
+						bind:value={editing.fewest}
+						label={t('info-tokens.from')}
+						lessLabel={t('info-tokens.fewerFrom')}
+						moreLabel={t('info-tokens.moreFrom')}
+						min={1}
+						max={editing.characters - 1}
 					/>
-				{/if}
-				<!-- Shown only while there is something to fill in, but always in place (no reflow). -->
-				<Toggle
-					label={t('info-tokens.answerOnly')}
-					checked={editing.answerOnly && editing.input !== 'none'}
-					disabled={editing.input === 'none'}
-					onChange={(checked) => (editing.answerOnly = checked)}
-				/>
-				<!-- None, exact or a range, then its numbers, always in place (no reflow). -->
-				<Select
-					label={t('info-tokens.askCharacters')}
-					value={editing.count}
-					options={(['none', 'exact', 'range'] as const).map((value) => ({
-						value,
-						label: t(`info-tokens.characterCount.${value}`)
-					}))}
-					onChange={setCount}
-				/>
-				<div class="count-field">
-					{#if editing.count === 'range'}
-						<span class="count-label">{t('info-tokens.from')}</span>
-						<Stepper
-							bind:value={editing.fewest}
-							label={t('info-tokens.from')}
-							lessLabel={t('info-tokens.fewerFrom')}
-							moreLabel={t('info-tokens.moreFrom')}
-							min={1}
-							max={editing.characters - 1}
-						/>
-						<span class="count-label">{t('info-tokens.to')}</span>
-						<Stepper
-							bind:value={editing.characters}
-							label={t('info-tokens.to')}
-							lessLabel={t('info-tokens.fewer')}
-							moreLabel={t('info-tokens.more')}
-							min={editing.fewest + 1}
-							max={MAX_ASKED_CHARACTERS}
-						/>
-					{:else}
-						<span class="count-label">{t('info-tokens.howMany')}</span>
-						<Stepper
-							bind:value={editing.characters}
-							label={t('info-tokens.howMany')}
-							lessLabel={t('info-tokens.fewer')}
-							moreLabel={t('info-tokens.more')}
-							min={1}
-							max={MAX_ASKED_CHARACTERS}
-							disabled={editing.count === 'none'}
-						/>
-					{/if}
-				</div>
-				<!-- As "These characters are not in play": chosen from those not in play. -->
-				<Toggle
-					label={t('info-tokens.notInPlay')}
-					checked={editing.notInPlay && editing.count !== 'none'}
-					disabled={editing.count === 'none'}
-					onChange={(checked) => (editing.notInPlay = checked)}
-				/>
-				{#if characters.length > 0}
-					<div class="belongs">
-						<span class="belongs-label">{t('info-tokens.belongsTo')}</span>
-						<span class="belongs-owners">
-							{#each editOwners as owner (owner.id)}<CharacterBadge
-									characterId={owner.id}
-									character={owner}
-									interactive={false}
-								/>{:else}{t('common.none')}{/each}
-						</span>
-						<Button icon="edit" onclick={() => (editView = 'characters')}
-							>{t('info-tokens.chooseCharacters')}</Button
-						>
-					</div>
+					<span class="count-label">{t('info-tokens.to')}</span>
+					<Stepper
+						bind:value={editing.characters}
+						label={t('info-tokens.to')}
+						lessLabel={t('info-tokens.fewer')}
+						moreLabel={t('info-tokens.more')}
+						min={editing.fewest + 1}
+						max={MAX_ASKED_CHARACTERS}
+					/>
+				{:else}
+					<span class="count-label">{t('info-tokens.howMany')}</span>
+					<Stepper
+						bind:value={editing.characters}
+						label={t('info-tokens.howMany')}
+						lessLabel={t('info-tokens.fewer')}
+						moreLabel={t('info-tokens.more')}
+						min={1}
+						max={MAX_ASKED_CHARACTERS}
+						disabled={editing.count === 'none'}
+					/>
 				{/if}
 			</div>
-		</div>
+			<!-- As "These characters are not in play": chosen from those not in play. -->
+			<Toggle
+				label={t('info-tokens.notInPlay')}
+				checked={editing.notInPlay && editing.count !== 'none'}
+				disabled={editing.count === 'none'}
+				onChange={(checked) => (editing.notInPlay = checked)}
+			/>
+			{#if characters.length > 0}
+				<div class="belongs">
+					<span class="belongs-label">{t('info-tokens.belongsTo')}</span>
+					<span class="belongs-owners">
+						{#each editOwners as owner (owner.id)}<CharacterBadge
+								characterId={owner.id}
+								character={owner}
+								interactive={false}
+							/>{:else}{t('common.none')}{/each}
+					</span>
+					<Button icon="edit" onclick={() => (editView = 'characters')}
+						>{t('info-tokens.chooseCharacters')}</Button
+					>
+				</div>
+			{/if}
+		</CardEditorLayout>
 	{/if}
 	{#snippet actions()}
 		{#if editView === 'characters'}
@@ -251,40 +242,6 @@
 </Dialog>
 
 <style>
-	.editor {
-		display: grid;
-		gap: var(--space-3);
-	}
-	@media (min-width: 48rem) {
-		.editor {
-			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-			align-items: start;
-		}
-		.preview {
-			order: 2;
-		}
-	}
-	.fields {
-		display: grid;
-		gap: var(--space-3);
-		align-content: start;
-	}
-	/* A fixed box, so typing never moves the editor (no reflow, Trevor). */
-	.preview {
-		margin: 0;
-		height: calc(9 * var(--u));
-		overflow: hidden;
-		border: 1px solid var(--border);
-		border-radius: var(--card-radius);
-		background: var(--surface, Canvas);
-		color: var(--on-surface);
-	}
-	/* The card fills the box, so if it must scroll its scrollbar is at the box's edge, not
-	   beside the centred text (Trevor, 2026-10-18). */
-	.preview-card {
-		height: 100%;
-		display: grid;
-	}
 	.range {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);

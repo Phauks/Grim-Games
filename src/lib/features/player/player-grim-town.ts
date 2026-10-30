@@ -2,6 +2,7 @@ import type { GameOver, SharedGrimoire } from '#lib/core/sync/room.ts';
 import type { RoomPlayer } from '#lib/features/room/player.svelte.ts';
 import type {
 	PublicCorner,
+	PublicStoryteller,
 	PublicLook,
 	PublicSeat,
 	PublicSeatLayout
@@ -16,6 +17,7 @@ export interface PlayerGrimTown {
 	seats: readonly PublicSeat[];
 	layout?: PublicSeatLayout;
 	storytellerName?: string;
+	storyteller?: PublicStoryteller;
 	corner?: PublicCorner;
 	/** The board's background, as it shares it with every grim of the game. */
 	look?: PublicLook;

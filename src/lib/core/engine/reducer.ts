@@ -190,13 +190,17 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 				seating
 			};
 		}
-		case 'SeatRemoved':
+		case 'SeatRemoved': {
 			if (!Object.hasOwn(game.seats, event.seatId)) return game;
-			return {
+			const removed = {
 				...game,
 				seats: omit(game.seats, event.seatId),
 				seating: game.seating.filter((id) => id !== event.seatId)
 			};
+			const reincarnated = game.reincarnated?.filter((id) => id !== event.seatId);
+			if (reincarnated === undefined) return removed;
+			return reincarnated.length > 0 ? { ...removed, reincarnated } : omit(removed, 'reincarnated');
+		}
 		case 'SeatRenamed':
 			return updateSeat(game, event.seatId, (seat) =>
 				event.playerName === undefined
@@ -274,6 +278,8 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 				? { ...game, storytellerAbilities }
 				: omit(game, 'storytellerAbilities');
 		}
+		case 'SeatReincarnated':
+			return { ...game, reincarnated: [...(game.reincarnated ?? []), event.seatId] };
 		case 'HeldAbilitySet':
 			return updateSeat(game, event.seatId, (seat) => {
 				const others = (seat.abilities ?? []).filter((a) => a.via !== event.via);
