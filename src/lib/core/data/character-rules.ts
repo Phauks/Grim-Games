@@ -32,6 +32,7 @@ import {
 	type SwapsCharacters
 } from './becomes-rules.ts';
 import { ownReminder, readToken } from './reminder-fields.ts';
+import { readMadness, type Madness } from './madness-rules.ts';
 import { readAnswers, readLearns, type Answers, type Learns } from './night-info-rules.ts';
 import { readImpairs, type Impairs } from './impairs-rules.ts';
 import { readReminderMovement, type ReminderMovementRules } from './reminder-movement-rules.ts';
@@ -210,6 +211,8 @@ export interface CharacterRules extends ChoiceRules {
 	 * https://wiki.bloodontheclocktower.com/Cult_Leader); its night step offers the change.
 	 */
 	takesNeighbourAlignment?: true;
+	/** A player it makes mad may be executed or die for breaking it (`madness-rules.ts`). */
+	madness?: Madness;
 	/** The characters its night step's info tokens show, filled in (`rules/info-token-characters.ts`). */
 	infoTokenCharacters?: InfoTokenCharacterRules;
 	/**
@@ -359,6 +362,7 @@ const RULE_KEYS = [
 	'changesCharacter',
 	'swapsCharacters',
 	'takesNeighbourAlignment',
+	'madness',
 	'infoTokenCharacters',
 	'makesExtraEvil',
 	'limitsExtraEvil',
@@ -596,6 +600,10 @@ export function parseCharacterRules(
 	}
 	if (readBoolean(raw, 'takesNeighbourAlignment', path, issues))
 		rules.takesNeighbourAlignment = true;
+	if (raw.madness !== undefined) {
+		const madness = readMadness(raw.madness, `${path}.madness`, issues, reminders);
+		if (madness) rules.madness = madness;
+	}
 	if (readBoolean(raw, 'limitsExtraEvil', path, issues)) rules.limitsExtraEvil = true;
 	const extraEvil = readBoolean(raw, 'makesExtraEvil', path, issues);
 	if (extraEvil !== undefined) rules.makesExtraEvil = extraEvil;

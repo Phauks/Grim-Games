@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { CharacterId } from '#lib/core/data/index.ts';
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import { dayNumber } from '#lib/core/rules/index.ts';
 	import type { OpenGame } from '#lib/features/game/session.svelte.ts';
@@ -31,6 +32,8 @@
 		onEndDay?: () => void;
 		/** Opens the Savant information sheet for a seat (L5). */
 		onSavant?: (seatId: SeatId) => void;
+		/** A mad player broke madness that executes: the board's Execution asks (L84). */
+		onExecute?: (seatId: SeatId, cause: CharacterId) => void;
 		/** What the grim cover shows, as from the board (Trevor, 2026-10-26). */
 		cover?: CoverDetails;
 		coverTimer?: Snippet;
@@ -47,6 +50,7 @@
 		game,
 		onEndDay,
 		onSavant,
+		onExecute,
 		cover,
 		coverTimer,
 		coverActions,
@@ -80,7 +84,7 @@
 				onclick={onSoundboard}
 			/>{/if}{/snippet}
 	<div class="body">
-		<DayPanel game={day} {assistance} {onSavant} />
+		<DayPanel game={day} {assistance} {onSavant} {onExecute} />
 	</div>
 	{#snippet actions()}
 		<span class="day-name" data-testid="day-name" aria-hidden="true">{title}</span>
