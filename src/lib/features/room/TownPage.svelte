@@ -224,6 +224,7 @@
 							seats: table.seats,
 							layout: table.layout,
 							storytellerName: table.storytellerName,
+							storyteller: table.storyteller,
 							corner: table.corner,
 							look: table.look,
 							roomCode: room,

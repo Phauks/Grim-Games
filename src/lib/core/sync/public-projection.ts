@@ -173,9 +173,22 @@ export interface PublicRule {
 	text?: string;
 }
 
+/**
+ * The Storyteller's own avatar, laurel and picture (by its name among the room's pictures), as
+ * a player's phone shares its own (RoomMember), so a phone shows the Storyteller's profile as
+ * it shows a player's (Trevor, 2026-10-30). Each is left out when none is picked.
+ */
+export interface PublicStoryteller {
+	avatar?: AvatarId;
+	frame?: FrameId;
+	picture?: string;
+}
+
 export interface PublicGameState {
 	/** The Storyteller's name, when the game has one: the table already knows who runs it. */
 	storytellerName?: string;
+	/** The Storyteller's look; left out by boards from before it, and when they pick none. */
+	storyteller?: PublicStoryteller;
 	/** In clockwise seating order. */
 	seats: PublicSeat[];
 	today: PublicDay;
