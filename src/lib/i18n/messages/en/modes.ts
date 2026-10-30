@@ -158,6 +158,9 @@ export const modes = {
 	'modes.extras.announceLow': 'Fewest hidden characters to tell the table',
 	'modes.extras.announceHigh': 'Most hidden characters to tell the table',
 	'modes.extras.next': 'Choose characters',
+	'modes.extras.box': 'Off the script',
+	// Shown while too few or too many are picked, e.g. "1 needed", "1–4 needed".
+	'modes.extras.needed': '{range} needed',
 	'modes.deal.pageTitle': `Characters · ${APP_NAME}`,
 	'modes.deal.menu': 'Characters',
 	'modes.deal.draftHeading': 'Draft',
