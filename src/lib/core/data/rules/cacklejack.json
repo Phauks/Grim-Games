@@ -28,6 +28,10 @@
 	"dayUse": {
 		"who": "chosen"
 	},
+	"changesCharacter": {
+		"types": ["townsfolk", "outsider", "minion", "demon"],
+		"notMarked": "Not Me"
+	},
 	"deathCause": {
 		"none": "changes a character"
 	},
