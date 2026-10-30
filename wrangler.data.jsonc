@@ -22,7 +22,9 @@
 			{ "name": "SHARED_SCRIPTS", "class_name": "SharedScript" },
 			{ "name": "REPORTS", "class_name": "ReportBox" },
 			// Each account's friends, requests and blocks (worker/friends/book.ts).
-			{ "name": "FRIEND_BOOKS", "class_name": "FriendBook" }
+			{ "name": "FRIEND_BOOKS", "class_name": "FriendBook" },
+			// Every account's id, for the admins' Accounts list (worker/account/objects/directory.ts).
+			{ "name": "ACCOUNT_DIRECTORY", "class_name": "AccountDirectory" }
 		]
 	},
 	"migrations": [
@@ -36,6 +38,7 @@
 				"ReportBox"
 			]
 		},
-		{ "tag": "v2", "new_sqlite_classes": ["FriendBook"] }
+		{ "tag": "v2", "new_sqlite_classes": ["FriendBook"] },
+		{ "tag": "v3", "new_sqlite_classes": ["AccountDirectory"] }
 	]
 }

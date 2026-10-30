@@ -9,6 +9,7 @@
  */
 import { WorkerEntrypoint } from 'cloudflare:workers';
 import {
+	AccountDirectory,
 	AccountEmail,
 	AccountName,
 	AccountUser,
@@ -20,7 +21,15 @@ import { localShare, SharedScript, type ShareEnv } from './share.ts';
 import type { DataCall, DataKind } from './shared-data.ts';
 import { FriendBook } from './friends/book.ts';
 
-export { AccountEmail, AccountName, AccountUser, FriendBook, ReportBox, SharedScript };
+export {
+	AccountDirectory,
+	AccountEmail,
+	AccountName,
+	AccountUser,
+	FriendBook,
+	ReportBox,
+	SharedScript
+};
 
 type DataEnv = Omit<AccountEnv, 'DATA'> &
 	Pick<ShareEnv, 'SHARED_SCRIPTS'> &
@@ -33,6 +42,10 @@ const kinds: Record<DataKind, [{ prototype: object }, (env: DataEnv, key: string
 	user: [AccountUser, (env, key) => localAccounts(env).user(key)],
 	address: [AccountEmail, (env, key) => localAccounts(env).address(key)],
 	username: [AccountName, (env, key) => localAccounts(env).username(key)],
+	directory: [
+		AccountDirectory,
+		(env, key) => env.ACCOUNT_DIRECTORY?.get(env.ACCOUNT_DIRECTORY.idFromName(key))
+	],
 	share: [SharedScript, localShare],
 	reports: [ReportBox, localReports],
 	friends: [FriendBook, (env, key) => env.FRIEND_BOOKS.get(env.FRIEND_BOOKS.idFromName(key))]

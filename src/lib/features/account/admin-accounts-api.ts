@@ -1,11 +1,11 @@
 import { fetchWithTimeout } from '#lib/ui/fetch.ts';
 import {
-	ADMIN_ACCOUNTS_FIND,
+	ADMIN_ACCOUNTS_LIST,
 	adminAccountPath,
 	type AdminAccount,
 	type AdminAccountAction,
-	type AdminAccountResponse,
-	type FindAccountRequest
+	type AdminAccountList,
+	type AdminAccountResponse
 } from './admin-accounts-protocol.ts';
 
 /** Not an admin account (or signed out): the Worker answers 404. */
@@ -20,15 +20,15 @@ function call(path: string, method: string, body: unknown = {}): Promise<Respons
 	});
 }
 
-async function account(response: Response): Promise<AdminAccount | null> {
+async function read<T>(response: Response): Promise<T> {
 	if (response.status === 404) throw new NotAdminError();
 	if (!response.ok) throw new Error(`HTTP ${response.status}`);
-	return ((await response.json()) as AdminAccountResponse).account;
+	return (await response.json()) as T;
 }
 
-/** The account with exactly this email or username, or null (plan S27). */
-export async function findAccount(query: string): Promise<AdminAccount | null> {
-	return account(await call(ADMIN_ACCOUNTS_FIND, 'POST', { query } satisfies FindAccountRequest));
+/** Every account, by email (plan S27). */
+export async function listAccounts(): Promise<AdminAccount[]> {
+	return (await read<AdminAccountList>(await call(ADMIN_ACCOUNTS_LIST, 'POST'))).accounts;
 }
 
 /** Runs an action on an account and returns it as it is now. */
@@ -36,7 +36,8 @@ export async function changeAccount(
 	id: string,
 	action: AdminAccountAction
 ): Promise<AdminAccount | null> {
-	return account(await call(adminAccountPath(id, action), 'POST'));
+	return (await read<AdminAccountResponse>(await call(adminAccountPath(id, action), 'POST')))
+		.account;
 }
 
 export async function deleteAccount(id: string): Promise<void> {

@@ -18,6 +18,7 @@
 import { normaliseEmail } from '../../src/lib/features/account/account-protocol.ts';
 import { isLegacyAccountId } from '../../src/lib/features/account/account-id.ts';
 import { remote, type DataBinding } from '../shared-data.ts';
+import type { AccountDirectory } from './objects/directory.ts';
 import type { AccountEmail } from './objects/email.ts';
 import type { AccountName } from './objects/name.ts';
 import type { AccountUser } from './objects/user.ts';
@@ -32,6 +33,11 @@ export interface AccountEnv {
 	ACCOUNT_USERS: DurableObjectNamespace<AccountUser>;
 	ACCOUNT_EMAILS: DurableObjectNamespace<AccountEmail>;
 	ACCOUNT_NAMES: DurableObjectNamespace<AccountName>;
+	/**
+	 * Every account's id (objects/directory.ts). Only the shared data Worker binds it; the app
+	 * reaches it through `DATA`, so previews add no Durable Object namespace for it.
+	 */
+	ACCOUNT_DIRECTORY?: DurableObjectNamespace<AccountDirectory>;
 	DATA?: DataBinding;
 }
 
@@ -79,6 +85,13 @@ export function emailStub(env: AccountEnv, email: string): DurableObjectStub<Acc
 	return accounts(env).address(normaliseEmail(email) ?? email);
 }
 
+/** Every account's id, or undefined where neither `DATA` nor the directory is bound. */
+export function directoryStub(env: AccountEnv): DurableObjectStub<AccountDirectory> | undefined {
+	if (env.DATA) return remote(env.DATA, 'directory', 'all');
+	const directory = env.ACCOUNT_DIRECTORY;
+	return directory?.get(directory.idFromName('all'));
+}
+
 /** Who holds a username (`usernameKey`). */
 export function nameStub(env: AccountEnv, key: string): DurableObjectStub<AccountName> {
 	return accounts(env).username(key);
@@ -92,5 +105,6 @@ export {
 	type StartResult,
 	type VerifyResult
 } from './objects/email.ts';
+export { AccountDirectory } from './objects/directory.ts';
 export { AccountName } from './objects/name.ts';
 export { AccountUser, type Authenticated, type PutResult } from './objects/user.ts';

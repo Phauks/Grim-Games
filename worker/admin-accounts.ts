@@ -1,28 +1,34 @@
 import { noStore, text } from './http.ts';
-import {
-	normaliseEmail,
-	normaliseUsername,
-	usernameKey
-} from '../src/lib/features/account/account-protocol.ts';
+import { usernameKey } from '../src/lib/features/account/account-protocol.ts';
 import {
 	ADMIN_ACCOUNTS_API,
-	ADMIN_ACCOUNTS_FIND,
+	ADMIN_ACCOUNTS_LIST,
 	parseAdminAccountPath,
+	sortAdminAccounts,
 	type AdminAccount,
+	type AdminAccountList,
 	type AdminAccountResponse
 } from '../src/lib/features/account/admin-accounts-protocol.ts';
-import { emailStub, nameStub, userStub } from './account/objects.ts';
+import { directoryStub, nameStub, userStub } from './account/objects.ts';
 import { deleteAccount, getUser, type Env } from './account/routes.ts';
 import { isAdmin } from './admins.ts';
 
-/** The account an exact email or username belongs to, if any. */
-async function findAccountId(env: Env, query: string): Promise<string | undefined> {
-	if (query.includes('@')) {
-		const email = normaliseEmail(query);
-		return email ? emailStub(env, email).ownerId() : undefined;
-	}
-	const name = normaliseUsername(query);
-	return name ? nameStub(env, usernameKey(name)).holder() : undefined;
+/**
+ * Every account in the directory (objects/directory.ts), each as it is now. An id whose
+ * account is gone leaves the list, as Live games drops a closed room.
+ */
+async function listAccounts(env: Env, url: URL): Promise<AdminAccount[]> {
+	const directory = directoryStub(env);
+	if (!directory) return [];
+	const accounts: AdminAccount[] = [];
+	await Promise.all(
+		(await directory.ids()).map(async (id) => {
+			const account = await adminAccount(env, url, id);
+			if (account) accounts.push(account);
+			else await directory.remove(id);
+		})
+	);
+	return sortAdminAccounts(accounts);
 }
 
 async function adminAccount(env: Env, url: URL, id: string): Promise<AdminAccount | null> {
@@ -68,11 +74,9 @@ export async function handleAdminAccounts(
 		return text('This request must come from the app', 403);
 	}
 
-	if (url.pathname === ADMIN_ACCOUNTS_FIND && request.method === 'POST') {
-		const body = (await request.json().catch(() => null)) as { query?: unknown } | null;
-		const query = typeof body?.query === 'string' ? body.query.trim() : '';
-		const id = query ? await findAccountId(env, query) : undefined;
-		return answer(id ? await adminAccount(env, url, id) : null);
+	if (url.pathname === ADMIN_ACCOUNTS_LIST && request.method === 'POST') {
+		const accounts = await listAccounts(env, url);
+		return Response.json({ accounts } satisfies AdminAccountList, { headers: noStore });
 	}
 
 	const target = parseAdminAccountPath(url.pathname);

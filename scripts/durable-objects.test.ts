@@ -91,9 +91,10 @@ const DATA_KEPT = {
 		ACCOUNT_NAMES: 'AccountName',
 		SHARED_SCRIPTS: 'SharedScript',
 		REPORTS: 'ReportBox',
-		FRIEND_BOOKS: 'FriendBook'
+		FRIEND_BOOKS: 'FriendBook',
+		ACCOUNT_DIRECTORY: 'AccountDirectory'
 	} as Record<string, string>,
-	migrationTags: ['v1', 'v2']
+	migrationTags: ['v1', 'v2', 'v3']
 };
 
 const dataText = readFileSync(new URL('../wrangler.data.jsonc', import.meta.url), 'utf8');
