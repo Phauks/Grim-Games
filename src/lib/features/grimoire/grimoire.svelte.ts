@@ -3,7 +3,7 @@ import { dawnGames, type Command } from '#lib/core/engine/index.ts';
 import { becomesOffer, survivesFirstDeath, type Night } from '#lib/core/rules/index.ts';
 import { doneKey } from './night-steps.ts';
 import { alignmentOf, replacedBy, scriptCharacterIds, type SeatId } from '#lib/core/model/index.ts';
-import type { CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
+import type { Alignment, CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
 import { keepIconsOffline } from '#lib/features/offline/keep-offline.ts';
 import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 import { toast } from '#lib/ui/primitives/toaster.ts';
@@ -311,7 +311,10 @@ export class Grimoire {
 	 * A reminder that says its player changed character or alignment, just placed or taken off
 	 * (`becomesOffer`): the board offers that change. Returns which change it offered.
 	 */
-	private askBecomes(command: Command, before: Game): 'demon' | 'evil' | 'swap' | undefined {
+	private askBecomes(
+		command: Command,
+		before: Game
+	): 'demon' | 'evil' | 'alignment' | 'swap' | undefined {
 		const characters = this.open.characters;
 		const game = this.open.game;
 		const placed = this.placed(command);
@@ -329,7 +332,17 @@ export class Grimoire {
 		if (offer.into === 'swap')
 			this.swapAsk = { seatId: offer.seatId, withSeatId: offer.withSeatId };
 		else if (offer.into === 'evil')
-			this.alignmentAsk = { seatId: offer.seatId, characterId: offer.characterId };
+			this.alignmentAsk = {
+				seatId: offer.seatId,
+				characterId: offer.characterId,
+				alignment: 'evil'
+			};
+		else if (offer.into === 'alignment')
+			this.alignmentAsk = {
+				seatId: offer.seatId,
+				characterId: offer.characterId,
+				alignment: offer.alignment
+			};
 		else this.demonAsk = { seatId: offer.seatId, characterId: offer.characterId };
 		return offer.into;
 	}
@@ -338,7 +351,9 @@ export class Grimoire {
 	 * A seat the Storyteller just marked as truly an evil character (Marionette, Trevor
 	 * 2026-10-17) whose alignment isn't evil yet: the board asks whether to make it evil.
 	 */
-	alignmentAsk = $state.raw<{ seatId: SeatId; characterId: CharacterId } | undefined>();
+	alignmentAsk = $state.raw<
+		{ seatId: SeatId; characterId: CharacterId; alignment: Alignment } | undefined
+	>();
 
 	private askAlignment(command: Command): void {
 		const placed = this.placed(command);
@@ -348,7 +363,7 @@ export class Grimoire {
 		const source = replacedBy(placed.reminder, this.open.characters);
 		if (!source || (source.type !== 'minion' && source.type !== 'demon')) return;
 		if (alignmentOf(game, seatId) === 'evil') return;
-		this.alignmentAsk = { seatId, characterId: source.id };
+		this.alignmentAsk = { seatId, characterId: source.id, alignment: 'evil' };
 	}
 
 	/**

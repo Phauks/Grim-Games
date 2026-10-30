@@ -14,10 +14,12 @@ import type { Game, Reminder, SeatId } from '#lib/core/model/types.ts';
  * The change to offer:
  * - `demon`: `seatId` becomes `characterId`, the Demon taken over, as evil;
  * - `evil`: `seatId`, playing `characterId`, turns evil;
- * - `swap`: `seatId`, a Demon, and `withSeatId` swap characters and alignments.
+ * - `swap`: `seatId`, a Demon, and `withSeatId` swap characters and alignments;
+ * - `alignment`: `seatId`, playing `characterId`, takes `alignment` (the carrier's).
  */
 export type BecomesOffer =
 	| { into: 'demon' | 'evil'; seatId: SeatId; characterId: CharacterId }
+	| { into: 'alignment'; seatId: SeatId; characterId: CharacterId; alignment: Alignment }
 	| { into: 'swap'; seatId: SeatId; withSeatId: SeatId };
 
 /**
@@ -40,6 +42,16 @@ export function becomesOffer(
 		const characterId = trueCharacter(game, seatId, characters);
 		if (characterId === undefined || alignmentOf(game, seatId) === 'evil') return undefined;
 		return { into: 'evil', seatId, characterId };
+	}
+	if (rule.into === 'carrier-alignment') {
+		// The token's character's own player takes the carrier's alignment.
+		const alignment = alignmentOf(game, seatId);
+		const owner = game.seating.find(
+			(id) => id !== seatId && trueCharacter(game, id, characters) === reminder.characterId
+		);
+		if (owner === undefined || alignment === undefined) return undefined;
+		if (alignmentOf(game, owner) === alignment) return undefined;
+		return { into: 'alignment', seatId: owner, characterId: reminder.characterId, alignment };
 	}
 	if (rule.into === 'swap') {
 		// The Demon the token's character chose swaps with that character's player.

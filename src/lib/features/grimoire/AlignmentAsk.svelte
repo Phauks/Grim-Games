@@ -17,7 +17,10 @@
 	 * the Mezepheles's "Turns Evil" asks to make that player evil
 	 * (https://wiki.bloodontheclocktower.com/Mezepheles); the Snake Charmer's "Poisoned" on the
 	 * Demon asks to swap their characters and alignments
-	 * (https://wiki.bloodontheclocktower.com/Snake_Charmer). Rules: `becomesOffer` in core.
+	 * (https://wiki.bloodontheclocktower.com/Snake_Charmer). The Goon's Drunk and the Ogre's
+	 * Friend ask to give the Goon or Ogre the carrier's alignment
+	 * (https://wiki.bloodontheclocktower.com/Goon, https://wiki.bloodontheclocktower.com/Ogre).
+	 * Rules: `becomesOffer` in core.
 	 */
 	interface Props {
 		grimoire: Grimoire;
@@ -71,14 +74,14 @@
 	});
 
 	function confirm() {
-		if (ask) grimoire.run({ type: 'SetAlignment', seatId: ask.seatId, alignment: 'evil' });
+		if (ask) grimoire.run({ type: 'SetAlignment', seatId: ask.seatId, alignment: ask.alignment });
 		grimoire.alignmentAsk = undefined;
 	}
 </script>
 
 <ConfirmDialog
 	bind:open
-	title="Make this player evil?"
+	title={`Make this player ${ask?.alignment ?? 'evil'}?`}
 	onConfirm={confirm}
 	onCancel={() => (grimoire.alignmentAsk = undefined)}
 >
@@ -100,7 +103,7 @@
 				<AlignmentPill alignment={seat.alignment} />
 			</dd>
 			<dt>New alignment</dt>
-			<dd><AlignmentPill alignment="evil" /></dd>
+			<dd><AlignmentPill alignment={ask.alignment} /></dd>
 		</dl>
 	{/if}
 </ConfirmDialog>
