@@ -13,7 +13,6 @@ import {
 	setChoosing
 } from './room.ts';
 import {
-	FINAL_CALL_SECONDS,
 	MAX_SCRIPT_VOTE_OPTIONS,
 	cleanBallot,
 	newScriptVote,
@@ -192,24 +191,24 @@ describe('a vote on the next script', () => {
 		expect(castScriptBallot(r, 'alex', 'v1', [])).toBe(r);
 	});
 
-	// Trevor, 2026-10-26: "Allow storyteller to end vote early, upon doing so, give 15 second
-	// final vote warning to players".
-	it('ends early after a final call', () => {
+	// Trevor, 2026-10-30: "End vote should end vote. No 15 second delay" (replacing the
+	// 2026-10-26 final call).
+	it('ends at once', () => {
 		let r = openScriptVote(room(), 'v1', 'single', options, undefined, 0);
+		r = castScriptBallot(r, 'alex', 'v1', ['tb'], 1000);
 		r = endScriptVote(r, 5000);
-		const closes = 5000 + FINAL_CALL_SECONDS * 1000;
-		expect(r.scriptVote).toMatchObject({ endsAt: closes, finalCall: true });
-		expect(playerView(r, 'alex').scriptVote).toMatchObject({ endsAt: closes, finalCall: true });
-		expect(hostView(r).scriptVote?.finalCall).toBe(true);
-		// Ending again does not push the close back.
+		expect(r.scriptVote).toMatchObject({ endsAt: 5000 });
+		expect(playerView(r, 'alex').scriptVote).toMatchObject({ endsAt: 5000 });
+		expect(hostView(r).scriptVote).toMatchObject({ endsAt: 5000, voted: 1 });
+		// No ballot is taken or changed after it ends, and ending again changes nothing.
+		expect(castScriptBallot(r, 'alex', 'v1', ['bmr'], 5000)).toBe(r);
+		expect(castScriptBallot(r, 'alex', 'v1', [], 5000)).toBe(r);
 		expect(endScriptVote(r, 9000)).toBe(r);
-		expect(castScriptBallot(r, 'alex', 'v1', ['tb'], closes - 1).scriptVote?.ballots.alex).toEqual([
-			'tb'
-		]);
-		expect(castScriptBallot(r, 'alex', 'v1', ['tb'], closes)).toBe(r);
-		// A time limit that runs out sooner stands.
-		const soon = openScriptVote(room(), 'v1', 'single', options, 1, 0);
-		expect(endScriptVote(soon, 50_000)).toBe(soon);
+		// A time limit ends at once too, and one that already ran out stands.
+		const timed = openScriptVote(room(), 'v1', 'single', options, 5, 0);
+		expect(endScriptVote(timed, 20_000).scriptVote?.endsAt).toBe(20_000);
+		const ran = openScriptVote(room(), 'v1', 'single', options, 1, 0);
+		expect(endScriptVote(ran, 70_000)).toBe(ran);
 		expect(endScriptVote(room(), 0)).toEqual(room());
 	});
 

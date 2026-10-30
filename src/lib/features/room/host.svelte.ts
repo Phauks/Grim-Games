@@ -553,7 +553,7 @@ export class RoomHost {
 		this.#socket?.send({ type: 'script-vote-tally', show });
 	}
 
-	/** Ends the script vote after a final call to phones (Trevor, 2026-10-26). */
+	/** Ends the script vote at once (Trevor, 2026-10-30). */
 	endScriptVote(): void {
 		this.#socket?.send({ type: 'end-script-vote' });
 	}

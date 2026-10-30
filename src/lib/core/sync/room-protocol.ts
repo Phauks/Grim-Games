@@ -124,7 +124,7 @@ export type ClientMessage =
 	  }
 	/** Shows players the count, or hides it, while the vote is open. */
 	| { type: 'script-vote-tally'; show: boolean }
-	/** Ends the vote after FINAL_CALL_SECONDS, so phones have a last chance (2026-10-26). */
+	/** Ends the vote at once (Trevor, 2026-10-30: "No 15 second delay"). */
 	| { type: 'end-script-vote' }
 	| { type: 'close-script-vote' }
 	/** Each seat's own character while players may see them; `show: false` takes them back. */
@@ -236,8 +236,6 @@ export interface PlayerView {
 		choices?: string[];
 		/** When the time limit runs out (epoch ms, the room's clock). */
 		endsAt?: number;
-		/** The Storyteller ended the vote early; it closes at `endsAt`. */
-		finalCall?: true;
 		/** The count, when the Storyteller lets players see it (Trevor, 2026-10-26). */
 		tally?: Pick<
 			ScriptVoteTally,
