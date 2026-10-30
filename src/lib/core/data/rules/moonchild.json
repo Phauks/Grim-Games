@@ -31,6 +31,9 @@
 			}
 		]
 	},
+	"dayUse": {
+		"who": "chosen"
+	},
 	"deathCause": {
 		"kind": "kills",
 		"victim": {

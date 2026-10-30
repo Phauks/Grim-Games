@@ -25,6 +25,9 @@
 			}
 		]
 	},
+	"dayUse": {
+		"who": "chosen"
+	},
 	"deathCause": {
 		"none": "changes a character"
 	},

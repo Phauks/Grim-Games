@@ -27,6 +27,11 @@
 			}
 		]
 	},
+	"dayUse": {
+		"who": "nominated",
+		"kills": true,
+		"spentToken": "May Not Nominate"
+	},
 	"deathCause": {
 		"kind": "kills",
 		"victim": {
