@@ -2336,6 +2336,44 @@ test('the Alchemist gains a Minion ability and is marked "Is The Alchemist"', as
 	await expect(sheet.getByRole('button', { name: 'Actions for Is The Alchemist' })).toBeVisible();
 });
 
+// https://wiki.bloodontheclocktower.com/Boffin: the Demon has a not-in-play good character's
+// ability; its token goes by the Demon's.
+test("the Boffin gives the Demon a not-in-play good character's ability", async ({ page }) => {
+	await startGame(page);
+	const pickFor = async (number: number, name: string) => {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		const picker = page.getByRole('dialog', { name: `Character for Seat ${number}` });
+		if (name === 'Boffin') await picker.getByText('Include characters not on the script').tap();
+		await picker.getByRole('button', { name, exact: true }).tap();
+		return sheet;
+	};
+	await pickFor(1, 'Boffin');
+	await closeSheet(page);
+	await pickFor(3, 'Monk');
+	await closeSheet(page);
+	const demon = await pickFor(2, 'Imp');
+	await seatMenu(page, demon, 'Held ability…');
+	const holds = page.getByRole('dialog', { name: 'Ability Seat 2 holds' });
+	// Only good characters not in play: the Monk is in play, and no Minion is offered.
+	await expect(holds.getByRole('button', { name: 'Monk', exact: true })).toHaveCount(0);
+	await expect(holds.getByRole('button', { name: 'Poisoner', exact: true })).toHaveCount(0);
+	await holds.getByRole('button', { name: 'Chef', exact: true }).tap();
+	await closeSheet(page);
+	// The Chef's token sits by the Demon's on the board.
+	const mark = page.getByTestId('seat').nth(1).getByTestId('held-ability');
+	await expect(mark).toHaveAttribute('title', 'Holds the Chef ability');
+	// A dead Boffin takes it away.
+	const boffin = await openSeat(page, 1);
+	await boffin.getByRole('button', { name: 'Status: Alive' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Status of Seat 1' })
+		.getByRole('button', { name: 'Executed' })
+		.tap();
+	await closeSheet(page);
+	await expect(mark).toHaveAttribute('title', 'Holds the Chef ability (not now)');
+});
+
 test("a Traveller's alignment can be drawn from face-down tokens", async ({ page }) => {
 	await startGame(page);
 	await menu(page, 'Add seat');
