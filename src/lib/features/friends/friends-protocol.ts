@@ -75,6 +75,27 @@ export const FRIENDS_API = '/api/friends';
 export const FRIEND_REQUESTS_API = `${FRIENDS_API}/requests`;
 export const FRIEND_SETTINGS_API = `${FRIENDS_API}/settings`;
 export const friendActionApi = (action: FriendAction) => `${FRIENDS_API}/${action}`;
+/** A player in a live room, by seat (plan F2): `POST` with `SeatFriendRequest`. */
+export const FRIEND_SEAT_API = `${FRIENDS_API}/seat`;
+
+/** `POST /api/friends/seat`: where this player sits; `send` asks them, else only looks. */
+export interface SeatFriendRequest {
+	code: string;
+	seatId: string;
+	send?: boolean;
+}
+
+/**
+ * Whether the player in a seat can be added: `unavailable` when they aren't signed in, can't
+ * be found, or anything else stops it (never which); `self` for the asker's own seat.
+ */
+export type SeatFriendState = 'unavailable' | 'self' | 'add' | 'requested' | 'friends';
+
+export interface SeatFriendResponse {
+	state: SeatFriendState;
+	/** Why a `send` was refused. */
+	refused?: RequestRefusal;
+}
 
 /**
  * A link that opens Add friend with this username filled in, for a friend QR code (Trevor,

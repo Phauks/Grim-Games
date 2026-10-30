@@ -273,6 +273,12 @@
 				<a href={resolve('/friends')}>Friends</a> page. There is no list or search of accounts.
 			</li>
 			<li>
+				While you are signed in, a live room you open or join remembers which account is on your
+				device, so others in that room can ask you as a friend from your profile. Only the room
+				keeps it, and it is deleted with the room; other phones never see your account, only whether
+				they can ask. Turning off finding you by username turns this off too.
+			</li>
+			<li>
 				Blocking someone is not shown to them. Requests are limited per account using Cloudflare's
 				rate limiter.
 			</li>

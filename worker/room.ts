@@ -69,6 +69,14 @@ import { liveGameIndex, type LiveGameIndex } from './live-games.ts';
 import { pushCallTown, setRoomPushAddress, type PushEnv } from './push.ts';
 import { closeSocket, send, sendText, type Attachment } from './room-sockets.ts';
 import {
+	accountTags,
+	linkAccount,
+	requestAccount,
+	seatAccount,
+	withAccount
+} from './room-accounts.ts';
+import type { AccountEnv } from './account/objects.ts';
+import {
 	answerTransfer,
 	claimGone,
 	claimMessage,
@@ -162,6 +170,11 @@ export class Room extends DurableObject<RoomEnv> {
 		return liveGame(code, room, script?.script, this.present().size, active);
 	}
 
+	/** The account in `seatId`, for `requester` to friend (worker/room-accounts.ts). */
+	async friendSeat(requester: string, seatId: string): Promise<string | 'self' | undefined> {
+		return seatAccount(this.ctx, await this.load(), requester, seatId);
+	}
+
 	async fetch(request: Request): Promise<Response> {
 		const room = await this.load();
 		const image = parseRoomImagePath(new URL(request.url).pathname);
@@ -176,7 +189,7 @@ export class Room extends DurableObject<RoomEnv> {
 		if (room && !admin) await this.touch();
 		const pair = new WebSocketPair();
 		const [client, server] = Object.values(pair);
-		this.ctx.acceptWebSocket(server);
+		this.ctx.acceptWebSocket(server, admin ? [] : accountTags(requestAccount(request)));
 		if (admin) server.serializeAttachment({ role: 'admin' } satisfies Attachment);
 		return new Response(null, { status: 101, webSocket: client });
 	}
@@ -298,6 +311,7 @@ export class Room extends DurableObject<RoomEnv> {
 					return;
 				}
 				ws.serializeAttachment({ role: 'host' } satisfies Attachment);
+				await linkAccount(this.ctx, ws, { host: true });
 				// Phones built before the Storyteller's app hear of it, and look for the update.
 				// Its app says whether it shows players' messages; phones offer to send one only then.
 				const built = setInbox(setStorytellerBuild(room, message.builtAt), message.inbox);
@@ -353,6 +367,7 @@ export class Room extends DurableObject<RoomEnv> {
 				return;
 			}
 			ws.serializeAttachment({ role: 'player', memberId } satisfies Attachment);
+			await linkAccount(this.ctx, ws, { memberId });
 			// Saved even when nothing changed, so the Storyteller sees this phone is here now.
 			await this.save(markHere(joined, memberId));
 			const script = await this.ctx.storage.get<ScriptView>('script');
@@ -739,7 +754,7 @@ const clientAddress = (request: Request) => request.headers.get('CF-Connecting-I
  */
 export async function handleRoom(
 	request: Request,
-	env: RoomEnv,
+	env: RoomEnv & AccountEnv,
 	url: URL
 ): Promise<Response | undefined> {
 	if (url.pathname === '/api/rooms') {
@@ -779,5 +794,5 @@ export async function handleRoom(
 	// Limits guessing codes: a room shows only names and seats, but strangers shouldn't browse.
 	const limit = await env.ROOM_JOINS.limit({ key: clientAddress(request) });
 	if (!limit.success) return new Response('Too many tries', { status: 429 });
-	return env.ROOMS.get(env.ROOMS.idFromName(code)).fetch(request);
+	return env.ROOMS.get(env.ROOMS.idFromName(code)).fetch(await withAccount(request, env));
 }

@@ -8,11 +8,14 @@ import { account } from '#lib/features/account/account.svelte.ts';
 import {
 	friendActionApi,
 	FRIEND_REQUESTS_API,
+	FRIEND_SEAT_API,
 	FRIEND_SETTINGS_API,
 	FRIENDS_API,
 	type FriendAction,
 	type FriendsResponse,
-	type RequestResponse
+	type RequestResponse,
+	type SeatFriendRequest,
+	type SeatFriendResponse
 } from './friends-protocol.ts';
 
 let data = $state.raw<FriendsResponse | undefined>(undefined);
@@ -56,6 +59,15 @@ export const friends = {
 	async request(username: string): Promise<RequestResponse> {
 		const answer = await call<RequestResponse>(FRIEND_REQUESTS_API, 'POST', { username });
 		if (answer.ok) data = answer.friends;
+		return answer;
+	},
+	/**
+	 * The player in a live room's seat (plan F2): whether they can be added, or, with `send`,
+	 * asks them. The Friends page reloads after a request goes out.
+	 */
+	async seat(request: SeatFriendRequest): Promise<SeatFriendResponse> {
+		const answer = await call<SeatFriendResponse>(FRIEND_SEAT_API, 'POST', request);
+		if (request.send && !answer.refused) void friends.load();
 		return answer;
 	},
 	act(action: FriendAction, id: string): Promise<void> {
