@@ -12,3 +12,9 @@ export function dealTitle(gameId: GameId): string {
 		? t('modes.deal.draftHeading')
 		: t('modes.deal.chooseHeading');
 }
+
+/** Draft or Choose characters for a mode that deals no bag (Sushi Buffet, Whale Buffet). */
+export function dealStep(gameId: GameId): string | undefined {
+	const kind = gameModeOf(gameId)?.parts.assignment?.kind;
+	return kind === 'draft' || kind === 'choose-own' ? dealTitle(gameId) : undefined;
+}

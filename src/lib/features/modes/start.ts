@@ -106,16 +106,11 @@ export async function startInMode<
 }
 
 /**
- * Where a new game opens: the draft or choose screen for a mode that doesn't use the bag (Sushi
- * Buffet, Whale Buffet), otherwise Character selection, Standard too (Trevor, 2026-10-23), where
- * Game settings and a rule's hidden characters are chosen (Trevor, 2026-10-29).
+ * Where a new game opens: Character selection, Standard too (Trevor, 2026-10-23), where Game
+ * settings, special rules and a rule's hidden characters are chosen. A mode that doesn't use the
+ * bag (Sushi Buffet, Whale Buffet) goes on from there to its draft (Trevor, 2026-10-29).
  */
 export function setupHref(gameId: GameId): ResolvedPathname {
-	const record = readGameMode(gameId);
-	const mode = withRules(findMode(record?.modeId ?? '') ?? STANDARD, record?.rules ?? []);
-	const kind = mode.parts.assignment?.kind;
-	if (kind === 'draft' || kind === 'choose-own')
-		return resolve('/grimoire/[gameId]/deal', { gameId });
 	return resolve('/grimoire/[gameId]/setup', { gameId });
 }
 
