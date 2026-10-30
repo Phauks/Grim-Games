@@ -24,6 +24,7 @@ import {
 	becomesOffer,
 	changeableSeats,
 	characterChanger,
+	minionsLeft,
 	neighbourAlignments,
 	swappableSeats
 } from './becomes.ts';
@@ -199,7 +200,14 @@ describe('a character that changes a chosen player (changesCharacter)', () => {
 
 	it('is the Summoner, the Pit-Hag and the Huntsman', () => {
 		const changers = [...OFFICIAL_RULES].filter(([, r]) => r.changesCharacter).map(([id]) => id);
-		expect(changers.sort()).toEqual(['engineer', 'hatter', 'huntsman', 'pithag', 'summoner']);
+		expect(changers.sort()).toEqual([
+			'engineer',
+			'hatter',
+			'huntsman',
+			'kazali',
+			'pithag',
+			'summoner'
+		]);
 	});
 
 	it('asks on the night its token is on its own living player', () => {
@@ -273,6 +281,22 @@ describe('a character that changes a chosen player (changesCharacter)', () => {
 			remind(0, 'engineer', 'No Ability')
 		);
 		expect(characterChanger(used.session.game, 'engineer', characters)).toBeUndefined();
+	});
+
+	// https://wiki.bloodontheclocktower.com/Kazali: no Minions are dealt; on the first night the
+	// Kazali makes players into evil Minions, one at a time, up to the usual number.
+	it('asks the Kazali on the first night only, until the usual Minions are in play', () => {
+		// 7 players usually have one Minion.
+		const cast = ['kazali', 'chef', 'empath', 'monk', 'butler', 'saint', 'mayor'];
+		const { session, seats } = castGame(cast);
+		expect(minionsLeft(session.game, characters)).toBe(1);
+		expect(characterChanger(session.game, 'kazali', characters)).toBe(seats[0]);
+		expect(changeableSeats(session.game, 'kazali', characters)).toEqual(seats.slice(1));
+		const later = { ...session.game, pastDays: [session.game.today] };
+		expect(characterChanger(later, 'kazali', characters)).toBeUndefined();
+		const full = castGame(['kazali', 'poisoner', 'empath', 'monk', 'butler', 'saint', 'mayor']);
+		expect(minionsLeft(full.session.game, characters)).toBe(0);
+		expect(characterChanger(full.session.game, 'kazali', characters)).toBeUndefined();
 	});
 
 	// A homebrew Minion that turns a chosen player into an Outsider each night: its rules block

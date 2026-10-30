@@ -49,7 +49,6 @@
 	import ModeValue from './ModeValue.svelte';
 	import ScriptPicker from './ScriptPicker.svelte';
 	import RestrictedDialog from './RestrictedDialog.svelte';
-	import SpecialRulesDialog from './SpecialRulesDialog.svelte';
 	import {
 		loadLinkedScript,
 		loadScriptChoice,
@@ -137,14 +136,6 @@
 	let adding = $state(false);
 	let deleting = $state(false);
 	const mode = $derived<GameMode>(findMode(modeId) ?? STANDARD);
-	/**
-	 * A mode that deals no bag (Sushi Buffet, Whale Buffet) opens on its draft, not Character
-	 * selection, so its special rules are still chosen here until that screen has them too.
-	 */
-	const dealt = $derived(
-		mode.parts.assignment?.kind === 'draft' || mode.parts.assignment?.kind === 'choose-own'
-	);
-	let choosingRules = $state(false);
 	/** Rules whose own switch is on (rule-switches.ts), such as +1 naming its character. */
 	let switchChoices = $state<SwitchChoices>({});
 	const rules = $derived(
@@ -431,12 +422,6 @@
 					onclick={() => (deleting = true)}
 				/>
 			</div>
-			{#if dealt}
-				<Button variant="field" icon="fabled" onclick={() => (choosingRules = true)}>
-					{t('modes.specialRules')}
-					<CountBadge count={rules.length} />
-				</Button>
-			{/if}
 		</PageSection>
 		<!-- Every mode's About, Standard's too (Trevor, 2026-10-18). -->
 		<PageSection title={t('modes.about')}>
@@ -631,22 +616,12 @@
 </div>
 
 <ModeInspectDialog bind:open={inspecting} {mode} />
-<SpecialRulesDialog
-	bind:open={choosingRules}
-	{mode}
-	{ruleIds}
-	onChange={(ids) => (ruleIds = ids)}
-	choices={switchChoices}
-	onSwitch={(c) => (switchChoices = c)}
-	onadd={() => (adding = true)}
-/>
 <AddModeDialog
 	bind:open={adding}
 	onadded={(m) => {
 		modeId = m.id;
 		restrictions = NO_RESTRICTIONS;
 	}}
-	onaddedrule={(r) => (ruleIds = [...ruleIds.filter((id) => id !== r.id), r.id])}
 />
 <ConfirmDialog
 	bind:open={deleting}

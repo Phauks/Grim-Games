@@ -72,5 +72,9 @@
 			"upTo": 2
 		}
 	},
-	"marksChoice": ["Mad"]
+	"marksChoice": ["Mad"],
+	"madness": {
+		"token": "Mad",
+		"breaking": "execution"
+	}
 }

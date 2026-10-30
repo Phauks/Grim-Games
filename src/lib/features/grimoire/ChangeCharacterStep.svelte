@@ -31,7 +31,9 @@
 	 * (`sameType`, https://wiki.bloodontheclocktower.com/Hatter) lets each Minion and Demon
 	 * player change in turn, each into another character of their own type. The Cult Leader
 	 * (`takesNeighbourAlignment`, https://wiki.bloodontheclocktower.com/Cult_Leader) shows its
-	 * alignment and offers each living neighbour's that differs.
+	 * alignment and offers each living neighbour's that differs. On the first night the Kazali
+	 * (`upTo: 'minions'`, https://wiki.bloodontheclocktower.com/Kazali) makes evil Minions, one
+	 * player after another, until the usual number are in play.
 	 */
 	interface Props {
 		grimoire: Grimoire;
@@ -104,7 +106,8 @@
 	let seatOpen = $state(false);
 	let characterOpen = $state(false);
 	let chosen = $state<SeatId>();
-	// Each change made tonight; the Hatter's Minions and Demon may each change (`sameType`).
+	// Each change made tonight; the Hatter's Minions and Demon may each change (`sameType`), and
+	// the Kazali makes Minions until there are as many as usual (`upTo`).
 	let made = $state<{ seatId: SeatId; characterId: CharacterId }[]>([]);
 	$effect.pre(() => {
 		void step.id;
@@ -206,7 +209,7 @@
 		{:else}
 			<span class="none">None</span>
 		{/each}
-		{#if !made.length || (rule.sameType && changer)}
+		{#if !made.length || ((rule.sameType || rule.upTo) && changer)}
 			<Button variant="quiet" onclick={() => (seatOpen = true)}>Choose</Button>
 		{/if}
 	</div>
