@@ -95,6 +95,7 @@ export const ICON_SLOTS = {
 	random: { label: 'Random selection', choices: ['ph:shuffle', 'ph:dice-five'] },
 	/** Deal at random on the Draw page: the bag split out to the seats, not the shuffle of Random selection (Trevor, 2026-10-29). */
 	deal: { label: 'Deal at random', choices: ['ph:arrows-split', 'ph:cards'] },
+	latePlayer: { label: 'Add late player', choices: ['ph:user-plus', 'ph:plus-circle'] },
 	clearSelection: { label: 'Clear selection', choices: ['ph:eraser', 'ph:x-circle'] },
 	selectedOnly: { label: 'Show only selected', choices: ['ph:list-checks', 'ph:check-square'] },
 	expand: { label: 'Show or hide a section', choices: ['ph:caret-down', 'ph:caret-circle-down'] },

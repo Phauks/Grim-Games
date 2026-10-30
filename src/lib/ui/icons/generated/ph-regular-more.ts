@@ -105,7 +105,6 @@ import ph_tree from '~icons/ph/tree';
 import ph_triangle from '~icons/ph/triangle';
 import ph_umbrella from '~icons/ph/umbrella';
 import ph_user from '~icons/ph/user';
-import ph_user_plus from '~icons/ph/user-plus';
 import ph_user_switch from '~icons/ph/user-switch';
 import ph_users from '~icons/ph/users';
 import ph_warning_circle from '~icons/ph/warning-circle';
@@ -219,7 +218,6 @@ const icons: IconMap = {
 	'ph:triangle': ph_triangle,
 	'ph:umbrella': ph_umbrella,
 	'ph:user': ph_user,
-	'ph:user-plus': ph_user_plus,
 	'ph:user-switch': ph_user_switch,
 	'ph:users': ph_users,
 	'ph:warning-circle': ph_warning_circle,

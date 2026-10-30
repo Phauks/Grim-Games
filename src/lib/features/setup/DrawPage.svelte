@@ -34,6 +34,7 @@
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
+	import LateSeatDialog from './LateSeatDialog.svelte';
 
 	interface Props {
 		port: SetupGamePort;
@@ -236,6 +237,11 @@
 		if (hasRoom && dealShow) roomHost().showRoles(current.gameId, true);
 	}
 
+	// Add late player (Trevor, 2026-10-30): one more player, mid-draw or once every tile is
+	// drawn, until the game is under way.
+	let lateOpen = $state(false);
+	const lateLookup = (id: string) => lookup?.get(id) ?? officialData.current?.byId.get(id);
+
 	function confirm(details: { playerName: string; alignment?: Alignment }) {
 		if (!tile?.drawnBySeat) return;
 		const seatId = tile.drawnBySeat;
@@ -263,6 +269,13 @@
 				label={t('setup.deal')}
 				disabled={inBag === 0}
 				onclick={() => (dealOpen = true)}
+			/>{/if}
+		{#if !locked && game}<IconButton
+				icon="latePlayer"
+				label={t('setup.late')}
+				disabled={!bag || !script || game.pastDays.length > 0}
+				data-testid="late-player"
+				onclick={() => (lateOpen = true)}
 			/>{/if}
 		{#if game}
 			<IconButton
@@ -341,6 +354,17 @@
 		onChange={(on) => (dealShow = on)}
 	/>
 </ConfirmDialog>
+
+{#if game && script && officialData.current}
+	<LateSeatDialog
+		bind:open={lateOpen}
+		{game}
+		scriptCharacters={script.characters}
+		official={officialData.current.characters}
+		lookup={lateLookup}
+		{send}
+	/>
+{/if}
 
 {#if game}
 	<PinDialog bind:open={pinOpen} gameId={game.gameId} mode={pinMode} onDone={pinDone} />

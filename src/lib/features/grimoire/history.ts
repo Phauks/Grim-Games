@@ -402,6 +402,14 @@ function describeEntry(
 			seatPart(before, swap.seatB)
 		];
 	if (entry.command === 'CountOff') return [text('Counted off the seats')]; // Plan J40.
+	if (entry.command === 'AddLatePlayer' && first.type === 'SeatAdded') {
+		const changed = entry.events.filter((e) => e.type === 'CharacterAssigned').length;
+		return [
+			text('Added '),
+			seatName(after, first.seatId),
+			text(changed ? ` as a late player, ${changed} changed` : ' as a late player')
+		];
+	}
 	const reorder = entry.events.find((e) => e.type === 'SeatingReordered');
 	if (reorder?.type === 'SeatingReordered' && before) {
 		const was = before.seating;
