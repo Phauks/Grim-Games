@@ -104,7 +104,6 @@ describe('parsePreferences', () => {
 			soundPads: [{ sound: 'gallows' }, { mix: 'mix-1', name: 'Doom', sounds: ['heartbeat'] }],
 			timerKeepAwake: false,
 			timerPerPlayer: 45,
-			timerForPlayers: 'timer',
 			setupForPlayers: 'town',
 			coverPin: true,
 			qrCentre: 'picture',
@@ -115,6 +114,8 @@ describe('parsePreferences', () => {
 			qrFinders: 'rounded'
 		};
 		expect(parsePreferences(valid)).toEqual(valid);
+		// Players' phones always show a sun now (Trevor, 2026-10-29): an older build's choice goes.
+		expect(parsePreferences({ ...valid, timerForPlayers: 'timer' })).toEqual(valid);
 		// Shapes it doesn't know, and a zoom out of range, fall back (Trevor, 2026-10-23).
 		expect(
 			parsePreferences({
