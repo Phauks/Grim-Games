@@ -147,6 +147,7 @@ longest cell, so two PRs that each added a row used to conflict over the whole t
 - A QR code, in any of its shapes, with a middle on whole squares: `ui/primitives/QrCode.svelte` (`modules`, `finders`; `qr-pattern.ts` draws, `qr-centre.ts` places the middle) (enforced by review)
 - The Storyteller's own picture in a QR code's middle, and its settings: `ui/share/QrPicture.svelte`; `ui/share/QrCentreSetting.svelte` (Settings > Storyteller and the share screen) (enforced by review)
 - A seat named in a sentence ("Seat 3 (Alex)"): `features/game/seat-label.ts` (`seatLabel`) (enforced by review)
+- An info card's editor, the card's live preview in a fixed box beside its fields: `features/info-tokens/CardEditorLayout.svelte`, for the custom card editor (`CustomTokenEditor`) and the quick card (`InfoTokenList`) (enforced by `e2e/info-tokens-sheet.e2e.ts`)
 - Saving a file to the device: `ui/download.ts` (`downloadJson`, `downloadFile`, `fileNameFor`) (enforced by review)
 - Pixel sizes: `var(--u)` and tokens (enforced by `npm run lint:px`)
 - Colours: theme tokens; no hex, colour functions or named colours (`white`) outside the themes; mixes, washes and fixed looks (print paper, ghost vote) are tokens in `ui/tokens/components.css`; a sheet's colours come from the sheet scope there (enforced by `npm run lint:colors`)
