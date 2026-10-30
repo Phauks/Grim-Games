@@ -43,6 +43,11 @@
 		onlyAlignment?: Alignment;
 		/** The places hold Demon bluffs, so each shows the Bluff badge (Trevor, 2026-10-29). */
 		bluffs?: boolean;
+		/**
+		 * Characters to mark, never lock, with a note saying why: another set's bluffs already
+		 * hold them (Trevor, 2026-10-30: the Demon's, while choosing a second set).
+		 */
+		marked?: { ids: ReadonlySet<CharacterId>; note: string };
 		/** Beside the search, on its pinned line: a bluff set's name (Trevor, 2026-10-29). */
 		beforeSearch?: Snippet;
 	}
@@ -58,6 +63,7 @@
 		hideInPlayFirst = true,
 		onlyAlignment,
 		bluffs = false,
+		marked,
 		beforeSearch
 	}: Props = $props();
 
@@ -108,6 +114,7 @@
 
 	/** Warned, never locked (Trevor's rule: the Storyteller can override anything). */
 	function marker(character: Character): string | undefined {
+		if (marked?.ids.has(character.id)) return marked.note;
 		return inPlay?.has(character.id) ? t('show.inPlay') : undefined;
 	}
 </script>
@@ -167,7 +174,11 @@
 						<li data-blocked={blocked ? '' : undefined}>
 							<CharacterRow
 								{character}
-								note={blocked ? t('show.inPlay') : undefined}
+								note={blocked
+									? t('show.inPlay')
+									: marked?.ids.has(character.id)
+										? marked.note
+										: undefined}
 								label={removeLabel(character, blocked)}
 								onclick={() => toggle(character.id)}
 							>
@@ -188,7 +199,7 @@
 				{selected}
 				onSelect={toggle}
 				max={max > 1 ? max : undefined}
-				marker={inPlay ? marker : undefined}
+				marker={inPlay || marked ? marker : undefined}
 				contained={false}
 				showSearch={false}
 				bind:query
@@ -254,7 +265,10 @@
 	.slots {
 		--character-ring: 2.6em;
 		font-size: 0.8em;
-		--slot-height: var(--character-ring);
+		/* The token and the row's own padding round it, so the ring is never cut off. */
+		--slot-height: calc(
+			var(--character-ring) * var(--character-ring-scale, 1) + 2 * var(--space-1)
+		);
 		display: grid;
 		grid-template-columns: repeat(var(--places), minmax(0, 1fr));
 		gap: var(--space-1);
@@ -274,6 +288,7 @@
 	/* The strip: token and name, with no room for the Bluff badge beside a name. */
 	@container not (min-width: 36rem) {
 		.slots :global(.marks),
+		.slots :global(.note),
 		.slots :global(.ring-ability) {
 			display: none;
 		}
