@@ -67,13 +67,12 @@ test('New game in the board menu, once the game ends, starts the next game with 
 	await page.keyboard.press('Escape');
 	await expect(sheet).toBeHidden();
 
-	// The pencil no longer changes the script.
+	// Game info has no New game, and no pencil (the Storyteller is the Profile's name).
 	const info = await openGameInfo(page);
 	await expect(info.getByRole('button', { name: 'New game' })).toHaveCount(0);
-	await info.getByTestId('game-info-edit').tap();
-	const edit = page.getByRole('dialog', { name: 'Edit game info' });
-	await expect(edit.getByRole('radiogroup', { name: 'Script' })).toHaveCount(0);
-	await edit.getByRole('button', { name: 'Cancel' }).tap();
+	await expect(info.getByTestId('game-info-edit')).toHaveCount(0);
+	await page.keyboard.press('Escape');
+	await expect(info).toBeHidden();
 
 	// The game is ended first; New game then opens with nothing to ask.
 	await endGame(page);

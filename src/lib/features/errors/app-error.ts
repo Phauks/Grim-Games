@@ -23,7 +23,8 @@ export interface AppError {
 }
 
 export const MAX_MESSAGE_LENGTH = 300;
-export const MAX_STACK_LINES = 8;
+/** Chrome's own limit (`Error.stackTraceLimit`), so Svelte's frames don't crowd out ours. */
+export const MAX_STACK_LINES = 10;
 
 /**
  * Removes the query string and hash from every URL in `text` and drops the origin, so a
