@@ -37,7 +37,8 @@
 		flex-direction: column;
 		align-items: center;
 		gap: var(--space-1);
-		width: 9mm;
+		/* The printed front's Icon size scales it (--character-ring-scale). */
+		width: calc(9mm * var(--character-ring-scale, 1));
 	}
 	h2 {
 		margin: 0;
@@ -55,8 +56,8 @@
 		list-style: none;
 	}
 	li {
-		width: 8mm;
-		height: 8mm;
+		width: calc(8mm * var(--character-ring-scale, 1));
+		height: calc(8mm * var(--character-ring-scale, 1));
 	}
 	/* The tokens' own size is a fixed px; here they fill their slot. */
 	.strip li :global(> *) {

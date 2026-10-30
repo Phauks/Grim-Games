@@ -72,6 +72,7 @@ export const ROADMAP: readonly RoadmapItem[] = [
 			'L76',
 			'L77',
 			'L78',
+			'L79',
 			'L80',
 			'L82'
 		]
@@ -199,6 +200,12 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['S26']
 	},
 	{ title: 'Search Settings for any setting by name', parts: ['S24'] },
+	{
+		title:
+			'Print your own script sheet: Letter or A4, your margins, and what goes on the front and back',
+		parts: ['T1']
+	},
+	{ title: 'A background image on the printed sheet', parts: ['T2'], later: true },
 	{
 		title:
 			'Sound: every sound in one place, Back to town (also on locked phones), day and night ambience, a soundboard with a mixer and hot spots, sounds for your actions, playing on Town Square or another speaker, your own sounds',
