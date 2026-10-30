@@ -241,18 +241,14 @@ test('the day timer sound is in Sound settings and its mode in Storyteller', asy
 	await expect(dialog.getByRole('combobox', { name: 'Timer sound' })).toHaveCount(0);
 	await dialog.getByRole('combobox', { name: 'Day timer', exact: true }).tap();
 	await page.getByRole('option', { name: 'Stopwatch' }).tap();
-	// How players' phones show it (Trevor, 2026-10-26): a sun unless chosen otherwise.
-	const forPlayers = dialog.getByRole('combobox', { name: 'Day timer on players’ phones' });
-	await expect(forPlayers).toContainText('Sun');
-	await forPlayers.tap();
-	await page.getByRole('option', { name: 'Timer', exact: true }).tap();
+	// Players' phones always show a sun (Trevor, 2026-10-29), so there is no choice of it.
+	await expect(dialog.getByRole('combobox', { name: 'Day timer on players’ phones' })).toHaveCount(
+		0
+	);
 	await page.reload();
 	const again = await openSettings(page, 'Storyteller');
 	await expect(again.getByRole('combobox', { name: 'Day timer', exact: true })).toContainText(
 		'Stopwatch'
-	);
-	await expect(again.getByRole('combobox', { name: 'Day timer on players’ phones' })).toContainText(
-		'Timer'
 	);
 	// The time per living player too (Trevor, 2026-10-19), typed or stepped.
 	const seconds = again.getByTestId('timer-per-player');
@@ -763,9 +759,10 @@ test('Print has its own section with the printed sheet settings and a reset', as
 	const dialog = await openSettings(page, 'Print');
 	const fields = dialog.getByTestId('print-settings');
 	await expect(fields.getByRole('combobox', { name: 'Columns' })).toBeVisible();
-	const jinxes = fields.getByRole('checkbox', { name: 'Jinxes', includeHidden: true });
+	// The Front's Jinxes; the Back has its own (Trevor, 2026-10-29).
+	const jinxes = fields.getByRole('checkbox', { name: 'Jinxes', includeHidden: true }).first();
 	await expect(jinxes).toBeChecked();
-	await fields.getByText('Jinxes', { exact: true }).tap();
+	await fields.getByText('Jinxes', { exact: true }).first().tap();
 	await expect(jinxes).not.toBeChecked();
 	await page.reload();
 	const again = await openSettings(page, 'Player');
@@ -777,5 +774,6 @@ test('Print has its own section with the printed sheet settings and a reset', as
 		print
 			.getByTestId('print-settings')
 			.getByRole('checkbox', { name: 'Jinxes', includeHidden: true })
+			.first()
 	).not.toBeChecked();
 });

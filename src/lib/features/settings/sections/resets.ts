@@ -69,7 +69,6 @@ export const resets = {
 				'timerMode',
 				'timerKeepAwake',
 				'timerPerPlayer',
-				'timerForPlayers',
 				'setupForPlayers',
 				'coverPin',
 				'qrCentre',
