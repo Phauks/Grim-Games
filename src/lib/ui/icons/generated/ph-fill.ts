@@ -220,6 +220,7 @@ import ph_upload_simple_fill from '~icons/ph/upload-simple-fill';
 import ph_user_fill from '~icons/ph/user-fill';
 import ph_user_circle_fill from '~icons/ph/user-circle-fill';
 import ph_user_gear_fill from '~icons/ph/user-gear-fill';
+import ph_user_list_fill from '~icons/ph/user-list-fill';
 import ph_user_plus_fill from '~icons/ph/user-plus-fill';
 import ph_user_switch_fill from '~icons/ph/user-switch-fill';
 import ph_users_fill from '~icons/ph/users-fill';
@@ -454,6 +455,7 @@ const icons: IconMap = {
 	'ph:user-fill': ph_user_fill,
 	'ph:user-circle-fill': ph_user_circle_fill,
 	'ph:user-gear-fill': ph_user_gear_fill,
+	'ph:user-list-fill': ph_user_list_fill,
 	'ph:user-plus-fill': ph_user_plus_fill,
 	'ph:user-switch-fill': ph_user_switch_fill,
 	'ph:users-fill': ph_users_fill,

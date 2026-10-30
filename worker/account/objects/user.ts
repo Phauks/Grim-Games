@@ -187,6 +187,13 @@ export class AccountUser extends DurableObject<AccountEnv> {
 		return { old, user: this.user() };
 	}
 
+	/** An admin took the name away (plan S27). Returns the old name, to release. */
+	async clearUsername(): Promise<{ old: string | null; user: User | undefined }> {
+		const old = this.user()?.username ?? null;
+		this.sql.exec('DELETE FROM username');
+		return { old, user: this.user() };
+	}
+
 	/** Sets or replaces the password from its hash (`hashPassword`). */
 	async setPasswordHash(password: PasswordHash, now: number): Promise<User | undefined> {
 		this.sql.exec(
