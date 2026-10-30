@@ -3,6 +3,7 @@
 	import type { PlayerName } from '#lib/core/data/index.ts';
 	import { seatFrame, type FrameId } from '#lib/core/frames/index.ts';
 	import SeatFriendButton from '#lib/features/friends/SeatFriendButton.svelte';
+	import type { SeatFriendTarget } from '#lib/features/friends/friends-protocol.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
@@ -13,7 +14,8 @@
 	 * A player's profile, opened from their avatar on a grim (Trevor, 2026-10-28): their avatar
 	 * large in their laurel, then a row for each thing about the PLAYER, never their character.
 	 * Game stats join the rows later. The board's Storyteller and the town's phones open the same.
-	 * In a live room, `friend` names the seat, and a row offers Add friend (plan F2).
+	 * In a live room, `friend` names the seat (or the Storyteller), and a row offers Add friend
+	 * (plan F2).
 	 */
 	interface Props {
 		open?: boolean;
@@ -21,7 +23,7 @@
 		avatar: AvatarId;
 		picture?: string;
 		frame?: FrameId;
-		friend?: { code: string; seatId: string };
+		friend?: SeatFriendTarget;
 	}
 
 	let { open = $bindable(false), name, avatar, picture, frame, friend }: Props = $props();
@@ -61,7 +63,7 @@
 			{#if friend}
 				<div class="row" data-testid="player-profile-friend">
 					<dt>{t('player.seatProfile.friend')}</dt>
-					<dd><SeatFriendButton {open} code={friend.code} seatId={friend.seatId} /></dd>
+					<dd><SeatFriendButton {open} target={friend} /></dd>
 				</div>
 			{/if}
 		</dl>

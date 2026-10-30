@@ -4,15 +4,16 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { friends } from './friends.svelte.ts';
-	import type { SeatFriendState } from './friends-protocol.ts';
+	import type { SeatFriendState, SeatFriendTarget } from './friends-protocol.ts';
 
 	/**
-	 * Add friend for the player in a live room's seat (plan F2), in their profile. Asks the
+	 * Add friend for the player in a live room's seat, or its Storyteller (plan F2), in their
+	 * profile. Asks the
 	 * server each time the profile opens; it only offers Add when both are signed in and the
 	 * player can be found (Trevor, 2026-10-29). Always the same button, so nothing moves while
 	 * it loads: disabled until it can send.
 	 */
-	let { open, code, seatId }: { open: boolean; code: string; seatId: string } = $props();
+	let { open, target }: { open: boolean; target: SeatFriendTarget } = $props();
 
 	let seat = $state<SeatFriendState>();
 	let busy = $state(false);
@@ -20,7 +21,7 @@
 
 	$effect(() => {
 		if (!open || !signedIn) return;
-		const asked = { code, seatId };
+		const asked = { ...target };
 		seat = undefined;
 		let current = true;
 		friends
@@ -40,7 +41,7 @@
 		if (busy) return;
 		busy = true;
 		try {
-			const answer = await friends.seat({ code, seatId, send: true });
+			const answer = await friends.seat({ ...target, send: true });
 			seat = answer.state;
 			if (answer.refused) toast(t(`friends.refused.${answer.refused}`));
 		} catch (e) {

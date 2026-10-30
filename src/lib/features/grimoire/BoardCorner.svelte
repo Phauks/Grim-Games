@@ -8,6 +8,7 @@
 	import { formatRoomCode } from '#lib/core/sync/room-code.ts';
 	import type { GameInfoChanges } from '#lib/features/modes/GameInfoEditDialog.svelte';
 	import ModeMenu from '#lib/features/modes/ModeMenu.svelte';
+	import TownGameInfo from '#lib/features/modes/TownGameInfo.svelte';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
@@ -18,8 +19,8 @@
 	 * The board's lower left corner (Trevor, 2026-10-17): the script's name, small and clear of
 	 * the seats, with the game's mode and rules, the author, the Storyteller, the join code and
 	 * Game time under it, and who watches above it. A player's grim shows the same corner
-	 * (plan J13), from its script and the lines the Storyteller's board sends (corner-lines.ts),
-	 * with nothing to open or share.
+	 * (plan J13), from its script and the lines the Storyteller's board sends (corner-lines.ts);
+	 * its name opens a read-only Game info (TownGameInfo) and nothing is shared.
 	 */
 	interface Props {
 		/** The Storyteller's game; a player's grim gives `meta` and `storytellerName` instead. */
@@ -28,6 +29,8 @@
 		storytellerName?: string;
 		/** A spectator's board: nothing to share or edit. */
 		watching?: boolean;
+		/** A player's grim: its name opens Game info, read only, for this room (TownGameInfo). */
+		townInfo?: { roomCode?: string };
 		/** The lines under the name, as the Storyteller's board shows them (corner-lines.ts). */
 		corner?: PublicCorner;
 		/** The join code to show; the room this device runs, if not given. */
@@ -64,6 +67,7 @@
 		meta: givenMeta,
 		storytellerName,
 		watching = false,
+		townInfo,
 		corner,
 		roomCode: givenCode,
 		logo,
@@ -202,6 +206,14 @@
 		>{/if}
 {/snippet}
 
+{#snippet nameLine()}<span class="name-line"
+		>{#if logo}<ScriptLogo src={logo} class="corner-logo" />{/if}<span
+			class="script-name"
+			class:mode={modeInName}
+			data-testid={modeInName ? 'game-mode' : undefined}>{meta?.name}</span
+		></span
+	>{/snippet}
+
 {#snippet codeLine()}
 	<span class="room-code-line"
 		>{t('room.joinCode')}
@@ -248,13 +260,13 @@
 					class:mode={modeInName}
 					data-testid={modeInName ? 'game-mode' : undefined}>{meta.name}</span
 				></ModeMenu
-			>{:else}<span class="name-line"
-				>{#if logo}<ScriptLogo src={logo} class="corner-logo" />{/if}<span
-					class="script-name"
-					class:mode={modeInName}
-					data-testid={modeInName ? 'game-mode' : undefined}>{meta.name}</span
-				></span
-			>{/if}
+			>{:else if townInfo}<!-- A player's grim opens Game info from the name too (Trevor,
+			     2026-10-30), with the Storyteller's profile in it. --><TownGameInfo
+				{meta}
+				storytellerName={storyteller}
+				{corner}
+				roomCode={townInfo.roomCode}>{@render nameLine()}</TownGameInfo
+			>{:else}{@render nameLine()}{/if}
 		<!-- The mode and rules take the author's line: a line each where the corner has room
 		     for them all (corner-room.ts), else one line joined with " + ". -->
 		{#each stackRules ? modeLines : modeLines.length ? [modeLines.join(' + ')] : [] as line, i (i)}<span

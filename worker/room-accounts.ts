@@ -37,22 +37,26 @@ export async function linkAccount(
 	await ctx.storage.put(STORAGE_KEY, { ...accounts, [key]: accountId });
 }
 
+/** Who in a room is asked: the player in a seat, or the Storyteller. */
+export type SeatTarget = { seatId: string } | { storyteller: true };
+
 /**
- * The account of the player in `seatId`, for `requester` to ask as a friend: only someone
- * whose own account is in this room (the Storyteller or a player) may ask. `self` when it is
- * the requester's own seat.
+ * The account of the player in a seat, or of the Storyteller, for `requester` to ask as a
+ * friend: only someone whose own account is in this room (the Storyteller or a player) may
+ * ask. `self` when it is the requester's own.
  */
 export async function seatAccount(
 	ctx: DurableObjectState,
 	room: RoomState | undefined,
 	requester: string,
-	seatId: string
+	target: SeatTarget
 ): Promise<string | 'self' | undefined> {
 	if (!room) return undefined;
 	const accounts = (await ctx.storage.get<Accounts>(STORAGE_KEY)) ?? {};
 	if (!Object.values(accounts).includes(requester)) return undefined;
-	const member = room.members.find((m) => m.seatId === seatId);
-	const accountId = member && accounts[member.memberId];
+	const member =
+		'seatId' in target ? room.members.find((m) => m.seatId === target.seatId) : undefined;
+	const accountId = 'storyteller' in target ? accounts[HOST] : member && accounts[member.memberId];
 	if (!accountId) return undefined;
 	return accountId === requester ? 'self' : accountId;
 }
