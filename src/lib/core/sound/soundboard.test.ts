@@ -4,6 +4,9 @@ import {
 	BOARD_SOUNDS,
 	DEFAULT_ACTION_SOUNDS,
 	SOUND_ACTIONS,
+	SOUND_OUTPUTS,
+	hearsSound,
+	parseSoundOutput,
 	actionTaken,
 	boardSound,
 	boardSoundUrl,
@@ -146,5 +149,24 @@ describe('parsePads', () => {
 
 	it('keeps an empty soundboard empty', () => {
 		expect(parsePads([])).toEqual([]);
+	});
+});
+
+// Trevor, 2026-10-30: "Do not play audio from storytellers device ... Only play remote on
+// other devices". Play on offers no choice that sounds on the Storyteller's device.
+describe('Play on', () => {
+	it('names only the room’s other devices', () => {
+		expect(SOUND_OUTPUTS).toEqual(['all', 'phones', 'town']);
+		expect(hearsSound('all', 'town')).toBe(true);
+		expect(hearsSound('all', 'phones')).toBe(true);
+		expect(hearsSound('town', 'phones')).toBe(false);
+		expect(hearsSound('phones', 'town')).toBe(false);
+	});
+
+	it('moves an older build’s choice off the Storyteller’s device', () => {
+		expect(parseSoundOutput('device')).toBeUndefined();
+		expect(parseSoundOutput('both')).toBe('town');
+		expect(parseSoundOutput('phones')).toBe('phones');
+		expect(parseSoundOutput(7)).toBeUndefined();
 	});
 });

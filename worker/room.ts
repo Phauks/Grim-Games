@@ -59,6 +59,7 @@ import {
 	type ScriptView,
 	type ServerMessage
 } from '../src/lib/core/sync/room.ts';
+import { hearsSound, parseSoundOutput } from '../src/lib/core/sound/soundboard.ts';
 import { liveGame, type LiveGame } from '../src/lib/core/sync/live-games.ts';
 import { loadRoomState, newStoredRoom } from '../src/lib/core/sync/room-state.ts';
 import { parseRoomImagePath } from '../src/lib/core/sync/room-images.ts';
@@ -538,13 +539,19 @@ export class Room extends DurableObject<RoomEnv> {
 				return;
 			}
 			case 'town-sound': {
-				// Not kept: only the Public Town displays here now play it (plan U10).
+				// Not kept: only the devices here now play it (plan U10). Never the Storyteller's
+				// own (Trevor, 2026-10-30); an older app's, which names none, reaches the town.
 				const command = parseTownSound(message);
 				if (!command) return;
+				const output = parseSoundOutput(message.to) ?? 'town';
 				const text = JSON.stringify({ type: 'town-sound', ...command } satisfies ServerMessage);
 				for (const socket of this.ctx.getWebSockets()) {
 					const to = socket.deserializeAttachment() as Attachment | null;
-					if (to?.role === 'town') sendText(socket, text);
+					if (
+						(to?.role === 'town' && hearsSound(output, 'town')) ||
+						(to?.role === 'player' && hearsSound(output, 'phones'))
+					)
+						sendText(socket, text);
 				}
 				return;
 			}

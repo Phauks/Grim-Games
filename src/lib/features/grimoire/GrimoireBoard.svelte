@@ -49,7 +49,6 @@
 	import { nominationPrompts, type NominationPrompt } from '#lib/core/modes/index.ts';
 	import DayTimer from '#lib/features/day/DayTimer.svelte';
 	import BoardActionSounds from '#lib/features/sound/BoardActionSounds.svelte';
-	import BoardAmbience from '#lib/features/sound/BoardAmbience.svelte';
 	import SoundboardDialog from '#lib/features/sound/SoundboardDialog.svelte';
 	import BluffsSheet from '#lib/features/bluffs/BluffsSheet.svelte';
 	import { showableBluffSets } from '#lib/features/bluffs/bluffs.ts';
@@ -903,8 +902,6 @@
 	</div>
 </div>
 
-<!-- Day and night sound (plan U3), for the Storyteller's own board only. -->
-<BoardAmbience scene={watching || ended || phaseNow.kind === 'setup' ? null : phaseNow.kind} />
 {#if !watching}
 	<!-- Sounds for the Storyteller's actions (plan U7). -->
 	<BoardActionSounds

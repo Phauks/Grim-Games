@@ -10,6 +10,7 @@ import { buildInfo } from '#lib/build-info.ts';
 import {
 	isNewerBuild,
 	ROOM_PROTOCOL,
+	parseTownSound,
 	type PlayerView,
 	type SharedGrimoire
 } from '#lib/core/sync/room.ts';
@@ -24,7 +25,8 @@ import { avatarPicture } from '#lib/features/player/avatar-picture.svelte.ts';
 import { putRoomImage } from './room-images.ts';
 import { callTownPush } from './call-town-push.svelte.ts';
 import { dealtSeats } from '#lib/features/modes/players-line.ts';
-import { hearCallTown, unlockOnFirstTap } from '#lib/features/sound/sound.ts';
+import { RoomSounds } from '#lib/features/sound/room-sounds.ts';
+import { hearCallTown } from '#lib/features/sound/sound.ts';
 import { t } from '#lib/i18n/locale.svelte.ts';
 import { toast } from '#lib/ui/primitives/toaster.ts';
 
@@ -173,10 +175,11 @@ export class RoomPlayer {
 	#offeredName = false;
 	/** Stops telling the room about Back to town alerts and the app being on screen (plan U12). */
 	readonly #stopPush: () => void;
+	/** The Storyteller's sounds, when Play on includes players' phones (Trevor, 2026-10-30). */
+	readonly #sounds = new RoomSounds('phones');
 
 	constructor(code: string) {
 		this.code = code;
-		unlockOnFirstTap();
 		writeStoredText(LAST_ROOM_KEY, code);
 		rememberRoom(code);
 		this.#socket = new RoomSocket(
@@ -192,6 +195,7 @@ export class RoomPlayer {
 						);
 					}
 					this.view = m;
+					this.#sounds.follow(m.public);
 					// No name in this room yet: the Profile's name goes, once.
 					if (!m.me?.name && playerName.current && !this.#offeredName) {
 						this.#offeredName = true;
@@ -220,6 +224,9 @@ export class RoomPlayer {
 				} else if (m.type === 'call-town') {
 					hearCallTown();
 					toast(t('room.callTownHeard'));
+				} else if (m.type === 'town-sound') {
+					const command = parseTownSound(m);
+					if (command) this.#sounds.hear(command);
 				} else if (m.type === 'message-delivered') {
 					// The only trace a sent message leaves on the phone (Trevor, 2026-10-28).
 					toast(t(m.delivered ? 'room.message.delivered' : 'room.message.notDelivered'));
@@ -362,5 +369,6 @@ export class RoomPlayer {
 	stop(): void {
 		this.#stopPush();
 		this.#socket.stop();
+		this.#sounds.stop();
 	}
 }
