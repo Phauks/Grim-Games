@@ -48,12 +48,14 @@ import ph_certificate_light from '~icons/ph/certificate-light';
 import ph_chat_centered_text_light from '~icons/ph/chat-centered-text-light';
 import ph_chat_text_light from '~icons/ph/chat-text-light';
 import ph_check_light from '~icons/ph/check-light';
+import ph_check_circle_light from '~icons/ph/check-circle-light';
 import ph_check_square_light from '~icons/ph/check-square-light';
 import ph_circle_dashed_light from '~icons/ph/circle-dashed-light';
 import ph_circle_notch_light from '~icons/ph/circle-notch-light';
 import ph_circles_three_light from '~icons/ph/circles-three-light';
 import ph_clipboard_light from '~icons/ph/clipboard-light';
 import ph_clipboard_text_light from '~icons/ph/clipboard-text-light';
+import ph_clock_light from '~icons/ph/clock-light';
 import ph_clock_counter_clockwise_light from '~icons/ph/clock-counter-clockwise-light';
 import ph_club_light from '~icons/ph/club-light';
 import ph_coffee_light from '~icons/ph/coffee-light';
@@ -276,12 +278,14 @@ const icons: IconMap = {
 	'ph:chat-centered-text-light': ph_chat_centered_text_light,
 	'ph:chat-text-light': ph_chat_text_light,
 	'ph:check-light': ph_check_light,
+	'ph:check-circle-light': ph_check_circle_light,
 	'ph:check-square-light': ph_check_square_light,
 	'ph:circle-dashed-light': ph_circle_dashed_light,
 	'ph:circle-notch-light': ph_circle_notch_light,
 	'ph:circles-three-light': ph_circles_three_light,
 	'ph:clipboard-light': ph_clipboard_light,
 	'ph:clipboard-text-light': ph_clipboard_text_light,
+	'ph:clock-light': ph_clock_light,
 	'ph:clock-counter-clockwise-light': ph_clock_counter_clockwise_light,
 	'ph:club-light': ph_club_light,
 	'ph:coffee-light': ph_coffee_light,

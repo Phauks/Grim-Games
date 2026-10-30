@@ -85,33 +85,36 @@ test('Deal gives every seat a character, and a seated phone holds to see its own
 	await hold.dispatchEvent('pointerup', { pointerId: 1, isPrimary: true });
 	await expect(card.getByTestId('role-name')).toBeHidden();
 
-	// Players lists every seat (Trevor, 2026-10-29: moved from Share): seat 2 has seen theirs,
-	// the others have no phone.
+	// Each player's row on Players marks who has seen theirs (Trevor, 2026-10-30: combined
+	// with the list of players): seat 2 has, the others have no phone.
 	await page.goto(`${board}/players`);
-	const rows = page.getByTestId('role-seat');
+	const rows = page.getByTestId('room-player');
 	await expect(rows).toHaveCount(5);
-	await expect(rows.nth(1)).toContainText('Seen');
-	await expect(rows.nth(0)).toContainText('No phone');
+	await expect(rows.nth(1).getByTestId('room-player-seen')).toHaveAttribute('data-seen', '');
+	await expect(rows.nth(1).getByRole('img', { name: 'Seen' })).toBeVisible();
+	await expect(rows.nth(0).getByTestId('room-player-seen')).not.toHaveAttribute('data-seen');
+	await expect(rows.nth(0).getByTestId('room-player-phone')).toHaveAttribute('data-phone', 'none');
 
 	// A minute after it was turned on, it turns itself off and the phone can no longer open it
-	// (Trevor, 2026-10-28: "only be available for 1 minute, then turn off").
-	const toggle = page.getByRole('checkbox', { name: 'Players can see their character' });
-	await expect(toggle).toBeChecked();
+	// (Trevor, 2026-10-28: "only be available for 1 minute, then turn off"). A button, not a
+	// switch (Trevor, 2026-10-30).
+	const toggle = page.getByTestId('roles-show');
+	await expect(toggle).toHaveText('Hide their characters');
 	// The Storyteller sees how much longer (Trevor, 2026-10-29).
 	const timeLeft = page.getByTestId('roles-time-left');
 	await expect(timeLeft).toHaveText(/^Players can see theirs for 0:[0-5]\d more$/);
 	await page.clock.fastForward('01:01');
-	await expect(toggle).not.toBeChecked();
+	await expect(toggle).toHaveText('Show players their characters');
 	await expect(timeLeft).toHaveCount(0);
 	await expect(card).toBeHidden();
 	await expect(phone.getByTestId('your-character')).toBeDisabled();
 	// Who has looked stays.
-	await expect(rows.nth(1)).toContainText('Seen');
+	await expect(rows.nth(1).getByTestId('room-player-seen')).toHaveAttribute('data-seen', '');
 
-	// Turned on again, and off by hand.
-	await page.getByText('Players can see their character', { exact: true }).tap();
+	// Shown again, and hidden by hand.
+	await toggle.tap();
 	await expect(phone.getByTestId('your-character')).toBeEnabled();
-	await page.getByText('Players can see their character', { exact: true }).tap();
+	await toggle.tap();
 	await expect(phone.getByTestId('your-character')).toBeDisabled();
 	await phoneContext.close();
 });
@@ -186,7 +189,7 @@ test('a Traveller’s phone holds to see only "You are Evil"', async ({
 	await expect(phone.getByTestId('you-row')).toHaveAttribute('data-seat', '1');
 	await expect(phone.getByRole('button', { name: 'Settings: Sam' })).toBeVisible();
 	await page.goto(`${board}/players`);
-	await page.getByText('Players can see their character', { exact: true }).tap();
+	await page.getByTestId('roles-show').tap();
 
 	// The Storyteller makes seat 1 the Thief, evil, with no draw.
 	await page.goto(board);

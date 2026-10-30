@@ -48,12 +48,14 @@ import ph_certificate_duotone from '~icons/ph/certificate-duotone';
 import ph_chat_centered_text_duotone from '~icons/ph/chat-centered-text-duotone';
 import ph_chat_text_duotone from '~icons/ph/chat-text-duotone';
 import ph_check_duotone from '~icons/ph/check-duotone';
+import ph_check_circle_duotone from '~icons/ph/check-circle-duotone';
 import ph_check_square_duotone from '~icons/ph/check-square-duotone';
 import ph_circle_dashed_duotone from '~icons/ph/circle-dashed-duotone';
 import ph_circle_notch_duotone from '~icons/ph/circle-notch-duotone';
 import ph_circles_three_duotone from '~icons/ph/circles-three-duotone';
 import ph_clipboard_duotone from '~icons/ph/clipboard-duotone';
 import ph_clipboard_text_duotone from '~icons/ph/clipboard-text-duotone';
+import ph_clock_duotone from '~icons/ph/clock-duotone';
 import ph_clock_counter_clockwise_duotone from '~icons/ph/clock-counter-clockwise-duotone';
 import ph_club_duotone from '~icons/ph/club-duotone';
 import ph_coffee_duotone from '~icons/ph/coffee-duotone';
@@ -276,12 +278,14 @@ const icons: IconMap = {
 	'ph:chat-centered-text-duotone': ph_chat_centered_text_duotone,
 	'ph:chat-text-duotone': ph_chat_text_duotone,
 	'ph:check-duotone': ph_check_duotone,
+	'ph:check-circle-duotone': ph_check_circle_duotone,
 	'ph:check-square-duotone': ph_check_square_duotone,
 	'ph:circle-dashed-duotone': ph_circle_dashed_duotone,
 	'ph:circle-notch-duotone': ph_circle_notch_duotone,
 	'ph:circles-three-duotone': ph_circles_three_duotone,
 	'ph:clipboard-duotone': ph_clipboard_duotone,
 	'ph:clipboard-text-duotone': ph_clipboard_text_duotone,
+	'ph:clock-duotone': ph_clock_duotone,
 	'ph:clock-counter-clockwise-duotone': ph_clock_counter_clockwise_duotone,
 	'ph:club-duotone': ph_club_duotone,
 	'ph:coffee-duotone': ph_coffee_duotone,

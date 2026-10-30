@@ -146,7 +146,10 @@ test('a phone joins with a name, and the Storyteller seats it', async ({
 		.getByRole('list', { name: 'Players in the room' })
 		.getByRole('listitem')
 		.filter({ hasText: 'Alex' });
-	await expect(alex).toContainText(/Alex\s*No seat · Here/);
+	await expect(alex).toContainText(/Alex\s*No seat/);
+	// The phone is a symbol, not words (Trevor, 2026-10-30).
+	await expect(alex.getByTestId('room-player-phone')).toHaveAttribute('data-phone', 'here');
+	await expect(alex.getByRole('img', { name: 'Phone: Here' })).toBeVisible();
 	// The avatar opens the player's profile, as on the board (Trevor, 2026-10-29).
 	await alex.getByTestId('sheet-avatar').tap();
 	const profile = page.getByRole('dialog', { name: 'Alex', exact: true });
@@ -169,7 +172,9 @@ test('a phone joins with a name, and the Storyteller seats it', async ({
 	await expect(phone.getByTestId('you-row')).toHaveAttribute('data-seat', '3');
 	await expect(phone.getByRole('button', { name: 'Settings: Alex K' })).toBeVisible();
 	await page.goto(`${board}/players`);
-	await expect(alex).toContainText(/Alex K\s*Seat 3 · Here/);
+	await expect(alex).toContainText('Alex K');
+	await expect(alex).not.toContainText('No seat');
+	await expect(alex.getByTestId('room-player-phone')).toHaveAttribute('data-phone', 'here');
 
 	// Coming back (Trevor, 2026-10-19: "it booted me out like I had not joined it yet"): Join
 	// game lists the room, and opening it shows the seat this phone already has. It is listed
