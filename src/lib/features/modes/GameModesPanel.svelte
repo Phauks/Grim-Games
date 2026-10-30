@@ -57,7 +57,6 @@
 		type ScriptChoice
 	} from './script-choices.svelte.ts';
 	import { campaigns } from './campaigns.ts';
-	import RulesRecap from './RulesRecap.svelte';
 	import { switched, type SwitchChoices } from './rule-switches.ts';
 	import { continueCampaign, rulesScript, setupHref, startInMode, startTowns } from './start.ts';
 	import { townGroup } from './town-groups.ts';
@@ -96,10 +95,11 @@
 		modeId = $bindable(STANDARD.id),
 		ruleIds = $bindable([])
 	}: Props = $props();
-	/** Start game with special rules on restates them first (RulesRecap). */
-	let recap = $state<(() => void) | undefined>();
-	let recapOpen = $state(false);
-	function startAfterRecap(go: () => void) {
+	/**
+	 * Starts the game. The special rules are chosen on Character selection since 2026-10-29
+	 * (Trevor), where they are restated; a room vote's rules still come with the game.
+	 */
+	function startKeepingDraft(go: () => void) {
 		// Kept so Back from the next step brings New game back as it is now (Trevor, 2026-10-23).
 		saveDraft(
 			{
@@ -113,9 +113,7 @@
 			},
 			true
 		);
-		if (!rules.length) return go();
-		recap = go;
-		recapOpen = true;
+		go();
 	}
 
 	onMount(() => {
@@ -139,6 +137,13 @@
 	let adding = $state(false);
 	let deleting = $state(false);
 	const mode = $derived<GameMode>(findMode(modeId) ?? STANDARD);
+	/**
+	 * A mode that deals no bag (Sushi Buffet, Whale Buffet) opens on its draft, not Character
+	 * selection, so its special rules are still chosen here until that screen has them too.
+	 */
+	const dealt = $derived(
+		mode.parts.assignment?.kind === 'draft' || mode.parts.assignment?.kind === 'choose-own'
+	);
 	let choosingRules = $state(false);
 	/** Rules whose own switch is on (rule-switches.ts), such as +1 naming its character. */
 	let switchChoices = $state<SwitchChoices>({});
@@ -426,12 +431,12 @@
 					onclick={() => (deleting = true)}
 				/>
 			</div>
-			<!-- Every mode, Standard too: rules stack on any mode (Trevor, 2026-10-18), directly under
-		the mode they stack on (2026-10-19). -->
-			<Button variant="field" icon="fabled" onclick={() => (choosingRules = true)}>
-				{t('modes.specialRules')}
-				<CountBadge count={rules.length} />
-			</Button>
+			{#if dealt}
+				<Button variant="field" icon="fabled" onclick={() => (choosingRules = true)}>
+					{t('modes.specialRules')}
+					<CountBadge count={rules.length} />
+				</Button>
+			{/if}
 		</PageSection>
 		<!-- Every mode's About, Standard's too (Trevor, 2026-10-18). -->
 		<PageSection title={t('modes.about')}>
@@ -439,7 +444,7 @@
 		</PageSection>
 
 		{#if isStandard}
-			{@render standard(rules, startAfterRecap)}
+			{@render standard(rules, startKeepingDraft)}
 		{:else}
 			<div class="settings" data-testid="mode-settings">
 				<PageSection title={t('modes.settings')}>
@@ -595,7 +600,7 @@
 				variant="accent"
 				icon="grimoire"
 				disabled={starting}
-				onclick={() => startAfterRecap(start)}
+				onclick={() => startKeepingDraft(start)}
 			>
 				{t('modes.start')}
 			</Button>
@@ -626,19 +631,13 @@
 </div>
 
 <ModeInspectDialog bind:open={inspecting} {mode} />
-<RulesRecap
-	bind:open={recapOpen}
-	{rules}
-	choices={switchChoices}
-	onSwitch={(c) => (switchChoices = c)}
-	onStart={() => recap?.()}
-/>
 <SpecialRulesDialog
 	bind:open={choosingRules}
 	{mode}
 	{ruleIds}
 	onChange={(ids) => (ruleIds = ids)}
 	choices={switchChoices}
+	onSwitch={(c) => (switchChoices = c)}
 	onadd={() => (adding = true)}
 />
 <AddModeDialog

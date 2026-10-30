@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { openPlayers, openPlayerSheet } from './players.ts';
-import { pickScript, nameStoryteller, toBoard } from './new-game.ts';
+import { chooseRulesOnSetup, pickScript, nameStoryteller, toBoard } from './new-game.ts';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { openMenu } from './shell.ts';
 import { savesSettled, trackSaves } from './saves.ts';
@@ -5594,16 +5594,8 @@ test('with I See Dead People, the walk-through says a poisoned player doesn’t 
 }) => {
 	await page.goto('/new');
 	await pickScript(page, 'Trouble Brewing');
-	await page.getByRole('button', { name: /^Special rules/ }).tap();
-	const rules = page.getByRole('dialog', { name: 'Special rules' });
-	await rules.getByText('I See Dead People', { exact: true }).tap();
-	await rules.getByRole('button', { name: 'Close' }).tap();
-	await expect(rules).toBeHidden();
 	await page.getByRole('button', { name: 'Create game' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Special rules in this game' })
-		.getByRole('button', { name: 'Create game' })
-		.tap();
+	await chooseRulesOnSetup(page, 'I See Dead People');
 	await toBoard(page);
 	for (const [number, name] of [
 		[1, 'Poisoner'],
@@ -5638,16 +5630,8 @@ test('with I See Dead People, the walk-through says a poisoned player doesn’t 
 test('with The Ballad of Seat 7, the walk-through says seat 7 has no player', async ({ page }) => {
 	await page.goto('/new');
 	await pickScript(page, 'Trouble Brewing');
-	await page.getByRole('button', { name: /^Special rules/ }).tap();
-	const rules = page.getByRole('dialog', { name: 'Special rules' });
-	await rules.getByText('The Ballad of Seat 7', { exact: true }).tap();
-	await rules.getByRole('button', { name: 'Close' }).tap();
-	await expect(rules).toBeHidden();
 	await page.getByRole('button', { name: 'Create game' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Special rules in this game' })
-		.getByRole('button', { name: 'Create game' })
-		.tap();
+	await chooseRulesOnSetup(page, 'The Ballad of Seat 7');
 	await toBoard(page);
 	for (const [number, name] of [
 		[6, 'Washerwoman'],
@@ -6164,16 +6148,8 @@ async function startWithRule(
 ) {
 	await page.goto('/new');
 	await pickScript(page, 'Trouble Brewing');
-	await page.getByRole('button', { name: /^Special rules/ }).tap();
-	const rules = page.getByRole('dialog', { name: 'Special rules' });
-	await rules.getByText(rule, { exact: true }).tap();
-	await rules.getByRole('button', { name: 'Close' }).tap();
-	await expect(rules).toBeHidden();
 	await page.getByRole('button', { name: 'Create game' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Special rules in this game' })
-		.getByRole('button', { name: 'Create game' })
-		.tap();
+	await chooseRulesOnSetup(page, rule);
 	await toBoard(page);
 	for (const [number, name] of cast) {
 		const sheet = await openSeat(page, number);

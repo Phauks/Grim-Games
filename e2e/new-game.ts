@@ -59,3 +59,22 @@ export async function openGameInfo(page: Page) {
 	}
 	return page.getByRole('dialog', { name: 'Game info', exact: true });
 }
+
+/**
+ * Switches these special rules on from Character selection, where a game's rules are chosen
+ * since 2026-10-29 (Trevor): the screen opens again on them as the sheet closes.
+ */
+export async function chooseRulesOnSetup(page: Page, ...names: string[]): Promise<void> {
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
+	const button = page.getByTestId('setup-special-rules');
+	await button.tap();
+	const dialog = page.getByRole('dialog', { name: 'Special rules' });
+	const list = dialog.getByTestId('special-rules');
+	for (const name of names) {
+		await list.getByText(name, { exact: true }).tap();
+		await expect(list.getByRole('checkbox', { name, includeHidden: true })).toBeChecked();
+	}
+	await dialog.getByRole('button', { name: 'Close' }).tap();
+	await expect(dialog).toBeHidden();
+	await expect(button).toHaveText(`Special rules ${names.length}`);
+}

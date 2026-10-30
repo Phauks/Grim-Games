@@ -7,6 +7,7 @@
 	} from '#lib/core/modes/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
+	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
@@ -16,16 +17,17 @@
 	import { modeLabel } from './labels.ts';
 	import ModeInspectDialog from './ModeInspectDialog.svelte';
 	import { shownAbout } from './own-wording.svelte.ts';
-	import { switched, type SwitchChoices } from './rule-switches.ts';
+	import { RULE_SWITCHES, switched, switchOn, type SwitchChoices } from './rule-switches.ts';
 
 	/**
-	 * New game's special rules (Trevor, 2026-10-18: rules stack on a game mode, modes don't
-	 * mix): one switch per rule, on in the order chosen. Two that set the same part
-	 * differently are listed as conflicts; they warn, never stop the game starting. Each rule
-	 * shows its description under its switch (Trevor, 2026-10-19), or the author's own rule text
-	 * until he has approved one; everything else is behind Inspect. A rule's own switches are
-	 * set on the Special rules in this game screen at Start game, not here, to keep this list
-	 * clean (Trevor, 2026-10-24).
+	 * A game's special rules, on Character selection (Trevor, 2026-10-29; New game's until then.
+	 * 2026-10-18: rules stack on a game mode, modes don't mix): one switch per rule, on in the
+	 * order chosen. Two that set the same part differently are listed as conflicts; they warn,
+	 * never stop the game starting. Each rule shows its description under its switch (Trevor,
+	 * 2026-10-19), or the author's own rule text until he has approved one; everything else is
+	 * behind Inspect. The rules in this game come first, restated with their own switches, as
+	 * the screen before Start game did (Trevor, 2026-10-22, 2026-10-24), so the full list stays
+	 * clean.
 	 * Design: /mnt/project-files/world-cup-rules/format-design.md.
 	 */
 	interface Props {
@@ -34,13 +36,14 @@
 		/** The chosen rules' ids, in the order chosen. */
 		ruleIds: readonly string[];
 		onChange: (ids: string[]) => void;
-		/** The Storyteller's choices for rules' own switches (rule-switches.ts), for Inspect. */
+		/** The Storyteller's choices for rules' own switches (rule-switches.ts). */
 		choices: SwitchChoices;
+		onSwitch: (choices: SwitchChoices) => void;
 		/** Add mode, which also takes a rule file. */
 		onadd: () => void;
 	}
 
-	let { open = $bindable(), mode, ruleIds, onChange, choices, onadd }: Props = $props();
+	let { open = $bindable(), mode, ruleIds, onChange, choices, onSwitch, onadd }: Props = $props();
 
 	const rules = $derived(allRules());
 	const chosen = $derived(ruleIds.flatMap((id) => findRule(id) ?? []));
@@ -119,6 +122,30 @@
 	{/snippet}
 	<div class="rules">
 		<SearchField bind:value={term} label={t('modes.searchRules')} />
+		<section aria-labelledby="rules-in-game-title">
+			<h3 id="rules-in-game-title">
+				{t('modes.rulesInGame')}
+				<CountBadge count={chosen.length} />
+			</h3>
+			<ul role="list" class="in-game" data-testid="rules-in-game">
+				{#each chosen as rule (rule.id)}
+					<li>
+						{@render ruleRow(rule, false)}
+						{#each RULE_SWITCHES[rule.id] ?? [] as sw (sw.id)}
+							<div class="own">
+								<Toggle
+									label={t(sw.label(rule.id))}
+									checked={switchOn(choices, rule.id, sw)}
+									onChange={(on) => onSwitch({ ...choices, [`${rule.id}:${sw.id}`]: on })}
+								/>
+							</div>
+						{/each}
+					</li>
+				{:else}
+					<li class="muted">{t('common.none')}</li>
+				{/each}
+			</ul>
+		</section>
 		<!-- Conflicts first (Trevor, 2026-10-22: "move conflicts to the top"), each with both
 		sides' descriptions, Inspect and switch, so it can be settled here. -->
 		<section aria-labelledby="rule-conflicts-title">
@@ -213,6 +240,20 @@
 		min-width: 0;
 	}
 	/* A rule's own switch, indented under its description. */
+	.own {
+		padding-inline-start: var(--space-4);
+	}
+	.in-game {
+		display: grid;
+	}
+	.in-game > li + li {
+		border-top: 1px solid var(--border);
+	}
+	h3 {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+	}
 	/* The description under its switch, quieter, always there so nothing moves. */
 	.description {
 		margin: 0;

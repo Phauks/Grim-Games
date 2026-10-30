@@ -30,12 +30,12 @@ const STACKED_TODO: readonly string[] = [];
 /** "screen: parent > block", whatever text that list shows. */
 const key = (found: string) => found.replace(/ \(gap.*$/, '');
 
-async function undelineated(page: Page, screen: string): Promise<string[]> {
+async function undelineated(page: Page, screen: string, scope = 'body'): Promise<string[]> {
 	// Measured once sheets have finished sliding in.
 	await page.waitForFunction(() =>
 		document.getAnimations().every((a) => a.playState !== 'running')
 	);
-	const found = await page.evaluate(() => {
+	const found = await page.evaluate((scope) => {
 		const opaque = (css: string) => {
 			const n = css.match(/[\d.]+/g)?.map(Number);
 			return !!n && n.length >= 3 && (n[3] ?? 1) > 0;
@@ -92,7 +92,7 @@ async function undelineated(page: Page, screen: string): Promise<string[]> {
 			`${el.tagName.toLowerCase()}.${[...el.classList].find((c) => !c.startsWith('svelte-')) ?? ''}`;
 		const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
 		const out: string[] = [];
-		for (const parent of document.querySelectorAll('body *')) {
+		for (const parent of document.querySelectorAll(`${scope} *`)) {
 			const kids = [...parent.children].filter(visible);
 			for (let i = 1; i < kids.length; i++) {
 				const [a, b] = [kids[i - 1], kids[i]];
@@ -116,7 +116,7 @@ async function undelineated(page: Page, screen: string): Promise<string[]> {
 			}
 		}
 		return out;
-	});
+	}, scope);
 	return found.map((f) => `${screen}: ${f}`);
 }
 
@@ -134,9 +134,11 @@ test('no list of information runs together without a divider, a gap or a heading
 		seen.push(...(await undelineated(page, route)));
 	}
 	await page.goto('/new');
-	await page.getByRole('button', { name: /^Special rules/ }).tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
+	await page.getByTestId('setup-special-rules').tap();
 	await page.getByRole('dialog').last().waitFor();
-	seen.push(...(await undelineated(page, 'special rules')));
+	// The sheet only: Character selection behind it is a game screen, not listed above.
+	seen.push(...(await undelineated(page, 'special rules', '[role="dialog"]')));
 	// The board's ⋯ menu and a seat's sheet.
 	await page.goto('/new');
 	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
