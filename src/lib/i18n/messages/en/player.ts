@@ -176,6 +176,7 @@ export const player = {
 	'player.printLayingOut': 'Laying out',
 	'player.printPreview': 'Preview',
 	'player.printConfirm': 'Print',
+	'player.printDownload': 'Download PDF',
 	'player.printScriptTool': 'Open in the official Script Tool',
 	'player.jinxedWith': 'Jinxed with {names}',
 	'player.seating.open': 'Seating is open',

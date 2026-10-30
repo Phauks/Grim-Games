@@ -38,6 +38,8 @@ test('Print script prints the sheet, then the night order and player counts', as
 			const w = window as unknown as Record<string, unknown>;
 			const sheet = document.querySelector('[data-testid="print-sheet"]');
 			w.printed = sheet?.textContent ?? '';
+			// "Save as PDF" names and titles the file after the page (Trevor, 2026-10-30).
+			w.title = document.title;
 			// Each side fits one page (Trevor, 2026-10-18): front in one or two columns.
 			w.pages = [
 				...document.querySelectorAll<HTMLElement>('[data-testid="print-sheet"] .page')
@@ -85,14 +87,19 @@ test('Print script prints the sheet, then the night order and player counts', as
 		})
 		.toContain('First night');
 	const w = await page.evaluate(() => {
-		const { printed, strips, pages, pageRule } = window as unknown as Record<string, unknown>;
-		return { printed, strips, pages, pageRule } as {
+		const { printed, strips, pages, pageRule, title } = window as unknown as Record<
+			string,
+			unknown
+		>;
+		return { printed, strips, pages, pageRule, title } as {
+			title: string;
 			printed: string;
 			strips: Record<string, string[]>;
 			pages: unknown;
 			pageRule: string;
 		};
 	});
+	expect(w.title).toBe('Trouble Brewing');
 	expect(w.printed).toContain('Washerwoman');
 	expect(w.printed).toContain('Other nights');
 	expect(w.printed).not.toContain('Not the first night');
@@ -109,6 +116,11 @@ test('Print script prints the sheet, then the night order and player counts', as
 	await page.emulateMedia({ media: 'print' });
 	expect(await page.evaluate(() => getComputedStyle(document.documentElement).colorScheme)).toBe(
 		'light'
+	);
+	// The theme's fixed backdrop printed under each page, a dark line at the sheet's edges
+	// (Trevor, 2026-10-30).
+	expect(await page.evaluate(() => getComputedStyle(document.body, '::before').display)).toBe(
+		'none'
 	);
 	await page.emulateMedia({ media: 'screen' });
 	// The page itself is unchanged.
@@ -221,4 +233,36 @@ test('the jinxes, Fabled and Loric go on either side, or both', async ({ page })
 	await expect(
 		fields.getByRole('checkbox', { name: 'Night order', exact: true, includeHidden: true })
 	).toBeDisabled();
+});
+
+// Trevor, 2026-10-30: "also add download button, so they don't have to change save as pdf".
+test('Download PDF saves both sides as a PDF named after the script', async ({ page }) => {
+	// Picturing two pages at print sharpness takes a while on a busy machine.
+	test.setTimeout(90_000);
+	const { screen } = await openSheet(page);
+	await expect(screen.getByTestId('print-laying-out')).toBeHidden();
+	const [download] = await Promise.all([
+		page.waitForEvent('download', { timeout: 60_000 }),
+		screen.getByRole('button', { name: 'Download PDF' }).tap()
+	]);
+	expect(download.suggestedFilename()).toBe('trouble-brewing.pdf');
+	const path = await download.path();
+	const { readFile } = await import('node:fs/promises');
+	const pdf = (await readFile(path)).toString('latin1');
+	expect(pdf.startsWith('%PDF-')).toBe(true);
+	// One page per side, on Letter paper by default.
+	expect(pdf.match(/\/Type \/Page /g)).toHaveLength(2);
+	expect(pdf).toContain('/MediaBox [0 0 612 792]');
+	// The file names its script and author in its properties.
+	const utf16 = (text: string) =>
+		'<FEFF' +
+		[...text].map((c) => c.charCodeAt(0).toString(16).padStart(4, '0').toUpperCase()).join('') +
+		'>';
+	expect(pdf).toContain(`/Title ${utf16('Trouble Brewing')}`);
+	expect(pdf).toContain(`/Author ${utf16('The Pandemonium Institute')}`);
+	// Its words lie invisibly over the picture, so they select and search (Trevor, 2026-10-30).
+	expect(pdf).toContain('BT 3 Tr');
+	expect(pdf).toContain('(Washerwoman)');
+	// Saved, the Print screen closes.
+	await expect(screen).toBeHidden();
 });

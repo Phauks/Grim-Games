@@ -45,10 +45,9 @@
 	import { seatChanges } from './history.ts';
 	import DeadBadge from '#lib/ui/seating/DeadBadge.svelte';
 	import { boardLooks } from './board-looks.svelte.ts';
-	import { isGeneric, reminderWords, tokenLabel } from './reminders.ts';
+	import { placedLook, tokenLabel } from './reminders.ts';
 	import BoardReminder from './BoardReminder.svelte';
-	import { shownReminderSize } from '#lib/ui/seating/last-board.svelte.ts';
-	import { innerHeight, innerWidth } from 'svelte/reactivity/window';
+	import ReminderTokenRow from './ReminderTokenRow.svelte';
 	import SavantSheet from '#lib/features/savant/SavantSheet.svelte';
 	import NoteSheet from '#lib/features/day/NoteSheet.svelte';
 	import { LiveDay } from '#lib/features/day/live-day.svelte.ts';
@@ -95,13 +94,6 @@
 	const title = $derived(seat ? (seat.playerName ?? t('common.seat', { number })) : '');
 	/** Custom tokens can look alike, so the type shows too (Trevor, 2026-10-22, plan L26). */
 	const metaLine = $derived(seatCharacterLine(character?.type, seat?.alignment, number));
-	/** The seat's reminder tokens, as on the board (Trevor, 2026-10-30). */
-	const reminderSize = $derived(
-		shownReminderSize(preferences.current.tokenAppearance, {
-			width: innerWidth.current ?? 0,
-			height: innerHeight.current ?? 0
-		})
-	);
 
 	// ── Name, edited in the header ──
 	const nameEdit = new SeatNameEdit({
@@ -218,7 +210,7 @@
 	const claim = $derived.by(() => {
 		const id = seat?.characterId;
 		const c = id ? dayClaim(id, grimoire.open.characters) : undefined;
-		return preferences.current.assistance.playerClaims && (c === 'guesses' || c === 'statement')
+		return preferences.current.assistance.playerClaims && c !== undefined && c !== 'statements'
 			? c
 			: undefined;
 	});
@@ -417,22 +409,15 @@
 			{#if seat.reminders.length === 0}
 				<p class="none">None</p>
 			{:else}
-				<ul class="reminders" style:--reminder-gap="{Math.round(reminderSize * 0.6)}px">
+				<ReminderTokenRow>
 					{#each seat.reminders as reminder (reminder.reminderId)}
 						<!-- Just the token: tapping it opens its actions, delete among them (Trevor,
 						     2026-10-19: no tick box, no owner, no ⋯; the icon says whose it is). -->
 						<!-- The token as on the board, not its name (Trevor, 2026-10-30). -->
 						<li>
 							<BoardReminder
-								label={reminderWords(reminder)}
-								infinite={isGeneric(reminder)}
-								symbol={reminder.symbol}
-								symbolColour={reminder.symbolColour}
-								symbolFill={reminder.symbolFill}
-								art={reminder.like ? characters.get(reminder.like.characterId) : undefined}
-								character={characters.get(reminder.characterId)}
+								{...placedLook(reminder, characters)}
 								alignment={placingAlignment(game, reminder, characters)}
-								size={reminderSize}
 								ariaLabel={`Actions for ${tokenLabel(reminder)}`}
 								onTap={() => {
 									moving = reminder.reminderId;
@@ -441,7 +426,7 @@
 							/>
 						</li>
 					{/each}
-				</ul>
+				</ReminderTokenRow>
 			{/if}
 		</div>
 	{/if}
@@ -717,15 +702,5 @@
 	.none {
 		margin: 0;
 		color: var(--on-surface-muted);
-	}
-	/* Room beside each token for its words, which run wider than it, and under a row for the
-	   words' band (as CharacterSummary). */
-	.reminders {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-3) var(--reminder-gap);
-		margin: 0;
-		padding: 0 0 var(--space-2) calc(var(--reminder-gap) / 4);
-		list-style: none;
 	}
 </style>

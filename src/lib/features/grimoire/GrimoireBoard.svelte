@@ -1159,6 +1159,13 @@
 		height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
 		min-height: calc(20 * var(--u));
 	}
+	/* The board fills the screen, so its page never scrolls: on a laptop a scrollbar that a
+	   rounding sliver brought in narrowed the board, which took the sliver away again, and the
+	   scrollbar flickered in and out (Trevor, 2026-10-30). No room is kept for one either. */
+	:global(html:has(.grimoire)) {
+		overflow: hidden;
+		scrollbar-gutter: auto;
+	}
 	/* Mirrors the corner's script name, bottom right above the reminder bank, with the same
 	   halo and no band (Trevor, 2026-10-28). */
 	.fair-play {

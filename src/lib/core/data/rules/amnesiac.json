@@ -59,5 +59,6 @@
 	"givesAbility": {
 		"to": "self",
 		"types": ["townsfolk", "outsider", "minion", "demon"]
-	}
+	},
+	"dayClaim": "ability-guess"
 }

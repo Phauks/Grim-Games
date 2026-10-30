@@ -18,9 +18,14 @@
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import ScriptPrintSheet from './ScriptPrintSheet.svelte';
 	import PrintSettingsFields from './PrintSettingsFields.svelte';
-	import { playerSettings } from './player-settings.svelte.ts';
+	import { PAPER_MM, playerSettings } from './player-settings.svelte.ts';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import Spinner from '#lib/ui/primitives/Spinner.svelte';
+	import { APP_NAME } from '#lib/core/app-name.ts';
+	import { imagePdf } from '#lib/core/print/image-pdf.ts';
+	import { downloadBlob, fileNameFor } from '#lib/ui/download.ts';
+	import { screenshot } from '#lib/ui/screenshot.ts';
+	import { textRuns } from '#lib/ui/text-runs.ts';
 
 	/**
 	 * Print opens the ways to print a script (Trevor, 2026-10-19: routes 1, 3 and 4 of
@@ -45,6 +50,8 @@
 	let choosing = $state(false);
 	let toolLink = $state<string>();
 	let printing = $state(false);
+	/** The off-screen sheet is being pictured for a PDF, so it must be visible to the copy. */
+	let capturing = $state(false);
 	let root = $state<HTMLElement>();
 	let sheet = $state<ScriptPrintSheet>();
 
@@ -108,10 +115,8 @@
 		return style;
 	}
 
-	async function print() {
-		if (!script || printing) return;
-		choosing = false;
-		setting = false;
+	/** Draws the sheet off screen, icons loaded and each side fitted to its page. */
+	async function draw() {
 		printing = true;
 		await tick();
 		// Wait for the sheet's data and icons, so the page isn't printed half drawn.
@@ -127,15 +132,84 @@
 		]);
 		// Each side on one page (Trevor, 2026-10-18).
 		await sheet?.fit();
+	}
+
+	async function print() {
+		if (!script || printing) return;
+		choosing = false;
+		setting = false;
+		await draw();
 		document.documentElement.classList.add('printing');
 		const page = pageRule();
+		// The browser's "Save as PDF" names the file, and titles it, after the page.
+		const title = document.title;
+		document.title = fileTitle();
 		const done = () => {
 			document.documentElement.classList.remove('printing');
+			document.title = title;
 			page.remove();
 			printing = false;
 		};
 		window.addEventListener('afterprint', done, { once: true });
 		window.print();
+	}
+
+	/** The script's name, with its version when it has one: what a saved file is called. */
+	function fileTitle(): string {
+		return [script?.name ?? '', version].filter(Boolean).join(' ');
+	}
+
+	/** Print sharp: about 300 dots an inch, at 96 CSS pixels an inch. */
+	const PDF_SCALE = 3;
+
+	/**
+	 * Saves the sheet as a PDF file, so nobody has to find "Save as PDF" in the print dialog
+	 * (Trevor, 2026-10-30). Each side is a picture of the drawn page, so it matches print. The
+	 * Print screen stays open, its Download greyed, until the file is saved.
+	 */
+	async function download() {
+		if (!script || printing) return;
+		const title = fileTitle();
+		const author = script.meta.author;
+		try {
+			await draw();
+			capturing = true;
+			await tick();
+			const sides = [
+				...(root?.querySelectorAll<HTMLElement>('[data-testid="print-sheet"] .page') ?? [])
+			];
+			const pages = [];
+			for (const side of sides) {
+				// The paper's white: the page itself is see-through, and a JPEG has no see-through.
+				const paper = side.closest<HTMLElement>('[data-testid="print-sheet"]') ?? side;
+				const picture = await screenshot(side, 'image/jpeg', {
+					scale: PDF_SCALE,
+					backgroundColor: getComputedStyle(paper).backgroundColor
+				});
+				const paperMm = PAPER_MM[printChoices.pageSize];
+				const areaMm = paperMm[0] - 2 * printChoices.margin;
+				pages.push({
+					jpeg: new Uint8Array(await picture.arrayBuffer()),
+					paperMm,
+					marginMm: printChoices.margin,
+					// Its words too, invisible, so they select and search (Trevor, 2026-10-30).
+					text: textRuns(side, areaMm / side.getBoundingClientRect().width)
+				});
+			}
+			const pdf = imagePdf(pages, {
+				title,
+				author: author || undefined,
+				creator: APP_NAME
+			});
+			downloadBlob(
+				fileNameFor(title, 'script', 'pdf'),
+				new Blob([pdf.buffer as ArrayBuffer], { type: 'application/pdf' })
+			);
+			setting = false;
+		} finally {
+			capturing = false;
+			printing = false;
+		}
 	}
 </script>
 
@@ -205,8 +279,14 @@
 		</section>
 	</div>
 	{#snippet actions()}
+		{#snippet downloadAction()}
+			<Button icon="download" onclick={download} data-testid="print-download" disabled={printing}
+				>{t('player.printDownload')}</Button
+			>
+		{/snippet}
 		<ModalActions
 			onCancel={() => (setting = false)}
+			start={downloadAction}
 			onConfirm={print}
 			confirmLabel={t('player.printConfirm')}
 			confirmIcon="print"
@@ -215,7 +295,7 @@
 </Dialog>
 
 {#if printing && script}
-	<div class="print-root" bind:this={root} use:toBody>
+	<div class="print-root" class:capturing bind:this={root} use:toBody>
 		<ScriptPrintSheet bind:this={sheet} {script} {version} {rules} settings={printChoices} />
 	</div>
 {/if}
@@ -290,9 +370,20 @@
 			left: -300vw;
 			visibility: hidden;
 		}
+		/* Still off screen, but a copy of a hidden page is blank. */
+		.print-root.capturing {
+			visibility: visible;
+		}
 	}
 	@media print {
 		:global(html.printing body > *:not(.print-root)) {
+			display: none !important;
+		}
+		/*
+		 * The theme's backdrop (base.css) is fixed, so it is printed under every page, and its
+		 * dark showed as a line along the sheet's top and left edges (Trevor, 2026-10-30).
+		 */
+		:global(html.printing body::before) {
 			display: none !important;
 		}
 		/* A dark theme sets color-scheme: dark on <html>, which paints the page margins black. */

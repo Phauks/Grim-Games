@@ -20,7 +20,10 @@ test.describe('on a computer (mouse, wide window)', () => {
 		await page.waitForTimeout(400);
 		const box = await sheet.boundingBox();
 		const centre = (box?.x ?? 0) + (box?.width ?? 0) / 2;
-		expect(Math.abs(centre - 720)).toBeLessThan(2);
+		// Centred in the window, less the room kept for the page's scrollbar (base.css).
+		const room = await page.locator('[data-scope="drawer"][data-part="positioner"]').boundingBox();
+		expect(Math.abs(centre - (room?.width ?? 0) / 2)).toBeLessThan(2);
+		expect(room?.width).toBeGreaterThan(1440 - 24);
 		// Not stuck to the bottom of the window like a phone sheet.
 		expect((box?.y ?? 0) + (box?.height ?? 0)).toBeLessThan(900 - 8);
 

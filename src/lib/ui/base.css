@@ -14,6 +14,11 @@
 html {
 	/* The text-size scale: text sized in rem follows it; layout uses --u (tokens/base.css). */
 	font-size: calc(100% * var(--text-scale));
+	/* The page's scrollbar always has its room, so a screen that scrolls is as wide as one that
+	   doesn't: /play's tabs and the candles held still between Grim and Script (Trevor,
+	   2026-10-30), and a board sized by its width can't make the scrollbar it then removes.
+	   Phones and Macs draw the scrollbar over the page, so this takes no room there. */
+	scrollbar-gutter: stable;
 }
 
 html,

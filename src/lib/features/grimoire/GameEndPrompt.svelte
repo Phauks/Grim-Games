@@ -14,7 +14,8 @@
 	} from '#lib/core/rules/index.ts';
 	import { impairmentOfLabel } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
-	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
+	import BoardReminder from './BoardReminder.svelte';
+	import ReminderTokenRow from './ReminderTokenRow.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import { readGameMode } from '#lib/features/modes/game-mode-store.ts';
@@ -23,7 +24,7 @@
 	import { dismissedGameEnds } from './device-notes.ts';
 	import EndGameFields from './EndGameFields.svelte';
 	import { tonight } from './night-steps.ts';
-	import { tokenLabel } from './reminders.ts';
+	import { isGeneric, reminderWords } from './reminders.ts';
 
 	/**
 	 * When a game end condition is met (Trevor, 2026-10-18), list every one met, with what may
@@ -135,9 +136,16 @@
 				{#each h.seats as id (id)}{@render seat(id)}{/each}
 				{#if h.rule === 'impaired'}
 					{@const s = game.seats[h.seats[0]]}
-					{#each s?.reminders.filter((r) => impairmentOfLabel(r.label) || r.label === 'No Ability') ?? [] as r (r.reminderId)}
-						<ReminderToken label={tokenLabel(r)} character={characters.get(r.characterId)} />
-					{/each}
+					<!-- The tokens themselves, as on the board (Trevor, 2026-10-30). -->
+					<ReminderTokenRow inline>
+						{#each s?.reminders.filter((r) => impairmentOfLabel(r.label) || r.label === 'No Ability') ?? [] as r (r.reminderId)}
+							<BoardReminder
+								label={reminderWords(r)}
+								infinite={isGeneric(r)}
+								character={characters.get(r.characterId)}
+							/>
+						{/each}
+					</ReminderTokenRow>
 				{:else}
 					{@render ability(h.characterId)}
 				{/if}

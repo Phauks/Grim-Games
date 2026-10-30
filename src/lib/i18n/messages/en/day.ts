@@ -49,6 +49,14 @@ export const day = {
 	'day.statement': 'Statement',
 	'day.statementLabel': 'Statement: {who}',
 	'day.statementTrue': 'The statement is true',
+	'day.abilityGuess': 'Guess',
+	'day.abilityGuessLabel': 'Guess: {who}',
+	'day.answer': 'Answer',
+	'day.answer.none': 'None',
+	'day.answer.cold': 'Cold',
+	'day.answer.warm': 'Warm',
+	'day.answer.hot': 'Hot',
+	'day.answer.bingo': 'Bingo',
 	'day.correctGuesses': { one: '{count} correct', other: '{count} correct' },
 	'day.markUsedTitle': 'Mark {who} as used?',
 	'day.markUsedNow': '{who} has not used their ability.',
@@ -184,6 +192,7 @@ export const day = {
 	'day.logAbilityOn.nominated': '{character} ({seat}) used their ability on {on}',
 	'day.logAbilityOn.guesser': '{character} ({seat}) was guessed by {on}',
 	'day.logNote': '{who}: {text}',
+	'day.logAnswer': '{line} · {answer}',
 	'day.logGuesses': { one: '{line} · {count} guess', other: '{line} · {count} guesses' },
 	'day.logInfo': '{character} ({seat}): {text}'
 } as const;
