@@ -217,6 +217,11 @@ export class FriendBook extends DurableObject {
 		this.sql.exec('DELETE FROM block WHERE id = ?', id);
 	}
 
+	/** What this account holds about `id`. */
+	async relationTo(id: string): Promise<Relation> {
+		return this.relation(id);
+	}
+
 	/** Whether this account holds anything about `id`, so actions only reach those. */
 	async knows(id: string): Promise<boolean> {
 		const relation = this.relation(id);

@@ -82,7 +82,7 @@
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import type { CoverDetails } from '#lib/features/show/CoverScreen.svelte';
 	import SavantSheet from '#lib/features/savant/SavantSheet.svelte';
-	import NotesSheet from './NotesSheet.svelte';
+	import { playersDialog } from '#lib/features/room/players-dialog.svelte.ts';
 	import { DAY_HASH } from '#lib/features/day/day-hash.ts';
 	import SeatSheet from './SeatSheet.svelte';
 	import SeatProfileDialog from './SeatProfileDialog.svelte';
@@ -347,16 +347,14 @@
 		rules?.details(character);
 	}
 
-	// ── Notes (Trevor, 2026-10-19): the game's and every player's in ⋯ Notes ──
-	let notesOpen = $state(false);
+	// ── Notes: the game's and every player's, on Players (Trevor, 2026-10-29) ──
 	let soundboardOpen = $state(false);
-	let notesSheet = $state<ReturnType<typeof NotesSheet>>();
 	/**
-	 * A seat's pen mark opens just that player's notes, not the whole sheet (Trevor,
-	 * 2026-10-19: less to take in). After the tap's click, so it doesn't land in the field.
+	 * A seat's pen mark opens that player's sheet on Players, with their notes. After the tap's
+	 * click, so it doesn't land in the field.
 	 */
 	function editNote(seatId: SeatId) {
-		setTimeout(() => notesSheet?.edit(seatId));
+		setTimeout(() => playersDialog.showSeat(seatId));
 	}
 	/**
 	 * A tapped reminder opens only its own dialog, not its seat's sheet (Trevor, 2026-10-18:
@@ -927,7 +925,6 @@
 	ended={!!ended}
 	onHistory={() => (historyOpen = true)}
 	onBluffs={() => (bluffsOpen = true)}
-	onNotes={() => (notesOpen = true)}
 	onCallTown={!watching && !ended && roomHost().code ? () => (callTownOpen = true) : undefined}
 	onGameInfo={() => (modeMenuOpen = true)}
 	onCharacterSelection={startedAt === undefined && !setUp && !watching
@@ -1014,7 +1011,7 @@
 		sheetOpen = false;
 		onDraw(id);
 	}}
-	onNotes={(id) => notesSheet?.edit(id)}
+	onNotes={(id) => editNote(id)}
 	onNominated={nominated}
 	onExecute={(seatId) => flow.executeFromSeat(seatId)}
 />
@@ -1025,8 +1022,6 @@
 <NominationChooser {grimoire} {characters} bind:asking={nominatingFrom} onNominated={nominated} />
 
 <HistoryDialog bind:open={historyOpen} {grimoire} />
-
-<NotesSheet bind:this={notesSheet} bind:open={notesOpen} {grimoire} />
 
 <ExportGameDialog bind:open={exportOpen} load={exportGame} {capture} />
 {#if !watching}

@@ -10,7 +10,9 @@ import {
 	FRIEND_REQUESTS_API,
 	FRIEND_SETTINGS_API,
 	FRIENDS_API,
+	FRIEND_SEAT_API,
 	isFriendAction,
+	type SeatFriendResponse,
 	type FriendAccount,
 	type FriendsResponse,
 	type RequestResponse
@@ -23,6 +25,8 @@ import {
 import { getUser, readBody, sameOriginJson } from '../account/routes.ts';
 import { nameStub, userStub, type AccountEnv } from '../account/objects.ts';
 import { remote, type DataBinding } from '../shared-data.ts';
+import { normaliseRoomCode } from '../../src/lib/core/sync/room-code.ts';
+import type { Room } from '../room.ts';
 import type { BookEntry, FriendBook } from './book.ts';
 
 export interface FriendsEnv extends AccountEnv {
@@ -30,10 +34,15 @@ export interface FriendsEnv extends AccountEnv {
 	/** Requests by username per account, so usernames can't be tried one after another. */
 	FRIEND_LOOKUPS?: RateLimit;
 	DATA?: DataBinding;
+	/** Live rooms, for adding a player from a game (plan F2). */
+	ROOMS: DurableObjectNamespace<Room>;
 }
 
+/** What reaching friend books needs: not the rooms. */
+type BookEnv = Pick<FriendsEnv, 'FRIEND_BOOKS' | 'DATA'>;
+
 /** An account's friend book: the shared data Worker's when bound, else this Worker's own. */
-export function friendBook(env: FriendsEnv, accountId: string): DurableObjectStub<FriendBook> {
+export function friendBook(env: BookEnv, accountId: string): DurableObjectStub<FriendBook> {
 	if (env.DATA) return remote(env.DATA, 'friends', accountId);
 	return env.FRIEND_BOOKS.get(env.FRIEND_BOOKS.idFromName(accountId));
 }
@@ -81,6 +90,15 @@ async function sendRequest(
 	if (!other || !(await friendBook(env, other).isFindable())) {
 		return { ok: false, reason: 'not-found' };
 	}
+	return requestAccount(env, accountId, other);
+}
+
+/** Asks `other`, already found and findable, on behalf of `accountId`. */
+async function requestAccount(
+	env: FriendsEnv,
+	accountId: string,
+	other: string
+): Promise<RequestResponse> {
 	const now = Date.now();
 	const sent = await friendBook(env, accountId).send(other, now);
 	if (!sent.ok) return sent;
@@ -98,6 +116,34 @@ async function sendRequest(
 		outcome: friends ? 'friends' : 'sent',
 		friends: await contents(env, accountId)
 	};
+}
+
+/**
+ * The player in a live room's seat (plan F2): only someone whose own account is in that room
+ * may look or ask, and "Let people find me by username" covers games too (Trevor, 2026-10-29).
+ */
+async function seatFriend(
+	env: FriendsEnv,
+	accountId: string,
+	hasUsername: boolean,
+	body: Record<string, unknown> | undefined
+): Promise<SeatFriendResponse> {
+	const unavailable: SeatFriendResponse = { state: 'unavailable' };
+	const code = typeof body?.code === 'string' ? normaliseRoomCode(body.code) : undefined;
+	const seatId = body?.seatId;
+	if (!code || typeof seatId !== 'string') return unavailable;
+	const other = await env.ROOMS.get(env.ROOMS.idFromName(code)).friendSeat(accountId, seatId);
+	if (!other) return unavailable;
+	if (other === 'self') return { state: 'self' };
+	const relation = await friendBook(env, accountId).relationTo(other);
+	if (relation.friend) return { state: 'friends' };
+	if (relation.blocked || !(await friendBook(env, other).isFindable())) return unavailable;
+	if (relation.outgoing) return { state: 'requested' };
+	if (body?.send !== true) return { state: 'add' };
+	if (!hasUsername) return { state: 'add', refused: 'no-username' };
+	const answer = await requestAccount(env, accountId, other);
+	if (!answer.ok) return { state: 'add', refused: answer.reason };
+	return { state: answer.outcome === 'friends' ? 'friends' : 'requested' };
 }
 
 /** Runs one action on another account already on this account's book. */
@@ -126,7 +172,7 @@ async function act(env: FriendsEnv, accountId: string, action: string, other: st
 }
 
 /** Called when an account is deleted: every account it was linked to forgets it. */
-export async function forgetFriends(env: FriendsEnv, accountId: string): Promise<void> {
+export async function forgetFriends(env: BookEnv, accountId: string): Promise<void> {
 	const linked = await friendBook(env, accountId).erase();
 	await Promise.all(linked.map((other) => friendBook(env, other).forget(accountId)));
 }
@@ -156,6 +202,18 @@ export async function handleFriends(
 		const username = normaliseUsername((await readBody(request))?.username);
 		if (!username) return json({ ok: false, reason: 'not-found' } satisfies RequestResponse);
 		return json(await sendRequest(env, accountId, auth.user.username !== null, username));
+	}
+
+	if (path === FRIEND_SEAT_API && method === 'POST') {
+		const body = await readBody(request);
+		if (
+			body?.send === true &&
+			env.FRIEND_LOOKUPS &&
+			!(await env.FRIEND_LOOKUPS.limit({ key: accountId })).success
+		) {
+			return fail(429, 'Too many tries. Wait a minute and try again.');
+		}
+		return json(await seatFriend(env, accountId, auth.user.username !== null, body));
 	}
 
 	if (path === FRIEND_SETTINGS_API && method === 'PUT') {
