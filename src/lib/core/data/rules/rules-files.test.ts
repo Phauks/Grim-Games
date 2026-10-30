@@ -52,6 +52,12 @@ describe('parseCharacterRules', () => {
 			'rules.dayUse.who: unknown value "neighbour"'
 		]);
 		expect(parse({ dayUse: 'chosen' }).issues).toHaveLength(1);
+		const golem = { who: 'nominated', kills: true, spentToken: 'May Not Nominate' };
+		expect(parse({ dayUse: golem }, ['May Not Nominate']).rules).toEqual({ dayUse: golem });
+		expect(parse({ dayUse: golem }).issues).toEqual([
+			'rules.dayUse.spentToken: not one of this character’s reminders'
+		]);
+		expect(parse({ dayUse: { who: 'chosen', kills: false } }).issues).toHaveLength(1);
 	});
 
 	// https://wiki.bloodontheclocktower.com/Flowergirl (two tokens show whether the Demon voted)

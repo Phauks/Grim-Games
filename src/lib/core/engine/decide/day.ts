@@ -9,6 +9,7 @@ import {
 	type Game,
 	type Reminder
 } from '#lib/core/model/index.ts';
+import { rulesOf } from '#lib/core/data/rules/index.ts';
 import {
 	DAY_MARKS,
 	dayMarkSeats,
@@ -197,15 +198,15 @@ export const DAY_DECIDERS: Deciders<
 		const usedToday = game.today.entries.some(
 			(e) => e.kind === 'ability' && e.seatId === seat.seatId && e.characterId === character.id
 		);
-		if (!character.reminders.includes(NO_ABILITY_LABEL)) {
+		// The token that marks it spent: "No Ability", or its own (the Golem's May Not Nominate).
+		const spent = rulesOf(character.id, ctx.characters)?.dayUse?.spentToken ?? NO_ABILITY_LABEL;
+		if (!character.reminders.includes(spent)) {
 			if (usedToday) warn('already-used', `the ${character.name} already used it today`);
 			return [{ type: 'DayEntryAdded', entry }];
 		}
-		const placed = seat.reminders.some(
-			(r) => r.characterId === character.id && r.label === NO_ABILITY_LABEL
-		);
+		const placed = seat.reminders.some((r) => r.characterId === character.id && r.label === spent);
 		if (placed) {
-			warn('already-used', `the ${character.name} already has "${NO_ABILITY_LABEL}"`);
+			warn('already-used', `the ${character.name} already has "${spent}"`);
 			return [{ type: 'DayEntryAdded', entry }];
 		}
 		const reminderId = ctx.newId();
@@ -213,7 +214,7 @@ export const DAY_DECIDERS: Deciders<
 			{
 				type: 'ReminderAdded',
 				seatId: seat.seatId,
-				reminder: { reminderId, characterId: character.id, label: NO_ABILITY_LABEL }
+				reminder: { reminderId, characterId: character.id, label: spent }
 			},
 			{ type: 'DayEntryAdded', entry: { ...entry, reminderId } }
 		];

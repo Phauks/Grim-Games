@@ -83,6 +83,10 @@ test('the Slayer is marked Used and unmarked after a confirm each, and the Washe
 	await expect(confirm).toContainText('Slayer (Ben) has not used their ability.');
 	const on = confirm.getByTestId('day-use-on');
 	await expect(on).toHaveText('Hal');
+	// Hal is the Imp, so the shot kills: Dies starts on (https://wiki.bloodontheclocktower.com/Slayer).
+	const dies = (name: string) =>
+		confirm.getByRole('checkbox', { name: `${name} dies`, includeHidden: true });
+	await expect(dies('Hal')).toBeChecked();
 	// The player can be changed, or left as None, before Confirm.
 	await on.tap();
 	await chooser.getByRole('button', { name: 'None', exact: true }).tap();
@@ -90,6 +94,8 @@ test('the Slayer is marked Used and unmarked after a confirm each, and the Washe
 	await on.tap();
 	await chooser.getByRole('button', { name: /Gus/ }).tap();
 	await expect(on).toHaveText('Gus');
+	// Gus is the Poisoner: the shot does nothing, so Dies starts off.
+	await expect(dies('Gus')).not.toBeChecked();
 	await confirm.screenshot({ path: `test-results/day-use-on-${test.info().project.name}.png` });
 	await confirm.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(used).toHaveAttribute('aria-pressed', 'true');
@@ -103,7 +109,7 @@ test('the Slayer is marked Used and unmarked after a confirm each, and the Washe
 	await expect(used).toHaveAttribute('aria-pressed', 'false');
 	await expect(undo).toBeHidden();
 	await used.tap();
-	await chooser.getByRole('button', { name: /Hal/ }).tap();
+	await chooser.getByRole('button', { name: /Gus/ }).tap();
 	await confirm.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(used).toHaveAttribute('aria-pressed', 'true');
 

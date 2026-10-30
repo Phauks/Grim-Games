@@ -181,7 +181,7 @@ character: a rule becomes a behaviour with parameters that any character can use
 - Death checks (`night-deaths.ts`: the Gambler, Acrobat, Lycanthrope and Grandmother): `deathCheck`, moved
 - Kill redirect and first-death survival (`ability.ts`, `first-death.ts`): `redirectsKill`, `survivesFirstDeath`, moved
 - Nomination abilities (`rules/nominations.ts`): `onNominated`, `afterDeath`, moved
-- Who a day ability was used on (`rules/day-claims.ts` `dayUseWho`, asked by `features/day/DayUseDialog.svelte` when Used is marked: the Slayer's chosen player, the Virgin's nominator, the Judge's nominee): `dayUse`, new
+- Who a day ability was used on (`rules/day-claims.ts` `dayUseWho`, asked by `features/day/DayUseDialog.svelte` when Used is marked: the Slayer's chosen player, the Virgin's nominator, the Judge's nominee, the Golem's nominee, the Damsel's guesser; `kills` adds Dies, checked by `dayUseDeath` against `deathCause`; `spentToken` for a token other than No Ability): `dayUse`, new
 - Acts when dead (`dead-characters.ts`): `actsWhenDead`, moved
 - Stops waking (`night-alerts.ts`: the Exorcist's Chosen on the Demon): `stopsWaking`, new
 - Stops killing (`night-alerts.ts`: the Princess's Doesn't Kill on the Demon): `stopsKilling`, new

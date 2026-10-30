@@ -427,6 +427,20 @@ describe('UseAbility', () => {
 		expect(s.game.today.entries[0]).toMatchObject({ kind: 'ability', on: seats[3] });
 	});
 
+	// https://wiki.bloodontheclocktower.com/Golem: May Not Nominate marks the nomination spent.
+	it('places its own spent token when its rules name one (the Golem)', () => {
+		const { session, ctx, seats } = setup();
+		const s = run(
+			session,
+			ctx,
+			{ type: 'AssignCharacter', seatId: seats[0], characterId: 'golem' },
+			{ type: 'UseAbility', seatId: seats[0], characterId: 'golem' }
+		);
+		expect(s.game.seats[seats[0]].reminders).toMatchObject([
+			{ characterId: 'golem', label: 'May Not Nominate' }
+		]);
+	});
+
 	it('only logs a use for a character with no such token', () => {
 		const { session, ctx, seats } = setup();
 		const s = run(session, ctx, {
