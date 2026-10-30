@@ -1139,6 +1139,30 @@ test("the Demon's step says when the Exorcist's choice stops it waking", async (
 	);
 });
 
+// https://wiki.bloodontheclocktower.com/Lord_of_Typhon: the evil players sit in one line with
+// the Lord of Typhon inside it; its step warns when they don't.
+test("the Lord of Typhon's step warns when the evil players don't sit in one line", async ({
+	page
+}) => {
+	await startGame(page);
+	for (const [seat, name] of [
+		[1, 'Lord of Typhon'],
+		[2, 'Poisoner']
+	] as const) {
+		const sheet = await openSeat(page, seat);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		const picker = page.getByRole('dialog', { name: `Character for Seat ${seat}` });
+		if (seat === 1) await picker.getByText('Include characters not on the script').tap();
+		await picker.getByRole('button', { name, exact: true }).tap();
+		await closeSheet(page);
+	}
+	await (await walkTo(page, 'Lord of Typhon')).locator('button.step .count').tap();
+	const step = page.getByRole('dialog', { name: 'Lord of Typhon' });
+	await expect(step.getByTestId('night-alerts')).toContainText(
+		/Seat 1: the evil players don't sit in one line with\s*Lord of Typhon\s*inside it/
+	);
+});
+
 test("the Demon's step says when the Princess stops its kill tonight", async ({ page }) => {
 	// https://wiki.bloodontheclocktower.com/Princess : after her day-one execution, the Demon
 	// doesn't kill tonight, so the Soldier's protection isn't listed either.

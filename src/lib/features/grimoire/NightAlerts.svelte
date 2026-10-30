@@ -41,6 +41,7 @@
 		impaired: 'poisoned',
 		blocked: 'warning',
 		'no-kill': 'protected',
+		seating: 'warning',
 		protected: 'protected',
 		'may-bounce': 'warning',
 		'survives-first-death': 'protected',
@@ -94,6 +95,10 @@
 						tonight
 					{:else if alert.kind === 'no-kill'}
 						{@render player(alert.seatId)}: {@render badge(sourceId(alert))}, doesn't kill tonight
+					{:else if alert.kind === 'seating'}
+						{@render player(alert.seatId)}: the evil players don't sit in one line with {@render badge(
+							sourceId(alert)
+						)} inside it
 					{:else if alert.kind === 'protected'}
 						{@render player(alert.seatId)} can't die{#if alert.source === 'override'}
 							(set by hand){:else}: {@render badge(sourceId(alert))}{/if}
