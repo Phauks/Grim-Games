@@ -2,6 +2,13 @@
 	import type { Snippet } from 'svelte';
 	import type { HTMLInputAttributes } from 'svelte/elements';
 	import { t } from '#lib/i18n/locale.svelte.ts';
+	import {
+		afterLineBreak,
+		listAt,
+		toggleList,
+		type ListKind,
+		type TextEdit
+	} from '#lib/core/text/lists.ts';
 	import ClearableField from './ClearableField.svelte';
 	import IconButton from './IconButton.svelte';
 
@@ -35,6 +42,12 @@
 		 * scrolls past most of the screen's height (seat notes: Trevor, 2026-10-19).
 		 */
 		autogrow?: boolean;
+		/**
+		 * A multi-line field with Bulleted and Numbered list buttons beside its label, and Enter
+		 * carrying a list on (notes: Trevor, 2026-10-30). The list is the text itself ("• ",
+		 * "1. "), `core/text/lists.ts`.
+		 */
+		lists?: boolean;
 		placeholder?: string;
 		maxlength?: number;
 		required?: boolean;
@@ -69,6 +82,7 @@
 		spellcheck,
 		grow = false,
 		autogrow = false,
+		lists = false,
 		placeholder,
 		maxlength,
 		required = false,
@@ -100,6 +114,65 @@
 		area.style.height = `${Math.max(area.scrollHeight + border, area.offsetHeight)}px`;
 	});
 
+	/** The list the caret's line is in, so its button shows as on. */
+	let caretList = $state<ListKind>();
+	function readCaret() {
+		if (area) caretList = listAt(area.value, area.selectionStart);
+	}
+
+	/**
+	 * Puts an edit into the textarea as typing would (`insertText`), so the browser's undo
+	 * takes it back and `input` updates `value`; set directly where a browser can't.
+	 */
+	function apply(edit: TextEdit) {
+		if (!area) return;
+		const before = area.value;
+		let from = 0;
+		while (from < before.length && before[from] === edit.text[from]) from++;
+		let tail = 0;
+		while (
+			tail < before.length - from &&
+			tail < edit.text.length - from &&
+			before[before.length - 1 - tail] === edit.text[edit.text.length - 1 - tail]
+		)
+			tail++;
+		const insert = edit.text.slice(from, edit.text.length - tail);
+		area.setSelectionRange(from, before.length - tail);
+		const typed = document.execCommand(insert ? 'insertText' : 'delete', false, insert);
+		if (!typed || area.value !== edit.text) {
+			area.value = edit.text;
+			value = edit.text;
+			oninput?.(edit.text);
+		}
+		area.setSelectionRange(edit.start, edit.end);
+		readCaret();
+	}
+
+	function list(kind: ListKind) {
+		if (!area || disabled) return;
+		area.focus();
+		apply(toggleList(area.value, area.selectionStart, area.selectionEnd, kind));
+	}
+
+	/*
+	 * Enter is read from the `input` it makes rather than its keydown, which a phone's keyboard
+	 * often doesn't send as "Enter".
+	 */
+	function onAreaInput(event: Event & { currentTarget: HTMLTextAreaElement }) {
+		const field = event.currentTarget;
+		oninput?.(field.value);
+		const input = event instanceof InputEvent ? event : undefined;
+		const newLine =
+			input?.inputType === 'insertLineBreak' ||
+			input?.inputType === 'insertParagraph' ||
+			(input?.inputType === 'insertText' && input.data === '\n');
+		if (lists && newLine && field.selectionStart === field.selectionEnd) {
+			const edit = afterLineBreak(field.value, field.selectionStart);
+			if (edit) apply(edit);
+		}
+		if (lists) readCaret();
+	}
+
 	function onkeydown(event: KeyboardEvent & { currentTarget: HTMLInputElement }) {
 		if (event.key !== 'Enter' || event.isComposing) return;
 		event.preventDefault();
@@ -115,12 +188,24 @@
 		plain && 'plain'
 	]}
 >
-	<span class={hideLabel ? 'visually-hidden' : 'label'}>{label}</span>
+	{#if lists && multiline}
+		<!-- The buttons always show, so focusing the field moves nothing (no reflow). -->
+		<span class="head">
+			<span class={hideLabel ? 'visually-hidden' : 'label'}>{label}</span>
+			<span class="list-buttons">
+				{@render listButton('bullet', 'bulletList', t('common.bulletList'))}
+				{@render listButton('numbered', 'numberedList', t('common.numberedList'))}
+			</span>
+		</span>
+	{:else}
+		<span class={hideLabel ? 'visually-hidden' : 'label'}>{label}</span>
+	{/if}
 	{#if multiline}
 		<textarea
 			bind:this={area}
 			bind:value
 			{rows}
+			aria-label={lists ? label : undefined}
 			{placeholder}
 			{spellcheck}
 			{autocomplete}
@@ -129,7 +214,10 @@
 			{disabled}
 			aria-invalid={invalid || undefined}
 			data-testid={testid}
-			oninput={(e) => oninput?.(e.currentTarget.value)}></textarea>
+			oninput={onAreaInput}
+			onkeyup={lists ? readCaret : undefined}
+			onpointerup={lists ? readCaret : undefined}
+			onfocus={lists ? readCaret : undefined}></textarea>
 	{:else}
 		<ClearableField
 			bind:value
@@ -164,6 +252,19 @@
 	{/if}
 </label>
 
+{#snippet listButton(kind: ListKind, icon: 'bulletList' | 'numberedList', name: string)}
+	<!-- Pressing it keeps the focus in the field, so a phone's keyboard stays up. -->
+	<IconButton
+		{icon}
+		label={name}
+		aria-pressed={caretList === kind}
+		{disabled}
+		data-list={kind}
+		onpointerdown={(e) => e.preventDefault()}
+		onclick={() => list(kind)}
+	/>
+{/snippet}
+
 {#snippet eye()}<IconButton
 		icon={revealed ? 'hide' : 'show'}
 		label={t('common.showPassword')}
@@ -181,6 +282,17 @@
 	}
 	.label {
 		color: var(--on-surface-muted);
+	}
+	.head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-2);
+	}
+	.list-buttons {
+		display: flex;
+		gap: var(--space-1);
+		margin-left: auto;
 	}
 	input,
 	textarea {

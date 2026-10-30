@@ -54,6 +54,7 @@
 				value={note.text}
 				multiline
 				grow
+				lists
 				disabled={readonly}
 				oninput={(text) => onChange({ text })}
 			/>

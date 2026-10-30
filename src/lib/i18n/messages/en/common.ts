@@ -12,6 +12,8 @@ export const common = {
 	'common.none': 'None',
 	'common.hideContents': 'Hide contents',
 	'common.showPassword': 'Show password',
+	'common.bulletList': 'Bulleted list',
+	'common.numberedList': 'Numbered list',
 	'common.seat': 'Seat {number}',
 	'common.seatWithName': '{seat} ({name})',
 	'common.save': 'Save',

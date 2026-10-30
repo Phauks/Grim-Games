@@ -67,6 +67,7 @@ import ph_link_break from '~icons/ph/link-break';
 import ph_list from '~icons/ph/list';
 import ph_list_bullets from '~icons/ph/list-bullets';
 import ph_list_checks from '~icons/ph/list-checks';
+import ph_list_numbers from '~icons/ph/list-numbers';
 import ph_lock_simple from '~icons/ph/lock-simple';
 import ph_magnifying_glass from '~icons/ph/magnifying-glass';
 import ph_mask_sad from '~icons/ph/mask-sad';
@@ -184,6 +185,7 @@ const icons: IconMap = {
 	'ph:list': ph_list,
 	'ph:list-bullets': ph_list_bullets,
 	'ph:list-checks': ph_list_checks,
+	'ph:list-numbers': ph_list_numbers,
 	'ph:lock-simple': ph_lock_simple,
 	'ph:magnifying-glass': ph_magnifying_glass,
 	'ph:mask-sad': ph_mask_sad,
