@@ -2339,6 +2339,7 @@ test('the Alchemist gains a Minion ability and is marked "Is The Alchemist"', as
 // https://wiki.bloodontheclocktower.com/Boffin: the Demon has a not-in-play good character's
 // ability; its token goes by the Demon's.
 test("the Boffin gives the Demon a not-in-play good character's ability", async ({ page }) => {
+	test.slow();
 	await startGame(page);
 	const pickFor = async (number: number, name: string) => {
 		const sheet = await openSeat(page, number);
@@ -2363,6 +2364,34 @@ test("the Boffin gives the Demon a not-in-play good character's ability", async 
 	// The Chef's token sits by the Demon's on the board.
 	const mark = page.getByTestId('seat').nth(1).getByTestId('held-ability');
 	await expect(mark).toHaveAttribute('title', 'Holds the Chef ability');
+	// It shares a pill with the notes mark, bottom right (Trevor, 2026-10-30); the pen still
+	// opens the player's notes.
+	const demonSeat = page.getByTestId('seat').nth(1);
+	await expect(demonSeat.getByTestId('note-mark')).toHaveCount(0);
+	const again = await openSeat(page, 2);
+	await again.getByRole('button', { name: 'Seat actions' }).tap();
+	await page.getByRole('dialog', { name: 'Seat 2' }).getByRole('button', { name: 'Notes' }).tap();
+	const notes = page
+		.getByRole('dialog', { name: 'Seat 2', exact: true })
+		.filter({ has: page.getByTestId('room-player-sheet') });
+	await notes.getByTestId('new-note').tap();
+	const note = page.getByRole('dialog', { name: 'Note', exact: true });
+	await note.getByRole('textbox', { name: 'Title' }).fill('Claim');
+	await note.getByRole('button', { name: 'Close' }).tap();
+	await page.keyboard.press('Escape');
+	await page.keyboard.press('Escape');
+	await expect(notes).toBeHidden();
+	await closeSheet(page);
+	const pill = demonSeat.getByTestId('held-pill');
+	await expect(pill.getByTestId('held-ability')).toBeVisible();
+	await expect(pill.getByTestId('note-mark')).toBeVisible();
+	await pill.getByTestId('note-mark').tap();
+	await expect(notes).toBeVisible();
+	// Its notes open over the Players list, as the lone pen mark's do.
+	await page.keyboard.press('Escape');
+	await expect(notes).toBeHidden();
+	await page.keyboard.press('Escape');
+	await expect(page.getByRole('dialog', { name: 'Players' })).toBeHidden();
 	// A dead Boffin takes it away.
 	const boffin = await openSeat(page, 1);
 	await boffin.getByRole('button', { name: 'Status: Alive' }).tap();
