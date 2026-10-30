@@ -99,7 +99,11 @@ async function readScriptBody(request: Request): Promise<string | { error: strin
 	return JSON.stringify(json);
 }
 
-export async function allowed(env: ShareEnv, limiter: RateLimit, caller: string): Promise<boolean> {
+export async function allowed(
+	env: Pick<ShareEnv, 'SHARE_LIMITS'>,
+	limiter: RateLimit,
+	caller: string
+): Promise<boolean> {
 	if (env.SHARE_LIMITS === 'off') return true;
 	return (await limiter.limit({ key: caller })).success;
 }

@@ -30,6 +30,7 @@ export const MIGRATED_PATHS: readonly string[] = [
 	'src/routes/account/',
 	'src/lib/features/friends/',
 	'src/routes/friends/',
+	'src/routes/u/',
 	'src/lib/features/scripts/',
 	'src/routes/scripts/',
 	'src/lib/features/script-builder/',

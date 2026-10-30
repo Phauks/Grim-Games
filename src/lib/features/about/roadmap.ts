@@ -332,6 +332,12 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8']
 	},
 	{
+		// Trevor, 2026-10-30: "hey, use this script to a friend. Or ... point at their profile".
+		title: 'Friends: send a script to a friend, and show scripts on your profile',
+		area: 'friends',
+		parts: ['F9', 'F10']
+	},
+	{
 		title: 'Achievements and laurels, and History stats',
 		area: 'profile',
 		parts: ['A1a', 'A1d', 'A1'],
