@@ -21,15 +21,13 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
-	import Dialog from '#lib/ui/primitives/Dialog.svelte';
-	import { onLayerOpen } from '#lib/ui/primitives/layers.ts';
-	import Popover from '#lib/ui/primitives/Popover.svelte';
 	import { downloadJson, fileNameFor } from '#lib/ui/download.ts';
 	import { campaignOf } from './campaigns.ts';
 	import { findMode } from './custom-modes.svelte.ts';
 	import { readGameMode } from './game-mode-store.ts';
 	import { seedInPlay } from './in-play.ts';
 	import GameInfoEditDialog, { type GameInfoChanges } from './GameInfoEditDialog.svelte';
+	import GameInfoSheet, { type GameInfoRow } from './GameInfoSheet.svelte';
 	import ModeInspectDialog from './ModeInspectDialog.svelte';
 	import { hasSpectatorVote } from './specters.ts';
 	import SpectersSheet from './SpectersSheet.svelte';
@@ -87,12 +85,6 @@
 	}: Props = $props();
 	let editing = $state(false);
 	const gameId = $derived(game.gameId);
-	// The corner's popover closes when a seat's sheet or another overlay opens over the board
-	// (Trevor, 2026-10-19: "Game info popup should close if other item is opened like a
-	// character"). The ⋯ dialog is an overlay itself, so it isn't closed this way.
-	$effect(() => {
-		if (open && children) return onLayerOpen(() => (open = false));
-	});
 
 	const group = $derived(townGroupOf(gameId));
 	const record = $derived(readGameMode(gameId));
@@ -107,7 +99,6 @@
 	let inspected = $state<GameMode | SpecialRule>();
 	// The board's character lookup, to count the characters in play by type.
 	const characters = contextCharacters();
-	const none = $derived(t('common.none'));
 	// The saved script the game started from: its name links its source page, and its version
 	// shows when the game's own script names none (Trevor, backlog L14).
 	const savedChoice = $derived(savedChoiceFor(game.script));
@@ -129,7 +120,7 @@
 			? undefined
 			: gameClock.formatGameLength(gameClock.gameLength(startedAt, clockNow, endedAt))
 	);
-	const info = $derived([
+	const info = $derived<GameInfoRow[]>([
 		{
 			key: 'script',
 			label: t('modes.info.script'),
@@ -150,11 +141,17 @@
 			// Not players, so on a line of their own (Trevor, 2026-10-20).
 			extra: ruleCharactersLine(game, characters?.())
 		},
-		{ key: 'mode', label: t('modes.label'), value: (base ?? STANDARD).name },
+		{
+			key: 'mode',
+			label: t('modes.label'),
+			value: (base ?? STANDARD).name,
+			links: base ? [inspectLink(base)] : undefined
+		},
 		{
 			key: 'rules',
 			label: t('modes.info.rules'),
-			value: rules.map((r) => r.name).join(', ')
+			value: rules.map((r) => r.name).join(', '),
+			links: rules.map(inspectLink)
 		},
 		...(onShare
 			? [
@@ -162,7 +159,10 @@
 						key: 'join-code',
 						label: t('room.joinCode'),
 						value: roomCode ? formatRoomCode(roomCode) : undefined,
-						action: onShare
+						// Opens Share, as the corner's does; before a room opens it is None and
+						// opens Share to start one.
+						action: onShare,
+						actionTestId: 'info-join-code'
 					}
 				]
 			: []),
@@ -188,18 +188,12 @@
 		const lines = preferences.current.cornerLines;
 		preferences.update({ cornerLines: { ...lines, [line]: !lines[line] } });
 	}
-	/** What the mode and rules rows open when tapped: each one's whole Inspect (plan G5). */
-	const inspectable = $derived<Record<string, readonly (GameMode | SpecialRule)[]>>({
-		mode: base ? [base] : [],
-		rules
-	});
 	const campaign = $derived(campaignOf(gameId));
 	const specters = $derived(hasSpectatorVote(gameId));
 	const assignment = $derived(mode?.parts.assignment?.kind);
 	const hidden = $derived(mode?.parts.pool?.kind === 'script-plus-hidden');
 	let inspecting = $state(false);
 	let spectating = $state(false);
-	let anchor = $state<HTMLElement>();
 	let towns = $state.raw<(OpenGame | undefined)[]>([]);
 
 	$effect(() => {
@@ -238,6 +232,16 @@
 		inspecting = true;
 	}
 
+	/** The mode and each rule open their whole Inspect when tapped (plan G5). */
+	function inspectLink(item: GameMode | SpecialRule) {
+		return {
+			id: item.id,
+			name: item.name,
+			label: t('modes.inspect', { name: item.name }),
+			onclick: () => inspect(item)
+		};
+	}
+
 	/** The game's script as a file in TPI's format (Trevor, 2026-10-22, plan G3). */
 	async function downloadScript() {
 		try {
@@ -256,155 +260,114 @@
 	}
 </script>
 
-{#if children}<button
-		type="button"
-		class="name"
-		bind:this={anchor}
-		aria-haspopup="dialog"
-		aria-expanded={open}
-		data-testid="mode-menu"
-		onclick={() => (open = true)}>{@render children()}<Icon name="expand" /></button
-	>{/if}
-{#snippet actions()}
-	<table class="info" data-testid="game-info">
-		<tbody>
-			{#each info as row (row.key)}
-				{@const line = lineOf(row.key)}
-				<tr data-field={row.key}>
-					<!-- Whether the board's corner shows this line (Trevor, 2026-10-24: "an eye
-					     toggle on each line in game info"); a tap target over the row's height. -->
-					{#if onEdit}<td class="eye-cell"
-							>{#if line}{@const shown = preferences.current.cornerLines[line]}<button
-									type="button"
-									class="inline-icon eye"
-									aria-pressed={shown}
-									aria-label={t('modes.info.onBoard', { line: cornerLineLabel(line) })}
-									data-testid="corner-eye"
-									onclick={() => toggleLine(line)}><Icon name={shown ? 'show' : 'hide'} /></button
-								>{/if}</td
-						>{/if}
-					<th scope="row">{row.label}</th>
-					<td>
-						{#if inspectable[row.key]?.length}<!-- Tapped for its full details (Trevor,
-							2026-10-22: "allow clicking game mode or special rules in game info to see
-							exact details"). -->{#each inspectable[row.key] as item, i (item.id)}{#if i > 0},
-								{/if}<button
-									type="button"
-									class="inspect-link"
-									aria-label={t('modes.inspect', { name: item.name })}
-									onclick={() => inspect(item)}>{item.name}</button
-								>{/each}{:else if 'action' in row && row.action}<!-- The join code opens
-							Share, as the corner's does; before a room opens it is None and opens Share
-							to start one. --><button
-								type="button"
-								class="inspect-link"
-								data-testid="info-join-code"
-								onclick={() => {
-									open = false;
-									row.action?.();
-								}}>{row.value || none}</button
-							>{:else if 'href' in row && row.href && row.value?.trim()}<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- another site's page -->
-							<a href={row.href} target="_blank" rel="noopener noreferrer">{row.value}</a
-							>{:else}{row.value?.trim() ||
-								none}{/if}{#if row.key === 'script'}<!-- The file beside the
-							script's name, whose link is its source (Trevor, 2026-10-27: no buttons atop
-							Game info). --><button
-								type="button"
-								class="inline-icon after"
-								aria-label={t('modes.info.download')}
-								data-testid="game-info-download"
-								onclick={() => void downloadScript()}><Icon name="download" /></button
-							>{:else if row.key === 'storyteller' && onEdit}<!-- A small pencil by the
-							name it renames (Trevor, 2026-10-27). --><button
-								type="button"
-								class="inline-icon after"
-								aria-label={t('modes.info.editStoryteller')}
-								aria-haspopup="dialog"
-								data-testid="game-info-edit"
-								onclick={() => {
-									open = false;
-									editing = true;
-								}}><Icon name="edit" /></button
-							>{/if}{#if 'extra' in row && row.extra}<span class="extra" data-testid="info-extra"
-								>{row.extra}</span
-							>{/if}
-					</td>
-				</tr>
-			{/each}
-		</tbody>
-	</table>
-	<div class="actions">
-		{#if group}
-			{#each group.gameIds as id, i (id)}
-				{@const town = towns[i]}
-				<Button
-					variant="quiet"
-					icon={id === gameId ? 'check' : undefined}
-					disabled={!town}
-					aria-current={id === gameId ? 'page' : undefined}
-					onclick={() => town && pick(town, i)}
-				>
-					{t('modes.towns.townScript', {
-						number: i + 1,
-						script: town?.game.script.meta?.name ?? t('common.none')
-					})}
-				</Button>
-			{/each}
-			<Button
-				variant="quiet"
-				icon="grimoire"
-				onclick={() => go(resolve('/towns/[groupId]', { groupId: group.groupId }))}
-			>
-				{t('modes.towns.all')}
-			</Button>
-		{/if}
-		{#if campaign}
-			<Button
-				variant="quiet"
-				icon="history"
-				onclick={() => go(resolve('/campaigns/[campaignId]', { campaignId: campaign.campaignId }))}
-			>
-				{t('library.campaignOpen')}
-			</Button>
-		{/if}
-		{#if specters}
-			<Button
-				variant="quiet"
-				icon="vote"
-				onclick={() => {
-					open = false;
-					spectating = true;
-				}}
-			>
-				{t('modes.specters.menu')}
-			</Button>
-		{/if}
-		{#if hidden}
-			<!-- A gear, as it opens settings for the rules; the shuffle read as "randomise" (Trevor, 2026-10-25). -->
-			<Button
-				variant="quiet"
-				icon="settings"
-				onclick={() => go(resolve('/grimoire/[gameId]/extras', { gameId }))}
-			>
-				{t('modes.extras.title')}
-			</Button>
-		{/if}
-		{#if assignment === 'draft' || assignment === 'choose-own'}
-			<Button
-				variant="quiet"
-				icon="bag"
-				onclick={() => go(resolve('/grimoire/[gameId]/deal', { gameId }))}
-			>
-				{t('modes.deal.menu')}
-			</Button>
-		{/if}
-	</div>
+<!-- Whether the board's corner shows this line (Trevor, 2026-10-24: "an eye toggle on each
+     line in game info"); a tap target over the row's height. -->
+{#snippet eye(row: GameInfoRow)}
+	{@const line = lineOf(row.key)}
+	{#if line}{@const shown = preferences.current.cornerLines[line]}<button
+			type="button"
+			class="inline-icon eye"
+			aria-pressed={shown}
+			aria-label={t('modes.info.onBoard', { line: cornerLineLabel(line) })}
+			data-testid="corner-eye"
+			onclick={() => toggleLine(line)}><Icon name={shown ? 'show' : 'hide'} /></button
+		>{/if}
 {/snippet}
-{#if children}
-	<Popover bind:open title={t('modes.info.title')} {anchor}>{@render actions()}</Popover>
-{:else}
-	<Dialog bind:open title={t('modes.info.title')}>{@render actions()}</Dialog>
-{/if}
+{#snippet after(row: GameInfoRow)}
+	{#if row.key === 'script'}<!-- The file beside the script's name, whose link is its source
+		(Trevor, 2026-10-27: no buttons atop Game info). --><button
+			type="button"
+			class="inline-icon after"
+			aria-label={t('modes.info.download')}
+			data-testid="game-info-download"
+			onclick={() => void downloadScript()}><Icon name="download" /></button
+		>{:else if row.key === 'storyteller' && onEdit}<!-- A small pencil by the name it renames
+		(Trevor, 2026-10-27). --><button
+			type="button"
+			class="inline-icon after"
+			aria-label={t('modes.info.editStoryteller')}
+			aria-haspopup="dialog"
+			data-testid="game-info-edit"
+			onclick={() => {
+				open = false;
+				editing = true;
+			}}><Icon name="edit" /></button
+		>{/if}
+{/snippet}
+{#snippet actions()}
+	{#if group}
+		{#each group.gameIds as id, i (id)}
+			{@const town = towns[i]}
+			<Button
+				variant="quiet"
+				icon={id === gameId ? 'check' : undefined}
+				disabled={!town}
+				aria-current={id === gameId ? 'page' : undefined}
+				onclick={() => town && pick(town, i)}
+			>
+				{t('modes.towns.townScript', {
+					number: i + 1,
+					script: town?.game.script.meta?.name ?? t('common.none')
+				})}
+			</Button>
+		{/each}
+		<Button
+			variant="quiet"
+			icon="grimoire"
+			onclick={() => go(resolve('/towns/[groupId]', { groupId: group.groupId }))}
+		>
+			{t('modes.towns.all')}
+		</Button>
+	{/if}
+	{#if campaign}
+		<Button
+			variant="quiet"
+			icon="history"
+			onclick={() => go(resolve('/campaigns/[campaignId]', { campaignId: campaign.campaignId }))}
+		>
+			{t('library.campaignOpen')}
+		</Button>
+	{/if}
+	{#if specters}
+		<Button
+			variant="quiet"
+			icon="vote"
+			onclick={() => {
+				open = false;
+				spectating = true;
+			}}
+		>
+			{t('modes.specters.menu')}
+		</Button>
+	{/if}
+	{#if hidden}
+		<!-- A gear, as it opens settings for the rules; the shuffle read as "randomise" (Trevor, 2026-10-25). -->
+		<Button
+			variant="quiet"
+			icon="settings"
+			onclick={() => go(resolve('/grimoire/[gameId]/extras', { gameId }))}
+		>
+			{t('modes.extras.title')}
+		</Button>
+	{/if}
+	{#if assignment === 'draft' || assignment === 'choose-own'}
+		<Button
+			variant="quiet"
+			icon="bag"
+			onclick={() => go(resolve('/grimoire/[gameId]/deal', { gameId }))}
+		>
+			{t('modes.deal.menu')}
+		</Button>
+	{/if}
+{/snippet}
+<GameInfoSheet
+	bind:open
+	rows={info}
+	{children}
+	lead={onEdit ? eye : undefined}
+	{after}
+	footer={actions}
+/>
 {#if onEdit}
 	<GameInfoEditDialog
 		bind:open={editing}
@@ -416,57 +379,6 @@
 {#if specters && mode}<SpectersSheet bind:open={spectating} {game} {mode} />{/if}
 
 <style>
-	.extra {
-		display: block;
-	}
-	/* The name keeps its size and place; only the caret is added, inside the same line. */
-	.name {
-		position: relative;
-		display: flex;
-		align-items: center;
-		gap: 0.2em;
-		min-width: 0;
-		max-width: 100%;
-		/* Text high, not a button's 44px: the corner's room is measured from its height
-		   (corner-room.ts); the ::before below keeps the tap target. */
-		min-height: 0;
-		padding: 0;
-		/* The corner title lets taps through to the board; its town name takes them. */
-		pointer-events: auto;
-		border: 0;
-		background: none;
-		color: inherit;
-		font: inherit;
-		text-align: inherit;
-		cursor: pointer;
-		--icon-size: 0.9em;
-	}
-	/* The name is cut short as the corner title cuts it; the caret always shows. */
-	.name > :global(:first-child) {
-		min-width: 0;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-	.name > :global(:last-child) {
-		flex: none;
-	}
-	/* A tap target bigger than the small corner text, without moving anything. */
-	.name::before {
-		content: '';
-		position: absolute;
-		inset: 50% auto auto 50%;
-		min-width: max(100%, var(--tap-target));
-		min-height: max(100%, var(--tap-target));
-		transform: translate(-50%, -50%);
-	}
-	.info {
-		border-collapse: collapse;
-		margin-top: var(--space-2);
-	}
-	.eye-cell {
-		padding-right: var(--space-2);
-	}
 	/* Icon-sized in the row, so Game info keeps its height; the ::before is its tap target.
 	   The eyes, the script's download and the Storyteller's pencil. */
 	.inline-icon {
@@ -508,53 +420,5 @@
 		min-width: var(--tap-target);
 		min-height: var(--tap-target);
 		transform: translate(-50%, -50%);
-	}
-	.info th {
-		padding-right: var(--space-3);
-		color: var(--on-surface-muted);
-		font-weight: normal;
-		text-align: left;
-		white-space: nowrap;
-	}
-	.info th,
-	.info td {
-		padding-block: var(--space-1);
-		vertical-align: top;
-	}
-	/* The mode and each rule read as text and open their details; the tap target is
-	   widened without moving the row, as the corner name's is. */
-	.inspect-link {
-		position: relative;
-		/* Inline in the row like the script's link; the ::before below is its tap target. */
-		min-height: 0;
-		padding: 0;
-		border: 0;
-		background: none;
-		color: var(--heading);
-		font: inherit;
-		text-align: inherit;
-		text-decoration: underline;
-		cursor: pointer;
-	}
-	.inspect-link::before {
-		content: '';
-		position: absolute;
-		inset: 50% auto auto 50%;
-		min-width: max(100%, var(--tap-target));
-		min-height: max(100%, var(--tap-target));
-		transform: translate(-50%, -50%);
-	}
-	/* The Storyteller's row is a button: its name, tapped to rename them. */
-	.actions:empty {
-		display: none;
-	}
-	.actions {
-		display: grid;
-		gap: var(--space-1);
-		margin-top: var(--space-2);
-	}
-	.actions :global(button),
-	.actions :global(a) {
-		justify-content: flex-start;
 	}
 </style>
