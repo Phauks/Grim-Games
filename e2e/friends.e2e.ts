@@ -163,11 +163,13 @@ test('a friend code, scanned or opened, fills in Add friend', async ({ browser }
 	const ann = await signedIn(browser, 'ann');
 	const bob = await signedIn(browser, 'bob');
 
-	// Ann's own code: a link with her username in the hash, her profile icon in the middle.
+	// Ann's own code: a link with her username in the hash, her Profile avatar in the middle.
 	await ann.page.goto('/friends');
 	const link = ann.page.getByRole('textbox', { name: 'Link' });
 	await expect(link).toHaveValue(new RegExp(`/friends#friend=${ann.username}$`));
 	await expect(ann.page.getByRole('img', { name: 'QR code to add you as a friend' })).toBeVisible();
+	// Its middle is her Profile's avatar, as Settings' Profile button shows it (2026-10-30).
+	await expect(ann.page.getByTestId('profile-avatar')).toBeVisible();
 
 	// Bob scans it from Add friend: her name is filled in, ready to send.
 	await aimCamera(bob.page, qrSrc(renderSVG(await link.inputValue(), { border: 2 })));
