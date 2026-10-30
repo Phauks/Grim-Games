@@ -85,3 +85,27 @@ test('Game settings is no step: Character selection goes back to New game', asyn
 	await bar.getByRole('button', { name: 'New game' }).tap();
 	await expect(page).toHaveURL(/\/new#back$/);
 });
+
+test('Game settings splits into Day and Bag draw tabs that keep the dialog one size', async ({
+	page
+}) => {
+	// Trevor (2026-10-29): "game settings page should be tabbed, so it doesn't run down one screen".
+	const settings = await startToGameSettings(page);
+	const tabs = settings.getByRole('tab');
+	await expect(tabs).toHaveText(['Day', 'Bag draw']);
+	await expect(settings.getByText('Track nominations', { exact: true })).toBeVisible();
+	await expect(settings.getByText('Slot machine reveal', { exact: true })).toBeHidden();
+	const dialog = page.getByRole('dialog', { name: 'Game settings' });
+	const before = (await dialog.boundingBox())!;
+
+	await tabs.filter({ hasText: 'Bag draw' }).tap();
+	await expect(settings.getByText('Slot machine reveal', { exact: true })).toBeVisible();
+	await expect(settings.getByText('Track nominations', { exact: true })).toBeHidden();
+	// A tab change never resizes the dialog (no reflow).
+	const after = (await dialog.boundingBox())!;
+	expect(Math.abs(after.height - before.height)).toBeLessThan(1);
+	expect(Math.abs(after.y - before.y)).toBeLessThan(1);
+	const slot = settings.getByRole('checkbox', { name: 'Slot machine reveal', includeHidden: true });
+	await settings.getByText('Slot machine reveal', { exact: true }).tap();
+	await expect(slot).toBeChecked();
+});

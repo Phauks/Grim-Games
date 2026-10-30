@@ -213,6 +213,12 @@ test('the candles beside Setup open who is connected, on phones and in character
 	await expect(stList.getByTestId('connected-unseated')).not.toContainText('None');
 	await page.keyboard.press('Escape');
 
+	// The candles follow the player count before it is seated: one more, then back.
+	await page.getByRole('button', { name: 'More players' }).tap();
+	await expect(candles.locator('.candle')).toHaveCount(seatCount + 1);
+	await page.getByRole('button', { name: 'Fewer players' }).tap();
+	await expect(candles.locator('.candle')).toHaveCount(seatCount);
+
 	// The phone's screen locks: it stays in the +1, as it stays in Share's list (Trevor,
 	// 2026-10-29), and the candles don't move.
 	const before = await candles.locator('.candle').first().boundingBox();

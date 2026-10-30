@@ -232,9 +232,17 @@
 	<!-- Players are already in a script: no Change script and no Code (Trevor, 2026-10-16).
 	     Another script loads only from a share link or QR code. Before a game is joined or a
 	     script loaded, there is nothing to print or share, so neither shows (Trevor, 2026-10-23);
-	     the settings cog always does (plan E2). -->
+	     the settings cog does (plan E2), except on Continue game until this phone is in a room
+	     (Trevor, 2026-10-29). -->
 	{#snippet actions()}
-		<PlayerScriptActions {script} {version} share={shareable} room={inRoom} joined={joinedRoom} />
+		<PlayerScriptActions
+			{script}
+			{version}
+			share={shareable}
+			room={inRoom}
+			joined={joinedRoom}
+			cog={!join || !!joinedRoom}
+		/>
 	{/snippet}
 	<!-- Author and version under the title, or a blank line so nothing moves (Trevor). The
 	     Storyteller only for the room this script came from: Join game's code form shows none
