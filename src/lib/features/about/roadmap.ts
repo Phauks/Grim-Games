@@ -345,9 +345,22 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	},
 	{
 		// Trevor approved the plan 2026-10-29 (https://claude.ai/artifact/8ahBpAozQZ3UUpxVQ5QVoT).
-		title: 'Friends: add friends, see who you played with, invite them to games',
+		// F6 is groups since 2026-10-30 (Trevor: groups "should replace f6").
+		title: 'Friends: add friends, see who you played with, invite them to games, join groups',
 		area: 'friends',
 		parts: ['F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8']
+	},
+	{
+		// Trevor, 2026-10-30, from the idea roadmap (https://claude.ai/artifact/EMMicZLmAGjdgFxtN39eow).
+		title: 'Friends: invite people new to the app, suggestions from your games, hand the room to a friend',
+		area: 'friends',
+		parts: ['F12', 'F13', 'F14']
+	},
+	{
+		// Trevor, 2026-10-30: "number of games should be a statistic on a users page".
+		title: 'Games played on your profile, for anyone who taps it',
+		area: 'profile',
+		parts: ['F11']
 	},
 	{
 		// Trevor, 2026-10-30: "hey, use this script to a friend. Or ... point at their profile".
