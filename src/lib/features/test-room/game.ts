@@ -1,11 +1,13 @@
 /**
- * The game room-bots.ts `--storyteller` plays: every live-room feature a table uses, in the
+ * The game a test room's fake Storyteller plays (scripts/room-bots.ts `--storyteller`, the Test
+ * room page): every live-room feature a table uses, in the
  * order a table uses them, each a step that passes once every phone shows it.
  */
 import type { Script } from '#lib/core/data/index.ts';
-import { viewProblems } from './checks.ts';
+import { viewProblems } from '#lib/core/sync/room-bots/checks.ts';
+import { deal } from '#lib/core/sync/room-bots/deal.ts';
 import type { PhoneBot } from './phone-bot.ts';
-import { deal, type FakeStoryteller } from './storyteller.ts';
+import type { FakeStoryteller } from './storyteller.ts';
 
 const TROUBLE_BREWING = [
 	'washerwoman',
@@ -35,21 +37,31 @@ const TROUBLE_BREWING = [
 const views = (bots: readonly PhoneBot[]) =>
 	new Map(bots.flatMap((b) => (b.view ? [[b.name, b.view] as const] : [])));
 
+/** What is wrong across the bots' views together now (room-bots/checks.ts). */
+export const botProblems = (bots: readonly PhoneBot[]) => viewProblems(views(bots));
+
 const pick = <T>(items: readonly T[]) => items[Math.floor(Math.random() * items.length)];
 
-/** Plays one game; resolves with whether every step passed. */
+/**
+ * Plays one game; resolves with whether every step passed. Steps wait for the bots only: seats
+ * past theirs are for people in the Test room's phone frames, who may play along or not.
+ * `pauseMs` waits after each step, so a person watching the frames sees each one.
+ */
 export async function playGame(
 	st: FakeStoryteller,
 	bots: readonly PhoneBot[],
 	seatCount: number,
-	log: (line: string) => void
+	log: (line: string) => void,
+	pauseMs = 0
 ): Promise<boolean> {
 	let ok = true;
+	const botSeats = Math.min(seatCount, bots.length);
 	const step = async (...args: Parameters<FakeStoryteller['step']>) => {
 		const passed = await st.step(...args);
-		const problems = viewProblems(views(bots));
+		const problems = botProblems(bots);
 		for (const p of problems) log(`  ! ${p}`);
 		ok &&= passed && problems.length === 0;
+		if (pauseMs) await new Promise((r) => setTimeout(r, pauseMs));
 		return passed;
 	};
 	const named = () => st.members().filter((m) => m.name);
@@ -79,7 +91,7 @@ export async function playGame(
 	await step(
 		`Phones claim the ${seatCount} empty seats`,
 		() => st.setUp(seatCount),
-		() => seated().length >= seatCount,
+		() => seated().length >= botSeats,
 		() => `${seated().length} seated`
 	);
 	const spectators = bots.length - seatCount;
@@ -105,7 +117,7 @@ export async function playGame(
 	await step(
 		'Phones move their own seat while seating is open',
 		() => st.send({ type: 'seating', open: true }),
-		() => st.wishes - wishesBefore >= seatCount,
+		() => st.wishes - wishesBefore >= botSeats,
 		() => `${st.wishes - wishesBefore} moves asked`
 	);
 	st.send({ type: 'seating', open: false });
@@ -122,9 +134,9 @@ export async function playGame(
 	const roles = deal(seatCount);
 	const bySeat = Object.fromEntries(st.seats().map((s, i) => [s.seatId, roles[i]]));
 	await step(
-		'Every seated phone holds to see its own character',
+		'Every seated bot holds to see its own character',
 		() => st.send({ type: 'roles', gameId: st.gameId, show: true, roles: bySeat }),
-		() => (st.host?.rolesSeen?.length ?? 0) >= seatCount,
+		() => (st.host?.rolesSeen?.length ?? 0) >= botSeats,
 		() => `${st.host?.rolesSeen?.length ?? 0} seen`
 	);
 	for (const bot of bots) {

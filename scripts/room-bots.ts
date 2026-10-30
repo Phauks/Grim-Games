@@ -19,11 +19,10 @@ import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
 import { MAX_MEMBERS } from '#lib/core/sync/room-presence.ts';
 import { normaliseRoomCode } from '#lib/core/sync/room-code.ts';
-import { viewProblems } from './lib/room-bots/checks.ts';
-import { playGame } from './lib/room-bots/game.ts';
-import { PhoneBot } from './lib/room-bots/phone-bot.ts';
-import { FakeStoryteller } from './lib/room-bots/storyteller.ts';
-import { JoinQueue } from './lib/room-bots/socket.ts';
+import { botProblems, playGame } from '#lib/features/test-room/game.ts';
+import { PhoneBot } from '#lib/features/test-room/phone-bot.ts';
+import { FakeStoryteller } from '#lib/features/test-room/storyteller.ts';
+import { JoinQueue } from '#lib/features/test-room/socket.ts';
 
 const DEFAULT_SITE = 'https://beta.grimbinder.com';
 
@@ -99,11 +98,7 @@ async function main() {
 	const changed = () => {
 		clearTimeout(checkSoon);
 		checkSoon = setTimeout(() => {
-			for (const p of viewProblems(
-				new Map(bots.flatMap((b) => (b.view ? [[b.name, b.view]] : [])))
-			)) {
-				log(`! ${p}`);
-			}
+			for (const p of botProblems(bots)) log(`! ${p}`);
 		}, 3000);
 	};
 	for (let i = 0; i < players; i++) {
