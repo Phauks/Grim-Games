@@ -21,6 +21,8 @@
 	const ask = $derived(grimoire.reincarnateAsk);
 	const game = $derived(grimoire.game);
 	const characters = $derived(grimoire.open.characters);
+	// eslint-disable-next-line grim/names-as-badges -- a dialog title is plain text, as the seat's "Character for …" picker's is
+	const title = $derived(ask ? `Reincarnate ${seatName(game, ask.seatId)} as` : '');
 
 	let open = $state(false);
 	$effect(() => {
@@ -39,7 +41,7 @@
 
 <CharacterPicker
 	bind:open
-	title={ask ? `Reincarnate ${seatName(game, ask.seatId)} as` : ''}
+	{title}
 	{characters}
 	script={game.script}
 	types={['traveller']}
