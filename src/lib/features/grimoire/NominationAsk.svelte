@@ -56,7 +56,12 @@
 		const { nominator, nominee } = ask;
 		if (ask.kind === 'execute-nominator') {
 			grimoire.run({ type: 'Execute', seatId: nominator, cause: ask.characterId });
-			grimoire.run({ type: 'UseAbility', seatId: nominee, characterId: ask.characterId });
+			grimoire.run({
+				type: 'UseAbility',
+				seatId: nominee,
+				characterId: ask.characterId,
+				on: nominator
+			});
 		} else if (ask.kind === 'evil-swap') {
 			const a = game.seats[nominator];
 			const b = game.seats[nominee];

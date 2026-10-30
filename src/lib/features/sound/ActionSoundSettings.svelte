@@ -16,7 +16,7 @@
 
 	function choose(action: SoundAction, sound: string) {
 		preferences.update({ actionSounds: { ...preferences.current.actionSounds, [action]: sound } });
-		if (sound !== 'none') void soundboard.play(sound);
+		if (sound !== 'none') void soundboard.preview(sound);
 	}
 </script>
 

@@ -5,6 +5,9 @@
 			"note": "On the Judge once they have used their ability."
 		}
 	},
+	"dayUse": {
+		"who": "nominee"
+	},
 	"setupPrep": {
 		"none": "its tokens are only used after the first night or when something happens"
 	},

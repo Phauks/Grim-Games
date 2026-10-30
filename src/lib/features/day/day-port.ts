@@ -1,5 +1,6 @@
 import type { CharacterId, CharacterName, PlayerName } from '#lib/core/data/index.ts';
 import type { Command, GameLog } from '#lib/core/engine/index.ts';
+import { dayUseWho } from '#lib/core/rules/index.ts';
 import { t } from '#lib/i18n/locale.svelte.ts';
 import type { CharacterLookup, DayEntry, Game, SeatId } from '#lib/core/model/index.ts';
 
@@ -45,11 +46,16 @@ export function describeEntry(
 			return t(entry.died ? 'day.logExiled' : 'day.logExiledDead', {
 				name: seatName(entry.seatId)
 			});
-		case 'ability':
-			return t('day.logAbility', {
+		case 'ability': {
+			const names = {
 				character: characterName(entry.characterId),
 				seat: seatName(entry.seatId)
-			});
+			};
+			if (entry.on === undefined) return t('day.logAbility', names);
+			// Official characters' rules only: a custom one's use reads as "on" its player.
+			const who = dayUseWho(entry.characterId) ?? 'chosen';
+			return t(`day.logAbilityOn.${who}`, { ...names, on: seatName(entry.on) });
+		}
 		case 'note': {
 			const who = entry.seatId
 				? t('day.who', {
