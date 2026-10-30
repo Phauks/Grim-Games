@@ -10,13 +10,18 @@
  *
  * Until "Has Ability" is placed the step is still shown, at the same place, marked
  * `if-mad`: the Storyteller makes the madness call there (swap Mad for Has Ability, or not).
+ *
+ * A player also has the abilities they hold without a token (`Seat.abilities`), given by
+ * another character's `givesAbility` rule: the Boffin's good ability on the Demon, who
+ * wakes when that good character would (https://wiki.bloodontheclocktower.com/Boffin).
  */
 import type { GainedFrom } from '#lib/core/data/gained-from-rules.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { Character, CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
-import { trueCharacter } from '#lib/core/model/selectors.ts';
-import type { Game, SeatId } from '#lib/core/model/types.ts';
+import { trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
+import type { Game, HeldAbility, SeatId } from '#lib/core/model/types.ts';
+import { abilityState } from './ability.ts';
 import type { Night, NightStep } from './night-order.ts';
 
 export interface GainedAbility {
@@ -66,8 +71,30 @@ export function gainedBy(
 }
 
 /**
+ * Whether `holder` has the ability held by `via`'s `givesAbility` rule now: they are still
+ * who it goes to (the Demon), and, for `whileWorks`, a player of `via` has a working ability
+ * (a drunk, poisoned or dead Boffin takes it away for as long as that lasts).
+ */
+export function holdsAbility(
+	game: Game,
+	holder: SeatId,
+	held: HeldAbility,
+	characters: CharacterLookup
+): boolean {
+	const rule = rulesOf(held.via, characters)?.givesAbility;
+	if (!rule) return false;
+	if (rule.to === 'demon' && typeOf(game, holder, characters) !== 'demon') return false;
+	if (!rule.whileWorks) return true;
+	return game.seating.some(
+		(s) =>
+			trueCharacter(game, s, characters) === held.via && abilityState(game, s, characters).works
+	);
+}
+
+/**
  * Every living player's gained (or about to be gained) ability that wakes them. They wake by
- * the token they hold (a Drunk who thinks they are the Pixie too).
+ * the token they hold (a Drunk who thinks they are the Pixie too). Abilities held without a
+ * token (`Seat.abilities`) follow, while `holdsAbility`.
  */
 export function gainedAbilities(game: Game, characters: CharacterLookup): GainedAbility[] {
 	const out: GainedAbility[] = [];
@@ -80,12 +107,22 @@ export function gainedAbilities(game: Game, characters: CharacterLookup): Gained
 		if (!gained) continue;
 		out.push({ seatId, via, ...gained });
 	}
+	for (const seatId of game.seating) {
+		const seat = game.seats[seatId];
+		if (seat.dead) continue;
+		for (const held of seat.abilities ?? []) {
+			if (!holdsAbility(game, seatId, held, characters)) continue;
+			out.push({ seatId, via: held.via, characterId: held.characterId, status: 'has-ability' });
+		}
+	}
 	return out;
 }
 
 /**
- * Adds a step for each gained ability, right after the gained character's own step (or
- * just before Dawn when it has none tonight), with that character's night text. A gained
+ * Adds a step for each gained ability, right after the gained character's own step, with
+ * that character's night text. A character not in play (the Boffin's) has no step of its
+ * own, so its step goes where `order` (the night sheet's ids for tonight) puts it; with no
+ * place there, just before Dawn. A gained
  * ability with no night text adds nothing. The step keeps the gaining character (the Pixie) as
  * its character, with `gained` saying whose ability it is and whether it is still `if-mad`.
  */
@@ -93,11 +130,20 @@ export function withGainedSteps<T extends NightStep>(
 	steps: readonly T[],
 	game: Game,
 	characters: CharacterLookup,
-	night: Night
+	night: Night,
+	order: readonly string[] = []
 ): (T | NightStep)[] {
 	const out: (T | NightStep)[] = [...steps];
+	// Before the first step the sheet puts after `id`.
+	const bySheet = (id: string) => {
+		const at = order.indexOf(id);
+		if (at < 0) return -1;
+		return out.findIndex((s) => order.indexOf(s.id) > at);
+	};
 	for (const gained of gainedAbilities(game, characters)) {
-		const via = characters.get(gained.via);
+		// The step is the holder's own token's: the Pixie's, or the Demon holding the Boffin's.
+		const token = game.seats[gained.seatId]?.characterId;
+		const via = characters.get(token ?? gained.via);
 		const as: Character | undefined = characters.get(gained.characterId);
 		if (!via || !as) continue;
 		const own = night === 'first' ? as.firstNightReminder : as.otherNightReminder;
@@ -114,9 +160,41 @@ export function withGainedSteps<T extends NightStep>(
 			gained: own === undefined ? { ...gained, firstNightText: true } : gained
 		};
 		const anchor = out.findIndex((s) => s.id === gained.characterId);
+		const placed = anchor >= 0 ? anchor + 1 : bySheet(gained.characterId);
 		const dawn = out.findIndex((s) => s.id === 'dawn');
-		const at = anchor >= 0 ? anchor + 1 : dawn >= 0 ? dawn : out.length;
+		const at = placed >= 0 ? placed : dawn >= 0 ? dawn : out.length;
 		out.splice(at, 0, step);
 	}
 	return out;
+}
+
+/**
+ * The characters in play whose `givesAbility` goes to `seatId` (the Boffin's, while it is
+ * the Demon), so its ⋯ menu offers to pick that ability.
+ */
+export function abilityGivers(
+	game: Game,
+	seatId: SeatId,
+	characters: CharacterLookup
+): CharacterId[] {
+	const givers = new Set<CharacterId>();
+	for (const s of game.seating) {
+		const id = trueCharacter(game, s, characters);
+		const rule = id === undefined ? undefined : rulesOf(id, characters)?.givesAbility;
+		if (!id || !rule) continue;
+		if (rule.to === 'demon' && typeOf(game, seatId, characters) === 'demon') givers.add(id);
+	}
+	return [...givers];
+}
+
+/** The abilities `seatId` holds without a token, each with whether they have it now. */
+export function heldAbilitiesOf(
+	game: Game,
+	seatId: SeatId,
+	characters: CharacterLookup
+): (HeldAbility & { works: boolean })[] {
+	return (game.seats[seatId]?.abilities ?? []).map((held) => ({
+		...held,
+		works: holdsAbility(game, seatId, held, characters)
+	}));
 }

@@ -26,6 +26,10 @@ import {
 	sendMessage,
 	setInbox,
 	setSeatingOpen,
+	startCountOff,
+	endCountOff,
+	takeCount,
+	nameCount,
 	sitWish,
 	MAX_GRIMOIRE_BYTES,
 	MAX_SCRIPT_BYTES,
@@ -71,7 +75,8 @@ import {
 	linkAccount,
 	requestAccount,
 	seatAccount,
-	withAccount
+	withAccount,
+	type SeatTarget
 } from './room-accounts.ts';
 import type { AccountEnv } from './account/objects.ts';
 import {
@@ -163,9 +168,9 @@ export class Room extends DurableObject<RoomEnv> {
 		return liveGame(code, room, script?.script, this.present().size, active);
 	}
 
-	/** The account in `seatId`, for `requester` to friend (worker/room-accounts.ts). */
-	async friendSeat(requester: string, seatId: string): Promise<string | 'self' | undefined> {
-		return seatAccount(this.ctx, await this.load(), requester, seatId);
+	/** The account in a seat or the Storyteller's, for `requester` to friend (room-accounts.ts). */
+	async friendSeat(requester: string, target: SeatTarget): Promise<string | 'self' | undefined> {
+		return seatAccount(this.ctx, await this.load(), requester, target);
 	}
 
 	async fetch(request: Request): Promise<Response> {
@@ -350,6 +355,10 @@ export class Room extends DurableObject<RoomEnv> {
 				const next = roleSeen(room, id);
 				if (next === room) return;
 				room = next;
+			} else if (message.type === 'count') {
+				const next = takeCount(room, id, message.number);
+				if (next === room) return;
+				room = next;
 			} else if (message.type === 'sit' || message.type === 'claim-seat') {
 				// Passed on to the Storyteller's device, which seats them on the board (plan J38).
 				const wish = sitWish(room, id, message);
@@ -460,6 +469,15 @@ export class Room extends DurableObject<RoomEnv> {
 				break;
 			case 'seating':
 				room = setSeatingOpen(room, message.open);
+				break;
+			case 'count-off':
+				room = startCountOff(room, message.first ?? {});
+				break;
+			case 'end-count-off':
+				room = endCountOff(room);
+				break;
+			case 'name-count':
+				room = nameCount(room, message.number, message.name);
 				break;
 			case 'judge-picture': {
 				const next = judgePicture(room, message.hash, message.allow);

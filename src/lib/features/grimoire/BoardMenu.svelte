@@ -220,6 +220,16 @@
 				>
 					{host.seatingOpen ? t('room.seating.lock') : t('room.seating.open')}
 				</Button>
+				<!-- Count off (plan J40): one player is 1, and every phone taps the number it counts to. -->
+				<Button
+					disabled={watching || !host.code}
+					variant="quiet"
+					icon="countOff"
+					data-testid="menu-count-off"
+					onclick={() => fromMenu(() => (playersDialog.countOff = true))}
+				>
+					{t('room.countOff.title')}
+				</Button>
 			</section>
 			<section class="group" aria-labelledby="board-menu-app">
 				<h3 id="board-menu-app" class="group-title">App</h3>

@@ -1,4 +1,7 @@
 <script lang="ts">
+	import type { ScriptMeta } from '#lib/core/data/index.ts';
+	import type { PublicGameState } from '#lib/core/sync/public-projection.ts';
+	import TownGameInfo from '#lib/features/modes/TownGameInfo.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import HideContentsButton from '#lib/ui/primitives/HideContentsButton.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
@@ -11,8 +14,9 @@
 	 * 2026-10-27: "move any controls onto the grim so we remove wasted space"), all in its top
 	 * right beside Full screen ("All controls on a player grim should be in the top right, next
 	 * to the full screen button"): the eye, the board's shape and, once the Storyteller shares
-	 * it, the Final grimoire switch (plan R5); and the reminder bin (Trevor, 2026-10-29). A row
-	 * only: PlayerGrim places it.
+	 * it, the Final grimoire switch (plan R5); the reminder bin (Trevor, 2026-10-29); and Game
+	 * info, which the corner's name opens too but a phone's corner often has no room for
+	 * (Trevor, 2026-10-30). A row only: PlayerGrim places it.
 	 */
 	interface Props {
 		/** The board's shape has arrived, so the town can take it. */
@@ -23,6 +27,12 @@
 		onFinal: (on: boolean) => void;
 		/** The reminder bin: open, and off while the eye hides the player's own reminders. */
 		bin?: { open: boolean; disabled: boolean; onToggle: () => void };
+		/** Game info for this town, read only (TownGameInfo). */
+		info?: {
+			meta: ScriptMeta;
+			table?: Pick<PublicGameState, 'storytellerName' | 'corner'>;
+			roomCode?: string;
+		};
 		/** Placed in the town's top right itself, for a town without Full screen's corner. */
 		placed?: boolean;
 		/** Placed, the row's size, measured, so the ring of seats keeps clear of it. */
@@ -36,10 +46,12 @@
 		showFinal,
 		onFinal,
 		bin,
+		info,
 		placed = false,
 		width = $bindable(0),
 		height = $bindable(0)
 	}: Props = $props();
+	let infoOpen = $state(false);
 </script>
 
 <!-- Placed, measured; in Full screen's corner, that corner is measured instead. -->
@@ -69,8 +81,24 @@
 					onclick={bin.onToggle}
 				/></span
 			>{/if}
+		{#if info}<span class="corner-button"
+				><IconButton
+					icon="info"
+					label={t('modes.info.title')}
+					aria-haspopup="dialog"
+					data-testid="grim-game-info"
+					onclick={() => (infoOpen = true)}
+				/></span
+			>{/if}
 		<span class="corner-button"><MatchShapeButton disabled={!shaped} /></span>
 	</div>{/snippet}
+{#if info}<TownGameInfo
+		bind:open={infoOpen}
+		meta={info.meta}
+		storytellerName={info.table?.storytellerName}
+		corner={info.table?.corner}
+		roomCode={info.roomCode}
+	/>{/if}
 
 <style>
 	.grim-tools {

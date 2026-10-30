@@ -11,6 +11,7 @@
 	import { trueCharacter } from '#lib/core/model/index.ts';
 	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
 	import {
+		abilityGivers,
 		abilityState,
 		mayNominate,
 		seatNominations,
@@ -159,6 +160,10 @@
 	const gainsAbility = $derived(
 		seatId !== undefined &&
 			!!rulesOf(trueCharacter(game, seatId, characters) ?? '', characters)?.swapsForAbility
+	);
+	// One held without a token (the Boffin's on the Demon), by another's `givesAbility`.
+	const holdsAbility = $derived(
+		seatId !== undefined && abilityGivers(game, seatId, characters).length > 0
 	);
 
 	// ── Status: Alive, or dead with its cause, in one list (Trevor, 2026-10-16) ──
@@ -463,11 +468,13 @@
 	{seat}
 	{character}
 	{gainsAbility}
+	{holdsAbility}
 	{savant}
 	{claim}
 	hasChanges={changes.length > 0}
 	onChangeCharacter={() => flow?.choose()}
 	onGain={() => flow?.chooseGain()}
+	onHeld={() => flow?.chooseHeld()}
 	onSavant={() => (savantOpen = true)}
 	onClaim={() => (claimOpen = true)}
 	onAlignment={() => flow?.chooseAlignment()}

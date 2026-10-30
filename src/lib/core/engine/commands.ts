@@ -93,6 +93,12 @@ export type Command =
 	| { type: 'SwapCharacters'; seatId: SeatId; withSeatId: SeatId; keepAlignments?: true }
 	| { type: 'SetAlignment'; seatId: SeatId; alignment: Alignment }
 	/**
+	 * Gives a player the ability of `characterId` by `via`'s `givesAbility` rule, replacing any
+	 * `via` gave them before (the Boffin's good ability on the Demon); without `characterId`
+	 * it takes that ability away.
+	 */
+	| { type: 'SetHeldAbility'; seatId: SeatId; via: CharacterId; characterId?: CharacterId }
+	/**
 	 * Marks a player dead or alive. `cause` is optional when marking dead (the Storyteller
 	 * can skip it and set it later with `SetDeathCause`); on an already dead player it sets
 	 * the cause. Coming back to life clears the cause.
@@ -154,6 +160,12 @@ export type Command =
 	| { type: 'RotateSeats'; direction: 'clockwise' | 'anticlockwise' }
 	/** Moves a player to `position` (0-based) in the seating order; the others close up. */
 	| { type: 'MoveSeat'; seatId: SeatId; position: number }
+	/**
+	 * Count off (plan J40): the whole table in its new order, seat 1 first, as the players
+	 * counted round the clock. An entry with no seat is a new one; a name renames its seat.
+	 * Every seat now at the table is listed once.
+	 */
+	| { type: 'CountOff'; seats: { seatId?: SeatId; playerName?: PlayerName }[] }
 	| { type: 'SetOverride'; seatId: SeatId; override: SeatOverride }
 	| { type: 'ClearOverride'; seatId: SeatId; field: OverrideField }
 	/**
