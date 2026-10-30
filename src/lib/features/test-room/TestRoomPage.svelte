@@ -1,65 +1,81 @@
 <script lang="ts">
-	import { onDestroy } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import { resolve } from '$app/paths';
+	import { BOT_ACTIONS, type BotAction } from '#lib/core/sync/room-bots/brain.ts';
 	import { formatRoomCode, ROOM_CODE_LENGTH } from '#lib/core/sync/room-code.ts';
+	import { MAX_MEMBERS } from '#lib/core/sync/room-presence.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import CodeField from '#lib/ui/primitives/CodeField.svelte';
-	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import Stepper from '#lib/ui/primitives/Stepper.svelte';
-	import { PHONE_FRAME_PREFIX } from '#lib/ui/stored.ts';
-	import { TestRoom, ZOOMS, type Zoom } from './bench.svelte.ts';
-	import { DEVICES, deviceById } from './devices.ts';
+	import Toggle from '#lib/ui/primitives/Toggle.svelte';
+	import { botName, frameName, TestRoom, ZOOMS, type Zoom } from './bench.svelte.ts';
+	import { DEVICES, deviceById, STORYTELLER_SCREENS } from './devices.ts';
 
-	// The Test room (Trevor, 2026-10-30: "an interface, with ability to mockup sizing for
-	// different phones"): the real join screen in phone-sized frames, each its own player
-	// (stored.ts keeps a frame's data under its window name), with bots filling the room.
+	// The Test room (Trevor, 2026-10-30: "a place where i fully control the fake game, and have
+	// access to a certain number of fake players, along with perhaps some fast tools"): you are
+	// the Storyteller in the real app on the left, and the fake players follow its room, each on
+	// a device of its own ("so i can choose having multiple types of different devices").
 
 	const bench = new TestRoom();
-	onDestroy(() => bench.leave());
+	onMount(() => bench.start());
+	onDestroy(() => bench.stop());
 
 	let typed = $state('');
 	let logOpen = $state(false);
 
-	const joinPath = $derived(
-		bench.code ? resolve('/join/[code]', { code: bench.code }) : resolve('/join')
-	);
+	const sized = (d: { name: string; width: number; height: number }) =>
+		t('room.testRoom.deviceSize', { name: d.name, width: d.width, height: d.height });
+	const deviceOptions = DEVICES.map((d) => ({ value: d.id, label: sized(d) }));
+	const screenOptions = STORYTELLER_SCREENS.map((d) => ({ value: d.id, label: sized(d) }));
 	const zoomOptions = ZOOMS.map((z) => ({
 		value: z,
 		label: t('room.testRoom.zoomPercent', { percent: Math.round(Number(z) * 100) })
 	}));
-	const deviceOptions = DEVICES.map((d) => ({
-		value: d.id,
-		label: t('room.testRoom.deviceSize', { name: d.name, width: d.width, height: d.height })
-	}));
+	const toolLabels: Record<BotAction, string> = {
+		seat: t('room.testRoom.tool.seat'),
+		count: t('room.testRoom.tool.count'),
+		role: t('room.testRoom.tool.role'),
+		vote: t('room.testRoom.tool.vote'),
+		rate: t('room.testRoom.tool.rate'),
+		message: t('room.testRoom.tool.message')
+	};
+
+	const screen = $derived(STORYTELLER_SCREENS.find((s) => s.id === bench.screen)!);
+	const joinPath = $derived(
+		bench.code ? resolve('/join/[code]', { code: bench.code }) : resolve('/join')
+	);
+	const allShown = $derived(bench.players.length > 0 && bench.players.every((p) => p.shown));
+
+	/** Player `i`'s seat number in the room, if it has one. */
+	function seatOf(i: number): string {
+		const view = bench.bot(i)?.view;
+		const seat = view?.public?.seats.find((s) => s.seatId === view.me.seatId);
+		return seat ? t('room.testRoom.seat', { number: seat.seatNumber }) : t('common.none');
+	}
 </script>
 
 <Page title={t('room.testRoom.title')}>
 	{#snippet actions()}
-		<Select
-			icon="add"
-			label={t('room.testRoom.addPhone')}
-			options={deviceOptions}
-			onChange={(id) => bench.addFrame(id)}
-		/>
 		<IconButton icon="history" label={t('room.testRoom.log')} onclick={() => (logOpen = true)} />
 	{/snippet}
 	{#snippet toolbar()}
 		<div class="controls">
-			<!-- The room: a code to join, or one this page opens and storytells. Both stay in place
-			     once a room is chosen, disabled, so nothing moves. -->
+			<!-- The players' room: the Storyteller screen's, or a code storytold on another device. -->
 			<form
 				class="room"
 				onsubmit={(e) => {
 					e.preventDefault();
-					void bench.join(typed);
+					bench.joinCode(typed);
 				}}
 			>
+				<label class="visually-hidden" for="test-room-code">{t('room.testRoom.code')}</label>
 				<CodeField
+					id="test-room-code"
 					bind:value={typed}
 					length={ROOM_CODE_LENGTH}
 					group={3}
@@ -68,19 +84,21 @@
 				<Button type="submit" disabled={typed.length !== ROOM_CODE_LENGTH}
 					>{t('room.testRoom.join')}</Button
 				>
-				<Button onclick={() => void bench.open()}>{t('room.testRoom.newRoom')}</Button>
+				<Button
+					disabled={!bench.typedCode}
+					onclick={() => {
+						typed = '';
+						bench.joinCode(undefined);
+					}}>{t('room.testRoom.follow')}</Button
+				>
 			</form>
-			<Stepper
-				label={t('room.testRoom.bots')}
-				lessLabel={t('room.testRoom.fewerBots')}
-				moreLabel={t('room.testRoom.moreBots')}
-				value={bench.botCount}
-				max={bench.maxBots}
-				onchange={(n) => bench.setBots(n)}
-				testid="test-room-bots"
-			>
-				{#snippet display()}{t('room.testRoom.botsCount', { count: bench.botCount })}{/snippet}
-			</Stepper>
+			<Select
+				label={t('room.testRoom.screen')}
+				hideLabel
+				value={bench.screen}
+				options={screenOptions}
+				onChange={(s) => bench.setScreen(s)}
+			/>
 			<Select
 				label={t('room.testRoom.zoom')}
 				hideLabel
@@ -88,47 +106,136 @@
 				options={zoomOptions}
 				onChange={(z: Zoom) => bench.setZoom(z)}
 			/>
-			<Button
-				variant="accent"
-				disabled={!bench.storytelling || bench.playing}
-				onclick={() => void bench.play()}>{t('room.testRoom.play')}</Button
-			>
-			<Button disabled={!bench.code} onclick={() => bench.leave()}
-				>{t('room.testRoom.leave')}</Button
-			>
 		</div>
 		<p class="status" role="status" data-testid="test-room-status">
 			{bench.code
 				? t('room.testRoom.inRoom', {
 						code: formatRoomCode(bench.code),
 						connected: bench.connected,
-						bots: bench.botCount
+						players: bench.players.length
 					})
 				: t('room.testRoom.noRoom')}
 		</p>
 	{/snippet}
 
-	<div class="frames" style:--zoom={bench.zoom}>
-		{#each bench.frames as frame (frame.n)}
-			{@const device = deviceById(frame.device)!}
-			<figure style:--w={device.width} style:--h={device.height} data-testid="phone-frame">
-				<figcaption>
-					<span
-						>{t('room.testRoom.deviceSize', {
-							name: device.name,
-							width: device.width,
-							height: device.height
-						})}</span
+	{#snippet side()}
+		<section class="panel" aria-label={t('room.testRoom.players')}>
+			<Stepper
+				label={t('room.testRoom.players')}
+				lessLabel={t('room.testRoom.fewerPlayers')}
+				moreLabel={t('room.testRoom.morePlayers')}
+				value={bench.players.length}
+				max={MAX_MEMBERS}
+				onchange={(n) => bench.setCount(n)}
+				testid="test-room-players"
+			>
+				{#snippet display()}{t('room.testRoom.playersCount', {
+						count: bench.players.length
+					})}{/snippet}
+			</Stepper>
+			<Toggle
+				label={t('room.testRoom.auto')}
+				checked={bench.auto}
+				onChange={(on) => bench.setAuto(on)}
+			/>
+			<Toggle
+				label={t('room.testRoom.showAll')}
+				checked={allShown}
+				disabled={!bench.players.length}
+				onChange={(on) => bench.showAll(on)}
+			/>
+			<div class="row-tools">
+				<Button disabled={!bench.players.length} onclick={() => bench.mixDevices()}
+					>{t('room.testRoom.mixDevices')}</Button
+				>
+				<Select
+					label={t('room.testRoom.allOn')}
+					hideLabel
+					placeholder={t('room.testRoom.allOn')}
+					options={deviceOptions}
+					disabled={!bench.players.length}
+					onChange={(d) => bench.allOn(d)}
+				/>
+			</div>
+		</section>
+
+		<!-- Fast tools: every connected player makes the same tap now. -->
+		<section class="panel" aria-label={t('room.testRoom.everyone')}>
+			<h2>{t('room.testRoom.everyone')}</h2>
+			<div class="tools">
+				{#each BOT_ACTIONS as kind (kind)}
+					<Button disabled={!bench.connected} onclick={() => bench.everyone(kind)}
+						>{toolLabels[kind]}</Button
 					>
-					<DeleteButton
-						label={t('room.testRoom.removePhone', { name: device.name })}
-						onclick={() => bench.removeFrame(frame.n)}
+				{/each}
+				<Button disabled={!bench.connected} onclick={() => bench.lockAll(true)}
+					>{t('room.testRoom.lockAll')}</Button
+				>
+				<Button disabled={!bench.code} onclick={() => bench.lockAll(false)}
+					>{t('room.testRoom.unlockAll')}</Button
+				>
+			</div>
+		</section>
+
+		<ul class="players" data-testid="test-room-player-list">
+			{#each bench.players as player, i (player.key)}
+				{@const bot = bench.bot(i)}
+				{@const name = botName(i)}
+				<li data-testid="test-room-player">
+					<span class="dot" data-on={bot?.connected ? '' : undefined} aria-hidden="true"></span>
+					<span class="name">{name}</span>
+					<span class="seat">{seatOf(i)}</span>
+					<Select
+						label={t('room.testRoom.deviceOf', { name })}
+						hideLabel
+						value={player.device}
+						options={deviceOptions}
+						onChange={(d) => bench.setDevice(i, d)}
 					/>
-				</figcaption>
-				<div class="screen">
-					<iframe title={device.name} name="{PHONE_FRAME_PREFIX}{frame.n}" src={joinPath}></iframe>
-				</div>
-			</figure>
+					<IconButton
+						icon={player.shown ? 'hide' : 'show'}
+						label={t(player.shown ? 'room.testRoom.hidePhone' : 'room.testRoom.showPhone', {
+							name
+						})}
+						aria-pressed={player.shown}
+						onclick={() => bench.showPhone(i, !player.shown)}
+					/>
+					<IconButton
+						icon="lock"
+						label={t('room.testRoom.lock', { name })}
+						aria-pressed={!!bot?.locked}
+						disabled={!bot}
+						onclick={() => bench.lock(i, !bot?.locked)}
+					/>
+				</li>
+			{/each}
+		</ul>
+	{/snippet}
+
+	<div class="frames" style:--zoom={bench.zoom}>
+		<figure style:--w={screen.width} style:--h={screen.height} data-testid="storyteller-frame">
+			<figcaption>{t('room.testRoom.storyteller')}</figcaption>
+			<div class="screen">
+				<iframe
+					title={t('room.testRoom.storyteller')}
+					name="grimbinder-storyteller"
+					src={resolve('/')}
+				></iframe>
+			</div>
+		</figure>
+		{#each bench.players as player, i (player.key)}
+			{#if player.shown}
+				{@const device = deviceById(player.device)!}
+				<figure style:--w={device.width} style:--h={device.height} data-testid="phone-frame">
+					<figcaption>{botName(i)} · {sized(device)}</figcaption>
+					<div class="screen">
+						<!-- Keyed by device, so a new size reloads it as that phone. -->
+						{#key player.device}
+							<iframe title={botName(i)} name={frameName(i)} src={joinPath}></iframe>
+						{/key}
+					</div>
+				</figure>
+			{/if}
 		{/each}
 	</div>
 
@@ -145,7 +252,9 @@
 
 <style>
 	.controls,
-	.room {
+	.room,
+	.row-tools,
+	.tools {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
@@ -153,6 +262,45 @@
 	}
 	.status {
 		margin: var(--space-1) 0 0;
+		color: var(--on-surface-muted);
+		font-size: 0.85rem;
+	}
+	.panel {
+		display: grid;
+		gap: var(--space-2);
+		padding-block-end: var(--space-3);
+		border-bottom: 0.0625rem solid var(--border);
+		margin-block-end: var(--space-3);
+	}
+	h2 {
+		margin: 0;
+		font-size: 1rem;
+	}
+	.players {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+	.players li {
+		display: grid;
+		grid-template-columns: auto 1fr auto minmax(0, 2fr) auto auto;
+		align-items: center;
+		gap: var(--space-2);
+		padding-block: var(--space-1);
+		border-bottom: 0.0625rem solid var(--border);
+	}
+	/* As the room's own status (RoomPanel): hollow while offline, filled once connected. */
+	.dot {
+		width: 0.75em;
+		height: 0.75em;
+		border: 0.15em solid var(--on-surface-muted);
+		border-radius: 50%;
+	}
+	.dot[data-on] {
+		border-color: var(--good);
+		background: var(--good);
+	}
+	.seat {
 		color: var(--on-surface-muted);
 		font-size: 0.85rem;
 	}
@@ -168,24 +316,20 @@
 		gap: var(--space-1);
 	}
 	figcaption {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-1);
 		font-size: 0.85rem;
 	}
-	/* The phone's own CSS pixels, scaled by the zoom: the frame lays out exactly as that phone. */
+	/* The device's own CSS pixels, scaled by the zoom: the frame lays out exactly as that device. */
 	.screen {
-		width: calc(var(--w) * var(--zoom) * 1px); /* px-ok: a phone's CSS viewport */
-		height: calc(var(--h) * var(--zoom) * 1px); /* px-ok: a phone's CSS viewport */
+		width: calc(var(--w) * var(--zoom) * 1px); /* px-ok: a device's CSS viewport */
+		height: calc(var(--h) * var(--zoom) * 1px); /* px-ok: a device's CSS viewport */
 		overflow: hidden;
 		border: 0.15rem solid var(--border);
 		border-radius: 1rem;
 		background: var(--surface);
 	}
 	iframe {
-		width: calc(var(--w) * 1px); /* px-ok: a phone's CSS viewport */
-		height: calc(var(--h) * 1px); /* px-ok: a phone's CSS viewport */
+		width: calc(var(--w) * 1px); /* px-ok: a device's CSS viewport */
+		height: calc(var(--h) * 1px); /* px-ok: a device's CSS viewport */
 		border: 0;
 		transform: scale(var(--zoom));
 		transform-origin: 0 0;
