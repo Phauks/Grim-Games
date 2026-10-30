@@ -1,19 +1,16 @@
-import {
-	ambienceMix,
-	ambienceUrl,
-	type AmbienceMix,
-	type AmbienceScene
-} from '#lib/core/sound/ambience.ts';
+import { ambienceMix, ambienceUrl, type AmbienceMix } from '#lib/core/sound/ambience.ts';
 import { keepOffline } from '#lib/features/offline/keep-offline.ts';
 import { preferences } from '#lib/ui/preferences.svelte.ts';
 import { recording } from './recording.ts';
 import { audio, unlockOnFirstTap } from './sound.ts';
 
 /**
- * Plays day and night sound on the board (plan U3, Trevor 2026-10-26): the recording chosen
- * for the scene, looped (`#lib/core/sound/ambience.ts`). One plays at a time; a new scene or
- * a new choice fades in over the old one. A recording is fetched when first played, so a
- * device that never turns this on never downloads one; a missing one is left out.
+ * Plays day and night sound (plan U3, Trevor 2026-10-26): the recording the Storyteller chose
+ * for the scene, looped (`#lib/core/sound/ambience.ts`). Never on the Storyteller's own device
+ * (Trevor, 2026-10-30): the public table names it (`PublicSound`), and the Public Town tablet
+ * and players' phones play it. One plays at a time; a new scene or a new choice fades in over
+ * the old one. A recording is fetched when first played, so a device that never plays one
+ * never downloads one; a missing one is left out.
  */
 
 /** Seconds a recording takes to fade in or out. */
@@ -30,16 +27,15 @@ function buffer(ctx: AudioContext, mix: AmbienceMix): Promise<AudioBuffer | unde
 	return recording(ctx, ambienceUrl(mix));
 }
 
-/** The level day and night sound plays at, under the device's volume. */
+/** The level day and night sound previews at, under the device's volume. */
 function busLevel(): number {
 	return preferences.current.ambienceLevel * preferences.current.soundVolume;
 }
 
-/** The recording chosen for a scene. */
-function chosen(scene: AmbienceScene): AmbienceMix | undefined {
-	return ambienceMix(
-		scene === 'night' ? preferences.current.nightAmbience : preferences.current.dayAmbience
-	);
+/** A recording and the Storyteller's level for it, as the public table sends them. */
+export interface AmbienceCue {
+	id: string;
+	level: number;
 }
 
 class Ambience {
@@ -47,7 +43,7 @@ class Ambience {
 	#playing: Playing | undefined;
 	#kept = new Set<string>();
 	#paused = false;
-	#scene: AmbienceScene | null = null;
+	#cue: AmbienceCue | undefined;
 
 	/**
 	 * Holds day and night sound silent until resumed, from the soundboard's Pause. A looped
@@ -56,25 +52,24 @@ class Ambience {
 	setPaused(paused: boolean): void {
 		if (this.#paused === paused) return;
 		this.#paused = paused;
-		this.sync(this.#scene);
+		this.follow(this.#cue);
 	}
 
 	/**
-	 * Plays this scene's recording as the preferences choose, fading out the one before; null
-	 * stops it. Reads the preferences, so an effect that calls it follows their changes.
+	 * Plays the recording the Storyteller's game names, at their level under this device's
+	 * volume, fading out the one before; undefined stops it.
 	 */
-	sync(scene: AmbienceScene | null): void {
-		this.#scene = scene;
-		const on = preferences.current.ambienceOn && scene !== null;
-		const mix = on ? chosen(scene) : undefined;
-		const level = this.#paused ? 0 : busLevel();
+	follow(cue: AmbienceCue | undefined): void {
+		this.#cue = cue;
+		const mix = cue && ambienceMix(cue.id);
+		const level = this.#paused || !cue ? 0 : cue.level * preferences.current.soundVolume;
 		if (this.#playing && this.#playing.id !== mix?.id) this.#fadeOut(this.#playing);
 		if (!mix) return;
 		const ctx = audio();
 		if (!ctx) return;
-		// The board may open before any tap, as after a reload.
+		// A phone or the town may get it before any tap, as after a reload.
 		if (ctx.state === 'suspended') unlockOnFirstTap();
-		this.#keepOffline();
+		this.#keepOffline(mix);
 		if (!this.#bus) {
 			this.#bus = ctx.createGain();
 			this.#bus.connect(ctx.destination);
@@ -83,15 +78,12 @@ class Ambience {
 		if (this.#playing?.id !== mix.id) this.#start(ctx, this.#bus, mix);
 	}
 
-	/** Stores both scenes' recordings, so a game later on with no signal still has them. */
-	#keepOffline(): void {
-		const urls = (['night', 'day'] as const)
-			.map((scene) => chosen(scene))
-			.filter((mix) => mix !== undefined)
-			.map(ambienceUrl)
-			.filter((url) => !this.#kept.has(url));
-		for (const url of urls) this.#kept.add(url);
-		keepOffline(urls);
+	/** Stores the recording, so it plays again later on with no signal. */
+	#keepOffline(mix: AmbienceMix): void {
+		const url = ambienceUrl(mix);
+		if (this.#kept.has(url)) return;
+		this.#kept.add(url);
+		keepOffline([url]);
 	}
 
 	#start(ctx: AudioContext, bus: GainNode, mix: AmbienceMix): void {

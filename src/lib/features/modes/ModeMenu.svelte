@@ -26,7 +26,6 @@
 	import { findMode } from './custom-modes.svelte.ts';
 	import { readGameMode } from './game-mode-store.ts';
 	import { seedInPlay } from './in-play.ts';
-	import GameInfoEditDialog, { type GameInfoChanges } from './GameInfoEditDialog.svelte';
 	import GameInfoSheet, { type GameInfoRow } from './GameInfoSheet.svelte';
 	import ModeInspectDialog from './ModeInspectDialog.svelte';
 	import { hasSpectatorVote } from './specters.ts';
@@ -54,9 +53,11 @@
 		/** The corner name, which opens the menu; without it the menu is a dialog opened by `open` (the board's ⋯, while the corner name is hidden). */
 		children?: Snippet;
 		open?: boolean;
-		/** Renames the Storyteller: their row is then tappable (Trevor, 2026-10-19: "edit storyteller name in bottom left"). */
-		/** Saves the Game info pencil's changes; without it Game info has no pencil. */
-		onEdit?: (changes: GameInfoChanges) => void;
+		/**
+		 * The Storyteller's own board: each row has an eye for the corner. The Storyteller's name
+		 * is the Profile's, renamed only there (Trevor, 2026-10-30).
+		 */
+		editable?: boolean;
 		/**
 		 * The board corner's other lines, so Game info has all of them where the corner can't
 		 * show them (Trevor, 2026-10-23: "on mobile I can't see the join code or game time").
@@ -76,14 +77,13 @@
 		game,
 		children,
 		open = $bindable(false),
-		onEdit,
+		editable = false,
 		startedAt,
 		endedAt,
 		phase,
 		watcherCount = 0,
 		onShare
 	}: Props = $props();
-	let editing = $state(false);
 	const gameId = $derived(game.gameId);
 
 	const group = $derived(townGroupOf(gameId));
@@ -183,7 +183,7 @@
 	]);
 	/** A row's eye, when it has one: every row but the script's name, which opens Game info. */
 	const lineOf = (key: string) =>
-		onEdit ? CORNER_LINES.find((line): line is CornerLine => line === key) : undefined;
+		editable ? CORNER_LINES.find((line): line is CornerLine => line === key) : undefined;
 	function toggleLine(line: CornerLine) {
 		const lines = preferences.current.cornerLines;
 		preferences.update({ cornerLines: { ...lines, [line]: !lines[line] } });
@@ -281,17 +281,6 @@
 			aria-label={t('modes.info.download')}
 			data-testid="game-info-download"
 			onclick={() => void downloadScript()}><Icon name="download" /></button
-		>{:else if row.key === 'storyteller' && onEdit}<!-- A small pencil by the name it renames
-		(Trevor, 2026-10-27). --><button
-			type="button"
-			class="inline-icon after"
-			aria-label={t('modes.info.editStoryteller')}
-			aria-haspopup="dialog"
-			data-testid="game-info-edit"
-			onclick={() => {
-				open = false;
-				editing = true;
-			}}><Icon name="edit" /></button
 		>{/if}
 {/snippet}
 {#snippet actions()}
@@ -364,17 +353,10 @@
 	bind:open
 	rows={info}
 	{children}
-	lead={onEdit ? eye : undefined}
+	lead={editable ? eye : undefined}
 	{after}
 	footer={actions}
 />
-{#if onEdit}
-	<GameInfoEditDialog
-		bind:open={editing}
-		initial={{ storytellerName: game.storytellerName ?? '' }}
-		onsave={onEdit}
-	/>
-{/if}
 {#if inspected}<ModeInspectDialog bind:open={inspecting} mode={inspected} />{/if}
 {#if specters && mode}<SpectersSheet bind:open={spectating} {game} {mode} />{/if}
 

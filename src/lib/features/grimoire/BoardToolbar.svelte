@@ -24,6 +24,9 @@
 		/** A new seat waits for its place on the board. */
 		placing: boolean;
 		onCancelPlacing: () => void;
+		/** The Grimoire is shown to a player: nothing over it but the X that ends it. */
+		showing?: boolean;
+		onStopShowing?: () => void;
 		onDay: () => void;
 		onInfo: () => void;
 		onScript: () => void;
@@ -40,6 +43,8 @@
 		seatArr,
 		placing,
 		onCancelPlacing,
+		showing = false,
+		onStopShowing,
 		onDay,
 		onInfo,
 		onScript,
@@ -77,6 +82,11 @@
 	{:else if placing}
 		<span class="title">Add a seat</span>
 		<Button variant="quiet" icon="close" onclick={onCancelPlacing}>Cancel</Button>
+	{:else if showing}
+		<!-- Only the X, top right, so the player sees nothing of the Storyteller's controls
+		     (Trevor, 2026-10-30). -->
+		<span class="spacer"></span>
+		<IconButton icon="close" label="Close" onclick={onStopShowing} />
 	{:else}
 		<!-- ☰ and the cover, in the same spot as on the day's sheet (GameLead). -->
 		<GameLead {watching}>{@render lead?.()}</GameLead>

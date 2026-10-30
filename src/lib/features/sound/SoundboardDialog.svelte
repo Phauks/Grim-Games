@@ -25,10 +25,11 @@
 	 */
 	let { open = $bindable(false) }: { open?: boolean } = $props();
 
-	// Play on (plan U10): the soundboard reaches the Public Town through this board's room.
+	// Play on (plan U10): the soundboard reaches the Public Town and phones through this
+	// board's room, and never sounds here (Trevor, 2026-10-30).
 	$effect(() => {
 		if (!roomHost().code) return;
-		soundboard.town = (command) => roomHost().townSound(command);
+		soundboard.town = (command) => roomHost().townSound(command, preferences.current.soundOutput);
 		return () => (soundboard.town = undefined);
 	});
 

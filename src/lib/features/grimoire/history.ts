@@ -427,6 +427,12 @@ function describeEntry(
 				{ kind: 'character', characterId: assigned.characterId }
 			];
 	}
+	// A used ability reads as its day log line, with whom it was used on (Trevor, 2026-10-30),
+	// not as the No Ability token it placed.
+	if (entry.command === 'UseAbility') {
+		const logged = entry.events.find((e) => e.type === 'DayEntryAdded');
+		if (logged) return describeEvent(logged, before, after, characters);
+	}
 	if (entry.events.length > 1 && entry.events.every((e) => e.type === 'ReminderAdded')) {
 		return [text(`Placed ${entry.events.length} reminders`)];
 	}

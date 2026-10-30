@@ -1,7 +1,7 @@
 import { dayTimers } from '#lib/core/rules/index.ts';
 import { preferences } from '#lib/ui/preferences.svelte.ts';
 import { gameSettings } from '#lib/features/game-settings/game-settings.svelte.ts';
-import { playSound, unlockSound, vibrate } from '#lib/features/sound/sound.ts';
+import { unlockSound, vibrate } from '#lib/features/sound/sound.ts';
 import { keepScreenAwake } from './timer-wake-lock.ts';
 
 const { adjust, dayTimer, elapsed, isFresh, isOver, isRunning, pause, remaining, shown, start } =
@@ -137,9 +137,9 @@ class LiveDayTimer {
 		}
 		if (!this.#signalled) {
 			this.#signalled = true;
+			// Silent here: the Public Town and phones ring (room-sounds.ts), so the sound never
+			// gives away where the Storyteller sits (Trevor, 2026-10-30).
 			if (preferences.current.timerVibrate) vibrate();
-			// A stopwatch has no sound (Trevor, 2026-10-23); its setting shows disabled.
-			if (this.mode === 'down') playSound(preferences.current.timerSound);
 		}
 	}
 

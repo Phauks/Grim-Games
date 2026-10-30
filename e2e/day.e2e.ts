@@ -75,8 +75,22 @@ test('the Slayer is marked Used and unmarked after a confirm each, and the Washe
 	const used = page.getByRole('button', { name: 'Used: Slayer (Ben)' });
 	const before = await place(used);
 	await used.tap();
+	// It asks whom the Slayer chose first (Trevor, 2026-10-30), from every seat, Ben too.
+	const chooser = page.getByRole('dialog', { name: /^Who did Slayer \(\s?Ben\s?\) choose\?$/ });
+	await expect(chooser.getByRole('button', { name: /Ben/ })).toBeVisible();
+	await chooser.getByRole('button', { name: /Hal/ }).tap();
 	const confirm = page.getByRole('alertdialog', { name: /^Mark Slayer \(\s?Ben\s?\) as used\?$/ });
 	await expect(confirm).toContainText('Slayer (Ben) has not used their ability.');
+	const on = confirm.getByTestId('day-use-on');
+	await expect(on).toHaveText('Hal');
+	// The player can be changed, or left as None, before Confirm.
+	await on.tap();
+	await chooser.getByRole('button', { name: 'None', exact: true }).tap();
+	await expect(on).toHaveText('None');
+	await on.tap();
+	await chooser.getByRole('button', { name: /Gus/ }).tap();
+	await expect(on).toHaveText('Gus');
+	await confirm.screenshot({ path: `test-results/day-use-on-${test.info().project.name}.png` });
 	await confirm.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(used).toHaveAttribute('aria-pressed', 'true');
 	// The reminder stays where it was, pressed, so the list does not jump.
@@ -89,6 +103,7 @@ test('the Slayer is marked Used and unmarked after a confirm each, and the Washe
 	await expect(used).toHaveAttribute('aria-pressed', 'false');
 	await expect(undo).toBeHidden();
 	await used.tap();
+	await chooser.getByRole('button', { name: /Hal/ }).tap();
 	await confirm.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(used).toHaveAttribute('aria-pressed', 'true');
 

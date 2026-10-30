@@ -12,6 +12,7 @@
 		type DayMark,
 		dayClaim,
 		dayStateFromGame,
+		dayUseWho,
 		isOnceOnlyDayAbility,
 		daySentence,
 		madnessOffer,
@@ -42,6 +43,7 @@
 	import type { DayPort } from './day-port.ts';
 	import NoteSheet, { type NoteTarget } from './NoteSheet.svelte';
 	import MadnessDeathDialog from './MadnessDeathDialog.svelte';
+	import DayUseDialog from './DayUseDialog.svelte';
 
 	interface Props {
 		game: DayPort;
@@ -102,7 +104,14 @@
 		pending?.run();
 	}
 
+	let dayUse = $state<DayUseDialog>();
 	function askUsed(seatId: SeatId, characterId: CharacterId) {
+		// Who it was used on, when its rules ask (Trevor, 2026-10-30).
+		const on = dayUseWho(characterId, game.characters);
+		if (on) {
+			dayUse?.ask({ seatId, characterId, who: on });
+			return;
+		}
 		const who = t('day.who', { character: slot('character'), seat: slot('seat') });
 		const token = game.characters.get(characterId)?.reminders.includes(NO_ABILITY);
 		ask({
@@ -521,6 +530,7 @@
 
 <NoteSheet bind:open={noteOpen} {game} target={noteTarget} />
 <MadnessDeathDialog bind:open={madnessOpen} {game} offer={madness} />
+<DayUseDialog bind:this={dayUse} {game} />
 
 <!-- A character as a badge; false inside a button, so it does not open the character. -->
 {#snippet badge(id: CharacterId | undefined, interactive = true)}{#if id}<CharacterBadge

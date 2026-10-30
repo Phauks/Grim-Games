@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { toBoard } from './new-game.ts';
+import { nameStoryteller, toBoard } from './new-game.ts';
 
 // Trevor's playtest notes (2026-10-26): "Hide grim guesses, eyeball feature like we use in
 // notes", and "Grim cover ... Accessible from day or grim view". Later the same day: "Cover
@@ -101,13 +101,9 @@ test('a player hides their guesses and notes on the Grim tab, and has no cover',
 test('the Storyteller covers the screen from the board, beside ☰, and from the day', async ({
 	page
 }) => {
-	const board = await startGame(page);
+	await startGame(page);
 	// Who runs the game shows too (Trevor, 2026-10-27: "Include storyteller name on grim cover").
-	await page.goto(`${board}/setup`);
-	const storyteller = page.getByRole('textbox', { name: 'Storyteller' });
-	await storyteller.fill('Trev');
-	await storyteller.press('Enter');
-	await toBoard(page);
+	await nameStoryteller(page, 'Trev');
 
 	// Never in the ⋯ menu.
 	await page.getByRole('button', { name: 'More', exact: true }).tap();

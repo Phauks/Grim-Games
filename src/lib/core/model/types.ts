@@ -239,7 +239,8 @@ export interface CharacterGuess {
  * - `exile`: a Traveller was exiled (and marked dead by exile if alive). Exile is not an
  *   execution: abilities about executions ignore it
  *   (https://wiki.bloodontheclocktower.com/Exile).
- * - `ability`: a character used its ability; `reminderId` is the "No Ability" token placed.
+ * - `ability`: a character used its ability; `reminderId` is the "No Ability" token placed,
+ *   and `on` the player the use was about (whom the Slayer chose, the Virgin's nominator).
  * - `note`: the Storyteller's free text about a character (a Gossip statement, the Artist's
  *   question, what the Savant was told), with structured `guesses` for the Juggler.
  * - `info`: what a waking character was shown, with the reminder tokens it placed, and
@@ -266,6 +267,7 @@ export type DayEntry =
 			seatId: SeatId;
 			characterId: CharacterId;
 			reminderId?: ReminderId;
+			on?: SeatId;
 	  }
 	| {
 			kind: 'note';

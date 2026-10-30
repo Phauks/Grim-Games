@@ -12,7 +12,6 @@
 	import type { WatchedTimer } from './watched-timer.svelte.ts';
 	import { hold } from '#lib/ui/hold.ts';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
-	import { playSound } from '#lib/features/sound/sound.ts';
 	import VibrateToggle from '#lib/features/sound/VibrateToggle.svelte';
 	import { canKeepAwake } from './timer-wake-lock.ts';
 	import TimerPerPlayerRow from './TimerPerPlayerRow.svelte';
@@ -51,9 +50,9 @@
 	let soundOpen = $state(false);
 	let controlsOpen = $state(false);
 	const soundLabel = (sound: TimerSound) => t(`day.timerSound.${sound}`);
+	// Not played here: the board is the Storyteller's device (Trevor, 2026-10-30).
 	function chooseSound(sound: TimerSound) {
 		preferences.update({ timerSound: sound });
-		playSound(sound);
 	}
 </script>
 
