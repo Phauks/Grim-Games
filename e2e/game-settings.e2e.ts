@@ -35,10 +35,10 @@ test('Game settings opens on Character selection, and a choice there is kept for
 	);
 	const track = settings.getByRole('checkbox', { name: 'Track nominations', includeHidden: true });
 	await expect(track).not.toBeChecked();
-	// The day timer is always on players' phones: only its style is a choice (Trevor, 2026-10-28).
-	await settings.getByRole('combobox', { name: 'Day timer on players’ phones' }).tap();
-	await expect(page.getByRole('option')).toHaveText(['Sun', 'Timer']);
-	await page.keyboard.press('Escape');
+	// Players' phones always show the day timer as a sun (Trevor, 2026-10-29): no choice of it.
+	await expect(
+		settings.getByRole('combobox', { name: 'Day timer on players’ phones' })
+	).toHaveCount(0);
 	await settings.getByText('Track nominations', { exact: true }).tap();
 	await expect(track).toBeChecked();
 	// What phones show beside Setup is chosen here too (Trevor, 2026-10-28).
