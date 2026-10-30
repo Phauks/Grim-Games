@@ -201,6 +201,12 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	{ title: 'Search Settings for any setting by name', parts: ['S24'] },
 	{
 		title:
+			'Print your own script sheet: Letter or A4, your margins, and what goes on the front and back',
+		parts: ['T1']
+	},
+	{ title: 'A background image on the printed sheet', parts: ['T2'], later: true },
+	{
+		title:
 			'Sound: every sound in one place, Back to town (also on locked phones), day and night ambience, a soundboard with a mixer and hot spots, sounds for your actions, playing on Town Square or another speaker, your own sounds',
 		parts: ['U1', 'U2', 'U3', 'U4', 'U6', 'U7', 'U8', 'U9', 'U10', 'U11', 'U12']
 	},
