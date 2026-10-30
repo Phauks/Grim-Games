@@ -29,6 +29,10 @@
 			}
 		]
 	},
+	"dayUse": {
+		"who": "guesser",
+		"spentToken": "Guess Used"
+	},
 	"deathCause": {
 		"none": "loss condition"
 	},

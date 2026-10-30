@@ -12,7 +12,7 @@
 		type DayMark,
 		dayClaim,
 		dayStateFromGame,
-		dayUseWho,
+		dayUseOf,
 		isOnceOnlyDayAbility,
 		daySentence,
 		madnessOffer,
@@ -107,9 +107,9 @@
 	let dayUse = $state<DayUseDialog>();
 	function askUsed(seatId: SeatId, characterId: CharacterId) {
 		// Who it was used on, when its rules ask (Trevor, 2026-10-30).
-		const on = dayUseWho(characterId, game.characters);
-		if (on) {
-			dayUse?.ask({ seatId, characterId, who: on });
+		const rule = dayUseOf(characterId, game.characters);
+		if (rule) {
+			dayUse?.ask({ seatId, characterId, rule });
 			return;
 		}
 		const who = t('day.who', { character: slot('character'), seat: slot('seat') });
@@ -135,8 +135,9 @@
 	 */
 	function askUnmarkUsed(seatId: SeatId, characterId: CharacterId) {
 		const who = t('day.who', { character: slot('character'), seat: slot('seat') });
+		const label = spentOf(characterId);
 		const token = g.seats[seatId].reminders.find(
-			(r) => r.characterId === characterId && r.label === NO_ABILITY
+			(r) => r.characterId === characterId && r.label === label
 		);
 		ask({
 			action: t('day.unmarkUsed'),
@@ -147,6 +148,7 @@
 			after: t('day.markUsedNow', { who }),
 			characterId,
 			seatId,
+			tokens: { now: label },
 			run: () => unmarkUsed(seatId, characterId)
 		});
 	}
@@ -159,8 +161,9 @@
 			game.run({ type: 'RemoveDayEntry', entryId: entry.entryId });
 			return;
 		}
+		const label = spentOf(characterId);
 		const token = g.seats[seatId].reminders.find(
-			(r) => r.characterId === characterId && r.label === NO_ABILITY
+			(r) => r.characterId === characterId && r.label === label
 		);
 		if (token) game.run({ type: 'RemoveReminder', reminderId: token.reminderId });
 	}
@@ -218,10 +221,21 @@
 				(e) => e.kind === 'ability' && e.seatId === seatId && e.characterId === characterId
 			) ||
 			g.seats[seatId].reminders.some(
-				(r) => r.characterId === characterId && r.label === 'No Ability'
+				(r) => r.characterId === characterId && r.label === spentOf(characterId)
 			)
 		);
 	}
+
+	/** The token that marks an ability used: "No Ability", or its own (the Golem's). */
+	const spentOf = (characterId: CharacterId) =>
+		dayUseOf(characterId, game.characters)?.spentToken ?? NO_ABILITY;
+	/**
+	 * Used, for a once-per-game day ability or one whose use is about a player (`dayUse`: the
+	 * Psychopath's daily kill, the Klutz's choice once dead; Trevor, 2026-10-30).
+	 */
+	const usedButton = (characterId: CharacterId) =>
+		isOnceOnlyDayAbility(characterId, game.characters) ||
+		dayUseOf(characterId, game.characters) !== undefined;
 
 	function hasNote(target: NoteTarget): boolean {
 		return g.today.entries.some(
@@ -259,7 +273,7 @@
 	};
 	const hasDayButton = (characterId: CharacterId | undefined) =>
 		characterId !== undefined &&
-		(isOnceOnlyDayAbility(characterId, game.characters) ||
+		(usedButton(characterId) ||
 			noteClaim(characterId) !== undefined ||
 			savantButton(characterId) ||
 			markButton(characterId) !== undefined);
@@ -349,7 +363,7 @@
 		seat: game.seatName(seatId)
 	})}
 	<!-- eslint-enable grim/names-as-badges -->
-	{#if characterId && isOnceOnlyDayAbility(characterId, game.characters)}
+	{#if characterId && usedButton(characterId)}
 		{@const isUsed = used(seatId, characterId)}
 		<Chip
 			pressed={isUsed}
@@ -541,7 +555,9 @@
 {#snippet pendingSlot(name: string)}{#if name === 'seat'}{#if pending}<PlayerBadge
 				name={game.seatName(pending.seatId)}
 			/>{/if}{:else if name === 'reminder' || name === 'now' || name === 'after'}<ReminderToken
-			label={name === 'reminder' ? NO_ABILITY : (pending?.tokens?.[name] ?? NO_ABILITY)}
+			label={name === 'reminder'
+				? (pending?.tokens?.now ?? NO_ABILITY)
+				: (pending?.tokens?.[name] ?? NO_ABILITY)}
 			character={pending ? game.characters.get(pending.characterId) : undefined}
 		/>{:else}{@render badge(pending?.characterId)}{/if}{/snippet}
 

@@ -8,6 +8,10 @@
  * - https://wiki.bloodontheclocktower.com/Virgin (the first player to nominate them)
  * - https://wiki.bloodontheclocktower.com/Judge (forces the current execution, after another
  *   player nominated)
+ * - https://wiki.bloodontheclocktower.com/Golem (the player they nominate dies unless the Demon)
+ * - https://wiki.bloodontheclocktower.com/Psychopath, /Gangster, /Gunslinger (the chosen dies)
+ * - https://wiki.bloodontheclocktower.com/Klutz, /Moonchild, /Cacklejack (choose a player)
+ * - https://wiki.bloodontheclocktower.com/Damsel (a Minion guesses)
  */
 import { describe, expect, it } from 'vitest';
 import type { Command } from '#lib/core/engine/index.ts';
@@ -19,6 +23,8 @@ import {
 import {
 	correctGuesses,
 	dayClaim,
+	dayUseDeath,
+	dayUseOf,
 	dayUseSuggestion,
 	dayUseWho,
 	distinctGuesses,
@@ -49,6 +55,19 @@ describe('dayUseWho', () => {
 		expect(dayUseWho('fisherman')).toBeUndefined();
 	});
 
+	it('reads whether the player dies, and the token that marks it used', () => {
+		for (const id of ['slayer', 'psychopath', 'gangster', 'gunslinger', 'golem'])
+			expect(dayUseOf(id)?.kills, id).toBe(true);
+		for (const id of ['klutz', 'moonchild', 'cacklejack', 'damsel', 'virgin'])
+			expect(dayUseOf(id)?.kills, id).toBeUndefined();
+		expect(dayUseOf('golem')).toEqual({
+			who: 'nominated',
+			kills: true,
+			spentToken: 'May Not Nominate'
+		});
+		expect(dayUseOf('damsel')).toEqual({ who: 'guesser', spentToken: 'Guess Used' });
+	});
+
 	it('reads a custom character’s own block', () => {
 		const custom = new Map([['marksman', { rules: { dayUse: { who: 'chosen' as const } } }]]);
 		expect(dayUseWho('marksman', custom)).toBe('chosen');
@@ -75,10 +94,52 @@ describe('dayUseSuggestion', () => {
 		expect(dayUseSuggestion(game, seats[2], 'nominee')).toBe(seats[0]);
 	});
 
+	it('fills in whom the seat nominated (the Golem nominates once)', () => {
+		const { game, seats } = today();
+		expect(dayUseSuggestion(game, seats[1], 'nominated')).toBe(seats[0]);
+		expect(dayUseSuggestion(game, seats[0], 'nominated')).toBeUndefined();
+	});
+
 	it('knows nothing of a choice, or of a nomination not logged', () => {
 		const { game, seats } = today();
 		expect(dayUseSuggestion(game, seats[0], 'chosen')).toBeUndefined();
 		expect(dayUseSuggestion(game, seats[2], 'nominator')).toBeUndefined();
+	});
+});
+
+describe('dayUseDeath', () => {
+	const cast = (...ids: string[]) => {
+		const { session, ctx, seats } = newGame(ids.map((_, i) => `P${i}`));
+		const s = run(
+			session,
+			ctx,
+			...ids.map((characterId, i): Command => ({
+				type: 'AssignCharacter',
+				seatId: seats[i],
+				characterId
+			}))
+		);
+		return { game: s.game, seats, ctx, session: s };
+	};
+
+	it('kills the Demon the Slayer shoots, and nobody else', () => {
+		const { game, seats } = cast('slayer', 'imp', 'chef', 'baron');
+		expect(dayUseDeath(game, 'slayer', seats[1], characters)).toBe('dies');
+		expect(dayUseDeath(game, 'slayer', seats[2], characters)).toBe('no');
+	});
+
+	it('leaves a Recluse shot by the Slayer to the Storyteller', () => {
+		// The Recluse might register as the Demon (https://wiki.bloodontheclocktower.com/Recluse).
+		const { game, seats } = cast('slayer', 'imp', 'recluse', 'baron');
+		expect(dayUseDeath(game, 'slayer', seats[2], characters)).toBe('maybe');
+	});
+
+	it('kills anyone but the Demon the Golem nominates, and nobody already dead', () => {
+		const { game, seats, ctx, session } = cast('golem', 'imp', 'chef', 'baron');
+		expect(dayUseDeath(game, 'golem', seats[2], characters)).toBe('dies');
+		expect(dayUseDeath(game, 'golem', seats[1], characters)).toBe('no');
+		const dead = run(session, ctx, { type: 'SetDead', seatId: seats[2], dead: true });
+		expect(dayUseDeath(dead.game, 'golem', seats[2], characters)).toBe('no');
 	});
 });
 

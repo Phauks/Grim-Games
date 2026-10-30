@@ -15,6 +15,10 @@
 			}
 		]
 	},
+	"dayUse": {
+		"who": "chosen",
+		"kills": true
+	},
 	"deathCause": {
 		"kind": "kills"
 	}
