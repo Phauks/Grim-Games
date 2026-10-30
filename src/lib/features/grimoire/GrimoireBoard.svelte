@@ -625,6 +625,8 @@
 		roomHost().showLook(game.gameId, shown, picture);
 	}
 	let menuOpen = $state(false);
+	/** The board shown to a player who looks at the Grimoire, from their night step. */
+	let showingGrim = $state(false);
 	/** ⋯'s New game, which asks to end this game first (Trevor, 2026-10-26). */
 	let newGameSheet = $state<NewGameSheet>();
 	// ── Info tokens: the cards shown to players, one tap from the toolbar ──
@@ -718,6 +720,11 @@
 		{seatArr}
 		placing={!!placing}
 		onCancelPlacing={() => (placing = undefined)}
+		showing={showingGrim}
+		onStopShowing={() => {
+			showingGrim = false;
+			nw.guideOpen = true;
+		}}
 		onDay={() => (dayOpen = true)}
 		onInfo={() => (infoOpen = true)}
 		onScript={() => (scriptOpen = true)}
@@ -745,6 +752,8 @@
 		class:holding={heldSeat !== undefined}
 		class:walking={nw.walk !== undefined}
 		class:ended={!!ended}
+		class:showing={showingGrim}
+		inert={showingGrim}
 		style:--tray-h="{chip + 30}px"
 		style:--strip-h={nw.walk ? STRIP_H : undefined}
 		style:--name-scale={boardLooks.current.nameSize}
@@ -1114,6 +1123,7 @@
 		infoOpen = true;
 	}}
 	onChooseBluffs={() => (bluffsOpen = true)}
+	onShowGrimoire={() => (showingGrim = true)}
 	{onDraw}
 />
 
@@ -1226,6 +1236,11 @@
 	.game-over[data-team='evil'] {
 		background: var(--evil);
 		color: var(--on-evil);
+	}
+	/* Shown to a player: the seats only, with the room for the rest kept so nothing moves. */
+	.board.showing :global(:is([data-tray], [data-testid='night-strip'])),
+	.board.showing .board-timer {
+		visibility: hidden;
 	}
 	/* The day timer in the board's top right corner, clear of the seats' ring. */
 	.board-timer {
