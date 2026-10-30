@@ -22,8 +22,6 @@
 	import { planImport, readAccountExport, type ImportPlan } from './import-file.ts';
 	import { accountSync } from './sync/sync.svelte.ts';
 	import PasswordDialog from './PasswordDialog.svelte';
-	import ProfileIcon from './ProfileIcon.svelte';
-	import ProfileIconDialog from './ProfileIconDialog.svelte';
 	// Scripts are shown in the Library now, but signing in here still saves the device's
 	// scripts to the profile, which this module does when the user changes.
 	import './profile-scripts.svelte.ts';
@@ -94,7 +92,6 @@
 	let editUsername = $state(false);
 	let editEmail = $state(false);
 	let editPassword = $state(false);
-	let editIcon = $state(false);
 	let busy = $state(false);
 
 	const date = (ms: number) => intl.date(ms);
@@ -252,14 +249,6 @@
 				<h2 id="you">{t('account.you.title')}</h2>
 				<!-- The account is its own id: the username and email can change at any time. -->
 				<dl>
-					<dt>{t('account.you.icon')}</dt>
-					<dd><span class="icon"><ProfileIcon icon={account.user.icon} /></span></dd>
-					<IconButton
-						icon="edit"
-						label={t('account.icon.title')}
-						onclick={() => (editIcon = true)}
-						disabled={busy}
-					/>
 					<dt>{t('account.you.username')}</dt>
 					<dd data-testid="account-username">{account.user.username ?? t('common.none')}</dd>
 					<IconButton
@@ -429,7 +418,6 @@
 <UsernameDialog bind:open={editUsername} />
 <ChangeEmailDialog bind:open={editEmail} />
 <PasswordDialog bind:open={editPassword} />
-<ProfileIconDialog bind:open={editIcon} />
 
 <ConfirmDialog
 	bind:open={confirmDelete}
@@ -520,11 +508,6 @@
 	}
 	.muted {
 		margin: 0;
-	}
-	.icon {
-		display: grid;
-		width: var(--tap-target);
-		height: var(--tap-target);
 	}
 	.buttons {
 		display: flex;
