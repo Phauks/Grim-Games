@@ -6564,7 +6564,7 @@ test('the reminder bank pulls up by its handle bar to show every token, and toke
 	await expect(bin).toBeVisible();
 	await expect(handle).toHaveAttribute('aria-expanded', 'true');
 	await expect(page.getByRole('list', { name: 'Reminder bank' })).toHaveCount(0);
-	expect((await bank.boundingBox())!.y).toBeLessThan(rowTop - 100);
+	expect((await bank.boundingBox())!.y).toBeLessThan(rowTop - 20);
 	expect((await run.boundingBox())!.y).toBeCloseTo(runAt.y, 0);
 	// Under the bank's own captions, in rows.
 	await expect(bin.getByText('∞', { exact: true })).toBeVisible();

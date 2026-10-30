@@ -213,11 +213,16 @@
 		// Clear of the handle bar in the middle of the row's top edge (Trevor, 2026-10-30).
 		const middle = start + row.clientWidth / 2;
 		const half = grabW * 0.3 + gap;
-		for (const c of placed) {
+		placed.forEach((c, i) => {
 			const x = (c.left / 100) * width + gap;
-			if (x < middle + half && x + (captionW[c.group] ?? 0) > middle - half)
-				c.left = pct(middle + half - gap);
-		}
+			const w = captionW[c.group] ?? 0;
+			if (x >= middle + half || x + w <= middle - half) return;
+			// Moved past it unless that runs into the next caption: then it stays, drawn over
+			// the bar, rather than going.
+			const next = placed[i + 1];
+			const moved = middle + half - gap;
+			if (!next || (next.left / 100) * width >= moved + gap + w) c.left = pct(moved);
+		});
 		// A caption goes once the next one reaches it, so no two overlap (Trevor, 2026-10-19).
 		return placed.filter((c, i) => {
 			const next = placed[i + 1];
@@ -596,13 +601,16 @@
 	.bank.tall {
 		z-index: 3;
 		align-items: stretch;
-		height: calc(var(--tray-h) + var(--reach));
+		/* As tall as its tokens need, up to most of the board, so no empty space sits above the
+		   run button. */
+		height: auto;
+		max-height: calc(var(--tray-h) + var(--reach));
 		background: var(--surface-raised);
 		box-shadow: var(--shadow);
-		transition: height var(--duration-fast) ease;
 	}
+	/* Pulled by its handle: it follows the finger. */
 	.bank.pulling {
-		transition: none;
+		height: calc(var(--tray-h) + var(--reach));
 	}
 	.every {
 		flex: 1;
@@ -619,16 +627,27 @@
 	.bank.lowered .every {
 		opacity: 0;
 	}
+	/* The run button keeps its corner cell at the foot, the size it is in the row, its own
+	   rounded corner towards the tokens (Trevor, 2026-10-30: it looked bad pulled up). */
 	.bank.tall :global(.run) {
-		align-self: flex-end;
+		position: absolute;
+		right: 0;
+		bottom: 0;
 		height: calc(var(--tray-h) - 2px); /* px-ok: the bank's two borders */
+		border-start-start-radius: calc(var(--radius-md) - 1px);
+	}
+	/* The tokens to its left, so the last row sits beside it. */
+	.bank.tall .every {
+		min-height: calc(var(--tray-h) * 2);
+		padding-inline-end: calc(var(--run-w, 0rem) + var(--space-2));
 	}
 	/* The handle bar, on the top edge over the middle of the tokens, half over the board. */
 	.grab {
 		position: absolute;
 		top: 0;
 		left: calc((100% - var(--run-w, 0rem)) / 2);
-		z-index: 4;
+		/* Under the captions, which let a press through to it. */
+		z-index: 2;
 		translate: -50% -50%;
 	}
 	/*
