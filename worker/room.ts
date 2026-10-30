@@ -71,7 +71,8 @@ import {
 	linkAccount,
 	requestAccount,
 	seatAccount,
-	withAccount
+	withAccount,
+	type SeatTarget
 } from './room-accounts.ts';
 import type { AccountEnv } from './account/objects.ts';
 import {
@@ -163,9 +164,9 @@ export class Room extends DurableObject<RoomEnv> {
 		return liveGame(code, room, script?.script, this.present().size, active);
 	}
 
-	/** The account in `seatId`, for `requester` to friend (worker/room-accounts.ts). */
-	async friendSeat(requester: string, seatId: string): Promise<string | 'self' | undefined> {
-		return seatAccount(this.ctx, await this.load(), requester, seatId);
+	/** The account in a seat or the Storyteller's, for `requester` to friend (room-accounts.ts). */
+	async friendSeat(requester: string, target: SeatTarget): Promise<string | 'self' | undefined> {
+		return seatAccount(this.ctx, await this.load(), requester, target);
 	}
 
 	async fetch(request: Request): Promise<Response> {
