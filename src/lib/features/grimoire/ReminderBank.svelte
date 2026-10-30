@@ -210,18 +210,19 @@
 			if (line + gap + (captionW[group] ?? 0) > end) return;
 			placed.push({ group, text, left: pct(Math.max(start, line)) });
 		});
-		// Clear of the handle bar in the middle of the row's top edge (Trevor, 2026-10-30).
-		const middle = start + row.clientWidth / 2;
-		const half = grabW * 0.3 + gap;
+		// Clear of the handle bar in the middle of the bank's top edge (Trevor, 2026-10-30).
+		const middle = width / 2;
+		const half = grabW * 0.375 + gap; // half its tab, 3.75 of the handle's 5 units wide
 		placed.forEach((c, i) => {
 			const x = (c.left / 100) * width + gap;
 			const w = captionW[c.group] ?? 0;
 			if (x >= middle + half || x + w <= middle - half) return;
-			// Moved past it unless that runs into the next caption: then it stays, drawn over
-			// the bar, rather than going.
+			// Moved past it unless that runs into the next caption or the run button: then it
+			// stays, drawn over the bar, rather than going.
 			const next = placed[i + 1];
 			const moved = middle + half - gap;
-			if (!next || (next.left / 100) * width >= moved + gap + w) c.left = pct(moved);
+			const limit = next ? (next.left / 100) * width : start + row.clientWidth;
+			if (limit >= moved + gap + w) c.left = pct(moved);
 		});
 		// A caption goes once the next one reaches it, so no two overlap (Trevor, 2026-10-19).
 		return placed.filter((c, i) => {
@@ -507,9 +508,9 @@
 			{/each}
 		</ul>
 	{/if}
-	<!-- The handle bar on the row's top edge, over the middle of the tokens: pulls the bank up
-	     over the board, or back down (Trevor, 2026-10-30). Clear of the run button (Trevor,
-	     2026-10-29: "a drag above the red button is bad placement"). -->
+	<!-- The handle bar in the middle of the bank's top edge: pulls the bank up over the board,
+	     or back down (Trevor, 2026-10-30). Clear of the run button (Trevor, 2026-10-29: "a drag
+	     above the red button is bad placement"). -->
 	<div class="grab" bind:clientWidth={grabW}>
 		<SheetHandle label="Every reminder" expanded={binOpen} onToggle={toggleBin} onPull={pullBin} />
 	</div>
@@ -641,14 +642,32 @@
 		min-height: calc(var(--tray-h) * 2);
 		padding-inline-end: calc(var(--run-w, 0rem) + var(--space-2));
 	}
-	/* The handle bar, on the top edge over the middle of the tokens, half over the board. */
+	/* The handle bar, centred on the bank's top edge, half over the board (Trevor, 2026-10-30). */
 	.grab {
 		position: absolute;
 		top: 0;
-		left: calc((100% - var(--run-w, 0rem)) / 2);
+		left: 50%;
 		/* Under the captions, which let a press through to it. */
 		z-index: 2;
+		display: grid;
+		place-items: center;
 		translate: -50% -50%;
+	}
+	/* Its bar sits in a tab the captions' pill shape, so it reads as part of the bank rather
+	   than a mark across its border. The button around it stays a full tap target. */
+	.grab::before {
+		content: '';
+		position: absolute;
+		width: calc(2.75 * var(--u) + 2 * var(--space-2));
+		height: calc(0.65rem * 1.6);
+		box-sizing: border-box;
+		border: 1px solid var(--border);
+		border-radius: var(--radius-full);
+		background: var(--surface-raised);
+		pointer-events: none;
+	}
+	.grab :global(.handle) {
+		position: relative;
 	}
 	/*
 	 * On the bank's top edge, half over the board, so it is the seat name's pill (PlayerNameMark):
