@@ -1,5 +1,10 @@
 {
 	"actsWhenDead": true,
+	"givesAbility": {
+		"to": "storyteller",
+		"types": ["minion"],
+		"token": "Storyteller Ability"
+	},
 	"onDeath": {
 		"by": "any"
 	},

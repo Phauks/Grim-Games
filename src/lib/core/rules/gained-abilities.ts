@@ -82,8 +82,7 @@ export function holdsAbility(
 	characters: CharacterLookup
 ): boolean {
 	const rule = rulesOf(held.via, characters)?.givesAbility;
-	if (!rule) return false;
-	if (rule.to === 'demon' && typeOf(game, holder, characters) !== 'demon') return false;
+	if (rule?.to !== 'demon' || typeOf(game, holder, characters) !== 'demon') return false;
 	if (!rule.whileWorks) return true;
 	return game.seating.some(
 		(s) =>
@@ -197,4 +196,42 @@ export function heldAbilitiesOf(
 		...held,
 		works: holdsAbility(game, seatId, held, characters)
 	}));
+}
+
+/**
+ * Adds a step for each ability the Storyteller holds (the Plague Doctor's Minion), with that
+ * Minion's night text: right after the Minion's own step when it is in play too, else where
+ * `order` (the night sheet's ids for tonight) puts it, else just before Dawn. The Storyteller
+ * makes its choices (the Plague Doctor's How to Run); it wakes nobody.
+ */
+export function withStorytellerSteps<T extends NightStep>(
+	steps: readonly T[],
+	game: Game,
+	characters: CharacterLookup,
+	night: Night,
+	order: readonly string[] = []
+): (T | NightStep)[] {
+	const out: (T | NightStep)[] = [...steps];
+	for (const held of game.storytellerAbilities ?? []) {
+		const as = characters.get(held.characterId);
+		const reminder = as && (night === 'first' ? as.firstNightReminder : as.otherNightReminder);
+		if (!as || reminder === undefined) continue;
+		const step: NightStep = {
+			id: `storyteller:${held.via}:${held.characterId}`,
+			kind: 'character',
+			character: as,
+			reminder,
+			afterDawn: false,
+			placement: 'night-sheet',
+			notes: ['The Storyteller makes this choice; nobody wakes.'],
+			storytellerAbility: held
+		};
+		const own = out.findIndex((s) => s.id === held.characterId);
+		const at = order.indexOf(held.characterId);
+		const later = at < 0 ? -1 : out.findIndex((s) => order.indexOf(s.id) > at);
+		const dawn = out.findIndex((s) => s.id === 'dawn');
+		const placed = own >= 0 ? own + 1 : later >= 0 ? later : dawn >= 0 ? dawn : out.length;
+		out.splice(placed, 0, step);
+	}
+	return out;
 }

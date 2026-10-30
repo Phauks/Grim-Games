@@ -1,10 +1,12 @@
 <script lang="ts">
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
+	import { rulesOf } from '#lib/core/data/rules/index.ts';
 	import { ruleReminders, type ReminderId } from '#lib/core/model/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterDialog from '#lib/features/characters/CharacterDialog.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
+	import Button from '#lib/ui/primitives/Button.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -18,7 +20,8 @@
 	 * Fabled and Loric are rules of the game, not seats (Trevor, 2026-10-17): the dialogs the
 	 * board's rule tokens open. Adding one, one's entry with its reminders, all of them at once
 	 * from the corner stack, and removing one. The tokens themselves stay on the board, where
-	 * their reminders are dragged.
+	 * their reminders are dragged. An ability the Storyteller holds (the Plague Doctor's
+	 * Minion) opens here too, to change or remove it.
 	 */
 	interface Props {
 		grimoire: Grimoire;
@@ -59,6 +62,31 @@
 	/** Every Fabled and Loric at once. */
 	export function showAll(): void {
 		rulesGroupOpen = true;
+	}
+
+	// An ability the Storyteller holds, by the character that gave it.
+	let abilityVia = $state<CharacterId | undefined>();
+	let abilityOpen = $state(false);
+	let abilityPickOpen = $state(false);
+	let abilityRemoveOpen = $state(false);
+	const abilityHeld = $derived(
+		game.storytellerAbilities?.find((a) => a.via === abilityVia)?.characterId
+	);
+	const abilityCharacter = $derived(abilityHeld ? characters.get(abilityHeld) : undefined);
+	const abilityTypes = $derived(
+		(abilityVia && rulesOf(abilityVia, characters)?.givesAbility?.types) || []
+	);
+
+	/** An ability the Storyteller holds, given by `via`. */
+	export function showAbility(via: CharacterId): void {
+		abilityVia = via;
+		abilityOpen = true;
+	}
+
+	function setAbility(characterId: CharacterId | undefined) {
+		abilityPickOpen = false;
+		if (characterId === undefined) abilityOpen = false;
+		if (abilityVia) grimoire.run({ type: 'SetStorytellerAbility', via: abilityVia, characterId });
 	}
 
 	/** A character's details, as its token opens them. */
@@ -159,12 +187,84 @@
 					/>
 				</li>
 			{/if}
-		{:else}
-			<li class="none">None</li>
 		{/each}
+		{#each game.storytellerAbilities ?? [] as held (held.via)}
+			{@const character = characters.get(held.characterId)}
+			{#if character}
+				<li class="rule-detail">
+					{@render ruleToken(character)}
+					<div>
+						<h3 class="held-head">Storyteller's ability</h3>
+						<CharacterBadge characterId={character.id} {character} />
+						<p>{character.ability}</p>
+					</div>
+					<Button variant="quiet" disabled={watching} onclick={() => showAbility(held.via)}
+						>Change</Button
+					>
+				</li>
+			{/if}
+		{/each}
+		{#if game.ruleCharacters.length === 0 && !game.storytellerAbilities?.length}
+			<li class="none">None</li>
+		{/if}
 	</ul>
 	<RulesAtSetting disabled={watching} />
 </Dialog>
+
+<Dialog bind:open={abilityOpen} title="Storyteller's ability">
+	{#if abilityCharacter}
+		<div class="rule-detail">
+			{@render ruleToken(abilityCharacter)}
+			<div>
+				<CharacterBadge characterId={abilityCharacter.id} character={abilityCharacter} />
+				<p>{abilityCharacter.ability}</p>
+			</div>
+		</div>
+		<div class="actions">
+			<Button variant="quiet" disabled={watching} onclick={() => (abilityPickOpen = true)}
+				>Change</Button
+			>
+		</div>
+	{/if}
+	{#snippet headActions()}
+		<DeleteButton
+			label="Remove the Storyteller's ability"
+			disabled={watching}
+			onclick={() => (abilityRemoveOpen = true)}
+		/>
+	{/snippet}
+</Dialog>
+
+<CharacterPicker
+	bind:open={abilityPickOpen}
+	title="Storyteller's ability"
+	{characters}
+	script={game.script}
+	types={abilityTypes}
+	current={abilityHeld}
+	onPick={setAbility}
+/>
+
+<ConfirmDialog
+	bind:open={abilityRemoveOpen}
+	title="Remove the Storyteller's ability?"
+	danger
+	onConfirm={() => setAbility(undefined)}
+>
+	{#if abilityHeld}
+		<dl class="change">
+			<dt>Now</dt>
+			<dd>
+				The Storyteller has <CharacterBadge
+					characterId={abilityHeld}
+					character={abilityCharacter}
+				/>
+			</dd>
+			<dt>Becomes</dt>
+			<dd>None</dd>
+		</dl>
+	{/if}
+</ConfirmDialog>
 
 <ConfirmDialog
 	bind:open={ruleRemoveOpen}
@@ -242,6 +342,11 @@
 	.rule-detail > div {
 		flex: 1;
 		min-width: 0;
+	}
+	.actions {
+		display: flex;
+		justify-content: flex-end;
+		margin-top: var(--space-3);
 	}
 	.rules-group {
 		display: grid;

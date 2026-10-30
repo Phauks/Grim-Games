@@ -1,3 +1,6 @@
+import { ambienceMix } from '#lib/core/sound/ambience.ts';
+import { parseSoundOutput, type SoundOutput } from '#lib/core/sound/soundboard.ts';
+
 /**
  * The soundboard played on the Public Town tablet (plan U10, Trevor 2026-10-27: "Soundboard
  * should have options for output (eg device speakers, external speakers, town square,
@@ -65,6 +68,49 @@ export function parseTownSound(raw: unknown): TownSoundCommand | null {
 		default:
 			return null;
 	}
+}
+
+/**
+ * The sounds that follow the game, in the public table (Trevor, 2026-10-30: "Do not play audio
+ * from storytellers device ... Only play remote on other devices"): the Storyteller's device
+ * plays none, so the devices `on` names play the day or night recording and ring when the day
+ * timer runs out. Left out by older apps, whose devices then play neither.
+ */
+export interface PublicSound {
+	on: SoundOutput;
+	/** The day or night recording playing now, at the Storyteller's level (0 to 1). */
+	ambience?: { id: string; level: number };
+	/** What the day timer plays when it runs out; left out for none. */
+	timerSound?: string;
+}
+
+/** The longest timer sound name kept; the device playing it knows the names. */
+const TIMER_SOUND_MAX = 32;
+
+/** The sounds in a public table as anyone sent them; undefined when missing or malformed. */
+export function parsePublicSound(raw: unknown): PublicSound | undefined {
+	if (!raw || typeof raw !== 'object') return undefined;
+	const { on, ambience, timerSound } = raw as Record<string, unknown>;
+	const output = parseSoundOutput(on);
+	if (!output) return undefined;
+	const sound: PublicSound = { on: output };
+	if (ambience && typeof ambience === 'object') {
+		const { id, level } = ambience as Record<string, unknown>;
+		if (
+			typeof id === 'string' &&
+			ambienceMix(id) &&
+			typeof level === 'number' &&
+			Number.isFinite(level)
+		)
+			sound.ambience = { id, level: Math.min(1, Math.max(0, level)) };
+	}
+	if (
+		typeof timerSound === 'string' &&
+		timerSound.length > 0 &&
+		timerSound.length <= TIMER_SOUND_MAX
+	)
+		sound.timerSound = timerSound;
+	return sound;
 }
 
 /** Back to town calls closer together than this are dropped, so phones don't keep ringing. */

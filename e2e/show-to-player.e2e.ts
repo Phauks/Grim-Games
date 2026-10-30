@@ -363,6 +363,9 @@ test('on phones the chosen bluffs are one pinned strip, on tablets rows down the
 	await expect(places).toHaveCount(3);
 	const boxes = await Promise.all([0, 1, 2].map(async (i) => (await places.nth(i).boundingBox())!));
 	const phone = page.viewportSize()!.width < 600;
+	// The whole token shows inside its place (Trevor, 2026-10-30: it was cut off at the bottom).
+	const ring = (await places.first().locator('.ring').boundingBox())!;
+	expect(ring.y + ring.height).toBeLessThanOrEqual(boxes[0].y + boxes[0].height + 0.5);
 	for (const box of boxes.slice(1)) {
 		if (phone) expect(box.y).toBeCloseTo(boxes[0].y, 0);
 		else expect(box.y).toBeGreaterThan(boxes[0].y);
@@ -379,6 +382,27 @@ test('on phones the chosen bluffs are one pinned strip, on tablets rows down the
 	if (phone) expect(head.y).toBeGreaterThanOrEqual(boxes[0].y + boxes[0].height - 1);
 	await places.first().getByRole('button').tap();
 	await expect(page.getByRole('dialog', { name: /Demon bluffs · 0\/3/ })).toBeVisible();
+});
+
+test("a second bluff set marks the Demon's bluffs, but they can still be chosen", async ({
+	page
+}) => {
+	// Trevor, 2026-10-30: say which characters the Demon's set already holds.
+	await page.goto('/spikes/bluffs');
+	await page.getByRole('button', { name: 'Demon bluffs', exact: true }).tap();
+	await page.getByRole('button', { name: 'Choose' }).tap();
+	await choice(page, 'Monk').tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	await page.getByRole('button', { name: 'Add a set' }).tap();
+	await expect(choice(page, 'Monk')).toContainText('Demon bluff');
+	await expect(choice(page, 'Saint')).not.toContainText('Demon bluff');
+	// Marked, never locked (the Storyteller can override anything).
+	await choice(page, 'Monk').tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(page.locator('[data-testid="bluff-set"][data-set="Set 2"]')).toContainText('Monk');
+	// The Demon's own set marks nothing of its own.
+	await page.getByRole('button', { name: 'Choose the Demon bluffs' }).tap();
+	await expect(choice(page, 'Monk')).not.toContainText('Demon bluff');
 });
 
 test("a character's own card is filled in and shown, e.g. the Mezepheles's secret word", async ({

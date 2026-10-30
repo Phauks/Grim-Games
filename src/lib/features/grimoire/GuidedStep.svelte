@@ -4,11 +4,13 @@
 	import NightAlerts from './NightAlerts.svelte';
 	import StepAfflictions from './StepAfflictions.svelte';
 	import ChangeCharacterStep from './ChangeCharacterStep.svelte';
+	import StorytellerAbilityStep from './StorytellerAbilityStep.svelte';
 	import NightSuggested from './NightSuggested.svelte';
 	import NightYesNo from './NightYesNo.svelte';
 	import TravellerAlignment from './TravellerAlignment.svelte';
 	import { STANDARD_INFO_TOKENS, type CharacterId } from '#lib/core/data/index.ts';
 	import { believesDemon, TRAVELLER_ALIGNMENT_STEP } from '#lib/core/rules/index.ts';
+	import { seesGrimoire } from '#lib/core/rules/sees-grimoire.ts';
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import type { InfoChoice, InfoPicker, Night, NightStep } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
@@ -60,6 +62,8 @@
 		/** Tonight's steps, to move to the one before or after without ticking anything. */
 		steps?: readonly NightStep[];
 		onStep?: (step: NightStep) => void;
+		/** A player who looks at the Grimoire (the Spy, the Widow): the board, shown clean. */
+		onShowGrimoire?: () => void;
 	}
 
 	let {
@@ -71,7 +75,8 @@
 		onChooseBluffs,
 		onDraw,
 		steps = [],
-		onStep
+		onStep,
+		onShowGrimoire
 	}: Props = $props();
 
 	const returnLabel = (label: string) => `Return ${label} to the reminder bank`;
@@ -264,10 +269,11 @@
 					<StepIcon {step} size={56} details />
 				</span>
 				<div class="head-text">
-					<p class="who">
-						{#each holders as s, i (s)}{i > 0 ? ', ' : ''}<PlayerBadge
-								name={seatName(game, s)}
-							/>{:else}None{/each}
+					<!-- An ability the Storyteller holds wakes nobody: the Storyteller acts. -->
+					<p class="who" data-testid="step-who">
+						{#if step.storytellerAbility}Storyteller{:else}{#each holders as s, i (s)}{i > 0
+									? ', '
+									: ''}<PlayerBadge name={seatName(game, s)} />{:else}None{/each}{/if}
 					</p>
 					<!-- The whole ability up top, beside the icon and name (Trevor, 2026-10-17). -->
 					{#if step.character?.ability}
@@ -286,6 +292,18 @@
 						{step.reminder}
 					{/if}
 				</p>
+			{/if}
+			<!-- The board itself, for as long as they need (Trevor, 2026-10-30); the step closes
+			     under it and comes back with its X. -->
+			{#if step.character && onShowGrimoire && seesGrimoire(step.character)}
+				<Button
+					variant="quiet"
+					icon="showToPlayer"
+					onclick={() => {
+						open = false;
+						onShowGrimoire();
+					}}>Show the Grimoire</Button
+				>
 			{/if}
 			<NightAlerts {grimoire} {step} withoutImpaired />
 			{#if step.id === TRAVELLER_ALIGNMENT_STEP}
@@ -349,6 +367,7 @@
 						showOpen = true;
 					}}
 				/>
+				<StorytellerAbilityStep {grimoire} {step} />
 			{/if}
 			{#if numberStep}
 				<h3>Info token</h3>

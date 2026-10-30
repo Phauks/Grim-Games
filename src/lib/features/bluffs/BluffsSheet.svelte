@@ -241,6 +241,9 @@
 				bluffs
 				hideInPlayFirst={blocks(editing)}
 				notInPlay
+				marked={editing === DEMON_SET
+					? undefined
+					: { ids: new Set(game.bluffs[DEMON_SET] ?? []), note: t('bluffs.inDemonSet') }}
 			>
 				{#snippet beforeSearch()}{#if editing !== undefined && editing !== DEMON_SET}
 						<form

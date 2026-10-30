@@ -13,8 +13,6 @@ export const modes = {
 	'modes.info.version': 'Version',
 	'modes.info.storyteller': 'Storyteller',
 	'modes.info.players': 'Players',
-	'modes.info.edit': 'Edit game info',
-	'modes.info.editStoryteller': 'Rename the Storyteller',
 	'modes.newGame.ask': 'Start a new game?',
 	'modes.newGame.askText':
 		'This game moves to History when the new one starts. The room and players stay.',

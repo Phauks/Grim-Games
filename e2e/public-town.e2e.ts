@@ -410,8 +410,9 @@ test("Public Town shows the finished grimoire the Storyteller shares, as players
 });
 
 // Play on (plan U10, Trevor 2026-10-27: "Soundboard should have options for output (eg device
-// speakers, external speakers, town square, multiple)").
-test('the soundboard plays on the Public Town tablet when Play on says so', async ({
+// speakers, external speakers, town square, multiple)"), never the Storyteller's own device
+// (Trevor, 2026-10-30: "Do not play audio from storytellers device").
+test('the soundboard plays on the Public Town tablet unless Play on leaves it out', async ({
 	page,
 	browser
 }, testInfo) => {
@@ -436,12 +437,21 @@ test('the soundboard plays on the Public Town tablet when Play on says so', asyn
 	await page.getByRole('button', { name: 'Soundboard', exact: true }).tap();
 	const sheet = page.getByRole('dialog', { name: 'Soundboard' });
 	const pads = sheet.getByRole('group', { name: 'Soundboard' });
-	// This device only, the default: the tablet stays quiet.
+	const playOn = sheet.getByRole('combobox', { name: 'Play on' });
+	// The town and phones, the default; there is no choice for this device.
+	await expect(playOn).toContainText('Town Square and players’ phones');
+	await playOn.tap();
+	await expect(page.getByRole('option')).toHaveText([
+		'Town Square and players’ phones',
+		'Players’ phones',
+		'Town Square'
+	]);
+	await page.getByRole('option', { name: 'Players’ phones', exact: true }).tap();
 	await pads.getByRole('button', { name: 'Hand bell' }).tap();
 	await page.waitForTimeout(500);
 	expect(heard).toEqual([]);
 
-	await sheet.getByRole('combobox', { name: 'Play on' }).tap();
+	await playOn.tap();
 	await page.getByRole('option', { name: 'Town Square', exact: true }).tap();
 	await pads.getByRole('button', { name: 'Gallows trap' }).tap();
 	await expect.poll(() => heard).toContain('/sounds/board/gallows.mp3');

@@ -124,6 +124,25 @@ describe('historyItems', () => {
 		]);
 		expect(voted.parts).toEqual([{ kind: 'text', text: 'Demon voted' }]);
 	});
+
+	// Who a day ability was used on (Trevor, 2026-10-30): whom the Slayer chose
+	// (https://wiki.bloodontheclocktower.com/Slayer), who nominated the Virgin
+	// (https://wiki.bloodontheclocktower.com/Virgin).
+	it('names the player a day ability was used on', () => {
+		const session = play(
+			(s) => ({ type: 'RenameSeat', seatId: first(s), playerName: 'Ana' }),
+			(s) => ({ type: 'RenameSeat', seatId: second(s), playerName: 'Ben' }),
+			(s) => ({ type: 'AssignCharacter', seatId: first(s), characterId: 'slayer' }),
+			(s) => ({ type: 'AssignCharacter', seatId: second(s), characterId: 'virgin' }),
+			(s) => ({ type: 'UseAbility', seatId: first(s), characterId: 'slayer', on: second(s) }),
+			(s) => ({ type: 'UseAbility', seatId: second(s), characterId: 'virgin', on: first(s) })
+		);
+		const [virgin, slayer] = historyItems(session.log.entries, session.log.cursor, characters);
+		const text = (parts: typeof slayer.parts) =>
+			parts.map((p) => (p.kind === 'text' ? p.text : `[${p.kind}]`)).join('');
+		expect(text(slayer.parts)).toBe('[character] ([seat]) used their ability on [seat]');
+		expect(text(virgin.parts)).toBe('[character] ([seat]) used their ability, nominated by [seat]');
+	});
 });
 
 describe('itemSeats', () => {
