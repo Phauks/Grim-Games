@@ -239,3 +239,11 @@ export function nearestOfType(
 export function charactersInPlay(game: Game): CharacterId[] {
 	return seatsInOrder(game).flatMap((s) => (s.characterId === undefined ? [] : [s.characterId]));
 }
+
+/**
+ * How many tokens sit with the Fabled and Loric: those in play and the abilities the
+ * Storyteller holds (the Plague Doctor's Minion).
+ */
+export function boardRuleCount(game: Game): number {
+	return game.ruleCharacters.length + (game.storytellerAbilities?.length ?? 0);
+}

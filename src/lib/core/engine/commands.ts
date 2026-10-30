@@ -99,6 +99,11 @@ export type Command =
 	 */
 	| { type: 'SetHeldAbility'; seatId: SeatId; via: CharacterId; characterId?: CharacterId }
 	/**
+	 * Gives the Storyteller the ability of `characterId` by `via`'s `givesAbility` rule (the
+	 * Plague Doctor's Minion), replacing any `via` gave before; without it, takes it away.
+	 */
+	| { type: 'SetStorytellerAbility'; via: CharacterId; characterId?: CharacterId }
+	/**
 	 * Marks a player dead or alive. `cause` is optional when marking dead (the Storyteller
 	 * can skip it and set it later with `SetDeathCause`); on an already dead player it sets
 	 * the cause. Coming back to life clears the cause.
@@ -240,9 +245,11 @@ export type Command =
 	| { type: 'Exile'; seatId: SeatId }
 	/**
 	 * Logs that a character used its ability. A character with a "No Ability" reminder
-	 * token gets it placed on the seat; otherwise only the use is logged.
+	 * token gets it placed on the seat; otherwise only the use is logged. `on` is the player
+	 * the use was about, when its rules ask (`dayUse`: the Slayer's choice, the Virgin's
+	 * nominator).
 	 */
-	| { type: 'UseAbility'; seatId: SeatId; characterId: CharacterId }
+	| { type: 'UseAbility'; seatId: SeatId; characterId: CharacterId; on?: SeatId }
 	/**
 	 * A free-text note about a character (any length; may be empty with `guesses`). `holds`
 	 * marks a statement true or false (L58).

@@ -193,6 +193,7 @@ export const DAY_DECIDERS: Deciders<
 			seatId: seat.seatId,
 			characterId: character.id
 		};
+		if (command.on !== undefined) entry.on = seatOf(game, command.on).seatId;
 		const usedToday = game.today.entries.some(
 			(e) => e.kind === 'ability' && e.seatId === seat.seatId && e.characterId === character.id
 		);

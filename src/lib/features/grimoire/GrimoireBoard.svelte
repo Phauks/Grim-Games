@@ -26,6 +26,7 @@
 	import { resolve } from '$app/paths';
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import {
+		boardRuleCount,
 		charactersInPlay,
 		scriptCharacterIds,
 		type ReminderId,
@@ -49,7 +50,6 @@
 	import { nominationPrompts, type NominationPrompt } from '#lib/core/modes/index.ts';
 	import DayTimer from '#lib/features/day/DayTimer.svelte';
 	import BoardActionSounds from '#lib/features/sound/BoardActionSounds.svelte';
-	import BoardAmbience from '#lib/features/sound/BoardAmbience.svelte';
 	import SoundboardDialog from '#lib/features/sound/SoundboardDialog.svelte';
 	import BluffsSheet from '#lib/features/bluffs/BluffsSheet.svelte';
 	import { showableBluffSets } from '#lib/features/bluffs/bluffs.ts';
@@ -625,6 +625,8 @@
 		roomHost().showLook(game.gameId, shown, picture);
 	}
 	let menuOpen = $state(false);
+	/** The board shown to a player who looks at the Grimoire, from their night step. */
+	let showingGrim = $state(false);
 	/** ⋯'s New game, which asks to end this game first (Trevor, 2026-10-26). */
 	let newGameSheet = $state<NewGameSheet>();
 	// ── Info tokens: the cards shown to players, one tap from the toolbar ──
@@ -684,13 +686,14 @@
 	<BoardRules
 		{game}
 		{characters}
-		grouped={boardLooks.current.rulesGrouped && game.ruleCharacters.length > 0}
+		grouped={boardLooks.current.rulesGrouped && boardRuleCount(game) > 0}
 		edge={tokenSize < size * 0.8}
 		{tokenSize}
 		{chip}
 		disabled={seatArr.arranging || watching}
 		lifted={remDrag.drag?.reminderId}
 		onShow={(id) => (id ? rules?.show(id) : rules?.showAll())}
+		onShowAbility={(via) => rules?.showAbility(via)}
 		onHeldTap={(id) => heldDialog?.show(id)}
 		onHeldDrag={(id, x, y, end) => remDrag.move(id, undefined, x, y, end)}
 		onCancel={() => remDrag.cancel()}
@@ -718,6 +721,11 @@
 		{seatArr}
 		placing={!!placing}
 		onCancelPlacing={() => (placing = undefined)}
+		showing={showingGrim}
+		onStopShowing={() => {
+			showingGrim = false;
+			nw.guideOpen = true;
+		}}
 		onDay={() => (dayOpen = true)}
 		onInfo={() => (infoOpen = true)}
 		onScript={() => (scriptOpen = true)}
@@ -745,6 +753,8 @@
 		class:holding={heldSeat !== undefined}
 		class:walking={nw.walk !== undefined}
 		class:ended={!!ended}
+		class:showing={showingGrim}
+		inert={showingGrim}
 		style:--tray-h="{chip + 30}px"
 		style:--strip-h={nw.walk ? STRIP_H : undefined}
 		style:--name-scale={boardLooks.current.nameSize}
@@ -829,7 +839,7 @@
 
 		<!-- Measures the tap target, the height every reminder takes on the board. -->
 		<span class="tap-probe" aria-hidden="true" bind:clientHeight={sizing.tapPx}></span>
-		{#if boardLooks.current.rulesAt !== 'middle' && game.ruleCharacters.length > 0}
+		{#if boardLooks.current.rulesAt !== 'middle' && boardRuleCount(game) > 0}
 			<div class="rules-edge" bind:clientWidth={sizing.edgeW} bind:clientHeight={sizing.edgeH}>
 				{@render ruleTokens(Math.max(sizing.tapPx, Math.round(size * 0.5)))}
 			</div>
@@ -903,8 +913,6 @@
 	</div>
 </div>
 
-<!-- Day and night sound (plan U3), for the Storyteller's own board only. -->
-<BoardAmbience scene={watching || ended || phaseNow.kind === 'setup' ? null : phaseNow.kind} />
 {#if !watching}
 	<!-- Sounds for the Storyteller's actions (plan U7). -->
 	<BoardActionSounds
@@ -1114,6 +1122,7 @@
 		infoOpen = true;
 	}}
 	onChooseBluffs={() => (bluffsOpen = true)}
+	onShowGrimoire={() => (showingGrim = true)}
 	{onDraw}
 />
 
@@ -1226,6 +1235,11 @@
 	.game-over[data-team='evil'] {
 		background: var(--evil);
 		color: var(--on-evil);
+	}
+	/* Shown to a player: the seats only, with the room for the rest kept so nothing moves. */
+	.board.showing :global(:is([data-tray], [data-testid='night-strip'])),
+	.board.showing .board-timer {
+		visibility: hidden;
 	}
 	/* The day timer in the board's top right corner, clear of the seats' ring. */
 	.board-timer {

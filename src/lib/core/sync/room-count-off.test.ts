@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { SeatId } from '#lib/core/model/index.ts';
 import type { PublicGameState } from './public-projection.ts';
 import {
+	countOffFirsts,
 	countOffSeats,
 	countOffView,
 	endCountOff,
@@ -135,5 +136,38 @@ describe('countOffSeats', () => {
 			{ seatId: 'a' },
 			{ seatId: 'd' }
 		]);
+	});
+});
+
+describe('countOffFirsts', () => {
+	it('lists two seats or two phones with the same name once each, by seat or phone', () => {
+		const seating = [s('a'), s('b'), s('c')];
+		const seats = { a: { playerName: 'Ana' }, b: { playerName: 'Ana' }, c: {} };
+		const members = [
+			{ memberId: 'ana', name: 'Ana' },
+			{ memberId: 'bo1', name: 'Bo' },
+			{ memberId: 'bo2', name: 'Bo' }
+		];
+		const firsts = countOffFirsts(seating, seats, members, members.slice(1));
+		expect(firsts).toEqual([
+			{ key: 'seat:a', name: 'Ana', first: { memberId: 'ana' } },
+			{ key: 'seat:b', name: 'Ana', first: { memberId: 'ana' } },
+			{ key: 'member:bo1', name: 'Bo', first: { memberId: 'bo1' } },
+			{ key: 'member:bo2', name: 'Bo', first: { memberId: 'bo2' } }
+		]);
+		expect(new Set(firsts.map((f) => f.key)).size).toBe(firsts.length);
+	});
+
+	it('leaves out a phone whose name is already on the board, and names a seat with no phone', () => {
+		const firsts = countOffFirsts(
+			[s('a')],
+			{ a: { playerName: 'Dan' } },
+			[{ memberId: 'dan', name: ' dan' }],
+			[{ memberId: 'dan', name: ' dan' }]
+		);
+		expect(firsts).toEqual([{ key: 'seat:a', name: 'Dan', first: { memberId: 'dan' } }]);
+		expect(countOffFirsts([s('a')], { a: { playerName: 'Eve' } }, [], [])[0].first).toEqual({
+			name: 'Eve'
+		});
 	});
 });

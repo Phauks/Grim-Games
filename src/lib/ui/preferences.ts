@@ -32,7 +32,7 @@ import {
 	parsePads,
 	parseSoundMixes,
 	DEFAULT_PADS,
-	SOUND_OUTPUTS,
+	parseSoundOutput,
 	type ActionSound,
 	type SoundOutput,
 	type BoardSoundMix,
@@ -106,7 +106,7 @@ export interface Preferences {
 	timerVibrate: boolean;
 	/** The sound a player's phone makes when the Storyteller calls Back to town (plan U2). */
 	callSound: TimerSound;
-	/** Day and night sound plays on the board (plan U3). */
+	/** Day and night sound plays in the room while a game runs (plan U3). */
 	ambienceOn: boolean;
 	/** How loud day and night sound plays, under the device's volume (plan U3). */
 	ambienceLevel: number;
@@ -114,7 +114,7 @@ export interface Preferences {
 	nightAmbience: string;
 	/** The recording that plays in the day, by id (plan U3). */
 	dayAmbience: string;
-	/** The board plays a sound when the Storyteller takes an action (plan U7). */
+	/** A sound plays in the room when the Storyteller takes an action (plan U7). */
 	actionSoundsOn: boolean;
 	/** The sound each action plays, by soundboard sound id (plan U7). */
 	actionSounds: Record<SoundAction, ActionSound>;
@@ -125,8 +125,9 @@ export interface Preferences {
 	/** Each soundboard sound's own volume and loop, by sound id; only those changed. */
 	soundMixes: Record<string, BoardSoundMix>;
 	/**
-	 * Where the soundboard plays while the board has a room (plan U10): this device, the
-	 * Public Town tablet, or both. Without a room it plays here.
+	 * Which devices in the room play the Storyteller's sounds (plan U10): the Public Town
+	 * tablet, the players' phones, or both. Never the Storyteller's own device (Trevor,
+	 * 2026-10-30), so without a room nothing plays.
 	 */
 	soundOutput: SoundOutput;
 	/** The speaker every sound plays on, by device id; empty for the device's default (U11). */
@@ -266,7 +267,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
 	soundboardLevel: 1,
 	soundboardOverlap: false,
 	soundMixes: {},
-	soundOutput: 'device',
+	soundOutput: 'all',
 	speaker: '',
 	soundPads: DEFAULT_PADS.map((pad) => ({ ...pad })),
 	timerKeepAwake: true,
@@ -368,9 +369,7 @@ export function parsePreferences(raw: unknown): Preferences {
 		),
 		soundboardOverlap: input.soundboardOverlap === true,
 		soundMixes: parseSoundMixes(input.soundMixes),
-		soundOutput: (SOUND_OUTPUTS as readonly unknown[]).includes(input.soundOutput)
-			? (input.soundOutput as SoundOutput)
-			: DEFAULT_PREFERENCES.soundOutput,
+		soundOutput: parseSoundOutput(input.soundOutput) ?? DEFAULT_PREFERENCES.soundOutput,
 		speaker: typeof input.speaker === 'string' && input.speaker.length <= 256 ? input.speaker : '',
 		soundPads: parsePads(input.soundPads),
 		timerMode: (TIMER_MODES as readonly unknown[]).includes(input.timerMode)

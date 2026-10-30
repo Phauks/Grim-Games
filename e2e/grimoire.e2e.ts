@@ -2381,6 +2381,75 @@ test("the Boffin gives the Demon a not-in-play good character's ability", async 
 	await expect(mark).toHaveAttribute('title', 'Holds the Chef ability (not now)');
 });
 
+// https://wiki.bloodontheclocktower.com/Plague_Doctor: when it dies, the Storyteller gains a
+// Minion ability, marked Storyteller Ability; shown with the Fabled and Loric (Trevor, 2026-10-30).
+test('a dead Plague Doctor gives the Storyteller a Minion ability, shown on the board', async ({
+	page
+}) => {
+	test.slow();
+	await startGame(page);
+	for (const [number, name] of [
+		[1, 'Plague Doctor'],
+		[2, 'Imp'],
+		[3, 'Empath']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		const picker = page.getByRole('dialog', { name: `Character for Seat ${number}` });
+		if (number === 1) await picker.getByText('Include characters not on the script').tap();
+		await picker.getByRole('button', { name, exact: true }).tap();
+		await closeSheet(page);
+	}
+	const first = await walkTo(page, 'Dusk');
+	await first.getByRole('button', { name: 'Next step' }).tap();
+	await endNight(page);
+	const day = page.getByRole('dialog', { name: 'Day 1' });
+	await day.getByRole('button', { name: 'Close' }).tap();
+	await expect(day).toBeHidden();
+	const doctor = await openSeat(page, 1);
+	await doctor.getByRole('button', { name: 'Status: Alive' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Status of Seat 1' })
+		.getByRole('button', { name: 'Executed' })
+		.tap();
+	await page
+		.getByRole('alertdialog', { name: 'End the day?' })
+		.getByRole('button', { name: 'Confirm', exact: true })
+		.tap();
+
+	// Its name: on a phone, a tap on the middle also reached the opened step's icon below it.
+	await (await walkTo(page, 'Plague Doctor')).locator('.step .name strong').tap();
+	const step = page.getByRole('dialog', { name: 'Plague Doctor' });
+	const row = step.getByTestId('storyteller-ability');
+	await expect(row).toContainText('None');
+	await row.getByRole('button', { name: 'Choose' }).tap();
+	await page
+		.getByRole('dialog', { name: "Storyteller's ability" })
+		.getByRole('button', { name: 'Poisoner', exact: true })
+		.tap();
+	await expect(row).toContainText('Poisoner');
+	await page.keyboard.press('Escape');
+	// On the board with the Fabled and Loric, marked Storyteller Ability.
+	const token = page.getByTestId('storyteller-ability-token');
+	await expect(
+		token.getByRole('button', { name: "Storyteller's ability: Poisoner" })
+	).toBeVisible();
+	await expect(token.getByRole('button', { name: 'Storyteller Ability' })).toBeVisible();
+	// Its own night step, where the Storyteller chooses.
+	const poisoner = await openStep(page, 'Poisoner');
+	await expect(poisoner.getByTestId('step-who')).toHaveText('Storyteller');
+	await page.keyboard.press('Escape');
+	// Tapping the token opens it, to change or remove.
+	await token.getByRole('button', { name: "Storyteller's ability: Poisoner" }).tap();
+	const dialog = page.getByRole('dialog', { name: "Storyteller's ability" });
+	await dialog.getByRole('button', { name: "Remove the Storyteller's ability" }).tap();
+	await page
+		.getByRole('alertdialog', { name: "Remove the Storyteller's ability?" })
+		.getByRole('button', { name: 'Confirm', exact: true })
+		.tap();
+	await expect(token).toHaveCount(0);
+});
+
 test("a Traveller's alignment can be drawn from face-down tokens", async ({ page }) => {
 	await startGame(page);
 	await menu(page, 'Add seat');

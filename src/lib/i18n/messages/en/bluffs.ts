@@ -7,6 +7,7 @@ export const bluffs = {
 	'bluffs.set.numbered': 'Set {number}',
 	'bluffs.inPlayReplace': 'In play: replace',
 	'bluffs.alsoInPlay': 'Also in play',
+	'bluffs.inDemonSet': 'Demon bluff',
 	'bluffs.choose': 'Choose',
 	'bluffs.change': 'Change',
 	'bluffs.clearNamed': 'Clear the {set} bluffs',

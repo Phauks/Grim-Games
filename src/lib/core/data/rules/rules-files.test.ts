@@ -45,6 +45,15 @@ describe('parseCharacterRules', () => {
 		expect(parse({ onNominated: { ...onNominated, effect: 'swap' } }).issues).toHaveLength(1);
 	});
 
+	// https://wiki.bloodontheclocktower.com/Slayer (chooses a player), /Virgin (the nominator)
+	it('reads who a day ability is used on, and rejects an unknown one', () => {
+		expect(parse({ dayUse: { who: 'chosen' } }).rules).toEqual({ dayUse: { who: 'chosen' } });
+		expect(parse({ dayUse: { who: 'neighbour' } }).issues).toEqual([
+			'rules.dayUse.who: unknown value "neighbour"'
+		]);
+		expect(parse({ dayUse: 'chosen' }).issues).toHaveLength(1);
+	});
+
 	// https://wiki.bloodontheclocktower.com/Flowergirl (two tokens show whether the Demon voted)
 	it('reads a day mark with its two tokens, and rejects an unknown mark or token', () => {
 		const dayMark = { mark: 'demon-voted', yes: 'Voted', no: 'Not Voted' };
