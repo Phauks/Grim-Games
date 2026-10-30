@@ -39,6 +39,7 @@ longest cell, so two PRs that each added a row used to conflict over the whole t
 - A list of short texts with add and remove: `ui/primitives/TextListField.svelte` (enforced by review)
 - The clear X on a field: `ui/primitives/ClearableField.svelte` (TextField has it) (enforced by `grim/clearable-field`)
 - A short code typed one character to a box (room code): `ui/primitives/CodeField.svelte` (enforced by review)
+- Fake players in a live room (bots that answer like phones, a fake Storyteller, a whole game as steps): `features/test-room` over `core/sync/room-bots`: the Test room page and `scripts/room-bots.ts` (enforced by `e2e/test-room.e2e.ts`)
 - A secret shown only while held (a character on the draw or on a phone): `ui/primitives/HoldToSee.svelte` (RevealDialog's hold to see, the player's Your character); `noLongPress` from `ui/no-long-press.ts` stops the phone's long-press buzz around it (enforced by review)
 - One choice among a few: `ui/primitives/Select.svelte` (enforced by `grim/dropdown-choice`)
 - One choice among many, found by typing: `ui/primitives/Combobox.svelte` (shares Select's list styles) (enforced by review)
@@ -147,6 +148,7 @@ longest cell, so two PRs that each added a row used to conflict over the whole t
 - A QR code, in any of its shapes, with a middle on whole squares: `ui/primitives/QrCode.svelte` (`modules`, `finders`; `qr-pattern.ts` draws, `qr-centre.ts` places the middle) (enforced by review)
 - The Storyteller's own picture in a QR code's middle, and its settings: `ui/share/QrPicture.svelte`; `ui/share/QrCentreSetting.svelte` (Settings > Storyteller and the share screen) (enforced by review)
 - A seat named in a sentence ("Seat 3 (Alex)"): `features/game/seat-label.ts` (`seatLabel`) (enforced by review)
+- An info card's editor, the card's live preview in a fixed box beside its fields: `features/info-tokens/CardEditorLayout.svelte`, for the custom card editor (`CustomTokenEditor`) and the quick card (`InfoTokenList`) (enforced by `e2e/info-tokens-sheet.e2e.ts`)
 - Saving a file to the device: `ui/download.ts` (`downloadJson`, `downloadFile`, `fileNameFor`) (enforced by review)
 - Pixel sizes: `var(--u)` and tokens (enforced by `npm run lint:px`)
 - Colours: theme tokens; no hex, colour functions or named colours (`white`) outside the themes; mixes, washes and fixed looks (print paper, ghost vote) are tokens in `ui/tokens/components.css`; a sheet's colours come from the sheet scope there (enforced by `npm run lint:colors`)
@@ -184,6 +186,7 @@ character: a rule becomes a behaviour with parameters that any character can use
 - Kill redirect and first-death survival (`ability.ts`, `first-death.ts`): `redirectsKill`, `survivesFirstDeath`, moved
 - Nomination abilities (`rules/nominations.ts`): `onNominated`, `afterDeath`, moved
 - Values the Storyteller decides (`Game.prepValues`, `setupPrep` notes with a `value`; shown in a pre-day reminder and written by tapping it, `PrepValueDialog.svelte` in the day view): the Yaggababble's phrase, the Amnesiac's ability
+- Rebirth as a Traveller (`rules/reincarnation.ts` `reincarnatedBy`, `Game.reincarnated`; the board's Traveller picker after a death in `ReincarnateAsk.svelte`, beside `FirstDeathAsk.svelte`): the Hindu's first four deaths: `reincarnates`, new (`after-death-rules.ts`)
 - Who a day ability was used on (`rules/day-claims.ts` `dayUseWho`, asked by `features/day/DayUseDialog.svelte` when Used is marked: the Slayer's chosen player, the Virgin's nominator, the Judge's nominee, the Golem's nominee, the Damsel's guesser; `kills` adds Dies, checked by `dayUseDeath` against `deathCause`; `spentToken` for a token other than No Ability): `dayUse`, new
 - Acts when dead (`dead-characters.ts`): `actsWhenDead`, moved
 - Stops waking (`night-alerts.ts`: the Exorcist's Chosen on the Demon): `stopsWaking`, new

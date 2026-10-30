@@ -11,10 +11,12 @@ import { gameSheetRules } from '#lib/features/modes/sheet-rules.ts';
 import { publicTravellerTest } from '#lib/features/player/travellers-in-play.ts';
 import { gameSound } from '#lib/features/sound/room-sounds.ts';
 import type { RoomHost } from './host.svelte.ts';
+import { storytellerLook } from './storyteller-look.svelte.ts';
 
 /**
  * The game's public state as players' phones get it now: the town, where the game is up to,
- * the day timer as players see it, the rules, the board's look and the sounds the room plays. The room sends it, and the
+ * the day timer as players see it, the rules, the board's look, the Storyteller's own look and
+ * the sounds the room plays. The room sends it, and the
  * board's Script and the grim cover's Player view draw from it too, so they show whatever
  * phones show (Trevor, 2026-10-27: "Design it so that these additions move in
  * automatically"), with or without a room.
@@ -27,7 +29,7 @@ export function tableState(
 	corner?: PublicCorner
 ): PublicGameState {
 	const now = host.playersPhase(game.gameId);
-	return publicProjection(
+	const state = publicProjection(
 		game,
 		publicTravellerTest(game.gameId, characters),
 		layout,
@@ -43,4 +45,7 @@ export function tableState(
 		// Played by the Public Town and phones, never by the board (Trevor, 2026-10-30).
 		gameSound(now)
 	);
+	// The Storyteller's own avatar and laurel, as each phone shares its own (Trevor, 2026-10-30).
+	const storyteller = storytellerLook(host.code);
+	return storyteller ? { ...state, storyteller } : state;
 }

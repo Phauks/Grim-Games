@@ -16,7 +16,7 @@ import { scriptEdition } from '#lib/core/data/script.ts';
 import type { GameId } from '#lib/core/model/index.ts';
 import type { GameLog, GameSession } from './log.ts';
 
-export const SAVED_GAME_VERSION = 23;
+export const SAVED_GAME_VERSION = 24;
 
 export interface SavedGame {
 	schemaVersion: typeof SAVED_GAME_VERSION;
@@ -248,6 +248,14 @@ const migrateV21toV22: Migration = (doc) => ({ ...doc, schemaVersion: 22 });
  */
 const migrateV22toV23: Migration = (doc) => ({ ...doc, schemaVersion: 23 });
 
+/**
+ * Version 24 (2026-10-30) added players reborn as Travellers (`Game.reincarnated`, the
+ * `Reincarnate` command and `SeatReincarnated` event: the Hindu). The log needs no change: an
+ * older game has none. The bump makes older builds refuse a version 24 save instead of
+ * failing on the unknown event.
+ */
+const migrateV23toV24: Migration = (doc) => ({ ...doc, schemaVersion: 24 });
+
 /** `MIGRATIONS[n]` migrates version `n` to `n + 1`. Version 1 is the first saved shape. */
 export const MIGRATIONS: Readonly<Record<number, Migration>> = {
 	1: migrateV1toV2,
@@ -271,7 +279,8 @@ export const MIGRATIONS: Readonly<Record<number, Migration>> = {
 	19: migrateV19toV20,
 	20: migrateV20toV21,
 	21: migrateV21toV22,
-	22: migrateV22toV23
+	22: migrateV22toV23,
+	23: migrateV23toV24
 };
 
 export function toSavedGame(session: GameSession, savedAt: number): SavedGame {
@@ -280,6 +289,26 @@ export function toSavedGame(session: GameSession, savedAt: number): SavedGame {
 		gameId: session.game.gameId,
 		savedAt,
 		log: structuredClone(session.log)
+	};
+}
+
+/**
+ * The same game under another id, so a copy opened on a device (a game sent with a report)
+ * never replaces a game of its own. The id is in the save and in the game's first event.
+ */
+export function withGameId(saved: SavedGame, gameId: GameId): SavedGame {
+	return {
+		...saved,
+		gameId,
+		log: {
+			...saved.log,
+			entries: saved.log.entries.map((entry) => ({
+				...entry,
+				events: entry.events.map((event) =>
+					event.type === 'GameCreated' ? { ...event, gameId } : event
+				)
+			}))
+		}
 	};
 }
 

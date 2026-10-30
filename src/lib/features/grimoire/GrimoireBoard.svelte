@@ -23,6 +23,7 @@
 	import { goto, replaceState } from '$app/navigation';
 	import { onMount, tick, untrack } from 'svelte';
 	import { REMINDERS_HASH } from '#lib/features/setup/setup-steps.ts';
+	import LateSeatOnBoard from '#lib/features/setup/LateSeatOnBoard.svelte';
 	import { resolve } from '$app/paths';
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import {
@@ -110,6 +111,7 @@
 	import EndGameDialogs from './EndGameDialogs.svelte';
 	import StarPassPrompt from './StarPassPrompt.svelte';
 	import FirstDeathAsk from './FirstDeathAsk.svelte';
+	import ReincarnateAsk from './ReincarnateAsk.svelte';
 	import ReminderAsk from './ReminderAsk.svelte';
 	import { NightWalk, type NightWalkContext } from './night-walk.svelte.ts';
 	import { PhaseFlow } from './phase-flow.svelte.ts';
@@ -983,6 +985,7 @@
 <AlignmentAsk {grimoire} />
 <StarPassPrompt {grimoire} active={!ended && !grimoire.open.viewOnly} />
 <FirstDeathAsk {grimoire} />
+<ReincarnateAsk {grimoire} />
 <NominationAsk {grimoire} bind:asks={nominationAsks} />
 <EndGameDialogs
 	{grimoire}
@@ -1036,6 +1039,7 @@
 <NominationChooser {grimoire} {characters} bind:asking={nominatingFrom} onNominated={nominated} />
 
 <HistoryDialog bind:open={historyOpen} {grimoire} />
+{#if !watching}<LateSeatOnBoard {grimoire} place={startPlacing} />{/if}
 
 <ExportGameDialog bind:open={exportOpen} load={exportGame} {capture} />
 {#if !watching}

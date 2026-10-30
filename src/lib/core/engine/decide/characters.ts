@@ -21,6 +21,7 @@ export const CHARACTERS_DECIDERS: Deciders<
 	| 'SetAlignment'
 	| 'SetHeldAbility'
 	| 'SetStorytellerAbility'
+	| 'Reincarnate'
 	| 'SetDead'
 	| 'SetDeathCause'
 	| 'SpendGhostVote'
@@ -153,6 +154,32 @@ export const CHARACTERS_DECIDERS: Deciders<
 				...(command.characterId !== undefined ? { characterId: command.characterId } : {})
 			}
 		];
+	},
+
+	Reincarnate(game, command, ctx, warn) {
+		const seat = seatOf(game, command.seatId);
+		const character = seatableCharacter(ctx, command.characterId);
+		if (!seat.dead) refuse('not-dead', 'only a dead player is reincarnated');
+		if (character.type !== 'traveller')
+			warn('not-traveller', `${character.name} is not a Traveller`);
+		const elsewhere = game.seating.some(
+			(id) => id !== seat.seatId && game.seats[id].characterId === character.id
+		);
+		if (elsewhere && !allowsDuplicates(character)) {
+			warn('already-in-play', `${character.name} is already on another seat`, [character.id]);
+		}
+		const events: GameEvent[] = [
+			{
+				type: 'CharacterAssigned',
+				seatId: seat.seatId,
+				characterId: character.id,
+				...(seat.alignment !== undefined ? { alignment: seat.alignment } : {})
+			},
+			{ type: 'DeathSet', seatId: seat.seatId, dead: false }
+		];
+		if (seat.ghostVoteUsed) events.push({ type: 'GhostVoteRestored', seatId: seat.seatId });
+		events.push({ type: 'SeatReincarnated', seatId: seat.seatId });
+		return events;
 	},
 
 	SetDead(game, command, ctx, warn) {

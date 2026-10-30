@@ -54,6 +54,7 @@ interface Row extends Record<string, SqlStorageValue> {
 	user_id: string | null;
 	script_name: string | null;
 	has_script: number;
+	has_game: number;
 }
 
 /**
@@ -100,6 +101,10 @@ export class ReportBox extends DurableObject<ReportBoxEnv> {
 		}
 		// The app's own id for each report (outbox.svelte.ts): a report resent after a dropped
 		// connection is stored once. Older reports and older apps have none.
+		// The game it was sent from, when the Storyteller turned it on (Trevor, 2026-10-30).
+		if (!columns.some((c) => c.name === 'game')) {
+			this.sql.exec('ALTER TABLE reports ADD COLUMN game TEXT');
+		}
 		if (!columns.some((c) => c.name === 'send_id')) {
 			this.sql.exec('ALTER TABLE reports ADD COLUMN send_id TEXT');
 		}
@@ -129,8 +134,8 @@ export class ReportBox extends DurableObject<ReportBoxEnv> {
 		return this.sql
 			.exec<{ id: number }>(
 				`INSERT INTO reports (kind, title, body, details, contact, page, build, device, created_at,
-				 user_id, script, script_name, send_id)
-				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
+				 user_id, script, script_name, send_id, game)
+				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
 				draft.kind,
 				draft.title,
 				draft.body,
@@ -143,7 +148,8 @@ export class ReportBox extends DurableObject<ReportBoxEnv> {
 				userId ?? null,
 				draft.script ?? null,
 				draft.script ? (draft.scriptName ?? null) : null,
-				draft.sendId ?? null
+				draft.sendId ?? null,
+				draft.game ?? null
 			)
 			.one().id;
 	}
@@ -153,12 +159,17 @@ export class ReportBox extends DurableObject<ReportBoxEnv> {
 	 * signed in (what a non-admin may read). Scripts are left out (`script`). `withScripts`:
 	 * include whether each has one and its name; an app from before scripts doesn't ask, as it
 	 * wouldn't keep them from other readers (the data Worker deploys from beta before main).
+	 * `withGames`: include whether each has a game (`game`), asked for the same way.
 	 */
-	async list(fromAccounts = false, withScripts = false): Promise<(Report & { userId?: string })[]> {
+	async list(
+		fromAccounts = false,
+		withScripts = false,
+		withGames = false
+	): Promise<(Report & { userId?: string })[]> {
 		return this.sql
 			.exec<Row>(
 				`SELECT id, kind, title, body, details, contact, page, build, device, status, created_at,
-				 user_id, script_name, script IS NOT NULL AS has_script
+				 user_id, script_name, script IS NOT NULL AS has_script, game IS NOT NULL AS has_game
 				 FROM reports ${fromAccounts ? 'WHERE user_id IS NOT NULL' : ''} ORDER BY id DESC`
 			)
 			.toArray()
@@ -177,6 +188,7 @@ export class ReportBox extends DurableObject<ReportBoxEnv> {
 					if (value !== null) report[key] = value;
 				}
 				if (withScripts && row.has_script) report.hasScript = true;
+				if (withGames && row.has_game) report.hasGame = true;
 				if (row.user_id !== null) report.userId = row.user_id;
 				return report;
 			});
@@ -194,6 +206,18 @@ export class ReportBox extends DurableObject<ReportBoxEnv> {
 		return row.user_id === null
 			? { script: row.script }
 			: { script: row.script, userId: row.user_id };
+	}
+
+	/** A report's game file and its sending account's id; undefined when it has no game. */
+	async game(id: number): Promise<{ game: string; userId?: string } | undefined> {
+		const row = this.sql
+			.exec<{ game: string | null; user_id: string | null }>(
+				'SELECT game, user_id FROM reports WHERE id = ?',
+				id
+			)
+			.toArray()[0];
+		if (!row?.game) return undefined;
+		return row.user_id === null ? { game: row.game } : { game: row.game, userId: row.user_id };
 	}
 
 	async setStatus(id: number, status: ReportStatus): Promise<boolean> {

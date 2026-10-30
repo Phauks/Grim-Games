@@ -26,6 +26,7 @@ export const shell = {
 	'shell.navSectionAdmin': 'Admin',
 	'shell.navReports': 'Reports',
 	'shell.navLiveGames': 'Live games',
+	'shell.navTestRoom': 'Test room',
 	'shell.navAccounts': 'Accounts',
 	'shell.cccAlt': 'Community Created Content: not an official Blood on the Clocktower product',
 	'shell.changelog': 'Changelog',

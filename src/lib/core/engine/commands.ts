@@ -104,6 +104,11 @@ export type Command =
 	 */
 	| { type: 'SetStorytellerAbility'; via: CharacterId; characterId?: CharacterId }
 	/**
+	 * A dead player is reborn as the Traveller `characterId`, alive, keeping their alignment
+	 * (the Hindu's first four deaths, https://wiki.bloodontheclocktower.com/Hindu).
+	 */
+	| { type: 'Reincarnate'; seatId: SeatId; characterId: CharacterId }
+	/**
 	 * Marks a player dead or alive. `cause` is optional when marking dead (the Storyteller
 	 * can skip it and set it later with `SetDeathCause`); on an already dead player it sets
 	 * the cause. Coming back to life clears the cause.
@@ -224,8 +229,11 @@ export type Command =
 	 */
 	| {
 			type: 'AddLatePlayer';
-			playerName?: PlayerName;
-			position?: number;
+			/**
+			 * One or more late players (Trevor, 2026-10-30), each where the Storyteller placed
+			 * them: `position` is in the seating as it was before any of them joined.
+			 */
+			players: { playerName?: PlayerName; position?: number }[];
 			changes: { seatId: SeatId; characterId: CharacterId }[];
 			bag: TileSpec[];
 	  }
