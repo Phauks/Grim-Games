@@ -167,7 +167,8 @@
 		characters,
 		layout,
 		spacedFor: watching ? grimoire.aspect : undefined,
-		walking: !!nw.walk,
+		// Shown to a player, the board looks as it does with the night closed (Trevor, 2026-10-30).
+		walking: !!nw.walk && !showingGrim,
 		offScriptOk,
 		nominations: nominatedToday !== undefined,
 		shown: () => shown,
@@ -751,12 +752,12 @@
 		class="board"
 		class:arranging={seatArr.arranging}
 		class:holding={heldSeat !== undefined}
-		class:walking={nw.walk !== undefined}
+		class:walking={nw.walk !== undefined && !showingGrim}
 		class:ended={!!ended}
 		class:showing={showingGrim}
 		inert={showingGrim}
 		style:--tray-h="{chip + 30}px"
-		style:--strip-h={nw.walk ? STRIP_H : undefined}
+		style:--strip-h={nw.walk && !showingGrim ? STRIP_H : undefined}
 		style:--name-scale={boardLooks.current.nameSize}
 		style:--name-offset={boardLooks.current.nameOffset}
 		bind:this={board}
