@@ -14,6 +14,7 @@ import {
 	REBUILDABLE
 } from './src/lib/features/offline/chunk-renames.ts';
 import { chromiumPath } from './scripts/lib/chromium-path.ts';
+import { svelteNestedFlush } from './svelte-nested-flush.ts';
 
 // Lets sandboxes with a preinstalled Chromium skip `playwright install`.
 const executablePath = chromiumPath();
@@ -149,6 +150,7 @@ export default defineConfig({
 		__CHANGE_HISTORY__: JSON.stringify(readHistory(process.env, buildInfo.branch))
 	},
 	plugins: [
+		svelteNestedFlush(),
 		sveltekit({
 			compilerOptions: {
 				// Force runes mode for the project, except for libraries. Can be removed in svelte 6.
