@@ -158,11 +158,9 @@
      own pill, Trevor 2026-10-30). -->
 {#if placing}
 	{@const held = placing}
-	<div class="placing">
-		<ReminderInHand onPutDown={() => (placing = undefined)}>
-			{#snippet token()}{@render tokenView(held, true)}{/snippet}
-		</ReminderInHand>
-	</div>
+	<ReminderInHand onPutDown={() => (placing = undefined)}>
+		{#snippet token()}{@render tokenView(held, true)}{/snippet}
+	</ReminderInHand>
 {/if}
 
 <style>
@@ -172,12 +170,5 @@
 		translate: -50% -50%;
 		scale: 1.15;
 		pointer-events: none;
-	}
-	.placing {
-		position: absolute;
-		left: 50%;
-		bottom: var(--space-2);
-		z-index: 4;
-		translate: -50% 0;
 	}
 </style>

@@ -10,7 +10,7 @@
 	import { rulesOf } from '#lib/core/data/rules/index.ts';
 	import { abilityGivers } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
-	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
+	import BoardReminder from '#lib/features/grimoire/BoardReminder.svelte';
 	import AlignmentPill from '#lib/features/grimoire/AlignmentPill.svelte';
 	import CharacterPicker from '#lib/features/grimoire/CharacterPicker.svelte';
 	import SeatBadge from '#lib/features/grimoire/SeatBadge.svelte';
@@ -21,7 +21,7 @@
 		SEAT_TYPES
 	} from '#lib/features/grimoire/board.ts';
 	import type { Grimoire } from '#lib/features/grimoire/grimoire.svelte.ts';
-	import { tokenLabel } from '#lib/features/grimoire/reminders.ts';
+	import { placedLook } from '#lib/features/grimoire/reminders.ts';
 	import { seatName } from '#lib/features/game/seat-label.ts';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -256,9 +256,9 @@
 			<ul class="dropped" data-testid="dropped-reminders">
 				{#each dropped as { seatId: on, reminder } (reminder.reminderId)}
 					<li>
-						<ReminderToken
-							label={tokenLabel(reminder)}
-							character={characters.get(reminder.characterId)}
+						<!-- The token itself, as on the board (Trevor, 2026-10-30). -->
+						<BoardReminder
+							{...placedLook(reminder, characters)}
 							alignment={placingAlignment(game, reminder, characters)}
 						/>
 						<span>on <SeatBadge {game} {characters} seatId={on} /></span>
@@ -346,6 +346,13 @@
 		flex-wrap: wrap;
 		align-items: center;
 		gap: var(--space-1);
+	}
+	/* Room under each token for its words' band. */
+	.dropped {
+		gap: var(--space-3);
+		margin: 0;
+		padding: 0 0 var(--space-2);
+		list-style: none;
 	}
 	.choices {
 		display: flex;

@@ -6,7 +6,8 @@
 
 	/**
 	 * The reminder in hand (Trevor, 2026-10-30): a tapped token from the Storyteller's bank or a
-	 * player's bin, waiting for the seat tapped next. Over the board's foot, the token, its ⋯
+	 * player's bin, waiting for the seat tapped next. Centred over the foot of what holds it
+	 * (`--hand-bottom` above it), the token, its ⋯
 	 * when it has actions (Duplicate, About, ...), and × to put it down. No words: the token
 	 * says what is held.
 	 */
@@ -45,6 +46,11 @@
 
 <style>
 	.in-hand {
+		position: absolute;
+		left: 50%;
+		bottom: var(--hand-bottom, var(--space-2));
+		z-index: 4;
+		translate: -50% 0;
 		display: flex;
 		align-items: center;
 		gap: var(--space-1);

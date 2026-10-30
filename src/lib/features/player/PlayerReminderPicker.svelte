@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
-	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
+	import BoardReminder from '#lib/features/grimoire/BoardReminder.svelte';
+	import ReminderTokenRow from '#lib/features/grimoire/ReminderTokenRow.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import type { GenericLook } from '#lib/core/model/index.ts';
@@ -8,6 +9,7 @@
 	import {
 		isGenericReminder,
 		placedKey,
+		playerLook,
 		reminderWords,
 		type PlayerReminder
 	} from './player-reminders.ts';
@@ -43,26 +45,26 @@
 </script>
 
 <Dialog bind:open title={t('player.grim.remindersTitle', { name })}>
+	<!-- The tokens themselves, as on the board (Trevor, 2026-10-30). -->
 	<div class="recent" role="group" aria-label={t('player.grim.onThisSeat')}>
-		{#each placed as reminder (placedKey(reminder))}
-			{@const generic = isGenericReminder(reminder)}
-			<button
-				type="button"
-				class="chip"
-				aria-label={generic
-					? t('player.grim.editGeneric', { label: reminderWords(reminder) })
-					: t('player.grim.takeOff', { label: reminder.label })}
-				aria-pressed="true"
-				onclick={() => (generic ? edit(reminder.id) : onToggle(reminder))}
-			>
-				<ReminderToken
-					label={reminderWords(reminder)}
-					character={characterOf(reminder.characterId)}
-				/>
-			</button>
-		{:else}
-			<span class="none">{t('common.none')}</span>
-		{/each}
+		<ReminderTokenRow inline>
+			{#each placed as reminder (placedKey(reminder))}
+				{@const generic = isGenericReminder(reminder)}
+				<button
+					type="button"
+					class="chip"
+					aria-label={generic
+						? t('player.grim.editGeneric', { label: reminderWords(reminder) })
+						: t('player.grim.takeOff', { label: reminder.label })}
+					aria-pressed="true"
+					onclick={() => (generic ? edit(reminder.id) : onToggle(reminder))}
+				>
+					<BoardReminder {...playerLook(reminder, characterOf)} />
+				</button>
+			{:else}
+				<span class="none">{t('common.none')}</span>
+			{/each}
+		</ReminderTokenRow>
 	</div>
 </Dialog>
 
@@ -102,6 +104,7 @@
 	.chip[aria-pressed='true'] > :global(.reminder) {
 		outline: 0.2rem solid var(--accent);
 		outline-offset: 0.1rem;
+		border-radius: 50%;
 	}
 	.chip:hover {
 		filter: brightness(1.15);

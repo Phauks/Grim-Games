@@ -2,7 +2,7 @@
 	import type { ReminderId, SeatId } from '#lib/core/model/index.ts';
 	import { setupReminders } from '#lib/core/rules/index.ts';
 	import CharacterSummary from '#lib/features/characters/CharacterSummary.svelte';
-	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
+	import BoardReminder from './BoardReminder.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -11,7 +11,7 @@
 	import ReminderMoreButton from './ReminderMoreButton.svelte';
 	import ReminderNoteField from './ReminderNoteField.svelte';
 	import ReminderOrigin from './ReminderOrigin.svelte';
-	import { isGeneric, tokenLabel } from './reminders.ts';
+	import { isGeneric, placedLook } from './reminders.ts';
 
 	/** One reminder's own dialog over the seat sheet: whose it is, move it, or take it off. */
 	interface Props {
@@ -56,10 +56,10 @@
 </script>
 
 <Dialog bind:open title="Reminder">
+	<!-- The token itself, as on the board (Trevor, 2026-10-30). -->
 	{#snippet heading()}
-		{#if movingReminder}<ReminderToken
-				label={tokenLabel(movingReminder)}
-				character={characters.get(movingReminder.characterId)}
+		{#if movingReminder}<BoardReminder
+				{...placedLook(movingReminder, characters)}
 				alignment={placingAlignment(game, movingReminder, characters)}
 			/>{:else}Reminder{/if}
 	{/snippet}

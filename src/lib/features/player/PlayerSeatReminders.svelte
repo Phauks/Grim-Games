@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Character, CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
+	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import type { PublicSeat } from '#lib/core/sync/public-projection.ts';
 	import BoardReminder from '#lib/features/grimoire/BoardReminder.svelte';
 	import { boardLooks } from '#lib/features/grimoire/board-looks.svelte.ts';
@@ -11,8 +11,8 @@
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import type { SeatPoint } from '#lib/ui/seating/seat-layout.ts';
 	import {
-		isGenericReminder,
 		placedKey,
+		playerLook,
 		reminderChip,
 		remindersOn,
 		type PlayerReminders
@@ -111,14 +111,7 @@
 			style:top="{p?.y ?? 50}%"
 		>
 			<BoardReminder
-				label={isGenericReminder(reminder)
-					? ((reminder.note ?? '') as ReminderLabel)
-					: reminder.label}
-				infinite={isGenericReminder(reminder)}
-				symbol={reminder.symbol}
-				symbolColour={reminder.symbolColour}
-				symbolFill={reminder.symbolFill}
-				character={characterOf(reminder.characterId)}
+				{...playerLook(reminder, characterOf)}
 				size={chip}
 				onTap={() => onOpen(seat)}
 			/>

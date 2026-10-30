@@ -402,12 +402,17 @@ function describeEntry(
 			seatPart(before, swap.seatB)
 		];
 	if (entry.command === 'CountOff') return [text('Counted off the seats')]; // Plan J40.
-	if (entry.command === 'AddLatePlayer' && first.type === 'SeatAdded') {
+	if (entry.command === 'AddLatePlayer') {
+		const added = entry.events.flatMap((e) => (e.type === 'SeatAdded' ? [e.seatId] : []));
 		const changed = entry.events.filter((e) => e.type === 'CharacterAssigned').length;
 		return [
 			text('Added '),
-			seatName(after, first.seatId),
-			text(changed ? ` as a late player, ${changed} changed` : ' as a late player')
+			...added.flatMap((seatId, i) => [
+				...(i === 0 ? [] : [text(i === added.length - 1 ? ' and ' : ', ')]),
+				seatName(after, seatId)
+			]),
+			text(added.length === 1 ? ' as a late player' : ' as late players'),
+			...(changed ? [text(`, ${changed} changed`)] : [])
 		];
 	}
 	const reorder = entry.events.find((e) => e.type === 'SeatingReordered');

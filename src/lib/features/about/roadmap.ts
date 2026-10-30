@@ -275,9 +275,9 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	{ title: 'Search Settings for any setting by name', area: 'app', parts: ['S24'] },
 	{
 		title:
-			'Print your own script sheet: Letter or A4, your margins, and what goes on the front and back',
+			'Print your own script sheet: Letter or A4, your margins, and what goes on the front and back, or download it as a PDF',
 		area: 'prepare',
-		parts: ['T1']
+		parts: ['T1', 'T3']
 	},
 	{ title: 'A background image on the printed sheet', area: 'prepare', parts: ['T2'], later: true },
 	{
@@ -293,9 +293,10 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['B6', 'L38', 'L39', 'L40', 'L15', 'L24', 'H1', 'H2']
 	},
 	{
-		title: 'Add a late player to the bag draw as one more player, not a Traveller',
+		title:
+			'Add late players to the bag draw as more players, not Travellers: placed on the grimoire, several at once, before and after',
 		area: 'storyteller',
-		parts: ['L96']
+		parts: ['L96', 'L96a']
 	},
 	{
 		title:

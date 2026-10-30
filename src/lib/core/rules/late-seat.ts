@@ -47,7 +47,7 @@ export interface UndrawnTile {
 export interface LateSeatInput {
 	seen: readonly SeenSeat[];
 	bag: readonly UndrawnTile[];
-	/** The counts for one more player, setup modifiers included. */
+	/** The counts for the new number of players, setup modifiers included. */
 	target: Readonly<TypeCounts>;
 	/** How many characters of each type the script has, for the neutral swap. */
 	scriptCounts: Readonly<TypeCounts>;
@@ -106,8 +106,9 @@ function pickIndex(length: number, random: () => number): number {
 }
 
 /**
- * What changes when one more player joins: which drawn players change type, which bag
- * tiles go and which come in. Throws when the target is not exactly one player more.
+ * What changes when one or more players join: which drawn players change type, which bag
+ * tiles go and which come in. Throws unless the target is for more players than now.
+ * Several late players are the one-player step done once for each, so each stays fair.
  */
 export function planLateSeat(input: LateSeatInput): LateSeatPlan {
 	const { random } = input;
@@ -116,8 +117,8 @@ export function planLateSeat(input: LateSeatInput): LateSeatPlan {
 	const current = countByType([...input.seen, ...input.bag].map((c) => c.type));
 	const players = SEATED_TYPES.reduce((sum, t) => sum + current[t], 0);
 	const wanted = SEATED_TYPES.reduce((sum, t) => sum + input.target[t], 0);
-	if (wanted !== players + 1) {
-		throw new RangeError(`The new counts are for ${wanted} players, not ${players + 1}.`);
+	if (wanted <= players) {
+		throw new RangeError(`The new counts are for ${wanted} players, not more than ${players}.`);
 	}
 
 	// Fixed by the counts alone, never by who drew what, so each step stays exact.
@@ -128,10 +129,13 @@ export function planLateSeat(input: LateSeatInput): LateSeatPlan {
 		for (let i = 0; i < -diff; i++) removed.push(type);
 		for (let i = 0; i < diff; i++) added.push(type);
 	}
-	// The extra tile is a Townsfolk when one is added: it is the commonest type, so it most
+	// Each extra tile is a Townsfolk while one is added: it is the commonest type, so it most
 	// often lands on a player of its own type and changes nobody.
-	const insertAt = added.includes('townsfolk') ? added.indexOf('townsfolk') : 0;
-	const [inserted] = added.splice(insertAt, 1);
+	const inserted: SeatedType[] = [];
+	for (let i = players; i < wanted; i++) {
+		const at = added.includes('townsfolk') ? added.indexOf('townsfolk') : 0;
+		inserted.push(...added.splice(at, 1));
+	}
 
 	const slots: Slot[] = input.seen.map((seat) => ({ seat, type: seat.type }));
 	const pool: PoolTile[] = input.bag.map((t) => ({ type: t.type, kind: 'bag' }));
@@ -159,29 +163,33 @@ export function planLateSeat(input: LateSeatInput): LateSeatPlan {
 		tile.type = to;
 	});
 
-	// The extra tile lands on any seat at random: a drawn one, or one of the undrawn
-	// (the bag's tiles and the late player's own seat).
+	// Each extra tile lands on any seat at random: a drawn one, or one of the undrawn (the
+	// bag's tiles, which hold the earlier late players' own, and this late player's seat).
 	const open = slots.filter((s) => !(demonStays && s.seat.type === 'demon'));
-	const j = pickIndex(open.length + pool.length + 1, random);
-	const hit = open[j];
-	if (!hit || hit.type === inserted) {
-		pool.push({ type: inserted, kind: 'new' });
-	} else {
+	for (const type of inserted) insert(type);
+
+	function insert(inserted: SeatedType) {
+		const j = pickIndex(open.length + pool.length + 1, random);
+		const hit = open[j];
+		if (!hit || hit.type === inserted) {
+			pool.push({ type: inserted, kind: 'new' });
+			return;
+		}
 		const oldType = hit.type;
 		hit.type = inserted;
-		if (oldType === hit.seat.type) {
-			// Back in the bag, kept only as often as any character of its type is in play.
-			const id = hit.seat.characterId;
-			const chance = Math.min(1, input.target[oldType] / Math.max(1, input.scriptCounts[oldType]));
-			if (keep(id) || random() < chance) {
-				returned.push(id);
-				pool.push({ type: oldType, kind: 'returned' });
-			} else {
-				replaced.push(id);
-				pool.push({ type: oldType, kind: 'new' });
-			}
+		if (oldType !== hit.seat.type) {
+			// Changed by an earlier step, so the character it held was a new one anyway.
+			pool.push({ type: oldType, kind: 'new' });
+			return;
+		}
+		// Back in the bag, kept only as often as any character of its type is in play.
+		const id = hit.seat.characterId;
+		const chance = Math.min(1, input.target[oldType] / Math.max(1, input.scriptCounts[oldType]));
+		if (keep(id) || random() < chance) {
+			returned.push(id);
+			pool.push({ type: oldType, kind: 'returned' });
 		} else {
-			// Changed by a swap above, so the character it held was a new one anyway.
+			replaced.push(id);
 			pool.push({ type: oldType, kind: 'new' });
 		}
 	}

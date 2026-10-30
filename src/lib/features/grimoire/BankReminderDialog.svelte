@@ -10,6 +10,7 @@
 	import CharacterSummary from '#lib/features/characters/CharacterSummary.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import BoardReminder from './BoardReminder.svelte';
 	import type { BankItem } from './bank-items.ts';
 	import { placingAlignment } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
@@ -30,11 +31,16 @@
 </script>
 
 <Dialog bind:open title="About this reminder">
+	<!-- The token itself, as on the board (Trevor, 2026-10-30). -->
 	{#snippet heading()}
-		{#if item}<ReminderToken
-				label={isGeneric(item) ? item.label || '∞' : item.label}
+		{#if item}<BoardReminder
+				label={item.label}
 				character={characters.get(item.characterId)}
 				alignment={placingAlignment(game, item, characters)}
+				infinite={isGeneric(item)}
+				symbol={item.token?.symbol}
+				symbolColour={item.token?.symbolColour}
+				symbolFill={item.token?.symbolFill}
 			/>{:else}About this reminder{/if}
 	{/snippet}
 	{#snippet subtitle()}

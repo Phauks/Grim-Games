@@ -27,8 +27,9 @@
 	import { watchRootFont } from '#lib/ui/root-font.svelte.ts';
 	import PlayerSeatReminders from './PlayerSeatReminders.svelte';
 	import PlayerSeating from './PlayerSeating.svelte';
-	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
-	import { placedKey, reminderChip, reminderWords, remindersOn } from './player-reminders.ts';
+	import BoardReminder from '#lib/features/grimoire/BoardReminder.svelte';
+	import ReminderTokenRow from '#lib/features/grimoire/ReminderTokenRow.svelte';
+	import { playerLook, reminderChip, reminderWords, remindersOn } from './player-reminders.ts';
 	import { PlayerReminderState } from './player-reminders.svelte.ts';
 	import PlayerReminderPicker from './PlayerReminderPicker.svelte';
 	import PlayerReminderBin from './PlayerReminderBin.svelte';
@@ -600,17 +601,16 @@
 			{/each}
 		</ul>
 	</div>
-	<!-- The reminder tokens this player put on the seat (Trevor, 2026-10-26); a tap opens them. -->
+	<!-- The player's tokens on the seat (Trevor, 2026-10-26, as tokens 2026-10-30); a tap opens them. -->
 	<button
 		type="button"
 		class="row seat-note"
 		data-testid="seat-reminders"
 		onclick={() => (remindersOpen = true)}
-		><span class="row-label">{t('player.grim.reminders')}</span><span class="chips"
-			>{#each chosen ? remindersOn(reminders.current, chosen.seatId) : [] as reminder (placedKey(reminder))}<ReminderToken
-					label={reminderWords(reminder)}
-					character={characterOf(reminder.characterId)}
-				/>{:else}<span class="row-none">{t('common.none')}</span>{/each}</span
+		><span class="row-label">{t('player.grim.reminders')}</span><ReminderTokenRow inline oneLine
+			>{#each chosen ? remindersOn(reminders.current, chosen.seatId) : [] as reminder, i (i)}<BoardReminder
+					{...playerLook(reminder, characterOf)}
+				/>{:else}<span class="row-none">{t('common.none')}</span>{/each}</ReminderTokenRow
 		></button
 	>
 	<!-- The player's own notes on this seat (Trevor, 2026-10-24; several since 2026-10-26). -->
