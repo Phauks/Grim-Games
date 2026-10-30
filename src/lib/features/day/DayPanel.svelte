@@ -40,9 +40,10 @@
 	import DayTimer from './DayTimer.svelte';
 	import DayAnnouncements from './DayAnnouncements.svelte';
 	import DayCounts from './DayCounts.svelte';
-	import type { DayPort } from './day-port.ts';
+	import { CLAIM_KEYS, type DayPort, type NoteClaim } from './day-port.ts';
 	import NoteSheet, { type NoteTarget } from './NoteSheet.svelte';
 	import MadnessDeathDialog from './MadnessDeathDialog.svelte';
+	import PrepValueDialog from './PrepValueDialog.svelte';
 	import DayUseDialog from './DayUseDialog.svelte';
 
 	interface Props {
@@ -267,8 +268,8 @@
 	 */
 	const noteClaim = (characterId: CharacterId | undefined) => {
 		const claim = claimOf(characterId);
-		return assistance.playerClaims && (claim === 'guesses' || claim === 'statement')
-			? claim
+		return assistance.playerClaims && claim !== undefined && claim !== 'statements'
+			? (claim satisfies NoteClaim)
 			: undefined;
 	};
 	const hasDayButton = (characterId: CharacterId | undefined) =>
@@ -313,6 +314,14 @@
 		return seatId ? madnessOffer(g, reminder.characterId, seatId, game.characters) : undefined;
 	}
 	let madnessOpen = $state(false);
+
+	// A value the Storyteller decides, shown in a reminder (the Amnesiac's ability).
+	let valueOpen = $state(false);
+	let valueFor = $state<{ characterId: CharacterId; key: string }>();
+	function editValue(characterId: CharacterId, key: string) {
+		valueFor = { characterId, key };
+		valueOpen = true;
+	}
 	let madness = $state<MadnessOffer>();
 	function breakMadness(offer: MadnessOffer) {
 		if (offer.breaking === 'death') {
@@ -377,10 +386,10 @@
 		<Chip
 			marked={hasNote({ characterId, seatId })}
 			data-testid="claim"
-			aria-label={t(claim === 'guesses' ? 'day.guessesLabel' : 'day.statementLabel', { who })}
+			aria-label={t(CLAIM_KEYS[claim!].label, { who })}
 			onclick={() => openNote({ characterId, seatId })}
 		>
-			{t(claim === 'guesses' ? 'day.guesses' : 'day.statement')}
+			{t(CLAIM_KEYS[claim!].name)}
 		</Chip>
 	{:else if markButton(characterId)}
 		{@const mark = markButton(characterId)!}
@@ -495,9 +504,15 @@
 													/>{#if stop}.{/if}</span
 												>
 											{:else if segment.kind === 'value'}
-												<!-- A value the Storyteller entered during prep (the Yaggababble's phrase). -->
+												<!-- A value the Storyteller decides (the Yaggababble's phrase): tap to write it. -->
 												<span
-													>({segment.value ?? segment.placeholder}){#if stop}.{/if}</span
+													><button
+														type="button"
+														class="prep-value"
+														data-testid="prep-value"
+														onclick={() => editValue(segment.characterId, segment.key)}
+														>({segment.value ?? segment.placeholder})</button
+													>{#if stop}.{/if}</span
 												>
 											{:else}
 												<span><GlossaryText segments={explained[i] ?? []} /></span>
@@ -544,6 +559,12 @@
 
 <NoteSheet bind:open={noteOpen} {game} target={noteTarget} />
 <MadnessDeathDialog bind:open={madnessOpen} {game} offer={madness} />
+<PrepValueDialog
+	bind:open={valueOpen}
+	{game}
+	characterId={valueFor?.characterId}
+	valueKey={valueFor?.key}
+/>
 <DayUseDialog bind:this={dayUse} {game} />
 
 <!-- A character as a badge; false inside a button, so it does not open the character. -->
@@ -715,5 +736,15 @@
 		.sections {
 			--toolbar-height: 0px; /* px-ok: nothing above the section headers here */
 		}
+	}
+	/* Reads as the sentence's own words, underlined as something to tap. */
+	.prep-value {
+		padding: 0;
+		border: 0;
+		background: none;
+		color: inherit;
+		font: inherit;
+		text-decoration: underline dotted;
+		cursor: pointer;
 	}
 </style>

@@ -84,7 +84,7 @@ export const ASSIST_LABELS: Record<AssistKey, { label: string; description: stri
 	playerClaims: {
 		label: 'Log player claims',
 		description:
-			"Guesses on the Juggler's row of the day and Statement on the Gossip's, also in their seat's ⋯ menu, for their night answers."
+			"Guesses on the Juggler's row of the day, Statement on the Gossip's and Guess on the Amnesiac's, also in their seat's ⋯ menu, for their answers."
 	},
 	trackNominations: {
 		label: 'Track nominations',

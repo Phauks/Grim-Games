@@ -19,6 +19,16 @@ export interface DayPort {
 	characterName(id: CharacterId | undefined): CharacterName;
 }
 
+/** A player's claim in town that the day note sheet records (`dayClaim`, all but the Savant's). */
+export type NoteClaim = 'guesses' | 'statement' | 'ability-guess';
+
+/** Each claim's button text and its label naming the player. */
+export const CLAIM_KEYS = {
+	guesses: { name: 'day.guesses', label: 'day.guessesLabel' },
+	statement: { name: 'day.statement', label: 'day.statementLabel' },
+	'ability-guess': { name: 'day.abilityGuess', label: 'day.abilityGuessLabel' }
+} as const satisfies Record<NoteClaim, { name: string; label: string }>;
+
 /** A short line for a day-log entry, in our words (the grimoire's History uses it). */
 export function describeEntry(
 	entry: DayEntry,
@@ -63,7 +73,10 @@ export function describeEntry(
 						seat: seatName(entry.seatId)
 					})
 				: characterName(entry.characterId);
-			const line = t('day.logNote', { who, text: entry.text });
+			const note = t('day.logNote', { who, text: entry.text });
+			const line = entry.answer
+				? t('day.logAnswer', { line: note, answer: t(`day.answer.${entry.answer}`) })
+				: note;
 			return entry.guesses?.length
 				? t('day.logGuesses', { line, count: entry.guesses.length })
 				: line;

@@ -128,6 +128,15 @@ describe('state-based reminders', () => {
 		).toEqual(['[Yaggababble] secret phrase is (cheese and onion)']);
 	});
 
+	// https://wiki.bloodontheclocktower.com/Amnesiac: the Storyteller decides the ability.
+	it('shows the Amnesiac’s ability once the Storyteller wrote it', () => {
+		const amnesiac = seat('amnesiac');
+		expect(texts({ seats: [amnesiac] })).toContain('[Amnesiac] ability is (ABILITY)');
+		expect(
+			texts({ seats: [amnesiac], prepValues: { 'amnesiac.ability': 'learns a number' } })
+		).toContain('[Amnesiac] ability is (learns a number)');
+	});
+
 	// https://wiki.bloodontheclocktower.com/Pixie and /Sailor (Trevor’s review wording)
 	it('words the Pixie and Sailor reminders as reviewed', () => {
 		const pixie = seat('pixie');

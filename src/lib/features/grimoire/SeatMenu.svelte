@@ -4,6 +4,7 @@
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import { seatCharacterLine } from '#lib/features/game/seat-label.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
+	import { CLAIM_KEYS, type NoteClaim } from '#lib/features/day/day-port.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -23,7 +24,7 @@
 		/** The Savant's information generator is offered for this seat. */
 		savant: boolean;
 		/** The player's claim in town, as on their day row. */
-		claim: 'guesses' | 'statement' | undefined;
+		claim: NoteClaim | undefined;
 		/** The seat has a character history to show. */
 		hasChanges: boolean;
 		onChangeCharacter: () => void;
@@ -90,7 +91,7 @@
 		{/if}
 		{#if claim}
 			<Button variant="quiet" icon="notes" onclick={() => fromMenu(onClaim)}>
-				{t(claim === 'guesses' ? 'day.guesses' : 'day.statement')}…
+				{t(CLAIM_KEYS[claim].name)}…
 			</Button>
 		{/if}
 		<Button

@@ -1,5 +1,6 @@
 import {
 	ABNORMAL_REASONS,
+	GUESS_ANSWERS,
 	getSeat,
 	isTraveller,
 	trueCharacter,
@@ -7,6 +8,7 @@ import {
 	type AbnormalCause,
 	type DayEntry,
 	type Game,
+	type GuessAnswer,
 	type Reminder
 } from '#lib/core/model/index.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
@@ -37,6 +39,10 @@ import {
 	seatOf,
 	type Deciders
 } from './shared.ts';
+
+/** One of the Storyteller's answers to an ability guess; anything else is left out. */
+const isAnswer = (value: unknown): value is GuessAnswer =>
+	(GUESS_ANSWERS as readonly unknown[]).includes(value);
 
 /** The day log: nominations, executions, exiles, abilities, notes and night information. */
 export const DAY_DECIDERS: Deciders<
@@ -233,6 +239,7 @@ export const DAY_DECIDERS: Deciders<
 		if (command.seatId !== undefined) entry.seatId = seatOf(game, command.seatId).seatId;
 		if (guesses.length > 0) entry.guesses = guesses;
 		if (typeof command.holds === 'boolean') entry.holds = command.holds;
+		if (isAnswer(command.answer)) entry.answer = command.answer;
 		return [{ type: 'DayEntryAdded', entry }];
 	},
 
@@ -248,8 +255,10 @@ export const DAY_DECIDERS: Deciders<
 		const next: Extract<DayEntry, { kind: 'note' }> = { ...entry, text };
 		delete next.guesses;
 		delete next.holds;
+		delete next.answer;
 		if (guesses.length > 0) next.guesses = guesses;
 		if (typeof command.holds === 'boolean') next.holds = command.holds;
+		if (isAnswer(command.answer)) next.answer = command.answer;
 		if (JSON.stringify(next) === JSON.stringify(entry)) {
 			warn('no-change', 'the note is unchanged');
 			return [];
