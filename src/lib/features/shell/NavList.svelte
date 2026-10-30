@@ -9,7 +9,6 @@
 	import type { IconSlot } from '#lib/ui/icons/catalogue.ts';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import { account } from '#lib/features/account/account.svelte.ts';
-	import ProfileIcon from '#lib/features/account/ProfileIcon.svelte';
 	import { friends } from '#lib/features/friends/friends.svelte.ts';
 	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import {
@@ -85,16 +84,8 @@
 			aria-current={isCurrent(item, page.url.pathname) ? 'page' : undefined}
 			onclick={() => onChoose?.()}
 		>
-			{#if item === ACCOUNT_ITEM}
-				<!-- The signed-in account's profile icon, as the header's button had (2026-10-22). -->
-				<span class="profile" data-signed-in={account.status === 'signed-in'}
-					><ProfileIcon
-						icon={account.status === 'signed-in' ? account.user?.icon : undefined}
-					/></span
-				>
-			{:else}
-				<Icon name={item.icon} />
-			{/if}
+			<!-- Account keeps the plain account icon, never the Profile's character (Trevor, 2026-10-30). -->
+			<Icon name={item.icon} />
 			<span>{label(item.label)}</span>
 			<!-- Friend requests waiting for an answer (plan F1). -->
 			{#if item === FRIENDS_ITEM && friends.waiting > 0}<CountBadge
@@ -188,12 +179,6 @@
 		gap: var(--space-2);
 		margin-top: var(--space-2);
 		padding: 0 var(--space-3);
-	}
-	.profile {
-		display: grid;
-		flex: none;
-		width: var(--icon-size);
-		height: var(--icon-size);
 	}
 	a {
 		display: flex;
