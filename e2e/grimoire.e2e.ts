@@ -4446,7 +4446,8 @@ test('the board menu names its groups, in two columns beside a phone', async ({ 
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	const menu = page.getByRole('dialog', { name: 'Grimoire' });
 	// Trevor (2026-10-27): named groups ("the delineation is nice"), End game or New game under
-	// Game, and all of Settings from one item.
+	// Game, and all of Settings from one item. Players holds the notes (2026-10-29), so it is
+	// there in every game, room or not.
 	const group = (name: string) => menu.getByRole('region', { name, exact: true });
 	const names = (name: string) =>
 		group(name)
@@ -4455,7 +4456,7 @@ test('the board menu names its groups, in two columns beside a phone', async ({ 
 				els.filter((e) => e.checkVisibility()).map((e) => (e.textContent ?? '').trim())
 			);
 	expect((await names('Game')).join(' ')).toMatch(
-		/^History Demon bluffs Notes( Game info)? Game settings( Character selection)? End game$/
+		/^Players History Demon bluffs( Game info)? Game settings( Character selection)? End game$/
 	);
 	expect(await names('Seats')).toEqual(['Add seat', 'Add Fabled or Loric', 'Arrange seats']);
 	expect(await names('App')).toEqual(['Settings', 'Full screen', 'Report an issue']);
