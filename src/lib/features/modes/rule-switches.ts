@@ -146,3 +146,25 @@ export function switched(rule: SpecialRule, choices: SwitchChoices): SpecialRule
 		rule
 	);
 }
+
+/**
+ * The switch choices a game's kept rules were made with, read back from the rules themselves
+ * (a game keeps each rule as switched), so Character selection's Special rules shows them as
+ * they were set. A rule whose file is gone keeps its defaults.
+ */
+export function choicesOf(
+	rules: readonly SpecialRule[],
+	find: (id: string) => SpecialRule | undefined
+): SwitchChoices {
+	const out: Record<string, boolean> = {};
+	for (const rule of rules) {
+		const base = find(rule.id);
+		if (!base) continue;
+		for (const sw of RULE_SWITCHES[rule.id] ?? []) {
+			const flipped = switched(base, { [`${rule.id}:${sw.id}`]: !sw.default });
+			if (JSON.stringify(flipped) === JSON.stringify(rule))
+				out[`${rule.id}:${sw.id}`] = !sw.default;
+		}
+	}
+	return out;
+}

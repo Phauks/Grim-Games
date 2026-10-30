@@ -43,6 +43,7 @@ export * from './wakes-when.ts';
 export * from './night-numbers.ts';
 export * from './game-end.ts';
 export * from './becomes.ts';
+export * from './madness.ts';
 export * from './character-changes.ts';
 export * from './first-death.ts';
 export * from './end-reason.ts';

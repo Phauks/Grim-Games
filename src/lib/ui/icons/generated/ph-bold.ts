@@ -48,12 +48,14 @@ import ph_certificate_bold from '~icons/ph/certificate-bold';
 import ph_chat_centered_text_bold from '~icons/ph/chat-centered-text-bold';
 import ph_chat_text_bold from '~icons/ph/chat-text-bold';
 import ph_check_bold from '~icons/ph/check-bold';
+import ph_check_circle_bold from '~icons/ph/check-circle-bold';
 import ph_check_square_bold from '~icons/ph/check-square-bold';
 import ph_circle_dashed_bold from '~icons/ph/circle-dashed-bold';
 import ph_circle_notch_bold from '~icons/ph/circle-notch-bold';
 import ph_circles_three_bold from '~icons/ph/circles-three-bold';
 import ph_clipboard_bold from '~icons/ph/clipboard-bold';
 import ph_clipboard_text_bold from '~icons/ph/clipboard-text-bold';
+import ph_clock_bold from '~icons/ph/clock-bold';
 import ph_clock_counter_clockwise_bold from '~icons/ph/clock-counter-clockwise-bold';
 import ph_club_bold from '~icons/ph/club-bold';
 import ph_coffee_bold from '~icons/ph/coffee-bold';
@@ -276,12 +278,14 @@ const icons: IconMap = {
 	'ph:chat-centered-text-bold': ph_chat_centered_text_bold,
 	'ph:chat-text-bold': ph_chat_text_bold,
 	'ph:check-bold': ph_check_bold,
+	'ph:check-circle-bold': ph_check_circle_bold,
 	'ph:check-square-bold': ph_check_square_bold,
 	'ph:circle-dashed-bold': ph_circle_dashed_bold,
 	'ph:circle-notch-bold': ph_circle_notch_bold,
 	'ph:circles-three-bold': ph_circles_three_bold,
 	'ph:clipboard-bold': ph_clipboard_bold,
 	'ph:clipboard-text-bold': ph_clipboard_text_bold,
+	'ph:clock-bold': ph_clock_bold,
 	'ph:clock-counter-clockwise-bold': ph_clock_counter_clockwise_bold,
 	'ph:club-bold': ph_club_bold,
 	'ph:coffee-bold': ph_coffee_bold,

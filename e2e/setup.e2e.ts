@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { openProfile, setPlayerName } from './player-name.ts';
-import { pickScript, toBoard } from './new-game.ts';
+import { chooseRulesOnSetup, pickScript, toBoard } from './new-game.ts';
 import { menuButton } from './shell.ts';
 
 // Character selection, the bag and the draw (ROADMAP Phase 2 Setup).
@@ -250,16 +250,8 @@ test('Stowed Away: up to 2 Travellers count in the bag, the rest for fewer playe
 }) => {
 	await page.goto('/new');
 	await pickScript(page, 'Trouble Brewing');
-	await page.getByRole('button', { name: /^Special rules/ }).tap();
-	const rules = page.getByRole('dialog', { name: 'Special rules' });
-	await rules.getByText('Stowed Away', { exact: true }).tap();
-	await rules.getByRole('button', { name: 'Close' }).tap();
-	await expect(rules).toBeHidden();
 	await page.getByRole('button', { name: 'Create game' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Special rules in this game' })
-		.getByRole('button', { name: 'Create game' })
-		.tap();
+	await chooseRulesOnSetup(page, 'Stowed Away');
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+/);
 	const gameId = new URL(page.url()).pathname.split('/')[2];
 	await page.goto(`/grimoire/${gameId}/setup`);

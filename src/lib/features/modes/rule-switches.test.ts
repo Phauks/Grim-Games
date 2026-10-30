@@ -5,6 +5,7 @@ import {
 	DUPLICATE_DEMONS,
 	INFINITE_NAMED,
 	PLUS_ONE_NAMED,
+	choicesOf,
 	switched
 } from './rule-switches.ts';
 
@@ -51,5 +52,12 @@ describe('rule switches', () => {
 			instructions: DUPLICATE_DEMONS
 		});
 		expect(parseSpecialRule(demons).ok).toBe(true);
+	});
+
+	it('read back from the kept rules, so Character selection shows them as set', () => {
+		const find = (id: string) => specialRuleById(id);
+		const named = switched(plusOne, { 'plus-one:named': true });
+		expect(choicesOf([named, infinite], find)).toEqual({ 'plus-one:named': true });
+		expect(choicesOf([plusOne], find)).toEqual({});
 	});
 });

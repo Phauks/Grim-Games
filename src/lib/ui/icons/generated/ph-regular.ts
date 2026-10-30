@@ -27,6 +27,7 @@ import ph_caret_right from '~icons/ph/caret-right';
 import ph_caret_up from '~icons/ph/caret-up';
 import ph_chat_text from '~icons/ph/chat-text';
 import ph_check from '~icons/ph/check';
+import ph_check_circle from '~icons/ph/check-circle';
 import ph_circle_dashed from '~icons/ph/circle-dashed';
 import ph_circle_notch from '~icons/ph/circle-notch';
 import ph_clipboard_text from '~icons/ph/clipboard-text';
@@ -71,6 +72,8 @@ import ph_lock_simple from '~icons/ph/lock-simple';
 import ph_magnifying_glass from '~icons/ph/magnifying-glass';
 import ph_mask_sad from '~icons/ph/mask-sad';
 import ph_minus from '~icons/ph/minus';
+import ph_minus_circle from '~icons/ph/minus-circle';
+import ph_moon from '~icons/ph/moon';
 import ph_moon_stars from '~icons/ph/moon-stars';
 import ph_note_pencil from '~icons/ph/note-pencil';
 import ph_paint_bucket from '~icons/ph/paint-bucket';
@@ -144,6 +147,7 @@ const icons: IconMap = {
 	'ph:caret-up': ph_caret_up,
 	'ph:chat-text': ph_chat_text,
 	'ph:check': ph_check,
+	'ph:check-circle': ph_check_circle,
 	'ph:circle-dashed': ph_circle_dashed,
 	'ph:circle-notch': ph_circle_notch,
 	'ph:clipboard-text': ph_clipboard_text,
@@ -188,6 +192,8 @@ const icons: IconMap = {
 	'ph:magnifying-glass': ph_magnifying_glass,
 	'ph:mask-sad': ph_mask_sad,
 	'ph:minus': ph_minus,
+	'ph:minus-circle': ph_minus_circle,
+	'ph:moon': ph_moon,
 	'ph:moon-stars': ph_moon_stars,
 	'ph:note-pencil': ph_note_pencil,
 	'ph:paint-bucket': ph_paint_bucket,

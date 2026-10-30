@@ -24,6 +24,7 @@ import ph_chat_centered_text from '~icons/ph/chat-centered-text';
 import ph_check_square from '~icons/ph/check-square';
 import ph_circles_three from '~icons/ph/circles-three';
 import ph_clipboard from '~icons/ph/clipboard';
+import ph_clock from '~icons/ph/clock';
 import ph_club from '~icons/ph/club';
 import ph_coin from '~icons/ph/coin';
 import ph_copy_simple from '~icons/ph/copy-simple';
@@ -67,9 +68,7 @@ import ph_list_dashes from '~icons/ph/list-dashes';
 import ph_list_magnifying_glass from '~icons/ph/list-magnifying-glass';
 import ph_lock from '~icons/ph/lock';
 import ph_megaphone from '~icons/ph/megaphone';
-import ph_minus_circle from '~icons/ph/minus-circle';
 import ph_monitor from '~icons/ph/monitor';
-import ph_moon from '~icons/ph/moon';
 import ph_notepad from '~icons/ph/notepad';
 import ph_paint_brush from '~icons/ph/paint-brush';
 import ph_pause_circle from '~icons/ph/pause-circle';
@@ -137,6 +136,7 @@ const icons: IconMap = {
 	'ph:check-square': ph_check_square,
 	'ph:circles-three': ph_circles_three,
 	'ph:clipboard': ph_clipboard,
+	'ph:clock': ph_clock,
 	'ph:club': ph_club,
 	'ph:coin': ph_coin,
 	'ph:copy-simple': ph_copy_simple,
@@ -180,9 +180,7 @@ const icons: IconMap = {
 	'ph:list-magnifying-glass': ph_list_magnifying_glass,
 	'ph:lock': ph_lock,
 	'ph:megaphone': ph_megaphone,
-	'ph:minus-circle': ph_minus_circle,
 	'ph:monitor': ph_monitor,
-	'ph:moon': ph_moon,
 	'ph:notepad': ph_notepad,
 	'ph:paint-brush': ph_paint_brush,
 	'ph:pause-circle': ph_pause_circle,
