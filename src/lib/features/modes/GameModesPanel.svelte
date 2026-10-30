@@ -44,7 +44,6 @@
 	import AddModeDialog from './AddModeDialog.svelte';
 	import { allModes, customModes, findMode } from './custom-modes.svelte.ts';
 	import { findRule } from './custom-rules.svelte.ts';
-	import { readGameMode } from './game-mode-store.ts';
 	import ModeAbout from './ModeAbout.svelte';
 	import ModeInspectDialog from './ModeInspectDialog.svelte';
 	import ModeValue from './ModeValue.svelte';
@@ -60,7 +59,7 @@
 	import { campaigns } from './campaigns.ts';
 	import RulesRecap from './RulesRecap.svelte';
 	import { switched, type SwitchChoices } from './rule-switches.ts';
-	import { continueCampaign, rulesScript, startHref, startInMode, startTowns } from './start.ts';
+	import { continueCampaign, rulesScript, setupHref, startInMode, startTowns } from './start.ts';
 	import { townGroup } from './town-groups.ts';
 	import { townSetupHref } from './town-setup.ts';
 	import { storytellerName } from '#lib/features/game/storyteller-name.svelte.ts';
@@ -339,9 +338,7 @@
 					},
 					(name, number) => t('modes.campaign.scriptName', { name, number })
 				);
-				await goto(
-					startHref(modeId, readGameMode(open.game.gameId)?.rules ?? [], open.game.gameId)
-				);
+				await goto(setupHref(open.game.gameId));
 				return;
 			}
 			const loaded = await loadScripts(data);
@@ -380,7 +377,7 @@
 				create: (s) => OpenGame.create(data, s, total, undefined, undefined, storyteller)
 			});
 			saveDraft({ gameId: open.game.gameId });
-			await goto(startHref(modeId, rules, open.game.gameId));
+			await goto(setupHref(open.game.gameId));
 		} catch (e) {
 			reportError(e, { area: 'grimoire' });
 		} finally {
