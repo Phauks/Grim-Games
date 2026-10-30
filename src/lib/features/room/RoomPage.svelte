@@ -6,13 +6,16 @@
 	import WithSavedGame from '#lib/features/game/WithSavedGame.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import { prepareRoom } from './host.svelte.ts';
+	import PlayersPanel from './PlayersPanel.svelte';
 	import RoomPanel from './RoomPanel.svelte';
 
 	interface Props {
 		gameId: GameId;
+		/** Players (Trevor, 2026-10-29) rather than Share: the same page, its own panel. */
+		players?: boolean;
 	}
 
-	let { gameId }: Props = $props();
+	let { gameId, players = false }: Props = $props();
 
 	// The room opens while the game loads, not after.
 	prepareRoom();
@@ -28,11 +31,11 @@
 		>
 			{t('room.back')}
 		</Button>
-		<h1>{t('room.title')}</h1>
+		<h1>{players ? t('room.players.title') : t('room.title')}</h1>
 	</header>
 	<WithSavedGame {gameId} area="grimoire">
 		{#snippet children(game: OpenGame)}
-			<RoomPanel {game} />
+			{#if players}<PlayersPanel {game} />{:else}<RoomPanel {game} />{/if}
 		{/snippet}
 		{#snippet fallback({ kind, message })}
 			<p

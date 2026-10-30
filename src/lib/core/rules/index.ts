@@ -14,6 +14,7 @@ export * from './script-builder.ts';
 export * from './character-builder.ts';
 export * from './prevented-deaths.ts';
 export * from './teensyville.ts';
+export * from './evil-info.ts';
 export * from './night-order.ts';
 export * from './night-info.ts';
 export * from './day-reminders.ts';

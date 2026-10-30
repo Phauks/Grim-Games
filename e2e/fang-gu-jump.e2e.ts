@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
+import { putReminder } from './reminder-bank.ts';
 
 /**
  * The Fang Gu jumping into an Outsider (https://wiki.bloodontheclocktower.com/Fang_Gu): the
@@ -41,23 +42,30 @@ async function choose(page: Page, number: number, name: string) {
 	await closeSheet(page);
 }
 
-/** Puts one of the Fang Gu's reminders on a seat from the seat's sheet. */
+/** Puts one of the Fang Gu's reminders on a seat, from the bank. */
 async function addFangGu(page: Page, number: number, label: string) {
-	const sheet = await openSeat(page, number);
-	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
-	await page
-		.getByRole('dialog', { name: `Reminders for Seat ${number}` })
-		.getByRole('group', { name: 'Fang Gu' })
-		.getByRole('button', { name: label })
-		.tap();
+	await putReminder(page, label, number);
 }
 
-/** The old Fang Gu is dead, so placing its reminder asks first (Trevor, 2026-10-20). */
-async function confirmPlaceDead(page: Page) {
+/**
+ * The Fang Gu's one Dead token, taken off the seat it is on (back to the bank) and then onto the next
+ * seat, so placing it asks again.
+ */
+async function moveDead(page: Page, from: number, to: number) {
 	await page
-		.getByRole('alertdialog', { name: /^Place Dead/ })
-		.getByRole('button', { name: 'Confirm', exact: true })
+		.locator(`.chip-slot[data-seat="${from}"]`)
+		.getByRole('button', { name: 'Dead reminder' })
 		.tap();
+	await page.getByRole('button', { name: 'Remove reminder' }).tap();
+	const stays = page.getByRole('alertdialog', { name: 'Confirm change?' });
+	if (await stays.isVisible()) await stays.getByRole('button', { name: 'Confirm' }).tap();
+	await page.keyboard.press('Escape');
+	await page.keyboard.press('Escape');
+	await addFangGu(page, to, 'Dead');
+	// The old Fang Gu is dead, so placing its reminder asks first (Trevor, 2026-10-20).
+	const place = page.getByRole('alertdialog', { name: /^Place Dead/ });
+	if (await place.isVisible())
+		await place.getByRole('button', { name: 'Confirm', exact: true }).tap();
 }
 
 test('a Fang Gu jumping into an Outsider is no game end, and its Dead still asks', async ({
@@ -88,8 +96,7 @@ test('a Fang Gu jumping into an Outsider is no game end, and its Dead still asks
 
 	// The Klutz dies too, before becoming the Fang Gu: nobody is left to jump into, so the
 	// game end asks. Confirmed, then reopened, it doesn't ask again straight away.
-	await addFangGu(page, 2, 'Dead');
-	await confirmPlaceDead(page);
+	await moveDead(page, 1, 2);
 	await page
 		.getByRole('alertdialog', { name: /^Mark .*Seat 2 dead\?$/ })
 		.getByRole('button', { name: 'Confirm', exact: true })
@@ -108,8 +115,7 @@ test('a Fang Gu jumping into an Outsider is no game end, and its Dead still asks
 	await expect(end).toHaveCount(0);
 
 	// The Fang Gu's next "Dead" still asks.
-	await addFangGu(page, 3, 'Dead');
-	await confirmPlaceDead(page);
+	await moveDead(page, 2, 3);
 	await expect(page.getByRole('alertdialog', { name: /^Mark .*Seat 3 dead\?$/ })).toBeVisible();
 	await expect(end).toHaveCount(0);
 });

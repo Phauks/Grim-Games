@@ -137,11 +137,6 @@ export interface Preferences {
 	timerKeepAwake: boolean;
 	/** The day timer's starting seconds per living player (Trevor, 2026-10-19). */
 	timerPerPlayer: number;
-	/**
-	 * How players' phones show the day timer in a live room (Trevor, 2026-10-26: "sun or timer
-	 * for players", the Storyteller decides).
-	 */
-	timerForPlayers: TimerForPlayers;
 	/** What players' phones show beside Setup (Trevor, 2026-10-28). */
 	setupForPlayers: SetupLook;
 	/**
@@ -183,13 +178,6 @@ export type QrFinders = (typeof QR_FINDERS)[number];
 
 const TIMER_MODES = ['down', 'up'] as const;
 export type TimerMode = (typeof TIMER_MODES)[number];
-
-/**
- * How players' phones show the day timer: a sun or the clock. Always shown; the Storyteller
- * picks only its style (Trevor, 2026-10-28), so Hidden, saved by older builds, reads as Sun.
- */
-export const TIMER_FOR_PLAYERS = ['sun', 'timer'] as const;
-export type TimerForPlayers = (typeof TIMER_FOR_PLAYERS)[number];
 
 /** The day timer's finishing sounds, made on the device (no audio files); or none. */
 export const TIMER_SOUNDS = ['bell', 'chime', 'clocktower', 'buzzer', 'none'] as const;
@@ -283,7 +271,6 @@ export const DEFAULT_PREFERENCES: Preferences = {
 	soundPads: DEFAULT_PADS.map((pad) => ({ ...pad })),
 	timerKeepAwake: true,
 	timerPerPlayer: DAY_SECONDS_PER_ALIVE,
-	timerForPlayers: 'sun',
 	setupForPlayers: 'candles',
 	coverPin: false,
 	qrCentre: 'script',
@@ -397,7 +384,6 @@ export function parsePreferences(raw: unknown): Preferences {
 			typeof input.timerKeepAwake === 'boolean'
 				? input.timerKeepAwake
 				: DEFAULT_PREFERENCES.timerKeepAwake,
-		timerForPlayers: oneOf(TIMER_FOR_PLAYERS, input.timerForPlayers, 'sun'),
 		setupForPlayers: oneOf(SETUP_LOOKS, input.setupForPlayers, 'candles'),
 		coverPin: input.coverPin === true,
 		timerPerPlayer:

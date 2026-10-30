@@ -16,6 +16,7 @@
 	import PlayerScriptActions from '#lib/features/player/PlayerScriptActions.svelte';
 	import { scriptVersion } from '#lib/features/player/player-script.ts';
 	import ScriptByline from '#lib/features/player/ScriptByline.svelte';
+	import { gameSheetRules } from '#lib/features/modes/sheet-rules.ts';
 	import { gameShareable } from '#lib/features/scripts/game-shareable.svelte.ts';
 	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -58,6 +59,8 @@
 	const version = $derived(scriptVersion(undefined, script?.meta));
 	/** Share links to the saved script when it is the game's, as /play's does (parity). */
 	const share = $derived(open && script ? gameShareable(script) : undefined);
+	/** The game mode and special rules, as the Script below lists them, for Print. */
+	const rules = $derived(open ? gameSheetRules(game.gameId) : []);
 </script>
 
 {#snippet logoLead()}<ScriptLogo src={logo} class="title-logo" />{/snippet}
@@ -69,7 +72,7 @@
 	lead={logo ? logoLead : undefined}
 >
 	{#snippet headActions()}
-		<PlayerScriptActions {script} {version} {share} {room} storyteller />
+		<PlayerScriptActions {script} {version} {share} {room} {rules} storyteller />
 	{/snippet}
 	{#snippet subtitle()}
 		<ScriptByline

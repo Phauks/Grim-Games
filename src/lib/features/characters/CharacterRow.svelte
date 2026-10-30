@@ -225,10 +225,11 @@
 	/*
 	 * The ring look: the ring over the start of its text, which holds the band and the
 	 * ability beside the ring under the band. The ring is as tall as the name and two lines of
-	 * ability; a host may set --character-ring smaller (a printed compact sheet).
+	 * ability; a host may set --character-ring smaller (a printed compact sheet), and
+	 * --character-ring-scale to size it (a printed side's Icon size).
 	 */
 	.ring-row {
-		--ring: var(--character-ring, 4.4em);
+		--ring: calc(var(--character-ring, 4.4em) * var(--character-ring-scale, 1));
 		position: relative;
 		/* The ring's z-index stays inside the row, under a sticky header scrolling over it. */
 		isolation: isolate;

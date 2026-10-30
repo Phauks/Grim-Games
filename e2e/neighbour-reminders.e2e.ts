@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
+import { putReminder } from './reminder-bank.ts';
 
 // Players who swap or move seats (the Matron) take their own reminders with them, but the
 // Tea Lady's Cannot Die marks whoever sits next to her now, so it moves to her new
@@ -10,18 +11,7 @@ const seatLabelled = (page: Page, start: string) =>
 	page.locator(`[data-testid="seat"][aria-label^="${start}"]`);
 
 async function addCannotDie(page: Page, seat: number) {
-	await page.getByRole('button', { name: new RegExp(`^Seat ${seat}:`) }).tap();
-	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
-	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
-	const picker = page.getByRole('dialog', { name: `Reminders for Seat ${seat}` });
-	await picker
-		.getByRole('group', { name: 'Tea Lady' })
-		.getByRole('button', { name: 'Cannot Die' })
-		.first()
-		.tap();
-	await picker.getByRole('button', { name: 'Close' }).tap();
-	await page.keyboard.press('Escape');
-	await expect(sheet).toBeHidden();
+	await putReminder(page, 'Cannot Die', seat);
 }
 
 test("the Tea Lady's Cannot Die moves to her new neighbour when players move", async ({ page }) => {

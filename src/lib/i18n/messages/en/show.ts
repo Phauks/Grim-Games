@@ -23,6 +23,16 @@ export const show = {
 	'show.evil.showNamed': 'Show {card}',
 	'show.evil.chooseBluffs': 'Choose bluffs',
 	'show.evil.inPlay': 'In play: replace',
+	// A player who believes they are the Demon (the Lunatic), from the mockup Trevor approved
+	// (2026-10-29).
+	'show.evil.believerTitle': 'Sell the Demon',
+	'show.evil.as': 'As the',
+	'show.evil.choose': 'Choose',
+	'show.evil.edit': 'Edit',
+	'show.evil.chose': 'chose',
+	'show.evil.decoyChose': 'The decoy chose',
+	'show.evil.add': 'Add {name}',
+	'show.evil.hidden': 'in play: the Demon and Minions don’t learn each other',
 	// Fair-play warnings (FairPlayNotice), in Trevor's own words (2026-10-27).
 	'show.fairPlay.secret':
 		'This is for your eyes only. Please do not screenshot, photograph, or otherwise share this screen in any way that could compromise the integrity of this game.',

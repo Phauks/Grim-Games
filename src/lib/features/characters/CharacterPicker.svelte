@@ -266,6 +266,11 @@
 		padding: 0;
 		list-style: none;
 	}
+	/* A tile fills its grid row, so a short ability beside a longer one leaves no gap
+	   (Trevor, 2026-10-29). */
+	li {
+		display: grid;
+	}
 	/* Ring rows carry no box of their own, so a divider keeps one from running into the next
 	   (e2e/stacked-blocks.e2e.ts; Trevor: rows with dividers). */
 	.divided {

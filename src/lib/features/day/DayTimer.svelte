@@ -3,7 +3,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import { gameSettings } from '#lib/features/game-settings/game-settings.svelte.ts';
-	import { TIMER_FOR_PLAYERS, TIMER_SOUNDS, type TimerSound } from '#lib/ui/preferences.ts';
+	import { TIMER_SOUNDS, type TimerSound } from '#lib/ui/preferences.ts';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
@@ -70,17 +70,6 @@
 {/snippet}
 
 {#snippet forPlayers()}
-	<!-- How players' phones show this timer in a live room (Trevor, 2026-10-26); also in
-	     Settings > Storyteller > Day. -->
-	<Select
-		label={t('day.timerForPlayers')}
-		value={gameSettings.current.timerForPlayers}
-		options={TIMER_FOR_PLAYERS.map((value) => ({
-			value,
-			label: t(`day.timerForPlayers.${value}`)
-		}))}
-		onChange={(timerForPlayers) => gameSettings.set(gameSettings.gameId, { timerForPlayers })}
-	/>
 	<!-- What phones show beside Setup, before the first night (Trevor, 2026-10-28); also in
 	     Settings > Storyteller > Day. -->
 	<Select

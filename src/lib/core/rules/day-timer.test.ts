@@ -118,8 +118,8 @@ describe('the timer spectators see (Trevor, 2026-10-19)', () => {
 	});
 });
 
-describe("players' day timer (Trevor, 2026-10-26: sun or timer for players)", () => {
-	it('keeps the timer and how it looks', () => {
+describe("players' day timer (Trevor, 2026-10-29: always a sun)", () => {
+	it('keeps the timer, always as a sun', () => {
 		expect(
 			parsePublicTimer({
 				durationMs: 60_000,
@@ -131,11 +131,16 @@ describe("players' day timer (Trevor, 2026-10-26: sun or timer for players)", ()
 		).toEqual({ durationMs: 60_000, elapsedMs: 0, startedAt: 9, mode: 'down', look: 'sun' });
 	});
 
-	it('drops a timer with no look, or a malformed one', () => {
-		expect(parsePublicTimer({ durationMs: 60_000, elapsedMs: 0, mode: 'down' })).toBeUndefined();
+	it('shows a sun whatever look an older build sent, or none', () => {
+		const sun = { durationMs: 60_000, elapsedMs: 0, mode: 'down', look: 'sun' };
+		expect(parsePublicTimer({ durationMs: 60_000, elapsedMs: 0, mode: 'down' })).toEqual(sun);
 		expect(
-			parsePublicTimer({ durationMs: 60_000, elapsedMs: 0, mode: 'down', look: 'moon' })
-		).toBeUndefined();
+			parsePublicTimer({ durationMs: 60_000, elapsedMs: 0, mode: 'down', look: 'timer' })
+		).toEqual(sun);
+	});
+
+	it('drops a malformed timer', () => {
+		expect(parsePublicTimer({ durationMs: 'soon', elapsedMs: 0, mode: 'down' })).toBeUndefined();
 		expect(parsePublicTimer(undefined)).toBeUndefined();
 	});
 
