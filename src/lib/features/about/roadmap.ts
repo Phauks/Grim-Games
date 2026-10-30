@@ -275,9 +275,9 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	{ title: 'Search Settings for any setting by name', area: 'app', parts: ['S24'] },
 	{
 		title:
-			'Print your own script sheet: Letter or A4, your margins, and what goes on the front and back',
+			'Print your own script sheet: Letter or A4, your margins, and what goes on the front and back, or download it as a PDF',
 		area: 'prepare',
-		parts: ['T1']
+		parts: ['T1', 'T3']
 	},
 	{ title: 'A background image on the printed sheet', area: 'prepare', parts: ['T2'], later: true },
 	{

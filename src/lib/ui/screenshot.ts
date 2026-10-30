@@ -15,9 +15,17 @@ function skipped(node: Node): boolean {
 	return node instanceof HTMLElement && node.dataset.screenshot === 'skip';
 }
 
+export interface ScreenshotOptions {
+	/** Pixels per CSS pixel; at least MIN_SCALE. */
+	scale?: number;
+	/** What shows through the element; the page's own background otherwise. */
+	backgroundColor?: string;
+}
+
 export async function screenshot(
 	element: HTMLElement,
-	type: 'image/png' | 'image/jpeg' = 'image/png'
+	type: 'image/png' | 'image/jpeg' = 'image/png',
+	options: ScreenshotOptions = {}
 ): Promise<Blob> {
 	// Loaded when asked, so the library stays out of the app's first download.
 	const { domToBlob } = await import('modern-screenshot');
@@ -25,9 +33,9 @@ export async function screenshot(
 	return domToBlob(element, {
 		type,
 		quality: 0.85,
-		scale: Math.max(MIN_SCALE, devicePixelRatio || 1),
+		scale: Math.max(MIN_SCALE, options.scale ?? 0, devicePixelRatio || 1),
 		// The page's own background, under a board that lets it show through.
-		backgroundColor: getComputedStyle(document.body).backgroundColor,
+		backgroundColor: options.backgroundColor ?? getComputedStyle(document.body).backgroundColor,
 		filter: (node) => !skipped(node)
 	});
 }
