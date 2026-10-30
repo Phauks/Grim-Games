@@ -35,7 +35,7 @@ import {
 import type { AbilityState } from './ability.ts';
 import type { GainedAbility } from './gained-abilities.ts';
 import type { NightStepInfo } from './night-info.ts';
-import { hasEvilTeamInfo } from './teensyville.ts';
+import { evilTeamInfoRemovedBy, hasEvilTeamInfo } from './teensyville.ts';
 
 export type Night = 'first' | 'other';
 
@@ -52,6 +52,11 @@ export interface NightOrderInput {
 	overrides?: readonly NightStepOverride[];
 	/** The official characters by id, to place a homebrew one beside those most like it. */
 	official?: ReadonlyMap<CharacterId, Character>;
+	/**
+	 * Every character on the sheet at once (the Reference), not a game: no character's rules
+	 * leave a step out (Tor's missing evil info).
+	 */
+	wholeSheet?: true;
 }
 
 /**
@@ -299,7 +304,12 @@ export function nightOrder(input: NightOrderInput): NightOrder {
 
 	const markers: NightMarker[] = ['dusk'];
 	if (night === 'first') {
-		if (hasEvilTeamInfo(input.players, input.inPlay)) markers.push('minioninfo', 'demoninfo');
+		const removedBy = input.wholeSheet ? undefined : evilTeamInfoRemovedBy(input.inPlay);
+		if (removedBy) {
+			const reason = `${removedBy.name}: no Minion or Demon info.`;
+			omitted.push({ id: 'minioninfo', reason }, { id: 'demoninfo', reason });
+		} else if (hasEvilTeamInfo(input.players, input.inPlay))
+			markers.push('minioninfo', 'demoninfo');
 		else {
 			const reason = `Fewer than 7 players (${input.players}): no Minion or Demon info.`;
 			omitted.push({ id: 'minioninfo', reason }, { id: 'demoninfo', reason });

@@ -401,7 +401,8 @@ export function fullNightOrder(data: GameData, night: Night): NightOrder {
 		sheet: data.nightSheet,
 		official: data.byId,
 		inPlay: data.characters,
-		players: MAX_DEALT_PLAYERS
+		players: MAX_DEALT_PLAYERS,
+		wholeSheet: true
 	});
 }
 

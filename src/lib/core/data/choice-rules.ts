@@ -30,7 +30,9 @@ type EvilInfoStep = (typeof EVIL_INFO_STEPS)[number];
  * with it lives: the Demon learns no Minions (the Poppy Grower,
  * https://wiki.bloodontheclocktower.com/Poppy_Grower). `shownAsOtherEvil`: the Demon is shown
  * its player as a Minion and the Minions as the Demon (the Magician,
- * https://wiki.bloodontheclocktower.com/Magician).
+ * https://wiki.bloodontheclocktower.com/Magician). `none` leaves both steps out at any player
+ * count (Tor: the Demon and Minions do not know each other,
+ * https://wiki.bloodontheclocktower.com/Tor).
  */
 interface EvilInfo {
 	notes?: Partial<Record<EvilInfoStep, string>>;
@@ -38,6 +40,7 @@ interface EvilInfo {
 	anyPlayerCount?: true;
 	hidesMinions?: true;
 	shownAsOtherEvil?: true;
+	none?: true;
 }
 
 /** What its night information is like: a number (the Chef), only once per game (the Artist). */
@@ -202,7 +205,13 @@ function readEvilInfo(raw: unknown, path: string, issues: Issues): EvilInfo | un
 		issues.add(path, `expected object, got ${describe(raw)}`);
 		return undefined;
 	}
-	const flags = ['hidesDemon', 'anyPlayerCount', 'hidesMinions', 'shownAsOtherEvil'] as const;
+	const flags = [
+		'hidesDemon',
+		'anyPlayerCount',
+		'hidesMinions',
+		'shownAsOtherEvil',
+		'none'
+	] as const;
 	checkKeys(raw, ['notes', ...flags], path, issues);
 	const out: EvilInfo = {};
 	for (const flag of flags) if (readBoolean(raw, flag, path, issues)) out[flag] = true;
