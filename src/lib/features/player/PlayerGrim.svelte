@@ -27,18 +27,10 @@
 	import { watchRootFont } from '#lib/ui/root-font.svelte.ts';
 	import PlayerSeatReminders from './PlayerSeatReminders.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
-	import {
-		readPlayerReminders,
-		placedKey,
-		addGenericReminder,
-		reminderWords,
-		remindersOn,
-		setGenericLook,
-		toggleReminder,
-		writePlayerReminders,
-		type PlayerReminders
-	} from './player-reminders.ts';
+	import { placedKey, reminderChip, reminderWords, remindersOn } from './player-reminders.ts';
+	import { PlayerReminderState } from './player-reminders.svelte.ts';
 	import PlayerReminderPicker from './PlayerReminderPicker.svelte';
+	import PlayerReminderBin from './PlayerReminderBin.svelte';
 	import BoardLogo from '#lib/features/scripts/BoardLogo.svelte';
 	import { scriptLogo } from '#lib/core/data/script-logo.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
@@ -129,8 +121,14 @@
 	);
 	let guesses = $state<Guesses>({});
 	/** The reminder tokens this player put on seats (Trevor, 2026-10-26), kept as guesses are. */
-	let reminders = $state<PlayerReminders>({});
+	const reminders = new PlayerReminderState();
 	let remindersOpen = $state(false);
+	/** The reminder bin (Trevor, 2026-10-29), from the grim's controls. */
+	let binOpen = $state(false);
+	let bin = $state<ReturnType<typeof PlayerReminderBin>>();
+	let townEl = $state<HTMLElement>();
+	/** The seat a finger is on, whose reminder lines show under "While held". */
+	let held = $state<string>();
 	/** The seat this player marked as theirs; else the one the room gave them. */
 	let marked = $state<string>();
 	const mine = $derived(selfSeat(marked, player?.view?.me.seatId));
@@ -144,7 +142,7 @@
 	let book = $state<ReturnType<typeof seatNotes>>();
 	$effect.pre(() => {
 		guesses = kept ? readGuesses(kept) : {};
-		reminders = kept ? readPlayerReminders(kept) : {};
+		reminders.load(kept);
 		marked = kept ? readSelf(kept) : undefined;
 		book = kept ? seatNotes(kept) : undefined;
 	});
@@ -155,7 +153,7 @@
 	const hiding = $derived(playerSettings.current.hideGuesses);
 	const notes = $derived(hiding ? {} : (book?.notes ?? {}));
 	/** The player's own reminders, hidden by the eye with their guesses. */
-	const visible = $derived(hiding ? {} : reminders);
+	const visible = $derived(hiding ? {} : reminders.current);
 	// Share, the QR code and every sheet blur the Grim behind them, as over the board
 	// (Trevor, 2026-10-26: players at the table could read guesses behind Share).
 	$effect(() => markBoardShown());
@@ -221,17 +219,6 @@
 			...seats.flatMap((seat) => seat.traveller ?? [])
 		])
 	]);
-	function saveReminders(change: (seatId: string) => PlayerReminders) {
-		if (!kept || !chosen) return;
-		reminders = change(chosen.seatId);
-		writePlayerReminders(kept, reminders);
-	}
-	/** A new generic token on the chosen seat (Trevor, 2026-10-26), whose id the picker edits. */
-	function addGeneric() {
-		const id = crypto.randomUUID();
-		saveReminders((seatId) => addGenericReminder(reminders, seatId, id));
-		return id;
-	}
 
 	// The Storyteller's background, vignette and logo, the same on every device whatever its own
 	// settings or theme (Trevor, 2026-10-26); the script's own image only as a web link.
@@ -264,6 +251,8 @@
 	let open = $state(false);
 	let chosen = $state<PublicSeat>();
 	function choose(seat: PublicSeat, event?: MouseEvent) {
+		// A token tapped in the bin goes on the seat tapped next.
+		if (bin?.placeOn(seat)) return;
 		// Hidden guesses never open in a sheet either.
 		if (hiding) return;
 		chosen = seat;
@@ -389,6 +378,7 @@
 			style={boardColours}
 			data-board-colours={boardColours ? '' : undefined}
 			data-testid="player-grim"
+			bind:this={townEl}
 			{@attach fitInDialog}
 		>
 			<BoardBackdrop
@@ -444,6 +434,7 @@
 					aria-label={label(seat)}
 					data-testid="grim-seat"
 					onclick={display ? undefined : (event: MouseEvent) => choose(seat, event)}
+					onpointerdown={() => (held = seat.seatId)}
 				>
 					<SeatDisc
 						{size}
@@ -490,11 +481,24 @@
 				{names}
 				{notes}
 				{characterOf}
+				bind:held
 				onOpen={(seat) => {
 					chosen = seat;
 					remindersOpen = true;
 				}}
 			/>
+			{#if !display}<PlayerReminderBin
+					bind:this={bin}
+					bind:open={binOpen}
+					characters={script.characters}
+					guessed={firstReminders}
+					{seats}
+					{points}
+					town={townEl}
+					{size}
+					chip={reminderChip(size, preferences.current.tokenAppearance.reminderScale)}
+					onPlace={(seat, r) => reminders.place(seat.seatId, r)}
+				/>{/if}
 			<!-- The Grim tab's controls, top right; with Full screen, in its corner. A Public
 			     Town display shows only public things. -->
 			{#if !display && !fullScreen}{@render grimTools(true)}{/if}
@@ -530,6 +534,7 @@
 		final={!town && !!final}
 		{showFinal}
 		onFinal={(on) => (showFinal = on)}
+		bin={{ open: binOpen, disabled: hiding, onToggle: () => (binOpen = !binOpen) }}
 	/>{/snippet}
 <!-- Full screen's corner: this grim's controls, the page's own, then Full screen. -->
 {#snippet stageCorner(filled: boolean)}
@@ -591,7 +596,7 @@
 		data-testid="seat-reminders"
 		onclick={() => (remindersOpen = true)}
 		><span class="row-label">{t('player.grim.reminders')}</span><span class="chips"
-			>{#each chosen ? remindersOn(reminders, chosen.seatId) : [] as reminder (placedKey(reminder))}<ReminderToken
+			>{#each chosen ? remindersOn(reminders.current, chosen.seatId) : [] as reminder (placedKey(reminder))}<ReminderToken
 					label={reminderWords(reminder)}
 					character={characterOf(reminder.characterId)}
 				/>{:else}<span class="row-none">{t('common.none')}</span>{/each}</span
@@ -633,14 +638,10 @@
 <PlayerReminderPicker
 	bind:open={remindersOpen}
 	name={chosen ? nameOf(chosen) : ''}
-	characters={script.characters}
-	placed={chosen ? remindersOn(reminders, chosen.seatId) : []}
+	placed={chosen ? remindersOn(reminders.current, chosen.seatId) : []}
 	characterOf={(id) => characterOf(id)}
-	onToggle={(r) => saveReminders((seatId) => toggleReminder(reminders, seatId, r))}
-	onAddGeneric={addGeneric}
-	onGenericLook={(id, look) =>
-		saveReminders((seatId) => setGenericLook(reminders, seatId, id, look))}
-	guessed={firstReminders}
+	onToggle={(r) => chosen && reminders.toggle(chosen.seatId, r)}
+	onGenericLook={(id, look) => chosen && reminders.setLook(chosen.seatId, id, look)}
 />
 
 <SeatNotesDialog

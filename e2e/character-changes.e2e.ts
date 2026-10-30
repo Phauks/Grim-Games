@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
+import { closeBin, putReminder } from './reminder-bank.ts';
 
 /**
  * Reminders and deaths that change a player's character or alignment offer the change (the
@@ -41,22 +42,14 @@ async function choose(page: Page, number: number, name: string, offScript = fals
 	await closeSheet(page);
 }
 
-/** Puts one of `character`'s reminders on a seat from the seat's sheet; the sheet stays open. */
-async function addReminder(page: Page, number: number, character: string, label: string) {
-	const sheet = await openSeat(page, number);
-	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
-	const picker = page.getByRole('dialog', { name: `Reminders for Seat ${number}` });
-	await picker.getByRole('group', { name: character }).getByRole('button', { name: label }).tap();
-	return { sheet, picker };
-}
-
 test("the Snake Charmer's Poisoned on the Demon offers to swap characters and alignments", async ({
 	page
 }) => {
 	await startGame(page);
 	await choose(page, 1, 'Snake Charmer');
 	await choose(page, 2, 'Vigormortis');
-	const { sheet, picker } = await addReminder(page, 2, 'Snake Charmer', 'Poisoned');
+	// The Snake Charmer's Poisoned, from the bank.
+	await putReminder(page, 'Poisoned', 2);
 	const ask = page.getByRole('alertdialog', { name: 'Swap characters and alignments?' });
 	await expect(ask.getByTestId('swap-ask')).toContainText(
 		/Seat 2\s*New character\s*Snake Charmer\s*New alignment\s*Good/
@@ -66,7 +59,8 @@ test("the Snake Charmer's Poisoned on the Demon offers to swap characters and al
 	);
 	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(ask).toBeHidden();
-	await picker.getByRole('button', { name: 'Close' }).tap();
+	await closeBin(page);
+	const sheet = await openSeat(page, 2);
 	await expect(sheet).toContainText(/Snake Charmer\s*Townsfolk · Good · Seat 2/);
 	await closeSheet(page);
 	await expect(seatLabelled(page, 'Seat 1: no name, Vigormortis')).toBeAttached();
@@ -108,11 +102,10 @@ test('taking off the Mezepheles\'s "Turns Evil" offers to make that player evil'
 	await startGame(page);
 	await choose(page, 1, 'Mezepheles', true);
 	await choose(page, 2, 'Clockmaker');
-	const { picker } = await addReminder(page, 2, 'Mezepheles', 'Turns Evil');
+	await putReminder(page, 'Turns Evil', 2);
 	// Saying the word marks them; they turn evil that night, as the token comes off.
 	await expect(page.getByRole('alertdialog', { name: 'Make this player evil?' })).toHaveCount(0);
-	await picker.getByRole('button', { name: 'Close' }).tap();
-	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
+	const sheet = await openSeat(page, 2);
 	await sheet.getByRole('button', { name: 'Actions for Turns Evil' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Turns Evil' })
