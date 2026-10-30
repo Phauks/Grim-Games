@@ -43,3 +43,30 @@ export function readAfterDeath(raw: unknown, at: string, issues: Issues): AfterD
 		? { cause: causes, ...out }
 		: undefined;
 }
+
+/**
+ * The `reincarnates` part of a rules block: the first `first` players to die are at once
+ * reborn as Travellers the Storyteller picks, alive, keeping their alignment (the Hindu,
+ * https://wiki.bloodontheclocktower.com/Hindu). Read by `rules/reincarnation.ts`.
+ */
+export interface Reincarnates {
+	first: number;
+}
+
+export function readReincarnates(
+	raw: unknown,
+	at: string,
+	issues: Issues
+): Reincarnates | undefined {
+	if (!isObject(raw)) {
+		issues.add(at, `expected object, got ${describe(raw)}`);
+		return undefined;
+	}
+	checkKeys(raw, ['first'], at, issues);
+	const first = readNumber(raw, 'first', at, issues);
+	if (first === undefined || !Number.isInteger(first) || first < 1) {
+		issues.add(`${at}.first`, 'expected a whole number, 1 or more');
+		return undefined;
+	}
+	return { first };
+}

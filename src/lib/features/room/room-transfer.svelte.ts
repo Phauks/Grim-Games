@@ -9,27 +9,17 @@ import { goto } from '$app/navigation';
 import { resolve } from '$app/paths';
 import { buildInfo } from '#lib/build-info.ts';
 import { sha256Hex } from '#lib/core/codes/hash.ts';
-import { migrateSavedGame } from '#lib/core/engine/index.ts';
 import type { GameId } from '#lib/core/model/index.ts';
 import {
 	makeTransferCode,
 	ROOM_PROTOCOL,
 	TRANSFER_CODE_LENGTH,
 	type ServerMessage,
-	type SharedGrimoire,
 	type TransferDetails
 } from '#lib/core/sync/room.ts';
-import { gameStore } from '#lib/features/game/session.svelte.ts';
-import {
-	parseReminderCopyIds,
-	parseReminderSpots,
-	reminderCopyIds,
-	reminderSpots,
-	seatLayouts
-} from '#lib/features/grimoire/device-notes.ts';
 import { t } from '#lib/i18n/locale.svelte.ts';
 import { toast } from '#lib/ui/primitives/toaster.ts';
-import { parseSeatLayout } from '#lib/ui/seating/seat-layout.ts';
+import { keepGrimoire } from './board-notes.ts';
 import { roomHost } from './host.svelte.ts';
 import { playerName } from './player.svelte.ts';
 import { randomKey, RoomSocket } from './room-socket.svelte.ts';
@@ -200,28 +190,9 @@ export class RoomClaim {
 			this.#denied?.(new Error('Turned down'));
 		} else if (message.type === 'transferred') {
 			this.#socket.stop();
-			const gameId = message.grimoire ? await keepGame(message.grimoire) : undefined;
+			const gameId = message.grimoire ? await keepGrimoire(message.grimoire) : undefined;
 			roomHost().adopt(this.#roomCode, this.#key);
 			this.#taken?.(gameId);
 		}
-	}
-}
-
-/**
- * Saves the game that came with the room on this device, under its own id so the players'
- * seats, notes and guesses carry on, with where the old device drew its seats and reminders.
- * Undefined when this build can't read it (saved by a newer one): the room comes alone.
- */
-async function keepGame(grimoire: SharedGrimoire): Promise<GameId | undefined> {
-	try {
-		const saved = migrateSavedGame(grimoire.saved);
-		await gameStore().save(saved);
-		const gameId = saved.gameId as GameId;
-		if (grimoire.layout !== undefined) seatLayouts.write(gameId, parseSeatLayout(grimoire.layout));
-		reminderSpots.write(gameId, parseReminderSpots(grimoire.reminderSpots));
-		reminderCopyIds.write(gameId, parseReminderCopyIds(grimoire.copies));
-		return gameId;
-	} catch {
-		return undefined;
 	}
 }

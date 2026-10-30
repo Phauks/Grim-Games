@@ -12,7 +12,23 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
+import type { Command } from '#lib/core/engine/index.ts';
+import {
+	castGame,
+	run,
+	testCharacters as characters
+} from '#lib/core/model/fixtures.test-support.ts';
+import { alignmentOf } from '#lib/core/model/selectors.ts';
+import { reincarnatedBy } from '#lib/core/rules/reincarnation.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+
+const hindu: Command = { type: 'AddRuleCharacter', characterId: 'hindu' };
+const dies =
+	(i: number) =>
+	(s: string[]): Command => ({ type: 'SetDead', seatId: s[i], dead: true, cause: 'demon' });
+const reborn =
+	(i: number, characterId: string) =>
+	(s: string[]): Command => ({ type: 'Reincarnate', seatId: s[i], characterId });
 
 describe('Hindu', () => {
 	const character = committedCharacter('hindu');
@@ -43,8 +59,74 @@ describe('Hindu', () => {
 		});
 	});
 
+	// Summary: the first four players to die, however they die, become Travellers the
+	// Storyteller picks, alive, with the alignment they had; after four, death is as normal.
+	describe('rebirth', () => {
+		const cast = ['princess', 'chef', 'empath', 'monk', 'poisoner', 'imp'];
+
+		it('offers a rebirth to a player who just died', () => {
+			const { game, seats } = castGame(cast, hindu, dies(1));
+			expect(reincarnatedBy(game, seats[1], characters)).toBe('hindu');
+		});
+
+		it('offers none without the Hindu, or to a living player', () => {
+			const { game, seats } = castGame(cast, dies(1));
+			expect(reincarnatedBy(game, seats[1], characters)).toBeUndefined();
+			const living = castGame(cast, hindu);
+			expect(reincarnatedBy(living.game, living.seats[2], characters)).toBeUndefined();
+		});
+
+		it('keeps an evil player evil', () => {
+			const { game, seats } = castGame(cast, hindu, dies(4), reborn(4, 'gunslinger'));
+			expect(game.seats[seats[4]]).toMatchObject({ characterId: 'gunslinger', dead: false });
+			expect(alignmentOf(game, seats[4])).toBe('evil');
+		});
+
+		// If the Demon is among the first four to die, good wins: there is no rebirth to offer.
+		it('offers the Demon none', () => {
+			const { game, seats } = castGame(cast, hindu, dies(5));
+			expect(reincarnatedBy(game, seats[5], characters)).toBeUndefined();
+		});
+
+		it('offers a reborn player none when they die again', () => {
+			const { game, seats } = castGame(cast, hindu, dies(1), reborn(1, 'gangster'), dies(1));
+			expect(reincarnatedBy(game, seats[1], characters)).toBeUndefined();
+		});
+	});
+
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Hindu#Examples)', () => {
-		it.todo('Example 1: Executed Princess reincarnates as Gangster');
-		it.todo("Example 2: Sweetheart's death cancels drunk; two more rebirths");
+		// The Princess is executed and comes back as the Gangster, still good.
+		it('Example 1: the executed Princess becomes the Gangster', () => {
+			const { game, seats } = castGame(
+				['princess', 'chef', 'empath', 'monk', 'poisoner', 'imp'],
+				hindu,
+				(s) => ({ type: 'SetDead', seatId: s[0], dead: true, cause: 'execution' }),
+				reborn(0, 'gangster')
+			);
+			expect(game.seats[seats[0]]).toMatchObject({ characterId: 'gangster', dead: false });
+			expect(alignmentOf(game, seats[0])).toBe('good');
+			expect(game.reincarnated).toEqual([seats[0]]);
+		});
+
+		// Two players die and are reborn; then the Demon kills three at once, one at a time:
+		// the first two are reborn, and the fifth death is a normal one.
+		it('Example 2: four rebirths, then the fifth player stays dead', () => {
+			const cast = ['sweetheart', 'engineer', 'chef', 'empath', 'monk', 'poisoner', 'po'];
+			const first = castGame(
+				cast,
+				hindu,
+				dies(0),
+				reborn(0, 'cacklejack'),
+				dies(1),
+				reborn(1, 'judge'),
+				dies(2),
+				reborn(2, 'gnome'),
+				dies(3),
+				reborn(3, 'harlot')
+			);
+			expect(first.game.reincarnated).toEqual(first.seats.slice(0, 4));
+			const { game } = run(first.session, first.ctx, dies(4)(first.seats));
+			expect(reincarnatedBy(game, first.seats[4], characters)).toBeUndefined();
+		});
 	});
 });

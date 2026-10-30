@@ -1,7 +1,8 @@
 /**
- * What a fake phone does when its view changes (room-bots.ts): the same messages a player's
- * phone sends (`ClientMessage` in core/sync/room-protocol.ts), chosen the way a player at the
- * table would. Pure, so the choices are tested; the bot that sends them is bot.ts.
+ * What a test room's fake phone does when its view changes (features/test-room): the same messages a player's
+ * phone sends (`ClientMessage` in room-protocol.ts), chosen the way a player at the
+ * table would. Pure, so the choices are tested; the bot that sends them is
+ * features/test-room/phone-bot.ts.
  */
 import { ACCOLADES } from '#lib/core/feedback/feedback.ts';
 import type { ClientMessage, PlayerView } from '#lib/core/sync/room-protocol.ts';

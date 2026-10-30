@@ -105,6 +105,24 @@ describe('proposeLateSeat', () => {
 		}
 	});
 
+	it('makes room for two late players at once', () => {
+		for (let seed = 1; seed <= 40; seed++) {
+			const game = draw(TWELVE, 6);
+			const p = proposeLateSeat({
+				game,
+				scriptCharacters: TB,
+				lookup,
+				ruleCharacters: [],
+				random: mulberry32(seed),
+				extra: 2
+			});
+			// Fourteen players: 9, 1, 3, 1 (https://wiki.bloodontheclocktower.com/Setup).
+			expect(p.after).toEqual({ townsfolk: 9, outsider: 1, minion: 3, demon: 1 });
+			expect(lateSeatCounts(game, lookup, p.changes, p.bag)).toEqual(p.tileTarget);
+			expect(p.bag).toHaveLength(14 - 6);
+		}
+	});
+
 	it('picks new characters that are on the script and not already in play', () => {
 		for (let seed = 1; seed <= 40; seed++) {
 			const game = draw(TWELVE, 12);

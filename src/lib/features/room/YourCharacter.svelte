@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import { defaultAlignment } from '#lib/core/data/index.ts';
+	import { defaultAlignment, type Character, type PlayerName } from '#lib/core/data/index.ts';
+	import type { SeatRole } from '#lib/core/sync/seat-roles.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
@@ -9,23 +10,44 @@
 	import FairPlayNotice from '#lib/features/show/FairPlayNotice.svelte';
 	import HoldToSee from '#lib/ui/primitives/HoldToSee.svelte';
 	import { noLongPress } from '#lib/ui/no-long-press.ts';
-	import type { RoomPlayer } from './player.svelte.ts';
-	import { roomScript } from './room-script.svelte.ts';
+	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
+	import VoteChoice from './VoteChoice.svelte';
 
 	/**
 	 * The player's own character on their phone (Trevor, 2026-10-26: "Storyteller tells people
 	 * they can see it on their screen. It becomes a hold to see."). The button has its own row,
 	 * always there and disabled until the Storyteller lets players see theirs, so turning it on
 	 * or off moves nothing (Trevor, 2026-10-28). The first hold tells the Storyteller it was seen.
+	 * The Storyteller's player view has the same row (Trevor, 2026-10-30): it asks which seat
+	 * first, then shows that seat's card as its phone does.
 	 */
-	let { player }: { player: RoomPlayer } = $props();
+	interface SeatChoice {
+		seatId: string;
+		seatNumber: number;
+		name?: PlayerName;
+		role?: SeatRole;
+	}
+	interface Props {
+		/** This phone's own role, while players may see theirs. */
+		role?: SeatRole;
+		/** The game's script characters, before the official ones. */
+		characters?: readonly Character[];
+		/** The first hold of a role, to tell the Storyteller. */
+		onSeen?: () => void;
+		/** The Storyteller's player view: every seat, while players may see theirs. */
+		seats?: readonly SeatChoice[];
+	}
 
-	const role = $derived(player.view?.role);
+	let { role: own, characters, onSeen, seats }: Props = $props();
+
+	/** The seat the Storyteller chose to see as. */
+	let chosen = $state<string>();
+	const role = $derived(seats ? seats.find((s) => s.seatId === chosen)?.role : own);
 	const character = $derived.by(() => {
 		const id = role?.characterId;
 		if (!id) return undefined;
 		return (
-			roomScript(player.code)?.characters.find((c) => c.id === id) ??
+			characters?.find((c) => c.id === id) ??
 			officialData.current?.characters.find((c) => c.id === id)
 		);
 	});
@@ -36,6 +58,7 @@
 	);
 
 	let open = $state(false);
+	let picking = $state(false);
 	let held = $state(false);
 	let told = '';
 	$effect(() => {
@@ -45,11 +68,19 @@
 	$effect(() => {
 		if (!role) open = false;
 	});
+	$effect(() => {
+		if (seats && !seats.some((s) => s.role)) picking = false;
+	});
 	function onhold(on: boolean) {
 		const key = JSON.stringify(role);
 		if (!on || told === key) return;
 		told = key;
-		player.roleSeen();
+		onSeen?.();
+	}
+	function pick(seatId: string) {
+		chosen = seatId;
+		picking = false;
+		open = true;
 	}
 </script>
 
@@ -57,10 +88,30 @@
 	<Button
 		aria-haspopup="dialog"
 		data-testid="your-character"
-		disabled={!role}
-		onclick={() => (open = true)}>{t('room.role.open')}</Button
+		disabled={seats ? !seats.some((s) => s.role) : !role}
+		onclick={() => (seats ? (picking = true) : (open = true))}>{t('room.role.open')}</Button
 	>
 </div>
+
+{#if seats}
+	<Dialog bind:open={picking} title={t('room.role.open')}>
+		<ul class="seats" data-testid="role-seats">
+			{#each seats as seat (seat.seatId)}
+				<li>
+					<VoteChoice
+						mark={seat.seatNumber}
+						pressed={false}
+						disabled={!seat.role}
+						onclick={() => pick(seat.seatId)}
+						>{#if seat.name}<PlayerBadge name={seat.name} />{:else}{t('common.seat', {
+								number: seat.seatNumber
+							})}{/if}</VoteChoice
+					>
+				</li>
+			{/each}
+		</ul>
+	</Dialog>
+{/if}
 
 <Dialog bind:open title={t('room.role.open')}>
 	<div class="role" data-testid="role-card" {@attach noLongPress}>
@@ -106,6 +157,13 @@
 	}
 	.secret {
 		visibility: hidden;
+	}
+	.seats {
+		display: grid;
+		gap: var(--space-2);
+		margin: 0;
+		padding: 0;
+		list-style: none;
 	}
 	.role {
 		display: grid;

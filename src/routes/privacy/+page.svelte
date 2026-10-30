@@ -321,8 +321,17 @@
 			</li>
 			<li>
 				When you send it from a script, the grimoire or the player view, that script, only if you
-				leave it in. It never holds player names, notes, games or room codes, and web addresses are
-				shortened.
+				leave it in.
+			</li>
+			<li>
+				When you send it from a game you run, that game, only if you turn on "Include this game":
+				its whole history, its players' names and characters, your notes, and where the board draws
+				its seats and reminders, so the maintainer can open it and step through what happened. Only
+				the maintainer can open it, and you too if you sent it signed in.
+			</li>
+			<li>
+				Otherwise a report never holds player names, notes, games or room codes, and web addresses
+				are shortened.
 			</li>
 		</ul>
 		<p>

@@ -14,6 +14,7 @@
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { errorMessage } from '#lib/features/errors/app-error.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
+	import { offerGameToReports } from '#lib/features/reports/report-game.svelte.ts';
 	import { OpenGame } from './session.svelte.ts';
 
 	/**
@@ -41,10 +42,14 @@
 
 	const loading = (): View => ({ kind: 'loading', message: t('common.gameOpening') });
 	let view = $state<View>(loading());
+	/** The game once open: a report sent from any of its screens may carry it (Trevor, 2026-10-30). */
+	let opened = $state.raw<OpenGame>();
+	offerGameToReports(() => opened);
 
 	$effect(() => {
 		const id = gameId;
 		view = loading();
+		opened = undefined;
 		let cancelled = false;
 		(async () => {
 			try {
@@ -54,6 +59,7 @@
 					view = { kind: 'missing', message: t('common.gameMissing') };
 					return;
 				}
+				opened = open;
 				const value = await prepare(open);
 				if (cancelled || value === undefined) return;
 				view = { kind: 'ready', value };
