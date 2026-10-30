@@ -11,7 +11,9 @@
 	import PlayerScreen from '#lib/features/player/PlayerScreen.svelte';
 	import PlayerStatusRow from '#lib/features/player/PlayerStatusRow.svelte';
 	import { travellersInPlay } from '#lib/features/player/travellers-in-play.ts';
+	import { seatRoles } from '#lib/core/sync/seat-roles.ts';
 	import { gameOverText } from '#lib/features/room/game-over-text.ts';
+	import YourCharacter from '#lib/features/room/YourCharacter.svelte';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
 	import { tableState } from '#lib/features/room/table-state.svelte.ts';
 
@@ -68,6 +70,18 @@
 			room: host.code ?? undefined
 		};
 	});
+	// Your character as each seat's phone has it, while players may see theirs (Trevor,
+	// 2026-10-30): the Storyteller picks a seat, then sees that seat's card.
+	const roleSeats = $derived.by(() => {
+		const shown = roomHost().rolesShown.gameId === game.gameId;
+		const roles = shown ? seatRoles(game, characters) : {};
+		return town.seats.map((seat) => ({
+			seatId: seat.seatId,
+			seatNumber: seat.seatNumber,
+			name: seat.playerName,
+			role: roles[seat.seatId]
+		}));
+	});
 </script>
 
 <!-- The row over the tabs, as on /play: where the game is up to and the day timer. -->
@@ -78,6 +92,8 @@
 	{presence}
 	unseatedNames={roomHost().unseatedInGame.flatMap((m) => (m.name ? [m.name] : []))}
 />
+<!-- Its own row under the status line, as on /play. -->
+<YourCharacter characters={script.characters} seats={roleSeats} />
 <PlayerScreen
 	{script}
 	players={dealtSeats(town.seats).dealt}
