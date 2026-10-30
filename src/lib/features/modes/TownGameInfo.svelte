@@ -2,7 +2,10 @@
 	import type { Snippet } from 'svelte';
 	import type { PlayerName, ScriptMeta } from '#lib/core/data/index.ts';
 	import { gameClock } from '#lib/core/rules/index.ts';
-	import type { PublicCorner } from '#lib/core/sync/public-projection.ts';
+	import { parseAvatarId } from '#lib/core/avatars/index.ts';
+	import { parseFrameId } from '#lib/core/frames/index.ts';
+	import type { PublicCorner, PublicStoryteller } from '#lib/core/sync/public-projection.ts';
+	import { isImageHash, roomImagePath } from '#lib/core/sync/room-images.ts';
 	import { formatRoomCode } from '#lib/core/sync/room-code.ts';
 	import { phaseText } from '#lib/features/grimoire/phase-text.ts';
 	import PlayerProfileDialog from '#lib/features/player/PlayerProfileDialog.svelte';
@@ -20,6 +23,8 @@
 		open?: boolean;
 		meta: ScriptMeta;
 		storytellerName?: string;
+		/** The Storyteller's avatar, laurel and picture, for their profile as a player's shows. */
+		storyteller?: PublicStoryteller;
 		corner?: PublicCorner;
 		/** The live room this phone is in; without it the Storyteller's name opens nothing. */
 		roomCode?: string;
@@ -30,9 +35,15 @@
 		open = $bindable(false),
 		meta,
 		storytellerName,
+		storyteller,
 		corner,
 		roomCode
 	}: Props = $props();
+	const picture = $derived(
+		roomCode && isImageHash(storyteller?.picture)
+			? roomImagePath(roomCode, storyteller.picture)
+			: undefined
+	);
 	let profileOpen = $state(false);
 
 	/** Game time ticks while it is open, as the corner's does. */
@@ -91,6 +102,8 @@
 {#if roomCode}<PlayerProfileDialog
 		bind:open={profileOpen}
 		name={(storytellerName?.trim() || t('modes.storytellerName')) as PlayerName}
-		avatar="initials"
+		avatar={parseAvatarId(storyteller?.avatar) ?? 'initials'}
+		frame={parseFrameId(storyteller?.frame)}
+		{picture}
 		friend={{ code: roomCode, storyteller: true }}
 	/>{/if}

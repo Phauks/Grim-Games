@@ -2,6 +2,7 @@ import { fetchWithTimeout, SLOW_FETCH_TIMEOUT_MS } from '#lib/ui/fetch.ts';
 
 import {
 	REPORTS_API,
+	reportGamePath,
 	reportScriptPath,
 	type CreatedReport,
 	type ReportDraft,
@@ -73,4 +74,12 @@ export async function fetchReportScript(id: number): Promise<unknown[] | undefin
 	if (response.status === 404) return undefined;
 	if (!response.ok) throw new Error(await response.text());
 	return (await response.json()) as unknown[];
+}
+
+/** The game file a report was sent with (report-game.svelte.ts); undefined when there is none. */
+export async function fetchReportGame(id: number): Promise<unknown> {
+	const response = await fetchWithTimeout(reportGamePath(id), { timeoutMs: SLOW_FETCH_TIMEOUT_MS });
+	if (response.status === 404) return undefined;
+	if (!response.ok) throw new Error(await response.text());
+	return (await response.json()) as unknown;
 }

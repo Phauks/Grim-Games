@@ -11,7 +11,12 @@
  */
 import { readSetupModifier, type SetupModifierRules } from './setup-modifier-rules.ts';
 import { readDayReminders, type DayReminderRules } from './day-reminder-rules.ts';
-import { readAfterDeath, type AfterDeath } from './after-death-rules.ts';
+import {
+	readAfterDeath,
+	readReincarnates,
+	type AfterDeath,
+	type Reincarnates
+} from './after-death-rules.ts';
 import { readDeathCause, type DeathCauseRule } from './death-cause-rules.ts';
 import { readNightText, type NightTextRules } from './night-text-rules.ts';
 import { readDayMark, type DayMarkRule } from './day-mark-rules.ts';
@@ -167,6 +172,8 @@ export interface CharacterRules extends ChoiceRules {
 	 * (https://wiki.bloodontheclocktower.com/Banshee).
 	 */
 	afterDeath?: AfterDeath;
+	/** The first players to die are reborn as Travellers (`after-death-rules.ts`). */
+	reincarnates?: Reincarnates;
 	/**
 	 * Its player may make this many more nominations each day after the day's first execution,
 	 * even if they already nominated, and of a player already nominated today (the Butcher,
@@ -364,6 +371,7 @@ const RULE_KEYS = [
 	'answers',
 	'onNominated',
 	'afterDeath',
+	'reincarnates',
 	'nominationsAfterExecution',
 	'dayClaim',
 	'guessLimit',
@@ -519,6 +527,10 @@ export function parseCharacterRules(
 	if (raw.afterDeath !== undefined) {
 		const afterDeath = readAfterDeath(raw.afterDeath, `${path}.afterDeath`, issues);
 		if (afterDeath) rules.afterDeath = afterDeath;
+	}
+	if (raw.reincarnates !== undefined) {
+		const reincarnates = readReincarnates(raw.reincarnates, `${path}.reincarnates`, issues);
+		if (reincarnates) rules.reincarnates = reincarnates;
 	}
 	const dayClaim = readEnum(raw, 'dayClaim', DAY_CLAIMS, path, issues, false);
 	if (dayClaim) rules.dayClaim = dayClaim;

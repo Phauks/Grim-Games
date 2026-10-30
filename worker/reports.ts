@@ -2,6 +2,7 @@ import { noStore, text } from './http.ts';
 import {
 	isReportStatus,
 	parseReportDraft,
+	parseReportGamePath,
 	parseReportIdPath,
 	parseReportScriptPath,
 	REPORT_OPTIONAL_FIELDS,
@@ -36,7 +37,7 @@ async function reportList(
 ): Promise<ReportList> {
 	const names = new Map<string, string | undefined>();
 	const reports: Report[] = [];
-	for (const { userId, ...report } of await box.list(!reader.admin, true)) {
+	for (const { userId, ...report } of await box.list(!reader.admin, true, true)) {
 		if (userId !== undefined) {
 			if (!names.has(userId)) {
 				names.set(userId, (await userStub(env, userId).profile())?.username ?? undefined);
@@ -50,6 +51,7 @@ async function reportList(
 		if (!reader.admin && !(report.mine && reader.ownTrusted)) {
 			for (const key of REPORT_OPTIONAL_FIELDS) delete report[key];
 			delete report.hasScript;
+			delete report.hasGame;
 		}
 		reports.push(report);
 	}
@@ -108,6 +110,19 @@ export async function handleReports(
 			found && (admin || (found.userId === auth.userId && adminSignInTrusted(env, url)));
 		return allowed
 			? new Response(found.script, {
+					headers: { ...noStore, 'Content-Type': 'application/json' }
+				})
+			: text('Not found', 404);
+	}
+	const gameId = parseReportGamePath(url.pathname);
+	if (gameId !== undefined && request.method === 'GET') {
+		// The game it was sent from, like its script: for the admins and its sender. A data
+		// Worker from before games has no `game` method; then there is none to show.
+		const found = await box.game(gameId).catch(() => undefined);
+		const allowed =
+			found && (admin || (found.userId === auth.userId && adminSignInTrusted(env, url)));
+		return allowed
+			? new Response(found.game, {
 					headers: { ...noStore, 'Content-Type': 'application/json' }
 				})
 			: text('Not found', 404);

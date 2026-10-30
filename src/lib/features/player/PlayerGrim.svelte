@@ -519,7 +519,7 @@
 				roomCode={town ? (town.roomCode ?? roomHost().code) : code}
 				logo={logo && !logoFailed ? logo : undefined}
 				watching
-				townInfo={display ? undefined : { roomCode: friendRoom }}
+				townInfo={display ? undefined : { roomCode: friendRoom, storyteller: table?.storyteller }}
 				fitRoom={fitCorner}
 				{width}
 				{rootFont}

@@ -15,7 +15,7 @@
 	import type { MessageKey } from '#lib/i18n/catalog.ts';
 	import { copyText } from '#lib/ui/clipboard.ts';
 	import JsonDialog from '#lib/ui/builder/JsonDialog.svelte';
-	import { downloadFile, fileNameFor } from '#lib/ui/download.ts';
+	import { downloadFile, downloadJson, fileNameFor } from '#lib/ui/download.ts';
 	import {
 		reportMarkdown,
 		reportFileName,
@@ -23,7 +23,17 @@
 		reportsMarkdown,
 		type ExportedReport
 	} from './report-export.ts';
-	import { deleteReport, fetchReportScript, listReports, setReportStatus } from './reports-api.ts';
+	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
+	import { isSharedGrimoire } from '#lib/core/sync/room.ts';
+	import { keepGrimoire } from '#lib/features/room/board-notes.ts';
+	import {
+		deleteReport,
+		fetchReportGame,
+		fetchReportScript,
+		listReports,
+		setReportStatus
+	} from './reports-api.ts';
 	import { REPORT_STATUSES, type Report, type ReportStatus } from './reports-protocol.ts';
 
 	// In-app reports, at /reports. Admin accounts triage them (Trevor, 2026-10-18; no admin key
@@ -195,6 +205,41 @@
 		}
 	}
 
+	/** The game file it was sent with (Trevor, 2026-10-30), or undefined after saying why not. */
+	async function gameFile(report: Report): Promise<unknown> {
+		try {
+			const file = await fetchReportGame(report.id);
+			if (file === undefined) toast(t('reports.loadFailed'), t('reports.sendFailedDetail'));
+			return file;
+		} catch {
+			toast(t('reports.loadFailed'), t('reports.sendFailedDetail'));
+			return undefined;
+		}
+	}
+
+	async function downloadGame(report: Report) {
+		const file = await gameFile(report);
+		if (file !== undefined) downloadJson(`report-${report.id}-game.json`, file);
+	}
+
+	/**
+	 * Opens the game on this device as a copy of its own, at the point it was sent, so its
+	 * History steps through everything that happened before (Trevor, 2026-10-30).
+	 */
+	async function openGame(report: Report) {
+		const file = await gameFile(report);
+		if (file === undefined) return;
+		const gameId = isSharedGrimoire(file)
+			? await keepGrimoire(file, crypto.randomUUID())
+			: undefined;
+		if (gameId === undefined) {
+			toast(t('reports.loadFailed'), t('reports.gameUnreadable'));
+			return;
+		}
+		dialogOpen = false;
+		await goto(resolve('/grimoire/[gameId]', { gameId }));
+	}
+
 	async function remove(report: Report) {
 		try {
 			await deleteReport(report.id);
@@ -322,6 +367,24 @@
 						{t('common.none')}
 					{/if}
 				</dd>
+				<!-- The game it was sent from (Trevor, 2026-10-30): opened here to step through. -->
+				<dt>{t('reports.game')}</dt>
+				<dd>
+					{#if hidden}
+						{t('reports.hidden')}
+					{:else if current.hasGame}
+						<div class="game" data-testid="report-game-actions">
+							<Button variant="quiet" icon="grimoire" onclick={() => openGame(current)}>
+								{t('reports.openGame')}
+							</Button>
+							<Button variant="quiet" icon="download" onclick={() => downloadGame(current)}>
+								{t('reports.downloadGame')}
+							</Button>
+						</div>
+					{:else}
+						{t('common.none')}
+					{/if}
+				</dd>
 			</dl>
 			{#if current.details}
 				<h3>{t('reports.details')}</h3>
@@ -415,6 +478,11 @@
 	dd {
 		margin: 0;
 		overflow-wrap: anywhere;
+	}
+	.game {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-1);
 	}
 	h3 {
 		margin: 0;

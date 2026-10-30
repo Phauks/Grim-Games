@@ -6407,6 +6407,36 @@ test('a Fool marked dead is offered to survive their first death', async ({ page
 	);
 });
 
+test('with the Hindu, a player who dies is reincarnated as a Traveller', async ({ page }) => {
+	// The first four to die come back as Travellers the Storyteller picks, same alignment
+	// (https://wiki.bloodontheclocktower.com/Hindu).
+	await startGame(page, 'Trouble Brewing');
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Chef', exact: true })
+		.tap();
+	await closeSheet(page);
+	await menu(page, 'Add Fabled or Loric');
+	const adding = page.getByRole('dialog', { name: 'Add Fabled or Loric' });
+	await adding.getByRole('button', { name: 'Hindu', exact: true }).tap();
+	await expect(adding).toBeHidden();
+
+	await (await openSeat(page, 1)).getByRole('button', { name: 'Status: Alive' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Status of Seat 1' })
+		.getByRole('button', { name: 'The Demon' })
+		.tap();
+	const picker = page.getByRole('dialog', { name: 'Reincarnate Seat 1 as' });
+	await picker.getByRole('button', { name: 'Gunslinger, Recommended' }).tap();
+	await expect(picker).toBeHidden();
+	await closeSheet(page);
+	const seat = seatLabelled(page, 'Seat 1: no name, Gunslinger');
+	await expect(seat).toBeAttached();
+	await expect(seat).not.toHaveAttribute('aria-label', /dead/);
+});
+
 /** A Trouble Brewing game with one special rule, these seats given these characters. */
 async function startWithRule(
 	page: Page,

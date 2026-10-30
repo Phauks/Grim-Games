@@ -1,14 +1,14 @@
 /**
  * One device's connection to a live room, as the app makes it (features/room/room-socket.svelte.ts):
  * a WebSocket to `/api/room/<code>` whose first message is `hello` with the device's own key
- * (worker/room.ts). Node 22 has WebSocket built in.
+ * (worker/room.ts). Browsers and Node 22 both have WebSocket built in.
  */
-import { randomBytes } from 'node:crypto';
+import { toHex } from '#lib/core/codes/hash.ts';
 import { ROOM_PROTOCOL } from '#lib/core/sync/room-version.ts';
 import type { ClientMessage, ServerMessage } from '#lib/core/sync/room-protocol.ts';
 
 /** A device key like the app's (`randomKey`): 32 random bytes in hex. */
-export const newKey = () => randomBytes(32).toString('hex');
+export const newKey = () => toHex(crypto.getRandomValues(new Uint8Array(32)));
 
 /**
  * Joins and reconnects count against ROOM_JOINS, 60 a minute per address (wrangler.jsonc), and

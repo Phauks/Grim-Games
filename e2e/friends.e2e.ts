@@ -278,6 +278,12 @@ test('a player adds the Storyteller from Game info', async ({ browser }) => {
 	test.slow();
 	const ann = await signedIn(browser, 'ann');
 	const bob = await signedIn(browser, 'bob');
+	// Ann's Profile laurel, which the room shares as a player's (Trevor, 2026-10-30).
+	await ann.page.evaluate(() => {
+		const key = 'grim-games:player-settings:v1';
+		const settings = JSON.parse(localStorage.getItem(key) ?? '{}');
+		localStorage.setItem(key, JSON.stringify({ ...settings, frame: 'ring-gold~pulse' }));
+	});
 	const { code } = await liveRoom(ann.page, 'Ann the Storyteller');
 	await bob.page.goto(`/join/${code}`);
 	await openProfile(bob.page);
@@ -292,6 +298,9 @@ test('a player adds the Storyteller from Game info', async ({ browser }) => {
 	await info.getByTestId('info-storyteller').tap();
 	await expect(info).toBeHidden();
 	const profile = bob.page.getByRole('dialog', { name: 'Ann the Storyteller', exact: true });
+	// Her laurel, as a player's profile shows theirs.
+	await expect(profile.locator('svg[data-frame="ring-gold~pulse"]')).toBeAttached();
+	await expect(profile.getByTestId('player-profile-laurel')).not.toContainText('None');
 	const add = profile.getByTestId('seat-friend');
 	await expect(add).toHaveAttribute('data-state', 'add');
 	await add.tap();

@@ -22,6 +22,7 @@
 		NAV_SECTIONS,
 		REPORTS_ITEM,
 		LIVE_GAMES_ITEM,
+		TEST_ROOM_ITEM,
 		type NavItem
 	} from './nav.ts';
 	import { openSettings } from './shell.ts';
@@ -117,9 +118,11 @@
 		{/each}
 		{#if account.admin}
 			{#snippet adminItems()}
-				{@render link(REPORTS_ITEM)}{@render link(LIVE_GAMES_ITEM)}{@render link(ACCOUNTS_ITEM)}
+				{@render link(REPORTS_ITEM)}{@render link(LIVE_GAMES_ITEM)}{@render link(
+					TEST_ROOM_ITEM
+				)}{@render link(ACCOUNTS_ITEM)}
 			{/snippet}
-			{@render section('admin', t('shell.navSectionAdmin'), 3, adminItems)}
+			{@render section('admin', t('shell.navSectionAdmin'), 4, adminItems)}
 		{/if}
 		<!-- Account, Friends and History, last in the sidebar and the drawer alike (2026-10-22). -->
 		{#snippet youItems()}
