@@ -2367,6 +2367,40 @@ test('the Alchemist gains a Minion ability and is marked "Is The Alchemist"', as
 	await expect(sheet.getByRole('button', { name: 'Actions for Is The Alchemist' })).toBeVisible();
 });
 
+// https://wiki.bloodontheclocktower.com/Amnesiac: the Storyteller decides the ability, and
+// may make it work like another character's for its night timing.
+test('the Storyteller writes the Amnesiac’s ability and picks what it works like', async ({
+	page
+}) => {
+	await startGame(page);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	const picker = page.getByRole('dialog', { name: 'Character for Seat 1' });
+	await picker.getByText('Include characters not on the script').tap();
+	await picker.getByRole('button', { name: 'Amnesiac', exact: true }).tap();
+	await seatMenu(page, sheet, 'Held ability…');
+	await page
+		.getByRole('dialog', { name: 'Ability Seat 1 holds' })
+		.getByRole('button', { name: 'Empath', exact: true })
+		.tap();
+	await closeSheet(page);
+	await expect(page.getByTestId('seat').first().getByTestId('held-ability')).toHaveAttribute(
+		'title',
+		'Holds the Empath ability'
+	);
+
+	await page.getByRole('button', { name: 'Day', exact: true }).tap();
+	const day = page.getByRole('dialog', { name: 'Day' });
+	const value = day.getByTestId('prep-value');
+	await expect(value).toHaveText('(ABILITY)');
+	await value.tap();
+	const words = page.getByRole('dialog', { name: 'Ability' });
+	await words.getByRole('textbox', { name: 'Ability' }).fill('learns a number each night');
+	await words.getByRole('button', { name: 'Save' }).tap();
+	await expect(words).toBeHidden();
+	await expect(value).toHaveText('(learns a number each night)');
+});
+
 // https://wiki.bloodontheclocktower.com/Boffin: the Demon has a not-in-play good character's
 // ability; its token goes by the Demon's.
 test("the Boffin gives the Demon a not-in-play good character's ability", async ({ page }) => {

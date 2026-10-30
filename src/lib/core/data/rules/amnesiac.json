@@ -10,7 +10,11 @@
 		"notes": [
 			{
 				"text": "Decide what the Amnesiac’s ability is; note it with [?]",
-				"tokens": ["?"]
+				"tokens": ["?"],
+				"value": {
+					"key": "ability",
+					"label": "Ability"
+				}
 			}
 		],
 		"none": "the ? tokens are optional notes on the Amnesiac’s ability"
@@ -28,6 +32,21 @@
 						"text": "may guess their ability"
 					}
 				]
+			},
+			{
+				"group": "day-ability",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "ability is"
+					},
+					{
+						"value": "ability",
+						"placeholder": "ABILITY"
+					}
+				]
 			}
 		]
 	},
@@ -36,5 +55,9 @@
 	},
 	"reminderMovement": {
 		"why": "The Storyteller decides what these mean."
+	},
+	"givesAbility": {
+		"to": "self",
+		"types": ["townsfolk", "outsider", "minion", "demon"]
 	}
 }

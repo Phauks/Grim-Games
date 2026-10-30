@@ -43,6 +43,7 @@
 	import type { DayPort } from './day-port.ts';
 	import NoteSheet, { type NoteTarget } from './NoteSheet.svelte';
 	import MadnessDeathDialog from './MadnessDeathDialog.svelte';
+	import PrepValueDialog from './PrepValueDialog.svelte';
 	import DayUseDialog from './DayUseDialog.svelte';
 
 	interface Props {
@@ -313,6 +314,14 @@
 		return seatId ? madnessOffer(g, reminder.characterId, seatId, game.characters) : undefined;
 	}
 	let madnessOpen = $state(false);
+
+	// A value the Storyteller decides, shown in a reminder (the Amnesiac's ability).
+	let valueOpen = $state(false);
+	let valueFor = $state<{ characterId: CharacterId; key: string }>();
+	function editValue(characterId: CharacterId, key: string) {
+		valueFor = { characterId, key };
+		valueOpen = true;
+	}
 	let madness = $state<MadnessOffer>();
 	function breakMadness(offer: MadnessOffer) {
 		if (offer.breaking === 'death') {
@@ -495,9 +504,15 @@
 													/>{#if stop}.{/if}</span
 												>
 											{:else if segment.kind === 'value'}
-												<!-- A value the Storyteller entered during prep (the Yaggababble's phrase). -->
+												<!-- A value the Storyteller decides (the Yaggababble's phrase): tap to write it. -->
 												<span
-													>({segment.value ?? segment.placeholder}){#if stop}.{/if}</span
+													><button
+														type="button"
+														class="prep-value"
+														data-testid="prep-value"
+														onclick={() => editValue(segment.characterId, segment.key)}
+														>({segment.value ?? segment.placeholder})</button
+													>{#if stop}.{/if}</span
 												>
 											{:else}
 												<span><GlossaryText segments={explained[i] ?? []} /></span>
@@ -544,6 +559,12 @@
 
 <NoteSheet bind:open={noteOpen} {game} target={noteTarget} />
 <MadnessDeathDialog bind:open={madnessOpen} {game} offer={madness} />
+<PrepValueDialog
+	bind:open={valueOpen}
+	{game}
+	characterId={valueFor?.characterId}
+	valueKey={valueFor?.key}
+/>
 <DayUseDialog bind:this={dayUse} {game} />
 
 <!-- A character as a badge; false inside a button, so it does not open the character. -->
@@ -715,5 +736,15 @@
 		.sections {
 			--toolbar-height: 0px; /* px-ok: nothing above the section headers here */
 		}
+	}
+	/* Reads as the sentence's own words, underlined as something to tap. */
+	.prep-value {
+		padding: 0;
+		border: 0;
+		background: none;
+		color: inherit;
+		font: inherit;
+		text-decoration: underline dotted;
+		cursor: pointer;
 	}
 </style>

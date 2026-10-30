@@ -98,7 +98,7 @@ export type ReminderSegment =
 	| { kind: 'value'; characterId: CharacterId; key: string; placeholder: string; value?: string };
 
 /** Where a prep value is stored in `Game.prepValues`: "yaggababble.phrase". */
-const prepValueKey = (characterId: CharacterId, key: string) => `${characterId}.${key}`;
+export const prepValueKey = (characterId: CharacterId, key: string) => `${characterId}.${key}`;
 
 export interface DayReminder {
 	/** Stable id for overrides: the same state gives the same key. */

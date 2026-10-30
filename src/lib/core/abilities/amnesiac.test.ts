@@ -11,8 +11,34 @@
  * that paraphrases the example. Never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
-import { defaultAlignment } from '#lib/core/data/index.ts';
-import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { defaultAlignment, type CharacterId } from '#lib/core/data/index.ts';
+import type { Command } from '#lib/core/engine/index.ts';
+import { castWith } from '#lib/core/model/fixtures.test-support.ts';
+import {
+	abilityGivers,
+	heldAbilitiesOf,
+	withGainedSteps
+} from '#lib/core/rules/gained-abilities.ts';
+import { nightOrder } from '#lib/core/rules/night-order.ts';
+import {
+	committedCharacter,
+	committedGameData,
+	nightSheetPresence
+} from '#lib/core/testing/committed-data.ts';
+
+const data = committedGameData();
+const characters = data.byId;
+const cast = castWith({ characters });
+const PLAYERS: CharacterId[] = ['amnesiac', 'chef', 'imp', 'empath', 'monk'];
+// The Storyteller says the Amnesiac's ability works like `characterId`'s.
+const worksLike =
+	(characterId: CharacterId) =>
+	(s: string[]): Command => ({
+		type: 'SetHeldAbility',
+		seatId: s[0],
+		via: 'amnesiac',
+		characterId
+	});
 
 describe('Amnesiac', () => {
 	const character = committedCharacter('amnesiac');
@@ -43,8 +69,45 @@ describe('Amnesiac', () => {
 		});
 	});
 
+	// How to Run: the Storyteller decides the ability at setup and treats the player as having
+	// it, waking them when it needs to.
+	describe('its ability, as the Storyteller decides it', () => {
+		it('is picked from its own seat only', () => {
+			const { game, seats } = cast(PLAYERS);
+			expect(abilityGivers(game, seats[0], characters)).toEqual(['amnesiac']);
+			expect(abilityGivers(game, seats[1], characters)).toEqual([]);
+		});
+
+		it('holds nothing until the Storyteller picks', () => {
+			const { game, seats } = cast(PLAYERS);
+			expect(heldAbilitiesOf(game, seats[0], characters)).toEqual([]);
+		});
+	});
+
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Amnesiac#Examples)', () => {
 		it.todo('Example 1: Ability: check two players for a Minion');
-		it.todo('Example 2: Ability: count living Townsfolk neighbours each night');
+		// The Amnesiac learns a number each night about its living neighbours: the Storyteller
+		// gives it a working ability like the Empath's, so it wakes at the Empath's time.
+		it('Example 2: an ability like the Empath’s wakes the Amnesiac at the Empath’s time', () => {
+			const { game, seats } = cast(
+				['amnesiac', 'chef', 'imp', 'monk', 'poisoner'],
+				worksLike('empath')
+			);
+			expect(heldAbilitiesOf(game, seats[0], characters)).toEqual([
+				{ characterId: 'empath', via: 'amnesiac', works: true }
+			]);
+			const inPlay = game.seating.map((s) => characters.get(game.seats[s].characterId!)!);
+			const steps = withGainedSteps(
+				nightOrder({ night: 'other', sheet: data.nightSheet, inPlay, players: 5 }).steps,
+				game,
+				characters,
+				'other',
+				data.nightSheet.otherNight
+			);
+			const empath = steps.filter((s) => s.gained?.characterId === 'empath');
+			expect(empath).toHaveLength(1);
+			expect(empath[0].gained?.seatId).toBe(seats[0]);
+			expect(empath[0].reminder).toBe(characters.get('empath')?.otherNightReminder);
+		});
 	});
 });
