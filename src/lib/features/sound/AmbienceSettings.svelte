@@ -26,7 +26,7 @@
 	}
 </script>
 
-<!-- Day and night sound on the board (plan U3, Trevor 2026-10-26): one recording for the night
+<!-- Day and night sound in the room (plan U3, Trevor 2026-10-26): one recording for the night
      and one for the day. Every row stays in place, disabled while it is off. -->
 <SettingHeading title={t('settings.ambience')} />
 <SettingToggle

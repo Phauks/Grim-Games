@@ -4,6 +4,7 @@
 	import NightAlerts from './NightAlerts.svelte';
 	import StepAfflictions from './StepAfflictions.svelte';
 	import ChangeCharacterStep from './ChangeCharacterStep.svelte';
+	import StorytellerAbilityStep from './StorytellerAbilityStep.svelte';
 	import NightSuggested from './NightSuggested.svelte';
 	import NightYesNo from './NightYesNo.svelte';
 	import TravellerAlignment from './TravellerAlignment.svelte';
@@ -264,10 +265,11 @@
 					<StepIcon {step} size={56} details />
 				</span>
 				<div class="head-text">
-					<p class="who">
-						{#each holders as s, i (s)}{i > 0 ? ', ' : ''}<PlayerBadge
-								name={seatName(game, s)}
-							/>{:else}None{/each}
+					<!-- An ability the Storyteller holds wakes nobody: the Storyteller acts. -->
+					<p class="who" data-testid="step-who">
+						{#if step.storytellerAbility}Storyteller{:else}{#each holders as s, i (s)}{i > 0
+									? ', '
+									: ''}<PlayerBadge name={seatName(game, s)} />{:else}None{/each}{/if}
 					</p>
 					<!-- The whole ability up top, beside the icon and name (Trevor, 2026-10-17). -->
 					{#if step.character?.ability}
@@ -349,6 +351,7 @@
 						showOpen = true;
 					}}
 				/>
+				<StorytellerAbilityStep {grimoire} {step} />
 			{/if}
 			{#if numberStep}
 				<h3>Info token</h3>

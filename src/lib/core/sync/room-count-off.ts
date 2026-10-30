@@ -139,3 +139,37 @@ export function countOffSeats(
 	const filled = [...order].map((entry) => entry ?? (rest.length ? { seatId: rest.shift()! } : {}));
 	return [...filled, ...rest.map((seatId) => ({ seatId }))];
 }
+
+/** Someone who can be number 1, keyed by their seat or phone so two with one name both show. */
+export interface CountOffFirst {
+	key: string;
+	name: string;
+	first: { memberId: string } | { name: string };
+}
+
+/**
+ * Who can be 1 (CountOffDialog): the board's named players in seat order, then the phones at
+ * the game with no seat whose name is not already on the board. Names repeat (two seats, or
+ * two phones, called the same), so each is keyed by its seat or phone, never its name.
+ */
+export function countOffFirsts(
+	seating: readonly SeatId[],
+	seats: Readonly<Record<SeatId, { playerName?: string }>>,
+	members: readonly { memberId: string; name?: string }[],
+	unseated: readonly { memberId: string; name?: string }[]
+): CountOffFirst[] {
+	const memberFor = (name: string) => members.find((m) => m.name && key(m.name) === key(name));
+	const board = seating.flatMap((id): CountOffFirst[] => {
+		const name = seats[id]?.playerName;
+		if (isOpenSeat(seats[id]) || !name) return [];
+		const member = memberFor(name);
+		return [{ key: `seat:${id}`, name, first: member ? { memberId: member.memberId } : { name } }];
+	});
+	const listed = new Set(board.map((c) => key(c.name)));
+	const phones = unseated.flatMap((m): CountOffFirst[] =>
+		m.name && !listed.has(key(m.name))
+			? [{ key: `member:${m.memberId}`, name: m.name, first: { memberId: m.memberId } }]
+			: []
+	);
+	return [...board, ...phones];
+}

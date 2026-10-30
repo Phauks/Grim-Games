@@ -26,6 +26,7 @@
 	import { resolve } from '$app/paths';
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import {
+		boardRuleCount,
 		charactersInPlay,
 		scriptCharacterIds,
 		type ReminderId,
@@ -49,7 +50,6 @@
 	import { nominationPrompts, type NominationPrompt } from '#lib/core/modes/index.ts';
 	import DayTimer from '#lib/features/day/DayTimer.svelte';
 	import BoardActionSounds from '#lib/features/sound/BoardActionSounds.svelte';
-	import BoardAmbience from '#lib/features/sound/BoardAmbience.svelte';
 	import SoundboardDialog from '#lib/features/sound/SoundboardDialog.svelte';
 	import BluffsSheet from '#lib/features/bluffs/BluffsSheet.svelte';
 	import { showableBluffSets } from '#lib/features/bluffs/bluffs.ts';
@@ -684,13 +684,14 @@
 	<BoardRules
 		{game}
 		{characters}
-		grouped={boardLooks.current.rulesGrouped && game.ruleCharacters.length > 0}
+		grouped={boardLooks.current.rulesGrouped && boardRuleCount(game) > 0}
 		edge={tokenSize < size * 0.8}
 		{tokenSize}
 		{chip}
 		disabled={seatArr.arranging || watching}
 		lifted={remDrag.drag?.reminderId}
 		onShow={(id) => (id ? rules?.show(id) : rules?.showAll())}
+		onShowAbility={(via) => rules?.showAbility(via)}
 		onHeldTap={(id) => heldDialog?.show(id)}
 		onHeldDrag={(id, x, y, end) => remDrag.move(id, undefined, x, y, end)}
 		onCancel={() => remDrag.cancel()}
@@ -829,7 +830,7 @@
 
 		<!-- Measures the tap target, the height every reminder takes on the board. -->
 		<span class="tap-probe" aria-hidden="true" bind:clientHeight={sizing.tapPx}></span>
-		{#if boardLooks.current.rulesAt !== 'middle' && game.ruleCharacters.length > 0}
+		{#if boardLooks.current.rulesAt !== 'middle' && boardRuleCount(game) > 0}
 			<div class="rules-edge" bind:clientWidth={sizing.edgeW} bind:clientHeight={sizing.edgeH}>
 				{@render ruleTokens(Math.max(sizing.tapPx, Math.round(size * 0.5)))}
 			</div>
@@ -903,8 +904,6 @@
 	</div>
 </div>
 
-<!-- Day and night sound (plan U3), for the Storyteller's own board only. -->
-<BoardAmbience scene={watching || ended || phaseNow.kind === 'setup' ? null : phaseNow.kind} />
 {#if !watching}
 	<!-- Sounds for the Storyteller's actions (plan U7). -->
 	<BoardActionSounds

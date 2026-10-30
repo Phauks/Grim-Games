@@ -267,8 +267,13 @@
 		overflow: hidden;
 		border: 0;
 		border-radius: 0;
+		/*
+		 * The bottom as far in as the sides, above the home indicator: the actions sit on the
+		 * padding's edge, and with none Execution touched the screen's bottom (Trevor, 2026-10-30).
+		 */
 		padding: calc(var(--app-top) + var(--menu-inset))
-			calc(env(safe-area-inset-right) + var(--space-4)) env(safe-area-inset-bottom)
+			calc(env(safe-area-inset-right) + var(--space-4))
+			calc(env(safe-area-inset-bottom) + var(--space-4))
 			calc(env(safe-area-inset-left) + var(--space-4));
 	}
 	/* The header's buttons --menu-inset from the edges, where the game toolbar's are. */
