@@ -132,7 +132,6 @@ import ph_list_bullets_fill from '~icons/ph/list-bullets-fill';
 import ph_list_checks_fill from '~icons/ph/list-checks-fill';
 import ph_list_dashes_fill from '~icons/ph/list-dashes-fill';
 import ph_list_magnifying_glass_fill from '~icons/ph/list-magnifying-glass-fill';
-import ph_list_numbers_fill from '~icons/ph/list-numbers-fill';
 import ph_lock_fill from '~icons/ph/lock-fill';
 import ph_lock_simple_fill from '~icons/ph/lock-simple-fill';
 import ph_magnifying_glass_fill from '~icons/ph/magnifying-glass-fill';
@@ -361,7 +360,6 @@ const icons: IconMap = {
 	'ph:list-checks-fill': ph_list_checks_fill,
 	'ph:list-dashes-fill': ph_list_dashes_fill,
 	'ph:list-magnifying-glass-fill': ph_list_magnifying_glass_fill,
-	'ph:list-numbers-fill': ph_list_numbers_fill,
 	'ph:lock-fill': ph_lock_fill,
 	'ph:lock-simple-fill': ph_lock_simple_fill,
 	'ph:magnifying-glass-fill': ph_magnifying_glass_fill,

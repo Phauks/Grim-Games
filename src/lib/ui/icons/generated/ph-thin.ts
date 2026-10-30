@@ -132,7 +132,6 @@ import ph_list_bullets_thin from '~icons/ph/list-bullets-thin';
 import ph_list_checks_thin from '~icons/ph/list-checks-thin';
 import ph_list_dashes_thin from '~icons/ph/list-dashes-thin';
 import ph_list_magnifying_glass_thin from '~icons/ph/list-magnifying-glass-thin';
-import ph_list_numbers_thin from '~icons/ph/list-numbers-thin';
 import ph_lock_thin from '~icons/ph/lock-thin';
 import ph_lock_simple_thin from '~icons/ph/lock-simple-thin';
 import ph_magnifying_glass_thin from '~icons/ph/magnifying-glass-thin';
@@ -361,7 +360,6 @@ const icons: IconMap = {
 	'ph:list-checks-thin': ph_list_checks_thin,
 	'ph:list-dashes-thin': ph_list_dashes_thin,
 	'ph:list-magnifying-glass-thin': ph_list_magnifying_glass_thin,
-	'ph:list-numbers-thin': ph_list_numbers_thin,
 	'ph:lock-thin': ph_lock_thin,
 	'ph:lock-simple-thin': ph_lock_simple_thin,
 	'ph:magnifying-glass-thin': ph_magnifying_glass_thin,

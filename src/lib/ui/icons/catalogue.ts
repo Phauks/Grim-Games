@@ -144,9 +144,6 @@ export const ICON_SLOTS = {
 	share: { label: 'Share', choices: ['ph:share-network', 'ph:qr-code'] },
 	/** Reads a QR code with the camera (Join game). */
 	scan: { label: 'Scan a code', choices: ['ph:camera', 'ph:scan'] },
-	/** A note's list buttons, beside its text (Trevor, 2026-10-30). */
-	bulletList: { label: 'Bulleted list', choices: ['ph:list-bullets', 'ph:list-dashes'] },
-	numberedList: { label: 'Numbered list', choices: ['ph:list-numbers'] },
 	copy: { label: 'Copy', choices: ['ph:copy', 'ph:copy-simple'] },
 	data: { label: 'Data', choices: ['ph:database', 'ph:hard-drives'] },
 	/** The scratch pad's drawing tool only; an edit button is `edit` (grim/icon-meaning). */

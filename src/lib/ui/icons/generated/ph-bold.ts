@@ -132,7 +132,6 @@ import ph_list_bullets_bold from '~icons/ph/list-bullets-bold';
 import ph_list_checks_bold from '~icons/ph/list-checks-bold';
 import ph_list_dashes_bold from '~icons/ph/list-dashes-bold';
 import ph_list_magnifying_glass_bold from '~icons/ph/list-magnifying-glass-bold';
-import ph_list_numbers_bold from '~icons/ph/list-numbers-bold';
 import ph_lock_bold from '~icons/ph/lock-bold';
 import ph_lock_simple_bold from '~icons/ph/lock-simple-bold';
 import ph_magnifying_glass_bold from '~icons/ph/magnifying-glass-bold';
@@ -361,7 +360,6 @@ const icons: IconMap = {
 	'ph:list-checks-bold': ph_list_checks_bold,
 	'ph:list-dashes-bold': ph_list_dashes_bold,
 	'ph:list-magnifying-glass-bold': ph_list_magnifying_glass_bold,
-	'ph:list-numbers-bold': ph_list_numbers_bold,
 	'ph:lock-bold': ph_lock_bold,
 	'ph:lock-simple-bold': ph_lock_simple_bold,
 	'ph:magnifying-glass-bold': ph_magnifying_glass_bold,

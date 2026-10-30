@@ -132,7 +132,6 @@ import ph_list_bullets_light from '~icons/ph/list-bullets-light';
 import ph_list_checks_light from '~icons/ph/list-checks-light';
 import ph_list_dashes_light from '~icons/ph/list-dashes-light';
 import ph_list_magnifying_glass_light from '~icons/ph/list-magnifying-glass-light';
-import ph_list_numbers_light from '~icons/ph/list-numbers-light';
 import ph_lock_light from '~icons/ph/lock-light';
 import ph_lock_simple_light from '~icons/ph/lock-simple-light';
 import ph_magnifying_glass_light from '~icons/ph/magnifying-glass-light';
@@ -361,7 +360,6 @@ const icons: IconMap = {
 	'ph:list-checks-light': ph_list_checks_light,
 	'ph:list-dashes-light': ph_list_dashes_light,
 	'ph:list-magnifying-glass-light': ph_list_magnifying_glass_light,
-	'ph:list-numbers-light': ph_list_numbers_light,
 	'ph:lock-light': ph_lock_light,
 	'ph:lock-simple-light': ph_lock_simple_light,
 	'ph:magnifying-glass-light': ph_magnifying_glass_light,

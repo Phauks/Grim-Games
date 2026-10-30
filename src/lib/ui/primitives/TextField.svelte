@@ -2,13 +2,7 @@
 	import type { Snippet } from 'svelte';
 	import type { HTMLInputAttributes } from 'svelte/elements';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import {
-		afterLineBreak,
-		listAt,
-		toggleList,
-		type ListKind,
-		type TextEdit
-	} from '#lib/core/text/lists.ts';
+	import { afterLineBreak, type TextEdit } from '#lib/core/text/lists.ts';
 	import ClearableField from './ClearableField.svelte';
 	import IconButton from './IconButton.svelte';
 
@@ -43,9 +37,8 @@
 		 */
 		autogrow?: boolean;
 		/**
-		 * A multi-line field with Bulleted and Numbered list buttons beside its label, and Enter
-		 * carrying a list on (notes: Trevor, 2026-10-30). The list is the text itself ("• ",
-		 * "1. "), `core/text/lists.ts`.
+		 * A multi-line field where Enter carries a typed list on ("- ", "1. ", "a) "), and ends it
+		 * on an empty item (notes: Trevor, 2026-10-30), `core/text/lists.ts`.
 		 */
 		lists?: boolean;
 		placeholder?: string;
@@ -114,12 +107,6 @@
 		area.style.height = `${Math.max(area.scrollHeight + border, area.offsetHeight)}px`;
 	});
 
-	/** The list the caret's line is in, so its button shows as on. */
-	let caretList = $state<ListKind>();
-	function readCaret() {
-		if (area) caretList = listAt(area.value, area.selectionStart);
-	}
-
 	/**
 	 * Puts an edit into the textarea as typing would (`insertText`), so the browser's undo
 	 * takes it back and `input` updates `value`; set directly where a browser can't.
@@ -145,13 +132,6 @@
 			oninput?.(edit.text);
 		}
 		area.setSelectionRange(edit.start, edit.end);
-		readCaret();
-	}
-
-	function list(kind: ListKind) {
-		if (!area || disabled) return;
-		area.focus();
-		apply(toggleList(area.value, area.selectionStart, area.selectionEnd, kind));
 	}
 
 	/*
@@ -170,7 +150,6 @@
 			const edit = afterLineBreak(field.value, field.selectionStart);
 			if (edit) apply(edit);
 		}
-		if (lists) readCaret();
 	}
 
 	function onkeydown(event: KeyboardEvent & { currentTarget: HTMLInputElement }) {
@@ -188,24 +167,12 @@
 		plain && 'plain'
 	]}
 >
-	{#if lists && multiline}
-		<!-- The buttons always show, so focusing the field moves nothing (no reflow). -->
-		<span class="head">
-			<span class={hideLabel ? 'visually-hidden' : 'label'}>{label}</span>
-			<span class="list-buttons">
-				{@render listButton('bullet', 'bulletList', t('common.bulletList'))}
-				{@render listButton('numbered', 'numberedList', t('common.numberedList'))}
-			</span>
-		</span>
-	{:else}
-		<span class={hideLabel ? 'visually-hidden' : 'label'}>{label}</span>
-	{/if}
+	<span class={hideLabel ? 'visually-hidden' : 'label'}>{label}</span>
 	{#if multiline}
 		<textarea
 			bind:this={area}
 			bind:value
 			{rows}
-			aria-label={lists ? label : undefined}
 			{placeholder}
 			{spellcheck}
 			{autocomplete}
@@ -214,10 +181,7 @@
 			{disabled}
 			aria-invalid={invalid || undefined}
 			data-testid={testid}
-			oninput={onAreaInput}
-			onkeyup={lists ? readCaret : undefined}
-			onpointerup={lists ? readCaret : undefined}
-			onfocus={lists ? readCaret : undefined}></textarea>
+			oninput={onAreaInput}></textarea>
 	{:else}
 		<ClearableField
 			bind:value
@@ -252,19 +216,6 @@
 	{/if}
 </label>
 
-{#snippet listButton(kind: ListKind, icon: 'bulletList' | 'numberedList', name: string)}
-	<!-- Pressing it keeps the focus in the field, so a phone's keyboard stays up. -->
-	<IconButton
-		{icon}
-		label={name}
-		aria-pressed={caretList === kind}
-		{disabled}
-		data-list={kind}
-		onpointerdown={(e) => e.preventDefault()}
-		onclick={() => list(kind)}
-	/>
-{/snippet}
-
 {#snippet eye()}<IconButton
 		icon={revealed ? 'hide' : 'show'}
 		label={t('common.showPassword')}
@@ -282,20 +233,6 @@
 	}
 	.label {
 		color: var(--on-surface-muted);
-	}
-	.head {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-2);
-	}
-	/* Full-size tap targets that don't make the label's line taller: the note's text keeps
-	   its place above a phone's keyboard (e2e/grimoire.e2e.ts). */
-	.list-buttons {
-		display: flex;
-		gap: var(--space-1);
-		margin-left: auto;
-		margin-block: calc((1lh - var(--tap-target)) / 2);
 	}
 	input,
 	textarea {
