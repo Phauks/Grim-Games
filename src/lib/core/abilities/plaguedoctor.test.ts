@@ -12,7 +12,40 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { rulesOf } from '#lib/core/data/rules/index.ts';
+import type { Command } from '#lib/core/engine/index.ts';
+import {
+	castGame,
+	testCharacters as characters,
+	type CastGame
+} from '#lib/core/model/fixtures.test-support.ts';
+import { withNightInfo } from '#lib/core/rules/night-info.ts';
+import { nightOrder } from '#lib/core/rules/night-order.ts';
+import {
+	committedCharacter,
+	committedGameData,
+	nightSheetPresence
+} from '#lib/core/testing/committed-data.ts';
+
+// Once the Plague Doctor has died, the Storyteller picks the Minion ability they gain.
+const gains = (characterId: string) => (): Command => ({
+	type: 'SetStorytellerAbility',
+	via: 'plaguedoctor',
+	characterId
+});
+
+function otherNight(game: CastGame['game']) {
+	const data = committedGameData();
+	const inPlay = game.seating.map((s) => data.byId.get(game.seats[s].characterId!)!);
+	return withNightInfo(
+		nightOrder({ night: 'other', sheet: data.nightSheet, inPlay, players: 5 }).steps,
+		game,
+		characters,
+		'other',
+		{ died: [] },
+		data.nightSheet.otherNight
+	);
+}
 
 describe('Plague Doctor', () => {
 	const character = committedCharacter('plaguedoctor');
@@ -43,9 +76,63 @@ describe('Plague Doctor', () => {
 		});
 	});
 
+	// Summary: when it dies, the Storyteller gains a Minion ability of their choice for the rest
+	// of the game. How to Run: a Minion token marked Storyteller Ability, with a night step
+	// where the Storyteller makes that Minion's choices.
+	it('gives the Storyteller a Minion ability', () => {
+		expect(rulesOf('plaguedoctor', characters)?.givesAbility).toEqual({
+			to: 'storyteller',
+			types: ['minion'],
+			token: 'Storyteller Ability'
+		});
+	});
+
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Plague_Doctor#Examples)', () => {
-		it.todo('Example 1: Storyteller gains Poisoner, poisoning nightly');
-		it.todo('Example 2: Storyteller as Pit-Hag makes a second Cerenovus');
-		it.todo("Example 3: Later drunkenness doesn't remove the gained ability");
+		it('Example 1: Storyteller gains Poisoner, poisoning nightly', () => {
+			// The Plague Doctor dies and the Storyteller takes the Poisoner's ability: each night
+			// there is a Poisoner step for the Storyteller, though no Poisoner is in play.
+			const { game } = castGame(
+				['plaguedoctor', 'imp', 'monk', 'empath', 'chef'],
+				(s) => ({ type: 'SetDead', seatId: s[0], dead: true, cause: 'execution' }),
+				gains('poisoner')
+			);
+			expect(game.storytellerAbilities).toEqual([{ characterId: 'poisoner', via: 'plaguedoctor' }]);
+			const step = otherNight(game).find((s) => s.storytellerAbility);
+			expect(step?.character?.id).toBe('poisoner');
+			expect(step?.reminder).toBe(characters.get('poisoner')?.otherNightReminder);
+			expect(step?.info).toBeUndefined();
+		});
+
+		it('Example 2: Storyteller as Pit-Hag makes a second Cerenovus', () => {
+			// The Storyteller holds the Cerenovus ability and a player becomes the Cerenovus too:
+			// two Cerenovus steps, the Storyteller's right after the player's.
+			const { game } = castGame(
+				['plaguedoctor', 'imp', 'cerenovus', 'empath', 'chef'],
+				(s) => ({ type: 'SetDead', seatId: s[0], dead: true, cause: 'execution' }),
+				gains('cerenovus')
+			);
+			const ids = otherNight(game).map((s) => s.id);
+			const own = ids.indexOf('cerenovus');
+			expect(own).toBeGreaterThanOrEqual(0);
+			expect(ids[own + 1]).toBe('storyteller:plaguedoctor:cerenovus');
+		});
+
+		it("Example 3: Later drunkenness doesn't remove the gained ability", () => {
+			// The Storyteller has had the Organ Grinder's ability for days when a Minstrel makes the
+			// Plague Doctor drunk: it was gained at the death, so it stays.
+			const { game } = castGame(
+				['plaguedoctor', 'imp', 'minstrel', 'empath', 'chef'],
+				(s) => ({ type: 'SetDead', seatId: s[0], dead: true, cause: 'execution' }),
+				gains('organgrinder'),
+				(s) => ({
+					type: 'AddReminder',
+					seatId: s[0],
+					reminder: { characterId: 'minstrel', label: 'Drunk' }
+				})
+			);
+			expect(game.storytellerAbilities).toEqual([
+				{ characterId: 'organgrinder', via: 'plaguedoctor' }
+			]);
+		});
 	});
 });

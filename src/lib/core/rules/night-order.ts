@@ -34,6 +34,7 @@ import {
 } from '#lib/core/night-placement/index.ts';
 import type { AbilityState } from './ability.ts';
 import type { GainedAbility } from './gained-abilities.ts';
+import type { HeldAbility } from '#lib/core/model/types.ts';
 import type { NightStepInfo } from './night-info.ts';
 import { evilTeamInfoRemovedBy, hasEvilTeamInfo } from './teensyville.ts';
 
@@ -115,6 +116,8 @@ export interface NightStep {
 	impaired?: AbilityState[];
 	/** Set on a step added for a gained ability (the Pixie's), by `withGainedSteps`. */
 	gained?: GainedAbility;
+	/** Set on a step for an ability the Storyteller holds, by `withStorytellerSteps`. */
+	storytellerAbility?: HeldAbility;
 	/**
 	 * On the first step, before Dusk, when Travellers have no alignment yet: their seats
 	 * (`withTravellerAlignmentStep`).

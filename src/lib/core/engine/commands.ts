@@ -99,6 +99,11 @@ export type Command =
 	 */
 	| { type: 'SetHeldAbility'; seatId: SeatId; via: CharacterId; characterId?: CharacterId }
 	/**
+	 * Gives the Storyteller the ability of `characterId` by `via`'s `givesAbility` rule (the
+	 * Plague Doctor's Minion), replacing any `via` gave before; without it, takes it away.
+	 */
+	| { type: 'SetStorytellerAbility'; via: CharacterId; characterId?: CharacterId }
+	/**
 	 * Marks a player dead or alive. `cause` is optional when marking dead (the Storyteller
 	 * can skip it and set it later with `SetDeathCause`); on an already dead player it sets
 	 * the cause. Coming back to life clears the cause.

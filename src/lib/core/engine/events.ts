@@ -60,6 +60,8 @@ export type GameEvent =
 	| { type: 'AlignmentSet'; seatId: SeatId; alignment: Alignment }
 	/** Sets (or, without `characterId`, takes away) the ability `via` gives this player. */
 	| { type: 'HeldAbilitySet'; seatId: SeatId; via: CharacterId; characterId?: CharacterId }
+	/** Sets (or, without `characterId`, takes away) the ability `via` gives the Storyteller. */
+	| { type: 'StorytellerAbilitySet'; via: CharacterId; characterId?: CharacterId }
 	/** `cause` only with `dead: true`; `dead: false` clears any cause. */
 	| { type: 'DeathSet'; seatId: SeatId; dead: boolean; cause?: DeathCause }
 	/** No `cause` clears it. */
