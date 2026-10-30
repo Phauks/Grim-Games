@@ -11,6 +11,7 @@
 	import PlayerScreen from '#lib/features/player/PlayerScreen.svelte';
 	import PlayerStatusRow from '#lib/features/player/PlayerStatusRow.svelte';
 	import { travellersInPlay } from '#lib/features/player/travellers-in-play.ts';
+	import { gameOverText } from '#lib/features/room/game-over-text.ts';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
 	import { tableState } from '#lib/features/room/table-state.svelte.ts';
 
@@ -50,11 +51,30 @@
 		return host.code ? host.seatPresence : undefined;
 	});
 	const guessKey = $derived(notebook ?? `storyteller:${game.gameId}`);
+	// The end of the game as the room tells phones (Trevor, 2026-10-30): "Game over" over the
+	// tabs, and the final grimoire on the Grim tab once Share grim sends it.
+	const ended = $derived.by(() => {
+		const over = roomHost().ended;
+		return over?.gameId === game.gameId ? over : undefined;
+	});
+	const final = $derived.by(() => {
+		const host = roomHost();
+		const shared = host.revealed;
+		if (shared?.gameId !== game.gameId) return undefined;
+		const { winner, reason } = ended ?? {};
+		return {
+			grimoire: shared.grimoire,
+			ended: { ...(winner ? { winner } : {}), ...(reason ? { reason } : {}) },
+			room: host.code ?? undefined
+		};
+	});
 </script>
 
 <!-- The row over the tabs, as on /play: where the game is up to and the day timer. -->
 <PlayerStatusRow
 	table={town}
+	ended={!!ended}
+	status={ended ? gameOverText(ended.winner) : undefined}
 	{presence}
 	unseatedNames={roomHost().unseatedInGame.flatMap((m) => (m.name ? [m.name] : []))}
 />
@@ -73,7 +93,8 @@
 		look,
 		picture,
 		pictureRoom,
-		guessKey
+		guessKey,
+		final
 	}}
 	notesKey={notebook ?? scriptKey(script)}
 />
