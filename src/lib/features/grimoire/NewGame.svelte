@@ -15,7 +15,7 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import GameModesPanel from '#lib/features/modes/GameModesPanel.svelte';
-	import { startHref, startInMode } from '#lib/features/modes/start.ts';
+	import { setupHref, startInMode } from '#lib/features/modes/start.ts';
 	import { NO_RESTRICTIONS, STANDARD, type SpecialRule } from '#lib/core/modes/index.ts';
 	import ScriptPicker from '#lib/features/modes/ScriptPicker.svelte';
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
@@ -95,7 +95,7 @@
 					create: (s) => OpenGame.create(data, s, count, undefined, undefined, storyteller)
 				});
 				saveDraft({ gameId: open.game.gameId });
-				await goto(startHref(STANDARD.id, rules, open.game.gameId));
+				await goto(setupHref(open.game.gameId));
 				return;
 			}
 			const open = await OpenGame.create(
@@ -108,7 +108,7 @@
 			);
 			saveDraft({ gameId: open.game.gameId });
 			// On to Character selection, where Game settings opens (Trevor, 2026-10-29).
-			await goto(startHref(STANDARD.id, [], open.game.gameId));
+			await goto(setupHref(open.game.gameId));
 		} catch (e) {
 			reportError(e, { area: 'grimoire' });
 		} finally {

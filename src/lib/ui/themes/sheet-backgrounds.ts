@@ -39,8 +39,7 @@ function midPaper(surface: string, raised: string, selected: string, edge: strin
 	return {
 		...paper(surface, raised, selected, edge),
 		'--on-surface-muted': '#3f3f3f',
-		'--traveller-text': '#4a2459',
-		'--loric-text': '#21522a'
+		'--traveller-text': '#4a2459'
 	};
 }
 
@@ -56,8 +55,7 @@ function dark(surface: string, raised: string, selected: string): Tokens {
 		'--border': '#ffffff33',
 		'--button-edge': '#a8a49c',
 		...TEAM_TEXT.dark,
-		'--traveller-text': '#d2aee3',
-		'--loric-text': '#97d39e'
+		'--traveller-text': '#d2aee3'
 	};
 }
 

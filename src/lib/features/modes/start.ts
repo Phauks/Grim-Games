@@ -106,25 +106,9 @@ export async function startInMode<
 }
 
 /**
- * Where a new game opens: the hidden characters for a rule that adds them (+1, A Script of
- * Infinite Possibilities), otherwise Character selection or a mode's deal (Trevor,
- * 2026-10-29: Game settings is no longer a step of its own; it opens from Characters).
- */
-export function startHref(
-	modeId: string,
-	rules: readonly SpecialRule[],
-	gameId: GameId
-): ResolvedPathname {
-	const mode = withRules(findMode(modeId) ?? STANDARD, rules);
-	if (mode.parts.pool?.kind === 'script-plus-hidden')
-		return resolve('/grimoire/[gameId]/extras', { gameId });
-	return setupHref(gameId);
-}
-
-/**
- * Where the start flow goes to choose characters: the draft or choose screen for a mode that
- * doesn't use the bag (Sushi Buffet, Whale Buffet), otherwise Character selection, Standard too
- * (Trevor, 2026-10-23).
+ * Where a new game opens: the draft or choose screen for a mode that doesn't use the bag (Sushi
+ * Buffet, Whale Buffet), otherwise Character selection, Standard too (Trevor, 2026-10-23), where
+ * Game settings and a rule's hidden characters are chosen (Trevor, 2026-10-29).
  */
 export function setupHref(gameId: GameId): ResolvedPathname {
 	const record = readGameMode(gameId);
@@ -224,15 +208,4 @@ export async function continueCampaign<
 		]
 	});
 	return open;
-}
-
-/**
- * The start-flow step before choosing characters (Trevor, 2026-10-23: one start flow, Back on
- * every step): a rule's hidden characters where it adds them, else New game.
- */
-export function stepBeforeSetup(gameId: GameId): 'extras' | 'new' {
-	const record = readGameMode(gameId);
-	if (!record) return 'new';
-	const mode = withRules(findMode(record.modeId) ?? STANDARD, record.rules);
-	return mode.parts.pool?.kind === 'script-plus-hidden' ? 'extras' : 'new';
 }

@@ -4,6 +4,7 @@
 	import { playerSettings } from './player-settings.svelte.ts';
 	import { SHEET_BACKGROUNDS } from '#lib/ui/themes/sheet-backgrounds.ts';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
+	import ReminderLinesSetting from '#lib/features/grimoire/ReminderLinesSetting.svelte';
 </script>
 
 <!-- Name, picture and laurel are in the Profile, from the button beside Settings' X (Trevor,
@@ -27,6 +28,12 @@
 	label={t('player.townMatchShape')}
 	checked={playerSettings.current.townMatchShape}
 	onChange={(townMatchShape) => playerSettings.update({ townMatchShape })}
+/>
+
+<!-- The Grim tab's own choice; the Storyteller's board has its own in Board (Trevor, 2026-10-29). -->
+<ReminderLinesSetting
+	value={playerSettings.current.reminderLines}
+	onChange={(reminderLines) => playerSettings.update({ reminderLines })}
 />
 
 <!-- Also at the top of every script sheet (Trevor, 2026-10-23; colours 2026-10-24). -->

@@ -12,13 +12,11 @@
  */
 import { SETUP_LOOKS, type SetupLook } from '#lib/core/rules/game-phase.ts';
 import { DAY_SECONDS_PER_ALIVE_MAX, DAY_SECONDS_PER_ALIVE_MIN } from '#lib/core/rules/day-timer.ts';
-import { TIMER_FOR_PLAYERS, type Preferences, type TimerForPlayers } from '#lib/ui/preferences.ts';
+import type { Preferences } from '#lib/ui/preferences.ts';
 
 export interface GameSettings {
 	/** Who each player nominated today, and who nominated them. */
 	trackNominations: boolean;
-	/** How players' phones show the day timer. */
-	timerForPlayers: TimerForPlayers;
 	/** What players' phones show beside Setup, before the first night. */
 	setupForPlayers: SetupLook;
 	/** The day timer's starting seconds per living player. */
@@ -39,7 +37,6 @@ export const gameSettingsKey = (gameId: string) => `grim-games:game-settings:v1:
 export function settingsFrom(prefs: Preferences): GameSettings {
 	return {
 		trackNominations: prefs.assistance.trackNominations,
-		timerForPlayers: prefs.timerForPlayers,
 		setupForPlayers: prefs.setupForPlayers,
 		timerPerPlayer: prefs.timerPerPlayer,
 		requireName: prefs.requireName,
@@ -71,9 +68,6 @@ export function parseGameSettings(raw: unknown, fallback: GameSettings): GameSet
 	const seconds = r.timerPerPlayer;
 	return {
 		trackNominations: bool(r.trackNominations, fallback.trackNominations),
-		timerForPlayers: (TIMER_FOR_PLAYERS as readonly unknown[]).includes(r.timerForPlayers)
-			? (r.timerForPlayers as TimerForPlayers)
-			: fallback.timerForPlayers,
 		setupForPlayers: (SETUP_LOOKS as readonly unknown[]).includes(r.setupForPlayers)
 			? (r.setupForPlayers as SetupLook)
 			: fallback.setupForPlayers,

@@ -318,6 +318,12 @@ function describeEvent(
 		case 'BluffSetRemoved':
 		case 'BluffSetRenamed':
 			return [text('Changed the Demon bluffs')];
+		case 'FakeEvilInfoSet':
+			return [
+				text('Changed what '),
+				seatName(before, event.seatId),
+				text(' is shown as the Demon')
+			];
 		case 'BagBuilt':
 			return [text('Filled the bag')];
 		case 'BagCleared':

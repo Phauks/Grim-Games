@@ -3,6 +3,7 @@
 	import { resolve } from '$app/paths';
 	import { account } from '#lib/features/account/account.svelte.ts';
 	import ProfileIcon from '#lib/features/account/ProfileIcon.svelte';
+	import ProfileAvatar from '#lib/features/player/ProfileAvatar.svelte';
 	import UsernameDialog from '#lib/features/account/UsernameDialog.svelte';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
@@ -186,8 +187,8 @@
 							: t('friends.loading')}
 					qrCenterShape="square"
 				>
-					{#snippet qrCenter()}<span class="qr-icon"><ProfileIcon icon={account.user?.icon} /></span
-						>{/snippet}
+					<!-- The Profile's own avatar, as Settings' Profile button shows it (Trevor, 2026-10-30). -->
+					{#snippet qrCenter()}<span class="qr-icon"><ProfileAvatar /></span>{/snippet}
 				</SharePanel>
 			</PageSection>
 

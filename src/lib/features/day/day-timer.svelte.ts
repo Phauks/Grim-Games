@@ -59,11 +59,11 @@ class LiveDayTimer {
 		return { ...this.#timer, mode: this.mode };
 	}
 	/**
-	 * What players' phones get (Trevor, 2026-10-26): the shared timer and how to show it, by
-	 * the game's `timerForPlayers` setting; always shown (Trevor, 2026-10-28).
+	 * What players' phones get (Trevor, 2026-10-26): the shared timer, always shown (Trevor,
+	 * 2026-10-28) and always as a sun (Trevor, 2026-10-29).
 	 */
 	get forPlayers(): dayTimers.PublicDayTimer {
-		return { ...this.shared, look: gameSettings.current.timerForPlayers };
+		return { ...this.shared, look: 'sun' };
 	}
 	/** Start is possible: not running, and counting up or with time left. */
 	get startable(): boolean {

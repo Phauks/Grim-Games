@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
+import { putReminder } from './reminder-bank.ts';
 
 /**
  * A drunk or poisoned player may be given any information, true or false
@@ -38,15 +39,7 @@ async function choose(page: Page, number: number, name: string, offScript = fals
 }
 
 async function poison(page: Page, number: number) {
-	const sheet = await openSeat(page, number);
-	await sheet.getByRole('button', { name: 'Add reminder' }).tap();
-	const picker = page.getByRole('dialog', { name: `Reminders for Seat ${number}` });
-	await picker
-		.getByRole('group', { name: 'Poisoner' })
-		.getByRole('button', { name: 'Poisoned' })
-		.tap();
-	await picker.getByRole('button', { name: 'Close' }).tap();
-	await closeSheet(page);
+	await putReminder(page, 'Poisoned', number);
 }
 
 async function walkTo(page: Page, title: string) {

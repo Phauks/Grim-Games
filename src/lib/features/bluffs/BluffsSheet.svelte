@@ -26,7 +26,13 @@
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
-	import { bluffSetLabel, charactersReallyInPlay, DEMON_SET, lunaticInPlay } from './bluffs.ts';
+	import {
+		bluffSetLabel,
+		charactersReallyInPlay,
+		DEMON_SET,
+		LUNATIC_SET,
+		lunaticInPlay
+	} from './bluffs.ts';
 
 	export type BluffCommand = Extract<
 		Command,
@@ -183,21 +189,17 @@
 									onclick={() => show(ids)}
 								/></span
 							>
-							{#if index === DEMON_SET}
-								<DeleteButton
-									label={t('bluffs.clearNamed', { set: label(index) })}
-									disabled={ids.length === 0}
-									onclick={() => set(index, [])}
-								/>
-							{:else}
-								<DeleteButton
-									label={t('bluffs.deleteNamed', { set: label(index) })}
-									onclick={() => {
-										deleting = index;
-										deleteOpen = true;
-									}}
-								/>
-							{/if}
+							<!-- Clearing the Demon's set or deleting another asks first (Trevor, 2026-10-29). -->
+							<DeleteButton
+								label={t(index === DEMON_SET ? 'bluffs.clearNamed' : 'bluffs.deleteNamed', {
+									set: label(index)
+								})}
+								disabled={index === DEMON_SET && ids.length === 0}
+								onclick={() => {
+									deleting = index;
+									deleteOpen = true;
+								}}
+							/>
 						</div>
 						<!-- Each bluff as the script lists it: its name, its ability under it (Trevor, 2026-10-20). -->
 						<ol class="rows">
@@ -229,27 +231,6 @@
 				>
 			</div>
 		{:else}
-			{#if editing !== DEMON_SET}
-				<form
-					class="rename picked-name"
-					onsubmit={(event) => {
-						event.preventDefault();
-						save();
-					}}
-				>
-					<ClearableField bind:value={pickedName}>
-						<input
-							type="text"
-							aria-label={t('bluffs.setName')}
-							placeholder={defaultLabel(editing)}
-							maxlength={MAX_BLUFF_SET_NAME}
-							autocomplete="off"
-							enterkeyhint="done"
-							bind:value={pickedName}
-						/>
-					</ClearableField>
-				</form>
-			{/if}
 			<CharacterPicker
 				characters={scriptList}
 				bind:selected={picked}
@@ -260,7 +241,44 @@
 				bluffs
 				hideInPlayFirst={blocks(editing)}
 				notInPlay
-			/>
+			>
+				{#snippet beforeSearch()}{#if editing !== undefined && editing !== DEMON_SET}
+						<form
+							class="rename picked-name"
+							onsubmit={(event) => {
+								event.preventDefault();
+								save();
+							}}
+						>
+							<span class="name-field">
+								<ClearableField bind:value={pickedName}>
+									<input
+										type="text"
+										aria-label={t('bluffs.setName')}
+										placeholder={defaultLabel(editing)}
+										maxlength={MAX_BLUFF_SET_NAME}
+										autocomplete="off"
+										enterkeyhint="done"
+										bind:value={pickedName}
+									/>
+								</ClearableField>
+							</span>
+							<!--
+							A second set is nearly always the Lunatic's, so its name is one tap away
+							(Trevor, 2026-10-29); disabled, not hidden, once the set is already called that.
+						-->
+							{#if editing === LUNATIC_SET}
+								<Button
+									variant="quiet"
+									disabled={(pickedName.trim() || defaultLabel(editing)) ===
+										t('bluffs.set.lunatic')}
+									onclick={() => (pickedName = t('bluffs.set.lunatic'))}
+									>{t('bluffs.set.lunatic')}</Button
+								>
+							{/if}
+						</form>
+					{/if}{/snippet}
+			</CharacterPicker>
 			<ModalActions onCancel={() => (editing = undefined)} onConfirm={() => save()} />
 		{/if}
 	</ErrorBoundary>
@@ -299,9 +317,13 @@
 
 <ConfirmDialog
 	bind:open={deleteOpen}
-	title={t('bluffs.deleteConfirm')}
+	title={t(deleting === DEMON_SET ? 'bluffs.clearConfirm' : 'bluffs.deleteConfirm')}
 	danger
-	onConfirm={() => deleting !== undefined && run({ type: 'RemoveBluffSet', set: deleting })}
+	onConfirm={() => {
+		// The Demon's set always stays, so it is emptied rather than removed.
+		if (deleting === DEMON_SET) set(DEMON_SET, []);
+		else if (deleting !== undefined) run({ type: 'RemoveBluffSet', set: deleting });
+	}}
 >
 	{@const doomed = lookup(game.bluffs[deleting ?? -1] ?? [])}
 	<p class="confirm">
@@ -361,15 +383,21 @@
 		flex: 1;
 		font-family: var(--font-heading);
 	}
-	/* The sheet is parchment: the pencil and eye take its ink colour. */
+	/* The sheet is parchment: the pencil and eye take its ink colour. Spaced as the bin is. */
 	.ink {
 		display: flex;
+		gap: var(--space-2);
 	}
 	.ink :global(.icon-button) {
 		color: inherit;
 	}
+	/* Its field and button sit straight in the search line, sharing it evenly with the search. */
 	.picked-name {
-		margin-bottom: var(--space-3);
+		display: contents;
+	}
+	.name-field {
+		flex: 1;
+		min-width: 0;
 	}
 	.rename input {
 		width: 100%;

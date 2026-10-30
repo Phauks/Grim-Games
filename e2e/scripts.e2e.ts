@@ -1,6 +1,7 @@
 import { gzipSync } from 'node:zlib';
 import { expect, test, type Page } from '@playwright/test';
 import { toBoard } from './new-game.ts';
+import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { encodeSharedScript } from '../src/lib/features/scripts/share.ts';
 import { WORLD_CUPS } from '../src/lib/features/scripts/world-cup.ts';
 
@@ -1038,10 +1039,10 @@ test('a BotC Scripts result offers its other versions, and says when a newer one
 	await details(page).getByRole('button', { name: 'Print script' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Print script' })
-		.getByRole('button', { name: 'Print our sheet' })
+		.getByRole('button', { name: `Print ${APP_NAME} Sheet` })
 		.tap();
 	await page
-		.getByRole('dialog', { name: 'Print our sheet' })
+		.getByRole('dialog', { name: `Print ${APP_NAME} Sheet` })
 		.getByRole('button', { name: 'Print', exact: true })
 		.tap();
 	// Printing first waits up to five seconds for the sheet and its icons, so poll longer than that.

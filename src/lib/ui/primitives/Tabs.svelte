@@ -13,9 +13,14 @@
 		/** Renders the panel for one tab. */
 		panel: Snippet<[T]>;
 		label?: string;
+		/**
+		 * Every panel takes the tallest one's height, so switching tabs never moves what is
+		 * under or around them (Trevor's no-reflow rule; a dialog's tabs keep its size).
+		 */
+		steady?: boolean;
 	}
 
-	let { value = $bindable(), tabs, panel, label }: Props = $props();
+	let { value = $bindable(), tabs, panel, label, steady = false }: Props = $props();
 
 	const selected = $derived(value ?? tabs[0]?.value);
 
@@ -62,7 +67,17 @@
 	let moreButton = $state<HTMLButtonElement>();
 </script>
 
-<Tabs.Root value={selected} onValueChange={(details) => (value = details.value as T)} lazyMount>
+{#snippet contents()}
+	{#each tabs as tab (tab.value)}
+		<Tabs.Content value={tab.value}>{@render panel(tab.value)}</Tabs.Content>
+	{/each}
+{/snippet}
+
+<Tabs.Root
+	value={selected}
+	onValueChange={(details) => (value = details.value as T)}
+	lazyMount={!steady}
+>
 	<div class="bar" bind:this={bar}>
 		<Tabs.List aria-label={label}>
 			{#each onRow as tab (tab.value)}
@@ -88,9 +103,11 @@
 			</div>
 		</div>
 	</div>
-	{#each tabs as tab (tab.value)}
-		<Tabs.Content value={tab.value}>{@render panel(tab.value)}</Tabs.Content>
-	{/each}
+	{#if steady}
+		<div class="steady">{@render contents()}</div>
+	{:else}
+		{@render contents()}
+	{/if}
 </Tabs.Root>
 
 <Popover bind:open={menuOpen} title={t('common.moreTabs')} anchor={moreButton}>
@@ -176,6 +193,17 @@
 	}
 	:global([data-scope='tabs'][data-part='content']) {
 		padding-top: var(--space-4);
+	}
+	/* All panels in one cell: the hidden ones keep their room but can't be seen or reached. */
+	.steady {
+		display: grid;
+	}
+	.steady > :global([data-part='content']) {
+		grid-area: 1 / 1;
+	}
+	.steady > :global([data-part='content'][hidden]) {
+		display: block;
+		visibility: hidden;
 	}
 	.menu {
 		display: grid;

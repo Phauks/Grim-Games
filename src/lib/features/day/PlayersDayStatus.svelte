@@ -22,8 +22,7 @@
 	 * with which night or day it is.
 	 *
 	 * The Storyteller's day timer on a player's phone (Trevor, 2026-10-26: "timer populates on
-	 * other screens ... sun or timer for players", the Storyteller decides). The clock as the
-	 * board shows it, or a sun (Trevor, 2026-10-26): it rises on the left and crosses the sky
+	 * other screens"), always as a sun (Trevor, 2026-10-29): it rises on the left and crosses the sky
 	 * to set on the right as the day's time runs out, filling the sky beneath its path. At the
 	 * right the time is all but up; it waits there until the Storyteller ends the day, and less
 	 * time from the Storyteller only moves it faster.
@@ -108,10 +107,8 @@
 	);
 	const ghostLabel = $derived(counts && t('day.ghostVotesLabel', { count: counts.ghostVotes }));
 
-	/** By day the timer; in Town only the sun, set (the clock means nothing once called). */
-	const showTimer = $derived(
-		!!timer && (phase.kind === 'day' || (phase.kind === 'town' && timer.look === 'sun'))
-	);
+	/** By day the sun; in Town the sun, set. */
+	const showTimer = $derived(!!timer && (phase.kind === 'day' || phase.kind === 'town'));
 	const watched = new WatchedTimer();
 	// Each copy from the room replaces the last; untracked, as set reads what it writes.
 	$effect(() => {
@@ -283,11 +280,10 @@
 		<span
 			class="players-timer"
 			data-testid="players-timer"
-			data-look={timer.look}
 			data-done={watched.done || phase.kind === 'town' ? '' : undefined}
 			style={skyStyle}
 		>
-			{#if timer.look === 'sun' && wide}
+			{#if wide}
 				<svg
 					class="wide-sun"
 					viewBox="0 0 {SKY_W} {SKY_H}"
@@ -306,7 +302,7 @@
 						<circle class="disc" cx={wideX} cy={wideY} r="7.5" />
 					</g>
 				</svg>
-			{:else if timer.look === 'sun'}
+			{:else}
 				<svg
 					viewBox="0 0 48 28"
 					role="img"
@@ -324,8 +320,6 @@
 						<circle class="disc" cx={sunX} cy={sunY} r="3.5" />
 					</g>
 				</svg>
-			{:else}
-				<span class="clock" role="timer" aria-label={t('day.timer')}>{watched.clock}</span>
 			{/if}
 		</span>
 	{/if}
@@ -435,9 +429,6 @@
 	}
 	.wide-sun .horizon {
 		stroke-width: 2;
-	}
-	.sky-slot .clock {
-		font-size: 1.75rem;
 	}
 	button.players-status {
 		cursor: pointer;
@@ -586,16 +577,7 @@
 		stroke-width: 1.5;
 		stroke-linecap: round;
 	}
-	.clock {
-		min-width: 4.5ch;
-		font-variant-numeric: tabular-nums;
-		font-weight: 700;
-		text-align: center;
-	}
 	.players-status:has([data-done]) {
 		border-color: var(--evil);
-	}
-	.players-timer[data-done] .clock {
-		color: var(--evil-text);
 	}
 </style>

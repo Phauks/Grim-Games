@@ -53,7 +53,7 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import { seedStartSettings } from '#lib/features/game-settings/start-settings.ts';
-	import { backFromSetup, backFromSetupLabel } from './back-step.ts';
+	import { backToNewGame } from './new-game-draft.ts';
 	import { dealTitle } from './deal-title.ts';
 	import { readDeal, writeDeal, type DealProgress } from './deal-progress.ts';
 	import { readGameMode } from './game-mode-store.ts';
@@ -473,9 +473,9 @@
 	<!-- The start flow's bar (Trevor, 2026-10-23): Back to New game as it was, until a tile is
 	     drawn; Restart starts the deal over after that. -->
 	<SetupNav
-		onBack={() => void backFromSetup(gameId)}
+		onBack={() => void backToNewGame(gameId)}
 		backDisabled={picks.length > 0 || held !== undefined}
-		backLabel={backFromSetupLabel(gameId)}
+		backLabel={t('setup.newGame')}
 	>
 		{#snippet next()}
 			<span class="footer">

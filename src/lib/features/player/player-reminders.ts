@@ -134,6 +134,13 @@ export function scriptReminderGroups(characters: readonly Character[]): PlayerRe
 	});
 }
 
+/**
+ * A reminder's diameter on a player's grim, as on the board: half the token, kept between 30
+ * and 48px and scaled by the Tokens setting, never under a finger's 44px tap target.
+ */
+export const reminderChip = (size: number, scale: number): number =>
+	Math.max(44, Math.round(Math.max(30, Math.min(48, size * 0.5)) * scale));
+
 /** A placed reminder's key in a list: one of each token per seat, or a generic one's id. */
 export const placedKey = (r: PlayerReminder): string => r.id ?? [r.characterId, r.label].join(':');
 

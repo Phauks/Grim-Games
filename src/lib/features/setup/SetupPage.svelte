@@ -39,8 +39,8 @@
 	import StandInDialog from './StandInDialog.svelte';
 	import AddCharactersDialog from './AddCharactersDialog.svelte';
 	import SetupBluffs from '#lib/features/bluffs/SetupBluffs.svelte';
-	import { notBegun } from '#lib/features/modes/new-game-draft.ts';
-	import { backFromSetup, backFromSetupLabel } from '#lib/features/modes/back-step.ts';
+	import { backToNewGame, notBegun } from '#lib/features/modes/new-game-draft.ts';
+	import SetupOffScript from './SetupOffScript.svelte';
 	import GameOptions from './GameOptions.svelte';
 	import { DEMON_SET, randomBluffs, toggleDemonBluff } from '#lib/features/bluffs/bluffs.ts';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
@@ -76,7 +76,7 @@
 
 	const game = $derived(port.game);
 	/** Where this step's Back goes: the start flow's step before until the game begins. */
-	const backStep = $derived(game && notBegun(game) ? ('start' as const) : ('board' as const));
+	const backStep = $derived(game && notBegun(game) ? ('new' as const) : ('board' as const));
 	const data = $derived(officialData.current);
 	// The game's own script, so a homebrew character is found even if the Scripts page moved on.
 	const script = $derived(game && data ? fromScript(game.script, data).script : undefined);
@@ -163,15 +163,20 @@
 	 * Characters chosen though they are not on the script (Infinite Possibilities' hidden
 	 * extras, or any other addition), listed under their own type with an off-script mark
 	 * (Trevor, 2026-10-18). Once listed they stay for this visit, so taking one out can be
-	 * undone.
+	 * undone; a rule's hidden ones leave once taken out of its box (`fromRule`).
 	 */
 	let offScriptSeen = $state.raw<CharacterId[]>([]);
+	const fromRule: CharacterId[] = [];
 	$effect(() => {
+		for (const id of ruleAllowed) if (!fromRule.includes(id)) fromRule.push(id);
 		const onScript = new Set([...scriptOrder, ...editionTravellers.map((c) => c.id)]);
-		const added = Object.keys(s.selection).filter(
-			(id) => (s.selection[id] ?? 0) > 0 && !onScript.has(id) && !offScriptSeen.includes(id)
+		const kept = offScriptSeen.filter(
+			(id) => ruleAllowed.has(id) || !fromRule.includes(id) || (s.selection[id] ?? 0) > 0
 		);
-		if (added.length) offScriptSeen = [...offScriptSeen, ...added];
+		const added = Object.keys(s.selection).filter(
+			(id) => (s.selection[id] ?? 0) > 0 && !onScript.has(id) && !kept.includes(id)
+		);
+		if (added.length || kept.length < offScriptSeen.length) offScriptSeen = [...kept, ...added];
 	});
 	const offScript = $derived(
 		offScriptSeen
@@ -188,8 +193,11 @@
 			(c) => !selectedOnly || (s.selection[c.id] ?? 0) > 0 || inRule.has(c.id)
 		)
 	);
-	/** Characters a special rule put in play (+1, Infinite Possibilities) are not marked. */
-	const ruleAllowed = $derived(game ? allowedOffScriptIn(game.gameId) : new Set<CharacterId>());
+	/** Characters a rule put in play (+1, Infinite Possibilities) aren't marked; re-read as picked. */
+	const ruleAllowed = $derived.by(() => {
+		void Object.values(s.selection);
+		return game ? allowedOffScriptIn(game.gameId) : new Set<CharacterId>();
+	});
 	const offScriptIds = $derived(
 		new Set([...offScript, ...offScriptRules].map((c) => c.id).filter((id) => !ruleAllowed.has(id)))
 	);
@@ -528,6 +536,7 @@
 					}}
 				/>
 			{/if}
+			<SetupOffScript {port} />
 		</ErrorBoundary>
 	{/snippet}
 
@@ -636,8 +645,8 @@
 			backHref={backStep === 'board'
 				? resolve('/grimoire/[gameId]', { gameId: game.gameId })
 				: undefined}
-			onBack={backStep === 'board' ? undefined : () => void backFromSetup(game.gameId, s.players)}
-			backLabel={backStep === 'board' ? t('setup.grimoire') : backFromSetupLabel(game.gameId)}
+			onBack={backStep === 'board' ? undefined : () => void backToNewGame(game.gameId, s.players)}
+			backLabel={backStep === 'board' ? t('setup.grimoire') : t('setup.newGame')}
 		>
 			{#snippet next()}
 				<span class="next">

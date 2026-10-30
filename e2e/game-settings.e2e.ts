@@ -35,10 +35,10 @@ test('Game settings opens on Character selection, and a choice there is kept for
 	);
 	const track = settings.getByRole('checkbox', { name: 'Track nominations', includeHidden: true });
 	await expect(track).not.toBeChecked();
-	// The day timer is always on players' phones: only its style is a choice (Trevor, 2026-10-28).
-	await settings.getByRole('combobox', { name: 'Day timer on players’ phones' }).tap();
-	await expect(page.getByRole('option')).toHaveText(['Sun', 'Timer']);
-	await page.keyboard.press('Escape');
+	// Players' phones always show the day timer as a sun (Trevor, 2026-10-29): no choice of it.
+	await expect(
+		settings.getByRole('combobox', { name: 'Day timer on players’ phones' })
+	).toHaveCount(0);
 	await settings.getByText('Track nominations', { exact: true }).tap();
 	await expect(track).toBeChecked();
 	// What phones show beside Setup is chosen here too (Trevor, 2026-10-28).
@@ -84,4 +84,28 @@ test('Game settings is no step: Character selection goes back to New game', asyn
 	await expect(bar.getByRole('button', { name: 'Game settings' })).toHaveCount(0);
 	await bar.getByRole('button', { name: 'New game' }).tap();
 	await expect(page).toHaveURL(/\/new#back$/);
+});
+
+test('Game settings splits into Day and Bag draw tabs that keep the dialog one size', async ({
+	page
+}) => {
+	// Trevor (2026-10-29): "game settings page should be tabbed, so it doesn't run down one screen".
+	const settings = await startToGameSettings(page);
+	const tabs = settings.getByRole('tab');
+	await expect(tabs).toHaveText(['Day', 'Bag draw']);
+	await expect(settings.getByText('Track nominations', { exact: true })).toBeVisible();
+	await expect(settings.getByText('Slot machine reveal', { exact: true })).toBeHidden();
+	const dialog = page.getByRole('dialog', { name: 'Game settings' });
+	const before = (await dialog.boundingBox())!;
+
+	await tabs.filter({ hasText: 'Bag draw' }).tap();
+	await expect(settings.getByText('Slot machine reveal', { exact: true })).toBeVisible();
+	await expect(settings.getByText('Track nominations', { exact: true })).toBeHidden();
+	// A tab change never resizes the dialog (no reflow).
+	const after = (await dialog.boundingBox())!;
+	expect(Math.abs(after.height - before.height)).toBeLessThan(1);
+	expect(Math.abs(after.y - before.y)).toBeLessThan(1);
+	const slot = settings.getByRole('checkbox', { name: 'Slot machine reveal', includeHidden: true });
+	await settings.getByText('Slot machine reveal', { exact: true }).tap();
+	await expect(slot).toBeChecked();
 });

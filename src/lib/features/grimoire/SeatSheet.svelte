@@ -39,7 +39,6 @@
 	import SeatNameSuggestions from './SeatNameSuggestions.svelte';
 	import { SeatNameEdit } from './seat-name-edit.svelte.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
-	import ReminderPicker from './ReminderPicker.svelte';
 	import SeatChooser from './SeatChooser.svelte';
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
 	import { seatChanges } from './history.ts';
@@ -205,7 +204,6 @@
 			dayClaim(seat.characterId, characters) === 'statements' &&
 			preferences.current.assistance.savantInfo
 	);
-	let remindersOpen = $state(false);
 	/** A player's claim in town (L56): Guesses or Statement, as on their day row. */
 	const claim = $derived.by(() => {
 		const id = seat?.characterId;
@@ -404,9 +402,8 @@
 			{/if}
 
 			<div class="row reminders-head">
+				<!-- Added from the reminder bank only, by drag or tap (Trevor, 2026-10-29). -->
 				<h3>Reminders</h3>
-				<!-- A + only (Trevor, 2026-10-19). -->
-				<IconButton icon="add" label="Add reminder" onclick={() => (remindersOpen = true)} />
 			</div>
 			{#if seat.reminders.length === 0}
 				<p class="none">None</p>
@@ -445,15 +442,6 @@
 {#if claim && seat?.characterId}
 	<NoteSheet bind:open={claimOpen} game={day} target={{ characterId: seat.characterId, seatId }} />
 {/if}
-
-<ReminderPicker
-	bind:open={remindersOpen}
-	{grimoire}
-	{seatId}
-	{title}
-	onRemove={(id) => moveConfirm?.requestReturn(id)}
-	onMove={(id, to) => moveConfirm?.request(id, to)}
-/>
 
 <SeatCharacterFlow bind:this={flow} {grimoire} {seatId} {onDraw} />
 

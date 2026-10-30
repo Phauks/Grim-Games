@@ -85,8 +85,9 @@ test('Deal gives every seat a character, and a seated phone holds to see its own
 	await hold.dispatchEvent('pointerup', { pointerId: 1, isPrimary: true });
 	await expect(card.getByTestId('role-name')).toBeHidden();
 
-	// Share lists every seat: seat 2 has seen theirs, the others have no phone.
-	await page.goto(`${board}/room`);
+	// Players lists every seat (Trevor, 2026-10-29: moved from Share): seat 2 has seen theirs,
+	// the others have no phone.
+	await page.goto(`${board}/players`);
 	const rows = page.getByTestId('role-seat');
 	await expect(rows).toHaveCount(5);
 	await expect(rows.nth(1)).toContainText('Seen');
@@ -184,7 +185,7 @@ test('a Traveller’s phone holds to see only "You are Evil"', async ({
 	await nameSeat(page, board, 1, 'Sam');
 	await expect(phone.getByTestId('you-row')).toHaveAttribute('data-seat', '1');
 	await expect(phone.getByRole('button', { name: 'Settings: Sam' })).toBeVisible();
-	await page.goto(`${board}/room`);
+	await page.goto(`${board}/players`);
 	await page.getByText('Players can see their character', { exact: true }).tap();
 
 	// The Storyteller makes seat 1 the Thief, evil, with no draw.
