@@ -1,5 +1,6 @@
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { OVERRIDE_FIELDS, isOnScript, registersAsDead } from '#lib/core/model/index.ts';
+import { rulesOf } from '#lib/core/data/rules/index.ts';
+import { OVERRIDE_FIELDS, isOnScript, registersAsDead, typeOf } from '#lib/core/model/index.ts';
 import type { GameEvent } from '../events.ts';
 import {
 	allowsDuplicates,
@@ -8,6 +9,7 @@ import {
 	refuse,
 	seatOf,
 	seatableCharacter,
+	trulyInPlay,
 	type Deciders
 } from './shared.ts';
 
@@ -96,6 +98,21 @@ export const CHARACTERS_DECIDERS: Deciders<
 		if (seat.alignment === command.alignment) {
 			warn('no-change', `already ${command.alignment}`);
 			return [];
+		}
+		if (command.alignment === 'evil') {
+			const limiter = [...trulyInPlay(game, ctx)].find(
+				(id) => rulesOf(id, ctx.characters)?.limitsExtraEvil
+			);
+			// Good-type players who are evil, counting this one: each is an extra evil player.
+			const extra = game.seating.filter((id) => {
+				const type = typeOf(game, id, ctx.characters);
+				const evil = id === seat.seatId || game.seats[id].alignment === 'evil';
+				return evil && (type === 'townsfolk' || type === 'outsider');
+			});
+			if (limiter && extra.length > 1) {
+				const name = ctx.characters.get(limiter)?.name ?? limiter;
+				warn('extra-evil-limit', `${name}: there can't be more than 1 extra evil player`);
+			}
 		}
 		return [{ type: 'AlignmentSet', seatId: seat.seatId, alignment: command.alignment }];
 	},

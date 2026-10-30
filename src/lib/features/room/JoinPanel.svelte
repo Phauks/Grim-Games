@@ -338,9 +338,11 @@
 				? t('room.notACode')
 				: player?.refusedReason === 'too-old'
 					? t('room.tooOld')
-					: status === 'closed'
-						? t('room.closedByStoryteller')
-						: t('room.closedOrWrong')}
+					: player?.refusedReason === 'removed'
+						? t('room.removedYou')
+						: status === 'closed'
+							? t('room.closedByStoryteller')
+							: t('room.closedOrWrong')}
 		</p>
 	{/if}
 	<!-- Continue game: once there is room, the code on the left and the games to resume on the

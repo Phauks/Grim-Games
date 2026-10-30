@@ -144,6 +144,7 @@
 			label={t(claim === 'statement' ? 'day.statement' : 'day.note')}
 			bind:value={text}
 			multiline
+			lists={claim !== 'statement'}
 			rows={6}
 			testid="note-text"
 		/>
