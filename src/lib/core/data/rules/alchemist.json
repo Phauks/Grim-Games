@@ -40,5 +40,10 @@
 	"reminderMovement": {
 		"fixed": ["Is The Alchemist"],
 		"why": "Marks which player is the Alchemist."
+	},
+	"swapsForAbility": {
+		"token": "Is The Alchemist",
+		"good": ["minion"],
+		"evil": ["minion"]
 	}
 }

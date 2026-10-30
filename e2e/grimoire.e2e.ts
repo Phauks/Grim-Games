@@ -2317,6 +2317,25 @@ test('the Apprentice gains a Townsfolk ability and is marked "Is The Apprentice"
 	await expect(sheet.getByRole('button', { name: 'Actions for Is The Apprentice' })).toBeVisible();
 });
 
+// https://wiki.bloodontheclocktower.com/Alchemist: the Alchemist has a Minion's ability; its token is
+// swapped for that Minion's, marked "Is The Alchemist", and it stays good.
+test('the Alchemist gains a Minion ability and is marked "Is The Alchemist"', async ({ page }) => {
+	await startGame(page);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	const picker = page.getByRole('dialog', { name: 'Character for Seat 1' });
+	await picker.getByText('Include characters not on the script').tap();
+	await picker.getByRole('button', { name: 'Alchemist', exact: true }).tap();
+	await seatMenu(page, sheet, 'Gained ability…');
+	const gains = page.getByRole('dialog', { name: 'Ability Seat 1 gains' });
+	// Only Minions are offered.
+	await expect(gains.getByRole('button', { name: 'Monk', exact: true })).toHaveCount(0);
+	await gains.getByRole('button', { name: 'Poisoner', exact: true }).tap();
+	// The seat shows the Minion, still good, marked as the Alchemist.
+	await expect(sheet).toContainText(/Poisoner\s*Minion · Good · Seat 1/);
+	await expect(sheet.getByRole('button', { name: 'Actions for Is The Alchemist' })).toBeVisible();
+});
+
 test("a Traveller's alignment can be drawn from face-down tokens", async ({ page }) => {
 	await startGame(page);
 	await menu(page, 'Add seat');
