@@ -151,5 +151,28 @@ export const account = {
 	'account.scripts.unlink': 'Unlink',
 	'account.scripts.update': 'Update',
 	'account.scripts.check': 'Check for update',
-	'account.scripts.use': 'Use'
+	'account.scripts.use': 'Use',
+
+	// Admins' Accounts page (plan S27).
+	'account.admin.title': 'Accounts',
+	'account.admin.find': 'Email or username',
+	'account.admin.findButton': 'Find',
+	'account.admin.notFound': 'No account has that email or username',
+	'account.admin.findFailed': 'Could not find the account',
+	'account.admin.actionFailed': 'The account could not be changed',
+	'account.admin.adminsOnly': 'Only admin accounts see accounts.',
+	'account.admin.devices': 'Signed-in devices',
+	'account.admin.lastUsed': 'Last used',
+	'account.admin.signOut': 'Sign out everywhere',
+	'account.admin.signOutTitle': 'Sign out every device?',
+	'account.admin.signOutText':
+		'{email} is signed out on every device and signs in again with a code.',
+	'account.admin.removeUsername': 'Remove username',
+	'account.admin.removeUsernameTitle': 'Remove this username?',
+	'account.admin.removeUsernameText':
+		'{username} is freed for anyone to take. The account keeps everything else.',
+	'account.admin.delete': 'Delete account',
+	'account.admin.deleteTitle': 'Delete this account?',
+	'account.admin.deleteText':
+		"This deletes {email}, every script saved to its profile and its friends, and signs out all its devices. This can't be undone."
 } as const;

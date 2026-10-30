@@ -1,4 +1,5 @@
 import { handleAccount, type Env as AccountRoutesEnv } from './account/routes.ts';
+import { handleAdminAccounts } from './admin-accounts.ts';
 import { handleFriends, type FriendsEnv } from './friends/routes.ts';
 import { bloodstarSource, handleBloodstarScript } from './bloodstar.ts';
 import { handleBotcScripts } from './botcscripts.ts';
@@ -65,6 +66,8 @@ export default {
 		if (room) return room;
 		const liveGames = await handleLiveGames(request, env, url);
 		if (liveGames) return liveGames;
+		const adminAccounts = await handleAdminAccounts(request, env, url);
+		if (adminAccounts) return adminAccounts;
 		const pushKey = await handlePushKey(request, env, url);
 		if (pushKey) return pushKey;
 		// Tests fake these answers; the sites themselves refuse CI machines (BotC Scripts: 403).

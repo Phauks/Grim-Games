@@ -220,6 +220,7 @@ import ph_upload_simple_duotone from '~icons/ph/upload-simple-duotone';
 import ph_user_duotone from '~icons/ph/user-duotone';
 import ph_user_circle_duotone from '~icons/ph/user-circle-duotone';
 import ph_user_gear_duotone from '~icons/ph/user-gear-duotone';
+import ph_user_list_duotone from '~icons/ph/user-list-duotone';
 import ph_user_plus_duotone from '~icons/ph/user-plus-duotone';
 import ph_user_switch_duotone from '~icons/ph/user-switch-duotone';
 import ph_users_duotone from '~icons/ph/users-duotone';
@@ -454,6 +455,7 @@ const icons: IconMap = {
 	'ph:user-duotone': ph_user_duotone,
 	'ph:user-circle-duotone': ph_user_circle_duotone,
 	'ph:user-gear-duotone': ph_user_gear_duotone,
+	'ph:user-list-duotone': ph_user_list_duotone,
 	'ph:user-plus-duotone': ph_user_plus_duotone,
 	'ph:user-switch-duotone': ph_user_switch_duotone,
 	'ph:users-duotone': ph_users_duotone,

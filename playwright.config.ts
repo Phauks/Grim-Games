@@ -41,7 +41,7 @@ export default defineConfig({
 		// ADMINS_TRUST_PREVIEW_SIGN_IN: admin accounts count although local sign-in shows its code.
 		// quiet-server-log: leaves out workerd's report of each browser that hung up mid-reply.
 		// Both configs: the app's DATA binding needs the shared data Worker running beside it.
-		command: `npm run build && npx wrangler dev -c wrangler.jsonc -c wrangler.data.jsonc --port ${PORT} --ip 127.0.0.1 --var SHARE_LIMITS:off --var OTHER_SITES:off --var ADMIN_EMAILS:phone-admin-1@example.com,phone-admin-2@example.com,phone-admin-3@example.com,tablet-admin-1@example.com,tablet-admin-2@example.com,tablet-admin-3@example.com --var ADMINS_TRUST_PREVIEW_SIGN_IN:on 2>&1 | node scripts/quiet-server-log.ts --run`,
+		command: `npm run build && npx wrangler dev -c wrangler.jsonc -c wrangler.data.jsonc --port ${PORT} --ip 127.0.0.1 --var SHARE_LIMITS:off --var OTHER_SITES:off --var ADMIN_EMAILS:phone-admin-1@example.com,phone-admin-2@example.com,phone-admin-3@example.com,phone-admin-4@example.com,tablet-admin-1@example.com,tablet-admin-2@example.com,tablet-admin-3@example.com,tablet-admin-4@example.com --var ADMINS_TRUST_PREVIEW_SIGN_IN:on 2>&1 | node scripts/quiet-server-log.ts --run`,
 		url: `http://localhost:${PORT}/api/health`,
 		reuseExistingServer: !process.env.CI,
 		timeout: 180_000

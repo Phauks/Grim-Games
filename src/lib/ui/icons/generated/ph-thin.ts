@@ -220,6 +220,7 @@ import ph_upload_simple_thin from '~icons/ph/upload-simple-thin';
 import ph_user_thin from '~icons/ph/user-thin';
 import ph_user_circle_thin from '~icons/ph/user-circle-thin';
 import ph_user_gear_thin from '~icons/ph/user-gear-thin';
+import ph_user_list_thin from '~icons/ph/user-list-thin';
 import ph_user_plus_thin from '~icons/ph/user-plus-thin';
 import ph_user_switch_thin from '~icons/ph/user-switch-thin';
 import ph_users_thin from '~icons/ph/users-thin';
@@ -454,6 +455,7 @@ const icons: IconMap = {
 	'ph:user-thin': ph_user_thin,
 	'ph:user-circle-thin': ph_user_circle_thin,
 	'ph:user-gear-thin': ph_user_gear_thin,
+	'ph:user-list-thin': ph_user_list_thin,
 	'ph:user-plus-thin': ph_user_plus_thin,
 	'ph:user-switch-thin': ph_user_switch_thin,
 	'ph:users-thin': ph_users_thin,

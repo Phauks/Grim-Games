@@ -8,6 +8,10 @@ export class AccountName extends DurableObject<AccountEnv> {
 	constructor(ctx: DurableObjectState, env: AccountEnv) {
 		super(ctx, env);
 		this.sql = ctx.storage.sql;
+		this.createTables();
+	}
+
+	private createTables(): void {
 		this.sql.exec(`
 			CREATE TABLE IF NOT EXISTS owner (
 				id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -37,6 +41,8 @@ export class AccountName extends DurableObject<AccountEnv> {
 		this.sql.exec('DELETE FROM owner WHERE user_id = ?', userId);
 		if (!this.sql.exec<{ n: number }>('SELECT COUNT(*) AS n FROM owner').one().n) {
 			await this.ctx.storage.deleteAll();
+			// The table comes back, so later calls on this instance (a lookup of the freed name) work.
+			this.createTables();
 		}
 	}
 }

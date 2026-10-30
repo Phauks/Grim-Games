@@ -13,6 +13,7 @@
 	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import {
 		ACCOUNT_ITEM,
+		ACCOUNTS_ITEM,
 		APP_ITEMS,
 		FRIENDS_ITEM,
 		HISTORY_ITEM,
@@ -116,9 +117,9 @@
 		{/each}
 		{#if account.admin}
 			{#snippet adminItems()}
-				{@render link(REPORTS_ITEM)}{@render link(LIVE_GAMES_ITEM)}
+				{@render link(REPORTS_ITEM)}{@render link(LIVE_GAMES_ITEM)}{@render link(ACCOUNTS_ITEM)}
 			{/snippet}
-			{@render section('admin', t('shell.navSectionAdmin'), 2, adminItems)}
+			{@render section('admin', t('shell.navSectionAdmin'), 3, adminItems)}
 		{/if}
 		<!-- Account, Friends and History, last in the sidebar and the drawer alike (2026-10-22). -->
 		{#snippet youItems()}
