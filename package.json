@@ -27,6 +27,7 @@
 		"deploy": "npm run build && wrangler deploy",
 		"deploy:staging": "npm run build && wrangler deploy --env staging",
 		"sync:data": "node scripts/sync-data.ts",
+		"bots": "node scripts/room-bots.ts",
 		"scaffold:rules-tests": "node scripts/scaffold-rules-tests.ts",
 		"export:setup-prep": "node scripts/export-setup-prep.ts",
 		"export:reminder-placeholders": "node scripts/export-reminder-placeholders.ts"

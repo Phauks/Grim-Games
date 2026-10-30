@@ -36,6 +36,7 @@ static/data/       synced TPI data and icons (generated; see Data)
 | `npm run test:e2e`                               | Playwright touch tests (phone + tablet)                                                                                    |
 | `npm run verify`                                 | check + lint + unit tests; the pre-push hook in `.githooks` runs it (`npm install` turns the hook on)                      |
 | `npm run sync:data`                              | Refresh TPI's data and icons in `static/data/` (see [Data](#data))                                                         |
+| `npm run bots -- <room code> [--players 15]`     | Fake players' phones join a live room and play along (see [Room bots](#room-bots))                                         |
 | `npm run scaffold:rules-tests`                   | Create missing character and jinx test files (see [Rules tests](#rules-tests))                                             |
 | `npm run check:rules-coverage`                   | Fail if a character or jinx has no test file; count scenario todos                                                         |
 | `npm run export:setup-prep -- <file>`            | Write every character's setup preparation as JSON for review (from each rules file's `setupPrep`)                          |
@@ -53,6 +54,16 @@ Every character and every jinx has a test file, based on the [BotC wiki](https:/
 To write a scenario, read the example on the wiki page and replace its `it.todo` with a test that sets up seats, characters and reminders, runs the action and checks the resulting state, prompts or warnings. Paraphrase it: the wiki has no licence, so never copy its prose. Keep the wiki URL at the top of the file. These files run in the `rules` Vitest project without per-file isolation (that keeps 300+ files fast), so don't use `vi.mock` or leave module state behind; read data with `#lib/core/testing/committed-data.ts`.
 
 `npm run check:rules-coverage` (part of `npm run lint`, so CI runs it) fails when a character or jinx pair in `static/data/` has no test file, when a file doesn't cite its character's wiki URL, or when a file is left for a character or jinx that no longer exists. When a data sync adds one, run `npm run scaffold:rules-tests`: it only creates missing files, never overwrites. It also prints the number of `todo`s left, which the roadmap takes to zero for 1.0. `-- --fetch-examples` makes one numbered todo per wiki example (it counts them through the wiki's API and writes no wiki text).
+
+## Room bots
+
+`scripts/room-bots.ts` fakes players' phones to test live rooms with up to a room's 40 phones (`MAX_MEMBERS`). Each bot speaks the room protocol (`src/lib/core/sync/room-protocol.ts`) over its own WebSocket, as the app does, and answers like a player: it names itself, claims an open seat (or moves its own while seating is open), taps its number in a count off, holds to see its character, votes as a spectator or on the next script, and rates the game when it ends. Every few seconds it checks what all the phones see together (two phones in one seat, a character sent to a phone with no seat).
+
+- `npm run bots -- 482913 --players 15` joins bots to a room you run from your own Storyteller device, until Ctrl+C or `--minutes`. A join link works in place of the code.
+- `npm run bots -- --storyteller --players 40 --seats 15` also fakes the Storyteller: it opens a room, plays a whole game through it, prints each step with ✓ or ✗ and exits 1 if one fails. Players past `--seats` stay spectators.
+- `--site http://localhost:8787` for `npm run preview` (the default is beta), `--flaky` makes phones lock their screen now and then, `--think <ms>` sets the longest pause before a bot answers.
+
+Joins count against the room join limit (60 a minute per address, `wrangler.jsonc`), so bots queue for turns. The **Room bots** workflow runs the same script from the Actions tab or the GitHub app, so a room can be filled from a phone.
 
 ## Deploying
 

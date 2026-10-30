@@ -1,0 +1,65 @@
+# Fake players' phones for testing live rooms (scripts/room-bots.ts), started by hand from the
+# Actions tab or the GitHub app, so a room can be filled from a phone with no computer.
+# Leave the room empty to have the bots' own Storyteller play a whole game; the run fails if a
+# step does. Bots join from GitHub's address, which the room's join limit counts like any other.
+name: Room bots
+
+on:
+  workflow_dispatch:
+    inputs:
+      room:
+        description: Room code or join link to fill (empty = the bots run their own game)
+        type: string
+        default: ''
+      players:
+        description: How many fake phones (1 to 40)
+        type: string
+        default: '15'
+      seats:
+        description: Seats in the bots' own game (the rest are spectators); empty = one each
+        type: string
+        default: ''
+      minutes:
+        description: How long the bots stay in your room
+        type: string
+        default: '20'
+      flaky:
+        description: Phones lock their screen now and then
+        type: boolean
+        default: false
+      site:
+        description: The site the room is on
+        type: choice
+        options: [https://beta.grimbinder.com, https://grimbinder.com]
+        default: https://beta.grimbinder.com
+
+permissions:
+  contents: read
+
+jobs:
+  bots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 65
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      # Inputs go through the environment, never pasted into the command.
+      - name: Run the bots
+        env:
+          ROOM: ${{ inputs.room }}
+          PLAYERS: ${{ inputs.players }}
+          SEATS: ${{ inputs.seats }}
+          MINUTES: ${{ inputs.minutes }}
+          FLAKY: ${{ inputs.flaky }}
+          SITE: ${{ inputs.site }}
+        run: |
+          args=(--players "$PLAYERS" --site "$SITE")
+          if [ "$FLAKY" = true ]; then args+=(--flaky); fi
+          if [ -z "$ROOM" ]; then
+            if [ -n "$SEATS" ]; then args+=(--seats "$SEATS"); fi
+            node scripts/room-bots.ts --storyteller "${args[@]}"
+          else
+            node scripts/room-bots.ts "$ROOM" --minutes "$MINUTES" "${args[@]}"
+          fi
