@@ -312,10 +312,9 @@ export function playerView(
 	const role = memberRole(room, memberId);
 	if (role) view.role = role;
 	if (room.scriptVote) {
-		const { voteId, kind, subject, options, ballots, endsAt, finalCall } = room.scriptVote;
+		const { voteId, kind, subject, options, ballots, endsAt } = room.scriptVote;
 		view.scriptVote = { voteId, kind, options, ...(subject ? { subject } : {}) };
 		if (endsAt !== undefined) view.scriptVote.endsAt = endsAt;
-		if (finalCall) view.scriptVote.finalCall = true;
 		if (ballots[memberId]) view.scriptVote.choices = ballots[memberId];
 		if (room.scriptVote.showTally) {
 			const { points, out, winner, rounds, voted, members, people } = scriptVoteCount(

@@ -264,6 +264,16 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 			return updateSeat(game, event.seatId, (seat) => omit(seat, 'characterId', 'alignment'));
 		case 'AlignmentSet':
 			return updateSeat(game, event.seatId, (seat) => ({ ...seat, alignment: event.alignment }));
+		case 'StorytellerAbilitySet': {
+			const others = (game.storytellerAbilities ?? []).filter((a) => a.via !== event.via);
+			const storytellerAbilities =
+				event.characterId === undefined
+					? others
+					: [...others, { characterId: event.characterId, via: event.via }];
+			return storytellerAbilities.length > 0
+				? { ...game, storytellerAbilities }
+				: omit(game, 'storytellerAbilities');
+		}
 		case 'HeldAbilitySet':
 			return updateSeat(game, event.seatId, (seat) => {
 				const others = (seat.abilities ?? []).filter((a) => a.via !== event.via);

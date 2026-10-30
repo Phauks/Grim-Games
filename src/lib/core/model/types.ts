@@ -366,6 +366,13 @@ export interface Game {
 	/** Fabled and Loric in play. */
 	ruleCharacters: CharacterId[];
 	/**
+	 * Abilities the Storyteller holds, each given by a character's `givesAbility` rule (the
+	 * Plague Doctor's Minion, https://wiki.bloodontheclocktower.com/Plague_Doctor), shown on
+	 * the board with the Fabled and Loric (Trevor, 2026-10-30). At most one per giver.
+	 * Absent while none.
+	 */
+	storytellerAbilities?: HeldAbility[];
+	/**
 	 * Reminders held by a Fabled or Loric in play, by its id (Trevor, 2026-10-17). Optional,
 	 * so older saved games read as before; removing the character takes its reminders away.
 	 */

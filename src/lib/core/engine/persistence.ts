@@ -16,7 +16,7 @@ import { scriptEdition } from '#lib/core/data/script.ts';
 import type { GameId } from '#lib/core/model/index.ts';
 import type { GameLog, GameSession } from './log.ts';
 
-export const SAVED_GAME_VERSION = 22;
+export const SAVED_GAME_VERSION = 23;
 
 export interface SavedGame {
 	schemaVersion: typeof SAVED_GAME_VERSION;
@@ -234,11 +234,19 @@ const migrateV19toV20: Migration = (doc) => ({ ...doc, schemaVersion: 20 });
 const migrateV20toV21: Migration = (doc) => ({ ...doc, schemaVersion: 21 });
 
 /**
- * Version 22 (2026-10-30) added a late player joining mid-draw (the `TileRecast`, `TileAdded`
- * and `TileRemoved` events). The log needs no change; the bump makes older builds refuse a
- * version 22 save instead of failing on the unknown events.
+ * Version 22 (2026-10-30) added abilities the Storyteller holds (`Game.storytellerAbilities`,
+ * the `StorytellerAbilitySet` event: the Plague Doctor's Minion). The log needs no change:
+ * an older game has none. The bump makes older builds refuse a version 22 save instead of
+ * failing on the unknown event.
  */
 const migrateV21toV22: Migration = (doc) => ({ ...doc, schemaVersion: 22 });
+
+/**
+ * Version 23 (2026-10-30) added a late player joining mid-draw (the `TileRecast`, `TileAdded`
+ * and `TileRemoved` events). The log needs no change; the bump makes older builds refuse a
+ * version 23 save instead of failing on the unknown events.
+ */
+const migrateV22toV23: Migration = (doc) => ({ ...doc, schemaVersion: 23 });
 
 /** `MIGRATIONS[n]` migrates version `n` to `n + 1`. Version 1 is the first saved shape. */
 export const MIGRATIONS: Readonly<Record<number, Migration>> = {
@@ -262,7 +270,8 @@ export const MIGRATIONS: Readonly<Record<number, Migration>> = {
 	18: migrateV18toV19,
 	19: migrateV19toV20,
 	20: migrateV20toV21,
-	21: migrateV21toV22
+	21: migrateV21toV22,
+	22: migrateV22toV23
 };
 
 export function toSavedGame(session: GameSession, savedAt: number): SavedGame {

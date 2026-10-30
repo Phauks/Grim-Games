@@ -4,7 +4,7 @@
  */
 import {
 	cleanBallot,
-	endScriptVoteSoon,
+	endScriptVoteNow,
 	newScriptVote,
 	scriptVoteEnded,
 	tallyScriptVote,
@@ -57,10 +57,10 @@ export function showScriptVoteTally(room: RoomState, show: unknown): RoomState {
 	return { ...room, scriptVote: show ? { ...rest, showTally: true } : rest };
 }
 
-/** Ends the open script vote after a final call (endScriptVoteSoon). */
+/** Ends the open script vote now: no more ballots (endScriptVoteNow). */
 export function endScriptVote(room: RoomState, now: number): RoomState {
 	if (!room.scriptVote) return room;
-	const vote = endScriptVoteSoon(room.scriptVote, now);
+	const vote = endScriptVoteNow(room.scriptVote, now);
 	return vote === room.scriptVote ? room : { ...room, scriptVote: vote };
 }
 
