@@ -89,6 +89,7 @@
 		seats: town.seats,
 		layout: town.layout,
 		storytellerName: town.storytellerName,
+		storyteller: town.storyteller,
 		corner: town.corner,
 		look,
 		picture,

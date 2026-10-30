@@ -30,7 +30,7 @@
 		/** Game info for this town, read only (TownGameInfo). */
 		info?: {
 			meta: ScriptMeta;
-			table?: Pick<PublicGameState, 'storytellerName' | 'corner'>;
+			table?: Pick<PublicGameState, 'storytellerName' | 'storyteller' | 'corner'>;
 			roomCode?: string;
 		};
 		/** Placed in the town's top right itself, for a town without Full screen's corner. */
@@ -96,6 +96,7 @@
 		bind:open={infoOpen}
 		meta={info.meta}
 		storytellerName={info.table?.storytellerName}
+		storyteller={info.table?.storyteller}
 		corner={info.table?.corner}
 		roomCode={info.roomCode}
 	/>{/if}

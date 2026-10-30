@@ -4,7 +4,7 @@
 	import type { ScriptMeta } from '#lib/core/data/index.ts';
 	import type { Game } from '#lib/core/model/index.ts';
 	import { gameClock } from '#lib/core/rules/index.ts';
-	import type { PublicCorner } from '#lib/core/sync/public-projection.ts';
+	import type { PublicCorner, PublicStoryteller } from '#lib/core/sync/public-projection.ts';
 	import { formatRoomCode } from '#lib/core/sync/room-code.ts';
 	import ModeMenu from '#lib/features/modes/ModeMenu.svelte';
 	import TownGameInfo from '#lib/features/modes/TownGameInfo.svelte';
@@ -29,7 +29,7 @@
 		/** A spectator's board: nothing to share or edit. */
 		watching?: boolean;
 		/** A player's grim: its name opens Game info, read only, for this room (TownGameInfo). */
-		townInfo?: { roomCode?: string };
+		townInfo?: { roomCode?: string; storyteller?: PublicStoryteller };
 		/** The lines under the name, as the Storyteller's board shows them (corner-lines.ts). */
 		corner?: PublicCorner;
 		/** The join code to show; the room this device runs, if not given. */
@@ -265,7 +265,8 @@
 				{meta}
 				storytellerName={storyteller}
 				{corner}
-				roomCode={townInfo.roomCode}>{@render nameLine()}</TownGameInfo
+				roomCode={townInfo.roomCode}
+				storyteller={townInfo.storyteller}>{@render nameLine()}</TownGameInfo
 			>{:else}{@render nameLine()}{/if}
 		<!-- The mode and rules take the author's line: a line each where the corner has room
 		     for them all (corner-room.ts), else one line joined with " + ". -->
