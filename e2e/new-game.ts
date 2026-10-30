@@ -1,4 +1,6 @@
 import { expect, type Page } from '@playwright/test';
+import { setPlayerName } from './player-name.ts';
+import { openSettingsDialog } from './shell.ts';
 
 const BASE_THREE = ['Trouble Brewing', 'Bad Moon Rising', 'Sects & Violets'];
 
@@ -20,17 +22,15 @@ export async function pickScript(page: Page, name: string): Promise<void> {
 }
 
 /**
- * Names the Storyteller of the game on the board, on its Characters screen, where the name
- * is typed (Trevor, 2026-10-19), then comes back to the board.
+ * Names the Storyteller: the Profile's name, set from Settings over the board, which the board
+ * then gives its game (Trevor, 2026-10-30: "All connected to profile name").
  */
 export async function nameStoryteller(page: Page, name: string): Promise<void> {
-	const board = new URL(page.url()).pathname;
-	await page.goto(`${board}/setup`);
-	const field = page.getByRole('textbox', { name: 'Storyteller' });
-	await field.fill(name);
-	await field.press('Enter');
-	await page.goto(board);
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	const settings = await openSettingsDialog(page);
+	await settings.getByRole('button', { name: 'Profile', exact: true }).tap();
+	await setPlayerName(page, name);
+	await page.keyboard.press('Escape');
+	await expect(settings).toBeHidden();
 }
 
 /**

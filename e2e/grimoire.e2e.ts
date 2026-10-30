@@ -5590,49 +5590,33 @@ test('a big name badge beside a dialog title shrinks instead of squeezing the ti
 	expect(badge!.x + badge!.width).toBeLessThanOrEqual(close!.x);
 });
 
-test('the Storyteller is named on the Characters screen and renamed from the corner', async ({
-	page
-}) => {
-	// Trevor, 2026-10-19: the name goes "on the screen you pick characters, not on the new game
-	// screen", and is edited "in bottom left of screen" (the corner script name's Game info).
-	await page.goto('/new');
-	await expect(page.getByRole('textbox', { name: 'Storyteller' })).toHaveCount(0);
+test('the Storyteller is the Profile’s name, set nowhere else', async ({ page }) => {
+	// Trevor, 2026-10-30: "No longer allow setting storyteller name from app. All connected to
+	// profile name".
 	await startGame(page);
 	const board = new URL(page.url()).pathname;
 	await page.goto(`${board}/setup`);
-	const field = page.getByRole('textbox', { name: 'Storyteller' });
-	await expect(field).toHaveValue('');
-	await field.fill('Trev');
-	await field.press('Enter');
-	await page.reload();
-	await expect(field).toHaveValue('Trev');
-	// The ⋯ menu has no Storyteller entry; Game info has the name.
+	await expect(page.getByRole('textbox', { name: 'Storyteller' })).toHaveCount(0);
 	await page.goto(board);
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	const more = page.getByRole('dialog', { name: 'Grimoire' });
-	await expect(more.getByRole('button', { name: 'Storyteller', exact: true })).toHaveCount(0);
-	await page.keyboard.press('Escape');
-	await expect(more).toBeHidden();
 	await openGameInfo(page);
 	const info = page.getByRole('dialog', { name: 'Game info', exact: true });
-	// A small pencil by the Storyteller's name, and no buttons in Game info's header
-	// (Trevor, 2026-10-27).
-	await expect(info.locator('.head-actions')).toHaveCount(0);
-	await info.locator('tr[data-field="storyteller"]').getByTestId('game-info-edit').tap();
+	const name = info.locator('tr[data-field="storyteller"] td:last-child');
+	await expect(name).toHaveText('None');
+	await expect(info.getByTestId('game-info-edit')).toHaveCount(0);
+	await page.keyboard.press('Escape');
 	await expect(info).toBeHidden();
-	const dialog = page.getByRole('dialog', { name: 'Edit game info' });
-	const name = dialog.getByRole('textbox', { name: 'Storyteller' });
-	await expect(name).toHaveValue('Trev');
-	await name.fill('Sam');
-	await dialog.getByRole('button', { name: 'Confirm' }).tap();
-	await expect(dialog).toBeHidden();
-	await page.goto(`${board}/setup`);
-	await expect(field).toHaveValue('Sam');
-	// A new game offers the name typed last.
+
+	// Renaming the Profile renames the game in play.
+	await nameStoryteller(page, 'Trev');
+	await openGameInfo(page);
+	await expect(name).toHaveText('Trev');
+	await page.keyboard.press('Escape');
+
+	// A new game starts with it.
 	await page.goto('/new');
 	await startGame(page);
-	await page.goto(`${new URL(page.url()).pathname}/setup`);
-	await expect(field).toHaveValue('Trev');
+	await openGameInfo(page);
+	await expect(name).toHaveText('Trev');
 });
 
 test('the corner script name opens the game’s info, in a Standard game too', async ({ page }) => {
