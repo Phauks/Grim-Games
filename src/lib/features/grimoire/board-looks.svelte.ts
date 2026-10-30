@@ -1,3 +1,9 @@
+import {
+	DEFAULT_REMINDER_LINES,
+	parseReminderLines,
+	type ReminderLines
+} from './reminder-lines.ts';
+
 /**
  * How the board looks on this device, for every game (Trevor, 2026-10-17), shown beside the
  * background where it takes effect and in Settings:
@@ -11,7 +17,8 @@
  * - whether reminders are held by their seat or stay where they are dropped;
  * - how a dead player's used ghost vote looks on their badge;
  * - the frame round seat tokens whose player has not picked their own (L4);
- * - which reminders light up while a seat's token is held.
+ * - which reminders light up while a seat's token is held;
+ * - when a reminder shows its line back to its seat (reminder-lines.ts).
  */
 export interface BoardLooks {
 	vignette: boolean;
@@ -41,6 +48,8 @@ export interface BoardLooks {
 	 * ('struck') (Trevor, 2026-10-19: both looks, picked in Settings).
 	 */
 	usedGhostVote: 'hollow' | 'struck';
+	/** When a reminder shows its line back to its seat (Trevor, 2026-10-29). */
+	reminderLines: ReminderLines;
 }
 
 /** The player name badge's size range (Trevor, 2026-10-17: "should be an option"). */
@@ -61,7 +70,8 @@ export const DEFAULT_BOARD_LOOKS: BoardLooks = {
 	nameSize: 1,
 	nameOffset: 0,
 	reminders: 'seat',
-	usedGhostVote: 'hollow'
+	usedGhostVote: 'hollow',
+	reminderLines: DEFAULT_REMINDER_LINES
 };
 const KEY = 'grim.boardLooks';
 
@@ -91,7 +101,8 @@ export function parseBoardLooks(raw: unknown): BoardLooks {
 			? Math.min(NAME_OFFSET.max, Math.max(NAME_OFFSET.min, nameOffset))
 			: DEFAULT_BOARD_LOOKS.nameOffset,
 		reminders: value.reminders === 'free' ? 'free' : 'seat',
-		usedGhostVote: value.usedGhostVote === 'struck' ? 'struck' : 'hollow'
+		usedGhostVote: value.usedGhostVote === 'struck' ? 'struck' : 'hollow',
+		reminderLines: parseReminderLines(value.reminderLines)
 		// Earlier builds' `reminderStacks` switch is dropped: every reminder is always on the
 		// board (Trevor, 2026-10-23). So is `dragSource`: a dragged reminder no longer names
 		// where it came from (Trevor, 2026-10-24). `holdLights` and `holdMoves` too: holding a

@@ -73,9 +73,15 @@ test('a long script goes across as an animated code', async ({ page, browser }, 
 
 	await page.getByRole('button', { name: 'Share script' }).tap();
 	const share = page.getByRole('dialog', { name: 'Share', exact: true });
+	const link = share.getByTestId('share-url');
+	await expect(link).not.toHaveValue('');
+	const before = await link.boundingBox();
 	await share.getByText('Offline code', { exact: true }).tap();
 	const qr = share.getByRole('img', { name: 'Offline code for Long Homebrew' });
 	await expect(qr).toBeVisible();
+	// The offline warning on the QR's edge moves nothing below it (Trevor, 2026-10-29).
+	await expect(share.getByTestId('qr-caption')).toBeVisible();
+	expect(await link.boundingBox()).toEqual(before);
 	// The frames take turns in the QR's place.
 	const pattern = qr.getByTestId('qr-pattern');
 	const first = await pattern.getAttribute('d');

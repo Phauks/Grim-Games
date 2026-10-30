@@ -1,4 +1,4 @@
-import { TEAM_COLORS, TEAM_TEXT } from '../team-colors.ts';
+import { FIXED_COLORS, TEAM_TEXT } from '../team-colors.ts';
 import type { Theme } from '../types.ts';
 
 /**
@@ -31,8 +31,6 @@ export const grimoire: Theme = {
 		'--palette-gold-400': '#e7c873',
 		'--palette-arcane-600': '#5c3d8a',
 		'--palette-plum-700': '#563463',
-		'--palette-ochre-800': '#6b4a10',
-		'--palette-grass-700': '#2e6b34',
 		'--palette-grass-400': '#6fb862',
 		'--palette-violet-400': '#a77fcf',
 		'--palette-leaf-500': '#5f9a3c',
@@ -53,20 +51,14 @@ export const grimoire: Theme = {
 		'--accent': 'var(--palette-blood-700)',
 		'--on-accent': 'var(--palette-parchment-100)',
 		'--focus': 'var(--palette-gold-400)',
-		// The team colours are the same in every theme (team-colors.ts).
-		...TEAM_COLORS,
+		// The team, Fabled and Loric colours are the same in every theme (team-colors.ts).
+		...FIXED_COLORS,
 		...TEAM_TEXT.dark,
 		'--traveller': 'var(--palette-plum-700)',
 		'--on-traveller': 'var(--palette-parchment-100)',
 		// Traveller headings and labels: purple, as split blue and red reads badly on text
 		// (Trevor, 2026-10-18). Badges and reminder rims are split --good / --evil instead.
 		'--traveller-text': 'var(--palette-violet-400)',
-		'--fabled': 'var(--palette-ochre-800)',
-		'--on-fabled': 'var(--palette-parchment-100)',
-		// Loric in its own green (Trevor, 2026-10-18), with a lighter green for text on the page.
-		'--loric': 'var(--palette-grass-700)',
-		'--on-loric': 'var(--palette-parchment-100)',
-		'--loric-text': 'var(--palette-grass-400)',
 		'--leaf': 'var(--palette-leaf-500)',
 		'--token-flower': 'var(--palette-amber-500)',
 		'--token-flower-centre': 'var(--palette-gold-400)',

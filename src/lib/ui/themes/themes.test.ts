@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ICON_SETS, ICON_SLOTS, isIconChoice, type IconSlot } from '#lib/ui/icons/catalogue.ts';
 import { contrastRatio, resolveToken } from './contrast.ts';
 import { THEMES } from './registry.ts';
-import { TEAM_COLORS } from './team-colors.ts';
+import { FIXED_COLORS } from './team-colors.ts';
 import { EDGE_PAIRS, SEMANTIC_TOKENS, TEXT_PAIRS } from './types.ts';
 
 describe('contrast helpers', () => {
@@ -21,10 +21,10 @@ describe.each(THEMES.map((theme) => [theme.id, theme] as const))('theme %s', (_,
 
 	// The good blue and evil red are the same in every theme (Trevor, 2026-10-28).
 	it('uses the fixed team colours', () => {
-		for (const [token, color] of Object.entries(TEAM_COLORS)) {
+		for (const [token, color] of Object.entries(FIXED_COLORS)) {
 			expect(resolveToken(token, table), token).toBe(color);
 		}
-		for (const token of Object.keys(TEAM_COLORS)) {
+		for (const token of Object.keys(FIXED_COLORS)) {
 			expect(theme.components ?? {}, token).not.toHaveProperty(token);
 		}
 	});

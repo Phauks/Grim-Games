@@ -117,13 +117,14 @@
 	td {
 		border-inline-start: 1px solid var(--border);
 	}
+	/* Each type's name in its tokens' blue or red, whatever the theme (Trevor, 2026-10-29). */
 	tbody tr[data-type='townsfolk'] th,
 	tbody tr[data-type='outsider'] th {
-		color: var(--good-text);
+		color: var(--good);
 	}
 	tbody tr[data-type='minion'] th,
 	tbody tr[data-type='demon'] th {
-		color: var(--evil-text);
+		color: var(--evil);
 	}
 	button {
 		width: 100%;

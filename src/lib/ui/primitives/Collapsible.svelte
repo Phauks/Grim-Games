@@ -24,6 +24,7 @@
 	import { untrack, type Snippet } from 'svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import CountBadge from './CountBadge.svelte';
+	import type { TypeTone } from '#lib/core/data/character-type.ts';
 
 	interface Props {
 		title: string;
@@ -31,9 +32,8 @@
 		storageKey?: string;
 		/** Heading level of the title. */
 		level?: 2 | 3 | 4;
-		/** Colours the title by alignment, for character type groups. */
 		/** A character type's colour family (`typeTone`). */
-		tone?: 'good' | 'evil' | 'traveller' | 'loric';
+		tone?: TypeTone;
 		/**
 		 * Shown open regardless of the remembered choice, e.g. while a search is typed so every
 		 * match is visible. The header can't close it meanwhile; the remembered choice is kept.
@@ -187,17 +187,21 @@
 		cursor: pointer;
 		touch-action: manipulation;
 	}
+	/* A character type's heading takes its tokens' colour in every theme (Trevor, 2026-10-29). */
 	.head[data-tone='good'] .toggle {
-		color: var(--good-text);
+		color: var(--good);
 	}
 	.head[data-tone='evil'] .toggle {
-		color: var(--evil-text);
+		color: var(--evil);
 	}
 	.head[data-tone='traveller'] .toggle {
 		color: var(--traveller-text);
 	}
+	.head[data-tone='fabled'] .toggle {
+		color: var(--fabled);
+	}
 	.head[data-tone='loric'] .toggle {
-		color: var(--loric-text);
+		color: var(--loric);
 	}
 	.toggle[aria-disabled='true'] {
 		cursor: default;

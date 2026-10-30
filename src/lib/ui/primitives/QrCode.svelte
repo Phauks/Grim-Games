@@ -120,8 +120,8 @@
 	}
 	:global(.qr[data-scope='qr-code']:has(.qr-caption)) {
 		position: relative;
-		/* Room below for the caption's lower half. */
-		margin-bottom: 0.8em;
+		/* Room below for the caption's lower half; a caller that keeps it anyway sets 0. */
+		margin-bottom: var(--qr-caption-room, 0.8em);
 	}
 	.qr-caption {
 		position: absolute;

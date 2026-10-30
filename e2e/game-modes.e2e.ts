@@ -1204,11 +1204,9 @@ test('A Script of Infinite Possibilities rolls hidden characters from off the sc
 		.getByRole('dialog', { name: 'Special rules in this game' })
 		.getByRole('button', { name: 'Create game' })
 		.tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/extras$/);
-	// Named for the rules, since the characters may not stay hidden; the rule that opened the
-	// screen sits at its top (Trevor, 2026-10-23).
-	await expect(page.getByRole('heading', { name: 'Special rules', level: 1 })).toBeVisible();
-	await expect(page.getByTestId('rule-header')).toContainText('A Script of Infinite Possibilities');
+	// Picked on Character selection, no step of their own (Trevor, 2026-10-29).
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
+	await expect(page.getByTestId('setup-off-script')).toContainText('Off the script');
 	const extras = page.getByTestId('extras').locator('li');
 	// Up to four, one of each type (Trevor, 2026-10-19).
 	await expect(extras).toHaveCount(4);
@@ -1272,8 +1270,6 @@ test('A Script of Infinite Possibilities rolls hidden characters from off the sc
 		.locator('[data-character-id]')
 		.evaluateAll((els) => els.map((el) => el.getAttribute('data-character-id')!));
 	expect(hidden).toHaveLength(2);
-	await page.getByRole('button', { name: 'Choose characters' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 	// Off the script but chosen for the bag: listed under their own types (Trevor,
 	// 2026-10-18), and not marked as off the script, since the rule put them in play
 	// (Trevor, 2026-10-23).
@@ -1291,7 +1287,7 @@ test('A Script of Infinite Possibilities rolls hidden characters from off the sc
 	await expect(page.locator(`.main[data-character-id="${hidden[1]}"]`)).toBeVisible();
 });
 
-test('with no hidden character, Infinite Possibilities can’t go on to the setup', async ({
+test('with no hidden character, Infinite Possibilities says how many are needed', async ({
 	page
 }) => {
 	await page.goto('/new');
@@ -1301,9 +1297,11 @@ test('with no hidden character, Infinite Possibilities can’t go on to the setu
 		.getByRole('dialog', { name: 'Special rules in this game' })
 		.getByRole('button', { name: 'Create game' })
 		.tap();
-	await expect(page).toHaveURL(/\/extras$/);
+	await expect(page).toHaveURL(/\/setup$/);
 	const extras = page.getByTestId('extras').locator('li');
 	await expect(extras).toHaveCount(4);
+	const needed = page.getByTestId('extras-needed');
+	await expect(needed).toBeHidden();
 	// The roll fills at least one row.
 	await expect(
 		extras.getByRole('button', { name: /^Roll again instead of / }).first()
@@ -1313,7 +1311,9 @@ test('with no hidden character, Infinite Possibilities can’t go on to the setu
 		const clear = extras.nth(i).getByRole('button', { name: `Clear the hidden ${type}` });
 		if (await clear.isEnabled()) await clear.tap();
 	}
-	await expect(page.getByRole('button', { name: 'Choose characters' })).toBeDisabled();
+	// A warning, never a lock (the Storyteller overrides anything); its line is always there.
+	await expect(needed).toBeVisible();
+	await expect(needed).toHaveText('1–4 needed');
 });
 
 test('Flesh and Bone runs a campaign: the next game adds a Demon once the current game has ended', async ({
@@ -1979,36 +1979,35 @@ test('+1 adds exactly one character from off the script', async ({ page }) => {
 		.getByRole('dialog', { name: 'Special rules in this game' })
 		.getByRole('button', { name: 'Create game' })
 		.tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/extras$/);
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 	const extras = page.getByTestId('extras').locator('li');
 	await expect(extras).toHaveCount(4);
 	// The roll fills one row; the table is told there is one, so no range is offered.
 	const filled = extras.getByRole('button', { name: /^Roll again instead of / });
 	await expect(filled).toHaveCount(1);
 	await expect(page.getByTestId('extras-range')).toHaveCount(0);
-	const next = page.getByRole('button', { name: 'Choose characters' });
-	await expect(next).toBeEnabled();
+	const needed = page.getByTestId('extras-needed');
+	await expect(needed).toBeHidden();
 	// A second one is too many.
 	for (const [i, type] of ['Townsfolk', 'Outsider', 'Minion', 'Demon'].entries()) {
 		const clear = extras.nth(i).getByRole('button', { name: `Clear the hidden ${type}` });
 		if (await clear.isEnabled()) await clear.tap();
 	}
-	await expect(next).toBeDisabled();
+	await expect(needed).toHaveText('1 needed');
+	await expect(needed).toBeVisible();
 	await extras.nth(1).getByRole('button', { name: 'Choose a hidden Outsider' }).tap();
 	const picker = page.getByRole('dialog', { name: 'Choose a hidden Outsider' });
 	await picker.getByRole('searchbox').fill('Goon');
 	await picker.getByRole('button', { name: /^Goon\b/ }).tap();
-	await expect(next).toBeEnabled();
+	await expect(needed).toBeHidden();
 	await extras.nth(2).getByRole('button', { name: 'Choose a hidden Minion' }).tap();
 	const minions = page.getByRole('dialog', { name: 'Choose a hidden Minion' });
 	await minions.getByRole('searchbox').fill('Witch');
 	await minions.getByRole('button', { name: /^Witch\b/ }).tap();
-	await expect(next).toBeDisabled();
+	await expect(needed).toBeVisible();
 	await extras.nth(2).getByRole('button', { name: 'Clear the hidden Minion' }).tap();
 	await noSidewaysScroll(page);
 
-	await next.tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 	// Listed, but not marked as off the script: +1 put it in play (Trevor, 2026-10-23).
 	await expect(page.locator('.main[data-character-id="goon"]')).toHaveAttribute(
 		'aria-pressed',
@@ -2029,8 +2028,8 @@ test('Game info’s Special rules opens the screen once the game is set up', asy
 		.getByRole('dialog', { name: 'Special rules in this game' })
 		.getByRole('button', { name: 'Create game' })
 		.tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/extras$/);
-	const board = new URL(page.url()).pathname.replace(/\/extras$/, '');
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
+	const board = new URL(page.url()).pathname.replace(/\/setup$/, '');
 	const extras = page.getByTestId('extras').locator('li');
 	for (const [i, type] of ['Townsfolk', 'Outsider', 'Minion', 'Demon'].entries()) {
 		const clear = extras.nth(i).getByRole('button', { name: `Clear the hidden ${type}` });
@@ -2040,8 +2039,6 @@ test('Game info’s Special rules opens the screen once the game is set up', asy
 	const picker = page.getByRole('dialog', { name: 'Choose a hidden Outsider' });
 	await picker.getByRole('searchbox').fill('Goon');
 	await picker.getByRole('button', { name: /^Goon\b/ }).tap();
-	await page.getByRole('button', { name: 'Choose characters' }).tap();
-	await expect(page).toHaveURL(`${board}/setup`);
 	for (let n = 8; n > 5; n--) await page.getByRole('button', { name: 'Fewer players' }).tap();
 	for (const name of ['Washerwoman', 'Empath', 'Poisoner', 'Imp'])
 		await page

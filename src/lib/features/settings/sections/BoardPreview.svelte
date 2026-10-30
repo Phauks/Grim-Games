@@ -15,6 +15,7 @@
 	import { defaultBackground } from '#lib/features/grimoire/default-background.svelte.ts';
 	import ReminderCount from '#lib/features/grimoire/ReminderCount.svelte';
 	import { stepFocus } from '#lib/features/grimoire/step-focus.svelte.ts';
+	import { lineShown } from '#lib/features/grimoire/reminder-lines.ts';
 	import BoardLogo from '#lib/features/scripts/BoardLogo.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
@@ -132,6 +133,22 @@
 		].join(' + ')
 	);
 	const loose = $derived(boardLooks.current.reminders === 'free');
+	/**
+	 * The sample reminder's line back to Sam (ReminderTethers), by Reminder lines: from the
+	 * token's rim towards the reminder tucked against its right. Seat-relative px.
+	 */
+	const tether = $derived.by(() => {
+		const seat = { x: size / 2, y: size / 2 };
+		const at = { x: size + chip / 2, y: chip / 2 };
+		const mode = boardLooks.current.reminderLines;
+		if (loose || !lineShown(mode, { seat, at, size, chip, held: false })) return undefined;
+		const d = Math.hypot(at.x - seat.x, at.y - seat.y);
+		const rim = {
+			x: seat.x + ((at.x - seat.x) / d) * (size / 2),
+			y: seat.y + ((at.y - seat.y) / d) * (size / 2)
+		};
+		return { from: rim, to: at };
+	});
 	const rulesSize = $derived(
 		boardLooks.current.rulesAt === 'middle' ? Math.round(size * 0.6) : Math.round(size * 0.4)
 	);
@@ -207,6 +224,12 @@
 					{#snippet face()}{#if token}<CharacterToken character={token} {size} />{/if}{/snippet}
 				</SeatDisc>
 				<!-- The Washerwoman's "Townsfolk" on Sam: beside the seat, or where it was dropped. -->
+				{#if i === 0 && tether}<svg
+						class="preview-tether"
+						aria-hidden="true"
+						data-testid="preview-tether"
+						><line x1={tether.from.x} y1={tether.from.y} x2={tether.to.x} y2={tether.to.y} /></svg
+					>{/if}
 				{#if i === 0}<span class="seat-reminder" class:loose data-testid="preview-seat-reminder"
 						>{@render reminder(STEP, 0, 'good')}</span
 					>{/if}
@@ -287,6 +310,19 @@
 		position: absolute;
 		left: 100%;
 		top: 0;
+	}
+	.preview-tether {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		overflow: visible;
+		pointer-events: none;
+	}
+	.preview-tether line {
+		stroke: var(--on-surface);
+		stroke-opacity: 0.35;
+		stroke-width: 1.5;
 	}
 	.seat-reminder.loose {
 		left: 115%;

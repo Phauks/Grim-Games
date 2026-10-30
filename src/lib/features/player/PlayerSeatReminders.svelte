@@ -6,11 +6,14 @@
 	import { avoidBoxes, toPercent, toPx } from '#lib/features/grimoire/board-geometry.ts';
 	import type { Box } from '#lib/features/grimoire/name-placement.ts';
 	import { fitReminders } from '#lib/features/grimoire/reminder-fan.ts';
+	import ReminderTethers from '#lib/features/grimoire/ReminderTethers.svelte';
+	import { playerSettings } from './player-settings.svelte.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import type { SeatPoint } from '#lib/ui/seating/seat-layout.ts';
 	import {
 		isGenericReminder,
 		placedKey,
+		reminderChip,
 		remindersOn,
 		type PlayerReminders
 	} from './player-reminders.ts';
@@ -19,7 +22,9 @@
 	/**
 	 * The player's own reminders on their grim (Trevor, 2026-10-26), lined up in front of each
 	 * seat towards the middle as on the board (reminder-fan.ts), at the board's reminder size and
-	 * never under a finger's tap target. A tap opens the seat's reminders. Goes inside the town.
+	 * never under a finger's tap target, each with the board's line back to its seat (Trevor,
+	 * 2026-10-29), by the player's own Reminder lines. A tap opens the seat's reminders. Goes
+	 * inside the town.
 	 */
 	interface Props {
 		seats: readonly PublicSeat[];
@@ -35,19 +40,24 @@
 		notes: Readonly<SeatNotes>;
 		characterOf: (id: CharacterId) => Character | undefined;
 		onOpen: (seat: PublicSeat) => void;
+		/** The seat whose token or reminder a finger is on, for "While held" lines. */
+		held?: string;
 	}
 
-	let { seats, points, board, size, reminders, names, notes, characterOf, onOpen }: Props =
-		$props();
+	let {
+		seats,
+		points,
+		board,
+		size,
+		reminders,
+		names,
+		notes,
+		characterOf,
+		onOpen,
+		held = $bindable()
+	}: Props = $props();
 
-	const chip = $derived(
-		Math.max(
-			44,
-			Math.round(
-				Math.max(30, Math.min(48, size * 0.5)) * preferences.current.tokenAppearance.reminderScale
-			)
-		)
-	);
+	const chip = $derived(reminderChip(size, preferences.current.tokenAppearance.reminderScale));
 	const fan = $derived.by(() => {
 		if (board.width <= 0 || board.height <= 0) return seats.map(() => []);
 		return fitReminders(
@@ -74,10 +84,32 @@
 	});
 </script>
 
+<!-- Lifting a finger anywhere lets go of the seat. -->
+<svelte:window onpointerup={() => (held = undefined)} onpointercancel={() => (held = undefined)} />
+
+<ReminderTethers
+	seats={seats.map((seat, i) => ({
+		at: points[i],
+		spots: fan[i] ?? [],
+		held: held === seat.seatId
+	}))}
+	{board}
+	{size}
+	{chip}
+	mode={playerSettings.current.reminderLines}
+	under
+/>
+
 {#each seats as seat, i (seat.seatId)}
 	{#each remindersOn(reminders, seat.seatId) as reminder, k (placedKey(reminder))}
 		{@const p = fan[i]?.[k] ?? points[i]}
-		<div class="chip-slot" style:left="{p?.x ?? 50}%" style:top="{p?.y ?? 50}%">
+		<div
+			class="chip-slot"
+			role="presentation"
+			onpointerdown={() => (held = seat.seatId)}
+			style:left="{p?.x ?? 50}%"
+			style:top="{p?.y ?? 50}%"
+		>
 			<BoardReminder
 				label={isGenericReminder(reminder)
 					? ((reminder.note ?? '') as ReminderLabel)

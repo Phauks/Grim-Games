@@ -1,6 +1,11 @@
 import { parseAvatarId, type AvatarId } from '#lib/core/avatars/index.ts';
 import { parseFrameId, type FrameId } from '#lib/core/frames/index.ts';
 import { SHEET_BACKGROUNDS, type SheetBackground } from '#lib/ui/themes/sheet-backgrounds.ts';
+import {
+	DEFAULT_REMINDER_LINES,
+	parseReminderLines,
+	type ReminderLines
+} from '#lib/features/grimoire/reminder-lines.ts';
 
 /**
  * Player view settings, kept in this browser only. Separate from the app's shared
@@ -50,6 +55,11 @@ export interface PlayerSettings {
 	 * neutral colours in place of 2026-10-23's light switch, whose on reads as parchment).
 	 */
 	sheetBackground: SheetBackground;
+	/**
+	 * Grim tab: when the player's own reminders show their line back to their seat (Trevor,
+	 * 2026-10-29), as the Storyteller's board does with its own choice.
+	 */
+	reminderLines: ReminderLines;
 }
 
 /** `auto` fits each side to one page, as before; the others fix that choice. */
@@ -117,7 +127,8 @@ const DEFAULTS: PlayerSettings = {
 	hideGuesses: false,
 	matchShape: false,
 	townMatchShape: true,
-	sheetBackground: 'theme'
+	sheetBackground: 'theme',
+	reminderLines: DEFAULT_REMINDER_LINES
 };
 
 /** The longest flavour text kept. */
@@ -143,7 +154,8 @@ function read(): PlayerSettings {
 			townMatchShape: raw.townMatchShape !== false,
 			sheetBackground:
 				SHEET_BACKGROUNDS.find((b) => b === raw.sheetBackground) ??
-				(raw.lightSheet === true ? 'parchment' : DEFAULTS.sheetBackground)
+				(raw.lightSheet === true ? 'parchment' : DEFAULTS.sheetBackground),
+			reminderLines: parseReminderLines(raw.reminderLines)
 		};
 	} catch {
 		return DEFAULTS;

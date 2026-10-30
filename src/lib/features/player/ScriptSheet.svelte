@@ -353,17 +353,22 @@
 		font-size: 1.1rem;
 		color: var(--heading);
 	}
+	/* Townsfolk, Outsiders, Minions, Demons, Fabled and Loric take their tokens' colours in
+	   every theme (Trevor, 2026-10-29). */
 	section[data-tone='good'] h2 {
-		color: var(--good-text);
+		color: var(--good);
 	}
 	section[data-tone='evil'] h2 {
-		color: var(--evil-text);
+		color: var(--evil);
 	}
 	section[data-tone='traveller'] h2 {
 		color: var(--traveller-text);
 	}
+	section[data-tone='fabled'] h2 {
+		color: var(--fabled);
+	}
 	section[data-tone='loric'] h2 {
-		color: var(--loric-text);
+		color: var(--loric);
 	}
 
 	/* Compact: name and ability side by side, more per row (Trevor approved, 2026-10-16). */

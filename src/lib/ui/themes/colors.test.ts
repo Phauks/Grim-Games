@@ -20,6 +20,11 @@ describe('custom theme colours', () => {
 		).toEqual({});
 	});
 
+	// Nor the Fabled gold or Loric green (Trevor, 2026-10-29).
+	it('never lets a Fabled or Loric colour be changed', () => {
+		expect(parseColors({ '--fabled': '#00ff00', '--loric': '#00ff00' })).toEqual({});
+	});
+
 	it('warns about a custom pair under 4.5:1, and only for custom colours', () => {
 		expect(contrastWarnings(grimoire, {}, '--surface')).toEqual([]);
 		const warnings = contrastWarnings(grimoire, { '--surface': '#efe2c4' }, '--surface');
