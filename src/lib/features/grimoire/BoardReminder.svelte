@@ -10,6 +10,8 @@
 	import { ICON_SETS, withWeight } from '#lib/ui/icons/catalogue.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import { resolveIconSet } from '#lib/ui/preferences.ts';
+	import { shownReminderSize } from '#lib/ui/seating/last-board.svelte.ts';
+	import { innerHeight, innerWidth } from 'svelte/reactivity/window';
 
 	/**
 	 * A reminder token on the board, as in the physical grimoire: a round parchment token
@@ -19,8 +21,8 @@
 	interface Props {
 		label: ReminderLabel;
 		character: Character | undefined;
-		/** Diameter in px. */
-		size: number;
+		/** Diameter in px; left out, the board's size for it, never under the tap target (off the board). */
+		size?: number;
 		/**
 		 * Alignment of the player whose character put the token down: the icon is drawn in
 		 * its colour, so a turned-evil good player's reminders are red (Trevor, 2026-10-16).
@@ -47,7 +49,12 @@
 		disabled?: boolean;
 		/** What a screen reader says for it, when tapping it does something else (opens its actions). */
 		ariaLabel?: string;
-		onTap: () => void;
+		/**
+		 * Left out, the token is only a picture of itself (a list of a character's tokens), so
+		 * it can sit inside a button of its own (Trevor, 2026-10-30: tokens, not chips, outside
+		 * a sentence).
+		 */
+		onTap?: () => void;
 		/** Pointer position in client px while dragging; `end` true when released. */
 		onDrag?: (x: number, y: number, end: boolean) => void;
 		onCancel?: () => void;
@@ -62,7 +69,7 @@
 	let {
 		label,
 		character,
-		size,
+		size: given,
 		alignment,
 		more,
 		infinite = false,
@@ -79,6 +86,13 @@
 	}: Props = $props();
 
 	const appearance = $derived(preferences.current.tokenAppearance);
+	const size = $derived(
+		given ??
+			shownReminderSize(appearance, {
+				width: innerWidth.current ?? 0,
+				height: innerHeight.current ?? 0
+			})
+	);
 	// The owner's icon, always in the owner's alignment (Trevor, 2026-10-23).
 	const src = $derived(character ? reminderIconUrl(character, alignment) : undefined);
 	const artSrc = $derived(art && !symbol ? reminderIconUrl(art, undefined) : undefined);
@@ -195,7 +209,7 @@
 		} else if (dragging) onDrag?.(event.clientX, event.clientY, true);
 		else {
 			swallowNextClick(event.currentTarget);
-			onTap();
+			onTap?.();
 		}
 		down = null;
 		dragging = false;
@@ -209,8 +223,10 @@
 	}
 </script>
 
-<button
-	type="button"
+<svelte:element
+	this={onTap ? 'button' : 'span'}
+	type={onTap ? 'button' : undefined}
+	role={onTap ? undefined : 'img'}
 	class="reminder"
 	data-type={character?.type}
 	data-testid="board-reminder"
@@ -225,12 +241,12 @@
 			: infinite
 				? `Generic reminder${label ? `: ${label}` : ''}`
 				: `${label} reminder`)}
-	{disabled}
-	onpointerdown={pointerdown}
-	onpointermove={pointermove}
-	onpointerup={pointerup}
-	onpointercancel={pointercancel}
-	onclick={(event) => event.detail === 0 && onTap()}
+	disabled={onTap ? disabled : undefined}
+	onpointerdown={onTap && pointerdown}
+	onpointermove={onTap && pointermove}
+	onpointerup={onTap && pointerup}
+	onpointercancel={onTap && pointercancel}
+	onclick={onTap && ((event: MouseEvent) => event.detail === 0 && onTap())}
 >
 	{#if more}
 		<span class="more">+{more}</span>
@@ -261,7 +277,7 @@
 		<!-- eslint-disable-next-line grim/names-as-badges -- this is the reminder token on the board -->
 		{#if label}<span class="label" {@attach fitWords}>{label}</span>{/if}
 	{/if}
-</button>
+</svelte:element>
 
 <style>
 	.reminder {
@@ -305,6 +321,10 @@
 	.reminder[data-still] {
 		cursor: pointer;
 		touch-action: manipulation;
+	}
+	/* Only a picture of the token. */
+	span.reminder {
+		cursor: inherit;
 	}
 	.reminder:disabled {
 		cursor: default;

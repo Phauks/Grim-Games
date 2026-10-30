@@ -8,7 +8,8 @@
 	} from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
-	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
+	import BoardReminder from '#lib/features/grimoire/BoardReminder.svelte';
+	import ReminderTokenRow from '#lib/features/grimoire/ReminderTokenRow.svelte';
 
 	/**
 	 * The character as it will look, then what still stops it being saved, on the Character
@@ -30,11 +31,14 @@
 	<div class="token"><CharacterToken character={preview} /></div>
 	<CharacterBadge characterId={preview.id} character={preview} />
 	<p class="ability">{preview.ability || t('common.none')}</p>
-	<!-- Always there, so typing a reminder never moves the preview. -->
+	<!-- Always there, a token high, so typing a reminder never moves the preview; the tokens
+	     themselves, as on the board (Trevor, 2026-10-30). -->
 	<p class="reminders">
-		{#each [...preview.reminders, ...preview.remindersGlobal] as label, i (i)}
-			<ReminderToken {label} character={preview} />
-		{:else}{t('common.none')}{/each}
+		<ReminderTokenRow inline>
+			{#each [...preview.reminders, ...preview.remindersGlobal] as label, i (i)}
+				<BoardReminder {label} character={preview} />
+			{:else}{t('common.none')}{/each}
+		</ReminderTokenRow>
 	</p>
 </section>
 {@render children?.()}
@@ -63,12 +67,6 @@
 	.reminders {
 		margin: 0;
 		overflow-wrap: anywhere;
-	}
-	.reminders {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-1);
-		min-height: var(--tap-target);
 	}
 	.problems {
 		display: grid;

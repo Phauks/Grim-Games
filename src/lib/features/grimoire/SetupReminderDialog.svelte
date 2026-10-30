@@ -8,6 +8,7 @@
 	import { prepTextSegments } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
+	import BoardReminder from './BoardReminder.svelte';
 	import { seatName } from '#lib/features/game/seat-label.ts';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -43,8 +44,9 @@
 </script>
 
 <Dialog bind:open title="Setup reminder">
+	<!-- The token itself, as on the board (Trevor, 2026-10-30). -->
 	{#snippet heading()}
-		{#if shown}<ReminderToken
+		{#if shown}<BoardReminder
 				label={shown.suggestion.label}
 				character={characters.get(shown.suggestion.characterId)}
 			/>{/if}

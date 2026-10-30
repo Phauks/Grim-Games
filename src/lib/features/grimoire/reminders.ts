@@ -409,3 +409,22 @@ export function bankOwners(
 	}
 	return out.filter((o) => o.count > 0);
 }
+
+/**
+ * A placed reminder's look, for a `BoardReminder` off the board (a seat's sheet, a dialog
+ * about it): its words and, for a generic ∞ token, its symbol or copied art.
+ */
+export function placedLook(
+	reminder: ReminderInstance,
+	characters: ReadonlyMap<CharacterId, Character>
+) {
+	return {
+		label: reminderWords(reminder),
+		infinite: isGeneric(reminder),
+		symbol: reminder.symbol,
+		symbolColour: reminder.symbolColour,
+		symbolFill: reminder.symbolFill,
+		art: reminder.like ? characters.get(reminder.like.characterId) : undefined,
+		character: characters.get(reminder.characterId)
+	};
+}
