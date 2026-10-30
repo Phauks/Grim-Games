@@ -654,6 +654,21 @@ test('Execution ends the day and walks through tonight from Dusk', async ({ page
 	).toBeEnabled();
 });
 
+test('Execution sits as far from the bottom of the screen as from its side', async ({ page }) => {
+	await startGame(page);
+	await page.getByRole('button', { name: 'Day', exact: true }).tap();
+	const execution = page
+		.getByRole('dialog', { name: 'Day' })
+		.getByRole('button', { name: 'Execution' });
+	await expect(execution).toBeVisible();
+	// It touched the screen's bottom edge (Trevor, 2026-10-30).
+	const box = (await execution.boundingBox())!;
+	const { width, height } = page.viewportSize()!;
+	const side = width - (box.x + box.width);
+	expect(side).toBeGreaterThan(0);
+	expect(height - (box.y + box.height)).toBeCloseTo(side, 0);
+});
+
 // https://wiki.bloodontheclocktower.com/Flowergirl and /Town_Crier (How to Run: each day ends
 // with one of the two tokens on them).
 test('Execution asks whether the Demon voted and a Minion nominated, and places their tokens', async ({
