@@ -258,10 +258,8 @@
 				{#snippet aside()}
 					<Button
 						variant="quiet"
-						href={ownLink && account.user?.username
-							? profileHref(account.user.username)
-							: undefined}
-						disabled={!ownLink}>{t('friends.profile.open')}</Button
+						href={account.user?.username ? profileHref(account.user.username) : undefined}
+						disabled={!account.user?.username}>{t('friends.profile.open')}</Button
 					>
 				{/snippet}
 				{#if friendScripts.data}

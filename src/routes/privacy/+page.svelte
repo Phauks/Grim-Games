@@ -270,9 +270,9 @@
 			</li>
 			<li>
 				Your profile page shows your username, profile icon and the scripts you chose to show on it,
-				to anyone with its link, even without an account. Turning off finding you by username hides
-				it. A script you send a friend is kept on their account until they dismiss it; only the
-				newest 50 are kept.
+				to anyone with its link, even without an account, whether or not people can find you by
+				username. A script you send a friend is kept on their account until they dismiss it; only
+				the newest 50 are kept.
 			</li>
 			<li>
 				Someone can find you only by typing your exact username, and you can turn that off on the

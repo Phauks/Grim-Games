@@ -311,6 +311,8 @@ test('a script sent to a friend, and one shown on a profile anyone can open', as
 	await expect(inbox).toContainText(`From ${ann.username}`);
 	await inbox.getByRole('link', { name: 'Open' }).tap();
 	await expect(bob.page).toHaveURL(/\/scripts$/);
+	// Search shows it once saved; leaving sooner would drop the save.
+	await expect(bob.page.getByText('Friend Night').first()).toBeVisible();
 	await bob.page.goto('/library');
 	await expect(bob.page.getByText('Friend Night').first()).toBeVisible();
 	await bob.page.goto('/friends');
@@ -333,8 +335,16 @@ test('a script sent to a friend, and one shown on a profile anyone can open', as
 	await scripts.getByRole('link', { name: 'Open' }).tap();
 	await expect(stranger).toHaveURL(/\/scripts$/);
 
-	// Ann takes it off her profile on the Friends page.
+	// Published means public (Trevor, 2026-10-30): hiding from search leaves the profile open.
 	await ann.page.goto('/friends');
+	await ann.page.getByText('Let people find me by username', { exact: true }).tap();
+	await expect(
+		ann.page.getByRole('checkbox', { name: 'Let people find me by username', includeHidden: true })
+	).not.toBeChecked();
+	await stranger.goto(`/u/${ann.username}`);
+	await expect(stranger.getByTestId('profile-page-scripts')).toContainText('Friend Night');
+
+	// Ann takes it off her profile on the Friends page.
 	await ann.page
 		.getByTestId('profile-scripts')
 		.getByRole('button', { name: 'Remove Friend Night from your profile' })

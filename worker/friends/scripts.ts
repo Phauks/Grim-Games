@@ -1,7 +1,6 @@
 /**
  * Scripts between friends (plan F9, F10): `/api/friends/scripts/*` for the signed-in account,
- * and `/api/profiles/<username>`, the scripts an account publishes, which anyone may read
- * unless it turned off "Let people find me by username".
+ * and `/api/profiles/<username>`, the scripts an account publishes, which anyone may read.
  */
 import {
 	DISMISS_SCRIPT_API,
@@ -116,8 +115,9 @@ export async function handleProfiles(
 	if (!username) return notFound;
 	const holder = await nameStub(env, usernameKey(username)).holder();
 	if (!holder) return notFound;
+	// Published means public (Trevor, 2026-10-30): "Let people find me by username" only
+	// covers friend requests, never the profile.
 	const book = friendBook(env, holder);
-	if (!(await book.isFindable())) return notFound;
 	const user = await userStub(env, holder).profile();
 	if (!user?.username) return notFound;
 	return json({
