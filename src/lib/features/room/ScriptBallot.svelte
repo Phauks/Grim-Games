@@ -127,7 +127,7 @@
 		)}
 	</h2>
 	<p class="lead">{lead}</p>
-	<VoteTimeLeft endsAt={vote?.endsAt} finalCall={!!vote?.finalCall} onEnded={(e) => (ended = e)} />
+	<VoteTimeLeft endsAt={vote?.endsAt} onEnded={(e) => (ended = e)} />
 	<ul class="vote" data-testid="script-ballot">
 		{#each rows as option (option.id)}
 			{@const place = chosen.indexOf(option.id)}

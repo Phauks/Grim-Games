@@ -343,11 +343,7 @@
 					/>
 				</section>
 				{#if tally}
-					<VoteTimeLeft
-						endsAt={tally.endsAt}
-						finalCall={!!tally.finalCall}
-						onEnded={(e) => (ended = e)}
-					/>
+					<VoteTimeLeft endsAt={tally.endsAt} onEnded={(e) => (ended = e)} />
 				{:else}
 					<Select
 						label={t('room.scriptVote.timeLimit')}
@@ -369,10 +365,8 @@
 				>
 				{#if tally && !ended}
 					<!-- One button (Trevor, 2026-10-26: "duplicative end vote and close vote"): End
-					     vote gives phones a final call, then it is New vote. -->
-					<Button disabled={!!tally.finalCall} onclick={() => host.endScriptVote()}
-						>{t('room.scriptVote.end')}</Button
-					>
+					     vote closes it at once (2026-10-30), then it is New vote. -->
+					<Button onclick={() => host.endScriptVote()}>{t('room.scriptVote.end')}</Button>
 				{:else if tally}
 					<Button onclick={() => host.closeScriptVote()}>{t('room.scriptVote.new')}</Button>
 					{#if onRules}

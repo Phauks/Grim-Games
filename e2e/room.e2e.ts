@@ -707,14 +707,10 @@ test('after a game the room votes on the next script, and the next game opens in
 	// No Play while the vote is open (Trevor, 2026-10-26).
 	await expect(results.getByRole('button', { name: 'Play' })).toHaveCount(0);
 
-	// One button ends it (Trevor, 2026-10-26: "duplicative end vote and close vote"): phones
-	// get a final call ("15 second final vote warning"), then it is New vote.
+	// One button ends it (Trevor, 2026-10-26: "duplicative end vote and close vote"), at once
+	// (2026-10-30: "End vote should end vote. No 15 second delay"), then it is New vote.
 	await sheet.getByRole('button', { name: 'End vote' }).tap();
-	await expect(ballot.getByTestId('script-vote-time')).toHaveText(
-		/^Final call: voting closes in 0:1\d$/
-	);
-	await expect(sheet.getByRole('button', { name: 'End vote' })).toBeDisabled();
-	await expect(sheet.getByRole('button', { name: 'New vote' })).toBeVisible({ timeout: 20_000 });
+	await expect(sheet.getByRole('button', { name: 'New vote' })).toBeVisible({ timeout: 3000 });
 	await expect(sheet.getByRole('button', { name: 'Close vote' })).toHaveCount(0);
 	await expect(ballot.getByTestId('script-vote-time')).toHaveText('Voting has closed.');
 
