@@ -1,4 +1,6 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
+import { renderSVG } from 'uqr';
+import { aimCamera, qrSrc } from './camera.ts';
 import { theMenu } from './shell.ts';
 
 // Friends (plan F1): two accounts, each in its own browser, find each other by username.
@@ -47,7 +49,7 @@ async function openFriends(page: Page) {
 async function sendRequest(page: Page, username: string) {
 	await page.getByRole('button', { name: 'Add friend' }).tap();
 	const dialog = page.getByRole('dialog', { name: 'Add friend' });
-	await dialog.getByLabel('Their username').fill(username);
+	await dialog.getByLabel('Username', { exact: true }).fill(username);
 	await dialog.getByRole('button', { name: 'Send request' }).tap();
 	return dialog;
 }
@@ -71,7 +73,7 @@ test('asking by username, accepting, and removing a friend', async ({ browser })
 	// A name nobody holds, and Ann's own, are refused in the dialog.
 	let dialog = await sendRequest(ann.page, unique('nobody'));
 	await expect(dialog.getByRole('status')).toHaveText('No one can be found with that username.');
-	await dialog.getByLabel('Their username').fill(ann.username);
+	await dialog.getByLabel('Username', { exact: true }).fill(ann.username);
 	await dialog.getByRole('button', { name: 'Send request' }).tap();
 	await expect(dialog.getByRole('status')).toHaveText('That’s your own username.');
 	await dialog.getByRole('button', { name: 'Cancel' }).tap();
@@ -155,4 +157,35 @@ test('a block is silent, and hiding from search stops new requests', async ({ br
 		.tap();
 	const dialog = await sendRequest(bob.page, ann.username);
 	await expect(dialog.getByRole('status')).toHaveText('No one can be found with that username.');
+});
+
+test('a friend code, scanned or opened, fills in Add friend', async ({ browser }) => {
+	const ann = await signedIn(browser, 'ann');
+	const bob = await signedIn(browser, 'bob');
+
+	// Ann's own code: a link with her username in the hash, her profile icon in the middle.
+	await ann.page.goto('/friends');
+	const link = ann.page.getByRole('textbox', { name: 'Link' });
+	await expect(link).toHaveValue(new RegExp(`/friends#friend=${ann.username}$`));
+	await expect(ann.page.getByRole('img', { name: 'QR code to add you as a friend' })).toBeVisible();
+
+	// Bob scans it from Add friend: her name is filled in, ready to send.
+	await aimCamera(bob.page, qrSrc(renderSVG(await link.inputValue(), { border: 2 })));
+	await bob.page.goto('/friends');
+	await bob.page.getByRole('button', { name: 'Add friend' }).tap();
+	const dialog = bob.page.getByRole('dialog', { name: 'Add friend' });
+	await dialog.getByRole('button', { name: 'Scan a code' }).tap();
+	await expect(dialog.getByLabel('Username', { exact: true })).toHaveValue(ann.username);
+	await dialog.getByRole('button', { name: 'Send request' }).tap();
+	await expect(bob.page.getByTestId('friend-outgoing')).toContainText(ann.username);
+
+	// Opened as a link (the phone's own camera app), it opens Add friend the same way.
+	await bob.page.goto(`/friends#friend=${ann.username}`);
+	await expect(
+		bob.page.getByRole('dialog', { name: 'Add friend' }).getByLabel('Username', { exact: true })
+	).toHaveValue(ann.username);
+
+	// Hidden from search, Ann has no code to show.
+	await ann.page.getByText('Let people find me by username', { exact: true }).tap();
+	await expect(ann.page.getByText('Finding you by username is off.')).toBeVisible();
 });

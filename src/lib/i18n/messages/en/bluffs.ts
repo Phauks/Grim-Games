@@ -19,6 +19,7 @@ export const bluffs = {
 	'bluffs.addSet': 'Add a set',
 	'bluffs.characters': 'Bluff characters',
 	'bluffs.deleteConfirm': 'Delete bluff set?',
+	'bluffs.clearConfirm': 'Clear the Demon bluffs?',
 	'bluffs.inPlayConfirm': 'Save bluffs that are in play?',
 	'bluffs.inPlaySummary': 'In play: {names}',
 	'bluffs.deleteSummary': '{set}: {names}',

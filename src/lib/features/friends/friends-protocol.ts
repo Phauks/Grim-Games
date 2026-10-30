@@ -75,3 +75,30 @@ export const FRIENDS_API = '/api/friends';
 export const FRIEND_REQUESTS_API = `${FRIENDS_API}/requests`;
 export const FRIEND_SETTINGS_API = `${FRIENDS_API}/settings`;
 export const friendActionApi = (action: FriendAction) => `${FRIENDS_API}/${action}`;
+
+/**
+ * A link that opens Add friend with this username filled in, for a friend QR code (Trevor,
+ * 2026-10-29). The name is in the hash, which never reaches the server's logs.
+ */
+export function friendLink(origin: string, username: string): string {
+	return `${origin}/friends#friend=${encodeURIComponent(username)}`;
+}
+
+/** The username in a friend link or its hash (`#friend=…`), as typed; undefined for anything else. */
+export function readFriendLink(text: string): string | undefined {
+	let hash: string;
+	try {
+		const url = new URL(text.trim());
+		if (url.pathname !== '/friends') return undefined;
+		hash = url.hash;
+	} catch {
+		hash = text.trim();
+	}
+	const match = /^#friend=([^&]+)$/.exec(hash);
+	if (!match) return undefined;
+	try {
+		return decodeURIComponent(match[1]);
+	} catch {
+		return undefined;
+	}
+}

@@ -6810,6 +6810,36 @@ test("the Engineer's step changes a Minion into another Minion", async ({ page }
 	await expect(await openSeat(page, 3)).toContainText(/Scarlet Woman\s*Minion · Evil · Seat 3/);
 });
 
+// https://wiki.bloodontheclocktower.com/Cult_Leader: each night it becomes the alignment of an
+// alive neighbour. Its step shows its alignment and offers a neighbour's that differs.
+test("the Cult Leader's step offers a living neighbour's alignment", async ({ page }) => {
+	await startGame(page);
+	for (const [seat, name] of [
+		[1, 'Imp'],
+		[2, 'Cult Leader'],
+		[3, 'Chef']
+	] as const) {
+		const sheet = await openSeat(page, seat);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		const picker = page.getByRole('dialog', { name: `Character for Seat ${seat}` });
+		const button = picker.getByRole('button', { name, exact: true });
+		// The picker keeps its "not on the script" switch between seats.
+		if (!(await button.count()))
+			await picker.getByText('Include characters not on the script').tap();
+		await button.tap();
+		await closeSheet(page);
+	}
+	const strip = await walkTo(page, 'Cult Leader');
+	await strip.locator('button.step .name strong').tap();
+	const step = page.getByRole('dialog', { name: 'Cult Leader' });
+	const row = step.getByTestId('neighbour-alignment');
+	await expect(row).toContainText('Good');
+	await row.getByRole('button', { name: 'Make evil' }).tap();
+	await expect(row.getByRole('button', { name: 'Make good' })).toBeVisible();
+	await step.getByRole('button', { name: 'Close' }).first().tap();
+	await expect(await openSeat(page, 2)).toContainText(/Cult Leader\s*Townsfolk · Evil · Seat 2/);
+});
+
 // https://wiki.bloodontheclocktower.com/Summoner: on the 3rd night it points at a player and at
 // a Demon on the character sheet; that player becomes the evil Demon.
 test("the Summoner's Night 3 step makes the chosen player the Demon it points at", async ({
