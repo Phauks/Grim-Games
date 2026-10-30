@@ -23,6 +23,7 @@
 	import { goto, replaceState } from '$app/navigation';
 	import { onMount, tick, untrack } from 'svelte';
 	import { REMINDERS_HASH } from '#lib/features/setup/setup-steps.ts';
+	import LateSeatOnBoard from '#lib/features/setup/LateSeatOnBoard.svelte';
 	import { resolve } from '$app/paths';
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import {
@@ -1038,6 +1039,7 @@
 <NominationChooser {grimoire} {characters} bind:asking={nominatingFrom} onNominated={nominated} />
 
 <HistoryDialog bind:open={historyOpen} {grimoire} />
+{#if !watching}<LateSeatOnBoard {grimoire} place={startPlacing} />{/if}
 
 <ExportGameDialog bind:open={exportOpen} load={exportGame} {capture} />
 {#if !watching}

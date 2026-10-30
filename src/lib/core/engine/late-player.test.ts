@@ -38,7 +38,7 @@ describe('AddLatePlayer', () => {
 		const before = session.game.bag!.order;
 		const s = run(session, ctx, {
 			type: 'AddLatePlayer',
-			playerName: 'Max',
+			players: [{ playerName: 'Max' }],
 			changes: [],
 			bag: ['empath', 'poisoner', 'imp', 'saint'].map(spec)
 		});
@@ -48,10 +48,32 @@ describe('AddLatePlayer', () => {
 		for (const id of before) expect(s.game.bag!.order).toContain(id);
 	});
 
+	it('seats several late players where the Storyteller placed them', () => {
+		const { session, ctx, seats } = midDraw();
+		const s = run(session, ctx, {
+			type: 'AddLatePlayer',
+			players: [
+				{ playerName: 'Max', position: 1 },
+				{ playerName: 'Noa', position: 1 },
+				{ playerName: 'Ola', position: 5 }
+			],
+			changes: [{ seatId: seats[1], characterId: 'spy' }],
+			bag: ['empath', 'poisoner', 'imp', 'saint', 'monk', 'soldier'].map(spec)
+		});
+		const names = s.game.seating.map((id) => s.game.seats[id].playerName);
+		expect(names).toEqual(['Ana', 'Max', 'Noa', 'Ben', 'Cat', 'Dev', 'Eve', 'Ola']);
+		expect(s.game.bag!.order).toHaveLength(6);
+		// Ben is fourth once Max and Noa sit before him.
+		expect(s.game.nightOrderOverrides.at(-1)).toMatchObject({
+			text: expect.stringContaining('Ben')
+		});
+	});
+
 	it('changes a drawn player: their tile, their seat and a first-night "You are" step', () => {
 		const { session, ctx, seats } = midDraw();
 		const s = run(session, ctx, {
 			type: 'AddLatePlayer',
+			players: [{}],
 			changes: [{ seatId: seats[1], characterId: 'spy' }],
 			bag: ['empath', 'poisoner', 'imp', 'washerwoman'].map(spec)
 		});
@@ -68,12 +90,14 @@ describe('AddLatePlayer', () => {
 		const { session, ctx } = midDraw();
 		const s = run(session, ctx, {
 			type: 'AddLatePlayer',
+			players: [{}],
 			changes: [],
 			bag: ['empath', 'spy', 'imp', 'monk', 'soldier'].map(spec)
 		});
 		expect(inBag(s.game)).toEqual(['empath', 'imp', 'monk', 'soldier', 'spy']);
 		const fewer = run(session, ctx, {
 			type: 'AddLatePlayer',
+			players: [{}],
 			changes: [],
 			bag: ['imp'].map(spec)
 		});
@@ -85,6 +109,7 @@ describe('AddLatePlayer', () => {
 		const held = run(session, ctx, { type: 'DrawTile', seatId: seats[2] });
 		const s = run(held, ctx, {
 			type: 'AddLatePlayer',
+			players: [{}],
 			changes: [{ seatId: seats[2], characterId: 'monk' }],
 			bag: ['poisoner', 'imp', 'saint'].map(spec)
 		});
@@ -98,6 +123,7 @@ describe('AddLatePlayer', () => {
 		const { session, ctx, seats } = midDraw();
 		const s = run(session, ctx, {
 			type: 'AddLatePlayer',
+			players: [{}],
 			changes: [{ seatId: seats[1], characterId: 'spy' }],
 			bag: ['empath', 'poisoner', 'imp', 'washerwoman'].map(spec)
 		});
@@ -107,7 +133,11 @@ describe('AddLatePlayer', () => {
 
 	it('needs a bag', () => {
 		const { session, ctx } = newGame(names, { ctx: testContext() });
-		const none = dispatch(session, { type: 'AddLatePlayer', changes: [], bag: [] }, ctx);
+		const none = dispatch(
+			session,
+			{ type: 'AddLatePlayer', players: [{}], changes: [], bag: [] },
+			ctx
+		);
 		expect(none.ok).toBe(false);
 	});
 });
