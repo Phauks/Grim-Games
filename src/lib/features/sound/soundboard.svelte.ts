@@ -26,10 +26,12 @@ import { audio, unlockSound } from './sound.ts';
  * stops it. Pause (Trevor, 2026-10-27) holds every sound where it is and silences day and
  * night sound until Resume; playing another sound ends the pause.
  *
- * Play on (plan U10, Trevor 2026-10-27) sends each of these to the Public Town tablet too,
- * through the room, or only there: the board's room connects `town`, and the tablet plays
- * them with `fromStoryteller`. Sent only there, sounds still run here, silent, so the pads
- * show what is playing.
+ * None of them sound on the Storyteller's own device (Trevor, 2026-10-30: it "identifies where
+ * a storyteller is in a room. Only play remote on other devices"). Play on (plan U10) sends
+ * each to the Public Town tablet, the players' phones or both, through the room: the board's
+ * room connects `town`, and those devices play them with `fromStoryteller`. Sounds still run
+ * here, silent, so the pads show what is playing; without a room nothing is heard. A preview
+ * in Settings is the one sound heard on the device it is chosen on.
  */
 
 type Tone = typeof import('tone');
@@ -91,8 +93,8 @@ class Soundboard {
 	/** The sound the mixer's per-sound rows change. */
 	mixing = $state(BOARD_SOUNDS[0].id);
 	/**
-	 * Sends a command to the Public Town tablet, while this device's board has a room; false
-	 * when the room can't be reached.
+	 * Sends a command to the devices Play on names, while this device's board has a room;
+	 * false when the room can't be reached.
 	 */
 	town: ((command: TownSoundCommand) => boolean) | undefined;
 	#voices = new Map<string, Voice>();
@@ -101,6 +103,8 @@ class Soundboard {
 	#held: Held[] = [];
 	#bus: Gain | undefined;
 	#keptOffline = false;
+	/** Sounds here are heard: they came from the Storyteller, or are a preview in Settings. */
+	#heard = false;
 
 	isPlaying(id: string): boolean {
 		return this.playing.includes(id);
@@ -139,13 +143,22 @@ class Soundboard {
 			.filter((id) => boardSound(id))
 			.map((id) => ({ id, ...soundMix(preferences.current.soundMixes, id) }));
 		const cut = !preferences.current.soundboardOverlap;
-		if (this.#toTown() && sounds.length) this.town?.({ command: 'play', sounds, cut });
+		this.#hear(false);
+		if (sounds.length) this.town?.({ command: 'play', sounds, cut });
 		this.#endPause();
 		await this.#play(sounds, cut, false);
 	}
 
-	/** Plays what the Storyteller's soundboard sent the Public Town (plan U10). */
+	/** Plays a sound on this device alone, as chosen in Settings, so it can be heard. */
+	async preview(id: string): Promise<void> {
+		this.#hear(true);
+		this.#endPause();
+		await this.#play([{ id, ...soundMix(preferences.current.soundMixes, id) }], true, false);
+	}
+
+	/** Plays what the Storyteller's soundboard sent the room (plan U10). */
 	fromStoryteller(command: TownSoundCommand): void {
+		this.#hear(true);
 		if (command.command === 'play') {
 			this.#endPause();
 			void this.#play(command.sounds, command.cut, true);
@@ -156,18 +169,16 @@ class Soundboard {
 		else this.#resumeHere();
 	}
 
-	/** Play on sends to the Public Town, and the board has a room to send it through. */
-	#toTown(): boolean {
-		return !!this.town && preferences.current.soundOutput !== 'device';
-	}
-
-	/** Play on keeps this device's speaker silent, sending only to the Public Town. */
-	#silentHere(): boolean {
-		return !!this.town && preferences.current.soundOutput === 'town';
+	/** Whether sounds here are heard, cutting off any of the other kind still playing. */
+	#hear(heard: boolean): void {
+		if (this.#heard === heard) return;
+		this.#stopHere();
+		this.#heard = heard;
+		this.applyMix();
 	}
 
 	#level(): number {
-		return this.#silentHere() ? 0 : busLevel();
+		return this.#heard ? busLevel() : 0;
 	}
 
 	async #play(sounds: TownSoundPlay[], cut: boolean, fixed: boolean): Promise<void> {
@@ -175,7 +186,7 @@ class Soundboard {
 		if (cut) this.#stopHere();
 		else for (const { id } of sounds) this.#stopHere(id);
 		const known = sounds.filter(({ id }) => boardSound(id));
-		if (!known.length || !ctx || (busLevel() <= 0 && !this.#toTown())) return;
+		if (!known.length || !ctx || (busLevel() <= 0 && this.#heard)) return;
 		unlockSound();
 		if (!this.#keptOffline) {
 			// Every sound, so a game later on with no signal can still play them all.
@@ -237,7 +248,7 @@ class Soundboard {
 	/** Holds every sound where it is, and day and night sound, until resumed. */
 	pause(): void {
 		if (this.paused) return;
-		if (this.#toTown()) this.town?.({ command: 'pause' });
+		this.town?.({ command: 'pause' });
 		this.#pauseHere();
 	}
 
@@ -260,7 +271,7 @@ class Soundboard {
 
 	/** Carries on from where Pause held everything. */
 	resume(): void {
-		if (this.paused && this.#toTown()) this.town?.({ command: 'resume' });
+		if (this.paused) this.town?.({ command: 'resume' });
 		this.#resumeHere();
 	}
 
@@ -287,8 +298,7 @@ class Soundboard {
 
 	/** Stops one sound with a short fade, or every sound when none is named. */
 	stop(id?: string): void {
-		if (this.#toTown())
-			this.town?.(id === undefined ? { command: 'stop' } : { command: 'stop', ids: [id] });
+		this.town?.(id === undefined ? { command: 'stop' } : { command: 'stop', ids: [id] });
 		this.#stopHere(id);
 	}
 

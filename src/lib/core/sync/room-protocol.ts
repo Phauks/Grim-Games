@@ -7,6 +7,7 @@ import type { GameFeedback } from '#lib/core/feedback/index.ts';
 import type { SeatId } from '#lib/core/model/index.ts';
 import type { PublicGameState } from './public-projection.ts';
 import type { SharedGrimoire } from './shared-grimoire.ts';
+import type { SoundOutput } from '#lib/core/sound/soundboard.ts';
 import type { TownSoundCommand } from './room-sound.ts';
 import type { FeedbackView } from './room-feedback.ts';
 import type {
@@ -138,8 +139,11 @@ export type ClientMessage =
 	| { type: 'roles'; gameId: string; show: boolean; roles?: Record<SeatId, SeatRole> }
 	/** Calls every player back to town: their phones sound and vibrate (plan U2). */
 	| { type: 'call-town' }
-	/** Soundboard sounds for the Public Town tablet to play (plan U10). */
-	| ({ type: 'town-sound' } & TownSoundCommand)
+	/**
+	 * Soundboard sounds for the room's devices to play (plan U10): `to` names them, and older
+	 * apps, which send none, reach the Public Town alone.
+	 */
+	| ({ type: 'town-sound'; to?: SoundOutput } & TownSoundCommand)
 	/** Lets a reported picture stand, or takes that player's picture away for this game. */
 	| { type: 'judge-picture'; hash: string; allow: boolean }
 	| { type: 'read-messages'; ids: string[] } // The Storyteller opened these messages.
@@ -304,7 +308,7 @@ export type ServerMessage =
 	 * kept, so a phone that joins later doesn't sound; older apps ignore it.
 	 */
 	| { type: 'call-town' }
-	/** To the Public Town: play, stop, pause or resume soundboard sounds (plan U10). */
+	/** To the Public Town or phones: play, stop, pause or resume soundboard sounds (plan U10). */
 	| ({ type: 'town-sound' } & TownSoundCommand)
 	/**
 	 * To the Storyteller's device: send the whole grimoire while an admin watches from Live

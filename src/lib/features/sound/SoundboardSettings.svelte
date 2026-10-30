@@ -66,7 +66,8 @@
 	</SettingRow>
 	<SoundPadsDialog bind:open={padsOpen} />
 {/if}
-<!-- Where it plays while the board has a room (plan U10); the Public Town plays its own copy. -->
+<!-- Which devices in the room play every Storyteller sound (plan U10): never this one (Trevor,
+     2026-10-30), so nothing gives away where the Storyteller sits. -->
 <SettingSelect
 	label={t('settings.soundOutput')}
 	value={preferences.current.soundOutput}
