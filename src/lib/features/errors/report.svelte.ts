@@ -8,6 +8,7 @@ import {
 	recordError,
 	type AppError
 } from './app-error.ts';
+import { hasBuiltFrames, resolveBuiltStack } from './source-stack.ts';
 
 const STORAGE_KEY = 'grim-games:error-log:v1';
 /** Most recent distinct problems kept on the device. */
@@ -67,7 +68,30 @@ class ErrorLog {
 		this.entries = [entry, ...this.entries.filter((_, i) => i !== index)].slice(0, MAX_LOGGED);
 		if (notify && !this.unseen.includes(entry.key)) this.unseen = [entry.key, ...this.unseen];
 		write($state.snapshot(this.entries));
+		void this.resolveStacks();
 		return entry;
+	}
+
+	/**
+	 * Points the stacks still in minified build files at the source they came from
+	 * (source-stack.ts). Run when a problem is logged and again before its details are read,
+	 * for anything an earlier try couldn't reach. Never throws.
+	 */
+	async resolveStacks(): Promise<void> {
+		const pending = this.entries.filter((e) => hasBuiltFrames(e.stack));
+		if (pending.length === 0) return;
+		const resolved: Record<string, string> = {};
+		for (const { stack } of pending) {
+			if (!stack) continue;
+			const source = await resolveBuiltStack(stack);
+			if (source !== stack) resolved[stack] = source;
+		}
+		if (Object.keys(resolved).length === 0) return;
+		// Entries may have changed while the maps loaded; only the stacks that were read change.
+		this.entries = this.entries.map((e) =>
+			e.stack && Object.hasOwn(resolved, e.stack) ? { ...e, stack: resolved[e.stack] } : e
+		);
+		write($state.snapshot(this.entries));
 	}
 
 	/** Hides the corner card; the log keeps everything. */
@@ -78,6 +102,7 @@ class ErrorLog {
 	showDetails(): void {
 		this.open = true;
 		this.unseen = [];
+		void this.resolveStacks();
 	}
 
 	clear(): void {
