@@ -289,10 +289,13 @@
 		justify-content: space-between;
 		gap: var(--space-2);
 	}
+	/* Full-size tap targets that don't make the label's line taller: the note's text keeps
+	   its place above a phone's keyboard (e2e/grimoire.e2e.ts). */
 	.list-buttons {
 		display: flex;
 		gap: var(--space-1);
 		margin-left: auto;
+		margin-block: calc((1lh - var(--tap-target)) / 2);
 	}
 	input,
 	textarea {
