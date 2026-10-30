@@ -10,7 +10,8 @@
  */
 
 /** The kinds of shared object, by what each is found by. */
-export type DataKind = 'user' | 'address' | 'username' | 'share' | 'reports' | 'friends';
+export type DataKind =
+	'user' | 'address' | 'username' | 'directory' | 'share' | 'reports' | 'friends';
 
 /** One method call on one shared object. */
 export interface DataCall {

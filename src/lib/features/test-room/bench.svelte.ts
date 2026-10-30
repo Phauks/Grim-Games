@@ -1,106 +1,183 @@
 /**
- * The Test room (Trevor, 2026-10-30): real phone frames beside bots in one live room. The bots
- * and the fake Storyteller are the same ones scripts/room-bots.ts runs, here in the page.
+ * The Test room (Trevor, 2026-10-30: "a place where i fully control the fake game, and have
+ * access to a certain number of fake players, along with perhaps some fast tools"). The
+ * Storyteller is the real app in a frame; the players are bots (phone-bot.ts) that follow its
+ * room, each on a device of its own, and any of them can be shown as that device's real screen.
  */
 import { MAX_MEMBERS } from '#lib/core/sync/room-presence.ts';
 import { normaliseRoomCode } from '#lib/core/sync/room-code.ts';
-import { readStored, writeStored } from '#lib/ui/stored.ts';
-import { DEFAULT_FRAMES, deviceById } from './devices.ts';
-import { botProblems, playGame } from './game.ts';
+import type { BotAction } from '#lib/core/sync/room-bots/brain.ts';
+import { STORAGE_KEY as HOST_KEY, type StoredRoom } from '#lib/features/room/host-storage.ts';
+import { PHONE_FRAME_PREFIX, readStored, writeStored } from '#lib/ui/stored.ts';
+import { deviceById, mixedDevices, STORYTELLER_SCREENS } from './devices.ts';
+import { botProblems } from './game.ts';
 import { PhoneBot } from './phone-bot.ts';
-import { FakeStoryteller } from './storyteller.ts';
 import { JoinQueue } from './socket.ts';
 
-const STORAGE_KEY = 'grim-games:test-room:v1';
-/** The longest pause before a bot answers, as a person reading their phone. */
+const STORAGE_KEY = 'grim-games:test-room:v2';
+/** Where the player app keeps a phone's key and name (features/room/player.svelte.ts). */
+const PLAYER_KEY = 'grim-games-room-player';
+const NAME_KEY = 'grim-games-room-name';
+/** The longest pause before a bot answers by itself, as a person reading their phone. */
 const THINK_MS = 1500;
-const STEP_TIMEOUT_MS = 60_000;
-/** Each step of a game stays this long, so the frames can be watched. */
-const STEP_PAUSE_MS = 3000;
 const MAX_LOG = 500;
 const TIME = new Intl.DateTimeFormat(undefined, { timeStyle: 'medium', hour12: false });
 
 export const ZOOMS = ['0.5', '0.75', '1'] as const;
 export type Zoom = (typeof ZOOMS)[number];
 
-/** A phone frame: which device it is, and its own number, which keeps its data apart. */
-export interface Frame {
-	n: number;
+/** One fake player: its key (so it is the same player after a reload) and its device. */
+export interface Player {
+	key: string;
 	device: string;
+	/** Its phone's real screen is shown. */
+	shown: boolean;
 }
 
 interface Saved {
-	frames: Frame[];
+	players: Player[];
+	auto: boolean;
 	zoom: Zoom;
-	bots: number;
+	screen: string;
 }
+
+const isPlayer = (p: Partial<Player> | undefined): p is Player =>
+	typeof p?.key === 'string' && /^[0-9a-f]{64}$/.test(p.key) && !!deviceById(p.device ?? '');
 
 function load(): Saved {
 	const raw = readStored<Partial<Saved>>(STORAGE_KEY);
-	const frames = Array.isArray(raw?.frames)
-		? raw.frames.filter((f) => Number.isInteger(f?.n) && deviceById(f?.device))
-		: DEFAULT_FRAMES.map((device, n) => ({ n, device }));
-	const zoom = ZOOMS.includes(raw?.zoom as Zoom) ? (raw!.zoom as Zoom) : '0.75';
-	const bots = Number.isInteger(raw?.bots) ? Math.max(0, Math.min(MAX_MEMBERS, raw!.bots!)) : 8;
-	return { frames, zoom, bots };
+	return {
+		players: Array.isArray(raw?.players) ? raw.players.filter(isPlayer).slice(0, MAX_MEMBERS) : [],
+		auto: raw?.auto !== false,
+		zoom: ZOOMS.includes(raw?.zoom as Zoom) ? (raw!.zoom as Zoom) : '0.5',
+		screen: STORYTELLER_SCREENS.some((s) => s.id === raw?.screen) ? raw!.screen! : 'ipad-landscape'
+	};
 }
 
+/** The frame name that keeps phone `i`'s data apart (ui/stored.ts). */
+export const frameName = (i: number) => `${PHONE_FRAME_PREFIX}${i}`;
+export const botName = (i: number) => `Bot ${i + 1}`;
+
 export class TestRoom {
-	frames = $state<Frame[]>([]);
-	zoom = $state<Zoom>('0.75');
-	/** How many bots to have in the room. */
-	botCount = $state(8);
-	/** The room the frames and bots are in. */
+	players = $state<Player[]>([]);
+	auto = $state(true);
+	zoom = $state<Zoom>('0.5');
+	/** The Storyteller frame's screen (STORYTELLER_SCREENS). */
+	screen = $state('ipad-landscape');
+	/** The room the players are in: the Storyteller frame's, unless a code was typed. */
 	code = $state<string>();
-	/** This page opened the room and plays its Storyteller. */
-	storytelling = $state(false);
-	playing = $state(false);
+	/** A code typed in, for a room storytold on another device. */
+	typedCode = $state<string>();
 	log = $state<string[]>([]);
-	/** Bumped when any bot's view or connection changes, so counts redraw. */
+	/** Bumped when any bot's view or connection changes, so the rows redraw. */
 	#tick = $state(0);
 	#bots: PhoneBot[] = [];
-	#st: FakeStoryteller | undefined;
 	readonly #queue = new JoinQueue();
 	#checkSoon: ReturnType<typeof setTimeout> | undefined;
+	#follow: ReturnType<typeof setInterval> | undefined;
 
 	constructor() {
 		const saved = load();
-		this.frames = saved.frames;
+		this.players = saved.players;
+		this.auto = saved.auto;
 		this.zoom = saved.zoom;
-		this.botCount = saved.bots;
+		this.screen = saved.screen;
 	}
 
-	/** Bots connected now, of those asked for. */
+	/** Follows the Storyteller frame's room (host-storage.ts) and starts the players in it. */
+	start(): void {
+		const follow = () => this.#useRoom(this.typedCode ?? this.#storytellerRoom());
+		follow();
+		this.#follow = setInterval(follow, 1000);
+	}
+
+	stop(): void {
+		clearInterval(this.#follow);
+		clearTimeout(this.#checkSoon);
+		for (const bot of this.#bots) bot.stop();
+		this.#bots = [];
+	}
+
+	#storytellerRoom(): string | undefined {
+		return readStored<StoredRoom>(HOST_KEY)?.code;
+	}
+
+	/** The bot playing player `i`, while there is a room. */
+	bot(i: number): PhoneBot | undefined {
+		void this.#tick;
+		return this.#bots[i];
+	}
+
 	get connected(): number {
 		void this.#tick;
 		return this.#bots.filter((b) => b.connected).length;
 	}
 
-	/** The most bots there can be beside the frames, since a room holds MAX_MEMBERS phones. */
-	get maxBots(): number {
-		return MAX_MEMBERS - this.frames.length;
-	}
-
 	#save(): void {
-		writeStored(STORAGE_KEY, { frames: this.frames, zoom: this.zoom, bots: this.botCount });
+		writeStored(STORAGE_KEY, {
+			players: this.players,
+			auto: this.auto,
+			zoom: this.zoom,
+			screen: this.screen
+		} satisfies Saved);
 	}
 
 	#say = (line: string): void => {
-		const time = TIME.format(Date.now());
-		this.log = [...this.log.slice(-(MAX_LOG - 1)), `${time} ${line}`];
+		this.log = [...this.log.slice(-(MAX_LOG - 1)), `${TIME.format(Date.now())} ${line}`];
 	};
 
-	addFrame(device: string): void {
-		if (!deviceById(device) || this.frames.length >= MAX_MEMBERS) return;
-		const n = Math.max(-1, ...this.frames.map((f) => f.n)) + 1;
-		this.frames = [...this.frames, { n, device }];
-		this.botCount = Math.min(this.botCount, this.maxBots);
+	/** How many fake players there are: new ones take the next devices in turn. */
+	setCount(count: number): void {
+		const n = Math.max(0, Math.min(MAX_MEMBERS, count));
+		const devices = mixedDevices(Math.max(0, n - this.players.length), this.players.length);
+		this.players = [
+			...this.players.slice(0, n),
+			...devices.map((device) => ({ key: newPlayerKey(), device, shown: false }))
+		];
 		this.#save();
-		void this.#fitBots();
+		this.#fitBots();
 	}
 
-	removeFrame(n: number): void {
-		this.frames = this.frames.filter((f) => f.n !== n);
+	setDevice(i: number, device: string): void {
+		if (!deviceById(device)) return;
+		this.players = this.players.map((p, j) => (j === i ? { ...p, device } : p));
+		this.#save();
+	}
+
+	/** Every player on a different kind of device, in turn. */
+	mixDevices(): void {
+		const devices = mixedDevices(this.players.length);
+		this.players = this.players.map((p, i) => ({ ...p, device: devices[i] }));
+		this.#save();
+	}
+
+	/** Every player on the same device. */
+	allOn(device: string): void {
+		if (!deviceById(device)) return;
+		this.players = this.players.map((p) => ({ ...p, device }));
+		this.#save();
+	}
+
+	/** Shows or hides player `i`'s phone: the real app, as that same player. */
+	showPhone(i: number, shown: boolean): void {
+		const player = this.players[i];
+		if (!player) return;
+		if (shown) {
+			// The frame reads these under its own name (stored.ts), so it is this bot's phone.
+			writeStored(`${frameName(i)}:${PLAYER_KEY}`, { key: player.key });
+			writeStored(`${frameName(i)}:${NAME_KEY}`, botName(i));
+		}
+		this.players = this.players.map((p, j) => (j === i ? { ...p, shown } : p));
+		this.#save();
+	}
+
+	showAll(shown: boolean): void {
+		this.players.forEach((_, i) => this.showPhone(i, shown));
+	}
+
+	setAuto(auto: boolean): void {
+		this.auto = auto;
+		for (const bot of this.#bots) bot.auto = auto;
 		this.#save();
 	}
 
@@ -109,89 +186,73 @@ export class TestRoom {
 		this.#save();
 	}
 
-	setBots(count: number): void {
-		this.botCount = Math.max(0, Math.min(this.maxBots, count));
+	setScreen(screen: string): void {
+		if (!STORYTELLER_SCREENS.some((s) => s.id === screen)) return;
+		this.screen = screen;
 		this.#save();
-		void this.#fitBots();
 	}
 
-	/** Joins a room someone else is storytelling, from its code. */
-	async join(raw: string): Promise<boolean> {
-		const code = normaliseRoomCode(raw);
-		if (!code) return false;
-		this.leave();
-		this.code = code;
-		this.#say(`Joining room ${code}`);
-		await this.#fitBots();
+	/** Players join a room storytold elsewhere; an empty code follows the frame's room again. */
+	joinCode(raw: string | undefined): boolean {
+		const code = raw ? normaliseRoomCode(raw) : undefined;
+		if (raw && !code) return false;
+		this.typedCode = code ?? undefined;
+		this.#useRoom(this.typedCode ?? this.#storytellerRoom());
 		return true;
 	}
 
-	/** Opens a new room, with this page as its Storyteller. */
-	async open(): Promise<void> {
-		this.leave();
-		const st = new FakeStoryteller(location.origin, this.#queue, this.#say, STEP_TIMEOUT_MS);
-		try {
-			this.code = await st.open();
-		} catch (e) {
-			this.#say(`Could not open a room: ${(e as Error).message}`);
-			return;
-		}
-		this.#st = st;
-		this.storytelling = true;
-		this.#say(`Opened room ${this.code}`);
-		await this.#fitBots();
+	/** A fast tool: every player makes this tap now. Says how many could. */
+	everyone(kind: BotAction): number {
+		const done = this.#bots.filter((b) => b.act(kind)).length;
+		this.#say(`${kind}: ${done} of ${this.#bots.length} players`);
+		return done;
 	}
 
-	/**
-	 * The fake Storyteller plays a whole game, with every phone in the room: the frames' players
-	 * as well as the bots, so a frame left alone holds a step up until it times out.
-	 */
-	async play(): Promise<void> {
-		const st = this.#st;
-		if (!st || this.playing) return;
-		this.playing = true;
-		const seats = Math.max(1, this.#bots.length + this.frames.length);
-		const passed = await playGame(st, this.#bots, seats, this.#say, STEP_PAUSE_MS);
-		this.#say(passed ? 'Every step passed.' : 'A step failed.');
-		this.playing = false;
-	}
-
-	/** Every bot leaves, and the room this page opened closes. */
-	leave(): void {
-		for (const bot of this.#bots) bot.stop();
-		this.#bots = [];
-		this.#st?.close();
-		this.#st = undefined;
-		this.storytelling = false;
-		this.playing = false;
-		this.code = undefined;
+	lock(i: number, locked: boolean): void {
+		const bot = this.#bots[i];
+		if (locked) bot?.lock();
+		else bot?.unlock();
 		this.#tick++;
 	}
 
-	/** Starts or stops bots until the room has as many as asked for. */
-	async #fitBots(): Promise<void> {
+	lockAll(locked: boolean): void {
+		this.#bots.forEach((_, i) => this.lock(i, locked));
+	}
+
+	/** Moves every player to `code`, keeping their keys, so they are the same players there. */
+	#useRoom(code: string | undefined): void {
+		if (code === this.code) return;
+		for (const bot of this.#bots) bot.stop();
+		this.#bots = [];
+		this.code = code;
+		if (code) this.#say(`Players join room ${code}`);
+		this.#fitBots();
+	}
+
+	/** Starts or stops bots until every player has one in the room. */
+	#fitBots(): void {
 		const code = this.code;
 		if (!code) return;
-		while (this.#bots.length > this.botCount) this.#bots.pop()?.stop();
-		const added: PhoneBot[] = [];
-		for (let i = this.#bots.length; i < this.botCount; i++) {
+		while (this.#bots.length > this.players.length) this.#bots.pop()?.stop();
+		for (let i = this.#bots.length; i < this.players.length; i++) {
 			const bot = new PhoneBot(
-				{ index: i, name: `Bot ${i + 1}`, random: Math.random },
+				{ index: i, name: botName(i), random: Math.random },
 				{
 					site: location.origin,
 					code,
 					queue: this.#queue,
 					thinkMs: THINK_MS,
 					flaky: false,
+					key: this.players[i].key,
+					auto: this.auto,
 					log: this.#say,
 					changed: this.#changed
 				}
 			);
 			this.#bots.push(bot);
-			added.push(bot);
+			void bot.start().catch((e: Error) => this.#say(`${bot.name}: ${e.message}`));
 		}
 		this.#tick++;
-		await Promise.all(added.map((b) => b.start().catch((e: Error) => this.#say(e.message))));
 	}
 
 	#changed = (): void => {
@@ -202,4 +263,10 @@ export class TestRoom {
 			for (const problem of botProblems(this.#bots)) this.#say(`! ${problem}`);
 		}, 3000);
 	};
+}
+
+function newPlayerKey(): string {
+	return Array.from(crypto.getRandomValues(new Uint8Array(32)), (b) =>
+		b.toString(16).padStart(2, '0')
+	).join('');
 }

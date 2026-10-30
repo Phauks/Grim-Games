@@ -68,3 +68,33 @@ test('the Juggler seat logs guesses from the ⋯ menu, with the count right so f
 	await page.getByRole('option', { name: 'Witch', exact: true }).tap();
 	await expect(guesses.getByTestId('correct-guesses')).toHaveText('1 correct');
 });
+
+// https://wiki.bloodontheclocktower.com/Amnesiac: each day the Amnesiac guesses its ability
+// in private, and the Storyteller answers Cold, Warm, Hot or Bingo.
+test('the Amnesiac seat logs its daily guess with the answer, from the ⋯ menu', async ({
+	page
+}) => {
+	await start(page, 'Trouble Brewing');
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).tap();
+	const picker = page.getByRole('dialog', { name: 'Character for Seat 1' });
+	await picker.getByText('Include characters not on the script').tap();
+	await picker.getByRole('button', { name: 'Amnesiac', exact: true }).tap();
+	await expect(picker).toBeHidden();
+	await sheet.getByRole('button', { name: 'Seat actions' }).tap();
+	await page.getByRole('dialog').getByRole('button', { name: 'Guess…' }).tap();
+	const note = page.getByRole('dialog', { name: /^Note: Amnesiac/ });
+	await note.getByRole('textbox', { name: 'Guess' }).fill('Do I learn about Minions?');
+	await note.getByRole('combobox', { name: 'Answer' }).tap();
+	await page.getByRole('option', { name: 'Hot', exact: true }).tap();
+	await note.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(note).toBeHidden();
+
+	// Opening it again edits the same guess and answer.
+	await sheet.getByRole('button', { name: 'Seat actions' }).tap();
+	await page.getByRole('dialog').getByRole('button', { name: 'Guess…' }).tap();
+	await expect(note.getByRole('textbox', { name: 'Guess' })).toHaveValue(
+		'Do I learn about Minions?'
+	);
+	await expect(note.getByRole('combobox', { name: 'Answer' })).toContainText('Hot');
+});

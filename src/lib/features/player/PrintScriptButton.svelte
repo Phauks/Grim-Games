@@ -25,6 +25,7 @@
 	import { imagePdf } from '#lib/core/print/image-pdf.ts';
 	import { downloadBlob, fileNameFor } from '#lib/ui/download.ts';
 	import { screenshot } from '#lib/ui/screenshot.ts';
+	import { textRuns } from '#lib/ui/text-runs.ts';
 
 	/**
 	 * Print opens the ways to print a script (Trevor, 2026-10-19: routes 1, 3 and 4 of
@@ -185,10 +186,14 @@
 					scale: PDF_SCALE,
 					backgroundColor: getComputedStyle(paper).backgroundColor
 				});
+				const paperMm = PAPER_MM[printChoices.pageSize];
+				const areaMm = paperMm[0] - 2 * printChoices.margin;
 				pages.push({
 					jpeg: new Uint8Array(await picture.arrayBuffer()),
-					paperMm: PAPER_MM[printChoices.pageSize],
-					marginMm: printChoices.margin
+					paperMm,
+					marginMm: printChoices.margin,
+					// Its words too, invisible, so they select and search (Trevor, 2026-10-30).
+					text: textRuns(side, areaMm / side.getBoundingClientRect().width)
 				});
 			}
 			const pdf = imagePdf(pages, {

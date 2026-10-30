@@ -249,11 +249,11 @@
 			and all its data immediately.
 		</p>
 		<p>
-			To look after the service, the site's admins can look up one account by its exact email
-			address or username. They see its email address, username, whether it has a password, how many
-			devices are signed in and when it was made and last used, never its scripts or games. They can
-			sign it out of every device, remove a username that breaks the rules, or delete the account
-			when you ask them to. Admins can't list or browse accounts.
+			To look after the service, the site's admins can see a list of every account. For each one
+			they see its email address, username, whether it has a password, how many devices are signed
+			in and when it was made and last used, never its scripts or games. They can sign it out of
+			every device, remove a username that breaks the rules, or delete the account when you ask them
+			to.
 		</p>
 		<p>
 			When you sign in, we email a one-time sign-in code and link to the address you entered, sent

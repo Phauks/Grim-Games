@@ -247,8 +247,7 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['S2', 'S7', 'S10', 'S16', 'S28']
 	},
 	{
-		title:
-			'Admins find an account by email or username, and sign it out, free its username or delete it',
+		title: 'Admins see every account, and sign one out, free its username or delete it',
 		area: 'app',
 		parts: ['S27']
 	},

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { PlayerView } from '#lib/core/sync/room-protocol.ts';
-import { replies, type BotMemory } from './brain.ts';
+import { action, replies, type BotMemory } from './brain.ts';
 import { viewProblems } from './checks.ts';
 import { deal } from './deal.ts';
 
@@ -81,6 +81,29 @@ describe('room bots', () => {
 		const [ballot] = sent(view({ scriptVote: { voteId: 'v', kind: 'ranked', options } }));
 		expect(ballot).toMatchObject({ type: 'script-ballot', voteId: 'v' });
 		expect([...(ballot as { choices: string[] }).choices].sort()).toEqual(['a', 'b']);
+	});
+
+	it('makes a fast tool tap only when the view offers it', () => {
+		const empty = view();
+		expect(action('seat', empty, self)).toBeNull();
+		expect(action('role', empty, self)).toBeNull();
+		expect(action('vote', empty, self)).toBeNull();
+		expect(action('rate', empty, self)).toBeNull();
+		// Messages go to the Storyteller only when the room has the inbox on.
+		expect(action('message', empty, self)).toBeNull();
+		expect(action('message', view({ inbox: true } as Partial<PlayerView>), self)).toEqual({
+			type: 'message',
+			text: 'A test message from Bot 3.'
+		});
+		// No tap for a phone that has not named itself yet.
+		expect(action('role', view({ me: { memberId: 'm3' }, role: {} }), self)).toBeNull();
+	});
+
+	it('taps a count off number again after the first one is cleared, never a held one', () => {
+		const mine = { countOff: { size: 3, tokens: [{ number: 3, mine: true }] } };
+		expect(action('count', view(mine as Partial<PlayerView>), self)).toBeNull();
+		const full = { countOff: { size: 2, tokens: [{ number: 1 }, { number: 2 }] } };
+		expect(action('count', view(full as Partial<PlayerView>), self)).toBeNull();
 	});
 
 	it('flags two phones in one seat, and a character with no seat', () => {

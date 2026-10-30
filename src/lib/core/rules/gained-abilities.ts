@@ -183,7 +183,8 @@ export function withGainedSteps<T extends NightStep>(
 
 /**
  * The characters in play whose `givesAbility` goes to `seatId` (the Boffin's, while it is
- * the Demon), so its ⋯ menu offers to pick that ability.
+ * the Demon; the seat's own, to `self` with nothing on the script to give: the Amnesiac's), so
+ * its ⋯ menu offers to pick that ability.
  */
 export function abilityGivers(
 	game: Game,
@@ -196,6 +197,7 @@ export function abilityGivers(
 		const rule = id === undefined ? undefined : rulesOf(id, characters)?.givesAbility;
 		if (!id || !rule) continue;
 		if (rule.to === 'demon' && typeOf(game, seatId, characters) === 'demon') givers.add(id);
+		if (rule.to === 'self' && !rule.onScript && s === seatId) givers.add(id);
 	}
 	return [...givers];
 }

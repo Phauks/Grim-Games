@@ -155,10 +155,8 @@ export const account = {
 
 	// Admins' Accounts page (plan S27).
 	'account.admin.title': 'Accounts',
-	'account.admin.find': 'Email or username',
-	'account.admin.findButton': 'Find',
-	'account.admin.notFound': 'No account has that email or username',
-	'account.admin.findFailed': 'Could not find the account',
+	'account.admin.filter': 'Email, username or id',
+	'account.admin.listFailed': 'Could not load the accounts',
 	'account.admin.actionFailed': 'The account could not be changed',
 	'account.admin.adminsOnly': 'Only admin accounts see accounts.',
 	'account.admin.devices': 'Signed-in devices',
