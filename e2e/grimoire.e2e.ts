@@ -2401,6 +2401,22 @@ test("the Boffin gives the Demon a not-in-play good character's ability", async 
 		.tap();
 	await closeSheet(page);
 	await expect(mark).toHaveAttribute('title', 'Holds the Chef ability (not now)');
+	// Vanilla (Trevor, 2026-10-30): the Chef's token beside the Demon, as the wiki runs it; the
+	// pen goes back to its own mark.
+	await boardSettings(page, 'Board');
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	await settings.getByText('Vanilla held abilities', { exact: true }).tap();
+	await settings.getByRole('button', { name: 'Close' }).tap();
+	await expect(pill).toHaveCount(0);
+	await expect(demonSeat.getByTestId('note-mark')).toBeVisible();
+	const token = page.locator('[data-testid="held-token"][data-seat="2"]');
+	await expect(token).toHaveAttribute('title', 'Holds the Chef ability (not now)');
+	await token.tap();
+	await expect(
+		page
+			.locator('[data-scope="drawer"][data-part="content"]')
+			.getByRole('button', { name: 'Edit player name' })
+	).toBeVisible();
 });
 
 // https://wiki.bloodontheclocktower.com/Plague_Doctor: when it dies, the Storyteller gains a

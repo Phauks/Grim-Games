@@ -7,6 +7,7 @@
 		type SeatId
 	} from '#lib/core/model/index.ts';
 	import { heldAbilitiesOf, votesWithoutToken } from '#lib/core/rules/index.ts';
+	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import type { SeatPoint } from '#lib/ui/seating/seat-layout.ts';
 	import BoardReminderChip from './BoardReminderChip.svelte';
@@ -86,6 +87,20 @@
 	/** The character whose art a generic copy shows (Trevor, 2026-10-27), if any. */
 	const artOf = (reminder: ReminderInstance) =>
 		reminder.like ? characters.get(reminder.like.characterId) : undefined;
+	/**
+	 * The abilities each seat holds without their tokens (the Boffin's good character), in
+	 * seating order: in the seat's bottom-right pill, or Vanilla, beside the seat as the wiki
+	 * runs it (Board looks).
+	 */
+	const vanilla = $derived(boardLooks.current.abilityLook === 'vanilla');
+	const held = $derived(
+		seats.map((seat) =>
+			heldAbilitiesOf(game, seat.seatId, characters).flatMap(({ characterId, works }) => {
+				const as = characters.get(characterId);
+				return as ? [{ character: as, works }] : [];
+			})
+		)
+	);
 </script>
 
 <!-- Each seat's line to its reminders, by the Storyteller's "Reminder lines" choice (Trevor,
@@ -131,12 +146,7 @@
 			orphan={isOrphan(seat, game.script, characters, offScriptOk)}
 			nominations={nominations(seat.seatId)}
 			tokenFreeVotes={votesWithoutToken(game, seat.seatId, characters)}
-			heldAbilities={heldAbilitiesOf(game, seat.seatId, characters).flatMap(
-				({ characterId, works }) => {
-					const as = characters.get(characterId);
-					return as ? [{ character: as, works }] : [];
-				}
-			)}
+			heldAbilities={vanilla ? [] : held[i]}
 			dropTarget={seatArr.reorderTarget === seat.seatId ||
 				(remDrag.drag !== undefined &&
 					remDrag.drag.target === seat.seatId &&
@@ -184,6 +194,28 @@
 		{/each}
 	{/if}
 {/each}
+
+<!-- Vanilla: each held ability's token beside its seat, after the seat's reminders (the
+     board's fan leaves it a place). Tapping it opens the seat, where the ability is changed. -->
+{#if vanilla}
+	{#each seats as seat, i (seat.seatId)}
+		{#each held[i] as { character: as, works }, j (as.id)}
+			{@const spot = fan[i]?.[seat.reminders.length + j] ?? shown[i]}
+			<button
+				type="button"
+				class="held-token"
+				data-testid="held-token"
+				data-seat={i + 1}
+				data-off={works ? undefined : ''}
+				style:left="{spot.x}%"
+				style:top="{spot.y}%"
+				title={works ? `Holds the ${as.name} ability` : `Holds the ${as.name} ability (not now)`}
+				disabled={seatArr.arranging || watching}
+				onclick={() => onSeat(seat.seatId)}><CharacterToken character={as} size={chip} /></button
+			>
+		{/each}
+	{/each}
+{/if}
 
 <!-- Reminders that belong to no one, where they were put down (Trevor, 2026-10-17). -->
 {#each looseReminders(game) as reminder, k (reminder.reminderId)}
@@ -262,6 +294,36 @@
 	:global(.holding .tethers line:not(.held)) {
 		opacity: 0.35;
 		transition: opacity 0.15s;
+	}
+	.held-token {
+		position: absolute;
+		z-index: 1;
+		display: grid;
+		place-items: center;
+		min-width: var(--tap-target);
+		min-height: var(--tap-target);
+		padding: 0;
+		translate: -50% -50%;
+		border: 0;
+		border-radius: 50%;
+		background: none;
+		cursor: pointer;
+	}
+	/* Not now: faded and struck through, as in the pill, so it never rests on colour alone. */
+	.held-token[data-off] > :global(*) {
+		opacity: 0.4;
+	}
+	.held-token[data-off]::before {
+		content: '';
+		position: absolute;
+		z-index: 1;
+		width: 90%;
+		height: calc(0.15 * var(--u));
+		background: var(--on-surface);
+		rotate: -45deg;
+	}
+	:global(.holding) .held-token {
+		opacity: 0.35;
 	}
 	.place-spot {
 		position: absolute;
