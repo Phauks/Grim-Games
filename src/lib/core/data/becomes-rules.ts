@@ -76,6 +76,8 @@ export function readBecomes(
  * - `spent`: not once its own token says it was used (the Huntsman's No Ability);
  * - `onlyFrom`: only a player of one of these characters changes (the Huntsman's Damsel,
  *   https://wiki.bloodontheclocktower.com/Huntsman);
+ * - `notMarked`: never the player its own token marks (the Cacklejack's Not Me, chosen by
+ *   day, https://wiki.bloodontheclocktower.com/Cacklejack);
  * - `sameType`: each player of one of `types` may change, into another character of their own
  *   type (the Hatter's tea party, https://wiki.bloodontheclocktower.com/Hatter; the Engineer,
  *   https://wiki.bloodontheclocktower.com/Engineer). A character
@@ -93,6 +95,7 @@ export interface ChangesCharacter {
 	token?: ReminderLabel;
 	spent?: ReminderLabel;
 	onlyFrom?: readonly CharacterId[];
+	notMarked?: ReminderLabel;
 	sameType?: true;
 	firstNight?: true;
 	upTo?: 'minions';
@@ -118,6 +121,7 @@ export function readChangesCharacter(
 			'token',
 			'spent',
 			'onlyFrom',
+			'notMarked',
 			'sameType',
 			'firstNight',
 			'upTo'
@@ -136,6 +140,7 @@ export function readChangesCharacter(
 	const token = readToken(raw, 'token', path, issues, reminders);
 	const spent = readToken(raw, 'spent', path, issues, reminders);
 	const onlyFrom = readStringArray(raw, 'onlyFrom', path, issues);
+	const notMarked = readToken(raw, 'notMarked', path, issues, reminders);
 	const sameType = readBoolean(raw, 'sameType', path, issues);
 	const firstNight = readBoolean(raw, 'firstNight', path, issues);
 	const upTo = readEnum(raw, 'upTo', ['minions'] as const, path, issues, false);
@@ -147,6 +152,7 @@ export function readChangesCharacter(
 		...(token ? { token } : {}),
 		...(spent ? { spent } : {}),
 		...(onlyFrom?.length ? { onlyFrom } : {}),
+		...(notMarked ? { notMarked } : {}),
 		...(sameType ? { sameType: true as const } : {}),
 		...(firstNight ? { firstNight: true as const } : {}),
 		...(upTo ? { upTo } : {})
