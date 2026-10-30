@@ -483,11 +483,20 @@ test('after End game the Storyteller shares the finished grimoire with the room'
 	await expect(phone.getByRole('tab', { name: 'Grim' })).toHaveAttribute('aria-selected', 'true');
 	await expect(final.getByTestId('seat')).toHaveCount(seats);
 
-	// Reopening the game makes the grimoire private again.
 	await page
 		.getByRole('dialog', { name: 'Share', exact: true })
 		.getByRole('button', { name: 'Close' })
 		.tap();
+	// The Storyteller's player view shows the end as phones do (Trevor, 2026-10-30).
+	await page.getByRole('button', { name: 'Script', exact: true }).tap();
+	const view = page.getByTestId('script-scroll');
+	await expect(view.getByTestId('join-status')).toHaveText('Game over: Evil won');
+	await view.getByRole('tab', { name: 'Grim' }).tap();
+	await expect(view.getByTestId('final-grimoire').getByTestId('seat')).toHaveCount(seats);
+	await page.keyboard.press('Escape');
+	await expect(view).toBeHidden();
+
+	// Reopening the game makes the grimoire private again.
 	await page.getByTestId('game-over').tap();
 	await page
 		.getByRole('alertdialog', { name: 'Reopen game?' })

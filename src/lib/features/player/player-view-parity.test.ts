@@ -10,6 +10,7 @@ const joinPanel = source('room/JoinPanel.svelte');
 const playerView = source('player/PlayerView.svelte');
 const boardView = source('grimoire/BoardPlayerView.svelte');
 const screen = source('player/PlayerScreen.svelte');
+const grim = source('player/PlayerGrim.svelte');
 
 describe("Storyteller's player view parity", () => {
 	it('renders the same row over the tabs and the same tabs as /play', () => {
@@ -37,5 +38,15 @@ describe("Storyteller's player view parity", () => {
 		// Storyteller's view renders too: not straight in the phone's own room row.
 		expect(joinPanel).not.toMatch(/from '#lib\/features\/day\//);
 		expect(joinPanel).not.toMatch(/public\?\.(now|timer)\b/);
+	});
+
+	it('shows the shared final grimoire and the end of the game as phones do', () => {
+		// Trevor, 2026-10-30: Share grim's final grimoire never reached the Storyteller's player
+		// view, which read only a phone's room. The board hands it the one the room sent.
+		expect(boardView).toMatch(/roomHost\(\)\.revealed|host\.revealed/);
+		expect(boardView).toMatch(/\bfinal\b[\s\S]*}}/);
+		expect(grim).toMatch(/town \? town\.final : player\?\.revealed/);
+		// "Game over" over the tabs comes from the same words on both sides.
+		for (const host of [joinPanel, boardView]) expect(host).toContain('gameOverText(');
 	});
 });

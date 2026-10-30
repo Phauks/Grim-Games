@@ -482,10 +482,22 @@ export class RoomHost {
 		return this.#socket?.send({ type: 'town-sound', ...command }) ?? false;
 	}
 
-	/** The game that is over (End game), so its grimoire can be shared (Share grim, R5). */
-	endedGame = $state<string>();
-	/** The game whose final grimoire the room's phones were sent (Share grim, R5). */
-	revealedGame = $state<string>();
+	/**
+	 * The game that is over (End game), with who won and how, as the room's phones are told,
+	 * so its grimoire can be shared (Share grim, R5) and the Storyteller's player view says so.
+	 */
+	ended = $state.raw<{ gameId: GameId; winner?: 'good' | 'evil'; reason?: string }>();
+	get endedGame(): string | undefined {
+		return this.ended?.gameId;
+	}
+	/**
+	 * The final grimoire the room's phones were sent (Share grim, R5), which the Storyteller's
+	 * player view shows on its Grim tab as phones do.
+	 */
+	revealed = $state.raw<{ gameId: string; grimoire: SharedGrimoire }>();
+	get revealedGame(): string | undefined {
+		return this.revealed?.gameId;
+	}
 
 	/**
 	 * Share grim (R5): sends the whole grimoire to the room's phones once the game is over.
@@ -506,7 +518,7 @@ export class RoomHost {
 		} as const;
 		if (JSON.stringify(message).length > MAX_GRIMOIRE_BYTES) return false;
 		if (!this.#socket?.send(message)) return false;
-		this.revealedGame = gameId;
+		this.revealed = { gameId, grimoire: message.grimoire };
 		return true;
 	}
 
@@ -566,9 +578,9 @@ export class RoomHost {
 	 */
 	setEnded(gameId: GameId, ended: { winner?: 'good' | 'evil'; reason?: string } | undefined): void {
 		this.#ended = { gameId, ended };
-		this.endedGame = ended ? gameId : undefined;
+		this.ended = ended ? { gameId, ...ended } : undefined;
 		// Reopen takes the shared grimoire back (the room drops it too).
-		if (!ended && this.revealedGame === gameId) this.revealedGame = undefined;
+		if (!ended && this.revealedGame === gameId) this.revealed = undefined;
 		this.#sendEnded();
 	}
 
@@ -767,7 +779,7 @@ export class RoomHost {
 		this.scriptVote = undefined;
 		this.viewerKey = undefined;
 		this.viewerPassword = undefined;
-		this.revealedGame = undefined;
+		this.revealed = undefined;
 		this.rolesShown.stop();
 		this.rolesSeen = [];
 		this.transfer = undefined;

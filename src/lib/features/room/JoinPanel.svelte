@@ -32,6 +32,7 @@
 	import YourCharacter from './YourCharacter.svelte';
 	import PlayerCountOff from './PlayerCountOff.svelte';
 	import { finalGrimoire } from './final-grimoire.svelte.ts';
+	import { gameOverText } from './game-over-text.ts';
 	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
 	import ScriptByline from '#lib/features/player/ScriptByline.svelte';
 	import PlayerStatusRow from '#lib/features/player/PlayerStatusRow.svelte';
@@ -137,12 +138,7 @@
 		if (!view) return status === 'offline' ? t('room.playerOffline') : t('room.joining');
 		if (view.choosing) return t('room.choosing');
 		// The same words as the Storyteller's board once the game has ended.
-		if (view.ended)
-			return view.ended.winner === 'good'
-				? t('room.gameOverGood')
-				: view.ended.winner === 'evil'
-					? t('room.gameOverEvil')
-					: t('room.gameOver');
+		if (view.ended) return gameOverText(view.ended.winner);
 		// In the room: nothing to say, named or not; the cog at the top carries the name (Trevor,
 		// 2026-10-26: "remove you are in the room as ...", then of "set your name": "I just want
 		// that whole thing gone").
@@ -471,17 +467,9 @@
 		ended={!!view?.endedGameId}
 		presence={parseSeatPresence(view?.presence)}
 		mySeat={mine}
+		status={summary}
+		seatNumber={mySeat}
 	>
-		{#snippet before()}
-			<!-- Where this phone sits; the name is set from You on the title line (plan E2, Trevor
-			     2026-10-26: "move name into an edit button in the top"). -->
-			<!-- With nothing to say (the phone has its name) the box takes no room, so the game's
-			     status starts the row (Trevor, 2026-10-26: "remove the empty space next to the game
-			     state tracker"). -->
-			<p class="you" class:quiet={!summary} data-testid="you-row" data-seat={mySeat}>
-				<span class="summary" role="status" data-testid="join-status">{summary}</span>
-			</p>
-		{/snippet}
 		{#snippet after()}
 			<!-- Only once the game is over (Trevor 2026-10-25); it shares the row's height, so nothing below moves. -->
 			{#if view?.endedGameId}
@@ -621,32 +609,6 @@
 	.problem {
 		margin: 0;
 		color: var(--on-surface-muted);
-	}
-	/* Where this phone sits, in the row over the tabs (PlayerStatusRow). */
-	.you {
-		display: flex;
-		flex: 1;
-		align-items: center;
-		gap: var(--space-2);
-		box-sizing: border-box;
-		min-width: 0;
-		min-height: var(--tap-target);
-		margin: 0;
-		padding: var(--space-2) var(--space-3);
-		border: 1px solid var(--border);
-		border-radius: var(--radius-md);
-		background: var(--surface-raised);
-	}
-	/* Two lines reserved, so a longer status never moves the tabs. */
-	.you.quiet {
-		display: none;
-	}
-	.summary {
-		flex: 1;
-		min-width: 0;
-		min-height: 2.8em;
-		margin: 0;
-		align-content: center;
 	}
 	.ability {
 		margin: 0 0 var(--space-2);

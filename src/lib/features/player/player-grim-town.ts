@@ -1,3 +1,4 @@
+import type { GameOver, SharedGrimoire } from '#lib/core/sync/room.ts';
 import type {
 	PublicCorner,
 	PublicLook,
@@ -26,4 +27,9 @@ export interface PlayerGrimTown {
 	roomCode?: string;
 	/** Each seat's player's picture (2026-10-27); else, on the board, this device's room's. */
 	pictures?: Partial<Record<string, string>>;
+	/**
+	 * The finished grimoire the Storyteller shared (Share grim, R5), as the room sent it to
+	 * phones, how the game ended and the room holding its background; a phone reads its room's.
+	 */
+	final?: { grimoire: SharedGrimoire; ended?: Omit<GameOver, 'gameId'>; room?: string };
 }

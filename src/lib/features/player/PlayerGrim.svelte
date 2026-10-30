@@ -161,14 +161,17 @@
 	 * the town until switched off (Trevor, 2026-10-24); its History steps through on this
 	 * phone only.
 	 */
-	const final = $derived(player?.revealed);
+	// The Storyteller's player view is given the one the room sent (Trevor, 2026-10-30).
+	const final = $derived(town ? town.final : player?.revealed);
 	let showFinal = $state(true);
 	let arrivedAt = $state(0);
 	$effect(() => {
 		if (final) arrivedAt = Date.now();
 	});
 	const over = $derived<EndedGame | undefined>(
-		final ? ({ endedAt: arrivedAt, ...player?.view?.ended } as EndedGame) : undefined
+		final
+			? ({ endedAt: arrivedAt, ...(town ? town.final?.ended : player?.view?.ended) } as EndedGame)
+			: undefined
 	);
 
 	const nameOf = (seat: PublicSeat) =>
@@ -361,7 +364,7 @@
 		/>
 	</div>
 	<div class="final" data-testid="final-grimoire">
-		<SharedBoard shared={final.grimoire} {over} room={code} />
+		<SharedBoard shared={final.grimoire} {over} room={town ? town.final?.room : code} />
 	</div>
 {:else if !code || seats.length === 0}
 	<p class="none" data-testid="grim-none">{t('common.none')}</p>
@@ -540,7 +543,7 @@
 		bind:width={toolsW}
 		bind:height={toolsH}
 		shaped={!!aspect}
-		final={!town && !!final}
+		final={!!final}
 		{showFinal}
 		onFinal={(on) => (showFinal = on)}
 		bin={{ open: binOpen, disabled: hiding, onToggle: () => (binOpen = !binOpen) }}
