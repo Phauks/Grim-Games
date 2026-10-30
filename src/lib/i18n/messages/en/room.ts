@@ -48,6 +48,8 @@ export const room = {
 		'Their phone leaves the room and can’t join again this game unless you let it back in.',
 	'room.players.removed': 'Removed from room',
 	'room.players.letBackIn': 'Let back in',
+	'room.seating.open': 'Open seating',
+	'room.seating.lock': 'Lock seating',
 	'room.removedYou': 'The Storyteller removed you from this game.',
 	'room.refresh': 'New code',
 	'room.refreshTitle': 'Make a new code?',

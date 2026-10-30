@@ -182,6 +182,9 @@ export const ICON_SLOTS = {
 	phoneAway: { label: 'Phone away', choices: ['ph:moon', 'ph:clock'] },
 	noPhone: { label: 'No phone', choices: ['ph:minus-circle', 'ph:minus'] },
 	roleSeen: { label: 'Has seen their character', choices: ['ph:eye', 'ph:check'] },
+	/** Seating on the grim (plan J38): phones may move their own seat, until it is locked. */
+	openSeating: { label: 'Open seating', choices: ['ph:lock-simple-open', 'ph:lock-open'] },
+	lockSeating: { label: 'Lock seating', choices: ['ph:lock-simple', 'ph:lock'] },
 	/** Room transfer: the room goes to another Storyteller's device (Trevor, 2026-10-28). */
 	transfer: { label: 'Room transfer', choices: ['ph:hand-arrow-up', 'ph:arrow-square-out'] },
 	/** Marks an opened message unread again (Trevor, 2026-10-28: "an eyeball next to the x"). */

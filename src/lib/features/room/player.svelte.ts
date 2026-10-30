@@ -334,6 +334,11 @@ export class RoomPlayer {
 		return voteId ? this.#socket.send({ type: 'script-ballot', voteId, choices }) : false;
 	}
 
+	/** Asks the Storyteller's board to seat this phone (plan J38): after a seat, or in an open one. */
+	askSeat(message: { type: 'sit'; after: SeatId } | { type: 'claim-seat'; seatId: SeatId }) {
+		return this.#socket.send(message);
+	}
+
 	/** Tells the Storyteller this player has seen their character (Trevor, 2026-10-26). */
 	roleSeen(): void {
 		this.#socket.send({ type: 'role-seen' });

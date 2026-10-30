@@ -135,7 +135,9 @@ import ph_list_checks_bold from '~icons/ph/list-checks-bold';
 import ph_list_dashes_bold from '~icons/ph/list-dashes-bold';
 import ph_list_magnifying_glass_bold from '~icons/ph/list-magnifying-glass-bold';
 import ph_lock_bold from '~icons/ph/lock-bold';
+import ph_lock_open_bold from '~icons/ph/lock-open-bold';
 import ph_lock_simple_bold from '~icons/ph/lock-simple-bold';
+import ph_lock_simple_open_bold from '~icons/ph/lock-simple-open-bold';
 import ph_magnifying_glass_bold from '~icons/ph/magnifying-glass-bold';
 import ph_mask_sad_bold from '~icons/ph/mask-sad-bold';
 import ph_megaphone_bold from '~icons/ph/megaphone-bold';
@@ -365,7 +367,9 @@ const icons: IconMap = {
 	'ph:list-dashes-bold': ph_list_dashes_bold,
 	'ph:list-magnifying-glass-bold': ph_list_magnifying_glass_bold,
 	'ph:lock-bold': ph_lock_bold,
+	'ph:lock-open-bold': ph_lock_open_bold,
 	'ph:lock-simple-bold': ph_lock_simple_bold,
+	'ph:lock-simple-open-bold': ph_lock_simple_open_bold,
 	'ph:magnifying-glass-bold': ph_magnifying_glass_bold,
 	'ph:mask-sad-bold': ph_mask_sad_bold,
 	'ph:megaphone-bold': ph_megaphone_bold,

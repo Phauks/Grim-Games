@@ -4458,7 +4458,14 @@ test('the board menu names its groups, in two columns beside a phone', async ({ 
 	expect((await names('Game')).join(' ')).toMatch(
 		/^Players History Demon bluffs( Game info)? Game settings( Character selection)? End game$/
 	);
-	expect(await names('Seats')).toEqual(['Add seat', 'Add Fabled or Loric', 'Arrange seats']);
+	// Open seating (plan J38) is there with no room open too, disabled, so nothing moves.
+	expect(await names('Seats')).toEqual([
+		'Add seat',
+		'Add Fabled or Loric',
+		'Arrange seats',
+		'Open seating'
+	]);
+	await expect(group('Seats').getByRole('button', { name: 'Open seating' })).toBeDisabled();
 	expect(await names('App')).toEqual(['Settings', 'Full screen', 'Report an issue']);
 	// Beside a phone, the game on the left and the rest on the right.
 	const game = (await group('Game').boundingBox())!;

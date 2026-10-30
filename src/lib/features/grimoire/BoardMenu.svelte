@@ -209,6 +209,17 @@
 				>
 					Arrange seats
 				</Button>
+				<!-- Seating on the grim (plan J38): while open, each phone drags its own seat on its Grim
+				     tab; locked, a phone with no seat taps an open one. Disabled with no room open. -->
+				<Button
+					disabled={watching || !host.code}
+					variant="quiet"
+					icon={host.seatingOpen ? 'lockSeating' : 'openSeating'}
+					data-testid="menu-seating"
+					onclick={() => fromMenu(() => host.send({ type: 'seating', open: !host.seatingOpen }))}
+				>
+					{host.seatingOpen ? t('room.seating.lock') : t('room.seating.open')}
+				</Button>
 			</section>
 			<section class="group" aria-labelledby="board-menu-app">
 				<h3 id="board-menu-app" class="group-title">App</h3>

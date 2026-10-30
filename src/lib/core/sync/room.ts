@@ -30,6 +30,7 @@ import { MAX_MEMBERS } from './room-presence.ts';
 import { seatPresence } from './seat-presence.ts';
 import type { RoomTransfer } from './room-transfer.ts';
 import { withoutRemoved, type RemovedMember } from './room-removed.ts';
+import { setSeatingOpen } from './room-seating-open.ts';
 
 export {
 	isSharedGrimoire,
@@ -119,6 +120,8 @@ export interface RoomState {
 	transfer?: RoomTransfer;
 	/** Phones the Storyteller removed this game (room-removed.ts); a new game clears it. */
 	removed?: RemovedMember[];
+	/** Phones may move their own seat (room-seating-open.ts, plan J38); a new game locks it. */
+	seatingOpen?: true;
 }
 
 /**
@@ -173,6 +176,7 @@ export {
 export type * from './room-protocol.ts';
 export * from './room-transfer.ts';
 export * from './room-removed.ts';
+export * from './room-seating-open.ts';
 
 /**
  * A light shape check of a script from the Storyteller's device: the room only stores and
@@ -223,6 +227,7 @@ export function hostView(room: RoomState, present?: ReadonlySet<string>): HostVi
 	if (reports.length) view.pictureReports = reports;
 	if (room.messages?.length) view.messages = room.messages;
 	if (room.removed?.length) view.removed = room.removed;
+	if (room.seatingOpen) view.seatingOpen = true;
 	if (room.transfer) {
 		const { endsAt, tries, asking } = room.transfer;
 		view.transfer = { endsAt, tries };
@@ -297,6 +302,7 @@ export function playerView(
 		if (mine) view.feedback = mine.feedback;
 	}
 	if (room.choosing) view.choosing = true;
+	if (room.seatingOpen) view.seatingOpen = true;
 	const role = memberRole(room, memberId);
 	if (role) view.role = role;
 	if (room.scriptVote) {
@@ -440,10 +446,15 @@ export function publish(
 	const keep = (seatId?: SeatId) => !newGame && seatId !== undefined && seats.has(seatId);
 	// A vote, and the game being over, belong to their game.
 	const base = newGame
-		? withoutRemoved(
-				withoutMessages(
-					withoutPictureVerdicts(closeScriptVote(setChoosing(withoutEnded(closeVote(room)), false)))
-				)
+		? setSeatingOpen(
+				withoutRemoved(
+					withoutMessages(
+						withoutPictureVerdicts(
+							closeScriptVote(setChoosing(withoutEnded(closeVote(room)), false))
+						)
+					)
+				),
+				false
 			)
 		: room;
 	return {

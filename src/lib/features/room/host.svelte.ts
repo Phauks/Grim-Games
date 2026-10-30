@@ -58,6 +58,7 @@ import { newGrimViewPassword } from '#lib/core/sync/grim-view-password.ts';
 
 import { STORAGE_KEY, type StoredRoom } from './host-storage.ts';
 import { RolesShown } from './roles-shown.svelte.ts';
+import { grantSit } from './host-seating.ts';
 
 /** Changes are gathered for this long before the grimoire is sent to viewers again. */
 const GRIMOIRE_DELAY_MS = 300;
@@ -72,8 +73,7 @@ export class RoomHost {
 	present = $state.raw<readonly string[]>();
 	/** Members whose phone sleeps or is in the background, but was here during this game. */
 	away = $state.raw<readonly string[]>([]);
-	/** The spectators' open vote and its count (Specters), if one is open. */
-	vote = $state.raw<VoteTally>();
+	vote = $state.raw<VoteTally>(); // The spectators' open vote and its count (Specters).
 	/** The room's vote on the next script and its count (plan R1), if one is open. */
 	scriptVote = $state.raw<ScriptVoteTally>();
 	problem = $state(false); // Opening a room failed, e.g. offline.
@@ -89,14 +89,11 @@ export class RoomHost {
 	 * storyteller ... default to a new password per game (that can be customizable)").
 	 */
 	viewerPassword = $state<string>();
-	/** True when the grimoire is too large to send to viewers. */
-	grimoireTooLarge = $state(false);
-	/** How many are watching through the view-only link now (Trevor, 2026-10-20). */
-	watchers = $state(0);
-	/** The game whose players may see their own character now, for a minute (RolesShown). */
-	readonly rolesShown = new RolesShown();
-	/** Seats whose player has held their character to see it (Trevor, 2026-10-26). */
-	rolesSeen = $state.raw<readonly SeatId[]>([]);
+	grimoireTooLarge = $state(false); // Too large to send to viewers.
+	watchers = $state(0); // Watching through the view-only link now (Trevor, 2026-10-20).
+	readonly rolesShown = new RolesShown(); // Players may see their own character, for a minute.
+	rolesSeen = $state.raw<readonly SeatId[]>([]); // Their player held the character to see it.
+	seatingOpen = $state(false); // Phones may move their own seat (plan J38).
 	transfer = $state.raw<TransferStatus>(); // The open Room transfer (room-transfer.svelte.ts).
 	sendingGame = $state(false); // The grimoire goes to the room: a Room transfer brings it.
 	onMessage: ((message: ServerMessage) => void) | undefined; // Hears the room first (transfer).
@@ -124,8 +121,7 @@ export class RoomHost {
 	/** The board's own picture while its look has one, and its name in the room once uploaded. */
 	#picture = $state.raw<Blob>();
 	#uploaded = $state.raw<{ picture: Blob; code: string; hash: string }>();
-	/** The open board's shape, its width ÷ height, for every shared grim (showAspect). */
-	#aspect = $state.raw<{ gameId: string; aspect: number }>();
+	#aspect = $state.raw<{ gameId: string; aspect: number }>(); // The board's width ÷ height.
 	#ended:
 		| { gameId: GameId; ended: { winner?: 'good' | 'evil'; reason?: string } | undefined }
 		| undefined;
@@ -656,6 +652,7 @@ export class RoomHost {
 			this.present = message.present;
 			this.away = message.away ?? [];
 			this.removed = message.removed ?? [];
+			this.seatingOpen = !!message.seatingOpen;
 			this.vote = message.vote;
 			this.scriptVote = message.scriptVote;
 			this.rolesSeen = message.rolesSeen ?? [];
@@ -664,6 +661,8 @@ export class RoomHost {
 			if (message.feedback && message.feedbackGameId) {
 				gameFeedback.save(message.feedbackGameId, message.feedback);
 			}
+		} else if (message.type === 'sit') {
+			if (this.#game) grantSit(this.#game, this.members, message);
 		} else if (message.type === 'watchers') {
 			this.watchers = message.count;
 		} else if (message.type === 'grimoire-wanted') {
@@ -763,6 +762,7 @@ export class RoomHost {
 		this.present = undefined;
 		this.away = [];
 		this.removed = [];
+		this.seatingOpen = false;
 		this.vote = undefined;
 		this.scriptVote = undefined;
 		this.viewerKey = undefined;
