@@ -5,7 +5,8 @@
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterDialog from '#lib/features/characters/CharacterDialog.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
-	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
+	import BoardReminder from './BoardReminder.svelte';
+	import ReminderTokenRow from './ReminderTokenRow.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
@@ -13,7 +14,7 @@
 	import { placingAlignment } from './board.ts';
 	import CharacterPicker from './CharacterPicker.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
-	import { tokenLabel } from './reminders.ts';
+	import { placedLook } from './reminders.ts';
 	import RulesAtSetting from './RulesAtSetting.svelte';
 
 	/**
@@ -100,22 +101,19 @@
 {#snippet heldList(id: CharacterId)}
 	<!-- Nothing when it holds none; placed ones under a Reminders header (Trevor, 2026-10-18). -->
 	{#if ruleReminders(game, id).length > 0}<h3 class="held-head">Reminders</h3>{/if}
+	<!-- The tokens themselves, as on the board (Trevor, 2026-10-30). -->
 	<div class="held-list" role="group" aria-label="Reminders">
-		{#each ruleReminders(game, id) as reminder (reminder.reminderId)}
-			<button
-				type="button"
-				class="held-chip"
-				aria-label={reminder.label}
-				disabled={watching}
-				onclick={() => onReminder(reminder.reminderId)}
-			>
-				<ReminderToken
-					label={tokenLabel(reminder)}
-					character={characters.get(reminder.characterId)}
+		<ReminderTokenRow inline>
+			{#each ruleReminders(game, id) as reminder (reminder.reminderId)}
+				<BoardReminder
+					{...placedLook(reminder, characters)}
 					alignment={placingAlignment(game, reminder, characters)}
+					ariaLabel={reminder.label}
+					disabled={watching}
+					onTap={() => onReminder(reminder.reminderId)}
 				/>
-			</button>
-		{/each}
+			{/each}
+		</ReminderTokenRow>
 	</div>
 {/snippet}
 
@@ -309,18 +307,7 @@
 		color: var(--on-surface-muted);
 	}
 	.held-list {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: var(--space-1);
 		margin-top: var(--space-2);
-	}
-	.held-chip {
-		min-height: var(--tap-target);
-		padding: 0;
-		border: 0;
-		background: none;
-		cursor: pointer;
 	}
 	.rule-detail {
 		display: flex;

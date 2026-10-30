@@ -7,7 +7,9 @@
  *   https://wiki.bloodontheclocktower.com/Boffin), `storyteller`, the Storyteller, who
  *   makes its choices (the Plague Doctor, picked on its night step once it dies,
  *   https://wiki.bloodontheclocktower.com/Plague_Doctor), or `self`, this character's own
- *   player (the Hermit, https://wiki.bloodontheclocktower.com/Hermit);
+ *   player (the Hermit, https://wiki.bloodontheclocktower.com/Hermit; picked from its own ⋯
+ *   menu without `onScript`: the character whose ability the Amnesiac's works like, for its
+ *   night timing, text and reminders, https://wiki.bloodontheclocktower.com/Amnesiac);
  * - `types`: the character types the ability may come from;
  * - `onScript`: every other character of those types on the script, all at once, with
  *   nothing to pick (the Hermit's Outsiders);

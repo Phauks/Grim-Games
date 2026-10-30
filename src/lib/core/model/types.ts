@@ -224,6 +224,14 @@ export interface Bag {
 	unseated?: Reminder[];
 }
 
+/**
+ * The Storyteller's answer to a private guess at a player's own ability (the Amnesiac's,
+ * https://wiki.bloodontheclocktower.com/Amnesiac): very wrong, on the right track, very close,
+ * or spot on.
+ */
+export const GUESS_ANSWERS = ['cold', 'warm', 'hot', 'bingo'] as const;
+export type GuessAnswer = (typeof GUESS_ANSWERS)[number];
+
 /** A public guess of one player's character (the Juggler's, for example). */
 export interface CharacterGuess {
 	seatId: SeatId;
@@ -278,6 +286,8 @@ export type DayEntry =
 			guesses?: CharacterGuess[];
 			/** For a statement (the Gossip's): whether it is true, as the Storyteller marked it. */
 			holds?: boolean;
+			/** For a guess at the player's own ability (the Amnesiac's): the Storyteller's answer. */
+			answer?: GuessAnswer;
 	  }
 	| {
 			kind: 'info';

@@ -29,12 +29,12 @@
 	import { fromScript, scriptLogo } from '#lib/core/data/index.ts';
 	import { loadOfficialData, officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { onMount, untrack } from 'svelte';
-	import { pushState } from '$app/navigation';
+	import { goto, pushState } from '$app/navigation';
 	import { page } from '$app/state';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
-	import LateSeatDialog from './LateSeatDialog.svelte';
+	import { latePlayerHref } from './late-player.ts';
 
 	interface Props {
 		port: SetupGamePort;
@@ -237,11 +237,6 @@
 		if (hasRoom && dealShow) roomHost().showRoles(current.gameId, true);
 	}
 
-	// Add late player (Trevor, 2026-10-30): one more player, mid-draw or once every tile is
-	// drawn, until the game is under way.
-	let lateOpen = $state(false);
-	const lateLookup = (id: string) => lookup?.get(id) ?? officialData.current?.byId.get(id);
-
 	function confirm(details: { playerName: string; alignment?: Alignment }) {
 		if (!tile?.drawnBySeat) return;
 		const seatId = tile.drawnBySeat;
@@ -273,9 +268,9 @@
 		{#if !locked && game}<IconButton
 				icon="latePlayer"
 				label={t('setup.late')}
-				disabled={!bag || !script || game.pastDays.length > 0}
+				disabled={!bag || game.pastDays.length > 0}
 				data-testid="late-player"
-				onclick={() => (lateOpen = true)}
+				onclick={() => void goto(latePlayerHref(game.gameId))}
 			/>{/if}
 		{#if game}
 			<IconButton
@@ -354,17 +349,6 @@
 		onChange={(on) => (dealShow = on)}
 	/>
 </ConfirmDialog>
-
-{#if game && script && officialData.current}
-	<LateSeatDialog
-		bind:open={lateOpen}
-		{game}
-		scriptCharacters={script.characters}
-		official={officialData.current.characters}
-		lookup={lateLookup}
-		{send}
-	/>
-{/if}
 
 {#if game}
 	<PinDialog bind:open={pinOpen} gameId={game.gameId} mode={pinMode} onDone={pinDone} />

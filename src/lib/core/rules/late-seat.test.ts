@@ -113,6 +113,17 @@ describe('planLateSeat', () => {
 		}
 	});
 
+	it('stays fair for several late players at once', () => {
+		for (const [from, to, seen] of [
+			[5, 7, 3],
+			[9, 11, 6],
+			[10, 13, 10],
+			[12, 14, 8]
+		]) {
+			expect(distanceFromFresh(from, BASE_DISTRIBUTION[to], seen)).toBeLessThan(0.02);
+		}
+	});
+
 	it('stays fair going from 12 to 13 at any point in the draw', () => {
 		for (const seen of [1, 6, 9, 12]) {
 			expect(distanceFromFresh(12, BASE_DISTRIBUTION[13], seen)).toBeLessThan(0.02);
@@ -209,10 +220,10 @@ describe('planLateSeat', () => {
 		}
 	});
 
-	it('refuses counts that are not for one more player', () => {
+	it('refuses counts that are not for more players', () => {
 		const input: LateSeatInput = {
 			...deal(BASE_DISTRIBUTION[10], 5, seeded()),
-			target: BASE_DISTRIBUTION[12],
+			target: BASE_DISTRIBUTION[10],
 			scriptCounts: SCRIPT,
 			random: seeded()
 		};

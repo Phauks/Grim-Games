@@ -4,7 +4,8 @@
 -->
 <script lang="ts">
 	import type { CharacterLookup, Game } from '#lib/core/model/index.ts';
-	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
+	import BoardReminder from './BoardReminder.svelte';
+	import ReminderTokenRow from './ReminderTokenRow.svelte';
 	import ExecutionDialog from '#lib/features/day/ExecutionDialog.svelte';
 	import type { PhaseFlow } from '#lib/features/grimoire/phase-flow.svelte.ts';
 	import { ASSIST_LABELS } from '#lib/ui/assistance.ts';
@@ -27,16 +28,17 @@
 	onConfirm={() => flow.beginGame()}
 >
 	<p class="ask-note">Setup reminders not yet placed:</p>
-	<ul class="setup-left" data-testid="setup-left">
+	<!-- The tokens themselves, as on the board (Trevor, 2026-10-30). -->
+	<ReminderTokenRow testid="setup-left">
 		{#each flow.setupLeft as { key, suggestion } (key)}
 			<li>
-				<ReminderToken
+				<BoardReminder
 					label={suggestion.label}
 					character={characters.get(suggestion.characterId)}
 				/>
 			</li>
 		{/each}
-	</ul>
+	</ReminderTokenRow>
 </ConfirmDialog>
 
 <ConfirmDialog
@@ -67,13 +69,5 @@
 <style>
 	.ask-note {
 		margin: 0;
-	}
-	.setup-left {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-1);
-		margin: 0;
-		padding: 0;
-		list-style: none;
 	}
 </style>

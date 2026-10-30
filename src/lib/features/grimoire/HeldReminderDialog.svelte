@@ -8,6 +8,7 @@
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterSummary from '#lib/features/characters/CharacterSummary.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
+	import BoardReminder from './BoardReminder.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -15,7 +16,7 @@
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import SeatChooser from './SeatChooser.svelte';
 	import ReminderMoreButton from './ReminderMoreButton.svelte';
-	import { isGeneric, tokenLabel } from './reminders.ts';
+	import { isGeneric, placedLook, tokenLabel } from './reminders.ts';
 	import ReminderNoteField from './ReminderNoteField.svelte';
 
 	/**
@@ -60,9 +61,10 @@
 </script>
 
 <Dialog bind:open title="Reminder">
+	<!-- The token itself, as on the board (Trevor, 2026-10-30). -->
 	{#snippet heading()}
-		{#if reminder}<ReminderToken
-				label={tokenLabel(reminder)}
+		{#if reminder}<BoardReminder
+				{...placedLook(reminder, characters)}
 				character={source}
 				alignment={placingAlignment(game, reminder, characters)}
 			/>{:else}Reminder{/if}

@@ -12,6 +12,7 @@ import type {
 	AbnormalCause,
 	CharacterGuess,
 	DayEntryId,
+	GuessAnswer,
 	DeathCause,
 	FakeEvilInfo,
 	GenericLook,
@@ -229,8 +230,11 @@ export type Command =
 	 */
 	| {
 			type: 'AddLatePlayer';
-			playerName?: PlayerName;
-			position?: number;
+			/**
+			 * One or more late players (Trevor, 2026-10-30), each where the Storyteller placed
+			 * them: `position` is in the seating as it was before any of them joined.
+			 */
+			players: { playerName?: PlayerName; position?: number }[];
 			changes: { seatId: SeatId; characterId: CharacterId }[];
 			bag: TileSpec[];
 	  }
@@ -270,7 +274,8 @@ export type Command =
 	| { type: 'UseAbility'; seatId: SeatId; characterId: CharacterId; on?: SeatId }
 	/**
 	 * A free-text note about a character (any length; may be empty with `guesses`). `holds`
-	 * marks a statement true or false (L58).
+	 * marks a statement true or false (L58); `answer` answers a guess at the player's own
+	 * ability (the Amnesiac's).
 	 */
 	| {
 			type: 'DayNote';
@@ -279,14 +284,16 @@ export type Command =
 			text: string;
 			guesses?: CharacterGuess[];
 			holds?: boolean;
+			answer?: GuessAnswer;
 	  }
-	/** Replaces a note's text, guesses and truth (leaving one out clears it). */
+	/** Replaces a note's text, guesses, truth and answer (leaving one out clears it). */
 	| {
 			type: 'EditDayNote';
 			entryId: DayEntryId;
 			text: string;
 			guesses?: CharacterGuess[];
 			holds?: boolean;
+			answer?: GuessAnswer;
 	  }
 	/**
 	 * Records what a waking character was shown (`seatId` is the waking player), placing

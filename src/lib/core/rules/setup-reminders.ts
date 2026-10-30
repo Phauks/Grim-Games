@@ -82,6 +82,15 @@ export function setupPrepOf(
 	return rulesOf(characterId, lookup)?.setupPrep;
 }
 
+/** The label of the value `characterId`'s prep asks for under `key` ("Secret phrase"). */
+export function prepValueLabel(
+	characterId: CharacterId,
+	key: string,
+	lookup?: CharacterLookup
+): string | undefined {
+	return setupPrepOf(characterId, lookup)?.notes?.find((n) => n.value?.key === key)?.value?.label;
+}
+
 /** One character's setup tokens, with the wiki page to link. */
 interface SetupReminderEntry {
 	id: CharacterId;

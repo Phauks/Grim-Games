@@ -23,6 +23,7 @@
 	import { goto, replaceState } from '$app/navigation';
 	import { onMount, tick, untrack } from 'svelte';
 	import { REMINDERS_HASH } from '#lib/features/setup/setup-steps.ts';
+	import LateSeatOnBoard from '#lib/features/setup/LateSeatOnBoard.svelte';
 	import { resolve } from '$app/paths';
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import {
@@ -1038,6 +1039,7 @@
 <NominationChooser {grimoire} {characters} bind:asking={nominatingFrom} onNominated={nominated} />
 
 <HistoryDialog bind:open={historyOpen} {grimoire} />
+{#if !watching}<LateSeatOnBoard {grimoire} place={startPlacing} />{/if}
 
 <ExportGameDialog bind:open={exportOpen} load={exportGame} {capture} />
 {#if !watching}
@@ -1156,6 +1158,13 @@
 		/* Fills the screen: a game hides the sidebar (route data). */
 		height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
 		min-height: calc(20 * var(--u));
+	}
+	/* The board fills the screen, so its page never scrolls: on a laptop a scrollbar that a
+	   rounding sliver brought in narrowed the board, which took the sliver away again, and the
+	   scrollbar flickered in and out (Trevor, 2026-10-30). No room is kept for one either. */
+	:global(html:has(.grimoire)) {
+		overflow: hidden;
+		scrollbar-gutter: auto;
 	}
 	/* Mirrors the corner's script name, bottom right above the reminder bank, with the same
 	   halo and no band (Trevor, 2026-10-28). */

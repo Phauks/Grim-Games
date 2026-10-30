@@ -1787,7 +1787,7 @@ test('the reminder bank holds setup reminders, placed by hand, then every remind
 	// In the seat sheet a reminder is just its token, tapped for these actions, delete among
 	// them (Trevor, 2026-10-19): no tick box, no owner, no ⋯.
 	await expect(actions.getByRole('button', { name: 'Remove reminder' })).toBeVisible();
-	const row = sheet.locator('ul.reminders > li').first();
+	const row = sheet.locator('ul.token-row > li').first();
 	await expect(row.locator('button')).toHaveCount(1);
 	await expect(row.getByTestId('reminder-origin')).toHaveCount(0);
 	await actions.getByRole('button', { name: 'Return to reminder bank' }).tap();
@@ -2365,6 +2365,40 @@ test('the Alchemist gains a Minion ability and is marked "Is The Alchemist"', as
 	// The seat shows the Minion, still good, marked as the Alchemist.
 	await expect(sheet).toContainText(/Poisoner\s*Minion · Good · Seat 1/);
 	await expect(sheet.getByRole('button', { name: 'Actions for Is The Alchemist' })).toBeVisible();
+});
+
+// https://wiki.bloodontheclocktower.com/Amnesiac: the Storyteller decides the ability, and
+// may make it work like another character's for its night timing.
+test('the Storyteller writes the Amnesiac’s ability and picks what it works like', async ({
+	page
+}) => {
+	await startGame(page);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	const picker = page.getByRole('dialog', { name: 'Character for Seat 1' });
+	await picker.getByText('Include characters not on the script').tap();
+	await picker.getByRole('button', { name: 'Amnesiac', exact: true }).tap();
+	await seatMenu(page, sheet, 'Held ability…');
+	await page
+		.getByRole('dialog', { name: 'Ability Seat 1 holds' })
+		.getByRole('button', { name: 'Empath', exact: true })
+		.tap();
+	await closeSheet(page);
+	await expect(page.getByTestId('seat').first().getByTestId('held-ability')).toHaveAttribute(
+		'title',
+		'Holds the Empath ability'
+	);
+
+	await page.getByRole('button', { name: 'Day', exact: true }).tap();
+	const day = page.getByRole('dialog', { name: 'Day' });
+	const value = day.getByTestId('prep-value');
+	await expect(value).toHaveText('(ABILITY)');
+	await value.tap();
+	const words = page.getByRole('dialog', { name: 'Ability' });
+	await words.getByRole('textbox', { name: 'Ability' }).fill('learns a number each night');
+	await words.getByRole('button', { name: 'Save' }).tap();
+	await expect(words).toBeHidden();
+	await expect(value).toHaveText('(learns a number each night)');
 });
 
 // https://wiki.bloodontheclocktower.com/Boffin: the Demon has a not-in-play good character's
@@ -5424,8 +5458,9 @@ test('the generic ∞ reminder is always in the bank and can carry a few words',
 	await expect(colour).toBeDisabled();
 	await page.keyboard.press('Escape');
 	await closeSheet(page);
+	// On the board: its actions' title shows the same token while open.
 	const placed = page.locator(
-		'[data-testid="board-reminder"][aria-label="Generic reminder: Chose Sam"]'
+		'.chip-slot > [data-testid="board-reminder"][aria-label="Generic reminder: Chose Sam"]'
 	);
 	await expect(placed).toHaveCount(1);
 	// Look C: the chosen symbol in the middle; the bank's stays blank.
