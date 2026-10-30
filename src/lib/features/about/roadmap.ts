@@ -310,6 +310,7 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	{
 		// Trevor, 2026-10-30: "hey, use this script to a friend. Or ... point at their profile".
 		title: 'Friends: send a script to a friend, and show scripts on your profile',
+		area: 'friends',
 		parts: ['F9', 'F10']
 	},
 	{
