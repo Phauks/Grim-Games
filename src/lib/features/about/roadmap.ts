@@ -352,7 +352,8 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	},
 	{
 		// Trevor, 2026-10-30, from the idea roadmap (https://claude.ai/artifact/EMMicZLmAGjdgFxtN39eow).
-		title: 'Friends: invite people new to the app, suggestions from your games, hand the room to a friend',
+		title:
+			'Friends: invite people new to the app, suggestions from your games, hand the room to a friend',
 		area: 'friends',
 		parts: ['F12', 'F13', 'F14']
 	},
