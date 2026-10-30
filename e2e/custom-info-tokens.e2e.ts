@@ -320,6 +320,21 @@ test("Trevor's Enhanced tokens sit apart, and the number can be stepped or typed
 	await page.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(shown.locator('.detail')).toHaveText('No');
 	await expect(shown.locator('h2.title')).toHaveCount(0);
+	await shown.getByRole('button', { name: 'Close' }).tap();
+
+	// Short answers fill the screen on one line, the longest too (Trevor, 2026-10-30).
+	await enhanced.getByRole('button', { name: 'True/False', exact: true }).tap();
+	await page.getByRole('combobox', { name: 'Answer' }).tap();
+	await page.getByRole('option', { name: 'False', exact: true }).tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	const answer = shown.locator('.detail');
+	await expect(answer).toHaveText('False');
+	const view = page.viewportSize()!;
+	const box = (await answer.boundingBox())!;
+	const lineHeight = await answer.evaluate((el) => parseFloat(getComputedStyle(el).lineHeight));
+	expect(box.height).toBeLessThan(lineHeight * 1.5);
+	expect(box.width).toBeGreaterThan(view.width * 0.5);
+	expect(box.x + box.width).toBeLessThanOrEqual(view.width);
 });
 
 test('a quick card is shown once and never saved', async ({ page }) => {
