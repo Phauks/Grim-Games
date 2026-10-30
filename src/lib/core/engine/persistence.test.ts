@@ -273,6 +273,26 @@ describe('version 10 saves', () => {
 describe('version 18 saves', () => {
 	// Before several notes per seat (Trevor, 2026-10-26): an older seat's single note
 	// (`SeatNoteSet`) opens as its untitled first note, and more can be added.
+	it('migrates a version 23 game with no one reincarnated, then reincarnates one', () => {
+		const { session, ctx, seats } = newGame(['Sam', 'Ana', 'Kim', 'Lee', 'Max']);
+		const v23 = { ...JSON.parse(JSON.stringify(toSavedGame(session, 1))), schemaVersion: 23 };
+		const loaded = migrateSavedGame(v23);
+		expect(loaded.schemaVersion).toBe(SAVED_GAME_VERSION);
+		expect(loaded.log).toEqual(v23.log);
+		const opened = openSession(loaded.log);
+		expect(opened.game.reincarnated).toBeUndefined();
+		const reborn = run(
+			opened,
+			ctx,
+			{ type: 'AssignCharacter', seatId: seats[0], characterId: 'chef' },
+			{ type: 'SetDead', seatId: seats[0], dead: true, cause: 'demon' },
+			{ type: 'Reincarnate', seatId: seats[0], characterId: 'gangster' }
+		);
+		const again = openSession(migrateSavedGame(toSavedGame(reborn, 2)).log);
+		expect(again.game.reincarnated).toEqual([seats[0]]);
+		expect(again.game.seats[seats[0]]).toMatchObject({ characterId: 'gangster', dead: false });
+	});
+
 	it('migrates a version 21 game with no Storyteller abilities, then takes one', () => {
 		const { session, ctx } = newGame(['Sam', 'Ana', 'Kim', 'Lee', 'Max']);
 		const v21 = { ...JSON.parse(JSON.stringify(toSavedGame(session, 1))), schemaVersion: 21 };
