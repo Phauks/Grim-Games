@@ -2,7 +2,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { PlayerName } from '#lib/core/data/index.ts';
 	import type { Command } from '#lib/core/engine/index.ts';
-	import { countOffSeats, isOpenSeat } from '#lib/core/sync/room.ts';
+	import { countOffFirsts, countOffSeats } from '#lib/core/sync/room.ts';
 	import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -26,21 +26,9 @@
 	const badge = (name: string) => name as PlayerName;
 
 	/** Who can be 1: the board's players in seat order, then the phones with no seat. */
-	const candidates = $derived.by(() => {
-		const names = game.game.seating.flatMap((id) => {
-			const seat = game.game.seats[id];
-			return isOpenSeat(seat) ? [] : [seat.playerName!];
-		});
-		const key = (name: string) => name.trim().toLocaleLowerCase();
-		const listed = new Set(names.map(key));
-		const phones = host.unseatedInGame.flatMap((m) =>
-			m.name && !listed.has(key(m.name)) ? [m.name] : []
-		);
-		return [...names, ...phones].map((name) => {
-			const member = host.members.find((m) => m.name && key(m.name) === key(name));
-			return { name, first: member ? { memberId: member.memberId } : { name } };
-		});
-	});
+	const candidates = $derived(
+		countOffFirsts(game.game.seating, game.game.seats, host.members, host.unseatedInGame)
+	);
 
 	/** The number whose player's name is being typed. */
 	let naming = $state<number>();
@@ -82,7 +70,7 @@
 		{:else}
 			<h3 id="count-off-first">{t('room.countOff.first')}</h3>
 			<ul class="rows" aria-labelledby="count-off-first">
-				{#each candidates as candidate (candidate.name)}
+				{#each candidates as candidate (candidate.key)}
 					<li>
 						<button
 							type="button"

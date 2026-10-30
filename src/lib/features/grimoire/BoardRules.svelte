@@ -1,9 +1,13 @@
 <!--
 	Fabled and Loric are rules of the game, not seats: in the middle, or small along the edge
-	(Trevor, 2026-10-17), each with its reminders at its top right (GrimoireBoard).
+	(Trevor, 2026-10-17), each with its reminders at its top right (GrimoireBoard). Abilities the
+	Storyteller holds sit with them, on the board rather than hidden away (Trevor, 2026-10-30):
+	the Plague Doctor's Minion, marked with its Storyteller Ability reminder as its How to Run
+	says (https://wiki.bloodontheclocktower.com/Plague_Doctor).
 -->
 <script lang="ts">
 	import type { CharacterId } from '#lib/core/data/index.ts';
+	import { rulesOf } from '#lib/core/data/rules/index.ts';
 	import {
 		ruleReminders,
 		type CharacterLookup,
@@ -32,6 +36,8 @@
 		lifted: ReminderId | undefined;
 		/** Opens one Fabled or Loric, or the list of all of them. */
 		onShow: (id?: CharacterId) => void;
+		/** Opens an ability the Storyteller holds, by the character that gave it. */
+		onShowAbility: (via: CharacterId) => void;
 		onHeldTap: (reminderId: ReminderId) => void;
 		onHeldDrag: (reminderId: ReminderId, x: number, y: number, end: boolean) => void;
 		onCancel: () => void;
@@ -47,12 +53,18 @@
 		disabled,
 		lifted,
 		onShow,
+		onShowAbility,
 		onHeldTap,
 		onHeldDrag,
 		onCancel
 	}: Props = $props();
 
 	const heldLabel = (name: string) => `${name}'s reminders`;
+	const abilities = $derived(game.storytellerAbilities ?? []);
+	/** Every token in the corner stack: the Fabled and Loric, then the Storyteller's abilities. */
+	const stacked = $derived([...game.ruleCharacters, ...abilities.map((a) => a.characterId)]);
+	/** The giver's reminder that marks the ability it gives (the Storyteller Ability). */
+	const markOf = (via: CharacterId) => rulesOf(via, characters)?.givesAbility?.token;
 	/** The character whose art a generic copy shows (Trevor, 2026-10-27), if any. */
 	const artOf = (reminder: ReminderInstance) =>
 		reminder.like ? characters.get(reminder.like.characterId) : undefined;
@@ -106,15 +118,15 @@
 			type="button"
 			class="rules-stack"
 			data-rule-stack
-			aria-label={`Fabled and Loric: ${game.ruleCharacters.length}`}
+			aria-label={`Fabled and Loric: ${stacked.length}`}
 			onclick={() => onShow()}
 		>
-			{#each game.ruleCharacters.slice(0, 3) as id (id)}
+			{#each stacked.slice(0, 3) as id, i (`${i}:${id}`)}
 				{@const character = characters.get(id)}
 				{#if character}<CharacterToken {character} size={tokenSize} />{/if}
 			{/each}
-			{#if game.ruleCharacters.length > 1}<span class="stack-count" aria-hidden="true"
-					><CountBadge count={game.ruleCharacters.length} warn /></span
+			{#if stacked.length > 1}<span class="stack-count" aria-hidden="true"
+					><CountBadge count={stacked.length} warn /></span
 				>{/if}
 		</button>
 		{@render heldCluster(
@@ -143,6 +155,33 @@
 					{@render heldCluster(ruleReminders(game, id), heldLabel(character.name), () =>
 						onShow(id)
 					)}
+				</li>
+			{/if}
+		{/each}
+		{#each abilities as held (held.via)}
+			{@const character = characters.get(held.characterId)}
+			{@const mark = markOf(held.via)}
+			{#if character}
+				<li data-testid="storyteller-ability-token">
+					<button
+						type="button"
+						class="rule"
+						aria-label={`Storyteller's ability: ${character.name}`}
+						onclick={() => onShowAbility(held.via)}
+					>
+						<CharacterToken {character} size={tokenSize} />
+					</button>
+					{#if mark}
+						<span class="held">
+							<BoardReminder
+								label={mark}
+								character={characters.get(held.via)}
+								size={Math.round(chip * 0.7)}
+								{disabled}
+								onTap={() => onShowAbility(held.via)}
+							/>
+						</span>
+					{/if}
 				</li>
 			{/if}
 		{/each}
