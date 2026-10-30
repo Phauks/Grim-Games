@@ -218,7 +218,7 @@
 	const claim = $derived.by(() => {
 		const id = seat?.characterId;
 		const c = id ? dayClaim(id, grimoire.open.characters) : undefined;
-		return preferences.current.assistance.playerClaims && (c === 'guesses' || c === 'statement')
+		return preferences.current.assistance.playerClaims && c !== undefined && c !== 'statements'
 			? c
 			: undefined;
 	});

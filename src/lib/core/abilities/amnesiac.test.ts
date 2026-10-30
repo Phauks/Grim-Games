@@ -13,7 +13,8 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment, type CharacterId } from '#lib/core/data/index.ts';
 import type { Command } from '#lib/core/engine/index.ts';
-import { castWith } from '#lib/core/model/fixtures.test-support.ts';
+import { castWith, run } from '#lib/core/model/fixtures.test-support.ts';
+import { dayClaim } from '#lib/core/rules/day-claims.ts';
 import {
 	abilityGivers,
 	heldAbilitiesOf,
@@ -81,6 +82,47 @@ describe('Amnesiac', () => {
 		it('holds nothing until the Storyteller picks', () => {
 			const { game, seats } = cast(PLAYERS);
 			expect(heldAbilitiesOf(game, seats[0], characters)).toEqual([]);
+		});
+	});
+
+	// Summary: each day the Amnesiac guesses its ability in private, and the Storyteller
+	// answers Cold (very wrong), Warm (on the right track), Hot (very close) or Bingo.
+	describe('the daily guess', () => {
+		const guess = (s: string[]): Command => ({
+			type: 'DayNote',
+			characterId: 'amnesiac',
+			seatId: s[0],
+			text: 'Is it about Minions?',
+			answer: 'hot'
+		});
+		const notes = (game: { today: { entries: { kind: string }[] } }) =>
+			game.today.entries.filter((e) => e.kind === 'note');
+
+		it('is a claim the day log keeps', () => {
+			expect(dayClaim('amnesiac', characters)).toBe('ability-guess');
+		});
+
+		it('keeps the Storyteller’s answer, and a later edit changes it', () => {
+			const { session, ctx, game, seats } = cast(PLAYERS, guess);
+			expect(notes(game)).toEqual([expect.objectContaining({ answer: 'hot' })]);
+			const [entry] = notes(game) as { entryId: string }[];
+			const edited = run(session, ctx, {
+				type: 'EditDayNote',
+				entryId: entry.entryId,
+				text: 'Do I detect Minions among two players?',
+				answer: 'bingo'
+			});
+			expect(notes(edited.game)).toEqual([
+				expect.objectContaining({ seatId: seats[0], answer: 'bingo' })
+			]);
+		});
+
+		it('leaves out an answer that is not one of the four', () => {
+			const { game } = cast(PLAYERS, (s) => ({
+				...guess(s),
+				answer: 'lukewarm' as never
+			}));
+			expect(notes(game)[0]).not.toHaveProperty('answer');
 		});
 	});
 

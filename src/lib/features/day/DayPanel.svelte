@@ -40,7 +40,7 @@
 	import DayTimer from './DayTimer.svelte';
 	import DayAnnouncements from './DayAnnouncements.svelte';
 	import DayCounts from './DayCounts.svelte';
-	import type { DayPort } from './day-port.ts';
+	import { CLAIM_KEYS, type DayPort, type NoteClaim } from './day-port.ts';
 	import NoteSheet, { type NoteTarget } from './NoteSheet.svelte';
 	import MadnessDeathDialog from './MadnessDeathDialog.svelte';
 	import PrepValueDialog from './PrepValueDialog.svelte';
@@ -268,8 +268,8 @@
 	 */
 	const noteClaim = (characterId: CharacterId | undefined) => {
 		const claim = claimOf(characterId);
-		return assistance.playerClaims && (claim === 'guesses' || claim === 'statement')
-			? claim
+		return assistance.playerClaims && claim !== undefined && claim !== 'statements'
+			? (claim satisfies NoteClaim)
 			: undefined;
 	};
 	const hasDayButton = (characterId: CharacterId | undefined) =>
@@ -386,10 +386,10 @@
 		<Chip
 			marked={hasNote({ characterId, seatId })}
 			data-testid="claim"
-			aria-label={t(claim === 'guesses' ? 'day.guessesLabel' : 'day.statementLabel', { who })}
+			aria-label={t(CLAIM_KEYS[claim!].label, { who })}
 			onclick={() => openNote({ characterId, seatId })}
 		>
-			{t(claim === 'guesses' ? 'day.guesses' : 'day.statement')}
+			{t(CLAIM_KEYS[claim!].name)}
 		</Chip>
 	{:else if markButton(characterId)}
 		{@const mark = markButton(characterId)!}

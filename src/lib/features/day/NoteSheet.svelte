@@ -2,7 +2,13 @@
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import type { CharacterId } from '#lib/core/data/index.ts';
-	import type { CharacterGuess, DayEntry, SeatId } from '#lib/core/model/index.ts';
+	import {
+		GUESS_ANSWERS,
+		type CharacterGuess,
+		type DayEntry,
+		type GuessAnswer,
+		type SeatId
+	} from '#lib/core/model/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import Sentence from '#lib/features/characters/Sentence.svelte';
@@ -12,7 +18,7 @@
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import { correctGuesses, dayClaim, guessLimit } from '#lib/core/rules/index.ts';
-	import type { DayPort } from './day-port.ts';
+	import { CLAIM_KEYS, type DayPort } from './day-port.ts';
 
 	export interface NoteTarget {
 		characterId: CharacterId;
@@ -66,6 +72,11 @@
 	let text = $state('');
 	let slots = $state<Slot[]>([]);
 	let holds = $state(false);
+	let answer = $state<GuessAnswer | undefined>();
+	const answerOptions = $derived([
+		{ value: NONE, label: t('day.answer.none') },
+		...GUESS_ANSWERS.map((a) => ({ value: a as string, label: t(`day.answer.${a}`) }))
+	]);
 
 	// Fill the form each time the sheet opens.
 	$effect(() => {
@@ -77,6 +88,7 @@
 			...Array.from({ length: Math.max(0, slotCount - saved.length) }, () => ({}))
 		];
 		holds = existing?.holds ?? false;
+		answer = existing?.answer;
 	});
 
 	/** The slots with both a player and a character; half-filled ones are left out on save. */
@@ -90,7 +102,8 @@
 
 	function save() {
 		if (!target) return;
-		const truth = claim === 'statement' ? { holds } : {};
+		const truth =
+			claim === 'statement' ? { holds } : claim === 'ability-guess' && answer ? { answer } : {};
 		const ok = existing
 			? game.run({
 					type: 'EditDayNote',
@@ -141,16 +154,26 @@
 		}}
 	>
 		<TextField
-			label={t(claim === 'statement' ? 'day.statement' : 'day.note')}
+			label={t(
+				claim === 'statement' || claim === 'ability-guess' ? CLAIM_KEYS[claim].name : 'day.note'
+			)}
 			bind:value={text}
 			multiline
-			lists={claim !== 'statement'}
+			lists={claim !== 'statement' && claim !== 'ability-guess'}
 			rows={6}
 			testid="note-text"
 		/>
 
 		{#if claim === 'statement'}
 			<Toggle label={t('day.statementTrue')} checked={holds} onChange={(on) => (holds = on)} />
+		{:else if claim === 'ability-guess'}
+			<!-- The Storyteller's answer (https://wiki.bloodontheclocktower.com/Amnesiac). -->
+			<Select
+				label={t('day.answer')}
+				value={answer ?? NONE}
+				options={answerOptions}
+				onChange={(a: string) => (answer = a === NONE ? undefined : (a as GuessAnswer))}
+			/>
 		{:else if claim === 'guesses'}
 			<fieldset class="guesses">
 				<legend
