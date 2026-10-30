@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { contrastRatio, resolveToken } from './contrast.ts';
 import { grimoire } from './grimoire/theme.ts';
 import { SHEET_BACKGROUNDS, SHEET_TOKENS, sheetStyle, sheetTheme } from './sheet-backgrounds.ts';
-import { TEAM_COLORS } from './team-colors.ts';
+import { FIXED_COLORS } from './team-colors.ts';
 import { EDGE_PAIRS, SEMANTIC_TOKENS, TEXT_PAIRS } from './types.ts';
 
 // Every sheet background keeps its text readable (WCAG AA, 4.5:1 for body text).
@@ -18,8 +18,7 @@ describe('sheet backgrounds', () => {
 					'--heading',
 					'--good-text',
 					'--evil-text',
-					'--traveller-text',
-					'--loric-text'
+					'--traveller-text'
 				] as const) {
 					expect(
 						contrastRatio(tokens[ink]!, tokens[surface]!),
@@ -31,7 +30,8 @@ describe('sheet backgrounds', () => {
 
 		// The good blue and evil red never change (Trevor, 2026-10-28).
 		it(`${background}: keeps the team colours`, () => {
-			for (const token of Object.keys(TEAM_COLORS)) expect(tokens, token).not.toHaveProperty(token);
+			for (const token of Object.keys(FIXED_COLORS))
+				expect(tokens, token).not.toHaveProperty(token);
 		});
 	}
 
@@ -78,7 +78,7 @@ describe.each(SHEET_BACKGROUNDS.filter((b) => b !== 'theme'))(
 		);
 
 		it('keeps the team colours', () => {
-			for (const [token, color] of Object.entries(TEAM_COLORS)) {
+			for (const [token, color] of Object.entries(FIXED_COLORS)) {
 				expect(resolveToken(token, table), token).toBe(color);
 			}
 		});

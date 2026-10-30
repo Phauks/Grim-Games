@@ -9,18 +9,17 @@ export function isSeatable(type: CharacterType): type is SeatableType {
 
 /**
  * The colour family a character type's headings and labels use: good and evil for the
- * seated types, purple for Travellers and green for Loric (Trevor, 2026-10-18). Fabled keep
- * the plain heading colour.
+ * seated types, purple for Travellers (Trevor, 2026-10-18), and the Fabled and Loric tokens'
+ * own gold and green (Trevor, 2026-10-29).
  */
-export type TypeTone = 'good' | 'evil' | 'traveller' | 'loric';
+export type TypeTone = 'good' | 'evil' | 'traveller' | 'fabled' | 'loric';
 
 export function typeTone(type: CharacterType): TypeTone | undefined {
 	switch (type) {
 		case 'traveller':
+		case 'fabled':
 		case 'loric':
 			return type;
-		case 'fabled':
-			return undefined;
 		default:
 			return defaultAlignment(type);
 	}

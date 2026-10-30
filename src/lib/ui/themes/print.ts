@@ -29,6 +29,5 @@ export const LIGHT_SHEET: Readonly<Record<`--${string}`, string>> = {
 	'--border': '#0000002e',
 	'--button-edge': '#76674b',
 	...TEAM_TEXT.light,
-	'--traveller-text': '#5c2f6e',
-	'--loric-text': '#2e6b34'
+	'--traveller-text': '#5c2f6e'
 };

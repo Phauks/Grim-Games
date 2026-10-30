@@ -34,11 +34,12 @@ test.describe('on a computer (mouse, wide window)', () => {
 		const settings = page
 			.getByRole('navigation', { name: 'Menu', exact: true })
 			.getByRole('button', { name: 'Settings' });
-		// The hover tint is layered over the button's own fill (base.css), so read both.
+		// The hover tint is layered over the button's own fill (base.css), or a filled Button
+		// brightens (Button.svelte), so read all three.
 		const background = () =>
 			settings.evaluate((el) => {
 				const style = getComputedStyle(el);
-				return `${style.backgroundColor} ${style.backgroundImage}`;
+				return `${style.backgroundColor} ${style.backgroundImage} ${style.filter}`;
 			});
 		const before = await background();
 		await settings.hover();

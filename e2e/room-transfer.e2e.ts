@@ -71,8 +71,7 @@ test('a Storyteller hands the room and the game to another device, and the playe
 	await openProfile(phone);
 	await setPlayerName(phone, 'Alex');
 	await phone.keyboard.press('Escape');
-	const players = page.getByRole('list', { name: 'Players in the room' }).getByRole('listitem');
-	await expect(players).toHaveText(/^Alex\s*No seat$/);
+	await expect(page.getByTestId('status-players')).toHaveText('1 player');
 	await page.getByRole('link', { name: 'Grimoire' }).tap();
 	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
 	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
@@ -126,6 +125,7 @@ test('a Storyteller hands the room and the game to another device, and the playe
 	await other.goto(`/grimoire/${gameId}/room`);
 	await expect(other.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
 	await expect(other.getByTestId('share-code')).toHaveText(`${code.slice(0, 3)} ${code.slice(3)}`);
+	await other.goto(`/grimoire/${gameId}/players`);
 	await expect(
 		other.getByRole('list', { name: 'Players in the room' }).getByRole('listitem')
 	).toContainText(['Alex']);

@@ -19,6 +19,7 @@ export const MIGRATED_PATHS: readonly string[] = [
 	'src/routes/reports/',
 	'src/lib/features/room/',
 	'src/routes/join/',
+	'src/routes/grimoire/[gameId]/players/',
 	'src/routes/grimoire/[gameId]/room/',
 	'src/lib/features/show/',
 	'src/lib/features/info-tokens/',

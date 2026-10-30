@@ -111,7 +111,8 @@ export type WarningCode =
 	| 'empty-day'
 	| 'reminder-fixed'
 	| 'reminder-followed'
-	| 'no-cause';
+	| 'no-cause'
+	| 'not-a-believer';
 
 export interface Issue<C extends string> {
 	code: C;

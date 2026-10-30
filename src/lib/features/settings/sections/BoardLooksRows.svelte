@@ -7,6 +7,7 @@
 	import { intl, t } from '#lib/i18n/locale.svelte.ts';
 	import SettingSlider from '#lib/ui/settings/SettingSlider.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
+	import ReminderLinesSetting from '#lib/features/grimoire/ReminderLinesSetting.svelte';
 
 	/**
 	 * The board's device looks (Trevor, 2026-10-17: settings appear where they act and in
@@ -49,4 +50,9 @@
 	label={t('settings.strikeUsedGhostVote')}
 	checked={boardLooks.current.usedGhostVote === 'struck'}
 	onChange={(struck) => boardLooks.update({ usedGhostVote: struck ? 'struck' : 'hollow' })}
+/>
+<!-- When a reminder shows its line back to its seat (Trevor, 2026-10-29); the preview's too. -->
+<ReminderLinesSetting
+	value={boardLooks.current.reminderLines}
+	onChange={(reminderLines) => boardLooks.update({ reminderLines })}
 />
