@@ -7,7 +7,7 @@ import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 import { type AbilityState, abilityState } from '../ability.ts';
 import { withTravellerAlignmentStep } from '../traveller-alignment.ts';
-import { withGainedSteps } from '../gained-abilities.ts';
+import { withGainedSteps, withStorytellerSteps } from '../gained-abilities.ts';
 import { type DeathCheck, deathCheck } from '../night-deaths.ts';
 import type { Night, NightStep } from '../night-order.ts';
 import { type NightAnswer } from './reliability.ts';
@@ -71,13 +71,22 @@ export function withNightInfo<T extends NightStep>(
 	order?: readonly string[]
 ): (T | NightStep)[] {
 	const all = withTravellerAlignmentStep(
-		night ? withGainedSteps(steps, game, characters, night, order) : steps,
+		night
+			? withStorytellerSteps(
+					withGainedSteps(steps, game, characters, night, order),
+					game,
+					characters,
+					night,
+					order
+				)
+			: steps,
 		game,
 		characters
 	);
 	return all.map((step) => {
 		// A wake step for a changed character shows the player; it works out nothing.
-		if (!step.character || step.changed) return step;
+		// Nor does one the Storyteller acts in: it wakes nobody.
+		if (!step.character || step.changed || step.storytellerAbility) return step;
 		const gained = step.gained;
 		const seats = gained
 			? [gained.seatId]
