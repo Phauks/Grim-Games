@@ -14,6 +14,7 @@
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { reportDialog } from './report-dialog.svelte.ts';
 	import { reportScript, type ReportScript } from './report-script.svelte.ts';
+	import { reportGame, type ReportGame } from './report-game.svelte.ts';
 	import { reportOutbox } from './outbox.svelte.ts';
 	import ReportOutboxList from './ReportOutboxList.svelte';
 	import { REPORT_KINDS, REPORT_LIMITS, type ReportKind } from './reports-protocol.ts';
@@ -34,6 +35,12 @@
 	/** The script on screen when the form opened (Trevor, 2026-10-22), sent unless turned off. */
 	let script = $state.raw<ReportScript>();
 	let includeScript = $state(true);
+	/**
+	 * The game open when the form opened (Trevor, 2026-10-30), sent only when turned on: it holds
+	 * the players' names and the Storyteller's notes.
+	 */
+	let game = $state.raw<ReportGame | 'too-large'>();
+	let includeGame = $state(false);
 
 	$effect(() => {
 		void reportDialog.opened;
@@ -48,7 +55,10 @@
 		page = scrubUrls(location.pathname);
 		script = untrack(reportScript);
 		includeScript = true;
+		game = untrack(reportGame);
+		includeGame = false;
 	});
+	const sendsGame = $derived(typeof game === 'object' && includeGame);
 
 	const details = $derived(reportDialog.start.details);
 	/** Sent now, or sent later while the form still shows it waiting. */
@@ -79,6 +89,7 @@
 				...(contact.trim() ? { contact } : {}),
 				...(details && includeDetails ? { details } : {}),
 				...(script && includeScript ? { script: script.json, scriptName: script.name } : {}),
+				...(typeof game === 'object' && includeGame ? { game: game.json } : {}),
 				page,
 				build,
 				device: navigator.userAgent
@@ -128,6 +139,14 @@
 					onChange={(v) => (includeScript = v)}
 				/>
 			{/if}
+			{#if game}
+				<Toggle
+					label={t(game === 'too-large' ? 'reports.gameTooLarge' : 'reports.includeGame')}
+					checked={sendsGame}
+					disabled={game === 'too-large'}
+					onChange={(v) => (includeGame = v)}
+				/>
+			{/if}
 			{#if details}
 				<Toggle
 					label={t('reports.includeDetails')}
@@ -147,6 +166,12 @@
 						<dt>{t('reports.script')}</dt>
 						<dd class:excluded={!includeScript} data-testid="report-script">
 							{script.name || t('common.none')}
+						</dd>
+					{/if}
+					{#if typeof game === 'object'}
+						<dt>{t('reports.game')}</dt>
+						<dd class:excluded={!includeGame} data-testid="report-game">
+							{game.name || t('reports.game')}
 						</dd>
 					{/if}
 				</dl>

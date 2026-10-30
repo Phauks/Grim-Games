@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import { MAX_GRIMOIRE_BYTES } from '#lib/core/sync/room.ts';
 import {
 	isReportStatus,
 	parseReportDraft,
+	parseReportGamePath,
 	parseReportIdPath,
 	parseReportScriptPath,
 	REPORT_LIMITS,
@@ -66,6 +68,36 @@ describe('a report sent from a script (Trevor, 2026-10-22)', () => {
 	it('reads the id from the script path', () => {
 		expect(parseReportScriptPath('/api/reports/42/script')).toBe(42);
 		expect(parseReportScriptPath('/api/reports/42')).toBeUndefined();
+	});
+});
+
+describe('a report sent with its game (Trevor, 2026-10-30)', () => {
+	const base = { kind: 'bug', title: 'x', body: 'y' };
+	const game = JSON.stringify({ saved: { schemaVersion: 1, gameId: 'g' }, layout: 'circle' });
+
+	it('keeps the game file as JSON', () => {
+		expect(parseReportDraft({ ...base, game })).toEqual({ ...base, game });
+	});
+
+	it('refuses a game file without a saved game, or too long', () => {
+		expect(parseReportDraft({ ...base, game: '{"layout":"circle"}' })).toHaveProperty('error');
+		expect(parseReportDraft({ ...base, game: '[]' })).toHaveProperty('error');
+		expect(parseReportDraft({ ...base, game: 'not json' })).toHaveProperty('error');
+		expect(
+			parseReportDraft({
+				...base,
+				game: JSON.stringify({ saved: { x: 'x'.repeat(REPORT_LIMITS.game) } })
+			})
+		).toHaveProperty('error');
+	});
+
+	it('takes as much as a room sends of a whole game', () => {
+		expect(REPORT_LIMITS.game).toBe(MAX_GRIMOIRE_BYTES);
+	});
+
+	it('reads the id from the game path', () => {
+		expect(parseReportGamePath('/api/reports/42/game')).toBe(42);
+		expect(parseReportGamePath('/api/reports/42/script')).toBeUndefined();
 	});
 });
 

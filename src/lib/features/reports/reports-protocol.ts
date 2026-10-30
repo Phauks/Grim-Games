@@ -8,6 +8,7 @@
  *   PATCH  /api/reports/<id>         (admin) { status }           -> 204
  *   DELETE /api/reports/<id>         (admin)                      -> 204
  *   GET    /api/reports/<id>/script  (admin, or its sender)       -> 200 the script's JSON
+ *   GET    /api/reports/<id>/game    (admin, or its sender)       -> 200 the game file
  *
  * Triage needs a signed-in admin, one whose sign-in email is in the ADMIN_EMAILS secret
  * (Trevor, 2026-10-22: no admin key, admin is inherent by user type); otherwise it answers 404.
@@ -39,7 +40,12 @@ export const REPORT_LIMITS = {
 	device: 400,
 	scriptName: 200,
 	/** The script's JSON text: room for big homebrew scripts, not for embedded images. */
-	script: 200_000
+	script: 200_000,
+	/**
+	 * The game file's JSON text: as much as a room sends of a whole game (MAX_GRIMOIRE_BYTES in
+	 * core/sync/shared-grimoire.ts; the Worker reads this file without the app's imports).
+	 */
+	game: 1024 * 1024
 } as const;
 
 /** What the app sends. `details` is only there when the person chose to include it. */
@@ -55,10 +61,16 @@ export interface ReportDraft {
 	device?: string;
 	/**
 	 * The script it was sent from, in TPI's JSON (Trevor, 2026-10-22), with its name. Only the
-	 * script: never the game, its players or notes.
+	 * script: the game, its players and notes go only as `game`.
 	 */
 	script?: string;
 	scriptName?: string;
+	/**
+	 * The game it was sent from (Trevor, 2026-10-30: "even if mid-game, so we can exactly walk
+	 * through"), only when the Storyteller turns it on: the saved game with its whole History,
+	 * and where the board draws its seats and reminders (`ReportGameFile`), as JSON.
+	 */
+	game?: string;
 	/**
 	 * Made on the device when the report is saved to send (outbox.svelte.ts), so a report
 	 * sent again after a dropped connection is stored once (`isSendId`).
@@ -66,8 +78,8 @@ export interface ReportDraft {
 	sendId?: string;
 }
 
-/** A listed report: the script's JSON is fetched on its own (`reportScriptPath`). */
-export interface Report extends Omit<ReportDraft, 'script' | 'sendId'> {
+/** A listed report: the script and game are fetched on their own (`reportScriptPath`). */
+export interface Report extends Omit<ReportDraft, 'script' | 'game' | 'sendId'> {
 	id: number;
 	status: ReportStatus;
 	createdAt: number;
@@ -79,6 +91,8 @@ export interface Report extends Omit<ReportDraft, 'script' | 'sendId'> {
 	mine?: boolean;
 	/** Sent with a script; its name is in `scriptName` for those who may see it. */
 	hasScript?: boolean;
+	/** Sent with its game (`reportGamePath`), for those who may see it. */
+	hasGame?: boolean;
 }
 
 /** What the list shows the reader: everything to an admin, else the public part (above). */
@@ -138,6 +152,10 @@ export function parseReportDraft(raw: unknown): ReportDraft | { error: string } 
 	} else {
 		delete draft.scriptName;
 	}
+	if (input.game !== undefined && input.game !== null) {
+		if (!isGameJson(input.game)) return { error: 'Bad game' };
+		draft.game = input.game;
+	}
 	if (input.sendId !== undefined && input.sendId !== null) {
 		if (!isSendId(input.sendId)) return { error: 'Bad sendId' };
 		draft.sendId = input.sendId;
@@ -160,6 +178,19 @@ function isScriptJson(value: unknown): value is string {
 	}
 }
 
+/** A game file's JSON text within the limit: an object holding a saved game. */
+function isGameJson(value: unknown): value is string {
+	if (typeof value !== 'string' || value.length > REPORT_LIMITS.game) return false;
+	try {
+		const parsed: unknown = JSON.parse(value);
+		if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return false;
+		const { saved } = parsed as { saved?: unknown };
+		return typeof saved === 'object' && saved !== null && !Array.isArray(saved);
+	} catch {
+		return false;
+	}
+}
+
 /** Where a report's script is read. */
 export function reportScriptPath(id: number): string {
 	return `${REPORTS_API}/${id}/script`;
@@ -168,6 +199,17 @@ export function reportScriptPath(id: number): string {
 /** `/api/reports/<id>/script` -> id, else undefined. */
 export function parseReportScriptPath(pathname: string): number | undefined {
 	const match = pathname.match(/^\/api\/reports\/(\d{1,9})\/script$/);
+	return match ? Number(match[1]) : undefined;
+}
+
+/** Where a report's game file is read. */
+export function reportGamePath(id: number): string {
+	return `${REPORTS_API}/${id}/game`;
+}
+
+/** `/api/reports/<id>/game` -> id, else undefined. */
+export function parseReportGamePath(pathname: string): number | undefined {
+	const match = pathname.match(/^\/api\/reports\/(\d{1,9})\/game$/);
 	return match ? Number(match[1]) : undefined;
 }
 
