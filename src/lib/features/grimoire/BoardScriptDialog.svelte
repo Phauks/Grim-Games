@@ -18,8 +18,12 @@
 	import ScriptByline from '#lib/features/player/ScriptByline.svelte';
 	import { gameSheetRules } from '#lib/features/modes/sheet-rules.ts';
 	import { gameShareable } from '#lib/features/scripts/game-shareable.svelte.ts';
+	import { playerSettings } from '#lib/features/player/player-settings.svelte.ts';
 	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
+	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import { screenTheme } from '#lib/ui/themes/screen-theme.svelte.ts';
+	import { sheetTheme } from '#lib/ui/themes/sheet-backgrounds.ts';
 
 	interface Props {
 		open: boolean;
@@ -61,6 +65,13 @@
 	const share = $derived(open && script ? gameShareable(script) : undefined);
 	/** The game mode and special rules, as the Script below lists them, for Print. */
 	const rules = $derived(open ? gameSheetRules(game.gameId) : []);
+	// The whole player view takes the sheet background while it is open, as /play does
+	// (PlayerView), so its tabs, title line and dialogs match, not the Script tab alone (Trevor,
+	// 2026-10-30: "Theme not working everywhere. Player view within storyteller view").
+	$effect.pre(() => {
+		if (!open) return;
+		return screenTheme.show(sheetTheme(playerSettings.current.sheetBackground, preferences.theme));
+	});
 </script>
 
 {#snippet logoLead()}<ScriptLogo src={logo} class="title-logo" />{/snippet}
