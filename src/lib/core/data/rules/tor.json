@@ -24,5 +24,8 @@
 	},
 	"deathCause": {
 		"none": "hidden characters"
+	},
+	"evilInfo": {
+		"none": true
 	}
 }
