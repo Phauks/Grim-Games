@@ -283,6 +283,26 @@ export function toSavedGame(session: GameSession, savedAt: number): SavedGame {
 	};
 }
 
+/**
+ * The same game under another id, so a copy opened on a device (a game sent with a report)
+ * never replaces a game of its own. The id is in the save and in the game's first event.
+ */
+export function withGameId(saved: SavedGame, gameId: GameId): SavedGame {
+	return {
+		...saved,
+		gameId,
+		log: {
+			...saved.log,
+			entries: saved.log.entries.map((entry) => ({
+				...entry,
+				events: entry.events.map((event) =>
+					event.type === 'GameCreated' ? { ...event, gameId } : event
+				)
+			}))
+		}
+	};
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

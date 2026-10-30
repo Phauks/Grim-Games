@@ -13,6 +13,7 @@ import {
 	runMigrations,
 	summariseSavedGame,
 	toSavedGame,
+	withGameId,
 	type Migration,
 	type SavedDocument
 } from './persistence.ts';
@@ -420,5 +421,16 @@ describe('MemoryGameStore and listing', () => {
 			}
 		};
 		expect(() => listSavedGames([exploding])).toThrow(TypeError);
+	});
+});
+
+describe('a copy of a game under another id', () => {
+	it('opens as the same game with the new id', () => {
+		const { session, saved } = savedGame();
+		const copy = withGameId(saved, 'copy');
+		expect(copy.gameId).toBe('copy');
+		const opened = openSession(migrateSavedGame(copy).log);
+		expect(opened.game).toEqual({ ...session.game, gameId: 'copy' });
+		expect(saved.gameId).not.toBe('copy');
 	});
 });

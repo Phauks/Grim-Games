@@ -244,7 +244,7 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	{
 		title: 'Report an issue from inside the app, with diagnostics',
 		area: 'app',
-		parts: ['S2', 'S7', 'S10', 'S16']
+		parts: ['S2', 'S7', 'S10', 'S16', 'S28']
 	},
 	{
 		title:

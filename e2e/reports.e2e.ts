@@ -206,6 +206,52 @@ test('a report sent from the board carries its script, for its sender and the ad
 	await expect(json).not.toContainText('Seat');
 });
 
+test('a report sent mid-game can carry the game, which opens as a copy to step through', async ({
+	page
+}) => {
+	// Trevor, 2026-10-30: "allow sending the file, even if mid-game. so we can exactly walk through".
+	const title = `With the game ${Date.now()}`;
+	await signIn(page, `gamefile-${Date.now()}@example.com`);
+	await page.goto('/new');
+	await pickScript(page, 'Trouble Brewing');
+	await page.getByRole('button', { name: 'Create game' }).tap();
+	await toBoard(page);
+	await expect(page.getByTestId('seat')).toHaveCount(8);
+	const sentFrom = page.url();
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Report an issue' })
+		.tap();
+
+	const form = page.getByRole('dialog', { name: 'Report' });
+	await form.getByRole('textbox', { name: 'Title' }).fill(title);
+	await form.getByRole('textbox', { name: 'Description' }).fill('The Chef counts wrong.');
+	// It holds the players' names and notes, so it goes only when turned on.
+	const include = form.getByLabel('Include this game');
+	await expect(include).not.toBeChecked();
+	// The whole row is the switch's tap target.
+	await form.getByText('Include this game', { exact: true }).tap();
+	await expect(include).toBeChecked();
+	await form.getByRole('button', { name: 'Sent with it' }).tap();
+	await expect(form.getByTestId('report-game')).toHaveText('Trouble Brewing');
+	await form.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(form.getByTestId('report-sent')).toBeVisible();
+	await form.getByRole('button', { name: 'Close' }).last().tap();
+
+	// Its sender (and the admins) open it as a game of their own, never replacing the original.
+	await page.goto('/reports');
+	const row = page.getByTestId('reports').locator('tr', { hasText: title });
+	await row.getByRole('button', { name: title }).tap();
+	const report = page.getByRole('dialog', { name: new RegExp(title) });
+	const actions = report.getByTestId('report-game-actions');
+	await expect(actions.getByRole('button', { name: 'Download game' })).toBeVisible();
+	await actions.getByRole('button', { name: 'Open game' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[^/#]+$/);
+	expect(page.url()).not.toBe(sentFrom);
+	await expect(page.getByTestId('seat')).toHaveCount(8);
+});
+
 test('the Library script popup has Report an issue, and the player view reports its script', async ({
 	page
 }) => {
