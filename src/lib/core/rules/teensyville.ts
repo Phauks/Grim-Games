@@ -58,6 +58,15 @@ export function teensyvilleWarnings(characters: readonly Character[], players: n
 }
 
 /**
+ * The character in play whose `evilInfo` has `none`, leaving out the Minion info and Demon
+ * info steps at any player count (Tor, https://wiki.bloodontheclocktower.com/Tor).
+ */
+export function evilTeamInfoRemovedBy(inPlay: readonly Character[]): Character | undefined {
+	const characters = new Map(inPlay.map((c) => [c.id, c]));
+	return inPlay.find((c) => rulesOf(c.id, characters)?.evilInfo?.none === true);
+}
+
+/**
  * Whether the first night has the Minion info and Demon info steps: 7 or more players, or a
  * character in play whose `evilInfo` has `anyPlayerCount` (the Toymaker: "evil players get
  * normal starting info").

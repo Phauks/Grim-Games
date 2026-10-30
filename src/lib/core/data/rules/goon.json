@@ -17,5 +17,9 @@
 	"reminderMovement": {
 		"why": "Follows whoever chose the Goon tonight."
 	},
-	"makesExtraEvil": true
+	"makesExtraEvil": true,
+	"becomes": {
+		"token": "Drunk",
+		"into": "carrier-alignment"
+	}
 }

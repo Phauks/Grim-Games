@@ -15,9 +15,11 @@
 		avatar: AvatarId;
 		picture?: string;
 		frame?: FrameId;
+		/** The live room and seat, for Add friend (plan F2). */
+		friend?: { code: string; seatId: string };
 	}
 
-	let { name, avatar, picture, frame }: Props = $props();
+	let { name, avatar, picture, frame, friend }: Props = $props();
 	let open = $state(false);
 </script>
 
@@ -29,7 +31,7 @@
 	onclick={() => (open = true)}
 	><span class="face"><AvatarFace {avatar} {name} {picture} /></span></button
 >
-<PlayerProfileDialog bind:open {name} {avatar} {picture} {frame} />
+<PlayerProfileDialog bind:open {name} {avatar} {picture} {frame} {friend} />
 
 <style>
 	.seat-avatar {

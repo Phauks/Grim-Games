@@ -1,6 +1,8 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import { renderSVG } from 'uqr';
 import { aimCamera, qrSrc } from './camera.ts';
+import { toBoard } from './new-game.ts';
+import { openProfile, setPlayerName } from './player-name.ts';
 import { theMenu } from './shell.ts';
 
 // Friends (plan F1): two accounts, each in its own browser, find each other by username.
@@ -163,11 +165,13 @@ test('a friend code, scanned or opened, fills in Add friend', async ({ browser }
 	const ann = await signedIn(browser, 'ann');
 	const bob = await signedIn(browser, 'bob');
 
-	// Ann's own code: a link with her username in the hash, her profile icon in the middle.
+	// Ann's own code: a link with her username in the hash, her Profile avatar in the middle.
 	await ann.page.goto('/friends');
 	const link = ann.page.getByRole('textbox', { name: 'Link' });
 	await expect(link).toHaveValue(new RegExp(`/friends#friend=${ann.username}$`));
 	await expect(ann.page.getByRole('img', { name: 'QR code to add you as a friend' })).toBeVisible();
+	// Its middle is her Profile's avatar, as Settings' Profile button shows it (2026-10-30).
+	await expect(ann.page.getByTestId('profile-avatar')).toBeVisible();
 
 	// Bob scans it from Add friend: her name is filled in, ready to send.
 	await aimCamera(bob.page, qrSrc(renderSVG(await link.inputValue(), { border: 2 })));
@@ -188,4 +192,77 @@ test('a friend code, scanned or opened, fills in Add friend', async ({ browser }
 	// Hidden from search, Ann has no code to show.
 	await ann.page.getByText('Let people find me by username', { exact: true }).tap();
 	await expect(ann.page.getByText('Finding you by username is off.')).toBeVisible();
+});
+
+/** Starts a Trouble Brewing game and opens its room; returns the board's path and the code. */
+async function liveRoom(page: Page): Promise<{ board: string; code: string }> {
+	await page.goto('/new');
+	await page
+		.getByRole('radiogroup', { name: 'Script' })
+		.getByText('Trouble Brewing', { exact: true })
+		.tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
+	await toBoard(page);
+	const board = new URL(page.url()).pathname;
+	await page.goto(`${board}/room`);
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+	return { board, code };
+}
+
+/** Names a seat on the board, which seats the phone with that name. */
+async function nameSeat(page: Page, number: number, name: string) {
+	await page.getByRole('link', { name: 'Grimoire' }).tap();
+	await page.getByRole('button', { name: new RegExp(`^Seat ${number}:`) }).tap();
+	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
+	await sheet.getByRole('button', { name: 'Edit player name' }).tap();
+	await sheet.getByRole('textbox', { name: 'Player name' }).fill(name);
+	await sheet.getByRole('textbox', { name: 'Player name' }).press('Enter');
+	await page.keyboard.press('Escape');
+	await expect(sheet).toBeHidden();
+}
+
+test('a player in a live game is added from their profile', async ({ browser }) => {
+	// Plan F2 (Trevor, 2026-10-29): a signed-in player's account is always linked to the room;
+	// no phone ever learns another's account, only whether Add friend can be offered.
+	test.slow();
+	const ann = await signedIn(browser, 'ann');
+	const bob = await signedIn(browser, 'bob');
+	const { board, code } = await liveRoom(ann.page);
+
+	await bob.page.goto(`/join/${code}`);
+	await openProfile(bob.page);
+	await setPlayerName(bob.page, 'Bob');
+	await bob.page.keyboard.press('Escape');
+	await expect(ann.page.getByTestId('status-players')).toHaveText('1 player');
+	await nameSeat(ann.page, 3, 'Bob');
+	await expect(bob.page.getByTestId('you-row')).toHaveAttribute('data-seat', '3');
+
+	// The Storyteller opens Bob's profile from Players and asks him.
+	await ann.page.goto(`${board}/players`);
+	await ann.page
+		.getByRole('list', { name: 'Players in the room' })
+		.getByRole('listitem')
+		.filter({ hasText: 'Bob' })
+		.getByTestId('sheet-avatar')
+		.tap();
+	const profile = ann.page.getByRole('dialog', { name: 'Bob', exact: true });
+	const add = profile.getByTestId('seat-friend');
+	await expect(add).toHaveAttribute('data-state', 'add');
+	await expect(add).toHaveText('Add friend');
+	await add.tap();
+	await expect(add).toHaveAttribute('data-state', 'requested');
+	await expect(add).toHaveText('Requested');
+	await expect(add).toBeDisabled();
+
+	// Bob's own seat says it is him, and the request waits on his Friends page.
+	await bob.page.getByRole('tab', { name: 'Grim' }).tap();
+	await bob.page.getByTestId('grim-seat').nth(2).tap();
+	await bob.page.getByRole('dialog', { name: 'Seat 3 · Bob' }).getByTestId('sheet-avatar').tap();
+	const own = bob.page.getByRole('dialog', { name: 'Bob', exact: true }).getByTestId('seat-friend');
+	await expect(own).toHaveAttribute('data-state', 'self');
+	await expect(own).toHaveText('You');
+	await bob.page.goto('/friends');
+	await expect(bob.page.getByTestId('friend-incoming')).toContainText(ann.username);
 });

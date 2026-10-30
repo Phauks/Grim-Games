@@ -12,6 +12,7 @@
 	}: { open?: boolean; game: Game; seatId: SeatId | undefined } = $props();
 
 	const seat = $derived(seatId ? game.seats[seatId] : undefined);
+	const code = $derived(roomHost().code);
 </script>
 
 {#if seat?.avatar && seatId}<PlayerProfileDialog
@@ -20,4 +21,5 @@
 		avatar={seat.avatar}
 		picture={roomHost().pictureOf(seatId)}
 		frame={seat.frame}
+		friend={code ? { code, seatId } : undefined}
 	/>{/if}

@@ -111,6 +111,7 @@ export const player = {
 	'player.seatProfile.laurel': 'Laurel',
 	'player.seatProfile.colour': 'Color',
 	'player.seatProfile.motion': 'Motion',
+	'player.seatProfile.friend': 'Friend',
 	'player.picture': 'Your picture',
 	'player.pictureDetail':
 		'On your seat in place of your initials, in rooms you join. The Storyteller can take it away for a game.',

@@ -31,7 +31,6 @@
 		ended: boolean;
 		onHistory: () => void;
 		onBluffs: () => void;
-		onNotes: () => void;
 		/** Back to town (plan U2): only while players' phones can be in a room. */
 		onCallTown?: () => void;
 		onGameInfo: () => void;
@@ -61,7 +60,6 @@
 		ended,
 		onHistory,
 		onBluffs,
-		onNotes,
 		onCallTown,
 		onGameInfo,
 		onCharacterSelection,
@@ -93,25 +91,21 @@
 	<div class="menu">
 		<section class="group" aria-labelledby="board-menu-game">
 			<h3 id="board-menu-game" class="group-title">Game</h3>
-			<!-- Players and their messages, here on every screen (Trevor, 2026-10-28: "we should not
-			     have discrepancy"; 2026-10-29: Messages folded into Players). -->
-			{#if host.code && !watching}
-				<Button
-					variant="quiet"
-					icon="players"
-					data-testid="menu-players"
-					onclick={() => fromMenu(() => playersDialog.show())}
-				>
-					{t('room.players.title')}
-					{#if host.inbox.unread}<CountBadge count={host.inbox.unread} warn />{/if}
-				</Button>
-			{/if}
+			<!-- Players, with their notes and messages, here on every screen (Trevor, 2026-10-28: "we
+			     should not have discrepancy"; 2026-10-29: Messages and Notes folded into Players). -->
+			<Button
+				disabled={watching}
+				variant="quiet"
+				icon="players"
+				data-testid="menu-players"
+				onclick={() => fromMenu(() => playersDialog.show())}
+			>
+				{t('room.players.title')}
+				{#if host.code && host.inbox.unread}<CountBadge count={host.inbox.unread} warn />{/if}
+			</Button>
 			<Button variant="quiet" icon="history" onclick={() => fromMenu(onHistory)}>History</Button>
 			<Button disabled={watching} variant="quiet" icon="demon" onclick={() => fromMenu(onBluffs)}
 				>Demon bluffs</Button
-			>
-			<Button disabled={watching} variant="quiet" icon="notes" onclick={() => fromMenu(onNotes)}
-				>Notes</Button
 			>
 			{#if onCallTown}
 				<!-- Every phone in the room sounds and vibrates (plan U2, Trevor 2026-10-26). -->
