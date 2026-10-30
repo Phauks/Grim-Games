@@ -20,6 +20,7 @@
 	import { playersDialog } from './players-dialog.svelte.ts';
 	import RemovedPlayers from './RemovedPlayers.svelte';
 	import RolesPanel from './RolesPanel.svelte';
+	import { seatRoles } from '#lib/core/sync/seat-roles.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 
@@ -68,16 +69,37 @@
 		)
 	]);
 
+	type Phone = 'here' | 'away' | 'none';
+	const phoneOf = (entry: Entry): Phone =>
+		!entry.member ? 'none' : host.isHere(entry.member.memberId) ? 'here' : 'away';
+	const PHONE_ICON = { here: 'phoneHere', away: 'phoneAway', none: 'noPhone' } as const;
+	const PHONE_TEXT = {
+		here: 'room.players.here',
+		away: 'room.players.away',
+		none: 'room.players.noPhone'
+	} as const;
+
 	function where(entry: Entry): string {
 		const n = seatIndex(entry.seatId);
 		const seat = n ? t('common.seat', { number: n }) : t('room.noSeat');
-		const m = entry.member;
-		const state = !m
-			? t('room.players.noPhone')
-			: host.isHere(m.memberId)
-				? t('room.players.here')
-				: t('room.players.away');
-		return t('room.players.where', { seat, state });
+		return t('room.players.where', { seat, state: t(PHONE_TEXT[phoneOf(entry)]) });
+	}
+
+	// Who has seen their character, on each player's row (Trevor, 2026-10-30: "who has seen
+	// theirs and the above area seems duplicative, can you just combine").
+	const gameId = $derived(game.game.gameId);
+	const roles = $derived(seatRoles(game.game, game.characters));
+	const seen = $derived(new Set(host.rolesSeen));
+	function roleState(entry: Entry): string | undefined {
+		const seat = entry.seatId && game.game.seats[entry.seatId];
+		if (!seat || !seat.characterId) return undefined;
+		if (!roles[seat.seatId])
+			return game.characters.get(seat.characterId)?.type === 'traveller'
+				? t('room.roles.noAlignment')
+				: t('room.roles.withheld');
+		if (!entry.member) return undefined;
+		if (seen.has(seat.seatId)) return t('room.roles.seen');
+		return host.rolesShown.gameId === gameId ? t('room.roles.notSeen') : t('room.roles.hidden');
 	}
 
 	/** What waits from this player: unread messages and pictures still to judge. */
@@ -144,6 +166,17 @@
 	}
 </script>
 
+{#snippet nameAndCharacter(entry: Entry)}
+	{@const seat = entry.seatId && game.game.seats[entry.seatId]}
+	{#if seat && seat.characterId}<CharacterBadge
+			characterId={seat.characterId}
+			character={game.characters.get(seat.characterId)}
+			alignment={seat.alignment}
+			playerName={entry.name}
+			interactive={false}
+		/>{:else}<PlayerBadge name={entry.name} />{/if}
+{/snippet}
+
 {#snippet avatar(entry: Entry)}
 	{#if entry.member}<SeatAvatarButton
 			name={entry.name}
@@ -189,9 +222,10 @@
 							data-testid="room-player-open"
 							onclick={() => openSheet(entry.key)}
 						>
+							<!-- Name and character on one row (Trevor, 2026-10-30). -->
 							<span class="who">
 								<span class="name"
-									><PlayerBadge name={entry.name} />{#if seatNotes(entry.seatId).length}<span
+									>{@render nameAndCharacter(entry)}{#if seatNotes(entry.seatId).length}<span
 											class="note-mark"
 											data-testid="room-player-note"
 											><Icon name="notes" /><span class="visually-hidden"
@@ -199,8 +233,29 @@
 											></span
 										>{/if}</span
 								>
-								<span class="where">{where(entry)}</span>
+								{#if !entry.seatId}<span class="where">{t('room.noSeat')}</span>{/if}
 							</span>
+							<!-- Symbols, not words (Trevor, 2026-10-30): seen their character, then the
+							     phone; both keep their space so rows line up. -->
+							<span
+								class="mark seen"
+								data-testid="room-player-seen"
+								data-seen={entry.seatId && seen.has(entry.seatId) ? '' : undefined}
+								>{#if entry.seatId && seen.has(entry.seatId)}<Icon
+										name="roleSeen"
+										label={t('room.roles.seen')}
+									/>{/if}</span
+							>
+							<span
+								class="mark phone"
+								data-testid="room-player-phone"
+								data-phone={phoneOf(entry)}
+								title={t(PHONE_TEXT[phoneOf(entry)])}
+								><Icon
+									name={PHONE_ICON[phoneOf(entry)]}
+									label={t('room.players.phone', { state: t(PHONE_TEXT[phoneOf(entry)]) })}
+								/></span
+							>
 							<!-- Kept when there is nothing, so rows never shift as messages come in. -->
 							<span class="waiting">
 								{#if wait.count}<CountBadge
@@ -245,11 +300,14 @@
 			</div>
 			{#if sheet.seatId}
 				{@const seat = game.game.seats[sheet.seatId]}
-				{#if seat?.characterId}<CharacterBadge
-						characterId={seat.characterId}
-						character={game.characters.get(seat.characterId)}
-						alignment={seat.alignment}
-					/>{/if}
+				{@const role = roleState(sheet)}
+				{#if seat?.characterId}<span class="sheet-role"
+						><CharacterBadge
+							characterId={seat.characterId}
+							character={game.characters.get(seat.characterId)}
+							alignment={seat.alignment}
+						/>{#if role}<span class="where" data-testid="room-player-role">{role}</span>{/if}</span
+					>{/if}
 				{@const seatId = sheet.seatId}
 				<section class="notes" aria-labelledby="player-notes-{seatId}">
 					<h3 id="player-notes-{seatId}">{t('room.players.notesHeading')}</h3>
@@ -408,6 +466,23 @@
 		align-items: center;
 		gap: var(--space-1);
 		min-width: 0;
+	}
+	.mark {
+		display: grid;
+		place-items: center;
+		flex: none;
+		width: 1.5em;
+		color: var(--on-surface-muted);
+	}
+	.seen,
+	.phone[data-phone='here'] {
+		color: var(--good-text);
+	}
+	.sheet-role {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-2);
 	}
 	.note-mark {
 		display: inline-flex;

@@ -177,6 +177,11 @@ export const ICON_SLOTS = {
 	feedback: { label: 'Player feedback', choices: ['ph:star-half', 'ph:chat-centered-text'] },
 	/** Players' messages to the Storyteller, and the Storyteller's Messages (Trevor, 2026-10-27). */
 	messages: { label: 'Messages', choices: ['ph:chat-text', 'ph:envelope-simple'] },
+	/** A player's phone on Players (Trevor, 2026-10-30: "a checkmark, x or none or some other symbols"). */
+	phoneHere: { label: 'Phone here', choices: ['ph:check-circle', 'ph:device-mobile'] },
+	phoneAway: { label: 'Phone away', choices: ['ph:moon', 'ph:clock'] },
+	noPhone: { label: 'No phone', choices: ['ph:minus-circle', 'ph:minus'] },
+	roleSeen: { label: 'Has seen their character', choices: ['ph:eye', 'ph:check'] },
 	/** Room transfer: the room goes to another Storyteller's device (Trevor, 2026-10-28). */
 	transfer: { label: 'Room transfer', choices: ['ph:hand-arrow-up', 'ph:arrow-square-out'] },
 	/** Marks an opened message unread again (Trevor, 2026-10-28: "an eyeball next to the x"). */

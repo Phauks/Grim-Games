@@ -48,12 +48,14 @@ import ph_certificate_thin from '~icons/ph/certificate-thin';
 import ph_chat_centered_text_thin from '~icons/ph/chat-centered-text-thin';
 import ph_chat_text_thin from '~icons/ph/chat-text-thin';
 import ph_check_thin from '~icons/ph/check-thin';
+import ph_check_circle_thin from '~icons/ph/check-circle-thin';
 import ph_check_square_thin from '~icons/ph/check-square-thin';
 import ph_circle_dashed_thin from '~icons/ph/circle-dashed-thin';
 import ph_circle_notch_thin from '~icons/ph/circle-notch-thin';
 import ph_circles_three_thin from '~icons/ph/circles-three-thin';
 import ph_clipboard_thin from '~icons/ph/clipboard-thin';
 import ph_clipboard_text_thin from '~icons/ph/clipboard-text-thin';
+import ph_clock_thin from '~icons/ph/clock-thin';
 import ph_clock_counter_clockwise_thin from '~icons/ph/clock-counter-clockwise-thin';
 import ph_club_thin from '~icons/ph/club-thin';
 import ph_coffee_thin from '~icons/ph/coffee-thin';
@@ -276,12 +278,14 @@ const icons: IconMap = {
 	'ph:chat-centered-text-thin': ph_chat_centered_text_thin,
 	'ph:chat-text-thin': ph_chat_text_thin,
 	'ph:check-thin': ph_check_thin,
+	'ph:check-circle-thin': ph_check_circle_thin,
 	'ph:check-square-thin': ph_check_square_thin,
 	'ph:circle-dashed-thin': ph_circle_dashed_thin,
 	'ph:circle-notch-thin': ph_circle_notch_thin,
 	'ph:circles-three-thin': ph_circles_three_thin,
 	'ph:clipboard-thin': ph_clipboard_thin,
 	'ph:clipboard-text-thin': ph_clipboard_text_thin,
+	'ph:clock-thin': ph_clock_thin,
 	'ph:clock-counter-clockwise-thin': ph_clock_counter_clockwise_thin,
 	'ph:club-thin': ph_club_thin,
 	'ph:coffee-thin': ph_coffee_thin,

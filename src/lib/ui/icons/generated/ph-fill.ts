@@ -48,12 +48,14 @@ import ph_certificate_fill from '~icons/ph/certificate-fill';
 import ph_chat_centered_text_fill from '~icons/ph/chat-centered-text-fill';
 import ph_chat_text_fill from '~icons/ph/chat-text-fill';
 import ph_check_fill from '~icons/ph/check-fill';
+import ph_check_circle_fill from '~icons/ph/check-circle-fill';
 import ph_check_square_fill from '~icons/ph/check-square-fill';
 import ph_circle_dashed_fill from '~icons/ph/circle-dashed-fill';
 import ph_circle_notch_fill from '~icons/ph/circle-notch-fill';
 import ph_circles_three_fill from '~icons/ph/circles-three-fill';
 import ph_clipboard_fill from '~icons/ph/clipboard-fill';
 import ph_clipboard_text_fill from '~icons/ph/clipboard-text-fill';
+import ph_clock_fill from '~icons/ph/clock-fill';
 import ph_clock_counter_clockwise_fill from '~icons/ph/clock-counter-clockwise-fill';
 import ph_club_fill from '~icons/ph/club-fill';
 import ph_coffee_fill from '~icons/ph/coffee-fill';
@@ -276,12 +278,14 @@ const icons: IconMap = {
 	'ph:chat-centered-text-fill': ph_chat_centered_text_fill,
 	'ph:chat-text-fill': ph_chat_text_fill,
 	'ph:check-fill': ph_check_fill,
+	'ph:check-circle-fill': ph_check_circle_fill,
 	'ph:check-square-fill': ph_check_square_fill,
 	'ph:circle-dashed-fill': ph_circle_dashed_fill,
 	'ph:circle-notch-fill': ph_circle_notch_fill,
 	'ph:circles-three-fill': ph_circles_three_fill,
 	'ph:clipboard-fill': ph_clipboard_fill,
 	'ph:clipboard-text-fill': ph_clipboard_text_fill,
+	'ph:clock-fill': ph_clock_fill,
 	'ph:clock-counter-clockwise-fill': ph_clock_counter_clockwise_fill,
 	'ph:club-fill': ph_club_fill,
 	'ph:coffee-fill': ph_coffee_fill,

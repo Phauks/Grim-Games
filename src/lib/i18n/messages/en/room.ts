@@ -41,6 +41,7 @@ export const room = {
 		other: '{count} notes'
 	},
 	'room.players.where': '{seat} · {state}',
+	'room.players.phone': 'Phone: {state}',
 	'room.players.remove': 'Remove from room',
 	'room.players.removeConfirm': 'Remove this player from the room?',
 	'room.players.removeBody':
@@ -219,10 +220,9 @@ export const room = {
 	// Players' own characters on their phones (Trevor, 2026-10-26)
 	'room.roles.heading': 'Characters on phones',
 	'room.roles.toggle': 'Players can see their character',
-	'room.roles.hint':
-		'Each seated player holds to see their own character on their phone. It turns itself off after a minute.',
+	'room.roles.show': 'Show players their characters',
+	'room.roles.hide': 'Hide their characters',
 	'room.roles.timeLeft': 'Players can see theirs for {time} more',
-	'room.roles.seats': 'Who has seen theirs',
 	'room.roles.seen': 'Seen',
 	'room.roles.notSeen': 'Not seen',
 	'room.roles.hidden': 'Hidden',
