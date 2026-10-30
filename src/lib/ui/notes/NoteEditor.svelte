@@ -20,9 +20,10 @@
 	let confirming = $state(false);
 </script>
 
-<!-- The same full-screen panel as a scratch pad, so notes and pads look alike (Trevor,
-     2026-10-18). The heading stays "Note" so it doesn't change while the title is typed. -->
-<Dialog bind:open title={t('player.note')} size="max" scroll={false}>
+<!-- A plain dialog, not a full screen, whose text grows as it is written, so the whole note
+     stays in view above a phone's keyboard (Trevor, 2026-10-30: "shouldn't be as big"). The
+     heading stays "Note" so it doesn't change while the title is typed. -->
+<Dialog bind:open title={t('player.note')}>
 	<!-- The trash sits beside the X (Trevor, 2026-10-17); it still confirms first. -->
 	{#snippet headActions()}
 		{#if note && !readonly}
@@ -53,7 +54,8 @@
 				label={t('player.noteText')}
 				value={note.text}
 				multiline
-				grow
+				autogrow
+				rows={4}
 				disabled={readonly}
 				oninput={(text) => onChange({ text })}
 			/>
@@ -78,10 +80,13 @@
 <style>
 	.editor {
 		display: grid;
-		grid-template-rows: auto 1fr;
 		gap: var(--space-2);
-		flex: 1;
-		min-height: 0;
+	}
+	/* Grows with its text up to half of what the keyboard leaves, then scrolls. */
+	.editor :global(.autogrow textarea) {
+		max-height: calc(
+			(100dvh - var(--keyboard-top, 0px) - var(--keyboard-inset, 0px)) / 2
+		); /* px-ok: zero fallback */
 	}
 	.title-row {
 		display: flex;

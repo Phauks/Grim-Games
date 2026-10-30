@@ -189,10 +189,11 @@
 		background: var(--backdrop);
 	}
 	/* Above the on-screen keyboard, so the field being typed in and Confirm stay in view
-	   (keyboard-inset.ts; Trevor, 2026-10-25). */
+	   (keyboard-inset.ts; Trevor, 2026-10-25), and from the top of what is shown, so the header
+	   stays put when the browser scrolls to the field (Trevor, 2026-10-30). */
 	:global([data-scope='dialog'][data-part='positioner']) {
 		position: fixed;
-		inset: 0 0 var(--keyboard-inset, 0) 0;
+		inset: var(--keyboard-top, 0) 0 var(--keyboard-inset, 0) 0;
 		z-index: calc(var(--z-overlay) + var(--layer, 1));
 		display: grid;
 		place-items: center;

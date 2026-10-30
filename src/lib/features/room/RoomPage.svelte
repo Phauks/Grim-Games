@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { resolve } from '$app/paths';
+	import { untrack } from 'svelte';
 	import type { GameId } from '#lib/core/model/index.ts';
 	import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 	import WithSavedGame from '#lib/features/game/WithSavedGame.svelte';
@@ -17,8 +18,9 @@
 
 	let { gameId, players = false }: Props = $props();
 
-	// The room opens while the game loads, not after.
-	prepareRoom();
+	// The room opens while the game loads, not after; Players needs no room (its notes).
+	// The page is keyed by game and never switches between Share and Players.
+	if (!untrack(() => players)) prepareRoom();
 </script>
 
 <main>
