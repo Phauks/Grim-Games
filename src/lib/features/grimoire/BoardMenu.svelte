@@ -226,7 +226,11 @@
 					variant="quiet"
 					icon="countOff"
 					data-testid="menu-count-off"
-					onclick={() => fromMenu(() => (playersDialog.countOff = true))}
+					onclick={() =>
+						fromMenu(() => {
+							host.send({ type: 'count-off' });
+							playersDialog.countOff = true;
+						})}
 				>
 					{t('room.countOff.title')}
 				</Button>
