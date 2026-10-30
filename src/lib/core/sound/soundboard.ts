@@ -257,6 +257,27 @@ export function parsePads(raw: unknown): SoundPad[] {
 	return pads;
 }
 
-/** Where the soundboard plays while the board has a room (plan U10). */
-export const SOUND_OUTPUTS = ['device', 'town', 'both'] as const;
+/**
+ * Which devices in the room play the Storyteller's sounds (plan U10). Never the Storyteller's
+ * own device (Trevor, 2026-10-30: a sound from there gives away where the Storyteller sits):
+ * the Public Town tablet, the players' phones, or both.
+ */
+export const SOUND_OUTPUTS = ['all', 'phones', 'town'] as const;
 export type SoundOutput = (typeof SOUND_OUTPUTS)[number];
+
+/** Who hears the Storyteller's sounds: a Public Town tablet or a player's phone. */
+export type SoundListener = 'town' | 'phones';
+
+/** Whether a listener plays the Storyteller's sounds, as Play on chooses. */
+export function hearsSound(output: SoundOutput, listener: SoundListener): boolean {
+	return output === 'all' || output === listener;
+}
+
+/**
+ * A saved or sent Play on. Builds before 2026-10-30 also offered "This device" (now the
+ * default, everywhere) and "This device and Town Square" (now Town Square alone).
+ */
+export function parseSoundOutput(value: unknown): SoundOutput | undefined {
+	if (value === 'both') return 'town';
+	return (SOUND_OUTPUTS as readonly unknown[]).includes(value) ? (value as SoundOutput) : undefined;
+}

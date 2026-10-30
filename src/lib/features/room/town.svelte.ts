@@ -13,9 +13,9 @@ import {
 	parseTownSound,
 	ROOM_PROTOCOL,
 	type SharedGrimoire,
-	type TownSoundCommand,
 	type TownView
 } from '#lib/core/sync/room.ts';
+import { RoomSounds } from '#lib/features/sound/room-sounds.ts';
 import { randomKey, RoomSocket } from './room-socket.svelte.ts';
 
 export class RoomTown {
@@ -27,14 +27,14 @@ export class RoomTown {
 	/** The finished grimoire the Storyteller shared at game end (plan R5), as phones get it. */
 	revealed = $state.raw<{ gameId: string; grimoire: SharedGrimoire }>();
 	readonly #socket: RoomSocket;
-
 	/**
-	 * Called with each soundboard command the Storyteller sends the Public Town (plan U10);
-	 * never for an admin watching.
+	 * The Storyteller's sounds, when Play on includes Town Square (plan U10); never for an
+	 * admin watching.
 	 */
-	onSound: ((command: TownSoundCommand) => void) | undefined;
+	readonly #sounds: RoomSounds | undefined;
 
 	constructor(code: string, admin = false) {
+		this.#sounds = admin ? undefined : new RoomSounds('town');
 		this.#socket = new RoomSocket(
 			code,
 			// The room ignores a display's key; a hello still carries one.
@@ -42,15 +42,16 @@ export class RoomTown {
 			(m) => {
 				if (m.type === 'town-view') {
 					this.view = m;
+					this.#sounds?.follow(m.public);
 					// The game runs again, or a new one began: the finished grimoire goes.
 					if (!m.ended) this.revealed = undefined;
 				} else if (m.type === 'reveal') {
 					this.revealed = { gameId: m.gameId, grimoire: m.grimoire };
 				} else if (m.type === 'script') this.script = m.script;
 				else if (m.type === 'grimoire' && admin) this.grimoire = m.grimoire;
-				else if (m.type === 'town-sound' && !admin) {
+				else if (m.type === 'town-sound') {
 					const command = parseTownSound(m);
-					if (command) this.onSound?.(command);
+					if (command) this.#sounds?.hear(command);
 				}
 			},
 			// Each connection starts again from what the room holds then.
@@ -69,5 +70,6 @@ export class RoomTown {
 
 	stop(): void {
 		this.#socket.stop();
+		this.#sounds?.stop();
 	}
 }

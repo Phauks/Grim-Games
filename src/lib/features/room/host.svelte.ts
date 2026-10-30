@@ -38,6 +38,7 @@ import type {
 	ScriptVoteTally,
 	VoteSubject
 } from '#lib/core/sync/script-vote.ts';
+import type { SoundOutput } from '#lib/core/sound/soundboard.ts';
 import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 import { seatLayouts } from '#lib/features/grimoire/device-notes.ts';
@@ -474,12 +475,9 @@ export class RoomHost {
 		return sent;
 	}
 
-	/**
-	 * Plays, stops, pauses or resumes soundboard sounds on the Public Town tablet (plan U10).
-	 * False when the room can't be reached.
-	 */
-	townSound(command: TownSoundCommand): boolean {
-		return this.#socket?.send({ type: 'town-sound', ...command }) ?? false;
+	/** Soundboard sounds on the devices Play on names, never this one; false when offline. */
+	townSound(command: TownSoundCommand, to: SoundOutput): boolean {
+		return this.#socket?.send({ type: 'town-sound', to, ...command }) ?? false;
 	}
 
 	/** The game that is over (End game), so its grimoire can be shared (Share grim, R5). */
@@ -551,7 +549,7 @@ export class RoomHost {
 		this.#socket?.send({ type: 'script-vote-tally', show });
 	}
 
-	/** Ends the script vote after a final call to phones (Trevor, 2026-10-26). */
+	/** Ends the script vote at once (Trevor, 2026-10-30). */
 	endScriptVote(): void {
 		this.#socket?.send({ type: 'end-script-vote' });
 	}

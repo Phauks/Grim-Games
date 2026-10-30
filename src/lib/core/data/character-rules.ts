@@ -86,6 +86,14 @@ const DAY_CLAIMS = ['guesses', 'statement', 'statements'] as const;
 export type DayClaim = (typeof DAY_CLAIMS)[number];
 
 /**
+ * The player a day ability's use is about, asked when it is marked used: the player its
+ * player `chosen` (the Slayer), the `nominator` who set it off (the Virgin), or the `nominee`
+ * whose execution it decided (the Judge).
+ */
+const DAY_USE_WHO = ['chosen', 'nominator', 'nominee'] as const;
+export type DayUseWho = (typeof DAY_USE_WHO)[number];
+
+/**
  * Night deaths the ability itself decides (`rules/night-deaths.ts`):
  * - `wrong-guess`: the player guesses a player's character and dies if wrong (the Gambler);
  * - `chose-impaired`: the player dies if their pick is drunk or poisoned (the Acrobat);
@@ -167,6 +175,8 @@ export interface CharacterRules extends ChoiceRules {
 	dayClaim?: DayClaim;
 	/** At most this many guesses a day, for a `guesses` claim (the Juggler's 5). */
 	guessLimit?: number;
+	/** Who marking its day ability used asks for (Trevor, 2026-10-30). */
+	dayUse?: { who: DayUseWho };
 	/** How the ability leaves players drunk, poisoned or with no ability (`rules/ability.ts`). */
 	impairs?: Impairs;
 	/** Players who may register as another alignment or character type (`rules/ability.ts`). */
@@ -344,6 +354,7 @@ const RULE_KEYS = [
 	'nominationsAfterExecution',
 	'dayClaim',
 	'guessLimit',
+	'dayUse',
 	'impairs',
 	'registersAs',
 	'gameEnd',
@@ -503,6 +514,16 @@ export function parseCharacterRules(
 		if (Number.isInteger(guessLimit) && guessLimit > 0) rules.guessLimit = guessLimit;
 		else issues.add(`${path}.guessLimit`, `expected a whole number above 0, got ${guessLimit}`);
 	}
+	if (raw.dayUse !== undefined) {
+		const at = `${path}.dayUse`;
+		if (!isObject(raw.dayUse)) {
+			issues.add(at, `expected object, got ${describe(raw.dayUse)}`);
+		} else {
+			checkKeys(raw.dayUse, ['who'], at, issues);
+			const who = readEnum(raw.dayUse, 'who', DAY_USE_WHO, at, issues, true);
+			if (who) rules.dayUse = { who };
+		}
+	}
 	if (raw.impairs !== undefined) {
 		const impairs = readImpairs(raw.impairs, `${path}.impairs`, issues, reminders);
 		if (impairs) rules.impairs = impairs;
@@ -609,7 +630,7 @@ export function parseCharacterRules(
 		if (madness) rules.madness = madness;
 	}
 	if (raw.givesAbility !== undefined) {
-		const gives = readGivesAbility(raw.givesAbility, `${path}.givesAbility`, issues);
+		const gives = readGivesAbility(raw.givesAbility, `${path}.givesAbility`, issues, reminders);
 		if (gives) rules.givesAbility = gives;
 	}
 	if (readBoolean(raw, 'limitsExtraEvil', path, issues)) rules.limitsExtraEvil = true;

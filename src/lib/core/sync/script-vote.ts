@@ -61,12 +61,6 @@ export interface ScriptVoteCharacter {
  */
 export const SCRIPT_VOTE_MINUTES = [1, 2, 3, 5, 10] as const;
 
-/**
- * When the Storyteller ends the vote early, phones get this long to vote before it closes
- * (Trevor, 2026-10-26: "give 15 second final vote warning to players").
- */
-export const FINAL_CALL_SECONDS = 15;
-
 export const MIN_SCRIPT_VOTE_OPTIONS = 2;
 /** A practical ceiling, so one vote can't flood every phone; the only place it is set. */
 export const MAX_SCRIPT_VOTE_OPTIONS = 12;
@@ -85,8 +79,6 @@ export interface ScriptVote {
 	ballots: Record<string, string[]>;
 	/** When the time limit runs out (epoch ms, the room's clock); no limit when absent. */
 	endsAt?: number;
-	/** The Storyteller ended it early: the last FINAL_CALL_SECONDS before `endsAt`. */
-	finalCall?: true;
 	/** Players see the count too (Trevor, 2026-10-26); the Storyteller only when absent. */
 	showTally?: true;
 }
@@ -117,7 +109,6 @@ export interface ScriptVoteTally {
 	 */
 	people?: VotePerson[];
 	endsAt?: number;
-	finalCall?: true;
 	showTally?: true;
 }
 
@@ -200,14 +191,11 @@ export function scriptVoteEnded(vote: { endsAt?: number }, now: number): boolean
 }
 
 /**
- * Ends the vote early: phones get FINAL_CALL_SECONDS more, or what is left of the time limit
- * if that is sooner (Trevor, 2026-10-26). Once ended or in its final call, nothing changes.
+ * Ends the vote at `now`: no more ballots (Trevor, 2026-10-30: "End vote should end vote. No
+ * 15 second delay"). Once ended, nothing changes.
  */
-export function endScriptVoteSoon(vote: ScriptVote, now: number): ScriptVote {
-	if (vote.finalCall || scriptVoteEnded(vote, now)) return vote;
-	const soon = now + FINAL_CALL_SECONDS * 1000;
-	if (vote.endsAt !== undefined && vote.endsAt <= soon) return vote;
-	return { ...vote, endsAt: soon, finalCall: true };
+export function endScriptVoteNow(vote: ScriptVote, now: number): ScriptVote {
+	return scriptVoteEnded(vote, now) ? vote : { ...vote, endsAt: now };
 }
 
 /**
@@ -304,7 +292,6 @@ export function tallyScriptVote(vote: ScriptVote, memberIds: readonly string[]):
 		voted: counted.length,
 		members: members.size,
 		...(vote.endsAt !== undefined ? { endsAt: vote.endsAt } : {}),
-		...(vote.finalCall ? { finalCall: true as const } : {}),
 		...(vote.showTally ? { showTally: true as const } : {})
 	};
 }

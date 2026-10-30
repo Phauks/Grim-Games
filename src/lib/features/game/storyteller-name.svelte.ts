@@ -1,30 +1,14 @@
 /**
- * The Storyteller's name (Trevor, 2026-10-19: "put in the storyteller name"), saved with each
- * game (`Game.storytellerName`) so the places that show a game can name who runs it. It is
- * typed on a game's Characters screen, and a new game starts with the name typed last on this
- * device, else the signed-in account's username; empty means none.
+ * The Storyteller's name (Trevor, 2026-10-19), saved with each game (`Game.storytellerName`)
+ * so the places that show a game can name who runs it. It is the Profile's name and is set
+ * nowhere else (Trevor, 2026-10-30: "No longer allow setting storyteller name from app. All
+ * connected to profile name"): a new game starts with it, and the board keeps its game's name
+ * in step with it while the game is in play. Empty means none.
  */
-import { account } from '#lib/features/account/account.svelte.ts';
-import { readStored, writeStored } from '#lib/ui/stored.ts';
-
-const KEY = 'grim-games:storyteller-name';
-/** The longest name the field takes. */
-export const MAX_STORYTELLER_NAME = 40;
-
-let typed = $state<string | undefined>(
-	(() => {
-		const stored = readStored<unknown>(KEY);
-		return typeof stored === 'string' ? stored : undefined;
-	})()
-);
+import { savedPlayerName } from '#lib/features/room/player.svelte.ts';
 
 export const storytellerName = {
-	/** The name a new game starts with: the last one typed, else the account's username. */
 	get current(): string {
-		return typed ?? account.user?.username ?? '';
-	},
-	set(name: string) {
-		typed = name;
-		writeStored(KEY, name);
+		return savedPlayerName().trim();
 	}
 };
