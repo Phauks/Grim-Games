@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { imagePdf, jpegSize, pdfText } from './image-pdf.ts';
+import { imagePdf, jpegSize, pdfText, winAnsiString } from './image-pdf.ts';
 
 /** The smallest JPEG shape the reader looks at: start, an APP0 segment, then a frame header. */
 function jpeg(width: number, height: number, channels = 3): Uint8Array {
@@ -75,7 +75,7 @@ describe('imagePdf', () => {
 		const xref = Number(pdf.match(/startxref\n(\d+)/)?.[1]);
 		expect(pdf.slice(xref, xref + 4)).toBe('xref');
 		const entries = [...pdf.slice(xref).matchAll(/^(\d{10}) 00000 n $/gm)].map((m) => Number(m[1]));
-		expect(entries).toHaveLength(9);
+		expect(entries).toHaveLength(10);
 		entries.forEach((offset, i) =>
 			expect(pdf.slice(offset).startsWith(`${i + 1} 0 obj`)).toBe(true)
 		);
@@ -91,10 +91,36 @@ describe('the file information', () => {
 			})
 		);
 		expect(pdf).toContain(`/Title ${pdfText('Bad Moon')} /Author ${pdfText('TPI')}`);
-		expect(pdf).toMatch(/\/Root 1 0 R \/Info 6 0 R/);
+		expect(pdf).toMatch(/\/Root 1 0 R \/Info 7 0 R/);
 	});
 
 	it('writes any name as UTF-16 behind a byte-order mark', () => {
 		expect(pdfText('Aé')).toBe('<FEFF004100E9>');
+	});
+});
+
+describe('the hidden text', () => {
+	const pdf = text(
+		imagePdf([
+			{
+				jpeg: jpeg(1, 1),
+				paperMm: [215.9, 279.4],
+				marginMm: 10,
+				text: [{ text: 'Chef (you)', x: 5, y: 0, width: 50, height: 5 }]
+			}
+		])
+	);
+
+	it('draws each run invisibly in Courier over its place in the picture', () => {
+		expect(pdf).toContain('/BaseFont /Courier /Encoding /WinAnsiEncoding');
+		expect(pdf).toContain('BT 3 Tr');
+		// 4 mm type (11.34 pt), 10 characters stretched to 50 mm; 15 mm from the paper's left.
+		expect(pdf).toMatch(
+			/\/F1 11\.34 Tf 208\.30 Tz 1 0 0 1 42\.52 [\d.]+ Tm \(Chef \\\(you\\\)\) Tj/
+		);
+	});
+
+	it('writes curly quotes and dashes as Windows bytes, and anything else as ?', () => {
+		expect([...winAnsiString('’–\u00a0é漢')]).toEqual([0x28, 0x92, 0x96, 0x20, 0xe9, 0x3f, 0x29]);
 	});
 });
