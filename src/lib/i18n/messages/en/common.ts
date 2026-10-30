@@ -10,6 +10,8 @@ export const common = {
 	'common.searchReminders': 'Search reminders',
 	'common.confirm': 'Confirm',
 	'common.none': 'None',
+	'common.putDown': 'Put down',
+	'common.moreReminderActions': 'More reminder actions',
 	'common.hideContents': 'Hide contents',
 	'common.showPassword': 'Show password',
 	'common.seat': 'Seat {number}',

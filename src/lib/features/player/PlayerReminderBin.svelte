@@ -4,18 +4,12 @@
 	import type { PublicSeat } from '#lib/core/sync/public-projection.ts';
 	import { matchesReminderSearch } from '#lib/features/characters/character-search.ts';
 	import BoardReminder from '#lib/features/grimoire/BoardReminder.svelte';
-	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import ReminderBinSheet from '#lib/features/grimoire/ReminderBinSheet.svelte';
+	import ReminderInHand from '#lib/features/grimoire/ReminderInHand.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import Button from '#lib/ui/primitives/Button.svelte';
 	import SearchField from '#lib/ui/primitives/SearchField.svelte';
 	import type { SeatPoint } from '#lib/ui/seating/seat-layout.ts';
-	import {
-		guessesFirst,
-		reminderWords,
-		scriptReminderGroups,
-		type PlayerReminder
-	} from './player-reminders.ts';
+	import { guessesFirst, scriptReminderGroups, type PlayerReminder } from './player-reminders.ts';
 
 	/**
 	 * A player's reminder bin (Trevor, 2026-10-29: the bin, not a list on the seat's sheet), the
@@ -127,14 +121,14 @@
 	});
 </script>
 
-{#snippet token(token: Token, floating = false)}
+{#snippet tokenView(token: Token, floating = false)}
 	<BoardReminder
 		label={token.character ? token.reminder.label : ('' as ReminderLabel)}
 		character={token.character}
 		infinite={!token.character}
 		size={chip}
 		disabled={floating}
-		onTap={() => (placing = token)}
+		onTap={() => (placing = placing?.key === token.key ? undefined : token)}
 		onDrag={(x, y, end) => dragToken(token, x, y, end)}
 		onCancel={() => (drag = undefined)}
 	/>
@@ -145,7 +139,7 @@
 	label={t('player.grim.reminderBin')}
 	{groups}
 	keyOf={(item) => item.key}
-	item={token}
+	item={tokenView}
 	lowered={!!drag || !!placing}
 >
 	{#snippet header()}<SearchField
@@ -156,16 +150,18 @@
 
 {#if drag}
 	<div class="floating" style:left="{drag.at.x}%" style:top="{drag.at.y}%" aria-hidden="true">
-		{@render token(drag.token, true)}
+		{@render tokenView(drag.token, true)}
 	</div>
 {/if}
 
-<!-- Tapped: which seat it goes on, over the town's foot. -->
+<!-- Tapped: in hand until a seat is tapped, over the town's foot (the Storyteller's bank's
+     own pill, Trevor 2026-10-30). -->
 {#if placing}
-	<div class="placing" role="status" data-testid="bin-placing">
-		<span>{t('player.grim.tapSeatFor')}</span>
-		<ReminderToken label={reminderWords(placing.reminder)} character={placing.character} />
-		<Button onclick={() => (placing = undefined)}>{t('common.cancel')}</Button>
+	{@const held = placing}
+	<div class="placing">
+		<ReminderInHand onPutDown={() => (placing = undefined)}>
+			{#snippet token()}{@render tokenView(held, true)}{/snippet}
+		</ReminderInHand>
 	</div>
 {/if}
 
@@ -182,15 +178,6 @@
 		left: 50%;
 		bottom: var(--space-2);
 		z-index: 4;
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		padding: var(--space-1) var(--space-1) var(--space-1) var(--space-3);
-		border: 1px solid var(--border);
-		border-radius: var(--radius-full);
-		background: var(--surface-raised);
-		box-shadow: var(--shadow);
 		translate: -50% 0;
-		white-space: nowrap;
 	}
 </style>

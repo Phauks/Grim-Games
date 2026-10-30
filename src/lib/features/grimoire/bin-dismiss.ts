@@ -13,7 +13,15 @@ export function pressedOutside(event: PointerEvent, el: Element | undefined): bo
 	return !target.closest?.('[role="dialog"], [role="alertdialog"], [data-part="backdrop"]');
 }
 
-/** Escape closes it, unless a dialog is over it: then Escape closes only that dialog. */
+/**
+ * Escape closes it, unless a dialog is over it or the key is pressed in a menu (a held
+ * token's ⋯): then Escape closes only that.
+ */
 export function escapeCloses(event: KeyboardEvent): boolean {
-	return event.key === 'Escape' && !document.querySelector('[role="dialog"], [role="alertdialog"]');
+	const inMenu = (event.target as Element | null)?.closest?.('[data-scope="menu"]');
+	return (
+		event.key === 'Escape' &&
+		!inMenu &&
+		!document.querySelector('[role="dialog"], [role="alertdialog"]')
+	);
 }

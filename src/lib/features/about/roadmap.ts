@@ -301,7 +301,7 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		title:
 			'Crowded boards: reminders on spokes with a tether, duplicate from the bank, mark where a reminder came from',
 		area: 'storyteller',
-		parts: ['D2', 'B2', 'B3', 'B5', 'B1', 'B11']
+		parts: ['D2', 'B2', 'B3', 'B5', 'B1', 'B11', 'B12']
 	},
 	{
 		title: 'Seats that keep their names when players rotate, and random name colours',

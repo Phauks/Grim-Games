@@ -54,3 +54,26 @@ export async function putReminder(page: Page, label: string, seat: number | stri
 	await expect(page.locator('.lowered [data-testid="reminder-bin"]')).toHaveCount(0);
 	if ((await page.getByRole('alertdialog').count()) === 0) await closeBin(page);
 }
+
+/** The board's seat whose label starts `Seat N:` (or the label given). */
+export const boardSeat = (page: Page, seat: number | string) =>
+	page.locator(
+		`[data-testid="seat"][aria-label^="${typeof seat === 'number' ? `Seat ${seat}:` : seat}"]`
+	);
+
+/** The pill of the token in hand (Trevor, 2026-10-30: a tap holds a token). */
+export const inHand = (page: Page) => page.getByTestId('reminder-in-hand');
+
+/** Taps a token to hold it, then the seat it goes on. */
+export async function tapToSeat(page: Page, token: Locator, seat: number | string) {
+	await token.tap();
+	await expect(inHand(page)).toBeVisible();
+	await boardSeat(page, seat).tap();
+	await expect(inHand(page)).toBeHidden();
+}
+
+/** Picks a row of the held token's ⋯. */
+export async function heldAction(page: Page, row: string) {
+	await inHand(page).getByRole('button', { name: 'More reminder actions' }).tap();
+	await page.getByRole('menuitem', { name: row, exact: true }).tap();
+}
