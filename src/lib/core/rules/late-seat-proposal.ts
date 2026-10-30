@@ -1,6 +1,6 @@
 /**
- * The Add late player sheet's starting point (Trevor, 2026-10-30): the counts for one more
- * player, and a fair roll of who changes (`planLateSeat`) with characters picked for every
+ * The Add late player sheet's starting point (Trevor, 2026-10-30): the counts with the late
+ * players, and a fair roll of who changes (`planLateSeat`) with characters picked for every
  * new tile. It only suggests; the Storyteller changes, keeps or adds anyone before
  * confirming, and the counts check warns rather than blocks.
  */
@@ -20,6 +20,8 @@ export interface LateSeatProposalInput {
 	/** Fabled and Loric in play, with the Sentinel when the Storyteller invokes it. */
 	ruleCharacters: readonly CharacterId[];
 	random: () => number;
+	/** How many late players join; one by default. */
+	extra?: number;
 }
 
 export interface LateSeatChoice {
@@ -29,10 +31,10 @@ export interface LateSeatChoice {
 }
 
 export interface LateSeatProposal {
-	/** Character counts now, and for one more player. */
+	/** Character counts now, and with the late players. */
 	before: TypeCounts;
 	after: TypeCounts;
-	/** The same for one more player, by what the tiles are (a Drunk's tile is a Townsfolk). */
+	/** The same with the late players, by what the tiles are (a Drunk's tile is a Townsfolk). */
 	tileTarget: TypeCounts;
 	changes: LateSeatChoice[];
 	/** What the tiles still in the bag become, by grimoire character. */
@@ -92,6 +94,7 @@ function pickCounts(
 
 export function proposeLateSeat(input: LateSeatProposalInput): LateSeatProposal {
 	const { game, lookup, random } = input;
+	const extra = Math.max(1, input.extra ?? 1);
 	const { seen, bag, unseated, inPlay, typeOf } = drawState(game, lookup);
 	const scriptOrder = input.scriptCharacters.map((c) => c.id);
 	const selection: Record<CharacterId, number> = {};
@@ -106,8 +109,8 @@ export function proposeLateSeat(input: LateSeatProposalInput): LateSeatProposal 
 			lookup
 		});
 	const before = countByType(inPlay.map(typeOf));
-	const next = analysis(dealt + 1);
-	const after = pickCounts(next.expected, dealt + 1, before, random) ?? { ...next.base };
+	const next = analysis(dealt + extra);
+	const after = pickCounts(next.expected, dealt + extra, before, random) ?? { ...next.base };
 
 	// A Drunk or Marionette has no tile: a good character's tile stands in for theirs.
 	const tileTarget = { ...after };

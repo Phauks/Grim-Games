@@ -1,10 +1,10 @@
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { isKnownReminder, seatNumber, type Tile, type TileId } from '#lib/core/model/index.ts';
+import { isKnownReminder, type Tile, type TileId } from '#lib/core/model/index.ts';
 import type { TileSpec } from '../commands.ts';
 import type { GameEvent } from '../events.ts';
-import { SEATS_DECIDERS } from './seats.ts';
 import {
 	characterOf,
+	MAX_SEATS,
 	nextPosition,
 	refuse,
 	seatOf,
@@ -13,7 +13,7 @@ import {
 } from './shared.ts';
 
 /**
- * A late player joins mid-draw (the fair late seat, Trevor, 2026-10-30; the choice of who
+ * Late players join mid-draw (the fair late seat, Trevor, 2026-10-30; the choice of who
  * changes is `planLateSeat` in core/rules, and the Storyteller's to change). One command,
  * so Undo takes it all back.
  */
@@ -26,12 +26,24 @@ export const LATE_PLAYER_DECIDERS: Deciders<'AddLatePlayer'> = {
 				'the game is under way: a late player usually joins as a Traveller'
 			);
 		}
-		const events: GameEvent[] = SEATS_DECIDERS.AddSeat(
-			game,
-			{ type: 'AddSeat', playerName: command.playerName, position: command.position },
-			ctx,
-			warn
-		);
+		if (command.players.length === 0) refuse('invalid-player-count', 'no late player to add');
+		if (game.seating.length + command.players.length > MAX_SEATS) {
+			refuse('invalid-player-count', `a game has at most ${MAX_SEATS} seats`);
+		}
+		// Placed against the seating before any joined: the furthest round goes in first, so
+		// each later position is still right. Two at one spot keep their order.
+		const events: GameEvent[] = command.players
+			.map((player, i) => ({ player, i, position: player.position ?? game.seating.length }))
+			.sort((a, b) => b.position - a.position || b.i - a.i)
+			.map(({ player, position }) => {
+				if (!Number.isInteger(position) || position < 0 || position > game.seating.length) {
+					refuse('invalid-position', `position must be from 0 to ${game.seating.length}`);
+				}
+				const event: GameEvent = { type: 'SeatAdded', seatId: ctx.newId(), position };
+				const playerName = player.playerName?.trim();
+				if (playerName) event.playerName = playerName;
+				return event;
+			});
 		const tiles = Object.values(game.bag.tiles);
 		let added = game.nightOrderOverrides.length;
 		for (const change of command.changes) {
@@ -67,7 +79,12 @@ export const LATE_PLAYER_DECIDERS: Deciders<'AddLatePlayer'> = {
 			events.push(assigned);
 			// First thing on the first night, before Minion and Demon info: a changed player
 			// may now be evil.
-			const who = seat.playerName || `Seat ${seatNumber(game, seat.seatId) ?? '?'}`;
+			// Its number once the late players are seated.
+			const index = game.seating.indexOf(seat.seatId);
+			const before = command.players.filter(
+				(p) => (p.position ?? game.seating.length) <= index
+			).length;
+			const who = seat.playerName || `Seat ${index + 1 + before}`;
 			events.push({
 				type: 'NightStepOverrideAdded',
 				index: added++,

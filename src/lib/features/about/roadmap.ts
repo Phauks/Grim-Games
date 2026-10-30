@@ -293,9 +293,10 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['B6', 'L38', 'L39', 'L40', 'L15', 'L24', 'H1', 'H2']
 	},
 	{
-		title: 'Add a late player to the bag draw as one more player, not a Traveller',
+		title:
+			'Add late players to the bag draw as more players, not Travellers: placed on the grimoire, several at once, before and after',
 		area: 'storyteller',
-		parts: ['L96']
+		parts: ['L96', 'L96a']
 	},
 	{
 		title:
