@@ -326,6 +326,42 @@ describe('seats', () => {
 	});
 });
 
+describe('CountOff', () => {
+	// Count off (plan J40; Trevor, 2026-10-30: players count clockwise from the top of the clock).
+	it('puts the table in the counted order, renames and adds seats, as one step', () => {
+		const { session, ctx, seats } = newGame(names);
+		const s = run(session, ctx, {
+			type: 'CountOff',
+			seats: [
+				{ seatId: seats[2] },
+				{ seatId: seats[0] },
+				{ seatId: seats[4], playerName: 'Fay' as never },
+				{ seatId: seats[1] },
+				{ seatId: seats[3] },
+				{ playerName: 'Gus' as never }
+			]
+		});
+		expect(s.game.seating.slice(0, 5)).toEqual([seats[2], seats[0], seats[4], seats[1], seats[3]]);
+		expect(s.game.seats[seats[4]].playerName).toBe('Fay');
+		expect(s.game.seats[s.game.seating[5]].playerName).toBe('Gus');
+		expect(undo(s).game.seating).toEqual(seats);
+		expect(undo(s).game.seats[seats[4]].playerName).toBe('Eve');
+	});
+
+	it('lists every seat once, and says when nothing changes', () => {
+		const { session, ctx, seats } = newGame(names);
+		expect(
+			refused(session, ctx, {
+				type: 'CountOff',
+				seats: seats.slice(1).map((seatId) => ({ seatId }))
+			})
+		).toBe('invalid-position');
+		expect(
+			warned(session, ctx, { type: 'CountOff', seats: seats.map((seatId) => ({ seatId })) })
+		).toEqual(['no-change']);
+	});
+});
+
 describe('the Storyteller’s name', () => {
 	// Trevor (2026-10-19): typed on New game, shown wherever the game is shown.
 	it('starts with the game, outlives undo, changes and clears', () => {

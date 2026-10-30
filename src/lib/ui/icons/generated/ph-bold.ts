@@ -56,6 +56,7 @@ import ph_circles_three_bold from '~icons/ph/circles-three-bold';
 import ph_clipboard_bold from '~icons/ph/clipboard-bold';
 import ph_clipboard_text_bold from '~icons/ph/clipboard-text-bold';
 import ph_clock_bold from '~icons/ph/clock-bold';
+import ph_clock_clockwise_bold from '~icons/ph/clock-clockwise-bold';
 import ph_clock_counter_clockwise_bold from '~icons/ph/clock-counter-clockwise-bold';
 import ph_club_bold from '~icons/ph/club-bold';
 import ph_coffee_bold from '~icons/ph/coffee-bold';
@@ -134,6 +135,7 @@ import ph_list_bullets_bold from '~icons/ph/list-bullets-bold';
 import ph_list_checks_bold from '~icons/ph/list-checks-bold';
 import ph_list_dashes_bold from '~icons/ph/list-dashes-bold';
 import ph_list_magnifying_glass_bold from '~icons/ph/list-magnifying-glass-bold';
+import ph_list_numbers_bold from '~icons/ph/list-numbers-bold';
 import ph_lock_bold from '~icons/ph/lock-bold';
 import ph_lock_open_bold from '~icons/ph/lock-open-bold';
 import ph_lock_simple_bold from '~icons/ph/lock-simple-bold';
@@ -288,6 +290,7 @@ const icons: IconMap = {
 	'ph:clipboard-bold': ph_clipboard_bold,
 	'ph:clipboard-text-bold': ph_clipboard_text_bold,
 	'ph:clock-bold': ph_clock_bold,
+	'ph:clock-clockwise-bold': ph_clock_clockwise_bold,
 	'ph:clock-counter-clockwise-bold': ph_clock_counter_clockwise_bold,
 	'ph:club-bold': ph_club_bold,
 	'ph:coffee-bold': ph_coffee_bold,
@@ -366,6 +369,7 @@ const icons: IconMap = {
 	'ph:list-checks-bold': ph_list_checks_bold,
 	'ph:list-dashes-bold': ph_list_dashes_bold,
 	'ph:list-magnifying-glass-bold': ph_list_magnifying_glass_bold,
+	'ph:list-numbers-bold': ph_list_numbers_bold,
 	'ph:lock-bold': ph_lock_bold,
 	'ph:lock-open-bold': ph_lock_open_bold,
 	'ph:lock-simple-bold': ph_lock_simple_bold,
