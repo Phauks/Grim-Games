@@ -23,10 +23,11 @@
 	let nameHeight = $state(0);
 
 	/**
-	 * A one-word answer (a number, Yes, True) fills the space it has, sized by its length so
-	 * it never wraps (Trevor, 2026-10-30: "Your number is 1" was small and hard to read).
+	 * A short answer (a number, Yes/No, True/False, a custom card's choice) fills the space it
+	 * has, sized by its length so it stays on one line (Trevor, 2026-10-30: "Your number is 1"
+	 * was small and hard to read; "consider other short infos like yes no true false").
 	 */
-	const short = $derived(!!detail && detail.length <= 6 && !/\s/.test(detail));
+	const short = $derived(!!detail && detail.length <= 12);
 
 	const single = $derived(characters.length === 1 ? characters[0].character : undefined);
 	/**
@@ -197,8 +198,8 @@
 		font-size: clamp(1.6rem, 7vw, 3rem);
 	}
 	/*
-	 * A number or one-word answer: as big as the card allows, each character taking about
-	 * 0.6em, under the title when there is one.
+	 * A short answer: as big as the card allows, each character taking about 0.6em, under the
+	 * title when there is one.
 	 */
 	.detail[data-short],
 	.content[data-compact] .detail[data-short] {
