@@ -34,7 +34,7 @@ longest cell, so two PRs that each added a row used to conflict over the whole t
 - A section that opens and closes from its header, and anything else with a caret: `ui/primitives/Collapsible.svelte`: `storageKey` remembers it; `count` shows how many items it holds while closed (Trevor, 2026-10-19); `disabled` keeps it in place until it can open. It draws a line above itself when something sits above it in the same box (Trevor, 2026-10-27), so every caret has one indent, spacing, badge and line; a drop-down's caret (`aria-haspopup`) is a menu, not this (enforced by `grim/caret-section`, `e2e/caret-dividers.e2e.ts`)
 - Sections one under another, wrapped (a night, a sheet's type): `ui/layout/SectionStack.svelte` draws the line between each two; `edge` adds one above the first, under a heading or a field (the player's Script, Night and Notes tabs, the Library sidebar, Info tokens, the changelog) (enforced by `e2e/caret-dividers.e2e.ts`)
 - An element appearing or leaving (fade and short move): `rise` from `ui/motion.ts` (token speeds, none under reduced motion; transform and opacity only) (enforced by `no-restricted-imports`)
-- A labelled text field, one line or several: `ui/primitives/TextField.svelte` (enforced by `grim/text-field`)
+- A labelled text field, one line or several: `ui/primitives/TextField.svelte`; `lists` makes Enter carry a typed list on, "- ", "1. ", "a) " (`core/text/lists.ts`; notes) (enforced by `grim/text-field`)
 - A search box: `ui/primitives/SearchField.svelte` (enforced by `grim/text-field`)
 - A list of short texts with add and remove: `ui/primitives/TextListField.svelte` (enforced by review)
 - The clear X on a field: `ui/primitives/ClearableField.svelte` (TextField has it) (enforced by `grim/clearable-field`)

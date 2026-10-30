@@ -2,6 +2,7 @@
 	import type { Snippet } from 'svelte';
 	import type { HTMLInputAttributes } from 'svelte/elements';
 	import { t } from '#lib/i18n/locale.svelte.ts';
+	import { afterLineBreak, type TextEdit } from '#lib/core/text/lists.ts';
 	import ClearableField from './ClearableField.svelte';
 	import IconButton from './IconButton.svelte';
 
@@ -35,6 +36,11 @@
 		 * scrolls past most of the screen's height (seat notes: Trevor, 2026-10-19).
 		 */
 		autogrow?: boolean;
+		/**
+		 * A multi-line field where Enter carries a typed list on ("- ", "1. ", "a) "), and ends it
+		 * on an empty item (notes: Trevor, 2026-10-30), `core/text/lists.ts`.
+		 */
+		lists?: boolean;
 		placeholder?: string;
 		maxlength?: number;
 		required?: boolean;
@@ -69,6 +75,7 @@
 		spellcheck,
 		grow = false,
 		autogrow = false,
+		lists = false,
 		placeholder,
 		maxlength,
 		required = false,
@@ -100,6 +107,51 @@
 		area.style.height = `${Math.max(area.scrollHeight + border, area.offsetHeight)}px`;
 	});
 
+	/**
+	 * Puts an edit into the textarea as typing would (`insertText`), so the browser's undo
+	 * takes it back and `input` updates `value`; set directly where a browser can't.
+	 */
+	function apply(edit: TextEdit) {
+		if (!area) return;
+		const before = area.value;
+		let from = 0;
+		while (from < before.length && before[from] === edit.text[from]) from++;
+		let tail = 0;
+		while (
+			tail < before.length - from &&
+			tail < edit.text.length - from &&
+			before[before.length - 1 - tail] === edit.text[edit.text.length - 1 - tail]
+		)
+			tail++;
+		const insert = edit.text.slice(from, edit.text.length - tail);
+		area.setSelectionRange(from, before.length - tail);
+		const typed = document.execCommand(insert ? 'insertText' : 'delete', false, insert);
+		if (!typed || area.value !== edit.text) {
+			area.value = edit.text;
+			value = edit.text;
+			oninput?.(edit.text);
+		}
+		area.setSelectionRange(edit.start, edit.end);
+	}
+
+	/*
+	 * Enter is read from the `input` it makes rather than its keydown, which a phone's keyboard
+	 * often doesn't send as "Enter".
+	 */
+	function onAreaInput(event: Event & { currentTarget: HTMLTextAreaElement }) {
+		const field = event.currentTarget;
+		oninput?.(field.value);
+		const input = event instanceof InputEvent ? event : undefined;
+		const newLine =
+			input?.inputType === 'insertLineBreak' ||
+			input?.inputType === 'insertParagraph' ||
+			(input?.inputType === 'insertText' && input.data === '\n');
+		if (lists && newLine && field.selectionStart === field.selectionEnd) {
+			const edit = afterLineBreak(field.value, field.selectionStart);
+			if (edit) apply(edit);
+		}
+	}
+
 	function onkeydown(event: KeyboardEvent & { currentTarget: HTMLInputElement }) {
 		if (event.key !== 'Enter' || event.isComposing) return;
 		event.preventDefault();
@@ -129,7 +181,7 @@
 			{disabled}
 			aria-invalid={invalid || undefined}
 			data-testid={testid}
-			oninput={(e) => oninput?.(e.currentTarget.value)}></textarea>
+			oninput={onAreaInput}></textarea>
 	{:else}
 		<ClearableField
 			bind:value

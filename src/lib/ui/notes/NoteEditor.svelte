@@ -56,6 +56,7 @@
 				multiline
 				autogrow
 				rows={4}
+				lists
 				disabled={readonly}
 				oninput={(text) => onChange({ text })}
 			/>
