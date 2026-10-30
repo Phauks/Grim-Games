@@ -140,8 +140,8 @@
 			     somewhat different from the other items in game"; "these all seem related to pre and
 			     post game"): Character selection until Start game, then End game, then what an ended
 			     game offers. -->
-			<section class="group" aria-labelledby="board-menu-start">
-				<h3 id="board-menu-start" class="group-title">Start and end</h3>
+			<section class="group" aria-labelledby="board-menu-session">
+				<h3 id="board-menu-session" class="group-title">Session</h3>
 				{#if onCharacterSelection}
 					<Button
 						disabled={watching}
