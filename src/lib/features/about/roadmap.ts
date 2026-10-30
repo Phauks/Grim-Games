@@ -326,6 +326,12 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		later: true
 	},
 	{
+		// Trevor, 2026-10-30: on the roadmap, after a spike and research.
+		title: 'Jinxes the app applies, not only shows',
+		area: 'storyteller',
+		parts: ['L99', 'L100']
+	},
+	{
 		title: 'Co-Storytelling: two Storytellers on one game',
 		area: 'storyteller',
 		parts: ['Y2'],
