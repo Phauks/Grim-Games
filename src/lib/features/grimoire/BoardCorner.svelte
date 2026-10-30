@@ -6,7 +6,6 @@
 	import { gameClock } from '#lib/core/rules/index.ts';
 	import type { PublicCorner } from '#lib/core/sync/public-projection.ts';
 	import { formatRoomCode } from '#lib/core/sync/room-code.ts';
-	import type { GameInfoChanges } from '#lib/features/modes/GameInfoEditDialog.svelte';
 	import ModeMenu from '#lib/features/modes/ModeMenu.svelte';
 	import TownGameInfo from '#lib/features/modes/TownGameInfo.svelte';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
@@ -47,7 +46,8 @@
 		endedAt?: number;
 		/** The night or day in play, for the Game info sheet (ModeMenu). */
 		gamePhase?: string;
-		onEdit?: (changes: GameInfoChanges) => void;
+		/** The Storyteller's own board: Game info has an eye per corner line (ModeMenu). */
+		editable?: boolean;
 		/** Game info's join code opens Share (ModeMenu). */
 		onShare?: () => void;
 		/** The corner's size, kept clear of reminders. */
@@ -77,7 +77,7 @@
 		startedAt,
 		endedAt,
 		gamePhase,
-		onEdit,
+		editable = false,
 		onShare,
 		titleW = $bindable(0),
 		titleH = $bindable(0),
@@ -249,7 +249,7 @@
 		<!-- A mode's name opens its actions (Alternative game modes, Trevor 2026-10-18). -->
 		{#if game}<ModeMenu
 				{game}
-				onEdit={watching ? undefined : onEdit}
+				editable={editable && !watching}
 				{startedAt}
 				{endedAt}
 				phase={gamePhase}
