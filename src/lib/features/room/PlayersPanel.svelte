@@ -18,7 +18,10 @@
 	import { roomHost } from './host.svelte.ts';
 	import PlayerInbox from './PlayerInbox.svelte';
 	import { playersDialog } from './players-dialog.svelte.ts';
+	import RemovedPlayers from './RemovedPlayers.svelte';
 	import RolesPanel from './RolesPanel.svelte';
+	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
+	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 
 	/**
 	 * Players (Trevor, 2026-10-29: "player management shouldn't be under share"): every seat,
@@ -105,6 +108,15 @@
 		playersDialog.seat = undefined;
 		requestAnimationFrame(() => requestAnimationFrame(() => openSheet(seatId)));
 	});
+
+	// ── Remove from room (plan J37): this game only, and the Removed list can let them back ──
+	let removing = $state<{ memberId: string; name: PlayerName }>();
+	let confirmRemove = $state(false);
+	function remove() {
+		if (!removing) return;
+		host.send({ type: 'remove', memberId: removing.memberId });
+		sheetOpen = false;
+	}
 
 	// ── Notes: the game's (no seat) and each player's, the same notes as before ──
 	const viewOnly = $derived(game.viewOnly);
@@ -204,11 +216,27 @@
 		{/if}
 	</section>
 	<RolesPanel {game} />
+	{#if host.code}<RemovedPlayers />{/if}
 </div>
 
 <!-- eslint-disable-next-line grim/names-as-badges -- the dialog's plain-text name; shown as a badge (heading) -->
 <Dialog bind:open={sheetOpen} title={sheet?.name ?? ''}>
 	{#snippet heading()}<PlayerBadge name={sheet?.name ?? ''} />{/snippet}
+	<!-- A red trash beside the X, asking first (Trevor's UI rules). -->
+	{#snippet headActions()}
+		{#if sheet?.member && host.code && !viewOnly}
+			{@const memberId = sheet.member.memberId}
+			{@const name = sheet.name}
+			<DeleteButton
+				label={t('room.players.remove')}
+				data-testid="room-player-remove"
+				onclick={() => {
+					removing = { memberId, name };
+					confirmRemove = true;
+				}}
+			/>
+		{/if}
+	{/snippet}
 	{#if sheet}
 		<div class="sheet" data-testid="room-player-sheet">
 			<div class="sheet-top">
@@ -236,6 +264,16 @@
 		</div>
 	{/if}
 </Dialog>
+
+<ConfirmDialog
+	bind:open={confirmRemove}
+	title={t('room.players.removeConfirm')}
+	danger
+	onConfirm={remove}
+>
+	{#if removing}<PlayerBadge name={removing.name} />{/if}
+	<p>{t('room.players.removeBody')}</p>
+</ConfirmDialog>
 
 <Dialog bind:open={gameNotesOpen} title={t('room.players.gameNotes')}>
 	<div data-testid="game-notes">

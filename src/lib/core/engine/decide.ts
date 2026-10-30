@@ -79,6 +79,7 @@ export type WarningCode =
 	| 'not-on-script'
 	| 'already-in-play'
 	| 'kept-alignment'
+	| 'extra-evil-limit'
 	| 'alignment-differs-from-true-character'
 	| 'seat-has-character'
 	| 'draw-cancelled'
