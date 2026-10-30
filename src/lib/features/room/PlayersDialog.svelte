@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { Command } from '#lib/core/engine/index.ts';
 	import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -6,9 +7,9 @@
 	import PlayersPanel from './PlayersPanel.svelte';
 
 	/** Players over the board, from ⋯ on every screen, so the Storyteller never leaves the game. */
-	let { game }: { game: OpenGame } = $props();
+	let { game, run }: { game: OpenGame; run?: (command: Command) => boolean } = $props();
 </script>
 
 <Dialog bind:open={playersDialog.open} title={t('room.players.title')} size="full">
-	<PlayersPanel {game} />
+	<PlayersPanel {game} {run} />
 </Dialog>

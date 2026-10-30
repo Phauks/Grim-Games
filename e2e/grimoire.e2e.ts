@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { openPlayers, openPlayerSheet } from './players.ts';
 import { pickScript, nameStoryteller, toBoard } from './new-game.ts';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { openMenu } from './shell.ts';
@@ -2691,15 +2692,15 @@ async function endWithNote(page: Page) {
 		.getByRole('button', { name: 'Imp', exact: true })
 		.tap();
 	await closeSheet(page);
-	await menu(page, 'Notes');
-	await page
-		.getByRole('group', { name: 'Notes for Seat 1' })
-		.getByRole('button', { name: 'New note' })
-		.tap();
+	// A player's notes are on their sheet in Players (Trevor, 2026-10-29).
+	const player = await openPlayerSheet(page, 'Seat 1');
+	await player.getByTestId('new-note').tap();
 	const notes = page.getByRole('dialog', { name: 'Note', exact: true });
 	await notes.getByRole('textbox', { name: 'Text' }).fill('Secret word: lantern');
 	await notes.getByRole('button', { name: 'Close' }).tap();
-	await closeSheet(page);
+	await page.keyboard.press('Escape');
+	await page.keyboard.press('Escape');
+	await expect(page.getByRole('dialog', { name: 'Players', exact: true })).toBeHidden();
 	await menu(page, 'End game');
 	const end = page.getByRole('alertdialog', { name: 'End game?' });
 	await end.getByRole('combobox', { name: 'Winner' }).tap();
@@ -2962,7 +2963,7 @@ test("the day's Announcements explain a kill that didn't happen", async ({ page 
 	await page.screenshot({ path: `test-results/prevented-${test.info().project.name}.png` });
 });
 
-test('the Storyteller keeps game and player notes in one sheet, marked on the token', async ({
+test('the Storyteller keeps game and player notes on Players, marked on the token', async ({
 	page
 }) => {
 	// Game notes, then several notes on a player, from three places: longer than the default.
@@ -2970,17 +2971,26 @@ test('the Storyteller keeps game and player notes in one sheet, marked on the to
 	await startGame(page);
 	const seat = await openSeat(page, 1);
 	await nameSeat(seat, 'Ana');
-	// Player notes live in the ⋯ Notes sheet, not as a row of the seat sheet (Trevor, 2026-10-19).
+	// Player notes are not a row of the seat sheet (Trevor, 2026-10-19).
 	await expect(seat.getByRole('button', { name: /^Notes/ })).toHaveCount(0);
 	await closeSheet(page);
 
-	await menu(page, 'Notes');
-	const sheet = page.getByTestId('notes-sheet');
-	// Every player, headed by their character, seat and name (Trevor, 2026-10-19).
-	await expect(sheet.locator('li[data-seat]')).toHaveCount(8);
+	// Notes folded into Players (Trevor, 2026-10-29): ⋯ has no Notes of its own, and the
+	// game's notes head the list of players.
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await expect(
+		page
+			.getByRole('dialog', { name: 'Grimoire' })
+			.getByRole('button', { name: 'Notes', exact: true })
+	).toHaveCount(0);
+	await page.keyboard.press('Escape');
+	const players = await openPlayers(page);
+	await expect(players.getByTestId('room-player')).toHaveCount(8);
+	await expect(players.getByTestId('game-notes-open')).toContainText('None');
+	await players.getByTestId('game-notes-open').tap();
 	// Game notes as the player's notebook keeps them (Trevor, 2026-10-23): several, each with a
 	// title, starting as a "+ New note" card with a dashed edge.
-	const gameNotes = sheet.getByRole('region', { name: 'Game' });
+	const gameNotes = page.getByRole('dialog', { name: 'Game notes' });
 	const add = gameNotes.getByTestId('new-note');
 	const cards = gameNotes.locator('[data-note]');
 	await expect(cards).toHaveCount(0);
@@ -2990,6 +3000,25 @@ test('the Storyteller keeps game and player notes in one sheet, marked on the to
 	const gameDialog = page.getByRole('dialog', { name: 'Note', exact: true });
 	await gameDialog.getByRole('textbox', { name: 'Title' }).fill('Fang Gu');
 	await gameDialog.getByRole('textbox', { name: 'Text' }).fill('Ana asked about the Fang Gu');
+	// Trevor (2026-10-30): the note was a full screen that the keyboard covered, and the browser
+	// scrolling to the field pushed its header off. With a keyboard over the lower 45% and the
+	// view scrolled down by 10%, the header and the whole text box sit in what is left.
+	const height = page.viewportSize()!.height;
+	await page.evaluate(
+		([inset, top]) => {
+			document.documentElement.style.setProperty('--keyboard-inset', `${inset}px`);
+			document.documentElement.style.setProperty('--keyboard-top', `${top}px`);
+		},
+		[Math.round(height * 0.45), Math.round(height * 0.1)]
+	);
+	const close = await gameDialog.getByRole('button', { name: 'Close' }).boundingBox();
+	const text = await gameDialog.getByRole('textbox', { name: 'Text' }).boundingBox();
+	expect(close!.y).toBeGreaterThanOrEqual(height * 0.1 - 1);
+	expect(text!.y + text!.height).toBeLessThanOrEqual(height * 0.55 + 1);
+	await page.evaluate(() => {
+		document.documentElement.style.removeProperty('--keyboard-inset');
+		document.documentElement.style.removeProperty('--keyboard-top');
+	});
 	await gameDialog.getByRole('button', { name: 'Close' }).tap();
 	await expect(cards).toHaveCount(1);
 	await expect(cards).toHaveText(/^\s*Fang Gu\s*Ana asked about the Fang Gu\s*$/);
@@ -3015,9 +3044,18 @@ test('the Storyteller keeps game and player notes in one sheet, marked on the to
 	await page.keyboard.press('Escape');
 	await expect(cards).toHaveText(/^\s*Fang Gu\s*Hidden\s*$/);
 	await page.screenshot({ path: `test-results/game-notes-${test.info().project.name}.png` });
+	await page.keyboard.press('Escape');
+	await expect(gameNotes).toBeHidden();
+	await expect(players.getByTestId('game-notes-open')).toContainText('1 note');
 
-	// Several titled notes per player too, as the same cards (Trevor, 2026-10-26).
-	const player = sheet.getByRole('group', { name: 'Notes for Seat 1 (Ana)' });
+	// Several titled notes per player too, as the same cards (Trevor, 2026-10-26), on their
+	// sheet.
+	const ana = players.getByTestId('room-player').filter({ hasText: 'Ana' });
+	await ana.getByTestId('room-player-open').tap();
+	// Not the seat's own sheet, which has the same name and stays open under it.
+	const player = page
+		.getByRole('dialog', { name: 'Ana', exact: true })
+		.filter({ has: page.getByTestId('room-player-sheet') });
 	const playerCards = player.locator('[data-note]');
 	await expect(playerCards).toHaveCount(0);
 	await expect(player.getByTestId('new-note')).toHaveCSS('border-top-style', 'dashed');
@@ -3032,22 +3070,22 @@ test('the Storyteller keeps game and player notes in one sheet, marked on the to
 	await gameDialog.getByRole('textbox', { name: 'Text' }).fill('Chef: 1');
 	await page.keyboard.press('Escape');
 	await expect(playerCards).toHaveText([/Word/, /Claim/]);
-	// The game's notes are untouched.
-	await expect(cards).toHaveCount(1);
-	await closeSheet(page);
+	await page.keyboard.press('Escape');
+	await expect(player).toBeHidden();
+	// The list marks who has notes; the game's are untouched.
+	await expect(ana.getByTestId('room-player-note')).toBeVisible();
+	await expect(players.getByTestId('game-notes-open')).toContainText('1 note');
+	await page.keyboard.press('Escape');
+	await expect(players).toBeHidden();
 
 	await expect(seatLabelled(page, 'Seat 1: Ana, no character, has a note')).toBeAttached();
 	const mark = page.getByTestId('note-mark');
 	await expect(mark).toHaveCount(1);
-	// Tapping the pen mark opens just that player's notes (Trevor, 2026-10-19).
+	// Tapping the pen mark opens that player's sheet (Trevor, 2026-10-29).
 	await mark.tap();
-	// "Notes: Ana", the character on the next line (Trevor, 2026-10-19).
-	const dialog = page.getByRole('dialog', { name: 'Notes: Ana' });
-	const seatCards = dialog.locator('[data-note]');
-	await expect(dialog).toBeVisible();
-	await expect(dialog.getByText('None', { exact: true })).toBeVisible();
+	const seatCards = player.locator('[data-note]');
+	await expect(player).toBeVisible();
 	await expect(seatCards).toHaveText([/Word/, /Claim/]);
-	await expect(sheet).toBeHidden();
 	await expect(page.getByRole('button', { name: 'Edit player name' })).toHaveCount(0);
 	// A note opens over the player's notes, and its trash deletes it after asking.
 	await seatCards.nth(1).tap();
@@ -3057,9 +3095,10 @@ test('the Storyteller keeps game and player notes in one sheet, marked on the to
 		.getByRole('button', { name: 'Confirm' })
 		.tap();
 	await expect(seatCards).toHaveText([/Word/]);
-	await dialog.getByRole('button', { name: 'Close' }).tap();
-	await expect(dialog).toBeHidden();
-	// The seat's own ⋯ menu opens the same notes (Trevor, 2026-10-19).
+	await page.keyboard.press('Escape');
+	await page.keyboard.press('Escape');
+	await expect(player).toBeHidden();
+	// The seat's own ⋯ menu opens the same sheet (Trevor, 2026-10-19), with the character.
 	const again = await openSeat(page, 1);
 	await again.getByRole('button', { name: 'Choose' }).tap();
 	await page
@@ -3068,18 +3107,16 @@ test('the Storyteller keeps game and player notes in one sheet, marked on the to
 		.tap();
 	await again.getByRole('button', { name: 'Seat actions' }).tap();
 	await page.getByRole('dialog', { name: 'Ana' }).getByRole('button', { name: 'Notes' }).tap();
-	await expect(dialog).toBeVisible();
-	await expect(dialog.locator('[data-character-id="poisoner"]')).toBeVisible();
-	await dialog.getByTestId('new-note').tap();
+	await expect(player.getByTestId('room-player-sheet')).toBeVisible();
+	await expect(player.locator('[data-character-id="poisoner"]')).toBeVisible();
+	await player.getByTestId('new-note').tap();
 	await gameDialog.getByRole('textbox', { name: 'Title' }).fill('Bluffs');
 	await gameDialog.getByRole('button', { name: 'Close' }).tap();
 	await expect(seatCards).toHaveText([/Word/, /Bluffs/]);
 	await page.screenshot({ path: `test-results/seat-note-${test.info().project.name}.png` });
-	await dialog.getByRole('button', { name: 'Close' }).tap();
-	await expect(dialog).toBeHidden();
-	await closeSheet(page);
-	await menu(page, 'Notes');
-	await expect(playerCards).toHaveText([/Word/, /Bluffs/]);
+	await page.keyboard.press('Escape');
+	await page.keyboard.press('Escape');
+	await expect(player).toBeHidden();
 	await closeSheet(page);
 	// Saved with the game, and listed in History.
 	await page.reload();

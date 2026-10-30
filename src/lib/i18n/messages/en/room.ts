@@ -33,6 +33,13 @@ export const room = {
 	'room.players.here': 'Here',
 	'room.players.away': 'Away',
 	'room.players.noPhone': 'No phone',
+	'room.players.gameNotes': 'Game notes',
+	'room.players.notesHeading': 'Notes',
+	'room.players.hasNotes': 'Has notes',
+	'room.players.notes': {
+		one: '{count} note',
+		other: '{count} notes'
+	},
 	'room.players.where': '{seat} · {state}',
 	'room.refresh': 'New code',
 	'room.refreshTitle': 'Make a new code?',
