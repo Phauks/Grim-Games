@@ -1787,7 +1787,7 @@ test('the reminder bank holds setup reminders, placed by hand, then every remind
 	// In the seat sheet a reminder is just its token, tapped for these actions, delete among
 	// them (Trevor, 2026-10-19): no tick box, no owner, no ⋯.
 	await expect(actions.getByRole('button', { name: 'Remove reminder' })).toBeVisible();
-	const row = sheet.locator('ul.reminders > li').first();
+	const row = sheet.locator('ul.token-row > li').first();
 	await expect(row.locator('button')).toHaveCount(1);
 	await expect(row.getByTestId('reminder-origin')).toHaveCount(0);
 	await actions.getByRole('button', { name: 'Return to reminder bank' }).tap();
@@ -5424,8 +5424,9 @@ test('the generic ∞ reminder is always in the bank and can carry a few words',
 	await expect(colour).toBeDisabled();
 	await page.keyboard.press('Escape');
 	await closeSheet(page);
+	// On the board: its actions' title shows the same token while open.
 	const placed = page.locator(
-		'[data-testid="board-reminder"][aria-label="Generic reminder: Chose Sam"]'
+		'.chip-slot > [data-testid="board-reminder"][aria-label="Generic reminder: Chose Sam"]'
 	);
 	await expect(placed).toHaveCount(1);
 	// Look C: the chosen symbol in the middle; the bank's stays blank.

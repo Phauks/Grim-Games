@@ -2,7 +2,7 @@
 	import { seatName } from '#lib/features/game/seat-label.ts';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
-	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
+	import BoardReminder from './BoardReminder.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
@@ -62,7 +62,7 @@
 			<dt>Player</dt>
 			<dd><PlayerBadge name={seatName(grimoire.game, ask.seatId)} /></dd>
 			<dt>Places</dt>
-			<dd><ReminderToken label={ask.spentToken} {character} /></dd>
+			<dd><BoardReminder label={ask.spentToken} {character} /></dd>
 		</dl>
 	{/if}
 </ConfirmDialog>

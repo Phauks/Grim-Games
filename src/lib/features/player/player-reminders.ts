@@ -149,6 +149,22 @@ export const placedKey = (r: PlayerReminder): string => r.id ?? [r.characterId, 
 export const reminderWords = (r: PlayerReminder): ReminderLabel =>
 	(isGenericReminder(r) ? r.note || '∞' : r.label) as ReminderLabel;
 
+/**
+ * A token's look for a `BoardReminder`, as on the player's grim: its words and, for a generic
+ * one, its own text and symbol.
+ */
+export const playerLook = (
+	r: PlayerReminder,
+	characterOf: (id: CharacterId) => Character | undefined
+) => ({
+	label: (isGenericReminder(r) ? (r.note ?? '') : r.label) as ReminderLabel,
+	infinite: isGenericReminder(r),
+	symbol: r.symbol,
+	symbolColour: r.symbolColour,
+	symbolFill: r.symbolFill,
+	character: characterOf(r.characterId)
+});
+
 /** Puts a new, blank generic token on a seat, last; `id` names it. */
 export function addGenericReminder(
 	reminders: PlayerReminders,

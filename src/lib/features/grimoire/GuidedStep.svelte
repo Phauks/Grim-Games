@@ -14,7 +14,7 @@
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import type { InfoChoice, InfoPicker, Night, NightStep } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
-	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
+	import BoardReminder from './BoardReminder.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import { TYPE_PLURALS } from '#lib/features/reference/labels.ts';
 	import NightText from '#lib/features/reference/NightText.svelte';
@@ -445,7 +445,8 @@
 					{#each rows as { label, at, key } (key)}
 						{@const held = at ? game.seats[at.seatId] : undefined}
 						<li>
-							<ReminderToken
+							<!-- The token itself, as on the board (Trevor, 2026-10-30). -->
+							<BoardReminder
 								{label}
 								character={step.character}
 								alignment={step.character
@@ -561,9 +562,10 @@
 		margin: var(--space-2) 0 var(--space-1);
 		font-size: 1rem;
 	}
+	/* Room under each token for its words' band, and beside it for words wider than it. */
 	.reminders {
 		display: grid;
-		gap: var(--space-1);
+		gap: var(--space-3);
 		margin: 0;
 		padding: 0;
 		list-style: none;
@@ -571,7 +573,8 @@
 	.reminders li {
 		display: flex;
 		align-items: center;
-		gap: var(--space-2);
+		gap: var(--space-3);
+		padding: 0 0 var(--space-2) var(--space-2);
 	}
 	.where {
 		flex: 1;
