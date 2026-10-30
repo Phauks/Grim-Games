@@ -415,6 +415,18 @@ describe('UseAbility', () => {
 		expect(undo(s).game.seats[seats[1]].reminders).toEqual([]);
 	});
 
+	// https://wiki.bloodontheclocktower.com/Slayer: the Slayer publicly chooses a player.
+	it('logs the player the use was about', () => {
+		const { session, ctx, seats } = setup();
+		const s = run(session, ctx, {
+			type: 'UseAbility',
+			seatId: seats[1],
+			characterId: 'slayer',
+			on: seats[3]
+		});
+		expect(s.game.today.entries[0]).toMatchObject({ kind: 'ability', on: seats[3] });
+	});
+
 	it('only logs a use for a character with no such token', () => {
 		const { session, ctx, seats } = setup();
 		const s = run(session, ctx, {

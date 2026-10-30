@@ -1,7 +1,7 @@
-import type { CharacterRules, DayClaim } from '../data/character-rules.ts';
+import type { CharacterRules, DayClaim, DayUseWho } from '../data/character-rules.ts';
 import type { CharacterId } from '../data/index.ts';
 import { rulesOf } from '../data/rules/index.ts';
-import type { CharacterGuess, CharacterLookup, Game } from '../model/index.ts';
+import type { CharacterGuess, CharacterLookup, Game, SeatId } from '../model/index.ts';
 import { trueCharacter } from '../model/selectors.ts';
 
 type RulesLookup = ReadonlyMap<CharacterId, { rules?: CharacterRules }>;
@@ -18,6 +18,32 @@ export function dayClaim(characterId: CharacterId, characters?: RulesLookup): Da
 /** How many guesses a character's claim may hold a day (`guessLimit` in its rules block). */
 export function guessLimit(characterId: CharacterId, characters?: RulesLookup): number | undefined {
 	return rulesOf(characterId, characters)?.guessLimit;
+}
+
+/**
+ * Who marking a character's day ability used asks for (`dayUse` in its rules block; Trevor,
+ * 2026-10-30): the player chosen (the Slayer), the nominator (the Virgin) or the nominee whose
+ * execution it decided (the Judge). None for an ability about no player (the Artist).
+ */
+export function dayUseWho(
+	characterId: CharacterId,
+	characters?: RulesLookup
+): DayUseWho | undefined {
+	return rulesOf(characterId, characters)?.dayUse?.who;
+}
+
+/**
+ * The player today's log already names for a seat's day ability, to fill in when it is marked
+ * used: the first nominator of this seat ("the 1st time you are nominated",
+ * https://wiki.bloodontheclocktower.com/Virgin), or the last nominee of another player's
+ * nomination (the Judge: "if another player nominated",
+ * https://wiki.bloodontheclocktower.com/Judge). The log never knows whom a player chose.
+ */
+export function dayUseSuggestion(game: Game, seatId: SeatId, who: DayUseWho): SeatId | undefined {
+	const nominations = game.today.entries.filter((e) => e.kind === 'nomination');
+	if (who === 'nominator') return nominations.find((e) => e.nominee === seatId)?.nominator;
+	if (who === 'nominee') return nominations.findLast((e) => e.nominator !== seatId)?.nominee;
+	return undefined;
 }
 
 /**
