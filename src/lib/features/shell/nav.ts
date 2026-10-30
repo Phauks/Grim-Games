@@ -22,6 +22,7 @@ export interface NavItem {
 		| '/friends'
 		| '/reports'
 		| '/live-games'
+		| '/accounts'
 		| '/about'
 		| '/credits'
 		| '/support'
@@ -127,6 +128,14 @@ export const LIVE_GAMES_ITEM: NavItem = {
 	path: '/live-games',
 	label: 'shell.navLiveGames',
 	icon: 'watchers'
+};
+
+/** Find one account and act on it (plan S27); in the Admin group, for admins only. */
+export const ACCOUNTS_ITEM: NavItem = {
+	id: 'accounts',
+	path: '/accounts',
+	label: 'shell.navAccounts',
+	icon: 'accounts'
 };
 
 /**

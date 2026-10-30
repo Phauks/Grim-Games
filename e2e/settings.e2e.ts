@@ -218,7 +218,8 @@ test('the board looks and background are in Board, saved with the board', async 
 		nameOffset: 0,
 		reminders: 'seat',
 		reminderLines: 'always',
-		usedGhostVote: 'hollow'
+		usedGhostVote: 'hollow',
+		abilityLook: 'grimbinder'
 	});
 
 	await page.reload();

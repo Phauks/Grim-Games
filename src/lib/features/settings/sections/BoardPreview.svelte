@@ -20,6 +20,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import SeatDisc from '#lib/ui/seating/SeatDisc.svelte';
+	import HeldAbilityPill from '#lib/features/grimoire/HeldAbilityPill.svelte';
 	import { boardTokenSize } from '#lib/ui/seating/last-board.svelte.ts';
 	import { reminderTokenSize } from '#lib/ui/seating/seat-layout.ts';
 	import { formatRoomCode } from '#lib/core/sync/room-code.ts';
@@ -31,16 +32,18 @@
 	 * A small board for every Board setting (Trevor, 2026-10-20: "you can't really see changes
 	 * until you leave"; 2026-10-22: "all preview settings should populate in the preview
 	 * area"): the background with its vignette and the script's logo, two seats (one dead with
-	 * a used ghost vote) and a reminder, a Fabled and a Loric, the script's name in the corner,
+	 * a used ghost vote) and a reminder, the Demon's held ability, a Fabled and a Loric, the script's name in the corner,
 	 * and a reminder bank with a duplicate reminder and the Washerwoman's step in focus. The
 	 * open board's own background, logo and name when Settings is opened from a board.
 	 */
 	onMount(() => void loadOfficialData());
 	const SEATS = [
-		{ id: 'godfather', name: t('characters.previewPlayer'), dead: false },
+		{ id: 'imp', name: t('characters.previewPlayer'), dead: false },
 		{ id: 'washerwoman', name: t('settings.previewDeadPlayer'), dead: true }
 	] as const;
 	const RULES = ['duchess', 'bootlegger'] as const;
+	/** The ability the Demon holds without its token (the wiki's Boffin example: the Virgin). */
+	const HELD: CharacterId = 'virgin';
 	/** The walked-through night step whose reminders the bank brings into focus. */
 	const STEP: CharacterId = 'washerwoman';
 	const SAMPLE_CODE = formatRoomCode('482913');
@@ -48,6 +51,8 @@
 	const characters = $derived(officialData.current?.byId);
 	const character = (id: string) => characters?.get(id);
 	const label = (id: string, i: number) => character(id)?.reminders[i];
+	const held = $derived(character(HELD));
+	const vanilla = $derived(boardLooks.current.abilityLook === 'vanilla');
 
 	const choice: BackgroundChoice = $derived(
 		boardBackground.context?.current ?? defaultBackground.current ?? { kind: 'none' }
@@ -223,7 +228,15 @@
 					usedVote={boardLooks.current.usedGhostVote}
 				>
 					{#snippet face()}{#if token}<CharacterToken character={token} {size} />{/if}{/snippet}
+					{#snippet marks()}{#if i === 0 && held && !vanilla}<HeldAbilityPill
+								abilities={[{ character: held, works: true }]}
+							/>{/if}{/snippet}
 				</SeatDisc>
+				<!-- The Demon's held ability, Vanilla: its token beside the seat, clear of the
+				     reminder on the other side. -->
+				{#if i === 0 && held && vanilla}<span class="seat-held" data-testid="preview-held-token"
+						><CharacterToken character={held} size={chip} /></span
+					>{/if}
 				<!-- The Washerwoman's "Townsfolk" on Sam: beside the seat, or where it was dropped. -->
 				{#if i === 0 && tether}<svg
 						class="preview-tether"
@@ -310,6 +323,11 @@
 	.seat-reminder {
 		position: absolute;
 		left: 100%;
+		top: 0;
+	}
+	.seat-held {
+		position: absolute;
+		right: 100%;
 		top: 0;
 	}
 	.preview-tether {

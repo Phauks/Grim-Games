@@ -220,6 +220,7 @@ import ph_upload_simple_bold from '~icons/ph/upload-simple-bold';
 import ph_user_bold from '~icons/ph/user-bold';
 import ph_user_circle_bold from '~icons/ph/user-circle-bold';
 import ph_user_gear_bold from '~icons/ph/user-gear-bold';
+import ph_user_list_bold from '~icons/ph/user-list-bold';
 import ph_user_plus_bold from '~icons/ph/user-plus-bold';
 import ph_user_switch_bold from '~icons/ph/user-switch-bold';
 import ph_users_bold from '~icons/ph/users-bold';
@@ -454,6 +455,7 @@ const icons: IconMap = {
 	'ph:user-bold': ph_user_bold,
 	'ph:user-circle-bold': ph_user_circle_bold,
 	'ph:user-gear-bold': ph_user_gear_bold,
+	'ph:user-list-bold': ph_user_list_bold,
 	'ph:user-plus-bold': ph_user_plus_bold,
 	'ph:user-switch-bold': ph_user_switch_bold,
 	'ph:users-bold': ph_users_bold,

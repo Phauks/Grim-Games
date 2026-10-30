@@ -412,6 +412,22 @@ async function setUsername(
 	return json({ user: changed.user! } satisfies UserResponse);
 }
 
+/**
+ * Deletes an account and everything stored for it, and frees its email and username: from
+ * Account settings, or by an admin (plan S27).
+ */
+export async function deleteAccount(env: Env, userId: string): Promise<void> {
+	// Everyone this account was friends with, asked or blocked forgets it first.
+	await forgetFriends(env, userId);
+	const { email, username } = await userStub(env, userId).deleteAccount();
+	if (email) {
+		await emailStub(env, email).forget(userId);
+	}
+	if (username) {
+		await nameStub(env, usernameKey(username)).release(userId);
+	}
+}
+
 /** Handles `/api/auth/*` and `/api/account/*`. Undefined for any other path. */
 export async function handleAccount(
 	request: Request,
@@ -494,15 +510,7 @@ export async function handleAccount(
 		});
 	}
 	if (path === '/api/account' && method === 'DELETE') {
-		// Everyone this account was friends with, asked or blocked forgets it first.
-		await forgetFriends(env, auth.userId);
-		const { email, username } = await user.deleteAccount();
-		if (email) {
-			await emailStub(env, email).forget(auth.userId);
-		}
-		if (username) {
-			await nameStub(env, usernameKey(username)).release(auth.userId);
-		}
+		await deleteAccount(env, auth.userId);
 		return json({ ok: true }, 200, { 'Set-Cookie': clearCookie });
 	}
 

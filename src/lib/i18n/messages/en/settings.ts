@@ -180,6 +180,7 @@ export const settings = {
 	'settings.previewBank': 'Reminder bank',
 	'settings.nameOffset': 'Player name distance',
 	'settings.strikeUsedGhostVote': 'Strike through used ghost votes',
+	'settings.vanillaAbilities': 'Vanilla held abilities',
 	'settings.reminderLines': 'Reminder lines',
 	'settings.reminderLines.always': 'Always',
 	'settings.reminderLines.away': 'When away from the seat',

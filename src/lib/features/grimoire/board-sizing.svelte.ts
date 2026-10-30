@@ -7,6 +7,7 @@
 import { untrack } from 'svelte';
 import type { CharacterId } from '#lib/core/data/index.ts';
 import type { CharacterLookup, Game, SeatId } from '#lib/core/model/index.ts';
+import { heldAbilitiesOf } from '#lib/core/rules/index.ts';
 import { t } from '#lib/i18n/locale.svelte.ts';
 import { preferences } from '#lib/ui/preferences.svelte.ts';
 import {
@@ -193,18 +194,23 @@ export class BoardSizing {
 	 * which is what a reminder takes up on screen.
 	 */
 	readonly #restFan = $derived.by(() => {
-		const { game } = this.#context();
+		const { game, characters } = this.#context();
 		const shown = this.#context().shown();
 		const seats = game.seating.map((id) => game.seats[id]);
+		// Vanilla: a held ability's token lines up after the seat's reminders (BoardSeats).
+		const vanilla = boardLooks.current.abilityLook === 'vanilla';
+		const counts = seats.map(
+			(s) => s.reminders.length + (vanilla ? heldAbilitiesOf(game, s.seatId, characters).length : 0)
+		);
 		const { width, height } = this;
 		if (width <= 0 || height <= 0)
-			return seats.map((s, i) => Array.from({ length: s.reminders.length }, () => shown[i]));
+			return seats.map((_, i) => Array.from({ length: counts[i] }, () => shown[i]));
 		const board = this.board;
 		const fitted = fitReminders(
-			seats.map((s, i) => ({
+			seats.map((_, i) => ({
 				seat: toPx(shown[i], board),
 				middle: { x: width / 2, y: height / 2 },
-				count: s.reminders.length,
+				count: counts[i],
 				size: this.size,
 				chip: Math.max(this.chip, this.tapPx),
 				avoid: this.#avoidFor(i)

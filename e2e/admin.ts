@@ -24,6 +24,6 @@ export async function signIn(page: Page, email: string) {
  * An admin from the start, named in ADMIN_EMAILS like Trevor in Cloudflare (playwright.config.ts).
  * One per test and project, since tests run in parallel and a new code replaces the last.
  */
-export function listedAdmin(testInfo: TestInfo, n: 1 | 2 | 3): string {
+export function listedAdmin(testInfo: TestInfo, n: 1 | 2 | 3 | 4): string {
 	return `${testInfo.project.name}-admin-${n}@example.com`;
 }

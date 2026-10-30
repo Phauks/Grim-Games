@@ -220,6 +220,7 @@ import ph_upload_simple_light from '~icons/ph/upload-simple-light';
 import ph_user_light from '~icons/ph/user-light';
 import ph_user_circle_light from '~icons/ph/user-circle-light';
 import ph_user_gear_light from '~icons/ph/user-gear-light';
+import ph_user_list_light from '~icons/ph/user-list-light';
 import ph_user_plus_light from '~icons/ph/user-plus-light';
 import ph_user_switch_light from '~icons/ph/user-switch-light';
 import ph_users_light from '~icons/ph/users-light';
@@ -454,6 +455,7 @@ const icons: IconMap = {
 	'ph:user-light': ph_user_light,
 	'ph:user-circle-light': ph_user_circle_light,
 	'ph:user-gear-light': ph_user_gear_light,
+	'ph:user-list-light': ph_user_list_light,
 	'ph:user-plus-light': ph_user_plus_light,
 	'ph:user-switch-light': ph_user_switch_light,
 	'ph:users-light': ph_users_light,
