@@ -49,4 +49,10 @@ describe("Storyteller's player view parity", () => {
 		// "Game over" over the tabs comes from the same words on both sides.
 		for (const host of [joinPanel, boardView]) expect(host).toContain('gameOverText(');
 	});
+
+	it("has the phone's Your character row, which asks the Storyteller for a seat", () => {
+		// Trevor, 2026-10-30: the character draw never reached the Storyteller's player view.
+		for (const host of [joinPanel, boardView]) expect(host).toContain('<YourCharacter');
+		expect(boardView).toMatch(/<YourCharacter[^>]*\bseats=/);
+	});
 });

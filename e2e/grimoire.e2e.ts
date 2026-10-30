@@ -6865,6 +6865,56 @@ test("the Huntsman's step turns the Damsel into a not-in-play Townsfolk", async 
 	await expect(seat).toContainText(/Empath\s*Townsfolk · Good · Seat 2/);
 });
 
+// https://wiki.bloodontheclocktower.com/Cacklejack: each night but the first, the Storyteller
+// changes any player's character, but never the player the Cacklejack marked Not Me by day.
+test("the Cacklejack's step changes any player's character but the one marked Not Me", async ({
+	page
+}) => {
+	test.slow();
+	await startGame(page);
+	for (const [seat, name] of [
+		[1, 'Cacklejack'],
+		[2, 'Chef'],
+		[3, 'Empath'],
+		[4, 'Imp']
+	] as const) {
+		const sheet = await openSeat(page, seat);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		const picker = page.getByRole('dialog', { name: `Character for Seat ${seat}` });
+		const button = picker.getByRole('button', { name, exact: true });
+		// The picker keeps its "not on the script" switch between seats.
+		if (!(await button.count()))
+			await picker.getByText('Include characters not on the script').tap();
+		await button.tap();
+		// A Traveller's alignment is asked as it is chosen.
+		if (name === 'Cacklejack')
+			await page
+				.getByRole('dialog', { name: 'Alignment' })
+				.getByRole('button', { name: 'Good' })
+				.tap();
+		await closeSheet(page);
+	}
+	await walkTo(page, 'Dusk');
+	await nextNight(page);
+	await putReminder(page, 'Not Me', 2);
+
+	const strip = await walkTo(page, 'Cacklejack');
+	await strip.locator('button.step .name strong').tap();
+	const step = page.getByRole('dialog', { name: 'Cacklejack' });
+	await step.getByTestId('change-character').getByRole('button', { name: 'Choose' }).tap();
+	const seats = page.getByRole('dialog', { name: 'Changes character' });
+	await expect(seats.getByRole('button', { name: /Seat 2/ })).toHaveCount(0);
+	await seats.getByRole('button', { name: /Seat 3/ }).tap();
+	await page
+		.getByRole('dialog', { name: 'Choose a character' })
+		.getByRole('button', { name: 'Washerwoman', exact: true })
+		.tap();
+	await expect(step.getByTestId('change-character')).toContainText('Washerwoman');
+	await step.getByRole('button', { name: 'Close' }).first().tap();
+	const seat = await openSeat(page, 3);
+	await expect(seat).toContainText(/Washerwoman\s*Townsfolk · Good · Seat 3/);
+});
+
 // https://wiki.bloodontheclocktower.com/Barber: if the Barber died today or tonight, the Demon
 // may choose 2 players (not another Demon) to swap characters. Alignments stay; the Demon is
 // faded, still choosable as an override.
