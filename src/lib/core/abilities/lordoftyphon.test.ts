@@ -12,7 +12,17 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
+import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
+import { evilInOneLine, nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+
+/** The Lord of Typhon's seating alerts, by seat number. */
+const seating = (cast: string[]) => {
+	const { game, seats } = castGame(cast);
+	return nightStepAlerts(game, 'lordoftyphon', characters)
+		.filter((a) => a.kind === 'seating')
+		.map((a) => seats.indexOf(a.seatId) + 1);
+};
 
 describe('Lord of Typhon', () => {
 	const character = committedCharacter('lordoftyphon');
@@ -43,8 +53,30 @@ describe('Lord of Typhon', () => {
 		});
 	});
 
+	// How to Run: the evil players sit in one line, the Lord of Typhon inside it with a Minion on
+	// each side. The app warns on its night step when they don't; it never moves anyone.
+	describe('seating', () => {
+		it('warns when the Lord of Typhon sits at the end of the evil line', () => {
+			expect(seating(['lordoftyphon', 'poisoner', 'spy', 'empath', 'monk'])).toEqual([1]);
+		});
+
+		it('warns when an evil player sits apart from the line', () => {
+			expect(
+				seating(['poisoner', 'lordoftyphon', 'spy', 'empath', 'monk', 'baron', 'chef'])
+			).toEqual([2]);
+		});
+
+		it('counts the line round the table', () => {
+			const { game, seats } = castGame(['lordoftyphon', 'spy', 'empath', 'monk', 'poisoner']);
+			expect(evilInOneLine(game, seats[0])).toBe(true);
+		});
+	});
+
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Lord_of_Typhon#Examples)', () => {
-		it.todo('Example 1: Two Minions flank the Lord of Typhon');
+		// Two Minions sit either side of the Lord of Typhon: nothing to warn about.
+		it('Example 1: two Minions flank the Lord of Typhon', () => {
+			expect(seating(['empath', 'poisoner', 'lordoftyphon', 'spy', 'monk'])).toEqual([]);
+		});
 		it.todo('Example 2: Ten players include two extra Outsiders');
 		it.todo('Example 3: Puzzlemaster becomes Boomdandy, no Outsiders');
 	});

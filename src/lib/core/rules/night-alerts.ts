@@ -9,6 +9,9 @@
  * - `no-kill`: another ability's token stops them killing tonight, so no kill alerts follow
  *   (`stopsKilling`: the Princess's Doesn't Kill on the Demon,
  *   https://wiki.bloodontheclocktower.com/Princess);
+ * - `seating`: a character whose neighbours are turned evil at setup (`turnsPlayersInto`
+ *   `neighbours`) is not inside one line of every evil player
+ *   (https://wiki.bloodontheclocktower.com/Lord_of_Typhon);
  * and, when the step can kill (`NIGHT_KILLERS`), for each player it might kill:
  * - `protected`: they cannot die tonight (the Storyteller's override, the Sailor, the
  *   Soldier or Monk against the Demon, the Tea Lady, the Innkeeper);
@@ -30,7 +33,7 @@ import { OFFICIAL_RULES, rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
 import { wikiUrl } from '#lib/core/data/wiki.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
-import { getSeat, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
+import { alignmentOf, getSeat, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
 import type { DeathCause, Game, SeatId } from '#lib/core/model/types.ts';
 import { isExecution } from './death-causes.ts';
 import {
@@ -122,6 +125,7 @@ export type NightAlertKind =
 	| 'impaired'
 	| 'blocked'
 	| 'no-kill'
+	| 'seating'
 	| 'protected'
 	| 'may-bounce'
 	| 'survives-first-death'
@@ -138,6 +142,24 @@ export interface NightAlert {
 	/** Why the source's ability does not work (empty when it works). */
 	impairments: Impairment[];
 	wiki?: string;
+}
+
+/**
+ * Whether every evil player sits in one unbroken line round the table with `seatId` inside
+ * it, an evil player on each side (the Lord of Typhon's setup). Warns only.
+ */
+export function evilInOneLine(game: Game, seatId: SeatId): boolean {
+	const seating = game.seating;
+	const n = seating.length;
+	const at = seating.indexOf(seatId);
+	if (at < 0 || n < 3) return true;
+	const evil = (i: number) => alignmentOf(game, seating[((i % n) + n) % n]) === 'evil';
+	if (!evil(at - 1) || !evil(at + 1)) return false;
+	let left = 0;
+	while (left < n - 1 && evil(at - left - 1)) left += 1;
+	let right = 0;
+	while (left + right < n - 1 && evil(at + right + 1)) right += 1;
+	return seating.filter((_, i) => evil(i)).length === Math.min(n, 1 + left + right);
 }
 
 /** Seats whose true character, or token, is `characterId`. */
@@ -171,6 +193,16 @@ export function nightStepAlerts(
 			impairments: state.impairments
 		});
 	}
+	if (rulesOf(characterId, characters)?.turnsPlayersInto?.players === 'neighbours')
+		for (const seatId of actors)
+			if (!evilInOneLine(game, seatId))
+				out.push({
+					kind: 'seating',
+					seatId,
+					source: { characterId, seatId },
+					works: true,
+					impairments: []
+				});
 	let noKill = false;
 	for (const seatId of actors) {
 		for (const r of game.seats[seatId].reminders) {
