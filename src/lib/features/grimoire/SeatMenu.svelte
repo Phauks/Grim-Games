@@ -2,6 +2,7 @@
 	import type { Character } from '#lib/core/data/index.ts';
 	import type { Seat } from '#lib/core/model/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import { seatCharacterLine } from '#lib/features/game/seat-label.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
@@ -65,7 +66,8 @@
 	}
 </script>
 
-<Dialog bind:open {title} description={t('common.seat', { number })}>
+<!-- Type, alignment and seat, as under the name in the seat sheet (Trevor, 2026-10-30). -->
+<Dialog bind:open {title} description={seatCharacterLine(character?.type, seat?.alignment, number)}>
 	{#snippet lead()}
 		{#if seat?.characterId}
 			<CharacterBadge characterId={seat.characterId} {character} alignment={seat.alignment} />
