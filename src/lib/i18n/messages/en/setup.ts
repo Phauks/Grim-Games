@@ -6,6 +6,10 @@ export const setup = {
 	'setup.pageTitle.draw': `Draw · ${APP_NAME}`,
 	'setup.grimoire': 'Grimoire',
 	'setup.newGame': 'New game',
+	'setup.dealt.draft':
+		"{mode}: each player drafts their own character, so there's no bag to build here.",
+	'setup.dealt.choose':
+		"{mode}: each player chooses their own character, so there's no bag to build here.",
 	'setup.gameSettings': 'Game settings',
 	'setup.characterSelection': 'Character selection',
 	'setup.steps': 'Setup steps',

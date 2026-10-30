@@ -53,7 +53,6 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import { seedStartSettings } from '#lib/features/game-settings/start-settings.ts';
-	import { backToNewGame } from './new-game-draft.ts';
 	import { dealTitle } from './deal-title.ts';
 	import { readDeal, writeDeal, type DealProgress } from './deal-progress.ts';
 	import { readGameMode } from './game-mode-store.ts';
@@ -470,12 +469,13 @@
 
 	<BagTiles {slots} {marks} seatLabel={label} onpick={draw} />
 
-	<!-- The start flow's bar (Trevor, 2026-10-23): Back to New game as it was, until a tile is
-	     drawn; Restart starts the deal over after that. -->
+	<!-- The start flow's bar (Trevor, 2026-10-23): Back to Character selection, where the game
+	     is set up (Trevor, 2026-10-29), until a tile is drawn; Restart starts the deal over after
+	     that. -->
 	<SetupNav
-		onBack={() => void backToNewGame(gameId)}
+		backHref={resolve('/grimoire/[gameId]/setup', { gameId })}
 		backDisabled={picks.length > 0 || held !== undefined}
-		backLabel={t('setup.newGame')}
+		backLabel={t('setup.characters')}
 	>
 		{#snippet next()}
 			<span class="footer">
