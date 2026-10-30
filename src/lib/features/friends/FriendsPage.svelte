@@ -2,7 +2,6 @@
 	import { onMount, type Snippet } from 'svelte';
 	import { resolve } from '$app/paths';
 	import { account } from '#lib/features/account/account.svelte.ts';
-	import ProfileIcon from '#lib/features/account/ProfileIcon.svelte';
 	import ProfileAvatar from '#lib/features/player/ProfileAvatar.svelte';
 	import UsernameDialog from '#lib/features/account/UsernameDialog.svelte';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
@@ -10,6 +9,7 @@
 	import Page from '#lib/ui/layout/Page.svelte';
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Menu from '#lib/ui/primitives/Menu.svelte';
@@ -17,6 +17,10 @@
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import SharePanel from '#lib/ui/share/SharePanel.svelte';
 	import AddFriendDialog from './AddFriendDialog.svelte';
+	import FriendRows from './FriendRows.svelte';
+	import { profileHref, scriptOpenHref } from './friend-links.ts';
+	import { friendScripts } from './friend-scripts.svelte.ts';
+	import { type InboxScript, type PublishedScript } from './friend-scripts-protocol.ts';
 	import { friends } from './friends.svelte.ts';
 	import {
 		friendLink,
@@ -51,6 +55,7 @@
 
 	onMount(() => {
 		void friends.load();
+		void friendScripts.load();
 		openFriendLink();
 		window.addEventListener('hashchange', openFriendLink);
 		return () => window.removeEventListener('hashchange', openFriendLink);
@@ -85,6 +90,18 @@
 		confirmOpen = true;
 	}
 
+	/** A received or published script's change (plan F9, F10); a failure shows in a toast. */
+	async function change(task: () => Promise<void>): Promise<void> {
+		busy = true;
+		try {
+			await task();
+		} catch (e) {
+			toast(t('friends.failed'), e instanceof Error ? e.message : String(e));
+		} finally {
+			busy = false;
+		}
+	}
+
 	async function setFindable(findable: boolean): Promise<void> {
 		busy = true;
 		try {
@@ -98,20 +115,50 @@
 </script>
 
 {#snippet who(other: FriendAccount)}
-	<span class="icon"><ProfileIcon icon={other.icon} /></span>
-	<span class="name">{nameOf(other)}</span>
+	{#if other.username}
+		<a class="name" href={profileHref(other.username)}>{other.username}</a>
+	{:else}
+		{nameOf(other)}
+	{/if}
 {/snippet}
 
-{#snippet rows(list: FriendAccount[], testid: string, actions: Snippet<[FriendAccount]>)}
-	{#if list.length === 0}
-		<p class="muted" data-testid="{testid}-none">{t('common.none')}</p>
-	{:else}
-		<ul class="rows" data-testid={testid}>
-			{#each list as other (other.id)}
-				<li>{@render who(other)}<span class="actions">{@render actions(other)}</span></li>
-			{/each}
-		</ul>
-	{/if}
+{#snippet accounts(list: FriendAccount[], testid: string, actions: Snippet<[FriendAccount]>)}
+	<FriendRows
+		items={list}
+		key={(other) => other.id}
+		{testid}
+		icon={(other) => other.icon}
+		label={who}
+		{actions}
+	/>
+{/snippet}
+
+{#snippet inboxLabel(script: InboxScript)}
+	<span class="script">{script.name}</span>
+	<span class="from">{t('friends.scripts.from', { name: nameOf(script.from) })}</span>
+{/snippet}
+
+{#snippet inboxActions(script: InboxScript)}
+	<Button variant="accent" href={scriptOpenHref(script.hash)}>{t('friends.scripts.open')}</Button>
+	<Button
+		variant="quiet"
+		disabled={busy}
+		onclick={() => change(() => friendScripts.dismiss(script.id))}
+		>{t('friends.scripts.dismiss')}</Button
+	>
+{/snippet}
+
+{#snippet publishedLabel(script: PublishedScript)}
+	<span class="script">{script.name}</span>
+{/snippet}
+
+{#snippet publishedActions(script: PublishedScript)}
+	<Button variant="quiet" href={scriptOpenHref(script.hash)}>{t('friends.scripts.open')}</Button>
+	<DeleteButton
+		label={t('friends.scripts.unpublish', { name: script.name })}
+		disabled={busy}
+		onclick={() => change(() => friendScripts.setPublished(script, false))}
+	/>
 {/snippet}
 
 {#snippet incomingActions(other: FriendAccount)}
@@ -154,7 +201,22 @@
 		{#if account.status === 'signed-in' && account.user}
 			{@const data = friends.data}
 			<PageSection title={t('friends.requests')}>
-				{#if data}{@render rows(data.incoming, 'friend-incoming', incomingActions)}{/if}
+				{#if data}{@render accounts(data.incoming, 'friend-incoming', incomingActions)}{/if}
+			</PageSection>
+
+			<PageSection title={t('friends.scripts.inbox')}>
+				{#if friendScripts.data}
+					<FriendRows
+						items={friendScripts.data.inbox}
+						key={(script) => script.id}
+						testid="friend-scripts"
+						icon={(script) => script.from.icon}
+						label={inboxLabel}
+						actions={inboxActions}
+					/>
+				{:else}
+					<p class="muted">{t('friends.loading')}</p>
+				{/if}
 			</PageSection>
 
 			<PageSection title={t('friends.list')}>
@@ -169,7 +231,7 @@
 					>
 				{/snippet}
 				{#if data}
-					{@render rows(data.friends, 'friend-list', friendActions)}
+					{@render accounts(data.friends, 'friend-list', friendActions)}
 				{:else}
 					<p class="muted">{friends.error || t('friends.loading')}</p>
 				{/if}
@@ -192,8 +254,29 @@
 				</SharePanel>
 			</PageSection>
 
+			<PageSection title={t('friends.profile')}>
+				{#snippet aside()}
+					<Button
+						variant="quiet"
+						href={account.user?.username ? profileHref(account.user.username) : undefined}
+						disabled={!account.user?.username}>{t('friends.profile.open')}</Button
+					>
+				{/snippet}
+				{#if friendScripts.data}
+					<FriendRows
+						items={friendScripts.data.published}
+						key={(script) => script.hash}
+						testid="profile-scripts"
+						label={publishedLabel}
+						actions={publishedActions}
+					/>
+				{:else}
+					<p class="muted">{t('friends.loading')}</p>
+				{/if}
+			</PageSection>
+
 			<PageSection title={t('friends.sent')}>
-				{#if data}{@render rows(data.outgoing, 'friend-outgoing', outgoingActions)}{/if}
+				{#if data}{@render accounts(data.outgoing, 'friend-outgoing', outgoingActions)}{/if}
 			</PageSection>
 
 			<PageSection title={t('friends.privacy')}>
@@ -215,7 +298,7 @@
 			</PageSection>
 
 			<PageSection title={t('friends.blocked')}>
-				{#if data}{@render rows(data.blocked, 'friend-blocked', blockedActions)}{/if}
+				{#if data}{@render accounts(data.blocked, 'friend-blocked', blockedActions)}{/if}
 			</PageSection>
 		{:else}
 			<section class="card" aria-labelledby="friends-sign-in">
@@ -249,40 +332,17 @@
 		margin: 0;
 		color: var(--on-surface-muted);
 	}
-	.rows {
-		margin: 0;
-		padding: 0;
-		list-style: none;
-	}
-	/* Rows with dividers, not cards (Trevor's UI rules). */
-	.rows li {
-		display: flex;
-		align-items: center;
-		gap: var(--space-3);
-		min-height: var(--tap-target);
-		padding-block: var(--space-2);
-		border-bottom: var(--card-border);
-	}
-	.rows li:last-child {
-		border-bottom: 0;
-	}
-	.icon {
-		display: grid;
-		flex: none;
-		width: calc(2.5 * var(--icon-size));
-		height: calc(2.5 * var(--icon-size));
-	}
 	.name {
-		flex: 1;
-		min-width: 0;
-		overflow-wrap: anywhere;
-		font-weight: var(--font-control-weight);
+		color: inherit;
 	}
-	.actions {
-		display: flex;
-		flex-wrap: wrap;
-		justify-content: flex-end;
-		gap: var(--space-2);
+	.script {
+		display: block;
+	}
+	.from {
+		display: block;
+		color: var(--on-surface-muted);
+		font-weight: normal;
+		font-size: 0.85rem;
 	}
 	.you {
 		display: grid;

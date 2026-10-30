@@ -4573,6 +4573,12 @@ test('a number step offers the "Your number is" info token; a step icon opens it
 		.tap();
 	await expect(shown.locator('h2.title')).toHaveText('Your number is');
 	await expect(shown.locator('.detail')).toHaveText('0');
+	// The number fills the space under the title, on one line (Trevor, 2026-10-30).
+	const view = page.viewportSize()!;
+	const digit = (await shown.locator('.detail').boundingBox())!;
+	expect(digit.height).toBeGreaterThan(Math.min(view.width, view.height) * 0.3);
+	expect(digit.x).toBeGreaterThanOrEqual(0);
+	expect(digit.x + digit.width).toBeLessThanOrEqual(view.width);
 	await closeShown();
 	// Any other number from the step's own info token.
 	const number = chef.getByTestId('step-number');
@@ -4600,8 +4606,8 @@ test('the board menu names its groups, in two columns beside a phone', async ({ 
 	await startGame(page);
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	const menu = page.getByRole('dialog', { name: 'Grimoire' });
-	// Trevor (2026-10-27): named groups ("the delineation is nice"), End game or New game under
-	// Game, and all of Settings from one item. Players holds the notes (2026-10-29), so it is
+	// Trevor (2026-10-27): named groups ("the delineation is nice"), and all of Settings from
+	// one item. Character selection and End game sit under Session, below Game (2026-10-30). Players holds the notes (2026-10-29), so it is
 	// there in every game, room or not.
 	const group = (name: string) => menu.getByRole('region', { name, exact: true });
 	const names = (name: string) =>
@@ -4611,8 +4617,10 @@ test('the board menu names its groups, in two columns beside a phone', async ({ 
 				els.filter((e) => e.checkVisibility()).map((e) => (e.textContent ?? '').trim())
 			);
 	expect((await names('Game')).join(' ')).toMatch(
-		/^Players History Demon bluffs( Game info)? Game settings( Character selection)? End game$/
+		/^Players History Demon bluffs( Game info)? Game settings$/
 	);
+	expect((await names('Session')).join(' ')).toMatch(/^(Character selection )?End game$/);
+	const session = (await group('Session').boundingBox())!;
 	// Open seating (plan J38) and Count off (J40) are there with no room open, disabled.
 	expect(await names('Seats')).toEqual([
 		'Add seat',
@@ -4630,6 +4638,8 @@ test('the board menu names its groups, in two columns beside a phone', async ({ 
 	if ((page.viewportSize()?.width ?? 0) >= 640) {
 		expect(seats.x).toBeGreaterThan(game.x + game.width - 1);
 		expect(Math.abs(seats.y - game.y)).toBeLessThan(2);
+		expect(Math.abs(session.x - game.x)).toBeLessThan(2);
+		expect(session.y).toBeGreaterThan(game.y + game.height - 1);
 	} else {
 		expect(seats.y).toBeGreaterThan(game.y + game.height - 1);
 	}

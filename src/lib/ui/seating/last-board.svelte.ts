@@ -3,7 +3,12 @@
  * layout. The token size preview in Settings uses it to draw tokens at the size the board
  * gives them (Trevor, 2026-10-17: the preview didn't match the size in play).
  */
-import { DEFAULT_SEAT_LAYOUT, seatTokenSize, type SeatLayout } from './seat-layout.ts';
+import {
+	DEFAULT_SEAT_LAYOUT,
+	reminderTokenSize,
+	seatTokenSize,
+	type SeatLayout
+} from './seat-layout.ts';
 
 interface BoardMetrics {
 	width: number;
@@ -28,4 +33,18 @@ const TYPICAL_SEATS = Array.from({ length: 10 }, (_, i) => `seat-${i}`);
 export function boardTokenSize(scale: number, viewport: { width: number; height: number }): number {
 	if (last) return seatTokenSize(last.seating, last.layout, last, scale);
 	return seatTokenSize(TYPICAL_SEATS, DEFAULT_SEAT_LAYOUT, viewport, scale);
+}
+
+/**
+ * A reminder token shown off the board (a character's or a seat's tokens in a dialog), at
+ * the size the board draws it, never under a finger's tap target.
+ */
+export function shownReminderSize(
+	appearance: { tokenScale: number; reminderScale: number },
+	viewport: { width: number; height: number }
+): number {
+	return Math.max(
+		44,
+		reminderTokenSize(boardTokenSize(appearance.tokenScale, viewport), appearance.reminderScale)
+	);
 }

@@ -216,6 +216,19 @@ export type Command =
 	| { type: 'ConfirmDraw'; tileId: TileId; alignment?: Alignment }
 	/** The player puts the tile back; it returns to a random place in the bag. */
 	| { type: 'CancelDraw'; tileId: TileId }
+	/**
+	 * One more player joins mid-draw instead of as a Traveller (the fair late seat, Trevor,
+	 * 2026-10-30): a seat for them, new characters for the drawn players in `changes`, and
+	 * the tiles still in the bag become `bag`. Each changed player who has confirmed a draw
+	 * is woken first on the first night and shown their new character.
+	 */
+	| {
+			type: 'AddLatePlayer';
+			playerName?: PlayerName;
+			position?: number;
+			changes: { seatId: SeatId; characterId: CharacterId }[];
+			bag: TileSpec[];
+	  }
 	// ── The day log (`Game.today`). Every entry can be removed or edited: an override. ──
 	/** Logs a nomination: who nominated whom. Votes are not tracked. */
 	| { type: 'Nominate'; nominator: SeatId; nominee: SeatId }

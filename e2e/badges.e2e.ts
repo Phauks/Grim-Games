@@ -71,9 +71,9 @@ test('opening a character shows its whole wiki page, fetched live', async ({ pag
 	await page.goto('/spikes/badges');
 	await page.locator('button.badge', { hasText: 'Witch' }).first().tap();
 	const dialog = page.getByRole('dialog', { name: 'Witch' });
-	// Its reminder tokens sit with the ability, above every section.
+	// Its reminder tokens, drawn as on the board, sit with the ability, above every section.
 	const reminders = dialog.getByTestId('character-reminders');
-	await expect(reminders.getByTestId('reminder-token')).toHaveText(['Cursed']);
+	await expect(reminders.getByTestId('board-reminder')).toHaveText(['Cursed']);
 	const wiki = dialog.getByTestId('wiki-page');
 	await expect(wiki.getByRole('heading', { name: 'Summary' })).toBeVisible();
 	// The name is a badge, whose own markup spacing shows up in the text.

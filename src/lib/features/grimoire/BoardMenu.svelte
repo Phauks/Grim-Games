@@ -14,8 +14,9 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 
 	/**
-	 * The board's ⋯ menu in named groups: the game's less frequent actions ending with End
-	 * game (New game once it has ended), the seats, and the app's items with all of Settings.
+	 * The board's ⋯ menu in named groups: the game's less frequent actions, its start and end
+	 * (Character selection, End game, and New game once it has ended), the seats, and the app's
+	 * items with all of Settings.
 	 * Each item closes the menu before it acts, but Full screen, which leaves it open.
 	 */
 	interface Props {
@@ -85,108 +86,123 @@
 </script>
 
 <!-- Named groups, in two columns on a tablet or computer (Trevor, 2026-10-27: "the delineation
-     is nice"): the game on the left, with End game or New game at its foot ("end game/new game
-     should be under game"); seats and the app's items on the right. -->
+     is nice"): the game on the left, with its start and end under it ("end game/new game should
+     be under game"); seats and the app's items on the right. -->
 <Dialog bind:open title="Grimoire" size="wide">
 	<div class="menu">
-		<section class="group" aria-labelledby="board-menu-game">
-			<h3 id="board-menu-game" class="group-title">Game</h3>
-			<!-- Players, with their notes and messages, here on every screen (Trevor, 2026-10-28: "we
-			     should not have discrepancy"; 2026-10-29: Messages and Notes folded into Players). -->
-			<Button
-				disabled={watching}
-				variant="quiet"
-				icon="players"
-				data-testid="menu-players"
-				onclick={() => fromMenu(() => playersDialog.show())}
-			>
-				{t('room.players.title')}
-				{#if host.code && host.inbox.unread}<CountBadge count={host.inbox.unread} warn />{/if}
-			</Button>
-			<Button variant="quiet" icon="history" onclick={() => fromMenu(onHistory)}>History</Button>
-			<Button disabled={watching} variant="quiet" icon="demon" onclick={() => fromMenu(onBluffs)}
-				>Demon bluffs</Button
-			>
-			{#if onCallTown}
-				<!-- Every phone in the room sounds and vibrates (plan U2, Trevor 2026-10-26). -->
+		<div class="column">
+			<section class="group" aria-labelledby="board-menu-game">
+				<h3 id="board-menu-game" class="group-title">Game</h3>
+				<!-- Players, with their notes and messages, here on every screen (Trevor, 2026-10-28: "we
+				     should not have discrepancy"; 2026-10-29: Messages and Notes folded into Players). -->
 				<Button
 					disabled={watching}
 					variant="quiet"
-					icon="sound"
-					onclick={() => fromMenu(onCallTown)}
+					icon="players"
+					data-testid="menu-players"
+					onclick={() => fromMenu(() => playersDialog.show())}
 				>
-					{t('room.callTown')}
+					{t('room.players.title')}
+					{#if host.code && host.inbox.unread}<CountBadge count={host.inbox.unread} warn />{/if}
 				</Button>
-			{/if}
-			{#if gameInfo}
-				<Button variant="quiet" icon="info" onclick={() => fromMenu(onGameInfo)}>Game info</Button>
-			{/if}
-			<!-- This game's own settings, as the start flow's Game settings step set them. -->
-			{#if gameId}
-				<Button
-					disabled={watching}
-					variant="quiet"
-					icon="settings"
-					onclick={() => fromMenu(() => (gameSettingsOpen = true))}
+				<Button variant="quiet" icon="history" onclick={() => fromMenu(onHistory)}>History</Button>
+				<Button disabled={watching} variant="quiet" icon="demon" onclick={() => fromMenu(onBluffs)}
+					>Demon bluffs</Button
 				>
-					{t('setup.gameSettings')}
-				</Button>
-			{/if}
-			{#if onCharacterSelection}
-				<Button
-					disabled={watching}
-					variant="quiet"
-					icon="bag"
-					onclick={() => fromMenu(onCharacterSelection)}
-				>
-					{t('setup.characterSelection')}
-				</Button>
-			{/if}
-			<!-- Leaving keeps the game to come back to; End moves it to History (Trevor, 2026-10-16). -->
-			{#if ended}
-				<Button
-					disabled={watching}
-					variant="quiet"
-					icon="download"
-					onclick={() => fromMenu(onExport)}
-				>
-					Export game
-				</Button>
-				{#if onFeedback}
+				{#if onCallTown}
+					<!-- Every phone in the room sounds and vibrates (plan U2, Trevor 2026-10-26). -->
 					<Button
 						disabled={watching}
 						variant="quiet"
-						icon="feedback"
-						onclick={() => fromMenu(onFeedback)}
+						icon="sound"
+						onclick={() => fromMenu(onCallTown)}
 					>
-						{t('room.feedback.view')}
+						{t('room.callTown')}
 					</Button>
 				{/if}
-				<Button disabled={watching} variant="quiet" icon="undo" onclick={() => fromMenu(onReopen)}
-					>Reopen game</Button
-				>
-			{/if}
-			<!-- New game takes End game's place once the game has ended (Trevor, 2026-10-26). -->
-			{#if !ended}
-				<Button disabled={watching} variant="danger" icon="close" onclick={() => fromMenu(onEnd)}
-					>End game</Button
-				>
-			{:else if onNewGame}
-				<Button disabled={watching} variant="quiet" icon="add" onclick={() => fromMenu(onNewGame)}>
-					{t('setup.newGame')}
-				</Button>
-			{/if}
-			{#if ended && onCloseRoom}
-				<Button
-					disabled={watching}
-					variant="danger"
-					icon="close"
-					onclick={() => fromMenu(() => (closeRoomOpen = true))}
-				>
-					{t('room.closeRoom')}
-				</Button>
-			{/if}
-		</section>
+				{#if gameInfo}
+					<Button variant="quiet" icon="info" onclick={() => fromMenu(onGameInfo)}>Game info</Button
+					>
+				{/if}
+				<!-- This game's own settings, as the start flow's Game settings step set them. -->
+				{#if gameId}
+					<Button
+						disabled={watching}
+						variant="quiet"
+						icon="settings"
+						onclick={() => fromMenu(() => (gameSettingsOpen = true))}
+					>
+						{t('setup.gameSettings')}
+					</Button>
+				{/if}
+			</section>
+			<!-- Before and after the game, apart from its other items (Trevor, 2026-10-30: they "feel
+			     somewhat different from the other items in game"; "these all seem related to pre and
+			     post game"): Character selection until Start game, then End game, then what an ended
+			     game offers. -->
+			<section class="group" aria-labelledby="board-menu-session">
+				<h3 id="board-menu-session" class="group-title">Session</h3>
+				{#if onCharacterSelection}
+					<Button
+						disabled={watching}
+						variant="quiet"
+						icon="bag"
+						onclick={() => fromMenu(onCharacterSelection)}
+					>
+						{t('setup.characterSelection')}
+					</Button>
+				{/if}
+				<!-- Leaving keeps the game to come back to; End moves it to History (Trevor, 2026-10-16). -->
+				{#if ended}
+					<Button
+						disabled={watching}
+						variant="quiet"
+						icon="download"
+						onclick={() => fromMenu(onExport)}
+					>
+						Export game
+					</Button>
+					{#if onFeedback}
+						<Button
+							disabled={watching}
+							variant="quiet"
+							icon="feedback"
+							onclick={() => fromMenu(onFeedback)}
+						>
+							{t('room.feedback.view')}
+						</Button>
+					{/if}
+					<Button disabled={watching} variant="quiet" icon="undo" onclick={() => fromMenu(onReopen)}
+						>Reopen game</Button
+					>
+				{/if}
+				<!-- New game takes End game's place once the game has ended (Trevor, 2026-10-26). -->
+				{#if !ended}
+					<Button disabled={watching} variant="danger" icon="close" onclick={() => fromMenu(onEnd)}
+						>End game</Button
+					>
+				{:else if onNewGame}
+					<Button
+						disabled={watching}
+						variant="quiet"
+						icon="add"
+						onclick={() => fromMenu(onNewGame)}
+					>
+						{t('setup.newGame')}
+					</Button>
+				{/if}
+				{#if ended && onCloseRoom}
+					<Button
+						disabled={watching}
+						variant="danger"
+						icon="close"
+						onclick={() => fromMenu(() => (closeRoomOpen = true))}
+					>
+						{t('room.closeRoom')}
+					</Button>
+				{/if}
+			</section>
+		</div>
 		<div class="column">
 			<section class="group" aria-labelledby="board-menu-seats">
 				<h3 id="board-menu-seats" class="group-title">Seats</h3>
@@ -226,7 +242,11 @@
 					variant="quiet"
 					icon="countOff"
 					data-testid="menu-count-off"
-					onclick={() => fromMenu(() => (playersDialog.countOff = true))}
+					onclick={() =>
+						fromMenu(() => {
+							host.send({ type: 'count-off' });
+							playersDialog.countOff = true;
+						})}
 				>
 					{t('room.countOff.title')}
 				</Button>
