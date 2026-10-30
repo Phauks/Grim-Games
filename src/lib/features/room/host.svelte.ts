@@ -23,6 +23,7 @@ import {
 	MAX_GRIMOIRE_BYTES,
 	ROOM_PROTOCOL,
 	type ClientMessage,
+	type CountOffView,
 	type RemovedMember,
 	type RoomMember,
 	type ServerMessage,
@@ -72,11 +73,9 @@ export class RoomHost {
 	 * every member counts as here. The room keeps phones from earlier games (2026-10-25).
 	 */
 	present = $state.raw<readonly string[]>();
-	/** Members whose phone sleeps or is in the background, but was here during this game. */
-	away = $state.raw<readonly string[]>([]);
+	away = $state.raw<readonly string[]>([]); // Phones asleep or in the background this game.
 	vote = $state.raw<VoteTally>(); // The spectators' open vote and its count (Specters).
-	/** The room's vote on the next script and its count (plan R1), if one is open. */
-	scriptVote = $state.raw<ScriptVoteTally>();
+	scriptVote = $state.raw<ScriptVoteTally>(); // The vote on the next script (plan R1).
 	problem = $state(false); // Opening a room failed, e.g. offline.
 	opening = $state(false); // A room is being opened.
 	removed = $state.raw<readonly RemovedMember[]>([]); // Phones removed this game (plan J37).
@@ -95,6 +94,7 @@ export class RoomHost {
 	readonly rolesShown = new RolesShown(); // Players may see their own character, for a minute.
 	rolesSeen = $state.raw<readonly SeatId[]>([]); // Their player held the character to see it.
 	seatingOpen = $state(false); // Phones may move their own seat (plan J38).
+	countOff = $state.raw<CountOffView>(); // The count off, while one is open (plan J40).
 	transfer = $state.raw<TransferStatus>(); // The open Room transfer (room-transfer.svelte.ts).
 	sendingGame = $state(false); // The grimoire goes to the room: a Room transfer brings it.
 	onMessage: ((message: ServerMessage) => void) | undefined; // Hears the room first (transfer).
@@ -113,10 +113,8 @@ export class RoomHost {
 	#choosing = false;
 	/** Where the open board's game is up to (showPhase): players see it, and the day's timer. */
 	#phase = $state.raw<{ gameId: string; phase: GamePhase }>();
-	/** The day the Storyteller called Back to town in, which is Town until it ends. */
-	#town = $state.raw<{ gameId: string; number: number }>();
-	/** What the open board's corner shows, for the phones' corners (showCorner). */
-	#corner = $state<{ gameId: string; corner: PublicCorner }>();
+	#town = $state.raw<{ gameId: string; number: number }>(); // Back to town's day, Town till over.
+	#corner = $state<{ gameId: string; corner: PublicCorner }>(); // For phones' corners (showCorner).
 	/** The open board's background, vignette and logo, for every shared grim (showLook). */
 	#look = $state<{ gameId: string; look: PublicLook }>();
 	/** The board's own picture while its look has one, and its name in the room once uploaded. */
@@ -651,6 +649,7 @@ export class RoomHost {
 			this.away = message.away ?? [];
 			this.removed = message.removed ?? [];
 			this.seatingOpen = !!message.seatingOpen;
+			this.countOff = message.countOff;
 			this.vote = message.vote;
 			this.scriptVote = message.scriptVote;
 			this.rolesSeen = message.rolesSeen ?? [];
@@ -761,6 +760,7 @@ export class RoomHost {
 		this.away = [];
 		this.removed = [];
 		this.seatingOpen = false;
+		this.countOff = undefined;
 		this.vote = undefined;
 		this.scriptVote = undefined;
 		this.viewerKey = undefined;

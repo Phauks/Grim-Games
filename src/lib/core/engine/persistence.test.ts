@@ -273,6 +273,24 @@ describe('version 10 saves', () => {
 describe('version 18 saves', () => {
 	// Before several notes per seat (Trevor, 2026-10-26): an older seat's single note
 	// (`SeatNoteSet`) opens as its untitled first note, and more can be added.
+	it('migrates a version 20 game with no held abilities, then takes one', () => {
+		const { session, ctx, seats } = newGame(['Sam', 'Ana', 'Kim', 'Lee', 'Max']);
+		const v20 = { ...JSON.parse(JSON.stringify(toSavedGame(session, 1))), schemaVersion: 20 };
+		const loaded = migrateSavedGame(v20);
+		expect(loaded.schemaVersion).toBe(SAVED_GAME_VERSION);
+		expect(loaded.log).toEqual(v20.log);
+		const opened = openSession(loaded.log);
+		expect(opened.game.seats[seats[0]].abilities).toBeUndefined();
+		const held = run(opened, ctx, {
+			type: 'SetHeldAbility',
+			seatId: seats[0],
+			via: 'boffin',
+			characterId: 'chef'
+		});
+		const again = openSession(migrateSavedGame(toSavedGame(held, 2)).log);
+		expect(again.game.seats[seats[0]].abilities).toEqual([{ characterId: 'chef', via: 'boffin' }]);
+	});
+
 	it("migrate with the log unchanged and keep a seat's note as its first", () => {
 		const { session, ctx, seats } = newGame(['Sam', 'Ana', 'Kim', 'Lee', 'Max']);
 		const saved = JSON.parse(JSON.stringify(toSavedGame(session, 1)));

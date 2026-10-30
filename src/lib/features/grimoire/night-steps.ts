@@ -78,7 +78,14 @@ export function boardNightSteps(
 	const number = night === 'first' ? 1 : game.pastDays.length + 1;
 	return duskToDawn([
 		...ruleNightSteps(rules, number),
-		...withNightInfo(woken, game, characters, night, { died: today.died ?? [] })
+		...withNightInfo(
+			woken,
+			game,
+			characters,
+			night,
+			{ died: today.died ?? [] },
+			data.nightSheet[night === 'first' ? 'firstNight' : 'otherNight']
+		)
 	]);
 }
 

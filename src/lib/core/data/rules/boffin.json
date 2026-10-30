@@ -17,6 +17,12 @@
 	"deathCause": {
 		"kind": "gained-ability"
 	},
+	"givesAbility": {
+		"to": "demon",
+		"types": ["townsfolk", "outsider"],
+		"notInPlay": true,
+		"whileWorks": true
+	},
 	"infoTokenCharacters": {
 		"selected-you": {
 			"characters": ["self"],

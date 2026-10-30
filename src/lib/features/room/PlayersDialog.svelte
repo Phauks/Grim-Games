@@ -5,6 +5,7 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { playersDialog } from './players-dialog.svelte.ts';
 	import PlayersPanel from './PlayersPanel.svelte';
+	import CountOffDialog from './CountOffDialog.svelte';
 
 	/** Players over the board, from ⋯ on every screen, so the Storyteller never leaves the game. */
 	let { game, run }: { game: OpenGame; run?: (command: Command) => boolean } = $props();
@@ -13,3 +14,4 @@
 <Dialog bind:open={playersDialog.open} title={t('room.players.title')} size="full">
 	<PlayersPanel {game} {run} />
 </Dialog>
+<CountOffDialog {game} {run} />

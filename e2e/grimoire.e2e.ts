@@ -2336,6 +2336,44 @@ test('the Alchemist gains a Minion ability and is marked "Is The Alchemist"', as
 	await expect(sheet.getByRole('button', { name: 'Actions for Is The Alchemist' })).toBeVisible();
 });
 
+// https://wiki.bloodontheclocktower.com/Boffin: the Demon has a not-in-play good character's
+// ability; its token goes by the Demon's.
+test("the Boffin gives the Demon a not-in-play good character's ability", async ({ page }) => {
+	await startGame(page);
+	const pickFor = async (number: number, name: string) => {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		const picker = page.getByRole('dialog', { name: `Character for Seat ${number}` });
+		if (name === 'Boffin') await picker.getByText('Include characters not on the script').tap();
+		await picker.getByRole('button', { name, exact: true }).tap();
+		return sheet;
+	};
+	await pickFor(1, 'Boffin');
+	await closeSheet(page);
+	await pickFor(3, 'Monk');
+	await closeSheet(page);
+	const demon = await pickFor(2, 'Imp');
+	await seatMenu(page, demon, 'Held ability…');
+	const holds = page.getByRole('dialog', { name: 'Ability Seat 2 holds' });
+	// Only good characters not in play: the Monk is in play, and no Minion is offered.
+	await expect(holds.getByRole('button', { name: 'Monk', exact: true })).toHaveCount(0);
+	await expect(holds.getByRole('button', { name: 'Poisoner', exact: true })).toHaveCount(0);
+	await holds.getByRole('button', { name: 'Chef', exact: true }).tap();
+	await closeSheet(page);
+	// The Chef's token sits by the Demon's on the board.
+	const mark = page.getByTestId('seat').nth(1).getByTestId('held-ability');
+	await expect(mark).toHaveAttribute('title', 'Holds the Chef ability');
+	// A dead Boffin takes it away.
+	const boffin = await openSeat(page, 1);
+	await boffin.getByRole('button', { name: 'Status: Alive' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Status of Seat 1' })
+		.getByRole('button', { name: 'Executed' })
+		.tap();
+	await closeSheet(page);
+	await expect(mark).toHaveAttribute('title', 'Holds the Chef ability (not now)');
+});
+
 test("a Traveller's alignment can be drawn from face-down tokens", async ({ page }) => {
 	await startGame(page);
 	await menu(page, 'Add seat');
@@ -4477,14 +4515,16 @@ test('the board menu names its groups, in two columns beside a phone', async ({ 
 	expect((await names('Game')).join(' ')).toMatch(
 		/^Players History Demon bluffs( Game info)? Game settings( Character selection)? End game$/
 	);
-	// Open seating (plan J38) is there with no room open too, disabled, so nothing moves.
+	// Open seating (plan J38) and Count off (J40) are there with no room open, disabled.
 	expect(await names('Seats')).toEqual([
 		'Add seat',
 		'Add Fabled or Loric',
 		'Arrange seats',
-		'Open seating'
+		'Open seating',
+		'Count off'
 	]);
 	await expect(group('Seats').getByRole('button', { name: 'Open seating' })).toBeDisabled();
+	await expect(group('Seats').getByRole('button', { name: 'Count off' })).toBeDisabled();
 	expect(await names('App')).toEqual(['Settings', 'Full screen', 'Report an issue']);
 	// Beside a phone, the game on the left and the rest on the right.
 	const game = (await group('Game').boundingBox())!;

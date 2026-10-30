@@ -119,7 +119,7 @@ async function requestAccount(
 }
 
 /**
- * The player in a live room's seat (plan F2): only someone whose own account is in that room
+ * The player in a live room's seat, or its Storyteller (plan F2): only someone whose own account is in that room
  * may look or ask, and "Let people find me by username" covers games too (Trevor, 2026-10-29).
  */
 async function seatFriend(
@@ -131,8 +131,14 @@ async function seatFriend(
 	const unavailable: SeatFriendResponse = { state: 'unavailable' };
 	const code = typeof body?.code === 'string' ? normaliseRoomCode(body.code) : undefined;
 	const seatId = body?.seatId;
-	if (!code || typeof seatId !== 'string') return unavailable;
-	const other = await env.ROOMS.get(env.ROOMS.idFromName(code)).friendSeat(accountId, seatId);
+	const target =
+		body?.storyteller === true
+			? ({ storyteller: true } as const)
+			: typeof seatId === 'string'
+				? { seatId }
+				: undefined;
+	if (!code || !target) return unavailable;
+	const other = await env.ROOMS.get(env.ROOMS.idFromName(code)).friendSeat(accountId, target);
 	if (!other) return unavailable;
 	if (other === 'self') return { state: 'self' };
 	const relation = await friendBook(env, accountId).relationTo(other);

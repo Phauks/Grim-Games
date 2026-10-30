@@ -177,6 +177,18 @@ export interface Seat {
 	 */
 	avatar?: AvatarId;
 	reminders: ReminderInstance[];
+	/**
+	 * Abilities this player has besides their own character's, each given by another
+	 * character's `givesAbility` rule (the Boffin's good ability on the Demon,
+	 * https://wiki.bloodontheclocktower.com/Boffin). At most one per giver. Absent while none.
+	 */
+	abilities?: HeldAbility[];
+}
+
+/** An ability a player holds without its token: whose it is, and which character gave it. */
+export interface HeldAbility {
+	characterId: CharacterId;
+	via: CharacterId;
 }
 
 /**

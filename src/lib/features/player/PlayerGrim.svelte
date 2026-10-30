@@ -511,7 +511,7 @@
 			     Town display shows only public things. -->
 			{#if !display && !fullScreen}{@render grimTools(true)}{/if}
 			<!-- The board's corner, line for line as the Storyteller's board shows it (Trevor,
-			     2026-10-24); nothing to open or share here. -->
+			     2026-10-24); its name opens Game info (Trevor, 2026-10-30), nothing to share. -->
 			<BoardCorner
 				meta={script.meta}
 				storytellerName={table?.storytellerName}
@@ -519,6 +519,7 @@
 				roomCode={town ? (town.roomCode ?? roomHost().code) : code}
 				logo={logo && !logoFailed ? logo : undefined}
 				watching
+				townInfo={display ? undefined : { roomCode: friendRoom }}
 				fitRoom={fitCorner}
 				{width}
 				{rootFont}
@@ -543,6 +544,7 @@
 		{showFinal}
 		onFinal={(on) => (showFinal = on)}
 		bin={{ open: binOpen, disabled: hiding, onToggle: () => (binOpen = !binOpen) }}
+		info={{ meta: script.meta, table, roomCode: friendRoom }}
 	/>{/snippet}
 <!-- Full screen's corner: this grim's controls, the page's own, then Full screen. -->
 {#snippet stageCorner(filled: boolean)}
