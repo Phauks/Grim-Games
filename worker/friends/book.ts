@@ -5,6 +5,12 @@ import {
 	type RequestRefusal
 } from '../../src/lib/features/friends/friends-protocol.ts';
 import {
+	MAX_INBOX,
+	MAX_PUBLISHED,
+	type FriendScript,
+	type PublishedScript
+} from '../../src/lib/features/friends/friend-scripts-protocol.ts';
+import {
 	planReceive,
 	planSend,
 	type BookCounts,
@@ -24,6 +30,13 @@ export interface BookContents {
 	outgoing: BookEntry[];
 	blocked: BookEntry[];
 	findable: boolean;
+}
+
+/** A script a friend sent, by the sender's id. */
+export interface InboxEntry extends FriendScript {
+	id: number;
+	sender: string;
+	at: number;
 }
 
 /** The asker's side of a request: what the route must then ask the other account to do. */
@@ -57,6 +70,19 @@ export class FriendBook extends DurableObject {
 			CREATE TABLE IF NOT EXISTS settings (
 				id INTEGER PRIMARY KEY CHECK (id = 1),
 				findable INTEGER NOT NULL
+			);
+			-- Scripts friends sent (plan F9), and scripts on this account's profile (F10).
+			CREATE TABLE IF NOT EXISTS inbox (
+				id INTEGER PRIMARY KEY AUTOINCREMENT,
+				sender TEXT NOT NULL,
+				name TEXT NOT NULL,
+				hash TEXT NOT NULL,
+				sent_at INTEGER NOT NULL
+			);
+			CREATE TABLE IF NOT EXISTS published (
+				hash TEXT PRIMARY KEY,
+				name TEXT NOT NULL,
+				published_at INTEGER NOT NULL
 			);
 		`);
 	}
@@ -206,9 +232,10 @@ export class FriendBook extends DurableObject {
 		this.sql.exec("DELETE FROM request WHERE id = ? AND direction = 'in'", id);
 	}
 
-	/** Blocks `id`: any friendship and requests between them end. */
+	/** Blocks `id`: any friendship and requests between them end, and its scripts go. */
 	async block(id: string, now: number): Promise<void> {
 		this.sql.exec('DELETE FROM friend WHERE id = ?', id);
+		this.sql.exec('DELETE FROM inbox WHERE sender = ?', id);
 		this.sql.exec('DELETE FROM request WHERE id = ?', id);
 		this.sql.exec('INSERT OR IGNORE INTO block (id, created_at) VALUES (?, ?)', id, now);
 	}
@@ -233,6 +260,68 @@ export class FriendBook extends DurableObject {
 		this.sql.exec('DELETE FROM friend WHERE id = ?', id);
 		this.sql.exec('DELETE FROM request WHERE id = ?', id);
 		this.sql.exec('DELETE FROM block WHERE id = ?', id);
+		this.sql.exec('DELETE FROM inbox WHERE sender = ?', id);
+	}
+
+	/** A friend, `from`, sends this account a script. False unless they are friends. */
+	async receiveScript(from: string, script: FriendScript, now: number): Promise<boolean> {
+		const relation = this.relation(from);
+		if (!relation.friend || relation.blocked) return false;
+		this.sql.exec(
+			'INSERT INTO inbox (sender, name, hash, sent_at) VALUES (?, ?, ?, ?)',
+			from,
+			script.name,
+			script.hash,
+			now
+		);
+		this.sql.exec(
+			'DELETE FROM inbox WHERE id NOT IN (SELECT id FROM inbox ORDER BY id DESC LIMIT ?)',
+			MAX_INBOX
+		);
+		return true;
+	}
+
+	/** Scripts friends sent, newest first. */
+	async inbox(): Promise<InboxEntry[]> {
+		return this.sql
+			.exec<{ id: number; sender: string; name: string; hash: string; at: number }>(
+				'SELECT id, sender, name, hash, sent_at AS at FROM inbox ORDER BY id DESC'
+			)
+			.toArray()
+			.map(({ id, sender, name, hash, at }) => ({ id, sender, name, hash, at }));
+	}
+
+	async dismissScript(id: number): Promise<void> {
+		this.sql.exec('DELETE FROM inbox WHERE id = ?', id);
+	}
+
+	/** Shows a script on this account's profile; false when the profile is full. */
+	async publish(script: FriendScript, now: number): Promise<boolean> {
+		const count = this.sql
+			.exec<{ n: number }>('SELECT COUNT(*) AS n FROM published WHERE hash != ?', script.hash)
+			.one().n;
+		if (count >= MAX_PUBLISHED) return false;
+		this.sql.exec(
+			'INSERT OR REPLACE INTO published (hash, name, published_at) VALUES (?, ?, ?)',
+			script.hash,
+			script.name,
+			now
+		);
+		return true;
+	}
+
+	async unpublish(hash: string): Promise<void> {
+		this.sql.exec('DELETE FROM published WHERE hash = ?', hash);
+	}
+
+	/** The scripts on this account's profile, newest first. */
+	async published(): Promise<PublishedScript[]> {
+		return this.sql
+			.exec<{ name: string; hash: string; at: number }>(
+				'SELECT name, hash, published_at AS at FROM published ORDER BY published_at DESC'
+			)
+			.toArray()
+			.map(({ name, hash, at }) => ({ name, hash, at }));
 	}
 
 	/** This account was deleted: returns everyone it was linked to, and keeps nothing. */

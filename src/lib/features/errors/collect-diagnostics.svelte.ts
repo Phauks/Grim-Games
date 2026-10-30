@@ -119,7 +119,11 @@ function settingsSection(): DiagnosticSection {
 
 /** Everything the Diagnostics page shows, read now. Never throws. */
 export async function collectDiagnostics(now = Date.now()): Promise<Diagnostics> {
-	const [app, storage] = await Promise.all([appSection(), storageSection()]);
+	const [app, storage] = await Promise.all([
+		appSection(),
+		storageSection(),
+		errorLog.resolveStacks()
+	]);
 	const room = registeredRows();
 	const sections: DiagnosticSection[] = [
 		{

@@ -273,6 +273,14 @@ export function seatTokenSize(
 }
 
 /**
+ * A reminder token's diameter in pixels for a seat token of `tokenSize`, as the board draws
+ * it: half the token, kept between 30 and 48px, times the user's Reminder size setting.
+ */
+export function reminderTokenSize(tokenSize: number, scale = 1): number {
+	return Math.round(Math.max(30, Math.min(48, tokenSize * 0.5)) * scale);
+}
+
+/**
  * Points from a seat towards the middle of the board, at each distance (px) from the seat's
  * centre: where its reminder tokens go, as in front of a token in the physical grimoire.
  * A seat at the very middle sends them downwards.

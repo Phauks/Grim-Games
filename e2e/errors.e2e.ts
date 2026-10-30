@@ -74,6 +74,46 @@ test('an uncaught error shows the corner card, and Details offers a scrubbed rep
 	await expect(page.getByTestId('error-notice')).toBeHidden();
 });
 
+test("a problem's stack names the source files, not the build's minified ones", async ({
+	page
+}) => {
+	await page.goto('/');
+	await expect(page.getByRole('heading', { level: 1 })).toHaveText(APP_NAME);
+	// A frame at the first mapped place in one of this build's own files, as a crash in the app
+	// would have (source-stack.ts reads the map the build writes beside it).
+	await page.evaluate(async () => {
+		const file = performance
+			.getEntriesByType('resource')
+			.map((entry) => new URL(entry.name).pathname)
+			.find((path) => /^\/_app\/immutable\/nodes\/.+\.js$/.test(path))!;
+		const map = await (await fetch(`${file}.map`)).json();
+		const lines: string[] = map.mappings.split(';');
+		const line = lines.findIndex((segments) => segments.length > 0);
+		// The first segment's first value is its column: base64 VLQ, 5 bits per digit, low first,
+		// with 32 marking a digit that continues and the lowest bit the sign.
+		const digits = /^[g-z0-9+/]*[A-Za-f]/.exec(lines[line])![0];
+		const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+		let column = 0;
+		for (const [i, digit] of [...digits].entries()) column += (B64.indexOf(digit) & 31) << (5 * i);
+		column >>= 1;
+		const error = new Error('source map test');
+		error.stack = `Error: source map test\n    at x (${location.origin}${file}:${line + 1}:${column + 1})`;
+		setTimeout(() => {
+			throw error;
+		});
+	});
+	await page.getByTestId('error-notice').getByRole('button', { name: 'Details' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Problems on this device' })
+		.getByRole('button', { name: /source map test/ })
+		.tap();
+	const details = page.getByRole('dialog', { name: 'Error' });
+	await expect(details).toContainText(
+		/at (src|node_modules)\/[\w/@+.-]+\.(svelte|ts|m?js):\d+:\d+/
+	);
+	await expect(details).not.toContainText('/_app/immutable/');
+});
+
 test('dismissing the card keeps the page as it was', async ({ page }) => {
 	await page.goto('/');
 	const heading = page.getByRole('heading', { level: 1 });

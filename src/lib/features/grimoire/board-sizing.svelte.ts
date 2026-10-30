@@ -13,6 +13,7 @@ import { preferences } from '#lib/ui/preferences.svelte.ts';
 import {
 	clearOfCorner,
 	keepInside,
+	reminderTokenSize,
 	seatPoints,
 	seatTokenSize,
 	type SeatLayout,
@@ -111,11 +112,8 @@ export class BoardSizing {
 		);
 	});
 
-	readonly chip = $derived.by(() =>
-		Math.round(
-			Math.max(30, Math.min(48, this.size * 0.5)) *
-				preferences.current.tokenAppearance.reminderScale
-		)
+	readonly chip = $derived(
+		reminderTokenSize(this.size, preferences.current.tokenAppearance.reminderScale)
 	);
 
 	/**

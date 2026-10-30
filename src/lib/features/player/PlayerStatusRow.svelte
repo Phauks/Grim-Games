@@ -12,7 +12,7 @@
 	 * its room's copy; the board's Script and the grim cover's Player view feed it the state
 	 * the room would get (`tableState`), so whatever is added here shows on both
 	 * (Trevor, 2026-10-27: "Design it so that these additions move in automatically"). What
-	 * only a phone in a room has (its own status, character, Rate) comes in `before`/`after`.
+	 * only a phone in a room has (its character, Rate) comes in `after`.
 	 */
 	interface Props {
 		/** The game's public state as players' phones get it. */
@@ -25,11 +25,26 @@
 		mySeat?: SeatId;
 		/** The names of connected phones with no seat, where the room tells them (the Storyteller). */
 		unseatedNames?: readonly string[];
-		before?: Snippet;
+		/**
+		 * What the room says of the game, such as "Game over: Good won", at the start of the row;
+		 * empty takes no room. A phone also says it is joining or offline here.
+		 */
+		status?: string;
+		/** This phone's seat number, for tests to read; the screen doesn't say it. */
+		seatNumber?: number;
 		after?: Snippet;
 	}
 
-	let { table, ended = false, presence, mySeat, unseatedNames, before, after }: Props = $props();
+	let {
+		table,
+		ended = false,
+		presence,
+		mySeat,
+		unseatedNames,
+		status,
+		seatNumber,
+		after
+	}: Props = $props();
 
 	const phase = $derived(ended ? undefined : parsePlayersPhase(table?.now));
 	const timer = $derived(ended ? undefined : dayTimers.parsePublicTimer(table?.timer));
@@ -42,9 +57,15 @@
 	);
 </script>
 
-{#if before || after || phase}
+{#if status !== undefined || after || phase}
 	<div class="status-row" data-testid="player-status-row">
-		{@render before?.()}
+		{#if status !== undefined}
+			<!-- With nothing to say the box takes no room, so the game's status starts the row
+			     (Trevor, 2026-10-26: "remove the empty space next to the game state tracker"). -->
+			<p class="you" class:quiet={!status} data-testid="you-row" data-seat={seatNumber}>
+				<span class="summary" role="status" data-testid="join-status">{status}</span>
+			</p>
+		{/if}
 		<!-- Where the game is up to, with the day's timer; it shares the row's height, so
 		     nothing below moves. -->
 		{#if phase}<PlayersDayStatus
@@ -78,5 +99,30 @@
 	   should then take up the entire horizontal of that line area"). */
 	.status-row > :global([data-testid='players-status']) {
 		flex: 1;
+	}
+	/* What the room says of the game, in the row over the tabs. */
+	.you {
+		display: flex;
+		flex: 1;
+		align-items: center;
+		gap: var(--space-2);
+		box-sizing: border-box;
+		min-width: 0;
+		min-height: var(--tap-target);
+		margin: 0;
+		padding: var(--space-2) var(--space-3);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-md);
+		background: var(--surface-raised);
+	}
+	.you.quiet {
+		display: none;
+	}
+	.summary {
+		flex: 1;
+		min-width: 0;
+		min-height: 2.8em;
+		margin: 0;
+		align-content: center;
 	}
 </style>

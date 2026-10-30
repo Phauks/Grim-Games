@@ -22,6 +22,7 @@
 	import SeatDisc from '#lib/ui/seating/SeatDisc.svelte';
 	import HeldAbilityPill from '#lib/features/grimoire/HeldAbilityPill.svelte';
 	import { boardTokenSize } from '#lib/ui/seating/last-board.svelte.ts';
+	import { reminderTokenSize } from '#lib/ui/seating/seat-layout.ts';
 	import { formatRoomCode } from '#lib/core/sync/room-code.ts';
 	import { GAME_MODES, SPECIAL_RULES, STANDARD } from '#lib/core/modes/index.ts';
 	import { standardPlayersLine } from '#lib/features/modes/players-line.ts';
@@ -114,8 +115,8 @@
 			viewport.height ? Math.floor((0.3 * viewport.height - 32) / 3.4) : 64
 		)
 	);
-	// The board's reminder size for this token: half of it, kept between 30 and 48px.
-	const chip = $derived(Math.round(Math.max(30, Math.min(48, size * 0.5))));
+	// The board's reminder size for this token.
+	const chip = $derived(reminderTokenSize(size));
 	const storyteller = $derived(storytellerName.current.trim() || t('settings.previewStoryteller'));
 	/**
 	 * Sample lines for the rest of the corner: the app's own mode and special rule with the
