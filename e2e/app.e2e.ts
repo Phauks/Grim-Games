@@ -64,7 +64,7 @@ test('a local build shows no switch to beta or production', async ({ page }) => 
 	await page.goto('/');
 	const menu = await theMenu(page);
 	await expect(menu.getByTestId('build-info')).toBeVisible();
-	await expect(page.getByTestId('switch-build')).toHaveCount(0);
+	await expect(page.getByTestId('nav-action-switch-build')).toHaveCount(0);
 });
 
 test('installs as a PWA and reopens offline', async ({ page, context }) => {

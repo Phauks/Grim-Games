@@ -117,14 +117,21 @@ test.describe('on a computer', () => {
 		await expect(nav.getByRole('link', { name: 'Library' })).toBeVisible();
 	});
 
-	// Report an issue is a menu row like Settings, not small text (Trevor, 2026-10-29).
-	test('Report an issue is a row in App', async ({ page }) => {
+	// Trevor (2026-10-29): "modals get buttons, locations get the current". Every menu row goes
+	// to a place; Settings, Report an issue and the build switch are buttons under the sections.
+	test('menu rows only go to places; actions are buttons under them', async ({ page }) => {
 		test.skip(test.info().project.name !== 'tablet', 'one desktop run is enough');
 		await page.goto('/');
-		const app = page
-			.getByRole('navigation', { name: 'Menu' })
-			.getByRole('list', { name: 'App', exact: true });
-		await app.getByRole('button', { name: 'Report an issue' }).click();
+		const nav = page.getByRole('navigation', { name: 'Menu' });
+		await expect(nav.getByRole('listitem').first()).toBeVisible();
+		for (const item of await nav.getByRole('listitem').all()) {
+			await expect(item.getByRole('button')).toHaveCount(0);
+			await expect(item.getByRole('link')).toHaveCount(1);
+		}
+		const you = nav.getByRole('list', { name: 'You', exact: true });
+		await expect(you.getByRole('link')).toHaveText(['Account', 'Friends', 'History']);
+		await expect(nav.getByTestId(/^nav-action-/)).toHaveText(['Settings', 'Report an issue']);
+		await nav.getByRole('button', { name: 'Report an issue' }).click();
 		await expect(page.getByRole('dialog', { name: 'Report' })).toBeVisible();
 	});
 });
