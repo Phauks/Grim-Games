@@ -69,7 +69,15 @@ export const shell = {
 	'shell.roadmapTitle': `Roadmap · ${APP_NAME}`,
 	'shell.roadmapProgress': '{done} of {total} done',
 	'shell.roadmapDone': 'Done',
-	'shell.roadmapNext': 'Next',
 	'shell.roadmapLater': 'Later',
-	'shell.roadmapPlanned': 'Planned'
+	'shell.roadmapPlanned': 'Planned',
+	'shell.roadmapAreaStoryteller': 'Storyteller',
+	'shell.roadmapAreaPlayer': 'Player',
+	'shell.roadmapAreaSearch': 'Search',
+	'shell.roadmapAreaLibrary': 'Library',
+	'shell.roadmapAreaPrepare': 'Prepare',
+	'shell.roadmapAreaFriends': 'Friends',
+	'shell.roadmapAreaProfile': 'Profile',
+	'shell.roadmapAreaHistory': 'History',
+	'shell.roadmapAreaApp': 'App'
 } as const;

@@ -351,6 +351,36 @@ test('the set name and search share a pinned line, with the type being scrolled'
 	await expect(outsiders).toBeInViewport();
 });
 
+test('on phones the chosen bluffs are one pinned strip, on tablets rows down the left', async ({
+	page
+}) => {
+	// Trevor, 2026-10-30: full rows pinned on a phone left room for one character.
+	await page.goto('/spikes/bluffs');
+	await page.getByRole('button', { name: 'Demon bluffs', exact: true }).tap();
+	await page.getByRole('button', { name: 'Choose' }).tap();
+	await choice(page, 'Monk').tap();
+	const places = page.getByRole('list', { name: 'Chosen' }).locator('li');
+	await expect(places).toHaveCount(3);
+	const boxes = await Promise.all([0, 1, 2].map(async (i) => (await places.nth(i).boundingBox())!));
+	const phone = page.viewportSize()!.width < 600;
+	for (const box of boxes.slice(1)) {
+		if (phone) expect(box.y).toBeCloseTo(boxes[0].y, 0);
+		else expect(box.y).toBeGreaterThan(boxes[0].y);
+	}
+	// Still pinned once the list scrolls: the Monk stays in view with the Outsiders' header.
+	const outsiders = page.getByRole('heading', { name: /^Outsiders/ });
+	await outsiders.evaluate((el) => {
+		const body = el.closest('.body') as HTMLElement;
+		body.scrollTop += el.getBoundingClientRect().top - body.getBoundingClientRect().top + 60;
+	});
+	await expect(places.first()).toBeInViewport();
+	await expect(outsiders).toBeInViewport();
+	const head = (await outsiders.boundingBox())!;
+	if (phone) expect(head.y).toBeGreaterThanOrEqual(boxes[0].y + boxes[0].height - 1);
+	await places.first().getByRole('button').tap();
+	await expect(page.getByRole('dialog', { name: /Demon bluffs · 0\/3/ })).toBeVisible();
+});
+
 test("a character's own card is filled in and shown, e.g. the Mezepheles's secret word", async ({
 	page
 }) => {
