@@ -113,6 +113,18 @@ export type GameEvent =
 	| { type: 'DrawConfirmed'; tileId: TileId }
 	/** The tile goes back into the bag at `position` in the draw order. */
 	| { type: 'DrawCancelled'; tileId: TileId; position: number }
+	/** A tile now shows and puts in the grimoire other characters (a late player joined). */
+	| {
+			type: 'TileRecast';
+			tileId: TileId;
+			shows: CharacterId;
+			grimoire: CharacterId;
+			reminders: Reminder[];
+	  }
+	/** A new tile goes into the bag at `position` in the draw order. */
+	| { type: 'TileAdded'; tile: Tile; position: number }
+	/** A tile still in the bag leaves the game. */
+	| { type: 'TileRemoved'; tileId: TileId }
 	/** A new entry at the end of today's log (its own effects are separate events). */
 	| { type: 'DayEntryAdded'; entry: DayEntry }
 	/** Replaces the entry with the same `entryId`. */

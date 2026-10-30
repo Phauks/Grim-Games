@@ -573,6 +573,43 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 				}
 			};
 		}
+		case 'TileRecast': {
+			const bag = game.bag;
+			if (!bag || !Object.hasOwn(bag.tiles, event.tileId)) return game;
+			const tile = {
+				...bag.tiles[event.tileId],
+				shows: event.shows,
+				grimoire: event.grimoire,
+				reminders: structuredClone(event.reminders)
+			};
+			return { ...game, bag: { ...bag, tiles: { ...bag.tiles, [event.tileId]: tile } } };
+		}
+		case 'TileAdded': {
+			const bag = game.bag;
+			if (!bag || Object.hasOwn(bag.tiles, event.tile.tileId)) return game;
+			const order = [...bag.order];
+			order.splice(Math.max(0, Math.min(event.position, order.length)), 0, event.tile.tileId);
+			return {
+				...game,
+				bag: {
+					...bag,
+					tiles: { ...bag.tiles, [event.tile.tileId]: structuredClone(event.tile) },
+					order
+				}
+			};
+		}
+		case 'TileRemoved': {
+			const bag = game.bag;
+			if (!bag || !Object.hasOwn(bag.tiles, event.tileId)) return game;
+			return {
+				...game,
+				bag: {
+					...bag,
+					tiles: omit(bag.tiles, event.tileId),
+					order: bag.order.filter((id) => id !== event.tileId)
+				}
+			};
+		}
 		case 'DayEntryAdded':
 			if (game.today.entries.some((e) => e.entryId === event.entry.entryId)) return game;
 			return {
