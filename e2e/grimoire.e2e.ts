@@ -6127,11 +6127,7 @@ test('two copies of a character each have their own reminders, in their own colo
 	await expect(dead.nth(1).locator('img')).toHaveAttribute('src', /imp_g\.webp$/);
 
 	// The good Imp's token keeps its colour on the board; the evil Imp's stays in the bank.
-	await dead.nth(1).tap();
-	await page
-		.getByRole('dialog', { name: 'Put Dead on' })
-		.getByRole('button', { name: /None Seat 2/ })
-		.tap();
+	await tapToSeat(page, dead.nth(1), 2);
 	// A Dead reminder asks whether to mark the player dead; not this time.
 	await page
 		.getByRole('alertdialog', { name: 'Mark Seat 2 dead?' })
@@ -6230,10 +6226,7 @@ test("a dragged seat's reminders go along with it, and fit around it again once 
 		.locator('[data-testid="board-reminder"][aria-label="Dead reminder"]')
 		.first()
 		.tap();
-	await page
-		.getByRole('dialog', { name: 'Put Dead on' })
-		.getByRole('button', { name: /Seat 1/ })
-		.tap();
+	await boardSeat(page, 1).tap();
 	await page
 		.getByRole('alertdialog', { name: /^Mark .*dead\?$/ })
 		.getByRole('button', { name: 'Cancel' })
@@ -6806,16 +6799,14 @@ test('the reminder bank pulls up by its handle bar to show every token, and toke
 	await expect(bank).not.toHaveClass(/lowered/);
 	await expect(bin).toBeVisible();
 
-	// A tap asks for a seat, as in the row, and the bank stays up for the next one.
+	// A tap holds it, as in the row, dropping the bank back while a seat is tapped; it stays
+	// up for the next one.
 	await token.tap();
-	await page
-		.getByRole('dialog', { name: 'Put ∞ on' })
-		.getByRole('button', { name: /None Seat 2/ })
-		.tap();
+	await expect(bank).toHaveClass(/lowered/);
+	await boardSeat(page, 2).tap();
 	await expect(seatLabelled(page, 'Seat 2: no name, no character, 1 reminder')).toBeAttached();
+	await expect(bank).not.toHaveClass(/lowered/);
 	await expect(bin).toBeVisible();
-	// The seat chooser gone, not still fading over the handle.
-	await expect(page.locator('[data-part="backdrop"]')).toHaveCount(0);
 
 	// Pulled down, a tap on its handle, Escape or a tap outside it puts it back down.
 	const top = (await handle.boundingBox())!;
