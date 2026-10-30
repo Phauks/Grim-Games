@@ -1,5 +1,5 @@
 /**
- * What should hold across every fake phone's view at once (room-bots.ts): problems a player
+ * What should hold across every test room phone's view at once (features/test-room): problems a player
  * would notice, or a leak they shouldn't see. Each problem is one line for the log.
  */
 import type { PlayerView } from '#lib/core/sync/room-protocol.ts';

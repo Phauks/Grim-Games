@@ -39,6 +39,7 @@ longest cell, so two PRs that each added a row used to conflict over the whole t
 - A list of short texts with add and remove: `ui/primitives/TextListField.svelte` (enforced by review)
 - The clear X on a field: `ui/primitives/ClearableField.svelte` (TextField has it) (enforced by `grim/clearable-field`)
 - A short code typed one character to a box (room code): `ui/primitives/CodeField.svelte` (enforced by review)
+- Fake players in a live room (bots that answer like phones, a fake Storyteller, a whole game as steps): `features/test-room` over `core/sync/room-bots`: the Test room page and `scripts/room-bots.ts` (enforced by `e2e/test-room.e2e.ts`)
 - A secret shown only while held (a character on the draw or on a phone): `ui/primitives/HoldToSee.svelte` (RevealDialog's hold to see, the player's Your character); `noLongPress` from `ui/no-long-press.ts` stops the phone's long-press buzz around it (enforced by review)
 - One choice among a few: `ui/primitives/Select.svelte` (enforced by `grim/dropdown-choice`)
 - One choice among many, found by typing: `ui/primitives/Combobox.svelte` (shares Select's list styles) (enforced by review)
