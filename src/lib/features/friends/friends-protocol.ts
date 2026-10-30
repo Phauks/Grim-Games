@@ -78,12 +78,12 @@ export const friendActionApi = (action: FriendAction) => `${FRIENDS_API}/${actio
 /** A player in a live room, by seat (plan F2): `POST` with `SeatFriendRequest`. */
 export const FRIEND_SEAT_API = `${FRIENDS_API}/seat`;
 
-/** `POST /api/friends/seat`: where this player sits; `send` asks them, else only looks. */
-export interface SeatFriendRequest {
-	code: string;
-	seatId: string;
-	send?: boolean;
-}
+/**
+ * `POST /api/friends/seat`: a player by the seat they sit in, or the room's Storyteller
+ * (Trevor, 2026-10-30, from Game info); `send` asks them, else only looks.
+ */
+export type SeatFriendTarget = ({ seatId: string } | { storyteller: true }) & { code: string };
+export type SeatFriendRequest = SeatFriendTarget & { send?: boolean };
 
 /**
  * Whether the player in a seat can be added: `unavailable` when they aren't signed in, can't

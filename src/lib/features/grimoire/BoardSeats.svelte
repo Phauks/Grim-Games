@@ -6,7 +6,7 @@
 		type ReminderInstance,
 		type SeatId
 	} from '#lib/core/model/index.ts';
-	import { votesWithoutToken } from '#lib/core/rules/index.ts';
+	import { heldAbilitiesOf, votesWithoutToken } from '#lib/core/rules/index.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import type { SeatPoint } from '#lib/ui/seating/seat-layout.ts';
 	import BoardReminderChip from './BoardReminderChip.svelte';
@@ -131,6 +131,12 @@
 			orphan={isOrphan(seat, game.script, characters, offScriptOk)}
 			nominations={nominations(seat.seatId)}
 			tokenFreeVotes={votesWithoutToken(game, seat.seatId, characters)}
+			heldAbilities={heldAbilitiesOf(game, seat.seatId, characters).flatMap(
+				({ characterId, works }) => {
+					const as = characters.get(characterId);
+					return as ? [{ character: as, works }] : [];
+				}
+			)}
 			dropTarget={seatArr.reorderTarget === seat.seatId ||
 				(remDrag.drag !== undefined &&
 					remDrag.drag.target === seat.seatId &&
