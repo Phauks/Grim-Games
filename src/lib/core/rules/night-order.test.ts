@@ -87,6 +87,14 @@ describe('the 7+ player rule', () => {
 		expect(result.omitted[0].reason).toContain('Fewer than 7 players');
 	});
 
+	// https://wiki.bloodontheclocktower.com/Tor: the Demon and Minions do not know each other.
+	it('skips them at any player count while Tor is in play, with a reason', () => {
+		const result = order({ inPlay: get('poisoner', 'imp', 'tor'), players: 10 });
+		expect(result.steps.map((s) => s.id)).not.toContain('minioninfo');
+		expect(result.omitted.map((o) => o.id)).toEqual(['minioninfo', 'demoninfo']);
+		expect(result.omitted[0].reason).toBe('Tor: no Minion or Demon info.');
+	});
+
 	it('keeps them at exactly 7', () => {
 		expect(stepIds({ inPlay: [], players: 7 })).toEqual([
 			'dusk',
@@ -323,7 +331,8 @@ describe('every character on the full sheet', () => {
 				night,
 				sheet: data.nightSheet,
 				inPlay: data.characters,
-				players: 15
+				players: 15,
+				wholeSheet: true
 			}).steps;
 			expect(steps.map((s) => s.id)).toEqual(
 				night === 'first' ? data.nightSheet.firstNight : data.nightSheet.otherNight
