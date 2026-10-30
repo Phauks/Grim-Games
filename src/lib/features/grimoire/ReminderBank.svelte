@@ -217,11 +217,12 @@
 			const x = (c.left / 100) * width + gap;
 			const w = captionW[c.group] ?? 0;
 			if (x >= middle + half || x + w <= middle - half) return;
-			// Moved past it unless that runs into the next caption: then it stays, drawn over
-			// the bar, rather than going.
+			// Moved past it unless that runs into the next caption or the run button: then it
+			// stays, drawn over the bar, rather than going.
 			const next = placed[i + 1];
 			const moved = middle + half - gap;
-			if (!next || (next.left / 100) * width >= moved + gap + w) c.left = pct(moved);
+			const limit = next ? (next.left / 100) * width : start + row.clientWidth;
+			if (limit >= moved + gap + w) c.left = pct(moved);
 		});
 		// A caption goes once the next one reaches it, so no two overlap (Trevor, 2026-10-19).
 		return placed.filter((c, i) => {
