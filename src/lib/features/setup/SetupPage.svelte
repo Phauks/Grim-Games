@@ -27,7 +27,6 @@
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
-	import Button from '#lib/ui/primitives/Button.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import CharacterPicker from '#lib/features/characters/CharacterPicker.svelte';
 	import CharacterSearchBox from '#lib/features/characters/CharacterSearchBox.svelte';
@@ -39,13 +38,15 @@
 	import StandInDialog from './StandInDialog.svelte';
 	import AddCharactersDialog from './AddCharactersDialog.svelte';
 	import SetupBluffs from '#lib/features/bluffs/SetupBluffs.svelte';
-	import { backToNewGame, notBegun } from '#lib/features/modes/new-game-draft.ts';
+	import { notBegun } from '#lib/features/modes/new-game-draft.ts';
+	import { dealStep } from '#lib/features/modes/deal-title.ts';
 	import SetupOffScript from './SetupOffScript.svelte';
 	import GameOptions from './GameOptions.svelte';
 	import { DEMON_SET, randomBluffs, toggleDemonBluff } from '#lib/features/bluffs/bluffs.ts';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import PlayerCountSheet from './PlayerCountSheet.svelte';
-	import SetupNav from './SetupNav.svelte';
+	import SetupBar from './SetupBar.svelte';
+	import SetupDealt from './SetupDealt.svelte';
 	import SetupActions from './SetupActions.svelte';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import { buildErrors, setupWarningMessages, uncuratedReminderCharacters } from './build-check.ts';
@@ -233,6 +234,8 @@
 	];
 
 	const ready = $derived(script !== undefined && game !== undefined && s.gameId === game.gameId);
+	/** A mode that deals no bag (Sushi Buffet, Whale Buffet): its draft's name. */
+	const dealt = $derived(game ? dealStep(game.gameId) : undefined);
 	/**
 	 * Travellers a special rule lets into the bag (Stowed Away: up to 2, the other counts for
 	 * that many fewer players). Otherwise a selected Traveller is one more player.
@@ -427,11 +430,18 @@
 		await openDraw(game.gameId);
 	}
 
-	/** The board without a bag, seated for this screen's count (Trevor, 2026-10-28). */
-	async function toBoard(gameId: string) {
+	/**
+	 * Seated for this screen's count, the board without a bag (Trevor, 2026-10-28) or a mode's
+	 * draft or choice.
+	 */
+	async function seatAndGo(gameId: string, to: 'board' | 'deal') {
 		if (!seatPlayers()) return;
 		await port.flush();
-		await goto(resolve('/grimoire/[gameId]', { gameId }));
+		await goto(
+			to === 'deal'
+				? resolve('/grimoire/[gameId]/deal', { gameId })
+				: resolve('/grimoire/[gameId]', { gameId })
+		);
 	}
 
 	/** The draw, or for a town of a mode game the next town's setup (Alternative game modes). */
@@ -522,7 +532,7 @@
 				maxPlayers={script ? scriptMaxPlayers(script.characters) : undefined}
 			/>
 			<!-- Under the Setup sheet: both are the technical side of the setup (Trevor, 2026-10-20). -->
-			{#if ready}
+			{#if ready && !dealt}
 				<SetupCheckPanel
 					{analysis}
 					{plan}
@@ -541,133 +551,124 @@
 	{/snippet}
 
 	<ErrorBoundary area="setup">
-		<!--
+		{#if game && dealt}<SetupDealt gameId={game.gameId} />{/if}
+		<div class:off={dealt} inert={dealt !== undefined}>
+			<!--
 			The counts, search and tools sit right above the characters at every width, sticky, with
 			each type's heading held just beneath them (Trevor, 2026-10-22: desktop matches phones).
 		-->
-		<div class="counts" data-testid="selection-band" bind:offsetHeight={bandHeight}>
-			<CountsBar {analysis} {travellers} {travellerLimits} />
-			<div class="find">
-				<CharacterSearchBox bind:query shortcut />
-				<div class="tools">
-					<IconButton icon="random" label={t('setup.random')} disabled={!ready} onclick={random} />
-					<IconButton
-						icon="selectedOnly"
-						label={t('setup.selectedOnly')}
-						aria-pressed={selectedOnly}
-						disabled={!ready}
-						onclick={() => (selectedOnly = !selectedOnly)}
-					/>
-					<IconButton
-						icon="clearSelection"
-						label={t('setup.clearSelection')}
-						disabled={!ready || clearable === 0}
-						onclick={() => (clearOpen = true)}
-					/>
+			<div class="counts" data-testid="selection-band" bind:offsetHeight={bandHeight}>
+				<CountsBar {analysis} {travellers} {travellerLimits} />
+				<div class="find">
+					<CharacterSearchBox bind:query shortcut />
+					<div class="tools">
+						<IconButton
+							icon="random"
+							label={t('setup.random')}
+							disabled={!ready}
+							onclick={random}
+						/>
+						<IconButton
+							icon="selectedOnly"
+							label={t('setup.selectedOnly')}
+							aria-pressed={selectedOnly}
+							disabled={!ready}
+							onclick={() => (selectedOnly = !selectedOnly)}
+						/>
+						<IconButton
+							icon="clearSelection"
+							label={t('setup.clearSelection')}
+							disabled={!ready || clearable === 0}
+							onclick={() => (clearOpen = true)}
+						/>
+					</div>
 				</div>
 			</div>
-		</div>
-		<CharacterPicker
-			characters={listed}
-			mode="multi"
-			selected={[...ids, ...inRule]}
-			bind:query
-			showSearch={false}
-			collapsibleKey="setup"
-			surface="page"
-			contained={false}
-			types={TYPES}
-			pinTop="calc(var(--app-top) + {Math.max(0, bandHeight - 1)}px)"
-			keepTypes={['traveller', 'fabled', 'loric']}
-			closedTypes={travellersChosenAtStart ? ['fabled', 'loric'] : ['traveller', 'fabled', 'loric']}
-			onSelect={(id) => {
-				const character = lookup(id);
-				if (character) toggle(character);
-			}}
-		>
-			{#snippet groupAside(type)}
-				{#if type === 'traveller' || type === 'fabled' || type === 'loric'}
-					<IconButton
-						icon="add"
-						label={t(ADD_LABELS[type].button)}
-						disabled={!ready}
-						onclick={() => (adding = type)}
+			<CharacterPicker
+				characters={listed}
+				mode="multi"
+				selected={[...ids, ...inRule]}
+				bind:query
+				showSearch={false}
+				collapsibleKey="setup"
+				surface="page"
+				contained={false}
+				types={TYPES}
+				pinTop="calc(var(--app-top) + {Math.max(0, bandHeight - 1)}px)"
+				keepTypes={['traveller', 'fabled', 'loric']}
+				closedTypes={travellersChosenAtStart
+					? ['fabled', 'loric']
+					: ['traveller', 'fabled', 'loric']}
+				onSelect={(id) => {
+					const character = lookup(id);
+					if (character) toggle(character);
+				}}
+			>
+				{#snippet groupAside(type)}
+					{#if type === 'traveller' || type === 'fabled' || type === 'loric'}
+						<IconButton
+							icon="add"
+							label={t(ADD_LABELS[type].button)}
+							disabled={!ready}
+							onclick={() => (adding = type)}
+						/>
+					{/if}
+				{/snippet}
+				{#snippet item(character)}
+					<CharacterChoice
+						{character}
+						copies={isRuleCharacter(character.type)
+							? inRule.has(character.id)
+								? 1
+								: 0
+							: (s.selection[character.id] ?? 0)}
+						duplicates={!isRuleCharacter(character.type) &&
+							canDuplicate(character, inPlay, duplicatesAllowed)}
+						jinxedWith={jinxPartners[character.id]}
+						offScript={offScriptIds.has(character.id)}
+						bluff={bluffIds.has(character.id)}
+						onToggle={() => toggle(character)}
+						locked={s.locked.includes(character.id) || required.has(character.id)}
+						onLock={isRuleCharacter(character.type)
+							? undefined
+							: required.has(character.id)
+								? () => explainRequired(character)
+								: () => setupSelection.toggleLock(character.id)}
+						onBluff={canBluff(character) ? () => toggleBluff(character) : undefined}
+						bluffBlocked={canBluff(character) ? bluffBlocked(character) : undefined}
+						onAddCopy={() =>
+							setupSelection.setCopies(character.id, setupSelection.copies(character.id) + 1)}
 					/>
-				{/if}
-			{/snippet}
-			{#snippet item(character)}
-				<CharacterChoice
-					{character}
-					copies={isRuleCharacter(character.type)
-						? inRule.has(character.id)
-							? 1
-							: 0
-						: (s.selection[character.id] ?? 0)}
-					duplicates={!isRuleCharacter(character.type) &&
-						canDuplicate(character, inPlay, duplicatesAllowed)}
-					jinxedWith={jinxPartners[character.id]}
-					offScript={offScriptIds.has(character.id)}
-					bluff={bluffIds.has(character.id)}
-					onToggle={() => toggle(character)}
-					locked={s.locked.includes(character.id) || required.has(character.id)}
-					onLock={isRuleCharacter(character.type)
-						? undefined
-						: required.has(character.id)
-							? () => explainRequired(character)
-							: () => setupSelection.toggleLock(character.id)}
-					onBluff={canBluff(character) ? () => toggleBluff(character) : undefined}
-					bluffBlocked={canBluff(character) ? bluffBlocked(character) : undefined}
-					onAddCopy={() =>
-						setupSelection.setCopies(character.id, setupSelection.copies(character.id) + 1)}
-				/>
-			{/snippet}
-		</CharacterPicker>
-		<!--
+				{/snippet}
+			</CharacterPicker>
+			<!--
 			The Demon's bluffs, from the characters chosen here rather than on the Draw screen the
 			players use (Trevor, 2026-10-18). Always there, even before a Demon is chosen.
 		-->
-		{#if game && port.lookup}
-			<SetupBluffs
-				{game}
-				characters={port.lookup}
-				dispatch={port.dispatch}
-				waiting={!ready}
-				inPlay={ids}
-				always
-			/>
-		{/if}
+			{#if game && port.lookup}
+				<SetupBluffs
+					{game}
+					characters={port.lookup}
+					dispatch={port.dispatch}
+					waiting={!ready}
+					inPlay={ids}
+					always
+				/>
+			{/if}
+		</div>
 	</ErrorBoundary>
 
 	{#if game}
-		<!-- Back is the start flow's step before while nothing has happened yet (Trevor,
-		     2026-10-23), else the board. -->
-		<SetupNav
-			backHref={backStep === 'board'
-				? resolve('/grimoire/[gameId]', { gameId: game.gameId })
-				: undefined}
-			onBack={backStep === 'board' ? undefined : () => void backToNewGame(game.gameId, s.players)}
-			backLabel={backStep === 'board' ? t('setup.grimoire') : t('setup.newGame')}
-		>
-			{#snippet next()}
-				<span class="next">
-					<!-- The board without a bag, for a Storyteller who hands tokens out on it; always
-					     here, so the bar never changes. -->
-					{#if backStep !== 'board'}<IconButton
-							icon="grimoire"
-							label={t('setup.grimoire')}
-							onclick={() => void toBoard(game.gameId)}
-							data-testid="setup-to-board"
-						/>{/if}
-					<Button
-						variant="accent"
-						icon="bag"
-						disabled={!ready || plan.tiles.length === 0}
-						onclick={() => requestBuild()}
-						>{sameBag ? t('setup.continueDraw') : t('setup.buildBag')}</Button
-					>
-				</span>
-			{/snippet}
-		</SetupNav>
+		<SetupBar
+			gameId={game.gameId}
+			{backStep}
+			players={s.players}
+			deal={dealt}
+			disabled={!ready || (!dealt && plan.tiles.length === 0)}
+			{sameBag}
+			onNext={() => (dealt ? void seatAndGo(game.gameId, 'deal') : requestBuild())}
+			onBoard={() => void seatAndGo(game.gameId, 'board')}
+		/>
 	{/if}
 </Page>
 
@@ -725,10 +726,8 @@
 </ConfirmDialog>
 
 <style>
-	.next {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
+	.off {
+		opacity: 0.4;
 	}
 	.script {
 		display: flex;

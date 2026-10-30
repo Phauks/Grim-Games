@@ -21,28 +21,6 @@ async function chooseMode(page: Page, name: string) {
 	await expect(modes).toContainText(name);
 }
 
-/**
- * Special rules stack on any mode (Trevor, 2026-10-18): a mode that opens on its draft still
- * switches them on from New game; every other game does on Character selection (2026-10-29).
- */
-async function chooseRules(page: Page, ...names: string[]) {
-	await modesPanel(page)
-		.getByRole('button', { name: /^Special rules/ })
-		.tap();
-	const dialog = page.getByRole('dialog', { name: 'Special rules' });
-	// The list, not the conflicts at the top, which repeat a rule's switch.
-	const list = dialog.getByTestId('special-rules');
-	for (const name of names) {
-		await list.getByText(name, { exact: true }).tap();
-		await expect(list.getByRole('checkbox', { name, includeHidden: true })).toBeChecked();
-	}
-	await dialog.getByRole('button', { name: 'Close' }).tap();
-	await expect(dialog).toBeHidden();
-	await expect(modesPanel(page).getByRole('button', { name: /^Special rules/ })).toHaveText(
-		`Special rules ${names.length}`
-	);
-}
-
 /** Character selection's Special rules sheet for a new Standard game (Trevor, 2026-10-29). */
 async function openRulesOnSetup(page: Page) {
 	await page.goto('/new');
@@ -194,9 +172,13 @@ test('restricted characters stay out of the game, and the mode’s bans can be l
 	await expect(restricted.locator('.count-badge')).toHaveText('3');
 
 	await modesPanel(page).getByRole('button', { name: 'Create game' }).tap();
-	// Whale Buffet opens on choosing; the setup list shows the game's characters all the same.
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/deal$/);
-	await page.goto(new URL(page.url()).pathname.replace(/\/deal$/, '/setup'));
+	// Whale Buffet opens on Character selection, greyed out with the reason, then goes on to
+	// choosing (Trevor, 2026-10-29); the list shows the game's characters all the same.
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
+	await expect(page.getByTestId('setup-dealt')).toHaveText(
+		"Whale Buffet: each player chooses their own character, so there's no bag to build here."
+	);
+	await expect(page.getByTestId('setup-next')).toHaveText('Choose characters');
 	const list = page.getByTestId('character-picker');
 	// Every character is in the pool, less the restricted ones.
 	await expect(list.getByRole('button', { name: 'Vortox', exact: true })).toBeVisible();
@@ -206,8 +188,8 @@ test('restricted characters stay out of the game, and the mode’s bans can be l
 });
 
 /**
- * Starts a 5-player Trouble Brewing game in `mode`; it opens on the draft or choose screen.
- * `setting`, when given, is a New game switch to turn on first.
+ * Starts a 5-player Trouble Brewing game in `mode` and goes on from Character selection to the
+ * draft or choose screen. `setting`, when given, is a New game switch to turn on first.
  */
 async function startIn(page: Page, mode: string, setting?: string) {
 	await page.goto('/new');
@@ -219,6 +201,9 @@ async function startIn(page: Page, mode: string, setting?: string) {
 	for (let n = 8; n > 5; n--) await panel.getByRole('button', { name: 'Fewer players' }).tap();
 	if (setting) await panel.locator('[data-setting]').getByText(setting, { exact: true }).tap();
 	await panel.getByRole('button', { name: 'Create game' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
+	await expect(page.getByTestId('setup-dealt')).toBeVisible();
+	await page.getByTestId('setup-next').tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/deal$/);
 }
 
@@ -822,7 +807,7 @@ test('Sushi Buffet has no script to choose: it drafts from every official charac
 	await modesPanel(page).getByText('Deal needed characters', { exact: true }).tap();
 	await expect(needed).not.toBeChecked();
 	await modesPanel(page).getByRole('button', { name: 'Create game' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/deal$/);
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 	const gameId = new URL(page.url()).pathname.split('/')[2];
 	const record = await page.evaluate(
 		(id) => JSON.parse(localStorage.getItem(`grim-games:game-mode:v2:${id}`) ?? '{}'),
@@ -833,6 +818,9 @@ test('Sushi Buffet has no script to choose: it drafts from every official charac
 	expect(record.ivoryDraft).toBe(true);
 	expect(record.oneTypePerOffer).toBe(true);
 	expect(record.dealsRequired).toBe(false);
+	await expect(page.getByTestId('setup-next')).toHaveText('Draft');
+	await page.getByTestId('setup-next').tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/deal$/);
 	// The draft knows each character's jinxed partners
 	// (https://wiki.bloodontheclocktower.com/Heretic#Related_Jinxes).
 	await drawTile(page);
@@ -1741,10 +1729,9 @@ test('special rules stack on a mode: two at once, a conflict warns, and the game
 	// stop the game).
 	await page.goto('/new');
 	await chooseMode(page, 'Whale Buffet');
-	await chooseRules(page, 'Stowed Away', 'A Script of Infinite Possibilities');
-	await modesPanel(page)
-		.getByRole('button', { name: /^Special rules/ })
-		.tap();
+	await modesPanel(page).getByRole('button', { name: 'Create game' }).tap();
+	await chooseRulesOnSetup(page, 'Stowed Away', 'A Script of Infinite Possibilities');
+	await page.getByTestId('setup-special-rules').tap();
 	const dialog = page.getByRole('dialog', { name: 'Special rules' });
 	// Conflicts come first, in plain words, with each side's description, Inspect and switch
 	// (Trevor, 2026-10-22).
@@ -1782,7 +1769,7 @@ test('special rules stack on a mode: two at once, a conflict warns, and the game
 	await dialog.getByRole('button', { name: 'Close' }).tap();
 	await noSidewaysScroll(page);
 
-	await modesPanel(page).getByRole('button', { name: 'Create game' }).tap();
+	await page.getByTestId('setup-next').tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/deal$/);
 	// The game is named for its mode and rules wherever it is listed.
 	await page.goto('/join');
@@ -1791,31 +1778,15 @@ test('special rules stack on a mode: two at once, a conflict warns, and the game
 	);
 });
 
-test('Special rules sits under Game mode for a mode that drafts, and opening it closes the Game mode list', async ({
+test('New game has no Special rules for any mode: they are chosen on Character selection', async ({
 	page
 }) => {
-	// Trevor, 2026-10-19: Special rules directly beneath Game mode; the Game mode list stayed
-	// open over the Special rules dialog. Standard has none there since 2026-10-29.
+	// Trevor, 2026-10-29: special rules on the Character selection screen, Buffets too.
 	await page.goto('/new');
-	const panel = modesPanel(page);
-	const rules = panel.getByRole('button', { name: /^Special rules/ });
+	const rules = modesPanel(page).getByRole('button', { name: /^Special rules/ });
 	await expect(rules).toHaveCount(0);
 	await chooseMode(page, 'Whale Buffet');
-	const modes = panel.getByRole('combobox', { name: 'Game mode' });
-	const about = panel.getByTestId('mode-about');
-	const [modeBox, rulesBox, aboutBox] = await Promise.all(
-		[modes, rules, about].map((l) => l.boundingBox())
-	);
-	expect(rulesBox!.y).toBeGreaterThan(modeBox!.y);
-	expect(rulesBox!.y).toBeLessThan(aboutBox!.y);
-
-	await modes.tap();
-	await expect(page.getByRole('listbox')).toBeVisible();
-	// A tap that reaches the button without first closing the list, as on Trevor's phone.
-	await rules.evaluate((el: HTMLElement) => el.click());
-	await expect(page.getByRole('dialog', { name: 'Special rules' })).toBeVisible();
-	await expect(page.getByRole('listbox')).toBeHidden();
-	await noSidewaysScroll(page);
+	await expect(rules).toHaveCount(0);
 });
 
 test('each special rule shows its description beside its switch, with a line between rules', async ({
