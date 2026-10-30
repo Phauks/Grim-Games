@@ -10,7 +10,7 @@ import { listedAdmin, reportBox, type ReportBoxEnv } from './report-box.ts';
 export interface AdminsEnv extends EmailEnv, ReportBoxEnv {
 	/**
 	 * "on" only in the local e2e server: trusts sign-ins whose code is shown on screen. Admin
-	 * accounts otherwise count only where sign-in codes really go by email, since a preview
+	 * accounts otherwise count only where sign-in codes really go by email, since a local run
 	 * shows the code to whoever asks for it (account/email.ts).
 	 */
 	ADMINS_TRUST_PREVIEW_SIGN_IN?: string;

@@ -4,9 +4,10 @@
  * Production sends real email through Cloudflare Email Service: the `send_email` binding
  * `EMAIL` and the var `EMAIL_FROM` in wrangler.jsonc. It only sends from a domain onboarded
  * in Email Service on the same account (developers.cloudflare.com/email-service/platform/limits/).
- * - Previews and local runs have no binding and use `PreviewSender`: nothing is sent; the code
- *   and link go to the Worker log and back to the page, which shows them on screen;
- * - production without the binding or var has no sender, so sign-in is switched off there.
+ * - local runs use `PreviewSender`: nothing is sent; the code and link go to the Worker log
+ *   and back to the page, which shows them on screen;
+ * - production and previews without the binding or var have no sender, so sign-in is
+ *   switched off there.
  *
  * The link in the email is built from the address the request came in on (routes.ts), so the
  * only domain-specific value here is `EMAIL_FROM`.
@@ -128,25 +129,17 @@ function isLocal(url: URL): boolean {
 }
 
 /**
- * The beta preview, where testers play before a release: it sends real email like production
- * (Trevor, 2026-10-18), so admin accounts can be trusted there. Branch previews are named
- * after their branch and keep showing the code.
- */
-function isBeta(url: URL): boolean {
-	return url.hostname.split('.')[0] === 'beta';
-}
-
-/**
- * The sender for this request: preview mode off production and beta, else real email when set
+ * The sender for this request: preview mode only for local runs, else real email when set
  * up. Local runs come first because `wrangler dev` gives them a simulated `EMAIL` binding too.
+ *
+ * Every preview sends real email, whatever its address: accounts live in the shared data
+ * Worker, so a sign-in on any preview is a sign-in to the same account everywhere, and a
+ * code shown on screen would let anyone in. The beta preview is served on more than
+ * `beta.grimbinder.com` (its workers.dev and per-deployment addresses), so the host name
+ * can't tell a safe preview apart. A preview without the binding has no sign-in.
  */
 export function emailSender(env: EmailEnv, url: URL): EmailSender {
 	if (isLocal(url)) return new PreviewSender();
-	if (env.ENVIRONMENT === 'preview') {
-		return isBeta(url) && env.EMAIL && env.EMAIL_FROM
-			? new CloudflareSender(env.EMAIL, env.EMAIL_FROM)
-			: new PreviewSender();
-	}
 	if (env.EMAIL && env.EMAIL_FROM) return new CloudflareSender(env.EMAIL, env.EMAIL_FROM);
 	return new NoSender();
 }
