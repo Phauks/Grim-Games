@@ -52,3 +52,4 @@ export * from './savant.ts';
 export * from './nominations.ts';
 export * from './day-claims.ts';
 export * from './day-marks.ts';
+export * from './late-seat.ts';
