@@ -6661,6 +6661,8 @@ test('the reminder bank pulls up by its handle bar to show every token, and toke
 		.tap();
 	await expect(seatLabelled(page, 'Seat 2: no name, no character, 1 reminder')).toBeAttached();
 	await expect(bin).toBeVisible();
+	// The seat chooser gone, not still fading over the handle.
+	await expect(page.locator('[data-part="backdrop"]')).toHaveCount(0);
 
 	// Pulled down, a tap on its handle, Escape or a tap outside it puts it back down.
 	const top = (await handle.boundingBox())!;
