@@ -20,6 +20,7 @@ export const CHARACTERS_DECIDERS: Deciders<
 	| 'SwapCharacters'
 	| 'SetAlignment'
 	| 'SetHeldAbility'
+	| 'SetStorytellerAbility'
 	| 'SetDead'
 	| 'SetDeathCause'
 	| 'SpendGhostVote'
@@ -131,6 +132,23 @@ export const CHARACTERS_DECIDERS: Deciders<
 			{
 				type: 'HeldAbilitySet',
 				seatId: seat.seatId,
+				via: command.via,
+				...(command.characterId !== undefined ? { characterId: command.characterId } : {})
+			}
+		];
+	},
+
+	SetStorytellerAbility(game, command, ctx, warn) {
+		characterOf(ctx, command.via);
+		if (command.characterId !== undefined) seatableCharacter(ctx, command.characterId);
+		const held = game.storytellerAbilities?.find((a) => a.via === command.via)?.characterId;
+		if (held === command.characterId) {
+			warn('no-change', command.characterId ? 'already has that ability' : 'has no such ability');
+			return [];
+		}
+		return [
+			{
+				type: 'StorytellerAbilitySet',
 				via: command.via,
 				...(command.characterId !== undefined ? { characterId: command.characterId } : {})
 			}

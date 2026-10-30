@@ -609,7 +609,7 @@ export function parseCharacterRules(
 		if (madness) rules.madness = madness;
 	}
 	if (raw.givesAbility !== undefined) {
-		const gives = readGivesAbility(raw.givesAbility, `${path}.givesAbility`, issues);
+		const gives = readGivesAbility(raw.givesAbility, `${path}.givesAbility`, issues, reminders);
 		if (gives) rules.givesAbility = gives;
 	}
 	if (readBoolean(raw, 'limitsExtraEvil', path, issues)) rules.limitsExtraEvil = true;
