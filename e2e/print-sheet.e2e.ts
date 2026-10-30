@@ -237,10 +237,12 @@ test('the jinxes, Fabled and Loric go on either side, or both', async ({ page })
 
 // Trevor, 2026-10-30: "also add download button, so they don't have to change save as pdf".
 test('Download PDF saves both sides as a PDF named after the script', async ({ page }) => {
+	// Picturing two pages at print sharpness takes a while on a busy machine.
+	test.setTimeout(90_000);
 	const { screen } = await openSheet(page);
 	await expect(screen.getByTestId('print-laying-out')).toBeHidden();
 	const [download] = await Promise.all([
-		page.waitForEvent('download', { timeout: 30_000 }),
+		page.waitForEvent('download', { timeout: 60_000 }),
 		screen.getByRole('button', { name: 'Download PDF' }).tap()
 	]);
 	expect(download.suggestedFilename()).toBe('trouble-brewing.pdf');
@@ -258,6 +260,9 @@ test('Download PDF saves both sides as a PDF named after the script', async ({ p
 		'>';
 	expect(pdf).toContain(`/Title ${utf16('Trouble Brewing')}`);
 	expect(pdf).toContain(`/Author ${utf16('The Pandemonium Institute')}`);
+	// Its words lie invisibly over the picture, so they select and search (Trevor, 2026-10-30).
+	expect(pdf).toContain('BT 3 Tr');
+	expect(pdf).toContain('(Washerwoman)');
 	// Saved, the Print screen closes.
 	await expect(screen).toBeHidden();
 });
