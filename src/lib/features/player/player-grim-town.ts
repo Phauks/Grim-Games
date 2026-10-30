@@ -1,4 +1,5 @@
 import type { GameOver, SharedGrimoire } from '#lib/core/sync/room.ts';
+import type { RoomPlayer } from '#lib/features/room/player.svelte.ts';
 import type {
 	PublicCorner,
 	PublicLook,
@@ -32,4 +33,20 @@ export interface PlayerGrimTown {
 	 * phones, how the game ended and the room holding its background; a phone reads its room's.
 	 */
 	final?: { grimoire: SharedGrimoire; ended?: Omit<GameOver, 'gameId'>; room?: string };
+}
+
+type FinalGrimoire = NonNullable<PlayerGrimTown['final']>;
+
+/**
+ * The finished grimoire the Grim tab shows (Share grim, R5): the one the Storyteller's board
+ * hands its player view (Trevor, 2026-10-30), else the one this phone's room sent.
+ */
+export function finalGrimoireOf(
+	town: PlayerGrimTown | undefined,
+	player: RoomPlayer | undefined,
+	room: string | undefined
+): FinalGrimoire | undefined {
+	if (town) return town.final;
+	const sent = player?.revealed;
+	return sent && { grimoire: sent.grimoire, ended: player?.view?.ended, room };
 }

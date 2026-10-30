@@ -482,22 +482,10 @@ export class RoomHost {
 		return this.#socket?.send({ type: 'town-sound', ...command }) ?? false;
 	}
 
-	/**
-	 * The game that is over (End game), with who won and how, as the room's phones are told,
-	 * so its grimoire can be shared (Share grim, R5) and the Storyteller's player view says so.
-	 */
+	/** The game that is over (End game), with how, as phones are told (Share grim, R5). */
 	ended = $state.raw<{ gameId: GameId; winner?: 'good' | 'evil'; reason?: string }>();
-	get endedGame(): string | undefined {
-		return this.ended?.gameId;
-	}
-	/**
-	 * The final grimoire the room's phones were sent (Share grim, R5), which the Storyteller's
-	 * player view shows on its Grim tab as phones do.
-	 */
+	/** The final grimoire the room's phones were sent (Share grim, R5), for the player view too. */
 	revealed = $state.raw<{ gameId: string; grimoire: SharedGrimoire }>();
-	get revealedGame(): string | undefined {
-		return this.revealed?.gameId;
-	}
 
 	/**
 	 * Share grim (R5): sends the whole grimoire to the room's phones once the game is over.
@@ -580,7 +568,7 @@ export class RoomHost {
 		this.#ended = { gameId, ended };
 		this.ended = ended ? { gameId, ...ended } : undefined;
 		// Reopen takes the shared grimoire back (the room drops it too).
-		if (!ended && this.revealedGame === gameId) this.revealed = undefined;
+		if (!ended && this.revealed?.gameId === gameId) this.revealed = undefined;
 		this.#sendEnded();
 	}
 

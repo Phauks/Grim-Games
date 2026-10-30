@@ -45,7 +45,7 @@ describe("Storyteller's player view parity", () => {
 		// view, which read only a phone's room. The board hands it the one the room sent.
 		expect(boardView).toMatch(/roomHost\(\)\.revealed|host\.revealed/);
 		expect(boardView).toMatch(/\bfinal\b[\s\S]*}}/);
-		expect(grim).toMatch(/town \? town\.final : player\?\.revealed/);
+		expect(grim).toContain('finalGrimoireOf(town, player');
 		// "Game over" over the tabs comes from the same words on both sides.
 		for (const host of [joinPanel, boardView]) expect(host).toContain('gameOverText(');
 	});

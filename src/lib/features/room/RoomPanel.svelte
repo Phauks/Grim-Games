@@ -123,7 +123,9 @@
 	 */
 	let shareGrimOpen = $state(false);
 	const canShareGrim = $derived(
-		connected && host.endedGame === game.game.gameId && host.revealedGame !== game.game.gameId
+		connected &&
+			host.ended?.gameId === game.game.gameId &&
+			host.revealed?.gameId !== game.game.gameId
 	);
 	function shareGrim() {
 		if (!host.reveal(game)) toast(t('room.shareGrim.failed'));
