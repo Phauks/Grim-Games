@@ -619,6 +619,7 @@ test("the player picks their name from the room's phones", async ({ page, browse
 	await phone.goto(`/join/${code}`);
 	await openProfile(phone);
 	await setPlayerName(phone, 'Alex');
+	await page.goto(setup.replace(/\/setup$/, '/players'));
 	await expect(page.getByRole('list', { name: 'Players in the room' })).toContainText('Alex');
 
 	await page.goto(setup);
@@ -648,6 +649,7 @@ test('a player whose phone sleeps stays in the names list', async ({ page, brows
 	await page.goto(setup.replace(/\/setup$/, '/room'));
 	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
 	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+	await page.goto(setup.replace(/\/setup$/, '/players'));
 	const players = page.getByRole('list', { name: 'Players in the room' });
 	// Each phone its own context, as a phone's key is kept in its storage.
 	const join = async (name: string) => {
