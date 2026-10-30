@@ -8,7 +8,10 @@
  *   turn, https://wiki.bloodontheclocktower.com/Mezepheles);
  * - `swap`: a Demon carrier swaps characters and alignments with this character's player (the
  *   Snake Charmer's Poisoned on the Demon it chose,
- *   https://wiki.bloodontheclocktower.com/Snake_Charmer).
+ *   https://wiki.bloodontheclocktower.com/Snake_Charmer);
+ * - `carrier-alignment`: this character's player takes the carrier's alignment (the Goon's
+ *   Drunk on the first player to choose it, https://wiki.bloodontheclocktower.com/Goon; the
+ *   Ogre's Friend, https://wiki.bloodontheclocktower.com/Ogre).
  *
  * `when` is the moment the token says so: `placed` (the default) or `removed`.
  */
@@ -31,7 +34,7 @@ import {
 } from './validate.ts';
 import { readToken } from './reminder-fields.ts';
 
-const BECOMES_INTO = ['demon', 'evil', 'swap'] as const;
+const BECOMES_INTO = ['demon', 'evil', 'swap', 'carrier-alignment'] as const;
 const BECOMES_WHEN = ['placed', 'removed'] as const;
 
 export interface Becomes {
