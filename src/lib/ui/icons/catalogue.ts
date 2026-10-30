@@ -185,6 +185,8 @@ export const ICON_SLOTS = {
 	/** Seating on the grim (plan J38): phones may move their own seat, until it is locked. */
 	openSeating: { label: 'Open seating', choices: ['ph:lock-simple-open', 'ph:lock-open'] },
 	lockSeating: { label: 'Lock seating', choices: ['ph:lock-simple', 'ph:lock'] },
+	/** Count off (plan J40): players count round the clock from number 1. */
+	countOff: { label: 'Count off', choices: ['ph:clock-clockwise', 'ph:list-numbers'] },
 	/** Room transfer: the room goes to another Storyteller's device (Trevor, 2026-10-28). */
 	transfer: { label: 'Room transfer', choices: ['ph:hand-arrow-up', 'ph:arrow-square-out'] },
 	/** Marks an opened message unread again (Trevor, 2026-10-28: "an eyeball next to the x"). */

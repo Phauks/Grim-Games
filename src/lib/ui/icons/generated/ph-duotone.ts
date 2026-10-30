@@ -56,6 +56,7 @@ import ph_circles_three_duotone from '~icons/ph/circles-three-duotone';
 import ph_clipboard_duotone from '~icons/ph/clipboard-duotone';
 import ph_clipboard_text_duotone from '~icons/ph/clipboard-text-duotone';
 import ph_clock_duotone from '~icons/ph/clock-duotone';
+import ph_clock_clockwise_duotone from '~icons/ph/clock-clockwise-duotone';
 import ph_clock_counter_clockwise_duotone from '~icons/ph/clock-counter-clockwise-duotone';
 import ph_club_duotone from '~icons/ph/club-duotone';
 import ph_coffee_duotone from '~icons/ph/coffee-duotone';
@@ -134,6 +135,7 @@ import ph_list_bullets_duotone from '~icons/ph/list-bullets-duotone';
 import ph_list_checks_duotone from '~icons/ph/list-checks-duotone';
 import ph_list_dashes_duotone from '~icons/ph/list-dashes-duotone';
 import ph_list_magnifying_glass_duotone from '~icons/ph/list-magnifying-glass-duotone';
+import ph_list_numbers_duotone from '~icons/ph/list-numbers-duotone';
 import ph_lock_duotone from '~icons/ph/lock-duotone';
 import ph_lock_open_duotone from '~icons/ph/lock-open-duotone';
 import ph_lock_simple_duotone from '~icons/ph/lock-simple-duotone';
@@ -288,6 +290,7 @@ const icons: IconMap = {
 	'ph:clipboard-duotone': ph_clipboard_duotone,
 	'ph:clipboard-text-duotone': ph_clipboard_text_duotone,
 	'ph:clock-duotone': ph_clock_duotone,
+	'ph:clock-clockwise-duotone': ph_clock_clockwise_duotone,
 	'ph:clock-counter-clockwise-duotone': ph_clock_counter_clockwise_duotone,
 	'ph:club-duotone': ph_club_duotone,
 	'ph:coffee-duotone': ph_coffee_duotone,
@@ -366,6 +369,7 @@ const icons: IconMap = {
 	'ph:list-checks-duotone': ph_list_checks_duotone,
 	'ph:list-dashes-duotone': ph_list_dashes_duotone,
 	'ph:list-magnifying-glass-duotone': ph_list_magnifying_glass_duotone,
+	'ph:list-numbers-duotone': ph_list_numbers_duotone,
 	'ph:lock-duotone': ph_lock_duotone,
 	'ph:lock-open-duotone': ph_lock_open_duotone,
 	'ph:lock-simple-duotone': ph_lock_simple_duotone,

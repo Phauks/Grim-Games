@@ -2,6 +2,7 @@ import type { Game, GameNote, SeatId } from '#lib/core/model/index.ts';
 import { neighbourFollows } from '#lib/core/rules/reminder-movement.ts';
 import type { EngineContext } from '../context.ts';
 import type { GameEvent } from '../events.ts';
+import { applyEvents } from '../reducer.ts';
 import {
 	MAX_SEATS,
 	nextPosition,
@@ -94,6 +95,7 @@ export const SEATS_DECIDERS: Deciders<
 	| 'SwapSeats'
 	| 'RotateSeats'
 	| 'MoveSeat'
+	| 'CountOff'
 > = {
 	ChangeScript(game, command, ctx, warn) {
 		if (JSON.stringify(command.script) === JSON.stringify(game.script)) {
@@ -244,5 +246,41 @@ export const SEATS_DECIDERS: Deciders<
 			...seatNumberNames(game),
 			...reseated(game, seating, { type: 'SeatingReordered', seating }, ctx, warn)
 		];
+	},
+
+	CountOff(game, command, ctx, warn) {
+		const listed = command.seats.flatMap((s) => (s.seatId ? [s.seatId] : []));
+		const all =
+			listed.length === game.seating.length &&
+			new Set(listed).size === listed.length &&
+			listed.every((id) => Object.hasOwn(game.seats, id));
+		if (!all) refuse('invalid-position', 'every seat at the table must be listed once');
+		if (command.seats.length > MAX_SEATS) {
+			refuse('invalid-player-count', `a game has at most ${MAX_SEATS} seats`);
+		}
+		const events: GameEvent[] = [];
+		let position = game.seating.length;
+		const seating = command.seats.map((entry) => {
+			const playerName = entry.playerName?.trim() || undefined;
+			if (!entry.seatId) {
+				const event: GameEvent = { type: 'SeatAdded', seatId: ctx.newId(), position: position++ };
+				if (playerName) event.playerName = playerName;
+				events.push(event);
+				return event.seatId;
+			}
+			if (playerName && playerName !== game.seats[entry.seatId].playerName)
+				events.push({ type: 'SeatRenamed', seatId: entry.seatId, playerName });
+			return entry.seatId;
+		});
+		// Neighbours' reminders follow on the table with its new seats in it.
+		const grown = applyEvents(game, events)!;
+		const same = seating.every((id, i) => grown.seating[i] === id);
+		if (same && events.length === 0) {
+			warn('no-change', 'everyone is already in that seat');
+			return [];
+		}
+		return same
+			? events
+			: [...events, ...reseated(grown, seating, { type: 'SeatingReordered', seating }, ctx, warn)];
 	}
 };
