@@ -2,7 +2,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { PlayerName } from '#lib/core/data/index.ts';
 	import type { Command } from '#lib/core/engine/index.ts';
-	import { countOffSeats, isOpenSeat } from '#lib/core/sync/room.ts';
+	import { countOffSeats } from '#lib/core/sync/room.ts';
 	import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -14,7 +14,8 @@
 	import { playersDialog } from './players-dialog.svelte.ts';
 
 	/**
-	 * Count off on the Storyteller's device (plan J40; Trevor, 2026-10-30): pick who is 1, watch
+	 * Count off on the Storyteller's device (plan J40; Trevor, 2026-10-30): the ⋯ item starts it
+	 * (whoever is 1 taps it themselves: "shouldn't require storyteller to select 1"), then watch
 	 * the phones tap their numbers, name the numbers of players without a phone ("needs to allow
 	 * for non phone users as well"), then Done puts that order and those names on the board as
 	 * one step. Cancel ends it with the board as it was.
@@ -24,23 +25,7 @@
 	const host = roomHost();
 	const view = $derived(host.countOff);
 	const badge = (name: string) => name as PlayerName;
-
-	/** Who can be 1: the board's players in seat order, then the phones with no seat. */
-	const candidates = $derived.by(() => {
-		const names = game.game.seating.flatMap((id) => {
-			const seat = game.game.seats[id];
-			return isOpenSeat(seat) ? [] : [seat.playerName!];
-		});
-		const key = (name: string) => name.trim().toLocaleLowerCase();
-		const listed = new Set(names.map(key));
-		const phones = host.unseatedInGame.flatMap((m) =>
-			m.name && !listed.has(key(m.name)) ? [m.name] : []
-		);
-		return [...names, ...phones].map((name) => {
-			const member = host.members.find((m) => m.name && key(m.name) === key(name));
-			return { name, first: member ? { memberId: member.memberId } : { name } };
-		});
-	});
+	const first = $derived(view?.tokens.find((token) => token.number === 1));
 
 	/** The number whose player's name is being typed. */
 	let naming = $state<number>();
@@ -72,31 +57,11 @@
 
 <Dialog bind:open={playersDialog.countOff} title={t('room.countOff.title')}>
 	<div class="count-off" data-testid="count-off-host">
-		{#if view}
-			{@const first = view.tokens.find((token) => token.number === 1)}
-			<p class="from">
-				{t('room.countOff.from')}
-				{#if first}<PlayerBadge name={badge(first.name)} />{/if}
-			</p>
-			<CountOffTokens {view} onTap={tap} />
-		{:else}
-			<h3 id="count-off-first">{t('room.countOff.first')}</h3>
-			<ul class="rows" aria-labelledby="count-off-first">
-				{#each candidates as candidate (candidate.name)}
-					<li>
-						<button
-							type="button"
-							class="row"
-							data-testid="count-off-first"
-							onclick={() => host.send({ type: 'count-off', first: candidate.first })}
-							><PlayerBadge name={badge(candidate.name)} /></button
-						>
-					</li>
-				{:else}
-					<li class="none">{t('common.none')}</li>
-				{/each}
-			</ul>
-		{/if}
+		<p class="from">
+			{#if first}{t('room.countOff.from')}
+				<PlayerBadge name={badge(first.name)} />{:else}{t('room.countOff.fromOne')}{/if}
+		</p>
+		{#if view}<CountOffTokens {view} onTap={tap} />{/if}
 	</div>
 	{#snippet actions()}
 		<ModalActions
@@ -127,32 +92,7 @@
 		display: grid;
 		gap: var(--space-3);
 	}
-	.from,
-	h3 {
+	.from {
 		margin: 0;
-	}
-	h3 {
-		font-size: 1.1rem;
-	}
-	.rows {
-		display: grid;
-		margin: 0;
-		padding: 0;
-		list-style: none;
-	}
-	.row {
-		display: flex;
-		align-items: center;
-		width: 100%;
-		min-height: var(--tap-target);
-		padding: 0;
-		border: none;
-		border-bottom: 1px solid var(--border);
-		background: none;
-		color: inherit;
-		text-align: start;
-	}
-	.none {
-		color: var(--on-surface-muted);
 	}
 </style>

@@ -91,6 +91,12 @@ describe('count off', () => {
 		expect(countOffView(nameCount(r, 3, ''))?.tokens).toHaveLength(1);
 	});
 
+	it('starts with nobody as 1, since the table picks who is (Trevor, 2026-10-30)', () => {
+		const r = startCountOff(room());
+		expect(countOffView(r)).toEqual({ size: 4, tokens: [] });
+		expect(startCountOff(takeCount(r, 'ana', 1))).toEqual(takeCount(r, 'ana', 1));
+	});
+
 	it('a new game ends it', () => {
 		const r = startCountOff(room(), { memberId: 'bo' });
 		expect(publish(r, 'g1', table('A')).countOff).toBeDefined();
