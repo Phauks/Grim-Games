@@ -45,5 +45,19 @@ export const friends = {
 	'friends.confirmBlock.text':
 		'They won’t be told. Your friendship and any requests between you end, and they can’t ask you again until you unblock them.',
 	'friends.confirmRemove.title': 'Remove {name}?',
-	'friends.confirmRemove.text': 'You stop being friends. Either of you can ask again later.'
+	'friends.confirmRemove.text': 'You stop being friends. Either of you can ask again later.',
+	'friends.scripts.inbox': 'Scripts from friends',
+	'friends.scripts.from': 'From {name}',
+	'friends.scripts.open': 'Open',
+	'friends.scripts.dismiss': 'Dismiss',
+	'friends.scripts.unpublish': 'Remove {name} from your profile',
+	'friends.scripts.publish': 'Show on my profile',
+	'friends.scripts.send': 'Send to a friend',
+	'friends.scripts.sendOne': 'Send',
+	'friends.scripts.sent': 'Sent',
+	'friends.scripts.notFriends': 'You are no longer friends.',
+	'friends.profile': 'Your profile',
+	'friends.profile.open': 'Open profile',
+	'friends.profile.scripts': 'Scripts',
+	'friends.profile.tooMany': 'Too many tries. Wait a minute and try again.'
 } as const;

@@ -12,6 +12,7 @@
 	import type { ShareTarget } from './share-codes.ts';
 	import { withOfflineRoom } from './share.ts';
 	import { keepScreenAwake } from '#lib/features/day/timer-wake-lock.ts';
+	import ScriptFriendsShare from '#lib/features/friends/ScriptFriendsShare.svelte';
 
 	/**
 	 * Sharing a script's link on the one share screen (`ui/share/SharePanel`). No code to
@@ -165,6 +166,8 @@
 			</div>
 		{/snippet}
 	</SharePanel>
+	<!-- Friends and the profile get the script itself, not a room (plan F9, F10). -->
+	{#if !inRoom}<ScriptFriendsShare name={title} hash={made?.lasting} />{/if}
 </div>
 
 <style>
