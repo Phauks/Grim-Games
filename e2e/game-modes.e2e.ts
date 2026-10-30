@@ -1302,9 +1302,10 @@ test('with no hidden character, Infinite Possibilities says how many are needed'
 		const clear = extras.nth(i).getByRole('button', { name: `Clear the hidden ${type}` });
 		if (await clear.isEnabled()) await clear.tap();
 	}
-	// A warning, never a lock (the Storyteller overrides anything); its line is always there.
+	// Build bag waits until the rule is complete (Trevor, 2026-10-30); its line is always there.
 	await expect(needed).toBeVisible();
 	await expect(needed).toHaveText('1–4 needed');
+	await expect(page.getByTestId('setup-next')).toBeDisabled();
 });
 
 test('Flesh and Bone runs a campaign: the next game adds a Demon once the current game has ended', async ({
@@ -1944,6 +1945,8 @@ test('+1 adds exactly one character from off the script', async ({ page }) => {
 	}
 	await expect(needed).toHaveText('1 needed');
 	await expect(needed).toBeVisible();
+	const build = page.getByTestId('setup-next');
+	await expect(build).toBeDisabled();
 	await extras.nth(1).getByRole('button', { name: 'Choose a hidden Outsider' }).tap();
 	const picker = page.getByRole('dialog', { name: 'Choose a hidden Outsider' });
 	await picker.getByRole('searchbox').fill('Goon');
@@ -1954,7 +1957,9 @@ test('+1 adds exactly one character from off the script', async ({ page }) => {
 	await minions.getByRole('searchbox').fill('Witch');
 	await minions.getByRole('button', { name: /^Witch\b/ }).tap();
 	await expect(needed).toBeVisible();
+	await expect(build).toBeDisabled();
 	await extras.nth(2).getByRole('button', { name: 'Clear the hidden Minion' }).tap();
+	await expect(build).toBeEnabled();
 	await noSidewaysScroll(page);
 
 	// Listed, but not marked as off the script: +1 put it in play (Trevor, 2026-10-23).
