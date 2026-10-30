@@ -13,8 +13,11 @@ import {
 	closeVote,
 	gameOver,
 	hostView,
+	isRemoved,
 	isScript,
 	isSharedGrimoire,
+	letBackIn,
+	removeMember,
 	join,
 	markHere,
 	judgePicture,
@@ -67,7 +70,7 @@ import {
 import { MAX_AVATAR_PICTURE_BYTES } from '../src/lib/core/sync/room-pictures.ts';
 import { liveGameIndex, type LiveGameIndex } from './live-games.ts';
 import { pushCallTown, setRoomPushAddress, type PushEnv } from './push.ts';
-import { closeSocket, send, sendText, type Attachment } from './room-sockets.ts';
+import { closeSocket, refuseRemoved, send, sendText, type Attachment } from './room-sockets.ts';
 import {
 	accountTags,
 	linkAccount,
@@ -360,6 +363,8 @@ export class Room extends DurableObject<RoomEnv> {
 				return;
 			}
 			const memberId = hash.slice(0, 24);
+			// Removed by the Storyteller for this game (plan J37): turned away until let back in.
+			if (isRemoved(room, memberId)) return refuseRemoved(ws);
 			const joined = join(room, memberId, this.present());
 			if (!joined) {
 				send(ws, { type: 'refused', reason: 'room-full' });
@@ -514,6 +519,17 @@ export class Room extends DurableObject<RoomEnv> {
 				return;
 			case 'unseat':
 				room = unseat(room, message.memberId);
+				break;
+			case 'remove': {
+				room = removeMember(room, message.memberId);
+				for (const socket of this.ctx.getWebSockets()) {
+					const to = socket.deserializeAttachment() as Attachment | null;
+					if (to?.role === 'player' && to.memberId === message.memberId) refuseRemoved(socket);
+				}
+				break;
+			}
+			case 'let-back-in':
+				room = letBackIn(room, message.memberId);
 				break;
 			case 'judge-picture': {
 				const next = judgePicture(room, message.hash, message.allow);

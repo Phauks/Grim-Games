@@ -29,6 +29,7 @@ import { numberedNames, withNumberedNames } from './room-names.ts';
 import { MAX_MEMBERS } from './room-presence.ts';
 import { seatPresence } from './seat-presence.ts';
 import type { RoomTransfer } from './room-transfer.ts';
+import { withoutRemoved, type RemovedMember } from './room-removed.ts';
 
 export {
 	isSharedGrimoire,
@@ -116,6 +117,8 @@ export interface RoomState {
 	inbox?: true;
 	/** A room transfer the Storyteller has open (room-transfer.ts). */
 	transfer?: RoomTransfer;
+	/** Phones the Storyteller removed this game (room-removed.ts); a new game clears it. */
+	removed?: RemovedMember[];
 }
 
 /**
@@ -169,6 +172,7 @@ export {
 } from './room-script-vote.ts';
 export type * from './room-protocol.ts';
 export * from './room-transfer.ts';
+export * from './room-removed.ts';
 
 /**
  * A light shape check of a script from the Storyteller's device: the room only stores and
@@ -218,6 +222,7 @@ export function hostView(room: RoomState, present?: ReadonlySet<string>): HostVi
 	const reports = pictureReports(room);
 	if (reports.length) view.pictureReports = reports;
 	if (room.messages?.length) view.messages = room.messages;
+	if (room.removed?.length) view.removed = room.removed;
 	if (room.transfer) {
 		const { endsAt, tries, asking } = room.transfer;
 		view.transfer = { endsAt, tries };
@@ -435,8 +440,10 @@ export function publish(
 	const keep = (seatId?: SeatId) => !newGame && seatId !== undefined && seats.has(seatId);
 	// A vote, and the game being over, belong to their game.
 	const base = newGame
-		? withoutMessages(
-				withoutPictureVerdicts(closeScriptVote(setChoosing(withoutEnded(closeVote(room)), false)))
+		? withoutRemoved(
+				withoutMessages(
+					withoutPictureVerdicts(closeScriptVote(setChoosing(withoutEnded(closeVote(room)), false)))
+				)
 			)
 		: room;
 	return {

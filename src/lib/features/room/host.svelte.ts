@@ -23,6 +23,7 @@ import {
 	MAX_GRIMOIRE_BYTES,
 	ROOM_PROTOCOL,
 	type ClientMessage,
+	type RemovedMember,
 	type RoomMember,
 	type ServerMessage,
 	type TransferStatus,
@@ -75,10 +76,9 @@ export class RoomHost {
 	vote = $state.raw<VoteTally>();
 	/** The room's vote on the next script and its count (plan R1), if one is open. */
 	scriptVote = $state.raw<ScriptVoteTally>();
-	/** True when opening a room failed, e.g. offline. */
-	problem = $state(false);
-	/** True while a room is being opened. */
-	opening = $state(false);
+	problem = $state(false); // Opening a room failed, e.g. offline.
+	opening = $state(false); // A room is being opened.
+	removed = $state.raw<readonly RemovedMember[]>([]); // Phones removed this game (plan J37).
 	/**
 	 * The key Grim view's password makes, while the Storyteller has it on (Specters, Trevor
 	 * 2026-10-18). Viewers see everything, so it is off until turned on.
@@ -655,6 +655,7 @@ export class RoomHost {
 			this.members = message.members;
 			this.present = message.present;
 			this.away = message.away ?? [];
+			this.removed = message.removed ?? [];
 			this.vote = message.vote;
 			this.scriptVote = message.scriptVote;
 			this.rolesSeen = message.rolesSeen ?? [];
@@ -761,6 +762,7 @@ export class RoomHost {
 		this.members = [];
 		this.present = undefined;
 		this.away = [];
+		this.removed = [];
 		this.vote = undefined;
 		this.scriptVote = undefined;
 		this.viewerKey = undefined;
