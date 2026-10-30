@@ -151,6 +151,27 @@ describe('AssignCharacter and alignment', () => {
 	});
 });
 
+// https://wiki.bloodontheclocktower.com/Spirit_of_Ivory: there can't be more than 1 extra evil
+// player. Turning a second good-type player evil warns; it is still done.
+describe('the Spirit of Ivory', () => {
+	it('warns when a second good-type player turns evil', () => {
+		const { session, ctx, seats } = newGame(names);
+		const s = run(
+			session,
+			ctx,
+			{ type: 'AssignCharacter', seatId: seats[0], characterId: 'chef' },
+			{ type: 'AssignCharacter', seatId: seats[1], characterId: 'saint' },
+			{ type: 'AssignCharacter', seatId: seats[2], characterId: 'imp' },
+			{ type: 'AddRuleCharacter', characterId: 'spiritofivory' },
+			{ type: 'SetAlignment', seatId: seats[0], alignment: 'evil' }
+		);
+		expect(s.warnings).toEqual([]);
+		const second = run(s, ctx, { type: 'SetAlignment', seatId: seats[1], alignment: 'evil' });
+		expect(second.warnings.map((w) => w.code)).toEqual(['extra-evil-limit']);
+		expect(second.game.seats[seats[1]].alignment).toBe('evil');
+	});
+});
+
 describe('death and ghost votes', () => {
 	it('marks death, and a player who comes back gets their vote back', () => {
 		const { session, ctx, seats } = newGame(names);
