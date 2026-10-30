@@ -14,9 +14,15 @@
 	import Menu from '#lib/ui/primitives/Menu.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
+	import SharePanel from '#lib/ui/share/SharePanel.svelte';
 	import AddFriendDialog from './AddFriendDialog.svelte';
 	import { friends } from './friends.svelte.ts';
-	import type { FriendAccount, FriendAction } from './friends-protocol.ts';
+	import {
+		friendLink,
+		readFriendLink,
+		type FriendAccount,
+		type FriendAction
+	} from './friends-protocol.ts';
 
 	/**
 	 * Friends (plan F1): requests to answer, friends, requests sent and blocked accounts, each
@@ -30,7 +36,34 @@
 	let confirming = $state<{ action: 'block' | 'remove'; other: FriendAccount } | undefined>();
 	let confirmOpen = $state(false);
 
-	onMount(() => void friends.load());
+	/** A username from a scanned friend code's link, filled into Add friend. */
+	let linked = $state('');
+
+	/** A friend link (`/friends#friend=…`) opens Add friend with its username in. */
+	function openFriendLink(): void {
+		const username = readFriendLink(location.hash);
+		if (!username) return;
+		history.replaceState(history.state, '', location.pathname);
+		linked = username;
+		adding = true;
+	}
+
+	onMount(() => {
+		void friends.load();
+		openFriendLink();
+		window.addEventListener('hashchange', openFriendLink);
+		return () => window.removeEventListener('hashchange', openFriendLink);
+	});
+
+	/**
+	 * This account's own friend code (Trevor, 2026-10-29): a link others scan to add it, with
+	 * its profile icon in the middle. None without a username, or while it can't be found.
+	 */
+	const ownLink = $derived(
+		account.user?.username && friends.data?.findable
+			? friendLink(location.origin, account.user.username)
+			: undefined
+	);
 	// Signing in on this page loads the list too (friends.svelte.ts listens for it).
 
 	const nameOf = (other: FriendAccount) => other.username ?? t('friends.noUsername');
@@ -125,8 +158,13 @@
 
 			<PageSection title={t('friends.list')}>
 				{#snippet aside()}
-					<Button icon="add" variant="quiet" onclick={() => (adding = true)}
-						>{t('friends.add')}</Button
+					<Button
+						icon="add"
+						variant="quiet"
+						onclick={() => {
+							linked = '';
+							adding = true;
+						}}>{t('friends.add')}</Button
 					>
 				{/snippet}
 				{#if data}
@@ -134,6 +172,23 @@
 				{:else}
 					<p class="muted">{friends.error || t('friends.loading')}</p>
 				{/if}
+			</PageSection>
+
+			<PageSection title={t('friends.code')}>
+				<SharePanel
+					url={ownLink}
+					title={t('friends.code.share')}
+					qrLabel={t('friends.code.qr')}
+					pending={!account.user.username
+						? t('friends.code.noUsername')
+						: data && !data.findable
+							? t('friends.code.hidden')
+							: t('friends.loading')}
+					qrCenterShape="square"
+				>
+					{#snippet qrCenter()}<span class="qr-icon"><ProfileIcon icon={account.user?.icon} /></span
+						>{/snippet}
+				</SharePanel>
 			</PageSection>
 
 			<PageSection title={t('friends.sent')}>
@@ -171,7 +226,7 @@
 	</ErrorBoundary>
 </Page>
 
-<AddFriendDialog bind:open={adding} />
+<AddFriendDialog bind:open={adding} initial={linked} />
 <UsernameDialog bind:open={editUsername} />
 
 {#if confirming}
@@ -240,6 +295,11 @@
 	}
 	.you dd {
 		margin: 0;
+	}
+	.qr-icon {
+		display: grid;
+		width: 100%;
+		height: 100%;
 	}
 	.card {
 		display: grid;

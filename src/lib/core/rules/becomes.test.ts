@@ -20,7 +20,13 @@ import {
 	testCharacters as characters,
 	testContext
 } from '#lib/core/model/fixtures.test-support.ts';
-import { becomesOffer, changeableSeats, characterChanger, swappableSeats } from './becomes.ts';
+import {
+	becomesOffer,
+	changeableSeats,
+	characterChanger,
+	neighbourAlignments,
+	swappableSeats
+} from './becomes.ts';
 
 const isTheDemon = { characterId: 'scarletwoman', label: 'Is The Demon' };
 const turnsEvil = { characterId: 'mezepheles', label: 'Turns Evil' };
@@ -347,5 +353,28 @@ describe("becomesOffer: the Goon and the Ogre take the carrier's alignment", () 
 			seatId: seats[0],
 			alignment: 'good'
 		});
+	});
+});
+
+// https://wiki.bloodontheclocktower.com/Cult_Leader: each night it becomes the alignment of an
+// alive neighbour; when they differ, either.
+describe("the Cult Leader takes a living neighbour's alignment (takesNeighbourAlignment)", () => {
+	it('is the Cult Leader', () => {
+		const takers = [...OFFICIAL_RULES].filter(([, r]) => r.takesNeighbourAlignment);
+		expect(takers.map(([id]) => id)).toEqual(['cultleader']);
+	});
+
+	it('offers both when the neighbours differ, one when they agree, skipping the dead', () => {
+		const mixed = castGame(['imp', 'cultleader', 'chef', 'empath']);
+		expect(neighbourAlignments(mixed.session.game, 'cultleader', characters)).toEqual({
+			seatId: mixed.seats[1],
+			alignments: ['evil', 'good']
+		});
+		const good = castGame(['imp', 'cultleader', 'chef', 'empath'], dead(0));
+		expect(neighbourAlignments(good.session.game, 'cultleader', characters)?.alignments).toEqual([
+			'good'
+		]);
+		const gone = castGame(['imp', 'cultleader', 'chef'], dead(1));
+		expect(neighbourAlignments(gone.session.game, 'cultleader', characters)).toBeUndefined();
 	});
 });

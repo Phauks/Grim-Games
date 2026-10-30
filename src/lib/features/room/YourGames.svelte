@@ -10,7 +10,8 @@
 	/**
 	 * Join game's "As player": the rooms this phone joined, newest first, each with its script,
 	 * Storyteller and when this phone last opened it (Trevor, 2026-10-19 and 2026-10-23), above
-	 * the games it is storytelling (Trevor, 2026-10-28). A room found closed leaves the list.
+	 * the games it is storytelling (Trevor, 2026-10-28). A room found closed leaves the list
+	 * at once; what happened in it is in History (Trevor, 2026-10-29).
 	 */
 	interface Props {
 		/** A room was tapped: `town` when this device last opened it as a Public Town display. */
@@ -40,6 +41,7 @@
 		}
 		return () => abort.abort();
 	});
+	const shown = $derived(recent.filter((room) => recentGames[room.code] !== null));
 </script>
 
 <!-- Opens and closes from its heading (Trevor, 2026-10-28). -->
@@ -47,34 +49,27 @@
 	title={t('room.asPlayer')}
 	collapsible
 	storageKey="continue.as-player"
-	count={recent.length}
+	count={shown.length}
 >
-	{#if recent.length === 0}
+	{#if shown.length === 0}
 		<p class="none">{t('common.none')}</p>
 	{:else}
 		<ul class="recent" data-testid="recent-rooms">
-			{#each recent as room (room.code)}
+			{#each shown as room (room.code)}
 				{@const game = recentGames[room.code]}
 				<li>
-					<button
-						type="button"
-						class="recent-game"
-						disabled={game === null}
-						onclick={() => onOpen(room.code, !!room.town)}
-					>
+					<button type="button" class="recent-game" onclick={() => onOpen(room.code, !!room.town)}>
 						<ScriptLogo src={game?.logo} name={game?.name ?? room.script} class="recent-logo" />
 						<span class="recent-text">
 							<span class="recent-name">{(game?.name ?? room.script) || t('room.noScriptYet')}</span
 							>
 							<span class="recent-line"
-								>{game === null
-									? t('room.recentClosed', { code: formatRoomCode(room.code) })
-									: game?.storyteller
-										? t('room.recentLine', {
-												code: formatRoomCode(room.code),
-												name: game.storyteller
-											})
-										: formatRoomCode(room.code)}</span
+								>{game?.storyteller
+									? t('room.recentLine', {
+											code: formatRoomCode(room.code),
+											name: game.storyteller
+										})
+									: formatRoomCode(room.code)}</span
 							>
 							<!-- Its own line, so a phone shows all of it (Trevor, 2026-10-26). -->
 							<span class="recent-line"
@@ -117,10 +112,6 @@
 		font: inherit;
 		text-align: start;
 		cursor: pointer;
-	}
-	.recent-game:disabled {
-		cursor: default;
-		opacity: 0.55;
 	}
 	.recent-game :global(.recent-logo) {
 		width: calc(2.5 * var(--u));

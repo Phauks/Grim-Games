@@ -266,16 +266,20 @@
 		align-content: start;
 		min-width: 0;
 	}
+	/* The caption's room is kept with or without one (QrCode's 0.8em), so turning on the
+	   offline code's warning moves nothing below it (Trevor, 2026-10-29). */
 	.qr {
+		--qr-caption-room: 0;
 		position: relative;
 		width: min(100%, calc(16 * var(--u)));
+		padding-bottom: 0.8em;
 	}
 	.qr.hidden > :global(:not(.cover)) {
 		visibility: hidden;
 	}
 	.cover {
 		position: absolute;
-		inset: 0;
+		inset: 0 0 0.8em; /* not over the caption's room */
 		background: var(--surface);
 	}
 	/* The QR's own square, held until the link exists. */

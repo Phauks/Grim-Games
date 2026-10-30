@@ -87,6 +87,6 @@ describe('typeTone', () => {
 		expect(typeTone('demon')).toBe('evil');
 		expect(typeTone('traveller')).toBe('traveller');
 		expect(typeTone('loric')).toBe('loric');
-		expect(typeTone('fabled')).toBeUndefined();
+		expect(typeTone('fabled')).toBe('fabled');
 	});
 });
