@@ -84,7 +84,8 @@ function precacheSizes(): Plugin {
 		},
 		// After writing, so the sizes are of the files as served.
 		writeBundle(options, bundle) {
-			const files = Object.keys(bundle);
+			// Source maps are fetched only to explain a problem, never stored (source-stack.ts).
+			const files = Object.keys(bundle).filter((file) => !file.endsWith('.map'));
 			if (!options.dir || !files.some((file) => file.startsWith('_app/immutable/'))) return;
 			const sizes: Record<string, number> = {};
 			for (const file of files) {
@@ -134,6 +135,14 @@ function precacheSizes(): Plugin {
 const rulesTests = ['src/lib/core/abilities/**/*.test.ts', 'src/lib/core/jinxes/**/*.test.ts'];
 
 export default defineConfig({
+	build: {
+		// A map beside each built file, so an error report can name the source file, line and
+		// function instead of a minified chunk (src/lib/features/errors/source-stack.ts). Hidden:
+		// the files don't point at them, so browsers never download them; and without the
+		// source text, only names and positions, which the public repository already shows.
+		sourcemap: 'hidden',
+		rollupOptions: { output: { sourcemapExcludeSources: true } }
+	},
 	define: {
 		__BUILD_INFO__: JSON.stringify(buildInfo),
 		// Only the Changelog page reads it, so it lands in that page's code (changelog.ts).

@@ -44,6 +44,8 @@ export function precached(path: string): boolean {
 
 /** True for a same-origin GET the service worker should store when first fetched. */
 export function cachedOnUse(path: string): boolean {
+	// Source maps are read only to explain a problem (source-stack.ts), so none are kept.
+	if (path.endsWith('.map')) return false;
 	return (
 		path.startsWith('/data/icons/') ||
 		path.startsWith('/_app/immutable/') ||

@@ -74,7 +74,10 @@
 		detailsOpen = true;
 	}
 
-	function report(error: AppError) {
+	async function report(error: AppError) {
+		// The source-mapped stack, when the log is still resolving it.
+		await errorLog.resolveStacks();
+		error = errorLog.entries.find((e) => e.key === error.key) ?? error;
 		reportDialog.show({
 			kind: 'bug',
 			title: `${error.name}: ${error.message}`.slice(0, 120),
