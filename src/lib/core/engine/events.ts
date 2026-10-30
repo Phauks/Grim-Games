@@ -14,6 +14,7 @@ import type {
 	DayEntry,
 	DayEntryId,
 	DeathCause,
+	FakeEvilInfo,
 	GameId,
 	GameNote,
 	GenericToken,
@@ -96,6 +97,8 @@ export type GameEvent =
 	| { type: 'BluffsSet'; set: number; characterIds: CharacterId[] }
 	| { type: 'BluffSetRemoved'; set: number }
 	| { type: 'BluffSetRenamed'; set: number; name: string }
+	/** No `info` clears it. */
+	| { type: 'FakeEvilInfoSet'; seatId: SeatId; info?: FakeEvilInfo }
 	| {
 			type: 'BagBuilt';
 			tiles: Tile[];

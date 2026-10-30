@@ -330,6 +330,19 @@ export interface GameNote {
 	hidden: boolean;
 }
 
+/**
+ * What a player who believes they are the Demon is shown, so it stays the same from night to
+ * night (https://wiki.bloodontheclocktower.com/Lunatic: "point to any players" as Minions).
+ */
+export interface FakeEvilInfo {
+	/** The players pointed at as their Minions. */
+	minions: SeatId[];
+	/** Another player they are told is the Lunatic, as a real Demon would be. */
+	decoy?: SeatId;
+	/** Whom that decoy "chose" last, shown as a real Lunatic's targets would be. */
+	decoyChose?: SeatId[];
+}
+
 export interface Game {
 	gameId: GameId;
 	/** Milliseconds since the epoch. */
@@ -360,6 +373,12 @@ export interface Game {
 	 * missing name means the set's default. Optional, so older saved games read as before.
 	 */
 	bluffNames?: string[];
+	/**
+	 * The world the Storyteller shows a player who believes they are the Demon (the Lunatic),
+	 * by that player's seat (Trevor, 2026-10-29). Private: never in the public projection.
+	 * Optional, so older saved games read as before.
+	 */
+	fakeEvilInfo?: Record<SeatId, FakeEvilInfo>;
 	bag?: Bag;
 	/** The Storyteller's changes to the night order, applied in this order. */
 	nightOrderOverrides: NightStepOverride[];

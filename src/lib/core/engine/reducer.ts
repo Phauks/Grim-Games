@@ -511,6 +511,12 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 			if (!game.bluffNames) return { ...game, bluffs };
 			return { ...game, bluffs, bluffNames: game.bluffNames.filter((_, i) => i !== event.set) };
 		}
+		case 'FakeEvilInfoSet': {
+			const fakeEvilInfo = { ...game.fakeEvilInfo };
+			if (event.info) fakeEvilInfo[event.seatId] = event.info;
+			else delete fakeEvilInfo[event.seatId];
+			return { ...game, fakeEvilInfo };
+		}
 		case 'BluffSetRenamed': {
 			if (event.set < 0 || event.set >= game.bluffs.length) return game;
 			const bluffNames = Array.from(
