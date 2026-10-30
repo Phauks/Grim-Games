@@ -13,15 +13,19 @@
  *
  * A player also has the abilities they hold without a token (`Seat.abilities`), given by
  * another character's `givesAbility` rule: the Boffin's good ability on the Demon, who
- * wakes when that good character would (https://wiki.bloodontheclocktower.com/Boffin).
+ * wakes when that good character would (https://wiki.bloodontheclocktower.com/Boffin). And
+ * those their own character's `givesAbility` gives them from the script (`ownHeld`): the
+ * Hermit has every other Outsider on the script, waking as each would and keeping after death
+ * only those that work even if dead (https://wiki.bloodontheclocktower.com/Hermit).
  */
 import type { GainedFrom } from '#lib/core/data/gained-from-rules.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { Character, CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
+import { scriptCharacterIds } from '#lib/core/model/characters.ts';
 import { trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
 import type { Game, HeldAbility, SeatId } from '#lib/core/model/types.ts';
-import { abilityState } from './ability.ts';
+import { abilityState, worksWhenDead } from './ability.ts';
 import type { Night, NightStep } from './night-order.ts';
 
 export interface GainedAbility {
@@ -82,6 +86,16 @@ export function holdsAbility(
 	characters: CharacterLookup
 ): boolean {
 	const rule = rulesOf(held.via, characters)?.givesAbility;
+	if (rule?.to === 'self') {
+		// Their own ability gives it: while it works, and after death only an ability that
+		// works even if dead.
+		const seat = game.seats[holder];
+		if (seat?.characterId !== held.via) return false;
+		const state = abilityState(game, holder, characters);
+		return (
+			state.impairments.length === 0 && (!seat.dead || worksWhenDead(held.characterId, characters))
+		);
+	}
 	if (rule?.to !== 'demon' || typeOf(game, holder, characters) !== 'demon') return false;
 	if (!rule.whileWorks) return true;
 	return game.seating.some(
@@ -109,7 +123,7 @@ export function gainedAbilities(game: Game, characters: CharacterLookup): Gained
 	for (const seatId of game.seating) {
 		const seat = game.seats[seatId];
 		if (seat.dead) continue;
-		for (const held of seat.abilities ?? []) {
+		for (const held of allHeld(game, seatId, characters)) {
 			if (!holdsAbility(game, seatId, held, characters)) continue;
 			out.push({ seatId, via: held.via, characterId: held.characterId, status: 'has-ability' });
 		}
@@ -186,13 +200,32 @@ export function abilityGivers(
 	return [...givers];
 }
 
+/**
+ * The abilities `seatId`'s own character gives it from the script, by a `givesAbility` to
+ * `self` with `onScript`: every other character of its types there (the Hermit's Outsiders).
+ */
+function ownHeld(game: Game, seatId: SeatId, characters: CharacterLookup): HeldAbility[] {
+	const via = game.seats[seatId]?.characterId;
+	const rule = via === undefined ? undefined : rulesOf(via, characters)?.givesAbility;
+	if (via === undefined || rule?.to !== 'self' || !rule.onScript) return [];
+	const types: readonly string[] = rule.types;
+	return scriptCharacterIds(game.script)
+		.filter((id) => id !== via && types.includes(characters.get(id)?.type ?? ''))
+		.map((characterId) => ({ characterId, via }));
+}
+
+/** Every ability `seatId` holds without a token: picked for it, then its own. */
+function allHeld(game: Game, seatId: SeatId, characters: CharacterLookup): HeldAbility[] {
+	return [...(game.seats[seatId]?.abilities ?? []), ...ownHeld(game, seatId, characters)];
+}
+
 /** The abilities `seatId` holds without a token, each with whether they have it now. */
 export function heldAbilitiesOf(
 	game: Game,
 	seatId: SeatId,
 	characters: CharacterLookup
 ): (HeldAbility & { works: boolean })[] {
-	return (game.seats[seatId]?.abilities ?? []).map((held) => ({
+	return allHeld(game, seatId, characters).map((held) => ({
 		...held,
 		works: holdsAbility(game, seatId, held, characters)
 	}));

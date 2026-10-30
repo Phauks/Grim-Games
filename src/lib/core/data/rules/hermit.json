@@ -16,6 +16,11 @@
 			"ambiguous": "The wiki says to use these instead of the duplicated Outsider's reminders but gives no placement rule."
 		}
 	},
+	"givesAbility": {
+		"to": "self",
+		"types": ["outsider"],
+		"onScript": true
+	},
 	"setupPrep": {
 		"none": "the 1, 2, 3 tokens stand in for other Outsiders’ tokens when needed"
 	},

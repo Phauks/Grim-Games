@@ -110,7 +110,7 @@ function seatOfCharacter(
 }
 
 /** Abilities that say they work "even if dead" (the Recluse, the Spy). */
-function worksWhenDead(characterId: CharacterId | undefined, characters: CharacterLookup) {
+export function worksWhenDead(characterId: CharacterId | undefined, characters: CharacterLookup) {
 	const ability = characterId ? characters.get(characterId)?.ability : undefined;
 	return ability !== undefined && /\beven if dead\b/i.test(ability);
 }

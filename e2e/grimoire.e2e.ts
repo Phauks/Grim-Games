@@ -2403,6 +2403,34 @@ test("the Boffin gives the Demon a not-in-play good character's ability", async 
 	await expect(mark).toHaveAttribute('title', 'Holds the Chef ability (not now)');
 });
 
+// https://wiki.bloodontheclocktower.com/Hermit: the Hermit has every other Outsider ability on
+// the script, with nothing to pick; after death only one that works even if dead.
+test('the Hermit holds every other Outsider ability on the script', async ({ page }) => {
+	await startGame(page);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	const picker = page.getByRole('dialog', { name: 'Character for Seat 1' });
+	await picker.getByText('Include characters not on the script').tap();
+	await picker.getByRole('button', { name: 'Hermit', exact: true }).tap();
+	await closeSheet(page);
+	// Trouble Brewing's Outsiders, in the seat's pill (Grimbinder).
+	const held = page.getByTestId('seat').nth(0).getByTestId('held-ability');
+	await expect(held).toHaveCount(4);
+	for (const name of ['Butler', 'Drunk', 'Recluse', 'Saint'])
+		await expect(held.and(page.locator(`[title="Holds the ${name} ability"]`))).toHaveCount(1);
+	// Dead, it keeps only the Recluse's, which works even if dead.
+	const again = await openSeat(page, 1);
+	await again.getByRole('button', { name: 'Status: Alive' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Status of Seat 1' })
+		.getByRole('button', { name: 'Executed' })
+		.tap();
+	await closeSheet(page);
+	const seat = page.getByTestId('seat').nth(0);
+	await expect(seat.locator('[title="Holds the Recluse ability"]')).toHaveCount(1);
+	await expect(seat.locator('[title="Holds the Butler ability (not now)"]')).toHaveCount(1);
+});
+
 // https://wiki.bloodontheclocktower.com/Plague_Doctor: when it dies, the Storyteller gains a
 // Minion ability, marked Storyteller Ability; shown with the Fabled and Loric (Trevor, 2026-10-30).
 test('a dead Plague Doctor gives the Storyteller a Minion ability, shown on the board', async ({
