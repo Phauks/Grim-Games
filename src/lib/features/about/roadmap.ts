@@ -270,6 +270,11 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['B6', 'L38', 'L39', 'L40', 'L15', 'L24', 'H1', 'H2']
 	},
 	{
+		title: 'Add a late player to the bag draw as one more player, not a Traveller',
+		area: 'storyteller',
+		parts: ['L96']
+	},
+	{
 		title:
 			'Crowded boards: reminders on spokes with a tether, duplicate from the bank, mark where a reminder came from',
 		area: 'storyteller',

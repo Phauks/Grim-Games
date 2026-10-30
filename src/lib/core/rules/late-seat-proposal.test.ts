@@ -119,15 +119,14 @@ describe('proposeLateSeat', () => {
 		}
 	});
 
-	it('lets the Sentinel keep an Outsider, and sometimes does', () => {
-		const outsiders = new Set<number>();
+	it('uses the Sentinel to keep an Outsider, so fewer players change', () => {
 		for (let seed = 1; seed <= 40; seed++) {
 			const game = draw(TWELVE, 12);
 			const p = propose(game, seed, ['sentinel']);
-			outsiders.add(p.after.outsider);
+			// https://wiki.bloodontheclocktower.com/Sentinel: one more or one fewer Outsider.
+			expect(p.after).toEqual({ townsfolk: 8, outsider: 1, minion: 3, demon: 1 });
 			expect(lateSeatCounts(game, lookup, p.changes, p.bag)).toEqual(p.tileTarget);
 		}
-		expect([...outsiders].sort()).toEqual([0, 1]);
 	});
 
 	it('keeps a Baron in play, and counts the Outsiders he adds', () => {

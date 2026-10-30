@@ -41,7 +41,8 @@ export interface LateSeatProposal {
 	outOfPlay: CharacterId[];
 }
 
-const isSeated = (type: string): type is SeatedType => (SEATED_TYPES as readonly string[]).includes(type);
+const isSeated = (type: string): type is SeatedType =>
+	(SEATED_TYPES as readonly string[]).includes(type);
 
 /** The drawn players, the tiles still in the bag, and every character in play. */
 export function drawState(game: Game, lookup: (id: CharacterId) => Character | undefined) {
@@ -62,20 +63,31 @@ export function drawState(game: Game, lookup: (id: CharacterId) => Character | u
 	return { seen, bag, unseated, inPlay, typeOf };
 }
 
-/** One combination of the allowed counts that adds up to `total`, picked at random. */
+/**
+ * The combination of the allowed counts that adds up to `total` and changes least from
+ * `before`, ties picked at random. A setup rule's choice (the Sentinel's Outsider, the
+ * Godfather's) is the Storyteller's, so it goes the way that changes fewest players; the
+ * current counts are no secret, so this gives nothing away.
+ */
 function pickCounts(
 	expected: Record<SeatedType, number[]>,
 	total: number,
+	before: TypeCounts,
 	random: () => number
 ): TypeCounts | undefined {
-	const combos: TypeCounts[] = [];
+	let best: TypeCounts[] = [];
+	let bestDistance = Infinity;
 	for (const townsfolk of expected.townsfolk)
 		for (const outsider of expected.outsider)
 			for (const minion of expected.minion)
-				for (const demon of expected.demon)
-					if (townsfolk + outsider + minion + demon === total)
-						combos.push({ townsfolk, outsider, minion, demon });
-	return combos.length ? combos[Math.floor(random() * combos.length)] : undefined;
+				for (const demon of expected.demon) {
+					const counts = { townsfolk, outsider, minion, demon };
+					if (townsfolk + outsider + minion + demon !== total) continue;
+					const distance = SEATED_TYPES.reduce((n, t) => n + Math.abs(counts[t] - before[t]), 0);
+					if (distance < bestDistance) [best, bestDistance] = [[], distance];
+					if (distance === bestDistance) best.push(counts);
+				}
+	return best.length ? best[Math.floor(random() * best.length)] : undefined;
 }
 
 export function proposeLateSeat(input: LateSeatProposalInput): LateSeatProposal {
@@ -95,7 +107,7 @@ export function proposeLateSeat(input: LateSeatProposalInput): LateSeatProposal 
 		});
 	const before = countByType(inPlay.map(typeOf));
 	const next = analysis(dealt + 1);
-	const after = pickCounts(next.expected, dealt + 1, random) ?? { ...next.base };
+	const after = pickCounts(next.expected, dealt + 1, before, random) ?? { ...next.base };
 
 	// A Drunk or Marionette has no tile: a good character's tile stands in for theirs.
 	const tileTarget = { ...after };
