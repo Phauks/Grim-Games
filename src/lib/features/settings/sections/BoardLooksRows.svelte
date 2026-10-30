@@ -56,3 +56,11 @@
 	value={boardLooks.current.reminderLines}
 	onChange={(reminderLines) => boardLooks.update({ reminderLines })}
 />
+<!-- An ability a seat holds without its token: Grimbinder's small token in the seat's pill, or
+     Vanilla, the character's token beside the seat as the wiki runs it (Trevor, 2026-10-30:
+     "Showcase difference while they decide"; the preview's Demon holds one). -->
+<SettingToggle
+	label={t('settings.vanillaAbilities')}
+	checked={boardLooks.current.abilityLook === 'vanilla'}
+	onChange={(vanilla) => boardLooks.update({ abilityLook: vanilla ? 'vanilla' : 'grimbinder' })}
+/>
