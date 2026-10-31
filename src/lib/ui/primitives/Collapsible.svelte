@@ -168,6 +168,12 @@
 	.collapsible:not(:first-child) {
 		border-top: 1px solid var(--border);
 	}
+	/* A character type's band marks where its list starts, so no line above it or under its
+	   list's end (Trevor, 2026-10-31: "not sure we need the additional horizontal line"). */
+	.collapsible:has(> .head[data-type-band]),
+	.collapsible:has(> .head[data-type-band]) + :global(*) {
+		border-top: 0;
+	}
 	.head {
 		display: flex;
 		align-items: center;
