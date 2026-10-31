@@ -2,7 +2,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { PlayerName } from '#lib/core/data/index.ts';
 	import type { PublicSeat } from '#lib/core/sync/public-projection.ts';
-	import { dropBetween, isOpenSeat } from '#lib/core/sync/room-seating-open.ts';
+	import { dropOnto, isOpenSeat } from '#lib/core/sync/room-seating-open.ts';
 	import { seatFrame } from '#lib/core/frames/index.ts';
 	import type { RoomPlayer } from '#lib/features/room/player.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
@@ -12,8 +12,9 @@
 
 	/**
 	 * Seating on the Grim tab (plan J38; Trevor, 2026-10-29 22:36). While the Storyteller has
-	 * seating open, the player drags their own disc, and only theirs, round the circle; the line
-	 * in the middle names the two players it would sit between ("no left and right"). A phone
+	 * seating open, the player drags their own disc, and only theirs, onto the seat they want: that
+	 * seat lights up and the line in the middle names it, and the drop takes its place (Trevor,
+	 * 2026-10-31: not a gap between seats). Dropped away from every seat, nothing changes. A phone
 	 * with no seat yet starts with its disc in the middle. Once seating is locked, a phone with
 	 * no seat taps an open seat (`claim`) to sit there. The Storyteller's board makes the change.
 	 */
@@ -41,18 +42,17 @@
 	let drag = $state<{ pointerId: number; from: { x: number; y: number }; at: SeatPoint }>();
 	let moved = $state(false);
 	const px = (p: SeatPoint) => ({ x: (p.x / 100) * board.width, y: (p.y / 100) * board.height });
-	/** The two players the disc would sit between, if dropped now. */
-	const between = $derived.by(() => {
+	/** The seat the disc would take if dropped now, and where it is drawn. */
+	const target = $derived.by(() => {
 		if (!drag || !moved) return undefined;
 		const others = ring.seats.flatMap((s, i) => (i === index ? [] : [{ s, p: ring.points[i] }]));
-		const gap = dropBetween(
+		const id = dropOnto(
 			others.map((o) => o.s.seatId),
 			others.map((o) => px(o.p)),
-			px(drag.at)
+			px(drag.at),
+			ring.size
 		);
-		if (!gap) return undefined;
-		const seat = (id: string) => ring.seats.find((s) => s.seatId === id)!;
-		return { after: gap.after, a: seat(gap.after), b: seat(gap.before) };
+		return others.find((o) => o.s.seatId === id);
 	});
 
 	function point(event: PointerEvent): SeatPoint | undefined {
@@ -81,10 +81,10 @@
 
 	function up(event: PointerEvent) {
 		if (!drag || event.pointerId !== drag.pointerId) return;
-		const gap = between;
+		const onto = target?.s;
 		const tapped = !moved;
 		cancel();
-		if (gap) player.askSeat({ type: 'sit', after: gap.after });
+		if (onto) player.askSeat({ type: 'sit', onto: onto.seatId });
 		else if (tapped && own) onTap(own);
 	}
 
@@ -115,6 +115,14 @@
 
 {#if open && me}
 	{@const at = drag && moved ? drag.at : home}
+	{#if target}<span
+			class="target"
+			style:left="{target.p.x}%"
+			style:top="{target.p.y}%"
+			style:--disc={`${ring.size}px`}
+			data-testid="seating-target"
+			data-seat={target.s.seatNumber}
+		></span>{/if}
 	<button
 		type="button"
 		class="disc"
@@ -140,9 +148,8 @@
 	</button>
 	<!-- The status line, over the middle of the town, so nothing on the screen moves. -->
 	<p class="line" role="status" data-testid="seating-line">
-		{#if between}{t('player.seating.between')}
-			<PlayerBadge name={badge(between.a)} />{#if between.b.seatId !== between.a.seatId}
-				{t('player.seating.and')} <PlayerBadge name={badge(between.b)} />{/if}
+		{#if target}{t('player.seating.take', { number: target.s.seatNumber })}
+			{#if !isOpenSeat(target.s)}<PlayerBadge name={badge(target.s)} />{/if}
 		{:else}{t('player.seating.open')}{/if}
 	</p>
 {/if}
@@ -177,6 +184,19 @@
 	.disc.held {
 		z-index: 4;
 		cursor: grabbing;
+	}
+	/* The seat the held disc would take: a ring round it, under the disc. */
+	.target {
+		position: absolute;
+		z-index: 2;
+		width: calc(var(--disc) * 1.2);
+		height: calc(var(--disc) * 1.2);
+		transform: translate(-50%, -50%);
+		border-radius: 50%;
+		box-shadow:
+			0 0 0 0.25em var(--accent),
+			0 0 0 0.5em var(--focus-glow);
+		pointer-events: none;
 	}
 	.disc.unseated {
 		opacity: 0.9;
