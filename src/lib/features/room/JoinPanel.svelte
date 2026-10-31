@@ -22,9 +22,9 @@
 	import FeedbackSheet from './FeedbackSheet.svelte';
 	import VoteChoice from './VoteChoice.svelte';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
-	import { forgetRoom, type RoomPlayer } from './player.svelte.ts';
+	import { forgetRoom, thisPhonesRemovedProbe, type RoomPlayer } from './player.svelte.ts';
 	import { releaseRoom, useRoom } from './room-connection.ts';
-	import { followRoomScript, roomScript } from './room-script.svelte.ts';
+	import { followRoomScript, roomScript, unfollowRoom } from './room-script.svelte.ts';
 	import { fetchRoomPreview, type GamePreview } from './room-preview.ts';
 	import { rememberRoom } from './recent-rooms.ts';
 	import YourGames from './YourGames.svelte';
@@ -103,7 +103,7 @@
 	$effect(() => {
 		const sent = player?.script;
 		const room = valid;
-		if (!sent || !room) return;
+		if (!sent || !room || removed) return;
 		let cancelled = false;
 		void followRoomScript(sent, room)
 			.then((loaded) => {
@@ -125,6 +125,14 @@
 	// A closed or refused room is forgotten, so /play's Room tab opens on the code form.
 	$effect(() => {
 		if (valid && (status === 'refused' || status === 'closed')) forgetRoom(valid);
+	});
+	// Removed by the Storyteller (plan J37): the game closes on this phone, which lands on the
+	// room's join screen, saying why, with no script or tabs (Trevor, 2026-10-31).
+	const removed = $derived(status === 'refused' && player?.refusedReason === 'removed');
+	$effect(() => {
+		if (!valid || !removed) return;
+		unfollowRoom(valid);
+		if (!entry) void goto(resolve('/join/[code]', { code: valid }), { replaceState: true });
 	});
 	const seats = $derived(view?.public?.seats ?? []);
 	const storyteller = $derived(view?.public?.storytellerName);
@@ -174,25 +182,35 @@
 		}
 		const abort = new AbortController();
 		lookup = { code: c, state: 'looking' };
-		fetchRoomPreview(c, abort.signal).then(
-			(game) => (lookup = game ? { code: c, state: 'found', game } : { code: c, state: 'none' }),
-			() => {
-				if (!abort.signal.aborted) lookup = { code: c, state: 'failed' };
-			}
-		);
+		thisPhonesRemovedProbe(c)
+			.then((probe) => fetchRoomPreview(c, abort.signal, probe))
+			.then(
+				(game) => (lookup = game ? { code: c, state: 'found', game } : { code: c, state: 'none' }),
+				() => {
+					if (!abort.signal.aborted) lookup = { code: c, state: 'failed' };
+				}
+			);
 		return () => abort.abort();
 	});
-	const found = $derived(lookup?.state === 'found' ? lookup.game : undefined);
+	/**
+	 * The Storyteller removed this phone from that game (plan J37): it is told here, as the
+	 * code is typed, and can't join (Trevor, 2026-10-31: "it should show error before you get to
+	 * that screen").
+	 */
+	const blocked = $derived(lookup?.state === 'found' && !!lookup.game.removed);
+	const found = $derived(lookup?.state === 'found' && !blocked ? lookup.game : undefined);
 	/** Joining goes ahead when the lookup fails (offline Worker, too many tries): the room page says why. */
-	const canJoin = $derived(lookup?.state === 'found' || lookup?.state === 'failed');
+	const canJoin = $derived(!blocked && (lookup?.state === 'found' || lookup?.state === 'failed'));
 	const lookupText = $derived(
-		lookup?.state === 'looking'
-			? t('room.lookingUp')
-			: lookup?.state === 'none'
-				? t('room.noGame')
-				: lookup?.state === 'failed'
-					? t('room.lookupFailed')
-					: ''
+		blocked
+			? t('room.removedYou')
+			: lookup?.state === 'looking'
+				? t('room.lookingUp')
+				: lookup?.state === 'none'
+					? t('room.noGame')
+					: lookup?.state === 'failed'
+						? t('room.lookupFailed')
+						: ''
 	);
 
 	let transferOpen = $state(false);

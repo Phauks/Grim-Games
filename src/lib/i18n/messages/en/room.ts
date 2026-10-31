@@ -45,9 +45,9 @@ export const room = {
 	'room.players.remove': 'Remove from room',
 	'room.players.removeConfirm': 'Remove this player from the room?',
 	'room.players.removeBody':
-		'Their phone leaves the room and can’t join again this game unless you let it back in.',
+		'Their phone leaves the game and their seat loses its name. They can’t join again this game unless you unblock them.',
 	'room.players.removed': 'Removed from room',
-	'room.players.letBackIn': 'Let back in',
+	'room.players.unblock': 'Unblock',
 	'room.seating.open': 'Open seating',
 	'room.seating.lock': 'Lock seating',
 	'room.countOff.title': 'Count off',
