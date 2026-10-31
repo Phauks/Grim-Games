@@ -126,6 +126,7 @@
 		if (!lookup) return { on: [], off: [] };
 		const named = optionalRuleChoices(game, lookup).map((r) => ({
 			...r,
+			// eslint-disable-next-line grim/names-as-badges -- a Game info value is plain text, as the special rules row's names are
 			name: lookup.get(r.characterId)?.name ?? r.characterId
 		}));
 		return {
