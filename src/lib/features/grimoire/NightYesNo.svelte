@@ -43,7 +43,7 @@
 	/** The players picked for each waking player, by their seat, in order. */
 	let chosen = $state<Record<SeatId, (SeatId | undefined)[]>>({});
 	const picked = (p: InfoPicker) => chosen[p.seatId] ?? [];
-	function choose(p: InfoPicker, n: number, seatId: SeatId) {
+	function choose(p: InfoPicker, n: number, seatId: SeatId | undefined) {
 		const next = [...picked(p)];
 		next[n] = seatId;
 		chosen = { ...chosen, [p.seatId]: next };
@@ -94,6 +94,7 @@
 								{options}
 								listFitsTrigger={false}
 								onChange={(s) => choose(p, n, s)}
+								onClear={() => choose(p, n, undefined)}
 							>
 								{#snippet item(option)}{@render seatOption(option.value)}{/snippet}
 								{#snippet selected(option)}<PlayerBadge name={name(option.value)} />{/snippet}
