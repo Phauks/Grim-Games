@@ -13,7 +13,9 @@
  *   Drunk on the first player to choose it, https://wiki.bloodontheclocktower.com/Goon; the
  *   Ogre's Friend, https://wiki.bloodontheclocktower.com/Ogre).
  *
- * `when` is the moment the token says so: `placed` (the default) or `removed`.
+ * `when` is the moment the token says so: `placed` (the default) or `removed`. `follows`, with
+ * `carrier-alignment`: whenever the carrier's alignment changes later, this character's player
+ * takes the new one too (the Ogre's optional rule: always the friend's alignment).
  */
 import {
 	ALIGNMENTS,
@@ -41,6 +43,7 @@ export interface Becomes {
 	token: ReminderLabel;
 	into: (typeof BECOMES_INTO)[number];
 	when?: 'removed';
+	follows?: true;
 }
 
 /** Reads a `becomes` block; `token` must be one of the character's `reminders`. */
@@ -54,13 +57,21 @@ export function readBecomes(
 		issues.add(path, `expected object, got ${describe(raw)}`);
 		return undefined;
 	}
-	checkKeys(raw, ['token', 'into', 'when'], path, issues);
+	checkKeys(raw, ['token', 'into', 'when', 'follows'], path, issues);
 	if (raw.token === undefined) issues.add(`${path}.token`, 'missing');
 	const token = readToken(raw, 'token', path, issues, reminders);
 	const into = readEnum(raw, 'into', BECOMES_INTO, path, issues, true);
 	const when = readEnum(raw, 'when', BECOMES_WHEN, path, issues, false);
+	const follows = readBoolean(raw, 'follows', path, issues);
+	if (follows && into !== 'carrier-alignment')
+		issues.add(`${path}.follows`, 'only with into "carrier-alignment"');
 	if (token === undefined || into === undefined) return undefined;
-	return { token, into, ...(when === 'removed' ? { when } : {}) };
+	return {
+		token,
+		into,
+		...(when === 'removed' ? { when } : {}),
+		...(follows && into === 'carrier-alignment' ? { follows: true as const } : {})
+	};
 }
 
 /**
@@ -82,6 +93,9 @@ export function readBecomes(
  *   type (the Hatter's tea party, https://wiki.bloodontheclocktower.com/Hatter; the Engineer,
  *   https://wiki.bloodontheclocktower.com/Engineer). A character
  *   whose rules say it acts when dead (`actsWhenDead`) offers it from a dead player too;
+ * - `anyType`: with `sameType`, the player may pick a character of any of `types`, not only
+ *   their own (the Hatter's optional rule: the Demon may become a Minion and a Minion the
+ *   Demon);
  * - `firstNight`: only on the first night (the Kazali,
  *   https://wiki.bloodontheclocktower.com/Kazali);
  * - `upTo: 'minions'`: one player after another until there are as many Minions as the
@@ -97,6 +111,7 @@ export interface ChangesCharacter {
 	onlyFrom?: readonly CharacterId[];
 	notMarked?: ReminderLabel;
 	sameType?: true;
+	anyType?: true;
 	firstNight?: true;
 	upTo?: 'minions';
 }
@@ -123,6 +138,7 @@ export function readChangesCharacter(
 			'onlyFrom',
 			'notMarked',
 			'sameType',
+			'anyType',
 			'firstNight',
 			'upTo'
 		],
@@ -142,6 +158,8 @@ export function readChangesCharacter(
 	const onlyFrom = readStringArray(raw, 'onlyFrom', path, issues);
 	const notMarked = readToken(raw, 'notMarked', path, issues, reminders);
 	const sameType = readBoolean(raw, 'sameType', path, issues);
+	const anyType = readBoolean(raw, 'anyType', path, issues);
+	if (anyType && !sameType) issues.add(`${path}.anyType`, 'only with sameType');
 	const firstNight = readBoolean(raw, 'firstNight', path, issues);
 	const upTo = readEnum(raw, 'upTo', ['minions'] as const, path, issues, false);
 	if (types.length === 0) return undefined;
@@ -154,6 +172,7 @@ export function readChangesCharacter(
 		...(onlyFrom?.length ? { onlyFrom } : {}),
 		...(notMarked ? { notMarked } : {}),
 		...(sameType ? { sameType: true as const } : {}),
+		...(anyType && sameType ? { anyType: true as const } : {}),
 		...(firstNight ? { firstNight: true as const } : {}),
 		...(upTo ? { upTo } : {})
 	};

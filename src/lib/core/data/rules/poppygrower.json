@@ -30,5 +30,16 @@
 		},
 		"hidesDemon": true,
 		"hidesMinions": true
+	},
+	"optionalRule": {
+		"evilInfo": {
+			"notes": {
+				"minioninfo": "while it lives, Minions and Demon do not learn each other.",
+				"demoninfo": "while it lives, Minions and Demon do not learn each other."
+			},
+			"hidesDemon": true,
+			"hidesMinions": true,
+			"whileWorking": true
+		}
 	}
 }

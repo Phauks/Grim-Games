@@ -13,6 +13,9 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import type { Command } from '#lib/core/engine/index.ts';
+import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
+import { demonInfo } from '#lib/core/rules/evil-info.ts';
 
 describe('Poppy Grower', () => {
 	const character = committedCharacter('poppygrower');
@@ -47,5 +50,32 @@ describe('Poppy Grower', () => {
 		it.todo("Example 1: Evil players don't learn each other");
 		it.todo('Example 2: Evil learn each other once the Poppy Grower dies');
 		it.todo("Example 3: Drunk Poppy Grower's death leaves evil unaware");
+	});
+});
+
+// The optional rule on the wiki page (https://wiki.bloodontheclocktower.com/Poppy_Grower): a
+// drunk or poisoned Poppy Grower no longer keeps the evil team apart.
+describe('Poppy Grower optional rule', () => {
+	const cast = ['poppygrower', 'chef', 'empath', 'monk', 'poisoner', 'imp'];
+	const on: Command = { type: 'SetOptionalRule', characterId: 'poppygrower', on: true };
+	const poisoned = (s: string[]): Command => ({
+		type: 'AddReminder',
+		seatId: s[0],
+		reminder: { characterId: 'poisoner', label: 'Poisoned' }
+	});
+
+	it('off, a poisoned Poppy Grower still hides the Minions from the Demon', () => {
+		const { game } = castGame(cast, poisoned);
+		expect(demonInfo(game, characters).hiddenBy).toBe('poppygrower');
+	});
+
+	it('on, a sober Poppy Grower hides them', () => {
+		const { game } = castGame(cast, on);
+		expect(demonInfo(game, characters).hiddenBy).toBe('poppygrower');
+	});
+
+	it('on, a poisoned Poppy Grower hides nothing', () => {
+		const { game } = castGame(cast, on, poisoned);
+		expect(demonInfo(game, characters).hiddenBy).toBeUndefined();
 	});
 });

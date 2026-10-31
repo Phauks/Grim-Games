@@ -2,6 +2,7 @@ import type { PublicLook } from '#lib/core/sync/public-projection.ts';
 import { dawnGames, type Command } from '#lib/core/engine/index.ts';
 import {
 	becomesOffer,
+	followedAlignmentOffer,
 	reincarnatedBy,
 	survivesFirstDeath,
 	type Night
@@ -343,6 +344,10 @@ export class Grimoire {
 				: undefined;
 			if (seatId && reminder) offer = becomesOffer(game, seatId, reminder, characters, 'removed');
 		}
+		// A player whose alignment just changed carries a token whose character follows it (the
+		// Ogre's Friend, with its optional rule).
+		if (!offer && command.type === 'SetAlignment')
+			offer = followedAlignmentOffer(game, command.seatId, characters);
 		if (!offer) return undefined;
 		if (offer.into === 'swap')
 			this.swapAsk = { seatId: offer.seatId, withSeatId: offer.withSeatId };

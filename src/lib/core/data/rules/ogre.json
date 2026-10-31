@@ -34,5 +34,12 @@
 	"becomes": {
 		"token": "Friend",
 		"into": "carrier-alignment"
+	},
+	"optionalRule": {
+		"becomes": {
+			"token": "Friend",
+			"into": "carrier-alignment",
+			"follows": true
+		}
 	}
 }

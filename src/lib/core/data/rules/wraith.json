@@ -4,5 +4,22 @@
 	},
 	"deathCause": {
 		"none": "wakes with evil"
+	},
+	"optionalRule": {
+		"dayReminders": {
+			"reminders": [
+				{
+					"group": "madness",
+					"template": [
+						{
+							"self": true
+						},
+						{
+							"text": "once per game, a player mad about being the Wraith may die"
+						}
+					]
+				}
+			]
+		}
 	}
 }
