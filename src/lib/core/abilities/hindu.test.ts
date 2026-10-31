@@ -85,8 +85,17 @@ describe('Hindu', () => {
 
 		// A Demon among the first four to die ends the game: good wins, even with a Scarlet
 		// Woman alive.
+		const executed =
+			(i: number) =>
+			(s: string[]): Command => ({
+				type: 'SetDead',
+				seatId: s[i],
+				dead: true,
+				cause: 'execution'
+			});
+
 		it('ends the game for good when the Demon is among the first four to die', () => {
-			const { game, seats } = castGame(cast, hindu, dies(5));
+			const { game, seats } = castGame(cast, hindu, executed(5));
 			expect(reincarnatedBy(game, seats[5], characters)).toBeUndefined();
 			expect(rebirthOf(game, seats[5], characters)).toBe('hindu');
 			expect(promptable(gameEnds(game, characters))).toEqual([
@@ -94,10 +103,17 @@ describe('Hindu', () => {
 			]);
 		});
 
-		it('ends it for good over a living Scarlet Woman', () => {
+		// The Demon is not reborn, so its death works as any Demon's: a Scarlet Woman or a star
+		// pass still keeps the game going (Trevor, 2026-10-31).
+		it('lets a living Scarlet Woman keep the game going', () => {
 			const sw = ['princess', 'chef', 'empath', 'monk', 'scarletwoman', 'imp'];
-			const { game } = castGame(sw, hindu, dies(5));
-			expect(promptable(gameEnds(game, characters))).toHaveLength(1);
+			const { game } = castGame(sw, hindu, executed(5));
+			expect(promptable(gameEnds(game, characters))).toEqual([]);
+		});
+
+		it("lets the Imp's star pass keep the game going", () => {
+			const { game } = castGame(cast, hindu, dies(5));
+			expect(promptable(gameEnds(game, characters))).toEqual([]);
 		});
 
 		it('ends it as usual once four have been reborn', () => {
