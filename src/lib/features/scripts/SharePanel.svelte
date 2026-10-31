@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import { onMount } from 'svelte';
+	import { onMount, type Snippet } from 'svelte';
 	import { roomJoinLink } from '#lib/features/room/join-link.ts';
 	import { formatRoomCode } from '#lib/core/sync/room-code.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
@@ -49,6 +49,8 @@
 			text?: string;
 			/** Replaces the room's code (`ui/share/SharePanel`'s `refresh`). */
 			refresh?: { label: string; onclick: () => void; disabled?: boolean };
+			/** Beside the join code's header: the room's connection and players (2026-10-31). */
+			status?: Snippet;
 		};
 	}
 
@@ -151,6 +153,7 @@
 		qrCaption={offline ? t('scripts.share.offlineCaption') : undefined}
 		frames={offlineCode?.frames}
 		plain={offline}
+		codeStatus={hosting?.status}
 	>
 		{#snippet qrCenter()}
 			<ScriptQrCenter {logo} name={title} bind:failed={logoFailed} />

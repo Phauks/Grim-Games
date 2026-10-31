@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { Snippet } from 'svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import CopyButton from './CopyButton.svelte';
 
@@ -12,16 +13,21 @@
 		/** As it is read ("482 913"); dots hold its place until it comes. */
 		value: string | undefined;
 		testid?: string;
+		/** Beside the header, e.g. the Storyteller's room connection (Trevor, 2026-10-31). */
+		status?: Snippet;
 	}
 
-	let { label, value, testid = 'share-code' }: Props = $props();
+	let { label, value, testid = 'share-code', status }: Props = $props();
 
 	const id = $props.id();
 </script>
 
 <div class="code-block">
 	<!-- The code and the link each under a header (Trevor, 2026-10-20). -->
-	<h2 class="header" {id}>{label}</h2>
+	<div class="head">
+		<h2 class="header" {id}>{label}</h2>
+		{@render status?.()}
+	</div>
 	<div class="code-row">
 		<p class="code" aria-labelledby={id} data-testid={testid}>
 			{value ?? '··· ···'}
@@ -38,6 +44,12 @@
 	.code-block {
 		display: grid;
 		gap: var(--space-1);
+	}
+	.head {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: var(--space-2);
 	}
 	.header {
 		margin: 0;
