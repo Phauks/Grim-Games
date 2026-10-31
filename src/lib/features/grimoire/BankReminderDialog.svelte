@@ -7,8 +7,9 @@
 	import { characterNames } from '#lib/core/rules/character-names.ts';
 	import { prepTextSegments } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
-	import CharacterSummary from '#lib/features/characters/CharacterSummary.svelte';
+	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
+	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import BoardReminder from './BoardReminder.svelte';
 	import type { BankItem } from './bank-items.ts';
@@ -27,6 +28,7 @@
 	const game = $derived(grimoire.game);
 	const characters = $derived(grimoire.open.characters);
 	const names = $derived(characterNames([...characters.values()]));
+	const scriptNames = $derived([...characters.values()].map((c) => c.name));
 	const owner = $derived(item && !isGeneric(item) ? characters.get(item.characterId) : undefined);
 </script>
 
@@ -58,7 +60,13 @@
 					/>{:else}{part.text}{/if}{/each}
 		</p>
 	{/if}
-	{#if owner}<CharacterSummary character={owner} reminders={false} />{/if}
+	<!-- The ability it comes from, as the Script tab shows the character (Trevor, 2026-10-30). -->
+	{#if owner}<CharacterRow character={owner} info
+			>{#snippet ability()}<GlossaryText
+					text={owner.ability}
+					names={scriptNames}
+				/>{/snippet}</CharacterRow
+		>{/if}
 </Dialog>
 
 <style>

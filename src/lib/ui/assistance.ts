@@ -6,7 +6,6 @@
  */
 export const ASSIST_KEYS = [
 	'nightWalkthrough',
-	'nightGuide',
 	'nightAnswers',
 	'infoSuggestions',
 	'preDayReminders',
@@ -34,11 +33,6 @@ export const ASSIST_LABELS: Record<AssistKey, { label: string; description: stri
 		label: 'Walk me through the night',
 		description:
 			'One character at a time with their Storyteller text. Off shows the whole night as a checklist.'
-	},
-	nightGuide: {
-		label: 'Guide night steps',
-		description:
-			"Tap a step in the night order to fill it in: TPI's text, its reminders to place, and Show to player."
 	},
 	nightAnswers: {
 		label: 'Work out night answers',

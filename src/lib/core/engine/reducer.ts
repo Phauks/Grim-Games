@@ -280,6 +280,11 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 		}
 		case 'SeatReincarnated':
 			return { ...game, reincarnated: [...(game.reincarnated ?? []), event.seatId] };
+		case 'OptionalRuleSet': {
+			const others = (game.optionalRules ?? []).filter((id) => id !== event.characterId);
+			const optionalRules = event.on ? [...others, event.characterId] : others;
+			return optionalRules.length > 0 ? { ...game, optionalRules } : omit(game, 'optionalRules');
+		}
 		case 'HeldAbilitySet':
 			return updateSeat(game, event.seatId, (seat) => {
 				const others = (seat.abilities ?? []).filter((a) => a.via !== event.via);

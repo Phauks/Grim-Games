@@ -6,7 +6,8 @@
 		type SeatId
 	} from '#lib/core/model/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
-	import CharacterSummary from '#lib/features/characters/CharacterSummary.svelte';
+	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
+	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import BoardReminder from './BoardReminder.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -35,6 +36,7 @@
 
 	const game = $derived(grimoire.game);
 	const characters = $derived(grimoire.open.characters);
+	const names = $derived([...characters.values()].map((c) => c.name));
 	let open = $state(false);
 	let seatOpen = $state(false);
 	let shown = $state<ReminderId>();
@@ -80,7 +82,9 @@
 		<ReminderNoteField {grimoire} {reminder} />
 	{/if}
 	{#if source}
-		<CharacterSummary character={source} reminders={false} />
+		<CharacterRow character={source} info
+			>{#snippet ability()}<GlossaryText text={source.ability} {names} />{/snippet}</CharacterRow
+		>
 	{/if}
 	<div class="menu">
 		<Button variant="quiet" icon="move" onclick={() => (seatOpen = true)}>Move to a seat</Button>

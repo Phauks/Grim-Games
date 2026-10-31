@@ -11,8 +11,9 @@ import { parseWikiPage, wikiPageTitle, type WikiSection } from './wiki-page.ts';
  * it still works offline. Without either, the dialog shows only the "Open wiki" link.
  */
 const WIKI_API = 'https://wiki.bloodontheclocktower.com/api.php';
-// v3: the wiki's "Related Jinxes (Open)" box dropped (older entries are fetched again).
-const KEY = 'grim-games:wiki-pages:v3';
+// v3: the wiki's "Related Jinxes (Open)" box dropped; v4: the optional rule in its own section
+// (older entries are fetched again).
+const KEY = 'grim-games:wiki-pages:v4';
 /** Fetched again after this long, when online. */
 const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 /** Pages kept on the device; the least recently fetched go first. */

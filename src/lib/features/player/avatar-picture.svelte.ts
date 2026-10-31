@@ -1,5 +1,6 @@
 import { cropRect, type AvatarCrop } from '#lib/core/avatars/crop.ts';
 import { AVATAR_PICTURE_SIDE } from '#lib/core/sync/room-pictures.ts';
+import { pictureSize, unpackPicture, type PickedPicture } from '#lib/ui/picked-picture.ts';
 import { readStored, readStoredText, writeStored, writeStoredText } from '#lib/ui/stored.ts';
 
 /**
@@ -19,16 +20,27 @@ const ORIGINAL_KEY = 'grim-games:player-picture-original:v1';
 const CROP_KEY = 'grim-games:player-picture-crop:v1';
 const ORIGINAL_SIDE = 1024;
 
+/**
+ * The picture unpacked once (ui/picked-picture.ts), large enough for both copies kept: the whole
+ * at ORIGINAL_SIDE and the chosen square at AVATAR_PICTURE_SIDE.
+ */
+async function unpackForCrop(file: Blob, crop: AvatarCrop): Promise<PickedPicture> {
+	const size = await pictureSize(file).catch(() => undefined);
+	if (!size) return unpackPicture(file, Infinity);
+	const shorter = Math.min(size.width, size.height);
+	const square = (AVATAR_PICTURE_SIDE * crop.zoom * Math.max(size.width, size.height)) / shorter;
+	return unpackPicture(file, Math.max(ORIGINAL_SIDE, Math.ceil(square)), size);
+}
+
 /** The picture shrunk to fit ORIGINAL_SIDE, as a JPEG data URL, and how much it was shrunk. */
-async function shrunkDataUrl(file: Blob): Promise<{ url: string; scale: number }> {
-	const bitmap = await createImageBitmap(file);
-	const scale = Math.min(1, ORIGINAL_SIDE / Math.max(bitmap.width, bitmap.height));
+function shrunkDataUrl(picture: PickedPicture): { url: string; scale: number } {
+	const shrink = Math.min(1, ORIGINAL_SIDE / Math.max(picture.width, picture.height));
 	const canvas = document.createElement('canvas');
-	canvas.width = Math.max(1, Math.round(bitmap.width * scale));
-	canvas.height = Math.max(1, Math.round(bitmap.height * scale));
-	canvas.getContext('2d')?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-	bitmap.close();
-	return { url: canvas.toDataURL('image/jpeg', 0.85), scale };
+	canvas.width = Math.max(1, Math.round(picture.width * shrink));
+	canvas.height = Math.max(1, Math.round(picture.height * shrink));
+	canvas.getContext('2d')?.drawImage(picture.image, 0, 0, canvas.width, canvas.height);
+	// Against the picture's own size, as the crop is.
+	return { url: canvas.toDataURL('image/jpeg', 0.85), scale: shrink * picture.scale };
 }
 
 function readCrop(): AvatarCrop | undefined {
@@ -38,16 +50,15 @@ function readCrop(): AvatarCrop | undefined {
 }
 
 /** The picture's chosen square (core/avatars/crop.ts), shrunk to AVATAR_PICTURE_SIDE, as a JPEG. */
-async function squareDataUrl(file: Blob, crop: AvatarCrop): Promise<string> {
-	const bitmap = await createImageBitmap(file);
-	const rect = cropRect(crop, bitmap);
+function squareDataUrl(picture: PickedPicture, crop: AvatarCrop): string {
+	const { scale } = picture;
+	const rect = cropRect({ zoom: crop.zoom, x: crop.x * scale, y: crop.y * scale }, picture);
 	const side = Math.max(1, Math.round(Math.min(AVATAR_PICTURE_SIDE, rect.side)));
 	const canvas = document.createElement('canvas');
 	canvas.width = side;
 	canvas.height = side;
 	const ctx = canvas.getContext('2d');
-	ctx?.drawImage(bitmap, rect.x, rect.y, rect.side, rect.side, 0, 0, side, side);
-	bitmap.close();
+	ctx?.drawImage(picture.image, rect.x, rect.y, rect.side, rect.side, 0, 0, side, side);
 	return canvas.toDataURL('image/jpeg', 0.85);
 }
 
@@ -88,8 +99,15 @@ class AvatarPicture {
 	/** Keeps the chosen square of a picture from the device; false when it can't be read or kept. */
 	async choose(file: Blob, crop: AvatarCrop): Promise<boolean> {
 		try {
-			const url = await squareDataUrl(file, crop);
-			const original = await shrunkDataUrl(file);
+			const picture = await unpackForCrop(file, crop);
+			let url: string;
+			let original: { url: string; scale: number };
+			try {
+				url = squareDataUrl(picture, crop);
+				original = shrunkDataUrl(picture);
+			} finally {
+				picture.close();
+			}
 			if (!writeStoredText(KEY, url)) return false;
 			this.#url = url;
 			// The whole picture only helps a later edit: a full storage still keeps the avatar.

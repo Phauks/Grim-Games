@@ -15,11 +15,14 @@ import type { Change } from './changelog.ts';
  * player, search, saved, friends, user profile, etc."; Storyteller and Player come first).
  * Search, Library, Friends and History are the menu's own pages; Prepare is the menu's group
  * for what is made before a game (the builders, Info tokens, the Character reference, the
- * printed sheet); App is everything the whole app shares.
+ * printed sheet); App is everything the whole app shares. Engine (Trevor, 2026-10-31) is the
+ * rules the app plays by: every official character's behaviour as data, on the way to full
+ * parity with no character written into code.
  */
 export const ROADMAP_AREAS = [
 	'storyteller',
 	'player',
+	'engine',
 	'search',
 	'library',
 	'prepare',
@@ -330,6 +333,12 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		area: 'library',
 		parts: ['Y1'],
 		later: true
+	},
+	{
+		// Trevor, 2026-10-30/31: chosen at the start, shown on or off with the special rules.
+		title: "Characters' optional rules, chosen at the start of the game",
+		area: 'engine',
+		parts: ['M1', 'M2']
 	},
 	{
 		// Trevor, 2026-10-30: on the roadmap, after a spike and research.

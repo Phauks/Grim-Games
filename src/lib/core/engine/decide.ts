@@ -54,6 +54,7 @@ export type ErrorCode =
 	| 'unknown-override'
 	| 'not-seatable'
 	| 'not-rule-character'
+	| 'no-optional-rule'
 	| 'rule-character-not-in-play'
 	| 'same-seat'
 	| 'invalid-direction'

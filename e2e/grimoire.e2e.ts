@@ -969,10 +969,9 @@ test('a reminder on the board drags to another seat (the Sailor picks again)', a
 	expect(
 		await page.evaluate(() => (window as unknown as { clicksInDialog: number }).clicksInDialog)
 	).toBe(0);
-	// Named once, in "From" (Trevor, 2026-10-18).
+	// Whose it is, then that character as the Script tab shows it (Trevor, 2026-10-30).
 	await expect(reminder).toContainText(/From\s*Sailor/);
-	await expect(reminder.getByText('Sailor', { exact: true })).toHaveCount(1);
-	await expect(reminder.locator('header.character')).toContainText(/choose an alive player/i);
+	await expect(reminder.locator('.ring-row')).toContainText(/choose an alive player/i);
 	await expect(page.locator('[data-scope="drawer"][data-part="content"]')).toBeHidden();
 	await reminder.getByRole('button', { name: 'Close' }).tap();
 	await expect(reminder).toBeHidden();
@@ -1429,17 +1428,26 @@ test("the Board preview's bank has the board bank's outline and colour", async (
 });
 
 // Trevor (2026-10-23): full screen on the board, for those who don't know how; in ⋯ since
-// 2026-10-27 ("We can move full screen into ... Menu"), so the grim cover sits beside ☰.
-test('the board can go full screen from its ⋯ menu, and back', async ({ page }) => {
+// 2026-10-27 ("We can move full screen into ... Menu"), so the grim cover sits beside ☰; an
+// icon beside the menu's X since 2026-10-31, not one of its items.
+test("the board can go full screen from beside its ⋯ menu's X, and back", async ({ page }) => {
 	await startGame(page);
 	const toolbar = page.getByRole('toolbar', { name: 'Grimoire' });
 	await expect(toolbar.getByRole('button', { name: 'Full screen' })).toHaveCount(0);
 	const item = () =>
 		page
 			.getByRole('dialog', { name: 'Grimoire' })
+			.getByTestId('dialog-head-actions')
 			.getByRole('button', { name: 'Full screen', exact: true });
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	await expect(item()).toHaveAttribute('aria-pressed', 'false');
+	// Right beside X.
+	const close = page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Close' });
+	const [icon, x] = [(await item().boundingBox())!, (await close.boundingBox())!];
+	expect(Math.abs(icon.y - x.y)).toBeLessThan(2);
+	expect(icon.x).toBeLessThan(x.x);
 	await item().tap();
 	// The menu stays open (Trevor, 2026-10-27: "dont close ... menu when toggling fullscreen").
 	await expect.poll(() => page.evaluate(() => !!document.fullscreenElement)).toBe(true);
@@ -4772,7 +4780,7 @@ test('the board menu names its groups, in two columns beside a phone', async ({ 
 	]);
 	await expect(group('Seats').getByRole('button', { name: 'Open seating' })).toBeDisabled();
 	await expect(group('Seats').getByRole('button', { name: 'Count off' })).toBeDisabled();
-	expect(await names('App')).toEqual(['Settings', 'Full screen', 'Report an issue']);
+	expect(await names('App')).toEqual(['Settings', 'Report an issue']);
 	// Beside a phone, the game on the left and the rest on the right.
 	const game = (await group('Game').boundingBox())!;
 	const seats = (await group('Seats').boundingBox())!;
@@ -5279,7 +5287,14 @@ test('a tapped bank token is held until a seat is tapped, or put down', async ({
 	await page.getByRole('menuitem', { name: 'About this reminder' }).tap();
 	const about = page.getByRole('dialog', { name: 'Poisoned' });
 	await expect(about).toContainText('From');
-	await expect(about).toContainText('Minion');
+	// Its character as the Script tab shows it: the ring row, whose ring opens the character's
+	// page (Trevor, 2026-10-30); no line left under it.
+	await expect(about.locator('.ring-row')).toContainText('they are poisoned');
+	await about.getByRole('button', { name: 'About the Poisoner' }).tap();
+	const page2 = page.getByRole('dialog', { name: 'Poisoner' });
+	await expect(page2).toBeVisible();
+	await page2.getByRole('button', { name: 'Close' }).tap();
+	await expect(page2).toBeHidden();
 	await about.getByRole('button', { name: 'Close' }).tap();
 	// Still in hand: the seat tapped next gets it, without opening its sheet.
 	await boardSeat(page, 2).tap();
@@ -6526,6 +6541,74 @@ test('with the Hindu, the Demon among the first four to die ends the game for go
 	await expect(line).toContainText('reincarnated as Travellers');
 	await expect(line).toContainText('Good wins');
 	await expect(page.getByRole('dialog', { name: 'Reincarnate Seat 1 as' })).toHaveCount(0);
+});
+
+test("with the Hindu's optional rule chosen at the start, a reborn Demon passes to a Minion", async ({
+	page
+}) => {
+	// The optional rule: if the Demon becomes a Traveller, a Minion becomes the Demon
+	// (https://wiki.bloodontheclocktower.com/Hindu). It is chosen with the special rules.
+	await page.goto('/new');
+	await pickScript(page, 'Trouble Brewing');
+	await page.getByRole('button', { name: 'Create game' }).tap();
+	await page.getByRole('button', { name: 'Add a Loric' }).tap();
+	const loric = page.getByRole('dialog', { name: 'All Loric' });
+	await loric.getByRole('searchbox').fill('Hindu');
+	await loric.getByRole('button', { name: /^Hindu/ }).tap();
+	await page.keyboard.press('Escape');
+	await expect(loric).toBeHidden();
+	await page.getByTestId('setup-special-rules').tap();
+	const rules = page.getByRole('dialog', { name: 'Special rules' });
+	const optional = rules.getByTestId('optional-rules');
+	const hinduRule = optional.getByRole('checkbox', {
+		name: 'Optional rule of Hindu',
+		includeHidden: true
+	});
+	await expect(hinduRule).not.toBeChecked();
+	await optional.locator('[data-scope="switch"][data-part="control"]').tap();
+	await expect(hinduRule).toBeChecked();
+	await rules.getByRole('button', { name: 'Close' }).tap();
+	await expect(rules).toBeHidden();
+	await expect(page.getByTestId('setup-special-rules')).toHaveText('Special rules 1');
+	await toBoard(page);
+
+	for (const [number, name] of [
+		[1, 'Imp'],
+		[2, 'Poisoner']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	await (await openSeat(page, 1)).getByRole('button', { name: 'Status: Alive' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Status of Seat 1' })
+		.getByRole('button', { name: 'Executed' })
+		.tap();
+	await expect(page.getByRole('alertdialog', { name: 'End game?' })).toHaveCount(0);
+	const picker = page.getByRole('dialog', { name: 'Reincarnate Seat 1 as' });
+	await picker.getByRole('button', { name: 'Gunslinger, Recommended' }).tap();
+	const ask = page.getByRole('alertdialog', { name: 'Choose the new Imp' });
+	await expect(ask.getByRole('radio', { name: /Seat 2/, includeHidden: true })).toBeChecked();
+	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(ask).toBeHidden();
+	await closeSheet(page);
+	await expect(seatLabelled(page, 'Seat 1: no name, Gunslinger')).not.toHaveAttribute(
+		'aria-label',
+		/dead/
+	);
+	await expect(seatLabelled(page, 'Seat 2: no name, Imp')).toBeAttached();
+	await expect(page.getByRole('alertdialog')).toHaveCount(0);
+
+	// Game info says the optional rule is in play.
+	await openGameInfo(page);
+	await expect(
+		page.getByTestId('game-info').locator('[data-field="optional-rules"]')
+	).toContainText('Hindu');
 });
 
 /** A Trouble Brewing game with one special rule, these seats given these characters. */

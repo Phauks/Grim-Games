@@ -75,6 +75,7 @@ export const shell = {
 	'shell.roadmapPlanned': 'Planned',
 	'shell.roadmapAreaStoryteller': 'Storyteller',
 	'shell.roadmapAreaPlayer': 'Player',
+	'shell.roadmapAreaEngine': 'Engine',
 	'shell.roadmapAreaSearch': 'Search',
 	'shell.roadmapAreaLibrary': 'Library',
 	'shell.roadmapAreaPrepare': 'Prepare',
