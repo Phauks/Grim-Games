@@ -403,7 +403,7 @@
 			>{/if}{/snippet}
 	{#if filling}
 		<TextField
-			label={t(filling.card.fills === 'word' ? 'info-tokens.fill.word' : 'info-tokens.fill.phrase')}
+			label={t(filling.card.fillKey)}
 			value={fillText}
 			oninput={(value) => {
 				if (filling) filled[filling.card.id] = value;

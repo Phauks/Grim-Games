@@ -62,3 +62,15 @@ export function evilLearns(
 	const id = trueCharacter(game, seatId, characters);
 	return { evil, marked: { seatId, ...(id ? { characterId: id } : {}) } };
 }
+
+/**
+ * Whether this reminder carries the Storyteller's own words for its player (`noteOn` in its
+ * character's rules block: the Zenomancer's Goal, https://wiki.bloodontheclocktower.com/Zenomancer).
+ */
+export function takesNote(
+	reminder: { characterId: CharacterId; label: string },
+	characters: CharacterLookup
+): boolean {
+	const label = rulesOf(reminder.characterId, characters)?.noteOn;
+	return label !== undefined && label === reminder.label;
+}

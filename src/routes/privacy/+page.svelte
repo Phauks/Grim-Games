@@ -292,12 +292,18 @@
 				they can ask. Turning off finding you by username turns this off too.
 			</li>
 			<li>
+				When a game in that room ends, your account remembers the other signed-in people who played
+				it (their name in that game and how many games you played together), and theirs remember
+				you, so you can ask each other from Recent players. Only the newest 50 are kept, and turning
+				off finding you by username keeps you off other people's lists.
+			</li>
+			<li>
 				Blocking someone is not shown to them. Requests are limited per account using Cloudflare's
 				rate limiter.
 			</li>
 			<li>
-				Deleting your account removes it from everyone's friends, requests and blocks, and the
-				scripts you sent stop showing.
+				Deleting your account removes it from everyone's friends, requests, blocks and recent
+				players, and the scripts you sent stop showing.
 			</li>
 		</ul>
 	</PageSection>

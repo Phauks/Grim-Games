@@ -7,14 +7,15 @@ import { AccountApiError, call } from '#lib/features/account/account-api.ts';
 import { account } from '#lib/features/account/account.svelte.ts';
 import {
 	friendActionApi,
+	FRIEND_RECENT_API,
 	FRIEND_REQUESTS_API,
 	FRIEND_SEAT_API,
 	FRIEND_SETTINGS_API,
 	FRIENDS_API,
 	type FriendAction,
 	type FriendsResponse,
+	type FriendTarget,
 	type RequestResponse,
-	type SeatFriendRequest,
 	type SeatFriendResponse
 } from './friends-protocol.ts';
 
@@ -62,11 +63,13 @@ export const friends = {
 		return answer;
 	},
 	/**
-	 * The player in a live room's seat (plan F2): whether they can be added, or, with `send`,
-	 * asks them. The Friends page reloads after a request goes out.
+	 * The player in a live room's seat (plan F2), or someone on Recent players (F3): whether
+	 * they can be added, or, with `send`, asks them. The Friends page reloads after a request
+	 * goes out.
 	 */
-	async seat(request: SeatFriendRequest): Promise<SeatFriendResponse> {
-		const answer = await call<SeatFriendResponse>(FRIEND_SEAT_API, 'POST', request);
+	async seat(request: FriendTarget & { send?: boolean }): Promise<SeatFriendResponse> {
+		const api = 'recent' in request ? FRIEND_RECENT_API : FRIEND_SEAT_API;
+		const answer = await call<SeatFriendResponse>(api, 'POST', request);
 		if (request.send && !answer.refused) void friends.load();
 		return answer;
 	},

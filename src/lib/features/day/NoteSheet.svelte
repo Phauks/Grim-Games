@@ -14,6 +14,9 @@
 	import Sentence from '#lib/features/characters/Sentence.svelte';
 	import { slot } from '#lib/features/characters/slots.ts';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
+	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
+	import Button from '#lib/ui/primitives/Button.svelte';
+	import Combobox from '#lib/ui/primitives/Combobox.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
@@ -73,10 +76,35 @@
 	let slots = $state<Slot[]>([]);
 	let holds = $state(false);
 	let answer = $state<GuessAnswer | undefined>();
+	/** The answer in the Storyteller's own words, when none of the standard ones fits. */
+	let customAnswer = $state<string>();
+	/** The drop-down's value for the answer typed in the Storyteller's own words. */
+	const CUSTOM = 'custom';
 	const answerOptions = $derived([
 		{ value: NONE, label: t('day.answer.none') },
-		...GUESS_ANSWERS.map((a) => ({ value: a as string, label: t(`day.answer.${a}`) }))
+		...GUESS_ANSWERS.map((a) => ({ value: a as string, label: t(`day.answer.${a}`) })),
+		...(customAnswer ? [{ value: CUSTOM, label: customAnswer }] : [])
 	]);
+	const answerValue = $derived(answer ?? (customAnswer ? CUSTOM : NONE));
+	/** What the player is told: the standard answer's word or the Storyteller's own. */
+	const answerText = $derived(answer ? t(`day.answer.${answer}`) : customAnswer);
+	/**
+	 * Typed words that aren't one of the answers become the answer in the Storyteller's own
+	 * words ("Lukewarm": Trevor, 2026-10-31, the answers are a range).
+	 */
+	function ownAnswer(query: string) {
+		if (!query || answerOptions.some((o) => o.label.toLowerCase() === query.toLowerCase()))
+			return undefined;
+		return {
+			value: '__own__',
+			label: t('day.answerOwn', { answer: query }),
+			run: () => {
+				answer = undefined;
+				customAnswer = query;
+			}
+		};
+	}
+	let showOpen = $state(false);
 
 	// Fill the form each time the sheet opens.
 	$effect(() => {
@@ -89,6 +117,7 @@
 		];
 		holds = existing?.holds ?? false;
 		answer = existing?.answer;
+		customAnswer = existing?.customAnswer;
 	});
 
 	/** The slots with both a player and a character; half-filled ones are left out on save. */
@@ -103,7 +132,15 @@
 	function save() {
 		if (!target) return;
 		const truth =
-			claim === 'statement' ? { holds } : claim === 'ability-guess' && answer ? { answer } : {};
+			claim === 'statement'
+				? { holds }
+				: claim !== 'ability-guess'
+					? {}
+					: answer
+						? { answer }
+						: customAnswer
+							? { customAnswer }
+							: {};
 		const ok = existing
 			? game.run({
 					type: 'EditDayNote',
@@ -167,13 +204,29 @@
 		{#if claim === 'statement'}
 			<Toggle label={t('day.statementTrue')} checked={holds} onChange={(on) => (holds = on)} />
 		{:else if claim === 'ability-guess'}
-			<!-- The Storyteller's answer (https://wiki.bloodontheclocktower.com/Amnesiac). -->
-			<Select
-				label={t('day.answer')}
-				value={answer ?? NONE}
-				options={answerOptions}
-				onChange={(a: string) => (answer = a === NONE ? undefined : (a as GuessAnswer))}
-			/>
+			<!-- The Storyteller's answer (https://wiki.bloodontheclocktower.com/Amnesiac), or their own
+			     words; shown to the player from here. -->
+			<div class="answer">
+				<Combobox
+					label={t('day.answer')}
+					value={answerValue}
+					options={answerOptions}
+					empty={t('common.none')}
+					action={ownAnswer}
+					onChange={(a: string) => {
+						if (a === CUSTOM) return;
+						answer = a === NONE ? undefined : (a as GuessAnswer);
+						customAnswer = undefined;
+					}}
+					testid="guess-answer"
+				/>
+				<Button
+					variant="quiet"
+					icon="showToPlayer"
+					disabled={!answerText}
+					onclick={() => (showOpen = true)}>{t('show.toPlayer')}</Button
+				>
+			</div>
 		{:else if claim === 'guesses'}
 			<fieldset class="guesses">
 				<legend
@@ -207,6 +260,8 @@
 
 		<ModalActions onCancel={() => (open = false)} submit />
 	</form>
+	<!-- Inside the sheet, so it stays open under the player view. -->
+	<ShowToPlayer bind:open={showOpen} cards={answerText ? [{ title: answerText }] : []} />
 </BottomSheet>
 
 <style>
@@ -237,6 +292,12 @@
 	.correct {
 		font-weight: 400;
 		color: var(--on-surface-muted);
+	}
+	.answer {
+		display: grid;
+		grid-template-columns: 1fr auto;
+		align-items: end;
+		gap: var(--space-2);
 	}
 	.guess {
 		display: grid;

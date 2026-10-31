@@ -10,9 +10,12 @@ import {
 	FRIEND_REQUESTS_API,
 	FRIEND_SETTINGS_API,
 	FRIENDS_API,
+	FRIEND_RECENT_API,
 	FRIEND_SEAT_API,
 	isFriendAction,
+	type RecentPlayer,
 	type SeatFriendResponse,
+	type SeatFriendState,
 	type FriendAccount,
 	type FriendsResponse,
 	type RequestResponse
@@ -27,7 +30,8 @@ import { nameStub, userStub, type AccountEnv } from '../account/objects.ts';
 import { remote, type DataBinding } from '../shared-data.ts';
 import { normaliseRoomCode } from '../../src/lib/core/sync/room-code.ts';
 import type { Room } from '../room.ts';
-import type { BookEntry, FriendBook } from './book.ts';
+import type { GamePlayer } from '../../src/lib/features/friends/friend-rules.ts';
+import type { BookEntry, FriendBook, RecentEntry } from './book.ts';
 import { handleFriendScripts } from './scripts.ts';
 
 export interface FriendsEnv extends AccountEnv {
@@ -69,13 +73,55 @@ export async function describe(env: FriendsEnv, entries: BookEntry[]): Promise<F
 
 async function contents(env: FriendsEnv, accountId: string): Promise<FriendsResponse> {
 	const book = await friendBook(env, accountId).contents(Date.now());
-	const [friends, incoming, outgoing, blocked] = await Promise.all([
+	const [friends, incoming, outgoing, blocked, recent] = await Promise.all([
 		describe(env, book.friends),
 		describe(env, book.incoming),
 		describe(env, book.outgoing),
-		describe(env, book.blocked)
+		describe(env, book.blocked),
+		recentPlayers(env, accountId, book)
 	]);
-	return { friends, incoming, outgoing, blocked, findable: book.findable };
+	return { friends, incoming, outgoing, blocked, findable: book.findable, recent };
+}
+
+/**
+ * Recent players (plan F3), each with whether they can be added, as a seat answers. Someone
+ * who turned off being found is left out, as a seat shows them unavailable. Empty while the
+ * shared data Worker is older than this app.
+ */
+async function recentPlayers(
+	env: FriendsEnv,
+	accountId: string,
+	book: { friends: BookEntry[]; outgoing: BookEntry[] }
+): Promise<RecentPlayer[]> {
+	let entries: RecentEntry[];
+	try {
+		entries = await friendBook(env, accountId).recent();
+	} catch {
+		return [];
+	}
+	const friends = new Set(book.friends.map((entry) => entry.id));
+	const asked = new Set(book.outgoing.map((entry) => entry.id));
+	const found = await Promise.all(
+		entries.map(async ({ id, at, name, games }) => {
+			const friend = friends.has(id);
+			const [user, findable] = await Promise.all([
+				userStub(env, id).profile(),
+				friend ? true : friendBook(env, id).isFindable()
+			]);
+			if (!user || !findable) return undefined;
+			const state: SeatFriendState = friend ? 'friends' : asked.has(id) ? 'requested' : 'add';
+			const player: RecentPlayer = {
+				id,
+				username: user.username,
+				icon: user.icon,
+				at,
+				games,
+				state
+			};
+			return name ? { ...player, name } : player;
+		})
+	);
+	return found.filter((player) => player !== undefined);
 }
 
 /** Asks the account holding `username`; refusals read the same whether or not it exists. */
@@ -142,11 +188,37 @@ async function seatFriend(
 	const other = await env.ROOMS.get(env.ROOMS.idFromName(code)).friendSeat(accountId, target);
 	if (!other) return unavailable;
 	if (other === 'self') return { state: 'self' };
+	return friendState(env, accountId, hasUsername, other, body?.send === true);
+}
+
+/** Someone on Recent players (plan F3), answered as a seat is: only those really there. */
+async function recentFriend(
+	env: FriendsEnv,
+	accountId: string,
+	hasUsername: boolean,
+	body: Record<string, unknown> | undefined
+): Promise<SeatFriendResponse> {
+	const other = body?.recent;
+	if (typeof other !== 'string' || !(await friendBook(env, accountId).playedWith(other))) {
+		return { state: 'unavailable' };
+	}
+	return friendState(env, accountId, hasUsername, other, body?.send === true);
+}
+
+/** Whether `other`, met in a game, can be added; with `send`, asks them. */
+async function friendState(
+	env: FriendsEnv,
+	accountId: string,
+	hasUsername: boolean,
+	other: string,
+	send: boolean
+): Promise<SeatFriendResponse> {
+	const unavailable: SeatFriendResponse = { state: 'unavailable' };
 	const relation = await friendBook(env, accountId).relationTo(other);
 	if (relation.friend) return { state: 'friends' };
 	if (relation.blocked || !(await friendBook(env, other).isFindable())) return unavailable;
 	if (relation.outgoing) return { state: 'requested' };
-	if (body?.send !== true) return { state: 'add' };
+	if (!send) return { state: 'add' };
 	if (!hasUsername) return { state: 'add', refused: 'no-username' };
 	const answer = await requestAccount(env, accountId, other);
 	if (!answer.ok) return { state: 'add', refused: answer.reason };
@@ -176,6 +248,24 @@ async function act(env: FriendsEnv, accountId: string, action: string, other: st
 		case 'unblock':
 			return mine.unblock(other);
 	}
+}
+
+/**
+ * A game in a room ended (plan F3): each signed-in player there remembers the others. Each
+ * book's write is safe to repeat, and one failing doesn't stop the rest.
+ */
+export async function recordGame(env: BookEnv, game: string, players: GamePlayer[]) {
+	if (players.length < 2) return;
+	const now = Date.now();
+	await Promise.allSettled(
+		players.map((player) =>
+			friendBook(env, player.id).played(
+				game,
+				players.filter((other) => other.id !== player.id),
+				now
+			)
+		)
+	);
 }
 
 /** Called when an account is deleted: every account it was linked to forgets it. */
@@ -211,7 +301,7 @@ export async function handleFriends(
 		return json(await sendRequest(env, accountId, auth.user.username !== null, username));
 	}
 
-	if (path === FRIEND_SEAT_API && method === 'POST') {
+	if ((path === FRIEND_SEAT_API || path === FRIEND_RECENT_API) && method === 'POST') {
 		const body = await readBody(request);
 		if (
 			body?.send === true &&
@@ -220,7 +310,8 @@ export async function handleFriends(
 		) {
 			return fail(429, 'Too many tries. Wait a minute and try again.');
 		}
-		return json(await seatFriend(env, accountId, auth.user.username !== null, body));
+		const answer = path === FRIEND_SEAT_API ? seatFriend : recentFriend;
+		return json(await answer(env, accountId, auth.user.username !== null, body));
 	}
 
 	if (path === FRIEND_SETTINGS_API && method === 'PUT') {
