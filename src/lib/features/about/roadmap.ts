@@ -333,7 +333,9 @@ export const ROADMAP: readonly RoadmapItem[] = [
 			'L90',
 			'L91',
 			'L92',
-			'L93'
+			'L93',
+			// Small token Option A (Trevor, 2026-10-31): who a player really is, marked =.
+			'L101'
 		],
 		prs: [828, 833, 838, 841, 843, 846, 847, 849, 851, 853, 855, 857]
 	},
