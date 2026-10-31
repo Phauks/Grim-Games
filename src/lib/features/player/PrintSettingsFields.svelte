@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Select from '#lib/ui/primitives/Select.svelte';
-	import Stepper from '#lib/ui/primitives/Stepper.svelte';
+	import NumberSelect from '#lib/ui/primitives/NumberSelect.svelte';
 	import SettingCollapsible from '#lib/ui/settings/SettingCollapsible.svelte';
 	import SettingRow from '#lib/ui/settings/SettingRow.svelte';
 	import SettingSelect from '#lib/ui/settings/SettingSelect.svelte';
@@ -72,26 +72,24 @@
 			defaultValue={PRINT_DEFAULTS.pageSize}
 			onChange={(pageSize) => set({ pageSize })}
 		/>
-		<!-- Under its name on a phone, where the stepper and unit don't fit beside it. -->
+		<!-- Under its name on a phone, where the margin and unit don't fit beside it. -->
 		<SettingRow
 			layout="inline-wide"
 			label={t('player.printMargins')}
 			onReset={() => set({ margin: PRINT_DEFAULTS.margin })}
 			isDefault={Math.abs(print.margin - PRINT_DEFAULTS.margin) < 0.05}
 		>
-			{#snippet control()}
+			{#snippet control(labelId)}
 				<span class="margin">
-					<Stepper
+					<NumberSelect
 						value={marginSteps}
 						label={t('player.printMargins')}
-						lessLabel={t('player.printSmallerMargins')}
-						moreLabel={t('player.printLargerMargins')}
+						labelledBy={labelId}
 						min={0}
 						max={maxSteps}
+						format={marginText}
 						onchange={(steps) => set({ margin: steps * MM_PER_STEP[unit] })}
-					>
-						{#snippet display()}{marginText(marginSteps)}{/snippet}
-					</Stepper>
+					/>
 					<Select
 						label={t('player.printMarginUnit')}
 						hideLabel
@@ -101,7 +99,7 @@
 							label: t(`player.printMarginUnit.${value}`)
 						}))}
 						onChange={(marginUnit) =>
-							// The nearest step of the new unit, so the stepper's number is exact.
+							// The nearest step of the new unit, so the margin's choice is exact.
 							set({
 								marginUnit,
 								margin: Math.round(print.margin / MM_PER_STEP[marginUnit]) * MM_PER_STEP[marginUnit]
@@ -237,10 +235,7 @@
 		gap: var(--space-2);
 		white-space: nowrap;
 	}
-	/* Room for "1⅞ in", so a longer margin never moves the buttons. */
-	.margin :global(output) {
-		min-width: 3.6em;
-	}
+	/* The margin and its unit keep their width, so a longer choice never moves them. */
 	.margin > :global([data-scope='select'][data-part='root']) {
 		flex: none;
 		width: calc(6 * var(--u));

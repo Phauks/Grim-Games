@@ -16,6 +16,7 @@
 	import PlayerScriptActions from '#lib/features/player/PlayerScriptActions.svelte';
 	import { scriptVersion } from '#lib/features/player/player-script.ts';
 	import ScriptByline from '#lib/features/player/ScriptByline.svelte';
+	import { storytellerLook } from '#lib/features/room/storyteller-look.svelte.ts';
 	import { gameSheetRules } from '#lib/features/modes/sheet-rules.ts';
 	import { gameShareable } from '#lib/features/scripts/game-shareable.svelte.ts';
 	import { playerSettings } from '#lib/features/player/player-settings.svelte.ts';
@@ -90,6 +91,7 @@
 			author={script?.meta.author}
 			{version}
 			storyteller={game.storytellerName}
+			profile={room ? { roomCode: room, look: storytellerLook(room) } : undefined}
 			inline
 		/>
 	{/snippet}

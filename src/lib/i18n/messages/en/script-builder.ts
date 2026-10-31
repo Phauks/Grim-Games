@@ -11,8 +11,6 @@ export const scriptBuilder = {
 	'script-builder.teensyville': 'Teensyville',
 	'script-builder.expected': 'Expected counts',
 	'script-builder.expectedReset': 'Back to the usual counts',
-	'script-builder.expectedLess': 'Fewer {type} expected',
-	'script-builder.expectedMore': 'More {type} expected',
 	'script-builder.selectedOnly': 'Show only selected',
 	'script-builder.variationOf': 'Variation of',
 	'script-builder.editing': 'Editing',

@@ -15,7 +15,7 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
-	import Stepper from '#lib/ui/primitives/Stepper.svelte';
+	import NumberSelect from '#lib/ui/primitives/NumberSelect.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 
 	/**
@@ -117,14 +117,13 @@
 			onChange={(v: SeatedType) => (type = v)}
 		/>
 		<div class="number">
-			<span class="label">{t('character-builder.number')}</span>
-			<Stepper
+			<span class="label" aria-hidden="true">{t('character-builder.number')}</span>
+			<NumberSelect
 				bind:value={from}
 				{min}
 				max={9}
 				label={t('character-builder.number')}
-				lessLabel={t('character-builder.lessNumber')}
-				moreLabel={t('character-builder.moreNumber')}
+				hideLabel
 				disabled={!usesNumbers}
 				testid="setup-from"
 			/>
@@ -137,13 +136,12 @@
 				disabled={kind !== 'count'}
 				onChange={(v: 'none' | 'or' | 'to') => (second = v)}
 			/>
-			<Stepper
+			<NumberSelect
 				bind:value={to}
 				{min}
 				max={9}
 				label={t('character-builder.secondNumber')}
-				lessLabel={t('character-builder.lessSecond')}
-				moreLabel={t('character-builder.moreSecond')}
+				hideLabel
 				disabled={kind === 'count' ? second === 'none' : kind !== 'copies'}
 				testid="setup-to"
 			/>

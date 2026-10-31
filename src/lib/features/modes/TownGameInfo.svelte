@@ -1,14 +1,11 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import type { PlayerName, ScriptMeta } from '#lib/core/data/index.ts';
+	import type { ScriptMeta } from '#lib/core/data/index.ts';
 	import { gameClock } from '#lib/core/rules/index.ts';
-	import { parseAvatarId } from '#lib/core/avatars/index.ts';
-	import { parseFrameId } from '#lib/core/frames/index.ts';
 	import type { PublicCorner, PublicStoryteller } from '#lib/core/sync/public-projection.ts';
-	import { isImageHash, roomImagePath } from '#lib/core/sync/room-images.ts';
 	import { formatRoomCode } from '#lib/core/sync/room-code.ts';
 	import { phaseText } from '#lib/features/grimoire/phase-text.ts';
-	import PlayerProfileDialog from '#lib/features/player/PlayerProfileDialog.svelte';
+	import StorytellerProfile from '#lib/features/player/StorytellerProfile.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import GameInfoSheet, { type GameInfoRow } from './GameInfoSheet.svelte';
 
@@ -39,11 +36,6 @@
 		corner,
 		roomCode
 	}: Props = $props();
-	const picture = $derived(
-		roomCode && isImageHash(storyteller?.picture)
-			? roomImagePath(roomCode, storyteller.picture)
-			: undefined
-	);
 	let profileOpen = $state(false);
 
 	/** Game time ticks while it is open, as the corner's does. */
@@ -99,11 +91,9 @@
 </script>
 
 <GameInfoSheet bind:open {rows} {children} />
-{#if roomCode}<PlayerProfileDialog
+{#if roomCode}<StorytellerProfile
 		bind:open={profileOpen}
-		name={(storytellerName?.trim() || t('modes.storytellerName')) as PlayerName}
-		avatar={parseAvatarId(storyteller?.avatar) ?? 'initials'}
-		frame={parseFrameId(storyteller?.frame)}
-		{picture}
-		friend={{ code: roomCode, storyteller: true }}
+		name={storytellerName}
+		look={storyteller}
+		{roomCode}
 	/>{/if}

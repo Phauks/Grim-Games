@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { chooseRulesOnSetup, pickScript } from './new-game.ts';
+import { pickNumber } from './number-select.ts';
 
 // One start flow for every game (Trevor, 2026-10-23): New game, then Character selection, where
 // the special rules and Game settings open (Trevor, 2026-10-29), with a Back to New game that
@@ -14,7 +15,7 @@ test('a plain game goes to Character selection, and Back returns to New game as 
 	await pickScript(page, 'Bad Moon Rising');
 	await page.getByRole('button', { name: 'Create game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
-	await page.getByRole('button', { name: 'More players' }).tap();
+	await pickNumber(page, 'Players', 9);
 
 	await setupBar(page).getByRole('button', { name: 'New game' }).tap();
 	await expect(page).toHaveURL(/\/new#back$/);

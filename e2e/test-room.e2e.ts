@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { toBoard } from './new-game.ts';
+import { pickNumber } from './number-select.ts';
 
 // Test room (Trevor, 2026-10-30: "a place where i fully control the fake game, and have access
 // to a certain number of fake players"; "so i can choose having multiple types of different
@@ -28,9 +29,7 @@ test('fake players join a room, each on its own device, and can be shown', async
 	await expect(page.getByTestId('test-room-status')).toHaveText(/^No room/);
 
 	// Two fake players, on two kinds of phone.
-	const more = page.getByRole('button', { name: 'More players' });
-	await more.tap();
-	await more.tap();
+	await pickNumber(page, 'Players', 'Players 2');
 	await expect(page.getByTestId('test-room-players')).toHaveText('Players 2');
 	const rows = page.getByTestId('test-room-player');
 	await expect(rows).toHaveCount(2);

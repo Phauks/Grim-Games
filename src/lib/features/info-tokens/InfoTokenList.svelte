@@ -1,3 +1,8 @@
+<script module lang="ts">
+	/** The id of the card for once, so the view showing it can bring its editor back. */
+	export const QUICK_CARD_ID = 'quick';
+</script>
+
 <script lang="ts">
 	import SectionStack from '#lib/ui/layout/SectionStack.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
@@ -17,7 +22,8 @@
 	import RichTextField from './RichTextField.svelte';
 	import InfoTokenTile from './InfoTokenTile.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
-	import Stepper from '#lib/ui/primitives/Stepper.svelte';
+	import NumberSelect from '#lib/ui/primitives/NumberSelect.svelte';
+	import { MAX_SEATS } from '#lib/core/engine/index.ts';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import { plainText } from './bold.ts';
 	import { tokenTitle } from './token-title.ts';
@@ -138,11 +144,19 @@
 		quickAdds = add;
 		quickOpen = true;
 	}
+	/**
+	 * Back to the card just shown, its words kept, to fix a mistake without typing it all
+	 * again (Trevor, 2026-10-31); the view that showed it calls this when it closes.
+	 */
+	export function reopenQuick() {
+		quickAdds = false;
+		quickOpen = true;
+	}
 	/** Enter keeps to how it was opened: the tile's + adds, the card itself shows. */
 	function useQuick(add = quickAdds) {
 		if (!plainText(quickText).trim()) return;
 		quickOpen = false;
-		const card: InfoToken = { id: 'quick', text: quickText, source: 'custom' };
+		const card: InfoToken = { id: QUICK_CARD_ID, text: quickText, source: 'custom' };
 		if (add) onadd?.(card);
 		else onchoose(card);
 	}
@@ -427,16 +441,12 @@
 		/>
 	{:else if asking && askValue?.kind === 'number'}
 		<div class="number">
-			<Stepper
+			<NumberSelect
 				bind:value={number}
 				label={tokenTitle(asking)}
-				lessLabel={t('info-tokens.numberLess')}
-				moreLabel={t('info-tokens.numberMore')}
+				hideLabel
 				min={askValue.min}
-				max={askValue.max}
-				large
-				typeable
-				oncommit={useAsked}
+				max={askValue.max ?? MAX_SEATS}
 			/>
 		</div>
 	{:else if askValue?.kind === 'choices'}

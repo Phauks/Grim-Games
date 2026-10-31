@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
-	import Stepper from '#lib/ui/primitives/Stepper.svelte';
+	import NumberSelect from '#lib/ui/primitives/NumberSelect.svelte';
 	import SetupTable from './SetupTable.svelte';
 	import { MAX_SELECT_PLAYERS, MIN_SELECT_PLAYERS } from './selection.svelte.ts';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 
 	/**
-	 * The player count with its stepper and the setup sheet under it, where tapping a column
+	 * The player count with its drop-down and the setup sheet under it, where tapping a column
 	 * picks that count. Shared by character selection and a mode's New game (Trevor, 2026-10-17).
 	 */
 	interface Props {
@@ -49,16 +49,14 @@
 	<Collapsible title={title ?? t('setup.sheet')} level={3} {storageKey}>
 		{#snippet aside()}
 			<div class="players">
-				<span>{t('setup.players')}</span>
-				<Stepper
+				<span aria-hidden="true">{t('setup.players')}</span>
+				<NumberSelect
 					value={players}
 					label={t('setup.players')}
-					lessLabel={t('setup.fewerPlayers')}
-					moreLabel={t('setup.morePlayers')}
+					hideLabel
 					{min}
 					{max}
 					onchange={set}
-					large
 					{testid}
 				/>
 			</div>

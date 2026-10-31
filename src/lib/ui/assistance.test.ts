@@ -9,7 +9,6 @@ describe('assistance', () => {
 			// record-keeping: both off until asked for.
 			expect(DEFAULT_ASSISTANCE[key]).toBe(key !== 'stackReminders' && key !== 'trackNominations');
 		}
-		expect(ASSIST_LABELS.nightGuide.label).toBe('Guide night steps');
 		expect(ASSIST_LABELS.explainTerms.label).toBe(
 			'Underline rules terms with glossary definitions'
 		);
@@ -23,9 +22,15 @@ describe('assistance', () => {
 		});
 	});
 
+	it('drops a removed switch from saved settings', () => {
+		// Guide night steps never changed anything and was removed (Trevor, 2026-10-31).
+		expect(parseAssistance({ nightGuide: false })).toEqual(DEFAULT_ASSISTANCE);
+	});
+
 	it('gives a switch added later its default, keeping the saved ones', () => {
 		const saved = { ...DEFAULT_ASSISTANCE, nightAnswers: false } as Record<string, boolean>;
-		delete saved.nightGuide;
-		expect(parseAssistance(saved)).toEqual({ ...DEFAULT_ASSISTANCE, nightAnswers: false });
+		delete saved.nightAnswers;
+		saved.nightWalkthrough = false;
+		expect(parseAssistance(saved)).toEqual({ ...DEFAULT_ASSISTANCE, nightWalkthrough: false });
 	});
 });
