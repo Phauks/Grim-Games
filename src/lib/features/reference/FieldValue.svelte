@@ -28,6 +28,8 @@
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import { cardsOfCharacter } from '#lib/features/info-tokens/character-cards.ts';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
+	import BoardReminder from '#lib/features/grimoire/BoardReminder.svelte';
+	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import CharacterDataDialog from './CharacterDataDialog.svelte';
@@ -225,12 +227,10 @@
 	{:else if field === 'tokens'}
 		<span class="tokens"
 			>{#each entry.tokens as token, i (i)}{@const note = tokenNote(token)}<span class="token-row"
-					><ReminderToken
-						label={token.label}
-						type={character.type}
-						{character}
-						count={token.copies}
-					/>{#if note}<span class="small">{note}</span>{/if}</span
+					><BoardReminder label={token.label} {character} />{#if token.copies > 1}<CountBadge
+							count={token.copies}
+							times
+						/>{/if}{#if note}<span class="small">{note}</span>{/if}</span
 				>{:else}{t('common.none')}{/each}</span
 		>
 	{:else if field === 'special'}
@@ -360,11 +360,15 @@
 		padding-top: var(--space-2);
 		border-top: var(--card-border);
 	}
+	/* The token as on the board (Trevor, 2026-10-30), with room under it for its words' band
+	   and beside it for words wider than it. */
 	.token-row {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		gap: calc(0.5 * var(--u));
+		gap: calc(0.5 * var(--u)) var(--space-3);
+		padding-bottom: var(--space-2);
+		padding-left: var(--space-2);
 	}
 	.spaced {
 		display: inline-flex;
