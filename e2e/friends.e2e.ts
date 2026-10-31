@@ -389,6 +389,51 @@ test('people from a finished game are on Recent players, with Add friend', async
 	await expect(ann.page.getByTestId('friend-recent').getByTestId('player-badge')).toHaveText('Bob');
 });
 
+test('the Storyteller invites a friend, who joins from Friends', async ({ browser }) => {
+	// Plan F4: Invite friends on the room's Share; the invite waits on the friend's Friends
+	// page with Join, and the sidebar counts it.
+	test.slow();
+	const ann = await signedIn(browser, 'ann');
+	const bob = await signedIn(browser, 'bob');
+	await befriend(ann, bob);
+	const { code } = await liveRoom(ann.page);
+
+	await ann.page.getByRole('button', { name: 'Invite friends' }).tap();
+	const sheet = ann.page.getByRole('dialog', { name: 'Invite friends' });
+	const row = sheet.getByTestId('invite-friends').getByRole('listitem').filter({
+		hasText: bob.username
+	});
+	await row.getByRole('button', { name: 'Invite' }).tap();
+	await expect(row.getByRole('button', { name: 'Invited' })).toBeDisabled();
+	await sheet.getByRole('button', { name: 'Close' }).tap();
+
+	// Counted beside Friends in Bob's menu, as a request is.
+	await bob.page.goto('/');
+	await expect((await theMenu(bob.page)).getByTestId('friend-requests-count')).toHaveText('1');
+	await bob.page.goto('/friends');
+	const invite = bob.page.getByTestId('friend-invites').getByRole('listitem');
+	await expect(invite).toContainText('Trouble Brewing');
+	await expect(invite).toContainText(`From ${ann.username}`);
+	await invite.getByRole('link', { name: 'Join' }).tap();
+	await expect(bob.page).toHaveURL(new RegExp(`/join#${code}$`));
+	await expect(bob.page.getByTestId('room-preview')).toContainText('Trouble Brewing');
+	await bob.page.getByRole('button', { name: 'Join as player' }).tap();
+	await openProfile(bob.page);
+	await setPlayerName(bob.page, 'Bob');
+	await bob.page.keyboard.press('Escape');
+	await expect(ann.page.getByTestId('status-players')).toHaveText('1 player');
+
+	// Bob is in the room now, and the sheet says so.
+	await ann.page.getByRole('button', { name: 'Invite friends' }).tap();
+	await expect(row.getByRole('button', { name: 'In the room' })).toBeDisabled();
+	await sheet.getByRole('button', { name: 'Close' }).tap();
+
+	// Declined, it goes.
+	await bob.page.goto('/friends');
+	await bob.page.getByTestId('friend-invites').getByRole('button', { name: 'Decline' }).tap();
+	await expect(bob.page.getByTestId('friend-invites-none')).toBeVisible();
+});
+
 /** Ann asks Bob by username and Bob accepts. */
 async function befriend(ann: { page: Page }, bob: { page: Page; username: string }) {
 	await ann.page.goto('/friends');

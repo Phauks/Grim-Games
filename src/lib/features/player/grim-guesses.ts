@@ -188,30 +188,14 @@ export function writeGuesses(room: string, guesses: Guesses): void {
 	writeStored(key(room), guesses);
 }
 
+/**
+ * Where the old "This is me" mark was kept. Players are seated by the room now (Trevor,
+ * 2026-10-31), so it is no longer read; a game's guesses are still thrown away with it.
+ */
 const selfKey = (room: string) => `grim-games:play:self:${room}`;
 
-/** Throws a game's guesses and own-seat mark away (the grim cover's, blank each time). */
+/** Throws a game's guesses away (the grim cover's, blank each time). */
 export function forgetGuesses(room: string): void {
 	writeStored(key(room), undefined);
 	writeStored(selfKey(room), undefined);
-}
-
-/**
- * The seat this player marked as their own on their Grim tab (Trevor, 2026-10-26: "allow
- * marking a person as self in own grim"), kept per game like the guesses. `''` when they
- * marked none, so the seat the Storyteller gave them can be unmarked too; undefined when they
- * never chose, and the room's seat counts.
- */
-export function readSelf(room: string): string | undefined {
-	const raw = readStored(selfKey(room));
-	return typeof raw === 'string' ? raw : undefined;
-}
-
-export function writeSelf(room: string, seatId: string): void {
-	writeStored(selfKey(room), seatId);
-}
-
-/** The player's own seat: the one they marked, else the one the room gave them. */
-export function selfSeat(marked: string | undefined, roomSeat: string | undefined) {
-	return marked === undefined ? roomSeat : marked || undefined;
 }
