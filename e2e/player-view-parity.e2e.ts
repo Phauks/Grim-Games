@@ -235,8 +235,24 @@ async function grimLayout(screen: Locator) {
 		Math.round(((x - box.x) / box.width) * 100),
 		Math.round(((y - box.y) / box.height) * 100)
 	]);
+	// How each part of the tab is painted, so a style one way in alone (a fill, a ring, a
+	// filter) shows as a difference (Trevor, 2026-10-31: boxes over the seats from the cover).
+	const styles = await town.evaluate((root) =>
+		[root, ...root.querySelectorAll('*')].map((e) => {
+			const s = getComputedStyle(e);
+			return [
+				e.tagName,
+				s.backgroundColor,
+				s.backgroundImage,
+				s.outlineStyle,
+				s.filter,
+				s.backdropFilter,
+				s.opacity
+			].join(' ');
+		})
+	);
 	await screen.getByRole('tab', { name: 'Script' }).tap();
-	return { buttons, places };
+	return { buttons, places, styles };
 }
 
 // Every way the Storyteller opens the players' screen shows the same one (Trevor, 2026-10-31:
@@ -267,4 +283,11 @@ test("the grim cover's Player view is the board's Script, seat for seat", async 
 		fromBoard
 	);
 	expect(await grimLayout(view)).toEqual(boardGrim);
+	// The cover is opaque, so nothing over it blurs what is behind: a blur in the browser's top
+	// layer drew dark boxes over the seats and buttons (Trevor, 2026-10-31).
+	const blurs = await page
+		.locator('dialog [data-part="backdrop"]')
+		.evaluateAll((all) => all.map((e) => getComputedStyle(e).backdropFilter));
+	expect(blurs.length).toBeGreaterThan(0);
+	expect(blurs.every((b) => b === 'none')).toBe(true);
 });
