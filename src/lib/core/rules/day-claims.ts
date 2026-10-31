@@ -2,7 +2,8 @@ import type { CharacterRules, DayClaim, DayUse, DayUseWho } from '../data/charac
 import type { CharacterId } from '../data/index.ts';
 import { rulesOf } from '../data/rules/index.ts';
 import type { CharacterGuess, CharacterLookup, Game, SeatId } from '../model/index.ts';
-import { trueCharacter } from '../model/selectors.ts';
+import { trueCharacter, typeOf } from '../model/selectors.ts';
+import { abilityState } from './ability.ts';
 import { validDeathCauses } from './death-causes.ts';
 
 type RulesLookup = ReadonlyMap<CharacterId, { rules?: CharacterRules }>;
@@ -97,4 +98,36 @@ export function correctGuesses(
 	return distinctGuesses(guesses).filter(
 		(g) => trueCharacter(game, g.seatId, characters) === g.characterId
 	);
+}
+
+/**
+ * What a day ability's player may be told about the player it was used on (`dayUse.answer`):
+ * - `right`: that player carries one of this character's impairing reminders, so they learn
+ *   the Demon player (`demons`);
+ * - `wrong`: they don't, so they learn any player who isn't the Demon;
+ * - `any`: the ability doesn't work (drunk or poisoned), so any player;
+ * - `dead`: its player has died, and the part that answers ends with death (a dead
+ *   Puzzlemaster may not guess, https://wiki.bloodontheclocktower.com/Puzzlemaster).
+ * Only this character's own reminder counts: a player drunk by other means is a wrong guess.
+ */
+export type DayUseAnswerOptions =
+	{ kind: 'right' | 'wrong'; demons: SeatId[] } | { kind: 'any' } | { kind: 'dead' };
+
+export function dayUseAnswer(
+	game: Game,
+	seatId: SeatId,
+	characterId: CharacterId,
+	target: SeatId,
+	characters: CharacterLookup
+): DayUseAnswerOptions | undefined {
+	const rules = rulesOf(characterId, characters);
+	if (rules?.dayUse?.answer !== 'demon-if-marked') return undefined;
+	if (game.seats[seatId]?.dead) return { kind: 'dead' };
+	if (abilityState(game, seatId, characters).impairments.length > 0) return { kind: 'any' };
+	const labels = Object.keys(rules.impairs?.tokens ?? {});
+	const marked = (game.seats[target]?.reminders ?? []).some(
+		(r) => r.characterId === characterId && labels.includes(r.label)
+	);
+	const demons = game.seating.filter((s) => typeOf(game, s, characters) === 'demon');
+	return { kind: marked ? 'right' : 'wrong', demons };
 }

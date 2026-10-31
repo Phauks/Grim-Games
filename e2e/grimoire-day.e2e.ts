@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 import { pickNumber } from './number-select.ts';
+import { putReminder } from './reminder-bank.ts';
 
 // The day sheet over the board of a saved game: executions, exiles and deaths, all
 // by hand, each with a cause from the valid ones. Nominations happen off the grimoire.
@@ -1093,4 +1094,44 @@ test('a death marked by day on the Vizier is offered with a caution', async ({ p
 	await status.getByRole('button', { name: 'Why The Demon is marked' }).tap();
 	const why = page.getByRole('dialog', { name: 'The Demon' });
 	await expect(why).toContainText(/Seat 3 can't die during the day\s*\(\s*Vizier\s*\)/);
+});
+
+// https://wiki.bloodontheclocktower.com/Puzzlemaster: marking the guess used asks whom they
+// guessed, then says what to tell them: the Demon for the player its Drunk is on, anyone but the
+// Demon otherwise. Either way the Puzzlemaster gets Guess Used (M10b).
+test('the Puzzlemaster’s guess asks who was guessed and says what to tell them', async ({
+	page
+}) => {
+	await startGame(page);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	const picker = page.getByRole('dialog', { name: 'Character for Seat 1' });
+	await picker.getByText('Include characters not on the script').tap();
+	await picker.getByRole('button', { name: 'Puzzlemaster', exact: true }).tap();
+	await closeSeat(page);
+	await chooseCharacter(page, 2, 'Empath');
+	await chooseCharacter(page, 3, 'Imp');
+	await putReminder(page, 'Drunk', 2);
+
+	const day = await openDay(page);
+	await day
+		.locator('li[data-character="puzzlemaster"]')
+		.getByRole('button', { name: /^Used: Puzzlemaster/ })
+		.tap();
+	const chooser = page.getByRole('dialog', { name: /^Who did Puzzlemaster .* guess\?$/ });
+	await chooser.getByRole('button', { name: /Seat 2$/ }).tap();
+	const confirm = page.getByRole('alertdialog', { name: /^Mark Puzzlemaster .* as used\?$/ });
+	const answer = confirm.getByTestId('day-use-answer');
+	await expect(answer).toHaveAttribute('data-kind', 'right');
+	await expect(answer).toContainText(/Right, so the Demon:\s*Seat 3/);
+	// A player without the Puzzlemaster's Drunk is a wrong guess.
+	await confirm.getByTestId('day-use-on').tap();
+	await chooser.getByRole('button', { name: /Seat 4$/ }).tap();
+	await expect(answer).toHaveAttribute('data-kind', 'wrong');
+	await expect(answer).toContainText(/Wrong, so anyone but the Demon:\s*Seat 3/);
+	await confirm.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await closeDay(page);
+	await expect(
+		page.locator('[data-testid="seat"][aria-label^="Seat 1: no name, Puzzlemaster"]')
+	).toHaveAttribute('aria-label', /1 reminder/);
 });

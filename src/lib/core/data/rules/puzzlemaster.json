@@ -8,6 +8,11 @@
 		}
 	},
 	"actsWhenDead": true,
+	"dayUse": {
+		"who": "guessed",
+		"spentToken": "Guess Used",
+		"answer": "demon-if-marked"
+	},
 	"reminderTargets": {
 		"Drunk": {
 			"seat": "any",
