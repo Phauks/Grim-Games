@@ -41,7 +41,7 @@ describe('room bots', () => {
 			public: { seats: seats(5), today: { nominations: [], executions: [] } }
 		});
 		const first = replies(v, { look: true }, self);
-		expect(first.send).toEqual([{ type: 'sit', after: 's3' }]);
+		expect(first.send).toEqual([{ type: 'sit', onto: 's3' }]);
 		expect(replies(v, first.memory, self).send).toEqual([]);
 	});
 
