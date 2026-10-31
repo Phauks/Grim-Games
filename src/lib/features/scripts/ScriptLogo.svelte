@@ -2,8 +2,9 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 
 	/**
-	 * A script's logo, the same wherever a script is shown (Trevor, 2026-10-18): the board's
-	 * background, Search rows and the script's details. `src` comes from `scriptLogo` (TPI's
+	 * A script's logo, the same wherever a script is shown (Trevor, 2026-10-18). Beside a name,
+	 * use ScriptName; on its own, BoardLogo (the board's middle), CoverScreen, ScriptQrCenter
+	 * and the printed sheet draw it (`grim/script-name`). `src` comes from `scriptLogo` (TPI's
 	 * edition logo, or the author's `_meta.logo` link, loaded from there and never copied).
 	 * The box keeps its size whether or not the image arrives, so nothing moves around it;
 	 * without `src`, or if the link fails, the box stays empty.
@@ -50,11 +51,6 @@
 </span>
 
 <style>
-	/* Beside the name in a title (/play, the board's Script), as tall as two lines of it at most. */
-	:global(.script-logo.title-logo) {
-		width: 1.8em;
-		height: 1.8em;
-	}
 	/* The image is laid over the box, so its size is always the box's and never the picture's
 	   own (about 500px for TPI's logos), whatever a browser makes of percentage heights. */
 	.script-logo {

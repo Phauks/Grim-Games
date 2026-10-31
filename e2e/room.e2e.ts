@@ -204,11 +204,16 @@ test('a phone joins with a name, and the Storyteller seats it', async ({
 	await page.getByRole('link', { name: 'Grimoire' }).tap();
 	await expect(page.locator('[data-testid="seat"][aria-label^="Seat 3: Alex K"]')).toBeVisible();
 
-	// Under the code: connected, with who is in the room (Trevor, 2026-10-20).
+	// Beside the code: connected, with who is in the room (Trevor, 2026-10-20; 2026-10-31).
 	await page.goto(`${board}/room`);
-	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toHaveText('Connected');
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toContainText(
+		'Connected'
+	);
 	await expect(page.getByTestId('status-players')).toHaveText('1 player');
+	// Who is watching, on the Grimoire tab (Trevor, 2026-10-31).
+	await page.getByRole('tab', { name: 'Grimoire' }).tap();
 	await expect(page.getByTestId('status-watching')).toHaveText('0 watching');
+	await page.getByRole('tab', { name: 'Players' }).tap();
 	// New code deletes the old room, sending the phone back to the code form.
 	await page.getByRole('button', { name: 'New code' }).tap();
 	await page
@@ -441,7 +446,8 @@ test('after End game the Storyteller shares the finished grimoire with the room'
 	const finalSwitch = phone.getByRole('checkbox', { name: 'Final grimoire' });
 	await expect(phone.getByTestId('player-grim')).toBeVisible();
 	await expect(finalSwitch).toHaveCount(0);
-	// Only once the game is over.
+	// Only once the game is over: Share's Grimoire tab has it, disabled (Trevor, 2026-10-31).
+	await page.getByRole('tab', { name: 'Grimoire' }).tap();
 	await expect(page.getByRole('button', { name: 'Share grim' })).toBeDisabled();
 
 	await page.goto(board);
@@ -459,9 +465,9 @@ test('after End game the Storyteller shares the finished grimoire with the room'
 	// The Share sheet offers Share grim once the game is over, and asks first.
 	const seats = await page.getByTestId('seat').count();
 	await page.getByRole('button', { name: 'Share', exact: true }).tap();
-	const share = page
-		.getByRole('dialog', { name: 'Share', exact: true })
-		.getByRole('button', { name: 'Share grim' });
+	const sheet = page.getByRole('dialog', { name: 'Share', exact: true });
+	await sheet.getByRole('tab', { name: 'Grimoire' }).tap();
+	const share = sheet.getByRole('button', { name: 'Share grim' });
 	await share.tap();
 	await page
 		.getByRole('alertdialog', { name: 'Share the grimoire?' })
@@ -1388,6 +1394,8 @@ test('the room code and a Grim view password open the grimoire, a new password e
 	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
 	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
 	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+	// Grim view is on Share's Grimoire tab (Trevor, 2026-10-31).
+	await page.getByRole('tab', { name: 'Grimoire' }).tap();
 	const watch = page.getByTestId('watch-link');
 	// A password field (Trevor, 2026-10-22): masked, with an eye button that shows it.
 	const password = watch.getByLabel('Grim view password', { exact: true });
@@ -1469,6 +1477,7 @@ test('the room code and a Grim view password open the grimoire, a new password e
 	const next = await startGame(page);
 	await page.goto(`${next}/room`);
 	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
+	await page.getByRole('tab', { name: 'Grimoire' }).tap();
 	await expect(password).toHaveValue(/^[a-z]+-[a-z]+-[1-9][0-9]$/);
 	expect(await password.inputValue()).not.toBe('lantern');
 	expect(await password.inputValue()).not.toBe(made);
@@ -1485,10 +1494,12 @@ test('a spectator watches the whole grimoire with Grim view, after promising', a
 	const board = await startGame(page);
 	await page.goto(`${board}/room`);
 	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
-	// On the same screen as the players' code, with no tabs (Trevor, 2026-10-22).
-	await expect(page.getByRole('tab')).toHaveCount(0);
+	// The players' code on the Players tab, Grim view on the Grimoire tab (Trevor, 2026-10-31,
+	// in place of 2026-10-22's one screen).
+	await expect(page.getByRole('tab')).toHaveText(['Players', 'Grimoire']);
 	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
 	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+	await page.getByRole('tab', { name: 'Grimoire' }).tap();
 	const watch = page.getByTestId('watch-link');
 	const toggle = watch.getByRole('checkbox', { name: 'Grim view' });
 	// The switch is tapped by its label, as the whole row is one tap target.
@@ -1653,9 +1664,10 @@ test('a spectator watches the whole grimoire with Grim view, after promising', a
 	// Turning it off takes the grimoire away at once; turning it on again makes a new password.
 	await page.goto(`${board}/room`);
 	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
-	// The players' tab says one is watching, by a dot that shows it is connected.
+	// Players says the room is connected, by a dot; Grimoire says one is watching.
 	await expect(page.getByTestId('connection-dot')).toBeVisible();
 	await expect(page.getByTestId('status-players')).toHaveText('0 players');
+	await page.getByRole('tab', { name: 'Grimoire' }).tap();
 	await expect(page.getByTestId('status-watching')).toHaveText('1 watching');
 	// New password replaces it in one step, letting the viewer go (Trevor, 2026-10-20).
 	await watch.getByRole('button', { name: 'New password' }).tap();

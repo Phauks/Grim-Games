@@ -16,6 +16,7 @@
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import { roomHost } from './host.svelte.ts';
+	import { removeFromRoom } from './host-seating.ts';
 	import PlayerInbox from './PlayerInbox.svelte';
 	import { playersDialog } from './players-dialog.svelte.ts';
 	import RemovedPlayers from './RemovedPlayers.svelte';
@@ -138,7 +139,7 @@
 	let confirmRemove = $state(false);
 	function remove() {
 		if (!removing) return;
-		host.send({ type: 'remove', memberId: removing.memberId });
+		removeFromRoom(host, game, removing.memberId);
 	}
 
 	// ── Notes: the game's (no seat) and each player's, the same notes as before ──

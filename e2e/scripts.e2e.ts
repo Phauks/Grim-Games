@@ -1524,7 +1524,7 @@ test('on a phone each Search row is two lines: the whole name, then Author and T
 	const row = table.locator('tbody tr').filter({ hasText: name });
 	await expect(row).toBeVisible();
 	// Trevor, 2026-10-19: names were cut to three letters ("One ...") beside Author and Type.
-	const title = row.locator('.title');
+	const title = row.locator('.script-name .name');
 	expect(await title.evaluate((e) => e.scrollWidth <= e.clientWidth)).toBe(true);
 	const [nameCell, author, type] = await Promise.all(
 		['name', 'author', 'kind'].map((col) => row.locator(`[data-col="${col}"]`).boundingBox())
