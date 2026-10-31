@@ -14,6 +14,8 @@ import {
 	gameOver,
 	hostView,
 	isRemoved,
+	isRemovedProbe,
+	REMOVED_PROBE_HEADER,
 	isScript,
 	isSharedGrimoire,
 	letBackIn,
@@ -75,6 +77,7 @@ import { closeSocket, refuseRemoved, send, sendText, type Attachment } from './r
 import {
 	accountTags,
 	linkAccount,
+	hostedAccounts,
 	requestAccount,
 	roomPlayers,
 	seatAccount,
@@ -182,13 +185,23 @@ export class Room extends DurableObject<RoomEnv> {
 		return seatAccount(this.ctx, await this.load(), requester, target);
 	}
 
+	/** Who is in this room, for its Storyteller inviting friends (plan F4). */
+	async inviteAccounts(requester: string): Promise<string[] | undefined> {
+		if (!(await this.load())) return undefined;
+		return hostedAccounts(this.ctx, requester);
+	}
+
 	async fetch(request: Request): Promise<Response> {
 		const room = await this.load();
 		const image = parseRoomImagePath(new URL(request.url).pathname);
 		if (image) return roomImage(this.ctx.storage, request, room, image.hash, () => this.touch());
 		if (request.headers.get('Upgrade') !== 'websocket') {
 			const script = room && (await this.ctx.storage.get<ScriptView>('script'));
-			return Response.json(roomPreview(room, script?.script));
+			// A removed phone is told so as it types the code (plan J37, Trevor 2026-10-31).
+			const code = normaliseRoomCode(new URL(request.url).pathname.split('/').pop() ?? '') ?? '';
+			const probe = request.headers.get(REMOVED_PROBE_HEADER);
+			const removed = !!room && (await isRemovedProbe(room, code, probe));
+			return Response.json(roomPreview(room, script?.script, removed));
 		}
 		// Only the admins' route (worker/live-games.ts) reaches a room on this path, after
 		// checking the account. An admin's watching doesn't keep the room alive.

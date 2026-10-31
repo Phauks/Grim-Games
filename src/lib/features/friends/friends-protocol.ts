@@ -16,6 +16,15 @@ export const REQUESTS_PER_DAY = 20;
 /** A request nobody answered is gone after this long. */
 export const REQUEST_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 export const DAY_MS = 24 * 60 * 60 * 1000;
+/** Invites one account may send in a day (the plan's limit, approved 2026-10-29). */
+export const INVITES_PER_DAY = 50;
+/** An invite is gone after this long; a room that closed sooner just can't be joined. */
+export const INVITE_TTL_MS = 12 * 60 * 60 * 1000;
+/** Invites kept waiting per account, newest first. */
+export const MAX_INVITES = 50;
+/** The longest game title an invite carries. */
+export const MAX_INVITE_TITLE = 100;
+
 /** Recent players kept per account, newest game first (plan F3). */
 export const MAX_RECENT = 50;
 
@@ -42,6 +51,19 @@ export interface FriendsResponse {
 	findable: boolean;
 	/** Signed-in people this account played a game with (plan F3); missing from older Workers. */
 	recent?: RecentPlayer[];
+	/** Friends' invites to their live games (plan F4), newest first; missing from older Workers. */
+	invites?: FriendInvite[];
+}
+
+/** A friend's invite to the live room they run (plan F4). */
+export interface FriendInvite {
+	id: number;
+	from: FriendAccount;
+	/** The room's six-digit code, which Join opens. */
+	code: string;
+	/** The game's script name, as the Storyteller's Share showed it. */
+	title: string;
+	at: number;
 }
 
 /**
@@ -92,6 +114,30 @@ export const FRIEND_SETTINGS_API = `${FRIENDS_API}/settings`;
 export const friendActionApi = (action: FriendAction) => `${FRIENDS_API}/${action}`;
 /** A player in a live room, by seat (plan F2): `POST` with `SeatFriendRequest`. */
 export const FRIEND_SEAT_API = `${FRIENDS_API}/seat`;
+/**
+ * Inviting friends to the room this account runs (plan F4): `POST` with `InviteRequest`.
+ * The room code goes in the body, never the URL.
+ */
+export const FRIEND_INVITE_API = `${FRIENDS_API}/invite`;
+/** Declines an invite: `POST {id}`. */
+export const FRIEND_INVITE_DISMISS_API = `${FRIENDS_API}/invites/dismiss`;
+
+/** Without `id`, asks which friends are already in the room; with it, invites that friend. */
+export interface InviteRequest {
+	code: string;
+	title: string;
+	id?: string;
+}
+
+/**
+ * The answer: `here` lists friends already in the room; `outcome` says what became of one
+ * invite. `unavailable` covers a room this account doesn't run and someone no longer a friend.
+ */
+export interface InviteResponse {
+	here: string[];
+	outcome?: 'sent' | 'here' | 'unavailable' | 'limit';
+}
+
 /** Someone from Recent players, by id (plan F3): `POST` with `RecentFriendRequest`. */
 export const FRIEND_RECENT_API = `${FRIENDS_API}/recent`;
 

@@ -9,7 +9,7 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
-	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
+	import ScriptName from '#lib/features/scripts/ScriptName.svelte';
 	import { scriptVoteCountLabel } from './script-vote-count.ts';
 
 	/**
@@ -52,12 +52,7 @@
 				data-winner={tally.winner === option.id || undefined}
 				data-out={tally.out?.[option.id] ? '' : undefined}
 			>
-				<span class="name"
-					>{#if option.logo}<ScriptLogo
-							src={option.logo}
-							class="stats-logo"
-						/>{/if}{option.name}</span
-				>
+				<span class="name"><ScriptName name={option.name} logo={option.logo} /></span>
 				<span class="points" data-testid="vote-count"
 					>{scriptVoteCountLabel(kind, tally, option.id)}</span
 				>
@@ -147,12 +142,6 @@
 	.name {
 		overflow-wrap: anywhere;
 	}
-	.options :global(.stats-logo) {
-		width: 1.5em;
-		height: 1.5em;
-		margin-inline-end: var(--space-1);
-		vertical-align: middle;
-	}
 	.points {
 		font-variant-numeric: tabular-nums;
 		color: var(--on-surface-muted);
@@ -161,7 +150,7 @@
 		color: var(--accent);
 		font-weight: 600;
 	}
-	li[data-out] .name {
+	li[data-out] .name :global(.name) {
 		color: var(--on-surface-muted);
 	}
 	/* Each option's share, under its row. */

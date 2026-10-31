@@ -21,7 +21,7 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import BackButton from '#lib/ui/primitives/BackButton.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
-	import ScriptLogo from './ScriptLogo.svelte';
+	import ScriptName from './ScriptName.svelte';
 	import DataTable, { type DataColumn, type DataSort } from '#lib/ui/table/DataTable.svelte';
 	import { MAX_FILTER_CHARACTERS } from './botcscripts-api.ts';
 	import BotcFilter from './BotcFilter.svelte';
@@ -429,12 +429,7 @@
 			disabled={busy}
 			onclick={() => select(listing)}
 		>
-			<!-- Every row keeps the logo's place, so names line up with or without one. -->
-			<span class="named"
-				><ScriptLogo src={row.logo} class="row-logo" /><span class="title"
-					>{row.name || t('common.none')}</span
-				></span
-			>
+			<ScriptName name={row.name} logo={row.logo} />
 		</button>
 	{:else if column.id === 'author'}
 		<span class="text">{row.author || t('common.none')}</span>
@@ -623,22 +618,6 @@
 	}
 	.picker :global(tbody tr:has(.pick:not(:disabled)):hover) {
 		background: var(--surface-selected);
-	}
-	.named {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		min-width: 0;
-	}
-	.named :global(.row-logo) {
-		width: 1.75em;
-		height: 1.75em;
-	}
-	.title {
-		font-weight: 600;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
 	}
 	.text {
 		display: flex;

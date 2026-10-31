@@ -25,18 +25,16 @@
 	import { setLeaveGuard } from '#lib/features/shell/shell.ts';
 	import { drawLock, keepScreenOn } from './draw-lock.svelte.ts';
 	import PinDialog from './PinDialog.svelte';
-	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
+	import ScriptName from '#lib/features/scripts/ScriptName.svelte';
 	import { fromScript, scriptLogo } from '#lib/core/data/index.ts';
 	import { loadOfficialData, officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { onMount, untrack } from 'svelte';
-	import { goto, pushState } from '$app/navigation';
+	import { pushState } from '$app/navigation';
 	import { page } from '$app/state';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
-	import { latePlayerHref } from './late-player.ts';
-	import { lateDraft } from './late-draft.svelte.ts';
-	import LateSeatDialog from './LateSeatDialog.svelte';
+	import LatePlayerButton from '#lib/features/late-player/LatePlayerButton.svelte';
 
 	interface Props {
 		port: SetupGamePort;
@@ -242,16 +240,6 @@
 		if (hasRoom && dealShow) roomHost().showRoles(current.gameId, true);
 	}
 
-	// Add late player (Trevor, 2026-10-30): its modal opens here; Choose seat goes to the
-	// grimoire to tap where that player sits, and the modal opens again there.
-	let lateOpen = $state(false);
-	const lateLookup = (id: string) => lookup?.get(id) ?? officialData.current?.byId.get(id);
-	function choose(index: number) {
-		if (!game) return;
-		lateDraft.placing = index;
-		void goto(latePlayerHref(game.gameId));
-	}
-
 	function confirm(details: { playerName: string; alignment?: Alignment }) {
 		if (!tile?.drawnBySeat) return;
 		const seatId = tile.drawnBySeat;
@@ -268,7 +256,7 @@
 
 <Page {title} iconActions>
 	{#snippet lead()}
-		{#if locked && logo}<ScriptLogo src={logo} class="draw-title-logo" />{/if}
+		{#if locked}<ScriptName name={script?.name} {logo} size="lead" />{/if}
 	{/snippet}
 	{#snippet actions()}
 		<!-- Locked: only the lock itself; Bag settings and Join can't be used (Trevor, 2026-10-19). -->
@@ -280,16 +268,8 @@
 				disabled={inBag === 0}
 				onclick={() => (dealOpen = true)}
 			/>{/if}
-		{#if !locked && game}<IconButton
-				icon="latePlayer"
-				label={t('setup.late')}
-				disabled={!bag || !script || game.pastDays.length > 0}
-				data-testid="late-player"
-				onclick={() => {
-					lateDraft.start();
-					lateOpen = true;
-				}}
-			/>{/if}
+		<!-- Add late player (Trevor, 2026-10-30), its own feature. -->
+		{#if !locked && game}<LatePlayerButton {game} {lookup} {send} />{/if}
 		{#if game}
 			<IconButton
 				icon="lock"
@@ -368,29 +348,11 @@
 	/>
 </ConfirmDialog>
 
-{#if game && script && officialData.current}
-	<LateSeatDialog
-		bind:open={lateOpen}
-		bind:players={lateDraft.players}
-		{game}
-		onAddAnother={() => lateDraft.add()}
-		onPlace={choose}
-		scriptCharacters={script.characters}
-		official={officialData.current.characters}
-		lookup={lateLookup}
-		{send}
-	/>
-{/if}
-
 {#if game}
 	<PinDialog bind:open={pinOpen} gameId={game.gameId} mode={pinMode} onDone={pinDone} />
 {/if}
 
 <style>
-	:global(.draw-title-logo) {
-		width: 1.5em;
-		height: 1.5em;
-	}
 	.deal-text {
 		margin: 0;
 	}

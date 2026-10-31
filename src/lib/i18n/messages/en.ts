@@ -26,6 +26,7 @@ import { characterBuilder } from '#lib/i18n/messages/en/character-builder.ts';
 import { modes } from '#lib/i18n/messages/en/modes.ts';
 import { savant } from '#lib/i18n/messages/en/savant.ts';
 import { friends } from '#lib/i18n/messages/en/friends.ts';
+import { latePlayer } from '#lib/i18n/messages/en/late-player.ts';
 
 /**
  * The English catalog: the source of truth for message keys and their placeholders.
@@ -41,6 +42,7 @@ export const en = {
 	...settings,
 	...common,
 	...setup,
+	...latePlayer,
 	...picker,
 	...errors,
 	...reports,

@@ -24,6 +24,14 @@ export function roomScript(code: string | undefined): LoadedScript | undefined {
 	return code && followed?.code === code ? followed.script : undefined;
 }
 
+/**
+ * Stops showing room `code`'s script on its join screen: the Storyteller removed this phone,
+ * so the game closes on it (Trevor, 2026-10-31: "we should actually kick them out of the game").
+ */
+export function unfollowRoom(code: string): void {
+	if (followed?.code === code) followed = undefined;
+}
+
 /** Loads `script`, sent by room `code`, and makes it current, unless it already is. */
 export async function followRoomScript(
 	script: Script,

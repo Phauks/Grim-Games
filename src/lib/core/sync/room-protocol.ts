@@ -67,7 +67,9 @@ export type ClientMessage =
 	 */
 	| { type: 'script-ballot'; voteId: string; choices: string[] }
 	| { type: 'role-seen' } // The player held their character to see it (2026-10-26).
-	/** Seating open (plan J38): the player dragged their disc to just after this seat. */
+	/** Seating open (plan J38): the player dropped their disc on this seat to take its place. */
+	| { type: 'sit'; onto: SeatId }
+	/** Older apps: the player dropped their disc just after this seat. */
 	| { type: 'sit'; after: SeatId }
 	/** Seating locked: a player with no seat tapped this open one to sit in it. */
 	| { type: 'claim-seat'; seatId: SeatId }

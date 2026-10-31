@@ -1,4 +1,5 @@
 <script lang="ts" module>
+	import ScriptName from '#lib/features/scripts/ScriptName.svelte';
 	import type { ScriptListing } from '#lib/features/scripts/script-providers.ts';
 	import type { Shareable } from '#lib/features/scripts/share-codes.ts';
 
@@ -182,6 +183,12 @@
 </script>
 
 <ItemPane bind:open title={row.listing.row.name || t('common.none')} {inline}>
+	{#snippet heading()}<ScriptName
+			name={row.listing.row.name}
+			logo={row.listing.row.logo}
+			size="title"
+			as="span"
+		/>{/snippet}
 	<!-- One place for Save and Remove, since only one ever applies (Trevor, 2026-10-18): Save
 	     while another version is previewed, then Remove once what is shown is in the Library. -->
 	{#snippet headActions()}
