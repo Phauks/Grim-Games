@@ -28,7 +28,7 @@ import { withoutMessages, type PlayerMessage } from './room-messages.ts';
 import { numberedNames, withNumberedNames } from './room-names.ts';
 import { MAX_MEMBERS } from './room-presence.ts';
 import { seatPresence } from './seat-presence.ts';
-import type { RoomTransfer } from './room-transfer.ts';
+import { transferCheck, type RoomTransfer } from './room-transfer.ts';
 import { withoutRemoved, type RemovedMember } from './room-removed.ts';
 import { setSeatingOpen } from './room-seating-open.ts';
 import { countOffView, endCountOff, type CountOff } from './room-count-off.ts';
@@ -236,7 +236,10 @@ export function hostView(room: RoomState, present?: ReadonlySet<string>): HostVi
 	if (room.transfer) {
 		const { endsAt, tries, asking } = room.transfer;
 		view.transfer = { endsAt, tries };
-		if (asking) view.transfer.asking = asking.name ? { name: asking.name } : {};
+		if (asking) {
+			const check = transferCheck(asking.keyHash);
+			view.transfer.asking = asking.name ? { name: asking.name, check } : { check };
+		}
 	}
 	return view;
 }

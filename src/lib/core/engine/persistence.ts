@@ -16,7 +16,7 @@ import { scriptEdition } from '#lib/core/data/script.ts';
 import type { GameId } from '#lib/core/model/index.ts';
 import type { GameLog, GameSession } from './log.ts';
 
-export const SAVED_GAME_VERSION = 24;
+export const SAVED_GAME_VERSION = 25;
 
 export interface SavedGame {
 	schemaVersion: typeof SAVED_GAME_VERSION;
@@ -256,6 +256,13 @@ const migrateV22toV23: Migration = (doc) => ({ ...doc, schemaVersion: 23 });
  */
 const migrateV23toV24: Migration = (doc) => ({ ...doc, schemaVersion: 24 });
 
+/**
+ * Version 25 (2026-10-31) added characters' optional rules (`Game.optionalRules`, the
+ * `SetOptionalRule` command and `OptionalRuleSet` event). The log needs no change: an older
+ * game has none on. The bump makes older builds refuse a version 25 save.
+ */
+const migrateV24toV25: Migration = (doc) => ({ ...doc, schemaVersion: 25 });
+
 /** `MIGRATIONS[n]` migrates version `n` to `n + 1`. Version 1 is the first saved shape. */
 export const MIGRATIONS: Readonly<Record<number, Migration>> = {
 	1: migrateV1toV2,
@@ -280,15 +287,21 @@ export const MIGRATIONS: Readonly<Record<number, Migration>> = {
 	20: migrateV20toV21,
 	21: migrateV21toV22,
 	22: migrateV22toV23,
-	23: migrateV23toV24
+	23: migrateV23toV24,
+	24: migrateV24toV25
 };
 
+/**
+ * The session as a saved game. Its log is shared, not copied (memory sweep, 2026-10-31): a log
+ * is never changed in place, as each command makes new entries, and a store or a message copies
+ * it as it writes.
+ */
 export function toSavedGame(session: GameSession, savedAt: number): SavedGame {
 	return {
 		schemaVersion: SAVED_GAME_VERSION,
 		gameId: session.game.gameId,
 		savedAt,
-		log: structuredClone(session.log)
+		log: session.log
 	};
 }
 

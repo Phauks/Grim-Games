@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript } from './new-game.ts';
+import { pickNumber } from './number-select.ts';
 
 // Add late player (Trevor, 2026-10-30): someone arrives after the tiles are dealt and joins as
 // one more player instead of a Traveller. Roll suggests who changes; the Storyteller confirms.
@@ -14,7 +15,7 @@ test('Add late player seats late players where tapped and makes room in the bag'
 	await pickScript(page, 'Trouble Brewing');
 	await page.getByRole('button', { name: 'Create game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
-	for (let n = 8; n > 5; n--) await page.getByRole('button', { name: 'Fewer players' }).tap();
+	await pickNumber(page, 'Players', 5);
 	for (const name of ['Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp'])
 		await choice(page, name).tap();
 	await page.getByRole('button', { name: 'Build bag' }).tap();

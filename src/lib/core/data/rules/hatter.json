@@ -37,5 +37,12 @@
 	"changesCharacter": {
 		"types": ["minion", "demon"],
 		"sameType": true
+	},
+	"optionalRule": {
+		"changesCharacter": {
+			"types": ["minion", "demon"],
+			"sameType": true,
+			"anyType": true
+		}
 	}
 }

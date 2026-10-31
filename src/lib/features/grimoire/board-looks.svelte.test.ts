@@ -10,7 +10,8 @@ describe('board looks', () => {
 				vignetteStrength: 3,
 				logo: false,
 				logoOpacity: 0,
-				rulesAt: 'edge',
+				// The Fabled and Loric are always in the corner now (Trevor, 2026-10-30).
+				rulesAt: 'middle',
 				rulesGrouped: true,
 				nameSize: 9,
 				nameOffset: 1,
@@ -35,7 +36,6 @@ describe('board looks', () => {
 			vignetteStrength: 1,
 			logo: false,
 			logoOpacity: 0.05,
-			rulesAt: 'edge',
 			rulesGrouped: true,
 			nameSize: 1.6,
 			nameOffset: 0.3,
@@ -64,8 +64,8 @@ describe('board looks', () => {
 			})
 		).toEqual(DEFAULT_BOARD_LOOKS);
 		// Saved before grouping was its own choice.
-		expect(parseBoardLooks({ rulesAt: 'corner' })).toMatchObject({
-			rulesAt: 'edge',
+		expect(parseBoardLooks({ rulesAt: 'corner' })).toEqual({
+			...DEFAULT_BOARD_LOOKS,
 			rulesGrouped: true
 		});
 	});

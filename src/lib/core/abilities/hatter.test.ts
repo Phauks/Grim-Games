@@ -13,6 +13,9 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import type { Command } from '#lib/core/engine/index.ts';
+import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
+import { rulesIn } from '#lib/core/data/rules/index.ts';
 
 describe('Hatter', () => {
 	const character = committedCharacter('hatter');
@@ -47,5 +50,27 @@ describe('Hatter', () => {
 		it.todo("Example 1: Ojo and Devil's Advocate change characters");
 		it.todo('Example 2: Both evils refuse changes to keep Vigormortis');
 		it.todo('Example 3: Assassin becomes Mastermind, Mastermind picks Assassin');
+	});
+});
+
+// The optional rule on the wiki page (https://wiki.bloodontheclocktower.com/Hatter): when
+// the Hatter dies, the Demon may become a Minion and a Minion the Demon.
+describe('Hatter optional rule', () => {
+	const cast = ['hatter', 'chef', 'empath', 'monk', 'poisoner', 'imp'];
+	const on: Command = { type: 'SetOptionalRule', characterId: 'hatter', on: true };
+
+	it('off, each Minion and the Demon picks from their own type', () => {
+		const { game } = castGame(cast);
+		const rule = rulesIn(game, 'hatter', characters)?.changesCharacter;
+		expect(rule).toMatchObject({ types: ['minion', 'demon'], sameType: true });
+		expect(rule?.anyType).toBeUndefined();
+	});
+
+	it('on, they may pick a Minion or a Demon', () => {
+		const { game } = castGame(cast, on);
+		expect(rulesIn(game, 'hatter', characters)?.changesCharacter).toMatchObject({
+			sameType: true,
+			anyType: true
+		});
 	});
 });

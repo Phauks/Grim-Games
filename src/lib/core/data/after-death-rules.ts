@@ -5,7 +5,8 @@
  * `rules/voting.ts`.
  */
 import type { DeathCauseMatch } from './day-reminder-rules.ts';
-import { checkKeys, describe, isObject, readNumber, type Issues } from './validate.ts';
+import { SEATED_TYPES, type SeatedType } from './types.ts';
+import { checkKeys, describe, isObject, readEnum, readNumber, type Issues } from './validate.ts';
 
 export interface AfterDeath {
 	cause: readonly DeathCauseMatch[];
@@ -48,9 +49,13 @@ export function readAfterDeath(raw: unknown, at: string, issues: Issues): AfterD
  * The `reincarnates` part of a rules block: the first `first` players to die are at once
  * reborn as Travellers the Storyteller picks, alive, keeping their alignment (the Hindu,
  * https://wiki.bloodontheclocktower.com/Hindu). Read by `rules/reincarnation.ts`.
+ *
+ * `demonTo`: a Demon among them may be reborn too, and then a living player of this type
+ * becomes that Demon (the Hindu's optional rule: a Minion). Without it, a Demon is not reborn.
  */
 export interface Reincarnates {
 	first: number;
+	demonTo?: SeatedType;
 }
 
 export function readReincarnates(
@@ -62,11 +67,12 @@ export function readReincarnates(
 		issues.add(at, `expected object, got ${describe(raw)}`);
 		return undefined;
 	}
-	checkKeys(raw, ['first'], at, issues);
+	checkKeys(raw, ['first', 'demonTo'], at, issues);
 	const first = readNumber(raw, 'first', at, issues);
+	const demonTo = readEnum(raw, 'demonTo', SEATED_TYPES, at, issues, false);
 	if (first === undefined || !Number.isInteger(first) || first < 1) {
 		issues.add(`${at}.first`, 'expected a whole number, 1 or more');
 		return undefined;
 	}
-	return { first };
+	return { first, ...(demonTo ? { demonTo } : {}) };
 }

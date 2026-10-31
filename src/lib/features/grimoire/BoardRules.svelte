@@ -1,6 +1,6 @@
 <!--
-	Fabled and Loric are rules of the game, not seats: in the middle, or small along the edge
-	(Trevor, 2026-10-17), each with its reminders at its top right (GrimoireBoard). Abilities the
+	Fabled and Loric are rules of the game, not seats: small in the board's top left corner
+	(Trevor, 2026-10-30: "only corner"), each with its reminders at its top right (GrimoireBoard). Abilities the
 	Storyteller holds sit with them, on the board rather than hidden away (Trevor, 2026-10-30):
 	the Plague Doctor's Minion, marked with its Storyteller Ability reminder as its How to Run
 	says (https://wiki.bloodontheclocktower.com/Plague_Doctor).
@@ -26,8 +26,6 @@
 		characters: CharacterLookup;
 		/** One stack for them all (Settings > Board). */
 		grouped: boolean;
-		/** Small along the board's edge rather than in the middle. */
-		edge: boolean;
 		tokenSize: number;
 		/** The size of a reminder on a seat; held ones are smaller. */
 		chip: number;
@@ -47,7 +45,6 @@
 		game,
 		characters,
 		grouped,
-		edge,
 		tokenSize,
 		chip,
 		disabled,
@@ -117,6 +114,7 @@
 		<button
 			type="button"
 			class="rules-stack"
+			style:--token="{tokenSize}px"
 			data-rule-stack
 			aria-label={`Fabled and Loric: ${stacked.length}`}
 			onclick={() => onShow()}
@@ -136,7 +134,7 @@
 		)}
 	</span>
 {:else}
-	<ul class="rules" class:edge aria-label="Fabled and Loric">
+	<ul class="rules" aria-label="Fabled and Loric">
 		{#each game.ruleCharacters as id (id)}
 			{@const character = characters.get(id)}
 			{#if character}
@@ -192,14 +190,10 @@
 	.rules {
 		display: flex;
 		flex-wrap: wrap;
-		justify-content: center;
 		gap: var(--space-1);
 		margin: 0;
 		padding: 0;
 		list-style: none;
-	}
-	.rules.edge {
-		justify-content: flex-start;
 	}
 	.rules li,
 	.stack-wrap {
@@ -242,8 +236,10 @@
 		background: none;
 		cursor: pointer;
 	}
+	/* A share of a token, not of the stack: a % margin is of the stack's width, so each one
+	   added pulled the rest further left, off the board (Trevor, 2026-10-30). */
 	.rules-stack > :global(*:not(:first-child):not(.stack-count)) {
-		margin-inline-start: -60%;
+		margin-inline-start: calc(-0.6 * var(--token));
 	}
 	.stack-count {
 		position: absolute;

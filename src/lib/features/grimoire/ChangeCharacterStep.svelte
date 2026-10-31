@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { seatName } from '#lib/features/game/seat-label.ts';
 	import type { Alignment, CharacterId } from '#lib/core/data/index.ts';
-	import { rulesOf } from '#lib/core/data/rules/index.ts';
+	import { rulesIn } from '#lib/core/data/rules/index.ts';
 	import { alignmentOf, trueCharacter, typeOf, type SeatId } from '#lib/core/model/index.ts';
 	import {
 		changeableSeats,
@@ -47,7 +47,7 @@
 	const game = $derived(grimoire.game);
 	const characters = $derived(grimoire.open.characters);
 	const rule = $derived(
-		step.character ? rulesOf(step.character.id, characters)?.changesCharacter : undefined
+		step.character ? rulesIn(game, step.character.id, characters)?.changesCharacter : undefined
 	);
 	const changer = $derived(
 		step.character ? characterChanger(game, step.character.id, characters) : undefined
@@ -62,7 +62,7 @@
 	);
 
 	const swaps = $derived(
-		step.character ? rulesOf(step.character.id, characters)?.swapsCharacters : undefined
+		step.character ? rulesIn(game, step.character.id, characters)?.swapsCharacters : undefined
 	);
 	// Any player with a character may be picked; the rule's left-out types are faded, as the
 	// Storyteller may still override.
@@ -134,9 +134,12 @@
 		if (grimoire.run(command))
 			made = [...made.filter((m) => m.seatId !== seatId), { seatId, characterId }];
 	}
-	// With `sameType`, the chosen player picks from their own type, not their own character.
+	// With `sameType`, the chosen player picks from their own type, not their own character;
+	// with `anyType` too (the Hatter's optional rule), from any of the rule's types.
 	const chosenType = $derived(chosen ? typeOf(game, chosen, characters) : undefined);
-	const pickTypes = $derived(rule?.sameType && chosenType ? [chosenType] : (rule?.types ?? []));
+	const pickTypes = $derived(
+		rule?.sameType && !rule.anyType && chosenType ? [chosenType] : (rule?.types ?? [])
+	);
 	const chosenOwn = $derived(chosen ? trueCharacter(game, chosen, characters) : undefined);
 	const left = $derived(rule?.sameType && chosenOwn ? [...inPlay, chosenOwn] : inPlay);
 	const playerName = (seatId: SeatId) => seatName(game, seatId);

@@ -7,7 +7,7 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
-	import Stepper from '#lib/ui/primitives/Stepper.svelte';
+	import NumberSelect from '#lib/ui/primitives/NumberSelect.svelte';
 	import { readParsed, writeStored } from '#lib/ui/stored.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { seatName } from './night-steps.ts';
@@ -125,25 +125,23 @@
 					>Evil {evil} · {percent(evil)}</span
 				>
 			</div>
-			<div class="steppers">
-				<span class="stepper">
-					<span>Tokens</span>
-					<Stepper
+			<div class="counts">
+				<span class="count">
+					<span aria-hidden="true">Tokens</span>
+					<NumberSelect
 						bind:value={count}
 						label={t('setup.alignmentDraw.tokens')}
-						lessLabel={t('setup.alignmentDraw.fewerTokens')}
-						moreLabel={t('setup.alignmentDraw.moreTokens')}
+						hideLabel
 						min={1}
 						max={MAX}
 					/>
 				</span>
-				<span class="stepper">
-					<span>Evil</span>
-					<Stepper
+				<span class="count">
+					<span aria-hidden="true">Evil</span>
+					<NumberSelect
 						bind:value={evil}
 						label={t('setup.alignmentDraw.evilTokens')}
-						lessLabel={t('setup.alignmentDraw.fewerEvil')}
-						moreLabel={t('setup.alignmentDraw.moreEvil')}
+						hideLabel
 						max={count}
 					/>
 				</span>
@@ -221,12 +219,12 @@
 	.part[data-team='evil'] {
 		background: var(--evil);
 	}
-	.steppers {
+	.counts {
 		display: flex;
 		flex-wrap: wrap;
 		gap: var(--space-2) var(--space-4);
 	}
-	.stepper {
+	.count {
 		display: flex;
 		align-items: center;
 		gap: var(--space-2);

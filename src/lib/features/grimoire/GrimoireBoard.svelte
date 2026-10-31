@@ -83,6 +83,7 @@
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import type { CoverDetails } from '#lib/features/show/CoverScreen.svelte';
 	import SavantSheet from '#lib/features/savant/SavantSheet.svelte';
+	import AidMenu from '#lib/features/settings/AidMenu.svelte';
 	import { playersDialog } from '#lib/features/room/players-dialog.svelte.ts';
 	import { DAY_HASH } from '#lib/features/day/day-hash.ts';
 	import SeatSheet from './SeatSheet.svelte';
@@ -92,7 +93,8 @@
 	import { stepReminders } from './reminders.ts';
 	import { stepFocus } from './step-focus.svelte.ts';
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
-	import HeldReminderDialog from './HeldReminderDialog.svelte';
+	import BankReminderDialog from './BankReminderDialog.svelte';
+	import { ReminderHand } from './reminder-hand.svelte.ts';
 	import BoardCorner from './BoardCorner.svelte';
 	import LeaveGuard from './LeaveGuard.svelte';
 	import BoardMenu from './BoardMenu.svelte';
@@ -284,7 +286,9 @@
 
 	// ── Dragging reminders (reminder-drag.svelte.ts) ──
 	let moveConfirm = $state<ReturnType<typeof ReminderMoveConfirm>>();
-	let heldDialog = $state<ReturnType<typeof HeldReminderDialog>>();
+	/** The token in hand, from the bank or the board (Trevor, 2026-10-30). */
+	const hand = new ReminderHand();
+	let bank = $state<ReturnType<typeof ReminderBank>>();
 	const remDrag = new ReminderDragging(() => ({
 		grimoire,
 		game,
@@ -332,7 +336,6 @@
 		selected = seatId;
 		sheetOpen = true;
 	}
-	let seatSheet = $state<ReturnType<typeof SeatSheet>>();
 	// A player's avatar mark opens their profile (Trevor, 2026-10-28).
 	let profileOpen = $state(false);
 	let profileSeat = $state<SeatId | undefined>();
@@ -371,10 +374,17 @@
 		else if (part === 'nominate') askNomination(seatId);
 		else openSeat(seatId);
 	}
-	function openReminder(seatId: SeatId, reminderId: ReminderId) {
-		selected = seatId;
+	/**
+	 * A token on the board tapped: held, as one from the bank is (Trevor, 2026-10-30), for the
+	 * seat (or bank) tapped next. With no bank (the game over), its own dialog instead.
+	 */
+	function holdReminder(reminderId: ReminderId, from?: SeatId) {
+		if (bank) hand.toggle({ kind: 'placed', reminderId, from });
+		else showReminder(reminderId);
+	}
+	function showReminder(reminderId: ReminderId) {
 		// After the tap's click, so it doesn't land on what opens under the finger.
-		setTimeout(() => seatSheet?.showReminder(reminderId));
+		setTimeout(() => hand.showAbout({ kind: 'placed', reminderId }));
 	}
 	// A removed (or undone) seat closes its sheet.
 	$effect(() => {
@@ -695,14 +705,13 @@
 		{game}
 		{characters}
 		grouped={boardLooks.current.rulesGrouped && boardRuleCount(game) > 0}
-		edge={tokenSize < size * 0.8}
 		{tokenSize}
 		{chip}
 		disabled={seatArr.arranging || watching}
 		lifted={remDrag.drag?.reminderId}
 		onShow={(id) => (id ? rules?.show(id) : rules?.showAll())}
 		onShowAbility={(via) => rules?.showAbility(via)}
-		onHeldTap={(id) => heldDialog?.show(id)}
+		onHeldTap={(id) => holdReminder(id)}
 		onHeldDrag={(id, x, y, end) => remDrag.move(id, undefined, x, y, end)}
 		onCancel={() => remDrag.cancel()}
 	/>
@@ -799,8 +808,8 @@
 			{placeSpots}
 			onPlace={placeAt}
 			onSeat={tapSeat}
-			onReminder={openReminder}
-			onLooseReminder={(id) => heldDialog?.show(id)}
+			onReminder={(seatId, id) => holdReminder(id, seatId)}
+			onLooseReminder={(id) => holdReminder(id)}
 		/>
 		{#if nw.walk && !ended}
 			<NightStrip
@@ -825,6 +834,8 @@
 			<HistoryStrip {grimoire} />
 		{:else}
 			<ReminderBank
+				bind:this={bank}
+				{hand}
 				{grimoire}
 				{board}
 				size={chip}
@@ -842,12 +853,14 @@
 				onHints={(h) => (hints.tray = h)}
 				run={flow.run}
 				disabled={watching}
+				{remDrag}
+				onRemove={(id) => moveConfirm?.requestReturn(id)}
 			/>
 		{/if}
 
 		<!-- Measures the tap target, the height every reminder takes on the board. -->
 		<span class="tap-probe" aria-hidden="true" bind:clientHeight={sizing.tapPx}></span>
-		{#if boardLooks.current.rulesAt !== 'middle' && boardRuleCount(game) > 0}
+		{#if boardRuleCount(game) > 0}
 			<div class="rules-edge" bind:clientWidth={sizing.edgeW} bind:clientHeight={sizing.edgeH}>
 				{@render ruleTokens(Math.max(sizing.tapPx, Math.round(size * 0.5)))}
 			</div>
@@ -912,12 +925,6 @@
 				/>
 			</div>
 		</div>
-		<div class="centre" bind:clientWidth={sizing.centreW} bind:clientHeight={sizing.centreH}>
-			<!-- Until the game is set up: choosing characters and the bag, then out of the way. -->
-			{#if boardLooks.current.rulesAt === 'middle'}
-				{@render ruleTokens(Math.round(size * 0.8))}
-			{/if}
-		</div>
 	</div>
 </div>
 
@@ -976,12 +983,7 @@
 	onShare={watching ? undefined : () => (phonesOpen = true)}
 />
 <ReminderMoveConfirm bind:this={moveConfirm} {grimoire} />
-<HeldReminderDialog
-	bind:this={heldDialog}
-	{grimoire}
-	onRemove={(id) => moveConfirm?.requestReturn(id)}
-	onMove={(id, to) => moveConfirm?.request(id, to)}
-/>
+<BankReminderDialog {grimoire} {hand} onRemove={(id) => moveConfirm?.requestReturn(id)} />
 <AlignmentAsk {grimoire} />
 <StarPassPrompt {grimoire} active={!ended && !grimoire.open.viewOnly} />
 <FirstDeathAsk {grimoire} />
@@ -1020,7 +1022,6 @@
 <LeaveGuard {game} {watching} />
 
 <SeatSheet
-	bind:this={seatSheet}
 	bind:open={sheetOpen}
 	{grimoire}
 	seatId={selected}
@@ -1029,6 +1030,7 @@
 		onDraw(id);
 	}}
 	onNotes={(id) => editNote(id)}
+	onReminder={showReminder}
 	onNominated={nominated}
 	onExecute={(seatId) => flow.executeFromSeat(seatId)}
 />
@@ -1107,7 +1109,9 @@
 	bind:open={savantAskOpen}
 	title={t('day.savantAsk')}
 	onConfirm={() => (savantOpen = true)}
-/>
+>
+	{#snippet headActions()}<AidMenu aid="savantInfo" />{/snippet}
+</ConfirmDialog>
 
 <GuidedStep
 	bind:open={nw.guideOpen}
@@ -1145,7 +1149,7 @@
 	dispatch={(command) => grimoire.open.run(command)}
 />
 
-<RuleCharacters bind:this={rules} {grimoire} {watching} onReminder={(id) => heldDialog?.show(id)} />
+<RuleCharacters bind:this={rules} {grimoire} {watching} onReminder={showReminder} />
 
 <style>
 	/* Start game's question: the setup reminders still to place (Trevor, 2026-10-20). */
@@ -1217,16 +1221,6 @@
 		visibility: hidden;
 		height: var(--tap-target);
 		pointer-events: none;
-	}
-	.centre {
-		position: absolute;
-		left: 50%;
-		top: 50%;
-		translate: -50% -50%;
-		display: grid;
-		justify-items: center;
-		gap: var(--space-2);
-		max-width: 50%;
 	}
 	/* Dimmed so seats and reminders stay clear over any image. */
 	.game-over {

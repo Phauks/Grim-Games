@@ -84,6 +84,14 @@ describe('ReminderDragging', () => {
 		expect(dragging.seatAt({ x: 20, y: 80 })).toBeUndefined();
 	});
 
+	it('takes a tap only on the character token itself, a drag near it', () => {
+		const { g, dragging } = setup();
+		// Seat 2's token is 40px across, centred 150px in: 25px off is beside it.
+		expect(dragging.seatAt({ x: 35, y: 50 })).toBe(g.seating[1]);
+		expect(dragging.seatAt({ x: 35, y: 50 }, true)).toBeUndefined();
+		expect(dragging.seatAt({ x: 33, y: 50 }, true)).toBe(g.seating[1]);
+	});
+
 	it('follows the finger, with the seat under it and where the reminder came from', () => {
 		const { g, dragging, reminder } = setup();
 		dragging.move(reminder.reminderId, g.seating[1], 250, 250, false);

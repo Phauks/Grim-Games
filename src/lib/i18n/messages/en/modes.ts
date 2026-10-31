@@ -69,8 +69,6 @@ export const modes = {
 	'modes.townScript': 'Town {number} script',
 	'modes.everyCharacter': 'Every character',
 	'modes.players': 'Players',
-	'modes.fewerPlayers': 'Fewer players',
-	'modes.morePlayers': 'More players',
 	'modes.townSheet': 'Town {number} setup sheet',
 	'modes.townsUneven': 'The towns’ player counts differ by more than {count}.',
 	'modes.start': 'Create game',
@@ -219,6 +217,9 @@ export const modes = {
 	'modes.switch.threeAlive': '3-player limit',
 	'modes.switch.duplicateDemons': 'Duplicate Demons',
 	'modes.rulesInGame': 'In this game',
+	'modes.optionalRules': 'Optional rules',
+	'modes.optionalRuleOf': 'Optional rule of {name}',
+	'modes.optionalRulesOff': 'Not in play: {names}',
 	'modes.deleteRuleConfirm': 'Delete {name}?',
 	'modes.conflicts': 'Conflicts',
 	'modes.conflict':

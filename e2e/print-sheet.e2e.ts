@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { encodeSharedScript } from '../src/lib/features/scripts/share.ts';
+import { pickNumber } from './number-select.ts';
 
 // Our own printed sheet, from /play's Print (Trevor, 2026-10-19), reworked 2026-10-29: named
 // after the app, paper and margins, and a Front and a Back with a switch per item.
@@ -180,16 +181,16 @@ test('the sheet opens its settings beside a live preview of each numbered page',
 });
 
 // Trevor, 2026-10-29: "margin size should be choosable as inches or mm".
-test('margins step in eighths of an inch or in millimetres', async ({ page }) => {
+test('margins are picked in eighths of an inch or in millimetres', async ({ page }) => {
 	const { fields } = await openSheet(page);
-	const margins = fields.locator('output[aria-label="Margins"]');
+	const margins = fields.getByRole('combobox', { name: 'Margins', exact: true });
 	await expect(margins).toHaveText('½ in');
-	await fields.getByRole('button', { name: 'Larger margins' }).tap();
+	await pickNumber(fields, 'Margins', '⅝ in');
 	await expect(margins).toHaveText('⅝ in');
 	await fields.getByRole('combobox', { name: 'Margin unit' }).tap();
 	await page.getByRole('option', { name: 'mm', exact: true }).tap();
 	await expect(margins).toHaveText('16 mm');
-	await fields.getByRole('button', { name: 'Smaller margins' }).tap();
+	await pickNumber(fields, 'Margins', '15 mm');
 	await expect(margins).toHaveText('15 mm');
 });
 

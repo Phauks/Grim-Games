@@ -46,5 +46,29 @@
 	"reminderMovement": {
 		"fixed": ["Hat"],
 		"why": "The player with the hat is chosen at setup."
+	},
+	"optionalRule": {
+		"dayReminders": {
+			"reminders": [
+				{
+					"group": "nomination",
+					"template": [
+						{
+							"self": true
+						},
+						{
+							"text": "hat is on"
+						},
+						{
+							"target": true
+						}
+					],
+					"when": {
+						"reminder": "Hat",
+						"self": "any"
+					}
+				}
+			]
+		}
 	}
 }

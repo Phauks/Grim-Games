@@ -124,25 +124,22 @@ describe('avoidBoxes', () => {
 describe('keepClear', () => {
 	it('keeps the measured parts clear with a margin', () => {
 		const boxes = keepClear({
-			centre: { w: 100, h: 40 },
 			edge: { w: 60, h: 30 },
 			timer: { w: 50, h: 20 },
 			title: { w: 80, h: 24 },
 			board
 		});
 		expect(boxes).toEqual([
-			{ x: 200, y: 100, w: 112, h: 52 },
 			{ x: 30, y: 15, w: 72, h: 42 },
 			{ x: 375, y: 10, w: 62, h: 32 },
 			{ x: 40, y: 188, w: 92, h: 36 }
 		]);
 	});
 
-	it('leaves out what is unmeasured, in the middle or hidden', () => {
+	it('leaves out what is unmeasured or hidden', () => {
 		expect(
 			keepClear({
-				centre: { w: 0, h: 0 },
-				edge: undefined,
+				edge: { w: 0, h: 0 },
 				timer: undefined,
 				title: { w: 0, h: 0 },
 				board

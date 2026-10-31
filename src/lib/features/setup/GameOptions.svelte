@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { STANDARD } from '#lib/core/modes/index.ts';
+	import { optionalRuleChoices } from '#lib/core/rules/index.ts';
 	import GameSettingsDialog from '#lib/features/game-settings/GameSettingsDialog.svelte';
 	import { seedStartSettings } from '#lib/features/game-settings/start-settings.ts';
 	import AddModeDialog from '#lib/features/modes/AddModeDialog.svelte';
@@ -29,6 +30,15 @@
 	const starting = $derived(game ? notBegun(game) : false);
 	const record = $derived(game ? readGameMode(game.gameId) : undefined);
 	const mode = $derived(findMode(record?.modeId ?? STANDARD.id) ?? STANDARD);
+	// Characters' optional rules, set straight on the game: chosen before it begins.
+	const optionalRules = $derived(
+		game && port.lookup
+			? optionalRuleChoices(game, port.lookup).map((r) => ({
+					...r,
+					character: port.lookup?.get(r.characterId)
+				}))
+			: []
+	);
 
 	let open = $state(false);
 	let rulesOpen = $state(false);
@@ -71,7 +81,7 @@
 		data-testid="setup-special-rules"
 	>
 		{t('modes.specialRules')}
-		<CountBadge count={ruleIds.length} />
+		<CountBadge count={ruleIds.length + optionalRules.filter((r) => r.on).length} />
 	</Button>
 	<Button variant="field" icon="settings" disabled={!game} onclick={() => (open = true)}>
 		{t('setup.gameSettings')}
@@ -88,6 +98,9 @@
 		{choices}
 		onSwitch={(c) => (choices = c)}
 		onadd={() => (adding = true)}
+		{optionalRules}
+		onOptionalRule={(characterId, on) =>
+			port.dispatch({ type: 'SetOptionalRule', characterId, on })}
 	/>
 	<AddModeDialog
 		bind:open={adding}

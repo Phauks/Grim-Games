@@ -44,8 +44,25 @@ export interface TransferAsk {
 export interface TransferStatus {
 	endsAt: number;
 	tries: number;
-	/** A device asks to take over: the Storyteller's device asks to allow it. */
-	asking?: { name?: string };
+	/**
+	 * A device asks to take over: the Storyteller's device asks to allow it, showing the
+	 * asker's match check (`transferCheck`).
+	 */
+	asking?: { name?: string; check?: string };
+}
+
+/** Digits in a transfer's match check. */
+export const TRANSFER_CHECK_LENGTH = 4;
+
+/**
+ * The match check (Trevor, 2026-10-31, after asking whether a transfer could be spoofed): a
+ * short number from the asking device's host key hash, shown on that device and in the
+ * Storyteller's Allow prompt. A Profile name can be anyone's; the check only matches on the
+ * device that really asked, so the Storyteller allows it only when the two screens agree.
+ */
+export function transferCheck(keyHash: string): string {
+	const n = parseInt(keyHash.slice(0, 8), 16) % 10 ** TRANSFER_CHECK_LENGTH;
+	return String(Number.isNaN(n) ? 0 : n).padStart(TRANSFER_CHECK_LENGTH, '0');
 }
 
 /** What a device that typed the right code is shown before it takes over (`TransferView`). */

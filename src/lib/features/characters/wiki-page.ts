@@ -30,6 +30,10 @@ const NOISE = 'sup.reference, .mw-editsection, style, script';
 const HEADING = /^H[2-6]$/;
 /** Lines from the details box that are not shown: its own labels and the episode credit. */
 const DROPPED = /^(Information|Appears in)\b/i;
+/** A line that states the character's optional rule ("Optional rule: …"). */
+const OPTIONAL_RULE = /^Optional rule\b/i;
+/** The wiki's own words for it, as the section's heading. */
+export const OPTIONAL_RULE_HEADING = 'Optional rule';
 
 function clean(el: Element): string {
 	const copy = el.cloneNode(true) as Element;
@@ -60,6 +64,13 @@ export function parseWikiPage(html: string): WikiSection[] {
 	const root = doc.querySelector('.mw-parser-output') ?? doc.body;
 	const sections: WikiSection[] = [{ heading: '', blocks: [] }];
 	const current = () => sections[sections.length - 1];
+	// A character's optional rule, wherever the page puts it (an example box, a paragraph), in a
+	// section of its own at the end (Trevor, 2026-10-31).
+	const optional: WikiBlock[] = [];
+	const add = (block: WikiBlock & { text: string }) => {
+		if (OPTIONAL_RULE.test(block.text)) optional.push({ kind: 'p', text: block.text });
+		else current().blocks.push(block);
+	};
 
 	const walk = (parent: Element) => {
 		for (const el of parent.children) {
@@ -77,10 +88,10 @@ export function parseWikiPage(html: string): WikiSection[] {
 				sections.push({ heading: clean(heading), blocks: [] });
 			} else if (el.matches('.example')) {
 				const text = clean(el);
-				if (text) current().blocks.push({ kind: 'example', text });
+				if (text) add({ kind: 'example', text });
 			} else if (el.tagName === 'P' || el.tagName === 'BLOCKQUOTE') {
 				const text = clean(el);
-				if (text && !DROPPED.test(text)) current().blocks.push({ kind: 'p', text });
+				if (text && !DROPPED.test(text)) add({ kind: 'p', text });
 			} else if (el.tagName === 'UL' || el.tagName === 'OL') {
 				const items = [...el.children]
 					.filter((li) => li.tagName === 'LI')
@@ -98,6 +109,7 @@ export function parseWikiPage(html: string): WikiSection[] {
 		}
 	};
 	walk(root);
+	if (optional.length > 0) sections.push({ heading: OPTIONAL_RULE_HEADING, blocks: optional });
 	return sections.filter((s) => s.blocks.length > 0);
 }
 

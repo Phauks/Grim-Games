@@ -92,11 +92,15 @@ export class ReminderDragging {
 			.find((r) => r.reminderId === id);
 	});
 
-	/** The seat under a point (in % of the board), if it is within reach of a token. */
-	seatAt = (at: SeatPoint): SeatId | undefined => {
+	/**
+	 * The seat under a point (in % of the board), if it is within reach of a token: a drag's
+	 * generous reach, or `onToken` for a tap, which must land on the character token itself
+	 * (Trevor, 2026-10-31).
+	 */
+	seatAt = (at: SeatPoint, onToken = false): SeatId | undefined => {
 		const { game, points, size, board } = this.#context();
 		let best: SeatId | undefined;
-		let bestDistance = size * 0.75;
+		let bestDistance = size * (onToken ? 0.5 : 0.75);
 		game.seating.forEach((id, i) => {
 			const d = Math.hypot(
 				((points[i].x - at.x) / 100) * board.width,
@@ -148,12 +152,19 @@ export class ReminderDragging {
 	}
 
 	/** A reminder's drag, from `from` (if on a seat), to a client point; `end` when let go. */
-	move(reminderId: ReminderId, from: SeatId | undefined, x: number, y: number, end: boolean) {
+	move(
+		reminderId: ReminderId,
+		from: SeatId | undefined,
+		x: number,
+		y: number,
+		end: boolean,
+		tap = false
+	) {
 		const { element, grimoire, game, free, confirm } = this.#context();
 		if (!element) return;
 		const rect = element.getBoundingClientRect();
 		const at = { x: ((x - rect.left) / rect.width) * 100, y: ((y - rect.top) / rect.height) * 100 };
-		const target = this.seatAt(at);
+		const target = this.seatAt(at, tap);
 		if (!end) {
 			const overNew = overNewToken(x, y);
 			this.drag = {

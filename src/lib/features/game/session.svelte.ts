@@ -58,6 +58,8 @@ export class OpenGame {
 	readonly #ctx: EngineContext;
 	readonly #store: GameStore;
 	#saving: Promise<void> = Promise.resolve();
+	/** The newest session waiting for the save before it to land. */
+	#unsaved: GameSession | undefined;
 
 	private constructor(
 		session: GameSession,
@@ -297,13 +299,21 @@ export class OpenGame {
 
 	/**
 	 * Queues a save of the current session; resolves once it (and earlier ones) landed. An
-	 * ended game being looked at is never saved.
+	 * ended game being looked at is never saved. Changes made while a save is being written are
+	 * saved together once it lands, as one write of the newest session (memory sweep, 2026-10-31):
+	 * each write is the whole game.
 	 */
 	save(): Promise<void> {
 		if (this.viewOnly) return this.#saving;
-		const snapshot = toSavedGame(this.session, this.#ctx.now());
+		const queued = this.#unsaved !== undefined;
+		this.#unsaved = this.session;
+		if (queued) return this.#saving;
 		this.#saving = this.#saving
-			.then(() => this.#store.save(snapshot))
+			.then(() => {
+				const session = this.#unsaved!;
+				this.#unsaved = undefined;
+				return this.#store.save(toSavedGame(session, this.#ctx.now()));
+			})
 			// A failed save is reported (corner card) and the next command saves again.
 			.catch((e: unknown) => void reportError(e, { area: 'grimoire' }));
 		return this.#saving;

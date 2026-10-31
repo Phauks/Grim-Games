@@ -32,6 +32,25 @@ describe('parseWikiPage', () => {
 		]);
 	});
 
+	// Made-up text in the wiki's shapes: the Hindu's in an example box, the Ogre's a paragraph.
+	it("moves a character's optional rule into a section of its own, at the end", () => {
+		const html =
+			'<div class="mw-parser-output"><h2>How to Run</h2><p>Sample step.</p>' +
+			'<div class="example"><p><b>Optional rule</b>: Sample rule.</p></div>' +
+			'<p>Another step.</p><h2>Examples</h2><p>Sample example.</p></div>';
+		expect(parseWikiPage(html)).toEqual([
+			{
+				heading: 'How to Run',
+				blocks: [
+					{ kind: 'p', text: 'Sample step.' },
+					{ kind: 'p', text: 'Another step.' }
+				]
+			},
+			{ heading: 'Examples', blocks: [{ kind: 'p', text: 'Sample example.' }] },
+			{ heading: 'Optional rule', blocks: [{ kind: 'p', text: 'Optional rule: Sample rule.' }] }
+		]);
+	});
+
 	it("drops the wiki's Related Jinxes box above the Summary", () => {
 		const html =
 			'<div class="mw-parser-output"><div id="jinxes"><p><span>Sample jinx label ' +

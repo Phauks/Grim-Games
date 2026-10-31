@@ -11,6 +11,11 @@ export const DAY_SECONDS_PER_ALIVE = 30;
 export const DAY_SECONDS_PER_ALIVE_MIN = 5;
 export const DAY_SECONDS_PER_ALIVE_MAX = 300;
 /**
+ * The times its drop-down offers (Trevor, 2026-10-30: a drop-down, not a typed number). A time
+ * saved before then that isn't one of them is still offered while it is chosen.
+ */
+export const DAY_SECONDS_PER_ALIVE_CHOICES = [10, 15, 20, 30, 45, 60, 90, 120] as const;
+/**
  * Counting down shows the time left and stops at 0:00; counting up shows the time used
  * from 0:00 and keeps going past the target (Trevor, 2026-10-17: "count up or down").
  */

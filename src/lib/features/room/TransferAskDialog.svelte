@@ -48,10 +48,31 @@
 			{t('room.transfer.askingDevice')}
 		{/if}
 	</p>
+	<!-- The asker's match check (Trevor, 2026-10-31): a Profile name can be anyone's, so the
+	     Storyteller allows it only when the device in their hand shows the same number. -->
+	{#if asking?.check}
+		<div class="check" data-testid="transfer-ask-check">
+			<span>{t('room.transfer.check')}</span>
+			<strong>{asking.check}</strong>
+		</div>
+		<p class="ask">{t('room.transfer.checkHint')}</p>
+	{/if}
 </ConfirmDialog>
 
 <style>
 	.ask {
 		margin: 0;
+	}
+	.check {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: var(--space-2);
+	}
+	.check strong {
+		font-family: var(--font-heading);
+		font-size: 2rem;
+		letter-spacing: 0.08em;
+		font-variant-numeric: tabular-nums;
 	}
 </style>

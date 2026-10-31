@@ -13,6 +13,9 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import type { Command } from '#lib/core/engine/index.ts';
+import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
+import { followedAlignmentOffer } from '#lib/core/rules/becomes.ts';
 
 describe('Ogre', () => {
 	const character = committedCharacter('ogre');
@@ -45,6 +48,46 @@ describe('Ogre', () => {
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Ogre#Examples)', () => {
 		it.todo('Example 1: Ogre picks an evil player and turns evil');
-		it.todo('Example 2: Friend turns evil, but Ogre stays good');
+		// The Ogre's friend is good, so the Ogre is good; the friend later turns evil, and the
+		// Ogre stays good (without the optional rule).
+		it('Example 2: Friend turns evil, but Ogre stays good', () => {
+			const { game, seats } = castGame(
+				['ogre', 'chef', 'empath', 'monk', 'poisoner', 'imp'],
+				(s) => ({
+					type: 'AddReminder',
+					seatId: s[1],
+					reminder: { characterId: 'ogre', label: 'Friend' }
+				}),
+				(s) => ({ type: 'SetAlignment', seatId: s[1], alignment: 'evil' })
+			);
+			expect(followedAlignmentOffer(game, seats[1], characters)).toBeUndefined();
+		});
+	});
+});
+
+// The optional rule on the wiki page (https://wiki.bloodontheclocktower.com/Ogre): the Ogre is
+// always the alignment of the player its Friend marks, following later changes.
+describe('Ogre optional rule', () => {
+	const cast = ['ogre', 'chef', 'empath', 'monk', 'poisoner', 'imp'];
+	const on: Command = { type: 'SetOptionalRule', characterId: 'ogre', on: true };
+	const friend = (s: string[]): Command => ({
+		type: 'AddReminder',
+		seatId: s[1],
+		reminder: { characterId: 'ogre', label: 'Friend' }
+	});
+	const turnsEvil = (s: string[]): Command => ({
+		type: 'SetAlignment',
+		seatId: s[1],
+		alignment: 'evil'
+	});
+
+	it('on, the Ogre turns evil when its friend does', () => {
+		const { game, seats } = castGame(cast, on, friend, turnsEvil);
+		expect(followedAlignmentOffer(game, seats[1], characters)).toEqual({
+			into: 'alignment',
+			seatId: seats[0],
+			characterId: 'ogre',
+			alignment: 'evil'
+		});
 	});
 });

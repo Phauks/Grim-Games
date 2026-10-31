@@ -15,6 +15,7 @@ import {
 	publish,
 	seat,
 	setName,
+	transferCheck,
 	transferDetails,
 	TRANSFER_MS,
 	type RoomState
@@ -105,17 +106,30 @@ describe('room transfer', () => {
 		expect(check).toEqual({ ok: false, room: closeTransfer(opened), triesLeft: 0 });
 	});
 
+	it('gives each asking device its own four-digit match check', () => {
+		const a = 'a1b2c3d4'.padEnd(64, '0');
+		const b = 'ffffffff'.padEnd(64, '0');
+		expect(transferCheck(a)).toBe(String(0xa1b2c3d4 % 10000).padStart(4, '0'));
+		expect(transferCheck(a)).toMatch(/^\d{4}$/);
+		expect(transferCheck(b)).not.toBe(transferCheck(a));
+		// The same key always gives the same check, so both screens agree.
+		expect(transferCheck(a)).toBe(transferCheck(a));
+		expect(transferCheck('0'.repeat(64))).toBe('0000');
+	});
+
 	it('asks the Storyteller before anyone takes over, with the asker’s name', () => {
 		const opened = openTransfer(room(), CODE_HASH, false, 0);
 		const asked = askTransfer(opened, 'new-host', '  Pat  ');
 		expect(asked.transfer?.asking).toEqual({ keyHash: 'new-host', name: 'Pat' });
-		// The Storyteller's device sees the name, never the key.
+		// The Storyteller's device sees the name and the match check, never the key.
 		expect(hostView(asked).transfer).toEqual({
 			endsAt: TRANSFER_MS,
 			tries: 0,
-			asking: { name: 'Pat' }
+			asking: { name: 'Pat', check: transferCheck('new-host') }
 		});
-		expect(hostView(askTransfer(opened, 'new-host', 7)).transfer?.asking).toEqual({});
+		expect(hostView(askTransfer(opened, 'new-host', 7)).transfer?.asking).toEqual({
+			check: transferCheck('new-host')
+		});
 		// A later ask replaces it; a switch change keeps it.
 		expect(askTransfer(asked, 'other', '').transfer?.asking).toEqual({ keyHash: 'other' });
 		expect(openTransfer(asked, CODE_HASH, true, 9).transfer?.asking).toEqual(

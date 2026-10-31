@@ -105,16 +105,22 @@ function markGuarded(on: boolean): void {
 export function leaveTo(leave: () => void): void {
 	const registered = top();
 	if (!registered) return leave();
-	registered.guard(() => {
-		confirmed = true;
-		const pass = ++passes;
-		// goto() awaits route resolution before asking, so the pass must outlive the call; the
-		// navigation uses it up, and this only clears it if `leave` never navigated.
-		setTimeout(() => {
-			if (pass === passes) confirmed = false;
-		}, 5000);
-		leave();
-	});
+	registered.guard(() => leaveWithoutAsking(leave));
+}
+
+/**
+ * Runs `leave` past any guard, for a way out the person can't refuse: the room was handed to
+ * another Storyteller's device, so this one is put out of the game (Room transfer).
+ */
+export function leaveWithoutAsking(leave: () => void): void {
+	confirmed = true;
+	const pass = ++passes;
+	// goto() awaits route resolution before asking, so the pass must outlive the call; the
+	// navigation uses it up, and this only clears it if `leave` never navigated.
+	setTimeout(() => {
+		if (pass === passes) confirmed = false;
+	}, 5000);
+	leave();
 }
 
 /**

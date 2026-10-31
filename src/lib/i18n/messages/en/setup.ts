@@ -11,6 +11,12 @@ export const setup = {
 	'setup.dealt.choose':
 		"{mode}: each player chooses their own character, so there's no bag to build here.",
 	'setup.gameSettings': 'Game settings',
+	'setup.gameSettings.on': 'On',
+	'setup.gameSettings.off': 'Off',
+	'setup.gameSettings.nominationsHelp':
+		'The Storyteller marks who nominated each day and who was nominated.',
+	'setup.gameSettings.timerHelp':
+		'Each day’s timer starts with this many seconds for each living player.',
 	'setup.characterSelection': 'Character selection',
 	'setup.steps': 'Setup steps',
 	'setup.nav': 'Setup',
@@ -27,14 +33,8 @@ export const setup = {
 	'setup.players': 'Players',
 	'setup.tooManyPlayers': 'Too many players for this script',
 	'setup.tooManyPlayersFor': 'This script is made for at most {max} players.',
-	'setup.fewerPlayers': 'Fewer players',
 	'setup.alignmentDraw.tokens': 'Tokens',
-	'setup.alignmentDraw.fewerTokens': 'Fewer tokens',
-	'setup.alignmentDraw.moreTokens': 'More tokens',
 	'setup.alignmentDraw.evilTokens': 'Evil tokens',
-	'setup.alignmentDraw.fewerEvil': 'Fewer evil',
-	'setup.alignmentDraw.moreEvil': 'More evil',
-	'setup.morePlayers': 'More players',
 	'setup.sheet': 'Setup sheet',
 	'setup.random': 'Random selection',
 	'setup.randomNone': 'No valid selection fits this script and player count',
