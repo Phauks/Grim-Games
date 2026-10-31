@@ -8,6 +8,7 @@ export const shell = {
 	'shell.navClose': 'Close menu',
 	'shell.navSectionGames': 'Play',
 	'shell.navSectionPrepare': 'Prepare',
+	'shell.navSectionBuild': 'Build',
 	'shell.navSectionYou': 'You',
 	'shell.navSectionApp': 'App',
 	'shell.navHome': 'Home',

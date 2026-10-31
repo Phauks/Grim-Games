@@ -45,7 +45,7 @@ describe('navigation', () => {
 	});
 
 	it('groups games first, then preparation (Trevor, 2026-10-16)', () => {
-		expect(NAV_SECTIONS.map((section) => section.id)).toEqual(['games', 'prepare']);
+		expect(NAV_SECTIONS.map((section) => section.id)).toEqual(['games', 'prepare', 'build']);
 		// Player view is reached from a join code, not the menu (Trevor, 2026-10-19).
 		expect(NAV_ITEMS.some((item) => item.id === 'play')).toBe(false);
 		// Join game and Resume game are one page (Trevor, 2026-10-28).
