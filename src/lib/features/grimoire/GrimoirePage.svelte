@@ -60,7 +60,8 @@
 			<PinDialog bind:open={pinOpen} {gameId} />
 		{:else}
 			<ErrorBoundary area="grimoire">
-				<GrimoireBoard grimoire={board} />
+				<!-- No box of its own: only marks the board page for its scroll lock below. -->
+				<div class="board-page"><GrimoireBoard grimoire={board} /></div>
 				<!-- Players, their notes, messages and reported pictures, from ⋯ (Trevor, 2026-10-29). -->
 				<PlayersDialog game={board.open} run={(command) => board.run(command)} />
 			</ErrorBoundary>
@@ -77,6 +78,18 @@
 </WithSavedGame>
 
 <style>
+	/* The board fills the screen, so its page never scrolls: on a laptop a scrollbar that a
+	   rounding sliver brought in narrowed the board, which took the sliver away again, and the
+	   scrollbar flickered in and out (Trevor, 2026-10-30). No room is kept for one either.
+	   Only this page: a board shown inside a scrolling page, like the final grimoire on a
+	   player's phone, leaves that page free to scroll. */
+	.board-page {
+		display: contents;
+	}
+	:global(html:has(.board-page)) {
+		overflow: hidden;
+		scrollbar-gutter: auto;
+	}
 	.message {
 		max-width: calc(40 * var(--u));
 		margin: 0 auto;
