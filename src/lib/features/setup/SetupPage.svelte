@@ -102,22 +102,18 @@
 	);
 	/**
 	 * The script's own Fabled and Loric, then any other the game has in play (Trevor,
-	 * 2026-10-18). They go straight into the game's rule characters, never the bag; once
-	 * listed they stay for this visit, so taking one out can be undone.
+	 * 2026-10-18). They go straight into the game's rule characters, never the bag. One not on
+	 * the script leaves the list once taken out, back to its Add dialog (Trevor, 2026-10-31).
 	 */
 	const scriptRules = $derived(script?.characters.filter((c) => isRuleCharacter(c.type)) ?? []);
 	const inRule = $derived(new Set(game?.ruleCharacters ?? []));
-	let rulesSeen = $state.raw<CharacterId[]>([]);
-	$effect(() => {
+	const offScriptRules = $derived.by(() => {
 		const onScript = new Set(scriptRules.map((c) => c.id));
-		const added = (game?.ruleCharacters ?? []).filter(
-			(id) => !onScript.has(id) && !rulesSeen.includes(id)
-		);
-		if (added.length) rulesSeen = [...rulesSeen, ...added];
+		return (game?.ruleCharacters ?? [])
+			.filter((id) => !onScript.has(id))
+			.map((id) => lookup(id))
+			.filter((c): c is Character => c !== undefined);
 	});
-	const offScriptRules = $derived(
-		rulesSeen.map((id) => lookup(id)).filter((c): c is Character => c !== undefined)
-	);
 	/** Every character of a type there is, the script's (and edition's) first, for its Add dialog. */
 	function allOf(type: CharacterType): Character[] {
 		const recommended = [...(script?.characters ?? []), ...editionTravellers].filter(
@@ -144,17 +140,13 @@
 	/**
 	 * Characters chosen though they are not on the script (Infinite Possibilities' hidden
 	 * extras, or any other addition), listed under their own type with an off-script mark
-	 * (Trevor, 2026-10-18). Once listed they stay for this visit, so taking one out can be
-	 * undone; a rule's hidden ones leave once taken out of its box (`fromRule`).
+	 * (Trevor, 2026-10-18). A rule's hidden ones stay listed while the rule allows them; any
+	 * other leaves the list once taken out, back to its Add dialog (Trevor, 2026-10-31).
 	 */
 	let offScriptSeen = $state.raw<CharacterId[]>([]);
-	const fromRule: CharacterId[] = [];
 	$effect(() => {
-		for (const id of ruleAllowed) if (!fromRule.includes(id)) fromRule.push(id);
 		const onScript = new Set([...scriptOrder, ...editionTravellers.map((c) => c.id)]);
-		const kept = offScriptSeen.filter(
-			(id) => ruleAllowed.has(id) || !fromRule.includes(id) || (s.selection[id] ?? 0) > 0
-		);
+		const kept = offScriptSeen.filter((id) => ruleAllowed.has(id) || (s.selection[id] ?? 0) > 0);
 		const added = Object.keys(s.selection).filter(
 			(id) => (s.selection[id] ?? 0) > 0 && !onScript.has(id) && !kept.includes(id)
 		);
