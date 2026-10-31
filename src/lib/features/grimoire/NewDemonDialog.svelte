@@ -46,14 +46,10 @@
 </script>
 
 <ConfirmDialog bind:open {title} onConfirm={confirm}>
-	<!-- The Demon's ability, as the Script tab shows the character (Trevor, 2026-10-30). -->
 	{#if demon}<div class="ability">
-			<CharacterRow character={demon} info
-				>{#snippet ability()}<GlossaryText
-						text={demon.ability}
-						names={[demon.name]}
-					/>{/snippet}</CharacterRow
-			>
+			<CharacterRow character={demon} info>
+				{#snippet ability()}<GlossaryText text={demon.ability} names={[demon.name]} />{/snippet}
+			</CharacterRow>
 		</div>{/if}
 	<ChoiceGroup
 		label={choiceLabel}
