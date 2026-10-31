@@ -69,8 +69,6 @@ export const modes = {
 	'modes.townScript': 'Town {number} script',
 	'modes.everyCharacter': 'Every character',
 	'modes.players': 'Players',
-	'modes.fewerPlayers': 'Fewer players',
-	'modes.morePlayers': 'More players',
 	'modes.townSheet': 'Town {number} setup sheet',
 	'modes.townsUneven': 'The towns’ player counts differ by more than {count}.',
 	'modes.start': 'Create game',

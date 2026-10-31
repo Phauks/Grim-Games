@@ -11,7 +11,7 @@
 	import CodeField from '#lib/ui/primitives/CodeField.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
-	import Stepper from '#lib/ui/primitives/Stepper.svelte';
+	import NumberSelect from '#lib/ui/primitives/NumberSelect.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import { botName, frameName, TestRoom, ZOOMS, type Zoom } from './bench.svelte.ts';
 	import { DEVICES, deviceById, STORYTELLER_SCREENS } from './devices.ts';
@@ -120,19 +120,15 @@
 
 	{#snippet side()}
 		<section class="panel" aria-label={t('room.testRoom.players')}>
-			<Stepper
+			<NumberSelect
 				label={t('room.testRoom.players')}
-				lessLabel={t('room.testRoom.fewerPlayers')}
-				moreLabel={t('room.testRoom.morePlayers')}
+				hideLabel
 				value={bench.players.length}
 				max={MAX_MEMBERS}
+				format={(count) => t('room.testRoom.playersCount', { count })}
 				onchange={(n) => bench.setCount(n)}
 				testid="test-room-players"
-			>
-				{#snippet display()}{t('room.testRoom.playersCount', {
-						count: bench.players.length
-					})}{/snippet}
-			</Stepper>
+			/>
 			<Toggle
 				label={t('room.testRoom.auto')}
 				checked={bench.auto}

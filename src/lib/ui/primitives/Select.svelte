@@ -57,6 +57,13 @@
 		attention?: boolean;
 		/** Whether the list is open; bind it to open the list from elsewhere. */
 		open?: boolean;
+		/**
+		 * At least this many characters wide (a NumberSelect's longest number), so a longer choice
+		 * never resizes the control where nothing else sets its width.
+		 */
+		chars?: number;
+		/** On the closed control, which shows the chosen option's label. */
+		testid?: string;
 	}
 
 	let {
@@ -77,7 +84,9 @@
 		listFitsTrigger = true,
 		icon,
 		attention = false,
-		open = $bindable(false)
+		open = $bindable(false),
+		chars,
+		testid
 	}: Props = $props();
 
 	// A dialog or sheet opening over the page closes the list, so it never stays on top of it.
@@ -174,6 +183,7 @@
 	}}
 	lazyMount
 	unmountOnExit
+	style={chars === undefined ? undefined : `--select-chars: ${chars}`}
 >
 	{#if !labelledBy}
 		<Select.Label class={hideLabel || icon ? 'visually-hidden' : undefined}>{label}</Select.Label>
@@ -186,7 +196,7 @@
 				{/snippet}
 			</Select.Trigger>
 		{:else}
-			<Select.Trigger data-attention={attention || undefined}>
+			<Select.Trigger data-attention={attention || undefined} data-testid={testid}>
 				<span class="value">
 					{#if current && selected && !multiple}{@render selected(current)}{:else}{shown}{/if}
 				</span>
@@ -225,6 +235,10 @@
 		overflow: hidden;
 		clip-path: inset(50%);
 		white-space: nowrap;
+	}
+	/* Room for `chars` characters, the caret and the padding beside them. */
+	:global([data-scope='select'][data-part='root'][style*='--select-chars']) {
+		min-width: calc(var(--select-chars) * 1ch + var(--space-3) + var(--space-2) * 2 + 1.5em);
 	}
 	/* An `icon` trigger is an IconButton and keeps that look alone. */
 	:global([data-scope='select'][data-part='trigger']:not(.icon-button)) {

@@ -6,6 +6,7 @@ import { nameStoryteller, openGameInfo, toBoard } from './new-game.ts';
 import { menuButton } from './shell.ts';
 import { aimCamera, qrSrc } from './camera.ts';
 import { openPlayerSheet } from './players.ts';
+import { pickNumber } from './number-select.ts';
 
 // Share's Players tab in a live room (07-accounts-and-multi-device.md §4.2): a phone gives its
 // name, the Storyteller picks its seat, and the seat is named in the grimoire. There is no
@@ -56,11 +57,8 @@ async function startGame(page: Page, storyteller?: string, players = 8) {
 		.tap();
 	await page.getByRole('button', { name: 'Create game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
-	const count = page.getByTestId('setup-table').locator('thead th[data-current]');
-	for (let n = 8; n < players; n++) {
-		await page.getByRole('button', { name: 'More players' }).tap();
-		await expect(count).toHaveText(String(n + 1));
-	}
+	await pickNumber(page, 'Players', players);
+	await expect(page.getByTestId('player-count')).toHaveText(String(players));
 	await toBoard(page);
 	if (storyteller !== undefined) await nameStoryteller(page, storyteller);
 	return new URL(page.url()).pathname;

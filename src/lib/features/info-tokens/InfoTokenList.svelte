@@ -17,7 +17,8 @@
 	import RichTextField from './RichTextField.svelte';
 	import InfoTokenTile from './InfoTokenTile.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
-	import Stepper from '#lib/ui/primitives/Stepper.svelte';
+	import NumberSelect from '#lib/ui/primitives/NumberSelect.svelte';
+	import { MAX_SEATS } from '#lib/core/engine/index.ts';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import { plainText } from './bold.ts';
 	import { tokenTitle } from './token-title.ts';
@@ -427,16 +428,12 @@
 		/>
 	{:else if asking && askValue?.kind === 'number'}
 		<div class="number">
-			<Stepper
+			<NumberSelect
 				bind:value={number}
 				label={tokenTitle(asking)}
-				lessLabel={t('info-tokens.numberLess')}
-				moreLabel={t('info-tokens.numberMore')}
+				hideLabel
 				min={askValue.min}
-				max={askValue.max}
-				large
-				typeable
-				oncommit={useAsked}
+				max={askValue.max ?? MAX_SEATS}
 			/>
 		</div>
 	{:else if askValue?.kind === 'choices'}

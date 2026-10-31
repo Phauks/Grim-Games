@@ -12,7 +12,7 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
-	import Stepper from '#lib/ui/primitives/Stepper.svelte';
+	import NumberSelect from '#lib/ui/primitives/NumberSelect.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import TextListField from '#lib/ui/primitives/TextListField.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
@@ -173,31 +173,28 @@
 			/>
 			<div class="count-field">
 				{#if editing.count === 'range'}
-					<span class="count-label">{t('info-tokens.from')}</span>
-					<Stepper
+					<span class="count-label" aria-hidden="true">{t('info-tokens.from')}</span>
+					<NumberSelect
 						bind:value={editing.fewest}
 						label={t('info-tokens.from')}
-						lessLabel={t('info-tokens.fewerFrom')}
-						moreLabel={t('info-tokens.moreFrom')}
+						hideLabel
 						min={1}
 						max={editing.characters - 1}
 					/>
-					<span class="count-label">{t('info-tokens.to')}</span>
-					<Stepper
+					<span class="count-label" aria-hidden="true">{t('info-tokens.to')}</span>
+					<NumberSelect
 						bind:value={editing.characters}
 						label={t('info-tokens.to')}
-						lessLabel={t('info-tokens.fewer')}
-						moreLabel={t('info-tokens.more')}
+						hideLabel
 						min={editing.fewest + 1}
 						max={MAX_ASKED_CHARACTERS}
 					/>
 				{:else}
-					<span class="count-label">{t('info-tokens.howMany')}</span>
-					<Stepper
+					<span class="count-label" aria-hidden="true">{t('info-tokens.howMany')}</span>
+					<NumberSelect
 						bind:value={editing.characters}
 						label={t('info-tokens.howMany')}
-						lessLabel={t('info-tokens.fewer')}
-						moreLabel={t('info-tokens.more')}
+						hideLabel
 						min={1}
 						max={MAX_ASKED_CHARACTERS}
 						disabled={editing.count === 'none'}

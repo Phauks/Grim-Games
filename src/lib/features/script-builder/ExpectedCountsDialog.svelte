@@ -8,7 +8,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
-	import Stepper from '#lib/ui/primitives/Stepper.svelte';
+	import NumberSelect from '#lib/ui/primitives/NumberSelect.svelte';
 	import { scriptBuilderDraft as draft } from './draft.svelte.ts';
 
 	type Expected = ReturnType<typeof expectedScriptCounts>;
@@ -31,17 +31,15 @@
 			disabled={!custom}
 			onclick={() => draft.resetExpected()}
 		/>{/snippet}
-	<div class="expected-steppers">
+	<div class="expected-counts">
 		{#each types as type (type)}
-			<span class="label" data-type={type}>{TYPE_PLURALS[type]}</span>
-			<Stepper
+			<span class="label" data-type={type} aria-hidden="true">{TYPE_PLURALS[type]}</span>
+			<NumberSelect
 				value={expected[type]}
 				label={TYPE_PLURALS[type]}
-				lessLabel={t('script-builder.expectedLess', { type: TYPE_PLURALS[type] })}
-				moreLabel={t('script-builder.expectedMore', { type: TYPE_PLURALS[type] })}
+				hideLabel
 				min={0}
 				max={MAX_EXPECTED_COUNT}
-				typeable
 				testid="expected-set-{type}"
 				onchange={(n) => draft.setExpected(type, n)}
 			/>
@@ -50,7 +48,7 @@
 </Dialog>
 
 <style>
-	.expected-steppers {
+	.expected-counts {
 		display: grid;
 		grid-template-columns: auto auto;
 		align-items: center;
