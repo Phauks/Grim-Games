@@ -74,6 +74,7 @@ import { closeSocket, refuseRemoved, send, sendText, type Attachment } from './r
 import {
 	accountTags,
 	linkAccount,
+	hostedAccounts,
 	requestAccount,
 	roomPlayers,
 	seatAccount,
@@ -179,6 +180,12 @@ export class Room extends DurableObject<RoomEnv> {
 	/** The account in a seat or the Storyteller's, for `requester` to friend (room-accounts.ts). */
 	async friendSeat(requester: string, target: SeatTarget): Promise<string | 'self' | undefined> {
 		return seatAccount(this.ctx, await this.load(), requester, target);
+	}
+
+	/** Who is in this room, for its Storyteller inviting friends (plan F4). */
+	async inviteAccounts(requester: string): Promise<string[] | undefined> {
+		if (!(await this.load())) return undefined;
+		return hostedAccounts(this.ctx, requester);
 	}
 
 	async fetch(request: Request): Promise<Response> {

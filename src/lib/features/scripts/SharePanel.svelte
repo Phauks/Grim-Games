@@ -12,6 +12,7 @@
 	import type { ShareTarget } from './share-codes.ts';
 	import { withOfflineRoom } from './share.ts';
 	import { keepScreenAwake } from '#lib/features/day/timer-wake-lock.ts';
+	import InviteFriends from '#lib/features/friends/InviteFriends.svelte';
 	import ScriptFriendsShare from '#lib/features/friends/ScriptFriendsShare.svelte';
 
 	/**
@@ -168,6 +169,8 @@
 	</SharePanel>
 	<!-- Friends and the profile get the script itself, not a room (plan F9, F10). -->
 	{#if !inRoom}<ScriptFriendsShare name={title} hash={made?.lasting} />{/if}
+	<!-- The Storyteller invites friends to the room (plan F4); kept in place until it opens. -->
+	{#if hosting}<InviteFriends code={room} {title} />{/if}
 </div>
 
 <style>
