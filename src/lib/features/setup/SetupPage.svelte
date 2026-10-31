@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { seatingFromSetup } from '#lib/features/grimoire/seating-mode.svelte.ts';
 	import { allowedOffScriptIn } from '#lib/features/modes/game-mode.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { onMount } from 'svelte';
@@ -439,6 +440,16 @@
 		);
 	}
 
+	/**
+	 * Seating from here (Trevor, 2026-10-31: players sit and count off while the Storyteller
+	 * picks characters): this screen's seats, then the board in Seating, whose Done comes back.
+	 */
+	async function seating() {
+		if (!game || !seatPlayers()) return;
+		await port.flush();
+		await seatingFromSetup(game.gameId);
+	}
+
 	/** The draw, or for a town of a mode game the next town's setup (Alternative game modes). */
 	async function openDraw(gameId: string) {
 		const town = await afterTownBag(gameId, await loadOfficialData());
@@ -498,7 +509,12 @@
 </script>
 
 <Page title={t('setup.characters')} sideFlow iconActions>
-	{#snippet actions()}<SetupActions {port} />{/snippet}
+	{#snippet actions()}<SetupActions {port} /><IconButton
+			icon="arrange"
+			label={t('room.seating.title')}
+			disabled={!ready}
+			onclick={seating}
+		/>{/snippet}
 	{#snippet subtitle()}<span class="script"
 			><span class="label">{t('setup.script')}</span>
 			<!-- With its logo, as every script's name (Trevor, 2026-10-31). -->

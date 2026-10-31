@@ -3,6 +3,7 @@
 	import type { GenericLook, Reminder, ReminderId, SeatId } from '#lib/core/model/index.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import type { SeatPoint } from '#lib/ui/seating/seat-layout.ts';
+	import type { Snippet } from 'svelte';
 	import BoardReminder from './BoardReminder.svelte';
 	import ReminderCount from './ReminderCount.svelte';
 	import NewTokenButton from './NewTokenButton.svelte';
@@ -62,6 +63,8 @@
 		 */
 		/** A spectator's board (Trevor, 2026-10-19): every token shown, none taken. */
 		disabled?: boolean;
+		/** Drawn in the tokens' place, the run button kept: Seating's bar (SeatingBar). */
+		instead?: Snippet;
 		/**
 		 * A reminder on the board is being dragged, and whether it is over "+ New token", which
 		 * glows to say it takes it (Trevor, 2026-10-27).
@@ -94,6 +97,7 @@
 		onHints,
 		run,
 		disabled = false,
+		instead,
 		dropping = false,
 		dropOver = false
 	}: Props = $props();
@@ -468,7 +472,9 @@
 			aria-hidden="true"
 			bind:offsetWidth={captionW[group as BankGroup]}>{text}</span
 		>{/each}
-	{#if tall}
+	{#if instead && !tall}
+		{@render instead()}
+	{:else if tall}
 		<div class="every" aria-label="Reminder bin" role="region" data-testid="reminder-bin">
 			<ReminderGroups
 				label="Reminder bin"
@@ -523,9 +529,14 @@
 	<!-- The handle bar in the middle of the bank's top edge: pulls the bank up over the board,
 	     or back down (Trevor, 2026-10-30). Clear of the run button (Trevor, 2026-10-29: "a drag
 	     above the red button is bad placement"). -->
-	<div class="grab" bind:clientWidth={grabW}>
-		<SheetHandle label="Every reminder" expanded={binOpen} onToggle={toggleBin} onPull={pullBin} />
-	</div>
+	{#if !instead}<div class="grab" bind:clientWidth={grabW}>
+			<SheetHandle
+				label="Every reminder"
+				expanded={binOpen}
+				onToggle={toggleBin}
+				onPull={pullBin}
+			/>
+		</div>{/if}
 	{#if run}<BankRunButton {run} />{/if}
 	<!-- Over the board's foot, above the handle bar (Trevor, 2026-10-30). -->
 	<ReminderHandPill

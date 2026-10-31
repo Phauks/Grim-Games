@@ -104,10 +104,8 @@ const bankNight = (
 	page: Page,
 	name: 'Set up' | 'Start game' | 'Run Night Order' | 'End night' | 'Execution'
 ) =>
-	page
-		.getByRole('list', { name: 'Reminder bank' })
-		.locator('..')
-		.getByRole('button', { name, exact: true });
+	// The bank's own box, which keeps its run button while Seating's bar takes its tokens' row.
+	page.locator('[data-tray]').getByRole('button', { name, exact: true });
 
 /**
  * Ending the day asks who was executed (Trevor, 2026-10-22); No execution unless a player
@@ -688,7 +686,7 @@ test('the board leads to setup and the day; setup ends on the setup reminders', 
 	await expect(page.getByRole('button', { name: 'Set up' })).toHaveCount(1);
 	await expect(bankNight(page, 'Start game')).toHaveCount(0);
 	// Arranging seats keeps Set up there, disabled until Done (Trevor, 2026-10-22).
-	await menu(page, 'Arrange seats');
+	await menu(page, 'Seating');
 	await expect(bankNight(page, 'Set up')).toBeDisabled();
 	await expect(bankNight(page, 'Start game')).toHaveCount(0);
 	await page.getByRole('toolbar', { name: 'Grimoire' }).getByRole('button', { name: 'Done' }).tap();
@@ -776,9 +774,9 @@ test('seats can be arranged: dragged anywhere, kept through a rotation, spread e
 	const board = (await page.locator('.board').boundingBox())!;
 	const seat2 = await centre(2);
 
-	await menu(page, 'Arrange seats');
+	await menu(page, 'Seating');
 	const toolbar = page.getByRole('toolbar', { name: 'Grimoire' });
-	await expect(toolbar).toContainText('Arrange seats');
+	await expect(toolbar).toContainText('Seating');
 	await expect(page.getByRole('dialog', { name: 'Grimoire' })).toBeHidden();
 
 	// Drag seat 1 inside the circle (clear of the centre buttons); the others stay put.
@@ -815,7 +813,7 @@ test('seats can be arranged: dragged anywhere, kept through a rotation, spread e
 	await closeSheet(page);
 
 	// Spread evenly puts everyone back round the table.
-	await menu(page, 'Arrange seats');
+	await menu(page, 'Seating');
 	await toolbar.getByRole('button', { name: 'Spread evenly' }).tap();
 	await expect(toolbar.getByRole('button', { name: 'Spread evenly' })).toBeDisabled();
 	const spread = await centre(1);
@@ -1863,7 +1861,7 @@ test('players rotate one seat, or swap places when one is dropped on another', a
 	await closeSheet(page);
 
 	// Rotating is part of arranging: one tap, one place, no confirm.
-	await menu(page, 'Arrange seats');
+	await menu(page, 'Seating');
 	const toolbar = page.getByRole('toolbar', { name: 'Grimoire' });
 	await toolbar.getByRole('button', { name: 'Rotate players clockwise' }).tap();
 	await expect(seatLabelled(page, 'Seat 2: Ana')).toBeAttached();
@@ -3191,10 +3189,10 @@ test("the Script button opens the players' copy of the script", async ({ page })
 	await expect(sheet.locator('section[data-night="first"] li[data-step="empath"]')).toBeVisible();
 	await page.keyboard.press('Escape');
 	await expect(sheet).toBeHidden();
-	// Arrange seats moved into More to make room.
+	// Seating (arranging seats) moved into More to make room.
 	await page.getByRole('button', { name: 'More' }).tap();
 	await expect(
-		page.getByRole('dialog', { name: 'Grimoire' }).getByRole('button', { name: 'Arrange seats' })
+		page.getByRole('dialog', { name: 'Grimoire' }).getByRole('button', { name: 'Seating' })
 	).toBeVisible();
 });
 
@@ -4809,16 +4807,10 @@ test('the board menu names its groups, in two columns beside a phone', async ({ 
 	);
 	expect((await names('Session')).join(' ')).toMatch(/^(Character selection )?End game$/);
 	const session = (await group('Session').boundingBox())!;
-	// Open seating (plan J38) and Count off (J40) are there with no room open, disabled.
-	expect(await names('Seats')).toEqual([
-		'Add seat',
-		'Add Fabled or Loric',
-		'Arrange seats',
-		'Open seating',
-		'Count off'
-	]);
-	await expect(group('Seats').getByRole('button', { name: 'Open seating' })).toBeDisabled();
-	await expect(group('Seats').getByRole('button', { name: 'Count off' })).toBeDisabled();
+	// Arranging seats, Open seating (plan J38) and Count off (J40) are one Seating mode
+	// (Trevor, 2026-10-31), which works with no room open too.
+	expect(await names('Seats')).toEqual(['Add seat', 'Add Fabled or Loric', 'Seating']);
+	await expect(group('Seats').getByRole('button', { name: 'Seating' })).toBeEnabled();
 	expect(await names('App')).toEqual(['Settings', 'Report an issue']);
 	// Beside a phone, the game on the left and the rest on the right.
 	const game = (await group('Game').boundingBox())!;
@@ -5705,9 +5697,9 @@ test('the seat last touched draws over the seats it overlaps, name and all', asy
 	);
 	const from = { x: two.x + two.width / 2, y: two.y + two.height / 2 };
 	const to = { x: one.x + one.width / 2, y: one.y + one.height / 2 + size * 0.7 };
-	await menu(page, 'Arrange seats');
+	await menu(page, 'Seating');
 	const toolbar = page.getByRole('toolbar', { name: 'Grimoire' });
-	await expect(toolbar).toContainText('Arrange seats');
+	await expect(toolbar).toContainText('Seating');
 	await expect(page.getByRole('dialog', { name: 'Grimoire' })).toBeHidden();
 	// Under load the first press can land before the seats take drags: drag until it moves.
 	await expect(async () => {

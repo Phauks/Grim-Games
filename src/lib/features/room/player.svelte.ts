@@ -359,7 +359,12 @@ export class RoomPlayer {
 	}
 
 	/** Asks the Storyteller's board to seat this phone (plan J38): in a seat's place, or an open one. */
-	askSeat(message: { type: 'sit'; onto: SeatId } | { type: 'claim-seat'; seatId: SeatId }) {
+	askSeat(
+		message:
+			| { type: 'sit'; onto: SeatId }
+			| { type: 'sit'; place: { x: number; y: number } }
+			| { type: 'claim-seat'; seatId: SeatId }
+	) {
 		return this.#socket.send(message);
 	}
 

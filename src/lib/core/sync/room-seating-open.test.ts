@@ -3,6 +3,7 @@ import type { SeatId } from '#lib/core/model/index.ts';
 import type { PublicGameState } from './public-projection.ts';
 import {
 	dropOnto,
+	placedSeat,
 	hostView,
 	join,
 	newRoom,
@@ -159,13 +160,22 @@ describe('sitCommands onto a seat', () => {
 		const named = seats({ a: 'Ana', b: 'Bo', c: 'Seat 3', d: 'Di' });
 		expect(sitCommands(seating, named, 'Ana', { onto: s('c') })).toEqual([
 			{ type: 'MoveSeat', seatId: 'a', position: 2 },
-			{ type: 'MoveSeat', seatId: 'c', position: 0 }
+			{ type: 'MoveSeat', seatId: 'c', position: 0 },
+			{ type: 'RenameSeat', seatId: 'c', playerName: 'Seat 1' }
 		]);
 		expect(sitCommands(seating, named, 'Bo', { onto: s('c') })).toEqual([
-			{ type: 'MoveSeat', seatId: 'b', position: 2 }
+			{ type: 'MoveSeat', seatId: 'b', position: 2 },
+			{ type: 'RenameSeat', seatId: 'c', playerName: 'Seat 2' }
 		]);
 		expect(sitCommands(seating, named, 'Di', { onto: s('e') })).toEqual([
-			{ type: 'MoveSeat', seatId: 'd', position: 4 }
+			{ type: 'MoveSeat', seatId: 'd', position: 4 },
+			{ type: 'RenameSeat', seatId: 'e', playerName: 'Seat 4' }
+		]);
+		// An empty seat with a character keeps its name, which moves with the character.
+		const dealt = { ...named, c: { playerName: 'Seat 3', characterId: 'chef' } };
+		expect(sitCommands(seating, dealt, 'Ana', { onto: s('c') })).toEqual([
+			{ type: 'MoveSeat', seatId: 'a', position: 2 },
+			{ type: 'MoveSeat', seatId: 'c', position: 0 }
 		]);
 	});
 
@@ -209,5 +219,36 @@ describe('dropOnto', () => {
 	it('lights nothing when the disc is far from every seat', () => {
 		expect(dropOnto(ids, points, { x: 50, y: 50 }, 30)).toBeUndefined();
 		expect(dropOnto([], [], { x: 50, y: 50 }, 30)).toBeUndefined();
+	});
+});
+
+// Trevor, 2026-10-31: while seating is open, players move where seats are, not only swap.
+describe('moving a seat to a place', () => {
+	it('passes on a point on the board, only while seating is open', () => {
+		const place = { type: 'sit', place: { x: 20, y: 70 } } as const;
+		expect(sitWish(room(), 'ana', place)).toBeUndefined();
+		expect(sitWish(setSeatingOpen(room(), true), 'ana', place)).toEqual({
+			type: 'sit',
+			memberId: 'ana',
+			place: { x: 20, y: 70 }
+		});
+		for (const bad of [{ x: 120, y: 5 }, { x: 'a', y: 5 }, null, { x: Number.NaN, y: 1 }]) {
+			expect(sitWish(setSeatingOpen(room(), true), 'ana', { type: 'sit', place: bad })).toBe(
+				undefined
+			);
+		}
+	});
+
+	const seating = [s('a'), s('b'), s('c')];
+	it("moves the phone's own seat, or names the first open seat for a phone with none", () => {
+		expect(placedSeat(seating, { a: { playerName: 'Ana' }, b: {}, c: {} }, 'ana')).toEqual({
+			seatId: 'a',
+			commands: []
+		});
+		expect(
+			placedSeat(seating, { a: { playerName: 'Ana' }, b: { playerName: 'Seat 2' }, c: {} }, 'Bo')
+		).toEqual({ seatId: 'b', commands: [{ type: 'RenameSeat', seatId: 'b', playerName: 'Bo' }] });
+		const full = { a: { playerName: 'Ana' }, b: { playerName: 'Cy' }, c: { playerName: 'Di' } };
+		expect(placedSeat(seating, full, 'Bo')).toBeUndefined();
 	});
 });

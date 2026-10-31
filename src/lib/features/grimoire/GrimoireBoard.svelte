@@ -65,6 +65,8 @@
 	} from '#lib/ui/seating/seat-layout.ts';
 	import { rememberBoard } from '#lib/ui/seating/last-board.svelte.ts';
 	import { SeatArranging } from './seat-arranging.svelte.ts';
+	import SeatingBar from './SeatingBar.svelte';
+	import { enterSeating, seatingRequested } from './seating-mode.svelte.ts';
 	import { BoardSizing, type BoardSizingContext } from './board-sizing.svelte.ts';
 	import { ReminderDragging } from './reminder-drag.svelte.ts';
 	import { markBoardShown } from '#lib/ui/board-cover.ts';
@@ -314,6 +316,9 @@
 		element: board
 	}));
 	const shown = $derived(seatArr.shown);
+	onMount(() => {
+		if (seatingRequested(game.gameId)) enterSeating(seatArr); // From Character selection.
+	});
 	/**
 	 * The seat picked up by a hold (Trevor, 2026-10-26): it lifts and the rest of the board
 	 * darkens, so it is plain the seat can now be dragged.
@@ -718,6 +723,9 @@
 	let rules = $state<ReturnType<typeof RuleCharacters>>();
 </script>
 
+<!-- The Seating mode's bar, in the bank's token row (Trevor, 2026-10-31). -->
+{#snippet seatingBar()}<SeatingBar />{/snippet}
+
 {#snippet ruleTokens(tokenSize: number)}
 	<BoardRules
 		{game}
@@ -869,6 +877,7 @@
 				onHints={(h) => (hints.tray = h)}
 				run={flow.run}
 				disabled={watching}
+				instead={seatArr.arranging ? seatingBar : undefined}
 				{remDrag}
 				onRemove={(id) => moveConfirm?.requestReturn(id)}
 			/>
@@ -973,7 +982,7 @@
 		// The seat just appears; tap it to choose a character or Traveller (Trevor, 2026-10-16).
 		startPlacing((position) => void grimoire.addSeat(position))}
 	onAddRule={() => rules?.add()}
-	onArrange={() => seatArr.start()}
+	onArrange={() => enterSeating(seatArr)}
 	onExport={() => (exportOpen = true)}
 	onFeedback={watching ? undefined : () => (feedbackOpen = true)}
 	onReopen={() => (reopenOpen = true)}
