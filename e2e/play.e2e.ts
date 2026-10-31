@@ -41,6 +41,26 @@ async function storedNotes(page: Page): Promise<{ title: string; hidden: boolean
 	);
 }
 
+/**
+ * The script's name against the header's buttons: under them on a phone, so the hamburger and
+ * a row of buttons never squeeze it (Trevor, 2026-10-26), and on a wider screen level with
+ * them at the start of the same row, so no row is left half empty (Trevor, 2026-10-31).
+ */
+function expectTitleBesideOrUnder(
+	page: Page,
+	title: { x: number; y: number; width: number; height: number },
+	icon: { x: number; y: number; width: number; height: number }
+) {
+	if (page.viewportSize()!.width < 600) {
+		expect(title.y).toBeGreaterThanOrEqual(icon.y + icon.height - 1);
+		return;
+	}
+	expect(Math.abs(title.y + title.height / 2 - (icon.y + icon.height / 2))).toBeLessThan(
+		icon.height / 2
+	);
+	expect(title.x + title.width).toBeLessThanOrEqual(icon.x + 1);
+}
+
 /** Opens Settings from the menu: Player view has no app header, as the board has none. */
 async function openSettings(page: Page) {
 	await page.getByRole('button', { name: 'Menu', exact: true }).tap();
@@ -234,11 +254,13 @@ test("the player view's menu is the app's, and leaving it asks first", async ({ 
 	const menu = page.getByRole('button', { name: 'Menu', exact: true });
 	const title = page.getByRole('heading', { name: 'Trouble Brewing', level: 1 });
 	const [m, h] = [(await menu.boundingBox())!, (await title.boundingBox())!];
-	// Level with the header's buttons, the title under them (Trevor, 2026-10-26: "move the
-	// script name down from the top of player view, still in header area, but lower").
+	// Level with the header's buttons; the title under them on a phone, beside them on a
+	// tablet (Trevor, 2026-10-26 and 2026-10-31).
 	const cog = (await page.getByTestId('you-button').boundingBox())!;
 	expect(Math.abs(m.y - cog.y)).toBeLessThan(m.height / 2);
-	expect(h.y).toBeGreaterThanOrEqual(m.y + m.height - 1);
+	expectTitleBesideOrUnder(page, h, cog);
+	// Never under the hamburger.
+	if (h.y < m.y + m.height) expect(h.x).toBeGreaterThanOrEqual(m.x + m.width);
 
 	await menu.tap();
 	const drawer = page.getByRole('dialog', { name: APP_NAME });
@@ -605,12 +627,12 @@ test('the header shares the script from an icon and has no Code button', async (
 	await expect(page.getByTestId('script-byline')).toHaveCount(0);
 	// Players are already in a script, so there is no code to enter here (Trevor, 2026-10-16).
 	await expect(page.getByRole('button', { name: 'Code', exact: true })).toHaveCount(0);
-	// Print and Share sit on one line above the title, phones included (Trevor, 2026-10-19;
-	// the title moved under them 2026-10-26).
+	// Print and Share sit on one line, phones included (Trevor, 2026-10-19): above the title on
+	// a phone (2026-10-26), beside it on a wider screen (2026-10-31).
 	const title = await page.getByRole('heading', { name: 'Code Night', level: 1 }).boundingBox();
 	for (const name of ['Print script', 'Share script']) {
 		const icon = await page.getByRole('button', { name }).boundingBox();
-		expect(icon!.y + icon!.height).toBeLessThanOrEqual(title!.y + 1);
+		expectTitleBesideOrUnder(page, title!, icon!);
 	}
 	await page.getByRole('button', { name: 'Share script' }).tap();
 	const qr = page.getByRole('dialog', { name: 'Share', exact: true });
@@ -763,11 +785,11 @@ test('the title line’s sheet background, Print, Share and settings cog are one
 		'Share script',
 		'Settings'
 	]);
-	// The script's name sits under them, clear of the buttons and the hamburger (Trevor,
-	// 2026-10-26: "move the script name down from the top of player view").
+	// The script's name clear of the buttons: under them on a phone, beside them on a wider
+	// screen (Trevor, 2026-10-26 and 2026-10-31).
 	const cog = (await row.getByTestId('you-button').boundingBox())!;
 	const title = (await page.getByRole('heading', { level: 1 }).boundingBox())!;
-	expect(title.y).toBeGreaterThanOrEqual(cog.y + cog.height - 1);
+	expectTitleBesideOrUnder(page, title, cog);
 });
 
 test('the Script sheet is always Normal on screen, with no layout setting', async ({ page }) => {
