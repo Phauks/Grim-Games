@@ -5,6 +5,7 @@ export const share = {
 	'share.copy': 'Copy link',
 	'share.copyCode': 'Copy code',
 	'share.copyCodeFailed': 'Could not copy the code',
+	'share.hideCode': 'Hide code',
 	'share.share': 'Share',
 	'share.sendFile': 'Send the file',
 	'share.qrCentre': 'QR code centre',

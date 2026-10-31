@@ -170,6 +170,7 @@ import ph_prohibit_fill from '~icons/ph/prohibit-fill';
 import ph_prohibit_inset_fill from '~icons/ph/prohibit-inset-fill';
 import ph_projector_screen_fill from '~icons/ph/projector-screen-fill';
 import ph_push_pin_fill from '~icons/ph/push-pin-fill';
+import ph_puzzle_piece_fill from '~icons/ph/puzzle-piece-fill';
 import ph_qr_code_fill from '~icons/ph/qr-code-fill';
 import ph_question_fill from '~icons/ph/question-fill';
 import ph_scales_fill from '~icons/ph/scales-fill';
@@ -406,6 +407,7 @@ const icons: IconMap = {
 	'ph:prohibit-inset-fill': ph_prohibit_inset_fill,
 	'ph:projector-screen-fill': ph_projector_screen_fill,
 	'ph:push-pin-fill': ph_push_pin_fill,
+	'ph:puzzle-piece-fill': ph_puzzle_piece_fill,
 	'ph:qr-code-fill': ph_qr_code_fill,
 	'ph:question-fill': ph_question_fill,
 	'ph:scales-fill': ph_scales_fill,

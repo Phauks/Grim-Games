@@ -3297,6 +3297,49 @@ test("the day's Announcements explain a kill that didn't happen", async ({ page 
 	await page.screenshot({ path: `test-results/prevented-${test.info().project.name}.png` });
 });
 
+test('game notes show a token beside the Fabled, at their size, that opens Players', async ({
+	page
+}) => {
+	// Trevor (2026-10-31): game notes get a token in the top left corner, sized like the Fabled.
+	test.setTimeout(60_000);
+	await startGame(page);
+	const token = page.getByTestId('game-notes-token');
+	await expect(token).toHaveCount(0);
+
+	const players = await openPlayers(page);
+	await players.getByTestId('game-notes-open').tap();
+	await page.getByRole('dialog', { name: 'Game notes' }).getByTestId('new-note').tap();
+	const note = page.getByRole('dialog', { name: 'Note', exact: true });
+	await note.getByRole('textbox', { name: 'Title' }).fill('Bluffs');
+	await note.getByRole('button', { name: 'Close' }).tap();
+	for (let i = 0; i < 3 && (await page.getByRole('dialog').count()) > 0; i++) {
+		await page.keyboard.press('Escape');
+	}
+	await expect(page.getByRole('dialog')).toHaveCount(0);
+
+	// Alone in the corner, then after a Fabled at the Fabled's size.
+	await expect(token).toBeVisible();
+	await expect(token).toHaveAccessibleName('Game notes: 1');
+	await menu(page, 'Add Fabled or Loric');
+	await page
+		.getByRole('dialog', { name: 'Add Fabled or Loric' })
+		.getByRole('button', { name: 'Spirit of Ivory', exact: true })
+		.tap();
+	const fabled = page.locator('.rules-edge').getByRole('button', { name: 'Spirit of Ivory' });
+	await expect(fabled).toBeVisible();
+	// The faces match: the same parchment disc, at the same size and height.
+	const a = (await fabled.locator('[data-token-face]').boundingBox())!;
+	const b = (await token.locator('[data-token-face]').boundingBox())!;
+	expect(Math.abs(a.width - b.width)).toBeLessThanOrEqual(1);
+	expect(Math.abs(a.height - b.height)).toBeLessThanOrEqual(1);
+	expect(Math.abs(a.y - b.y)).toBeLessThanOrEqual(1);
+	expect(b.x).toBeGreaterThan(a.x + a.width - 1);
+	await page.screenshot({ path: `test-results/game-notes-token-${test.info().project.name}.png` });
+
+	await token.tap();
+	await expect(page.getByRole('dialog', { name: 'Players', exact: true })).toBeVisible();
+});
+
 test('the Storyteller keeps game and player notes on Players, marked on the token', async ({
 	page
 }) => {
@@ -4801,16 +4844,19 @@ test('the board menu names its groups, in two columns beside a phone', async ({ 
 	);
 	expect((await names('Session')).join(' ')).toMatch(/^(Character selection )?End game$/);
 	const session = (await group('Session').boundingBox())!;
-	// Open seating (plan J38) and Count off (J40) are there with no room open, disabled.
+	// Open seating (plan J38), Count off (J40) and Travellers choose (L102) are there with no
+	// room open, disabled.
 	expect(await names('Seats')).toEqual([
 		'Add seat',
 		'Add Fabled or Loric',
 		'Arrange seats',
 		'Open seating',
-		'Count off'
+		'Count off',
+		'Travellers choose'
 	]);
 	await expect(group('Seats').getByRole('button', { name: 'Open seating' })).toBeDisabled();
 	await expect(group('Seats').getByRole('button', { name: 'Count off' })).toBeDisabled();
+	await expect(group('Seats').getByRole('button', { name: 'Travellers choose' })).toBeDisabled();
 	expect(await names('App')).toEqual(['Settings', 'Report an issue']);
 	// Beside a phone, the game on the left and the rest on the right.
 	const game = (await group('Game').boundingBox())!;

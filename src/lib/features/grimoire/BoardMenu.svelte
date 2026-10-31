@@ -56,6 +56,12 @@
 		 * deletes the room and sends every phone out. Asks first.
 		 */
 		onCloseRoom?: () => void;
+		/**
+		 * Share grim (plan R5), once the game has ended while its room is connected and before
+		 * the grimoire has gone to the phones (Trevor, 2026-10-31: off Share, "totally
+		 * misplaced"). Asks first; End game's own switch is the usual way.
+		 */
+		onShareGrim?: () => void;
 		onEnd: () => void;
 	}
 
@@ -77,9 +83,11 @@
 		onReopen,
 		onNewGame,
 		onCloseRoom,
+		onShareGrim,
 		onEnd
 	}: Props = $props();
 	let closeRoomOpen = $state(false);
+	let shareGrimOpen = $state(false);
 	/** Opens the transfer's codes, starting a transfer when none is open. */
 	let transferOpen = $state(false);
 	async function openTransfer() {
@@ -198,6 +206,16 @@
 							{t('room.feedback.view')}
 						</Button>
 					{/if}
+					{#if onShareGrim}
+						<Button
+							variant="quiet"
+							icon="share"
+							data-testid="menu-share-grim"
+							onclick={() => fromMenu(() => (shareGrimOpen = true))}
+						>
+							{t('room.shareGrim.button')}
+						</Button>
+					{/if}
 					<Button disabled={watching} variant="quiet" icon="undo" onclick={() => fromMenu(onReopen)}
 						>Reopen game</Button
 					>
@@ -288,6 +306,16 @@
 				>
 					{t('room.countOff.title')}
 				</Button>
+				<!-- Travellers choose on their phones (Trevor, 2026-10-31): a tap holds one, Confirm sends it. -->
+				<Button
+					disabled={watching || !host.code}
+					variant="quiet"
+					icon="traveller"
+					data-testid="menu-travellers"
+					onclick={() => fromMenu(() => (playersDialog.travellers = true))}
+				>
+					{t('room.travellers.title')}
+				</Button>
 			</section>
 			<section class="group" aria-labelledby="board-menu-app">
 				<h3 id="board-menu-app" class="group-title">App</h3>
@@ -332,6 +360,14 @@
 	onConfirm={() => onCloseRoom?.()}
 >
 	<p class="dialog-text">{t('room.closeRoomText')}</p>
+</ConfirmDialog>
+
+<ConfirmDialog
+	bind:open={shareGrimOpen}
+	title={t('room.shareGrim.title')}
+	onConfirm={() => onShareGrim?.()}
+>
+	<p class="dialog-text">{t('room.shareGrim.body')}</p>
 </ConfirmDialog>
 
 <style>
