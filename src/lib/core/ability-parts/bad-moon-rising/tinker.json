@@ -1,0 +1,18 @@
+{
+	"clauses": [
+		{
+			"id": "die",
+			"when": {
+				"at": "always"
+			},
+			"storytellerMay": true,
+			"marks": "Dead",
+			"effects": [
+				{
+					"do": "kill",
+					"who": "self"
+				}
+			]
+		}
+	]
+}

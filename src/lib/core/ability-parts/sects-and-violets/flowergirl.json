@@ -1,0 +1,20 @@
+{
+	"clauses": [
+		{
+			"id": "learn",
+			"when": {
+				"at": "night",
+				"nights": "each*"
+			},
+			"effects": [
+				{
+					"do": "learn",
+					"info": {
+						"question": "demon-voted",
+						"records": ["Demon Voted", "Demon Not Voted"]
+					}
+				}
+			]
+		}
+	]
+}

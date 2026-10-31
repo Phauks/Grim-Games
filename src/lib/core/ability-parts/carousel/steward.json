@@ -1,0 +1,22 @@
+{
+	"clauses": [
+		{
+			"id": "learn",
+			"when": {
+				"at": "night",
+				"nights": "first"
+			},
+			"effects": [
+				{
+					"do": "learn",
+					"info": {
+						"measure": "good-player",
+						"reminders": {
+							"each": "Know"
+						}
+					}
+				}
+			]
+		}
+	]
+}

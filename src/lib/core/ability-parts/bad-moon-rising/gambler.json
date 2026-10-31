@@ -1,0 +1,27 @@
+{
+	"clauses": [
+		{
+			"id": "guess",
+			"when": {
+				"at": "night",
+				"nights": "each*"
+			},
+			"choose": {
+				"count": 1,
+				"what": "player-and-character"
+			},
+			"if": [
+				{
+					"choice": "guess-wrong"
+				}
+			],
+			"marks": "Dead",
+			"effects": [
+				{
+					"do": "kill",
+					"who": "self"
+				}
+			]
+		}
+	]
+}

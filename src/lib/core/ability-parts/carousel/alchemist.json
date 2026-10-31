@@ -1,0 +1,39 @@
+{
+	"clauses": [
+		{
+			"id": "gain",
+			"when": {
+				"at": "setup"
+			},
+			"marks": "Is The Alchemist",
+			"effects": [
+				{
+					"do": "gain-ability",
+					"who": "self",
+					"of": "a-minion"
+				},
+				{
+					"do": "learn",
+					"info": {
+						"kind": "character-of",
+						"who": "self"
+					}
+				}
+			]
+		},
+		{
+			"id": "prompt",
+			"when": {
+				"at": "always"
+			},
+			"storytellerMay": true,
+			"effects": [
+				{
+					"do": "storyteller",
+					"note": "When they use it, you may prompt them to choose differently."
+				}
+			]
+		}
+	],
+	"hatches": ["prompting a different choice is Storyteller judgement"]
+}

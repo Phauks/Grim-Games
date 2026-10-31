@@ -1,0 +1,33 @@
+{
+	"clauses": [
+		{
+			"id": "secret",
+			"when": {
+				"at": "always"
+			},
+			"effects": [
+				{
+					"do": "game-rule",
+					"rule": "secret-votes"
+				}
+			]
+		},
+		{
+			"id": "drunk",
+			"when": {
+				"at": "night",
+				"nights": "each"
+			},
+			"optional": true,
+			"marks": "Drunk",
+			"effects": [
+				{
+					"do": "impair",
+					"who": "self",
+					"as": "drunk",
+					"until": "dusk"
+				}
+			]
+		}
+	]
+}

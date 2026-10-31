@@ -1,0 +1,31 @@
+{
+	"clauses": [
+		{
+			"id": "storm",
+			"when": {
+				"at": "setup"
+			},
+			"choose": {
+				"count": 1,
+				"what": "character",
+				"alignment": "good"
+			},
+			"marks": "Stormcaught",
+			"effects": [
+				{
+					"do": "protect",
+					"who": "chosen",
+					"from": "not-execution"
+				},
+				{
+					"do": "learn",
+					"to": "evil-players",
+					"info": {
+						"kind": "character-of",
+						"who": "chosen"
+					}
+				}
+			]
+		}
+	]
+}

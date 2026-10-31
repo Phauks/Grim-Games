@@ -1,0 +1,19 @@
+{
+	"clauses": [
+		{
+			"id": "drunk",
+			"when": {
+				"at": "death"
+			},
+			"marks": "Drunk",
+			"effects": [
+				{
+					"do": "impair",
+					"who": "another-player",
+					"as": "drunk",
+					"until": "always"
+				}
+			]
+		}
+	]
+}

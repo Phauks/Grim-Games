@@ -1,0 +1,33 @@
+{
+	"clauses": [
+		{
+			"id": "believe",
+			"when": {
+				"at": "setup"
+			},
+			"effects": [
+				{
+					"do": "believe",
+					"who": "self",
+					"isA": "demon",
+					"choicesAsDemon": "Chosen"
+				},
+				{
+					"do": "learn",
+					"to": "the-demon",
+					"info": {
+						"kind": "who-chose"
+					}
+				},
+				{
+					"do": "setup",
+					"modifier": {
+						"summary": "Shown a Demon",
+						"ops": [],
+						"notes": ["The Lunatic is shown a Demon token, not the Lunatic."]
+					}
+				}
+			]
+		}
+	]
+}

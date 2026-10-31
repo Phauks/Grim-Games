@@ -1,0 +1,45 @@
+{
+	"clauses": [
+		{
+			"id": "kill",
+			"when": {
+				"at": "night",
+				"nights": "each*"
+			},
+			"choose": {
+				"count": 1,
+				"what": "player"
+			},
+			"optional": true,
+			"marks": "Dead",
+			"effects": [
+				{
+					"do": "kill",
+					"who": "chosen"
+				}
+			]
+		},
+		{
+			"id": "charge",
+			"when": {
+				"at": "night",
+				"nights": "each*"
+			},
+			"if": [
+				{
+					"choice": "last-was-none"
+				}
+			],
+			"choose": {
+				"count": 3,
+				"what": "player"
+			},
+			"effects": [
+				{
+					"do": "kill",
+					"who": "chosen"
+				}
+			]
+		}
+	]
+}

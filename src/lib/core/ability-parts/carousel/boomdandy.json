@@ -1,0 +1,23 @@
+{
+	"clauses": [
+		{
+			"id": "boom",
+			"when": {
+				"at": "death",
+				"by": "execution"
+			},
+			"effects": [
+				{
+					"do": "kill",
+					"who": "each-player",
+					"allBut": 3
+				},
+				{
+					"do": "storyteller",
+					"note": "Count down from 10; the player most others point at dies."
+				}
+			]
+		}
+	],
+	"hatches": ["the pointing countdown: Storyteller note"]
+}

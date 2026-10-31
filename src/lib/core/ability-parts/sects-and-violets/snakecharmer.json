@@ -1,0 +1,39 @@
+{
+	"clauses": [
+		{
+			"id": "charm",
+			"when": {
+				"at": "night",
+				"nights": "each"
+			},
+			"choose": {
+				"count": 1,
+				"what": "player",
+				"alive": true
+			},
+			"if": [
+				{
+					"registers": {
+						"who": "chosen",
+						"types": ["demon"]
+					}
+				}
+			],
+			"marks": "Poisoned",
+			"effects": [
+				{
+					"do": "swap",
+					"who": "self",
+					"with": "chosen",
+					"what": "character-and-alignment"
+				},
+				{
+					"do": "impair",
+					"who": "chosen",
+					"as": "poisoned",
+					"until": "always"
+				}
+			]
+		}
+	]
+}

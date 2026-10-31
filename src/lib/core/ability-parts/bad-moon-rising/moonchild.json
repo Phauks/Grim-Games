@@ -1,0 +1,38 @@
+{
+	"clauses": [
+		{
+			"id": "choose",
+			"when": {
+				"at": "death",
+				"learned": true
+			},
+			"choose": {
+				"count": 1,
+				"what": "player",
+				"alive": true
+			},
+			"publicly": true,
+			"marks": "Dead",
+			"effects": [
+				{
+					"do": "later",
+					"at": "tonight",
+					"if": [
+						{
+							"registers": {
+								"who": "chosen",
+								"alignments": ["good"]
+							}
+						}
+					],
+					"effects": [
+						{
+							"do": "kill",
+							"who": "chosen"
+						}
+					]
+				}
+			]
+		}
+	]
+}

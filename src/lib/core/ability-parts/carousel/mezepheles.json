@@ -1,0 +1,50 @@
+{
+	"clauses": [
+		{
+			"id": "word",
+			"when": {
+				"at": "night",
+				"nights": "first"
+			},
+			"effects": [
+				{
+					"do": "learn",
+					"info": {
+						"kind": "secret-word"
+					}
+				}
+			]
+		},
+		{
+			"id": "turn",
+			"when": {
+				"at": "event",
+				"event": "said-word"
+			},
+			"limit": "first-time",
+			"if": [
+				{
+					"registers": {
+						"who": "speaker",
+						"alignments": ["good"]
+					}
+				}
+			],
+			"marks": "Turns Evil",
+			"spent": "No Ability",
+			"effects": [
+				{
+					"do": "later",
+					"at": "tonight",
+					"effects": [
+						{
+							"do": "become",
+							"who": "speaker",
+							"into": "evil"
+						}
+					]
+				}
+			]
+		}
+	]
+}

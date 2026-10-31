@@ -1,0 +1,23 @@
+{
+	"clauses": [
+		{
+			"id": "reincarnate",
+			"when": {
+				"at": "event",
+				"event": "player-dies"
+			},
+			"if": [
+				{
+					"firstTimes": 4
+				}
+			],
+			"effects": [
+				{
+					"do": "become",
+					"who": "died",
+					"into": "traveller"
+				}
+			]
+		}
+	]
+}

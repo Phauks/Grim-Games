@@ -1,0 +1,26 @@
+{
+	"clauses": [
+		{
+			"id": "save",
+			"when": {
+				"at": "night",
+				"nights": "each"
+			},
+			"choose": {
+				"count": 1,
+				"what": "player",
+				"alive": true,
+				"notRepeated": true
+			},
+			"marks": "Survives Execution",
+			"effects": [
+				{
+					"do": "protect",
+					"who": "chosen",
+					"from": "execution",
+					"until": "tomorrow"
+				}
+			]
+		}
+	]
+}

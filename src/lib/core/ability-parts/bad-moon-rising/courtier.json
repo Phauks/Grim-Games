@@ -1,0 +1,26 @@
+{
+	"clauses": [
+		{
+			"id": "drink",
+			"when": {
+				"at": "night",
+				"nights": "each"
+			},
+			"limit": "once-per-game",
+			"choose": {
+				"count": 1,
+				"what": "character"
+			},
+			"marks": "Drunk 3",
+			"spent": "No Ability",
+			"effects": [
+				{
+					"do": "impair",
+					"who": "chosen",
+					"as": "drunk",
+					"until": "3-nights-and-days"
+				}
+			]
+		}
+	]
+}

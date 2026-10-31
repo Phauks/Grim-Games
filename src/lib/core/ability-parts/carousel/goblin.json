@@ -1,0 +1,31 @@
+{
+	"clauses": [
+		{
+			"id": "claim",
+			"when": {
+				"at": "nominated"
+			},
+			"publicly": true,
+			"if": [
+				{
+					"choice": "claimed-character"
+				}
+			],
+			"marks": "Claimed",
+			"effects": [
+				{
+					"do": "arm",
+					"who": "self",
+					"on": "executed",
+					"until": "dusk",
+					"effects": [
+						{
+							"do": "end-game",
+							"winner": "own-team"
+						}
+					]
+				}
+			]
+		}
+	]
+}

@@ -1,0 +1,18 @@
+{
+	"clauses": [
+		{
+			"id": "plague",
+			"when": {
+				"at": "death"
+			},
+			"marks": "Storyteller Ability",
+			"effects": [
+				{
+					"do": "gain-ability",
+					"who": "storyteller",
+					"of": "a-minion"
+				}
+			]
+		}
+	]
+}

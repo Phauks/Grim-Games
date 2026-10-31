@@ -1,0 +1,45 @@
+{
+	"clauses": [
+		{
+			"id": "token",
+			"when": {
+				"at": "always"
+			},
+			"effects": [
+				{
+					"do": "vote-needs-token",
+					"who": "self"
+				}
+			]
+		},
+		{
+			"id": "learn",
+			"when": {
+				"at": "event",
+				"event": "given-vote-token"
+			},
+			"effects": [
+				{
+					"do": "learn",
+					"info": {
+						"kind": "alignment-of",
+						"who": "giver"
+					}
+				}
+			]
+		},
+		{
+			"id": "healthy",
+			"when": {
+				"at": "always"
+			},
+			"effects": [
+				{
+					"do": "immune",
+					"who": "self",
+					"to": ["drunk", "poisoned"]
+				}
+			]
+		}
+	]
+}

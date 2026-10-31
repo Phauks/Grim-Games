@@ -1,0 +1,50 @@
+{
+	"clauses": [
+		{
+			"id": "damsel",
+			"when": {
+				"at": "setup"
+			},
+			"effects": [
+				{
+					"do": "setup",
+					"modifier": {
+						"summary": "+the Damsel",
+						"ops": [],
+						"requires": "damsel",
+						"notes": ["If the Damsel is not already in play, swap a Townsfolk for the Damsel."]
+					}
+				}
+			]
+		},
+		{
+			"id": "hunt",
+			"when": {
+				"at": "night",
+				"nights": "each"
+			},
+			"limit": "once-per-game",
+			"choose": {
+				"count": 1,
+				"what": "player",
+				"alive": true
+			},
+			"if": [
+				{
+					"characterIs": {
+						"who": "chosen",
+						"id": "damsel"
+					}
+				}
+			],
+			"spent": "No Ability",
+			"effects": [
+				{
+					"do": "become",
+					"who": "chosen",
+					"into": "not-in-play-townsfolk"
+				}
+			]
+		}
+	]
+}

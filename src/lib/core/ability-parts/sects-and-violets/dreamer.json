@@ -1,0 +1,25 @@
+{
+	"clauses": [
+		{
+			"id": "learn",
+			"when": {
+				"at": "night",
+				"nights": "each"
+			},
+			"choose": {
+				"count": 1,
+				"what": "player",
+				"notSelf": true,
+				"notTravellers": true
+			},
+			"effects": [
+				{
+					"do": "learn",
+					"info": {
+						"kind": "good-and-evil-character"
+					}
+				}
+			]
+		}
+	]
+}

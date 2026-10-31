@@ -1,0 +1,36 @@
+{
+	"clauses": [
+		{
+			"id": "kill",
+			"when": {
+				"at": "night",
+				"nights": "each*"
+			},
+			"choose": {
+				"count": 1,
+				"what": "player"
+			},
+			"marks": "Dead",
+			"effects": [
+				{
+					"do": "kill",
+					"who": "chosen"
+				}
+			]
+		},
+		{
+			"id": "star-pass",
+			"when": {
+				"at": "event",
+				"event": "killed-self"
+			},
+			"effects": [
+				{
+					"do": "become",
+					"who": "a-minion",
+					"into": "this-character"
+				}
+			]
+		}
+	]
+}

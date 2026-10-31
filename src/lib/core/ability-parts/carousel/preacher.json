@@ -1,0 +1,38 @@
+{
+	"clauses": [
+		{
+			"id": "preach",
+			"when": {
+				"at": "night",
+				"nights": "each"
+			},
+			"choose": {
+				"count": 1,
+				"what": "player"
+			},
+			"if": [
+				{
+					"registers": {
+						"who": "chosen",
+						"types": ["minion"]
+					}
+				}
+			],
+			"effects": [
+				{
+					"do": "learn",
+					"info": {
+						"kind": "who-chose"
+					},
+					"to": "chosen"
+				},
+				{
+					"do": "lose-ability",
+					"who": "chosen",
+					"whileWorks": true,
+					"marks": "No Ability"
+				}
+			]
+		}
+	]
+}

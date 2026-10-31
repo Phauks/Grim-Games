@@ -1,0 +1,19 @@
+{
+	"clauses": [
+		{
+			"id": "learn",
+			"when": {
+				"at": "death",
+				"by": "demon"
+			},
+			"effects": [
+				{
+					"do": "learn",
+					"info": {
+						"measure": "demon-in-pair"
+					}
+				}
+			]
+		}
+	]
+}

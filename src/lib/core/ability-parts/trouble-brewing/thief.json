@@ -1,0 +1,25 @@
+{
+	"clauses": [
+		{
+			"id": "steal",
+			"when": {
+				"at": "night",
+				"nights": "each"
+			},
+			"choose": {
+				"count": 1,
+				"what": "player",
+				"notSelf": true
+			},
+			"marks": "Negative Vote",
+			"effects": [
+				{
+					"do": "vote-weight",
+					"who": "chosen",
+					"counts": -1,
+					"until": "tomorrow"
+				}
+			]
+		}
+	]
+}

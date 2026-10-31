@@ -1,0 +1,83 @@
+{
+	"clauses": [
+		{
+			"id": "setup",
+			"when": {
+				"at": "setup"
+			},
+			"effects": [
+				{
+					"do": "setup",
+					"modifier": {
+						"summary": "Characters are hidden",
+						"ops": [],
+						"notes": ["Players do not see their character or alignment until they die."]
+					}
+				}
+			]
+		},
+		{
+			"id": "no-evil-info",
+			"when": {
+				"at": "night",
+				"nights": "first"
+			},
+			"effects": [
+				{
+					"do": "game-rule",
+					"rule": "skip-evil-info"
+				}
+			]
+		},
+		{
+			"id": "learn-at-night",
+			"when": {
+				"at": "night",
+				"nights": "each*"
+			},
+			"effects": [
+				{
+					"do": "learn",
+					"to": "died",
+					"info": {
+						"kind": "character-of",
+						"who": "died"
+					}
+				},
+				{
+					"do": "learn",
+					"to": "died",
+					"info": {
+						"kind": "alignment-of",
+						"who": "died"
+					}
+				}
+			]
+		},
+		{
+			"id": "learn-executed",
+			"when": {
+				"at": "day",
+				"after": "first-execution"
+			},
+			"effects": [
+				{
+					"do": "learn",
+					"to": "executed",
+					"info": {
+						"kind": "character-of",
+						"who": "executed"
+					}
+				},
+				{
+					"do": "learn",
+					"to": "executed",
+					"info": {
+						"kind": "alignment-of",
+						"who": "executed"
+					}
+				}
+			]
+		}
+	]
+}

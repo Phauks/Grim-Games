@@ -1,0 +1,23 @@
+{
+	"clauses": [
+		{
+			"id": "learn",
+			"when": {
+				"at": "night",
+				"nights": "first"
+			},
+			"marks": "Know",
+			"effects": [
+				{
+					"do": "learn",
+					"info": {
+						"measure": "not-demon-pair",
+						"reminders": {
+							"each": "Know"
+						}
+					}
+				}
+			]
+		}
+	]
+}
