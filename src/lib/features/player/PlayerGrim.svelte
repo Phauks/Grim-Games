@@ -203,7 +203,6 @@
 	const names = $derived(
 		nameBoxes({ names: seats.map(nameOf), seats: ringPoints, size, unit, rootFont, board: ring })
 	);
-	// Above the tray, where the corner sits (`--foot-room`); px from the top left either way.
 	const cornerBoxes = $derived(
 		cornerObstacles(ringPoints, names, size, boardLooks.current.nameOffset, ring)
 	);
@@ -759,7 +758,8 @@
 		/* In a dialog (the Storyteller's player view), no taller than the room left under the
 		   tabs, so the whole ring shows on a wide, short window (fitInDialog); never so short
 		   that the seats crowd together. */
-		height: max(40dvh, min(75dvh, var(--fit-height, 75dvh)));
+		height: max(40dvh, min(var(--tall), var(--fit-height, var(--tall))));
+		--tall: calc(75dvh + var(--foot-room, 0rem)); /* + the reminder tray (tray-ring.ts) */
 	}
 	/* On a themed screen the town keeps the board's own surface, as on the Storyteller's. */
 	.town[data-board-colours] {

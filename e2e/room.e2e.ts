@@ -2097,9 +2097,9 @@ test('a player puts reminder tokens on seats in their own Grim', async ({
 	await expect(phone.getByTestId('reminder-in-hand')).toBeVisible();
 	await seat.tap();
 	await expect(phone.getByTestId('reminder-in-hand')).toBeHidden();
-	// Or dragged onto one from the row.
-	const protect = tray.getByRole('button', { name: 'Dead reminder', exact: true });
-	await protect.scrollIntoViewIfNeeded();
+	// Or dragged onto one from the pulled-up tray, which drops back to its row on the way.
+	await phone.getByRole('button', { name: 'Every reminder' }).tap();
+	const protect = bin.getByRole('button', { name: 'Dead reminder', exact: true });
 	const from = (await protect.boundingBox())!;
 	const to = (await phone.getByTestId('grim-seat').nth(2).boundingBox())!;
 	await phone.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
@@ -2111,6 +2111,9 @@ test('a player puts reminder tokens on seats in their own Grim', async ({
 		'aria-label',
 		'Seat 3: Seat 3, your reminders: Dead'
 	);
+	// Its handle lowers it again.
+	await phone.getByRole('button', { name: 'Every reminder' }).tap();
+	await expect(bin).toBeHidden();
 	// The seat's sheet lists them, with none to add there.
 	await seat.tap();
 	const sheet = phone.getByRole('dialog', { name: 'Seat 2 · Seat 2' });
