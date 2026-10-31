@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { TILE_COLOURS, TILE_SYMBOLS, tileLetters, tileMarks, tileRoman } from './tile-face.ts';
+import {
+	TILE_COLOURS,
+	TILE_RUNES,
+	TILE_SYMBOLS,
+	tileKanji,
+	tileLetters,
+	tileMarks,
+	tileRoman,
+	tileRunes
+} from './tile-face.ts';
 
 const names = (size: number, face: Parameters<typeof tileMarks>[1], seed = 'g') =>
 	tileMarks(size, face, seed).map((m) => m.name);
@@ -29,10 +38,48 @@ describe('tile marks', () => {
 		]);
 	});
 
+	// Kanji numerals (Trevor, 2026-10-31): digit before 十 for the tens, none before a lone ten.
+	it('kanji numerals count up to the 40 seats of several towns, and past', () => {
+		expect([1, 2, 9, 10, 11, 19, 20, 21, 30, 40, 99, 100, 111].map(tileKanji)).toEqual([
+			'一',
+			'二',
+			'九',
+			'十',
+			'十一',
+			'十九',
+			'二十',
+			'二十一',
+			'三十',
+			'四十',
+			'九十九',
+			'百',
+			'百十一'
+		]);
+		expect(new Set(names(40, 'kanji')).size).toBe(40);
+	});
+
+	// Norse runes (Trevor, 2026-10-31): the 24 Elder Futhark runes, then pairs like the letters.
+	it('runes run through the futhark, then pair up so 40 seats all differ', () => {
+		expect(TILE_RUNES).toHaveLength(24);
+		expect([1, 2, 24, 25, 26, 48, 49].map((n) => tileRunes(n).join(''))).toEqual([
+			'ᚠ',
+			'ᚢ',
+			'ᛟ',
+			'ᚠᚠ',
+			'ᚠᚢ',
+			'ᚠᛟ',
+			'ᚢᚠ'
+		]);
+		expect(names(2, 'runes')).toEqual(['Fehu', 'Uruz']);
+		expect(names(26, 'runes').slice(-2)).toEqual(['Fehu Fehu', 'Fehu Uruz']);
+		expect(new Set(names(40, 'runes')).size).toBe(40);
+	});
+
 	it('numbers, letters, symbols and colours in order', () => {
 		expect(names(3, 'numbers')).toEqual(['1', '2', '3']);
 		expect(names(3, 'letters')).toEqual(['A', 'B', 'C']);
 		expect(names(5, 'roman')).toEqual(['I', 'II', 'III', 'IV', 'V']);
+		expect(names(3, 'kanji')).toEqual(['一', '二', '三']);
 		expect(tileMarks(2, 'none', 'g').map((m) => m.kind === 'text' && m.text)).toEqual(['', '']);
 		expect(names(2, 'none')).toEqual(['1', '2']);
 		expect(names(2, 'symbols')).toEqual(['Star', 'Moon']);
