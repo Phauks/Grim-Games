@@ -4,7 +4,6 @@
 	import { formatRoomCode } from '#lib/core/sync/room-code.ts';
 	import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
-	import Button from '#lib/ui/primitives/Button.svelte';
 	import Tabs from '#lib/ui/primitives/Tabs.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import ScriptSharePanel from '#lib/features/scripts/SharePanel.svelte';
@@ -16,7 +15,6 @@
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { gameLine } from '#lib/features/player/byline.ts';
 	import { scriptVersion } from '#lib/features/player/player-script.ts';
-	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { roomHost } from './host.svelte.ts';
 
 	interface Props {
@@ -109,20 +107,6 @@
 				? t('room.shareGameText', { game: gameText, code: formatRoomCode(host.code) })
 				: t('room.shareText', { code: formatRoomCode(host.code) })
 	);
-
-	/*
-	 * Share grim (Trevor, 2026-10-20, plan R5): once the game is over, the whole finished
-	 * grimoire goes to the room's phones, once, after asking. In its place all game.
-	 */
-	let shareGrimOpen = $state(false);
-	const canShareGrim = $derived(
-		connected &&
-			host.ended?.gameId === game.game.gameId &&
-			host.revealed?.gameId !== game.game.gameId
-	);
-	function shareGrim() {
-		if (!host.reveal(game)) toast(t('room.shareGrim.failed'));
-	}
 </script>
 
 <!--
@@ -195,11 +179,6 @@
 					? t('room.watching', { count: host.watchers })
 					: ''}
 		</p>
-		<div class="share-grim">
-			<Button icon="share" disabled={!canShareGrim} onclick={() => (shareGrimOpen = true)}
-				>{t('room.shareGrim.button')}</Button
-			>
-		</div>
 	</section>
 {/snippet}
 
@@ -255,10 +234,6 @@
 	</p>
 </ConfirmDialog>
 
-<ConfirmDialog bind:open={shareGrimOpen} title={t('room.shareGrim.title')} onConfirm={shareGrim}>
-	<p class="dialog-text">{t('room.shareGrim.body')}</p>
-</ConfirmDialog>
-
 <style>
 	.dialog-text {
 		margin: 0;
@@ -287,9 +262,6 @@
 	.dot.live {
 		border-color: var(--good);
 		background: var(--good);
-	}
-	.share-grim {
-		display: flex;
 	}
 	.password {
 		display: flex;
