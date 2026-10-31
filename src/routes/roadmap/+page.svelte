@@ -19,6 +19,7 @@
 	const AREA_TITLES = {
 		storyteller: 'shell.roadmapAreaStoryteller',
 		player: 'shell.roadmapAreaPlayer',
+		engine: 'shell.roadmapAreaEngine',
 		search: 'shell.roadmapAreaSearch',
 		library: 'shell.roadmapAreaLibrary',
 		prepare: 'shell.roadmapAreaPrepare',

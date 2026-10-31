@@ -253,6 +253,9 @@
 			author={script?.meta.author}
 			{version}
 			storyteller={inRoom && inRoom === lastRoom() ? roomTable.storyteller : undefined}
+			profile={inRoom && inRoom === lastRoom()
+				? { roomCode: inRoom, look: roomTable.storytellerLook }
+				: undefined}
 			inline
 		/>&nbsp;
 	{/snippet}

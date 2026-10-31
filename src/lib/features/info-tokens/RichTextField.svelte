@@ -28,7 +28,7 @@
 	let underline = $state(false);
 	/** The colour at the caret; undefined is the card's own text colour. */
 	let ink = $state<InkColor>();
-	/** The colours sit in a popover, so the field and its tools fit one row (Trevor, 2026-10-18). */
+	/** The colours sit in a popover, so the tools fit one row above the words (Trevor, 2026-10-18). */
 	let choosingInk = $state(false);
 	let inkButton = $state<HTMLButtonElement>();
 	/** The selection when the colours opened: the popover takes focus, this brings it back. */
@@ -202,31 +202,9 @@
 
 <svelte:document onselectionchange={syncButtons} />
 
-<!-- One row: the words, then their tools; the tools wrap under the words when narrow. -->
+<!-- The tools sit above the words, outside their box, so the words get its whole width
+     (Trevor, 2026-10-31). -->
 <div class="rich">
-	<div
-		bind:this={field}
-		class="field"
-		role="textbox"
-		tabindex="0"
-		aria-label={label}
-		aria-multiline="false"
-		contenteditable="true"
-		spellcheck="true"
-		oninput={read}
-		onkeydown={(e) => {
-			if (e.key === 'Enter') {
-				e.preventDefault();
-				onsubmit?.();
-			}
-		}}
-		onpaste={(e) => {
-			// Pasted text arrives plain: no styles or markup from elsewhere.
-			e.preventDefault();
-			const text = e.clipboardData?.getData('text/plain').replace(/\s*\n\s*/g, ' ') ?? '';
-			document.execCommand('insertText', false, text);
-		}}
-	></div>
 	<div class="tools" role="toolbar" aria-label={t('info-tokens.formatting')}>
 		<button
 			type="button"
@@ -268,6 +246,29 @@
 			></span></button
 		>
 	</div>
+	<div
+		bind:this={field}
+		class="field"
+		role="textbox"
+		tabindex="0"
+		aria-label={label}
+		aria-multiline="false"
+		contenteditable="true"
+		spellcheck="true"
+		oninput={read}
+		onkeydown={(e) => {
+			if (e.key === 'Enter') {
+				e.preventDefault();
+				onsubmit?.();
+			}
+		}}
+		onpaste={(e) => {
+			// Pasted text arrives plain: no styles or markup from elsewhere.
+			e.preventDefault();
+			const text = e.clipboardData?.getData('text/plain').replace(/\s*\n\s*/g, ' ') ?? '';
+			document.execCommand('insertText', false, text);
+		}}
+	></div>
 </div>
 
 <Popover bind:open={choosingInk} title={t('info-tokens.colour')} anchor={inkButton}>
@@ -296,22 +297,12 @@
 </Popover>
 
 <style>
-	/* One box: the words and their tools share its border and its row. */
 	.rich {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: flex-start;
-		border: 1px solid var(--border);
-		border-radius: var(--radius-md);
-		background: var(--surface);
-	}
-	.rich:focus-within {
-		outline: 2px solid var(--focus);
-		outline-offset: -2px;
+		display: grid;
+		gap: var(--space-1);
 	}
 	.tools {
 		display: flex;
-		margin-inline-start: auto;
 	}
 	.inks {
 		display: flex;
@@ -353,9 +344,12 @@
 		background: var(--choice-selected-background);
 		box-shadow: inset 0 0 0 2px var(--focus);
 	}
+	/* The words' own box. */
 	.field {
-		flex: 1 1 10rem;
 		min-width: 0;
+		border: 1px solid var(--border);
+		border-radius: var(--radius-md);
+		background: var(--surface);
 		min-height: var(--tap-target);
 		padding: var(--space-2);
 		color: inherit;
@@ -366,7 +360,8 @@
 		white-space: pre-wrap;
 	}
 	.field:focus-visible {
-		outline: none;
+		outline: 2px solid var(--focus);
+		outline-offset: -2px;
 	}
 	/* Bold is weight, never colour (Trevor, 2026-10-16); browsers write b or strong. */
 	.field :global(strong),

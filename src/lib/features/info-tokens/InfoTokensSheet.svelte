@@ -13,7 +13,7 @@
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import { tokenTitle } from './token-title.ts';
 	import { characterCardsFor } from './character-cards.ts';
-	import InfoTokenList from './InfoTokenList.svelte';
+	import InfoTokenList, { QUICK_CARD_ID } from './InfoTokenList.svelte';
 	import ChainBar from './ChainBar.svelte';
 	import type { ChainCard } from './chain.ts';
 
@@ -69,6 +69,8 @@
 	let chainCards = $state<Card[]>([]);
 
 	let showOpen = $state(false);
+	/** The quick card is showing on its own: closing goes back to its editor. */
+	let quickShown = false;
 	let shown = $state<Card[]>([]);
 	/**
 	 * Opened at one card (`openWith`): closing the player view closes the sheet too, straight
@@ -126,6 +128,7 @@
 
 	function choose(token: InfoToken, add = false, detail?: string, filled?: FilledInfoToken) {
 		adding = add;
+		quickShown = token.id === QUICK_CARD_ID && !add;
 		pendingDetail = detail;
 		if (token.id === 'not-in-play' && bluffSets) {
 			if (bluffSets.length === 1) return use(token.text, bluffSets[0].characterIds);
@@ -274,6 +277,8 @@
 		cards={shownCards}
 		onclose={() => {
 			if (direct) open = false;
+			else if (quickShown) list?.reopenQuick();
+			quickShown = false;
 		}}
 	/>
 </BottomSheet>

@@ -397,6 +397,20 @@ export function rulesOf(
 	return characters?.get(characterId)?.rules ?? OFFICIAL_RULES.get(characterId);
 }
 
+/**
+ * A character's rules in a game: its block, with its optional rule's keys in place of its own
+ * when the game turned that rule on at the start (`Game.optionalRules`).
+ */
+export function rulesIn(
+	game: { readonly optionalRules?: readonly CharacterId[] },
+	characterId: CharacterId,
+	characters?: ReadonlyMap<CharacterId, { rules?: CharacterRules }>
+): CharacterRules | undefined {
+	const rules = rulesOf(characterId, characters);
+	if (!rules?.optionalRule || !game.optionalRules?.includes(characterId)) return rules;
+	return { ...rules, ...rules.optionalRule };
+}
+
 /** An official character's rules file exactly as written, for showing it; none for others. */
 export function rulesFileOf(characterId: CharacterId): unknown {
 	return Object.hasOwn(FILES, characterId) ? FILES[characterId] : undefined;

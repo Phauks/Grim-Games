@@ -22,5 +22,11 @@
 	},
 	"reincarnates": {
 		"first": 4
+	},
+	"optionalRule": {
+		"reincarnates": {
+			"first": 4,
+			"demonTo": "minion"
+		}
 	}
 }
