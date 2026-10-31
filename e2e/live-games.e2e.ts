@@ -74,7 +74,7 @@ test('an admin lists the open rooms and watches one, unseen and read-only', asyn
 	await expect(page.getByText(/watching/i)).toHaveCount(0);
 
 	// A Fabled stays where the board puts it (Trevor, 2026-10-27: "Admin view allows moving
-	// fable and lorics"): its Grouping is the Storyteller's to set.
+	// fable and lorics"): only the Storyteller removes it.
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	await page
 		.getByRole('dialog', { name: 'Grimoire' })
@@ -89,7 +89,7 @@ test('an admin lists the open rooms and watches one, unseen and read-only', asyn
 		.getByRole('button', { name: 'Spirit of Ivory' });
 	await fabled.tap();
 	const entry = admin.getByRole('dialog', { name: 'Spirit of Ivory' });
-	await expect(entry.getByRole('combobox', { name: 'Grouping', exact: true })).toBeDisabled();
+	await expect(entry.getByRole('button', { name: 'Remove from the game' })).toBeDisabled();
 	await admin.keyboard.press('Escape');
 
 	// History, read-only (Trevor, 2026-10-27: "Admin should have access to history"); the
