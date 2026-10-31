@@ -3,7 +3,6 @@ import {
 	AVATAR_GUESS,
 	GENERIC_GUESSES,
 	characterGuesses,
-	clearGuesses,
 	cycleGuess,
 	genericGuess,
 	guessesOf,
@@ -22,7 +21,7 @@ describe("a player's guesses on their Grim tab", () => {
 		let guesses = toggleGuess({}, 's1', 'empath');
 		guesses = toggleGuess(guesses, 's2', 'imp');
 		expect(guesses).toEqual({ s1: ['empath'], s2: ['imp'] });
-		expect(clearGuesses(guesses, 's2')).toEqual({ s1: ['empath'] });
+		expect(toggleGuess(guesses, 's2', 'imp')).toEqual({ s1: ['empath'] });
 	});
 
 	it('keeps only the newest guesses a room could hold', () => {

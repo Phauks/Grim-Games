@@ -175,11 +175,6 @@ export function travellerTeam(guesses: Guesses, seatId: string): GenericGuess | 
 		.find((g) => g && !g.type);
 }
 
-/** None: the seat has no guesses. */
-export function clearGuesses(guesses: Guesses, seatId: string): Guesses {
-	return withList(guesses, seatId, []);
-}
-
 export function readGuesses(room: string): Guesses {
 	return parseGuesses(readStored(key(room)));
 }
