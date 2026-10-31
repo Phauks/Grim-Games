@@ -31,6 +31,7 @@
 	import SavedGamesSection from '#lib/features/grimoire/SavedGamesSection.svelte';
 	import YourCharacter from './YourCharacter.svelte';
 	import PlayerCountOff from './PlayerCountOff.svelte';
+	import PlayerTravellerPick from './PlayerTravellerPick.svelte';
 	import { finalGrimoire } from './final-grimoire.svelte.ts';
 	import { gameOverText } from './game-over-text.ts';
 	import ScriptName from '#lib/features/scripts/ScriptName.svelte';
@@ -509,6 +510,7 @@
 			onSeen={() => player?.roleSeen()}
 		/>{/if}
 	{#if player}<PlayerCountOff {player} />{/if}
+	{#if player}<PlayerTravellerPick {player} />{/if}
 	{#if player && balloting}<ScriptBallot {player} />{/if}
 {/if}
 

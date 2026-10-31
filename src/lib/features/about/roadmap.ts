@@ -133,7 +133,8 @@ export const ROADMAP: readonly RoadmapItem[] = [
 			'J38',
 			'J39',
 			'J40',
-			'J41'
+			'J41',
+			'J42'
 		]
 	},
 	{
@@ -266,6 +267,12 @@ export const ROADMAP: readonly RoadmapItem[] = [
 			'Add late players to the bag draw as more players, not Travellers: placed on the grimoire or seated from a phone, several at once, with Character selection’s list',
 		area: 'storyteller',
 		parts: ['L96', 'L96a', 'L96b']
+	},
+	{
+		title:
+			'Travellers choose their own Traveller on their phones: the Storyteller sends the ones allowed, a tap holds one so no one else can take it, Confirm sends it',
+		area: 'storyteller',
+		parts: ['L102']
 	},
 	{
 		title:

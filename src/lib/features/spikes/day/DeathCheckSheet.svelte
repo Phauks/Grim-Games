@@ -48,7 +48,7 @@
 		]
 			.filter(Boolean)
 			.join(' · ');
-		const outcome = dies.length ? `Dead: ${names(dies)}` : '—';
+		const outcome = dies.length ? `Dead: ${names(dies)}` : 'No death';
 		const ok = game.run({
 			type: 'RecordNightInfo',
 			seatId: check.seatId,
@@ -112,7 +112,7 @@
 			<div class="actions">
 				<Button variant="quiet" onclick={() => (open = false)}>Cancel</Button>
 				{#if verdict?.kind === 'ask'}
-					<Button variant="quiet" onclick={() => record([])}>Record —</Button>
+					<Button variant="quiet" onclick={() => record([])}>Record no death</Button>
 					{#if verdict.ifYes.length}
 						<Button onclick={() => record(verdict.ifYes)}>Dead: {names(verdict.ifYes)}</Button>
 					{/if}

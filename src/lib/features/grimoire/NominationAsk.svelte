@@ -8,7 +8,9 @@
 	import RuleHeader from '#lib/features/modes/RuleHeader.svelte';
 	import { spawnedBy } from '#lib/features/modes/spawned-by.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
+	import { seatNominations } from '#lib/core/rules/index.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
+	import SeatChooser from './SeatChooser.svelte';
 
 	/**
 	 * What a recorded nomination sets off under the game's special rules (`nominationPrompts`
@@ -20,6 +22,9 @@
 	 * - A character's own ability (`characterNominationPrompts`), such as the Virgin
 	 *   (https://wiki.bloodontheclocktower.com/Virgin): Confirm executes the nominator, with the
 	 *   character as the cause of death, and marks the ability used ("No Ability").
+	 * - A character in play that has the nominee choose a player (the Big Wig,
+	 *   https://wiki.bloodontheclocktower.com/Big_Wig): a seat chooser records whom, on the
+	 *   nomination, so the day view can offer Broke madness for them.
 	 * Cancel, or closing, changes nothing (warn, never lock).
 	 */
 	interface Props {
@@ -51,8 +56,20 @@
 		if (!open && ask) asks = asks.slice(1);
 	});
 
+	/** Records whom the nominee chose on their nomination (`ChooseForNomination`). */
+	function choose(chosen: SeatId | undefined) {
+		const nomination = ask && seatNominations(game, ask.nominee).received;
+		open = false;
+		if (!nomination || nomination.nominator !== ask?.nominator) return;
+		grimoire.run({
+			type: 'ChooseForNomination',
+			entryId: nomination.entryId,
+			...(chosen ? { chosen } : {})
+		});
+	}
+
 	function confirm() {
-		if (!ask) return;
+		if (!ask || ask.kind === 'nominee-chooses') return;
 		const { nominator, nominee } = ask;
 		if (ask.kind === 'execute-nominator') {
 			grimoire.run({ type: 'Execute', seatId: nominator, cause: ask.characterId });
@@ -90,49 +107,64 @@
 	// The dialog's accessible name; its heading shows the players as badges.
 	/* eslint-disable grim/names-as-badges -- an accessible name, see above */
 	const title = $derived(
-		ask?.kind === 'execute-nominator'
-			? `${source}: execute ${label(ask.nominator)}?`
-			: ask?.kind === 'evil-swap'
-				? `${source}: swap characters?`
-				: ask
-					? `${source}: did ${label(ask.nominator)} choose to die?`
-					: ''
+		ask?.kind === 'nominee-chooses'
+			? `${source}: who did ${label(ask.nominee)} choose?`
+			: ask?.kind === 'execute-nominator'
+				? `${source}: execute ${label(ask.nominator)}?`
+				: ask?.kind === 'evil-swap'
+					? `${source}: swap characters?`
+					: ask
+						? `${source}: did ${label(ask.nominator)} choose to die?`
+						: ''
 	);
 	/* eslint-enable grim/names-as-badges */
 </script>
 
-<ConfirmDialog bind:open {title} onConfirm={confirm}>
-	{#snippet heading()}{#if ask?.kind === 'execute-nominator'}{source}: execute {@render player(
-				ask.nominator
-			)}?{:else if ask?.kind === 'evil-swap'}{source}: swap characters?{:else if ask}{source}: did {@render player(
-				ask.nominator
-			)} choose to die?{/if}{/snippet}
-	{#if ask}
-		<RuleHeader rules={spawning} />
-		<dl class="change">
-			{#each [['Nominator', ask.nominator], ['Nominee', ask.nominee]] as const as [what, seatId] (what)}
-				{@const id = game.seats[seatId]?.characterId}
-				{@const character = id ? characters.get(id) : undefined}
-				<dt>{what}</dt>
+{#if ask?.kind === 'nominee-chooses'}
+	<SeatChooser
+		bind:open
+		{title}
+		{game}
+		{characters}
+		onNone={() => choose(undefined)}
+		onChoose={(seatId) => choose(seatId)}
+	>
+		{#snippet heading()}{source}: who did {@render player(ask.nominee)} choose?{/snippet}
+	</SeatChooser>
+{:else}
+	<ConfirmDialog bind:open {title} onConfirm={confirm}>
+		{#snippet heading()}{#if ask?.kind === 'execute-nominator'}{source}: execute {@render player(
+					ask.nominator
+				)}?{:else if ask?.kind === 'evil-swap'}{source}: swap characters?{:else if ask}{source}: did {@render player(
+					ask.nominator
+				)} choose to die?{/if}{/snippet}
+		{#if ask}
+			<RuleHeader rules={spawning} />
+			<dl class="change">
+				{#each [['Nominator', ask.nominator], ['Nominee', ask.nominee]] as const as [what, seatId] (what)}
+					{@const id = game.seats[seatId]?.characterId}
+					{@const character = id ? characters.get(id) : undefined}
+					<dt>{what}</dt>
+					<dd>
+						{@render player(seatId)}
+						{#if id && character}<CharacterBadge characterId={id} {character} />{/if}
+					</dd>
+				{/each}
+				<dt>Then</dt>
 				<dd>
-					{@render player(seatId)}
-					{#if id && character}<CharacterBadge characterId={id} {character} />{/if}
+					{#if ask.kind === 'execute-nominator'}
+						{@render player(ask.nominator)} is executed, and the {source}’s ability is used.
+					{:else if ask.kind === 'evil-swap'}
+						They swap character tokens and learn their new characters tonight.
+					{:else}
+						{@render player(ask.nominator)} dies. {@render player(ask.nominee)}’s ability works
+						twice until dusk tomorrow.
+					{/if}
 				</dd>
-			{/each}
-			<dt>Then</dt>
-			<dd>
-				{#if ask.kind === 'execute-nominator'}
-					{@render player(ask.nominator)} is executed, and the {source}’s ability is used.
-				{:else if ask.kind === 'evil-swap'}
-					They swap character tokens and learn their new characters tonight.
-				{:else}
-					{@render player(ask.nominator)} dies. {@render player(ask.nominee)}’s ability works twice
-					until dusk tomorrow.
-				{/if}
-			</dd>
-		</dl>
-	{/if}
-</ConfirmDialog>
+			</dl>
+		{/if}
+	</ConfirmDialog>
+{/if}
 
 {#snippet player(seatId: SeatId)}<PlayerBadge name={seatName(game, seatId)} />{/snippet}
 

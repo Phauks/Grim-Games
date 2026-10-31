@@ -65,6 +65,8 @@ export const reference = {
 	'reference.removeToken': 'Remove this token',
 	'reference.oneOf': 'One of: {options}',
 	'reference.playerWith': 'player with',
+	'reference.nomineeChose': 'the player the nominee chose',
+	'reference.nominee': 'the nominee',
 	'reference.target.game': 'Not on a player',
 	'reference.target.self': 'Self',
 	'reference.target.anyPlayer': 'Any player',

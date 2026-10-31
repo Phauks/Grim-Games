@@ -52,6 +52,17 @@
 		/** Extra content at the end of the header row (a count, a badge); not part of the tap. */
 		aside?: Snippet;
 		/**
+		 * Content at the start of the header row, before the caret and not part of the tap, e.g.
+		 * a player's avatar, which opens their profile (Trevor, 2026-10-31: Players).
+		 */
+		lead?: Snippet;
+		/**
+		 * Replaces the title's text inside the tap, for a heading that is more than words, e.g. a
+		 * player's name and character badges and status marks. Nothing in it may be a control.
+		 * Its text names the button; `title` is then unused on screen.
+		 */
+		label?: Snippet;
+		/**
 		 * The aside sits right after the title instead of at the row's far end, e.g. an (i)
 		 * that explains the heading (Trevor, 2026-10-18).
 		 */
@@ -79,6 +90,8 @@
 		empty = false,
 		startClosed = false,
 		aside,
+		lead,
+		label,
 		asideByTitle = false,
 		count,
 		countOpen = false,
@@ -124,6 +137,7 @@
 -->
 <section class="collapsible" data-open={shown ? '' : undefined}>
 	<div class="head" data-type-band={tone} data-aside-by-title={asideByTitle ? '' : undefined}>
+		{#if lead}<div class="lead">{@render lead()}</div>{/if}
 		<svelte:element this={`h${level}`} class="title">
 			<button
 				type="button"
@@ -135,7 +149,9 @@
 				onclick={toggle}
 			>
 				<span class="caret" aria-hidden="true" data-caret><Icon name="expand" /></span>
-				<span class="label">{title}</span>
+				{#if label}<span class="label custom">{@render label()}</span>{:else}<span class="label"
+						>{title}</span
+					>{/if}
 				{#if count !== undefined && (countOpen || !shown)}<span
 						class="count"
 						aria-hidden="true"
@@ -240,6 +256,19 @@
 	.label {
 		min-width: 0;
 		overflow-wrap: anywhere;
+	}
+	.lead {
+		display: flex;
+		flex: none;
+		align-items: center;
+	}
+	.label.custom {
+		display: flex;
+		flex: 1;
+		align-items: center;
+		color: var(--on-surface);
+		font-size: 1rem;
+		font-weight: 400;
 	}
 	.aside {
 		display: flex;

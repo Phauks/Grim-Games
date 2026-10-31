@@ -98,6 +98,7 @@
 	import BankReminderDialog from './BankReminderDialog.svelte';
 	import { ReminderHand } from './reminder-hand.svelte.ts';
 	import BoardCorner from './BoardCorner.svelte';
+	import GameNotesToken from './GameNotesToken.svelte';
 	import LeaveGuard from './LeaveGuard.svelte';
 	import BoardMenu from './BoardMenu.svelte';
 	import BoardToolbar from './BoardToolbar.svelte';
@@ -719,6 +720,9 @@
 		untrack(() => grimoire.run({ type: 'SetStorytellerName', name }));
 	});
 
+	/** The Storyteller's notes on the game; never on a spectator's board. */
+	const gameNotes = $derived(watching ? 0 : (game.notes?.length ?? 0));
+
 	// ── Fabled and Loric: their dialogs (RuleCharacters) ──
 	let rules = $state<ReturnType<typeof RuleCharacters>>();
 </script>
@@ -885,9 +889,15 @@
 
 		<!-- Measures the tap target, the height every reminder takes on the board. -->
 		<span class="tap-probe" aria-hidden="true" bind:clientHeight={sizing.tapPx}></span>
-		{#if boardRuleCount(game) > 0}
+		{#if boardRuleCount(game) > 0 || gameNotes > 0}
+			{@const tokenSize = Math.max(sizing.tapPx, Math.round(size * 0.5))}
 			<div class="rules-edge" bind:clientWidth={sizing.edgeW} bind:clientHeight={sizing.edgeH}>
-				{@render ruleTokens(Math.max(sizing.tapPx, Math.round(size * 0.5)))}
+				{#if boardRuleCount(game) > 0}{@render ruleTokens(tokenSize)}{/if}
+				<!-- The game's notes after the Fabled and Loric, at their size, while there are any
+				     (Trevor, 2026-10-31). Kept off a player's sight while the grim is shown. -->
+				{#if gameNotes > 0}
+					<GameNotesToken size={tokenSize} count={gameNotes} onclick={() => playersDialog.show()} />
+				{/if}
 			</div>
 		{/if}
 		<BoardCorner
@@ -1244,7 +1254,8 @@
 	}
 	/* Shown to a player: the seats only, with the room for the rest kept so nothing moves. */
 	.board.showing :global(:is([data-tray], [data-testid='night-strip'])),
-	.board.showing .board-timer {
+	.board.showing .board-timer,
+	.board.showing :global([data-testid='game-notes-token']) {
 		visibility: hidden;
 	}
 	/* The day timer in the board's top right corner, clear of the seats' ring. */
@@ -1269,6 +1280,9 @@
 	}
 	/* Small, in the board's top left corner, clear of the seats' ring. */
 	.rules-edge {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--space-1);
 		position: absolute;
 		top: var(--space-1);
 		left: var(--space-1);

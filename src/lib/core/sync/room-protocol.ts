@@ -26,6 +26,8 @@ import type { PushAddress } from './web-push.ts';
 import type { RemovedMember } from './room-removed.ts';
 import type { SitWish } from './room-seating-open.ts';
 import type { CountOffView } from './room-count-off.ts';
+import type { CharacterId } from '#lib/core/data/index.ts';
+import type { TravellerPickHostView, TravellerPickPlayerView } from './room-traveller-pick.ts';
 
 export type ClientMessage =
 	/**
@@ -78,6 +80,9 @@ export type ClientMessage =
 	/** Seating locked: a player with no seat tapped this open one to sit in it. */
 	| { type: 'claim-seat'; seatId: SeatId }
 	| { type: 'count'; number: number } // Count off (plan J40): the number this player counted to.
+	/** Travellers choose (room-traveller-pick.ts): hold one, `null` to let it go, then confirm. */
+	| { type: 'hold-traveller'; pickId: string; characterId: CharacterId | null }
+	| { type: 'confirm-traveller'; pickId: string }
 	/**
 	 * Back to town reaches this phone while it is locked or the app is closed (plan U12), at this
 	 * push address; none turns that off.
@@ -101,6 +106,17 @@ export type ClientMessage =
 	/** Starts a count off (plan J40); apps from before 2026-10-30 also name who is 1. */
 	| { type: 'count-off'; first?: { memberId: string } | { name: string } }
 	| { type: 'end-count-off' } // Done (once the board has the order) or Cancel.
+	/** Travellers choose on their phones: the Travellers allowed and the seats choosing. */
+	| {
+			type: 'open-traveller-pick';
+			gameId: string;
+			pickId: string;
+			options: CharacterId[];
+			seats: SeatId[];
+	  }
+	| { type: 'close-traveller-pick' }
+	/** Confirms a Traveller for a seat (a player without a phone), or `null` lets its hold go. */
+	| { type: 'traveller-for'; seatId: SeatId; characterId: CharacterId | null }
 	/** Names a number for a player without a phone; no name clears it. */
 	| { type: 'name-count'; number: number; name?: string }
 	/** Puts a named member in a seat (players join without approval, Trevor 2026-10-26). */
@@ -203,6 +219,7 @@ export interface HostView {
 	removed?: RemovedMember[]; // Phones removed from the room this game (plan J37).
 	seatingOpen?: true; // Phones may move their own seat (plan J38).
 	countOff?: CountOffView; // The count off, while one is open (plan J40).
+	travellerPick?: TravellerPickHostView; // Travellers choosing on their phones.
 }
 
 export interface VoteTally {
@@ -267,6 +284,7 @@ export interface PlayerView {
 	inbox?: true; // The Storyteller's app takes messages, so this phone may send one.
 	seatingOpen?: true; // This phone may drag its own disc (plan J38).
 	countOff?: CountOffView; // The count off, with this phone's own number marked (plan J40).
+	travellerPick?: TravellerPickPlayerView; // The Traveller choice, while this seat is choosing.
 }
 
 /**
