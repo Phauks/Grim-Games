@@ -89,7 +89,7 @@
 			<!-- Account keeps the plain account icon, never the Profile's character (Trevor, 2026-10-30). -->
 			<Icon name={item.icon} />
 			<span>{label(item.label)}</span>
-			<!-- Friend requests waiting for an answer (plan F1). -->
+			<!-- Friend requests and game invites waiting for an answer (plan F1, F4). -->
 			{#if item === FRIENDS_ITEM && friends.waiting > 0}<CountBadge
 					count={friends.waiting}
 					testid="friend-requests-count"
