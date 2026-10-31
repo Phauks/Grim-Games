@@ -2196,6 +2196,45 @@ test("a seat's other guesses stay on the screen, on whichever side of the Grim i
 	await phoneContext.close();
 });
 
+test("a seat's guesses in its sheet all stay on the screen, with no None to pick", async ({
+	page,
+	browser
+}, testInfo) => {
+	// Trevor (2026-10-31): "character guesses run off the right side and I cannot see them".
+	// Three long names share the sheet's one Guesses line, each ending in "…" if it must.
+	const board = await startGame(page);
+	await page.goto(`${board}/room`);
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+
+	const phoneContext = await browser.newContext({ ...testInfo.project.use });
+	const phone = await phoneContext.newPage();
+	await phone.goto(`/join/${code}`);
+	await phone.getByRole('tab', { name: 'Grim' }).tap();
+	await phone.getByTestId('grim-seat').first().tap();
+	const sheet = phone.getByRole('dialog', { name: 'Seat 1 · Seat 1' });
+	// Deselecting a character takes its guess off, so the picker has no None (Trevor, 2026-10-31).
+	await expect(sheet.getByTestId('picker-none')).toHaveCount(0);
+	const picker = sheet.getByTestId('character-picker');
+	for (const name of ['Fortune Teller', 'Scarlet Woman', 'Ravenkeeper'])
+		await picker.getByRole('button', { name, exact: true }).tap();
+	const chips = sheet.getByTestId('seat-guesses').getByRole('button');
+	await expect(chips).toHaveCount(3);
+	await sheet.getByTestId('seat-guesses').scrollIntoViewIfNeeded();
+	if (process.env.GUESS_SHOT)
+		await sheet.screenshot({ path: `${process.env.GUESS_SHOT}-${testInfo.project.name}.png` });
+	const edge = (await sheet.getByTestId('seat-guesses').boundingBox())!;
+	for (let i = 0; i < 3; i++) {
+		const box = (await chips.nth(i).boundingBox())!;
+		expect(box.x + box.width, `Guess ${i + 1}`).toBeLessThanOrEqual(edge.x + edge.width + 1);
+		await expect(chips.nth(i).locator('img')).toBeVisible();
+	}
+	// Tapping a chosen character again takes it off.
+	await picker.getByRole('button', { name: 'Ravenkeeper', exact: true }).tap();
+	await expect(chips).toHaveCount(2);
+	await phoneContext.close();
+});
+
 test("a Banshee the Demon killed shows two votes and no ghost vote on the players' Grim", async ({
 	page,
 	browser
