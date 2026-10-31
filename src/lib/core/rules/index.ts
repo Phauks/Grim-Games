@@ -52,6 +52,7 @@ export * from './ability-parts.ts';
 export * from './savant.ts';
 export * from './nominations.ts';
 export * from './day-claims.ts';
+export * from './shown-to.ts';
 export * from './day-marks.ts';
 export * from './late-seat.ts';
 export * from './late-seat-proposal.ts';

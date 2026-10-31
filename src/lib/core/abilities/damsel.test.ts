@@ -12,7 +12,30 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
+import type { Command } from '#lib/core/engine/index.ts';
+import {
+	newGame,
+	run,
+	testCharacters as characters
+} from '#lib/core/model/fixtures.test-support.ts';
+import { shownAtMinionInfo, shownToSeats } from '#lib/core/rules/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+
+/** Seats with these characters, then the extra commands. */
+function table(ids: string[], ...extra: ((seats: string[]) => Command)[]) {
+	const { session, ctx, seats } = newGame(ids.map((_, i) => `P${i}`));
+	const s = run(
+		session,
+		ctx,
+		...ids.map((characterId, i): Command => ({
+			type: 'AssignCharacter',
+			seatId: seats[i],
+			characterId
+		})),
+		...extra.map((command) => command(seats))
+	);
+	return { game: s.game, seats };
+}
 
 describe('Damsel', () => {
 	const character = committedCharacter('damsel');
@@ -46,5 +69,20 @@ describe('Damsel', () => {
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Damsel#Examples)', () => {
 		it.todo('Example 1: Witch names bluffing Damsel; evil wins');
 		it.todo('Example 2: Two wrong Minion guesses change nothing');
+	});
+
+	// "All Minions know a Damsel is in play": each Minion is shown the Damsel token, at Minion
+	// info (https://wiki.bloodontheclocktower.com/Damsel).
+	describe('Minions are shown the Damsel token', () => {
+		it('wakes every Minion, and is one of the cards at Minion info', () => {
+			const { game, seats } = table(['damsel', 'poisoner', 'spy', 'imp', 'chef']);
+			expect(shownToSeats(game, 'damsel', characters)).toEqual([seats[1], seats[2]]);
+			expect(shownAtMinionInfo(game, characters)).toEqual(['damsel']);
+		});
+
+		it('is not a card at Minion info without a Damsel in play', () => {
+			const { game } = table(['poisoner', 'imp', 'chef']);
+			expect(shownAtMinionInfo(game, characters)).toEqual([]);
+		});
 	});
 });

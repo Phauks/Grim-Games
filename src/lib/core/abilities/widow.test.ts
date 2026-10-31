@@ -12,7 +12,30 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
+import type { Command } from '#lib/core/engine/index.ts';
+import {
+	newGame,
+	run,
+	testCharacters as characters
+} from '#lib/core/model/fixtures.test-support.ts';
+import { shownToSeats } from '#lib/core/rules/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+
+/** Seats with these characters, then the extra commands. */
+function table(ids: string[], ...extra: ((seats: string[]) => Command)[]) {
+	const { session, ctx, seats } = newGame(ids.map((_, i) => `P${i}`));
+	const s = run(
+		session,
+		ctx,
+		...ids.map((characterId, i): Command => ({
+			type: 'AssignCharacter',
+			seatId: seats[i],
+			characterId
+		})),
+		...extra.map((command) => command(seats))
+	);
+	return { game: s.game, seats };
+}
 
 describe('Widow', () => {
 	const character = committedCharacter('widow');
@@ -45,7 +68,21 @@ describe('Widow', () => {
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Widow#Examples)', () => {
 		it.todo('Example 1: Widow poisons the Sailor for the whole game');
-		it.todo('Example 2: Pit-Hag makes a Widow; Scapegoat learns of it');
+		it('Example 2: the good player marked Know is the one shown the Widow token', () => {
+			// The Pit-Hag made a Widow; the Storyteller marks the Scapegoat Know, so the Scapegoat
+			// is woken and shown the Widow token.
+			const { game, seats } = table(['widow', 'scapegoat', 'chef', 'imp'], (seats) => ({
+				type: 'AddReminder',
+				seatId: seats[1],
+				reminder: { characterId: 'widow', label: 'Know' }
+			}));
+			expect(shownToSeats(game, 'widow', characters)).toEqual([seats[1]]);
+		});
+
+		it('shows the token to no one until a player is marked Know', () => {
+			const { game } = table(['widow', 'chef', 'imp']);
+			expect(shownToSeats(game, 'widow', characters)).toEqual([]);
+		});
 		it.todo("Example 3: Innkeeper briefly suspends Empath's poisoning");
 	});
 });
