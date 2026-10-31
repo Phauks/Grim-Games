@@ -28,10 +28,8 @@
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
-	import CharacterPicker from '#lib/features/characters/CharacterPicker.svelte';
-	import CharacterSearchBox from '#lib/features/characters/CharacterSearchBox.svelte';
 	import CharacterChoice from './CharacterChoice.svelte';
-	import CountsBar from './CountsBar.svelte';
+	import SelectionList from './SelectionList.svelte';
 	import type { SetupGamePort } from './game-port.ts';
 	import SetupCandles from './SetupCandles.svelte';
 	import SetupCheckPanel from './SetupCheckPanel.svelte';
@@ -65,8 +63,6 @@
 	let replaceOpen = $state(false);
 	let errorsOpen = $state(false);
 	let query = $state('');
-	/** The counts band's height, so each type's heading pins just beneath it. */
-	let bandHeight = $state(0);
 
 	onMount(() => void loadOfficialData());
 
@@ -524,44 +520,16 @@
 			The counts, search and tools sit right above the characters at every width, sticky, with
 			each type's heading held just beneath them (Trevor, 2026-10-22: desktop matches phones).
 		-->
-			<div class="counts" data-testid="selection-band" bind:offsetHeight={bandHeight}>
-				<CountsBar {analysis} {travellers} {travellerLimits} />
-				<div class="find">
-					<CharacterSearchBox bind:query shortcut />
-					<div class="tools">
-						<IconButton
-							icon="random"
-							label={t('setup.random')}
-							disabled={!ready}
-							onclick={random}
-						/>
-						<IconButton
-							icon="selectedOnly"
-							label={t('setup.selectedOnly')}
-							aria-pressed={selectedOnly}
-							disabled={!ready}
-							onclick={() => (selectedOnly = !selectedOnly)}
-						/>
-						<IconButton
-							icon="clearSelection"
-							label={t('setup.clearSelection')}
-							disabled={!ready || clearable === 0}
-							onclick={() => (clearOpen = true)}
-						/>
-					</div>
-				</div>
-			</div>
-			<CharacterPicker
+			<SelectionList
+				{analysis}
+				{travellers}
+				{travellerLimits}
 				characters={listed}
-				mode="multi"
 				selected={[...ids, ...inRule]}
 				bind:query
-				showSearch={false}
 				collapsibleKey="setup"
 				surface="page"
-				contained={false}
 				types={TYPES}
-				pinTop="calc(var(--app-top) + {Math.max(0, bandHeight - 1)}px)"
 				keepTypes={['traveller', 'fabled', 'loric']}
 				closedTypes={travellersChosenAtStart
 					? ['fabled', 'loric']
@@ -571,6 +539,27 @@
 					if (character) toggle(character);
 				}}
 			>
+				{#snippet tools()}
+					<IconButton
+						icon="random"
+						label={t('setup.random')}
+						disabled={!ready}
+						onclick={random}
+					/>
+					<IconButton
+						icon="selectedOnly"
+						label={t('setup.selectedOnly')}
+						aria-pressed={selectedOnly}
+						disabled={!ready}
+						onclick={() => (selectedOnly = !selectedOnly)}
+					/>
+					<IconButton
+						icon="clearSelection"
+						label={t('setup.clearSelection')}
+						disabled={!ready || clearable === 0}
+						onclick={() => (clearOpen = true)}
+					/>
+				{/snippet}
 				{#snippet groupAside(type)}
 					{#if type === 'traveller' || type === 'fabled' || type === 'loric'}
 						<IconButton
@@ -607,7 +596,7 @@
 							setupSelection.setCopies(character.id, setupSelection.copies(character.id) + 1)}
 					/>
 				{/snippet}
-			</CharacterPicker>
+			</SelectionList>
 			<!--
 			The Demon's bluffs, from the characters chosen here rather than on the Draw screen the
 			players use (Trevor, 2026-10-18). Always there, even before a Demon is chosen.
@@ -712,50 +701,6 @@
 		text-overflow: ellipsis;
 		white-space: nowrap;
 		font-weight: 600;
-	}
-	/* Only the chosen counts stay in view while scrolling; the setup table scrolls away. */
-	.counts {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr);
-		gap: var(--space-2);
-		position: sticky;
-		/* At the top of the screen, as the sidebar is. */
-		top: var(--app-top);
-		z-index: var(--z-raised);
-		/* Edge to edge, so nothing shows beside it. */
-		margin-inline: calc(-1 * var(--page-gutter));
-		padding: var(--space-2) var(--page-gutter);
-		/* The page's own background, pinned to the window as the body's is, so it lines up. */
-		background: var(--page-background, var(--surface));
-		background-attachment: fixed;
-		box-shadow: 0 1px 0 var(--border);
-	}
-	/* Search, then Random and Clear as icon buttons right beside it. */
-	.find {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) auto;
-		align-items: center;
-		gap: var(--space-2);
-	}
-	.tools {
-		display: flex;
-		gap: var(--space-1);
-	}
-	.tools :global(.icon-button) {
-		background: var(--surface-raised);
-		box-shadow: var(--button-ring);
-	}
-	@media (hover: hover) {
-		.tools :global(.icon-button:hover:not(:disabled)) {
-			background: var(--surface-selected);
-		}
-	}
-	/* A computer window: the band spans the characters' column, not the window. */
-	@media (min-width: 75rem) {
-		.counts {
-			margin-inline: 0;
-			padding-inline: 0;
-		}
 	}
 	.errors {
 		display: grid;

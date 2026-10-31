@@ -52,20 +52,24 @@ test('Add late player seats late players where tapped and makes room in the bag'
 	await expect(sheet).toContainText('5 → 7 players');
 	await expect(sheet.getByTestId('late-check')).toContainText('Not the 7-player counts');
 
-	// The tabs keep one size, so nothing moves as the roll fills them in.
-	const before = await sheet.boundingBox();
+	// Character selection's own list, its counts pinned at the top (Trevor, 2026-10-31).
+	const list = sheet.getByTestId('late-after');
+	await expect(list.getByTestId('selection-band').getByTestId('count-townsfolk')).toHaveText('3');
 	await sheet.getByTestId('late-roll').tap();
 	await expect(sheet.getByTestId('late-check')).toHaveText('Matches the 7-player counts.');
-	expect(await sheet.boundingBox()).toEqual(before);
 	// The Sentinel is a character in the list, its icon and ability (Trevor, 2026-10-30).
-	await expect(
-		sheet.getByTestId('late-after').getByText('Sentinel', { exact: true })
-	).toBeVisible();
-	await sheet.getByRole('tab', { name: 'Changes' }).tap();
-	await expect(sheet.getByTestId('late-change-list')).toContainText('Max');
-	await expect(sheet.getByTestId('late-change-list')).toContainText('Noa');
-	await sheet.getByRole('tab', { name: 'Before' }).tap();
-	await expect(sheet.getByTestId('late-before').getByTestId('count-townsfolk')).toHaveText('3');
+	await expect(list.getByText('Sentinel', { exact: true })).toBeVisible();
+	// Only the changes, in their own sheet.
+	await sheet.getByTestId('late-show-changes').tap();
+	const changes = page.getByRole('dialog', { name: 'Changes' });
+	await expect(changes.getByTestId('late-change-list')).toContainText('Max');
+	await expect(changes.getByTestId('late-change-list')).toContainText('Noa');
+	await changes.getByRole('button', { name: 'Close' }).tap();
+	// Back to the draw as it was undoes the roll; Roll again for the counts.
+	await sheet.getByTestId('late-revert').tap();
+	await expect(sheet.getByTestId('late-check')).toContainText('Not the 7-player counts');
+	await sheet.getByTestId('late-roll').tap();
+	await expect(sheet.getByTestId('late-check')).toHaveText('Matches the 7-player counts.');
 
 	await sheet.getByRole('button', { name: 'Confirm and tell players' }).tap();
 	await expect(sheet).toBeHidden();
