@@ -32,6 +32,7 @@ import { normaliseRoomCode } from '../../src/lib/core/sync/room-code.ts';
 import type { Room } from '../room.ts';
 import type { GamePlayer } from '../../src/lib/features/friends/friend-rules.ts';
 import type { BookEntry, FriendBook, RecentEntry } from './book.ts';
+import { friendInvites, handleInvites } from './invites.ts';
 import { handleFriendScripts } from './scripts.ts';
 
 export interface FriendsEnv extends AccountEnv {
@@ -73,14 +74,15 @@ export async function describe(env: FriendsEnv, entries: BookEntry[]): Promise<F
 
 async function contents(env: FriendsEnv, accountId: string): Promise<FriendsResponse> {
 	const book = await friendBook(env, accountId).contents(Date.now());
-	const [friends, incoming, outgoing, blocked, recent] = await Promise.all([
+	const [friends, incoming, outgoing, blocked, recent, invites] = await Promise.all([
 		describe(env, book.friends),
 		describe(env, book.incoming),
 		describe(env, book.outgoing),
 		describe(env, book.blocked),
-		recentPlayers(env, accountId, book)
+		recentPlayers(env, accountId, book),
+		friendInvites(env, accountId)
 	]);
-	return { friends, incoming, outgoing, blocked, findable: book.findable, recent };
+	return { friends, incoming, outgoing, blocked, findable: book.findable, recent, invites };
 }
 
 /**
@@ -323,6 +325,9 @@ export async function handleFriends(
 
 	const scripts = await handleFriendScripts(request, env, path, accountId);
 	if (scripts) return scripts;
+
+	const invites = await handleInvites(request, env, path, accountId);
+	if (invites) return invites;
 
 	const action = path.slice(FRIENDS_API.length + 1);
 	if (method === 'POST' && isFriendAction(action) && path === friendActionApi(action)) {

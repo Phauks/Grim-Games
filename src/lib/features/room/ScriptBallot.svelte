@@ -6,7 +6,7 @@
 	import type { ScriptVoteOption } from '#lib/core/sync/script-vote.ts';
 	import { loadOfficialData, officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import ScriptDetails from '#lib/features/scripts/ScriptDetails.svelte';
-	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
+	import ScriptName from '#lib/features/scripts/ScriptName.svelte';
 	import type { RoomPlayer } from './player.svelte.ts';
 	import VoteStats from './VoteStats.svelte';
 	import VoteChoice from './VoteChoice.svelte';
@@ -137,10 +137,7 @@
 					pressed={place >= 0}
 					disabled={offline}
 					onclick={() => tap(option.id)}
-					>{#if option.logo}<ScriptLogo
-							src={option.logo}
-							class="ballot-logo"
-						/>{/if}{option.name}</VoteChoice
+					><ScriptName name={option.name} logo={option.logo} /></VoteChoice
 				>
 				{#if ranked}
 					<!-- Disabled, not hidden, until placed, so nothing moves (Trevor: no reflow). -->
@@ -224,12 +221,6 @@
 		min-width: 0;
 	}
 	/* The script's logo before its name (Trevor, 2026-10-24). */
-	.vote :global(.ballot-logo) {
-		width: 1.5em;
-		height: 1.5em;
-		margin-inline-end: var(--space-1);
-		vertical-align: middle;
-	}
 	/* Withdraw on the left, Vote bottom right (Trevor: Confirm bottom right). */
 	.actions {
 		display: flex;
