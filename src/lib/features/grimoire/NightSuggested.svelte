@@ -176,6 +176,9 @@
 		JSON.stringify([p.seatId, row.target, row.reason, row.marked ?? false]);
 	/** The character picked for a row that offers several (a Recluse shown as a Minion). */
 	let shownAs = $state<Record<string, CharacterId>>({});
+	/** `record` without `key`: a drop-down's "None" puts it back to nothing chosen. */
+	const withoutKey = (record: Record<string, CharacterId>, key: string) =>
+		Object.fromEntries(Object.entries(record).filter(([k]) => k !== key));
 	/**
 	 * Which rows' "Shown as" lists are open: Show to player with nothing picked opens the list
 	 * instead of doing nothing (Trevor, 2026-10-28: with the Investigator drunk it wasn't clear
@@ -377,6 +380,7 @@
 						label: characters.get(c)?.name ?? c
 					}))}
 					onChange={(c) => (shownAs = { ...shownAs, [key]: c })}
+					onClear={() => (shownAs = withoutKey(shownAs, key))}
 				>
 					{#snippet item(option)}<CharacterBadge
 							characterId={option.value}
@@ -661,6 +665,7 @@
 						label: characters.get(c)?.name ?? c
 					}))}
 					onChange={(c) => (shownAs = { ...shownAs, [key]: c })}
+					onClear={() => (shownAs = withoutKey(shownAs, key))}
 				>
 					{#snippet item(option)}<CharacterBadge
 							characterId={option.value}

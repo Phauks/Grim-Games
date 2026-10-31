@@ -4574,6 +4574,17 @@ test("the Fortune Teller's step answers for the two players picked", async ({ pa
 	await expect(answers.first().locator('strong')).toHaveText('Yes');
 	await pick('Second player chosen', 'Seat 4');
 	await expect(answers.first().locator('strong')).toHaveText('No');
+	// "None" at the top of the list puts the choice back to nothing chosen (Trevor, 2026-10-31).
+	const second = section.getByRole('combobox', { name: 'Second player chosen' });
+	const none = page.getByRole('option', { name: 'None', exact: true });
+	await expect(async () => {
+		if (!(await none.isVisible())) await second.tap();
+		await expect(none).toBeVisible({ timeout: 1000 });
+	}).toPass();
+	await none.tap();
+	await expect(answers).toHaveCount(0);
+	await expect(second).toHaveAttribute('data-attention');
+	await pick('Second player chosen', 'Seat 4');
 	// The answer shows as the Yes/No info token (Trevor, 2026-10-28).
 	await answers.first().getByRole('button', { name: 'Show to player' }).tap();
 	await expect(page.locator('[data-testid="show-to-player"][open]')).toContainText('No');
