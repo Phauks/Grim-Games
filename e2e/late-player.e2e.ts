@@ -135,7 +135,7 @@ test('Add late player can seat a phone in the room, as the bag draw does', async
 		.tap();
 	await expect(sheet.getByRole('textbox', { name: 'Name' })).toHaveValue('Zed');
 	await sheet.getByTestId('late-roll').tap();
-	await sheet.getByRole('button', { name: 'Confirm and tell players' }).tap();
+	await sheet.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(sheet).toBeHidden();
 	// Zed's phone sits at the new seat (phones sit by name).
 	await page.goto(draw.replace(/\/draw$/, '/players'));
