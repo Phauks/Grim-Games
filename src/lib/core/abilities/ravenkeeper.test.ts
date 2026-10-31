@@ -7,13 +7,13 @@
  * pin TPI's current data, so review and update them when a data sync changes Ravenkeeper.
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
- * a scenario test (seats, characters and reminders, then the action, then the expected state)
- * that paraphrases the example. Never copy wiki prose.
+ * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
+ * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
 import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night-info.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
 describe('Ravenkeeper', () => {
@@ -48,37 +48,30 @@ describe('Ravenkeeper', () => {
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Ravenkeeper#Examples)', () => {
 		it('Example 1: Imp kills Ravenkeeper, who learns the Empath', () => {
 			// The dead Ravenkeeper chooses the Empath's player and is shown the Empath.
-			const { game: g, seats } = castGame(
-				['ravenkeeper', 'empath', 'imp', 'monk', 'poisoner'],
-				(s) => ({
-					type: 'SetDead',
-					seatId: s[0],
-					dead: true
-				})
-			);
-			const picker = infoPicker(g, seats[0], 'ravenkeeper', characters)!;
-			expect(isTruthful(picker, { seats: [seats[1]], characterId: 'empath' })).toBe(true);
-			expect(isAllowed(picker, { seats: [seats[1]], characterId: 'monk' })).toBe(false);
+			const s = scenario(['ravenkeeper', 'empath', 'imp', 'monk', 'poisoner']).dies('ravenkeeper');
+			const picker = infoPicker(s.game, s.seat('ravenkeeper'), 'ravenkeeper', s.characters)!;
+			expect(isTruthful(picker, { seats: [s.seat('empath')], characterId: 'empath' })).toBe(true);
+			expect(isAllowed(picker, { seats: [s.seat('empath')], characterId: 'monk' })).toBe(false);
 		});
 
 		it('Example 2: Mayor bounce kills Ravenkeeper; Recluse shows Scarlet Woman', () => {
 			// A dead Recluse chosen by the Ravenkeeper may register as a Minion and be shown as one.
-			const { game: g, seats } = castGame(
-				['ravenkeeper', 'recluse', 'imp', 'mayor', 'scarletwoman'],
-				(s) => ({ type: 'SetDead', seatId: s[0], dead: true }),
-				(s) => ({ type: 'SetDead', seatId: s[1], dead: true })
-			);
-			const picker = infoPicker(g, seats[0], 'ravenkeeper', characters)!;
-			const minion = { seats: [seats[1]], characterId: 'scarletwoman' };
+			const s = scenario(['ravenkeeper', 'recluse', 'imp', 'mayor', 'scarletwoman'])
+				.dies('ravenkeeper')
+				.dies('recluse');
+			const picker = infoPicker(s.game, s.seat('ravenkeeper'), 'ravenkeeper', s.characters)!;
+			const minion = { seats: [s.seat('recluse')], characterId: 'scarletwoman' };
 			expect(isAllowed(picker, minion)).toBe(true);
 			expect(isTruthful(picker, minion)).toBe(false);
-			expect(isTruthful(picker, { seats: [seats[1]], characterId: 'recluse' })).toBe(true);
+			expect(isTruthful(picker, { seats: [s.seat('recluse')], characterId: 'recluse' })).toBe(true);
 		});
 
 		it('may choose any player, themselves included (How to Run)', () => {
-			const { game: g, seats } = castGame(['ravenkeeper', 'empath', 'imp', 'monk', 'poisoner']);
-			const picker = infoPicker(g, seats[0], 'ravenkeeper', characters)!;
-			expect(isTruthful(picker, { seats: [seats[0]], characterId: 'ravenkeeper' })).toBe(true);
+			const s = scenario(['ravenkeeper', 'empath', 'imp', 'monk', 'poisoner']);
+			const picker = infoPicker(s.game, s.seat('ravenkeeper'), 'ravenkeeper', s.characters)!;
+			expect(
+				isTruthful(picker, { seats: [s.seat('ravenkeeper')], characterId: 'ravenkeeper' })
+			).toBe(true);
 		});
 	});
 });
