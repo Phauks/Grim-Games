@@ -365,7 +365,10 @@
 					aria-live="polite"
 					data-testid="room-preview"
 				>
-					<ScriptLogo src={found?.logo} name={found?.name} class="game-logo" />
+					<!-- Only a found game has a logo; until then the status line has the whole box, centred. -->
+					{#if found}
+						<ScriptLogo src={found.logo} name={found.name} class="game-logo" />
+					{/if}
 					<div class="game-text">
 						{#if found}
 							<p class="game-name">{found.name || t('room.noScriptYet')}</p>
@@ -554,6 +557,10 @@
 		text-align: start;
 	}
 	/* The box is raised already, so the game it opens sits back in the page's own surface. */
+	.game:not(.found) {
+		grid-template-columns: minmax(0, 1fr);
+		text-align: center;
+	}
 	.game.found {
 		border-style: solid;
 		background: var(--surface);
