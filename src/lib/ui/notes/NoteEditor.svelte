@@ -1,6 +1,7 @@
 <script lang="ts">
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
+	import RichTextField from '#lib/ui/primitives/RichTextField.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -50,11 +51,11 @@
 					/>
 				{/if}
 			</div>
-			<TextField
+			<!-- The same rich box as info cards: formatting and typed lists (Trevor, 2026-10-31). -->
+			<RichTextField
 				label={t('player.noteText')}
 				value={note.text}
 				multiline
-				autogrow
 				rows={4}
 				lists
 				disabled={readonly}

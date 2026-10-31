@@ -5,6 +5,9 @@ import { toBoard } from './new-game.ts';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { encodeSharedScript } from '../src/lib/features/scripts/share.ts';
 
+/** The words in a rich text box, a line break as "\n" (notes share the cards' box, 2026-10-31). */
+const lines = (box: Locator) => () => box.evaluate((el) => (el as HTMLElement).innerText.trimEnd());
+
 // Player view (09-player-script-view.md): a reading page with the script, night order and notes.
 
 /**
@@ -629,7 +632,7 @@ test('each note can hide its contents until it is opened', async ({ page }) => {
 	await expect(row).not.toContainText('Sam is the Imp');
 	// Opening the note shows it.
 	await row.tap();
-	await expect(sheet.getByRole('textbox', { name: 'Text' })).toHaveValue('Sam is the Imp');
+	await expect(sheet.getByRole('textbox', { name: 'Text' })).toHaveText('Sam is the Imp');
 	await page.keyboard.press('Escape');
 	// Kept after a reload.
 	await expect.poll(() => storedNotes(page)).toEqual([{ title: 'Evil team', hidden: true }]);
@@ -659,7 +662,7 @@ test('Enter in a note title closes the keyboard', async ({ page }) => {
 	await text.fill('one');
 	await text.press('Enter');
 	await text.pressSequentially('two');
-	await expect(text).toHaveValue('one\ntwo');
+	await expect.poll(lines(text)).toBe('one\ntwo');
 });
 
 test('a script character is its icon in a ring, with its name on a band out of the ring’s top', async ({

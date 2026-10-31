@@ -270,6 +270,23 @@ test('closing a shown quick card goes back to it, its words kept', async ({ page
 	await expect(page.getByRole('textbox', { name: 'Text' })).toHaveText('');
 });
 
+test('a quick card can hold a typed list, shown on its lines', async ({ page }) => {
+	// Trevor (2026-10-31): cards use the notes' text box, lists and all.
+	await openSheet(page);
+	await page.getByRole('button', { name: 'Quick card', exact: true }).tap();
+	await page.getByRole('textbox', { name: 'Text' }).tap();
+	await page.keyboard.type('You learn:');
+	await page.keyboard.press('Enter');
+	await page.keyboard.type('1. Ana is good');
+	await page.keyboard.press('Enter');
+	await page.keyboard.type('Ben is evil');
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	const heading = shown(page).getByRole('heading');
+	await expect
+		.poll(() => heading.evaluate((el) => (el as HTMLElement).innerText))
+		.toBe('You learn:\n1. Ana is good\n2. Ben is evil');
+});
+
 test('a quick card can be added to the cards to show with others', async ({ page }) => {
 	// Trevor (2026-10-25): a quick card goes in with other cards, like each tile's +.
 	await openSheet(page);
