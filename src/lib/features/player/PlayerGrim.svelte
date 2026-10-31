@@ -737,11 +737,10 @@
 		justify-content: flex-end;
 		margin-bottom: var(--space-2);
 	}
-	/* The Storyteller's board, with room under it for History's Previous and Next. */
+	/* The Storyteller's board, as tall as it draws itself (a screen high, with History's
+	   Previous and Next inside its foot), so the tabs' bottom bar never covers them. */
 	.final {
 		position: relative;
-		height: 75dvh;
-		margin-bottom: calc(2 * var(--tray-h, var(--tap-target)));
 	}
 	.none {
 		margin: 0;

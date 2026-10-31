@@ -1,4 +1,4 @@
-import { plainText } from './bold.ts';
+import { plainText } from '#lib/core/text/rich.ts';
 
 /**
  * A token's one name: its tile, the dialog or sheet it opens, and the card shown all use
