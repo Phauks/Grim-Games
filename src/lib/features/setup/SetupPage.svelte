@@ -26,6 +26,7 @@
 	} from '#lib/core/rules/index.ts';
 	import { scriptMaxPlayers, teensyvilleWarnings } from '#lib/core/rules/teensyville.ts';
 	import { loadOfficialData, officialData } from '#lib/features/characters/game-data.svelte.ts';
+	import { gameSettings } from '#lib/features/game-settings/game-settings.svelte.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
@@ -295,8 +296,14 @@
 		return of;
 	});
 	const travellers = $derived(ids.filter((id) => lookup(id)?.type === 'traveller').length);
+	// Travellers who choose on their phones may still be picked here: none to all of them.
+	const travellersLater = $derived(gameSettings.current.travellersChoose && !travellersInBag);
 	const travellerLimits = $derived(
-		travellersInBag ? travellerRange(s.players, travellersInBag) : undefined
+		travellersInBag
+			? travellerRange(s.players, travellersInBag)
+			: travellersLater
+				? { min: 0, max: Math.max(travellersNeeded, travellers) }
+				: undefined
 	);
 	const warnings = $derived([
 		...setupWarningMessages(analysis.warnings, requirements, name),
@@ -310,7 +317,13 @@
 	]);
 
 	const errors = $derived(
-		buildErrors({ analysis, issues: plan.issues, travellers, travellerMax: travellerLimits?.max })
+		buildErrors({
+			analysis,
+			issues: plan.issues,
+			travellers,
+			travellerMax: travellersInBag ? travellerLimits?.max : undefined,
+			travellersLater
+		})
 	);
 
 	// Copies only where a character's rules allow them (Village Idiot, Legion, or with the
@@ -469,7 +482,8 @@
 					? scriptFacts(script.characters, data.jinxes, script.homebrewJinxes).jinxes
 					: [],
 			random: Math.random,
-			travellersInBag
+			travellersInBag,
+			travellersLater
 		});
 		if (result.ok) {
 			setupSelection.replace(result.selection);

@@ -27,6 +27,8 @@ export interface GameSettings {
 	holdToReveal: boolean;
 	tileOrderRandom: boolean;
 	slotMachine: boolean;
+	/** Players beyond 15 choose their Traveller on their phones, so Random leaves them open. */
+	travellersChoose: boolean;
 }
 
 export type GameSettingKey = keyof GameSettings;
@@ -43,7 +45,8 @@ export function settingsFrom(prefs: Preferences): GameSettings {
 		requireName: prefs.requireName,
 		holdToReveal: prefs.holdToReveal,
 		tileOrderRandom: prefs.tileOrderRandom,
-		slotMachine: prefs.slotMachine
+		slotMachine: prefs.slotMachine,
+		travellersChoose: prefs.travellersChoose
 	};
 }
 
@@ -87,6 +90,7 @@ export function parseGameSettings(raw: unknown, fallback: GameSettings): GameSet
 		requireName: bool(r.requireName, fallback.requireName),
 		holdToReveal: bool(r.holdToReveal, fallback.holdToReveal),
 		tileOrderRandom: bool(r.tileOrderRandom, fallback.tileOrderRandom),
-		slotMachine: bool(r.slotMachine, fallback.slotMachine)
+		slotMachine: bool(r.slotMachine, fallback.slotMachine),
+		travellersChoose: bool(r.travellersChoose, fallback.travellersChoose)
 	};
 }
