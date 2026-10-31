@@ -35,17 +35,20 @@
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import Sentence from '#lib/features/characters/Sentence.svelte';
 	import { slot } from '#lib/features/characters/slots.ts';
-	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import CountsBar from './CountsBar.svelte';
+	import CharacterChoice from './CharacterChoice.svelte';
+	import CharacterPicker from '#lib/features/characters/CharacterPicker.svelte';
 	import type { LatePlayer } from './late-player.ts';
 
 	interface Props {
 		open: boolean;
 		game: Game;
-		/** The late players, each at the spot tapped on the grimoire. */
+		/** The late players, each at the spot tapped on the grimoire once chosen. */
 		players: LatePlayer[];
-		/** Back to the grimoire to tap where another late player sits. */
+		/** Another late player, not placed yet. */
 		onAddAnother: () => void;
+		/** To the grimoire to tap where late player `index` sits. */
+		onPlace: (index: number) => void;
 		/** The script's characters, in script order. */
 		scriptCharacters: readonly Character[];
 		/** Every official character, for the rule characters that change setup. */
@@ -59,6 +62,7 @@
 		game,
 		players = $bindable(),
 		onAddAnother,
+		onPlace,
 		scriptCharacters,
 		official,
 		lookup,
@@ -102,9 +106,6 @@
 				rulesOf(c.id)?.setupModifier?.ops.some((op) => op.kind === 'delta')
 		)
 	);
-	const ruleLabel = (rule: Character) =>
-		// eslint-disable-next-line grim/names-as-badges -- a switch's label is its text: "Sentinel: ±1 Outsider"
-		`${rule.name}: ${rulesOf(rule.id)?.setupModifier?.summary ?? ''}`;
 
 	function roll() {
 		const next = proposeLateSeat({
@@ -183,11 +184,43 @@
 				.map((c) => ({ value: c.id, label: c.name, group: TYPE_PLURALS[c.type] }))
 		];
 	}
-	const bagOptions = $derived(
-		dealable
-			.filter((c) => !taken.has(c.id))
-			.map((c) => ({ value: c.id, label: c.name, group: TYPE_PLURALS[c.type] }))
-	);
+
+	// The list: the script's characters, then the Fabled and Loric in play or that change setup.
+	const listed = $derived([
+		...dealable,
+		...[...game.ruleCharacters, ...setupRules.map((c) => c.id)]
+			.map((id) => lookup(id))
+			.filter((c): c is Character => c !== undefined)
+	]);
+	const holderOf = (id: CharacterId) =>
+		drawn.seen.find((s, i) => seatedAfter[i] === id && s !== undefined)?.seatId;
+	/** Who has it, or that it waits in the bag. */
+	function markOf(character: Character): string | undefined {
+		const seatId = holderOf(character.id);
+		if (seatId) return seatName(game, seatId);
+		return bag.includes(character.id) ? t('setup.late.inBagMark') : undefined;
+	}
+	function toggle(character: Character) {
+		const id = character.id;
+		if (character.type === 'fabled' || character.type === 'loric') {
+			if (game.ruleCharacters.includes(id)) return;
+			rulesOn = rulesOn.includes(id) ? rulesOn.filter((r) => r !== id) : [...rulesOn, id];
+			reset();
+			return;
+		}
+		const i = bag.indexOf(id);
+		if (i !== -1) {
+			edited = bag.filter((_, j) => j !== i);
+			return;
+		}
+		// A player's character: they get a row to choose what they become.
+		const seatId = holderOf(id);
+		if (seatId) {
+			if (!rows.some((r) => r.seatId === seatId)) rows = [...rows, { seatId, rolled: false }];
+			return;
+		}
+		if (!drawn.unseated.includes(id)) edited = [...bag, id];
+	}
 
 	const reasonOf = (seatId: SeatId, rolled: boolean) => {
 		if (!rolled) return t('setup.late.yours');
@@ -197,16 +230,6 @@
 			? t('setup.late.none', { count: dealt + extra, type: TYPE_PLURALS[type] })
 			: t('setup.late.rolled');
 	};
-
-	const others = $derived(
-		drawn.seen
-			.filter((s) => !rows.some((r) => r.seatId === s.seatId))
-			.map((s) => ({
-				value: s.seatId,
-				// eslint-disable-next-line grim/names-as-badges -- the option's accessible name and typeahead text; it shows as badges (the option snippet)
-				label: `${seatName(game, s.seatId)}: ${lookup(s.characterId)?.name ?? s.characterId}`
-			}))
-	);
 
 	// What the bag gains and loses, against what is in it now.
 	const minus = (a: readonly CharacterId[], b: readonly CharacterId[]) => {
@@ -225,9 +248,9 @@
 	);
 
 	/** Where a late player sits: the seats either side of the spot tapped. */
-	function sidesOf(position: number): { a: SeatId; b: SeatId } | undefined {
+	function sidesOf(position: number | undefined): { a: SeatId; b: SeatId } | undefined {
 		const seating = game.seating;
-		if (seating.length === 0) return undefined;
+		if (seating.length === 0 || position === undefined) return undefined;
 		return {
 			a: seating[(position - 1 + seating.length) % seating.length],
 			b: seating[position % seating.length]
@@ -275,6 +298,13 @@
 							placeholder={t('common.none')}
 						/>
 						<span class="muted where">{@render where(player.position)}</span>
+						<span class="place"
+							><Button icon="grimoire" onclick={() => onPlace(i)} data-testid="late-place"
+								>{player.position === undefined
+									? t('setup.late.place')
+									: t('setup.late.move')}</Button
+							></span
+						>
 						<DeleteButton
 							label={t('setup.late.remove')}
 							disabled={players.length === 1}
@@ -290,16 +320,6 @@
 
 		<section>
 			<h3>{t('setup.late.players', { from: dealt, to: dealt + extra })}</h3>
-			{#each setupRules as rule (rule.id)}
-				<SettingToggle
-					label={ruleLabel(rule)}
-					checked={rulesOn.includes(rule.id)}
-					onChange={(on) => {
-						rulesOn = on ? [...rulesOn, rule.id] : rulesOn.filter((id) => id !== rule.id);
-						reset();
-					}}
-				/>
-			{/each}
 			<div class="roll">
 				<Button icon="random" onclick={roll} data-testid="late-roll"
 					>{proposal ? t('setup.late.rollAgain') : t('setup.late.roll')}</Button
@@ -373,42 +393,33 @@
 								{/each}
 							</ul>
 						{/if}
-						<Select
-							label={t('setup.late.another')}
-							hideLabel
-							placeholder={t('setup.late.another')}
-							options={others}
-							disabled={others.length === 0}
-							onChange={(seatId) => {
-								if (seatId) rows = [...rows, { seatId, rolled: false }];
+						<!-- Character selection's own list: tap to put a character in the bag or take it
+						     out, or to change the player who has it (Trevor, 2026-10-30). -->
+						<h3>{t('setup.late.characters')}</h3>
+						<CharacterPicker
+							characters={listed}
+							mode="multi"
+							selected={[...taken, ...ruleCharacters]}
+							showSearch={false}
+							surface="sheet"
+							collapsibleKey="late-player"
+							types={['townsfolk', 'outsider', 'minion', 'demon', 'fabled', 'loric']}
+							marker={markOf}
+							onSelect={(id) => {
+								const character = lookup(id);
+								if (character) toggle(character);
 							}}
 						>
-							{#snippet item(option)}{@render seat(option)}{/snippet}
-						</Select>
-						<h3>{t('setup.late.inBag')}</h3>
-						<ul class="bag-list" data-testid="late-bag">
-							{#each bag as id, i (`${id}-${i}`)}
-								{@const name = lookup(id)?.name ?? id}
-								<li>
-									<CharacterBadge characterId={id} /><DeleteButton
-										label={t('setup.late.removeFromBag', { name })}
-										onclick={() => (edited = bag.filter((_, j) => j !== i))}
-									/>
-								</li>
-							{/each}
-						</ul>
-						<Select
-							label={t('setup.late.addToBag')}
-							hideLabel
-							placeholder={t('setup.late.addToBag')}
-							options={bagOptions}
-							disabled={bagOptions.length === 0}
-							onChange={(id) => {
-								if (id) edited = [...bag, id];
-							}}
-						>
-							{#snippet item(option)}{@render pick(option, undefined)}{/snippet}
-						</Select>
+							{#snippet item(character, state)}
+								<CharacterChoice
+									{character}
+									copies={state.selected ? 1 : 0}
+									duplicates={false}
+									onToggle={() => toggle(character)}
+									onAddCopy={() => {}}
+								/>
+							{/snippet}
+						</CharacterPicker>
 					</div>
 				{:else}
 					<div class="panel" data-testid="late-changes">
@@ -473,9 +484,9 @@
 	{/snippet}
 </Dialog>
 
-{#snippet where(position: number)}
+{#snippet where(position: number | undefined)}
 	{@const sides = sidesOf(position)}
-	{#if !sides}{t('setup.late.newSeat')}{:else if sides.a === sides.b}<Sentence
+	{#if !sides}{t('setup.late.notPlaced')}{:else if sides.a === sides.b}<Sentence
 			text={t('setup.late.end', { a: slot('a') })}
 		>
 			{#snippet fill()}<PlayerBadge name={seatName(game, sides.a)} />{/snippet}
@@ -493,16 +504,6 @@
 				interactive={false}
 			/>{:else if option.value !== KEEP}<CharacterBadge
 				characterId={option.value}
-				interactive={false}
-			/>{/if}</span
-	>
-{/snippet}
-
-{#snippet seat(option: { value: string; label: string })}
-	{@const from = fromOf(option.value as SeatId)}
-	<span class="option"
-		><PlayerBadge name={seatName(game, option.value as SeatId)} />{#if from}<CharacterBadge
-				characterId={from}
 				interactive={false}
 			/>{/if}</span
 	>
@@ -538,13 +539,20 @@
 	.players li {
 		display: grid;
 		grid-template-columns: 1fr auto;
+		grid-auto-flow: dense;
 		align-items: end;
 		gap: var(--space-1) var(--space-2);
 		padding-bottom: var(--space-2);
 	}
 	.players .where {
+		grid-column: 1;
 		grid-row: 2;
+		align-self: center;
 		font-size: 0.875rem;
+	}
+	.players .place {
+		grid-column: 2;
+		grid-row: 2;
 	}
 	.roll {
 		display: flex;
@@ -561,7 +569,6 @@
 	}
 	.who,
 	.seats li,
-	.bag-list li,
 	.badges,
 	.option {
 		display: flex;
@@ -569,8 +576,7 @@
 		align-items: center;
 		gap: var(--space-2);
 	}
-	.seats,
-	.bag-list {
+	.seats {
 		display: flex;
 		flex-wrap: wrap;
 		gap: var(--space-2) var(--space-3);

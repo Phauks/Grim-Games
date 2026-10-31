@@ -42,7 +42,7 @@ test("players' phones show where the game is up to, with the day timer as a sun 
 	await expect(setupSky.locator('.candle[data-state="lit"]')).toHaveCount(0);
 	await expect(setupSky).toHaveAttribute(
 		'aria-label',
-		`0 of ${seatCount} seats with a player here. 1 more in the room without a seat`
+		`0 of ${seatCount} seats with a player here. 1 more unassigned`
 	);
 	// The Storyteller can show the town at dusk instead, from the timer's own controls.
 	await page.getByRole('button', { name: /^Day timer, .*; open its controls$/ }).tap();

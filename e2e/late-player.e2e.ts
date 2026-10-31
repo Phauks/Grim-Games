@@ -28,20 +28,27 @@ test('Add late player seats late players where tapped and makes room in the bag'
 		.tap();
 	await expect(page.getByRole('button', { name: /^Tile \d, drawn$/ })).toHaveCount(5);
 
-	// The button opens the grimoire to tap where the late player sits (Trevor, 2026-10-30).
+	// The button opens the modal; Choose seat goes to the grimoire to tap the spot, and the
+	// modal comes back with everything kept (Trevor, 2026-10-30).
 	await page.getByRole('button', { name: 'Add late player' }).tap();
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
-	await page.getByRole('button', { name: /^Place between Seat 1 and Seat 2$/ }).tap();
 	const sheet = page.getByRole('dialog', { name: 'Add late player' });
 	await expect(sheet.getByTestId('late-player-row')).toHaveCount(1);
+	await expect(sheet.getByTestId('late-player-row')).toContainText('Seat not chosen yet');
 	await sheet.getByRole('textbox', { name: 'Name' }).fill('Max');
+	await sheet.getByTestId('late-place').tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
+	await page.getByRole('button', { name: /^Place between Seat 1 and Seat 2$/ }).tap();
+	await expect(sheet.getByRole('textbox', { name: 'Name' })).toHaveValue('Max');
+	await expect(sheet.getByTestId('late-player-row')).toContainText('Between');
 	// A second late player, placed at their own spot.
 	await sheet.getByTestId('late-add-another').tap();
+	await expect(sheet.getByTestId('late-player-row')).toHaveCount(2);
+	await sheet.getByRole('textbox', { name: 'Name' }).nth(1).fill('Noa');
+	await sheet.getByTestId('late-place').nth(1).tap();
 	await expect(sheet).toBeHidden();
 	await page.getByRole('button', { name: /^Place between Seat 3 and Seat 4$/ }).tap();
 	await expect(sheet.getByTestId('late-player-row')).toHaveCount(2);
 	await expect(sheet.getByRole('textbox', { name: 'Name' }).first()).toHaveValue('Max');
-	await sheet.getByRole('textbox', { name: 'Name' }).nth(1).fill('Noa');
 	// Seven players have 5, 0, 1, 1 (https://wiki.bloodontheclocktower.com/Setup).
 	await expect(sheet).toContainText('5 → 7 players');
 	await expect(sheet.getByTestId('late-check')).toContainText('Not the 7-player counts');
@@ -50,8 +57,11 @@ test('Add late player seats late players where tapped and makes room in the bag'
 	const before = await sheet.boundingBox();
 	await sheet.getByTestId('late-roll').tap();
 	await expect(sheet.getByTestId('late-check')).toHaveText('Matches the 7-player counts.');
-	await expect(sheet.getByTestId('late-bag').getByRole('listitem')).toHaveCount(2);
 	expect(await sheet.boundingBox()).toEqual(before);
+	// The Sentinel is a character in the list, its icon and ability (Trevor, 2026-10-30).
+	await expect(
+		sheet.getByTestId('late-after').getByText('Sentinel', { exact: true })
+	).toBeVisible();
 	await sheet.getByRole('tab', { name: 'Changes' }).tap();
 	await expect(sheet.getByTestId('late-change-list')).toContainText('Max');
 	await expect(sheet.getByTestId('late-change-list')).toContainText('Noa');
