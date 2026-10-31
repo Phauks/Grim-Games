@@ -24,7 +24,9 @@
 			// Each account's friends, requests and blocks (worker/friends/book.ts).
 			{ "name": "FRIEND_BOOKS", "class_name": "FriendBook" },
 			// Every account's id, for the admins' Accounts list (worker/account/objects/directory.ts).
-			{ "name": "ACCOUNT_DIRECTORY", "class_name": "AccountDirectory" }
+			{ "name": "ACCOUNT_DIRECTORY", "class_name": "AccountDirectory" },
+			// Groups by join code: name, members and the live games shown in each (worker/friends/group.ts).
+			{ "name": "FRIEND_GROUPS", "class_name": "FriendGroup" }
 		]
 	},
 	"migrations": [
@@ -39,6 +41,7 @@
 			]
 		},
 		{ "tag": "v2", "new_sqlite_classes": ["FriendBook"] },
-		{ "tag": "v3", "new_sqlite_classes": ["AccountDirectory"] }
+		{ "tag": "v3", "new_sqlite_classes": ["AccountDirectory"] },
+		{ "tag": "v4", "new_sqlite_classes": ["FriendGroup"] }
 	]
 }

@@ -63,7 +63,7 @@ import {
 export type Env = AccountEnv &
 	EmailEnv &
 	AdminsEnv &
-	Pick<FriendsEnv, 'FRIEND_BOOKS'> & { AUTH_STARTS?: RateLimit; AUTH_PASSWORDS?: RateLimit };
+	FriendsEnv & { AUTH_STARTS?: RateLimit; AUTH_PASSWORDS?: RateLimit };
 
 /** The same answer for an unknown address, an account with no password and a wrong one. */
 const WRONG_PASSWORD = 'That email and password do not match. Check them, or sign in with a code.';
