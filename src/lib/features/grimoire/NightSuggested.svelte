@@ -176,6 +176,9 @@
 		JSON.stringify([p.seatId, row.target, row.reason, row.marked ?? false]);
 	/** The character picked for a row that offers several (a Recluse shown as a Minion). */
 	let shownAs = $state<Record<string, CharacterId>>({});
+	/** `record` without `key`: a drop-down's "None" puts it back to nothing chosen. */
+	const withoutKey = (record: Record<string, CharacterId>, key: string) =>
+		Object.fromEntries(Object.entries(record).filter(([k]) => k !== key));
 	/**
 	 * Which rows' "Shown as" lists are open: Show to player with nothing picked opens the list
 	 * instead of doing nothing (Trevor, 2026-10-28: with the Investigator drunk it wasn't clear
@@ -352,6 +355,36 @@
 	</li>
 {/snippet}
 
+<!-- The character a player is shown, picked from those that fit; "None" clears it. -->
+{#snippet shownAsSelect(key: string, id: CharacterId | undefined, ids: readonly CharacterId[])}
+	<Select
+		label="Shown as"
+		hideLabel
+		placeholder="Shown as"
+		attention={!id}
+		bind:open={() => listOpen[key] ?? false, (v) => (listOpen = { ...listOpen, [key]: v })}
+		value={id}
+		options={ids.map((c) => ({
+			value: c,
+			// eslint-disable-next-line grim/names-as-badges -- the option's accessible name and typeahead text; it shows as the badge (the item snippet)
+			label: characters.get(c)?.name ?? c
+		}))}
+		onChange={(c) => (shownAs = { ...shownAs, [key]: c })}
+		onClear={() => (shownAs = withoutKey(shownAs, key))}
+	>
+		{#snippet item(option)}<CharacterBadge
+				characterId={option.value}
+				character={characters.get(option.value)}
+				interactive={false}
+			/>{/snippet}
+		{#snippet selected(option)}<CharacterBadge
+				characterId={option.value}
+				character={characters.get(option.value)}
+				interactive={false}
+			/>{/snippet}
+	</Select>
+{/snippet}
+
 <!-- One answer that may be given, with Show to player for a number or a character. -->
 {#snippet answerRow(a: NightAnswer, o: AnswerOption, i: number)}
 	{@const key = `${a.seatId}:other`}
@@ -364,31 +397,7 @@
 		<span class="main option">
 			{#if o.otherCharacters}
 				<strong>Any other</strong>
-				<Select
-					label="Shown as"
-					hideLabel
-					placeholder="Shown as"
-					attention={!id}
-					bind:open={() => listOpen[key] ?? false, (v) => (listOpen = { ...listOpen, [key]: v })}
-					value={id}
-					options={o.otherCharacters.map((c) => ({
-						value: c,
-						// eslint-disable-next-line grim/names-as-badges -- the option's accessible name and typeahead text; it shows as the badge (the item snippet)
-						label: characters.get(c)?.name ?? c
-					}))}
-					onChange={(c) => (shownAs = { ...shownAs, [key]: c })}
-				>
-					{#snippet item(option)}<CharacterBadge
-							characterId={option.value}
-							character={characters.get(option.value)}
-							interactive={false}
-						/>{/snippet}
-					{#snippet selected(option)}<CharacterBadge
-							characterId={option.value}
-							character={characters.get(option.value)}
-							interactive={false}
-						/>{/snippet}
-				</Select>
+				{@render shownAsSelect(key, id, o.otherCharacters)}
 			{:else if o.anyOther}
 				<strong>Any other</strong>
 			{:else if o.value.kind === 'character'}
@@ -648,31 +657,7 @@
 					character={characters.get(row.characterIds[0])}
 				/>
 			{:else}
-				<Select
-					label="Shown as"
-					hideLabel
-					placeholder="Shown as"
-					attention={!id}
-					bind:open={() => listOpen[key] ?? false, (v) => (listOpen = { ...listOpen, [key]: v })}
-					value={id}
-					options={row.characterIds.map((c) => ({
-						value: c,
-						// eslint-disable-next-line grim/names-as-badges -- the option's accessible name and typeahead text; it shows as the badge (the item snippet)
-						label: characters.get(c)?.name ?? c
-					}))}
-					onChange={(c) => (shownAs = { ...shownAs, [key]: c })}
-				>
-					{#snippet item(option)}<CharacterBadge
-							characterId={option.value}
-							character={characters.get(option.value)}
-							interactive={false}
-						/>{/snippet}
-					{#snippet selected(option)}<CharacterBadge
-							characterId={option.value}
-							character={characters.get(option.value)}
-							interactive={false}
-						/>{/snippet}
-				</Select>
+				{@render shownAsSelect(key, id, row.characterIds)}
 			{/if}
 			<PlayerBadge name={name(row.target)} />
 			{#if p.seatCount > 1}

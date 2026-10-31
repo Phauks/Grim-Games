@@ -1,5 +1,5 @@
 import type { CharacterId } from '#lib/core/data/index.ts';
-import { plainText } from './bold.ts';
+import { plainText } from '#lib/core/text/rich.ts';
 
 /** A card to show: its words, the characters chosen with it, and what was filled in. */
 export interface ChainCard {

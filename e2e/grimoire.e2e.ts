@@ -2508,6 +2508,50 @@ test("the Boffin gives the Demon a not-in-play good character's ability", async 
 	).toBeVisible();
 });
 
+// Small token Option A (Trevor, 2026-10-31): Grimbinder shows who a player really is as a small
+// token marked = in the seat's pill, in place of the "Is The Drunk" reminder beside it; an ability
+// also held is marked +. https://wiki.bloodontheclocktower.com/Drunk
+test('Grimbinder shows who a player really is in the seat pill, marked =', async ({ page }) => {
+	await startGame(page);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Chef', exact: true })
+		.tap();
+	await closeSheet(page);
+	await putReminder(page, 'Is The Drunk', 1);
+	// Vanilla by default: the reminder beside the seat, as the wiki runs it.
+	const reminder = page.locator('.chip-slot[data-seat="1"]').getByRole('button', {
+		name: 'Is The Drunk reminder'
+	});
+	await expect(reminder).toBeVisible();
+	const seat = page.getByTestId('seat').first();
+	await expect(seat.getByTestId('true-character')).toHaveCount(0);
+
+	await boardSettings(page, 'Board');
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	await settings.getByText('Vanilla “Is The …” reminders', { exact: true }).tap();
+	await settings.getByRole('button', { name: 'Close' }).tap();
+	await expect(reminder).toHaveCount(0);
+	const truly = seat.getByTestId('held-pill').getByTestId('true-character');
+	await expect(truly).toHaveAttribute('title', 'Is really the Drunk');
+	await expect(truly).toContainText('=');
+	await expect(
+		seatLabelled(page, 'Seat 1: no name, Chef, is really the Drunk, 1 reminder')
+	).toBeAttached();
+	// Tapping it picks the reminder up, as tapping the reminder beside the seat does.
+	await truly.tap();
+	await expect(inHand(page)).toBeVisible();
+	await boardSeat(page, 3).tap();
+	await page
+		.getByRole('alertdialog', { name: 'Confirm change?' })
+		.getByRole('button', { name: 'Confirm', exact: true })
+		.tap();
+	await expect(seat.getByTestId('true-character')).toHaveCount(0);
+	await expect(page.getByTestId('seat').nth(2).getByTestId('true-character')).toBeVisible();
+});
+
 // https://wiki.bloodontheclocktower.com/Hermit: the Hermit has every other Outsider ability on
 // the script, with nothing to pick; after death only one that works even if dead.
 test('the Hermit holds every other Outsider ability on the script', async ({ page }) => {
@@ -4458,6 +4502,17 @@ test("the Fortune Teller's step answers for the two players picked", async ({ pa
 	await expect(answers.first().locator('strong')).toHaveText('Yes');
 	await pick('Second player chosen', 'Seat 4');
 	await expect(answers.first().locator('strong')).toHaveText('No');
+	// "None" at the top of the list puts the choice back to nothing chosen (Trevor, 2026-10-31).
+	const second = section.getByRole('combobox', { name: 'Second player chosen' });
+	const none = page.getByRole('option', { name: 'None', exact: true });
+	await expect(async () => {
+		if (!(await none.isVisible())) await second.tap();
+		await expect(none).toBeVisible({ timeout: 1000 });
+	}).toPass();
+	await none.tap();
+	await expect(answers).toHaveCount(0);
+	await expect(second).toHaveAttribute('data-attention');
+	await pick('Second player chosen', 'Seat 4');
 	// The answer shows as the Yes/No info token (Trevor, 2026-10-28).
 	await answers.first().getByRole('button', { name: 'Show to player' }).tap();
 	await expect(page.locator('[data-testid="show-to-player"][open]')).toContainText('No');

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { INK_TOKENS, parseRich, type TextRun } from './bold.ts';
+	import { INK_TOKENS, parseRich, type TextRun } from '#lib/core/text/rich.ts';
 
 	let { text }: { text: string } = $props();
 </script>

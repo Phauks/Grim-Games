@@ -2,7 +2,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
-	import { plainText } from '#lib/features/info-tokens/bold.ts';
+	import { plainText } from '#lib/core/text/rich.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import ShownCard from './ShownCard.svelte';
 	import type { ShownCharacter, ShownInfoCard } from './shown.ts';

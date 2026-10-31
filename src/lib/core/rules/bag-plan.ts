@@ -253,6 +253,28 @@ export function travellerRange(players: number, inBag = 0): { min: number; max: 
 	return { min, max: Math.max(min, inBag) };
 }
 
+/**
+ * Every Traveller not among the recommended ones (the script's and its edition's), for
+ * players beyond 15: they join as Travellers (https://wiki.bloodontheclocktower.com/Setup)
+ * and the wiki never limits them to the script
+ * (https://wiki.bloodontheclocktower.com/Travellers).
+ */
+export function moreTravellers(
+	recommended: readonly Character[],
+	all: readonly Character[]
+): Character[] {
+	const listed = new Set(recommended.filter((c) => c.type === 'traveller').map((c) => c.id));
+	return all.filter((c) => c.type === 'traveller' && !listed.has(c.id));
+}
+
+/**
+ * True when the recommended Travellers can't seat the `needed` players beyond 15, so the
+ * Characters page lists every other Traveller too (Trevor, 2026-10-31).
+ */
+export function listMoreTravellers(recommended: readonly Character[], needed: number): boolean {
+	return needed > 0 && recommended.filter((c) => c.type === 'traveller').length < needed;
+}
+
 export interface RandomSelectionInput extends Omit<SelectionAnalysisInput, 'selection'> {
 	/** The script's characters, in script order. */
 	scriptCharacters: readonly Character[];
@@ -264,6 +286,14 @@ export interface RandomSelectionInput extends Omit<SelectionAnalysisInput, 'sele
 	 * are picked at random, counting any already selected, and the rest is filled for that
 	 * many fewer players.
 	 */
+	/**
+	 * Travellers to fall back on for players beyond the dealt count once the script's own run
+	 * out, in the order to try them (the edition's, then every other one). The wiki sends
+	 * everyone past 15 in as Travellers and never limits them to the script
+	 * (https://wiki.bloodontheclocktower.com/Setup, https://wiki.bloodontheclocktower.com/Travellers).
+	 * Each group is used up, picked at random, before the next.
+	 */
+	fallbackTravellers?: readonly (readonly Character[])[];
 }
 
 /**
@@ -283,7 +313,9 @@ export function randomSelection(input: RandomSelectionInput): Record<CharacterId
 		}
 	};
 	const travellersSelected = () =>
-		input.scriptCharacters.filter((c) => c.type === 'traveller' && selection[c.id] > 0).length;
+		Object.keys(selection).filter(
+			(id) => selection[id] > 0 && input.lookup(id)?.type === 'traveller'
+		).length;
 	if (input.travellersInBag) {
 		const n = Math.floor(input.random() * (input.travellersInBag + 1));
 		take('traveller', n - travellersSelected());
@@ -306,7 +338,15 @@ export function randomSelection(input: RandomSelectionInput): Record<CharacterId
 		take(type, target - have);
 	}
 	const analysis = analyseSelection({ ...input, selection });
-	take('traveller', Math.max(0, input.players - analysis.dealt - travellersSelected()));
+	const needed = () => Math.max(0, input.players - analysis.dealt - travellersSelected());
+	take('traveller', needed());
+	for (const group of input.fallbackTravellers ?? []) {
+		const pool = group.filter((c) => c.type === 'traveller' && !(selection[c.id] > 0));
+		for (let n = needed(); n > 0 && pool.length > 0; n--) {
+			const [character] = pool.splice(Math.floor(input.random() * pool.length), 1);
+			selection[character.id] = 1;
+		}
+	}
 	return selection;
 }
 

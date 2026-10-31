@@ -20,6 +20,7 @@
 	import type { SeatArranging } from './seat-arranging.svelte.ts';
 	import type { SeatHints } from './seat-hints.svelte.ts';
 	import SeatToken from './SeatToken.svelte';
+	import { remindersBeside, trueCharacterMarks } from './true-character-marks.ts';
 
 	type SeatPart = 'note' | 'nominate' | 'avatar';
 
@@ -100,6 +101,16 @@
 			})
 		)
 	);
+	/**
+	 * Grimbinder: each seat's "Is The …" reminders as small tokens marked = in its pill (Trevor,
+	 * 2026-10-31, small token Option A); the rest of its reminders stay beside it. Vanilla: all
+	 * beside it.
+	 */
+	const truthsInPill = $derived(boardLooks.current.truthLook === 'grimbinder');
+	const beside = $derived(seats.map((seat) => remindersBeside(seat, characters, truthsInPill)));
+	const truths = $derived(
+		seats.map((seat) => (truthsInPill ? trueCharacterMarks(seat, characters) : []))
+	);
 </script>
 
 <!-- Each seat's line to its reminders, by the Storyteller's "Reminder lines" choice (Trevor,
@@ -146,6 +157,9 @@
 			nominations={nominations(seat.seatId)}
 			tokenFreeVotes={votesWithoutToken(game, seat.seatId, characters)}
 			heldAbilities={vanilla ? [] : held[i]}
+			trueCharacters={truths[i]}
+			onReminder={(reminderId) =>
+				!seatArr.arranging && !watching && onReminder(seat.seatId, reminderId)}
 			dropTarget={seatArr.reorderTarget === seat.seatId ||
 				(remDrag.drag !== undefined &&
 					remDrag.drag.target === seat.seatId &&
@@ -168,9 +182,9 @@
 {/each}
 
 {#each seats as seat, i (seat.seatId)}
-	{#if seat.reminders.length > 0}
+	{#if beside[i].length > 0}
 		{@const at = fan[i]}
-		{#each seat.reminders as reminder, k (reminder.reminderId)}
+		{#each beside[i] as reminder, k (reminder.reminderId)}
 			{@const dragged = remDrag.drag?.reminderId === reminder.reminderId}
 			<BoardReminderChip
 				{reminder}
@@ -198,7 +212,7 @@
 {#if vanilla}
 	{#each seats as seat, i (seat.seatId)}
 		{#each held[i] as { character: as, works }, j (as.id)}
-			{@const spot = fan[i]?.[seat.reminders.length + j] ?? shown[i]}
+			{@const spot = fan[i]?.[beside[i].length + j] ?? shown[i]}
 			<button
 				type="button"
 				class="held-token"

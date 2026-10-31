@@ -183,6 +183,7 @@ export const settings = {
 	'settings.nameOffset': 'Player name distance',
 	'settings.strikeUsedGhostVote': 'Strike through used ghost votes',
 	'settings.vanillaAbilities': 'Vanilla held abilities',
+	'settings.vanillaTruths': 'Vanilla “Is The …” reminders',
 	'settings.reminderLines': 'Reminder lines',
 	'settings.reminderLines.always': 'Always',
 	'settings.reminderLines.away': 'When away from the seat',

@@ -8,7 +8,7 @@
 	import { askBadges } from './asks.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
-	import { plainText } from './bold.ts';
+	import { plainText } from '#lib/core/text/rich.ts';
 	import InfoTokenText from './InfoTokenText.svelte';
 
 	interface Props {

@@ -31,8 +31,8 @@
 	 * A small board for every Board setting (Trevor, 2026-10-20: "you can't really see changes
 	 * until you leave"; 2026-10-22: "all preview settings should populate in the preview
 	 * area"): the background with its vignette and the script's logo, two seats (one dead with
-	 * a used ghost vote) and a reminder, the Demon's held ability, a Fabled and a Loric, the script's name in the corner,
-	 * and a reminder bank with a duplicate reminder and the Washerwoman's step in focus. The
+	 * a used ghost vote, really the Drunk) and a reminder, the Demon's held ability, a Fabled and
+	 * a Loric, the script's name in the corner, and a reminder bank with a duplicate reminder and the Washerwoman's step in focus. The
 	 * open board's own background, logo and name when Settings is opened from a board.
 	 */
 	onMount(() => void loadOfficialData());
@@ -43,6 +43,8 @@
 	const RULES = ['duchess', 'bootlegger'] as const;
 	/** The ability the Demon holds without its token (the wiki's Boffin example: the Virgin). */
 	const HELD: CharacterId = 'virgin';
+	/** Who the dead player really is: the Drunk, told they are the Washerwoman. */
+	const TRULY: CharacterId = 'drunk';
 	/** The walked-through night step whose reminders the bank brings into focus. */
 	const STEP: CharacterId = 'washerwoman';
 	const SAMPLE_CODE = formatRoomCode('482913');
@@ -52,6 +54,11 @@
 	const label = (id: string, i: number) => character(id)?.reminders[i];
 	const held = $derived(character(HELD));
 	const vanilla = $derived(boardLooks.current.abilityLook === 'vanilla');
+	const truly = $derived(character(TRULY));
+	// The reminder's own label, as `replacedBy` matches it; not shown as a name.
+	// eslint-disable-next-line grim/names-as-badges -- a reminder label to match, not shown
+	const trulyLabel = $derived(truly?.remindersGlobal.find((r) => r === `Is The ${truly.name}`));
+	const truthsInPill = $derived(boardLooks.current.truthLook === 'grimbinder');
 
 	const choice: BackgroundChoice = $derived(
 		boardBackground.context?.current ?? defaultBackground.current ?? { kind: 'none' }
@@ -212,6 +219,9 @@
 					{#snippet face()}{#if token}<CharacterToken character={token} {size} />{/if}{/snippet}
 					{#snippet marks()}{#if i === 0 && held && !vanilla}<HeldAbilityPill
 								abilities={[{ character: held, works: true }]}
+							/>{:else if i === 1 && truly && truthsInPill}<HeldAbilityPill
+								abilities={[]}
+								truths={[{ character: truly }]}
 							/>{/if}{/snippet}
 				</SeatDisc>
 				<!-- The Demon's held ability, Vanilla: its token beside the seat, clear of the
@@ -228,6 +238,19 @@
 					>{/if}
 				{#if i === 0}<span class="seat-reminder" data-testid="preview-seat-reminder"
 						>{@render reminder(STEP, 0, 'good')}</span
+					>{/if}
+				<!-- Vanilla: the Drunk's "Is The Drunk" beside the dead player, as the wiki runs it. -->
+				{#if i === 1 && truly && trulyLabel && !truthsInPill}<span
+						class="seat-reminder"
+						data-testid="preview-truth-reminder"
+						><BoardReminder
+							label={trulyLabel}
+							character={truly}
+							alignment="good"
+							size={chip}
+							disabled
+							onTap={() => {}}
+						/></span
 					>{/if}
 			</div>
 		{/each}

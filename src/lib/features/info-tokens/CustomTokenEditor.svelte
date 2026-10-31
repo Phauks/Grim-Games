@@ -16,7 +16,7 @@
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import TextListField from '#lib/ui/primitives/TextListField.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
-	import { plainText } from './bold.ts';
+	import { plainText } from '#lib/core/text/rich.ts';
 	import {
 		editorAsks,
 		editorDetail as detailOf,
@@ -33,7 +33,7 @@
 	} from './custom-tokens.ts';
 	import { customInfoTokens } from './custom-tokens.svelte.ts';
 	import CardEditorLayout from './CardEditorLayout.svelte';
-	import RichTextField from './RichTextField.svelte';
+	import RichTextField from '#lib/ui/primitives/RichTextField.svelte';
 
 	interface Props {
 		/** Characters a card can belong to (the script's, or every one off a game). */
@@ -116,7 +116,9 @@
 				bind:value={editing.text}
 				label={t('info-tokens.text')}
 				maxlength={MAX_CUSTOM_TEXT}
-				onsubmit={save}
+				multiline
+				lists
+				display
 			/>
 			<!-- Each thing it asks for, set on its own (Trevor, 2026-10-18). -->
 			<Select

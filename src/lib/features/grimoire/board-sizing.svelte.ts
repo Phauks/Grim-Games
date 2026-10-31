@@ -32,6 +32,7 @@ import {
 import type { Box } from './name-placement.ts';
 import { boardLooks } from './board-looks.svelte.ts';
 import { fitReminders } from './reminder-fan.ts';
+import { remindersBeside } from './true-character-marks.ts';
 
 /**
  * Each seat's slot is its token plus one --u (16px, unscaled by text size) either side;
@@ -196,8 +197,12 @@ export class BoardSizing {
 		const seats = game.seating.map((id) => game.seats[id]);
 		// Vanilla: a held ability's token lines up after the seat's reminders (BoardSeats).
 		const vanilla = boardLooks.current.abilityLook === 'vanilla';
+		// Grimbinder: "Is The …" reminders sit in the seat's pill, not beside it.
+		const truthsInPill = boardLooks.current.truthLook === 'grimbinder';
 		const counts = seats.map(
-			(s) => s.reminders.length + (vanilla ? heldAbilitiesOf(game, s.seatId, characters).length : 0)
+			(s) =>
+				remindersBeside(s, characters, truthsInPill).length +
+				(vanilla ? heldAbilitiesOf(game, s.seatId, characters).length : 0)
 		);
 		const { width, height } = this;
 		if (width <= 0 || height <= 0)

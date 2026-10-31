@@ -99,6 +99,8 @@ export const ICON_SLOTS = {
 	deal: { label: 'Deal at random', choices: ['ph:arrows-split', 'ph:cards'] },
 	latePlayer: { label: 'Add late player', choices: ['ph:user-plus', 'ph:plus-circle'] },
 	clearSelection: { label: 'Clear selection', choices: ['ph:eraser', 'ph:x-circle'] },
+	/** Only what a change alters, before and after (the late player screen, Trevor 2026-10-31). */
+	changes: { label: 'Changes', choices: ['ph:git-diff', 'ph:arrows-left-right'] },
 	selectedOnly: { label: 'Show only selected', choices: ['ph:list-checks', 'ph:check-square'] },
 	expand: { label: 'Show or hide a section', choices: ['ph:caret-down', 'ph:caret-circle-down'] },
 	wiki: { label: 'Wiki link', choices: ['ph:arrow-square-out', 'ph:book-open-text'] },

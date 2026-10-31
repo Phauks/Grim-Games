@@ -64,3 +64,11 @@
 	checked={boardLooks.current.abilityLook === 'vanilla'}
 	onChange={(vanilla) => boardLooks.update({ abilityLook: vanilla ? 'vanilla' : 'grimbinder' })}
 />
+<!-- Who a player really is (an "Is The Drunk" reminder): Grimbinder's small token marked = in
+     the seat's pill, or Vanilla, the reminder beside the seat (Trevor, 2026-10-31, small token
+     Option A; the preview's dead player is the Drunk). -->
+<SettingToggle
+	label={t('settings.vanillaTruths')}
+	checked={boardLooks.current.truthLook === 'vanilla'}
+	onChange={(vanilla) => boardLooks.update({ truthLook: vanilla ? 'vanilla' : 'grimbinder' })}
+/>

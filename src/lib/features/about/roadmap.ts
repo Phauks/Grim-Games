@@ -156,7 +156,7 @@ export const ROADMAP: readonly RoadmapItem[] = [
 			'R13',
 			'R14',
 			'L18b',
-			...range('W', 1, 15),
+			...range('W', 1, 16),
 			...range('E', 1, 4)
 		]
 	},
@@ -262,9 +262,9 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	},
 	{
 		title:
-			'Add late players to the bag draw as more players, not Travellers: placed on the grimoire, several at once, before and after',
+			'Add late players to the bag draw as more players, not Travellers: placed on the grimoire or seated from a phone, several at once, with Character selection’s list',
 		area: 'storyteller',
-		parts: ['L96', 'L96a']
+		parts: ['L96', 'L96a', 'L96b']
 	},
 	{
 		title:
@@ -333,7 +333,9 @@ export const ROADMAP: readonly RoadmapItem[] = [
 			'L90',
 			'L91',
 			'L92',
-			'L93'
+			'L93',
+			// Small token Option A (Trevor, 2026-10-31): who a player really is, marked =.
+			'L101'
 		],
 		prs: [828, 833, 838, 841, 843, 846, 847, 849, 851, 853, 855, 857]
 	},
