@@ -7,11 +7,12 @@
 	import SharePanel from '#lib/ui/share/SharePanel.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import ScriptByline from '#lib/features/player/ScriptByline.svelte';
-	import ScriptLogo from './ScriptLogo.svelte';
+	import ScriptName from './ScriptName.svelte';
 	import ScriptQrCenter from './ScriptQrCenter.svelte';
 	import type { ShareTarget } from './share-codes.ts';
 	import { withOfflineRoom } from './share.ts';
 	import { keepScreenAwake } from '#lib/features/day/timer-wake-lock.ts';
+	import InviteFriends from '#lib/features/friends/InviteFriends.svelte';
 	import ScriptFriendsShare from '#lib/features/friends/ScriptFriendsShare.svelte';
 
 	/**
@@ -119,13 +120,7 @@
 	<!-- The script under the screen's "Share" title, as /play's header shows it: logo, name,
 	     then author and version (Trevor, 2026-10-27). -->
 	<div class="script" data-testid="share-script">
-		<h3 class="name">
-			{#if logo && !logoFailed}<ScriptLogo
-					src={logo}
-					class="title-logo"
-					onfail={() => (logoFailed = true)}
-				/>{/if}<span>{title}</span>
-		</h3>
+		<ScriptName name={title} {logo} size="title" />
 		<ScriptByline {author} {version} inline />
 	</div>
 	<SharePanel
@@ -171,6 +166,8 @@
 	</SharePanel>
 	<!-- Friends and the profile get the script itself, not a room (plan F9, F10). -->
 	{#if !inRoom}<ScriptFriendsShare name={title} hash={made?.lasting} />{/if}
+	<!-- The Storyteller invites friends to the room (plan F4); kept in place until it opens. -->
+	{#if hosting}<InviteFriends code={room} {title} />{/if}
 </div>
 
 <style>
@@ -181,18 +178,6 @@
 		display: grid;
 		gap: var(--space-1);
 		margin-bottom: var(--space-3);
-	}
-	.name {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		min-width: 0;
-		margin: 0;
-		font-size: var(--page-title-size);
-		overflow-wrap: break-word;
-	}
-	.name > span {
-		min-width: 0;
 	}
 	.offline {
 		flex: 1;

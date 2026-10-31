@@ -154,6 +154,8 @@ export const settings = {
 	'settings.tileLabels.numbers': 'Numbers',
 	'settings.tileLabels.letters': 'Letters',
 	'settings.tileLabels.roman': 'Roman numerals',
+	'settings.tileLabels.kanji': 'Kanji numerals',
+	'settings.tileLabels.runes': 'Norse runes',
 	'settings.tileLabels.symbols': 'Symbols',
 	'settings.tileLabels.colours': 'Colours',
 	'settings.tileLabels.emoji': 'Emoji',

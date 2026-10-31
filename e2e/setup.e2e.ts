@@ -39,6 +39,17 @@ test('the setup table is shown and follows the player count', async ({ page }) =
 	);
 });
 
+test("character selection names the script with its logo, as every script's name", async ({
+	page
+}) => {
+	// Trevor, 2026-10-31: "in character selector, you should be able to see the script logo".
+	await selectionFor(page, 6);
+	const name = page.getByTestId('setup-script-name');
+	await expect(name).toHaveText('Trouble Brewing');
+	await expect(name.getByTestId('script-logo')).toHaveAttribute('data-logo', /tb/);
+	await expect(name.locator('img')).toBeVisible();
+});
+
 test('setup is one flow of two steps with the same bar on each', async ({ page }) => {
 	await selectionFor(page, 5);
 	const board = new URL(page.url()).pathname.replace(/\/setup$/, '');
@@ -495,6 +506,33 @@ test('Random label order mixes the bag tile labels, so colours are not always a 
 	await settings.getByRole('combobox', { name: 'Bag tile labels' }).tap();
 	await page.getByRole('option', { name: 'Random', exact: true }).tap();
 	await expect(order).toBeDisabled();
+});
+
+test('bag tiles can show kanji numerals or Norse runes', async ({ page }, info) => {
+	await selectionFor(page, 5);
+	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
+	await page.getByRole('button', { name: 'Build bag' }).tap();
+	await expect(page).toHaveURL(/\/draw$/);
+	const settings = page.getByTestId('bag-settings');
+	const pick = async (option: string) => {
+		await page.getByRole('button', { name: 'Bag draw' }).tap();
+		await settings.getByRole('combobox', { name: 'Bag tile labels' }).tap();
+		await page.getByRole('option', { name: option }).tap();
+		await page.keyboard.press('Escape');
+	};
+
+	// Kanji numerals (Trevor, 2026-10-31): the tile shows the kanji and is named by it.
+	await pick('Kanji numerals');
+	await expect(page.getByRole('button', { name: 'Tile 一', exact: true })).toHaveText('一');
+	await expect(page.getByRole('button', { name: 'Tile 五', exact: true })).toHaveText('五');
+	await page.screenshot({ path: info.outputPath('kanji.png') });
+
+	// Norse runes: the tile shows the rune and is named by the rune's name.
+	await pick('Norse runes');
+	await expect(page.getByRole('button', { name: 'Tile Fehu', exact: true })).toHaveText('ᚠ');
+	await expect(page.getByRole('button', { name: 'Tile Raidho', exact: true })).toHaveText('ᚱ');
+	await page.screenshot({ path: info.outputPath('runes.png') });
+	await noSidewaysScroll(page);
 });
 
 test('bag tiles show numbers, letters, symbols, colours, emoji or a random mix, centred on the token', async ({
