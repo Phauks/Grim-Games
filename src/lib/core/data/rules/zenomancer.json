@@ -42,5 +42,7 @@
 	"reminderMovement": {
 		"fixed": ["Goal"],
 		"why": "Each player’s goal is set at the start."
-	}
+	},
+	"infoCard": "goal",
+	"noteOn": "Goal"
 }

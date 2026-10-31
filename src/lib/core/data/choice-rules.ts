@@ -104,6 +104,12 @@ export interface ChoiceRules {
 	 * https://wiki.bloodontheclocktower.com/Storm_Catcher).
 	 */
 	evilLearns?: { carrier: ReminderLabel };
+	/**
+	 * Its reminder whose every copy carries the Storyteller's own words for that player, typed
+	 * and shown on its `infoCard` from the reminder (the Zenomancer's Goal: the Storyteller
+	 * picks each goal, https://wiki.bloodontheclocktower.com/Zenomancer).
+	 */
+	noteOn?: ReminderLabel;
 }
 
 export interface ShownTo {
@@ -117,7 +123,7 @@ interface SwapsForAbility {
 	evil: readonly SeatedType[];
 }
 
-export const INFO_CARDS = ['secret-word', 'secret-phrase'] as const;
+export const INFO_CARDS = ['secret-word', 'secret-phrase', 'goal'] as const;
 export type InfoCard = (typeof INFO_CARDS)[number];
 
 export const CHOICE_RULE_KEYS = [
@@ -133,7 +139,8 @@ export const CHOICE_RULE_KEYS = [
 	'carrierIsDemon',
 	'swapsForAbility',
 	'shownTo',
-	'evilLearns'
+	'evilLearns',
+	'noteOn'
 ] as const satisfies readonly (keyof ChoiceRules)[];
 
 /** Reads this file's keys from a rules block; labels must be the character's own reminders. */
@@ -174,6 +181,8 @@ export function readChoiceRules(
 	if (card !== undefined && !(INFO_CARDS as readonly string[]).includes(card)) {
 		issues.add(`${path}.infoCard`, `expected one of ${INFO_CARDS.join(', ')}`);
 	} else if (card !== undefined) out.infoCard = card as InfoCard;
+	const noteOn = readToken(raw, 'noteOn', path, issues, reminders);
+	if (noteOn) out.noteOn = noteOn;
 	const demon = readToken(raw, 'carrierIsDemon', path, issues, reminders);
 	if (demon) out.carrierIsDemon = demon;
 	if (raw.swapsForAbility !== undefined) {
