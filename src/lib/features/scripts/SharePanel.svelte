@@ -7,7 +7,7 @@
 	import SharePanel from '#lib/ui/share/SharePanel.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import ScriptByline from '#lib/features/player/ScriptByline.svelte';
-	import ScriptLogo from './ScriptLogo.svelte';
+	import ScriptName from './ScriptName.svelte';
 	import ScriptQrCenter from './ScriptQrCenter.svelte';
 	import type { ShareTarget } from './share-codes.ts';
 	import { withOfflineRoom } from './share.ts';
@@ -119,13 +119,7 @@
 	<!-- The script under the screen's "Share" title, as /play's header shows it: logo, name,
 	     then author and version (Trevor, 2026-10-27). -->
 	<div class="script" data-testid="share-script">
-		<h3 class="name">
-			{#if logo && !logoFailed}<ScriptLogo
-					src={logo}
-					class="title-logo"
-					onfail={() => (logoFailed = true)}
-				/>{/if}<span>{title}</span>
-		</h3>
+		<ScriptName name={title} {logo} size="title" />
 		<ScriptByline {author} {version} inline />
 	</div>
 	<SharePanel
@@ -181,18 +175,6 @@
 		display: grid;
 		gap: var(--space-1);
 		margin-bottom: var(--space-3);
-	}
-	.name {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		min-width: 0;
-		margin: 0;
-		font-size: var(--page-title-size);
-		overflow-wrap: break-word;
-	}
-	.name > span {
-		min-width: 0;
 	}
 	.offline {
 		flex: 1;
