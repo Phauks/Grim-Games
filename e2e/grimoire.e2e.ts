@@ -4073,6 +4073,7 @@ test('a reminder put down in the open belongs to no one, and a tap moves it', as
 	const dialog = page.getByRole('dialog', { name: 'Poisoned' });
 	await expect(dialog).toContainText(/From\s*Poisoner\s*loose on the board/);
 	await dialog.getByRole('button', { name: 'Close' }).tap();
+	await expect(dialog).toBeHidden();
 	await expect(inHand(page)).toBeVisible();
 	const before = (await loose.boundingBox())!;
 	await page.touchscreen.tap(board.x + board.width * 0.6, board.y + board.height * 0.35);
