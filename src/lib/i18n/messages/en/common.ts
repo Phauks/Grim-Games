@@ -11,6 +11,7 @@ export const common = {
 	'common.confirm': 'Confirm',
 	'common.none': 'None',
 	'common.putDown': 'Put down',
+	'common.aboutReminder': 'About this reminder',
 	'common.moreReminderActions': 'More reminder actions',
 	'common.hideContents': 'Hide contents',
 	'common.showPassword': 'Show password',
