@@ -19,6 +19,7 @@ export const shell = {
 	'shell.navLibrary': 'Library',
 	'shell.navBuildScript': 'Script builder',
 	'shell.navBuildCharacter': 'Character builder',
+	'shell.navBuildMode': 'Mode builder',
 	'shell.navReference': 'Character reference',
 	'shell.navInfoTokens': 'Info tokens',
 	'shell.navAccount': 'Account',
