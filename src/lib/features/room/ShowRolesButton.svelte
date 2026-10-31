@@ -7,19 +7,26 @@
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import { roomHost } from './host.svelte.ts';
-	import VoteTimeLeft from './VoteTimeLeft.svelte';
+	import { ROLES_SHOWN_MS } from './roles-shown.svelte.ts';
+	import { clock, timeLeft } from './time-left.svelte.ts';
 
 	/**
-	 * Players' own characters on their phones (Trevor, 2026-10-26: "Storyteller sees who has
-	 * seen their role. Then can turn on and off when ppl can see it"). A button, not a switch
-	 * (Trevor, 2026-10-30), since showing them starts a minute that runs out on its own. Who has
-	 * seen theirs is marked on each player's row above (combined, Trevor 2026-10-30).
+	 * Show players their own characters on their phones (Trevor, 2026-10-26: "Storyteller sees
+	 * who has seen their role. Then can turn on and off when ppl can see it"), beside Players'
+	 * ✕ (Trevor, 2026-10-31: "put it next to the x button, when clicked the button changes into
+	 * the timer which can also be ended very fast"). A button, not a switch (Trevor,
+	 * 2026-10-30): showing them starts a minute that runs out on its own, counted down on the
+	 * button itself, and one tap on it hides them again. Who has seen theirs is marked on each
+	 * player's row (Trevor, 2026-10-30).
 	 */
 	let { game }: { game: OpenGame } = $props();
 
 	const host = roomHost();
 	const gameId = $derived(game.game.gameId);
 	const shown = $derived(host.rolesShown.gameId === gameId);
+	const countdown = timeLeft(() => (shown ? host.rolesShown.until : undefined));
+	// Before it starts, the minute it will run; then what is left of it.
+	const time = $derived(clock(countdown.ms ?? ROLES_SHOWN_MS));
 
 	// Who won't see a character, said before showing them (Trevor, 2026-10-31: "should show
 	// some information if not all seats are filled, or not all players have assigned
@@ -53,26 +60,18 @@
 	}
 </script>
 
-<section class="roles" aria-labelledby="roles-label" data-testid="roles-panel">
-	<h2 id="roles-label">{t('room.roles.heading')}</h2>
-	<Button
-		icon={shown ? 'hide' : 'showToPlayer'}
-		variant={shown ? 'quiet' : 'solid'}
-		disabled={!host.code}
-		data-testid="roles-show"
-		onclick={toggle}>{shown ? t('room.roles.hide') : t('room.roles.show')}</Button
-	>
-	<!-- How much longer players can see theirs (Trevor, 2026-10-29); the line is kept while
-	     they can't, so nothing below moves. -->
-	<div class="time-left">
-		<VoteTimeLeft
-			endsAt={shown ? host.rolesShown.until : undefined}
-			text={(time) => t('room.roles.timeLeft', { time })}
-			endedText=""
-			testid="roles-time-left"
-		/>
-	</div>
-</section>
+<!-- Small enough to sit beside the ✕: an eye and the minute it will run, then an eye shut and
+     what is left. The time's digits are all one width, so the button never changes size. -->
+<Button
+	icon={shown ? 'hide' : 'showToPlayer'}
+	variant={shown ? 'accent' : 'solid'}
+	disabled={!host.code}
+	aria-label={shown ? t('room.roles.hideLeft', { time }) : t('room.roles.show')}
+	title={shown ? t('room.roles.hideLeft', { time }) : t('room.roles.show')}
+	data-testid="roles-show"
+	data-shown={shown || undefined}
+	onclick={toggle}><span class="time" data-testid="roles-time-left">{time}</span></Button
+>
 
 <ConfirmDialog
 	bind:open={warn}
@@ -87,12 +86,8 @@
 </ConfirmDialog>
 
 <style>
-	.roles {
-		display: grid;
-		gap: var(--space-2);
-		align-content: start;
-		justify-items: start;
-		min-width: 0;
+	.time {
+		font-variant-numeric: tabular-nums;
 	}
 	.gaps {
 		display: grid;
@@ -115,16 +110,5 @@
 	.gaps span {
 		flex: none;
 		color: var(--on-surface-muted);
-	}
-	h2 {
-		margin: 0;
-		font-size: 1.1rem;
-	}
-	.time-left {
-		min-height: 1.5em;
-	}
-	.time-left :global([data-testid='roles-time-left']) {
-		margin: 0;
-		line-height: 1.5;
 	}
 </style>

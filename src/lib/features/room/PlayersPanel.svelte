@@ -19,7 +19,6 @@
 	import PlayerInbox from './PlayerInbox.svelte';
 	import { playersDialog } from './players-dialog.svelte.ts';
 	import RemovedPlayers from './RemovedPlayers.svelte';
-	import RolesPanel from './RolesPanel.svelte';
 	import { seatRoles } from '#lib/core/sync/seat-roles.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
@@ -270,7 +269,6 @@
 			</ul>
 		{/if}
 	</section>
-	<RolesPanel {game} />
 	{#if host.code}<RemovedPlayers />{/if}
 </div>
 
