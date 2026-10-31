@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { CharacterId, CharacterType, Script } from '#lib/core/data/index.ts';
+	import type { Alignment, CharacterId, CharacterType, Script } from '#lib/core/data/index.ts';
 	import type { CharacterLookup } from '#lib/core/model/index.ts';
 	import SharedPicker from '#lib/features/characters/CharacterPicker.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -28,6 +28,8 @@
 		onPick: (id: CharacterId) => void;
 		/** Offers "None" first, to take the character away (Trevor, 2026-10-17). */
 		onNone?: () => void;
+		/** Every token in this alignment's colours (a reborn player's Travellers). */
+		alignment?: Alignment;
 	}
 
 	let {
@@ -41,7 +43,8 @@
 		exclude = [],
 		recommended = [],
 		onPick,
-		onNone
+		onNone,
+		alignment
 	}: Props = $props();
 
 	let showAll = $state(false);
@@ -79,6 +82,7 @@
 				: undefined}
 			onSelect={onPick}
 			{onNone}
+			{alignment}
 		/>
 	</div>
 </Dialog>

@@ -201,8 +201,8 @@ test('the board looks and background are in Board, saved with the board', async 
 	await dialog.getByText('Vignette', { exact: true }).tap();
 	// The player name badge is set in Tokens now (Trevor, 2026-10-20).
 	await expect(dialog.getByRole('slider', { name: 'Player name distance' })).toHaveCount(0);
-	await dialog.getByRole('combobox', { name: 'Location', exact: true }).tap();
-	await page.getByRole('option', { name: 'Corner', exact: true }).tap();
+	// The Fabled and Loric are always in the corner (Trevor, 2026-10-30: "only corner").
+	await expect(dialog.getByRole('combobox', { name: 'Location', exact: true })).toHaveCount(0);
 
 	const saved = await page.evaluate(() =>
 		JSON.parse(localStorage.getItem('grim.boardLooks') ?? 'null')
@@ -212,7 +212,6 @@ test('the board looks and background are in Board, saved with the board', async 
 		vignetteStrength: 0.3,
 		logo: true,
 		logoOpacity: 0.3,
-		rulesAt: 'edge',
 		rulesGrouped: false,
 		nameSize: 1,
 		nameOffset: 0,
@@ -745,9 +744,7 @@ test('every Board setting shows in its preview', async ({ page }) => {
 		.tap();
 	await expect(seatReminder).toHaveClass(/loose/);
 
-	// The Fabled and Loric: in the middle or the corner, each or stacked.
-	await expect(preview.locator('.preview-middle').getByTestId('preview-rules')).toBeVisible();
-	await choose('Location', 'Corner');
+	// The Fabled and Loric: in the corner, each or stacked.
 	await expect(preview.locator('.preview-rules-edge').getByTestId('preview-rules')).toBeVisible();
 	await choose('Grouping', 'Stacked');
 	await expect(preview.getByTestId('preview-rules-stack')).toBeVisible();

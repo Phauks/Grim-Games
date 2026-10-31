@@ -18,6 +18,8 @@
 		danger?: boolean;
 		/** Confirm can't be pressed yet (a request is running). */
 		disabled?: boolean;
+		/** Icon buttons in the header, before Close (an aid prompt's ⋯). */
+		headActions?: Snippet;
 		/** What happens, shown above the buttons. */
 		children?: Snippet;
 		/** Runs on Confirm; the dialog closes first. */
@@ -33,13 +35,14 @@
 		description,
 		danger = false,
 		disabled = false,
+		headActions,
 		children,
 		onConfirm,
 		onCancel
 	}: Props = $props();
 </script>
 
-<Dialog bind:open {title} {heading} {description} role="alertdialog">
+<Dialog bind:open {title} {heading} {description} {headActions} role="alertdialog">
 	{@render children?.()}
 	{#snippet actions()}
 		<ModalActions
