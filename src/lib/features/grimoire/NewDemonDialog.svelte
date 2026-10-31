@@ -2,6 +2,7 @@
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
 	import { seatName } from '#lib/features/game/seat-label.ts';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import ChoiceGroup from '#lib/ui/primitives/ChoiceGroup.svelte';
@@ -45,10 +46,14 @@
 </script>
 
 <ConfirmDialog bind:open {title} onConfirm={confirm}>
-	{#if demon}<p class="ability">
-			<CharacterBadge characterId={demon.id} character={demon} />
-			<GlossaryText text={demon.ability} names={[demon.name]} />
-		</p>{/if}
+	{#if demon}<div class="ability">
+			<CharacterRow character={demon}
+				>{#snippet ability()}<GlossaryText
+						text={demon.ability}
+						names={[demon.name]}
+					/>{/snippet}</CharacterRow
+			>
+		</div>{/if}
 	<ChoiceGroup
 		label={choiceLabel}
 		value={choice}
