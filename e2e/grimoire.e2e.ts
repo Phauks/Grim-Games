@@ -4132,41 +4132,44 @@ test("the step focus works for a script's own character too (Fall of Rome's Merc
 	await expect(tokens.first()).toContainText('Paid');
 });
 
-test('the Fabled and Loric can sit grouped in a corner, listed together when tapped', async ({
-	page
-}) => {
+test('the Fabled stack and the Loric stack sit side by side in the corner', async ({ page }) => {
 	await startGame(page);
-	for (const name of ['Spirit of Ivory', 'Angel', 'Djinn']) {
+	for (const name of ['Spirit of Ivory', 'Angel', 'Djinn', 'Bootlegger']) {
 		await menu(page, 'Add Fabled or Loric');
 		await page
 			.getByRole('dialog', { name: 'Add Fabled or Loric' })
 			.getByRole('button', { name, exact: true })
 			.tap();
 	}
-	// The choice is on the Fabled's own sheet (Trevor, 2026-10-17).
-	await page
-		.getByRole('list', { name: 'Fabled and Loric' })
-		.getByRole('button', { name: 'Angel' })
-		.tap();
-	// They always sit in the corner (Trevor, 2026-10-30: "only corner"); grouping is the choice.
-	const angel = page.getByRole('dialog', { name: 'Angel' });
-	await expect(angel.getByRole('combobox', { name: 'Location', exact: true })).toHaveCount(0);
-	await angel.getByRole('combobox', { name: 'Grouping', exact: true }).tap();
-	await page.getByRole('option', { name: 'Stacked' }).tap();
-	await expect(page.locator('.rules-edge .rules-stack')).toBeVisible();
-	await angel.getByRole('button', { name: 'Close' }).tap();
-
-	const stack = page.getByRole('button', { name: 'Fabled and Loric: 3' });
-	await expect(stack).toBeVisible();
+	// Always two stacks, with no Location or Grouping choice (Trevor, 2026-10-31: "stack lorics
+	// and fabled separately next to each other").
+	const corner = page.locator('.rules-edge').getByRole('list', { name: 'Fabled and Loric' });
+	const fabled = corner.getByRole('button', { name: 'Fabled: 3' });
+	const loric = corner.getByRole('button', { name: 'Bootlegger' });
+	await expect(fabled).toBeVisible();
+	await expect(loric).toBeVisible();
+	const f = (await fabled.boundingBox())!;
+	const l = (await loric.boundingBox())!;
+	expect(l.x).toBeGreaterThanOrEqual(f.x + f.width - 1);
+	expect(Math.abs(l.y - f.y)).toBeLessThan(2);
+	await page.screenshot({ path: test.info().outputPath('rule-stacks.png') });
 	// Every token in the stack stays on the board, none off its left side (Trevor, 2026-10-30).
-	for (const token of await stack.locator(':scope > :not(.stack-count)').all()) {
+	for (const token of await fabled.locator(':scope > :not(.stack-count)').all()) {
 		expect((await token.boundingBox())!.x).toBeGreaterThanOrEqual(0);
 	}
-	await expect(page.getByRole('list', { name: 'Fabled and Loric' })).toHaveCount(0);
-	await stack.tap();
-	const group = page.getByRole('dialog', { name: 'Fabled and Loric' });
+
+	// A stack of one opens its own sheet, with no setting on it.
+	await loric.tap();
+	const bootlegger = page.getByRole('dialog', { name: 'Bootlegger' });
+	await expect(bootlegger.getByRole('combobox')).toHaveCount(0);
+	await bootlegger.getByRole('button', { name: 'Close' }).tap();
+
+	// The Fabled stack lists only the Fabled.
+	await fabled.tap();
+	const group = page.getByRole('dialog', { name: 'Fabled', exact: true });
 	await expect(group.locator('.rules-group > li')).toHaveCount(3);
-	// Each row as tall as its contents, with no gaps between them (Trevor, 2026-10-30).
+	await expect(group.getByRole('combobox')).toHaveCount(0);
+	// Each row as tall as its contents, with no blank space between them (Trevor, 2026-10-31).
 	const rows = await group.locator('.rules-group > li').all();
 	const first = (await rows[0].boundingBox())!;
 	const second = (await rows[1].boundingBox())!;
@@ -4178,7 +4181,7 @@ test('the Fabled and Loric can sit grouped in a corner, listed together when tap
 		.tap();
 	await expect(group.locator('.rules-group > li')).toHaveCount(2);
 	await group.getByRole('button', { name: 'Close' }).tap();
-	await expect(page.getByRole('button', { name: 'Fabled and Loric: 2' })).toBeVisible();
+	await expect(corner.getByRole('button', { name: 'Fabled: 2' })).toBeVisible();
 });
 
 test('an open night step moves to the step before or after without ticking it', async ({

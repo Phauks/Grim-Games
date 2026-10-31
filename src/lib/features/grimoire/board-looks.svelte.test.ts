@@ -12,6 +12,7 @@ describe('board looks', () => {
 				logoOpacity: 0,
 				// The Fabled and Loric are always in the corner now (Trevor, 2026-10-30).
 				rulesAt: 'middle',
+				// Always a Fabled stack and a Loric stack now (Trevor, 2026-10-31).
 				rulesGrouped: true,
 				nameSize: 9,
 				nameOffset: 1,
@@ -37,7 +38,6 @@ describe('board looks', () => {
 			vignetteStrength: 1,
 			logo: false,
 			logoOpacity: 0.05,
-			rulesGrouped: true,
 			nameSize: 1.6,
 			nameOffset: 0.3,
 			usedGhostVote: 'struck',
@@ -63,10 +63,6 @@ describe('board looks', () => {
 				titleAt: 'x'
 			})
 		).toEqual(DEFAULT_BOARD_LOOKS);
-		// Saved before grouping was its own choice.
-		expect(parseBoardLooks({ rulesAt: 'corner' })).toEqual({
-			...DEFAULT_BOARD_LOOKS,
-			rulesGrouped: true
-		});
+		expect(parseBoardLooks({ rulesAt: 'corner' })).toEqual(DEFAULT_BOARD_LOOKS);
 	});
 });

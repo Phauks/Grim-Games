@@ -1,6 +1,7 @@
 <!--
 	Fabled and Loric are rules of the game, not seats: small in the board's top left corner
-	(Trevor, 2026-10-30: "only corner"), each with its reminders at its top right (GrimoireBoard). Abilities the
+	(Trevor, 2026-10-30: "only corner"), the Fabled in one stack and the Loric in another beside
+	it (Trevor, 2026-10-31), each with its reminders at its top right (GrimoireBoard). Abilities the
 	Storyteller holds sit with them, on the board rather than hidden away (Trevor, 2026-10-30):
 	the Plague Doctor's Minion, marked with its Storyteller Ability reminder as its How to Run
 	says (https://wiki.bloodontheclocktower.com/Plague_Doctor).
@@ -20,20 +21,19 @@
 	import BoardReminder from '#lib/features/grimoire/BoardReminder.svelte';
 	import { isGeneric, reminderWords } from '#lib/features/grimoire/reminders.ts';
 	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
+	import { ruleStacks, type RuleKind } from './rule-stacks.ts';
 
 	interface Props {
 		game: Game;
 		characters: CharacterLookup;
-		/** One stack for them all (Settings > Board). */
-		grouped: boolean;
 		tokenSize: number;
 		/** The size of a reminder on a seat; held ones are smaller. */
 		chip: number;
 		disabled: boolean;
 		/** The held reminder being dragged, whose place stays dimmed. */
 		lifted: ReminderId | undefined;
-		/** Opens one Fabled or Loric, or the list of all of them. */
-		onShow: (id?: CharacterId) => void;
+		/** Opens one Fabled or Loric, or the list of one stack's. */
+		onShow: (id: CharacterId | undefined, kind?: RuleKind) => void;
 		/** Opens an ability the Storyteller holds, by the character that gave it. */
 		onShowAbility: (via: CharacterId) => void;
 		onHeldTap: (reminderId: ReminderId) => void;
@@ -44,7 +44,6 @@
 	let {
 		game,
 		characters,
-		grouped,
 		tokenSize,
 		chip,
 		disabled,
@@ -58,8 +57,8 @@
 
 	const heldLabel = (name: string) => `${name}'s reminders`;
 	const abilities = $derived(game.storytellerAbilities ?? []);
-	/** Every token in the corner stack: the Fabled and Loric, then the Storyteller's abilities. */
-	const stacked = $derived([...game.ruleCharacters, ...abilities.map((a) => a.characterId)]);
+	/** The Fabled stack, then the Loric stack, leaving out an empty one. */
+	const stacks = $derived(ruleStacks(game.ruleCharacters, characters));
 	/** The giver's reminder that marks the ability it gives (the Storyteller Ability). */
 	const markOf = (via: CharacterId) => rulesOf(via, characters)?.givesAbility?.token;
 	/** The character whose art a generic copy shows (Trevor, 2026-10-27), if any. */
@@ -108,34 +107,10 @@
 	{/if}
 {/snippet}
 
-{#if grouped}
-	<!-- One stack for them all; a tap lists every one (Trevor, 2026-10-17). -->
-	<span class="stack-wrap">
-		<button
-			type="button"
-			class="rules-stack"
-			style:--token="{tokenSize}px"
-			data-rule-stack
-			aria-label={`Fabled and Loric: ${stacked.length}`}
-			onclick={() => onShow()}
-		>
-			{#each stacked.slice(0, 3) as id, i (`${i}:${id}`)}
-				{@const character = characters.get(id)}
-				{#if character}<CharacterToken {character} size={tokenSize} />{/if}
-			{/each}
-			{#if stacked.length > 1}<span class="stack-count" aria-hidden="true"
-					><CountBadge count={stacked.length} warn /></span
-				>{/if}
-		</button>
-		{@render heldCluster(
-			Object.values(game.ruleReminders ?? {}).flat(),
-			'Fabled and Loric reminders',
-			() => onShow()
-		)}
-	</span>
-{:else}
-	<ul class="rules" aria-label="Fabled and Loric">
-		{#each game.ruleCharacters as id (id)}
+<ul class="rules" aria-label="Fabled and Loric">
+	{#each stacks as stack (stack.kind)}
+		{#if stack.ids.length === 1}
+			{@const id = stack.ids[0]}
 			{@const character = characters.get(id)}
 			{#if character}
 				<li>
@@ -155,48 +130,72 @@
 					)}
 				</li>
 			{/if}
-		{/each}
-		{#each abilities as held (held.via)}
-			{@const character = characters.get(held.characterId)}
-			{@const mark = markOf(held.via)}
-			{#if character}
-				<li data-testid="storyteller-ability-token">
-					<button
-						type="button"
-						class="rule"
-						aria-label={`Storyteller's ability: ${character.name}`}
-						onclick={() => onShowAbility(held.via)}
+		{:else}
+			<!-- Overlapping, with how many; a tap lists this stack's (Trevor, 2026-10-31). -->
+			<li>
+				<button
+					type="button"
+					class="rules-stack"
+					style:--token="{tokenSize}px"
+					data-rule-stack={stack.kind}
+					aria-label={`${stack.label}: ${stack.ids.length}`}
+					onclick={() => onShow(undefined, stack.kind)}
+				>
+					{#each stack.ids.slice(0, 3) as id (id)}
+						{@const character = characters.get(id)}
+						{#if character}<CharacterToken {character} size={tokenSize} />{/if}
+					{/each}
+					<span class="stack-count" aria-hidden="true"
+						><CountBadge count={stack.ids.length} warn /></span
 					>
-						<CharacterToken {character} size={tokenSize} />
-					</button>
-					{#if mark}
-						<span class="held">
-							<BoardReminder
-								label={mark}
-								character={characters.get(held.via)}
-								size={Math.round(chip * 0.7)}
-								{disabled}
-								onTap={() => onShowAbility(held.via)}
-							/>
-						</span>
-					{/if}
-				</li>
-			{/if}
-		{/each}
-	</ul>
-{/if}
+				</button>
+				{@render heldCluster(
+					stack.ids.flatMap((id) => ruleReminders(game, id)),
+					`${stack.label} reminders`,
+					() => onShow(undefined, stack.kind)
+				)}
+			</li>
+		{/if}
+	{/each}
+	{#each abilities as held (held.via)}
+		{@const character = characters.get(held.characterId)}
+		{@const mark = markOf(held.via)}
+		{#if character}
+			<li data-testid="storyteller-ability-token">
+				<button
+					type="button"
+					class="rule"
+					aria-label={`Storyteller's ability: ${character.name}`}
+					onclick={() => onShowAbility(held.via)}
+				>
+					<CharacterToken {character} size={tokenSize} />
+				</button>
+				{#if mark}
+					<span class="held">
+						<BoardReminder
+							label={mark}
+							character={characters.get(held.via)}
+							size={Math.round(chip * 0.7)}
+							{disabled}
+							onTap={() => onShowAbility(held.via)}
+						/>
+					</span>
+				{/if}
+			</li>
+		{/if}
+	{/each}
+</ul>
 
 <style>
+	/* The stacks side by side, never wrapped under each other (Trevor, 2026-10-31). */
 	.rules {
 		display: flex;
-		flex-wrap: wrap;
 		gap: var(--space-1);
 		margin: 0;
 		padding: 0;
 		list-style: none;
 	}
-	.rules li,
-	.stack-wrap {
+	.rules li {
 		position: relative;
 	}
 	/* Packed on the token's top right corner, taking no room of its own. */

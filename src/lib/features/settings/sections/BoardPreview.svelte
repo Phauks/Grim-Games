@@ -1,5 +1,4 @@
 <script lang="ts">
-	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import { onMount } from 'svelte';
 	import { innerHeight, innerWidth } from 'svelte/reactivity/window';
 	import type { Alignment, CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
@@ -169,29 +168,14 @@
 		/>{/if}
 {/snippet}
 
+<!-- A Fabled and a Loric, each its own stack of one (Trevor, 2026-10-31). -->
 {#snippet rules()}
-	{#if boardLooks.current.rulesGrouped}
-		<span
-			class="preview-rules-stack"
-			style:--rules-size="{rulesSize}px"
-			data-testid="preview-rules-stack"
-		>
-			{#each RULES as id (id)}
-				{@const rule = character(id)}
-				{#if rule}<CharacterToken character={rule} size={rulesSize} />{/if}
-			{/each}
-			<span class="preview-stack-count" aria-hidden="true"
-				><CountBadge count={RULES.length} warn /></span
-			>
-		</span>
-	{:else}
-		<ul class="preview-rules" data-testid="preview-rules">
-			{#each RULES as id (id)}
-				{@const rule = character(id)}
-				{#if rule}<li><CharacterToken character={rule} size={rulesSize} /></li>{/if}
-			{/each}
-		</ul>
-	{/if}
+	<ul class="preview-rules" data-testid="preview-rules">
+		{#each RULES as id (id)}
+			{@const rule = character(id)}
+			{#if rule}<li><CharacterToken character={rule} size={rulesSize} /></li>{/if}
+		{/each}
+	</ul>
 {/snippet}
 
 <div
@@ -350,20 +334,6 @@
 		margin: 0;
 		padding: 0;
 		list-style: none;
-	}
-	.preview-rules-stack {
-		position: relative;
-		display: flex;
-	}
-	.preview-rules-stack > :global(*:not(:first-child):not(.preview-stack-count)) {
-		margin-inline-start: calc(-0.6 * var(--rules-size));
-	}
-	.preview-stack-count {
-		position: absolute;
-		right: 0;
-		bottom: 0;
-		display: flex;
-		font-size: 0.75rem;
 	}
 	.preview-title {
 		position: absolute;

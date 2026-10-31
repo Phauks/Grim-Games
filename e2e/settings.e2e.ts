@@ -213,7 +213,6 @@ test('the board looks and background are in Board, saved with the board', async 
 		vignetteStrength: 0.3,
 		logo: true,
 		logoOpacity: 0.3,
-		rulesGrouped: false,
 		nameSize: 1,
 		nameOffset: 0,
 		reminderLines: 'always',
@@ -732,10 +731,9 @@ test('every Board setting shows in its preview', async ({ page }) => {
 	await choose("Show this character's reminders", 'Highlight');
 	await expect(bank.locator('li.dim')).toHaveCount(2);
 
-	// The Fabled and Loric: in the corner, each or stacked.
+	// The Fabled and Loric: in the corner, with no Grouping choice (Trevor, 2026-10-31).
 	await expect(preview.locator('.preview-rules-edge').getByTestId('preview-rules')).toBeVisible();
-	await choose('Grouping', 'Stacked');
-	await expect(preview.getByTestId('preview-rules-stack')).toBeVisible();
+	await expect(dialog.getByRole('combobox', { name: 'Grouping', exact: true })).toHaveCount(0);
 	await preview.screenshot({ path: test.info().outputPath('board-preview.png') });
 });
 

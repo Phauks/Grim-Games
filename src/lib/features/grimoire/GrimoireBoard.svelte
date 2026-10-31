@@ -701,12 +701,11 @@
 	<BoardRules
 		{game}
 		{characters}
-		grouped={boardLooks.current.rulesGrouped && boardRuleCount(game) > 0}
 		{tokenSize}
 		{chip}
 		disabled={seatArr.arranging || watching}
 		lifted={remDrag.drag?.reminderId}
-		onShow={(id) => (id ? rules?.show(id) : rules?.showAll())}
+		onShow={(id, kind) => (id ? rules?.show(id) : rules?.showAll(kind))}
 		onShowAbility={(via) => rules?.showAbility(via)}
 		onHeldTap={(id) => holdReminder(id)}
 		onHeldDrag={(id, x, y, end) => remDrag.move(id, undefined, x, y, end)}
@@ -1273,7 +1272,6 @@
 		position: absolute;
 		top: var(--space-1);
 		left: var(--space-1);
-		max-width: 30%;
 		z-index: 2;
 	}
 </style>
