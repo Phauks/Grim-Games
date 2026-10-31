@@ -291,12 +291,17 @@ export const MIGRATIONS: Readonly<Record<number, Migration>> = {
 	24: migrateV24toV25
 };
 
+/**
+ * The session as a saved game. Its log is shared, not copied (memory sweep, 2026-10-31): a log
+ * is never changed in place, as each command makes new entries, and a store or a message copies
+ * it as it writes.
+ */
 export function toSavedGame(session: GameSession, savedAt: number): SavedGame {
 	return {
 		schemaVersion: SAVED_GAME_VERSION,
 		gameId: session.game.gameId,
 		savedAt,
-		log: structuredClone(session.log)
+		log: session.log
 	};
 }
 

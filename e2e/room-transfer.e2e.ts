@@ -3,11 +3,12 @@ import { nameStoryteller, toBoard } from './new-game.ts';
 import { openProfile, setPlayerName } from './player-name.ts';
 
 // Room transfer (Trevor, 2026-10-28): "Storyteller A can transfer the rights of hosting the
-// room to storyteller B so that people don't have to rejoin". The Storyteller's Share screen
-// shows an eight-digit transfer code ("8 digits, not 6, so it looks different from a room
-// code"); the other device types the room code on Join game, then ⋯ > Room transfer and the
-// code, and the Storyteller's device allows it ("so that someone cannot just take the room
-// without consent"). The old device is then put out of the room ("force the user out").
+// room to storyteller B so that people don't have to rejoin". The board's ⋯ > Room transfer
+// (above End game, Trevor 2026-10-30) shows the room code and an eight-digit transfer code
+// ("8 digits, not 6, so it looks different from a room code"); the other device types the room
+// code on Join game, then ⋯ > Room transfer and the code, and the Storyteller's device allows
+// it ("so that someone cannot just take the room without consent") once both show the same
+// match check (2026-10-31). The old device is then put out of the room ("force the user out").
 
 async function startGame(page: Page): Promise<{ board: string; code: string }> {
 	await page.goto('/new');
@@ -26,10 +27,20 @@ async function startGame(page: Page): Promise<{ board: string; code: string }> {
 	return { board, code };
 }
 
-/** Opens Room transfer on the Storyteller's Share screen and reads its code. */
-async function openTransfer(page: Page): Promise<string> {
-	await page.getByRole('button', { name: 'Room transfer' }).tap();
+/** Opens Room transfer from the board's ⋯ menu and reads its code. */
+async function openTransfer(page: Page, board: string, code: string): Promise<string> {
+	if (new URL(page.url()).pathname !== board) await page.goto(board);
+	await page.getByRole('button', { name: /^More/ }).tap();
+	const menu = page.getByRole('dialog', { name: 'Grimoire' });
+	// Above End game, in Session.
+	const session = menu.getByRole('region', { name: 'Session' });
+	await expect(session.getByRole('button')).toContainText(['Room transfer', 'End game']);
+	await session.getByRole('button', { name: 'Room transfer' }).tap();
 	const dialog = page.getByRole('dialog', { name: 'Room transfer' });
+	// The room code too, as the other device types both (Trevor, 2026-10-30).
+	await expect(dialog.getByTestId('transfer-room-code')).toHaveText(
+		`${code.slice(0, 3)} ${code.slice(3)}`
+	);
 	await expect(dialog.getByTestId('transfer-code')).toHaveText(/^\d{4} \d{4}$/);
 	await expect(dialog.getByTestId('transfer-time')).toHaveText(/^Expires in [45]:\d\d$/);
 	return (await dialog.getByTestId('transfer-code').textContent())!.replace(/\s/g, '');
@@ -82,9 +93,7 @@ test('a Storyteller hands the room and the game to another device, and the playe
 	await expect(phone.getByTestId('you-row')).toHaveAttribute('data-seat', '1');
 
 	// The Storyteller opens Room transfer and brings the game.
-	await page.goto(`${board}/room`);
-	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
-	const transferCode = await openTransfer(page);
+	const transferCode = await openTransfer(page, board, code);
 	const dialog = page.getByRole('dialog', { name: 'Room transfer' });
 	await dialog.getByText('Bring this game', { exact: true }).tap();
 	await expect(dialog.getByRole('checkbox', { name: 'Keep storytelling' })).toBeDisabled();
@@ -105,14 +114,19 @@ test('a Storyteller hands the room and the game to another device, and the playe
 	await typeTransferCode(other, transferCode);
 	await expect(take.getByTestId('transfer-status')).toContainText('Trevor');
 	await expect(take.getByTestId('transfer-status')).toContainText('1 player and the game');
+	await expect(take.getByTestId('transfer-check')).toContainText('····');
 	await take.getByRole('button', { name: 'Take over' }).tap();
 	await expect(take.getByTestId('transfer-status')).toHaveText(
 		'Waiting for the Storyteller to allow it.'
 	);
+	await expect(take.getByTestId('transfer-check')).toHaveText(/Match check\s*\d{4}$/);
+	const check = (await take.getByTestId('transfer-check').locator('strong').textContent())!;
 
-	// Nothing changes hands until the Storyteller's device allows it.
+	// Nothing changes hands until the Storyteller's device allows it, showing the same match
+	// check as the asking device (a Profile name can be anyone's).
 	const ask = page.getByRole('alertdialog', { name: 'Room transfer' });
 	await expect(ask).toContainText('Pat wants to take over this room as its Storyteller.');
+	await expect(ask.getByTestId('transfer-ask-check')).toContainText(check);
 	await ask.getByRole('button', { name: 'Confirm' }).tap();
 
 	// The game opens on the new device, with the same seats; the old one is put out of the
@@ -138,8 +152,8 @@ test('a stopped room transfer turns its code away, and a new game goes without t
 	page,
 	browser
 }, testInfo) => {
-	const { code } = await startGame(page);
-	const first = await openTransfer(page);
+	const { board, code } = await startGame(page);
+	const first = await openTransfer(page, board, code);
 	const dialog = page.getByRole('dialog', { name: 'Room transfer' });
 	await dialog.getByText('Join as a player', { exact: true }).tap();
 	await dialog.getByRole('button', { name: 'Stop transfer' }).tap();
@@ -152,7 +166,7 @@ test('a stopped room transfer turns its code away, and a new game goes without t
 	await expect(take.getByTestId('transfer-status')).toHaveText('This room has no transfer open.');
 
 	// A new transfer, without the game: the new device starts a New game in the same room.
-	const second = await openTransfer(page);
+	const second = await openTransfer(page, board, code);
 	await typeTransferCode(other, second);
 	await expect(take.getByTestId('transfer-status')).toContainText('and a new game');
 
