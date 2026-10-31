@@ -355,6 +355,9 @@ test('a quick card is shown once and never saved', async ({ page }) => {
 	const shown = page.locator('[data-testid="show-to-player"][open]');
 	await expect(shown.getByRole('heading')).toHaveText('You may not speak');
 	await shown.getByRole('button', { name: 'Close' }).tap();
+	// Back to the card, its words kept to fix a mistake (Trevor, 2026-10-31).
+	await expect(page.getByRole('textbox', { name: 'Text' })).toHaveText('You may not speak');
+	await page.getByRole('button', { name: 'Cancel' }).tap();
 	await expect(page.getByRole('button', { name: 'You may not speak', exact: true })).toHaveCount(0);
 	expect(
 		await page.evaluate(() => localStorage.getItem('grim-games:info-tokens') ?? '')
