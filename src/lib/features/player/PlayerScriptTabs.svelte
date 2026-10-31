@@ -57,14 +57,16 @@
 		data ? (['first', 'other'] as const).map((n) => playerNight(script, data, n)) : []
 	);
 	const tabs = $derived([
-		{ value: 'script', label: t('player.tab.script') },
-		{ value: 'night', label: t('player.tab.night') },
-		...(grim ? [{ value: 'grim', label: t('player.tab.grim') }] : []),
-		...(notes ? [{ value: 'notes', label: t('player.tab.notes') }] : [])
+		{ value: 'script', label: t('player.tab.script'), icon: 'script' as const },
+		{ value: 'night', label: t('player.tab.night'), icon: 'night' as const },
+		...(grim ? [{ value: 'grim', label: t('player.tab.grim'), icon: 'grimoire' as const }] : []),
+		...(notes ? [{ value: 'notes', label: t('player.tab.notes'), icon: 'notes' as const }] : [])
 	]);
 </script>
 
-<Tabs bind:value={tab} label={t('player.title')} {tabs}>
+<!-- A bar along the bottom with an icon over each tab (Trevor, 2026-10-31: "looks better than
+     loose text above the sections"). -->
+<Tabs bind:value={tab} label={t('player.title')} {tabs} placement="bottom">
 	{#snippet panel(value)}
 		<div class="panel">
 			<!-- A crash in one tab replaces only that tab. -->
@@ -126,11 +128,9 @@
 	.inset,
 	.bleed {
 		margin-inline: calc(-1 * var(--space-3));
-		/* From the tabs' line to the first heading is the same as the side margin (Trevor,
-		   2026-10-28: "probably just match side distance"): the tab panel's own top padding
-		   and the sheet's give way to it. A host whose side margin isn't the page gutter
-		   (the board's Script dialog) sets --player-side. */
-		margin-top: calc(var(--player-side, var(--page-gutter)) - var(--space-4) - var(--space-3));
+		/* With the tabs at the bottom, the sheet's words start where the panel does: its own
+		   padding gives way above, as it does at the sides. */
+		margin-top: calc(-1 * var(--space-3));
 	}
 	/* The colours themselves are the chosen background's (themes/sheet-backgrounds.ts), set on the element. */
 	.painted {
