@@ -7,13 +7,13 @@
  * pin TPI's current data, so review and update them when a data sync changes Leviathan.
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
- * a scenario test (seats, characters and reminders, then the action, then the expected state)
- * that paraphrases the example. Never copy wiki prose.
+ * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
+ * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
-import { castGame, testCharacters } from '#lib/core/model/fixtures.test-support.ts';
 import { gameEnds } from '#lib/core/rules/game-end.ts';
 import { defaultAlignment } from '#lib/core/data/index.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
 describe('Leviathan', () => {
@@ -54,14 +54,12 @@ describe('Leviathan', () => {
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Leviathan#Examples)', () => {
 		it('Example 1: Two good players executed early, so evil wins', () => {
-			const { session } = castGame(
-				['chef', 'empath', 'monk', 'mayor', 'baron', 'leviathan'],
-				{ type: 'NewDay' },
-				(s) => ({ type: 'Execute', seatId: s[0] }),
-				{ type: 'NewDay' },
-				(s) => ({ type: 'Execute', seatId: s[1] })
-			);
-			expect(gameEnds(session.game, testCharacters)).toMatchObject([
+			const s = scenario(['chef', 'empath', 'monk', 'mayor', 'baron', 'leviathan'])
+				.newDay()
+				.execute('chef')
+				.newDay()
+				.execute('empath');
+			expect(gameEnds(s.game, s.characters)).toMatchObject([
 				{ rule: 'executions-of-alignment', winner: 'evil' }
 			]);
 		});

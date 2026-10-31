@@ -7,8 +7,8 @@
  * pin TPI's current data, so review and update them when a data sync changes Puzzlemaster.
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
- * a scenario test (seats, characters and reminders, then the action, then the expected state)
- * that paraphrases the example. Never copy wiki prose.
+ * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
+ * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
@@ -19,6 +19,7 @@ import {
 	testCharacters as characters
 } from '#lib/core/model/fixtures.test-support.ts';
 import { dayUseAnswer, dayUseOf } from '#lib/core/rules/index.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
 /**
@@ -79,27 +80,27 @@ describe('Puzzlemaster', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Puzzlemaster#Examples)', () => {
+		// The Puzzlemaster, Alex the Demon, an Empath, a Sailor and a Chef.
+		const table = () => scenario(['puzzlemaster', 'imp', 'empath', 'sailor', 'chef']);
+
 		it('Example 1: guessing the player it made drunk learns the Demon player', () => {
 			// The Empath carries the Puzzlemaster's Drunk; guessing her is right: Alex, the Demon.
-			const { game, seats } = table(drunkOn(2));
-			expect(dayUseAnswer(game, seats[0], 'puzzlemaster', seats[2], characters)).toEqual({
-				kind: 'right',
-				demons: [seats[1]]
-			});
+			const s = table().reminder('empath', 'puzzlemaster', 'Drunk');
+			expect(
+				dayUseAnswer(s.game, s.seat('puzzlemaster'), 'puzzlemaster', s.seat('empath'), s.characters)
+			).toEqual({ kind: 'right', demons: [s.seat('imp')] });
 		});
 
 		it('Example 2: a player drunk by another ability is a wrong guess', () => {
 			// The Chef is dead and drunk by the Puzzlemaster; the Sailor's own player is drunk by
 			// the Sailor. Guessing the Sailor's player is wrong: anyone but the Demon.
-			const { game, seats } = table(drunkOn(4), reminder(3, 'sailor', 'Drunk'), (seats) => ({
-				type: 'SetDead',
-				seatId: seats[4],
-				dead: true
-			}));
-			expect(dayUseAnswer(game, seats[0], 'puzzlemaster', seats[3], characters)).toEqual({
-				kind: 'wrong',
-				demons: [seats[1]]
-			});
+			const s = table()
+				.reminder('chef', 'puzzlemaster', 'Drunk')
+				.reminder('sailor', 'sailor', 'Drunk')
+				.dies('chef');
+			expect(
+				dayUseAnswer(s.game, s.seat('puzzlemaster'), 'puzzlemaster', s.seat('sailor'), s.characters)
+			).toEqual({ kind: 'wrong', demons: [s.seat('imp')] });
 		});
 	});
 

@@ -7,35 +7,14 @@
  * pin TPI's current data, so review and update them when a data sync changes Widow.
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
- * a scenario test (seats, characters and reminders, then the action, then the expected state)
- * that paraphrases the example. Never copy wiki prose.
+ * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
+ * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import type { Command } from '#lib/core/engine/index.ts';
-import {
-	newGame,
-	run,
-	testCharacters as characters
-} from '#lib/core/model/fixtures.test-support.ts';
 import { shownToSeats } from '#lib/core/rules/index.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-
-/** Seats with these characters, then the extra commands. */
-function table(ids: string[], ...extra: ((seats: string[]) => Command)[]) {
-	const { session, ctx, seats } = newGame(ids.map((_, i) => `P${i}`));
-	const s = run(
-		session,
-		ctx,
-		...ids.map((characterId, i): Command => ({
-			type: 'AssignCharacter',
-			seatId: seats[i],
-			characterId
-		})),
-		...extra.map((command) => command(seats))
-	);
-	return { game: s.game, seats };
-}
 
 describe('Widow', () => {
 	const character = committedCharacter('widow');
@@ -71,17 +50,17 @@ describe('Widow', () => {
 		it('Example 2: the good player marked Know is the one shown the Widow token', () => {
 			// The Pit-Hag made a Widow; the Storyteller marks the Scapegoat Know, so the Scapegoat
 			// is woken and shown the Widow token.
-			const { game, seats } = table(['widow', 'scapegoat', 'chef', 'imp'], (seats) => ({
-				type: 'AddReminder',
-				seatId: seats[1],
-				reminder: { characterId: 'widow', label: 'Know' }
-			}));
-			expect(shownToSeats(game, 'widow', characters)).toEqual([seats[1]]);
+			const s = scenario(['widow', 'scapegoat', 'chef', 'imp']).reminder(
+				'scapegoat',
+				'widow',
+				'Know'
+			);
+			expect(shownToSeats(s.game, 'widow', s.characters)).toEqual([s.seat('scapegoat')]);
 		});
 
 		it('shows the token to no one until a player is marked Know', () => {
-			const { game } = table(['widow', 'chef', 'imp']);
-			expect(shownToSeats(game, 'widow', characters)).toEqual([]);
+			const s = scenario(['widow', 'chef', 'imp']);
+			expect(shownToSeats(s.game, 'widow', s.characters)).toEqual([]);
 		});
 		it.todo("Example 3: Innkeeper briefly suspends Empath's poisoning");
 	});

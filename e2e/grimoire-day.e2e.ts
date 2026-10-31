@@ -839,6 +839,40 @@ test("Execution's Saved by applies the Pacifist the Storyteller picks", async ({
 	await expect(boardSeat(page, 'Seat 3')).not.toHaveAccessibleName(/dead/);
 });
 
+test("Execution can execute a good Scapegoat in a good player's place (M12a)", async ({ page }) => {
+	// https://wiki.bloodontheclocktower.com/Scapegoat: if a player of its alignment would be
+	// executed, the Storyteller may execute the Scapegoat instead.
+	await startGame(page);
+	await chooseCharacter(page, 1, 'Chef');
+	await chooseCharacter(page, 2, 'Imp');
+	const sheet = await openSeat(page, 3);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 3' })
+		.getByRole('button', { name: /^Scapegoat(, Recommended)?$/ })
+		.tap();
+	await page.getByRole('dialog', { name: 'Alignment' }).getByRole('button', { name: 'Good' }).tap();
+	await closeSeat(page);
+	const day = await openDay(page);
+	await day.getByRole('button', { name: 'Execution', exact: true }).tap();
+	const ask = page.getByRole('alertdialog', { name: 'End the day?' });
+	// There while the Scapegoat lives, disabled until a player of its alignment is chosen.
+	const instead = ask.getByRole('checkbox', { name: 'Scapegoat is executed instead' });
+	await expect(instead).toBeDisabled();
+	await ask.getByRole('combobox', { name: 'Execution' }).tap();
+	await page.getByRole('option', { name: /^Seat 2\b/ }).tap();
+	await expect(instead).toBeDisabled();
+	await ask.getByRole('combobox', { name: 'Execution' }).tap();
+	await page.getByRole('option', { name: /^Seat 1\b/ }).tap();
+	await expect(instead).toBeEnabled();
+	await ask.getByTestId('executed-instead').locator('[data-part="control"]').tap();
+	await expect(instead).toBeChecked();
+	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(page.getByTestId('night-strip')).toBeVisible();
+	await expect(boardSeat(page, 'Seat 3')).toHaveAccessibleName(/dead/);
+	await expect(boardSeat(page, 'Seat 1')).not.toHaveAccessibleName(/dead/);
+});
+
 test('an unnamed seat is named by its number in the day view', async ({ page }) => {
 	await startGame(page);
 	await chooseCharacter(page, 3, 'Slayer');

@@ -2,7 +2,7 @@
 	"reminderTargets": {
 		"Drunk 1": {
 			"seat": "any",
-			"note": "The player of the in-play character the Courtier named, on the first night of drunkenness."
+			"note": "Swapped onto the same drunk player on the third night; it comes off the next night."
 		},
 		"Drunk 2": {
 			"seat": "any",
@@ -10,7 +10,7 @@
 		},
 		"Drunk 3": {
 			"seat": "any",
-			"note": "Swapped onto the same drunk player on the third night."
+			"note": "The player of the in-play character the Courtier named, on the first night of drunkenness."
 		},
 		"No Ability": {
 			"seat": "self",
@@ -82,5 +82,8 @@
 				"reason": "Says how the drunk tokens count down over 3 nights and days."
 			}
 		}
+	},
+	"countdown": {
+		"tokens": ["Drunk 3", "Drunk 2", "Drunk 1"]
 	}
 }
