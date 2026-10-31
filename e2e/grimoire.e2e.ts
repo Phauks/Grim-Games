@@ -7355,7 +7355,9 @@ test("the Cult Leader's step offers a living neighbour's alignment", async ({ pa
 	await row.getByRole('button', { name: 'Make evil' }).tap();
 	await expect(row.getByRole('button', { name: 'Make good' })).toBeVisible();
 	await step.getByRole('button', { name: 'Close' }).first().tap();
-	await expect(await openSeat(page, 2)).toContainText(/Townsfolk · Evil · Seat 2[\s\S]*Cult Leader/);
+	await expect(await openSeat(page, 2)).toContainText(
+		/Townsfolk · Evil · Seat 2[\s\S]*Cult Leader/
+	);
 });
 
 // https://wiki.bloodontheclocktower.com/Summoner: on the 3rd night it points at a player and at
