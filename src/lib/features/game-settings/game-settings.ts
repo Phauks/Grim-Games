@@ -12,7 +12,6 @@
  */
 import { SETUP_LOOKS, type SetupLook } from '#lib/core/rules/game-phase.ts';
 import { DAY_SECONDS_PER_ALIVE_MAX, DAY_SECONDS_PER_ALIVE_MIN } from '#lib/core/rules/day-timer.ts';
-import type { PublicGameSettings } from '#lib/core/sync/public-game-settings.ts';
 import type { Preferences } from '#lib/ui/preferences.ts';
 
 export interface GameSettings {
@@ -59,12 +58,6 @@ export function asPreferences(
 			? {}
 			: { assistance: { ...prefs.assistance, trackNominations } })
 	};
-}
-
-/** What players' phones are told, read only: the settings players meet (public-game-settings.ts). */
-export function forPlayers(settings: GameSettings): PublicGameSettings {
-	const { trackNominations, timerPerPlayer, requireName, holdToReveal, slotMachine } = settings;
-	return { trackNominations, timerPerPlayer, requireName, holdToReveal, slotMachine };
 }
 
 const bool = (v: unknown, fallback: boolean) => (typeof v === 'boolean' ? v : fallback);
