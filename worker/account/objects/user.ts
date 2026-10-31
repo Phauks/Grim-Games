@@ -310,6 +310,14 @@ export class AccountUser extends DurableObject<AccountEnv> {
 		return this.user();
 	}
 
+	/** When any of this account's devices was last seen, to the hour (friends' presence, plan F5). */
+	async lastSeen(): Promise<number | undefined> {
+		const row = this.sql
+			.exec<{ at: number | null }>('SELECT MAX(last_seen_at) AS at FROM session')
+			.one();
+		return row.at ?? undefined;
+	}
+
 	/** The signed-in user for a session secret, or undefined when it isn't (or no longer) valid. */
 	async authenticate(
 		secret: string,

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Spinner from '#lib/ui/primitives/Spinner.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { resolve } from '$app/paths';
 	import { untrack } from 'svelte';
@@ -45,6 +46,7 @@
 				aria-busy={kind === 'loading'}
 				role={kind === 'error' ? 'alert' : undefined}
 			>
+				{#if kind === 'loading'}<Spinner />{/if}
 				{message}
 			</p>
 		{/snippet}

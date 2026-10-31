@@ -88,6 +88,11 @@ export interface Preferences {
 	 */
 	slotMachine: boolean;
 	/**
+	 * Players beyond 15 choose their own Traveller on their phones (Trevor, 2026-10-31), so
+	 * Random on Character selection leaves those places open instead of filling them.
+	 */
+	travellersChoose: boolean;
+	/**
 	 * Show text in our own wording that Trevor hasn't approved yet, such as the game modes'
 	 * About descriptions; off by default, when only source text and links show (no authored
 	 * content, Trevor 2026-10-15).
@@ -192,6 +197,8 @@ export const TILE_FACES = [
 	'numbers',
 	'letters',
 	'roman',
+	'kanji',
+	'runes',
 	'symbols',
 	'colours',
 	'emoji',
@@ -251,6 +258,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
 	requireName: false,
 	holdToReveal: false,
 	slotMachine: false,
+	travellersChoose: false,
 	tileOrderRandom: false,
 	ownWording: false,
 	soundVolume: 1,
@@ -330,6 +338,10 @@ export function parsePreferences(raw: unknown): Preferences {
 				: DEFAULT_PREFERENCES.holdToReveal,
 		slotMachine:
 			typeof input.slotMachine === 'boolean' ? input.slotMachine : DEFAULT_PREFERENCES.slotMachine,
+		travellersChoose:
+			typeof input.travellersChoose === 'boolean'
+				? input.travellersChoose
+				: DEFAULT_PREFERENCES.travellersChoose,
 		tileOrderRandom:
 			typeof input.tileOrderRandom === 'boolean'
 				? input.tileOrderRandom

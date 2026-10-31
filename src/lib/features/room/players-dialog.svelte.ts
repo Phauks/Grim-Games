@@ -7,6 +7,8 @@ class PlayersDialog {
 	seat = $state<SeatId>();
 	/** Count off (plan J40), from the board's ⋯. */
 	countOff = $state(false);
+	/** Travellers choose on their phones, from the board's ⋯. */
+	travellers = $state(false);
 
 	show(): void {
 		this.open = true;

@@ -5,6 +5,7 @@
 	 * board with everything kept.
 	 */
 	import { fromScript } from '#lib/core/data/index.ts';
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { loadOfficialData, officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import type { Grimoire } from '#lib/features/grimoire/grimoire.svelte.ts';
 	import { resolve } from '$app/paths';
@@ -16,8 +17,14 @@
 
 	interface Props {
 		grimoire: Grimoire;
-		/** The board's own Add a seat: tap between two players, then `add` runs with the spot. */
-		place: (add: (position: number) => void) => void;
+		/**
+		 * The board's own Add a seat: tap between two players, then `add` runs with the spot.
+		 * `pending` shows the late players already placed (Trevor, 2026-10-31).
+		 */
+		place: (
+			add: (position: number) => void,
+			pending: readonly { position: number; name: string }[]
+		) => void;
 	}
 
 	let { grimoire, place }: Props = $props();
@@ -33,11 +40,16 @@
 
 	function choose(index: number) {
 		open = false;
+		const pending = lateDraft.players.flatMap((p, i) =>
+			i !== index && p.position !== undefined
+				? [{ position: p.position, name: p.name.trim() || t('late-player.newSeat') }]
+				: []
+		);
 		place((position) => {
 			const player = lateDraft.players[index];
 			if (player) player.position = position;
 			open = true;
-		});
+		}, pending);
 	}
 
 	onMount(() => {

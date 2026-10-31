@@ -43,6 +43,18 @@ async function openTransfer(page: Page, board: string, code: string): Promise<st
 	);
 	await expect(dialog.getByTestId('transfer-code')).toHaveText(/^\d{4} \d{4}$/);
 	await expect(dialog.getByTestId('transfer-time')).toHaveText(/^Expires in [45]:\d\d$/);
+	// The eye hides the transfer code behind dots and shows it again (Trevor, 2026-10-31),
+	// and nothing in the dialog moves while it is hidden.
+	const hide = dialog.getByRole('button', { name: 'Hide code' });
+	const before = await dialog.getByTestId('transfer-time').boundingBox();
+	await hide.tap();
+	await expect(hide).toHaveAttribute('aria-pressed', 'true');
+	await expect(dialog.getByTestId('transfer-code-hidden')).toHaveText('•••• ••••');
+	await expect(dialog.getByTestId('transfer-code')).toBeHidden();
+	expect(await dialog.getByTestId('transfer-time').boundingBox()).toEqual(before);
+	await hide.tap();
+	await expect(dialog.getByTestId('transfer-code-hidden')).toHaveCount(0);
+	await expect(dialog.getByTestId('transfer-code')).toBeVisible();
 	return (await dialog.getByTestId('transfer-code').textContent())!.replace(/\s/g, '');
 }
 
@@ -96,8 +108,9 @@ test('a Storyteller hands the room and the game to another device, and the playe
 	const transferCode = await openTransfer(page, board, code);
 	const dialog = page.getByRole('dialog', { name: 'Room transfer' });
 	await dialog.getByText('Bring this game', { exact: true }).tap();
-	await expect(dialog.getByRole('checkbox', { name: 'Keep storytelling' })).toBeDisabled();
-	await expect(dialog.getByRole('checkbox', { name: 'Join as a player' })).toBeChecked();
+	// No Keep storytelling switch until co-storytelling exists (Trevor, 2026-10-31).
+	await expect(dialog.getByRole('checkbox', { name: 'Keep storytelling' })).toHaveCount(0);
+	await expect(dialog.getByRole('checkbox', { name: 'Join room as player' })).toBeChecked();
 
 	// The other Storyteller's device: a wrong code says so, the right one says what comes.
 	const otherContext = await browser.newContext({ ...testInfo.project.use });
@@ -148,15 +161,18 @@ test('a Storyteller hands the room and the game to another device, and the playe
 	await otherContext.close();
 });
 
-test('a stopped room transfer turns its code away, and a new game goes without the game', async ({
+test('a closed room transfer turns its code away, and a new game goes without the game', async ({
 	page,
 	browser
 }, testInfo) => {
 	const { board, code } = await startGame(page);
 	const first = await openTransfer(page, board, code);
 	const dialog = page.getByRole('dialog', { name: 'Room transfer' });
-	await dialog.getByText('Join as a player', { exact: true }).tap();
-	await dialog.getByRole('button', { name: 'Stop transfer' }).tap();
+	await dialog.getByText('Join room as player', { exact: true }).tap();
+	// No Stop transfer button (Trevor, 2026-10-31): closing the dialog ends the transfer.
+	await expect(dialog.getByRole('button', { name: 'Stop transfer' })).toHaveCount(0);
+	await expect(dialog.getByTestId('transfer-awaiting')).toHaveText('Awaiting confirmation');
+	await page.keyboard.press('Escape');
 	await expect(dialog).toBeHidden();
 
 	const otherContext = await browser.newContext({ ...testInfo.project.use });

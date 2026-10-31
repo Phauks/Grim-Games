@@ -22,8 +22,17 @@ export const RULE_COLORS = {
 	'--on-loric': '#f4e9cf'
 } as const;
 
+/**
+ * The ring on a count that doesn't match yet, on Character selection's blue and red type
+ * boxes (Trevor, 2026-10-31: "make the warnings a different color perhaps, like gold"). The
+ * boxes never change colour, so neither does the ring: about 4.6:1 on the red, 4.9:1 on the blue.
+ */
+export const WARN_COLORS = {
+	'--count-warn': '#e8b931'
+} as const;
+
 /** Every colour no theme, sheet background, print or custom colour may change. */
-export const FIXED_COLORS = { ...TEAM_COLORS, ...RULE_COLORS } as const;
+export const FIXED_COLORS = { ...TEAM_COLORS, ...RULE_COLORS, ...WARN_COLORS } as const;
 
 /**
  * The same blue and red as text on the page. On a light surface the fills read as they are;

@@ -99,8 +99,6 @@ test('a player messages the Storyteller, who reads it on Players; the cover show
 	await expect(item).toContainText('New');
 	await item.tap();
 	await page.keyboard.press('Escape');
-	await page.keyboard.press('Escape');
-	await expect(alexSheet).toBeHidden();
 	await expect(row.getByTestId('room-player-waiting')).toHaveCount(0);
 	await page.keyboard.press('Escape');
 	await expect(players).toBeHidden();

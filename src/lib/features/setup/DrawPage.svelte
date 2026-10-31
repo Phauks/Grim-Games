@@ -29,14 +29,12 @@
 	import { fromScript, scriptLogo } from '#lib/core/data/index.ts';
 	import { loadOfficialData, officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { onMount, untrack } from 'svelte';
-	import { goto, pushState } from '$app/navigation';
+	import { pushState } from '$app/navigation';
 	import { page } from '$app/state';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
-	import { latePlayerHref } from './late-player.ts';
-	import { lateDraft } from './late-draft.svelte.ts';
-	import LateSeatDialog from './LateSeatDialog.svelte';
+	import LatePlayerButton from '#lib/features/late-player/LatePlayerButton.svelte';
 
 	interface Props {
 		port: SetupGamePort;
@@ -223,7 +221,10 @@
 	const hasRoom = $derived(!!roomHost().code);
 	function deal() {
 		if (!game) return;
-		for (let i = 0; i < dealPairs(game, Math.random).seatsShort; i++) send({ type: 'AddSeat' });
+		// Seats choosing a Traveller on their phones take no tile (Trevor, 2026-10-31).
+		const choosing = new Set(roomHost().travellerPick?.seats.map((s) => s.seatId));
+		for (let i = 0; i < dealPairs(game, Math.random, choosing).seatsShort; i++)
+			send({ type: 'AddSeat' });
 		// Phones in the room that sit nowhere yet take the unnamed seats, so each gets its own.
 		const named = port.game;
 		if (!named) return;
@@ -232,21 +233,11 @@
 			send({ type: 'RenameSeat', seatId, playerName });
 		const current = port.game;
 		if (!current) return;
-		for (const { seatId, tileId } of dealPairs(current, Math.random).pairs) {
+		for (const { seatId, tileId } of dealPairs(current, Math.random, choosing).pairs) {
 			if (!send({ type: 'DrawTile', seatId, tileId })) return;
 			if (!send({ type: 'ConfirmDraw', tileId })) return;
 		}
 		if (hasRoom && dealShow) roomHost().showRoles(current.gameId, true);
-	}
-
-	// Add late player (Trevor, 2026-10-30): its modal opens here; Choose seat goes to the
-	// grimoire to tap where that player sits, and the modal opens again there.
-	let lateOpen = $state(false);
-	const lateLookup = (id: string) => lookup?.get(id) ?? officialData.current?.byId.get(id);
-	function choose(index: number) {
-		if (!game) return;
-		lateDraft.placing = index;
-		void goto(latePlayerHref(game.gameId));
 	}
 
 	function confirm(details: { playerName: string; alignment?: Alignment }) {
@@ -277,16 +268,8 @@
 				disabled={inBag === 0}
 				onclick={() => (dealOpen = true)}
 			/>{/if}
-		{#if !locked && game}<IconButton
-				icon="latePlayer"
-				label={t('setup.late')}
-				disabled={!bag || !script || game.pastDays.length > 0}
-				data-testid="late-player"
-				onclick={() => {
-					lateDraft.start();
-					lateOpen = true;
-				}}
-			/>{/if}
+		<!-- Add late player (Trevor, 2026-10-30), its own feature. -->
+		{#if !locked && game}<LatePlayerButton {game} {lookup} {send} />{/if}
 		{#if game}
 			<IconButton
 				icon="lock"
@@ -364,20 +347,6 @@
 		onChange={(on) => (dealShow = on)}
 	/>
 </ConfirmDialog>
-
-{#if game && script && officialData.current}
-	<LateSeatDialog
-		bind:open={lateOpen}
-		bind:players={lateDraft.players}
-		{game}
-		onAddAnother={() => lateDraft.add()}
-		onPlace={choose}
-		scriptCharacters={script.characters}
-		official={officialData.current.characters}
-		lookup={lateLookup}
-		{send}
-	/>
-{/if}
 
 {#if game}
 	<PinDialog bind:open={pinOpen} gameId={game.gameId} mode={pinMode} onDone={pinDone} />

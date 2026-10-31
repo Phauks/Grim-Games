@@ -10,6 +10,7 @@ import {
 	FRIEND_REQUESTS_API,
 	FRIEND_SETTINGS_API,
 	FRIENDS_API,
+	FRIEND_PRESENCE_API,
 	FRIEND_RECENT_API,
 	FRIEND_SEAT_API,
 	isFriendAction,
@@ -32,6 +33,8 @@ import { normaliseRoomCode } from '../../src/lib/core/sync/room-code.ts';
 import type { Room } from '../room.ts';
 import type { GamePlayer } from '../../src/lib/features/friends/friend-rules.ts';
 import type { BookEntry, FriendBook, RecentEntry } from './book.ts';
+import { friendInvites, handleInvites } from './invites.ts';
+import { friendsPresence, handleFriendRoom, showsPresence } from './presence.ts';
 import { handleFriendScripts } from './scripts.ts';
 
 export interface FriendsEnv extends AccountEnv {
@@ -73,14 +76,28 @@ export async function describe(env: FriendsEnv, entries: BookEntry[]): Promise<F
 
 async function contents(env: FriendsEnv, accountId: string): Promise<FriendsResponse> {
 	const book = await friendBook(env, accountId).contents(Date.now());
-	const [friends, incoming, outgoing, blocked, recent] = await Promise.all([
-		describe(env, book.friends),
-		describe(env, book.incoming),
-		describe(env, book.outgoing),
-		describe(env, book.blocked),
-		recentPlayers(env, accountId, book)
-	]);
-	return { friends, incoming, outgoing, blocked, findable: book.findable, recent };
+	const [friends, incoming, outgoing, blocked, recent, invites, presence, showPresence] =
+		await Promise.all([
+			describe(env, book.friends),
+			describe(env, book.incoming),
+			describe(env, book.outgoing),
+			describe(env, book.blocked),
+			recentPlayers(env, accountId, book),
+			friendInvites(env, accountId),
+			friendsPresence(env, book.friends),
+			showsPresence(env, accountId)
+		]);
+	return {
+		friends,
+		incoming,
+		outgoing,
+		blocked,
+		findable: book.findable,
+		recent,
+		invites,
+		presence,
+		showPresence
+	};
 }
 
 /**
@@ -323,6 +340,19 @@ export async function handleFriends(
 
 	const scripts = await handleFriendScripts(request, env, path, accountId);
 	if (scripts) return scripts;
+
+	const invites = await handleInvites(request, env, path, accountId);
+	if (invites) return invites;
+
+	if (path === FRIEND_PRESENCE_API && method === 'PUT') {
+		const show = (await readBody(request))?.show;
+		if (typeof show !== 'boolean') return fail(400, 'Bad setting.');
+		await friendBook(env, accountId).setShowsPresence(show);
+		return json(await contents(env, accountId));
+	}
+
+	const room = await handleFriendRoom(request, env, path, accountId);
+	if (room) return room;
 
 	const action = path.slice(FRIENDS_API.length + 1);
 	if (method === 'POST' && isFriendAction(action) && path === friendActionApi(action)) {
