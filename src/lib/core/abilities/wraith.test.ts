@@ -63,7 +63,8 @@ describe('Wraith', () => {
 });
 
 // The optional rule on the wiki page (https://wiki.bloodontheclocktower.com/Wraith): once a
-// game, a player mad about being the Wraith may die.
+// game, a player who is mad that the Wraith's player is the Wraith may die (Trevor, 2026-10-31:
+// "you" is the Wraith's player).
 describe('Wraith optional rule', () => {
 	const cast = ['chef', 'empath', 'monk', 'wraith', 'imp'];
 	const on: Command = { type: 'SetOptionalRule', characterId: 'wraith', on: true };
