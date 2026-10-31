@@ -160,6 +160,30 @@ export default defineConfig({
 			// Prerendered SPA served as Workers static assets; unknown paths fall back to
 			// index.html via `not_found_handling` in wrangler.jsonc.
 			adapter: adapter({ fallback: 'index.html' }),
+			// Content Security Policy (security sweep, Trevor 2026-10-31): only our own scripts run.
+			// Pages are prerendered, so SvelteKit writes it as a meta tag with the hash of its own
+			// start-up script; app.html's boot-failure script is a file (static/boot-failure.js) for
+			// that reason. Images and fetches may come from any https site (custom character art,
+			// script links, the wiki); `blob:` workers are modern-screenshot's. A new kind of outside
+			// source needs a line here: e2e/csp.e2e.ts fails on anything blocked.
+			csp: {
+				mode: 'hash',
+				directives: {
+					'default-src': ['self'],
+					'script-src': ['self'],
+					'style-src': ['self', 'unsafe-inline'],
+					'img-src': ['self', 'data:', 'blob:', 'https:'],
+					'font-src': ['self'],
+					'connect-src': ['self', 'https:', 'wss:'],
+					'media-src': ['self', 'blob:'],
+					'frame-src': ['self'],
+					'worker-src': ['self', 'blob:'],
+					'manifest-src': ['self'],
+					'object-src': ['none'],
+					'base-uri': ['self'],
+					'form-action': ['self']
+				}
+			},
 			version: { name: buildLine }
 		}),
 		// Compiles `~icons/<set>/<name>` imports into Svelte components at build time, so icons

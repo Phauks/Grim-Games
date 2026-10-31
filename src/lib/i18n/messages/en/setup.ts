@@ -229,7 +229,7 @@ export const setup = {
 	'setup.late.outOfPlay': 'Out of play',
 	'setup.late.matches': 'Matches the {count}-player counts.',
 	'setup.late.offCount': 'Not the {count}-player counts. You can still confirm.',
-	'setup.late.confirm': 'Confirm and tell players',
+	'setup.late.confirm': 'Confirm',
 	'setup.late.who': 'Late players',
 	'setup.late.where': 'Between {a} and {b}',
 	'setup.late.end': 'After {a}',

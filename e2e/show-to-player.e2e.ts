@@ -267,6 +267,23 @@ test('the Storyteller adds more bluff sets and deletes one after confirming', as
 	await expect(page.locator('[data-testid="bluff-set"][data-set="Set 2"]')).toContainText('Mayor');
 });
 
+test('Demon bluffs always open on the sets, dropping an unsaved set', async ({ page }) => {
+	// Trevor, 2026-10-31: reopening never lands on a picker left open last time.
+	await page.goto('/spikes/bluffs');
+	const open = page.getByRole('button', { name: 'Demon bluffs', exact: true });
+	await open.tap();
+	await page.getByRole('button', { name: 'Add a set' }).tap();
+	await choice(page, 'Monk').tap();
+	const sheet = page.getByRole('dialog', { name: /Set 2/ });
+	await page.keyboard.press('Escape');
+	await expect(sheet).toBeHidden();
+
+	await open.tap();
+	await expect(page.getByRole('dialog', { name: 'Demon bluffs' })).toBeVisible();
+	await expect(page.getByTestId('bluff-set')).toHaveCount(1);
+	await expect(page.getByRole('button', { name: 'Add a set' })).toBeVisible();
+});
+
 test('clearing the Demon bluffs asks first, and the set buttons are evenly spaced', async ({
 	page
 }) => {
