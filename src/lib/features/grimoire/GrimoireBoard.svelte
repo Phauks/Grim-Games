@@ -23,7 +23,7 @@
 	import { goto, replaceState } from '$app/navigation';
 	import { onMount, tick, untrack } from 'svelte';
 	import { REMINDERS_HASH } from '#lib/features/setup/setup-steps.ts';
-	import LateSeatOnBoard from '#lib/features/setup/LateSeatOnBoard.svelte';
+	import LateSeatOnBoard from '#lib/features/late-player/LateSeatOnBoard.svelte';
 	import { resolve } from '$app/paths';
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import {
@@ -399,8 +399,14 @@
 	// ── Travellers ──
 	// ── Placing a new seat: the Storyteller taps where it goes (Trevor, 2026-10-16) ──
 	let placing = $state<((position: number) => void) | undefined>();
-	function startPlacing(add: (position: number) => void) {
+	/** Seats already placed but not added yet (late players), shown at their spots. */
+	let pendingSeats = $state<readonly { position: number; name: string }[]>([]);
+	function startPlacing(
+		add: (position: number) => void,
+		pending: readonly { position: number; name: string }[] = []
+	) {
 		placing = add;
+		pendingSeats = pending;
 		toast('Add a seat', 'Tap between two players to put the new seat there.');
 	}
 	/** One spot between each pair of neighbours; the one after the last seat wraps round. */
@@ -413,7 +419,8 @@
 					return {
 						position: i + 1,
 						at: { x: (p.x + next.x) / 2, y: (p.y + next.y) / 2 },
-						label: `Place between ${name(i)} and ${name((i + 1) % shown.length)}`
+						label: `Place between ${name(i)} and ${name((i + 1) % shown.length)}`,
+						pending: pendingSeats.filter((p) => p.position === i + 1).map((p) => p.name)
 					};
 				})
 			: []

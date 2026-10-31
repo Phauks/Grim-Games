@@ -1,6 +1,9 @@
 import { DurableObject } from 'cloudflare:workers';
 import {
 	DAY_MS,
+	INVITE_TTL_MS,
+	INVITES_PER_DAY,
+	MAX_INVITES,
 	MAX_RECENT,
 	REQUEST_TTL_MS,
 	type RequestRefusal
@@ -38,6 +41,15 @@ export interface BookContents {
 export interface RecentEntry extends BookEntry {
 	name?: string;
 	games: number;
+}
+
+/** A friend's invite to their live room (plan F4), by the sender's id. */
+export interface InviteEntry {
+	id: number;
+	sender: string;
+	code: string;
+	title: string;
+	at: number;
 }
 
 /** A script a friend sent, by the sender's id. */
@@ -101,6 +113,17 @@ export class FriendBook extends DurableObject {
 				games INTEGER NOT NULL,
 				last_at INTEGER NOT NULL
 			);
+			-- Friends' invites to their live rooms (plan F4): one per sender and room.
+			CREATE TABLE IF NOT EXISTS invite (
+				id INTEGER PRIMARY KEY AUTOINCREMENT,
+				sender TEXT NOT NULL,
+				code TEXT NOT NULL,
+				title TEXT NOT NULL,
+				sent_at INTEGER NOT NULL,
+				UNIQUE (sender, code)
+			);
+			-- When each invite this account sent went, for the day's limit.
+			CREATE TABLE IF NOT EXISTS invited (at INTEGER NOT NULL);
 		`);
 	}
 
@@ -253,6 +276,7 @@ export class FriendBook extends DurableObject {
 	async block(id: string, now: number): Promise<void> {
 		this.sql.exec('DELETE FROM friend WHERE id = ?', id);
 		this.sql.exec('DELETE FROM recent WHERE id = ?', id);
+		this.sql.exec('DELETE FROM invite WHERE sender = ?', id);
 		this.sql.exec('DELETE FROM inbox WHERE sender = ?', id);
 		this.sql.exec('DELETE FROM request WHERE id = ?', id);
 		this.sql.exec('INSERT OR IGNORE INTO block (id, created_at) VALUES (?, ?)', id, now);
@@ -280,6 +304,57 @@ export class FriendBook extends DurableObject {
 		this.sql.exec('DELETE FROM block WHERE id = ?', id);
 		this.sql.exec('DELETE FROM inbox WHERE sender = ?', id);
 		this.sql.exec('DELETE FROM recent WHERE id = ?', id);
+		this.sql.exec('DELETE FROM invite WHERE sender = ?', id);
+	}
+
+	/** Counts an invite this account sends against the day's limit; false when it is used up. */
+	async spendInvite(now: number): Promise<boolean> {
+		this.sql.exec('DELETE FROM invited WHERE at < ?', now - DAY_MS);
+		const sent = this.sql.exec<{ n: number }>('SELECT COUNT(*) AS n FROM invited').one().n;
+		if (sent >= INVITES_PER_DAY) return false;
+		this.sql.exec('INSERT INTO invited (at) VALUES (?)', now);
+		return true;
+	}
+
+	/**
+	 * A friend, `from`, invites this account to their room (plan F4). False unless they are
+	 * friends. A second invite to the same room replaces the first.
+	 */
+	async receiveInvite(
+		from: string,
+		invite: { code: string; title: string },
+		now: number
+	): Promise<boolean> {
+		const relation = this.relation(from);
+		if (!relation.friend || relation.blocked) return false;
+		this.sql.exec(
+			`INSERT INTO invite (sender, code, title, sent_at) VALUES (?, ?, ?, ?)
+			ON CONFLICT (sender, code) DO UPDATE SET title = excluded.title, sent_at = excluded.sent_at`,
+			from,
+			invite.code,
+			invite.title,
+			now
+		);
+		this.sql.exec(
+			'DELETE FROM invite WHERE id NOT IN (SELECT id FROM invite ORDER BY sent_at DESC LIMIT ?)',
+			MAX_INVITES
+		);
+		return true;
+	}
+
+	/** Invites still open, newest first. */
+	async invites(now: number): Promise<InviteEntry[]> {
+		this.sql.exec('DELETE FROM invite WHERE sent_at < ?', now - INVITE_TTL_MS);
+		return this.sql
+			.exec<{ id: number; sender: string; code: string; title: string; at: number }>(
+				'SELECT id, sender, code, title, sent_at AS at FROM invite ORDER BY sent_at DESC'
+			)
+			.toArray()
+			.map(({ id, sender, code, title, at }) => ({ id, sender, code, title, at }));
+	}
+
+	async dismissInvite(id: number): Promise<void> {
+		this.sql.exec('DELETE FROM invite WHERE id = ?', id);
 	}
 
 	/**
