@@ -9,7 +9,8 @@
 
 	/**
 	 * The phones removed from the room this game (plan J37; Trevor, 2026-10-29: "only good for
-	 * that game, but the kick can be revoked"). "Let back in" lets one join again, with no seat.
+	 * that game, but the kick can be revoked"). Unblock (Trevor, 2026-10-31) only lets one try to
+	 * join again: it comes back as a new phone, with no seat, and asks to sit like anyone else.
 	 * Always shown in a live room, "None" when empty, so removing someone shifts nothing.
 	 */
 	const host = roomHost();
@@ -36,7 +37,7 @@
 					<Button
 						variant="quiet"
 						onclick={() => host.send({ type: 'let-back-in', memberId: member.memberId })}
-						>{t('room.players.letBackIn')}</Button
+						>{t('room.players.unblock')}</Button
 					>
 				</li>
 			{/each}

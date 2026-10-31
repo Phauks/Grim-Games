@@ -21,6 +21,9 @@ const SHARE_TODO = [];
  * (Trevor, 2026-10-24: every player name is the grim's name badge).
  */
 const PLAYER_BADGE_TODO = [];
+// Files that still draw a script's logo beside its name by hand (grim/script-name). Only
+// shrinks: the board's corner title is measured line by line (corner-room.ts).
+const SCRIPT_NAME_TODO = ['src/lib/features/grimoire/BoardCorner.svelte'];
 /**
  * Files that still draw a character's icon or ability themselves instead of CharacterRow (or
  * another shared character component); only ever shrinks (Trevor, 2026-10-30: characters and
@@ -413,6 +416,25 @@ export default defineConfig(
 		languageOptions: { parserOptions: { projectService: true, extraFileExtensions: ['.svelte'] } },
 		plugins: { grim },
 		rules: { 'grim/character-display': 'error' }
+	},
+	{
+		// A script's name, with its logo, is one component (Trevor, 2026-10-31). The logo on
+		// its own (the board's middle, the grim cover, a QR code's middle, paper) is its owners'.
+		// SCRIPT_NAME_TODO only shrinks.
+		files: ['src/**/*.svelte', 'src/**/*.ts'],
+		ignores: [
+			'src/**/*.test.ts',
+			'src/lib/features/spikes/**',
+			'src/routes/spikes/**',
+			'src/lib/features/scripts/ScriptName.svelte',
+			'src/lib/features/scripts/BoardLogo.svelte',
+			'src/lib/features/scripts/ScriptQrCenter.svelte',
+			'src/lib/features/show/CoverScreen.svelte',
+			'src/lib/features/player/ScriptPrintSheet.svelte',
+			...SCRIPT_NAME_TODO
+		],
+		plugins: { grim },
+		rules: { 'grim/script-name': 'error' }
 	},
 	{
 		// Core builds no screen text, but its fields must keep the name marks for the UI.

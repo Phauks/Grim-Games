@@ -236,3 +236,31 @@ select:focus-visible {
 [data-setting] + [data-setting] {
 	border-top: 1px solid var(--border);
 }
+
+/*
+	A character type's band (Trevor, 2026-10-31, picked "B · Band"): every type heading
+	(Collapsible's `tone`, the printed script's headings) and Character selection's counts boxes
+	fill with their tokens' colour, the same fills as a CharacterBadge, with its text colour on
+	top. Anything carrying `data-type-band` reads `--type-band` and `--on-type-band` from here.
+	Travellers split blue and red, as their badges do.
+*/
+[data-type-band='good'] {
+	--type-band: var(--good);
+	--on-type-band: var(--on-good);
+}
+[data-type-band='evil'] {
+	--type-band: var(--evil);
+	--on-type-band: var(--on-evil);
+}
+[data-type-band='traveller'] {
+	--type-band: linear-gradient(to right, var(--good) 50%, var(--evil) 50%);
+	--on-type-band: var(--on-good);
+}
+[data-type-band='fabled'] {
+	--type-band: var(--fabled);
+	--on-type-band: var(--on-fabled);
+}
+[data-type-band='loric'] {
+	--type-band: var(--loric);
+	--on-type-band: var(--on-loric);
+}

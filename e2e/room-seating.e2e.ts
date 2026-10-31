@@ -10,8 +10,9 @@ import { openProfile, setPlayerName } from './player-name.ts';
 import { toBoard } from './new-game.ts';
 
 // Seating on the grim (plan J38; Trevor, 2026-10-29 22:36: "yes to drag circle, yes to claim",
-// with no left and right): while seating is open each phone drags its own disc and the drop
-// names both neighbours; the Storyteller locks seating from ⋯; then a phone taps an open seat.
+// with no left and right): while seating is open each phone drags its own disc onto the seat it
+// wants, which lights up, and the drop takes that seat's place (Trevor, 2026-10-31: not between
+// seats); the Storyteller locks seating from ⋯; then a phone taps an open seat.
 
 async function openRoom(page: Page) {
 	await page.goto('/new');
@@ -78,30 +79,76 @@ test('phones drag their own seat while seating is open, then claim an open seat 
 	await seatingFromMenu(page, 'Open seating');
 	await expect(line).toHaveText('Seating is open');
 
-	// A phone with no seat drags its disc from the middle; the line names both neighbours.
-	const from = await centre(phone.getByTestId('seating-disc'));
-	const [cy, eve] = [await centre(seats.nth(0)), await centre(seats.nth(1))];
-	await phone.mouse.move(from.x, from.y);
-	await phone.mouse.down();
-	await phone.mouse.move((cy.x + eve.x) / 2, (cy.y + eve.y) / 2, { steps: 8 });
-	await expect(line).toHaveText(/^Between\s*Cy\s*and\s*Eve$/);
+	const disc = phone.getByTestId('seating-disc');
+	const target = phone.getByTestId('seating-target');
+	async function dragTo(to: { x: number; y: number }) {
+		const from = await centre(disc);
+		await phone.mouse.move(from.x, from.y);
+		await phone.mouse.down();
+		await phone.mouse.move(to.x, to.y, { steps: 8 });
+	}
+
+	// Held away from every seat, nothing lights up and the drop changes nothing.
+	const middle = await centre(disc);
+	await dragTo({ x: middle.x + 4, y: middle.y + 12 });
+	await expect(target).toHaveCount(0);
+	await expect(line).toHaveText('Seating is open');
 	await phone.mouse.up();
-	// The board seats the phone there, and every grim shows it.
+
+	// A phone with no seat drags its disc onto Eve's seat: it lights up and the line names it.
+	await dragTo(await centre(seats.nth(1)));
+	await expect(target).toHaveAttribute('data-seat', '2');
+	await expect(line).toHaveText(/^Sit in Seat 2\s*Eve$/);
+	await phone.mouse.up();
+	await expect(target).toHaveCount(0);
+	// The board seats the phone in that place, Eve moves one along, and every grim shows it.
 	await expect(seats.nth(1)).toHaveAttribute('aria-label', /^Seat 2: Ana/);
 	await expect(seats.nth(2)).toHaveAttribute('aria-label', /^Seat 3: Eve/);
 	await expect(page.getByRole('button', { name: /^Seat 2: Ana/ })).toBeVisible();
+
+	// Onto an open seat, the two swap: the chair Ana left is the empty one.
+	await dragTo(await centre(seats.nth(4)));
+	await expect(target).toHaveAttribute('data-seat', '5');
+	await expect(line).toHaveText('Sit in Seat 5');
+	await phone.mouse.up();
+	await expect(seats.nth(4)).toHaveAttribute('aria-label', /^Seat 5: Ana/);
+	await expect(seats.nth(2)).toHaveAttribute('aria-label', /^Seat 3: Eve/);
+	await expect(page.getByRole('button', { name: /^Seat 5: Ana/ })).toBeVisible();
 
 	// Locked: no more dragging, and a phone with no seat taps an open one to sit there.
 	await seatingFromMenu(page, 'Lock seating');
 	await expect(line).toHaveCount(0);
 	const bo = await joinAs(browser, testInfo, code, 'Bo');
-	await bo.getByTestId('grim-seat').nth(4).tap();
-	const ask = bo.getByRole('alertdialog', { name: 'Sit in Seat 5?' });
-	await expect(ask.getByTestId('seating-claim')).toHaveText(/^Between\s*Seat 4\s*and\s*Seat 6$/);
+	await bo.getByTestId('grim-seat').nth(1).tap();
+	const ask = bo.getByRole('alertdialog', { name: 'Sit in Seat 2?' });
+	await expect(ask.getByTestId('seating-claim')).toHaveText(/^Between\s*Cy\s*and\s*Eve$/);
 	await ask.getByRole('button', { name: 'Confirm' }).tap();
-	await expect(bo.getByTestId('grim-seat').nth(4)).toHaveAttribute('aria-label', /^Seat 5: Bo/);
-	await expect(page.getByRole('button', { name: /^Seat 5: Bo/ })).toBeVisible();
+	await expect(bo.getByTestId('grim-seat').nth(1)).toHaveAttribute('aria-label', /^Seat 2: Bo/);
+	await expect(page.getByRole('button', { name: /^Seat 2: Bo/ })).toBeVisible();
 
 	await phone.context().close();
 	await bo.context().close();
+});
+
+test('the seat the room gives a phone has a ring on its Grim, with no way to mark another', async ({
+	page,
+	browser
+}, testInfo) => {
+	// Trevor (2026-10-27): a steady ring on the player's own seat. Players are seated by the
+	// room now, so the seat sheet's "This is me" is gone (Trevor, 2026-10-31).
+	const code = await openRoom(page);
+	await nameSeat(page, 2, 'Ana');
+	const phone = await joinAs(browser, testInfo, code, 'Ana');
+	const seat = phone.getByTestId('grim-seat').nth(1);
+	await expect(seat).toHaveAttribute('data-mine');
+	await expect(phone.locator('[data-testid="grim-seat"][data-mine]')).toHaveCount(1);
+	await expect(seat).toHaveAttribute('aria-label', /, you$/);
+	const disc = seat.locator('.disc');
+	await expect(disc).toHaveCSS('outline-style', 'solid');
+	await expect(disc).toHaveCSS('animation-name', 'none');
+	await phone.getByTestId('grim-seat').nth(2).tap();
+	const sheet = phone.getByRole('dialog', { name: /^Seat 3/ });
+	await expect(sheet.getByTestId('seat-note')).toBeVisible();
+	await expect(sheet.getByText('This is me', { exact: true })).toHaveCount(0);
+	await phone.context().close();
 });

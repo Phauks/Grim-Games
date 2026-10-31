@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { SeatId } from '#lib/core/model/index.ts';
 import type { PublicGameState } from './public-projection.ts';
 import {
-	dropBetween,
+	dropOnto,
 	hostView,
 	join,
 	newRoom,
@@ -66,6 +66,19 @@ describe('sitWish', () => {
 		);
 	});
 
+	it('passes on the seat a phone dropped its disc on, only while seating is open', () => {
+		const onto = { type: 'sit', onto: 's3' } as const;
+		expect(sitWish(room(), 'ana', onto)).toBeUndefined();
+		expect(sitWish(setSeatingOpen(room(), true), 'ana', onto)).toEqual({
+			type: 'sit',
+			memberId: 'ana',
+			onto: 's3'
+		});
+		expect(sitWish(setSeatingOpen(room(), true), 'ana', { type: 'sit', onto: 'nope' })).toBe(
+			undefined
+		);
+	});
+
 	it('passes a claim on only once locked, from a phone with no seat, for an open seat', () => {
 		const claim = (seatId: string) => ({ type: 'claim-seat', seatId }) as const;
 		expect(sitWish(room(), 'bo', claim('s2'))).toEqual({
@@ -125,22 +138,76 @@ describe('sitCommands', () => {
 	});
 });
 
-describe('dropBetween', () => {
-	// Four seats round a ring: top, right, bottom, left.
-	const ids = [s('n'), s('e'), s('s'), s('w')];
+// Trevor, 2026-10-31: in open seating the drop takes the seat it lights up, not a gap between.
+describe('sitCommands onto a seat', () => {
+	const seating = [s('a'), s('b'), s('c'), s('d'), s('e')];
+	const seats = (names: Record<string, string>) =>
+		Object.fromEntries(seating.map((id) => [id, names[id] ? { playerName: names[id] } : {}]));
+
+	it("puts the phone's seat in a player's place, and that player moves one towards it", () => {
+		const named = seats({ a: 'Ana', b: 'Bo', c: 'Cy', d: 'Di', e: 'Eve' });
+		expect(sitCommands(seating, named, 'Ana', { onto: s('c') })).toEqual([
+			{ type: 'MoveSeat', seatId: 'a', position: 2 }
+		]);
+		expect(sitCommands(seating, named, 'Eve', { onto: s('b') })).toEqual([
+			{ type: 'MoveSeat', seatId: 'e', position: 1 }
+		]);
+		expect(sitCommands(seating, named, 'Cy', { onto: s('c') })).toEqual([]);
+	});
+
+	it('swaps places with an open seat, so the chair it left is the empty one', () => {
+		const named = seats({ a: 'Ana', b: 'Bo', c: 'Seat 3', d: 'Di' });
+		expect(sitCommands(seating, named, 'Ana', { onto: s('c') })).toEqual([
+			{ type: 'MoveSeat', seatId: 'a', position: 2 },
+			{ type: 'MoveSeat', seatId: 'c', position: 0 }
+		]);
+		expect(sitCommands(seating, named, 'Bo', { onto: s('c') })).toEqual([
+			{ type: 'MoveSeat', seatId: 'b', position: 2 }
+		]);
+		expect(sitCommands(seating, named, 'Di', { onto: s('e') })).toEqual([
+			{ type: 'MoveSeat', seatId: 'd', position: 4 }
+		]);
+	});
+
+	it('names an open seat a phone with no seat lands on', () => {
+		const named = seats({ a: 'Ana', c: 'Cy' });
+		expect(sitCommands(seating, named, 'Eve', { onto: s('d') })).toEqual([
+			{ type: 'RenameSeat', seatId: 'd', playerName: 'Eve' }
+		]);
+	});
+
+	it("brings the first open seat to a player's place for a phone with no seat, or adds one", () => {
+		const named = seats({ a: 'Ana', c: 'Cy', d: 'Di', e: 'Eve' });
+		expect(sitCommands(seating, named, 'Fay', { onto: s('d') })).toEqual([
+			{ type: 'RenameSeat', seatId: 'b', playerName: 'Fay' },
+			{ type: 'MoveSeat', seatId: 'b', position: 3 }
+		]);
+		const full = seats({ a: 'Ana', b: 'Bo', c: 'Cy', d: 'Di', e: 'Eve' });
+		expect(sitCommands(seating, full, 'Fay', { onto: s('c') })).toEqual([
+			{ type: 'AddSeat', playerName: 'Fay', position: 2 }
+		]);
+	});
+
+	it('does nothing for a seat no longer at the table', () => {
+		expect(sitCommands(seating, seats({ a: 'Ana' }), 'Ana', { onto: s('z') })).toEqual([]);
+	});
+});
+
+describe('dropOnto', () => {
+	const ids = [s('n'), s('e'), s('s')];
 	const points = [
 		{ x: 50, y: 0 },
 		{ x: 100, y: 50 },
-		{ x: 50, y: 100 },
-		{ x: 0, y: 50 }
+		{ x: 50, y: 100 }
 	];
 
-	it('names the two seats either side of the drop', () => {
-		expect(dropBetween(ids, points, { x: 90, y: 10 })).toEqual({ after: 'n', before: 'e' });
-		expect(dropBetween(ids, points, { x: 5, y: 10 })).toEqual({ after: 'w', before: 'n' });
+	it('lights the nearest seat within reach', () => {
+		expect(dropOnto(ids, points, { x: 90, y: 40 }, 30)).toBe('e');
+		expect(dropOnto(ids, points, { x: 55, y: 5 }, 30)).toBe('n');
 	});
 
-	it('has nothing to drop between at an empty table', () => {
-		expect(dropBetween([], [], { x: 50, y: 50 })).toBeUndefined();
+	it('lights nothing when the disc is far from every seat', () => {
+		expect(dropOnto(ids, points, { x: 50, y: 50 }, 30)).toBeUndefined();
+		expect(dropOnto([], [], { x: 50, y: 50 }, 30)).toBeUndefined();
 	});
 });

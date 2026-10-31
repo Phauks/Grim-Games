@@ -22,9 +22,9 @@
 	import FeedbackSheet from './FeedbackSheet.svelte';
 	import VoteChoice from './VoteChoice.svelte';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
-	import { forgetRoom, type RoomPlayer } from './player.svelte.ts';
+	import { forgetRoom, thisPhonesRemovedProbe, type RoomPlayer } from './player.svelte.ts';
 	import { releaseRoom, useRoom } from './room-connection.ts';
-	import { followRoomScript, roomScript } from './room-script.svelte.ts';
+	import { followRoomScript, roomScript, unfollowRoom } from './room-script.svelte.ts';
 	import { fetchRoomPreview, type GamePreview } from './room-preview.ts';
 	import { rememberRoom } from './recent-rooms.ts';
 	import YourGames from './YourGames.svelte';
@@ -33,7 +33,7 @@
 	import PlayerCountOff from './PlayerCountOff.svelte';
 	import { finalGrimoire } from './final-grimoire.svelte.ts';
 	import { gameOverText } from './game-over-text.ts';
-	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
+	import ScriptName from '#lib/features/scripts/ScriptName.svelte';
 	import ScriptByline from '#lib/features/player/ScriptByline.svelte';
 	import PlayerStatusRow from '#lib/features/player/PlayerStatusRow.svelte';
 	import { parseSeatPresence } from '#lib/core/sync/seat-presence.ts';
@@ -102,7 +102,7 @@
 	$effect(() => {
 		const sent = player?.script;
 		const room = valid;
-		if (!sent || !room) return;
+		if (!sent || !room || removed) return;
 		let cancelled = false;
 		void followRoomScript(sent, room)
 			.then((loaded) => {
@@ -124,6 +124,14 @@
 	// A closed or refused room is forgotten, so /play's Room tab opens on the code form.
 	$effect(() => {
 		if (valid && (status === 'refused' || status === 'closed')) forgetRoom(valid);
+	});
+	// Removed by the Storyteller (plan J37): the game closes on this phone, which lands on the
+	// room's join screen, saying why, with no script or tabs (Trevor, 2026-10-31).
+	const removed = $derived(status === 'refused' && player?.refusedReason === 'removed');
+	$effect(() => {
+		if (!valid || !removed) return;
+		unfollowRoom(valid);
+		if (!entry) void goto(resolve('/join/[code]', { code: valid }), { replaceState: true });
 	});
 	const seats = $derived(view?.public?.seats ?? []);
 	const storyteller = $derived(view?.public?.storytellerName);
@@ -173,25 +181,35 @@
 		}
 		const abort = new AbortController();
 		lookup = { code: c, state: 'looking' };
-		fetchRoomPreview(c, abort.signal).then(
-			(game) => (lookup = game ? { code: c, state: 'found', game } : { code: c, state: 'none' }),
-			() => {
-				if (!abort.signal.aborted) lookup = { code: c, state: 'failed' };
-			}
-		);
+		thisPhonesRemovedProbe(c)
+			.then((probe) => fetchRoomPreview(c, abort.signal, probe))
+			.then(
+				(game) => (lookup = game ? { code: c, state: 'found', game } : { code: c, state: 'none' }),
+				() => {
+					if (!abort.signal.aborted) lookup = { code: c, state: 'failed' };
+				}
+			);
 		return () => abort.abort();
 	});
-	const found = $derived(lookup?.state === 'found' ? lookup.game : undefined);
+	/**
+	 * The Storyteller removed this phone from that game (plan J37): it is told here, as the
+	 * code is typed, and can't join (Trevor, 2026-10-31: "it should show error before you get to
+	 * that screen").
+	 */
+	const blocked = $derived(lookup?.state === 'found' && !!lookup.game.removed);
+	const found = $derived(lookup?.state === 'found' && !blocked ? lookup.game : undefined);
 	/** Joining goes ahead when the lookup fails (offline Worker, too many tries): the room page says why. */
-	const canJoin = $derived(lookup?.state === 'found' || lookup?.state === 'failed');
+	const canJoin = $derived(!blocked && (lookup?.state === 'found' || lookup?.state === 'failed'));
 	const lookupText = $derived(
-		lookup?.state === 'looking'
-			? t('room.lookingUp')
-			: lookup?.state === 'none'
-				? t('room.noGame')
-				: lookup?.state === 'failed'
-					? t('room.lookupFailed')
-					: ''
+		blocked
+			? t('room.removedYou')
+			: lookup?.state === 'looking'
+				? t('room.lookingUp')
+				: lookup?.state === 'none'
+					? t('room.noGame')
+					: lookup?.state === 'failed'
+						? t('room.lookupFailed')
+						: ''
 	);
 
 	let transferOpen = $state(false);
@@ -364,28 +382,27 @@
 					aria-live="polite"
 					data-testid="room-preview"
 				>
-					<!-- Only a found game has a logo; until then the status line has the whole box, centred. -->
+					<!-- Only a found game has a logo; until then the status line has the whole box,
+					     centred (Trevor, 2026-10-31). The box keeps its height, so nothing moves. -->
 					{#if found}
-						<ScriptLogo src={found.logo} name={found.name} class="game-logo" />
+						<ScriptName name={found.name} logo={found.logo} empty={t('room.noScriptYet')}>
+							{#snippet sub()}
+								<ScriptByline author={found.author} inline />
+								{#if found.storyteller}
+									<span data-testid="game-storyteller"
+										>{t('room.storytellerLine', { name: found.storyteller })}</span
+									>
+								{/if}
+								{#if found.seats !== undefined}
+									<span
+										>{t('room.tableSize', { seats: found.seats, seated: found.seated ?? 0 })}</span
+									>
+								{/if}
+							{/snippet}
+						</ScriptName>
+					{:else}
+						<p class="game-status" role="status">{lookupText}</p>
 					{/if}
-					<div class="game-text">
-						{#if found}
-							<p class="game-name">{found.name || t('room.noScriptYet')}</p>
-							<ScriptByline author={found.author} inline />
-							{#if found.storyteller}
-								<span class="game-table" data-testid="game-storyteller"
-									>{t('room.storytellerLine', { name: found.storyteller })}</span
-								>
-							{/if}
-							{#if found.seats !== undefined}
-								<span class="game-table"
-									>{t('room.tableSize', { seats: found.seats, seated: found.seated ?? 0 })}</span
-								>
-							{/if}
-						{:else}
-							<p class="game-status" role="status">{lookupText}</p>
-						{/if}
-					</div>
 				</section>
 				<div class="entry">
 					<Button type="submit" variant="accent" disabled={!canJoin}>
@@ -541,10 +558,8 @@
 		font-size: 1.1rem;
 	}
 	.game {
-		display: grid;
-		grid-template-columns: calc(4.5 * var(--u)) minmax(0, 1fr);
+		display: flex;
 		align-items: center;
-		gap: var(--space-3);
 		box-sizing: border-box;
 		width: 100%;
 		/* Room for the name, the author, the Storyteller and the table, so none of them moves the page. */
@@ -554,38 +569,18 @@
 		border-radius: var(--radius-md);
 		text-align: start;
 	}
-	/* The box is raised already, so the game it opens sits back in the page's own surface. */
 	.game:not(.found) {
-		grid-template-columns: minmax(0, 1fr);
+		justify-content: center;
 		text-align: center;
 	}
-	.game.found {
-		border-style: solid;
-		background: var(--surface);
-	}
-	.game :global(.game-logo) {
-		width: calc(4.5 * var(--u));
-		height: calc(4.5 * var(--u));
-	}
-	.game-text {
-		display: grid;
-		gap: var(--space-1);
-		min-width: 0;
-	}
-	.game-name {
-		margin: 0;
-		overflow: hidden;
-		font-family: var(--font-heading);
-		font-weight: var(--font-heading-weight);
-		font-size: 1.3rem;
-		line-height: 1.2;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-	.game-table,
 	.game-status {
 		margin: 0;
 		color: var(--on-surface-muted);
+	}
+	/* The box is raised already, so the game it opens sits back in the page's own surface. */
+	.game.found {
+		border-style: solid;
+		background: var(--surface);
 	}
 	.entry {
 		display: flex;

@@ -212,3 +212,59 @@ test("the Storyteller's player view has every button a phone in the room has", a
 	expect(filled.height).toBeGreaterThanOrEqual(viewport.height - 1);
 	await phoneContext.close();
 });
+
+/** The Grim tab as drawn: its corner's buttons (and whether each is on) and its seats' places. */
+async function grimLayout(screen: Locator) {
+	await screen.getByRole('tab', { name: 'Grim' }).tap();
+	const town = screen.getByTestId('player-grim');
+	await expect(town.getByTestId('grim-seat')).toHaveCount(8);
+	const buttons = await screen
+		.getByTestId('full-screen-corner')
+		.getByRole('button')
+		.evaluateAll((all) =>
+			all.map((b) => `${b.getAttribute('aria-label')}:${(b as HTMLButtonElement).disabled}`)
+		);
+	const box = (await town.boundingBox())!;
+	const seats = await town.getByTestId('grim-seat').evaluateAll((all) =>
+		all.map((s) => {
+			const r = s.getBoundingClientRect();
+			return [r.x + r.width / 2, r.y + r.height / 2];
+		})
+	);
+	const places = seats.map(([x, y]) => [
+		Math.round(((x - box.x) / box.width) * 100),
+		Math.round(((y - box.y) / box.height) * 100)
+	]);
+	await screen.getByRole('tab', { name: 'Script' }).tap();
+	return { buttons, places };
+}
+
+// Every way the Storyteller opens the players' screen shows the same one (Trevor, 2026-10-31:
+// "going into player view from the grim cover screen looks different than if you go into it
+// from the normal grim screen").
+test("the grim cover's Player view is the board's Script, seat for seat", async ({ page }) => {
+	await page.goto('/new');
+	await page
+		.getByRole('radiogroup', { name: 'Script' })
+		.getByText('Trouble Brewing', { exact: true })
+		.tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
+	await toBoard(page);
+
+	await page.getByRole('button', { name: 'Script', exact: true }).tap();
+	const script = page.getByRole('dialog', { name: 'Trouble Brewing' });
+	const fromBoard = await playerScreenButtons(script, script.getByTestId('dialog-head-actions'));
+	const boardGrim = await grimLayout(script);
+	await page.keyboard.press('Escape');
+	await expect(script).toBeHidden();
+
+	await page.getByTestId('cover-button').tap();
+	const cover = page.getByRole('dialog', { name: 'Screen covered' });
+	await cover.getByRole('button', { name: 'Player view' }).tap();
+	const view = page.getByRole('dialog', { name: 'Trouble Brewing' });
+	await expect(view.getByTestId('cover-player-view')).toBeVisible();
+	expect(await playerScreenButtons(view, view.getByTestId('dialog-head-actions'))).toEqual(
+		fromBoard
+	);
+	expect(await grimLayout(view)).toEqual(boardGrim);
+});
