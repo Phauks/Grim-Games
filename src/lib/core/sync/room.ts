@@ -32,6 +32,12 @@ import { transferCheck, type RoomTransfer } from './room-transfer.ts';
 import { withoutRemoved, type RemovedMember } from './room-removed.ts';
 import { setSeatingOpen } from './room-seating-open.ts';
 import { countOffView, endCountOff, type CountOff } from './room-count-off.ts';
+import {
+	closeTravellerPick,
+	travellerPickHostView,
+	travellerPickPlayerView,
+	type TravellerPick
+} from './room-traveller-pick.ts';
 
 export {
 	isSharedGrimoire,
@@ -125,6 +131,8 @@ export interface RoomState {
 	seatingOpen?: true;
 	/** A count off the Storyteller has open (room-count-off.ts, plan J40); a new game ends it. */
 	countOff?: CountOff;
+	/** Travellers choosing on their phones (room-traveller-pick.ts); a new game closes it. */
+	travellerPick?: TravellerPick;
 }
 
 /**
@@ -181,6 +189,7 @@ export * from './room-transfer.ts';
 export * from './room-removed.ts';
 export * from './room-seating-open.ts';
 export * from './room-count-off.ts';
+export * from './room-traveller-pick.ts';
 
 /**
  * A light shape check of a script from the Storyteller's device: the room only stores and
@@ -233,6 +242,8 @@ export function hostView(room: RoomState, present?: ReadonlySet<string>): HostVi
 	if (room.removed?.length) view.removed = room.removed;
 	if (room.seatingOpen) view.seatingOpen = true;
 	if (room.countOff) view.countOff = countOffView(room, present);
+	const travellers = travellerPickHostView(room);
+	if (travellers) view.travellerPick = travellers;
 	if (room.transfer) {
 		const { endsAt, tries, asking } = room.transfer;
 		view.transfer = { endsAt, tries };
@@ -312,6 +323,8 @@ export function playerView(
 	if (room.choosing) view.choosing = true;
 	if (room.seatingOpen) view.seatingOpen = true;
 	if (room.countOff) view.countOff = countOffView(room, present, memberId);
+	const travellers = travellerPickPlayerView(room, memberId, present);
+	if (travellers) view.travellerPick = travellers;
 	const role = memberRole(room, memberId);
 	if (role) view.role = role;
 	if (room.scriptVote) {
@@ -466,7 +479,7 @@ export function publish(
 			)
 		: room;
 	return {
-		...(newGame ? endCountOff(base) : base),
+		...(newGame ? closeTravellerPick(endCountOff(base)) : base),
 		gameId,
 		public: state,
 		members: room.members.map((m) => {

@@ -9,6 +9,8 @@ import {
 	friendActionApi,
 	FRIEND_INVITE_API,
 	FRIEND_INVITE_DISMISS_API,
+	FRIEND_PRESENCE_API,
+	FRIEND_ROOM_API,
 	FRIEND_RECENT_API,
 	FRIEND_REQUESTS_API,
 	FRIEND_SEAT_API,
@@ -91,6 +93,18 @@ export const friends = {
 	async dismissInvite(id: number): Promise<void> {
 		await call(FRIEND_INVITE_DISMISS_API, 'POST', { id });
 		if (data) data = { ...data, invites: data.invites?.filter((invite) => invite.id !== id) };
+	},
+	/** Shows friends this account's presence, or hides it (plan F5). */
+	setShowPresence(show: boolean): Promise<void> {
+		return update(() => call<FriendsResponse>(FRIEND_PRESENCE_API, 'PUT', { show }));
+	},
+	/**
+	 * Whether friends may join the room this account runs without an invite (plan F5); with
+	 * `open`, sets it.
+	 */
+	async friendRoom(code: string, open?: boolean): Promise<boolean> {
+		const body = open === undefined ? { code } : { code, open };
+		return (await call<{ open: boolean }>(FRIEND_ROOM_API, 'POST', body)).open;
 	},
 	setFindable(findable: boolean): Promise<void> {
 		return update(() => call<FriendsResponse>(FRIEND_SETTINGS_API, 'PUT', { findable }));

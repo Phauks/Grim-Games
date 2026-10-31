@@ -14,10 +14,38 @@
 				"when": {
 					"self": "any"
 				}
+			},
+			{
+				"group": "madness",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"target": true
+					},
+					{
+						"text": "is mad"
+					},
+					{
+						"nominee": true
+					},
+					{
+						"text": "is good"
+					}
+				],
+				"when": {
+					"self": "any",
+					"nomineeChose": true
+				}
 			}
 		]
 	},
 	"deathCause": {
 		"kind": "kills"
+	},
+	"madness": {
+		"chosenBy": "nominee",
+		"breaking": "death"
 	}
 }

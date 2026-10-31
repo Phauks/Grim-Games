@@ -21,6 +21,7 @@ import {
 	validRandomSelection,
 	listMoreTravellers,
 	moreTravellers,
+	recommendedTravellers,
 	travellerRange,
 	type BagSelection
 } from './bag-plan.ts';
@@ -388,6 +389,14 @@ describe('the draw', () => {
 		expect(dealt.game.bag!.order).toEqual([]);
 	});
 
+	// Trevor, 2026-10-31: a seat choosing a Traveller on its phone takes no tile.
+	it('deals no tile to a seat choosing a Traveller', () => {
+		const { session, seats } = drawGame();
+		const { pairs, seatsShort } = dealPairs(session.game, () => 0.5, new Set([seats[0]]));
+		expect(pairs.map((p) => p.seatId)).not.toContain(seats[0]);
+		expect(seatsShort).toBe(1);
+	});
+
 	it('deals in an order set by the random numbers, not the bag order', () => {
 		const { session } = drawGame();
 		const first = dealPairs(session.game, () => 0).pairs.map((p) => p.tileId);
@@ -539,6 +548,40 @@ describe('validRandomSelection', () => {
 		expect(listMoreTravellers(TB, 1)).toBe(true);
 		expect(listMoreTravellers([...TB, scapegoat], 1)).toBe(false);
 		expect(listMoreTravellers([...TB, scapegoat], 2)).toBe(true);
+	});
+
+	// Trevor, 2026-10-31: when players beyond 15 choose their Traveller on their phones,
+	// Random leaves those places open, and nothing says Travellers are missing.
+	it('leaves Traveller places open when the Travellers choose later', () => {
+		const travellers = [...data.byId.values()].filter((c) => c.type === 'traveller');
+		const input = { players: 18, scriptCharacters: TB, scriptOrder: TB.map((c) => c.id), lookup };
+		const result = validRandomSelection({
+			...input,
+			selection: {},
+			random: seeded(9),
+			fallbackTravellers: [travellers],
+			travellersLater: true
+		});
+		expect(result.ok).toBe(true);
+		if (!result.ok) return;
+		expect(Object.keys(result.selection).filter((id) => lookup(id)?.type === 'traveller')).toEqual(
+			[]
+		);
+		expect(Object.values(result.selection).reduce((a, b) => a + b, 0)).toBe(15);
+	});
+
+	it("lists the recommended Travellers: the script's own, then its edition's", () => {
+		const all = [...data.byId.values()];
+		const harlot = data.byId.get('harlot')!;
+		const ids = recommendedTravellers([...TB, harlot], 'tb', all).map((c) => c.id);
+		expect(ids[0]).toBe('harlot');
+		expect(ids.slice(1).sort()).toEqual(
+			all
+				.filter((c) => c.type === 'traveller' && c.edition === 'tb')
+				.map((c) => c.id)
+				.sort()
+		);
+		expect(recommendedTravellers(TB, undefined, all)).toEqual([]);
 	});
 
 	it('says why instead of choosing when nothing fits', () => {

@@ -148,10 +148,14 @@ export function nominatorsAfterExecution(
 	);
 }
 
-/** A character's ability a nomination sets off, for the board to offer (warn, never lock). */
+/**
+ * A character's ability a nomination sets off, for the board to offer (warn, never lock):
+ * the nominee's own (`onNominated`), or `nominee-chooses`, a character in play that has the
+ * nominee choose a player (`madness.chosenBy`, the Big Wig).
+ */
 export interface CharacterNominationPrompt {
-	kind: NominatedEffect;
-	/** The nominee's character, whose ability it is. */
+	kind: NominatedEffect | 'nominee-chooses';
+	/** The character whose ability it is. */
 	characterId: CharacterId;
 	nominator: SeatId;
 	nominee: SeatId;
@@ -165,6 +169,38 @@ export interface CharacterNominationPrompt {
  * straight away. A Spy might register as a Townsfolk, so a Spy nominator is asked about too.
  */
 export function characterNominationPrompts(
+	game: Game,
+	nomination: { nominator: SeatId; nominee: SeatId },
+	characters: CharacterLookup
+): CharacterNominationPrompt[] {
+	return [
+		...nomineeAbilityPrompts(game, nomination, characters),
+		...nomineeChooses(game, characters).map((characterId): CharacterNominationPrompt => ({
+			kind: 'nominee-chooses',
+			characterId,
+			...nomination
+		}))
+	];
+}
+
+/**
+ * Characters in play that have each nominee choose a player (`madness.chosenBy: 'nominee'`,
+ * https://wiki.bloodontheclocktower.com/Big_Wig): a Fabled or Loric in play, or a player's
+ * character while their ability works.
+ */
+export function nomineeChooses(game: Game, characters: CharacterLookup): CharacterId[] {
+	const chooses = (id: CharacterId) => rulesOf(id, characters)?.madness?.chosenBy === 'nominee';
+	const seated = game.seating.flatMap((seatId) => {
+		const id = trueCharacter(game, seatId, characters);
+		return id !== undefined && chooses(id) && abilityState(game, seatId, characters).works
+			? [id]
+			: [];
+	});
+	return [...new Set([...game.ruleCharacters.filter(chooses), ...seated])];
+}
+
+/** The nominee's own ability a nomination sets off (`onNominated`). */
+function nomineeAbilityPrompts(
 	game: Game,
 	nomination: { nominator: SeatId; nominee: SeatId },
 	characters: CharacterLookup

@@ -303,6 +303,12 @@
 				pass. Each account can send a limited number of invites a day.
 			</li>
 			<li>
+				Your friends see when you were last on (to the hour) and whether you're in a live game.
+				While you're in one, the server notes the room for up to 12 hours, until you leave. If the
+				Storyteller lets friends join without an invite, your friends also get a Join button for it.
+				Turn off "Let friends see when I'm on" on Friends and they see none of this.
+			</li>
+			<li>
 				Blocking someone is not shown to them. Requests are limited per account using Cloudflare's
 				rate limiter.
 			</li>

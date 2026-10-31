@@ -4,7 +4,8 @@
  * (https://wiki.bloodontheclocktower.com/Cerenovus), and the Mutant who tries to seem an
  * Outsider (https://wiki.bloodontheclocktower.com/Mutant); for the Harpy, the 1st player,
  * the 2nd, both or neither might die, never a dead one
- * (https://wiki.bloodontheclocktower.com/Harpy).
+ * (https://wiki.bloodontheclocktower.com/Harpy); for the Big Wig, the player a nominee chose
+ * to speak for them might die (https://wiki.bloodontheclocktower.com/Big_Wig).
  */
 import { describe, expect, it } from 'vitest';
 import type { Command } from '#lib/core/engine/index.ts';
@@ -24,9 +25,9 @@ const dead =
 	(s: string[]): Command => ({ type: 'SetDead', seatId: s[i], dead: true, cause: 'execution' });
 
 describe('breaking madness (madness)', () => {
-	it('is the Cerenovus, the Harpy and the Mutant', () => {
+	it('is the Big Wig, the Cerenovus, the Harpy and the Mutant', () => {
 		const mad = [...OFFICIAL_RULES].filter(([, r]) => r.madness).map(([id]) => id);
-		expect(mad.sort()).toEqual(['cerenovus', 'harpy', 'mutant']);
+		expect(mad.sort()).toEqual(['bigwig', 'cerenovus', 'harpy', 'mutant']);
 	});
 
 	it('offers to execute the player with the Cerenovus token, and no one else', () => {
@@ -77,5 +78,29 @@ describe('breaking madness (madness)', () => {
 		expect(
 			madnessOffer(deadSecond.session.game, 'harpy', deadSecond.seats[1], characters)?.dies
 		).toEqual([deadSecond.seats[1]]);
+	});
+
+	it('offers the player a nominee chose today to die, for the Big Wig', () => {
+		const { game, seats } = castGame(
+			['chef', 'empath', 'monk', 'imp'],
+			{ type: 'AddRuleCharacter', characterId: 'bigwig' },
+			(s) => ({ type: 'Nominate', nominator: s[0], nominee: s[1] })
+		);
+		const entryId = game.today.entries[0]!.entryId;
+		const chose = castGame(
+			['chef', 'empath', 'monk', 'imp'],
+			{ type: 'AddRuleCharacter', characterId: 'bigwig' },
+			(s) => ({ type: 'Nominate', nominator: s[0], nominee: s[1] }),
+			(s) => ({ type: 'ChooseForNomination', entryId, chosen: s[2] })
+		);
+		// Nobody chose yet: no one is mad.
+		expect(madnessOffer(game, 'bigwig', seats[2], characters)).toBeUndefined();
+		expect(madnessOffer(chose.game, 'bigwig', chose.seats[2], characters)).toEqual({
+			characterId: 'bigwig',
+			seatId: chose.seats[2],
+			breaking: 'death',
+			dies: [chose.seats[2]]
+		});
+		expect(madnessOffer(chose.game, 'bigwig', chose.seats[1], characters)).toBeUndefined();
 	});
 });

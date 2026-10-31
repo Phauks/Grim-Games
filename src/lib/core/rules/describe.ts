@@ -14,7 +14,15 @@ import type {
 
 type Named = Pick<Character, 'name' | 'type'>;
 
-const KNOWN_KEYS = new Set(['self', 'reminder', 'noReminder', 'cause', 'minAlive', 'targetAlive']);
+const KNOWN_KEYS = new Set([
+	'self',
+	'reminder',
+	'noReminder',
+	'cause',
+	'minAlive',
+	'targetAlive',
+	'nomineeChose'
+]);
 
 /** "killed by the Demon", "executed", "killed by the Assassin". */
 export function describeCause(
@@ -81,6 +89,7 @@ export function describeWhen(
 			`${when.targetAlive ? 'an alive' : 'a'} player has ${n}’s “${when.reminder}” reminder${perPlayer ? ' (one line per player)' : ''}`
 		);
 	}
+	if (when.nomineeChose) parts.push('a nominee chose a player today (one line per nomination)');
 	if (when.noReminder) parts.push(`no player has ${n}’s “${when.noReminder}” reminder`);
 	if (when.minAlive !== undefined) parts.push(`at least ${when.minAlive} players are alive`);
 	for (const [key, value] of Object.entries(when)) {

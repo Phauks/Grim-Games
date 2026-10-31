@@ -48,7 +48,7 @@ async function invite(
 ): Promise<InviteResponse> {
 	const code = typeof body?.code === 'string' ? normaliseRoomCode(body.code) : undefined;
 	if (!code) return { here: [], outcome: 'unavailable' };
-	const inRoom = await env.ROOMS.get(env.ROOMS.idFromName(code)).inviteAccounts(accountId);
+	const inRoom = (await env.ROOMS.get(env.ROOMS.idFromName(code)).friendsRoom(accountId))?.accounts;
 	if (!inRoom) return { here: [], outcome: 'unavailable' };
 	const mine = friendBook(env, accountId);
 	const { friends } = await mine.contents(Date.now());

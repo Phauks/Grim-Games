@@ -58,6 +58,7 @@ function answerNote(
 export const DAY_DECIDERS: Deciders<
 	| 'Nominate'
 	| 'EditNomination'
+	| 'ChooseForNomination'
 	| 'SetDayMark'
 	| 'SetPrepValue'
 	| 'Execute'
@@ -101,7 +102,23 @@ export const DAY_DECIDERS: Deciders<
 			return [];
 		}
 		checkNomination(game, ctx.characters, nominator, nominee, warn, entry.entryId);
-		return [{ type: 'DayEntryReplaced', entry: { ...entry, nominator, nominee } }];
+		// Whom the nominee chose was the old nominee's choice: a new nominee chooses again.
+		const next: typeof entry = { ...entry, nominator, nominee };
+		if (nominee !== entry.nominee) delete next.chosen;
+		return [{ type: 'DayEntryReplaced', entry: next }];
+	},
+
+	ChooseForNomination(game, command, ctx, warn) {
+		const entry = entryOfKind(game, command.entryId, 'nomination');
+		const chosen = command.chosen === undefined ? undefined : seatOf(game, command.chosen).seatId;
+		if (entry.chosen === chosen) {
+			warn('no-change', 'the choice is unchanged');
+			return [];
+		}
+		const next: typeof entry = { ...entry };
+		if (chosen) next.chosen = chosen;
+		else delete next.chosen;
+		return [{ type: 'DayEntryReplaced', entry: next }];
 	},
 
 	SetDayMark(game, command, ctx, warn) {

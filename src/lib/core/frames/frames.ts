@@ -4,8 +4,9 @@
  * achievements item, A1, e.g. "Clock face after 12 games"). Every frame is unlocked for now.
  *
  * The drawings are our own (research/frames.md), never Clocktower art. They are drawn in a
- * 100 by 100 box around a token whose face shrinks to a circle of radius `FACE_RADIUS`, so a
- * frame sits inside the token's own footprint and never moves a name or a reminder. Frames
+ * 100 by 100 box whose inner circle, of radius `FACE_RADIUS`, is the token's face. On a seat
+ * the face keeps its size and the frame is drawn round it, past the token's edge (Trevor,
+ * 2026-10-31: every token the same size), so it never moves a name or a reminder. Frames
  * carry no game meaning, so none can be mistaken for a dead, drunk or poisoned mark.
  *
  * Every frame but None is a form drawn in a colour, any form in any colour (Trevor,
