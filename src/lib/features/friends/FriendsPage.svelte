@@ -21,6 +21,7 @@
 	import AddFriendDialog from './AddFriendDialog.svelte';
 	import SeatFriendButton from './SeatFriendButton.svelte';
 	import FriendRows from './FriendRows.svelte';
+	import { roomJoinPath } from '#lib/features/room/join-link.ts';
 	import { profileHref, scriptOpenHref } from './friend-links.ts';
 	import { friendScripts } from './friend-scripts.svelte.ts';
 	import { type InboxScript, type PublishedScript } from './friend-scripts-protocol.ts';
@@ -30,6 +31,7 @@
 		readFriendLink,
 		type FriendAccount,
 		type FriendAction,
+		type FriendInvite,
 		type RecentPlayer
 	} from './friends-protocol.ts';
 
@@ -151,6 +153,21 @@
 	<SeatFriendButton open target={{ recent: other.id }} known={other.state} />
 {/snippet}
 
+{#snippet inviteLabel(invite: FriendInvite)}
+	<span class="script">{invite.title || t('friends.invites')}</span>
+	<span class="from">{t('friends.invites.from', { name: nameOf(invite.from) })}</span>
+{/snippet}
+
+{#snippet inviteActions(invite: FriendInvite)}
+	<Button variant="accent" href={roomJoinPath(invite.code)}>{t('friends.invites.join')}</Button>
+	<Button
+		variant="quiet"
+		disabled={busy}
+		onclick={() => change(() => friends.dismissInvite(invite.id))}
+		>{t('friends.invites.decline')}</Button
+	>
+{/snippet}
+
 {#snippet inboxLabel(script: InboxScript)}
 	<span class="script">{script.name}</span>
 	<span class="from">{t('friends.scripts.from', { name: nameOf(script.from) })}</span>
@@ -218,6 +235,21 @@
 	<ErrorBoundary area="friends">
 		{#if account.status === 'signed-in' && account.user}
 			{@const data = friends.data}
+			<PageSection title={t('friends.invites')}>
+				{#if data}
+					<FriendRows
+						items={data.invites ?? []}
+						key={(invite) => invite.id}
+						testid="friend-invites"
+						icon={(invite) => invite.from.icon}
+						label={inviteLabel}
+						actions={inviteActions}
+					/>
+				{:else}
+					<p class="muted">{friends.error || t('friends.loading')}</p>
+				{/if}
+			</PageSection>
+
 			<PageSection title={t('friends.requests')}>
 				{#if data}{@render accounts(data.incoming, 'friend-incoming', incomingActions)}{/if}
 			</PageSection>

@@ -298,6 +298,11 @@
 				off finding you by username keeps you off other people's lists.
 			</li>
 			<li>
+				A Storyteller can invite friends to their live room. The invite (who sent it, the room's
+				code and the script's name) waits on the friend's account until they decline it or 12 hours
+				pass. Each account can send a limited number of invites a day.
+			</li>
+			<li>
 				Blocking someone is not shown to them. Requests are limited per account using Cloudflare's
 				rate limiter.
 			</li>
