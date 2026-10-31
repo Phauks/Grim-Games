@@ -165,8 +165,9 @@
 		padding: var(--space-3);
 		overflow-y: auto;
 	}
+	/* --card-fit shrinks the words to fit an editor's preview (CardEditorLayout). */
 	.content[data-compact] .title {
-		font-size: clamp(1.3rem, 5vw, 2.4rem);
+		font-size: calc(clamp(1.3rem, 5vw, 2.4rem) * var(--card-fit, 1));
 	}
 	.content[data-compact] .ability {
 		font-size: 1.05rem;
@@ -195,7 +196,7 @@
 		overflow-wrap: anywhere;
 	}
 	.content[data-compact] .detail {
-		font-size: clamp(1.6rem, 7vw, 3rem);
+		font-size: calc(clamp(1.6rem, 7vw, 3rem) * var(--card-fit, 1));
 	}
 	/*
 	 * A short answer: as big as the card allows, each character taking about 0.6em, under the
