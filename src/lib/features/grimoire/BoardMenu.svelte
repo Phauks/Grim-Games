@@ -12,12 +12,14 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 
 	/**
 	 * The board's ⋯ menu in named groups: the game's less frequent actions, its start and end
 	 * (Character selection, End game, and New game once it has ended), the seats, and the app's
 	 * items with all of Settings.
-	 * Each item closes the menu before it acts, but Full screen, which leaves it open.
+	 * Each item closes the menu before it acts. Full screen is an icon beside the menu's X, and
+	 * leaves it open.
 	 */
 	interface Props {
 		open: boolean;
@@ -89,6 +91,20 @@
      is nice"): the game on the left, with its start and end under it ("end game/new game should
      be under game"); seats and the app's items on the right. -->
 <Dialog bind:open title="Grimoire" size="wide">
+	<!-- An icon beside X, not a menu item (Trevor, 2026-10-31: "instead of full screen being its
+	     own button in the menu, put it as an icon next to the x button"). The symbol says on or
+	     off; where the browser can't, it isn't there. It leaves the menu open (Trevor,
+	     2026-10-27: "dont close ... menu when toggling fullscreen"). -->
+	{#snippet headActions()}
+		{#if appFullScreen.available}
+			<IconButton
+				icon={appFullScreen.on ? 'exitFullScreen' : 'fullScreen'}
+				label="Full screen"
+				aria-pressed={appFullScreen.on}
+				onclick={() => appFullScreen.toggle()}
+			/>
+		{/if}
+	{/snippet}
 	<div class="menu">
 		<div class="column">
 			<section class="group" aria-labelledby="board-menu-game">
@@ -264,19 +280,6 @@
 				>
 					{t('settings.title')}
 				</Button>
-				<!-- Here, not on the toolbar, so the grim cover can sit beside ☰ (Trevor, 2026-10-27).
-				     The symbol says on or off; where the browser can't, it isn't listed. It leaves the
-				     menu open (Trevor, 2026-10-27: "dont close ... menu when toggling fullscreen"). -->
-				{#if appFullScreen.available}
-					<Button
-						variant="quiet"
-						icon={appFullScreen.on ? 'exitFullScreen' : 'fullScreen'}
-						aria-pressed={appFullScreen.on}
-						onclick={() => appFullScreen.toggle()}
-					>
-						Full screen
-					</Button>
-				{/if}
 				<!-- Leaving is through the app's navigation, which asks first (Trevor, 2026-10-16). -->
 				<span class="menu-nav">
 					<Button variant="quiet" icon="menu" onclick={() => fromMenu(() => navDrawer.show())}>
