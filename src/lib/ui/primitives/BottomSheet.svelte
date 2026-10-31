@@ -128,9 +128,8 @@
 <style>
 	/* Over the grimoire board, the board behind is blurred as well as dimmed, so nothing on it
 	   can be read while it isn't the main screen (Trevor, 2026-10-23: "for game integrity").
-	   GrimoireBoard marks the page while it is shown (board-cover.ts). Not inside a
-	   full-screen view (the grim cover): as Dialog's. */
-	:global(:root[data-board-shown] [data-scope='drawer'][data-part='backdrop']:not(dialog *)) {
+	   GrimoireBoard marks the page while it is shown (board-cover.ts). */
+	:global(:root[data-board-shown] [data-scope='drawer'][data-part='backdrop']) {
 		-webkit-backdrop-filter: blur(var(--u));
 		backdrop-filter: blur(var(--u));
 	}

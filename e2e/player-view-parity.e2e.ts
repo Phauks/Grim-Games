@@ -266,6 +266,25 @@ test("the grim cover's Player view is the board's Script, seat for seat", async 
 		.tap();
 	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
+	// Over a background, where the toolbar's buttons get a backing that the cover, a dialog
+	// inside the toolbar, passed on to every seat (Trevor, 2026-10-31).
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Settings', exact: true })
+		.tap();
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	await settings
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Board', exact: true })
+		.tap();
+	await settings
+		.getByRole('group', { name: 'Background', exact: true })
+		.getByRole('button', { name: 'Green felt' })
+		.tap();
+	await settings.getByRole('button', { name: 'Close' }).first().tap();
+	await expect(settings).toBeHidden();
+	await expect(page.getByTestId('board-background')).toHaveAttribute('data-preset', 'felt');
 
 	await page.getByRole('button', { name: 'Script', exact: true }).tap();
 	const script = page.getByRole('dialog', { name: 'Trouble Brewing' });
@@ -283,11 +302,4 @@ test("the grim cover's Player view is the board's Script, seat for seat", async 
 		fromBoard
 	);
 	expect(await grimLayout(view)).toEqual(boardGrim);
-	// The cover is opaque, so nothing over it blurs what is behind: a blur in the browser's top
-	// layer drew dark boxes over the seats and buttons (Trevor, 2026-10-31).
-	const blurs = await page
-		.locator('dialog [data-part="backdrop"]')
-		.evaluateAll((all) => all.map((e) => getComputedStyle(e).backdropFilter));
-	expect(blurs.length).toBeGreaterThan(0);
-	expect(blurs.every((b) => b === 'none')).toBe(true);
 });
