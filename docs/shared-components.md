@@ -12,7 +12,7 @@ longest cell, so two PRs that each added a row used to conflict over the whole t
 - `src/lib/core`: Pure TypeScript rules and data, with Vitest tests. No Svelte or DOM.
 - `src/lib/ui/primitives`: Controls with no game knowledge. Features never import `@ark-ui/*`.
 - `src/lib/ui/layout`: Page structure: `Page`, `PageSection`.
-- `src/lib/ui/builder`: The parts every builder page shares (Script builder, Character builder).
+- `src/lib/ui/builder`: The parts every builder page shares (Script builder, Character builder, Mode builder).
 - `src/lib/ui/share`: The share screen (code, QR, link).
 - `src/lib/ui/*.ts`: Helpers with no game knowledge: `stored.ts`, `download.ts`, `clipboard.ts`.
 - `src/lib/features/characters`: Anything that draws a character or reminder.

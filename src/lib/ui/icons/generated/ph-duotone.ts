@@ -170,6 +170,7 @@ import ph_prohibit_duotone from '~icons/ph/prohibit-duotone';
 import ph_prohibit_inset_duotone from '~icons/ph/prohibit-inset-duotone';
 import ph_projector_screen_duotone from '~icons/ph/projector-screen-duotone';
 import ph_push_pin_duotone from '~icons/ph/push-pin-duotone';
+import ph_puzzle_piece_duotone from '~icons/ph/puzzle-piece-duotone';
 import ph_qr_code_duotone from '~icons/ph/qr-code-duotone';
 import ph_question_duotone from '~icons/ph/question-duotone';
 import ph_scales_duotone from '~icons/ph/scales-duotone';
@@ -406,6 +407,7 @@ const icons: IconMap = {
 	'ph:prohibit-inset-duotone': ph_prohibit_inset_duotone,
 	'ph:projector-screen-duotone': ph_projector_screen_duotone,
 	'ph:push-pin-duotone': ph_push_pin_duotone,
+	'ph:puzzle-piece-duotone': ph_puzzle_piece_duotone,
 	'ph:qr-code-duotone': ph_qr_code_duotone,
 	'ph:question-duotone': ph_question_duotone,
 	'ph:scales-duotone': ph_scales_duotone,
