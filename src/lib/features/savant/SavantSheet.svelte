@@ -1,4 +1,5 @@
 <script lang="ts">
+	import AidMenu from '#lib/features/settings/AidMenu.svelte';
 	import { untrack } from 'svelte';
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import { dawnGames } from '#lib/core/engine/index.ts';
@@ -285,6 +286,7 @@
 			disabled={shown.length === 0}
 			onclick={() => (showOpen = true)}
 		/>
+		<AidMenu aid="savantInfo" />
 	{/snippet}
 	{#snippet aside()}<section aria-label={t('savant.earlier')}>
 			<h3 class="pane-title">{t('savant.earlier')}</h3>

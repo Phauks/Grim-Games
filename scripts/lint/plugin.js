@@ -1,5 +1,6 @@
 /** Grim-Games' own lint rules, as an ESLint plugin (`grim/...`). */
 import { caretSection } from './caret-section.js';
+import { characterDisplay } from './character-display.js';
 import { clearableField } from './clearable-field.js';
 import { closeButton } from './close-button.js';
 import { confirmDialog } from './confirm-dialog.js';
@@ -25,6 +26,7 @@ export default {
 		'icon-meaning': iconMeaning,
 		'share-panel': sharePanel,
 		'caret-section': caretSection,
-		'count-badge': countBadge
+		'count-badge': countBadge,
+		'character-display': characterDisplay
 	}
 };
