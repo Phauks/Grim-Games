@@ -248,6 +248,8 @@
 		height: var(--picker-height, 100%);
 	}
 	.picker[data-contained] .list {
+		/* Its own scroller: pinned headers stop at its top. */
+		--pin-top: 0rem;
 		flex: 1;
 		min-height: 0;
 		overflow-y: auto;
@@ -260,15 +262,9 @@
 	.picker[data-surface='sheet'] {
 		--collapsible-heading: currentColor;
 	}
-	/* Each type's header stays at the top while its group scrolls under it; the next one's
-	   pushes it off, since a header only sticks within its own group. */
-	.picker[data-pinned] :global(.collapsible > .head) {
-		position: sticky;
-		top: var(--picker-pin-top);
-		/* Under the band it sits below, over the rows. */
-		z-index: calc(var(--z-raised) - 1);
-		background: var(--page-background, var(--surface));
-		background-attachment: fixed;
+	/* Each type's header (Collapsible's own pin) stops just under the band above the picker. */
+	.picker[data-pinned] {
+		--pin-top: var(--picker-pin-top);
 	}
 	ul {
 		display: grid;

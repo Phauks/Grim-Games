@@ -74,7 +74,12 @@ async function unlined(page: Page, screen: string): Promise<string[]> {
 				const inBand = (y: number) => y >= bottom - 2 && y <= top + 2;
 				// A line under its neighbour's last row, inside the neighbour's own padding.
 				const nearBottom = (y: number) => y >= bottom - 24 && y <= top + 2;
+				// A character type's band is its own mark, and ends the list above it (Trevor,
+				// 2026-10-31: no extra line at a type list's start or end).
+				const band = (e: Element) => !!e.querySelector(':scope > .head[data-type-band]');
 				ok =
+					band(el) ||
+					band(prev) ||
 					prev.tagName === 'HR' ||
 					boxed(el) ||
 					boxed(prev) ||

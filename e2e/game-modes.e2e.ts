@@ -2306,11 +2306,13 @@ test('the Script sheet’s background choice sits beside Print and Share, and co
 		'background-color',
 		'rgb(218, 218, 218)'
 	);
-	// Each character type starts under a line across the sheet (SectionStack draws it).
+	// A character type's band marks where it starts, with no line above it (Trevor,
+	// 2026-10-31); other sections still start under a line (SectionStack draws it).
 	await sheet.getByRole('tab', { name: 'Script' }).tap();
 	const sections = sheet.getByTestId('script-copy').locator('.section-stack > section');
-	await expect(sections.nth(1)).not.toHaveCSS('border-top-width', '0px');
+	await expect(sections.nth(1)).toHaveCSS('border-top-width', '0px');
 	await expect(sections.first()).toHaveCSS('border-top-width', '0px');
+	await expect(sections.last()).not.toHaveCSS('border-top-width', '0px');
 });
 
 test('the Script sheet has the players’ settings cog, opening the one Settings', async ({

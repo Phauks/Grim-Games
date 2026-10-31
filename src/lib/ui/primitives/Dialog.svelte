@@ -212,6 +212,9 @@
 		border-radius: var(--card-radius);
 		background: var(--dialog-background);
 		color: var(--dialog-color);
+		/* Pinned section headers stop at the dialog's own top, in its colour. */
+		--pin-top: 0rem;
+		--pin-background: var(--dialog-background);
 		box-shadow: var(--shadow);
 	}
 	/* Two panes (`aside`): wider than a plain dialog, its panes scrolling inside it. */
