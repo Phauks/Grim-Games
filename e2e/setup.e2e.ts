@@ -1834,3 +1834,43 @@ test('tiles side by side are the same height, their bluff and lock buttons too',
 		[...byTop.values()].some((line) => line.length > 1) || test.info().project.name === 'phone'
 	).toBe(true);
 });
+
+// Trevor, 2026-10-31: past 15 players the extra players are Travellers
+// (https://wiki.bloodontheclocktower.com/Setup), so the section opens by itself, and a script
+// listing none still offers every Traveller (the wiki never limits them to the script,
+// https://wiki.bloodontheclocktower.com/Travellers). Random fills them too.
+test('past 15 players the Travellers open, and a script without any still offers them', async ({
+	page
+}) => {
+	await selectionFor(page, 15);
+	const header = page.getByRole('button', { name: 'Travellers', exact: true });
+	await expect(header).toHaveAttribute('aria-expanded', 'false');
+	await pickNumber(page, 'Players', 16);
+	await expect(header).toHaveAttribute('aria-expanded', 'true');
+	await expect(choice(page, 'Scapegoat')).toBeVisible();
+	await expect(choice(page, 'Harlot')).toHaveCount(0);
+
+	await page.goto('/library');
+	await page.getByRole('button', { name: 'Add script' }).tap();
+	const paste = page.getByRole('dialog', { name: 'Add script' });
+	await paste
+		.getByLabel('Script JSON')
+		.fill(
+			JSON.stringify([
+				{ id: '_meta', name: 'No Travellers' },
+				...['washerwoman', 'librarian', 'investigator', 'chef', 'empath', 'fortuneteller'],
+				...['undertaker', 'monk', 'ravenkeeper', 'virgin', 'slayer', 'soldier', 'mayor'],
+				...['butler', 'recluse', 'saint', 'poisoner', 'spy', 'scarletwoman', 'imp']
+			])
+		);
+	await paste.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(page.getByTestId('script-details-name')).toHaveText('No Travellers');
+	await selectionFor(page, 16, 'No Travellers');
+	await expect(header).toHaveAttribute('aria-expanded', 'true');
+	await expect(page.locator('li', { has: choice(page, 'Harlot') })).toContainText('Not on script');
+	await page.getByRole('button', { name: 'Random selection', exact: true }).tap();
+	await expect(page.getByTestId('count-traveller')).toHaveText('1');
+	await expect(
+		page.locator('[data-testid="setup-counts"] [data-type="traveller"]')
+	).toHaveAttribute('data-ok', '');
+});
