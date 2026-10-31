@@ -18,6 +18,18 @@ export interface BoardPlaces {
 	swap(a: SeatId, b: SeatId): void;
 }
 
+let open: { gameId: string; places: BoardPlaces } | undefined;
+
+/** The board open on this device, for a phone moving its seat (GrimoirePage). */
+export function openBoardPlaces(gameId: string, places: BoardPlaces): void {
+	open = { gameId, places };
+}
+
+/** Where the board of `game` draws its seats, while it is the board open on this device. */
+export function boardPlaces(game: OpenGame): BoardPlaces | undefined {
+	return open?.gameId === game.game.gameId ? open.places : undefined;
+}
+
 export function grantSit(
 	game: OpenGame,
 	members: readonly RoomMember[],

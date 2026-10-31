@@ -61,7 +61,7 @@ import { newGrimViewPassword } from '#lib/core/sync/grim-view-password.ts';
 import { applyTravellerPicks } from './host-traveller-pick.ts';
 import { STORAGE_KEY, type StoredRoom } from './host-storage.ts';
 import { RolesShown } from './roles-shown.svelte.ts';
-import { grantSit, type BoardPlaces } from './host-seating.ts';
+import { boardPlaces, grantSit } from './host-seating.ts';
 
 /** Changes are gathered for this long before the grimoire is sent to viewers again. */
 const GRIMOIRE_DELAY_MS = 300;
@@ -126,7 +126,6 @@ export class RoomHost {
 		| undefined;
 	#socket = $state.raw<RoomSocket>();
 	#game: OpenGame | undefined;
-	#places: BoardPlaces | undefined; // Where the open board draws a seat a phone moved.
 	#stopWatching: (() => void) | undefined;
 	#published: { gameId: string; state: PublicGameState } | undefined;
 	#script: Script | undefined;
@@ -285,8 +284,7 @@ export class RoomHost {
 	 * device. Any open game will do, including one still in setup: phones get the script as
 	 * soon as they join, before anyone has a seat.
 	 */
-	attach(game: OpenGame, notes?: () => BoardNotes, places?: BoardPlaces): void {
-		this.#places = places;
+	attach(game: OpenGame, notes?: () => BoardNotes): void {
 		if (this.#game === game) return;
 		this.#stopWatching?.();
 		this.#game = game;
@@ -663,7 +661,7 @@ export class RoomHost {
 				gameFeedback.save(message.feedbackGameId, message.feedback);
 			}
 		} else if (message.type === 'sit') {
-			if (this.#game) grantSit(this.#game, this.members, message, this.#places);
+			if (this.#game) grantSit(this.#game, this.members, message, boardPlaces(this.#game));
 		} else if (message.type === 'watchers') {
 			this.watchers = message.count;
 		} else if (message.type === 'grimoire-wanted') {
@@ -797,6 +795,6 @@ export function prepareRoom(): void {
 }
 
 /** Called wherever a game is open on the Storyteller's device, so phones follow it live. */
-export function attachRoom(game: OpenGame, notes?: () => BoardNotes, places?: BoardPlaces): void {
-	roomHost().attach(game, notes, places);
+export function attachRoom(game: OpenGame, notes?: () => BoardNotes): void {
+	roomHost().attach(game, notes);
 }

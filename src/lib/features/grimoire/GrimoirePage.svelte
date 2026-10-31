@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { swapPlaces, withPlaced } from '#lib/ui/seating/seat-layout.ts';
 	import { attachRoom } from '#lib/features/room/host.svelte.ts';
+	import { openBoardPlaces } from '#lib/features/room/host-seating.ts';
 	import { resolve } from '$app/paths';
 	import type { GameId } from '#lib/core/model/index.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
@@ -35,19 +36,16 @@
 		const board = new Grimoire(open);
 		// Phones in this device's live room follow the open game (a no-op without a room), and
 		// viewers of the view-only link see this board's seats and reminders where they are.
-		attachRoom(
-			open,
-			() => ({
-				layout: board.layout,
-				reminderSpots: board.reminderSpots,
-				copies: [...board.copies]
-			}),
-			// Phones moving their seats while seating is open (Trevor, 2026-10-31).
-			{
-				place: (seatId, point) => board.setLayout(withPlaced(board.layout, seatId, point)),
-				swap: (a, b) => board.setLayout(swapPlaces(board.layout, a, b))
-			}
-		);
+		attachRoom(open, () => ({
+			layout: board.layout,
+			reminderSpots: board.reminderSpots,
+			copies: [...board.copies]
+		}));
+		// Phones moving their seats while seating is open (Trevor, 2026-10-31).
+		openBoardPlaces(open.game.gameId, {
+			place: (seatId, point) => board.setLayout(withPlaced(board.layout, seatId, point)),
+			swap: (a, b) => board.setLayout(swapPlaces(board.layout, a, b))
+		});
 		grimoire = board;
 		return grimoire;
 	}
