@@ -151,6 +151,7 @@ longest cell, so two PRs that each added a row used to conflict over the whole t
 - A token size or switch (character, reminder, names and reminders in text) as a setting row: `features/characters/TokenAppearanceRow.svelte` (keys in `token-appearance-rows.ts`), and the player name size: `features/grimoire/NameSizeSlider.svelte`; Settings > Tokens draws them, never their own slider. Players reach them there too: the player screen's and Public Town's cogs open the one Settings at its list of sections (Trevor, 2026-10-27: one Settings everywhere)
 - Reading a QR code with the camera: `ui/share/QrScanner.svelte` (`ui/share/qr-reader.ts`: BarcodeDetector, else jsQR) (enforced by review)
 - Text too long for one QR code (an animated code): `core/codes/qr-frames.ts` (`qrFrames`, `QrFrameCollector`); shown by `frames` on `ui/share/SharePanel`, read through `ui/share/QrScanner.svelte` (`progress`) (enforced by `e2e/offline-share.e2e.ts`)
+- A wiki example as a rules test (a character's `Example N`): `core/testing/scenario.ts` (`scenario([...]).drunk('chef').dies('king')`, seats by place or character, then `expect` on the rule) (Trevor, 2026-10-31: one way for every example; enforced by `npm run lint` rules coverage)
 - A fake phone camera in an e2e test: `e2e/camera.ts` (`aimCamera`, one picture or frames in turn) (enforced by review)
 - A script's logo, or its name, in a QR code's middle: `features/scripts/ScriptQrCenter.svelte` (`qrCenter` on `ui/share/SharePanel`, `center` on `ui/primitives/QrCode`) (enforced by review)
 - A QR code, in any of its shapes, with a middle on whole squares: `ui/primitives/QrCode.svelte` (`modules`, `finders`; `qr-pattern.ts` draws, `qr-centre.ts` places the middle) (enforced by review)
@@ -178,7 +179,7 @@ character: a rule becomes a behaviour with parameters that any character can use
 - Setup reminders and preparation notes (`setup-reminders.ts`): `setupPrep`, moved
 - Setup counts (`setup-modifiers.ts`: the Baron, Godfather, Legion and the rest): `setupModifier`, moved
 - Death causes (`death-causes.ts`: who can cause a death and whom): `deathCause`, moved
-- Breaking madness (`madness.ts`: who a mad player is and whether breaking it executes or kills, the day view's Broke madness): `madness`, new
+- Breaking madness (`madness.ts`: who a mad player is and whether breaking it executes or kills, the day view's Broke madness): `madness`, new; `madness.chosenBy: nominee` with `dayReminders` `when.nomineeChose` for a player a nominee chose (the Big Wig's speaker, `ChooseForNomination`, asked by `NominationAsk`)
 - Reminder movement (`reminder-movement.ts`: tokens that stay put, characters that relocate them, and `followsNeighbours` tokens that move to the new neighbours when players change seats): `reminderMovement`, moved
 - Reminder placeholders (`night-text.ts`: what each `:reminder:` in the night text means): `reminderPlaceholders`, moved
 - Night text overrides (`night-text.ts`: Trevor's reviewed edits and the parked fuller text): `nightText`, moved

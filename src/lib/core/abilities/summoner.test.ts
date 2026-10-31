@@ -7,13 +7,13 @@
  * pin TPI's current data, so review and update them when a data sync changes Summoner.
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
- * a scenario test (seats, characters and reminders, then the action, then the expected state)
- * that paraphrases the example. Never copy wiki prose.
+ * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
+ * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
-import { castGame, testCharacters } from '#lib/core/model/fixtures.test-support.ts';
 import { gameEnds } from '#lib/core/rules/game-end.ts';
 import { defaultAlignment } from '#lib/core/data/index.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
 describe('Summoner', () => {
@@ -48,12 +48,10 @@ describe('Summoner', () => {
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Summoner#Examples)', () => {
 		it.todo('Example 1: Summoner turns Snitch into Lleech');
 		it('Example 2: Summoner executed on day one; good wins', () => {
-			const { session } = castGame(
-				['chef', 'empath', 'monk', 'mayor', 'summoner'],
-				{ type: 'NewDay' },
-				(s) => ({ type: 'Execute', seatId: s[4] })
-			);
-			expect(gameEnds(session.game, testCharacters)).toMatchObject([
+			const s = scenario(['chef', 'empath', 'monk', 'mayor', 'summoner'])
+				.newDay()
+				.execute('summoner');
+			expect(gameEnds(s.game, s.characters)).toMatchObject([
 				{ rule: 'dead-without-demon', winner: 'good' }
 			]);
 		});
