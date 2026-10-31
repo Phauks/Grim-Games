@@ -2359,10 +2359,9 @@ test('a player writes notes on a seat from the Grim tab, and the Notes tab lists
 
 	await seats.nth(2).tap();
 	const sheet = phone.getByRole('dialog', { name: 'Seat 3 · Seat 3' });
-	await expect(sheet.getByTestId('seat-note')).toContainText('None');
-	await sheet.getByTestId('seat-note').tap();
-	// Several titled notes per player, as the game's notes (Trevor, 2026-10-26).
-	const notes = phone.getByRole('dialog', { name: 'Notes: Seat 3' });
+	// Several titled notes per player, as the game's notes (Trevor, 2026-10-26), each its own
+	// card on the seat's sheet (Trevor, 2026-10-31).
+	const notes = sheet.getByTestId('seat-note');
 	const cards = notes.locator('[data-note]');
 	const editor = phone.getByRole('dialog', { name: 'Note', exact: true });
 	await expect(cards).toHaveCount(0);
@@ -2375,10 +2374,19 @@ test('a player writes notes on a seat from the Grim tab, and the Notes tab lists
 	await notes.getByTestId('new-note').tap();
 	await editor.getByRole('textbox', { name: 'Text' }).fill('Quiet all day');
 	await editor.getByRole('button', { name: 'Close' }).tap();
-	await expect(cards).toHaveText([/Claim/, /Quiet all day/]);
-	await notes.getByRole('button', { name: 'Close' }).tap();
-	// The seat's sheet lists them on one line.
-	await expect(sheet.getByTestId('seat-note')).toContainText('Claim, Quiet all day');
+	await expect(cards).toHaveText([
+		/^\s*Claim\s*Claims Chef: 1\s*$/,
+		/^\s*Untitled\s*Quiet all day\s*$/
+	]);
+	// A hidden note keeps its title and hides its text, as everywhere else.
+	await cards.first().tap();
+	await editor.getByRole('button', { name: 'Hide contents' }).tap();
+	await phone.keyboard.press('Escape');
+	await expect(cards.first()).toHaveText(/^\s*Claim\s*Hidden\s*$/);
+	await cards.first().tap();
+	await editor.getByRole('button', { name: 'Hide contents' }).tap();
+	await phone.keyboard.press('Escape');
+	await expect(cards.first()).toHaveText(/^\s*Claim\s*Claims Chef: 1\s*$/);
 	// Guessed as two characters, both listed after the name on the Notes tab.
 	await sheet.getByRole('button', { name: 'Empath', exact: true }).tap();
 	await sheet.getByRole('button', { name: 'Spy', exact: true }).tap();
@@ -2391,9 +2399,10 @@ test('a player writes notes on a seat from the Grim tab, and the Notes tab lists
 	// The board's own note mark, which opens the notes straight away, as on the board (Trevor,
 	// 2026-10-25: the same icon and the same behaviour).
 	await seats.nth(2).getByTestId('note-mark').tap();
-	await expect(cards).toHaveText([/Claim/, /Quiet all day/]);
+	const notesDialog = phone.getByRole('dialog', { name: 'Notes: Seat 3' });
+	await expect(notesDialog.locator('[data-note]')).toHaveText([/Claim/, /Quiet all day/]);
 	await expect(sheet).toHaveCount(0);
-	await notes.getByRole('button', { name: 'Close' }).tap();
+	await notesDialog.getByRole('button', { name: 'Close' }).tap();
 
 	// The Notes tab lists every seat with its notes, and opens the same editor.
 	await phone.getByRole('tab', { name: 'Notes' }).tap();

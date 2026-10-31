@@ -65,7 +65,8 @@
 	import GuessMarks from './GuessMarks.svelte';
 	import SeatGuessChips from './SeatGuessChips.svelte';
 	import SeatNotesDialog from '#lib/ui/notes/SeatNotesDialog.svelte';
-	import { deleteSeatNote, notesLine, saveSeatNote, seatNotes } from './seat-notes.svelte.ts';
+	import { deleteSeatNote, saveSeatNote, seatNotes } from './seat-notes.svelte.ts';
+	import SeatNotesRow from './SeatNotesRow.svelte';
 	import { TYPE_LABELS } from '#lib/features/reference/labels.ts';
 	import { matchesShape } from './MatchShapeButton.svelte';
 	import PlayerGrimTools from './PlayerGrimTools.svelte';
@@ -581,16 +582,13 @@
 				/>{:else}<span class="row-none">{t('common.none')}</span>{/each}</ReminderTokenRow
 		></button
 	>
-	<!-- The player's own notes on this seat (Trevor, 2026-10-24; several since 2026-10-26). -->
-	<button
-		type="button"
-		class="row seat-note"
-		data-testid="seat-note"
-		onclick={() => (noteOpen = true)}
-		><span class="row-label">{t('player.notes')}</span><span class="seat-note-text"
-			>{(chosen && notesLine(notes[chosen.seatId], t('player.hidden'))) || t('common.none')}</span
-		></button
-	>
+	<!-- The player's own notes on this seat (Trevor, 2026-10-24; several since 2026-10-26), each
+	     its own card (2026-10-31). -->
+	<SeatNotesRow
+		notes={(chosen && notes[chosen.seatId]) || []}
+		onSave={(note) => kept && chosen && saveSeatNote(kept, chosen.seatId, note)}
+		onDelete={(noteId) => kept && chosen && deleteSeatNote(kept, chosen.seatId, noteId)}
+	/>
 	<!-- A seat by its type alone, or only good or evil (Trevor, 2026-10-24), above the
 	     characters; a Traveller's seat has only Good and Evil, and no characters. -->
 	<GenericGuessGrid
@@ -652,12 +650,6 @@
 	}
 	.row-none {
 		color: var(--on-surface-muted);
-	}
-	.seat-note-text {
-		overflow: hidden;
-		color: var(--on-surface-muted);
-		text-overflow: ellipsis;
-		white-space: nowrap;
 	}
 	/* Over the finished grimoire: its switch alone, at the end. */
 	.tools {

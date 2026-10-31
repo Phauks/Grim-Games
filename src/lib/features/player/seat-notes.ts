@@ -93,13 +93,6 @@ export function withoutSeatNote(notes: SeatNotes, seatId: string, noteId: string
 	});
 }
 
-/** A seat's notes on one line, as its sheet shows them: each one's title, or its first line. */
-export function notesLine(notes: readonly TitledNote[] = [], hidden: string): string {
-	return notes
-		.map((n) => n.title.trim() || (n.hidden ? hidden : n.text.trim().split('\n')[0]))
-		.join(', ');
-}
-
 export function readSeatNotes(room: string): SeatNotes {
 	return parseSeatNotes(readStored(key(room)));
 }
