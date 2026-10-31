@@ -262,9 +262,9 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	},
 	{
 		title:
-			'Add late players to the bag draw as more players, not Travellers: placed on the grimoire, several at once, before and after',
+			'Add late players to the bag draw as more players, not Travellers: placed on the grimoire or seated from a phone, several at once, with Character selection’s list',
 		area: 'storyteller',
-		parts: ['L96', 'L96a']
+		parts: ['L96', 'L96a', 'L96b']
 	},
 	{
 		title:

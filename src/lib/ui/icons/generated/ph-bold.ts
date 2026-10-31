@@ -101,6 +101,7 @@ import ph_gavel_bold from '~icons/ph/gavel-bold';
 import ph_gear_bold from '~icons/ph/gear-bold';
 import ph_gear_six_bold from '~icons/ph/gear-six-bold';
 import ph_ghost_bold from '~icons/ph/ghost-bold';
+import ph_git_diff_bold from '~icons/ph/git-diff-bold';
 import ph_globe_bold from '~icons/ph/globe-bold';
 import ph_hammer_bold from '~icons/ph/hammer-bold';
 import ph_hand_arrow_up_bold from '~icons/ph/hand-arrow-up-bold';
@@ -336,6 +337,7 @@ const icons: IconMap = {
 	'ph:gear-bold': ph_gear_bold,
 	'ph:gear-six-bold': ph_gear_six_bold,
 	'ph:ghost-bold': ph_ghost_bold,
+	'ph:git-diff-bold': ph_git_diff_bold,
 	'ph:globe-bold': ph_globe_bold,
 	'ph:hammer-bold': ph_hammer_bold,
 	'ph:hand-arrow-up-bold': ph_hand_arrow_up_bold,

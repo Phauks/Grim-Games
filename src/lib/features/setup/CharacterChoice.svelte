@@ -30,6 +30,8 @@
 		onBluff?: () => void;
 		/** Why the bluff button can't be used now, e.g. "3 bluffs chosen"; undefined when it can. */
 		bluffBlocked?: string;
+		/** A short note on the row, e.g. who has it (the late player screen). */
+		note?: string;
 		onToggle: () => void;
 		onAddCopy: () => void;
 	}
@@ -45,6 +47,7 @@
 		onLock,
 		onBluff,
 		bluffBlocked,
+		note,
 		onToggle,
 		onAddCopy
 	}: Props = $props();
@@ -58,8 +61,9 @@
 		onLock?.();
 	}
 	// The accessible name; the row shows the name itself beside its token.
-	// eslint-disable-next-line grim/names-as-badges -- accessible name (aria-label) only
-	const label = $derived(copies > 1 ? `${character.name}, ${copies} copies` : character.name);
+	const label = $derived(
+		[character.name, copies > 1 ? `${copies} copies` : undefined, note].filter(Boolean).join(', ')
+	);
 </script>
 
 <!--
@@ -74,6 +78,7 @@
 	pressed={selected}
 	dashed={offScript}
 	{label}
+	{note}
 	describedby={bluff ? `${uid}-bluff` : outOfBag ? `${uid}-out` : undefined}
 	onclick={onToggle}
 >

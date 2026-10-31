@@ -51,6 +51,7 @@ import ph_funnel from '~icons/ph/funnel';
 import ph_gavel from '~icons/ph/gavel';
 import ph_gear from '~icons/ph/gear';
 import ph_ghost from '~icons/ph/ghost';
+import ph_git_diff from '~icons/ph/git-diff';
 import ph_hammer from '~icons/ph/hammer';
 import ph_hand_arrow_up from '~icons/ph/hand-arrow-up';
 import ph_hand_palm from '~icons/ph/hand-palm';
@@ -175,6 +176,7 @@ const icons: IconMap = {
 	'ph:gavel': ph_gavel,
 	'ph:gear': ph_gear,
 	'ph:ghost': ph_ghost,
+	'ph:git-diff': ph_git_diff,
 	'ph:hammer': ph_hammer,
 	'ph:hand-arrow-up': ph_hand_arrow_up,
 	'ph:hand-palm': ph_hand_palm,
