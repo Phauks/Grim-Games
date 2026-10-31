@@ -2,6 +2,7 @@
 	import {
 		combineRules,
 		type GameMode,
+		SPECIAL_RULES,
 		type RuleConflict,
 		type SpecialRule
 	} from '#lib/core/modes/index.ts';
@@ -18,9 +19,10 @@
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import SearchField from '#lib/ui/primitives/SearchField.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
-	import { allRules, customRules, findRule } from './custom-rules.svelte.ts';
+	import { customRules, findRule } from './custom-rules.svelte.ts';
 	import { modeLabel } from './labels.ts';
 	import ModeInspectDialog from './ModeInspectDialog.svelte';
+	import ShareModeDialog from './ShareModeDialog.svelte';
 	import { shownAbout } from './own-wording.svelte.ts';
 	import { RULE_SWITCHES, switched, switchOn, type SwitchChoices } from './rule-switches.ts';
 
@@ -37,6 +39,8 @@
 	 * Below them, the optional rules of the characters on the script (Trevor, 2026-10-30: an
 	 * official character's optional rule is its own functionality, not a special rule), each
 	 * a switch beside the character's badge, whose page has the rule's wiki text.
+	 * The app's own rules have no Delete; the rules added on this device sit in a Custom section
+	 * beneath them, each with Share and Delete (Trevor, 2026-10-31).
 	 */
 	interface Props {
 		open: boolean;
@@ -72,17 +76,18 @@
 		for (const r of optionalRules) if (r.character) prefetchWikiPage(r.character);
 	});
 
-	const rules = $derived(allRules());
 	const chosen = $derived(ruleIds.flatMap((id) => findRule(id) ?? []));
 	const conflicts = $derived(combineRules(mode, chosen).conflicts);
 	let inspecting = $state<GameMode | SpecialRule | undefined>();
 	let inspectOpen = $state(false);
 	let deleting = $state<SpecialRule | undefined>();
 	let deleteOpen = $state(false);
+	let sharing = $state<SpecialRule | undefined>();
+	let shareOpen = $state(false);
 
 	let term = $state('');
 	/** Rules whose name, other names or description hold the search term. */
-	const shown = $derived.by(() => {
+	function matching(rules: readonly SpecialRule[], term: string): readonly SpecialRule[] {
 		const q = term.trim().toLocaleLowerCase();
 		if (!q) return rules;
 		return rules.filter((rule) =>
@@ -91,7 +96,9 @@
 				.toLocaleLowerCase()
 				.includes(q)
 		);
-	});
+	}
+	const shown = $derived(matching(SPECIAL_RULES, term));
+	const shownCustom = $derived(matching(customRules.list, term));
 
 	/** A conflict's side: the game mode, or a rule (switchable here). */
 	const sideOf = (id: string): GameMode | SpecialRule =>
@@ -116,7 +123,7 @@
 	}
 </script>
 
-{#snippet ruleRow(rule: SpecialRule, withDelete: boolean)}
+{#snippet ruleRow(rule: SpecialRule, custom: boolean)}
 	<div class="row">
 		<Toggle
 			label={rule.name}
@@ -129,11 +136,17 @@
 			label={t('modes.inspectRule', { name: rule.name })}
 			onclick={() => inspect(rule)}
 		/>
-		{#if withDelete}
-			<!-- Always there, so nothing moves; only a rule added on this device can go. -->
+		{#if custom}
+			<IconButton
+				icon="share"
+				label={t('modes.shareFile', { name: rule.name })}
+				onclick={() => {
+					sharing = rule;
+					shareOpen = true;
+				}}
+			/>
 			<DeleteButton
 				label={t('modes.deleteRule', { name: rule.name })}
-				disabled={!customRules.list.some((r) => r.id === rule.id)}
 				onclick={() => {
 					deleting = rule;
 					deleteOpen = true;
@@ -246,8 +259,25 @@
 		</section>
 		<section aria-labelledby="rule-list-title">
 			<h3 id="rule-list-title">{t('modes.allRules')}</h3>
-			<ul role="list" data-testid="special-rules">
+			<ul role="list" class="rule-list" data-testid="special-rules">
 				{#each shown as rule (rule.id)}
+					<li>
+						{@render ruleRow(rule, false)}
+					</li>
+				{:else}
+					<li class="muted">{t('common.none')}</li>
+				{/each}
+			</ul>
+		</section>
+		<!-- Beneath the app's own: the rules added on this device, the only ones that can be
+			shared or deleted (Trevor, 2026-10-31). -->
+		<section aria-labelledby="custom-rules-title">
+			<h3 id="custom-rules-title">
+				{t('modes.customRules')}
+				<CountBadge count={customRules.list.length} />
+			</h3>
+			<ul role="list" class="rule-list" data-testid="custom-rules">
+				{#each shownCustom as rule (rule.id)}
 					<li>
 						{@render ruleRow(rule, true)}
 					</li>
@@ -262,6 +292,7 @@
 {#if inspecting}
 	<ModeInspectDialog bind:open={inspectOpen} mode={inspecting} />
 {/if}
+<ShareModeDialog bind:open={shareOpen} mode={sharing} />
 <ConfirmDialog
 	bind:open={deleteOpen}
 	title={t('modes.deleteRuleConfirm', { name: deleting?.name ?? '' })}
@@ -284,14 +315,14 @@
 		padding: 0;
 		list-style: none;
 	}
-	ul[data-testid='special-rules'] {
+	.rule-list {
 		display: grid;
 	}
 	/* A line between rules (Trevor, 2026-10-22: "better delineation between rules"). */
-	ul[data-testid='special-rules'] > li + li {
+	.rule-list > li + li {
 		border-top: 1px solid var(--border);
 	}
-	ul[data-testid='special-rules'] > li {
+	.rule-list > li {
 		padding-block: var(--space-1);
 	}
 	/* The switch takes the row, its description beside it; Inspect and Delete on the name line. */
