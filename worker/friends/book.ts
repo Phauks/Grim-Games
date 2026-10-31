@@ -1,6 +1,7 @@
 import { DurableObject } from 'cloudflare:workers';
 import {
 	DAY_MS,
+	MAX_RECENT,
 	REQUEST_TTL_MS,
 	type RequestRefusal
 } from '../../src/lib/features/friends/friends-protocol.ts';
@@ -14,6 +15,7 @@ import {
 	planReceive,
 	planSend,
 	type BookCounts,
+	type GamePlayer,
 	type Relation
 } from '../../src/lib/features/friends/friend-rules.ts';
 
@@ -30,6 +32,12 @@ export interface BookContents {
 	outgoing: BookEntry[];
 	blocked: BookEntry[];
 	findable: boolean;
+}
+
+/** Someone this account finished a game with (plan F3). */
+export interface RecentEntry extends BookEntry {
+	name?: string;
+	games: number;
 }
 
 /** A script a friend sent, by the sender's id. */
@@ -83,6 +91,15 @@ export class FriendBook extends DurableObject {
 				hash TEXT PRIMARY KEY,
 				name TEXT NOT NULL,
 				published_at INTEGER NOT NULL
+			);
+			-- People this account finished a game with (plan F3): their name in the last one,
+			-- that game's id (so it counts once) and how many games they played together.
+			CREATE TABLE IF NOT EXISTS recent (
+				id TEXT PRIMARY KEY,
+				name TEXT,
+				game TEXT NOT NULL,
+				games INTEGER NOT NULL,
+				last_at INTEGER NOT NULL
 			);
 		`);
 	}
@@ -235,6 +252,7 @@ export class FriendBook extends DurableObject {
 	/** Blocks `id`: any friendship and requests between them end, and its scripts go. */
 	async block(id: string, now: number): Promise<void> {
 		this.sql.exec('DELETE FROM friend WHERE id = ?', id);
+		this.sql.exec('DELETE FROM recent WHERE id = ?', id);
 		this.sql.exec('DELETE FROM inbox WHERE sender = ?', id);
 		this.sql.exec('DELETE FROM request WHERE id = ?', id);
 		this.sql.exec('INSERT OR IGNORE INTO block (id, created_at) VALUES (?, ?)', id, now);
@@ -261,6 +279,46 @@ export class FriendBook extends DurableObject {
 		this.sql.exec('DELETE FROM request WHERE id = ?', id);
 		this.sql.exec('DELETE FROM block WHERE id = ?', id);
 		this.sql.exec('DELETE FROM inbox WHERE sender = ?', id);
+		this.sql.exec('DELETE FROM recent WHERE id = ?', id);
+	}
+
+	/**
+	 * This account finished game `game` with `others` (plan F3). Safe to run twice: a game
+	 * counts once per person. Someone this account blocked isn't kept; the newest are.
+	 */
+	async played(game: string, others: GamePlayer[], now: number): Promise<void> {
+		for (const other of others) {
+			if (this.relation(other.id).blocked) continue;
+			this.sql.exec(
+				`INSERT INTO recent (id, name, game, games, last_at) VALUES (?, ?, ?, 1, ?)
+				ON CONFLICT (id) DO UPDATE SET
+					games = games + (CASE WHEN game = excluded.game THEN 0 ELSE 1 END),
+					name = excluded.name, game = excluded.game, last_at = excluded.last_at`,
+				other.id,
+				other.name ?? null,
+				game,
+				now
+			);
+		}
+		this.sql.exec(
+			'DELETE FROM recent WHERE id NOT IN (SELECT id FROM recent ORDER BY last_at DESC LIMIT ?)',
+			MAX_RECENT
+		);
+	}
+
+	/** People this account finished a game with, the latest first. */
+	async recent(): Promise<RecentEntry[]> {
+		return this.sql
+			.exec<{ id: string; name: string | null; games: number; at: number }>(
+				'SELECT id, name, games, last_at AS at FROM recent ORDER BY last_at DESC'
+			)
+			.toArray()
+			.map(({ id, name, games, at }) => (name ? { id, name, games, at } : { id, games, at }));
+	}
+
+	/** Whether this account finished a game with `id`, so Recent players may reach it. */
+	async playedWith(id: string): Promise<boolean> {
+		return this.sql.exec('SELECT 1 FROM recent WHERE id = ?', id).toArray().length > 0;
 	}
 
 	/** A friend, `from`, sends this account a script. False unless they are friends. */
@@ -328,7 +386,7 @@ export class FriendBook extends DurableObject {
 	async erase(): Promise<string[]> {
 		const ids = this.sql
 			.exec<{ id: string }>(
-				'SELECT id FROM friend UNION SELECT id FROM request UNION SELECT id FROM block'
+				'SELECT id FROM friend UNION SELECT id FROM request UNION SELECT id FROM block UNION SELECT id FROM recent'
 			)
 			.toArray()
 			.map((row) => row.id);
