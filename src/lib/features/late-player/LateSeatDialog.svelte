@@ -496,7 +496,8 @@
 		{@const seatId = changing}
 		<div class="change" data-testid="late-change">
 			<p class="badges">
-				<PlayerBadge name={seatName(game, seatId)} /><span class="muted">{t('late-player.was')}</span
+				<PlayerBadge name={seatName(game, seatId)} /><span class="muted"
+					>{t('late-player.was')}</span
 				><CharacterBadge characterId={fromOf(seatId) ?? ''} />
 			</p>
 			<CharacterPicker
