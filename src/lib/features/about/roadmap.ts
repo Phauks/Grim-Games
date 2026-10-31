@@ -80,41 +80,7 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		title:
 			'Grimoire board with a guided night: night steps, reminders, frames, the character sheet',
 		area: 'storyteller',
-		parts: [
-			'L8',
-			'L18a',
-			'L4',
-			'L26',
-			'L59',
-			'L60',
-			'L63',
-			'L66',
-			'L67',
-			'L70',
-			'L71',
-			'L72',
-			'L73',
-			'L75',
-			'L76',
-			'L77',
-			'L78',
-			'L79',
-			'L80',
-			'L81',
-			'L82',
-			'L83',
-			'L84',
-			'L85',
-			'L86',
-			'L87',
-			'L88',
-			'L89',
-			'L90',
-			'L91',
-			'L92',
-			'L93',
-			'L94'
-		]
+		parts: ['L8', 'L18a', 'L4', 'L26', 'L59', 'L60', 'L63', 'L66', 'L67', 'L82', 'L94']
 	},
 	{
 		title:
@@ -234,7 +200,7 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	{
 		title:
 			'Custom characters that follow their own rules: kill, protect, drunk and poison, win conditions, night information',
-		area: 'prepare',
+		area: 'engine',
 		parts: ['L74'],
 		prs: [410, 420, 429, 445, 459, 460, 462, 463, 465, 472, 482, 485, 488, 491]
 	},
@@ -338,12 +304,69 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		// Trevor, 2026-10-30/31: chosen at the start, shown on or off with the special rules.
 		title: "Characters' optional rules, chosen at the start of the game",
 		area: 'engine',
-		parts: ['M1', 'M2']
+		parts: ['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8']
+	},
+	{
+		// The ability parts gap list (/mnt/project-files/ability-parts/gaps.md), gaps 2 to 5.
+		title:
+			"Every official character's ability as data: night information, character and alignment changes, abilities held without a token",
+		area: 'engine',
+		parts: [
+			'L70',
+			'L71',
+			'L72',
+			'L73',
+			'L75',
+			'L76',
+			'L77',
+			'L78',
+			'L79',
+			'L80',
+			'L81',
+			'L83',
+			'L84',
+			'L85',
+			'L86',
+			'L87',
+			'L88',
+			'L89',
+			'L90',
+			'L91',
+			'L92',
+			'L93'
+		],
+		prs: [828, 833, 838, 841, 843, 846, 847, 849, 851, 853, 855, 857]
+	},
+	{
+		// Gap 2: characters whose information the Storyteller still works out by hand.
+		title:
+			'Valid information for the Chambermaid, Puzzlemaster, Widow, Damsel, Storm Catcher and Zenomancer',
+		area: 'engine',
+		parts: ['M10']
+	},
+	{
+		// Gap 8: the Bigwig's chosen speaker; gap 12: one-offs with no behaviour yet.
+		title: "The Bigwig's speaker, the Scapegoat, the Boomdandy and the Courtier's three nights",
+		area: 'engine',
+		parts: ['M11', 'M12']
+	},
+	{
+		// Gap 1, last and separate (Trevor, 2026-10-28).
+		title:
+			'Voting and nominations: vote weight, who may vote or nominate, forced and blocked executions (Butler, Thief, Bureaucrat, Bishop, Legion and 12 more)',
+		area: 'engine',
+		parts: ['M9']
+	},
+	{
+		// The wiki examples each character's test file lists as still to do.
+		title: 'Every wiki example tested, for every character',
+		area: 'engine',
+		parts: ['M13']
 	},
 	{
 		// Trevor, 2026-10-30: on the roadmap, after a spike and research.
 		title: 'Jinxes the app applies, not only shows',
-		area: 'storyteller',
+		area: 'engine',
 		parts: ['L99', 'L100']
 	},
 	{
