@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { pickNumber } from './number-select.ts';
 
 // The Character builder in Prepare (Trevor, 2026-10-17): make a homebrew character, save it on
 // the device, find it in the Library, and put it on a script with the Script builder.
@@ -80,7 +81,7 @@ test('an ability is built from its opening and setup changes', async ({ page }) 
 	const add = page.getByRole('button', { name: 'Add a setup change' });
 	await add.tap();
 	let dialog = page.getByRole('dialog', { name: 'Add a setup change' });
-	await dialog.getByRole('button', { name: 'Higher number' }).tap();
+	await pickNumber(dialog, 'Number', 2);
 	await expect(dialog.getByTestId('setup-part-preview')).toHaveText('[+2 Outsiders]');
 	await dialog.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(ability).toHaveValue(

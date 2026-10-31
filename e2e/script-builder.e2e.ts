@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { pickNumber } from './number-select.ts';
 
 // The Script builder in Prepare (Trevor, 2026-10-16): pick official characters, see the
 // script check (jinxed pairs, no Djinn line: Trevor 2026-10-17), save into the saved scripts New game uses.
@@ -534,11 +535,8 @@ test("each type's expected count can be set for this script, and set back", asyn
 
 	await page.getByTestId('builder-expected').tap();
 	const dialog = page.getByRole('dialog', { name: 'Expected counts' });
-	for (let i = 0; i < 3; i++) {
-		await dialog.getByRole('button', { name: 'Fewer Demons expected' }).tap();
-	}
-	await dialog.getByRole('button', { name: 'More Outsiders expected' }).tap();
-	await dialog.getByRole('button', { name: 'More Outsiders expected' }).tap();
+	await pickNumber(dialog, 'Demons', 1);
+	await pickNumber(dialog, 'Outsiders', 6);
 	await expect(page.getByTestId('expected-demon')).toHaveText('/1');
 	await expect(page.getByTestId('expected-outsider')).toHaveText('/6');
 	// One Demon on a one-Demon script: no longer marked.

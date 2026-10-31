@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { pickNumber } from './number-select.ts';
 
 /** Selects `word` inside the card editor, as a Storyteller's drag would. */
 async function select(page: Page, word: string) {
@@ -271,7 +272,7 @@ test('a saved colour can be changed and cleared, with bold kept', async ({ page 
 	await expect(preview.locator('[data-ink="blue"]')).toHaveCount(0);
 });
 
-test("Trevor's Enhanced tokens sit apart, and the number can be stepped or typed", async ({
+test("Trevor's Enhanced tokens sit apart, and the number is picked from a drop-down", async ({
 	page
 }) => {
 	await page.goto('/info-tokens');
@@ -295,21 +296,16 @@ test("Trevor's Enhanced tokens sit apart, and the number can be stepped or typed
 	await enhanced.getByRole('button', { name: 'Your number is', exact: true }).tap();
 	// The dialog takes the token's own name (Trevor, 2026-10-18).
 	await expect(page.getByRole('dialog', { name: 'Your number is' })).toBeVisible();
-	await page.getByRole('button', { name: 'Higher number' }).tap();
-	await page.getByRole('button', { name: 'Higher number' }).tap();
+	await pickNumber(page, 'Your number is', 2);
 	await page.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(shown.locator('h2.title')).toHaveText('Your number is');
 	await expect(shown.locator('.detail')).toHaveText('2');
 	await shown.getByRole('button', { name: 'Close' }).tap();
 
-	// Typed, with Enter showing it (Trevor, 2026-10-18).
+	// Two digits too, from the same drop-down (Trevor, 2026-10-30: no typed number box).
 	await enhanced.getByRole('button', { name: 'Your number is', exact: true }).tap();
-	const field = page.getByRole('textbox', { name: 'Your number is' });
-	await field.fill('12');
-	// Letters are dropped as they are typed (Trevor, 2026-10-18).
-	await field.pressSequentially('x');
-	await expect(field).toHaveValue('12');
-	await field.press('Enter');
+	await pickNumber(page, 'Your number is', 12);
+	await page.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(shown.locator('.detail')).toHaveText('12');
 	await shown.getByRole('button', { name: 'Close' }).tap();
 
@@ -389,7 +385,7 @@ test('a custom card can do what the built-in ones do: exactly, not in play, answ
 	// Like "These characters are not in play" (Trevor, 2026-10-18).
 	await newCard(page, 'Your bluffs are');
 	await characterCount(page, 'Exactly');
-	for (let i = 0; i < 2; i++) await page.getByRole('button', { name: 'More characters' }).tap();
+	await pickNumber(page, 'How many', 3);
 	await page.getByText('Only characters not in play').tap();
 	await page.getByRole('button', { name: 'Confirm' }).tap();
 	const bluffs = page.getByRole('button', { name: 'Your bluffs are', exact: true });
@@ -417,16 +413,16 @@ test('a range of characters can start above one, and is kept', async ({ page }) 
 	await newCard(page, 'Two of these are');
 	await characterCount(page, 'Range');
 	// From 1 to 2; raise the most to 4, then the least to 2.
-	for (let i = 0; i < 2; i++) await page.getByRole('button', { name: 'More characters' }).tap();
-	await page.getByRole('button', { name: 'Higher From' }).tap();
+	await pickNumber(page, 'To', 4);
+	await pickNumber(page, 'From', 2);
 	await page.getByRole('button', { name: 'Confirm' }).tap();
 	const tile = page.getByRole('button', { name: 'Two of these are', exact: true });
 	await expect(tile.getByRole('img')).toHaveAccessibleName('Asks for 2 to 4 characters');
 	await page.reload();
 	await page.getByRole('button', { name: 'Edit Two of these are' }).tap();
 	await expect(page.getByRole('combobox', { name: 'Characters to show' })).toContainText('Range');
-	await expect(page.getByLabel('From', { exact: true })).toHaveText('2');
-	await expect(page.getByLabel('To', { exact: true })).toHaveText('4');
+	await expect(page.getByRole('combobox', { name: 'From', exact: true })).toHaveText('2');
+	await expect(page.getByRole('combobox', { name: 'To', exact: true })).toHaveText('4');
 });
 
 test("the example card fills its box, and the page doesn't scroll behind a shown card", async ({
