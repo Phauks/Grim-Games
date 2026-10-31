@@ -446,7 +446,7 @@ test('the seat sheet names, assigns, shrouds and survives a reload', async ({ pa
 		.getByRole('dialog', { name: 'Alignment' })
 		.getByRole('button', { name: 'Confirm' })
 		.tap();
-	await expect(sheet).toContainText(/Imp\s*Demon · Good · Seat 1/);
+	await expect(sheet).toContainText(/Demon · Good · Seat 1[\s\S]*Imp/);
 	await expect(impIcon).not.toHaveAttribute('src', evilSrc!);
 	await expect(page.locator('[data-testid="seat"][aria-label^="Seat 1:"] .disc > .face')).toHaveCSS(
 		'rotate',
@@ -479,7 +479,7 @@ test('tapping the seat token shows the character; changing it goes through the �
 	// Opened from a seat, the details name the seat and its alignment too (plan L26).
 	await expect(details.getByTestId('character-seat')).toHaveText('Seat 1 · Evil');
 	await details.getByRole('button', { name: 'Close' }).tap();
-	await expect(sheet).toContainText(/Imp\s*Demon · Evil · Seat 1/);
+	await expect(sheet).toContainText(/Demon · Evil · Seat 1[\s\S]*Imp/);
 
 	// The … menu names the character first.
 	await sheet.getByRole('button', { name: 'Seat actions' }).tap();
@@ -499,7 +499,7 @@ test('tapping the seat token shows the character; changing it goes through the �
 	await expect(confirm).toContainText('Reminders from the previous character will be removed.');
 	await expect(confirm).toContainText(/Removed\s*None/);
 	await confirm.getByRole('button', { name: 'Confirm', exact: true }).tap();
-	await expect(sheet).toContainText(/Baron\s*Minion · Evil · Seat 1/);
+	await expect(sheet).toContainText(/Minion · Evil · Seat 1[\s\S]*Baron/);
 	// The seat keeps its changes, in a window of their own from the ⋯ menu (Trevor, 2026-10-18).
 	await seatMenu(page, sheet, 'Character history');
 	const changes = page.getByRole('dialog', { name: 'Character history for Seat 1' });
@@ -513,7 +513,7 @@ test('tapping the seat token shows the character; changing it goes through the �
 	await expect(alignment).toContainText('Evil');
 	await expect(alignment).toContainText('Becomes');
 	await alignment.getByRole('button', { name: 'Confirm' }).tap();
-	await expect(sheet).toContainText(/Baron\s*Minion · Good · Seat 1/);
+	await expect(sheet).toContainText(/Minion · Good · Seat 1[\s\S]*Baron/);
 });
 
 test('history, add seat and remove', async ({ page }) => {
@@ -1852,7 +1852,7 @@ test("a seat's character can be searched by name or ability", async ({ page }) =
 	await expect(picker.getByRole('button', { name: 'Poisoner', exact: true })).toBeVisible();
 	await expect(picker.getByRole('button', { name: 'Washerwoman', exact: true })).toBeHidden();
 	await picker.getByRole('button', { name: 'Poisoner', exact: true }).tap();
-	await expect(sheet).toContainText(/Poisoner\s*Minion · Evil · Seat 1/);
+	await expect(sheet).toContainText(/Minion · Evil · Seat 1[\s\S]*Poisoner/);
 });
 
 test('players rotate one seat, or swap places when one is dropped on another', async ({ page }) => {
@@ -2387,7 +2387,7 @@ test('the Alchemist gains a Minion ability and is marked "Is The Alchemist"', as
 	await expect(gains.getByRole('button', { name: 'Monk', exact: true })).toHaveCount(0);
 	await gains.getByRole('button', { name: 'Poisoner', exact: true }).tap();
 	// The seat shows the Minion, still good, marked as the Alchemist.
-	await expect(sheet).toContainText(/Poisoner\s*Minion · Good · Seat 1/);
+	await expect(sheet).toContainText(/Minion · Good · Seat 1[\s\S]*Poisoner/);
 	await expect(sheet.getByRole('button', { name: 'Actions for Is The Alchemist' })).toBeVisible();
 });
 
@@ -5701,7 +5701,7 @@ test('placing the Scarlet Woman\'s "Is The Demon" offers to change her into the 
 	await expect(ask).toBeHidden();
 	await closeBin(page);
 	const sheet = await openSeat(page, 1);
-	await expect(sheet).toContainText(/Imp\s*Demon · Evil · Seat 1/);
+	await expect(sheet).toContainText(/Demon · Evil · Seat 1[\s\S]*Imp/);
 	await closeSheet(page);
 	await expect(seatLabelled(page, 'Seat 1: no name, Imp, 1 reminder')).toBeAttached();
 });
@@ -6275,7 +6275,7 @@ test('two copies of a character each have their own reminders, in their own colo
 				.getByRole('dialog', { name: 'Alignment' })
 				.getByRole('button', { name: 'Confirm' })
 				.tap();
-			await expect(sheet).toContainText(/Imp\s*Demon · Good · Seat 3/);
+			await expect(sheet).toContainText(/Demon · Good · Seat 3[\s\S]*Imp/);
 		}
 		await closeSheet(page);
 	}
@@ -7183,7 +7183,7 @@ test("the Huntsman's step turns the Damsel into a not-in-play Townsfolk", async 
 	await expect(step.getByTestId('change-character')).toContainText('Empath');
 	await step.getByRole('button', { name: 'Close' }).first().tap();
 	const seat = await openSeat(page, 2);
-	await expect(seat).toContainText(/Empath\s*Townsfolk · Good · Seat 2/);
+	await expect(seat).toContainText(/Townsfolk · Good · Seat 2[\s\S]*Empath/);
 });
 
 // https://wiki.bloodontheclocktower.com/Cacklejack: each night but the first, the Storyteller
@@ -7233,7 +7233,7 @@ test("the Cacklejack's step changes any player's character but the one marked No
 	await expect(step.getByTestId('change-character')).toContainText('Washerwoman');
 	await step.getByRole('button', { name: 'Close' }).first().tap();
 	const seat = await openSeat(page, 3);
-	await expect(seat).toContainText(/Washerwoman\s*Townsfolk · Good · Seat 3/);
+	await expect(seat).toContainText(/Townsfolk · Good · Seat 3[\s\S]*Washerwoman/);
 });
 
 // https://wiki.bloodontheclocktower.com/Barber: if the Barber died today or tonight, the Demon
@@ -7285,9 +7285,9 @@ test("the Barber's step swaps two players' characters, keeping alignments", asyn
 	await expect(swap).toContainText('Poisoner');
 	await expect(swap).toContainText('Chef');
 	await step.getByRole('button', { name: 'Close' }).first().tap();
-	await expect(await openSeat(page, 2)).toContainText(/Poisoner\s*Minion · Good · Seat 2/);
+	await expect(await openSeat(page, 2)).toContainText(/Minion · Good · Seat 2[\s\S]*Poisoner/);
 	await closeSheet(page);
-	await expect(await openSeat(page, 3)).toContainText(/Chef\s*Townsfolk · Evil · Seat 3/);
+	await expect(await openSeat(page, 3)).toContainText(/Townsfolk · Evil · Seat 3[\s\S]*Chef/);
 });
 
 // https://wiki.bloodontheclocktower.com/Hatter: if it died today or tonight, each Minion and
@@ -7343,7 +7343,7 @@ test("the Hatter's step lets each Minion and Demon become another of their type"
 	// The Demon may still change.
 	await expect(change.getByRole('button', { name: 'Choose' })).toBeVisible();
 	await step.getByRole('button', { name: 'Close' }).first().tap();
-	await expect(await openSeat(page, 3)).toContainText(/Spy\s*Minion · Evil · Seat 3/);
+	await expect(await openSeat(page, 3)).toContainText(/Minion · Evil · Seat 3[\s\S]*Spy/);
 });
 
 // https://wiki.bloodontheclocktower.com/Engineer: once per game it chooses which Minions or which
@@ -7380,7 +7380,7 @@ test("the Engineer's step changes a Minion into another Minion", async ({ page }
 		.tap();
 	await expect(change).toContainText('Scarlet Woman');
 	await step.getByRole('button', { name: 'Close' }).first().tap();
-	await expect(await openSeat(page, 3)).toContainText(/Scarlet Woman\s*Minion · Evil · Seat 3/);
+	await expect(await openSeat(page, 3)).toContainText(/Minion · Evil · Seat 3[\s\S]*Scarlet Woman/);
 });
 
 // https://wiki.bloodontheclocktower.com/Cult_Leader: each night it becomes the alignment of an
@@ -7410,7 +7410,9 @@ test("the Cult Leader's step offers a living neighbour's alignment", async ({ pa
 	await row.getByRole('button', { name: 'Make evil' }).tap();
 	await expect(row.getByRole('button', { name: 'Make good' })).toBeVisible();
 	await step.getByRole('button', { name: 'Close' }).first().tap();
-	await expect(await openSeat(page, 2)).toContainText(/Cult Leader\s*Townsfolk · Evil · Seat 2/);
+	await expect(await openSeat(page, 2)).toContainText(
+		/Townsfolk · Evil · Seat 2[\s\S]*Cult Leader/
+	);
 });
 
 // https://wiki.bloodontheclocktower.com/Summoner: on the 3rd night it points at a player and at
@@ -7446,7 +7448,7 @@ test("the Summoner's Night 3 step makes the chosen player the Demon it points at
 	).toBeVisible();
 	await step.getByRole('button', { name: 'Close' }).first().tap();
 	const seat = await openSeat(page, 2);
-	await expect(seat).toContainText(/Imp\s*Demon · Evil · Seat 2/);
+	await expect(seat).toContainText(/Demon · Evil · Seat 2[\s\S]*Imp/);
 });
 
 // https://wiki.bloodontheclocktower.com/Kazali: no Minions are dealt; on the first night the
@@ -7485,5 +7487,5 @@ test("the Kazali's first night step makes the usual number of Minions", async ({
 	// One Minion is the usual number for 8 players, so no more are made.
 	await expect(change.getByRole('button', { name: 'Choose' })).toHaveCount(0);
 	await step.getByRole('button', { name: 'Close' }).first().tap();
-	await expect(await openSeat(page, 2)).toContainText(/Poisoner\s*Minion · Evil · Seat 2/);
+	await expect(await openSeat(page, 2)).toContainText(/Minion · Evil · Seat 2[\s\S]*Poisoner/);
 });
