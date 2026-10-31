@@ -393,9 +393,10 @@ test('reminder tokens show their copies and whether setup places them; the table
 	await search.fill('No Dashii');
 	const tokens = rowOf(page, 'nodashii')
 		.locator('[data-field="tokens"]')
-		.getByTestId('reminder-token');
-	// TPI lists Poisoned twice; setup poisons both of its Townsfolk neighbours.
-	await expect(tokens).toHaveText(['Dead', 'Poisoned×2']);
+		.getByTestId('board-reminder');
+	// TPI lists Poisoned twice; setup poisons both of its Townsfolk neighbours. Round tokens,
+	// as on the board (Trevor, 2026-10-30), the count beside them.
+	await expect(tokens).toHaveText(['Dead', 'Poisoned']);
 	// Beside each chip: when it goes down, and who it may go on (Trevor, 2026-10-18), read from
 	// the board's own placement rules. The chips carry the No Dashii's icon, not a setup flower.
 	const rowsOf = (id: string) => rowOf(page, id).locator('[data-field="tokens"] .token-row');
@@ -479,7 +480,7 @@ test('Traveller reminders are split blue and red', async ({ page }) => {
 	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Bureaucrat');
 	const chip = rowOf(page, 'bureaucrat')
 		.locator('[data-field="tokens"]')
-		.getByTestId('reminder-token')
+		.getByTestId('board-reminder')
 		.first();
 	const background = await chip.evaluate((e) => getComputedStyle(e).backgroundImage);
 	expect(background).toContain(rgb(await token('--good')));
