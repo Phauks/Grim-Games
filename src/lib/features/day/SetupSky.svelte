@@ -11,6 +11,10 @@
 	 * neighbour's, and phones with no seat are a count on the right. Town at dusk: rooftops
 	 * and a clock tower with windows lighting. Dusk: the glow on the horizon after sunset and
 	 * the evening's first star. Each stands on the horizon the day and night draw.
+	 *
+	 * Once every seat's candle is lit, sparks drift up from each flame, so the table can see at
+	 * a glance that everyone is here and ready (Trevor, 2026-10-31). Phones with no seat don't
+	 * count, as they have no candle. With reduced motion the sparks hang still over the flames.
 	 */
 	interface Props {
 		look: SetupLook;
@@ -52,6 +56,10 @@
 		});
 	});
 	const lit = $derived(candles.filter((c) => c.state === 'lit').length);
+	/** Every seat's candle lit: the sparks rise. */
+	const allLit = $derived(candles.length > 0 && lit === candles.length);
+	/** Sparks over each flame, spread across the flame and started at different heights. */
+	const SPARKS = [-1, 0, 1] as const;
 	const candlesLabel = $derived(
 		[
 			t('day.candlesLabel', { lit, total: candles.length }),
@@ -89,6 +97,7 @@
 		viewBox="0 0 {SKY_W} {SKY_H}"
 		role="img"
 		aria-label={candlesLabel}
+		data-all-lit={allLit ? '' : undefined}
 	>
 		{#each placed as c, i (i)}
 			<g class="candle" data-state={c.state} data-mine={c.mine ? '' : undefined}>
@@ -110,6 +119,17 @@
 						style:animation-delay="{-i * 0.37}s"
 						d={flamePath(c.x, c.top - 2.5, c.flame)}
 					/>
+					{#if allLit}
+						{#each SPARKS as k, j (k)}
+							<circle
+								class="spark"
+								style:animation-delay="{-(i * 0.71 + j * 1.1)}s"
+								cx={c.x + k * 1.6}
+								cy={c.top - 2.5 - c.flame - j * 2}
+								r="0.9"
+							/>
+						{/each}
+					{/if}
 				{:else if c.state === 'away'}
 					<circle
 						class="ember"
@@ -219,6 +239,10 @@
 	.ember {
 		fill: var(--sky-afternoon);
 	}
+	.spark {
+		fill: var(--sky-sun);
+		opacity: 0.7;
+	}
 	.unseated {
 		fill: var(--on-surface-muted);
 		font-weight: 700;
@@ -280,6 +304,10 @@
 		.star {
 			animation: twinkle 4s ease-in-out infinite;
 		}
+		.spark {
+			opacity: 0;
+			animation: rise 3.3s ease-out infinite;
+		}
 	}
 	@keyframes flicker {
 		0%,
@@ -302,6 +330,20 @@
 		}
 		50% {
 			opacity: 1;
+		}
+	}
+	/* In the drawing's own units, so the sparks rise as far at any size. */
+	@keyframes rise {
+		0% {
+			opacity: 0;
+			transform: translateY(0);
+		}
+		15% {
+			opacity: 0.9;
+		}
+		100% {
+			opacity: 0;
+			transform: translateY(-10px); /* px-ok: SVG user units, scaled with the drawing */
 		}
 	}
 	@keyframes twinkle {
