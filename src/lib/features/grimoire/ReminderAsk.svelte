@@ -3,10 +3,10 @@
 	import type { ReminderPrompt } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
-	import { ASSIST_LABELS, type AssistKey } from '#lib/ui/assistance.ts';
+	import AidMenu from '#lib/features/settings/AidMenu.svelte';
+	import type { AssistKey } from '#lib/ui/assistance.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
-	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import { placingAlignment } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import {
@@ -24,8 +24,8 @@
 	 * player asks to mark them dead; "Alive" on a dead one asks to revive them. Which reminders
 	 * ask is data (REMINDER_PROMPTS); each kind of question has its words and setting below.
 	 * Moving one to another seat asks too. Reminders already where they were when the board
-	 * opened never ask. Like the day's End day, each has its setting where it is used
-	 * (Trevor, 2026-10-18).
+	 * opened never ask. Each one's switch is only in Settings; its ⋯ opens it there (Trevor,
+	 * 2026-10-30).
 	 */
 	interface Props {
 		grimoire: Grimoire;
@@ -130,15 +130,7 @@
 					playerName={name}
 				/>{:else}{name}{/if}{ui.after}
 		{/snippet}
-		<SettingToggle
-			label={ASSIST_LABELS[ui.setting].label}
-			description={ASSIST_LABELS[ui.setting].description}
-			checked={preferences.current.assistance[ui.setting]}
-			onChange={(on) =>
-				preferences.update({
-					assistance: { ...preferences.current.assistance, [ui.setting]: on }
-				})}
-		/>
+		{#snippet headActions()}<AidMenu aid={ui.setting} />{/snippet}
 	</ConfirmDialog>
 {/if}
 
@@ -169,14 +161,6 @@
 					: undefined}
 			/> is dead.
 		</p>
-		<SettingToggle
-			label={ASSIST_LABELS.deadReminderAsk.label}
-			description={ASSIST_LABELS.deadReminderAsk.description}
-			checked={preferences.current.assistance.deadReminderAsk}
-			onChange={(on) =>
-				preferences.update({
-					assistance: { ...preferences.current.assistance, deadReminderAsk: on }
-				})}
-		/>
+		{#snippet headActions()}<AidMenu aid="deadReminderAsk" />{/snippet}
 	</ConfirmDialog>
 {/if}
