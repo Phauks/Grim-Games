@@ -3,6 +3,7 @@
 	import { rulesOf } from '#lib/core/data/rules/index.ts';
 	import { ruleReminders, type ReminderId } from '#lib/core/model/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
 	import CharacterDialog from '#lib/features/characters/CharacterDialog.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import BoardReminder from './BoardReminder.svelte';
@@ -15,7 +16,7 @@
 	import CharacterPicker from './CharacterPicker.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { placedLook } from './reminders.ts';
-	import RulesGroupingSetting from './RulesGroupingSetting.svelte';
+	import { kindOf, type RuleKind } from './rule-stacks.ts';
 
 	/**
 	 * Fabled and Loric are rules of the game, not seats (Trevor, 2026-10-17): the dialogs the
@@ -40,8 +41,12 @@
 	let ruleOpen = $state(false);
 	let ruleShown = $state<CharacterId | undefined>();
 	let ruleShownOpen = $state(false);
-	/** Every Fabled and Loric at once, from the corner stack. */
+	/** One corner stack's Fabled or Loric at once. */
 	let rulesGroupOpen = $state(false);
+	let rulesGroupKind = $state<RuleKind>('fabled');
+	const rulesGroup = $derived(
+		game.ruleCharacters.filter((id) => kindOf(id, characters) === rulesGroupKind)
+	);
 	const removeRuleLabel = (name: string) => `Remove ${name} from the game`;
 	let ruleRemoveOpen = $state(false);
 	const ruleShownCharacter = $derived(ruleShown ? characters.get(ruleShown) : undefined);
@@ -60,8 +65,9 @@
 		ruleShownOpen = true;
 	}
 
-	/** Every Fabled and Loric at once. */
-	export function showAll(): void {
+	/** One stack's Fabled or Loric at once. */
+	export function showAll(kind: RuleKind = 'fabled'): void {
+		rulesGroupKind = kind;
 		rulesGroupOpen = true;
 	}
 
@@ -99,22 +105,25 @@
 
 <!-- A Fabled or Loric's reminders in its dialog; a tap opens one. -->
 {#snippet heldList(id: CharacterId)}
-	<!-- Nothing when it holds none; placed ones under a Reminders header (Trevor, 2026-10-18). -->
-	{#if ruleReminders(game, id).length > 0}<h3 class="held-head">Reminders</h3>{/if}
-	<!-- The tokens themselves, as on the board (Trevor, 2026-10-30). -->
-	<div class="held-list" role="group" aria-label="Reminders">
-		<ReminderTokenRow inline>
-			{#each ruleReminders(game, id) as reminder (reminder.reminderId)}
-				<BoardReminder
-					{...placedLook(reminder, characters)}
-					alignment={placingAlignment(game, reminder, characters)}
-					ariaLabel={reminder.label}
-					disabled={watching}
-					onTap={() => onReminder(reminder.reminderId)}
-				/>
-			{/each}
-		</ReminderTokenRow>
-	</div>
+	<!-- Nothing, not even an empty row's room, when it holds none (Trevor, 2026-10-31: "hella
+	     blank space"); placed ones under a Reminders header (Trevor, 2026-10-18). -->
+	{#if ruleReminders(game, id).length > 0}
+		<h3 class="held-head">Reminders</h3>
+		<!-- The tokens themselves, as on the board (Trevor, 2026-10-30). -->
+		<div class="held-list" role="group" aria-label="Reminders">
+			<ReminderTokenRow inline>
+				{#each ruleReminders(game, id) as reminder (reminder.reminderId)}
+					<BoardReminder
+						{...placedLook(reminder, characters)}
+						alignment={placingAlignment(game, reminder, characters)}
+						ariaLabel={reminder.label}
+						disabled={watching}
+						onTap={() => onReminder(reminder.reminderId)}
+					/>
+				{/each}
+			</ReminderTokenRow>
+		</div>
+	{/if}
 {/snippet}
 
 {#snippet ruleToken(character: Character)}
@@ -150,7 +159,6 @@
 		</div>
 		{@render heldList(ruleShownCharacter.id)}
 	{/if}
-	<RulesGroupingSetting disabled={watching} />
 	{#snippet headActions()}
 		<!-- Beside the close X (Trevor, 2026-10-17); a red trash icon, named for screen readers. -->
 		<DeleteButton
@@ -163,50 +171,31 @@
 
 {#if ruleDetails}<CharacterDialog bind:open={ruleDetailsOpen} character={ruleDetails} />{/if}
 
-<Dialog bind:open={rulesGroupOpen} title="Fabled and Loric">
+<!-- One stack's, each as every list draws a character (CharacterRow). -->
+<Dialog bind:open={rulesGroupOpen} title={rulesGroupKind === 'loric' ? 'Loric' : 'Fabled'}>
 	<ul class="rules-group">
-		{#each game.ruleCharacters as id (id)}
+		{#each rulesGroup as id (id)}
 			{@const character = characters.get(id)}
 			{#if character}
-				<li class="rule-detail">
-					{@render ruleToken(character)}
-					<div>
-						<CharacterBadge characterId={id} {character} />
-						<p>{character.ability}</p>
+				<li>
+					<CharacterRow {character} info={details}>
+						{#snippet end()}
+							<DeleteButton
+								label={removeRuleLabel(character.name)}
+								disabled={watching}
+								onclick={() => {
+									ruleShown = id;
+									ruleRemoveOpen = true;
+								}}
+							/>
+						{/snippet}
 						{@render heldList(id)}
-					</div>
-					<DeleteButton
-						label={removeRuleLabel(character.name)}
-						disabled={watching}
-						onclick={() => {
-							ruleShown = id;
-							ruleRemoveOpen = true;
-						}}
-					/>
+					</CharacterRow>
 				</li>
 			{/if}
 		{/each}
-		{#each game.storytellerAbilities ?? [] as held (held.via)}
-			{@const character = characters.get(held.characterId)}
-			{#if character}
-				<li class="rule-detail">
-					{@render ruleToken(character)}
-					<div>
-						<h3 class="held-head">Storyteller's ability</h3>
-						<CharacterBadge characterId={character.id} {character} />
-						<p>{character.ability}</p>
-					</div>
-					<Button variant="quiet" disabled={watching} onclick={() => showAbility(held.via)}
-						>Change</Button
-					>
-				</li>
-			{/if}
-		{/each}
-		{#if game.ruleCharacters.length === 0 && !game.storytellerAbilities?.length}
-			<li class="none">None</li>
-		{/if}
+		{#if rulesGroup.length === 0}<li class="none">None</li>{/if}
 	</ul>
-	<RulesGroupingSetting disabled={watching} />
 </Dialog>
 
 <Dialog bind:open={abilityOpen} title="Storyteller's ability">
