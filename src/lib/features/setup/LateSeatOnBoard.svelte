@@ -1,8 +1,8 @@
 <script lang="ts">
 	/*
-	 * Add late player on the grimoire (Trevor, 2026-10-30): the bag draw's button opens the
-	 * board ready to tap where the late player sits, so their seat is right from the start;
-	 * Add another late player comes back here for the next one.
+	 * Add late player on the grimoire (Trevor, 2026-10-30): the modal's Choose seat brings the
+	 * Storyteller here to tap where that late player sits, and the modal opens again over the
+	 * board with everything kept.
 	 */
 	import { fromScript } from '#lib/core/data/index.ts';
 	import { loadOfficialData, officialData } from '#lib/features/characters/game-data.svelte.ts';
@@ -11,7 +11,8 @@
 	import { replaceState } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import LateSeatDialog from './LateSeatDialog.svelte';
-	import { LATE_PLAYER_HASH, type LatePlayer } from './late-player.ts';
+	import { LATE_PLAYER_HASH } from './late-player.ts';
+	import { lateDraft } from './late-draft.svelte.ts';
 
 	interface Props {
 		grimoire: Grimoire;
@@ -22,8 +23,6 @@
 	let { grimoire, place }: Props = $props();
 
 	let open = $state(false);
-	let players = $state<LatePlayer[]>([]);
-	let key = 0;
 
 	const game = $derived(grimoire.game);
 	const script = $derived(
@@ -32,10 +31,11 @@
 	const lookup = (id: string) =>
 		grimoire.open.characters.get(id) ?? officialData.current?.byId.get(id);
 
-	function another() {
+	function choose(index: number) {
 		open = false;
 		place((position) => {
-			players = [...players, { key: key++, position, name: '' }];
+			const player = lateDraft.players[index];
+			if (player) player.position = position;
 			open = true;
 		});
 	}
@@ -45,17 +45,18 @@
 		if (location.hash !== LATE_PLAYER_HASH) return;
 		replaceState(resolve('/grimoire/[gameId]', { gameId: game.gameId }), {});
 		if (!game.bag) return;
-		players = [];
-		another();
+		if (!lateDraft.players.length) lateDraft.start();
+		choose(lateDraft.placing ?? 0);
 	});
 </script>
 
 {#if script && officialData.current}
 	<LateSeatDialog
 		bind:open
-		bind:players
+		bind:players={lateDraft.players}
 		{game}
-		onAddAnother={another}
+		onAddAnother={() => lateDraft.add()}
+		onPlace={choose}
 		scriptCharacters={script.characters}
 		official={officialData.current.characters}
 		{lookup}
