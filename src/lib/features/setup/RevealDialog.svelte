@@ -1,6 +1,5 @@
 <script lang="ts">
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
-	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import {
 		defaultAlignment,
@@ -15,11 +14,8 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { gameSettings } from '#lib/features/game-settings/game-settings.svelte.ts';
 	import { untrack } from 'svelte';
-	import IconButton from '#lib/ui/primitives/IconButton.svelte';
-	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
-	import { suggestNames } from '#lib/features/grimoire/device-notes.ts';
-	import { roomHost } from '#lib/features/room/host.svelte.ts';
 	import { reelsMove, spinReel } from './reel.ts';
+	import PlayerNameInput from './PlayerNameInput.svelte';
 	import HoldToSee from '#lib/ui/primitives/HoldToSee.svelte';
 	import { noLongPress } from '#lib/ui/no-long-press.ts';
 
@@ -87,17 +83,6 @@
 	);
 
 	let name = $state('');
-	// Names to pick instead of typing (Trevor, 2026-10-19): only the room's phones, connected or
-	// asleep, without a seat in this game, never names from earlier games (Trevor, 2026-10-26).
-	const names = $derived(
-		suggestNames(
-			roomHost().unseatedInGame.flatMap((m) => (m.name ? [m.name] : [])),
-			'',
-			taken,
-			Infinity
-		)
-	);
-	let picking = $state(false);
 	let alignment = $state<Alignment | ''>('');
 	/** False while the player still has to type their name to see the token. */
 	let revealed = $state(true);
@@ -107,7 +92,6 @@
 	$effect(() => {
 		if (open) {
 			name = playerName;
-			picking = false;
 			alignment = '';
 			revealed = !gameSettings.current.requireName || playerName.trim() !== '';
 			held = false;
@@ -185,17 +169,8 @@
 <Dialog bind:open title={t('setup.draw.tile', { number })} size="full">
 	<div class="reveal" data-testid="reveal">
 		<p class="seat">{seatLabel}</p>
-		<!-- Enter keeps the name and closes the phone keyboard; Confirm stays a separate tap. -->
-		<!-- The names button is always here, disabled when there are none: nothing moves. -->
-		<div class="player">
-			<TextField label={t('setup.reveal.name')} bind:value={name} placeholder={t('common.none')} />
-			<IconButton
-				icon="players"
-				label={t('setup.reveal.pickName')}
-				disabled={names.length === 0}
-				onclick={() => (picking = true)}
-			/>
-		</div>
+		<!-- Confirm stays a separate tap from Enter in the name. -->
+		<div class="player"><PlayerNameInput bind:value={name} {taken} /></div>
 		<!-- Hidden until a name is entered when that's required; the space stays reserved. -->
 		<!-- No long-press anywhere on the faces, held or not: Chrome's long press on the token's
 		     image or the ability's text buzzes too (Trevor, 2026-10-25: "let's just remove it"). -->
@@ -261,22 +236,6 @@
 		{/if}
 	{/snippet}
 </Dialog>
-
-<BottomSheet bind:open={picking} title={t('setup.reveal.pickName')}>
-	<ul class="names">
-		{#each names as option (option)}
-			<li>
-				<button
-					type="button"
-					onclick={() => {
-						name = option;
-						picking = false;
-					}}>{option}</button
-				>
-			</li>
-		{/each}
-	</ul>
-</BottomSheet>
 
 <style>
 	.reveal {
@@ -353,37 +312,7 @@
 		font-family: var(--font-ability);
 	}
 	.player {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) auto;
-		align-items: end;
-		gap: var(--space-2);
 		width: min(100%, 20rem);
-		text-align: start;
-	}
-	.names {
-		display: grid;
-		margin: 0;
-		padding: 0;
-		list-style: none;
-	}
-	.names li + li {
-		border-top: 1px solid var(--border);
-	}
-	/* A whole-row tap, in the player font as on a seat. */
-	.names button {
-		width: 100%;
-		min-height: var(--tap-target);
-		padding: var(--space-2);
-		border: 0;
-		background: none;
-		color: inherit;
-		font-family: var(--font-player);
-		font-size: 1.1rem;
-		text-align: start;
-	}
-	/* A player's name is in the player font, as on their seat. */
-	.player :global(.text-field input) {
-		font-family: var(--font-player);
 	}
 	/* Space for the Traveller's alignment is always reserved, so the actions never move. */
 	.alignment {

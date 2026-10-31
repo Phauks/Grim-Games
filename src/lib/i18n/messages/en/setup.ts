@@ -253,6 +253,8 @@ export const setup = {
 	'setup.late.revert': 'Back to the draw as it was',
 	'setup.late.changeTitle': 'Change character',
 	'setup.late.invoked': 'Invoked',
+	'setup.late.takenOut': 'Taken out',
+	'setup.late.pickPhone': 'Pick a phone in the room',
 	'setup.draw.noBag': 'No bag. Select characters and build the bag first.',
 	'setup.draw.bag': 'Bag',
 	'setup.draw.held': 'Held',

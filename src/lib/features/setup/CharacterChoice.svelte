@@ -61,7 +61,6 @@
 		onLock?.();
 	}
 	// The accessible name; the row shows the name itself beside its token.
-	// eslint-disable-next-line grim/names-as-badges -- accessible name (aria-label) only
 	const label = $derived(
 		[character.name, copies > 1 ? `${copies} copies` : undefined, note].filter(Boolean).join(', ')
 	);

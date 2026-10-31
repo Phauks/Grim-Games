@@ -24,7 +24,6 @@
 	} from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import { seatName } from '#lib/features/game/seat-label.ts';
-	import { TYPE_PLURALS } from '#lib/features/reference/labels.ts';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import ChangeList from '#lib/ui/primitives/ChangeList.svelte';
@@ -32,7 +31,6 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
-	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import Sentence from '#lib/features/characters/Sentence.svelte';
 	import { slot } from '#lib/features/characters/slots.ts';
@@ -40,6 +38,7 @@
 	import CharacterPicker from '#lib/features/characters/CharacterPicker.svelte';
 	import AddCharactersDialog from './AddCharactersDialog.svelte';
 	import SelectionList from './SelectionList.svelte';
+	import PlayerNameInput from './PlayerNameInput.svelte';
 	import type { LatePlayer } from './late-player.ts';
 
 	interface Props {
@@ -73,6 +72,8 @@
 
 	/** Rule characters the Storyteller invokes for this change (the Sentinel). */
 	let rulesOn = $state<CharacterId[]>([]);
+	/** Fabled and Loric in play that this change takes out (Trevor, 2026-10-31). */
+	let rulesOff = $state<CharacterId[]>([]);
 	let proposal = $state<LateSeatProposal | undefined>(undefined);
 	/** Each changed seat's new character, from the roll or the Storyteller. */
 	let choice = $state<Record<SeatId, CharacterId>>({});
@@ -100,12 +101,16 @@
 	/** Back to the draw as it was: no rule invoked, no player changed, the bag as it is. */
 	function revert() {
 		rulesOn = [];
+		rulesOff = [];
 		reset();
 	}
 
 	const drawn = $derived(drawState(game, lookup));
 	const dealt = $derived(drawn.seen.length + drawn.bag.length);
-	const ruleCharacters = $derived([...game.ruleCharacters, ...rulesOn]);
+	const ruleCharacters = $derived([
+		...game.ruleCharacters.filter((id) => !rulesOff.includes(id)),
+		...rulesOn
+	]);
 	// A rule character not in play yet whose rules change the setup counts.
 	const setupRules = $derived(
 		official.filter(
@@ -150,15 +155,6 @@
 		for (const id of ids) selection[id] = (selection[id] ?? 0) + 1;
 		return selection;
 	};
-	const before = $derived(
-		analyseSelection({
-			players: dealt,
-			selection: selectionOf(drawn.inPlay),
-			ruleCharacters: game.ruleCharacters,
-			scriptOrder,
-			lookup
-		})
-	);
 	const after = $derived(
 		analyseSelection({
 			players: dealt + extra,
@@ -213,8 +209,9 @@
 	function toggle(character: Character) {
 		const id = character.id;
 		if (character.type === 'fabled' || character.type === 'loric') {
-			if (game.ruleCharacters.includes(id)) return;
-			rulesOn = rulesOn.includes(id) ? rulesOn.filter((r) => r !== id) : [...rulesOn, id];
+			if (game.ruleCharacters.includes(id))
+				rulesOff = rulesOff.includes(id) ? rulesOff.filter((r) => r !== id) : [...rulesOff, id];
+			else rulesOn = rulesOn.includes(id) ? rulesOn.filter((r) => r !== id) : [...rulesOn, id];
 			if (!rulesSeen.includes(id)) rulesSeen = [...rulesSeen, id];
 			reset();
 			return;
@@ -255,6 +252,12 @@
 		minus([...drawn.seen.map((s) => s.characterId), ...bagNow], [...seatedAfter, ...bag])
 	);
 
+	/** Names on the seats and the other late players, so a phone is only offered once. */
+	const takenBy = (index: number) => [
+		...game.seating.flatMap((id) => game.seats[id].playerName ?? []),
+		...players.flatMap((p, j) => (j !== index && p.name.trim() ? [p.name.trim()] : []))
+	];
+
 	/** Where a late player sits: the seats either side of the spot tapped. */
 	function sidesOf(position: number | undefined): { a: SeatId; b: SeatId } | undefined {
 		const seating = game.seating;
@@ -266,6 +269,7 @@
 	}
 
 	function confirm() {
+		for (const id of rulesOff) if (!send({ type: 'RemoveRuleCharacter', characterId: id })) return;
 		for (const id of rulesOn) if (!send({ type: 'AddRuleCharacter', characterId: id })) return;
 		// A tile kept in the bag keeps what it shows (a Lunatic's tile shows a Demon).
 		const left = drawn.bag.map((t) => game.bag!.tiles[t.tileId]);
@@ -289,6 +293,7 @@
 		if (roomHost().code) roomHost().showRoles(game.gameId, true);
 		players = [];
 		rulesOn = [];
+		rulesOff = [];
 		open = false;
 	}
 </script>
@@ -301,26 +306,28 @@
 				<ul class="players">
 					{#each players as player, i (player.key)}
 						<li data-testid="late-player-row">
-							<TextField
-								label={t('setup.reveal.name')}
-								bind:value={player.name}
-								placeholder={t('common.none')}
-							/>
-							<div class="seat">
-								<span class="muted where">{@render where(player.position)}</span>
-								<span class="place"
-									><Button icon="grimoire" onclick={() => onPlace(i)} data-testid="late-place"
-										>{player.position === undefined
-											? t('setup.late.place')
-											: t('setup.late.move')}</Button
-									></span
-								>
+							<div class="line">
+								<PlayerNameInput
+									bind:value={player.name}
+									taken={takenBy(i)}
+									hideLabel
+									pickLabel={t('setup.late.pickPhone')}
+								/>
+								<IconButton
+									icon="grimoire"
+									label={player.position === undefined
+										? t('setup.late.place')
+										: t('setup.late.move')}
+									onclick={() => onPlace(i)}
+									data-testid="late-place"
+								/>
+								<DeleteButton
+									label={t('setup.late.remove')}
+									disabled={players.length === 1}
+									onclick={() => (players = players.filter((_, j) => j !== i))}
+								/>
 							</div>
-							<DeleteButton
-								label={t('setup.late.remove')}
-								disabled={players.length === 1}
-								onclick={() => (players = players.filter((_, j) => j !== i))}
-							/>
+							<span class="muted where">{@render where(player.position)}</span>
 						</li>
 					{/each}
 				</ul>
@@ -377,7 +384,7 @@
 				<IconButton
 					icon="reset"
 					label={t('setup.late.revert')}
-					disabled={!proposal && !edited && !changes.length && !rulesOn.length}
+					disabled={!proposal && !edited && !changes.length && !rulesOn.length && !rulesOff.length}
 					onclick={revert}
 					data-testid="late-revert"
 				/>
@@ -437,6 +444,12 @@
 				<dt>{t('setup.late.invoked')}</dt>
 				<dd>
 					{#each rulesOn as id (id)}<CharacterBadge characterId={id} />{/each}
+				</dd>
+			{/if}
+			{#if rulesOff.length}
+				<dt>{t('setup.late.takenOut')}</dt>
+				<dd>
+					{#each rulesOff as id (id)}<CharacterBadge characterId={id} />{/each}
 				</dd>
 			{/if}
 			{#if bagIn.length}
@@ -547,29 +560,21 @@
 		margin: 0;
 		padding: 0;
 	}
+	/* One line per late player: the name with its phones button, then Choose seat and remove. */
 	.players li {
 		display: grid;
-		grid-template-columns: 1fr auto;
-		grid-auto-flow: dense;
-		align-items: end;
-		gap: var(--space-1) var(--space-2);
-		padding-bottom: var(--space-2);
+		gap: var(--space-1);
+		padding-block: var(--space-2);
+		border-bottom: 1px solid var(--border);
 	}
-	/* Where they sit and the seat button share the row under the name, wrapping when narrow. */
-	.players .seat {
-		display: flex;
-		flex-wrap: wrap;
-		grid-column: 1 / -1;
-		grid-row: 2;
+	.players .line {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto auto;
 		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-1) var(--space-2);
+		gap: var(--space-2);
 	}
 	.players .where {
 		font-size: 0.875rem;
-	}
-	.players .place {
-		margin-inline-start: auto;
 	}
 	.badges {
 		display: flex;

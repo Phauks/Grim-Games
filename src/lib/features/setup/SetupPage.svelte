@@ -540,12 +540,7 @@
 				}}
 			>
 				{#snippet tools()}
-					<IconButton
-						icon="random"
-						label={t('setup.random')}
-						disabled={!ready}
-						onclick={random}
-					/>
+					<IconButton icon="random" label={t('setup.random')} disabled={!ready} onclick={random} />
 					<IconButton
 						icon="selectedOnly"
 						label={t('setup.selectedOnly')}
