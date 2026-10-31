@@ -309,6 +309,13 @@
 				Turn off "Let friends see when I'm on" on Friends and they see none of this.
 			</li>
 			<li>
+				A group keeps its name, its join code, who started it and who is in it, until its starter
+				deletes it. Only the starter sees the members' usernames; others see how many there are.
+				When a Storyteller shows their live game in a group, the group keeps the room's code, the
+				script's name and the Storyteller's username for up to 12 hours, and its members can see
+				them. Nothing is sent to members.
+			</li>
+			<li>
 				Blocking someone is not shown to them. Requests are limited per account using Cloudflare's
 				rate limiter.
 			</li>
