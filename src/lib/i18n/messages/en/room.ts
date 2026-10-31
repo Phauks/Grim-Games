@@ -4,6 +4,8 @@ import { APP_NAME } from '#lib/core/app-name.ts';
 export const room = {
 	// Storyteller's page
 	'room.title': 'Share',
+	'room.tab.players': 'Players',
+	'room.tab.grimoire': 'Grimoire',
 	// Back to town (plan U2, Trevor's words): the Storyteller's call, and what a phone shows.
 	'room.callTown': 'Back to town',
 	'room.callTownHeard': 'Back to town',
@@ -20,7 +22,6 @@ export const room = {
 	'room.shareGameText': `Join the game on ${APP_NAME}: {game}. Room code: {code}`,
 	'room.copyFailed': 'Could not copy the link',
 	'room.copyFailedHint': 'Use the QR code instead.',
-	'room.status': 'Status',
 	'room.connected': 'Connected',
 	'room.watching': '{count} watching',
 	'room.connecting': 'Connecting…',
@@ -249,7 +250,6 @@ export const room = {
 	'room.role.evil': 'You are Evil',
 	// The view-only grimoire link (Specters)
 	'room.watch.title': 'Watch the grimoire',
-	'room.watch.heading': 'View grimoire',
 	'room.watch.toggle': 'Grim view',
 	'room.watch.hint':
 		'Spectators with the room code and this password see the whole grimoire live, after promising not to spoil the game. Each game gets a new password.',

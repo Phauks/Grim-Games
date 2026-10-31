@@ -1297,10 +1297,11 @@ test('Share in the toolbar shows the room code, QR and join link, never the game
 	await expect(share.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
 	await expect(share.getByRole('img', { name: 'QR code to join the room' })).toBeVisible();
 	const code = (await share.getByTestId('share-code').textContent())!.replace(/\D/g, '');
-	// The link is the room's one (Trevor, 2026-10-26): Join game with its code. Grim view sits
-	// below it on the same screen (Trevor, 2026-10-22), off, with no link of its own.
+	// The link is the room's one (Trevor, 2026-10-26): Join game with its code. Grim view is on
+	// the Grimoire tab (Trevor, 2026-10-31), off, with no link of its own.
 	const watch = share.getByTestId('watch-link');
 	await expect(share.getByTestId('share-url')).toHaveValue(new RegExp(`/join#${code}$`));
+	await share.getByRole('tab', { name: 'Grimoire' }).tap();
 	await expect(watch.getByTestId('share-url')).toHaveCount(0);
 	await expect(watch.getByLabel('Grim view password', { exact: true })).toBeDisabled();
 	expect(page.url()).toBe(url);
