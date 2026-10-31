@@ -7,13 +7,13 @@
  * pin TPI's current data, so review and update them when a data sync changes Mastermind.
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
- * a scenario test (seats, characters and reminders, then the action, then the expected state)
- * that paraphrases the example. Never copy wiki prose.
+ * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
+ * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
-import { castGame, testCharacters } from '#lib/core/model/fixtures.test-support.ts';
 import { gameEnds } from '#lib/core/rules/game-end.ts';
 import { defaultAlignment } from '#lib/core/data/index.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
 describe('Mastermind', () => {
@@ -47,28 +47,22 @@ describe('Mastermind', () => {
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Mastermind#Examples)', () => {
 		it('Example 1: Demon dead, good player executed: evil wins', () => {
-			const { session } = castGame(
-				['professor', 'chef', 'empath', 'mastermind', 'shabaloth'],
-				{ type: 'NewDay' },
-				(s) => ({ type: 'Execute', seatId: s[4] }),
-				{ type: 'NewDay' },
-				(s) => ({ type: 'Execute', seatId: s[0] })
-			);
-			expect(gameEnds(session.game, testCharacters)).toMatchObject([
-				{ rule: 'extra-day', winner: 'evil' }
-			]);
+			const s = scenario(['professor', 'chef', 'empath', 'mastermind', 'shabaloth'])
+				.newDay()
+				.execute('shabaloth')
+				.newDay()
+				.execute('professor');
+			expect(gameEnds(s.game, s.characters)).toMatchObject([{ rule: 'extra-day', winner: 'evil' }]);
 		});
 		it.todo('Example 2: Protected evil player executed; good wins anyway');
 		it.todo("Example 3: Zombuul's second death extends the game a day");
 		it('Example 4: Two alive, no execution: good wins', () => {
-			const { session } = castGame(
-				['chef', 'empath', 'mastermind', 'imp'],
-				(s) => ({ type: 'SetDead', seatId: s[1], dead: true, cause: 'demon' }),
-				{ type: 'NewDay' },
-				(s) => ({ type: 'Execute', seatId: s[3] }),
-				{ type: 'NewDay' }
-			);
-			expect(gameEnds(session.game, testCharacters, { dayEnded: true })).toMatchObject([
+			const s = scenario(['chef', 'empath', 'mastermind', 'imp'])
+				.dies('empath', 'demon')
+				.newDay()
+				.execute('imp')
+				.newDay();
+			expect(gameEnds(s.game, s.characters, { dayEnded: true })).toMatchObject([
 				{ rule: 'extra-day', winner: 'good' }
 			]);
 		});
