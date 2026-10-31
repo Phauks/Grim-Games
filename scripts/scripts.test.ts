@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { findColourFunctions, findHexColours, findNamedColours } from './check-colors.ts';
 import { counted, lineCount, lineProblems, MAX_LINES } from './check-lines.ts';
 import { findPxSizes, svelteStyles } from './check-px.ts';
+import { findInScript, findInSvelte } from './check-separators.ts';
 import { previewsToDelete } from './delete-old-previews.ts';
 import { annotationText, flakyTests, pageSnapshot, summaryMarkdown } from './flaky-summary.ts';
 import { generatedFiles, missingIcons } from './generate-icons.ts';
@@ -119,6 +120,40 @@ describe('check-px', () => {
 		expect(findPxSizes(blocks[0].css, blocks[0].firstLine)).toEqual([
 			{ line: 3, match: '40px', property: 'width' }
 		]);
+	});
+});
+
+describe('check-separators', () => {
+	it('flags an em dash in any string, never a middle dot', () => {
+		const source = "const a = `${x} — ${y}`;\nconst b = 'a · b';\n// a comment — is fine";
+		expect(findInScript(source).map((p) => p.line)).toEqual([1]);
+	});
+
+	it('flags a pipe only in catalog text', () => {
+		const source = "const key = ids.join('|');\nconst m = { 'a.b': 'Night 2 - Day 3' };";
+		expect(findInScript(source)).toEqual([]);
+		expect(findInScript(source, true).map((p) => p.text)).toEqual(['|']);
+	});
+
+	it('flags template text and readable attributes, not code attributes', () => {
+		const source = [
+			'<p>{a} — {b}</p>',
+			'<span aria-label="Votes | Exile">{x}</span>',
+			'<div id="{id}-{role}" class="a - b" style="width: calc(1em - 2px)"></div>',
+			"<p>{x ? ' — ' : ''}</p>",
+			'<code>a | b</code>'
+		].join('\n');
+		expect(findInSvelte(source).map((p) => p.line)).toEqual([1, 2, 4]);
+	});
+
+	it('keeps symbols on a sep-ok line', () => {
+		expect(findInScript("const mask = '—'; // sep-ok: a font table")).toEqual([]);
+		expect(findInSvelte("<p>{v ?? '—'}<!-- sep-ok: a font table --></p>")).toEqual([]);
+	});
+
+	it('checks a Svelte script with its file lines', () => {
+		const source = '<script lang="ts">\n\tconst a = \'x — y\';\n</script>\n<p>ok</p>';
+		expect(findInSvelte(source).map((p) => p.line)).toEqual([2]);
 	});
 });
 

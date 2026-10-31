@@ -29,7 +29,7 @@
 	import PlayerSeating from './PlayerSeating.svelte';
 	import BoardReminder from '#lib/features/grimoire/BoardReminder.svelte';
 	import ReminderTokenRow from '#lib/features/grimoire/ReminderTokenRow.svelte';
-	import { playerLook, reminderChip, reminderWords, remindersOn } from './player-reminders.ts';
+	import { playerLook, reminderWords, remindersOn } from './player-reminders.ts';
 	import { PlayerReminderState } from './player-reminders.svelte.ts';
 	import PlayerReminderPicker from './PlayerReminderPicker.svelte';
 	import PlayerReminderBin from './PlayerReminderBin.svelte';
@@ -41,13 +41,12 @@
 	import {
 		DEFAULT_SEAT_LAYOUT,
 		parseAspect,
-		parseSeatLayout,
-		sharedSeats
+		parseSeatLayout
 	} from '#lib/ui/seating/seat-layout.ts';
+	import { ringAboveTray } from './tray-ring.ts';
 	import {
 		AVATAR_GUESS,
 		GENERIC_GUESSES,
-		clearGuesses,
 		cycleGuess,
 		genericGuess,
 		guessesOf,
@@ -64,11 +63,9 @@
 	} from './grim-guesses.ts';
 	import GenericGuessToken from './GenericGuessToken.svelte';
 	import GuessMarks from './GuessMarks.svelte';
-	import AvatarFace from '#lib/ui/seating/AvatarFace.svelte';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import SeatGuessChips from './SeatGuessChips.svelte';
 	import SeatNotesDialog from '#lib/ui/notes/SeatNotesDialog.svelte';
 	import { deleteSeatNote, notesLine, saveSeatNote, seatNotes } from './seat-notes.svelte.ts';
-	import AlignmentPill from '#lib/features/grimoire/AlignmentPill.svelte';
 	import { TYPE_LABELS } from '#lib/features/reference/labels.ts';
 	import { matchesShape } from './MatchShapeButton.svelte';
 	import PlayerGrimTools from './PlayerGrimTools.svelte';
@@ -118,8 +115,6 @@
 	/** The reminder tokens this player put on seats (Trevor, 2026-10-26), kept as guesses are. */
 	const reminders = new PlayerReminderState();
 	let remindersOpen = $state(false);
-	/** The reminder bin (Trevor, 2026-10-29), from the grim's controls. */
-	let binOpen = $state(false);
 	let bin = $state<ReturnType<typeof PlayerReminderBin>>();
 	let seating = $state<ReturnType<typeof PlayerSeating>>(); // Seating on the grim (plan J38).
 	let townEl = $state<HTMLElement>();
@@ -183,20 +178,22 @@
 	let toolsW = $state(0);
 	let toolsH = $state(0);
 	const tools = $derived(display ? undefined : { w: toolsW + 12, h: toolsH + 12 });
-	const { size, points } = $derived(
-		sharedSeats(seats, layout, board, aspect, matchesShape(display), preferences.current, tools)
+	const fit = $derived(matchesShape(display));
+	const placement = $derived(
+		ringAboveTray({ seats, layout, board, aspect, fit, tools, tray: !display }, preferences.current)
 	);
+	const { chip, foot, ring, ringPoints, size, points } = $derived(placement);
 
 	// The corner's script name keeps clear of every seat and name, as on the board.
 	const root = watchRootFont();
 	const rootFont = $derived(root.current);
 	const names = $derived(
-		nameBoxes({ names: seats.map(nameOf), seats: points, size, unit, rootFont, board })
+		nameBoxes({ names: seats.map(nameOf), seats: ringPoints, size, unit, rootFont, board: ring })
 	);
 	const cornerBoxes = $derived(
-		cornerObstacles(points, names, size, boardLooks.current.nameOffset, board)
+		cornerObstacles(ringPoints, names, size, boardLooks.current.nameOffset, ring)
 	);
-	const fitCorner = $derived(cornerFit(cornerBoxes, board));
+	const fitCorner = $derived(cornerFit(cornerBoxes, ring));
 
 	/** The characters this player guessed on any seat, and the Travellers the town knows. */
 	const firstReminders = $derived([
@@ -365,6 +362,7 @@
 			bind:clientHeight={height}
 			style:--name-scale={boardLooks.current.nameSize}
 			style:--name-offset={boardLooks.current.nameOffset}
+			style:--foot-room={display ? undefined : `${foot}px`}
 			style={boardColours}
 			data-board-colours={boardColours ? '' : undefined}
 			data-testid="player-grim"
@@ -472,22 +470,22 @@
 				{notes}
 				{characterOf}
 				bind:held
-				onOpen={(seat) => {
-					chosen = seat;
-					remindersOpen = true;
-				}}
+				onTap={(seat, r) => bin?.pickUp(seat.seatId, r)}
 			/>
 			{#if !display}<PlayerReminderBin
 					bind:this={bin}
-					bind:open={binOpen}
 					characters={script.characters}
 					guessed={firstReminders}
 					{seats}
 					{points}
 					town={townEl}
 					{size}
-					chip={reminderChip(size, preferences.current.tokenAppearance.reminderScale)}
+					{chip}
+					{characterOf}
+					disabled={hiding}
 					onPlace={(seat, r) => reminders.place(seat.seatId, r)}
+					onMove={(from, r, to) => reminders.move(from, r, to)}
+					onLook={(seatId, id, look) => reminders.setLook(seatId, id, look)}
 				/>{/if}
 			{#if player}<PlayerSeating
 					bind:this={seating}
@@ -534,7 +532,6 @@
 		final={!!final}
 		{showFinal}
 		onFinal={(on) => (showFinal = on)}
-		bin={{ open: binOpen, disabled: hiding, onToggle: () => (binOpen = !binOpen) }}
 		info={{ meta: script.meta, table, roomCode: friendRoom }}
 	/>{/snippet}
 <!-- Full screen's corner: this grim's controls, the page's own, then Full screen. -->
@@ -564,32 +561,10 @@
 	     note, a row of its own, so the two never read as one. -->
 	<div class="row" data-testid="seat-guesses">
 		<span class="row-label">{t('player.grim.guesses')}</span>
-		<ul class="chips" aria-label={t('player.grim.guesses')}>
-			{#each chosen ? listed(chosen.seatId) : [] as g, i (g.id)}
-				<li>
-					<button
-						type="button"
-						class="chip"
-						aria-pressed={i === 0}
-						aria-label={g.avatar ? g.label : undefined}
-						onclick={() =>
-							chosen && save(mainGuess(guesses, chosen.seatId, g.id, withAvatar(chosen)))}
-						>{#if g.avatar}<span class="avatar-chip"
-								><AvatarFace avatar={g.avatar} name={g.name} picture={g.picture} /></span
-							>{:else if g.generic}<AlignmentPill
-								alignment={g.generic.team}
-								text={g.label}
-							/>{:else}<CharacterBadge
-								characterId={g.id}
-								character={g.character}
-								interactive={false}
-							/>{/if}</button
-					>
-				</li>
-			{:else}
-				<li class="row-none">{t('common.none')}</li>
-			{/each}
-		</ul>
+		<SeatGuessChips
+			entries={chosen ? listed(chosen.seatId) : []}
+			onPick={(id) => chosen && save(mainGuess(guesses, chosen.seatId, id, withAvatar(chosen)))}
+		/>
 	</div>
 	<!-- The player's tokens on the seat (Trevor, 2026-10-26, as tokens 2026-10-30); a tap opens them. -->
 	<button
@@ -625,7 +600,6 @@
 			characters={script.characters}
 			selected={chosen ? guessesOf(guesses, chosen.seatId) : []}
 			onSelect={(id) => guess(id)}
-			onNone={() => chosen && save(clearGuesses(guesses, chosen.seatId))}
 		/>{/if}
 </BottomSheet>
 
@@ -673,40 +647,8 @@
 		text-align: start;
 		cursor: pointer;
 	}
-	/* One line of up to three, so adding a guess moves nothing below it. */
-	.chips {
-		display: flex;
-		gap: var(--space-1);
-		min-width: 0;
-		margin: 0;
-		padding: 0;
-		overflow: hidden;
-		list-style: none;
-	}
-	.chip {
-		display: grid;
-		place-items: center;
-		min-height: var(--tap-target);
-		padding: 0 var(--space-1);
-		border: 1px solid transparent;
-		border-radius: var(--radius-sm);
-		background: none;
-		font: inherit;
-		cursor: pointer;
-	}
-	/* The main guess, the one on the token. */
-	.chip[aria-pressed='true'] {
-		border-color: var(--accent);
-		background: var(--surface-selected);
-	}
 	.row-none {
 		color: var(--on-surface-muted);
-	}
-	/* The seat's avatar in its cycle, the size of a badge's icon. */
-	.avatar-chip {
-		display: block;
-		width: 2em;
-		height: 2em;
 	}
 	.seat-note-text {
 		overflow: hidden;
@@ -741,7 +683,8 @@
 		/* In a dialog (the Storyteller's player view), no taller than the room left under the
 		   tabs, so the whole ring shows on a wide, short window (fitInDialog); never so short
 		   that the seats crowd together. */
-		height: max(40dvh, min(75dvh, var(--fit-height, 75dvh)));
+		height: max(40dvh, min(var(--tall), var(--fit-height, var(--tall))));
+		--tall: calc(75dvh + var(--foot-room, 0rem)); /* + the reminder tray (tray-ring.ts) */
 	}
 	/* On a themed screen the town keeps the board's own surface, as on the Storyteller's. */
 	.town[data-board-colours] {
