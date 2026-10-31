@@ -9,6 +9,7 @@ import type { PlayerName } from '#lib/core/data/index.ts';
 import type { SeatId } from '#lib/core/model/index.ts';
 import { numberedNames } from './room-names.ts';
 import { isOpenSeat } from './room-seating-open.ts';
+import type { ClientMessage } from './room-protocol.ts';
 import type { RoomState } from './room.ts';
 
 /** Who holds a number: a phone in the room, or a name the Storyteller typed. */
@@ -144,4 +145,14 @@ export function countOffSeats(
 	const rest = seating.filter((id) => !used.has(id));
 	const filled = [...order].map((entry) => entry ?? (rest.length ? { seatId: rest.shift()! } : {}));
 	return [...filled, ...rest.map((seatId) => ({ seatId }))];
+}
+
+/** Applies the Storyteller's count off messages: start, Done or Cancel, and naming a number. */
+export function countOffMessage(
+	room: RoomState,
+	message: Extract<ClientMessage, { type: 'count-off' | 'end-count-off' | 'name-count' }>
+): RoomState {
+	if (message.type === 'count-off') return startCountOff(room, message.first ?? {});
+	if (message.type === 'end-count-off') return endCountOff(room);
+	return nameCount(room, message.number, message.name);
 }

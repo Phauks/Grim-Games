@@ -4809,16 +4809,19 @@ test('the board menu names its groups, in two columns beside a phone', async ({ 
 	);
 	expect((await names('Session')).join(' ')).toMatch(/^(Character selection )?End game$/);
 	const session = (await group('Session').boundingBox())!;
-	// Open seating (plan J38) and Count off (J40) are there with no room open, disabled.
+	// Open seating (plan J38), Count off (J40) and Travellers choose (L102) are there with no
+	// room open, disabled.
 	expect(await names('Seats')).toEqual([
 		'Add seat',
 		'Add Fabled or Loric',
 		'Arrange seats',
 		'Open seating',
-		'Count off'
+		'Count off',
+		'Travellers choose'
 	]);
 	await expect(group('Seats').getByRole('button', { name: 'Open seating' })).toBeDisabled();
 	await expect(group('Seats').getByRole('button', { name: 'Count off' })).toBeDisabled();
+	await expect(group('Seats').getByRole('button', { name: 'Travellers choose' })).toBeDisabled();
 	expect(await names('App')).toEqual(['Settings', 'Report an issue']);
 	// Beside a phone, the game on the left and the rest on the right.
 	const game = (await group('Game').boundingBox())!;
