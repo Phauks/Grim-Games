@@ -9,7 +9,8 @@
 	 * her ability makes it hers. The same for any Demon whose death by its own kill passes it on,
 	 * as the Fang Gu's does to an Outsider, who turns evil
 	 * (https://wiki.bloodontheclocktower.com/Fang_Gu). A suggestion: Cancel leaves everyone as
-	 * they are, and asks again only if the players who may take it on change. Rules: `starPass`
+	 * they are, and asks again only if the players who may take it on change or the Demon dies
+	 * again after coming back. Rules: `starPass`
 	 * in core.
 	 */
 	interface Props {
@@ -27,7 +28,13 @@
 	// What the dialog shows, kept while it closes after the pass is made.
 	let shown = $state.raw<NonNullable<typeof pass>>();
 	$effect(() => {
-		if (!pass || open) return;
+		// Once nothing passes on (the Demon alive again), a later death asks afresh, even after
+		// a Cancel (Trevor, 2026-10-31).
+		if (!pass) {
+			asked = undefined;
+			return;
+		}
+		if (open) return;
 		const key = `${pass.characterId}:${pass.heirs.join(',')}`;
 		if (asked === key) return;
 		asked = key;

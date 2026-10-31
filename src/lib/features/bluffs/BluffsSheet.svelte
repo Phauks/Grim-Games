@@ -66,6 +66,16 @@
 	/** A later set's name, edited where its characters are chosen (Trevor, 2026-10-17). */
 	let pickedName = $state('');
 
+	/**
+	 * Opening always starts on the sets, never on a picker left open last time: unsaved picks
+	 * (a second set never saved, say) are dropped (Trevor, 2026-10-31).
+	 */
+	let wasOpen = false;
+	$effect.pre(() => {
+		if (open && !wasOpen) editing = undefined;
+		wasOpen = open;
+	});
+
 	const notInPlay = STANDARD_INFO_TOKENS.find((t) => t.id === 'not-in-play')?.text ?? '';
 	const scriptList = $derived(
 		scriptCharacterIds(game.script).flatMap((id) => {
