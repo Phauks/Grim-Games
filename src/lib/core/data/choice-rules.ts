@@ -97,6 +97,13 @@ export interface ChoiceRules {
 	 * https://wiki.bloodontheclocktower.com/Widow).
 	 */
 	shownTo?: ShownTo;
+	/**
+	 * Each evil player learns who carries its `carrier` reminder: shown "This player is" with
+	 * that player's character, pointing at them; with no one marked, "These characters are not
+	 * in play" with the character named (the Storm Catcher's Stormcaught,
+	 * https://wiki.bloodontheclocktower.com/Storm_Catcher).
+	 */
+	evilLearns?: { carrier: ReminderLabel };
 }
 
 export interface ShownTo {
@@ -125,7 +132,8 @@ export const CHOICE_RULE_KEYS = [
 	'infoCard',
 	'carrierIsDemon',
 	'swapsForAbility',
-	'shownTo'
+	'shownTo',
+	'evilLearns'
 ] as const satisfies readonly (keyof ChoiceRules)[];
 
 /** Reads this file's keys from a rules block; labels must be the character's own reminders. */
@@ -185,6 +193,17 @@ export function readChoiceRules(
 					...(minions ? { minions: true as const } : {}),
 					...(carrier ? { carrier } : {})
 				};
+		}
+	}
+	if (raw.evilLearns !== undefined) {
+		const at = `${path}.evilLearns`;
+		if (!isObject(raw.evilLearns))
+			issues.add(at, `expected object, got ${describe(raw.evilLearns)}`);
+		else {
+			checkKeys(raw.evilLearns, ['carrier'], at, issues);
+			if (raw.evilLearns.carrier === undefined) issues.add(`${at}.carrier`, 'missing');
+			const carrier = readToken(raw.evilLearns, 'carrier', at, issues, reminders);
+			if (carrier) out.evilLearns = { carrier };
 		}
 	}
 	return out;

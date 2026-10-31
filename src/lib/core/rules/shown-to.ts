@@ -1,7 +1,7 @@
 import type { CharacterId } from '../data/index.ts';
 import { rulesOf } from '../data/rules/index.ts';
 import type { CharacterLookup } from '../model/characters.ts';
-import { trueCharacter, typeOf } from '../model/selectors.ts';
+import { alignmentOf, trueCharacter, typeOf } from '../model/selectors.ts';
 import type { Game, SeatId } from '../model/types.ts';
 
 /**
@@ -34,4 +34,31 @@ export function shownToSeats(
 export function shownAtMinionInfo(game: Game, characters: CharacterLookup): CharacterId[] {
 	const ids = game.seating.flatMap((s) => trueCharacter(game, s, characters) ?? []);
 	return [...new Set(ids)].filter((id) => rulesOf(id, characters)?.shownTo?.minions);
+}
+
+/**
+ * What each evil player learns from a character's `evilLearns` rule (the Storm Catcher,
+ * https://wiki.bloodontheclocktower.com/Storm_Catcher): the evil players to wake, and the
+ * player carrying its reminder with their character. No `marked` when nobody carries it: they
+ * are then shown the named character as not in play.
+ */
+export interface EvilLearns {
+	evil: SeatId[];
+	marked?: { seatId: SeatId; characterId?: CharacterId };
+}
+
+export function evilLearns(
+	game: Game,
+	characterId: CharacterId,
+	characters: CharacterLookup
+): EvilLearns | undefined {
+	const rule = rulesOf(characterId, characters)?.evilLearns;
+	if (!rule) return undefined;
+	const evil = game.seating.filter((s) => alignmentOf(game, s) === 'evil');
+	const seatId = game.seating.find((s) =>
+		game.seats[s].reminders.some((r) => r.characterId === characterId && r.label === rule.carrier)
+	);
+	if (seatId === undefined) return { evil };
+	const id = trueCharacter(game, seatId, characters);
+	return { evil, marked: { seatId, ...(id ? { characterId: id } : {}) } };
 }

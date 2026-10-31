@@ -1,4 +1,7 @@
 {
+	"evilLearns": {
+		"carrier": "Stormcaught"
+	},
 	"reminderTargets": {
 		"Stormcaught": {
 			"seat": "any",

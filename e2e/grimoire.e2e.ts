@@ -4421,6 +4421,69 @@ test('the Widow and Damsel steps say who is shown their token', async ({ page })
 	await expect(shown).toContainText('Widow');
 });
 
+// https://wiki.bloodontheclocktower.com/Storm_Catcher (M10e): each evil player learns who is
+// stormcaught, or, with no one marked, the named good character as not in play.
+async function stormCatcherGame(page: Page) {
+	await startGame(page);
+	await menu(page, 'Add Fabled or Loric');
+	await page
+		.getByRole('dialog', { name: 'Add Fabled or Loric' })
+		.getByRole('button', { name: 'Storm Catcher', exact: true })
+		.tap();
+	for (const [number, name] of [
+		[1, 'Imp'],
+		[2, 'Poisoner'],
+		[3, 'Chef'],
+		[4, 'Empath'],
+		[5, 'Monk'],
+		[6, 'Soldier'],
+		[7, 'Mayor']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+}
+
+test('the Storm Catcher step shows the evil players who is stormcaught', async ({ page }) => {
+	test.slow();
+	await stormCatcherGame(page);
+	await putReminder(page, 'Stormcaught', 3);
+	const step = await openStep(page, 'Storm Catcher');
+	const learns = step.getByTestId('night-evil-learns');
+	await expect(learns).toContainText(
+		/Seat 1,\s*Seat 2\s*is shown\s*This player is\s*Chef\s*Seat 3/
+	);
+	await learns.getByRole('button', { name: 'Show to player' }).tap();
+	const shown = page.locator('[data-testid="show-to-player"][open]');
+	await expect(shown.getByRole('heading')).toHaveText('This player is');
+	await expect(shown).toContainText('Chef');
+});
+
+test('with no one stormcaught, the evil players are shown the named character as not in play', async ({
+	page
+}) => {
+	test.slow();
+	await stormCatcherGame(page);
+	const step = await openStep(page, 'Storm Catcher');
+	const learns = step.getByTestId('night-evil-learns');
+	await expect(learns).toContainText('These characters are not in play');
+	const show = learns.getByRole('button', { name: 'Show to player' });
+	await expect(show).toBeDisabled();
+	await learns.getByRole('combobox', { name: 'Character named' }).tap();
+	// Only good characters on the script that aren't in play: no Chef.
+	await expect(page.getByRole('option', { name: 'Chef', exact: true })).toHaveCount(0);
+	await page.getByRole('option', { name: 'Washerwoman', exact: true }).tap();
+	await show.tap();
+	const shown = page.locator('[data-testid="show-to-player"][open]');
+	await expect(shown.getByRole('heading')).toHaveText('These characters are not in play');
+	await expect(shown).toContainText('Washerwoman');
+});
+
 test('Minion info and Demon info list every card they can show, with who it points at', async ({
 	page
 }) => {
