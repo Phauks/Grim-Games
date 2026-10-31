@@ -6556,6 +6556,10 @@ test("with the Hindu's optional rule chosen at the start, a reborn Demon passes 
 		includeHidden: true
 	});
 	await expect(hinduRule).not.toBeChecked();
+	// The character's standard row with its ability, then the rule and its switch beneath
+	// (Trevor, 2026-10-31): the wiki's own line once fetched, else a plain label.
+	await expect(optional.getByText(/first 4 players to die/i)).toBeVisible();
+	await expect(optional.getByRole('paragraph')).toHaveText(/^Optional rule/);
 	await optional.locator('[data-scope="switch"][data-part="control"]').tap();
 	await expect(hinduRule).toBeChecked();
 	await rules.getByRole('button', { name: 'Close' }).tap();

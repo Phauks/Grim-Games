@@ -219,6 +219,7 @@ export const modes = {
 	'modes.rulesInGame': 'In this game',
 	'modes.optionalRules': 'Optional rules',
 	'modes.optionalRuleOf': 'Optional rule of {name}',
+	'modes.optionalRule': 'Optional rule',
 	'modes.optionalRulesOff': 'Not in play: {names}',
 	'modes.deleteRuleConfirm': 'Delete {name}?',
 	'modes.conflicts': 'Conflicts',
