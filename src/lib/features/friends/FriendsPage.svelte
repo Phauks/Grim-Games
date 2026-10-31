@@ -21,6 +21,7 @@
 	import AddFriendDialog from './AddFriendDialog.svelte';
 	import SeatFriendButton from './SeatFriendButton.svelte';
 	import FriendRows from './FriendRows.svelte';
+	import GroupsSection from './GroupsSection.svelte';
 	import { roomJoinPath } from '#lib/features/room/join-link.ts';
 	import { profileHref, scriptOpenHref } from './friend-links.ts';
 	import { friendScripts } from './friend-scripts.svelte.ts';
@@ -279,6 +280,8 @@
 					<p class="muted">{friends.error || t('friends.loading')}</p>
 				{/if}
 			</PageSection>
+
+			<GroupsSection />
 
 			<PageSection title={t('friends.requests')}>
 				{#if data}{@render accounts(data.incoming, 'friend-incoming', incomingActions)}{/if}
