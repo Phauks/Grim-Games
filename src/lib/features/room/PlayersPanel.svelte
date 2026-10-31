@@ -13,7 +13,7 @@
 	import { seatName } from '#lib/features/game/seat-label.ts';
 	import SeatAvatarButton from '#lib/features/player/SeatAvatarButton.svelte';
 	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
-	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import { roomHost } from './host.svelte.ts';
 	import PlayerInbox from './PlayerInbox.svelte';
@@ -27,10 +27,12 @@
 	/**
 	 * Players (Trevor, 2026-10-29: "player management shouldn't be under share"): every seat,
 	 * phone or not, then the phones with no seat; each with their avatar (a tap opens their
-	 * profile), whether their phone is here, and what they have sent. A tap on a player opens
-	 * their sheet with their notes, messages and reported picture ("get rid of messages, and
-	 * just fully integrate it into Players"); the game's own notes head the list (Notes folded
-	 * in, Trevor 2026-10-29). Share is shown to players, so nothing here is on it.
+	 * profile), whether their phone is here, and what they have sent. Each player is a caret
+	 * section with their notes, messages and reported picture shown beneath them (Trevor,
+	 * 2026-10-31: "all notes and messages should populate beneath each player, not be hidden in
+	 * a sub-menu"; "allow carrot menuing each character"). The game's own notes are their own
+	 * section above the players (Trevor, 2026-10-31). Share is shown to players, so nothing here
+	 * is on it.
 	 */
 	interface Props {
 		game: OpenGame;
@@ -114,21 +116,21 @@
 	const pictureOf = (m: RoomMember) =>
 		m.picture && host.code ? roomImagePath(host.code, m.picture) : undefined;
 
-	let sheetFor = $state<string>();
-	let sheetOpen = $state(false);
-	const sheet = $derived(entries.find((e) => e.key === sheetFor));
-	function openSheet(key: string) {
-		sheetFor = key;
-		sheetOpen = true;
-	}
-	// A seat's pen mark or its ⋯ Notes opens that player's sheet here. Two frames on, once
-	// Players has hidden what is behind it from screen readers; opened together, the sheet was
-	// hidden with the rest.
+	/** The players list, to bring one player into view. */
+	let list = $state<HTMLElement>();
+	// A seat's pen mark or its ⋯ Notes opens Players at that player. Two frames on, once Players
+	// is laid out.
 	$effect(() => {
 		const seatId = playersDialog.seat;
 		if (seatId === undefined) return;
 		playersDialog.seat = undefined;
-		requestAnimationFrame(() => requestAnimationFrame(() => openSheet(seatId)));
+		requestAnimationFrame(() =>
+			requestAnimationFrame(() =>
+				list
+					?.querySelector(`[data-seat="${CSS.escape(seatId)}"]`)
+					?.scrollIntoView({ block: 'start' })
+			)
+		);
 	});
 
 	// ── Remove from room (plan J37): this game only, and the Removed list can let them back ──
@@ -137,7 +139,6 @@
 	function remove() {
 		if (!removing) return;
 		host.send({ type: 'remove', memberId: removing.memberId });
-		sheetOpen = false;
 	}
 
 	// ── Notes: the game's (no seat) and each player's, the same notes as before ──
@@ -145,7 +146,6 @@
 	const seatNotes = (seatId: SeatId | undefined) =>
 		(seatId && game.game.seats[seatId]?.notes) || [];
 	const gameNotes = $derived(game.game.notes ?? []);
-	let gameNotesOpen = $state(false);
 	let editor = $state<ReturnType<typeof NoteDraftEditor>>();
 	/** Whose note the editor has open; undefined for a game note. */
 	let noteSeat = $state<SeatId>();
@@ -190,81 +190,84 @@
 {/snippet}
 
 <div class="players">
+	<!-- The whole game's notes, their own section above the players (Trevor, 2026-10-31). -->
+	<section aria-labelledby="game-notes-label" data-testid="game-notes">
+		<h2 id="game-notes-label">{t('room.players.gameNotes')}</h2>
+		<NoteCards
+			notes={gameNotes}
+			onOpen={(noteId) => openNote(undefined, noteId)}
+			onAdd={viewOnly ? undefined : () => openNote(undefined)}
+		/>
+	</section>
 	<section aria-labelledby="players-label">
 		<h2 id="players-label">{t('room.playersInRoom')}</h2>
-		<!-- The whole game's notes, above the players (Trevor, 2026-10-29). -->
-		<button
-			type="button"
-			class="game-notes"
-			data-testid="game-notes-open"
-			onclick={() => (gameNotesOpen = true)}
-		>
-			<span class="who"><Icon name="notes" />{t('room.players.gameNotes')}</span>
-			<span class="where"
-				>{gameNotes.length
-					? t('room.players.notes', { count: gameNotes.length })
-					: t('common.none')}</span
-			>
-		</button>
 		{#if entries.length === 0}
 			<p class="none">{t('common.none')}</p>
 		{:else}
-			<ul class="list" aria-labelledby="players-label">
+			<ul class="list" aria-labelledby="players-label" bind:this={list}>
 				{#each entries as entry (entry.key)}
 					{@const wait = entry.member
 						? waiting(entry.member.memberId)
 						: { count: 0, urgent: false }}
-					<li class="member" data-testid="room-player">
-						{@render avatar(entry)}
-						<button
-							type="button"
-							class="open"
-							data-testid="room-player-open"
-							onclick={() => openSheet(entry.key)}
-						>
-							<!-- Name and character on one row (Trevor, 2026-10-30). -->
-							<span class="who">
-								<span class="name"
-									>{@render nameAndCharacter(entry)}{#if seatNotes(entry.seatId).length}<span
-											class="note-mark"
-											data-testid="room-player-note"
-											><Icon name="notes" /><span class="visually-hidden"
-												>{t('room.players.hasNotes')}</span
-											></span
-										>{/if}</span
-								>
-								{#if !entry.seatId}<span class="where">{t('room.noSeat')}</span>{/if}
-							</span>
-							<!-- Symbols, not words (Trevor, 2026-10-30): seen their character, then the
-							     phone; both keep their space so rows line up. -->
-							<span
-								class="mark seen"
-								data-testid="room-player-seen"
-								data-seen={entry.seatId && seen.has(entry.seatId) ? '' : undefined}
-								>{#if entry.seatId && seen.has(entry.seatId)}<Icon
-										name="roleSeen"
-										label={t('room.roles.seen')}
-									/>{/if}</span
-							>
-							<span
-								class="mark phone"
-								data-testid="room-player-phone"
-								data-phone={phoneOf(entry)}
-								title={t(PHONE_TEXT[phoneOf(entry)])}
-								><Icon
-									name={PHONE_ICON[phoneOf(entry)]}
-									label={t('room.players.phone', { state: t(PHONE_TEXT[phoneOf(entry)]) })}
-								/></span
-							>
-							<!-- Kept when there is nothing, so rows never shift as messages come in. -->
-							<span class="waiting">
-								{#if wait.count}<CountBadge
-										count={wait.count}
-										warn={wait.urgent}
-										testid="room-player-waiting"
-									/>{/if}
-							</span>
-						</button>
+					<li class="member" data-testid="room-player" data-seat={entry.seatId}>
+						<!-- eslint-disable-next-line grim/names-as-badges -- never shown: the label snippet shows the badge -->
+						<Collapsible title={entry.name} level={3}>
+							{#snippet lead()}{@render avatar(entry)}{/snippet}
+							{#snippet label()}
+								<span class="row">
+									<!-- Name and character on one row (Trevor, 2026-10-30). -->
+									<span class="who">
+										<span class="name">{@render nameAndCharacter(entry)}</span>
+										{#if !entry.seatId}<span class="where">{t('room.noSeat')}</span>{/if}
+									</span>
+									<!-- Symbols, not words (Trevor, 2026-10-30): seen their character, then
+									     the phone; both keep their space so rows line up. -->
+									<span
+										class="mark seen"
+										data-testid="room-player-seen"
+										data-seen={entry.seatId && seen.has(entry.seatId) ? '' : undefined}
+										>{#if entry.seatId && seen.has(entry.seatId)}<Icon
+												name="roleSeen"
+												label={t('room.roles.seen')}
+											/>{/if}</span
+									>
+									<span
+										class="mark phone"
+										data-testid="room-player-phone"
+										data-phone={phoneOf(entry)}
+										title={t(PHONE_TEXT[phoneOf(entry)])}
+										><Icon
+											name={PHONE_ICON[phoneOf(entry)]}
+											label={t('room.players.phone', { state: t(PHONE_TEXT[phoneOf(entry)]) })}
+										/></span
+									>
+									<!-- Kept when there is nothing, so rows never shift as messages come in. -->
+									<span class="waiting">
+										{#if wait.count}<CountBadge
+												count={wait.count}
+												warn={wait.urgent}
+												testid="room-player-waiting"
+											/>{/if}
+									</span>
+								</span>
+							{/snippet}
+							{#snippet aside()}
+								<!-- A red trash at the row's end, asking first (Trevor's UI rules). -->
+								{#if entry.member && host.code && !viewOnly}
+									{@const memberId = entry.member.memberId}
+									{@const name = entry.name}
+									<DeleteButton
+										label={t('room.players.remove')}
+										data-testid="room-player-remove"
+										onclick={() => {
+											removing = { memberId, name };
+											confirmRemove = true;
+										}}
+									/>
+								{/if}
+							{/snippet}
+							{@render details(entry)}
+						</Collapsible>
 					</li>
 				{/each}
 			</ul>
@@ -274,54 +277,29 @@
 	{#if host.code}<RemovedPlayers />{/if}
 </div>
 
-<!-- eslint-disable-next-line grim/names-as-badges -- the dialog's plain-text name; shown as a badge (heading) -->
-<Dialog bind:open={sheetOpen} title={sheet?.name ?? ''}>
-	{#snippet heading()}<PlayerBadge name={sheet?.name ?? ''} />{/snippet}
-	<!-- A red trash beside the X, asking first (Trevor's UI rules). -->
-	{#snippet headActions()}
-		{#if sheet?.member && host.code && !viewOnly}
-			{@const memberId = sheet.member.memberId}
-			{@const name = sheet.name}
-			<DeleteButton
-				label={t('room.players.remove')}
-				data-testid="room-player-remove"
-				onclick={() => {
-					removing = { memberId, name };
-					confirmRemove = true;
-				}}
-			/>
+<!-- What sits under each player: where they are, their character, notes and messages. -->
+{#snippet details(entry: Entry)}
+	<div class="details" data-testid="room-player-sheet">
+		<span class="where">{where(entry)}</span>
+		{#if entry.seatId}
+			{@const seat = game.game.seats[entry.seatId]}
+			{@const role = roleState(entry)}
+			<!-- The character is in the heading; this says whether the phone has seen it. -->
+			{#if seat?.characterId && role}<span class="where" data-testid="room-player-role">{role}</span
+				>{/if}
+			{@const seatId = entry.seatId}
+			<section class="notes" aria-labelledby="player-notes-{seatId}">
+				<h4 id="player-notes-{seatId}">{t('room.players.notesHeading')}</h4>
+				<NoteCards
+					notes={seatNotes(seatId)}
+					onOpen={(noteId) => openNote(seatId, noteId)}
+					onAdd={viewOnly ? undefined : () => openNote(seatId)}
+				/>
+			</section>
 		{/if}
-	{/snippet}
-	{#if sheet}
-		<div class="sheet" data-testid="room-player-sheet">
-			<div class="sheet-top">
-				{@render avatar(sheet)}
-				<span class="where">{where(sheet)}</span>
-			</div>
-			{#if sheet.seatId}
-				{@const seat = game.game.seats[sheet.seatId]}
-				{@const role = roleState(sheet)}
-				{#if seat?.characterId}<span class="sheet-role"
-						><CharacterBadge
-							characterId={seat.characterId}
-							character={game.characters.get(seat.characterId)}
-							alignment={seat.alignment}
-						/>{#if role}<span class="where" data-testid="room-player-role">{role}</span>{/if}</span
-					>{/if}
-				{@const seatId = sheet.seatId}
-				<section class="notes" aria-labelledby="player-notes-{seatId}">
-					<h3 id="player-notes-{seatId}">{t('room.players.notesHeading')}</h3>
-					<NoteCards
-						notes={seatNotes(seatId)}
-						onOpen={(noteId) => openNote(seatId, noteId)}
-						onAdd={viewOnly ? undefined : () => openNote(seatId)}
-					/>
-				</section>
-			{/if}
-			{#if sheet.member}<PlayerInbox memberId={sheet.member.memberId} name={sheet.name} />{/if}
-		</div>
-	{/if}
-</Dialog>
+		{#if entry.member}<PlayerInbox memberId={entry.member.memberId} name={entry.name} />{/if}
+	</div>
+{/snippet}
 
 <ConfirmDialog
 	bind:open={confirmRemove}
@@ -332,16 +310,6 @@
 	{#if removing}<PlayerBadge name={removing.name} />{/if}
 	<p>{t('room.players.removeBody')}</p>
 </ConfirmDialog>
-
-<Dialog bind:open={gameNotesOpen} title={t('room.players.gameNotes')}>
-	<div data-testid="game-notes">
-		<NoteCards
-			notes={gameNotes}
-			onOpen={(noteId) => openNote(undefined, noteId)}
-			onAdd={viewOnly ? undefined : () => openNote(undefined)}
-		/>
-	</div>
-</Dialog>
 
 <!-- One editor for every note here, the game's or a player's. Never shown to players. -->
 <NoteDraftEditor
@@ -379,28 +347,24 @@
 	}
 	/* Rows with dividers, not cards (Trevor). */
 	.member {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		min-height: var(--tap-target);
 		border-bottom: 1px solid var(--border);
 	}
-	.open {
+	/* The caret section's own heading row: name and character, then the marks. */
+	.row {
 		display: flex;
 		flex: 1;
 		align-items: center;
 		justify-content: space-between;
 		gap: var(--space-2);
 		min-width: 0;
-		min-height: var(--tap-target);
-		padding: 0;
-		border: 0;
-		background: none;
-		color: inherit;
-		font: inherit;
-		text-align: left;
-		cursor: pointer;
-		touch-action: manipulation;
+	}
+	.details {
+		display: grid;
+		gap: var(--space-3);
+	}
+	h4 {
+		margin: 0;
+		font-size: 1rem;
 	}
 	.who {
 		display: flex;
@@ -441,26 +405,6 @@
 		grid-area: 1 / 1;
 		color: var(--on-surface-muted);
 	}
-	.game-notes {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-2);
-		min-height: var(--tap-target);
-		padding: 0;
-		border: 0;
-		border-bottom: 1px solid var(--border);
-		background: none;
-		color: inherit;
-		font: inherit;
-		text-align: left;
-		cursor: pointer;
-		touch-action: manipulation;
-	}
-	.game-notes .who {
-		gap: var(--space-2);
-		justify-content: flex-start;
-	}
 	.name {
 		display: flex;
 		align-items: center;
@@ -478,31 +422,8 @@
 	.phone[data-phone='here'] {
 		color: var(--good-text);
 	}
-	.sheet-role {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: var(--space-2);
-	}
-	.note-mark {
-		display: inline-flex;
-		color: var(--on-surface-muted);
-	}
 	.notes {
 		display: grid;
-		gap: var(--space-2);
-	}
-	h3 {
-		margin: 0;
-		font-size: 1rem;
-	}
-	.sheet {
-		display: grid;
-		gap: var(--space-3);
-	}
-	.sheet-top {
-		display: flex;
-		align-items: center;
 		gap: var(--space-2);
 	}
 </style>

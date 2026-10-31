@@ -44,15 +44,12 @@ test('the Storyteller removes a phone for this game, and can let it back in', as
 	const phone = await joinAs(browser, testInfo, code, 'Ana');
 	await expect(unseated).toHaveText([/Ana\s*No seat/]);
 
-	// The red trash on the player's sheet asks first.
-	await unseated.getByTestId('room-player-open').tap();
-	const sheet = page.getByRole('dialog', { name: 'Ana', exact: true });
-	await sheet.getByTestId('room-player-remove').tap();
+	// The red trash on the player's row asks first.
+	await unseated.getByTestId('room-player-remove').tap();
 	await page
 		.getByRole('alertdialog', { name: 'Remove this player from the room?' })
 		.getByRole('button', { name: 'Confirm' })
 		.tap();
-	await expect(sheet).toBeHidden();
 	await expect(unseated).toHaveCount(0);
 	await expect(removed.getByTestId('room-removed-player')).toHaveText([/Ana/]);
 	await expect(phone.getByRole('alert')).toHaveText('The Storyteller removed you from this game.');
