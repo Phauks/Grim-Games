@@ -219,6 +219,9 @@ export const modes = {
 	'modes.switch.threeAlive': '3-player limit',
 	'modes.switch.duplicateDemons': 'Duplicate Demons',
 	'modes.rulesInGame': 'In this game',
+	'modes.optionalRules': 'Optional rules',
+	'modes.optionalRuleOf': 'Optional rule of {name}',
+	'modes.optionalRulesOff': 'Not in play: {names}',
 	'modes.deleteRuleConfirm': 'Delete {name}?',
 	'modes.conflicts': 'Conflicts',
 	'modes.conflict':

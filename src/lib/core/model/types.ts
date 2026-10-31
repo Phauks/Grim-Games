@@ -390,6 +390,11 @@ export interface Game {
 	 */
 	reincarnated?: SeatId[];
 	/**
+	 * The characters whose optional rule from their wiki page this game plays with, chosen at
+	 * the start (Trevor, 2026-10-30): their rules are `rulesIn`. Absent while none.
+	 */
+	optionalRules?: CharacterId[];
+	/**
 	 * Reminders held by a Fabled or Loric in play, by its id (Trevor, 2026-10-17). Optional,
 	 * so older saved games read as before; removing the character takes its reminders away.
 	 */

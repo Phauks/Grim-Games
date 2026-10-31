@@ -109,6 +109,8 @@ export type Command =
 	 * (the Hindu's first four deaths, https://wiki.bloodontheclocktower.com/Hindu).
 	 */
 	| { type: 'Reincarnate'; seatId: SeatId; characterId: CharacterId }
+	/** Turns a character's optional rule on or off for this game (`Game.optionalRules`). */
+	| { type: 'SetOptionalRule'; characterId: CharacterId; on: boolean }
 	/**
 	 * Marks a player dead or alive. `cause` is optional when marking dead (the Storyteller
 	 * can skip it and set it later with `SetDeathCause`); on an already dead player it sets
