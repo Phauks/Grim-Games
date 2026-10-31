@@ -21,7 +21,9 @@ export function fitInDialog(element: HTMLElement) {
 			box.scrollTop -
 			box.clientTop;
 		const bottom = parseFloat(getComputedStyle(box).paddingBottom) || 0;
-		const room = Math.floor(box.clientHeight - top - bottom);
+		// Bottom-bar tabs (Tabs placement="bottom") cover the foot of the box.
+		const bar = box.querySelector<HTMLElement>('[data-bottom-bar]')?.offsetHeight ?? 0;
+		const room = Math.floor(box.clientHeight - top - bottom - bar);
 		element.style.setProperty('--fit-height', `${Math.max(0, room)}px`);
 	};
 	fit();

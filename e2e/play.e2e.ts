@@ -191,6 +191,44 @@ test('tabs that do not fit move into a ⋯ menu instead of wrapping', async ({ p
 	await expect(more).toHaveCount(0);
 });
 
+test('the tabs sit in a bar along the bottom, the chosen one filled', async ({ page }) => {
+	// Trevor, 2026-10-31: a bottom bar with an icon over each tab, the chosen icon filled,
+	// gold and a little larger, with no line or pill.
+	const bar = page.getByRole('tablist');
+	const atBottom = async () => {
+		const box = (await bar.boundingBox())!;
+		const screen = page.viewportSize()!;
+		// The bar's own bottom padding (clear of a gesture bar) is part of the strip.
+		const strip = (await bar.evaluate((el) => el.parentElement!.getBoundingClientRect().bottom))!;
+		expect(box.y).toBeGreaterThan(screen.height / 2);
+		expect(Math.abs(strip - screen.height)).toBeLessThanOrEqual(1);
+	};
+	// A short tab still has its bar at the foot of the screen, with nothing to scroll.
+	await page.getByRole('tab', { name: 'Notes' }).tap();
+	await atBottom();
+	expect(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight)).toBe(
+		true
+	);
+	// A long one keeps it there while the page scrolls under it.
+	await page.getByRole('tab', { name: 'Script' }).tap();
+	await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight / 2));
+	await atBottom();
+	// And at the end of the page, where it meets the screen's edge just the same.
+	await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+	await atBottom();
+	// Every tab has its icon; only the chosen one's is drawn larger.
+	const widths = await page
+		.getByRole('tab')
+		.evaluateAll((tabs) =>
+			tabs.map((tab) =>
+				(tab.querySelector('[data-icon]')?.getBoundingClientRect().width ?? 0).toFixed(0)
+			)
+		);
+	expect(widths).toHaveLength(4);
+	expect(Number(widths[0])).toBeGreaterThan(Number(widths[1]));
+	expect(new Set(widths.slice(1)).size).toBe(1);
+});
+
 test("the player view's menu is the app's, and leaving it asks first", async ({ page }) => {
 	// The app pages' hamburger, as no sidebar shows on a phone or tablet (Trevor, 2026-10-24).
 	const menu = page.getByRole('button', { name: 'Menu', exact: true });
