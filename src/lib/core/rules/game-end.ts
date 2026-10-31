@@ -273,22 +273,10 @@ function spentBefore(
 function demonDead(game: Game, characters: CharacterLookup): GameEnd[] {
 	const demons = demonSeats(game, characters);
 	if (demons.length === 0 || demons.some((id) => aliveForEnd(game, id, characters))) return [];
-	// A Demon among the first to die while players are reborn (the Hindu's first four): the
-	// game ends and good wins, whatever might otherwise keep it going
-	// (https://wiki.bloodontheclocktower.com/Hindu).
+	// A Demon among the first to die while players are reborn (the Hindu's first four) is not
+	// reborn: its death ends the game as any Demon's would, so the Scarlet Woman or a star pass
+	// still keeps it going (https://wiki.bloodontheclocktower.com/Hindu; Trevor, 2026-10-31).
 	const rebirth = demons.map((id) => rebirthOf(game, id, characters)).find((id) => id);
-	if (rebirth)
-		return [
-			{
-				key: `demon-dead:${demons.join(',')}`,
-				rule: 'demon-dead',
-				winner: 'good',
-				characterId: rebirth,
-				seats: demons,
-				wiki: wikiOf(rebirth, characters),
-				holds: []
-			}
-		];
 	const holds: GameHold[] = [];
 
 	// Good can't win while its player and the player with its token both live (the Evil
@@ -348,8 +336,9 @@ function demonDead(game: Game, characters: CharacterLookup): GameEnd[] {
 			key: `demon-dead:${demons.join(',')}`,
 			rule: 'demon-dead',
 			winner: 'good',
+			...(rebirth ? { characterId: rebirth } : {}),
 			seats: demons,
-			wiki: `${W}Glossary`,
+			wiki: rebirth ? wikiOf(rebirth, characters) : `${W}Glossary`,
 			holds
 		}
 	];
@@ -667,8 +656,7 @@ export function gameEnds(
 		: [];
 	const demon = demonDead(game, characters);
 	for (const end of demon) {
-		// The Hindu's end needs no extra day: the game ends.
-		const mind = end.characterId ? undefined : extraDay(game, characters, options, end);
+		const mind = extraDay(game, characters, options, end);
 		if (mind === undefined) out.push(end);
 		else if ('key' in mind) out.push(mind);
 		else out.push({ ...end, holds: [...end.holds, mind] });
