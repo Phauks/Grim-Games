@@ -14,7 +14,7 @@
 	 * 2026-10-27: "move any controls onto the grim so we remove wasted space"), all in its top
 	 * right beside Full screen ("All controls on a player grim should be in the top right, next
 	 * to the full screen button"): the eye, the board's shape and, once the Storyteller shares
-	 * it, the Final grimoire switch (plan R5); the reminder bin (Trevor, 2026-10-29); and Game
+	 * it, the Final grimoire switch (plan R5); and Game
 	 * info, which the corner's name opens too but a phone's corner often has no room for
 	 * (Trevor, 2026-10-30). A row only: PlayerGrim places it.
 	 */
@@ -25,8 +25,6 @@
 		final: boolean;
 		showFinal: boolean;
 		onFinal: (on: boolean) => void;
-		/** The reminder bin: open, and off while the eye hides the player's own reminders. */
-		bin?: { open: boolean; disabled: boolean; onToggle: () => void };
 		/** Game info for this town, read only (TownGameInfo). */
 		info?: {
 			meta: ScriptMeta;
@@ -45,7 +43,6 @@
 		final,
 		showFinal,
 		onFinal,
-		bin,
 		info,
 		placed = false,
 		width = $bindable(0),
@@ -70,17 +67,6 @@
 				testid="hide-guesses"
 			/></span
 		>
-		{#if bin}<span class="corner-button"
-				><IconButton
-					icon="reminder"
-					label={t('player.grim.reminderBin')}
-					aria-pressed={bin.open}
-					disabled={bin.disabled}
-					data-bin-opener
-					data-testid="reminder-bin-button"
-					onclick={bin.onToggle}
-				/></span
-			>{/if}
 		{#if info}<span class="corner-button"
 				><IconButton
 					icon="info"

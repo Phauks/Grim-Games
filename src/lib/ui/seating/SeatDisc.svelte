@@ -32,8 +32,9 @@
 		/** How a used ghost vote looks: a grey outline ghost, or struck through (Trevor, 2026-10-19). */
 		usedVote?: 'hollow' | 'struck';
 		/**
-		 * A frame round the token (L4, Trevor 2026-10-22). It sits inside the token's own
-		 * footprint, the face shrinking a little, so nothing around the seat moves.
+		 * A frame round the token (L4, Trevor 2026-10-22). The face keeps the size every other
+		 * seat's has (Trevor, 2026-10-31: a token with a laurel was smaller), and the frame is
+		 * drawn round it, past the token's edge, without moving anything around the seat.
 		 */
 		frame?: Frame;
 		/** The player's avatar (plan R6, their initials from `name`), shown in place of the number. */
@@ -82,7 +83,7 @@
 	data-dead={dead || undefined}
 	data-framed={framed || undefined}
 	style:--size="{size}px"
-	style:--face-scale={(frame?.faceRadius ?? FACE_RADIUS) / 50}
+	style:--frame-scale={framed ? 50 / (frame?.faceRadius ?? FACE_RADIUS) : 1}
 >
 	<span class="disc">
 		<!-- Marked as a token face, so a seat button's focus ring is round (base.css). -->
@@ -93,15 +94,18 @@
 					{picture}
 				/>{:else}<span class="empty">{number}</span>{/if}</span
 		>
-		{#if frame && framed}<span
-				class="frame-layer"
-				data-growing={growing || undefined}
-				onanimationend={() => (growing = false)}><FrameDrawing {frame} /></span
-			>{/if}
+		<!-- The frame's own box, round the face; the emblem sits on its top. -->
+		<span class="frame-box"
+			>{#if frame && framed}<span
+					class="frame-layer"
+					data-growing={growing || undefined}
+					onanimationend={() => (growing = false)}><FrameDrawing {frame} /></span
+				>{/if}
+			<!-- Outside the frame layer, so it stays put while the laurel moves (Trevor, 2026-10-28). -->
+			<CharacterEmblem {avatar} {fullColour} /></span
+		>
 		<!-- Over the face, not in it, so the face's own size never moves the name. -->
 		<!-- One name badge for every seat, named or empty (Trevor, 2026-10-19). -->
-		<!-- Outside the frame layer, so it stays put while the laurel moves (Trevor, 2026-10-28). -->
-		<CharacterEmblem {avatar} {fullColour} />
 		<PlayerNameMark {name} />
 		{#if dead}<DeadBadge {vote} usedLook={usedVote} testid="dead-mark" />{/if}
 		{#if marks}{@render marks()}{/if}
@@ -139,9 +143,18 @@
 		color: var(--on-surface-muted);
 		font: var(--seat-font);
 	}
-	/* Framed: the face shrinks into the frame, the disc keeps its size. */
-	.seat-disc[data-framed] .face {
-		scale: var(--face-scale);
+	/*
+	 * The frame's box: the face's circle is the frame's inner circle, so the box reaches past
+	 * the token by the frame's width. Unframed, it is the token itself.
+	 */
+	.frame-box {
+		position: absolute;
+		inset: calc((1 - var(--frame-scale)) * 50%);
+		pointer-events: none;
+	}
+	/* The emblem keeps the size it has on a token with no frame. */
+	.frame-box :global(.emblem) {
+		width: calc(30% / var(--frame-scale));
 	}
 	.frame-layer {
 		position: absolute;

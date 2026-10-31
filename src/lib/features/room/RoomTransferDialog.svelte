@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
-	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import ShareCode from '#lib/ui/share/ShareCode.svelte';
 	import { formatRoomCode } from '#lib/core/sync/room-code.ts';
@@ -14,7 +13,8 @@
 	 * (Trevor, 2026-10-30: "room transfer should be above end game"): the room code and the
 	 * transfer code another device types on Join game (⋯ > Room transfer) to become this room's
 	 * Storyteller, for five minutes. Both are here, as the other device needs both (2026-10-30).
-	 * Closing it leaves the code working; Stop transfer ends it.
+	 * Closing it ends the transfer, so the code stops working (Trevor, 2026-10-31: no Stop
+	 * transfer button, "Awaiting confirmation" at the bottom instead).
 	 */
 	interface Props {
 		open: boolean;
@@ -24,6 +24,13 @@
 
 	const host = roomHost();
 	const transfer = roomTransfer();
+
+	// Closed (✕, Escape or outside): the transfer ends with it.
+	let wasOpen = false;
+	$effect(() => {
+		if (wasOpen && !open && transfer.code) transfer.stop();
+		wasOpen = open;
+	});
 </script>
 
 <Dialog bind:open title={t('room.transfer.title')}>
@@ -33,7 +40,12 @@
 			value={host.code && formatRoomCode(host.code)}
 			testid="transfer-room-code"
 		/>
-		<ShareCode label={t('room.transfer.code')} value={transfer.code} testid="transfer-code" />
+		<ShareCode
+			label={t('room.transfer.code')}
+			value={transfer.code}
+			testid="transfer-code"
+			hideable
+		/>
 		<!-- Always in its place, so the switches below never move. -->
 		<div class="time">
 			<VoteTimeLeft
@@ -53,22 +65,7 @@
 			checked={transfer.joinAsPlayer}
 			onChange={(on) => (transfer.joinAsPlayer = on)}
 		/>
-		<!-- Co-storytelling's place, kept until it exists (design: room-handoff/design.md). -->
-		<SettingToggle
-			label={t('room.transfer.keepStorytelling')}
-			checked={false}
-			disabled
-			onChange={() => undefined}
-		/>
-		<ModalActions
-			danger
-			disabled={!transfer.code}
-			confirmLabel={t('room.transfer.stop')}
-			onConfirm={() => {
-				transfer.stop();
-				open = false;
-			}}
-		/>
+		<p class="awaiting" data-testid="transfer-awaiting">{t('room.transfer.awaiting')}</p>
 	</div>
 </Dialog>
 
@@ -79,5 +76,10 @@
 	}
 	.time {
 		min-height: 1.5em;
+	}
+	.awaiting {
+		margin: 0;
+		color: var(--on-surface-muted);
+		text-align: end;
 	}
 </style>

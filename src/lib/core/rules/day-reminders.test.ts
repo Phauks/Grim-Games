@@ -87,7 +87,7 @@ describe('coverage', () => {
 					entry.id
 				).toBe(true);
 				if (spec.template.some((p) => 'target' in p))
-					expect(spec.when?.reminder, entry.id).toBeDefined();
+					expect(spec.when?.reminder ?? spec.when?.nomineeChose, entry.id).toBeDefined();
 			}
 		}
 	});
@@ -268,6 +268,55 @@ describe('Storyteller overrides', () => {
 			'added',
 			'added'
 		]);
+	});
+});
+
+// https://wiki.bloodontheclocktower.com/Big_Wig: each nominee chooses a player, who is mad the
+// nominee is good; one madness line per nomination whose nominee chose.
+describe('Big Wig', () => {
+	it('shows who each nominee chose, mad that the nominee is good', () => {
+		const chef = seat('chef', { playerName: 'Ana' });
+		const monk = seat('monk', { playerName: 'Ben' });
+		const imp = seat('imp', { playerName: 'Cat' });
+		const result = run({
+			seats: [chef, monk, imp],
+			ruleCharacters: ['bigwig'],
+			nominationChoices: [{ nominee: imp.seatId, chosen: monk.seatId }]
+		});
+		const madness = result.groups.find((g) => g.group === 'madness')!.reminders;
+		expect(madness).toHaveLength(1);
+		expect(madness[0].target).toBe(monk.seatId);
+		expect(renderReminder(madness[0].segments, name)).toBe(
+			'[Big Wig] [Monk · Ben] is mad [Imp · Cat] is good'
+		);
+		const none = run({ seats: [chef, monk, imp], ruleCharacters: ['bigwig'] });
+		expect(none.groups.some((g) => g.group === 'madness')).toBe(false);
+	});
+
+	it('reads the choices from today’s nominations', () => {
+		const { session, ctx, seats } = newGame(3);
+		let s = runCommands(session, ctx, { type: 'Nominate', nominator: seats[0], nominee: seats[1] });
+		const entryId = s.game.today.entries[0].entryId;
+		s = runCommands(s, ctx, { type: 'ChooseForNomination', entryId, chosen: seats[2] });
+		expect(dayStateFromGame(s.game, data.byId.get.bind(data.byId)).nominationChoices).toEqual([
+			{ nominee: seats[1], chosen: seats[2] }
+		]);
+	});
+
+	it('needs nomineeChose for a nominee segment', () => {
+		const issues = new Issues();
+		parseCharacterRules(
+			{
+				dayReminders: {
+					reminders: [{ group: 'madness', template: [{ self: true }, { nominee: true }] }]
+				}
+			},
+			'x',
+			issues
+		);
+		expect(issues.list).toContain(
+			'x.dayReminders.reminders[0].when.nomineeChose: a nominee segment needs nomineeChose'
+		);
 	});
 });
 

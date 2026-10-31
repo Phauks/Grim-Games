@@ -15,12 +15,10 @@
 	import { characterNames } from '#lib/core/rules/character-names.ts';
 	import { prepTextSegments, takesNote } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
-	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
-	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
-	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import BoardReminder from './BoardReminder.svelte';
+	import ReminderAbout from './ReminderAbout.svelte';
 	import { placingAlignment } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import type { ReminderHand } from './reminder-hand.svelte.ts';
@@ -61,9 +59,9 @@
 					: looseReminders(game);
 		return list.find((r) => r.reminderId === reminderId);
 	});
-	const token = $derived(placed ?? item);
+	const shown = $derived(placed ?? item);
 	const owner = $derived(
-		token && !isGeneric(token) ? characters.get(token.characterId) : undefined
+		shown && !isGeneric(shown) ? characters.get(shown.characterId) : undefined
 	);
 	// Gone from the board (removed, undone): nothing left to show.
 	$effect(() => {
@@ -71,9 +69,8 @@
 	});
 </script>
 
-<Dialog bind:open={hand.aboutOpen} title="About this reminder">
-	<!-- The token itself, as on the board (Trevor, 2026-10-30). -->
-	{#snippet heading()}
+<ReminderAbout bind:open={hand.aboutOpen} {owner} {scriptNames}>
+	{#snippet token()}
 		{#if placed}<BoardReminder
 				{...placedLook(placed, characters)}
 				alignment={placingAlignment(game, placed, characters)}
@@ -93,8 +90,8 @@
 				{characters}
 				characterId={placed.characterId}
 				on={holder.seatId}
-			/>{:else if token && owner}From <CharacterBadge
-				characterId={token.characterId}
+			/>{:else if shown && owner}From <CharacterBadge
+				characterId={shown.characterId}
 				character={owner}
 			/>{/if}
 		{#if holder && 'characterId' in holder}on <CharacterBadge
@@ -121,13 +118,6 @@
 			{grimoire}
 			reminder={placed}
 		/>{/if}
-	<!-- The ability it comes from, as the Script tab shows the character (Trevor, 2026-10-30). -->
-	{#if owner}<CharacterRow character={owner} info
-			>{#snippet ability()}<GlossaryText
-					text={owner.ability}
-					names={scriptNames}
-				/>{/snippet}</CharacterRow
-		>{/if}
 	{#snippet headActions()}
 		{#if placed}
 			<ReminderMoreButton {grimoire} {reminderId} onDone={() => (hand.aboutOpen = false)} />
@@ -140,7 +130,7 @@
 			/>
 		{/if}
 	{/snippet}
-</Dialog>
+</ReminderAbout>
 
 <style>
 	.text {

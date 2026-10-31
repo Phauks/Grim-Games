@@ -170,6 +170,7 @@ import ph_prohibit_light from '~icons/ph/prohibit-light';
 import ph_prohibit_inset_light from '~icons/ph/prohibit-inset-light';
 import ph_projector_screen_light from '~icons/ph/projector-screen-light';
 import ph_push_pin_light from '~icons/ph/push-pin-light';
+import ph_puzzle_piece_light from '~icons/ph/puzzle-piece-light';
 import ph_qr_code_light from '~icons/ph/qr-code-light';
 import ph_question_light from '~icons/ph/question-light';
 import ph_scales_light from '~icons/ph/scales-light';
@@ -406,6 +407,7 @@ const icons: IconMap = {
 	'ph:prohibit-inset-light': ph_prohibit_inset_light,
 	'ph:projector-screen-light': ph_projector_screen_light,
 	'ph:push-pin-light': ph_push_pin_light,
+	'ph:puzzle-piece-light': ph_puzzle_piece_light,
 	'ph:qr-code-light': ph_qr_code_light,
 	'ph:question-light': ph_question_light,
 	'ph:scales-light': ph_scales_light,
