@@ -41,7 +41,7 @@
 <!-- After night 1 starts a late arrival is a Traveller (https://wiki.bloodontheclocktower.com/Travellers). -->
 <IconButton
 	icon="latePlayer"
-	label={t('latePlayer.button')}
+	label={t('late-player.button')}
 	disabled={!game.bag || !script || game.pastDays.length > 0}
 	data-testid="late-player"
 	onclick={() => {

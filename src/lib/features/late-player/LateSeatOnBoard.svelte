@@ -42,7 +42,7 @@
 		open = false;
 		const pending = lateDraft.players.flatMap((p, i) =>
 			i !== index && p.position !== undefined
-				? [{ position: p.position, name: p.name.trim() || t('latePlayer.newSeat') }]
+				? [{ position: p.position, name: p.name.trim() || t('late-player.newSeat') }]
 				: []
 		);
 		place((position) => {

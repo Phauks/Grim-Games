@@ -201,8 +201,8 @@
 	function noteOf(character: Character): string | undefined {
 		const seatId = holderOf(character.id);
 		if (seatId) return seatName(game, seatId);
-		if (bag.includes(character.id)) return t('latePlayer.inBagMark');
-		return outOfPlay.includes(character.id) ? t('latePlayer.outOfPlay') : undefined;
+		if (bag.includes(character.id)) return t('late-player.inBagMark');
+		return outOfPlay.includes(character.id) ? t('late-player.outOfPlay') : undefined;
 	}
 	function toggle(character: Character) {
 		const id = character.id;
@@ -304,11 +304,11 @@
 	}
 </script>
 
-<Dialog bind:open title={t('latePlayer.title')} size="full" pinAside={false}>
+<Dialog bind:open title={t('late-player.title')} size="full" pinAside={false}>
 	{#snippet aside()}
 		<div class="late" data-testid="late-seat">
 			<section>
-				<h3>{t('latePlayer.who')}</h3>
+				<h3>{t('late-player.who')}</h3>
 				<ul class="players">
 					{#each players as player, i (player.key)}
 						<li data-testid="late-player-row">
@@ -317,18 +317,18 @@
 									bind:value={player.name}
 									taken={takenBy(i)}
 									hideLabel
-									pickLabel={t('latePlayer.pickPhone')}
+									pickLabel={t('late-player.pickPhone')}
 								/>
 								<IconButton
 									icon="grimoire"
 									label={player.position === undefined
-										? t('latePlayer.place')
-										: t('latePlayer.move')}
+										? t('late-player.place')
+										: t('late-player.move')}
 									onclick={() => onPlace(i)}
 									data-testid="late-place"
 								/>
 								<DeleteButton
-									label={t('latePlayer.remove')}
+									label={t('late-player.remove')}
 									disabled={players.length === 1}
 									onclick={() => (players = players.filter((_, j) => j !== i))}
 								/>
@@ -338,7 +338,7 @@
 					{/each}
 				</ul>
 				<Button icon="latePlayer" onclick={onAddAnother} data-testid="late-add-another"
-					>{t('latePlayer.addAnother')}</Button
+					>{t('late-player.addAnother')}</Button
 				>
 			</section>
 
@@ -374,25 +374,25 @@
 			{#snippet tools()}
 				<IconButton
 					icon="random"
-					label={proposal ? t('latePlayer.rollAgain') : t('latePlayer.roll')}
+					label={proposal ? t('late-player.rollAgain') : t('late-player.roll')}
 					onclick={roll}
 					data-testid="late-roll"
 				/>
 				<IconButton
 					icon="selectedOnly"
-					label={t('latePlayer.inPlayOnly')}
+					label={t('late-player.inPlayOnly')}
 					aria-pressed={inPlayOnly}
 					onclick={() => (inPlayOnly = !inPlayOnly)}
 				/>
 				<IconButton
 					icon="changes"
-					label={t('latePlayer.showChanges')}
+					label={t('late-player.showChanges')}
 					onclick={() => (changesOpen = true)}
 					data-testid="late-show-changes"
 				/>
 				<IconButton
 					icon="reset"
-					label={t('latePlayer.revert')}
+					label={t('late-player.revert')}
 					disabled={!proposal && !edited && !changes.length && !rulesOn.length && !rulesOff.length}
 					onclick={revert}
 					data-testid="late-revert"
@@ -423,20 +423,20 @@
 		<ModalActions
 			onCancel={() => (open = false)}
 			onConfirm={confirm}
-			confirmLabel={t('latePlayer.confirm')}
+			confirmLabel={t('late-player.confirm')}
 		/>
 	{/snippet}
 </Dialog>
 
 <!-- Only what differs, before and after (Trevor, 2026-10-30). -->
-<Dialog bind:open={changesOpen} title={t('latePlayer.changes')}>
+<Dialog bind:open={changesOpen} title={t('late-player.changes')}>
 	<div data-testid="late-changes">
 		<ChangeList testid="late-change-list">
 			{#each players as player (player.key)}
-				<dt>{t('latePlayer.joins')}</dt>
+				<dt>{t('late-player.joins')}</dt>
 				<dd>
 					{#if player.name.trim()}<PlayerBadge name={player.name.trim() as PlayerName} />{:else}{t(
-							'latePlayer.newSeat'
+							'late-player.newSeat'
 						)}{/if}
 					<span class="muted">{@render where(player.position)}</span>
 				</dd>
@@ -450,38 +450,38 @@
 				</dd>
 			{/each}
 			{#if rulesOn.length}
-				<dt>{t('latePlayer.invoked')}</dt>
+				<dt>{t('late-player.invoked')}</dt>
 				<dd>
 					{#each rulesOn as id (id)}<CharacterBadge characterId={id} />{/each}
 				</dd>
 			{/if}
 			{#if rulesOff.length}
-				<dt>{t('latePlayer.takenOut')}</dt>
+				<dt>{t('late-player.takenOut')}</dt>
 				<dd>
 					{#each rulesOff as id (id)}<CharacterBadge characterId={id} />{/each}
 				</dd>
 			{/if}
 			{#if bagIn.length}
-				<dt>{t('latePlayer.in')}</dt>
+				<dt>{t('late-player.in')}</dt>
 				<dd data-testid="late-bag-in">
 					{#each bagIn as id, i (`${id}-${i}`)}<CharacterBadge characterId={id} />{/each}
 				</dd>
 			{/if}
 			{#if bagOut.length}
-				<dt>{t('latePlayer.out')}</dt>
+				<dt>{t('late-player.out')}</dt>
 				<dd data-testid="late-bag-out">
 					{#each bagOut as id, i (`${id}-${i}`)}<CharacterBadge characterId={id} />{/each}
 				</dd>
 			{/if}
 			{#if outOfPlay.length}
-				<dt>{t('latePlayer.outOfPlay')}</dt>
+				<dt>{t('late-player.outOfPlay')}</dt>
 				<dd data-testid="late-out-of-play">
 					{#each outOfPlay as id, i (`${id}-${i}`)}<CharacterBadge characterId={id} />{/each}
 				</dd>
 			{/if}
 		</ChangeList>
 		{#if !changes.length && !bagIn.length && !bagOut.length}
-			<p class="muted">{t('latePlayer.noneChanged')}</p>
+			<p class="muted">{t('late-player.noneChanged')}</p>
 		{/if}
 	</div>
 </Dialog>
@@ -489,14 +489,14 @@
 <!-- What a player becomes: Character selection's list again, one choice. -->
 <Dialog
 	bind:open={() => changing !== undefined, (o) => (changing = o ? changing : undefined)}
-	title={t('latePlayer.changeTitle')}
+	title={t('late-player.changeTitle')}
 	size="full"
 >
 	{#if changing}
 		{@const seatId = changing}
 		<div class="change" data-testid="late-change">
 			<p class="badges">
-				<PlayerBadge name={seatName(game, seatId)} /><span class="muted">{t('latePlayer.was')}</span
+				<PlayerBadge name={seatName(game, seatId)} /><span class="muted">{t('late-player.was')}</span
 				><CharacterBadge characterId={fromOf(seatId) ?? ''} />
 			</p>
 			<CharacterPicker
@@ -531,11 +531,11 @@
 
 {#snippet where(position: number | undefined)}
 	{@const sides = sidesOf(position)}
-	{#if !sides}{t('latePlayer.notPlaced')}{:else if sides.a === sides.b}<Sentence
-			text={t('latePlayer.end', { a: slot('a') })}
+	{#if !sides}{t('late-player.notPlaced')}{:else if sides.a === sides.b}<Sentence
+			text={t('late-player.end', { a: slot('a') })}
 		>
 			{#snippet fill()}<PlayerBadge name={seatName(game, sides.a)} />{/snippet}
-		</Sentence>{:else}<Sentence text={t('latePlayer.where', { a: slot('a'), b: slot('b') })}>
+		</Sentence>{:else}<Sentence text={t('late-player.where', { a: slot('a'), b: slot('b') })}>
 			{#snippet fill(name)}<PlayerBadge
 					name={seatName(game, name === 'a' ? sides.a : sides.b)}
 				/>{/snippet}
