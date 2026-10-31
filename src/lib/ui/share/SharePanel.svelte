@@ -68,6 +68,8 @@
 		 * off another phone's screen (offline codes, which carry a whole script).
 		 */
 		plain?: boolean;
+		/** Beside the code's header (`ShareCode`'s `status`). */
+		codeStatus?: Snippet;
 	}
 
 	let {
@@ -86,7 +88,8 @@
 		file,
 		onFileFailed,
 		frames,
-		plain = false
+		plain = false,
+		codeStatus
 	}: Props = $props();
 
 	/** Five frames a second: near the 6–7 Divan found fastest (https://divan.dev/posts/animatedqr/); a missed frame costs little with a fountain code. */
@@ -141,7 +144,7 @@
 
 <div class="share">
 	{#if code}
-		<ShareCode label={code.label} value={code.value} />
+		<ShareCode label={code.label} value={code.value} status={codeStatus} />
 	{/if}
 	<div class="qr" class:hidden={url && hidden}>
 		{#if frames?.length}
