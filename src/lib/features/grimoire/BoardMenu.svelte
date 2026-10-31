@@ -273,38 +273,16 @@
 				>
 					Add Fabled or Loric
 				</Button>
+				<!-- Seating (Trevor, 2026-10-31): arranging seats, letting phones move theirs (plan J38)
+				     and Count off (J40) are one mode, with the room's parts along its bar. -->
 				<Button
 					disabled={watching}
 					variant="quiet"
 					icon="arrange"
+					data-testid="menu-seating"
 					onclick={() => fromMenu(onArrange)}
 				>
-					Arrange seats
-				</Button>
-				<!-- Seating on the grim (plan J38): while open, each phone drags its own seat on its Grim
-				     tab; locked, a phone with no seat taps an open one. Disabled with no room open. -->
-				<Button
-					disabled={watching || !host.code}
-					variant="quiet"
-					icon={host.seatingOpen ? 'lockSeating' : 'openSeating'}
-					data-testid="menu-seating"
-					onclick={() => fromMenu(() => host.send({ type: 'seating', open: !host.seatingOpen }))}
-				>
-					{host.seatingOpen ? t('room.seating.lock') : t('room.seating.open')}
-				</Button>
-				<!-- Count off (plan J40): one player is 1, and every phone taps the number it counts to. -->
-				<Button
-					disabled={watching || !host.code}
-					variant="quiet"
-					icon="countOff"
-					data-testid="menu-count-off"
-					onclick={() =>
-						fromMenu(() => {
-							host.send({ type: 'count-off' });
-							playersDialog.countOff = true;
-						})}
-				>
-					{t('room.countOff.title')}
+					{t('room.seating.title')}
 				</Button>
 				<!-- Travellers choose on their phones (Trevor, 2026-10-31): a tap holds one, Confirm sends it. -->
 				<Button
