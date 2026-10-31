@@ -47,18 +47,31 @@ test('Add late player seats late players where tapped and makes room in the bag'
 	await sheet.getByRole('textbox', { name: 'Name' }).nth(1).fill('Noa');
 	await sheet.getByTestId('late-place').nth(1).tap();
 	await expect(sheet).toBeHidden();
+	// Max shows where he goes, so Noa can sit elsewhere or beside him (Trevor, 2026-10-31).
+	await expect(page.getByTestId('place-pending')).toHaveText('Max');
 	await page.getByRole('button', { name: /^Place between Seat 3 and Seat 4$/ }).tap();
 	await expect(sheet.getByTestId('late-player-row')).toHaveCount(2);
 	await expect(sheet.getByRole('textbox', { name: 'Name' }).first()).toHaveValue('Max');
-	// Seven players have 5, 0, 1, 1 (https://wiki.bloodontheclocktower.com/Setup).
-	await expect(sheet).toContainText('5 → 7 players');
-	await expect(sheet.getByTestId('late-check')).toContainText('Not the 7-player counts');
+	// Character selection's own player count (Trevor, 2026-10-31): one more adds a late
+	// player, one fewer takes the last one away.
+	const count = sheet.getByRole('combobox', { name: 'Players', exact: true });
+	await expect(count).toHaveText('7');
+	await pickNumber(sheet, 'Players', 8);
+	await expect(sheet.getByTestId('late-player-row')).toHaveCount(3);
+	await pickNumber(sheet, 'Players', 7);
+	await expect(sheet.getByTestId('late-player-row')).toHaveCount(2);
+	await expect(sheet.getByRole('textbox', { name: 'Name' }).nth(1)).toHaveValue('Noa');
 
-	// Character selection's own list, its counts pinned at the top (Trevor, 2026-10-31).
+	// Character selection's own list and counts, pinned at the top (Trevor, 2026-10-31).
+	// Seven players have 5, 0, 1, 1 (https://wiki.bloodontheclocktower.com/Setup); a count
+	// that doesn't match is outlined, as on Character selection.
 	const list = sheet.getByTestId('late-after');
-	await expect(list.getByTestId('selection-band').getByTestId('count-townsfolk')).toHaveText('3');
-	await sheet.getByTestId('late-roll').tap();
-	await expect(sheet.getByTestId('late-check')).toHaveText('Matches the 7-player counts.');
+	const band = list.getByTestId('selection-band');
+	const matching = band.locator('[data-testid="setup-counts"] > [data-ok]');
+	await expect(band.getByTestId('count-townsfolk')).toHaveText('3');
+	await expect(matching).not.toHaveCount(5);
+	await sheet.getByRole('button', { name: 'Roll', exact: true }).tap();
+	await expect(matching).toHaveCount(5);
 	// The Sentinel is a character in the list, its icon and ability (Trevor, 2026-10-30).
 	await expect(list.getByText('Sentinel', { exact: true })).toBeVisible();
 	// A Fabled or Loric is chosen and taken out again like any character (Trevor, 2026-10-31).
@@ -69,18 +82,23 @@ test('Add late player seats late players where tapped and makes room in the bag'
 	await expect(sentinel).toHaveAttribute('aria-pressed', 'true');
 	await list.getByText('Sentinel', { exact: true }).tap();
 	await expect(sentinel).toHaveAttribute('aria-pressed', 'false');
-	await sheet.getByTestId('late-roll').tap();
+	// Invoking a rule character starts the roll over, so the button says Roll again.
+	await sheet.getByRole('button', { name: 'Roll', exact: true }).tap();
+	await expect(sheet.getByRole('button', { name: 'Shuffle', exact: true })).toBeVisible();
 	// Only the changes, in their own sheet.
-	await sheet.getByTestId('late-show-changes').tap();
+	await sheet.getByRole('button', { name: 'Show only Changes', exact: true }).tap();
 	const changes = page.getByRole('dialog', { name: 'Changes' });
 	await expect(changes.getByTestId('late-change-list')).toContainText('Max');
 	await expect(changes.getByTestId('late-change-list')).toContainText('Noa');
 	await changes.getByRole('button', { name: 'Close' }).tap();
-	// Back to the draw as it was undoes the roll; Roll again for the counts.
-	await sheet.getByTestId('late-revert').tap();
-	await expect(sheet.getByTestId('late-check')).toContainText('Not the 7-player counts');
-	await sheet.getByTestId('late-roll').tap();
-	await expect(sheet.getByTestId('late-check')).toHaveText('Matches the 7-player counts.');
+	// Show only In-Play keeps what is in play; Reset undoes the roll; Roll again.
+	await sheet.getByRole('button', { name: 'Show only In-Play', exact: true }).tap();
+	await expect(list.getByText('Sentinel', { exact: true })).toBeHidden();
+	await sheet.getByRole('button', { name: 'Show only In-Play', exact: true }).tap();
+	await sheet.getByRole('button', { name: 'Reset', exact: true }).tap();
+	await expect(matching).not.toHaveCount(5);
+	await sheet.getByRole('button', { name: 'Roll', exact: true }).tap();
+	await expect(matching).toHaveCount(5);
 
 	await sheet.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(sheet).toBeHidden();

@@ -30,6 +30,7 @@ export const SEMANTIC_TOKENS = [
 	'--on-fabled',
 	'--loric',
 	'--on-loric',
+	'--count-warn',
 	'--leaf',
 	'--token-flower',
 	'--token-flower-centre',
