@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Spinner from '#lib/ui/primitives/Spinner.svelte';
 	import type { Snippet } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -43,6 +44,7 @@
 	{#snippet fallback({ kind, message })}
 		<Page {title}>
 			<p aria-busy={kind === 'loading'} role={kind === 'error' ? 'alert' : undefined}>
+				{#if kind === 'loading'}<Spinner />{/if}
 				{message}
 			</p>
 		</Page>
