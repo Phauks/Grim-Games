@@ -77,6 +77,37 @@ export const TILE_EMOJI: readonly { emoji: string; key: MessageKey }[] = [
 	{ emoji: '🌮', key: 'setup.tileEmoji.taco' }
 ];
 
+/**
+ * The 24 runes of the Elder Futhark in futhark order, each with its name for the reveal title
+ * and screen readers (Trevor, 2026-10-31). Android draws them from its system Noto Sans Runic.
+ */
+export const TILE_RUNES: readonly { rune: string; key: MessageKey }[] = [
+	{ rune: 'ᚠ', key: 'setup.tileRune.fehu' },
+	{ rune: 'ᚢ', key: 'setup.tileRune.uruz' },
+	{ rune: 'ᚦ', key: 'setup.tileRune.thurisaz' },
+	{ rune: 'ᚨ', key: 'setup.tileRune.ansuz' },
+	{ rune: 'ᚱ', key: 'setup.tileRune.raidho' },
+	{ rune: 'ᚲ', key: 'setup.tileRune.kaunan' },
+	{ rune: 'ᚷ', key: 'setup.tileRune.gebo' },
+	{ rune: 'ᚹ', key: 'setup.tileRune.wunjo' },
+	{ rune: 'ᚺ', key: 'setup.tileRune.hagalaz' },
+	{ rune: 'ᚾ', key: 'setup.tileRune.naudiz' },
+	{ rune: 'ᛁ', key: 'setup.tileRune.isaz' },
+	{ rune: 'ᛃ', key: 'setup.tileRune.jera' },
+	{ rune: 'ᛇ', key: 'setup.tileRune.eihwaz' },
+	{ rune: 'ᛈ', key: 'setup.tileRune.perthro' },
+	{ rune: 'ᛉ', key: 'setup.tileRune.algiz' },
+	{ rune: 'ᛊ', key: 'setup.tileRune.sowilo' },
+	{ rune: 'ᛏ', key: 'setup.tileRune.tiwaz' },
+	{ rune: 'ᛒ', key: 'setup.tileRune.berkanan' },
+	{ rune: 'ᛖ', key: 'setup.tileRune.ehwaz' },
+	{ rune: 'ᛗ', key: 'setup.tileRune.mannaz' },
+	{ rune: 'ᛚ', key: 'setup.tileRune.laguz' },
+	{ rune: 'ᛜ', key: 'setup.tileRune.ingwaz' },
+	{ rune: 'ᛞ', key: 'setup.tileRune.dagaz' },
+	{ rune: 'ᛟ', key: 'setup.tileRune.othala' }
+];
+
 /** A, B … Z, then AA, AB …: the letter label for the 1-based tile `number`. */
 export function tileLetters(number: number): string {
 	let n = number;
@@ -118,6 +149,38 @@ export function tileRoman(number: number): string {
 	return out;
 }
 
+const KANJI_DIGITS = ['', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
+
+/**
+ * 一, 二 … 十, 十一 … 二十, 四十: the Japanese kanji numeral for the 1-based tile `number`
+ * (Trevor, 2026-10-31). Tens and hundreds are written as a digit before 十 or 百, with no 一
+ * before a lone ten or hundred. These are ordinary CJK characters, so a phone without a
+ * Japanese font still draws them from its system CJK fallback.
+ */
+export function tileKanji(number: number): string {
+	const hundreds = Math.floor(number / 100);
+	const tens = Math.floor((number % 100) / 10);
+	const ones = number % 10;
+	const place = (digit: number, unit: string) =>
+		digit === 0 ? '' : (digit === 1 ? '' : KANJI_DIGITS[digit]) + unit;
+	return place(hundreds, '百') + place(tens, '十') + KANJI_DIGITS[ones];
+}
+
+/**
+ * ᚠ, ᚢ … ᛟ, then ᚠᚠ, ᚠᚢ …: the rune label for the 1-based tile `number`, counted like the
+ * letters past the end of the futhark, so the 40 seats of several towns still all differ.
+ */
+export function tileRunes(number: number): string[] {
+	let n = number;
+	const out: string[] = [];
+	while (n > 0) {
+		const rem = (n - 1) % TILE_RUNES.length;
+		out.unshift(TILE_RUNES[rem].rune);
+		n = Math.floor((n - 1) / TILE_RUNES.length);
+	}
+	return out;
+}
+
 /** A tile mark's name in words; the catalog keys above take no parameters. */
 export const named = t as (key: MessageKey) => string;
 
@@ -130,6 +193,14 @@ export function tileFaceOptions(): { value: TileFace; label: string }[] {
 }
 
 const text = (s: string): TileMark => ({ kind: 'text', text: s, name: s });
+
+const RUNE_KEYS = new Map(TILE_RUNES.map((r) => [r.rune, r.key]));
+
+function runes(n: number): TileMark {
+	const marks = tileRunes(n);
+	const name = marks.map((r) => named(RUNE_KEYS.get(r) as MessageKey)).join(' ');
+	return { kind: 'text', text: marks.join(''), name };
+}
 
 /** The n-th entry of a list; past its end the list starts again with a small number, "Red 2". */
 function cycle<T>(list: readonly T[], n: number): { item: T; repeat?: number } {
@@ -175,15 +246,29 @@ function seeded(seed: string): () => number {
 
 /**
  * Random: every mark of every kind for a bag of `size`, shuffled with `seed` (the game), then
- * one per tile. Marks of different kinds never clash ("1" is a number, "A" a letter), so
- * Roman numerals stay out: "I", "V" and "X" are letters too.
+ * one per tile (Trevor, 2026-10-31: every kind goes in). A Roman numeral that reads the same
+ * as a letter ("I", "V", "X", "L") goes in once, so no two tiles ever show the same mark.
  */
 function randomMarks(size: number, seed: string): TileMark[] {
 	const pool: TileMark[] = [];
-	for (let n = 1; n <= size; n++) pool.push(text(String(n)), text(tileLetters(n)));
-	for (let n = 1; n <= TILE_SYMBOLS.length; n++) pool.push(symbol(n));
-	for (let n = 1; n <= TILE_COLOURS.length; n++) pool.push(colour(n));
-	for (let n = 1; n <= TILE_EMOJI.length; n++) pool.push(emoji(n));
+	const shown = new Set<string>();
+	const add = (m: TileMark) => {
+		if (m.kind === 'text') {
+			if (shown.has(m.text)) return;
+			shown.add(m.text);
+		}
+		pool.push(m);
+	};
+	for (let n = 1; n <= size; n++) {
+		add(text(String(n)));
+		add(text(tileLetters(n)));
+		add(text(tileRoman(n)));
+		add(text(tileKanji(n)));
+		add(runes(n));
+	}
+	for (let n = 1; n <= TILE_SYMBOLS.length; n++) add(symbol(n));
+	for (let n = 1; n <= TILE_COLOURS.length; n++) add(colour(n));
+	for (let n = 1; n <= TILE_EMOJI.length; n++) add(emoji(n));
 	return shuffle(pool, seed).slice(0, size);
 }
 
@@ -207,6 +292,8 @@ function kindSize(face: TileFace): number {
 function mark(face: TileFace, n: number): TileMark {
 	if (face === 'letters') return text(tileLetters(n));
 	if (face === 'roman') return text(tileRoman(n));
+	if (face === 'kanji') return text(tileKanji(n));
+	if (face === 'runes') return runes(n);
 	if (face === 'symbols') return symbol(n);
 	if (face === 'colours') return colour(n);
 	if (face === 'emoji') return emoji(n);
