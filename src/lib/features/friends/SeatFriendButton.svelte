@@ -4,16 +4,23 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { friends } from './friends.svelte.ts';
-	import type { SeatFriendState, SeatFriendTarget } from './friends-protocol.ts';
+	import type { FriendTarget, SeatFriendState } from './friends-protocol.ts';
 
 	/**
 	 * Add friend for the player in a live room's seat, or its Storyteller (plan F2), in their
-	 * profile. Asks the
-	 * server each time the profile opens; it only offers Add when both are signed in and the
-	 * player can be found (Trevor, 2026-10-29). Always the same button, so nothing moves while
-	 * it loads: disabled until it can send.
+	 * profile, and for someone on Recent players (F3). Asks the server each time the profile
+	 * opens, unless the state is already `known`; it only offers Add when both are signed in
+	 * and the player can be found (Trevor, 2026-10-29). Always the same button, so nothing
+	 * moves while it loads: disabled until it can send.
 	 */
-	let { open, target }: { open: boolean; target: SeatFriendTarget } = $props();
+	interface Props {
+		open: boolean;
+		target: FriendTarget;
+		/** What the list already says (Recent players), so no lookup is needed. */
+		known?: SeatFriendState;
+	}
+
+	let { open, target, known }: Props = $props();
 
 	let seat = $state<SeatFriendState>();
 	let busy = $state(false);
@@ -21,6 +28,10 @@
 
 	$effect(() => {
 		if (!open || !signedIn) return;
+		if (known) {
+			seat = known;
+			return;
+		}
 		const asked = { ...target };
 		seat = undefined;
 		let current = true;
