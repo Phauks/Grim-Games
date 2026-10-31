@@ -1,12 +1,13 @@
 <script lang="ts">
 	import {
 		DAY_SECONDS_PER_ALIVE,
+		DAY_SECONDS_PER_ALIVE_CHOICES,
 		DAY_SECONDS_PER_ALIVE_MAX,
 		DAY_SECONDS_PER_ALIVE_MIN
 	} from '#lib/core/rules/day-timer.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { gameSettings } from '#lib/features/game-settings/game-settings.svelte.ts';
-	import Stepper from '#lib/ui/primitives/Stepper.svelte';
+	import NumberSelect from '#lib/ui/primitives/NumberSelect.svelte';
 	import SettingRow from '#lib/ui/settings/SettingRow.svelte';
 
 	/**
@@ -28,15 +29,15 @@
 	onReset={() => change(DAY_SECONDS_PER_ALIVE)}
 	isDefault={seconds === DAY_SECONDS_PER_ALIVE}
 >
-	{#snippet control()}
-		<Stepper
+	{#snippet control(labelId)}
+		<NumberSelect
 			value={seconds}
 			label={t('day.timerPerPlayer')}
-			lessLabel={t('day.timerPerPlayerLess')}
-			moreLabel={t('day.timerPerPlayerMore')}
+			labelledBy={labelId}
 			min={DAY_SECONDS_PER_ALIVE_MIN}
 			max={DAY_SECONDS_PER_ALIVE_MAX}
-			typeable
+			values={DAY_SECONDS_PER_ALIVE_CHOICES}
+			format={(count) => t('day.timerPerPlayerSeconds', { count })}
 			testid="timer-per-player"
 			onchange={change}
 		/>

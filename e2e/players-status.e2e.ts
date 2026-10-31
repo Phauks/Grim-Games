@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { toBoard } from './new-game.ts';
+import { pickNumber } from './number-select.ts';
 
 // The Storyteller's day timer on players' phones (Trevor, 2026-10-26: "timer populates on
 // other screens, as sun not timer (sun or timer for players)"; the Storyteller decides), in a
@@ -214,9 +215,9 @@ test('the candles beside Setup open who is connected, on phones and in character
 	await page.keyboard.press('Escape');
 
 	// The candles follow the player count before it is seated: one more, then back.
-	await page.getByRole('button', { name: 'More players' }).tap();
+	await pickNumber(page, 'Players', seatCount + 1);
 	await expect(candles.locator('.candle')).toHaveCount(seatCount + 1);
-	await page.getByRole('button', { name: 'Fewer players' }).tap();
+	await pickNumber(page, 'Players', seatCount);
 	await expect(candles.locator('.candle')).toHaveCount(seatCount);
 
 	// The phone's screen locks: it stays in the +1, as it stays in Share's list (Trevor,

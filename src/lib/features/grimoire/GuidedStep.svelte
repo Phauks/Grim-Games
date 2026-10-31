@@ -29,7 +29,7 @@
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
-	import Stepper from '#lib/ui/primitives/Stepper.svelte';
+	import NumberSelect from '#lib/ui/primitives/NumberSelect.svelte';
 	import { placingAlignment, seatMisfits } from './board.ts';
 	import { boardLooks } from './board-looks.svelte.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
@@ -372,16 +372,13 @@
 			{#if numberStep}
 				<h3>Info token</h3>
 				<div class="number" data-testid="step-number">
-					<span class="card-text">{numberCard}</span>
-					<Stepper
+					<span class="card-text" aria-hidden="true">{numberCard}</span>
+					<NumberSelect
 						bind:value={number}
 						label={numberCard}
-						lessLabel="Lower number"
-						moreLabel="Higher number"
+						hideLabel
 						min={0}
 						max={Math.max(game.seating.length, 1)}
-						typeable
-						oncommit={() => showNumber(number)}
 					/>
 					<Button variant="quiet" onclick={() => showNumber(number)}>Show to player</Button>
 				</div>
