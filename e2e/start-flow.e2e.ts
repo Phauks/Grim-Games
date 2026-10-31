@@ -42,10 +42,11 @@ test('special rules are chosen on Character selection, and Back and Create game 
 	);
 	await page.getByRole('button', { name: 'Create game' }).tap();
 	await chooseRulesOnSetup(page, 'Stowed Away');
-	// The rules in the game come first, restated with their own switches.
 	await page.getByTestId('setup-special-rules').tap();
 	const rules = page.getByRole('dialog', { name: 'Special rules' });
-	await expect(rules.getByTestId('rules-in-game')).toContainText('Stowed Away');
+	await expect(
+		rules.getByRole('checkbox', { name: 'Stowed Away', includeHidden: true })
+	).toBeChecked();
 	await rules.getByRole('button', { name: 'Close' }).tap();
 	await expect(rules).toBeHidden();
 

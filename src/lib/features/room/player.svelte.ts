@@ -3,7 +3,7 @@
  * public table and asks the Storyteller for a name and a seat. The phone's key is its own
  * secret, kept on the device, so it is the same member when it comes back.
  */
-import type { Script } from '#lib/core/data/index.ts';
+import type { CharacterId, Script } from '#lib/core/data/index.ts';
 import type { GameFeedback } from '#lib/core/feedback/index.ts';
 import type { SeatId } from '#lib/core/model/index.ts';
 import { buildInfo } from '#lib/build-info.ts';
@@ -366,6 +366,18 @@ export class RoomPlayer {
 	/** Count off (plan J40): the number this player counted to, going clockwise. */
 	count(number: number): boolean {
 		return this.#socket.send({ type: 'count', number });
+	}
+
+	/** Travellers choose (room-traveller-pick.ts): holds one, or `null` lets this phone's go. */
+	holdTraveller(characterId: CharacterId | null): boolean {
+		const pickId = this.view?.travellerPick?.pickId;
+		return pickId ? this.#socket.send({ type: 'hold-traveller', pickId, characterId }) : false;
+	}
+
+	/** Sends the Traveller this phone holds; only the Storyteller changes it after that. */
+	confirmTraveller(): boolean {
+		const pickId = this.view?.travellerPick?.pickId;
+		return pickId ? this.#socket.send({ type: 'confirm-traveller', pickId }) : false;
 	}
 
 	/** Tells the Storyteller this player has seen their character (Trevor, 2026-10-26). */

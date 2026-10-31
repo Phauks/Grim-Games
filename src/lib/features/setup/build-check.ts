@@ -30,6 +30,8 @@ export interface BuildCheckInput {
 	travellers: number;
 	/** The most Travellers a special rule lets into the bag (Stowed Away). */
 	travellerMax?: number;
+	/** Players beyond 15 choose their Traveller on their phones, later (Trevor, 2026-10-31). */
+	travellersLater?: boolean;
 }
 
 /** The errors to confirm before building the bag, as messages; empty when it is clean. */
@@ -37,14 +39,15 @@ export function buildErrors({
 	analysis,
 	issues,
 	travellers,
-	travellerMax
+	travellerMax,
+	travellersLater
 }: BuildCheckInput): string[] {
 	const errors = [
 		...analysis.warnings.filter((w) => ERROR_WARNINGS.has(w.code)).map((w) => w.message),
 		...issues.filter((i) => ERROR_ISSUES.has(i.code)).map((i) => i.message)
 	];
 	// Players beyond 15 join as Travellers (https://wiki.bloodontheclocktower.com/Setup).
-	if (travellers < analysis.travellers) {
+	if (travellers < analysis.travellers && !travellersLater) {
 		errors.push(
 			t('setup.errors.travellers', {
 				count: travellers,
