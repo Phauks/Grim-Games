@@ -53,11 +53,18 @@ export interface RoomPreview {
 	seated?: number;
 	/** The Storyteller set a Grim view password: the code and it open the grimoire. */
 	grimView?: true;
+	/** The phone that asked was removed from this room for the game (plan J37). */
+	removed?: true;
 }
 
-export function roomPreview(room: RoomState | undefined, script?: Script): RoomPreview {
+export function roomPreview(
+	room: RoomState | undefined,
+	script?: Script,
+	removed = false
+): RoomPreview {
 	if (!room) return { open: false };
 	const preview: RoomPreview = { open: true };
+	if (removed) preview.removed = true;
 	if (script) {
 		const { name = '', author, logo } = script.meta ?? {};
 		preview.script = {
