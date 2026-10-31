@@ -6,6 +6,7 @@
 	import ChangeCharacterStep from './ChangeCharacterStep.svelte';
 	import StorytellerAbilityStep from './StorytellerAbilityStep.svelte';
 	import NightSuggested from './NightSuggested.svelte';
+	import NightShownTo from './NightShownTo.svelte';
 	import NightYesNo from './NightYesNo.svelte';
 	import TravellerAlignment from './TravellerAlignment.svelte';
 	import { STANDARD_INFO_TOKENS, type CharacterId } from '#lib/core/data/index.ts';
@@ -342,6 +343,15 @@
 										return character ? [{ character }] : [];
 									})
 								};
+					showOpen = true;
+				}}
+			/>
+			<NightShownTo
+				{grimoire}
+				{step}
+				onShow={(id) => {
+					shownCard = undefined;
+					shownId = id;
 					showOpen = true;
 				}}
 			/>

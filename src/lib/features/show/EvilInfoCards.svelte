@@ -13,6 +13,7 @@
 		chosenLikeDemon,
 		demonInfo,
 		fakeEvilInfoOf,
+		shownAtMinionInfo,
 		type Night
 	} from '#lib/core/rules/index.ts';
 	import {
@@ -175,6 +176,10 @@
 			// Other Minions only when there is more than one.
 			if (minions.length > 1)
 				out.push({ key: 'minions', title: text('these-are-your-minions'), seats: minions });
+			// A token every Minion is shown, with no words (the Damsel: "All Minions know a Damsel
+			// is in play", https://wiki.bloodontheclocktower.com/Damsel).
+			for (const id of shownAtMinionInfo(game, characters))
+				out.push({ key: `shown-${id}`, title: '', characterIds: [id], showCharacters: [id] });
 		} else {
 			out.push({
 				key: 'minions',
@@ -195,9 +200,15 @@
 		return out;
 	});
 
+	/** The card's accessible name: its words, or the tokens of a card with none (the Damsel). */
+	function cardName(row: Row): string {
+		if (!row.title)
+			return (row.characterIds ?? []).map((id) => characters.get(id)?.name ?? id).join(', ');
+		return row.set ? `${row.title} · ${row.set}` : row.title;
+	}
 	function card(row: Row): ShownInfoCard {
 		return {
-			title: row.title,
+			...(row.title ? { title: row.title } : {}),
 			characters: (row.showCharacters ?? []).flatMap((id) => {
 				const character = characters.get(id);
 				return character ? [{ character, alignment: 'good' as const }] : [];
@@ -338,9 +349,7 @@
 					variant="quiet"
 					icon="forward"
 					disabled={empty}
-					aria-label={t('show.evil.showNamed', {
-						card: row.set ? `${row.title} · ${row.set}` : row.title
-					})}
+					aria-label={t('show.evil.showNamed', { card: cardName(row) })}
 					onclick={() => onShow(shown(row))}>{t('show.evil.show')}</Button
 				>
 			</li>

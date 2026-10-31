@@ -47,5 +47,8 @@ export const show = {
 		'You will see everything the Storyteller sees: every character, reminder and note. You promise that:',
 	'show.fairPlay.watchCheat': 'You won’t use it to cheat, or to help anyone playing.',
 	'show.fairPlay.watchShare': 'You won’t tell or show any player what you see.',
-	'show.fairPlay.watchIntegrity': 'You won’t do anything that spoils the game for its players.'
+	'show.fairPlay.watchIntegrity': 'You won’t do anything that spoils the game for its players.',
+	'show.shownTo.heading': 'Valid Information',
+	'show.shownTo.sees': 'is shown',
+	'show.toPlayer': 'Show to player'
 } as const;

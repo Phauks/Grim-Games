@@ -1,4 +1,7 @@
 {
+	"shownTo": {
+		"minions": true
+	},
 	"reminderTargets": {
 		"Guess Used": {
 			"seat": "self",

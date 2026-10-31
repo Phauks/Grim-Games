@@ -4333,6 +4333,50 @@ test('an open night step moves to the step before or after without ticking it', 
 	await expect(strip.locator('button.step')).not.toHaveClass(/ticked/);
 });
 
+// https://wiki.bloodontheclocktower.com/Widow and /Damsel (M10c, M10d): the Widow's step says
+// who is woken and shown the Widow token (the Know player), and Minion info has the Damsel's
+// token for the Minions, each shown with one tap.
+test('the Widow and Damsel steps say who is shown their token', async ({ page }) => {
+	test.slow();
+	await startGame(page);
+	for (const [number, name, offScript] of [
+		[1, 'Imp', false],
+		[2, 'Widow', true],
+		// The list stays widened after the Widow.
+		[3, 'Damsel', false],
+		[4, 'Chef', false],
+		[5, 'Empath', false],
+		[6, 'Monk', false],
+		[7, 'Soldier', false]
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		const picker = page.getByRole('dialog', { name: `Character for Seat ${number}` });
+		if (offScript) await picker.getByText('Include characters not on the script').tap();
+		await picker.getByRole('button', { name, exact: true }).tap();
+		await closeSheet(page);
+	}
+	await putReminder(page, 'Know', 4);
+
+	const minionInfo = await openStep(page, 'Minion info');
+	const damsel = minionInfo.locator('[data-testid="evil-info-card"][data-row="shown-damsel"]');
+	await expect(damsel).toContainText('Damsel');
+	await minionInfo.getByRole('button', { name: 'Show Damsel' }).tap();
+	const shown = page.locator('[data-testid="show-to-player"][open]');
+	await expect(shown).toContainText('Damsel');
+	await shown.getByRole('button', { name: 'Close' }).tap();
+	// On through the night, step by step, to the Widow's.
+	const widow = page.getByRole('dialog', { name: 'Widow' });
+	for (let i = 0; i < 20 && !(await widow.isVisible()); i++) {
+		await page.getByRole('dialog').getByRole('button', { name: 'Next step' }).last().tap();
+		await page.waitForTimeout(300);
+	}
+	const shownTo = widow.getByTestId('night-shown-to');
+	await expect(shownTo).toContainText(/Seat 4\s*is shown\s*Widow/);
+	await shownTo.getByRole('button', { name: 'Show to player' }).tap();
+	await expect(shown).toContainText('Widow');
+});
+
 test('Minion info and Demon info list every card they can show, with who it points at', async ({
 	page
 }) => {

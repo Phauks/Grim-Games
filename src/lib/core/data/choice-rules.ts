@@ -90,6 +90,18 @@ export interface ChoiceRules {
 	 * The seat's ⋯ menu offers the swap (`features/grimoire/SeatCharacterFlow.svelte`).
 	 */
 	swapsForAbility?: SwapsForAbility;
+	/**
+	 * Who is woken and shown this character's token, in its own night step: every Minion (the
+	 * Damsel, also at Minion info, https://wiki.bloodontheclocktower.com/Damsel), or the player
+	 * carrying its `carrier` reminder (the Widow's Know,
+	 * https://wiki.bloodontheclocktower.com/Widow).
+	 */
+	shownTo?: ShownTo;
+}
+
+export interface ShownTo {
+	minions?: true;
+	carrier?: ReminderLabel;
 }
 
 interface SwapsForAbility {
@@ -112,7 +124,8 @@ export const CHOICE_RULE_KEYS = [
 	'evilInfo',
 	'infoCard',
 	'carrierIsDemon',
-	'swapsForAbility'
+	'swapsForAbility',
+	'shownTo'
 ] as const satisfies readonly (keyof ChoiceRules)[];
 
 /** Reads this file's keys from a rules block; labels must be the character's own reminders. */
@@ -158,6 +171,21 @@ export function readChoiceRules(
 	if (raw.swapsForAbility !== undefined) {
 		const swaps = readSwaps(raw.swapsForAbility, `${path}.swapsForAbility`, issues, reminders);
 		if (swaps) out.swapsForAbility = swaps;
+	}
+	if (raw.shownTo !== undefined) {
+		const at = `${path}.shownTo`;
+		if (!isObject(raw.shownTo)) issues.add(at, `expected object, got ${describe(raw.shownTo)}`);
+		else {
+			checkKeys(raw.shownTo, ['minions', 'carrier'], at, issues);
+			const minions = readBoolean(raw.shownTo, 'minions', at, issues);
+			const carrier = readToken(raw.shownTo, 'carrier', at, issues, reminders);
+			if (!minions && !carrier) issues.add(at, 'expected minions or carrier');
+			else
+				out.shownTo = {
+					...(minions ? { minions: true as const } : {}),
+					...(carrier ? { carrier } : {})
+				};
+		}
 	}
 	return out;
 }

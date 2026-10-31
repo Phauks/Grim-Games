@@ -1,4 +1,7 @@
 {
+	"shownTo": {
+		"carrier": "Know"
+	},
 	"reminderTargets": {
 		"Know": {
 			"seat": "any",
