@@ -695,7 +695,6 @@
 		{game}
 		{characters}
 		grouped={boardLooks.current.rulesGrouped && boardRuleCount(game) > 0}
-		edge={tokenSize < size * 0.8}
 		{tokenSize}
 		{chip}
 		disabled={seatArr.arranging || watching}
@@ -847,7 +846,7 @@
 
 		<!-- Measures the tap target, the height every reminder takes on the board. -->
 		<span class="tap-probe" aria-hidden="true" bind:clientHeight={sizing.tapPx}></span>
-		{#if boardLooks.current.rulesAt !== 'middle' && boardRuleCount(game) > 0}
+		{#if boardRuleCount(game) > 0}
 			<div class="rules-edge" bind:clientWidth={sizing.edgeW} bind:clientHeight={sizing.edgeH}>
 				{@render ruleTokens(Math.max(sizing.tapPx, Math.round(size * 0.5)))}
 			</div>
@@ -911,12 +910,6 @@
 					shown={watchedTimer}
 				/>
 			</div>
-		</div>
-		<div class="centre" bind:clientWidth={sizing.centreW} bind:clientHeight={sizing.centreH}>
-			<!-- Until the game is set up: choosing characters and the bag, then out of the way. -->
-			{#if boardLooks.current.rulesAt === 'middle'}
-				{@render ruleTokens(Math.round(size * 0.8))}
-			{/if}
 		</div>
 	</div>
 </div>
@@ -1217,16 +1210,6 @@
 		visibility: hidden;
 		height: var(--tap-target);
 		pointer-events: none;
-	}
-	.centre {
-		position: absolute;
-		left: 50%;
-		top: 50%;
-		translate: -50% -50%;
-		display: grid;
-		justify-items: center;
-		gap: var(--space-2);
-		max-width: 50%;
 	}
 	/* Dimmed so seats and reminders stay clear over any image. */
 	.game-over {
