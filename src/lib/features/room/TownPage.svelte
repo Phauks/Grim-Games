@@ -197,6 +197,7 @@
 				author={script?.meta.author}
 				{version}
 				storyteller={table?.storytellerName?.trim() || undefined}
+				profile={room ? { roomCode: room, look: table?.storyteller } : undefined}
 				inline
 			/>&nbsp;
 		{/snippet}

@@ -297,8 +297,6 @@ export const room = {
 	'room.testRoom.zoomPercent': 'Zoom {percent}%',
 	'room.testRoom.players': 'Players',
 	'room.testRoom.playersCount': 'Players {count}',
-	'room.testRoom.fewerPlayers': 'Fewer players',
-	'room.testRoom.morePlayers': 'More players',
 	'room.testRoom.auto': 'Players answer by themselves',
 	'room.testRoom.showAll': 'Show every phone',
 	'room.testRoom.mixDevices': 'Mix devices',

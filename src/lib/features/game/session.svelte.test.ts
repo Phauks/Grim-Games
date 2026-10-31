@@ -49,6 +49,30 @@ describe('OpenGame', () => {
 		expect((await store.list()).games).toHaveLength(1);
 	});
 
+	it('saves changes made while a save is written together, as one write of the newest', async () => {
+		const store = new MemoryGameStore();
+		const game = await OpenGame.create(data, script, 5, store, context());
+		await game.save();
+		const writes: number[] = [];
+		const save = store.save.bind(store);
+		store.save = async (saved) => {
+			writes.push(saved.log.entries.length);
+			await new Promise((resolve) => setTimeout(resolve, 20));
+			return save(saved);
+		};
+		const seatId = game.game.seating[0];
+		game.run({ type: 'RenameSeat', seatId, playerName: 'Ana' });
+		await Promise.resolve();
+		// The first write has started; these three wait for it, then go as one.
+		game.run({ type: 'RenameSeat', seatId, playerName: 'Ben' });
+		game.run({ type: 'RenameSeat', seatId, playerName: 'Cat' });
+		game.run({ type: 'AssignCharacter', seatId, characterId: 'chef' });
+		await game.save();
+		expect(writes).toEqual([2, 5]);
+		const reopened = await OpenGame.open(data, game.game.gameId, store, context());
+		expect(reopened?.game.seats[seatId]).toMatchObject({ playerName: 'Cat', characterId: 'chef' });
+	});
+
 	it('refuses bad commands without changing or saving anything', async () => {
 		const store = new MemoryGameStore();
 		const game = await OpenGame.create(data, script, 5, store, context());

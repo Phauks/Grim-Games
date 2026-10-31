@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { openProfile, setPlayerName } from './player-name.ts';
 import { chooseRulesOnSetup, pickScript, toBoard } from './new-game.ts';
 import { menuButton } from './shell.ts';
+import { pickNumber } from './number-select.ts';
 
 // Character selection, the bag and the draw (ROADMAP Phase 2 Setup).
 
@@ -13,8 +14,7 @@ async function selectionFor(page: Page, players: number, script = 'Trouble Brewi
 	// A new game opens on character selection (G7), where the count is set (Trevor, 2026-10-28).
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 	await expect(page.getByRole('heading', { name: 'Characters', level: 1 })).toBeVisible();
-	for (let n = 8; n > players; n--) await page.getByRole('button', { name: 'Fewer players' }).tap();
-	for (let n = 8; n < players; n++) await page.getByRole('button', { name: 'More players' }).tap();
+	await pickNumber(page, 'Players', players);
 	await expect(page.getByTestId('player-count')).toHaveText(String(players));
 }
 
@@ -25,7 +25,7 @@ test('the setup table is shown and follows the player count', async ({ page }) =
 	const current = table.locator('thead [data-current]');
 	await expect(current).toHaveText('6');
 	await expect(table.locator('tbody [data-current]')).toHaveText(['3', '1', '1', '1']);
-	await page.getByRole('button', { name: 'More players' }).tap();
+	await pickNumber(page, 'Players', 7);
 	await expect(current).toHaveText('7');
 	await expect(table.locator('tbody [data-current]')).toHaveText(['5', '0', '1', '1']);
 	// Tapping a column sets the count too (Trevor, 2026-10-16), anywhere in the column.
@@ -366,7 +366,7 @@ test('character selection takes more than 20 players, and New game has no count'
 	await selectionFor(page, 20);
 	// Beyond 15 the sheet's 15+ column applies (https://wiki.bloodontheclocktower.com/Setup).
 	await expect(page.getByTestId('setup-table').locator('thead [data-current]')).toHaveText('15+');
-	await page.getByRole('button', { name: 'More players' }).tap();
+	await pickNumber(page, 'Players', 21);
 	await expect(page.getByTestId('player-count')).toHaveText('21');
 });
 
@@ -394,7 +394,7 @@ test('lowering the player count in character selection takes the extra seats awa
 // to a new seat rather than left in the bag.
 test('a bag with more tiles than seats draws the extra tiles to new seats', async ({ page }) => {
 	await selectionFor(page, 8);
-	for (let n = 8; n < 20; n++) await page.getByRole('button', { name: 'More players' }).tap();
+	await pickNumber(page, 'Players', 20);
 	await expect(page.getByTestId('player-count')).toHaveText('20');
 	const names = await page
 		.locator('main [aria-pressed][data-character-id]')
@@ -804,7 +804,8 @@ test.describe('in a computer window', () => {
 		await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').click();
 		await page.getByRole('button', { name: 'Create game' }).click();
 		await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
-		for (let n = 8; n > 5; n--) await page.getByRole('button', { name: 'Fewer players' }).click();
+		await page.getByRole('combobox', { name: 'Players', exact: true }).click();
+		await page.getByRole('option', { name: '5', exact: true }).click();
 
 		// The setup sheet is beside the characters; Build bag is in the bar at the bottom right.
 		const sheet = await page.getByTestId('setup-table').boundingBox();
@@ -935,7 +936,7 @@ test('the setup check lists jinxed pairs in play and says when a required charac
 	await pickScript(page, 'Jinx Check');
 	await page.getByRole('button', { name: 'Create game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
-	for (let n = 8; n > 5; n--) await page.getByRole('button', { name: 'Fewer players' }).tap();
+	await pickNumber(page, 'Players', 5);
 	await toBoard(page);
 	await page.goto(`${new URL(page.url()).pathname}/setup`);
 
@@ -1293,7 +1294,7 @@ test('a Teensyville script greys out player counts above 6 but still allows them
 	await expect(page.getByTestId('seat')).toHaveCount(6);
 	await page.goto(`${new URL(page.url()).pathname}/setup`);
 	await expect(table.locator('thead th[data-too-many]')).toHaveCount(9);
-	await page.getByRole('button', { name: 'More players' }).tap();
+	await pickNumber(page, 'Players', 7);
 	await expect(page.getByTestId('player-count')).toHaveText('7');
 	await expect(page.getByText('This script is made for at most 6 players.')).toBeVisible();
 	await expect(page.getByTestId('setup-check')).toContainText('Teensyville');

@@ -52,10 +52,15 @@ describe('saved games', () => {
 		expect(openSession(loaded.log).game).toEqual(session.game);
 	});
 
-	it('copies the log so later changes do not alter the save', () => {
-		const { session, saved } = savedGame();
-		expect(saved.log).not.toBe(session.log);
-		expect(saved.log).toEqual(session.log);
+	it('later changes, undo and redo do not alter the save, though its log is not copied', () => {
+		const { session: first, ctx, seats } = newGame(names);
+		const session = run(first, ctx, { type: 'AddSeat', playerName: 'Fay' });
+		const saved = toSavedGame(session, 1);
+		const before = structuredClone(saved);
+		const later = run(session, ctx, { type: 'SetDead', seatId: seats[0], dead: true });
+		redo(undo(undo(later)));
+		dispatch(undo(later), { type: 'AddSeat', playerName: 'Gus' }, ctx);
+		expect(saved).toEqual(before);
 	});
 
 	it('summarises a save without replaying it', () => {
