@@ -7,7 +7,8 @@
 	import ScriptByline from './ScriptByline.svelte';
 	import type { PublicRule } from '#lib/core/sync/public-projection.ts';
 	import ScriptSheet from './ScriptSheet.svelte';
-	import ScriptTitle from './ScriptTitle.svelte';
+	import ScriptName from '#lib/features/scripts/ScriptName.svelte';
+	import { scriptLogo } from '#lib/core/data/script-logo.ts';
 	import SheetBackgroundSelect from './SheetBackgroundSelect.svelte';
 	import { playerSettings } from './player-settings.svelte.ts';
 	import { sheetStyle } from '#lib/ui/themes/sheet-backgrounds.ts';
@@ -86,7 +87,12 @@
 	style={sheetStyle(playerSettings.current.sheetBackground)}
 	data-testid="script-copy"
 >
-	{#if title}<ScriptTitle {script} />{/if}
+	{#if title}<ScriptName
+			name={script.name}
+			logo={scriptLogo(script)}
+			size="title"
+			testid="script-copy-title"
+		/>{/if}
 	{#if byline || backgroundChoice}<div class="head">
 			{#if byline && data}<ScriptByline author={script.meta.author} {version} />{/if}
 			{#if backgroundChoice}<span class="background-choice"><SheetBackgroundSelect compact /></span

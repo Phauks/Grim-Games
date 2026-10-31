@@ -25,7 +25,7 @@
 	import { setLeaveGuard } from '#lib/features/shell/shell.ts';
 	import { drawLock, keepScreenOn } from './draw-lock.svelte.ts';
 	import PinDialog from './PinDialog.svelte';
-	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
+	import ScriptName from '#lib/features/scripts/ScriptName.svelte';
 	import { fromScript, scriptLogo } from '#lib/core/data/index.ts';
 	import { loadOfficialData, officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { onMount, untrack } from 'svelte';
@@ -265,7 +265,7 @@
 
 <Page {title} iconActions>
 	{#snippet lead()}
-		{#if locked && logo}<ScriptLogo src={logo} class="draw-title-logo" />{/if}
+		{#if locked}<ScriptName name={script?.name} {logo} size="lead" />{/if}
 	{/snippet}
 	{#snippet actions()}
 		<!-- Locked: only the lock itself; Bag settings and Join can't be used (Trevor, 2026-10-19). -->
@@ -384,10 +384,6 @@
 {/if}
 
 <style>
-	:global(.draw-title-logo) {
-		width: 1.5em;
-		height: 1.5em;
-	}
 	.deal-text {
 		margin: 0;
 	}

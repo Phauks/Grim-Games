@@ -39,6 +39,17 @@ test('the setup table is shown and follows the player count', async ({ page }) =
 	);
 });
 
+test("character selection names the script with its logo, as every script's name", async ({
+	page
+}) => {
+	// Trevor, 2026-10-31: "in character selector, you should be able to see the script logo".
+	await selectionFor(page, 6);
+	const name = page.getByTestId('setup-script-name');
+	await expect(name).toHaveText('Trouble Brewing');
+	await expect(name.getByTestId('script-logo')).toHaveAttribute('data-logo', /tb/);
+	await expect(name.locator('img')).toBeVisible();
+});
+
 test('setup is one flow of two steps with the same bar on each', async ({ page }) => {
 	await selectionFor(page, 5);
 	const board = new URL(page.url()).pathname.replace(/\/setup$/, '');

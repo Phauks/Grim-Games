@@ -14,7 +14,7 @@
 	import { gameSheetRules } from '#lib/features/modes/sheet-rules.ts';
 	import { gameShareable } from '#lib/features/scripts/game-shareable.svelte.ts';
 	import { playerSettings } from '#lib/features/player/player-settings.svelte.ts';
-	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
+	import ScriptName from '#lib/features/scripts/ScriptName.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { screenTheme } from '#lib/ui/themes/screen-theme.svelte.ts';
@@ -58,7 +58,7 @@
 	});
 </script>
 
-{#snippet logoLead()}<ScriptLogo src={logo} class="title-logo" />{/snippet}
+{#snippet logoLead()}<ScriptName name={game.script.meta?.name} {logo} size="lead" />{/snippet}
 <Dialog
 	bind:open
 	title={game.script.meta?.name || 'Script'}
