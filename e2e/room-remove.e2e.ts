@@ -71,15 +71,12 @@ test('a removed phone leaves the game, is turned away at the code, and Unblock s
 	await expect(unseated).toHaveCount(0);
 	await expect(phone.getByRole('tab', { name: 'Grim' })).toBeVisible();
 
-	// The red trash on the player's sheet asks first.
-	await ana.getByTestId('room-player-open').tap();
-	const sheet = page.getByRole('dialog', { name: 'Ana', exact: true });
-	await sheet.getByTestId('room-player-remove').tap();
+	// The red trash on the player's row asks first.
+	await ana.getByTestId('room-player-remove').tap();
 	await page
 		.getByRole('alertdialog', { name: 'Remove this player from the room?' })
 		.getByRole('button', { name: 'Confirm' })
 		.tap();
-	await expect(sheet).toBeHidden();
 	await expect(removed.getByTestId('room-removed-player')).toHaveText([/Ana/]);
 	// Their seat lost the name, so nothing seats them there again by name.
 	await expect(players.filter({ hasText: 'Ana' })).toHaveCount(0);
@@ -121,11 +118,7 @@ test('a phone removed while on its player screen lands on the join screen, out o
 	await phone.goto('/play');
 	await expect(phone.getByRole('tab', { name: 'Grim' })).toBeVisible();
 
-	await unseated.getByTestId('room-player-open').tap();
-	await page
-		.getByRole('dialog', { name: 'Ana', exact: true })
-		.getByTestId('room-player-remove')
-		.tap();
+	await unseated.getByTestId('room-player-remove').tap();
 	await page
 		.getByRole('alertdialog', { name: 'Remove this player from the room?' })
 		.getByRole('button', { name: 'Confirm' })

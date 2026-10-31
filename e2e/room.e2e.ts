@@ -2686,7 +2686,6 @@ test("a player's own picture goes on their seat, and a report lets the Storytell
 	await expect(opened).toBeHidden();
 	await expect(report).toHaveCount(0);
 	await page.keyboard.press('Escape');
-	await page.keyboard.press('Escape');
 	await expect(seat.getByTestId('avatar-face')).toHaveText('AK');
 	await expect(seat.getByTestId('avatar-face')).not.toHaveAttribute('data-picture');
 	await expect(alexSeat.getByTestId('avatar-face')).toHaveText('AK');
