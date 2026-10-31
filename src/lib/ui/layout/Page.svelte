@@ -71,6 +71,24 @@
 	toolbar, then the content.
 	No Back button: the sidebar navigates. Overlays (dialogs, sheets) go beside it, not inside.
 -->
+{#snippet heading()}
+	<h1>
+		{#if lead}{@render lead()}{/if}<span class="title-text" {@attach fitWords(title)}>{title}</span>
+	</h1>
+{/snippet}
+<!-- `titleBelow`: the byline goes with the title, so on a wide page both sit beside the
+     actions (Trevor, 2026-10-31). -->
+{#snippet titles()}
+	{#if titleBelow && subtitle}
+		<div class="titles">
+			{@render heading()}
+			<p class="subtitle">{@render subtitle()}</p>
+		</div>
+	{:else}
+		{@render heading()}
+	{/if}
+{/snippet}
+
 <main class="page">
 	<PageMenuButton />
 	<header class="head" class:visually-hidden={hideTitle}>
@@ -82,22 +100,14 @@
 			{#if showMenu && !hideTitle}
 				<div class="start">
 					<span class="menu-room" aria-hidden="true"></span>
-					<h1>
-						{#if lead}{@render lead()}{/if}<span class="title-text" {@attach fitWords(title)}
-							>{title}</span
-						>
-					</h1>
+					{@render titles()}
 				</div>
 			{:else}
-				<h1>
-					{#if lead}{@render lead()}{/if}<span class="title-text" {@attach fitWords(title)}
-						>{title}</span
-					>
-				</h1>
+				{@render titles()}
 			{/if}
 			{#if actions}<div class="actions" data-testid="page-actions">{@render actions()}</div>{/if}
 		</div>
-		{#if subtitle}<p class="subtitle">{@render subtitle()}</p>{/if}
+		{#if subtitle && !titleBelow}<p class="subtitle">{@render subtitle()}</p>{/if}
 	</header>
 	{#if toolbar}<div class="toolbar">{@render toolbar()}</div>{/if}
 	{#if side}
@@ -201,9 +211,24 @@
 		.actions {
 			justify-content: flex-end;
 		}
+		/* The title and byline at the start of the row, the actions at its end, level with the
+		   title (Trevor, 2026-10-31: "on desktop and larger screens, we have some leftover
+		   space"). The title clears the hamburger again. */
 		.title-row[data-title-below] {
-			grid-template-columns: minmax(0, 1fr);
+			grid-template-columns: minmax(calc(20 * var(--u)), 1fr) minmax(0, auto);
+			align-items: start;
 		}
+		.title-row[data-title-below] .actions {
+			order: 0;
+		}
+		.title-row[data-title-below] .menu-room {
+			display: block;
+		}
+	}
+	.titles {
+		display: grid;
+		gap: var(--space-1);
+		min-width: 0;
 	}
 	.subtitle {
 		margin: 0;
