@@ -21,6 +21,28 @@ const SHARE_TODO = [];
  * (Trevor, 2026-10-24: every player name is the grim's name badge).
  */
 const PLAYER_BADGE_TODO = [];
+/**
+ * Files that still draw a character's icon or ability themselves instead of CharacterRow (or
+ * another shared character component); only ever shrinks (Trevor, 2026-10-30: characters and
+ * their abilities always show the way the Script tab does).
+ */
+const CHARACTER_DISPLAY_TODO = [
+	'src/lib/features/character-builder/CharacterPreview.svelte',
+	'src/lib/features/characters/CharacterGroupDialog.svelte',
+	'src/lib/features/day/PreventedSheet.svelte',
+	'src/lib/features/errors/ErrorPage.svelte',
+	'src/lib/features/grimoire/FirstDeathAsk.svelte',
+	'src/lib/features/grimoire/GameEndPrompt.svelte',
+	'src/lib/features/grimoire/GuidedStep.svelte',
+	'src/lib/features/grimoire/RuleCharacters.svelte',
+	'src/lib/features/grimoire/SeatSheet.svelte',
+	'src/lib/features/grimoire/StarPassPrompt.svelte',
+	'src/lib/features/modes/SpectersSheet.svelte',
+	'src/lib/features/player/GuessMarks.svelte',
+	'src/lib/features/player/ScriptSheet.svelte',
+	'src/lib/features/reference/FieldValue.svelte',
+	'src/lib/features/setup/CharacterChoice.svelte'
+];
 
 /**
  * Files that still build "Seat 3" by hand instead of seatName or t('common.seat'); only ever
@@ -354,6 +376,44 @@ export default defineConfig(
 		ignores: ['src/lib/features/spikes/**', 'src/routes/spikes/**'],
 		plugins: { grim },
 		rules: { 'grim/count-badge': 'error' }
+	},
+	{
+		// Characters and their abilities show through the shared character components, the
+		// Script tab's look (Trevor, 2026-10-30). Type-aware: see scripts/lint/character-display.js.
+		// CHARACTER_DISPLAY_TODO only shrinks.
+		files: ['src/**/*.ts', 'src/**/*.svelte'],
+		ignores: [
+			'src/**/*.test.ts',
+			'src/lib/core/**',
+			'src/service-worker.ts',
+			'src/lib/features/spikes/**',
+			'src/routes/spikes/**',
+			// The components that draw a character, and where its icon is worked out.
+			'src/lib/features/characters/icon-url.ts',
+			'src/lib/features/characters/CharacterRow.svelte',
+			'src/lib/features/characters/CharacterBadge.svelte',
+			'src/lib/features/characters/CharacterToken.svelte',
+			'src/lib/features/characters/ReminderToken.svelte',
+			'src/lib/ui/seating/CharacterEmblem.svelte',
+			'src/lib/features/grimoire/BoardReminder.svelte',
+			'src/lib/features/grimoire/HeldAbilityPill.svelte',
+			'src/lib/features/account/ProfileIcon.svelte',
+			// The character's own page: CharacterSummary is its top.
+			'src/lib/features/characters/CharacterSummary.svelte',
+			'src/lib/features/characters/CharacterDialog.svelte',
+			'src/lib/features/library/CharacterPane.svelte',
+			// Shown to a player: the card hands them their character, a separate thing (Trevor,
+			// 2026-10-31).
+			'src/lib/features/room/YourCharacter.svelte',
+			'src/lib/features/setup/RevealDialog.svelte',
+			'src/lib/features/show/ShownCard.svelte',
+			// Icon addresses to keep offline, not drawn.
+			'src/lib/features/offline/keep-offline.ts',
+			...CHARACTER_DISPLAY_TODO
+		],
+		languageOptions: { parserOptions: { projectService: true, extraFileExtensions: ['.svelte'] } },
+		plugins: { grim },
+		rules: { 'grim/character-display': 'error' }
 	},
 	{
 		// Core builds no screen text, but its fields must keep the name marks for the UI.
