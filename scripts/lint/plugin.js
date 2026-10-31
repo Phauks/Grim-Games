@@ -10,6 +10,7 @@ import { dropdownChoice } from './dropdown-choice.js';
 import { iconMeaning } from './icon-meaning.js';
 import { modalActions } from './modal-actions.js';
 import { namesAsBadges } from './names-as-badges.js';
+import { scriptName } from './script-name.js';
 import { sharePanel } from './share-panel.js';
 import { textField } from './text-field.js';
 
@@ -27,6 +28,7 @@ export default {
 		'share-panel': sharePanel,
 		'caret-section': caretSection,
 		'count-badge': countBadge,
-		'character-display': characterDisplay
+		'character-display': characterDisplay,
+		'script-name': scriptName
 	}
 };

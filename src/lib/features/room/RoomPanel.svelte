@@ -5,6 +5,7 @@
 	import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import Tabs from '#lib/ui/primitives/Tabs.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import ScriptSharePanel from '#lib/features/scripts/SharePanel.svelte';
 	import { gameShareable } from '#lib/features/scripts/game-shareable.svelte.ts';
@@ -23,6 +24,8 @@
 	}
 
 	let { game }: Props = $props();
+
+	let tab = $state<'players' | 'grimoire'>('players');
 
 	const host = roomHost();
 	$effect(() => host.attach(game));
@@ -128,20 +131,28 @@
 	the board names with it ("I wanna drop the seat picking").
 -->
 
-<!-- One screen, no tabs (Trevor, 2026-10-22: "combine tabs, we show on the qr code that this
-     is the spoiler version"): the players' code first, then the view-only grimoire below it in
-     the same two columns. -->
-<div class="screen">
-	{@render players()}
-	{@render watching()}
-</div>
+<!-- Two tabs (Trevor, 2026-10-31, picked from four mocked placements; it reverses 2026-10-22's
+     "combine tabs"): Players, the code and QR they join with; Grimoire, everything that hands
+     the grimoire to phones, Grim view while the game runs and Share grim once it is over.
+     Steady, so switching never moves the tabs or what is under them. -->
+<Tabs
+	bind:value={tab}
+	steady
+	label={t('room.title')}
+	tabs={[
+		{ value: 'players', label: t('room.tab.players') },
+		{ value: 'grimoire', label: t('room.tab.grimoire') }
+	]}
+>
+	{#snippet panel(value)}
+		{#if value === 'players'}{@render players()}{:else}{@render grimoire()}{/if}
+	{/snippet}
+</Tabs>
 
-{#snippet watching()}
-	<!-- Grim view (Specters, Trevor 2026-10-18), under its own rule: no QR or link of its own
-	     (Trevor, 2026-10-26: "a second QR code for spoilers is unnecessary"), only a password
-	     with the room code. Status above counts who is watching. -->
-	<section class="watch watch-part" aria-labelledby="watch-label" data-testid="watch-link">
-		<h2 id="watch-label">{t('room.watch.heading')}</h2>
+{#snippet grimoire()}
+	<!-- Grim view (Specters, Trevor 2026-10-18): no QR or link of its own (Trevor, 2026-10-26:
+	     "a second QR code for spoilers is unnecessary"), only a password with the room code. -->
+	<section class="grimoire" data-testid="watch-link">
 		<SettingToggle
 			label={t('room.watch.toggle')}
 			description={t('room.watch.hint')}
@@ -175,64 +186,62 @@
 				onclick={() => askRefresh('watch')}
 			/>
 		</div>
-		<p class="status" role="status">{host.grimoireTooLarge ? t('room.watch.tooLarge') : ''}</p>
+		<!-- Who is watching, in its place before the room connects; a grimoire too large to send
+		     says so here instead. -->
+		<p class="status" role="status" data-testid="status-watching">
+			{host.grimoireTooLarge
+				? t('room.watch.tooLarge')
+				: connected
+					? t('room.watching', { count: host.watchers })
+					: ''}
+		</p>
+		<div class="share-grim">
+			<Button icon="share" disabled={!canShareGrim} onclick={() => (shareGrimOpen = true)}
+				>{t('room.shareGrim.button')}</Button
+			>
+		</div>
 	</section>
 {/snippet}
 
 {#snippet players()}
-	<!-- Laid out the same before the room opens, so the code and QR arrive without a reflow. -->
-	<div class="layout">
-		<section class="join">
-			<!-- The players' Share screen, header and offline code too (Trevor, 2026-10-27:
-			     "Storyteller should have everything player screen has"). -->
-			<ScriptSharePanel
-				title={scriptName}
-				author={game.game.script.meta?.author}
-				version={scriptVersion(undefined, game.game.script.meta)}
-				{logo}
-				{target}
-				room={host.code}
-				hosting={{
-					pending: host.problem ? t('room.openFailed') : t('room.openingRoom'),
-					text: message || undefined,
-					refresh: {
-						label: t('room.refresh'),
-						disabled: host.opening,
-						// No Open or Close room (Trevor, 2026-10-20): a room is just there while the
-						// game is, and a new code replaces it, deleting the old room.
-						onclick: () => (host.code ? askRefresh('room') : void host.open())
-					}
-				}}
-			/>
-		</section>
+	<!-- Laid out the same before the room opens, so the code and QR arrive without a reflow.
+	     The players' Share screen, header and offline code too (Trevor, 2026-10-27:
+	     "Storyteller should have everything player screen has"). -->
+	<ScriptSharePanel
+		title={scriptName}
+		author={game.game.script.meta?.author}
+		version={scriptVersion(undefined, game.game.script.meta)}
+		{logo}
+		{target}
+		room={host.code}
+		hosting={{
+			pending: host.problem ? t('room.openFailed') : t('room.openingRoom'),
+			text: message || undefined,
+			status: connection,
+			refresh: {
+				label: t('room.refresh'),
+				disabled: host.opening,
+				// No Open or Close room (Trevor, 2026-10-20): a room is just there while the
+				// game is, and a new code replaces it, deleting the old room.
+				onclick: () => (host.code ? askRefresh('room') : void host.open())
+			}
+		}}
+	/>
+{/snippet}
 
-		<section aria-labelledby="status-label">
-			<!-- How the room is doing and who is in it, under its own header (Trevor, 2026-10-20). -->
-			<h2 id="status-label">{t('room.status')}</h2>
-			<!-- One line per thing it reports (Trevor, 2026-10-20), each always in its place. -->
-			<div class="status-lines">
-				<p class="status connection" role="status" data-status={host.status}>
-					{#if host.code}<span
-							class="dot"
-							class:live={connected}
-							data-testid="connection-dot"
-							aria-hidden="true"
-						></span>{/if}<span>{statusText}</span>
-				</p>
-				<p class="status" data-testid="status-players">
-					{connected ? t('common.players', { count: seated.length }) : ''}
-				</p>
-				<p class="status" data-testid="status-watching">
-					{connected ? t('room.watching', { count: host.watchers }) : ''}
-				</p>
-			</div>
-			<div class="share-grim">
-				<Button icon="share" disabled={!canShareGrim} onclick={() => (shareGrimOpen = true)}
-					>{t('room.shareGrim.button')}</Button
-				>
-			</div>
-		</section>
-	</div>
+{#snippet connection()}
+	<!-- Beside the join code it vouches for (2026-10-31, in place of the Status section): how
+	     the room is doing, and how many players are in it. -->
+	<p class="status connection" role="status" data-status={host.status}>
+		{#if host.code}<span
+				class="dot"
+				class:live={connected}
+				data-testid="connection-dot"
+				aria-hidden="true"
+			></span>{/if}<span>{statusText}</span>{#if connected}<span aria-hidden="true">·</span><span
+				data-testid="status-players">{t('common.players', { count: seated.length })}</span
+			>{/if}
+	</p>
 {/snippet}
 
 <ConfirmDialog
@@ -254,30 +263,13 @@
 	.dialog-text {
 		margin: 0;
 	}
-	.screen {
-		display: grid;
-		gap: var(--space-5);
-	}
-	/* Grim view sits under a rule, as its own thing: it shows the whole grimoire. */
-	.watch-part {
-		padding-top: var(--space-5);
-		border-top: 1px solid var(--border);
-	}
-	h2 {
-		margin: 0 0 var(--space-2);
-		font-size: 1.1rem;
-	}
-	h2 + :global(*) {
-		margin-top: 0;
-	}
-	section {
+	.grimoire {
 		display: grid;
 		gap: var(--space-2);
 		align-content: start;
 		min-width: 0;
-	}
-	.status-lines {
-		margin-bottom: var(--space-4);
+		max-width: 32rem;
+		padding-top: var(--space-3);
 	}
 	.connection {
 		display: flex;
@@ -292,20 +284,12 @@
 		border: 0.15em solid var(--on-surface-muted);
 		border-radius: 50%;
 	}
-	.share-grim {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-2);
-		margin-bottom: var(--space-4);
-	}
 	.dot.live {
 		border-color: var(--good);
 		background: var(--good);
 	}
-	.watch {
-		display: grid;
-		gap: var(--space-2);
-		max-width: 32rem;
+	.share-grim {
+		display: flex;
 	}
 	.password {
 		display: flex;
@@ -315,16 +299,6 @@
 	.password > :global(:first-child) {
 		flex: 1;
 		min-width: 0;
-	}
-	/* Phones stack; a computer or tablet shows the code beside the lists. */
-	.layout {
-		display: grid;
-		gap: var(--space-5);
-	}
-	@media (min-width: 48rem) {
-		.layout {
-			grid-template-columns: minmax(16rem, 22rem) 1fr;
-		}
 	}
 	.status {
 		min-height: 1.4em;
