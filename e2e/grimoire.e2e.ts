@@ -4251,41 +4251,44 @@ test("the step focus works for a script's own character too (Fall of Rome's Merc
 	await expect(tokens.first()).toContainText('Paid');
 });
 
-test('the Fabled and Loric can sit grouped in a corner, listed together when tapped', async ({
-	page
-}) => {
+test('the Fabled stack and the Loric stack sit side by side in the corner', async ({ page }) => {
 	await startGame(page);
-	for (const name of ['Spirit of Ivory', 'Angel', 'Djinn']) {
+	for (const name of ['Spirit of Ivory', 'Angel', 'Djinn', 'Bootlegger']) {
 		await menu(page, 'Add Fabled or Loric');
 		await page
 			.getByRole('dialog', { name: 'Add Fabled or Loric' })
 			.getByRole('button', { name, exact: true })
 			.tap();
 	}
-	// The choice is on the Fabled's own sheet (Trevor, 2026-10-17).
-	await page
-		.getByRole('list', { name: 'Fabled and Loric' })
-		.getByRole('button', { name: 'Angel' })
-		.tap();
-	// They always sit in the corner (Trevor, 2026-10-30: "only corner"); grouping is the choice.
-	const angel = page.getByRole('dialog', { name: 'Angel' });
-	await expect(angel.getByRole('combobox', { name: 'Location', exact: true })).toHaveCount(0);
-	await angel.getByRole('combobox', { name: 'Grouping', exact: true }).tap();
-	await page.getByRole('option', { name: 'Stacked' }).tap();
-	await expect(page.locator('.rules-edge .rules-stack')).toBeVisible();
-	await angel.getByRole('button', { name: 'Close' }).tap();
-
-	const stack = page.getByRole('button', { name: 'Fabled and Loric: 3' });
-	await expect(stack).toBeVisible();
+	// Always two stacks, with no Location or Grouping choice (Trevor, 2026-10-31: "stack lorics
+	// and fabled separately next to each other").
+	const corner = page.locator('.rules-edge').getByRole('list', { name: 'Fabled and Loric' });
+	const fabled = corner.getByRole('button', { name: 'Fabled: 3' });
+	const loric = corner.getByRole('button', { name: 'Bootlegger' });
+	await expect(fabled).toBeVisible();
+	await expect(loric).toBeVisible();
+	const f = (await fabled.boundingBox())!;
+	const l = (await loric.boundingBox())!;
+	expect(l.x).toBeGreaterThanOrEqual(f.x + f.width - 1);
+	expect(Math.abs(l.y - f.y)).toBeLessThan(2);
+	await page.screenshot({ path: test.info().outputPath('rule-stacks.png') });
 	// Every token in the stack stays on the board, none off its left side (Trevor, 2026-10-30).
-	for (const token of await stack.locator(':scope > :not(.stack-count)').all()) {
+	for (const token of await fabled.locator(':scope > :not(.stack-count)').all()) {
 		expect((await token.boundingBox())!.x).toBeGreaterThanOrEqual(0);
 	}
-	await expect(page.getByRole('list', { name: 'Fabled and Loric' })).toHaveCount(0);
-	await stack.tap();
-	const group = page.getByRole('dialog', { name: 'Fabled and Loric' });
+
+	// A stack of one opens its own sheet, with no setting on it.
+	await loric.tap();
+	const bootlegger = page.getByRole('dialog', { name: 'Bootlegger' });
+	await expect(bootlegger.getByRole('combobox')).toHaveCount(0);
+	await bootlegger.getByRole('button', { name: 'Close' }).tap();
+
+	// The Fabled stack lists only the Fabled.
+	await fabled.tap();
+	const group = page.getByRole('dialog', { name: 'Fabled', exact: true });
 	await expect(group.locator('.rules-group > li')).toHaveCount(3);
-	// Each row as tall as its contents, with no gaps between them (Trevor, 2026-10-30).
+	await expect(group.getByRole('combobox')).toHaveCount(0);
+	// Each row as tall as its contents, with no blank space between them (Trevor, 2026-10-31).
 	const rows = await group.locator('.rules-group > li').all();
 	const first = (await rows[0].boundingBox())!;
 	const second = (await rows[1].boundingBox())!;
@@ -4297,7 +4300,7 @@ test('the Fabled and Loric can sit grouped in a corner, listed together when tap
 		.tap();
 	await expect(group.locator('.rules-group > li')).toHaveCount(2);
 	await group.getByRole('button', { name: 'Close' }).tap();
-	await expect(page.getByRole('button', { name: 'Fabled and Loric: 2' })).toBeVisible();
+	await expect(corner.getByRole('button', { name: 'Fabled: 2' })).toBeVisible();
 });
 
 test('an open night step moves to the step before or after without ticking it', async ({
@@ -6080,6 +6083,39 @@ test('when the Imp kills itself, a living Minion is chosen to become the Imp', a
 	await expect(page.getByRole('alertdialog')).toHaveCount(0);
 });
 
+test('the star pass is asked again when a revived Imp kills itself again', async ({ page }) => {
+	// Trevor (2026-10-31): Cancel once, bring the Imp back, kill it by its own kill again.
+	await startGame(page);
+	for (const [number, name] of [
+		[3, 'Imp'],
+		[4, 'Poisoner']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	const ask = page.getByRole('alertdialog', { name: 'Choose the new Imp' });
+	const status = page.getByRole('dialog', { name: 'Status of Seat 3' });
+	const sheet = await openSeat(page, 3);
+	await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
+	await status.getByRole('button', { name: 'The Demon' }).tap();
+	await ask.getByRole('button', { name: 'Cancel', exact: true }).tap();
+	await expect(ask).toBeHidden();
+	await sheet.getByRole('button', { name: /^Status: / }).tap();
+	await status.getByRole('button', { name: 'Alive', exact: true }).tap();
+	await page
+		.getByRole('alertdialog', { name: 'Bring Seat 3 back to life?' })
+		.getByRole('button', { name: 'Confirm', exact: true })
+		.tap();
+	await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
+	await status.getByRole('button', { name: 'The Demon' }).tap();
+	await expect(ask).toBeVisible();
+});
+
 test('a player whose character changed since dawn is woken that night to learn it', async ({
 	page
 }) => {
@@ -6501,12 +6537,13 @@ test('with the Hindu, a player who dies is reincarnated as a Traveller', async (
 test('with the Hindu, the Demon among the first four to die ends the game for good', async ({
 	page
 }) => {
-	// If the Demon is one of the first four to die, the game ends and good wins, even with a
-	// Scarlet Woman alive (https://wiki.bloodontheclocktower.com/Hindu).
+	// If the Demon is one of the first four to die, it is not reborn and the game ends with good
+	// winning (https://wiki.bloodontheclocktower.com/Hindu); a Scarlet Woman would still keep it
+	// going, as for any Demon's death (Trevor, 2026-10-31).
 	await startGame(page, 'Trouble Brewing');
 	for (const [number, name] of [
 		[1, 'Imp'],
-		[2, 'Scarlet Woman']
+		[2, 'Poisoner']
 	] as const) {
 		const sheet = await openSeat(page, number);
 		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
@@ -6556,6 +6593,10 @@ test("with the Hindu's optional rule chosen at the start, a reborn Demon passes 
 		includeHidden: true
 	});
 	await expect(hinduRule).not.toBeChecked();
+	// The character's standard row with its ability, then the rule and its switch beneath
+	// (Trevor, 2026-10-31): the wiki's own line once fetched, else a plain label.
+	await expect(optional.getByText(/first 4 players to die/i)).toBeVisible();
+	await expect(optional.getByRole('paragraph')).toHaveText(/^Optional rule/);
 	await optional.locator('[data-scope="switch"][data-part="control"]').tap();
 	await expect(hinduRule).toBeChecked();
 	await rules.getByRole('button', { name: 'Close' }).tap();

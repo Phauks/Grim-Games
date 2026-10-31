@@ -7,6 +7,9 @@
 	} from '#lib/core/modes/index.ts';
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
+	import { optionalRuleText, prefetchWikiPage } from '#lib/features/characters/wiki-page.svelte.ts';
+	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
@@ -62,6 +65,12 @@
 		optionalRules = [],
 		onOptionalRule
 	}: Props = $props();
+
+	// Each optional rule's own wording comes from its character's wiki page, fetched live and
+	// kept on this device only (CLAUDE.md).
+	$effect(() => {
+		for (const r of optionalRules) if (r.character) prefetchWikiPage(r.character);
+	});
 
 	const rules = $derived(allRules());
 	const chosen = $derived(ruleIds.flatMap((id) => findRule(id) ?? []));
@@ -172,15 +181,30 @@
 			<ul role="list" class="in-game" data-testid="optional-rules">
 				{#each optionalRules as rule (rule.characterId)}
 					{@const name = rule.character?.name ?? rule.characterId}
-					<li class="row optional">
-						<CharacterBadge characterId={rule.characterId} character={rule.character} />
-						<Toggle
-							label={t('modes.optionalRuleOf', { name })}
-							hideLabel
-							checked={rule.on}
-							disabled={!onOptionalRule}
-							onChange={(on) => onOptionalRule?.(rule.characterId, on)}
-						/>
+					<li class="optional">
+						{#if rule.character}
+							{@const character = rule.character}
+							<CharacterRow {character} info
+								>{#snippet ability()}<GlossaryText
+										text={character.ability}
+										names={[character.name]}
+									/>{/snippet}</CharacterRow
+							>
+						{:else}
+							<CharacterBadge characterId={rule.characterId} />
+						{/if}
+						<div class="row own">
+							<p class="rule">
+								{(rule.character && optionalRuleText(rule.character)) ?? t('modes.optionalRule')}
+							</p>
+							<Toggle
+								label={t('modes.optionalRuleOf', { name })}
+								hideLabel
+								checked={rule.on}
+								disabled={!onOptionalRule}
+								onChange={(on) => onOptionalRule?.(rule.characterId, on)}
+							/>
+						</div>
 					</li>
 				{:else}
 					<li class="muted">{t('common.none')}</li>
@@ -280,13 +304,14 @@
 		flex: 1;
 		min-width: 0;
 	}
-	/* A character's badge, then its optional rule's switch at the row's end. */
-	.row.optional {
-		align-items: center;
-		justify-content: space-between;
+	/* A character's row, then its optional rule and switch beneath (Trevor, 2026-10-31). */
+	.optional {
+		display: grid;
+		gap: var(--space-1);
+		padding-block: var(--space-1);
 	}
-	.row.optional > :global(:first-child) {
-		flex: 0 1 auto;
+	.rule {
+		margin: 0;
 	}
 	/* A rule's own switch, indented under its description. */
 	.own {

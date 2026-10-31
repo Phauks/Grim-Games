@@ -15,7 +15,6 @@
 	import BoardLooksRows from './BoardLooksRows.svelte';
 	import BoardPreview from './BoardPreview.svelte';
 	import SettingGroup from '#lib/ui/settings/SettingGroup.svelte';
-	import RulesLooksRows from './RulesLooksRows.svelte';
 	import DefaultBackgroundRow from './DefaultBackgroundRow.svelte';
 	import BoardBackgroundRow from '#lib/features/grimoire/BoardBackgroundRow.svelte';
 	import { boardBackground } from '#lib/features/grimoire/board-background.svelte.ts';
@@ -53,9 +52,6 @@
 	<!-- The corner's lines, the same choices as the eyes in Game info (Trevor, 2026-10-24). -->
 	<SettingHeading title={t('settings.groupCorner')} />
 	{#each CORNER_LINES as line (line)}<CornerLineToggle {line} />{/each}
-
-	<SettingHeading title={t('settings.groupRules')} />
-	<RulesLooksRows />
 </SettingGroup>
 
 <!-- Pinch to zoom: a touch gesture, not text (Trevor, 2026-10-27: moved from Text). It zooms

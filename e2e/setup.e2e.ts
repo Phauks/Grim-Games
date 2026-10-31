@@ -315,6 +315,13 @@ test("Travellers can join the bag: the edition's are listed, the rest are a sear
 		['demon', '/ 1']
 	])
 		await expect(page.getByTestId(`count-info-${type}`)).toContainText(expected);
+	// Taken out, a Traveller not recommended leaves the list for its Add dialog again, while
+	// a recommended one stays listed (Trevor, 2026-10-31).
+	await choice(page, 'Harlot').tap();
+	await expect(choice(page, 'Harlot')).toHaveCount(0);
+	await choice(page, 'Scapegoat').tap();
+	await choice(page, 'Scapegoat').tap();
+	await expect(choice(page, 'Scapegoat')).toHaveAttribute('aria-pressed', 'false');
 	await noSidewaysScroll(page);
 });
 
@@ -347,9 +354,16 @@ test('Fabled and Loric are added from their own closed sections, not to the bag'
 	// In play as a rule character, so the bag's counts don't change.
 	for (const type of ['townsfolk', 'outsider', 'minion', 'demon', 'traveller'])
 		await expect(page.getByTestId(`count-${type}`)).toHaveText('0');
-	// A tap takes it out again, and it stays listed so that can be undone.
+	// A tap takes it out again, and it goes back to its Add dialog (Trevor, 2026-10-31).
 	await choice(page, 'Sentinel').tap();
-	await expect(choice(page, 'Sentinel')).toHaveAttribute('aria-pressed', 'false');
+	await expect(choice(page, 'Sentinel')).toHaveCount(0);
+	await page.getByRole('button', { name: 'Add a Fabled' }).tap();
+	await dialog.getByRole('searchbox').fill('Sentinel');
+	await expect(dialog.getByRole('button', { name: /^Sentinel/ })).toHaveAttribute(
+		'aria-pressed',
+		'false'
+	);
+	await page.keyboard.press('Escape');
 	await noSidewaysScroll(page);
 });
 
