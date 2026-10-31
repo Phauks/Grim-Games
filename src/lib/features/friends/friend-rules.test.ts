@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { MAX_FRIENDS, MAX_PENDING, REQUESTS_PER_DAY } from './friends-protocol.ts';
 import {
 	gamePlayers,
+	sinceUnit,
 	NO_RELATION,
 	planReceive,
 	planSend,
@@ -101,5 +102,25 @@ describe('who played a finished game', () => {
 			{ memberId: 'm5', name: 'Ann again', seatId: 's2' }
 		];
 		expect(gamePlayers({ m1: 'ann', m5: 'ann' }, members)).toEqual([{ id: 'ann', name: 'Ann' }]);
+	});
+});
+
+describe('how long ago a friend was last seen', () => {
+	const hour = 60 * 60 * 1000;
+	const now = 1_000 * 24 * hour;
+
+	it('counts hours within a day, this hour at first', () => {
+		expect(sinceUnit(now - 10 * 60 * 1000, now)).toEqual({ value: 0, unit: 'hour' });
+		expect(sinceUnit(now - 5 * hour, now)).toEqual({ value: -5, unit: 'hour' });
+	});
+
+	it('then days, weeks and months', () => {
+		expect(sinceUnit(now - 2 * 24 * hour, now)).toEqual({ value: -2, unit: 'day' });
+		expect(sinceUnit(now - 15 * 24 * hour, now)).toEqual({ value: -2, unit: 'week' });
+		expect(sinceUnit(now - 65 * 24 * hour, now)).toEqual({ value: -2, unit: 'month' });
+	});
+
+	it('reads a time from a fast clock as now', () => {
+		expect(sinceUnit(now + hour, now)).toEqual({ value: 0, unit: 'hour' });
 	});
 });

@@ -75,6 +75,7 @@ import {
 	accountTags,
 	linkAccount,
 	hostedAccounts,
+	notePresence,
 	requestAccount,
 	roomPlayers,
 	seatAccount,
@@ -188,6 +189,22 @@ export class Room extends DurableObject<RoomEnv> {
 		return hostedAccounts(this.ctx, requester);
 	}
 
+	/**
+	 * Whether friends of the room's people may join without an invite (plan F5): read, or with
+	 * `open` set, by the room's Storyteller only. Off unless they turn it on.
+	 */
+	async friendsJoin(requester: string, open?: boolean): Promise<boolean | undefined> {
+		if (!(await this.load()) || !(await hostedAccounts(this.ctx, requester))) return undefined;
+		if (open !== undefined) await this.ctx.storage.put('friendsJoin', open);
+		return (await this.ctx.storage.get<boolean>('friendsJoin')) === true;
+	}
+
+	/** Whether this room is open and lets friends join without an invite. */
+	async friendsMayJoin(): Promise<boolean> {
+		if (!(await this.load())) return false;
+		return (await this.ctx.storage.get<boolean>('friendsJoin')) === true;
+	}
+
 	async fetch(request: Request): Promise<Response> {
 		const room = await this.load();
 		const image = parseRoomImagePath(new URL(request.url).pathname);
@@ -257,6 +274,7 @@ export class Room extends DurableObject<RoomEnv> {
 				}
 				ws.serializeAttachment({ role: 'host' } satisfies Attachment);
 				await linkAccount(this.ctx, ws, { host: true });
+				this.ctx.waitUntil(notePresence(this.ctx, this.env, ws, true).catch(() => {}));
 				// Phones built before the Storyteller's app hear of it, and look for the update.
 				// Its app says whether it shows players' messages; phones offer to send one only then.
 				const built = setInbox(setStorytellerBuild(room, message.builtAt), message.inbox);
@@ -315,6 +333,7 @@ export class Room extends DurableObject<RoomEnv> {
 			}
 			ws.serializeAttachment({ role: 'player', memberId } satisfies Attachment);
 			await linkAccount(this.ctx, ws, { memberId });
+			this.ctx.waitUntil(notePresence(this.ctx, this.env, ws, true).catch(() => {}));
 			// Saved even when nothing changed, so the Storyteller sees this phone is here now.
 			await this.save(markHere(joined, memberId));
 			const script = await this.ctx.storage.get<ScriptView>('script');
@@ -617,6 +636,9 @@ export class Room extends DurableObject<RoomEnv> {
 	 */
 	async webSocketClose(ws: WebSocket): Promise<void> {
 		const who = ws.deserializeAttachment() as Attachment | null;
+		if (who?.role === 'host' || who?.role === 'player') {
+			this.ctx.waitUntil(notePresence(this.ctx, this.env, ws, false).catch(() => {}));
+		}
 		if (who?.role === 'viewer') this.tellWatchers(ws);
 		if (who?.role === 'admin') this.tellGrimoireWanted(ws);
 		if (who?.role === 'player' || who?.role === 'claim') {

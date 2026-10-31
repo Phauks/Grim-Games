@@ -5,6 +5,7 @@ import {
 	INVITES_PER_DAY,
 	MAX_INVITES,
 	MAX_RECENT,
+	PRESENCE_TTL_MS,
 	REQUEST_TTL_MS,
 	type RequestRefusal
 } from '../../src/lib/features/friends/friends-protocol.ts';
@@ -124,6 +125,12 @@ export class FriendBook extends DurableObject {
 			);
 			-- When each invite this account sent went, for the day's limit.
 			CREATE TABLE IF NOT EXISTS invited (at INTEGER NOT NULL);
+			-- Live rooms this account is connected to (plan F5), and whether friends see it.
+			CREATE TABLE IF NOT EXISTS playing (code TEXT PRIMARY KEY, at INTEGER NOT NULL);
+			CREATE TABLE IF NOT EXISTS presence (
+				id INTEGER PRIMARY KEY CHECK (id = 1),
+				shown INTEGER NOT NULL
+			);
 		`);
 	}
 
@@ -305,6 +312,38 @@ export class FriendBook extends DurableObject {
 		this.sql.exec('DELETE FROM inbox WHERE sender = ?', id);
 		this.sql.exec('DELETE FROM recent WHERE id = ?', id);
 		this.sql.exec('DELETE FROM invite WHERE sender = ?', id);
+	}
+
+	/** This account connected to the live room `code` (plan F5). */
+	async joinedRoom(code: string, now: number): Promise<void> {
+		this.sql.exec('INSERT OR REPLACE INTO playing (code, at) VALUES (?, ?)', code, now);
+	}
+
+	/** This account's last device left the room `code`. */
+	async leftRoom(code: string): Promise<void> {
+		this.sql.exec('DELETE FROM playing WHERE code = ?', code);
+	}
+
+	/** Shown to friends unless turned off (Trevor approved the plan's switch, 2026-10-28). */
+	async showsPresence(): Promise<boolean> {
+		const row = this.sql
+			.exec<{ shown: number }>('SELECT shown FROM presence WHERE id = 1')
+			.toArray()[0];
+		return row ? row.shown === 1 : true;
+	}
+
+	async setShowsPresence(shown: boolean): Promise<void> {
+		this.sql.exec('INSERT OR REPLACE INTO presence (id, shown) VALUES (1, ?)', shown ? 1 : 0);
+	}
+
+	/** The rooms this account is in, latest first; none while it hides its presence. */
+	async rooms(now: number): Promise<string[]> {
+		this.sql.exec('DELETE FROM playing WHERE at < ?', now - PRESENCE_TTL_MS);
+		if (!(await this.showsPresence())) return [];
+		return this.sql
+			.exec<{ code: string }>('SELECT code FROM playing ORDER BY at DESC')
+			.toArray()
+			.map((row) => row.code);
 	}
 
 	/** Counts an invite this account sends against the day's limit; false when it is used up. */
