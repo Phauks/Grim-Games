@@ -2,6 +2,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { SEATED_TYPES, type SeatedType, type SetupAnalysis } from '#lib/core/rules/index.ts';
 	import { TYPE_PLURALS } from '#lib/features/reference/labels.ts';
+	import { typeTone } from '#lib/core/data/character-type.ts';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import Popover from '#lib/ui/primitives/Popover.svelte';
 	import SetupTable from './SetupTable.svelte';
@@ -93,6 +94,7 @@
 			type="button"
 			class="cell"
 			data-type={type}
+			data-type-band={typeTone(type)}
 			data-ok={ok ? '' : undefined}
 			aria-haspopup="dialog"
 			title={t('setup.countInfo', { type: TYPE_PLURALS[type] })}
@@ -114,7 +116,12 @@
 			{/if}
 		</button>
 	{/each}
-	<div class="cell" data-type="traveller" data-ok={game || travellersOk ? '' : undefined}>
+	<div
+		class="cell"
+		data-type="traveller"
+		data-type-band="traveller"
+		data-ok={game || travellersOk ? '' : undefined}
+	>
 		<span class="label">{TYPE_PLURALS.traveller}</span>
 		<span class="value"
 			><span class="chosen" data-testid="count-traveller">{travellers}</span>{#if !game}<span
@@ -179,6 +186,17 @@
 	}
 	.cell[data-ok] {
 		box-shadow: none;
+	}
+	/* Each type's box in its tokens' colour (Trevor, 2026-10-31, "B · Band"); a count that
+	   doesn't match yet is ringed in gold, which reads on the blue and red alike (Trevor:
+	   "make the warnings a different color perhaps, like gold"). */
+	.cell[data-type-band] {
+		background: var(--type-band);
+		color: var(--on-type-band);
+		box-shadow: inset 0 0 0 3px var(--count-warn);
+	}
+	.cell[data-type-band][data-ok] {
+		box-shadow: var(--button-ring);
 	}
 	.label {
 		font-size: 0.72rem;

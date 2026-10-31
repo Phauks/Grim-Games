@@ -89,6 +89,7 @@ longest cell, so two PRs that each added a row used to conflict over the whole t
 - A builder's "Open a saved …" list: `ui/builder/OpenSavedDialog.svelte` (enforced by review)
 - A table (paging, column picker, a filter on every column): `ui/table/DataTable.svelte`: each column gives `value`, `filterable` or a `noFilter` reason (`column-filter.ts`) (enforced by review)
 - A character name: `features/characters/CharacterBadge.svelte` (enforced by `grim/names-as-badges`)
+- A character type in its tokens' colour (a type heading, Character selection's counts boxes): `data-type-band` with `typeTone(type)`, whose fill and text (`--type-band`, `--on-type-band`) come from `ui/base.css`; Collapsible's `tone` draws the band (Trevor, 2026-10-31, picked "B · Band"); a count that doesn't match yet is ringed in `--count-warn` gold (enforced by review)
 - An alignment in its colour (Good, Evil, Not set): `features/grimoire/AlignmentPill.svelte` (`text` for words such as "Good wins") (enforced by review)
 - A night answer's set of characters (the Godfather's Outsiders in play, "+1 Outsider", "None"): `features/grimoire/CharacterSet.svelte`, in Valid Information and its Why (enforced by review)
 - The board's lower left corner (script name, mode and rules, join code, night/day, Game time, watchers): `features/grimoire/BoardCorner.svelte`, its lines from `cornerLines` in `features/grimoire/corner-lines.ts`; a player's grim gets the same lines through the room (`PublicCorner`) (enforced by review)

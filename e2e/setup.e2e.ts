@@ -508,6 +508,33 @@ test('Random label order mixes the bag tile labels, so colours are not always a 
 	await expect(order).toBeDisabled();
 });
 
+test('bag tiles can show kanji numerals or Norse runes', async ({ page }, info) => {
+	await selectionFor(page, 5);
+	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
+	await page.getByRole('button', { name: 'Build bag' }).tap();
+	await expect(page).toHaveURL(/\/draw$/);
+	const settings = page.getByTestId('bag-settings');
+	const pick = async (option: string) => {
+		await page.getByRole('button', { name: 'Bag draw' }).tap();
+		await settings.getByRole('combobox', { name: 'Bag tile labels' }).tap();
+		await page.getByRole('option', { name: option }).tap();
+		await page.keyboard.press('Escape');
+	};
+
+	// Kanji numerals (Trevor, 2026-10-31): the tile shows the kanji and is named by it.
+	await pick('Kanji numerals');
+	await expect(page.getByRole('button', { name: 'Tile 一', exact: true })).toHaveText('一');
+	await expect(page.getByRole('button', { name: 'Tile 五', exact: true })).toHaveText('五');
+	await page.screenshot({ path: info.outputPath('kanji.png') });
+
+	// Norse runes: the tile shows the rune and is named by the rune's name.
+	await pick('Norse runes');
+	await expect(page.getByRole('button', { name: 'Tile Fehu', exact: true })).toHaveText('ᚠ');
+	await expect(page.getByRole('button', { name: 'Tile Raidho', exact: true })).toHaveText('ᚱ');
+	await page.screenshot({ path: info.outputPath('runes.png') });
+	await noSidewaysScroll(page);
+});
+
 test('bag tiles show numbers, letters, symbols, colours, emoji or a random mix, centred on the token', async ({
 	page
 }) => {
