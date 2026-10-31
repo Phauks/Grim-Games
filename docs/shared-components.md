@@ -36,6 +36,7 @@ longest cell, so two PRs that each added a row used to conflict over the whole t
 - Sections one under another, wrapped (a night, a sheet's type): `ui/layout/SectionStack.svelte` draws the line between each two; `edge` adds one above the first, under a heading or a field (the player's Script, Night and Notes tabs, the Library sidebar, Info tokens, the changelog) (enforced by `e2e/caret-dividers.e2e.ts`)
 - An element appearing or leaving (fade and short move): `rise` from `ui/motion.ts` (token speeds, none under reduced motion; transform and opacity only) (enforced by `no-restricted-imports`)
 - A labelled text field, one line or several: `ui/primitives/TextField.svelte`; `lists` makes Enter carry a typed list on, "- ", "1. ", "a) " (`core/text/lists.ts`; notes) (enforced by `grim/text-field`)
+- Text with bold, italic, underline and colour (notes, info cards): `ui/primitives/RichTextField.svelte`, tools in a row above the box, stored as marks (`core/text/rich.ts`, drawn by `features/info-tokens/InfoTokenText.svelte`); `multiline` and `lists` as in TextField (Trevor, 2026-10-31: one box for notes and cards) (enforced by review)
 - A search box: `ui/primitives/SearchField.svelte` (enforced by `grim/text-field`)
 - A list of short texts with add and remove: `ui/primitives/TextListField.svelte` (enforced by review)
 - The clear X on a field: `ui/primitives/ClearableField.svelte` (TextField has it) (enforced by `grim/clearable-field`)

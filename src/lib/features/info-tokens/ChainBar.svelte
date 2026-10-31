@@ -5,7 +5,7 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
-	import { plainText } from './bold.ts';
+	import { plainText } from '#lib/core/text/rich.ts';
 	import { chainLabel, detailLabel, moved, type ChainCard } from './chain.ts';
 
 	interface Props {
