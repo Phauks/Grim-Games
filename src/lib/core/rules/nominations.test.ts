@@ -4,6 +4,7 @@ import { dispatch, type Command } from '#lib/core/engine/index.ts';
 import { castGame } from '#lib/core/model/fixtures.test-support.ts';
 import {
 	characterNominationPrompts,
+	nomineeChooses,
 	extraNominationOpen,
 	extraNominators,
 	mayNominate,
@@ -252,5 +253,30 @@ describe('characterNominationPrompts', () => {
 				poisoned.ctx.characters
 			)
 		).toEqual([]);
+	});
+});
+
+// https://wiki.bloodontheclocktower.com/Big_Wig: each nominee chooses a player to speak for them.
+describe('nomineeChooses', () => {
+	it('asks whom the nominee chose while the Big Wig is in play', () => {
+		const { session, ctx, seats } = castGame(['chef', 'empath', 'imp'], {
+			type: 'AddRuleCharacter',
+			characterId: 'bigwig'
+		});
+		expect(nomineeChooses(session.game, ctx.characters)).toEqual(['bigwig']);
+		expect(
+			characterNominationPrompts(
+				session.game,
+				{ nominator: seats[0], nominee: seats[2] },
+				ctx.characters
+			)
+		).toEqual([
+			{ kind: 'nominee-chooses', characterId: 'bigwig', nominator: seats[0], nominee: seats[2] }
+		]);
+	});
+
+	it('asks nothing without the Big Wig', () => {
+		const { session, ctx } = castGame(['chef', 'empath', 'imp']);
+		expect(nomineeChooses(session.game, ctx.characters)).toEqual([]);
 	});
 });

@@ -86,6 +86,34 @@ describe('Nominate', () => {
 		s = run(s, ctx, { type: 'RemoveDayEntry', entryId });
 		expect(s.game.today.entries).toEqual([]);
 	});
+
+	// https://wiki.bloodontheclocktower.com/Big_Wig: the nominee chooses a player to speak.
+	it('records whom the nominee chose, kept while the nominee stays the same', () => {
+		const { session, ctx, seats } = setup();
+		let s = run(session, ctx, { type: 'Nominate', nominator: seats[0], nominee: seats[1] });
+		const entryId = s.game.today.entries[0].entryId;
+		s = run(s, ctx, { type: 'ChooseForNomination', entryId, chosen: seats[2] });
+		expect(s.game.today.entries[0]).toMatchObject({ chosen: seats[2] });
+		expect(warned(s, ctx, { type: 'ChooseForNomination', entryId, chosen: seats[2] })).toEqual([
+			'no-change'
+		]);
+		const nominator = run(s, ctx, {
+			type: 'EditNomination',
+			entryId,
+			nominator: seats[3],
+			nominee: seats[1]
+		});
+		expect(nominator.game.today.entries[0]).toMatchObject({ chosen: seats[2] });
+		const nominee = run(s, ctx, {
+			type: 'EditNomination',
+			entryId,
+			nominator: seats[0],
+			nominee: seats[3]
+		});
+		expect('chosen' in nominee.game.today.entries[0]).toBe(false);
+		const cleared = run(s, ctx, { type: 'ChooseForNomination', entryId });
+		expect('chosen' in cleared.game.today.entries[0]).toBe(false);
+	});
 });
 
 describe('SetDayMark', () => {

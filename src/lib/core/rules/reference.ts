@@ -34,6 +34,8 @@ import { setupPrepOf } from './setup-reminders.ts';
 export type ReferenceSegment =
 	| { kind: 'character'; characterId: CharacterId }
 	| { kind: 'target'; token: ReminderLabel }
+	/** A player from today's nominations: the one a nominee chose, or the nominee. */
+	| { kind: 'nomination'; who: 'chosen' | 'nominee' }
 	| { kind: 'value'; placeholder: string }
 	| { kind: 'text'; text: string };
 
@@ -212,10 +214,14 @@ function dayFor(character: Character, name: (id: CharacterId) => string, problem
 					'self' in part
 						? { kind: 'character', characterId: character.id }
 						: 'target' in part
-							? { kind: 'target', token: spec.when?.reminder ?? '' }
-							: 'value' in part
-								? { kind: 'value', placeholder: part.placeholder }
-								: { kind: 'text', text: part.text }
+							? spec.when?.nomineeChose
+								? { kind: 'nomination', who: 'chosen' }
+								: { kind: 'target', token: spec.when?.reminder ?? '' }
+							: 'nominee' in part
+								? { kind: 'nomination', who: 'nominee' }
+								: 'value' in part
+									? { kind: 'value', placeholder: part.placeholder }
+									: { kind: 'text', text: part.text }
 				),
 				when: describeWhen(spec, character, name)
 			});
@@ -223,7 +229,11 @@ function dayFor(character: Character, name: (id: CharacterId) => string, problem
 				if (token !== undefined && !tokens.has(token))
 					problems.push(`A day reminder uses “${token}”, which is not one of its reminder tokens.`);
 			}
-			if (spec.template.some((p) => 'target' in p) && !spec.when?.reminder)
+			if (
+				spec.template.some((p) => 'target' in p) &&
+				!spec.when?.reminder &&
+				!spec.when?.nomineeChose
+			)
 				problems.push('A day reminder names a player but no reminder token says which.');
 		}
 		if (entry.impairable) {
@@ -353,7 +363,11 @@ export function referenceText(
 					? `[${name(s.characterId)}]`
 					: s.kind === 'value'
 						? `(${s.placeholder})`
-						: `[player with “${s.token}”]`
+						: s.kind === 'nomination'
+							? s.who === 'chosen'
+								? '[the player the nominee chose]'
+								: '[the nominee]'
+							: `[player with “${s.token}”]`
 		)
 		.join(' ');
 }
