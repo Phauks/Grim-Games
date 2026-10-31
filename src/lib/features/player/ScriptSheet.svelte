@@ -161,8 +161,8 @@
 	count?: number
 )}
 	{#if flat}
-		<section data-tone={tone}>
-			<h2>{title}</h2>
+		<section>
+			<h2 data-type-band={tone}>{title}</h2>
 			{@render body()}
 		</section>
 	{:else}
@@ -353,22 +353,15 @@
 		font-size: 1.1rem;
 		color: var(--heading);
 	}
-	/* Townsfolk, Outsiders, Minions, Demons, Fabled and Loric take their tokens' colours in
-	   every theme (Trevor, 2026-10-29). */
-	section[data-tone='good'] h2 {
-		color: var(--good);
-	}
-	section[data-tone='evil'] h2 {
-		color: var(--evil);
-	}
-	section[data-tone='traveller'] h2 {
-		color: var(--traveller-text);
-	}
-	section[data-tone='fabled'] h2 {
-		color: var(--fabled);
-	}
-	section[data-tone='loric'] h2 {
-		color: var(--loric);
+	/* Each type's heading is a band in its tokens' colour, as on screen (Trevor, 2026-10-31;
+	   colours in base.css), kept when printed like the rows' name bands. */
+	h2[data-type-band] {
+		padding: var(--space-1) var(--space-3);
+		border-radius: var(--radius-full);
+		background: var(--type-band);
+		color: var(--on-type-band);
+		print-color-adjust: exact;
+		-webkit-print-color-adjust: exact;
 	}
 
 	/* Compact: name and ability side by side, more per row (Trevor approved, 2026-10-16). */
