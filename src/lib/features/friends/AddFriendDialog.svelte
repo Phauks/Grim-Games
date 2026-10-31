@@ -1,11 +1,7 @@
 <script lang="ts">
 	import { normaliseUsername, USERNAME_MAX } from '#lib/features/account/account-protocol.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import Dialog from '#lib/ui/primitives/Dialog.svelte';
-	import IconButton from '#lib/ui/primitives/IconButton.svelte';
-	import QrScanner from '#lib/ui/share/QrScanner.svelte';
-	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
-	import TextField from '#lib/ui/primitives/TextField.svelte';
+	import ScanFieldDialog from './ScanFieldDialog.svelte';
 	import { friends } from './friends.svelte.ts';
 	import { readFriendLink } from './friends-protocol.ts';
 
@@ -28,21 +24,6 @@
 		}
 	});
 
-	let scanning = $state(false);
-	let scanProblem = $state('');
-
-	function scanned(text: string): boolean {
-		const read = readFriendLink(text);
-		if (!read) {
-			scanProblem = t('friends.addDialog.notFriendCode');
-			return false;
-		}
-		name = read;
-		error = '';
-		scanning = false;
-		return true;
-	}
-
 	async function send(): Promise<void> {
 		if (!valid || busy) return;
 		busy = true;
@@ -59,53 +40,17 @@
 	}
 </script>
 
-<Dialog bind:open title={t('friends.addDialog.title')}>
-	<TextField
-		plain
-		label={t('friends.addDialog.username')}
-		bind:value={name}
-		maxlength={USERNAME_MAX}
-		autocomplete="off"
-		spellcheck={false}
-		invalid={name.trim() !== '' && !valid}
-		disabled={busy}
-		oncommit={() => void send()}
-		end={scan}
-	/>
-	<!-- Always there, so an error never moves the buttons. -->
-	<p class="error" role="status">{error}</p>
-	{#snippet actions()}
-		<ModalActions
-			onCancel={() => (open = false)}
-			onConfirm={() => void send()}
-			confirmLabel={t('friends.addDialog.send')}
-			disabled={!valid || busy}
-		/>
-	{/snippet}
-</Dialog>
-
-{#snippet scan()}
-	<!-- The camera in the field, as on Join game (Trevor, 2026-10-30). -->
-	<IconButton
-		icon="scan"
-		label={t('share.scan')}
-		disabled={busy}
-		onclick={() => {
-			scanProblem = '';
-			scanning = true;
-		}}
-	/>
-{/snippet}
-
-<Dialog bind:open={scanning} title={t('share.scan')}>
-	{#if scanning}<QrScanner onRead={scanned} problem={scanProblem} />{/if}
-</Dialog>
-
-<style>
-	.error {
-		margin: var(--space-1) 0 0;
-		min-height: 1lh;
-		color: var(--evil-text);
-		overflow-wrap: anywhere;
-	}
-</style>
+<ScanFieldDialog
+	bind:open
+	bind:value={name}
+	title={t('friends.addDialog.title')}
+	label={t('friends.addDialog.username')}
+	maxlength={USERNAME_MAX}
+	valid={!!valid}
+	{busy}
+	{error}
+	confirmLabel={t('friends.addDialog.send')}
+	onConfirm={() => void send()}
+	read={readFriendLink}
+	notCode={t('friends.addDialog.notFriendCode')}
+/>

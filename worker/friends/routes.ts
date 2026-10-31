@@ -33,12 +33,16 @@ import { normaliseRoomCode } from '../../src/lib/core/sync/room-code.ts';
 import type { Room } from '../room.ts';
 import type { GamePlayer } from '../../src/lib/features/friends/friend-rules.ts';
 import type { BookEntry, FriendBook, RecentEntry } from './book.ts';
+import type { FriendGroup } from './group.ts';
+import { handleGroups, leaveGroups } from './groups.ts';
 import { friendInvites, handleInvites } from './invites.ts';
 import { friendsPresence, handleFriendRoom, showsPresence } from './presence.ts';
 import { handleFriendScripts } from './scripts.ts';
 
 export interface FriendsEnv extends AccountEnv {
 	FRIEND_BOOKS: DurableObjectNamespace<FriendBook>;
+	/** Groups by join code (plan F6). */
+	FRIEND_GROUPS: DurableObjectNamespace<FriendGroup>;
 	/** Requests by username per account, so usernames can't be tried one after another. */
 	FRIEND_LOOKUPS?: RateLimit;
 	DATA?: DataBinding;
@@ -286,7 +290,8 @@ export async function recordGame(env: BookEnv, game: string, players: GamePlayer
 }
 
 /** Called when an account is deleted: every account it was linked to forgets it. */
-export async function forgetFriends(env: BookEnv, accountId: string): Promise<void> {
+export async function forgetFriends(env: FriendsEnv, accountId: string): Promise<void> {
+	await leaveGroups(env, accountId);
 	const linked = await friendBook(env, accountId).erase();
 	await Promise.all(linked.map((other) => friendBook(env, other).forget(accountId)));
 }
@@ -353,6 +358,9 @@ export async function handleFriends(
 
 	const room = await handleFriendRoom(request, env, path, accountId);
 	if (room) return room;
+
+	const groups = await handleGroups(request, env, path, accountId);
+	if (groups) return groups;
 
 	const action = path.slice(FRIENDS_API.length + 1);
 	if (method === 'POST' && isFriendAction(action) && path === friendActionApi(action)) {
