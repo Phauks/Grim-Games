@@ -989,6 +989,12 @@
 	onReopen={() => (reopenOpen = true)}
 	onNewGame={watching ? undefined : () => newGameSheet?.begin()}
 	onCloseRoom={!watching && roomHost().code ? () => roomHost().close() : undefined}
+	onShareGrim={!watching &&
+	roomHost().status === 'open' &&
+	roomHost().ended?.gameId === game.gameId &&
+	roomHost().revealed?.gameId !== game.gameId
+		? () => roomHost().reveal(grimoire.open) || toast(t('room.shareGrim.failed'))
+		: undefined}
 	onEnd={() => (endOpen = true)}
 />
 {#if !watching}<NewGameSheet
