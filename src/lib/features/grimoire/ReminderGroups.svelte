@@ -12,14 +12,16 @@
 		groups: readonly { key: string; caption?: string; items: readonly T[] }[];
 		keyOf: (item: T) => string;
 		item: Snippet<[T]>;
+		/** The tokens' diameter in px, which sets how far their name bands reach past them. */
+		size: number;
 	}
 
-	let { label, groups, keyOf, item }: Props = $props();
+	let { label, groups, keyOf, item, size }: Props = $props();
 
 	const empty = $derived(groups.every((g) => g.items.length === 0));
 </script>
 
-<div class="groups" data-testid="reminder-groups">
+<div class="groups" data-testid="reminder-groups" style:--d="{size}px">
 	{#each groups as group (group.key)}
 		{#if group.items.length > 0}
 			<div class="group" data-group={group.key}>
@@ -70,8 +72,13 @@
 		position: relative;
 		display: grid;
 		place-items: center;
-		/* Room for the name band, which is wider than the token, and the label under it. */
-		padding-inline: 0.75rem;
+		/* Room for the name band, as wide as the Reminder words setting lets it run past the
+		   token (BoardReminder .label, plus its padding), so the first column's isn't cut off
+		   (Trevor, 2026-10-31: the Scarlet Woman's "Is the Demon"). */
+		padding-inline: max(
+			0.75rem,
+			calc(var(--d) * (var(--reminder-label-width, 1.5) - 1) / 2 + 0.4rem)
+		);
 		padding-bottom: calc(0.375 * var(--u));
 	}
 	.none {

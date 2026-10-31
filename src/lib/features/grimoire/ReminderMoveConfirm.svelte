@@ -20,7 +20,7 @@
 	 * Moving a reminder that normally stays where it was put (an "Is The Drunk", a Poisoned
 	 * on the Poisoner's target) asks first (Trevor, 2026-10-16), with why it stays and any
 	 * character in play that does move tokens. Taking one off its seat, back to the reminder
-	 * bank or loose on the board, asks the same way, and so does giving a Fabled or Loric a
+	 * bank, asks the same way, and so does giving a Fabled or Loric a
 	 * reminder that isn't its own (Trevor, 2026-10-17). Confirming does it as usual (History
 	 * can undo it); nothing is locked.
 	 */
@@ -88,16 +88,6 @@
 		fromSeat(reminderId, { bank: true }, () =>
 			grimoire.run({ type: 'RemoveReminder', reminderId })
 		);
-	}
-
-	/**
-	 * Leaves the reminder loose on the board, belonging to no one (Trevor, 2026-10-17);
-	 * `then` runs once it is loose.
-	 */
-	export function requestLoose(reminderId: ReminderId, then: () => void): void {
-		fromSeat(reminderId, { loose: true }, () => {
-			if (grimoire.run({ type: 'LoosenReminder', reminderId })) then();
-		});
 	}
 
 	/**

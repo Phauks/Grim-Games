@@ -13,7 +13,6 @@
 	import { placingAlignment } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import type { StepFocus } from './step-focus.svelte.ts';
-	import { boardLooks } from './board-looks.svelte.ts';
 	import { copiedLook, isGeneric, type StepReminders } from './reminders.ts';
 	import GenericTokenDialog from './GenericTokenDialog.svelte';
 	import type { ReminderHand } from './reminder-hand.svelte.ts';
@@ -47,8 +46,6 @@
 		focusMode?: StepFocus['mode'];
 		/** The seat under a point (in % of the board), if any. */
 		seatAt: (at: SeatPoint, onToken?: boolean) => SeatId | undefined;
-		/** Whether a reminder may stay at this client point (not over the bank or buttons). */
-		spotAllowed: (x: number, y: number) => boolean;
 		/** The Fabled or Loric under a client point, if any. */
 		ruleAt: (x: number, y: number, reminder: Reminder) => CharacterId | undefined;
 		/**
@@ -92,7 +89,6 @@
 		focus,
 		focusMode = 'front',
 		seatAt,
-		spotAllowed,
 		ruleAt,
 		onRule,
 		onHints,
@@ -285,15 +281,12 @@
 	});
 
 	const seatsFor = (item: BankItem) => (item.setup ? traySeats(item.setup.suggestion) : []);
-	/** The seats marked for a token in hand, dragged or held; none in loose mode. */
-	const hintsFor = (item: BankItem, target?: SeatId) =>
-		loose
-			? { seats: [] }
-			: {
-					seats: seatsFor(item),
-					target,
-					reminder: item.token?.like ?? { characterId: item.characterId, label: item.label }
-				};
+	/** The seats marked for a token in hand, dragged or held. */
+	const hintsFor = (item: BankItem, target?: SeatId) => ({
+		seats: seatsFor(item),
+		target,
+		reminder: item.token?.like ?? { characterId: item.characterId, label: item.label }
+	});
 
 	function place(
 		item: Pick<BankItem, 'characterId' | 'label' | 'ownerSeatId' | 'token'>,
@@ -309,12 +302,6 @@
 			tokenId: token?.tokenId
 		});
 	}
-
-	/**
-	 * Loose mode ("stay where dropped", Trevor 2026-10-18): nothing is given to a seat. A
-	 * token goes where it is dropped, seats are not marked, and a tap doesn't offer seats.
-	 */
-	const loose = $derived(boardLooks.current.reminders === 'free');
 
 	// ── Drag a token from the bank onto a seat ──
 	let drag = $state<{ item: BankItem; at: SeatPoint; overNew: boolean } | undefined>();
@@ -347,15 +334,6 @@
 		// On a Fabled or Loric: it holds the reminder (Trevor, 2026-10-17).
 		const rule = ruleAt(x, y, reminder);
 		if (rule) return onRule(reminder, rule, tokenId);
-		const free = loose && spotAllowed(x, y);
-		// Loose mode: anywhere in the board's open area, seats too; it belongs to no one.
-		if (loose) {
-			if (free && grimoire.run({ type: 'PlaceLooseReminder', reminder, tokenId })) {
-				const added = grimoire.game.looseReminders?.at(-1);
-				if (added) grimoire.setReminderSpot(added.reminderId, at);
-			}
-			return;
-		}
 		if (!target) return;
 		// Any seat will do: the Storyteller can override the suggestion.
 		place(item, target);
@@ -497,6 +475,7 @@
 				groups={binGroups}
 				keyOf={(item) => item.key}
 				item={binToken}
+				{size}
 			/>
 		</div>
 	{:else}

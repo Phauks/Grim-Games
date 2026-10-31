@@ -32,7 +32,6 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import NumberSelect from '#lib/ui/primitives/NumberSelect.svelte';
 	import { placingAlignment, seatMisfits } from './board.ts';
-	import { boardLooks } from './board-looks.svelte.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { givesNumber, seatName, stepHolders, stepName } from './night-steps.ts';
 	import { reminderCopies, reminderKey } from './reminders.ts';
@@ -166,11 +165,11 @@
 	}
 	/**
 	 * The seats the token being put doesn't fit, faded in the list (Trevor, 2026-10-27: only
-	 * valid picks, e.g. only Minions for the Preacher). Loose mode gives tokens to no seat.
+	 * valid picks, e.g. only Minions for the Preacher).
 	 */
 	const misfits = $derived.by(() => {
 		const id = step?.character?.id;
-		if (!choosing || !id || boardLooks.current.reminders === 'free') return undefined;
+		if (!choosing || !id) return undefined;
 		return seatMisfits(
 			game,
 			{ characterId: id, label: choosing.label },

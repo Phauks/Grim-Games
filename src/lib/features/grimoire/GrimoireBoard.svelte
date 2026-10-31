@@ -297,7 +297,6 @@
 		size,
 		board: boardSize,
 		element: board,
-		free: boardLooks.current.reminders === 'free',
 		confirm: moveConfirm
 	}));
 	const dragOrigin = $derived(remDrag.origin);
@@ -423,13 +422,11 @@
 	// ── The reminder bank under the board (Trevor, 2026-10-16): setup suggestions until
 	// they are all placed or dismissed (or the first day starts), then every reminder left.
 	// The Storyteller can switch at any time.
-	const looseMode = $derived(boardLooks.current.reminders === 'free');
 	const hints = new SeatHints(() => ({
 		grimoire,
 		game,
 		characters,
 		dragged: dragOrigin?.reminder,
-		loose: looseMode,
 		holders: nw.holders
 	}));
 	// The setup flow's last step lands here with its setup reminders in the bank.
@@ -843,7 +840,6 @@
 					: undefined}
 				focusMode={stepFocus.current.mode}
 				seatAt={remDrag.seatAt}
-				spotAllowed={remDrag.spotAllowed}
 				ruleAt={remDrag.ruleAt}
 				dropping={remDrag.drag !== undefined}
 				dropOver={!!remDrag.drag?.overNew}
@@ -1162,13 +1158,8 @@
 		height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
 		min-height: calc(20 * var(--u));
 	}
-	/* The board fills the screen, so its page never scrolls: on a laptop a scrollbar that a
-	   rounding sliver brought in narrowed the board, which took the sliver away again, and the
-	   scrollbar flickered in and out (Trevor, 2026-10-30). No room is kept for one either. */
-	:global(html:has(.grimoire)) {
-		overflow: hidden;
-		scrollbar-gutter: auto;
-	}
+	/* The board page's scroll lock is in GrimoirePage: a board inside a scrolling page (the
+	   final grimoire on a phone, Public Town) leaves that page free to scroll. */
 	/* Mirrors the corner's script name, bottom right above the reminder bank, with the same
 	   halo and no band (Trevor, 2026-10-28). */
 	.fair-play {

@@ -110,7 +110,7 @@ test('every caret has a line between it and what is above it', async ({ page }) 
 		await page.locator('h1, h2').first().waitFor();
 		seen.push(...(await unlined(page, route)));
 	}
-	// Settings' closing groups (Theme's colours, Board's Advanced).
+	// Settings' closing groups (Theme's colours).
 	await page.goto('/settings');
 	await page.getByRole('dialog').last().waitFor();
 	seen.push(...(await unlined(page, 'settings')));

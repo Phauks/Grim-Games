@@ -1,11 +1,12 @@
 /**
  * Dragging a reminder on the board (GrimoireBoard): from a seat, a Fabled or Loric, or loose
  * on the board, onto another seat, a Fabled or Loric, the setup tray, the bank's "+ New token"
- * (a new ∞ token like it), or (loose mode) any free spot. A move goes through ReminderMoveConfirm, so it is one History entry.
+ * (a new ∞ token like it). A move goes through ReminderMoveConfirm, so it is one History entry.
+ * Reminders are always held by a seat (Trevor, 2026-10-31: no "Stay where dropped"); a loose
+ * one from an older build goes on a seat the same way.
  */
 import type { CharacterId } from '#lib/core/data/index.ts';
 import {
-	looseReminders,
 	ruleReminders,
 	trueCharacter,
 	type CharacterLookup,
@@ -39,8 +40,6 @@ export interface ReminderDragContext {
 	board: BoardSize;
 	/** The board element. */
 	element: HTMLElement | undefined;
-	/** Loose mode (Trevor, 2026-10-18): nothing is given to a seat. */
-	free: boolean;
 	confirm: ReturnType<typeof ReminderMoveConfirm> | undefined;
 }
 
@@ -115,22 +114,6 @@ export class ReminderDragging {
 	};
 
 	/**
-	 * Where a free reminder may stay: on the board, but not over the reminder bank, the night
-	 * walk-through, the middle's buttons, the timer or the Fabled and Loric (Trevor, 2026-10-17).
-	 */
-	spotAllowed = (x: number, y: number): boolean => {
-		const { element } = this.#context();
-		if (!element) return false;
-		const inside = (r: DOMRect | undefined) =>
-			!!r && x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
-		if (!inside(element.getBoundingClientRect())) return false;
-		const blocked = element.querySelectorAll(
-			'[data-tray], [data-testid="night-strip"], .centre > *, .board-timer, .rules-edge'
-		);
-		return ![...blocked].some((el) => inside(el.getBoundingClientRect()));
-	};
-
-	/**
 	 * The Fabled or Loric under a client point, if any: its own token, or the grouped stack
 	 * (then the one whose reminder it is, else the first) (Trevor, 2026-10-17).
 	 */
@@ -160,7 +143,7 @@ export class ReminderDragging {
 		end: boolean,
 		tap = false
 	) {
-		const { element, grimoire, game, free, confirm } = this.#context();
+		const { element, grimoire, game, confirm } = this.#context();
 		if (!element) return;
 		const rect = element.getBoundingClientRect();
 		const at = { x: ((x - rect.left) / rect.width) * 100, y: ((y - rect.top) / rect.height) * 100 };
@@ -171,7 +154,7 @@ export class ReminderDragging {
 				reminderId,
 				from,
 				at,
-				target: free || overNew ? undefined : target,
+				target: overNew ? undefined : target,
 				overNew: overNew || undefined
 			};
 			return;
@@ -196,15 +179,6 @@ export class ReminderDragging {
 		if (rule) {
 			if (!ruleReminders(game, rule).some((r) => r.reminderId === reminderId))
 				confirm?.requestRule(reminderId, rule);
-			return;
-		}
-		// Loose mode (Trevor, 2026-10-18): nothing is given to a seat. A reminder goes where it
-		// is dropped, seats included; one still on a seat from before comes off it.
-		if (free) {
-			if (!this.spotAllowed(x, y)) return;
-			if (looseReminders(game).some((r) => r.reminderId === reminderId))
-				grimoire.setReminderSpot(reminderId, at);
-			else confirm?.requestLoose(reminderId, () => grimoire.setReminderSpot(reminderId, at));
 			return;
 		}
 		// Dropped on another seat: moved (one History entry).
