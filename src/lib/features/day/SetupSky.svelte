@@ -18,9 +18,13 @@
 		candles?: readonly Candle[];
 		/** Phones in the room with no seat (`SeatPresence.unseated`). */
 		unseated?: number;
+		/** MOCKUP: the effect once every seat's candle is lit. */
+		ready?: 'glow' | 'horizon' | 'sparks' | 'wave';
 	}
 
-	let { look, candles = [], unseated = 0 }: Props = $props();
+	let { look, candles = [], unseated = 0, ready }: Props = $props();
+	const allLit = $derived(candles.length > 0 && candles.every((c) => c.state === 'lit'));
+	const readyLook = $derived(allLit ? ready : undefined);
 	const id = $props.id();
 
 	/** The drawing's units, as the day's sky (PlayersDayStatus). */
@@ -89,7 +93,33 @@
 		viewBox="0 0 {SKY_W} {SKY_H}"
 		role="img"
 		aria-label={candlesLabel}
+		data-ready={readyLook}
 	>
+		<linearGradient id="{id}-band" x1="0" y1="0" x2="0" y2="1">
+			<stop class="band-edge" offset="0" />
+			<stop class="band-core" offset="0.55" />
+			<stop class="band-edge" offset="1" />
+		</linearGradient>
+		<linearGradient id="{id}-bandends" x1="0" y1="0" x2="1" y2="0">
+			<stop class="hidden" offset="0" />
+			<stop class="shown" offset="0.1" />
+			<stop class="shown" offset="0.9" />
+			<stop class="hidden" offset="1" />
+		</linearGradient>
+		<mask id="{id}-bandfade"
+			><rect x="0" y="0" width={SKY_W} height={SKY_H} fill="url(#{id}-bandends)" /></mask
+		>
+		{#if readyLook === 'glow'}
+			<rect
+				class="band"
+				x="10"
+				y="0"
+				width={SKY_W - 20 - reserve}
+				height={GROUND}
+				fill="url(#{id}-band)"
+				mask="url(#{id}-bandfade)"
+			/>
+		{/if}
 		{#each placed as c, i (i)}
 			<g class="candle" data-state={c.state} data-mine={c.mine ? '' : undefined}>
 				{#if c.state === 'lit'}
@@ -107,9 +137,20 @@
 				{#if c.state === 'lit'}
 					<path
 						class="flame"
-						style:animation-delay="{-i * 0.37}s"
+						style:animation-delay={readyLook === 'wave' ? `${i * 0.12}s, 1.6s` : `${-i * 0.37}s`}
 						d={flamePath(c.x, c.top - 2.5, c.flame)}
 					/>
+					{#if readyLook === 'sparks'}
+						{#each [0, 1, 2] as k (k)}
+							<circle
+								class="spark"
+								style:animation-delay="{-(i * 0.71 + k * 1.1)}s"
+								cx={c.x + (k - 1) * 1.6}
+								cy={c.top - 2.5 - c.flame}
+								r="0.9"
+							/>
+						{/each}
+					{/if}
 				{:else if c.state === 'away'}
 					<circle
 						class="ember"
@@ -122,6 +163,25 @@
 			</g>
 		{/each}
 		<line class="horizon" x1="6" y1={GROUND} x2={SKY_W - 6 - reserve} y2={GROUND} />
+		{#if readyLook === 'horizon'}
+			<line
+				class="horizon-lit"
+				pathLength="1"
+				x1="6"
+				y1={GROUND}
+				x2={SKY_W - 6 - reserve}
+				y2={GROUND}
+			/>
+			<rect
+				class="reflection"
+				x="6"
+				y={GROUND + 1}
+				width={SKY_W - 12 - reserve}
+				height="7"
+				fill="url(#{id}-band)"
+				mask="url(#{id}-bandfade)"
+			/>
+		{/if}
 		{#if unseated > 0}
 			<text class="unseated" x={SKY_W - 6} y={GROUND - 8} text-anchor="end" font-size="11"
 				>+{unseated}</text
@@ -258,6 +318,36 @@
 	.hidden {
 		stop-color: black; /* colour-ok: a mask's paint, never seen */
 	}
+	/* MOCKUP: every candle lit. */
+	.band-edge {
+		stop-color: var(--sky-sun);
+		stop-opacity: 0;
+	}
+	.band-core {
+		stop-color: var(--sky-sun);
+		stop-opacity: 0.28;
+	}
+	[data-ready='glow'] .halo,
+	[data-ready='wave'] .halo {
+		opacity: 0.3;
+	}
+	.horizon-lit {
+		stroke: var(--sky-sun);
+		stroke-width: 2.4;
+		stroke-linecap: round;
+		stroke-dasharray: 1;
+		stroke-dashoffset: 0;
+	}
+	.reflection {
+		transform: scaleY(-1);
+		transform-box: fill-box;
+		transform-origin: center;
+	}
+	.spark {
+		fill: var(--sky-sun);
+		opacity: 0;
+		transform-box: fill-box;
+	}
 	/* Gentle motion: flames flicker, the embers and windows glow, the star twinkles. */
 	.flame,
 	.ember,
@@ -279,6 +369,66 @@
 		}
 		.star {
 			animation: twinkle 4s ease-in-out infinite;
+		}
+		.band {
+			animation:
+				band-in 1.2s ease-out both,
+				breathe 5s ease-in-out 1.2s infinite;
+		}
+		.horizon-lit {
+			animation: sweep 1.4s ease-out both;
+		}
+		.reflection {
+			animation: band-in 1.4s ease-out both;
+		}
+		.spark {
+			animation: rise 3.3s ease-out infinite;
+		}
+		/* Every flame burns in step once the table is lit, after a flare runs along the row. */
+		[data-ready='wave'] .flame {
+			animation:
+				flare 0.7s ease-out both,
+				flicker 3s ease-in-out 1.6s infinite;
+		}
+	}
+	@keyframes band-in {
+		from {
+			opacity: 0;
+		}
+	}
+	@keyframes breathe {
+		50% {
+			opacity: 0.6;
+		}
+	}
+	@keyframes sweep {
+		from {
+			stroke-dashoffset: 1;
+		}
+	}
+	@keyframes rise {
+		0% {
+			opacity: 0;
+			transform: translateY(0);
+		}
+		15% {
+			opacity: 0.9;
+		}
+		100% {
+			opacity: 0;
+			transform: translateY(-0.9em);
+		}
+	}
+	@keyframes flare {
+		0% {
+			transform: scale(1);
+		}
+		45% {
+			transform: scale(1.7, 1.9);
+			opacity: 1;
+		}
+		100% {
+			transform: scale(1);
 		}
 	}
 	@keyframes flicker {
