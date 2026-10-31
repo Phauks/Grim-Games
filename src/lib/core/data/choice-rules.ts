@@ -28,7 +28,9 @@ type EvilInfoStep = (typeof EVIL_INFO_STEPS)[number];
  * `anyPlayerCount` gives the steps below 7 players too (the Toymaker: evil players get normal
  * starting info, https://wiki.bloodontheclocktower.com/Toymaker). `hidesMinions` while a player
  * with it lives: the Demon learns no Minions (the Poppy Grower,
- * https://wiki.bloodontheclocktower.com/Poppy_Grower). `shownAsOtherEvil`: the Demon is shown
+ * https://wiki.bloodontheclocktower.com/Poppy_Grower); with `whileWorking`, only while its
+ * ability works, so a drunk or poisoned one hides nothing (its optional rule).
+ * `shownAsOtherEvil`: the Demon is shown
  * its player as a Minion and the Minions as the Demon (the Magician,
  * https://wiki.bloodontheclocktower.com/Magician). `none` leaves both steps out at any player
  * count (Tor: the Demon and Minions do not know each other,
@@ -40,6 +42,7 @@ interface EvilInfo {
 	anyPlayerCount?: true;
 	hidesMinions?: true;
 	shownAsOtherEvil?: true;
+	whileWorking?: true;
 	none?: true;
 }
 
@@ -210,6 +213,7 @@ function readEvilInfo(raw: unknown, path: string, issues: Issues): EvilInfo | un
 		'anyPlayerCount',
 		'hidesMinions',
 		'shownAsOtherEvil',
+		'whileWorking',
 		'none'
 	] as const;
 	checkKeys(raw, ['notes', ...flags], path, issues);

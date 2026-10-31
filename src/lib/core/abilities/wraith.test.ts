@@ -13,6 +13,19 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import type { Command } from '#lib/core/engine/index.ts';
+import type { Game } from '#lib/core/model/types.ts';
+import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
+import { dayReminders, dayStateFromGame, renderReminder } from '#lib/core/rules/day-reminders.ts';
+
+/** This character's day reminders: their group and plain text. */
+const linesOf = (game: Game, characterId: string) =>
+	dayReminders(dayStateFromGame(game, (id) => characters.get(id), undefined, characters))
+		.groups.flatMap((g) =>
+			g.reminders
+				.filter((r) => r.characterId === characterId)
+				.map((r) => ({ group: g.group, text: renderReminder(r.segments) }))
+		);
 
 describe('Wraith', () => {
 	const character = committedCharacter('wraith');
@@ -45,5 +58,22 @@ describe('Wraith', () => {
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Wraith#Examples)', () => {
 		it.todo('Example 1: Wraith signals to kill suspected Fortune Teller');
+	});
+});
+
+// The optional rule on the wiki page (https://wiki.bloodontheclocktower.com/Wraith): once a
+// game, a player mad about being the Wraith may die.
+describe('Wraith optional rule', () => {
+	const cast = ['chef', 'empath', 'monk', 'wraith', 'imp'];
+	const on: Command = { type: 'SetOptionalRule', characterId: 'wraith', on: true };
+
+	it('off, no day reminder', () => {
+		const { game } = castGame(cast);
+		expect(linesOf(game, 'wraith')).toEqual([]);
+	});
+
+	it('on, a madness reminder', () => {
+		const { game } = castGame(cast, on);
+		expect(linesOf(game, 'wraith').map((l) => l.group)).toEqual(['madness']);
 	});
 });

@@ -20,5 +20,23 @@
 	},
 	"deathCause": {
 		"none": "win condition"
+	},
+	"optionalRule": {
+		"dayReminders": {
+			"impairable": true,
+			"reminders": [
+				{
+					"group": "day-ability",
+					"template": [
+						{
+							"self": true
+						},
+						{
+							"text": "may guess the evil team; up to three players may make this guess today"
+						}
+					]
+				}
+			]
+		}
 	}
 }

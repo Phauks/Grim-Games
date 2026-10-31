@@ -7,7 +7,8 @@
  * https://wiki.bloodontheclocktower.com/Magician).
  */
 import type { CharacterId } from '#lib/core/data/index.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
+import { rulesIn, rulesOf } from '#lib/core/data/rules/index.ts';
+import { abilityState } from './ability.ts';
 import {
 	trueCharacter,
 	type CharacterLookup,
@@ -62,9 +63,14 @@ export interface DemonInfo {
 export function demonInfo(game: Game, characters: CharacterLookup): DemonInfo {
 	const out: DemonInfo = { shownAsMinions: [], shownAsDemon: [] };
 	for (const seatId of game.seating) {
-		const evilInfo = rulesAt(game, seatId, characters)?.evilInfo;
-		if (evilInfo?.hidesMinions && !game.seats[seatId].dead && out.hiddenBy === undefined)
-			out.hiddenBy = trueCharacter(game, seatId, characters);
+		const id = trueCharacter(game, seatId, characters);
+		const evilInfo = id === undefined ? undefined : rulesIn(game, id, characters)?.evilInfo;
+		// With its optional rule (`whileWorking`), a drunk or poisoned Poppy Grower hides nothing.
+		const hides =
+			evilInfo?.hidesMinions &&
+			!game.seats[seatId].dead &&
+			(!evilInfo.whileWorking || abilityState(game, seatId, characters).works);
+		if (hides && out.hiddenBy === undefined) out.hiddenBy = id;
 		if (evilInfo?.shownAsOtherEvil) {
 			out.shownAsMinions.push(seatId);
 			out.shownAsDemon.push(seatId);

@@ -4,7 +4,7 @@
  * (`data/becomes-rules.ts`). Placing or taking off such a reminder offers the change; the
  * Storyteller confirms it or leaves the player as they are.
  */
-import { rulesOf } from '#lib/core/data/rules/index.ts';
+import { rulesIn } from '#lib/core/data/rules/index.ts';
 import { baseCounts } from './distribution.ts';
 import type { Alignment, CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
@@ -34,7 +34,7 @@ export function becomesOffer(
 	characters: CharacterLookup,
 	when: 'placed' | 'removed' = 'placed'
 ): BecomesOffer | undefined {
-	const rule = rulesOf(reminder.characterId, characters)?.becomes;
+	const rule = rulesIn(game, reminder.characterId, characters)?.becomes;
 	if (rule?.token !== reminder.label || (rule.when ?? 'placed') !== when) return undefined;
 	if (!game.seats[seatId]) return undefined;
 	const isDemon = typeOf(game, seatId, characters) === 'demon';
@@ -72,6 +72,25 @@ export function becomesOffer(
 }
 
 /**
+ * The alignment change `seatId`'s new alignment offers: a player whose character follows the
+ * alignment of the player its token marks (`becomes.follows`, the Ogre's optional rule,
+ * https://wiki.bloodontheclocktower.com/Ogre) takes it too. None when no such token is on
+ * `seatId` or its player already has that alignment.
+ */
+export function followedAlignmentOffer(
+	game: Game,
+	seatId: SeatId,
+	characters: CharacterLookup
+): BecomesOffer | undefined {
+	for (const reminder of game.seats[seatId]?.reminders ?? []) {
+		if (!rulesIn(game, reminder.characterId, characters)?.becomes?.follows) continue;
+		const offer = becomesOffer(game, seatId, reminder, characters);
+		if (offer) return offer;
+	}
+	return undefined;
+}
+
+/**
  * The player whose `characterId` changes a chosen player's character tonight
  * (`changesCharacter`): its own living player (or dead, when it acts when dead: the Hatter),
  * with its `token` on them when the rule names one (the Summoner's Night 3) and without its
@@ -83,7 +102,7 @@ export function characterChanger(
 	characterId: CharacterId,
 	characters: CharacterLookup
 ): SeatId | undefined {
-	const rules = rulesOf(characterId, characters);
+	const rules = rulesIn(game, characterId, characters);
 	const rule = rules?.changesCharacter;
 	if (!rule) return undefined;
 	const carries = (id: SeatId, label: string) =>
@@ -121,7 +140,7 @@ export function changeableSeats(
 	characterId: CharacterId,
 	characters: CharacterLookup
 ): SeatId[] {
-	const rule = rulesOf(characterId, characters)?.changesCharacter;
+	const rule = rulesIn(game, characterId, characters)?.changesCharacter;
 	return game.seating.filter((id) => {
 		const own = trueCharacter(game, id, characters);
 		if (rule?.upTo) {
@@ -152,7 +171,7 @@ export function swappableSeats(
 	characterId: CharacterId,
 	characters: CharacterLookup
 ): SeatId[] {
-	const rule = rulesOf(characterId, characters)?.swapsCharacters;
+	const rule = rulesIn(game, characterId, characters)?.swapsCharacters;
 	if (!rule) return [];
 	return game.seating.filter((id) => {
 		const type = typeOf(game, id, characters);
@@ -171,7 +190,7 @@ export function neighbourAlignments(
 	characterId: CharacterId,
 	characters: CharacterLookup
 ): { seatId: SeatId; alignments: Alignment[] } | undefined {
-	if (!rulesOf(characterId, characters)?.takesNeighbourAlignment) return undefined;
+	if (!rulesIn(game, characterId, characters)?.takesNeighbourAlignment) return undefined;
 	const seatId = game.seating.find(
 		(id) => !game.seats[id].dead && trueCharacter(game, id, characters) === characterId
 	);
