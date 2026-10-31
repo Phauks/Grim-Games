@@ -10,23 +10,12 @@
 	let { disabled = false }: Props = $props();
 
 	/**
-	 * Where the Fabled and Loric sit on the board and whether they are grouped, shown wherever
-	 * they are (Trevor, 2026-10-17: "place this setting on the fabled", then "separate group
-	 * and location ... into two dropdowns"): their sheets, beside Board and tokens. Labelled
-	 * Location and Grouping (Trevor, 2026-10-18).
+	 * Whether the Fabled and Loric are grouped, shown wherever they are (Trevor, 2026-10-17:
+	 * "place this setting on the fabled"): their sheets, beside Board and tokens. They always sit
+	 * in the corner, so there is no Location choice (Trevor, 2026-10-30: "only corner").
 	 */
 </script>
 
-<Select
-	label="Location"
-	{disabled}
-	value={boardLooks.current.rulesAt}
-	options={[
-		{ value: 'middle', label: 'Middle' },
-		{ value: 'edge', label: 'Corner' }
-	]}
-	onChange={(rulesAt) => boardLooks.update({ rulesAt })}
-/>
 <Select
 	label="Grouping"
 	{disabled}

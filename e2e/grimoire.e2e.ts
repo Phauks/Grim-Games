@@ -229,6 +229,28 @@ async function endNight(page: Page) {
 }
 
 /** The Demon died: the game end prompt asks first; Cancel keeps playing. */
+/**
+ * An aid prompt's switch is only in Settings (Trevor, 2026-10-30): its ⋯ › View in settings
+ * opens Settings over the prompt at that switch, scrolled to and marked.
+ */
+async function aidInSettings(page: Page, prompt: Locator, label: string) {
+	await expect(prompt.getByRole('checkbox', { name: label })).toHaveCount(0);
+	await prompt.getByRole('button', { name: 'More', exact: true }).tap();
+	await page.getByRole('menuitem', { name: 'View in settings' }).tap();
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	await expect(settings.getByRole('heading', { name: 'Storyteller', level: 2 })).toBeVisible();
+	const row = settings.locator(`.content [data-search-label="${label}"]`);
+	await expect(row).toBeInViewport();
+	await expect(row).toHaveAttribute('data-search-hit', '');
+	return settings;
+}
+
+/** Closes Settings, back to the prompt under it. */
+async function closeSettings(settings: Locator) {
+	await settings.locator('[data-part="close-trigger"]').first().tap();
+	await expect(settings).toHaveCount(0);
+}
+
 async function keepPlaying(page: Page) {
 	const prompt = page.getByRole('alertdialog', { name: 'End game?' });
 	await prompt.getByRole('button', { name: 'Cancel' }).tap();
@@ -559,7 +581,7 @@ test('an orphan character is flagged, and old names are not suggested', async ({
 	await expect(sheet.getByRole('group', { name: 'Name suggestions' })).toHaveCount(0);
 });
 
-test('Travellers join as a new seat, and Fabled sit in the middle', async ({ page }) => {
+test('Travellers join as a new seat, and Fabled sit in the corner', async ({ page }) => {
 	await startGame(page);
 	// A Traveller joins as a new seat: Add seat, then choose them for it.
 	await menu(page, 'Add seat');
@@ -587,13 +609,7 @@ test('Travellers join as a new seat, and Fabled sit in the middle', async ({ pag
 		.getByRole('list', { name: 'Fabled and Loric' })
 		.getByRole('button', { name: 'Spirit of Ivory' });
 	await expect(fabled).toBeVisible();
-	// Or small along the edge (Trevor, 2026-10-17), set beside the background.
-	await boardSettings(page, 'Board');
-	const looks = page.getByRole('dialog', { name: 'Settings' });
-	// A drop-down (Trevor, 2026-10-17).
-	await looks.getByRole('combobox', { name: 'Location', exact: true }).tap();
-	await page.getByRole('option', { name: 'Corner', exact: true }).tap();
-	await looks.getByRole('button', { name: 'Close' }).tap();
+	// Always small in the corner, never the middle (Trevor, 2026-10-30: "only corner").
 	await expect(
 		page.locator('.rules-edge').getByRole('button', { name: 'Spirit of Ivory' })
 	).toBeVisible();
@@ -2766,6 +2782,7 @@ test('a met game end condition offers End game, listing every outcome', async ({
 	await execute(1);
 	const prompt = page.getByRole('alertdialog', { name: 'End game?' });
 	await expect(prompt.getByTestId('game-end-prompt')).toContainText('Evil wins');
+	await closeSettings(await aidInSettings(page, prompt, 'Game end prompts'));
 	await expect(
 		prompt.locator('[data-rule="executed-loses"] [data-character-id="saint"]')
 	).toBeVisible();
@@ -3828,9 +3845,7 @@ test('once every token is placed, the board does not prompt for the Demon bluffs
 			.tap();
 		await closeSheet(page);
 	}
-	await expect(page.locator('.centre').getByRole('button', { name: 'Demon bluffs' })).toHaveCount(
-		0
-	);
+	await expect(page.locator('.board').getByRole('button', { name: 'Demon bluffs' })).toHaveCount(0);
 });
 
 test('a new Demon bluff set is named on the screen where its characters are chosen', async ({
@@ -3932,9 +3947,9 @@ test('reminders can stay where dropped, after a warning listing what changes', a
 	await expect(token).toBeVisible();
 	await expect.poll(near).toBe(true);
 
-	// Only in the board's open area (Trevor, 2026-10-17): dropped on the middle's buttons it
-	// stays where it was.
-	const middle = page.locator('.centre > *').first();
+	// Only in the board's open area (Trevor, 2026-10-17): dropped on the day timer it stays
+	// where it was.
+	const middle = page.locator('.board-timer');
 	const m = (await middle.boundingBox())!;
 	const from = (await token.boundingBox())!;
 	await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
@@ -4230,7 +4245,7 @@ test('the Fabled and Loric can sit grouped in a corner, listed together when tap
 	page
 }) => {
 	await startGame(page);
-	for (const name of ['Spirit of Ivory', 'Angel']) {
+	for (const name of ['Spirit of Ivory', 'Angel', 'Djinn']) {
 		await menu(page, 'Add Fabled or Loric');
 		await page
 			.getByRole('dialog', { name: 'Add Fabled or Loric' })
@@ -4242,29 +4257,37 @@ test('the Fabled and Loric can sit grouped in a corner, listed together when tap
 		.getByRole('list', { name: 'Fabled and Loric' })
 		.getByRole('button', { name: 'Angel' })
 		.tap();
-	// Where they sit and whether they are grouped are two choices (Trevor, 2026-10-17).
+	// They always sit in the corner (Trevor, 2026-10-30: "only corner"); grouping is the choice.
 	const angel = page.getByRole('dialog', { name: 'Angel' });
-	await angel.getByRole('combobox', { name: 'Location', exact: true }).tap();
-	await page.getByRole('option', { name: 'Corner', exact: true }).tap();
+	await expect(angel.getByRole('combobox', { name: 'Location', exact: true })).toHaveCount(0);
 	await angel.getByRole('combobox', { name: 'Grouping', exact: true }).tap();
 	await page.getByRole('option', { name: 'Stacked' }).tap();
 	await expect(page.locator('.rules-edge .rules-stack')).toBeVisible();
 	await angel.getByRole('button', { name: 'Close' }).tap();
 
-	const stack = page.getByRole('button', { name: 'Fabled and Loric: 2' });
+	const stack = page.getByRole('button', { name: 'Fabled and Loric: 3' });
 	await expect(stack).toBeVisible();
+	// Every token in the stack stays on the board, none off its left side (Trevor, 2026-10-30).
+	for (const token of await stack.locator(':scope > :not(.stack-count)').all()) {
+		expect((await token.boundingBox())!.x).toBeGreaterThanOrEqual(0);
+	}
 	await expect(page.getByRole('list', { name: 'Fabled and Loric' })).toHaveCount(0);
 	await stack.tap();
 	const group = page.getByRole('dialog', { name: 'Fabled and Loric' });
-	await expect(group.locator('.rules-group > li')).toHaveCount(2);
+	await expect(group.locator('.rules-group > li')).toHaveCount(3);
+	// Each row as tall as its contents, with no gaps between them (Trevor, 2026-10-30).
+	const rows = await group.locator('.rules-group > li').all();
+	const first = (await rows[0].boundingBox())!;
+	const second = (await rows[1].boundingBox())!;
+	expect(second.y - (first.y + first.height)).toBeLessThan(40);
 	await group.getByRole('button', { name: 'Remove Angel from the game' }).tap();
 	await page
 		.getByRole('alertdialog', { name: 'Remove from the game?' })
 		.getByRole('button', { name: 'Confirm', exact: true })
 		.tap();
-	await expect(group.locator('.rules-group > li')).toHaveCount(1);
+	await expect(group.locator('.rules-group > li')).toHaveCount(2);
 	await group.getByRole('button', { name: 'Close' }).tap();
-	await expect(page.getByRole('button', { name: 'Fabled and Loric: 1' })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Fabled and Loric: 2' })).toBeVisible();
 });
 
 test('an open night step moves to the step before or after without ticking it', async ({
@@ -5042,15 +5065,17 @@ test('the bank button starts the game, ends each night and day, and resumes a st
 	await expect(strip.locator('.step .name strong')).toHaveText('Dusk');
 	await expect(strip.locator('.count')).toHaveText(/^1 of/);
 
-	// With "Open the day after End night" off, set in the confirm itself, the Storyteller stays
-	// on the grimoire (Trevor, 2026-10-18).
+	// With "Open the day after End night" off, set in Settings from the confirm's ⋯, the
+	// Storyteller stays on the grimoire (Trevor, 2026-10-18; 2026-10-30).
 	await strip.getByRole('button', { name: 'Next step' }).tap();
 	await end.tap();
 	const confirm = page.getByRole('alertdialog', { name: 'End the night?' });
-	const dayAfter = confirm.getByRole('checkbox', { name: 'Open the day after End night' });
+	const settings = await aidInSettings(page, confirm, 'Open the day after End night');
+	const dayAfter = settings.getByRole('checkbox', { name: 'Open the day after End night' });
 	await expect(dayAfter).toBeChecked();
-	await confirm.getByText('Open the day after End night', { exact: true }).tap();
+	await settings.getByText('Open the day after End night', { exact: true }).tap();
 	await expect(dayAfter).not.toBeChecked();
+	await closeSettings(settings);
 	await confirm.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(confirm).toHaveCount(0);
 	await expect(page.getByRole('dialog', { name: 'Day 2' })).toHaveCount(0);
@@ -5994,7 +6019,10 @@ test('a Dead reminder put on a living player asks whether to mark them dead', as
 	// Cancel leaves them alive; switched off, it never asks.
 	await addDead(3, 2);
 	const again = page.getByRole('alertdialog', { name: 'Mark Seat 3 dead?' });
-	await again.getByText('Ask to mark dead', { exact: true }).tap();
+	const settings = await aidInSettings(page, again, 'Ask to mark dead');
+	await settings.getByText('Ask to mark dead', { exact: true }).tap();
+	await expect(settings.getByRole('checkbox', { name: 'Ask to mark dead' })).not.toBeChecked();
+	await closeSettings(settings);
 	await again.getByRole('button', { name: 'Cancel', exact: true }).tap();
 	await expect(seatLabelled(page, 'Seat 3: no name, no character, 1 reminder')).toBeAttached();
 	await closeBin(page);
@@ -6114,7 +6142,7 @@ test('an Alive reminder put on a dead player asks whether to revive them', async
 	await add(2, 'Alive');
 	const ask = page.getByRole('alertdialog', { name: 'Revive Seat 2?' });
 	await expect(ask).toBeVisible();
-	await expect(ask.getByText('Ask to revive', { exact: true })).toBeVisible();
+	await closeSettings(await aidInSettings(page, ask, 'Ask to revive'));
 	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(seatLabelled(page, 'Seat 2: no name, no character, 2 reminders')).toBeAttached();
 	await expect(seatLabelled(page, 'Seat 2:')).not.toHaveAttribute('aria-label', /dead/);
@@ -6353,9 +6381,7 @@ test("putting a dead character's reminder on the board asks first", async ({ pag
 	// Cancel takes it back off; Confirm keeps it.
 	await put('Cursed');
 	await expect(ask).toContainText('is dead.');
-	await expect(
-		ask.getByText("Ask before a dead character's reminder", { exact: true })
-	).toBeVisible();
+	await closeSettings(await aidInSettings(page, ask, "Ask before a dead character's reminder"));
 	await ask.getByRole('button', { name: 'Cancel' }).tap();
 	await expect(onBoard('Cursed')).toHaveCount(0);
 	await put('Cursed');
@@ -6447,12 +6473,52 @@ test('with the Hindu, a player who dies is reincarnated as a Traveller', async (
 		.getByRole('button', { name: 'The Demon' })
 		.tap();
 	const picker = page.getByRole('dialog', { name: 'Reincarnate Seat 1 as' });
-	await picker.getByRole('button', { name: 'Gunslinger, Recommended' }).tap();
+	// Each Traveller shows in the player's alignment, good here, not the Travellers' own colours.
+	const gunslinger = picker.getByRole('button', { name: 'Gunslinger, Recommended' });
+	await expect(picker.locator('[data-team="good"]').first()).toBeVisible();
+	await expect(picker.locator('[data-team="traveller"]')).toHaveCount(0);
+	await gunslinger.tap();
 	await expect(picker).toBeHidden();
 	await closeSheet(page);
 	const seat = seatLabelled(page, 'Seat 1: no name, Gunslinger');
 	await expect(seat).toBeAttached();
 	await expect(seat).not.toHaveAttribute('aria-label', /dead/);
+});
+
+test('with the Hindu, the Demon among the first four to die ends the game for good', async ({
+	page
+}) => {
+	// If the Demon is one of the first four to die, the game ends and good wins, even with a
+	// Scarlet Woman alive (https://wiki.bloodontheclocktower.com/Hindu).
+	await startGame(page, 'Trouble Brewing');
+	for (const [number, name] of [
+		[1, 'Imp'],
+		[2, 'Scarlet Woman']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	await menu(page, 'Add Fabled or Loric');
+	const adding = page.getByRole('dialog', { name: 'Add Fabled or Loric' });
+	await adding.getByRole('button', { name: 'Hindu', exact: true }).tap();
+	await expect(adding).toBeHidden();
+
+	await (await openSeat(page, 1)).getByRole('button', { name: 'Status: Alive' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Status of Seat 1' })
+		.getByRole('button', { name: 'Executed' })
+		.tap();
+	const prompt = page.getByRole('alertdialog', { name: 'End game?' });
+	const line = prompt.locator('[data-rule="demon-dead"]');
+	// The line shows the Hindu's ability, so the Storyteller sees why.
+	await expect(line).toContainText('reincarnated as Travellers');
+	await expect(line).toContainText('Good wins');
+	await expect(page.getByRole('dialog', { name: 'Reincarnate Seat 1 as' })).toHaveCount(0);
 });
 
 /** A Trouble Brewing game with one special rule, these seats given these characters. */

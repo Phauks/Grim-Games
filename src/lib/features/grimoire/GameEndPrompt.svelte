@@ -18,6 +18,7 @@
 	import ReminderTokenRow from './ReminderTokenRow.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
+	import AidMenu from '#lib/features/settings/AidMenu.svelte';
 	import { readGameMode } from '#lib/features/modes/game-mode-store.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
@@ -166,6 +167,7 @@
 {/snippet}
 
 <ConfirmDialog bind:open title="End game?" danger onConfirm={confirm}>
+	{#snippet headActions()}<AidMenu aid="gameEndPrompts" />{/snippet}
 	<ul class="ends" data-testid="game-end-prompt">
 		{#each shown as end (end.key)}
 			<li data-rule={end.rule}>

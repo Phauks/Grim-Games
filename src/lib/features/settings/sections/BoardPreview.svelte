@@ -155,9 +155,7 @@
 		};
 		return { from: rim, to: at };
 	});
-	const rulesSize = $derived(
-		boardLooks.current.rulesAt === 'middle' ? Math.round(size * 0.6) : Math.round(size * 0.4)
-	);
+	const rulesSize = $derived(Math.round(size * 0.4));
 </script>
 
 {#snippet reminder(id: CharacterId, i: number, alignment: Alignment)}
@@ -174,7 +172,11 @@
 
 {#snippet rules()}
 	{#if boardLooks.current.rulesGrouped}
-		<span class="preview-rules-stack" data-testid="preview-rules-stack">
+		<span
+			class="preview-rules-stack"
+			style:--rules-size="{rulesSize}px"
+			data-testid="preview-rules-stack"
+		>
 			{#each RULES as id (id)}
 				{@const rule = character(id)}
 				{#if rule}<CharacterToken character={rule} size={rulesSize} />{/if}
@@ -200,7 +202,6 @@
 	style:--chip="{chip}px"
 	style:--name-scale={boardLooks.current.nameSize}
 	style:--name-offset={boardLooks.current.nameOffset}
-	data-rules-at={boardLooks.current.rulesAt}
 >
 	<BoardBackdrop
 		contained
@@ -211,9 +212,7 @@
 	{#if boardLooks.current.logo}
 		<BoardLogo src={logo} name={scriptName} opacity={boardLooks.current.logoOpacity} />
 	{/if}
-	{#if boardLooks.current.rulesAt === 'edge'}<div class="preview-rules-edge">
-			{@render rules()}
-		</div>{/if}
+	<div class="preview-rules-edge">{@render rules()}</div>
 
 	<div class="seats">
 		{#each SEATS as seat, i (seat.id)}
@@ -249,9 +248,6 @@
 					>{/if}
 			</div>
 		{/each}
-	</div>
-	<div class="preview-middle">
-		{#if boardLooks.current.rulesAt === 'middle'}{@render rules()}{/if}
 	</div>
 
 	<p class="preview-title" data-testid="preview-script-title">
@@ -347,11 +343,6 @@
 		left: 115%;
 		top: 70%;
 	}
-	.preview-middle {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-	}
 	.preview-rules-edge {
 		position: absolute;
 		top: var(--space-1);
@@ -370,7 +361,7 @@
 		display: flex;
 	}
 	.preview-rules-stack > :global(*:not(:first-child):not(.preview-stack-count)) {
-		margin-inline-start: -60%;
+		margin-inline-start: calc(-0.6 * var(--rules-size));
 	}
 	.preview-stack-count {
 		position: absolute;
@@ -427,7 +418,9 @@
 	/* The board's bank (ReminderBank .bank): its outline, corners and see-through bar, so the
 	   preview's bank reads as the board's (Trevor, 2026-10-23: "doesn't look like it has an
 	   outline"). e2e/settings.e2e.ts checks the two stay alike. */
+	/* The bottom row, below the empty middle the Fabled and Loric left for the corner. */
 	.bank {
+		grid-row: 3;
 		position: relative;
 		z-index: 1;
 		display: flex;

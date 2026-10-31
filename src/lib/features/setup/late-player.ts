@@ -4,7 +4,7 @@ import type { ResolvedPathname } from '$app/types';
 /** The board's URL hash that starts adding late players (the bag draw's button). */
 export const LATE_PLAYER_HASH = '#late-player';
 
-/** The grimoire, ready to tap where the first late player sits (Trevor, 2026-10-30). */
+/** The grimoire, ready to tap where a late player sits (Trevor, 2026-10-30). */
 export function latePlayerHref(gameId: string): ResolvedPathname {
 	return `${resolve('/grimoire/[gameId]', { gameId })}${LATE_PLAYER_HASH}` as ResolvedPathname;
 }
@@ -13,6 +13,7 @@ export function latePlayerHref(gameId: string): ResolvedPathname {
 export interface LatePlayer {
 	/** Keeps the row while names are typed. */
 	key: number;
-	position: number;
+	/** Not chosen yet: the end of the seating. */
+	position?: number;
 	name: string;
 }

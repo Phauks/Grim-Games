@@ -15,7 +15,7 @@
 	import CharacterPicker from './CharacterPicker.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { placedLook } from './reminders.ts';
-	import RulesAtSetting from './RulesAtSetting.svelte';
+	import RulesGroupingSetting from './RulesGroupingSetting.svelte';
 
 	/**
 	 * Fabled and Loric are rules of the game, not seats (Trevor, 2026-10-17): the dialogs the
@@ -150,7 +150,7 @@
 		</div>
 		{@render heldList(ruleShownCharacter.id)}
 	{/if}
-	<RulesAtSetting disabled={watching} />
+	<RulesGroupingSetting disabled={watching} />
 	{#snippet headActions()}
 		<!-- Beside the close X (Trevor, 2026-10-17); a red trash icon, named for screen readers. -->
 		<DeleteButton
@@ -206,7 +206,7 @@
 			<li class="none">None</li>
 		{/if}
 	</ul>
-	<RulesAtSetting disabled={watching} />
+	<RulesGroupingSetting disabled={watching} />
 </Dialog>
 
 <Dialog bind:open={abilityOpen} title="Storyteller's ability">
@@ -335,8 +335,10 @@
 		justify-content: flex-end;
 		margin-top: var(--space-3);
 	}
+	/* Rows as tall as their contents, however tall the sheet (Trevor, 2026-10-30). */
 	.rules-group {
 		display: grid;
+		align-content: start;
 		gap: var(--space-3);
 		margin: 0 0 var(--space-3);
 		padding: 0;
