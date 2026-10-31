@@ -10,6 +10,7 @@ import type { RoomState } from '../src/lib/core/sync/room.ts';
 import { gamePlayers, type GamePlayer } from '../src/lib/features/friends/friend-rules.ts';
 import type { AccountEnv } from './account/objects.ts';
 import { getUser } from './account/routes.ts';
+import { friendBook, type FriendsEnv } from './friends/routes.ts';
 
 const TAG_PREFIX = 'account:';
 /** Where a room keeps its accounts: the Storyteller's under `host`, players' by member id. */
@@ -21,6 +22,38 @@ type Accounts = Record<string, string>;
 /** The socket's tags for its account, if the person opening it is signed in. */
 export function accountTags(accountId: string | undefined): string[] {
 	return accountId ? [`${TAG_PREFIX}${accountId}`] : [];
+}
+
+/** The account on a socket, if its person was signed in when it opened. */
+function socketAccount(ctx: DurableObjectState, ws: WebSocket): string | undefined {
+	const tag = ctx.getTags(ws).find((t) => t.startsWith(TAG_PREFIX));
+	return tag?.slice(TAG_PREFIX.length);
+}
+
+/**
+ * Friends see this account in a game (plan F5): the room's code goes in its friend book when
+ * a socket joins as Storyteller or player, and leaves when its last such socket closes.
+ */
+export async function notePresence(
+	ctx: DurableObjectState,
+	env: Pick<FriendsEnv, 'FRIEND_BOOKS' | 'DATA'>,
+	ws: WebSocket,
+	joined: boolean
+): Promise<void> {
+	const accountId = socketAccount(ctx, ws);
+	const code = accountId && (await ctx.storage.get<string>('code'));
+	if (!accountId || !code) return;
+	const book = friendBook(env, accountId);
+	if (joined) return book.joinedRoom(code, Date.now());
+	const still = ctx.getWebSockets(`${TAG_PREFIX}${accountId}`).some((socket) => {
+		const role = (socket.deserializeAttachment() as { role?: string } | null)?.role;
+		return (
+			socket !== ws &&
+			socket.readyState === WebSocket.OPEN &&
+			(role === 'host' || role === 'player')
+		);
+	});
+	if (!still) await book.leftRoom(code);
 }
 
 /** Remembers the socket's account (if any) for the Storyteller, or a player by member id. */
@@ -42,6 +75,19 @@ export async function linkAccount(
 export async function roomPlayers(ctx: DurableObjectState, room: RoomState): Promise<GamePlayer[]> {
 	const accounts = (await ctx.storage.get<Accounts>(STORAGE_KEY)) ?? {};
 	return gamePlayers(accounts, room.members, room.public?.storytellerName);
+}
+
+/**
+ * The accounts in a room, for inviting friends to it (plan F4): only for its Storyteller's
+ * own account, so no one else can learn who is there.
+ */
+export async function hostedAccounts(
+	ctx: DurableObjectState,
+	requester: string
+): Promise<string[] | undefined> {
+	const accounts = (await ctx.storage.get<Accounts>(STORAGE_KEY)) ?? {};
+	if (accounts[HOST] !== requester) return undefined;
+	return [...new Set(Object.values(accounts))];
 }
 
 /** Who in a room is asked: the player in a seat, or the Storyteller. */

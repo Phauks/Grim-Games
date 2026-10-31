@@ -86,14 +86,14 @@ const names = (game: DayGame, seats: readonly SeatId[]) =>
 
 /**
  * A death verdict as values: "Dead: Ana" (the DEAD reminder), "Dead? Ana" when it is the
- * Storyteller's call, "—" when nobody dies, then who is impaired, protects or may register.
+ * Storyteller's call, "No death" when nobody dies, then who is impaired, protects or may register.
  */
 export function verdictText(game: DayGame, v: DeathVerdict | undefined): string {
 	if (!v || v.kind === 'choose') return '';
 	const parts: string[] = [];
 	if (v.kind === 'dies') parts.push(`Dead: ${names(game, v.seatIds)}`);
 	else if (v.kind === 'ask') parts.push(`Dead? ${names(game, v.ifYes)}`);
-	else parts.push('—');
+	else parts.push('No death');
 	if (v.kind !== 'no-death' && v.demonKills === false) parts.push('Demon ✕');
 	if (v.chosen?.length) parts.push(impairmentValues(game, v.chosen));
 	if (v.impairments?.length) parts.push(impairmentValues(game, v.impairments));

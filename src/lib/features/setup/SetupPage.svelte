@@ -6,6 +6,7 @@
 	import { resolve } from '$app/paths';
 	import {
 		fromScript,
+		scriptLogo,
 		type Character,
 		type CharacterId,
 		type CharacterType
@@ -26,6 +27,7 @@
 	} from '#lib/core/rules/index.ts';
 	import { scriptMaxPlayers, teensyvilleWarnings } from '#lib/core/rules/teensyville.ts';
 	import { loadOfficialData, officialData } from '#lib/features/characters/game-data.svelte.ts';
+	import { gameSettings } from '#lib/features/game-settings/game-settings.svelte.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
@@ -39,6 +41,7 @@
 	import AddCharactersDialog from './AddCharactersDialog.svelte';
 	import SetupBluffs from '#lib/features/bluffs/SetupBluffs.svelte';
 	import { notBegun } from '#lib/features/modes/new-game-draft.ts';
+	import ScriptName from '#lib/features/scripts/ScriptName.svelte';
 	import { dealStep } from '#lib/features/modes/deal-title.ts';
 	import SetupOffScript from './SetupOffScript.svelte';
 	import GameOptions from './GameOptions.svelte';
@@ -295,8 +298,14 @@
 		return of;
 	});
 	const travellers = $derived(ids.filter((id) => lookup(id)?.type === 'traveller').length);
+	// Travellers who choose on their phones may still be picked here: none to all of them.
+	const travellersLater = $derived(gameSettings.current.travellersChoose && !travellersInBag);
 	const travellerLimits = $derived(
-		travellersInBag ? travellerRange(s.players, travellersInBag) : undefined
+		travellersInBag
+			? travellerRange(s.players, travellersInBag)
+			: travellersLater
+				? { min: 0, max: Math.max(travellersNeeded, travellers) }
+				: undefined
 	);
 	const warnings = $derived([
 		...setupWarningMessages(analysis.warnings, requirements, name),
@@ -310,7 +319,13 @@
 	]);
 
 	const errors = $derived(
-		buildErrors({ analysis, issues: plan.issues, travellers, travellerMax: travellerLimits?.max })
+		buildErrors({
+			analysis,
+			issues: plan.issues,
+			travellers,
+			travellerMax: travellersInBag ? travellerLimits?.max : undefined,
+			travellersLater
+		})
 	);
 
 	// Copies only where a character's rules allow them (Village Idiot, Legion, or with the
@@ -469,7 +484,8 @@
 					? scriptFacts(script.characters, data.jinxes, script.homebrewJinxes).jinxes
 					: [],
 			random: Math.random,
-			travellersInBag
+			travellersInBag,
+			travellersLater
 		});
 		if (result.ok) {
 			setupSelection.replace(result.selection);
@@ -499,8 +515,12 @@
 	{#snippet actions()}<SetupActions {port} />{/snippet}
 	{#snippet subtitle()}<span class="script"
 			><span class="label">{t('setup.script')}</span>
-			<span class="name" data-testid="setup-script-name">{script?.name ?? t('common.none')}</span
-			></span
+			<!-- With its logo, as every script's name (Trevor, 2026-10-31). -->
+			<ScriptName
+				name={script?.name}
+				logo={script && scriptLogo(script)}
+				testid="setup-script-name"
+			/></span
 		>{/snippet}
 	{#snippet side()}
 		<ErrorBoundary area="setup">
@@ -706,14 +726,6 @@
 	}
 	.script .label {
 		color: var(--on-surface-muted);
-	}
-	.script .name {
-		flex: 1;
-		min-width: 0;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-		font-weight: 600;
 	}
 	.errors {
 		display: grid;

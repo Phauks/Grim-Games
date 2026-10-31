@@ -7,6 +7,10 @@ import { AccountApiError, call } from '#lib/features/account/account-api.ts';
 import { account } from '#lib/features/account/account.svelte.ts';
 import {
 	friendActionApi,
+	FRIEND_INVITE_API,
+	FRIEND_INVITE_DISMISS_API,
+	FRIEND_PRESENCE_API,
+	FRIEND_ROOM_API,
 	FRIEND_RECENT_API,
 	FRIEND_REQUESTS_API,
 	FRIEND_SEAT_API,
@@ -15,6 +19,8 @@ import {
 	type FriendAction,
 	type FriendsResponse,
 	type FriendTarget,
+	type InviteRequest,
+	type InviteResponse,
 	type RequestResponse,
 	type SeatFriendResponse
 } from './friends-protocol.ts';
@@ -48,9 +54,9 @@ export const friends = {
 	get error(): string {
 		return error;
 	},
-	/** Requests waiting for this account's answer. */
+	/** Requests and invites waiting for this account's answer (plan F1, F4). */
 	get waiting(): number {
-		return data?.incoming.length ?? 0;
+		return (data?.incoming.length ?? 0) + (data?.invites?.length ?? 0);
 	},
 	load(): Promise<void> {
 		if (account.status !== 'signed-in') return Promise.resolve();
@@ -76,10 +82,41 @@ export const friends = {
 	act(action: FriendAction, id: string): Promise<void> {
 		return update(() => call<FriendsResponse>(friendActionApi(action), 'POST', { id }));
 	},
+	/**
+	 * Which friends are already in the room this account runs, or, with `id`, invites that
+	 * friend to it (plan F4).
+	 */
+	invite(request: InviteRequest): Promise<InviteResponse> {
+		return call<InviteResponse>(FRIEND_INVITE_API, 'POST', request);
+	},
+	/** Declines an invite; it goes from the list at once. */
+	async dismissInvite(id: number): Promise<void> {
+		await call(FRIEND_INVITE_DISMISS_API, 'POST', { id });
+		if (data) data = { ...data, invites: data.invites?.filter((invite) => invite.id !== id) };
+	},
+	/** Shows friends this account's presence, or hides it (plan F5). */
+	setShowPresence(show: boolean): Promise<void> {
+		return update(() => call<FriendsResponse>(FRIEND_PRESENCE_API, 'PUT', { show }));
+	},
+	/**
+	 * Whether friends may join the room this account runs without an invite (plan F5); with
+	 * `open`, sets it.
+	 */
+	async friendRoom(code: string, open?: boolean): Promise<boolean> {
+		const body = open === undefined ? { code } : { code, open };
+		return (await call<{ open: boolean }>(FRIEND_ROOM_API, 'POST', body)).open;
+	},
 	setFindable(findable: boolean): Promise<void> {
 		return update(() => call<FriendsResponse>(FRIEND_SETTINGS_API, 'PUT', { findable }));
 	}
 };
+
+// Invites arrive when the app opens or comes back to the front (plan F4: no push yet).
+if (typeof document !== 'undefined') {
+	document.addEventListener('visibilitychange', () => {
+		if (document.visibilityState === 'visible') void friends.load();
+	});
+}
 
 account.onChange((user) => {
 	generation++;

@@ -31,9 +31,10 @@
 	import SavedGamesSection from '#lib/features/grimoire/SavedGamesSection.svelte';
 	import YourCharacter from './YourCharacter.svelte';
 	import PlayerCountOff from './PlayerCountOff.svelte';
+	import PlayerTravellerPick from './PlayerTravellerPick.svelte';
 	import { finalGrimoire } from './final-grimoire.svelte.ts';
 	import { gameOverText } from './game-over-text.ts';
-	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
+	import ScriptName from '#lib/features/scripts/ScriptName.svelte';
 	import ScriptByline from '#lib/features/player/ScriptByline.svelte';
 	import PlayerStatusRow from '#lib/features/player/PlayerStatusRow.svelte';
 	import { parseSeatPresence } from '#lib/core/sync/seat-presence.ts';
@@ -382,25 +383,27 @@
 					aria-live="polite"
 					data-testid="room-preview"
 				>
-					<ScriptLogo src={found?.logo} name={found?.name} class="game-logo" />
-					<div class="game-text">
-						{#if found}
-							<p class="game-name">{found.name || t('room.noScriptYet')}</p>
-							<ScriptByline author={found.author} inline />
-							{#if found.storyteller}
-								<span class="game-table" data-testid="game-storyteller"
-									>{t('room.storytellerLine', { name: found.storyteller })}</span
-								>
-							{/if}
-							{#if found.seats !== undefined}
-								<span class="game-table"
-									>{t('room.tableSize', { seats: found.seats, seated: found.seated ?? 0 })}</span
-								>
-							{/if}
-						{:else}
-							<p class="game-status" role="status">{lookupText}</p>
-						{/if}
-					</div>
+					<!-- Only a found game has a logo; until then the status line has the whole box,
+					     centred (Trevor, 2026-10-31). The box keeps its height, so nothing moves. -->
+					{#if found}
+						<ScriptName name={found.name} logo={found.logo} empty={t('room.noScriptYet')}>
+							{#snippet sub()}
+								<ScriptByline author={found.author} inline />
+								{#if found.storyteller}
+									<span data-testid="game-storyteller"
+										>{t('room.storytellerLine', { name: found.storyteller })}</span
+									>
+								{/if}
+								{#if found.seats !== undefined}
+									<span
+										>{t('room.tableSize', { seats: found.seats, seated: found.seated ?? 0 })}</span
+									>
+								{/if}
+							{/snippet}
+						</ScriptName>
+					{:else}
+						<p class="game-status" role="status">{lookupText}</p>
+					{/if}
 				</section>
 				<div class="entry">
 					<Button type="submit" variant="accent" disabled={!canJoin}>
@@ -504,6 +507,7 @@
 			onSeen={() => player?.roleSeen()}
 		/>{/if}
 	{#if player}<PlayerCountOff {player} />{/if}
+	{#if player}<PlayerTravellerPick {player} />{/if}
 	{#if player && balloting}<ScriptBallot {player} />{/if}
 {/if}
 
@@ -556,10 +560,8 @@
 		font-size: 1.1rem;
 	}
 	.game {
-		display: grid;
-		grid-template-columns: calc(4.5 * var(--u)) minmax(0, 1fr);
+		display: flex;
 		align-items: center;
-		gap: var(--space-3);
 		box-sizing: border-box;
 		width: 100%;
 		/* Room for the name, the author, the Storyteller and the table, so none of them moves the page. */
@@ -569,34 +571,18 @@
 		border-radius: var(--radius-md);
 		text-align: start;
 	}
+	.game:not(.found) {
+		justify-content: center;
+		text-align: center;
+	}
+	.game-status {
+		margin: 0;
+		color: var(--on-surface-muted);
+	}
 	/* The box is raised already, so the game it opens sits back in the page's own surface. */
 	.game.found {
 		border-style: solid;
 		background: var(--surface);
-	}
-	.game :global(.game-logo) {
-		width: calc(4.5 * var(--u));
-		height: calc(4.5 * var(--u));
-	}
-	.game-text {
-		display: grid;
-		gap: var(--space-1);
-		min-width: 0;
-	}
-	.game-name {
-		margin: 0;
-		overflow: hidden;
-		font-family: var(--font-heading);
-		font-weight: var(--font-heading-weight);
-		font-size: 1.3rem;
-		line-height: 1.2;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-	.game-table,
-	.game-status {
-		margin: 0;
-		color: var(--on-surface-muted);
 	}
 	.entry {
 		display: flex;

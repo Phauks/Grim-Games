@@ -62,8 +62,8 @@ test('a removed phone leaves the game, is turned away at the code, and Unblock s
 	const players = page.getByRole('list', { name: 'Players in the room' }).getByRole('listitem');
 	const unseated = players.filter({ hasText: 'No seat' });
 	const removed = page.getByTestId('room-removed');
-	// Always there, so removing someone moves nothing.
-	await expect(removed).toContainText('None');
+	// Hidden until someone is blocked (Trevor, 2026-10-31).
+	await expect(removed).toHaveCount(0);
 	const phone = await joinAs(browser, testInfo, code, 'Ana');
 	// Seated by name in seat 1, and in the game: the script's tabs show.
 	const ana = players.filter({ hasText: 'Ana' });
@@ -71,15 +71,12 @@ test('a removed phone leaves the game, is turned away at the code, and Unblock s
 	await expect(unseated).toHaveCount(0);
 	await expect(phone.getByRole('tab', { name: 'Grim' })).toBeVisible();
 
-	// The red trash on the player's sheet asks first.
-	await ana.getByTestId('room-player-open').tap();
-	const sheet = page.getByRole('dialog', { name: 'Ana', exact: true });
-	await sheet.getByTestId('room-player-remove').tap();
+	// The red trash on the player's row asks first.
+	await ana.getByTestId('room-player-remove').tap();
 	await page
-		.getByRole('alertdialog', { name: 'Remove this player from the room?' })
+		.getByRole('alertdialog', { name: 'Block this player from the room?' })
 		.getByRole('button', { name: 'Confirm' })
 		.tap();
-	await expect(sheet).toBeHidden();
 	await expect(removed.getByTestId('room-removed-player')).toHaveText([/Ana/]);
 	// Their seat lost the name, so nothing seats them there again by name.
 	await expect(players.filter({ hasText: 'Ana' })).toHaveCount(0);
@@ -97,7 +94,7 @@ test('a removed phone leaves the game, is turned away at the code, and Unblock s
 
 	// Unblock only lets the phone try again: it joins as a new phone, with no seat.
 	await removed.getByRole('button', { name: 'Unblock' }).tap();
-	await expect(removed).toContainText('None');
+	await expect(removed).toHaveCount(0);
 	await typeCode(phone, code);
 	await expect(preview).toContainText('Trouble Brewing');
 	await phone.getByRole('button', { name: 'Join as player' }).tap();
@@ -121,13 +118,9 @@ test('a phone removed while on its player screen lands on the join screen, out o
 	await phone.goto('/play');
 	await expect(phone.getByRole('tab', { name: 'Grim' })).toBeVisible();
 
-	await unseated.getByTestId('room-player-open').tap();
+	await unseated.getByTestId('room-player-remove').tap();
 	await page
-		.getByRole('dialog', { name: 'Ana', exact: true })
-		.getByTestId('room-player-remove')
-		.tap();
-	await page
-		.getByRole('alertdialog', { name: 'Remove this player from the room?' })
+		.getByRole('alertdialog', { name: 'Block this player from the room?' })
 		.getByRole('button', { name: 'Confirm' })
 		.tap();
 

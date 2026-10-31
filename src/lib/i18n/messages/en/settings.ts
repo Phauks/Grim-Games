@@ -154,6 +154,8 @@ export const settings = {
 	'settings.tileLabels.numbers': 'Numbers',
 	'settings.tileLabels.letters': 'Letters',
 	'settings.tileLabels.roman': 'Roman numerals',
+	'settings.tileLabels.kanji': 'Kanji numerals',
+	'settings.tileLabels.runes': 'Norse runes',
 	'settings.tileLabels.symbols': 'Symbols',
 	'settings.tileLabels.colours': 'Colours',
 	'settings.tileLabels.emoji': 'Emoji',
@@ -211,6 +213,9 @@ export const settings = {
 	'settings.requireName': 'Require a name before drawing',
 	'settings.holdToReveal': 'Hold to see character',
 	'settings.slotMachine': 'Slot machine reveal',
+	'settings.travellersChoose': 'Travellers choose on their phones',
+	'settings.travellersChooseHelp':
+		'Random selection leaves the Travellers for players past 15 open; send them the choice from ⋯ › Travellers choose.',
 	'settings.ownWording': 'Show our own wording',
 	'settings.ownWordingHelp':
 		'Game mode descriptions written for this app. Off, a mode shows its source link instead.',

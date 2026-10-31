@@ -5,7 +5,7 @@
 	import ProfileAvatar from '#lib/features/player/ProfileAvatar.svelte';
 	import UsernameDialog from '#lib/features/account/UsernameDialog.svelte';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
-	import { t } from '#lib/i18n/locale.svelte.ts';
+	import { intl, t } from '#lib/i18n/locale.svelte.ts';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -21,15 +21,18 @@
 	import AddFriendDialog from './AddFriendDialog.svelte';
 	import SeatFriendButton from './SeatFriendButton.svelte';
 	import FriendRows from './FriendRows.svelte';
+	import { roomJoinPath } from '#lib/features/room/join-link.ts';
 	import { profileHref, scriptOpenHref } from './friend-links.ts';
 	import { friendScripts } from './friend-scripts.svelte.ts';
 	import { type InboxScript, type PublishedScript } from './friend-scripts-protocol.ts';
+	import { sinceUnit } from './friend-rules.ts';
 	import { friends } from './friends.svelte.ts';
 	import {
 		friendLink,
 		readFriendLink,
 		type FriendAccount,
 		type FriendAction,
+		type FriendInvite,
 		type RecentPlayer
 	} from './friends-protocol.ts';
 
@@ -106,6 +109,26 @@
 		}
 	}
 
+	/** A friend's presence as words (plan F5): in a game, or when they were last on. */
+	function presenceText(other: FriendAccount): string | undefined {
+		const presence = friends.data?.presence?.[other.id];
+		if (presence?.inGame) return t('friends.presence.inGame');
+		if (!presence?.lastSeen) return undefined;
+		const { value, unit } = sinceUnit(presence.lastSeen, Date.now());
+		return t('friends.presence.lastSeen', { when: intl.relative(value, unit) });
+	}
+
+	async function setShowPresence(show: boolean): Promise<void> {
+		busy = true;
+		try {
+			await friends.setShowPresence(show);
+		} catch (e) {
+			toast(t('friends.failed'), e instanceof Error ? e.message : String(e));
+		} finally {
+			busy = false;
+		}
+	}
+
 	async function setFindable(findable: boolean): Promise<void> {
 		busy = true;
 		try {
@@ -151,6 +174,21 @@
 	<SeatFriendButton open target={{ recent: other.id }} known={other.state} />
 {/snippet}
 
+{#snippet inviteLabel(invite: FriendInvite)}
+	<span class="script">{invite.title || t('friends.invites')}</span>
+	<span class="from">{t('friends.invites.from', { name: nameOf(invite.from) })}</span>
+{/snippet}
+
+{#snippet inviteActions(invite: FriendInvite)}
+	<Button variant="accent" href={roomJoinPath(invite.code)}>{t('friends.invites.join')}</Button>
+	<Button
+		variant="quiet"
+		disabled={busy}
+		onclick={() => change(() => friends.dismissInvite(invite.id))}
+		>{t('friends.invites.decline')}</Button
+	>
+{/snippet}
+
 {#snippet inboxLabel(script: InboxScript)}
 	<span class="script">{script.name}</span>
 	<span class="from">{t('friends.scripts.from', { name: nameOf(script.from) })}</span>
@@ -192,7 +230,16 @@
 	/>
 {/snippet}
 
+{#snippet friendLabel(other: FriendAccount)}
+	{@render who(other)}
+	{@const presence = presenceText(other)}
+	{#if presence}<span class="from" data-testid="friend-presence">{presence}</span>{/if}
+{/snippet}
+
 {#snippet friendActions(other: FriendAccount)}
+	{@const join = friends.data?.presence?.[other.id]?.join}
+	{#if join}<Button variant="accent" href={roomJoinPath(join)}>{t('friends.presence.join')}</Button
+		>{/if}
 	<Menu
 		label={t('friends.actionsFor', { name: nameOf(other) })}
 		items={[
@@ -218,6 +265,21 @@
 	<ErrorBoundary area="friends">
 		{#if account.status === 'signed-in' && account.user}
 			{@const data = friends.data}
+			<PageSection title={t('friends.invites')}>
+				{#if data}
+					<FriendRows
+						items={data.invites ?? []}
+						key={(invite) => invite.id}
+						testid="friend-invites"
+						icon={(invite) => invite.from.icon}
+						label={inviteLabel}
+						actions={inviteActions}
+					/>
+				{:else}
+					<p class="muted">{friends.error || t('friends.loading')}</p>
+				{/if}
+			</PageSection>
+
 			<PageSection title={t('friends.requests')}>
 				{#if data}{@render accounts(data.incoming, 'friend-incoming', incomingActions)}{/if}
 			</PageSection>
@@ -249,7 +311,14 @@
 					>
 				{/snippet}
 				{#if data}
-					{@render accounts(data.friends, 'friend-list', friendActions)}
+					<FriendRows
+						items={data.friends}
+						key={(other) => other.id}
+						testid="friend-list"
+						icon={(other) => other.icon}
+						label={friendLabel}
+						actions={friendActions}
+					/>
 				{:else}
 					<p class="muted">{friends.error || t('friends.loading')}</p>
 				{/if}
@@ -327,6 +396,12 @@
 					checked={data?.findable ?? true}
 					disabled={!data || busy}
 					onChange={(findable) => void setFindable(findable)}
+				/>
+				<SettingToggle
+					label={t('friends.presence.show')}
+					checked={data?.showPresence ?? true}
+					disabled={!data || busy}
+					onChange={(show) => void setShowPresence(show)}
 				/>
 			</PageSection>
 

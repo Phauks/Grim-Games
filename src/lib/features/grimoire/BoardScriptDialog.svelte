@@ -14,7 +14,8 @@
 	import { gameSheetRules } from '#lib/features/modes/sheet-rules.ts';
 	import { gameShareable } from '#lib/features/scripts/game-shareable.svelte.ts';
 	import { playerSettings } from '#lib/features/player/player-settings.svelte.ts';
-	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
+	import ScriptName from '#lib/features/scripts/ScriptName.svelte';
+	import { afterPaint } from '#lib/ui/after-paint.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { screenTheme } from '#lib/ui/themes/screen-theme.svelte.ts';
@@ -49,6 +50,19 @@
 	const share = $derived(open && script ? gameShareable(script) : undefined);
 	/** The game mode and special rules, as the Script below lists them, for Print. */
 	const rules = $derived(open ? gameSheetRules(game.gameId) : []);
+	/**
+	 * The player view is built just after the dialog's first frame paints, so the Script tap
+	 * answers at once; building it in the tap held the next paint for 300 ms on a phone (Chrome's
+	 * INP reading, Trevor 2026-10-31). The dialog fades in over that frame, so nothing jumps.
+	 * Set back before each opening renders (pre), and left alone on closing, so the view stays
+	 * while the dialog fades out.
+	 */
+	let painted = $state(false);
+	$effect.pre(() => {
+		if (!open) return;
+		painted = false;
+		return afterPaint(() => (painted = true));
+	});
 	// The whole player view takes the sheet background while it is open, as /play does
 	// (PlayerView), so its tabs, title line and dialogs match, not the Script tab alone (Trevor,
 	// 2026-10-30: "Theme not working everywhere. Player view within storyteller view").
@@ -58,7 +72,7 @@
 	});
 </script>
 
-{#snippet logoLead()}<ScriptLogo src={logo} class="title-logo" />{/snippet}
+{#snippet logoLead()}<ScriptName name={game.script.meta?.name} {logo} size="lead" />{/snippet}
 <Dialog
 	bind:open
 	title={game.script.meta?.name || 'Script'}
@@ -80,7 +94,7 @@
 	{/snippet}
 	<!-- A max-size dialog doesn't scroll itself: its content does. -->
 	<div class="script-scroll" data-testid={testid}>
-		{#if script}
+		{#if script && painted}
 			<!-- Every screen a player has, Grim and Notes too (Trevor, 2026-10-23: "feature
 			     parity"): the town as the table knows it, and the Storyteller's own notes. -->
 			<BoardPlayerView

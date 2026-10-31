@@ -240,3 +240,50 @@ test('an update rebuilds a renamed file from its stored copy', async ({
 	);
 	expect(stored).toBe(await (await request.get(renamed)).text());
 });
+
+// Trevor (2026-10-31): opening a game on beta ended in the browser's network error ("The
+// FetchEvent … resulted in a network error response"), because the service worker had no
+// stored app page and the network failed. A game address now always opens something.
+test('a game address opens with no stored app page and no network', async ({ page, context }) => {
+	await page.goto('/');
+	await page.evaluate(() => navigator.serviceWorker.ready);
+	await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
+	const build = Object.keys(await cachedPaths(page)).find(
+		(name) => name !== 'grim-games-runtime-v1'
+	);
+	expect(build).toBeDefined();
+
+	// An older build's stored copy is still there: the game opens from it.
+	await page.evaluate(async (name) => {
+		const older = await caches.open('grim-games-older');
+		const current = await caches.open(name);
+		for (const request of await current.keys()) {
+			const response = await current.match(request);
+			if (response) await older.put(request, response);
+		}
+		await caches.delete(name);
+	}, build!);
+	await context.setOffline(true);
+	await page.goto('/grimoire/no-such-game/setup');
+	await expect(page.getByText('There is no saved game here on this device.')).toBeVisible();
+
+	// Nothing stored at all: a page that says so, with Try again once back online.
+	await context.setOffline(false);
+	await page.evaluate(async () => {
+		for (const name of await caches.keys()) await caches.delete(name);
+	});
+	await context.setOffline(true);
+	await page.goto('/grimoire/no-such-game/setup');
+	await expect(page.getByText('This page could not open.')).toBeVisible();
+	const retry = page.getByRole('button', { name: 'Try again' });
+	await retry.tap();
+	await expect(page.getByText('This page could not open.')).toBeVisible();
+	await context.setOffline(false);
+	// Coming back online also reloads by itself, which can land before the network is up
+	// (CI, phone project); Try again is what a person taps then.
+	const game = page.getByText('There is no saved game here on this device.');
+	await expect(async () => {
+		if (await retry.isVisible()) await retry.tap({ timeout: 1000 }).catch(() => {});
+		await expect(game).toBeVisible({ timeout: 2000 });
+	}).toPass({ timeout: 20_000 });
+});

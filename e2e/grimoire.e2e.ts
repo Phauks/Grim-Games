@@ -1297,10 +1297,11 @@ test('Share in the toolbar shows the room code, QR and join link, never the game
 	await expect(share.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
 	await expect(share.getByRole('img', { name: 'QR code to join the room' })).toBeVisible();
 	const code = (await share.getByTestId('share-code').textContent())!.replace(/\D/g, '');
-	// The link is the room's one (Trevor, 2026-10-26): Join game with its code. Grim view sits
-	// below it on the same screen (Trevor, 2026-10-22), off, with no link of its own.
+	// The link is the room's one (Trevor, 2026-10-26): Join game with its code. Grim view is on
+	// the Grimoire tab (Trevor, 2026-10-31), off, with no link of its own.
 	const watch = share.getByTestId('watch-link');
 	await expect(share.getByTestId('share-url')).toHaveValue(new RegExp(`/join#${code}$`));
+	await share.getByRole('tab', { name: 'Grimoire' }).tap();
 	await expect(watch.getByTestId('share-url')).toHaveCount(0);
 	await expect(watch.getByLabel('Grim view password', { exact: true })).toBeDisabled();
 	expect(page.url()).toBe(url);
@@ -2460,14 +2461,15 @@ test("the Boffin gives the Demon a not-in-play good character's ability", async 
 	const again = await openSeat(page, 2);
 	await again.getByRole('button', { name: 'Seat actions' }).tap();
 	await page.getByRole('dialog', { name: 'Seat 2' }).getByRole('button', { name: 'Notes' }).tap();
+	// Players opens at that player, their notes beneath them (Trevor, 2026-10-31).
 	const notes = page
-		.getByRole('dialog', { name: 'Seat 2', exact: true })
-		.filter({ has: page.getByTestId('room-player-sheet') });
+		.getByRole('dialog', { name: 'Players', exact: true })
+		.getByTestId('room-player')
+		.filter({ hasText: 'Seat 2' });
 	await notes.getByTestId('new-note').tap();
 	const note = page.getByRole('dialog', { name: 'Note', exact: true });
 	await note.getByRole('textbox', { name: 'Title' }).fill('Claim');
 	await note.getByRole('button', { name: 'Close' }).tap();
-	await page.keyboard.press('Escape');
 	await page.keyboard.press('Escape');
 	await expect(notes).toBeHidden();
 	await closeSheet(page);
@@ -3032,7 +3034,6 @@ async function endWithNote(page: Page) {
 	await notes.getByRole('textbox', { name: 'Text' }).fill('Secret word: lantern');
 	await notes.getByRole('button', { name: 'Close' }).tap();
 	await page.keyboard.press('Escape');
-	await page.keyboard.press('Escape');
 	await expect(page.getByRole('dialog', { name: 'Players', exact: true })).toBeHidden();
 	await menu(page, 'End game');
 	const end = page.getByRole('alertdialog', { name: 'End game?' });
@@ -3296,6 +3297,49 @@ test("the day's Announcements explain a kill that didn't happen", async ({ page 
 	await page.screenshot({ path: `test-results/prevented-${test.info().project.name}.png` });
 });
 
+test('game notes show a token beside the Fabled, at their size, that opens Players', async ({
+	page
+}) => {
+	// Trevor (2026-10-31): game notes get a token in the top left corner, sized like the Fabled.
+	test.setTimeout(60_000);
+	await startGame(page);
+	const token = page.getByTestId('game-notes-token');
+	await expect(token).toHaveCount(0);
+
+	const players = await openPlayers(page);
+	await players.getByTestId('game-notes-open').tap();
+	await page.getByRole('dialog', { name: 'Game notes' }).getByTestId('new-note').tap();
+	const note = page.getByRole('dialog', { name: 'Note', exact: true });
+	await note.getByRole('textbox', { name: 'Title' }).fill('Bluffs');
+	await note.getByRole('button', { name: 'Close' }).tap();
+	for (let i = 0; i < 3 && (await page.getByRole('dialog').count()) > 0; i++) {
+		await page.keyboard.press('Escape');
+	}
+	await expect(page.getByRole('dialog')).toHaveCount(0);
+
+	// Alone in the corner, then after a Fabled at the Fabled's size.
+	await expect(token).toBeVisible();
+	await expect(token).toHaveAccessibleName('Game notes: 1');
+	await menu(page, 'Add Fabled or Loric');
+	await page
+		.getByRole('dialog', { name: 'Add Fabled or Loric' })
+		.getByRole('button', { name: 'Spirit of Ivory', exact: true })
+		.tap();
+	const fabled = page.locator('.rules-edge').getByRole('button', { name: 'Spirit of Ivory' });
+	await expect(fabled).toBeVisible();
+	// The faces match: the same parchment disc, at the same size and height.
+	const a = (await fabled.locator('[data-token-face]').boundingBox())!;
+	const b = (await token.locator('[data-token-face]').boundingBox())!;
+	expect(Math.abs(a.width - b.width)).toBeLessThanOrEqual(1);
+	expect(Math.abs(a.height - b.height)).toBeLessThanOrEqual(1);
+	expect(Math.abs(a.y - b.y)).toBeLessThanOrEqual(1);
+	expect(b.x).toBeGreaterThan(a.x + a.width - 1);
+	await page.screenshot({ path: `test-results/game-notes-token-${test.info().project.name}.png` });
+
+	await token.tap();
+	await expect(page.getByRole('dialog', { name: 'Players', exact: true })).toBeVisible();
+});
+
 test('the Storyteller keeps game and player notes on Players, marked on the token', async ({
 	page
 }) => {
@@ -3319,11 +3363,10 @@ test('the Storyteller keeps game and player notes on Players, marked on the toke
 	await page.keyboard.press('Escape');
 	const players = await openPlayers(page);
 	await expect(players.getByTestId('room-player')).toHaveCount(8);
-	await expect(players.getByTestId('game-notes-open')).toContainText('None');
-	await players.getByTestId('game-notes-open').tap();
 	// Game notes as the player's notebook keeps them (Trevor, 2026-10-23): several, each with a
-	// title, starting as a "+ New note" card with a dashed edge.
-	const gameNotes = page.getByRole('dialog', { name: 'Game notes' });
+	// title, starting as a "+ New note" card with a dashed edge; their own section above the
+	// players (Trevor, 2026-10-31).
+	const gameNotes = players.getByTestId('game-notes');
 	const add = gameNotes.getByTestId('new-note');
 	const cards = gameNotes.locator('[data-note]');
 	await expect(cards).toHaveCount(0);
@@ -3377,18 +3420,11 @@ test('the Storyteller keeps game and player notes on Players, marked on the toke
 	await page.keyboard.press('Escape');
 	await expect(cards).toHaveText(/^\s*Fang Gu\s*Hidden\s*$/);
 	await page.screenshot({ path: `test-results/game-notes-${test.info().project.name}.png` });
-	await page.keyboard.press('Escape');
-	await expect(gameNotes).toBeHidden();
-	await expect(players.getByTestId('game-notes-open')).toContainText('1 note');
 
-	// Several titled notes per player too, as the same cards (Trevor, 2026-10-26), on their
-	// sheet.
+	// Several titled notes per player too, as the same cards (Trevor, 2026-10-26), beneath them
+	// (Trevor, 2026-10-31).
 	const ana = players.getByTestId('room-player').filter({ hasText: 'Ana' });
-	await ana.getByTestId('room-player-open').tap();
-	// Not the seat's own sheet, which has the same name and stays open under it.
-	const player = page
-		.getByRole('dialog', { name: 'Ana', exact: true })
-		.filter({ has: page.getByTestId('room-player-sheet') });
+	const player = ana;
 	const playerCards = player.locator('[data-note]');
 	await expect(playerCards).toHaveCount(0);
 	await expect(player.getByTestId('new-note')).toHaveCSS('border-top-style', 'dashed');
@@ -3403,11 +3439,13 @@ test('the Storyteller keeps game and player notes on Players, marked on the toke
 	await gameDialog.getByRole('textbox', { name: 'Text' }).fill('Chef: 1');
 	await page.keyboard.press('Escape');
 	await expect(playerCards).toHaveText([/Word/, /Claim/]);
-	await page.keyboard.press('Escape');
-	await expect(player).toBeHidden();
-	// The list marks who has notes; the game's are untouched.
-	await expect(ana.getByTestId('room-player-note')).toBeVisible();
-	await expect(players.getByTestId('game-notes-open')).toContainText('1 note');
+	// The game's notes are untouched.
+	await expect(cards).toHaveCount(1);
+	// Each player folds away under their caret (Trevor, 2026-10-31: "allow carrot menuing").
+	await ana.getByRole('button', { expanded: true }).tap();
+	await expect(ana.getByTestId('room-player-sheet')).toBeHidden();
+	await ana.getByRole('button', { expanded: false }).tap();
+	await expect(playerCards).toHaveText([/Word/, /Claim/]);
 	await page.keyboard.press('Escape');
 	await expect(players).toBeHidden();
 
@@ -3429,7 +3467,6 @@ test('the Storyteller keeps game and player notes on Players, marked on the toke
 		.tap();
 	await expect(seatCards).toHaveText([/Word/]);
 	await page.keyboard.press('Escape');
-	await page.keyboard.press('Escape');
 	await expect(player).toBeHidden();
 	// The seat's own ⋯ menu opens the same sheet (Trevor, 2026-10-19), with the character.
 	const again = await openSeat(page, 1);
@@ -3447,7 +3484,6 @@ test('the Storyteller keeps game and player notes on Players, marked on the toke
 	await gameDialog.getByRole('button', { name: 'Close' }).tap();
 	await expect(seatCards).toHaveText([/Word/, /Bluffs/]);
 	await page.screenshot({ path: `test-results/seat-note-${test.info().project.name}.png` });
-	await page.keyboard.press('Escape');
 	await page.keyboard.press('Escape');
 	await expect(player).toBeHidden();
 	await closeSheet(page);
@@ -4808,16 +4844,19 @@ test('the board menu names its groups, in two columns beside a phone', async ({ 
 	);
 	expect((await names('Session')).join(' ')).toMatch(/^(Character selection )?End game$/);
 	const session = (await group('Session').boundingBox())!;
-	// Open seating (plan J38) and Count off (J40) are there with no room open, disabled.
+	// Open seating (plan J38), Count off (J40) and Travellers choose (L102) are there with no
+	// room open, disabled.
 	expect(await names('Seats')).toEqual([
 		'Add seat',
 		'Add Fabled or Loric',
 		'Arrange seats',
 		'Open seating',
-		'Count off'
+		'Count off',
+		'Travellers choose'
 	]);
 	await expect(group('Seats').getByRole('button', { name: 'Open seating' })).toBeDisabled();
 	await expect(group('Seats').getByRole('button', { name: 'Count off' })).toBeDisabled();
+	await expect(group('Seats').getByRole('button', { name: 'Travellers choose' })).toBeDisabled();
 	expect(await names('App')).toEqual(['Settings', 'Report an issue']);
 	// Beside a phone, the game on the left and the rest on the right.
 	const game = (await group('Game').boundingBox())!;

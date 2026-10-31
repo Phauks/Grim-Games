@@ -3,14 +3,12 @@ import {
 	AVATAR_GUESS,
 	GENERIC_GUESSES,
 	characterGuesses,
-	clearGuesses,
 	cycleGuess,
 	genericGuess,
 	guessesOf,
 	mainGuess,
 	parseGuesses,
 	seatCycle,
-	selfSeat,
 	toggleGuess,
 	travellerGuess,
 	travellerTeam,
@@ -22,7 +20,7 @@ describe("a player's guesses on their Grim tab", () => {
 		let guesses = toggleGuess({}, 's1', 'empath');
 		guesses = toggleGuess(guesses, 's2', 'imp');
 		expect(guesses).toEqual({ s1: ['empath'], s2: ['imp'] });
-		expect(clearGuesses(guesses, 's2')).toEqual({ s1: ['empath'] });
+		expect(toggleGuess(guesses, 's2', 'imp')).toEqual({ s1: ['empath'] });
 	});
 
 	it('keeps only the newest guesses a room could hold', () => {
@@ -153,15 +151,6 @@ describe("a Traveller's seat (Trevor, 2026-10-26)", () => {
 		expect(travellerTeam(guesses, 's1')).toBeUndefined();
 		expect(travellerTeam({ s1: ['imp', 'team:evil'] }, 's1')?.team).toBe('evil');
 		expect(travellerGuess(guesses, 's1', 'imp')).toEqual({});
-	});
-});
-
-describe('marking your own seat (Trevor, 2026-10-26)', () => {
-	it("is the room's seat until the player marks one, or marks none", () => {
-		expect(selfSeat(undefined, 's2')).toBe('s2');
-		expect(selfSeat('s5', 's2')).toBe('s5');
-		expect(selfSeat('', 's2')).toBeUndefined();
-		expect(selfSeat(undefined, undefined)).toBeUndefined();
 	});
 });
 

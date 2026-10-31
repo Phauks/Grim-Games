@@ -118,6 +118,23 @@ export function toggleReminder(
 	return parsePlayerReminders(next.length ? { ...rest, [seatId]: next } : rest);
 }
 
+/**
+ * A token picked up off a seat (Trevor, 2026-10-31: as on the board): onto another seat,
+ * keeping its look, or back to the tray when `to` is none.
+ */
+export function moveReminder(
+	reminders: PlayerReminders,
+	from: string,
+	reminder: PlayerReminder,
+	to?: string
+): PlayerReminders {
+	let next = hasReminder(reminders, from, reminder)
+		? toggleReminder(reminders, from, reminder)
+		: reminders;
+	if (to && !hasReminder(next, to, reminder)) next = toggleReminder(next, to, reminder);
+	return next;
+}
+
 export interface PlayerReminderGroup {
 	character: Character;
 	labels: ReminderLabel[];
