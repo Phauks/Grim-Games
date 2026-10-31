@@ -2,7 +2,7 @@
 	import { locale, t } from '#lib/i18n/locale.svelte.ts';
 	import { formatRoomCode } from '#lib/core/sync/room-code.ts';
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
-	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
+	import ScriptName from '#lib/features/scripts/ScriptName.svelte';
 	import { forgetRoom } from './player.svelte.ts';
 	import { fetchRoomPreview, type GamePreview } from './room-preview.ts';
 	import { recentRooms } from './recent-rooms.ts';
@@ -59,23 +59,24 @@
 				{@const game = recentGames[room.code]}
 				<li>
 					<button type="button" class="recent-game" onclick={() => onOpen(room.code, !!room.town)}>
-						<ScriptLogo src={game?.logo} name={game?.name ?? room.script} class="recent-logo" />
-						<span class="recent-text">
-							<span class="recent-name">{(game?.name ?? room.script) || t('room.noScriptYet')}</span
-							>
-							<span class="recent-line"
-								>{game?.storyteller
-									? t('room.recentLine', {
-											code: formatRoomCode(room.code),
-											name: game.storyteller
-										})
-									: formatRoomCode(room.code)}</span
-							>
-							<!-- Its own line, so a phone shows all of it (Trevor, 2026-10-26). -->
-							<span class="recent-line"
-								>{lastSeen.format(room.at)}{room.town ? ` · ${t('room.town.title')}` : ''}</span
-							>
-						</span>
+						<ScriptName
+							name={game?.name ?? room.script}
+							logo={game?.logo}
+							empty={t('room.noScriptYet')}
+						>
+							{#snippet sub()}<span class="recent-line"
+									>{game?.storyteller
+										? t('room.recentLine', {
+												code: formatRoomCode(room.code),
+												name: game.storyteller
+											})
+										: formatRoomCode(room.code)}</span
+								>
+								<!-- Its own line, so a phone shows all of it (Trevor, 2026-10-26). -->
+								<span class="recent-line"
+									>{lastSeen.format(room.at)}{room.town ? ` · ${t('room.town.title')}` : ''}</span
+								>{/snippet}
+						</ScriptName>
 					</button>
 				</li>
 			{/each}
@@ -97,10 +98,8 @@
 	}
 	/* Three lines always, so a room's details arriving move nothing. */
 	.recent-game {
-		display: grid;
-		grid-template-columns: calc(2.5 * var(--u)) minmax(0, 1fr);
+		display: flex;
 		align-items: center;
-		gap: var(--space-3);
 		box-sizing: border-box;
 		width: 100%;
 		min-height: var(--tap-target);
@@ -113,25 +112,9 @@
 		text-align: start;
 		cursor: pointer;
 	}
-	.recent-game :global(.recent-logo) {
-		width: calc(2.5 * var(--u));
-		height: calc(2.5 * var(--u));
-	}
-	.recent-text {
-		display: grid;
-		min-width: 0;
-	}
-	.recent-name,
 	.recent-line {
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
-	}
-	.recent-name {
-		font-family: var(--font-heading);
-		font-weight: var(--font-heading-weight);
-	}
-	.recent-line {
-		color: var(--on-surface-muted);
 	}
 </style>

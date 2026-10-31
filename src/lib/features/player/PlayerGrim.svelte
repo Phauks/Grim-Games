@@ -36,7 +36,6 @@
 	import BoardLogo from '#lib/features/scripts/BoardLogo.svelte';
 	import { scriptLogo } from '#lib/core/data/script-logo.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
-	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import { markBoardShown } from '#lib/ui/board-cover.ts';
 	import { playerSettings } from './player-settings.svelte.ts';
 	import {
@@ -58,9 +57,6 @@
 		toggleGuess,
 		travellerGuess,
 		travellerTeam,
-		readSelf,
-		selfSeat,
-		writeSelf,
 		writeGuesses,
 		type GenericGuess,
 		type GuessMark,
@@ -126,20 +122,14 @@
 	let seating = $state<ReturnType<typeof PlayerSeating>>(); // Seating on the grim (plan J38).
 	let townEl = $state<HTMLElement>();
 	let held = $state<string>(); // The seat a finger is on, its reminder lines under "While held".
-	let marked = $state<string>(); // The seat this player marked as theirs, else the room's.
-	const mine = $derived(selfSeat(marked, player?.view?.me.seatId));
-	function markSelf(seatId: string, on: boolean) {
-		if (!kept) return;
-		marked = on ? seatId : '';
-		writeSelf(kept, marked);
-	}
+	/** The seat the room gave this phone; it has a ring on the grim. */
+	const mine = $derived(player?.view?.me.seatId);
 	/** The player's own notes on each seat (Trevor, 2026-10-24), shared with the Notes tab. */
 	// Set in an effect, not a derived, so the derived below follows the notes it reads.
 	let book = $state<ReturnType<typeof seatNotes>>();
 	$effect.pre(() => {
 		guesses = kept ? readGuesses(kept) : {};
 		reminders.load(kept);
-		marked = kept ? readSelf(kept) : undefined;
 		book = kept ? seatNotes(kept) : undefined;
 	});
 	/**
@@ -623,13 +613,6 @@
 			>{(chosen && notesLine(notes[chosen.seatId], t('player.hidden'))) || t('common.none')}</span
 		></button
 	>
-	<!-- Which seat is this player's own, for when the room did not seat them (Trevor,
-	     2026-10-26); it has a ring on the grim. -->
-	<SettingToggle
-		label={t('player.grim.thisIsMe')}
-		checked={!!chosen && chosen.seatId === mine}
-		onChange={(on) => chosen && markSelf(chosen.seatId, on)}
-	/>
 	<!-- A seat by its type alone, or only good or evil (Trevor, 2026-10-24), above the
 	     characters; a Traveller's seat has only Good and Evil, and no characters. -->
 	<GenericGuessGrid

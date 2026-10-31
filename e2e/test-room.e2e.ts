@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import { toBoard } from './new-game.ts';
 import { pickNumber } from './number-select.ts';
 
@@ -66,4 +66,45 @@ test('fake players join a room, each on its own device, and can be shown', async
 	await page.getByRole('button', { name: 'Unlock every screen' }).tap();
 	await expect(page.getByTestId('test-room-status')).toContainText('2 of 2 players connected');
 	await storyteller.context().close();
+});
+
+test('the Storyteller screen’s room closes from the Test room, and the screens fill the screen', async ({
+	page
+}) => {
+	// Trevor, 2026-10-31: "need a way to close a test room"; and a full screen for the screens.
+	await page.goto('/test-room');
+	await pickNumber(page, 'Players', 'Players 2');
+	const frame = page.frameLocator('iframe[name="grimbinder-storyteller"]');
+	const screen = page.frame({ name: 'grimbinder-storyteller' })!;
+	// The Storyteller starts a game on its screen. Its taps are made in the frame directly, as
+	// part of it can sit below the page's fold at the frame's zoom.
+	const press = (target: Locator) => target.evaluate((el: HTMLElement) => el.click());
+	await screen.goto('/new');
+	await press(
+		frame.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing', { exact: true })
+	);
+	await press(frame.getByRole('button', { name: 'Create game' }));
+	await press(frame.getByTestId('setup-to-board'));
+	await expect.poll(() => screen.url()).toMatch(/\/grimoire\/[\w-]+$/);
+	await screen.goto(`${new URL(screen.url()).pathname}/room`);
+	await expect(frame.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
+	const status = page.getByTestId('test-room-status');
+	await expect(status).toHaveText(/^Room \d{3} \d{3} · 2 of 2 players connected$/);
+
+	// Full screen: the screens alone, and back.
+	const stage = page.getByTestId('test-room-stage');
+	await stage.getByRole('button', { name: 'Full screen' }).tap();
+	await expect(stage).toHaveAttribute('data-filled', '');
+	await stage.getByRole('button', { name: 'Full screen' }).tap();
+	await expect(stage).not.toHaveAttribute('data-filled');
+
+	await page.getByRole('button', { name: 'Close room' }).tap();
+	const confirm = page.getByRole('alertdialog', { name: 'Close the test room?' });
+	await confirm.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(status).toHaveText(/^No room/);
+	// The room is gone: the Storyteller screen starts again from Home, with no room to follow.
+	await expect.poll(() => new URL(screen.url()).pathname).toBe('/');
+	await page.waitForTimeout(1500);
+	await expect(status).toHaveText(/^No room/);
+	await expect(page.getByRole('button', { name: 'Close room' })).toBeDisabled();
 });

@@ -58,7 +58,7 @@ export function action(kind: BotAction, view: PlayerView, self: BotSelf): Client
 	switch (kind) {
 		case 'seat': {
 			if (!seats.length) return null;
-			if (view.seatingOpen) return { type: 'sit', after: seats[self.index % seats.length].seatId };
+			if (view.seatingOpen) return { type: 'sit', onto: seats[self.index % seats.length].seatId };
 			if (me.seatId) return null;
 			const free = seats.filter((s) => open(s.playerName) && !view.takenSeats.includes(s.seatId));
 			const seat = free[self.index % Math.max(1, free.length)];

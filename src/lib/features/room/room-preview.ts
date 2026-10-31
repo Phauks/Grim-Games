@@ -4,7 +4,7 @@
  * what it says into what the Join game page shows.
  */
 import { authorLogo, editionLogo, OFFICIAL_EDITIONS } from '#lib/core/data/index.ts';
-import type { RoomPreview } from '#lib/core/sync/room.ts';
+import { REMOVED_PROBE_HEADER, type RoomPreview } from '#lib/core/sync/room.ts';
 import { fetchWithTimeout } from '#lib/ui/fetch.ts';
 
 export interface GamePreview {
@@ -16,14 +16,18 @@ export interface GamePreview {
 	seated?: number;
 	/** The Storyteller set a Grim view password. */
 	grimView?: boolean;
+	/** The Storyteller removed this phone from the game (plan J37): joining is turned away. */
+	removed?: boolean;
 }
 
 /** `undefined` when no open room has the code. Throws when the Worker can't be reached. */
 export async function fetchRoomPreview(
 	code: string,
-	signal?: AbortSignal
+	signal?: AbortSignal,
+	removedProbe?: string
 ): Promise<GamePreview | undefined> {
-	const response = await fetchWithTimeout(`/api/room/${code}`, { signal });
+	const headers = removedProbe ? { [REMOVED_PROBE_HEADER]: removedProbe } : undefined;
+	const response = await fetchWithTimeout(`/api/room/${code}`, { signal, headers });
 	if (!response.ok) throw new Error(`Room lookup failed: ${response.status}`);
 	return toGamePreview((await response.json()) as RoomPreview);
 }
@@ -44,5 +48,6 @@ export function toGamePreview(preview: RoomPreview): GamePreview | undefined {
 		game.seated = preview.seated ?? 0;
 	}
 	if (preview.grimView) game.grimView = true;
+	if (preview.removed) game.removed = true;
 	return game;
 }

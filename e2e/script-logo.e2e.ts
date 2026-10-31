@@ -107,7 +107,8 @@ test("Search shows a script's own logo beside its name, and in its details", asy
 	expect(await width('No Logo Town')).toBe(await width('Storm Front'));
 
 	await page.getByRole('button', { name: /^Storm Front/ }).tap();
-	await expect(page.getByRole('img', { name: 'Storm Front logo' })).toBeVisible();
+	// In the details, before the name as on /play (ScriptName), so it is decorative.
+	await expect(page.getByTestId('script-details-name').locator('img')).toHaveAttribute('src', LOGO);
 });
 
 test("Continue game shows each game's script logo beside its name", async ({ page }) => {
