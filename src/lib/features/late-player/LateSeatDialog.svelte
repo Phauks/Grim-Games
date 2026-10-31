@@ -34,11 +34,12 @@
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import Sentence from '#lib/features/characters/Sentence.svelte';
 	import { slot } from '#lib/features/characters/slots.ts';
-	import CharacterChoice from './CharacterChoice.svelte';
+	import CharacterChoice from '#lib/features/setup/CharacterChoice.svelte';
 	import CharacterPicker from '#lib/features/characters/CharacterPicker.svelte';
-	import AddCharactersDialog from './AddCharactersDialog.svelte';
-	import SelectionList from './SelectionList.svelte';
-	import PlayerNameInput from './PlayerNameInput.svelte';
+	import AddCharactersDialog from '#lib/features/setup/AddCharactersDialog.svelte';
+	import SelectionList from '#lib/features/setup/SelectionList.svelte';
+	import PlayerCountSheet from '#lib/features/setup/PlayerCountSheet.svelte';
+	import PlayerNameInput from '#lib/features/setup/PlayerNameInput.svelte';
 	import type { LatePlayer } from './late-player.ts';
 
 	interface Props {
@@ -164,9 +165,6 @@
 			lookup
 		})
 	);
-	const matches = $derived(
-		SEATED_TYPES.every((type) => after.expected[type].includes(after.chosen[type]))
-	);
 
 	const taken = $derived(new Set([...seatedAfter, ...bag, ...drawn.unseated]));
 	const dealable = $derived(
@@ -203,8 +201,8 @@
 	function noteOf(character: Character): string | undefined {
 		const seatId = holderOf(character.id);
 		if (seatId) return seatName(game, seatId);
-		if (bag.includes(character.id)) return t('setup.late.inBagMark');
-		return outOfPlay.includes(character.id) ? t('setup.late.outOfPlay') : undefined;
+		if (bag.includes(character.id)) return t('latePlayer.inBagMark');
+		return outOfPlay.includes(character.id) ? t('latePlayer.outOfPlay') : undefined;
 	}
 	function toggle(character: Character) {
 		const id = character.id;
@@ -252,6 +250,14 @@
 		minus([...drawn.seen.map((s) => s.characterId), ...bagNow], [...seatedAfter, ...bag])
 	);
 
+	/** The player count's drop-down: more adds late players, fewer takes the last ones off. */
+	function setCount(count: number) {
+		const wanted = Math.max(1, count - dealt);
+		const have = players.length;
+		for (let n = have; n < wanted; n++) onAddAnother();
+		if (have > wanted) players = players.slice(0, wanted);
+	}
+
 	/** Names on the seats and the other late players, so a phone is only offered once. */
 	const takenBy = (index: number) => [
 		...game.seating.flatMap((id) => game.seats[id].playerName ?? []),
@@ -298,11 +304,11 @@
 	}
 </script>
 
-<Dialog bind:open title={t('setup.late.title')} size="full" pinAside={false}>
+<Dialog bind:open title={t('latePlayer.title')} size="full" pinAside={false}>
 	{#snippet aside()}
 		<div class="late" data-testid="late-seat">
 			<section>
-				<h3>{t('setup.late.who')}</h3>
+				<h3>{t('latePlayer.who')}</h3>
 				<ul class="players">
 					{#each players as player, i (player.key)}
 						<li data-testid="late-player-row">
@@ -311,18 +317,18 @@
 									bind:value={player.name}
 									taken={takenBy(i)}
 									hideLabel
-									pickLabel={t('setup.late.pickPhone')}
+									pickLabel={t('latePlayer.pickPhone')}
 								/>
 								<IconButton
 									icon="grimoire"
 									label={player.position === undefined
-										? t('setup.late.place')
-										: t('setup.late.move')}
+										? t('latePlayer.place')
+										: t('latePlayer.move')}
 									onclick={() => onPlace(i)}
 									data-testid="late-place"
 								/>
 								<DeleteButton
-									label={t('setup.late.remove')}
+									label={t('latePlayer.remove')}
 									disabled={players.length === 1}
 									onclick={() => (players = players.filter((_, j) => j !== i))}
 								/>
@@ -332,16 +338,19 @@
 					{/each}
 				</ul>
 				<Button icon="latePlayer" onclick={onAddAnother} data-testid="late-add-another"
-					>{t('setup.late.addAnother')}</Button
+					>{t('latePlayer.addAnother')}</Button
 				>
 			</section>
 
-			<h3>{t('setup.late.players', { from: dealt, to: dealt + extra })}</h3>
-			<p class="check" class:matches data-testid="late-check">
-				{matches
-					? t('setup.late.matches', { count: dealt + extra })
-					: t('setup.late.offCount', { count: dealt + extra })}
-			</p>
+			<!-- Character selection's own player count and setup sheet (Trevor, 2026-10-31): a
+			     higher count adds late players, a lower one takes the last ones away. -->
+			<PlayerCountSheet
+				players={dealt + extra}
+				min={dealt + 1}
+				onChange={setCount}
+				storageKey="late-player:sheet"
+				testid="late-player-count"
+			/>
 		</div>
 	{/snippet}
 	<!-- Character selection's own list: tap to put a character in the bag or take it out, or
@@ -365,25 +374,25 @@
 			{#snippet tools()}
 				<IconButton
 					icon="random"
-					label={proposal ? t('setup.late.rollAgain') : t('setup.late.roll')}
+					label={proposal ? t('latePlayer.rollAgain') : t('latePlayer.roll')}
 					onclick={roll}
 					data-testid="late-roll"
 				/>
 				<IconButton
 					icon="selectedOnly"
-					label={t('setup.late.inPlayOnly')}
+					label={t('latePlayer.inPlayOnly')}
 					aria-pressed={inPlayOnly}
 					onclick={() => (inPlayOnly = !inPlayOnly)}
 				/>
 				<IconButton
 					icon="changes"
-					label={t('setup.late.showChanges')}
+					label={t('latePlayer.showChanges')}
 					onclick={() => (changesOpen = true)}
 					data-testid="late-show-changes"
 				/>
 				<IconButton
 					icon="reset"
-					label={t('setup.late.revert')}
+					label={t('latePlayer.revert')}
 					disabled={!proposal && !edited && !changes.length && !rulesOn.length && !rulesOff.length}
 					onclick={revert}
 					data-testid="late-revert"
@@ -414,20 +423,20 @@
 		<ModalActions
 			onCancel={() => (open = false)}
 			onConfirm={confirm}
-			confirmLabel={t('setup.late.confirm')}
+			confirmLabel={t('latePlayer.confirm')}
 		/>
 	{/snippet}
 </Dialog>
 
 <!-- Only what differs, before and after (Trevor, 2026-10-30). -->
-<Dialog bind:open={changesOpen} title={t('setup.late.changes')}>
+<Dialog bind:open={changesOpen} title={t('latePlayer.changes')}>
 	<div data-testid="late-changes">
 		<ChangeList testid="late-change-list">
 			{#each players as player (player.key)}
-				<dt>{t('setup.late.joins')}</dt>
+				<dt>{t('latePlayer.joins')}</dt>
 				<dd>
 					{#if player.name.trim()}<PlayerBadge name={player.name.trim() as PlayerName} />{:else}{t(
-							'setup.late.newSeat'
+							'latePlayer.newSeat'
 						)}{/if}
 					<span class="muted">{@render where(player.position)}</span>
 				</dd>
@@ -441,38 +450,38 @@
 				</dd>
 			{/each}
 			{#if rulesOn.length}
-				<dt>{t('setup.late.invoked')}</dt>
+				<dt>{t('latePlayer.invoked')}</dt>
 				<dd>
 					{#each rulesOn as id (id)}<CharacterBadge characterId={id} />{/each}
 				</dd>
 			{/if}
 			{#if rulesOff.length}
-				<dt>{t('setup.late.takenOut')}</dt>
+				<dt>{t('latePlayer.takenOut')}</dt>
 				<dd>
 					{#each rulesOff as id (id)}<CharacterBadge characterId={id} />{/each}
 				</dd>
 			{/if}
 			{#if bagIn.length}
-				<dt>{t('setup.late.in')}</dt>
+				<dt>{t('latePlayer.in')}</dt>
 				<dd data-testid="late-bag-in">
 					{#each bagIn as id, i (`${id}-${i}`)}<CharacterBadge characterId={id} />{/each}
 				</dd>
 			{/if}
 			{#if bagOut.length}
-				<dt>{t('setup.late.out')}</dt>
+				<dt>{t('latePlayer.out')}</dt>
 				<dd data-testid="late-bag-out">
 					{#each bagOut as id, i (`${id}-${i}`)}<CharacterBadge characterId={id} />{/each}
 				</dd>
 			{/if}
 			{#if outOfPlay.length}
-				<dt>{t('setup.late.outOfPlay')}</dt>
+				<dt>{t('latePlayer.outOfPlay')}</dt>
 				<dd data-testid="late-out-of-play">
 					{#each outOfPlay as id, i (`${id}-${i}`)}<CharacterBadge characterId={id} />{/each}
 				</dd>
 			{/if}
 		</ChangeList>
 		{#if !changes.length && !bagIn.length && !bagOut.length}
-			<p class="muted">{t('setup.late.noneChanged')}</p>
+			<p class="muted">{t('latePlayer.noneChanged')}</p>
 		{/if}
 	</div>
 </Dialog>
@@ -480,14 +489,14 @@
 <!-- What a player becomes: Character selection's list again, one choice. -->
 <Dialog
 	bind:open={() => changing !== undefined, (o) => (changing = o ? changing : undefined)}
-	title={t('setup.late.changeTitle')}
+	title={t('latePlayer.changeTitle')}
 	size="full"
 >
 	{#if changing}
 		{@const seatId = changing}
 		<div class="change" data-testid="late-change">
 			<p class="badges">
-				<PlayerBadge name={seatName(game, seatId)} /><span class="muted">{t('setup.late.was')}</span
+				<PlayerBadge name={seatName(game, seatId)} /><span class="muted">{t('latePlayer.was')}</span
 				><CharacterBadge characterId={fromOf(seatId) ?? ''} />
 			</p>
 			<CharacterPicker
@@ -522,11 +531,11 @@
 
 {#snippet where(position: number | undefined)}
 	{@const sides = sidesOf(position)}
-	{#if !sides}{t('setup.late.notPlaced')}{:else if sides.a === sides.b}<Sentence
-			text={t('setup.late.end', { a: slot('a') })}
+	{#if !sides}{t('latePlayer.notPlaced')}{:else if sides.a === sides.b}<Sentence
+			text={t('latePlayer.end', { a: slot('a') })}
 		>
 			{#snippet fill()}<PlayerBadge name={seatName(game, sides.a)} />{/snippet}
-		</Sentence>{:else}<Sentence text={t('setup.late.where', { a: slot('a'), b: slot('b') })}>
+		</Sentence>{:else}<Sentence text={t('latePlayer.where', { a: slot('a'), b: slot('b') })}>
 			{#snippet fill(name)}<PlayerBadge
 					name={seatName(game, name === 'a' ? sides.a : sides.b)}
 				/>{/snippet}
@@ -581,13 +590,5 @@
 		flex-wrap: wrap;
 		align-items: center;
 		gap: var(--space-2);
-	}
-	.check {
-		padding: var(--space-2) var(--space-3);
-		border-radius: var(--radius-md);
-		background: var(--accent-wash);
-	}
-	.check.matches {
-		background: var(--good-wash);
 	}
 </style>
