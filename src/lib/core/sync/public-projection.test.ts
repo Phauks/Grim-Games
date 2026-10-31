@@ -184,6 +184,31 @@ describe('publicProjection', () => {
 		expect(at('fireworks')).toBeUndefined();
 	});
 
+	it("carries the game's settings that players meet, field by field (Trevor, 2026-10-30)", () => {
+		const { game } = busyGame();
+		expect(publicProjection(game)).not.toHaveProperty('settings');
+		const sent = (settings: unknown) =>
+			publicProjection(
+				game,
+				undefined,
+				undefined,
+				undefined,
+				undefined,
+				[],
+				undefined,
+				{ kind: 'setup' },
+				undefined,
+				undefined,
+				undefined,
+				settings as object
+			).settings;
+		expect(sent({ trackNominations: true, timerPerPlayer: 45, pin: '1234' })).toEqual({
+			trackNominations: true,
+			timerPerPlayer: 45
+		});
+		expect(sent({ timerPerPlayer: -1 })).toBeUndefined();
+	});
+
 	it('carries the game mode and special rules, and nothing for a Standard game', () => {
 		const { game } = busyGame();
 		expect(publicProjection(game)).not.toHaveProperty('rules');
