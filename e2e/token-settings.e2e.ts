@@ -262,10 +262,10 @@ test('character names on grimoire tokens are off by default and shown when switc
 	await page.reload();
 	await expect(name).toHaveText('Fortune Teller');
 
-	// Every token follows the setting (Trevor, 2026-10-18): the seat sheet's and Show to
-	// player's too.
+	// Every token follows the setting (Trevor, 2026-10-18): Show to player's too. The seat
+	// sheet draws no token now, only the standard character row (Trevor, 2026-10-31).
 	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
-	await expect(sheet.getByTestId('token-name').first()).toHaveText('Fortune Teller');
+	await expect(sheet.getByTestId('token-name')).toHaveCount(0);
 	await sheet.getByRole('button', { name: 'Show to player' }).tap();
 	const shown = page.locator('[data-testid="show-to-player"][open]');
 	await expect(shown.getByTestId('token-name')).toHaveText('Fortune Teller');

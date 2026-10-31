@@ -2,7 +2,7 @@
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import type { DayUse } from '#lib/core/data/character-rules.ts';
 	import type { SeatId } from '#lib/core/model/index.ts';
-	import { dayUseDeath, dayUseSuggestion } from '#lib/core/rules/index.ts';
+	import { dayUseAnswer, dayUseDeath, dayUseSuggestion } from '#lib/core/rules/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
@@ -27,6 +27,10 @@
 	 * Gangster, Gunslinger, Golem) adds Dies, switched on when its `deathCause` says the player
 	 * dies (`dayUseDeath`), off when it can't kill them or the Storyteller must decide (a
 	 * Recluse shot by the Slayer, a poisoned Slayer). Confirm then marks them dead by it.
+	 *
+	 * An ability that answers (`dayUse.answer`: the Puzzlemaster's guess) adds what to tell its
+	 * player about the player picked (`dayUseAnswer`): the Demon for a right guess, anyone but
+	 * the Demon for a wrong one.
 	 */
 	interface Props {
 		game: DayPort;
@@ -86,6 +90,11 @@
 	}
 
 	const who = t('day.who', { character: slot('character'), seat: slot('seat') });
+	const answer = $derived(
+		use && on
+			? dayUseAnswer(game.game, use.seatId, use.characterId, on, game.characters)
+			: undefined
+	);
 	const token = $derived(
 		use ? game.characters.get(use.characterId)?.reminders.includes(spent) : false
 	);
@@ -147,6 +156,19 @@
 				>
 				<!-- eslint-enable grim/names-as-badges -->
 			</dd>
+			{#if answer}
+				<dt>{t('day.useAnswer')}</dt>
+				<dd data-testid="day-use-answer" data-kind={answer.kind}>
+					{#if answer.kind === 'right' || answer.kind === 'wrong'}
+						{t(answer.kind === 'right' ? 'day.useAnswerRight' : 'day.useAnswerWrong')}
+						{#each answer.demons as demon (demon)}<PlayerBadge
+								name={game.seatName(demon)}
+							/>{:else}{t('day.useOnNone')}{/each}
+					{:else}
+						{t(answer.kind === 'any' ? 'day.useAnswerAny' : 'day.useAnswerDead')}
+					{/if}
+				</dd>
+			{/if}
 			{#if use.rule.kills && on}
 				<dt>{t('day.useDies')}</dt>
 				<dd>

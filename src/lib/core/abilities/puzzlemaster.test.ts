@@ -12,7 +12,42 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
+import type { Command } from '#lib/core/engine/index.ts';
+import {
+	newGame,
+	run,
+	testCharacters as characters
+} from '#lib/core/model/fixtures.test-support.ts';
+import { dayUseAnswer, dayUseOf } from '#lib/core/rules/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+
+/**
+ * Seats 0 to 4: the Puzzlemaster, Alex the Demon, an Empath, a Sailor and a Chef, with the
+ * extra commands run after.
+ */
+function table(...extra: ((seats: string[]) => Command)[]) {
+	const { session, ctx, seats } = newGame(['Pat', 'Alex', 'Sarah', 'Marianna', 'Ben']);
+	const s = run(
+		session,
+		ctx,
+		...['puzzlemaster', 'imp', 'empath', 'sailor', 'chef'].map((characterId, i): Command => ({
+			type: 'AssignCharacter',
+			seatId: seats[i],
+			characterId
+		})),
+		...extra.map((command) => command(seats))
+	);
+	return { game: s.game, seats };
+}
+/** A reminder of `characterId`'s on seat `n`. */
+const reminder =
+	(n: number, characterId: string, label: string) =>
+	(seats: string[]): Command => ({
+		type: 'AddReminder',
+		seatId: seats[n],
+		reminder: { characterId, label }
+	});
+const drunkOn = (n: number) => reminder(n, 'puzzlemaster', 'Drunk');
 
 describe('Puzzlemaster', () => {
 	const character = committedCharacter('puzzlemaster');
@@ -44,7 +79,55 @@ describe('Puzzlemaster', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Puzzlemaster#Examples)', () => {
-		it.todo('Example 1: Correct guess on drunk Empath reveals Demon');
-		it.todo('Example 2: Wrong guess returns a misleading name');
+		it('Example 1: guessing the player it made drunk learns the Demon player', () => {
+			// The Empath carries the Puzzlemaster's Drunk; guessing her is right: Alex, the Demon.
+			const { game, seats } = table(drunkOn(2));
+			expect(dayUseAnswer(game, seats[0], 'puzzlemaster', seats[2], characters)).toEqual({
+				kind: 'right',
+				demons: [seats[1]]
+			});
+		});
+
+		it('Example 2: a player drunk by another ability is a wrong guess', () => {
+			// The Chef is dead and drunk by the Puzzlemaster; the Sailor's own player is drunk by
+			// the Sailor. Guessing the Sailor's player is wrong: anyone but the Demon.
+			const { game, seats } = table(drunkOn(4), reminder(3, 'sailor', 'Drunk'), (seats) => ({
+				type: 'SetDead',
+				seatId: seats[4],
+				dead: true
+			}));
+			expect(dayUseAnswer(game, seats[0], 'puzzlemaster', seats[3], characters)).toEqual({
+				kind: 'wrong',
+				demons: [seats[1]]
+			});
+		});
+	});
+
+	describe('the guess (https://wiki.bloodontheclocktower.com/Puzzlemaster)', () => {
+		it('asks whom they guessed, and marks it Guess Used', () => {
+			expect(dayUseOf('puzzlemaster')).toEqual({
+				who: 'guessed',
+				spentToken: 'Guess Used',
+				answer: 'demon-if-marked'
+			});
+		});
+
+		it('gives any player while the Puzzlemaster is poisoned', () => {
+			const { game, seats } = table(drunkOn(2), reminder(0, 'poisoner', 'Poisoned'));
+			expect(dayUseAnswer(game, seats[0], 'puzzlemaster', seats[2], characters)).toEqual({
+				kind: 'any'
+			});
+		});
+
+		it('gives nothing once the Puzzlemaster is dead: the dead may not guess', () => {
+			const { game, seats } = table(drunkOn(2), (seats) => ({
+				type: 'SetDead',
+				seatId: seats[0],
+				dead: true
+			}));
+			expect(dayUseAnswer(game, seats[0], 'puzzlemaster', seats[2], characters)).toEqual({
+				kind: 'dead'
+			});
+		});
 	});
 });
