@@ -83,7 +83,6 @@
 	const game = $derived(grimoire.game);
 	const characters = $derived(grimoire.open.characters);
 	const seats = $derived(game.seating.map((id) => game.seats[id]));
-	const looseMode = $derived(boardLooks.current.reminders === 'free');
 	/** The character whose art a generic copy shows (Trevor, 2026-10-27), if any. */
 	const artOf = (reminder: ReminderInstance) =>
 		reminder.like ? characters.get(reminder.like.characterId) : undefined;
@@ -105,7 +104,7 @@
 
 <!-- Each seat's line to its reminders, by the Storyteller's "Reminder lines" choice (Trevor,
      2026-10-29); none for loose reminders, or while one is dragged. -->
-{#if !looseMode && remDrag.drag === undefined}<ReminderTethers
+{#if remDrag.drag === undefined}<ReminderTethers
 		seats={seats.map((seat, i) => ({
 			at: shown[i],
 			spots: fan[i] ?? [],
@@ -173,10 +172,9 @@
 		{@const at = fan[i]}
 		{#each seat.reminders as reminder, k (reminder.reminderId)}
 			{@const dragged = remDrag.drag?.reminderId === reminder.reminderId}
-			{@const spot = looseMode ? grimoire.reminderSpots[reminder.reminderId] : undefined}
 			<BoardReminderChip
 				{reminder}
-				at={dragged ? remDrag.drag!.at : (spot ?? at[k])}
+				at={dragged ? remDrag.drag!.at : at[k]}
 				character={characters.get(reminder.characterId)}
 				alignment={placingAlignment(game, reminder, characters)}
 				art={artOf(reminder)}
@@ -217,7 +215,9 @@
 	{/each}
 {/if}
 
-<!-- Reminders that belong to no one, where they were put down (Trevor, 2026-10-17). -->
+<!-- Reminders that belong to no one, where they were put down (Trevor, 2026-10-17): only an
+     older build made them (Trevor, 2026-10-31: no "Stay where dropped"), marked until each goes on
+     a seat. -->
 {#each looseReminders(game) as reminder, k (reminder.reminderId)}
 	{@const dragged = remDrag.drag?.reminderId === reminder.reminderId}
 	<BoardReminderChip
@@ -233,7 +233,7 @@
 		loose
 		dragging={dragged}
 		extra={hints.extras.has(reminder.reminderId)}
-		unassigned={!looseMode}
+		unassigned
 		now={nw.isStepReminder(reminder)}
 		onTap={() => onLooseReminder(reminder.reminderId)}
 		onDrag={(x, y, end) => remDrag.move(reminder.reminderId, undefined, x, y, end)}

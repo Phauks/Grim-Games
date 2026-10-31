@@ -94,7 +94,7 @@ async function change(page: Page, control: Locator): Promise<(() => Promise<void
 	if (kind === 'combobox') {
 		await control.tap();
 		await page.locator('[role="option"]:not([aria-selected="true"]):visible').first().tap();
-		// A choice that asks first (e.g. Reminders: Stay where dropped).
+		// A choice that asks first.
 		const confirm = page.getByRole('alertdialog').getByRole('button', { name: 'Confirm' });
 		if (await confirm.isVisible().catch(() => false)) await confirm.tap();
 		return;

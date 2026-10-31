@@ -18,13 +18,24 @@
 		groups: readonly { key: string; caption?: string; items: readonly T[] }[];
 		keyOf: (item: T) => string;
 		item: Snippet<[T]>;
+		/** The tokens' diameter in px (ReminderGroups). */
+		size: number;
 		/** A token is being dragged out: the sheet drops away. */
 		lowered?: boolean;
 		/** Above the tokens, such as a search field. */
 		header?: Snippet;
 	}
 
-	let { open = $bindable(), label, groups, keyOf, item, lowered = false, header }: Props = $props();
+	let {
+		open = $bindable(),
+		label,
+		groups,
+		keyOf,
+		item,
+		size,
+		lowered = false,
+		header
+	}: Props = $props();
 
 	let sheet = $state<HTMLElement>();
 	/** Pulled down by its handle bar, in px. */
@@ -64,7 +75,7 @@
 			/>
 		</div>
 		{@render header?.()}
-		<ReminderGroups {label} {groups} {keyOf} {item} />
+		<ReminderGroups {label} {groups} {keyOf} {item} {size} />
 	</section>
 {/if}
 

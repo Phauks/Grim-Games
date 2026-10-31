@@ -193,9 +193,6 @@ export const settings = {
 	'settings.groupCorner': 'Board corner',
 	'settings.warning': 'Warning',
 	'settings.storytellerLine': 'Storyteller: {name}',
-	'settings.boardAdvanced': 'Advanced',
-	'settings.reminderModeWarning':
-		'Reminders left where dropped belong to no seat: no lines back to seats, no fitting around them, and they stay put when seats move.',
 	'settings.rulesGrouped.each': 'Individual',
 	'settings.rulesGrouped.grouped': 'Stacked',
 	'settings.groupShare': 'Share',

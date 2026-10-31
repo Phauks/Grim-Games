@@ -297,7 +297,6 @@
 		size,
 		board: boardSize,
 		element: board,
-		free: boardLooks.current.reminders === 'free',
 		confirm: moveConfirm
 	}));
 	const dragOrigin = $derived(remDrag.origin);
@@ -423,13 +422,11 @@
 	// ── The reminder bank under the board (Trevor, 2026-10-16): setup suggestions until
 	// they are all placed or dismissed (or the first day starts), then every reminder left.
 	// The Storyteller can switch at any time.
-	const looseMode = $derived(boardLooks.current.reminders === 'free');
 	const hints = new SeatHints(() => ({
 		grimoire,
 		game,
 		characters,
 		dragged: dragOrigin?.reminder,
-		loose: looseMode,
 		holders: nw.holders
 	}));
 	// The setup flow's last step lands here with its setup reminders in the bank.
@@ -844,7 +841,6 @@
 					: undefined}
 				focusMode={stepFocus.current.mode}
 				seatAt={remDrag.seatAt}
-				spotAllowed={remDrag.spotAllowed}
 				ruleAt={remDrag.ruleAt}
 				dropping={remDrag.drag !== undefined}
 				dropOver={!!remDrag.drag?.overNew}

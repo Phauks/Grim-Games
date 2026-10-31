@@ -15,6 +15,7 @@ describe('board looks', () => {
 				rulesGrouped: true,
 				nameSize: 9,
 				nameOffset: 1,
+				// Reminders are always held by their seat now (Trevor, 2026-10-31).
 				reminders: 'free',
 				usedGhostVote: 'struck',
 				reminderLines: 'away',
@@ -39,7 +40,6 @@ describe('board looks', () => {
 			rulesGrouped: true,
 			nameSize: 1.6,
 			nameOffset: 0.3,
-			reminders: 'free',
 			usedGhostVote: 'struck',
 			reminderLines: 'away',
 			abilityLook: 'vanilla'

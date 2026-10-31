@@ -138,7 +138,6 @@
 			...(lines.rules && SAMPLE_RULE ? [SAMPLE_RULE] : [])
 		].join(' + ')
 	);
-	const loose = $derived(boardLooks.current.reminders === 'free');
 	/**
 	 * The sample reminder's line back to Sam (ReminderTethers), by Reminder lines: from the
 	 * token's rim towards the reminder tucked against its right. Seat-relative px.
@@ -147,7 +146,7 @@
 		const seat = { x: size / 2, y: size / 2 };
 		const at = { x: size + chip / 2, y: chip / 2 };
 		const mode = boardLooks.current.reminderLines;
-		if (loose || !lineShown(mode, { seat, at, size, chip, held: false })) return undefined;
+		if (!lineShown(mode, { seat, at, size, chip, held: false })) return undefined;
 		const d = Math.hypot(at.x - seat.x, at.y - seat.y);
 		const rim = {
 			x: seat.x + ((at.x - seat.x) / d) * (size / 2),
@@ -243,7 +242,7 @@
 						data-testid="preview-tether"
 						><line x1={tether.from.x} y1={tether.from.y} x2={tether.to.x} y2={tether.to.y} /></svg
 					>{/if}
-				{#if i === 0}<span class="seat-reminder" class:loose data-testid="preview-seat-reminder"
+				{#if i === 0}<span class="seat-reminder" data-testid="preview-seat-reminder"
 						>{@render reminder(STEP, 0, 'good')}</span
 					>{/if}
 			</div>
@@ -338,10 +337,6 @@
 		stroke: var(--on-surface);
 		stroke-opacity: 0.35;
 		stroke-width: 1.5;
-	}
-	.seat-reminder.loose {
-		left: 115%;
-		top: 70%;
 	}
 	.preview-rules-edge {
 		position: absolute;

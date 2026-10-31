@@ -14,7 +14,6 @@ import {
  *   "only corner"), are grouped as one stack;
  * - the script's logo faint in the middle of the board, and how faint (Trevor, 2026-10-18);
  * - how big each seat's player name badge is, and how far below the token it sits;
- * - whether reminders are held by their seat or stay where they are dropped;
  * - how a dead player's used ghost vote looks on their badge;
  * - the frame round seat tokens whose player has not picked their own (L4);
  * - which reminders light up while a seat's token is held;
@@ -38,11 +37,6 @@ export interface BoardLooks {
 	 * token's size (Trevor, 2026-10-18: clear of the character name on the token).
 	 */
 	nameOffset: number;
-	/**
-	 * 'seat': reminders sit around their seat, laid out so none overlap. 'free' (Trevor,
-	 * 2026-10-17, "nonsticky"): a reminder stays where it is dropped; it still belongs to a seat.
-	 */
-	reminders: 'seat' | 'free';
 	/**
 	 * A used ghost vote: a grey outline ghost ('hollow'), or the ghost struck through in red
 	 * ('struck') (Trevor, 2026-10-19: both looks, picked in Settings).
@@ -75,7 +69,6 @@ export const DEFAULT_BOARD_LOOKS: BoardLooks = {
 	rulesGrouped: false,
 	nameSize: 1,
 	nameOffset: 0,
-	reminders: 'seat',
 	usedGhostVote: 'hollow',
 	reminderLines: DEFAULT_REMINDER_LINES,
 	abilityLook: 'grimbinder'
@@ -106,10 +99,11 @@ export function parseBoardLooks(raw: unknown): BoardLooks {
 		nameOffset: Number.isFinite(nameOffset)
 			? Math.min(NAME_OFFSET.max, Math.max(NAME_OFFSET.min, nameOffset))
 			: DEFAULT_BOARD_LOOKS.nameOffset,
-		reminders: value.reminders === 'free' ? 'free' : 'seat',
 		usedGhostVote: value.usedGhostVote === 'struck' ? 'struck' : 'hollow',
 		reminderLines: parseReminderLines(value.reminderLines),
 		abilityLook: value.abilityLook === 'vanilla' ? 'vanilla' : 'grimbinder'
+		// Earlier builds' `reminders: 'free'` ("Stay where dropped") is dropped: reminders are
+		// always held by their seat (Trevor, 2026-10-31).
 		// Earlier builds' `reminderStacks` switch is dropped: every reminder is always on the
 		// board (Trevor, 2026-10-23). So is `dragSource`: a dragged reminder no longer names
 		// where it came from (Trevor, 2026-10-24). `holdLights` and `holdMoves` too: holding a

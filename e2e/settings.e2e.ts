@@ -216,7 +216,6 @@ test('the board looks and background are in Board, saved with the board', async 
 		rulesGrouped: false,
 		nameSize: 1,
 		nameOffset: 0,
-		reminders: 'seat',
 		reminderLines: 'always',
 		usedGhostVote: 'hollow',
 		abilityLook: 'grimbinder'
@@ -732,18 +731,6 @@ test('every Board setting shows in its preview', async ({ page }) => {
 	await expect(bank.locator('li')).toHaveCount(2);
 	await choose("Show this character's reminders", 'Highlight');
 	await expect(bank.locator('li.dim')).toHaveCount(2);
-
-	// A seat's reminder beside its seat, or where it was dropped.
-	const seatReminder = preview.getByTestId('preview-seat-reminder');
-	await expect(seatReminder).not.toHaveClass(/loose/);
-	// In Board's closed Advanced part (Trevor, 2026-10-23).
-	await dialog.getByRole('button', { name: /^Advanced/ }).tap();
-	await choose('Reminders', 'Stay where dropped');
-	await page
-		.getByRole('alertdialog', { name: 'Reminders stay where dropped?' })
-		.getByRole('button', { name: 'Confirm' })
-		.tap();
-	await expect(seatReminder).toHaveClass(/loose/);
 
 	// The Fabled and Loric: in the corner, each or stacked.
 	await expect(preview.locator('.preview-rules-edge').getByTestId('preview-rules')).toBeVisible();

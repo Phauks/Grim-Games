@@ -26,8 +26,8 @@ const ctx: EngineContext = {
 };
 const characters = ctx.characters;
 
-/** Five seats, with a Poisoned reminder on the second. */
-function game(): Game {
+/** Five seats, with a Poisoned reminder on the second (or `loose`, on no seat). */
+function game(loose = false): Game {
 	let made = createGame(
 		{ type: 'CreateGame', script: { meta: { name: 'Drag' }, entries: [] }, playerCount: 5 },
 		ctx
@@ -43,25 +43,27 @@ function game(): Game {
 		ctx
 	);
 	if (!made.ok) throw new Error(made.error.message);
+	if (loose) {
+		const reminderId = onBoard(made.session.game)[0].reminderId;
+		made = dispatch(made.session, { type: 'LoosenReminder', reminderId }, ctx);
+		if (!made.ok) throw new Error(made.error.message);
+	}
 	return made.session.game;
 }
 
 /** A board 500px square at the page's top left, seats on a row at y = 50%. */
-function setup(free = false) {
-	const g = game();
+function setup(g = game()) {
 	const calls: unknown[][] = [];
 	const confirm = {
 		request: (...args: unknown[]) => calls.push(['request', ...args]),
 		requestReturn: (...args: unknown[]) => calls.push(['return', ...args]),
-		requestRule: (...args: unknown[]) => calls.push(['rule', ...args]),
-		requestLoose: (...args: unknown[]) => calls.push(['loose', ...args])
+		requestRule: (...args: unknown[]) => calls.push(['rule', ...args])
 	};
 	const element = document.createElement('div');
 	element.getBoundingClientRect = () => new DOMRect(0, 0, 500, 500);
 	const points = g.seating.map((_, i) => ({ x: 10 + i * 20, y: 50 }));
 	const dragging = new ReminderDragging(() => ({
 		grimoire: {
-			setReminderSpot: () => {},
 			run: (command: unknown) => calls.push(['run', command])
 		} as unknown as Grimoire,
 		game: g,
@@ -70,7 +72,6 @@ function setup(free = false) {
 		size: 40,
 		board: { width: 500, height: 500 },
 		element,
-		free,
 		confirm: confirm as never
 	}));
 	const reminder = onBoard(g)[0];
@@ -118,10 +119,14 @@ describe('ReminderDragging', () => {
 		expect(calls).toEqual([]);
 	});
 
-	it('marks no target seat in loose mode', () => {
-		const { g, dragging, reminder } = setup(true);
-		dragging.move(reminder.reminderId, g.seating[1], 250, 250, false);
-		expect(dragging.drag?.target).toBeUndefined();
+	it('puts a loose reminder from an older build on the seat it is dropped on', () => {
+		// Loose reminders are no longer made (Trevor, 2026-10-31), but a saved game may hold one.
+		const { g, dragging, calls } = setup(game(true));
+		const loose = g.looseReminders![0];
+		dragging.move(loose.reminderId, undefined, 250, 250, false);
+		expect(dragging.drag?.target).toBe(g.seating[2]);
+		dragging.move(loose.reminderId, undefined, 250, 250, true);
+		expect(calls).toEqual([['request', loose.reminderId, g.seating[2]]]);
 	});
 
 	it('stops on cancel', () => {

@@ -3,14 +3,10 @@
 	import { ASSIST_LABELS } from '#lib/ui/assistance.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
-	import ReminderModeSetting, {
-		REMINDER_MODE_LABEL
-	} from '#lib/features/grimoire/ReminderModeSetting.svelte';
 	import StepFocusSetting, {
 		STEP_FOCUS_LABEL
 	} from '#lib/features/grimoire/StepFocusSetting.svelte';
 	import SettingRow from '#lib/ui/settings/SettingRow.svelte';
-	import SettingCollapsible from '#lib/ui/settings/SettingCollapsible.svelte';
 	import SettingHeading from '#lib/ui/settings/SettingHeading.svelte';
 	import BoardLooksRows from './BoardLooksRows.svelte';
 	import BoardPreview from './BoardPreview.svelte';
@@ -67,17 +63,3 @@
 	checked={preferences.current.allowZoom}
 	onChange={(allowZoom) => preferences.update({ allowZoom })}
 />
-
-<!-- Where reminders sit, apart and closed, marked with a warning before it is touched, since
-     leaving them where dropped turns a lot off (Trevor, 2026-10-23). Its Confirm still lists
-     what changes (Trevor, 2026-10-17). The board's ⋯ > Board opens this section too. -->
-<SettingCollapsible
-	title={t('settings.boardAdvanced')}
-	storageKey="settings-board-advanced"
-	defaultOpen={false}
-	count={1}
->
-	<SettingRow label={REMINDER_MODE_LABEL} warning={t('settings.reminderModeWarning')}>
-		{#snippet control(labelId)}<ReminderModeSetting labelledBy={labelId} />{/snippet}
-	</SettingRow>
-</SettingCollapsible>
