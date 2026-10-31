@@ -30,9 +30,9 @@
 	 * order chosen. Two that set the same part differently are listed as conflicts; they warn,
 	 * never stop the game starting. Each rule shows its description under its switch (Trevor,
 	 * 2026-10-19), or the author's own rule text until he has approved one; everything else is
-	 * behind Inspect. The rules in this game come first, restated with their own switches, as
-	 * the screen before Start game did (Trevor, 2026-10-22, 2026-10-24), so the full list stays
-	 * clean.
+	 * behind Inspect. A rule's own switches sit under it in the list, usable while it is on
+	 * (Trevor, 2026-10-31: no "In this game" restating them, it only duplicated the list and
+	 * moved things about).
 	 * Design: /mnt/project-files/world-cup-rules/format-design.md.
 	 * Below them, the optional rules of the characters on the script (Trevor, 2026-10-30: an
 	 * official character's optional rule is its own functionality, not a special rule), each
@@ -116,7 +116,7 @@
 	}
 </script>
 
-{#snippet ruleRow(rule: SpecialRule, withDelete: boolean)}
+{#snippet ruleRow(rule: SpecialRule, listed: boolean)}
 	<div class="row">
 		<Toggle
 			label={rule.name}
@@ -129,7 +129,7 @@
 			label={t('modes.inspectRule', { name: rule.name })}
 			onclick={() => inspect(rule)}
 		/>
-		{#if withDelete}
+		{#if listed}
 			<!-- Always there, so nothing moves; only a rule added on this device can go. -->
 			<DeleteButton
 				label={t('modes.deleteRule', { name: rule.name })}
@@ -141,6 +141,19 @@
 			/>
 		{/if}
 	</div>
+	<!-- Always there, so nothing moves when the rule goes on; usable only while it is. -->
+	{#if listed}
+		{#each RULE_SWITCHES[rule.id] ?? [] as sw (sw.id)}
+			<div class="own">
+				<Toggle
+					label={t(sw.label(rule.id))}
+					checked={switchOn(choices, rule.id, sw)}
+					disabled={!ruleIds.includes(rule.id)}
+					onChange={(on) => onSwitch({ ...choices, [`${rule.id}:${sw.id}`]: on })}
+				/>
+			</div>
+		{/each}
+	{/if}
 {/snippet}
 
 <Dialog bind:open title={t('modes.specialRulesTitle')} size="full">
@@ -149,30 +162,6 @@
 	{/snippet}
 	<div class="rules">
 		<SearchField bind:value={term} label={t('modes.searchRules')} />
-		<section aria-labelledby="rules-in-game-title">
-			<h3 id="rules-in-game-title">
-				{t('modes.rulesInGame')}
-				<CountBadge count={chosen.length} />
-			</h3>
-			<ul role="list" class="in-game" data-testid="rules-in-game">
-				{#each chosen as rule (rule.id)}
-					<li>
-						{@render ruleRow(rule, false)}
-						{#each RULE_SWITCHES[rule.id] ?? [] as sw (sw.id)}
-							<div class="own">
-								<Toggle
-									label={t(sw.label(rule.id))}
-									checked={switchOn(choices, rule.id, sw)}
-									onChange={(on) => onSwitch({ ...choices, [`${rule.id}:${sw.id}`]: on })}
-								/>
-							</div>
-						{/each}
-					</li>
-				{:else}
-					<li class="muted">{t('common.none')}</li>
-				{/each}
-			</ul>
-		</section>
 		<section aria-labelledby="optional-rules-title">
 			<h3 id="optional-rules-title">
 				{t('modes.optionalRules')}
@@ -245,7 +234,10 @@
 			{/if}
 		</section>
 		<section aria-labelledby="rule-list-title">
-			<h3 id="rule-list-title">{t('modes.allRules')}</h3>
+			<h3 id="rule-list-title">
+				{t('modes.allRules')}
+				<CountBadge count={chosen.length} />
+			</h3>
 			<ul role="list" data-testid="special-rules">
 				{#each shown as rule (rule.id)}
 					<li>

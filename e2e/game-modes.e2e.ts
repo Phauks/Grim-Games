@@ -2071,26 +2071,26 @@ test('Duplicate Characters lets any character but a Demon be chosen twice and si
 	await expect(flagged).toBeVisible();
 });
 
-test('Special rules restates the rules in the game first, with their own switches', async ({
-	page
-}) => {
-	// Trevor (2026-10-22): the rules in the game restated; since 2026-10-29 at the top of
-	// Character selection's Special rules, not a screen before it.
+test('a rule’s own switches sit under it in the list, usable while it is on', async ({ page }) => {
+	// Trevor (2026-10-31): no "In this game" section restating the chosen rules; a rule's own
+	// switches (Trevor, 2026-10-23) stay in place under it, disabled while it is off.
 	await page.goto('/new');
 	await modesPanel(page).getByRole('button', { name: 'Create game' }).tap();
-	await chooseRulesOnSetup(page, '+1', 'Binary Supernovae');
+	await chooseRulesOnSetup(page, 'Binary Supernovae');
 	await page.getByTestId('setup-special-rules').tap();
 	const dialog = page.getByRole('dialog', { name: 'Special rules' });
-	const items = dialog.getByTestId('rules-in-game').locator(':scope > li');
-	await expect(items).toHaveCount(2);
-	await expect(items.nth(1)).toContainText('Binary Supernovae');
-	await expect(items.nth(1)).toContainText('If a Demon dies by execution, good wins.');
-	// The rule's switches change here (Trevor, 2026-10-23).
-	const announce = items
-		.nth(0)
-		.getByRole('checkbox', { name: 'Storyteller announces character', includeHidden: true });
+	await expect(dialog.getByTestId('rules-in-game')).toHaveCount(0);
+	const list = dialog.getByTestId('special-rules');
+	const plusOne = list.locator(':scope > li').filter({ hasText: '+1' }).first();
+	const announce = plusOne.getByRole('checkbox', {
+		name: 'Storyteller announces character',
+		includeHidden: true
+	});
+	await expect(announce).toBeDisabled();
+	await plusOne.getByText('+1', { exact: true }).tap();
+	await expect(announce).toBeEnabled();
 	await expect(announce).not.toBeChecked();
-	await items.nth(0).getByText('Storyteller announces character', { exact: true }).tap();
+	await plusOne.getByText('Storyteller announces character', { exact: true }).tap();
 	await expect(announce).toBeChecked();
 	await noSidewaysScroll(page);
 	// Kept as the screen opens again on them.
@@ -2114,17 +2114,20 @@ test('Special rules has a search box', async ({ page }) => {
 	await noSidewaysScroll(page);
 });
 
-test('+1 has a switch for naming its character among the rules in the game, shown in its instructions', async ({
-	page
-}) => {
+test('+1 has a switch for naming its character, shown in its instructions', async ({ page }) => {
 	// Trevor (2026-10-22): "add setting for +1", with his two instructions. Its switch is set
-	// only once the rule is in the game, keeping the rule list clean (Trevor, 2026-10-24).
+	// only once the rule is in the game (Trevor, 2026-10-24); until then it is disabled in place.
 	const dialog = await openRulesOnSetup(page);
-	const named = dialog.getByRole('checkbox', {
+	const plusOne = dialog
+		.getByTestId('special-rules')
+		.locator(':scope > li')
+		.filter({ hasText: '+1' })
+		.first();
+	const named = plusOne.getByRole('checkbox', {
 		name: 'Storyteller announces character',
 		includeHidden: true
 	});
-	await expect(named).toHaveCount(0);
+	await expect(named).toBeDisabled();
 	await dialog.getByTestId('special-rules').getByText('+1', { exact: true }).tap();
 	const inspectPlusOne = async (text: string) => {
 		await dialog.getByTestId('special-rules').getByRole('button', { name: 'Inspect +1' }).tap();
@@ -2135,7 +2138,7 @@ test('+1 has a switch for naming its character among the rules in the game, show
 	};
 	await inspectPlusOne('Tell the table that one character from off the script is in play.');
 	await expect(named).not.toBeChecked();
-	await dialog.getByText('Storyteller announces character', { exact: true }).tap();
+	await plusOne.getByText('Storyteller announces character', { exact: true }).tap();
 	await expect(named).toBeChecked();
 	await noSidewaysScroll(page);
 	await inspectPlusOne('Tell the table which character from off the script is in play.');

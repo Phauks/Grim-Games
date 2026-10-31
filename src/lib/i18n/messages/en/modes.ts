@@ -216,7 +216,6 @@ export const modes = {
 	'modes.switch.namedMany': 'Storyteller announces characters',
 	'modes.switch.threeAlive': '3-player limit',
 	'modes.switch.duplicateDemons': 'Duplicate Demons',
-	'modes.rulesInGame': 'In this game',
 	'modes.optionalRules': 'Optional rules',
 	'modes.optionalRuleOf': 'Optional rule of {name}',
 	'modes.optionalRule': 'Optional rule',
