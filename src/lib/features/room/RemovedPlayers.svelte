@@ -11,17 +11,16 @@
 	 * The phones removed from the room this game (plan J37; Trevor, 2026-10-29: "only good for
 	 * that game, but the kick can be revoked"). Unblock (Trevor, 2026-10-31) only lets one try to
 	 * join again: it comes back as a new phone, with no seat, and asks to sit like anyone else.
-	 * Always shown in a live room, "None" when empty, so removing someone shifts nothing.
+	 * Hidden until someone is blocked (Trevor, 2026-10-31: "hide removed from room unless someone
+	 * is in there"). It sits last on the Players screen, so it shifts nothing above it.
 	 */
 	const host = roomHost();
 	const name = (n?: string) => (n ?? t('room.scriptVote.unnamed')) as PlayerName;
 </script>
 
-<section aria-labelledby="removed-label" data-testid="room-removed">
-	<h2 id="removed-label">{t('room.players.removed')}</h2>
-	{#if host.removed.length === 0}
-		<p class="none">{t('common.none')}</p>
-	{:else}
+{#if host.removed.length > 0}
+	<section aria-labelledby="removed-label" data-testid="room-removed">
+		<h2 id="removed-label">{t('room.players.removed')}</h2>
 		<ul class="list" aria-labelledby="removed-label">
 			{#each host.removed as member (member.memberId)}
 				<li class="member" data-testid="room-removed-player">
@@ -42,8 +41,8 @@
 				</li>
 			{/each}
 		</ul>
-	{/if}
-</section>
+	</section>
+{/if}
 
 <style>
 	section {
@@ -55,10 +54,6 @@
 	h2 {
 		margin: 0;
 		font-size: 1.1rem;
-	}
-	.none {
-		margin: 0;
-		color: var(--on-surface-muted);
 	}
 	.list {
 		display: grid;
