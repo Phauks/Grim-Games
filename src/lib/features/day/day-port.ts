@@ -74,9 +74,8 @@ export function describeEntry(
 					})
 				: characterName(entry.characterId);
 			const note = t('day.logNote', { who, text: entry.text });
-			const line = entry.answer
-				? t('day.logAnswer', { line: note, answer: t(`day.answer.${entry.answer}`) })
-				: note;
+			const answer = entry.answer ? t(`day.answer.${entry.answer}`) : entry.customAnswer;
+			const line = answer ? t('day.logAnswer', { line: note, answer }) : note;
 			return entry.guesses?.length
 				? t('day.logGuesses', { line, count: entry.guesses.length })
 				: line;

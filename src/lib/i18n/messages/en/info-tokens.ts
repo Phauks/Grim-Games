@@ -79,8 +79,10 @@ export const infoTokens = {
 	'info-tokens.characterCardsNote': 'Only used while the character is in play.',
 	'info-tokens.card.secretWord': 'Your Secret Word is',
 	'info-tokens.card.secretPhrase': 'Your Secret Phrase is',
+	'info-tokens.card.goal': 'Your goal is',
 	'info-tokens.fill.word': 'Word',
 	'info-tokens.fill.phrase': 'Phrase',
+	'info-tokens.fill.goal': 'Goal',
 	'info-tokens.fill.answer': 'Fill in',
 	'info-tokens.cardFor': '{card} ({name})'
 } as const;

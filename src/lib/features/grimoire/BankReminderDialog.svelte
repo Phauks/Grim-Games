@@ -2,7 +2,8 @@
 	A reminder's own dialog (Trevor, 2026-10-30: one component for a token from the bank or the
 	board), opened by tapping the token in hand's pill, a seat sheet's reminder or a Fabled's:
 	whose it is, what a setup suggestion is for, and the ability it comes from. A placed one
-	also has its ⋯ (Duplicate) and red trash, and an ∞ one its note.
+	also has its ⋯ (Duplicate) and red trash, and an ∞ one its note, as does one whose rules
+	carry the Storyteller's words (the Zenomancer's Goal), with Show to player.
 -->
 <script lang="ts">
 	import {
@@ -12,7 +13,7 @@
 		type ReminderInstance
 	} from '#lib/core/model/index.ts';
 	import { characterNames } from '#lib/core/rules/character-names.ts';
-	import { prepTextSegments } from '#lib/core/rules/index.ts';
+	import { prepTextSegments, takesNote } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
@@ -24,6 +25,7 @@
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import type { ReminderHand } from './reminder-hand.svelte.ts';
 	import ReminderMoreButton from './ReminderMoreButton.svelte';
+	import NotedReminderFields from './NotedReminderFields.svelte';
 	import ReminderNoteField from './ReminderNoteField.svelte';
 	import ReminderOrigin from './ReminderOrigin.svelte';
 	import { isGeneric, placedLook } from './reminders.ts';
@@ -112,7 +114,13 @@
 					/>{:else}{part.text}{/if}{/each}
 		</p>
 	{/if}
-	{#if placed && isGeneric(placed)}<ReminderNoteField {grimoire} reminder={placed} />{/if}
+	{#if placed && isGeneric(placed)}<ReminderNoteField
+			{grimoire}
+			reminder={placed}
+		/>{:else if placed && takesNote(placed, characters)}<NotedReminderFields
+			{grimoire}
+			reminder={placed}
+		/>{/if}
 	<!-- The ability it comes from, as the Script tab shows the character (Trevor, 2026-10-30). -->
 	{#if owner}<CharacterRow character={owner} info
 			>{#snippet ability()}<GlossaryText

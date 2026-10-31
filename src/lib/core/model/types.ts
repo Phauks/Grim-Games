@@ -288,6 +288,11 @@ export type DayEntry =
 			holds?: boolean;
 			/** For a guess at the player's own ability (the Amnesiac's): the Storyteller's answer. */
 			answer?: GuessAnswer;
+			/**
+			 * The Storyteller's answer in their own words when no `answer` fits ("Lukewarm":
+			 * Trevor, 2026-10-31, the answers are a range). Never set with `answer`.
+			 */
+			customAnswer?: string;
 	  }
 	| {
 			kind: 'info';

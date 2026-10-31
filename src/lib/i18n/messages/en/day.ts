@@ -57,6 +57,7 @@ export const day = {
 	'day.answer.warm': 'Warm',
 	'day.answer.hot': 'Hot',
 	'day.answer.bingo': 'Bingo',
+	'day.answerOwn': 'Use “{answer}”',
 	'day.correctGuesses': { one: '{count} correct', other: '{count} correct' },
 	'day.markUsedTitle': 'Mark {who} as used?',
 	'day.markUsedNow': '{who} has not used their ability.',

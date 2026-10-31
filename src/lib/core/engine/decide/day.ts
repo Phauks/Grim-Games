@@ -44,6 +44,16 @@ import {
 const isAnswer = (value: unknown): value is GuessAnswer =>
 	(GUESS_ANSWERS as readonly unknown[]).includes(value);
 
+/** Sets a note's answer: one of the standard ones, else the Storyteller's own words. */
+function answerNote(
+	note: Extract<DayEntry, { kind: 'note' }>,
+	command: { answer?: unknown; customAnswer?: unknown }
+) {
+	if (isAnswer(command.answer)) note.answer = command.answer;
+	else if (typeof command.customAnswer === 'string' && command.customAnswer.trim())
+		note.customAnswer = command.customAnswer.trim();
+}
+
 /** The day log: nominations, executions, exiles, abilities, notes and night information. */
 export const DAY_DECIDERS: Deciders<
 	| 'Nominate'
@@ -235,11 +245,16 @@ export const DAY_DECIDERS: Deciders<
 			warn('no-change', 'the note is empty');
 			return [];
 		}
-		const entry: DayEntry = { kind: 'note', entryId: ctx.newId(), characterId, text };
+		const entry: Extract<DayEntry, { kind: 'note' }> = {
+			kind: 'note',
+			entryId: ctx.newId(),
+			characterId,
+			text
+		};
 		if (command.seatId !== undefined) entry.seatId = seatOf(game, command.seatId).seatId;
 		if (guesses.length > 0) entry.guesses = guesses;
 		if (typeof command.holds === 'boolean') entry.holds = command.holds;
-		if (isAnswer(command.answer)) entry.answer = command.answer;
+		answerNote(entry, command);
 		return [{ type: 'DayEntryAdded', entry }];
 	},
 
@@ -256,9 +271,10 @@ export const DAY_DECIDERS: Deciders<
 		delete next.guesses;
 		delete next.holds;
 		delete next.answer;
+		delete next.customAnswer;
 		if (guesses.length > 0) next.guesses = guesses;
 		if (typeof command.holds === 'boolean') next.holds = command.holds;
-		if (isAnswer(command.answer)) next.answer = command.answer;
+		answerNote(next, command);
 		if (JSON.stringify(next) === JSON.stringify(entry)) {
 			warn('no-change', 'the note is unchanged');
 			return [];
