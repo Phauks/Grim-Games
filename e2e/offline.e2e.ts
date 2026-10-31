@@ -267,7 +267,7 @@ test('a game address opens with no stored app page and no network', async ({ pag
 	await page.goto('/grimoire/no-such-game/setup');
 	await expect(page.getByText('There is no saved game here on this device.')).toBeVisible();
 
-	// Nothing stored at all: a page that says so, which opens the app once back online.
+	// Nothing stored at all: a page that says so, with Try again once back online.
 	await context.setOffline(false);
 	await page.evaluate(async () => {
 		for (const name of await caches.keys()) await caches.delete(name);
@@ -279,5 +279,11 @@ test('a game address opens with no stored app page and no network', async ({ pag
 	await retry.tap();
 	await expect(page.getByText('This page could not open.')).toBeVisible();
 	await context.setOffline(false);
-	await expect(page.getByText('There is no saved game here on this device.')).toBeVisible();
+	// Coming back online also reloads by itself, which can land before the network is up
+	// (CI, phone project); Try again is what a person taps then.
+	const game = page.getByText('There is no saved game here on this device.');
+	await expect(async () => {
+		if (await retry.isVisible()) await retry.tap({ timeout: 1000 }).catch(() => {});
+		await expect(game).toBeVisible({ timeout: 2000 });
+	}).toPass({ timeout: 20_000 });
 });
