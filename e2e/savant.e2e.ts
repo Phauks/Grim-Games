@@ -158,6 +158,15 @@ test('the end of the night offers to set the Savant’s information', async ({ p
 		.tap();
 	// A question, never a block (Trevor, 2026-10-23: L46).
 	const ask = page.getByRole('alertdialog', { name: 'Set the Savant’s information for today?' });
+	// Its switch is in Settings, through ⋯ (Trevor, 2026-10-30).
+	await ask.getByRole('button', { name: 'More', exact: true }).tap();
+	await page.getByRole('menuitem', { name: 'View in settings' }).tap();
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	await expect(
+		settings.locator('.content [data-search-label="Suggest Savant information"]')
+	).toBeInViewport();
+	await settings.locator('[data-part="close-trigger"]').first().tap();
+	await expect(settings).toHaveCount(0);
 	await ask.getByRole('button', { name: 'Confirm' }).tap();
 	const savant = page.getByRole('dialog', { name: /^Savant information/ });
 	await expect(savant.getByTestId('savant-line')).toHaveCount(2);

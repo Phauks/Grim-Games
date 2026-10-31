@@ -4,23 +4,13 @@
 	import SettingSelect from '#lib/ui/settings/SettingSelect.svelte';
 
 	/**
-	 * Where the Fabled and Loric sit and whether they are grouped (Trevor, 2026-10-18: labelled
-	 * Location and Grouping, under a "Fabled and Loric" heading), the same store as the
-	 * board's own choice.
+	 * Whether the Fabled and Loric are grouped (Trevor, 2026-10-18: under a "Fabled and Loric"
+	 * heading), the same store as the board's own choice. They always sit in the corner (Trevor,
+	 * 2026-10-30: "only corner").
 	 */
 </script>
 
 <!-- A dropdown like the other choices in Settings; the Background dialog shows the same choice. -->
-<SettingSelect
-	label={t('settings.rulesAt')}
-	value={boardLooks.current.rulesAt}
-	options={[
-		{ value: 'middle', label: t('settings.rulesAt.middle') },
-		{ value: 'edge', label: t('settings.rulesAt.edge') }
-	]}
-	defaultValue={DEFAULT_BOARD_LOOKS.rulesAt}
-	onChange={(rulesAt) => boardLooks.update({ rulesAt })}
-/>
 <SettingSelect
 	label={t('settings.rulesGrouped')}
 	value={boardLooks.current.rulesGrouped ? 'grouped' : 'each'}
