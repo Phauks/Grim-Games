@@ -16,6 +16,8 @@ export const REQUESTS_PER_DAY = 20;
 /** A request nobody answered is gone after this long. */
 export const REQUEST_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 export const DAY_MS = 24 * 60 * 60 * 1000;
+/** Recent players kept per account, newest game first (plan F3). */
+export const MAX_RECENT = 50;
 
 /** Another account as the app shows it: never its email. */
 export interface FriendAccount {
@@ -38,6 +40,19 @@ export interface FriendsResponse {
 	blocked: FriendAccount[];
 	/** Whether others can find this account by its username. */
 	findable: boolean;
+	/** Signed-in people this account played a game with (plan F3); missing from older Workers. */
+	recent?: RecentPlayer[];
+}
+
+/**
+ * Someone this account played a finished game with (plan F3): both were signed in, in that
+ * room. `at` is when their last game together ended; `name` is what they were called in it.
+ */
+export interface RecentPlayer extends FriendAccount {
+	name?: string;
+	games: number;
+	/** Whether they can be added now: as a seat's Add friend answers. */
+	state: SeatFriendState;
 }
 
 /**
@@ -77,6 +92,8 @@ export const FRIEND_SETTINGS_API = `${FRIENDS_API}/settings`;
 export const friendActionApi = (action: FriendAction) => `${FRIENDS_API}/${action}`;
 /** A player in a live room, by seat (plan F2): `POST` with `SeatFriendRequest`. */
 export const FRIEND_SEAT_API = `${FRIENDS_API}/seat`;
+/** Someone from Recent players, by id (plan F3): `POST` with `RecentFriendRequest`. */
+export const FRIEND_RECENT_API = `${FRIENDS_API}/recent`;
 
 /**
  * `POST /api/friends/seat`: a player by the seat they sit in, or the room's Storyteller
@@ -84,6 +101,11 @@ export const FRIEND_SEAT_API = `${FRIENDS_API}/seat`;
  */
 export type SeatFriendTarget = ({ seatId: string } | { storyteller: true }) & { code: string };
 export type SeatFriendRequest = SeatFriendTarget & { send?: boolean };
+/** `POST /api/friends/recent`: someone on Recent players, answered as a seat is. */
+export type RecentFriendTarget = { recent: string };
+export type RecentFriendRequest = RecentFriendTarget & { send?: boolean };
+/** Whoever an Add friend button asks: a seat, the Storyteller, or a recent player. */
+export type FriendTarget = SeatFriendTarget | RecentFriendTarget;
 
 /**
  * Whether the player in a seat can be added: `unavailable` when they aren't signed in, can't

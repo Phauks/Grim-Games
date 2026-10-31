@@ -7,6 +7,7 @@
  * other phones never learn it, and older apps see no change.
  */
 import type { RoomState } from '../src/lib/core/sync/room.ts';
+import { gamePlayers, type GamePlayer } from '../src/lib/features/friends/friend-rules.ts';
 import type { AccountEnv } from './account/objects.ts';
 import { getUser } from './account/routes.ts';
 
@@ -35,6 +36,12 @@ export async function linkAccount(
 	const accountId = tag.slice(TAG_PREFIX.length);
 	if (accounts[key] === accountId) return;
 	await ctx.storage.put(STORAGE_KEY, { ...accounts, [key]: accountId });
+}
+
+/** The signed-in Storyteller and seated players of the room's game, for Recent players (plan F3). */
+export async function roomPlayers(ctx: DurableObjectState, room: RoomState): Promise<GamePlayer[]> {
+	const accounts = (await ctx.storage.get<Accounts>(STORAGE_KEY)) ?? {};
+	return gamePlayers(accounts, room.members, room.public?.storytellerName);
 }
 
 /** Who in a room is asked: the player in a seat, or the Storyteller. */

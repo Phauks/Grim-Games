@@ -70,3 +70,32 @@ export function planReceive(relation: Relation, counts: BookCounts): ReceivePlan
 	if (relation.incoming) return 'store';
 	return counts.pending >= MAX_PENDING ? 'ignore' : 'store';
 }
+
+/** One signed-in person at a finished game, by account, with what they were called in it. */
+export interface GamePlayer {
+	id: string;
+	name?: string;
+}
+
+/**
+ * Who played a finished game (plan F3): the Storyteller and every seated player whose own
+ * account was in the room, once per account. `accounts` is the room's own record, by `host`
+ * or member id (worker/room-accounts.ts).
+ */
+export function gamePlayers(
+	accounts: Readonly<Record<string, string>>,
+	members: readonly { memberId: string; name?: string; seatId?: string }[],
+	storytellerName?: string
+): GamePlayer[] {
+	const players = new Map<string, GamePlayer>();
+	const add = (id: string | undefined, name: string | undefined) => {
+		if (!id || players.has(id)) return;
+		const trimmed = name?.trim();
+		players.set(id, trimmed ? { id, name: trimmed } : { id });
+	};
+	add(accounts.host, storytellerName);
+	for (const member of members) {
+		if (member.seatId) add(accounts[member.memberId], member.name);
+	}
+	return [...players.values()];
+}
