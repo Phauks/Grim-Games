@@ -206,6 +206,11 @@ export interface SelectionAnalysisInput {
 	 * are counted among the players instead, so the other counts are for that many fewer.
 	 */
 	travellersInBag?: number;
+	/**
+	 * Players beyond 15 choose their own Traveller on their phones (Trevor, 2026-10-31), so
+	 * none needs selecting here: Random leaves those places open.
+	 */
+	travellersLater?: boolean;
 	/** Fabled and Loric in play, which can change setup (the Sentinel). */
 	ruleCharacters?: readonly CharacterId[];
 	scriptOrder: readonly CharacterId[];
@@ -251,6 +256,23 @@ export function analyseSelection(input: SelectionAnalysisInput): SetupAnalysis {
 export function travellerRange(players: number, inBag = 0): { min: number; max: number } {
 	const min = Math.max(0, players - 15);
 	return { min, max: Math.max(min, inBag) };
+}
+
+/**
+ * The recommended Travellers: the script's own, then, for an official edition, that edition's,
+ * which go with it without being on its sheet (Trevor, 2026-10-18).
+ */
+export function recommendedTravellers(
+	scriptCharacters: readonly Character[],
+	edition: string | undefined,
+	all: readonly Character[]
+): Character[] {
+	const own = scriptCharacters.filter((c) => c.type === 'traveller');
+	const listed = new Set(own.map((c) => c.id));
+	const fromEdition = edition
+		? all.filter((c) => c.type === 'traveller' && c.edition === edition && !listed.has(c.id))
+		: [];
+	return [...own, ...fromEdition];
 }
 
 /**
@@ -338,7 +360,8 @@ export function randomSelection(input: RandomSelectionInput): Record<CharacterId
 		take(type, target - have);
 	}
 	const analysis = analyseSelection({ ...input, selection });
-	const needed = () => Math.max(0, input.players - analysis.dealt - travellersSelected());
+	const needed = () =>
+		input.travellersLater ? 0 : Math.max(0, input.players - analysis.dealt - travellersSelected());
 	take('traveller', needed());
 	for (const group of input.fallbackTravellers ?? []) {
 		const pool = group.filter((c) => c.type === 'traveller' && !(selection[c.id] > 0));
@@ -385,7 +408,7 @@ export function selectionProblems(input: SelectionCheckInput): string[] {
 		...plan.issues
 			.filter((i) => i.code === 'no-stand-in' || i.code === 'unknown-character')
 			.map((i) => i.message),
-		...(travellers < analysis.travellers
+		...(travellers < analysis.travellers && !input.travellersLater
 			? [`${analysis.travellers} Travellers needed; ${travellers} chosen.`]
 			: []),
 		...jinxSetupWarnings(input.jinxes ?? [], ids, (id) => input.lookup(id)?.name ?? id).map(
@@ -440,7 +463,9 @@ export function nextDrawSeat(game: Game): SeatId | undefined {
  */
 export function dealPairs(
 	game: Game,
-	random: () => number
+	random: () => number,
+	/** Seats that take no tile: those choosing a Traveller on their phones. */
+	skip: ReadonlySet<SeatId> = new Set()
 ): { pairs: { seatId: SeatId; tileId: TileId }[]; seatsShort: number } {
 	const tiles = [...(game.bag?.order ?? [])];
 	for (let i = tiles.length - 1; i > 0; i--) {
@@ -453,7 +478,7 @@ export function dealPairs(
 			.map((t) => t.drawnBySeat)
 	);
 	const seats = game.seating.filter(
-		(id) => game.seats[id].characterId === undefined && !holding.has(id)
+		(id) => game.seats[id].characterId === undefined && !holding.has(id) && !skip.has(id)
 	);
 	const pairs = seats.slice(0, tiles.length).map((seatId, i) => ({ seatId, tileId: tiles[i] }));
 	return { pairs, seatsShort: Math.max(0, tiles.length - seats.length) };
