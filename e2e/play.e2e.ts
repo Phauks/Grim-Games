@@ -418,6 +418,33 @@ test('First night and Other nights each close from their header, remembered', as
 	await expect(other).toHaveAttribute('aria-expanded', 'true');
 });
 
+test('each heading stays pinned at the top while its section scrolls, then hands over', async ({
+	page
+}) => {
+	// Trevor, 2026-10-31: "pin first night and other night while scrolling", "probably just for
+	// everything": every caret section's header (Collapsible) pins within its own section.
+	await page.getByRole('tab', { name: 'Night', exact: true }).tap();
+	const first = page.getByRole('button', { name: 'First night' });
+	const other = page.getByRole('button', { name: 'Other nights' });
+	const top = (l: typeof first) => l.evaluate((el) => el.getBoundingClientRect().top);
+	const otherAt = await other.evaluate((el) => el.getBoundingClientRect().top + window.scrollY);
+	// Halfway down the first night: its header is at the top, over the rows.
+	await page.evaluate((y) => window.scrollTo(0, y / 2), otherAt);
+	await expect.poll(() => top(first)).toBeLessThan(2);
+	const head = await first.boundingBox();
+	const hidden = await page.evaluate(
+		({ x, y }) => document.elementFromPoint(x, y)?.closest('button')?.textContent?.trim(),
+		{ x: head!.x + head!.width / 2, y: head!.y + head!.height / 2 }
+	);
+	expect(hidden).toContain('First night');
+	// At the end, First night has been pushed up by Other nights, never over it.
+	await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+	await expect
+		.poll(async () => (await first.boundingBox())!.y + (await first.boundingBox())!.height)
+		.toBeLessThanOrEqual((await other.boundingBox())!.y + 1);
+	expect(await top(other)).toBeGreaterThanOrEqual(0);
+});
+
 test("the night order shows who wakes, with TPI's night text", async ({ page }) => {
 	await page.getByRole('tab', { name: 'Night', exact: true }).tap();
 	const first = page.locator('section[data-night="first"]');
