@@ -41,10 +41,7 @@ const CHARACTER_DISPLAY_TODO = [
 	'src/lib/features/player/GuessMarks.svelte',
 	'src/lib/features/player/ScriptSheet.svelte',
 	'src/lib/features/reference/FieldValue.svelte',
-	'src/lib/features/room/YourCharacter.svelte',
-	'src/lib/features/setup/CharacterChoice.svelte',
-	'src/lib/features/setup/RevealDialog.svelte',
-	'src/lib/features/show/ShownCard.svelte'
+	'src/lib/features/setup/CharacterChoice.svelte'
 ];
 
 /**
@@ -405,6 +402,11 @@ export default defineConfig(
 			'src/lib/features/characters/CharacterSummary.svelte',
 			'src/lib/features/characters/CharacterDialog.svelte',
 			'src/lib/features/library/CharacterPane.svelte',
+			// Shown to a player: the card hands them their character, a separate thing (Trevor,
+			// 2026-10-31).
+			'src/lib/features/room/YourCharacter.svelte',
+			'src/lib/features/setup/RevealDialog.svelte',
+			'src/lib/features/show/ShownCard.svelte',
 			// Icon addresses to keep offline, not drawn.
 			'src/lib/features/offline/keep-offline.ts',
 			...CHARACTER_DISPLAY_TODO
