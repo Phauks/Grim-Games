@@ -480,6 +480,20 @@ test('after End game the Storyteller shares the finished grimoire with the room'
 	await phone.reload();
 	await expect(phone.getByRole('tab', { name: 'Grim' })).toHaveAttribute('aria-selected', 'true');
 	await expect(final.getByTestId('seat')).toHaveCount(seats);
+	// The page still scrolls with the board on it: only the Storyteller's board page holds
+	// its page still (2026-10-31).
+	const scroll = await phone.evaluate(() => {
+		const root = document.documentElement;
+		window.scrollTo(0, root.scrollHeight);
+		return {
+			overflow: getComputedStyle(root).overflowY,
+			room: root.scrollHeight - window.innerHeight,
+			at: window.scrollY
+		};
+	});
+	expect(scroll.overflow).not.toBe('hidden');
+	expect(scroll.room > 1 ? scroll.at : 1).toBeGreaterThan(0);
+	await phone.evaluate(() => window.scrollTo(0, 0));
 
 	await page
 		.getByRole('dialog', { name: 'Share', exact: true })
