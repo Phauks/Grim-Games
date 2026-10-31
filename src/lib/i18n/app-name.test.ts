@@ -11,6 +11,8 @@ describe('the app name', () => {
 	});
 
 	it('is in the start-up failure screen', () => {
-		expect(readFileSync('src/app.html', 'utf8')).toContain(`"${APP_NAME} couldn't start"`);
+		expect(readFileSync('static/boot-failure.js', 'utf8')).toContain(
+			`"${APP_NAME} couldn't start"`
+		);
 	});
 });
