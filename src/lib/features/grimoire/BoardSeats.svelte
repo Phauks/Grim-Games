@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { CharacterId } from '#lib/core/data/index.ts';
+	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import {
 		looseReminders,
 		type ReminderId,
@@ -50,7 +51,13 @@
 		heldSeat: SeatId | undefined;
 		/** A Fabled or Loric's reminder, while it is dragged. */
 		heldDrag: ReminderInstance | undefined;
-		placeSpots: readonly { position: number; at: SeatPoint; label: string }[];
+		/** `pending`: the names already placed at that spot and not added yet (late players). */
+		placeSpots: readonly {
+			position: number;
+			at: SeatPoint;
+			label: string;
+			pending?: readonly string[];
+		}[];
 		onPlace: (position: number) => void;
 		onSeat: (seatId: SeatId, part?: SeatPart) => void;
 		onReminder: (seatId: SeatId, reminderId: ReminderId) => void;
@@ -278,6 +285,15 @@
 		aria-label={spot.label}
 		onclick={() => onPlace(spot.position)}><Icon name="add" /></button
 	>
+	{#if spot.pending?.length}
+		<span
+			class="place-pending"
+			data-testid="place-pending"
+			style:left="{spot.at.x}%"
+			style:top="{spot.at.y}%"
+			>{#each spot.pending as name, i (i)}<PlayerBadge {name} />{/each}</span
+		>
+	{/if}
 {/each}
 
 <style>
@@ -352,6 +368,17 @@
 		background: var(--surface-raised);
 		color: var(--accent);
 		cursor: pointer;
+	}
+	/* Who already goes there, just under the spot, so another late player can sit beside them. */
+	.place-pending {
+		position: absolute;
+		z-index: 3;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--space-1);
+		translate: -50% calc(var(--tap-target) / 2 + var(--space-1));
+		pointer-events: none;
 	}
 	.place-spot:hover {
 		background: var(--surface-selected);

@@ -192,6 +192,8 @@ export const TILE_FACES = [
 	'numbers',
 	'letters',
 	'roman',
+	'kanji',
+	'runes',
 	'symbols',
 	'colours',
 	'emoji',

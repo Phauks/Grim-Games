@@ -44,6 +44,19 @@ export async function roomPlayers(ctx: DurableObjectState, room: RoomState): Pro
 	return gamePlayers(accounts, room.members, room.public?.storytellerName);
 }
 
+/**
+ * The accounts in a room, for inviting friends to it (plan F4): only for its Storyteller's
+ * own account, so no one else can learn who is there.
+ */
+export async function hostedAccounts(
+	ctx: DurableObjectState,
+	requester: string
+): Promise<string[] | undefined> {
+	const accounts = (await ctx.storage.get<Accounts>(STORAGE_KEY)) ?? {};
+	if (accounts[HOST] !== requester) return undefined;
+	return [...new Set(Object.values(accounts))];
+}
+
 /** Who in a room is asked: the player in a seat, or the Storyteller. */
 export type SeatTarget = { seatId: string } | { storyteller: true };
 
