@@ -1172,6 +1172,20 @@ test('a phone can type a code, and wrong codes say so', async ({ page }) => {
 	// No room has this code, so the page says so before anyone joins (Trevor, 2026-10-19).
 	await expect(page.getByTestId('room-preview')).toHaveText('No open game has this code.');
 	await expect(join).toBeDisabled();
+	// With no game there is no logo, so the line sits in the middle of the box (Trevor, 2026-10-31).
+	const box = await page.getByTestId('room-preview').boundingBox();
+	const text = await page
+		.getByRole('status')
+		.filter({ hasText: 'No open game' })
+		.evaluate((el) => {
+			const range = document.createRange();
+			range.selectNodeContents(el);
+			const r = range.getBoundingClientRect();
+			return { left: r.left, right: r.right };
+		});
+	expect(box).toBeTruthy();
+	const boxMid = box!.x + box!.width / 2;
+	expect(Math.abs((text.left + text.right) / 2 - boxMid)).toBeLessThan(box!.width * 0.03);
 });
 
 test('a typed code shows the game it opens before the phone joins', async ({
