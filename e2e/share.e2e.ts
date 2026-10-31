@@ -84,7 +84,7 @@ test("the players' Grim is drawn as the board: its seats where the board has the
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	await page
 		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Arrange seats' })
+		.getByRole('button', { name: 'Seating' })
 		.tap();
 	// Seat 1 goes to the middle, a third of the way down, clear of the centre's buttons.
 	const to = { x: board.x + board.width / 2, y: board.y + board.height * 0.3 };

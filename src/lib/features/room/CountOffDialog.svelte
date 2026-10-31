@@ -2,7 +2,6 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { PlayerName } from '#lib/core/data/index.ts';
 	import type { Command } from '#lib/core/engine/index.ts';
-	import { countOffSeats } from '#lib/core/sync/room.ts';
 	import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -10,11 +9,12 @@
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import CountOffTokens from './CountOffTokens.svelte';
+	import { cancelCountOff, finishCountOff } from './count-off.ts';
 	import { roomHost } from './host.svelte.ts';
 	import { playersDialog } from './players-dialog.svelte.ts';
 
 	/**
-	 * Count off on the Storyteller's device (plan J40; Trevor, 2026-10-30): the ⋯ item starts it
+	 * Count off on the Storyteller's device (plan J40; Trevor, 2026-10-30): Seating's Count off starts it
 	 * (whoever is 1 taps it themselves: "shouldn't require storyteller to select 1"), then watch
 	 * the phones tap their numbers, name the numbers of players without a phone ("needs to allow
 	 * for non phone users as well"), then Done puts that order and those names on the board as
@@ -43,14 +43,11 @@
 	}
 
 	function done() {
-		if (!view) return;
-		const seats = countOffSeats(game.game.seating, game.game.seats, view);
-		const command: Command = { type: 'CountOff', seats };
-		if (run ? run(command) : game.run(command).ok) host.send({ type: 'end-count-off' });
+		finishCountOff(game, run);
 		playersDialog.countOff = false;
 	}
 	function cancel() {
-		if (view) host.send({ type: 'end-count-off' });
+		cancelCountOff();
 		playersDialog.countOff = false;
 	}
 </script>

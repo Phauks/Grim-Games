@@ -71,6 +71,12 @@ export type ClientMessage =
 	| { type: 'sit'; onto: SeatId }
 	/** Older apps: the player dropped their disc just after this seat. */
 	| { type: 'sit'; after: SeatId }
+	/**
+	 * Seating open: the player dropped their disc in a space, to move their seat there (Trevor,
+	 * 2026-10-31: players move where seats are, to match the room), in % of the Storyteller's
+	 * board as its seat layout keeps placed seats.
+	 */
+	| { type: 'sit'; place: { x: number; y: number } }
 	/** Seating locked: a player with no seat tapped this open one to sit in it. */
 	| { type: 'claim-seat'; seatId: SeatId }
 	| { type: 'count'; number: number } // Count off (plan J40): the number this player counted to.
