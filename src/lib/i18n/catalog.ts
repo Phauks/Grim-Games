@@ -58,6 +58,20 @@ export function placeholdersOf(value: MessageValue): string[] {
 	return [...names].sort();
 }
 
+/**
+ * One of each formatter per locale: making an `Intl` formatter costs far more than using one,
+ * and `t()` runs for every label each time a screen redraws (the Test room lagged on Trevor's
+ * Pixel, 2026-10-31, with this the busiest code on the page).
+ */
+const pluralRules = new Map<string, Intl.PluralRules>();
+const numberFormats = new Map<string, Intl.NumberFormat>();
+
+function cached<T>(cache: Map<string, T>, locale: string, make: () => T): T {
+	let value = cache.get(locale);
+	if (!value) cache.set(locale, (value = make()));
+	return value;
+}
+
 /** Fills a message for a locale. Numbers are formatted for the locale; unknown names stay. */
 export function formatMessage(
 	value: MessageValue,
@@ -69,14 +83,16 @@ export function formatMessage(
 		text = value;
 	} else {
 		const count = Number(params.count);
-		const category = new Intl.PluralRules(locale).select(count);
+		const category = cached(pluralRules, locale, () => new Intl.PluralRules(locale)).select(count);
 		text = value[category] ?? value.other;
 	}
-	const numbers = new Intl.NumberFormat(locale);
+	// Most messages have nothing to fill in.
+	if (!text.includes('{')) return text;
 	return text.replace(PLACEHOLDER, (whole, name: string) => {
 		const param = params[name];
 		if (param === undefined) return whole;
-		return typeof param === 'number' ? numbers.format(param) : param;
+		if (typeof param !== 'number') return param;
+		return cached(numberFormats, locale, () => new Intl.NumberFormat(locale)).format(param);
 	});
 }
 

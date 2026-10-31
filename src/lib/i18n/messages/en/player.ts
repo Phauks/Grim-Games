@@ -178,6 +178,7 @@ export const player = {
 	'player.seating.open': 'Seating is open',
 	'player.seating.drag': 'Your seat: drag it to where you sit',
 	'player.seating.between': 'Between',
+	'player.seating.take': 'Sit in Seat {number}',
 	'player.seating.and': 'and',
 	'player.seating.claim': 'Sit in Seat {number}?'
 } as const;
