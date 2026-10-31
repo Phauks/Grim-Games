@@ -43,6 +43,7 @@ import {
 } from '#lib/features/about/update-progress.ts';
 import type { PushMessage } from '#lib/core/sync/room-push.ts';
 import { room } from '#lib/i18n/messages/en/room.ts';
+import { errors } from '#lib/i18n/messages/en/errors.ts';
 
 const CACHE = `${BUILD_CACHE_PREFIX}${version}`;
 const SHELL = '/';
@@ -346,6 +347,43 @@ sw.addEventListener('notificationclick', (event) => {
 	);
 });
 
+/**
+ * Shown for an app address when no copy of the app is stored and the network failed, instead
+ * of the browser's own error page (Trevor, 2026-10-31: opening a game gave "Failed to fetch").
+ * It loads the app again by itself once the device is back online. The service worker can't
+ * read the app's language, so the words are the English error page's own.
+ */
+function couldNotOpen(): Response {
+	const html = `<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${errors['errors.pageFailedDetail']}</title>
+<style>:root{color-scheme:dark}body{margin:0;min-height:100vh;display:grid;place-content:center;gap:1rem;text-align:center;font:1rem system-ui,sans-serif}button{font:inherit;min-height:2.75rem;padding:0 1.5rem}</style>
+</head><body><p>${errors['errors.pageFailedDetail']}</p>
+<button type="button" data-way-back onclick="location.reload()">${errors['errors.tryAgain']}</button>
+<script>addEventListener('online',()=>location.reload())</script></body></html>`;
+	return new Response(html, {
+		status: 503,
+		headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' }
+	});
+}
+
+/**
+ * The page for an app address: every route is the same SPA shell, so this build's copy opens
+ * any game with no signal. Without it (storage cleared or evicted under it), the network; and
+ * when that fails too (offline, or a phone's radio still waking as the app resumes), any older
+ * build's stored shell, else a page that says so. It never rejects, so a game route can't end
+ * in the browser's network error.
+ */
+async function appPage(request: Request, cache: Cache): Promise<Response> {
+	const shell = await cache.match(SHELL);
+	if (shell) return shell;
+	try {
+		return await fetch(request);
+	} catch {
+		return (await caches.match(SHELL).catch(() => undefined)) ?? couldNotOpen();
+	}
+}
+
 sw.addEventListener('fetch', (event) => {
 	const request = event.request;
 	if (request.method !== 'GET') return;
@@ -356,7 +394,7 @@ sw.addEventListener('fetch', (event) => {
 			(async () => {
 				const runtime = await caches.open(RUNTIME_CACHE);
 				return (await runtime.match(url.href)) ?? fetch(request);
-			})()
+			})().catch(() => Response.error())
 		);
 		return;
 	}
@@ -374,9 +412,7 @@ sw.addEventListener('fetch', (event) => {
 		(async () => {
 			const cache = await caches.open(CACHE);
 			// App routes are all served by the same SPA shell.
-			if (request.mode === 'navigate') {
-				return (await cache.match(SHELL)) ?? fetch(request);
-			}
+			if (request.mode === 'navigate') return appPage(request, cache);
 			const cached = await cache.match(url.pathname);
 			if (cached) return cached;
 			// A tab still running the previous build asks for its own hashed files.
@@ -384,11 +420,20 @@ sw.addEventListener('fetch', (event) => {
 				const older = await caches.match(url.pathname);
 				if (older) return older;
 			}
-			if (!cachedOnUse(url.pathname)) return fetch(request);
+			if (!cachedOnUse(url.pathname)) {
+				// Offline, an older build's copy (an app page opened from one asks for its files).
+				return fetch(request).catch(async (error: unknown) => {
+					const older = await caches.match(url.pathname);
+					if (older) return older;
+					throw error;
+				});
+			}
 			const runtime = await caches.open(RUNTIME_CACHE);
 			const stored = await runtime.match(url.pathname);
 			if (stored) return stored;
 			return (await store(runtime, url.pathname)) ?? fetch(request);
-		})()
+			// A file that is neither stored nor reachable fails like any offline file, without
+			// an uncaught rejection in the worker's console.
+		})().catch(() => Response.error())
 	);
 });

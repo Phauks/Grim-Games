@@ -92,6 +92,7 @@ import ph_printer from '~icons/ph/printer';
 import ph_prohibit from '~icons/ph/prohibit';
 import ph_projector_screen from '~icons/ph/projector-screen';
 import ph_push_pin from '~icons/ph/push-pin';
+import ph_puzzle_piece from '~icons/ph/puzzle-piece';
 import ph_scroll from '~icons/ph/scroll';
 import ph_shapes from '~icons/ph/shapes';
 import ph_share_network from '~icons/ph/share-network';
@@ -216,6 +217,7 @@ const icons: IconMap = {
 	'ph:prohibit': ph_prohibit,
 	'ph:projector-screen': ph_projector_screen,
 	'ph:push-pin': ph_push_pin,
+	'ph:puzzle-piece': ph_puzzle_piece,
 	'ph:scroll': ph_scroll,
 	'ph:shapes': ph_shapes,
 	'ph:share-network': ph_share_network,

@@ -161,10 +161,12 @@
 		padding: var(--menu-inset) var(--menu-inset) 0;
 	}
 	/* Over a background, the toolbar's buttons get the reminder bank's backing, so they read
-   on any image (Trevor, 2026-10-18). */
+   on any image (Trevor, 2026-10-18). Only the toolbar's own: the grim cover is a <dialog>
+   inside the toolbar, and its Player view's seats and buttons took this backing too (Trevor,
+   2026-10-31: dark boxes over every seat). */
 	:global(.grimoire:has(> .backdrop))
 		.toolbar
-		:global(button:not([data-variant='accent']):not([data-variant='danger'])) {
+		:global(button:not([data-variant='accent']):not([data-variant='danger']):not(dialog *)) {
 		background: var(--board-bar-background);
 	}
 	.title {

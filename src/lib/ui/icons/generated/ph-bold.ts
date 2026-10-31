@@ -168,6 +168,7 @@ import ph_prohibit_bold from '~icons/ph/prohibit-bold';
 import ph_prohibit_inset_bold from '~icons/ph/prohibit-inset-bold';
 import ph_projector_screen_bold from '~icons/ph/projector-screen-bold';
 import ph_push_pin_bold from '~icons/ph/push-pin-bold';
+import ph_puzzle_piece_bold from '~icons/ph/puzzle-piece-bold';
 import ph_qr_code_bold from '~icons/ph/qr-code-bold';
 import ph_question_bold from '~icons/ph/question-bold';
 import ph_scales_bold from '~icons/ph/scales-bold';
@@ -402,6 +403,7 @@ const icons: IconMap = {
 	'ph:prohibit-inset-bold': ph_prohibit_inset_bold,
 	'ph:projector-screen-bold': ph_projector_screen_bold,
 	'ph:push-pin-bold': ph_push_pin_bold,
+	'ph:puzzle-piece-bold': ph_puzzle_piece_bold,
 	'ph:qr-code-bold': ph_qr_code_bold,
 	'ph:question-bold': ph_question_bold,
 	'ph:scales-bold': ph_scales_bold,

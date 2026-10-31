@@ -2,6 +2,7 @@ import type { GenericLook } from '#lib/core/model/index.ts';
 import {
 	addGenericReminder,
 	hasReminder,
+	moveReminder,
 	isGenericReminder,
 	readPlayerReminders,
 	setGenericLook,
@@ -36,11 +37,25 @@ export class PlayerReminderState {
 		this.#save(toggleReminder(this.current, seatId, reminder));
 	}
 
-	/** From the bin (Trevor, 2026-10-29): a token onto a seat once, or a new generic one. */
+	/**
+	 * From the tray (Trevor, 2026-10-29): a token onto a seat once, or a new generic one with
+	 * the look it was given in hand.
+	 */
 	place(seatId: string, reminder: PlayerReminder): void {
-		if (isGenericReminder(reminder))
-			this.#save(addGenericReminder(this.current, seatId, crypto.randomUUID()));
-		else if (!hasReminder(this.current, seatId, reminder)) this.toggle(seatId, reminder);
+		if (isGenericReminder(reminder)) {
+			const id = crypto.randomUUID();
+			const { note, symbol, symbolColour, symbolFill } = reminder;
+			const added = addGenericReminder(this.current, seatId, id);
+			this.#save(setGenericLook(added, seatId, id, { note, symbol, symbolColour, symbolFill }));
+		} else if (!hasReminder(this.current, seatId, reminder)) this.toggle(seatId, reminder);
+	}
+
+	/**
+	 * A token picked up off a seat (Trevor, 2026-10-31: as on the board): onto another seat,
+	 * keeping its look, or back to the tray (`to` none).
+	 */
+	move(from: string, reminder: PlayerReminder, to?: string): void {
+		this.#save(moveReminder(this.current, from, reminder, to));
 	}
 
 	setLook(seatId: string, id: string, look: GenericLook): void {
