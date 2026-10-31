@@ -161,6 +161,7 @@ longest cell, so two PRs that each added a row used to conflict over the whole t
 - An info card's editor, the card's live preview in a fixed box beside its fields: `features/info-tokens/CardEditorLayout.svelte`, for the custom card editor (`CustomTokenEditor`) and the quick card (`InfoTokenList`) (enforced by `e2e/info-tokens-sheet.e2e.ts`)
 - Saving a file to the device: `ui/download.ts` (`downloadJson`, `downloadFile`, `fileNameFor`) (enforced by review)
 - Pixel sizes: `var(--u)` and tokens (enforced by `npm run lint:px`)
+- No em dash `—` or pipe `|` in text people see; say it in words (Trevor, 2026-10-31; the middle dot and hyphens are fine; enforced by `npm run lint:separators`; a symbol that must stay says why in a `sep-ok:` comment on the same line)
 - Colours: theme tokens; no hex, colour functions or named colours (`white`) outside the themes; mixes, washes and fixed looks (print paper, ghost vote) are tokens in `ui/tokens/components.css`; a sheet's colours come from the sheet scope there (enforced by `npm run lint:colors`)
 
 ¹ Account settings (`features/account/AccountPage.svelte`) is exempt from `grim/delete-button` (Trevor, 2026-10-18): Sign out is a text button, and Delete account a labelled red button.
