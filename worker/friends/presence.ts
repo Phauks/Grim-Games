@@ -20,7 +20,7 @@ async function presenceOf(env: FriendsEnv, id: string, now: number): Promise<Fri
 	const presence: FriendPresence = lastSeen ? { lastSeen } : {};
 	if (!rooms.length) return presence;
 	for (const code of rooms) {
-		if (await env.ROOMS.get(env.ROOMS.idFromName(code)).friendsMayJoin()) {
+		if ((await env.ROOMS.get(env.ROOMS.idFromName(code)).friendsView())?.friendsJoin) {
 			return { ...presence, inGame: true, join: code };
 		}
 	}
@@ -64,9 +64,13 @@ export async function handleFriendRoom(
 		const code = typeof body?.code === 'string' ? normaliseRoomCode(body.code) : undefined;
 		const open = typeof body?.open === 'boolean' ? body.open : undefined;
 		if (!code) return fail(404, 'Not found');
-		const answer = await env.ROOMS.get(env.ROOMS.idFromName(code)).friendsJoin(accountId, open);
-		if (answer === undefined) return fail(404, 'Not found');
-		return json({ open: answer });
+		const room = env.ROOMS.get(env.ROOMS.idFromName(code));
+		const answer = await room.friendsRoom(
+			accountId,
+			open === undefined ? undefined : { friendsJoin: open }
+		);
+		if (!answer) return fail(404, 'Not found');
+		return json({ open: answer.friendsJoin });
 	}
 	return undefined;
 }
