@@ -9,6 +9,8 @@
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import CodeField from '#lib/ui/primitives/CodeField.svelte';
+	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
+	import FullScreenStage from '#lib/ui/layout/FullScreenStage.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import NumberSelect from '#lib/ui/primitives/NumberSelect.svelte';
@@ -27,6 +29,18 @@
 
 	let typed = $state('');
 	let logOpen = $state(false);
+	let closeOpen = $state(false);
+	/** The screens' area's width, so no screen is wider than it (no sideways scrolling). */
+	let framesWidth = $state(0);
+	let storytellerFrame = $state<HTMLIFrameElement>();
+
+	async function closeRoom() {
+		const own = bench.ownRoom;
+		typed = '';
+		await bench.close();
+		// Its room gone, the Storyteller screen starts again from Home.
+		if (own) storytellerFrame?.contentWindow?.location.assign(resolve('/'));
+	}
 
 	const sized = (d: { name: string; width: number; height: number }) =>
 		t('room.testRoom.deviceSize', { name: d.name, width: d.width, height: d.height });
@@ -92,6 +106,9 @@
 					}}>{t('room.testRoom.follow')}</Button
 				>
 			</form>
+			<Button variant="danger" disabled={!bench.code} onclick={() => (closeOpen = true)}
+				>{t('room.testRoom.close')}</Button
+			>
 			<Select
 				label={t('room.testRoom.screen')}
 				hideLabel
@@ -208,32 +225,49 @@
 		</ul>
 	{/snippet}
 
-	<div class="frames" style:--zoom={bench.zoom}>
-		<figure style:--w={screen.width} style:--h={screen.height} data-testid="storyteller-frame">
-			<figcaption>{t('room.testRoom.storyteller')}</figcaption>
-			<div class="screen">
-				<iframe
-					title={t('room.testRoom.storyteller')}
-					name="grimbinder-storyteller"
-					src={resolve('/')}
-				></iframe>
-			</div>
-		</figure>
-		{#each bench.players as player, i (player.key)}
-			{#if player.shown}
-				{@const device = deviceById(player.device)!}
-				<figure style:--w={device.width} style:--h={device.height} data-testid="phone-frame">
-					<figcaption>{botName(i)} · {sized(device)}</figcaption>
-					<div class="screen">
-						<!-- Keyed by device, so a new size reloads it as that phone. -->
-						{#key player.device}
-							<iframe title={botName(i)} name={frameName(i)} src={joinPath}></iframe>
-						{/key}
-					</div>
-				</figure>
-			{/if}
-		{/each}
-	</div>
+	<!-- Full screen (Trevor, 2026-10-31): the screens alone, without the controls round them. -->
+	<FullScreenStage testid="test-room-stage">
+		<div
+			class="frames"
+			style:--zoom={bench.zoom}
+			style:--room={framesWidth || undefined}
+			bind:clientWidth={framesWidth}
+		>
+			<figure style:--w={screen.width} style:--h={screen.height} data-testid="storyteller-frame">
+				<figcaption>{t('room.testRoom.storyteller')}</figcaption>
+				<div class="screen">
+					<iframe
+						title={t('room.testRoom.storyteller')}
+						name="grimbinder-storyteller"
+						bind:this={storytellerFrame}
+						src={resolve('/')}
+					></iframe>
+				</div>
+			</figure>
+			{#each bench.players as player, i (player.key)}
+				{#if player.shown}
+					{@const device = deviceById(player.device)!}
+					<figure style:--w={device.width} style:--h={device.height} data-testid="phone-frame">
+						<figcaption>{botName(i)} · {sized(device)}</figcaption>
+						<div class="screen">
+							<!-- Keyed by device, so a new size reloads it as that phone. -->
+							{#key player.device}
+								<iframe title={botName(i)} name={frameName(i)} src={joinPath}></iframe>
+							{/key}
+						</div>
+					</figure>
+				{/if}
+			{/each}
+		</div>
+	</FullScreenStage>
+
+	<ConfirmDialog
+		bind:open={closeOpen}
+		title={t('room.testRoom.closeConfirm')}
+		description={t(bench.ownRoom ? 'room.testRoom.closeOwn' : 'room.testRoom.closeTyped')}
+		danger
+		onConfirm={() => void closeRoom()}
+	/>
 
 	<BottomSheet bind:open={logOpen} title={t('room.testRoom.log')}>
 		{#if bench.log.length}
@@ -305,8 +339,21 @@
 		flex-wrap: wrap;
 		align-items: flex-start;
 		gap: var(--space-3);
+		/* Room for Full screen in the top right corner, so it covers no screen's caption. */
+		padding-inline-end: calc(var(--tap-target) + var(--space-2));
+		box-sizing: border-box;
 	}
+	/* Filling the screen, the screens scroll inside it. */
+	:global([data-filled]) > .frames {
+		overflow: auto;
+		padding: var(--space-3);
+		padding-inline-end: calc(var(--tap-target) + var(--space-4));
+	}
+	/* The zoom picked, or less where the screen would be wider than the area (Trevor's Pixel,
+	   2026-10-31: a tablet screen at 50% ran off the side of the phone): the area's width less
+	   its padding and a frame's border, in CSS pixels. */
 	figure {
+		--fit: min(var(--zoom), (var(--room, 100000) - 80) / var(--w));
 		margin: 0;
 		display: grid;
 		gap: var(--space-1);
@@ -316,8 +363,8 @@
 	}
 	/* The device's own CSS pixels, scaled by the zoom: the frame lays out exactly as that device. */
 	.screen {
-		width: calc(var(--w) * var(--zoom) * 1px); /* px-ok: a device's CSS viewport */
-		height: calc(var(--h) * var(--zoom) * 1px); /* px-ok: a device's CSS viewport */
+		width: calc(var(--w) * var(--fit) * 1px); /* px-ok: a device's CSS viewport */
+		height: calc(var(--h) * var(--fit) * 1px); /* px-ok: a device's CSS viewport */
 		overflow: hidden;
 		border: 0.15rem solid var(--border);
 		border-radius: 1rem;
@@ -327,7 +374,7 @@
 		width: calc(var(--w) * 1px); /* px-ok: a device's CSS viewport */
 		height: calc(var(--h) * 1px); /* px-ok: a device's CSS viewport */
 		border: 0;
-		transform: scale(var(--zoom));
+		transform: scale(var(--fit));
 		transform-origin: 0 0;
 	}
 	.log {

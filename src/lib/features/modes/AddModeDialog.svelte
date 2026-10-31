@@ -20,11 +20,12 @@
 		open?: boolean;
 		onadded: (mode: GameMode) => void;
 		onaddedrule?: (rule: SpecialRule) => void;
+		/** The file in the box, e.g. one a share link carried (mode-share.ts). */
+		text?: string;
 	}
 
-	let { open = $bindable(false), onadded, onaddedrule }: Props = $props();
+	let { open = $bindable(false), onadded, onaddedrule, text = $bindable('') }: Props = $props();
 
-	let text = $state('');
 	let issues = $state<string[]>([]);
 	let fileInput = $state<HTMLInputElement>();
 	let guide = $state(false);
