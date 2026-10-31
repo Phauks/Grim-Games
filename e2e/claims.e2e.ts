@@ -85,7 +85,7 @@ test('the Amnesiac seat logs its daily guess with the answer, from the ⋯ menu'
 	await page.getByRole('dialog').getByRole('button', { name: 'Guess…' }).tap();
 	const note = page.getByRole('dialog', { name: /^Note: Amnesiac/ });
 	await note.getByRole('textbox', { name: 'Guess' }).fill('Do I learn about Minions?');
-	await note.getByRole('combobox', { name: 'Answer' }).tap();
+	await note.getByRole('button', { name: 'Answer' }).tap();
 	await page.getByRole('option', { name: 'Hot', exact: true }).tap();
 	await note.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(note).toBeHidden();
@@ -96,5 +96,42 @@ test('the Amnesiac seat logs its daily guess with the answer, from the ⋯ menu'
 	await expect(note.getByRole('textbox', { name: 'Guess' })).toHaveValue(
 		'Do I learn about Minions?'
 	);
-	await expect(note.getByRole('combobox', { name: 'Answer' })).toContainText('Hot');
+	await expect(note.getByRole('combobox', { name: 'Answer' })).toHaveValue('Hot');
+});
+
+// The answers are a range (Trevor, 2026-10-31): one in the Storyteller's own words, such as
+// Lukewarm, is typed into the answer field; either kind is shown to the player from the note.
+test('the Amnesiac’s answer can be the Storyteller’s own words, shown to the player', async ({
+	page
+}) => {
+	await start(page, 'Trouble Brewing');
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).tap();
+	const picker = page.getByRole('dialog', { name: 'Character for Seat 1' });
+	await picker.getByText('Include characters not on the script').tap();
+	await picker.getByRole('button', { name: 'Amnesiac', exact: true }).tap();
+	await expect(picker).toBeHidden();
+	await sheet.getByRole('button', { name: 'Seat actions' }).tap();
+	await page.getByRole('dialog').getByRole('button', { name: 'Guess…' }).tap();
+	const note = page.getByRole('dialog', { name: /^Note: Amnesiac/ });
+	await note.getByRole('textbox', { name: 'Guess' }).fill('Do I learn about Minions?');
+	const show = note.getByRole('button', { name: 'Show to player' });
+	await expect(show).toBeDisabled();
+	const answer = note.getByRole('combobox', { name: 'Answer' });
+	await answer.fill('Lukewarm');
+	await page.getByRole('option', { name: 'Use “Lukewarm”' }).tap();
+	await expect(show).toBeEnabled();
+	await expect(answer).toHaveValue('Lukewarm');
+	await show.tap();
+	const shown = page.locator('[data-testid="show-to-player"][open]');
+	await expect(shown).toContainText('Lukewarm');
+	await shown.getByRole('button', { name: 'Close' }).tap();
+	await expect(shown).toHaveCount(0);
+	await note.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(note).toBeHidden();
+
+	// Kept: opening it again shows the same answer.
+	await sheet.getByRole('button', { name: 'Seat actions' }).tap();
+	await page.getByRole('dialog').getByRole('button', { name: 'Guess…' }).tap();
+	await expect(note.getByRole('combobox', { name: 'Answer' })).toHaveValue('Lukewarm');
 });

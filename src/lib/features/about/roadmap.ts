@@ -187,9 +187,9 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	},
 	{
 		title:
-			"Special rules and game modes: +1, Binary Supernovae, Trained Killer, Phantom Detectives, Council of the Dead, The Warrens, The Djinn's Bargain",
+			"Special rules and game modes: +1, Binary Supernovae, Trained Killer, Phantom Detectives, Council of the Dead, The Warrens, The Djinn's Bargain, sharing your own mode files",
 		area: 'storyteller',
-		parts: ['L1', 'L35', 'L36'],
+		parts: ['L1', 'L35', 'L36', 'L103'],
 		prs: [322, 328]
 	},
 	{
@@ -236,9 +236,9 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	{ title: 'Choose the app language (English for now)', area: 'app', parts: ['S22'] },
 	{
 		title:
-			'Game settings: nomination tracking, the day timer on phones and the bag draw chosen for each game, shown read only on players’ phones',
+			'Game settings: nomination tracking, the day timer on phones and the bag draw chosen for each game',
 		area: 'storyteller',
-		parts: ['S26', 'S29']
+		parts: ['S26']
 	},
 	{ title: 'Search Settings for any setting by name', area: 'app', parts: ['S24'] },
 	{

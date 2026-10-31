@@ -46,6 +46,9 @@
 	import { findRule } from './custom-rules.svelte.ts';
 	import ModeAbout from './ModeAbout.svelte';
 	import ModeInspectDialog from './ModeInspectDialog.svelte';
+	import ShareModeDialog from './ShareModeDialog.svelte';
+	import { modeFileFromHash } from './mode-share.ts';
+	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import ModeValue from './ModeValue.svelte';
 	import ScriptPicker from './ScriptPicker.svelte';
 	import RestrictedDialog from './RestrictedDialog.svelte';
@@ -115,8 +118,26 @@
 		go();
 	}
 
+	/**
+	 * A shared mode link (mode-share.ts) opens Add mode holding its file, checked and confirmed
+	 * like a pasted one. The hash is cleared so a refresh doesn't ask again.
+	 */
+	async function openSharedMode() {
+		try {
+			const file = await modeFileFromHash(location.hash);
+			if (file === undefined) return;
+			history.replaceState(history.state, '', location.pathname);
+			addText = file;
+			adding = true;
+		} catch {
+			history.replaceState(history.state, '', location.pathname);
+			toast(t('modes.share.failed'));
+		}
+	}
+
 	onMount(() => {
 		void restoreScripts();
+		void openSharedMode();
 		if (!openedByBack()) return;
 		const draft = readDraft();
 		if (draft.modeId && findMode(draft.modeId)) modeId = draft.modeId;
@@ -134,7 +155,9 @@
 	const isStandard = $derived(modeId === STANDARD.id);
 	const custom = $derived(customModes.list.some((m) => m.id === modeId));
 	let adding = $state(false);
+	let addText = $state('');
 	let deleting = $state(false);
+	let sharing = $state(false);
 	const mode = $derived<GameMode>(findMode(modeId) ?? STANDARD);
 	/** Rules whose own switch is on (rule-switches.ts), such as +1 naming its character. */
 	let switchChoices = $state<SwitchChoices>({});
@@ -415,7 +438,14 @@
 					onclick={() => (inspecting = true)}
 				/>
 				<IconButton icon="add" label={t('modes.add.button')} onclick={() => (adding = true)} />
-				<!-- Always there, so nothing moves; only a mode added on this device can go. -->
+				<!-- Always there, so nothing moves; only a mode added on this device can be shared
+					(Trevor, 2026-10-31) or go. -->
+				<IconButton
+					icon="share"
+					label={t('modes.shareFile', { name: mode.name })}
+					disabled={!custom}
+					onclick={() => (sharing = true)}
+				/>
 				<DeleteButton
 					label={t('modes.add.delete', { name: mode.name })}
 					disabled={!custom}
@@ -618,11 +648,13 @@
 <ModeInspectDialog bind:open={inspecting} {mode} />
 <AddModeDialog
 	bind:open={adding}
+	bind:text={addText}
 	onadded={(m) => {
 		modeId = m.id;
 		restrictions = NO_RESTRICTIONS;
 	}}
 />
+<ShareModeDialog bind:open={sharing} mode={custom ? mode : undefined} />
 <ConfirmDialog
 	bind:open={deleting}
 	title={t('modes.add.deleteConfirm', { name: mode.name })}

@@ -19,11 +19,12 @@ describe('character cards', () => {
 		]);
 	});
 
-	it("are only the secret word and phrase, in Trevor's wording, until he approves more", () => {
+	it("are only the secret word, phrase and goal, in Trevor's wording, until he approves more", () => {
 		const all = characterCardsFor([...data.byId.keys()]);
-		expect(all.map((c) => [c.characterId, c.source])).toEqual([
+		expect(all.map((c) => [c.characterId, c.source]).sort()).toEqual([
 			['mezepheles', 'own'],
-			['yaggababble', 'own']
+			['yaggababble', 'own'],
+			['zenomancer', 'own']
 		]);
 	});
 
@@ -37,7 +38,7 @@ describe('character cards', () => {
 			rules: { infoCard: 'secret-phrase' }
 		};
 		expect(cardsOfCharacter(custom)).toMatchObject([
-			{ id: 'character:whisperer:secret-phrase', fills: 'phrase' }
+			{ id: 'character:whisperer:secret-phrase', fillKey: 'info-tokens.fill.phrase' }
 		]);
 		expect(characterCardsFor(['whisperer'])).toEqual([]);
 	});

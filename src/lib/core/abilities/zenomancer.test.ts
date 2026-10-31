@@ -12,7 +12,15 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { rulesOf } from '#lib/core/data/rules/index.ts';
+import { takesNote } from '#lib/core/rules/shown-to.ts';
+import {
+	committedCharacter,
+	committedGameData,
+	nightSheetPresence
+} from '#lib/core/testing/committed-data.ts';
+
+const characters = committedGameData().byId;
 
 describe('Zenomancer', () => {
 	const character = committedCharacter('zenomancer');
@@ -40,6 +48,21 @@ describe('Zenomancer', () => {
 
 		it('has no special app hooks', () => {
 			expect(character.special).toEqual([]);
+		});
+	});
+
+	// Summary: the Storyteller sets each goal and the true info it earns, so the app keeps the
+	// goal they typed on that player's Goal reminder and shows it on a "Your goal is" card
+	// (Trevor, 2026-10-31).
+	describe('goals', () => {
+		it('each Goal reminder carries the Storyteller’s words; other reminders don’t', () => {
+			expect(takesNote({ characterId: 'zenomancer', label: 'Goal' }, characters)).toBe(true);
+			expect(takesNote({ characterId: 'zenomancer', label: 'Other' }, characters)).toBe(false);
+			expect(takesNote({ characterId: 'chef', label: 'Goal' }, characters)).toBe(false);
+		});
+
+		it('shows the goal on its own card', () => {
+			expect(rulesOf('zenomancer', characters)?.infoCard).toBe('goal');
 		});
 	});
 

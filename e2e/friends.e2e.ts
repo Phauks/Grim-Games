@@ -338,6 +338,57 @@ test("a player opens the Storyteller's profile from the name at the top", async 
 	await expect(add).toHaveAttribute('data-state', 'requested');
 });
 
+test('people from a finished game are on Recent players, with Add friend', async ({ browser }) => {
+	// Plan F3: when a game ends, its signed-in Storyteller and seated players remember each
+	// other, and each can ask from their Friends page.
+	test.slow();
+	const ann = await signedIn(browser, 'ann');
+	const bob = await signedIn(browser, 'bob');
+	const { board, code } = await liveRoom(ann.page, 'Ann the Storyteller');
+	await bob.page.goto(`/join/${code}`);
+	await openProfile(bob.page);
+	await setPlayerName(bob.page, 'Bob');
+	await bob.page.keyboard.press('Escape');
+	await expect(ann.page.getByTestId('status-players')).toHaveText('1 player');
+	await nameSeat(ann.page, 3, 'Bob');
+	await expect(bob.page.getByTestId('you-row')).toHaveAttribute('data-seat', '3');
+
+	// Nobody is there until the game is over.
+	await bob.page.goto('/friends');
+	await expect(bob.page.getByTestId('friend-recent-none')).toBeVisible();
+
+	await ann.page.goto(board);
+	await ann.page.getByRole('button', { name: 'More', exact: true }).tap();
+	await ann.page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'End game', exact: true })
+		.tap();
+	const end = ann.page.getByRole('alertdialog', { name: 'End game?' });
+	await end.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(ann.page.getByTestId('game-over')).toBeVisible();
+
+	// Bob sees Ann, by her username, as she was called in the game.
+	await expect(async () => {
+		await bob.page.reload();
+		await expect(bob.page.getByTestId('friend-recent')).toContainText(ann.username, {
+			timeout: 2000
+		});
+	}).toPass();
+	const row = bob.page.getByTestId('friend-recent').getByRole('listitem');
+	await expect(row.getByTestId('player-badge')).toHaveText('Ann the Storyteller');
+	await expect(row).toContainText('Games together: 1');
+	const add = row.getByTestId('seat-friend');
+	await expect(add).toHaveAttribute('data-state', 'add');
+	await add.tap();
+	await expect(add).toHaveAttribute('data-state', 'requested');
+
+	// Ann has Bob on hers, and his request waiting.
+	await ann.page.goto('/friends');
+	await expect(ann.page.getByTestId('friend-incoming')).toContainText(bob.username);
+	await expect(ann.page.getByTestId('friend-recent')).toContainText(bob.username);
+	await expect(ann.page.getByTestId('friend-recent').getByTestId('player-badge')).toHaveText('Bob');
+});
+
 /** Ann asks Bob by username and Bob accepts. */
 async function befriend(ann: { page: Page }, bob: { page: Page; username: string }) {
 	await ann.page.goto('/friends');
@@ -353,6 +404,9 @@ async function befriend(ann: { page: Page }, bob: { page: Page; username: string
 test('a script sent to a friend, and one shown on a profile anyone can open', async ({
 	browser
 }) => {
+	// Two sign-ups, a friendship, then the script both ways and a stranger's view: about 16 s
+	// alone, past the 30 s default beside other tests, as the other two-account tests are.
+	test.slow();
 	const ann = await signedIn(browser, 'ann');
 	const bob = await signedIn(browser, 'bob');
 	await befriend(ann, bob);
