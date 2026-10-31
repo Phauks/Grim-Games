@@ -1413,17 +1413,26 @@ test("the Board preview's bank has the board bank's outline and colour", async (
 });
 
 // Trevor (2026-10-23): full screen on the board, for those who don't know how; in ⋯ since
-// 2026-10-27 ("We can move full screen into ... Menu"), so the grim cover sits beside ☰.
-test('the board can go full screen from its ⋯ menu, and back', async ({ page }) => {
+// 2026-10-27 ("We can move full screen into ... Menu"), so the grim cover sits beside ☰; an
+// icon beside the menu's X since 2026-10-31, not one of its items.
+test("the board can go full screen from beside its ⋯ menu's X, and back", async ({ page }) => {
 	await startGame(page);
 	const toolbar = page.getByRole('toolbar', { name: 'Grimoire' });
 	await expect(toolbar.getByRole('button', { name: 'Full screen' })).toHaveCount(0);
 	const item = () =>
 		page
 			.getByRole('dialog', { name: 'Grimoire' })
+			.getByTestId('dialog-head-actions')
 			.getByRole('button', { name: 'Full screen', exact: true });
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	await expect(item()).toHaveAttribute('aria-pressed', 'false');
+	// Right beside X.
+	const close = page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Close' });
+	const [icon, x] = [(await item().boundingBox())!, (await close.boundingBox())!];
+	expect(Math.abs(icon.y - x.y)).toBeLessThan(2);
+	expect(icon.x).toBeLessThan(x.x);
 	await item().tap();
 	// The menu stays open (Trevor, 2026-10-27: "dont close ... menu when toggling fullscreen").
 	await expect.poll(() => page.evaluate(() => !!document.fullscreenElement)).toBe(true);
@@ -4749,7 +4758,7 @@ test('the board menu names its groups, in two columns beside a phone', async ({ 
 	]);
 	await expect(group('Seats').getByRole('button', { name: 'Open seating' })).toBeDisabled();
 	await expect(group('Seats').getByRole('button', { name: 'Count off' })).toBeDisabled();
-	expect(await names('App')).toEqual(['Settings', 'Full screen', 'Report an issue']);
+	expect(await names('App')).toEqual(['Settings', 'Report an issue']);
 	// Beside a phone, the game on the left and the rest on the right.
 	const game = (await group('Game').boundingBox())!;
 	const seats = (await group('Seats').boundingBox())!;
