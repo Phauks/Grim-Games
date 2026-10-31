@@ -63,8 +63,6 @@
 		connections?: readonly SeatConnection[];
 		/** The names of the phones with no seat, where they are known. */
 		unseatedNames?: readonly string[];
-		/** MOCKUP: the effect once every candle is lit. */
-		ready?: 'glow' | 'horizon' | 'sparks' | 'wave';
 	}
 
 	let {
@@ -76,8 +74,7 @@
 		candles,
 		unseated = 0,
 		connections,
-		unseatedNames,
-		ready
+		unseatedNames
 	}: Props = $props();
 	const title = $derived(
 		phase.kind === 'setup'
@@ -219,7 +216,6 @@
 					look={setupLook}
 					{candles}
 					{unseated}
-					{ready}
 				/>{/if}
 		</span>
 	{:else if showTimer}{@render shownTimer()}{/if}
