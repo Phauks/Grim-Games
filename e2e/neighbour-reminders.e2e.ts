@@ -39,7 +39,7 @@ test("the Tea Lady's Cannot Die moves to her new neighbour when players move", a
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	await page
 		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Arrange seats', exact: true })
+		.getByRole('button', { name: 'Seating', exact: true })
 		.tap();
 	const centre = async (n: number) => {
 		const box = (await page

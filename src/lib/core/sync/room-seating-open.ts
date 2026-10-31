@@ -19,6 +19,8 @@ export interface SitWish {
 	onto?: SeatId;
 	/** Seating open, from older apps: sit right after this seat, going round in seat order. */
 	after?: SeatId;
+	/** Seating open: move the phone's seat to this point, in % of the board (seat layout). */
+	place?: { x: number; y: number };
 	/** Seating locked: sit in this open seat. */
 	seatId?: SeatId;
 }
@@ -41,7 +43,8 @@ export function sitWish(
 	room: RoomState,
 	memberId: string,
 	message:
-		{ type: 'sit'; onto?: unknown; after?: unknown } | { type: 'claim-seat'; seatId: unknown }
+		| { type: 'sit'; onto?: unknown; after?: unknown; place?: unknown }
+		| { type: 'claim-seat'; seatId: unknown }
 ): SitWish | undefined {
 	const member = room.members.find((m) => m.memberId === memberId);
 	if (!member?.name || !room.public) return undefined;
@@ -51,11 +54,21 @@ export function sitWish(
 		if (!room.seatingOpen) return undefined;
 		if (at(message.onto)) return { type: 'sit', memberId, onto: message.onto as SeatId };
 		if (at(message.after)) return { type: 'sit', memberId, after: message.after as SeatId };
-		return undefined;
+		const place = boardPoint(message.place);
+		return place ? { type: 'sit', memberId, place } : undefined;
 	}
 	const seat = seats.find((s) => s.seatId === message.seatId);
 	if (room.seatingOpen || member.seatId || !seat || !isOpenSeat(seat)) return undefined;
 	return { type: 'sit', memberId, seatId: seat.seatId };
+}
+
+/** A point on the board, in %, or undefined for anything else. */
+function boardPoint(value: unknown): { x: number; y: number } | undefined {
+	if (!value || typeof value !== 'object') return undefined;
+	const { x, y } = value as Record<string, unknown>;
+	const ok = (n: unknown): n is number =>
+		typeof n === 'number' && Number.isFinite(n) && n >= 0 && n <= 100;
+	return ok(x) && ok(y) ? { x, y } : undefined;
 }
 
 /**
@@ -69,6 +82,15 @@ export const isOpenSeat = (seat: { playerName?: string } | undefined) =>
 const key = (name: string) => name.replace(/\s+/g, ' ').trim().toLocaleLowerCase();
 
 type SeatCommand = Extract<Command, { type: 'RenameSeat' | 'MoveSeat' | 'AddSeat' }>;
+
+/** The seat of the phone named `name`: phones sit by name (room-seating.ts). */
+export function ownSeat(
+	seating: readonly SeatId[],
+	seats: Readonly<Record<SeatId, { playerName?: string }>>,
+	name: string
+): SeatId | undefined {
+	return seating.find((id) => seats[id]?.playerName && key(seats[id].playerName!) === key(name));
+}
 
 /**
  * The board commands that grant a wish from the phone named `name`. Phones sit by name
@@ -86,14 +108,12 @@ type SeatCommand = Extract<Command, { type: 'RenameSeat' | 'MoveSeat' | 'AddSeat
  */
 export function sitCommands(
 	seating: readonly SeatId[],
-	seats: Readonly<Record<SeatId, { playerName?: string }>>,
+	seats: Readonly<Record<SeatId, { playerName?: string; characterId?: string }>>,
 	name: string,
 	wish: Pick<SitWish, 'onto' | 'after' | 'seatId'>
 ): SeatCommand[] {
 	const playerName = name as PlayerName;
-	const own = seating.find(
-		(id) => seats[id]?.playerName && key(seats[id].playerName!) === key(name)
-	);
+	const own = ownSeat(seating, seats, name);
 	if (wish.seatId) {
 		if (own || !seating.includes(wish.seatId) || !isOpenSeat(seats[wish.seatId])) return [];
 		return [{ type: 'RenameSeat', seatId: wish.seatId, playerName }];
@@ -118,9 +138,29 @@ export function sitCommands(
 	return commands;
 }
 
-function ontoCommands(
+/**
+ * The seat a phone named `name` moves when it drops its disc in a space: its own seat, or for a
+ * phone with no seat yet the first open seat, named for it (`commands`). Undefined when it has
+ * no seat and none is open.
+ */
+export function placedSeat(
 	seating: readonly SeatId[],
 	seats: Readonly<Record<SeatId, { playerName?: string }>>,
+	name: string
+): { seatId: SeatId; commands: SeatCommand[] } | undefined {
+	const own = ownSeat(seating, seats, name);
+	if (own) return { seatId: own, commands: [] };
+	const open = seating.find((id) => isOpenSeat(seats[id]));
+	if (!open) return undefined;
+	return {
+		seatId: open,
+		commands: [{ type: 'RenameSeat', seatId: open, playerName: name as PlayerName }]
+	};
+}
+
+function ontoCommands(
+	seating: readonly SeatId[],
+	seats: Readonly<Record<SeatId, { playerName?: string; characterId?: string }>>,
 	playerName: PlayerName,
 	own: SeatId | undefined,
 	onto: SeatId
@@ -139,6 +179,13 @@ function ontoCommands(
 		// nearer the phone's old seat, so it needs a move only when the two were not neighbours.
 		if (Math.abs(from - place) > 1)
 			commands.push({ type: 'MoveSeat', seatId: onto, position: from });
+		// An empty chair with no character is named for where it now is, not where it was.
+		if (!seats[onto]?.characterId)
+			commands.push({
+				type: 'RenameSeat',
+				seatId: onto,
+				playerName: `Seat ${from + 1}` as PlayerName
+			});
 	}
 	return commands;
 }
