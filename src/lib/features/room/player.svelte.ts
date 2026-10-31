@@ -14,7 +14,7 @@ import {
 	type PlayerView,
 	type SharedGrimoire
 } from '#lib/core/sync/room.ts';
-import type { PublicRule } from '#lib/core/sync/public-projection.ts';
+import type { PublicRule, PublicStoryteller } from '#lib/core/sync/public-projection.ts';
 import { readStored, readStoredText, writeStored, writeStoredText } from '#lib/ui/stored.ts';
 import { forgetRecentRoom, rememberRoom } from './recent-rooms.ts';
 import { lookForNewerBuild } from './newer-build.ts';
@@ -80,6 +80,8 @@ const TABLE_KEY = 'grim-games-room-table';
 
 export interface RoomTable {
 	storyteller?: string;
+	/** The Storyteller's avatar, laurel and picture, for their profile (Trevor, 2026-10-31). */
+	storytellerLook?: PublicStoryteller;
 	travellers?: TravellerInPlay[];
 	/** The game mode and special rules, for the Script tab (Trevor, 2026-10-24). */
 	rules?: PublicRule[];
@@ -99,6 +101,7 @@ function storedTable(code: string | undefined): RoomTable {
 	if (!code || stored?.code !== code) return {};
 	return {
 		storyteller: stored.storyteller,
+		storytellerLook: stored.storytellerLook,
 		travellers: stored.travellers,
 		rules: stored.rules,
 		gameId: stored.gameId,
@@ -122,6 +125,7 @@ export function gameKey(code: string): string {
 function setTable(code: string, table: RoomTable): void {
 	if (JSON.stringify(table) === JSON.stringify($state.snapshot(roomTable))) return;
 	roomTable.storyteller = table.storyteller;
+	roomTable.storytellerLook = table.storytellerLook;
 	roomTable.travellers = table.travellers;
 	roomTable.rules = table.rules;
 	roomTable.gameId = table.gameId;
@@ -129,6 +133,7 @@ function setTable(code: string, table: RoomTable): void {
 	roomTable.ruleCharacters = table.ruleCharacters;
 	const empty =
 		!table.storyteller &&
+		!table.storytellerLook &&
 		!table.travellers?.length &&
 		!table.rules?.length &&
 		!table.gameId &&
@@ -206,12 +211,14 @@ export class RoomPlayer {
 					// The game runs again, or a new one began: the finished grimoire goes.
 					if (!m.ended) this.revealed = undefined;
 					const storyteller = m.public?.storytellerName?.trim();
+					const storytellerLook = m.public?.storyteller;
 					const travellers = travellersInPlay(m.public?.seats ?? []);
 					const rules = m.public?.rules;
 					const players = dealtSeats(m.public?.seats ?? []).dealt;
 					const ruleCharacters = m.public?.ruleCharacters;
 					setTable(code, {
 						...(storyteller ? { storyteller } : {}),
+						...(storytellerLook ? { storytellerLook } : {}),
 						...(travellers.length ? { travellers } : {}),
 						...(rules?.length ? { rules } : {}),
 						...(m.gameId ? { gameId: m.gameId } : {}),

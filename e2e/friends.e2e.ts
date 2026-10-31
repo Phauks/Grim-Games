@@ -310,6 +310,34 @@ test('a player adds the Storyteller from Game info', async ({ browser }) => {
 	await expect(ann.page.getByTestId('friend-incoming')).toContainText(bob.username);
 });
 
+test("a player opens the Storyteller's profile from the name at the top", async ({ browser }) => {
+	// Trevor, 2026-10-31: "allow players to click storyteller name in player view, in the top
+	// where it says storyteller, to access that profile".
+	test.slow();
+	const ann = await signedIn(browser, 'ann');
+	const bob = await signedIn(browser, 'bob');
+	await ann.page.evaluate(() => {
+		const key = 'grim-games:player-settings:v1';
+		const settings = JSON.parse(localStorage.getItem(key) ?? '{}');
+		localStorage.setItem(key, JSON.stringify({ ...settings, frame: 'ring-gold~pulse' }));
+	});
+	const { code } = await liveRoom(ann.page, 'Ann the Storyteller');
+	await bob.page.goto(`/join/${code}`);
+	await openProfile(bob.page);
+	await setPlayerName(bob.page, 'Bob');
+	await bob.page.keyboard.press('Escape');
+
+	const name = bob.page.getByTestId('byline-storyteller');
+	await expect(name).toHaveText('Ann the Storyteller');
+	await name.tap();
+	const profile = bob.page.getByRole('dialog', { name: 'Ann the Storyteller', exact: true });
+	await expect(profile.locator('svg[data-frame="ring-gold~pulse"]')).toBeAttached();
+	const add = profile.getByTestId('seat-friend');
+	await expect(add).toHaveAttribute('data-state', 'add');
+	await add.tap();
+	await expect(add).toHaveAttribute('data-state', 'requested');
+});
+
 /** Ann asks Bob by username and Bob accepts. */
 async function befriend(ann: { page: Page }, bob: { page: Page; username: string }) {
 	await ann.page.goto('/friends');
