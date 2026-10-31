@@ -72,10 +72,7 @@ export class BoardSizing {
 	/** The day timer's row, top right: seats and reminders keep clear of it. */
 	timerW = $state(0);
 	timerH = $state(0);
-	/** The Set up button and the Fabled and Loric in the middle. */
-	centreW = $state(0);
-	centreH = $state(0);
-	/** The Fabled and Loric along the edge. */
+	/** The Fabled and Loric in the top left corner. */
 	edgeW = $state(0);
 	edgeH = $state(0);
 	/** The script's name. */
@@ -215,12 +212,10 @@ export class BoardSizing {
 				chip: Math.max(this.chip, this.tapPx),
 				avoid: this.#avoidFor(i)
 			})),
-			// The Set up button and the Fabled and Loric in the middle, the Fabled and Loric along
-			// the edge, the day timer and the script's name stay clear and tappable.
+			// The Fabled and Loric in the corner, the day timer and the script's name stay clear
+			// and tappable.
 			keepClear({
-				centre: { w: this.centreW, h: this.centreH },
-				edge:
-					boardLooks.current.rulesAt !== 'middle' ? { w: this.edgeW, h: this.edgeH } : undefined,
+				edge: { w: this.edgeW, h: this.edgeH },
 				timer: { w: this.timerW, h: this.timerH },
 				title: { w: this.titleW, h: this.titleH },
 				board

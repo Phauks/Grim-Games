@@ -1,10 +1,12 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { defaultAlignment, type Character, type PlayerName } from '#lib/core/data/index.ts';
+	import type { PublicGameSettings } from '#lib/core/sync/public-game-settings.ts';
 	import type { SeatRole } from '#lib/core/sync/seat-roles.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
+	import PlayerGameSettings from '#lib/features/game-settings/PlayerGameSettings.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import FairPlayNotice from '#lib/features/show/FairPlayNotice.svelte';
@@ -19,7 +21,7 @@
 	 * always there and disabled until the Storyteller lets players see theirs, so turning it on
 	 * or off moves nothing (Trevor, 2026-10-28). The first hold tells the Storyteller it was seen.
 	 * The Storyteller's player view has the same row (Trevor, 2026-10-30): it asks which seat
-	 * first, then shows that seat's card as its phone does.
+	 * first, then shows that seat's card as its phone does. Game settings shares the row.
 	 */
 	interface SeatChoice {
 		seatId: string;
@@ -36,9 +38,14 @@
 		onSeen?: () => void;
 		/** The Storyteller's player view: every seat, while players may see theirs. */
 		seats?: readonly SeatChoice[];
+		/**
+		 * The game's settings as the board sends them, for Game settings beside it on the row
+		 * (Trevor, 2026-10-30); without them that button is there, disabled, so nothing moves.
+		 */
+		settings?: PublicGameSettings;
 	}
 
-	let { role: own, characters, onSeen, seats }: Props = $props();
+	let { role: own, characters, onSeen, seats, settings }: Props = $props();
 
 	/** The seat the Storyteller chose to see as. */
 	let chosen = $state<string>();
@@ -91,6 +98,9 @@
 		disabled={seats ? !seats.some((s) => s.role) : !role}
 		onclick={() => (seats ? (picking = true) : (open = true))}>{t('room.role.open')}</Button
 	>
+	<!-- How the game will run, read only, so players understand it from Setup on (Trevor,
+	     2026-10-30). -->
+	<PlayerGameSettings {settings} />
 </div>
 
 {#if seats}
@@ -153,6 +163,8 @@
 <style>
 	.open {
 		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: var(--space-2);
 		margin-bottom: var(--space-2);
 	}
 	.secret {
