@@ -418,8 +418,8 @@ test('a range of characters can start above one, and is kept', async ({ page }) 
 	await page.reload();
 	await page.getByRole('button', { name: 'Edit Two of these are' }).tap();
 	await expect(page.getByRole('combobox', { name: 'Characters to show' })).toContainText('Range');
-	await expect(page.getByLabel('From', { exact: true })).toHaveText('2');
-	await expect(page.getByLabel('To', { exact: true })).toHaveText('4');
+	await expect(page.getByRole('combobox', { name: 'From', exact: true })).toHaveText('2');
+	await expect(page.getByRole('combobox', { name: 'To', exact: true })).toHaveText('4');
 });
 
 test("the example card fills its box, and the page doesn't scroll behind a shown card", async ({

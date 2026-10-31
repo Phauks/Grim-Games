@@ -2611,9 +2611,9 @@ test("a Traveller's alignment can be drawn from face-down tokens", async ({ page
 	await step.getByRole('button', { name: 'Draw' }).tap();
 	// The Storyteller sets 4 tokens, none evil: the player still picks one.
 	const draw = page.getByRole('dialog', { name: 'Alignment draw' });
-	await expect(draw.getByLabel('Tokens', { exact: true })).toHaveText('4');
+	await expect(draw.getByRole('combobox', { name: 'Tokens', exact: true })).toHaveText('4');
 	await pickNumber(draw, 'Evil tokens', 0);
-	await expect(draw.getByLabel('Evil tokens')).toHaveText('0');
+	await expect(draw.getByRole('combobox', { name: 'Evil tokens' })).toHaveText('0');
 	await draw.getByRole('button', { name: 'Confirm' }).tap();
 	const pick = page.getByRole('dialog', { name: 'Choose a token' });
 	// The counts are not shown to the player.
@@ -2661,7 +2661,7 @@ test('a joining Traveller draws their alignment, with the last mix remembered', 
 		}
 		await expect(draw.getByTestId('evil-chance')).toHaveText('Evil 4 · 100%');
 		await expect(draw.getByTestId('good-chance')).toHaveText('Good 0 · 0%');
-		await expect(draw.getByLabel('Evil tokens')).toHaveText('4');
+		await expect(draw.getByRole('combobox', { name: 'Evil tokens' })).toHaveText('4');
 		await draw.getByRole('button', { name: 'Confirm' }).tap();
 		await page
 			.getByRole('dialog', { name: 'Choose a token' })
