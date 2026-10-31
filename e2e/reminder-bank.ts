@@ -77,3 +77,13 @@ export async function heldAction(page: Page, row: string) {
 	await inHand(page).getByRole('button', { name: 'More reminder actions' }).tap();
 	await page.getByRole('menuitem', { name: row, exact: true }).tap();
 }
+
+/** Taps a seat's token on the board to hold it, then the seat it moves to (Trevor, 2026-10-30). */
+export async function moveOnBoard(page: Page, label: string, from: number, to: number) {
+	await page
+		.locator(`.chip-slot[data-seat="${from}"]`)
+		.getByRole('button', { name: `${label} reminder` })
+		.tap();
+	await expect(inHand(page)).toBeVisible();
+	await boardSeat(page, to).tap();
+}

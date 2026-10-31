@@ -22,7 +22,6 @@
 	import CharacterDialog from '#lib/features/characters/CharacterDialog.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
-	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
@@ -31,7 +30,6 @@
 	import CauseName from './CauseName.svelte';
 	import SeatStatusDialog from './SeatStatusDialog.svelte';
 	import SeatMenu from './SeatMenu.svelte';
-	import SeatReminderMenu from './SeatReminderMenu.svelte';
 	import SeatCharacterFlow from './SeatCharacterFlow.svelte';
 	import SeatBadge from './SeatBadge.svelte';
 	import TableCheck from './TableCheck.svelte';
@@ -40,8 +38,6 @@
 	import SeatNameSuggestions from './SeatNameSuggestions.svelte';
 	import { SeatNameEdit } from './seat-name-edit.svelte.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
-	import SeatChooser from './SeatChooser.svelte';
-	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
 	import { seatChanges } from './history.ts';
 	import DeadBadge from '#lib/ui/seating/DeadBadge.svelte';
 	import { boardLooks } from './board-looks.svelte.ts';
@@ -63,6 +59,8 @@
 		onDraw?: (seatId: SeatId) => void;
 		/** Edits this player's notes, which live in the board's Notes sheet. */
 		onNotes?: (seatId: SeatId) => void;
+		/** One of the seat's reminders tapped: its own dialog (ReminderDialog, the board's). */
+		onReminder?: (reminderId: ReminderId) => void;
 		/** A nomination was recorded or changed: special rules may act on it (NominationAsk). */
 		onNominated?: (nomination: { nominator: SeatId; nominee: SeatId }) => void;
 		/**
@@ -79,6 +77,7 @@
 		seatId,
 		onDraw,
 		onNotes,
+		onReminder,
 		onNominated,
 		onExecute
 	}: Props = $props();
@@ -170,8 +169,6 @@
 	);
 
 	// ── Reminders and seats ──
-	let moving = $state<ReminderId | undefined>();
-	let moveOpen = $state(false);
 	/** Which of the seat's nominations is being chosen (Track nominations). */
 	let nominating = $state<{ seatId: SeatId; side: 'made' | 'received' }>();
 	const nominations = $derived(
@@ -188,15 +185,7 @@
 	const canNominate = $derived(
 		seatId !== undefined && (!!nominations.made || mayNominate(game, seatId, characters))
 	);
-	let moveConfirm = $state<ReturnType<typeof ReminderMoveConfirm>>();
 	let menuOpen = $state(false);
-	let reminderMenuOpen = $state(false);
-	/** Opens one reminder's own dialog over the sheet: a reminder tapped on the board. */
-	export function showReminder(reminderId: ReminderId) {
-		moving = reminderId;
-		reminderMenuOpen = true;
-	}
-	const movingReminder = $derived(seat?.reminders.find((r) => r.reminderId === moving));
 	let removeOpen = $state(false);
 	let showOpen = $state(false);
 	let savantOpen = $state(false);
@@ -419,10 +408,7 @@
 								{...placedLook(reminder, characters)}
 								alignment={placingAlignment(game, reminder, characters)}
 								ariaLabel={`Actions for ${tokenLabel(reminder)}`}
-								onTap={() => {
-									moving = reminder.reminderId;
-									reminderMenuOpen = true;
-								}}
+								onTap={() => onReminder?.(reminder.reminderId)}
 							/>
 						</li>
 					{/each}
@@ -431,8 +417,6 @@
 		</div>
 	{/if}
 </BottomSheet>
-
-<ReminderMoveConfirm bind:this={moveConfirm} {grimoire} />
 
 <SavantSheet bind:open={savantOpen} {grimoire} {seatId} />
 {#if claim && seat?.characterId}
@@ -476,42 +460,7 @@
 	onRemove={() => (removeOpen = true)}
 />
 
-<SeatReminderMenu
-	bind:open={reminderMenuOpen}
-	{grimoire}
-	{seatId}
-	reminderId={moving}
-	onMove={() => (moveOpen = true)}
-	onReturn={() => {
-		// Taken off the seat, it waits in the reminder bank again.
-		if (moving) moveConfirm?.requestReturn(moving);
-		moving = undefined;
-	}}
-/>
-
 <NominationChooser {grimoire} {characters} bind:asking={nominating} {onNominated} />
-
-<SeatChooser
-	bind:open={moveOpen}
-	title="Move reminder to"
-	{game}
-	{characters}
-	exclude={seatId}
-	onChoose={(toSeatId) => {
-		moveOpen = false;
-		if (moving) moveConfirm?.request(moving, toSeatId);
-		moving = undefined;
-	}}
->
-	<!-- It says which reminder moves (Trevor, 2026-10-19). -->
-	{#snippet heading()}
-		Move {#if movingReminder}<ReminderToken
-				label={tokenLabel(movingReminder)}
-				character={characters.get(movingReminder.characterId)}
-				alignment={placingAlignment(game, movingReminder, characters)}
-			/>{:else}reminder{/if} to
-	{/snippet}
-</SeatChooser>
 
 <ConfirmDialog
 	bind:open={removeOpen}

@@ -93,7 +93,8 @@
 	import { stepReminders } from './reminders.ts';
 	import { stepFocus } from './step-focus.svelte.ts';
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
-	import HeldReminderDialog from './HeldReminderDialog.svelte';
+	import BankReminderDialog from './BankReminderDialog.svelte';
+	import { ReminderHand } from './reminder-hand.svelte.ts';
 	import BoardCorner from './BoardCorner.svelte';
 	import LeaveGuard from './LeaveGuard.svelte';
 	import BoardMenu from './BoardMenu.svelte';
@@ -285,7 +286,9 @@
 
 	// ── Dragging reminders (reminder-drag.svelte.ts) ──
 	let moveConfirm = $state<ReturnType<typeof ReminderMoveConfirm>>();
-	let heldDialog = $state<ReturnType<typeof HeldReminderDialog>>();
+	/** The token in hand, from the bank or the board (Trevor, 2026-10-30). */
+	const hand = new ReminderHand();
+	let bank = $state<ReturnType<typeof ReminderBank>>();
 	const remDrag = new ReminderDragging(() => ({
 		grimoire,
 		game,
@@ -333,7 +336,6 @@
 		selected = seatId;
 		sheetOpen = true;
 	}
-	let seatSheet = $state<ReturnType<typeof SeatSheet>>();
 	// A player's avatar mark opens their profile (Trevor, 2026-10-28).
 	let profileOpen = $state(false);
 	let profileSeat = $state<SeatId | undefined>();
@@ -372,10 +374,17 @@
 		else if (part === 'nominate') askNomination(seatId);
 		else openSeat(seatId);
 	}
-	function openReminder(seatId: SeatId, reminderId: ReminderId) {
-		selected = seatId;
+	/**
+	 * A token on the board tapped: held, as one from the bank is (Trevor, 2026-10-30), for the
+	 * seat (or bank) tapped next. With no bank (the game over), its own dialog instead.
+	 */
+	function holdReminder(reminderId: ReminderId, from?: SeatId) {
+		if (bank) hand.toggle({ kind: 'placed', reminderId, from });
+		else showReminder(reminderId);
+	}
+	function showReminder(reminderId: ReminderId) {
 		// After the tap's click, so it doesn't land on what opens under the finger.
-		setTimeout(() => seatSheet?.showReminder(reminderId));
+		setTimeout(() => hand.showAbout({ kind: 'placed', reminderId }));
 	}
 	// A removed (or undone) seat closes its sheet.
 	$effect(() => {
@@ -702,7 +711,7 @@
 		lifted={remDrag.drag?.reminderId}
 		onShow={(id) => (id ? rules?.show(id) : rules?.showAll())}
 		onShowAbility={(via) => rules?.showAbility(via)}
-		onHeldTap={(id) => heldDialog?.show(id)}
+		onHeldTap={(id) => holdReminder(id)}
 		onHeldDrag={(id, x, y, end) => remDrag.move(id, undefined, x, y, end)}
 		onCancel={() => remDrag.cancel()}
 	/>
@@ -799,8 +808,8 @@
 			{placeSpots}
 			onPlace={placeAt}
 			onSeat={tapSeat}
-			onReminder={openReminder}
-			onLooseReminder={(id) => heldDialog?.show(id)}
+			onReminder={(seatId, id) => holdReminder(id, seatId)}
+			onLooseReminder={(id) => holdReminder(id)}
 		/>
 		{#if nw.walk && !ended}
 			<NightStrip
@@ -825,6 +834,8 @@
 			<HistoryStrip {grimoire} />
 		{:else}
 			<ReminderBank
+				bind:this={bank}
+				{hand}
 				{grimoire}
 				{board}
 				size={chip}
@@ -842,6 +853,8 @@
 				onHints={(h) => (hints.tray = h)}
 				run={flow.run}
 				disabled={watching}
+				{remDrag}
+				onRemove={(id) => moveConfirm?.requestReturn(id)}
 			/>
 		{/if}
 
@@ -970,12 +983,7 @@
 	onShare={watching ? undefined : () => (phonesOpen = true)}
 />
 <ReminderMoveConfirm bind:this={moveConfirm} {grimoire} />
-<HeldReminderDialog
-	bind:this={heldDialog}
-	{grimoire}
-	onRemove={(id) => moveConfirm?.requestReturn(id)}
-	onMove={(id, to) => moveConfirm?.request(id, to)}
-/>
+<BankReminderDialog {grimoire} {hand} onRemove={(id) => moveConfirm?.requestReturn(id)} />
 <AlignmentAsk {grimoire} />
 <StarPassPrompt {grimoire} active={!ended && !grimoire.open.viewOnly} />
 <FirstDeathAsk {grimoire} />
@@ -1014,7 +1022,6 @@
 <LeaveGuard {game} {watching} />
 
 <SeatSheet
-	bind:this={seatSheet}
 	bind:open={sheetOpen}
 	{grimoire}
 	seatId={selected}
@@ -1023,6 +1030,7 @@
 		onDraw(id);
 	}}
 	onNotes={(id) => editNote(id)}
+	onReminder={showReminder}
 	onNominated={nominated}
 	onExecute={(seatId) => flow.executeFromSeat(seatId)}
 />
@@ -1141,7 +1149,7 @@
 	dispatch={(command) => grimoire.open.run(command)}
 />
 
-<RuleCharacters bind:this={rules} {grimoire} {watching} onReminder={(id) => heldDialog?.show(id)} />
+<RuleCharacters bind:this={rules} {grimoire} {watching} onReminder={showReminder} />
 
 <style>
 	/* Start game's question: the setup reminders still to place (Trevor, 2026-10-20). */
