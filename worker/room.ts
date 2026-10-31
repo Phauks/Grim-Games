@@ -189,7 +189,7 @@ export class Room extends DurableObject<RoomEnv> {
 		return seatAccount(this.ctx, await this.load(), requester, target);
 	}
 
-	/** The room as its Storyteller's friends tools see it (plan F4, F5, room-friends.ts). */
+	/** The room as its Storyteller's friends tools see it (plan F4-F6, room-friends.ts). */
 	async friendsRoom(
 		requester: string,
 		change?: RoomFriendsChange
@@ -197,7 +197,7 @@ export class Room extends DurableObject<RoomEnv> {
 		return (await this.load()) ? roomFriends(this.ctx, requester, change) : undefined;
 	}
 
-	/** What friends and groups may see of this room while it is open (plan F5). */
+	/** What friends and groups may see of this room while it is open (plan F5, F6). */
 	async friendsView(): Promise<RoomFriendsView | undefined> {
 		return (await this.load()) ? roomFriendsView(this.ctx) : undefined;
 	}

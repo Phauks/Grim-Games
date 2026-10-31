@@ -28,6 +28,7 @@ import { COLLECTIONS } from '../src/lib/features/scripts/collection-api.ts';
 export { LiveGameIndex, PushKeyStore, ReportBox, Room, ScriptMirror, SharedRecap, SharedScript };
 export { AccountEmail, AccountName, AccountUser } from './account/objects.ts';
 export { FriendBook } from './friends/book.ts';
+export { FriendGroup } from './friends/group.ts';
 
 export interface Env
 	extends

@@ -15,6 +15,7 @@ import {
 	type FriendScript,
 	type PublishedScript
 } from '../../src/lib/features/friends/friend-scripts-protocol.ts';
+import { GROUPS_PER_DAY, MAX_GROUPS } from '../../src/lib/features/friends/groups-protocol.ts';
 import {
 	planReceive,
 	planSend,
@@ -131,6 +132,9 @@ export class FriendBook extends DurableObject {
 				id INTEGER PRIMARY KEY CHECK (id = 1),
 				shown INTEGER NOT NULL
 			);
+			-- Groups this account is in (plan F6), by join code, and when it started each of its own.
+			CREATE TABLE IF NOT EXISTS grouped (code TEXT PRIMARY KEY, joined_at INTEGER NOT NULL);
+			CREATE TABLE IF NOT EXISTS group_started (at INTEGER NOT NULL);
 		`);
 	}
 
@@ -494,6 +498,36 @@ export class FriendBook extends DurableObject {
 			)
 			.toArray()
 			.map(({ name, hash, at }) => ({ name, hash, at }));
+	}
+
+	/** The groups this account is in, by code, oldest first. */
+	async groups(): Promise<string[]> {
+		return this.sql
+			.exec<{ code: string }>('SELECT code FROM grouped ORDER BY joined_at, code')
+			.toArray()
+			.map((row) => row.code);
+	}
+
+	/** Lists a group; false when this account is in as many groups as it may be. */
+	async addGroup(code: string, now: number): Promise<boolean> {
+		if (this.sql.exec('SELECT 1 FROM grouped WHERE code = ?', code).toArray().length) return true;
+		const count = this.sql.exec<{ n: number }>('SELECT COUNT(*) AS n FROM grouped').one().n;
+		if (count >= MAX_GROUPS) return false;
+		this.sql.exec('INSERT INTO grouped (code, joined_at) VALUES (?, ?)', code, now);
+		return true;
+	}
+
+	async dropGroup(code: string): Promise<void> {
+		this.sql.exec('DELETE FROM grouped WHERE code = ?', code);
+	}
+
+	/** Counts a group this account starts against the day's limit; false when it's spent. */
+	async spendGroupStart(now: number): Promise<boolean> {
+		this.sql.exec('DELETE FROM group_started WHERE at < ?', now - DAY_MS);
+		const count = this.sql.exec<{ n: number }>('SELECT COUNT(*) AS n FROM group_started').one().n;
+		if (count >= GROUPS_PER_DAY) return false;
+		this.sql.exec('INSERT INTO group_started (at) VALUES (?)', now);
+		return true;
 	}
 
 	/** This account was deleted: returns everyone it was linked to, and keeps nothing. */
