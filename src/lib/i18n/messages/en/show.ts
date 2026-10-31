@@ -50,5 +50,6 @@ export const show = {
 	'show.fairPlay.watchIntegrity': 'You won’t do anything that spoils the game for its players.',
 	'show.shownTo.heading': 'Valid Information',
 	'show.shownTo.sees': 'is shown',
-	'show.toPlayer': 'Show to player'
+	'show.toPlayer': 'Show to player',
+	'show.evilLearns.named': 'Character named'
 } as const;

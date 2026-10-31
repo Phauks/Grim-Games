@@ -353,6 +353,11 @@
 					shownId = id;
 					showOpen = true;
 				}}
+				onShowCard={(card) => {
+					shownId = undefined;
+					shownCard = card;
+					showOpen = true;
+				}}
 			/>
 			<NightYesNo
 				{grimoire}
