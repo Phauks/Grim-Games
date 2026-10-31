@@ -228,6 +228,28 @@ async function endNight(page: Page) {
 }
 
 /** The Demon died: the game end prompt asks first; Cancel keeps playing. */
+/**
+ * An aid prompt's switch is only in Settings (Trevor, 2026-10-30): its ⋯ › View in settings
+ * opens Settings over the prompt at that switch, scrolled to and marked.
+ */
+async function aidInSettings(page: Page, prompt: Locator, label: string) {
+	await expect(prompt.getByRole('checkbox', { name: label })).toHaveCount(0);
+	await prompt.getByRole('button', { name: 'More', exact: true }).tap();
+	await page.getByRole('menuitem', { name: 'View in settings' }).tap();
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	await expect(settings.getByRole('heading', { name: 'Storyteller', level: 2 })).toBeVisible();
+	const row = settings.locator(`.content [data-search-label="${label}"]`);
+	await expect(row).toBeInViewport();
+	await expect(row).toHaveAttribute('data-search-hit', '');
+	return settings;
+}
+
+/** Closes Settings, back to the prompt under it. */
+async function closeSettings(settings: Locator) {
+	await settings.locator('[data-part="close-trigger"]').first().tap();
+	await expect(settings).toHaveCount(0);
+}
+
 async function keepPlaying(page: Page) {
 	const prompt = page.getByRole('alertdialog', { name: 'End game?' });
 	await prompt.getByRole('button', { name: 'Cancel' }).tap();
@@ -2776,6 +2798,7 @@ test('a met game end condition offers End game, listing every outcome', async ({
 	await execute(1);
 	const prompt = page.getByRole('alertdialog', { name: 'End game?' });
 	await expect(prompt.getByTestId('game-end-prompt')).toContainText('Evil wins');
+	await closeSettings(await aidInSettings(page, prompt, 'Game end prompts'));
 	await expect(
 		prompt.locator('[data-rule="executed-loses"] [data-character-id="saint"]')
 	).toBeVisible();
@@ -5051,15 +5074,17 @@ test('the bank button starts the game, ends each night and day, and resumes a st
 	await expect(strip.locator('.step .name strong')).toHaveText('Dusk');
 	await expect(strip.locator('.count')).toHaveText(/^1 of/);
 
-	// With "Open the day after End night" off, set in the confirm itself, the Storyteller stays
-	// on the grimoire (Trevor, 2026-10-18).
+	// With "Open the day after End night" off, set in Settings from the confirm's ⋯, the
+	// Storyteller stays on the grimoire (Trevor, 2026-10-18; 2026-10-30).
 	await strip.getByRole('button', { name: 'Next step' }).tap();
 	await end.tap();
 	const confirm = page.getByRole('alertdialog', { name: 'End the night?' });
-	const dayAfter = confirm.getByRole('checkbox', { name: 'Open the day after End night' });
+	const settings = await aidInSettings(page, confirm, 'Open the day after End night');
+	const dayAfter = settings.getByRole('checkbox', { name: 'Open the day after End night' });
 	await expect(dayAfter).toBeChecked();
-	await confirm.getByText('Open the day after End night', { exact: true }).tap();
+	await settings.getByText('Open the day after End night', { exact: true }).tap();
 	await expect(dayAfter).not.toBeChecked();
+	await closeSettings(settings);
 	await confirm.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(confirm).toHaveCount(0);
 	await expect(page.getByRole('dialog', { name: 'Day 2' })).toHaveCount(0);
@@ -6001,7 +6026,10 @@ test('a Dead reminder put on a living player asks whether to mark them dead', as
 	// Cancel leaves them alive; switched off, it never asks.
 	await addDead(3, 2);
 	const again = page.getByRole('alertdialog', { name: 'Mark Seat 3 dead?' });
-	await again.getByText('Ask to mark dead', { exact: true }).tap();
+	const settings = await aidInSettings(page, again, 'Ask to mark dead');
+	await settings.getByText('Ask to mark dead', { exact: true }).tap();
+	await expect(settings.getByRole('checkbox', { name: 'Ask to mark dead' })).not.toBeChecked();
+	await closeSettings(settings);
 	await again.getByRole('button', { name: 'Cancel', exact: true }).tap();
 	await expect(seatLabelled(page, 'Seat 3: no name, no character, 1 reminder')).toBeAttached();
 	await closeBin(page);
@@ -6121,7 +6149,7 @@ test('an Alive reminder put on a dead player asks whether to revive them', async
 	await add(2, 'Alive');
 	const ask = page.getByRole('alertdialog', { name: 'Revive Seat 2?' });
 	await expect(ask).toBeVisible();
-	await expect(ask.getByText('Ask to revive', { exact: true })).toBeVisible();
+	await closeSettings(await aidInSettings(page, ask, 'Ask to revive'));
 	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(seatLabelled(page, 'Seat 2: no name, no character, 2 reminders')).toBeAttached();
 	await expect(seatLabelled(page, 'Seat 2:')).not.toHaveAttribute('aria-label', /dead/);
@@ -6360,9 +6388,7 @@ test("putting a dead character's reminder on the board asks first", async ({ pag
 	// Cancel takes it back off; Confirm keeps it.
 	await put('Cursed');
 	await expect(ask).toContainText('is dead.');
-	await expect(
-		ask.getByText("Ask before a dead character's reminder", { exact: true })
-	).toBeVisible();
+	await closeSettings(await aidInSettings(page, ask, "Ask before a dead character's reminder"));
 	await ask.getByRole('button', { name: 'Cancel' }).tap();
 	await expect(onBoard('Cursed')).toHaveCount(0);
 	await put('Cursed');

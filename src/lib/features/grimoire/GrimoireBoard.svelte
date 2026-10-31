@@ -83,6 +83,7 @@
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import type { CoverDetails } from '#lib/features/show/CoverScreen.svelte';
 	import SavantSheet from '#lib/features/savant/SavantSheet.svelte';
+	import AidMenu from '#lib/features/settings/AidMenu.svelte';
 	import { playersDialog } from '#lib/features/room/players-dialog.svelte.ts';
 	import { DAY_HASH } from '#lib/features/day/day-hash.ts';
 	import SeatSheet from './SeatSheet.svelte';
@@ -1107,7 +1108,9 @@
 	bind:open={savantAskOpen}
 	title={t('day.savantAsk')}
 	onConfirm={() => (savantOpen = true)}
-/>
+>
+	{#snippet headActions()}<AidMenu aid="savantInfo" />{/snippet}
+</ConfirmDialog>
 
 <GuidedStep
 	bind:open={nw.guideOpen}

@@ -7,6 +7,8 @@ export const settings = {
 	'settings.allSettings': 'All settings',
 	'settings.search': 'Search settings',
 	'settings.searchResults': 'Settings found',
+	'settings.aidMenu': 'More',
+	'settings.viewInSettings': 'View in settings',
 	'settings.themeText': 'Theme and text',
 	'settings.groupNight': 'Night',
 	'settings.groupSetup': 'Bag draw',
