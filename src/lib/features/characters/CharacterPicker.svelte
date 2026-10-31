@@ -10,7 +10,12 @@
 	import { typeTone } from '#lib/core/data/character-type.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { tick, type Snippet } from 'svelte';
-	import { type Character, type CharacterId, type CharacterType } from '#lib/core/data/index.ts';
+	import {
+		type Alignment,
+		type Character,
+		type CharacterId,
+		type CharacterType
+	} from '#lib/core/data/index.ts';
 	import { TYPE_PLURALS } from '#lib/features/reference/labels.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import CharacterSearchBox from './CharacterSearchBox.svelte';
@@ -80,6 +85,11 @@
 		pinTop?: string;
 		/** Each type's header ends with how many it lists, "Townsfolk (13)" (Script builder, Trevor 2026-10-19). */
 		counts?: boolean;
+		/**
+		 * Every row's token in this alignment's colours, not its type's own (the Hindu's
+		 * Travellers in the reborn player's alignment, Trevor 2026-10-31).
+		 */
+		alignment?: Alignment;
 	}
 
 	let {
@@ -104,7 +114,8 @@
 		groupAside,
 		onInfo,
 		pinTop,
-		counts = false
+		counts = false,
+		alignment
 	}: Props = $props();
 
 	// A pinned header closed while pinned leaves its type's top above the window: keep the
@@ -155,6 +166,7 @@
 				{:else}
 					<CharacterRow
 						{character}
+						{alignment}
 						info={onInfo}
 						{note}
 						withNote={notes}
