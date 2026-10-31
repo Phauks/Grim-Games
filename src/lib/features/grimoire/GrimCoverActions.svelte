@@ -5,15 +5,9 @@
 -->
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import type { LoadedScript } from '#lib/core/data/index.ts';
-	import type { CharacterLookup, Game } from '#lib/core/model/index.ts';
-	import type {
-		PublicCorner,
-		PublicLook,
-		PublicSeatLayout
-	} from '#lib/core/sync/public-projection.ts';
 	import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 	import BoardScriptDialog from '#lib/features/grimoire/BoardScriptDialog.svelte';
+	import type { BoardPlayerSource } from '#lib/features/grimoire/board-player-source.ts';
 	import { forgetTableNotebook, tableNotebook } from '#lib/features/player/table-notebook.ts';
 	import CallTownConfirm from '#lib/features/room/CallTownConfirm.svelte';
 	import InboxNotice from '#lib/features/room/InboxNotice.svelte';
@@ -21,35 +15,14 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 
 	interface Props {
-		game: Game;
 		/** Back to town is offered: a live room, and the game not over. */
 		callTown: boolean;
-		/** The game's script, once the official data has loaded. */
-		script: LoadedScript | undefined;
-		logo: string | undefined;
-		/** The live room's code, for Share. */
-		room: string | undefined;
-		characters: CharacterLookup;
-		layout: PublicSeatLayout;
-		corner: PublicCorner;
-		look?: PublicLook;
-		picture?: Blob;
-		pictureRoom?: string;
+		/** The players' screen, from the same source as the board's Script (BoardPlayerSource). */
+		view: BoardPlayerSource;
 	}
 
-	let {
-		game,
-		callTown,
-		script,
-		logo,
-		room,
-		characters,
-		layout,
-		corner,
-		look,
-		picture,
-		pictureRoom
-	}: Props = $props();
+	let { callTown, view }: Props = $props();
+	const game = $derived(view.game);
 
 	let callTownOpen = $state(false);
 	/** The players' view. */
@@ -83,23 +56,14 @@
 	</Button>
 	<CallTownConfirm bind:open={callTownOpen} />
 {/if}
-{#if script}
+{#if view.script}
 	<Button icon="script" onclick={openView}>{t('show.playerView')}</Button>
 	<!-- The players' screen as it is on /play, its title-line buttons and notes too (Trevor,
 	     2026-10-27: "same setting, share, and other buttons ... As if they were within the
 	     app. We shouldn't even block notes"); the notes are the table's, blank each time. -->
 	<BoardScriptDialog
 		bind:open={viewOpen}
-		{game}
-		{script}
-		{logo}
-		{room}
-		{characters}
-		{layout}
-		{corner}
-		{look}
-		{picture}
-		{pictureRoom}
+		{...view}
 		notebook={tableNotebook(game.gameId)}
 		testid="cover-player-view"
 	/>

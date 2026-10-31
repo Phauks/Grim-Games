@@ -50,7 +50,7 @@
 	import { screenTheme } from '#lib/ui/themes/screen-theme.svelte.ts';
 	import { sheetTheme } from '#lib/ui/themes/sheet-backgrounds.ts';
 	import LeaveGuard from '#lib/features/setup/LeaveGuard.svelte';
-	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
+	import ScriptName from '#lib/features/scripts/ScriptName.svelte';
 	import { scriptLogo } from '#lib/core/data/script-logo.ts';
 
 	// A reading page for players, not a grimoire (Trevor, 2026-10-16): no seats or controls.
@@ -162,11 +162,6 @@
 		return screenTheme.show(sheetTheme(playerSettings.current.sheetBackground, preferences.theme));
 	});
 	const logo = $derived(script && scriptLogo(script));
-	let logoFailed = $state(false);
-	$effect(() => {
-		void logo;
-		logoFailed = false;
-	});
 	// A report sent from here carries the script (Trevor, 2026-10-22).
 	offerScriptToReports(() => script);
 	/** No script yet: the Scripts page no longer lists the base three, so offer them here. */
@@ -223,11 +218,7 @@
 	<!-- The script's logo before its name, when it has one; nothing in its place otherwise
 	     (Trevor, 2026-10-23). -->
 	{#snippet lead()}
-		{#if logo && !logoFailed}<ScriptLogo
-				src={logo}
-				class="title-logo"
-				onfail={() => (logoFailed = true)}
-			/>{/if}
+		<ScriptName name={script?.name} {logo} size="lead" />
 	{/snippet}
 	<!-- Players are already in a script: no Change script and no Code (Trevor, 2026-10-16).
 	     Another script loads only from a share link or QR code. Before a game is joined or a

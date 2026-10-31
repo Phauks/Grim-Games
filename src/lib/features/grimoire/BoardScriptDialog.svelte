@@ -5,13 +5,7 @@
 	open it.
 -->
 <script lang="ts">
-	import type { LoadedScript } from '#lib/core/data/index.ts';
-	import type { CharacterLookup, Game } from '#lib/core/model/index.ts';
-	import type {
-		PublicCorner,
-		PublicLook,
-		PublicSeatLayout
-	} from '#lib/core/sync/public-projection.ts';
+	import type { BoardPlayerSource } from '#lib/features/grimoire/board-player-source.ts';
 	import BoardPlayerView from '#lib/features/grimoire/BoardPlayerView.svelte';
 	import PlayerScriptActions from '#lib/features/player/PlayerScriptActions.svelte';
 	import { scriptVersion } from '#lib/features/player/player-script.ts';
@@ -20,27 +14,16 @@
 	import { gameSheetRules } from '#lib/features/modes/sheet-rules.ts';
 	import { gameShareable } from '#lib/features/scripts/game-shareable.svelte.ts';
 	import { playerSettings } from '#lib/features/player/player-settings.svelte.ts';
-	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
+	import ScriptName from '#lib/features/scripts/ScriptName.svelte';
 	import { afterPaint } from '#lib/ui/after-paint.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { screenTheme } from '#lib/ui/themes/screen-theme.svelte.ts';
 	import { sheetTheme } from '#lib/ui/themes/sheet-backgrounds.ts';
 
-	interface Props {
+	/** Always the board's one source (BoardPlayerSource), whichever way it was opened. */
+	interface Props extends BoardPlayerSource {
 		open: boolean;
-		game: Game;
-		/** The game's script, once the official data has loaded. */
-		script: LoadedScript | undefined;
-		logo: string | undefined;
-		/** The live room's code, for Share. */
-		room: string | undefined;
-		characters: CharacterLookup;
-		layout: PublicSeatLayout;
-		corner: PublicCorner;
-		look?: PublicLook;
-		picture?: Blob;
-		pictureRoom?: string;
 		/** Where notes and guesses are kept (BoardPlayerView). */
 		notebook?: string;
 		testid: string;
@@ -89,7 +72,7 @@
 	});
 </script>
 
-{#snippet logoLead()}<ScriptLogo src={logo} class="title-logo" />{/snippet}
+{#snippet logoLead()}<ScriptName name={game.script.meta?.name} {logo} size="lead" />{/snippet}
 <Dialog
 	bind:open
 	title={game.script.meta?.name || 'Script'}

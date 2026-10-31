@@ -23,7 +23,7 @@
 	import { gameStore } from '#lib/features/game/session.svelte.ts';
 	import { forgetGame } from './forget-game.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
-	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
+	import ScriptName from '#lib/features/scripts/ScriptName.svelte';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import {
 		endedGames,
@@ -112,6 +112,12 @@
 	};
 </script>
 
+<!-- The mode in its own colour after the script's name, as in the board's corner title. -->
+{#snippet modeName(gameId: GameId)}{#if gameModeName(gameId)}<span
+			class="mode"
+			data-testid="game-mode">{` · ${gameModeName(gameId)}`}</span
+		>{/if}{/snippet}
+
 <!-- Continue game's As Storyteller heading is SavedGamesSection's; History keeps its own "Games" heading. -->
 {#if view === 'active'}<section aria-label="Saved games">
 		{#if loaded && games.length === 0 && unreadable.length === 0}
@@ -121,17 +127,10 @@
 			{#each games as game (game.gameId)}
 				<li>
 					<a class="open" href={resolve('/grimoire/[gameId]', { gameId: game.gameId })}>
-						<!-- The script's logo, its slot kept in every row (Trevor, 2026-10-18). -->
-						<ScriptLogo src={game.scriptLogo} class="game-logo" />
 						<!-- An alternative mode is named beside the script (Trevor, 2026-10-18). -->
-						<span class="name"
-							>{game.scriptName || 'None'}{#if gameModeName(game.gameId)}<span
-									class="mode"
-									data-testid="game-mode">{` · ${gameModeName(game.gameId)}`}</span
-								>{/if}</span
-						>
-						<span class="meta"
-							>{stageText(game)} · {game.seatCount} seats · {when.format(game.savedAt)}</span
+						<ScriptName name={game.scriptName} logo={game.scriptLogo}
+							>{@render modeName(game.gameId)}{#snippet sub()}{stageText(game)} · {game.seatCount} seats
+								· {when.format(game.savedAt)}{/snippet}</ScriptName
 						>
 					</a>
 					<DeleteButton
@@ -146,12 +145,10 @@
 			{#each unreadable as game (game.gameId)}
 				<li>
 					<span class="open" aria-disabled="true">
-						<ScriptLogo src={undefined} class="game-logo" />
-						<span class="name">Unreadable game</span>
-						<span class="meta"
-							>{game.problem === 'too-new'
-								? 'Saved by a newer version: refresh to update'
-								: 'This save is damaged'}</span
+						<ScriptName name="Unreadable game"
+							>{#snippet sub()}{game.problem === 'too-new'
+									? 'Saved by a newer version: refresh to update'
+									: 'This save is damaged'}{/snippet}</ScriptName
 						>
 					</span>
 					<DeleteButton
@@ -175,19 +172,10 @@
 				<li>
 					<!-- Opens read-only, to look around; Reopen is on the board (Trevor, 2026-10-17). -->
 					<a class="open" href={resolve('/grimoire/[gameId]', { gameId: game.gameId })}>
-						<!-- The script's logo, its slot kept in every row (Trevor, 2026-10-18). -->
-						<ScriptLogo src={game.scriptLogo} class="game-logo" />
-						<!-- An alternative mode is named beside the script (Trevor, 2026-10-18). -->
-						<span class="name"
-							>{game.scriptName || 'None'}{#if gameModeName(game.gameId)}<span
-									class="mode"
-									data-testid="game-mode">{` · ${gameModeName(game.gameId)}`}</span
-								>{/if}</span
-						>
-						<span class="meta"
-							>{winnerText(game.gameId)} · {stageText(game)} · {when.format(
-								ended[game.gameId].endedAt
-							)}</span
+						<ScriptName name={game.scriptName} logo={game.scriptLogo}
+							>{@render modeName(game.gameId)}{#snippet sub()}{winnerText(game.gameId)} · {stageText(
+									game
+								)} · {when.format(ended[game.gameId].endedAt)}{/snippet}</ScriptName
 						>
 					</a>
 					<!-- Export opens the board, so its picture is the board itself (Trevor, 2026-10-26). -->
@@ -242,10 +230,9 @@
 	}
 	.open {
 		flex: 1;
-		display: grid;
-		grid-template-columns: auto minmax(0, 1fr);
-		column-gap: var(--space-3);
+		display: flex;
 		align-items: center;
+		min-width: 0;
 		min-height: var(--tap-target);
 		padding: var(--space-2) var(--space-3);
 		color: inherit;
@@ -255,26 +242,8 @@
 		background: var(--surface-selected);
 		border-radius: var(--radius-md);
 	}
-	/* Beside both lines, the same size in every row so names line up. */
-	.open :global(.game-logo) {
-		grid-row: 1 / span 2;
-		width: 2.5rem;
-		height: 2.5rem;
-	}
-	.name,
-	.meta {
-		grid-column: 2;
-	}
-	.name {
-		font-family: var(--font-heading);
-		color: var(--heading);
-	}
 	/* The mode in its own colour, as in the board's corner title. */
 	.mode {
 		color: var(--accent);
-	}
-	.meta {
-		font-size: 0.9rem;
-		color: var(--on-surface-muted);
 	}
 </style>
