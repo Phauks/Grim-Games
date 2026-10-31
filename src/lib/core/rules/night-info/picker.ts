@@ -8,7 +8,6 @@ import type { CharacterId, CharacterType } from '#lib/core/data/types.ts';
 import { type CharacterLookup, scriptCharacterIds } from '#lib/core/model/characters.ts';
 import {
 	aliveNeighbours,
-	getSeat,
 	registersAsDead,
 	trueCharacter,
 	typeOf
@@ -16,6 +15,9 @@ import {
 import type { AbnormalCause, Game, Reminder, SeatId } from '#lib/core/model/types.ts';
 import { type Registration, type RegistrationWorld, registrationWorlds } from '../ability.ts';
 import { causesOf } from '../night-deaths.ts';
+import type { Night } from '../night-order.ts';
+import { wokeTonight } from '../woke-tonight.ts';
+import { carries, lastShown } from './token-carriers.ts';
 import {
 	type AnswerValue,
 	type Reliability,
@@ -120,6 +122,8 @@ interface PickerSpec extends Learns {
 	kind: PickerKind;
 	seatCount: number;
 	answer?: PickerAnswer;
+	/** For `woke-tonight`: the players who woke tonight by their own ability. */
+	woke?: ReadonlySet<SeatId>;
 }
 
 /** The picker each `learns` measure shows: its kind and how many players are tapped. */
@@ -141,7 +145,8 @@ const MEASURE_PICKERS: Readonly<
 	'demon-player': { kind: 'players', seatCount: 1 },
 	'closest-evil-direction': { kind: 'yes-no', seatCount: 0, answer: 'direction' },
 	'chosen-alignment': { kind: 'yes-no', seatCount: 1, answer: 'alignment' },
-	'type-differs-from-token': { kind: 'players', seatCount: 1 }
+	'type-differs-from-token': { kind: 'players', seatCount: 1 },
+	'woke-tonight': { kind: 'number', seatCount: 2 }
 };
 
 /**
@@ -307,6 +312,14 @@ function optionsIn(
 			// https://wiki.bloodontheclocktower.com/Village_Idiot: the alignment of the player
 			// chosen. Like the Fortune Teller, any player, themselves included.
 			return game.seating.map((s) => ({ seats: [s], yes: evil(s) }));
+		case 'woke-tonight':
+			// https://wiki.bloodontheclocktower.com/Chambermaid: two alive players, not the
+			// Chambermaid; how many woke tonight because of their own ability. A player woken to
+			// be asked counts even if they decline (Trevor, 2026-10-31).
+			return choose(
+				others.filter((s) => !game.seats[s].dead),
+				2
+			).map((pair) => ({ seats: pair, number: pair.filter((s) => spec.woke?.has(s)).length }));
 		case 'type-differs-from-token': {
 			// https://wiki.bloodontheclocktower.com/Balloonist: a player of a different character
 			// type than the one shown last time (any player the first time). Alive or dead.
@@ -316,28 +329,6 @@ function optionsIn(
 				.map((s) => ({ seats: [s], pivot: s }));
 		}
 	}
-}
-
-/**
- * The players last shown to a waking player, by the `token` placed on them: the carriers of
- * the token its latest recorded info placed, or else every carrier of the token.
- */
-function lastShown(
-	game: Game,
-	seatId: SeatId,
-	characterId: CharacterId,
-	token: string | undefined
-): SeatId[] {
-	const carriers = game.seating.filter((s) => carries(game, s, characterId, token));
-	const entries = [...game.pastDays.flatMap((d) => d.entries), ...game.today.entries];
-	for (const e of entries.reverse()) {
-		if (e.kind !== 'info' || e.seatId !== seatId || e.characterId !== characterId) continue;
-		const placed = carriers.filter((s) =>
-			game.seats[s].reminders.some((r) => e.reminderIds.includes(r.reminderId))
-		);
-		if (placed.length > 0) return placed;
-	}
-	return carriers;
 }
 
 /** The players a `character-of` picker may show the character of. */
@@ -372,18 +363,6 @@ function shownAs(
 	return {
 		characterIds: scriptCharacterIds(game.script).filter((id) => characters.get(id)?.type === type)
 	};
-}
-
-/** Whether a seat carries the character's `token` reminder (the Fortune Teller's red herring). */
-function carries(
-	game: Game,
-	seatId: SeatId,
-	characterId: CharacterId,
-	token: string | undefined
-): boolean {
-	return (getSeat(game, seatId)?.reminders ?? []).some(
-		(r) => r.characterId === characterId && r.label === token
-	);
 }
 
 const optionKey = (o: InfoOption) =>
@@ -456,6 +435,8 @@ function pickerFacts(
 			return others.filter(evil).map(f);
 		case 'type-differs-from-token':
 			return lastShown(game, seatId, characterId, spec.token).map(f);
+		case 'woke-tonight':
+			return others.filter((s) => !game.seats[s].dead && spec.woke?.has(s)).map(f);
 		case 'chosen-alignment':
 		case 'good-player':
 		case 'character-of':
@@ -468,10 +449,18 @@ export function infoPicker(
 	game: Game,
 	seatId: SeatId,
 	characterId: CharacterId,
-	characters: CharacterLookup
+	characters: CharacterLookup,
+	night: Night = game.pastDays.length === 0 ? 'first' : 'other'
 ): InfoPicker | undefined {
-	const spec = pickerSpec(characterId, characters);
-	if (!spec) return undefined;
+	const learns = pickerSpec(characterId, characters);
+	if (!learns) return undefined;
+	const spec: PickerSpec =
+		learns.measure === 'woke-tonight'
+			? {
+					...learns,
+					woke: new Set(game.seating.filter((s) => wokeTonight(game, s, characters, night)))
+				}
+			: learns;
 	const all = reliability(game, seatId, characterId, characters);
 	const options = truthfulOptions(game, seatId, characterId, spec, characters, all.registrations);
 	const worlds = registrationWorlds(game, characters, all.registrations);
@@ -652,7 +641,7 @@ export interface ValidInfo {
 /** The highest number a number picker could show, for listing every valid one. */
 function highestNumber(game: Game, measure: Learns['measure']): number {
 	const n = game.seating.length;
-	if (measure === 'evil-alive-neighbours') return 2;
+	if (measure === 'evil-alive-neighbours' || measure === 'woke-tonight') return 2;
 	if (measure === 'demon-minion-steps') return Math.max(1, Math.floor(n / 2));
 	return n;
 }

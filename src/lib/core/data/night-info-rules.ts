@@ -35,7 +35,9 @@ import { checkKeys, describe, isObject, readBoolean, readEnum, type Issues } fro
  *   (Shugenja);
  * - `chosen-alignment`: the alignment of a player the waking player chose (Village Idiot);
  * - `type-differs-from-token`: one player whose character type differs from that of the
- *   player carrying `token`, the last one shown (Balloonist).
+ *   player carrying `token`, the last one shown (Balloonist);
+ * - `woke-tonight`: how many of two chosen alive players woke tonight by their own ability, a
+ *   player woken to be asked counting even if they decline (Chambermaid).
  * `reminders` are the tokens to place: `target` on the shown character's player, `other` on the
  * second player, `each` on every player tapped.
  */
@@ -55,7 +57,8 @@ const LEARNS_MEASURES = [
 	'demon-player',
 	'closest-evil-direction',
 	'chosen-alignment',
-	'type-differs-from-token'
+	'type-differs-from-token',
+	'woke-tonight'
 ] as const;
 export interface Learns {
 	measure: (typeof LEARNS_MEASURES)[number];
