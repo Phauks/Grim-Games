@@ -22,6 +22,7 @@ import { readNightText, type NightTextRules } from './night-text-rules.ts';
 import { readDayMark, type DayMarkRule } from './day-mark-rules.ts';
 import { readInfoTokenCharacters, type InfoTokenCharacterRules } from './info-token-rules.ts';
 import { readStopsWaking, type StopsWaking } from './stops-waking-rules.ts';
+import { readCountdown, type Countdown } from './countdown-rules.ts';
 import { readWakesWhen, type WakesWhen } from './wakes-when-rules.ts';
 import { CHOICE_RULE_KEYS, readChoiceRules, type ChoiceRules } from './choice-rules.ts';
 import { readRegistersAs } from './registers-as-rules.ts';
@@ -246,6 +247,8 @@ export interface CharacterRules extends ChoiceRules {
 	stopsWaking?: StopsWaking;
 	/** Its token on a player stops them killing tonight (`stops-waking-rules.ts`'s shape). */
 	stopsKilling?: StopsWaking;
+	/** Its token counts down one step a night (`countdown-rules.ts`). */
+	countdown?: Countdown;
 	/** A condition its player needs before waking for it (`wakes-when-rules.ts`). */
 	wakesWhen?: WakesWhen;
 	/** Its token on a dead player keeps that player's ability (`keeps-ability-rules.ts`). */
@@ -411,6 +414,7 @@ const RULE_KEYS = [
 	'nightText',
 	'dayMark',
 	'stopsWaking',
+	'countdown',
 	'stopsKilling',
 	'wakesWhen',
 	'keepsAbility',
@@ -651,6 +655,10 @@ export function parseCharacterRules(
 		const stops = readStopsWaking(raw.stopsWaking, at, issues, reminders);
 		if (stops) rules.stopsWaking = stops;
 	}
+	const countdown =
+		raw.countdown !== undefined &&
+		readCountdown(raw.countdown, `${path}.countdown`, issues, reminders);
+	if (countdown) rules.countdown = countdown;
 	if (raw.stopsKilling !== undefined) {
 		const stops = readStopsWaking(raw.stopsKilling, `${path}.stopsKilling`, issues, reminders);
 		if (stops) rules.stopsKilling = stops;

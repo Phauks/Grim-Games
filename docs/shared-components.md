@@ -179,6 +179,7 @@ character: a rule becomes a behaviour with parameters that any character can use
 - Setup reminders and preparation notes (`setup-reminders.ts`): `setupPrep`, moved
 - Setup counts (`setup-modifiers.ts`: the Baron, Godfather, Legion and the rest): `setupModifier`, moved
 - Death causes (`death-causes.ts`: who can cause a death and whom): `deathCause`, moved
+- A token that counts down each night (the Courtier's Drunk 3, 2, 1): `countdown` in a rules block (`data/countdown-rules.ts`), `rules/countdown.ts`, offered at the step by `features/grimoire/CountdownStep.svelte`, new
 - Breaking madness (`madness.ts`: who a mad player is and whether breaking it executes or kills, the day view's Broke madness): `madness`, new; `madness.chosenBy: nominee` with `dayReminders` `when.nomineeChose` for a player a nominee chose (the Big Wig's speaker, `ChooseForNomination`, asked by `NominationAsk`)
 - Reminder movement (`reminder-movement.ts`: tokens that stay put, characters that relocate them, and `followsNeighbours` tokens that move to the new neighbours when players change seats): `reminderMovement`, moved
 - Reminder placeholders (`night-text.ts`: what each `:reminder:` in the night text means): `reminderPlaceholders`, moved
