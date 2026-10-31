@@ -21,7 +21,6 @@
 		"none": "reincarnation"
 	},
 	"reincarnates": {
-		"first": 4,
-		"demonTo": "minion"
+		"first": 4
 	}
 }

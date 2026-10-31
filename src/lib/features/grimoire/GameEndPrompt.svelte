@@ -95,9 +95,6 @@
 			return;
 		}
 		if (!promptable(ends).some((e) => !dismissed.includes(dismissKey(e)))) return;
-		// A Demon offered a rebirth (the Hindu's optional rule) may yet pass on: ask once the
-		// Storyteller has picked a Traveller or left the Demon dead.
-		if (grimoire.reincarnateAsk) return;
 		shown = ends;
 		winner = suggestedWinner(ends);
 		open = true;
