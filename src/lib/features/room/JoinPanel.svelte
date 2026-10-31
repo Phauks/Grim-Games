@@ -38,7 +38,6 @@
 	import ScriptByline from '#lib/features/player/ScriptByline.svelte';
 	import PlayerStatusRow from '#lib/features/player/PlayerStatusRow.svelte';
 	import { parseSeatPresence } from '#lib/core/sync/seat-presence.ts';
-	import { parsePublicGameSettings } from '#lib/core/sync/public-game-settings.ts';
 
 	/**
 	 * Joining a live room on a phone: the code form (with the game it opens), then one "You" row
@@ -484,7 +483,6 @@
 	<!-- Its own row under the status line (Trevor, 2026-10-28). -->
 	{#if player}<YourCharacter
 			role={view?.role}
-			settings={view?.endedGameId ? undefined : parsePublicGameSettings(view?.public?.settings)}
 			characters={roomScript(player.code)?.characters}
 			onSeen={() => player?.roleSeen()}
 		/>{/if}

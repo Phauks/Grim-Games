@@ -343,6 +343,11 @@ export const room = {
 	'room.testRoom.unlockAll': 'Unlock every screen',
 	'room.testRoom.inRoom': 'Room {code} · {connected} of {players} players connected',
 	'room.testRoom.noRoom': 'No room: start a live game on the Storyteller screen, or join a code',
+	'room.testRoom.close': 'Close room',
+	'room.testRoom.closeConfirm': 'Close the test room?',
+	'room.testRoom.closeOwn':
+		'The Storyteller screen’s room is deleted for every phone in it, and the players leave.',
+	'room.testRoom.closeTyped': 'The players leave the room. Only its Storyteller can delete it.',
 	'room.pictureReport.allow': 'Let it stand',
 	'room.pictureReport.removeNamed': "Remove {name}'s picture for this game",
 	'room.pictureReport.picture': "{name}'s picture",

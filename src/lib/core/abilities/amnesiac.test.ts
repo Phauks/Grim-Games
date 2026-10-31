@@ -125,6 +125,28 @@ describe('Amnesiac', () => {
 			}));
 			expect(notes(game)[0]).not.toHaveProperty('answer');
 		});
+
+		// The answers are a range (Trevor, 2026-10-31), so one in the Storyteller's own words is
+		// kept as typed when none of the four fits.
+		it('keeps an answer in the Storyteller’s own words, and a standard one replaces it', () => {
+			const { session, ctx, game } = cast(PLAYERS, (s) => ({
+				...guess(s),
+				answer: undefined,
+				customAnswer: '  Lukewarm '
+			}));
+			expect(notes(game)).toEqual([expect.objectContaining({ customAnswer: 'Lukewarm' })]);
+			expect(notes(game)[0]).not.toHaveProperty('answer');
+			const [entry] = notes(game);
+			const edited = run(session, ctx, {
+				type: 'EditDayNote',
+				entryId: entry.entryId,
+				text: entry.text,
+				answer: 'warm',
+				customAnswer: 'Lukewarm'
+			});
+			expect(notes(edited.game)[0]).toMatchObject({ answer: 'warm' });
+			expect(notes(edited.game)[0]).not.toHaveProperty('customAnswer');
+		});
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Amnesiac#Examples)', () => {
