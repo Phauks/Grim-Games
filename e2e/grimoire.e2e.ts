@@ -6080,6 +6080,39 @@ test('when the Imp kills itself, a living Minion is chosen to become the Imp', a
 	await expect(page.getByRole('alertdialog')).toHaveCount(0);
 });
 
+test('the star pass is asked again when a revived Imp kills itself again', async ({ page }) => {
+	// Trevor (2026-10-31): Cancel once, bring the Imp back, kill it by its own kill again.
+	await startGame(page);
+	for (const [number, name] of [
+		[3, 'Imp'],
+		[4, 'Poisoner']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	const ask = page.getByRole('alertdialog', { name: 'Choose the new Imp' });
+	const status = page.getByRole('dialog', { name: 'Status of Seat 3' });
+	const sheet = await openSeat(page, 3);
+	await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
+	await status.getByRole('button', { name: 'The Demon' }).tap();
+	await ask.getByRole('button', { name: 'Cancel', exact: true }).tap();
+	await expect(ask).toBeHidden();
+	await sheet.getByRole('button', { name: /^Status: / }).tap();
+	await status.getByRole('button', { name: 'Alive', exact: true }).tap();
+	await page
+		.getByRole('alertdialog', { name: 'Bring Seat 3 back to life?' })
+		.getByRole('button', { name: 'Confirm', exact: true })
+		.tap();
+	await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
+	await status.getByRole('button', { name: 'The Demon' }).tap();
+	await expect(ask).toBeVisible();
+});
+
 test('a player whose character changed since dawn is woken that night to learn it', async ({
 	page
 }) => {
@@ -6501,12 +6534,13 @@ test('with the Hindu, a player who dies is reincarnated as a Traveller', async (
 test('with the Hindu, the Demon among the first four to die ends the game for good', async ({
 	page
 }) => {
-	// If the Demon is one of the first four to die, the game ends and good wins, even with a
-	// Scarlet Woman alive (https://wiki.bloodontheclocktower.com/Hindu).
+	// If the Demon is one of the first four to die, it is not reborn and the game ends with good
+	// winning (https://wiki.bloodontheclocktower.com/Hindu); a Scarlet Woman would still keep it
+	// going, as for any Demon's death (Trevor, 2026-10-31).
 	await startGame(page, 'Trouble Brewing');
 	for (const [number, name] of [
 		[1, 'Imp'],
-		[2, 'Scarlet Woman']
+		[2, 'Poisoner']
 	] as const) {
 		const sheet = await openSeat(page, number);
 		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
@@ -6556,6 +6590,10 @@ test("with the Hindu's optional rule chosen at the start, a reborn Demon passes 
 		includeHidden: true
 	});
 	await expect(hinduRule).not.toBeChecked();
+	// The character's standard row with its ability, then the rule and its switch beneath
+	// (Trevor, 2026-10-31): the wiki's own line once fetched, else a plain label.
+	await expect(optional.getByText(/first 4 players to die/i)).toBeVisible();
+	await expect(optional.getByRole('paragraph')).toHaveText(/^Optional rule/);
 	await optional.locator('[data-scope="switch"][data-part="control"]').tap();
 	await expect(hinduRule).toBeChecked();
 	await rules.getByRole('button', { name: 'Close' }).tap();

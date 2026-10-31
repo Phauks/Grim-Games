@@ -82,7 +82,7 @@ test('Add late player seats late players where tapped and makes room in the bag'
 	await sheet.getByTestId('late-roll').tap();
 	await expect(sheet.getByTestId('late-check')).toHaveText('Matches the 7-player counts.');
 
-	await sheet.getByRole('button', { name: 'Confirm and tell players' }).tap();
+	await sheet.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(sheet).toBeHidden();
 	await expect(page.getByRole('button', { name: /^Seat 2: Max/ })).toBeVisible();
 	await expect(page.getByRole('button', { name: /^Seat 5: Noa/ })).toBeVisible();

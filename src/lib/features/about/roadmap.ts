@@ -338,11 +338,12 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		prs: [828, 833, 838, 841, 843, 846, 847, 849, 851, 853, 855, 857]
 	},
 	{
-		// Gap 2: characters whose information the Storyteller still works out by hand.
+		// Gap 2: characters whose information the Storyteller still works out by hand. M10a
+		// Chambermaid, M10b Puzzlemaster, M10c Widow, M10d Damsel, M10e Storm Catcher, M10f Zenomancer.
 		title:
 			'Valid information for the Chambermaid, Puzzlemaster, Widow, Damsel, Storm Catcher and Zenomancer',
 		area: 'engine',
-		parts: ['M10']
+		parts: ['M10a', 'M10b', 'M10c', 'M10d', 'M10e', 'M10f']
 	},
 	{
 		// Gap 8: the Bigwig's chosen speaker; gap 12: one-offs with no behaviour yet.
