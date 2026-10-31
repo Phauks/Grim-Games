@@ -20,12 +20,13 @@ import { dayReminders, dayStateFromGame, renderReminder } from '#lib/core/rules/
 
 /** This character's day reminders: their group and plain text. */
 const linesOf = (game: Game, characterId: string) =>
-	dayReminders(dayStateFromGame(game, (id) => characters.get(id), undefined, characters))
-		.groups.flatMap((g) =>
-			g.reminders
-				.filter((r) => r.characterId === characterId)
-				.map((r) => ({ group: g.group, text: renderReminder(r.segments) }))
-		);
+	dayReminders(
+		dayStateFromGame(game, (id) => characters.get(id), undefined, characters)
+	).groups.flatMap((g) =>
+		g.reminders
+			.filter((r) => r.characterId === characterId)
+			.map((r) => ({ group: g.group, text: renderReminder(r.segments) }))
+	);
 
 describe('Alsaahir', () => {
 	const character = committedCharacter('alsaahir');
@@ -71,11 +72,19 @@ describe('Alsaahir optional rule', () => {
 
 	it('off, the reminder sets no limit', () => {
 		const { game } = castGame(cast);
-		expect(linesOf(game, 'alsaahir').map((l) => l.text).join()).not.toContain('three');
+		expect(
+			linesOf(game, 'alsaahir')
+				.map((l) => l.text)
+				.join()
+		).not.toContain('three');
 	});
 
 	it('on, the reminder says three players a day', () => {
 		const { game } = castGame(cast, on);
-		expect(linesOf(game, 'alsaahir').map((l) => l.text).join()).toContain('three players');
+		expect(
+			linesOf(game, 'alsaahir')
+				.map((l) => l.text)
+				.join()
+		).toContain('three players');
 	});
 });
