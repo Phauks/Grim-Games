@@ -5,7 +5,7 @@ import {
 	testCharacters,
 	testContext
 } from '#lib/core/model/fixtures.test-support.ts';
-import { parseSeatRole, roleKey, seatRoles } from './seat-roles.ts';
+import { parseSeatRole, roleGaps, roleKey, seatRoles } from './seat-roles.ts';
 
 describe('the character each phone shows its player', () => {
 	it('is the seat’s character, with no alignment when it is the character’s own', () => {
@@ -109,5 +109,44 @@ describe('roles from a device', () => {
 		expect(roleKey({ characterId: 'chef' })).not.toBe(
 			roleKey({ characterId: 'chef', alignment: 'evil' })
 		);
+	});
+});
+
+// Trevor, 2026-10-31: showing players their characters says who won't see one.
+describe('who won’t see a character when they are shown', () => {
+	it('lists seats with no character, a hidden one, no Traveller alignment, or no phone', () => {
+		const { session, ctx, seats } = newGame(5);
+		const game = run(
+			session,
+			ctx,
+			{ type: 'AssignCharacter', seatId: seats[0], characterId: 'chef' },
+			// https://wiki.bloodontheclocktower.com/Lunatic: never shown the truth.
+			{ type: 'AssignCharacter', seatId: seats[1], characterId: 'lunatic' },
+			// https://wiki.bloodontheclocktower.com/Travellers: the alignment is the secret.
+			{ type: 'AssignCharacter', seatId: seats[2], characterId: 'scapegoat' },
+			{ type: 'AssignCharacter', seatId: seats[3], characterId: 'imp' }
+		).game;
+		const phones = new Set([seats[0], seats[1], seats[2], seats[4]]);
+		expect(roleGaps(game, testCharacters, phones)).toEqual([
+			{ seatId: seats[1], gaps: ['withheld'] },
+			{ seatId: seats[2], gaps: ['no-alignment'] },
+			{ seatId: seats[3], gaps: ['no-phone'] },
+			{ seatId: seats[4], gaps: ['no-character'] }
+		]);
+	});
+
+	it('gives every reason a seat has, and nothing when all will see theirs', () => {
+		const { session, ctx, seats } = newGame(2);
+		const game = run(session, ctx, {
+			type: 'AssignCharacter',
+			seatId: seats[0],
+			characterId: 'chef'
+		}).game;
+		expect(roleGaps(game, testCharacters, new Set([seats[0]]))).toEqual([
+			{ seatId: seats[1], gaps: ['no-character', 'no-phone'] }
+		]);
+		expect(roleGaps(game, testCharacters, new Set(seats)).map((g) => g.gaps)).toEqual([
+			['no-character']
+		]);
 	});
 });

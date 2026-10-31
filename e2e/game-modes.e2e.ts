@@ -2329,3 +2329,74 @@ test('the Script sheet has the players’ settings cog, opening the one Settings
 	await expect(settings).toBeHidden();
 	await expect(sheet).toBeVisible();
 });
+
+test('built-in special rules have no Delete; custom rules sit beneath, shared by a link that adds them on another device', async ({
+	page
+}) => {
+	// Trevor, 2026-10-31: no trash on the app's own rules, a Custom section beneath them, and
+	// mode files shared as scripts, characters and character collections are.
+	const dialog = await openRulesOnSetup(page);
+	await expect(
+		dialog.getByTestId('special-rules').getByRole('button', { name: /^Delete/ })
+	).toHaveCount(0);
+	const custom = dialog.getByTestId('custom-rules');
+	await expect(custom).toHaveText('None');
+
+	const rule = {
+		kind: 'special-rule',
+		format: 1,
+		id: 'house-rule',
+		name: 'Our House Rule',
+		sources: [{ title: 'Our group', url: 'https://example.com/house' }],
+		parts: { text: ['Our house rule.'] }
+	};
+	await dialog.getByRole('button', { name: 'Add mode' }).tap();
+	const add = page.getByRole('dialog', { name: 'Add a game mode' });
+	await add.getByTestId('mode-file').fill(JSON.stringify(rule));
+	await add.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(add).toHaveCount(0);
+	await expect(dialog.getByTestId('special-rules')).not.toContainText('Our House Rule');
+	await expect(custom.getByRole('button', { name: 'Delete Our House Rule' })).toBeVisible();
+
+	await custom.getByRole('button', { name: 'Share Our House Rule' }).tap();
+	const share = page.getByRole('dialog', { name: 'Share Our House Rule' });
+	const url = share.getByTestId('share-url');
+	await expect(url).toHaveValue(/\/new#m=1\./);
+	const link = await url.inputValue();
+	await noSidewaysScroll(page);
+
+	// On a device without it: the link opens New game with Add mode holding the file.
+	await page.evaluate(() => localStorage.removeItem('grim-games:custom-rules:v1'));
+	await page.goto(link);
+	const opened = page.getByRole('dialog', { name: 'Add a game mode' });
+	await expect(opened.getByTestId('mode-file')).toHaveValue(/"id": "house-rule"/);
+	await expect(page).toHaveURL(/\/new$/);
+	await opened.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(opened).toHaveCount(0);
+	expect(await page.evaluate(() => localStorage.getItem('grim-games:custom-rules:v1'))).toContain(
+		'house-rule'
+	);
+});
+
+test('a custom game mode can be shared; a built-in one cannot', async ({ page }) => {
+	await page.goto('/new');
+	const panel = modesPanel(page);
+	await expect(panel.getByRole('button', { name: 'Share Standard' })).toBeDisabled();
+	await panel.getByRole('button', { name: 'Add mode' }).tap();
+	const add = page.getByRole('dialog', { name: 'Add a game mode' });
+	await add.getByTestId('mode-file').fill(
+		JSON.stringify({
+			format: 1,
+			id: 'tiny-mode',
+			name: 'Tiny Mode',
+			sources: [{ title: 'Our group', url: 'https://example.com/tiny' }],
+			parts: { restricted: { banned: ['pithag'] } }
+		})
+	);
+	await add.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(add).toHaveCount(0);
+	await panel.getByRole('button', { name: 'Share Tiny Mode' }).tap();
+	await expect(
+		page.getByRole('dialog', { name: 'Share Tiny Mode' }).getByTestId('share-url')
+	).toHaveValue(/\/new#m=1\./);
+});

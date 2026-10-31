@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { MAX_FRIENDS, MAX_PENDING, REQUESTS_PER_DAY } from './friends-protocol.ts';
-import { NO_RELATION, planReceive, planSend, type BookCounts } from './friend-rules.ts';
+import {
+	gamePlayers,
+	NO_RELATION,
+	planReceive,
+	planSend,
+	type BookCounts
+} from './friend-rules.ts';
 
 const empty: BookCounts = { friends: 0, pending: 0, sentToday: 0 };
 
@@ -66,5 +72,34 @@ describe('receiving a friend request', () => {
 		expect(planReceive(NO_RELATION, full)).toBe('ignore');
 		expect(planReceive({ ...NO_RELATION, incoming: true }, full)).toBe('store');
 		expect(planReceive(NO_RELATION, { ...empty, friends: MAX_FRIENDS })).toBe('ignore');
+	});
+});
+
+describe('who played a finished game', () => {
+	const accounts = { host: 'st', m1: 'ann', m2: 'bob', m3: 'cat' };
+
+	it('takes the Storyteller and seated players with an account, with their names', () => {
+		const members = [
+			{ memberId: 'm1', name: 'Ann', seatId: 's1' },
+			{ memberId: 'm2', name: ' Bob ', seatId: 's2' },
+			{ memberId: 'm4', name: 'Dee', seatId: 's3' }
+		];
+		expect(gamePlayers(accounts, members, 'Sam')).toEqual([
+			{ id: 'st', name: 'Sam' },
+			{ id: 'ann', name: 'Ann' },
+			{ id: 'bob', name: 'Bob' }
+		]);
+	});
+
+	it('leaves out people in the room without a seat', () => {
+		expect(gamePlayers(accounts, [{ memberId: 'm3', name: 'Cat' }])).toEqual([{ id: 'st' }]);
+	});
+
+	it('counts an account once, even on two phones', () => {
+		const members = [
+			{ memberId: 'm1', name: 'Ann', seatId: 's1' },
+			{ memberId: 'm5', name: 'Ann again', seatId: 's2' }
+		];
+		expect(gamePlayers({ m1: 'ann', m5: 'ann' }, members)).toEqual([{ id: 'ann', name: 'Ann' }]);
 	});
 });
