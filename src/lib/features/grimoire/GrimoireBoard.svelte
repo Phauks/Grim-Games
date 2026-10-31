@@ -119,6 +119,7 @@
 	import { PhaseFlow } from './phase-flow.svelte.ts';
 	import { SeatHints } from './seat-hints.svelte.ts';
 	import GrimCoverActions from './GrimCoverActions.svelte';
+	import type { BoardPlayerSource } from './board-player-source.ts';
 	import { BoardStatus } from './board-status.svelte.ts';
 	import PhaseDialogs from './PhaseDialogs.svelte';
 	import NominationAsk from './NominationAsk.svelte';
@@ -662,6 +663,19 @@
 	const phaseNow = $derived(status.now);
 	const phase = $derived(status.text);
 	const cornerInfo = $derived(status.corner);
+	// One source for the players' screen, whichever way the Storyteller opens it.
+	const playerView: BoardPlayerSource = $derived({
+		game,
+		script: loadedScript,
+		logo: boardLogo,
+		room: watching ? undefined : roomHost().code,
+		characters,
+		layout: { ...layout, aspect },
+		corner: cornerInfo,
+		look,
+		picture: watching ? undefined : ownPicture,
+		pictureRoom: watching ? grimoire.room : undefined
+	});
 	// Always shown, unless the script itself asks not to (Trevor, 2026-10-23: "always show
 	// script name and author on board, remove as an option").
 	const showTitle = $derived(!game.script.meta?.hideTitle);
@@ -1043,20 +1057,7 @@
 	<GameFeedbackSheet bind:open={feedbackOpen} {game} />
 {/if}
 
-<BoardScriptDialog
-	bind:open={scriptOpen}
-	{game}
-	script={loadedScript}
-	logo={boardLogo}
-	room={watching ? undefined : roomHost().code}
-	{characters}
-	layout={{ ...layout, aspect }}
-	corner={cornerInfo}
-	{look}
-	picture={watching ? undefined : ownPicture}
-	pictureRoom={watching ? grimoire.room : undefined}
-	testid="script-scroll"
-/>
+<BoardScriptDialog bind:open={scriptOpen} {...playerView} testid="script-scroll" />
 
 <CallTownConfirm bind:open={callTownOpen} />
 
@@ -1066,19 +1067,7 @@
 </Dialog>
 
 {#snippet coverActions()}
-	<GrimCoverActions
-		{game}
-		callTown={!ended && !!roomHost().code}
-		script={loadedScript}
-		logo={boardLogo}
-		room={watching ? undefined : roomHost().code}
-		{characters}
-		{layout}
-		corner={cornerInfo}
-		{look}
-		picture={watching ? undefined : ownPicture}
-		pictureRoom={watching ? grimoire.room : undefined}
-	/>
+	<GrimCoverActions callTown={!ended && !!roomHost().code} view={playerView} />
 {/snippet}
 
 {#snippet coverTimer()}

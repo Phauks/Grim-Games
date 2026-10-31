@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import { onMount } from 'svelte';
+	import { onMount, type Snippet } from 'svelte';
 	import { roomJoinLink } from '#lib/features/room/join-link.ts';
 	import { formatRoomCode } from '#lib/core/sync/room-code.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import SharePanel from '#lib/ui/share/SharePanel.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import ScriptByline from '#lib/features/player/ScriptByline.svelte';
-	import ScriptLogo from './ScriptLogo.svelte';
+	import ScriptName from './ScriptName.svelte';
 	import ScriptQrCenter from './ScriptQrCenter.svelte';
 	import type { ShareTarget } from './share-codes.ts';
 	import { withOfflineRoom } from './share.ts';
@@ -50,6 +50,8 @@
 			text?: string;
 			/** Replaces the room's code (`ui/share/SharePanel`'s `refresh`). */
 			refresh?: { label: string; onclick: () => void; disabled?: boolean };
+			/** Beside the join code's header: the room's connection and players (2026-10-31). */
+			status?: Snippet;
 		};
 	}
 
@@ -118,13 +120,7 @@
 	<!-- The script under the screen's "Share" title, as /play's header shows it: logo, name,
 	     then author and version (Trevor, 2026-10-27). -->
 	<div class="script" data-testid="share-script">
-		<h3 class="name">
-			{#if logo && !logoFailed}<ScriptLogo
-					src={logo}
-					class="title-logo"
-					onfail={() => (logoFailed = true)}
-				/>{/if}<span>{title}</span>
-		</h3>
+		<ScriptName name={title} {logo} size="title" />
 		<ScriptByline {author} {version} inline />
 	</div>
 	<SharePanel
@@ -152,6 +148,7 @@
 		qrCaption={offline ? t('scripts.share.offlineCaption') : undefined}
 		frames={offlineCode?.frames}
 		plain={offline}
+		codeStatus={hosting?.status}
 	>
 		{#snippet qrCenter()}
 			<ScriptQrCenter {logo} name={title} bind:failed={logoFailed} />
@@ -181,18 +178,6 @@
 		display: grid;
 		gap: var(--space-1);
 		margin-bottom: var(--space-3);
-	}
-	.name {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		min-width: 0;
-		margin: 0;
-		font-size: var(--page-title-size);
-		overflow-wrap: break-word;
-	}
-	.name > span {
-		min-width: 0;
 	}
 	.offline {
 		flex: 1;

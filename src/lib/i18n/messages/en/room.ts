@@ -4,6 +4,8 @@ import { APP_NAME } from '#lib/core/app-name.ts';
 export const room = {
 	// Storyteller's page
 	'room.title': 'Share',
+	'room.tab.players': 'Players',
+	'room.tab.grimoire': 'Grimoire',
 	// Back to town (plan U2, Trevor's words): the Storyteller's call, and what a phone shows.
 	'room.callTown': 'Back to town',
 	'room.callTownHeard': 'Back to town',
@@ -20,7 +22,6 @@ export const room = {
 	'room.shareGameText': `Join the game on ${APP_NAME}: {game}. Room code: {code}`,
 	'room.copyFailed': 'Could not copy the link',
 	'room.copyFailedHint': 'Use the QR code instead.',
-	'room.status': 'Status',
 	'room.connected': 'Connected',
 	'room.watching': '{count} watching',
 	'room.connecting': 'Connecting…',
@@ -45,9 +46,9 @@ export const room = {
 	'room.players.remove': 'Remove from room',
 	'room.players.removeConfirm': 'Remove this player from the room?',
 	'room.players.removeBody':
-		'Their phone leaves the room and can’t join again this game unless you let it back in.',
+		'Their phone leaves the game and their seat loses its name. They can’t join again this game unless you unblock them.',
 	'room.players.removed': 'Removed from room',
-	'room.players.letBackIn': 'Let back in',
+	'room.players.unblock': 'Unblock',
 	'room.seating.open': 'Open seating',
 	'room.seating.lock': 'Lock seating',
 	'room.countOff.title': 'Count off',
@@ -236,6 +237,7 @@ export const room = {
 	'room.roles.toggle': 'Players can see their character',
 	'room.roles.show': 'Show players their characters',
 	'room.roles.hide': 'Hide their characters',
+	'room.roles.gapsTitle': 'Not every player will see a character',
 	'room.roles.timeLeft': 'Players can see theirs for {time} more',
 	'room.roles.seen': 'Seen',
 	'room.roles.notSeen': 'Not seen',
@@ -249,7 +251,6 @@ export const room = {
 	'room.role.evil': 'You are Evil',
 	// The view-only grimoire link (Specters)
 	'room.watch.title': 'Watch the grimoire',
-	'room.watch.heading': 'View grimoire',
 	'room.watch.toggle': 'Grim view',
 	'room.watch.hint':
 		'Spectators with the room code and this password see the whole grimoire live, after promising not to spoil the game. Each game gets a new password.',
@@ -320,6 +321,11 @@ export const room = {
 	'room.testRoom.unlockAll': 'Unlock every screen',
 	'room.testRoom.inRoom': 'Room {code} · {connected} of {players} players connected',
 	'room.testRoom.noRoom': 'No room: start a live game on the Storyteller screen, or join a code',
+	'room.testRoom.close': 'Close room',
+	'room.testRoom.closeConfirm': 'Close the test room?',
+	'room.testRoom.closeOwn':
+		'The Storyteller screen’s room is deleted for every phone in it, and the players leave.',
+	'room.testRoom.closeTyped': 'The players leave the room. Only its Storyteller can delete it.',
 	'room.pictureReport.allow': 'Let it stand',
 	'room.pictureReport.removeNamed': "Remove {name}'s picture for this game",
 	'room.pictureReport.picture': "{name}'s picture",

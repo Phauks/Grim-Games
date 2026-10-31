@@ -7,10 +7,12 @@ import type { Script } from '#lib/core/data/index.ts';
 import type { GameFeedback } from '#lib/core/feedback/index.ts';
 import type { SeatId } from '#lib/core/model/index.ts';
 import { buildInfo } from '#lib/build-info.ts';
+import { sha256Hex } from '#lib/core/codes/hash.ts';
 import {
 	isNewerBuild,
 	ROOM_PROTOCOL,
 	parseTownSound,
+	removedProbe,
 	type PlayerView,
 	type SharedGrimoire
 } from '#lib/core/sync/room.ts';
@@ -38,6 +40,14 @@ function deviceKey(): string {
 	const key = randomKey();
 	writeStored(STORAGE_KEY, { key });
 	return key;
+}
+
+/**
+ * This phone's `removedProbe` for room `code`: its member id there is the start of its key's
+ * hash, as the room works it out (worker/room.ts), so the room can say it removed this phone.
+ */
+export async function thisPhonesRemovedProbe(code: string): Promise<string> {
+	return removedProbe(code, (await sha256Hex(deviceKey())).slice(0, 24));
 }
 
 /** The last name this phone asked for, to fill the field next time. */
@@ -348,8 +358,8 @@ export class RoomPlayer {
 		return voteId ? this.#socket.send({ type: 'script-ballot', voteId, choices }) : false;
 	}
 
-	/** Asks the Storyteller's board to seat this phone (plan J38): after a seat, or in an open one. */
-	askSeat(message: { type: 'sit'; after: SeatId } | { type: 'claim-seat'; seatId: SeatId }) {
+	/** Asks the Storyteller's board to seat this phone (plan J38): in a seat's place, or an open one. */
+	askSeat(message: { type: 'sit'; onto: SeatId } | { type: 'claim-seat'; seatId: SeatId }) {
 		return this.#socket.send(message);
 	}
 
