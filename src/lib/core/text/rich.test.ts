@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { boldToRed, parseRich, plainText, toSource } from './bold.ts';
+import { boldToRed, editLines, parseRich, plainText, toSource } from './rich.ts';
 
 const plain = (text: string) => ({ text, bold: false, italic: false });
 const bold = (text: string) => ({ text, bold: true, italic: false });
@@ -97,5 +97,38 @@ describe('underline', () => {
 
 	it('keeps an unpartnered [u] as typed', () => {
 		expect(parseRich('[u]x')).toEqual([plain('[u]x')]);
+	});
+});
+
+// Notes and cards share one rich box with typed lists (Trevor, 2026-10-31).
+describe('several lines', () => {
+	it('pairs markers only within a line', () => {
+		expect(parseRich('a *b\nc* d')).toEqual([plain('a *b\nc* d')]);
+		expect(parseRich('**a**\n*b*')).toEqual([bold('a'), plain('\n'), italic('b')]);
+	});
+
+	it('reads a "* " bullet at a line start as the list, not italic', () => {
+		expect(parseRich('* one\n* two')).toEqual([plain('* one\n* two')]);
+		expect(parseRich('* **one**')).toEqual([plain('* '), bold('one')]);
+	});
+
+	it('marks each line of a run that crosses lines', () => {
+		const source = toSource([bold('one\ntwo')]);
+		expect(source).toBe('**one**\n**two**');
+		expect(parseRich(source)).toEqual([bold('one'), plain('\n'), bold('two')]);
+	});
+});
+
+describe('editLines', () => {
+	it('adds a list marker without losing the formatting on the line', () => {
+		expect(editLines('1. **a**\n**b**', '1. a\n2. b')).toBe('1. **a**\n2. **b**');
+	});
+
+	it('renumbers later items and keeps their marks', () => {
+		expect(editLines('1. a\n**x**\n2. *b*', '1. a\n2. x\n3. b')).toBe('1. a\n2. **x**\n3. *b*');
+	});
+
+	it('ends a list by taking an empty item away', () => {
+		expect(editLines('- **a**\n- \n', '- a\n')).toBe('- **a**\n');
 	});
 });

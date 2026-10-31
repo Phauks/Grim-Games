@@ -53,6 +53,13 @@ export interface BoardLooks {
 	 * runs it.
 	 */
 	abilityLook: 'grimbinder' | 'vanilla';
+	/**
+	 * Who a player really is when they were told otherwise (an "Is The Drunk" reminder; Trevor,
+	 * 2026-10-31, small token Option A): 'grimbinder' shows that character as a small token,
+	 * marked =, in the same pill; 'vanilla' keeps the reminder beside the seat, as the wiki
+	 * runs it.
+	 */
+	truthLook: 'grimbinder' | 'vanilla';
 }
 
 /** The player name badge's size range (Trevor, 2026-10-17: "should be an option"). */
@@ -73,7 +80,9 @@ export const DEFAULT_BOARD_LOOKS: BoardLooks = {
 	reminders: 'seat',
 	usedGhostVote: 'hollow',
 	reminderLines: DEFAULT_REMINDER_LINES,
-	abilityLook: 'grimbinder'
+	abilityLook: 'grimbinder',
+	// The mockup's promise (2026-10-31): nothing changes until a Storyteller picks it.
+	truthLook: 'vanilla'
 };
 const KEY = 'grim.boardLooks';
 
@@ -102,7 +111,8 @@ export function parseBoardLooks(raw: unknown): BoardLooks {
 		reminders: value.reminders === 'free' ? 'free' : 'seat',
 		usedGhostVote: value.usedGhostVote === 'struck' ? 'struck' : 'hollow',
 		reminderLines: parseReminderLines(value.reminderLines),
-		abilityLook: value.abilityLook === 'vanilla' ? 'vanilla' : 'grimbinder'
+		abilityLook: value.abilityLook === 'vanilla' ? 'vanilla' : 'grimbinder',
+		truthLook: value.truthLook === 'grimbinder' ? 'grimbinder' : 'vanilla'
 		// Earlier builds' `reminderStacks` switch is dropped: every reminder is always on the
 		// board (Trevor, 2026-10-23). So is `dragSource`: a dragged reminder no longer names
 		// where it came from (Trevor, 2026-10-24). `holdLights` and `holdMoves` too: holding a

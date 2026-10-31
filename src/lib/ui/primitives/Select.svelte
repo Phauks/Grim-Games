@@ -5,6 +5,7 @@
 	import type { IconSlot } from '#lib/ui/icons/catalogue.ts';
 	import IconButton from './IconButton.svelte';
 	import { onLayerOpen } from './layers.ts';
+	import { t } from '#lib/i18n/locale.svelte.ts';
 
 	interface Option {
 		value: T;
@@ -64,6 +65,11 @@
 		chars?: number;
 		/** On the closed control, which shows the chosen option's label. */
 		testid?: string;
+		/**
+		 * A first "None" option that clears the choice back to nothing chosen (Trevor,
+		 * 2026-10-31: valid information drop-downs reset to unset).
+		 */
+		onClear?: () => void;
 	}
 
 	let {
@@ -86,8 +92,12 @@
 		attention = false,
 		open = $bindable(false),
 		chars,
-		testid
+		testid,
+		onClear
 	}: Props = $props();
+
+	/** The value of the "None" option; never a real option's. */
+	const NONE = '\u0000none' as T;
 
 	// A dialog or sheet opening over the page closes the list, so it never stays on top of it.
 	$effect(() => {
@@ -111,6 +121,11 @@
 	});
 
 	function change(next: T[]) {
+		if (onClear && next.includes(NONE)) {
+			open = false;
+			onClear();
+			return;
+		}
 		if (action && next.includes(action.value)) {
 			open = false;
 			action.run();
@@ -119,7 +134,11 @@
 		if (multiple) onValuesChange?.(next);
 		else if (next[0]) onChange?.(next[0]);
 	}
-	const items = $derived(action ? [...options, action] : options);
+	const items = $derived([
+		...(onClear && !multiple ? [{ value: NONE, label: t('common.none') }] : []),
+		...options,
+		...(action ? [action] : [])
+	]);
 	const collection = $derived(
 		createListCollection({
 			items,
@@ -152,7 +171,7 @@
 {#snippet optionItem(option: Option)}
 	<Select.Item item={option}>
 		<Select.ItemText>
-			{#if item}{@render item(option)}{:else}
+			{#if item && option.value !== NONE}{@render item(option)}{:else}
 				<span class="option-label">{option.label}</span>
 				{#if option.description}<small>{option.description}</small>{/if}
 			{/if}

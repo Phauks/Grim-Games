@@ -101,6 +101,7 @@ import ph_gavel_thin from '~icons/ph/gavel-thin';
 import ph_gear_thin from '~icons/ph/gear-thin';
 import ph_gear_six_thin from '~icons/ph/gear-six-thin';
 import ph_ghost_thin from '~icons/ph/ghost-thin';
+import ph_git_diff_thin from '~icons/ph/git-diff-thin';
 import ph_globe_thin from '~icons/ph/globe-thin';
 import ph_hammer_thin from '~icons/ph/hammer-thin';
 import ph_hand_arrow_up_thin from '~icons/ph/hand-arrow-up-thin';
@@ -336,6 +337,7 @@ const icons: IconMap = {
 	'ph:gear-thin': ph_gear_thin,
 	'ph:gear-six-thin': ph_gear_six_thin,
 	'ph:ghost-thin': ph_ghost_thin,
+	'ph:git-diff-thin': ph_git_diff_thin,
 	'ph:globe-thin': ph_globe_thin,
 	'ph:hammer-thin': ph_hammer_thin,
 	'ph:hand-arrow-up-thin': ph_hand_arrow_up_thin,

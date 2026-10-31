@@ -19,13 +19,13 @@
 	import Popover from '#lib/ui/primitives/Popover.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import CardEditorLayout from './CardEditorLayout.svelte';
-	import RichTextField from './RichTextField.svelte';
+	import RichTextField from '#lib/ui/primitives/RichTextField.svelte';
 	import InfoTokenTile from './InfoTokenTile.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import NumberSelect from '#lib/ui/primitives/NumberSelect.svelte';
 	import { MAX_SEATS } from '#lib/core/engine/index.ts';
 	import Select from '#lib/ui/primitives/Select.svelte';
-	import { plainText } from './bold.ts';
+	import { plainText } from '#lib/core/text/rich.ts';
 	import { tokenTitle } from './token-title.ts';
 	import type { CharacterCard } from './character-cards.ts';
 	import { MAX_CUSTOM_TEXT, type CustomInfoToken } from './custom-tokens.ts';
@@ -137,11 +137,9 @@
 
 	/** A card for once: shown, then gone, never saved (Trevor, 2026-10-18). */
 	let quickOpen = $state(false);
-	let quickAdds = $state(false);
 	let quickText = $state('');
-	export function openQuick(add = false) {
+	export function openQuick() {
 		quickText = '';
-		quickAdds = add;
 		quickOpen = true;
 	}
 	/**
@@ -149,11 +147,10 @@
 	 * again (Trevor, 2026-10-31); the view that showed it calls this when it closes.
 	 */
 	export function reopenQuick() {
-		quickAdds = false;
 		quickOpen = true;
 	}
-	/** Enter keeps to how it was opened: the tile's + adds, the card itself shows. */
-	function useQuick(add = quickAdds) {
+	/** Shown now, or added to the cards to show; Enter is a new line, so the buttons decide. */
+	function useQuick(add: boolean) {
 		if (!plainText(quickText).trim()) return;
 		quickOpen = false;
 		const card: InfoToken = { id: QUICK_CARD_ID, text: quickText, source: 'custom' };
@@ -317,7 +314,7 @@
 						quick
 						asks={{ value: { kind: 'text' } }}
 						onchoose={() => openQuick()}
-						onadd={onadd && (() => openQuick(true))}
+						onadd={onadd && (() => openQuick())}
 					/>
 				</ul>
 			</Collapsible>
@@ -468,7 +465,9 @@
 			bind:value={quickText}
 			label={t('info-tokens.text')}
 			maxlength={MAX_CUSTOM_TEXT}
-			onsubmit={() => useQuick()}
+			multiline
+			lists
+			display
 		/>
 	</CardEditorLayout>
 	{#snippet actions()}

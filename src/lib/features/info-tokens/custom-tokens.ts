@@ -5,7 +5,7 @@ import {
 	type InfoTokenAsks,
 	type InfoTokenValue
 } from '#lib/core/data/info-tokens.ts';
-import { boldToRed } from './bold.ts';
+import { boldToRed } from '#lib/core/text/rich.ts';
 
 /**
  * A Storyteller's own card. Beyond the text:

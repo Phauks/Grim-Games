@@ -4,7 +4,7 @@
 	import SeatNoteMark from '#lib/ui/seating/SeatNoteMark.svelte';
 	import { defaultAlignment, type Character } from '#lib/core/data/index.ts';
 	import { seatFrame } from '#lib/core/frames/index.ts';
-	import type { Seat } from '#lib/core/model/index.ts';
+	import type { ReminderId, Seat } from '#lib/core/model/index.ts';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import HeldAbilityPill from './HeldAbilityPill.svelte';
@@ -14,6 +14,7 @@
 	import { swallowNextClick } from '#lib/ui/tap.ts';
 	import { boardLooks } from './board-looks.svelte.ts';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
+	import type { TrueCharacterMark } from './true-character-marks.ts';
 
 	interface Props {
 		seat: Seat;
@@ -70,6 +71,12 @@
 		 * rim, faded while it doesn't work (a drunk, poisoned or dead Boffin).
 		 */
 		heldAbilities?: { character: Character; works: boolean }[];
+		/**
+		 * Who the player really is, from "Is The …" reminders shown in the pill (Grimbinder's
+		 * look, Trevor 2026-10-31): each a small token marked =. A tap on one opens its reminder.
+		 */
+		trueCharacters?: TrueCharacterMark[];
+		onReminder?: (reminderId: ReminderId) => void;
 	}
 
 	let {
@@ -88,7 +95,9 @@
 		onHold,
 		nominations,
 		tokenFreeVotes,
-		heldAbilities = []
+		heldAbilities = [],
+		trueCharacters = [],
+		onReminder
 	}: Props = $props();
 
 	// The player's alignment is not the one their character type starts with (a good Minion,
@@ -122,6 +131,8 @@
 					? `${seat.alignment}`
 					: '',
 			orphan ? 'not on the script' : '',
+			// eslint-disable-next-line grim/names-as-badges -- an accessible name, see above
+			...trueCharacters.map(({ character: truly }) => `is really the ${truly.name}`),
 			seat.notes?.length ? 'has a note' : '',
 			seat.reminders.length
 				? `${seat.reminders.length} reminder${seat.reminders.length === 1 ? '' : 's'}`
@@ -184,11 +195,13 @@
 				tokenFreeVotes === undefined
 			)
 				onGhostVote();
+			else if (target?.closest('[data-reminder]') && onReminder)
+				onReminder(target.closest('[data-reminder]')!.getAttribute('data-reminder') as ReminderId);
 			else
 				onTap(
 					target?.closest('.mark.note, .note-slot')
 						? 'note'
-						: target?.closest('.rim-pill')
+						: target?.closest('.rim-pill[data-edge="top"]')
 							? 'nominate'
 							: target?.closest('.mark.avatar')
 								? 'avatar'
@@ -243,8 +256,12 @@
 		>{/if}
 	<!-- Abilities held without a token, with the notes mark (HeldAbilityPill); the Storyteller's
 	     notes alone keep their own mark, lower right (never shown to players). -->
-	{#if heldAbilities.length}<HeldAbilityPill
+	{#if heldAbilities.length || trueCharacters.length}<HeldAbilityPill
 			abilities={heldAbilities}
+			truths={trueCharacters.map(({ reminder, character: truly }) => ({
+				character: truly,
+				reminderId: reminder.reminderId
+			}))}
 			notes={!!seat.notes?.length}
 		/>{:else if seat.notes?.length}<SeatNoteMark />{/if}
 {/snippet}

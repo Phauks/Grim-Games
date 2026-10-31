@@ -101,6 +101,7 @@ import ph_gavel_light from '~icons/ph/gavel-light';
 import ph_gear_light from '~icons/ph/gear-light';
 import ph_gear_six_light from '~icons/ph/gear-six-light';
 import ph_ghost_light from '~icons/ph/ghost-light';
+import ph_git_diff_light from '~icons/ph/git-diff-light';
 import ph_globe_light from '~icons/ph/globe-light';
 import ph_hammer_light from '~icons/ph/hammer-light';
 import ph_hand_arrow_up_light from '~icons/ph/hand-arrow-up-light';
@@ -336,6 +337,7 @@ const icons: IconMap = {
 	'ph:gear-light': ph_gear_light,
 	'ph:gear-six-light': ph_gear_six_light,
 	'ph:ghost-light': ph_ghost_light,
+	'ph:git-diff-light': ph_git_diff_light,
 	'ph:globe-light': ph_globe_light,
 	'ph:hammer-light': ph_hammer_light,
 	'ph:hand-arrow-up-light': ph_hand_arrow_up_light,

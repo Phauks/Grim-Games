@@ -178,6 +178,8 @@
 	.title {
 		margin: 0;
 		max-width: 22ch;
+		/* A card's own lines and typed lists (Trevor, 2026-10-31). */
+		white-space: pre-line;
 		font-family: var(--font-heading);
 		font-weight: var(--font-heading-weight);
 		font-size: clamp(2rem, 9vw, 4rem);

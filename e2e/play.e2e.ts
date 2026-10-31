@@ -5,6 +5,9 @@ import { toBoard } from './new-game.ts';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { encodeSharedScript } from '../src/lib/features/scripts/share.ts';
 
+/** The words in a rich text box, a line break as "\n" (notes share the cards' box, 2026-10-31). */
+const lines = (box: Locator) => () => box.evaluate((el) => (el as HTMLElement).innerText.trimEnd());
+
 // Player view (09-player-script-view.md): a reading page with the script, night order and notes.
 
 /**
@@ -186,6 +189,44 @@ test('tabs that do not fit move into a ⋯ menu instead of wrapping', async ({ p
 	await page.setViewportSize({ width: 1000, height: 640 });
 	await expect(page.getByRole('tab')).toHaveText(['Script', 'Night', 'Grim', 'Notes']);
 	await expect(more).toHaveCount(0);
+});
+
+test('the tabs sit in a bar along the bottom, the chosen one filled', async ({ page }) => {
+	// Trevor, 2026-10-31: a bottom bar with an icon over each tab, the chosen icon filled,
+	// gold and a little larger, with no line or pill.
+	const bar = page.getByRole('tablist');
+	const atBottom = async () => {
+		const box = (await bar.boundingBox())!;
+		const screen = page.viewportSize()!;
+		// The bar's own bottom padding (clear of a gesture bar) is part of the strip.
+		const strip = (await bar.evaluate((el) => el.parentElement!.getBoundingClientRect().bottom))!;
+		expect(box.y).toBeGreaterThan(screen.height / 2);
+		expect(Math.abs(strip - screen.height)).toBeLessThanOrEqual(1);
+	};
+	// A short tab still has its bar at the foot of the screen, with nothing to scroll.
+	await page.getByRole('tab', { name: 'Notes' }).tap();
+	await atBottom();
+	expect(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight)).toBe(
+		true
+	);
+	// A long one keeps it there while the page scrolls under it.
+	await page.getByRole('tab', { name: 'Script' }).tap();
+	await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight / 2));
+	await atBottom();
+	// And at the end of the page, where it meets the screen's edge just the same.
+	await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+	await atBottom();
+	// Every tab has its icon; only the chosen one's is drawn larger.
+	const widths = await page
+		.getByRole('tab')
+		.evaluateAll((tabs) =>
+			tabs.map((tab) =>
+				(tab.querySelector('[data-icon]')?.getBoundingClientRect().width ?? 0).toFixed(0)
+			)
+		);
+	expect(widths).toHaveLength(4);
+	expect(Number(widths[0])).toBeGreaterThan(Number(widths[1]));
+	expect(new Set(widths.slice(1)).size).toBe(1);
 });
 
 test("the player view's menu is the app's, and leaving it asks first", async ({ page }) => {
@@ -629,7 +670,7 @@ test('each note can hide its contents until it is opened', async ({ page }) => {
 	await expect(row).not.toContainText('Sam is the Imp');
 	// Opening the note shows it.
 	await row.tap();
-	await expect(sheet.getByRole('textbox', { name: 'Text' })).toHaveValue('Sam is the Imp');
+	await expect(sheet.getByRole('textbox', { name: 'Text' })).toHaveText('Sam is the Imp');
 	await page.keyboard.press('Escape');
 	// Kept after a reload.
 	await expect.poll(() => storedNotes(page)).toEqual([{ title: 'Evil team', hidden: true }]);
@@ -659,7 +700,7 @@ test('Enter in a note title closes the keyboard', async ({ page }) => {
 	await text.fill('one');
 	await text.press('Enter');
 	await text.pressSequentially('two');
-	await expect(text).toHaveValue('one\ntwo');
+	await expect.poll(lines(text)).toBe('one\ntwo');
 });
 
 test('a script character is its icon in a ring, with its name on a band out of the ring’s top', async ({

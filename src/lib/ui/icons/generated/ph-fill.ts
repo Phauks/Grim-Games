@@ -101,6 +101,7 @@ import ph_gavel_fill from '~icons/ph/gavel-fill';
 import ph_gear_fill from '~icons/ph/gear-fill';
 import ph_gear_six_fill from '~icons/ph/gear-six-fill';
 import ph_ghost_fill from '~icons/ph/ghost-fill';
+import ph_git_diff_fill from '~icons/ph/git-diff-fill';
 import ph_globe_fill from '~icons/ph/globe-fill';
 import ph_hammer_fill from '~icons/ph/hammer-fill';
 import ph_hand_arrow_up_fill from '~icons/ph/hand-arrow-up-fill';
@@ -336,6 +337,7 @@ const icons: IconMap = {
 	'ph:gear-fill': ph_gear_fill,
 	'ph:gear-six-fill': ph_gear_six_fill,
 	'ph:ghost-fill': ph_ghost_fill,
+	'ph:git-diff-fill': ph_git_diff_fill,
 	'ph:globe-fill': ph_globe_fill,
 	'ph:hammer-fill': ph_hammer_fill,
 	'ph:hand-arrow-up-fill': ph_hand_arrow_up_fill,

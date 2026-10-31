@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
+	import { plainText } from '#lib/core/text/rich.ts';
 	import type { TitledNote } from './note.ts';
 
 	/**
@@ -15,7 +16,8 @@
 	}
 
 	let { notes, onOpen, onAdd }: Props = $props();
-	const preview = (text: string) => text.trim().split('\n')[0] || t('player.empty');
+	// The first line's words, without their formatting marks.
+	const preview = (text: string) => plainText(text).trim().split('\n')[0] || t('player.empty');
 </script>
 
 {#if notes.length || onAdd}

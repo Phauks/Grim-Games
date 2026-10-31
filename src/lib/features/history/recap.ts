@@ -5,6 +5,7 @@
  */
 /* eslint-disable grim/names-as-badges -- a saved text file, where names can only be words */
 import { t } from '#lib/i18n/locale.svelte.ts';
+import { plainText } from '#lib/core/text/rich.ts';
 import type { Alignment, CharacterId } from '#lib/core/data/index.ts';
 import { applyEvent, type LogEntry } from '#lib/core/engine/index.ts';
 import {
@@ -98,7 +99,9 @@ export function buildRecap(source: RecapSource): GameRecap {
 	const notes: GameRecap['notes'] = [];
 	// Each game note under its title, as the Notes sheet lists them (Trevor, 2026-10-23).
 	for (const note of game.notes ?? []) {
-		if (note.text.trim()) notes.push({ about: note.title.trim() || 'Game', text: note.text });
+		// A saved text file: the words without their formatting marks (notes are rich, 2026-10-31).
+		if (note.text.trim())
+			notes.push({ about: note.title.trim() || 'Game', text: plainText(note.text) });
 	}
 	// Each player's notes under their name, and the note's title if it has one.
 	for (const seatId of game.seating) {
@@ -106,7 +109,7 @@ export function buildRecap(source: RecapSource): GameRecap {
 			if (!note.text.trim()) continue;
 			const title = note.title.trim();
 			const who = seatName(game, seatId);
-			notes.push({ about: title ? `${who}: ${title}` : who, text: note.text });
+			notes.push({ about: title ? `${who}: ${title}` : who, text: plainText(note.text) });
 		}
 	}
 	[...game.pastDays, game.today].forEach((log, day) => {
