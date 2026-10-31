@@ -19,6 +19,8 @@
 		scriptFacts,
 		selectedIds,
 		travellerRange,
+		listMoreTravellers,
+		moreTravellers,
 		isRuleCharacter,
 		validRandomSelection
 	} from '#lib/core/rules/index.ts';
@@ -100,6 +102,14 @@
 				)
 			: []
 	);
+	// Travellers past 15 players, with every other Traveller listed when too few (core).
+	const travellersNeeded = $derived(travellerRange(s.players).min);
+	const otherTravellers = $derived(
+		data ? moreTravellers([...choices, ...editionTravellers], data.characters) : []
+	);
+	const otherTravellersListed = $derived(
+		listMoreTravellers([...choices, ...editionTravellers], travellersNeeded) ? otherTravellers : []
+	);
 	/**
 	 * The script's own Fabled and Loric, then any other the game has in play (Trevor,
 	 * 2026-10-18). They go straight into the game's rule characters, never the bag; once
@@ -171,8 +181,17 @@
 	 */
 	let selectedOnly = $state(false);
 	const listed = $derived(
-		[...choices, ...editionTravellers, ...offScript, ...scriptRules, ...offScriptRules].filter(
-			(c) => !selectedOnly || (s.selection[c.id] ?? 0) > 0 || inRule.has(c.id)
+		[
+			...choices,
+			...editionTravellers,
+			...otherTravellersListed,
+			...offScript.filter((c) => !otherTravellersListed.includes(c)),
+			...scriptRules,
+			...offScriptRules
+		].filter(
+			(c, i, all) =>
+				all.findIndex((o) => o.id === c.id) === i &&
+				(!selectedOnly || (s.selection[c.id] ?? 0) > 0 || inRule.has(c.id))
 		)
 	);
 	/** Characters a rule put in play (+1, Infinite Possibilities) aren't marked; re-read as picked. */
@@ -181,7 +200,11 @@
 		return game ? allowedOffScriptIn(game.gameId) : new Set<CharacterId>();
 	});
 	const offScriptIds = $derived(
-		new Set([...offScript, ...offScriptRules].map((c) => c.id).filter((id) => !ruleAllowed.has(id)))
+		new Set(
+			[...otherTravellersListed, ...offScript, ...offScriptRules]
+				.map((c) => c.id)
+				.filter((id) => !ruleAllowed.has(id))
+		)
 	);
 	/** The Demon's bluffs, chosen below the list, are tagged in it (Trevor, 2026-10-18). */
 	const bluffIds = $derived(new Set(game?.bluffs[DEMON_SET] ?? []));
@@ -447,6 +470,9 @@
 			ruleCharacters: game?.ruleCharacters,
 			// A rule's Travellers come from the recommended ones: the script's and its edition's.
 			scriptCharacters: travellersInBag ? [...choices, ...editionTravellers] : choices,
+			// Players beyond 15 still need Travellers when the script lists too few: its
+			// edition's next, then any other (Trevor, 2026-10-31).
+			fallbackTravellers: [travellersInBag ? [] : editionTravellers, otherTravellers],
 			scriptOrder,
 			lookup,
 			findByName,
@@ -563,7 +589,7 @@
 				types={TYPES}
 				pinTop="calc(var(--app-top) + {Math.max(0, bandHeight - 1)}px)"
 				keepTypes={['traveller', 'fabled', 'loric']}
-				closedTypes={travellersChosenAtStart
+				closedTypes={travellersChosenAtStart || travellersNeeded > 0
 					? ['fabled', 'loric']
 					: ['traveller', 'fabled', 'loric']}
 				onSelect={(id) => {

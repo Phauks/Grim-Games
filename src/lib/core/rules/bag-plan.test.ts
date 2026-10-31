@@ -19,6 +19,8 @@ import {
 	selectionProblems,
 	standInKind,
 	validRandomSelection,
+	listMoreTravellers,
+	moreTravellers,
 	travellerRange,
 	type BagSelection
 } from './bag-plan.ts';
@@ -480,6 +482,64 @@ describe('validRandomSelection', () => {
 			}
 		);
 	}
+
+	// Trevor, 2026-10-31: everyone past 15 is a Traveller
+	// (https://wiki.bloodontheclocktower.com/Setup), from any edition
+	// (https://wiki.bloodontheclocktower.com/Travellers): a script listing none still gets them.
+	it.each([16, 18, 20])('a script with no Travellers still fills %i players', (players) => {
+		const travellers = [...data.byId.values()].filter((c) => c.type === 'traveller');
+		const tb = travellers.filter((c) => c.edition === 'tb');
+		const others = travellers.filter((c) => c.edition !== 'tb');
+		const random = seeded(players);
+		for (let i = 0; i < 20; i++) {
+			const input = { players, scriptCharacters: TB, scriptOrder: TB.map((c) => c.id), lookup };
+			const result = validRandomSelection({
+				...input,
+				selection: {},
+				random,
+				fallbackTravellers: [tb, others]
+			});
+			expect(result.ok).toBe(true);
+			if (!result.ok) continue;
+			const picked = Object.keys(result.selection).filter((id) => lookup(id)?.type === 'traveller');
+			expect(picked).toHaveLength(players - 15);
+			// The edition's Travellers come first, the rest only once they run out.
+			expect(picked.filter((id) => lookup(id)?.edition === 'tb')).toHaveLength(
+				Math.min(players - 15, tb.length)
+			);
+		}
+	});
+
+	it("uses the script's own Travellers before any other", () => {
+		const scapegoat = data.byId.get('scapegoat')!;
+		const others = [...data.byId.values()].filter(
+			(c) => c.type === 'traveller' && c.id !== 'scapegoat'
+		);
+		const characters = [...TB, scapegoat];
+		const result = validRandomSelection({
+			players: 17,
+			selection: {},
+			scriptCharacters: characters,
+			scriptOrder: characters.map((c) => c.id),
+			lookup,
+			random: seeded(4),
+			fallbackTravellers: [others]
+		});
+		expect(result.ok).toBe(true);
+		if (result.ok) expect(result.selection.scapegoat).toBe(1);
+	});
+
+	it('lists every other Traveller only when the recommended ones are too few', () => {
+		const all = [...data.byId.values()];
+		const scapegoat = data.byId.get('scapegoat')!;
+		const more = moreTravellers([...TB, scapegoat], all);
+		expect(more.some((c) => c.id === 'scapegoat')).toBe(false);
+		expect(more.every((c) => c.type === 'traveller')).toBe(true);
+		expect(listMoreTravellers(TB, 0)).toBe(false);
+		expect(listMoreTravellers(TB, 1)).toBe(true);
+		expect(listMoreTravellers([...TB, scapegoat], 1)).toBe(false);
+		expect(listMoreTravellers([...TB, scapegoat], 2)).toBe(true);
+	});
 
 	it('says why instead of choosing when nothing fits', () => {
 		// Two Townsfolk and an Imp can't fill seven seats.
