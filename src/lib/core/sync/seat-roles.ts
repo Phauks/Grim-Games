@@ -73,3 +73,30 @@ export function parseSeatRole(raw: unknown): SeatRole | undefined {
 	if (alignment === 'good' || alignment === 'evil') role.alignment = alignment;
 	return role.characterId || role.alignment ? role : undefined;
 }
+
+/**
+ * Why a seat's player won't see a character on their phone when the Storyteller shows
+ * them (Trevor, 2026-10-31: "should show some information if not all seats are filled, or
+ * not all players have assigned characters"). `no-character`: the seat has none yet;
+ * `withheld`: it has one the player must not see and no tile to say what they were shown;
+ * `no-alignment`: a Traveller whose alignment isn't chosen; `no-phone`: no phone sits there.
+ */
+export type RoleGap = 'no-character' | 'withheld' | 'no-alignment' | 'no-phone';
+
+/** Every seat whose player won't see a character, in seat order, with each reason. */
+export function roleGaps(
+	game: Game,
+	characters: CharacterLookup,
+	phoneSeats: ReadonlySet<SeatId>
+): { seatId: SeatId; gaps: RoleGap[] }[] {
+	const roles = seatRoles(game, characters);
+	return game.seating.flatMap((seatId) => {
+		const characterId = game.seats[seatId]?.characterId;
+		const gaps: RoleGap[] = [];
+		if (!characterId) gaps.push('no-character');
+		else if (!roles[seatId])
+			gaps.push(characters.get(characterId)?.type === 'traveller' ? 'no-alignment' : 'withheld');
+		if (!phoneSeats.has(seatId)) gaps.push('no-phone');
+		return gaps.length ? [{ seatId, gaps }] : [];
+	});
+}

@@ -1,7 +1,8 @@
 /**
  * Seating on the grim (plan J38; Trevor, 2026-10-29: the board should match where people really
  * sit). While the Storyteller has seating open, each phone drags its own disc round the circle on
- * its Grim tab, and the drop asks to sit between two neighbours. Once seating is locked, a phone
+ * its Grim tab onto the seat it wants, which lights up, and the drop asks to take that seat's place
+ * (Trevor, 2026-10-31: not between seats). Once seating is locked, a phone
  * with no seat taps an open seat to claim it. The room only passes these on: the Storyteller's
  * device makes the change on the board, through its own commands, so it can be undone there.
  */
@@ -14,7 +15,9 @@ import type { RoomState } from './room.ts';
 export interface SitWish {
 	type: 'sit';
 	memberId: string;
-	/** Seating open: sit right after this seat, going round in seat order. */
+	/** Seating open: take this seat's place at the table. */
+	onto?: SeatId;
+	/** Seating open, from older apps: sit right after this seat, going round in seat order. */
 	after?: SeatId;
 	/** Seating locked: sit in this open seat. */
 	seatId?: SeatId;
@@ -37,14 +40,18 @@ export function setSeatingOpen(room: RoomState, open: unknown): RoomState {
 export function sitWish(
 	room: RoomState,
 	memberId: string,
-	message: { type: 'sit'; after: unknown } | { type: 'claim-seat'; seatId: unknown }
+	message:
+		{ type: 'sit'; onto?: unknown; after?: unknown } | { type: 'claim-seat'; seatId: unknown }
 ): SitWish | undefined {
 	const member = room.members.find((m) => m.memberId === memberId);
 	if (!member?.name || !room.public) return undefined;
 	const seats = room.public.seats;
 	if (message.type === 'sit') {
-		if (!room.seatingOpen || !seats.some((s) => s.seatId === message.after)) return undefined;
-		return { type: 'sit', memberId, after: message.after as SeatId };
+		const at = (id: unknown) => seats.some((s) => s.seatId === id);
+		if (!room.seatingOpen) return undefined;
+		if (at(message.onto)) return { type: 'sit', memberId, onto: message.onto as SeatId };
+		if (at(message.after)) return { type: 'sit', memberId, after: message.after as SeatId };
+		return undefined;
 	}
 	const seat = seats.find((s) => s.seatId === message.seatId);
 	if (room.seatingOpen || member.seatId || !seat || !isOpenSeat(seat)) return undefined;
@@ -65,15 +72,23 @@ type SeatCommand = Extract<Command, { type: 'RenameSeat' | 'MoveSeat' | 'AddSeat
 
 /**
  * The board commands that grant a wish from the phone named `name`. Phones sit by name
- * (room-seating.ts), so a phone's seat is the one with its name. Moving after a seat takes the
- * phone's own seat there; a phone with no seat yet takes the first open seat there, or a new
- * seat when none is open. Claiming names the open seat. Nothing when it is already so.
+ * (room-seating.ts), so a phone's seat is the one with its name.
+ *
+ * Taking a seat's place (`onto`): onto an open seat, the phone's own seat and that one swap
+ * places, as the chair it left is now the empty one; onto a player's seat, the phone's seat goes
+ * there and that player moves one place towards where the phone was. A phone with no seat yet
+ * names an open seat it lands on, or else brings the first open seat (or a new one when none is
+ * open) to that place.
+ *
+ * Moving after a seat (older apps) takes the phone's own seat there; a phone with no seat yet
+ * takes the first open seat there, or a new seat when none is open. Claiming names the open
+ * seat. Nothing when it is already so.
  */
 export function sitCommands(
 	seating: readonly SeatId[],
 	seats: Readonly<Record<SeatId, { playerName?: string }>>,
 	name: string,
-	wish: Pick<SitWish, 'after' | 'seatId'>
+	wish: Pick<SitWish, 'onto' | 'after' | 'seatId'>
 ): SeatCommand[] {
 	const playerName = name as PlayerName;
 	const own = seating.find(
@@ -83,6 +98,7 @@ export function sitCommands(
 		if (own || !seating.includes(wish.seatId) || !isOpenSeat(seats[wish.seatId])) return [];
 		return [{ type: 'RenameSeat', seatId: wish.seatId, playerName }];
 	}
+	if (wish.onto) return ontoCommands(seating, seats, playerName, own, wish.onto);
 	const after = wish.after;
 	if (!after || after === own || !seating.includes(after)) return [];
 	const free = (id: SeatId) => isOpenSeat(seats[id]);
@@ -102,28 +118,49 @@ export function sitCommands(
 	return commands;
 }
 
+function ontoCommands(
+	seating: readonly SeatId[],
+	seats: Readonly<Record<SeatId, { playerName?: string }>>,
+	playerName: PlayerName,
+	own: SeatId | undefined,
+	onto: SeatId
+): SeatCommand[] {
+	const place = seating.indexOf(onto);
+	if (place < 0 || onto === own) return [];
+	const free = (id: SeatId) => isOpenSeat(seats[id]);
+	if (!own && free(onto)) return [{ type: 'RenameSeat', seatId: onto, playerName }];
+	const moving = own ?? seating.find(free);
+	if (!moving) return [{ type: 'AddSeat', playerName, position: place }];
+	const commands: SeatCommand[] = own ? [] : [{ type: 'RenameSeat', seatId: moving, playerName }];
+	const from = seating.indexOf(moving);
+	commands.push({ type: 'MoveSeat', seatId: moving, position: place });
+	if (own && free(onto)) {
+		// The open seat goes back to where the phone was: after the first move it sits one place
+		// nearer the phone's old seat, so it needs a move only when the two were not neighbours.
+		if (Math.abs(from - place) > 1)
+			commands.push({ type: 'MoveSeat', seatId: onto, position: from });
+	}
+	return commands;
+}
+
 /**
- * Where a disc dropped at `at` goes in the circle: between the two neighbouring seats it adds
- * the least distance to, so it works for any layout, not just a ring. `ids` and `points` are the
- * other seats, in seat order. Returns the seat it goes after, and the one it goes before.
+ * The seat a disc held at `at` would take: the nearest of `points` (the other seats, in seat
+ * order), when it is within `reach`. Positions are in pixels, so it works for any layout.
  */
-export function dropBetween(
+export function dropOnto(
 	ids: readonly SeatId[],
 	points: readonly { x: number; y: number }[],
-	at: { x: number; y: number }
-): { after: SeatId; before: SeatId } | undefined {
-	if (ids.length === 0) return undefined;
-	const d = (a: { x: number; y: number }, b: { x: number; y: number }) =>
-		Math.hypot(a.x - b.x, a.y - b.y);
-	let best = 0;
-	let cost = Infinity;
-	for (let i = 0; i < ids.length; i++) {
-		const j = (i + 1) % ids.length;
-		const c = d(points[i], at) + d(at, points[j]) - d(points[i], points[j]);
-		if (c < cost) {
-			cost = c;
-			best = i;
+	at: { x: number; y: number },
+	reach: number
+): SeatId | undefined {
+	let best: SeatId | undefined;
+	let nearest = reach;
+	ids.forEach((id, i) => {
+		const d = Math.hypot(points[i].x - at.x, points[i].y - at.y);
+		if (d <= nearest) {
+			nearest = d;
+			best = id;
 		}
-	}
-	return { after: ids[best], before: ids[(best + 1) % ids.length] };
+	});
+	return best;
 }
