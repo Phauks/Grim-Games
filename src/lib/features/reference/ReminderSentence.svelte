@@ -26,6 +26,10 @@
 			<span class="target"
 				>{t('reference.playerWith')} <ReminderToken label={segment.token} {type} /></span
 			>
+		{:else if segment.kind === 'nomination'}
+			<span class="target"
+				>{t(segment.who === 'chosen' ? 'reference.nomineeChose' : 'reference.nominee')}</span
+			>
 		{:else if segment.kind === 'value'}
 			<!-- A value the Storyteller enters during prep (the Yaggababble's phrase). -->
 			<span>({segment.placeholder})</span>

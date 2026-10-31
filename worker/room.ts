@@ -14,8 +14,6 @@ import {
 	gameOver,
 	hostView,
 	isRemoved,
-	isRemovedProbe,
-	REMOVED_PROBE_HEADER,
 	isScript,
 	isSharedGrimoire,
 	letBackIn,
@@ -28,10 +26,9 @@ import {
 	sendMessage,
 	setInbox,
 	setSeatingOpen,
-	startCountOff,
-	endCountOff,
 	takeCount,
-	nameCount,
+	countOffMessage,
+	travellerPickMessage,
 	sitWish,
 	MAX_GRIMOIRE_BYTES,
 	MAX_SCRIPT_BYTES,
@@ -46,7 +43,6 @@ import {
 	reopenGame,
 	roleSeen,
 	setRoles,
-	roomPreview,
 	seat,
 	setName,
 	setChoosing,
@@ -67,6 +63,7 @@ import { liveGame, type LiveGame } from '../src/lib/core/sync/live-games.ts';
 import { loadRoomState, newStoredRoom } from '../src/lib/core/sync/room-state.ts';
 import { parseRoomImagePath } from '../src/lib/core/sync/room-images.ts';
 import { dropAvatarPicture, roomImage } from './room-image-store.ts';
+import { previewResponse } from './room-preview.ts';
 import { liveGameIndex, type LiveGameIndex } from './live-games.ts';
 import { setRoomPushAddress, type PushEnv } from './push.ts';
 import { callTown, playTownSound } from './room-town.ts';
@@ -206,14 +203,8 @@ export class Room extends DurableObject<RoomEnv> {
 		const room = await this.load();
 		const image = parseRoomImagePath(new URL(request.url).pathname);
 		if (image) return roomImage(this.ctx.storage, request, room, image.hash, () => this.touch());
-		if (request.headers.get('Upgrade') !== 'websocket') {
-			const script = room && (await this.ctx.storage.get<ScriptView>('script'));
-			// A removed phone is told so as it types the code (plan J37, Trevor 2026-10-31).
-			const code = normaliseRoomCode(new URL(request.url).pathname.split('/').pop() ?? '') ?? '';
-			const probe = request.headers.get(REMOVED_PROBE_HEADER);
-			const removed = !!room && (await isRemovedProbe(room, code, probe));
-			return Response.json(roomPreview(room, script?.script, removed));
-		}
+		if (request.headers.get('Upgrade') !== 'websocket')
+			return previewResponse(this.ctx.storage, request, room);
 		// Only the admins' route (worker/live-games.ts) reaches a room on this path, after
 		// checking the account. An admin's watching doesn't keep the room alive.
 		const admin = new URL(request.url).pathname.startsWith('/api/admin/');
@@ -394,6 +385,11 @@ export class Room extends DurableObject<RoomEnv> {
 				const next = takeCount(room, id, message.number);
 				if (next === room) return;
 				room = next;
+			} else if (message.type === 'hold-traveller' || message.type === 'confirm-traveller') {
+				const next = travellerPickMessage(room, message, id);
+				// A refused tap: the hold that beat it was already sent to every phone.
+				if (next === room) return;
+				room = next;
 			} else if (message.type === 'sit' || message.type === 'claim-seat') {
 				// Passed on to the Storyteller's device, which seats them on the board (plan J38).
 				const wish = sitWish(room, id, message);
@@ -506,13 +502,14 @@ export class Room extends DurableObject<RoomEnv> {
 				room = setSeatingOpen(room, message.open);
 				break;
 			case 'count-off':
-				room = startCountOff(room, message.first ?? {});
-				break;
 			case 'end-count-off':
-				room = endCountOff(room);
-				break;
 			case 'name-count':
-				room = nameCount(room, message.number, message.name);
+				room = countOffMessage(room, message);
+				break;
+			case 'open-traveller-pick':
+			case 'close-traveller-pick':
+			case 'traveller-for':
+				room = travellerPickMessage(room, message);
 				break;
 			case 'judge-picture': {
 				const next = judgePicture(room, message.hash, message.allow);

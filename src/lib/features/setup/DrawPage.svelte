@@ -221,7 +221,10 @@
 	const hasRoom = $derived(!!roomHost().code);
 	function deal() {
 		if (!game) return;
-		for (let i = 0; i < dealPairs(game, Math.random).seatsShort; i++) send({ type: 'AddSeat' });
+		// Seats choosing a Traveller on their phones take no tile (Trevor, 2026-10-31).
+		const choosing = new Set(roomHost().travellerPick?.seats.map((s) => s.seatId));
+		for (let i = 0; i < dealPairs(game, Math.random, choosing).seatsShort; i++)
+			send({ type: 'AddSeat' });
 		// Phones in the room that sit nowhere yet take the unnamed seats, so each gets its own.
 		const named = port.game;
 		if (!named) return;
@@ -230,7 +233,7 @@
 			send({ type: 'RenameSeat', seatId, playerName });
 		const current = port.game;
 		if (!current) return;
-		for (const { seatId, tileId } of dealPairs(current, Math.random).pairs) {
+		for (const { seatId, tileId } of dealPairs(current, Math.random, choosing).pairs) {
 			if (!send({ type: 'DrawTile', seatId, tileId })) return;
 			if (!send({ type: 'ConfirmDraw', tileId })) return;
 		}
