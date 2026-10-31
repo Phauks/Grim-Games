@@ -10,8 +10,8 @@ import {
  * - the vignette, which darkens a background image towards the board's edges (Trevor,
  *   2026-10-18: the old oval behind the script's name was too faint to notice once the name
  *   moved to the corner), and how dark it is;
- * - where the Fabled and Loric sit (large in the middle, or small in the top left corner) and
- *   whether they are grouped as one stack (Trevor, 2026-10-17: two choices);
+ * - whether the Fabled and Loric, always small in the top left corner (Trevor, 2026-10-30:
+ *   "only corner"), are grouped as one stack;
  * - the script's logo faint in the middle of the board, and how faint (Trevor, 2026-10-18);
  * - how big each seat's player name badge is, and how far below the token it sits;
  * - whether reminders are held by their seat or stay where they are dropped;
@@ -29,7 +29,6 @@ export interface BoardLooks {
 	logo: boolean;
 	/** How visible that logo is, 0.05 to 1. */
 	logoOpacity: number;
-	rulesAt: 'middle' | 'edge';
 	/** The Fabled and Loric as one stack that lists them all when tapped. */
 	rulesGrouped: boolean;
 	/** The player name badge's size, as a multiple of its usual size. */
@@ -73,7 +72,6 @@ export const DEFAULT_BOARD_LOOKS: BoardLooks = {
 	vignetteStrength: 0.55,
 	logo: true,
 	logoOpacity: 0.3,
-	rulesAt: 'middle',
 	rulesGrouped: false,
 	nameSize: 1,
 	nameOffset: 0,
@@ -101,7 +99,6 @@ export function parseBoardLooks(raw: unknown): BoardLooks {
 			? Math.min(LOGO_OPACITY.max, Math.max(LOGO_OPACITY.min, logoOpacity))
 			: DEFAULT_BOARD_LOOKS.logoOpacity,
 		// 'corner' was the edge, grouped, before they became two choices.
-		rulesAt: value.rulesAt === 'edge' || value.rulesAt === 'corner' ? 'edge' : 'middle',
 		rulesGrouped: value.rulesGrouped === true || value.rulesAt === 'corner',
 		nameSize: Number.isFinite(nameSize)
 			? Math.min(NAME_SIZE.max, Math.max(NAME_SIZE.min, nameSize))
@@ -117,7 +114,8 @@ export function parseBoardLooks(raw: unknown): BoardLooks {
 		// board (Trevor, 2026-10-23). So is `dragSource`: a dragged reminder no longer names
 		// where it came from (Trevor, 2026-10-24). `holdLights` and `holdMoves` too: holding a
 		// seat's token only moves it now (Trevor, 2026-10-26). `defaultFrame` too: frames are
-		// laurel forms each player picks, with no board default (Trevor, 2026-10-27).
+		// laurel forms each player picks, with no board default (Trevor, 2026-10-27). `rulesAt` too:
+		// the Fabled and Loric always sit in the corner, never the middle (Trevor, 2026-10-30).
 	};
 }
 

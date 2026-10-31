@@ -580,7 +580,7 @@ test('an orphan character is flagged, and old names are not suggested', async ({
 	await expect(sheet.getByRole('group', { name: 'Name suggestions' })).toHaveCount(0);
 });
 
-test('Travellers join as a new seat, and Fabled sit in the middle', async ({ page }) => {
+test('Travellers join as a new seat, and Fabled sit in the corner', async ({ page }) => {
 	await startGame(page);
 	// A Traveller joins as a new seat: Add seat, then choose them for it.
 	await menu(page, 'Add seat');
@@ -608,13 +608,7 @@ test('Travellers join as a new seat, and Fabled sit in the middle', async ({ pag
 		.getByRole('list', { name: 'Fabled and Loric' })
 		.getByRole('button', { name: 'Spirit of Ivory' });
 	await expect(fabled).toBeVisible();
-	// Or small along the edge (Trevor, 2026-10-17), set beside the background.
-	await boardSettings(page, 'Board');
-	const looks = page.getByRole('dialog', { name: 'Settings' });
-	// A drop-down (Trevor, 2026-10-17).
-	await looks.getByRole('combobox', { name: 'Location', exact: true }).tap();
-	await page.getByRole('option', { name: 'Corner', exact: true }).tap();
-	await looks.getByRole('button', { name: 'Close' }).tap();
+	// Always small in the corner, never the middle (Trevor, 2026-10-30: "only corner").
 	await expect(
 		page.locator('.rules-edge').getByRole('button', { name: 'Spirit of Ivory' })
 	).toBeVisible();
@@ -3861,9 +3855,7 @@ test('once every token is placed, the board does not prompt for the Demon bluffs
 			.tap();
 		await closeSheet(page);
 	}
-	await expect(page.locator('.centre').getByRole('button', { name: 'Demon bluffs' })).toHaveCount(
-		0
-	);
+	await expect(page.locator('.board').getByRole('button', { name: 'Demon bluffs' })).toHaveCount(0);
 });
 
 test('a new Demon bluff set is named on the screen where its characters are chosen', async ({
@@ -3965,9 +3957,9 @@ test('reminders can stay where dropped, after a warning listing what changes', a
 	await expect(token).toBeVisible();
 	await expect.poll(near).toBe(true);
 
-	// Only in the board's open area (Trevor, 2026-10-17): dropped on the middle's buttons it
-	// stays where it was.
-	const middle = page.locator('.centre > *').first();
+	// Only in the board's open area (Trevor, 2026-10-17): dropped on the day timer it stays
+	// where it was.
+	const middle = page.locator('.board-timer');
 	const m = (await middle.boundingBox())!;
 	const from = (await token.boundingBox())!;
 	await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
@@ -4262,7 +4254,7 @@ test('the Fabled and Loric can sit grouped in a corner, listed together when tap
 	page
 }) => {
 	await startGame(page);
-	for (const name of ['Spirit of Ivory', 'Angel']) {
+	for (const name of ['Spirit of Ivory', 'Angel', 'Djinn']) {
 		await menu(page, 'Add Fabled or Loric');
 		await page
 			.getByRole('dialog', { name: 'Add Fabled or Loric' })
@@ -4274,29 +4266,37 @@ test('the Fabled and Loric can sit grouped in a corner, listed together when tap
 		.getByRole('list', { name: 'Fabled and Loric' })
 		.getByRole('button', { name: 'Angel' })
 		.tap();
-	// Where they sit and whether they are grouped are two choices (Trevor, 2026-10-17).
+	// They always sit in the corner (Trevor, 2026-10-30: "only corner"); grouping is the choice.
 	const angel = page.getByRole('dialog', { name: 'Angel' });
-	await angel.getByRole('combobox', { name: 'Location', exact: true }).tap();
-	await page.getByRole('option', { name: 'Corner', exact: true }).tap();
+	await expect(angel.getByRole('combobox', { name: 'Location', exact: true })).toHaveCount(0);
 	await angel.getByRole('combobox', { name: 'Grouping', exact: true }).tap();
 	await page.getByRole('option', { name: 'Stacked' }).tap();
 	await expect(page.locator('.rules-edge .rules-stack')).toBeVisible();
 	await angel.getByRole('button', { name: 'Close' }).tap();
 
-	const stack = page.getByRole('button', { name: 'Fabled and Loric: 2' });
+	const stack = page.getByRole('button', { name: 'Fabled and Loric: 3' });
 	await expect(stack).toBeVisible();
+	// Every token in the stack stays on the board, none off its left side (Trevor, 2026-10-30).
+	for (const token of await stack.locator(':scope > :not(.stack-count)').all()) {
+		expect((await token.boundingBox())!.x).toBeGreaterThanOrEqual(0);
+	}
 	await expect(page.getByRole('list', { name: 'Fabled and Loric' })).toHaveCount(0);
 	await stack.tap();
 	const group = page.getByRole('dialog', { name: 'Fabled and Loric' });
-	await expect(group.locator('.rules-group > li')).toHaveCount(2);
+	await expect(group.locator('.rules-group > li')).toHaveCount(3);
+	// Each row as tall as its contents, with no gaps between them (Trevor, 2026-10-30).
+	const rows = await group.locator('.rules-group > li').all();
+	const first = (await rows[0].boundingBox())!;
+	const second = (await rows[1].boundingBox())!;
+	expect(second.y - (first.y + first.height)).toBeLessThan(40);
 	await group.getByRole('button', { name: 'Remove Angel from the game' }).tap();
 	await page
 		.getByRole('alertdialog', { name: 'Remove from the game?' })
 		.getByRole('button', { name: 'Confirm', exact: true })
 		.tap();
-	await expect(group.locator('.rules-group > li')).toHaveCount(1);
+	await expect(group.locator('.rules-group > li')).toHaveCount(2);
 	await group.getByRole('button', { name: 'Close' }).tap();
-	await expect(page.getByRole('button', { name: 'Fabled and Loric: 1' })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Fabled and Loric: 2' })).toBeVisible();
 });
 
 test('an open night step moves to the step before or after without ticking it', async ({
