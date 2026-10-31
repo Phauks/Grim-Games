@@ -306,14 +306,16 @@
 								bind:value={player.name}
 								placeholder={t('common.none')}
 							/>
-							<span class="muted where">{@render where(player.position)}</span>
-							<span class="place"
-								><Button icon="grimoire" onclick={() => onPlace(i)} data-testid="late-place"
-									>{player.position === undefined
-										? t('setup.late.place')
-										: t('setup.late.move')}</Button
-								></span
-							>
+							<div class="seat">
+								<span class="muted where">{@render where(player.position)}</span>
+								<span class="place"
+									><Button icon="grimoire" onclick={() => onPlace(i)} data-testid="late-place"
+										>{player.position === undefined
+											? t('setup.late.place')
+											: t('setup.late.move')}</Button
+									></span
+								>
+							</div>
 							<DeleteButton
 								label={t('setup.late.remove')}
 								disabled={players.length === 1}
@@ -553,15 +555,21 @@
 		gap: var(--space-1) var(--space-2);
 		padding-bottom: var(--space-2);
 	}
-	.players .where {
-		grid-column: 1;
+	/* Where they sit and the seat button share the row under the name, wrapping when narrow. */
+	.players .seat {
+		display: flex;
+		flex-wrap: wrap;
+		grid-column: 1 / -1;
 		grid-row: 2;
-		align-self: center;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-1) var(--space-2);
+	}
+	.players .where {
 		font-size: 0.875rem;
 	}
 	.players .place {
-		grid-column: 2;
-		grid-row: 2;
+		margin-inline-start: auto;
 	}
 	.badges {
 		display: flex;
