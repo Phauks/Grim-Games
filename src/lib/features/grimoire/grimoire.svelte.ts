@@ -216,11 +216,6 @@ export class Grimoire {
 		bankCopies.write(this.game.gameId, next);
 	}
 
-	setReminderSpot(reminderId: ReminderId, at: SeatPoint): void {
-		this.reminderSpots = { ...this.reminderSpots, [reminderId]: at };
-		reminderSpots.write(this.game.gameId, this.reminderSpots);
-	}
-
 	/** Changes where seats are drawn on this device; the seating order is untouched. */
 	setLayout(layout: SeatLayout): void {
 		this.layout = layout;

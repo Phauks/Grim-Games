@@ -140,6 +140,7 @@
 	{groups}
 	keyOf={(item) => item.key}
 	item={tokenView}
+	size={chip}
 	lowered={!!drag || !!placing}
 >
 	{#snippet header()}<SearchField

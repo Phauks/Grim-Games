@@ -24,8 +24,6 @@ export interface SeatHintsContext {
 	characters: CharacterLookup;
 	/** The reminder being dragged, if any. */
 	dragged: Reminder | undefined;
-	/** Reminders put down anywhere: nothing is given to a seat, so no seat is marked. */
-	loose: boolean;
 	/** The seats a walked night step wakes, marked when no reminder is in hand. */
 	holders: SeatId[];
 }
@@ -45,11 +43,7 @@ export class SeatHints {
 		this.#context = context;
 	}
 
-	/** Loose mode marks no seats: nothing is given to one (Trevor, 2026-10-18). */
-	readonly #hand = $derived.by(() => {
-		const { dragged, loose } = this.#context();
-		return loose ? undefined : (dragged ?? this.tray.reminder);
-	});
+	readonly #hand = $derived.by(() => this.#context().dragged ?? this.tray.reminder);
 
 	/**
 	 * While a reminder is dragged, the seats it doesn't fit are faded (Trevor, 2026-10-16:
