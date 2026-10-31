@@ -99,3 +99,19 @@ export function gamePlayers(
 	}
 	return [...players.values()];
 }
+
+/**
+ * How long ago `then` was, in the largest whole unit, for "Last seen …" (plan F5): within
+ * the hour reads as this hour, since last seen is only kept to the hour.
+ */
+export function sinceUnit(
+	then: number,
+	now: number
+): { value: number; unit: 'hour' | 'day' | 'week' | 'month' } {
+	const hours = Math.floor(Math.max(0, now - then) / (60 * 60 * 1000));
+	if (hours < 24) return { value: 0 - hours, unit: 'hour' };
+	const days = Math.floor(hours / 24);
+	if (days < 7) return { value: -days, unit: 'day' };
+	if (days < 30) return { value: -Math.floor(days / 7), unit: 'week' };
+	return { value: -Math.floor(days / 30), unit: 'month' };
+}

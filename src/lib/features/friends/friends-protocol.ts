@@ -53,6 +53,21 @@ export interface FriendsResponse {
 	recent?: RecentPlayer[];
 	/** Friends' invites to their live games (plan F4), newest first; missing from older Workers. */
 	invites?: FriendInvite[];
+	/** What each friend lets friends see (plan F5), by account id; missing from older Workers. */
+	presence?: Record<string, FriendPresence>;
+	/** Whether this account shows friends its own presence (on unless turned off). */
+	showPresence?: boolean;
+}
+
+/**
+ * A friend's presence (plan F5): when they were last on, to the hour, whether they're in a
+ * live game, and that room's code when its Storyteller lets friends join without an invite.
+ * Empty when they turned presence off.
+ */
+export interface FriendPresence {
+	lastSeen?: number;
+	inGame?: boolean;
+	join?: string;
 }
 
 /** A friend's invite to the live room they run (plan F4). */
@@ -119,6 +134,16 @@ export const FRIEND_SEAT_API = `${FRIENDS_API}/seat`;
  * The room code goes in the body, never the URL.
  */
 export const FRIEND_INVITE_API = `${FRIENDS_API}/invite`;
+/** Turns presence on or off: `PUT {show}`. */
+export const FRIEND_PRESENCE_API = `${FRIENDS_API}/presence`;
+/**
+ * Whether friends of the room's people may join it without an invite (plan F5): `POST
+ * {code, open?}` by the room's Storyteller; answers `{open}`.
+ */
+export const FRIEND_ROOM_API = `${FRIENDS_API}/room`;
+/** A room counts as someone's live game for this long after they last connected to it. */
+export const PRESENCE_TTL_MS = 12 * 60 * 60 * 1000;
+
 /** Declines an invite: `POST {id}`. */
 export const FRIEND_INVITE_DISMISS_API = `${FRIENDS_API}/invites/dismiss`;
 

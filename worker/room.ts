@@ -54,7 +54,6 @@ import {
 	setStorytellerBuild,
 	supportsProtocol,
 	townView,
-	parseTownSound,
 	unseat,
 	viewerFailed,
 	viewersLocked,
@@ -62,21 +61,27 @@ import {
 	type GrimoireView,
 	type RevealView,
 	type RoomState,
-	type ScriptView,
-	type ServerMessage
+	type ScriptView
 } from '../src/lib/core/sync/room.ts';
-import { hearsSound, parseSoundOutput } from '../src/lib/core/sound/soundboard.ts';
 import { liveGame, type LiveGame } from '../src/lib/core/sync/live-games.ts';
 import { loadRoomState, newStoredRoom } from '../src/lib/core/sync/room-state.ts';
 import { parseRoomImagePath } from '../src/lib/core/sync/room-images.ts';
 import { dropAvatarPicture, roomImage } from './room-image-store.ts';
 import { liveGameIndex, type LiveGameIndex } from './live-games.ts';
-import { pushCallTown, setRoomPushAddress, type PushEnv } from './push.ts';
+import { setRoomPushAddress, type PushEnv } from './push.ts';
+import { callTown, playTownSound } from './room-town.ts';
+import {
+	roomFriends,
+	roomFriendsView,
+	type RoomFriends,
+	type RoomFriendsChange,
+	type RoomFriendsView
+} from './room-friends.ts';
 import { closeSocket, refuseRemoved, send, sendText, type Attachment } from './room-sockets.ts';
 import {
 	accountTags,
 	linkAccount,
-	hostedAccounts,
+	notePresence,
 	requestAccount,
 	roomPlayers,
 	seatAccount,
@@ -184,10 +189,17 @@ export class Room extends DurableObject<RoomEnv> {
 		return seatAccount(this.ctx, await this.load(), requester, target);
 	}
 
-	/** Who is in this room, for its Storyteller inviting friends (plan F4). */
-	async inviteAccounts(requester: string): Promise<string[] | undefined> {
-		if (!(await this.load())) return undefined;
-		return hostedAccounts(this.ctx, requester);
+	/** The room as its Storyteller's friends tools see it (plan F4, F5, room-friends.ts). */
+	async friendsRoom(
+		requester: string,
+		change?: RoomFriendsChange
+	): Promise<RoomFriends | undefined> {
+		return (await this.load()) ? roomFriends(this.ctx, requester, change) : undefined;
+	}
+
+	/** What friends and groups may see of this room while it is open (plan F5). */
+	async friendsView(): Promise<RoomFriendsView | undefined> {
+		return (await this.load()) ? roomFriendsView(this.ctx) : undefined;
 	}
 
 	async fetch(request: Request): Promise<Response> {
@@ -263,6 +275,7 @@ export class Room extends DurableObject<RoomEnv> {
 				}
 				ws.serializeAttachment({ role: 'host' } satisfies Attachment);
 				await linkAccount(this.ctx, ws, { host: true });
+				this.ctx.waitUntil(notePresence(this.ctx, this.env, ws, true).catch(() => {}));
 				// Phones built before the Storyteller's app hear of it, and look for the update.
 				// Its app says whether it shows players' messages; phones offer to send one only then.
 				const built = setInbox(setStorytellerBuild(room, message.builtAt), message.inbox);
@@ -321,6 +334,7 @@ export class Room extends DurableObject<RoomEnv> {
 			}
 			ws.serializeAttachment({ role: 'player', memberId } satisfies Attachment);
 			await linkAccount(this.ctx, ws, { memberId });
+			this.ctx.waitUntil(notePresence(this.ctx, this.env, ws, true).catch(() => {}));
 			// Saved even when nothing changed, so the Storyteller sees this phone is here now.
 			await this.save(markHere(joined, memberId));
 			const script = await this.ctx.storage.get<ScriptView>('script');
@@ -572,35 +586,12 @@ export class Room extends DurableObject<RoomEnv> {
 				const now = Date.now();
 				if (!canCallTown(this.lastCallTown, now)) return;
 				this.lastCallTown = now;
-				const text = JSON.stringify({ type: 'call-town' } satisfies ServerMessage);
-				const showing = new Set<string>();
-				for (const socket of this.ctx.getWebSockets()) {
-					const to = socket.deserializeAttachment() as Attachment | null;
-					if (to?.role !== 'player') continue;
-					sendText(socket, text);
-					if (to.showing && socket.readyState === WebSocket.OPEN) showing.add(to.memberId);
-				}
-				// Phones locked or with the app closed get it as a notification (plan U12).
-				this.ctx.waitUntil(pushCallTown(this.env, this.ctx.storage, showing));
+				callTown(this.ctx, this.env);
 				return;
 			}
-			case 'town-sound': {
-				// Not kept: only the devices here now play it (plan U10). Never the Storyteller's
-				// own (Trevor, 2026-10-30); an older app's, which names none, reaches the town.
-				const command = parseTownSound(message);
-				if (!command) return;
-				const output = parseSoundOutput(message.to) ?? 'town';
-				const text = JSON.stringify({ type: 'town-sound', ...command } satisfies ServerMessage);
-				for (const socket of this.ctx.getWebSockets()) {
-					const to = socket.deserializeAttachment() as Attachment | null;
-					if (
-						(to?.role === 'town' && hearsSound(output, 'town')) ||
-						(to?.role === 'player' && hearsSound(output, 'phones'))
-					)
-						sendText(socket, text);
-				}
+			case 'town-sound':
+				playTownSound(this.ctx, message);
 				return;
-			}
 			case 'close':
 				this.broadcastClosed('Room closed');
 				await this.forget();
@@ -623,6 +614,9 @@ export class Room extends DurableObject<RoomEnv> {
 	 */
 	async webSocketClose(ws: WebSocket): Promise<void> {
 		const who = ws.deserializeAttachment() as Attachment | null;
+		if (who?.role === 'host' || who?.role === 'player') {
+			this.ctx.waitUntil(notePresence(this.ctx, this.env, ws, false).catch(() => {}));
+		}
 		if (who?.role === 'viewer') this.tellWatchers(ws);
 		if (who?.role === 'admin') this.tellGrimoireWanted(ws);
 		if (who?.role === 'player' || who?.role === 'claim') {
