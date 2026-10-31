@@ -7,7 +7,7 @@
  * out.
  */
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
-import { alignmentOf, registersAsDead } from '#lib/core/model/selectors.ts';
+import { alignmentOf, inPlay, registersAsDead } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 import { afterDeath } from './nominations.ts';
 
@@ -18,7 +18,8 @@ export interface BlockThreshold {
 	needed: number;
 }
 
-export function blockThreshold(game: Game): BlockThreshold {
+export function blockThreshold(full: Game): BlockThreshold {
+	const game = inPlay(full);
 	const alive = game.seating.filter((s) => !game.seats[s].dead).length;
 	return { alive, needed: neededToBlock(alive) };
 }
@@ -32,7 +33,8 @@ function neededToBlock(alive: number): number {
  * Players who must support an exile, for the Storyteller, while a living Traveller is in play
  * (`neededToExile` over every seat), or undefined when nobody can be exiled.
  */
-export function exileThreshold(game: Game, characters: CharacterLookup): number | undefined {
+export function exileThreshold(full: Game, characters: CharacterLookup): number | undefined {
+	const game = inPlay(full);
 	const traveller = game.seating.some((s) => {
 		const seat = game.seats[s];
 		return (
@@ -52,6 +54,8 @@ export interface TownSeat {
 	votes?: number;
 	/** The Traveller in this seat, when the town knows it. */
 	traveller?: string;
+	/** At the table but not in play yet: left out of every count. */
+	notInPlay?: true;
 }
 
 /** The day's counts as players' phones show them: the Storyteller's, without the teams. */
@@ -70,7 +74,8 @@ export interface TownCounts extends BlockThreshold {
  * would already have access to"). The town's view is all a phone has, so a player who only
  * seems dead counts as dead here.
  */
-export function townCounts(seats: readonly TownSeat[]): TownCounts {
+export function townCounts(all: readonly TownSeat[]): TownCounts {
+	const seats = all.filter((s) => !s.notInPlay);
 	const alive = seats.filter((s) => !s.dead).length;
 	const ghostVotes = seats.reduce(
 		(sum, s) => sum + (s.dead ? (s.votes ?? (s.ghostVote === 'used' ? 0 : 1)) : 0),
@@ -109,7 +114,8 @@ export interface LivingByTeam {
 export function livingByTeam(game: Game): LivingByTeam {
 	const out: LivingByTeam = { alive: 0, good: 0, evil: 0, unknown: 0 };
 	for (const seatId of game.seating) {
-		if (game.seats[seatId].dead) continue;
+		// Not in play yet: not living in the game (`Seat.notInPlay`).
+		if (game.seats[seatId].dead || game.seats[seatId].notInPlay) continue;
 		out.alive++;
 		const alignment = alignmentOf(game, seatId);
 		if (alignment) out[alignment]++;

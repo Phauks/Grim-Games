@@ -33,7 +33,14 @@ export type GameEvent =
 	| { type: 'GameCreated'; gameId: GameId; createdAt: number; script: Script; seatIds: SeatId[] }
 	/** Replaces `Game.script`; nothing else changes. */
 	| { type: 'ScriptChanged'; script: Script }
-	| { type: 'SeatAdded'; seatId: SeatId; position: number; playerName?: PlayerName }
+	| {
+			type: 'SeatAdded';
+			seatId: SeatId;
+			position: number;
+			playerName?: PlayerName;
+			notInPlay?: true;
+	  }
+	| { type: 'SeatInPlaySet'; seatId: SeatId; inPlay: boolean }
 	| { type: 'SeatRemoved'; seatId: SeatId }
 	| { type: 'SeatRenamed'; seatId: SeatId; playerName?: PlayerName }
 	/**

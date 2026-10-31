@@ -276,6 +276,23 @@ describe('version 10 saves', () => {
 	});
 });
 
+describe('version 25 saves', () => {
+	// Seats not in play yet (Trevor, 2026-10-31): every seat of an older game is in play.
+	it('migrates a version 25 game with every seat in play, then adds one not in play', () => {
+		const { session, ctx } = newGame(['Sam', 'Ana', 'Kim', 'Lee', 'Max']);
+		const v25 = { ...JSON.parse(JSON.stringify(toSavedGame(session, 1))), schemaVersion: 25 };
+		const loaded = migrateSavedGame(v25);
+		expect(loaded.schemaVersion).toBe(SAVED_GAME_VERSION);
+		expect(loaded.log).toEqual(v25.log);
+		const opened = openSession(loaded.log);
+		expect(Object.values(opened.game.seats).some((s) => s.notInPlay)).toBe(false);
+		const added = run(opened, ctx, { type: 'AddSeat', playerName: 'Bo', notInPlay: true });
+		const again = openSession(migrateSavedGame(toSavedGame(added, 2)).log);
+		const bo = Object.values(again.game.seats).find((s) => s.playerName === 'Bo');
+		expect(bo?.notInPlay).toBe(true);
+	});
+});
+
 describe('version 18 saves', () => {
 	// Before several notes per seat (Trevor, 2026-10-26): an older seat's single note
 	// (`SeatNoteSet`) opens as its untitled first note, and more can be added.
