@@ -494,7 +494,7 @@
 					{board}
 					town={townEl}
 					{nameOf}
-					shape={{ aspect, fit: matchesShape(display) }}
+					shape={{ aspect, fit, area: ring }}
 					onTap={(seat) => choose(seat)}
 				/>{/if}
 			<!-- The Grim tab's controls, top right; with Full screen, in its corner. A Public

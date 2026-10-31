@@ -319,8 +319,8 @@
 		hand.putDown();
 		return true;
 	}}
->
 	{instead}
+>
 	{#snippet run()}{#if runButton}<BankRunButton run={runButton} />{/if}{/snippet}
 	<ReminderHandPill
 		{grimoire}

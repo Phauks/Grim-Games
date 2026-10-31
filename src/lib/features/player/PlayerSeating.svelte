@@ -25,8 +25,11 @@
 		board: { width: number; height: number };
 		town: HTMLElement | undefined;
 		nameOf: (seat: PublicSeat) => string;
-		/** The Storyteller's board's shape, and whether this grim draws in it (sharedSeats). */
-		shape: { aspect: number | undefined; fit: boolean };
+		/**
+		 * The Storyteller's board's shape, whether this grim draws in it, and the part of the
+		 * town the ring is drawn in, above the reminder tray (sharedSeats, ringAboveTray).
+		 */
+		shape: { aspect: number | undefined; fit: boolean; area: { width: number; height: number } };
 		/** A tap on the player's own disc, which opens their seat as before. */
 		onTap: (seat: PublicSeat) => void;
 	}
@@ -102,9 +105,15 @@
 		const tapped = !moved;
 		cancel();
 		if (onto) player.askSeat({ type: 'sit', onto: onto.seatId });
-		else if (spot)
-			player.askSeat({ type: 'sit', place: sharedPlace(spot, board, shape.aspect, shape.fit) });
+		else if (spot) player.askSeat({ type: 'sit', place: boardPlace(spot) });
 		else if (tapped && own) onTap(own);
+	}
+
+	/** A point on this town, in %, as the Storyteller's board keeps a seat placed by hand. */
+	function boardPlace(spot: SeatPoint): SeatPoint {
+		const { area } = shape;
+		const y = area.height > 0 ? (spot.y * board.height) / area.height : spot.y;
+		return sharedPlace({ x: spot.x, y }, area, shape.aspect, shape.fit);
 	}
 
 	function cancel() {
