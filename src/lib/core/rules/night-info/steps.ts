@@ -49,7 +49,7 @@ export function nightStepInfo(
 			? []
 			: seats.flatMap((s) => deathCheck(game, s, character.id, characters) ?? []);
 	if (checks.length > 0) return { kind: 'death', checks };
-	const pickers = seats.flatMap((s) => infoPicker(game, s, character.id, characters) ?? []);
+	const pickers = seats.flatMap((s) => infoPicker(game, s, character.id, characters, night) ?? []);
 	return pickers.length > 0 ? { kind: 'picker', pickers } : undefined;
 }
 

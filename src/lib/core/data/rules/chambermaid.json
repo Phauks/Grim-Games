@@ -1,4 +1,7 @@
 {
+	"learns": {
+		"measure": "woke-tonight"
+	},
 	"dayReminders": {
 		"none": "night info"
 	},

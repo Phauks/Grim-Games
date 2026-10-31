@@ -294,7 +294,7 @@ function standardOrder(
 }
 
 /** Characters that act tonight: those with night text, or a night number, for this night. */
-function actsTonight(character: Character, night: Night): boolean {
+export function actsTonight(character: Character, night: Night): boolean {
 	return reminderFor(character, night) !== undefined || numberFor(character, night) !== undefined;
 }
 
