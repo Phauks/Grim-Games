@@ -3307,8 +3307,8 @@ test('game notes show a token beside the Fabled, at their size, that opens Playe
 	await expect(token).toHaveCount(0);
 
 	const players = await openPlayers(page);
-	await players.getByTestId('game-notes-open').tap();
-	await page.getByRole('dialog', { name: 'Game notes' }).getByTestId('new-note').tap();
+	// Game notes sit on Players itself, with their own New note card.
+	await players.getByTestId('game-notes').getByTestId('new-note').tap();
 	const note = page.getByRole('dialog', { name: 'Note', exact: true });
 	await note.getByRole('textbox', { name: 'Title' }).fill('Bluffs');
 	await note.getByRole('button', { name: 'Close' }).tap();
