@@ -246,16 +246,29 @@ function seeded(seed: string): () => number {
 
 /**
  * Random: every mark of every kind for a bag of `size`, shuffled with `seed` (the game), then
- * one per tile. Marks of different kinds never clash ("1" is a number, "A" a letter), so
- * Roman numerals stay out: "I", "V" and "X" are letters too. Kanji numerals and runes stay
- * out as well: adding them would reshuffle the Random marks of a draw saved by an older build.
+ * one per tile (Trevor, 2026-10-31: every kind goes in). A Roman numeral that reads the same
+ * as a letter ("I", "V", "X", "L") goes in once, so no two tiles ever show the same mark.
  */
 function randomMarks(size: number, seed: string): TileMark[] {
 	const pool: TileMark[] = [];
-	for (let n = 1; n <= size; n++) pool.push(text(String(n)), text(tileLetters(n)));
-	for (let n = 1; n <= TILE_SYMBOLS.length; n++) pool.push(symbol(n));
-	for (let n = 1; n <= TILE_COLOURS.length; n++) pool.push(colour(n));
-	for (let n = 1; n <= TILE_EMOJI.length; n++) pool.push(emoji(n));
+	const shown = new Set<string>();
+	const add = (m: TileMark) => {
+		if (m.kind === 'text') {
+			if (shown.has(m.text)) return;
+			shown.add(m.text);
+		}
+		pool.push(m);
+	};
+	for (let n = 1; n <= size; n++) {
+		add(text(String(n)));
+		add(text(tileLetters(n)));
+		add(text(tileRoman(n)));
+		add(text(tileKanji(n)));
+		add(runes(n));
+	}
+	for (let n = 1; n <= TILE_SYMBOLS.length; n++) add(symbol(n));
+	for (let n = 1; n <= TILE_COLOURS.length; n++) add(colour(n));
+	for (let n = 1; n <= TILE_EMOJI.length; n++) add(emoji(n));
 	return shuffle(pool, seed).slice(0, size);
 }
 

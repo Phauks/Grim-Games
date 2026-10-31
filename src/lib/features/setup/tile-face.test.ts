@@ -101,6 +101,19 @@ describe('tile marks', () => {
 		expect(names(20, 'random', 'game-2')).not.toEqual(marks.map((m) => m.name));
 	});
 
+	it('Random draws from every kind, Roman, kanji and runes too, and never shows a mark twice', () => {
+		const shown = Array.from({ length: 30 }, (_, i) => tileMarks(40, 'random', `g${i}`)).flat();
+		const texts = shown.flatMap((m) => (m.kind === 'text' ? [m.text] : []));
+		expect(texts.some((t) => /^[一二三四五六七八九十]+$/.test(t))).toBe(true);
+		expect(texts.some((t) => /^[\u16A0-\u16FF]+$/.test(t))).toBe(true);
+		expect(texts.some((t) => /^[IVXL]{2,}$/.test(t))).toBe(true);
+		for (let i = 0; i < 30; i++) {
+			const one = tileMarks(40, 'random', `g${i}`).filter((m) => m.kind === 'text');
+			const t = one.map((m) => (m.kind === 'text' ? m.text : ''));
+			expect(new Set(t).size).toBe(t.length);
+		}
+	});
+
 	it('Random label order mixes a kind, keeps every tile different, and stays put per seed', () => {
 		const numbers = tileMarks(8, 'numbers', 'game-1', true).map((m) => m.name);
 		expect([...numbers].sort((a, b) => Number(a) - Number(b))).toEqual(names(8, 'numbers'));
