@@ -12,7 +12,7 @@ import { PHONE_FRAME_PREFIX, readStored, writeStored } from '#lib/ui/stored.ts';
 import { deviceById, mixedDevices, STORYTELLER_SCREENS } from './devices.ts';
 import { botProblems } from './game.ts';
 import { PhoneBot } from './phone-bot.ts';
-import { JoinQueue } from './socket.ts';
+import { closeRoom, JoinQueue } from './socket.ts';
 
 const STORAGE_KEY = 'grim-games:test-room:v2';
 /** Where the player app keeps a phone's key and name (features/room/player.svelte.ts). */
@@ -21,6 +21,12 @@ const NAME_KEY = 'grim-games-room-name';
 /** The longest pause before a bot answers by itself, as a person reading their phone. */
 const THINK_MS = 1500;
 const MAX_LOG = 500;
+/**
+ * At most this often the players' rows redraw for news from the room. With 20 players every
+ * change in the room is 20 messages here, all on the Storyteller screen's thread, so a redraw
+ * for each made its taps lag on Trevor's Pixel (2026-10-31).
+ */
+const REDRAW_MS = 250;
 const TIME = new Intl.DateTimeFormat(undefined, { timeStyle: 'medium', hour12: false });
 
 export const ZOOMS = ['0.5', '0.75', '1'] as const;
@@ -74,6 +80,8 @@ export class TestRoom {
 	#bots: PhoneBot[] = [];
 	readonly #queue = new JoinQueue();
 	#checkSoon: ReturnType<typeof setTimeout> | undefined;
+	/** A redraw is due: every bot hears every change in the room, so redraws wait for a few. */
+	#redraw: ReturnType<typeof setTimeout> | undefined;
 	#follow: ReturnType<typeof setInterval> | undefined;
 
 	constructor() {
@@ -94,12 +102,48 @@ export class TestRoom {
 	stop(): void {
 		clearInterval(this.#follow);
 		clearTimeout(this.#checkSoon);
+		clearTimeout(this.#redraw);
+		this.#redraw = undefined;
 		for (const bot of this.#bots) bot.stop();
 		this.#bots = [];
 	}
 
+	/** The Storyteller screen's own room, which Close room can delete. */
+	get ownRoom(): boolean {
+		return !!this.code && !this.typedCode;
+	}
+
+	/**
+	 * Ends the test (Trevor, 2026-10-31: "need a way to close a test room"): the Storyteller
+	 * screen's room is deleted for everyone in it, as its own Close does, and the players leave.
+	 * A room storytold on another device is only left, as only its Storyteller can delete it.
+	 */
+	async close(): Promise<void> {
+		const stored = this.ownRoom ? readStored<StoredRoom>(HOST_KEY) : undefined;
+		const code = this.code;
+		this.typedCode = undefined;
+		for (const bot of this.#bots) bot.stop();
+		this.#bots = [];
+		this.code = undefined;
+		this.#tick++;
+		if (stored && stored.code === code) {
+			// Forgotten first, so following the screen's room doesn't bring the players back;
+			// the screen's app forgets it too once the room tells it it's closed.
+			writeStored(HOST_KEY, undefined);
+			await closeRoom(location.origin, stored.code, stored.key, this.#queue).catch((e: Error) =>
+				this.#say(e.message)
+			);
+		}
+		if (code) this.#say(`Room ${code} closed`);
+	}
+
 	#storytellerRoom(): string | undefined {
 		return readStored<StoredRoom>(HOST_KEY)?.code;
+	}
+
+	/** Player `i` answers by itself only while its phone is hidden: a shown phone is yours. */
+	#autoFor(i: number): boolean {
+		return this.auto && !this.players[i]?.shown;
 	}
 
 	/** The bot playing player `i`, while there is a room. */
@@ -168,6 +212,8 @@ export class TestRoom {
 			writeStored(`${frameName(i)}:${NAME_KEY}`, botName(i));
 		}
 		this.players = this.players.map((p, j) => (j === i ? { ...p, shown } : p));
+		const bot = this.#bots[i];
+		if (bot) bot.auto = this.#autoFor(i);
 		this.#save();
 	}
 
@@ -177,7 +223,7 @@ export class TestRoom {
 
 	setAuto(auto: boolean): void {
 		this.auto = auto;
-		for (const bot of this.#bots) bot.auto = auto;
+		this.#bots.forEach((bot, i) => (bot.auto = this.#autoFor(i)));
 		this.#save();
 	}
 
@@ -244,7 +290,7 @@ export class TestRoom {
 					thinkMs: THINK_MS,
 					flaky: false,
 					key: this.players[i].key,
-					auto: this.auto,
+					auto: this.#autoFor(i),
 					log: this.#say,
 					changed: this.#changed
 				}
@@ -256,7 +302,10 @@ export class TestRoom {
 	}
 
 	#changed = (): void => {
-		this.#tick++;
+		this.#redraw ??= setTimeout(() => {
+			this.#redraw = undefined;
+			this.#tick++;
+		}, REDRAW_MS);
 		// Views arrive one phone at a time, so checks wait for the room to go quiet.
 		clearTimeout(this.#checkSoon);
 		this.#checkSoon = setTimeout(() => {

@@ -130,3 +130,43 @@ export class RoomSocket {
 		ws?.close(1000, 'bye');
 	}
 }
+
+/**
+ * Deletes a room as its Storyteller's Close does (host.svelte.ts `close`): connects with the
+ * host key and sends `close`; the room then tells every device in it, the Storyteller's too.
+ */
+export async function closeRoom(
+	site: string,
+	code: string,
+	hostKey: string,
+	queue: JoinQueue
+): Promise<void> {
+	let answered: (refused: boolean) => void = () => {};
+	const answer = new Promise<boolean>((resolve) => (answered = resolve));
+	const socket = new RoomSocket(
+		site,
+		code,
+		'host',
+		hostKey,
+		{
+			// The room knows this socket for its Storyteller once it sends the host's view.
+			message: (m) => {
+				if (m.type === 'host-view') answered(false);
+				else if (m.type === 'refused') answered(true);
+			},
+			closed: () => answered(true)
+		},
+		queue
+	);
+	await socket.connect();
+	const timer = setTimeout(() => answered(true), 10_000);
+	const refused = await answer;
+	clearTimeout(timer);
+	if (refused) {
+		socket.drop();
+		throw new Error(`Room ${code} could not be closed`);
+	}
+	socket.send({ type: 'close' });
+	// The room closes the socket itself once everyone is told; this is in case it doesn't.
+	setTimeout(() => socket.drop(), 5000);
+}
