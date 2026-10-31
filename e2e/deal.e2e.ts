@@ -128,8 +128,19 @@ test('Deal gives every seat a character, and a seated phone holds to see its own
 	// Who has looked stays.
 	await expect(rows.nth(1).getByTestId('room-player-seen')).toHaveAttribute('data-seen', '');
 
-	// Shown again, and hidden by hand.
+	// Shown again, and hidden by hand. Every seat has a character but only seat 2 has a phone,
+	// so it first says who won't see theirs (Trevor, 2026-10-31); Cancel shows nothing.
 	await toggle.tap();
+	const warning = page.getByRole('alertdialog', { name: 'Not every player will see a character' });
+	const gaps = warning.getByTestId('roles-gap');
+	await expect(gaps).toHaveCount(4);
+	await expect(gaps.first()).toContainText('Seat 1');
+	await expect(gaps.first()).toContainText('No phone');
+	await expect(warning).not.toContainText('Alex');
+	await warning.getByRole('button', { name: 'Cancel' }).tap();
+	await expect(toggle).toHaveText('Show players their characters');
+	await toggle.tap();
+	await warning.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(phone.getByTestId('your-character')).toBeEnabled();
 	await toggle.tap();
 	await expect(phone.getByTestId('your-character')).toBeDisabled();
@@ -211,6 +222,11 @@ test('a Traveller’s phone holds to see only "You are Evil"', async ({
 	await expect(phone.getByRole('button', { name: 'Settings: Sam' })).toBeVisible();
 	await page.goto(`${board}/players`);
 	await page.getByTestId('roles-show').tap();
+	// No seat has a character yet, and only Sam's has a phone (Trevor, 2026-10-31).
+	const warning = page.getByRole('alertdialog', { name: 'Not every player will see a character' });
+	await expect(warning.getByTestId('roles-gap').first()).toContainText('Sam');
+	await expect(warning.getByTestId('roles-gap').first()).toHaveText(/Sam\s*No character$/);
+	await warning.getByRole('button', { name: 'Confirm' }).tap();
 
 	// The Storyteller makes seat 1 the Thief, evil, with no draw.
 	await page.goto(board);
