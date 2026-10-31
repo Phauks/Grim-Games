@@ -30,17 +30,17 @@ test('a search finds a setting in any section and opens it, marked', async ({ pa
 test('a setting in a closed group opens the group', async ({ page }) => {
 	await page.goto('/');
 	const dialog = await openSettingsDialog(page);
-	await dialog.getByTestId('settings-search').fill('reminders');
+	await dialog.getByTestId('settings-search').fill('focus ring');
 	await dialog
 		.getByTestId('settings-results')
-		.getByRole('button', { name: /^Reminders\s*Board$/ })
+		.getByRole('button', { name: /^Focus ring\s*Theme$/ })
 		.tap();
-	await expect(dialog.getByRole('heading', { name: 'Board', level: 2 })).toBeVisible();
-	await expect(dialog.getByRole('button', { name: 'Advanced' })).toHaveAttribute(
+	await expect(dialog.getByRole('heading', { name: 'Theme', level: 2 })).toBeVisible();
+	await expect(dialog.getByRole('button', { name: 'Accents and buttons' })).toHaveAttribute(
 		'aria-expanded',
 		'true'
 	);
-	await expect(dialog.locator('.content [data-search-label="Reminders"]')).toBeInViewport();
+	await expect(dialog.locator('.content [data-search-label="Focus ring"]')).toBeInViewport();
 });
 
 test('nothing found says None, and clearing brings the sections back', async ({ page }) => {
