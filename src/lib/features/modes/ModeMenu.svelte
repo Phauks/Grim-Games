@@ -11,7 +11,7 @@
 		type SpecialRule
 	} from '#lib/core/modes/index.ts';
 	import { setupComplete } from '#lib/core/rules/bag-plan.ts';
-	import { gameClock } from '#lib/core/rules/index.ts';
+	import { gameClock, optionalRuleChoices } from '#lib/core/rules/index.ts';
 	import { formatRoomCode } from '#lib/core/sync/room-code.ts';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
 	import { editionWikiUrl, fromScript, scriptEdition, scriptToJson } from '#lib/core/data/index.ts';
@@ -120,6 +120,19 @@
 			? undefined
 			: gameClock.formatGameLength(gameClock.gameLength(startedAt, clockNow, endedAt))
 	);
+	// Each character's optional rule, in play or not (Trevor, 2026-10-31).
+	const optional = $derived.by(() => {
+		const lookup = characters?.();
+		if (!lookup) return { on: [], off: [] };
+		const named = optionalRuleChoices(game, lookup).map((r) => ({
+			...r,
+			name: lookup.get(r.characterId)?.name ?? r.characterId
+		}));
+		return {
+			on: named.filter((r) => r.on).map((r) => r.name),
+			off: named.filter((r) => !r.on).map((r) => r.name)
+		};
+	});
 	const info = $derived<GameInfoRow[]>([
 		{
 			key: 'script',
@@ -152,6 +165,15 @@
 			label: t('modes.info.rules'),
 			value: rules.map((r) => r.name).join(', '),
 			links: rules.map(inspectLink)
+		},
+		{
+			key: 'optional-rules',
+			label: t('modes.optionalRules'),
+			value: optional.on.join(', ') || undefined,
+			extra:
+				optional.off.length > 0
+					? t('modes.optionalRulesOff', { names: optional.off.join(', ') })
+					: undefined
 		},
 		...(onShare
 			? [

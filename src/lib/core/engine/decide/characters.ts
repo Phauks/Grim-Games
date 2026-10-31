@@ -22,6 +22,7 @@ export const CHARACTERS_DECIDERS: Deciders<
 	| 'SetHeldAbility'
 	| 'SetStorytellerAbility'
 	| 'Reincarnate'
+	| 'SetOptionalRule'
 	| 'SetDead'
 	| 'SetDeathCause'
 	| 'SpendGhostVote'
@@ -265,6 +266,20 @@ export const CHARACTERS_DECIDERS: Deciders<
 			return [];
 		}
 		return [{ type: 'OverrideCleared', seatId: seat.seatId, field: command.field }];
+	},
+
+	SetOptionalRule(game, command, ctx, warn) {
+		const character = characterOf(ctx, command.characterId);
+		if (!rulesOf(character.id, ctx.characters)?.optionalRule)
+			refuse('no-optional-rule', `${character.name} has no optional rule`);
+		if ((game.optionalRules?.includes(character.id) ?? false) === command.on) {
+			warn(
+				'no-change',
+				`${character.name}'s optional rule is already ${command.on ? 'on' : 'off'}`
+			);
+			return [];
+		}
+		return [{ type: 'OptionalRuleSet', characterId: character.id, on: command.on }];
 	},
 
 	AddRuleCharacter(game, command, ctx, warn) {

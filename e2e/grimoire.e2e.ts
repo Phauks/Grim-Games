@@ -6498,6 +6498,74 @@ test('with the Hindu, the Demon among the first four to die ends the game for go
 	await expect(page.getByRole('dialog', { name: 'Reincarnate Seat 1 as' })).toHaveCount(0);
 });
 
+test("with the Hindu's optional rule chosen at the start, a reborn Demon passes to a Minion", async ({
+	page
+}) => {
+	// The optional rule: if the Demon becomes a Traveller, a Minion becomes the Demon
+	// (https://wiki.bloodontheclocktower.com/Hindu). It is chosen with the special rules.
+	await page.goto('/new');
+	await pickScript(page, 'Trouble Brewing');
+	await page.getByRole('button', { name: 'Create game' }).tap();
+	await page.getByRole('button', { name: 'Add a Loric' }).tap();
+	const loric = page.getByRole('dialog', { name: 'All Loric' });
+	await loric.getByRole('searchbox').fill('Hindu');
+	await loric.getByRole('button', { name: /^Hindu/ }).tap();
+	await page.keyboard.press('Escape');
+	await expect(loric).toBeHidden();
+	await page.getByTestId('setup-special-rules').tap();
+	const rules = page.getByRole('dialog', { name: 'Special rules' });
+	const optional = rules.getByTestId('optional-rules');
+	const hinduRule = optional.getByRole('checkbox', {
+		name: 'Optional rule of Hindu',
+		includeHidden: true
+	});
+	await expect(hinduRule).not.toBeChecked();
+	await optional.locator('[data-scope="switch"][data-part="control"]').tap();
+	await expect(hinduRule).toBeChecked();
+	await rules.getByRole('button', { name: 'Close' }).tap();
+	await expect(rules).toBeHidden();
+	await expect(page.getByTestId('setup-special-rules')).toHaveText('Special rules 1');
+	await toBoard(page);
+
+	for (const [number, name] of [
+		[1, 'Imp'],
+		[2, 'Poisoner']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	await (await openSeat(page, 1)).getByRole('button', { name: 'Status: Alive' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Status of Seat 1' })
+		.getByRole('button', { name: 'Executed' })
+		.tap();
+	await expect(page.getByRole('alertdialog', { name: 'End game?' })).toHaveCount(0);
+	const picker = page.getByRole('dialog', { name: 'Reincarnate Seat 1 as' });
+	await picker.getByRole('button', { name: 'Gunslinger, Recommended' }).tap();
+	const ask = page.getByRole('alertdialog', { name: 'Choose the new Imp' });
+	await expect(ask.getByRole('radio', { name: /Seat 2/, includeHidden: true })).toBeChecked();
+	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(ask).toBeHidden();
+	await closeSheet(page);
+	await expect(seatLabelled(page, 'Seat 1: no name, Gunslinger')).not.toHaveAttribute(
+		'aria-label',
+		/dead/
+	);
+	await expect(seatLabelled(page, 'Seat 2: no name, Imp')).toBeAttached();
+	await expect(page.getByRole('alertdialog')).toHaveCount(0);
+
+	// Game info says the optional rule is in play.
+	await openGameInfo(page);
+	await expect(
+		page.getByTestId('game-info').locator('[data-field="optional-rules"]')
+	).toContainText('Hindu');
+});
+
 /** A Trouble Brewing game with one special rule, these seats given these characters. */
 async function startWithRule(
 	page: Page,

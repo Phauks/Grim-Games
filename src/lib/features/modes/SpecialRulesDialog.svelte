@@ -5,6 +5,8 @@
 		type RuleConflict,
 		type SpecialRule
 	} from '#lib/core/modes/index.ts';
+	import type { Character, CharacterId } from '#lib/core/data/index.ts';
+	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
@@ -29,6 +31,9 @@
 	 * the screen before Start game did (Trevor, 2026-10-22, 2026-10-24), so the full list stays
 	 * clean.
 	 * Design: /mnt/project-files/world-cup-rules/format-design.md.
+	 * Below them, the optional rules of the characters on the script (Trevor, 2026-10-30: an
+	 * official character's optional rule is its own functionality, not a special rule), each
+	 * a switch beside the character's badge, whose page has the rule's wiki text.
 	 */
 	interface Props {
 		open: boolean;
@@ -41,9 +46,22 @@
 		onSwitch: (choices: SwitchChoices) => void;
 		/** Add mode, which also takes a rule file. */
 		onadd: () => void;
+		/** The characters with an optional rule, each on or off for this game. */
+		optionalRules?: readonly { characterId: CharacterId; character?: Character; on: boolean }[];
+		onOptionalRule?: (characterId: CharacterId, on: boolean) => void;
 	}
 
-	let { open = $bindable(), mode, ruleIds, onChange, choices, onSwitch, onadd }: Props = $props();
+	let {
+		open = $bindable(),
+		mode,
+		ruleIds,
+		onChange,
+		choices,
+		onSwitch,
+		onadd,
+		optionalRules = [],
+		onOptionalRule
+	}: Props = $props();
 
 	const rules = $derived(allRules());
 	const chosen = $derived(ruleIds.flatMap((id) => findRule(id) ?? []));
@@ -146,6 +164,29 @@
 				{/each}
 			</ul>
 		</section>
+		<section aria-labelledby="optional-rules-title">
+			<h3 id="optional-rules-title">
+				{t('modes.optionalRules')}
+				<CountBadge count={optionalRules.filter((r) => r.on).length} />
+			</h3>
+			<ul role="list" class="in-game" data-testid="optional-rules">
+				{#each optionalRules as rule (rule.characterId)}
+					{@const name = rule.character?.name ?? rule.characterId}
+					<li class="row optional">
+						<CharacterBadge characterId={rule.characterId} character={rule.character} />
+						<Toggle
+							label={t('modes.optionalRuleOf', { name })}
+							hideLabel
+							checked={rule.on}
+							disabled={!onOptionalRule}
+							onChange={(on) => onOptionalRule?.(rule.characterId, on)}
+						/>
+					</li>
+				{:else}
+					<li class="muted">{t('common.none')}</li>
+				{/each}
+			</ul>
+		</section>
 		<!-- Conflicts first (Trevor, 2026-10-22: "move conflicts to the top"), each with both
 		sides' descriptions, Inspect and switch, so it can be settled here. -->
 		<section aria-labelledby="rule-conflicts-title">
@@ -238,6 +279,14 @@
 	.row > :global(:first-child) {
 		flex: 1;
 		min-width: 0;
+	}
+	/* A character's badge, then its optional rule's switch at the row's end. */
+	.row.optional {
+		align-items: center;
+		justify-content: space-between;
+	}
+	.row.optional > :global(:first-child) {
+		flex: 0 1 auto;
 	}
 	/* A rule's own switch, indented under its description. */
 	.own {

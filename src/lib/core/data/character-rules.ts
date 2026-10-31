@@ -177,6 +177,13 @@ export interface CharacterRules extends ChoiceRules {
 	/** The first players to die are reborn as Travellers (`after-death-rules.ts`). */
 	reincarnates?: Reincarnates;
 	/**
+	 * The character's optional rule from its wiki page (Trevor, 2026-10-30: an official
+	 * character's optional rule is its own functionality, chosen at the start of the game): the
+	 * rules that replace this block's own, key by key, in a game that turns it on
+	 * (`rulesIn`, `Game.optionalRules`). Never nested.
+	 */
+	optionalRule?: CharacterRules;
+	/**
 	 * Its player may make this many more nominations each day after the day's first execution,
 	 * even if they already nominated, and of a player already nominated today (the Butcher,
 	 * https://wiki.bloodontheclocktower.com/Butcher).
@@ -374,6 +381,7 @@ const RULE_KEYS = [
 	'onNominated',
 	'afterDeath',
 	'reincarnates',
+	'optionalRule',
 	'nominationsAfterExecution',
 	'dayClaim',
 	'guessLimit',
@@ -688,6 +696,15 @@ export function parseCharacterRules(
 	const turns = readTurnsPlayersInto(raw.turnsPlayersInto, path, issues);
 	if (turns) rules.turnsPlayersInto = turns;
 	Object.assign(rules, readChoiceRules(raw, path, issues, reminders));
+	if (raw.optionalRule !== undefined) {
+		const at = `${path}.optionalRule`;
+		if (isObject(raw.optionalRule) && raw.optionalRule.optionalRule !== undefined)
+			issues.add(`${at}.optionalRule`, 'an optional rule has no optional rule of its own');
+		else {
+			const optional = parseCharacterRules(raw.optionalRule, at, issues, reminders);
+			if (optional) rules.optionalRule = optional;
+		}
+	}
 	return issues.list.length > before ? undefined : rules;
 }
 
