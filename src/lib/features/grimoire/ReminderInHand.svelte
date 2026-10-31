@@ -25,14 +25,21 @@
 		actions?: MenuItem[];
 		/** Its ⋯ open (a right-click on the token opens it too). */
 		menuOpen?: boolean;
+		/** A tap on the token: its own dialog (Trevor, 2026-10-30: not a ⋯ row). */
+		onAbout?: () => void;
 		onPutDown: () => void;
 	}
 
-	let { token, actions = [], menuOpen = $bindable(false), onPutDown }: Props = $props();
+	let { token, actions = [], menuOpen = $bindable(false), onAbout, onPutDown }: Props = $props();
 </script>
 
 <div class="in-hand" role="status" data-testid="reminder-in-hand">
-	<span class="token">{@render token()}</span>
+	{#if onAbout}<button
+			type="button"
+			class="token"
+			aria-label={t('common.aboutReminder')}
+			onclick={onAbout}>{@render token()}</button
+		>{:else}<span class="token">{@render token()}</span>{/if}
 	{#if actions.length > 0}
 		<Menu
 			label={t('common.moreReminderActions')}
@@ -64,6 +71,11 @@
 	}
 	/* Room for the label band under the token, which is wider than it. */
 	.token {
+		border: 0;
+		background: none;
+		color: inherit;
+		cursor: pointer;
+		touch-action: manipulation;
 		display: grid;
 		place-items: center;
 		padding: 0 var(--space-2) calc(0.375 * var(--u));

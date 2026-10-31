@@ -1,39 +1,79 @@
 <!--
-	About this reminder (Trevor, 2026-10-30), from a held bank token's ⋯ (ReminderBank): whose
-	it is, what a setup suggestion is for, and the ability it comes from. Its actions are the
-	⋯'s other rows; the token stays in hand underneath.
+	A reminder's own dialog (Trevor, 2026-10-30: one component for a token from the bank or the
+	board), opened by tapping the token in hand's pill, a seat sheet's reminder or a Fabled's:
+	whose it is, what a setup suggestion is for, and the ability it comes from. A placed one
+	also has its ⋯ (Duplicate) and red trash, and an ∞ one its note.
 -->
 <script lang="ts">
+	import {
+		looseReminders,
+		reminderHolder,
+		type ReminderId,
+		type ReminderInstance
+	} from '#lib/core/model/index.ts';
 	import { characterNames } from '#lib/core/rules/character-names.ts';
 	import { prepTextSegments } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterSummary from '#lib/features/characters/CharacterSummary.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
+	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import BoardReminder from './BoardReminder.svelte';
-	import type { BankItem } from './bank-items.ts';
 	import { placingAlignment } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
-	import { isGeneric } from './reminders.ts';
+	import type { ReminderHand } from './reminder-hand.svelte.ts';
+	import ReminderMoreButton from './ReminderMoreButton.svelte';
+	import ReminderNoteField from './ReminderNoteField.svelte';
+	import ReminderOrigin from './ReminderOrigin.svelte';
+	import { isGeneric, placedLook } from './reminders.ts';
 
 	interface Props {
 		grimoire: Grimoire;
-		open: boolean;
-		item: BankItem | undefined;
+		/**
+		 * Whose `about` it shows: a bank token, by what it is, or a token on the board (a seat's,
+		 * a Fabled or Loric's, or loose), by id.
+		 */
+		hand: ReminderHand;
+		/** Takes a placed one off the board (ReminderMoveConfirm). */
+		onRemove?: (reminderId: ReminderId) => void;
 	}
 
-	let { grimoire, open = $bindable(), item }: Props = $props();
+	let { grimoire, hand, onRemove }: Props = $props();
+
+	const item = $derived(hand.about?.kind === 'bank' ? hand.about.item : undefined);
+	const reminderId = $derived(hand.about?.kind === 'placed' ? hand.about.reminderId : undefined);
 
 	const game = $derived(grimoire.game);
 	const characters = $derived(grimoire.open.characters);
 	const names = $derived(characterNames([...characters.values()]));
-	const owner = $derived(item && !isGeneric(item) ? characters.get(item.characterId) : undefined);
+	const holder = $derived(reminderId ? reminderHolder(game, reminderId) : undefined);
+	const placed = $derived.by((): ReminderInstance | undefined => {
+		if (!reminderId || !holder) return undefined;
+		const list =
+			'seatId' in holder
+				? game.seats[holder.seatId].reminders
+				: 'characterId' in holder
+					? (game.ruleReminders?.[holder.characterId] ?? [])
+					: looseReminders(game);
+		return list.find((r) => r.reminderId === reminderId);
+	});
+	const token = $derived(placed ?? item);
+	const owner = $derived(
+		token && !isGeneric(token) ? characters.get(token.characterId) : undefined
+	);
+	// Gone from the board (removed, undone): nothing left to show.
+	$effect(() => {
+		if (hand.aboutOpen && reminderId && !placed) hand.aboutOpen = false;
+	});
 </script>
 
-<Dialog bind:open title="About this reminder">
+<Dialog bind:open={hand.aboutOpen} title="About this reminder">
 	<!-- The token itself, as on the board (Trevor, 2026-10-30). -->
 	{#snippet heading()}
-		{#if item}<BoardReminder
+		{#if placed}<BoardReminder
+				{...placedLook(placed, characters)}
+				alignment={placingAlignment(game, placed, characters)}
+			/>{:else if item}<BoardReminder
 				label={item.label}
 				character={characters.get(item.characterId)}
 				alignment={placingAlignment(game, item, characters)}
@@ -44,7 +84,19 @@
 			/>{:else}About this reminder{/if}
 	{/snippet}
 	{#snippet subtitle()}
-		{#if item && owner}From <CharacterBadge characterId={item.characterId} character={owner} />{/if}
+		{#if placed && holder && 'seatId' in holder}From <ReminderOrigin
+				{game}
+				{characters}
+				characterId={placed.characterId}
+				on={holder.seatId}
+			/>{:else if token && owner}From <CharacterBadge
+				characterId={token.characterId}
+				character={owner}
+			/>{/if}
+		{#if holder && 'characterId' in holder}on <CharacterBadge
+				characterId={holder.characterId}
+				character={characters.get(holder.characterId)}
+			/>{:else if holder && 'loose' in holder}loose on the board{/if}
 	{/snippet}
 	{#if item?.setup}
 		{@const s = item.setup.suggestion}
@@ -58,7 +110,20 @@
 					/>{:else}{part.text}{/if}{/each}
 		</p>
 	{/if}
+	{#if placed && isGeneric(placed)}<ReminderNoteField {grimoire} reminder={placed} />{/if}
 	{#if owner}<CharacterSummary character={owner} reminders={false} />{/if}
+	{#snippet headActions()}
+		{#if placed}
+			<ReminderMoreButton {grimoire} {reminderId} onDone={() => (hand.aboutOpen = false)} />
+			<DeleteButton
+				label="Remove reminder"
+				onclick={() => {
+					hand.aboutOpen = false;
+					if (reminderId) onRemove?.(reminderId);
+				}}
+			/>
+		{/if}
+	{/snippet}
 </Dialog>
 
 <style>

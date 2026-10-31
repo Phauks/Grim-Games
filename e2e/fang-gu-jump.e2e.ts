@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
-import { putReminder } from './reminder-bank.ts';
+import { heldAction, putReminder } from './reminder-bank.ts';
 
 /**
  * The Fang Gu jumping into an Outsider (https://wiki.bloodontheclocktower.com/Fang_Gu): the
@@ -56,7 +56,7 @@ async function moveDead(page: Page, from: number, to: number) {
 		.locator(`.chip-slot[data-seat="${from}"]`)
 		.getByRole('button', { name: 'Dead reminder' })
 		.tap();
-	await page.getByRole('button', { name: 'Remove reminder' }).tap();
+	await heldAction(page, 'Remove reminder');
 	const stays = page.getByRole('alertdialog', { name: 'Confirm change?' });
 	if (await stays.isVisible()) await stays.getByRole('button', { name: 'Confirm' }).tap();
 	await page.keyboard.press('Escape');

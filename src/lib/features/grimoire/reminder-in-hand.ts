@@ -2,6 +2,7 @@
  * The reminder bank's token in hand (Trevor, 2026-10-30): tapped, it waits for the board to
  * be tapped where it goes (ReminderBank), with its ⋯ in its pill (ReminderInHand).
  */
+import type { ReminderId, ReminderInstance } from '#lib/core/model/index.ts';
 import type { BankItem } from './bank-items.ts';
 import { duplicateReminder } from './duplicate-reminder.ts';
 import type { Grimoire } from './grimoire.svelte.ts';
@@ -14,21 +15,20 @@ interface Row {
 }
 
 /**
- * The held token's ⋯ rows: About first, then only what this kind of token can do. Each but
- * About puts the token down, since it changes what the bank holds.
+ * A held bank token's ⋯ rows: only what this kind of token can do. Each puts the token down,
+ * since it changes what the bank holds. Its About is a tap on the token in the pill (Trevor,
+ * 2026-10-30), not a row.
  */
 export function heldTokenActions(
 	grimoire: Grimoire,
 	item: BankItem,
-	on: { about: (item: BankItem) => void; edit: (tokenId: string) => void; putDown: () => void }
+	on: { edit: (tokenId: string) => void; putDown: () => void }
 ): Row[] {
 	const done = (action: () => void) => () => {
 		on.putDown();
 		action();
 	};
-	const rows: Row[] = [
-		{ value: 'about', label: 'About this reminder', onSelect: () => on.about(item) }
-	];
+	const rows: Row[] = [];
 	if (!isGeneric(item)) {
 		rows.push({
 			value: 'duplicate',
@@ -56,21 +56,52 @@ export function heldTokenActions(
 	return rows;
 }
 
+/**
+ * A held token from the board's ⋯ rows: Duplicate and Remove. Moving it is a
+ * tap on a seat, and back to the bank a tap on the bank (Trevor, 2026-10-30: no Move or Return
+ * rows).
+ */
+export function placedTokenActions(
+	grimoire: Grimoire,
+	reminder: Pick<ReminderInstance, 'reminderId' | 'characterId' | 'label'>,
+	on: { remove: (reminderId: ReminderId) => void; putDown: () => void }
+): Row[] {
+	// A placed ∞ token is duplicated too: copied as it looks, never unusual.
+	return [
+		{
+			value: 'duplicate',
+			label: 'Duplicate reminder',
+			onSelect: () => {
+				on.putDown();
+				duplicateReminder(grimoire, reminder);
+			}
+		},
+		{
+			value: 'remove',
+			label: 'Remove reminder',
+			onSelect: () => {
+				on.putDown();
+				on.remove(reminder.reminderId);
+			}
+		}
+	];
+}
+
 /** How far a press may move and still be a tap, in px. */
 const SLOP = 10;
 
 /**
- * Takes the board's taps while a token is held: a tap anywhere on `board` but inside `keep`
- * (the bank and the pill) calls `onTap` at that client point instead of reaching what is
+ * Takes the board's taps while a token is held: a tap anywhere on `board` but on what `keep`
+ * keeps (the pill, and for a bank token the bank) calls `onTap` at that client point instead of reaching what is
  * under it. A swipe does nothing. Returns the cleanup.
  */
 export function dropOnTap(
 	board: HTMLElement,
-	keep: HTMLElement | undefined,
+	keep: (target: Element) => boolean,
 	onTap: (x: number, y: number) => void
 ): () => void {
 	let down: { x: number; y: number; id: number } | undefined;
-	const ours = (event: Event) => !!keep?.contains(event.target as Node);
+	const ours = (event: Event) => event.target instanceof Element && keep(event.target);
 	const pointerdown = (event: PointerEvent) => {
 		if (ours(event) || !event.isPrimary) return;
 		event.stopPropagation();
