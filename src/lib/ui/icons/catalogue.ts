@@ -43,6 +43,7 @@ export const ICON_SLOTS = {
 	script: { label: 'Script', choices: ['ph:scroll', 'ph:book-open'] },
 	buildScript: { label: 'Script builder', choices: ['ph:hammer', 'ph:wrench'] },
 	buildCharacter: { label: 'Character builder', choices: ['ph:user-gear', 'ph:user-plus'] },
+	buildMode: { label: 'Mode builder', choices: ['ph:puzzle-piece', 'ph:sliders-horizontal'] },
 	installApp: { label: 'Install app', choices: ['ph:device-mobile', 'ph:download-simple'] },
 	download: { label: 'Download', choices: ['ph:download-simple', 'ph:file-arrow-down'] },
 	open: { label: 'Open', choices: ['ph:folder-open', 'ph:folder'] },

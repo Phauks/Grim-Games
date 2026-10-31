@@ -26,6 +26,7 @@ test('on a phone, the header menu opens a drawer with every destination', async 
 		'Library',
 		'Script builder',
 		'Character builder',
+		'Mode builder',
 		'Character reference',
 		'Info tokens',
 		'Account'
@@ -50,6 +51,7 @@ test('on a phone, the header menu opens a drawer with every destination', async 
 		'Library',
 		'Script builder',
 		'Character builder',
+		'Mode builder',
 		'Info tokens',
 		'Character reference'
 	]);
@@ -108,7 +110,7 @@ test.describe('on a computer', () => {
 		await prepare.click();
 		await expect(prepare).toHaveAttribute('aria-expanded', 'false');
 		await expect(nav.getByRole('link', { name: 'Library' })).toBeHidden();
-		await expect(prepare.getByTestId('section-count')).toHaveText('6');
+		await expect(prepare.getByTestId('section-count')).toHaveText('7');
 		// The other sections stay as they were.
 		await expect(nav.getByRole('link', { name: 'New game' })).toBeVisible();
 		await page.reload();
