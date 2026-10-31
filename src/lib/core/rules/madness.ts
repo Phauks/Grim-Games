@@ -11,6 +11,7 @@ import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { getSeat, trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 import { abilityState } from './ability.ts';
+import { todaysNominations } from './nominations.ts';
 
 export interface MadnessOffer {
 	/** The character whose madness it is; the cause of the execution or death. */
@@ -24,8 +25,9 @@ export interface MadnessOffer {
 
 /**
  * What breaking `characterId`'s madness does to the player in `seatId`, or undefined when
- * that player is not mad by it: they carry its token, or, for a rule with no token, they are
- * that character and their ability works (a drunk Mutant is not mad).
+ * that player is not mad by it: they carry its token; with `chosenBy: 'nominee'`, a nominee
+ * chose them today (the Big Wig's speaker); or, for a rule with neither, they are that
+ * character and their ability works (a drunk Mutant is not mad).
  */
 export function madnessOffer(
 	game: Game,
@@ -42,8 +44,10 @@ export function madnessOffer(
 		);
 	const mad = rule.token
 		? carrying(rule.token).includes(seatId)
-		: trueCharacter(game, seatId, characters) === characterId &&
-			abilityState(game, seatId, characters).works;
+		: rule.chosenBy === 'nominee'
+			? todaysNominations(game).some((n) => n.chosen === seatId)
+			: trueCharacter(game, seatId, characters) === characterId &&
+				abilityState(game, seatId, characters).works;
 	if (!mad) return undefined;
 	if (rule.breaking === 'execution')
 		return { characterId, seatId, breaking: 'execution', dies: [] };
