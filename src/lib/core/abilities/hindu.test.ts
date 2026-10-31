@@ -19,7 +19,8 @@ import {
 	testCharacters as characters
 } from '#lib/core/model/fixtures.test-support.ts';
 import { alignmentOf } from '#lib/core/model/selectors.ts';
-import { reincarnatedBy } from '#lib/core/rules/reincarnation.ts';
+import { gameEnds, promptable } from '#lib/core/rules/game-end.ts';
+import { rebirthOf, reincarnatedBy } from '#lib/core/rules/reincarnation.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
 const hindu: Command = { type: 'AddRuleCharacter', characterId: 'hindu' };
@@ -82,10 +83,51 @@ describe('Hindu', () => {
 			expect(alignmentOf(game, seats[4])).toBe('evil');
 		});
 
-		// If the Demon is among the first four to die, good wins: there is no rebirth to offer.
-		it('offers the Demon none', () => {
+		// A Demon among the first four to die ends the game: good wins, even with a Scarlet
+		// Woman alive.
+		it('ends the game for good when the Demon is among the first four to die', () => {
 			const { game, seats } = castGame(cast, hindu, dies(5));
 			expect(reincarnatedBy(game, seats[5], characters)).toBeUndefined();
+			expect(rebirthOf(game, seats[5], characters)).toBe('hindu');
+			expect(promptable(gameEnds(game, characters))).toEqual([
+				expect.objectContaining({ rule: 'demon-dead', winner: 'good', characterId: 'hindu' })
+			]);
+		});
+
+		it('ends it for good over a living Scarlet Woman', () => {
+			const sw = ['princess', 'chef', 'empath', 'monk', 'scarletwoman', 'imp'];
+			const { game } = castGame(sw, hindu, dies(5));
+			expect(promptable(gameEnds(game, characters))).toHaveLength(1);
+		});
+
+		it('ends it as usual once four have been reborn', () => {
+			const { game } = castGame(
+				[
+					'princess',
+					'chef',
+					'empath',
+					'monk',
+					'scarletwoman',
+					'imp',
+					'mayor',
+					'soldier',
+					'ravenkeeper',
+					'undertaker'
+				],
+				hindu,
+				dies(0),
+				reborn(0, 'gunslinger'),
+				dies(1),
+				reborn(1, 'beggar'),
+				dies(2),
+				reborn(2, 'thief'),
+				dies(3),
+				reborn(3, 'bureaucrat'),
+				(s) => ({ type: 'SetDead', seatId: s[5], dead: true, cause: 'execution' })
+			);
+			const [end] = gameEnds(game, characters);
+			expect(end.characterId).toBeUndefined();
+			expect(end.holds.map((h) => h.rule)).toContain('becomes-demon');
 		});
 
 		it('offers a reborn player none when they die again', () => {

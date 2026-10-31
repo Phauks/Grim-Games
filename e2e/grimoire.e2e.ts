@@ -6462,6 +6462,42 @@ test('with the Hindu, a player who dies is reincarnated as a Traveller', async (
 	await expect(seat).not.toHaveAttribute('aria-label', /dead/);
 });
 
+test('with the Hindu, the Demon among the first four to die ends the game for good', async ({
+	page
+}) => {
+	// If the Demon is one of the first four to die, the game ends and good wins, even with a
+	// Scarlet Woman alive (https://wiki.bloodontheclocktower.com/Hindu).
+	await startGame(page, 'Trouble Brewing');
+	for (const [number, name] of [
+		[1, 'Imp'],
+		[2, 'Scarlet Woman']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	await menu(page, 'Add Fabled or Loric');
+	const adding = page.getByRole('dialog', { name: 'Add Fabled or Loric' });
+	await adding.getByRole('button', { name: 'Hindu', exact: true }).tap();
+	await expect(adding).toBeHidden();
+
+	await (await openSeat(page, 1)).getByRole('button', { name: 'Status: Alive' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Status of Seat 1' })
+		.getByRole('button', { name: 'Executed' })
+		.tap();
+	const prompt = page.getByRole('alertdialog', { name: 'End game?' });
+	const line = prompt.locator('[data-rule="demon-dead"]');
+	// The line shows the Hindu's ability, so the Storyteller sees why.
+	await expect(line).toContainText('reincarnated as Travellers');
+	await expect(line).toContainText('Good wins');
+	await expect(page.getByRole('dialog', { name: 'Reincarnate Seat 1 as' })).toHaveCount(0);
+});
+
 /** A Trouble Brewing game with one special rule, these seats given these characters. */
 async function startWithRule(
 	page: Page,
