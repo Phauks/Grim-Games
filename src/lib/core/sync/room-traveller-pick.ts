@@ -12,6 +12,7 @@
 import type { CharacterId } from '#lib/core/data/index.ts';
 import type { SeatId } from '#lib/core/model/index.ts';
 import { numberedNames } from './room-names.ts';
+import type { ClientMessage } from './room-protocol.ts';
 import type { RoomState } from './room.ts';
 
 export interface TravellerPick {
@@ -178,6 +179,47 @@ export function setTravellerFor(room: RoomState, seatId: unknown, characterId: u
 	const by = holder(pick, characterId as CharacterId);
 	if (by && by !== seat) return room;
 	return setSeat(room, pick, seat, characterId as CharacterId, true);
+}
+
+type PickMessage = Extract<
+	ClientMessage,
+	{
+		type:
+			| 'hold-traveller'
+			| 'confirm-traveller'
+			| 'open-traveller-pick'
+			| 'close-traveller-pick'
+			| 'traveller-for';
+	}
+>;
+
+/**
+ * Applies a Traveller choice message: a phone's tap or Confirm (with its `memberId`), or the
+ * Storyteller's send, stop or pick. Returns the room unchanged when the message is refused.
+ */
+export function travellerPickMessage(
+	room: RoomState,
+	message: PickMessage,
+	memberId?: string
+): RoomState {
+	switch (message.type) {
+		case 'hold-traveller':
+			return memberId ? holdTraveller(room, memberId, message.pickId, message.characterId) : room;
+		case 'confirm-traveller':
+			return memberId ? confirmTraveller(room, memberId, message.pickId) : room;
+		case 'open-traveller-pick':
+			return openTravellerPick(
+				room,
+				message.gameId,
+				message.pickId,
+				message.options,
+				message.seats
+			);
+		case 'close-traveller-pick':
+			return closeTravellerPick(room);
+		case 'traveller-for':
+			return setTravellerFor(room, message.seatId, message.characterId);
+	}
 }
 
 export function travellerPickHostView(room: RoomState): TravellerPickHostView | undefined {

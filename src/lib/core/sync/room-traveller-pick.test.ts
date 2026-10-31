@@ -15,6 +15,7 @@ import {
 	seat,
 	setName,
 	setTravellerFor,
+	travellerPickMessage,
 	type RoomState
 } from './room.ts';
 
@@ -133,5 +134,27 @@ describe('Travellers choose on their phones', () => {
 		expect(openTravellerPick(r, 'g1', 'p', [c('scapegoat')], ['s1']).travellerPick?.seats).toEqual([
 			's1'
 		]);
+	});
+
+	it('takes the room messages: a phone needs its member, the Storyteller does not', () => {
+		let r = travellerPickMessage(room(), {
+			type: 'hold-traveller',
+			pickId: 'p1',
+			characterId: c('thief')
+		});
+		expect(r.travellerPick?.holds).toEqual({});
+		r = travellerPickMessage(
+			r,
+			{ type: 'hold-traveller', pickId: 'p1', characterId: c('thief') },
+			'sam'
+		);
+		r = travellerPickMessage(r, { type: 'confirm-traveller', pickId: 'p1' }, 'sam');
+		r = travellerPickMessage(r, {
+			type: 'traveller-for',
+			seatId: s('s4'),
+			characterId: c('beggar')
+		});
+		expect(hostView(r).travellerPick?.seats.filter((x) => x.confirmed).length).toBe(2);
+		expect(travellerPickMessage(r, { type: 'close-traveller-pick' }).travellerPick).toBeUndefined();
 	});
 });

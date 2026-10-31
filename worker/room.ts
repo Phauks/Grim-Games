@@ -30,11 +30,7 @@ import {
 	endCountOff,
 	takeCount,
 	nameCount,
-	openTravellerPick,
-	closeTravellerPick,
-	holdTraveller,
-	confirmTraveller,
-	setTravellerFor,
+	travellerPickMessage,
 	sitWish,
 	MAX_GRIMOIRE_BYTES,
 	MAX_SCRIPT_BYTES,
@@ -373,10 +369,7 @@ export class Room extends DurableObject<RoomEnv> {
 				if (next === room) return;
 				room = next;
 			} else if (message.type === 'hold-traveller' || message.type === 'confirm-traveller') {
-				const next =
-					message.type === 'hold-traveller'
-						? holdTraveller(room, id, message.pickId, message.characterId)
-						: confirmTraveller(room, id, message.pickId);
+				const next = travellerPickMessage(room, message, id);
 				// A refused tap: the hold that beat it was already sent to every phone.
 				if (next === room) return;
 				room = next;
@@ -501,19 +494,9 @@ export class Room extends DurableObject<RoomEnv> {
 				room = nameCount(room, message.number, message.name);
 				break;
 			case 'open-traveller-pick':
-				room = openTravellerPick(
-					room,
-					message.gameId,
-					message.pickId,
-					message.options,
-					message.seats
-				);
-				break;
 			case 'close-traveller-pick':
-				room = closeTravellerPick(room);
-				break;
 			case 'traveller-for':
-				room = setTravellerFor(room, message.seatId, message.characterId);
+				room = travellerPickMessage(room, message);
 				break;
 			case 'judge-picture': {
 				const next = judgePicture(room, message.hash, message.allow);
