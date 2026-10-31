@@ -282,7 +282,7 @@ export type Command =
 	/**
 	 * A free-text note about a character (any length; may be empty with `guesses`). `holds`
 	 * marks a statement true or false (L58); `answer` answers a guess at the player's own
-	 * ability (the Amnesiac's).
+	 * ability (the Amnesiac's), or `customAnswer` in the Storyteller's own words.
 	 */
 	| {
 			type: 'DayNote';
@@ -292,6 +292,7 @@ export type Command =
 			guesses?: CharacterGuess[];
 			holds?: boolean;
 			answer?: GuessAnswer;
+			customAnswer?: string;
 	  }
 	/** Replaces a note's text, guesses, truth and answer (leaving one out clears it). */
 	| {
@@ -301,6 +302,7 @@ export type Command =
 			guesses?: CharacterGuess[];
 			holds?: boolean;
 			answer?: GuessAnswer;
+			customAnswer?: string;
 	  }
 	/**
 	 * Records what a waking character was shown (`seatId` is the waking player), placing
