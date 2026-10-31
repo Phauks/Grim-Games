@@ -8,7 +8,6 @@ import type { CharacterId, CharacterType } from '#lib/core/data/types.ts';
 import { type CharacterLookup, scriptCharacterIds } from '#lib/core/model/characters.ts';
 import {
 	aliveNeighbours,
-	getSeat,
 	registersAsDead,
 	trueCharacter,
 	typeOf
@@ -16,10 +15,9 @@ import {
 import type { AbnormalCause, Game, Reminder, SeatId } from '#lib/core/model/types.ts';
 import { type Registration, type RegistrationWorld, registrationWorlds } from '../ability.ts';
 import { causesOf } from '../night-deaths.ts';
-import { keepsAbilityWhenDead } from '../dead-characters.ts';
-import { livesWhileDead } from '../game-end.ts';
-import { actsTonight, type Night } from '../night-order.ts';
-import { wakeConditionMet } from '../wakes-when.ts';
+import type { Night } from '../night-order.ts';
+import { wokeTonight } from '../woke-tonight.ts';
+import { carries, lastShown } from './token-carriers.ts';
 import {
 	type AnswerValue,
 	type Reliability,
@@ -333,28 +331,6 @@ function optionsIn(
 	}
 }
 
-/**
- * The players last shown to a waking player, by the `token` placed on them: the carriers of
- * the token its latest recorded info placed, or else every carrier of the token.
- */
-function lastShown(
-	game: Game,
-	seatId: SeatId,
-	characterId: CharacterId,
-	token: string | undefined
-): SeatId[] {
-	const carriers = game.seating.filter((s) => carries(game, s, characterId, token));
-	const entries = [...game.pastDays.flatMap((d) => d.entries), ...game.today.entries];
-	for (const e of entries.reverse()) {
-		if (e.kind !== 'info' || e.seatId !== seatId || e.characterId !== characterId) continue;
-		const placed = carriers.filter((s) =>
-			game.seats[s].reminders.some((r) => e.reminderIds.includes(r.reminderId))
-		);
-		if (placed.length > 0) return placed;
-	}
-	return carriers;
-}
-
 /** The players a `character-of` picker may show the character of. */
 function characterOfSeats(
 	game: Game,
@@ -387,18 +363,6 @@ function shownAs(
 	return {
 		characterIds: scriptCharacterIds(game.script).filter((id) => characters.get(id)?.type === type)
 	};
-}
-
-/** Whether a seat carries the character's `token` reminder (the Fortune Teller's red herring). */
-function carries(
-	game: Game,
-	seatId: SeatId,
-	characterId: CharacterId,
-	token: string | undefined
-): boolean {
-	return (getSeat(game, seatId)?.reminders ?? []).some(
-		(r) => r.characterId === characterId && r.label === token
-	);
 }
 
 const optionKey = (o: InfoOption) =>
@@ -672,30 +636,6 @@ export interface ValidInfo {
 	seats: SeatId[];
 	/** Any other choice is valid too, for `unreliable` or `vortox` (too many to list). */
 	anyOther?: boolean;
-}
-
-/**
- * Whether `seatId` woke tonight by their own ability, for the Chambermaid: their character
- * has a step tonight, they still have their ability (alive, kept by another's token, or
- * living on by their own), and its own condition for waking holds (`wakesWhen`: a used
- * Seamstress no longer wakes). A player woken to be asked counts though they decline.
- */
-function wokeTonight(
-	game: Game,
-	seatId: SeatId,
-	characters: CharacterLookup,
-	night: Night
-): boolean {
-	const id = trueCharacter(game, seatId, characters);
-	const character = id === undefined ? undefined : characters.get(id);
-	if (id === undefined || !character || !actsTonight(character, night)) return false;
-	if (
-		game.seats[seatId].dead &&
-		!keepsAbilityWhenDead(game, seatId, characters) &&
-		!livesWhileDead(game, seatId, characters)
-	)
-		return false;
-	return wakeConditionMet(game, id, seatId, characters, new Set());
 }
 
 /** The highest number a number picker could show, for listing every valid one. */
