@@ -13,12 +13,14 @@ import type { GameId } from '#lib/core/model/index.ts';
 import {
 	makeTransferCode,
 	ROOM_PROTOCOL,
+	transferCheck,
 	TRANSFER_CODE_LENGTH,
 	type ServerMessage,
 	type TransferDetails
 } from '#lib/core/sync/room.ts';
 import { t } from '#lib/i18n/locale.svelte.ts';
 import { toast } from '#lib/ui/primitives/toaster.ts';
+import { leaveWithoutAsking } from '#lib/features/shell/shell.ts';
 import { keepGrimoire } from './board-notes.ts';
 import { roomHost } from './host.svelte.ts';
 import { playerName } from './player.svelte.ts';
@@ -89,7 +91,13 @@ class RoomTransferHost {
 		// Put out of the room (Trevor, 2026-10-28: "when room transfer has occurred, force the
 		// user out"): off the Storyteller's screens, into the room as a player if asked.
 		toast(t('room.transfer.handedOver'));
-		void goto(this.joinAsPlayer && room ? resolve('/join/[code]', { code: room }) : resolve('/'));
+		// The board's leave guard doesn't ask: Room transfer opens from the board's ⋯ menu.
+		leaveWithoutAsking(
+			() =>
+				void goto(
+					this.joinAsPlayer && room ? resolve('/join/[code]', { code: room }) : resolve('/')
+				)
+		);
 	}
 }
 
@@ -114,6 +122,11 @@ export class RoomClaim {
 	details = $state.raw<TransferDetails>();
 	problem = $state.raw<ClaimProblem>();
 	taking = $state(false);
+	/**
+	 * This device's match check, the same number the Storyteller's Allow prompt shows for it
+	 * (`transferCheck` of this device's host key hash).
+	 */
+	matchCheck = $state<string>();
 	readonly #roomCode: string;
 	readonly #key = randomKey();
 	readonly #socket: RoomSocket;
@@ -123,6 +136,7 @@ export class RoomClaim {
 
 	constructor(roomCode: string) {
 		this.#roomCode = roomCode;
+		void sha256Hex(this.#key).then((hash) => (this.matchCheck = transferCheck(hash)));
 		this.#socket = new RoomSocket(
 			roomCode,
 			{

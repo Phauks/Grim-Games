@@ -4,14 +4,17 @@
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import ShareCode from '#lib/ui/share/ShareCode.svelte';
+	import { formatRoomCode } from '#lib/core/sync/room-code.ts';
 	import { roomHost } from './host.svelte.ts';
 	import { roomTransfer } from './room-transfer.svelte.ts';
 	import VoteTimeLeft from './VoteTimeLeft.svelte';
 
 	/**
-	 * Room transfer, the Storyteller's side (Trevor, 2026-10-28): the transfer code another
-	 * device types on Join game (⋯ > Room transfer) to become this room's Storyteller, for five
-	 * minutes. Closing it leaves the code working; Stop transfer ends it.
+	 * Room transfer, the Storyteller's side (Trevor, 2026-10-28), from the board's ⋯ > Session
+	 * (Trevor, 2026-10-30: "room transfer should be above end game"): the room code and the
+	 * transfer code another device types on Join game (⋯ > Room transfer) to become this room's
+	 * Storyteller, for five minutes. Both are here, as the other device needs both (2026-10-30).
+	 * Closing it leaves the code working; Stop transfer ends it.
 	 */
 	interface Props {
 		open: boolean;
@@ -25,6 +28,11 @@
 
 <Dialog bind:open title={t('room.transfer.title')}>
 	<div class="transfer" data-testid="room-transfer">
+		<ShareCode
+			label={t('room.transfer.roomCode')}
+			value={host.code && formatRoomCode(host.code)}
+			testid="transfer-room-code"
+		/>
 		<ShareCode label={t('room.transfer.code')} value={transfer.code} testid="transfer-code" />
 		<!-- Always in its place, so the switches below never move. -->
 		<div class="time">

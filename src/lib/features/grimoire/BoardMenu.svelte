@@ -12,6 +12,9 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import { toast } from '#lib/ui/primitives/toaster.ts';
+	import RoomTransferDialog from '#lib/features/room/RoomTransferDialog.svelte';
+	import { roomTransfer } from '#lib/features/room/room-transfer.svelte.ts';
 
 	/**
 	 * The board's ⋯ menu in named groups: the game's less frequent actions, its start and end
@@ -75,6 +78,13 @@
 		onEnd
 	}: Props = $props();
 	let closeRoomOpen = $state(false);
+	/** Opens the transfer's codes, starting a transfer when none is open. */
+	let transferOpen = $state(false);
+	async function openTransfer() {
+		const transfer = roomTransfer();
+		if (!transfer.code && !(await transfer.start())) toast(t('room.transfer.failed'));
+		else transferOpen = true;
+	}
 	let gameSettingsOpen = $state(false);
 	const gameId = $derived(gameSettings.gameId);
 	const host = roomHost();
@@ -175,6 +185,18 @@
 					<Button disabled={watching} variant="quiet" icon="undo" onclick={() => fromMenu(onReopen)}
 						>Reopen game</Button
 					>
+				{/if}
+				<!-- Room transfer (Trevor, 2026-10-30: "room transfer should be above end game"),
+				     moved from Share; only while the room is connected, as unavailable items hide. -->
+				{#if !watching && host.status === 'open'}
+					<Button
+						variant="quiet"
+						icon="transfer"
+						data-testid="menu-transfer"
+						onclick={() => fromMenu(() => void openTransfer())}
+					>
+						{t('room.transfer.button')}
+					</Button>
 				{/if}
 				<!-- New game takes End game's place once the game has ended (Trevor, 2026-10-26). -->
 				{#if !ended}
@@ -297,6 +319,8 @@
 </Dialog>
 
 {#if gameId}<GameSettingsDialog bind:open={gameSettingsOpen} {gameId} />{/if}
+
+<RoomTransferDialog bind:open={transferOpen} />
 
 <ConfirmDialog
 	bind:open={closeRoomOpen}

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
 	leaveTo,
+	leaveWithoutAsking,
 	lockedDrawHidesShell,
 	mustAskBeforeLeaving,
 	setLeaveGuard,
@@ -43,6 +44,23 @@ describe('leaving a game', () => {
 		remove();
 		leaveTo(() => left.push('after'));
 		expect(left).toEqual(['direct', 'guarded', 'after']);
+	});
+});
+
+describe('leaving without asking', () => {
+	it('passes a set guard once, as when a Room transfer puts the old device out', () => {
+		const from = new URL('https://grim.test/grimoire/g1');
+		const to = new URL('https://grim.test/join/123456');
+		let asked = false;
+		const remove = setLeaveGuard(() => (asked = true));
+		const left: string[] = [];
+		leaveWithoutAsking(() => left.push('out'));
+		expect(left).toEqual(['out']);
+		expect(asked).toBe(false);
+		// Its navigation goes through; the next one asks again.
+		expect(mustAskBeforeLeaving(to, 'goto', from)).toBe(false);
+		expect(mustAskBeforeLeaving(to, 'goto', from)).toBe(true);
+		remove();
 	});
 });
 
