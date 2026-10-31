@@ -50,10 +50,22 @@
 		if (settingsDialog.open) return;
 		query = '';
 		found = null;
+		settingsDialog.reveal = null;
 	});
 	$effect(() => {
 		const host = indexHost;
 		if (host) void tick().then(() => (found = readSettings(host)));
+	});
+
+	// A setting asked for by name (`showSetting`), once its section has drawn.
+	$effect(() => {
+		const label = settingsDialog.reveal;
+		const host = content;
+		const section = active?.id;
+		if (!label || !host || !section || section !== settingsDialog.section) return;
+		settingsDialog.reveal = null;
+		const entry = { section, sectionLabel: activeLabel, label, index: -1 };
+		void tick().then(() => revealSetting(host, entry));
 	});
 
 	async function pick(entry: SettingEntry) {
