@@ -8,10 +8,8 @@
 	import ReminderTokenRow from './ReminderTokenRow.svelte';
 	import ExecutionDialog from '#lib/features/day/ExecutionDialog.svelte';
 	import type { PhaseFlow } from '#lib/features/grimoire/phase-flow.svelte.ts';
-	import { ASSIST_LABELS } from '#lib/ui/assistance.ts';
+	import AidMenu from '#lib/features/settings/AidMenu.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
-	import { preferences } from '#lib/ui/preferences.svelte.ts';
-	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 
 	interface Props {
 		flow: PhaseFlow;
@@ -46,15 +44,8 @@
 	title="End the night?"
 	onConfirm={() => flow.endNight()}
 >
-	<SettingToggle
-		label={ASSIST_LABELS.dayAfterNight.label}
-		description={ASSIST_LABELS.dayAfterNight.description}
-		checked={preferences.current.assistance.dayAfterNight}
-		onChange={(dayAfterNight) =>
-			preferences.update({
-				assistance: { ...preferences.current.assistance, dayAfterNight }
-			})}
-	/>
+	<!-- Whether the day opens after it is only in Settings (Trevor, 2026-10-30). -->
+	{#snippet headActions()}<AidMenu aid="dayAfterNight" />{/snippet}
 </ConfirmDialog>
 
 <!-- The same question as the day view's Execution. -->

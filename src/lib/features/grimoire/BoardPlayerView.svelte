@@ -93,7 +93,11 @@
 	unseatedNames={roomHost().unseatedInGame.flatMap((m) => (m.name ? [m.name] : []))}
 />
 <!-- Its own row under the status line, as on /play. -->
-<YourCharacter characters={script.characters} seats={roleSeats} />
+<YourCharacter
+	characters={script.characters}
+	seats={roleSeats}
+	settings={ended ? undefined : town.settings}
+/>
 <PlayerScreen
 	{script}
 	players={dealtSeats(town.seats).dealt}
