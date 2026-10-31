@@ -21,7 +21,7 @@
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterDialog from '#lib/features/characters/CharacterDialog.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
-	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
+	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
@@ -208,27 +208,18 @@
 </script>
 
 <BottomSheet bind:open {title} description={t('common.seat', { number })}>
-	<!-- The character's name is the biggest thing here; alignment and seat are easy to see
-	     on the token already (Trevor, 2026-10-16). Type, alignment and seat start their own
-	     line under the name (Trevor, 2026-10-30). -->
+	<!-- Type, alignment and seat under the player's name; the character itself is the
+	     standard row below (Trevor, 2026-10-31, mockup C). -->
 	{#snippet subtitle()}
-		<!-- eslint-disable-next-line grim/names-as-badges -- caption beside its own token (lead) -->
-		{#if character}<span class="role">{character.name}</span>{/if}
 		<span class="meta" data-testid="seat-meta">{metaLine}</span>
 	{/snippet}
 	{#snippet lead()}
-		<button
-			type="button"
-			class="lead-token"
-			aria-label={character ? `About the ${character.name}` : 'Choose character'}
-			onclick={() => (character ? (detailsOpen = true) : flow?.choose())}
-		>
-			{#if character}
-				<CharacterToken {character} alignment={seat?.alignment} size={60} />
-			{:else}
-				<span class="no-token">{number}</span>
-			{/if}
-		</button>
+		{#if !character}<button
+				type="button"
+				class="lead-token"
+				aria-label="Choose character"
+				onclick={() => flow?.choose()}><span class="no-token">{number}</span></button
+			>{/if}
 	{/snippet}
 	{#snippet heading()}
 		<SeatNameField edit={nameEdit} placeholder={t('common.seat', { number })} />
@@ -275,9 +266,14 @@
 			<!-- The character's ability (TPI's text), always shown under the header. -->
 			<div class="ability">
 				{#if character}
-					<p class="ability-text">
-						<GlossaryText text={character.ability} names={[character.name]} />
-					</p>
+					<!-- The character as the Script tab shows it; its ring opens the character's
+					     page with this seat's number and alignment (Trevor, 2026-10-31). -->
+					<CharacterRow {character} alignment={seat.alignment} info={() => (detailsOpen = true)}
+						>{#snippet ability()}<GlossaryText
+								text={character.ability}
+								names={[character.name]}
+							/>{/snippet}</CharacterRow
+					>
 				{:else}
 					<p class="none">No character</p>
 				{/if}
@@ -514,13 +510,6 @@
 		font: 600 1.1rem / 1 var(--font-control);
 		color: var(--on-surface-muted);
 	}
-	.role {
-		font-family: var(--font-heading);
-		font-weight: var(--font-heading-weight);
-		font-size: 1.45rem;
-		letter-spacing: 0.04em;
-		color: var(--on-surface);
-	}
 	.meta {
 		display: block;
 		font-size: 0.8rem;
@@ -550,10 +539,6 @@
 	}
 	.ability p {
 		margin: 0;
-	}
-	.ability-text {
-		font-family: var(--font-ability);
-		line-height: 1.35;
 	}
 	.state {
 		display: flex;

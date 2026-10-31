@@ -35,7 +35,6 @@ const CHARACTER_DISPLAY_TODO = [
 	'src/lib/features/grimoire/GameEndPrompt.svelte',
 	'src/lib/features/grimoire/GuidedStep.svelte',
 	'src/lib/features/grimoire/RuleCharacters.svelte',
-	'src/lib/features/grimoire/SeatSheet.svelte',
 	'src/lib/features/grimoire/StarPassPrompt.svelte',
 	'src/lib/features/modes/SpectersSheet.svelte',
 	'src/lib/features/player/GuessMarks.svelte',

@@ -61,7 +61,7 @@ test("the Snake Charmer's Poisoned on the Demon offers to swap characters and al
 	await expect(ask).toBeHidden();
 	await closeBin(page);
 	const sheet = await openSeat(page, 2);
-	await expect(sheet).toContainText(/Snake Charmer\s*Townsfolk · Good · Seat 2/);
+	await expect(sheet).toContainText(/Townsfolk · Good · Seat 2[\s\S]*Snake Charmer/);
 	await closeSheet(page);
 	await expect(seatLabelled(page, 'Seat 1: no name, Vigormortis')).toBeAttached();
 	await expect(seatLabelled(page, 'Seat 2: no name, Snake Charmer, 1 reminder')).toBeAttached();
@@ -91,7 +91,7 @@ test('a Fang Gu that kills itself asks which Outsider becomes the evil Fang Gu',
 		/dead/
 	);
 	const klutz = await openSeat(page, 2);
-	await expect(klutz).toContainText(/Fang Gu\s*Demon · Evil · Seat 2/);
+	await expect(klutz).toContainText(/Demon · Evil · Seat 2[\s\S]*Fang Gu/);
 	await closeSheet(page);
 	await expect(page.getByRole('alertdialog')).toHaveCount(0);
 });
@@ -117,7 +117,7 @@ test('taking off the Mezepheles\'s "Turns Evil" offers to make that player evil'
 	await expect(ask).toContainText(/Character\s*Clockmaker/);
 	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(ask).toBeHidden();
-	await expect(sheet).toContainText(/Clockmaker\s*Townsfolk · Evil · Seat 2/);
+	await expect(sheet).toContainText(/Townsfolk · Evil · Seat 2[\s\S]*Clockmaker/);
 });
 
 // https://wiki.bloodontheclocktower.com/Goon: the first player each night to choose the Goon is
@@ -133,5 +133,5 @@ test("the Goon's Drunk on an evil player offers to make the Goon evil", async ({
 	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(ask).toBeHidden();
 	await closeBin(page);
-	await expect(await openSeat(page, 1)).toContainText(/Goon\s*Outsider · Evil · Seat 1/);
+	await expect(await openSeat(page, 1)).toContainText(/Outsider · Evil · Seat 1[\s\S]*Goon/);
 });
