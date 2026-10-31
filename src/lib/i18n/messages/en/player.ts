@@ -152,8 +152,6 @@ export const player = {
 	'player.printPageSize.a4': 'A4',
 	'player.printPageSize.a4.size': '210 × 297 mm',
 	'player.printMargins': 'Margins',
-	'player.printSmallerMargins': 'Smaller margins',
-	'player.printLargerMargins': 'Larger margins',
 	'player.printMarginUnit': 'Margin unit',
 	'player.printMarginUnit.in': 'in',
 	'player.printMarginUnit.mm': 'mm',

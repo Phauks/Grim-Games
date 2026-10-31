@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { menuButton, openMenu, openSettingsDialog } from './shell.ts';
+import { pickNumber } from './number-select.ts';
 
 /** Opens settings from the menu and goes to a section (drill-in on phones). */
 async function openSettings(page: Page, section: string) {
@@ -250,11 +251,11 @@ test('the day timer sound is in Sound settings and its mode in Storyteller', asy
 	await expect(again.getByRole('combobox', { name: 'Day timer', exact: true })).toContainText(
 		'Stopwatch'
 	);
-	// The time per living player too (Trevor, 2026-10-19), typed or stepped.
+	// The time per living player too (Trevor, 2026-10-19), from a drop-down (2026-10-30).
 	const seconds = again.getByTestId('timer-per-player');
-	await expect(seconds).toHaveValue('30');
-	await again.getByRole('button', { name: 'More seconds per living player' }).tap();
-	await expect(seconds).toHaveValue('31');
+	await expect(seconds).toHaveText('30 seconds');
+	await pickNumber(again, 'Seconds per living player', '45 seconds');
+	await expect(seconds).toHaveText('45 seconds');
 	// A stopwatch has no sound (Trevor, 2026-10-23), so its choice shows disabled.
 	await page.reload();
 	const soundAgain = await openSettings(page, 'Sound');

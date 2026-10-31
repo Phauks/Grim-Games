@@ -18,6 +18,7 @@ import {
 	putReminder,
 	tapToSeat
 } from './reminder-bank.ts';
+import { pickNumber } from './number-select.ts';
 
 // The Storyteller's grimoire board: saved games, seats and the seat sheet (ROADMAP Phase 2).
 
@@ -2624,9 +2625,9 @@ test("a Traveller's alignment can be drawn from face-down tokens", async ({ page
 	await step.getByRole('button', { name: 'Draw' }).tap();
 	// The Storyteller sets 4 tokens, none evil: the player still picks one.
 	const draw = page.getByRole('dialog', { name: 'Alignment draw' });
-	await expect(draw.getByLabel('Tokens', { exact: true })).toHaveText('4');
-	await draw.getByRole('button', { name: 'Fewer evil' }).tap();
-	await expect(draw.getByLabel('Evil tokens')).toHaveText('0');
+	await expect(draw.getByRole('combobox', { name: 'Tokens', exact: true })).toHaveText('4');
+	await pickNumber(draw, 'Evil tokens', 0);
+	await expect(draw.getByRole('combobox', { name: 'Evil tokens' })).toHaveText('0');
 	await draw.getByRole('button', { name: 'Confirm' }).tap();
 	const pick = page.getByRole('dialog', { name: 'Choose a token' });
 	// The counts are not shown to the player.
@@ -2670,11 +2671,11 @@ test('a joining Traveller draws their alignment, with the last mix remembered', 
 			await expect(draw.getByTestId('evil-chance')).toHaveText('Evil 1 · 25%');
 			await expect(draw.getByTestId('good-chance')).toHaveText('Good 3 · 75%');
 			// All evil: the player still feels they chose.
-			for (let n = 1; n < 4; n++) await draw.getByRole('button', { name: 'More evil' }).tap();
+			await pickNumber(draw, 'Evil tokens', 4);
 		}
 		await expect(draw.getByTestId('evil-chance')).toHaveText('Evil 4 · 100%');
 		await expect(draw.getByTestId('good-chance')).toHaveText('Good 0 · 0%');
-		await expect(draw.getByLabel('Evil tokens')).toHaveText('4');
+		await expect(draw.getByRole('combobox', { name: 'Evil tokens' })).toHaveText('4');
 		await draw.getByRole('button', { name: 'Confirm' }).tap();
 		await page
 			.getByRole('dialog', { name: 'Choose a token' })
@@ -3426,7 +3427,7 @@ test("on a crowded table one seat's reminders never cover another's", async ({ p
 		.tap();
 	await page.getByRole('button', { name: 'Create game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
-	for (let i = 0; i < 7; i++) await page.getByRole('button', { name: 'More players' }).tap();
+	await pickNumber(page, 'Players', 15);
 	await toBoard(page);
 	await expect(page.getByTestId('seat')).toHaveCount(15);
 	for (const [seat, name] of [
@@ -4722,8 +4723,7 @@ test('a number step offers the "Your number is" info token; a step icon opens it
 	await closeShown();
 	// Any other number from the step's own info token.
 	const number = chef.getByTestId('step-number');
-	await number.getByRole('button', { name: 'Higher number' }).tap();
-	await number.getByRole('button', { name: 'Higher number' }).tap();
+	await pickNumber(number, 'Your number is', 2);
 	await number.getByRole('button', { name: 'Show to player' }).tap();
 	await expect(shown.locator('.detail')).toHaveText('2');
 	await closeShown();
@@ -4935,10 +4935,7 @@ test('the script name in the corner keeps clear of every seat, and a town names 
 		await page.getByRole('button', { name: 'Create game' }).tap();
 		await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
 		const count = page.getByTestId('player-count');
-		for (let n = 8; n < players; n++)
-			await page.getByRole('button', { name: 'More players' }).tap();
-		for (let n = 8; n > players; n--)
-			await page.getByRole('button', { name: 'Fewer players' }).tap();
+		await pickNumber(page, 'Players', players);
 		await expect(count).toContainText(String(players));
 		await toBoard(page);
 		await expect(page.getByTestId('seat')).toHaveCount(players);
@@ -5007,7 +5004,7 @@ test('the bank button starts the game, ends each night and day, and resumes a st
 	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
 	await page.getByRole('button', { name: 'Create game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
-	await page.getByRole('button', { name: 'Fewer players' }).tap();
+	await pickNumber(page, 'Players', 7);
 	await toBoard(page);
 	const board = page.url();
 	// Always in place, so the bank never moves: Set up until the tokens are handed out

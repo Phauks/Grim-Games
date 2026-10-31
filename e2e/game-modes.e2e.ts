@@ -4,6 +4,7 @@ import { chooseRulesOnSetup, pickScript, toBoard } from './new-game.ts';
 import { expectMatchingIconRow } from './icon-row.ts';
 import { openSettingsDialog } from './shell.ts';
 import { savesSettled, trackSaves } from './saves.ts';
+import { pickNumber } from './number-select.ts';
 
 /**
  * Game modes on New game (Trevor, 2026-10-17): choose a mode, inspect every part of it, and
@@ -198,7 +199,7 @@ async function startIn(page: Page, mode: string, setting?: string) {
 	// Whale Buffet plays every character, so it has no script to choose.
 	const script = panel.getByRole('radiogroup', { name: 'Script' });
 	if (await script.count()) await script.getByText('Trouble Brewing').tap();
-	for (let n = 8; n > 5; n--) await panel.getByRole('button', { name: 'Fewer players' }).tap();
+	await pickNumber(panel, 'Players', 5);
 	if (setting) await panel.locator('[data-setting]').getByText(setting, { exact: true }).tap();
 	await panel.getByRole('button', { name: 'Create game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
@@ -897,10 +898,8 @@ async function pick(page: Page, names: readonly string[]) {
 test('Two games at once takes more than 20 players', async ({ page }) => {
 	await page.goto('/new');
 	await chooseMode(page, 'Two games at once');
-	const more = modesPanel(page).getByRole('button', { name: 'More players' });
-	for (let n = 8; n < 21; n++) await more.tap();
+	await pickNumber(modesPanel(page), 'Players', 21);
 	await expect(modesPanel(page).getByTestId('player-count')).toHaveText('21');
-	await expect(more).toBeEnabled();
 });
 
 test('Two games at once: one setup for both bags, then one token for both games', async ({
@@ -914,7 +913,7 @@ test('Two games at once: one setup for both bags, then one token for both games'
 	const panel = modesPanel(page);
 	await panel.getByRole('combobox', { name: 'Town 2 script' }).tap();
 	await page.getByRole('option', { name: 'Bad Moon Rising', exact: true }).tap();
-	for (let n = 8; n > 5; n--) await panel.getByRole('button', { name: 'Fewer players' }).tap();
+	await pickNumber(panel, 'Players', 5);
 	await panel.getByRole('button', { name: 'Create game' }).tap();
 
 	// Town 1's setup opens straight away; its bag opens town 2's setup.
@@ -1045,14 +1044,13 @@ test('Two Towns and a Boomdandy starts two towns with their own scripts', async 
 	await expect(panel.getByRole('heading', { name: 'Town 2 setup sheet' })).toBeVisible();
 	const warning = panel.getByTestId('town-sizes-warning');
 	const town2 = panel.getByRole('region', { name: 'Town 2 setup sheet' });
-	await town2.getByRole('button', { name: 'More players' }).tap();
+	await pickNumber(town2, 'Players', 6);
 	await expect(panel.getByTestId('town-2-player-count')).toHaveText('6');
 	await expect(warning).toBeHidden();
-	await town2.getByRole('button', { name: 'More players' }).tap();
+	await pickNumber(town2, 'Players', 7);
 	await expect(warning).toBeVisible();
 	await expect(warning).toHaveText('The towns’ player counts differ by more than 1.');
-	await town2.getByRole('button', { name: 'Fewer players' }).tap();
-	await town2.getByRole('button', { name: 'Fewer players' }).tap();
+	await pickNumber(town2, 'Players', 5);
 	await expect(panel.getByTestId('town-2-player-count')).toHaveText('5');
 	await expect(panel.getByTestId('town-1-player-count')).toHaveText('5');
 	await panel.getByRole('button', { name: 'Create game' }).tap();
@@ -1989,7 +1987,7 @@ test('Game info’s Special rules opens the screen once the game is set up', asy
 	const picker = page.getByRole('dialog', { name: 'Choose a hidden Outsider' });
 	await picker.getByRole('searchbox').fill('Goon');
 	await picker.getByRole('button', { name: /^Goon\b/ }).tap();
-	for (let n = 8; n > 5; n--) await page.getByRole('button', { name: 'Fewer players' }).tap();
+	await pickNumber(page, 'Players', 5);
 	for (const name of ['Washerwoman', 'Empath', 'Poisoner', 'Imp'])
 		await page
 			.getByTestId('character-picker')

@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
+import { pickNumber } from './number-select.ts';
 
 // The day sheet over the board of a saved game: executions, exiles and deaths, all
 // by hand, each with a cause from the valid ones. Nominations happen off the grimoire.
@@ -9,7 +10,7 @@ async function startGame(page: Page, players = 8, script = 'Trouble Brewing') {
 	await page.getByRole('radiogroup', { name: 'Script' }).getByText(script, { exact: true }).tap();
 	await page.getByRole('button', { name: 'Create game' }).tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
-	for (let i = 8; i < players; i++) await page.getByRole('button', { name: 'More players' }).tap();
+	await pickNumber(page, 'Players', players);
 	await toBoard(page);
 	await expect(page.getByTestId('seat')).toHaveCount(players);
 	return new URL(page.url()).pathname;
@@ -620,9 +621,9 @@ test('the time per living player is set on the timer and starts it at that much'
 	await timer.getByRole('button', { name: /^Timer sound/ }).tap();
 	const sheet = page.getByRole('dialog', { name: 'Timer sound' });
 	const seconds = sheet.getByTestId('timer-per-player');
-	await expect(seconds).toHaveValue('30');
-	await seconds.fill('45');
-	await seconds.press('Enter');
+	await expect(seconds).toHaveText('30 seconds');
+	await pickNumber(sheet, 'Seconds per living player', '45 seconds');
+	await expect(seconds).toHaveText('45 seconds');
 	await page.keyboard.press('Escape');
 	await expect(sheet).toBeHidden();
 	// 8 living players at 45 seconds each.
