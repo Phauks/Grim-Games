@@ -170,6 +170,7 @@ import ph_prohibit_thin from '~icons/ph/prohibit-thin';
 import ph_prohibit_inset_thin from '~icons/ph/prohibit-inset-thin';
 import ph_projector_screen_thin from '~icons/ph/projector-screen-thin';
 import ph_push_pin_thin from '~icons/ph/push-pin-thin';
+import ph_puzzle_piece_thin from '~icons/ph/puzzle-piece-thin';
 import ph_qr_code_thin from '~icons/ph/qr-code-thin';
 import ph_question_thin from '~icons/ph/question-thin';
 import ph_scales_thin from '~icons/ph/scales-thin';
@@ -406,6 +407,7 @@ const icons: IconMap = {
 	'ph:prohibit-inset-thin': ph_prohibit_inset_thin,
 	'ph:projector-screen-thin': ph_projector_screen_thin,
 	'ph:push-pin-thin': ph_push_pin_thin,
+	'ph:puzzle-piece-thin': ph_puzzle_piece_thin,
 	'ph:qr-code-thin': ph_qr_code_thin,
 	'ph:question-thin': ph_question_thin,
 	'ph:scales-thin': ph_scales_thin,
