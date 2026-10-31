@@ -121,10 +121,10 @@ test('Deal gives every seat a character, and a seated phone holds to see its own
 	await expect(toggle).toHaveAccessibleName(/^Hide characters, 0:[0-5]\d left$/);
 	// The Storyteller sees how much longer (Trevor, 2026-10-29).
 	const timeLeft = page.getByTestId('roles-time-left');
-	await expect(timeLeft).toHaveText(/^0:[0-5]\d$/);
+	await expect(timeLeft).toHaveText(/^Hide · 0:[0-5]\d$/);
 	await page.clock.fastForward('01:01');
 	await expect(toggle).toHaveAccessibleName('Show characters');
-	await expect(timeLeft).toHaveText('1:00');
+	await expect(timeLeft).toBeHidden();
 	await expect(card).toBeHidden();
 	await expect(phone.getByTestId('your-character')).toBeDisabled();
 	// Who has looked stays.
