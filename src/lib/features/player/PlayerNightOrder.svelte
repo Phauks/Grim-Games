@@ -4,7 +4,6 @@
 	import type { Character } from '#lib/core/data/index.ts';
 	import CharacterDialog from '#lib/features/characters/CharacterDialog.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
-	import { iconUrl } from '#lib/features/characters/icon-url.ts';
 	import NightText from '#lib/features/reference/NightText.svelte';
 	import MarkerToken from '#lib/ui/token/MarkerToken.svelte';
 	import SectionStack from '#lib/ui/layout/SectionStack.svelte';
@@ -92,7 +91,7 @@
 	>{/if}
 
 {#if shown}
-	<CharacterDialog bind:open={dialogOpen} character={shown} icon={iconUrl(shown)} />
+	<CharacterDialog bind:open={dialogOpen} character={shown} />
 {/if}
 
 <style>

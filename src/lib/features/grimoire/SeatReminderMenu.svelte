@@ -1,7 +1,8 @@
 <script lang="ts">
 	import type { ReminderId, SeatId } from '#lib/core/model/index.ts';
 	import { setupReminders } from '#lib/core/rules/index.ts';
-	import CharacterSummary from '#lib/features/characters/CharacterSummary.svelte';
+	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
+	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import BoardReminder from './BoardReminder.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
@@ -29,6 +30,7 @@
 
 	const game = $derived(grimoire.game);
 	const characters = $derived(grimoire.open.characters);
+	const names = $derived([...characters.values()].map((c) => c.name));
 	const seat = $derived(seatId === undefined ? undefined : game.seats[seatId]);
 	const movingReminder = $derived(seat?.reminders.find((r) => r.reminderId === reminderId));
 	/** A setup reminder can go back to the Setup reminders tray (Trevor, 2026-10-16). */
@@ -78,7 +80,9 @@
 	{/if}
 	{#if movingReminder}
 		{@const source = characters.get(movingReminder.characterId)}
-		{#if source}<CharacterSummary character={source} reminders={false} />{/if}
+		{#if source}<CharacterRow character={source} info
+				>{#snippet ability()}<GlossaryText text={source.ability} {names} />{/snippet}</CharacterRow
+			>{/if}
 	{/if}
 	<div class="menu">
 		<Button variant="quiet" icon="move" onclick={() => fromMenu(onMove)}>

@@ -953,10 +953,9 @@ test('a reminder on the board drags to another seat (the Sailor picks again)', a
 	expect(
 		await page.evaluate(() => (window as unknown as { clicksInDialog: number }).clicksInDialog)
 	).toBe(0);
-	// Named once, in "From" (Trevor, 2026-10-18).
+	// Whose it is, then that character as the Script tab shows it (Trevor, 2026-10-30).
 	await expect(reminder).toContainText(/From\s*Sailor/);
-	await expect(reminder.getByText('Sailor', { exact: true })).toHaveCount(1);
-	await expect(reminder.locator('header.character')).toContainText(/choose an alive player/i);
+	await expect(reminder.locator('.ring-row')).toContainText(/choose an alive player/i);
 	await expect(page.locator('[data-scope="drawer"][data-part="content"]')).toBeHidden();
 	await reminder.getByRole('button', { name: 'Close' }).tap();
 	await expect(reminder).toBeHidden();
@@ -5254,7 +5253,14 @@ test('a tapped bank token is held until a seat is tapped, or put down', async ({
 	await page.getByRole('menuitem', { name: 'About this reminder' }).tap();
 	const about = page.getByRole('dialog', { name: 'Poisoned' });
 	await expect(about).toContainText('From');
-	await expect(about).toContainText('Minion');
+	// Its character as the Script tab shows it: the ring row, whose ring opens the character's
+	// page (Trevor, 2026-10-30); no line left under it.
+	await expect(about.locator('.ring-row')).toContainText('they are poisoned');
+	await about.getByRole('button', { name: 'About the Poisoner' }).tap();
+	const page2 = page.getByRole('dialog', { name: 'Poisoner' });
+	await expect(page2).toBeVisible();
+	await page2.getByRole('button', { name: 'Close' }).tap();
+	await expect(page2).toBeHidden();
 	await about.getByRole('button', { name: 'Close' }).tap();
 	// Still in hand: the seat tapped next gets it, without opening its sheet.
 	await boardSeat(page, 2).tap();
