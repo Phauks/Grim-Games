@@ -235,8 +235,24 @@ async function grimLayout(screen: Locator) {
 		Math.round(((x - box.x) / box.width) * 100),
 		Math.round(((y - box.y) / box.height) * 100)
 	]);
+	// How each part of the tab is painted, so a style one way in alone (a fill, a ring, a
+	// filter) shows as a difference (Trevor, 2026-10-31: boxes over the seats from the cover).
+	const styles = await town.evaluate((root) =>
+		[root, ...root.querySelectorAll('*')].map((e) => {
+			const s = getComputedStyle(e);
+			return [
+				e.tagName,
+				s.backgroundColor,
+				s.backgroundImage,
+				s.outlineStyle,
+				s.filter,
+				s.backdropFilter,
+				s.opacity
+			].join(' ');
+		})
+	);
 	await screen.getByRole('tab', { name: 'Script' }).tap();
-	return { buttons, places };
+	return { buttons, places, styles };
 }
 
 // Every way the Storyteller opens the players' screen shows the same one (Trevor, 2026-10-31:
@@ -250,6 +266,25 @@ test("the grim cover's Player view is the board's Script, seat for seat", async 
 		.tap();
 	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
+	// Over a background, where the toolbar's buttons get a backing that the cover, a dialog
+	// inside the toolbar, passed on to every seat (Trevor, 2026-10-31).
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Settings', exact: true })
+		.tap();
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	await settings
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Board', exact: true })
+		.tap();
+	await settings
+		.getByRole('group', { name: 'Background', exact: true })
+		.getByRole('button', { name: 'Green felt' })
+		.tap();
+	await settings.getByRole('button', { name: 'Close' }).first().tap();
+	await expect(settings).toBeHidden();
+	await expect(page.getByTestId('board-background')).toHaveAttribute('data-preset', 'felt');
 
 	await page.getByRole('button', { name: 'Script', exact: true }).tap();
 	const script = page.getByRole('dialog', { name: 'Trouble Brewing' });

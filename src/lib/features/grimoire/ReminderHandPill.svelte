@@ -83,7 +83,6 @@
 		bind:menuOpen={hand.menuOpen}
 		onAbout={() => hand.showAbout(held)}
 		onPutDown={() => hand.putDown()}
-		--hand-bottom="calc(100% + var(--tap-target) / 2 + var(--space-2))"
 	>
 		{#snippet token()}
 			{#if held.kind === 'bank'}<BoardReminder

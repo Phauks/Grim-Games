@@ -16,6 +16,7 @@ export interface NavItem {
 		| '/library'
 		| '/build-script'
 		| '/build-character'
+		| '/build-mode'
 		| '/reference'
 		| '/info-tokens'
 		| '/account'
@@ -74,6 +75,12 @@ export const NAV_SECTIONS: readonly NavSection[] = [
 				path: '/build-character',
 				label: 'shell.navBuildCharacter',
 				icon: 'buildCharacter'
+			},
+			{
+				id: 'build-mode',
+				path: '/build-mode',
+				label: 'shell.navBuildMode',
+				icon: 'buildMode'
 			},
 			{ id: 'info-tokens', path: '/info-tokens', label: 'shell.navInfoTokens', icon: 'info' },
 			{ id: 'reference', path: '/reference', label: 'shell.navReference', icon: 'reference' }

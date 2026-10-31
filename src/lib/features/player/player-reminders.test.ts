@@ -5,6 +5,7 @@ import {
 	addGenericReminder,
 	guessesFirst,
 	hasReminder,
+	moveReminder,
 	parsePlayerReminders,
 	reminderWords,
 	scriptReminderGroups,
@@ -43,6 +44,22 @@ describe("reminder tokens on a player's own grim", () => {
 		expect(
 			parsePlayerReminders({ s1: 'Poisoned', s2: [3, { label: 'Dead' }, dead, dead], s3: [] })
 		).toEqual({ s2: [dead] });
+	});
+
+	it('moves a picked-up token to another seat, keeping its look, or back off its seat', () => {
+		// Trevor (2026-10-31): a token on the player's grim is picked up as on the board.
+		let reminders = setGenericLook(addGenericReminder({}, 's1', 'g1'), 's1', 'g1', { note: '3' });
+		reminders = toggleReminder(reminders, 's1', poisoned);
+		const generic = reminders.s1[0];
+		const moved = moveReminder(reminders, 's1', generic, 's2');
+		expect(moved.s1).toEqual([poisoned]);
+		expect(moved.s2).toEqual([generic]);
+		expect(moved.s2[0]).toMatchObject({ id: 'g1', note: '3' });
+		// Onto a seat that already has it: one copy there, gone from where it was.
+		const both = toggleReminder(moved, 's3', poisoned);
+		expect(moveReminder(both, 's1', poisoned, 's3')).toEqual({ s2: [generic], s3: [poisoned] });
+		// Back to the tray.
+		expect(moveReminder(moved, 's2', generic)).toEqual({ s1: [poisoned] });
 	});
 
 	it('holds several generic tokens on a seat, each with its own text and symbol', () => {

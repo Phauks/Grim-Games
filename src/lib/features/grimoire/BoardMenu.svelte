@@ -56,6 +56,12 @@
 		 * deletes the room and sends every phone out. Asks first.
 		 */
 		onCloseRoom?: () => void;
+		/**
+		 * Share grim (plan R5), once the game has ended while its room is connected and before
+		 * the grimoire has gone to the phones (Trevor, 2026-10-31: off Share, "totally
+		 * misplaced"). Asks first; End game's own switch is the usual way.
+		 */
+		onShareGrim?: () => void;
 		onEnd: () => void;
 	}
 
@@ -77,9 +83,11 @@
 		onReopen,
 		onNewGame,
 		onCloseRoom,
+		onShareGrim,
 		onEnd
 	}: Props = $props();
 	let closeRoomOpen = $state(false);
+	let shareGrimOpen = $state(false);
 	/** Opens the transfer's codes, starting a transfer when none is open. */
 	let transferOpen = $state(false);
 	async function openTransfer() {
@@ -196,6 +204,16 @@
 							onclick={() => fromMenu(onFeedback)}
 						>
 							{t('room.feedback.view')}
+						</Button>
+					{/if}
+					{#if onShareGrim}
+						<Button
+							variant="quiet"
+							icon="share"
+							data-testid="menu-share-grim"
+							onclick={() => fromMenu(() => (shareGrimOpen = true))}
+						>
+							{t('room.shareGrim.button')}
 						</Button>
 					{/if}
 					<Button disabled={watching} variant="quiet" icon="undo" onclick={() => fromMenu(onReopen)}
@@ -342,6 +360,14 @@
 	onConfirm={() => onCloseRoom?.()}
 >
 	<p class="dialog-text">{t('room.closeRoomText')}</p>
+</ConfirmDialog>
+
+<ConfirmDialog
+	bind:open={shareGrimOpen}
+	title={t('room.shareGrim.title')}
+	onConfirm={() => onShareGrim?.()}
+>
+	<p class="dialog-text">{t('room.shareGrim.body')}</p>
 </ConfirmDialog>
 
 <style>
