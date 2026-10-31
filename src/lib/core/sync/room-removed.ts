@@ -4,6 +4,7 @@
  * in or a new game starts. The Storyteller's Players lists who was removed, by name and look,
  * so "Let back in" has someone to show.
  */
+import { sha256Hex } from '#lib/core/codes/hash.ts';
 import { lookOf } from './room-look.ts';
 import type { RoomMember, RoomState } from './room.ts';
 
@@ -51,4 +52,30 @@ export function withoutRemoved(room: RoomState): RoomState {
 	const { removed: _all, ...rest } = room;
 	void _all;
 	return rest;
+}
+
+/**
+ * Header on a room's preview (`GET /api/room/<code>`) carrying `removedProbe`, so Join game turns
+ * a removed phone away as the code is typed (Trevor, 2026-10-31: "it should show error before
+ * you get to that screen"). Never a query string, which the Worker's logs keep.
+ */
+export const REMOVED_PROBE_HEADER = 'X-Removed-Probe';
+
+/**
+ * Asks "was I removed?" without naming the phone: a hash of its member id and the room's code,
+ * so the same phone looks different in every room.
+ */
+export function removedProbe(code: string, memberId: string): Promise<string> {
+	return sha256Hex(`removed:${code}:${memberId}`);
+}
+
+/** Whether `probe` (from `removedProbe`) names a phone removed from room `code`. */
+export async function isRemovedProbe(
+	room: RoomState,
+	code: string,
+	probe: string | null | undefined
+): Promise<boolean> {
+	if (!probe || !room.removed?.length) return false;
+	for (const m of room.removed) if ((await removedProbe(code, m.memberId)) === probe) return true;
+	return false;
 }

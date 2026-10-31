@@ -14,7 +14,7 @@
 	import ScriptByline from '#lib/features/player/ScriptByline.svelte';
 	import { playerSettings } from '#lib/features/player/player-settings.svelte.ts';
 	import { scriptVersion } from '#lib/features/player/player-script.ts';
-	import ScriptLogo from '#lib/features/scripts/ScriptLogo.svelte';
+	import ScriptName from '#lib/features/scripts/ScriptName.svelte';
 	import { scriptShareable } from '#lib/features/scripts/share-codes.ts';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -88,11 +88,6 @@
 	});
 
 	const logo = $derived(script && scriptLogo(script));
-	let logoFailed = $state(false);
-	$effect(() => {
-		void logo;
-		logoFailed = false;
-	});
 	const version = $derived(scriptVersion(undefined, script?.meta));
 	const shareable = $derived(script && scriptShareable(script, undefined));
 
@@ -178,11 +173,7 @@
 	     with the title under the app's buttons as on /play, so a phone has room for the name. -->
 	<Page title={script?.name ?? t('room.town.title')} iconActions titleBelow>
 		{#snippet lead()}
-			{#if logo && !logoFailed}<ScriptLogo
-					src={logo}
-					class="title-logo"
-					onfail={() => (logoFailed = true)}
-				/>{/if}
+			<ScriptName name={script?.name} {logo} size="lead" />
 		{/snippet}
 		{#snippet actions()}
 			{#if script}<PlayerScriptActions
@@ -247,12 +238,6 @@
 {/if}
 
 <style>
-	/* Beside the name in the title, as on /play. */
-	:global(.title-logo) {
-		flex: none;
-		width: 1.8em;
-		height: 1.8em;
-	}
 	.status-line {
 		display: flex;
 		min-height: var(--tap-target);

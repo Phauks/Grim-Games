@@ -11,6 +11,8 @@ const playerView = source('player/PlayerView.svelte');
 const boardView = source('grimoire/BoardPlayerView.svelte');
 const screen = source('player/PlayerScreen.svelte');
 const grim = source('player/PlayerGrim.svelte');
+const board = source('grimoire/GrimoireBoard.svelte');
+const cover = source('grimoire/GrimCoverActions.svelte');
 
 describe("Storyteller's player view parity", () => {
 	it('renders the same row over the tabs and the same tabs as /play', () => {
@@ -54,5 +56,19 @@ describe("Storyteller's player view parity", () => {
 		// Trevor, 2026-10-30: the character draw never reached the Storyteller's player view.
 		for (const host of [joinPanel, boardView]) expect(host).toContain('<YourCharacter');
 		expect(boardView).toMatch(/<YourCharacter[^>]*\bseats=/);
+	});
+
+	it("opens the same players' screen from the board's Script and the grim cover", () => {
+		// Trevor, 2026-10-31: the cover's Player view looked different; its call passed the
+		// seats without the board's shape. Both ways in now take the board's one source.
+		const dialogs = [...board.matchAll(/<BoardScriptDialog\b[^>]*>/g)].map((m) => m[0]);
+		expect(dialogs).toHaveLength(1);
+		expect(dialogs[0]).toContain('{...playerView}');
+		expect(board).toMatch(/<GrimCoverActions\b[^>]*\bview=\{playerView\}/);
+		const coverDialog = cover.match(/<BoardScriptDialog\b[^>]*>/)?.[0] ?? '';
+		expect(coverDialog).toContain('{...view}');
+		// Only its own open state, where its notes go and its test id are the cover's own.
+		const own = [...coverDialog.matchAll(/\b([a-z]+)=/gi)].map((m) => m[1]).sort();
+		expect(own).toEqual(['notebook', 'open', 'testid']);
 	});
 });

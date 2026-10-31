@@ -6,6 +6,7 @@
 	import { resolve } from '$app/paths';
 	import {
 		fromScript,
+		scriptLogo,
 		type Character,
 		type CharacterId,
 		type CharacterType
@@ -39,6 +40,7 @@
 	import AddCharactersDialog from './AddCharactersDialog.svelte';
 	import SetupBluffs from '#lib/features/bluffs/SetupBluffs.svelte';
 	import { notBegun } from '#lib/features/modes/new-game-draft.ts';
+	import ScriptName from '#lib/features/scripts/ScriptName.svelte';
 	import { dealStep } from '#lib/features/modes/deal-title.ts';
 	import SetupOffScript from './SetupOffScript.svelte';
 	import GameOptions from './GameOptions.svelte';
@@ -499,8 +501,12 @@
 	{#snippet actions()}<SetupActions {port} />{/snippet}
 	{#snippet subtitle()}<span class="script"
 			><span class="label">{t('setup.script')}</span>
-			<span class="name" data-testid="setup-script-name">{script?.name ?? t('common.none')}</span
-			></span
+			<!-- With its logo, as every script's name (Trevor, 2026-10-31). -->
+			<ScriptName
+				name={script?.name}
+				logo={script && scriptLogo(script)}
+				testid="setup-script-name"
+			/></span
 		>{/snippet}
 	{#snippet side()}
 		<ErrorBoundary area="setup">
@@ -706,14 +712,6 @@
 	}
 	.script .label {
 		color: var(--on-surface-muted);
-	}
-	.script .name {
-		flex: 1;
-		min-width: 0;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-		font-weight: 600;
 	}
 	.errors {
 		display: grid;
