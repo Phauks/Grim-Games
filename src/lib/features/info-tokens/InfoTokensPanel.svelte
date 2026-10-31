@@ -8,7 +8,7 @@
 	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import { characterCardsFor } from './character-cards.ts';
-	import InfoTokenList from './InfoTokenList.svelte';
+	import InfoTokenList, { QUICK_CARD_ID } from './InfoTokenList.svelte';
 	import ChainBar from './ChainBar.svelte';
 	import type { ChainCard } from './chain.ts';
 	import { tokenTitle } from './token-title.ts';
@@ -25,6 +25,9 @@
 	let { characters, only, level = 2 }: Props = $props();
 
 	let showOpen = $state(false);
+	let list = $state<ReturnType<typeof InfoTokenList>>();
+	/** The quick card is showing on its own: closing goes back to its editor. */
+	let quickShown = false;
 	let shown = $state<ChainCard[]>([]);
 	let pickOpen = $state(false);
 	let picking = $state<InfoToken>();
@@ -78,6 +81,7 @@
 
 	function choose(token: InfoToken, add: boolean, detail?: string) {
 		adding = add;
+		quickShown = token.id === QUICK_CARD_ID && !add;
 		// Player cards ("This is the Demon") are shown at once: the Storyteller points.
 		if (!token.asks?.characters) return use(token.text, [], detail);
 		picking = token;
@@ -91,6 +95,7 @@
 <ErrorBoundary area="info-tokens">
 	<div class="panel">
 		<InfoTokenList
+			bind:this={list}
 			onchoose={(token, detail) => choose(token, false, detail)}
 			onadd={(token, detail) => choose(token, true, detail)}
 			{only}
@@ -129,7 +134,14 @@
 	</BottomSheet>
 </ErrorBoundary>
 
-<ShowToPlayer bind:open={showOpen} cards={shownCards} />
+<ShowToPlayer
+	bind:open={showOpen}
+	cards={shownCards}
+	onclose={() => {
+		if (quickShown) list?.reopenQuick();
+		quickShown = false;
+	}}
+/>
 
 <style>
 	/* The cards to show sit over the page's bottom edge, in the page's own colour. */

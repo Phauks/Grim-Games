@@ -231,6 +231,45 @@ test("the quick card's preview shows the whole card", async ({ page }) => {
 	expect(box.height).toBeGreaterThan(2 * text.height);
 });
 
+test("a long quick card's preview fits every word", async ({ page }) => {
+	// Trevor (2026-10-31): after a long enough message the preview cut it off.
+	await openSheet(page);
+	await page.getByRole('button', { name: 'Quick card', exact: true }).tap();
+	const words =
+		'Tonight you learn that one of your neighbours is lying to you, and that the Demon sat ' +
+		'beside them on the first night; tell nobody, or something bad will happen to you.';
+	await page.getByRole('textbox', { name: 'Text' }).fill(words);
+	const preview = page.getByRole('figure', { name: 'Preview' });
+	const heading = preview.getByRole('heading');
+	await expect(heading).toHaveText(words);
+	const box = (await preview.boundingBox())!;
+	const text = (await heading.boundingBox())!;
+	expect(text.y).toBeGreaterThanOrEqual(box.y);
+	expect(text.y + text.height).toBeLessThanOrEqual(box.y + box.height + 1);
+	// Its fields stay on screen below (or beside) it.
+	await expect(page.getByRole('textbox', { name: 'Text' })).toBeInViewport();
+});
+
+test('closing a shown quick card goes back to it, its words kept', async ({ page }) => {
+	// Trevor (2026-10-31): a mistake shouldn't mean typing the whole card again.
+	await openSheet(page);
+	await page.getByRole('button', { name: 'Quick card', exact: true }).tap();
+	await page.getByRole('textbox', { name: 'Text' }).fill('You may not spaek');
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	await shown(page).getByRole('button', { name: 'Close' }).tap();
+	const text = page.getByRole('textbox', { name: 'Text' });
+	await expect(text).toHaveText('You may not spaek');
+	await text.fill('You may not speak');
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(shown(page).getByRole('heading')).toHaveText('You may not speak');
+	await shown(page).getByRole('button', { name: 'Close' }).tap();
+	// Cancel leaves it, back to the list; the next quick card starts empty.
+	await page.getByRole('button', { name: 'Cancel' }).tap();
+	await expect(page.getByRole('button', { name: 'This is the Demon', exact: true })).toBeVisible();
+	await page.getByRole('button', { name: 'Quick card', exact: true }).tap();
+	await expect(page.getByRole('textbox', { name: 'Text' })).toHaveText('');
+});
+
 test('a quick card can be added to the cards to show with others', async ({ page }) => {
 	// Trevor (2026-10-25): a quick card goes in with other cards, like each tile's +.
 	await openSheet(page);

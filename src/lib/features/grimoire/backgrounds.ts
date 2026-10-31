@@ -7,6 +7,7 @@
  * A script may name a background image (`_meta.background`, a link). It is only offered, and
  * only fetched once the Storyteller chooses it.
  */
+import { unpackPicture } from '#lib/ui/picked-picture.ts';
 
 export type BackgroundChoice =
 	| { kind: 'none' }
@@ -125,15 +126,15 @@ export async function clearBackground(scope: BackgroundScope) {
 
 /** Shrinks a picked image to at most `side` (`MAX_SIDE`) on its longest side, as a JPEG. */
 export async function shrinkImage(file: Blob, side = MAX_SIDE, quality = 0.85): Promise<Blob> {
-	const bitmap = await createImageBitmap(file);
-	const scale = Math.min(1, side / Math.max(bitmap.width, bitmap.height));
-	const width = Math.max(1, Math.round(bitmap.width * scale));
-	const height = Math.max(1, Math.round(bitmap.height * scale));
+	const picture = await unpackPicture(file, side);
+	const scale = Math.min(1, side / Math.max(picture.width, picture.height));
+	const width = Math.max(1, Math.round(picture.width * scale));
+	const height = Math.max(1, Math.round(picture.height * scale));
 	const canvas = document.createElement('canvas');
 	canvas.width = width;
 	canvas.height = height;
-	canvas.getContext('2d')?.drawImage(bitmap, 0, 0, width, height);
-	bitmap.close();
+	canvas.getContext('2d')?.drawImage(picture.image, 0, 0, width, height);
+	picture.close();
 	return new Promise((resolve, reject) =>
 		canvas.toBlob(
 			(blob) => (blob ? resolve(blob) : reject(new Error('Image could not be read'))),
