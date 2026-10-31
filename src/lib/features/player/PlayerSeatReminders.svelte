@@ -15,6 +15,7 @@
 		playerLook,
 		reminderChip,
 		remindersOn,
+		type PlayerReminder,
 		type PlayerReminders
 	} from './player-reminders.ts';
 	import type { SeatNotes } from './seat-notes.ts';
@@ -23,8 +24,9 @@
 	 * The player's own reminders on their grim (Trevor, 2026-10-26), lined up in front of each
 	 * seat towards the middle as on the board (reminder-fan.ts), at the board's reminder size and
 	 * never under a finger's tap target, each with the board's line back to its seat (Trevor,
-	 * 2026-10-29), by the player's own Reminder lines. A tap opens the seat's reminders. Goes
-	 * inside the town.
+	 * 2026-10-29), by the player's own Reminder lines. A tap picks the token up, as on the board
+	 * (Trevor, 2026-10-31: not the seat's reminders, which the seat itself opens). Goes inside
+	 * the town.
 	 */
 	interface Props {
 		seats: readonly PublicSeat[];
@@ -39,7 +41,8 @@
 		/** Seats with the player's note mark. */
 		notes: Readonly<SeatNotes>;
 		characterOf: (id: CharacterId) => Character | undefined;
-		onOpen: (seat: PublicSeat) => void;
+		/** A token tapped: picked up (PlayerReminderBin). */
+		onTap: (seat: PublicSeat, reminder: PlayerReminder) => void;
 		/** The seat whose token or reminder a finger is on, for "While held" lines. */
 		held?: string;
 	}
@@ -53,7 +56,7 @@
 		names,
 		notes,
 		characterOf,
-		onOpen,
+		onTap,
 		held = $bindable()
 	}: Props = $props();
 
@@ -113,7 +116,7 @@
 			<BoardReminder
 				{...playerLook(reminder, characterOf)}
 				size={chip}
-				onTap={() => onOpen(seat)}
+				onTap={() => onTap(seat, reminder)}
 			/>
 		</div>
 	{/each}

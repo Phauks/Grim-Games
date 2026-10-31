@@ -29,7 +29,7 @@
 	import PlayerSeating from './PlayerSeating.svelte';
 	import BoardReminder from '#lib/features/grimoire/BoardReminder.svelte';
 	import ReminderTokenRow from '#lib/features/grimoire/ReminderTokenRow.svelte';
-	import { playerLook, reminderChip, reminderWords, remindersOn } from './player-reminders.ts';
+	import { playerLook, reminderWords, remindersOn } from './player-reminders.ts';
 	import { PlayerReminderState } from './player-reminders.svelte.ts';
 	import PlayerReminderPicker from './PlayerReminderPicker.svelte';
 	import PlayerReminderBin from './PlayerReminderBin.svelte';
@@ -42,9 +42,9 @@
 	import {
 		DEFAULT_SEAT_LAYOUT,
 		parseAspect,
-		parseSeatLayout,
-		sharedSeats
+		parseSeatLayout
 	} from '#lib/ui/seating/seat-layout.ts';
+	import { ringAboveTray } from './tray-ring.ts';
 	import {
 		AVATAR_GUESS,
 		GENERIC_GUESSES,
@@ -122,8 +122,6 @@
 	/** The reminder tokens this player put on seats (Trevor, 2026-10-26), kept as guesses are. */
 	const reminders = new PlayerReminderState();
 	let remindersOpen = $state(false);
-	/** The reminder bin (Trevor, 2026-10-29), from the grim's controls. */
-	let binOpen = $state(false);
 	let bin = $state<ReturnType<typeof PlayerReminderBin>>();
 	let seating = $state<ReturnType<typeof PlayerSeating>>(); // Seating on the grim (plan J38).
 	let townEl = $state<HTMLElement>();
@@ -193,20 +191,23 @@
 	let toolsW = $state(0);
 	let toolsH = $state(0);
 	const tools = $derived(display ? undefined : { w: toolsW + 12, h: toolsH + 12 });
-	const { size, points } = $derived(
-		sharedSeats(seats, layout, board, aspect, matchesShape(display), preferences.current, tools)
+	const fit = $derived(matchesShape(display));
+	const placement = $derived(
+		ringAboveTray({ seats, layout, board, aspect, fit, tools, tray: !display }, preferences.current)
 	);
+	const { chip, foot, ring, ringPoints, size, points } = $derived(placement);
 
 	// The corner's script name keeps clear of every seat and name, as on the board.
 	const root = watchRootFont();
 	const rootFont = $derived(root.current);
 	const names = $derived(
-		nameBoxes({ names: seats.map(nameOf), seats: points, size, unit, rootFont, board })
+		nameBoxes({ names: seats.map(nameOf), seats: ringPoints, size, unit, rootFont, board: ring })
 	);
+	// Above the tray, where the corner sits (`--foot-room`); px from the top left either way.
 	const cornerBoxes = $derived(
-		cornerObstacles(points, names, size, boardLooks.current.nameOffset, board)
+		cornerObstacles(ringPoints, names, size, boardLooks.current.nameOffset, ring)
 	);
-	const fitCorner = $derived(cornerFit(cornerBoxes, board));
+	const fitCorner = $derived(cornerFit(cornerBoxes, ring));
 
 	/** The characters this player guessed on any seat, and the Travellers the town knows. */
 	const firstReminders = $derived([
@@ -375,6 +376,7 @@
 			bind:clientHeight={height}
 			style:--name-scale={boardLooks.current.nameSize}
 			style:--name-offset={boardLooks.current.nameOffset}
+			style:--foot-room={display ? undefined : `${foot}px`}
 			style={boardColours}
 			data-board-colours={boardColours ? '' : undefined}
 			data-testid="player-grim"
@@ -482,22 +484,22 @@
 				{notes}
 				{characterOf}
 				bind:held
-				onOpen={(seat) => {
-					chosen = seat;
-					remindersOpen = true;
-				}}
+				onTap={(seat, r) => bin?.pickUp(seat.seatId, r)}
 			/>
 			{#if !display}<PlayerReminderBin
 					bind:this={bin}
-					bind:open={binOpen}
 					characters={script.characters}
 					guessed={firstReminders}
 					{seats}
 					{points}
 					town={townEl}
 					{size}
-					chip={reminderChip(size, preferences.current.tokenAppearance.reminderScale)}
+					{chip}
+					{characterOf}
+					disabled={hiding}
 					onPlace={(seat, r) => reminders.place(seat.seatId, r)}
+					onMove={(from, r, to) => reminders.move(from, r, to)}
+					onLook={(seatId, id, look) => reminders.setLook(seatId, id, look)}
 				/>{/if}
 			{#if player}<PlayerSeating
 					bind:this={seating}
@@ -544,7 +546,6 @@
 		final={!!final}
 		{showFinal}
 		onFinal={(on) => (showFinal = on)}
-		bin={{ open: binOpen, disabled: hiding, onToggle: () => (binOpen = !binOpen) }}
 		info={{ meta: script.meta, table, roomCode: friendRoom }}
 	/>{/snippet}
 <!-- Full screen's corner: this grim's controls, the page's own, then Full screen. -->

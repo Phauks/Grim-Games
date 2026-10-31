@@ -2053,9 +2053,15 @@ test('a player puts reminder tokens on seats in their own Grim', async ({
 		.tap();
 	await phone.keyboard.press('Escape');
 	const seat = phone.getByTestId('grim-seat').nth(1);
-	// From the bin only (Trevor, 2026-10-29), opened from the grim's controls: the characters
-	// guessed first, then the rest of the script, then the generic ∞.
-	await phone.getByTestId('reminder-bin-button').tap();
+	// From the tray only (Trevor, 2026-10-29), docked at the town's foot as the Storyteller's
+	// bank is (Trevor, 2026-10-31: one tray), with no button of its own in the grim's controls.
+	await expect(phone.getByTestId('reminder-bin-button')).toHaveCount(0);
+	const tray = phone.getByRole('list', { name: 'Reminder bank' });
+	await expect(tray.getByRole('button', { name: 'Red Herring reminder' })).toBeVisible();
+	await expect(phone.getByTestId('bank-guesses')).toHaveText('Your guesses');
+	// Pulled up by the same handle bar: the characters guessed first, then the rest of the
+	// script, then the generic ∞.
+	await phone.getByRole('button', { name: 'Every reminder' }).tap();
 	const bin = phone.getByTestId('reminder-bin');
 	const lists = bin.getByRole('list');
 	await expect(lists).toHaveCount(3);
@@ -2072,35 +2078,50 @@ test('a player puts reminder tokens on seats in their own Grim', async ({
 	await search.fill('poison');
 	await expect(bin.getByTestId('board-reminder')).toHaveCount(1);
 	await search.fill('');
-	// A tap, then the seat it goes on.
+	// A tap, then the seat it goes on: the tray lowers to its row while the token is in hand.
 	await bin.getByRole('button', { name: 'Poisoned reminder' }).tap();
+	await expect(phone.getByTestId('reminder-in-hand')).toBeVisible();
+	await expect(bin).toBeHidden();
+	// Not an ∞ token: no ⋯ (Trevor, 2026-10-31), only About on a tap and × to put it down.
+	await expect(
+		phone.getByTestId('reminder-in-hand').getByRole('button', { name: 'More reminder actions' })
+	).toHaveCount(0);
+	await phone
+		.getByTestId('reminder-in-hand')
+		.getByRole('button', { name: 'About this reminder' })
+		.tap();
+	const about = phone.getByRole('dialog', { name: 'Poisoned' });
+	await expect(about).toContainText(/From\s*Poisoner/);
+	await phone.keyboard.press('Escape');
+	await expect(about).toBeHidden();
 	await expect(phone.getByTestId('reminder-in-hand')).toBeVisible();
 	await seat.tap();
 	await expect(phone.getByTestId('reminder-in-hand')).toBeHidden();
-	await expect(bin).toBeVisible();
-	// Or dragged onto one: the bin drops away until it is put down.
-	const protect = bin.getByRole('button', { name: 'Dead reminder', exact: true });
+	// Or dragged onto one from the row.
+	const protect = tray.getByRole('button', { name: 'Dead reminder', exact: true });
+	await protect.scrollIntoViewIfNeeded();
 	const from = (await protect.boundingBox())!;
 	const to = (await phone.getByTestId('grim-seat').nth(2).boundingBox())!;
 	await phone.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
 	await phone.mouse.down();
 	await phone.mouse.move(to.x + to.width / 2, to.y + to.height / 2 + 20, { steps: 6 });
-	await expect(bin).toHaveClass(/lowered/);
 	await phone.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 4 });
 	await phone.mouse.up();
 	await expect(phone.getByTestId('grim-seat').nth(2)).toHaveAttribute(
 		'aria-label',
 		'Seat 3: Seat 3, your reminders: Dead'
 	);
-	await phone.getByTestId('reminder-bin-button').tap();
-	await expect(bin).toBeHidden();
 	// The seat's sheet lists them, with none to add there.
 	await seat.tap();
 	const sheet = phone.getByRole('dialog', { name: 'Seat 2 · Seat 2' });
 	await expect(sheet.getByTestId('seat-reminders')).toContainText('Poisoned');
 	await phone.keyboard.press('Escape');
 	await expect(seat).toHaveAttribute('aria-label', 'Seat 2: Seat 2, your reminders: Poisoned');
-	const token = phone.getByTestId('player-grim').getByRole('button', { name: 'Poisoned reminder' });
+	// On its seat, not in the tray, which holds one too.
+	const token = phone
+		.getByTestId('player-grim')
+		.locator('.chip-slot')
+		.getByRole('button', { name: 'Poisoned reminder' });
 	await expect(token).toHaveCount(1);
 	// With the board's line back to its seat (Trevor, 2026-10-29), by the player's own choice.
 	const lines = phone.getByTestId('player-grim').locator('line[data-tether="2"]');
@@ -2124,12 +2145,20 @@ test('a player puts reminder tokens on seats in their own Grim', async ({
 	await phone.mouse.up();
 	await expect(lines).toHaveCount(0);
 	await phone.keyboard.press('Escape');
-	// A tap on the token opens the seat's reminders, where it comes off.
+	// A tap on the token picks it up, as on the board (Trevor, 2026-10-31: not the seat's
+	// reminders); a seat tapped next moves it there, and the tray takes it back off.
 	await token.tap();
-	await phone
-		.getByRole('dialog', { name: 'Reminders for Seat 2' })
-		.getByRole('button', { name: 'Poisoned: take off' })
-		.tap();
+	await expect(phone.getByTestId('reminder-in-hand')).toBeVisible();
+	await expect(phone.getByRole('dialog')).toHaveCount(0);
+	await phone.getByTestId('grim-seat').nth(5).tap();
+	await expect(phone.getByTestId('grim-seat').nth(5)).toHaveAttribute(
+		'aria-label',
+		'Seat 6: Seat 6, your reminders: Poisoned'
+	);
+	await expect(seat).toHaveAttribute('aria-label', 'Seat 2: Seat 2');
+	await token.tap();
+	await phone.getByRole('list', { name: 'Reminder bank' }).tap({ position: { x: 4, y: 4 } });
+	await expect(phone.getByTestId('reminder-in-hand')).toBeHidden();
 	await expect(token).toHaveCount(0);
 	await phoneContext.close();
 });
@@ -2149,17 +2178,29 @@ test("a player puts generic tokens with numbers or notes on their own Grim's sea
 	const phone = await phoneContext.newPage();
 	await phone.goto(`/join/${code}`);
 	await phone.getByRole('tab', { name: 'Grim' }).tap();
-	// Two from the bin's ∞, then each given its words from the seat's reminders.
+	// Two from the tray's ∞, then each given its words from the seat's reminders.
 	const third = phone.getByTestId('grim-seat').nth(2);
-	await phone.getByTestId('reminder-bin-button').tap();
 	const generic = phone
-		.getByTestId('reminder-bin')
+		.getByRole('list', { name: 'Reminder bank' })
 		.getByRole('button', { name: 'Generic reminder' });
+	await generic.scrollIntoViewIfNeeded();
 	for (let n = 0; n < 2; n++) {
 		await generic.tap();
 		await third.tap();
 	}
-	await phone.getByTestId('reminder-bin-button').tap();
+	// An ∞ in hand has a ⋯ with Edit token (Trevor, 2026-10-31): its words before it goes on.
+	await generic.tap();
+	const hand = phone.getByTestId('reminder-in-hand');
+	await hand.getByRole('button', { name: 'More reminder actions' }).tap();
+	await phone.getByRole('menuitem', { name: 'Edit token' }).tap();
+	await phone.getByTestId('reminder-note').fill('7');
+	await phone.getByTestId('reminder-note').press('Enter');
+	await phone.keyboard.press('Escape');
+	await phone.getByTestId('grim-seat').nth(5).tap();
+	await expect(phone.getByTestId('grim-seat').nth(5)).toHaveAttribute(
+		'aria-label',
+		/your reminders: 7$/
+	);
 	await third.tap();
 	await phone.getByTestId('seat-reminders').tap();
 	const picker = phone.getByRole('dialog', { name: 'Reminders for Seat 3' });
@@ -2179,12 +2220,15 @@ test("a player puts generic tokens with numbers or notes on their own Grim's sea
 	await expect(here).toHaveText(['2']);
 	await phone.keyboard.press('Escape');
 	await phone.keyboard.press('Escape');
-	const placed = phone.getByTestId('player-grim').getByTestId('board-reminder');
-	await expect(placed).toHaveAccessibleName('Generic reminder: 2');
+	const placed = phone
+		.getByTestId('player-grim')
+		.locator('.chip-slot')
+		.filter({ has: phone.getByRole('button', { name: 'Generic reminder: 2' }) });
+	await expect(placed).toHaveCount(1);
 	// Kept on this phone for the game.
 	await phone.reload();
 	await phone.getByRole('tab', { name: 'Grim' }).tap();
-	await expect(placed).toHaveAccessibleName('Generic reminder: 2');
+	await expect(placed).toHaveCount(1);
 	await phoneContext.close();
 });
 

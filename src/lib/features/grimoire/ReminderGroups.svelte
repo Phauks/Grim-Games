@@ -3,8 +3,8 @@
 
 	/**
 	 * Every reminder token at once (Trevor, 2026-10-29: "a way to see more tokens without
-	 * scrolling"), in rows under its stretch's caption: the Storyteller's bank pulled up
-	 * (ReminderBank) and a player's reminder bin (ReminderBinSheet).
+	 * scrolling"), in rows under its stretch's caption: the reminder tray pulled up
+	 * (ReminderTray), the Storyteller's bank and a player's alike.
 	 */
 	interface Props {
 		/** Names the rows of a stretch with no caption. */
@@ -19,6 +19,24 @@
 	let { label, groups, keyOf, item, size }: Props = $props();
 
 	const empty = $derived(groups.every((g) => g.items.length === 0));
+
+	/**
+	 * Each cell as wide as its own token's name band, not the widest band the Reminder words
+	 * setting allows (Trevor, 2026-10-31: only two tokens a row on his Pixel), so short words
+	 * pack tight and long ones still aren't cut off.
+	 */
+	function fitBand(cell: HTMLElement) {
+		const band = () => {
+			const label = cell.querySelector<HTMLElement>('.label');
+			cell.style.setProperty('--band', label ? `${label.offsetWidth}px` : '0px'); // px-ok: measured
+		};
+		const observer = new ResizeObserver(band);
+		observer.observe(cell);
+		const label = cell.querySelector('.label');
+		if (label) observer.observe(label);
+		band();
+		return () => observer.disconnect();
+	}
 </script>
 
 <div class="groups" data-testid="reminder-groups" style:--d="{size}px">
@@ -28,7 +46,7 @@
 				{#if group.caption}<span class="caption">{group.caption}</span>{/if}
 				<ul aria-label={group.caption ?? label}>
 					{#each group.items as token (keyOf(token))}
-						<li>{@render item(token)}</li>
+						<li {@attach fitBand}>{@render item(token)}</li>
 					{/each}
 				</ul>
 			</div>
@@ -72,13 +90,9 @@
 		position: relative;
 		display: grid;
 		place-items: center;
-		/* Room for the name band, as wide as the Reminder words setting lets it run past the
-		   token (BoardReminder .label, plus its padding), so the first column's isn't cut off
-		   (Trevor, 2026-10-31: the Scarlet Woman's "Is the Demon"). */
-		padding-inline: max(
-			0.75rem,
-			calc(var(--d) * (var(--reminder-label-width, 1.5) - 1) / 2 + 0.4rem)
-		);
+		/* Room for this token's own name band past its sides (`fitBand`), so the first column's
+		   isn't cut off (Trevor, 2026-10-31: the Scarlet Woman's "Is the Demon"). */
+		padding-inline: max(0.25rem, calc((var(--band, var(--d)) - var(--d)) / 2 + 0.1rem));
 		padding-bottom: calc(0.375 * var(--u));
 	}
 	.none {
