@@ -6454,7 +6454,11 @@ test('with the Hindu, a player who dies is reincarnated as a Traveller', async (
 		.getByRole('button', { name: 'The Demon' })
 		.tap();
 	const picker = page.getByRole('dialog', { name: 'Reincarnate Seat 1 as' });
-	await picker.getByRole('button', { name: 'Gunslinger, Recommended' }).tap();
+	// Each Traveller shows in the player's alignment, good here, not the Travellers' own colours.
+	const gunslinger = picker.getByRole('button', { name: 'Gunslinger, Recommended' });
+	await expect(picker.locator('[data-team="good"]').first()).toBeVisible();
+	await expect(picker.locator('[data-team="traveller"]')).toHaveCount(0);
+	await gunslinger.tap();
 	await expect(picker).toBeHidden();
 	await closeSheet(page);
 	const seat = seatLabelled(page, 'Seat 1: no name, Gunslinger');
