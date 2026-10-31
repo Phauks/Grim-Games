@@ -62,8 +62,8 @@ test('a removed phone leaves the game, is turned away at the code, and Unblock s
 	const players = page.getByRole('list', { name: 'Players in the room' }).getByRole('listitem');
 	const unseated = players.filter({ hasText: 'No seat' });
 	const removed = page.getByTestId('room-removed');
-	// Always there, so removing someone moves nothing.
-	await expect(removed).toContainText('None');
+	// Hidden until someone is blocked (Trevor, 2026-10-31).
+	await expect(removed).toHaveCount(0);
 	const phone = await joinAs(browser, testInfo, code, 'Ana');
 	// Seated by name in seat 1, and in the game: the script's tabs show.
 	const ana = players.filter({ hasText: 'Ana' });
@@ -76,7 +76,7 @@ test('a removed phone leaves the game, is turned away at the code, and Unblock s
 	const sheet = page.getByRole('dialog', { name: 'Ana', exact: true });
 	await sheet.getByTestId('room-player-remove').tap();
 	await page
-		.getByRole('alertdialog', { name: 'Remove this player from the room?' })
+		.getByRole('alertdialog', { name: 'Block this player from the room?' })
 		.getByRole('button', { name: 'Confirm' })
 		.tap();
 	await expect(sheet).toBeHidden();
@@ -97,7 +97,7 @@ test('a removed phone leaves the game, is turned away at the code, and Unblock s
 
 	// Unblock only lets the phone try again: it joins as a new phone, with no seat.
 	await removed.getByRole('button', { name: 'Unblock' }).tap();
-	await expect(removed).toContainText('None');
+	await expect(removed).toHaveCount(0);
 	await typeCode(phone, code);
 	await expect(preview).toContainText('Trouble Brewing');
 	await phone.getByRole('button', { name: 'Join as player' }).tap();
@@ -127,7 +127,7 @@ test('a phone removed while on its player screen lands on the join screen, out o
 		.getByTestId('room-player-remove')
 		.tap();
 	await page
-		.getByRole('alertdialog', { name: 'Remove this player from the room?' })
+		.getByRole('alertdialog', { name: 'Block this player from the room?' })
 		.getByRole('button', { name: 'Confirm' })
 		.tap();
 
