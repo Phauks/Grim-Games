@@ -100,7 +100,7 @@
 			<!-- With a living Traveller the same gold badge holds the exile count too, so the row
 			     keeps its five cells (Trevor, 2026-10-28, option A). -->
 			<span class="pair" data-testid="exile-needed"
-				><Icon name="vote" />{block.needed}<span class="split" aria-hidden="true">|</span><Icon
+				><Icon name="vote" />{block.needed}<span class="split" aria-hidden="true"></span><Icon
 					name="exile"
 				/>{exile}</span
 			>{/if}</CountBadge
@@ -123,8 +123,9 @@
 		align-items: center;
 		gap: 0.1em;
 	}
+	/* A gap between the two counts; the icons tell them apart (Trevor, 2026-10-31: no |). */
 	.split {
-		opacity: 0.55;
+		inline-size: 0.35em;
 	}
 	/*
 	 * One line however narrow (Trevor, 2026-10-17): five equal cells sharing the width, the

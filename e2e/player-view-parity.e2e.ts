@@ -108,7 +108,7 @@ test("the Storyteller's player view has the players' status row and day timer", 
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
 	await expect(day).toBeVisible();
 	const votes = day.getByTestId('votes-needed');
-	await expect(votes.getByTestId('exile-needed')).toHaveText('4|4');
+	await expect(votes.getByTestId('exile-needed')).toHaveText('44');
 	await expect(votes).toHaveAccessibleName(/4 players must support an exile/);
 	const row = (await votes.locator('..').boundingBox())!;
 	const badge = (await votes.boundingBox())!;
