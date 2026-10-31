@@ -11,12 +11,6 @@ export const setup = {
 	'setup.dealt.choose':
 		"{mode}: each player chooses their own character, so there's no bag to build here.",
 	'setup.gameSettings': 'Game settings',
-	'setup.gameSettings.on': 'On',
-	'setup.gameSettings.off': 'Off',
-	'setup.gameSettings.nominationsHelp':
-		'The Storyteller marks who nominated each day and who was nominated.',
-	'setup.gameSettings.timerHelp':
-		'Each day’s timer starts with this many seconds for each living player.',
 	'setup.characterSelection': 'Character selection',
 	'setup.steps': 'Setup steps',
 	'setup.nav': 'Setup',

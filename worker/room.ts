@@ -75,11 +75,15 @@ import {
 	accountTags,
 	linkAccount,
 	requestAccount,
+	roomPlayers,
 	seatAccount,
 	withAccount,
 	type SeatTarget
 } from './room-accounts.ts';
 import type { AccountEnv } from './account/objects.ts';
+import type { FriendBook } from './friends/book.ts';
+import { recordGame } from './friends/routes.ts';
+import type { DataBinding } from './shared-data.ts';
 import {
 	answerTransfer,
 	claimGone,
@@ -95,6 +99,9 @@ export interface RoomEnv extends PushEnv {
 	ROOM_CREATES: RateLimit;
 	/** The open rooms' codes, for the admins' Live games (plan J31). */
 	LIVE_GAMES: DurableObjectNamespace<LiveGameIndex>;
+	/** Friend books, where a finished game's players remember each other (plan F3). */
+	FRIEND_BOOKS: DurableObjectNamespace<FriendBook>;
+	DATA?: DataBinding;
 }
 
 /**
@@ -505,9 +512,17 @@ export class Room extends DurableObject<RoomEnv> {
 			case 'close-vote':
 				room = closeVote(room);
 				break;
-			case 'game-over':
+			case 'game-over': {
+				const wasOver = room.ended?.gameId === message.gameId;
 				room = gameOver(room, message.gameId, message.winner, message.reason);
+				// Its signed-in players remember each other (plan F3), once per game.
+				if (!wasOver && room.ended && room.gameId) {
+					const game = room.gameId;
+					const players = await roomPlayers(this.ctx, room);
+					this.ctx.waitUntil(recordGame(this.env, game, players));
+				}
 				break;
+			}
 			case 'reopen-game':
 				room = reopenGame(room, message.gameId);
 				await this.dropReveal(room);

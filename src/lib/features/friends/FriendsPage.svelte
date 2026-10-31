@@ -16,7 +16,10 @@
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import SharePanel from '#lib/ui/share/SharePanel.svelte';
+	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
+	import type { PlayerName } from '#lib/core/data/index.ts';
 	import AddFriendDialog from './AddFriendDialog.svelte';
+	import SeatFriendButton from './SeatFriendButton.svelte';
 	import FriendRows from './FriendRows.svelte';
 	import { profileHref, scriptOpenHref } from './friend-links.ts';
 	import { friendScripts } from './friend-scripts.svelte.ts';
@@ -26,7 +29,8 @@
 		friendLink,
 		readFriendLink,
 		type FriendAccount,
-		type FriendAction
+		type FriendAction,
+		type RecentPlayer
 	} from './friends-protocol.ts';
 
 	/**
@@ -133,6 +137,20 @@
 	/>
 {/snippet}
 
+<!-- Recent players (plan F3): who they are, what they were called in your last game together
+     and how many you've played. -->
+{#snippet recentLabel(other: RecentPlayer)}
+	{@render who(other)}
+	<span class="from recent-line">
+		{#if other.name}<PlayerBadge name={other.name as PlayerName} />{/if}
+		<span>{t('friends.recent.games', { games: other.games })}</span>
+	</span>
+{/snippet}
+
+{#snippet recentActions(other: RecentPlayer)}
+	<SeatFriendButton open target={{ recent: other.id }} known={other.state} />
+{/snippet}
+
 {#snippet inboxLabel(script: InboxScript)}
 	<span class="script">{script.name}</span>
 	<span class="from">{t('friends.scripts.from', { name: nameOf(script.from) })}</span>
@@ -232,6 +250,21 @@
 				{/snippet}
 				{#if data}
 					{@render accounts(data.friends, 'friend-list', friendActions)}
+				{:else}
+					<p class="muted">{friends.error || t('friends.loading')}</p>
+				{/if}
+			</PageSection>
+
+			<PageSection title={t('friends.recent')}>
+				{#if data}
+					<FriendRows
+						items={data.recent ?? []}
+						key={(other) => other.id}
+						testid="friend-recent"
+						icon={(other) => other.icon}
+						label={recentLabel}
+						actions={recentActions}
+					/>
 				{:else}
 					<p class="muted">{friends.error || t('friends.loading')}</p>
 				{/if}
@@ -343,6 +376,12 @@
 		color: var(--on-surface-muted);
 		font-weight: normal;
 		font-size: 0.85rem;
+	}
+	.recent-line {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-2);
 	}
 	.you {
 		display: grid;

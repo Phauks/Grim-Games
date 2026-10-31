@@ -1,7 +1,7 @@
 <script lang="ts" generics="T extends string">
 	import { foldForSearch } from '#lib/core/text/fold.ts';
 	import { Combobox, createListCollection } from '@ark-ui/svelte/combobox';
-	import type { Snippet } from 'svelte';
+	import { tick, type Snippet } from 'svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import ClearableField from './ClearableField.svelte';
 
@@ -91,10 +91,14 @@
 	function change(next: string[]) {
 		const picked = next[0];
 		if (!picked) return;
-		if (extra && picked === extra.value) {
+		// Held before the text resets: `extra` is worked out from the typed text.
+		const act = extra;
+		if (act && picked === act.value) {
 			open = false;
 			text = current?.label ?? '';
-			extra.run();
+			act.run();
+			// The list resets the field once it closes; it then shows what the action chose.
+			void tick().then(() => (text = current?.label ?? ''));
 			return;
 		}
 		onChange?.(picked as T);
