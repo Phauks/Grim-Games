@@ -1914,57 +1914,6 @@ test("a Traveller's seat on the players' Grim takes only Good or Evil", async ({
 	await phoneContext.close();
 });
 
-test("a player marks their own seat on the players' Grim, and it has a ring", async ({
-	page,
-	browser
-}, testInfo) => {
-	// Trevor (2026-10-26): "Allow marking a person as self in own grim", and "special glow or
-	// effect on self in grim". A phone the room has not seated marks a seat as its own.
-	const board = await startGame(page);
-	await page.goto(`${board}/room`);
-	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
-	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
-
-	const phoneContext = await browser.newContext({ ...testInfo.project.use });
-	const phone = await phoneContext.newPage();
-	await phone.goto(`/join/${code}`);
-	await phone.getByRole('tab', { name: 'Grim' }).tap();
-	const seat = phone.getByTestId('grim-seat').nth(2);
-	await expect(phone.locator('[data-testid="grim-seat"][data-mine]')).toHaveCount(0);
-	await seat.tap();
-	const sheet = phone.getByRole('dialog', { name: 'Seat 3 · Seat 3' });
-	const me = sheet.getByRole('checkbox', { name: 'This is me' });
-	await expect(me).not.toBeChecked();
-	await sheet.getByText('This is me', { exact: true }).tap();
-	await expect(me).toBeChecked();
-	await expect(seat).toHaveAttribute('data-mine');
-	await expect(seat).toHaveAttribute('aria-label', 'Seat 3: Seat 3, you');
-	await phone.keyboard.press('Escape');
-	// A steady ring, with no pulse (Trevor, 2026-10-27).
-	const disc = seat.locator('.disc');
-	await expect(disc).toHaveCSS('outline-style', 'solid');
-	await expect(disc).toHaveCSS('animation-name', 'none');
-	await expect(disc).toHaveCSS('box-shadow', 'none');
-	// Kept on this phone for the game.
-	await phone.reload();
-	await phone.getByRole('tab', { name: 'Grim' }).tap();
-	await expect(seat).toHaveAttribute('data-mine');
-	// One seat at a time, and it can be taken off.
-	await phone.getByTestId('grim-seat').nth(4).tap();
-	await phone
-		.getByRole('dialog', { name: 'Seat 5 · Seat 5' })
-		.getByText('This is me', { exact: true })
-		.tap();
-	await expect(phone.locator('[data-testid="grim-seat"][data-mine]')).toHaveCount(1);
-	await expect(phone.getByTestId('grim-seat').nth(4)).toHaveAttribute('data-mine');
-	await phone
-		.getByRole('dialog', { name: 'Seat 5 · Seat 5' })
-		.getByText('This is me', { exact: true })
-		.tap();
-	await expect(phone.locator('[data-testid="grim-seat"][data-mine]')).toHaveCount(0);
-	await phoneContext.close();
-});
-
 test("a player's Grim fills the screen from its own corner, and a seat's sheet opens over it", async ({
 	page,
 	browser
@@ -2019,7 +1968,7 @@ test("a player's Grim fills the screen from its own corner, and a seat's sheet o
 	// A seat's sheet still opens over it.
 	await phone.getByTestId('grim-seat').nth(2).tap();
 	const sheet = phone.getByRole('dialog', { name: 'Seat 3 · Seat 3' });
-	await expect(sheet.getByRole('checkbox', { name: 'This is me' })).toBeVisible();
+	await expect(sheet.getByTestId('seat-note')).toBeVisible();
 	await phone.keyboard.press('Escape');
 	await expect(sheet).toHaveCount(0);
 	await expect(fullScreen).toHaveAttribute('aria-pressed', 'true');

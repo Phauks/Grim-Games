@@ -22,7 +22,6 @@ export const player = {
 	'player.leaveTitle': 'Leave the script?',
 	'player.leaveBody': 'Your notes, scratch pads and guesses stay on this device.',
 	'player.grim.you': 'you',
-	'player.grim.thisIsMe': 'This is me',
 	'player.grim.dead': 'dead',
 	'player.grim.voteUnused': 'ghost vote not used',
 	'player.grim.voteUsed': 'ghost vote used',

@@ -105,3 +105,26 @@ test('phones drag their own seat while seating is open, then claim an open seat 
 	await phone.context().close();
 	await bo.context().close();
 });
+
+test('the seat the room gives a phone has a ring on its Grim, with no way to mark another', async ({
+	page,
+	browser
+}, testInfo) => {
+	// Trevor (2026-10-27): a steady ring on the player's own seat. Players are seated by the
+	// room now, so the seat sheet's "This is me" is gone (Trevor, 2026-10-31).
+	const code = await openRoom(page);
+	await nameSeat(page, 2, 'Ana');
+	const phone = await joinAs(browser, testInfo, code, 'Ana');
+	const seat = phone.getByTestId('grim-seat').nth(1);
+	await expect(seat).toHaveAttribute('data-mine');
+	await expect(phone.locator('[data-testid="grim-seat"][data-mine]')).toHaveCount(1);
+	await expect(seat).toHaveAttribute('aria-label', /, you$/);
+	const disc = seat.locator('.disc');
+	await expect(disc).toHaveCSS('outline-style', 'solid');
+	await expect(disc).toHaveCSS('animation-name', 'none');
+	await phone.getByTestId('grim-seat').nth(2).tap();
+	const sheet = phone.getByRole('dialog', { name: /^Seat 3/ });
+	await expect(sheet.getByTestId('seat-note')).toBeVisible();
+	await expect(sheet.getByText('This is me', { exact: true })).toHaveCount(0);
+	await phone.context().close();
+});
