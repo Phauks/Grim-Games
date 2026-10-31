@@ -2,7 +2,12 @@ import { fetchWithTimeout } from '#lib/ui/fetch.ts';
 import { readStored, writeStored } from '#lib/ui/stored.ts';
 import { SvelteMap } from 'svelte/reactivity';
 import { wikiUrl, type Character } from '#lib/core/data/index.ts';
-import { parseWikiPage, wikiPageTitle, type WikiSection } from './wiki-page.ts';
+import {
+	OPTIONAL_RULE_HEADING,
+	parseWikiPage,
+	wikiPageTitle,
+	type WikiSection
+} from './wiki-page.ts';
 
 /**
  * A character's whole wiki page, shown when the character is opened (Trevor, 2026-10-16).
@@ -118,4 +123,21 @@ export function prefetchWikiPage(character: Character): void {
 	const title = wikiPageTitle(url);
 	if (wikiPages.get(title).status === 'ready') return;
 	void wikiPages.load(title);
+}
+
+/**
+ * The wiki's own "Optional rule" line for a character, once its page has been fetched (or is
+ * kept on the device); undefined until then. Shown beside the rule's switch at the start of a
+ * game (Trevor, 2026-10-31), under the same live-only terms as the page itself.
+ */
+export function optionalRuleText(character: Character): string | undefined {
+	const url = wikiUrl(character);
+	if (!url) return undefined;
+	const page = wikiPages.get(wikiPageTitle(url));
+	if (page.status !== 'ready') return undefined;
+	const section = page.sections.find((s) => s.heading === OPTIONAL_RULE_HEADING);
+	const text = section?.blocks
+		.flatMap((b) => (b.kind === 'p' || b.kind === 'example' ? [b.text] : []))
+		.join(' ');
+	return text || undefined;
 }
