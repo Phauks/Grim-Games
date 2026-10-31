@@ -96,6 +96,12 @@
 				{t('room.transfer.none')}
 			{/if}
 		</p>
+		<!-- The match check (Trevor, 2026-10-31): the Storyteller's Allow prompt shows the same
+		     number for this device only. In its place before it is asked, so nothing moves. -->
+		<div class="check" data-testid="transfer-check" class:waiting={!claim?.taking}>
+			<span>{t('room.transfer.check')}</span>
+			<strong>{claim?.taking && claim.matchCheck ? claim.matchCheck : '····'}</strong>
+		</div>
 		<ModalActions
 			onCancel={() => (open = false)}
 			submit
@@ -116,5 +122,20 @@
 	.status {
 		margin: 0;
 		min-height: 3em;
+	}
+	.check {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: var(--space-2);
+	}
+	.check strong {
+		font-family: var(--font-heading);
+		font-size: 2rem;
+		letter-spacing: 0.08em;
+		font-variant-numeric: tabular-nums;
+	}
+	.check.waiting {
+		color: var(--on-surface-muted);
 	}
 </style>
