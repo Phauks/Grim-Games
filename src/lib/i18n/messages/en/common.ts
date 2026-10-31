@@ -17,6 +17,8 @@ export const common = {
 	'common.showPassword': 'Show password',
 	'common.seat': 'Seat {number}',
 	'common.seatWithName': '{seat} ({name})',
+	'common.notInPlay': 'Not in play',
+	'common.inPlay': 'In play',
 	'common.save': 'Save',
 	'common.saved': 'Saved',
 	'common.saveNew': 'Save as new',

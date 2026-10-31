@@ -9,9 +9,10 @@ import type { DayMark } from '#lib/core/data/day-mark-rules.ts';
 import type { Game, GameNote, ReminderInstance, Seat, SeatId } from '#lib/core/model/index.ts';
 import type { GameEvent } from './events.ts';
 
-function newSeat(seatId: SeatId, playerName?: PlayerName): Seat {
+function newSeat(seatId: SeatId, playerName?: PlayerName, notInPlay?: true): Seat {
 	const seat: Seat = { seatId, dead: false, ghostVoteUsed: false, overrides: [], reminders: [] };
 	if (playerName !== undefined) seat.playerName = playerName;
+	if (notInPlay) seat.notInPlay = true;
 	return seat;
 }
 
@@ -186,10 +187,17 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 			seating.splice(Math.max(0, Math.min(event.position, seating.length)), 0, event.seatId);
 			return {
 				...game,
-				seats: { ...game.seats, [event.seatId]: newSeat(event.seatId, event.playerName) },
+				seats: {
+					...game.seats,
+					[event.seatId]: newSeat(event.seatId, event.playerName, event.notInPlay)
+				},
 				seating
 			};
 		}
+		case 'SeatInPlaySet':
+			return updateSeat(game, event.seatId, (seat) =>
+				event.inPlay ? omit(seat, 'notInPlay') : { ...seat, notInPlay: true }
+			);
 		case 'SeatRemoved': {
 			if (!Object.hasOwn(game.seats, event.seatId)) return game;
 			const removed = {

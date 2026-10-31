@@ -318,6 +318,7 @@
 		const parts = [`${t('common.seat', { number: seat.seatNumber })}: ${nameOf(seat)}`];
 		if (seat.seatId === mine) parts.push(t('player.grim.you'));
 		if (seat.dead) parts.push(t('player.grim.dead'));
+		if (seat.notInPlay) parts.push(t('common.notInPlay'));
 		if (seat.ghostVote === 'unused') parts.push(t('player.grim.voteUnused'));
 		if (seat.ghostVote === 'used') parts.push(t('player.grim.voteUsed'));
 		// No ghost vote to spend (the Banshee killed by the Demon), as the board says.
@@ -426,6 +427,7 @@
 					<SeatDisc
 						{size}
 						dead={seat.dead}
+						notInPlay={seat.notInPlay ? t('common.notInPlay') : undefined}
 						name={nameOf(seat)}
 						number={seat.seatNumber}
 						face={shown ? face : undefined}

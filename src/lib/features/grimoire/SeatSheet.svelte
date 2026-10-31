@@ -165,7 +165,11 @@
 	// ── Status: Alive, or dead with its cause, in one list (Trevor, 2026-10-16) ──
 	let causeOpen = $state(false);
 	const statusText = $derived(
-		seat?.dead ? `Dead: ${causeLabel(seat.deathCause, characters, traveller)}` : 'Alive'
+		seat?.dead
+			? `Dead: ${causeLabel(seat.deathCause, characters, traveller)}`
+			: seat?.notInPlay
+				? t('common.notInPlay')
+				: 'Alive'
 	);
 
 	// ── Reminders and seats ──
@@ -298,14 +302,14 @@
 					aria-label={`Status: ${statusText}`}
 					onclick={() => (causeOpen = true)}
 				>
-					<Icon name={seat.dead ? 'dead' : 'alive'} />
+					<Icon name={seat.dead ? 'dead' : seat.notInPlay ? 'night' : 'alive'} />
 					<span class="status-text"
 						>{#if seat.dead}Dead: <CauseName
 								cause={seat.deathCause}
 								{characters}
 								{traveller}
 								interactive={false}
-							/>{:else}Alive{/if}</span
+							/>{:else if seat.notInPlay}{t('common.notInPlay')}{:else}Alive{/if}</span
 					>
 				</button>
 			</div>

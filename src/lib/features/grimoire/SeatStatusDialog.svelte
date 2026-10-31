@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { DeathCause, SeatId } from '#lib/core/model/index.ts';
 	import { isExecution, validDeathCauses, type ValidDeathCause } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
@@ -54,7 +55,18 @@
 	// brings a dead player back, after a confirm that states both sides.
 	function pickAlive() {
 		open = false;
+		if (seat?.notInPlay && seatId)
+			grimoire.run({ type: 'SetInPlay', seatIds: [seatId], inPlay: true });
 		if (seat?.dead) reviveOpen = true;
+	}
+	/**
+	 * At the table but not in play yet (Trevor, 2026-10-31): a Traveller who arrives mid-game
+	 * sits down before the night they join at. The next night brings them in (grimoire.svelte.ts).
+	 */
+	function pickNotInPlay() {
+		open = false;
+		if (seatId && !seat?.notInPlay)
+			grimoire.run({ type: 'SetInPlay', seatIds: [seatId], inPlay: false });
 	}
 	function revive() {
 		reviveOpen = false;
@@ -79,9 +91,20 @@
 <Dialog bind:open title={`Status of ${title}`}>
 	<div class="causes">
 		<div class="cause-row">
-			<button type="button" class="cause" aria-pressed={!seat?.dead} onclick={pickAlive}>
+			<button
+				type="button"
+				class="cause"
+				aria-pressed={!seat?.dead && !seat?.notInPlay}
+				onclick={pickAlive}
+			>
 				<span class="slot status-icon"><Icon name="alive" /></span>
 				Alive
+			</button>
+		</div>
+		<div class="cause-row">
+			<button type="button" class="cause" aria-pressed={!!seat?.notInPlay} onclick={pickNotInPlay}>
+				<span class="slot status-icon"><Icon name="night" /></span>
+				{t('common.notInPlay')}
 			</button>
 		</div>
 		{#each causes as { cause, flags, gained }, i (cause)}

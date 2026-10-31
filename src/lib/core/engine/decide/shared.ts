@@ -483,6 +483,8 @@ export function checkNomination(
 		(e): e is Extract<DayEntry, { kind: 'nomination' }> =>
 			e.kind === 'nomination' && e.entryId !== ignore
 	);
+	if (game.seats[nominator]?.notInPlay) warn('not-in-play', 'the nominator is not in play yet');
+	if (game.seats[nominee]?.notInPlay) warn('not-in-play', 'the nominee is not in play yet');
 	const allowed = nominationsPerDay(game, nominator, characters);
 	if (allowed === 0) warn('dead-nominator', 'dead players may not nominate');
 	// The Butcher's extra nomination after the day's first execution: no once-a-day limits.
