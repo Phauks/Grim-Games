@@ -873,6 +873,54 @@ test("Execution can execute a good Scapegoat in a good player's place (M12a)", a
 	await expect(boardSeat(page, 'Seat 1')).not.toHaveAccessibleName(/dead/);
 });
 
+test('executing the Boomdandy asks who lives, then who was pointed at most (M12b)', async ({
+	page
+}) => {
+	// https://wiki.bloodontheclocktower.com/Boomdandy: executed, all but 3 players die; then
+	// the player most pointed at dies.
+	test.slow();
+	await startGame(page, 6);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	const picker = page.getByRole('dialog', { name: 'Character for Seat 1' });
+	await picker.getByText('Include characters not on the script').tap();
+	await picker.getByRole('button', { name: 'Boomdandy', exact: true }).tap();
+	await closeSeat(page);
+	await chooseCharacter(page, 2, 'Imp');
+	const day = await openDay(page);
+	await day.getByRole('button', { name: 'Execution', exact: true }).tap();
+	await endTheDay(page, 'Seat 1');
+	const lives = page.getByRole('alertdialog', { name: 'Boomdandy: who lives?' });
+	const note = lives.getByTestId('explosion-note');
+	await expect(note).toHaveText('0 of 3 live');
+	for (const seat of [3, 4]) {
+		await lives
+			.getByTestId('explosion-lives')
+			.locator('li')
+			.nth(seat - 2)
+			.locator('[data-part="control"]')
+			.tap();
+	}
+	// Leaving the Demon out is a note, never a lock.
+	await expect(note).toHaveText('2 of 3 live; the Demon is not among them');
+	await lives
+		.getByTestId('explosion-lives')
+		.locator('li')
+		.nth(0)
+		.locator('[data-part="control"]')
+		.tap();
+	await expect(note).toHaveText('3 of 3 live');
+	await lives.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	const pointed = page.getByRole('dialog', { name: 'Who was pointed at most?' });
+	await pointed.getByText('Seat 3', { exact: true }).tap();
+	await expect(pointed).toBeHidden();
+	// The board under the two-alive game end prompt: Seat 2 (the Imp) and Seat 4 live.
+	for (const seat of [1, 3, 5, 6])
+		await expect(boardSeat(page, `Seat ${seat}`)).toHaveAttribute('data-dead', 'true');
+	for (const seat of [2, 4])
+		await expect(boardSeat(page, `Seat ${seat}`)).not.toHaveAttribute('data-dead');
+});
+
 test('an unnamed seat is named by its number in the day view', async ({ page }) => {
 	await startGame(page);
 	await chooseCharacter(page, 3, 'Slayer');
