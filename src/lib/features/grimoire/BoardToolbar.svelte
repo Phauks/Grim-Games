@@ -8,7 +8,7 @@
 	import type { Snippet } from 'svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import type { SeatArranging } from './seat-arranging.svelte.ts';
-	import { leaveSeating } from './seating-mode.svelte.ts';
+	import { countOff, leaveSeating, letPhonesMove } from './seating-mode.svelte.ts';
 
 	/**
 	 * The bar over the board: the app's navigation and the grim cover, then Day, Info tokens,
@@ -25,6 +25,8 @@
 		/** A new seat waits for its place on the board. */
 		placing: boolean;
 		onCancelPlacing: () => void;
+		/** Seating's Add seat: places a new seat, then comes back to Seating. */
+		onAddSeat: () => void;
 		/** The Grimoire is shown to a player: nothing over it but the X that ends it. */
 		showing?: boolean;
 		onStopShowing?: () => void;
@@ -44,6 +46,7 @@
 		seatArr,
 		placing,
 		onCancelPlacing,
+		onAddSeat,
 		showing = false,
 		onStopShowing,
 		onDay,
@@ -56,38 +59,75 @@
 	const host = roomHost();
 	/** Players' messages and reported pictures still to see (Trevor, 2026-10-27). */
 	const unread = $derived(host.code ? host.inbox.unread : 0);
+	const count = $derived(host.countOff);
 </script>
 
 <!-- Left out of the board's picture (screenshot.ts): it is the app's, not the game's. -->
-<div class="toolbar" role="toolbar" aria-label="Grimoire" data-screenshot="skip">
-	{#if seatArr.arranging}
+<div
+	class="toolbar"
+	class:seating={seatArr.arranging && !placing}
+	role="toolbar"
+	aria-label="Grimoire"
+	data-screenshot="skip"
+>
+	{#if placing}
+		<!-- Before Seating's controls, so Add seat from Seating comes back to them. -->
+		<span class="title">Add a seat</span>
+		<Button variant="quiet" icon="close" onclick={onCancelPlacing}>Cancel</Button>
+	{:else if seatArr.arranging}
+		<!-- Every Seating control here, alike (Trevor, 2026-11-01): icons on phones, their
+		     words beside them where there is room, as the board's own tools. -->
 		<span class="title arranging-title">{t('room.seating.title')}</span>
-		<span class="spacer"></span>
+		<Button variant="quiet" icon="add" aria-label="Add seat" onclick={onAddSeat}
+			><span class="tool-label">Add seat</span></Button
+		>
+		<!-- Phones move their seats while this is on (seating open); none with no room. -->
+		<Button
+			variant="quiet"
+			icon="phonesMove"
+			aria-label={t('room.seating.phones')}
+			aria-pressed={host.seatingOpen}
+			disabled={!host.code}
+			onclick={() => letPhonesMove(!host.seatingOpen)}
+			><span class="tool-label">{t('room.seating.phones')}</span></Button
+		>
+		<Button
+			variant="quiet"
+			icon="countOff"
+			aria-label={t('room.countOff.title')}
+			disabled={!host.code}
+			onclick={countOff}
+			><span class="tool-label">{t('room.countOff.title')}</span>{#if count}<span class="count"
+					><CountBadge count={count.tokens.length} total={count.size} /></span
+				>{/if}</Button
+		>
 		<IconButton
-			icon="undo"
+			outlined
+			icon="rotateAnticlockwise"
 			label="Rotate players anticlockwise"
 			onclick={() => grimoire.run({ type: 'RotateSeats', direction: 'anticlockwise' })}
 		/>
 		<IconButton
-			icon="redo"
+			outlined
+			icon="rotateClockwise"
 			label="Rotate players clockwise"
 			onclick={() => grimoire.run({ type: 'RotateSeats', direction: 'clockwise' })}
 		/>
 		<Button
 			variant="quiet"
+			icon="spread"
+			aria-label="Spread evenly"
 			disabled={Object.keys(grimoire.layout.placed).length === 0 &&
 				Object.keys(grimoire.layout.gaps).length === 0}
-			onclick={() => seatArr.spread()}>Spread evenly</Button
+			onclick={() => seatArr.spread()}><span class="tool-label">Spread evenly</span></Button
 		>
 		<Button
 			variant="accent"
 			icon="check"
+			aria-label="Done"
 			data-way-back
-			onclick={() => leaveSeating(seatArr, grimoire)}>Done</Button
+			onclick={() => leaveSeating(seatArr, grimoire)}><span class="tool-label">Done</span></Button
 		>
-	{:else if placing}
-		<span class="title">Add a seat</span>
-		<Button variant="quiet" icon="close" onclick={onCancelPlacing}>Cancel</Button>
 	{:else if showing}
 		<!-- Only the X, top right, so the player sees nothing of the Storyteller's controls
 		     (Trevor, 2026-10-30). -->
@@ -166,7 +206,11 @@
    2026-10-31: dark boxes over every seat). */
 	:global(.grimoire:has(> .backdrop))
 		.toolbar
-		:global(button:not([data-variant='accent']):not([data-variant='danger']):not(dialog *)) {
+		:global(
+			button:not([data-variant='accent']):not([data-variant='danger']):not(
+					[aria-pressed='true']
+				):not(dialog *)
+		) {
 		background: var(--board-bar-background);
 	}
 	.title {
@@ -192,11 +236,17 @@
 		font-family: var(--font-heading);
 		font-weight: 700;
 	}
-	@media (max-width: 479.98px) {
-		/* On a phone the arranging controls need the whole bar. */
+	@media (max-width: 1099.98px) {
+		/* Below the width where Seating's words show, its tools need the whole bar; the
+		   title keeps its space, so Done stays at the right. */
 		.arranging-title {
-			display: none;
+			visibility: hidden;
 		}
+	}
+	/* Seating's tools keep their size, all the same square on a phone. */
+	.seating :global(.button),
+	.seating :global(.icon-button) {
+		flex: none;
 	}
 	/* A count on a button's corner, so the button keeps its size. It sits inside the button,
 	   since ⋯ is at the screen's edge and a count over its corner was cut off (Trevor,
@@ -213,7 +263,7 @@
 	}
 	/* Solid, so the board's background never shows through; the day timer on the board has
 	   the same fill and edge (Trevor, 2026-10-23). A hover still shows its wash. */
-	.toolbar :global(.button[data-variant='quiet']:not(:hover)),
+	.toolbar :global(.button[data-variant='quiet']:not(:hover):not([aria-pressed='true'])),
 	.toolbar :global(.icon-button[data-outlined]:not([aria-pressed='true'])) {
 		background: var(--surface);
 	}
@@ -231,6 +281,17 @@
 	@media (min-width: 720px) {
 		.toolbar :global(.tool-label) {
 			display: inline;
+		}
+	}
+	/* Seating has seven tools: their words only where all of them fit. */
+	@media (min-width: 720px) and (max-width: 1099.98px) {
+		.seating :global(.tool-label) {
+			display: none;
+		}
+		.seating :global(.button:has(.tool-label)) {
+			min-width: var(--tap-target);
+			padding: 0;
+			gap: 0;
 		}
 	}
 </style>

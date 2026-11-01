@@ -54,8 +54,9 @@ async function enterSeating(page: Page) {
 }
 
 async function leaveSeating(page: Page) {
-	await page.getByRole('toolbar', { name: 'Grimoire' }).getByRole('button', { name: 'Done' }).tap();
-	await expect(page.getByTestId('seating-bar')).toHaveCount(0);
+	const toolbar = page.getByRole('toolbar', { name: 'Grimoire' });
+	await toolbar.getByRole('button', { name: 'Done' }).tap();
+	await expect(toolbar.getByRole('button', { name: 'Players move seats' })).toHaveCount(0);
 }
 
 async function joinAs(browser: Browser, testInfo: TestInfo, code: string, name: string) {
@@ -88,11 +89,14 @@ test('phones drag their own seat while seating is open, then claim an open seat 
 	await expect(phone.getByTestId('seating-disc')).toHaveCount(0);
 
 	await enterSeating(page);
+	// Every Seating control in the top bar, alike (Trevor, 2026-11-01); this one stays
+	// pressed while phones may move their seats.
 	const phones = page
-		.getByTestId('seating-bar')
-		.getByRole('checkbox', { name: 'Players move seats' });
-	await expect(phones).toBeChecked();
+		.getByRole('toolbar', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Players move seats' });
+	await expect(phones).toHaveAttribute('aria-pressed', 'true');
 	await expect(line).toHaveText('Seating is open');
+	await page.screenshot({ path: `test-results/seating-top-bar-${testInfo.project.name}.png` });
 
 	const disc = phone.getByTestId('seating-disc');
 	const target = phone.getByTestId('seating-target');
@@ -152,11 +156,10 @@ test('phones drag their own seat while seating is open, then claim an open seat 
 		.toBeLessThan(town.width * 0.05);
 
 	// The switch off: no more dragging. Done leaves Seating with seating locked.
-	const phonesSwitch = page.getByTestId('seating-bar').getByText('Players move seats');
-	await phonesSwitch.tap();
-	await expect(phones).not.toBeChecked();
+	await phones.tap();
+	await expect(phones).toHaveAttribute('aria-pressed', 'false');
 	await expect(line).toHaveCount(0);
-	await phonesSwitch.tap();
+	await phones.tap();
 	await expect(line).toHaveText('Seating is open');
 	await leaveSeating(page);
 	await expect(line).toHaveCount(0);
@@ -185,9 +188,20 @@ test('Character selection opens Seating, and Done comes back to it', async ({ pa
 	await page.getByRole('button', { name: 'Seating' }).tap();
 	await expect(page.getByRole('toolbar', { name: 'Grimoire' })).toContainText('Seating');
 	// No room open: the room's parts stay in place, disabled.
-	const bar = page.getByTestId('seating-bar');
-	await expect(bar.getByRole('checkbox', { name: 'Players move seats' })).toBeDisabled();
+	const bar = page.getByRole('toolbar', { name: 'Grimoire' });
+	await expect(bar.getByRole('button', { name: 'Players move seats' })).toBeDisabled();
 	await expect(bar.getByRole('button', { name: 'Count off' })).toBeDisabled();
+	// Add seat is there too: it places a seat, then comes back to Seating (Trevor, 2026-11-01).
+	const seats = page.getByRole('button', { name: /^Seat \d+/ });
+	const before = await seats.count();
+	await bar.getByRole('button', { name: 'Add seat' }).tap();
+	await expect(bar).toContainText('Add a seat');
+	await page
+		.getByRole('button', { name: /^Place between/ })
+		.first()
+		.tap();
+	await expect(bar.getByRole('button', { name: 'Players move seats' })).toBeVisible();
+	await expect(seats).toHaveCount(before + 1);
 	await leaveSeating(page);
 	await expect(page).toHaveURL(setup);
 });
