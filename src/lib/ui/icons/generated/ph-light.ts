@@ -174,6 +174,7 @@ import ph_question_light from '~icons/ph/question-light';
 import ph_scales_light from '~icons/ph/scales-light';
 import ph_scan_light from '~icons/ph/scan-light';
 import ph_scroll_light from '~icons/ph/scroll-light';
+import ph_seal_check_light from '~icons/ph/seal-check-light';
 import ph_selection_light from '~icons/ph/selection-light';
 import ph_shapes_light from '~icons/ph/shapes-light';
 import ph_share_network_light from '~icons/ph/share-network-light';
@@ -198,6 +199,7 @@ import ph_speaker_high_light from '~icons/ph/speaker-high-light';
 import ph_spinner_light from '~icons/ph/spinner-light';
 import ph_square_light from '~icons/ph/square-light';
 import ph_square_split_horizontal_light from '~icons/ph/square-split-horizontal-light';
+import ph_stamp_light from '~icons/ph/stamp-light';
 import ph_star_light from '~icons/ph/star-light';
 import ph_star_half_light from '~icons/ph/star-half-light';
 import ph_sun_light from '~icons/ph/sun-light';
@@ -409,6 +411,7 @@ const icons: IconMap = {
 	'ph:scales-light': ph_scales_light,
 	'ph:scan-light': ph_scan_light,
 	'ph:scroll-light': ph_scroll_light,
+	'ph:seal-check-light': ph_seal_check_light,
 	'ph:selection-light': ph_selection_light,
 	'ph:shapes-light': ph_shapes_light,
 	'ph:share-network-light': ph_share_network_light,
@@ -433,6 +436,7 @@ const icons: IconMap = {
 	'ph:spinner-light': ph_spinner_light,
 	'ph:square-light': ph_square_light,
 	'ph:square-split-horizontal-light': ph_square_split_horizontal_light,
+	'ph:stamp-light': ph_stamp_light,
 	'ph:star-light': ph_star_light,
 	'ph:star-half-light': ph_star_half_light,
 	'ph:sun-light': ph_sun_light,

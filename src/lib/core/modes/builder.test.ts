@@ -5,6 +5,7 @@ import {
 	fieldControl,
 	issuesAt,
 	knownType,
+	modeFileKind,
 	newPartValue,
 	partFields,
 	pathText,
@@ -105,5 +106,16 @@ describe('editing the file', () => {
 		expect(issuesAt(issues, ['parts', 'nightSteps', 0, 'when'])).toEqual(['must be one of x']);
 		expect(issuesAt(issues, ['sources'])).toEqual(['[1].url: must be an https link']);
 		expect(issuesAt(issues, ['name'])).toEqual([]);
+	});
+});
+
+describe('telling a mode file from a script', () => {
+	it('reads a game mode or special rule file, and not a script or a character', () => {
+		expect(modeFileKind(emptyFile('game-mode'))).toBe('game-mode');
+		expect(modeFileKind(emptyFile('special-rule'))).toBe('special-rule');
+		expect(modeFileKind([{ id: '_meta', name: 'S' }, 'washerwoman'])).toBeUndefined();
+		expect(modeFileKind({ id: 'x', name: 'X', ability: 'Each night...' })).toBeUndefined();
+		expect(modeFileKind({ format: 1, parts: [] })).toBeUndefined();
+		expect(modeFileKind(null)).toBeUndefined();
 	});
 });

@@ -113,6 +113,21 @@ export function buildKindOf(file: Record<string, unknown>): BuildKind {
 	return file.kind === 'special-rule' ? 'special-rule' : 'game-mode';
 }
 
+/**
+ * Whether loaded JSON is a mode file, and which kind (the Library's Add takes them beside
+ * scripts): an object with a numeric `format` and a `parts` object. A script is a list, and
+ * a single character has no `parts`, so neither reads as one.
+ */
+export function modeFileKind(json: unknown): BuildKind | undefined {
+	if (typeof json !== 'object' || json === null || Array.isArray(json)) return undefined;
+	const file = json as Record<string, unknown>;
+	const parts = file.parts;
+	if (typeof file.format !== 'number' || typeof parts !== 'object' || parts === null) {
+		return undefined;
+	}
+	return Array.isArray(parts) ? undefined : buildKindOf(file);
+}
+
 /** A new part or list item: its first kind, or no fields at all. */
 export function newPartValue(part: GuidePart): unknown {
 	if (isLinesPart(part)) return '';
