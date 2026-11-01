@@ -88,6 +88,8 @@ export function readBecomes(
  * - `types`: the character types that may be picked;
  * - `notInPlay`: only characters no one is playing (the Pit-Hag,
  *   https://wiki.bloodontheclocktower.com/Pit-Hag);
+ * - `notTravellers`: never a Traveller (the Pit-Hag; its wiki page calls changing a
+ *   Traveller an optional rule the Storyteller may allow, so its optional rule leaves this out);
  * - `alignment`: the player's new alignment; left out, they keep theirs (the Summoner's
  *   "evil Demon", https://wiki.bloodontheclocktower.com/Summoner);
  * - `token`: only on a night its own token marks (the Summoner's Night 3);
@@ -112,6 +114,7 @@ export function readBecomes(
 export interface ChangesCharacter {
 	types: readonly SeatedType[];
 	notInPlay?: true;
+	notTravellers?: true;
 	alignment?: Alignment;
 	token?: ReminderLabel;
 	spent?: ReminderLabel;
@@ -139,6 +142,7 @@ export function readChangesCharacter(
 		[
 			'types',
 			'notInPlay',
+			'notTravellers',
 			'alignment',
 			'token',
 			'spent',
@@ -159,6 +163,7 @@ export function readChangesCharacter(
 	}) as SeatedType[];
 	if (types.length === 0) issues.add(`${path}.types`, 'expected at least one character type');
 	const notInPlay = readBoolean(raw, 'notInPlay', path, issues);
+	const notTravellers = readBoolean(raw, 'notTravellers', path, issues);
 	const alignment = readEnum(raw, 'alignment', ALIGNMENTS, path, issues, false);
 	const token = readToken(raw, 'token', path, issues, reminders);
 	const spent = readToken(raw, 'spent', path, issues, reminders);
@@ -173,6 +178,7 @@ export function readChangesCharacter(
 	return {
 		types,
 		...(notInPlay ? { notInPlay: true as const } : {}),
+		...(notTravellers ? { notTravellers: true as const } : {}),
 		...(alignment ? { alignment } : {}),
 		...(token ? { token } : {}),
 		...(spent ? { spent } : {}),

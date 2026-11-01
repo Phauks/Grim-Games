@@ -251,6 +251,20 @@ describe('a character that changes a chosen player (changesCharacter)', () => {
 		expect(OFFICIAL_RULES.get('pithag')?.changesCharacter).toMatchObject({ notInPlay: true });
 	});
 
+	// https://wiki.bloodontheclocktower.com/Pit-Hag (Tips): changing a Traveller is an optional
+	// rule the Storyteller may allow, so the Pit-Hag skips Travellers unless the game turns it on.
+	it('skips Travellers, unless the game plays the Pit-Hag optional rule', () => {
+		const cast: CharacterId[] = ['pithag', 'chef', 'empath', 'imp', 'gunslinger'];
+		const off = castGame(cast);
+		expect(changeableSeats(off.session.game, 'pithag', characters)).toEqual(off.seats.slice(0, 4));
+		const on = castGame(cast, () => ({
+			type: 'SetOptionalRule',
+			characterId: 'pithag',
+			on: true
+		}));
+		expect(changeableSeats(on.session.game, 'pithag', characters)).toEqual(on.seats);
+	});
+
 	it('asks the Huntsman only while a Damsel is in play and before its No Ability', () => {
 		const none = castGame(['huntsman', 'chef', 'empath']);
 		expect(characterChanger(none.session.game, 'huntsman', characters)).toBeUndefined();

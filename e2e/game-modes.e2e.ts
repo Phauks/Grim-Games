@@ -1117,9 +1117,14 @@ test('a mode file someone wrote can be added, inspected and deleted', async ({ p
 	const sections = guide.getByRole('navigation', { name: 'Sections' });
 	if (!(await sections.isVisible()))
 		await guide.getByRole('button', { name: 'Sections', exact: true }).tap();
-	await expect(sections.getByRole('button')).toHaveCount(18);
+	// The game mode's sections, then a special rule's own header and parts (2026-11-01).
+	await expect(sections.getByRole('button')).toHaveCount(28);
 	await sections.getByRole('button', { name: 'Character pool', exact: true }).tap();
 	await expect(guide.locator('section[data-part="pool"]')).toBeVisible();
+	if (!(await sections.isVisible()))
+		await guide.getByRole('button', { name: 'Sections', exact: true }).tap();
+	await sections.getByRole('button', { name: 'Deaths', exact: true }).tap();
+	await expect(guide.locator('section[data-part="deaths"]')).toBeVisible();
 	await noSidewaysScroll(page);
 	// The whole guide downloads as Markdown or plain text.
 	await guide.getByRole('button', { name: 'Download the guide' }).tap();
