@@ -5,6 +5,8 @@ import {
 	followedAlignmentOffer,
 	reincarnatedBy,
 	survivesFirstDeath,
+	explosionOf,
+	type Explosion,
 	type Night
 } from '#lib/core/rules/index.ts';
 import { doneKey } from './night-steps.ts';
@@ -257,8 +259,18 @@ export class Grimoire {
 		if (misfit && becomes !== 'swap') toast('Note', misfit);
 		this.askAlignment(command);
 		this.askFirstDeath(command);
+		if (command.type === 'Execute') {
+			const explosion = explosionOf(before, command.seatId, this.open.characters);
+			if (explosion) this.explosionAsk = { ...explosion, seatId: command.seatId };
+		}
 		return true;
 	}
+
+	/**
+	 * An executed player whose character explodes, its ability working before the execution
+	 * (the Boomdandy, `explosionOf`): the board asks who lives, then who was pointed at most.
+	 */
+	explosionAsk = $state.raw<(Explosion & { seatId: SeatId }) | undefined>();
 
 	/** The seat and reminder an AddReminder or MoveReminder just put down. */
 	private placed(command: Command): { seatId: SeatId; reminder: Reminder } | undefined {

@@ -4,7 +4,7 @@
  * the other device types the room code on Join game, then the transfer code (⋯ Room transfer),
  * and asks to take over; the Storyteller's device allows it (Trevor, 2026-10-28: "so that
  * someone cannot just take the room without consent"), and the other device becomes the room's
- * Storyteller. The room holds only the code's hash, for five minutes and three wrong tries.
+ * Storyteller. The room holds only the code's hash, for two minutes (Trevor, 2026-11-01) and three wrong tries.
  * Split from `room.ts`.
  */
 import type { PlayersPhase } from '#lib/core/rules/game-phase.ts';
@@ -16,7 +16,7 @@ import type { RoomState } from './room.ts';
  */
 export const TRANSFER_CODE_LENGTH = 8;
 /** How long a transfer code works. */
-export const TRANSFER_MS = 5 * 60 * 1000;
+export const TRANSFER_MS = 2 * 60 * 1000;
 /** Wrong codes, from any device, that end a transfer. */
 export const TRANSFER_TRIES = 3;
 

@@ -2580,6 +2580,42 @@ test('the Hermit holds every other Outsider ability on the script', async ({ pag
 	await expect(seat.locator('[title="Holds the Butler ability (not now)"]')).toHaveCount(1);
 });
 
+// https://wiki.bloodontheclocktower.com/Courtier: the chosen player is drunk for 3 nights and 3
+// days; its step counts the token down each other night, Drunk 3 to 2 to 1, then off (M12).
+test("the Courtier's step counts its Drunk token down each night", async ({ page }) => {
+	test.slow();
+	await startGame(page);
+	for (const [number, name] of [
+		[1, 'Courtier'],
+		[2, 'Imp']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		const picker = page.getByRole('dialog', { name: `Character for Seat ${number}` });
+		if (number === 1) await picker.getByText('Include characters not on the script').tap();
+		await picker.getByRole('button', { name, exact: true }).tap();
+		await closeSheet(page);
+	}
+	// The first night, the Courtier names the Imp.
+	const first = await walkTo(page, 'Dusk');
+	await first.getByRole('button', { name: 'Next step' }).tap();
+	await putReminder(page, 'Drunk 3', 2);
+	await endNight(page);
+	const day = page.getByRole('dialog', { name: 'Day 1' });
+	await day.getByRole('button', { name: 'Close' }).tap();
+	await expect(day).toBeHidden();
+	const step = await openStep(page, 'Courtier');
+	const rows = step.getByTestId('countdown');
+	await expect(rows).toContainText(/Seat 2.*becomes/);
+	await step.getByRole('button', { name: 'Count down', exact: true }).tap();
+	// Done for tonight: the new Drunk 2 was placed tonight, so nothing is left to count.
+	await expect(rows).toHaveText('None');
+	await expect(step.getByRole('button', { name: 'Count down', exact: true })).toBeDisabled();
+	await page.keyboard.press('Escape');
+	// Drunk 2 on the board in place of Drunk 3.
+	await expect(page.getByRole('button', { name: 'Drunk 2 reminder' })).toHaveCount(1);
+});
+
 // https://wiki.bloodontheclocktower.com/Plague_Doctor: when it dies, the Storyteller gains a
 // Minion ability, marked Storyteller Ability; shown with the Fabled and Loric (Trevor, 2026-10-30).
 test('a dead Plague Doctor gives the Storyteller a Minion ability, shown on the board', async ({
@@ -4421,6 +4457,33 @@ test('with no one stormcaught, the evil players are shown the named character as
 	const shown = page.locator('[data-testid="show-to-player"][open]');
 	await expect(shown.getByRole('heading')).toHaveText('These characters are not in play');
 	await expect(shown).toContainText('Washerwoman');
+});
+
+// Trevor (2026-11-01, M10g): the named character is saved with the game, in play or not.
+test('the Storm Catcher named character is picked before the day and kept at its step', async ({
+	page
+}) => {
+	test.slow();
+	await stormCatcherGame(page);
+	await page.getByRole('button', { name: 'Day', exact: true }).tap();
+	const day = page.getByRole('dialog', { name: 'Day' });
+	const value = day.getByTestId('prep-value').first();
+	await expect(value).toHaveText('(CHARACTER)');
+	await value.tap();
+	const pick = page.getByRole('dialog', { name: 'Stormcaught character' });
+	await pick.getByRole('combobox', { name: 'Stormcaught character' }).tap();
+	await page.getByRole('option', { name: 'Washerwoman', exact: true }).tap();
+	await pick.getByRole('button', { name: 'Save' }).tap();
+	await expect(pick).toBeHidden();
+	await expect(value).toContainText('Washerwoman');
+	await page.keyboard.press('Escape');
+	await expect(day).toBeHidden();
+	// Kept through a reload, and already chosen at the first night step.
+	await page.reload();
+	const step = await openStep(page, 'Storm Catcher');
+	const learns = step.getByTestId('night-evil-learns');
+	await expect(learns).toContainText('Washerwoman');
+	await expect(learns.getByRole('button', { name: 'Show to player' })).toBeEnabled();
 });
 
 test('Minion info and Demon info list every card they can show, with who it points at', async ({

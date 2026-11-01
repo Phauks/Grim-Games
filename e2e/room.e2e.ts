@@ -2179,24 +2179,28 @@ test("a player puts generic tokens with numbers or notes on their own Grim's sea
 		'aria-label',
 		/your reminders: 7$/
 	);
+	// Each given its words from the seat's sheet: a tap on a token opens its About, as on the
+	// board's sheet (Trevor, 2026-11-01), whose pencil edits an ∞ token's look.
 	await third.tap();
-	await phone.getByTestId('seat-reminders').tap();
-	const picker = phone.getByRole('dialog', { name: 'Reminders for Seat 3' });
+	const row = phone.getByTestId('seat-reminders');
 	const text = phone.getByTestId('reminder-note');
 	for (const [n, words] of ['1', '2'].entries()) {
-		await picker.getByRole('group', { name: 'On this seat' }).getByRole('button').nth(n).tap();
+		await row.getByRole('button').nth(n).tap();
+		await phone.getByRole('button', { name: 'Edit token' }).tap();
 		await text.fill(words);
 		await text.press('Enter');
 		await phone.keyboard.press('Escape');
 		await expect(text).toBeHidden();
+		await phone.keyboard.press('Escape');
 	}
-	const here = picker.getByRole('group', { name: 'On this seat' }).getByRole('button');
-	await expect(here).toHaveText(['1', '2']);
-	// A placed one opens its look again, where it can be deleted.
-	await here.first().tap();
-	await phone.getByRole('button', { name: 'Delete token' }).tap();
-	await expect(here).toHaveText(['2']);
-	await phone.keyboard.press('Escape');
+	await expect(row.getByRole('button')).toHaveCount(2);
+	await expect(row.getByRole('button').nth(0)).toHaveAccessibleName('Generic reminder: 1');
+	await expect(row.getByRole('button').nth(1)).toHaveAccessibleName('Generic reminder: 2');
+	// Its About takes it off the seat, as the board's red trash does.
+	await row.getByRole('button').first().tap();
+	await phone.getByRole('button', { name: 'Remove reminder' }).tap();
+	await expect(row.getByRole('button')).toHaveCount(1);
+	await expect(row.getByRole('button')).toHaveAccessibleName('Generic reminder: 2');
 	await phone.keyboard.press('Escape');
 	const placed = phone
 		.getByTestId('player-grim')
