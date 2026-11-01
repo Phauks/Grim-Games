@@ -30,7 +30,7 @@ import {
 	type AbilitySource,
 	type RegistrationWorld
 } from './ability.ts';
-import { gainedBy } from './gained-abilities.ts';
+import { gainedBy, heldAbilitiesOf } from './gained-abilities.ts';
 import {
 	type DeathCauseRule,
 	type DeathKind,
@@ -214,6 +214,11 @@ export function validDeathCauses(
 		const holders = game.seating.filter((s) => trueCharacter(game, s, characters) === characterId);
 		if (holders.length === 0 && !game.ruleCharacters.includes(characterId)) continue;
 
+		/** Who an ability can kill: its own player when it only causes its own death. */
+		const ruleOf = (id: CharacterId): VictimRule | undefined => {
+			const entry = deathCauseEntry(id, characters);
+			return entry?.kind === 'own-death' ? { who: 'self' } : entry?.victim;
+		};
 		// A gained ability: the rules of the character it came from.
 		const from = rulesOf(characterId, characters)?.gainedFrom !== undefined;
 		const gainedFor = new Map<SeatId, CharacterId>();
@@ -223,13 +228,33 @@ export function validDeathCauses(
 			if (id !== undefined && entry && entry.kind !== 'gained-ability') gainedFor.set(h, id);
 		}
 		if (from && gainedFor.size === 0) continue;
+		// An ability its own character gives its player without a token (`givesAbility` to
+		// `self`): the Amnesiac's, whatever the Storyteller chose it to be once picked in the
+		// seat's menu (https://wiki.bloodontheclocktower.com/Amnesiac, M15i), or the Hermit's
+		// Outsiders. The death is the holder's own character's, shown with the ability it held.
+		// Once any is recorded, it is offered only when one of them can kill this player.
+		const own = !from && kind === 'gained-ability';
+		let held = false;
+		for (const h of own ? holders : []) {
+			for (const ability of heldAbilitiesOf(game, h, characters)) {
+				if (ability.via !== characterId) continue;
+				held = true;
+				const entry = deathCauseEntry(ability.characterId, characters);
+				if (!entry || entry.kind === 'gained-ability') continue;
+				if (!gainedFor.has(h) || holderFits(game, ruleOf(ability.characterId), h, seatId))
+					gainedFor.set(h, ability.characterId);
+			}
+		}
+		if (held && gainedFor.size === 0) continue;
 		const ruleFor = (h: SeatId): VictimRule | undefined => {
-			const id = gainedFor.get(h) ?? characterId;
-			const k = gainedFor.has(h) ? deathCauseEntry(id, characters)!.kind : kind;
-			return k === 'own-death' ? { who: 'self' } : deathCauseEntry(id, characters)?.victim;
+			const id = gainedFor.get(h);
+			if (id !== undefined) return ruleOf(id);
+			return kind === 'own-death'
+				? { who: 'self' }
+				: deathCauseEntry(characterId, characters)?.victim;
 		};
 		const acting = holders.filter(
-			(h) => (!from || gainedFor.has(h)) && holderFits(game, ruleFor(h), h, seatId)
+			(h) => (!(from || held) || gainedFor.has(h)) && holderFits(game, ruleFor(h), h, seatId)
 		);
 		if (holders.length > 0 && acting.length === 0) continue;
 		const gained = acting.length > 0 ? gainedFor.get(acting[0]) : undefined;
