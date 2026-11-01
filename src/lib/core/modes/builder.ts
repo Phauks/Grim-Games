@@ -187,3 +187,87 @@ export function issuesAt(issues: readonly string[], path: Path): string[] {
 			: [];
 	});
 }
+
+/**
+ * A part's Source and Storyteller instructions: on every part, but set on few, so the builder
+ * adds them per part from its header rather than as a row on each (Trevor, 2026-11-01: "find a
+ * better way to make it so it can be added per rule change").
+ */
+export const PART_NOTES: readonly GuideField[] = [CITE, INSTRUCTIONS];
+const NOTE_NAMES: ReadonlySet<string> = new Set(PART_NOTES.map((f) => f.name));
+
+/** The fields of one part, or one list item, less its Source and Storyteller instructions. */
+export function ownPartFields(part: GuidePart, kind: string | undefined): GuideField[] {
+	return partFields(part, kind).filter((f) => !NOTE_NAMES.has(f.name));
+}
+
+/**
+ * The part with one setting changed. A part the file leaves out is added first, so changing
+ * any of its settings turns it on (Trevor, 2026-11-01: "while something is disabled, you
+ * should still be able to open the menus").
+ */
+export function setPartAt(part: GuidePart, current: unknown, path: Path, value: unknown): unknown {
+	return setAt(current === undefined ? newPartValue(part) : current, path, value);
+}
+
+/**
+ * Of the places on the form (`paths`, as problems write them), the one a problem at `path` is
+ * shown at: the same path, else the nearest one holding it, else the file's details.
+ */
+export function closestPath(path: string, paths: readonly string[]): string | undefined {
+	let best: string | undefined;
+	for (const p of paths) {
+		const holds = path === p || path.startsWith(`${p}.`) || path.startsWith(`${p}[`);
+		if (holds && (best === undefined || p.length > best.length)) best = p;
+	}
+	return best;
+}
+
+/** One run of a file's JSON: the lines of one part (`part`), or of what is around them. */
+export interface JsonChunk {
+	text: string;
+	part?: string;
+}
+
+/**
+ * The file as it is downloaded (two-space JSON), split so each part's lines are one chunk:
+ * the builder's output makes a part's lines a link to its settings. The chunks joined are
+ * the file's JSON exactly, whatever order its keys are in.
+ */
+export function jsonChunks(file: Record<string, unknown>): JsonChunk[] {
+	const lines = JSON.stringify(file, null, 2).split('\n');
+	const chunks: JsonChunk[] = [];
+	let around: string[] = [];
+	let part: { name: string; lines: string[] } | undefined;
+	let inParts = false;
+	const flushAround = () => {
+		if (around.length) chunks.push({ text: around.join('\n') });
+		around = [];
+	};
+	const flushPart = () => {
+		if (part) chunks.push({ text: part.lines.join('\n'), part: part.name });
+		part = undefined;
+	};
+	for (const line of lines) {
+		if (!inParts) {
+			around.push(line);
+			if (line === '  "parts": {') inParts = true;
+			continue;
+		}
+		const start = /^ {4}"((?:[^"\\]|\\.)*)": /.exec(line);
+		if (start) {
+			flushAround();
+			flushPart();
+			part = { name: JSON.parse(`"${start[1]}"`) as string, lines: [line] };
+		} else if (/^ {2}\}/.test(line)) {
+			flushPart();
+			inParts = false;
+			around.push(line);
+		} else if (part) part.lines.push(line);
+		else around.push(line);
+	}
+	flushPart();
+	flushAround();
+	// Each chunk after the first starts on a new line.
+	return chunks.map((c, i) => (i === 0 ? c : { ...c, text: `\n${c.text}` }));
+}

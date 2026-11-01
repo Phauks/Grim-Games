@@ -191,7 +191,7 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		title:
 			"Special rules and game modes: +1, Binary Supernovae, Trained Killer, Phantom Detectives, Council of the Dead, The Warrens, The Djinn's Bargain, sharing your own mode files, the Mode builder, requesting missing mode features, mode files in the Library",
 		area: 'storyteller',
-		parts: ['L1', 'L35', 'L36', 'L103', 'L104', 'L105', 'L106'],
+		parts: ['L1', 'L35', 'L36', 'L103', 'L104', 'L105', 'L106', 'L110'],
 		prs: [322, 328]
 	},
 	{
@@ -349,11 +349,11 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	},
 	{
 		// Gap 2: characters whose information the Storyteller still works out by hand. M10a
-		// Chambermaid, M10b Puzzlemaster, M10c Widow, M10d Damsel, M10e Storm Catcher, M10f Zenomancer.
+		// Chambermaid, M10b Puzzlemaster, M10c Widow, M10d Damsel, M10e Storm Catcher, M10f Zenomancer, M10g the Storm Catcher's named character saved.
 		title:
 			'Valid information for the Chambermaid, Puzzlemaster, Widow, Damsel, Storm Catcher and Zenomancer',
 		area: 'engine',
-		parts: ['M10a', 'M10b', 'M10c', 'M10d', 'M10e', 'M10f']
+		parts: ['M10a', 'M10b', 'M10c', 'M10d', 'M10e', 'M10f', 'M10g']
 	},
 	{
 		// Gap 8: the Bigwig's chosen speaker; gap 12: one-offs with no behaviour yet: M12a the
@@ -370,10 +370,11 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['M9']
 	},
 	{
-		// The wiki examples each character's test file lists as still to do.
+		// The wiki examples each character's test file lists as still to do, a batch per edition
+		// (M13b Trouble Brewing). Examples the engine can't pass yet are written as it.fails.
 		title: 'Every wiki example tested, for every character',
 		area: 'engine',
-		parts: ['M13a', 'M13']
+		parts: ['M13a', 'M13b', 'M13']
 	},
 	{
 		// Trevor, 2026-10-30: on the roadmap, after a spike and research.

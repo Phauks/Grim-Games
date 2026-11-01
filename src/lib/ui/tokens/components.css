@@ -72,6 +72,8 @@
 
 	/* The board's bars over the background (reminder bank, history strip, toolbar). */
 	--board-bar-background: color-mix(in srgb, var(--surface) 85%, transparent);
+	/* A bordered block over the page background (the Mode builder's tables and output). */
+	--panel-background: color-mix(in srgb, var(--surface) 85%, transparent);
 	/* The glow round a seat token being picked or dragged. */
 	--focus-glow: color-mix(in srgb, var(--focus) 55%, transparent);
 	/* A pale wash of a colour behind a pressed or chosen control. */
