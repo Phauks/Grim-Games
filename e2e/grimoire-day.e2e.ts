@@ -338,6 +338,19 @@ test("the day's sections fold with their caret and their headers stick under the
 	expect(headBox.y).toBeLessThan(toolbarBox.y + toolbarBox.height + 1);
 });
 
+// Votes are run outside the app; the votes dialog lists each unusual vote for the
+// Storyteller's count (Trevor, 2026-11-01; M9e).
+test('the votes dialog notes a Thief’s negative vote (M9e)', async ({ page }) => {
+	await startGame(page);
+	await addThief(page);
+	await putReminder(page, 'Negative Vote', 2);
+	await openDay(page);
+	await page.getByTestId('votes-needed').tap();
+	const notes = page.getByTestId('vote-notes');
+	await expect(notes.locator('tbody tr')).toHaveCount(1);
+	await expect(notes.locator('tbody tr')).toHaveText(/Seat 2.*Vote counts as -1/);
+});
+
 test('a Traveller is exiled, and a death offers only valid causes', async ({ page }) => {
 	const board = await startGame(page);
 	await addThief(page);

@@ -366,7 +366,8 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		// Gap 1, last and separate (Trevor, 2026-10-28). M9a the vote record and vote weights
 		// (Thief, Bureaucrat, God of Ug, Butler, Zealot, Beggar), M9b voting across the table
 		// (Voudon, Organ Grinder, Ferryman), M9c who may nominate (Bishop, Golem, Gnome), M9d
-		// forced and failed executions (Legion, Judge, Vizier, Cult Leader), M9e the vote sheet.
+		// forced and failed executions (Legion, Judge, Vizier, Cult Leader), M9e vote notes for the
+		// Storyteller's count (Trevor, 2026-11-01: votes are run outside the app, never recorded).
 		title:
 			'Voting and nominations: vote weight, who may vote or nominate, forced and blocked executions (Butler, Thief, Bureaucrat, Bishop, Legion and 12 more)',
 		area: 'engine',
