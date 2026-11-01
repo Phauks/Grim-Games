@@ -48,7 +48,7 @@ describe('room transfer', () => {
 		expect(makeTransferCode(() => 0.999999999)).toBe('99999999');
 	});
 
-	it('opens for five minutes, and a switch change keeps the time and tries', () => {
+	it('opens for two minutes, and a switch change keeps the time and tries', () => {
 		const opened = openTransfer(room(), CODE_HASH, false, 1000);
 		expect(opened.transfer).toEqual({
 			codeHash: CODE_HASH,
