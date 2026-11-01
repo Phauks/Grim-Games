@@ -527,6 +527,10 @@ test('history, add seat and remove', async ({ page }) => {
 	// History lists the change; going back to before it asks first.
 	await menu(page, 'History');
 	const history = page.getByRole('dialog', { name: 'History' });
+	// Each line has its number, the oldest 1 (Trevor, 2026-11-01).
+	const numbers = history.getByTestId('history-number');
+	await expect(numbers.last()).toHaveText('1');
+	await expect(numbers.first()).toHaveText(String(await numbers.count()));
 	const added = history.getByRole('listitem').filter({ hasText: 'Added Seat 3' });
 	await added.getByRole('button', { name: 'Restore' }).tap();
 	const back = page.getByRole('alertdialog', { name: 'Restore?' });

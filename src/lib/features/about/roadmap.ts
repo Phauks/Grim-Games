@@ -312,7 +312,7 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		// Trevor, 2026-10-30/31: chosen at the start, shown on or off with the special rules.
 		title: "Characters' optional rules, chosen at the start of the game",
 		area: 'engine',
-		parts: ['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8']
+		parts: ['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8', 'M14']
 	},
 	{
 		// The ability parts gap list (/mnt/project-files/ability-parts/gaps.md), gaps 2 to 5.
