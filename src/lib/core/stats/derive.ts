@@ -8,6 +8,7 @@ import { applyEvent, type SavedGame } from '#lib/core/engine/index.ts';
 import {
 	alignmentOf,
 	characterLookup,
+	inPlay,
 	isAliveForWin,
 	isTraveller,
 	trueCharacter,
@@ -44,7 +45,8 @@ function snapshot(game: Game, characters: CharacterLookup): Map<SeatId, RecordCh
 	return out;
 }
 
-function aliveCount(game: Game, characters: CharacterLookup): number {
+function aliveCount(full: Game, characters: CharacterLookup): number {
+	const game = inPlay(full);
 	return game.seating.filter((id) => isAliveForWin(game, id) && !isTraveller(game, id, characters))
 		.length;
 }

@@ -153,6 +153,13 @@ export interface Seat {
 	 */
 	alignment?: Alignment;
 	dead: boolean;
+	/**
+	 * At the table but not in play yet (Trevor, 2026-10-31): a Traveller who arrives mid-game
+	 * sits down before the night they join at. Such a seat counts for nothing (votes, the alive
+	 * count, nominations, the game's end) until it comes into play, by hand or when the next
+	 * night starts. Absent once in play.
+	 */
+	notInPlay?: true;
 	/** How the player died, if the Storyteller recorded it. Only set while `dead`. */
 	deathCause?: DeathCause;
 	/** True once a dead player has used their vote. */

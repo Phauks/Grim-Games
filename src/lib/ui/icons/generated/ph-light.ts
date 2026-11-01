@@ -138,9 +138,7 @@ import ph_list_dashes_light from '~icons/ph/list-dashes-light';
 import ph_list_magnifying_glass_light from '~icons/ph/list-magnifying-glass-light';
 import ph_list_numbers_light from '~icons/ph/list-numbers-light';
 import ph_lock_light from '~icons/ph/lock-light';
-import ph_lock_open_light from '~icons/ph/lock-open-light';
 import ph_lock_simple_light from '~icons/ph/lock-simple-light';
-import ph_lock_simple_open_light from '~icons/ph/lock-simple-open-light';
 import ph_magnifying_glass_light from '~icons/ph/magnifying-glass-light';
 import ph_mask_sad_light from '~icons/ph/mask-sad-light';
 import ph_megaphone_light from '~icons/ph/megaphone-light';
@@ -170,6 +168,7 @@ import ph_prohibit_light from '~icons/ph/prohibit-light';
 import ph_prohibit_inset_light from '~icons/ph/prohibit-inset-light';
 import ph_projector_screen_light from '~icons/ph/projector-screen-light';
 import ph_push_pin_light from '~icons/ph/push-pin-light';
+import ph_puzzle_piece_light from '~icons/ph/puzzle-piece-light';
 import ph_qr_code_light from '~icons/ph/qr-code-light';
 import ph_question_light from '~icons/ph/question-light';
 import ph_scales_light from '~icons/ph/scales-light';
@@ -374,9 +373,7 @@ const icons: IconMap = {
 	'ph:list-magnifying-glass-light': ph_list_magnifying_glass_light,
 	'ph:list-numbers-light': ph_list_numbers_light,
 	'ph:lock-light': ph_lock_light,
-	'ph:lock-open-light': ph_lock_open_light,
 	'ph:lock-simple-light': ph_lock_simple_light,
-	'ph:lock-simple-open-light': ph_lock_simple_open_light,
 	'ph:magnifying-glass-light': ph_magnifying_glass_light,
 	'ph:mask-sad-light': ph_mask_sad_light,
 	'ph:megaphone-light': ph_megaphone_light,
@@ -406,6 +403,7 @@ const icons: IconMap = {
 	'ph:prohibit-inset-light': ph_prohibit_inset_light,
 	'ph:projector-screen-light': ph_projector_screen_light,
 	'ph:push-pin-light': ph_push_pin_light,
+	'ph:puzzle-piece-light': ph_puzzle_piece_light,
 	'ph:qr-code-light': ph_qr_code_light,
 	'ph:question-light': ph_question_light,
 	'ph:scales-light': ph_scales_light,

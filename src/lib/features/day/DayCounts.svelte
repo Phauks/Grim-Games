@@ -6,6 +6,7 @@
 		livingByTeam,
 		type DayCount
 	} from '#lib/core/rules/index.ts';
+	import { inPlay } from '#lib/core/model/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import CountBadge from './CountBadge.svelte';
@@ -18,7 +19,8 @@
 	}
 
 	let { game }: Props = $props();
-	const g = $derived(game.game);
+	/** Seats not in play yet count for nothing (Trevor, 2026-10-31). */
+	const g = $derived(inPlay(game.game));
 
 	/** Votes for the first nominee, from who is alive now (core `blockThreshold`). */
 	const block = $derived(blockThreshold(g));

@@ -71,7 +71,6 @@ import ph_list from '~icons/ph/list';
 import ph_list_bullets from '~icons/ph/list-bullets';
 import ph_list_checks from '~icons/ph/list-checks';
 import ph_lock_simple from '~icons/ph/lock-simple';
-import ph_lock_simple_open from '~icons/ph/lock-simple-open';
 import ph_magnifying_glass from '~icons/ph/magnifying-glass';
 import ph_mask_sad from '~icons/ph/mask-sad';
 import ph_minus from '~icons/ph/minus';
@@ -93,6 +92,7 @@ import ph_printer from '~icons/ph/printer';
 import ph_prohibit from '~icons/ph/prohibit';
 import ph_projector_screen from '~icons/ph/projector-screen';
 import ph_push_pin from '~icons/ph/push-pin';
+import ph_puzzle_piece from '~icons/ph/puzzle-piece';
 import ph_scroll from '~icons/ph/scroll';
 import ph_shapes from '~icons/ph/shapes';
 import ph_share_network from '~icons/ph/share-network';
@@ -196,7 +196,6 @@ const icons: IconMap = {
 	'ph:list-bullets': ph_list_bullets,
 	'ph:list-checks': ph_list_checks,
 	'ph:lock-simple': ph_lock_simple,
-	'ph:lock-simple-open': ph_lock_simple_open,
 	'ph:magnifying-glass': ph_magnifying_glass,
 	'ph:mask-sad': ph_mask_sad,
 	'ph:minus': ph_minus,
@@ -218,6 +217,7 @@ const icons: IconMap = {
 	'ph:prohibit': ph_prohibit,
 	'ph:projector-screen': ph_projector_screen,
 	'ph:push-pin': ph_push_pin,
+	'ph:puzzle-piece': ph_puzzle_piece,
 	'ph:scroll': ph_scroll,
 	'ph:shapes': ph_shapes,
 	'ph:share-network': ph_share_network,

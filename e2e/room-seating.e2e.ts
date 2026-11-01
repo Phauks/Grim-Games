@@ -12,7 +12,9 @@ import { toBoard } from './new-game.ts';
 // Seating on the grim (plan J38; Trevor, 2026-10-29 22:36: "yes to drag circle, yes to claim",
 // with no left and right): while seating is open each phone drags its own disc onto the seat it
 // wants, which lights up, and the drop takes that seat's place (Trevor, 2026-10-31: not between
-// seats); the Storyteller locks seating from ⋯; then a phone taps an open seat.
+// seats), or into a space to move its seat there. Seating is one mode on the Storyteller's board
+// (Trevor, 2026-10-31), its "Players move seats" switch on from the start; Done locks seating,
+// then a phone taps an open seat.
 
 async function openRoom(page: Page) {
 	await page.goto('/new');
@@ -42,9 +44,18 @@ async function nameSeat(page: Page, number: number, name: string) {
 	await expect(sheet).toBeHidden();
 }
 
-async function seatingFromMenu(page: Page, item: 'Open seating' | 'Lock seating') {
+async function enterSeating(page: Page) {
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await page.getByRole('dialog', { name: 'Grimoire' }).getByRole('button', { name: item }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Seating' })
+		.tap();
+	await expect(page.getByRole('toolbar', { name: 'Grimoire' })).toContainText('Seating');
+}
+
+async function leaveSeating(page: Page) {
+	await page.getByRole('toolbar', { name: 'Grimoire' }).getByRole('button', { name: 'Done' }).tap();
+	await expect(page.getByTestId('seating-bar')).toHaveCount(0);
 }
 
 async function joinAs(browser: Browser, testInfo: TestInfo, code: string, name: string) {
@@ -76,7 +87,11 @@ test('phones drag their own seat while seating is open, then claim an open seat 
 	const line = phone.getByTestId('seating-line');
 	await expect(phone.getByTestId('seating-disc')).toHaveCount(0);
 
-	await seatingFromMenu(page, 'Open seating');
+	await enterSeating(page);
+	const phones = page
+		.getByTestId('seating-bar')
+		.getByRole('checkbox', { name: 'Players move seats' });
+	await expect(phones).toBeChecked();
 	await expect(line).toHaveText('Seating is open');
 
 	const disc = phone.getByTestId('seating-disc');
@@ -106,7 +121,22 @@ test('phones drag their own seat while seating is open, then claim an open seat 
 	await expect(seats.nth(2)).toHaveAttribute('aria-label', /^Seat 3: Eve/);
 	await expect(page.getByRole('button', { name: /^Seat 2: Ana/ })).toBeVisible();
 
-	// Onto an open seat, the two swap: the chair Ana left is the empty one.
+	// Dropped in a space, Ana's seat moves there on every grim, keeping its place in the order.
+	const town = (await phone.getByTestId('player-grim').boundingBox())!;
+	const spot = { x: town.x + town.width * 0.5, y: town.y + town.height * 0.45 };
+	await dragTo(spot);
+	await expect(target).toHaveCount(0);
+	await expect(line).toHaveText('Move your seat here');
+	await phone.mouse.up();
+	await expect
+		.poll(async () => {
+			const at = await centre(seats.nth(1));
+			return Math.hypot(at.x - spot.x, at.y - spot.y);
+		})
+		.toBeLessThan(town.width * 0.05);
+	await expect(seats.nth(1)).toHaveAttribute('aria-label', /^Seat 2: Ana/);
+
+	// Onto an open seat, the two swap, places and all: the chair Ana left is the empty one.
 	await dragTo(await centre(seats.nth(4)));
 	await expect(target).toHaveAttribute('data-seat', '5');
 	await expect(line).toHaveText('Sit in Seat 5');
@@ -114,10 +144,23 @@ test('phones drag their own seat while seating is open, then claim an open seat 
 	await expect(seats.nth(4)).toHaveAttribute('aria-label', /^Seat 5: Ana/);
 	await expect(seats.nth(2)).toHaveAttribute('aria-label', /^Seat 3: Eve/);
 	await expect(page.getByRole('button', { name: /^Seat 5: Ana/ })).toBeVisible();
+	await expect
+		.poll(async () => {
+			const at = await centre(seats.nth(1));
+			return Math.hypot(at.x - spot.x, at.y - spot.y);
+		})
+		.toBeLessThan(town.width * 0.05);
 
-	// Locked: no more dragging, and a phone with no seat taps an open one to sit there.
-	await seatingFromMenu(page, 'Lock seating');
+	// The switch off: no more dragging. Done leaves Seating with seating locked.
+	const phonesSwitch = page.getByTestId('seating-bar').getByText('Players move seats');
+	await phonesSwitch.tap();
+	await expect(phones).not.toBeChecked();
 	await expect(line).toHaveCount(0);
+	await phonesSwitch.tap();
+	await expect(line).toHaveText('Seating is open');
+	await leaveSeating(page);
+	await expect(line).toHaveCount(0);
+	// Locked, a phone with no seat taps an open one to sit there.
 	const bo = await joinAs(browser, testInfo, code, 'Bo');
 	await bo.getByTestId('grim-seat').nth(1).tap();
 	const ask = bo.getByRole('alertdialog', { name: 'Sit in Seat 2?' });
@@ -128,6 +171,25 @@ test('phones drag their own seat while seating is open, then claim an open seat 
 
 	await phone.context().close();
 	await bo.context().close();
+});
+
+test('Character selection opens Seating, and Done comes back to it', async ({ page }) => {
+	await page.goto('/new');
+	await page
+		.getByRole('radiogroup', { name: 'Script' })
+		.getByText('Trouble Brewing', { exact: true })
+		.tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
+	await expect(page).toHaveURL(/\/setup$/);
+	const setup = page.url();
+	await page.getByRole('button', { name: 'Seating' }).tap();
+	await expect(page.getByRole('toolbar', { name: 'Grimoire' })).toContainText('Seating');
+	// No room open: the room's parts stay in place, disabled.
+	const bar = page.getByTestId('seating-bar');
+	await expect(bar.getByRole('checkbox', { name: 'Players move seats' })).toBeDisabled();
+	await expect(bar.getByRole('button', { name: 'Count off' })).toBeDisabled();
+	await leaveSeating(page);
+	await expect(page).toHaveURL(setup);
 });
 
 test('the seat the room gives a phone has a ring on its Grim, with no way to mark another', async ({

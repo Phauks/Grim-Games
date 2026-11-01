@@ -138,9 +138,7 @@ import ph_list_dashes_bold from '~icons/ph/list-dashes-bold';
 import ph_list_magnifying_glass_bold from '~icons/ph/list-magnifying-glass-bold';
 import ph_list_numbers_bold from '~icons/ph/list-numbers-bold';
 import ph_lock_bold from '~icons/ph/lock-bold';
-import ph_lock_open_bold from '~icons/ph/lock-open-bold';
 import ph_lock_simple_bold from '~icons/ph/lock-simple-bold';
-import ph_lock_simple_open_bold from '~icons/ph/lock-simple-open-bold';
 import ph_magnifying_glass_bold from '~icons/ph/magnifying-glass-bold';
 import ph_mask_sad_bold from '~icons/ph/mask-sad-bold';
 import ph_megaphone_bold from '~icons/ph/megaphone-bold';
@@ -170,6 +168,7 @@ import ph_prohibit_bold from '~icons/ph/prohibit-bold';
 import ph_prohibit_inset_bold from '~icons/ph/prohibit-inset-bold';
 import ph_projector_screen_bold from '~icons/ph/projector-screen-bold';
 import ph_push_pin_bold from '~icons/ph/push-pin-bold';
+import ph_puzzle_piece_bold from '~icons/ph/puzzle-piece-bold';
 import ph_qr_code_bold from '~icons/ph/qr-code-bold';
 import ph_question_bold from '~icons/ph/question-bold';
 import ph_scales_bold from '~icons/ph/scales-bold';
@@ -374,9 +373,7 @@ const icons: IconMap = {
 	'ph:list-magnifying-glass-bold': ph_list_magnifying_glass_bold,
 	'ph:list-numbers-bold': ph_list_numbers_bold,
 	'ph:lock-bold': ph_lock_bold,
-	'ph:lock-open-bold': ph_lock_open_bold,
 	'ph:lock-simple-bold': ph_lock_simple_bold,
-	'ph:lock-simple-open-bold': ph_lock_simple_open_bold,
 	'ph:magnifying-glass-bold': ph_magnifying_glass_bold,
 	'ph:mask-sad-bold': ph_mask_sad_bold,
 	'ph:megaphone-bold': ph_megaphone_bold,
@@ -406,6 +403,7 @@ const icons: IconMap = {
 	'ph:prohibit-inset-bold': ph_prohibit_inset_bold,
 	'ph:projector-screen-bold': ph_projector_screen_bold,
 	'ph:push-pin-bold': ph_push_pin_bold,
+	'ph:puzzle-piece-bold': ph_puzzle_piece_bold,
 	'ph:qr-code-bold': ph_qr_code_bold,
 	'ph:question-bold': ph_question_bold,
 	'ph:scales-bold': ph_scales_bold,

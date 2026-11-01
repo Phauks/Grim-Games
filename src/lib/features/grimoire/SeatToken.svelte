@@ -130,6 +130,7 @@
 				: shifted
 					? `${seat.alignment}`
 					: '',
+			seat.notInPlay ? 'not in play' : '',
 			orphan ? 'not on the script' : '',
 			// eslint-disable-next-line grim/names-as-badges -- an accessible name, see above
 			...trueCharacters.map(({ character: truly }) => `is really the ${truly.name}`),
@@ -291,6 +292,7 @@
 	<SeatDisc
 		{size}
 		dead={seat.dead}
+		notInPlay={seat.notInPlay ? t('common.notInPlay') : undefined}
 		{name}
 		{number}
 		face={character ? face : undefined}

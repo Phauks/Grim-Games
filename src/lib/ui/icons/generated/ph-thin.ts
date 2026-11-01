@@ -138,9 +138,7 @@ import ph_list_dashes_thin from '~icons/ph/list-dashes-thin';
 import ph_list_magnifying_glass_thin from '~icons/ph/list-magnifying-glass-thin';
 import ph_list_numbers_thin from '~icons/ph/list-numbers-thin';
 import ph_lock_thin from '~icons/ph/lock-thin';
-import ph_lock_open_thin from '~icons/ph/lock-open-thin';
 import ph_lock_simple_thin from '~icons/ph/lock-simple-thin';
-import ph_lock_simple_open_thin from '~icons/ph/lock-simple-open-thin';
 import ph_magnifying_glass_thin from '~icons/ph/magnifying-glass-thin';
 import ph_mask_sad_thin from '~icons/ph/mask-sad-thin';
 import ph_megaphone_thin from '~icons/ph/megaphone-thin';
@@ -170,6 +168,7 @@ import ph_prohibit_thin from '~icons/ph/prohibit-thin';
 import ph_prohibit_inset_thin from '~icons/ph/prohibit-inset-thin';
 import ph_projector_screen_thin from '~icons/ph/projector-screen-thin';
 import ph_push_pin_thin from '~icons/ph/push-pin-thin';
+import ph_puzzle_piece_thin from '~icons/ph/puzzle-piece-thin';
 import ph_qr_code_thin from '~icons/ph/qr-code-thin';
 import ph_question_thin from '~icons/ph/question-thin';
 import ph_scales_thin from '~icons/ph/scales-thin';
@@ -374,9 +373,7 @@ const icons: IconMap = {
 	'ph:list-magnifying-glass-thin': ph_list_magnifying_glass_thin,
 	'ph:list-numbers-thin': ph_list_numbers_thin,
 	'ph:lock-thin': ph_lock_thin,
-	'ph:lock-open-thin': ph_lock_open_thin,
 	'ph:lock-simple-thin': ph_lock_simple_thin,
-	'ph:lock-simple-open-thin': ph_lock_simple_open_thin,
 	'ph:magnifying-glass-thin': ph_magnifying_glass_thin,
 	'ph:mask-sad-thin': ph_mask_sad_thin,
 	'ph:megaphone-thin': ph_megaphone_thin,
@@ -406,6 +403,7 @@ const icons: IconMap = {
 	'ph:prohibit-inset-thin': ph_prohibit_inset_thin,
 	'ph:projector-screen-thin': ph_projector_screen_thin,
 	'ph:push-pin-thin': ph_push_pin_thin,
+	'ph:puzzle-piece-thin': ph_puzzle_piece_thin,
 	'ph:qr-code-thin': ph_qr_code_thin,
 	'ph:question-thin': ph_question_thin,
 	'ph:scales-thin': ph_scales_thin,

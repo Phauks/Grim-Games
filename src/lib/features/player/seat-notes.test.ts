@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-	notesLine,
 	parseSeatNotes,
 	SEAT_NOTES_VERSION,
 	withoutSeatNote,
@@ -52,17 +51,5 @@ describe("a player's notes on the seats of their grim", () => {
 		expect(parseSeatNotes({ schemaVersion: 99, notes: { s1: [saved] } })).toEqual({});
 		expect(parseSeatNotes({ s1: 'a' })).toEqual({});
 		expect(parseSeatNotes('x')).toEqual({});
-	});
-});
-
-describe("a seat's notes on one line", () => {
-	it('lists each title, else the first line, and keeps hidden text hidden', () => {
-		const notes = [
-			{ noteId: 'n1', title: 'Claim', text: 'Chef: 1', hidden: false },
-			{ noteId: 'n2', title: '', text: 'Quiet\nall day', hidden: false },
-			{ noteId: 'n3', title: '', text: 'Secret', hidden: true }
-		];
-		expect(notesLine(notes, 'Hidden')).toBe('Claim, Quiet, Hidden');
-		expect(notesLine(undefined, 'Hidden')).toBe('');
 	});
 });

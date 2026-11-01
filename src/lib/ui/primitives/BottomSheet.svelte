@@ -172,6 +172,9 @@
 		border-radius: var(--sheet-radius) var(--sheet-radius) 0 0;
 		background: var(--sheet-background);
 		color: var(--sheet-color);
+		/* Pinned section headers stop at the sheet's own top, in its colour. */
+		--pin-top: 0rem;
+		--pin-background: var(--sheet-background);
 		box-shadow: var(--shadow);
 		outline: none;
 		transition: transform var(--duration-normal) var(--ease-out);

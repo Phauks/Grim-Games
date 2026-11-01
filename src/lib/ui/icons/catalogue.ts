@@ -43,6 +43,7 @@ export const ICON_SLOTS = {
 	script: { label: 'Script', choices: ['ph:scroll', 'ph:book-open'] },
 	buildScript: { label: 'Script builder', choices: ['ph:hammer', 'ph:wrench'] },
 	buildCharacter: { label: 'Character builder', choices: ['ph:user-gear', 'ph:user-plus'] },
+	buildMode: { label: 'Mode builder', choices: ['ph:puzzle-piece', 'ph:sliders-horizontal'] },
 	installApp: { label: 'Install app', choices: ['ph:device-mobile', 'ph:download-simple'] },
 	download: { label: 'Download', choices: ['ph:download-simple', 'ph:file-arrow-down'] },
 	open: { label: 'Open', choices: ['ph:folder-open', 'ph:folder'] },
@@ -142,7 +143,7 @@ export const ICON_SLOTS = {
 	traveller: { label: 'Traveller', choices: ['ph:person-simple-walk', 'ph:user-plus'] },
 	fabled: { label: 'Fabled and Loric', choices: ['ph:sparkle'] },
 	grimoire: { label: 'Grimoire', choices: ['ph:users-four', 'ph:circle-dashed'] },
-	arrange: { label: 'Arrange seats', choices: ['ph:arrows-out-cardinal', 'ph:hand-grabbing'] },
+	arrange: { label: 'Seating', choices: ['ph:arrows-out-cardinal', 'ph:hand-grabbing'] },
 	more: { label: 'More actions', choices: ['ph:dots-three', 'ph:dots-three-vertical'] },
 	history: { label: 'History', choices: ['ph:clock-counter-clockwise', 'ph:list-bullets'] },
 	join: { label: 'Join game', choices: ['ph:sign-in', 'ph:door-open'] },
@@ -188,8 +189,6 @@ export const ICON_SLOTS = {
 	noPhone: { label: 'No phone', choices: ['ph:minus-circle', 'ph:minus'] },
 	roleSeen: { label: 'Has seen their character', choices: ['ph:eye', 'ph:check'] },
 	/** Seating on the grim (plan J38): phones may move their own seat, until it is locked. */
-	openSeating: { label: 'Open seating', choices: ['ph:lock-simple-open', 'ph:lock-open'] },
-	lockSeating: { label: 'Lock seating', choices: ['ph:lock-simple', 'ph:lock'] },
 	/** Count off (plan J40): players count round the clock from number 1. */
 	countOff: { label: 'Count off', choices: ['ph:clock-clockwise', 'ph:list-numbers'] },
 	/** Room transfer: the room goes to another Storyteller's device (Trevor, 2026-10-28). */

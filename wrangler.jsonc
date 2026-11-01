@@ -54,7 +54,8 @@
 			// The push signing keys, made by the Worker itself (worker/push.ts).
 			{ "name": "PUSH_KEYS", "class_name": "PushKeyStore" },
 			// Each account's friends, requests and blocks (worker/friends/book.ts).
-			{ "name": "FRIEND_BOOKS", "class_name": "FriendBook" }
+			{ "name": "FRIEND_BOOKS", "class_name": "FriendBook" },
+			{ "name": "FRIEND_GROUPS", "class_name": "FriendGroup" }
 		]
 	},
 	"migrations": [
@@ -67,7 +68,8 @@
 		{ "tag": "v7", "new_sqlite_classes": ["SharedRecap"] },
 		{ "tag": "v8", "new_sqlite_classes": ["LiveGameIndex"] },
 		{ "tag": "v9", "new_sqlite_classes": ["PushKeyStore"] },
-		{ "tag": "v10", "new_sqlite_classes": ["FriendBook"] }
+		{ "tag": "v10", "new_sqlite_classes": ["FriendBook"] },
+		{ "tag": "v11", "new_sqlite_classes": ["FriendGroup"] }
 	],
 	// Nightly refresh of the stored script copies (worker/mirror.ts). Previews run no
 	// schedule; there a copy is refreshed when it is asked for and over a day old.
@@ -127,7 +129,8 @@
 				{ "name": "RECAPS", "class_name": "SharedRecap" },
 				{ "name": "LIVE_GAMES", "class_name": "LiveGameIndex" },
 				{ "name": "PUSH_KEYS", "class_name": "PushKeyStore" },
-				{ "name": "FRIEND_BOOKS", "class_name": "FriendBook" }
+				{ "name": "FRIEND_BOOKS", "class_name": "FriendBook" },
+				{ "name": "FRIEND_GROUPS", "class_name": "FriendGroup" }
 			]
 		},
 		"ratelimits": [

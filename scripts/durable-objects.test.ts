@@ -22,9 +22,10 @@ const KEPT = {
 		RECAPS: 'SharedRecap',
 		LIVE_GAMES: 'LiveGameIndex',
 		PUSH_KEYS: 'PushKeyStore',
-		FRIEND_BOOKS: 'FriendBook'
+		FRIEND_BOOKS: 'FriendBook',
+		FRIEND_GROUPS: 'FriendGroup'
 	} as Record<string, string>,
-	migrationTags: ['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10']
+	migrationTags: ['v1', 'v2', 'v3', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10', 'v11']
 };
 
 type Binding = { name: string; class_name: string };
@@ -83,7 +84,7 @@ describe('wrangler.jsonc keeps every Durable Object and its data', () => {
 });
 
 // The shared data Worker holds accounts, share codes and reports (wrangler.data.jsonc, Trevor 2026-10-19),
-// and each account's friends (plan F1, 2026-10-29).
+// each account's friends (plan F1, 2026-10-29) and groups (plan F6, 2026-10-31).
 const DATA_KEPT = {
 	bindings: {
 		ACCOUNT_USERS: 'AccountUser',
@@ -92,9 +93,10 @@ const DATA_KEPT = {
 		SHARED_SCRIPTS: 'SharedScript',
 		REPORTS: 'ReportBox',
 		FRIEND_BOOKS: 'FriendBook',
-		ACCOUNT_DIRECTORY: 'AccountDirectory'
+		ACCOUNT_DIRECTORY: 'AccountDirectory',
+		FRIEND_GROUPS: 'FriendGroup'
 	} as Record<string, string>,
-	migrationTags: ['v1', 'v2', 'v3']
+	migrationTags: ['v1', 'v2', 'v3', 'v4']
 };
 
 const dataText = readFileSync(new URL('../wrangler.data.jsonc', import.meta.url), 'utf8');

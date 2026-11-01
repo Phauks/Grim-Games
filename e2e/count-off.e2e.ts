@@ -52,12 +52,14 @@ test('the table counts off round the clock, and Done seats everyone in that orde
 	const ana = await joinAs(browser, testInfo, code, 'Ana');
 	const bo = await joinAs(browser, testInfo, code, 'Bo');
 
-	// Count off starts at once: whoever the table picks as 1 taps it (Trevor, 2026-10-30).
+	// Count off, in Seating's bar (Trevor, 2026-10-31), starts at once: whoever the table picks
+	// as 1 taps it (Trevor, 2026-10-30).
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	await page
 		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Count off' })
+		.getByRole('button', { name: 'Seating' })
 		.tap();
+	await page.getByTestId('seating-bar').getByRole('button', { name: 'Count off' }).tap();
 	const host = page.getByTestId('count-off-host');
 	await expect(host).toContainText('Count clockwise from 1');
 	// Cy has no phone, so the Storyteller names 1 for them.
@@ -95,6 +97,9 @@ test('the table counts off round the clock, and Done seats everyone in that orde
 	await expect(page.getByRole('button', { name: /^Seat 4: Dan/ })).toBeVisible();
 	await expect(sheet).toBeHidden();
 	await expect(ana.getByTestId('you-row')).toHaveAttribute('data-seat', '3');
+	// Seating's own Done leaves the mode, with the bank back in its place.
+	await page.getByRole('toolbar', { name: 'Grimoire' }).getByRole('button', { name: 'Done' }).tap();
+	await expect(page.getByTestId('seating-bar')).toHaveCount(0);
 
 	await ana.context().close();
 	await bo.context().close();
