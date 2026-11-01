@@ -113,6 +113,26 @@ export function parseWikiPage(html: string): WikiSection[] {
 	return sections.filter((s) => s.blocks.length > 0);
 }
 
+/**
+ * A character's optional rule in its parsed page, in the wiki's words: its "Optional rule"
+ * section, or else a tip that names one (the Pit-Hag's Travellers,
+ * https://wiki.bloodontheclocktower.com/Pit-Hag). Undefined when the page has neither.
+ */
+export function optionalRuleIn(sections: readonly WikiSection[]): string | undefined {
+	const section = sections.find((s) => s.heading === OPTIONAL_RULE_HEADING);
+	const text = section?.blocks
+		.flatMap((b) => (b.kind === 'p' || b.kind === 'example' ? [b.text] : []))
+		.join(' ');
+	if (text) return text;
+	for (const s of sections)
+		for (const block of s.blocks) {
+			const lines = block.kind === 'list' ? block.items : 'text' in block ? [block.text] : [];
+			const line = lines.find((l) => /\boptional rule\b/i.test(l));
+			if (line) return line;
+		}
+	return undefined;
+}
+
 /** The wiki page title in a character's wiki URL (the last path segment). */
 export function wikiPageTitle(url: string): string {
 	return decodeURIComponent(new URL(url).pathname.split('/').pop() ?? '');
