@@ -4445,7 +4445,7 @@ test('the Storm Catcher named character is picked before the day and kept at its
 	test.slow();
 	await stormCatcherGame(page);
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	const day = page.getByRole('dialog', { name: 'Day' });
+	const day = page.getByRole('dialog', { name: /^(Setup|Day( \d+)?)$/ });
 	const value = day.getByTestId('prep-value').first();
 	await expect(value).toHaveText('(CHARACTER)');
 	await value.tap();
