@@ -18,6 +18,10 @@ async function startGame(page: Page, players = 8, script = 'Trouble Brewing') {
 }
 
 async function addThief(page: Page) {
+	await addTraveller(page, 'Thief, Recommended', 'Evil');
+}
+
+async function addTraveller(page: Page, choice: string, alignment: 'Good' | 'Evil') {
 	// A Traveller joins as a new seat: Add seat (the board asks where), then choose them.
 	await page.getByRole('button', { name: 'More' }).tap();
 	await page
@@ -30,13 +34,17 @@ async function addThief(page: Page) {
 	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
 	await page
 		.getByRole('dialog', { name: 'Character for Seat 9' })
-		.getByRole('button', { name: 'Thief, Recommended', exact: true })
+		.getByRole('button', { name: choice, exact: true })
 		.tap();
-	await page.getByRole('dialog', { name: 'Alignment' }).getByRole('button', { name: 'Evil' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Alignment' })
+		.getByRole('button', { name: alignment })
+		.tap();
 	await page.keyboard.press('Escape');
 	await expect(sheet).toBeHidden();
+	const name = choice.split(',')[0];
 	await expect(
-		page.locator('[data-testid="seat"][aria-label^="Seat 9: no name, Thief"]')
+		page.locator(`[data-testid="seat"][aria-label^="Seat 9: no name, ${name}"]`)
 	).toBeAttached();
 }
 
@@ -332,6 +340,28 @@ test("the day's sections fold with their caret and their headers stick under the
 	// Tucked just under the toolbar, its content scrolled up behind it.
 	expect(headBox.y).toBeGreaterThanOrEqual(toolbarBox.y + toolbarBox.height - 1);
 	expect(headBox.y).toBeLessThan(toolbarBox.y + toolbarBox.height + 1);
+});
+
+// https://wiki.bloodontheclocktower.com/Deviant: whether they were funny is the Storyteller's call.
+test('exiling a Deviant asks whether they survive', async ({ page }) => {
+	await startGame(page);
+	await addTraveller(page, 'Deviant', 'Good');
+	const status = await openStatus(page, 9);
+	await status.getByRole('button', { name: 'Exiled' }).tap();
+	const ask = page.getByRole('dialog', { name: 'Does Seat 9 survive the exile?' });
+	await expect(ask).toBeVisible();
+	await expect(ask.locator('[data-exile-saver]')).toContainText('Deviant');
+	await ask.getByRole('button', { name: 'Survives' }).tap();
+	await expect(ask).toBeHidden();
+	await closeSeat(page);
+	await expect(boardSeat(page, 'Seat 9: no name, Deviant')).not.toHaveAccessibleName(/dead/);
+
+	const again = await openStatus(page, 9);
+	await again.getByRole('button', { name: 'Exiled' }).tap();
+	await ask.getByRole('button', { name: 'Dies' }).tap();
+	await expect(ask).toBeHidden();
+	await closeSeat(page);
+	await expect(boardSeat(page, 'Seat 9: no name, Deviant')).toHaveAccessibleName(/dead/);
 });
 
 test('a Traveller is exiled, and a death offers only valid causes', async ({ page }) => {

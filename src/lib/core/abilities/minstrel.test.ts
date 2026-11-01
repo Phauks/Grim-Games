@@ -18,7 +18,7 @@ import { isTraveller } from '#lib/core/model/selectors.ts';
 import { abilityState } from '#lib/core/rules/ability.ts';
 import { isExecution } from '#lib/core/rules/death-causes.ts';
 import { gameEnds } from '#lib/core/rules/game-end.ts';
-import { engineGap, scenario, type Scenario, type SeatRef } from '#lib/core/testing/scenario.ts';
+import { scenario, type Scenario, type SeatRef } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
 describe('Minstrel', () => {
@@ -60,10 +60,13 @@ describe('Minstrel', () => {
 			)!;
 			return s.do({ type: 'RemoveReminder', reminderId: token.reminderId });
 		};
+		/** The Everyone Is Drunk tokens on the Minstrel. */
+		const drunkTokens = (s: Scenario) =>
+			s.game.seats[s.seat('minstrel')].reminders.filter((r) => r.label === 'Everyone Is Drunk');
 		const works = (s: Scenario, on: SeatRef) =>
 			abilityState(s.game, s.seat(on), s.characters).works;
 
-		it.fails('Example 1: Minion executed: everyone drunk next day', () => {
+		it('Example 1: Minion executed: everyone drunk next day', () => {
 			// Wiki: "During the first day, the Pacifist dies. That night, players act as normal,
 			// because the Pacifist is not a Minion. During the second day, the Judge executes the
 			// Godfather. That night, everyone is drunk, including the Demon, so nobody dies. During the
@@ -72,8 +75,12 @@ describe('Minstrel', () => {
 			// Minstrel makes everyone drunk."
 			const cast = ['minstrel', 'pacifist', 'judge', 'godfather', 'devilsadvocate', 'chef', 'imp'];
 			const day1 = scenario(cast).becomes('judge', 'judge', 'good').newDay().execute('pacifist');
+			// A Townsfolk's execution: no Everyone Is Drunk.
+			expect(drunkTokens(day1)).toEqual([]);
 			expect(works(day1, 'imp')).toBe(true);
-			const day2 = drunk(day1.newDay().execute('godfather'));
+			// The Godfather's execution puts it on by itself.
+			const day2 = day1.newDay().execute('godfather');
+			expect(drunkTokens(day2)).toHaveLength(1);
 			expect(works(day2, 'imp')).toBe(false);
 			expect(works(day2, 'judge')).toBe(true);
 			// The next day, still before dusk: the Devil's Advocate's protection fails.
@@ -82,12 +89,10 @@ describe('Minstrel', () => {
 				.reminder('devilsadvocate', 'devilsadvocate', 'Survives Execution')
 				.execute('devilsadvocate');
 			expect(day3.game.seats[day3.seat('devilsadvocate')].dead).toBe(true);
-			engineGap(
-				'unplanned',
-				"a Minion dying by execution today puts the Minstrel's Everyone Is Drunk on; a Townsfolk does not"
-			);
+			// A Minion died by execution again: everyone stays drunk, one token still.
+			expect(drunkTokens(day3)).toHaveLength(1);
 		});
-		it.fails("Example 2: Traveller exile doesn't trigger; everyone sobers", () => {
+		it("Example 2: Traveller exile doesn't trigger; everyone sobers", () => {
 			// Wiki: "The Assassin is executed, so the Minstrel makes everyone drunk. The next day, the
 			// Godfather is executed, so the Minstrel makes everyone drunk again. The Demon could not
 			// kill on either night. The next day, the evil Apprentice Mastermind is exiled, so that
@@ -97,9 +102,9 @@ describe('Minstrel', () => {
 			const s = scenario(cast)
 				.becomes('apprentice', 'mastermind', 'evil')
 				.reminder('apprentice', 'apprentice', 'Is The Apprentice');
-			const night1 = drunk(s.newDay().execute('assassin'));
+			const night1 = s.newDay().execute('assassin');
 			expect(works(night1, 'imp')).toBe(false);
-			const night2 = drunk(sober(night1).newDay().execute('godfather'));
+			const night2 = sober(night1).newDay().execute('godfather');
 			expect(works(night2, 'imp')).toBe(false);
 			// A Traveller, holding a Minion's ability, is exiled: not an execution.
 			const day3 = sober(night2)
@@ -109,11 +114,8 @@ describe('Minstrel', () => {
 			expect(
 				isExecution(day3.game.seats[day3.seat('apprentice')].deathCause, day3.characters)
 			).toBe(false);
+			expect(drunkTokens(day3)).toEqual([]);
 			expect(works(day3, 'imp')).toBe(true);
-			engineGap(
-				'unplanned',
-				"only a Minion's execution puts the Minstrel's Everyone Is Drunk on, never a Traveller's exile"
-			);
 		});
 		it('Example 3: Good wins when drunk Zombuul dies', () => {
 			// Wiki: "During the day, the Assassin dies, so the Minstrel makes everyone drunk. The

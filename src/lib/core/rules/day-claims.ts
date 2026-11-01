@@ -5,6 +5,7 @@ import type { CharacterGuess, CharacterLookup, Game, SeatId } from '../model/ind
 import { trueCharacter, typeOf } from '../model/selectors.ts';
 import { abilityState } from './ability.ts';
 import { validDeathCauses } from './death-causes.ts';
+import { survivesFirstDeath } from './first-death.ts';
 
 type RulesLookup = ReadonlyMap<CharacterId, { rules?: CharacterRules }>;
 
@@ -59,8 +60,8 @@ export function dayUseSuggestion(game: Game, seatId: SeatId, who: DayUseWho): Se
 /**
  * Whether the player a killing day ability (`dayUse.kills`) was used on dies straight away,
  * by its `deathCause` rule (`validDeathCauses`): `dies` when nothing stands in the way, `maybe`
- * when it rests on a false registration, an impaired ability, an unset character or a
- * protection by day (the Storyteller decides), `no` when it can't kill them (the Slayer's
+ * when it rests on a false registration, an impaired ability, an unset character, a
+ * protection or an unspent first-death saver (the Storyteller decides), `no` when it can't kill them (the Slayer's
  * shot at a player who never registers as the Demon) or they are already dead.
  */
 export function dayUseDeath(
@@ -74,6 +75,9 @@ export function dayUseDeath(
 		(c) => c.cause === characterId
 	);
 	if (!cause) return 'no';
+	// The first time a Fool dies, they don't: the board offers to spend the ability instead
+	// (https://wiki.bloodontheclocktower.com/Gangster, Fool).
+	if (survivesFirstDeath(game, target, characterId, characters)) return 'maybe';
 	return cause.flags.length > 0 ? 'maybe' : 'dies';
 }
 

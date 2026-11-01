@@ -423,6 +423,55 @@ describe('Exile', () => {
 			'traveller-executed'
 		]);
 	});
+
+	// https://wiki.bloodontheclocktower.com/Tea_Lady: "can't die" covers an exile too.
+	it('keeps a protected Traveller alive, unless the Storyteller says they die', () => {
+		const { session, ctx, seats } = withTraveller();
+		const s = run(
+			session,
+			ctx,
+			{ type: 'AssignCharacter', seatId: seats[3], characterId: 'tealady' },
+			{ type: 'AssignCharacter', seatId: seats[0], characterId: 'chef' },
+			{
+				type: 'AddReminder',
+				seatId: seats[4],
+				reminder: { characterId: 'tealady', label: 'Cannot Die' }
+			}
+		);
+		expect(warned(s, ctx, { type: 'Exile', seatId: seats[4] })).toEqual(['survives-exile']);
+		const exiled = run(s, ctx, { type: 'Exile', seatId: seats[4] });
+		expect(exiled.game.seats[seats[4]].dead).toBe(false);
+		expect(exiled.game.today.entries).toMatchObject([
+			{ kind: 'exile', died: false, savedBy: { characterId: 'tealady', seatId: seats[3] } }
+		]);
+		const dies = run(s, ctx, { type: 'Exile', seatId: seats[4], dies: true });
+		expect(dies.game.seats[seats[4]]).toMatchObject({ dead: true, deathCause: 'exile' });
+	});
+
+	// https://wiki.bloodontheclocktower.com/Deviant: the Storyteller judges "funny".
+	it("logs the Storyteller's pick of what kept them alive, warning when it may not apply", () => {
+		const { session, ctx, seats } = withTraveller();
+		const deviant = run(session, ctx, {
+			type: 'AssignCharacter',
+			seatId: seats[4],
+			characterId: 'deviant',
+			alignment: 'good'
+		});
+		expect(warned(deviant, ctx, { type: 'Exile', seatId: seats[4] })).toEqual([]);
+		expect(warned(deviant, ctx, { type: 'Exile', seatId: seats[4], savedBy: 'deviant' })).toEqual([
+			'survives-exile'
+		]);
+		const kept = run(deviant, ctx, { type: 'Exile', seatId: seats[4], savedBy: 'deviant' });
+		expect(kept.game.seats[seats[4]].dead).toBe(false);
+		expect(kept.game.today.entries).toMatchObject([
+			{ kind: 'exile', died: false, savedBy: { characterId: 'deviant', seatId: seats[4] } }
+		]);
+		// The beggar has no such ability: applied anyway, with a warning.
+		expect(warned(session, ctx, { type: 'Exile', seatId: seats[4], savedBy: 'deviant' })).toEqual([
+			'save-may-not-apply',
+			'survives-exile'
+		]);
+	});
 });
 
 describe('UseAbility', () => {

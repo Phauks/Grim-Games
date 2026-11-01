@@ -474,19 +474,24 @@ export function registrationWorlds(
 /** One ability that protects a player from a kill, and the reminder that says so if any. */
 export interface Protector {
 	source: AbilitySource;
-	/** Against the Demon's kill only, any death, an execution only, or all but an execution. */
+	/**
+	 * Against the Demon's kill only, any death, an execution only, all but an execution, any
+	 * death by day, or an exile only.
+	 */
 	from: (typeof PROTECTS_FROM)[number];
 }
 
 /**
- * What a death is from: the Demon's kill, another ability's at night, the day's execution, or
- * another ability's by day (`day`: a Slayer's shot, a Witch's curse, recorded while it is day).
+ * What a death is from: the Demon's kill, another ability's at night, the day's execution,
+ * another ability's by day (`day`: a Slayer's shot, a Witch's curse, recorded while it is day),
+ * or a Traveller's exile, which is not an execution
+ * (https://wiki.bloodontheclocktower.com/Exile).
  */
-export type DeathBy = 'demon' | 'other' | 'execution' | 'day';
+export type DeathBy = 'demon' | 'other' | 'execution' | 'day' | 'exile';
 
 /** Whether a protection stops a death `by` this: one lasting only the night stops none by day. */
 function stops(rule: Protects, by: DeathBy): boolean {
-	const byDay = by === 'execution' || by === 'day';
+	const byDay = by === 'execution' || by === 'day' || by === 'exile';
 	const covers =
 		rule.from === 'any' ||
 		rule.from === by ||
@@ -596,6 +601,29 @@ export function executionSavers(
 	seatId: SeatId,
 	characters: CharacterLookup
 ): ExecutionSaver[] {
+	return savers(game, seatId, characters, 'execution');
+}
+
+/**
+ * `executionSavers` for a Traveller's exile: every character on the script or in play whose
+ * ability can stop an exile death (the Tea Lady's Cannot Die, and the Deviant, whom the
+ * Storyteller keeps alive when they were funny: https://wiki.bloodontheclocktower.com/Deviant,
+ * /Tea_Lady).
+ */
+export function exileSavers(
+	game: Game,
+	seatId: SeatId,
+	characters: CharacterLookup
+): ExecutionSaver[] {
+	return savers(game, seatId, characters, 'exile');
+}
+
+function savers(
+	game: Game,
+	seatId: SeatId,
+	characters: CharacterLookup,
+	by: 'execution' | 'exile'
+): ExecutionSaver[] {
 	const ids = new Set<CharacterId>();
 	for (const entry of game.script.entries)
 		ids.add(entry.kind === 'official' ? entry.id : entry.character.id);
@@ -607,7 +635,7 @@ export function executionSavers(
 	const out: ExecutionSaver[] = [];
 	for (const characterId of ids) {
 		const rule = rulesOf(characterId, characters)?.protects;
-		if (!rule || !stops(rule, 'execution')) continue;
+		if (!rule || !stops(rule, by)) continue;
 		const from = seatOfCharacter(game, characterId, characters);
 		const source = protectionFor(game, seatId, characterId, rule, characters);
 		const inPlay = from !== undefined || game.ruleCharacters.includes(characterId);

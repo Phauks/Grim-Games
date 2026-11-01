@@ -63,7 +63,7 @@ describe('Tinker', () => {
 			expect(tinkerCause(s, 'empath')).toBeUndefined();
 		});
 
-		it.fails("Example 2: Tea Lady's protection keeps Tinker alive", () => {
+		it("Example 2: Tea Lady's protection keeps Tinker alive", () => {
 			// Wiki: "The Tea Lady sits next to the Tinker and another good player, protecting the Tinker from
 			// death. The Tinker cannot die from their ability."
 			const s = scenario(['tinker', 'tealady', 'chef', 'imp', 'poisoner']).reminder(
@@ -74,8 +74,7 @@ describe('Tinker', () => {
 			expect(protection(s.game, s.seat('tinker'), s.characters, 'other')).toMatchObject({
 				characterId: 'tealady'
 			});
-			// Waits on the engine: the Tinker's own death is offered as a cause with no flag, though the
-			// Tea Lady protects them.
+			// The Tinker's own death is offered with a caution: the Tea Lady protects them.
 			expect(tinkerCause(s, 'tinker')?.flags).not.toEqual([]);
 		});
 

@@ -19,6 +19,7 @@ import {
 	markTokenSwap,
 	marksInPlay,
 	executionSavers,
+	exileSavers,
 	protection,
 	type DayMark
 } from '#lib/core/rules/index.ts';
@@ -207,6 +208,31 @@ export const DAY_DECIDERS: Deciders<
 		if (seat.dead) {
 			warn('already-dead', 'the player was already dead, so the exile is only logged');
 			return [{ type: 'DayEntryAdded', entry }];
+		}
+		// As an execution: a protection that stops any death (the Tea Lady's) applies, and the
+		// Storyteller's own pick (the Deviant they found funny) is applied as given.
+		const chosen =
+			command.savedBy === undefined
+				? undefined
+				: exileSavers(game, seat.seatId, ctx.characters).find(
+						(s) => s.source.characterId === command.savedBy
+					);
+		if (command.savedBy !== undefined && (!chosen || chosen.problem)) {
+			warn('save-may-not-apply', 'that character may not save this player from exile');
+		}
+		const saved =
+			command.dies === true
+				? undefined
+				: command.savedBy !== undefined
+					? (chosen?.source ?? { characterId: command.savedBy })
+					: protection(game, seat.seatId, ctx.characters, 'exile');
+		if (saved) {
+			warn('survives-exile', 'the player is exiled and does not die');
+			const savedBy =
+				saved === 'override'
+					? {}
+					: { characterId: saved.characterId, ...(saved.seatId ? { seatId: saved.seatId } : {}) };
+			return [{ type: 'DayEntryAdded', entry: { ...entry, died: false, savedBy } }];
 		}
 		return [
 			{ type: 'DayEntryAdded', entry },

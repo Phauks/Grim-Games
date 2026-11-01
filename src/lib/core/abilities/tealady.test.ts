@@ -72,7 +72,7 @@ describe('Tea Lady', () => {
 			expect(protectedBy(evilGoon, 'courtier')).toBeUndefined();
 		});
 
-		it.fails('Example 2: Exiled protected neighbour still lives', () => {
+		it('Example 2: Exiled protected neighbour still lives', () => {
 			// Wiki: "The Tea Lady's alive neighbours are a good Matron and a good Judge. The Matron is exiled
 			// but remains alive."
 			const s = scenario(['tealady', 'matron', 'imp', 'chef', 'poisoner', 'judge'])
@@ -82,7 +82,6 @@ describe('Tea Lady', () => {
 			expect(protection(s.game, s.seat('matron'), s.characters, 'execution')).toMatchObject({
 				characterId: 'tealady'
 			});
-			// Waits on the engine: Exile kills a living Traveller without checking protection.
 			const exiled = s.do((at) => ({ type: 'Exile', seatId: at.seat('matron') }));
 			expect(exiled.game.seats[exiled.seat('matron')].dead).toBe(false);
 		});

@@ -170,6 +170,8 @@ export function causeFlagText(
 			return { text: `${victim}'s alignment or character is not set, so this can't be checked.` };
 		case 'protected-by-day':
 			return { text: `${victim} can't die during the day`, by: flag.source.characterId };
+		case 'protected':
+			return { text: `${victim} is protected from dying now`, by: flag.source.characterId };
 	}
 }
 

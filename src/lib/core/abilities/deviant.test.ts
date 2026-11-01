@@ -55,30 +55,37 @@ describe('Deviant', () => {
 				alignment
 			}));
 
-		it.fails('Example 1: Storyteller saves funny Deviant from exile', () => {
+		it('Example 1: Storyteller saves funny Deviant from exile', () => {
 			// Wiki: "The evil Deviant cracks a few jokes, and gets a few laughs, but the players
 			// nevertheless decide to exile them. Even though there are enough votes, the Storyteller
 			// decides to keep the Deviant alive."
-			// Waits on the engine: Exile always kills a living Traveller; it has no way to log the
-			// exile while the Deviant's ability keeps them alive.
+			// "Funny" is the Storyteller's call: the exile names the Deviant as what kept them alive.
 			const s = table('evil');
 			expect(exileThreshold(s.game, s.characters)).toBeDefined();
-			const after = s.do((at) => ({ type: 'Exile', seatId: at.seat('deviant') }));
+			const after = s.do((at) => ({
+				type: 'Exile',
+				seatId: at.seat('deviant'),
+				savedBy: 'deviant'
+			}));
 			expect(after.game.today.entries).toMatchObject([
-				{ kind: 'exile', seatId: s.seat('deviant') }
+				{
+					kind: 'exile',
+					seatId: s.seat('deviant'),
+					died: false,
+					savedBy: { characterId: 'deviant' }
+				}
 			]);
 			expect(after.game.seats[after.seat('deviant')].dead).toBe(false);
 		});
 
-		it.fails('Example 2: Spared after mild humour, exiled after a flop', () => {
+		it('Example 2: Spared after mild humour, exiled after a flop', () => {
 			// Wiki: "On the third day, the Deviant was slightly funny, and cannot be exiled. On the fourth
 			// day, the Deviant was not very funny, and is successfully exiled."
-			// Waits on the engine: Exile always kills a living Traveller; it has no way to log the
-			// exile while the Deviant's ability keeps them alive.
+			// The Storyteller judges each day: kept alive on day three, not on day four.
 			const dayThree = table('good')
 				.newDay()
 				.newDay()
-				.do((at) => ({ type: 'Exile', seatId: at.seat('deviant') }));
+				.do((at) => ({ type: 'Exile', seatId: at.seat('deviant'), savedBy: 'deviant' }));
 			expect(dayThree.game.seats[dayThree.seat('deviant')].dead).toBe(false);
 			const dayFour = dayThree.newDay().do((at) => ({ type: 'Exile', seatId: at.seat('deviant') }));
 			expect(dayFour.game.seats[dayFour.seat('deviant')]).toMatchObject({
