@@ -4,8 +4,9 @@
  * Fails when a character in static/data/roles.json or a jinx pair in jinxes.json has no test
  * file, when a test file does not cite the character's wiki page, or when a test file is left
  * over for a character or jinx that no longer exists, or when a `:reminder:` in TPI's night
- * text has no explicit token mapping (each rules file's `reminderPlaceholders`). Prints how many scenario `todo`s remain:
- * the roadmap tracks that count to zero for 1.0.
+ * text has no explicit token mapping (each rules file's `reminderPlaceholders`). Prints how many scenario `todo`s remain
+ * and how many examples are written but waiting on the engine (`it.fails`): the roadmap tracks
+ * both counts to zero for 1.0.
  *
  * Fix a missing file with `npm run scaffold:rules-tests`.
  */
@@ -25,10 +26,13 @@ console.log(
 	[
 		`Rules test coverage:`,
 		`  characters: ${report.characterFiles}/${data.characters.length} test files, ` +
-			`${report.charactersDone} with every wiki scenario written, ${report.characterTodos} scenario todos left`,
+			`${report.charactersDone} with every wiki scenario passing, ${report.characterTodos} scenario todos left, ` +
+			`${report.characterFails} written but waiting on the engine`,
 		`  jinxes:     ${report.jinxFiles}/${data.jinxes.all.length} test files, ` +
-			`${report.jinxesDone} with the rule tested, ${report.jinxTodos} rule todos left`,
-		`  total todos: ${report.characterTodos + report.jinxTodos}`
+			`${report.jinxesDone} with the rule passing, ${report.jinxTodos} rule todos left, ` +
+			`${report.jinxFails} written but waiting on the engine`,
+		`  total todos: ${report.characterTodos + report.jinxTodos}`,
+		`  total waiting on the engine (it.fails): ${report.characterFails + report.jinxFails}`
 	].join('\n')
 );
 

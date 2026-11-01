@@ -51,6 +51,8 @@ describe('historyItems', () => {
 		);
 		const items = historyItems(session.log.entries, session.log.cursor, characters);
 		expect(items.map((i) => i.cursor)).toEqual([4, 2, 1]);
+		// Numbered oldest first, with no gap where the draw and its confirmation share a line.
+		expect(items.map((i) => i.number)).toEqual([3, 2, 1]);
 		expect(items[0].parts).toEqual([
 			{ kind: 'seat', seatId: first(session), name: 'Seat 1' },
 			{ kind: 'text', text: ' drew ' },
