@@ -91,6 +91,19 @@ export function prepValueLabel(
 	return setupPrepOf(characterId, lookup)?.notes?.find((n) => n.value?.key === key)?.value?.label;
 }
 
+/**
+ * Whether the value `characterId`'s prep asks for under `key` is a character from the script
+ * (`value.character`: the Storm Catcher's named character), and which kind.
+ */
+export function prepValueCharacter(
+	characterId: CharacterId,
+	key: string,
+	lookup?: CharacterLookup
+): 'good' | undefined {
+	return setupPrepOf(characterId, lookup)?.notes?.find((n) => n.value?.key === key)?.value
+		?.character;
+}
+
 /** One character's setup tokens, with the wiki page to link. */
 interface SetupReminderEntry {
 	id: CharacterId;
