@@ -13,6 +13,7 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { engineGap, scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Beggar', () => {
 	const character = committedCharacter('beggar');
@@ -44,7 +45,26 @@ describe('Beggar', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Beggar#Examples)', () => {
-		it.todo('Example 1: Evil Beggar falsely calls Monk evil');
-		it.todo('Example 2: Beggar dies, losing all but one vote token');
+		// Vote tokens (the Beggar votes only with tokens given to them) wait on voting in the engine.
+		it.fails('Example 1: Evil Beggar falsely calls Monk evil', () => {
+			scenario(['beggar', 'monk', 'imp', 'chef', 'poisoner']).do((at) => ({
+				type: 'SetAlignment',
+				seatId: at.seat('beggar'),
+				alignment: 'evil'
+			}));
+			engineGap(
+				'M9',
+				'the Beggar may vote only with a vote token a player gave them, and learns the giver is good'
+			);
+		});
+		it.fails('Example 2: Beggar dies, losing all but one vote token', () => {
+			scenario(['beggar', 'recluse', 'imp', 'chef', 'poisoner'])
+				.do((at) => ({ type: 'SetAlignment', seatId: at.seat('beggar'), alignment: 'good' }))
+				.dies('beggar');
+			engineGap(
+				'M9',
+				"a dead Beggar keeps one of the vote tokens given to them; a Recluse's gift may show as evil"
+			);
+		});
 	});
 });

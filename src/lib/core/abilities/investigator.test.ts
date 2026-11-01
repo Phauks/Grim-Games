@@ -13,6 +13,8 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night-info.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Investigator', () => {
 	const character = committedCharacter('investigator');
@@ -44,8 +46,39 @@ describe('Investigator', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Investigator#Examples)', () => {
-		it.todo('Example 1: Investigator sees Baron among two players');
-		it.todo('Example 2: Spy is one of two players');
-		it.todo('Example 3: Recluse misreads as Poisoner, pairing with Imp');
+		it('Example 1: Baron is one of two players', () => {
+			const s = scenario(['investigator', 'baron', 'mayor', 'imp', 'saint', 'butler', 'chef']);
+			const picker = infoPicker(s.game, s.seat('investigator'), 'investigator', s.characters)!;
+			const shown = { seats: [s.seat('baron'), s.seat('mayor')], characterId: 'baron' };
+			expect(isTruthful(picker, shown)).toBe(true);
+		});
+
+		it('Example 2: Spy is one of two Minions shown', () => {
+			// Both players shown may be Minions.
+			const s = scenario([
+				'investigator',
+				'spy',
+				'poisoner',
+				'imp',
+				'chef',
+				'monk',
+				'empath',
+				'mayor',
+				'slayer',
+				'soldier'
+			]);
+			const picker = infoPicker(s.game, s.seat('investigator'), 'investigator', s.characters)!;
+			const shown = { seats: [s.seat('spy'), s.seat('poisoner')], characterId: 'spy' };
+			expect(isTruthful(picker, shown)).toBe(true);
+		});
+
+		it('Example 3: Recluse registers as the Poisoner', () => {
+			// The Recluse may register as a Minion; neither player shown is really one.
+			const s = scenario(['investigator', 'recluse', 'imp', 'chef', 'monk', 'scarletwoman']);
+			const picker = infoPicker(s.game, s.seat('investigator'), 'investigator', s.characters)!;
+			const shown = { seats: [s.seat('recluse'), s.seat('imp')], characterId: 'poisoner' };
+			expect(isAllowed(picker, shown)).toBe(true);
+			expect(isTruthful(picker, shown)).toBe(false);
+		});
 	});
 });
