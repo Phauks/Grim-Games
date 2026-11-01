@@ -4928,8 +4928,9 @@ test('the board menu names its groups, in two columns beside a phone', async ({ 
 			.evaluateAll((els) =>
 				els.filter((e) => e.checkVisibility()).map((e) => (e.textContent ?? '').trim())
 			);
+	// Game notes are here only on a phone too narrow for their toolbar button (2026-11-01).
 	expect((await names('Game')).join(' ')).toMatch(
-		/^Players History Demon bluffs( Game info)? Game settings$/
+		/^Players( Game notes)? History Demon bluffs( Game info)? Game settings$/
 	);
 	expect((await names('Session')).join(' ')).toMatch(/^(Character selection )?End game$/);
 	const session = (await group('Session').boundingBox())!;

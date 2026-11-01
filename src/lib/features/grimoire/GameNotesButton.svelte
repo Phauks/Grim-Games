@@ -47,7 +47,7 @@
 	const viewOnly = $derived(game.viewOnly);
 </script>
 
-<span class="slot" class:on-board={board}
+<span class="notes-slot" class:on-board={board}
 	><IconButton
 		icon="notes"
 		label={t('room.players.gameNotes')}
@@ -74,12 +74,12 @@
 />
 
 <style>
-	.slot {
+	.notes-slot {
 		display: contents;
 	}
 	/* Eight 44px buttons and their gaps need 412px; narrower, the board's are in More. */
 	@media (max-width: 411.98px) {
-		.slot.on-board {
+		.notes-slot.on-board {
 			display: none;
 		}
 	}
