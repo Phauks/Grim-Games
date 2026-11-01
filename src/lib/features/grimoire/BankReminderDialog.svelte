@@ -1,7 +1,7 @@
 <!--
 	A reminder's own dialog (Trevor, 2026-10-30: one component for a token from the bank or the
 	board), opened by tapping the token in hand's pill, a seat sheet's reminder or a Fabled's:
-	whose it is, what a setup suggestion is for, and the ability it comes from. A placed one
+	where it lies, what a setup suggestion is for, and the ability it comes from. A placed one
 	also has its ⋯ (Duplicate) and red trash, and an ∞ one its note, as does one whose rules
 	carry the Storyteller's words (the Zenomancer's Goal), with Show to player.
 -->
@@ -25,7 +25,6 @@
 	import ReminderMoreButton from './ReminderMoreButton.svelte';
 	import NotedReminderFields from './NotedReminderFields.svelte';
 	import ReminderNoteField from './ReminderNoteField.svelte';
-	import ReminderOrigin from './ReminderOrigin.svelte';
 	import { isGeneric, placedLook } from './reminders.ts';
 
 	interface Props {
@@ -84,16 +83,8 @@
 				symbolFill={item.token?.symbolFill}
 			/>{:else}About this reminder{/if}
 	{/snippet}
+	<!-- No "From [Character]": the ability row below names it (Trevor, 2026-11-01). -->
 	{#snippet subtitle()}
-		{#if placed && holder && 'seatId' in holder}From <ReminderOrigin
-				{game}
-				{characters}
-				characterId={placed.characterId}
-				on={holder.seatId}
-			/>{:else if shown && owner}From <CharacterBadge
-				characterId={shown.characterId}
-				character={owner}
-			/>{/if}
 		{#if holder && 'characterId' in holder}on <CharacterBadge
 				characterId={holder.characterId}
 				character={characters.get(holder.characterId)}
