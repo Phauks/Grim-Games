@@ -13,6 +13,7 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { engineGap, scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Bureaucrat', () => {
 	const character = committedCharacter('bureaucrat');
@@ -44,8 +45,28 @@ describe('Bureaucrat', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Bureaucrat#Examples)', () => {
-		it.todo('Example 1: Triple vote brings nominee to seven');
-		it.todo('Example 2: Triple vote spent over four nominations');
-		it.todo("Example 3: Dead player's single vote still counts triple");
+		// Vote weight (the 3 Votes token) waits on voting in the engine.
+		it.fails('Example 1: Triple vote brings nominee to seven', () => {
+			scenario(['bureaucrat', 'chef', 'imp', 'monk', 'poisoner', 'empath', 'saint'])
+				.reminder('chef', 'bureaucrat', '3 Votes')
+				.newDay();
+			engineGap(
+				'M9',
+				"a vote tally counts the 3 Votes player's raised hand as three (5 hands give 7)"
+			);
+		});
+		it.fails('Example 2: Triple vote spent over four nominations', () => {
+			scenario(['bureaucrat', 'chef', 'imp', 'monk', 'poisoner'])
+				.reminder('chef', 'bureaucrat', '3 Votes')
+				.newDay();
+			engineGap('M9', 'the 3 Votes player votes triple on every nomination that day');
+		});
+		it.fails("Example 3: Dead player's single vote still counts triple", () => {
+			scenario(['bureaucrat', 'chef', 'imp', 'monk', 'poisoner'])
+				.dies('chef')
+				.reminder('chef', 'bureaucrat', '3 Votes')
+				.newDay();
+			engineGap('M9', "a dead 3 Votes player's ghost vote counts as three");
+		});
 	});
 });

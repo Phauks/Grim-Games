@@ -16,4 +16,4 @@
 	<PlayersPanel {game} {run} />
 </Dialog>
 <CountOffDialog {game} {run} />
-<TravellerPickDialog {game} {run} />
+<TravellerPickDialog {game} />
