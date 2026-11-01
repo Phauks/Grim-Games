@@ -43,6 +43,11 @@
 		picture?: string;
 		/** The player's representative character in full colour: their own Profile only. */
 		fullColour?: boolean;
+		/**
+		 * At the table but not in play yet (Trevor, 2026-10-31): the token is greyed and this
+		 * label sits across it in a pill, over the token so nothing moves.
+		 */
+		notInPlay?: string;
 	}
 
 	let {
@@ -57,7 +62,8 @@
 		frame,
 		avatar,
 		picture,
-		fullColour = false
+		fullColour = false,
+		notInPlay
 	}: Props = $props();
 
 	const framed = $derived(frame !== undefined && frame.drawing.length > 0);
@@ -81,6 +87,7 @@
 <span
 	class="seat-disc"
 	data-dead={dead || undefined}
+	data-not-in-play={notInPlay ? '' : undefined}
 	data-framed={framed || undefined}
 	style:--size="{size}px"
 	style:--frame-scale={framed ? 50 / (frame?.faceRadius ?? FACE_RADIUS) : 1}
@@ -109,6 +116,7 @@
 		<PlayerNameMark {name} />
 		{#if dead}<DeadBadge {vote} usedLook={usedVote} testid="dead-mark" />{/if}
 		{#if marks}{@render marks()}{/if}
+		{#if notInPlay}<span class="not-in-play" data-testid="not-in-play">{notInPlay}</span>{/if}
 	</span>
 </span>
 
@@ -191,6 +199,31 @@
 	.seat-disc[data-dead] .frame-layer,
 	.seat-disc[data-dead] .face {
 		filter: brightness(0.55);
+	}
+	/* Not in play yet (Trevor, 2026-10-31): greyed, with a pill across the token. */
+	.seat-disc[data-not-in-play] :global(.emblem),
+	.seat-disc[data-not-in-play] .frame-layer,
+	.seat-disc[data-not-in-play] .face {
+		filter: grayscale(1) brightness(0.6);
+	}
+	.not-in-play {
+		position: absolute;
+		inset-inline: -6%;
+		top: 50%;
+		translate: 0 -50%;
+		text-align: center;
+		padding: 0.1em 0.4em;
+		border-radius: 999em;
+		/* The same neutral pill as the player's name under a seat (PlayerNameMark). */
+		background: var(--surface-raised);
+		border: 1px solid var(--border); /* px-ok: hairline outline */
+		color: var(--on-surface);
+		font-family: var(--font-player);
+		font-weight: 600;
+		font-size: calc(var(--size) * 0.14);
+		line-height: 1.2;
+		white-space: nowrap;
+		pointer-events: none;
 	}
 	/* One badge on the lower-left rim, half outside the token. */
 	.disc :global(.dead-badge) {

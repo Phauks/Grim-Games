@@ -16,6 +16,7 @@ export interface NavItem {
 		| '/library'
 		| '/build-script'
 		| '/build-character'
+		| '/build-mode'
 		| '/reference'
 		| '/info-tokens'
 		| '/account'
@@ -36,7 +37,7 @@ export interface NavItem {
 
 /** A labelled group of destinations (Trevor, 2026-10-16: games, then pre-game preparation). */
 export interface NavSection {
-	id: 'games' | 'prepare' | 'you';
+	id: 'games' | 'prepare' | 'build' | 'you';
 	label: MessageKey;
 	items: readonly NavItem[];
 }
@@ -63,6 +64,16 @@ export const NAV_SECTIONS: readonly NavSection[] = [
 			{ id: 'scripts', path: '/scripts', label: 'shell.navScripts', icon: 'search' },
 			// Everything the user has saved or made (Trevor, 2026-10-16).
 			{ id: 'library', path: '/library', label: 'shell.navLibrary', icon: 'library' },
+			{ id: 'info-tokens', path: '/info-tokens', label: 'shell.navInfoTokens', icon: 'info' },
+			{ id: 'reference', path: '/reference', label: 'shell.navReference', icon: 'reference' }
+		]
+	},
+	{
+		// The builders in their own section, apart from Prepare (Trevor, 2026-10-31: "we have a
+		// lot of builders, we should separate that into a Builder Section").
+		id: 'build',
+		label: 'shell.navSectionBuild',
+		items: [
 			{
 				id: 'build-script',
 				path: '/build-script',
@@ -75,8 +86,12 @@ export const NAV_SECTIONS: readonly NavSection[] = [
 				label: 'shell.navBuildCharacter',
 				icon: 'buildCharacter'
 			},
-			{ id: 'info-tokens', path: '/info-tokens', label: 'shell.navInfoTokens', icon: 'info' },
-			{ id: 'reference', path: '/reference', label: 'shell.navReference', icon: 'reference' }
+			{
+				id: 'build-mode',
+				path: '/build-mode',
+				label: 'shell.navBuildMode',
+				icon: 'buildMode'
+			}
 		]
 	}
 	// No Player view (Trevor, 2026-10-19): the Storyteller has the board's Script, and a player

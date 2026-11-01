@@ -1,5 +1,7 @@
 <script lang="ts">
+	import { swapPlaces, withPlaced } from '#lib/ui/seating/seat-layout.ts';
 	import { attachRoom } from '#lib/features/room/host.svelte.ts';
+	import { openBoardPlaces } from '#lib/features/room/host-seating.ts';
 	import { resolve } from '$app/paths';
 	import type { GameId } from '#lib/core/model/index.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
@@ -39,6 +41,11 @@
 			reminderSpots: board.reminderSpots,
 			copies: [...board.copies]
 		}));
+		// Phones moving their seats while seating is open (Trevor, 2026-10-31).
+		openBoardPlaces(open.game.gameId, {
+			place: (seatId, point) => board.setLayout(withPlaced(board.layout, seatId, point)),
+			swap: (a, b) => board.setLayout(swapPlaces(board.layout, a, b))
+		});
 		grimoire = board;
 		return grimoire;
 	}

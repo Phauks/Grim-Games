@@ -84,6 +84,7 @@ function reseated(
 export const SEATS_DECIDERS: Deciders<
 	| 'ChangeScript'
 	| 'AddSeat'
+	| 'SetInPlay'
 	| 'RemoveSeat'
 	| 'RenameSeat'
 	| 'SetStorytellerName'
@@ -120,7 +121,19 @@ export const SEATS_DECIDERS: Deciders<
 		const playerName = command.playerName?.trim() || undefined;
 		const event: GameEvent = { type: 'SeatAdded', seatId: ctx.newId(), position };
 		if (playerName !== undefined) event.playerName = playerName;
+		if (command.notInPlay) event.notInPlay = true;
 		return [event];
+	},
+
+	SetInPlay(game, command, _ctx, warn) {
+		const events: GameEvent[] = [];
+		for (const id of new Set(command.seatIds)) {
+			const seat = seatOf(game, id);
+			if (!seat.notInPlay === command.inPlay) continue;
+			events.push({ type: 'SeatInPlaySet', seatId: seat.seatId, inPlay: command.inPlay });
+		}
+		if (events.length === 0) warn('no-change', 'nothing changes');
+		return events;
 	},
 
 	RemoveSeat(game, command, ctx, warn) {

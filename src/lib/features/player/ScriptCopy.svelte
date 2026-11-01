@@ -140,6 +140,8 @@
 	.painted {
 		background: var(--surface);
 		color: var(--on-surface);
+		/* Pinned headings in the paper's colour, not the page's. */
+		--pin-background: var(--surface);
 	}
 	.muted {
 		margin: 0;

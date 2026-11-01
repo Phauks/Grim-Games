@@ -201,6 +201,8 @@ export function warningText(warning: EngineWarning): string | undefined {
 			return 'That player has already been nominated today.';
 		case 'dead-nominator':
 			return 'Dead players may not nominate.';
+		case 'not-in-play':
+			return 'That player is not in play yet.';
 		default:
 			return warning.message;
 	}

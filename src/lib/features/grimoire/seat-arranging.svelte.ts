@@ -53,7 +53,7 @@ export class SeatArranging {
 	front = $state<SeatId | undefined>();
 	#pressedAt = { x: 0, y: 0 };
 	/**
-	 * A press outside Arrange seats, which becomes a drag once it is a hold: holding a seat's
+	 * A press outside Seating, which becomes a drag once it is a hold: holding a seat's
 	 * token moves it (Trevor, 2026-10-25; the only thing a hold does, 2026-10-26).
 	 */
 	#pressed: (Drag & { target: HTMLElement }) | undefined;
@@ -94,7 +94,7 @@ export class SeatArranging {
 	start() {
 		this.arranging = true;
 		toast(
-			'Arrange seats',
+			'Seating',
 			'Drag a seat anywhere to space the table, or onto another seat to swap the two players.'
 		);
 	}

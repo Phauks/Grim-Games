@@ -7,6 +7,20 @@
 :root,
 [data-board-colours] {
 	--page-background: var(--surface-texture, var(--surface));
+	/*
+	 * Where a caret section's pinned heading stops at the top of whatever scrolls, and what it
+	 * is filled with so rows pass under it (Collapsible, Trevor 2026-10-31: "pin ... for
+	 * everything"). A page scrolls under the status bar; a dialog or sheet resets both. On a
+	 * page it is the backdrop itself, held still and fading to --surface at the top as the
+	 * backdrop does (base.css body::before), so the pinned header shows no edge.
+	 */
+	--pin-top: var(--app-top);
+	--pin-background:
+		linear-gradient(
+			var(--surface) env(safe-area-inset-top),
+			transparent calc(env(safe-area-inset-top) + 4 * var(--u))
+		),
+		var(--page-background);
 
 	--button-background: var(--button);
 	--button-color: var(--on-button);

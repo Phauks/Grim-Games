@@ -27,6 +27,7 @@ import { wikiUrl } from '#lib/core/data/wiki.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import {
 	alignmentOf,
+	inPlay,
 	isAliveForWin,
 	isTraveller,
 	trueCharacter,
@@ -645,10 +646,12 @@ function demonExecuted(game: Game, characters: CharacterLookup, ruleName: string
  * may go on.
  */
 export function gameEnds(
-	game: Game,
+	full: Game,
 	characters: CharacterLookup,
 	options: GameEndOptions = {}
 ): GameEnd[] {
+	// Seats not in play yet count for nothing (`Seat.notInPlay`).
+	const game = inPlay(full);
 	if (game.seating.every((id) => game.seats[id].characterId === undefined)) return [];
 
 	const out: GameEnd[] = options.demonExecutedBy

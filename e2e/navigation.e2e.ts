@@ -26,6 +26,7 @@ test('on a phone, the header menu opens a drawer with every destination', async 
 		'Library',
 		'Script builder',
 		'Character builder',
+		'Mode builder',
 		'Character reference',
 		'Info tokens',
 		'Account'
@@ -35,7 +36,15 @@ test('on a phone, the header menu opens a drawer with every destination', async 
 	// Grouped under plain labels: games, preparation, you, then the app's own pages (Trevor,
 	// 2026-10-16; no Player view, 2026-10-19; the footer's pages, 2026-10-23).
 	// Headed with the app's name, not "Menu" (Trevor, 2026-10-18).
-	await expect(drawer.getByRole('heading')).toHaveText([APP_NAME, 'Play', 'Prepare', 'You', 'App']);
+	// The builders have their own section after Prepare (Trevor, 2026-10-31).
+	await expect(drawer.getByRole('heading')).toHaveText([
+		APP_NAME,
+		'Play',
+		'Prepare',
+		'Build',
+		'You',
+		'App'
+	]);
 	// Home stands first on its own, outside the groups (Trevor, 2026-10-16).
 	await expect(drawer.getByRole('link').first()).toHaveText('Home');
 	await expect(
@@ -48,10 +57,13 @@ test('on a phone, the header menu opens a drawer with every destination', async 
 	await expect(drawer.getByRole('list', { name: 'Prepare' }).getByRole('link')).toHaveText([
 		'Search',
 		'Library',
-		'Script builder',
-		'Character builder',
 		'Info tokens',
 		'Character reference'
+	]);
+	await expect(drawer.getByRole('list', { name: 'Build' }).getByRole('link')).toHaveText([
+		'Script builder',
+		'Character builder',
+		'Mode builder'
 	]);
 	await drawer.getByRole('link', { name: 'Search' }).tap();
 	await expect(page).toHaveURL(/\/scripts$/);
@@ -108,7 +120,7 @@ test.describe('on a computer', () => {
 		await prepare.click();
 		await expect(prepare).toHaveAttribute('aria-expanded', 'false');
 		await expect(nav.getByRole('link', { name: 'Library' })).toBeHidden();
-		await expect(prepare.getByTestId('section-count')).toHaveText('6');
+		await expect(prepare.getByTestId('section-count')).toHaveText('4');
 		// The other sections stay as they were.
 		await expect(nav.getByRole('link', { name: 'New game' })).toBeVisible();
 		await page.reload();
