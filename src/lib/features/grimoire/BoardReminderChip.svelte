@@ -1,21 +1,25 @@
 <!--
-	One reminder token on the board, where it sits: by its seat, where it was put down, or
-	under the finger while it is dragged (GrimoireBoard).
+	One reminder token on a board, where it sits: by its seat, where it was put down, or under
+	the finger while it is dragged. The Storyteller's board (BoardSeats, `placedLook`) and a
+	player's grim (PlayerSeatReminders, `playerLook`) alike (Trevor, 2026-11-01).
 -->
 <script lang="ts">
-	import type { Alignment, Character } from '#lib/core/data/index.ts';
-	import type { ReminderInstance } from '#lib/core/model/index.ts';
+	import type { Alignment, Character, ReminderLabel } from '#lib/core/data/index.ts';
+	import type { GenericLook } from '#lib/core/model/index.ts';
 	import BoardReminder from '#lib/features/grimoire/BoardReminder.svelte';
-	import { isGeneric, reminderWords } from '#lib/features/grimoire/reminders.ts';
 
 	interface Props {
-		reminder: ReminderInstance;
+		/** How it looks: `placedLook` on the board, `playerLook` on a player's grim. */
+		look: Pick<GenericLook, 'symbol' | 'symbolColour' | 'symbolFill'> & {
+			label: ReminderLabel;
+			infinite: boolean;
+			character: Character | undefined;
+			/** The character whose look a copied reminder takes. */
+			art?: Character;
+		};
 		/** Where it sits, in % of the board. */
 		at: { x: number; y: number };
-		character: Character | undefined;
 		alignment?: Alignment;
-		/** The character whose look a copied reminder takes. */
-		art: Character | undefined;
 		size: number;
 		disabled: boolean;
 		/** The seat it is on (1 is the first), for tests and the held-seat dimming. */
@@ -39,11 +43,9 @@
 	}
 
 	let {
-		reminder,
+		look,
 		at,
-		character,
 		alignment,
-		art,
 		size,
 		disabled,
 		seatNumber,
@@ -75,21 +77,7 @@
 	style:top="{at.y}%"
 	aria-hidden={ghost ? 'true' : undefined}
 >
-	<BoardReminder
-		label={reminderWords(reminder)}
-		infinite={isGeneric(reminder)}
-		symbol={reminder.symbol}
-		symbolColour={reminder.symbolColour}
-		symbolFill={reminder.symbolFill}
-		{art}
-		{character}
-		{alignment}
-		{size}
-		{disabled}
-		{onTap}
-		{onDrag}
-		{onCancel}
-	/>
+	<BoardReminder {...look} {alignment} {size} {disabled} {onTap} {onDrag} {onCancel} />
 </div>
 
 <style>

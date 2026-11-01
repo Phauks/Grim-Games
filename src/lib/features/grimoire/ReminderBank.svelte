@@ -104,7 +104,6 @@
 
 	const items = $derived(
 		bankItems(game, characters, {
-			dismissed: grimoire.trayDismissed,
 			focus,
 			focusMode,
 			stack: preferences.current.assistance.stackReminders,

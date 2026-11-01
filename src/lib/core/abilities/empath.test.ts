@@ -13,6 +13,8 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { infoPicker, isTruthful } from '#lib/core/rules/night-info.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Empath', () => {
 	const character = committedCharacter('empath');
@@ -44,6 +46,24 @@ describe('Empath', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Empath#Examples)', () => {
-		it.todo("Example 1: Empath's count climbs from zero to two");
+		it('Example 1: neighbours change as players die', () => {
+			// Two good neighbours give 0. With both dead, the next living neighbours are a Librarian
+			// and an evil Traveller: 1. With only the Empath, Imp and Baron alive: 2.
+			const cast = ['empath', 'soldier', 'librarian', 'imp', 'baron', 'gunslinger', 'monk'];
+			const s = scenario(cast).do((at) => ({
+				type: 'SetAlignment',
+				seatId: at.seat('gunslinger'),
+				alignment: 'evil'
+			}));
+			const count = (at: typeof s) =>
+				infoPicker(at.game, at.seat('empath'), 'empath', at.characters)!.range?.truth;
+			expect(count(s)).toBe(0);
+			const later = s.execute('soldier').newDay().dies('monk', 'imp');
+			expect(count(later)).toBe(1);
+			const end = later.dies('librarian').dies('gunslinger');
+			expect(count(end)).toBe(2);
+			const picker = infoPicker(end.game, end.seat('empath'), 'empath', end.characters)!;
+			expect(isTruthful(picker, { seats: [], number: 2 })).toBe(true);
+		});
 	});
 });

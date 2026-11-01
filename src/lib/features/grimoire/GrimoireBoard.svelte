@@ -86,6 +86,7 @@
 	import SavantSheet from '#lib/features/savant/SavantSheet.svelte';
 	import AidMenu from '#lib/features/settings/AidMenu.svelte';
 	import { playersDialog } from '#lib/features/room/players-dialog.svelte.ts';
+	import { travellersForNewSeat } from '#lib/features/room/add-seat-travellers.ts';
 	import { DAY_HASH } from '#lib/features/day/day-hash.ts';
 	import SeatSheet from './SeatSheet.svelte';
 	import SeatProfileDialog from './SeatProfileDialog.svelte';
@@ -426,8 +427,8 @@
 				})
 			: []
 	);
-	/** The seat just appears; tap it to choose a character or Traveller (Trevor, 2026-10-16). */
-	const onAddSeat = () => startPlacing((position) => void grimoire.addSeat(position));
+	/** The seat just appears (Trevor, 2026-10-16); with a room open, Travellers choose follows. */
+	const onAddSeat = () => startPlacing((p) => travellersForNewSeat(grimoire.addSeat(p), watching));
 	function placeAt(position: number) {
 		const add = placing;
 		placing = undefined;
