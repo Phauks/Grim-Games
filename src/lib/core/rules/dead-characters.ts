@@ -23,9 +23,8 @@ export function actsWhenDead(characterId: CharacterId, characters?: RulesLookup)
  * ability still works. Living players never need it.
  *
  * The kept ability lasts only while the token's character does (M15g): once every player of it
- * is dead, the ability is gone (the Vigormortis's Minions keep theirs "for as long as the
- * Vigormortis remains alive"). With no player of it in play the token is kept: it may come from
- * a gained ability. `sourceWorks`, when given, judges each player of that character instead of
+ * is dead, or no player is it any more (the Pit-Hag turns the Vigormortis into another Demon),
+ * the ability is gone. `sourceWorks`, when given, judges each player of that character instead of
  * "alive" (`rules/ability.ts` asks whether its ability works, so a drunk or poisoned
  * Vigormortis's Minions lose theirs too).
  */
@@ -49,7 +48,7 @@ export function keepsAbilityWhenDead(
 					r.characterId
 		);
 		const works = sourceWorks ?? ((s: SeatId) => !game.seats[s].dead);
-		return sources.length === 0 || sources.some(works);
+		return sources.some(works);
 	});
 }
 

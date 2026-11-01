@@ -55,6 +55,13 @@ describe('kept ability (keepsAbility)', () => {
 		expect(keepsAbilityWhenDead(s.game, s.seat('witch'), s.characters)).toBe(true);
 	});
 
+	it('ends both once the Vigormortis becomes another Demon', () => {
+		const s = killed().becomes('vigormortis', 'vortox');
+		expect(keepsAbilityWhenDead(s.game, s.seat('witch'), s.characters)).toBe(false);
+		expect(abilityState(s.game, s.seat('witch'), s.characters).works).toBe(false);
+		expect(abilityState(s.game, s.seat('sage'), s.characters).works).toBe(true);
+	});
+
 	it('cures the neighbour once the dead Minion is no longer a Minion', () => {
 		const s = killed().becomes('witch', 'mayor');
 		expect(abilityState(s.game, s.seat('witch'), s.characters).dead).toBe(true);
