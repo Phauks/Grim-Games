@@ -46,13 +46,6 @@ export function heldTokenActions(
 	const tokenId = item.token?.tokenId;
 	if (tokenId)
 		rows.push({ value: 'edit', label: 'Edit token', onSelect: done(() => on.edit(tokenId)) });
-	const setupKey = item.setup?.key;
-	if (setupKey)
-		rows.push({
-			value: 'dismiss',
-			label: "Don't suggest",
-			onSelect: done(() => grimoire.dismissTray(setupKey))
-		});
 	return rows;
 }
 
