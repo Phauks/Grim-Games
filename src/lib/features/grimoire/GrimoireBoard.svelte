@@ -1031,6 +1031,7 @@
 	{grimoire}
 	{ended}
 	{endedText}
+	{phase}
 	bind:endOpen
 	bind:reopenOpen
 	onChange={() => (endedRead += 1)}
