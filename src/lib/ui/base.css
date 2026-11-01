@@ -19,6 +19,9 @@ html {
 	   2026-10-30), and a board sized by its width can't make the scrollbar it then removes.
 	   Phones and Macs draw the scrollbar over the page, so this takes no room there. */
 	scrollbar-gutter: stable;
+	/* A coding font, the device's own monospace, not a theme's choice: the Mode builder, where
+	   every setting is a key of a JSON file (Trevor, 2026-11-01: "like a coding font"). */
+	--font-code: ui-monospace, 'Cascadia Mono', 'Roboto Mono', Menlo, Consolas, monospace;
 }
 
 html,
@@ -105,6 +108,17 @@ h3 {
 	color: var(--heading);
 	letter-spacing: 0.04em;
 	line-height: 1.2;
+}
+
+/* Everything inside in the coding font (--font-code), controls and headings too, with none of
+   the themes' display or small-caps faces: the Mode builder and its dialogs. */
+.code-font {
+	--font-body: var(--font-code);
+	--font-heading: var(--font-code);
+	--font-control: var(--font-code);
+	/* Worked out once at the root, so it is set again here with the coding font. */
+	--button-font: var(--font-control-weight) 0.95rem / 1.1 var(--font-code);
+	font-family: var(--font-code);
 }
 
 /* Read by screen readers, not shown (a page title on the blank Home page, table captions). */
