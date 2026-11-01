@@ -12,7 +12,9 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
+import { quietLeft, quietStartRule } from '#lib/core/rules/quiet-start.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Buddhist', () => {
 	const character = committedCharacter('buddhist');
@@ -46,5 +48,25 @@ describe('Buddhist', () => {
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Buddhist#Examples)', () => {
 		it.todo('Example 1: Veterans quiet early to help newcomers');
 		it.todo('Example 2: Minion stays quiet at first, then bluffs');
+	});
+
+	/** M15b: the quiet start the day timer counts down (`quietStart`, `rules/quiet-start.ts`). */
+	describe('quiet start (M15b)', () => {
+		const s = scenario(['imp', 'washerwoman', 'empath', 'monk', 'soldier']).rule('buddhist');
+		const rule = quietStartRule(s.game, s.characters);
+
+		it('Example 1: the veterans are quiet for two minutes of each day, then talk freely', () => {
+			// Wiki: "Lachlan and Lewis are veterans in a game of mostly new players. To encourage the new players to talk, the Storyteller puts the Buddhist in play. Lachlan and Lewis may not talk for the first two minutes each day, after which, they may talk freely."
+			expect(rule?.players).toBe('veterans');
+			expect(rule && quietLeft(rule, 0)).toBe(120_000);
+			expect(rule && quietLeft(rule, 119_000)).toBe(1_000);
+			expect(rule && quietLeft(rule, 120_000)).toBe(0);
+		});
+
+		it('Example 2: the quiet holds whatever the veteran’s alignment', () => {
+			// Wiki: "Evin is affected by the Buddhist. He is a Minion and simply listens to what people are saying for the first two minutes, allowing him to bluff as a not-in-play character later on."
+			// The rule names no alignment or type: who is a veteran is the Storyteller's call.
+			expect(rule).toEqual({ characterId: 'buddhist', seconds: 120, players: 'veterans' });
+		});
 	});
 });

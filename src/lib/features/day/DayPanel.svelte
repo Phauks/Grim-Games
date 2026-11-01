@@ -8,6 +8,7 @@
 		dayMarkValue,
 		dayReminders,
 		marksInPlay,
+		quietStartRule,
 		markToken,
 		type DayMark,
 		dayClaim,
@@ -77,6 +78,8 @@
 	 * is the day log's, so it starts unset each new day and History can undo it.
 	 */
 	const marks = $derived(marksInPlay(g, game.characters));
+	/** A quiet start to each day in play (M15b: the Buddhist), counted down on the timer. */
+	const quiet = $derived(quietStartRule(g, game.characters));
 
 	// ── Confirming a change: what it is now, and what it will be ──
 	// TPI's reminder token text (game data, not interface text).
@@ -419,7 +422,7 @@
 <div class="panel" style:--toolbar-height={`${toolbarHeight}px`}>
 	<!-- Stays in view while the day scrolls (Trevor, 2026-10-17). -->
 	<div class="toolbar" data-testid="day-toolbar" bind:borderBoxSize={toolbarSize}>
-		<DayTimer alive={block.alive} />
+		<DayTimer alive={block.alive} {quiet} />
 		{#if onOpenNight}
 			<Button icon="night" onclick={onOpenNight}>{t('day.nightOrder')}</Button>
 		{/if}

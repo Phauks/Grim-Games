@@ -6,6 +6,7 @@
 	import ChangeCharacterStep from './ChangeCharacterStep.svelte';
 	import StorytellerAbilityStep from './StorytellerAbilityStep.svelte';
 	import CountdownStep from './CountdownStep.svelte';
+	import NoAttackStep from './NoAttackStep.svelte';
 	import NightSuggested from './NightSuggested.svelte';
 	import NightShownTo from './NightShownTo.svelte';
 	import NightYesNo from './NightYesNo.svelte';
@@ -385,6 +386,8 @@
 				<StorytellerAbilityStep {grimoire} {step} />
 				<!-- The Courtier's Drunk 3, 2, 1: counted down on other nights, as its text says. -->
 				{#if night === 'other'}<CountdownStep {grimoire} {step} />{/if}
+				<!-- M15a: the Toymaker's No attack, on the Demon's step. -->
+				<NoAttackStep {grimoire} {step} />
 			{/if}
 			{#if numberStep}
 				<h3>Info token</h3>

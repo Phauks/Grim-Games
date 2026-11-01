@@ -32,7 +32,7 @@ export type SetupTiming = (typeof SETUP_TIMINGS)[number];
  * Who may get the token, read from the grimoire:
  * - `any`: any player;
  * - `good` / `evil`: by the seat's alignment;
- * - `townsfolk` / `outsider` / `minion`: by the true character's type;
+ * - `townsfolk` / `outsider` / `minion` / `demon`: by the true character's type;
  * - `not-demon`: any player whose true character isn't a Demon;
  * - `same-alignment`: a player of this character's alignment;
  * - `copies`: one of the players who have this character (Village Idiots);
@@ -46,6 +46,7 @@ const SEAT_FILTERS = [
 	'townsfolk',
 	'outsider',
 	'minion',
+	'demon',
 	'not-demon',
 	'same-alignment',
 	'copies',

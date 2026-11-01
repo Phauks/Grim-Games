@@ -121,6 +121,8 @@ export const day = {
 	'day.timerOpen': 'Day timer, {clock}; open its controls',
 	'day.timerModeDown': 'Timer',
 	'day.timerModeUp': 'Stopwatch',
+	'day.quiet.veterans': 'Veterans quiet {clock}',
+	'day.quietLabel.veterans': 'Veterans may not talk for {clock} more',
 	'day.setupForPlayers': 'Setup on players’ phones',
 	'day.setupForPlayers.candles': 'Candles for the seats',
 	'day.setupForPlayers.town': 'Town at dusk',

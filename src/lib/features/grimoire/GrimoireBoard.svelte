@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { offerScriptToReports } from '#lib/features/reports/report-script.svelte.ts';
-	import type { NightStep } from '#lib/core/rules/index.ts';
+	import { quietStartRule, type NightStep } from '#lib/core/rules/index.ts';
 	import GuidedStep from './GuidedStep.svelte';
 	import NightStrip from './NightStrip.svelte';
 	import HistoryStrip from './HistoryStrip.svelte';
@@ -958,6 +958,7 @@
 					variant="compact"
 					readOnly={watching || !showTimer}
 					shown={watchedTimer}
+					quiet={quietStartRule(game, characters)}
 				/>
 			</div>
 		</div>

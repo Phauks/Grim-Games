@@ -2616,6 +2616,57 @@ test("the Courtier's step counts its Drunk token down each night", async ({ page
 	await expect(page.getByRole('button', { name: 'Drunk 2 reminder' })).toHaveCount(1);
 });
 
+// M15a, https://wiki.bloodontheclocktower.com/Toymaker: the Demon may choose not to attack and
+// must once per game; Final Night: No Attack stays on the Demon until it has. The Demon's step
+// reminds the Storyteller and offers No attack, which takes the token off.
+test("with the Toymaker in play the Demon's step offers No attack", async ({ page }) => {
+	test.slow();
+	await startGame(page);
+	const sheet = await openSeat(page, 2);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 2' })
+		.getByRole('button', { name: 'Imp', exact: true })
+		.tap();
+	await closeSheet(page);
+	await menu(page, 'Add Fabled or Loric');
+	await page
+		.getByRole('dialog', { name: 'Add Fabled or Loric' })
+		.getByRole('button', { name: 'Toymaker', exact: true })
+		.tap();
+	const first = await walkTo(page, 'Dusk');
+	await first.getByRole('button', { name: 'Next step' }).tap();
+	await putReminder(page, 'Final Night: No Attack', 2);
+	await endNight(page);
+	const day = page.getByRole('dialog', { name: 'Day 1' });
+	await day.getByRole('button', { name: 'Close' }).tap();
+	await expect(day).toBeHidden();
+	// Opened by its name: the reminder line makes the strip's step taller, and a tap at its middle
+	// lands on the opened step's own icon, which opens the Imp's entry over it.
+	const strip = await walkTo(page, 'Imp');
+	// On the Demon's seat, so not in the bank.
+	const banked = page
+		.getByRole('list', { name: 'Reminder bank' })
+		.getByRole('button', { name: 'Final Night: No Attack reminder' });
+	await expect(banked).toHaveCount(0);
+	await strip.locator('.step .name strong').tap();
+	const step = page.getByRole('dialog', { name: 'Imp' });
+	await expect(step).toBeVisible();
+	await expect(step.getByTestId('night-alerts')).toContainText(
+		"hasn't chosen not to attack yet, must once this game"
+	);
+	const rows = step.getByTestId('no-attack');
+	await expect(rows).toContainText(/Seat 2.*comes off/);
+	await step.getByRole('button', { name: 'No attack', exact: true }).tap();
+	// Recorded: the token is off, so nothing is left to skip, and it may still choose not to.
+	await expect(rows).toHaveText('None');
+	await expect(step.getByRole('button', { name: 'No attack', exact: true })).toBeDisabled();
+	await expect(step.getByTestId('night-alerts')).toContainText('may choose not to attack');
+	await page.keyboard.press('Escape');
+	// Off the Demon's seat, back in the bank.
+	await expect(banked).toHaveCount(1);
+});
+
 // https://wiki.bloodontheclocktower.com/Plague_Doctor: when it dies, the Storyteller gains a
 // Minion ability, marked Storyteller Ability; shown with the Fabled and Loric (Trevor, 2026-10-30).
 test('a dead Plague Doctor gives the Storyteller a Minion ability, shown on the board', async ({

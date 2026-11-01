@@ -231,7 +231,7 @@ function demonSeats(game: Game, characters: CharacterLookup): SeatId[] {
 }
 
 /** Players alive for the "just 2 alive" rule: Travellers don't count. */
-function aliveNonTravellers(game: Game, characters: CharacterLookup): SeatId[] {
+export function aliveNonTravellers(game: Game, characters: CharacterLookup): SeatId[] {
 	return game.seating.filter(
 		(id) => aliveForEnd(game, id, characters) && !isTraveller(game, id, characters)
 	);

@@ -212,6 +212,8 @@ and one line in the index, never an edit to `character-rules.ts`.
 - Acts when dead (`dead-characters.ts`): `actsWhenDead`, moved
 - Stops waking (`night-alerts.ts`: the Exorcist's Chosen on the Demon): `stopsWaking`, new
 - Stops killing (`night-alerts.ts`: the Princess's Doesn't Kill on the Demon): `stopsKilling`, new
+- Choosing not to attack (M15a, `rules/demon-attack.ts`, alerts in `night-alerts.ts`, No attack offered at the Demon's step by `features/grimoire/NoAttackStep.svelte`; the reminder goes on the Demon at setup by the `demon` seat filter: the Toymaker's Final Night: No Attack): `demonAttack` (`maySkip`, `mustSkipOnce`), new
+- A quiet start to each day (M15b, `rules/quiet-start.ts`, counted down on the day timer's top edge by `features/day/DayTimer.svelte`: the Buddhist's veterans): `quietStart` (`seconds`, `players`), new
 - Own wake conditions (`rules/wakes-when.ts`, read by `night-steps.ts` `stepWakes`: the King once the dead equal or outnumber the living, the Choirboy when the Demon killed the King, the Seamstress until her No Ability): `wakesWhen`, new
 - Keeps its ability when dead (`dead-characters.ts`: the Vigormortis's Has Ability on a Minion it killed): `keepsAbility`, new
 - Abilities gained from another player (`gained-abilities.ts`, was the Pixie hard-code and `GAINED_FROM` in `death-causes.ts`: the Cannibal's Lunch, the Pixie's Mad and Has Ability, the Philosopher's swap or Drunk): `gainedFrom`, moved
