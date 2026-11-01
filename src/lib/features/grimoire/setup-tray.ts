@@ -26,15 +26,6 @@ export function trayItems(suggestions: readonly SetupReminder[]): TrayItem[] {
 }
 
 /**
- * The items still to place: those not dismissed. Core already leaves out the tokens that
- * are on the board, so counting them off again here would hide a second copy as soon as
- * the first is placed (the No Dashii's two Poisoned).
- */
-export function pendingTray(items: readonly TrayItem[], dismissed: readonly string[]): TrayItem[] {
-	return items.filter(({ key }) => !dismissed.includes(key));
-}
-
-/**
  * Leaves out one suggestion for each matching reminder that is on the board but not on a
  * seat (loose, or held by a Fabled or Loric): core only counts seats, so without this a
  * Noble's "Know" put down loose stayed in the bank (Trevor, 2026-10-18).
@@ -54,15 +45,14 @@ export function withoutOffSeat(
 }
 
 /**
- * The setup reminders still to place, as the bank's Setup stretch lists them: suggested,
- * not dismissed, and not already on the board (on a seat, loose, or held by a rule character).
+ * The setup reminders still to place, as the bank's Setup stretch lists them: suggested
+ * and not already on the board (on a seat, loose, or held by a rule character). Core already
+ * leaves out the tokens on seats, so they are not counted off again here: that would hide a
+ * second copy as soon as the first is placed (the No Dashii's two Poisoned). There is no
+ * "Don't suggest" (Trevor, 2026-11-01).
  */
-export function pendingSetup(
-	game: Game,
-	characters: CharacterLookup,
-	dismissed: readonly string[]
-): TrayItem[] {
-	return withoutOffSeat(pendingTray(trayItems(setupReminders(game, characters)), dismissed), [
+export function pendingSetup(game: Game, characters: CharacterLookup): TrayItem[] {
+	return withoutOffSeat(trayItems(setupReminders(game, characters)), [
 		...(game.looseReminders ?? []),
 		...Object.values(game.ruleReminders ?? {}).flat()
 	]);
