@@ -97,6 +97,19 @@ test('phones drag their own seat while seating is open, then claim an open seat 
 	await expect(phones).toHaveAttribute('aria-pressed', 'true');
 	await expect(line).toHaveText('Seating is open');
 	await page.screenshot({ path: `test-results/seating-top-bar-${testInfo.project.name}.png` });
+	// Words beside the icons on a tablet, icons only on a phone (Trevor, 2026-11-01), and
+	// all seven tools fit across the bar either way.
+	const toolbar = page.getByRole('toolbar', { name: 'Grimoire' });
+	const words = toolbar.getByText('Players move seats', { exact: true });
+	if (testInfo.project.name === 'tablet') await expect(words).toBeVisible();
+	else await expect(words).toBeHidden();
+	const fits = await toolbar.evaluate((bar) => bar.scrollWidth <= bar.clientWidth);
+	expect(fits).toBe(true);
+	for (const tool of await toolbar.locator('button').all()) {
+		const box = (await tool.boundingBox())!;
+		const bar = (await toolbar.boundingBox())!;
+		expect(box.x + box.width).toBeLessThanOrEqual(bar.x + bar.width + 1);
+	}
 
 	const disc = phone.getByTestId('seating-disc');
 	const target = phone.getByTestId('seating-target');

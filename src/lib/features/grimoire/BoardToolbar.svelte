@@ -272,7 +272,7 @@
 		display: none;
 	}
 	@media (max-width: 719.98px) {
-		.toolbar :global(.button:has(.tool-label)) {
+		.toolbar:not(.seating) :global(.button:has(.tool-label)) {
 			min-width: var(--tap-target);
 			padding: 0;
 			gap: 0;
@@ -283,15 +283,31 @@
 			display: inline;
 		}
 	}
-	/* Seating has seven tools: their words only where all of them fit. */
-	@media (min-width: 720px) and (max-width: 1099.98px) {
-		.seating :global(.tool-label) {
-			display: none;
-		}
+	/* Seating's tools have their words from a tablet up, icons only on a phone (Trevor,
+	   2026-11-01), tighter so all seven fit across a tablet. */
+	@media (max-width: 699.98px) {
 		.seating :global(.button:has(.tool-label)) {
 			min-width: var(--tap-target);
 			padding: 0;
 			gap: 0;
+		}
+	}
+	@media (min-width: 700px) {
+		.seating :global(.tool-label) {
+			display: inline;
+		}
+	}
+	@media (min-width: 700px) and (max-width: 1099.98px) {
+		.seating {
+			gap: var(--space-1);
+		}
+		.seating :global(.button:has(.tool-label)) {
+			padding: 0 var(--space-2);
+			gap: var(--space-1);
+		}
+		.seating :global(.tool-label) {
+			font-size: 0.75em;
+			letter-spacing: 0;
 		}
 	}
 </style>
