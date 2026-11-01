@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
 	buildParts,
+	closestPath,
+	jsonChunks,
+	ownPartFields,
+	PART_NOTES,
+	setPartAt,
 	emptyFile,
 	fieldControl,
 	issuesAt,
@@ -105,5 +110,50 @@ describe('editing the file', () => {
 		expect(issuesAt(issues, ['parts', 'nightSteps', 0, 'when'])).toEqual(['must be one of x']);
 		expect(issuesAt(issues, ['sources'])).toEqual(['[1].url: must be an https link']);
 		expect(issuesAt(issues, ['name'])).toEqual([]);
+	});
+});
+
+describe('the redesigned builder (Trevor, 2026-11-01)', () => {
+	const pool = GUIDE_PARTS.find((p) => p.part === 'pool')!;
+
+	it('adds Source and Storyteller instructions per part, not as a row on every part', () => {
+		const own = ownPartFields(pool, pool.kinds[0].kind).map((f) => f.name);
+		expect(own).not.toContain('cite');
+		expect(own).not.toContain('instructions');
+		expect(PART_NOTES.map((f) => f.name)).toEqual(['cite', 'instructions']);
+	});
+
+	it('turns a part on when one of its settings is changed while it is off', () => {
+		expect(setPartAt(pool, undefined, ['count'], 2)).toEqual({
+			kind: pool.kinds[0].kind,
+			count: 2
+		});
+		expect(setPartAt(pool, { kind: 'script' }, ['count'], 2)).toEqual({ kind: 'script', count: 2 });
+	});
+
+	it('jumps from a problem to the nearest setting that holds it', () => {
+		const paths = ['id', 'parts.pool', 'parts.pool.count', 'parts.nightSteps[0]'];
+		expect(closestPath('parts.pool.count', paths)).toBe('parts.pool.count');
+		expect(closestPath('parts.pool.kind', paths)).toBe('parts.pool');
+		expect(closestPath('parts.nightSteps[0].when', paths)).toBe('parts.nightSteps[0]');
+		expect(closestPath('parts.poolish', paths)).toBeUndefined();
+	});
+
+	it('splits the JSON by part, joining back to the file exactly, in any key order', () => {
+		const file = {
+			id: 'x',
+			parts: { pool: { kind: 'script', note: '"parts": {' }, deaths: { kind: 'none' } },
+			name: 'After parts'
+		};
+		const chunks = jsonChunks(file);
+		expect(chunks.map((c) => c.text).join('')).toBe(JSON.stringify(file, null, 2));
+		expect(chunks.filter((c) => c.part).map((c) => c.part)).toEqual(['pool', 'deaths']);
+		expect(chunks.find((c) => c.part === 'pool')?.text).toContain('"kind": "script"');
+		const empty = { id: 'y', parts: {} };
+		expect(
+			jsonChunks(empty)
+				.map((c) => c.text)
+				.join('')
+		).toBe(JSON.stringify(empty, null, 2));
 	});
 });

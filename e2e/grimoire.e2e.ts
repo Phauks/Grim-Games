@@ -966,8 +966,10 @@ test('a reminder on the board drags to another seat (the Sailor picks again)', a
 	expect(
 		await page.evaluate(() => (window as unknown as { clicksInDialog: number }).clicksInDialog)
 	).toBe(0);
-	// Whose it is, then that character as the Script tab shows it (Trevor, 2026-10-30).
-	await expect(reminder).toContainText(/From\s*Sailor/);
+	// That character as the Script tab shows it (Trevor, 2026-10-30), with no "From" line
+	// above it, as the row already names it (Trevor, 2026-11-01).
+	await expect(reminder).not.toContainText(/From\s*Sailor/);
+	await expect(reminder.locator('.ring-row')).toContainText('Sailor');
 	await expect(reminder.locator('.ring-row')).toContainText(/choose an alive player/i);
 	await expect(page.locator('[data-scope="drawer"][data-part="content"]')).toBeHidden();
 	await reminder.getByRole('button', { name: 'Close' }).tap();
@@ -1814,7 +1816,8 @@ test('the reminder bank holds setup reminders, placed by hand, then every remind
 	const sheet = await openSeat(page, 2);
 	await sheet.getByRole('button', { name: 'Actions for Townsfolk' }).tap();
 	const actions = page.getByRole('dialog', { name: 'Townsfolk' });
-	await expect(actions).toContainText(/From\s*Washerwoman\s*Seat 1\s*on\s*\S+\s*Seat 2/);
+	await expect(actions.locator('.ring-row')).toContainText('Washerwoman');
+	await expect(actions).not.toContainText(/From\s*Washerwoman/);
 	// In the seat sheet a reminder is just its token, tapped for these actions, delete among
 	// them (Trevor, 2026-10-19): no tick box, no owner, no ⋯.
 	await expect(actions.getByRole('button', { name: 'Remove reminder' })).toBeVisible();
@@ -4117,11 +4120,12 @@ test('a Fabled or Loric holds reminders, asking first for one not its own', asyn
 	).toHaveCount(2);
 	await angelSheet.getByRole('button', { name: 'Close' }).tap();
 
-	// Tapped, one is in hand; its own dialog says whose it is, and it can be removed.
+	// Tapped, one is in hand; its own dialog says where it lies, and it can be removed.
 	await held.getByRole('button', { name: 'Poisoned reminder' }).tap();
 	await inHand(page).getByRole('button', { name: 'About this reminder' }).tap();
 	const reminder = page.getByRole('dialog', { name: 'Poisoned' });
-	await expect(reminder).toContainText(/From\s*Poisoner\s*on\s*Angel/);
+	await expect(reminder).toContainText(/on\s*Angel/);
+	await expect(reminder).not.toContainText(/From\s*Poisoner/);
 	await reminder.getByRole('button', { name: 'Remove reminder' }).tap();
 	await expect(held.getByRole('button')).toHaveCount(1);
 	await expect(all.getByRole('button', { name: 'Poisoned reminder' })).toBeVisible();
@@ -4956,16 +4960,10 @@ test('the board menu names its groups, in two columns beside a phone', async ({ 
 	expect((await names('Session')).join(' ')).toMatch(/^(Character selection )?End game$/);
 	const session = (await group('Session').boundingBox())!;
 	// Arranging seats, Open seating (plan J38) and Count off (J40) are one Seating mode
-	// (Trevor, 2026-10-31), which works with no room open too; Travellers choose (L102) is
-	// there with no room open, disabled.
-	expect(await names('Seats')).toEqual([
-		'Add seat',
-		'Add Fabled or Loric',
-		'Seating',
-		'Travellers choose'
-	]);
+	// (Trevor, 2026-10-31), which works with no room open too. Travellers choose (L102) comes
+	// with Add seat, not as its own button (Trevor, 2026-11-01).
+	expect(await names('Seats')).toEqual(['Add seat', 'Add Fabled or Loric', 'Seating']);
 	await expect(group('Seats').getByRole('button', { name: 'Seating' })).toBeEnabled();
-	await expect(group('Seats').getByRole('button', { name: 'Travellers choose' })).toBeDisabled();
 	expect(await names('App')).toEqual(['Settings', 'Report an issue']);
 	// Beside a phone, the game on the left and the rest on the right.
 	const game = (await group('Game').boundingBox())!;
@@ -5404,7 +5402,7 @@ test('a tapped bank token is held until a seat is tapped, or put down', async ({
 	await page.touchscreen.tap(board.x + board.width / 2, board.y + board.height * 0.45);
 	await expect(inHand(page)).toBeHidden();
 	await expect(page.getByRole('dialog')).toHaveCount(0);
-	// A right-click holds it with its ⋯ open; About says whose it is.
+	// A right-click holds it with its ⋯ open; About shows the ability it comes from.
 	await poisoned.click({ button: 'right' });
 	await expect(page.getByRole('menuitem', { name: 'Duplicate reminder' })).toBeVisible();
 	await page.screenshot({ path: testInfo.outputPath('held-token-menu.png') });
@@ -5412,7 +5410,7 @@ test('a tapped bank token is held until a seat is tapped, or put down', async ({
 	await page.keyboard.press('Escape');
 	await inHand(page).getByRole('button', { name: 'About this reminder' }).tap();
 	const about = page.getByRole('dialog', { name: 'Poisoned' });
-	await expect(about).toContainText('From');
+	await expect(about).not.toContainText('From');
 	// Its character as the Script tab shows it: the ring row, whose ring opens the character's
 	// page (Trevor, 2026-10-30); no line left under it.
 	await expect(about.locator('.ring-row')).toContainText('they are poisoned');

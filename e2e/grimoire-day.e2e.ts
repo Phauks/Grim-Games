@@ -227,9 +227,13 @@ test('the day screen marks an execution, survives a reload and shows votes neede
 	await expect(table.locator('tbody tr')).toHaveCount(1);
 	await expect(table.locator('tbody tr')).toHaveText(/Seat 2.*Unused/);
 	await closeCount();
+	// The votes: a short title, each threshold in its badge with a short line (Trevor,
+	// 2026-11-01, option A).
 	await page.getByTestId('votes-needed').tap();
-	await expect(table).toHaveText(/Living players\s*7\s*Half, rounded up\s*4/);
-	await closeCount();
+	await expect(page.getByRole('dialog', { name: 'Votes needed' })).toBeVisible();
+	await expect(page.getByTestId('count-votes')).toHaveText(/4\s*On the block · 7 alive/);
+	await page.getByRole('dialog').last().getByRole('button', { name: 'Close' }).tap();
+	await expect(page.getByTestId('count-votes')).toBeHidden();
 	// No characters yet, so the teams list nobody.
 	await page.getByTestId('alive-evil').tap();
 	await expect(table.locator('tbody')).toHaveText('None');

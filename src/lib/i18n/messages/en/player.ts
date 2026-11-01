@@ -46,7 +46,6 @@ export const player = {
 	'player.grim.everyReminder': 'Every reminder',
 	'player.grim.editToken': 'Edit token',
 	'player.grim.removeReminder': 'Remove reminder',
-	'player.grim.reminderFrom': 'From',
 	'player.grim.genericTokens': 'Generic',
 	'player.grim.avatar': 'Avatar',
 	'player.grim.seatMore': 'More for this seat',

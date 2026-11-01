@@ -3,6 +3,7 @@ import type { Character, Jinx, NightSheet } from '../src/lib/core/data/types.ts'
 import {
 	checkCoverage,
 	citesPage,
+	countFails,
 	countTodos,
 	jinxTestFile,
 	renderCharacterTest,
@@ -82,6 +83,14 @@ describe('countTodos', () => {
 	});
 });
 
+describe('countFails', () => {
+	it('counts it.fails and test.fails calls', () => {
+		expect(
+			countFails("it.fails('a', () => {});\ntest.fails ('b', () => {});\nit('c', () => {});")
+		).toBe(2);
+	});
+});
+
 describe('checkCoverage', () => {
 	it('passes a fully covered fixture and counts its todos', () => {
 		const report = checkCoverage(covered());
@@ -107,6 +116,28 @@ describe('checkCoverage', () => {
 		const report = checkCoverage({ ...input, abilityTests });
 		expect(report.charactersDone).toBe(1);
 		expect(report.characterTodos).toBe(2);
+	});
+
+	// Trevor (2026-11-01): examples the engine can't pass yet are written as it.fails.
+	it('counts examples waiting on the engine, and a file with any is not done', () => {
+		const input = covered();
+		const abilityTests = new Map(input.abilityTests);
+		abilityTests.set(
+			'chef.test.ts',
+			`// ${wikiUrl('Chef')}\nimport { scenario } from '#lib/core/testing/scenario.ts';\n` +
+				`it('Example 1: two evil pairs', () => {});\nit.fails('Example 2: a Recluse pair', () => {});`
+		);
+		const report = checkCoverage({ ...input, abilityTests });
+		expect(report.problems).toEqual([]);
+		expect(report.characterFails).toBe(1);
+		expect(report.charactersDone).toBe(0);
+	});
+
+	it('requires scenario for an example written as it.fails', () => {
+		const input = covered();
+		const abilityTests = new Map(input.abilityTests);
+		abilityTests.set('chef.test.ts', `// ${wikiUrl('Chef')}\nit.fails('Example 1: a', () => {});`);
+		expect(checkCoverage({ ...input, abilityTests }).problems).toHaveLength(1);
 	});
 
 	// Trevor (2026-10-31): one way to write the wiki examples (M13a).
