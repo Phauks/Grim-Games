@@ -101,9 +101,10 @@ export interface ChoiceRules {
 	 * Each evil player learns who carries its `carrier` reminder: shown "This player is" with
 	 * that player's character, pointing at them; with no one marked, "These characters are not
 	 * in play" with the character named (the Storm Catcher's Stormcaught,
-	 * https://wiki.bloodontheclocktower.com/Storm_Catcher).
+	 * https://wiki.bloodontheclocktower.com/Storm_Catcher). `named`: the key of its prep value
+	 * (`setupPrep` note `value`) holding the character named, saved even when not in play.
 	 */
-	evilLearns?: { carrier: ReminderLabel };
+	evilLearns?: { carrier: ReminderLabel; named?: string };
 	/**
 	 * Its reminder whose every copy carries the Storyteller's own words for that player, typed
 	 * and shown on its `infoCard` from the reminder (the Zenomancer's Goal: the Storyteller
@@ -209,10 +210,11 @@ export function readChoiceRules(
 		if (!isObject(raw.evilLearns))
 			issues.add(at, `expected object, got ${describe(raw.evilLearns)}`);
 		else {
-			checkKeys(raw.evilLearns, ['carrier'], at, issues);
+			checkKeys(raw.evilLearns, ['carrier', 'named'], at, issues);
 			if (raw.evilLearns.carrier === undefined) issues.add(`${at}.carrier`, 'missing');
 			const carrier = readToken(raw.evilLearns, 'carrier', at, issues, reminders);
-			if (carrier) out.evilLearns = { carrier };
+			const named = readString(raw.evilLearns, 'named', at, issues, false);
+			if (carrier) out.evilLearns = { carrier, ...(named ? { named } : {}) };
 		}
 	}
 	return out;
