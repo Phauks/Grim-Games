@@ -527,6 +527,10 @@ test('history, add seat and remove', async ({ page }) => {
 	// History lists the change; going back to before it asks first.
 	await menu(page, 'History');
 	const history = page.getByRole('dialog', { name: 'History' });
+	// Each line has its number, the oldest 1 (Trevor, 2026-11-01).
+	const numbers = history.getByTestId('history-number');
+	await expect(numbers.last()).toHaveText('1');
+	await expect(numbers.first()).toHaveText(String(await numbers.count()));
 	const added = history.getByRole('listitem').filter({ hasText: 'Added Seat 3' });
 	await added.getByRole('button', { name: 'Restore' }).tap();
 	const back = page.getByRole('alertdialog', { name: 'Restore?' });
@@ -4463,6 +4467,15 @@ test('the Storm Catcher named character is picked before the day and kept at its
 	const learns = step.getByTestId('night-evil-learns');
 	await expect(learns).toContainText('Washerwoman');
 	await expect(learns.getByRole('button', { name: 'Show to player' })).toBeEnabled();
+	// The step's own "not in play" card shows that character, never the Demon's bluffs
+	// (Trevor, 2026-11-01).
+	await step
+		.getByTestId('step-info-tokens')
+		.getByRole('button', { name: 'These characters are not in play (Washerwoman)', exact: true })
+		.tap();
+	const shown = page.locator('[data-testid="show-to-player"][open]');
+	await expect(shown.getByRole('img', { name: /Washerwoman token/ })).toBeVisible();
+	await expect(shown.getByRole('img', { name: /token/ })).toHaveCount(1);
 });
 
 test('Minion info and Demon info list every card they can show, with who it points at', async ({

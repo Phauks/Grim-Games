@@ -11,7 +11,14 @@
 	"createsDemon": true,
 	"changesCharacter": {
 		"types": ["townsfolk", "outsider", "minion", "demon"],
-		"notInPlay": true
+		"notInPlay": true,
+		"notTravellers": true
+	},
+	"optionalRule": {
+		"changesCharacter": {
+			"types": ["townsfolk", "outsider", "minion", "demon"],
+			"notInPlay": true
+		}
 	},
 	"jinxes": {
 		"cultleader": {

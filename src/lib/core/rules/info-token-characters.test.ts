@@ -216,3 +216,27 @@ describe('reading infoTokenCharacters', () => {
 		expect(parse({ 'this-player-is': { ...card, others: 'any' } }).issues).toHaveLength(1);
 	});
 });
+
+describe('a card filled with a prep value (Storm Catcher, https://wiki.bloodontheclocktower.com/Storm_Catcher)', () => {
+	// With the named character not in play, the evil players are shown "These characters are
+	// not in play" and that one character: never the Demon's bluffs (Trevor, 2026-11-01).
+	it('shows the named character on "These characters are not in play", once it is named', () => {
+		const storm = character('stormcatcher');
+		expect(filledInfoToken(storm, 'not-in-play', 3)).toEqual({ characterIds: [], upTo: 1 });
+		expect(filledInfoToken(storm, 'not-in-play', 3, { 'stormcatcher.named': 'empath' })).toEqual({
+			characterIds: ['empath'],
+			upTo: 1
+		});
+	});
+
+	it('reads a value character only with its key', () => {
+		const issues = (rule: object) => {
+			const list = new Issues();
+			parseCharacterRules({ infoTokenCharacters: { 'not-in-play': rule } }, 'r', list);
+			return list.list;
+		};
+		expect(issues({ characters: ['value'], value: 'named', upTo: 1 })).toEqual([]);
+		expect(issues({ characters: ['value'] })).toHaveLength(1);
+		expect(issues({ characters: ['self'], value: 'named' })).toHaveLength(1);
+	});
+});
