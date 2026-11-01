@@ -14,13 +14,17 @@ export interface Countdown {
 	tokens: readonly ReminderLabel[];
 }
 
-/** Reads a `countdown` block: two or more of the character's own reminders, in order. */
+/**
+ * Reads a `countdown` block: two or more of the character's own reminders, in order.
+ * Undefined when absent.
+ */
 export function readCountdown(
 	raw: unknown,
 	path: string,
 	issues: Issues,
 	reminders: readonly ReminderLabel[] | undefined
 ): Countdown | undefined {
+	if (raw === undefined) return undefined;
 	if (!isObject(raw)) {
 		issues.add(path, `expected object, got ${describe(raw)}`);
 		return undefined;

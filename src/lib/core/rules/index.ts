@@ -45,6 +45,8 @@ export * from './game-end.ts';
 export * from './becomes.ts';
 export * from './madness.ts';
 export * from './countdown.ts';
+export * from './executed-instead.ts';
+export * from './explosion.ts';
 export * from './character-changes.ts';
 export * from './first-death.ts';
 export * from './reincarnation.ts';

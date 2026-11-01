@@ -849,6 +849,88 @@ test("Execution's Saved by applies the Pacifist the Storyteller picks", async ({
 	await expect(boardSeat(page, 'Seat 3')).not.toHaveAccessibleName(/dead/);
 });
 
+test("Execution can execute a good Scapegoat in a good player's place (M12a)", async ({ page }) => {
+	// https://wiki.bloodontheclocktower.com/Scapegoat: if a player of its alignment would be
+	// executed, the Storyteller may execute the Scapegoat instead.
+	await startGame(page);
+	await chooseCharacter(page, 1, 'Chef');
+	await chooseCharacter(page, 2, 'Imp');
+	const sheet = await openSeat(page, 3);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 3' })
+		.getByRole('button', { name: /^Scapegoat(, Recommended)?$/ })
+		.tap();
+	await page.getByRole('dialog', { name: 'Alignment' }).getByRole('button', { name: 'Good' }).tap();
+	await closeSeat(page);
+	const day = await openDay(page);
+	await day.getByRole('button', { name: 'Execution', exact: true }).tap();
+	const ask = page.getByRole('alertdialog', { name: 'End the day?' });
+	// There while the Scapegoat lives, disabled until a player of its alignment is chosen.
+	const instead = ask.getByRole('checkbox', { name: 'Scapegoat is executed instead' });
+	await expect(instead).toBeDisabled();
+	await ask.getByRole('combobox', { name: 'Execution' }).tap();
+	await page.getByRole('option', { name: /^Seat 2\b/ }).tap();
+	await expect(instead).toBeDisabled();
+	await ask.getByRole('combobox', { name: 'Execution' }).tap();
+	await page.getByRole('option', { name: /^Seat 1\b/ }).tap();
+	await expect(instead).toBeEnabled();
+	await ask.getByTestId('executed-instead').locator('[data-part="control"]').tap();
+	await expect(instead).toBeChecked();
+	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(page.getByTestId('night-strip')).toBeVisible();
+	await expect(boardSeat(page, 'Seat 3')).toHaveAccessibleName(/dead/);
+	await expect(boardSeat(page, 'Seat 1')).not.toHaveAccessibleName(/dead/);
+});
+
+test('executing the Boomdandy asks who lives, then who was pointed at most (M12b)', async ({
+	page
+}) => {
+	// https://wiki.bloodontheclocktower.com/Boomdandy: executed, all but 3 players die; then
+	// the player most pointed at dies.
+	test.slow();
+	await startGame(page, 6);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	const picker = page.getByRole('dialog', { name: 'Character for Seat 1' });
+	await picker.getByText('Include characters not on the script').tap();
+	await picker.getByRole('button', { name: 'Boomdandy', exact: true }).tap();
+	await closeSeat(page);
+	await chooseCharacter(page, 2, 'Imp');
+	const day = await openDay(page);
+	await day.getByRole('button', { name: 'Execution', exact: true }).tap();
+	await endTheDay(page, 'Seat 1');
+	const lives = page.getByRole('alertdialog', { name: 'Boomdandy: who lives?' });
+	const note = lives.getByTestId('explosion-note');
+	await expect(note).toHaveText('0 of 3 live');
+	for (const seat of [3, 4]) {
+		await lives
+			.getByTestId('explosion-lives')
+			.locator('li')
+			.nth(seat - 2)
+			.locator('[data-part="control"]')
+			.tap();
+	}
+	// Leaving the Demon out is a note, never a lock.
+	await expect(note).toHaveText('2 of 3 live; the Demon is not among them');
+	await lives
+		.getByTestId('explosion-lives')
+		.locator('li')
+		.nth(0)
+		.locator('[data-part="control"]')
+		.tap();
+	await expect(note).toHaveText('3 of 3 live');
+	await lives.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	const pointed = page.getByRole('dialog', { name: 'Who was pointed at most?' });
+	await pointed.getByText('Seat 3', { exact: true }).tap();
+	await expect(pointed).toBeHidden();
+	// The board under the two-alive game end prompt: Seat 2 (the Imp) and Seat 4 live.
+	for (const seat of [1, 3, 5, 6])
+		await expect(boardSeat(page, `Seat ${seat}`)).toHaveAttribute('data-dead', 'true');
+	for (const seat of [2, 4])
+		await expect(boardSeat(page, `Seat ${seat}`)).not.toHaveAttribute('data-dead');
+});
+
 test('an unnamed seat is named by its number in the day view', async ({ page }) => {
 	await startGame(page);
 	await chooseCharacter(page, 3, 'Slayer');
