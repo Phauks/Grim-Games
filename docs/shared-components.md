@@ -212,6 +212,7 @@ and one line in the index, never an edit to `character-rules.ts`.
 - Acts when dead (`dead-characters.ts`): `actsWhenDead`, moved
 - Stops waking (`night-alerts.ts`: the Exorcist's Chosen on the Demon): `stopsWaking`, new
 - Stops killing (`night-alerts.ts`: the Princess's Doesn't Kill on the Demon): `stopsKilling`, new
+- Acts twice (`rules/acts-twice.ts`: the Barista's Acts Twice): a second wake after each of the carrier's night steps (`withActsTwiceSteps`, read by `night-steps.ts`, the step named "… again"), an alert at the step (`night-alerts.ts`), a spent once-per-game night step still waking (`wakes-when.ts`), and a second day use without a warning (`dayUsesAllowed`, `UseAbility`): `actsTwice`, new
 - Own wake conditions (`rules/wakes-when.ts`, read by `night-steps.ts` `stepWakes`: the King once the dead equal or outnumber the living, the Choirboy when the Demon killed the King, the Seamstress until her No Ability): `wakesWhen`, new
 - Keeps its ability when dead (`dead-characters.ts`: the Vigormortis's Has Ability on a Minion it killed): `keepsAbility`, new
 - Abilities gained from another player (`gained-abilities.ts`, was the Pixie hard-code and `GAINED_FROM` in `death-causes.ts`: the Cannibal's Lunch, the Pixie's Mad and Has Ability, the Philosopher's swap or Drunk): `gainedFrom`, moved
