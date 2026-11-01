@@ -989,8 +989,11 @@
 		? () => goto(resolve('/grimoire/[gameId]/setup', { gameId: game.gameId }))
 		: undefined}
 	onAddSeat={() =>
-		// The seat just appears; tap it to choose a character or Traveller (Trevor, 2026-10-16).
-		startPlacing((position) => void grimoire.addSeat(position))}
+		// The seat just appears (Trevor, 2026-10-16); with a room open, Travellers choose follows.
+		startPlacing((p) => {
+			const id = grimoire.addSeat(p);
+			if (id && !watching && roomHost().code) playersDialog.showTravellers(id);
+		})}
 	onAddRule={() => rules?.add()}
 	onArrange={() => enterSeating(seatArr)}
 	onExport={() => (exportOpen = true)}

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Alignment, Character, CharacterId, PlayerName } from '#lib/core/data/index.ts';
 	import { fromScript } from '#lib/core/data/index.ts';
@@ -23,7 +24,8 @@
 	 * Travellers choose on their phones (Trevor, 2026-10-31), on the Storyteller's device: send
 	 * the choice to some seats with the Travellers allowed (the recommended ones, any, or ones
 	 * picked here), then watch who holds and who has confirmed. A confirmed Traveller goes on its
-	 * seat (host-traveller-pick.ts); the alignment is chosen here or on the board
+	 * seat (host-traveller-pick.ts). It opens from Add seat with the new seat ticked (Trevor,
+	 * 2026-11-01), and from the sheet of a seat still choosing; the alignment is chosen here or on the board
 	 * (https://wiki.bloodontheclocktower.com/Glossary, "Traveller"). Seats with no phone are
 	 * picked for here.
 	 */
@@ -76,6 +78,17 @@
 		if (pick) seats = pick.seats.map((s) => s.seatId);
 		editing = true;
 	}
+	// Opened from Add seat: the new seat is ticked, or joins the choice already open.
+	$effect(() => {
+		const seatId = playersDialog.travellerSeat;
+		if (!playersDialog.travellers || seatId === undefined) return;
+		untrack(() => {
+			if (pick) change();
+			else seats = [];
+			if (!seats.includes(seatId)) seats = [...seats, seatId];
+			playersDialog.travellerSeat = undefined;
+		});
+	});
 	function stop() {
 		host.send({ type: 'close-traveller-pick' });
 		playersDialog.travellers = false;
