@@ -189,9 +189,9 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	},
 	{
 		title:
-			"Special rules and game modes: +1, Binary Supernovae, Trained Killer, Phantom Detectives, Council of the Dead, The Warrens, The Djinn's Bargain, sharing your own mode files, the Mode builder, requesting missing mode features",
+			"Special rules and game modes: +1, Binary Supernovae, Trained Killer, Phantom Detectives, Council of the Dead, The Warrens, The Djinn's Bargain, sharing your own mode files, the Mode builder, requesting missing mode features, one format for modes and rules",
 		area: 'storyteller',
-		parts: ['L1', 'L35', 'L36', 'L103', 'L104', 'L105', 'L110'],
+		parts: ['L1', 'L35', 'L36', 'L103', 'L104', 'L105', 'L110', 'L111'],
 		prs: [322, 328]
 	},
 	{
@@ -312,7 +312,7 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		// Trevor, 2026-10-30/31: chosen at the start, shown on or off with the special rules.
 		title: "Characters' optional rules, chosen at the start of the game",
 		area: 'engine',
-		parts: ['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8']
+		parts: ['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8', 'M14']
 	},
 	{
 		// The ability parts gap list (/mnt/project-files/ability-parts/gaps.md), gaps 2 to 5.

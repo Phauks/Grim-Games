@@ -2,7 +2,7 @@ import {
 	GAME_MODE_FORMAT,
 	GAME_MODE_REVISION,
 	GUIDE_INTRO,
-	GUIDE_PARTS,
+	FILE_GUIDE_PARTS,
 	GUIDE_TOP,
 	MINIMAL_EXAMPLE,
 	gameModeById,
@@ -64,7 +64,7 @@ export function guideText(format: GuideFormat): string {
 	fields(GUIDE_TOP);
 	heading(2, t('modes.guide.parts'));
 	out.push(t('modes.guide.cite'), '');
-	for (const p of GUIDE_PARTS) {
+	for (const p of FILE_GUIDE_PARTS) {
 		heading(3, `${modeLabel('part', p.part)} (${code(p.part)})`);
 		out.push(`${p.about} ${p.list ? t('modes.guide.list') : t('modes.guide.object')}`, '');
 		fields(p.fields);

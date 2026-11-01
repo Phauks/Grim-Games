@@ -1,4 +1,11 @@
 {
+	"infoTokenCharacters": {
+		"not-in-play": {
+			"characters": ["value"],
+			"value": "named",
+			"upTo": 1
+		}
+	},
 	"evilLearns": {
 		"carrier": "Stormcaught",
 		"named": "named"
