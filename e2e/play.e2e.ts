@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { openPlayerSettings, openProfile, setPlayerName } from './player-name.ts';
 import { expectMatchingIconRow } from './icon-row.ts';
+import { expectTitleBesideOrUnder } from './title-row.ts';
 import { toBoard } from './new-game.ts';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { encodeSharedScript } from '../src/lib/features/scripts/share.ts';
@@ -39,26 +40,6 @@ async function storedNotes(page: Page): Promise<{ title: string; hidden: boolean
 				};
 			})
 	);
-}
-
-/**
- * The script's name against the header's buttons: under them on a phone, so the hamburger and
- * a row of buttons never squeeze it (Trevor, 2026-10-26), and on a wider screen level with
- * them at the start of the same row, so no row is left half empty (Trevor, 2026-10-31).
- */
-function expectTitleBesideOrUnder(
-	page: Page,
-	title: { x: number; y: number; width: number; height: number },
-	icon: { x: number; y: number; width: number; height: number }
-) {
-	if (page.viewportSize()!.width < 600) {
-		expect(title.y).toBeGreaterThanOrEqual(icon.y + icon.height - 1);
-		return;
-	}
-	expect(Math.abs(title.y + title.height / 2 - (icon.y + icon.height / 2))).toBeLessThan(
-		icon.height / 2
-	);
-	expect(title.x + title.width).toBeLessThanOrEqual(icon.x + 1);
 }
 
 /** Opens Settings from the menu: Player view has no app header, as the board has none. */
@@ -258,7 +239,7 @@ test("the player view's menu is the app's, and leaving it asks first", async ({ 
 	// tablet (Trevor, 2026-10-26 and 2026-10-31).
 	const cog = (await page.getByTestId('you-button').boundingBox())!;
 	expect(Math.abs(m.y - cog.y)).toBeLessThan(m.height / 2);
-	expectTitleBesideOrUnder(page, h, cog);
+	await expectTitleBesideOrUnder(page.locator('header'), h, cog);
 	// Never under the hamburger.
 	if (h.y < m.y + m.height) expect(h.x).toBeGreaterThanOrEqual(m.x + m.width);
 
@@ -646,6 +627,38 @@ test('a shared /play link opens its script, and the script can be shared on', as
 	await expect(page.getByRole('heading', { name: 'Second Script', level: 1 })).toBeVisible();
 });
 
+test('a short script name shares the buttons\u2019 row, a long one goes under them', async ({
+	page
+}) => {
+	// Trevor, 2026-11-01: "if there is space in the front row where there would not be reflow,
+	// we do that, otherwise, put it beneath".
+	const short = [{ id: '_meta', name: 'TB' }, 'chef', 'empath', 'imp'];
+	await page.goto(`/play#s=${await encodeSharedScript(short)}`);
+	const header = page.locator('header');
+	const cog = page.getByTestId('you-button');
+	let title = page.getByRole('heading', { name: 'TB', level: 1 });
+	await expect(header.locator('[data-one-row]')).toHaveCount(1);
+	expect(
+		await expectTitleBesideOrUnder(header, (await title.boundingBox())!, (await cog.boundingBox())!)
+	).toBe(true);
+	// The row keeps room for Message, which only shows in a room, so joining one never moves
+	// the title: the title ends at least a button's width before the first button.
+	const first = (await page.getByTestId('sheet-background').boundingBox())!;
+	const words = (await title.locator('.title-text').boundingBox())!;
+	expect(words.x + words.width).toBeLessThanOrEqual(first.x - first.width);
+
+	const name = 'The Long and Winding Road of Grimbinder Night';
+	const long = [{ id: '_meta', name }, 'chef', 'empath', 'imp'];
+	await page.goto('/');
+	await page.goto(`/play#s=${await encodeSharedScript(long)}`);
+	title = page.getByRole('heading', { name, level: 1 });
+	await expect(title).toBeVisible();
+	await expect(header.locator('[data-one-row]')).toHaveCount(0);
+	expect(
+		await expectTitleBesideOrUnder(header, (await title.boundingBox())!, (await cog.boundingBox())!)
+	).toBe(false);
+});
+
 test('the header shares the script from an icon and has no Code button', async ({ page }) => {
 	const shared = [{ id: '_meta', name: 'Code Night' }, 'chef', 'empath', 'imp'];
 	await page.goto(`/play#s=${await encodeSharedScript(shared)}`);
@@ -659,7 +672,7 @@ test('the header shares the script from an icon and has no Code button', async (
 	const title = await page.getByRole('heading', { name: 'Code Night', level: 1 }).boundingBox();
 	for (const name of ['Print script', 'Share script']) {
 		const icon = await page.getByRole('button', { name }).boundingBox();
-		expectTitleBesideOrUnder(page, title!, icon!);
+		await expectTitleBesideOrUnder(page.locator('header'), title!, icon!);
 	}
 	await page.getByRole('button', { name: 'Share script' }).tap();
 	const qr = page.getByRole('dialog', { name: 'Share', exact: true });
@@ -816,7 +829,7 @@ test('the title line’s sheet background, Print, Share and settings cog are one
 	// screen (Trevor, 2026-10-26 and 2026-10-31).
 	const cog = (await row.getByTestId('you-button').boundingBox())!;
 	const title = (await page.getByRole('heading', { level: 1 }).boundingBox())!;
-	expectTitleBesideOrUnder(page, title, cog);
+	await expectTitleBesideOrUnder(page.locator('header'), title, cog);
 });
 
 test('the Script sheet is always Normal on screen, with no layout setting', async ({ page }) => {
