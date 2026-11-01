@@ -9,8 +9,10 @@ import {
 	type DayEntry,
 	type Game,
 	type GuessAnswer,
-	type Reminder
+	type Reminder,
+	type SeatId
 } from '#lib/core/model/index.ts';
+import type { CharacterId } from '#lib/core/data/types.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import {
 	DAY_MARKS,
@@ -19,8 +21,11 @@ import {
 	markTokenSwap,
 	marksInPlay,
 	executionSavers,
+	outcomeHolder,
+	outcomeProblem,
 	protection,
-	type DayMark
+	type DayMark,
+	type ExecutionOutcome
 } from '#lib/core/rules/index.ts';
 import type { EngineContext } from '../context.ts';
 import type { GameEvent } from '../events.ts';
@@ -37,7 +42,8 @@ import {
 	refuse,
 	reminderFrom,
 	seatOf,
-	type Deciders
+	type Deciders,
+	type Warn
 } from './shared.ts';
 
 /** One of the Storyteller's answers to an ability guess; anything else is left out. */
@@ -146,6 +152,21 @@ export const DAY_DECIDERS: Deciders<
 
 	Execute(game, command, ctx, warn) {
 		const seat = seatOf(game, command.seatId);
+		const outcome = command.outcome;
+		const used = outcome ? outcomeEvents(game, seat.seatId, outcome, ctx, warn) : undefined;
+		if (outcome?.kind === 'failed' && used) {
+			// Not an execution (https://wiki.bloodontheclocktower.com/Legion,
+			// /Judge): logged as failed, nobody dies, and the day may still have one.
+			const entry: DayEntry = {
+				kind: 'execution-failed',
+				entryId: ctx.newId(),
+				seatId: seat.seatId,
+				by: used.by
+			};
+			return [...used.events, { type: 'DayEntryAdded', entry }];
+		}
+		const forced = outcome?.kind === 'forced' && used ? { forcedBy: used.by } : {};
+		const before = used?.events ?? [];
 		if (game.today.entries.some((e) => e.kind === 'execution')) {
 			warn('already-executed', 'there is usually one execution a day');
 		}
@@ -156,11 +177,12 @@ export const DAY_DECIDERS: Deciders<
 			kind: 'execution',
 			entryId: ctx.newId(),
 			seatId: seat.seatId,
-			died: !seat.dead
+			died: !seat.dead,
+			...forced
 		};
 		if (seat.dead) {
 			warn('already-dead', 'the player was already dead, so the execution is only logged');
-			return [{ type: 'DayEntryAdded', entry }];
+			return [...before, { type: 'DayEntryAdded', entry }];
 		}
 		// The Storyteller's own pick of what saved them (the Pacifist), applied even when the
 		// grimoire says it should not (warn, never lock).
@@ -185,9 +207,10 @@ export const DAY_DECIDERS: Deciders<
 				saved === 'override'
 					? {}
 					: { characterId: saved.characterId, ...(saved.seatId ? { seatId: saved.seatId } : {}) };
-			return [{ type: 'DayEntryAdded', entry: { ...entry, died: false, savedBy } }];
+			return [...before, { type: 'DayEntryAdded', entry: { ...entry, died: false, savedBy } }];
 		}
 		return [
+			...before,
 			{ type: 'DayEntryAdded', entry },
 			{ type: 'DeathSet', seatId: seat.seatId, dead: true, cause: command.cause ?? 'execution' }
 		];
@@ -228,6 +251,7 @@ export const DAY_DECIDERS: Deciders<
 			characterId: character.id
 		};
 		if (command.on !== undefined) entry.on = seatOf(game, command.on).seatId;
+		if (typeof command.passed === 'boolean') entry.passed = command.passed;
 		const usedToday = game.today.entries.some(
 			(e) => e.kind === 'ability' && e.seatId === seat.seatId && e.characterId === character.id
 		);
@@ -378,6 +402,38 @@ export const DAY_DECIDERS: Deciders<
 		return [{ type: 'DayStarted', at: ctx.now() }, ...tokens];
 	}
 };
+
+/**
+ * What recording an execution's `outcome` sets off: a warning when it may not apply (warn,
+ * never lock), and the day use marked on the executed player when the character's use is
+ * marked (`dayUse`: the Judge's once-per-game ruling). `by` is the character, and its seat
+ * when one is in play.
+ */
+function outcomeEvents(
+	game: Game,
+	seatId: SeatId,
+	outcome: ExecutionOutcome,
+	ctx: EngineContext,
+	warn: Warn
+): { by: { characterId: CharacterId; seatId?: SeatId }; events: GameEvent[] } {
+	const characterId = characterOf(ctx, outcome.characterId).id;
+	const problem = outcomeProblem(game, seatId, outcome, ctx.characters);
+	if (problem)
+		warn('outcome-may-not-apply', `that ability may not decide this execution (${problem})`);
+	const holder = outcomeHolder(game, outcome, ctx.characters);
+	const by = { characterId, ...(holder ? { seatId: holder.seatId } : {}) };
+	const marked = holder && rulesOf(characterId, ctx.characters)?.dayUse;
+	const events =
+		marked && problem !== 'used'
+			? DAY_DECIDERS.UseAbility(
+					game,
+					{ type: 'UseAbility', seatId: holder.seatId, characterId, on: seatId },
+					ctx,
+					warn
+				)
+			: [];
+	return { by, events };
+}
 
 /** Marks one of today's facts and swaps the tokens that show it. */
 function markEvents(

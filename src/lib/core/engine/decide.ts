@@ -109,6 +109,7 @@ export type WarningCode =
 	| 'already-dead'
 	| 'survives-execution'
 	| 'save-may-not-apply'
+	| 'outcome-may-not-apply'
 	| 'not-seat-character'
 	| 'already-used'
 	| 'too-many-guesses'

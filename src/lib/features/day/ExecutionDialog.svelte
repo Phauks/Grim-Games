@@ -3,14 +3,19 @@
 	import type { CharacterLookup, Game, SeatId } from '#lib/core/model/index.ts';
 	import {
 		executedInstead,
+		executionOutcomes,
 		executionSavers,
 		insteadCandidates,
 		extraNominators,
 		nominatorsAfterExecution,
+		outcomeHolders,
 		protection,
 		suggestedMark,
 		unsetMarks,
-		type DayMark
+		type DayMark,
+		type ExecutionOutcome,
+		type OutcomeHolder,
+		type OutcomeKind
 	} from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import { seatLabel, seatName } from '#lib/features/game/seat-label.ts';
@@ -38,14 +43,16 @@
 		/**
 		 * The player executed, or undefined for no execution; the Storyteller's Saved by: a
 		 * character, `dies` for None, or undefined to leave it to the grimoire; and today's
-		 * facts still unmarked, as confirmed here; and whether to keep the day going instead of
-		 * ending it. The dialog closes first.
+		 * facts still unmarked, as confirmed here; whether to keep the day going instead of
+		 * ending it; and the ability that failed or forced the execution, if any. The dialog
+		 * closes first.
 		 */
 		onConfirm: (
 			seatId: SeatId | undefined,
 			save: CharacterId | 'dies' | undefined,
 			marks: Partial<Record<DayMark, boolean>>,
-			keepGoing: boolean
+			keepGoing: boolean,
+			outcome?: ExecutionOutcome
 		) => void;
 	}
 
@@ -104,6 +111,63 @@
 	const saveOff = $derived(
 		!choice || choice === NONE || choice === executed || !!game.seats[choice as SeatId]?.dead
 	);
+	/**
+	 * What an ability does to the execution (`executionOutcome`, M9d), one row per character
+	 * whose ability works, there for the whole time the dialog is open (no reflow) and
+	 * disabled until a living player is chosen:
+	 * - Only evil voted (the Legion, https://wiki.bloodontheclocktower.com/Legion): on, the
+	 *   execution fails and nobody dies;
+	 * - Ruling (the Judge, https://wiki.bloodontheclocktower.com/Judge): None, Forced to pass or
+	 *   Forced to fail; either marks the Judge's ability used;
+	 * - Executed at once (the Vizier, https://wiki.bloodontheclocktower.com/Vizier).
+	 * Votes aren't recorded yet, so the Storyteller answers; why one may not apply shows beside
+	 * it, and Confirm records it anyway (warn, never lock).
+	 */
+	const YES = 'yes';
+	const RULING_NONE = 'none';
+	const RULING_PASS = 'pass';
+	const RULING_FAIL = 'fail';
+	const holders = $derived(outcomeHolders(game, characters).filter((h) => h.works));
+	const offers = $derived(saveOff ? [] : executionOutcomes(game, choice as SeatId, characters));
+	let answers = $state<Partial<Record<OutcomeKind, string>>>({});
+	// Unanswered each time the dialog opens or another player is chosen (not on closing:
+	// Confirm reads them after the dialog closes).
+	$effect(() => {
+		if (!open) return;
+		void choice;
+		answers = {};
+	});
+	const problemOf = (holder: OutcomeHolder) =>
+		offers.find((o) => o.kind === holder.kind && o.characterId === holder.characterId)?.problem;
+	/** The outcome Confirm records: the Judge's ruling first, then the Vizier, then the Legion. */
+	const outcome = $derived.by((): ExecutionOutcome | undefined => {
+		if (saveOff) return undefined;
+		const by = (kind: OutcomeKind) => holders.find((h) => h.kind === kind)?.characterId;
+		const ruling = answers.force;
+		if (ruling === RULING_PASS || ruling === RULING_FAIL) {
+			const characterId = by('force');
+			if (characterId) return { kind: ruling === RULING_PASS ? 'forced' : 'failed', characterId };
+		}
+		for (const [kind, result] of [
+			['execute-now', 'forced'],
+			['fails', 'failed']
+		] as const) {
+			const characterId = by(kind);
+			if (characterId && answers[kind] === YES) return { kind: result, characterId };
+		}
+		return undefined;
+	});
+	const rulingOptions = $derived.by(() => {
+		const holder = holders.find((h) => h.kind === 'force');
+		const problem = holder ? problemOf(holder) : undefined;
+		const description = problem ? t(`day.outcomeProblem.${problem}`) : undefined;
+		return [
+			{ value: RULING_NONE, label: t('day.rulingNone') },
+			{ value: RULING_PASS, label: t('day.rulingPass'), ...(description ? { description } : {}) },
+			{ value: RULING_FAIL, label: t('day.rulingFail'), ...(description ? { description } : {}) }
+		];
+	});
+
 	const saveOptions = $derived([
 		{ value: DIES, label: t('day.savedByNone') },
 		...(saved === 'override' ? [{ value: OVERRIDE, label: t('day.savedByOverride') }] : []),
@@ -116,7 +180,11 @@
 	]);
 	/** The character the slot says saves the player, for the line beneath. */
 	const savedByNow = $derived(
-		saveOff || save === DIES ? undefined : save === OVERRIDE ? OVERRIDE : save
+		saveOff || save === DIES || outcome?.kind === 'failed'
+			? undefined
+			: save === OVERRIDE
+				? OVERRIDE
+				: save
 	);
 
 	/**
@@ -214,9 +282,12 @@
 			? onConfirm(undefined, undefined, { ...marks }, false)
 			: onConfirm(
 					insteadOf?.seatId ?? (choice as SeatId),
-					saveOff || insteadOf || save === OVERRIDE ? undefined : (save as CharacterId | 'dies'),
+					saveOff || insteadOf || save === OVERRIDE || outcome?.kind === 'failed'
+						? undefined
+						: (save as CharacterId | 'dies'),
 					{ ...marks },
-					keepAvailable && keepGoing
+					keepAvailable && keepGoing,
+					...(outcome && !insteadOf ? [outcome] : [])
 				)}
 >
 	<div class="execution" data-testid="execution">
@@ -282,6 +353,47 @@
 				<!-- eslint-enable grim/names-as-badges -->
 			</div>
 		{/if}
+		{#each holders as holder (holder.kind + holder.characterId)}
+			{@const character = characters.get(holder.characterId)}
+			{@const problem = problemOf(holder)}
+			<div class="instead" data-testid={`outcome-${holder.kind}`}>
+				<span class="candidate"
+					>{#if character}<CharacterBadge
+							characterId={character.id}
+							{character}
+							interactive={false}
+						/>{/if}{#if holder.kind === 'force'}{t('day.ruling')}{:else}{t(
+							holder.kind === 'fails' ? 'day.onlyEvilVoted' : 'day.executeNow'
+						)}{/if}{#if problem && holder.kind !== 'force'}<span class="problem"
+							><Icon name="warning" />{t(`day.outcomeProblem.${problem}`)}</span
+						>{/if}</span
+				>
+				<!-- eslint-disable grim/names-as-badges -- hidden labels (accessible names) only -->
+				{#if holder.kind === 'force'}
+					<Select
+						hideLabel
+						label={t('day.rulingLabel', { who: character?.name ?? holder.characterId })}
+						value={answers.force ?? RULING_NONE}
+						options={rulingOptions}
+						disabled={saveOff}
+						testid="outcome-ruling"
+						onChange={(value) => (answers = { ...answers, force: value })}
+					/>
+				{:else}
+					<Toggle
+						hideLabel
+						label={t(holder.kind === 'fails' ? 'day.onlyEvilVotedLabel' : 'day.executeNowLabel', {
+							who: character?.name ?? holder.characterId
+						})}
+						checked={answers[holder.kind] === YES}
+						disabled={saveOff}
+						onChange={(checked) =>
+							(answers = { ...answers, [holder.kind]: checked ? YES : undefined })}
+					/>
+				{/if}
+				<!-- eslint-enable grim/names-as-badges -->
+			</div>
+		{/each}
 		{#each Object.keys(marks) as DayMark[] as mark (mark)}
 			<Toggle
 				label={t(`day.mark.${mark}`)}

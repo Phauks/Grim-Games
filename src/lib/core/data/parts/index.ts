@@ -24,6 +24,7 @@ export { deathCheck } from './death-check.ts';
 export { evilInfo } from './evil-info.ts';
 export { evilLearns } from './evil-learns.ts';
 export { execution } from './execution.ts';
+export { executionOutcome } from './execution-outcome.ts';
 export { falseInfo } from './false-info.ts';
 export { gainedFrom } from './gained-from.ts';
 export { gainsAbilityOf } from './gains-ability-of.ts';
