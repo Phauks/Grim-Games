@@ -92,9 +92,11 @@ export interface SetupNote {
 	tokens?: readonly ReminderLabel[];
 	/**
 	 * A value the Storyteller types in during prep and the app shows later (the
-	 * Yaggababble's phrase in its pre-day reminder): stored as `Game.prepValues`.
+	 * Yaggababble's phrase in its pre-day reminder): stored as `Game.prepValues`. With
+	 * `character: 'good'` it is a good character from the script instead of words (the Storm
+	 * Catcher's named character), stored by id, chosen whether or not it is in play.
 	 */
-	value?: { key: string; label: string };
+	value?: { key: string; label: string; character?: 'good' };
 }
 
 export interface SetupPrepRules {
@@ -203,10 +205,12 @@ function readNote(
 		const at = `${path}.value`;
 		if (!isObject(raw.value)) issues.add(at, `expected object, got ${describe(raw.value)}`);
 		else {
-			checkKeys(raw.value, ['key', 'label'], at, issues);
+			checkKeys(raw.value, ['key', 'label', 'character'], at, issues);
 			const key = readString(raw.value, 'key', at, issues, true);
 			const label = readString(raw.value, 'label', at, issues, true);
-			if (key !== undefined && label !== undefined) value = { key, label };
+			const character = readEnum(raw.value, 'character', ['good'] as const, at, issues, false);
+			if (key !== undefined && label !== undefined)
+				value = { key, label, ...(character ? { character } : {}) };
 		}
 	}
 	if (text === undefined) return undefined;
