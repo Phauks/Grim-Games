@@ -6,8 +6,11 @@
  *
  * Keyed by the info token's id (`info-tokens.ts`), for a token the character's night text
  * names (or its step offers, `offer`):
- * - `characters`: the characters filled in, in order; `self` is the character itself, and
- *   `chosen` the true character of a player the Storyteller taps first (the Dreamer's choice);
+ * - `characters`: the characters filled in, in order; `self` is the character itself,
+ *   `chosen` the true character of a player the Storyteller taps first (the Dreamer's choice),
+ *   and `value` the character the Storyteller entered as the prep value named by `value`
+ *   (the Storm Catcher's named character, shown as not in play);
+ * - `value`: with a `value` character, the key of that prep value (`setupPrep` note `value`);
  * - `upTo`: how many the card may show in all on this step, when more than the token's own
  *   count (the Cerenovus shows itself, then the madness character);
  * - `others`: what the rest are picked from: `opposite-alignment`, characters of the other
@@ -21,10 +24,21 @@
  */
 import { MAX_ASKED_CHARACTERS, STANDARD_INFO_TOKENS } from './info-tokens.ts';
 import type { CharacterId } from './types.ts';
-import { checkKeys, describe, isObject, readEnum, readNumber, type Issues } from './validate.ts';
+import {
+	checkKeys,
+	describe,
+	isObject,
+	readEnum,
+	readNumber,
+	readString,
+	type Issues
+} from './validate.ts';
 
-/** `self`: the character whose step it is; `chosen`: the player the Storyteller taps. */
-export type FilledCharacter = 'self' | 'chosen' | CharacterId;
+/**
+ * `self`: the character whose step it is; `chosen`: the player the Storyteller taps; `value`:
+ * the character entered as a prep value.
+ */
+export type FilledCharacter = 'self' | 'chosen' | 'value' | CharacterId;
 
 const INFO_TOKEN_OTHERS = ['opposite-alignment'] as const;
 
@@ -37,6 +51,7 @@ export interface InfoTokenCharacters {
 	shuffle?: true;
 	order?: (typeof INFO_TOKEN_ORDERS)[number];
 	offer?: true;
+	value?: string;
 }
 
 export type InfoTokenCharacterRules = Readonly<Record<string, InfoTokenCharacters>>;
@@ -64,7 +79,12 @@ export function readInfoTokenCharacters(
 			issues.add(at, `expected object, got ${describe(entry)}`);
 			continue;
 		}
-		checkKeys(entry, ['characters', 'upTo', 'others', 'shuffle', 'order', 'offer'], at, issues);
+		checkKeys(
+			entry,
+			['characters', 'upTo', 'others', 'shuffle', 'order', 'offer', 'value'],
+			at,
+			issues
+		);
 		const characters = entry.characters;
 		if (
 			!Array.isArray(characters) ||
@@ -85,6 +105,8 @@ export function readInfoTokenCharacters(
 			else issues.add(`${at}.${flag}`, 'expected true');
 		}
 		const chosen = characters.filter((c) => c === 'chosen').length;
+		const value = readString(entry, 'value', at, issues, false);
+		const usesValue = characters.includes('value');
 		if (upTo !== undefined && (!Number.isInteger(upTo) || upTo > MAX_ASKED_CHARACTERS)) {
 			issues.add(`${at}.upTo`, `expected a whole number up to ${MAX_ASKED_CHARACTERS}`);
 		} else if (characters.length > most) {
@@ -93,6 +115,8 @@ export function readInfoTokenCharacters(
 			issues.add(`${at}.characters`, 'one "chosen" at most');
 		} else if (others && chosen === 0) {
 			issues.add(`${at}.others`, 'needs a "chosen" character to differ from');
+		} else if (usesValue !== (value !== undefined)) {
+			issues.add(`${at}.value`, 'a "value" character and the value key go together');
 		} else if (order && flags.shuffle) {
 			issues.add(`${at}.order`, 'a card shuffles or has an order, not both');
 		} else
@@ -101,6 +125,7 @@ export function readInfoTokenCharacters(
 				...(upTo !== undefined ? { upTo } : {}),
 				...(others ? { others } : {}),
 				...(order ? { order } : {}),
+				...(value !== undefined ? { value } : {}),
 				...flags
 			};
 	}
