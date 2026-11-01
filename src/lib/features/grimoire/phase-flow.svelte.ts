@@ -120,8 +120,9 @@ export class PhaseFlow {
 				...(save === 'dies' ? { dies: true } : save ? { savedBy: save } : {}),
 				...(cause ? { cause } : {})
 			});
-		// Keep the day going (Trevor, 2026-10-26): a player may still nominate after it.
-		if (!keepGoing) this.endDay();
+		// Keep the day going (Trevor, 2026-10-26): a player may still nominate after it. An
+		// explosion (the Boomdandy's) keeps it too, for who lives and the pointing.
+		if (!keepGoing && !grimoire.explosionAsk) this.endDay();
 	}
 
 	/**
