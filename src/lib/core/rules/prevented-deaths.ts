@@ -88,10 +88,11 @@ export function preventedDeaths(game: Game, characters: CharacterLookup): Preven
 				: protection(game, seatId, characters, killer.by);
 			if (safe) because.push({ kind: 'protected', source: safe });
 			if (abilityState(game, seatId, characters).works) {
-				const saver = firstDeathSaver(game, seatId, characters);
+				// A protected player is safe from the kill: they don't die, so nothing is spent on
+				// a first death (https://wiki.bloodontheclocktower.com/Fool, Example 3) and there is
+				// nothing to move elsewhere (https://wiki.bloodontheclocktower.com/Monk, Example 2).
+				const saver = safe ? undefined : firstDeathSaver(game, seatId, characters);
 				if (saver) because.push({ kind: 'survives-first-death', source: saver.source });
-				// A protected player is safe from the kill, so there is nothing to move elsewhere
-				// (the Monk's Mayor example: https://wiki.bloodontheclocktower.com/Monk).
 				const redirect = safe ? undefined : killRedirect(game, seatId, characters, killer.by);
 				if (redirect) because.push({ kind: 'may-bounce', source: redirect });
 			}

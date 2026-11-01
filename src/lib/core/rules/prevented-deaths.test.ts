@@ -89,6 +89,17 @@ describe('preventedDeaths', () => {
 		]);
 	});
 
+	// https://wiki.bloodontheclocktower.com/Fool (Example 3): the Monk protects the Fool from the
+	// Demon, so the Fool doesn't die and its first-death ability stays unused.
+	it('Fool Example 3: a protected Fool is safe and keeps its ability', () => {
+		const s = scenario(['imp', 'fool', 'monk', 'chef'])
+			.reminder('fool', 'monk', 'Safe')
+			.reminder('fool', 'imp', 'Dead');
+		expect(short(preventedDeaths(s.game, s.characters), [...s.seats])).toEqual([
+			'imp→1: protected by monk'
+		]);
+	});
+
 	// https://wiki.bloodontheclocktower.com/Monk: a poisoned Monk protects nobody, so the Mayor's
 	// bounce (https://wiki.bloodontheclocktower.com/Mayor) is still the Storyteller's to make.
 	it('a poisoned Monk leaves the Mayor’s bounce open', () => {

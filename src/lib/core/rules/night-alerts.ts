@@ -286,13 +286,13 @@ function deathAlerts(
 		for (const { source } of protectors(game, seatId, characters, killer.by)) {
 			alert('protected', source, wikiOf(source));
 		}
-		// A player a working protection keeps safe has no kill to move elsewhere (the Monk's
-		// Mayor example: https://wiki.bloodontheclocktower.com/Monk).
-		const redirect = protection(game, seatId, characters, killer.by)
-			? undefined
-			: killRedirect(game, seatId, characters, killer.by);
+		// A player a working protection keeps safe doesn't die: no kill to move elsewhere (the
+		// Monk's Mayor example: https://wiki.bloodontheclocktower.com/Monk) and no first death
+		// spent (https://wiki.bloodontheclocktower.com/Fool, Example 3).
+		const safe = protection(game, seatId, characters, killer.by);
+		const redirect = safe ? undefined : killRedirect(game, seatId, characters, killer.by);
 		if (redirect) alert('may-bounce', redirect, wikiOf(redirect));
-		const saver = firstDeathSaver(game, seatId, characters);
+		const saver = safe ? undefined : firstDeathSaver(game, seatId, characters);
 		if (saver) alert('survives-first-death', saver.source, wikiOf(saver.source));
 	}
 
