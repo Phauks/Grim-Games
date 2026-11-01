@@ -288,6 +288,23 @@ export type DayEntry =
 			 * were already dead.
 			 */
 			savedBy?: { characterId?: CharacterId; seatId?: SeatId };
+			/**
+			 * Executed whatever the vote, by an ability (`executionOutcome`: the Judge's forced
+			 * pass, the Vizier's execute now), and the seat whose ability it was, when known.
+			 */
+			forcedBy?: { characterId: CharacterId; seatId?: SeatId };
+	  }
+	/**
+	 * An execution that failed (`executionOutcome`): the player was about to be executed and
+	 * was not, nor did they die (only evil voted while the Legion's ability worked; the
+	 * Judge's forced fail). `by` is the character whose ability failed it, and its seat when
+	 * known. Not an execution: the day may still have one.
+	 */
+	| {
+			kind: 'execution-failed';
+			entryId: DayEntryId;
+			seatId: SeatId;
+			by: { characterId: CharacterId; seatId?: SeatId };
 	  }
 	| { kind: 'exile'; entryId: DayEntryId; seatId: SeatId; died: boolean }
 	| {
@@ -297,6 +314,11 @@ export type DayEntry =
 			characterId: CharacterId;
 			reminderId?: ReminderId;
 			on?: SeatId;
+			/**
+			 * Whether the vote the ability called passed (`dayUse.vote`: every living good
+			 * player joined the Cult Leader's cult). Absent for any other use.
+			 */
+			passed?: boolean;
 	  }
 	| {
 			kind: 'note';

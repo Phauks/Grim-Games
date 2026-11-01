@@ -5,7 +5,11 @@
  */
 import type { Alignment, CharacterId, Script, PlayerName } from '#lib/core/data/index.ts';
 import type { DayMark } from '#lib/core/data/day-mark-rules.ts';
-import type { DayReminderOverride, NightStepOverride } from '#lib/core/rules/index.ts';
+import type {
+	DayReminderOverride,
+	ExecutionOutcome,
+	NightStepOverride
+} from '#lib/core/rules/index.ts';
 import type { AvatarId } from '#lib/core/avatars/index.ts';
 import type { FrameId } from '#lib/core/frames/index.ts';
 import type {
@@ -282,18 +286,30 @@ export type Command =
 	 * character the Storyteller says saved them (the Execution sheet's Saved by, such as the
 	 * Pacifist's "might not die"), applied even when the grimoire disagrees, with a warning.
 	 * `cause` is the character whose ability executed them (the Virgin's), recorded as the cause
-	 * of death instead of a plain execution.
+	 * of death instead of a plain execution. `outcome` is an ability that decided it
+	 * (`executionOutcome`): `failed` logs a failed execution and nobody dies (the Legion's
+	 * only evil voted, the Judge's forced fail); `forced` executes them whatever the vote (the
+	 * Judge's forced pass, the Vizier's execute now). A character whose day use is marked
+	 * (`dayUse`, the Judge's once per game) gets it marked used on this player.
 	 */
-	| { type: 'Execute'; seatId: SeatId; dies?: boolean; savedBy?: CharacterId; cause?: CharacterId }
+	| {
+			type: 'Execute';
+			seatId: SeatId;
+			dies?: boolean;
+			savedBy?: CharacterId;
+			cause?: CharacterId;
+			outcome?: ExecutionOutcome;
+	  }
 	/** Logs a Traveller's exile and marks them dead by exile, if alive. Not an execution. */
 	| { type: 'Exile'; seatId: SeatId }
 	/**
 	 * Logs that a character used its ability. A character with a "No Ability" reminder
 	 * token gets it placed on the seat; otherwise only the use is logged. `on` is the player
 	 * the use was about, when its rules ask (`dayUse`: the Slayer's choice, the Virgin's
-	 * nominator).
+	 * nominator). `passed` says whether the vote it called passed (`dayUse.vote`: the Cult
+	 * Leader's cult vote).
 	 */
-	| { type: 'UseAbility'; seatId: SeatId; characterId: CharacterId; on?: SeatId }
+	| { type: 'UseAbility'; seatId: SeatId; characterId: CharacterId; on?: SeatId; passed?: boolean }
 	/**
 	 * A free-text note about a character (any length; may be empty with `guesses`). `holds`
 	 * marks a statement true or false (L58); `answer` answers a guess at the player's own

@@ -48,6 +48,7 @@ export * from './becomes.ts';
 export * from './madness.ts';
 export * from './countdown.ts';
 export * from './executed-instead.ts';
+export * from './execution-outcome.ts';
 export * from './explosion.ts';
 export * from './character-changes.ts';
 export * from './first-death.ts';
