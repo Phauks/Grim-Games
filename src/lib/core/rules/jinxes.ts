@@ -10,14 +10,87 @@
  * (`data/jinx-rules.ts`), in effect while both are on the script. A jinx with no such block
  * (a homebrew one) is text, except that its wording may still say only one can be in play.
  */
-import type { JinxRules } from '#lib/core/data/jinx-rules.ts';
+import type { JinxRules, RegistersTo } from '#lib/core/data/jinx-rules.ts';
 import type { JinxIndex } from '#lib/core/data/jinxes.ts';
 import { pairKey } from '#lib/core/data/parse.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterRules } from '#lib/core/data/character-rules.ts';
-import type { CharacterId, Jinx } from '#lib/core/data/types.ts';
+import type { Alignment, CharacterId, CharacterType, Jinx } from '#lib/core/data/types.ts';
+import { isOnScript, scriptCharacterIds } from '#lib/core/model/characters.ts';
+import type { Game } from '#lib/core/model/types.ts';
 
 type RulesLookup = ReadonlyMap<CharacterId, { rules?: CharacterRules }>;
+
+/**
+ * `owner`'s own jinx rules for `partner` (`owner`'s side of the pair only), while the game's
+ * script holds both: the rules that say what `owner` does, or how it is treated, with the
+ * partner (`registersTo`, `impairsPartner`, `noKill`, `noGrimoire`, `grimoireHides`).
+ */
+export function ownJinxRules(
+	game: Pick<Game, 'script'>,
+	owner: CharacterId,
+	partner: CharacterId,
+	characters?: RulesLookup
+): JinxRules | undefined {
+	if (owner === partner) return undefined;
+	const rule = rulesOf(owner, characters)?.jinxes?.[partner];
+	if (!rule) return undefined;
+	return isOnScript(game.script, owner) && isOnScript(game.script, partner) ? rule : undefined;
+}
+
+/**
+ * Every character on the script whose own jinx rules for `partner` pass `test`, with them:
+ * those whose jinx changes something about `partner` (the Spy and the Widow poison the
+ * Damsel, https://wiki.bloodontheclocktower.com/Damsel#Related_Jinxes).
+ */
+export function jinxedWith(
+	game: Pick<Game, 'script'>,
+	partner: CharacterId,
+	test: (rule: JinxRules) => boolean,
+	characters?: RulesLookup
+): { characterId: CharacterId; rule: JinxRules }[] {
+	return scriptCharacterIds(game.script).flatMap((characterId) => {
+		const rule = ownJinxRules(game, characterId, partner, characters);
+		return rule && test(rule) ? [{ characterId, rule }] : [];
+	});
+}
+
+/**
+ * `owner`'s own jinx rules in effect on the game's script, by partner, those passing `test`
+ * (the Spy's with the Poppy Grower and the Magician change what the Spy sees,
+ * https://wiki.bloodontheclocktower.com/Spy#Related_Jinxes).
+ */
+export function ownJinxes(
+	game: Pick<Game, 'script'>,
+	owner: CharacterId,
+	test: (rule: JinxRules) => boolean,
+	characters?: RulesLookup
+): { partner: CharacterId; rule: JinxRules }[] {
+	return Object.keys(rulesOf(owner, characters)?.jinxes ?? {}).flatMap((partner) => {
+		const rule = ownJinxRules(game, owner, partner, characters);
+		return rule && test(rule) ? [{ partner, rule }] : [];
+	});
+}
+
+/**
+ * How a player registers to a jinxed partner (`registersTo`), from how they register to
+ * everyone else (their true alignment and type first): the jinx's alignments and types are
+ * added, or with `always` replace the usual ones (the Spy always registers as evil to the
+ * Ogre, https://wiki.bloodontheclocktower.com/Ogre#Related_Jinxes).
+ */
+export function registeredTo(
+	base: { alignments: readonly Alignment[]; types: readonly CharacterType[] },
+	rule: RegistersTo
+): { alignments: Alignment[]; types: CharacterType[] } {
+	const merge = <T>(usual: readonly T[], jinx: readonly T[] | undefined): T[] => {
+		const all = !jinx ? usual : rule.always ? jinx : [...usual, ...jinx];
+		return all.filter((v, i) => all.indexOf(v) === i);
+	};
+	return {
+		alignments: merge(base.alignments, rule.alignments),
+		types: merge(base.types, rule.types)
+	};
+}
 
 export interface ScriptJinx extends Jinx {
 	/** `official` from TPI's jinxes.json; `script` from a homebrew character's `jinxes`. */

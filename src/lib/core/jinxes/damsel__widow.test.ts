@@ -10,8 +10,16 @@
  * of the two may be in play). Paraphrase, never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
-import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
+import { findJinx, jinxesAmong, type Script } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { castWith, run } from '#lib/core/model/fixtures.test-support.ts';
+import { abilityState } from '#lib/core/rules/ability.ts';
+import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
+
+const scriptOf = (ids: string[]): Script => ({
+	meta: { name: 'Jinxed' },
+	entries: ids.map((id) => ({ kind: 'official' as const, id }))
+});
 
 describe('Damsel + Widow jinx', () => {
 	const data = committedGameData();
@@ -30,5 +38,30 @@ describe('Damsel + Widow jinx', () => {
 		expect(jinxesAmong(data.jinxes, ['widow'])).not.toContain(jinx);
 	});
 
-	it.todo('enforces the rule the jinx imposes');
+	// Both pages' Related Jinxes: while the Widow is in play the Damsel is poisoned. The
+	// jinx also covers a Widow that has left play; the game keeps no record of that, so only
+	// one in play now counts.
+	describe('the Damsel is poisoned while the Widow is in play', () => {
+		const cast = castWith({ script: scriptOf(['damsel', 'widow', 'imp', 'chef', 'empath']) });
+
+		it("is data in the Widow's rules", () => {
+			expect(jinxRulesBetween('widow', 'damsel')).toEqual({ impairsPartner: 'poisoned' });
+		});
+
+		it('poisons the Damsel, even once the Widow is dead', () => {
+			const { session, ctx, seats } = cast(['damsel', 'widow', 'imp', 'chef', 'empath']);
+			const state = abilityState(session.game, seats[0], ctx.characters);
+			expect(state.works).toBe(false);
+			expect(state.impairments.map((i) => [i.reason, i.source])).toEqual([
+				['poisoned', { characterId: 'widow', seatId: seats[1] }]
+			]);
+			const { game } = run(session, ctx, { type: 'SetDead', seatId: seats[1], dead: true });
+			expect(abilityState(game, seats[0], ctx.characters).impairments[0]?.reason).toBe('poisoned');
+		});
+
+		it('leaves the Damsel healthy with no Widow in play', () => {
+			const { game, ctx, seats } = cast(['damsel', 'chef', 'imp', 'empath', 'monk']);
+			expect(abilityState(game, seats[0], ctx.characters).works).toBe(true);
+		});
+	});
 });

@@ -10,6 +10,7 @@ import type { Alignment, CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { aliveNeighbours, alignmentOf, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
 import type { Game, Reminder, SeatId } from '#lib/core/model/types.ts';
+import { registrations } from './ability.ts';
 
 /**
  * The change to offer:
@@ -45,13 +46,23 @@ export function becomesOffer(
 		return { into: 'evil', seatId, characterId };
 	}
 	if (rule.into === 'carrier-alignment') {
-		// The token's character's own player takes the carrier's alignment.
-		const alignment = alignmentOf(game, seatId);
+		// The token's character's own player takes the carrier's alignment: the one the carrier
+		// registers as to that character, which may differ from their true one (the Recluse
+		// might register as evil to the Ogre, the Spy always registers as evil to it:
+		// https://wiki.bloodontheclocktower.com/Ogre#Related_Jinxes). The first that would
+		// change the owner is offered; the Storyteller confirms it or leaves them as they are.
+		const truly = alignmentOf(game, seatId);
 		const owner = game.seating.find(
 			(id) => id !== seatId && trueCharacter(game, id, characters) === reminder.characterId
 		);
-		if (owner === undefined || alignment === undefined) return undefined;
-		if (alignmentOf(game, owner) === alignment) return undefined;
+		if (owner === undefined || truly === undefined) return undefined;
+		const registered = registrations(game, characters, reminder.characterId).find(
+			(r) => r.seatId === seatId
+		);
+		const alignment = (registered?.alignments ?? [truly]).find(
+			(a) => a !== alignmentOf(game, owner)
+		);
+		if (alignment === undefined) return undefined;
 		return { into: 'alignment', seatId: owner, characterId: reminder.characterId, alignment };
 	}
 	if (rule.into === 'swap') {

@@ -10,8 +10,16 @@
  * of the two may be in play). Paraphrase, never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
-import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
+import { findJinx, jinxesAmong, type Script } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { castWith, run } from '#lib/core/model/fixtures.test-support.ts';
+import { becomesOffer } from '#lib/core/rules/becomes.ts';
+import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
+
+const scriptOf = (ids: string[]): Script => ({
+	meta: { name: 'Jinxed' },
+	entries: ids.map((id) => ({ kind: 'official' as const, id }))
+});
 
 describe('Ogre + Recluse jinx', () => {
 	const data = committedGameData();
@@ -30,5 +38,39 @@ describe('Ogre + Recluse jinx', () => {
 		expect(jinxesAmong(data.jinxes, ['recluse'])).not.toContain(jinx);
 	});
 
-	it.todo('enforces the rule the jinx imposes');
+	// Both pages' Related Jinxes: if the Recluse registers as evil to the Ogre, the Ogre is
+	// evil and learns it. Whether the Recluse registers so is its own ability's call, so the
+	// app needs no jinx data to offer it; telling the Ogre is still the Storyteller's to do.
+	describe('the Ogre who chooses the Recluse may become evil', () => {
+		const cast = castWith({
+			script: scriptOf(['ogre', 'recluse', 'imp', 'chef', 'empath', 'poisoner'])
+		});
+		const friend = { characterId: 'ogre', label: 'Friend' };
+
+		it('needs no jinx data: the Recluse ability covers the registration', () => {
+			expect(jinxRulesBetween('recluse', 'ogre')).toBeUndefined();
+		});
+
+		it('offers to make the Ogre evil when its Friend is the Recluse', () => {
+			const { game, ctx, seats } = cast(['ogre', 'recluse', 'imp', 'chef', 'empath']);
+			expect(becomesOffer(game, seats[1], friend, ctx.characters)).toEqual({
+				into: 'alignment',
+				seatId: seats[0],
+				characterId: 'ogre',
+				alignment: 'evil'
+			});
+			// A good Friend who registers truly changes nothing.
+			expect(becomesOffer(game, seats[3], friend, ctx.characters)).toBeUndefined();
+		});
+
+		it('offers nothing when the Recluse is poisoned', () => {
+			const { session, ctx, seats } = cast(['ogre', 'recluse', 'imp', 'chef', 'poisoner']);
+			const { game } = run(session, ctx, {
+				type: 'AddReminder',
+				seatId: seats[1],
+				reminder: { characterId: 'poisoner', label: 'Poisoned' }
+			});
+			expect(becomesOffer(game, seats[1], friend, ctx.characters)).toBeUndefined();
+		});
+	});
 });
