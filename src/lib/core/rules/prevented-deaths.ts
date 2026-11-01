@@ -14,7 +14,9 @@
  * - `survives-first-death`: the player's ability stops their first death (the Fool,
  *   https://wiki.bloodontheclocktower.com/Fool; `firstDeathSaver`);
  * - `may-bounce`: the player's ability may move the kill onto someone else (the Mayor against
- *   the Demon, https://wiki.bloodontheclocktower.com/Mayor; `killRedirect`).
+ *   the Demon, https://wiki.bloodontheclocktower.com/Mayor; `killRedirect`), unless they
+ *   are protected: a safe player's kill has nothing to move (the Monk's Mayor example,
+ *   https://wiki.bloodontheclocktower.com/Monk).
  * Several reasons can apply at once; none means the Storyteller made a call the board
  * doesn't show (`because` is empty). Data only, no wording: the UI shows the characters'
  * TPI ability text.
@@ -81,14 +83,16 @@ export function preventedDeaths(game: Game, characters: CharacterLookup): Preven
 				if (state.impairments.length > 0)
 					because.push({ kind: 'killer-impaired', seatId: s, impairments: state.impairments });
 			}
-			if (!killer.ignoresProtection) {
-				const source = protection(game, seatId, characters, killer.by);
-				if (source) because.push({ kind: 'protected', source });
-			}
+			const safe = killer.ignoresProtection
+				? undefined
+				: protection(game, seatId, characters, killer.by);
+			if (safe) because.push({ kind: 'protected', source: safe });
 			if (abilityState(game, seatId, characters).works) {
 				const saver = firstDeathSaver(game, seatId, characters);
 				if (saver) because.push({ kind: 'survives-first-death', source: saver.source });
-				const redirect = killRedirect(game, seatId, characters, killer.by);
+				// A protected player is safe from the kill, so there is nothing to move elsewhere
+				// (the Monk's Mayor example: https://wiki.bloodontheclocktower.com/Monk).
+				const redirect = safe ? undefined : killRedirect(game, seatId, characters, killer.by);
 				if (redirect) because.push({ kind: 'may-bounce', source: redirect });
 			}
 
