@@ -7,8 +7,10 @@
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
-	import Toggle from '#lib/ui/primitives/Toggle.svelte';
+	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import Icon from '#lib/ui/icons/Icon.svelte';
 	import RoleCard from './RoleCard.svelte';
+	import VoteChoice from './VoteChoice.svelte';
 	import { roomHost } from './host.svelte.ts';
 	import { ROLES_SHOWN_MS } from './roles-shown.svelte.ts';
 	import { clock, timeLeft } from './time-left.svelte.ts';
@@ -42,24 +44,25 @@
 	} as const satisfies Record<RoleGap, string>;
 	let warning = $state<{ key: string; name: string; text: string }[]>([]);
 	let warn = $state(false);
-	// Players with no phone can come to the Storyteller to see theirs on this device (Trevor,
-	// 2026-10-31: "we can also ask if we want riley and morgan to come to the storyteller to get
-	// their roles"): asked in the warning, then each one's card in turn, in seat order.
+	// Players with no phone come to the Storyteller for theirs (Trevor, 2026-11-01: "After. On
+	// the next screen, make a screen where I see all people who don't have phones and can show
+	// it to them in any order"): once shown, a list of them; a tap holds out that one's card
+	// on this device, and closing it comes back to the list, the player now marked seen.
 	let noPhone = $state<SeatId[]>([]);
-	let callOver = $state(false);
-	let queue = $state<SeatId[]>([]);
+	let listOpen = $state(false);
+	let cardSeat = $state<SeatId>();
 	let cardOpen = $state(false);
-	const cardSeat = $derived(queue[0]);
-	const cardRole = $derived(cardSeat ? seatRoles(game.game, game.characters)[cardSeat] : undefined);
-	function nextCard(open: boolean) {
-		if (open || !queue.length) return;
-		queue = queue.slice(1);
-		if (queue.length) setTimeout(() => (cardOpen = true));
-	}
+	let shownHere = $state<ReadonlySet<SeatId>>(new Set());
+	const roles = $derived(seatRoles(game.game, game.characters));
+	const scriptCharacters = $derived([...game.characters.values()]);
 	function confirmShow() {
 		host.showRoles(gameId, true);
-		if (!callOver || !noPhone.length) return;
-		queue = [...noPhone];
+		if (!noPhone.length) return;
+		shownHere = new Set();
+		listOpen = true;
+	}
+	function showHere(seatId: SeatId) {
+		cardSeat = seatId;
 		cardOpen = true;
 	}
 	function gapsNow() {
@@ -79,9 +82,7 @@
 		if (shown) return host.showRoles(gameId, false);
 		warning = gapsNow();
 		const phones = new Set(host.members.flatMap((m) => (m.seatId ? [m.seatId] : [])));
-		const roles = seatRoles(game.game, game.characters);
 		noPhone = game.game.seating.filter((seatId) => roles[seatId] && !phones.has(seatId));
-		callOver = false;
 		if (warning.length) warn = true;
 		else host.showRoles(gameId, true);
 	}
@@ -113,25 +114,42 @@
 			<li data-testid="roles-gap"><PlayerBadge name={gap.name} /><span>{gap.text}</span></li>
 		{/each}
 	</ul>
-	{#if noPhone.length}
-		<div class="call" data-testid="roles-call-over">
-			<Toggle
-				label={t('room.roles.callOver')}
-				checked={callOver}
-				onChange={(on) => (callOver = on)}
-			/>
-		</div>
-	{/if}
 </ConfirmDialog>
 
-{#if cardSeat}
-	<RoleCard
-		bind:open={() => cardOpen, (open) => ((cardOpen = open), nextCard(open))}
-		role={cardRole}
-		characters={[...game.characters.values()]}
-		name={seatName(game.game, cardSeat)}
-	/>
-{/if}
+<Dialog bind:open={listOpen} title={t('room.roles.noPhoneTitle')}>
+	<ul class="no-phone" data-testid="roles-no-phone">
+		{#each noPhone as seatId (seatId)}
+			<li>
+				<VoteChoice
+					mark={game.game.seating.indexOf(seatId) + 1}
+					pressed={false}
+					onclick={() => showHere(seatId)}
+					><span class="who" data-testid="roles-no-phone-player"
+						><PlayerBadge name={seatName(game.game, seatId)} /><span class="seen"
+							>{#if shownHere.has(seatId)}<Icon
+									name="roleSeen"
+									label={t('room.roles.seen')}
+								/>{/if}</span
+						></span
+					></VoteChoice
+				>
+			</li>
+		{/each}
+	</ul>
+</Dialog>
+
+<RoleCard
+	bind:open={
+		() => cardOpen,
+		(open) => {
+			cardOpen = open;
+			if (!open && cardSeat) shownHere = new Set([...shownHere, cardSeat]);
+		}
+	}
+	role={cardSeat ? roles[cardSeat] : undefined}
+	characters={scriptCharacters}
+	name={cardSeat ? seatName(game.game, cardSeat) : undefined}
+/>
 
 <style>
 	.labels {
@@ -144,8 +162,24 @@
 	.off {
 		visibility: hidden;
 	}
-	.call {
-		margin-bottom: var(--space-2);
+	.no-phone {
+		display: grid;
+		gap: var(--space-2);
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+	.who {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-2);
+	}
+	/* Kept while empty, so marking one seen moves nothing. */
+	.seen {
+		display: grid;
+		place-items: center;
+		min-width: 1.5em;
 	}
 	.gaps {
 		display: grid;

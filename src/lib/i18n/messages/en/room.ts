@@ -237,7 +237,7 @@ export const room = {
 	'room.roles.show': 'Show characters',
 	'room.roles.hideLeft': 'Hide characters, {time} left',
 	'room.roles.hideTime': 'Hide · {time}',
-	'room.roles.callOver': 'Players with no phone see theirs here',
+	'room.roles.noPhoneTitle': 'Players with no phone',
 	'room.roles.gapsTitle': 'Not every player will see a character',
 	'room.roles.seen': 'Seen',
 	'room.roles.notSeen': 'Not seen',
