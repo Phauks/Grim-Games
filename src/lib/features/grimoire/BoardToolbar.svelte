@@ -101,22 +101,6 @@
 					><CountBadge count={count.tokens.length} total={count.size} /></span
 				>{/if}</Button
 		>
-		<!-- The two rotations side by side as one pair, since they have no words (Trevor,
-		     2026-11-01). -->
-		<span class="rotate" role="group" aria-label="Rotate players">
-			<IconButton
-				outlined
-				icon="rotateAnticlockwise"
-				label="Rotate players anticlockwise"
-				onclick={() => grimoire.run({ type: 'RotateSeats', direction: 'anticlockwise' })}
-			/>
-			<IconButton
-				outlined
-				icon="rotateClockwise"
-				label="Rotate players clockwise"
-				onclick={() => grimoire.run({ type: 'RotateSeats', direction: 'clockwise' })}
-			/>
-		</span>
 		<Button
 			variant="quiet"
 			icon="spread"
@@ -125,6 +109,20 @@
 				Object.keys(grimoire.layout.gaps).length === 0}
 			onclick={() => seatArr.spread()}><span class="tool-label">Distribute</span></Button
 		>
+		<!-- The two rotations as one box split down the middle, beside Done, so the tools with
+		     words sit together (Trevor, 2026-11-01). -->
+		<span class="rotate" role="group" aria-label="Rotate players">
+			<IconButton
+				icon="rotateAnticlockwise"
+				label="Rotate players anticlockwise"
+				onclick={() => grimoire.run({ type: 'RotateSeats', direction: 'anticlockwise' })}
+			/>
+			<IconButton
+				icon="rotateClockwise"
+				label="Rotate players clockwise"
+				onclick={() => grimoire.run({ type: 'RotateSeats', direction: 'clockwise' })}
+			/>
+		</span>
 		<Button
 			variant="accent"
 			icon="check"
@@ -250,7 +248,16 @@
 	.rotate {
 		display: flex;
 		flex: none;
-		gap: calc(var(--space-1) / 2);
+		overflow: hidden;
+		border-radius: var(--button-radius);
+		box-shadow: var(--button-ring);
+		background: var(--surface);
+	}
+	.rotate :global(.icon-button) {
+		border-radius: 0;
+	}
+	.rotate :global(.icon-button + .icon-button) {
+		border-left: var(--control-border);
 	}
 	/* Seating's tools keep their size, all the same square on a phone. */
 	.seating :global(.button),
