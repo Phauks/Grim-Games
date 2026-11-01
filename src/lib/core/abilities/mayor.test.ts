@@ -15,6 +15,7 @@ import { gameEnds } from '#lib/core/rules/game-end.ts';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { preventedDeaths } from '#lib/core/rules/prevented-deaths.ts';
 
 describe('Mayor', () => {
 	const character = committedCharacter('mayor');
@@ -46,7 +47,20 @@ describe('Mayor', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Mayor#Examples)', () => {
-		it.todo("Example 1: Imp's attack on Mayor bounces to Ravenkeeper");
+		it("Example 1: Imp's attack on Mayor bounces to Ravenkeeper", () => {
+			// The Mayor survives the Imp's attack, which the Storyteller may move onto another player.
+			const s = scenario(['mayor', 'ravenkeeper', 'imp', 'chef', 'poisoner']).reminder(
+				'mayor',
+				'imp',
+				'Dead'
+			);
+			expect(preventedDeaths(s.game, s.characters)).toMatchObject([
+				{
+					seatId: s.seat('mayor'),
+					because: [{ kind: 'may-bounce', source: { characterId: 'mayor' } }]
+				}
+			]);
+		});
 		it('Example 2: Three alive and no execution: good wins', () => {
 			const s = scenario(['mayor', 'chef', 'empath', 'baron', 'imp'])
 				.newDay()
@@ -56,6 +70,20 @@ describe('Mayor', () => {
 				{ rule: 'alive-at-dusk', winner: 'good' }
 			]);
 		});
-		it.todo('Example 3: Tied vote spares everyone; good wins');
+		it('Example 3: Tied vote spares everyone; good wins', () => {
+			// Five alive, two of them Travellers: both are exiled, and the tied vote executes nobody.
+			// Exile is not execution, so with three alive and no execution good wins.
+			const s = scenario(['mayor', 'chef', 'imp', 'beggar', 'gunslinger'])
+				.do(
+					(at) => ({ type: 'SetAlignment', seatId: at.seat('beggar'), alignment: 'good' }),
+					(at) => ({ type: 'SetAlignment', seatId: at.seat('gunslinger'), alignment: 'evil' })
+				)
+				.newDay()
+				.do((at) => ({ type: 'Exile', seatId: at.seat('beggar') }))
+				.do((at) => ({ type: 'Exile', seatId: at.seat('gunslinger') }));
+			expect(gameEnds(s.game, s.characters, { dayEnded: true })).toMatchObject([
+				{ rule: 'alive-at-dusk', winner: 'good' }
+			]);
+		});
 	});
 });

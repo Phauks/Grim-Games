@@ -192,7 +192,7 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		title:
 			"Special rules and game modes: +1, Binary Supernovae, Trained Killer, Phantom Detectives, Council of the Dead, The Warrens, The Djinn's Bargain, sharing your own mode files, the Mode builder, requesting missing mode features",
 		area: 'storyteller',
-		parts: ['L1', 'L35', 'L36', 'L103', 'L104', 'L105'],
+		parts: ['L1', 'L35', 'L36', 'L103', 'L104', 'L105', 'L110'],
 		prs: [322, 328]
 	},
 	{
@@ -371,10 +371,11 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['M9']
 	},
 	{
-		// The wiki examples each character's test file lists as still to do.
+		// The wiki examples each character's test file lists as still to do, a batch per edition
+		// (M13b Trouble Brewing). Examples the engine can't pass yet are written as it.fails.
 		title: 'Every wiki example tested, for every character',
 		area: 'engine',
-		parts: ['M13a', 'M13']
+		parts: ['M13a', 'M13b', 'M13']
 	},
 	{
 		// Trevor, 2026-10-30: on the roadmap, after a spike and research.

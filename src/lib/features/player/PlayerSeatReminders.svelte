@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import type { PublicSeat } from '#lib/core/sync/public-projection.ts';
-	import BoardReminder from '#lib/features/grimoire/BoardReminder.svelte';
+	import BoardReminderChip from '#lib/features/grimoire/BoardReminderChip.svelte';
 	import { boardLooks } from '#lib/features/grimoire/board-looks.svelte.ts';
 	import { avoidBoxes, toPercent, toPx } from '#lib/features/grimoire/board-geometry.ts';
 	import type { Box } from '#lib/features/grimoire/name-placement.ts';
@@ -43,6 +43,10 @@
 		characterOf: (id: CharacterId) => Character | undefined;
 		/** A token tapped: picked up (PlayerReminderBin). */
 		onTap: (seat: PublicSeat, reminder: PlayerReminder) => void;
+		/** The town, for where a dragged token is. */
+		town: HTMLElement | undefined;
+		/** A token dragged and let go at a client point (PlayerReminderBin `dropPlaced`). */
+		onDrop: (seat: PublicSeat, reminder: PlayerReminder, x: number, y: number) => void;
 		/** The seat whose token or reminder a finger is on, for "While held" lines. */
 		held?: string;
 	}
@@ -57,8 +61,26 @@
 		notes,
 		characterOf,
 		onTap,
+		onDrop,
+		town,
 		held = $bindable()
 	}: Props = $props();
+
+	/** The token under a finger, as on the board (Trevor, 2026-11-01): where it is, in %. */
+	let drag = $state<{ key: string; at: SeatPoint }>();
+	function dragTo(seat: PublicSeat, reminder: PlayerReminder, x: number, y: number, end: boolean) {
+		const rect = town?.getBoundingClientRect();
+		if (!end && rect) {
+			const at = {
+				x: ((x - rect.left) / rect.width) * 100,
+				y: ((y - rect.top) / rect.height) * 100
+			};
+			drag = { key: `${seat.seatId}/${placedKey(reminder)}`, at };
+			return;
+		}
+		drag = undefined;
+		if (end) onDrop(seat, reminder, x, y);
+	}
 
 	const chip = $derived(reminderChip(size, preferences.current.tokenAppearance.reminderScale));
 	const fan = $derived.by(() => {
@@ -105,27 +127,27 @@
 
 {#each seats as seat, i (seat.seatId)}
 	{#each remindersOn(reminders, seat.seatId) as reminder, k (placedKey(reminder))}
-		{@const p = fan[i]?.[k] ?? points[i]}
-		<div
-			class="chip-slot"
-			role="presentation"
-			onpointerdown={() => (held = seat.seatId)}
-			style:left="{p?.x ?? 50}%"
-			style:top="{p?.y ?? 50}%"
-		>
-			<BoardReminder
-				{...playerLook(reminder, characterOf)}
+		{@const key = `${seat.seatId}/${placedKey(reminder)}`}
+		{@const dragged = drag?.key === key}
+		<div class="hold" role="presentation" onpointerdown={() => (held = seat.seatId)}>
+			<BoardReminderChip
+				look={playerLook(reminder, characterOf)}
+				at={dragged && drag ? drag.at : (fan[i]?.[k] ?? points[i] ?? { x: 50, y: 50 })}
 				size={chip}
+				disabled={false}
+				seatNumber={i + 1}
+				dragging={dragged}
 				onTap={() => onTap(seat, reminder)}
+				onDrag={(x, y, end) => dragTo(seat, reminder, x, y, end)}
+				onCancel={() => (drag = undefined)}
 			/>
 		</div>
 	{/each}
 {/each}
 
 <style>
-	.chip-slot {
-		position: absolute;
-		translate: -50% -50%;
-		z-index: 1;
+	/* Only marks the seat held for "While held" lines; the chip places itself. */
+	.hold {
+		display: contents;
 	}
 </style>

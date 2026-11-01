@@ -84,6 +84,10 @@ test('a Storyteller hands the room and the game to another device, and the playe
 	page,
 	browser
 }, testInfo) => {
+	// Three devices and the whole hand-over: 15s alone, 25s beside another worker, so CI's
+	// busier runners crossed the 30s default (runs 41347582481, 41247019112). No one step is
+	// slow; the longest, Join game on the new device, takes about 2s.
+	test.slow();
 	const { board, code } = await startGame(page);
 	const gameId = board.split('/').pop();
 
