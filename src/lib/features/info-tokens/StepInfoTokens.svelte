@@ -16,6 +16,8 @@
 		/** The step's character, whose rules may fill in a card's characters. */
 		character: Character;
 		characters: CharacterLookup;
+		/** The game's prep values, for a card filled with one (the Storm Catcher's named character). */
+		prepValues?: Readonly<Record<string, string>>;
 		/**
 		 * A card was tapped: show it, asking for its characters first if it needs them. `filled`
 		 * are the characters the step's rules fill in (Trevor, 2026-10-24: the Harpy's own token).
@@ -23,12 +25,12 @@
 		onchoose: (token: InfoToken, filled?: FilledInfoToken) => void;
 	}
 
-	let { text, character, characters, onchoose }: Props = $props();
+	let { text, character, characters, prepValues, onchoose }: Props = $props();
 
 	const tokens = $derived(
 		stepInfoTokens(character, text).map((token) => {
 			const filled = token.asks?.characters
-				? filledInfoToken(character, token.id, token.asks.characters)
+				? filledInfoToken(character, token.id, token.asks.characters, prepValues)
 				: undefined;
 			const owners = (filled?.characterIds ?? []).flatMap((id) => {
 				const c = characters.get(id);
