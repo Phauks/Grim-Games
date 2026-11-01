@@ -46,7 +46,7 @@
 		dayClaim,
 		type CharacterNominationPrompt
 	} from '#lib/core/rules/index.ts';
-	import { readGameMode } from '#lib/features/modes/game-mode-store.ts';
+	import { playedRules } from '#lib/features/modes/game-mode.ts';
 	import { allowedOffScriptIn } from '#lib/features/modes/game-mode.ts';
 	import { nominationPrompts, type NominationPrompt } from '#lib/core/modes/index.ts';
 	import DayTimer from '#lib/features/day/DayTimer.svelte';
@@ -264,8 +264,8 @@
 		const { entries, cursor } = grimoire.open.session.log;
 		return diedSinceNewDay(entries.slice(0, cursor).flatMap((e) => e.events));
 	});
-	/** The game's special rules, kept whole with the game (game-mode-store.ts). */
-	const gameRules = $derived(readGameMode(game.gameId)?.rules ?? []);
+	/** The game's special rules, with its mode's own rule parts first (playedRules). */
+	const gameRules = $derived(playedRules(game.gameId));
 	/**
 	 * Who has an ability under a special rule, when one changes it (The Phantom Detectives:
 	 * the dead keep theirs, living Townsfolk have none).
