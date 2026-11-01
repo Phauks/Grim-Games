@@ -13,6 +13,8 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night-info.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Washerwoman', () => {
 	const character = committedCharacter('washerwoman');
@@ -44,8 +46,29 @@ describe('Washerwoman', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Washerwoman#Examples)', () => {
-		it.todo('Example 1: Chef is one of two named players');
-		it.todo('Example 2: Virgin is one of two players');
-		it.todo('Example 3: Spy masquerades as Ravenkeeper alongside another player');
+		it('Example 1: Chef is one of two named players', () => {
+			// Shown the Chef and the Ravenkeeper's players, as the Chef: true.
+			const s = scenario(['washerwoman', 'chef', 'ravenkeeper', 'imp', 'poisoner']);
+			const picker = infoPicker(s.game, s.seat('washerwoman'), 'washerwoman', s.characters)!;
+			const shown = { seats: [s.seat('chef'), s.seat('ravenkeeper')], characterId: 'chef' };
+			expect(isTruthful(picker, shown)).toBe(true);
+		});
+
+		it('Example 2: Virgin is one of two players', () => {
+			// The other player shown may be anyone, even the Imp.
+			const s = scenario(['washerwoman', 'imp', 'virgin', 'monk', 'poisoner']);
+			const picker = infoPicker(s.game, s.seat('washerwoman'), 'washerwoman', s.characters)!;
+			const shown = { seats: [s.seat('imp'), s.seat('virgin')], characterId: 'virgin' };
+			expect(isTruthful(picker, shown)).toBe(true);
+		});
+
+		it('Example 3: Spy masquerades as Ravenkeeper alongside another player', () => {
+			// The Spy may register as a Townsfolk, here the Ravenkeeper, beside the Scarlet Woman.
+			const s = scenario(['washerwoman', 'spy', 'scarletwoman', 'imp', 'chef']);
+			const picker = infoPicker(s.game, s.seat('washerwoman'), 'washerwoman', s.characters)!;
+			const shown = { seats: [s.seat('spy'), s.seat('scarletwoman')], characterId: 'ravenkeeper' };
+			expect(isAllowed(picker, shown)).toBe(true);
+			expect(isTruthful(picker, shown)).toBe(false);
+		});
 	});
 });

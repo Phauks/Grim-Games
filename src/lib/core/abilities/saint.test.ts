@@ -15,6 +15,8 @@ import { gameEnds } from '#lib/core/rules/game-end.ts';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { executedInstead } from '#lib/core/rules/executed-instead.ts';
+import { promptable } from '#lib/core/rules/game-end.ts';
 
 describe('Saint', () => {
 	const character = committedCharacter('saint');
@@ -59,6 +61,19 @@ describe('Saint', () => {
 			);
 			expect(gameEnds(s.game, s.characters)).toEqual([]);
 		});
-		it.todo("Example 3: Scapegoat dies in Saint's place; game continues");
+		it("Example 3: Scapegoat dies in Saint's place; game continues", () => {
+			// A good Scapegoat may be executed instead of the Saint; the Saint didn't die, so evil
+			// doesn't win.
+			const s = scenario(['saint', 'scapegoat', 'imp', 'chef', 'poisoner']).becomes(
+				'scapegoat',
+				'scapegoat',
+				'good'
+			);
+			expect(executedInstead(s.game, s.seat('saint'), s.characters)).toEqual([
+				{ seatId: s.seat('scapegoat'), characterId: 'scapegoat' }
+			]);
+			const after = s.execute('scapegoat');
+			expect(promptable(gameEnds(after.game, after.characters))).toEqual([]);
+		});
 	});
 });

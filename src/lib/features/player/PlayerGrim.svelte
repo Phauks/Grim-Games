@@ -482,7 +482,9 @@
 				{notes}
 				{characterOf}
 				bind:held
+				town={townEl}
 				onTap={(seat, r) => bin?.pickUp(seat.seatId, r)}
+				onDrop={(seat, r, x, y) => bin?.dropPlaced(seat.seatId, r, x, y)}
 			/>
 			{#if !display}<PlayerReminderBin
 					bind:this={bin}
