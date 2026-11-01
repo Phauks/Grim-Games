@@ -12,7 +12,7 @@
 	 * Room transfer, the Storyteller's side (Trevor, 2026-10-28), from the board's ⋯ > Session
 	 * (Trevor, 2026-10-30: "room transfer should be above end game"): the room code and the
 	 * transfer code another device types on Join game (⋯ > Room transfer) to become this room's
-	 * Storyteller, for five minutes. Both are here, as the other device needs both (2026-10-30).
+	 * Storyteller, for two minutes (Trevor, 2026-11-01). Both are here, as the other device needs both (2026-10-30).
 	 * Closing it ends the transfer, so the code stops working (Trevor, 2026-10-31: no Stop
 	 * transfer button, "Awaiting confirmation" at the bottom instead).
 	 */

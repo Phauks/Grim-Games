@@ -25,6 +25,8 @@
 	import ModeInspectDialog from '#lib/features/modes/ModeInspectDialog.svelte';
 	import ShareModeDialog from '#lib/features/modes/ShareModeDialog.svelte';
 	import { modeFileText } from '#lib/features/modes/mode-share.ts';
+	import { reportDialog } from '#lib/features/reports/report-dialog.svelte.ts';
+	import { REPORT_LIMITS } from '#lib/features/reports/reports-protocol.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import BuilderTools from '#lib/ui/builder/BuilderTools.svelte';
 	import OpenSavedDialog from '#lib/ui/builder/OpenSavedDialog.svelte';
@@ -216,6 +218,21 @@
 		else modeDraft.replace({ file: { ...copy, id: `${m.id}-copy` } });
 	}
 
+	/**
+	 * Ask for something the format can't say yet (Trevor, 2026-11-01: "a button on the mode
+	 * creation screen that allows you to submit a bug report to add certain mode functionality").
+	 * Opens the one Report form as an enhancement request, with what is on the builder as its
+	 * details so the request shows what was being made; the person can leave them out.
+	 */
+	function requestFeature() {
+		const text = isEmptyDraft(draft) ? '' : JSON.stringify(file, null, 2);
+		reportDialog.show({
+			kind: 'enhancement',
+			title: `${t('modes.builder.heading')}: `,
+			details: text && text.length <= REPORT_LIMITS.details ? text : undefined
+		});
+	}
+
 	/** `/build-mode#edit=<id>` opens one of this device's own (Special rules' and New game's Edit). */
 	function openFromHash() {
 		const id = new URLSearchParams(location.hash.slice(1)).get('edit');
@@ -338,6 +355,9 @@
 								onclick={() => (inspectOpen = true)}
 							>
 								{t('modes.builder.inspect')}
+							</Button>
+							<Button variant="field" icon="report" onclick={requestFeature}>
+								{t('modes.builder.request')}
 							</Button>
 						{/snippet}
 					</BuilderOutput>

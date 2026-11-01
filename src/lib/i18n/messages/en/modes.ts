@@ -279,6 +279,7 @@ export const modes = {
 	'modes.builder.jsonBad': 'Not JSON yet: {reason}',
 	'modes.builder.problems': 'Problems',
 	'modes.builder.inspect': 'Inspect',
+	'modes.builder.request': 'Request feature',
 	'modes.builder.open': 'Open a mode or rule',
 	'modes.builder.openTitle': 'Open a mode or rule',
 	'modes.builder.search': 'Search modes and rules',

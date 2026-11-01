@@ -105,3 +105,20 @@ test('opens a built-in mode as a copy to start from', async ({ page }) => {
 	await expect(builder.getByRole('textbox', { name: /^Id/ })).toHaveValue(/-copy$/);
 	await expect(builder.getByRole('textbox', { name: /^Name/ })).toHaveValue('Whale Buffet');
 });
+
+// Request feature (Trevor, 2026-11-01): the Report form opens as an enhancement request
+// with what is on the builder as removable details.
+test('Request feature opens the Report form with the mode being built', async ({ page }) => {
+	await page.goto('/build-mode');
+	const builder = page.getByTestId('mode-builder');
+	await builder.getByRole('textbox', { name: /^Name/ }).fill('Moon Rules');
+	// In the output beside the settings; on a phone, under the Output tab.
+	const output = page.getByRole('tab', { name: /^Output/ });
+	if (await output.isVisible()) await output.tap();
+	await page.getByRole('button', { name: 'Request feature' }).tap();
+	const form = page.getByTestId('report-form');
+	await expect(form).toBeVisible();
+	await expect(form.getByRole('combobox', { name: 'Kind' })).toContainText('Enhancement request');
+	await expect(form.getByRole('textbox', { name: /^Title/ })).toHaveValue('Mode builder: ');
+	await expect(form.locator('pre.details')).toContainText('Moon Rules', { useInnerText: false });
+});
