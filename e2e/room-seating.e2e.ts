@@ -13,7 +13,7 @@ import { toBoard } from './new-game.ts';
 // with no left and right): while seating is open each phone drags its own disc onto the seat it
 // wants, which lights up, and the drop takes that seat's place (Trevor, 2026-10-31: not between
 // seats), or into a space to move its seat there. Seating is one mode on the Storyteller's board
-// (Trevor, 2026-10-31), its "Players move seats" switch on from the start; Done locks seating,
+// (Trevor, 2026-10-31), its "Open seating" switch on from the start; Done locks seating,
 // then a phone taps an open seat.
 
 async function openRoom(page: Page) {
@@ -56,7 +56,7 @@ async function enterSeating(page: Page) {
 async function leaveSeating(page: Page) {
 	const toolbar = page.getByRole('toolbar', { name: 'Grimoire' });
 	await toolbar.getByRole('button', { name: 'Done' }).tap();
-	await expect(toolbar.getByRole('button', { name: 'Players move seats' })).toHaveCount(0);
+	await expect(toolbar.getByRole('button', { name: 'Open seating' })).toHaveCount(0);
 }
 
 async function joinAs(browser: Browser, testInfo: TestInfo, code: string, name: string) {
@@ -93,14 +93,14 @@ test('phones drag their own seat while seating is open, then claim an open seat 
 	// pressed while phones may move their seats.
 	const phones = page
 		.getByRole('toolbar', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Players move seats' });
+		.getByRole('button', { name: 'Open seating' });
 	await expect(phones).toHaveAttribute('aria-pressed', 'true');
 	await expect(line).toHaveText('Seating is open');
 	await page.screenshot({ path: `test-results/seating-top-bar-${testInfo.project.name}.png` });
 	// Words beside the icons on a tablet, icons only on a phone (Trevor, 2026-11-01), and
 	// all seven tools fit across the bar either way.
 	const toolbar = page.getByRole('toolbar', { name: 'Grimoire' });
-	const words = toolbar.getByText('Players move seats', { exact: true });
+	const words = toolbar.getByText('Open seating', { exact: true });
 	if (testInfo.project.name === 'tablet') await expect(words).toBeVisible();
 	else await expect(words).toBeHidden();
 	const fits = await toolbar.evaluate((bar) => bar.scrollWidth <= bar.clientWidth);
@@ -109,6 +109,17 @@ test('phones drag their own seat while seating is open, then claim an open seat 
 		const box = (await tool.boundingBox())!;
 		const bar = (await toolbar.boundingBox())!;
 		expect(box.x + box.width).toBeLessThanOrEqual(bar.x + bar.width + 1);
+	}
+	// A tablet is used in landscape (Trevor, 2026-11-01): the words at full size, with the
+	// mode's title, still all on the bar.
+	const portrait = page.viewportSize()!;
+	if (testInfo.project.name === 'tablet') {
+		await page.setViewportSize({ width: portrait.height, height: portrait.width });
+		await expect(toolbar.getByText('Seating', { exact: true })).toBeVisible();
+		await expect(words).toBeVisible();
+		expect(await toolbar.evaluate((bar) => bar.scrollWidth <= bar.clientWidth)).toBe(true);
+		await page.screenshot({ path: 'test-results/seating-top-bar-landscape.png' });
+		await page.setViewportSize(portrait);
 	}
 
 	const disc = phone.getByTestId('seating-disc');
@@ -202,7 +213,7 @@ test('Character selection opens Seating, and Done comes back to it', async ({ pa
 	await expect(page.getByRole('toolbar', { name: 'Grimoire' })).toContainText('Seating');
 	// No room open: the room's parts stay in place, disabled.
 	const bar = page.getByRole('toolbar', { name: 'Grimoire' });
-	await expect(bar.getByRole('button', { name: 'Players move seats' })).toBeDisabled();
+	await expect(bar.getByRole('button', { name: 'Open seating' })).toBeDisabled();
 	await expect(bar.getByRole('button', { name: 'Count off' })).toBeDisabled();
 	// Add seat is there too: it places a seat, then comes back to Seating (Trevor, 2026-11-01).
 	const seats = page.getByRole('button', { name: /^Seat \d+/ });
@@ -213,7 +224,7 @@ test('Character selection opens Seating, and Done comes back to it', async ({ pa
 		.getByRole('button', { name: /^Place between/ })
 		.first()
 		.tap();
-	await expect(bar.getByRole('button', { name: 'Players move seats' })).toBeVisible();
+	await expect(bar.getByRole('button', { name: 'Open seating' })).toBeVisible();
 	await expect(seats).toHaveCount(before + 1);
 	await leaveSeating(page);
 	await expect(page).toHaveURL(setup);

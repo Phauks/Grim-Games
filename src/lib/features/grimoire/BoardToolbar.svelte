@@ -101,18 +101,22 @@
 					><CountBadge count={count.tokens.length} total={count.size} /></span
 				>{/if}</Button
 		>
-		<IconButton
-			outlined
-			icon="rotateAnticlockwise"
-			label="Rotate players anticlockwise"
-			onclick={() => grimoire.run({ type: 'RotateSeats', direction: 'anticlockwise' })}
-		/>
-		<IconButton
-			outlined
-			icon="rotateClockwise"
-			label="Rotate players clockwise"
-			onclick={() => grimoire.run({ type: 'RotateSeats', direction: 'clockwise' })}
-		/>
+		<!-- The two rotations side by side as one pair, since they have no words (Trevor,
+		     2026-11-01). -->
+		<span class="rotate" role="group" aria-label="Rotate players">
+			<IconButton
+				outlined
+				icon="rotateAnticlockwise"
+				label="Rotate players anticlockwise"
+				onclick={() => grimoire.run({ type: 'RotateSeats', direction: 'anticlockwise' })}
+			/>
+			<IconButton
+				outlined
+				icon="rotateClockwise"
+				label="Rotate players clockwise"
+				onclick={() => grimoire.run({ type: 'RotateSeats', direction: 'clockwise' })}
+			/>
+		</span>
 		<Button
 			variant="quiet"
 			icon="spread"
@@ -236,12 +240,17 @@
 		font-family: var(--font-heading);
 		font-weight: 700;
 	}
-	@media (max-width: 1099.98px) {
+	@media (max-width: 999.98px) {
 		/* Below the width where Seating's words show, its tools need the whole bar; the
 		   title keeps its space, so Done stays at the right. */
 		.arranging-title {
 			visibility: hidden;
 		}
+	}
+	.rotate {
+		display: flex;
+		flex: none;
+		gap: calc(var(--space-1) / 2);
 	}
 	/* Seating's tools keep their size, all the same square on a phone. */
 	.seating :global(.button),
@@ -297,7 +306,7 @@
 			display: inline;
 		}
 	}
-	@media (min-width: 700px) and (max-width: 1099.98px) {
+	@media (min-width: 700px) and (max-width: 999.98px) {
 		.seating {
 			gap: var(--space-1);
 		}
