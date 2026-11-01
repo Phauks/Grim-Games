@@ -252,6 +252,10 @@
 		--pin-top: 0rem;
 		flex: 1;
 		min-height: 0;
+		/* Out into the gutter and given back inside, so a type's band, which reaches into the
+		   gutter (Collapsible), isn't clipped by this scroll box (Trevor, 2026-11-01). */
+		margin-inline: calc(-1 * var(--space-2));
+		padding-inline: var(--space-2);
 		overflow-y: auto;
 		/* No overscroll-behavior: contain here. When the list fits, the sheet or page around it
 		   scrolls instead, and Chrome stops a wheel or trackpad scroll at a contained box even
