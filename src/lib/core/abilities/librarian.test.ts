@@ -13,6 +13,8 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night-info.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Librarian', () => {
 	const character = committedCharacter('librarian');
@@ -44,8 +46,26 @@ describe('Librarian', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Librarian#Examples)', () => {
-		it.todo('Example 1: Saint is one of two players');
-		it.todo('Example 2: No Outsiders exist, so zero shown');
-		it.todo("Example 3: Drunk believing it's Monk still counts");
+		it('Example 1: Saint is one of two players', () => {
+			const s = scenario(['librarian', 'saint', 'baron', 'imp', 'chef', 'butler', 'monk']);
+			const picker = infoPicker(s.game, s.seat('librarian'), 'librarian', s.characters)!;
+			const shown = { seats: [s.seat('saint'), s.seat('baron')], characterId: 'saint' };
+			expect(isTruthful(picker, shown)).toBe(true);
+		});
+
+		it('Example 2: no Outsiders, so learns zero', () => {
+			const s = scenario(['librarian', 'chef', 'empath', 'imp', 'poisoner']);
+			const picker = infoPicker(s.game, s.seat('librarian'), 'librarian', s.characters)!;
+			expect(isTruthful(picker, { seats: [], none: true })).toBe(true);
+		});
+
+		it('Example 3: Drunk who thinks they are the Monk is shown as the Drunk', () => {
+			// The Librarian learns true characters, and the Drunk is the true one.
+			const s = scenario(['librarian', 'monk', 'undertaker', 'imp', 'poisoner']).drunk('monk');
+			const picker = infoPicker(s.game, s.seat('librarian'), 'librarian', s.characters)!;
+			const shown = { seats: [s.seat('monk'), s.seat('undertaker')], characterId: 'drunk' };
+			expect(isTruthful(picker, shown)).toBe(true);
+			expect(isAllowed(picker, { seats: [], none: true })).toBe(false);
+		});
 	});
 });

@@ -13,6 +13,8 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night-info.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Chef', () => {
 	const character = committedCharacter('chef');
@@ -44,9 +46,42 @@ describe('Chef', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Chef#Examples)', () => {
-		it.todo('Example 1: No evil neighbors, so Chef gets zero');
-		it.todo('Example 2: Two separate evil pairs, so a two');
-		it.todo('Example 3: Evil trio via Scapegoat, plus Minion pair');
-		it.todo('Example 4: Recluse bridging Imp and Poisoner gives one');
+		it('Example 1: no evil neighbours, learns zero', () => {
+			const s = scenario(['chef', 'imp', 'empath', 'poisoner', 'monk']);
+			const picker = infoPicker(s.game, s.seat('chef'), 'chef', s.characters)!;
+			expect(picker.range?.truth).toBe(0);
+			expect(isTruthful(picker, { seats: [], number: 0 })).toBe(true);
+		});
+
+		it('Example 2: two separate evil pairs, learns two', () => {
+			const s = scenario(['chef', 'imp', 'baron', 'monk', 'poisoner', 'scarletwoman', 'empath']);
+			const picker = infoPicker(s.game, s.seat('chef'), 'chef', s.characters)!;
+			expect(picker.range?.truth).toBe(2);
+		});
+
+		it('Example 3: evil Traveller between Imp and Minion, plus a Minion pair, learns three', () => {
+			// An evil Traveller counts as evil: Imp, Scapegoat and Poisoner make two pairs.
+			const s = scenario([
+				'chef',
+				'imp',
+				'scapegoat',
+				'poisoner',
+				'monk',
+				'scarletwoman',
+				'baron',
+				'empath'
+			]).do((at) => ({ type: 'SetAlignment', seatId: at.seat('scapegoat'), alignment: 'evil' }));
+			const picker = infoPicker(s.game, s.seat('chef'), 'chef', s.characters)!;
+			expect(picker.range?.truth).toBe(3);
+		});
+
+		it.fails('Example 4: Recluse between Imp and Poisoner, learns one', () => {
+			// The Recluse may register as evil for one pair and good for the other in the same
+			// count. Waits on the engine: a registration is one world for the whole count, so only
+			// 0 (both good) or 2 (both evil) is offered.
+			const s = scenario(['chef', 'imp', 'recluse', 'poisoner', 'monk', 'empath']);
+			const picker = infoPicker(s.game, s.seat('chef'), 'chef', s.characters)!;
+			expect(isAllowed(picker, { seats: [], number: 1 })).toBe(true);
+		});
 	});
 });
