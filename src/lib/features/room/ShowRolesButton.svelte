@@ -2,15 +2,14 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 	import { roleGaps, seatRoles, type RoleGap } from '#lib/core/sync/seat-roles.ts';
-	import type { SeatId, TileId } from '#lib/core/model/index.ts';
-	import type { BagSlot } from '#lib/core/rules/index.ts';
-	import BagTiles from '#lib/features/setup/BagTiles.svelte';
+	import type { SeatId } from '#lib/core/model/index.ts';
+	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
+	import { noPhoneDraw } from './no-phone-draw.svelte.ts';
 	import { seatName } from '#lib/features/game/seat-label.ts';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
-	import Dialog from '#lib/ui/primitives/Dialog.svelte';
-	import RoleCard from './RoleCard.svelte';
 	import { roomHost } from './host.svelte.ts';
 	import { ROLES_SHOWN_MS } from './roles-shown.svelte.ts';
 	import { clock, timeLeft } from './time-left.svelte.ts';
@@ -44,34 +43,16 @@
 	} as const satisfies Record<RoleGap, string>;
 	let warning = $state<{ key: string; name: string; text: string }[]>([]);
 	let warn = $state(false);
-	// Players with no phone come to the Storyteller for theirs (Trevor, 2026-11-01: "After. On
-	// the next screen, make a screen where I see all people who don't have phones and can show
-	// it to them in any order"): once shown, a list of them; a tap holds out that one's card
-	// on this device, and closing it comes back to the list, the player now marked seen.
+	// Players with no phone come to the Storyteller for theirs (Trevor, 2026-11-01: "it should
+	// use the normal draw area, not be this new modal"): once shown, the draw, where each one's
+	// tile carries their name and opens the usual reveal with its Confirm.
 	let noPhone = $state<SeatId[]>([]);
-	let listOpen = $state(false);
-	let cardSeat = $state<SeatId>();
-	let cardOpen = $state(false);
-	let shownHere = $state<ReadonlySet<SeatId>>(new Set());
 	const roles = $derived(seatRoles(game.game, game.characters));
-	const scriptCharacters = $derived([...game.characters.values()]);
-	const noPhoneSlots = $derived<BagSlot[]>(
-		noPhone.map((seatId, i) => ({
-			tileId: seatId as unknown as TileId,
-			number: i + 1,
-			state: shownHere.has(seatId) ? 'drawn' : cardOpen && cardSeat === seatId ? 'held' : 'in-bag',
-			seatId
-		}))
-	);
 	function confirmShow() {
 		host.showRoles(gameId, true);
 		if (!noPhone.length) return;
-		shownHere = new Set();
-		listOpen = true;
-	}
-	function showHere(seatId: SeatId) {
-		cardSeat = seatId;
-		cardOpen = true;
+		noPhoneDraw.start(gameId, noPhone);
+		void goto(resolve('/grimoire/[gameId]/draw', { gameId }));
 	}
 	function gapsNow() {
 		const phones = new Set(host.members.flatMap((m) => (m.seatId ? [m.seatId] : [])));
@@ -123,33 +104,6 @@
 		{/each}
 	</ul>
 </ConfirmDialog>
-
-<!-- Their names on tiles, as the bag draw's (Trevor, 2026-11-01: "make it look like a token
-     draw, but instead of symbols it has the people's names"): a tap holds out that player's
-     card, and their tile is drawn once it closes. -->
-<Dialog bind:open={listOpen} title={t('room.roles.noPhoneTitle')}>
-	<div data-testid="roles-no-phone">
-		<BagTiles
-			slots={noPhoneSlots}
-			marks={noPhone.map((seatId) => ({ kind: 'player', name: seatName(game.game, seatId) }))}
-			seatLabel={(seatId) => (seatId ? seatName(game.game, seatId) : '')}
-			onpick={(slot) => slot.seatId && showHere(slot.seatId)}
-		/>
-	</div>
-</Dialog>
-
-<RoleCard
-	bind:open={
-		() => cardOpen,
-		(open) => {
-			cardOpen = open;
-			if (!open && cardSeat) shownHere = new Set([...shownHere, cardSeat]);
-		}
-	}
-	role={cardSeat ? roles[cardSeat] : undefined}
-	characters={scriptCharacters}
-	name={cardSeat ? seatName(game.game, cardSeat) : undefined}
-/>
 
 <style>
 	.labels {

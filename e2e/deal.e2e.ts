@@ -144,24 +144,23 @@ test('Deal gives every seat a character, and a seated phone holds to see its own
 	await toggle.tap();
 	await warning.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(phone.getByTestId('your-character')).toBeEnabled();
-	// Then the players with no phone, their names on tiles as in the bag draw, to show theirs
-	// on this device in any order (Trevor, 2026-11-01): seat 4 first, its card titled with its
-	// name, then its tile drawn.
-	const list = page.getByRole('dialog', { name: 'Players with no phone' });
-	const tiles = list.getByRole('button', { name: /^Tile Seat \d/ });
-	await expect(tiles).toHaveCount(4);
-	await expect(tiles.nth(0)).toContainText('Seat 1');
-	await list.getByRole('button', { name: 'Tile Seat 4' }).tap();
-	const here = page.getByRole('dialog', { name: 'Seat 4' });
-	const hereHold = here.getByTestId('role-hold');
-	await hereHold.dispatchEvent('pointerdown', { pointerId: 1, isPrimary: true });
-	await expect(here.getByTestId('role-name')).toHaveText(/Washerwoman|Empath|Monk|Poisoner|Imp/);
-	await hereHold.dispatchEvent('pointerup', { pointerId: 1, isPrimary: true });
-	await here.getByRole('button', { name: 'Close' }).tap();
-	await expect(list.getByRole('button', { name: 'Tile Seat 4, drawn' })).toBeDisabled();
-	await expect(list.getByRole('button', { name: 'Tile Seat 1' })).toBeEnabled();
-	await list.getByRole('button', { name: 'Close' }).tap();
-	await expect(list).toBeHidden();
+	// Then the draw, where each player with no phone has their tile held again with their name
+	// on it, for the usual reveal and Confirm on this device, in any order (Trevor, 2026-11-01:
+	// "it should use the normal draw area").
+	await expect(page).toHaveURL(`${board}/draw`);
+	const named = page.getByRole('button', { name: /^Tile Seat \d, held by/ });
+	await expect(named).toHaveCount(4);
+	await expect(named.nth(0)).toContainText('Seat');
+	await page.getByRole('button', { name: /^Tile Seat 4, held by/ }).tap();
+	const reveal = page.getByTestId('reveal');
+	await expect(reveal.getByTestId('reveal-name')).toHaveText(
+		/Washerwoman|Empath|Monk|Poisoner|Imp/
+	);
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(reveal).toBeHidden();
+	await expect(named).toHaveCount(3);
+	await expect(page.getByRole('button', { name: /^Tile \S+, drawn$/ })).toHaveCount(2);
+	await page.goto(`${board}/players`);
 	await toggle.tap();
 	await expect(phone.getByTestId('your-character')).toBeDisabled();
 	// Off for the Storyteller's player view too.
