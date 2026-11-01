@@ -31,7 +31,6 @@
 	import ReminderTokenRow from '#lib/features/grimoire/ReminderTokenRow.svelte';
 	import { playerLook, reminderWords, remindersOn } from './player-reminders.ts';
 	import { PlayerReminderState } from './player-reminders.svelte.ts';
-	import PlayerReminderPicker from './PlayerReminderPicker.svelte';
 	import PlayerReminderBin from './PlayerReminderBin.svelte';
 	import BoardLogo from '#lib/features/scripts/BoardLogo.svelte';
 	import { scriptLogo } from '#lib/core/data/script-logo.ts';
@@ -115,7 +114,6 @@
 	let guesses = $state<Guesses>({});
 	/** The reminder tokens this player put on seats (Trevor, 2026-10-26), kept as guesses are. */
 	const reminders = new PlayerReminderState();
-	let remindersOpen = $state(false);
 	let bin = $state<ReturnType<typeof PlayerReminderBin>>();
 	let seating = $state<ReturnType<typeof PlayerSeating>>(); // Seating on the grim (plan J38).
 	let townEl = $state<HTMLElement>();
@@ -570,18 +568,16 @@
 			onPick={(id) => chosen && save(mainGuess(guesses, chosen.seatId, id, withAvatar(chosen)))}
 		/>
 	</div>
-	<!-- The player's tokens on the seat (Trevor, 2026-10-26, as tokens 2026-10-30); a tap opens them. -->
-	<button
-		type="button"
-		class="row seat-note"
-		data-testid="seat-reminders"
-		onclick={() => (remindersOpen = true)}
-		><span class="row-label">{t('player.grim.reminders')}</span><ReminderTokenRow inline oneLine
+	<!-- The player's tokens on the seat (Trevor, 2026-10-26, as tokens 2026-10-30); a tap on one
+	     opens its About, where it comes off, as on the board's sheet (Trevor, 2026-11-01). -->
+	<div class="row" data-testid="seat-reminders">
+		<span class="row-label">{t('player.grim.reminders')}</span><ReminderTokenRow inline oneLine
 			>{#each chosen ? remindersOn(reminders.current, chosen.seatId) : [] as reminder, i (i)}<BoardReminder
 					{...playerLook(reminder, characterOf)}
+					onTap={() => chosen && bin?.showAbout(chosen.seatId, reminder)}
 				/>{:else}<span class="row-none">{t('common.none')}</span>{/each}</ReminderTokenRow
-		></button
-	>
+		>
+	</div>
 	<!-- The player's own notes on this seat (Trevor, 2026-10-24; several since 2026-10-26), each
 	     its own card (2026-10-31). -->
 	<SeatNotesRow
@@ -603,15 +599,6 @@
 			onSelect={(id) => guess(id)}
 		/>{/if}
 </BottomSheet>
-
-<PlayerReminderPicker
-	bind:open={remindersOpen}
-	name={chosen ? nameOf(chosen) : ''}
-	placed={chosen ? remindersOn(reminders.current, chosen.seatId) : []}
-	characterOf={(id) => characterOf(id)}
-	onToggle={(r) => chosen && reminders.toggle(chosen.seatId, r)}
-	onGenericLook={(id, look) => chosen && reminders.setLook(chosen.seatId, id, look)}
-/>
 
 <SeatNotesDialog
 	bind:open={noteOpen}
@@ -637,16 +624,6 @@
 	.row-label {
 		font-family: var(--font-control);
 		font-weight: 600;
-	}
-	.seat-note {
-		margin: 0 0 var(--space-2);
-		border-width: 0 0 1px;
-		border-radius: 0;
-		background: transparent;
-		color: inherit;
-		font: inherit;
-		text-align: start;
-		cursor: pointer;
 	}
 	.row-none {
 		color: var(--on-surface-muted);
