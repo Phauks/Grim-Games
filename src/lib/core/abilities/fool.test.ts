@@ -7,22 +7,17 @@
  * pin TPI's current data, so review and update them when a data sync changes Fool.
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
- * a scenario test (seats, characters and reminders, then the action, then the expected state)
- * that paraphrases the example. Never copy wiki prose.
+ * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
+ * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import type { Command } from '#lib/core/engine/index.ts';
 import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
 import { survivesFirstDeath } from '#lib/core/rules/first-death.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
 const CAST = ['fool', 'chef', 'poisoner', 'assassin', 'imp'];
-const spent = (s: string[]): Command => ({
-	type: 'AddReminder',
-	seatId: s[0],
-	reminder: { characterId: 'fool', label: 'No Ability' }
-});
 
 describe('Fool', () => {
 	const character = committedCharacter('fool');
@@ -55,24 +50,24 @@ describe('Fool', () => {
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Fool#Examples)', () => {
 		it('Example 1: survives the first execution, then dies to the second', () => {
-			const { session, seats } = castGame(CAST);
-			expect(survivesFirstDeath(session.game, seats[0], 'execution', characters)).toMatchObject({
+			const s = scenario(CAST);
+			expect(survivesFirstDeath(s.game, s.seat('fool'), 'execution', s.characters)).toMatchObject({
 				spentToken: 'No Ability'
 			});
-			const after = castGame(CAST, spent);
+			const after = s.reminder('fool', 'fool', 'No Ability');
 			expect(
-				survivesFirstDeath(after.session.game, after.seats[0], 'execution', characters)
+				survivesFirstDeath(after.game, after.seat('fool'), 'execution', after.characters)
 			).toBeUndefined();
 		});
 
 		it('Example 2: survives a night kill, so a later execution kills them', () => {
-			const { session, seats } = castGame(CAST);
-			expect(survivesFirstDeath(session.game, seats[0], 'demon', characters)).toMatchObject({
+			const s = scenario(CAST);
+			expect(survivesFirstDeath(s.game, s.seat('fool'), 'demon', s.characters)).toMatchObject({
 				spentToken: 'No Ability'
 			});
-			const after = castGame(CAST, spent);
+			const after = s.reminder('fool', 'fool', 'No Ability');
 			expect(
-				survivesFirstDeath(after.session.game, after.seats[0], 'execution', characters)
+				survivesFirstDeath(after.game, after.seat('fool'), 'execution', after.characters)
 			).toBeUndefined();
 		});
 		it.todo('Example 3: Protected twice; ability saves once');

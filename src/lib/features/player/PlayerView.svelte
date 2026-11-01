@@ -214,6 +214,7 @@
 	title={script?.name ?? (join ? t('room.joinTitle') : t('player.title'))}
 	iconActions
 	titleBelow
+	actionSlots={5}
 >
 	<!-- The app's sidebar and hamburger, as on every app page (Trevor, 2026-10-24). -->
 	<!-- The script's logo before its name, when it has one; nothing in its place otherwise
