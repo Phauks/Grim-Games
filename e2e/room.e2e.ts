@@ -750,6 +750,80 @@ test('after a game the room votes on the next script, and the next game opens in
 	await phoneContext.close();
 });
 
+test('after a game the room vote runs over the board, without leaving the game screen', async ({
+	page,
+	browser
+}, testInfo) => {
+	// Trevor, 2026-11-01 (plan J43): a room vote after the game "should not require leaving the
+	// game screen in order to facilitate it".
+	test.setTimeout(90_000);
+	const board = await startGame(page);
+	await page.goto(`${board}/room`);
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+	const phoneContext = await browser.newContext({ ...testInfo.project.use });
+	const phone = await phoneContext.newPage();
+	await phone.goto(`/join/${code}`);
+	const status = phone.getByTestId('join-status');
+	await expect(status).toHaveText('');
+
+	await page.goto(board);
+	const more = page.getByRole('button', { name: 'More', exact: true });
+	const menu = page.getByRole('dialog', { name: 'Grimoire' });
+	// Only once the game is over.
+	await more.tap();
+	await expect(menu.getByTestId('menu-room-vote')).toHaveCount(0);
+	await menu.getByRole('button', { name: 'End game' }).tap();
+	await page
+		.getByRole('alertdialog', { name: 'End game?' })
+		.getByRole('button', { name: 'Confirm', exact: true })
+		.tap();
+	await expect(status).toHaveText('Game over');
+
+	await more.tap();
+	await menu.getByTestId('menu-room-vote').tap();
+	const sheet = page.getByRole('dialog', { name: 'Room vote' });
+	await expect(sheet.getByRole('heading', { name: 'Vote on the next script' })).toBeVisible();
+	// Still the game screen, with the room's code for the table and no Back (X closes it).
+	await expect(page).toHaveURL(new RegExp(`${board}$`));
+	await expect(sheet.getByTestId('share-code')).toHaveText(`${code.slice(0, 3)} ${code.slice(3)}`);
+	await expect(sheet.getByRole('button', { name: 'Back', exact: true })).toHaveCount(0);
+	await expect(status).toHaveText('The Storyteller is choosing a script.');
+
+	const scripts = sheet.getByRole('radiogroup', { name: 'Add a script' });
+	const add = sheet.getByRole('button', { name: 'Add to vote' });
+	await add.tap();
+	await scripts.getByText('Bad Moon Rising', { exact: true }).tap();
+	await add.tap();
+	await sheet.getByRole('button', { name: 'Open vote' }).tap();
+
+	// Closing the sheet keeps the vote running; Room vote opens it again with the count.
+	await sheet.getByRole('button', { name: 'Close' }).tap();
+	await expect(sheet).toHaveCount(0);
+	const ballot = phone.getByTestId('ballot-screen');
+	await ballot.locator('[aria-pressed]').filter({ hasText: 'Bad Moon Rising' }).tap();
+	await ballot.getByRole('button', { name: 'Vote', exact: true }).tap();
+	await more.tap();
+	await menu.getByTestId('menu-room-vote').tap();
+	await expect(sheet.getByTestId('script-vote-count')).toHaveText('Voted: 1 of 1');
+
+	await sheet.getByRole('button', { name: 'End vote' }).tap();
+	const results = sheet.getByTestId('script-vote-results').getByRole('listitem');
+	// Play opens the board's own New game with the winner chosen, the seats carried over.
+	await results.filter({ hasText: 'Bad Moon Rising' }).getByRole('button', { name: 'Play' }).tap();
+	await expect(sheet).toHaveCount(0);
+	await expect(ballot).toHaveCount(0);
+	const newGame = page.getByRole('dialog', { name: 'New game' });
+	await expect(
+		newGame.getByRole('radiogroup', { name: 'Script' }).getByRole('radio', { checked: true })
+	).toHaveAccessibleName('Bad Moon Rising');
+	await expect(page).toHaveURL(new RegExp(`${board}$`));
+	await newGame.getByRole('button', { name: 'Create game' }).tap();
+	await toBoard(page);
+	await expect(phone.getByRole('heading', { name: 'Bad Moon Rising', level: 1 })).toBeVisible();
+	await phoneContext.close();
+});
+
 test("a new game in the same room starts the phone's notes and guesses afresh", async ({
 	page,
 	browser
