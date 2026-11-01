@@ -2,7 +2,6 @@
 	import type { Character, CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
 	import { GENERIC_REMINDER_ID, type GenericLook } from '#lib/core/model/index.ts';
 	import type { PublicSeat } from '#lib/core/sync/public-projection.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import { matchesReminderSearch } from '#lib/features/characters/character-search.ts';
 	import BoardReminder from '#lib/features/grimoire/BoardReminder.svelte';
 	import GenericLookDialog from '#lib/features/grimoire/GenericLookDialog.svelte';
@@ -164,6 +163,22 @@
 		held = undefined;
 		return true;
 	}
+	/**
+	 * A token on a seat dragged and let go (Trevor, 2026-11-01: as on the board): onto another
+	 * seat it moves there; onto the tray it comes off.
+	 */
+	export function dropPlaced(from: string, reminder: PlayerReminder, x: number, y: number): void {
+		held = undefined;
+		const under = document.elementFromPoint(x, y);
+		if (under && trayEl?.contains(under)) return onMove(from, reminder);
+		if (!town) return;
+		const rect = town.getBoundingClientRect();
+		const seat = seatAt({
+			x: ((x - rect.left) / rect.width) * 100,
+			y: ((y - rect.top) / rect.height) * 100
+		});
+		if (seat && seat.seatId !== from) onMove(from, reminder, seat.seatId);
+	}
 	// The eye hides the player's reminders: nothing stays in hand.
 	$effect(() => {
 		if (disabled) held = undefined;
@@ -303,8 +318,6 @@
 
 <ReminderAbout bind:open={aboutOpen} {owner} scriptNames={characters.map((c) => c.name)}>
 	{#snippet token()}{@render subjectView()}{/snippet}
-	{#snippet subtitle()}{#if owner && subject}{t('player.grim.reminderFrom')}
-			<CharacterBadge characterId={subject.reminder.characterId} character={owner} />{/if}{/snippet}
 	{#snippet headActions()}
 		{#if subject?.seatId}
 			{#if subjectGeneric}<IconButton

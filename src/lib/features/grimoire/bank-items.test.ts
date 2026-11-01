@@ -26,7 +26,6 @@ function game() {
 }
 
 const options: BankOptions = {
-	dismissed: [],
 	focus: undefined,
 	focusMode: 'front',
 	stack: false,
