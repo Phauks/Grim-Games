@@ -20,7 +20,7 @@
 
 	/**
 	 * Someone's profile (plan F10): their username, profile icon and the scripts they publish,
-	 * which anyone can open without signing in (Trevor, 2026-10-30: "instead of having to
+	 * and how many games they've played (F11), which anyone can open without signing in (Trevor, 2026-10-30: "instead of having to
 	 * login, they can just point at their profile"). Signed in, Add friend asks them.
 	 */
 	let { username }: { username: string } = $props();
@@ -64,6 +64,12 @@
 {/snippet}
 
 <Page title={profile?.username ?? username}>
+	<!-- Always there, so the page doesn't move when the count arrives (plan F11). -->
+	{#snippet subtitle()}<span data-testid="profile-games"
+			>{profile?.games === undefined
+				? '\u00a0'
+				: t('friends.profile.games', { games: profile.games })}</span
+		>{/snippet}
 	{#snippet lead()}<span class="icon"><ProfileIcon icon={profile?.icon} /></span>{/snippet}
 	{#snippet actions()}
 		{#if account.status === 'signed-in'}

@@ -120,9 +120,11 @@ export async function handleProfiles(
 	const book = friendBook(env, holder);
 	const user = await userStub(env, holder).profile();
 	if (!user?.username) return notFound;
+	const games = await book.gamesPlayed().catch(() => undefined);
 	return json({
 		username: user.username,
 		icon: user.icon,
-		scripts: await book.published()
+		scripts: await book.published(),
+		...(games === undefined ? {} : { games })
 	} satisfies ProfileResponse);
 }

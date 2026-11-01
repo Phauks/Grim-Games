@@ -387,6 +387,10 @@ test('people from a finished game are on Recent players, with Add friend', async
 	await expect(ann.page.getByTestId('friend-incoming')).toContainText(bob.username);
 	await expect(ann.page.getByTestId('friend-recent')).toContainText(bob.username);
 	await expect(ann.page.getByTestId('friend-recent').getByTestId('player-badge')).toHaveText('Bob');
+
+	// The game counts on both profiles, which anyone can open (plan F11).
+	await ann.page.goto(`/u/${bob.username}`);
+	await expect(ann.page.getByTestId('profile-games')).toHaveText('Games played: 1');
 });
 
 test('the Storyteller invites a friend, who joins from Friends', async ({ browser }) => {
