@@ -3,6 +3,7 @@ import { rulesOf } from '../data/rules/index.ts';
 import type { CharacterLookup } from '../model/characters.ts';
 import { alignmentOf, trueCharacter, typeOf } from '../model/selectors.ts';
 import type { Game, SeatId } from '../model/types.ts';
+import { prepValueKey } from './day-reminders.ts';
 
 /**
  * The players woken and shown a character's token (`shownTo` in its rules block): every
@@ -40,11 +41,13 @@ export function shownAtMinionInfo(game: Game, characters: CharacterLookup): Char
  * What each evil player learns from a character's `evilLearns` rule (the Storm Catcher,
  * https://wiki.bloodontheclocktower.com/Storm_Catcher): the evil players to wake, and the
  * player carrying its reminder with their character. No `marked` when nobody carries it: they
- * are then shown the named character as not in play.
+ * are then shown the named character as not in play. `named` is the character the
+ * Storyteller named during prep (`evilLearns.named`, a prep value), saved with the game.
  */
 export interface EvilLearns {
 	evil: SeatId[];
 	marked?: { seatId: SeatId; characterId?: CharacterId };
+	named?: CharacterId;
 }
 
 export function evilLearns(
@@ -58,9 +61,11 @@ export function evilLearns(
 	const seatId = game.seating.find((s) =>
 		game.seats[s].reminders.some((r) => r.characterId === characterId && r.label === rule.carrier)
 	);
-	if (seatId === undefined) return { evil };
+	const name = rule.named && game.prepValues?.[prepValueKey(characterId, rule.named)];
+	const named = name ? { named: name } : {};
+	if (seatId === undefined) return { evil, ...named };
 	const id = trueCharacter(game, seatId, characters);
-	return { evil, marked: { seatId, ...(id ? { characterId: id } : {}) } };
+	return { evil, marked: { seatId, ...(id ? { characterId: id } : {}) }, ...named };
 }
 
 /**

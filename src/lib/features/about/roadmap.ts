@@ -349,11 +349,11 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	},
 	{
 		// Gap 2: characters whose information the Storyteller still works out by hand. M10a
-		// Chambermaid, M10b Puzzlemaster, M10c Widow, M10d Damsel, M10e Storm Catcher, M10f Zenomancer.
+		// Chambermaid, M10b Puzzlemaster, M10c Widow, M10d Damsel, M10e Storm Catcher, M10f Zenomancer, M10g the Storm Catcher's named character saved.
 		title:
 			'Valid information for the Chambermaid, Puzzlemaster, Widow, Damsel, Storm Catcher and Zenomancer',
 		area: 'engine',
-		parts: ['M10a', 'M10b', 'M10c', 'M10d', 'M10e', 'M10f']
+		parts: ['M10a', 'M10b', 'M10c', 'M10d', 'M10e', 'M10f', 'M10g']
 	},
 	{
 		// Gap 8: the Bigwig's chosen speaker; gap 12: one-offs with no behaviour yet: M12a the
