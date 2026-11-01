@@ -100,8 +100,8 @@ export function renderCharacterTest(
  * pin TPI's current data, so review and update them when a data sync changes ${name}.
  *
  * Wiki examples: each \`it.todo\` is one example in the page's Examples section. Replace it with
- * a scenario test (seats, characters and reminders, then the action, then the expected state)
- * that paraphrases the example. Never copy wiki prose.
+ * a test written with \`scenario\` (src/lib/core/testing/scenario.ts): the seats, what has
+ * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
@@ -210,6 +210,14 @@ export interface CoverageReport {
 	jinxesDone: number;
 }
 
+/** How a test file imports the one wiki-example helper (Trevor, 2026-10-31, M13a). */
+export const SCENARIO_IMPORT = "from '#lib/core/testing/scenario.ts'";
+
+/** Whether a test file has a written wiki example, not only `it.todo`s. */
+export function writesExamples(source: string): boolean {
+	return /\bit\(\s*['"`]Example \d/.test(source);
+}
+
 export function checkCoverage(input: CoverageInput): CoverageReport {
 	const problems: string[] = [];
 	const byId = new Map(input.characters.map((c) => [c.id, c]));
@@ -239,6 +247,11 @@ export function checkCoverage(input: CoverageInput): CoverageReport {
 		const todos = countTodos(source);
 		report.characterTodos += todos;
 		if (todos === 0) report.charactersDone++;
+		if (writesExamples(source) && !source.includes(SCENARIO_IMPORT)) {
+			problems.push(
+				`${ABILITIES_DIR}/${file}: writes wiki examples without \`scenario\` (src/lib/core/testing/scenario.ts)`
+			);
+		}
 	}
 	for (const file of input.abilityTests.keys()) {
 		if (!expectedAbilities.has(file)) {

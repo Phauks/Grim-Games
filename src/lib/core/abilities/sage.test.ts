@@ -7,13 +7,13 @@
  * pin TPI's current data, so review and update them when a data sync changes Sage.
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
- * a scenario test (seats, characters and reminders, then the action, then the expected state)
- * that paraphrases the example. Never copy wiki prose.
+ * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
+ * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
 import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night-info.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
 describe('Sage', () => {
@@ -48,30 +48,18 @@ describe('Sage', () => {
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Sage#Examples)', () => {
 		it('Example 1: Demon kills Sage early; two suspects shown', () => {
 			// The Demon kills the Sage: the Storyteller points to the Demon and one other player.
-			const { game: g, seats } = castGame(['sage', 'chef', 'imp', 'monk', 'poisoner'], (s) => ({
-				type: 'SetDead',
-				seatId: s[0],
-				dead: true
-			}));
-			const picker = infoPicker(g, seats[0], 'sage', characters)!;
-			expect(isTruthful(picker, { seats: [seats[2], seats[3]] })).toBe(true);
-			expect(isAllowed(picker, { seats: [seats[1], seats[3]] })).toBe(false);
+			const s = scenario(['sage', 'chef', 'imp', 'monk', 'poisoner']).dies('sage');
+			const picker = infoPicker(s.game, s.seat('sage'), 'sage', s.characters)!;
+			expect(isTruthful(picker, { seats: [s.seat('imp'), s.seat('monk')] })).toBe(true);
+			expect(isAllowed(picker, { seats: [s.seat('chef'), s.seat('monk')] })).toBe(false);
 		});
 
 		it('Example 2: Drunk Sage gets misleading info', () => {
 			// A Drunk who thinks they are the Sage may be shown any two players.
-			const { game: g, seats } = castGame(
-				['sage', 'chef', 'imp', 'monk', 'poisoner'],
-				(s) => ({
-					type: 'AddReminder',
-					seatId: s[0],
-					reminder: { characterId: 'drunk', label: 'Is The Drunk' }
-				}),
-				(s) => ({ type: 'SetDead', seatId: s[0], dead: true })
-			);
-			const picker = infoPicker(g, seats[0], 'sage', characters)!;
+			const s = scenario(['sage', 'chef', 'imp', 'monk', 'poisoner']).drunk('sage').dies('sage');
+			const picker = infoPicker(s.game, s.seat('sage'), 'sage', s.characters)!;
 			expect(picker.anyAllowed).toBe(true);
-			expect(isAllowed(picker, { seats: [seats[1], seats[3]] })).toBe(true);
+			expect(isAllowed(picker, { seats: [s.seat('chef'), s.seat('monk')] })).toBe(true);
 		});
 		it.todo("Example 3: Pit-Hag's arbitrary death leaves Sage uninformed");
 	});
