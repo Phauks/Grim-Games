@@ -130,7 +130,9 @@
 		adding = add;
 		quickShown = token.id === QUICK_CARD_ID && !add;
 		pendingDetail = detail;
-		if (token.id === 'not-in-play' && bluffSets) {
+		// The Demon's bluffs, unless the step fills the card itself (the Storm Catcher shows its
+		// named character as not in play, never the bluffs).
+		if (token.id === 'not-in-play' && bluffSets && !filled) {
 			if (bluffSets.length === 1) return use(token.text, bluffSets[0].characterIds);
 			if (bluffSets.length > 1) {
 				view = { kind: 'sets', token };
