@@ -10,6 +10,7 @@ import {
 	barredAbilities,
 	isExclusiveJinx,
 	jinxIsExclusive,
+	jinxesOnStep,
 	jinxRulesBetween,
 	jinxSetupWarnings,
 	scriptJinxes
@@ -110,5 +111,43 @@ describe('jinx rules data', () => {
 			['giver', { rules: { jinxes: { chef: { notGiven: true as const } } } }]
 		]);
 		expect(barredAbilities('giver', ['giver', 'chef', 'empath'], custom)).toEqual(['chef']);
+	});
+});
+
+describe('jinxesOnStep', () => {
+	const jinxes = scriptJinxes(data.jinxes, ['spy', 'magician', 'poppygrower', 'chef']);
+	const pairs = (list: readonly { characters: readonly string[] }[]) =>
+		list.map((j) => [...j.characters].sort().join('+'));
+
+	// https://wiki.bloodontheclocktower.com/Djinn: a jinx is in effect while both are in play.
+	it('shows each jinx on both characters once both are in play', () => {
+		const inPlay = ['spy', 'poppygrower', 'chef'];
+		expect(pairs(jinxesOnStep(jinxes, 'spy', inPlay))).toEqual(['poppygrower+spy']);
+		expect(pairs(jinxesOnStep(jinxes, 'poppygrower', inPlay))).toEqual(['poppygrower+spy']);
+		expect(jinxesOnStep(jinxes, 'chef', inPlay)).toEqual([]);
+	});
+
+	it('shows every jinx a character has with characters in play, in the given order', () => {
+		const inPlay = ['spy', 'magician', 'poppygrower'];
+		expect(pairs(jinxesOnStep(jinxes, 'spy', inPlay))).toEqual(
+			pairs(jinxes.filter((j) => j.characters.includes('spy')))
+		);
+		expect(pairs(jinxesOnStep(jinxes, 'magician', inPlay))).toEqual(['magician+spy']);
+	});
+
+	it('shows nothing while only one of the pair is in play, or the character is not', () => {
+		expect(jinxesOnStep(jinxes, 'spy', ['spy', 'chef'])).toEqual([]);
+		expect(jinxesOnStep(jinxes, 'spy', ['magician', 'poppygrower'])).toEqual([]);
+	});
+
+	it("keeps a script's own wording as it is", () => {
+		const own = scriptJinxes(
+			data.jinxes,
+			['spy', 'custom'],
+			[{ characters: ['custom', 'spy'], reason: 'Homebrew wording.' }]
+		);
+		expect(jinxesOnStep(own, 'custom', ['spy', 'custom']).map((j) => j.reason)).toEqual([
+			'Homebrew wording.'
+		]);
 	});
 });

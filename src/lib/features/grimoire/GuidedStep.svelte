@@ -39,6 +39,11 @@
 	import SeatChooser from './SeatChooser.svelte';
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
 	import { shownCommands } from './record-shown.ts';
+	import JinxNote from '#lib/features/characters/JinxNote.svelte';
+	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
+	import { gameJinxes } from '#lib/features/game/game-jinxes.ts';
+	import { jinxesOnStep } from '#lib/core/rules/jinxes.ts';
+	import { t } from '#lib/i18n/locale.svelte.ts';
 
 	/**
 	 * One night step, filled in with help (Trevor, 2026-10-16): TPI's text, who has the
@@ -108,6 +113,16 @@
 	const characters = $derived(grimoire.open.characters);
 	const holders = $derived(step ? stepHolders(game, step, characters) : []);
 	const believers = $derived(holders.filter((s) => believesDemon(game, s, characters)));
+	/**
+	 * The step's character's jinxes with characters in play, word for word, where the
+	 * Storyteller runs it (L107; https://wiki.bloodontheclocktower.com/Djinn).
+	 */
+	const stepJinxes = $derived.by(() => {
+		const id = step?.character?.id;
+		if (!id) return [];
+		const { jinxes, inPlay } = gameJinxes(game, officialData.current);
+		return jinxesOnStep(jinxes, id, inPlay);
+	});
 	/**
 	 * The character's own reminder tokens, one row per copy the game has (the Mathematician's
 	 * five "Abnormal", Trevor 2026-10-17), each placed or moved on its own.
@@ -307,6 +322,14 @@
 				>
 			{/if}
 			<NightAlerts {grimoire} {step} withoutImpaired />
+			{#if stepJinxes.length > 0}
+				<h3>{t('characters.jinxes')}</h3>
+				<ul class="jinxes" data-testid="step-jinxes">
+					{#each stepJinxes as jinx (jinx.characters.join('+'))}
+						<li><JinxNote {jinx} {characters} /></li>
+					{/each}
+				</ul>
+			{/if}
 			{#if step.id === TRAVELLER_ALIGNMENT_STEP}
 				<TravellerAlignment
 					{grimoire}
@@ -575,6 +598,13 @@
 	h3 {
 		margin: var(--space-2) 0 var(--space-1);
 		font-size: 1rem;
+	}
+	.jinxes {
+		display: grid;
+		gap: var(--space-2);
+		margin: 0 0 var(--space-2);
+		padding: 0;
+		list-style: none;
 	}
 	/* Room under each token for its words' band, and beside it for words wider than it. */
 	.reminders {
