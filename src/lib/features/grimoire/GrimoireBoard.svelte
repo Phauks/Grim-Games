@@ -87,6 +87,7 @@
 	import SavantSheet from '#lib/features/savant/SavantSheet.svelte';
 	import AidMenu from '#lib/features/settings/AidMenu.svelte';
 	import { playersDialog } from '#lib/features/room/players-dialog.svelte.ts';
+	import { travellersForNewSeat } from '#lib/features/room/add-seat-travellers.ts';
 	import { DAY_HASH } from '#lib/features/day/day-hash.ts';
 	import SeatSheet from './SeatSheet.svelte';
 	import SeatProfileDialog from './SeatProfileDialog.svelte';
@@ -991,10 +992,7 @@
 		: undefined}
 	onAddSeat={() =>
 		// The seat just appears (Trevor, 2026-10-16); with a room open, Travellers choose follows.
-		startPlacing((p) => {
-			const id = grimoire.addSeat(p);
-			if (id && !watching && roomHost().code) playersDialog.showTravellers(id);
-		})}
+		startPlacing((p) => travellersForNewSeat(grimoire.addSeat(p), watching))}
 	onAddRule={() => rules?.add()}
 	onArrange={() => enterSeating(seatArr)}
 	onExport={() => (exportOpen = true)}

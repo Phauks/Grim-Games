@@ -1,9 +1,8 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import type { Alignment, Character, CharacterId, PlayerName } from '#lib/core/data/index.ts';
+	import type { Character, CharacterId, PlayerName } from '#lib/core/data/index.ts';
 	import { fromScript } from '#lib/core/data/index.ts';
-	import type { Command } from '#lib/core/engine/index.ts';
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import { moreTravellers, recommendedTravellers } from '#lib/core/rules/index.ts';
 	import CharacterPicker from '#lib/features/characters/CharacterPicker.svelte';
@@ -25,15 +24,16 @@
 	 * the choice to some seats with the Travellers allowed (the recommended ones, any, or ones
 	 * picked here), then watch who holds and who has confirmed. A confirmed Traveller goes on its
 	 * seat (host-traveller-pick.ts). It opens from Add seat with the new seat ticked (Trevor,
-	 * 2026-11-01), and from the sheet of a seat still choosing; the alignment is chosen here or on the board
-	 * (https://wiki.bloodontheclocktower.com/Glossary, "Traveller"). Seats with no phone are
-	 * picked for here.
+	 * 2026-11-01), and from the sheet of a seat still choosing. A seat that already has a
+	 * character (a Traveller included) is shown but can't be sent the choice. The alignment is
+	 * left for later, where every Traveller's is chosen: the night's Traveller alignment step or
+	 * the seat (Trevor, 2026-11-01; https://wiki.bloodontheclocktower.com/Glossary, "Traveller").
+	 * Seats with no phone are picked for here.
 	 */
-	let { game, run }: { game: OpenGame; run?: (command: Command) => boolean } = $props();
+	let { game }: { game: OpenGame } = $props();
 
 	const host = roomHost();
 	const pick = $derived(host.travellerPick);
-	const exec = (command: Command) => (run ? run(command) : game.game && game.run(command).ok);
 
 	$effect(() => void loadOfficialData());
 	const data = $derived(officialData.current);
@@ -63,6 +63,9 @@
 		game.game.seats[seatId]?.playerName ??
 		t('common.seat', { number: game.game.seating.indexOf(seatId) + 1 });
 	const hasPhone = (seatId: SeatId) => host.members.some((m) => m.seatId === seatId);
+	/** Has a character token already (Trevor, 2026-11-01), unless it's in the open choice. */
+	const taken = (seatId: SeatId) =>
+		!!game.game.seats[seatId]?.characterId && !pick?.seats.some((s) => s.seatId === seatId);
 
 	function send() {
 		host.send({
@@ -70,7 +73,7 @@
 			gameId: game.game.gameId,
 			pickId: crypto.randomUUID(),
 			options,
-			seats
+			seats: seats.filter((seatId) => !taken(seatId))
 		});
 		editing = false;
 	}
@@ -111,7 +114,6 @@
 		host.send({ type: 'traveller-for', seatId: pickingFor, characterId: character.id });
 		pickingFor = undefined;
 	}
-	const ALIGNMENTS: Alignment[] = ['good', 'evil'];
 </script>
 
 <Dialog bind:open={playersDialog.travellers} title={t('room.travellers.title')}>
@@ -121,13 +123,22 @@
 				label={t('room.travellers.allowed')}
 				value={allowed}
 				options={[
-					{ value: 'recommended', label: t('room.travellers.recommended') },
 					{ value: 'any', label: t('room.travellers.any') },
+					{ value: 'recommended', label: t('room.travellers.recommended') },
 					{ value: 'chosen', label: t('room.travellers.chosen') }
 				]}
 				onChange={(value) => (allowed = value)}
 			/>
-			{#if allowed === 'chosen'}
+			<!-- Recommended shows those; Custom the whole list to pick from (Trevor, 2026-11-01). -->
+			{#if allowed === 'recommended'}
+				<ul class="rows" data-testid="traveller-pick-recommended">
+					{#each recommended as character (character.id)}
+						<li><CharacterRow {character} info /></li>
+					{:else}
+						<li class="row">{t('common.none')}</li>
+					{/each}
+				</ul>
+			{:else if allowed === 'chosen'}
 				<CharacterPicker
 					characters={[...recommended, ...others]}
 					mode="multi"
@@ -144,6 +155,7 @@
 						<Toggle
 							label={seatName(seatId)}
 							checked={seats.includes(seatId)}
+							disabled={taken(seatId)}
 							onChange={(on) =>
 								(seats = on ? [...seats, seatId] : seats.filter((s) => s !== seatId))}
 						/>
@@ -158,7 +170,6 @@
 		<ul class="rows" data-testid="traveller-pick-status">
 			{#each pick.seats as seat (seat.seatId)}
 				{@const character = seat.characterId ? byId.get(seat.characterId) : undefined}
-				{@const alignment = game.game.seats[seat.seatId]?.alignment}
 				<li class="row status">
 					<PlayerBadge name={seatName(seat.seatId) as PlayerName} />
 					<span class="state">
@@ -167,17 +178,6 @@
 						{:else}{t('room.travellers.choosing')}{/if}
 					</span>
 					<span class="tools">
-						{#if seat.confirmed}
-							<Select
-								label={t('room.travellers.alignment')}
-								hideLabel
-								placeholder={t('room.travellers.alignment')}
-								value={alignment}
-								options={ALIGNMENTS.map((a) => ({ value: a, label: t(`characters.${a}`) }))}
-								onChange={(value) =>
-									exec({ type: 'SetAlignment', seatId: seat.seatId, alignment: value })}
-							/>
-						{/if}
 						{#if seat.characterId}
 							<Button
 								variant="quiet"
@@ -200,7 +200,7 @@
 			<ModalActions
 				onCancel={() => (pick ? (editing = false) : (playersDialog.travellers = false))}
 				onConfirm={send}
-				disabled={options.length === 0 || seats.length === 0}
+				disabled={options.length === 0 || !seats.some((seatId) => !taken(seatId))}
 				confirmLabel={t('room.travellers.send')}
 			/>
 		{:else}
