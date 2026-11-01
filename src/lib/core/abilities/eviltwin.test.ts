@@ -7,13 +7,13 @@
  * pin TPI's current data, so review and update them when a data sync changes Evil Twin.
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
- * a scenario test (seats, characters and reminders, then the action, then the expected state)
- * that paraphrases the example. Never copy wiki prose.
+ * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
+ * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
-import { castGame, testCharacters } from '#lib/core/model/fixtures.test-support.ts';
 import { gameEnds } from '#lib/core/rules/game-end.ts';
 import { defaultAlignment } from '#lib/core/data/index.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
 describe('Evil Twin', () => {
@@ -48,30 +48,18 @@ describe('Evil Twin', () => {
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Evil_Twin#Examples)', () => {
 		it.todo('Example 1: Both twins claim Oracle; game continues');
 		it('Example 2: Sage-turned Mutant twin executed; evil wins', () => {
-			const { session } = castGame(
-				['mutant', 'chef', 'empath', 'eviltwin', 'imp'],
-				(s) => ({
-					type: 'AddReminder',
-					seatId: s[0],
-					reminder: { characterId: 'eviltwin', label: 'Twin' }
-				}),
-				(s) => ({ type: 'Execute', seatId: s[0] })
-			);
-			expect(gameEnds(session.game, testCharacters)).toMatchObject([
+			const s = scenario(['mutant', 'chef', 'empath', 'eviltwin', 'imp'])
+				.reminder('mutant', 'eviltwin', 'Twin')
+				.execute('mutant');
+			expect(gameEnds(s.game, s.characters)).toMatchObject([
 				{ rule: 'marked-executed', winner: 'evil' }
 			]);
 		});
 		it('Example 3: Wrong twin executed; night deaths stop', () => {
-			const { session } = castGame(
-				['artist', 'chef', 'empath', 'eviltwin', 'imp'],
-				(s) => ({
-					type: 'AddReminder',
-					seatId: s[0],
-					reminder: { characterId: 'eviltwin', label: 'Twin' }
-				}),
-				(s) => ({ type: 'Execute', seatId: s[4] })
-			);
-			expect(gameEnds(session.game, testCharacters)).toMatchObject([
+			const s = scenario(['artist', 'chef', 'empath', 'eviltwin', 'imp'])
+				.reminder('artist', 'eviltwin', 'Twin')
+				.execute('imp');
+			expect(gameEnds(s.game, s.characters)).toMatchObject([
 				{ rule: 'demon-dead', holds: [{ rule: 'marked-alive' }] }
 			]);
 		});

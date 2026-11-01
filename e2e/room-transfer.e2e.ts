@@ -42,7 +42,7 @@ async function openTransfer(page: Page, board: string, code: string): Promise<st
 		`${code.slice(0, 3)} ${code.slice(3)}`
 	);
 	await expect(dialog.getByTestId('transfer-code')).toHaveText(/^\d{4} \d{4}$/);
-	await expect(dialog.getByTestId('transfer-time')).toHaveText(/^Expires in [45]:\d\d$/);
+	await expect(dialog.getByTestId('transfer-time')).toHaveText(/^Expires in [12]:\d\d$/);
 	// The eye hides the transfer code behind dots and shows it again (Trevor, 2026-10-31),
 	// and nothing in the dialog moves while it is hidden.
 	const hide = dialog.getByRole('button', { name: 'Hide code' });

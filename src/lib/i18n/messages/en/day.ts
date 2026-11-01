@@ -8,6 +8,8 @@ export const day = {
 	'day.town': 'Town',
 	'day.endDayConfirm': 'End the day?',
 	'day.keepDayGoing': 'Keep the day going',
+	'day.executedInstead': 'is executed instead',
+	'day.executedInsteadLabel': '{who} is executed instead',
 	'day.execution': 'Execution',
 	'day.executionChoose': 'Choose',
 	'day.noExecution': 'No execution',

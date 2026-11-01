@@ -109,6 +109,22 @@ describe('checkCoverage', () => {
 		expect(report.characterTodos).toBe(2);
 	});
 
+	// Trevor (2026-10-31): one way to write the wiki examples (M13a).
+	it('fails when a written wiki example does not use scenario', () => {
+		const input = covered();
+		const abilityTests = new Map(input.abilityTests);
+		const cite = `// ${wikiUrl('Chef')}\n`;
+		abilityTests.set('chef.test.ts', `${cite}it('Example 1: two evil pairs', () => {});`);
+		expect(checkCoverage({ ...input, abilityTests }).problems).toEqual([
+			'src/lib/core/abilities/chef.test.ts: writes wiki examples without `scenario` (src/lib/core/testing/scenario.ts)'
+		]);
+		abilityTests.set(
+			'chef.test.ts',
+			`${cite}import { scenario } from '#lib/core/testing/scenario.ts';\nit('Example 1: two evil pairs', () => {});`
+		);
+		expect(checkCoverage({ ...input, abilityTests }).problems).toEqual([]);
+	});
+
 	it('fails when a character or jinx has no test file', () => {
 		const input = covered();
 		const abilityTests = new Map(input.abilityTests);
