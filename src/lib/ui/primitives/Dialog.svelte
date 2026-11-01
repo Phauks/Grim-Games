@@ -439,9 +439,17 @@
 		flex: 1;
 		flex-direction: column;
 		min-height: 0;
-		overflow: hidden;
+		/* Clipped top and bottom only, so what reaches into the dialog's side padding (a
+		   character type's band, Collapsible) keeps its ends. */
+		overflow-x: visible;
+		overflow-y: clip;
 	}
+	/* A scroll box clips sideways too, so it reaches out into the dialog's side padding and
+	   gives that room back inside: a character type's band, which reaches into the gutter,
+	   is drawn whole (Trevor, 2026-11-01: the Script view's Townsfolk band "still covered"). */
 	.body[data-scroll] {
+		margin-inline: calc(-1 * var(--space-3));
+		padding-inline: var(--space-3);
 		overflow-y: auto;
 		overscroll-behavior: contain;
 	}
