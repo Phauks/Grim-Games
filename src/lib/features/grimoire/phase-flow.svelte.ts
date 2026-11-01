@@ -129,8 +129,8 @@ export class PhaseFlow {
 	 * 2026-10-20), listing them; Confirm starts anyway (warn, never lock).
 	 */
 	startGame(): void {
-		const { grimoire, game, characters } = this.#context();
-		const left = pendingSetup(game, characters, grimoire.trayDismissed);
+		const { game, characters } = this.#context();
+		const left = pendingSetup(game, characters);
 		if (left.length > 0) {
 			this.setupLeft = left;
 			this.startAskOpen = true;

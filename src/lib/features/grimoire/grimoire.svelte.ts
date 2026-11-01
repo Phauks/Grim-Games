@@ -165,13 +165,6 @@ export class Grimoire {
 		return this.run({ type: 'NewDay' });
 	}
 
-	/** Setup reminder suggestions the Storyteller dismissed from the tray (`setup-tray.ts`). */
-	trayDismissed = $state.raw<readonly string[]>([]);
-
-	dismissTray(key: string): void {
-		if (!this.trayDismissed.includes(key)) this.trayDismissed = [...this.trayDismissed, key];
-	}
-
 	/** Where reminders were dropped, for reminders that stay where they are dropped. */
 	reminderSpots = $state.raw<Readonly<Record<string, SeatPoint>>>({});
 	/**
