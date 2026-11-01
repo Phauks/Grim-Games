@@ -194,7 +194,7 @@ export const ICON_SLOTS = {
 	phonesMove: { label: 'Players move seats', choices: ['ph:device-mobile', 'ph:hand-tap'] },
 	rotateAnticlockwise: { label: 'Rotate anticlockwise', choices: ['ph:arrow-arc-left'] },
 	rotateClockwise: { label: 'Rotate clockwise', choices: ['ph:arrow-arc-right'] },
-	spread: { label: 'Spread evenly', choices: ['ph:circle-dashed', 'ph:dots-three-circle'] },
+	spread: { label: 'Distribute', choices: ['ph:circle-dashed', 'ph:dots-three-circle'] },
 	/** Room transfer: the room goes to another Storyteller's device (Trevor, 2026-10-28). */
 	transfer: { label: 'Room transfer', choices: ['ph:hand-arrow-up', 'ph:arrow-square-out'] },
 	/** Marks an opened message unread again (Trevor, 2026-10-28: "an eyeball next to the x"). */

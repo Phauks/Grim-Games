@@ -116,10 +116,10 @@
 		<Button
 			variant="quiet"
 			icon="spread"
-			aria-label="Spread evenly"
+			aria-label="Distribute"
 			disabled={Object.keys(grimoire.layout.placed).length === 0 &&
 				Object.keys(grimoire.layout.gaps).length === 0}
-			onclick={() => seatArr.spread()}><span class="tool-label">Spread evenly</span></Button
+			onclick={() => seatArr.spread()}><span class="tool-label">Distribute</span></Button
 		>
 		<Button
 			variant="accent"
