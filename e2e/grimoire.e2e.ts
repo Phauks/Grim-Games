@@ -3121,8 +3121,33 @@ test('a finished game exports as a recap file and a grimoire image', async ({ pa
 	const png = readFileSync(image.path);
 	const box = await page.locator('.grimoire').boundingBox();
 	expect(box).not.toBeNull();
+	// Only the board and its game info (Trevor, 2026-11-01): the board with its margin all round,
+	// without the toolbar's row above or History's strip below.
+	const shown = await page.locator('.grimoire > .board').evaluate((el) => ({
+		height: el.getBoundingClientRect().height,
+		margin: parseFloat(getComputedStyle(el).marginTop)
+	}));
+	expect(shown.height + 2 * shown.margin).toBeLessThan(box!.height - 50);
 	const ratio = png.readUInt32BE(16) / png.readUInt32BE(20);
-	expect(ratio).toBeCloseTo(box!.width / box!.height, 1);
+	expect(ratio).toBeCloseTo(box!.width / (shown.height + 2 * shown.margin), 1);
+	// Drawn on the page's own colour, never see-through (the browser decodes the PNG).
+	const opaque = await page.evaluate(async (b64) => {
+		const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+		const bitmap = await createImageBitmap(new Blob([bytes], { type: 'image/png' }));
+		const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+		const ctx = canvas.getContext('2d')!;
+		ctx.drawImage(bitmap, 0, 0);
+		return ctx.getImageData(1, 1, 1, 1).data[3];
+	}, png.toString('base64'));
+	expect(opaque).toBe(255);
+	// The controls are left out: History's strip, the soundboard and the timer.
+	await expect(page.getByTestId('history-strip')).toHaveAttribute('data-screenshot', 'skip');
+	await expect(page.locator('.board-timer .timer-slot')).toHaveAttribute('data-screenshot', 'skip');
+	// By its label: the open Export dialog hides the board from getByRole.
+	await expect(page.locator('.board-timer [aria-label="Soundboard"]')).toHaveAttribute(
+		'data-screenshot',
+		'skip'
+	);
 	await page.keyboard.press('Escape');
 
 	// The same from History, which opens the board first so the picture is the board
