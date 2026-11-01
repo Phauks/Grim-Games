@@ -356,10 +356,11 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['M10a', 'M10b', 'M10c', 'M10d', 'M10e', 'M10f']
 	},
 	{
-		// Gap 8: the Bigwig's chosen speaker; gap 12: one-offs with no behaviour yet.
+		// Gap 8: the Bigwig's chosen speaker; gap 12: one-offs with no behaviour yet: M12a the
+		// Scapegoat, M12b the Boomdandy, M12c the Courtier's countdown.
 		title: "The Bigwig's speaker, the Scapegoat, the Boomdandy and the Courtier's three nights",
 		area: 'engine',
-		parts: ['M11', 'M12']
+		parts: ['M11', 'M12a', 'M12b', 'M12c']
 	},
 	{
 		// Gap 1, last and separate (Trevor, 2026-10-28).
