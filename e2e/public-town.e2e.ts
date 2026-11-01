@@ -387,8 +387,14 @@ test("Public Town shows the finished grimoire the Storyteller shares, as players
 	const end = page.getByRole('alertdialog', { name: 'End game?' });
 	await end.getByRole('combobox', { name: 'Winner' }).tap();
 	await page.getByRole('option', { name: 'Good', exact: true }).tap();
-	await end.getByText('Share the final grimoire with players', { exact: true }).tap();
 	await end.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	// Share grim is in ⋯ once the game is over, not on End game (Trevor, 2026-11-01).
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page.getByRole('dialog', { name: 'Grimoire' }).getByTestId('menu-share-grim').tap();
+	await page
+		.getByRole('alertdialog', { name: 'Share the grimoire?' })
+		.getByRole('button', { name: 'Confirm', exact: true })
+		.tap();
 
 	// The whole board in place of the town, every seat, as on a phone's Grim tab.
 	const final = tablet.getByTestId('final-grimoire');
@@ -399,7 +405,11 @@ test("Public Town shows the finished grimoire the Storyteller shares, as players
 	await expect(final.getByTestId('seat')).toHaveCount(8);
 
 	// Reopening the game makes the grimoire private again, and the town comes back.
-	await page.getByTestId('game-over').tap();
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Reopen game' })
+		.tap();
 	await page
 		.getByRole('alertdialog', { name: 'Reopen game?' })
 		.getByRole('button', { name: 'Confirm', exact: true })

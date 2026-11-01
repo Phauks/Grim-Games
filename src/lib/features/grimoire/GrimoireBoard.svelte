@@ -922,19 +922,13 @@
 				{#if ended}
 					<!-- Above Game info (the corner), out of History's strip so the strip keeps
 					     its room for the change shown (Trevor, 2026-10-25); held off the corner's
-					     size, so ending the game moves nothing. Tapping it offers to reopen. -->
-					<button
-						type="button"
-						class="game-over"
-						data-testid="game-over"
-						data-team={ended.winner}
-						disabled={watching}
-						onclick={() => (reopenOpen = true)}
-					>
+					     size, so ending the game moves nothing. Only a label: Reopen game is in ⋯
+					     (Trevor, 2026-11-01: "do not allow reopen game from there"). -->
+					<span class="game-over" role="status" data-testid="game-over" data-team={ended.winner}>
 						Game over: {endedText}{grimoire.open.session.log.cursor !== grimoire.open.savedCursor
 							? ' · Shown from History'
 							: ''}
-					</button>
+					</span>
 				{/if}
 			{/snippet}
 		</BoardCorner>
@@ -1251,7 +1245,10 @@
 		color: var(--on-surface);
 		font-family: var(--font-heading);
 		font-size: 0.9rem;
-		pointer-events: auto;
+		/* A label, not a button: its line is the tap target's height, as the button's was. */
+		display: block;
+		box-sizing: border-box;
+		line-height: calc(var(--tap-target) - 2px); /* px-ok: the border's two hairlines */
 	}
 	.game-over[data-team='good'] {
 		background: var(--good);
