@@ -7,13 +7,13 @@
  * pin TPI's current data, so review and update them when a data sync changes Choirboy.
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
- * a scenario test (seats, characters and reminders, then the action, then the expected state)
- * that paraphrases the example. Never copy wiki prose.
+ * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
+ * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
 import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night-info.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
 describe('Choirboy', () => {
@@ -48,30 +48,20 @@ describe('Choirboy', () => {
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Choirboy#Examples)', () => {
 		it('Example 1: Unprotected King dies; Choirboy learns the Imp', () => {
 			// The Demon killed the King: the Choirboy is shown the Demon's player.
-			const { game: g, seats } = castGame(['choirboy', 'king', 'imp', 'monk', 'poisoner'], (s) => ({
-				type: 'SetDead',
-				seatId: s[1],
-				dead: true
-			}));
-			const picker = infoPicker(g, seats[0], 'choirboy', characters)!;
-			expect(isTruthful(picker, { seats: [seats[2]] })).toBe(true);
-			expect(isAllowed(picker, { seats: [seats[4]] })).toBe(false);
+			const s = scenario(['choirboy', 'king', 'imp', 'monk', 'poisoner']).dies('king');
+			const picker = infoPicker(s.game, s.seat('choirboy'), 'choirboy', s.characters)!;
+			expect(isTruthful(picker, { seats: [s.seat('imp')] })).toBe(true);
+			expect(isAllowed(picker, { seats: [s.seat('poisoner')] })).toBe(false);
 		});
 
 		it('Example 2: Drunk Choirboy wrongly names the General', () => {
 			// A Drunk who thinks they are the Choirboy may be shown anyone as the Demon.
-			const { game: g, seats } = castGame(
-				['choirboy', 'king', 'shabaloth', 'general', 'poisoner'],
-				(s) => ({
-					type: 'AddReminder',
-					seatId: s[0],
-					reminder: { characterId: 'drunk', label: 'Is The Drunk' }
-				}),
-				(s) => ({ type: 'SetDead', seatId: s[1], dead: true })
-			);
-			const picker = infoPicker(g, seats[0], 'choirboy', characters)!;
+			const s = scenario(['choirboy', 'king', 'shabaloth', 'general', 'poisoner'])
+				.drunk('choirboy')
+				.dies('king');
+			const picker = infoPicker(s.game, s.seat('choirboy'), 'choirboy', s.characters)!;
 			expect(picker.anyAllowed).toBe(true);
-			expect(isAllowed(picker, { seats: [seats[3]] })).toBe(true);
+			expect(isAllowed(picker, { seats: [s.seat('general')] })).toBe(true);
 		});
 	});
 });

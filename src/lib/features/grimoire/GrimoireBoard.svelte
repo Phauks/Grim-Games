@@ -116,6 +116,7 @@
 	import EndGameDialogs from './EndGameDialogs.svelte';
 	import StarPassPrompt from './StarPassPrompt.svelte';
 	import FirstDeathAsk from './FirstDeathAsk.svelte';
+	import ExplosionAsk from './ExplosionAsk.svelte';
 	import ReincarnateAsk from './ReincarnateAsk.svelte';
 	import ReminderAsk from './ReminderAsk.svelte';
 	import { NightWalk, type NightWalkContext } from './night-walk.svelte.ts';
@@ -1031,6 +1032,7 @@
 <AlignmentAsk {grimoire} />
 <StarPassPrompt {grimoire} active={!ended && !grimoire.open.viewOnly} />
 <FirstDeathAsk {grimoire} />
+<ExplosionAsk {grimoire} />
 <ReincarnateAsk {grimoire} />
 <NominationAsk {grimoire} bind:asks={nominationAsks} />
 <EndGameDialogs

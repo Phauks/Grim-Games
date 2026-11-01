@@ -7,8 +7,8 @@
  * pin TPI's current data, so review and update them when a data sync changes Vortox.
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
- * a scenario test (seats, characters and reminders, then the action, then the expected state)
- * that paraphrases the example. Never copy wiki prose.
+ * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
+ * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
 import { parseCharacter } from '#lib/core/data/parse.ts';
@@ -17,6 +17,7 @@ import { castGame, castWith, testCharacters } from '#lib/core/model/fixtures.tes
 import { reliability } from '#lib/core/rules/night-info.ts';
 import { gameEnds } from '#lib/core/rules/game-end.ts';
 import { defaultAlignment } from '#lib/core/data/index.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
 describe('Vortox', () => {
@@ -54,10 +55,8 @@ describe('Vortox', () => {
 		it.todo('Example 3: Dreamer narrows Savant to two characters');
 		it.todo("Example 4: Pit-Hag's change gives Juggler true info");
 		it('Example 5: Nobody executed, so evil wins', () => {
-			const { session } = castGame(['chef', 'empath', 'monk', 'witch', 'vortox'], {
-				type: 'NewDay'
-			});
-			expect(gameEnds(session.game, testCharacters, { dayEnded: true })).toMatchObject([
+			const s = scenario(['chef', 'empath', 'monk', 'witch', 'vortox']).newDay();
+			expect(gameEnds(s.game, s.characters, { dayEnded: true })).toMatchObject([
 				{ rule: 'day-without-execution', winner: 'evil' }
 			]);
 		});

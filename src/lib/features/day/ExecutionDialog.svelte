@@ -2,7 +2,9 @@
 	import type { CharacterId } from '#lib/core/data/types.ts';
 	import type { CharacterLookup, Game, SeatId } from '#lib/core/model/index.ts';
 	import {
+		executedInstead,
 		executionSavers,
+		insteadCandidates,
 		extraNominators,
 		nominatorsAfterExecution,
 		protection,
@@ -131,6 +133,19 @@
 		return nominatorsAfterExecution(game, { seatId, dies }, characters).length > 0;
 	});
 
+	/**
+	 * Executed instead (the Scapegoat, https://wiki.bloodontheclocktower.com/Scapegoat): while
+	 * such a player lives the switch is there, disabled unless the player chosen has, or might
+	 * register as, their alignment. On, Confirm executes them in the chosen player's place.
+	 */
+	const insteadShown = $derived(insteadCandidates(game, characters));
+	const insteadFor = $derived(saveOff ? [] : executedInstead(game, choice as SeatId, characters));
+	let instead = $state(false);
+	$effect(() => {
+		if (!open || insteadFor.length === 0) instead = false;
+	});
+	const insteadOf = $derived(instead ? insteadFor[0] : undefined);
+
 	const options = $derived.by(() => {
 		const nominees: SeatId[] = [];
 		for (const e of game.today.entries)
@@ -198,8 +213,8 @@
 		choice === NONE || choice === undefined
 			? onConfirm(undefined, undefined, { ...marks }, false)
 			: onConfirm(
-					choice as SeatId,
-					saveOff || save === OVERRIDE ? undefined : (save as CharacterId | 'dies'),
+					insteadOf?.seatId ?? (choice as SeatId),
+					saveOff || insteadOf || save === OVERRIDE ? undefined : (save as CharacterId | 'dies'),
 					{ ...marks },
 					keepAvailable && keepGoing
 				)}
@@ -244,6 +259,29 @@
 						/>{/if}{/if}
 			{/if}
 		</p>
+		{#if insteadShown.length > 0}
+			<!-- Its character as a badge, then the switch (hidden label: its accessible name). -->
+			{@const by = insteadFor[0] ?? insteadShown[0]}
+			{@const character = characters.get(by.characterId)}
+			<div class="instead" data-testid="executed-instead">
+				<span class="candidate"
+					>{#if character}<CharacterBadge
+							characterId={character.id}
+							{character}
+							interactive={false}
+						/>{/if}{t('day.executedInstead')}</span
+				>
+				<!-- eslint-disable grim/names-as-badges -- hidden label (accessible name) only -->
+				<Toggle
+					hideLabel
+					label={t('day.executedInsteadLabel', { who: character?.name ?? by.characterId })}
+					checked={!!insteadOf}
+					disabled={insteadFor.length === 0}
+					onChange={(checked) => (instead = checked)}
+				/>
+				<!-- eslint-enable grim/names-as-badges -->
+			</div>
+		{/if}
 		{#each Object.keys(marks) as DayMark[] as mark (mark)}
 			<Toggle
 				label={t(`day.mark.${mark}`)}
@@ -290,6 +328,12 @@
 		display: grid;
 		gap: var(--space-2);
 		padding-block: var(--space-2);
+	}
+	.instead {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-2);
 	}
 	.saved {
 		display: flex;
