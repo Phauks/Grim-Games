@@ -7,11 +7,13 @@
  * pin TPI's current data, so review and update them when a data sync changes Scapegoat.
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
- * a scenario test (seats, characters and reminders, then the action, then the expected state)
- * that paraphrases the example. Never copy wiki prose.
+ * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
+ * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
+import { executedInstead } from '#lib/core/rules/executed-instead.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
 describe('Scapegoat', () => {
@@ -44,8 +46,41 @@ describe('Scapegoat', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Scapegoat#Examples)', () => {
-		it.todo('Example 1: Scapegoat dies so the Fortune Teller survives');
-		it.todo('Example 2: Evil Scapegoat dies instead of Poisoner');
-		it.todo('Example 3: Good Scapegoat dies instead of the Spy');
+		const table = (alignment: 'good' | 'evil') =>
+			scenario(['fortuneteller', 'undertaker', 'poisoner', 'spy', 'imp', 'scapegoat']).becomes(
+				'scapegoat',
+				'scapegoat',
+				alignment
+			);
+
+		it('Example 1: Scapegoat dies so the Fortune Teller survives', () => {
+			// The Fortune Teller is to be executed; the Storyteller executes the good Scapegoat
+			// instead: the Scapegoat dies by execution, and the Fortune Teller lives.
+			const s = table('good');
+			expect(executedInstead(s.game, s.seat('fortuneteller'), s.characters)).toEqual([
+				{ seatId: s.seat('scapegoat'), characterId: 'scapegoat' }
+			]);
+			const after = s.execute('scapegoat');
+			expect(after.game.seats[after.seat('scapegoat')]).toMatchObject({
+				dead: true,
+				deathCause: 'execution'
+			});
+			expect(after.game.seats[after.seat('fortuneteller')].dead).toBe(false);
+		});
+
+		it('Example 2: Evil Scapegoat dies instead of Poisoner', () => {
+			// An evil Scapegoat may die for an evil player; never for a good one.
+			const s = table('evil');
+			expect(executedInstead(s.game, s.seat('poisoner'), s.characters)).toHaveLength(1);
+			expect(executedInstead(s.game, s.seat('fortuneteller'), s.characters)).toEqual([]);
+		});
+
+		it('Example 3: Good Scapegoat dies instead of the Spy', () => {
+			// The Spy might register as good, so a good Scapegoat may die in its place; not for the
+			// Imp, who is plainly evil.
+			const s = table('good');
+			expect(executedInstead(s.game, s.seat('spy'), s.characters)).toHaveLength(1);
+			expect(executedInstead(s.game, s.seat('imp'), s.characters)).toEqual([]);
+		});
 	});
 });

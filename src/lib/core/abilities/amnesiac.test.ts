@@ -7,8 +7,8 @@
  * pin TPI's current data, so review and update them when a data sync changes Amnesiac.
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
- * a scenario test (seats, characters and reminders, then the action, then the expected state)
- * that paraphrases the example. Never copy wiki prose.
+ * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
+ * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment, type CharacterId } from '#lib/core/data/index.ts';
@@ -22,6 +22,7 @@ import {
 	withGainedSteps
 } from '#lib/core/rules/gained-abilities.ts';
 import { nightOrder } from '#lib/core/rules/night-order.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 import {
 	committedCharacter,
 	committedGameData,
@@ -32,16 +33,6 @@ const data = committedGameData();
 const characters = data.byId;
 const cast = castWith({ characters });
 const PLAYERS: CharacterId[] = ['amnesiac', 'chef', 'imp', 'empath', 'monk'];
-// The Storyteller says the Amnesiac's ability works like `characterId`'s.
-const worksLike =
-	(characterId: CharacterId) =>
-	(s: string[]): Command => ({
-		type: 'SetHeldAbility',
-		seatId: s[0],
-		via: 'amnesiac',
-		characterId
-	});
-
 describe('Amnesiac', () => {
 	const character = committedCharacter('amnesiac');
 
@@ -154,25 +145,29 @@ describe('Amnesiac', () => {
 		// The Amnesiac learns a number each night about its living neighbours: the Storyteller
 		// gives it a working ability like the Empath's, so it wakes at the Empath's time.
 		it('Example 2: an ability like the Empath’s wakes the Amnesiac at the Empath’s time', () => {
-			const { game, seats } = cast(
-				['amnesiac', 'chef', 'imp', 'monk', 'poisoner'],
-				worksLike('empath')
+			const s = scenario(['amnesiac', 'chef', 'imp', 'monk', 'poisoner'], { characters }).do(
+				(s) => ({
+					type: 'SetHeldAbility',
+					seatId: s.seat('amnesiac'),
+					via: 'amnesiac',
+					characterId: 'empath'
+				})
 			);
-			expect(heldAbilitiesOf(game, seats[0], characters)).toEqual([
+			expect(heldAbilitiesOf(s.game, s.seat('amnesiac'), s.characters)).toEqual([
 				{ characterId: 'empath', via: 'amnesiac', works: true }
 			]);
-			const inPlay = game.seating.map((s) => characters.get(game.seats[s].characterId!)!);
+			const inPlay = s.game.seating.map((id) => s.characters.get(s.game.seats[id].characterId!)!);
 			const steps = withGainedSteps(
 				nightOrder({ night: 'other', sheet: data.nightSheet, inPlay, players: 5 }).steps,
-				game,
-				characters,
+				s.game,
+				s.characters,
 				'other',
 				data.nightSheet.otherNight
 			);
-			const empath = steps.filter((s) => s.gained?.characterId === 'empath');
+			const empath = steps.filter((step) => step.gained?.characterId === 'empath');
 			expect(empath).toHaveLength(1);
-			expect(empath[0].gained?.seatId).toBe(seats[0]);
-			expect(empath[0].reminder).toBe(characters.get('empath')?.otherNightReminder);
+			expect(empath[0].gained?.seatId).toBe(s.seat('amnesiac'));
+			expect(empath[0].reminder).toBe(s.characters.get('empath')?.otherNightReminder);
 		});
 	});
 });
