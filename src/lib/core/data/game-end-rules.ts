@@ -24,8 +24,9 @@ import {
 /**
  * Ways an ability ends the game, each worked out in `rules/game-end.ts`:
  * - `executed-loses`: its player dies by execution, so their team loses (the Saint);
- * - `marked-executed`: while its player lives, the player with its `token` is executed, so
- *   `winner` wins (the Evil Twin's "Twin");
+ * - `marked-executed`: of its player and the player with its `token`, the one not on `winner`'s
+ *   team is executed while the other lives, so `winner` wins (the Evil Twin's "Twin": the good
+ *   twin is whichever of the pair is good, even a good-aligned Evil Twin);
  * - `day-without-execution`: while its player lives, a day ends with no execution, so `winner`
  *   wins (the Vortox);
  * - `alive-at-dusk`: at dusk, with exactly `alive` players alive (Travellers count) and no
@@ -38,7 +39,16 @@ import {
  * - `dead-without-demon`: there is no Demon and every player of it is dead, so `winner` wins
  *   (the Summoner, who can no longer summon one);
  * - `extra-day`: the Demon's execution would end the game, so play one more day; then whoever
- *   is executed loses for their team, and nobody executed means good wins (the Mastermind).
+ *   is executed loses for their team, and nobody executed means good wins (the Mastermind);
+ * - `used-on-loses`: its ability is first logged as used (`on` the player it names) and that
+ *   player is `on`, an alignment or character type, so the ability's player's team loses (the
+ *   Klutz choosing an evil player; a Minion guessing the Damsel, before her spent token);
+ * - `executed-with-token`: its player carries its own `token` and is executed, so their team
+ *   wins (the Goblin's "Claimed");
+ * - `alignment-alive`: while its player lives, at most `alive` players of `alignment` live
+ *   (Travellers not counted), so `winner` wins (Legion with one good player left);
+ * - `guesses-evil-team`: its player's logged guesses name every Demon as a Demon and every
+ *   Minion as a Minion, and nobody else, so `winner` wins (the Alsaahir).
  */
 const END_KINDS = [
 	'executed-loses',
@@ -49,7 +59,11 @@ const END_KINDS = [
 	'survives-day',
 	'nominated-marked-executed',
 	'dead-without-demon',
-	'extra-day'
+	'extra-day',
+	'used-on-loses',
+	'executed-with-token',
+	'alignment-alive',
+	'guesses-evil-team'
 ] as const;
 export type EndKind = (typeof END_KINDS)[number];
 export interface EndsGame {
@@ -60,6 +74,7 @@ export interface EndsGame {
 	alignment?: Alignment;
 	count?: number;
 	day?: number;
+	on?: Alignment | CharacterType;
 }
 
 /**
@@ -91,7 +106,7 @@ export interface HoldsGame {
  *   (the Heretic);
  * - `decidedByStoryteller`: the ability can decide the game through a public claim, guess or
  *   choice only the Storyteller sees, so End game offers it as a reason but nothing checks it
- *   (the Klutz, Damsel, Goblin, Atheist, Cult Leader, Alsaahir, Fiddler).
+ *   (the Atheist, Cult Leader, Fiddler, Politician).
  */
 export interface GameEndRules {
 	ends?: readonly EndsGame[];
@@ -111,7 +126,11 @@ const END_NEEDS: Readonly<Record<EndKind, readonly (keyof EndsGame)[]>> = {
 	'survives-day': ['day', 'winner'],
 	'nominated-marked-executed': ['token'],
 	'dead-without-demon': ['winner'],
-	'extra-day': []
+	'extra-day': [],
+	'used-on-loses': ['on'],
+	'executed-with-token': ['token'],
+	'alignment-alive': ['alignment', 'alive', 'winner'],
+	'guesses-evil-team': ['winner']
 };
 const HOLD_NEEDS: Readonly<Record<HoldKind, readonly (keyof HoldsGame)[]>> = {
 	'marked-alive': ['token'],
@@ -163,6 +182,8 @@ function readKind<K extends string, T extends { kind: K }>(
 		else if (key === 'winner' || key === 'alignment')
 			value = readEnum(raw, key, ALIGNMENTS, path, issues, false);
 		else if (key === 'to') value = readEnum(raw, key, CHARACTER_TYPES, path, issues, false);
+		else if (key === 'on')
+			value = readEnum(raw, key, [...ALIGNMENTS, ...CHARACTER_TYPES], path, issues, false);
 		else value = readNumber(raw, key, path, issues);
 		if (raw[key] === undefined && key !== 'spentToken') issues.add(`${path}.${key}`, 'missing');
 		if (value !== undefined) out[key] = value;

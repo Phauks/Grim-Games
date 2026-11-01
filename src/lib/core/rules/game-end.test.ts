@@ -4,6 +4,7 @@
  * - https://wiki.bloodontheclocktower.com/Saint, /Evil_Twin, /Scarlet_Woman, /Mastermind, /Imp
  * - https://wiki.bloodontheclocktower.com/Vortox, /Mayor, /Leviathan, /Fearmonger, /Summoner
  * - https://wiki.bloodontheclocktower.com/Heretic, /Zombuul, /Lleech, /Fang_Gu, /Lil%27_Monsta, /Legion
+ * - https://wiki.bloodontheclocktower.com/Klutz, /Damsel, /Goblin, /Alsaahir
  */
 import { describe, expect, it } from 'vitest';
 import type { Command } from '#lib/core/engine/index.ts';
@@ -500,6 +501,125 @@ describe('Binary Supernovae (https://beardytas.com/garden-of-djinn/binary-supern
 
 	it('without the rule, one executed Demon of two ends nothing', () => {
 		expect(ends(TWO, [execute(5)]).ends).toEqual([]);
+	});
+});
+
+describe('Klutz and Damsel: a logged use on a player (used-on-loses)', () => {
+	const use =
+		(i: number, characterId: string, on: number) =>
+		(s: string[]): Command => ({ type: 'UseAbility', seatId: s[i], characterId, on: s[on] });
+	const KLUTZ = ['klutz', 'chef', 'empath', 'poisoner', 'imp'];
+
+	// https://wiki.bloodontheclocktower.com/Klutz: choosing a good player changes nothing.
+	it('a Klutz choosing a good player ends nothing', () => {
+		expect(ends(KLUTZ, [dead(0), use(0, 'klutz', 1)]).ends).toEqual([]);
+	});
+
+	it('a Klutz choosing an evil player loses for good', () => {
+		const { ends: found, seats } = ends(KLUTZ, [dead(0), use(0, 'klutz', 3)]);
+		expect(found).toMatchObject([
+			{ rule: 'used-on-loses', winner: 'evil', characterId: 'klutz', seats: [seats[3], seats[0]] }
+		]);
+		expect(promptable(found)).toHaveLength(1);
+	});
+
+	// The same page: an evil Klutz choosing an evil player loses for evil.
+	it('an evil Klutz choosing an evil player loses for evil', () => {
+		const { ends: found } = ends(KLUTZ, [align(0, 'evil'), dead(0), use(0, 'klutz', 4)]);
+		expect(found).toMatchObject([{ rule: 'used-on-loses', winner: 'good' }]);
+	});
+
+	it('only the first choice counts', () => {
+		expect(ends(KLUTZ, [dead(0), use(0, 'klutz', 1), use(0, 'klutz', 4)]).ends).toEqual([]);
+	});
+
+	it('a poisoned Klutz may not end it: listed, but no prompt', () => {
+		const { ends: found } = ends(KLUTZ, [
+			remind(0, 'poisoner', 'Poisoned'),
+			dead(0),
+			use(0, 'klutz', 4)
+		]);
+		expect(found).toMatchObject([{ rule: 'used-on-loses', holds: [{ rule: 'impaired' }] }]);
+		expect(promptable(found)).toEqual([]);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Damsel: the Demon pretending to be a Minion doesn't
+	// count; a Minion's guess does.
+	it('a Damsel guessed by the Demon ends nothing, by a Minion loses for good', () => {
+		const cast = ['damsel', 'chef', 'empath', 'poisoner', 'imp'];
+		expect(ends(cast, [use(0, 'damsel', 4)]).ends).toEqual([]);
+		expect(ends(cast, [use(0, 'damsel', 3)]).ends).toMatchObject([
+			{ rule: 'used-on-loses', winner: 'evil', characterId: 'damsel' }
+		]);
+	});
+});
+
+describe('Goblin (https://wiki.bloodontheclocktower.com/Goblin)', () => {
+	const cast = ['goblin', 'chef', 'empath', 'monk', 'imp'];
+
+	it('executed without a claim, the game goes on', () => {
+		expect(ends(cast, [execute(0)]).ends).toEqual([]);
+	});
+
+	it('executed with its Claimed reminder, evil wins', () => {
+		const { ends: found, seats } = ends(cast, [remind(0, 'goblin', 'Claimed'), execute(0)]);
+		expect(found).toMatchObject([
+			{ rule: 'executed-with-token', winner: 'evil', characterId: 'goblin', seats: [seats[0]] }
+		]);
+	});
+
+	it('killed at night with the reminder, the game goes on', () => {
+		expect(ends(cast, [remind(0, 'goblin', 'Claimed'), dead(0)]).ends).toEqual([]);
+	});
+});
+
+describe('Legion (https://wiki.bloodontheclocktower.com/Legion)', () => {
+	const cast = ['chef', 'legion', 'legion', 'empath', 'legion', 'legion'];
+
+	it('two good players alive: nothing yet', () => {
+		expect(ends(cast).ends).toEqual([]);
+	});
+
+	it('one good player left: offers evil the win', () => {
+		const { ends: found, seats } = ends(cast, [dead(3)]);
+		expect(found).toMatchObject([
+			{ rule: 'alignment-alive', winner: 'evil', characterId: 'legion', seats: [seats[0]] }
+		]);
+		expect(suggestedWinner(found)).toBe('evil');
+	});
+
+	it('a good Traveller does not count as a good player left', () => {
+		expect(ends([...cast, 'beggar'], [dead(3)]).ends).toMatchObject([{ rule: 'alignment-alive' }]);
+	});
+});
+
+describe('Alsaahir (https://wiki.bloodontheclocktower.com/Alsaahir)', () => {
+	const cast = ['alsaahir', 'chef', 'poisoner', 'imp', 'empath'];
+	const guess =
+		(...pairs: [number, string][]) =>
+		(s: string[]): Command => ({
+			type: 'DayNote',
+			characterId: 'alsaahir',
+			seatId: s[0],
+			text: '',
+			guesses: pairs.map(([i, characterId]) => ({ seatId: s[i], characterId }))
+		});
+
+	it('naming the Demon and Minion by type, good wins', () => {
+		const { ends: found } = ends(cast, [guess([3, 'vortox'], [2, 'spy'])]);
+		expect(found).toMatchObject([{ rule: 'guesses-evil-team', winner: 'good' }]);
+	});
+
+	it('the Demon guessed as a Minion, nothing happens', () => {
+		expect(ends(cast, [guess([3, 'spy'], [2, 'imp'])]).ends).toEqual([]);
+	});
+
+	it('a good player named too, nothing happens', () => {
+		expect(ends(cast, [guess([3, 'imp'], [2, 'spy'], [1, 'spy'])]).ends).toEqual([]);
+	});
+
+	it('a Minion left out, nothing happens', () => {
+		expect(ends(cast, [guess([3, 'imp'])]).ends).toEqual([]);
 	});
 });
 

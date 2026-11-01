@@ -2,7 +2,7 @@
  * Game end conditions met by the grimoire and the day log (Trevor, 2026-10-18: "prompt when
  * game end condition has been met"). Everything is a recommendation: the Storyteller can
  * dismiss it or end the game anyway, and conditions that need what only the Storyteller
- * knows (a public claim or guess, the Atheist, the Fiddler) are not checked.
+ * knows (the Atheist, the Fiddler, the Politician) are not checked.
  *
  * - Good wins when every Demon is dead; evil wins when just 2 players live, Travellers not
  *   counted (https://wiki.bloodontheclocktower.com/Glossary, "Demon", "Evil").
@@ -12,8 +12,9 @@
  *   Zombuul's first death and a Lleech whose host lives (`aliveForEnd`).
  * - Characters that end it themselves, keep it going once the Demon is dead (`holds`), or
  *   flip every result say so in their rules block's `gameEnd` (`data/game-end-rules.ts`): the
- *   Saint, Evil Twin, Vortox, Mayor, Leviathan, Fearmonger, Summoner, Mastermind, Scarlet
- *   Woman, Imp, Fang Gu, Zombuul, Lleech and Heretic among the official ones. An end with
+ *   Saint, Evil Twin, Vortox, Mayor, Leviathan, Fearmonger, Summoner, Mastermind, Klutz,
+ *   Damsel, Goblin, Legion, Alsaahir, Scarlet Woman, Imp, Fang Gu, Zombuul, Lleech and Heretic
+ *   among the official ones. An end with
  *   holds is listed but doesn't prompt (`promptable`).
  *
  * Results are data only (no wording): `rule` says which rule, `seats` say who.
@@ -22,7 +23,7 @@
  */
 import type { EndKind, GameEndRules, HoldKind } from '#lib/core/data/game-end-rules.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
-import type { Alignment, CharacterId } from '#lib/core/data/types.ts';
+import type { Alignment, CharacterId, CharacterType } from '#lib/core/data/types.ts';
 import { wikiUrl } from '#lib/core/data/wiki.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import {
@@ -56,6 +57,12 @@ const W = 'https://wiki.bloodontheclocktower.com/';
  * - `dead-without-demon`: there is no Demon and its players are dead;
  * - `extra-day`: on the extra day, a player was executed (their team loses) or nobody was
  *   (good wins);
+ * - `used-on-loses`: its ability's first logged use named a player of the kind it says, so
+ *   that ability's player's team loses (`seats`: the player named, then its player);
+ * - `executed-with-token`: its player was executed carrying its own token (`seats`: them);
+ * - `alignment-alive`: few enough players of an alignment are left (`seats`: those left);
+ * - `guesses-evil-team`: its player's guesses named the whole evil team (`seats`: its player,
+ *   then the Demons and Minions);
  * - `demon-executed`: a special rule says good wins when a Demon dies by execution (Binary
  *   Supernovae), and one has (`seats`: the executed Demons; `ruleName`: the rule).
  */
@@ -360,7 +367,11 @@ function extraDay(
 	const minds = endsOf(game, characters, 'extra-day');
 	if (minds.length === 0) return undefined;
 	const logs = days(game);
-	const demonDay = logs.findIndex((log) => executedOn(log).some((id) => end.seats.includes(id)));
+	// The execution that ended it is the last: a Zombuul's first, survived one didn't
+	// (https://wiki.bloodontheclocktower.com/Mastermind).
+	const demonDay = logs.findLastIndex((log) =>
+		executedOn(log).some((id) => end.seats.includes(id))
+	);
 	const byExecution =
 		demonDay !== -1 || end.seats.some((id) => isExecution(game.seats[id].deathCause, characters));
 	if (!byExecution) return undefined;
@@ -425,21 +436,32 @@ function executedLoses(game: Game, characters: CharacterLookup): GameEnd[] {
 		}));
 }
 
-/** The player with its token was executed while its player lives (the Evil Twin's twin). */
+/**
+ * Of its player and the player with its token, the one not on the winning team was executed
+ * while the other lives: the good twin, who is whichever twin is good, even a good-aligned Evil
+ * Twin (https://wiki.bloodontheclocktower.com/Evil_Twin).
+ */
 function markedExecuted(game: Game, characters: CharacterLookup): GameEnd[] {
 	const out: GameEnd[] = [];
 	for (const { seatId, characterId, rule } of endsOf(game, characters, 'marked-executed')) {
-		// A dead player has no ability (https://wiki.bloodontheclocktower.com/Evil_Twin).
-		if (!aliveForEnd(game, seatId, characters)) continue;
 		for (const marked of carrying(game, characterId, rule.token!)) {
-			const seat = game.seats[marked];
-			if (!seat.dead || !isExecution(seat.deathCause, characters)) continue;
+			const pair = [marked, seatId];
+			const executed = pair.find(
+				(id) =>
+					game.seats[id].dead &&
+					isExecution(game.seats[id].deathCause, characters) &&
+					alignmentOf(game, id) === other(rule.winner!)
+			);
+			if (executed === undefined) continue;
+			// A dead player has no ability: the other twin must be alive.
+			const twin = executed === marked ? seatId : marked;
+			if (!aliveForEnd(game, twin, characters)) continue;
 			out.push({
-				key: `marked-executed:${marked}`,
+				key: `marked-executed:${executed}`,
 				rule: 'marked-executed',
 				winner: rule.winner!,
 				characterId,
-				seats: [marked, seatId],
+				seats: [executed, twin],
 				wiki: wikiOf(characterId, characters),
 				holds: impaired(game, seatId, characterId, characters)
 			});
@@ -597,6 +619,146 @@ function deadWithoutDemon(game: Game, characters: CharacterLookup): GameEnd[] {
 	];
 }
 
+/** Whether a player is `on`: an alignment, or a character type by true character. */
+function isOn(
+	game: Game,
+	seatId: SeatId,
+	on: Alignment | CharacterType,
+	characters: CharacterLookup
+): boolean {
+	return on === 'good' || on === 'evil'
+		? alignmentOf(game, seatId) === on
+		: typeOf(game, seatId, characters) === on;
+}
+
+/**
+ * An ability's first logged use names a player who is `on`, so the team of the player who
+ * used it loses (`used-on-loses`): the Klutz choosing an evil player
+ * (https://wiki.bloodontheclocktower.com/Klutz), held as a gained ability too (the Hermit); a
+ * Minion guessing the Damsel (https://wiki.bloodontheclocktower.com/Damsel). When its rules
+ * mark the ability spent with a token of its own, only the use that placed it counts: one
+ * placed before (a wrong guess) spends it.
+ */
+function usedOnLoses(game: Game, characters: CharacterLookup): GameEnd[] {
+	const out: GameEnd[] = [];
+	const counted = new Set<string>();
+	for (const log of days(game)) {
+		for (const entry of log.entries) {
+			if (entry.kind !== 'ability' || entry.on === undefined) continue;
+			const { seatId, characterId, on } = entry;
+			const rules = rulesOf(characterId, characters);
+			const rule = rules?.gameEnd?.ends?.find((e) => e.kind === 'used-on-loses');
+			if (!rule || !game.seats[seatId] || !game.seats[on]) continue;
+			const use = `${seatId}:${characterId}`;
+			if (counted.has(use)) continue;
+			counted.add(use);
+			const spent = rules?.dayUse?.spentToken ?? 'No Ability';
+			const spends = characters.get(characterId)?.reminders.includes(spent) ?? false;
+			if (spends && entry.reminderId === undefined) continue;
+			if (!isOn(game, on, rule.on!, characters)) continue;
+			out.push({
+				key: `used-on-loses:${entry.entryId}`,
+				rule: 'used-on-loses',
+				winner: losesFor(game, seatId),
+				characterId,
+				seats: [on, seatId],
+				wiki: wikiOf(characterId, characters),
+				holds: impaired(game, seatId, characterId, characters)
+			});
+		}
+	}
+	return out;
+}
+
+/**
+ * Its player carries its own token and was executed, so their team wins (the Goblin who
+ * claimed when nominated, marked "Claimed": https://wiki.bloodontheclocktower.com/Goblin).
+ * Another player with the token (a false claim) wins nothing.
+ */
+function executedWithToken(game: Game, characters: CharacterLookup): GameEnd[] {
+	return endsOf(game, characters, 'executed-with-token')
+		.filter(
+			({ seatId, characterId, rule }) =>
+				game.seats[seatId].dead &&
+				isExecution(game.seats[seatId].deathCause, characters) &&
+				carrying(game, characterId, rule.token!).includes(seatId)
+		)
+		.map(({ seatId, characterId }) => ({
+			key: `executed-with-token:${seatId}`,
+			rule: 'executed-with-token',
+			winner: alignmentOf(game, seatId) ?? 'good',
+			characterId,
+			seats: [seatId],
+			wiki: wikiOf(characterId, characters),
+			holds: impaired(game, seatId, characterId, characters)
+		}));
+}
+
+/**
+ * While its player lives, at most so many players of an alignment live, Travellers not
+ * counted: Legion with one good player left, when the Storyteller may declare evil the winner
+ * (https://wiki.bloodontheclocktower.com/Legion). Offered, never forced.
+ */
+function alignmentAlive(game: Game, characters: CharacterLookup): GameEnd[] {
+	const found = endsOf(game, characters, 'alignment-alive').find(({ seatId }) =>
+		aliveForEnd(game, seatId, characters)
+	);
+	if (found === undefined) return [];
+	const { seatId, characterId, rule } = found;
+	const left = aliveNonTravellers(game, characters).filter(
+		(id) => alignmentOf(game, id) === rule.alignment
+	);
+	if (left.length > rule.alive!) return [];
+	return [
+		{
+			key: `alignment-alive:${left.join(',')}`,
+			rule: 'alignment-alive',
+			winner: rule.winner!,
+			characterId,
+			seats: left,
+			wiki: wikiOf(characterId, characters),
+			holds: impaired(game, seatId, characterId, characters)
+		}
+	];
+}
+
+/**
+ * Its player's logged guesses (a note with guesses) name every Demon as a Demon and every
+ * Minion as a Minion, dead ones too, and nobody else; a guessed character counts by its type
+ * (the Alsaahir: https://wiki.bloodontheclocktower.com/Alsaahir).
+ */
+function guessesEvilTeam(game: Game, characters: CharacterLookup): GameEnd[] {
+	const evil = game.seating.filter((id) => {
+		const type = typeOf(game, id, characters);
+		return type === 'demon' || type === 'minion';
+	});
+	if (evil.length === 0) return [];
+	const rightGuess = (id: SeatId, guess: CharacterId | undefined) =>
+		guess !== undefined && characters.get(guess)?.type === typeOf(game, id, characters);
+	const out: GameEnd[] = [];
+	for (const { seatId, characterId, rule } of endsOf(game, characters, 'guesses-evil-team')) {
+		const right = days(game)
+			.flatMap((log) => log.entries)
+			.find((entry) => {
+				if (entry.kind !== 'note' || entry.characterId !== characterId) return false;
+				if (entry.seatId !== seatId || !entry.guesses?.length) return false;
+				const guessed = new Map(entry.guesses.map((g) => [g.seatId, g.characterId]));
+				return guessed.size === evil.length && evil.every((id) => rightGuess(id, guessed.get(id)));
+			});
+		if (!right) continue;
+		out.push({
+			key: `guesses-evil-team:${right.entryId}`,
+			rule: 'guesses-evil-team',
+			winner: rule.winner!,
+			characterId,
+			seats: [seatId, ...evil],
+			wiki: wikiOf(characterId, characters),
+			holds: impaired(game, seatId, characterId, characters)
+		});
+	}
+	return out;
+}
+
 /**
  * Whoever wins, loses (`invertWinner`), even if its player is dead; not while drunk or
  * poisoned (the Heretic: https://wiki.bloodontheclocktower.com/Heretic).
@@ -671,7 +833,11 @@ export function gameEnds(
 		...whileAlive(game, characters, options),
 		...dayWithoutExecution(game, characters, options),
 		...aliveAtDusk(game, characters, options),
-		...deadWithoutDemon(game, characters)
+		...deadWithoutDemon(game, characters),
+		...usedOnLoses(game, characters),
+		...executedWithToken(game, characters),
+		...alignmentAlive(game, characters),
+		...guessesEvilTeam(game, characters)
 	);
 	// A dead Demon wins it for good before "just 2 alive" can.
 	if (demon.length === 0) out.push(...twoAlive(game, characters));

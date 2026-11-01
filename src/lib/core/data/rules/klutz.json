@@ -4,7 +4,12 @@
 		"by": "any"
 	},
 	"gameEnd": {
-		"decidedByStoryteller": true
+		"ends": [
+			{
+				"kind": "used-on-loses",
+				"on": "evil"
+			}
+		]
 	},
 	"dayReminders": {
 		"reminders": [

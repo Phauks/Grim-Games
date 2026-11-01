@@ -22,7 +22,7 @@ import { dayReminders, dayStateFromGame, renderReminder } from '#lib/core/rules/
 import { abilityState } from '#lib/core/rules/ability.ts';
 import { endCharacters } from '#lib/core/rules/end-reason.ts';
 import { gameEnds, promptable } from '#lib/core/rules/game-end.ts';
-import { engineGap, scenario } from '#lib/core/testing/scenario.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 
 /** This character's day reminders: their group and plain text. */
 const linesOf = (game: Game, characterId: string) =>
@@ -70,16 +70,27 @@ describe('Alsaahir', () => {
 			expect(promptable(gameEnds(s.game, s.characters))).toEqual([]);
 		});
 
-		it.fails('Example 2: Correct guess of all evil players wins', () => {
+		it('Example 2: Correct guess of all evil players wins', () => {
 			// Wiki: "The Alsaahir guesses that Doug is the Demon, and Ben and Sarah are Minions. Doug is the
 			// Demon, and Ben and Sarah are Minions. Good wins immediately."
 			const s = scenario(['alsaahir', 'poisoner', 'chef', 'imp', 'empath', 'spy', 'monk']);
-			// End game offers the Alsaahir as the reason, for the Storyteller to pick.
+			// End game offers the Alsaahir as the reason.
 			expect(endCharacters(s.game, s.characters)).toContain('alsaahir');
-			engineGap(
-				'unplanned',
-				'a recorded Alsaahir guess that names every Demon and Minion ends the game, and good wins'
-			);
+			// Doug is the Imp, Ben the Poisoner and Sarah the Spy; only the types need be right.
+			const guess = s.do((at) => ({
+				type: 'DayNote',
+				characterId: 'alsaahir',
+				seatId: at.seat('alsaahir'),
+				text: '',
+				guesses: [
+					{ seatId: at.seat('imp'), characterId: 'imp' },
+					{ seatId: at.seat('poisoner'), characterId: 'spy' },
+					{ seatId: at.seat('spy'), characterId: 'poisoner' }
+				]
+			}));
+			expect(promptable(gameEnds(guess.game, guess.characters))).toMatchObject([
+				{ rule: 'guesses-evil-team', winner: 'good', characterId: 'alsaahir' }
+			]);
 		});
 
 		it('Example 3: Drunk guess fails, sober guess fails too', () => {

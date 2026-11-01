@@ -50,7 +50,7 @@ describe('Legion', () => {
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Legion#Examples)', () => {
 		// Waits on the engine: no game end lets evil win once only one good player is alive
 		// (Legion's How to Run: the Storyteller may declare it).
-		it.fails('Example 1: Two good players, one executed: evil wins', () => {
+		it('Example 1: Two good players, one executed: evil wins', () => {
 			// Wiki: "The only good players are the Fortune Teller and the Slayer. 6 Legion and the Slayer
 			// vote to execute the Fortune Teller. They are executed, and evil wins."
 			const s = scenario([

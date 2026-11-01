@@ -202,6 +202,14 @@
 						{#each end.seats as id (id)}{@render seat(id)}{/each} executed ({end.ruleName}).
 					{:else if end.rule === 'dead-without-demon'}
 						{#each end.seats as id (id)}{@render seat(id)}{/each} dead with no Demon.
+					{:else if end.rule === 'used-on-loses'}
+						{@render seat(end.seats[1])} used it on {@render seat(end.seats[0])}.
+					{:else if end.rule === 'executed-with-token'}
+						{@render seat(end.seats[0])} executed after claiming.
+					{:else if end.rule === 'alignment-alive'}
+						Only {#each end.seats as id (id)}{@render seat(id)}{/each} left alive on their team.
+					{:else if end.rule === 'guesses-evil-team'}
+						{@render seat(end.seats[0])} guessed every Demon and Minion.
 					{:else if end.characterId && end.seats.length > 0}
 						{@render character(end.characterId)}: {@render seat(end.seats[0])} executed on day {end.day}.
 					{:else if end.characterId}

@@ -23,7 +23,7 @@ import {
 	withGainedSteps
 } from '#lib/core/rules/gained-abilities.ts';
 import { nightOrder } from '#lib/core/rules/night-order.ts';
-import { engineGap, scenario } from '#lib/core/testing/scenario.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 import { abilityState } from '#lib/core/rules/ability.ts';
 import { gameEnds } from '#lib/core/rules/game-end.ts';
 import { madnessOffer } from '#lib/core/rules/madness.ts';
@@ -154,7 +154,7 @@ describe('Hermit', () => {
 			expect(steps.filter((step) => step.gained?.via === 'hermit')).toHaveLength(1);
 		});
 		// Waits on the engine: the Hermit's Recluse ability doesn't let it register as an evil
-		// character to the Ravenkeeper, and the Klutz's choice has no game end rule.
+		// character to the Ravenkeeper. (The Klutz's choice of an evil player now ends the game.)
 		it.fails('Example 1 (rest): the Klutz choice after execution: good loses', () => {
 			// Wiki: "Marianna is the Hermit, and has the Klutz, Butler, and Recluse abilities. Each night,
 			// she chooses a player as her master due to the Butler ability. The Ravenkeeper dies and
@@ -178,10 +178,15 @@ describe('Hermit', () => {
 			expect(isTruthful(picker, asDemon)).toBe(false);
 			const executed = s.newDay().execute('hermit');
 			expect(gameEnds(executed.game, executed.characters)).toEqual([]);
-			engineGap(
-				'unplanned',
-				'the Klutz choosing an evil player (the Wizard) ends the game: good loses'
-			);
+			const chose = executed.do((at) => ({
+				type: 'UseAbility',
+				seatId: at.seat('hermit'),
+				characterId: 'klutz',
+				on: at.seat('wizard')
+			}));
+			expect(gameEnds(chose.game, chose.characters)).toMatchObject([
+				{ rule: 'used-on-loses', winner: 'evil', characterId: 'klutz' }
+			]);
 		});
 		// Waits on the engine: madnessOffer reads only a player whose true character is the
 		// Mutant, so a Hermit holding the Mutant ability is never offered the execution.

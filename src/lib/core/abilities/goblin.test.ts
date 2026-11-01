@@ -51,11 +51,10 @@ describe('Goblin', () => {
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Goblin#Examples)', () => {
 		const cast = ['goblin', 'artist', 'imp', 'chef', 'monk', 'empath'];
 
-		it.fails("Example 1: Goblin's public claim leads to evil victory", () => {
+		it("Example 1: Goblin's public claim leads to evil victory", () => {
 			// Wiki: "Abdallah is the Goblin. Alex nominates Abdallah, and Abdallah claims to be the
 			// Goblin. Votes are counted, and Abdallah is about to die. Other nominations occur later
 			// today, but Abdallah has the most votes and is executed. Evil wins."
-			// Waits on the engine: gameEnds has no end for executing the Goblin who claimed today.
 			const s = scenario(cast)
 				.newDay()
 				.nominate('chef', 'goblin')
