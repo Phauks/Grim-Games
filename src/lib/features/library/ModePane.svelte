@@ -37,6 +37,12 @@
 	let sharing = $state(false);
 	let deleting = $state(false);
 
+	/** The Mode builder opens one of this device's own from its id in the hash. */
+	function edit() {
+		// eslint-disable-next-line svelte/no-navigation-without-resolve -- the path is resolved; only the hash is added
+		void goto(`${resolve('/build-mode')}#edit=${encodeURIComponent(mode.id)}`);
+	}
+
 	function download() {
 		downloadFile(fileNameFor(mode.name, mode.id), modeFileText(mode));
 	}
@@ -49,11 +55,7 @@
 			label={t('modes.inspect', { name: mode.name })}
 			onclick={() => (inspecting = true)}
 		/>
-		<IconButton
-			icon="edit"
-			label={t('library.editMode', { name: mode.name })}
-			onclick={() => goto(`${resolve('/build-mode')}#edit=${encodeURIComponent(mode.id)}`)}
-		/>
+		<IconButton icon="edit" label={t('library.editMode', { name: mode.name })} onclick={edit} />
 		<IconButton
 			icon="share"
 			label={t('modes.shareFile', { name: mode.name })}
