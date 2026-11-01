@@ -177,6 +177,11 @@ character's script entry. Both are read by `parseCharacterRules`
 a moved table goes in the character's file, never in a TypeScript table. Rules code names no
 character: a rule becomes a behaviour with parameters that any character can use.
 
+Each key of a rules block is one part, one file in `src/lib/core/data/parts/` with its reader,
+label and description, listed once in `parts/index.ts` (alphabetical). The block's type
+(`CharacterRules`) and reader are built from that list, so a new behaviour is a new part file
+and one line in the index, never an edit to `character-rules.ts`.
+
 - Reminder prompts (`rules/reminder-prompts.ts`): `reminderPrompts`, moved
 - Reminder targets (`reminder-targets.ts`): `reminderTargets`, moved
 - Day reminders (`day-reminders.ts`: also registration interactions such as the Spy and the Virgin): `dayReminders`, moved
@@ -231,8 +236,8 @@ character: a rule becomes a behaviour with parameters that any character can use
 - Who is woken and shown a character's token (`rules/shown-to.ts` `shownToSeats`, new): `shownTo.carrier` (the Widow's Know) or `shownTo.minions` (the Damsel, also a card at Minion info by `shownAtMinionInfo` in `EvilInfoCards`); shown in its night step by `features/grimoire/NightShownTo.svelte`. What each evil player learns of who carries a reminder (`evilLearns`, `rules/shown-to.ts` `evilLearns`: the Storm Catcher's Stormcaught, or the named character as not in play), in the same component
 - Rule characters a game never starts with (`script-rules.ts`, was the Djinn by id; jinxes show on their own): `jinxesOnly`, moved. The Bootlegger stays named there: TPI's script format ties `_meta.bootlegger` to it.
 - Character info cards (`features/info-tokens/character-cards.ts`, was a list naming the Mezepheles and Yaggababble): `infoCard` (`secret-word`, `secret-phrase`, `goal`), moved. A reminder that carries the Storyteller's words for its player (`noteOn`, `rules/shown-to.ts` `takesNote`: the Zenomancer's Goal) is typed and shown on that card from its reminder dialog by `features/grimoire/NotedReminderFields.svelte`
-- Who is the Demon by a token (`death-causes.ts` `carriesDemonToken`, `game-end.ts`; was a check for Lil' Monsta's id) `carrierIsDemon`; an ability gained by a swap in the seat's ⋯ menu (`SeatCharacterFlow.svelte`, `SeatSheet.svelte`; was a check for the Apprentice's id; the Alchemist's Minion too) `swapsForAbility`; moved (`choice-rules.ts`)
-- Savant statements (`savant-facts.ts`, `savant-templates.ts`, `savant-log-templates.ts`): reminders marking whom it chose (was `MINION_CHOICES`, `TOWNSFOLK_CHOICES`) `marksChoice`; number or once-per-game info (was `NUMBER_INFO`, `ONCE_INFO`) `infoKind`; the Witch's curse `curses`; the Lunatic's `choosesLikeDemon` and `believesOtherCharacter`; the Snake Charmer's `choosesUnmarked`; all moved (`choice-rules.ts`)
+- Who is the Demon by a token (`death-causes.ts` `carriesDemonToken`, `game-end.ts`; was a check for Lil' Monsta's id) `carrierIsDemon`; an ability gained by a swap in the seat's ⋯ menu (`SeatCharacterFlow.svelte`, `SeatSheet.svelte`; was a check for the Apprentice's id; the Alchemist's Minion too) `swapsForAbility`; moved (`parts/`)
+- Savant statements (`savant-facts.ts`, `savant-templates.ts`, `savant-log-templates.ts`): reminders marking whom it chose (was `MINION_CHOICES`, `TOWNSFOLK_CHOICES`) `marksChoice`; number or once-per-game info (was `NUMBER_INFO`, `ONCE_INFO`) `infoKind`; the Witch's curse `curses`; the Lunatic's `choosesLikeDemon` and `believesOtherCharacter`; the Snake Charmer's `choosesUnmarked`; all moved (`parts/`)
 
 ## Lists that only shrink
 
