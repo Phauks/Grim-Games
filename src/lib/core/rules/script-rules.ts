@@ -8,7 +8,7 @@
  *   way (https://botc-script-viewer.sthom.kiwi/wc25/), and some split one rule over two lines,
  *   so the lines are joined with a space.
  * - A game starts with the script's Fabled and Loric in play, plus the Bootlegger when the
- *   script has rules (Trevor, 2026-10-18). A `jinxesOnly` character (the Djinn) is left out: the
+ *   script has rules (Trevor, 2026-10-18) or homebrew characters (the wiki's Bootlegger). A `jinxesOnly` character (the Djinn) is left out: the
  *   app never mentions it, since jinxes show on their own (Trevor, 2026-10-17).
  */
 import { rulesOf } from '#lib/core/data/rules/index.ts';
@@ -44,7 +44,7 @@ export function withScriptRules(
 
 /**
  * The Fabled and Loric a new game starts with, in script order: those on the script, then
- * the Bootlegger if the script has rules and doesn't list it. `characters` is the game's
+ * the Bootlegger if the script has rules or homebrew characters and doesn't list it. `characters` is the game's
  * lookup (official characters plus the script's homebrew ones).
  */
 export function startingRuleCharacters(
@@ -52,13 +52,16 @@ export function startingRuleCharacters(
 	characters: ReadonlyMap<CharacterId, Character>
 ): CharacterId[] {
 	const ids: CharacterId[] = [];
+	let homebrew = false;
 	for (const entry of script.entries) {
+		if (entry.kind === 'custom' && entry.character.id !== BOOTLEGGER) homebrew = true;
 		const character = entry.kind === 'official' ? characters.get(entry.id) : entry.character;
 		if (!character || ids.includes(character.id)) continue;
 		if (rulesOf(character.id, characters)?.jinxesOnly) continue;
 		if (character.type === 'fabled' || character.type === 'loric') ids.push(character.id);
 	}
-	if (scriptRules(script.meta).length && !ids.includes(BOOTLEGGER) && characters.has(BOOTLEGGER)) {
+	const bootlegged = homebrew || scriptRules(script.meta).length > 0;
+	if (bootlegged && !ids.includes(BOOTLEGGER) && characters.has(BOOTLEGGER)) {
 		ids.push(BOOTLEGGER);
 	}
 	return ids;

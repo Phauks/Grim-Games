@@ -15,7 +15,7 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import type { Command } from '#lib/core/engine/index.ts';
+import { decide, type Command } from '#lib/core/engine/index.ts';
 import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
 import { rulesIn } from '#lib/core/data/rules/index.ts';
 import { typeOf } from '#lib/core/model/selectors.ts';
@@ -95,7 +95,7 @@ describe('Hatter', () => {
 				false
 			);
 		});
-		it.fails('Example 3: Assassin becomes Mastermind, Mastermind picks Assassin', () => {
+		it('Example 3: Assassin becomes Mastermind, Mastermind picks Assassin', () => {
 			// Wiki: "The Assassin kills a player. The Hatter is executed. That night, the Assassin
 			// becomes the Mastermind and the Mastermind shakes their head no to stay the Mastermind. The
 			// Storyteller shakes their head no because the Mastermind character has been chosen already,
@@ -106,10 +106,24 @@ describe('Hatter', () => {
 				.reminder('assassin', 'assassin', 'No Ability')
 				.execute('hatter');
 			expect(changeableSeats(s.game, 'hatter', s.characters)).toContain(s.seat('mastermind'));
-			engineGap(
-				'unplanned',
-				'the tea party refuses a character another player already chose tonight, and the new Assassin has its once-per-game ability again'
+			const party = s.becomes('assassin', 'mastermind');
+			// Staying the Mastermind is refused (warned): another player chose it tonight.
+			const stay = decide(
+				party.game,
+				{ type: 'AssignCharacter', seatId: s.seat('mastermind'), characterId: 'mastermind' },
+				party.ctx
 			);
+			expect(stay.ok && stay.warnings.map((w) => w.code)).toContain('already-in-play');
+			const after = party.becomes('mastermind', 'assassin');
+			const newAssassin = s.seat('mastermind');
+			expect(after.game.seats[newAssassin]).toMatchObject({ characterId: 'assassin' });
+			expect(abilityState(after.game, newAssassin, after.characters).works).toBe(true);
+			// The old Assassin's No Ability is not on the new Assassin: its ability is unused.
+			expect(
+				after.game.seats[newAssassin].reminders.some(
+					(r) => r.characterId === 'assassin' && r.label === 'No Ability'
+				)
+			).toBe(false);
 		});
 	});
 });

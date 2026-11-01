@@ -20,6 +20,7 @@ import { alignmentOf, trueCharacter, typeOf } from '#lib/core/model/index.ts';
 import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
 import type { CharacterId } from '#lib/core/data/index.ts';
 import { abilityState } from '#lib/core/rules/ability.ts';
+import { gainedSetupAbilities } from '#lib/core/rules/gained-abilities.ts';
 import { analyseSetup } from '#lib/core/rules/setup.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
@@ -89,16 +90,17 @@ describe('Alchemist', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Alchemist#Examples)', () => {
-		it.fails('Example 1: Alchemist with Baron ability: two extra Outsiders', () => {
+		it('Example 1: Alchemist with Baron ability: two extra Outsiders', () => {
 			// Wiki: "The Alchemist has the Baron ability. There are 2 extra Outsiders in play."
-			// Waits on the engine: the setup check counts the Alchemist only as a Townsfolk, not the
-			// Minion ability it holds.
+			// The setup check counts the Alchemist as a Townsfolk, with the Baron's setup change.
 			const s = alchemistAs('baron', ['chef', 'empath', 'butler', 'saint', 'poisoner', 'imp']);
 			expect(trueCharacter(s.game, s.seat(0), s.characters)).toBe('alchemist');
 			const inPlay = s.game.seating.map((id) =>
 				s.characters.get(trueCharacter(s.game, id, s.characters)!)!
 			);
-			const analysis = analyseSetup({ players: 7, inPlay });
+			const abilities = gainedSetupAbilities(s.game, s.characters);
+			expect(abilities.map((c) => c.id)).toEqual(['baron']);
+			const analysis = analyseSetup({ players: 7, inPlay, abilities });
 			expect(analysis.expected.outsider).toEqual([2]);
 		});
 

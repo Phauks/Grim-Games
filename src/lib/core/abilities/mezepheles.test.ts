@@ -77,15 +77,14 @@ describe('Mezepheles', () => {
 			expect(alignmentOf(s.game, s.seat('mayor'))).toBe('good');
 			expect(abilityState(s.game, s.seat('mezepheles'), s.characters).works).toBe(true);
 		});
-		// Waits on the engine: becomesOffer still offers Turns Evil's change while the Mezepheles is
-		// drunk; it should offer none (or flag the impaired Mezepheles).
-		it.fails('Example 3: Mezepheles drunk via Courtier; Noble stays good', () => {
+		it('Example 3: Mezepheles drunk via Courtier; Noble stays good', () => {
 			// Wiki: "The Mezepheles privately tells the Noble the secret word – “Constantinople”. The
 			// Noble visits the Storyteller and says “Constantinople” in private. That night, the Courtier
 			// makes the Mezepheles drunk. The Noble stays good."
 			const s = scenario(['noble', 'mezepheles', 'courtier', 'empath', 'imp'])
 				.reminder('noble', 'mezepheles', 'Turns Evil')
 				.reminder('mezepheles', 'courtier', 'Drunk 3');
+			// A drunk Mezepheles turns nobody evil: taking Turns Evil off offers no change.
 			expect(abilityState(s.game, s.seat('mezepheles'), s.characters).works).toBe(false);
 			expect(
 				becomesOffer(s.game, s.seat('noble'), TURNS_EVIL, s.characters, 'removed')

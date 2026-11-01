@@ -84,11 +84,10 @@ describe('Cacklejack', () => {
 			expect(s.game.seats[s.seat('acrobat')].characterId).toBe('clockmaker');
 			expect(alignmentOf(s.game, s.seat('acrobat'))).toBe('good');
 		});
-		it.fails('Example 2: Drunk player becomes Flowergirl unknowingly', () => {
+		it('Example 2: Drunk player becomes Flowergirl unknowingly', () => {
 			// Wiki: "During the day, the Cacklejack chooses Abdallah. That night, Julian changes from the
 			// Drunk into the Flowergirl. Julian does not learn that he is now sober."
-			// Waits on the engine: changing the Drunk's character leaves the Is The Drunk reminder on
-			// their seat, so the rules still treat them as the Drunk, with no working ability.
+			// The change takes the Is The Drunk reminder off: the new character's ability works.
 			const marked = scenario(['cacklejack', 'chef', 'empath', 'imp', 'poisoner'])
 				.drunk('chef')
 				.reminder('empath', 'cacklejack', 'Not Me');

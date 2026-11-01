@@ -33,13 +33,15 @@
 	"makesExtraEvil": true,
 	"becomes": {
 		"token": "Friend",
-		"into": "carrier-alignment"
+		"into": "carrier-alignment",
+		"evenIfImpaired": true
 	},
 	"optionalRule": {
 		"becomes": {
 			"token": "Friend",
 			"into": "carrier-alignment",
-			"follows": true
+			"follows": true,
+			"evenIfImpaired": true
 		}
 	}
 }

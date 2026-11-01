@@ -69,6 +69,8 @@ export interface DayState {
 	seats: readonly DaySeat[];
 	/** Fabled and Loric in play (not seated). */
 	ruleCharacters?: readonly CharacterId[];
+	/** Reminders placed on a Fabled or Loric (`Game.ruleReminders`): the Deus ex Fiasco's Whoopsie. */
+	ruleReminders?: Readonly<Record<CharacterId, readonly Pick<Reminder, 'label'>[]>>;
 	/** Character lookup (official and homebrew). */
 	character: (id: CharacterId) => Character | undefined;
 	overrides?: readonly DayReminderOverride[];
@@ -243,6 +245,7 @@ export function dayStateFromGame(
 	return {
 		seats: game.seating.map((id) => game.seats[id]).filter((s) => s !== undefined),
 		ruleCharacters: game.ruleCharacters,
+		...(game.ruleReminders ? { ruleReminders: game.ruleReminders } : {}),
 		character,
 		nominationChoices: game.today.entries.flatMap((e) =>
 			e.kind === 'nomination' && e.chosen ? [{ nominee: e.nominee, chosen: e.chosen }] : []
@@ -342,6 +345,12 @@ function refFor(seat: DaySeat | undefined, characterId: CharacterId): CharacterR
 		: { characterId };
 }
 
+/** Whether `source`'s `label` reminder is on a seat, or on its own Fabled or Loric. */
+function placed(state: DayState, source: CharacterId, label: string): boolean {
+	if (carriers(state, source, label).length > 0) return true;
+	return state.ruleReminders?.[source]?.some((r) => same(r.label, label)) ?? false;
+}
+
 function carriers(state: DayState, source: CharacterId, label: string): DaySeat[] {
 	return state.seats.filter((s) =>
 		s.reminders.some((r) => r.characterId === source && same(r.label, label))
@@ -420,7 +429,7 @@ function curated(
 		if (impaired.length > 0 && (when.self ?? 'alive') === 'alive') return;
 		const holds = conditionHolds(when, seat, state, alive);
 		if (holds === false) return;
-		if (when.noReminder && carriers(state, entry.id, when.noReminder).length > 0) return;
+		if (when.noReminder && placed(state, entry.id, when.noReminder)) return;
 		const base = {
 			characterId: entry.id,
 			group: spec.group,

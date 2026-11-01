@@ -48,13 +48,12 @@ describe('Spirit of Ivory', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Spirit_of_Ivory#Examples)', () => {
-		it.fails('Example 1: Second evil conversion blocked; Goon stays good', () => {
+		it('Example 1: Second evil conversion blocked; Goon stays good', () => {
 			// Wiki: "The Fang Gu attacks an Outsider and creates an evil player. The Devil's
 			// Advocate chooses the Goon at night. Normally, the Goon would turn evil, but the Goon
 			// remains good because there is already 1 more evil character than normal in play."
-			// Waits on the engine: the extra evil count only counts evil Townsfolk and Outsiders, so
-			// the Outsider the Fang Gu turned into an evil Demon is not counted, and turning the
-			// Goon evil gives no warning.
+			// The Outsider the Fang Gu jumped into is an extra evil player, so turning the Goon evil
+			// warns.
 			const cast = ['fanggu', 'butler', 'devilsadvocate', 'goon', 'chef', 'empath', 'monk'];
 			const s = scenario(cast)
 				.rule('spiritofivory')

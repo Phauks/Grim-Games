@@ -72,6 +72,14 @@
 	const swapMisfits = $derived(
 		new Set(game.seating.filter((id) => game.seats[id].characterId && !swappable.has(id)))
 	);
+	// Once a Demon is picked first, another Demon is left out of the second pick.
+	const secondMisfits = $derived.by(() => {
+		if (!step.character || first === undefined) return swapMisfits;
+		const ok = new Set(swappableSeats(game, step.character.id, characters, first));
+		return new Set(
+			game.seating.filter((id) => id !== first && game.seats[id].characterId && !ok.has(id))
+		);
+	});
 	// The Cult Leader's living neighbours' alignments, one of which it takes tonight.
 	const neighbours = $derived(
 		step.character ? neighbourAlignments(game, step.character.id, characters) : undefined
@@ -199,7 +207,7 @@
 		{characters}
 		exclude={first}
 		offer={(id) => !!game.seats[id].characterId}
-		misfits={swapMisfits}
+		misfits={secondMisfits}
 		onChoose={chooseSecond}
 	/>
 {/if}

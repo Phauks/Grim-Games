@@ -153,8 +153,7 @@ describe('Hermit', () => {
 			// The Klutz and Recluse have no night text, so add no step.
 			expect(steps.filter((step) => step.gained?.via === 'hermit')).toHaveLength(1);
 		});
-		// Waits on the engine: the Hermit's Recluse ability doesn't let it register as an evil
-		// character to the Ravenkeeper, and the Klutz's choice has no game end rule.
+		// Waits on the engine: the Klutz's choice has no game end rule.
 		it.fails('Example 1 (rest): the Klutz choice after execution: good loses', () => {
 			// Wiki: "Marianna is the Hermit, and has the Klutz, Butler, and Recluse abilities. Each night,
 			// she chooses a player as her master due to the Butler ability. The Ravenkeeper dies and
@@ -183,9 +182,7 @@ describe('Hermit', () => {
 				'the Klutz choosing an evil player (the Wizard) ends the game: good loses'
 			);
 		});
-		// Waits on the engine: madnessOffer reads only a player whose true character is the
-		// Mutant, so a Hermit holding the Mutant ability is never offered the execution.
-		it.fails('Example 2: Hermit as mistaken Exorcist executed; Alchemist drunk', () => {
+		it('Example 2: Hermit as mistaken Exorcist executed; Alchemist drunk', () => {
 			// Wiki: "Lewis is the Hermit and has the Drunk, Mutant, and Sweetheart abilities. Thinking
 			// that he is the Exorcist, he chooses a player each night. Lewis says that he thinks he might
 			// be the Drunk, so the Storyteller executes him due to the Mutant ability. Due to the

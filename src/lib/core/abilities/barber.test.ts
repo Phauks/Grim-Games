@@ -94,7 +94,7 @@ describe('Barber', () => {
 			});
 		});
 
-		it.fails('Example 3: Vortox swaps with a living Witch', () => {
+		it('Example 3: Vortox swaps with a living Witch', () => {
 			// Wiki: "The Barber dies. The Vortox swaps themself with an alive Witch."
 			const s = scenario(['barber', 'witch', 'chef', 'vortox', 'empath']).dies('barber');
 			const after = haircut(s, 'vortox', 'witch');
@@ -102,12 +102,11 @@ describe('Barber', () => {
 				characterId: 'vortox',
 				alignment: 'evil'
 			});
-			// Waits on the engine: swappableSeats leaves out every Demon, though only "another Demon" is
-			// barred, so the Demon may choose itself.
+			// Only "another Demon" is barred: the Demon may choose itself.
 			expect(swappable(s)).toEqual(expect.arrayContaining([s.seat('vortox'), s.seat('witch')]));
 		});
 
-		it.fails('Example 4: Vigormortis swaps with dead Sweetheart; game continues', () => {
+		it('Example 4: Vigormortis swaps with dead Sweetheart; game continues', () => {
 			// Wiki: "The Barber dies. The Vigormortis swaps themself with a dead Sweetheart. The old
 			// Vigormortis is now the evil Sweetheart. Because the Pit-Hag created a good Demon during the
 			// previous night, the game continues."
@@ -123,8 +122,7 @@ describe('Barber', () => {
 				dead: false
 			});
 			expect(gameEnds(after.game, after.characters)).toEqual([]);
-			// Waits on the engine: swappableSeats leaves out every Demon, though only "another Demon" is
-			// barred, so the Demon may choose itself.
+			// Only "another Demon" is barred: the Demon may choose itself.
 			expect(swappable(s)).toEqual(
 				expect.arrayContaining([s.seat('vigormortis'), s.seat('sweetheart')])
 			);
