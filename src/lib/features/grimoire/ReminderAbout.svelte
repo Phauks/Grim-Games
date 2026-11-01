@@ -14,7 +14,7 @@
 		open?: boolean;
 		/** The token, as the board draws it; none while there is nothing to show. */
 		token?: Snippet;
-		/** Whose it is ("From ..."). */
+		/** Where a placed one lies (on a Fabled, loose), under the token. */
 		subtitle?: Snippet;
 		/** The character whose ability it comes from; none for an ∞ token. */
 		owner?: Character;
