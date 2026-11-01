@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { oneRow } from '#lib/ui/one-row.ts';
 	import { Dialog } from '@ark-ui/svelte/dialog';
 	import { Portal } from '@ark-ui/svelte/portal';
 	import { usePortalTarget } from './portal-target.ts';
@@ -37,6 +38,11 @@
 		 * copy this is (the board's Script, Trevor 2026-10-26).
 		 */
 		titleBelow?: boolean;
+		/**
+		 * With `titleBelow`: how many head buttons the title's row keeps room for, shown or not,
+		 * so a button that appears later never moves the title (oneRow).
+		 */
+		actionSlots?: number;
 		/** False hides the ✕, for a dialog whose `lead` already closes it (the menu drawer). */
 		closeButton?: boolean;
 		/**
@@ -80,6 +86,7 @@
 		subtitle,
 		headActions,
 		titleBelow = false,
+		actionSlots,
 		closeButton = true,
 		scroll = true,
 		aside,
@@ -87,6 +94,7 @@
 		beforeClose,
 		shownToPlayers = false
 	}: Props = $props();
+	let head = $state<HTMLElement>();
 	/** Inside a full-screen view (the grim cover), into it; else the body (portal-target.ts). */
 	const portalTarget = usePortalTarget();
 
@@ -131,17 +139,32 @@
 		/>
 		<Dialog.Positioner style={layerStyle(layer, 'content')}>
 			<Dialog.Content data-size={size} data-panes={aside ? '' : undefined}>
-				<div class="head" data-title-below={titleBelow || undefined}>
+				<div
+					class="head"
+					data-title-below={titleBelow || undefined}
+					bind:this={head}
+					{@attach titleBelow
+						? oneRow(
+								{
+									title: () => head?.querySelector('.titled'),
+									actions: () => head?.querySelector('.head-actions'),
+									others: () => [head?.querySelector('[data-part="close-trigger"]')],
+									slots: actionSlots
+								},
+								title
+							)
+						: undefined}
+				>
 					<div class="titled" class:with-lead={!!lead}>
 						{#if lead}<span class="lead">{@render lead()}</span>{/if}
 						<Dialog.Title
 							>{#if heading}{@render heading()}{:else}{title}{/if}</Dialog.Title
 						>
-						<!-- Under the title, beside the buttons on a wide dialog (Trevor, 2026-10-31). -->
-						{#if titleBelow && subtitle}<Dialog.Description class="below"
-								>{@render subtitle()}</Dialog.Description
-							>{/if}
 					</div>
+					<!-- Under the title, across the dialog (Trevor, 2026-10-31). -->
+					{#if titleBelow && subtitle}<Dialog.Description class="below"
+							>{@render subtitle()}</Dialog.Description
+						>{/if}
 					{#if headActions}<span class="head-actions" data-testid="dialog-head-actions"
 							>{@render headActions()}</span
 						>{/if}
@@ -336,12 +359,14 @@
 		justify-content: space-between;
 		gap: var(--space-3);
 	}
-	/* A narrow dialog: the buttons and Close on the first row, the title and byline under them. */
+	/*
+	 * `titleBelow`: the buttons and Close alone on the first row, the title under them; or, when
+	 * the title fits beside them at its full size, the title on that row too (oneRow sets
+	 * data-one-row; Trevor, 2026-11-01). The byline under both, across the dialog.
+	 */
 	.head[data-title-below] {
 		flex-wrap: wrap;
-		align-items: start;
 		row-gap: var(--space-1);
-		container: dialog-head / inline-size;
 	}
 	.head[data-title-below] .titled {
 		order: 1;
@@ -350,30 +375,23 @@
 	.head[data-title-below] .head-actions {
 		margin-left: auto;
 	}
-	/* The byline under the title and the lead, from the dialog's edge. */
-	.titled > :global(.below) {
-		grid-column: 1 / -1;
-		margin: var(--space-1) 0 0;
+	.head[data-title-below] > :global(.below) {
+		order: 2;
+		flex-basis: 100%;
+		margin: 0;
 	}
-	/*
-	 * A wide dialog: the title and byline at the start of the first row and the buttons at its
-	 * end, level with the title, so no row is left half empty (Trevor, 2026-10-31: "on desktop
-	 * and larger screens, we have some leftover space"). The same width as Page's.
-	 */
-	@container dialog-head (min-width: 36rem) {
-		.head[data-title-below] .titled {
-			order: 0;
-			flex: 1 1 0;
-		}
-		/* The title's line as tall as the buttons, so the two centre on one line. */
-		.titled.with-lead {
-			grid-template-rows: minmax(var(--tap-target), auto);
-		}
-		.titled:not(.with-lead) > :global([data-part='title']) {
-			display: flex;
-			align-items: center;
-			min-height: var(--tap-target);
-		}
+	.head[data-title-below]:global([data-one-row]) .titled {
+		order: 0;
+		flex: 1 1 0;
+	}
+	/* The title's line as tall as the buttons, so the two centre on one line. */
+	.head[data-title-below] .titled.with-lead {
+		grid-template-rows: minmax(var(--tap-target), auto);
+	}
+	.head[data-title-below] .titled:not(.with-lead) > :global([data-part='title']) {
+		display: flex;
+		align-items: center;
+		min-height: var(--tap-target);
 	}
 	.head-actions {
 		flex: none;
