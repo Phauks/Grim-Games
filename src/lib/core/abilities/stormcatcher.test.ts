@@ -74,7 +74,7 @@ describe('Storm Catcher', () => {
 			});
 		});
 
-		it('Example 1: the evil players learn who the favoured General is', () => {
+		it('Example 1 (continued): the evil players learn who the favoured General is', () => {
 			// Wiki: "The Storyteller has built a script based on the General, so says that “the
 			// Storm Catcher favours the General”. The General is in play. At night, the Imp and the
 			// Godfather both attack the General, who does not die. After 5 days of information and
