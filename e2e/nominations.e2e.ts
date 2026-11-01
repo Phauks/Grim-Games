@@ -243,3 +243,27 @@ test('after the day’s first execution the Butcher nominates again, with no war
 	await expect(seat.getByTestId('sheet-nominated')).toHaveText('Seat 4, Seat 4');
 	await closeSheet(page);
 });
+
+test('while the Bishop’s ability works, a nomination is recorded with a warning', async ({
+	page
+}) => {
+	// https://wiki.bloodontheclocktower.com/Bishop: only the Storyteller nominates. The app warns
+	// and still records it, with the nominator the Storyteller picked (warn, never lock).
+	await startGame(page);
+	await trackNominations(page);
+	const seat = await openSeat(page, 1);
+	await seat.getByRole('button', { name: 'Choose' }).first().tap();
+	const picker = page.getByRole('dialog', { name: 'Character for Seat 1' });
+	await picker.getByText('Include characters not on the script').tap();
+	await picker.getByRole('button', { name: /^Bishop(,|$)/ }).tap();
+	await page
+		.getByRole('dialog', { name: 'Alignment' })
+		.getByRole('button', { name: 'Decide later' })
+		.tap();
+	await closeSheet(page);
+	await nominate(page, 2, 3);
+	await expect(page.getByText('Only the Storyteller may nominate now.')).toBeVisible();
+	const nominator = await openSeat(page, 2);
+	await expect(nominator.getByTestId('sheet-nominated')).toHaveText('Seat 3');
+	await closeSheet(page);
+});
