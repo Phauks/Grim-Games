@@ -88,6 +88,7 @@ longest cell, so two PRs that each added a row used to conflict over the whole t
 - A builder's title-row tools (open, download, clear): `ui/builder/BuilderTools.svelte` (enforced by review)
 - A builder's Save and Save as new: `ui/builder/BuilderTools.svelte` with `save` (icon buttons in the header) (enforced by review)
 - A builder's "Open a saved …" list: `ui/builder/OpenSavedDialog.svelte` (enforced by review)
+- A Mode builder section and its settings (bordered table with a header band; a row per setting with its name, file key, control and guide link): `features/mode-builder/BuilderTable.svelte` with `BuilderRow.svelte` (`BuilderField.svelte` picks the control from the format guide); the whole builder and its dialogs in the coding font through the `code-font` class (`ui/base.css`, `--font-code`) (enforced by `e2e/mode-builder.e2e.ts`)
 - A table (paging, column picker, a filter on every column): `ui/table/DataTable.svelte`: each column gives `value`, `filterable` or a `noFilter` reason (`column-filter.ts`) (enforced by review)
 - A character name: `features/characters/CharacterBadge.svelte` (enforced by `grim/names-as-badges`)
 - A character type in its tokens' colour (a type heading, Character selection's counts boxes): `data-type-band` with `typeTone(type)`, whose fill and text (`--type-band`, `--on-type-band`) come from `ui/base.css`; Collapsible's `tone` draws the band (Trevor, 2026-10-31, picked "B · Band"); a count that doesn't match yet is ringed in `--count-warn` gold (enforced by review)

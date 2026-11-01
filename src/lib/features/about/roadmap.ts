@@ -191,7 +191,7 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		title:
 			"Special rules and game modes: +1, Binary Supernovae, Trained Killer, Phantom Detectives, Council of the Dead, The Warrens, The Djinn's Bargain, sharing your own mode files, the Mode builder, requesting missing mode features",
 		area: 'storyteller',
-		parts: ['L1', 'L35', 'L36', 'L103', 'L104', 'L105'],
+		parts: ['L1', 'L35', 'L36', 'L103', 'L104', 'L105', 'L110'],
 		prs: [322, 328]
 	},
 	{
