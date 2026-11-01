@@ -48,6 +48,9 @@ export const day = {
 		one: '{count} vote puts the first nominee on the block ({alive} alive)',
 		other: '{count} votes put the first nominee on the block ({alive} alive)'
 	},
+	'day.votesTitle': 'Votes needed',
+	'day.blockLine': 'On the block · {alive} alive',
+	'day.exileLine': 'Exile · {total} players',
 	'day.who': '{character} ({seat})',
 	'day.used': 'Used',
 	'day.usedLabel': 'Used: {who}',
@@ -177,8 +180,6 @@ export const day = {
 		other: '{count} votes per nomination, no token'
 	},
 	'day.count.total': 'Total',
-	'day.count.living': 'Living players',
-	'day.count.half': 'Half, rounded up',
 	'day.count.mostVotes': 'Most votes, no majority needed',
 	'day.prevented': 'What didn’t happen',
 	'day.preventedButton': 'What didn’t happen: {count}',

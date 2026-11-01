@@ -97,7 +97,7 @@
 		kind="votes"
 		label={votesLabel}
 		testid="votes-needed"
-		onclick={() => openCount('votes', votesLabel)}
+		onclick={() => openCount('votes', t('day.votesTitle'))}
 		>{#if exile === undefined}<Icon name="vote" />{block.needed}{:else}
 			<!-- With a living Traveller the same gold badge holds the exile count too, so the row
 			     keeps its five cells (Trevor, 2026-10-28, option A). -->
