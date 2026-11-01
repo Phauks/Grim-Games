@@ -23,8 +23,13 @@ const weightVariables = FONT_ROLES.filter((r) => FONT_ROLE_INFO[r].length === 's
 );
 /** Component font tokens (tokens/components.css); each one is built from a role variable. */
 const fontTokens = ['--button-font', '--seat-font'];
+/**
+ * The coding font: the device's own monospace, the same in every theme and not a role anyone
+ * picks (ui/base.css, the Mode builder's `code-font`; Trevor, 2026-11-01).
+ */
+const fixedFonts = ['--font-code'];
 const usesRole = (value: string) =>
-	[...roleVariables, ...fontTokens].some((name) => value.includes(`var(${name})`));
+	[...roleVariables, ...fontTokens, ...fixedFonts].some((name) => value.includes(`var(${name})`));
 
 /** The CSS of a file: a stylesheet, or a component's `<style>` blocks. */
 const css = (path: string, text: string) =>
@@ -61,10 +66,10 @@ describe('font roles', () => {
 	});
 
 	it('refers only to role variables that exist', () => {
-		const known = new Set([...roleVariables, ...weightVariables]);
+		const known = new Set<string>([...roleVariables, ...weightVariables, ...fixedFonts]);
 		for (const [path, text] of files) {
 			for (const [name] of text.matchAll(/--font-[\w-]+/g)) {
-				expect(known.has(name as never), `${path}: ${name}`).toBe(true);
+				expect(known.has(name), `${path}: ${name}`).toBe(true);
 			}
 		}
 	});

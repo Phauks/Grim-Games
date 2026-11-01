@@ -18,7 +18,11 @@ import {
 	dayMarkValue,
 	markTokenSwap,
 	marksInPlay,
+	dayUseOpen,
+	dayUseUsers,
 	executionSavers,
+	isDayUseAlly,
+	mayBeFalseSource,
 	protection,
 	type DayMark
 } from '#lib/core/rules/index.ts';
@@ -37,7 +41,8 @@ import {
 	refuse,
 	reminderFrom,
 	seatOf,
-	type Deciders
+	type Deciders,
+	type Warn
 } from './shared.ts';
 
 /** One of the Storyteller's answers to an ability guess; anything else is left out. */
@@ -218,6 +223,10 @@ export const DAY_DECIDERS: Deciders<
 		const seat = seatOf(game, command.seatId);
 		const character = characterOf(ctx, command.characterId);
 		const truly = trueCharacter(game, seat.seatId, ctx.characters);
+		const rule = rulesOf(character.id, ctx.characters)?.dayUse;
+		if (rule?.anyone && game.ruleCharacters.includes(character.id)) {
+			return anyoneUse(game, command, character, ctx, warn);
+		}
 		if (seat.characterId !== character.id && truly !== character.id) {
 			warn('not-seat-character', `this seat is not the ${character.name}`);
 		}
@@ -325,8 +334,10 @@ export const DAY_DECIDERS: Deciders<
 			warn('no-change', 'nothing to record');
 			return [];
 		}
+		const spent = spendFalseInfo(game, seat.seatId, characterId, abnormal, ctx);
 		return [
 			...placements.map((p): GameEvent => ({ type: 'ReminderAdded', ...p })),
+			...spent.events,
 			{
 				type: 'DayEntryAdded',
 				entry: {
@@ -335,7 +346,7 @@ export const DAY_DECIDERS: Deciders<
 					seatId: seat.seatId,
 					characterId,
 					text,
-					reminderIds: placements.map((p) => p.reminder.reminderId),
+					reminderIds: [...placements.map((p) => p.reminder.reminderId), ...spent.ids],
 					...(abnormal.length > 0 ? { abnormal } : {})
 				}
 			}
@@ -407,4 +418,74 @@ function tokenEvents(
 			reminder: { reminderId: ctx.newId(), characterId: p.characterId, label: p.label }
 		}))
 	];
+}
+
+/**
+ * False information given by a character whose `falseInfo` may make it false once (the
+ * Fibbin, https://wiki.bloodontheclocktower.com/Fibbin: "loses their ability"): its
+ * `spentToken` goes on its token, beside a rule character or on the seat that holds it. The
+ * info entry lists the token, so removing the entry takes it back.
+ */
+function spendFalseInfo(
+	game: Game,
+	seatId: string,
+	characterId: string,
+	abnormal: readonly AbnormalCause[],
+	ctx: EngineContext
+): { events: GameEvent[]; ids: string[] } {
+	const type = ctx.characters.get(characterId)?.type;
+	const by = mayBeFalseSource(game, seatId, type, ctx.characters);
+	const label = by ? rulesOf(by, ctx.characters)?.falseInfo?.spentToken : undefined;
+	if (!by || !label || !abnormal.some((c) => c.characterId === by)) return { events: [], ids: [] };
+	const reminder = { reminderId: ctx.newId(), characterId: by, label };
+	if (game.ruleCharacters.includes(by)) {
+		return {
+			events: [{ type: 'RuleReminderAdded', characterId: by, reminder }],
+			ids: [reminder.reminderId]
+		};
+	}
+	const holder = game.seating.find((s) => trueCharacter(game, s, ctx.characters) === by);
+	if (!holder) return { events: [], ids: [] };
+	return {
+		events: [{ type: 'ReminderAdded', seatId: holder, reminder }],
+		ids: [reminder.reminderId]
+	};
+}
+
+/**
+ * A day ability any living player may use once per game, of a character no player holds
+ * (`dayUse.anyone`: the Doomsayer, https://wiki.bloodontheclocktower.com/Doomsayer). Only the
+ * use is logged; its kill is the Storyteller's `SetDead` with the character as cause. Warns,
+ * never refuses: when its player is dead or already used it this game, when too few players
+ * live (`dayUse.minAlive`), or when `on` is not a living player of its player's alignment.
+ */
+function anyoneUse(
+	game: Game,
+	command: { seatId: string; on?: string },
+	character: { id: string; name: string },
+	ctx: EngineContext,
+	warn: Warn
+): GameEvent[] {
+	const seat = seatOf(game, command.seatId);
+	if (seat.dead) warn('already-dead', `only living players may use the ${character.name}`);
+	if (dayUseUsers(game, character.id).includes(seat.seatId)) {
+		warn('already-used', `this player already used the ${character.name} this game`);
+	}
+	if (!dayUseOpen(game, character.id, ctx.characters)) {
+		warn('too-few-alive', `too few players live to use the ${character.name}`);
+	}
+	const entry: Extract<DayEntry, { kind: 'ability' }> = {
+		kind: 'ability',
+		entryId: ctx.newId(),
+		seatId: seat.seatId,
+		characterId: character.id
+	};
+	if (command.on !== undefined) {
+		entry.on = seatOf(game, command.on).seatId;
+		const rule = rulesOf(character.id, ctx.characters)?.dayUse;
+		if (rule?.who === 'ally' && !isDayUseAlly(game, seat.seatId, entry.on)) {
+			warn('not-ally', `the ${character.name} kills a living player of its user's alignment`);
+		}
+	}
+	return [{ type: 'DayEntryAdded', entry }];
 }

@@ -191,7 +191,7 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		title:
 			"Special rules and game modes: +1, Binary Supernovae, Trained Killer, Phantom Detectives, Council of the Dead, The Warrens, The Djinn's Bargain, sharing your own mode files, the Mode builder, requesting missing mode features",
 		area: 'storyteller',
-		parts: ['L1', 'L35', 'L36', 'L103', 'L104', 'L105'],
+		parts: ['L1', 'L35', 'L36', 'L103', 'L104', 'L105', 'L110'],
 		prs: [322, 328]
 	},
 	{
@@ -361,6 +361,16 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		title: "The Bigwig's speaker, the Scapegoat, the Boomdandy and the Courtier's three nights",
 		area: 'engine',
 		parts: ['M11', 'M12a', 'M12b', 'M12c']
+	},
+	{
+		// Gaps 5 and 12: one-off abilities and game rules nothing read yet (thread "Automate
+		// one-off characters and unread rules", 2026-11-01). M15a Toymaker, M15b Buddhist, M15c
+		// Barista, M15d Doomsayer, M15e Fibbin, M15f Duchess, M15g Vigormortis, M15h Lleech, M15i
+		// Amnesiac, M15j Summoner.
+		title:
+			"The Toymaker's skipped attack, the Buddhist's quiet veterans, the Barista's doubled ability, and more one-off characters",
+		area: 'engine',
+		parts: ['M15a', 'M15b', 'M15c', 'M15d', 'M15e', 'M15f', 'M15g', 'M15h', 'M15i', 'M15j']
 	},
 	{
 		// Gap 1, last and separate (Trevor, 2026-10-28).

@@ -15,9 +15,11 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { decide } from '#lib/core/engine/index.ts';
+import { dayUseUsers, isDayUseAlly } from '#lib/core/rules/day-claims.ts';
 import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
 import { dayReminders, dayStateFromGame, renderReminder } from '#lib/core/rules/day-reminders.ts';
-import { engineGap, scenario, type Scenario } from '#lib/core/testing/scenario.ts';
+import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 /** A character's day reminders in this scenario: their group and plain text. */
 const dayLines = (s: Scenario, characterId: string) =>
 	dayReminders(
@@ -75,25 +77,50 @@ describe('Doomsayer', () => {
 			expect(end.game.seats[end.seat('washerwoman')].deathCause).toBe('doomsayer');
 			expect(end.game.seats[end.seat('baron')].deathCause).toBe('doomsayer');
 		});
-		it.fails('Example 2: Evil sacrifices continue until the Spy dies', () => {
+		it('Example 2: Evil sacrifices continue until the Spy dies', () => {
 			// Wiki: "An evil Thief uses the Doomsayer ability, and the Scarlet Woman dies. Later,
 			// the Spy uses the Doomsayer ability, and the good Gunslinger dies. Later, the Demon
 			// uses the Doomsayer ability, and the Spy dies."
-			// The deaths can be recorded, but nothing records who used the Doomsayer, so the rules
-			// can't check that the player who dies shares the user's alignment.
+			// Who used it is logged (M15d), so each death is checked against the user's alignment.
+			// The Spy may kill a good player because it may register as good: a warning, never a
+			// refusal.
 			const s = scenario(['thief', 'scarletwoman', 'spy', 'gunslinger', 'imp', 'chef'])
 				.do((at) => ({ type: 'SetAlignment', seatId: at.seat('thief'), alignment: 'evil' }))
 				.do((at) => ({ type: 'SetAlignment', seatId: at.seat('gunslinger'), alignment: 'good' }))
 				.rule('doomsayer');
-			const end = s
-				.dies('scarletwoman', 'doomsayer')
-				.dies('gunslinger', 'doomsayer')
-				.dies('spy', 'doomsayer');
-			expect(end.game.seats[end.seat('gunslinger')].deathCause).toBe('doomsayer');
-			engineGap(
-				'unplanned',
-				'who used the Doomsayer, so the death is checked against their alignment (the Spy may kill a good player, as it may register as good)'
+			const use = (at: Scenario, by: string, dies: string) =>
+				at
+					.do({
+						type: 'UseAbility',
+						seatId: at.seat(by),
+						characterId: 'doomsayer',
+						on: at.seat(dies)
+					})
+					.dies(dies, 'doomsayer');
+			expect(isDayUseAlly(s.game, s.seat('thief'), s.seat('scarletwoman'))).toBe(true);
+			const one = use(s, 'thief', 'scarletwoman');
+			expect(isDayUseAlly(one.game, one.seat('spy'), one.seat('gunslinger'))).toBe(false);
+			const spyUse = decide(
+				one.game,
+				{
+					type: 'UseAbility',
+					seatId: one.seat('spy'),
+					characterId: 'doomsayer',
+					on: one.seat('gunslinger')
+				},
+				one.ctx
 			);
+			expect(spyUse.ok && spyUse.warnings.map((w) => w.code)).toContain('not-ally');
+			const two = use(one, 'spy', 'gunslinger');
+			expect(isDayUseAlly(two.game, two.seat('imp'), two.seat('spy'))).toBe(true);
+			const end = use(two, 'imp', 'spy');
+			expect(dayUseUsers(end.game, 'doomsayer')).toEqual([
+				end.seat('thief'),
+				end.seat('spy'),
+				end.seat('imp')
+			]);
+			for (const dead of ['scarletwoman', 'gunslinger', 'spy'])
+				expect(end.game.seats[end.seat(dead)].deathCause).toBe('doomsayer');
 		});
 	});
 });

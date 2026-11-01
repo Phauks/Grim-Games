@@ -17,5 +17,10 @@
 	"reminderMovement": {
 		"fixed": ["No Ability"],
 		"why": "Marks that this character has used its once-per-game ability."
+	},
+	"falseInfo": {
+		"may": true,
+		"alignment": "good",
+		"spentToken": "No Ability"
 	}
 }

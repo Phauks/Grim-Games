@@ -457,9 +457,13 @@ export function checkGuessLimit(
 /** The reminder token a character places when its once-only ability is used. */
 export const NO_ABILITY_LABEL = 'No Ability';
 
+/** Whether a reminder is still in the grimoire: on a seat or beside a rule character. */
 export function hasPlacedReminder(game: Game, reminderId: string): boolean {
-	return game.seating.some((id) =>
-		game.seats[id].reminders.some((r) => r.reminderId === reminderId)
+	return (
+		game.seating.some((id) => game.seats[id].reminders.some((r) => r.reminderId === reminderId)) ||
+		Object.values(game.ruleReminders ?? {}).some((list) =>
+			list.some((r) => r.reminderId === reminderId)
+		)
 	);
 }
 
