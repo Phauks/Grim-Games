@@ -489,6 +489,7 @@
 		presence={parseSeatPresence(view?.presence)}
 		mySeat={mine}
 		status={summary}
+		winner={view && !view.choosing ? view.ended?.winner : undefined}
 		seatNumber={mySeat}
 	>
 		{#snippet after()}

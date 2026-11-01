@@ -129,7 +129,6 @@ export const room = {
 	'room.shareGrim.body':
 		'Every player in the room sees the whole finished grimoire: every seat’s character and reminders.',
 	'room.shareGrim.failed': 'The grimoire could not be shared. Check the room is connected.',
-	'room.shareGrim.atEnd': 'Share the final grimoire with players',
 	// Room transfer (Trevor, 2026-10-28).
 	'room.transfer.button': 'Room transfer',
 	'room.transfer.title': 'Room transfer',

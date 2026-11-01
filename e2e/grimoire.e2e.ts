@@ -2986,8 +2986,14 @@ test('End game keeps the Storyteller on the board, says it is over, and can be r
 	await closeSheet(page);
 	await expect(seatLabelled(page, 'Seat 1: Ana')).toHaveCount(1);
 
-	// Reopening from the board puts it back in Continue game.
-	await page.getByTestId('game-over').tap();
+	// The Game over pill only says so; Reopen game is in ⋯ (Trevor, 2026-11-01).
+	await expect(page.getByRole('button', { name: /^Game over/ })).toHaveCount(0);
+	// Reopening from ⋯ puts it back in Continue game.
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Reopen game' })
+		.tap();
 	await page
 		.getByRole('alertdialog', { name: 'Reopen game?' })
 		.getByRole('button', { name: 'Confirm', exact: true })
