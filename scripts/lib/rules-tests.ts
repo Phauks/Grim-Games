@@ -48,6 +48,16 @@ export function countTodos(source: string): number {
 	return source.match(/\b(?:it|test|describe)\.todo\s*\(/g)?.length ?? 0;
 }
 
+/**
+ * Counts `it.fails(` / `test.fails(` calls: examples written but waiting on the engine
+ * (Trevor, 2026-11-01: "We can let these tests fail while we are building the rest of the
+ * components"). Vitest passes an `it.fails` while its body fails, and fails it once the
+ * engine makes it pass, so each one must then become a plain `it`.
+ */
+export function countFails(source: string): number {
+	return source.match(/\b(?:it|test)\.fails\s*\(/g)?.length ?? 0;
+}
+
 // ---------------------------------------------------------------------------------------
 // Generated files
 // ---------------------------------------------------------------------------------------
@@ -101,7 +111,8 @@ export function renderCharacterTest(
  *
  * Wiki examples: each \`it.todo\` is one example in the page's Examples section. Replace it with
  * a test written with \`scenario\` (src/lib/core/testing/scenario.ts): the seats, what has
- * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
+ * happened, then what the rules say. Paraphrase the example; never copy wiki prose. When the
+ * engine can't pass it yet, write it anyway as \`it.fails\` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
@@ -205,7 +216,10 @@ export interface CoverageReport {
 	characterTodos: number;
 	/** Rule `todo`s in jinx test files. */
 	jinxTodos: number;
-	/** Characters / jinxes whose test file has no `todo` left. */
+	/** Examples written as `it.fails`: waiting on the engine. */
+	characterFails: number;
+	jinxFails: number;
+	/** Characters / jinxes whose test file has no `todo` and no `it.fails` left. */
 	charactersDone: number;
 	jinxesDone: number;
 }
@@ -215,7 +229,7 @@ export const SCENARIO_IMPORT = "from '#lib/core/testing/scenario.ts'";
 
 /** Whether a test file has a written wiki example, not only `it.todo`s. */
 export function writesExamples(source: string): boolean {
-	return /\bit\(\s*['"`]Example \d/.test(source);
+	return /\bit(?:\.fails)?\(\s*['"`]Example \d/.test(source);
 }
 
 export function checkCoverage(input: CoverageInput): CoverageReport {
@@ -227,6 +241,8 @@ export function checkCoverage(input: CoverageInput): CoverageReport {
 		jinxFiles: 0,
 		characterTodos: 0,
 		jinxTodos: 0,
+		characterFails: 0,
+		jinxFails: 0,
 		charactersDone: 0,
 		jinxesDone: 0
 	};
@@ -245,8 +261,10 @@ export function checkCoverage(input: CoverageInput): CoverageReport {
 			problems.push(`${ABILITIES_DIR}/${file}: does not cite ${wikiUrl(character.name)}`);
 		}
 		const todos = countTodos(source);
+		const fails = countFails(source);
 		report.characterTodos += todos;
-		if (todos === 0) report.charactersDone++;
+		report.characterFails += fails;
+		if (todos === 0 && fails === 0) report.charactersDone++;
 		if (writesExamples(source) && !source.includes(SCENARIO_IMPORT)) {
 			problems.push(
 				`${ABILITIES_DIR}/${file}: writes wiki examples without \`scenario\` (src/lib/core/testing/scenario.ts)`
@@ -276,8 +294,10 @@ export function checkCoverage(input: CoverageInput): CoverageReport {
 			}
 		}
 		const todos = countTodos(source);
+		const fails = countFails(source);
 		report.jinxTodos += todos;
-		if (todos === 0) report.jinxesDone++;
+		report.jinxFails += fails;
+		if (todos === 0 && fails === 0) report.jinxesDone++;
 	}
 	for (const file of input.jinxTests.keys()) {
 		if (!expectedJinxes.has(file)) {

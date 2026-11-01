@@ -13,6 +13,7 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { engineGap, scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Thief', () => {
 	const character = committedCharacter('thief');
@@ -44,7 +45,30 @@ describe('Thief', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Thief#Examples)', () => {
-		it.todo('Example 1: Negative vote; nominee still reaches five');
-		it.todo('Example 2: Negative vote blocks execution; exile counts positively');
+		// Vote weight (the Negative Vote token) waits on voting in the engine.
+		it.fails('Example 1: Negative vote; nominee still reaches five', () => {
+			scenario(['thief', 'chef', 'imp', 'monk', 'poisoner', 'empath', 'saint'])
+				.reminder('chef', 'thief', 'Negative Vote')
+				.newDay();
+			engineGap('M9', "a vote tally counts the Negative Vote player's raised hand as minus one");
+		});
+		it.fails('Example 2: Negative vote blocks execution; exile counts positively', () => {
+			// Ten alive need five; a tally of four executes nobody. An exile vote is not affected.
+			scenario([
+				'thief',
+				'chef',
+				'imp',
+				'monk',
+				'poisoner',
+				'empath',
+				'saint',
+				'mayor',
+				'soldier',
+				'gunslinger'
+			])
+				.reminder('chef', 'thief', 'Negative Vote')
+				.newDay();
+			engineGap('M9', 'the negative vote counts on nominations for execution, but not on exiles');
+		});
 	});
 });
