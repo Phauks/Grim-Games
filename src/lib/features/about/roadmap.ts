@@ -370,10 +370,11 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['M9']
 	},
 	{
-		// The wiki examples each character's test file lists as still to do.
+		// The wiki examples each character's test file lists as still to do, a batch per edition
+		// (M13b Trouble Brewing). Examples the engine can't pass yet are written as it.fails.
 		title: 'Every wiki example tested, for every character',
 		area: 'engine',
-		parts: ['M13a', 'M13']
+		parts: ['M13a', 'M13b', 'M13']
 	},
 	{
 		// Trevor, 2026-10-30: on the roadmap, after a spike and research.
