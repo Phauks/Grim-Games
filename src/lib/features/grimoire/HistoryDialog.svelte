@@ -4,6 +4,7 @@
 	import type { PlayerName } from '#lib/core/data/index.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { historyItems, itemSeats, type HistoryItem } from './history.ts';
@@ -100,6 +101,7 @@
 	<ol class="history">
 		{#each shown as item (item.cursor)}
 			<li class:undone={item.undone} class:now={item.cursor === cursor}>
+				<span class="number"><CountBadge count={item.number} testid="history-number" /></span>
 				<span class="text"><HistoryLine parts={item.parts} {characters} /></span>
 				<span class="when">
 					{item.cursor === cursor
@@ -194,12 +196,20 @@
 	}
 	li {
 		display: grid;
-		grid-template-columns: 1fr auto;
-		grid-template-areas: 'text action' 'when action';
+		/* A fixed number column, so three-digit numbers don't shift the text (Trevor: no reflow). */
+		grid-template-columns: 2em 1fr auto;
+		grid-template-areas: 'number text action' 'number when action';
 		align-items: center;
 		column-gap: var(--space-2);
 		padding: var(--space-1) 0;
 		border-bottom: 1px solid var(--border);
+	}
+	.number {
+		grid-area: number;
+		font-size: 0.8rem;
+	}
+	li.undone .number {
+		opacity: 0.5;
 	}
 	.text {
 		grid-area: text;

@@ -89,6 +89,7 @@
 	table={town}
 	ended={!!ended}
 	status={ended ? gameOverText(ended.winner) : undefined}
+	winner={ended?.winner}
 	{presence}
 	unseatedNames={roomHost().unseatedInGame.flatMap((m) => (m.name ? [m.name] : []))}
 />

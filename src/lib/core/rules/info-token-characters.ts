@@ -18,6 +18,7 @@ import {
 } from '#lib/core/data/info-tokens.ts';
 import type { InfoTokenCharacterRules } from '#lib/core/data/info-token-rules.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
+import { prepValueKey } from './day-reminders.ts';
 
 /** The characters filled in, and how many the card may show in all on this step. */
 export interface FilledInfoToken {
@@ -67,20 +68,26 @@ export function stepInfoTokens(
 /**
  * What `character`'s step fills in on the info token `tokenId`, which shows up to `count`
  * characters on its own; nothing when its rules say nothing. A `chosen` place is left out of
- * `characterIds` until `withChosen` fills it.
+ * `characterIds` until `withChosen` fills it; a `value` place holds the character entered as
+ * that prep value in `prepValues` (the game's), left out until one is entered.
  */
 export function filledInfoToken(
 	character: Pick<Character, 'id' | 'edition' | 'rules'>,
 	tokenId: string,
-	count: number
+	count: number,
+	prepValues?: Readonly<Record<string, string>>
 ): FilledInfoToken | undefined {
 	const rule = infoTokenCharacterRulesOf(character)?.[tokenId];
 	if (!rule) return undefined;
 	const chosenAt = rule.characters.indexOf('chosen');
 	return {
-		characterIds: rule.characters.flatMap((c) =>
-			c === 'chosen' ? [] : [c === 'self' ? character.id : c]
-		),
+		characterIds: rule.characters.flatMap((c) => {
+			if (c === 'chosen') return [];
+			if (c === 'self') return [character.id];
+			if (c !== 'value') return [c];
+			const entered = rule.value && prepValues?.[prepValueKey(character.id, rule.value)];
+			return entered ? [entered] : [];
+		}),
 		upTo: Math.max(rule.upTo ?? count, rule.characters.length),
 		...(chosenAt >= 0 ? { chosenAt } : {}),
 		...(rule.others === 'opposite-alignment' ? { othersOpposite: true as const } : {}),

@@ -29,7 +29,8 @@
 	const position = $derived(stops.filter((c) => c <= cursor).length);
 </script>
 
-<section class="strip" aria-label="Game history" data-testid="history-strip">
+<!-- Left out of Export's picture, which is the board and its game info (Trevor, 2026-11-01). -->
+<section class="strip" aria-label="Game history" data-testid="history-strip" data-screenshot="skip">
 	<IconButton
 		icon="back"
 		label="Previous change"
