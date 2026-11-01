@@ -5,10 +5,19 @@
  * be in play (Heretic with Baron, Godfather, Lleech, Pit-Hag, Spy, Widow:
  * https://wiki.bloodontheclocktower.com/Heretic#Related_Jinxes); those become setup
  * warnings when both are chosen.
+ *
+ * What a jinx changes in the app is data: the `jinxes` block of either character's rules
+ * (`data/jinx-rules.ts`), in effect while both are on the script. A jinx with no such block
+ * (a homebrew one) is text, except that its wording may still say only one can be in play.
  */
+import type { GivenInstead, JinxRules } from '#lib/core/data/jinx-rules.ts';
 import type { JinxIndex } from '#lib/core/data/jinxes.ts';
 import { pairKey } from '#lib/core/data/parse.ts';
+import { rulesOf } from '#lib/core/data/rules/index.ts';
+import type { CharacterRules } from '#lib/core/data/character-rules.ts';
 import type { CharacterId, Jinx } from '#lib/core/data/types.ts';
+
+type RulesLookup = ReadonlyMap<CharacterId, { rules?: CharacterRules }>;
 
 export interface ScriptJinx extends Jinx {
 	/** `official` from TPI's jinxes.json; `script` from a homebrew character's `jinxes`. */
@@ -25,6 +34,77 @@ export function isExclusiveJinx(reason: string): boolean {
 }
 
 /**
+ * What the jinx between `a` and `b` changes, from both characters' `jinxes` blocks, or
+ * undefined when neither says anything (the jinx is text only).
+ */
+export function jinxRulesBetween(
+	a: CharacterId,
+	b: CharacterId,
+	characters?: RulesLookup
+): JinxRules | undefined {
+	const fromA = rulesOf(a, characters)?.jinxes?.[b];
+	const fromB = rulesOf(b, characters)?.jinxes?.[a];
+	return fromA || fromB ? { ...fromB, ...fromA } : undefined;
+}
+
+/** Whether a jinx forbids both being in play: its rules say so, else its wording does. */
+export function jinxIsExclusive(jinx: Jinx, characters?: RulesLookup): boolean {
+	const [a, b] = jinx.characters;
+	const rules = jinxRulesBetween(a, b, characters);
+	return rules ? rules.exclusive === true : isExclusiveJinx(jinx.reason);
+}
+
+/**
+ * The abilities `giver`'s `givesAbility` may not give on this script: each jinxed partner
+ * on it whose jinx says `notGiven` (the Boffin's Demon cannot have the Drunk ability,
+ * https://wiki.bloodontheclocktower.com/Boffin#Related_Jinxes).
+ */
+export function barredAbilities(
+	giver: CharacterId,
+	script: readonly CharacterId[],
+	characters?: RulesLookup
+): CharacterId[] {
+	return script.filter(
+		(id) => id !== giver && jinxRulesBetween(giver, id, characters)?.notGiven === true
+	);
+}
+
+/**
+ * What happens instead when `giver`'s `givesAbility` would give the Storyteller `ability`, by
+ * their jinx on this script (`givenInstead`: the Plague Doctor's Spy goes to a Minion, its
+ * Boomdandy makes a player the Boomdandy,
+ * https://wiki.bloodontheclocktower.com/Plague_Doctor#Related_Jinxes). Undefined when the
+ * Storyteller gains it as usual.
+ */
+export function givenInstead(
+	giver: CharacterId,
+	ability: CharacterId,
+	script: readonly CharacterId[],
+	characters?: RulesLookup
+): GivenInstead | undefined {
+	if (giver === ability || !script.includes(giver) || !script.includes(ability)) return undefined;
+	return jinxRulesBetween(giver, ability, characters)?.givenInstead;
+}
+
+/**
+ * The characters on the script whose jinx with `id` says `key`: those `id` may give or
+ * create while in play (`spareToken`: the Boffin's and Pit-Hag's Village Idiot), or whose
+ * player the Storyteller picks when `id` creates them (`storytellerPicksPlayer`: the
+ * Pit-Hag's Damsel).
+ */
+export function jinxedPartners(
+	id: CharacterId,
+	key: 'spareToken' | 'storytellerPicksPlayer' | 'noTurnGood',
+	script: readonly CharacterId[],
+	characters?: RulesLookup
+): CharacterId[] {
+	if (!script.includes(id)) return [];
+	return script.filter(
+		(other) => other !== id && jinxRulesBetween(id, other, characters)?.[key] === true
+	);
+}
+
+/**
  * Every jinx between characters on the script: TPI's, plus any declared by homebrew
  * characters. A homebrew jinx replaces TPI's for the same pair, since the script author
  * chose it. Order: TPI's data order, then the script's.
@@ -32,7 +112,8 @@ export function isExclusiveJinx(reason: string): boolean {
 export function scriptJinxes(
 	index: JinxIndex,
 	scriptIds: Iterable<CharacterId>,
-	homebrewJinxes: readonly Jinx[] = []
+	homebrewJinxes: readonly Jinx[] = [],
+	characters?: RulesLookup
 ): ScriptJinx[] {
 	const ids = new Set(scriptIds);
 	const own = new Map<string, Jinx>();
@@ -44,9 +125,10 @@ export function scriptJinxes(
 	for (const jinx of index.all) {
 		const [a, b] = jinx.characters;
 		if (!ids.has(a) || !ids.has(b) || own.has(pairKey(a, b))) continue;
-		out.push({ ...jinx, source: 'official', exclusive: isExclusiveJinx(jinx.reason) });
+		out.push({ ...jinx, source: 'official', exclusive: jinxIsExclusive(jinx, characters) });
 	}
 	for (const jinx of own.values()) {
+		// The script's own wording replaces TPI's jinx, so it is read as written.
 		out.push({ ...jinx, source: 'script', exclusive: isExclusiveJinx(jinx.reason) });
 	}
 	return out;

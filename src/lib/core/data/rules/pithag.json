@@ -19,5 +19,25 @@
 			"types": ["townsfolk", "outsider", "minion", "demon"],
 			"notInPlay": true
 		}
+	},
+	"jinxes": {
+		"cultleader": {
+			"noTurnGood": true
+		},
+		"damsel": {
+			"storytellerPicksPlayer": true
+		},
+		"goon": {
+			"noTurnGood": true
+		},
+		"ogre": {
+			"noTurnGood": true
+		},
+		"politician": {
+			"noTurnGood": true
+		},
+		"villageidiot": {
+			"spareToken": true
+		}
 	}
 }
