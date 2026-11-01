@@ -7,20 +7,17 @@
  * pin TPI's current data, so review and update them when a data sync changes Hindu.
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
- * a scenario test (seats, characters and reminders, then the action, then the expected state)
- * that paraphrases the example. Never copy wiki prose.
+ * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
+ * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import type { Command } from '#lib/core/engine/index.ts';
-import {
-	castGame,
-	run,
-	testCharacters as characters
-} from '#lib/core/model/fixtures.test-support.ts';
+import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
 import { alignmentOf } from '#lib/core/model/selectors.ts';
 import { gameEnds, promptable } from '#lib/core/rules/game-end.ts';
 import { demonHeirs, rebirthOf, reincarnatedBy } from '#lib/core/rules/reincarnation.ts';
+import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
 const hindu: Command = { type: 'AddRuleCharacter', characterId: 'hindu' };
@@ -199,36 +196,36 @@ describe('Hindu', () => {
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Hindu#Examples)', () => {
 		// The Princess is executed and comes back as the Gangster, still good.
 		it('Example 1: the executed Princess becomes the Gangster', () => {
-			const { game, seats } = castGame(
-				['princess', 'chef', 'empath', 'monk', 'poisoner', 'imp'],
-				hindu,
-				(s) => ({ type: 'SetDead', seatId: s[0], dead: true, cause: 'execution' }),
-				reborn(0, 'gangster')
-			);
-			expect(game.seats[seats[0]]).toMatchObject({ characterId: 'gangster', dead: false });
-			expect(alignmentOf(game, seats[0])).toBe('good');
-			expect(game.reincarnated).toEqual([seats[0]]);
+			const s = scenario(['princess', 'chef', 'empath', 'monk', 'poisoner', 'imp'])
+				.rule('hindu')
+				.dies('princess', 'execution')
+				.do((s) => ({ type: 'Reincarnate', seatId: s.seat('princess'), characterId: 'gangster' }));
+			expect(s.game.seats[s.seat('princess')]).toMatchObject({
+				characterId: 'gangster',
+				dead: false
+			});
+			expect(alignmentOf(s.game, s.seat('princess'))).toBe('good');
+			expect(s.game.reincarnated).toEqual([s.seat('princess')]);
 		});
 
 		// Two players die and are reborn; then the Demon kills three at once, one at a time:
 		// the first two are reborn, and the fifth death is a normal one.
 		it('Example 2: four rebirths, then the fifth player stays dead', () => {
-			const cast = ['sweetheart', 'engineer', 'chef', 'empath', 'monk', 'poisoner', 'po'];
-			const first = castGame(
-				cast,
-				hindu,
-				dies(0),
-				reborn(0, 'cacklejack'),
-				dies(1),
-				reborn(1, 'judge'),
-				dies(2),
-				reborn(2, 'gnome'),
-				dies(3),
-				reborn(3, 'harlot')
+			const reborn = (i: number, characterId: string) => (s: Scenario) =>
+				s.dies(i, 'demon').do({ type: 'Reincarnate', seatId: s.seat(i), characterId });
+			let s = scenario(['sweetheart', 'engineer', 'chef', 'empath', 'monk', 'poisoner', 'po']).rule(
+				'hindu'
 			);
-			expect(first.game.reincarnated).toEqual(first.seats.slice(0, 4));
-			const { game } = run(first.session, first.ctx, dies(4)(first.seats));
-			expect(reincarnatedBy(game, first.seats[4], characters)).toBeUndefined();
+			for (const [i, id] of [
+				[0, 'cacklejack'],
+				[1, 'judge'],
+				[2, 'gnome'],
+				[3, 'harlot']
+			] as const)
+				s = reborn(i, id)(s);
+			expect(s.game.reincarnated).toEqual(s.seats.slice(0, 4));
+			const fifth = s.dies(4, 'demon');
+			expect(reincarnatedBy(fifth.game, fifth.seat(4), fifth.characters)).toBeUndefined();
 		});
 	});
 });

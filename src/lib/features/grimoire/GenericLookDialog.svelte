@@ -11,7 +11,7 @@
 	 * A generic ∞ token's look (symbol, colour, text) in two panes (Trevor, 2026-10-24): the
 	 * token as it will look on the left, its fields on the right; on a phone the token stays on
 	 * top. The bank's reusable tokens (GenericTokenDialog) and a player's own generic reminders
-	 * (PlayerReminderPicker) alike.
+	 * (PlayerReminderBin) alike.
 	 */
 	interface Props {
 		open?: boolean;

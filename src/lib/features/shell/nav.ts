@@ -70,9 +70,10 @@ export const NAV_SECTIONS: readonly NavSection[] = [
 	},
 	{
 		// The builders in their own section, apart from Prepare (Trevor, 2026-10-31: "we have a
-		// lot of builders, we should separate that into a Builder Section").
+		// lot of builders, we should separate that into a Builder Section"), headed Create
+		// (Trevor, 2026-11-01).
 		id: 'build',
-		label: 'shell.navSectionBuild',
+		label: 'shell.navSectionCreate',
 		items: [
 			{
 				id: 'build-script',

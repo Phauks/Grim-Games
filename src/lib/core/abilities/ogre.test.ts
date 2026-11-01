@@ -7,11 +7,12 @@
  * pin TPI's current data, so review and update them when a data sync changes Ogre.
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
- * a scenario test (seats, characters and reminders, then the action, then the expected state)
- * that paraphrases the example. Never copy wiki prose.
+ * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
+ * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import type { Command } from '#lib/core/engine/index.ts';
 import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
@@ -51,16 +52,10 @@ describe('Ogre', () => {
 		// The Ogre's friend is good, so the Ogre is good; the friend later turns evil, and the
 		// Ogre stays good (without the optional rule).
 		it('Example 2: Friend turns evil, but Ogre stays good', () => {
-			const { game, seats } = castGame(
-				['ogre', 'chef', 'empath', 'monk', 'poisoner', 'imp'],
-				(s) => ({
-					type: 'AddReminder',
-					seatId: s[1],
-					reminder: { characterId: 'ogre', label: 'Friend' }
-				}),
-				(s) => ({ type: 'SetAlignment', seatId: s[1], alignment: 'evil' })
-			);
-			expect(followedAlignmentOffer(game, seats[1], characters)).toBeUndefined();
+			const s = scenario(['ogre', 'chef', 'empath', 'monk', 'poisoner', 'imp'])
+				.reminder('chef', 'ogre', 'Friend')
+				.do((s) => ({ type: 'SetAlignment', seatId: s.seat('chef'), alignment: 'evil' }));
+			expect(followedAlignmentOffer(s.game, s.seat('chef'), s.characters)).toBeUndefined();
 		});
 	});
 });

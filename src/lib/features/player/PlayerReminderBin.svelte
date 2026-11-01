@@ -12,6 +12,8 @@
 	import { dropOnTap } from '#lib/features/grimoire/reminder-in-hand.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import SearchField from '#lib/ui/primitives/SearchField.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import type { SeatPoint } from '#lib/ui/seating/seat-layout.ts';
 	import {
 		guessesFirst,
@@ -184,12 +186,30 @@
 	});
 
 	// ── Its About and, for an ∞ token, Edit token (Trevor, 2026-10-31: the ⋯ holds only that) ──
+	/**
+	 * What About and Edit token show: a token tapped in the seat's sheet (Trevor, 2026-11-01: as
+	 * the board's sheet opens its About), else the token in hand. `seatId` when it is on a seat.
+	 */
+	type Subject = { seatId?: string; reminder: PlayerReminder };
+	let shown = $state<Subject>();
+	const subject = $derived.by((): Subject | undefined => {
+		if (shown) return shown;
+		if (!held || !heldReminder) return undefined;
+		return { seatId: held.kind === 'placed' ? held.seatId : undefined, reminder: heldReminder };
+	});
 	let aboutOpen = $state(false);
 	let editOpen = $state(false);
+	$effect(() => {
+		if (!aboutOpen && !editOpen) shown = undefined;
+	});
+	/** A token on a seat, from the seat's sheet: its About, where it comes off. */
+	export function showAbout(seatId: string, reminder: PlayerReminder): void {
+		shown = { seatId, reminder };
+		aboutOpen = true;
+	}
+	const subjectGeneric = $derived(!!subject && isGenericReminder(subject.reminder));
 	const owner = $derived(
-		heldReminder && !isGenericReminder(heldReminder)
-			? characterOf(heldReminder.characterId)
-			: undefined
+		subject && !subjectGeneric ? characterOf(subject.reminder.characterId) : undefined
 	);
 	const actions = $derived(
 		heldReminder && isGenericReminder(heldReminder)
@@ -198,17 +218,22 @@
 	);
 	/** The look being edited, kept on the token in hand or on its seat. */
 	function setLook(change: GenericLook) {
-		if (!held) return;
-		if (held.kind === 'tray') held = { ...held, look: { ...held.look, ...change } };
-		else if (held.reminder.id) {
-			onLook(held.seatId, held.reminder.id, change);
-			held = { ...held, reminder: { ...held.reminder, ...change } };
-		}
+		const now = subject;
+		if (!now) return;
+		const reminder = { ...now.reminder, ...change };
+		if (now.seatId && now.reminder.id) onLook(now.seatId, now.reminder.id, change);
+		if (shown) shown = { ...shown, reminder };
+		else if (held?.kind === 'tray') held = { ...held, look: { ...held.look, ...change } };
+		else if (held) held = { ...held, reminder };
 	}
-	function deleteHeld() {
+	/** Off its seat (or, in hand from the tray, put down). */
+	function remove() {
+		const now = subject;
 		editOpen = false;
-		if (held?.kind === 'placed') onMove(held.seatId, held.reminder);
-		held = undefined;
+		aboutOpen = false;
+		if (now?.seatId) onMove(now.seatId, now.reminder);
+		if (!shown || (held?.kind === 'placed' && held.seatId === now?.seatId)) held = undefined;
+		shown = undefined;
 	}
 </script>
 
@@ -229,6 +254,9 @@
 
 {#snippet heldView()}
 	{#if heldReminder}<BoardReminder {...playerLook(heldReminder, characterOf)} />{/if}
+{/snippet}
+{#snippet subjectView()}
+	{#if subject}<BoardReminder {...playerLook(subject.reminder, characterOf)} />{/if}
 {/snippet}
 
 <ReminderTray
@@ -274,18 +302,28 @@
 {/if}
 
 <ReminderAbout bind:open={aboutOpen} {owner} scriptNames={characters.map((c) => c.name)}>
-	{#snippet token()}{@render heldView()}{/snippet}
-	{#snippet subtitle()}{#if owner && heldReminder}{t('player.grim.reminderFrom')}
-			<CharacterBadge characterId={heldReminder.characterId} character={owner} />{/if}{/snippet}
+	{#snippet token()}{@render subjectView()}{/snippet}
+	{#snippet subtitle()}{#if owner && subject}{t('player.grim.reminderFrom')}
+			<CharacterBadge characterId={subject.reminder.characterId} character={owner} />{/if}{/snippet}
+	{#snippet headActions()}
+		{#if subject?.seatId}
+			{#if subjectGeneric}<IconButton
+					icon="edit"
+					label={t('player.grim.editToken')}
+					onclick={() => (editOpen = true)}
+				/>{/if}
+			<DeleteButton label={t('player.grim.removeReminder')} onclick={remove} />
+		{/if}
+	{/snippet}
 </ReminderAbout>
 
 <GenericLookDialog
 	bind:open={editOpen}
-	look={heldReminder && isGenericReminder(heldReminder) ? heldReminder : undefined}
+	look={subject && subjectGeneric ? subject.reminder : undefined}
 	onChange={setLook}
-	onDelete={deleteHeld}
+	onDelete={remove}
 	deleteLabel={t('player.grim.deleteGeneric')}
-	tokenKey={held?.kind === 'placed' ? held.reminder.id : 'tray'}
+	tokenKey={subject?.reminder.id ?? 'tray'}
 />
 
 <style>
