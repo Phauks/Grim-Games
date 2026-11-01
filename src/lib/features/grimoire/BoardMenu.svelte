@@ -284,16 +284,6 @@
 				>
 					{t('room.seating.title')}
 				</Button>
-				<!-- Travellers choose on their phones (Trevor, 2026-10-31): a tap holds one, Confirm sends it. -->
-				<Button
-					disabled={watching || !host.code}
-					variant="quiet"
-					icon="traveller"
-					data-testid="menu-travellers"
-					onclick={() => fromMenu(() => (playersDialog.travellers = true))}
-				>
-					{t('room.travellers.title')}
-				</Button>
 			</section>
 			<section class="group" aria-labelledby="board-menu-app">
 				<h3 id="board-menu-app" class="group-title">App</h3>

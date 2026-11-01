@@ -14,7 +14,9 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { evilLearns } from '#lib/core/rules/index.ts';
+import { parseCharacterRules } from '#lib/core/data/character-rules.ts';
+import { Issues } from '#lib/core/data/validate.ts';
+import { evilLearns, prepValueCharacter, prepValueKey } from '#lib/core/rules/index.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { protection } from '#lib/core/rules/ability.ts';
@@ -99,6 +101,33 @@ describe('Storm Catcher', () => {
 			expect(evilLearns(s.game, 'stormcatcher', s.characters)).toEqual({
 				evil: [s.seat('poisoner'), s.seat('imp')]
 			});
+		});
+	});
+
+	describe('the named character, saved with the game (M10g)', () => {
+		it('keeps the character named during prep, even when it is not in play', () => {
+			// Trevor (2026-11-01): the stormcaught character is saved and logged in play or not.
+			const s = scenario(['poisoner', 'imp', 'chef']).do({
+				type: 'SetPrepValue',
+				key: prepValueKey('stormcatcher', 'named'),
+				value: 'empath'
+			});
+			expect(evilLearns(s.game, 'stormcatcher', s.characters)).toEqual({
+				evil: [s.seat('poisoner'), s.seat('imp')],
+				named: 'empath'
+			});
+			expect(prepValueCharacter('stormcatcher', 'named', s.characters)).toBe('good');
+		});
+
+		it('reads a character prep value, and refuses an unknown kind', () => {
+			const issues = new Issues();
+			const note = (value: object) => ({ setupPrep: { notes: [{ text: 'x', value }] } });
+			expect(
+				parseCharacterRules(note({ key: 'k', label: 'L', character: 'good' }), 'a', issues)
+					?.setupPrep?.notes?.[0]?.value
+			).toEqual({ key: 'k', label: 'L', character: 'good' });
+			parseCharacterRules(note({ key: 'k', label: 'L', character: 'evil' }), 'b', issues);
+			expect(issues.list).toEqual(['b.setupPrep.notes[0].value.character: unknown value "evil"']);
 		});
 	});
 });
