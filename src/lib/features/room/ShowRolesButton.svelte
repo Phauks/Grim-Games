@@ -2,15 +2,15 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 	import { roleGaps, seatRoles, type RoleGap } from '#lib/core/sync/seat-roles.ts';
-	import type { SeatId } from '#lib/core/model/index.ts';
+	import type { SeatId, TileId } from '#lib/core/model/index.ts';
+	import type { BagSlot } from '#lib/core/rules/index.ts';
+	import BagTiles from '#lib/features/setup/BagTiles.svelte';
 	import { seatName } from '#lib/features/game/seat-label.ts';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
-	import Icon from '#lib/ui/icons/Icon.svelte';
 	import RoleCard from './RoleCard.svelte';
-	import VoteChoice from './VoteChoice.svelte';
 	import { roomHost } from './host.svelte.ts';
 	import { ROLES_SHOWN_MS } from './roles-shown.svelte.ts';
 	import { clock, timeLeft } from './time-left.svelte.ts';
@@ -55,6 +55,14 @@
 	let shownHere = $state<ReadonlySet<SeatId>>(new Set());
 	const roles = $derived(seatRoles(game.game, game.characters));
 	const scriptCharacters = $derived([...game.characters.values()]);
+	const noPhoneSlots = $derived<BagSlot[]>(
+		noPhone.map((seatId, i) => ({
+			tileId: seatId as unknown as TileId,
+			number: i + 1,
+			state: shownHere.has(seatId) ? 'drawn' : cardOpen && cardSeat === seatId ? 'held' : 'in-bag',
+			seatId
+		}))
+	);
 	function confirmShow() {
 		host.showRoles(gameId, true);
 		if (!noPhone.length) return;
@@ -116,26 +124,18 @@
 	</ul>
 </ConfirmDialog>
 
+<!-- Their names on tiles, as the bag draw's (Trevor, 2026-11-01: "make it look like a token
+     draw, but instead of symbols it has the people's names"): a tap holds out that player's
+     card, and their tile is drawn once it closes. -->
 <Dialog bind:open={listOpen} title={t('room.roles.noPhoneTitle')}>
-	<ul class="no-phone" data-testid="roles-no-phone">
-		{#each noPhone as seatId (seatId)}
-			<li>
-				<VoteChoice
-					mark={game.game.seating.indexOf(seatId) + 1}
-					pressed={false}
-					onclick={() => showHere(seatId)}
-					><span class="who" data-testid="roles-no-phone-player"
-						><PlayerBadge name={seatName(game.game, seatId)} /><span class="seen"
-							>{#if shownHere.has(seatId)}<Icon
-									name="roleSeen"
-									label={t('room.roles.seen')}
-								/>{/if}</span
-						></span
-					></VoteChoice
-				>
-			</li>
-		{/each}
-	</ul>
+	<div data-testid="roles-no-phone">
+		<BagTiles
+			slots={noPhoneSlots}
+			marks={noPhone.map((seatId) => ({ kind: 'player', name: seatName(game.game, seatId) }))}
+			seatLabel={(seatId) => (seatId ? seatName(game.game, seatId) : '')}
+			onpick={(slot) => slot.seatId && showHere(slot.seatId)}
+		/>
+	</div>
 </Dialog>
 
 <RoleCard
@@ -161,25 +161,6 @@
 	}
 	.off {
 		visibility: hidden;
-	}
-	.no-phone {
-		display: grid;
-		gap: var(--space-2);
-		margin: 0;
-		padding: 0;
-		list-style: none;
-	}
-	.who {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-2);
-	}
-	/* Kept while empty, so marking one seen moves nothing. */
-	.seen {
-		display: grid;
-		place-items: center;
-		min-width: 1.5em;
 	}
 	.gaps {
 		display: grid;

@@ -144,21 +144,22 @@ test('Deal gives every seat a character, and a seated phone holds to see its own
 	await toggle.tap();
 	await warning.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(phone.getByTestId('your-character')).toBeEnabled();
-	// Then the players with no phone, to show theirs on this device in any order (Trevor,
-	// 2026-11-01): seat 4 first, its card titled with its name, then marked seen.
+	// Then the players with no phone, their names on tiles as in the bag draw, to show theirs
+	// on this device in any order (Trevor, 2026-11-01): seat 4 first, its card titled with its
+	// name, then its tile drawn.
 	const list = page.getByRole('dialog', { name: 'Players with no phone' });
-	const noPhone = list.getByTestId('roles-no-phone-player');
-	await expect(noPhone).toHaveCount(4);
-	await expect(noPhone.nth(0)).toContainText('Seat 1');
-	await noPhone.nth(2).tap();
+	const tiles = list.getByRole('button', { name: /^Tile Seat \d/ });
+	await expect(tiles).toHaveCount(4);
+	await expect(tiles.nth(0)).toContainText('Seat 1');
+	await list.getByRole('button', { name: 'Tile Seat 4' }).tap();
 	const here = page.getByRole('dialog', { name: 'Seat 4' });
 	const hereHold = here.getByTestId('role-hold');
 	await hereHold.dispatchEvent('pointerdown', { pointerId: 1, isPrimary: true });
 	await expect(here.getByTestId('role-name')).toHaveText(/Washerwoman|Empath|Monk|Poisoner|Imp/);
 	await hereHold.dispatchEvent('pointerup', { pointerId: 1, isPrimary: true });
 	await here.getByRole('button', { name: 'Close' }).tap();
-	await expect(noPhone.nth(2).getByRole('img', { name: 'Seen' })).toBeVisible();
-	await expect(noPhone.nth(0).getByRole('img', { name: 'Seen' })).toHaveCount(0);
+	await expect(list.getByRole('button', { name: 'Tile Seat 4, drawn' })).toBeDisabled();
+	await expect(list.getByRole('button', { name: 'Tile Seat 1' })).toBeEnabled();
 	await list.getByRole('button', { name: 'Close' }).tap();
 	await expect(list).toBeHidden();
 	await toggle.tap();
