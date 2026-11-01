@@ -3044,8 +3044,14 @@ test('End game keeps the Storyteller on the board, says it is over, and can be r
 	await closeSheet(page);
 	await expect(seatLabelled(page, 'Seat 1: Ana')).toHaveCount(1);
 
-	// Reopening from the board puts it back in Continue game.
-	await page.getByTestId('game-over').tap();
+	// The Game over pill only says so; Reopen game is in ⋯ (Trevor, 2026-11-01).
+	await expect(page.getByRole('button', { name: /^Game over/ })).toHaveCount(0);
+	// Reopening from ⋯ puts it back in Continue game.
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Reopen game' })
+		.tap();
 	await page
 		.getByRole('alertdialog', { name: 'Reopen game?' })
 		.getByRole('button', { name: 'Confirm', exact: true })
@@ -3166,8 +3172,33 @@ test('a finished game exports as a recap file and a grimoire image', async ({ pa
 	const png = readFileSync(image.path);
 	const box = await page.locator('.grimoire').boundingBox();
 	expect(box).not.toBeNull();
+	// Only the board and its game info (Trevor, 2026-11-01): the board with its margin all round,
+	// without the toolbar's row above or History's strip below.
+	const shown = await page.locator('.grimoire > .board').evaluate((el) => ({
+		height: el.getBoundingClientRect().height,
+		margin: parseFloat(getComputedStyle(el).marginTop)
+	}));
+	expect(shown.height + 2 * shown.margin).toBeLessThan(box!.height - 50);
 	const ratio = png.readUInt32BE(16) / png.readUInt32BE(20);
-	expect(ratio).toBeCloseTo(box!.width / box!.height, 1);
+	expect(ratio).toBeCloseTo(box!.width / (shown.height + 2 * shown.margin), 1);
+	// Drawn on the page's own colour, never see-through (the browser decodes the PNG).
+	const opaque = await page.evaluate(async (b64) => {
+		const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+		const bitmap = await createImageBitmap(new Blob([bytes], { type: 'image/png' }));
+		const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+		const ctx = canvas.getContext('2d')!;
+		ctx.drawImage(bitmap, 0, 0);
+		return ctx.getImageData(1, 1, 1, 1).data[3];
+	}, png.toString('base64'));
+	expect(opaque).toBe(255);
+	// The controls are left out: History's strip, the soundboard and the timer.
+	await expect(page.getByTestId('history-strip')).toHaveAttribute('data-screenshot', 'skip');
+	await expect(page.locator('.board-timer .timer-slot')).toHaveAttribute('data-screenshot', 'skip');
+	// By its label: the open Export dialog hides the board from getByRole.
+	await expect(page.locator('.board-timer [aria-label="Soundboard"]')).toHaveAttribute(
+		'data-screenshot',
+		'skip'
+	);
 	await page.keyboard.press('Escape');
 
 	// The same from History, which opens the board first so the picture is the board
@@ -4518,6 +4549,15 @@ test('the Storm Catcher named character is picked before the day and kept at its
 	const learns = step.getByTestId('night-evil-learns');
 	await expect(learns).toContainText('Washerwoman');
 	await expect(learns.getByRole('button', { name: 'Show to player' })).toBeEnabled();
+	// The step's own "not in play" card shows that character, never the Demon's bluffs
+	// (Trevor, 2026-11-01).
+	await step
+		.getByTestId('step-info-tokens')
+		.getByRole('button', { name: 'These characters are not in play (Washerwoman)', exact: true })
+		.tap();
+	const shown = page.locator('[data-testid="show-to-player"][open]');
+	await expect(shown.getByRole('img', { name: /Washerwoman token/ })).toBeVisible();
+	await expect(shown.getByRole('img', { name: /token/ })).toHaveCount(1);
 });
 
 test('Minion info and Demon info list every card they can show, with who it points at', async ({

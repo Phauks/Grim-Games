@@ -113,8 +113,12 @@ test("each card's + adds it to cards shown together, which can be reordered", as
 	await view.getByRole('button', { name: 'Close' }).tap();
 
 	// More than three cards are swiped through.
-	await page.getByRole('button', { name: 'Add This is the Demon to the cards to show' }).tap();
-	await page.getByRole('button', { name: 'Add These are your Minions to the cards to show' }).tap();
+	// Centred first: Playwright scrolls a + only to the edge, where the cards to show cover it.
+	for (const name of ['This is the Demon', 'These are your Minions']) {
+		const add = page.getByRole('button', { name: `Add ${name} to the cards to show` });
+		await add.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+		await add.tap();
+	}
 	await page.getByRole('button', { name: 'Show 4 cards' }).tap();
 	await expect(view.getByRole('region', { name: 'Card 1 of 4' })).toBeInViewport();
 	await view.getByRole('button', { name: 'Next card' }).tap();
@@ -320,4 +324,35 @@ test('opening a card that asks for characters leaves the keyboard closed', async
 	await page.getByRole('button', { name: 'You are', exact: true }).tap();
 	await expect(search).toBeVisible();
 	await expect(search).not.toBeFocused();
+});
+
+test('the cards to show stay on top of the pinned section headers', async ({ page }) => {
+	// Trevor, 2026-11-01: section headers slid over the cards to show.
+	await openSheet(page);
+	for (const name of ['Did you nominate today?', 'Did you vote today?', 'This is the Demon'])
+		await page.getByRole('button', { name: `Add ${name} to the cards to show`, exact: true }).tap();
+	const rows = page.getByTestId('chain-list').getByRole('listitem');
+	await expect(rows).toHaveCount(3);
+	// Scroll each header into the bar's band; whatever is drawn at each row is the row.
+	const heads = page.locator('[data-scope="drawer"] .head');
+	for (let h = 0; h < (await heads.count()); h++) {
+		const bar = (await page.getByRole('group', { name: 'Cards to show' }).boundingBox())!;
+		await heads.nth(h).evaluate(
+			(el, y) => {
+				let s = el.parentElement;
+				while (s && getComputedStyle(s).overflowY !== 'auto') s = s.parentElement;
+				if (s) s.scrollTop += el.getBoundingClientRect().top - y;
+			},
+			bar.y + bar.height / 2
+		);
+		// The first two: the frame shows two and a half rows, and scrolls the rest.
+		for (let i = 0; i < 2; i++) {
+			const covered = await rows.nth(i).evaluate((li) => {
+				const r = li.getBoundingClientRect();
+				const hit = document.elementFromPoint(r.left + r.width / 4, r.top + r.height / 2);
+				return !hit || !li.contains(hit);
+			});
+			expect(covered).toBe(false);
+		}
+	}
 });
