@@ -43,6 +43,8 @@
 		 * "Approve day view E"). Without it there is no Soundboard button.
 		 */
 		onSoundboard?: () => void;
+		/** Back to town on the day's timer (Trevor, 2026-11-01), as on the board's. */
+		town?: { can: boolean; called: boolean };
 	}
 
 	let {
@@ -54,7 +56,8 @@
 		cover,
 		coverTimer,
 		coverActions,
-		onSoundboard
+		onSoundboard,
+		town
 	}: Props = $props();
 
 	const day = $derived(new LiveDay(game));
@@ -84,7 +87,7 @@
 				onclick={onSoundboard}
 			/>{/if}{/snippet}
 	<div class="body">
-		<DayPanel game={day} {assistance} {onSavant} {onExecute} />
+		<DayPanel game={day} {assistance} {onSavant} {onExecute} {town} />
 	</div>
 	{#snippet actions()}
 		<span class="day-name" data-testid="day-name" aria-hidden="true">{title}</span>

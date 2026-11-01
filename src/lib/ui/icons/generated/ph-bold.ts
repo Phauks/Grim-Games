@@ -142,6 +142,7 @@ import ph_lock_simple_bold from '~icons/ph/lock-simple-bold';
 import ph_magnifying_glass_bold from '~icons/ph/magnifying-glass-bold';
 import ph_mask_sad_bold from '~icons/ph/mask-sad-bold';
 import ph_megaphone_bold from '~icons/ph/megaphone-bold';
+import ph_megaphone_simple_bold from '~icons/ph/megaphone-simple-bold';
 import ph_minus_bold from '~icons/ph/minus-bold';
 import ph_minus_circle_bold from '~icons/ph/minus-circle-bold';
 import ph_monitor_bold from '~icons/ph/monitor-bold';
@@ -377,6 +378,7 @@ const icons: IconMap = {
 	'ph:magnifying-glass-bold': ph_magnifying_glass_bold,
 	'ph:mask-sad-bold': ph_mask_sad_bold,
 	'ph:megaphone-bold': ph_megaphone_bold,
+	'ph:megaphone-simple-bold': ph_megaphone_simple_bold,
 	'ph:minus-bold': ph_minus_bold,
 	'ph:minus-circle-bold': ph_minus_circle_bold,
 	'ph:monitor-bold': ph_monitor_bold,

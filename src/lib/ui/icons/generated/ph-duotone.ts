@@ -142,6 +142,7 @@ import ph_lock_simple_duotone from '~icons/ph/lock-simple-duotone';
 import ph_magnifying_glass_duotone from '~icons/ph/magnifying-glass-duotone';
 import ph_mask_sad_duotone from '~icons/ph/mask-sad-duotone';
 import ph_megaphone_duotone from '~icons/ph/megaphone-duotone';
+import ph_megaphone_simple_duotone from '~icons/ph/megaphone-simple-duotone';
 import ph_minus_duotone from '~icons/ph/minus-duotone';
 import ph_minus_circle_duotone from '~icons/ph/minus-circle-duotone';
 import ph_monitor_duotone from '~icons/ph/monitor-duotone';
@@ -377,6 +378,7 @@ const icons: IconMap = {
 	'ph:magnifying-glass-duotone': ph_magnifying_glass_duotone,
 	'ph:mask-sad-duotone': ph_mask_sad_duotone,
 	'ph:megaphone-duotone': ph_megaphone_duotone,
+	'ph:megaphone-simple-duotone': ph_megaphone_simple_duotone,
 	'ph:minus-duotone': ph_minus_duotone,
 	'ph:minus-circle-duotone': ph_minus_circle_duotone,
 	'ph:monitor-duotone': ph_monitor_duotone,
