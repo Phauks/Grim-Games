@@ -20,5 +20,8 @@
 		"victim": {
 			"who": "not-self"
 		}
+	},
+	"execution": {
+		"explodes": 3
 	}
 }

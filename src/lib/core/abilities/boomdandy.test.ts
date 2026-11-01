@@ -12,7 +12,10 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
+import { explosionOf, survivorsLackDemon } from '#lib/core/rules/explosion.ts';
+import { gameEnds } from '#lib/core/rules/game-end.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Boomdandy', () => {
 	const character = committedCharacter('boomdandy');
@@ -44,6 +47,40 @@ describe('Boomdandy', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Boomdandy#Examples)', () => {
-		it.todo('Example 1: Pointing kills Widow after explosion; evil wins');
+		it('Example 1: Pointing kills Widow after explosion; evil wins', () => {
+			// The Boomdandy is executed: everyone dies but the Po, the Widow and the Fortune Teller.
+			// The three point, the Widow is pointed at most and dies, and two players are left.
+			const before = scenario([
+				'boomdandy',
+				'po',
+				'widow',
+				'fortuneteller',
+				'chef',
+				'empath',
+				'monk'
+			]);
+			expect(explosionOf(before.game, before.seat('boomdandy'), before.characters)).toEqual({
+				characterId: 'boomdandy',
+				survivors: 3
+			});
+			const lives = [before.seat('po'), before.seat('widow'), before.seat('fortuneteller')];
+			expect(survivorsLackDemon(before.game, lives, before.characters)).toBe(false);
+			const exploded = (['chef', 'empath', 'monk'] as const).reduce(
+				(s, id) => s.dies(id, 'boomdandy'),
+				before.execute('boomdandy')
+			);
+			expect(gameEnds(exploded.game, exploded.characters)).toEqual([]);
+			const pointed = exploded.dies('widow', 'boomdandy');
+			expect(gameEnds(pointed.game, pointed.characters)).toMatchObject([
+				{ rule: 'two-alive', winner: 'evil' }
+			]);
+		});
+
+		it('does not explode when its ability does not work', () => {
+			// A poisoned Boomdandy is executed like anyone else.
+			const s = scenario(['boomdandy', 'po', 'chef', 'empath', 'monk']).poisoned('boomdandy');
+			expect(explosionOf(s.game, s.seat('boomdandy'), s.characters)).toBeUndefined();
+			expect(explosionOf(s.game, s.seat('chef'), s.characters)).toBeUndefined();
+		});
 	});
 });
