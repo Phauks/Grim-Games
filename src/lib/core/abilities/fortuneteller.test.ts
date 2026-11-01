@@ -13,6 +13,8 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { infoPicker, isTruthful } from '#lib/core/rules/night-info.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Fortune Teller', () => {
 	const character = committedCharacter('fortuneteller');
@@ -44,9 +46,43 @@ describe('Fortune Teller', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Fortune_Teller#Examples)', () => {
-		it.todo('Example 1: Monk and Undertaker pair yields a no');
-		it.todo('Example 2: Imp paired with Empath gives a yes');
-		it.todo('Example 3: Living Butler and dead Imp give a yes');
-		it.todo('Example 4: Self plus red-herring Saint gives a yes');
+		it('Example 1: Monk and Undertaker, learns no', () => {
+			const s = scenario(['fortuneteller', 'monk', 'undertaker', 'imp', 'poisoner']);
+			const picker = infoPicker(s.game, s.seat('fortuneteller'), 'fortuneteller', s.characters)!;
+			expect(
+				isTruthful(picker, { seats: [s.seat('monk'), s.seat('undertaker')], yes: false })
+			).toBe(true);
+			expect(isTruthful(picker, { seats: [s.seat('monk'), s.seat('undertaker')], yes: true })).toBe(
+				false
+			);
+		});
+
+		it('Example 2: Imp and Empath, learns yes', () => {
+			const s = scenario(['fortuneteller', 'imp', 'empath', 'monk', 'poisoner']);
+			const picker = infoPicker(s.game, s.seat('fortuneteller'), 'fortuneteller', s.characters)!;
+			expect(isTruthful(picker, { seats: [s.seat('imp'), s.seat('empath')], yes: true })).toBe(
+				true
+			);
+		});
+
+		it('Example 3: alive Butler and dead Imp, learns yes', () => {
+			// A dead Demon still counts.
+			const s = scenario(['fortuneteller', 'butler', 'imp', 'monk', 'poisoner']).dies('imp');
+			const picker = infoPicker(s.game, s.seat('fortuneteller'), 'fortuneteller', s.characters)!;
+			expect(isTruthful(picker, { seats: [s.seat('butler'), s.seat('imp')], yes: true })).toBe(
+				true
+			);
+		});
+
+		it('Example 4: themselves and the Saint who is the Red Herring, learns yes', () => {
+			const s = scenario(['fortuneteller', 'saint', 'imp', 'monk', 'poisoner']).reminder(
+				'saint',
+				'fortuneteller',
+				'Red Herring'
+			);
+			const picker = infoPicker(s.game, s.seat('fortuneteller'), 'fortuneteller', s.characters)!;
+			const chose = [s.seat('fortuneteller'), s.seat('saint')];
+			expect(isTruthful(picker, { seats: chose, yes: true })).toBe(true);
+		});
 	});
 });
