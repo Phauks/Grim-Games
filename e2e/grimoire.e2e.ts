@@ -4905,16 +4905,10 @@ test('the board menu names its groups, in two columns beside a phone', async ({ 
 	expect((await names('Session')).join(' ')).toMatch(/^(Character selection )?End game$/);
 	const session = (await group('Session').boundingBox())!;
 	// Arranging seats, Open seating (plan J38) and Count off (J40) are one Seating mode
-	// (Trevor, 2026-10-31), which works with no room open too; Travellers choose (L102) is
-	// there with no room open, disabled.
-	expect(await names('Seats')).toEqual([
-		'Add seat',
-		'Add Fabled or Loric',
-		'Seating',
-		'Travellers choose'
-	]);
+	// (Trevor, 2026-10-31), which works with no room open too. Travellers choose (L102) comes
+	// with Add seat, not as its own button (Trevor, 2026-11-01).
+	expect(await names('Seats')).toEqual(['Add seat', 'Add Fabled or Loric', 'Seating']);
 	await expect(group('Seats').getByRole('button', { name: 'Seating' })).toBeEnabled();
-	await expect(group('Seats').getByRole('button', { name: 'Travellers choose' })).toBeDisabled();
 	expect(await names('App')).toEqual(['Settings', 'Report an issue']);
 	// Beside a phone, the game on the left and the rest on the right.
 	const game = (await group('Game').boundingBox())!;

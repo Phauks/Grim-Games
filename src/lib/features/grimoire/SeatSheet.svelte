@@ -50,6 +50,8 @@
 	import { dayClaim } from '#lib/core/rules/index.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import { gameSettings } from '#lib/features/game-settings/game-settings.svelte.ts';
+	import { roomHost } from '#lib/features/room/host.svelte.ts';
+	import { playersDialog } from '#lib/features/room/players-dialog.svelte.ts';
 
 	interface Props {
 		open: boolean;
@@ -208,6 +210,10 @@
 			: undefined;
 	});
 	let claimOpen = $state(false);
+	// A seat still choosing its Traveller on a phone: its empty token shows that choice.
+	const choosing = $derived(
+		seatId !== undefined && !!roomHost().travellerPick?.seats.some((s) => s.seatId === seatId)
+	);
 	const day = $derived(new LiveDay(grimoire.open));
 </script>
 
@@ -221,8 +227,9 @@
 		{#if !character}<button
 				type="button"
 				class="lead-token"
-				aria-label="Choose character"
-				onclick={() => flow?.choose()}><span class="no-token">{number}</span></button
+				aria-label={choosing ? t('room.travellers.title') : 'Choose character'}
+				onclick={() => (choosing ? playersDialog.showTravellers() : flow?.choose())}
+				><span class="no-token">{number}</span></button
 			>{/if}
 	{/snippet}
 	{#snippet heading()}
