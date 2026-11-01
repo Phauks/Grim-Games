@@ -20,5 +20,11 @@
 	},
 	"deathCause": {
 		"kind": "kills"
+	},
+	"dayUse": {
+		"who": "ally",
+		"kills": true,
+		"anyone": true,
+		"minAlive": 4
 	}
 }

@@ -93,6 +93,9 @@
 		const out: Flag[] = [];
 		// A listed answer's rows already say which values the Vortox allows.
 		if (r.falseBy && !listed) out.push({ text: 'must be false', warn: true, character: r.falseBy });
+		// The rows say it when listed (NightReasonTag); a lone answer says it here (the Fibbin).
+		if (r.mayBeFalse && !r.unreliable && !listed)
+			out.push({ text: 'might be false', warn: true, character: r.mayBeFalse });
 		if (r.misregister.length > 0)
 			out.push({ text: 'Might register falsely:', seats: r.misregister });
 		if (r.possible && r.possible.length > 1 && !listed)
@@ -411,7 +414,7 @@
 					>({@render players(a.because)})</span
 				>{/if}
 		</span>
-		<NightReasonTag {grimoire} reason={o.reason} />
+		<NightReasonTag {grimoire} reason={o.reason} source={a} />
 		{#if o.value.kind === 'number' && onShowNumber}
 			{@const n = o.value.value}
 			<Button variant="quiet" onclick={() => onShowNumber(n)}>Show to player</Button>
@@ -509,7 +512,12 @@
 											{#if v.seats.length > 0}<span class="with">and one of</span>{/if}{/if}
 										{@render players(v.seats)}
 									</span>
-									<NightReasonTag {grimoire} reason={v.reason} registered={v.registered} />
+									<NightReasonTag
+										{grimoire}
+										reason={v.reason}
+										registered={v.registered}
+										source={p}
+									/>
 									{#if v.number !== undefined && onShowNumber}
 										{@const n = v.number}
 										<Button
@@ -668,7 +676,7 @@
 			{/if}
 		</span>
 		{#if row.marked}<span class="tag marked"><Icon name="reminder" />Marked</span>{/if}
-		<NightReasonTag {grimoire} reason={row.reason} registered={row.registered} />
+		<NightReasonTag {grimoire} reason={row.reason} registered={row.registered} source={p} />
 		{#if onShow}
 			<Button variant="quiet" onclick={() => showRole(p, row, key, id)}>Show to player</Button>
 		{/if}

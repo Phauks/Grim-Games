@@ -46,6 +46,7 @@
 	import MadnessDeathDialog from './MadnessDeathDialog.svelte';
 	import PrepValueDialog from './PrepValueDialog.svelte';
 	import DayUseDialog from './DayUseDialog.svelte';
+	import AnyoneUseButton from './AnyoneUseButton.svelte';
 
 	interface Props {
 		game: DayPort;
@@ -127,6 +128,20 @@
 			seatId,
 			run: () => game.run({ type: 'UseAbility', seatId, characterId })
 		});
+	}
+
+	// ── A day ability any living player may use once (`dayUse.anyone`: the Doomsayer) ──
+	/** The rule character a reminder row is about, when any living player may use its ability. */
+	function anyoneOf(reminder: DayReminder): CharacterId | undefined {
+		const id = reminder.characterId;
+		const head = reminder.segments[0];
+		if (!id || head?.kind !== 'character' || head.ref.seatId) return undefined;
+		return dayUseOf(id, game.characters)?.anyone && g.ruleCharacters.includes(id) ? id : undefined;
+	}
+	/** Its player chosen (AnyoneUseButton): DayUseDialog asks who dies. */
+	function anyoneChose(characterId: CharacterId, seatId: SeatId) {
+		const rule = dayUseOf(characterId, game.characters);
+		if (rule) dayUse?.ask({ seatId, characterId, rule });
 	}
 
 	/**
@@ -356,6 +371,13 @@
 	{/if}
 {/snippet}
 
+<!-- Use on a rule character's row that any living player may use (the Doomsayer). -->
+{#snippet anyoneEnd(characterId: CharacterId)}
+	<span class="day-end"
+		><AnyoneUseButton {game} {characterId} onChoose={(s) => anyoneChose(characterId, s)} /></span
+	>
+{/snippet}
+
 <!-- Broke madness on a madness row, where no day button is (L84). -->
 {#snippet madnessEnd(offer: MadnessOffer)}
 	<span class="day-end"
@@ -476,7 +498,11 @@
 											>{@render sentence()}{#if buttonRows[reminder.key]}{@render dayEnd(
 													reminder.characterId,
 													buttonRows[reminder.key]
-												)}{:else if mad}{@render madnessEnd(mad)}{/if}</span
+												)}{:else if mad}{@render madnessEnd(
+													mad
+												)}{:else if anyoneOf(reminder)}{@render anyoneEnd(
+													anyoneOf(reminder)!
+												)}{/if}</span
 										>
 									</CharacterRow>
 								{:else}
