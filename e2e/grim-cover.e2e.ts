@@ -56,13 +56,10 @@ test('a player hides their guesses and notes on the Grim tab, and has no cover',
 	await seats.nth(1).tap();
 	const sheet = phone.getByRole('dialog', { name: 'Seat 2 · Seat 2' });
 	await sheet.getByRole('button', { name: 'Empath', exact: true }).tap();
-	await sheet.getByTestId('seat-note').tap();
-	const notes = phone.getByRole('dialog', { name: 'Notes: Seat 2' });
-	await notes.getByRole('button', { name: 'New note' }).tap();
+	await sheet.getByTestId('seat-note').getByRole('button', { name: 'New note' }).tap();
 	const editor = phone.getByRole('dialog', { name: 'Note', exact: true });
 	await editor.getByRole('textbox', { name: 'Text' }).fill('Claims Empath');
 	await editor.getByRole('button', { name: 'Close' }).tap();
-	await notes.getByRole('button', { name: 'Close' }).tap();
 	await phone.keyboard.press('Escape');
 	await expect(sheet).toBeHidden();
 	await expect(seats.nth(1)).toHaveAttribute(

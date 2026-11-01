@@ -8,6 +8,7 @@
 	import type { Snippet } from 'svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import type { SeatArranging } from './seat-arranging.svelte.ts';
+	import { leaveSeating } from './seating-mode.svelte.ts';
 
 	/**
 	 * The bar over the board: the app's navigation and the grim cover, then Day, Info tokens,
@@ -60,7 +61,7 @@
 <!-- Left out of the board's picture (screenshot.ts): it is the app's, not the game's. -->
 <div class="toolbar" role="toolbar" aria-label="Grimoire" data-screenshot="skip">
 	{#if seatArr.arranging}
-		<span class="title arranging-title">Arrange seats</span>
+		<span class="title arranging-title">{t('room.seating.title')}</span>
 		<span class="spacer"></span>
 		<IconButton
 			icon="undo"
@@ -78,7 +79,12 @@
 				Object.keys(grimoire.layout.gaps).length === 0}
 			onclick={() => seatArr.spread()}>Spread evenly</Button
 		>
-		<Button variant="accent" icon="check" onclick={() => (seatArr.arranging = false)}>Done</Button>
+		<Button
+			variant="accent"
+			icon="check"
+			data-way-back
+			onclick={() => leaveSeating(seatArr, grimoire)}>Done</Button
+		>
 	{:else if placing}
 		<span class="title">Add a seat</span>
 		<Button variant="quiet" icon="close" onclick={onCancelPlacing}>Cancel</Button>

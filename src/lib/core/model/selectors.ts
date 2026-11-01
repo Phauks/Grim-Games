@@ -59,6 +59,15 @@ export function getSeat(game: Game, seatId: SeatId): Seat | undefined {
 	return Object.hasOwn(game.seats, seatId) ? game.seats[seatId] : undefined;
 }
 
+/**
+ * The game as it is played: seats not in play yet (`Seat.notInPlay`) are left out of the
+ * seating, so counts, votes and the game's end skip them. The same game when every seat is in play.
+ */
+export function inPlay(game: Game): Game {
+	if (!game.seating.some((id) => game.seats[id]?.notInPlay)) return game;
+	return { ...game, seating: game.seating.filter((id) => !game.seats[id]?.notInPlay) };
+}
+
 /** The seats in clockwise seating order. */
 export function seatsInOrder(game: Game): Seat[] {
 	return game.seating.map((id) => game.seats[id]);

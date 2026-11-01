@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import type { GameMode, SpecialRule } from '#lib/core/modes/index.ts';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
@@ -90,6 +92,15 @@
 			onclick={() => fileInput?.click()}
 		/>
 		<IconButton icon="about" label={t('modes.guide.open')} onclick={() => (guide = true)} />
+		<!-- Or build one without writing JSON (Trevor, 2026-10-31). -->
+		<IconButton
+			icon="buildMode"
+			label={t('modes.builder.create')}
+			onclick={() => {
+				open = false;
+				void goto(resolve('/build-mode'));
+			}}
+		/>
 	{/snippet}
 	<TextField
 		label={t('modes.add.label')}

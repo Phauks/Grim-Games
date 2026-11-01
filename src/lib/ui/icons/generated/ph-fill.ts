@@ -138,9 +138,7 @@ import ph_list_dashes_fill from '~icons/ph/list-dashes-fill';
 import ph_list_magnifying_glass_fill from '~icons/ph/list-magnifying-glass-fill';
 import ph_list_numbers_fill from '~icons/ph/list-numbers-fill';
 import ph_lock_fill from '~icons/ph/lock-fill';
-import ph_lock_open_fill from '~icons/ph/lock-open-fill';
 import ph_lock_simple_fill from '~icons/ph/lock-simple-fill';
-import ph_lock_simple_open_fill from '~icons/ph/lock-simple-open-fill';
 import ph_magnifying_glass_fill from '~icons/ph/magnifying-glass-fill';
 import ph_mask_sad_fill from '~icons/ph/mask-sad-fill';
 import ph_megaphone_fill from '~icons/ph/megaphone-fill';
@@ -170,6 +168,7 @@ import ph_prohibit_fill from '~icons/ph/prohibit-fill';
 import ph_prohibit_inset_fill from '~icons/ph/prohibit-inset-fill';
 import ph_projector_screen_fill from '~icons/ph/projector-screen-fill';
 import ph_push_pin_fill from '~icons/ph/push-pin-fill';
+import ph_puzzle_piece_fill from '~icons/ph/puzzle-piece-fill';
 import ph_qr_code_fill from '~icons/ph/qr-code-fill';
 import ph_question_fill from '~icons/ph/question-fill';
 import ph_scales_fill from '~icons/ph/scales-fill';
@@ -374,9 +373,7 @@ const icons: IconMap = {
 	'ph:list-magnifying-glass-fill': ph_list_magnifying_glass_fill,
 	'ph:list-numbers-fill': ph_list_numbers_fill,
 	'ph:lock-fill': ph_lock_fill,
-	'ph:lock-open-fill': ph_lock_open_fill,
 	'ph:lock-simple-fill': ph_lock_simple_fill,
-	'ph:lock-simple-open-fill': ph_lock_simple_open_fill,
 	'ph:magnifying-glass-fill': ph_magnifying_glass_fill,
 	'ph:mask-sad-fill': ph_mask_sad_fill,
 	'ph:megaphone-fill': ph_megaphone_fill,
@@ -406,6 +403,7 @@ const icons: IconMap = {
 	'ph:prohibit-inset-fill': ph_prohibit_inset_fill,
 	'ph:projector-screen-fill': ph_projector_screen_fill,
 	'ph:push-pin-fill': ph_push_pin_fill,
+	'ph:puzzle-piece-fill': ph_puzzle_piece_fill,
 	'ph:qr-code-fill': ph_qr_code_fill,
 	'ph:question-fill': ph_question_fill,
 	'ph:scales-fill': ph_scales_fill,

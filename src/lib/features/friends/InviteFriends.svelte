@@ -6,6 +6,7 @@
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import FriendRows from './FriendRows.svelte';
+	import GroupRoomToggles from './GroupRoomToggles.svelte';
 	import type { FriendAccount } from './friends-protocol.ts';
 	import { friends } from './friends.svelte.ts';
 
@@ -97,6 +98,7 @@
 			disabled={friendsJoin === undefined || busy}
 			onChange={(open) => void setFriendsJoin(open)}
 		/>
+		<GroupRoomToggles {code} {title} />
 		<Button icon="friends" variant="quiet" disabled={!code} onclick={() => void show()}
 			>{t('friends.invite.title')}</Button
 		>
@@ -142,7 +144,7 @@
 		justify-items: start;
 		margin-top: var(--space-3);
 	}
-	.invite > :global(*:first-child) {
+	.invite > :global(*:not(:last-child)) {
 		justify-self: stretch;
 	}
 	.muted {

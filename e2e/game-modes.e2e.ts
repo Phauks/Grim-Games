@@ -2283,10 +2283,18 @@ test('the Script sheet’s background choice sits beside Print and Share, and co
 		'Share script',
 		'Settings'
 	]);
-	// The name under the buttons, as on /play (Trevor, 2026-10-26).
+	// As on /play: the name under the buttons on a phone (Trevor, 2026-10-26), level with them
+	// at the start of their row on a wider screen (Trevor, 2026-10-31).
 	const cog = (await sheet.getByTestId('you-button').boundingBox())!;
 	const name = (await sheet.getByRole('heading', { name: 'Trouble Brewing' }).boundingBox())!;
-	expect(name.y).toBeGreaterThanOrEqual(cog.y + cog.height - 1);
+	if (page.viewportSize()!.width < 600) {
+		expect(name.y).toBeGreaterThanOrEqual(cog.y + cog.height - 1);
+	} else {
+		expect(Math.abs(name.y + name.height / 2 - (cog.y + cog.height / 2))).toBeLessThan(
+			cog.height / 2
+		);
+		expect(name.x + name.width).toBeLessThanOrEqual(cog.x + 1);
+	}
 	await trigger.tap();
 	await page.getByRole('option', { name: 'Grey' }).tap();
 	await expect(sheet.getByTestId('script-copy')).toHaveCSS(
@@ -2298,11 +2306,13 @@ test('the Script sheet’s background choice sits beside Print and Share, and co
 		'background-color',
 		'rgb(218, 218, 218)'
 	);
-	// Each character type starts under a line across the sheet (SectionStack draws it).
+	// A character type's band marks where it starts, with no line above it (Trevor,
+	// 2026-10-31); other sections still start under a line (SectionStack draws it).
 	await sheet.getByRole('tab', { name: 'Script' }).tap();
 	const sections = sheet.getByTestId('script-copy').locator('.section-stack > section');
-	await expect(sections.nth(1)).not.toHaveCSS('border-top-width', '0px');
+	await expect(sections.nth(1)).toHaveCSS('border-top-width', '0px');
 	await expect(sections.first()).toHaveCSS('border-top-width', '0px');
+	await expect(sections.last()).not.toHaveCSS('border-top-width', '0px');
 });
 
 test('the Script sheet has the players’ settings cog, opening the one Settings', async ({

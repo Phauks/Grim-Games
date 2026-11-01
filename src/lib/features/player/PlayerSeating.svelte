@@ -8,13 +8,14 @@
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import SeatDisc from '#lib/ui/seating/SeatDisc.svelte';
-	import type { SeatPoint } from '#lib/ui/seating/seat-layout.ts';
+	import { sharedPlace, type SeatPoint } from '#lib/ui/seating/seat-layout.ts';
 
 	/**
 	 * Seating on the Grim tab (plan J38; Trevor, 2026-10-29 22:36). While the Storyteller has
 	 * seating open, the player drags their own disc, and only theirs, onto the seat they want: that
 	 * seat lights up and the line in the middle names it, and the drop takes its place (Trevor,
-	 * 2026-10-31: not a gap between seats). Dropped away from every seat, nothing changes. A phone
+	 * 2026-10-31: not a gap between seats). Dropped in a space, their seat moves there, to match
+	 * where they really sit (Trevor, 2026-10-31); back on its own spot, nothing changes. A phone
 	 * with no seat yet starts with its disc in the middle. Once seating is locked, a phone with
 	 * no seat taps an open seat (`claim`) to sit there. The Storyteller's board makes the change.
 	 */
@@ -24,11 +25,16 @@
 		board: { width: number; height: number };
 		town: HTMLElement | undefined;
 		nameOf: (seat: PublicSeat) => string;
+		/**
+		 * The Storyteller's board's shape, whether this grim draws in it, and the part of the
+		 * town the ring is drawn in, above the reminder tray (sharedSeats, ringAboveTray).
+		 */
+		shape: { aspect: number | undefined; fit: boolean; area: { width: number; height: number } };
 		/** A tap on the player's own disc, which opens their seat as before. */
 		onTap: (seat: PublicSeat) => void;
 	}
 
-	let { player, ring, board, town, nameOf, onTap }: Props = $props();
+	let { player, ring, board, town, nameOf, shape, onTap }: Props = $props();
 
 	const me = $derived(player.view?.me);
 	const open = $derived(!!player.view?.seatingOpen && !!me?.name);
@@ -53,6 +59,19 @@
 			ring.size
 		);
 		return others.find((o) => o.s.seatId === id);
+	});
+	/**
+	 * Where the disc would move the seat if dropped now: on the board, clear of every seat and
+	 * of its own spot (a seat's width away, or two from the middle for a phone with no seat).
+	 */
+	const place = $derived.by(() => {
+		if (!drag || !moved || target) return undefined;
+		const at = drag.at;
+		if (at.x < 0 || at.x > 100 || at.y < 0 || at.y > 100) return undefined;
+		const from = px(home);
+		const to = px(at);
+		const clear = (own ? 0.5 : 1) * ring.size;
+		return Math.hypot(to.x - from.x, to.y - from.y) > clear ? at : undefined;
 	});
 
 	function point(event: PointerEvent): SeatPoint | undefined {
@@ -82,10 +101,19 @@
 	function up(event: PointerEvent) {
 		if (!drag || event.pointerId !== drag.pointerId) return;
 		const onto = target?.s;
+		const spot = place;
 		const tapped = !moved;
 		cancel();
 		if (onto) player.askSeat({ type: 'sit', onto: onto.seatId });
+		else if (spot) player.askSeat({ type: 'sit', place: boardPlace(spot) });
 		else if (tapped && own) onTap(own);
+	}
+
+	/** A point on this town, in %, as the Storyteller's board keeps a seat placed by hand. */
+	function boardPlace(spot: SeatPoint): SeatPoint {
+		const { area } = shape;
+		const y = area.height > 0 ? (spot.y * board.height) / area.height : spot.y;
+		return sharedPlace({ x: spot.x, y }, area, shape.aspect, shape.fit);
 	}
 
 	function cancel() {
@@ -150,6 +178,7 @@
 	<p class="line" role="status" data-testid="seating-line">
 		{#if target}{t('player.seating.take', { number: target.s.seatNumber })}
 			{#if !isOpenSeat(target.s)}<PlayerBadge name={badge(target.s)} />{/if}
+		{:else if place}{t('player.seating.move')}
 		{:else}{t('player.seating.open')}{/if}
 	</p>
 {/if}

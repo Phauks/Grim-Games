@@ -11,7 +11,7 @@
 
 /** The kinds of shared object, by what each is found by. */
 export type DataKind =
-	'user' | 'address' | 'username' | 'directory' | 'share' | 'reports' | 'friends';
+	'user' | 'address' | 'username' | 'directory' | 'share' | 'reports' | 'friends' | 'groups';
 
 /** One method call on one shared object. */
 export interface DataCall {

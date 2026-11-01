@@ -61,7 +61,7 @@ import { newGrimViewPassword } from '#lib/core/sync/grim-view-password.ts';
 import { applyTravellerPicks } from './host-traveller-pick.ts';
 import { STORAGE_KEY, type StoredRoom } from './host-storage.ts';
 import { RolesShown } from './roles-shown.svelte.ts';
-import { grantSit } from './host-seating.ts';
+import { boardPlaces, grantSit } from './host-seating.ts';
 
 /** Changes are gathered for this long before the grimoire is sent to viewers again. */
 const GRIMOIRE_DELAY_MS = 300;
@@ -661,7 +661,7 @@ export class RoomHost {
 				gameFeedback.save(message.feedbackGameId, message.feedback);
 			}
 		} else if (message.type === 'sit') {
-			if (this.#game) grantSit(this.#game, this.members, message);
+			if (this.#game) grantSit(this.#game, this.members, message, boardPlaces(this.#game));
 		} else if (message.type === 'watchers') {
 			this.watchers = message.count;
 		} else if (message.type === 'grimoire-wanted') {
