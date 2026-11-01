@@ -199,6 +199,11 @@ export function warningText(warning: EngineWarning): string | undefined {
 			return 'That player has already nominated today.';
 		case 'already-nominee':
 			return 'That player has already been nominated today.';
+		// https://wiki.bloodontheclocktower.com/Bishop and /Golem (`nominating`).
+		case 'storyteller-nominates':
+			return 'Only the Storyteller may nominate now.';
+		case 'nominated-this-game':
+			return 'That player may not nominate again this game.';
 		case 'dead-nominator':
 			return 'Dead players may not nominate.';
 		case 'not-in-play':

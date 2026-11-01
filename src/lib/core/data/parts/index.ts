@@ -43,6 +43,7 @@ export { madness } from './madness.ts';
 export { makesExtraEvil } from './makes-extra-evil.ts';
 export { marksChoice } from './marks-choice.ts';
 export { nightText } from './night-text.ts';
+export { nominating } from './nominating.ts';
 export { nominationsAfterExecution } from './nominations-after-execution.ts';
 export { noteOn } from './note-on.ts';
 export { onDeath } from './on-death.ts';

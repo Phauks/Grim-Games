@@ -104,6 +104,8 @@ export type WarningCode =
 	| 'not-in-play'
 	| 'already-nominated'
 	| 'already-nominee'
+	| 'storyteller-nominates'
+	| 'nominated-this-game'
 	| 'already-executed'
 	| 'traveller-executed'
 	| 'not-traveller'
