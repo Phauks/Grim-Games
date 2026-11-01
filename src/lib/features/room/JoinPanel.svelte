@@ -90,10 +90,13 @@
 		return () => releaseRoom(p);
 	});
 
-	// The player's avatar, frame and picture go to the room as they pick them (plan R6).
+	// The player's avatar, frame, picture, tag-line and details go to the room as they pick
+	// them (plan R6; 2026-11-01).
 	$effect(() => {
 		void playerSettings.current.avatar;
 		void playerSettings.current.frame;
+		void playerSettings.current.flavour;
+		void playerSettings.current.details;
 		void avatarPicture.url;
 		void player?.view;
 		void player?.sendLook();

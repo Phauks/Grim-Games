@@ -16,6 +16,7 @@ import {
 	roomPreview,
 	seat,
 	setName,
+	setLook,
 	type RoomState
 } from './room.ts';
 
@@ -44,6 +45,13 @@ describe('removeMember', () => {
 		expect(r.members.map((m) => m.memberId)).toEqual(['jo']);
 		expect(isRemoved(r, 'alex')).toBe(true);
 		expect(hostView(r).removed).toEqual([{ memberId: 'alex', name: 'Alex' }]);
+	});
+
+	it("keeps the phone's look but not the words on its profile", () => {
+		const r = setLook(room(), 'alex', { avatar: 'initials', tagline: 'Rude words' });
+		expect(hostView(removeMember(r, 'alex')).removed).toEqual([
+			{ memberId: 'alex', name: 'Alex', avatar: 'initials' }
+		]);
 	});
 
 	it("drops the phone's vote", () => {

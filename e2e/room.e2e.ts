@@ -2622,7 +2622,16 @@ test("a player's avatar opens their profile, never their character, on the board
 	await phone.evaluate(() => {
 		const key = 'grim-games:player-settings:v1';
 		const settings = JSON.parse(localStorage.getItem(key) ?? '{}');
-		localStorage.setItem(key, JSON.stringify({ ...settings, frame: 'ring-gold~pulse' }));
+		// Their tag-line and a detail (Trevor, 2026-11-01), which the room shares with the look.
+		localStorage.setItem(
+			key,
+			JSON.stringify({
+				...settings,
+				frame: 'ring-gold~pulse',
+				flavour: 'Here for the bluffs.',
+				details: [{ label: 'Favorite script', text: 'Trouble Brewing' }]
+			})
+		);
 	});
 	await phone.reload();
 	await expect(page.getByTestId('status-players')).toHaveText('1 player');
@@ -2641,16 +2650,22 @@ test("a player's avatar opens their profile, never their character, on the board
 	await page.keyboard.press('Escape');
 	await expect(seatDrawer).toBeHidden();
 
-	/** The profile shows the player: their avatar large, their laurel, its colour and motion. */
+	/**
+	 * The profile shows the player: their avatar in their laurel, their tag-line and details,
+	 * and no rows for what they didn't set (Trevor, 2026-11-01: no "Laurel None").
+	 */
 	async function expectProfile(on: Page) {
 		const profile = on.getByRole('dialog', { name: 'Alex Kim', exact: true });
 		await expect(profile.getByTestId('player-profile')).toBeVisible();
 		await expect(profile.getByTestId('avatar-face')).toHaveText('AK');
 		const big = (await profile.getByTestId('avatar-face').boundingBox())!;
 		expect(big.width).toBeGreaterThan(100);
-		await expect(profile.getByTestId('player-profile-laurel')).toContainText('Simple ring');
-		await expect(profile.getByTestId('player-profile-colour')).toContainText('Gold');
-		await expect(profile.getByTestId('player-profile-motion')).toContainText('Pulse');
+		await expect(profile.locator('svg[data-frame="ring-gold~pulse"]')).toBeAttached();
+		await expect(profile.getByTestId('player-profile-tagline')).toHaveText('Here for the bluffs.');
+		await expect(profile.getByTestId('player-profile-detail')).toHaveText([
+			/Favorite script\s*Trouble Brewing/
+		]);
+		await expect(profile).not.toContainText('None');
 		await expect(profile).not.toContainText('Empath');
 		await on.keyboard.press('Escape');
 		await expect(profile).toBeHidden();

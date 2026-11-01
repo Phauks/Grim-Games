@@ -300,7 +300,7 @@ test('a player adds the Storyteller from Game info', async ({ browser }) => {
 	const profile = bob.page.getByRole('dialog', { name: 'Ann the Storyteller', exact: true });
 	// Her laurel, as a player's profile shows theirs.
 	await expect(profile.locator('svg[data-frame="ring-gold~pulse"]')).toBeAttached();
-	await expect(profile.getByTestId('player-profile-laurel')).not.toContainText('None');
+	await expect(profile).not.toContainText('None');
 	const add = profile.getByTestId('seat-friend');
 	await expect(add).toHaveAttribute('data-state', 'add');
 	await add.tap();
