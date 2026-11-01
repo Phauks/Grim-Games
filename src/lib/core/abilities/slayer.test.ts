@@ -13,6 +13,9 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { dayUseDeath, dayUseOf } from '#lib/core/rules/day-claims.ts';
+import { gameEnds, suggestedWinner } from '#lib/core/rules/game-end.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Slayer', () => {
 	const character = committedCharacter('slayer');
@@ -44,8 +47,24 @@ describe('Slayer', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Slayer#Examples)', () => {
-		it.todo('Example 1: Slayer targets Imp and wins the game');
-		it.todo('Example 2: Slayer hits Recluse, who registers as Demon');
-		it.todo('Example 3: Imp fakes Slayer claim on Scarlet Woman');
+		it('Example 1: Slayer targets Imp and wins the game', () => {
+			const s = scenario(['slayer', 'imp', 'poisoner', 'chef', 'monk']);
+			expect(dayUseDeath(s.game, 'slayer', s.seat('imp'), s.characters)).toBe('dies');
+			const after = s.dies('imp', 'slayer');
+			expect(suggestedWinner(gameEnds(after.game, after.characters))).toBe('good');
+		});
+		it('Example 2: Slayer hits Recluse, who registers as Demon', () => {
+			// The Recluse may die to the shot; the game goes on, as the real Imp lives.
+			const s = scenario(['slayer', 'recluse', 'imp', 'chef', 'poisoner']);
+			expect(dayUseDeath(s.game, 'slayer', s.seat('recluse'), s.characters)).toBe('maybe');
+			const after = s.dies('recluse', 'slayer');
+			expect(gameEnds(after.game, after.characters)).toEqual([]);
+		});
+		it('Example 3: Imp fakes Slayer claim on Scarlet Woman', () => {
+			// The Imp has no day ability, and the Scarlet Woman isn't the Demon: nothing happens.
+			const s = scenario(['imp', 'scarletwoman', 'chef', 'monk', 'empath']);
+			expect(dayUseOf('imp', s.characters)).toBeUndefined();
+			expect(dayUseDeath(s.game, 'slayer', s.seat('scarletwoman'), s.characters)).toBe('no');
+		});
 	});
 });

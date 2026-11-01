@@ -13,6 +13,8 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { dayUseDeath } from '#lib/core/rules/day-claims.ts';
+import { engineGap, scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Gunslinger', () => {
 	const character = committedCharacter('gunslinger');
@@ -44,7 +46,27 @@ describe('Gunslinger', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Gunslinger#Examples)', () => {
-		it.todo("Example 1: Voter shot; Imp's execution still proceeds");
-		it.todo("Example 2: Only the day's first vote tally counts");
+		it.fails("Example 1: Voter shot; Imp's execution still proceeds", () => {
+			// Waits on voting in the engine: who voted, and the nominee staying about to die.
+			const s = scenario(['gunslinger', 'chef', 'imp', 'monk', 'poisoner'])
+				.do((at) => ({ type: 'SetAlignment', seatId: at.seat('gunslinger'), alignment: 'good' }))
+				.nominate('chef', 'imp');
+			expect(dayUseDeath(s.game, 'gunslinger', s.seat('monk'), s.characters)).toBe('dies');
+			engineGap(
+				'M9',
+				"the Gunslinger may choose only a player who voted, and the vote's result stands"
+			);
+		});
+		it.fails("Example 2: Only the day's first vote tally counts", () => {
+			// An exile doesn't count as the first vote for execution.
+			scenario(['gunslinger', 'thief', 'butler', 'saint', 'imp', 'chef'])
+				.do((at) => ({ type: 'SetAlignment', seatId: at.seat('thief'), alignment: 'good' }))
+				.do((at) => ({ type: 'Exile', seatId: at.seat('thief') }))
+				.nominate('chef', 'butler');
+			engineGap(
+				'M9',
+				"the Gunslinger's ability is offered after the day's first vote for execution only"
+			);
+		});
 	});
 });

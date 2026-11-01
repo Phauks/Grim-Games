@@ -13,6 +13,7 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { engineGap, scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Butler', () => {
 	const character = committedCharacter('butler');
@@ -44,8 +45,23 @@ describe('Butler', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Butler#Examples)', () => {
-		it.todo('Example 1: Butler votes with master, or not at all');
-		it.todo('Example 2: Master lowers hand late; Butler follows');
-		it.todo('Example 3: Dead Butler votes freely using their ghost vote');
+		// The Butler's vote rule (votes only while the Master votes) waits on voting in the engine.
+		it.fails('Example 1: Butler votes with master, or not at all', () => {
+			scenario(['butler', 'chef', 'imp', 'monk', 'poisoner']).reminder('chef', 'butler', 'Master');
+			engineGap('M9', "the Butler's hand may be raised only while the Master's is");
+		});
+		it.fails('Example 2: Master lowers hand late; Butler follows', () => {
+			scenario(['butler', 'chef', 'imp', 'monk', 'poisoner'])
+				.reminder('chef', 'butler', 'Master')
+				.nominate('monk', 'imp');
+			engineGap('M9', 'when the Master lowers their hand during the count, the Butler must too');
+		});
+		it.fails('Example 3: Dead Butler votes freely using their ghost vote', () => {
+			// The dead have no ability, so the Butler's rule no longer binds them.
+			scenario(['butler', 'chef', 'imp', 'monk', 'poisoner'])
+				.reminder('chef', 'butler', 'Master')
+				.dies('butler');
+			engineGap('M9', 'a dead Butler may spend their vote token without the Master voting');
+		});
 	});
 });
