@@ -370,9 +370,16 @@ describe('executionSavers', () => {
 	it('offers the Psychopath and Lleech for themselves only; the Vizier applies unasked', () => {
 		// https://wiki.bloodontheclocktower.com/Psychopath (roshambo), /Lleech (lives while the
 		// host does), /Vizier (cannot die during the day).
-		const g = castGame(['psychopath', 'lleech', 'vizier', 'chef']);
+		const g = castGame(['psychopath', 'lleech', 'vizier', 'chef'], add(3, 'lleech', 'Poisoned'));
 		expect(ids(g, 0)).toContainEqual(['psychopath', 'ok']);
 		expect(ids(g, 1)).toContainEqual(['lleech', 'ok']);
+		// The Lleech's own protection applies unasked while its host lives (M15h), and not
+		// before it has a host.
+		expect(protection(g.game, g.seats[1], characters, 'execution')).toMatchObject({
+			characterId: 'lleech'
+		});
+		const hostless = castGame(['psychopath', 'lleech', 'vizier', 'chef']);
+		expect(ids(hostless, 1)).toContainEqual(['lleech', 'not-this-player']);
 		expect(ids(g, 3)).toEqual(
 			expect.arrayContaining([
 				['psychopath', 'not-this-player'],

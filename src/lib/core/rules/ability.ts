@@ -568,6 +568,17 @@ function protectionFor(
 		const near = from === undefined ? [] : aliveNeighbours(game, from);
 		if (near.length === 0 || near.some((id) => alignmentOf(game, id) !== 'good')) return undefined;
 	}
+	// Only while a player carrying its token lives (the Lleech's host: M15h).
+	const carrier = rule.whileCarrierAlive;
+	if (
+		carrier &&
+		!game.seating.some(
+			(id) =>
+				!game.seats[id].dead &&
+				game.seats[id].reminders.some((r) => r.characterId === characterId && r.label === carrier)
+		)
+	)
+		return undefined;
 	switch (rule.who) {
 		case 'self':
 			return trueCharacter(game, seatId, characters) === characterId
@@ -642,7 +653,7 @@ export interface ExecutionSaver {
  * (`protects` from `any` or `execution`, not lasting only the night), for the Execution
  * sheet's Saved by (Trevor, 2026-10-24: "a modifier slot to the execution area"). Those that
  * apply to `seatId` and work come first. Includes the ones the Storyteller decides
- * (`storytellerDecides`: the Pacifist, the Psychopath's roshambo, the Lleech, the
+ * (`storytellerDecides`: the Pacifist, the Psychopath's roshambo, the
  * Ventriloquist's mad nominee). https://wiki.bloodontheclocktower.com/Pacifist,
  * /Devil%27s_Advocate, /Sailor, /Tea_Lady, /Vizier, /Psychopath, /Lleech, /Ventriloquist
  */

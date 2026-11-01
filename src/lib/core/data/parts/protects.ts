@@ -1,5 +1,5 @@
 import type { ReminderLabel } from '../types.ts';
-import { ownReminder } from '../reminder-fields.ts';
+import { ownReminder, readToken } from '../reminder-fields.ts';
 import { checkKeys, describe, isObject, readBoolean, readEnum, readString } from '../validate.ts';
 import { objectPart } from './part.ts';
 
@@ -19,12 +19,19 @@ export const PROTECTS_FROM = ['demon', 'any', 'execution', 'not-execution', 'day
  * Psychopath's roshambo), so the grimoire never applies it; the Storyteller picks it in the
  * Execution sheet's Saved by. `whileNeighboursGood`: it holds only while both of the
  * character's alive neighbours are good (the Tea Lady,
- * https://wiki.bloodontheclocktower.com/Tea_Lady).
+ * https://wiki.bloodontheclocktower.com/Tea_Lady). `whileCarrierAlive`: it holds only while a
+ * player carrying this character's token lives (the Lleech cannot die while its host, marked
+ * with its Poisoned, is alive: https://wiki.bloodontheclocktower.com/Lleech, M15h).
  */
 export type Protects = (
 	| { who: 'self' | 'good'; from: (typeof PROTECTS_FROM)[number] }
 	| { who: 'marked'; token: ReminderLabel; from: (typeof PROTECTS_FROM)[number] }
-) & { night?: true; storytellerDecides?: true; whileNeighboursGood?: true };
+) & {
+	night?: true;
+	storytellerDecides?: true;
+	whileNeighboursGood?: true;
+	whileCarrierAlive?: ReminderLabel;
+};
 
 /**
  * The ability stops a death: its own player's (`self`, the Soldier), the player marked
@@ -41,13 +48,23 @@ export const protects = objectPart(
 		}
 		checkKeys(
 			raw,
-			['who', 'token', 'from', 'night', 'storytellerDecides', 'whileNeighboursGood'],
+			[
+				'who',
+				'token',
+				'from',
+				'night',
+				'storytellerDecides',
+				'whileNeighboursGood',
+				'whileCarrierAlive'
+			],
 			path,
 			issues
 		);
 		const who = readEnum(raw, 'who', PROTECTS_WHO, path, issues, true);
 		const from = readEnum(raw, 'from', PROTECTS_FROM, path, issues, true);
+		const carrier = readToken(raw, 'whileCarrierAlive', path, issues, reminders);
 		const flags = {
+			...(carrier ? { whileCarrierAlive: carrier } : {}),
 			...(readBoolean(raw, 'night', path, issues) ? { night: true as const } : {}),
 			...(readBoolean(raw, 'storytellerDecides', path, issues)
 				? { storytellerDecides: true as const }
