@@ -4,7 +4,7 @@ import { createGame, dispatch, type EngineContext } from '#lib/core/engine/index
 import { characterLookup } from '#lib/core/model/index.ts';
 import { setupReminders, type SetupReminder } from '#lib/core/rules/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import { pendingTray, trayItems, traySeats, withoutOffSeat } from './setup-tray.ts';
+import { trayItems, traySeats, withoutOffSeat } from './setup-tray.ts';
 
 const data = committedGameData();
 const script = toScript(editionScript('tb', data)!);
@@ -27,7 +27,6 @@ function suggestion(characterId: string, label: string, extra: Partial<SetupRemi
 
 // The Washerwoman's setup tokens (https://wiki.bloodontheclocktower.com/Washerwoman):
 // one Townsfolk and one Wrong on two players.
-const washer = [suggestion('washerwoman', 'Townsfolk'), suggestion('washerwoman', 'Wrong')];
 
 describe('setup tray', () => {
 	it('keys each copy of the same token apart', () => {
@@ -54,7 +53,7 @@ describe('setup tray', () => {
 			session = result.session;
 		});
 		const pending = () =>
-			pendingTray(trayItems(setupReminders(session.game, lookup)), []).filter(
+			trayItems(setupReminders(session.game, lookup)).filter(
 				(i) => i.suggestion.characterId === 'nodashii'
 			);
 		expect(pending()).toHaveLength(2);
@@ -70,10 +69,6 @@ describe('setup tray', () => {
 		if (!placed.ok) throw new Error();
 		session = placed.session;
 		expect(pending()).toHaveLength(1);
-	});
-	it('drops dismissed suggestions', () => {
-		const items = trayItems(washer);
-		expect(pendingTray(items, ['washerwoman:Townsfolk:0']).length).toBe(1);
 	});
 	it('lists the pre-filled seat first, then the other candidates', () => {
 		expect(traySeats(suggestion('x', 'A', { seatId: 'b', candidates: ['a', 'b', 'c'] }))).toEqual([

@@ -55,8 +55,6 @@ export interface BankItem {
 }
 
 export interface BankOptions {
-	/** Setup suggestions the Storyteller dismissed. */
-	dismissed: readonly string[];
 	/** The character whose night step is being walked through. */
 	focus: StepReminders | undefined;
 	/** How `focus` is shown (step-focus.svelte.ts). */
@@ -71,7 +69,7 @@ export interface BankOptions {
 export function bankItems(
 	game: Game,
 	characters: CharacterLookup,
-	{ dismissed, focus, focusMode, stack, copies, bankCopies }: BankOptions
+	{ focus, focusMode, stack, copies, bankCopies }: BankOptions
 ): BankItem[] {
 	// Script order, then reminder name (Trevor, 2026-10-16), like every reminder list; a
 	// setup token too important to miss (the Drunk's) first (Trevor, 2026-10-27).
@@ -80,7 +78,7 @@ export function bankItems(
 		const i = scriptOrder.indexOf(id);
 		return i < 0 ? scriptOrder.length : i;
 	};
-	const setupItems = pendingSetup(game, characters, dismissed).sort(
+	const setupItems = pendingSetup(game, characters).sort(
 		(a, b) =>
 			Number(b.suggestion.first === true) - Number(a.suggestion.first === true) ||
 			at(a.suggestion.characterId) - at(b.suggestion.characterId) ||

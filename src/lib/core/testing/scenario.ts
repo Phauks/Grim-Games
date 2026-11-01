@@ -22,6 +22,11 @@
  *     expect(isAllowed(picker, { seats: [s.seat('general')] })).toBe(true);
  *   });
  *
+ * An example the engine can't pass yet is still written, as `it.fails` (Trevor, 2026-11-01:
+ * "We can let these tests fail while we are building the rest of the components"), with a
+ * comment naming the gap. When the rule it needs doesn't exist yet, the test sets up the
+ * scenario, says what it should find, and ends with `engineGap('M9', ...)`.
+ *
  * The scaffold (`npm run scaffold:rules-tests`) writes new test files with this import.
  */
 import type { Alignment, CharacterId, ReminderLabel, Script } from '#lib/core/data/index.ts';
@@ -150,4 +155,12 @@ export function scenario(
 ): Scenario {
 	const { session, ctx, seats } = castWith(options)(cast);
 	return new Scenario(session, ctx, seats, cast);
+}
+
+/**
+ * Ends an `it.fails` example whose rule the engine doesn't have yet: `gap` is its roadmap ID
+ * (src/lib/features/about/roadmap.ts), `needs` what the rule must answer. Always throws.
+ */
+export function engineGap(gap: string, needs: string): never {
+	throw new Error(`waits on the engine (${gap}): ${needs}`);
 }
