@@ -1,7 +1,9 @@
 /**
  * The `voteWeight` and `voter` parts (M9a). The Thief (https://wiki.bloodontheclocktower.com/Thief),
  * Bureaucrat (/Bureaucrat) and God of Ug (/God_of_Ug) change what a vote counts as; the Butler
- * (/Butler), Zealot (/Zealot) and Beggar (/Beggar) change who may vote.
+ * (/Butler), Zealot (/Zealot) and Beggar (/Beggar) change who may vote. The `voting` part
+ * (M9b) changes voting for the whole table: the Voudon (/Voudon), Organ Grinder
+ * (/Organ_Grinder) and Ferryman (/Ferryman).
  */
 import { describe, expect, it } from 'vitest';
 import { parseCharacterRules } from '../character-rules.ts';
@@ -77,5 +79,43 @@ describe('voter', () => {
 		expect(rulesOf('butler')?.voter).toEqual({ onlyWith: 'Master' });
 		expect(rulesOf('zealot')?.voter).toEqual({ must: true, minAlive: 5 });
 		expect(rulesOf('beggar')?.voter).toEqual({ needsToken: true });
+	});
+});
+
+describe('voting', () => {
+	it('reads who may vote, free ghost votes, no majority, secrecy and regained tokens', () => {
+		const voudon = { voters: 'self-and-dead', deadNeedNoToken: true, noMajority: true };
+		expect(parse({ voting: voudon })).toEqual({ rules: { voting: voudon }, issues: [] });
+		expect(parse({ voting: { secret: true } }).rules).toEqual({ voting: { secret: true } });
+		expect(parse({ voting: { deadRegainToken: 'final-day' } }).rules).toEqual({
+			voting: { deadRegainToken: 'final-day' }
+		});
+	});
+
+	it('rejects an empty rule, unknown values, false flags and unknown fields', () => {
+		expect(parse({ voting: {} }).issues).toEqual([
+			'rules.voting: expected voters, deadNeedNoToken, noMajority, secret or deadRegainToken'
+		]);
+		expect(parse({ voting: { voters: 'everyone' } }).issues).toEqual([
+			'rules.voting.voters: unknown value "everyone"'
+		]);
+		expect(parse({ voting: { deadRegainToken: 'every-day' } }).issues).toHaveLength(1);
+		expect(parse({ voting: { secret: false } }).issues).toEqual([
+			'rules.voting.secret: expected true'
+		]);
+		expect(parse({ voting: { secret: true, open: true } }).issues).toEqual([
+			'rules.voting.open: unknown field'
+		]);
+		expect(parse({ voting: true }).issues).toHaveLength(1);
+	});
+
+	it('is in the Voudon’s, Organ Grinder’s and Ferryman’s rules', () => {
+		expect(rulesOf('voudon')?.voting).toEqual({
+			voters: 'self-and-dead',
+			deadNeedNoToken: true,
+			noMajority: true
+		});
+		expect(rulesOf('organgrinder')?.voting).toEqual({ secret: true });
+		expect(rulesOf('ferryman')?.voting).toEqual({ deadRegainToken: 'final-day' });
 	});
 });

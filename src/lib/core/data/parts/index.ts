@@ -68,4 +68,5 @@ export { takesNeighbourAlignment } from './takes-neighbour-alignment.ts';
 export { turnsPlayersInto } from './turns-players-into.ts';
 export { voteWeight } from './vote-weight.ts';
 export { voter } from './voter.ts';
+export { voting } from './voting.ts';
 export { wakesWhen } from './wakes-when.ts';

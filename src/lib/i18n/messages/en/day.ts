@@ -165,6 +165,7 @@ export const day = {
 	'day.count.total': 'Total',
 	'day.count.living': 'Living players',
 	'day.count.half': 'Half, rounded up',
+	'day.count.mostVotes': 'Most votes, no majority needed',
 	'day.prevented': 'What didn’t happen',
 	'day.preventedButton': 'What didn’t happen: {count}',
 	'day.preventedChose': 'chose',

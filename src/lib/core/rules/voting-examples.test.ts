@@ -6,6 +6,10 @@
  * - Bureaucrat: https://wiki.bloodontheclocktower.com/Bureaucrat (Examples)
  * - Butler: https://wiki.bloodontheclocktower.com/Butler (Examples)
  * - Beggar: https://wiki.bloodontheclocktower.com/Beggar (Examples)
+ * And those whose abilities change voting for the whole table (M9b, `voting-table.ts`):
+ * - Voudon: https://wiki.bloodontheclocktower.com/Voudon (Examples)
+ * - Organ Grinder: https://wiki.bloodontheclocktower.com/Organ_Grinder (Examples)
+ * - Ferryman: https://wiki.bloodontheclocktower.com/Ferryman (Examples)
  */
 import { describe, expect, it } from 'vitest';
 import type { Command } from '#lib/core/engine/index.ts';
@@ -13,7 +17,8 @@ import { warned } from '#lib/core/model/fixtures.test-support.ts';
 import type { DayEntry } from '#lib/core/model/types.ts';
 import { scenario, type Scenario, type SeatRef } from '#lib/core/testing/scenario.ts';
 import { tallyOf, voteHints } from './vote-weights.ts';
-import { blockThreshold } from './voting.ts';
+import { blockThreshold, exileThreshold } from './voting.ts';
+import { ghostVotesRestored, votesSecret } from './voting-table.ts';
 
 type Nomination = Extract<DayEntry, { kind: 'nomination' }>;
 
@@ -170,5 +175,132 @@ describe('Beggar examples', () => {
 		const voted = votes(beggarDead.nominate('imp', 'poisoner'), 'beggar');
 		expect(voted.game.seats[s.seat('beggar')].ghostVoteUsed).toBe(true);
 		expect(latest(voted).votes?.tokens).toBeUndefined();
+	});
+});
+
+describe('Voudon examples', () => {
+	// 15 players: the Voudon, 11 other living players and 3 dead ones.
+	const fifteen = [
+		'voudon',
+		'innkeeper',
+		'moonchild',
+		'chambermaid',
+		'exorcist',
+		'gossip',
+		'professor',
+		'minstrel',
+		'tealady',
+		'pacifist',
+		'zombuul',
+		'mastermind',
+		'fool',
+		'gambler',
+		'courtier'
+	];
+	const withDead = () => scenario(fifteen).dies('fool').dies('gambler').dies('courtier');
+
+	it('Example 1: three of the four who may vote are enough to execute the Moonchild', () => {
+		const s = withDead().nominate('innkeeper', 'moonchild');
+		expect(warnings(s, 'voudon', 'fool', 'gambler')).toEqual([]);
+		const voted = votes(s, 'voudon', 'fool', 'gambler');
+		expect(total(voted)).toBe(3);
+		expect(blockThreshold(voted.game, voted.characters)).toEqual({
+			alive: 12,
+			needed: 1,
+			mostVotes: 'voudon'
+		});
+		// No ghost vote is spent, so the dead may vote again on the next nomination.
+		expect(voted.game.seats[s.seat('fool')].ghostVoteUsed).toBe(false);
+		const next = votes(voted.nominate('gossip', 'tealady'), 'courtier');
+		expect(total(next)).toBe(1);
+	});
+
+	it('Example 2: on day one, 5 of 12 supporting the Voudon’s exile is not enough', () => {
+		const s = scenario(fifteen.slice(0, 12));
+		// Only the Voudon may vote, but anyone may support an exile, which needs half of all.
+		expect(warnings(s.nominate('innkeeper', 'gossip'), 'moonchild')).toEqual(['may-not-vote']);
+		expect(exileThreshold(s.game, s.characters)).toBe(6);
+	});
+
+	it('Example 3: the Voudon, a dead Fool and an apparently dead Zombuul outvote two', () => {
+		const s = withDead().reminder('zombuul', 'zombuul', 'Dead');
+		const mastermind = votes(s.nominate('innkeeper', 'mastermind'), 'gambler', 'courtier');
+		expect(total(mastermind)).toBe(2);
+		const gossip = mastermind.nominate('moonchild', 'gossip');
+		expect(warnings(gossip, 'voudon', 'fool', 'zombuul')).toEqual([]);
+		expect(total(votes(gossip, 'voudon', 'fool', 'zombuul'))).toBe(3);
+	});
+});
+
+describe('Organ Grinder examples', () => {
+	const eight = ['organgrinder', 'noble', 'imp', 'pixie', 'chef', 'empath', 'monk', 'soldier'];
+
+	it('Example: three secret votes, and the Imp’s 7 of 8 is the most', () => {
+		let s = scenario(eight);
+		expect(votesSecret(s.game, s.characters)).toBe(true);
+		// The Storyteller still counts, privately: 4 of 8 living players are needed.
+		expect(blockThreshold(s.game, s.characters)).toEqual({ alive: 8, needed: 4 });
+		const tallies: number[] = [];
+		const rounds: [SeatRef, SeatRef[]][] = [
+			['noble', ['chef', 'empath', 'monk', 'soldier', 'pixie']],
+			['imp', ['chef', 'empath', 'monk', 'soldier', 'pixie', 'noble', 'organgrinder']],
+			['pixie', ['chef', 'empath', 'monk', 'soldier']]
+		];
+		for (const [nominee, voters] of rounds) {
+			s = votes(s.nominate('chef', nominee), ...voters);
+			tallies.push(total(s)!);
+		}
+		expect(tallies).toEqual([5, 7, 4]);
+	});
+});
+
+describe('Ferryman examples', () => {
+	it('Example 1: two players who used their votes get them back on the final day', () => {
+		let s = scenario(['chef', 'empath', 'monk', 'soldier', 'mayor', 'imp']);
+		for (const dead of ['chef', 'empath', 'monk'] as const)
+			s = s.dies(dead, 'imp').do((at) => ({ type: 'SpendGhostVote', seatId: at.seat(dead) }));
+		s = s.do((at) => ({ type: 'RestoreGhostVote', seatId: at.seat('monk') }));
+		// Amy (the Chef) and Doug (the Empath) forgot they were dead and voted.
+		const ferried = s.rule('ferryman');
+		expect(blockThreshold(ferried.game).alive).toBe(3);
+		expect(ghostVotesRestored(ferried.game, ferried.characters, true)).toEqual([
+			s.seat('chef'),
+			s.seat('empath')
+		]);
+	});
+
+	it('Example 2: 10 of 17 dead players have used their tokens and all get them back', () => {
+		const twenty = [
+			'chef',
+			'empath',
+			'monk',
+			'soldier',
+			'mayor',
+			'slayer',
+			'virgin',
+			'ravenkeeper',
+			'undertaker',
+			'fortuneteller',
+			'investigator',
+			'librarian',
+			'washerwoman',
+			'butler',
+			'recluse',
+			'saint',
+			'drunk',
+			'poisoner',
+			'spy',
+			'imp'
+		];
+		let s = scenario(twenty);
+		twenty.slice(0, 17).forEach((dead, i) => {
+			s = s.dies(dead, 'imp');
+			if (i < 10) s = s.do((at) => ({ type: 'SpendGhostVote', seatId: at.seat(dead) }));
+		});
+		const ferried = s.rule('ferryman');
+		const back = ghostVotesRestored(ferried.game, ferried.characters, true);
+		expect(back).toEqual(twenty.slice(0, 10).map((id) => s.seat(id)));
+		const after = back.reduce((at, seatId) => at.do({ type: 'RestoreGhostVote', seatId }), ferried);
+		expect(ghostVotesRestored(after.game, after.characters, true)).toEqual([]);
 	});
 });

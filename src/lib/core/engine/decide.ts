@@ -124,7 +124,8 @@ export type WarningCode =
 	| 'must-vote'
 	| 'no-vote-token'
 	| 'needs-no-token'
-	| 'giver-not-dead';
+	| 'giver-not-dead'
+	| 'may-not-vote';
 
 export interface Issue<C extends string> {
 	code: C;

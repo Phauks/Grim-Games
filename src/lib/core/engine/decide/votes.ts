@@ -6,7 +6,13 @@
  */
 import { getSeat, registersAsDead } from '#lib/core/model/selectors.ts';
 import type { Game, NominationVotes, SeatId } from '#lib/core/model/types.ts';
-import { carriersOf, mustVoteNow, voterRule, votesWithoutToken } from '#lib/core/rules/index.ts';
+import {
+	carriersOf,
+	mayVote,
+	mustVoteNow,
+	voterRule,
+	votesWithoutToken
+} from '#lib/core/rules/index.ts';
 import type { GameEvent } from '../events.ts';
 import { entryOfKind, refuse, seatOf, type Deciders } from './shared.ts';
 
@@ -59,6 +65,12 @@ export const VOTES_DECIDERS: Deciders<'RecordVotes' | 'GiveVoteToken'> = {
 		for (const seatId of voters) {
 			const seat = game.seats[seatId];
 			if (seat.notInPlay) warn('not-in-play', 'a voter is not in play yet');
+			const allowed = mayVote(game, seatId, characters);
+			if (!allowed.ok) {
+				// Counted as the Storyteller recorded it, but spends nothing it may not use.
+				warn('may-not-vote', 'only the dead and one player may vote today', [allowed.by]);
+				continue;
+			}
 			const voter = voterRule(game, seatId, characters);
 			if (voter?.rule.onlyWith) {
 				const masters = carriersOf(game, voter.characterId, voter.rule.onlyWith);
@@ -87,6 +99,7 @@ export const VOTES_DECIDERS: Deciders<'RecordVotes' | 'GiveVoteToken'> = {
 		}
 		for (const seatId of game.seating) {
 			if (picked.has(seatId) || game.seats[seatId].notInPlay) continue;
+			if (!mayVote(game, seatId, characters).ok) continue;
 			const voter = voterRule(game, seatId, characters);
 			if (voter && mustVoteNow(game, voter.rule))
 				warn('must-vote', 'a player who must vote did not', [voter.characterId]);

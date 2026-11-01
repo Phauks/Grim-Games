@@ -18,6 +18,7 @@ import { registersAsDead, trueCharacter } from '#lib/core/model/selectors.ts';
 import type { DayEntry, Game, ReminderId, SeatId } from '#lib/core/model/types.ts';
 import { abilityState } from './ability.ts';
 import { blockThreshold, votesWithoutToken } from './voting.ts';
+import { mayVote } from './voting-table.ts';
 
 type Nomination = Extract<DayEntry, { kind: 'nomination' }>;
 type VoterRule = NonNullable<CharacterRules['voter']>;
@@ -147,10 +148,16 @@ export interface VoteHint {
 	/** The characters whose abilities change `worth`. */
 	worthFrom: CharacterId[];
 	/**
-	 * A dead player's vote: their ghost vote `unused` or `used`, or `free` when their
-	 * character lets them vote without one (`afterDeath`). Absent while alive.
+	 * A dead player's vote: their ghost vote `unused` or `used`, or `free` when they vote
+	 * without one (their character's `afterDeath`, or the table's `deadNeedNoToken`, the
+	 * Voudon). Absent while alive.
 	 */
 	ghostVote?: 'unused' | 'used' | 'free';
+	/**
+	 * They may not vote today: only the dead and that character's player may (the Voudon,
+	 * `mayVote`). The rules below that need them to vote are left out while this is set.
+	 */
+	mayNotVote?: { characterId: CharacterId };
 	/** They may vote only if one of `seats` votes too (the Butler's Master). */
 	onlyWith?: { characterId: CharacterId; seats: SeatId[] };
 	/** They must vote on every nomination today (the Zealot, with enough players alive). */
@@ -175,6 +182,11 @@ export function voteHints(game: Game, characters: CharacterLookup): VoteHint[] {
 			if (dead) {
 				const free = votesWithoutToken(game, seatId, characters) !== undefined;
 				hint.ghostVote = free ? 'free' : seat.ghostVoteUsed ? 'used' : 'unused';
+			}
+			const allowed = mayVote(game, seatId, characters);
+			if (!allowed.ok) {
+				hint.mayNotVote = { characterId: allowed.by };
+				return hint;
 			}
 			const voter = voterRule(game, seatId, characters);
 			if (voter?.rule.onlyWith) {

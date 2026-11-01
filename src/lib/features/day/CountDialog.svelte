@@ -29,7 +29,7 @@
 
 	let { open = $bindable(), game, characters, count, title }: Props = $props();
 
-	const block = $derived(blockThreshold(game));
+	const block = $derived(blockThreshold(game, characters));
 	const seats = $derived(count && count !== 'votes' ? seatsBehind(game, count) : []);
 	const total = $derived(
 		count && count !== 'votes'
@@ -60,7 +60,7 @@
 					<td>{block.alive}</td>
 				</tr>
 				<tr>
-					<th scope="row">{t('day.count.half')}</th>
+					<th scope="row">{t(block.mostVotes ? 'day.count.mostVotes' : 'day.count.half')}</th>
 					<td>{block.needed}</td>
 				</tr>
 			</tbody>

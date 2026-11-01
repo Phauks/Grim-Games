@@ -253,7 +253,7 @@
 	}
 
 	/** Votes for the first nominee, from who is alive now (core `blockThreshold`). */
-	const block = $derived(blockThreshold(g));
+	const block = $derived(blockThreshold(g, game.characters));
 	/** Section headers stick just under the toolbar (Trevor, 2026-10-17). */
 	let toolbarSize = $state<ResizeObserverSize[]>();
 	// The exact (fractional) height: a rounded one leaves a sliver between toolbar and header.
