@@ -78,6 +78,7 @@
 	title={game.script.meta?.name || 'Script'}
 	size="max"
 	titleBelow
+	page
 	lead={logo ? logoLead : undefined}
 >
 	{#snippet headActions()}
@@ -115,14 +116,15 @@
 <style>
 	/* Out into the dialog's padding, with that room given back inside, so the players' sheets
 	   can reach into it as they do into /play's gutter (PlayerScriptTabs) without being
-	   clipped by this scroll box. */
+	   clipped by this scroll box, and the bottom tab bar meets the dialog's sides as it meets
+	   the screen's on /play. */
 	.script-scroll {
 		/* The status row sits the dialog's side padding under the byline (PlayerStatusRow). */
 		--player-status-gap: var(--space-4);
 		flex: 1;
 		min-height: 0;
-		margin-inline: calc(-1 * var(--space-3));
-		padding-inline: var(--space-3);
+		margin-inline: calc(-1 * var(--space-4));
+		padding-inline: var(--space-4);
 		overflow-y: auto;
 		overscroll-behavior: contain;
 	}
