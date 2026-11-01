@@ -78,4 +78,17 @@
 		align-items: end;
 		gap: var(--space-1);
 	}
+	/* A phone: the title over its link, so neither is squeezed to a few letters. */
+	@container builder (max-width: 34rem) {
+		li {
+			grid-template-columns: minmax(0, 1fr) auto;
+		}
+		li > :global(:nth-child(-n + 2)) {
+			grid-column: 1;
+		}
+		li > :global(:nth-child(3)) {
+			grid-column: 2;
+			grid-row: 1 / span 2;
+		}
+	}
 </style>

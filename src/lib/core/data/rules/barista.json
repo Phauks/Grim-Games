@@ -2,6 +2,9 @@
 	"impairs": {
 		"clears": ["Sober & Healthy"]
 	},
+	"actsTwice": {
+		"token": "Acts Twice"
+	},
 	"reminderTargets": {
 		"Sober & Healthy": {
 			"seat": "any",

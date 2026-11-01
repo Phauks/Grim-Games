@@ -40,6 +40,7 @@ export * from './reminder-movement.ts';
 export * from './reminder-targets.ts';
 export * from './night-alerts.ts';
 export * from './wakes-when.ts';
+export * from './acts-twice.ts';
 export * from './night-numbers.ts';
 export * from './game-end.ts';
 export * from './becomes.ts';

@@ -25,6 +25,7 @@ import {
 	onDeathTrigger,
 	TRAVELLER_ALIGNMENT_STEP,
 	wakeConditionMet,
+	withActsTwiceSteps,
 	withCharacterChangeSteps,
 	withNightInfo,
 	type AnswerValue,
@@ -76,15 +77,20 @@ export function boardNightSteps(
 	const woken =
 		night === 'other' ? withCharacterChangeSteps(steps, today.changes ?? [], characters) : steps;
 	const number = night === 'first' ? 1 : game.pastDays.length + 1;
+	// A player whose ability works twice tonight wakes again straight after each of their steps.
 	return duskToDawn([
 		...ruleNightSteps(rules, number),
-		...withNightInfo(
-			woken,
+		...withActsTwiceSteps(
+			withNightInfo(
+				woken,
+				game,
+				characters,
+				night,
+				{ died: today.died ?? [] },
+				data.nightSheet[night === 'first' ? 'firstNight' : 'otherNight']
+			),
 			game,
-			characters,
-			night,
-			{ died: today.died ?? [] },
-			data.nightSheet[night === 'first' ? 'firstNight' : 'otherNight']
+			characters
 		)
 	]);
 }
@@ -136,8 +142,10 @@ export const tonight = (game: Game): Night => (game.pastDays.length === 0 ? 'fir
 
 export function stepName(step: NightStep): string {
 	if (step.kind === 'marker') return MARKER_TEXT[step.id as NightMarker].name;
+	// A second wake for a player who acts twice (`withActsTwiceSteps`) says "again".
+	const again = step.again ? ' again' : '';
 	// eslint-disable-next-line grim/names-as-badges -- a caption beside the step's own icon (StepIcon)
-	return step.title ?? step.character?.name ?? step.id;
+	return `${step.title ?? step.character?.name ?? step.id}${again}`;
 }
 
 /** Steps with no character get an icon of their own. */
@@ -163,6 +171,7 @@ export function stepHolders(game: Game, step: NightStep, characters: CharacterLo
 		});
 	}
 	if (step.changed) return [step.changed.seatId];
+	if (step.again) return [step.again.seatId];
 	const id = step.character?.id;
 	return id ? game.seating.filter((s) => game.seats[s].characterId === id) : [];
 }
