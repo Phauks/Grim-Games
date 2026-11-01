@@ -56,6 +56,8 @@ export interface PublicSeat {
 	 * mode keeps Travellers secret (Stowed Away).
 	 */
 	traveller?: CharacterId;
+	/** At the table but not in play yet (`Seat.notInPlay`): everyone sees it. */
+	notInPlay?: true;
 	/** The avatar and frame the seat's player picked on their phone (plan R6): theirs to show. */
 	avatar?: AvatarId;
 	frame?: FrameId;
@@ -324,6 +326,7 @@ export function publicProjection(
 				dead: appearsDead(seat)
 			};
 			if (seat.playerName !== undefined) view.playerName = seat.playerName;
+			if (seat.notInPlay) view.notInPlay = true;
 			if (seat.avatar !== undefined) view.avatar = seat.avatar;
 			if (seat.frame !== undefined) view.frame = seat.frame;
 			// Every seat that looks dead shows a vote the same way, so a Zombuul looks no different.

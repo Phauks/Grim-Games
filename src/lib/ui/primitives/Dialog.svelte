@@ -137,6 +137,10 @@
 						<Dialog.Title
 							>{#if heading}{@render heading()}{:else}{title}{/if}</Dialog.Title
 						>
+						<!-- Under the title, beside the buttons on a wide dialog (Trevor, 2026-10-31). -->
+						{#if titleBelow && subtitle}<Dialog.Description class="below"
+								>{@render subtitle()}</Dialog.Description
+							>{/if}
 					</div>
 					{#if headActions}<span class="head-actions" data-testid="dialog-head-actions"
 							>{@render headActions()}</span
@@ -155,7 +159,7 @@
 						>
 					{/if}
 				</div>
-				{#if subtitle}<Dialog.Description>{@render subtitle()}</Dialog.Description
+				{#if subtitle && !titleBelow}<Dialog.Description>{@render subtitle()}</Dialog.Description
 					>{:else if description}<Dialog.Description>{description}</Dialog.Description>{/if}
 				{#if aside}
 					<div class="panes" data-pin={pinAside || undefined}>
@@ -208,6 +212,9 @@
 		border-radius: var(--card-radius);
 		background: var(--dialog-background);
 		color: var(--dialog-color);
+		/* Pinned section headers stop at the dialog's own top, in its colour. */
+		--pin-top: 0rem;
+		--pin-background: var(--dialog-background);
 		box-shadow: var(--shadow);
 	}
 	/* Two panes (`aside`): wider than a plain dialog, its panes scrolling inside it. */
@@ -329,10 +336,12 @@
 		justify-content: space-between;
 		gap: var(--space-3);
 	}
-	/* The buttons and Close on the first row, the title under them. */
+	/* A narrow dialog: the buttons and Close on the first row, the title and byline under them. */
 	.head[data-title-below] {
 		flex-wrap: wrap;
+		align-items: start;
 		row-gap: var(--space-1);
+		container: dialog-head / inline-size;
 	}
 	.head[data-title-below] .titled {
 		order: 1;
@@ -340,6 +349,31 @@
 	}
 	.head[data-title-below] .head-actions {
 		margin-left: auto;
+	}
+	/* The byline under the title and the lead, from the dialog's edge. */
+	.titled > :global(.below) {
+		grid-column: 1 / -1;
+		margin: var(--space-1) 0 0;
+	}
+	/*
+	 * A wide dialog: the title and byline at the start of the first row and the buttons at its
+	 * end, level with the title, so no row is left half empty (Trevor, 2026-10-31: "on desktop
+	 * and larger screens, we have some leftover space"). The same width as Page's.
+	 */
+	@container dialog-head (min-width: 36rem) {
+		.head[data-title-below] .titled {
+			order: 0;
+			flex: 1 1 0;
+		}
+		/* The title's line as tall as the buttons, so the two centre on one line. */
+		.titled.with-lead {
+			grid-template-rows: minmax(var(--tap-target), auto);
+		}
+		.titled:not(.with-lead) > :global([data-part='title']) {
+			display: flex;
+			align-items: center;
+			min-height: var(--tap-target);
+		}
 	}
 	.head-actions {
 		flex: none;

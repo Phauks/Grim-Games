@@ -113,6 +113,11 @@ function describeEvent(
 			return [text(`Script changed to ${event.script.meta?.name ?? 'a custom script'}`)];
 		case 'SeatAdded':
 			return [text('Added '), seatName(after, event.seatId)];
+		case 'SeatInPlaySet':
+			return [
+				seatName(after, event.seatId),
+				text(event.inPlay ? ' came into play' : ' taken out of play')
+			];
 		case 'SeatRemoved':
 			return [text('Removed '), seatPart(before, event.seatId)];
 		case 'StorytellerNameSet':

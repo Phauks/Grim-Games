@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
 	orderAround,
+	sharedPlace,
 	clearOfCorner,
 	keepInside,
 	DEFAULT_SEAT_LAYOUT,
@@ -391,5 +392,21 @@ describe('swapPlaces', () => {
 			gaps: { b: 2 },
 			placed: { a: { x: 10, y: 20 } }
 		});
+	});
+});
+
+describe('sharedPlace', () => {
+	const board = { width: 400, height: 800 };
+	it('undoes centredIn for a grim drawn in the board’s shape', () => {
+		const box = fitAspect(board, 2);
+		const [onBoard] = centredIn([{ x: 30, y: 60 }], box, board);
+		const back = sharedPlace(onBoard, board, 2, true);
+		expect(back.x).toBeCloseTo(30);
+		expect(back.y).toBeCloseTo(60);
+	});
+
+	it('keeps the point when the grim fills its own board', () => {
+		expect(sharedPlace({ x: 30, y: 60 }, board, 2, false)).toEqual({ x: 30, y: 60 });
+		expect(sharedPlace({ x: 30, y: 60 }, board, undefined, true)).toEqual({ x: 30, y: 60 });
 	});
 });

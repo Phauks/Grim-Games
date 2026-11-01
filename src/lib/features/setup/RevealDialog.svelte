@@ -1,13 +1,8 @@
 <script lang="ts">
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import {
-		defaultAlignment,
-		type Alignment,
-		type Character,
-		type PlayerName
-	} from '#lib/core/data/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import type { Alignment, Character, PlayerName } from '#lib/core/data/index.ts';
+	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -197,17 +192,11 @@
 								>{/if}
 						</div>
 					{/if}
-					<p class="name" data-testid="reveal-name">
-						{#if visible}<CharacterBadge
-								characterId={face.character.id}
-								character={face.character}
-								alignment={defaultAlignment(face.character.type)}
-								interactive={false}
-							/>{/if}
-					</p>
-					<p class="ability" class:concealed={!visible}>
-						{visible ? face.character.ability : ''}
-					</p>
+					<!-- The character as Character selection shows it: the shared row (Trevor,
+					     2026-10-31); its place stays reserved while the token is locked. -->
+					<div class="row" data-testid="reveal-name">
+						{#if visible}<CharacterRow character={face.character} info />{/if}
+					</div>
 				</div>
 			{/each}
 		</div>
@@ -295,21 +284,14 @@
 		box-shadow: inset 0 0 0 3px var(--token-rim);
 		font-size: 0.9rem;
 	}
-	.concealed {
-		min-height: 1.3em;
-	}
-	/* The badge's height is reserved while the token is locked. */
-	.name {
-		display: grid;
-		place-items: center;
-		min-height: var(--tap-target);
-		margin: 0;
-		font-size: 1.3rem;
-	}
-	.ability {
-		max-width: 28rem;
-		margin: 0;
-		font-family: var(--font-ability);
+	/*
+	 * The row's height is reserved while the token is locked: the ring is as tall as the name
+	 * and two lines of ability (CharacterRow's --character-ring).
+	 */
+	.row {
+		width: min(100%, 28rem);
+		min-height: 4.4em;
+		text-align: start;
 	}
 	.player {
 		width: min(100%, 20rem);

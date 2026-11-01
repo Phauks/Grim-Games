@@ -11,8 +11,6 @@ import {
 	type WrittenNote
 } from './seat-notes.ts';
 
-export { notesLine } from './seat-notes.ts';
-
 // eslint-disable-next-line svelte/prefer-svelte-reactivity -- a cache of reactive objects, never read reactively itself
 const open = new Map<string, RoomSeatNotes>();
 

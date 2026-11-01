@@ -192,10 +192,15 @@ export class FakeStoryteller {
 			return;
 		}
 		const own = this.#seats.find((s) => s.playerName === member.name);
-		if (!own || own.seatId === wish.after) return;
+		const target = wish.onto ?? wish.after;
+		if (!own || !target || own.seatId === target) return;
 		const rest = this.#seats.filter((s) => s !== own);
-		const at = rest.findIndex((s) => s.seatId === wish.after);
-		rest.splice(at + 1, 0, own);
+		// Onto a seat takes its place in the order (2026-10-31); after one goes just past it.
+		const at = wish.onto
+			? this.#seats.findIndex((s) => s.seatId === wish.onto)
+			: rest.findIndex((s) => s.seatId === wish.after) + 1;
+		if (at < 0) return;
+		rest.splice(at, 0, own);
 		this.#seats = rest;
 		this.publish();
 	}
