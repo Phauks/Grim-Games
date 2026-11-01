@@ -2405,7 +2405,8 @@ test('a custom game mode can be shared; a built-in one cannot', async ({ page })
 			id: 'tiny-mode',
 			name: 'Tiny Mode',
 			sources: [{ title: 'Our group', url: 'https://example.com/tiny' }],
-			parts: { restricted: { banned: ['pithag'] } }
+			// Dealt from the bag: a whole-game part, so the file is a game mode (2026-11-01).
+			parts: { assignment: { kind: 'bag' }, restricted: { banned: ['pithag'] } }
 		})
 	);
 	await add.getByRole('button', { name: 'Confirm' }).tap();
