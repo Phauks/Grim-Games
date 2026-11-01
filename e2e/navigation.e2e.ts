@@ -36,12 +36,13 @@ test('on a phone, the header menu opens a drawer with every destination', async 
 	// Grouped under plain labels: games, preparation, you, then the app's own pages (Trevor,
 	// 2026-10-16; no Player view, 2026-10-19; the footer's pages, 2026-10-23).
 	// Headed with the app's name, not "Menu" (Trevor, 2026-10-18).
-	// The builders have their own section after Prepare (Trevor, 2026-10-31).
+	// The builders have their own section after Prepare (Trevor, 2026-10-31), headed Create
+	// (Trevor, 2026-11-01).
 	await expect(drawer.getByRole('heading')).toHaveText([
 		APP_NAME,
 		'Play',
 		'Prepare',
-		'Build',
+		'Create',
 		'You',
 		'App'
 	]);
@@ -60,7 +61,7 @@ test('on a phone, the header menu opens a drawer with every destination', async 
 		'Info tokens',
 		'Character reference'
 	]);
-	await expect(drawer.getByRole('list', { name: 'Build' }).getByRole('link')).toHaveText([
+	await expect(drawer.getByRole('list', { name: 'Create' }).getByRole('link')).toHaveText([
 		'Script builder',
 		'Character builder',
 		'Mode builder'
