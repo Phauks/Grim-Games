@@ -4434,6 +4434,33 @@ test('with no one stormcaught, the evil players are shown the named character as
 	await expect(shown).toContainText('Washerwoman');
 });
 
+// Trevor (2026-11-01, M10g): the named character is saved with the game, in play or not.
+test('the Storm Catcher named character is picked before the day and kept at its step', async ({
+	page
+}) => {
+	test.slow();
+	await stormCatcherGame(page);
+	await page.getByRole('button', { name: 'Day', exact: true }).tap();
+	const day = page.getByRole('dialog', { name: 'Day' });
+	const value = day.getByTestId('prep-value').first();
+	await expect(value).toHaveText('(CHARACTER)');
+	await value.tap();
+	const pick = page.getByRole('dialog', { name: 'Stormcaught character' });
+	await pick.getByRole('combobox', { name: 'Stormcaught character' }).tap();
+	await page.getByRole('option', { name: 'Washerwoman', exact: true }).tap();
+	await pick.getByRole('button', { name: 'Save' }).tap();
+	await expect(pick).toBeHidden();
+	await expect(value).toContainText('Washerwoman');
+	await page.keyboard.press('Escape');
+	await expect(day).toBeHidden();
+	// Kept through a reload, and already chosen at the first night step.
+	await page.reload();
+	const step = await openStep(page, 'Storm Catcher');
+	const learns = step.getByTestId('night-evil-learns');
+	await expect(learns).toContainText('Washerwoman');
+	await expect(learns.getByRole('button', { name: 'Show to player' })).toBeEnabled();
+});
+
 test('Minion info and Demon info list every card they can show, with who it points at', async ({
 	page
 }) => {

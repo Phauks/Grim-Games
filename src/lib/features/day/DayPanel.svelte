@@ -16,6 +16,7 @@
 		isOnceOnlyDayAbility,
 		daySentence,
 		madnessOffer,
+		prepValueCharacter,
 		type DayReminder,
 		type MadnessOffer
 	} from '#lib/core/rules/index.ts';
@@ -514,7 +515,10 @@
 														class="prep-value"
 														data-testid="prep-value"
 														onclick={() => editValue(segment.characterId, segment.key)}
-														>({segment.value ?? segment.placeholder})</button
+														>{#if segment.value && prepValueCharacter(segment.characterId, segment.key, game.characters)}<CharacterBadge
+																characterId={segment.value}
+																interactive={false}
+															/>{:else}({segment.value ?? segment.placeholder}){/if}</button
 													>{#if stop}.{/if}</span
 												>
 											{:else}

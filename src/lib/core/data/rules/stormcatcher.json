@@ -1,6 +1,7 @@
 {
 	"evilLearns": {
-		"carrier": "Stormcaught"
+		"carrier": "Stormcaught",
+		"named": "named"
 	},
 	"reminderTargets": {
 		"Stormcaught": {
@@ -21,6 +22,16 @@
 				},
 				"reason": "This player can only die by execution; evil learns who"
 			}
+		],
+		"notes": [
+			{
+				"text": "Name a good character as stormcaught, in play or not",
+				"value": {
+					"key": "named",
+					"label": "Stormcaught character",
+					"character": "good"
+				}
+			}
 		]
 	},
 	"dayReminders": {
@@ -40,6 +51,25 @@
 				],
 				"when": {
 					"reminder": "Stormcaught",
+					"self": "any"
+				}
+			},
+			{
+				"group": "execution-death",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"value": "named",
+						"placeholder": "CHARACTER"
+					},
+					{
+						"text": "is not in play"
+					}
+				],
+				"when": {
+					"noReminder": "Stormcaught",
 					"self": "any"
 				}
 			}
