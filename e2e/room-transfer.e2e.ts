@@ -43,18 +43,18 @@ async function openTransfer(page: Page, board: string, code: string): Promise<st
 	);
 	await expect(dialog.getByTestId('transfer-code')).toHaveText(/^\d{4} \d{4}$/);
 	await expect(dialog.getByTestId('transfer-time')).toHaveText(/^Expires in [12]:\d\d$/);
-	// The eye hides the transfer code behind dots and shows it again (Trevor, 2026-10-31),
-	// and nothing in the dialog moves while it is hidden.
+	// The transfer code starts hidden behind dots (Trevor, 2026-11-01); the eye shows it
+	// (2026-10-31), and nothing in the dialog moves.
 	const hide = dialog.getByRole('button', { name: 'Hide code' });
 	const before = await dialog.getByTestId('transfer-time').boundingBox();
-	await hide.tap();
 	await expect(hide).toHaveAttribute('aria-pressed', 'true');
 	await expect(dialog.getByTestId('transfer-code-hidden')).toHaveText('•••• ••••');
 	await expect(dialog.getByTestId('transfer-code')).toBeHidden();
-	expect(await dialog.getByTestId('transfer-time').boundingBox()).toEqual(before);
 	await hide.tap();
+	await expect(hide).toHaveAttribute('aria-pressed', 'false');
 	await expect(dialog.getByTestId('transfer-code-hidden')).toHaveCount(0);
 	await expect(dialog.getByTestId('transfer-code')).toBeVisible();
+	expect(await dialog.getByTestId('transfer-time').boundingBox()).toEqual(before);
 	return (await dialog.getByTestId('transfer-code').textContent())!.replace(/\s/g, '');
 }
 
@@ -84,6 +84,10 @@ test('a Storyteller hands the room and the game to another device, and the playe
 	page,
 	browser
 }, testInfo) => {
+	// Three devices and the whole hand-over: 15s alone, 25s beside another worker, so CI's
+	// busier runners crossed the 30s default (runs 41347582481, 41247019112). No one step is
+	// slow; the longest, Join game on the new device, takes about 2s.
+	test.slow();
 	const { board, code } = await startGame(page);
 	const gameId = board.split('/').pop();
 

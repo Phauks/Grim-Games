@@ -13,6 +13,7 @@
 	import type { SeatPoint } from '#lib/ui/seating/seat-layout.ts';
 	import BoardReminderChip from './BoardReminderChip.svelte';
 	import { isOrphan, placingAlignment } from './board.ts';
+	import { placedLook } from './reminders.ts';
 	import ReminderTethers from './ReminderTethers.svelte';
 	import { boardLooks } from './board-looks.svelte.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
@@ -91,9 +92,6 @@
 	const game = $derived(grimoire.game);
 	const characters = $derived(grimoire.open.characters);
 	const seats = $derived(game.seating.map((id) => game.seats[id]));
-	/** The character whose art a generic copy shows (Trevor, 2026-10-27), if any. */
-	const artOf = (reminder: ReminderInstance) =>
-		reminder.like ? characters.get(reminder.like.characterId) : undefined;
 	/**
 	 * The abilities each seat holds without their tokens (the Boffin's good character), in
 	 * seating order: in the seat's bottom-right pill, or Vanilla, beside the seat as the wiki
@@ -194,11 +192,9 @@
 		{#each beside[i] as reminder, k (reminder.reminderId)}
 			{@const dragged = remDrag.drag?.reminderId === reminder.reminderId}
 			<BoardReminderChip
-				{reminder}
+				look={placedLook(reminder, characters)}
 				at={dragged ? remDrag.drag!.at : at[k]}
-				character={characters.get(reminder.characterId)}
 				alignment={placingAlignment(game, reminder, characters)}
-				art={artOf(reminder)}
 				size={chip}
 				disabled={seatArr.arranging || watching}
 				seatNumber={i + 1}
@@ -242,13 +238,11 @@
 {#each looseReminders(game) as reminder, k (reminder.reminderId)}
 	{@const dragged = remDrag.drag?.reminderId === reminder.reminderId}
 	<BoardReminderChip
-		{reminder}
+		look={placedLook(reminder, characters)}
 		at={dragged
 			? remDrag.drag!.at
 			: (grimoire.reminderSpots[reminder.reminderId] ?? { x: 12 + 8 * (k % 4), y: 80 })}
-		character={characters.get(reminder.characterId)}
 		alignment={placingAlignment(game, reminder, characters)}
-		art={artOf(reminder)}
 		size={chip}
 		disabled={seatArr.arranging || watching}
 		loose
@@ -264,10 +258,8 @@
 <!-- A Fabled or Loric's reminder follows the finger while it is dragged. -->
 {#if heldDrag}
 	<BoardReminderChip
-		reminder={heldDrag}
+		look={placedLook(heldDrag, characters)}
 		at={remDrag.drag!.at}
-		character={characters.get(heldDrag.characterId)}
-		art={artOf(heldDrag)}
 		size={chip}
 		disabled
 		dragging

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseWikiPage, wikiPageTitle, withoutRepeats } from './wiki-page.ts';
+import { optionalRuleIn, parseWikiPage, wikiPageTitle, withoutRepeats } from './wiki-page.ts';
 
 // A made-up page in the wiki's shapes (old and new heading markup); no wiki text is copied.
 const PAGE = `
@@ -115,6 +115,20 @@ describe('parseWikiPage', () => {
 });
 
 // Made-up sample wording in the wiki's shapes.
+describe('optionalRuleIn', () => {
+	it('reads the Optional rule section, or else a tip that names an optional rule', () => {
+		const rule = { kind: 'p' as const, text: 'Optional rule: Sample rule.' };
+		expect(optionalRuleIn([{ heading: 'Optional rule', blocks: [rule] }])).toBe(rule.text);
+		const tip = 'Sample tip. This is an optional rule a sample Storyteller may allow.';
+		expect(
+			optionalRuleIn([{ heading: 'Tips', blocks: [{ kind: 'list', items: ['Other tip.', tip] }] }])
+		).toBe(tip);
+		expect(
+			optionalRuleIn([{ heading: 'Tips', blocks: [{ kind: 'p', text: 'Sample.' }] }])
+		).toBeUndefined();
+	});
+});
+
 describe('withoutRepeats', () => {
 	const ability = 'Each night*, choose a sample player [+1 Sample].';
 	it("drops the Summary's copy of the ability, ignoring quotes, brackets and spacing", () => {

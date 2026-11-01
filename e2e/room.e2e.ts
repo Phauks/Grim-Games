@@ -279,7 +279,11 @@ test('End game keeps the room open and tells its phones the game is over', async
 	await expect(status).toHaveText('Game over: Good won');
 
 	// Reopening the game runs it again for the phones too.
-	await page.getByTestId('game-over').tap();
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Reopen game' })
+		.tap();
 	await page
 		.getByRole('alertdialog', { name: 'Reopen game?' })
 		.getByRole('button', { name: 'Confirm', exact: true })
@@ -462,7 +466,7 @@ test('after End game the Storyteller shares the finished grimoire with the room'
 	await end.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(status).toHaveText('Game over: Evil won');
 
-	// Skipped at End game, ⋯ > Session offers Share grim once the game is over, and asks first.
+	// Not on End game: ⋯ > Session offers Share grim once the game is over, and asks first.
 	const seats = await page.getByTestId('seat').count();
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	await menu.getByTestId('menu-share-grim').tap();
@@ -513,7 +517,11 @@ test('after End game the Storyteller shares the finished grimoire with the room'
 	await expect(view).toBeHidden();
 
 	// Reopening the game makes the grimoire private again.
-	await page.getByTestId('game-over').tap();
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Reopen game' })
+		.tap();
 	await page
 		.getByRole('alertdialog', { name: 'Reopen game?' })
 		.getByRole('button', { name: 'Confirm', exact: true })
@@ -524,7 +532,7 @@ test('after End game the Storyteller shares the finished grimoire with the room'
 	await phoneContext.close();
 });
 
-test('End game can share the final grimoire, and each phone steps through its History', async ({
+test('Share grim after End game lets each phone step through the History in the final grimoire', async ({
 	page,
 	browser
 }, testInfo) => {
@@ -560,10 +568,15 @@ test('End game can share the final grimoire, and each phone steps through its Hi
 	const end = page.getByRole('alertdialog', { name: 'End game?' });
 	await end.getByRole('combobox', { name: 'Winner' }).tap();
 	await page.getByRole('option', { name: 'Good', exact: true }).tap();
-	const share = end.getByRole('checkbox', { name: 'Share the final grimoire with players' });
-	await expect(share).not.toBeChecked();
-	await end.getByText('Share the final grimoire with players', { exact: true }).tap();
+	await expect(end.getByRole('checkbox')).toHaveCount(0);
 	await end.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	// Share grim is in ⋯ once the game is over, not on End game (Trevor, 2026-11-01).
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page.getByRole('dialog', { name: 'Grimoire' }).getByTestId('menu-share-grim').tap();
+	await page
+		.getByRole('alertdialog', { name: 'Share the grimoire?' })
+		.getByRole('button', { name: 'Confirm', exact: true })
+		.tap();
 
 	// The phone turns to its Grim tab, where the finished board shows with its History.
 	await expect(phone.getByRole('tab', { name: 'Grim' })).toHaveAttribute('aria-selected', 'true');
@@ -2064,7 +2077,8 @@ test('a player puts reminder tokens on seats in their own Grim', async ({
 		.getByRole('button', { name: 'About this reminder' })
 		.tap();
 	const about = phone.getByRole('dialog', { name: 'Poisoned' });
-	await expect(about).toContainText(/From\s*Poisoner/);
+	await expect(about.locator('.ring-row')).toContainText('Poisoner');
+	await expect(about).not.toContainText(/From\s*Poisoner/);
 	await phone.keyboard.press('Escape');
 	await expect(about).toBeHidden();
 	await expect(phone.getByTestId('reminder-in-hand')).toBeVisible();
@@ -2132,6 +2146,22 @@ test('a player puts reminder tokens on seats in their own Grim', async ({
 		'Seat 6: Seat 6, your reminders: Poisoned'
 	);
 	await expect(seat).toHaveAttribute('aria-label', 'Seat 2: Seat 2');
+	// Or dragged onto another seat, as on the board (Trevor, 2026-11-01).
+	const fromBox = (await token.boundingBox())!;
+	const dest = (await phone.getByTestId('grim-seat').nth(3).boundingBox())!;
+	await phone.mouse.move(fromBox.x + fromBox.width / 2, fromBox.y + fromBox.height / 2);
+	await phone.mouse.down();
+	await phone.mouse.move(dest.x + dest.width / 2, dest.y + dest.height / 2 + 20, { steps: 6 });
+	await phone.mouse.move(dest.x + dest.width / 2, dest.y + dest.height / 2, { steps: 4 });
+	await phone.mouse.up();
+	await expect(phone.getByTestId('grim-seat').nth(3)).toHaveAttribute(
+		'aria-label',
+		/your reminders: Poisoned$/
+	);
+	await expect(phone.getByTestId('grim-seat').nth(5)).toHaveAttribute(
+		'aria-label',
+		'Seat 6: Seat 6'
+	);
 	await token.tap();
 	await phone.getByRole('list', { name: 'Reminder bank' }).tap({ position: { x: 4, y: 4 } });
 	await expect(phone.getByTestId('reminder-in-hand')).toBeHidden();
