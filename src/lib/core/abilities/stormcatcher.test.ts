@@ -8,13 +8,16 @@
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
  * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
- * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
+ * happened, then what the rules say. Quote the example word for word in a `// Wiki: "..."`
+ * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
+ * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { evilLearns } from '#lib/core/rules/index.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { protection } from '#lib/core/rules/ability.ts';
 
 describe('Storm Catcher', () => {
 	const character = committedCharacter('stormcatcher');
@@ -46,9 +49,34 @@ describe('Storm Catcher', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Storm_Catcher#Examples)', () => {
-		it.todo('Example 1: General survives night attacks until executed');
+		it('Example 1: General survives night attacks until executed', () => {
+			// Wiki: "The Storyteller has built a script based on the General, so says that “the
+			// Storm Catcher favours the General”. The General is in play. At night, the Imp and the
+			// Godfather both attack the General, who does not die. After 5 days of information and
+			// discussion, the town decides to execute the General. They die."
+			// The Stormcaught General can't die at night, to the Imp or the Godfather, only by
+			// execution.
+			const s = scenario(['general', 'imp', 'godfather', 'chef'])
+				.rule('stormcatcher')
+				.reminder('general', 'stormcatcher', 'Stormcaught');
+			for (const by of ['demon', 'other'] as const) {
+				expect(protection(s.game, s.seat('general'), s.characters, by)).toMatchObject({
+					characterId: 'stormcatcher'
+				});
+			}
+			expect(protection(s.game, s.seat('general'), s.characters, 'execution')).toBeUndefined();
+			const after = s.execute('general');
+			expect(after.game.seats[after.seat('general')]).toMatchObject({
+				dead: true,
+				deathCause: 'execution'
+			});
+		});
 
 		it('Example 1: the evil players learn who the favoured General is', () => {
+			// Wiki: "The Storyteller has built a script based on the General, so says that “the
+			// Storm Catcher favours the General”. The General is in play. At night, the Imp and the
+			// Godfather both attack the General, who does not die. After 5 days of information and
+			// discussion, the town decides to execute the General. They die."
 			// The General is marked Stormcaught: the Imp and Godfather are shown "This player is"
 			// with the General, pointing at its player.
 			const s = scenario(['general', 'imp', 'godfather', 'chef']).reminder(
@@ -63,6 +91,9 @@ describe('Storm Catcher', () => {
 		});
 
 		it('Example 2: with the favoured Empath not in play, no one is marked', () => {
+			// Wiki: "The Storyteller wants a game based around the Empath’s information, so
+			// declares that “The Storm Catcher favours the Empath”. There is no Empath in play.
+			// Because the evil players learn this, the Poisoner chooses to bluff as the Empath."
 			// The evil players are shown the Empath as not in play, so the Poisoner may bluff it.
 			const s = scenario(['poisoner', 'imp', 'chef']);
 			expect(evilLearns(s.game, 'stormcatcher', s.characters)).toEqual({

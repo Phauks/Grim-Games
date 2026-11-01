@@ -8,7 +8,9 @@
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
  * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
- * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
+ * happened, then what the rules say. Quote the example word for word in a `// Wiki: "..."`
+ * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
+ * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
@@ -49,6 +51,9 @@ describe('Recluse', () => {
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Recluse#Examples)', () => {
 		it("Example 1: Slayer kills Recluse, thinking it's Imp", () => {
+			// Wiki: "The Slayer uses their ability on the Recluse. The Storyteller decides that the
+			// Recluse registers as the Imp, so the Recluse dies. The Slayer believes that they just killed
+			// the Imp."
 			// The Storyteller may have the Recluse register as the Imp: the Slayer's shot may kill them.
 			const s = scenario(['slayer', 'recluse', 'imp', 'chef', 'poisoner']);
 			expect(dayUseDeath(s.game, 'slayer', s.seat('recluse'), s.characters)).toBe('maybe');
@@ -56,7 +61,8 @@ describe('Recluse', () => {
 			expect(gameEnds(after.game, after.characters)).toEqual([]);
 		});
 		it("Example 2: Empath's evil count drops to zero", () => {
-			// Beside the Recluse and the Monk, the Empath may learn 1 one night and 0 the next.
+			// Wiki: "The Empath, who neighbours the Recluse and the Monk, learns she is neighbouring one
+			// evil player. The next night, the Empath learns they are neighbouring no evil players."
 			const s = scenario(['empath', 'recluse', 'imp', 'chef', 'monk']);
 			const picker = infoPicker(s.game, s.seat('empath'), 'empath', s.characters)!;
 			expect(isAllowed(picker, { seats: [], number: 1 })).toBe(true);
@@ -66,6 +72,7 @@ describe('Recluse', () => {
 			expect(isTruthful(later, { seats: [], number: 0 })).toBe(true);
 		});
 		it('Example 3: Investigator narrows Scarlet Woman to two players', () => {
+			// Wiki: "The Investigator learns that either the Recluse or the Saint is the Scarlet Woman."
 			// Neither the Recluse nor the Saint is a Minion; the Recluse may register as one.
 			const s = scenario(['investigator', 'recluse', 'saint', 'imp', 'poisoner', 'chef', 'monk']);
 			const picker = infoPicker(s.game, s.seat('investigator'), 'investigator', s.characters)!;
@@ -74,6 +81,7 @@ describe('Recluse', () => {
 			expect(isTruthful(picker, shown)).toBe(false);
 		});
 		it('Example 4: Undertaker wrongly learns the Imp died', () => {
+			// Wiki: "The Recluse is executed. The Undertaker learns that the Imp was executed."
 			// The executed Recluse may register as a Demon, so the Undertaker may be shown the Imp.
 			const s = scenario(['undertaker', 'recluse', 'imp', 'chef', 'poisoner']).execute('recluse');
 			const answer = nightAnswer(s.game, s.seat('undertaker'), 'undertaker', s.characters)!;
@@ -85,6 +93,8 @@ describe('Recluse', () => {
 			expect(answer.registrations[0]?.types).toContain('demon');
 		});
 		it('Example 5: Chef sees zero, sparing a revealing two', () => {
+			// Wiki: "The Recluse neighbours the Imp and an Evil Traveller. Because showing a "2" to the
+			// Chef might be too revealing, the Chef learns true information, a "0,” instead."
 			// Between the Imp and an evil Traveller, the Recluse may register as evil (2), but the
 			// Storyteller may give the true answer, 0.
 			const s = scenario(['chef', 'imp', 'recluse', 'gunslinger', 'monk']).do((at) => ({
