@@ -998,8 +998,7 @@
 	onExport={() => (exportOpen = true)}
 	onFeedback={watching ? undefined : () => (feedbackOpen = true)}
 	onReopen={() => (reopenOpen = true)}
-	onNewGame={watching ? undefined : () => newGameSheet?.begin()}
-	onRoomVote={watching ? undefined : () => newGameSheet?.vote()}
+	newGame={watching ? undefined : newGameSheet}
 	onCloseRoom={!watching && roomHost().code ? () => roomHost().close() : undefined}
 	onShareGrim={!watching &&
 	roomHost().status === 'open' &&

@@ -49,13 +49,12 @@
 		/** Players' feedback on the ended game; not for a spectator's board. */
 		onFeedback?: () => void;
 		onReopen: () => void;
-		/** New game, which asks to end this one first; not on a spectator's board. */
-		onNewGame?: () => void;
 		/**
-		 * Room vote on the next game, once this one has ended, without leaving the board
-		 * (Trevor, 2026-11-01); not on a spectator's board.
+		 * The board's New game sheet, not on a spectator's board: New game, which asks to end
+		 * this one first, and the room's vote on the next game once this one has ended, without
+		 * leaving the board (Trevor, 2026-11-01).
 		 */
-		onRoomVote?: () => void;
+		newGame?: { begin(): void; vote(): void };
 		/**
 		 * Close room, once the game has ended and while its room is open (Trevor, 2026-10-26):
 		 * deletes the room and sends every phone out. Asks first.
@@ -86,8 +85,7 @@
 		onExport,
 		onFeedback,
 		onReopen,
-		onNewGame,
-		onRoomVote,
+		newGame,
 		onCloseRoom,
 		onShareGrim,
 		onEnd
@@ -240,12 +238,12 @@
 				{/if}
 				<!-- The room votes on the next game from here (Trevor, 2026-11-01: it "should not
 				     require leaving the game screen"); Play opens New game with the winner. -->
-				{#if ended && onRoomVote}
+				{#if ended && newGame}
 					<Button
 						variant="quiet"
 						icon="vote"
 						data-testid="menu-room-vote"
-						onclick={() => fromMenu(onRoomVote)}
+						onclick={() => fromMenu(() => newGame.vote())}
 					>
 						{t('room.scriptVote.button')}
 					</Button>
@@ -255,12 +253,12 @@
 					<Button disabled={watching} variant="danger" icon="close" onclick={() => fromMenu(onEnd)}
 						>End game</Button
 					>
-				{:else if onNewGame}
+				{:else if newGame}
 					<Button
 						disabled={watching}
 						variant="quiet"
 						icon="add"
-						onclick={() => fromMenu(onNewGame)}
+						onclick={() => fromMenu(() => newGame.begin())}
 					>
 						{t('setup.newGame')}
 					</Button>
