@@ -13,6 +13,8 @@
 	} from '#lib/core/rules/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import Sentence from '#lib/features/characters/Sentence.svelte';
+	import { slot } from '#lib/features/characters/slots.ts';
 	import { seatName } from '#lib/features/game/seat-label.ts';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -48,7 +50,7 @@
 	const noteLines = (hint: VoteHint): string[] => {
 		if (hint.mayNotVote) return [t('day.voteNotes.mayNotVote')];
 		const players = (seats: string[]) =>
-			seats.length ? seats.map((s) => seatName(game, s)).join(', ') : t('common.none');
+			seats.length ? seats.map((s) => slot(s)).join(', ') : t('common.none');
 		return [
 			hint.worth !== 1 ? t('day.voteNotes.worth', { count: hint.worth }) : undefined,
 			hint.onlyWith
@@ -81,6 +83,8 @@
 				: undefined
 	);
 </script>
+
+{#snippet seatBadge(seatId: string)}<PlayerBadge name={seatName(game, seatId)} />{/snippet}
 
 <Dialog bind:open {title}>
 	{#if count === 'votes'}
@@ -123,7 +127,9 @@
 									/>{:else}{t('common.none')}{/if}</td
 							>
 							<td
-								>{#each noteLines(hint) as line (line)}<span class="note">{line}</span>{/each}</td
+								>{#each noteLines(hint) as line (line)}<span class="note"
+										><Sentence text={line} fill={seatBadge} /></span
+									>{/each}</td
 							>
 						</tr>
 					{/each}
