@@ -55,6 +55,7 @@ export const modes = {
 	'modes.guide.optional': 'optional',
 	'modes.guide.values': 'One of:',
 	'modes.guide.full': 'A whole mode: Whale Buffet',
+	'modes.guide.ruleTop': 'A special rule file',
 	'modes.guide.colField': 'Field',
 	'modes.guide.colType': 'Type',
 	'modes.guide.colRequired': 'Required',
@@ -242,6 +243,21 @@ export const modes = {
 	'modes.builder.makes': 'Makes',
 	'modes.builder.makes.game-mode': 'Game mode',
 	'modes.builder.makes.special-rule': 'Special rule',
+	'modes.builder.makesAbout.game-mode':
+		'One per game, picked on New game. Sets how the whole game is set up and dealt.',
+	'modes.builder.makesAbout.special-rule':
+		'Any number per game, picked in Special rules. Adds to the game mode, never replaces it.',
+	'modes.builder.settings': 'Settings',
+	'modes.builder.output': 'Output',
+	'modes.builder.outputProblems': {
+		one: 'Output · {count} problem',
+		other: 'Output · {count} problems'
+	},
+	'modes.builder.summary': 'Summary',
+	'modes.builder.jsonOut': 'JSON',
+	'modes.builder.jumpTo': 'Go to {part}',
+	'modes.builder.guideFor': 'Guide: {setting}',
+	'modes.builder.noteFor': '{note}: {part}',
 	'modes.builder.details': 'Details',
 	'modes.builder.parts': 'Parts',
 	'modes.builder.partOn': 'Changes {part}',

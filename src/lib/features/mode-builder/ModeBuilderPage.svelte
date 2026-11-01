@@ -1,13 +1,15 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import {
 		buildKindOf,
 		buildParts,
+		closestPath,
 		emptyFile,
 		GAME_MODES,
 		parseGameMode,
 		parseSpecialRule,
 		setAt,
+		splitIssue,
 		SPECIAL_RULES,
 		topFields,
 		type BuildKind,
@@ -28,15 +30,18 @@
 	import OpenSavedDialog from '#lib/ui/builder/OpenSavedDialog.svelte';
 	import { fileNameFor } from '#lib/ui/download.ts';
 	import Page from '#lib/ui/layout/Page.svelte';
-	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
-	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
-	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
+	import Tabs from '#lib/ui/primitives/Tabs.svelte';
+	import ModeFormatGuide from '#lib/features/modes/ModeFormatGuide.svelte';
 	import BuilderField from './BuilderField.svelte';
+	import BuilderOutput from './BuilderOutput.svelte';
 	import BuilderPart from './BuilderPart.svelte';
+	import BuilderRow from './BuilderRow.svelte';
+	import BuilderTable from './BuilderTable.svelte';
+	import type { GuideAt } from './guide-at.ts';
 	import { isEmptyDraft, modeDraft } from './draft.svelte.ts';
 
 	/**
@@ -86,12 +91,59 @@
 	let openOpen = $state(false);
 	let clearOpen = $state(false);
 	let deleteOpen = $state(false);
-	let problemsOpen = $state(false);
 	let inspectOpen = $state(false);
 	let shareOpen = $state(false);
 	let replacing = $state.raw<GameMode | SpecialRule>();
 	let replaceOpen = $state(false);
 	let saveIssues = $state<string[]>([]);
+
+	/** Save's own problems first, then the checker's. */
+	const shownIssues = $derived([...saveIssues, ...issues.filter((i) => !saveIssues.includes(i))]);
+	function problemsIn(part: string) {
+		const at = `parts.${part}`;
+		return shownIssues.filter((i) => {
+			const { path } = splitIssue(i);
+			return path === at || path.startsWith(`${at}.`) || path.startsWith(`${at}[`);
+		}).length;
+	}
+
+	let tab = $state<'settings' | 'output'>('settings');
+	let settingsEl = $state<HTMLElement>();
+	let flashTimer: ReturnType<typeof setTimeout> | undefined;
+	/**
+	 * From the output to the setting it is about (Trevor, 2026-11-01: "Allow clicking the items
+	 * in the right area to move to those settings fast in the left side"): the nearest row or
+	 * table holding that path, scrolled to, outlined for a moment and focused.
+	 */
+	async function jump(path: string) {
+		tab = 'settings';
+		await tick();
+		const root = settingsEl;
+		if (!root) return;
+		const places = [...root.querySelectorAll<HTMLElement>('[data-path]')];
+		const target =
+			closestPath(
+				path || 'id',
+				places.map((el) => el.dataset.path ?? '')
+			) ?? 'id';
+		const el = places.find((p) => p.dataset.path === target);
+		if (!el) return;
+		el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+		el.querySelector<HTMLElement>('input, textarea, button, [role="combobox"]')?.focus({
+			preventScroll: true
+		});
+		root.querySelectorAll('[data-flash]').forEach((f) => f.removeAttribute('data-flash'));
+		el.setAttribute('data-flash', '');
+		clearTimeout(flashTimer);
+		flashTimer = setTimeout(() => el.removeAttribute('data-flash'), 1500);
+	}
+
+	let guideOpen = $state(false);
+	let guideAt = $state<GuideAt>();
+	function guide(at: GuideAt) {
+		guideAt = at;
+		guideOpen = true;
+	}
 
 	function set(path: readonly (string | number)[], value: unknown) {
 		modeDraft.setFile(setAt(file, path, value) as Record<string, unknown>);
@@ -126,7 +178,7 @@
 				: customModes.add(JSON.stringify(value), known);
 		if (!result.ok) {
 			saveIssues = result.issues;
-			problemsOpen = true;
+			tab = 'output';
 			return;
 		}
 		saveIssues = [];
@@ -207,63 +259,95 @@
 		</BuilderTools>
 	{/snippet}
 
-	{#snippet side()}
-		<div class="side">
-			<Button variant="field" icon="warning" onclick={() => (problemsOpen = true)}>
-				{t('modes.builder.problems')}
-				<CountBadge count={issues.length} />
-			</Button>
-			<Button variant="field" icon="info" disabled={!built} onclick={() => (inspectOpen = true)}>
-				{t('modes.builder.inspect')}
-			</Button>
-		</div>
-	{/snippet}
-
 	<ErrorBoundary area="modes">
-		<div class="builder" data-testid="mode-builder">
-			<PageSection title={t('modes.builder.details')}>
-				<Select
-					label={t('modes.builder.makes')}
-					value={kind}
-					options={(['game-mode', 'special-rule'] as const).map((k) => ({
-						value: k,
-						label: t(`modes.builder.makes.${k}`)
-					}))}
-					onChange={changeKind}
-				/>
-				{#each topFields(kind) as field (field.name)}
-					<BuilderField
-						{field}
-						parent="file"
-						value={file[field.name]}
-						onChange={(v) => set([field.name], v)}
-					/>
-				{/each}
-			</PageSection>
-			<PageSection title={t('modes.builder.parts')}>
-				<div class="parts">
+		<!-- Settings on the left, output on the right (Trevor picked layout B, 2026-11-01); on a
+		     phone, Settings and Output tabs. All in the coding font, with no small caps. -->
+		<div class="builder code-font" data-testid="mode-builder" data-tab={tab}>
+			<div class="tabs">
+				<Tabs
+					bind:value={tab}
+					label={t('modes.builder.heading')}
+					tabs={[
+						{ value: 'settings', label: t('modes.builder.settings') },
+						{
+							value: 'output',
+							label: shownIssues.length
+								? t('modes.builder.outputProblems', { count: shownIssues.length })
+								: t('modes.builder.output')
+						}
+					]}
+				>
+					{#snippet panel()}{/snippet}
+				</Tabs>
+			</div>
+			<div class="cols">
+				<div class="settings" bind:this={settingsEl}>
+					<BuilderTable path="details">
+						{#snippet head()}{t('modes.builder.details')}{/snippet}
+						<BuilderRow
+							label={t('modes.builder.makes')}
+							name="kind"
+							path="kind"
+							field="kind"
+							onGuide={() => guide({ section: 'rule-top', field: 'kind' })}
+						>
+							<Select
+								label={t('modes.builder.makes')}
+								hideLabel
+								value={kind}
+								options={(['game-mode', 'special-rule'] as const).map((k) => ({
+									value: k,
+									label: t(`modes.builder.makes.${k}`),
+									description: t(`modes.builder.makesAbout.${k}`)
+								}))}
+								onChange={changeKind}
+							/>
+						</BuilderRow>
+						{#each topFields(kind) as field (field.name)}
+							<BuilderField
+								{field}
+								parent="file"
+								path={field.name}
+								value={file[field.name]}
+								onChange={(v) => set([field.name], v)}
+								onGuide={() =>
+									guide({
+										section: kind === 'special-rule' ? 'rule-top' : 'top',
+										field: field.name
+									})}
+							/>
+						{/each}
+					</BuilderTable>
 					{#each parts as part (part.part)}
 						<BuilderPart
 							{part}
 							value={partsValue[part.part]}
+							problems={problemsIn(part.part)}
 							onChange={(v) => set(['parts', part.part], v)}
+							onGuide={guide}
 						/>
 					{/each}
 				</div>
-			</PageSection>
+				<aside class="output" aria-label={t('modes.builder.output')}>
+					<BuilderOutput {kind} {file} {parts} issues={shownIssues} onJump={jump}>
+						{#snippet actions()}
+							<Button
+								variant="field"
+								icon="info"
+								disabled={!built}
+								onclick={() => (inspectOpen = true)}
+							>
+								{t('modes.builder.inspect')}
+							</Button>
+						{/snippet}
+					</BuilderOutput>
+				</aside>
+			</div>
 		</div>
 	</ErrorBoundary>
 </Page>
 
-<Dialog bind:open={problemsOpen} title={t('modes.builder.problems')}>
-	<ul class="problems" data-testid="mode-builder-problems">
-		{#each [...saveIssues, ...issues.filter((i) => !saveIssues.includes(i))] as issue (issue)}
-			<li>{issue}</li>
-		{:else}
-			<li class="muted">{t('common.none')}</li>
-		{/each}
-	</ul>
-</Dialog>
+<ModeFormatGuide bind:open={guideOpen} at={guideAt} />
 
 {#if built}
 	<ModeInspectDialog bind:open={inspectOpen} mode={built} />
@@ -322,23 +406,55 @@
 
 <style>
 	.builder {
+		container: builder-page / inline-size;
+		font-size: 0.9rem;
+	}
+	.cols {
 		display: grid;
+		grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
 		gap: var(--space-4);
+		align-items: start;
 	}
-	.parts {
+	.settings {
+		container: builder / inline-size;
 		display: grid;
+		gap: var(--space-3);
+		min-width: 0;
 	}
-	/* Side by side, so they take one row above the form on a phone. */
-	.side {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(calc(var(--u) * 10), 1fr));
-		gap: var(--space-2);
+	/* The output stays in view while the settings scroll. */
+	.output {
+		position: sticky;
+		top: var(--space-3);
+		max-height: calc(100dvh - var(--space-6));
+		overflow-y: auto;
+		min-width: 0;
 	}
-	.problems {
-		display: grid;
-		gap: var(--space-1);
-		margin: 0;
-		padding-inline-start: var(--space-4);
+	.tabs {
+		display: none;
+	}
+	/* Narrow: one column at a time, chosen by the tabs. */
+	@container builder-page (max-width: 48rem) {
+		.tabs {
+			display: block;
+			margin-bottom: var(--space-2);
+		}
+		.cols {
+			grid-template-columns: minmax(0, 1fr);
+		}
+		.output {
+			position: static;
+			max-height: none;
+		}
+		[data-tab='settings'] .output,
+		[data-tab='output'] .settings {
+			display: none;
+		}
+	}
+	/* Outlined for a moment where the output jumped to. */
+	.settings :global([data-flash]),
+	.settings :global(tr[data-flash] > *) {
+		outline: 2px solid var(--accent); /* px-ok: focus ring */
+		outline-offset: -2px; /* px-ok: focus ring */
 	}
 	.open-row {
 		display: grid;
