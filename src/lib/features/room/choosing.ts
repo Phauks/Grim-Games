@@ -10,12 +10,13 @@ let holders = 0;
 export function holdChoosing(): () => void {
 	const host = roomHost();
 	holders++;
-	if (host.code) host.setChoosing(true);
+	// Before the room has opened too: the room vote opens one, which then says so at once.
+	host.setChoosing(true);
 	let held = true;
 	return () => {
 		if (!held) return;
 		held = false;
 		holders--;
-		if (holders === 0 && host.code) host.setChoosing(false);
+		if (holders === 0) host.setChoosing(false);
 	};
 }
