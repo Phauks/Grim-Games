@@ -65,6 +65,12 @@
 		 * screen, not just over the board, so they can't read it (Trevor, 2026-10-26).
 		 */
 		shownToPlayers?: boolean;
+		/**
+		 * Painted with the page's backdrop rather than the dialog colour, for a copy of a screen
+		 * (the Storyteller's player view is /play, Trevor 2026-11-01: "supposed to be an exact
+		 * match"), so whatever sits on it, such as the bottom tab bar, shows as on that screen.
+		 */
+		page?: boolean;
 	}
 
 	let {
@@ -85,7 +91,8 @@
 		aside,
 		pinAside = true,
 		beforeClose,
-		shownToPlayers = false
+		shownToPlayers = false,
+		page = false
 	}: Props = $props();
 	/** Inside a full-screen view (the grim cover), into it; else the body (portal-target.ts). */
 	const portalTarget = usePortalTarget();
@@ -130,7 +137,11 @@
 			data-players={shownToPlayers ? '' : undefined}
 		/>
 		<Dialog.Positioner style={layerStyle(layer, 'content')}>
-			<Dialog.Content data-size={size} data-panes={aside ? '' : undefined}>
+			<Dialog.Content
+				data-size={size}
+				data-panes={aside ? '' : undefined}
+				data-page={page || undefined}
+			>
 				<div class="head" data-title-below={titleBelow || undefined}>
 					<div class="titled" class:with-lead={!!lead}>
 						{#if lead}<span class="lead">{@render lead()}</span>{/if}
@@ -216,6 +227,20 @@
 		--pin-top: 0rem;
 		--pin-background: var(--dialog-background);
 		box-shadow: var(--shadow);
+	}
+	/* A copy of a screen: the page's backdrop, held to the window as the page's is (base.css
+	   body::before), and its pinned headers filled the same way (Collapsible). */
+	:global([data-scope='dialog'][data-part='content'][data-page]) {
+		background: var(--page-background);
+		background-attachment: fixed;
+		--pin-background: var(--page-background);
+		/* A bottom bar (Tabs) meets the bottom edge, as it meets the screen's on the page. */
+		padding-bottom: 0;
+	}
+	/* ...and its sides, its body reaching them with the padding given back inside. */
+	:global([data-scope='dialog'][data-part='content'][data-page]) > .body {
+		margin-inline: calc(-1 * var(--space-4));
+		padding-inline: var(--space-4);
 	}
 	/* Two panes (`aside`): wider than a plain dialog, its panes scrolling inside it. */
 	:global([data-scope='dialog'][data-part='content'][data-panes]) {

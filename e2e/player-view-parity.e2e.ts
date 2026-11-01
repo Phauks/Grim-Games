@@ -1,4 +1,4 @@
-import { expect, test, type Locator } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import { toBoard } from './new-game.ts';
 
 // The Storyteller's player view shows what phones show (Trevor, 2026-10-27: "storyteller view
@@ -302,4 +302,57 @@ test("the grim cover's Player view is the board's Script, seat for seat", async 
 		fromBoard
 	);
 	expect(await grimLayout(view)).toEqual(boardGrim);
+});
+
+/**
+ * What the player screen is painted on: the backdrop behind its tabs (the page's on /play, the
+ * dialog's over the board), the bottom tab bar's colour, and how far the bar stops short of the
+ * bottom of what holds it.
+ */
+async function paintedBehindTabs(page: Page, holder?: string) {
+	return page.evaluate((selector) => {
+		const bar = document.querySelector<HTMLElement>('[data-bottom-bar]')!.getBoundingClientRect();
+		const host = selector ? document.querySelector<HTMLElement>(selector)! : undefined;
+		// The page's backdrop is the last layer under its edge fades (base.css body::before).
+		const backdrop = host
+			? getComputedStyle(host).backgroundImage
+			: getComputedStyle(document.body, '::before')
+					.backgroundImage.split(/, (?=(?:radial|linear|url)\b)/)
+					.at(-1);
+		const bottom = host ? host.getBoundingClientRect().bottom : innerHeight;
+		return {
+			backdrop,
+			bar: getComputedStyle(document.querySelector('[data-bottom-bar]')!).backgroundColor,
+			gapBelow: Math.max(0, Math.round(bottom - bar.bottom))
+		};
+	}, holder);
+}
+
+// The Storyteller's player view is painted as /play is, so its bottom tab bar stands out from
+// the page the same way and meets the bottom edge (Trevor, 2026-11-01: "this is supposed to be
+// an exact match"; the dialog's own colour was the bar's, which hid it).
+test("the Storyteller's player view is painted as /play is", async ({ page }) => {
+	await page.goto('/play');
+	await page.getByRole('button', { name: 'Trouble Brewing' }).tap({ timeout: 15_000 });
+	await expect(page.locator('[data-bottom-bar]')).toBeVisible();
+	const play = await paintedBehindTabs(page);
+
+	await page.goto('/new');
+	await page
+		.getByRole('radiogroup', { name: 'Script' })
+		.getByText('Trouble Brewing', { exact: true })
+		.tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
+	await toBoard(page);
+	await page.getByRole('button', { name: 'Script', exact: true }).tap();
+	const script = page.getByRole('dialog', { name: 'Trouble Brewing' });
+	await expect(script.locator('[data-bottom-bar]')).toBeVisible();
+	const storyteller = await paintedBehindTabs(page, '[data-scope="dialog"][data-part="content"]');
+
+	expect(play.backdrop).toMatch(/gradient/);
+	expect(storyteller.backdrop).toBe(play.backdrop);
+	expect(storyteller.bar).toBe(play.bar);
+	expect(play.gapBelow).toBeLessThanOrEqual(1);
+	// The dialog's 1px border is all that's under it.
+	expect(storyteller.gapBelow).toBeLessThanOrEqual(1);
 });
