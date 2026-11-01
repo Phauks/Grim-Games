@@ -7,8 +7,8 @@
  * pin TPI's current data, so review and update them when a data sync changes Hermit.
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
- * a scenario test (seats, characters and reminders, then the action, then the expected state)
- * that paraphrases the example. Never copy wiki prose.
+ * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
+ * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment, type CharacterId, type Script } from '#lib/core/data/index.ts';
@@ -21,6 +21,7 @@ import {
 	withGainedSteps
 } from '#lib/core/rules/gained-abilities.ts';
 import { nightOrder } from '#lib/core/rules/night-order.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 import {
 	committedCharacter,
 	committedGameData,
@@ -124,23 +125,23 @@ describe('Hermit', () => {
 		// The Hermit has the Klutz, Butler and Recluse abilities: it picks a master each night as
 		// the Butler, though no Butler is in play.
 		it('Example 1: the Hermit wakes each night to choose a master, as the Butler would', () => {
-			const { game, seats } = cast(PLAYERS);
-			const inPlay = game.seating.map((s) => characters.get(game.seats[s].characterId!)!);
+			const s = scenario(PLAYERS, { script, characters });
+			const inPlay = s.game.seating.map((id) => characters.get(s.game.seats[id].characterId!)!);
 			const order = data.nightSheet.otherNight;
 			const steps = withGainedSteps(
 				nightOrder({ night: 'other', sheet: data.nightSheet, inPlay, players: 5 }).steps,
-				game,
-				characters,
+				s.game,
+				s.characters,
 				'other',
 				order
 			);
-			const butler = steps.filter((s) => s.gained?.characterId === 'butler');
+			const butler = steps.filter((step) => step.gained?.characterId === 'butler');
 			expect(butler).toHaveLength(1);
 			expect(butler[0].character?.id).toBe('hermit');
-			expect(butler[0].gained?.seatId).toBe(seats[0]);
+			expect(butler[0].gained?.seatId).toBe(s.seat('hermit'));
 			expect(butler[0].reminder).toBe(characters.get('butler')?.otherNightReminder);
 			// The Klutz and Recluse have no night text, so add no step.
-			expect(steps.filter((s) => s.gained?.via === 'hermit')).toHaveLength(1);
+			expect(steps.filter((step) => step.gained?.via === 'hermit')).toHaveLength(1);
 		});
 		it.todo('Example 1 (rest): the Klutz choice after execution: good loses');
 		it.todo('Example 2: Hermit as mistaken Exorcist executed; Alchemist drunk');

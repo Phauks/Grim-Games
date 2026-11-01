@@ -7,21 +7,22 @@
  * pin TPI's current data, so review and update them when a data sync changes Lord of Typhon.
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
- * a scenario test (seats, characters and reminders, then the action, then the expected state)
- * that paraphrases the example. Never copy wiki prose.
+ * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
+ * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
+import { castGame } from '#lib/core/model/fixtures.test-support.ts';
 import { evilInOneLine, nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
 /** The Lord of Typhon's seating alerts, by seat number. */
 const seating = (cast: string[]) => {
-	const { game, seats } = castGame(cast);
-	return nightStepAlerts(game, 'lordoftyphon', characters)
+	const s = scenario(cast);
+	return nightStepAlerts(s.game, 'lordoftyphon', s.characters)
 		.filter((a) => a.kind === 'seating')
-		.map((a) => seats.indexOf(a.seatId) + 1);
+		.map((a) => s.seats.indexOf(a.seatId) + 1);
 };
 
 describe('Lord of Typhon', () => {
