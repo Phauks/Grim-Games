@@ -84,6 +84,8 @@ test('a Storyteller hands the room and the game to another device, and the playe
 	page,
 	browser
 }, testInfo) => {
+	// Three devices and a whole hand-over: it ran past the 30 second default on CI tablets.
+	test.slow();
 	const { board, code } = await startGame(page);
 	const gameId = board.split('/').pop();
 
