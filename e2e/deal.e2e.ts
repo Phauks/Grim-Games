@@ -102,14 +102,13 @@ test('Deal gives every seat a character, and a seated phone holds to see its own
 	await page.keyboard.press('Escape');
 	await expect(stCard).toBeHidden();
 
-	// Each player's row on Players marks who has seen theirs (Trevor, 2026-10-30: combined
-	// with the list of players): seat 2 has, the others have no phone.
+	// Players lists every seat; who has seen theirs is no longer marked (Trevor, 2026-11-01:
+	// "remove 'has seen theirs'"). Seat 2 has a phone, the others none.
 	await page.goto(`${board}/players`);
 	const rows = page.getByTestId('room-player');
 	await expect(rows).toHaveCount(5);
-	await expect(rows.nth(1).getByTestId('room-player-seen')).toHaveAttribute('data-seen', '');
-	await expect(rows.nth(1).getByRole('img', { name: 'Seen' })).toBeVisible();
-	await expect(rows.nth(0).getByTestId('room-player-seen')).not.toHaveAttribute('data-seen');
+	await expect(page.getByTestId('room-player-seen')).toHaveCount(0);
+	await expect(rows.nth(1).getByTestId('room-player-phone')).toHaveAttribute('data-phone', 'here');
 	await expect(rows.nth(0).getByTestId('room-player-phone')).toHaveAttribute('data-phone', 'none');
 
 	// A minute after it was turned on, it turns itself off and the phone can no longer open it
@@ -125,8 +124,6 @@ test('Deal gives every seat a character, and a seated phone holds to see its own
 	await expect(timeLeft).toHaveCount(0);
 	await expect(card).toBeHidden();
 	await expect(phone.getByTestId('your-character')).toBeDisabled();
-	// Who has looked stays.
-	await expect(rows.nth(1).getByTestId('room-player-seen')).toHaveAttribute('data-seen', '');
 
 	// Shown again, and hidden by hand. Every seat has a character but only seat 2 has a phone,
 	// so it first says who won't see theirs (Trevor, 2026-10-31); Cancel shows nothing.

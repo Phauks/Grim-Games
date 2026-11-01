@@ -71,8 +71,9 @@ test('a removed phone leaves the game, is turned away at the code, and Unblock s
 	await expect(unseated).toHaveCount(0);
 	await expect(phone.getByRole('tab', { name: 'Grim' })).toBeVisible();
 
-	// The red trash on the player's row asks first.
-	await ana.getByTestId('room-player-remove').tap();
+	// The red trash on the chosen player asks first.
+	await ana.getByRole('button').tap();
+	await page.getByTestId('room-player-sheet').getByTestId('room-player-remove').tap();
 	await page
 		.getByRole('alertdialog', { name: 'Block this player from the room?' })
 		.getByRole('button', { name: 'Confirm' })
@@ -118,7 +119,8 @@ test('a phone removed while on its player screen lands on the join screen, out o
 	await phone.goto('/play');
 	await expect(phone.getByRole('tab', { name: 'Grim' })).toBeVisible();
 
-	await unseated.getByTestId('room-player-remove').tap();
+	await unseated.getByRole('button').tap();
+	await page.getByTestId('room-player-sheet').getByTestId('room-player-remove').tap();
 	await page
 		.getByRole('alertdialog', { name: 'Block this player from the room?' })
 		.getByRole('button', { name: 'Confirm' })

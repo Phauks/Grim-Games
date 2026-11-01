@@ -6,6 +6,7 @@
 	import { settingsDialog } from '#lib/features/settings/settings-dialog.svelte.ts';
 	import { navDrawer } from '#lib/features/shell/nav-drawer.svelte.ts';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
+	import { gameNotesDialog } from './game-notes-dialog.svelte.ts';
 	import { playersDialog } from '#lib/features/room/players-dialog.svelte.ts';
 	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import { appFullScreen } from '#lib/ui/full-screen.svelte.ts';
@@ -139,6 +140,17 @@
 					{t('room.players.title')}
 					{#if host.code && host.inbox.unread}<CountBadge count={host.inbox.unread} warn />{/if}
 				</Button>
+				<!-- Beside the grim cover where the toolbar has room; here on narrower phones. -->
+				<span class="narrow-only"
+					><Button
+						disabled={watching}
+						variant="quiet"
+						icon="notes"
+						data-testid="menu-game-notes"
+						onclick={() => fromMenu(() => (gameNotesDialog.open = true))}
+						>{t('room.players.gameNotes')}</Button
+					></span
+				>
 				<Button variant="quiet" icon="history" onclick={() => fromMenu(onHistory)}>History</Button>
 				<Button disabled={watching} variant="quiet" icon="demon" onclick={() => fromMenu(onBluffs)}
 					>Demon bluffs</Button
@@ -349,6 +361,15 @@
 </ConfirmDialog>
 
 <style>
+	.narrow-only {
+		display: none;
+	}
+	/* GameNotesButton's own breakpoint: below it, Game notes are only here. */
+	@media (max-width: 411.98px) {
+		.narrow-only {
+			display: contents;
+		}
+	}
 	.dialog-text {
 		margin: 0;
 	}
