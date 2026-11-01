@@ -1060,7 +1060,7 @@
 
 <ReminderAsk {grimoire} />
 
-<PhaseDialogs {flow} {game} {characters} />
+<PhaseDialogs {flow} {game} {characters} notStarted={phaseNow.kind === 'setup'} />
 
 <LeaveGuard {game} {watching} />
 
@@ -1111,6 +1111,7 @@
 <DaySheet
 	bind:open={dayOpen}
 	game={grimoire.open}
+	phase={phaseNow}
 	cover={coverDetails}
 	{coverTimer}
 	{coverActions}
