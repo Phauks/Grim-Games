@@ -399,7 +399,6 @@
 		if (selected !== undefined && !game.seats[selected]) sheetOpen = false;
 	});
 
-	// ── Travellers ──
 	// ── Placing a new seat: the Storyteller taps where it goes (Trevor, 2026-10-16) ──
 	let placing = $state<((position: number) => void) | undefined>();
 	/** Seats already placed but not added yet (late players), shown at their spots. */
