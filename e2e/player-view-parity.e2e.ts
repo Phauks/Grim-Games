@@ -114,6 +114,15 @@ test("the Storyteller's player view has the players' status row and day timer", 
 	const badge = (await votes.boundingBox())!;
 	expect(badge.x + badge.width).toBeLessThanOrEqual(row.x + row.width + 1);
 	expect(await votes.evaluate((e) => e.scrollWidth <= e.clientWidth + 1)).toBe(true);
+	// Its window lists both, each in its badge with a short line (Trevor, 2026-11-01, option A).
+	await votes.tap();
+	const lines = page.getByTestId('count-votes');
+	await expect(lines).toHaveText(/4\s*On the block · 8 alive\s*4\s*Exile · 8 players/);
+	await page
+		.getByRole('dialog', { name: 'Votes needed' })
+		.getByRole('button', { name: 'Close' })
+		.tap();
+	await expect(lines).toBeHidden();
 	await day.getByRole('button', { name: 'Close' }).tap();
 	await expect(day).toBeHidden();
 
