@@ -8,7 +8,9 @@ import { rulesOf } from '#lib/core/data/rules/index.ts';
 import {
 	activeJinxes,
 	barredAbilities,
+	givenInstead,
 	isExclusiveJinx,
+	jinxedPartners,
 	jinxIsExclusive,
 	jinxRulesBetween,
 	jinxSetupWarnings,
@@ -110,5 +112,28 @@ describe('jinx rules data', () => {
 			['giver', { rules: { jinxes: { chef: { notGiven: true as const } } } }]
 		]);
 		expect(barredAbilities('giver', ['giver', 'chef', 'empath'], custom)).toEqual(['chef']);
+	});
+
+	it("reads a custom character's givenInstead and partner keys", () => {
+		const custom = new Map([
+			[
+				'giver',
+				{
+					rules: {
+						jinxes: {
+							spy: { givenInstead: 'a-minion' as const },
+							chef: { spareToken: true as const, noTurnGood: true as const }
+						}
+					}
+				}
+			]
+		]);
+		const script = ['giver', 'chef', 'spy', 'empath'];
+		expect(givenInstead('giver', 'spy', script, custom)).toBe('a-minion');
+		expect(givenInstead('giver', 'chef', script, custom)).toBeUndefined();
+		expect(givenInstead('giver', 'spy', ['giver'], custom)).toBeUndefined();
+		expect(jinxedPartners('giver', 'spareToken', script, custom)).toEqual(['chef']);
+		expect(jinxedPartners('giver', 'noTurnGood', script, custom)).toEqual(['chef']);
+		expect(jinxedPartners('giver', 'storytellerPicksPlayer', script, custom)).toEqual([]);
 	});
 });

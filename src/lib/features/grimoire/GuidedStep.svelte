@@ -382,7 +382,15 @@
 						showOpen = true;
 					}}
 				/>
-				<StorytellerAbilityStep {grimoire} {step} />
+				<StorytellerAbilityStep
+					{grimoire}
+					{step}
+					onShow={(id) => {
+						shownCard = undefined;
+						shownId = id;
+						showOpen = true;
+					}}
+				/>
 				<!-- The Courtier's Drunk 3, 2, 1: counted down on other nights, as its text says. -->
 				{#if night === 'other'}<CountdownStep {grimoire} {step} />{/if}
 			{/if}
