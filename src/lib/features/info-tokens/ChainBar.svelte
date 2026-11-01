@@ -35,7 +35,7 @@
 -->
 {#if cards.length > 0}
 	<div class="chain" role="group" aria-label={t('info-tokens.toShow')}>
-		{#if cards.length > 0}
+		<div class="frame">
 			<ol class="chain-list" data-testid="chain-list">
 				{#each cards as card, i (card)}
 					{@const name = chainLabel(card, names)}
@@ -78,54 +78,78 @@
 					</li>
 				{/each}
 			</ol>
-		{/if}
-		<div class="chain-actions">
-			<span>
-				<DeleteButton
-					label={t('info-tokens.clearChain')}
-					disabled={cards.length === 0}
-					onclick={() => (cards = [])}
-				/>
-			</span>
-			<Button variant="accent" icon="forward" disabled={cards.length === 0} onclick={onshow}
-				>{t('info-tokens.showCards', { count: cards.length })}</Button
-			>
+			<div class="chain-actions">
+				<span>
+					<DeleteButton
+						label={t('info-tokens.clearChain')}
+						disabled={cards.length === 0}
+						onclick={() => (cards = [])}
+					/>
+				</span>
+				<Button variant="accent" icon="forward" disabled={cards.length === 0} onclick={onshow}
+					>{t('info-tokens.showCards', { count: cards.length })}</Button
+				>
+			</div>
 		</div>
 	</div>
 {/if}
 
 <style>
-	/* Sits over the bottom of the list, so adding cards never moves the cards above. */
+	/*
+	 * Sits over the bottom of the list, so adding cards never moves the cards above. Drawn
+	 * above the pinned section headers (z-index 1), which used to slide over it, and flush
+	 * with the scroller's bottom edge, so nothing peeks out under it (Trevor, 2026-11-01).
+	 */
 	.chain {
 		position: sticky;
-		bottom: 0;
-		display: grid;
-		grid-template-columns: minmax(0, 1fr);
-		gap: var(--space-1);
+		bottom: calc(-1 * var(--space-1));
+		z-index: 2;
 		margin-top: var(--space-3);
-		padding: var(--space-2) 0;
-		border-top: 1px solid var(--border);
+		margin-bottom: calc(-1 * var(--space-1));
+		padding: var(--space-2) 0 var(--space-2);
 		/* A sheet's colour by default; the page passes its own (`--chain-background`). */
 		background: var(--chain-background, var(--sheet-background));
+	}
+	/* One closed frame round the cards to show, a step lighter than the list, so where the
+	   selection starts and ends is plain (Trevor, 2026-11-01: "just a framing"). */
+	.frame {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		border: 2px solid var(--heading);
+		border-radius: var(--radius-md);
+		background: var(--surface-selected);
+		color: var(--on-surface);
+		overflow: hidden;
 	}
 	.chain-list {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
-		gap: var(--space-1);
+		/* Two and a half rows at most, so a phone keeps most of the list in view; more cards
+		   scroll inside the frame, the half row showing there are more. */
+		max-height: min(33dvh, calc(2.5 * var(--tap-target)));
 		margin: 0;
 		padding: 0;
+		overflow-y: auto;
+		overscroll-behavior: contain;
 		list-style: none;
 	}
+	/* Rows with dividers; each row's buttons share one cell, set off by a line. */
 	.chain-list li {
 		display: flex;
 		align-items: center;
-		gap: var(--space-1);
+		gap: var(--space-2);
+		min-height: var(--tap-target);
+		padding-inline-start: var(--space-3);
+	}
+	.chain-list li + li {
+		border-top: 1px solid var(--border);
 	}
 	.chain-card {
 		display: grid;
 		flex: 1;
 		min-width: 0;
 		gap: var(--space-1);
+		padding-block: var(--space-1);
 	}
 	.chain-text {
 		overflow: hidden;
@@ -148,10 +172,15 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: var(--space-2);
+		padding: var(--space-2) var(--space-2) var(--space-2) var(--space-1);
+		border-top: 1px solid var(--border);
 	}
 	.chain-buttons {
 		display: flex;
 		flex: none;
+		align-self: stretch;
+		align-items: center;
+		border-inline-start: 1px solid var(--border);
 	}
 	/* The same caret as the sections, turned to point up. */
 	.up :global(.icon) {
