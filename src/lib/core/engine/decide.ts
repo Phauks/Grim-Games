@@ -20,6 +20,7 @@ import { OVERRIDES_DECIDERS } from './decide/overrides.ts';
 import { REMINDERS_DECIDERS } from './decide/reminders.ts';
 import { BLUFFS_BAG_DECIDERS } from './decide/bluffs-bag.ts';
 import { DAY_DECIDERS } from './decide/day.ts';
+import { VOTES_DECIDERS } from './decide/votes.ts';
 import { LATE_PLAYER_DECIDERS } from './decide/late-player.ts';
 import {
 	MAX_PLAYERS,
@@ -117,7 +118,13 @@ export type WarningCode =
 	| 'reminder-followed'
 	| 'no-cause'
 	| 'not-a-believer'
-	| 'late-player-in-play';
+	| 'late-player-in-play'
+	| 'no-ghost-vote'
+	| 'only-votes-with'
+	| 'must-vote'
+	| 'no-vote-token'
+	| 'needs-no-token'
+	| 'giver-not-dead';
 
 export interface Issue<C extends string> {
 	code: C;
@@ -204,6 +211,7 @@ const DECIDERS: Deciders<CommandType> = {
 	...REMINDERS_DECIDERS,
 	...BLUFFS_BAG_DECIDERS,
 	...DAY_DECIDERS,
+	...VOTES_DECIDERS,
 	...LATE_PLAYER_DECIDERS
 };
 

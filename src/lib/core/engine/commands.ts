@@ -243,7 +243,7 @@ export type Command =
 			bag: TileSpec[];
 	  }
 	// ── The day log (`Game.today`). Every entry can be removed or edited: an override. ──
-	/** Logs a nomination: who nominated whom. Votes are not tracked. */
+	/** Logs a nomination: who nominated whom. Votes are recorded with `RecordVotes`. */
 	| { type: 'Nominate'; nominator: SeatId; nominee: SeatId }
 	/** Changes who nominated whom in a logged nomination. */
 	| { type: 'EditNomination'; entryId: DayEntryId; nominator: SeatId; nominee: SeatId }
@@ -252,6 +252,19 @@ export type Command =
 	 * undefined clears it.
 	 */
 	| { type: 'ChooseForNomination'; entryId: DayEntryId; chosen?: SeatId }
+	/**
+	 * Records who voted on a logged nomination (M9a); undefined `voters` clears the record. It
+	 * spends each dead voter's ghost vote and each used vote token (`GiveVoteToken`), and gives
+	 * back those an earlier record of it spent. It never refuses a vote the rules forbid: it
+	 * warns (a Butler voting without their Master, a Zealot not voting, a voter with no ghost
+	 * vote or vote token).
+	 */
+	| { type: 'RecordVotes'; entryId: DayEntryId; voters?: SeatId[] }
+	/**
+	 * A dead player gives their vote token to a player whose character needs one to vote (the
+	 * Beggar): `from` spends their ghost vote and `to` holds one more token.
+	 */
+	| { type: 'GiveVoteToken'; from: SeatId; to: SeatId }
 	/**
 	 * Marks one of today's yes-or-no facts (whether the Demon voted, for the Flowergirl), and
 	 * swaps the tokens of each character in play that shows it (`dayMark`); undefined clears it.

@@ -66,4 +66,6 @@ export { swapsCharacters } from './swaps-characters.ts';
 export { swapsForAbility } from './swaps-for-ability.ts';
 export { takesNeighbourAlignment } from './takes-neighbour-alignment.ts';
 export { turnsPlayersInto } from './turns-players-into.ts';
+export { voteWeight } from './vote-weight.ts';
+export { voter } from './voter.ts';
 export { wakesWhen } from './wakes-when.ts';

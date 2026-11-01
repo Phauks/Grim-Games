@@ -365,6 +365,13 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 			return updateSeat(game, event.seatId, (seat) => ({ ...seat, ghostVoteUsed: true }));
 		case 'GhostVoteRestored':
 			return updateSeat(game, event.seatId, (seat) => ({ ...seat, ghostVoteUsed: false }));
+		case 'VoteTokensSet':
+			return updateSeat(game, event.seatId, (seat) => {
+				const next = { ...seat };
+				if (event.count > 0) next.voteTokens = event.count;
+				else delete next.voteTokens;
+				return next;
+			});
 		case 'ReminderAdded':
 			return updateSeat(game, event.seatId, (seat) => ({
 				...seat,

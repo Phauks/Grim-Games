@@ -39,6 +39,7 @@ import {
 	seatOf,
 	type Deciders
 } from './shared.ts';
+import { releaseVotes } from './votes.ts';
 
 /** One of the Storyteller's answers to an ability guess; anything else is left out. */
 const isAnswer = (value: unknown): value is GuessAnswer =>
@@ -352,6 +353,8 @@ export const DAY_DECIDERS: Deciders<
 				if (seat.ghostVoteUsed) events.push({ type: 'GhostVoteRestored', seatId: seat.seatId });
 			}
 		}
+		// What the nomination's recorded votes spent comes back with it.
+		if (entry.kind === 'nomination') events.push(...releaseVotes(game, entry.votes));
 		const placed =
 			entry.kind === 'info'
 				? entry.reminderIds
