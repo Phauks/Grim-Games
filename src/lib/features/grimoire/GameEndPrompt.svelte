@@ -200,6 +200,8 @@
 						{@render seat(end.seats[1])} nominated and executed {@render seat(end.seats[0])}.
 					{:else if end.rule === 'demon-executed'}
 						{#each end.seats as id (id)}{@render seat(id)}{/each} executed ({end.ruleName}).
+					{:else if end.rule === 'dead-without-demon' && end.day !== undefined && end.characterId}
+						{@render character(end.characterId)}: no Demon made by night {end.day}.
 					{:else if end.rule === 'dead-without-demon'}
 						{#each end.seats as id (id)}{@render seat(id)}{/each} dead with no Demon.
 					{:else if end.characterId && end.seats.length > 0}

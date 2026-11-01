@@ -36,6 +36,7 @@ import {
 import type { DayLog, Game, SeatId } from '#lib/core/model/types.ts';
 import { abilityState, type AbilitySource } from './ability.ts';
 import { carriesDemonToken, isExecution } from './death-causes.ts';
+import { dayNumber } from './night-order.ts';
 import { rebirthOf } from './reincarnation.ts';
 
 const W = 'https://wiki.bloodontheclocktower.com/';
@@ -87,7 +88,10 @@ export interface GameEnd {
 	/** The character whose rule it is. */
 	characterId?: CharacterId;
 	seats: SeatId[];
-	/** The day it happened, for the rules checked at dusk (0 is before the first Dawn). */
+	/**
+	 * The day it happened, for the rules checked at dusk (0 is before the first Dawn); for
+	 * `dead-without-demon` while its player lives, the night that passed with no Demon made.
+	 */
 	day?: number;
 	wiki: string;
 	/** Set when an ability in play turned the result round (the Heretic). */
@@ -591,22 +595,29 @@ function nominatedMarkedExecuted(game: Game, characters: CharacterLookup): GameE
 
 /**
  * There is no Demon and its players are dead (the Summoner, who can no longer summon one:
- * https://wiki.bloodontheclocktower.com/Summoner).
+ * https://wiki.bloodontheclocktower.com/Summoner), or its rule's `night` is over and still no
+ * Demon was made (a Summoner drunk or poisoned on its 3rd night, M15j). Before that night ends,
+ * no Demon is no end.
  */
 function deadWithoutDemon(game: Game, characters: CharacterLookup): GameEnd[] {
 	if (demonSeats(game, characters).length > 0) return [];
 	const found = endsOf(game, characters, 'dead-without-demon');
-	if (found.length === 0 || found.some(({ seatId }) => aliveForEnd(game, seatId, characters)))
-		return [];
+	const over = ({ seatId, rule }: (typeof found)[number]) =>
+		!aliveForEnd(game, seatId, characters) ||
+		(rule.night !== undefined && dayNumber(game) >= rule.night);
+	if (found.length === 0 || !found.every(over)) return [];
 	const seats = found.map((f) => f.seatId);
 	const { characterId, rule } = found[0];
+	// A living player of it: its night passed with no Demon made (`day` names that night).
+	const alive = seats.some((id) => aliveForEnd(game, id, characters));
 	return [
 		{
-			key: `dead-without-demon:${seats.join(',')}`,
+			key: `dead-without-demon:${seats.join(',')}${alive ? ':night' : ''}`,
 			rule: 'dead-without-demon',
 			winner: rule.winner!,
 			characterId,
 			seats,
+			...(alive && rule.night !== undefined ? { day: rule.night } : {}),
 			wiki: wikiOf(characterId, characters),
 			holds: []
 		}
