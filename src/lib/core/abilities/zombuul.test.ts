@@ -16,6 +16,7 @@ import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { gameEnds, livesWhileDead } from '#lib/core/rules/game-end.ts';
+import { diedSinceNewDay } from '#lib/core/rules/night-numbers.ts';
 import { wakeConditionMet } from '#lib/core/rules/wakes-when.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
@@ -49,7 +50,7 @@ describe('Zombuul', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Zombuul#Examples)', () => {
-		it.fails('Example 1: Executed Zombuul appears dead', () => {
+		it('Example 1: Executed Zombuul appears dead', () => {
 			// Wiki: "The Zombuul is executed and appears to die. They cannot attack tonight. A few days
 			// later, only two players appear alive on the Town Square. The good team is fairly certain that
 			// one of the dead players is the Zombuul, and the game continues until one more player dies."
@@ -61,7 +62,7 @@ describe('Zombuul', () => {
 			);
 			const later = executed.newDay().dies('chef').newDay().dies('empath');
 			expect(gameEnds(later.game, later.characters)).toEqual([]);
-			// Waits on the engine: the Zombuul's step has no "only if nobody died today" condition.
+			// The Zombuul died today, so it does not wake tonight.
 			expect(
 				wakeConditionMet(
 					executed.game,
@@ -73,7 +74,7 @@ describe('Zombuul', () => {
 			).toBe(false);
 		});
 
-		it.fails('Example 2: Quiet day brings attack; next night skipped', () => {
+		it('Example 2: Quiet day brings attack; next night skipped', () => {
 			// Wiki: "Nobody died today. That night, the Zombuul attacks. The next day, the Tinker dies. That
 			// night, the Zombuul does not wake."
 			const quiet = scenario(['zombuul', 'tinker', 'chef', 'empath', 'poisoner']).newDay();
@@ -81,14 +82,15 @@ describe('Zombuul', () => {
 				wakeConditionMet(quiet.game, 'zombuul', quiet.seat('zombuul'), quiet.characters, new Set())
 			).toBe(true);
 			const tinkerDied = quiet.dies('chef', 'zombuul').newDay().dies('tinker', 'tinker');
-			// Waits on the engine: the Zombuul's step has no "only if nobody died today" condition.
+			// The night order passes who died since the New day, from the log.
+			const died = diedSinceNewDay(tinkerDied.session.log.entries.flatMap((e) => e.events));
 			expect(
 				wakeConditionMet(
 					tinkerDied.game,
 					'zombuul',
 					tinkerDied.seat('zombuul'),
 					tinkerDied.characters,
-					new Set()
+					died
 				)
 			).toBe(false);
 		});

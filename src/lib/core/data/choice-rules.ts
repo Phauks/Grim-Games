@@ -34,10 +34,13 @@ type EvilInfoStep = (typeof EVIL_INFO_STEPS)[number];
  * its player as a Minion and the Minions as the Demon (the Magician,
  * https://wiki.bloodontheclocktower.com/Magician). `none` leaves both steps out at any player
  * count (Tor: the Demon and Minions do not know each other,
- * https://wiki.bloodontheclocktower.com/Tor).
+ * https://wiki.bloodontheclocktower.com/Tor). `lateNote`: what to do on the night it comes
+ * into play after the first night, on the step that wakes its new player (a Snitch the
+ * Pit-Hag makes: each Minion learns 3 bluffs that night, https://wiki.bloodontheclocktower.com/Snitch).
  */
 export interface EvilInfo {
 	notes?: Partial<Record<EvilInfoStep, string>>;
+	lateNote?: string;
 	hidesDemon?: true;
 	anyPlayerCount?: true;
 	hidesMinions?: true;
@@ -115,9 +118,11 @@ export function readEvilInfo(raw: unknown, path: string, issues: Issues): EvilIn
 		'whileWorking',
 		'none'
 	] as const;
-	checkKeys(raw, ['notes', ...flags], path, issues);
+	checkKeys(raw, ['notes', 'lateNote', ...flags], path, issues);
 	const out: EvilInfo = {};
 	for (const flag of flags) if (readBoolean(raw, flag, path, issues)) out[flag] = true;
+	const late = readString(raw, 'lateNote', path, issues, false);
+	if (late !== undefined) out.lateNote = late;
 	if (raw.notes !== undefined) {
 		const at = `${path}.notes`;
 		if (!isObject(raw.notes)) issues.add(at, `expected object, got ${describe(raw.notes)}`);

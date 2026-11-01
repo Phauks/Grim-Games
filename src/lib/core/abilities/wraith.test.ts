@@ -20,7 +20,7 @@ import {
 	nightSheetPresence
 } from '#lib/core/testing/committed-data.ts';
 import { nightOrder } from '#lib/core/rules/night-order.ts';
-import { engineGap, scenario } from '#lib/core/testing/scenario.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 import type { Command } from '#lib/core/engine/index.ts';
 import type { Game } from '#lib/core/model/types.ts';
 import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
@@ -66,7 +66,7 @@ describe('Wraith', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Wraith#Examples)', () => {
-		it.fails('Example 1: Wraith signals to kill suspected Fortune Teller', () => {
+		it('Example 1: Wraith signals to kill suspected Fortune Teller', () => {
 			// Wiki: "During the first night the Wraith peeks at other players, and notices which good
 			// players wake and which do not. During the second night, the Wraith opens their eyes more
 			// fully and notices that Doug was woken and pointed to two players tonight. During the 3rd
@@ -81,12 +81,13 @@ describe('Wraith', () => {
 				inPlay: ['wraith', 'fortuneteller', 'chef', 'empath', 'imp'].map((id) =>
 					s.characters.get(id)!
 				)
-			}).steps.map((step) => step.id);
-			expect(steps).toContain('wraith');
-			expect(steps).toContain('imp');
-			engineGap(
-				'unplanned',
-				'the night order wakes the Wraith with each other evil player who wakes, such as the Demon'
+			}).steps;
+			const ids = steps.map((step) => step.id);
+			expect(ids).toContain('wraith');
+			// The Demon's step says to wake the Wraith too; a good player's step does not.
+			expect(steps.find((step) => step.id === 'imp')?.notes.join(' ')).toMatch(/Wraith/);
+			expect(steps.find((step) => step.id === 'fortuneteller')?.notes.join(' ')).not.toMatch(
+				/Wraith/
 			);
 		});
 	});

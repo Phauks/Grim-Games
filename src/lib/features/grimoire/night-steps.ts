@@ -23,6 +23,7 @@ import {
 	nightOrder,
 	onDeathApplies,
 	onDeathTrigger,
+	revivedAfterStep,
 	TRAVELLER_ALIGNMENT_STEP,
 	wakeConditionMet,
 	withCharacterChangeSteps,
@@ -182,7 +183,12 @@ export function stepWakes(
 	game: Game,
 	step: NightStep,
 	characters: CharacterLookup,
-	tonight: { abilitiesRule?: AbilitiesRule; diedTonight: ReadonlySet<SeatId> }
+	tonight: {
+		abilitiesRule?: AbilitiesRule;
+		diedTonight: ReadonlySet<SeatId>;
+		revived?: ReadonlySet<SeatId>;
+		order?: readonly string[];
+	}
 ): boolean {
 	const holders = stepHolders(game, step, characters);
 	const id = step.character?.id;
@@ -196,7 +202,12 @@ export function stepWakes(
 					(id !== undefined &&
 						tonight.diedTonight.has(s) &&
 						setOffByDeath(game, s, id, characters))) &&
-				(id === undefined || wakeConditionMet(game, id, s, characters, tonight.diedTonight))
+				(id === undefined || wakeConditionMet(game, id, s, characters, tonight.diedTonight)) &&
+				!(
+					tonight.revived &&
+					tonight.order &&
+					revivedAfterStep(game, s, step.id, tonight.order, characters, tonight.revived)
+				)
 		)
 	);
 }

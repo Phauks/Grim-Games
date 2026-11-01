@@ -50,11 +50,10 @@ describe('Cannibal', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Cannibal#Examples)', () => {
-		it.fails('Example 1: Ate Clockmaker: gets a distance number', () => {
+		it('Example 1: Ate Clockmaker: gets a distance number', () => {
 			// Wiki: "The Clockmaker is executed and dies. That night, the Cannibal learns a “2” because
 			// the Demon and Minion are two steps apart."
-			// Waits on the engine: the Cannibal's gained ability doesn't wake them (its gainedFrom
-			// rule has no wakes), so no Clockmaker step is added for them that night.
+			// The Cannibal wakes with the Clockmaker's ability, as a Clockmaker would.
 			const s = scenario(['cannibal', 'clockmaker', 'imp', 'chef', 'poisoner'])
 				.execute('clockmaker')
 				.reminder('clockmaker', 'cannibal', 'Lunch')

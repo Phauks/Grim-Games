@@ -105,17 +105,37 @@ export function holdsAbility(
 }
 
 /**
+ * The character whose `gainedFrom` rule gives `seatId` an ability: the token they hold (the
+ * Pixie, the Cannibal), or, for a token swapped for the character they chose (`swapped`),
+ * their true character (the Philosopher holding the Clockmaker token).
+ */
+function gainingCharacter(
+	game: Game,
+	seatId: SeatId,
+	characters: CharacterLookup
+): CharacterId | undefined {
+	const token = game.seats[seatId]?.characterId;
+	if (token === undefined) return undefined;
+	if (rulesOf(token, characters)?.gainedFrom) return token;
+	const own = trueCharacter(game, seatId, characters);
+	return own !== undefined && own !== token && rulesOf(own, characters)?.gainedFrom?.swapped
+		? own
+		: undefined;
+}
+
+/**
  * Every living player's gained (or about to be gained) ability that wakes them. They wake by
- * the token they hold (a Drunk who thinks they are the Pixie too). Abilities held without a
+ * the token they hold (a Drunk who thinks they are the Pixie too), or by their true character
+ * when their token was swapped for the character they chose (the Philosopher's). Abilities held without a
  * token (`Seat.abilities`) follow, while `holdsAbility`.
  */
 export function gainedAbilities(game: Game, characters: CharacterLookup): GainedAbility[] {
 	const out: GainedAbility[] = [];
 	for (const seatId of game.seating) {
-		const via = game.seats[seatId].characterId;
-		if (via === undefined || game.seats[seatId].dead) continue;
-		const rule = rulesOf(via, characters)?.gainedFrom;
-		if (!rule?.wakes) continue;
+		if (game.seats[seatId].dead) continue;
+		const via = gainingCharacter(game, seatId, characters);
+		const rule = via === undefined ? undefined : rulesOf(via, characters)?.gainedFrom;
+		if (via === undefined || !rule?.wakes) continue;
 		const gained = gainedBy(game, seatId, via, rule, characters);
 		if (!gained) continue;
 		out.push({ seatId, via, ...gained });
@@ -162,6 +182,9 @@ export function withGainedSteps<T extends NightStep>(
 		const own = night === 'first' ? as.firstNightReminder : as.otherNightReminder;
 		const reminder = own ?? (night === 'other' ? as.firstNightReminder : undefined);
 		if (reminder === undefined) continue;
+		// A swapped token wakes at its own step when it has one tonight (the Philosopher as the
+		// Dreamer); only a "you start knowing" ability gained later needs a step of its own.
+		if (token === gained.characterId && own !== undefined) continue;
 		const step: NightStep = {
 			id: `${gained.via}@${gained.seatId}:${gained.characterId}`,
 			kind: 'character',

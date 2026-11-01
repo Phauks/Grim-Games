@@ -18,7 +18,8 @@ import { committedCharacter, nightSheetPresence } from '#lib/core/testing/commit
 import { abilityState } from '#lib/core/rules/ability.ts';
 import { preventedDeaths } from '#lib/core/rules/prevented-deaths.ts';
 import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
-import { engineGap, scenario } from '#lib/core/testing/scenario.ts';
+import { nightKill } from '#lib/core/rules/night-kill.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Po', () => {
 	const character = committedCharacter('po');
@@ -50,7 +51,7 @@ describe('Po', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Po#Examples)', () => {
-		it.fails('Example 1: Kills one, skips, then triple kill', () => {
+		it('Example 1: Kills one, skips, then triple kill', () => {
 			// Wiki: "On the second night, the Po attacks one player. On the third night, the Po chooses to
 			// attack nobody. On the fourth night, the Po attacks three players."
 			const s = scenario(['po', 'chef', 'empath', 'washerwoman', 'librarian', 'poisoner'])
@@ -63,8 +64,14 @@ describe('Po', () => {
 			expect(reminderTargetMisses(s.game, charged, s.seat('empath'), s.characters)).toEqual([
 				'not-self'
 			]);
-			// Waits on the engine: nothing says how many players the Po may attack on a night.
-			engineGap('unplanned', 'the Po attacks one player, or three after a night it chose nobody');
+			// One attack a night, or three while its 3 Attacks token is on it.
+			const before = s.do((at) => ({
+				type: 'RemoveReminder',
+				reminderId: at.game.seats[at.seat('po')].reminders.find((r) => r.label === '3 Attacks')!
+					.reminderId
+			}));
+			expect(nightKill(before.game, before.seat('po'), 'po', before.characters)?.max).toBe(1);
+			expect(nightKill(s.game, s.seat('po'), 'po', s.characters)?.max).toBe(3);
 		});
 
 		it('Example 2: Poisoned triple attack fails; sober kill follows', () => {

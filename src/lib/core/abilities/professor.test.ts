@@ -80,7 +80,7 @@ describe('Professor', () => {
 			).toBe(true);
 		});
 
-		it.fails('Example 3: Drunk Professor picks a dead Fool', () => {
+		it('Example 3: Drunk Professor picks a dead Fool', () => {
 			// Wiki: "The drunk Professor chooses to resurrect the Minstrel. Unbeknownst to the Professor, the
 			// Minstrel was regurgitated by the Shabaloth and is now alive. The Storyteller shakes their head
 			// no, because the Professor must choose a dead player. The Professor chooses the dead Fool
@@ -95,8 +95,7 @@ describe('Professor', () => {
 			expect(misses(s, 'fool')).toEqual([]);
 			expect(abilityState(s.game, s.seat('professor'), s.characters).works).toBe(false);
 			const spent = s.reminder('professor', 'professor', 'No Ability');
-			// Waits on the engine: the Professor's step has no condition that stops it waking once its
-			// No Ability token is placed (as the Seamstress's has).
+			// Its No Ability token stops it waking, as the Seamstress's does.
 			expect(
 				wakeConditionMet(
 					spent.game,

@@ -19,6 +19,7 @@ import {
 	committedGameData,
 	nightSheetPresence
 } from '#lib/core/testing/committed-data.ts';
+import { withCharacterChangeSteps } from '#lib/core/rules/character-changes.ts';
 import { nightOrder, type Night } from '#lib/core/rules/night-order.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
@@ -107,7 +108,7 @@ describe('Snitch', () => {
 			expect(demonInfo?.notes).toMatch(/Snitch/);
 			expect(s.game.bluffs).toEqual(sets);
 		});
-		it.fails('Example 3: Pit-Hag creates Snitch; Minions each get three', () => {
+		it('Example 3: Pit-Hag creates Snitch; Minions each get three', () => {
 			// Wiki: "On the fourth night, the Pit-Hag creates a Snitch. All Minions learn three
 			// not-in-play characters."
 			const s = scenario(['chef', 'empath', 'pithag', 'monk', 'witch', 'imp', 'mayor'])
@@ -115,11 +116,19 @@ describe('Snitch', () => {
 				.newDay()
 				.newDay()
 				.becomes('chef', 'snitch');
-			// Waits on the engine: a Snitch made after the first night adds no step or note that
-			// night telling the Storyteller to show each Minion three bluffs.
-			const notes = notesTonight(s, 'other')
-				.map((step) => step.notes)
-				.join(' ');
+			// The night order wakes the new Snitch's player (a character change since dawn), and that
+			// step says each Minion learns three bluffs tonight.
+			const steps = withCharacterChangeSteps(
+				nightOrder({
+					night: 'other',
+					sheet: committedGameData().nightSheet,
+					players: s.game.seating.length,
+					inPlay: s.game.seating.map((id) => s.characters.get(s.game.seats[id].characterId!)!)
+				}).steps,
+				[{ seatId: s.seat('chef'), characterId: 'snitch' }],
+				s.characters
+			);
+			const notes = steps.map((step) => step.notes.join(' ')).join(' ');
 			expect(notes).toMatch(/Snitch/);
 		});
 	});

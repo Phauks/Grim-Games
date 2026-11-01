@@ -216,3 +216,24 @@ describe('stepWakes for players who live while marked dead', () => {
 		expect(stepWakes(g, stepOf(g, 'poisoner'), characters, none)).toBe(true);
 	});
 });
+
+// https://wiki.bloodontheclocktower.com/Shabaloth : a player regurgitated tonight does not act
+// at their own step when it came before the Shabaloth's.
+describe('stepWakes for a player revived tonight', () => {
+	const revive = (seats: string[]): Command => ({ type: 'SetDead', seatId: seats[0], dead: false });
+	const alive = (seats: string[]): Command => ({
+		type: 'AddReminder',
+		seatId: seats[0],
+		reminder: { characterId: 'shabaloth', label: 'Alive' }
+	});
+	const g = game(['monk', 'shabaloth', 'empath'], revive, alive);
+	const steps = boardNightSteps(g, characters, 'other', data);
+	const order = steps.map((s) => s.id);
+	const monk = steps.find((s) => s.id === 'monk')!;
+
+	it('skips their step before the reviving ability, but not without the revival', () => {
+		const revived = new Set([g.seating[0]]);
+		expect(stepWakes(g, monk, characters, { diedTonight: new Set(), revived, order })).toBe(false);
+		expect(stepWakes(g, monk, characters, { diedTonight: new Set(), order })).toBe(true);
+	});
+});

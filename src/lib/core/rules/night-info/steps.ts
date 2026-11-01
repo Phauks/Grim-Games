@@ -9,6 +9,7 @@ import { type AbilityState, abilityState } from '../ability.ts';
 import { withTravellerAlignmentStep } from '../traveller-alignment.ts';
 import { withGainedSteps, withStorytellerSteps } from '../gained-abilities.ts';
 import { type DeathCheck, deathCheck } from '../night-deaths.ts';
+import { nightKill } from '../night-kill.ts';
 import type { Night, NightStep } from '../night-order.ts';
 import { type NightAnswer } from './reliability.ts';
 import { type NightToday, nightAnswer } from './answers.ts';
@@ -96,10 +97,33 @@ export function withNightInfo<T extends NightStep>(
 		const impaired = seats
 			.map((s): AbilityState => abilityState(game, s, characters))
 			.filter((a) => a.impairments.length > 0);
+		const killNotes = gained ? [] : nightKillNotes(game, step.character.id, seats, characters);
 		return {
 			...step,
+			...(killNotes.length > 0 ? { notes: [...step.notes, ...killNotes] } : {}),
 			...(info ? { info } : {}),
 			...(impaired.length > 0 ? { impaired } : {})
 		};
 	});
+}
+
+/**
+ * Notes on a killing step whose kill differs tonight (`nightKill`): more players than usual
+ * (the Po after choosing no one), or none chosen while an earlier choice still dies (a Pukka
+ * the Exorcist chose).
+ */
+function nightKillNotes(
+	game: Game,
+	characterId: string,
+	seats: readonly SeatId[],
+	characters: CharacterLookup
+): string[] {
+	const usual = rulesOf(characterId, characters)?.kills?.count ?? 1;
+	const kills = seats.flatMap((s) => nightKill(game, s, characterId, characters) ?? []);
+	const most = Math.max(0, ...kills.map((k) => k.max));
+	const notes: string[] = [];
+	if (most > usual) notes.push(`May choose up to ${most} players tonight.`);
+	if (kills.some((k) => k.max === 0 && k.delayed.length > 0))
+		notes.push('Does not choose tonight, but its earlier choice still dies.');
+	return notes;
 }

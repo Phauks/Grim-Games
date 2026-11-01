@@ -14,11 +14,17 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import {
+	committedCharacter,
+	committedGameData,
+	nightSheetPresence
+} from '#lib/core/testing/committed-data.ts';
 import { protection } from '#lib/core/rules/ability.ts';
 import { preventedDeaths } from '#lib/core/rules/prevented-deaths.ts';
 import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
-import { engineGap, scenario } from '#lib/core/testing/scenario.ts';
+import { revivedSinceNewDay } from '#lib/core/rules/night-numbers.ts';
+import { revivedAfterStep } from '#lib/core/rules/revived-tonight.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Shabaloth', () => {
 	const character = committedCharacter('shabaloth');
@@ -67,7 +73,7 @@ describe('Shabaloth', () => {
 			]);
 		});
 
-		it.fails("Example 2: Courtier killed; Exorcist regurgitated, can't act yet", () => {
+		it("Example 2: Courtier killed; Exorcist regurgitated, can't act yet", () => {
 			// Wiki: "The Shabaloth attacks the alive Courtier and the dead Exorcist. The Courtier dies. The
 			// next night, the Storyteller decides that the Exorcist becomes alive again. The Exorcist
 			// doesn't act tonight--they normally act before the Shabaloth."
@@ -84,9 +90,27 @@ describe('Shabaloth', () => {
 			expect(reminderTargetMisses(s.game, regurgitate, s.seat('chef'), s.characters)).toEqual(
 				expect.arrayContaining(['life', 'with-label'])
 			);
-			// Waits on the engine: the night order doesn't skip a revived player's step that came before
-			// the Shabaloth's tonight.
-			engineGap('unplanned', 'a player revived by the Shabaloth does not act earlier that night');
+			// The next night the Storyteller regurgitates the Exorcist at the Shabaloth's step.
+			const back = s
+				.do((at) => ({ type: 'SetDead', seatId: at.seat('exorcist'), dead: false }))
+				.reminder('exorcist', 'shabaloth', 'Alive');
+			const revived = revivedSinceNewDay(back.session.log.entries.flatMap((e) => e.events));
+			const order = committedGameData().nightSheet.otherNight;
+			expect(order.indexOf('exorcist')).toBeLessThan(order.indexOf('shabaloth'));
+			expect(
+				revivedAfterStep(
+					back.game,
+					back.seat('exorcist'),
+					'exorcist',
+					order,
+					back.characters,
+					revived
+				)
+			).toBe(true);
+			// A step after the Shabaloth's would still wake them.
+			expect(
+				revivedAfterStep(back.game, back.seat('exorcist'), 'dawn', order, back.characters, revived)
+			).toBe(false);
 		});
 
 		it('Example 3: Protected neighbour lives; Tea Lady then dies', () => {

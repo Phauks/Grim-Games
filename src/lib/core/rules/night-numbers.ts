@@ -55,3 +55,21 @@ export function diedSinceNewDay(
 	}
 	return out;
 }
+
+/**
+ * The seats brought back to life since the last "New day" (the events applied so far, oldest
+ * first): revived tonight, as a player the Shabaloth regurgitates is.
+ */
+export function revivedSinceNewDay(
+	events: readonly { type: string; seatId?: SeatId; dead?: boolean }[]
+): Set<SeatId> {
+	const out = new Set<SeatId>();
+	for (const event of events) {
+		if (event.type === 'DayStarted') out.clear();
+		else if (event.type === 'DeathSet' && event.seatId) {
+			if (event.dead) out.delete(event.seatId);
+			else out.add(event.seatId);
+		}
+	}
+	return out;
+}

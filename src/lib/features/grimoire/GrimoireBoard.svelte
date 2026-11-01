@@ -5,7 +5,7 @@
 	import NightStrip from './NightStrip.svelte';
 	import HistoryStrip from './HistoryStrip.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import { boardNightSteps, stepWakes } from './night-steps.ts';
+	import { boardNightSteps, stepWakes, tonight } from './night-steps.ts';
 	import { changedCharacters, diedToday } from '#lib/core/engine/index.ts';
 	import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 	import AlignmentDraw from './AlignmentDraw.svelte';
@@ -39,6 +39,7 @@
 		livingByTeam,
 		setupComplete,
 		diedSinceNewDay,
+		revivedSinceNewDay,
 		stepNightNumbers,
 		todaysNominations,
 		mayNominate,
@@ -272,8 +273,20 @@
 	 * the dead keep theirs, living Townsfolk have none).
 	 */
 	const abilitiesRule = $derived(gameRules.find((r) => r.parts.abilities)?.parts.abilities);
+	/** Revived since the New day, and tonight's step ids: a revived player's earlier steps pass. */
+	const revived = $derived.by(() => {
+		const { entries, cursor } = grimoire.open.session.log;
+		return revivedSinceNewDay(entries.slice(0, cursor).flatMap((e) => e.events));
+	});
+	const tonightOrder = $derived.by(() => {
+		const data = officialData.current;
+		if (!data || revived.size === 0) return undefined;
+		return boardNightSteps(game, characters, tonight(game), data, today, gameRules).map(
+			(s) => s.id
+		);
+	});
 	const wakes = (step: NightStep): boolean =>
-		stepWakes(game, step, characters, { abilitiesRule, diedTonight });
+		stepWakes(game, step, characters, { abilitiesRule, diedTonight, revived, order: tonightOrder });
 	const nightNumbers = $derived.by(() => {
 		const data = officialData.current;
 		if (!data || preferences.current.tokenAppearance.nightLeaves !== 'numbers') return undefined;

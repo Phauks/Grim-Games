@@ -59,5 +59,6 @@
 				"reason": "Says what makes the Gossip kill."
 			}
 		}
-	}
+	},
+	"staysAsleep": "other"
 }

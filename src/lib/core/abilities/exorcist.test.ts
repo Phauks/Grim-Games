@@ -15,7 +15,8 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
-import { engineGap, scenario, type Scenario } from '#lib/core/testing/scenario.ts';
+import { nightKill } from '#lib/core/rules/night-kill.ts';
+import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
 describe('Exorcist', () => {
@@ -67,7 +68,7 @@ describe('Exorcist', () => {
 				})
 			);
 		});
-		it.fails("Example 2: Blocked Pukka's delayed death still happens", () => {
+		it("Example 2: Blocked Pukka's delayed death still happens", () => {
 			// Wiki: "The Exorcist chooses the Pukka. The Pukka does not wake to attack tonight, but a
 			// player still dies because of the Pukka’s attack during the previous night."
 			// Last night the Pukka poisoned the Chef; tonight the Chef dies though the Pukka sleeps.
@@ -77,12 +78,13 @@ describe('Exorcist', () => {
 				.newDay()
 				.reminder('pukka', 'exorcist', 'Chosen');
 			expect(alerts(s, 'pukka')).toContain('blocked');
-			engineGap(
-				'unplanned',
-				'a Pukka the Exorcist chose still kills the player it poisoned last night'
-			);
+			// The Pukka chooses no one tonight, but last night's poisoned player still dies.
+			expect(nightKill(s.game, s.seat('pukka'), 'pukka', s.characters)).toEqual({
+				max: 0,
+				delayed: [s.seat('chef')]
+			});
 		});
-		it.fails('Example 3: Po idles, then later strikes three', () => {
+		it('Example 3: Po idles, then later strikes three', () => {
 			// Wiki: "The Po chooses to attack no one. The next night, the Exorcist chooses the Po. The
 			// Po does not wake to act tonight. The next night, the Exorcist chooses the Assassin. The
 			// Assassin can still attack tonight, and the Po chooses three players to attack, because
@@ -102,10 +104,9 @@ describe('Exorcist', () => {
 			// The Exorcist stops only the Demon waking.
 			expect(alerts(next, 'assassin')).not.toContain('blocked');
 			expect(alerts(next, 'po')).not.toContain('blocked');
-			engineGap(
-				'unplanned',
-				'the Po, whose last choice was no one, attacks three players the next night it wakes'
-			);
+			// Blocked, the Po chooses no one; its 3 Attacks stays, so it attacks three next time.
+			expect(nightKill(blocked.game, blocked.seat('po'), 'po', blocked.characters)?.max).toBe(0);
+			expect(nightKill(next.game, next.seat('po'), 'po', next.characters)?.max).toBe(3);
 		});
 	});
 });

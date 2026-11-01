@@ -61,13 +61,12 @@ describe('Chambermaid', () => {
 			)?.number;
 		};
 
-		it.fails('Example 1: Reads two, then zero: Exorcist woke Shabaloth', () => {
+		it('Example 1: Reads two, then zero: Exorcist woke Shabaloth', () => {
 			// Wiki: "The Chambermaid chooses the Exorcist and the Innkeeper, and learns a "2." The
 			// next night, the Exorcist chooses the Shabaloth, which will wake the Shabaloth. Later,
 			// Chambermaid chooses the Shabaloth and the Fool. Since the Shabaloth only woke due to the
 			// Exorcist ability, the Chambermaid learns a "0"."
-			// Waits on the engine: a Demon the Exorcist chose still counts as woken by its own
-			// ability (wokeTonight does not read the Exorcist's stopsWaking token).
+			// The Exorcist's Chosen on the Demon means it woke by the Exorcist's ability, not its own.
 			const s = scenario(['chambermaid', 'exorcist', 'innkeeper', 'fool', 'shabaloth', 'goon'])
 				.newDay()
 				.newDay();
@@ -94,14 +93,13 @@ describe('Chambermaid', () => {
 			expect(isAllowed(picker, choice)).toBe(true);
 			expect(learns(s, 'other', 'grandmother', 'goon')).not.toBe(2);
 		});
-		it.fails("Example 3: Assassin's idle wake counts; Gossip stays hidden", () => {
+		it("Example 3: Assassin's idle wake counts; Gossip stays hidden", () => {
 			// Wiki: "It is the first night. The Chambermaid chooses the Assassin and the Moonchild,
 			// and learns a "0" because the Assassin does not wake to use their ability on the first
 			// night. The next night, they choose the Assassin and the Gossip. The Assassin woke but
 			// did not use their ability. The Gossip ability is used, but the Gossip does not wake to
 			// use it. The Chambermaid learns a "1"."
-			// Waits on the engine: the Gossip's night step (the Storyteller's, not a wake) counts as
-			// the Gossip waking.
+			// The Gossip's night step is the Storyteller's alone: the Gossip does not wake.
 			const s = scenario(['chambermaid', 'assassin', 'moonchild', 'gossip', 'imp']);
 			expect(learns(s, 'first', 'assassin', 'moonchild')).toBe(0);
 			const next = s.newDay();
