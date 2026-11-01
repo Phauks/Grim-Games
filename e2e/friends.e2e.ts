@@ -250,8 +250,8 @@ test('a player in a live game is added from their profile', async ({ browser }) 
 		.getByRole('list', { name: 'Players in the room' })
 		.getByRole('listitem')
 		.filter({ hasText: 'Bob' })
-		.getByTestId('sheet-avatar')
 		.tap();
+	await ann.page.getByTestId('room-player-sheet').getByTestId('sheet-avatar').tap();
 	const profile = ann.page.getByRole('dialog', { name: 'Bob', exact: true });
 	const add = profile.getByTestId('seat-friend');
 	await expect(add).toHaveAttribute('data-state', 'add');
