@@ -533,10 +533,14 @@ describe('impairing tokens end with their character unless they last', () => {
 	const tokens = [...OFFICIAL_RULES.keys()].flatMap((id) => {
 		const character = characters.get(id);
 		if (!character || !isSeatable(character.type) || character.type === 'traveller') return [];
-		return [...new Set(character.reminders)]
-			.filter((label) => impairmentOfLabel(label))
-			.map((label) => ({ id, label, rule: rulesOf(id)?.impairs?.tokens?.[label] }))
-			.filter(({ rule }) => rule === undefined || rule.on === 'carrier');
+		return (
+			[...new Set(character.reminders)]
+				.filter((label) => impairmentOfLabel(label))
+				.map((label) => ({ id, label, rule: rulesOf(id)?.impairs?.tokens?.[label] }))
+				// A token that also needs a kept ability (`whileKept`, the Vigormortis's Poisoned)
+				// has its own tests in kept-ability.test.ts.
+				.filter(({ rule }) => (rule === undefined || rule.on === 'carrier') && !rule?.whileKept)
+		);
 	});
 	const dead =
 		(i: number) =>

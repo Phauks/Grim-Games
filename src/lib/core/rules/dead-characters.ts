@@ -3,7 +3,7 @@ import type { CharacterId } from '../data/index.ts';
 import { rulesOf } from '../data/rules/index.ts';
 import type { CharacterLookup } from '../model/characters.ts';
 import type { Game, SeatId } from '../model/index.ts';
-import { typeOf } from '../model/selectors.ts';
+import { trueCharacter, typeOf } from '../model/selectors.ts';
 
 type RulesLookup = ReadonlyMap<CharacterId, { rules?: CharacterRules }>;
 
@@ -21,18 +21,35 @@ export function actsWhenDead(characterId: CharacterId, characters?: RulesLookup)
  * so (`keepsAbility`: the Vigormortis's Has Ability on a Minion it killed,
  * https://wiki.bloodontheclocktower.com/Vigormortis). They stay in the night order, and their
  * ability still works. Living players never need it.
+ *
+ * The kept ability lasts only while the token's character does (M15g): once every player of it
+ * is dead, the ability is gone (the Vigormortis's Minions keep theirs "for as long as the
+ * Vigormortis remains alive"). With no player of it in play the token is kept: it may come from
+ * a gained ability. `sourceWorks`, when given, judges each player of that character instead of
+ * "alive" (`rules/ability.ts` asks whether its ability works, so a drunk or poisoned
+ * Vigormortis's Minions lose theirs too).
  */
 export function keepsAbilityWhenDead(
 	game: Game,
 	seatId: SeatId,
-	characters?: CharacterLookup
+	characters?: CharacterLookup,
+	sourceWorks?: (sourceSeat: SeatId) => boolean
 ): boolean {
 	const seat = game.seats[seatId];
 	if (!seat?.dead) return false;
 	return seat.reminders.some((r) => {
 		const keeps = rulesOf(r.characterId, characters)?.keepsAbility;
 		if (keeps?.token !== r.label) return false;
-		return !keeps.type || (!!characters && typeOf(game, seatId, characters) === keeps.type);
+		if (keeps.type && (!characters || typeOf(game, seatId, characters) !== keeps.type))
+			return false;
+		const sources = (game.seating ?? []).filter(
+			(s) =>
+				s !== seatId &&
+				(characters ? trueCharacter(game, s, characters) : game.seats[s]?.characterId) ===
+					r.characterId
+		);
+		const works = sourceWorks ?? ((s: SeatId) => !game.seats[s].dead);
+		return sources.length === 0 || sources.some(works);
 	});
 }
 
