@@ -164,6 +164,30 @@ export function centredIn(
 	}));
 }
 
+/** A point in % of `board` as a point in % of the box centred on it (centredIn undone). */
+export function inBox(point: SeatPoint, box: BoardSize, board: BoardSize): SeatPoint {
+	if (!(box.width > 0 && box.height > 0)) return { ...point };
+	const left = (board.width - box.width) / 2;
+	const top = (board.height - box.height) / 2;
+	return {
+		x: (((point.x / 100) * board.width - left) / box.width) * 100,
+		y: (((point.y / 100) * board.height - top) / box.height) * 100
+	};
+}
+
+/**
+ * Where a point on a shared grim (sharedSeats) is on the Storyteller's board, as its layout
+ * keeps a seat placed by hand: a phone moving its own seat (Trevor, 2026-10-31).
+ */
+export function sharedPlace(
+	point: SeatPoint,
+	board: BoardSize,
+	aspect: number | undefined,
+	fit: boolean
+): SeatPoint {
+	return aspect && fit ? inBox(point, fitAspect(board, aspect), board) : { ...point };
+}
+
 /**
  * Where a shared grim (a player's Grim tab, Public Town) draws its seats, and their size
  * (Trevor, 2026-10-27): at the places round the ring of the Storyteller's board, whose shape

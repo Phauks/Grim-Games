@@ -309,6 +309,8 @@
 	   while the section scrolls, with a sticky preview held just below it. */
 	.content {
 		--settings-heading-height: calc(var(--tap-target) + var(--space-3));
+		/* A closing group's header pins just under the section's own heading. */
+		--pin-top: var(--settings-heading-height);
 	}
 	.heading {
 		position: sticky;

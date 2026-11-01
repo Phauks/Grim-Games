@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { seatingFromSetup } from '#lib/features/grimoire/seating-mode.svelte.ts';
 	import { allowedOffScriptIn } from '#lib/features/modes/game-mode.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { onMount } from 'svelte';
@@ -27,6 +28,7 @@
 	} from '#lib/core/rules/index.ts';
 	import { scriptMaxPlayers, teensyvilleWarnings } from '#lib/core/rules/teensyville.ts';
 	import { loadOfficialData, officialData } from '#lib/features/characters/game-data.svelte.ts';
+	import { gameSettings } from '#lib/features/game-settings/game-settings.svelte.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
@@ -297,8 +299,14 @@
 		return of;
 	});
 	const travellers = $derived(ids.filter((id) => lookup(id)?.type === 'traveller').length);
+	// Travellers who choose on their phones may still be picked here: none to all of them.
+	const travellersLater = $derived(gameSettings.current.travellersChoose && !travellersInBag);
 	const travellerLimits = $derived(
-		travellersInBag ? travellerRange(s.players, travellersInBag) : undefined
+		travellersInBag
+			? travellerRange(s.players, travellersInBag)
+			: travellersLater
+				? { min: 0, max: Math.max(travellersNeeded, travellers) }
+				: undefined
 	);
 	const warnings = $derived([
 		...setupWarningMessages(analysis.warnings, requirements, name),
@@ -312,7 +320,13 @@
 	]);
 
 	const errors = $derived(
-		buildErrors({ analysis, issues: plan.issues, travellers, travellerMax: travellerLimits?.max })
+		buildErrors({
+			analysis,
+			issues: plan.issues,
+			travellers,
+			travellerMax: travellersInBag ? travellerLimits?.max : undefined,
+			travellersLater
+		})
 	);
 
 	// Copies only where a character's rules allow them (Village Idiot, Legion, or with the
@@ -439,6 +453,16 @@
 		);
 	}
 
+	/**
+	 * Seating from here (Trevor, 2026-10-31: players sit and count off while the Storyteller
+	 * picks characters): this screen's seats, then the board in Seating, whose Done comes back.
+	 */
+	async function seating() {
+		if (!game || !seatPlayers()) return;
+		await port.flush();
+		await seatingFromSetup(game.gameId);
+	}
+
 	/** The draw, or for a town of a mode game the next town's setup (Alternative game modes). */
 	async function openDraw(gameId: string) {
 		const town = await afterTownBag(gameId, await loadOfficialData());
@@ -471,7 +495,8 @@
 					? scriptFacts(script.characters, data.jinxes, script.homebrewJinxes).jinxes
 					: [],
 			random: Math.random,
-			travellersInBag
+			travellersInBag,
+			travellersLater
 		});
 		if (result.ok) {
 			setupSelection.replace(result.selection);
@@ -498,7 +523,12 @@
 </script>
 
 <Page title={t('setup.characters')} sideFlow iconActions>
-	{#snippet actions()}<SetupActions {port} />{/snippet}
+	{#snippet actions()}<SetupActions {port} /><IconButton
+			icon="arrange"
+			label={t('room.seating.title')}
+			disabled={!ready}
+			onclick={seating}
+		/>{/snippet}
 	{#snippet subtitle()}<span class="script"
 			><span class="label">{t('setup.script')}</span>
 			<!-- With its logo, as every script's name (Trevor, 2026-10-31). -->

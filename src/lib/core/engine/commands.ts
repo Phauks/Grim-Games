@@ -48,7 +48,9 @@ export type Command =
 	 */
 	| { type: 'ChangeScript'; script: Script }
 	/** `position` is the 0-based place in the seating order; the default is the end. */
-	| { type: 'AddSeat'; playerName?: PlayerName; position?: number }
+	| { type: 'AddSeat'; playerName?: PlayerName; position?: number; notInPlay?: true }
+	/** Puts seats in play, or takes them out (`Seat.notInPlay`), as one change. */
+	| { type: 'SetInPlay'; seatIds: SeatId[]; inPlay: boolean }
 	| { type: 'RemoveSeat'; seatId: SeatId }
 	/** An empty or missing name clears it. */
 	| { type: 'RenameSeat'; seatId: SeatId; playerName?: PlayerName }
@@ -245,6 +247,11 @@ export type Command =
 	| { type: 'Nominate'; nominator: SeatId; nominee: SeatId }
 	/** Changes who nominated whom in a logged nomination. */
 	| { type: 'EditNomination'; entryId: DayEntryId; nominator: SeatId; nominee: SeatId }
+	/**
+	 * Records the player a nominee chose in a logged nomination (the Big Wig's speaker);
+	 * undefined clears it.
+	 */
+	| { type: 'ChooseForNomination'; entryId: DayEntryId; chosen?: SeatId }
 	/**
 	 * Marks one of today's yes-or-no facts (whether the Demon voted, for the Flowergirl), and
 	 * swaps the tokens of each character in play that shows it (`dayMark`); undefined clears it.

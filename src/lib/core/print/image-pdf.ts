@@ -88,7 +88,7 @@ const WIN_ANSI: Readonly<Record<string, number>> = {
 	'”': 0x94,
 	'•': 0x95,
 	'–': 0x96,
-	'—': 0x97,
+	'—': 0x97, // sep-ok: Windows-1252 code table for the PDF font, not text
 	'˜': 0x98,
 	'™': 0x99,
 	š: 0x9a,

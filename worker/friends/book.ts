@@ -5,6 +5,7 @@ import {
 	INVITES_PER_DAY,
 	MAX_INVITES,
 	MAX_RECENT,
+	PRESENCE_TTL_MS,
 	REQUEST_TTL_MS,
 	type RequestRefusal
 } from '../../src/lib/features/friends/friends-protocol.ts';
@@ -14,6 +15,7 @@ import {
 	type FriendScript,
 	type PublishedScript
 } from '../../src/lib/features/friends/friend-scripts-protocol.ts';
+import { GROUPS_PER_DAY, MAX_GROUPS } from '../../src/lib/features/friends/groups-protocol.ts';
 import {
 	planReceive,
 	planSend,
@@ -124,6 +126,15 @@ export class FriendBook extends DurableObject {
 			);
 			-- When each invite this account sent went, for the day's limit.
 			CREATE TABLE IF NOT EXISTS invited (at INTEGER NOT NULL);
+			-- Live rooms this account is connected to (plan F5), and whether friends see it.
+			CREATE TABLE IF NOT EXISTS playing (code TEXT PRIMARY KEY, at INTEGER NOT NULL);
+			CREATE TABLE IF NOT EXISTS presence (
+				id INTEGER PRIMARY KEY CHECK (id = 1),
+				shown INTEGER NOT NULL
+			);
+			-- Groups this account is in (plan F6), by join code, and when it started each of its own.
+			CREATE TABLE IF NOT EXISTS grouped (code TEXT PRIMARY KEY, joined_at INTEGER NOT NULL);
+			CREATE TABLE IF NOT EXISTS group_started (at INTEGER NOT NULL);
 		`);
 	}
 
@@ -307,6 +318,38 @@ export class FriendBook extends DurableObject {
 		this.sql.exec('DELETE FROM invite WHERE sender = ?', id);
 	}
 
+	/** This account connected to the live room `code` (plan F5). */
+	async joinedRoom(code: string, now: number): Promise<void> {
+		this.sql.exec('INSERT OR REPLACE INTO playing (code, at) VALUES (?, ?)', code, now);
+	}
+
+	/** This account's last device left the room `code`. */
+	async leftRoom(code: string): Promise<void> {
+		this.sql.exec('DELETE FROM playing WHERE code = ?', code);
+	}
+
+	/** Shown to friends unless turned off (Trevor approved the plan's switch, 2026-10-28). */
+	async showsPresence(): Promise<boolean> {
+		const row = this.sql
+			.exec<{ shown: number }>('SELECT shown FROM presence WHERE id = 1')
+			.toArray()[0];
+		return row ? row.shown === 1 : true;
+	}
+
+	async setShowsPresence(shown: boolean): Promise<void> {
+		this.sql.exec('INSERT OR REPLACE INTO presence (id, shown) VALUES (1, ?)', shown ? 1 : 0);
+	}
+
+	/** The rooms this account is in, latest first; none while it hides its presence. */
+	async rooms(now: number): Promise<string[]> {
+		this.sql.exec('DELETE FROM playing WHERE at < ?', now - PRESENCE_TTL_MS);
+		if (!(await this.showsPresence())) return [];
+		return this.sql
+			.exec<{ code: string }>('SELECT code FROM playing ORDER BY at DESC')
+			.toArray()
+			.map((row) => row.code);
+	}
+
 	/** Counts an invite this account sends against the day's limit; false when it is used up. */
 	async spendInvite(now: number): Promise<boolean> {
 		this.sql.exec('DELETE FROM invited WHERE at < ?', now - DAY_MS);
@@ -455,6 +498,36 @@ export class FriendBook extends DurableObject {
 			)
 			.toArray()
 			.map(({ name, hash, at }) => ({ name, hash, at }));
+	}
+
+	/** The groups this account is in, by code, oldest first. */
+	async groups(): Promise<string[]> {
+		return this.sql
+			.exec<{ code: string }>('SELECT code FROM grouped ORDER BY joined_at, code')
+			.toArray()
+			.map((row) => row.code);
+	}
+
+	/** Lists a group; false when this account is in as many groups as it may be. */
+	async addGroup(code: string, now: number): Promise<boolean> {
+		if (this.sql.exec('SELECT 1 FROM grouped WHERE code = ?', code).toArray().length) return true;
+		const count = this.sql.exec<{ n: number }>('SELECT COUNT(*) AS n FROM grouped').one().n;
+		if (count >= MAX_GROUPS) return false;
+		this.sql.exec('INSERT INTO grouped (code, joined_at) VALUES (?, ?)', code, now);
+		return true;
+	}
+
+	async dropGroup(code: string): Promise<void> {
+		this.sql.exec('DELETE FROM grouped WHERE code = ?', code);
+	}
+
+	/** Counts a group this account starts against the day's limit; false when it's spent. */
+	async spendGroupStart(now: number): Promise<boolean> {
+		this.sql.exec('DELETE FROM group_started WHERE at < ?', now - DAY_MS);
+		const count = this.sql.exec<{ n: number }>('SELECT COUNT(*) AS n FROM group_started').one().n;
+		if (count >= GROUPS_PER_DAY) return false;
+		this.sql.exec('INSERT INTO group_started (at) VALUES (?)', now);
+		return true;
 	}
 
 	/** This account was deleted: returns everyone it was linked to, and keeps nothing. */

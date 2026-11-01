@@ -31,6 +31,7 @@
 	import SavedGamesSection from '#lib/features/grimoire/SavedGamesSection.svelte';
 	import YourCharacter from './YourCharacter.svelte';
 	import PlayerCountOff from './PlayerCountOff.svelte';
+	import PlayerTravellerPick from './PlayerTravellerPick.svelte';
 	import { finalGrimoire } from './final-grimoire.svelte.ts';
 	import { gameOverText } from './game-over-text.ts';
 	import ScriptName from '#lib/features/scripts/ScriptName.svelte';
@@ -382,14 +383,11 @@
 					aria-live="polite"
 					data-testid="room-preview"
 				>
-					<!-- The logo's place and the name's line kept while looking, so nothing moves. -->
-					<ScriptName
-						name={found?.name}
-						logo={found?.logo}
-						empty={found ? t('room.noScriptYet') : ' '}
-					>
-						{#snippet sub()}
-							{#if found}
+					<!-- Only a found game has a logo; until then the status line has the whole box,
+					     centred (Trevor, 2026-10-31). The box keeps its height, so nothing moves. -->
+					{#if found}
+						<ScriptName name={found.name} logo={found.logo} empty={t('room.noScriptYet')}>
+							{#snippet sub()}
 								<ScriptByline author={found.author} inline />
 								{#if found.storyteller}
 									<span data-testid="game-storyteller"
@@ -401,11 +399,11 @@
 										>{t('room.tableSize', { seats: found.seats, seated: found.seated ?? 0 })}</span
 									>
 								{/if}
-							{:else}
-								<span role="status">{lookupText}</span>
-							{/if}
-						{/snippet}
-					</ScriptName>
+							{/snippet}
+						</ScriptName>
+					{:else}
+						<p class="game-status" role="status">{lookupText}</p>
+					{/if}
 				</section>
 				<div class="entry">
 					<Button type="submit" variant="accent" disabled={!canJoin}>
@@ -509,6 +507,7 @@
 			onSeen={() => player?.roleSeen()}
 		/>{/if}
 	{#if player}<PlayerCountOff {player} />{/if}
+	{#if player}<PlayerTravellerPick {player} />{/if}
 	{#if player && balloting}<ScriptBallot {player} />{/if}
 {/if}
 
@@ -571,6 +570,14 @@
 		border: 1px dashed var(--border);
 		border-radius: var(--radius-md);
 		text-align: start;
+	}
+	.game:not(.found) {
+		justify-content: center;
+		text-align: center;
+	}
+	.game-status {
+		margin: 0;
+		color: var(--on-surface-muted);
 	}
 	/* The box is raised already, so the game it opens sits back in the page's own surface. */
 	.game.found {

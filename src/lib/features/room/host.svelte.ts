@@ -30,6 +30,7 @@ import {
 	type TransferStatus,
 	type SharedGrimoire,
 	type TownSoundCommand,
+	type TravellerPickHostView,
 	type VoteTally
 } from '#lib/core/sync/room.ts';
 import type {
@@ -57,10 +58,10 @@ import { tableState } from './table-state.svelte.ts';
 import { seatRoles, type SeatRole } from '#lib/core/sync/seat-roles.ts';
 import { seatPresence, type SeatPresence } from '#lib/core/sync/seat-presence.ts';
 import { newGrimViewPassword } from '#lib/core/sync/grim-view-password.ts';
-
+import { applyTravellerPicks } from './host-traveller-pick.ts';
 import { STORAGE_KEY, type StoredRoom } from './host-storage.ts';
 import { RolesShown } from './roles-shown.svelte.ts';
-import { grantSit } from './host-seating.ts';
+import { boardPlaces, grantSit } from './host-seating.ts';
 
 /** Changes are gathered for this long before the grimoire is sent to viewers again. */
 const GRIMOIRE_DELAY_MS = 300;
@@ -79,10 +80,8 @@ export class RoomHost {
 	problem = $state(false); // Opening a room failed, e.g. offline.
 	opening = $state(false); // A room is being opened.
 	removed = $state.raw<readonly RemovedMember[]>([]); // Phones removed this game (plan J37).
-	/**
-	 * The key Grim view's password makes, while the Storyteller has it on (Specters, Trevor
-	 * 2026-10-18). Viewers see everything, so it is off until turned on.
-	 */
+	// The key Grim view's password makes, while the Storyteller has it on (Specters, Trevor
+	// 2026-10-18). Viewers see everything, so it is off until turned on.
 	viewerKey = $state<string>();
 	/**
 	 * Grim view's password, while it is on (Trevor, 2026-10-26: "access password locked by
@@ -95,6 +94,7 @@ export class RoomHost {
 	rolesSeen = $state.raw<readonly SeatId[]>([]); // Their player held the character to see it.
 	seatingOpen = $state(false); // Phones may move their own seat (plan J38).
 	countOff = $state.raw<CountOffView>(); // The count off, while one is open (plan J40).
+	travellerPick = $state.raw<TravellerPickHostView>(); // Travellers choosing on their phones.
 	transfer = $state.raw<TransferStatus>(); // The open Room transfer (room-transfer.svelte.ts).
 	sendingGame = $state(false); // The grimoire goes to the room: a Room transfer brings it.
 	onMessage: ((message: ServerMessage) => void) | undefined; // Hears the room first (transfer).
@@ -650,6 +650,8 @@ export class RoomHost {
 			this.removed = message.removed ?? [];
 			this.seatingOpen = !!message.seatingOpen;
 			this.countOff = message.countOff;
+			applyTravellerPicks(this.#game, this.travellerPick, message.travellerPick);
+			this.travellerPick = message.travellerPick;
 			this.vote = message.vote;
 			this.scriptVote = message.scriptVote;
 			this.rolesSeen = message.rolesSeen ?? [];
@@ -659,7 +661,7 @@ export class RoomHost {
 				gameFeedback.save(message.feedbackGameId, message.feedback);
 			}
 		} else if (message.type === 'sit') {
-			if (this.#game) grantSit(this.#game, this.members, message);
+			if (this.#game) grantSit(this.#game, this.members, message, boardPlaces(this.#game));
 		} else if (message.type === 'watchers') {
 			this.watchers = message.count;
 		} else if (message.type === 'grimoire-wanted') {
@@ -760,7 +762,7 @@ export class RoomHost {
 		this.away = [];
 		this.removed = [];
 		this.seatingOpen = false;
-		this.countOff = undefined;
+		this.countOff = this.travellerPick = undefined;
 		this.vote = undefined;
 		this.scriptVote = undefined;
 		this.viewerKey = undefined;

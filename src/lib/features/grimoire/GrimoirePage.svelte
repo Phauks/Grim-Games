@@ -1,5 +1,7 @@
 <script lang="ts">
+	import { swapPlaces, withPlaced } from '#lib/ui/seating/seat-layout.ts';
 	import { attachRoom } from '#lib/features/room/host.svelte.ts';
+	import { openBoardPlaces } from '#lib/features/room/host-seating.ts';
 	import { resolve } from '$app/paths';
 	import type { GameId } from '#lib/core/model/index.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
@@ -10,6 +12,8 @@
 	import { drawLock } from '#lib/features/setup/draw-lock.svelte.ts';
 	import PinDialog from '#lib/features/setup/PinDialog.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import Spinner from '#lib/ui/primitives/Spinner.svelte';
+	import NavMenuButton from '#lib/features/shell/NavMenuButton.svelte';
 	import { Grimoire } from './grimoire.svelte.ts';
 	import GrimoireBoard from './GrimoireBoard.svelte';
 	import PlayersDialog from '#lib/features/room/PlayersDialog.svelte';
@@ -37,6 +41,11 @@
 			reminderSpots: board.reminderSpots,
 			copies: [...board.copies]
 		}));
+		// Phones moving their seats while seating is open (Trevor, 2026-10-31).
+		openBoardPlaces(open.game.gameId, {
+			place: (seatId, point) => board.setLayout(withPlaced(board.layout, seatId, point)),
+			swap: (a, b) => board.setLayout(swapPlaces(board.layout, a, b))
+		});
 		grimoire = board;
 		return grimoire;
 	}
@@ -68,7 +77,11 @@
 		{/if}
 	{/snippet}
 	{#snippet fallback({ kind, message })}
-		<main class="message">
+		<!-- Centred where the board will be, with ☰ in the toolbar's spot, so the board takes
+		     over without the screen jumping (Trevor, 2026-10-31: it could look better). -->
+		<main class="opening" aria-busy={kind === 'loading'}>
+			<span class="menu-spot"><NavMenuButton /></span>
+			{#if kind === 'loading'}<span class="loading"><Spinner testid="game-opening" /></span>{/if}
 			<p role={kind === 'error' ? 'alert' : undefined}>{message}</p>
 			{#if kind !== 'loading'}
 				<Button href={resolve('/')} icon="back">Saved games</Button>
@@ -94,6 +107,29 @@
 		max-width: calc(40 * var(--u));
 		margin: 0 auto;
 		padding: var(--space-5) var(--space-4);
+	}
+	.opening {
+		display: grid;
+		place-content: center;
+		justify-items: center;
+		gap: var(--space-3);
+		min-height: 100dvh;
+		padding: var(--space-4) var(--page-gutter);
+		text-align: center;
+	}
+	.opening p {
+		margin: 0;
+		font-size: 1.15rem;
+	}
+	.opening .loading {
+		color: var(--accent);
+		--icon-size: calc(3 * var(--u));
+	}
+	/* Where the board's toolbar puts ☰ (PageMenuButton's spot). */
+	.menu-spot {
+		position: absolute;
+		top: calc(var(--app-top) + var(--menu-inset));
+		left: calc(env(safe-area-inset-left) + var(--menu-inset));
 	}
 	.locked {
 		display: grid;

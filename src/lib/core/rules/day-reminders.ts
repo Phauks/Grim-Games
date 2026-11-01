@@ -77,6 +77,8 @@ export interface DayState {
 	 * Poisoned and Drunk tokens are read.
 	 */
 	ability?: (seatId: SeatId) => AbilityState;
+	/** Today's nominations whose nominee chose a player (the Big Wig's speaker). */
+	nominationChoices?: readonly { nominee: SeatId; chosen: SeatId }[];
 	/** Values the Storyteller entered during prep (`Game.prepValues`). */
 	prepValues?: Readonly<Record<string, string>>;
 	/** Characters whose optional rule this game turned on (`Game.optionalRules`). */
@@ -112,6 +114,8 @@ export interface DayReminder {
 	autoDetected: boolean;
 	/** True when it depends on a death whose cause was not recorded. */
 	uncertain?: boolean;
+	/** The player its `target` segment names: the reminder's carrier, or a nominee's choice. */
+	target?: SeatId;
 	/** Set when a Storyteller override changed or added it. */
 	overridden?: 'edited' | 'added';
 	wiki?: string;
@@ -240,6 +244,9 @@ export function dayStateFromGame(
 		seats: game.seating.map((id) => game.seats[id]).filter((s) => s !== undefined),
 		ruleCharacters: game.ruleCharacters,
 		character,
+		nominationChoices: game.today.entries.flatMap((e) =>
+			e.kind === 'nomination' && e.chosen ? [{ nominee: e.nominee, chosen: e.chosen }] : []
+		),
 		...(game.prepValues ? { prepValues: game.prepValues } : {}),
 		...(game.optionalRules ? { optionalRules: game.optionalRules } : {}),
 		...(overrides ? { overrides } : {}),
@@ -345,11 +352,14 @@ function fill(
 	spec: DayReminderSpec,
 	selfRef: CharacterRef,
 	targetSeat: DaySeat | undefined,
-	values: Readonly<Record<string, string>> = {}
+	values: Readonly<Record<string, string>> = {},
+	nomineeSeat?: DaySeat
 ): ReminderSegment[] {
 	return spec.template.map((part): ReminderSegment => {
 		if ('text' in part) return { kind: 'text', text: part.text };
 		if ('self' in part) return { kind: 'character', ref: selfRef };
+		if ('nominee' in part)
+			return { kind: 'character', ref: refFor(nomineeSeat, nomineeSeat?.characterId ?? '') };
 		if ('value' in part) {
 			const value = values[prepValueKey(selfRef.characterId, part.value)];
 			return {
@@ -419,7 +429,19 @@ function curated(
 			...(holds === 'unknown' ? { uncertain: true } : {})
 		};
 		const key = `${entry.id}#${index}@${at}`;
-		if (when.reminder) {
+		if (when.nomineeChose) {
+			const seatOf = (id: SeatId) => state.seats.find((s) => s.seatId === id);
+			for (const choice of state.nominationChoices ?? []) {
+				const target = seatOf(choice.chosen);
+				if (!target) continue;
+				out.push({
+					...base,
+					key: `${key}>${choice.nominee}>${choice.chosen}`,
+					target: choice.chosen,
+					segments: fill(spec, selfRef, target, state.prepValues, seatOf(choice.nominee))
+				});
+			}
+		} else if (when.reminder) {
 			const targets = carriers(state, entry.id, when.reminder).filter(
 				(t) => !when.targetAlive || !t.dead
 			);
@@ -429,6 +451,7 @@ function curated(
 					out.push({
 						...base,
 						key: `${key}>${target.seatId}`,
+						target: target.seatId,
 						segments: fill(spec, selfRef, target, state.prepValues)
 					});
 				}

@@ -42,6 +42,10 @@ export const player = {
 	'player.grim.notesTitle': 'Notes: {name}',
 	'player.grim.reminders': 'Reminders',
 	'player.grim.reminderBin': 'Reminder bin',
+	'player.grim.reminderBank': 'Reminder bank',
+	'player.grim.everyReminder': 'Every reminder',
+	'player.grim.editToken': 'Edit token',
+	'player.grim.reminderFrom': 'From',
 	'player.grim.remindersTitle': 'Reminders for {name}',
 	'player.grim.onThisSeat': 'On this seat',
 	'player.grim.genericTokens': 'Generic',
@@ -179,6 +183,7 @@ export const player = {
 	'player.seating.drag': 'Your seat: drag it to where you sit',
 	'player.seating.between': 'Between',
 	'player.seating.take': 'Sit in Seat {number}',
+	'player.seating.move': 'Move your seat here',
 	'player.seating.and': 'and',
 	'player.seating.claim': 'Sit in Seat {number}?'
 } as const;

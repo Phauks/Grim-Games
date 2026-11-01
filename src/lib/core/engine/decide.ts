@@ -100,6 +100,7 @@ export type WarningCode =
 	| 'cause-ignored'
 	| 'duplicate-override'
 	| 'dead-nominator'
+	| 'not-in-play'
 	| 'already-nominated'
 	| 'already-nominee'
 	| 'already-executed'

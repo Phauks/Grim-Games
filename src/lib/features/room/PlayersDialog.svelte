@@ -7,6 +7,7 @@
 	import PlayersPanel from './PlayersPanel.svelte';
 	import ShowRolesButton from './ShowRolesButton.svelte';
 	import CountOffDialog from './CountOffDialog.svelte';
+	import TravellerPickDialog from './TravellerPickDialog.svelte';
 
 	/** Players over the board, from ⋯ on every screen, so the Storyteller never leaves the game. */
 	let { game, run }: { game: OpenGame; run?: (command: Command) => boolean } = $props();
@@ -17,3 +18,4 @@
 	<PlayersPanel {game} {run} />
 </Dialog>
 <CountOffDialog {game} {run} />
+<TravellerPickDialog {game} {run} />

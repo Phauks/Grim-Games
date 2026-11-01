@@ -6,6 +6,7 @@
 		livingByTeam,
 		type DayCount
 	} from '#lib/core/rules/index.ts';
+	import { inPlay } from '#lib/core/model/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import CountBadge from './CountBadge.svelte';
@@ -18,7 +19,8 @@
 	}
 
 	let { game }: Props = $props();
-	const g = $derived(game.game);
+	/** Seats not in play yet count for nothing (Trevor, 2026-10-31). */
+	const g = $derived(inPlay(game.game));
 
 	/** Votes for the first nominee, from who is alive now (core `blockThreshold`). */
 	const block = $derived(blockThreshold(g));
@@ -100,7 +102,7 @@
 			<!-- With a living Traveller the same gold badge holds the exile count too, so the row
 			     keeps its five cells (Trevor, 2026-10-28, option A). -->
 			<span class="pair" data-testid="exile-needed"
-				><Icon name="vote" />{block.needed}<span class="split" aria-hidden="true">|</span><Icon
+				><Icon name="vote" />{block.needed}<span class="split" aria-hidden="true"></span><Icon
 					name="exile"
 				/>{exile}</span
 			>{/if}</CountBadge
@@ -123,8 +125,9 @@
 		align-items: center;
 		gap: 0.1em;
 	}
+	/* A gap between the two counts; the icons tell them apart (Trevor, 2026-10-31: no |). */
 	.split {
-		opacity: 0.55;
+		inline-size: 0.35em;
 	}
 	/*
 	 * One line however narrow (Trevor, 2026-10-17): five equal cells sharing the width, the

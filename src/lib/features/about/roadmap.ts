@@ -132,7 +132,9 @@ export const ROADMAP: readonly RoadmapItem[] = [
 			'J37',
 			'J38',
 			'J39',
-			'J40'
+			'J40',
+			'J41',
+			'J42'
 		]
 	},
 	{
@@ -187,9 +189,9 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	},
 	{
 		title:
-			"Special rules and game modes: +1, Binary Supernovae, Trained Killer, Phantom Detectives, Council of the Dead, The Warrens, The Djinn's Bargain, sharing your own mode files",
+			"Special rules and game modes: +1, Binary Supernovae, Trained Killer, Phantom Detectives, Council of the Dead, The Warrens, The Djinn's Bargain, sharing your own mode files, the Mode builder",
 		area: 'storyteller',
-		parts: ['L1', 'L35', 'L36', 'L103'],
+		parts: ['L1', 'L35', 'L36', 'L103', 'L104'],
 		prs: [322, 328]
 	},
 	{
@@ -265,6 +267,12 @@ export const ROADMAP: readonly RoadmapItem[] = [
 			'Add late players to the bag draw as more players, not Travellers: placed on the grimoire or seated from a phone, several at once, with Character selection’s list',
 		area: 'storyteller',
 		parts: ['L96', 'L96a', 'L96b']
+	},
+	{
+		title:
+			'Travellers choose their own Traveller on their phones: the Storyteller sends the ones allowed, a tap holds one so no one else can take it, Confirm sends it; a Traveller who arrives mid-game sits at the table not in play until the night',
+		area: 'storyteller',
+		parts: ['L102', 'L102a']
 	},
 	{
 		title:

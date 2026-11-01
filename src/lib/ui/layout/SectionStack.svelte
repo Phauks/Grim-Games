@@ -30,4 +30,9 @@
 	.section-stack[data-edge] {
 		border-top: 1px solid var(--border);
 	}
+	/* Except round a character type's list: its band marks where it starts (Collapsible). */
+	.section-stack > :global(.collapsible:has(> .head[data-type-band])),
+	.section-stack > :global(.collapsible:has(> .head[data-type-band]) + *) {
+		border-top: 0;
+	}
 </style>

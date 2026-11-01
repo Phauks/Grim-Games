@@ -56,6 +56,12 @@
 		 * deletes the room and sends every phone out. Asks first.
 		 */
 		onCloseRoom?: () => void;
+		/**
+		 * Share grim (plan R5), once the game has ended while its room is connected and before
+		 * the grimoire has gone to the phones (Trevor, 2026-10-31: off Share, "totally
+		 * misplaced"). Asks first; End game's own switch is the usual way.
+		 */
+		onShareGrim?: () => void;
 		onEnd: () => void;
 	}
 
@@ -77,9 +83,11 @@
 		onReopen,
 		onNewGame,
 		onCloseRoom,
+		onShareGrim,
 		onEnd
 	}: Props = $props();
 	let closeRoomOpen = $state(false);
+	let shareGrimOpen = $state(false);
 	/** Opens the transfer's codes, starting a transfer when none is open. */
 	let transferOpen = $state(false);
 	async function openTransfer() {
@@ -198,6 +206,16 @@
 							{t('room.feedback.view')}
 						</Button>
 					{/if}
+					{#if onShareGrim}
+						<Button
+							variant="quiet"
+							icon="share"
+							data-testid="menu-share-grim"
+							onclick={() => fromMenu(() => (shareGrimOpen = true))}
+						>
+							{t('room.shareGrim.button')}
+						</Button>
+					{/if}
 					<Button disabled={watching} variant="quiet" icon="undo" onclick={() => fromMenu(onReopen)}
 						>Reopen game</Button
 					>
@@ -255,38 +273,26 @@
 				>
 					Add Fabled or Loric
 				</Button>
+				<!-- Seating (Trevor, 2026-10-31): arranging seats, letting phones move theirs (plan J38)
+				     and Count off (J40) are one mode, with the room's parts along its bar. -->
 				<Button
 					disabled={watching}
 					variant="quiet"
 					icon="arrange"
+					data-testid="menu-seating"
 					onclick={() => fromMenu(onArrange)}
 				>
-					Arrange seats
+					{t('room.seating.title')}
 				</Button>
-				<!-- Seating on the grim (plan J38): while open, each phone drags its own seat on its Grim
-				     tab; locked, a phone with no seat taps an open one. Disabled with no room open. -->
+				<!-- Travellers choose on their phones (Trevor, 2026-10-31): a tap holds one, Confirm sends it. -->
 				<Button
 					disabled={watching || !host.code}
 					variant="quiet"
-					icon={host.seatingOpen ? 'lockSeating' : 'openSeating'}
-					data-testid="menu-seating"
-					onclick={() => fromMenu(() => host.send({ type: 'seating', open: !host.seatingOpen }))}
+					icon="traveller"
+					data-testid="menu-travellers"
+					onclick={() => fromMenu(() => (playersDialog.travellers = true))}
 				>
-					{host.seatingOpen ? t('room.seating.lock') : t('room.seating.open')}
-				</Button>
-				<!-- Count off (plan J40): one player is 1, and every phone taps the number it counts to. -->
-				<Button
-					disabled={watching || !host.code}
-					variant="quiet"
-					icon="countOff"
-					data-testid="menu-count-off"
-					onclick={() =>
-						fromMenu(() => {
-							host.send({ type: 'count-off' });
-							playersDialog.countOff = true;
-						})}
-				>
-					{t('room.countOff.title')}
+					{t('room.travellers.title')}
 				</Button>
 			</section>
 			<section class="group" aria-labelledby="board-menu-app">
@@ -332,6 +338,14 @@
 	onConfirm={() => onCloseRoom?.()}
 >
 	<p class="dialog-text">{t('room.closeRoomText')}</p>
+</ConfirmDialog>
+
+<ConfirmDialog
+	bind:open={shareGrimOpen}
+	title={t('room.shareGrim.title')}
+	onConfirm={() => onShareGrim?.()}
+>
+	<p class="dialog-text">{t('room.shareGrim.body')}</p>
 </ConfirmDialog>
 
 <style>

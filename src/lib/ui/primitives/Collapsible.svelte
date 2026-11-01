@@ -52,6 +52,17 @@
 		/** Extra content at the end of the header row (a count, a badge); not part of the tap. */
 		aside?: Snippet;
 		/**
+		 * Content at the start of the header row, before the caret and not part of the tap, e.g.
+		 * a player's avatar, which opens their profile (Trevor, 2026-10-31: Players).
+		 */
+		lead?: Snippet;
+		/**
+		 * Replaces the title's text inside the tap, for a heading that is more than words, e.g. a
+		 * player's name and character badges and status marks. Nothing in it may be a control.
+		 * Its text names the button; `title` is then unused on screen.
+		 */
+		label?: Snippet;
+		/**
 		 * The aside sits right after the title instead of at the row's far end, e.g. an (i)
 		 * that explains the heading (Trevor, 2026-10-18).
 		 */
@@ -67,6 +78,13 @@
 		defaultOpen?: boolean;
 		/** Kept in place but can't open yet, e.g. while what it holds is still loading. */
 		disabled?: boolean;
+		/**
+		 * The header stays at the top of whatever scrolls while its section passes under it, and
+		 * the next section's header pushes it off (Trevor, 2026-10-31: "probably just for
+		 * everything"). `--pin-top` and `--pin-background` say where it stops and what fills it;
+		 * off only where something else already holds that spot.
+		 */
+		pinned?: boolean;
 		children: Snippet;
 	}
 
@@ -79,11 +97,14 @@
 		empty = false,
 		startClosed = false,
 		aside,
+		lead,
+		label,
 		asideByTitle = false,
 		count,
 		countOpen = false,
 		defaultOpen = true,
 		disabled = false,
+		pinned = true,
 		children
 	}: Props = $props();
 
@@ -122,8 +143,13 @@
 	one (`grim/caret-section`), so they share one indent, spacing and count badge, and a line
 	above it whenever something sits above it (wrapped ones: SectionStack) (Trevor, 2026-10-27).
 -->
-<section class="collapsible" data-open={shown ? '' : undefined}>
+<section
+	class="collapsible"
+	data-open={shown ? '' : undefined}
+	data-pinned={pinned ? '' : undefined}
+>
 	<div class="head" data-type-band={tone} data-aside-by-title={asideByTitle ? '' : undefined}>
+		{#if lead}<div class="lead">{@render lead()}</div>{/if}
 		<svelte:element this={`h${level}`} class="title">
 			<button
 				type="button"
@@ -135,7 +161,9 @@
 				onclick={toggle}
 			>
 				<span class="caret" aria-hidden="true" data-caret><Icon name="expand" /></span>
-				<span class="label">{title}</span>
+				{#if label}<span class="label custom">{@render label()}</span>{:else}<span class="label"
+						>{title}</span
+					>{/if}
 				{#if count !== undefined && (countOpen || !shown)}<span
 						class="count"
 						aria-hidden="true"
@@ -156,10 +184,29 @@
 	.collapsible:not(:first-child) {
 		border-top: 1px solid var(--border);
 	}
+	/* A character type's band marks where its list starts, so no line above it or under its
+	   list's end (Trevor, 2026-10-31: "not sure we need the additional horizontal line"). */
+	.collapsible:has(> .head[data-type-band]),
+	.collapsible:has(> .head[data-type-band]) + :global(*) {
+		border-top: 0;
+	}
 	.head {
 		display: flex;
 		align-items: center;
 		gap: var(--space-2);
+	}
+	/* A header only sticks within its own section, so the next one's takes over at the top. */
+	.collapsible[data-pinned] > .head {
+		position: sticky;
+		top: var(--pin-top, 0rem);
+		/* Over the rows passing under it, under any band, bar or heading pinned above it. */
+		z-index: 1;
+		background: var(--pin-background, var(--surface));
+		background-attachment: fixed;
+	}
+	/* A section inside a pinned one stops under its parent's header. */
+	.collapsible[data-pinned] :global(.collapsible[data-pinned] > .head) {
+		top: calc(var(--pin-top, 0rem) + var(--tap-target));
 	}
 	.title {
 		flex: 1;
@@ -240,6 +287,19 @@
 	.label {
 		min-width: 0;
 		overflow-wrap: anywhere;
+	}
+	.lead {
+		display: flex;
+		flex: none;
+		align-items: center;
+	}
+	.label.custom {
+		display: flex;
+		flex: 1;
+		align-items: center;
+		color: var(--on-surface);
+		font-size: 1rem;
+		font-weight: 400;
 	}
 	.aside {
 		display: flex;

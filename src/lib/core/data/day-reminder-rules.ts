@@ -29,7 +29,9 @@
  *   matches any Demon's id). An unknown cause counts as a match, flagged `uncertain`.
  *   The app does not track day or night, so nothing here depends on the day number.
  * - `minAlive`: only while at least this many players are alive;
- * - `targetAlive`: with `reminder`, only while the player carrying the token is alive.
+ * - `targetAlive`: with `reminder`, only while the player carrying the token is alive;
+ * - `nomineeChose: true`: one reminder per nomination today whose nominee chose a player
+ *   (the Big Wig's speaker, recorded on the nomination).
  *
  * Text here is our own summary, never wiki prose.
  */
@@ -65,7 +67,11 @@ export const DAY_GROUP_TITLES: Record<DayGroup, string> = {
 };
 
 export type TemplateSegment =
-	{ self: true } | { target: true } | { text: string } | { value: string; placeholder: string };
+	| { self: true }
+	| { target: true }
+	| { nominee: true }
+	| { text: string }
+	| { value: string; placeholder: string };
 
 /** How a death is matched: a cause the app records, or a character id. */
 export type DeathCauseMatch = 'execution' | 'exile' | 'demon' | 'other' | CharacterId;
@@ -80,6 +86,8 @@ export interface DayCondition {
 	minAlive?: number;
 	/** With `reminder`: only while the player carrying it is alive. */
 	targetAlive?: boolean;
+	/** One reminder per nomination today whose nominee chose a player. */
+	nomineeChose?: true;
 }
 
 export interface DayReminderSpec {
@@ -112,11 +120,16 @@ function readSegment(raw: unknown, path: string, issues: Issues): TemplateSegmen
 		issues.add(path, `expected object, got ${describe(raw)}`);
 		return undefined;
 	}
-	if (raw.self !== undefined || raw.target !== undefined) {
-		const key = raw.self !== undefined ? 'self' : 'target';
-		checkKeys(raw, [key], path, issues);
-		if (raw[key] !== true) issues.add(`${path}.${key}`, 'expected true');
-		return raw[key] !== true ? undefined : key === 'self' ? { self: true } : { target: true };
+	const flag = (['self', 'target', 'nominee'] as const).find((k) => raw[k] !== undefined);
+	if (flag) {
+		checkKeys(raw, [flag], path, issues);
+		if (raw[flag] !== true) issues.add(`${path}.${flag}`, 'expected true');
+		if (raw[flag] !== true) return undefined;
+		return flag === 'self'
+			? { self: true }
+			: flag === 'target'
+				? { target: true }
+				: { nominee: true };
 	}
 	if (raw.value !== undefined) {
 		checkKeys(raw, ['value', 'placeholder'], path, issues);
@@ -141,7 +154,7 @@ function readCondition(
 	}
 	checkKeys(
 		raw,
-		['self', 'reminder', 'noReminder', 'cause', 'minAlive', 'targetAlive'],
+		['self', 'reminder', 'noReminder', 'cause', 'minAlive', 'targetAlive', 'nomineeChose'],
 		path,
 		issues
 	);
@@ -166,6 +179,12 @@ function readCondition(
 	if (minAlive !== undefined) out.minAlive = minAlive;
 	const targetAlive = readBoolean(raw, 'targetAlive', path, issues);
 	if (targetAlive !== undefined) out.targetAlive = targetAlive;
+	const nomineeChose = readBoolean(raw, 'nomineeChose', path, issues);
+	if (nomineeChose === false) issues.add(`${path}.nomineeChose`, 'expected true, or leave it out');
+	if (nomineeChose) out.nomineeChose = true;
+	if (out.reminder && out.nomineeChose) {
+		issues.add(`${path}.nomineeChose`, 'a reminder or nomineeChose, not both');
+	}
 	return out;
 }
 
@@ -190,8 +209,11 @@ function readSpec(
 	}
 	const when =
 		raw.when === undefined ? undefined : readCondition(raw.when, `${path}.when`, issues, reminders);
-	if (template?.some((p) => 'target' in p) && !when?.reminder) {
+	if (template?.some((p) => 'target' in p) && !when?.reminder && !when?.nomineeChose) {
 		issues.add(`${path}.when.reminder`, 'a target segment needs the reminder that marks them');
+	}
+	if (template?.some((p) => 'nominee' in p) && !when?.nomineeChose) {
+		issues.add(`${path}.when.nomineeChose`, 'a nominee segment needs nomineeChose');
 	}
 	if (!group || !template) return undefined;
 	return { group, template, ...(when ? { when } : {}) };

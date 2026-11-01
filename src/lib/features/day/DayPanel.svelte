@@ -305,12 +305,13 @@
 		return rows;
 	});
 	// ── Breaking madness (L84) ──
-	/** A madness row's offer for its mad player: the last player the row names. */
+	/** A madness row's offer for its mad player: its target, else the last player it names. */
 	function madnessOf(reminder: DayReminder): MadnessOffer | undefined {
 		if (reminder.group !== 'madness' || !reminder.characterId) return undefined;
-		let seatId: SeatId | undefined;
-		for (const segment of reminder.segments)
-			if (segment.kind === 'character' && segment.ref.seatId) seatId = segment.ref.seatId;
+		let seatId: SeatId | undefined = reminder.target;
+		if (!seatId)
+			for (const segment of reminder.segments)
+				if (segment.kind === 'character' && segment.ref.seatId) seatId = segment.ref.seatId;
 		return seatId ? madnessOffer(g, reminder.characterId, seatId, game.characters) : undefined;
 	}
 	let madnessOpen = $state(false);

@@ -434,6 +434,105 @@ test('the Storyteller invites a friend, who joins from Friends', async ({ browse
 	await expect(bob.page.getByTestId('friend-invites-none')).toBeVisible();
 });
 
+test("friends see each other's presence, and join a game its Storyteller opened to friends", async ({
+	browser
+}) => {
+	// Plan F5 (Trevor approved presence with a switch, and joining without an invite only when
+	// the Storyteller allows it per room, 2026-10-28).
+	test.slow();
+	const ann = await signedIn(browser, 'ann');
+	const bob = await signedIn(browser, 'bob');
+	await befriend(ann, bob);
+	const annRow = bob.page.getByTestId('friend-list').getByRole('listitem');
+	await expect(annRow.getByTestId('friend-presence')).toHaveText('Last seen this hour');
+
+	const { code } = await liveRoom(ann.page);
+	await expect(async () => {
+		await bob.page.reload();
+		await expect(annRow.getByTestId('friend-presence')).toHaveText('In a game', {
+			timeout: 2000
+		});
+	}).toPass();
+	await expect(annRow.getByRole('link', { name: 'Join' })).toHaveCount(0);
+
+	// Ann opens her room to friends; Bob's row offers Join.
+	await ann.page.getByText('Friends can join without an invite', { exact: true }).tap();
+	await expect(async () => {
+		await bob.page.reload();
+		await expect(annRow.getByRole('link', { name: 'Join' })).toBeVisible({ timeout: 2000 });
+	}).toPass();
+	await annRow.getByRole('link', { name: 'Join' }).tap();
+	await expect(bob.page).toHaveURL(new RegExp(`/join#${code}$`));
+	await expect(bob.page.getByTestId('room-preview')).toContainText('Trouble Brewing');
+
+	// Ann hides her presence: Bob sees none of it.
+	await ann.page.goto('/friends');
+	await ann.page.getByText('Let friends see when I’m on', { exact: true }).tap();
+	await bob.page.goto('/friends');
+	await expect(annRow).toContainText(ann.username);
+	await expect(annRow.getByTestId('friend-presence')).toHaveCount(0);
+	await expect(annRow.getByRole('link', { name: 'Join' })).toHaveCount(0);
+});
+
+// Trevor, 2026-10-31: several groups, each with a join code, for a board game cafe; members
+// look at the group when a game starts, and nobody is sent anything (plan F6).
+test('a group by join code shows the games its Storytellers put in it', async ({ browser }) => {
+	test.slow();
+	const ann = await signedIn(browser, 'ann');
+	const bob = await signedIn(browser, 'bob');
+
+	// Ann starts the group; its sheet opens with the code to share.
+	await ann.page.goto('/friends');
+	await ann.page.getByRole('button', { name: 'Add a group' }).tap();
+	await ann.page.getByRole('menuitem', { name: 'New group' }).tap();
+	const form = ann.page.getByRole('dialog', { name: 'New group' });
+	await form.getByLabel('Name').fill('Board Game Cafe');
+	await form.getByRole('button', { name: 'Create' }).tap();
+	const annSheet = ann.page.getByRole('dialog', { name: 'Board Game Cafe' });
+	const shown = annSheet.getByTestId('share-code');
+	await expect(shown).toHaveText(/^[A-Z2-9]{4}-[A-Z2-9]{4}$/);
+	const code = (await shown.textContent())!;
+	await annSheet.getByRole('button', { name: 'Close' }).tap();
+
+	// Bob joins with the code, typed in lower case.
+	await bob.page.goto('/friends');
+	await bob.page.getByRole('button', { name: 'Add a group' }).tap();
+	await bob.page.getByRole('menuitem', { name: 'Join a group' }).tap();
+	const join = bob.page.getByRole('dialog', { name: 'Join a group' });
+	await join.getByLabel('Join code').fill(code.toLowerCase());
+	await join.getByRole('button', { name: 'Join' }).tap();
+	const bobSheet = bob.page.getByRole('dialog', { name: 'Board Game Cafe' });
+	await expect(bobSheet.getByTestId('group-games-none')).toBeVisible();
+	await expect(bobSheet).toContainText('Members: 2');
+	await bobSheet.getByRole('button', { name: 'Close' }).tap();
+	const bobRow = bob.page.getByTestId('friend-groups').getByRole('listitem');
+	await expect(bobRow).toContainText('Games now: 0');
+
+	// Ann's game shows in the group only once she turns it on.
+	const { code: room } = await liveRoom(ann.page);
+	await ann.page.getByText('Show in Board Game Cafe', { exact: true }).tap();
+	await expect(ann.page.getByRole('checkbox', { name: 'Show in Board Game Cafe' })).toBeChecked();
+	await expect(async () => {
+		await bob.page.reload();
+		await expect(bobRow).toContainText('Games now: 1', { timeout: 2000 });
+	}).toPass();
+	await bobRow.getByRole('button', { name: 'Open' }).tap();
+	const game = bobSheet.getByTestId('group-games').getByRole('listitem');
+	await expect(game).toContainText(`Storyteller: ${ann.username}`);
+	await game.getByRole('link', { name: 'Join' }).tap();
+	await expect(bob.page).toHaveURL(new RegExp(`/join#${room}$`));
+
+	// Ann sees the members and removes Bob, whose list then has no group.
+	await ann.page.goto('/friends');
+	await ann.page.getByTestId('friend-groups').getByRole('button', { name: 'Open' }).tap();
+	const members = annSheet.getByTestId('group-members').getByRole('listitem');
+	await expect(members).toHaveCount(2);
+	await annSheet.getByRole('button', { name: `Remove ${bob.username} from the group` }).tap();
+	await expect(members).toHaveCount(1);
+	await bob.page.goto('/friends');
+	await expect(bob.page.getByTestId('friend-groups-none')).toBeVisible();
+});
+
 /** Ann asks Bob by username and Bob accepts. */
 async function befriend(ann: { page: Page }, bob: { page: Page; username: string }) {
 	await ann.page.goto('/friends');

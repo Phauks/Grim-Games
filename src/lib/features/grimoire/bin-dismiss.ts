@@ -1,5 +1,5 @@
 /**
- * When a pulled-up reminder bin (the Storyteller's bank, a player's bin sheet) closes by
+ * When a pulled-up reminder tray (ReminderTray) closes by
  * itself: a press outside it, or Escape.
  */
 

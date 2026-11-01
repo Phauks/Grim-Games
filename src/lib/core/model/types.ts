@@ -153,6 +153,13 @@ export interface Seat {
 	 */
 	alignment?: Alignment;
 	dead: boolean;
+	/**
+	 * At the table but not in play yet (Trevor, 2026-10-31): a Traveller who arrives mid-game
+	 * sits down before the night they join at. Such a seat counts for nothing (votes, the alive
+	 * count, nominations, the game's end) until it comes into play, by hand or when the next
+	 * night starts. Absent once in play.
+	 */
+	notInPlay?: true;
 	/** How the player died, if the Storyteller recorded it. Only set while `dead`. */
 	deathCause?: DeathCause;
 	/** True once a dead player has used their vote. */
@@ -242,7 +249,8 @@ export interface CharacterGuess {
  * One thing the Storyteller logged since the last "New day" (Trevor, 2026-10-15: the log is
  * cleared by hand, never by the night order, because the app does not track day or night):
  * - `nomination`: who nominated whom. Votes are not tracked; a player-facing vote tracker
- *   comes later.
+ *   comes later. `chosen`: the player the nominee chose because a character in play says so
+ *   (the Big Wig's speaker, https://wiki.bloodontheclocktower.com/Big_Wig).
  * - `execution`: the player was executed (and marked dead by execution if they were alive).
  * - `exile`: a Traveller was exiled (and marked dead by exile if alive). Exile is not an
  *   execution: abilities about executions ignore it
@@ -255,7 +263,13 @@ export interface CharacterGuess {
  *   whether it worked abnormally (for the Mathematician).
  */
 export type DayEntry =
-	| { kind: 'nomination'; entryId: DayEntryId; nominator: SeatId; nominee: SeatId }
+	| {
+			kind: 'nomination';
+			entryId: DayEntryId;
+			nominator: SeatId;
+			nominee: SeatId;
+			chosen?: SeatId;
+	  }
 	| {
 			kind: 'execution';
 			entryId: DayEntryId;
