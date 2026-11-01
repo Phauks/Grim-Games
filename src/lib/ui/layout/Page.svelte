@@ -3,6 +3,7 @@
 	import PageMenuButton from '#lib/features/shell/PageMenuButton.svelte';
 	import { navDrawer } from '#lib/features/shell/nav-drawer.svelte.ts';
 	import { fitWords } from '#lib/ui/fit-words.ts';
+	import { oneRow } from '#lib/ui/one-row.ts';
 
 	interface Props {
 		/** The page's one `<h1>`; every page has one, so screen readers can find it. */
@@ -24,6 +25,11 @@
 		 * top of player view, still in header area, but lower").
 		 */
 		titleBelow?: boolean;
+		/**
+		 * With `titleBelow`: how many buttons the title's row keeps room for, shown or not, so a
+		 * button that appears later never moves the title (oneRow).
+		 */
+		actionSlots?: number;
 		/** One muted line under the title (an author, a date, the script in play). */
 		subtitle?: Snippet;
 		/** One row under the title for search, filters and view switches. */
@@ -51,6 +57,7 @@
 		actions,
 		iconActions = false,
 		titleBelow = false,
+		actionSlots,
 		subtitle,
 		toolbar,
 		side,
@@ -62,6 +69,7 @@
 	// Before the title: the page's own `start`, else the hamburger while no sidebar shows
 	// (phones, tablets, a closed sidebar), since there is no app header (2026-10-22).
 	const showMenu = $derived(navDrawer.pageButton);
+	let row = $state<HTMLElement>();
 </script>
 
 <!--
@@ -76,38 +84,46 @@
 		{#if lead}{@render lead()}{/if}<span class="title-text" {@attach fitWords(title)}>{title}</span>
 	</h1>
 {/snippet}
-<!-- `titleBelow`: the byline goes with the title, so on a wide page both sit beside the
-     actions (Trevor, 2026-10-31). -->
-{#snippet titles()}
-	{#if titleBelow && subtitle}
-		<div class="titles">
-			{@render heading()}
-			<p class="subtitle">{@render subtitle()}</p>
-		</div>
-	{:else}
-		{@render heading()}
-	{/if}
-{/snippet}
-
 <main class="page">
 	<PageMenuButton />
 	<header class="head" class:visually-hidden={hideTitle}>
-		<div
-			class="title-row"
-			data-icon-actions={iconActions ? '' : undefined}
-			data-title-below={titleBelow ? '' : undefined}
-		>
-			{#if showMenu && !hideTitle}
-				<div class="start">
-					<span class="menu-room" aria-hidden="true"></span>
-					{@render titles()}
-				</div>
-			{:else}
-				{@render titles()}
-			{/if}
-			{#if actions}<div class="actions" data-testid="page-actions">{@render actions()}</div>{/if}
-		</div>
-		{#if subtitle && !titleBelow}<p class="subtitle">{@render subtitle()}</p>{/if}
+		{#if titleBelow}
+			<!-- The title on the buttons' row when it fits there at full size, else under them
+			     (Trevor, 2026-11-01); the byline under both, across the page. -->
+			<div
+				class="title-row"
+				data-title-below=""
+				bind:this={row}
+				{@attach oneRow(
+					{
+						title: () => row?.querySelector('h1'),
+						actions: () => row?.querySelector('.actions'),
+						others: () => [row?.querySelector('.menu-room')],
+						slots: actionSlots
+					},
+					title,
+					showMenu
+				)}
+			>
+				{#if showMenu && !hideTitle}<span class="menu-room" aria-hidden="true"></span>{/if}
+				{@render heading()}
+				{#if actions}<div class="actions" data-testid="page-actions">{@render actions()}</div>{/if}
+				{#if subtitle}<p class="subtitle">{@render subtitle()}</p>{/if}
+			</div>
+		{:else}
+			<div class="title-row" data-icon-actions={iconActions ? '' : undefined}>
+				{#if showMenu && !hideTitle}
+					<div class="start">
+						<span class="menu-room" aria-hidden="true"></span>
+						{@render heading()}
+					</div>
+				{:else}
+					{@render heading()}
+				{/if}
+				{#if actions}<div class="actions" data-testid="page-actions">{@render actions()}</div>{/if}
+			</div>
+			{#if subtitle}<p class="subtitle">{@render subtitle()}</p>{/if}
+		{/if}
 	</header>
 	{#if toolbar}<div class="toolbar">{@render toolbar()}</div>{/if}
 	{#if side}
@@ -188,19 +204,6 @@
 		flex-wrap: nowrap;
 		justify-content: flex-end;
 	}
-	/* The actions alone on the first row, level with the hamburger; the title under them,
-	   from the page's edge. */
-	.title-row[data-title-below] {
-		grid-template-columns: minmax(0, 1fr);
-	}
-	.title-row[data-title-below] .actions {
-		order: -1;
-		min-height: var(--tap-target);
-		justify-content: flex-end;
-	}
-	.title-row[data-title-below] .menu-room {
-		display: none;
-	}
 	/* Wider pages: the actions sit at the end of the title's row; the title keeps 20u at least. */
 	@container page-head (min-width: 36rem) {
 		.title-row {
@@ -211,24 +214,56 @@
 		.actions {
 			justify-content: flex-end;
 		}
-		/* The title and byline at the start of the row, the actions at its end, level with the
-		   title (Trevor, 2026-10-31: "on desktop and larger screens, we have some leftover
-		   space"). The title clears the hamburger again. */
-		.title-row[data-title-below] {
-			grid-template-columns: minmax(calc(20 * var(--u)), 1fr) minmax(0, auto);
-			align-items: start;
-		}
-		.title-row[data-title-below] .actions {
-			order: 0;
-		}
-		.title-row[data-title-below] .menu-room {
-			display: block;
-		}
 	}
-	.titles {
-		display: grid;
-		gap: var(--space-1);
-		min-width: 0;
+	/*
+	 * `titleBelow`: the buttons alone on the first row, level with the hamburger, with the title
+	 * under them from the page's edge; or, when the title fits beside them at its full size,
+	 * the title on that row too (oneRow sets data-one-row; Trevor, 2026-11-01). The byline under
+	 * both, across the page.
+	 */
+	.title-row[data-title-below] {
+		grid-template-columns: minmax(0, 1fr) auto;
+		grid-template-areas:
+			'. actions'
+			'title title'
+			'sub sub';
+		align-items: center;
+		row-gap: var(--space-1);
+		column-gap: var(--space-3);
+	}
+	.title-row[data-title-below]:global([data-one-row]) {
+		grid-template-areas:
+			'title actions'
+			'sub sub';
+	}
+	/* Room for the hamburger before the title, when the title shares the buttons' row. Without
+	   it the buttons have the whole first row, the hamburger floating over its empty start. */
+	.title-row[data-title-below] > .menu-room {
+		display: none;
+	}
+	.title-row[data-title-below]:global([data-one-row]) > .menu-room {
+		display: block;
+	}
+	.title-row[data-title-below]:global([data-one-row]):has(> .menu-room) {
+		grid-template-columns: auto minmax(0, 1fr) auto;
+		grid-template-areas:
+			'room title actions'
+			'sub sub sub';
+	}
+	.title-row[data-title-below] > .menu-room {
+		grid-area: room;
+	}
+	.title-row[data-title-below] > h1 {
+		grid-area: title;
+	}
+	.title-row[data-title-below] > .actions {
+		grid-area: actions;
+		flex-wrap: nowrap;
+		justify-content: flex-end;
+		min-height: var(--tap-target);
+	}
+	.title-row[data-title-below] > .subtitle {
+		grid-area: sub;
 	}
 	.subtitle {
 		margin: 0;

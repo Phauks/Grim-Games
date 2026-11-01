@@ -2,7 +2,8 @@
 	import { STANDARD_INFO_TOKENS, type CharacterId } from '#lib/core/data/index.ts';
 	import { scriptCharacterIds } from '#lib/core/model/index.ts';
 	import type { NightStep } from '#lib/core/rules/index.ts';
-	import { evilLearns, shownToSeats } from '#lib/core/rules/index.ts';
+	import { rulesOf } from '#lib/core/data/rules/index.ts';
+	import { evilLearns, prepValueKey, shownToSeats } from '#lib/core/rules/index.ts';
 	import { charactersReallyInPlay } from '#lib/features/bluffs/bluffs.ts';
 	import type { ShownInfoCard } from '#lib/features/show/shown.ts';
 	import Select from '#lib/ui/primitives/Select.svelte';
@@ -20,7 +21,9 @@
 	 *
 	 * Also what each evil player learns (`evilLearns`: the Storm Catcher's Stormcaught): "This
 	 * player is" with the marked player's character, pointing at them; with no one marked,
-	 * "These characters are not in play" with the good character the Storyteller named.
+	 * "These characters are not in play" with the good character the Storyteller named, saved
+	 * with the game as its prep value (`evilLearns.named`), so it is the same one in the pre-day
+	 * reminder and after a reload.
 	 */
 	interface Props {
 		grimoire: Grimoire;
@@ -42,7 +45,15 @@
 	);
 	const text = (id: string) => STANDARD_INFO_TOKENS.find((token) => token.id === id)?.text ?? '';
 	/** With no one marked: the good character named, from the script's not in play. */
-	let named = $state<CharacterId>();
+	const named = $derived(learns?.named);
+	const namedKey = $derived.by(() => {
+		const id = step.character?.id;
+		const key = id && rulesOf(id, characters)?.evilLearns?.named;
+		return id && key ? prepValueKey(id, key) : undefined;
+	});
+	function setNamed(value: CharacterId | undefined) {
+		if (namedKey) grimoire.run({ type: 'SetPrepValue', key: namedKey, value });
+	}
 	const notInPlay = $derived.by(() => {
 		const inPlay = charactersReallyInPlay(game, characters);
 		return scriptCharacterIds(game.script).filter((id) => {
@@ -109,8 +120,8 @@
 						// eslint-disable-next-line grim/names-as-badges -- the option's accessible name and typeahead text; it shows as the badge (the item snippet)
 						label: characters.get(id)?.name ?? id
 					}))}
-					onChange={(id) => (named = id)}
-					onClear={() => (named = undefined)}
+					onChange={(id) => setNamed(id)}
+					onClear={() => setNamed(undefined)}
 				>
 					{#snippet item(option)}<CharacterBadge
 							characterId={option.value}

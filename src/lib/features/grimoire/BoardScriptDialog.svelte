@@ -78,6 +78,7 @@
 	title={game.script.meta?.name || 'Script'}
 	size="max"
 	titleBelow
+	actionSlots={5}
 	lead={logo ? logoLead : undefined}
 >
 	{#snippet headActions()}
