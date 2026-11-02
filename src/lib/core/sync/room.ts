@@ -249,8 +249,9 @@ export function hostView(room: RoomState, present?: ReadonlySet<string>): HostVi
 	const travellers = travellerPickHostView(room);
 	if (travellers) view.travellerPick = travellers;
 	if (room.transfer) {
-		const { endsAt, tries, asking } = room.transfer;
+		const { endsAt, tries, asking, offeredTo } = room.transfer;
 		view.transfer = { endsAt, tries };
+		if (offeredTo) view.transfer.offered = offeredTo;
 		if (asking) {
 			const check = transferCheck(asking.keyHash);
 			view.transfer.asking = asking.name ? { name: asking.name, check } : { check };
