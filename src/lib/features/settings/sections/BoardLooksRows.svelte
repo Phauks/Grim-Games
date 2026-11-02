@@ -18,7 +18,7 @@
 	 * Settings), the same store as the board's Background dialog, so both change one value.
 	 */
 
-	// Moving backgrounds (plan L113) acts only on a moving background, and never while the
+	// Moving backgrounds (plan L114) acts only on a moving background, and never while the
 	// device asks for less motion: disabled then, as the preview beside it can't change.
 	const reduceMotion = new MediaQuery('(prefers-reduced-motion: reduce)');
 	const background = $derived(boardBackground.context?.current ?? defaultBackground.current);

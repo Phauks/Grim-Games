@@ -1,5 +1,5 @@
 /**
- * Shapes the CSS scenes share (moving backgrounds, plan L113): a fixed scatter, so every
+ * Shapes the CSS scenes share (moving backgrounds, plan L114): a fixed scatter, so every
  * render and every screenshot is the same, and silhouettes drawn as SVG paths.
  */
 

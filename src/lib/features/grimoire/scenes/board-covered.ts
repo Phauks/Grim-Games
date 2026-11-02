@@ -1,5 +1,5 @@
 /**
- * Whether a sheet or dialog is open over the board (moving backgrounds, plan L113). The board
+ * Whether a sheet or dialog is open over the board (moving backgrounds, plan L114). The board
  * blurs behind every one (board-cover.ts), so a full-screen scene rests until it closes. The
  * same test is in SceneLayer.svelte's CSS, for the CSS scenes.
  */
