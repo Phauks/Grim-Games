@@ -6,7 +6,7 @@
 	import { afterDawn, dayNumber, preventedDeaths, type Night } from '#lib/core/rules/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
-	import CharacterEntry from '#lib/features/characters/CharacterEntry.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import Sentence from '#lib/features/characters/Sentence.svelte';
 	import { slot } from '#lib/features/characters/slots.ts';
@@ -178,7 +178,8 @@
 		{/if}
 		{#each announcers as a (a.character.id)}
 			<li data-character={a.character.id}>
-				<CharacterEntry
+				<CharacterPiece
+					template="entry"
 					characterId={a.character.id}
 					alignment={g.seats[a.seatId].alignment}
 					playerName={game.seatName(a.seatId)}
@@ -186,7 +187,7 @@
 					<span class="sentence"
 						><NightText text={a.text} character={a.character} night={a.night} /></span
 					>
-				</CharacterEntry>
+				</CharacterPiece>
 			</li>
 		{/each}
 		{#if died.length === 0 && !dawned && revived.length === 0 && announcers.length === 0}

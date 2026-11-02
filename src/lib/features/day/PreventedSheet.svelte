@@ -5,7 +5,7 @@
 	import type { PreventedBecause, PreventedDeath } from '#lib/core/rules/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
-	import CharacterEntry from '#lib/features/characters/CharacterEntry.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import type { DayPort } from './day-port.ts';
 
@@ -47,7 +47,8 @@
 			{@const target = g.seats[p.seatId]}
 			<li>
 				<!-- Laid out like a jinx, as every row of the day (Trevor, 2026-10-18). -->
-				<CharacterEntry
+				<CharacterPiece
+					template="entry"
 					characterId={p.killer}
 					alignment={p.killerSeats[0] ? g.seats[p.killerSeats[0]].alignment : undefined}
 					playerName={p.killerSeats[0] ? game.seatName(p.killerSeats[0]) : undefined}
@@ -71,20 +72,21 @@
 							{/if}
 							{#each blockers(because) as b (b.characterId)}
 								<li data-character={b.characterId}>
-									<CharacterEntry
+									<CharacterPiece
+										template="entry"
 										characterId={b.characterId}
 										alignment={b.seatId ? g.seats[b.seatId].alignment : undefined}
 										playerName={b.seatId ? game.seatName(b.seatId) : undefined}
 									>
 										{@render ability(b.characterId)}
-									</CharacterEntry>
+									</CharacterPiece>
 								</li>
 							{/each}
 						{:else}
 							<li>{t('day.preventedNoReason')}</li>
 						{/each}
 					</ul>
-				</CharacterEntry>
+				</CharacterPiece>
 			</li>
 		{/each}
 	</ul>

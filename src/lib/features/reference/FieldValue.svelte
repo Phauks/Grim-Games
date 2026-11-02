@@ -21,7 +21,7 @@
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterDialog from '#lib/features/characters/CharacterDialog.svelte';
 	import { prefetchWikiPage } from '#lib/features/characters/wiki-page.svelte.ts';
-	import CharacterEntry from '#lib/features/characters/CharacterEntry.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { slot } from '#lib/features/characters/slots.ts';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
@@ -251,8 +251,8 @@
 					{#each entry.jinxes as jinx (jinx.with)}
 						<!-- The text-size badge as a bar across, the jinx indented under it (Trevor, 2026-10-16). -->
 						<li class="jinx">
-							<CharacterEntry characterId={jinx.with}
-								><span class="small"><GlossaryText text={jinx.reason} /></span></CharacterEntry
+							<CharacterPiece template="entry" characterId={jinx.with}
+								><span class="small"><GlossaryText text={jinx.reason} /></span></CharacterPiece
 							>
 						</li>
 					{/each}
