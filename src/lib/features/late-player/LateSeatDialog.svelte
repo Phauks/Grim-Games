@@ -25,7 +25,6 @@
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import { seatName } from '#lib/features/game/seat-label.ts';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
-	import Button from '#lib/ui/primitives/Button.svelte';
 	import ChangeList from '#lib/ui/primitives/ChangeList.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -308,7 +307,17 @@
 	{#snippet aside()}
 		<div class="late" data-testid="late-seat">
 			<section>
-				<h3>{t('late-player.who')}</h3>
+				<!-- Add another sits by the heading, as Fabled and Loric's add does by theirs, so
+				     it never wraps in the narrow column (Trevor, 2026-11-01). -->
+				<div class="heading">
+					<h3>{t('late-player.who')}</h3>
+					<IconButton
+						icon="latePlayer"
+						label={t('late-player.addAnother')}
+						onclick={onAddAnother}
+						data-testid="late-add-another"
+					/>
+				</div>
 				<ul class="players">
 					{#each players as player, i (player.key)}
 						<li data-testid="late-player-row">
@@ -337,9 +346,6 @@
 						</li>
 					{/each}
 				</ul>
-				<Button icon="latePlayer" onclick={onAddAnother} data-testid="late-add-another"
-					>{t('late-player.addAnother')}</Button
-				>
 			</section>
 
 			<!-- Character selection's own player count and setup sheet (Trevor, 2026-10-31): a
@@ -553,6 +559,12 @@
 	section {
 		display: flex;
 		flex-direction: column;
+		gap: var(--space-2);
+	}
+	.heading {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
 		gap: var(--space-2);
 	}
 	h3 {

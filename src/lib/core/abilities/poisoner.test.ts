@@ -103,9 +103,8 @@ describe('Poisoner', () => {
 			const saint = s.poisoned('saint').execute('saint');
 			expect(promptable(gameEnds(saint.game, saint.characters))).toEqual([]);
 		});
-		it.fails('Example 5: Mayor is cured once Poisoner becomes Imp', () => {
-			// With no Poisoner left in play, the poison ends. Waits on the engine: a Poisoned
-			// token whose character nobody has any more is kept, in case a gained ability left it.
+		it('Example 5: Mayor is cured once Poisoner becomes Imp', () => {
+			// With no Poisoner left in play, the poison ends.
 			const s = scenario(['mayor', 'poisoner', 'imp', 'chef', 'monk']).poisoned('mayor');
 			expect(abilityState(s.game, s.seat('mayor'), s.characters).works).toBe(false);
 			const after = s.dies('imp', 'imp').becomes('poisoner', 'imp');

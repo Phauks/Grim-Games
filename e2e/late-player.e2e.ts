@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { pickScript } from './new-game.ts';
 import { openProfile, setPlayerName } from './player-name.ts';
 import { pickNumber } from './number-select.ts';
+import { clippedBands } from './type-bands.ts';
 
 // Add late player (Trevor, 2026-10-30): someone arrives after the tiles are dealt and joins as
 // one more player instead of a Traveller. Roll suggests who changes; the Storyteller confirms.
@@ -35,6 +36,9 @@ test('Add late player seats late players where tapped and makes room in the bag'
 	const sheet = page.getByRole('dialog', { name: 'Add late player' });
 	await expect(sheet.getByTestId('late-player-row')).toHaveCount(1);
 	await expect(sheet.getByTestId('late-player-row')).toContainText('Seat not chosen yet');
+	// Every character type's band is drawn whole (Trevor, 2026-11-01: a cut-off pill).
+	await expect(sheet.getByRole('button', { name: 'Townsfolk', exact: true })).toBeVisible();
+	expect(await clippedBands(page)).toEqual([]);
 	await sheet.getByRole('combobox', { name: 'Name' }).fill('Max');
 	await sheet.getByTestId('late-place').tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
