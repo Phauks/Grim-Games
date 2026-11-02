@@ -7,6 +7,7 @@ import {
 	scriptCharacterIds,
 	typeOf
 } from '#lib/core/model/index.ts';
+import { abilityState } from '#lib/core/rules/ability.ts';
 import { cantTurnGood } from '#lib/core/rules/becomes.ts';
 import { barredAbilities, givenInstead } from '#lib/core/rules/jinxes.ts';
 import { tallyKiller, tallyKills } from '#lib/core/rules/day-tally.ts';
@@ -273,6 +274,10 @@ export const CHARACTERS_DECIDERS: Deciders<
 		}
 		const death: GameEvent = { type: 'DeathSet', seatId: seat.seatId, dead: command.dead };
 		if (command.dead && cause !== undefined) death.cause = cause;
+		// A drunk or poisoned player's ability that acts on dying gives nothing (`afterDeath`).
+		if (command.dead && !abilityState(game, seat.seatId, ctx.characters).works) {
+			death.impaired = true;
+		}
 		const events: GameEvent[] = [death];
 		if (command.dead) events.push(...tallyDeath(game, seat.seatId, cause, ctx, warn));
 		// A player who comes back to life has their vote again.
