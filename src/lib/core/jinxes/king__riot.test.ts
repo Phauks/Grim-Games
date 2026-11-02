@@ -10,8 +10,17 @@
  * of the two may be in play). Paraphrase, never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
-import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
+import { findJinx, jinxesAmong, type Script } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import type { Command } from '#lib/core/engine/index.ts';
+import { castWith, type CastGame } from '#lib/core/model/fixtures.test-support.ts';
+import { ownJinxRules } from '#lib/core/rules/jinxes.ts';
+import { wakeConditionMet } from '#lib/core/rules/wakes-when.ts';
+
+const scriptOf = (ids: string[]): Script => ({
+	meta: { name: 'Jinxed' },
+	entries: ids.map((id) => ({ kind: 'official' as const, id }))
+});
 
 describe('King + Riot jinx', () => {
 	const data = committedGameData();
@@ -30,5 +39,35 @@ describe('King + Riot jinx', () => {
 		expect(jinxesAmong(data.jinxes, ['riot'])).not.toContain(jinx);
 	});
 
-	it.todo('enforces the rule the jinx imposes');
+	// Both pages' Related Jinxes: while Riot is in play, the King learns an alive character
+	// each night once anyone is dead, not only once the dead equal or outnumber the living.
+	describe('the King wakes once a player is dead', () => {
+		const ids = ['riot', 'king', 'chef', 'empath', 'poisoner', 'washerwoman', 'imp'];
+		const cast = castWith({ script: scriptOf(ids) });
+		const players = ['riot', 'king', 'chef', 'empath', 'poisoner', 'washerwoman', 'butler'];
+		const dies = (s: string[]): Command => ({
+			type: 'SetDead',
+			seatId: s[2],
+			dead: true,
+			cause: 'demon'
+		});
+		const wakes = (game: CastGame['game'], ctx: CastGame['ctx'], king: string) =>
+			wakeConditionMet(game, 'king', king, ctx.characters, new Set());
+
+		it("is data in the King's rules", () => {
+			expect(ownJinxRules({ script: scriptOf(ids) }, 'king', 'riot')).toEqual({ deadAtLeast: 1 });
+		});
+
+		it('wakes with one player dead while Riot is in play', () => {
+			const none = cast(players);
+			expect(wakes(none.game, none.ctx, none.seats[1])).toBe(false);
+			const { game, ctx, seats } = cast(players, dies);
+			expect(wakes(game, ctx, seats[1])).toBe(true);
+		});
+
+		it('waits for the dead to equal the living when Riot is not in play', () => {
+			const { game, ctx, seats } = cast(['imp', ...players.slice(1)], dies);
+			expect(wakes(game, ctx, seats[1])).toBe(false);
+		});
+	});
 });

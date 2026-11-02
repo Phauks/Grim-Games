@@ -2,7 +2,8 @@
 	import { seatName } from '#lib/features/game/seat-label.ts';
 	import AlignmentPill from './AlignmentPill.svelte';
 	import { untrack } from 'svelte';
-	import type { Alignment, CharacterId } from '#lib/core/data/index.ts';
+	import { findJinx, type Alignment, type CharacterId } from '#lib/core/data/index.ts';
+	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { trueCharacter, type SeatId } from '#lib/core/model/index.ts';
 	import {
 		gameEnds,
@@ -133,6 +134,17 @@
 	{#if c}<span class="ability"><GlossaryText text={c.ability} names={[c.name]} /></span>{/if}
 {/snippet}
 
+<!-- An end a jinx gives (the Leviathan's with the Soldier): the jinx's own TPI text. -->
+{#snippet jinx(a: CharacterId, b: CharacterId)}
+	{@const found = officialData.current && findJinx(officialData.current.jinxes, a, b)}
+	{#if found}<span class="ability" data-testid="end-jinx"
+			><GlossaryText
+				text={found.reason}
+				names={[characters.get(a)?.name ?? a, characters.get(b)?.name ?? b]}
+			/></span
+		>{:else}{@render ability(a)}{/if}
+{/snippet}
+
 {#snippet hold(h: GameHold)}
 	<li class="hold" data-rule={h.rule}>
 		<span class="text">
@@ -177,7 +189,8 @@
 				<span class="text">
 					{#if !OWN_WORDING}
 						{#each end.seats as id (id)}{@render seat(id)}{/each}
-						{#if end.characterId}{@render ability(end.characterId)}{/if}
+						{#if end.characterId && end.jinxedWith}{@render jinx(end.characterId, end.jinxedWith)}
+						{:else if end.characterId}{@render ability(end.characterId)}{/if}
 						{#if end.ruleName}<span class="rule">{end.ruleName}</span>{/if}
 					{:else if end.rule === 'demon-dead'}
 						{#each end.seats as id (id)}{@render seat(id)}{/each} dead.
