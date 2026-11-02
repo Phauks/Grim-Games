@@ -135,3 +135,73 @@ test("the Goon's Drunk on an evil player offers to make the Goon evil", async ({
 	await closeBin(page);
 	await expect(await openSeat(page, 1)).toContainText(/Outsider · Evil · Seat 1[\s\S]*Goon/);
 });
+
+async function walkTo(page: Page, title: string) {
+	const strip = page.getByTestId('night-strip');
+	await expect(page.getByRole('list', { name: 'Reminder bank' })).toBeVisible();
+	if (!(await strip.isVisible())) {
+		await page
+			.getByRole('list', { name: 'Reminder bank' })
+			.locator('..')
+			.getByRole('button', { name: /^(Start game|Run Night Order)$/ })
+			.tap();
+		const ask = page.getByRole('alertdialog', { name: 'Start the game?' });
+		await expect(strip.or(ask)).toBeVisible();
+		if (await ask.isVisible())
+			await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	}
+	const name = strip.locator('.step .name strong');
+	await expect(name).toBeVisible();
+	const next = strip.getByRole('button', { name: 'Next step' });
+	for (let i = 0; i < 30 && (await name.textContent()) !== title; i++) await next.tap();
+	await expect(name).toHaveText(title);
+	return strip;
+}
+
+// https://wiki.bloodontheclocktower.com/Snake_Charmer: the player it chooses, if the Demon,
+// swaps characters and alignments with it and is then poisoned; anyone else, nothing happens.
+test("the Snake Charmer's step swaps with the Demon it chooses and poisons the old Demon", async ({
+	page
+}) => {
+	test.slow();
+	await startGame(page);
+	await choose(page, 1, 'Snake Charmer');
+	await choose(page, 2, 'Vigormortis');
+	await choose(page, 3, 'Clockmaker');
+	const strip = await walkTo(page, 'Snake Charmer');
+	await strip.locator('button.step .name strong').tap();
+	const step = page.getByRole('dialog', { name: 'Snake Charmer' });
+	await expect(step).toBeVisible();
+	const swap = step.getByTestId('charm-swap');
+	await expect(swap).toContainText('None');
+	// Not the Demon: nothing happens.
+	await swap.getByRole('button', { name: 'Choose' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Chooses a player' })
+		.getByRole('button', { name: /Seat 3/ })
+		.tap();
+	await expect(swap).toContainText('None');
+	// The Demon: they swap, in one change.
+	await swap.getByRole('button', { name: 'Choose' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Chooses a player' })
+		.getByRole('button', { name: /Seat 2/ })
+		.tap();
+	await expect(swap).toContainText('Vigormortis');
+	await expect(swap).toContainText('Snake Charmer');
+	await expect(
+		page.getByRole('alertdialog', { name: 'Swap characters and alignments?' })
+	).toHaveCount(0);
+	// The new Demon is shown "You are" and the Demon (Trevor, 2026-11-02).
+	await swap.getByRole('button', { name: 'Show to player' }).first().tap();
+	await expect(page.getByText('You are', { exact: false }).last()).toBeVisible();
+	await expect(page.getByText('Vigormortis').last()).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(step).toBeVisible();
+	await step.getByRole('button', { name: 'Close' }).first().tap();
+	await expect(seatLabelled(page, 'Seat 1: no name, Vigormortis')).toBeAttached();
+	await expect(seatLabelled(page, 'Seat 2: no name, Snake Charmer, 1 reminder')).toBeAttached();
+	const sheet = await openSeat(page, 2);
+	await expect(sheet).toContainText(/Townsfolk · Good · Seat 2[\s\S]*Snake Charmer/);
+	await expect(sheet).toContainText('Poisoned');
+});

@@ -147,6 +147,25 @@ describe('historyItems', () => {
 	});
 });
 
+describe('historyItems: swapped characters', () => {
+	// A Demon swapping with the player who chose it (https://wiki.bloodontheclocktower.com/Snake_Charmer)
+	// is one line naming both players with the characters they had, not "is" lines.
+	it('words a character swap as one line with both players as they were', () => {
+		const session = play(
+			(s) => ({ type: 'AssignCharacter', seatId: first(s), characterId: 'chef' }),
+			(s) => ({ type: 'AssignCharacter', seatId: second(s), characterId: 'imp' }),
+			(s) => ({ type: 'SwapCharacters', seatId: second(s), withSeatId: first(s) })
+		);
+		const [swap] = historyItems(session.log.entries, session.log.cursor, characters);
+		expect(swap.parts).toEqual([
+			{ kind: 'text', text: 'Swapped the characters of ' },
+			expect.objectContaining({ kind: 'seat', seatId: second(session), characterId: 'imp' }),
+			{ kind: 'text', text: ' and ' },
+			expect.objectContaining({ kind: 'seat', seatId: first(session), characterId: 'chef' })
+		]);
+	});
+});
+
 describe('itemSeats', () => {
 	// Trevor (2026-10-19): a Mayor turned Imp, beside an Imp, is filtered as two players.
 	it('names the seats an entry is about, whatever character each had', () => {
