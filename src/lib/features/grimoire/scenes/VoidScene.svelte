@@ -2,7 +2,7 @@
 	import { f1, rand, range } from './scene-shapes.ts';
 
 	/**
-	 * Arcane void (moving backgrounds, plan L113): spiral arms turning slowly round a breathing
+	 * Arcane void (moving backgrounds, plan L114): spiral arms turning slowly round a breathing
 	 * core, with motes in orbit. Drawn in CSS: only rotation, scale and opacity move.
 	 */
 	function spiral(arms: number, curl: number, salt: number) {

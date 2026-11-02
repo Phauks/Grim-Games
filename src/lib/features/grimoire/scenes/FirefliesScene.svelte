@@ -2,7 +2,7 @@
 	import { f1, rand, range, ridge, ridgeY } from './scene-shapes.ts';
 
 	/**
-	 * Firefly wood (moving backgrounds, plan L113): fireflies wander and blink among dark
+	 * Firefly wood (moving backgrounds, plan L114): fireflies wander and blink among dark
 	 * trunks over moonlit mist. Drawn in CSS.
 	 */
 	const trunksBack = range(9, (i) => {

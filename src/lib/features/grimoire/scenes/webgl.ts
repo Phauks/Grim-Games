@@ -1,5 +1,5 @@
 /**
- * Draws one fragment shader over a whole canvas (moving backgrounds, plan L113). Undefined
+ * Draws one fragment shader over a whole canvas (moving backgrounds, plan L114). Undefined
  * when the device has no WebGL or the shader does not build, so the preset's still frame
  * shows instead.
  */
