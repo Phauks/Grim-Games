@@ -59,5 +59,6 @@
 	},
 	"kills": {
 		"by": "other"
-	}
+	},
+	"staysAsleep": "other"
 }

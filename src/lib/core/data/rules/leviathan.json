@@ -129,5 +129,6 @@
 				"either": true
 			}
 		]
-	}
+	},
+	"staysAsleep": "both"
 }

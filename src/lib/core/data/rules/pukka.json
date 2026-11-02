@@ -1,6 +1,7 @@
 {
 	"kills": {
-		"by": "demon"
+		"by": "demon",
+		"delayed": "Poisoned"
 	},
 	"reminderTargets": {
 		"Poisoned": {

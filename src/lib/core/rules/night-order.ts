@@ -374,11 +374,15 @@ export function nightOrder(input: NightOrderInput): NightOrder {
 				reminder: MARKER_TEXT[marker][night],
 				afterDawn,
 				placement: custom && customIds.has(marker) ? 'custom-order' : 'marker',
-				notes: [...candidate.notes, ...markerNotes(marker, input.inPlay)]
+				notes: [
+					...candidate.notes,
+					...markerNotes(marker, input.inPlay),
+					...(marker === 'demoninfo' ? wakesWithNotes(undefined, input.inPlay) : [])
+				]
 			};
 		}
 		const character = candidate.character;
-		const notes = [...candidate.notes];
+		const notes = [...candidate.notes, ...wakesWithNotes(character, input.inPlay)];
 		const reminder = reminderFor(character, night);
 		if (reminder === undefined) notes.push('No night text for this character tonight.');
 		return {
@@ -479,6 +483,21 @@ function markerNotes(marker: NightMarker, inPlay: readonly Character[]): string[
 		const note = rulesOf(c.id, characters)?.evilInfo?.notes?.[marker];
 		return note ? [`${c.name}: ${note}`] : [];
 	});
+}
+
+/**
+ * Who else wakes at an evil player's step (a Minion's or Demon's, or Demon info with no
+ * `character`): each character in play that wakes with evil (`wakesWithEvil`: the Wraith,
+ * https://wiki.bloodontheclocktower.com/Wraith), other than the step's own.
+ */
+function wakesWithNotes(character: Character | undefined, inPlay: readonly Character[]): string[] {
+	if (character && character.type !== 'minion' && character.type !== 'demon') return [];
+	const characters = new Map(inPlay.map((c) => [c.id, c]));
+	return [...characters.values()].flatMap((c) =>
+		c.id !== character?.id && rulesOf(c.id, characters)?.wakesWithEvil
+			? [`${c.name} wakes too.`]
+			: []
+	);
 }
 
 /**

@@ -59,5 +59,6 @@
 			}
 		]
 	},
-	"infoCard": "secret-phrase"
+	"infoCard": "secret-phrase",
+	"staysAsleep": "other"
 }
