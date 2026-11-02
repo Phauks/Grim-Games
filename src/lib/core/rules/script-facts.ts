@@ -53,7 +53,12 @@ export function scriptFacts(
 		const modifier = setupModifierFor(c, (name) => byName.get(name.toLowerCase()));
 		return modifier ? [modifier] : [];
 	});
-	const jinxes = scriptJinxes(jinxIndex, ids, homebrewJinxes);
+	const jinxes = scriptJinxes(
+		jinxIndex,
+		ids,
+		homebrewJinxes,
+		new Map(characters.map((c) => [c.id, c]))
+	);
 	return {
 		counts,
 		jinxes,

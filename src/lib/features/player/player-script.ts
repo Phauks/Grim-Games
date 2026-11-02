@@ -49,7 +49,8 @@ export function playerJinxes(script: LoadedScript, data: GameData): ScriptJinx[]
 	return scriptJinxes(
 		data.jinxes,
 		script.characters.map((c) => c.id),
-		script.homebrewJinxes
+		script.homebrewJinxes,
+		new Map(script.characters.map((c) => [c.id, c]))
 	);
 }
 

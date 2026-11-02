@@ -56,6 +56,7 @@ const W = 'https://wiki.bloodontheclocktower.com/';
  * - `dead-without-demon`: there is no Demon and its players are dead;
  * - `extra-day`: on the extra day, a player was executed (their team loses) or nobody was
  *   (good wins);
+ * - `cult-joined`: its player's vote passed today (`seats`: them);
  * - `demon-executed`: a special rule says good wins when a Demon dies by execution (Binary
  *   Supernovae), and one has (`seats`: the executed Demons; `ruleName`: the rule).
  */
@@ -574,6 +575,37 @@ function nominatedMarkedExecuted(game: Game, characters: CharacterLookup): GameE
 }
 
 /**
+ * Its player's vote passed today, so their team wins (the Cult Leader: every living good player
+ * joined the cult, https://wiki.bloodontheclocktower.com/Cult_Leader). The vote is recorded
+ * when its use is marked (`UseAbility`'s `passed`). A poisoned or drunk player's cult doesn't
+ * form, so that holds it (the Storyteller's call).
+ */
+function cultJoined(game: Game, characters: CharacterLookup): GameEnd[] {
+	return endsOf(game, characters, 'cult-joined').flatMap(({ seatId, characterId }) => {
+		const passed = game.today.entries.some(
+			(e) =>
+				e.kind === 'ability' &&
+				e.seatId === seatId &&
+				e.characterId === characterId &&
+				e.passed === true
+		);
+		if (!passed) return [];
+		return [
+			{
+				key: `cult-joined:${seatId}:${game.pastDays.length}`,
+				rule: 'cult-joined' as const,
+				winner: alignmentOf(game, seatId) ?? 'good',
+				characterId,
+				seats: [seatId],
+				day: game.pastDays.length,
+				wiki: wikiOf(characterId, characters),
+				holds: impaired(game, seatId, characterId, characters)
+			}
+		];
+	});
+}
+
+/**
  * There is no Demon and its players are dead (the Summoner, who can no longer summon one:
  * https://wiki.bloodontheclocktower.com/Summoner).
  */
@@ -671,7 +703,8 @@ export function gameEnds(
 		...whileAlive(game, characters, options),
 		...dayWithoutExecution(game, characters, options),
 		...aliveAtDusk(game, characters, options),
-		...deadWithoutDemon(game, characters)
+		...deadWithoutDemon(game, characters),
+		...cultJoined(game, characters)
 	);
 	// A dead Demon wins it for good before "just 2 alive" can.
 	if (demon.length === 0) out.push(...twoAlive(game, characters));

@@ -70,7 +70,7 @@ import ph_list_dashes from '~icons/ph/list-dashes';
 import ph_list_magnifying_glass from '~icons/ph/list-magnifying-glass';
 import ph_list_numbers from '~icons/ph/list-numbers';
 import ph_lock from '~icons/ph/lock';
-import ph_megaphone from '~icons/ph/megaphone';
+import ph_megaphone_simple from '~icons/ph/megaphone-simple';
 import ph_monitor from '~icons/ph/monitor';
 import ph_notepad from '~icons/ph/notepad';
 import ph_paint_brush from '~icons/ph/paint-brush';
@@ -82,6 +82,7 @@ import ph_qr_code from '~icons/ph/qr-code';
 import ph_question from '~icons/ph/question';
 import ph_scales from '~icons/ph/scales';
 import ph_scan from '~icons/ph/scan';
+import ph_seal_check from '~icons/ph/seal-check';
 import ph_selection from '~icons/ph/selection';
 import ph_shield_check from '~icons/ph/shield-check';
 import ph_shield_star from '~icons/ph/shield-star';
@@ -184,7 +185,7 @@ const icons: IconMap = {
 	'ph:list-magnifying-glass': ph_list_magnifying_glass,
 	'ph:list-numbers': ph_list_numbers,
 	'ph:lock': ph_lock,
-	'ph:megaphone': ph_megaphone,
+	'ph:megaphone-simple': ph_megaphone_simple,
 	'ph:monitor': ph_monitor,
 	'ph:notepad': ph_notepad,
 	'ph:paint-brush': ph_paint_brush,
@@ -196,6 +197,7 @@ const icons: IconMap = {
 	'ph:question': ph_question,
 	'ph:scales': ph_scales,
 	'ph:scan': ph_scan,
+	'ph:seal-check': ph_seal_check,
 	'ph:selection': ph_selection,
 	'ph:shield-check': ph_shield_check,
 	'ph:shield-star': ph_shield_star,

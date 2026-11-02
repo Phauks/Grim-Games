@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { openSoundboard } from './board-menu.ts';
 import { pickScript, toBoard } from './new-game.ts';
 
 // The Storyteller's soundboard and sounds for actions (plans U6 and U7, Trevor 2026-10-26:
@@ -18,21 +19,14 @@ test('the soundboard plays a sound at a tap, and Start game plays the Dusk sound
 	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
 
-	// On the board beside the day timer, not in the ⋯ menu (Trevor, 2026-10-27: "Sound can be
-	// next to timer for now").
-	const button = page.getByRole('button', { name: 'Soundboard', exact: true });
-	const timer = (await page.getByTestId('day-timer').boundingBox())!;
-	const placed = (await button.boundingBox())!;
-	// Touching it, beside or under it: the gap between the two is at most a small space.
-	const gapX = Math.max(timer.x - (placed.x + placed.width), placed.x - (timer.x + timer.width));
-	const gapY = Math.max(timer.y - (placed.y + placed.height), placed.y - (timer.y + timer.height));
-	expect(Math.max(gapX, gapY)).toBeLessThan(16);
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	// A full row in the ⋯ menu (Trevor, 2026-11-01: "soundboard should be something in the ...
+	// area, a full button"), no longer beside the day timer, which has Back to town.
+	await expect(
+		page.locator('.board-timer').getByRole('button', { name: 'Soundboard' })
+	).toHaveCount(0);
+	await openSoundboard(page);
 	const menu = page.getByRole('dialog', { name: 'Grimoire' });
-	await expect(menu.getByRole('button', { name: 'Soundboard' })).toHaveCount(0);
-	await page.keyboard.press('Escape');
 	await expect(menu).toBeHidden();
-	await button.tap();
 	const sheet = page.getByRole('dialog', { name: 'Soundboard' });
 	const pads = sheet.getByRole('group', { name: 'Soundboard' });
 	// Two columns (Trevor, 2026-10-27: "noise controls on one side and the noises on the
@@ -153,7 +147,7 @@ test('the soundboard shows only the sounds and mixes placed on it', async ({ pag
 	await pickScript(page, 'Trouble Brewing');
 	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
-	await page.getByRole('button', { name: 'Soundboard', exact: true }).tap();
+	await openSoundboard(page);
 	const sheet = page.getByRole('dialog', { name: 'Soundboard' });
 	const pads = sheet.getByRole('group', { name: 'Soundboard' });
 
@@ -192,7 +186,7 @@ test('the soundboard shows only the sounds and mixes placed on it', async ({ pag
 	await pickScript(page, 'Trouble Brewing');
 	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
-	await page.getByRole('button', { name: 'Soundboard', exact: true }).tap();
+	await openSoundboard(page);
 	await expect(pads.getByRole('button', { name: 'Doom' })).toBeVisible();
 	await expect(pads.getByRole('button', { name: 'Hand bell' })).toHaveCount(0);
 });

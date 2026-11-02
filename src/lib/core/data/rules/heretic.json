@@ -23,5 +23,25 @@
 	},
 	"deathCause": {
 		"none": "win condition"
+	},
+	"jinxes": {
+		"baron": {
+			"exclusive": true
+		},
+		"godfather": {
+			"exclusive": true
+		},
+		"lleech": {
+			"exclusive": true
+		},
+		"pithag": {
+			"exclusive": true
+		},
+		"spy": {
+			"exclusive": true
+		},
+		"widow": {
+			"exclusive": true
+		}
 	}
 }

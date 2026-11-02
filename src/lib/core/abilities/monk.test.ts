@@ -60,10 +60,8 @@ describe('Monk', () => {
 				s.seat('fortuneteller')
 			]);
 		});
-		it.fails('Example 2: Imp targets protected Mayor; no deaths', () => {
+		it('Example 2: Imp targets protected Mayor; no deaths', () => {
 			// The Mayor is safe from the Imp, so the Mayor's "another player dies" never comes up.
-			// Waits on the engine: the survivor's reasons still list the Mayor's bounce beside the
-			// Monk's protection.
 			const s = scenario(['monk', 'mayor', 'imp', 'chef', 'poisoner'])
 				.reminder('mayor', 'monk', 'Safe')
 				.reminder('mayor', 'imp', 'Dead');
