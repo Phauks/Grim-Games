@@ -51,7 +51,10 @@ import {
  *   Minion as a Minion, and nobody else, so `winner` wins (the Alsaahir);
  * - `cult-joined`: its player's vote passed today (`dayUse.vote`, marked when its use is), so
  *   its player's team wins (the Cult Leader's cult,
- *   https://wiki.bloodontheclocktower.com/Cult_Leader).
+ *   https://wiki.bloodontheclocktower.com/Cult_Leader);
+ * - `storyteller-executed`: the Storyteller is executed while it is in play, even dead, so
+ *   `winner` wins (the Atheist). With no such character in play, evil wins
+ *   (https://wiki.bloodontheclocktower.com/Atheist).
  */
 const END_KINDS = [
 	'executed-loses',
@@ -67,7 +70,8 @@ const END_KINDS = [
 	'executed-with-token',
 	'alignment-alive',
 	'guesses-evil-team',
-	'cult-joined'
+	'cult-joined',
+	'storyteller-executed'
 ] as const;
 export type EndKind = (typeof END_KINDS)[number];
 export interface EndsGame {
@@ -135,7 +139,8 @@ const END_NEEDS: Readonly<Record<EndKind, readonly (keyof EndsGame)[]>> = {
 	'executed-with-token': ['token'],
 	'alignment-alive': ['alignment', 'alive', 'winner'],
 	'guesses-evil-team': ['winner'],
-	'cult-joined': []
+	'cult-joined': [],
+	'storyteller-executed': ['winner']
 };
 const HOLD_NEEDS: Readonly<Record<HoldKind, readonly (keyof HoldsGame)[]>> = {
 	'marked-alive': ['token'],

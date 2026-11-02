@@ -17,7 +17,7 @@ import {
 import type { DayLog, Game, SeatId } from '#lib/core/model/types.ts';
 import { abilityState } from './ability.ts';
 import { carriesDemonToken } from './death-causes.ts';
-import type { GameEndOptions, GameHold } from './game-end.ts';
+import type { GameEnd, GameEndOptions, GameHold } from './game-end.ts';
 
 export const W = 'https://wiki.bloodontheclocktower.com/';
 
@@ -169,4 +169,41 @@ export function isOn(
 	return on === 'good' || on === 'evil'
 		? alignmentOf(game, seatId) === on
 		: typeOf(game, seatId, characters) === on;
+}
+
+/**
+ * Its player's logged guesses (a note with guesses) name every Demon as a Demon and every
+ * Minion as a Minion, dead ones too, and nobody else; a guessed character counts by its type
+ * (the Alsaahir: https://wiki.bloodontheclocktower.com/Alsaahir).
+ */
+export function guessesEvilTeam(game: Game, characters: CharacterLookup): GameEnd[] {
+	const evil = game.seating.filter((id) => {
+		const type = typeOf(game, id, characters);
+		return type === 'demon' || type === 'minion';
+	});
+	if (evil.length === 0) return [];
+	const rightGuess = (id: SeatId, guess: CharacterId | undefined) =>
+		guess !== undefined && characters.get(guess)?.type === typeOf(game, id, characters);
+	const out: GameEnd[] = [];
+	for (const { seatId, characterId, rule } of endsOf(game, characters, 'guesses-evil-team')) {
+		const right = days(game)
+			.flatMap((log) => log.entries)
+			.find((entry) => {
+				if (entry.kind !== 'note' || entry.characterId !== characterId) return false;
+				if (entry.seatId !== seatId || !entry.guesses?.length) return false;
+				const guessed = new Map(entry.guesses.map((g) => [g.seatId, g.characterId]));
+				return guessed.size === evil.length && evil.every((id) => rightGuess(id, guessed.get(id)));
+			});
+		if (!right) continue;
+		out.push({
+			key: `guesses-evil-team:${right.entryId}`,
+			rule: 'guesses-evil-team',
+			winner: rule.winner!,
+			characterId,
+			seats: [seatId, ...evil],
+			wiki: wikiOf(characterId, characters),
+			holds: impaired(game, seatId, characterId, characters)
+		});
+	}
+	return out;
 }
