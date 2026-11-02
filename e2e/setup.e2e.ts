@@ -625,7 +625,7 @@ test('with Require a name, the token stays hidden until a name is typed', async 
 	await expect(reveal.getByTestId('reveal-name')).toHaveText('');
 	const show = page.getByRole('button', { name: 'Reveal' });
 	await expect(show).toBeDisabled();
-	await reveal.getByRole('textbox', { name: 'Name' }).fill('Ana');
+	await reveal.getByRole('combobox', { name: 'Name' }).fill('Ana');
 	await show.tap();
 	await expect(reveal.getByTestId('reveal-name')).not.toBeEmpty();
 	await page.getByRole('button', { name: 'Confirm' }).tap();
@@ -644,9 +644,8 @@ test('with no room, the draw offers no names, even ones kept by earlier builds',
 	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
 	await page.getByRole('button', { name: 'Build bag' }).tap();
 	await page.getByRole('button', { name: 'Tile 1', exact: true }).tap();
-	await expect(
-		page.getByTestId('reveal').getByRole('button', { name: 'Pick your name' })
-	).toBeDisabled();
+	await page.getByTestId('reveal').getByRole('combobox', { name: 'Name' }).tap();
+	await expect(page.getByRole('option')).toHaveCount(0);
 });
 
 test("the player picks their name from the room's phones", async ({ page, browser }, testInfo) => {
@@ -671,17 +670,20 @@ test("the player picks their name from the room's phones", async ({ page, browse
 	await page.getByRole('button', { name: 'Build bag' }).tap();
 	await page.getByRole('button', { name: 'Tile 1', exact: true }).tap();
 	const reveal = page.getByTestId('reveal');
-	await reveal.getByRole('button', { name: 'Pick your name' }).tap();
-	const sheet = page.getByRole('dialog', { name: 'Pick your name' });
-	await expect(sheet.getByRole('button')).toHaveText(['Alex']);
-	await sheet.getByRole('button', { name: 'Alex' }).tap();
-	await expect(sheet).toBeHidden();
-	await expect(reveal.getByRole('textbox', { name: 'Name' })).toHaveValue('Alex');
+	// One typable drop-down: the room's names are its list (Trevor, 2026-11-02).
+	const name = reveal.getByRole('combobox', { name: 'Name' });
+	await expect(name).toHaveAttribute('placeholder', 'Pick your name');
+	await name.tap();
+	await expect(page.getByRole('option')).toHaveText(['Alex']);
+	await page.getByRole('option', { name: 'Alex' }).tap();
+	await expect(page.getByRole('option')).toHaveCount(0);
+	await expect(name).toHaveValue('Alex');
 	await page.getByRole('button', { name: 'Confirm' }).tap();
 
 	// Alex has a seat now, so the next player has no name to pick.
 	await page.getByRole('button', { name: 'Tile 2', exact: true }).tap();
-	await expect(reveal.getByRole('button', { name: 'Pick your name' })).toBeDisabled();
+	await reveal.getByRole('combobox', { name: 'Name' }).tap();
+	await expect(page.getByRole('option')).toHaveCount(0);
 	await phoneContext.close();
 });
 
@@ -714,9 +716,8 @@ test('a player whose phone sleeps stays in the names list', async ({ page, brows
 	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
 	await page.getByRole('button', { name: 'Build bag' }).tap();
 	await page.getByRole('button', { name: 'Tile 1', exact: true }).tap();
-	await page.getByTestId('reveal').getByRole('button', { name: 'Pick your name' }).tap();
-	const sheet = page.getByRole('dialog', { name: 'Pick your name' });
-	await expect(sheet.getByRole('button')).toHaveText(['Alex', 'Ben']);
+	await page.getByTestId('reveal').getByRole('combobox', { name: 'Name' }).tap();
+	await expect(page.getByRole('option')).toHaveText(['Alex', 'Ben']);
 	await ben.context().close();
 });
 
@@ -802,7 +803,7 @@ test('the draw reveals tiles, keeps a held tile and lands on seats', async ({ pa
 	expect(token.y + token.height).toBeLessThanOrEqual(caption.y + 1);
 	// The name and ability are Character selection's shared row, not their own text (Trevor, 2026-10-31).
 	await expect(reveal.getByTestId('reveal-name').locator('.ring-row')).toHaveCount(1);
-	await reveal.getByRole('textbox', { name: 'Name' }).fill('Ana');
+	await reveal.getByRole('combobox', { name: 'Name' }).fill('Ana');
 	await page.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByRole('button', { name: 'Tile 1, drawn' })).toBeDisabled();
 
@@ -818,7 +819,7 @@ test('the draw reveals tiles, keeps a held tile and lands on seats', async ({ pa
 	// The rest are drawn one by one; Enter in the name field closes the keyboard, not the reveal.
 	for (let n = 3; n <= 5; n++) {
 		await page.getByRole('button', { name: `Tile ${n}`, exact: true }).tap();
-		const name = reveal.getByRole('textbox', { name: 'Name' });
+		const name = reveal.getByRole('combobox', { name: 'Name' });
 		await expect(name).toHaveAttribute('enterkeyhint', 'done');
 		await name.fill(`P${n}`);
 		await name.press('Enter');
@@ -891,9 +892,9 @@ test.describe('in a computer window', () => {
 		await page.keyboard.press('Enter');
 		const reveal = page.getByTestId('reveal');
 		await expect(reveal).toBeVisible();
-		await reveal.getByRole('textbox', { name: 'Name' }).fill('Ana');
+		await reveal.getByRole('combobox', { name: 'Name' }).fill('Ana');
 		await page.keyboard.press('Enter');
-		await expect(reveal.getByRole('textbox', { name: 'Name' })).not.toBeFocused();
+		await expect(reveal.getByRole('combobox', { name: 'Name' })).not.toBeFocused();
 		await page.keyboard.press('Enter');
 		await expect(reveal).toBeHidden();
 		// Enter takes a tile at random, so any one of them is now drawn.

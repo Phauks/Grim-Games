@@ -589,11 +589,19 @@
 		padding-block: var(--space-2);
 		border-bottom: 1px solid var(--border);
 	}
+	/*
+	 * The name keeps room to type in beside its X and drop-down caret; in a narrow pane the
+	 * seat and remove buttons go under it, at the right.
+	 */
 	.players .line {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) auto auto;
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: flex-end;
 		align-items: center;
 		gap: var(--space-2);
+	}
+	.players .line > :global(:first-child) {
+		flex: 1 1 calc(10 * var(--u));
 	}
 	.players .where {
 		font-size: 0.875rem;
