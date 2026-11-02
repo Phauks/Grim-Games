@@ -2,6 +2,7 @@
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import { trueCharacter, type SeatId } from '#lib/core/model/index.ts';
 	import {
+		anyInfoSource,
 		falseInfoSource,
 		type AnswerOption,
 		type LearnedRole,
@@ -37,6 +38,8 @@
 	const falseBy = $derived(source?.falseBy ?? falseInfoSource(game, characters)?.characterId);
 	/** A character that may make it false, when nothing else makes it unreliable (the Fibbin). */
 	const mayBy = $derived(source && !source.unreliable ? source.mayBeFalse : undefined);
+	/** The character that lets the Storyteller break the rules (the Atheist). */
+	const anyBy = $derived(anyInfoSource(game, characters)?.characterId);
 </script>
 
 {#if reason === 'registers'}<span class="tag"
@@ -60,6 +63,9 @@
 				characterId={falseBy}
 				character={characters.get(falseBy)}
 			/>{/if}</span
+	>{:else if reason === 'any'}<span class="tag"
+		>{#if anyBy}<CharacterBadge characterId={anyBy} character={characters.get(anyBy)} />{/if}Any
+		allowed</span
 	>{:else if reason === 'invalid'}<span class="tag warn"><Icon name="warning" />Not valid</span
 	>{/if}
 
