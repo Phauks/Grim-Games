@@ -3,7 +3,7 @@
 	import Twinklers from './Twinklers.svelte';
 
 	/**
-	 * Aurora (moving backgrounds, plan L113): three curtains of light over a forest edge, each a
+	 * Aurora (moving backgrounds, plan L114): three curtains of light over a forest edge, each a
 	 * run of slices rippling in a travelling wave, under twinkling stars. Drawn in CSS.
 	 */
 	const stars = points(40, 100, [0.15, 0.35], [2.5, 6], [0, 62]);

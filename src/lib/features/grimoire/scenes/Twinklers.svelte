@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { ScenePoint } from './scene-shapes.ts';
 
-	/** Faint stars that twinkle, for the CSS scenes' night skies (moving backgrounds, L113). */
+	/** Faint stars that twinkle, for the CSS scenes' night skies (moving backgrounds, L114). */
 	interface Props {
 		stars: ScenePoint[];
 	}

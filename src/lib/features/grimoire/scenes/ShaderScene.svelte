@@ -4,7 +4,7 @@
 	import { shaderRenderer } from './webgl.ts';
 
 	/**
-	 * A shader scene (moving backgrounds, plan L113): its fragment shader drawn at half size and
+	 * A shader scene (moving backgrounds, plan L114): its fragment shader drawn at half size and
 	 * at most 30 frames a second. It stops while the page is hidden, and on the board while a
 	 * sheet or dialog covers it; still, it draws one frame and stops. Without WebGL it draws
 	 * nothing, and the preset's still frame behind it shows.

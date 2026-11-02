@@ -5,7 +5,7 @@
 	import type { ShaderSceneId } from './shaders.ts';
 
 	/**
-	 * A moving background's moving layer (plan L113), over its preset's still frame and under
+	 * A moving background's moving layer (plan L114), over its preset's still frame and under
 	 * the vignette: a CSS scene or a shader scene, dimmed so seat names and labels stay
 	 * readable. Still (the Moving backgrounds switch off, or the device asks for less motion),
 	 * a CSS scene stops where it is and a shader scene draws one frame. On the board, a sheet
