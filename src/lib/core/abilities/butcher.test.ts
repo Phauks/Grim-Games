@@ -49,11 +49,9 @@ describe('Butcher', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Butcher#Examples)', () => {
-		it.fails("Example 1: Witch's execution enables a Sage execution", () => {
+		it("Example 1: Witch's execution enables a Sage execution", () => {
 			// Wiki: "The Witch is executed and dies. The Butcher then nominates the Sage, who gets enough
 			// votes to be executed. The Sage dies too."
-			// Waits on the engine (M9): Execute warns already-executed even when the Butcher's extra
-			// nomination led to the day's second execution.
 			const s = scenario(['butcher', 'chef', 'witch', 'sage', 'fanggu'])
 				.do((at) => ({ type: 'SetAlignment', seatId: at.seat('butcher'), alignment: 'good' }))
 				.nominate('chef', 'witch')
@@ -90,13 +88,11 @@ describe('Butcher', () => {
 			).toContain('already-nominated');
 		});
 
-		it.fails('Example 3: Failed nominee renominated after another execution', () => {
+		it('Example 3: Failed nominee renominated after another execution', () => {
 			// Wiki: "The Butcher nominates the Town Crier, but the Town Crier is not executed. The
 			// Mathematician gets more votes and is executed today. The game continues, and the Butcher
 			// nominates the Town Crier again. This time, enough hands are raised, and the Town Crier is
 			// executed."
-			// Waits on the engine (M9): Execute warns already-executed even when the Butcher's extra
-			// nomination led to the day's second execution.
 			const s = scenario(['butcher', 'towncrier', 'mathematician', 'chef', 'nodashii'])
 				.do((at) => ({ type: 'SetAlignment', seatId: at.seat('butcher'), alignment: 'good' }))
 				.nominate('butcher', 'towncrier')

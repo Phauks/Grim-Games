@@ -18,10 +18,22 @@ import { committedCharacter, nightSheetPresence } from '#lib/core/testing/commit
 import { abilityState } from '#lib/core/rules/ability.ts';
 import { dayReminders, dayStateFromGame } from '#lib/core/rules/day-reminders.ts';
 import { gameEnds, promptable } from '#lib/core/rules/game-end.ts';
-import { mayNominate, todaysNominations } from '#lib/core/rules/nominations.ts';
-import { engineGap, scenario, type Scenario } from '#lib/core/testing/scenario.ts';
+import {
+	characterNominationPrompts,
+	mayNominate,
+	todaysNominations
+} from '#lib/core/rules/nominations.ts';
+import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
 /** The players the Witch's day reminders name: the cursed player while the curse holds. */
+/** The Witch's prompt for a nomination: the cursed nominator dies. */
+const curseKills = (s: Scenario, nominator: string, nominee: string) =>
+	characterNominationPrompts(
+		s.game,
+		{ nominator: s.seat(nominator), nominee: s.seat(nominee) },
+		s.characters
+	).filter((p) => p.characterId === 'witch');
+
 const cursedToday = (s: Scenario) =>
 	dayReminders(dayStateFromGame(s.game, (id) => s.characters.get(id), undefined, s.characters))
 		.groups.flatMap((g) => g.reminders)
@@ -58,7 +70,7 @@ describe('Witch', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Witch#Examples)', () => {
-		it.fails('Example 1: Cursed Sage dies nominating; Dreamer still executed', () => {
+		it('Example 1: Cursed Sage dies nominating; Dreamer still executed', () => {
 			// Wiki: "At night, the Witch curses the Sage. During the next day, the Sage nominates the Dreamer.
 			// The Storyteller immediately declares that the player of the Sage dies. The players still vote to
 			// execute the Dreamer, who dies too."
@@ -66,25 +78,36 @@ describe('Witch', () => {
 				.reminder('sage', 'witch', 'Cursed')
 				.newDay();
 			expect(cursedToday(s)).toEqual([s.seat('sage')]);
-			s.nominate('sage', 'dreamer');
-			engineGap(
-				'M9',
-				'a cursed player who nominates dies at once, and their nomination still goes to a vote'
-			);
+			expect(curseKills(s, 'sage', 'dreamer')).toEqual([
+				{
+					kind: 'kills-nominator',
+					characterId: 'witch',
+					nominator: s.seat('sage'),
+					nominee: s.seat('dreamer')
+				}
+			]);
+			// The Sage dies, and the nomination still stands: the Dreamer is executed.
+			const after = s.nominate('sage', 'dreamer').dies('sage', 'witch').execute('dreamer');
+			expect(after.game.seats[after.seat('sage')].dead).toBe(true);
+			expect(after.game.seats[after.seat('dreamer')].dead).toBe(true);
 		});
 
-		it.fails('Example 2: Witch curses self and dies nominating', () => {
+		it('Example 2: Witch curses self and dies nominating', () => {
 			// Wiki: "The Witch curses themself. During the next day, the Witch nominates the Demon, and dies.
 			// The players do not vote to execute the Demon, and nominations continue."
 			const s = scenario(['witch', 'sage', 'dreamer', 'imp', 'chef', 'monk'])
 				.reminder('witch', 'witch', 'Cursed')
 				.newDay();
 			expect(cursedToday(s)).toEqual([s.seat('witch')]);
-			s.nominate('witch', 'imp');
-			engineGap('M9', 'a Witch who cursed themself dies when they nominate');
+			expect(curseKills(s, 'witch', 'imp')).toMatchObject([
+				{ kind: 'kills-nominator', nominator: s.seat('witch') }
+			]);
+			// The Witch dies, and nominations continue.
+			const after = s.nominate('witch', 'imp').dies('witch', 'witch');
+			expect(mayNominate(after.game, after.seat('chef'), after.characters)).toBe(true);
 		});
 
-		it.fails('Example 3: Cursed Klutz turned Fang Gu dies nominating', () => {
+		it('Example 3: Cursed Klutz turned Fang Gu dies nominating', () => {
 			// Wiki: "The Witch curses the Klutz. The Fang Gu attacks the Klutz, so the Klutz becomes the Fang
 			// Gu. The new Fang Gu is now cursed by the Witch, and they nominate. The new Fang Gu dies, and
 			// good wins."
@@ -94,12 +117,14 @@ describe('Witch', () => {
 				.becomes('klutz', 'fanggu', 'evil')
 				.newDay();
 			expect(cursedToday(s)).toEqual([s.seat('klutz')]);
+			expect(curseKills(s, 'klutz', 'chef')).toMatchObject([
+				{ kind: 'kills-nominator', nominator: s.seat('klutz') }
+			]);
 			// Once the curse kills the new Fang Gu, no Demon is left alive.
 			const killed = s.nominate('klutz', 'chef').dies('klutz', 'witch');
 			expect(promptable(gameEnds(killed.game, killed.characters))).toMatchObject([
 				{ rule: 'demon-dead', winner: 'good' }
 			]);
-			engineGap('M9', 'the cursed new Fang Gu dies when they nominate');
 		});
 
 		it('Example 4: Curse ends at three alive; Savant safe', () => {

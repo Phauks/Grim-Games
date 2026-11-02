@@ -21,6 +21,7 @@ import {
 	markTokenSwap,
 	marksInPlay,
 	executionSavers,
+	extraExecutionOpen,
 	outcomeHolder,
 	outcomeProblem,
 	protection,
@@ -168,7 +169,11 @@ export const DAY_DECIDERS: Deciders<
 		}
 		const forced = outcome?.kind === 'forced' && used ? { forcedBy: used.by } : {};
 		const before = used?.events ?? [];
-		if (game.today.entries.some((e) => e.kind === 'execution')) {
+		// A second execution an extra nomination made possible is no surprise (the Butcher).
+		if (
+			game.today.entries.some((e) => e.kind === 'execution') &&
+			!extraExecutionOpen(game, seat.seatId, ctx.characters)
+		) {
 			warn('already-executed', 'there is usually one execution a day');
 		}
 		if (isTraveller(game, seat.seatId, ctx.characters)) {

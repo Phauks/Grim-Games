@@ -25,6 +25,9 @@
 	 * - A player's ability set off by the nomination of the player carrying its reminder, such as
 	 *   the Gnome's Amigo (https://wiki.bloodontheclocktower.com/Gnome): asked once the Gnome
 	 *   says so; Confirm marks the nominator dead, with the character as the cause.
+	 * - A nominator carrying a reminder that kills whoever nominates, such as the Witch's Cursed
+	 *   (https://wiki.bloodontheclocktower.com/Witch): Confirm marks the nominator dead, with the
+	 *   character as the cause; the nomination still stands.
 	 * - A character in play that has the nominee choose a player (the Big Wig,
 	 *   https://wiki.bloodontheclocktower.com/Big_Wig): a seat chooser records whom, on the
 	 *   nomination, so the day view can offer Broke madness for them.
@@ -82,7 +85,7 @@
 				characterId: ask.characterId,
 				on: nominator
 			});
-		} else if (ask.kind === 'may-kill-nominator') {
+		} else if (ask.kind === 'may-kill-nominator' || ask.kind === 'kills-nominator') {
 			grimoire.run({ type: 'SetDead', seatId: nominator, dead: true, cause: ask.characterId });
 		} else if (ask.kind === 'evil-swap') {
 			const a = game.seats[nominator];
@@ -116,7 +119,7 @@
 			? `${source}: who did ${label(ask.nominee)} choose?`
 			: ask?.kind === 'execute-nominator'
 				? `${source}: execute ${label(ask.nominator)}?`
-				: ask?.kind === 'may-kill-nominator'
+				: ask?.kind === 'may-kill-nominator' || ask?.kind === 'kills-nominator'
 					? `${source}: kill ${label(ask.nominator)}?`
 					: ask?.kind === 'evil-swap'
 						? `${source}: swap characters?`
@@ -142,11 +145,9 @@
 	<ConfirmDialog bind:open {title} onConfirm={confirm}>
 		{#snippet heading()}{#if ask?.kind === 'execute-nominator'}{source}: execute {@render player(
 					ask.nominator
-				)}?{:else if ask?.kind === 'may-kill-nominator'}{source}: kill {@render player(
-					ask.nominator
-				)}?{:else if ask?.kind === 'evil-swap'}{source}: swap characters?{:else if ask}{source}: did {@render player(
-					ask.nominator
-				)} choose to die?{/if}{/snippet}
+				)}?{:else if ask?.kind === 'may-kill-nominator' || ask?.kind === 'kills-nominator'}{source}:
+				kill {@render player(ask.nominator)}?{:else if ask?.kind === 'evil-swap'}{source}: swap
+				characters?{:else if ask}{source}: did {@render player(ask.nominator)} choose to die?{/if}{/snippet}
 		{#if ask}
 			<RuleHeader rules={spawning} />
 			<dl class="change">
@@ -165,6 +166,8 @@
 						{@render player(ask.nominator)} is executed, and the {source}’s ability is used.
 					{:else if ask.kind === 'may-kill-nominator'}
 						{@render player(ask.nominator)} dies. Continue voting.
+					{:else if ask.kind === 'kills-nominator'}
+						{@render player(ask.nominator)} dies.
 					{:else if ask.kind === 'evil-swap'}
 						They swap character tokens and learn their new characters tonight.
 					{:else}

@@ -6,6 +6,7 @@ import { scenario } from '#lib/core/testing/scenario.ts';
 import {
 	characterNominationPrompts,
 	nomineeChooses,
+	extraExecutionOpen,
 	extraNominationOpen,
 	extraNominators,
 	mayNominate,
@@ -297,5 +298,49 @@ describe('nomineeChooses', () => {
 	it('asks nothing without the Big Wig', () => {
 		const { session, ctx } = castGame(['chef', 'empath', 'imp']);
 		expect(nomineeChooses(session.game, ctx.characters)).toEqual([]);
+	});
+});
+
+describe('extraExecutionOpen', () => {
+	// https://wiki.bloodontheclocktower.com/Butcher
+	it("holds for the nominee of the Butcher's extra nomination, until someone is executed", () => {
+		const s = scenario(['butcher', 'chef', 'witch', 'sage', 'fanggu'])
+			.do((at) => ({ type: 'SetAlignment', seatId: at.seat('butcher'), alignment: 'good' }))
+			.nominate('chef', 'witch');
+		expect(extraExecutionOpen(s.game, s.seat('witch'), s.characters)).toBe(false);
+		const extra = s.execute('witch').nominate('butcher', 'sage');
+		expect(extraExecutionOpen(extra.game, extra.seat('sage'), extra.characters)).toBe(true);
+		const done = extra.execute('sage');
+		expect(extraExecutionOpen(done.game, done.seat('sage'), done.characters)).toBe(false);
+	});
+});
+
+describe('nominees who nominate', () => {
+	// https://wiki.bloodontheclocktower.com/Riot
+	it("lets a dead nominee nominate once, only while the Riot's Day 3 reminder is in play", () => {
+		const s = scenario(['chef', 'riot', 'riot', 'empath', 'monk']).newDay();
+		const killed = s.nominate('chef', 1).dies(1, 'riot');
+		expect(mayNominate(killed.game, killed.seat(1), killed.characters)).toBe(false);
+		const day3 = s.reminder(2, 'riot', 'Day 3').nominate('chef', 1).dies(1, 'riot');
+		expect(nominationsPerDay(day3.game, day3.seat(1), day3.characters)).toBe(1);
+		const used = day3.nominate(1, 2);
+		expect(mayNominate(used.game, used.seat(1), used.characters)).toBe(false);
+	});
+});
+
+describe('the Witch curse', () => {
+	// https://wiki.bloodontheclocktower.com/Witch
+	it('asks to kill a cursed nominator only while the Witch has her ability', () => {
+		const s = scenario(['witch', 'chef', 'empath', 'imp', 'monk', 'sage'])
+			.reminder('chef', 'witch', 'Cursed')
+			.newDay();
+		const nomination = { nominator: s.seat('chef'), nominee: s.seat('empath') };
+		expect(characterNominationPrompts(s.game, nomination, s.characters)).toEqual([
+			{ kind: 'kills-nominator', characterId: 'witch', ...nomination }
+		]);
+		const other = { nominator: s.seat('empath'), nominee: s.seat('chef') };
+		expect(characterNominationPrompts(s.game, other, s.characters)).toEqual([]);
+		const dead = s.dies('witch');
+		expect(characterNominationPrompts(dead.game, nomination, dead.characters)).toEqual([]);
 	});
 });

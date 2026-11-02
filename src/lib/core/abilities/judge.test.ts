@@ -16,7 +16,7 @@ import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { dayUseSuggestion, dayUseWho } from '#lib/core/rules/day-claims.ts';
 import { isExecution } from '#lib/core/rules/death-causes.ts';
-import { engineGap, scenario, type Scenario } from '#lib/core/testing/scenario.ts';
+import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
 describe('Judge', () => {
@@ -52,7 +52,7 @@ describe('Judge', () => {
 		/** The nominee whose execution the Judge may decide now, if any. */
 		const judged = (s: Scenario) => dayUseSuggestion(s.game, s.seat('judge'), 'nominee');
 
-		it.fails("Example 1: Judge stops Po's execution; Slayer remains doomed", () => {
+		it("Example 1: Judge stops Po's execution; Slayer remains doomed", () => {
 			// Wiki: "The Slayer was about to die, but the Po is nominated and every alive player votes,
 			// so now the Po is about to die. The evil Judge decides that the Po’s execution fails. So,
 			// as before, the Slayer is about to die, and the nomination process continues."
@@ -72,10 +72,20 @@ describe('Judge', () => {
 			expect(used.game.seats[used.seat('judge')].reminders).toMatchObject([
 				{ characterId: 'judge', label: 'No Ability' }
 			]);
-			engineGap(
-				'M9',
-				'who is about to die: a vote the Judge made fail leaves the Slayer about to die, not the Po'
-			);
+			// The Po's execution fails: nobody is executed, so the Slayer stays about to die. Votes are
+			// counted outside the app (Trevor, 2026-11-01), so who is about to die is the Storyteller's.
+			const failed = s.do((at) => ({
+				type: 'Execute',
+				seatId: at.seat('po'),
+				outcome: { kind: 'failed', characterId: 'judge' }
+			}));
+			expect(failed.game.seats[failed.seat('po')].dead).toBe(false);
+			const kinds = failed.game.today.entries.map((e) => e.kind);
+			expect(kinds.at(-1)).toBe('execution-failed');
+			expect(kinds).not.toContain('execution');
+			expect(failed.game.seats[failed.seat('judge')].reminders).toMatchObject([
+				{ characterId: 'judge', label: 'No Ability' }
+			]);
 		});
 		it("Example 2: Judge forces Goon's execution after Grandmother's nomination", () => {
 			// Wiki: "The good Judge nominates the Professor. Nobody votes, but the Judge may not use

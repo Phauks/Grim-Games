@@ -16,8 +16,8 @@ import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { alignmentOf } from '#lib/core/model/selectors.ts';
 import { abilityState } from '#lib/core/rules/ability.ts';
-import { mayNominate } from '#lib/core/rules/nominations.ts';
-import { engineGap, scenario } from '#lib/core/testing/scenario.ts';
+import { mayNominate, storytellerNominates } from '#lib/core/rules/nominations.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
 describe('Bishop', () => {
@@ -57,7 +57,7 @@ describe('Bishop', () => {
 				alignment
 			}));
 
-		it.fails('Example 1: Good Bishop: day-one nominees include Demon and Minion', () => {
+		it('Example 1: Good Bishop: day-one nominees include Demon and Minion', () => {
 			// Wiki: "The Bishop is good. On the first day, the Storyteller nominates the Demon, a
 			// Minion, and two Townsfolk. On the second day, the Storyteller nominates a Minion and
 			// Outsider."
@@ -65,12 +65,11 @@ describe('Bishop', () => {
 			const s = table('good').newDay();
 			expect(alignmentOf(s.game, s.seat('bishop'))).toBe('good');
 			expect(abilityState(s.game, s.seat('bishop'), s.characters).works).toBe(true);
-			engineGap(
-				'M9',
-				'while the Bishop works, no player may nominate; the Storyteller nominates, at least one evil player a day for a good Bishop'
-			);
+			expect(storytellerNominates(s.game, s.characters)).toEqual(['bishop']);
+			// Whom the Storyteller nominates, and that one is evil, is theirs to pick: the app keeps
+			// no list of who must be nominated.
 		});
-		it.fails('Example 2: Evil Bishop: a good Minstrel gets nominated', () => {
+		it('Example 2: Evil Bishop: a good Minstrel gets nominated', () => {
 			// Wiki: "The Bishop is evil. The Storyteller has nominated nobody. However, the
 			// Storyteller must nominate at least one good player today, so they choose the Minstrel.
 			// The next day, the Storyteller nominates four good players and the Demon. The Bishop is
@@ -78,13 +77,11 @@ describe('Bishop', () => {
 			// Once the Bishop is exiled, players nominate again.
 			const s = table('evil').newDay();
 			expect(alignmentOf(s.game, s.seat('bishop'))).toBe('evil');
+			expect(storytellerNominates(s.game, s.characters)).toEqual(['bishop']);
 			const exiled = s.newDay().do((at) => ({ type: 'Exile', seatId: at.seat('bishop') }));
 			expect(exiled.game.seats[exiled.seat('bishop')].dead).toBe(true);
 			expect(mayNominate(exiled.game, exiled.seat('chef'), exiled.characters)).toBe(true);
-			engineGap(
-				'M9',
-				'while the evil Bishop works, only the Storyteller nominates, at least one good player a day, until the Bishop is exiled'
-			);
+			expect(storytellerNominates(exiled.game, exiled.characters)).toEqual([]);
 		});
 	});
 });

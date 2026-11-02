@@ -6,12 +6,26 @@
  */
 import type { CharacterId } from '#lib/core/data/types.ts';
 import type { AfterDeath } from '#lib/core/data/after-death-rules.ts';
-import type { NominatedEffect } from '#lib/core/data/character-rules.ts';
+import type { NominatedEffect, NominatingEffect } from '#lib/core/data/character-rules.ts';
 import { rulesIn, rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { registersAsDead, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
 import type { DayEntry, Game, SeatId } from '#lib/core/model/types.ts';
 import { abilityState, registrations } from './ability.ts';
+import { heldAbilitiesOf } from './gained-abilities.ts';
+
+/**
+ * The abilities `seatId` has now: its own character's, while it works, and each it holds
+ * without a token that works (`heldAbilitiesOf`, the Virgin's the Boffin gave the Demon).
+ */
+function workingAbilities(game: Game, seatId: SeatId, characters: CharacterLookup): CharacterId[] {
+	const own = trueCharacter(game, seatId, characters);
+	const held = heldAbilitiesOf(game, seatId, characters)
+		.filter((h) => h.works)
+		.map((h) => h.characterId);
+	const works = own !== undefined && abilityState(game, seatId, characters).works;
+	return [...new Set([...(works ? [own] : []), ...held])];
+}
 
 export type Nomination = Extract<DayEntry, { kind: 'nomination' }>;
 
@@ -48,12 +62,18 @@ export function afterDeath(
 	if (!registersAsDead(game, seatId)) return undefined;
 	// Drunk or poisoned as they died: no power gained (https://wiki.bloodontheclocktower.com/Banshee).
 	if (game.seats[seatId]?.impairedAtDeath) return undefined;
-	const characterId = trueCharacter(game, seatId, characters);
-	const rule = characterId === undefined ? undefined : rulesOf(characterId, characters)?.afterDeath;
-	if (!rule) return undefined;
+	// Their own character's, or one they hold without a token (the Banshee's the Boffin gave
+	// the Demon, https://wiki.bloodontheclocktower.com/Boffin).
+	const own = trueCharacter(game, seatId, characters);
+	const held = heldAbilitiesOf(game, seatId, characters).map((h) => h.characterId);
 	const cause = game.seats[seatId]?.deathCause;
-	if (cause === undefined || rule.cause.includes(cause)) return rule;
-	return rule.cause.includes('demon') && characters.get(cause)?.type === 'demon' ? rule : undefined;
+	for (const characterId of [...(own === undefined ? [] : [own]), ...held]) {
+		const rule = rulesOf(characterId, characters)?.afterDeath;
+		if (!rule) continue;
+		if (cause === undefined || rule.cause.includes(cause)) return rule;
+		if (rule.cause.includes('demon') && characters.get(cause)?.type === 'demon') return rule;
+	}
+	return undefined;
 }
 
 /**
@@ -63,11 +83,44 @@ export function afterDeath(
  */
 export function nominationsPerDay(game: Game, seatId: SeatId, characters: CharacterLookup): number {
 	if (!registersAsDead(game, seatId)) return 1;
-	return afterDeath(game, seatId, characters)?.nominations ?? 0;
+	const own = afterDeath(game, seatId, characters)?.nominations ?? 0;
+	return Math.max(own, nomineeNominatesNow(game, seatId, characters) ? 1 : 0);
 }
 
-/** Whether a player may nominate at all today (`nominationsPerDay`). */
+/**
+ * Whether a dead player was nominated today while a nominee who dies nominates straight away
+ * (`nomineesNominate`, the Riot on day 3, https://wiki.bloodontheclocktower.com/Riot), and has
+ * not nominated since: a player of that character whose ability works, with that reminder of
+ * it in play.
+ */
+function nomineeNominatesNow(game: Game, seatId: SeatId, characters: CharacterLookup): boolean {
+	const entries = game.today.entries;
+	const received = entries.findLastIndex((e) => e.kind === 'nomination' && e.nominee === seatId);
+	if (received < 0) return false;
+	const since = entries.slice(received + 1);
+	if (since.some((e) => e.kind === 'nomination' && e.nominator === seatId)) return false;
+	const marked = (characterId: CharacterId, label: string) =>
+		game.seating.some((s) =>
+			game.seats[s]?.reminders.some((r) => r.characterId === characterId && r.label === label)
+		);
+	return game.seating.some((s) => {
+		const id = trueCharacter(game, s, characters);
+		const token = id === undefined ? undefined : rulesIn(game, id, characters)?.nomineesNominate;
+		return (
+			id !== undefined &&
+			token !== undefined &&
+			marked(id, token) &&
+			abilityState(game, s, characters).works
+		);
+	});
+}
+
+/**
+ * Whether a player may nominate at all today (`nominationsPerDay`), and, for a character that
+ * limits it to so many a game (`nominationsLeftThisGame`, the Golem), has one left.
+ */
 export function mayNominate(game: Game, seatId: SeatId, characters: CharacterLookup): boolean {
+	if (nominationsLeftThisGame(game, seatId, characters)?.left === 0) return false;
 	return nominationsPerDay(game, seatId, characters) > 0;
 }
 
@@ -96,6 +149,25 @@ export function extraNominationOpen(
 		.slice(first + 1)
 		.filter((e) => e.kind === 'nomination' && e.nominator === nominator).length;
 	return since < extra;
+}
+
+/**
+ * Whether executing `seatId` now is a further execution today that an extra nomination made it
+ * possible (`extraNominationOpen`, the Butcher, https://wiki.bloodontheclocktower.com/Butcher):
+ * their latest nomination today was one, and nobody has been executed since it.
+ */
+export function extraExecutionOpen(
+	game: Game,
+	seatId: SeatId,
+	characters: CharacterLookup
+): boolean {
+	const entries = game.today.entries;
+	const at = entries.findLastIndex((e) => e.kind === 'nomination' && e.nominee === seatId);
+	const nomination = entries[at];
+	if (at < 0 || nomination?.kind !== 'nomination') return false;
+	if (entries.slice(at + 1).some((e) => e.kind === 'execution')) return false;
+	const before: Game = { ...game, today: { ...game.today, entries: entries.slice(0, at) } };
+	return extraNominationOpen(before, nomination.nominator, characters);
 }
 
 /**
@@ -156,7 +228,7 @@ export function nominatorsAfterExecution(
  * nominee choose a player (`madness.chosenBy`, the Big Wig).
  */
 export interface CharacterNominationPrompt {
-	kind: NominatedEffect | 'nominee-chooses';
+	kind: NominatedEffect | NominatingEffect | 'nominee-chooses';
 	/** The character whose ability it is. */
 	characterId: CharacterId;
 	nominator: SeatId;
@@ -176,6 +248,7 @@ export function characterNominationPrompts(
 	characters: CharacterLookup
 ): CharacterNominationPrompt[] {
 	return [
+		...nominatorAbilityPrompts(game, nomination, characters),
 		...nomineeAbilityPrompts(game, nomination, characters),
 		...nomineeChooses(game, characters).map((characterId): CharacterNominationPrompt => ({
 			kind: 'nominee-chooses',
@@ -216,31 +289,72 @@ function nomineeAbilityPrompts(
 	const { nominator, nominee } = nomination;
 	if (nominator === nominee) return [];
 	const carried = game.seats[nominee]?.reminders ?? [];
-	return game.seating.flatMap((seatId): CharacterNominationPrompt[] => {
-		const characterId = trueCharacter(game, seatId, characters);
-		const rule =
-			characterId === undefined ? undefined : rulesIn(game, characterId, characters)?.onNominated;
-		if (characterId === undefined || !rule) return [];
-		const setOff = rule.carrier
-			? carried.some(
-					(r) =>
-						r.characterId === characterId &&
-						r.label === rule.carrier &&
-						(r.ownerSeatId === undefined || r.ownerSeatId === seatId)
-				)
-			: seatId === nominee;
-		if (!setOff || !abilityState(game, seatId, characters).works) return [];
-		const spent = game.seats[seatId]?.reminders.some(
-			(r) => r.characterId === characterId && r.label === 'No Ability'
-		);
-		if (spent) return [];
-		const by = rule.by;
-		const registersAs =
-			by === undefined ||
-			typeOf(game, nominator, characters) === by ||
-			registrations(game, characters).some((r) => r.seatId === nominator && r.types.includes(by));
-		return registersAs ? [{ kind: rule.effect, characterId, nominator, nominee }] : [];
-	});
+	return game.seating.flatMap((seatId) =>
+		workingAbilities(game, seatId, characters).flatMap(
+			(characterId): CharacterNominationPrompt[] => {
+				const rule = rulesIn(game, characterId, characters)?.onNominated;
+				if (!rule) return [];
+				const setOff = rule.carrier
+					? carries(carried, characterId, rule.carrier, seatId)
+					: seatId === nominee;
+				if (!setOff) return [];
+				const spent = game.seats[seatId]?.reminders.some(
+					(r) => r.characterId === characterId && r.label === 'No Ability'
+				);
+				if (spent) return [];
+				const by = rule.by;
+				const registersAs =
+					by === undefined ||
+					typeOf(game, nominator, characters) === by ||
+					registrations(game, characters).some(
+						(r) => r.seatId === nominator && r.types.includes(by)
+					);
+				return registersAs ? [{ kind: rule.effect, characterId, nominator, nominee }] : [];
+			}
+		)
+	);
+}
+
+/** Whether `reminders` hold `label` of `characterId`, placed by `ownerSeatId` or nobody known. */
+function carries(
+	reminders: readonly { characterId: CharacterId; label: string; ownerSeatId?: SeatId }[],
+	characterId: CharacterId,
+	label: string,
+	ownerSeatId: SeatId
+): boolean {
+	return reminders.some(
+		(r) =>
+			r.characterId === characterId &&
+			r.label === label &&
+			(r.ownerSeatId === undefined || r.ownerSeatId === ownerSeatId)
+	);
+}
+
+/**
+ * The abilities nominating sets off (`onNominating`): the nominator's own, or any player's
+ * whose `carrier` reminder the nominator has (the Witch's Cursed,
+ * https://wiki.bloodontheclocktower.com/Witch: a cursed player who nominates dies). Each only
+ * while its ability works, a dead player's kept one included (the Vigormortis's Has Ability).
+ */
+function nominatorAbilityPrompts(
+	game: Game,
+	nomination: { nominator: SeatId; nominee: SeatId },
+	characters: CharacterLookup
+): CharacterNominationPrompt[] {
+	const { nominator } = nomination;
+	const carried = game.seats[nominator]?.reminders ?? [];
+	return game.seating.flatMap((seatId) =>
+		workingAbilities(game, seatId, characters).flatMap(
+			(characterId): CharacterNominationPrompt[] => {
+				const rule = rulesIn(game, characterId, characters)?.onNominating;
+				if (!rule) return [];
+				const setOff = rule.carrier
+					? carries(carried, characterId, rule.carrier, seatId)
+					: seatId === nominator;
+				return setOff ? [{ kind: rule.effect, characterId, ...nomination }] : [];
+			}
+		)
+	);
 }
 
 /**

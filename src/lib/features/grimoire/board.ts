@@ -161,7 +161,8 @@ export function causeFlagText(
 	switch (flag.code) {
 		case 'registers': {
 			// "Only if Ana registered falsely ([Recluse])": the character shows as a badge.
-			return { text: `Only if ${victim} registered falsely`, by: flag.source.characterId };
+			const when = flag.unless ? 'Unless' : 'Only if';
+			return { text: `${when} ${victim} registered falsely`, by: flag.source.characterId };
 		}
 		case 'impaired':
 			return {

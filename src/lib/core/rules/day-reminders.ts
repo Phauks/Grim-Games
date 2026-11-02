@@ -15,6 +15,7 @@ import type { Character, CharacterId, PlayerName } from '#lib/core/data/types.ts
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import type { DeathCause, Game, Reminder, SeatId } from '#lib/core/model/types.ts';
 import { abilityState, impairmentOfLabel, type AbilityState, type Impairment } from './ability.ts';
+import { keepsAbilityWhenDead } from './dead-characters.ts';
 import {
 	DAY_GROUP_TITLES,
 	DAY_GROUPS,
@@ -41,6 +42,11 @@ export interface DaySeat {
 	/** The character token in the grimoire; seats without one are skipped. */
 	characterId?: CharacterId;
 	dead: boolean;
+	/**
+	 * Dead, but keeps their ability (`keepsAbility`, a Minion the Vigormortis killed): the lines
+	 * about their living ability still show (https://wiki.bloodontheclocktower.com/Vigormortis).
+	 */
+	keepsAbility?: boolean;
 	deathCause?: DeathCause;
 	reminders: readonly Reminder[];
 }
@@ -241,7 +247,13 @@ export function dayStateFromGame(
 	characters?: CharacterLookup
 ): DayState {
 	return {
-		seats: game.seating.map((id) => game.seats[id]).filter((s) => s !== undefined),
+		seats: game.seating.flatMap((id) => {
+			const seat = game.seats[id];
+			if (!seat) return [];
+			return seat.dead && characters && keepsAbilityWhenDead(game, id, characters)
+				? [{ ...seat, keepsAbility: true }]
+				: [seat];
+		}),
 		ruleCharacters: game.ruleCharacters,
 		character,
 		nominationChoices: game.today.entries.flatMap((e) =>
@@ -262,7 +274,7 @@ function ruleBlock(state: DayState, id: CharacterId) {
 
 /** Why a living seat's ability does not work: from `state.ability`, or its own tokens. */
 function seatImpairments(state: DayState, seat: DaySeat): Impairment[] {
-	if (seat.dead) return [];
+	if (seat.dead && !seat.keepsAbility) return [];
 	if (state.ability) return state.ability(seat.seatId).impairments;
 	return seat.reminders.flatMap((r): Impairment[] => {
 		const reason = impairmentOfLabel(r.label);
@@ -397,7 +409,7 @@ function conditionHolds(
 ): boolean | 'unknown' {
 	const self = when.self ?? 'alive';
 	const dead = seat?.dead ?? false;
-	if (self === 'alive' && dead) return false;
+	if (self === 'alive' && dead && !seat?.keepsAbility) return false;
 	if (self === 'dead' && !dead) return false;
 	if (when.minAlive !== undefined && alive < when.minAlive) return false;
 	if (when.cause && seat) return causeMatches(seat.deathCause, when.cause, state);

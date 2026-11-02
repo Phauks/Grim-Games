@@ -182,11 +182,9 @@ describe('Boffin', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Boffin#Examples)', () => {
-		it.fails("Example 1: Imp with Virgin ability executed by Alsaahir's nomination", () => {
+		it("Example 1: Imp with Virgin ability executed by Alsaahir's nomination", () => {
 			// Wiki: "The Imp has the Virgin ability. The Alsaahir nominates the Imp, and is immediately
 			// executed."
-			// Waits on the engine (M9): a nomination sets off only the nominee's own character's ability, not
-			// one the Boffin gave them.
 			const s = scenario(['boffin', 'imp', 'alsaahir', 'chef', 'empath'], { characters }).do(
 				boffinGives('imp', 'virgin')
 			);
@@ -218,11 +216,9 @@ describe('Boffin', () => {
 			]);
 		});
 
-		it.fails('Example 3: Dead Kazali gets two nominations and votes a day', () => {
+		it('Example 3: Dead Kazali gets two nominations and votes a day', () => {
 			// Wiki: "The Kazali has the Banshee ability. The Kazali dies at night, and the Scarlet Woman
 			// becomes the Kazali. The dead Kazali may nominate and vote twice per day."
-			// Waits on the engine (M9): a dead player's extra nominations come only from their own
-			// character, not from an ability the Boffin gave them.
 			const s = scenario(['boffin', 'kazali', 'scarletwoman', 'chef', 'empath', 'monk'], {
 				characters
 			})

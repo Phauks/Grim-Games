@@ -45,6 +45,16 @@ describe('parseCharacterRules', () => {
 		expect(parse({ onNominated: { ...onNominated, effect: 'swap' } }).issues).toHaveLength(1);
 	});
 
+	// https://wiki.bloodontheclocktower.com/Witch, /Riot
+	it('reads what nominating sets off, and which reminder lets nominees nominate', () => {
+		const onNominating = { carrier: 'Dead', effect: 'kills-nominator' };
+		expect(parse({ onNominating }).rules).toEqual({ onNominating });
+		expect(parse({ onNominating: { ...onNominating, carrier: 'Cursed' } }).issues).toHaveLength(1);
+		expect(parse({ onNominating: { effect: 'swap' } }).issues).toHaveLength(1);
+		expect(parse({ nomineesNominate: 'Dead' }).rules).toEqual({ nomineesNominate: 'Dead' });
+		expect(parse({ nomineesNominate: 'Day 3' }).issues).toHaveLength(1);
+	});
+
 	// https://wiki.bloodontheclocktower.com/Slayer (chooses a player), /Virgin (the nominator)
 	it('reads who a day ability is used on, and rejects an unknown one', () => {
 		expect(parse({ dayUse: { who: 'chosen' } }).rules).toEqual({ dayUse: { who: 'chosen' } });

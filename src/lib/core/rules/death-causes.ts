@@ -135,13 +135,15 @@ export function reminderDeathCause(
 /**
  * Why a cause is offered with a caution rather than plainly:
  * - `registers`: only if the player registered falsely (a Recluse as the Demon for the
- *   Slayer, a Spy as a Townsfolk for the Virgin), by `source`'s ability;
+ *   Slayer, a Spy as a Townsfolk for the Virgin), by `source`'s ability; with `unless`, the
+ *   other way round: unless they registered falsely (a Recluse as the Demon for the Golem,
+ *   https://wiki.bloodontheclocktower.com/Golem);
  * - `impaired`: every player who has the character is drunk, poisoned or without ability
  *   now, so it did nothing unless that was not so when the player died;
  * - `unknown`: the player's alignment or character is not set, so the rule cannot be checked.
  */
 export type DeathCauseFlag =
-	| { code: 'registers'; source: AbilitySource; wiki: string }
+	| { code: 'registers'; source: AbilitySource; wiki: string; unless?: true }
 	| { code: 'impaired'; seatIds: SeatId[] }
 	| { code: 'unknown' }
 	| { code: 'protected-by-day'; source: AbilitySource };
@@ -241,9 +243,10 @@ export function validDeathCauses(
 			const verdict = registersAs(game, seatId, rule.as, worlds, characters);
 			if (verdict === 'never') continue;
 			if (verdict === 'unknown') flags.push({ code: 'unknown' });
-			if (verdict === 'falsely') {
+			if (verdict === 'falsely' || verdict === 'unless-falsely') {
 				const reg = regs.find((r) => r.seatId === seatId);
-				if (reg) flags.push({ code: 'registers', source: reg.source, wiki: reg.wiki });
+				const unless = verdict === 'unless-falsely' ? { unless: true as const } : {};
+				if (reg) flags.push({ code: 'registers', source: reg.source, wiki: reg.wiki, ...unless });
 			}
 		}
 		if (
@@ -309,8 +312,8 @@ export function carriesDemonToken(
 }
 
 /**
- * Whether the player is (`truly`), could register as (`falsely`) or cannot be (`never`)
- * what the rule needs, or `unknown` when their alignment or character is not set. A player
+ * Whether the player is (`truly`), is but could register otherwise (`unless-falsely`), could
+ * register as (`falsely`) or cannot be (`never`) what the rule needs, or `unknown` when their alignment or character is not set. A player
  * carrying a reminder that makes them the Demon is the Demon (`carriesDemonToken`).
  */
 function registersAs(
@@ -319,7 +322,7 @@ function registersAs(
 	as: 'demon' | 'not-demon' | 'good' | 'townsfolk',
 	worlds: readonly RegistrationWorld[],
 	characters: CharacterLookup
-): 'truly' | 'falsely' | 'never' | 'unknown' {
+): 'truly' | 'unless-falsely' | 'falsely' | 'never' | 'unknown' {
 	const babysitter = carriesDemonToken(game, seatId, characters);
 	const test = (world: RegistrationWorld): boolean | undefined => {
 		if (as === 'good') {
@@ -334,6 +337,6 @@ function registersAs(
 	};
 	const first = test(worlds[0]);
 	if (first === undefined) return 'unknown';
-	if (first) return 'truly';
+	if (first) return worlds.every((w) => test(w) !== false) ? 'truly' : 'unless-falsely';
 	return worlds.some((w) => test(w)) ? 'falsely' : 'never';
 }
