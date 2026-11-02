@@ -176,6 +176,8 @@
 		display: grid;
 		gap: var(--space-4);
 		align-content: start;
+		/* Each look at its own width; Full width is the piece's own switch. */
+		justify-items: start;
 		min-width: 0;
 	}
 	.in-line {
