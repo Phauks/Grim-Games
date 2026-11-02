@@ -6,7 +6,12 @@
 		}
 	},
 	"gameEnd": {
-		"decidedByStoryteller": true
+		"ends": [
+			{
+				"kind": "executed-with-token",
+				"token": "Claimed"
+			}
+		]
 	},
 	"setupPrep": {
 		"none": "its tokens are only used after the first night or when something happens"
