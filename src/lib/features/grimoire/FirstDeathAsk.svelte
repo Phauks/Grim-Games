@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { seatName } from '#lib/features/game/seat-label.ts';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
-	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import BoardReminder from './BoardReminder.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
@@ -55,12 +55,12 @@
 >
 	{#if ask && character}
 		<div class="ability">
-			<CharacterRow {character} info>
-				{#snippet ability()}<GlossaryText
+			<CharacterPiece template="row" {character} info>
+				{#snippet abilityText()}<GlossaryText
 						text={character.ability}
 						names={[character.name]}
 					/>{/snippet}
-			</CharacterRow>
+			</CharacterPiece>
 		</div>
 		<dl class="change">
 			<dt>Player</dt>
