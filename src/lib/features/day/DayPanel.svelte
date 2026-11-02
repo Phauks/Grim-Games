@@ -8,6 +8,7 @@
 		dayMarkValue,
 		dayReminders,
 		marksInPlay,
+		quietStartRule,
 		markToken,
 		type DayMark,
 		dayClaim,
@@ -50,6 +51,7 @@
 	import MadnessDeathDialog from './MadnessDeathDialog.svelte';
 	import PrepValueDialog from './PrepValueDialog.svelte';
 	import DayUseDialog from './DayUseDialog.svelte';
+	import AnyoneUseButton from './AnyoneUseButton.svelte';
 
 	interface Props {
 		game: DayPort;
@@ -83,6 +85,8 @@
 	 * is the day log's, so it starts unset each new day and History can undo it.
 	 */
 	const marks = $derived(marksInPlay(g, game.characters));
+	/** A quiet start to each day in play (M15b: the Buddhist), counted down on the timer. */
+	const quiet = $derived(quietStartRule(g, game.characters));
 	/**
 	 * Jinxes between characters in play, as a mark on each one's band that opens their text
 	 * (L107; https://wiki.bloodontheclocktower.com/Djinn): on the band, so no row moves.
@@ -139,6 +143,19 @@
 			seatId,
 			run: () => game.run({ type: 'UseAbility', seatId, characterId })
 		});
+	}
+
+	/** A rule character's row whose day ability any living player may use (the Doomsayer). */
+	function anyoneOf(reminder: DayReminder): CharacterId | undefined {
+		const id = reminder.characterId;
+		const head = reminder.segments[0];
+		if (!id || head?.kind !== 'character' || head.ref.seatId) return undefined;
+		return dayUseOf(id, game.characters)?.anyone && g.ruleCharacters.includes(id) ? id : undefined;
+	}
+	/** Its player chosen (AnyoneUseButton): DayUseDialog asks who dies. */
+	function anyoneChose(characterId: CharacterId, seatId: SeatId) {
+		const rule = dayUseOf(characterId, game.characters);
+		if (rule) dayUse?.ask({ seatId, characterId, rule });
 	}
 
 	/**
@@ -368,6 +385,13 @@
 	{/if}
 {/snippet}
 
+<!-- Use on a rule character's row that any living player may use (the Doomsayer). -->
+{#snippet anyoneEnd(characterId: CharacterId)}
+	<span class="day-end"
+		><AnyoneUseButton {game} {characterId} onChoose={(s) => anyoneChose(characterId, s)} /></span
+	>
+{/snippet}
+
 <!-- Broke madness on a madness row, where no day button is (L84). -->
 {#snippet madnessEnd(offer: MadnessOffer)}
 	<span class="day-end"
@@ -431,7 +455,7 @@
 <div class="panel" style:--toolbar-height={`${toolbarHeight}px`}>
 	<!-- Stays in view while the day scrolls (Trevor, 2026-10-17). -->
 	<div class="toolbar" data-testid="day-toolbar" bind:borderBoxSize={toolbarSize}>
-		<DayTimer alive={block.alive} {town} />
+		<DayTimer alive={block.alive} {quiet} {town} />
 		{#if onOpenNight}
 			<Button icon="night" onclick={onOpenNight}>{t('day.nightOrder')}</Button>
 		{/if}
@@ -489,7 +513,11 @@
 											>{@render sentence()}{#if buttonRows[reminder.key]}{@render dayEnd(
 													reminder.characterId,
 													buttonRows[reminder.key]
-												)}{:else if mad}{@render madnessEnd(mad)}{/if}</span
+												)}{:else if mad}{@render madnessEnd(
+													mad
+												)}{:else if anyoneOf(reminder)}{@render anyoneEnd(
+													anyoneOf(reminder)!
+												)}{/if}</span
 										>
 									</CharacterRow>
 								{:else}

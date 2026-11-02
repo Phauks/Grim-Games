@@ -117,6 +117,20 @@
 		if (open ? up < -PULL : up > PULL) open = !open;
 	}
 	const binGroups = $derived(groups.filter((g) => g.items.length > 0));
+	/**
+	 * A token dragged out of it pulled up: let go, it stays down in its closed state (Trevor,
+	 * 2026-11-02), rather than coming back up.
+	 */
+	let draggedOut = false;
+	$effect(() => {
+		if (lowered) {
+			if (tall) draggedOut = true;
+			return;
+		}
+		if (!draggedOut) return;
+		draggedOut = false;
+		open = false;
+	});
 	/** A solid line goes before each stretch but the first. */
 	const startsGroup = (i: number) => i > 0 && items[i - 1].group !== items[i].group;
 	const endsGroup = (i: number) => i === items.length - 1 || items[i + 1].group !== items[i].group;
@@ -276,7 +290,11 @@
 			{@render header?.()}
 			<ReminderGroups label={binLabel} groups={binGroups} {keyOf} item={binToken} {size} />
 		</div>
-	{:else}
+	{/if}
+	<!-- Closed, or a token dragged out of it pulled up: back to its row (Trevor, 2026-11-02:
+	     dragging out of the bin left it empty). The bin stays under it, unseen, as the dragged
+	     token holds its pointer. -->
+	{#if !tall || lowered}
 		{#each captions as caption (caption.group)}<span
 				class="caption"
 				data-group={caption.group}
@@ -387,6 +405,9 @@
 		height: var(--tray-h);
 	}
 	.tray.lowered .every {
+		position: absolute;
+		inset: 0;
+		overflow: hidden;
 		opacity: 0;
 	}
 	/* The run button keeps its corner cell at the foot, the size it is in the row, its own

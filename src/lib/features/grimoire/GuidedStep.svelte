@@ -7,10 +7,12 @@
 	import StorytellerAbilityStep from './StorytellerAbilityStep.svelte';
 	import JinxChoiceStep from './JinxChoiceStep.svelte';
 	import CountdownStep from './CountdownStep.svelte';
+	import NoAttackStep from './NoAttackStep.svelte';
 	import NightSuggested from './NightSuggested.svelte';
 	import NightShownTo from './NightShownTo.svelte';
 	import NightYesNo from './NightYesNo.svelte';
 	import TravellerAlignment from './TravellerAlignment.svelte';
+	import SetupAlignmentStep from './SetupAlignmentStep.svelte';
 	import TravellerJoins from './TravellerJoins.svelte';
 	import { STANDARD_INFO_TOKENS, type CharacterId } from '#lib/core/data/index.ts';
 	import {
@@ -388,6 +390,17 @@
 					}}
 				/>
 			{/if}
+			{#if step.setupAlignments}
+				<!-- Over the open step, as with a suggestion's Show to player. -->
+				<SetupAlignmentStep
+					{grimoire}
+					onShow={(card) => {
+						shownId = undefined;
+						shownCard = card;
+						showOpen = true;
+					}}
+				/>
+			{/if}
 			<NightSuggested
 				{grimoire}
 				{step}
@@ -462,6 +475,8 @@
 				/>
 				<!-- The Courtier's Drunk 3, 2, 1: counted down on other nights, as its text says. -->
 				{#if night === 'other'}<CountdownStep {grimoire} {step} />{/if}
+				<!-- M15a: the Toymaker's No attack, on the Demon's step. -->
+				<NoAttackStep {grimoire} {step} />
 			{/if}
 			{#if numberStep}
 				<h3>Info token</h3>
