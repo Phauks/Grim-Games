@@ -8,7 +8,9 @@
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
  * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
- * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
+ * happened, then what the rules say. Quote the example word for word in a `// Wiki: "..."`
+ * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
+ * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
@@ -51,38 +53,56 @@ describe('Juggler', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Juggler#Examples)', () => {
-		// Three guesses on the first day, two of them naming the player's real character: the
-		// Juggler learns 2.
 		it("Example 1: Juggler's three guesses yield two correct", () => {
-			const s = scenario(['juggler', 'towncrier', 'nodashii', 'savant']).do((s) => ({
+			// Wiki: "During the first day, the Juggler guesses that Alex is the Town Crier, Mia is the No
+			// Dashii, and Julian is the Sage. That night, the Juggler learns a "2," meaning two of those
+			// guesses were correct."
+			// Alex is the Town Crier, Mia the No Dashii, and Julian the Savant.
+			const s = scenario(['juggler', 'towncrier', 'nodashii', 'savant', 'witch']).do((at) => ({
 				type: 'DayNote',
 				characterId: 'juggler',
-				seatId: s.seat('juggler'),
+				seatId: at.seat('juggler'),
 				text: '',
 				guesses: [
-					{ seatId: s.seat('towncrier'), characterId: 'towncrier' },
-					{ seatId: s.seat('nodashii'), characterId: 'nodashii' },
-					{ seatId: s.seat('savant'), characterId: 'sage' }
+					{ seatId: at.seat('towncrier'), characterId: 'towncrier' },
+					{ seatId: at.seat('nodashii'), characterId: 'nodashii' },
+					{ seatId: at.seat('savant'), characterId: 'sage' }
 				]
 			}));
-			expect(answer(s)).toMatchObject({ kind: 'number', value: 2 });
+			expect(nightAnswer(s.game, s.seat('juggler'), 'juggler', s.characters)).toMatchObject({
+				kind: 'number',
+				value: 2,
+				because: [s.seat('towncrier'), s.seat('nodashii')]
+			});
 		});
 
-		// A Juggler made mid-game guesses one player as two characters and another player as one
-		// of them; only one guess is right, so the Juggler learns 1.
 		it('Example 2: Savant-turned Juggler gets one right', () => {
-			const s = scenario(['juggler', 'witch', 'pithag', 'nodashii']).do((s) => ({
-				type: 'DayNote',
-				characterId: 'juggler',
-				seatId: s.seat('juggler'),
-				text: '',
-				guesses: [
-					{ seatId: s.seat('witch'), characterId: 'pithag' },
-					{ seatId: s.seat('witch'), characterId: 'witch' },
-					{ seatId: s.seat('pithag'), characterId: 'witch' }
-				]
-			}));
-			expect(answer(s)).toMatchObject({ kind: 'number', value: 1 });
+			// Wiki: "During the fourth night, the Savant gets turned into the Juggler. The next day, the
+			// new Juggler guesses that Benjamin is the Pit-Hag, that Benjamin is the Witch, and that Amy
+			// is the Pit-Hag. That night, the Juggler learns a "1.”"
+			// Benjamin is the Pit-Hag and Amy the Witch.
+			const s = scenario(['savant', 'pithag', 'witch', 'chef', 'nodashii'])
+				.newDay()
+				.newDay()
+				.newDay()
+				.becomes('savant', 'juggler')
+				.newDay()
+				.do((at) => ({
+					type: 'DayNote',
+					characterId: 'juggler',
+					seatId: at.seat('savant'),
+					text: '',
+					guesses: [
+						{ seatId: at.seat('pithag'), characterId: 'pithag' },
+						{ seatId: at.seat('pithag'), characterId: 'witch' },
+						{ seatId: at.seat('witch'), characterId: 'pithag' }
+					]
+				}));
+			expect(nightAnswer(s.game, s.seat('savant'), 'juggler', s.characters)).toMatchObject({
+				kind: 'number',
+				value: 1,
+				because: [s.seat('pithag')]
+			});
 		});
 	});
 

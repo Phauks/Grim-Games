@@ -6,6 +6,9 @@
  * - `impaired`: a waking player is drunk, poisoned or has no ability (from `abilityState`);
  * - `blocked`: another ability's token stops them waking tonight (`stopsWaking`: the
  *   Exorcist's Chosen on the Demon, https://wiki.bloodontheclocktower.com/Exorcist);
+ * - `acts-twice`: another ability's token makes their ability work twice tonight, so they wake
+ *   again after this step (`actsTwice`: the Barista's Acts Twice,
+ *   https://wiki.bloodontheclocktower.com/Barista);
  * - `no-kill`: another ability's token stops them killing tonight, so no kill alerts follow
  *   (`stopsKilling`: the Princess's Doesn't Kill on the Demon,
  *   https://wiki.bloodontheclocktower.com/Princess);
@@ -36,6 +39,7 @@ import { wikiUrl } from '#lib/core/data/wiki.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { alignmentOf, getSeat, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
 import type { DeathCause, Game, SeatId } from '#lib/core/model/types.ts';
+import { actsTwiceSource } from './acts-twice.ts';
 import { isExecution } from './death-causes.ts';
 import {
 	abilityState,
@@ -126,6 +130,7 @@ export const ON_DEATH: Readonly<Record<CharacterId, { by: KillBy | 'any'; night?
 export type NightAlertKind =
 	| 'impaired'
 	| 'blocked'
+	| 'acts-twice'
 	| 'no-kill'
 	| 'seating'
 	| 'protected'
@@ -205,6 +210,25 @@ export function nightStepAlerts(
 					works: true,
 					impairments: []
 				});
+	for (const seatId of actors) {
+		const twice = actsTwiceSource(game, seatId, characters);
+		if (!twice) continue;
+		const character = characters.get(twice.characterId);
+		out.push(
+			sourceAlert(
+				game,
+				'acts-twice',
+				seatId,
+				{
+					characterId: twice.characterId,
+					...(twice.seatId ? { seatId: twice.seatId } : {}),
+					reminderId: twice.reminderId
+				},
+				characters,
+				character && wikiUrl(character)
+			)
+		);
+	}
 	let noKill = false;
 	for (const seatId of actors) {
 		for (const r of game.seats[seatId].reminders) {

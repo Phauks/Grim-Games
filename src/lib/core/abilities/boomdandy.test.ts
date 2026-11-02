@@ -8,7 +8,9 @@
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
  * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
- * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
+ * happened, then what the rules say. Quote the example word for word in a `// Wiki: "..."`
+ * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
+ * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
@@ -48,6 +50,11 @@ describe('Boomdandy', () => {
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Boomdandy#Examples)', () => {
 		it('Example 1: Pointing kills Widow after explosion; evil wins', () => {
+			// Wiki: "Amy is the Boomdandy. She is executed. She explodes, killing all players except for
+			// the Po, the Widow, and the Fortune Teller. Frantically, all players start pointing at each
+			// other, and talking about who should be pointed at. After counting down, the Storyteller
+			// calls “Freeze” and the Widow has the most number of fingers pointed at them, and dies. Evil
+			// wins."
 			// The Boomdandy is executed: everyone dies but the Po, the Widow and the Fortune Teller.
 			// The three point, the Widow is pointed at most and dies, and two players are left.
 			const before = scenario([
