@@ -17,7 +17,7 @@ import {
  * - which reminders light up while a seat's token is held;
  * - when a reminder shows its line back to its seat (reminder-lines.ts);
  * - how a seat shows an ability it holds without its token (the Boffin's good character);
- * - whether a moving background moves (plan L113).
+ * - whether a moving background moves (plan L114).
  */
 export interface BoardLooks {
 	vignette: boolean;
@@ -56,7 +56,7 @@ export interface BoardLooks {
 	 */
 	truthLook: 'grimbinder' | 'vanilla';
 	/**
-	 * A moving background moves (plan L113); off, every scene shows its still frame. A device
+	 * A moving background moves (plan L114); off, every scene shows its still frame. A device
 	 * that asks for less motion always gets the still frame.
 	 */
 	movingBackgrounds: boolean;
