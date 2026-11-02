@@ -364,12 +364,8 @@ test('a Traveller is exiled, and a death offers only valid causes', async ({ pag
 
 	// No characters are in play, so no character is offered.
 	const causes = await openStatus(page, 3);
-	await expect(causes.locator('button.cause')).toHaveText([
-		'Alive',
-		'Not in play',
-		'Executed',
-		'The Demon'
-	]);
+	// Only a Traveller is offered Not in play (Trevor, 2026-11-02).
+	await expect(causes.locator('button.cause')).toHaveText(['Alive', 'Executed', 'The Demon']);
 	await causes.getByRole('button', { name: 'The Demon', exact: true }).tap();
 	await expect(causes).toBeHidden();
 	await closeSeat(page);

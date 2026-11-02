@@ -10,8 +10,13 @@
 	import NightShownTo from './NightShownTo.svelte';
 	import NightYesNo from './NightYesNo.svelte';
 	import TravellerAlignment from './TravellerAlignment.svelte';
+	import TravellerJoins from './TravellerJoins.svelte';
 	import { STANDARD_INFO_TOKENS, type CharacterId } from '#lib/core/data/index.ts';
-	import { believesDemon, TRAVELLER_ALIGNMENT_STEP } from '#lib/core/rules/index.ts';
+	import {
+		believesDemon,
+		TRAVELLER_ALIGNMENT_STEP,
+		TRAVELLER_JOINS_STEP
+	} from '#lib/core/rules/index.ts';
 	import { seesGrimoire } from '#lib/core/rules/sees-grimoire.ts';
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import type { InfoChoice, InfoPicker, Night, NightStep } from '#lib/core/rules/index.ts';
@@ -307,6 +312,9 @@
 				>
 			{/if}
 			<NightAlerts {grimoire} {step} withoutImpaired />
+			{#if step.id === TRAVELLER_JOINS_STEP}
+				<TravellerJoins {grimoire} travellers={step.travellers ?? []} />
+			{/if}
 			{#if step.id === TRAVELLER_ALIGNMENT_STEP}
 				<TravellerAlignment
 					{grimoire}

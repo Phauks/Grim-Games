@@ -41,3 +41,36 @@ export function withTravellerAlignmentStep<T extends NightStep>(
 	};
 	return [step, ...steps];
 }
+
+/** The id of the night step that offers to bring Travellers not in play into play. */
+export const TRAVELLER_JOINS_STEP = 'traveller-joins';
+
+/** Travellers sitting out (`Seat.notInPlay`), in seating order. */
+export function travellersNotInPlay(game: Game, characters: CharacterLookup): SeatId[] {
+	return game.seating.filter((s) => game.seats[s]?.notInPlay && isTraveller(game, s, characters));
+}
+
+/**
+ * The night steps with a step to bring each Traveller not in play into play, when there are
+ * any (Trevor, 2026-11-02: the night offers it, the Storyteller decides). The wiki lets a
+ * Traveller join at any time (https://wiki.bloodontheclocktower.com/Travellers). Placed
+ * right after Dusk with the other steps that come before anyone wakes.
+ */
+export function withTravellerJoinsStep<T extends NightStep>(
+	steps: readonly T[],
+	game: Game,
+	characters: CharacterLookup
+): (T | NightStep)[] {
+	const travellers = travellersNotInPlay(game, characters);
+	if (travellers.length === 0) return [...steps];
+	const step: NightStep = {
+		id: TRAVELLER_JOINS_STEP,
+		kind: 'custom',
+		title: 'Travellers not in play',
+		afterDawn: false,
+		placement: 'marker',
+		notes: [],
+		travellers
+	};
+	return [step, ...steps];
+}

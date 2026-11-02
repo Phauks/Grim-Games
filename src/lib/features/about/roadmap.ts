@@ -271,9 +271,9 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	},
 	{
 		title:
-			'Travellers choose their own Traveller on their phones: the Storyteller sends the ones allowed, a tap holds one so no one else can take it, Confirm sends it; a Traveller who arrives mid-game sits at the table not in play until the night',
+			'Travellers choose their own Traveller on their phones: the Storyteller sends the ones allowed, a tap holds one so no one else can take it, Confirm sends it; a Traveller who arrives mid-game sits at the table not in play until the night offers to bring them in',
 		area: 'storyteller',
-		parts: ['L102', 'L102a']
+		parts: ['L102', 'L102a', 'L102b']
 	},
 	{
 		title:
