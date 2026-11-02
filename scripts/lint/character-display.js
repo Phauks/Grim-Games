@@ -23,6 +23,8 @@ import { fileURLToPath } from 'node:url';
 
 const TYPES_FILE = fileURLToPath(new URL('../../src/lib/core/data/types.ts', import.meta.url));
 const ICON_FUNCTIONS = new Set(['iconUrl', 'fallbackIconUrl']);
+/** Components whose snippets may show a character's ability. */
+const ROW_OWNERS = new Set(['CharacterRow', 'Character']);
 
 /** True when a type, or one member of a union, is core's `Character`. */
 function isCharacter(type) {
@@ -42,7 +44,7 @@ function placeOf(node) {
 	let markup = false;
 	for (let at = node.parent; at; at = at.parent) {
 		if (at.type === 'SvelteScriptElement') return 'script';
-		if (at.type === 'SvelteElement' && at.name?.name === 'CharacterRow') return 'row';
+		if (at.type === 'SvelteElement' && ROW_OWNERS.has(at.name?.name)) return 'row';
 		if (typeof at.type === 'string' && at.type.startsWith('Svelte')) markup = true;
 	}
 	return markup ? 'markup' : 'none';

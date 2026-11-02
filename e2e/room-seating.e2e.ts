@@ -8,7 +8,6 @@ import {
 } from '@playwright/test';
 import { openProfile, setPlayerName } from './player-name.ts';
 import { toBoard } from './new-game.ts';
-import { notATraveller } from './add-seat.ts';
 
 // Seating on the grim (plan J38; Trevor, 2026-10-29 22:36: "yes to drag circle, yes to claim",
 // with no left and right): while seating is open each phone drags its own disc onto the seat it
@@ -212,22 +211,36 @@ test('Character selection opens Seating, and Done comes back to it', async ({ pa
 	const setup = page.url();
 	await page.getByRole('button', { name: 'Seating' }).tap();
 	await expect(page.getByRole('toolbar', { name: 'Grimoire' })).toContainText('Seating');
-	// No room open: the room's parts stay in place, disabled.
 	const bar = page.getByRole('toolbar', { name: 'Grimoire' });
-	await expect(bar.getByRole('button', { name: 'Open seating' })).toBeDisabled();
-	await expect(bar.getByRole('button', { name: 'Count off' })).toBeDisabled();
+	// No room open yet, so Open seating starts off.
+	await expect(bar.getByRole('button', { name: 'Open seating' })).toHaveAttribute(
+		'aria-pressed',
+		'false'
+	);
 	// Add seat is there too: it places a seat, then comes back to Seating (Trevor, 2026-11-01).
 	const seats = page.getByRole('button', { name: /^Seat \d+/ });
 	const before = await seats.count();
 	await bar.getByRole('button', { name: 'Add seat' }).tap();
-	await expect(bar).toContainText('Add a seat');
+	// No "Add a seat" hint covers the board (Trevor, 2026-11-02); the spots show where to tap.
+	await expect(page.getByRole('status').filter({ hasText: 'Add a seat' })).toHaveCount(0);
 	await page
 		.getByRole('button', { name: /^Place between/ })
 		.first()
 		.tap();
-	await notATraveller(page);
 	await expect(bar.getByRole('button', { name: 'Open seating' })).toBeVisible();
 	await expect(seats).toHaveCount(before + 1);
+	// Open seating and Count off work before anyone joins: they open the room first (Trevor,
+	// 2026-11-02: "Even if no one is in the room yet").
+	const open = bar.getByRole('button', { name: 'Open seating' });
+	await expect(open).toBeEnabled();
+	await open.tap();
+	await expect(open).toHaveAttribute('aria-pressed', 'true');
+	await bar.getByRole('button', { name: 'Count off' }).tap();
+	const sheet = page.getByRole('dialog', { name: 'Count off' });
+	await expect(sheet.getByTestId('count-off-host')).toBeVisible();
+	await expect(sheet.getByRole('button', { name: 'Done' })).toBeEnabled();
+	await sheet.getByRole('button', { name: 'Cancel' }).tap();
+	await expect(sheet).toBeHidden();
 	await leaveSeating(page);
 	await expect(page).toHaveURL(setup);
 });
