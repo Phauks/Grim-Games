@@ -14,6 +14,7 @@ import type { EngineWarning } from '#lib/core/engine/index.ts';
 import { slot } from '#lib/features/characters/slots.ts';
 import {
 	analyseSetup,
+	gainedSetupAbilities,
 	reminderTargetMisses,
 	targetRule,
 	type DeathCauseFlag,
@@ -273,6 +274,12 @@ function tableProblems(
 		players: seats.length,
 		travellers,
 		inPlay,
+		// The Alchemist's Minion ability changes setup as that Minion would.
+		abilities: gainedSetupAbilities(
+			game,
+			characters,
+			seats.map((s) => s.seatId)
+		),
 		findById: (id) => characters.get(id),
 		// Homebrew brackets name characters: "[+ Spartacus]".
 		findByName: (name) =>

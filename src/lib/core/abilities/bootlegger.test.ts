@@ -55,7 +55,7 @@ describe('Bootlegger', () => {
 		const data = committedGameData();
 		const official = ['chef', 'empath', 'monk', 'saint', 'poisoner', 'imp'];
 
-		it.fails('Example 1: Bootlegger for a homebrew character', () => {
+		it('Example 1: Bootlegger for a homebrew character', () => {
 			// Wiki: "The character sheet contains the homebrew character the Peasant. The
 			// Storyteller announces that the Bootlegger is in play and then explains how the
 			// Peasant works."
