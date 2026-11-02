@@ -1,11 +1,9 @@
 <script lang="ts">
 	import { FORGOT_WAIT_MS, secondsLeft } from '#lib/core/rules/draw-lock.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import Button from '#lib/ui/primitives/Button.svelte';
 	import CodeField from '#lib/ui/primitives/CodeField.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
-	import IconButton from '#lib/ui/primitives/IconButton.svelte';
-	import Popover from '#lib/ui/primitives/Popover.svelte';
+	import Menu from '#lib/ui/primitives/Menu.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import { drawLock } from './draw-lock.svelte.ts';
 
@@ -41,7 +39,6 @@
 	let forgotAt = $state<number | undefined>();
 	let now = $state(Date.now());
 	let menuOpen = $state(false);
-	let moreButton = $state<HTMLButtonElement>();
 
 	$effect(() => {
 		if (!open) return;
@@ -141,23 +138,34 @@
 		? t(cover ? 'setup.lock.coverSetBody' : 'setup.lock.setBody')
 		: undefined}
 >
-	<!-- Forgot PIN behind ⋯, so Cancel and Confirm keep one line on a phone (Trevor, 2026-10-25). -->
+	<!-- Forgot PIN behind ⋯, so Cancel and Confirm keep one line on a phone (Trevor, 2026-10-25),
+	     a menu item in the shared ⋯ menu, not a button (Trevor, 2026-11-02). -->
 	{#snippet headActions()}
 		{#if mode === 'unlock'}
-			<IconButton
-				icon="more"
+			<Menu
 				label={t('setup.lock.more')}
-				bind:ref={moreButton}
-				aria-haspopup="dialog"
-				aria-expanded={menuOpen}
-				onclick={() => (menuOpen = !menuOpen)}
+				bind:open={menuOpen}
+				items={[
+					forgotAt === undefined
+						? {
+								value: 'forgot',
+								label: t('setup.lock.forgot'),
+								onSelect: () => (forgotAt = Date.now() + FORGOT_WAIT_MS)
+							}
+						: {
+								value: 'keep',
+								label: t(cover ? 'setup.lock.keepCovered' : 'setup.lock.keepLocked'),
+								onSelect: () => (forgotAt = undefined)
+							}
+				]}
 			/>
 		{/if}
 	{/snippet}
 	<form class="pin" onsubmit={(e) => void submit(e)} data-testid="pin-dialog">
 		<label for="draw-pin">{t('setup.lock.pin')}</label>
-		<!-- On a phone: the 4th digit or Next moves on to PIN again, Enter there commits, as
-		     the keyboard's action key can't reach a Confirm it covers (Trevor, 2026-10-25). -->
+		<!-- Like a phone's lock screen, the last digit checks the PIN with no Enter (Trevor,
+		     2026-11-02); setting one, it moves on to PIN again, whose last digit locks. Enter
+		     and Confirm still work, as the keyboard can cover Confirm (Trevor, 2026-10-25). -->
 		<CodeField
 			id="draw-pin"
 			bind:value={pin}
@@ -166,9 +174,7 @@
 			clearLabel={t('setup.lock.clear')}
 			enterkeyhint={mode === 'set' ? 'next' : 'done'}
 			onenter={() => (mode === 'set' ? focusAgain() : void submit())}
-			oncomplete={() => {
-				if (mode === 'set') focusAgain();
-			}}
+			oncomplete={() => (mode === 'set' ? focusAgain() : void submit())}
 		/>
 		{#if mode === 'set'}
 			<label for="draw-pin-again">{t('setup.lock.again')}</label>
@@ -180,6 +186,7 @@
 				clearLabel={t('setup.lock.clear')}
 				enterkeyhint="done"
 				onenter={() => void submit()}
+				oncomplete={() => void submit()}
 			/>
 		{/if}
 		<p class="message" role="status" data-testid="pin-message">{message}</p>
@@ -193,36 +200,11 @@
 	{/snippet}
 </Dialog>
 
-<Popover bind:open={menuOpen} title={t('setup.lock.more')} anchor={moreButton}>
-	<div class="menu">
-		{#if forgotAt === undefined}
-			<Button
-				variant="quiet"
-				onclick={() => {
-					forgotAt = Date.now() + FORGOT_WAIT_MS;
-					menuOpen = false;
-				}}>{t('setup.lock.forgot')}</Button
-			>
-		{:else}
-			<Button
-				variant="quiet"
-				onclick={() => {
-					forgotAt = undefined;
-					menuOpen = false;
-				}}>{t(cover ? 'setup.lock.keepCovered' : 'setup.lock.keepLocked')}</Button
-			>
-		{/if}
-	</div>
-</Popover>
-
 <style>
 	.pin {
 		display: grid;
 		justify-items: center;
 		gap: var(--space-2);
-	}
-	.menu {
-		display: grid;
 	}
 	.message {
 		min-height: 1.5em;

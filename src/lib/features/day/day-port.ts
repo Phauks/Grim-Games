@@ -49,8 +49,18 @@ export function describeEntry(
 							character: characterName(entry.savedBy.characterId)
 						})
 					: t('day.logExecutedSurvived', { name: seatName(entry.seatId) });
+			if (entry.forcedBy)
+				return t('day.logExecutedForced', {
+					name: seatName(entry.seatId),
+					character: characterName(entry.forcedBy.characterId)
+				});
 			return t(entry.died ? 'day.logExecuted' : 'day.logExecutedDead', {
 				name: seatName(entry.seatId)
+			});
+		case 'execution-failed':
+			return t('day.logExecutionFailed', {
+				name: seatName(entry.seatId),
+				character: characterName(entry.by.characterId)
 			});
 		case 'exile':
 			return t(entry.died ? 'day.logExiled' : 'day.logExiledDead', {
@@ -61,6 +71,8 @@ export function describeEntry(
 				character: characterName(entry.characterId),
 				seat: seatName(entry.seatId)
 			};
+			if (entry.passed !== undefined)
+				return t(entry.passed ? 'day.logAbilityVotePassed' : 'day.logAbilityVoteFailed', names);
 			if (entry.on === undefined) return t('day.logAbility', names);
 			// Official characters' rules only: a custom one's use reads as "on" its player.
 			const who = dayUseWho(entry.characterId) ?? 'chosen';

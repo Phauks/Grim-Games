@@ -16,6 +16,9 @@
  *   Woman, Imp, Fang Gu, Zombuul, Lleech and Heretic among the official ones. An end with
  *   holds is listed but doesn't prompt (`promptable`).
  *
+ * - A jinx may add an end with its partner (`jinxes.endsGame`, `data/jinx-rules.ts`): the
+ *   Leviathan's and Riot's (`jinxEnds`). Such an end names the partner in `jinxedWith`.
+ *
  * Results are data only (no wording): `rule` says which rule, `seats` say who.
  * Rules checked "at dusk" (Vortox, Mayor, Leviathan's day 5) use `dayEnded` for today, and
  * every day closed by Dawn ("New day") before it.
@@ -36,6 +39,7 @@ import {
 import type { DayLog, Game, SeatId } from '#lib/core/model/types.ts';
 import { abilityState, type AbilitySource } from './ability.ts';
 import { carriesDemonToken, isExecution } from './death-causes.ts';
+import { jinxEnds } from './jinx-ends.ts';
 import { rebirthOf } from './reincarnation.ts';
 
 const W = 'https://wiki.bloodontheclocktower.com/';
@@ -56,6 +60,7 @@ const W = 'https://wiki.bloodontheclocktower.com/';
  * - `dead-without-demon`: there is no Demon and its players are dead;
  * - `extra-day`: on the extra day, a player was executed (their team loses) or nobody was
  *   (good wins);
+ * - `cult-joined`: its player's vote passed today (`seats`: them);
  * - `demon-executed`: a special rule says good wins when a Demon dies by execution (Binary
  *   Supernovae), and one has (`seats`: the executed Demons; `ruleName`: the rule).
  */
@@ -96,6 +101,11 @@ export interface GameEnd {
 	holds: GameHold[];
 	/** The special rule whose end it is, by name, for an end no character gives. */
 	ruleName?: string;
+	/**
+	 * Set when a jinx between `characterId` and this character gives the end (the Leviathan
+	 * nominating and executing the Soldier), so the jinx's own text says why.
+	 */
+	jinxedWith?: CharacterId;
 }
 
 export interface GameEndOptions {
@@ -184,13 +194,6 @@ function impaired(
 }
 
 /**
- * Alive for the game's end. Marked dead isn't always dead, while sober (`aliveWhileDead`):
- * - until its own token marks the real death: the Zombuul's first death, when it lives but
- *   registers as dead (https://wiki.bloodontheclocktower.com/Zombuul);
- * - while the player with its token lives: the Lleech dies only with its host
- *   (https://wiki.bloodontheclocktower.com/Lleech).
- */
-/**
  * Marked dead, yet still alive by its own ability (`gameEnd.aliveWhileDead`): the Zombuul after
  * its first death, which "lives but registers as dead" and still wakes to kill
  * (https://wiki.bloodontheclocktower.com/Zombuul), or a Lleech whose host lives
@@ -200,6 +203,10 @@ export function livesWhileDead(game: Game, seatId: SeatId, characters: Character
 	return !!game.seats[seatId]?.dead && aliveForEnd(game, seatId, characters);
 }
 
+/**
+ * Alive for the game's end. Marked dead isn't always dead, while sober (`aliveWhileDead`):
+ * the Zombuul's first death, a Lleech whose host lives.
+ */
 function aliveForEnd(game: Game, seatId: SeatId, characters: CharacterLookup): boolean {
 	if (isAliveForWin(game, seatId)) return true;
 	const seat = game.seats[seatId];
@@ -574,6 +581,37 @@ function nominatedMarkedExecuted(game: Game, characters: CharacterLookup): GameE
 }
 
 /**
+ * Its player's vote passed today, so their team wins (the Cult Leader: every living good player
+ * joined the cult, https://wiki.bloodontheclocktower.com/Cult_Leader). The vote is recorded
+ * when its use is marked (`UseAbility`'s `passed`). A poisoned or drunk player's cult doesn't
+ * form, so that holds it (the Storyteller's call).
+ */
+function cultJoined(game: Game, characters: CharacterLookup): GameEnd[] {
+	return endsOf(game, characters, 'cult-joined').flatMap(({ seatId, characterId }) => {
+		const passed = game.today.entries.some(
+			(e) =>
+				e.kind === 'ability' &&
+				e.seatId === seatId &&
+				e.characterId === characterId &&
+				e.passed === true
+		);
+		if (!passed) return [];
+		return [
+			{
+				key: `cult-joined:${seatId}:${game.pastDays.length}`,
+				rule: 'cult-joined' as const,
+				winner: alignmentOf(game, seatId) ?? 'good',
+				characterId,
+				seats: [seatId],
+				day: game.pastDays.length,
+				wiki: wikiOf(characterId, characters),
+				holds: impaired(game, seatId, characterId, characters)
+			}
+		];
+	});
+}
+
+/**
  * There is no Demon and its players are dead (the Summoner, who can no longer summon one:
  * https://wiki.bloodontheclocktower.com/Summoner).
  */
@@ -664,14 +702,29 @@ export function gameEnds(
 		else if ('key' in mind) out.push(mind);
 		else out.push({ ...end, holds: [...end.holds, mind] });
 	}
+	const jinxed = jinxEnds(game, characters, {
+		logs: days(game),
+		ended: endedDays(game, options),
+		executedOn,
+		alive: (id) => aliveForEnd(game, id, characters),
+		impaired: (id, characterId) => impaired(game, id, characterId, characters),
+		carrying: (characterId, label) => carrying(game, characterId, label),
+		wiki: (characterId) => wikiOf(characterId, characters)
+	});
 	out.push(
 		...executedLoses(game, characters),
 		...markedExecuted(game, characters),
 		...nominatedMarkedExecuted(game, characters),
-		...whileAlive(game, characters, options),
+		...jinxed.ends,
+		// A jinx end on a day replaces the character's own end that day (the Leviathan's day 5
+		// with the Mayor alive and no execution).
+		...whileAlive(game, characters, options).filter(
+			(e) => !jinxed.replaced.has(`${e.characterId}:${e.day}`)
+		),
 		...dayWithoutExecution(game, characters, options),
 		...aliveAtDusk(game, characters, options),
-		...deadWithoutDemon(game, characters)
+		...deadWithoutDemon(game, characters),
+		...cultJoined(game, characters)
 	);
 	// A dead Demon wins it for good before "just 2 alive" can.
 	if (demon.length === 0) out.push(...twoAlive(game, characters));

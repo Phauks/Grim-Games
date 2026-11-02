@@ -2,8 +2,7 @@
 	import type { Command } from '#lib/core/engine/index.ts';
 	import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import NoteCards from '#lib/ui/notes/NoteCards.svelte';
-	import NoteDraftEditor from '#lib/ui/notes/NoteDraftEditor.svelte';
+	import NoteList from '#lib/ui/notes/NoteList.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import { gameNotesDialog } from './game-notes-dialog.svelte.ts';
@@ -42,7 +41,6 @@
 			else local = v;
 		}
 	};
-	let editor = $state<ReturnType<typeof NoteDraftEditor>>();
 	const notes = $derived(game.game.notes ?? []);
 	const viewOnly = $derived(game.viewOnly);
 </script>
@@ -57,21 +55,16 @@
 	/></span
 >
 <Dialog bind:open={() => open.value, (v) => (open.value = v)} title={t('room.players.gameNotes')}>
+	<!-- Each written where it sits (Trevor, 2026-11-02). -->
 	<div data-testid="game-notes">
-		<NoteCards
+		<NoteList
 			{notes}
-			onOpen={(noteId) => editor?.edit(noteId)}
-			onAdd={viewOnly ? undefined : () => editor?.edit()}
+			readonly={viewOnly}
+			onSave={(note) => !viewOnly && run({ type: 'SetGameNote', ...note })}
+			onDelete={(noteId) => !viewOnly && run({ type: 'DeleteGameNote', noteId })}
 		/>
 	</div>
 </Dialog>
-<NoteDraftEditor
-	bind:this={editor}
-	{notes}
-	readonly={viewOnly}
-	onSave={(note) => !viewOnly && run({ type: 'SetGameNote', ...note })}
-	onDelete={(noteId) => !viewOnly && run({ type: 'DeleteGameNote', noteId })}
-/>
 
 <style>
 	.notes-slot {

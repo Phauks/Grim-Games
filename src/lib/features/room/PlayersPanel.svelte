@@ -7,8 +7,7 @@
 	import type { Command } from '#lib/core/engine/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
-	import NoteCards from '#lib/ui/notes/NoteCards.svelte';
-	import NoteDraftEditor from '#lib/ui/notes/NoteDraftEditor.svelte';
+	import NoteList from '#lib/ui/notes/NoteList.svelte';
 	import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 	import { seatName } from '#lib/features/game/seat-label.ts';
 	import SeatAvatarButton from '#lib/features/player/SeatAvatarButton.svelte';
@@ -132,21 +131,14 @@
 	const viewOnly = $derived(game.viewOnly);
 	const seatNotes = (seatId: SeatId | undefined) =>
 		(seatId && game.game.seats[seatId]?.notes) || [];
-	let editor = $state<ReturnType<typeof NoteDraftEditor>>();
-	/** Whose note the editor has open. */
-	let noteSeat = $state<SeatId>();
-	function openNote(seatId: SeatId, noteId?: string) {
-		noteSeat = seatId;
-		editor?.edit(noteId);
-	}
 	type Written = { noteId?: string; title: string; text: string; hidden: boolean };
-	function saveNote(note: Written) {
-		if (viewOnly || !noteSeat) return;
-		run({ type: 'SetSeatNote', seatId: noteSeat, ...note });
+	function saveNote(seatId: SeatId, note: Written) {
+		if (viewOnly) return;
+		run({ type: 'SetSeatNote', seatId, ...note });
 	}
-	function deleteNote(noteId: string) {
-		if (viewOnly || !noteSeat) return;
-		run({ type: 'DeleteSeatNote', seatId: noteSeat, noteId });
+	function deleteNote(seatId: SeatId, noteId: string) {
+		if (viewOnly) return;
+		run({ type: 'DeleteSeatNote', seatId, noteId });
 	}
 </script>
 
@@ -286,10 +278,11 @@
 					count={seatNotes(seatId).length}
 					countOpen
 				>
-					<NoteCards
+					<NoteList
 						notes={seatNotes(seatId)}
-						onOpen={(noteId) => openNote(seatId, noteId)}
-						onAdd={viewOnly ? undefined : () => openNote(seatId)}
+						readonly={viewOnly}
+						onSave={(note) => saveNote(seatId, note)}
+						onDelete={(noteId) => deleteNote(seatId, noteId)}
 					/>
 				</Collapsible>
 			{/if}
@@ -306,15 +299,6 @@
 	{#if removing}<PlayerBadge name={removing.name} />{/if}
 	<p>{t('room.players.removeBody')}</p>
 </ConfirmDialog>
-
-<!-- One editor for every player's notes. Never shown to players. -->
-<NoteDraftEditor
-	bind:this={editor}
-	notes={seatNotes(noteSeat)}
-	readonly={viewOnly}
-	onSave={saveNote}
-	onDelete={deleteNote}
-/>
 
 <style>
 	/*

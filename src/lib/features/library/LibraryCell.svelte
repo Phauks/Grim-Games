@@ -44,7 +44,9 @@
 		folder: 'folder',
 		script: 'script',
 		character: 'buildCharacter',
-		collection: 'players'
+		collection: 'players',
+		mode: 'buildMode',
+		rule: 'specialRule'
 	};
 </script>
 

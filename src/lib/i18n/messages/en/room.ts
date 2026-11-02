@@ -157,6 +157,12 @@ export const room = {
 	'room.transfer.asking': 'wants to take over this room as its Storyteller.',
 	'room.transfer.askingDevice': 'Another device wants to take over this room as its Storyteller.',
 	'room.transfer.handedOver': 'This room has a new Storyteller.',
+	// Plan F14: friends in the room, handed the room with no code.
+	'room.transfer.friends': 'Friends in the room',
+	'room.transfer.handOver': 'Hand over',
+	'room.transfer.offered': 'Offered',
+	'room.transfer.offerFailed': 'That friend can’t be handed the room. Check they are still in it.',
+	'room.transfer.offeredTo': 'The Storyteller is handing this room to you.',
 	'room.choosing': 'The Storyteller is choosing a script.',
 	'room.scriptVote.title': 'Vote on the next script',
 	'room.scriptVote.button': 'Room vote',

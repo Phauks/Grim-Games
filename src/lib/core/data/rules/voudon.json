@@ -17,5 +17,10 @@
 	},
 	"deathCause": {
 		"none": "votes"
+	},
+	"voting": {
+		"voters": "self-and-dead",
+		"deadNeedNoToken": true,
+		"noMajority": true
 	}
 }
