@@ -250,6 +250,12 @@
 				? { type: value.slice(5) as CharacterType }
 				: undefined;
 	}
+	/** Not marked, True or False: three states, so a drop-down (Trevor's UI rule). */
+	const markOptions = $derived([
+		{ value: NONE, label: t('savant.notMarked') },
+		{ value: 'true', label: t('savant.true') },
+		{ value: 'false', label: t('savant.false') }
+	]);
 	const ABOUT_TYPES: readonly CharacterType[] = ['demon', 'minion', 'outsider', 'townsfolk'];
 	const aboutOptions = $derived([
 		{ value: NONE, label: t('savant.aboutNone') },
@@ -426,12 +432,14 @@
 					{/if}
 					<p class="truth">
 						{#if written}
-							<Chip pressed={marked[i] === true} data-truth="true" onclick={() => mark(i, true)}
-								>{t('savant.true')}</Chip
-							>
-							<Chip pressed={marked[i] === false} data-truth="false" onclick={() => mark(i, false)}
-								>{t('savant.false')}</Chip
-							>
+							<Select
+								label={t('savant.mark', { number: i + 1 })}
+								hideLabel
+								value={marked[i] === undefined ? NONE : marked[i] ? 'true' : 'false'}
+								options={markOptions}
+								onChange={(v: string) =>
+									v === NONE ? (marked[i] = undefined) : mark(i, v === 'true')}
+							/>
 							<Select
 								label={t('savant.about', { number: i + 1 })}
 								hideLabel

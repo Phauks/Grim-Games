@@ -18,6 +18,8 @@ export const savant = {
 	'savant.true': 'True',
 	'savant.false': 'False',
 	'savant.dependsOn': 'Depends on {seats}',
+	'savant.mark': 'Statement {number} is',
+	'savant.notMarked': 'Not marked',
 	'savant.about': 'Statement {number} is about',
 	'savant.aboutNone': 'About no one in particular',
 	'savant.aboutType': 'A character type',
