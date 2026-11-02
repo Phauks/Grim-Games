@@ -1,6 +1,7 @@
 import { expect, test, type Browser, type Page, type TestInfo } from '@playwright/test';
 import { openProfile, setPlayerName } from './player-name.ts';
 import { toBoard } from './new-game.ts';
+import { addSeat, leaveSeating } from './seating.ts';
 
 // Travellers choose on their phones (plan L102; Trevor, 2026-10-31): the Storyteller sends the
 // Travellers allowed, everyone choosing sees the same list, a tap holds one so no one else can
@@ -64,10 +65,13 @@ test('Travellers choose on their phones: a tap holds one, Confirm puts it on the
 	// Travellers choose is part of Add seat (Trevor, 2026-11-01): placing a new seat opens it
 	// with that seat ticked. The Storyteller ticks the other three and sends the recommended.
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	const menu = page.getByRole('dialog', { name: 'Grimoire' });
-	await expect(menu.getByRole('button', { name: 'Travellers choose' })).toHaveCount(0);
-	await menu.getByRole('button', { name: 'Add seat' }).tap();
-	await page.getByRole('button', { name: /^Place between Cy and / }).tap();
+	await expect(
+		page
+			.getByRole('dialog', { name: 'Grimoire' })
+			.getByRole('button', { name: 'Travellers choose' })
+	).toHaveCount(0);
+	await page.keyboard.press('Escape');
+	await addSeat(page, /^Place between Cy and /, { stay: true });
 	const send = page.getByTestId('traveller-pick-send');
 	await expect(send.getByRole('checkbox', { name: 'Seat 4' })).toBeChecked();
 	// Selection (Trevor, 2026-11-01): All, Recommended (shown), or Custom (the full list).
@@ -87,6 +91,7 @@ test('Travellers choose on their phones: a tap holds one, Confirm puts it on the
 	// Closed, it opens again from the new seat's empty token while that seat is choosing.
 	await page.keyboard.press('Escape');
 	await expect(status).toBeHidden();
+	await leaveSeating(page);
 	await page.getByRole('button', { name: /^Seat 4/ }).tap();
 	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
 	await sheet.getByRole('button', { name: 'Travellers choose' }).tap();
@@ -142,9 +147,7 @@ test('Travellers choose on their phones: a tap holds one, Confirm puts it on the
 	await expect(page.getByRole('button', { name: /^Seat 3: Cy/ })).toHaveAccessibleName(/Beggar/);
 
 	// The next Add seat: seats with a character token, Travellers too, are shown but greyed.
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await menu.getByRole('button', { name: 'Add seat' }).tap();
-	await page.getByRole('button', { name: /^Place between Bo and / }).tap();
+	await addSeat(page, /^Place between Bo and /, { stay: true });
 	await expect(send.getByRole('checkbox', { name: 'Ana' })).toBeDisabled();
 	await expect(send.getByRole('checkbox', { name: 'Cy' })).toBeDisabled();
 	await expect(send.getByRole('checkbox', { name: 'Bo' })).toBeEnabled();
