@@ -264,7 +264,9 @@
 	</dl>
 </ConfirmDialog>
 
+<!-- eslint-disable-next-line grim/names-as-badges -- the dialog's accessible name; its heading shows the badge -->
 <Dialog bind:open={exileOpen} title={`Does ${title} survive the exile?`}>
+	{#snippet heading()}Does <PlayerBadge name={title} /> survive the exile?{/snippet}
 	{#if exileSaver}
 		<p data-exile-saver>
 			<CharacterBadge

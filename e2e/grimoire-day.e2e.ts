@@ -347,7 +347,7 @@ test('exiling a Deviant asks whether they survive', async ({ page }) => {
 	await startGame(page);
 	await addTraveller(page, 'Deviant', 'Good');
 	const status = await openStatus(page, 9);
-	await status.getByRole('button', { name: 'Exiled' }).tap();
+	await status.getByRole('option', { name: 'Exiled' }).tap();
 	const ask = page.getByRole('dialog', { name: 'Does Seat 9 survive the exile?' });
 	await expect(ask).toBeVisible();
 	await expect(ask.locator('[data-exile-saver]')).toContainText('Deviant');
@@ -357,7 +357,7 @@ test('exiling a Deviant asks whether they survive', async ({ page }) => {
 	await expect(boardSeat(page, 'Seat 9: no name, Deviant')).not.toHaveAccessibleName(/dead/);
 
 	const again = await openStatus(page, 9);
-	await again.getByRole('button', { name: 'Exiled' }).tap();
+	await again.getByRole('option', { name: 'Exiled' }).tap();
 	await ask.getByRole('button', { name: 'Dies' }).tap();
 	await expect(ask).toBeHidden();
 	await closeSeat(page);
