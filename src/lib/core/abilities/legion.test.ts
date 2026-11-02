@@ -71,12 +71,11 @@ describe('Legion', () => {
 			expect(s.game.seats[s.seat('fortuneteller')].dead).toBe(true);
 			expect(gameEnds(s.game, s.characters)).toMatchObject([{ winner: 'evil' }]);
 		});
-		it.fails('Example 2: Zero tally spares one; another dies instead', () => {
+		it('Example 2: Zero tally spares one; another dies instead', () => {
 			// Wiki: "4 players are alive. 3 Legion and no good players vote to execute Julian. Julian is
 			// not executed. Alex, who has 2 votes, 1 of which is a good player, is executed instead. Evil
 			// wins."
 			// Julian is a Legion; Alex, the Chef, is the only good player alive.
-			// Waits on the engine (M15l): no game end for evil once no good player is alive.
 			const s = scenario(['chef', 'legion', 'legion', 'legion', 'empath', 'monk'])
 				.dies('empath', 'legion')
 				.dies('monk', 'legion')
