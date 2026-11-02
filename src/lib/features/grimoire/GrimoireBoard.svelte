@@ -922,11 +922,10 @@
 					<!-- Above Game info (the corner), out of History's strip so the strip keeps
 					     its room for the change shown (Trevor, 2026-10-25); held off the corner's
 					     size, so ending the game moves nothing. Only a label: Reopen game is in ⋯
-					     (Trevor, 2026-11-01: "do not allow reopen game from there"). -->
+					     (Trevor, 2026-11-01: "do not allow reopen game from there"). It says the same
+					     while History steps back; the strip says which change shows (Trevor, 2026-11-02). -->
 					<span class="game-over" role="status" data-testid="game-over" data-team={ended.winner}>
-						Game over: {endedText}{grimoire.open.session.log.cursor !== grimoire.open.savedCursor
-							? ' · Shown from History'
-							: ''}
+						Game over: {endedText}
 					</span>
 				{/if}
 			{/snippet}

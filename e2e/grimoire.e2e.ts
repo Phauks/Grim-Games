@@ -2965,7 +2965,7 @@ test('End game keeps the Storyteller on the board, says it is over, and can be r
 	await menu(page, 'History');
 	const history = page.getByRole('dialog', { name: 'History' });
 	await history.getByRole('button', { name: 'Show' }).last().tap();
-	await expect(page.getByTestId('game-over')).toContainText('Shown from History');
+	await expect(page.getByTestId('game-over')).toHaveText('Game over: Evil won');
 	await expect(seatLabelled(page, 'Seat 1: Ana')).toHaveCount(0);
 	await page.goto('/join');
 	await expect(page.getByRole('link', { name: /Trouble Brewing/ })).toHaveCount(0);
@@ -2979,7 +2979,7 @@ test('End game keeps the Storyteller on the board, says it is over, and can be r
 	await expect(steps).toContainText(/(\d+) of \1.*Ana/);
 	await steps.getByRole('button', { name: 'Previous change' }).tap();
 	await expect(seatLabelled(page, 'Seat 1: Ana')).toHaveCount(0);
-	await expect(page.getByTestId('game-over')).toContainText('Shown from History');
+	await expect(page.getByTestId('game-over')).toHaveText('Game over: Evil won');
 	// Read-only: nothing pops up in the middle (Trevor, 2026-10-18), and the game over line
 	// is a status above Game info, leaving History's strip its room (2026-10-25).
 	await expect(page.getByRole('button', { name: 'Set up' })).toHaveCount(0);
