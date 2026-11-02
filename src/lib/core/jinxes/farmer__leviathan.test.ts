@@ -30,5 +30,7 @@ describe('Farmer + Leviathan jinx', () => {
 		expect(jinxesAmong(data.jinxes, ['leviathan'])).not.toContain(jinx);
 	});
 
+	// Waits for a Demon night step (L112 left it): each night after the first the Demon picks
+	// an alive good player, never the same twice, and a chosen partner acts as if killed.
 	it.todo('enforces the rule the jinx imposes');
 });

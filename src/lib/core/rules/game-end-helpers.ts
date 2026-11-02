@@ -4,7 +4,7 @@
  */
 import type { EndKind, GameEndRules, HoldKind } from '#lib/core/data/game-end-rules.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
-import type { Alignment, CharacterId } from '#lib/core/data/types.ts';
+import type { Alignment, CharacterId, CharacterType } from '#lib/core/data/types.ts';
 import { wikiUrl } from '#lib/core/data/wiki.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import {
@@ -97,13 +97,6 @@ export function impaired(
 }
 
 /**
- * Alive for the game's end. Marked dead isn't always dead, while sober (`aliveWhileDead`):
- * - until its own token marks the real death: the Zombuul's first death, when it lives but
- *   registers as dead (https://wiki.bloodontheclocktower.com/Zombuul);
- * - while the player with its token lives: the Lleech dies only with its host
- *   (https://wiki.bloodontheclocktower.com/Lleech).
- */
-/**
  * Marked dead, yet still alive by its own ability (`gameEnd.aliveWhileDead`): the Zombuul after
  * its first death, which "lives but registers as dead" and still wakes to kill
  * (https://wiki.bloodontheclocktower.com/Zombuul), or a Lleech whose host lives
@@ -113,6 +106,10 @@ export function livesWhileDead(game: Game, seatId: SeatId, characters: Character
 	return !!game.seats[seatId]?.dead && aliveForEnd(game, seatId, characters);
 }
 
+/**
+ * Alive for the game's end. Marked dead isn't always dead, while sober (`aliveWhileDead`):
+ * the Zombuul's first death, a Lleech whose host lives.
+ */
 export function aliveForEnd(game: Game, seatId: SeatId, characters: CharacterLookup): boolean {
 	if (isAliveForWin(game, seatId)) return true;
 	const seat = game.seats[seatId];
@@ -160,4 +157,16 @@ export function endedDays(game: Game, options: GameEndOptions): number[] {
 	for (let day = 1; day < last; day++) out.push(day);
 	if (options.dayEnded && last >= 1) out.push(last);
 	return out;
+}
+
+/** Whether a player is `on`: an alignment, or a character type by true character. */
+export function isOn(
+	game: Game,
+	seatId: SeatId,
+	on: Alignment | CharacterType,
+	characters: CharacterLookup
+): boolean {
+	return on === 'good' || on === 'evil'
+		? alignmentOf(game, seatId) === on
+		: typeOf(game, seatId, characters) === on;
 }

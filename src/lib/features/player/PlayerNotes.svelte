@@ -1,17 +1,14 @@
 <script lang="ts">
-	import { untrack } from 'svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import ScratchPadDialog from '#lib/ui/scratch/ScratchPadDialog.svelte';
 	import { ScratchPads, type ScratchPadState } from '#lib/ui/scratch/scratch-store.svelte.ts';
 	import { NotebookState } from './notebook-store.svelte.ts';
-	import NoteEditor from '#lib/ui/notes/NoteEditor.svelte';
 	import NotesPanel from './NotesPanel.svelte';
 	import type { PublicSeat } from '#lib/core/sync/public-projection.ts';
 	import { gameKey, lastRoom } from '#lib/features/room/player.svelte.ts';
 	import { releaseRoom, useRoom } from '#lib/features/room/room-connection.ts';
-	import NoteDraftEditor from '#lib/ui/notes/NoteDraftEditor.svelte';
 	import { deleteSeatNote, saveSeatNote, seatNotes } from './seat-notes.svelte.ts';
 	import { characterGuesses, readGuesses } from './grim-guesses.ts';
 
@@ -53,20 +50,12 @@
 	const nameOf = (seat: PublicSeat) =>
 		seat.playerName ?? t('common.seat', { number: seat.seatNumber });
 	const guesses = $derived(kept ? readGuesses(kept) : {});
-	/** The seat whose note the seat-note editor has open. */
-	let seatId = $state<string>();
-	let seatEditor = $state<ReturnType<typeof NoteDraftEditor>>();
-	function openSeatNote(id: string, noteId?: string) {
-		seatId = id;
-		seatEditor?.edit(noteId);
-	}
 
 	let notebook = $state<NotebookState>();
 	$effect(() => {
 		const key = notesKey;
 		if (!key || notebook?.key === key) return;
 		const book = new NotebookState(key);
-		noteOpen = false;
 		void book.load().then(() => {
 			if (book.key === key) notebook = book;
 		});
@@ -99,19 +88,12 @@
 		toast(t('player.cannotSave'), t('player.cannotSaveDetail'));
 	});
 
-	let noteId = $state<string>();
-	let noteOpen = $state(false);
-	function openNote(id: string) {
-		noteId = id;
-		noteOpen = true;
+	/** A note written in its row (NoteList); a new one is kept only once it has words in it. */
+	function saveNote(note: { noteId?: string; title: string; text: string; hidden: boolean }) {
+		if (!notebook) return;
+		const { title, text, hidden } = note;
+		notebook.updateNote(note.noteId || notebook.addNote(), { title, text, hidden });
 	}
-	// A note closed with nothing in it is not kept, as the Storyteller's game notes, so "+ New
-	// note" then X leaves no empty card behind (Trevor, 2026-10-29).
-	$effect(() => {
-		if (noteOpen || !noteId) return;
-		const id = noteId;
-		untrack(() => notebook?.dropIfBlank(id));
-	});
 </script>
 
 {#if !notebook}
@@ -120,8 +102,8 @@
 	<NotesPanel
 		notes={notebook.book.notes}
 		pads={scratch?.pads}
-		onAdd={() => openNote(notebook!.addNote())}
-		onOpenNote={openNote}
+		onSaveNote={saveNote}
+		onDeleteNote={(noteId) => notebook!.deleteNote(noteId)}
 		onAddScratch={() => scratch && openScratch(scratch.add())}
 		onOpenScratch={openScratch}
 		seats={room && seats.length
@@ -134,26 +116,11 @@
 					characterIds: s.traveller ? [s.traveller] : characterGuesses(guesses, s.seatId)
 				}))
 			: undefined}
-		onOpenSeatNote={openSeatNote}
+		onSaveSeatNote={(seatId, note) => kept && saveSeatNote(kept, seatId, note)}
+		onDeleteSeatNote={(seatId, noteId) => kept && deleteSeatNote(kept, seatId, noteId)}
 	/>
 {/if}
 
-{#if notebook}
-	<ErrorBoundary area="play">
-		<NoteEditor
-			bind:open={noteOpen}
-			note={notebook.book.notes.find((n) => n.noteId === noteId)}
-			onChange={(patch) => noteId && notebook!.updateNote(noteId, patch)}
-			onDelete={() => noteId && notebook!.deleteNote(noteId)}
-		/>
-	</ErrorBoundary>
-{/if}
-<NoteDraftEditor
-	bind:this={seatEditor}
-	notes={(seatId && notesOnSeats[seatId]) || []}
-	onSave={(note) => kept && seatId && saveSeatNote(kept, seatId, note)}
-	onDelete={(noteId) => kept && seatId && deleteSeatNote(kept, seatId, noteId)}
-/>
 {#if scratch && scratchPad}
 	<ErrorBoundary area="play">
 		<ScratchPadDialog

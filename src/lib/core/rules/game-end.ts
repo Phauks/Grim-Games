@@ -17,18 +17,22 @@
  *   among the official ones. An end with
  *   holds is listed but doesn't prompt (`promptable`).
  *
+ * - A jinx may add an end with its partner (`jinxes.endsGame`, `data/jinx-rules.ts`): the
+ *   Leviathan's and Riot's (`jinxEnds`). Such an end names the partner in `jinxedWith`.
+ *
  * Results are data only (no wording): `rule` says which rule, `seats` say who.
  * Rules checked "at dusk" (Vortox, Mayor, Leviathan's day 5) use `dayEnded` for today, and
  * every day closed by Dawn ("New day") before it.
  */
 import type { EndKind, HoldKind } from '#lib/core/data/game-end-rules.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
-import type { Alignment, CharacterId, CharacterType } from '#lib/core/data/types.ts';
+import type { Alignment, CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { alignmentOf, inPlay, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 import { abilityState, type AbilitySource } from './ability.ts';
 import { isExecution } from './death-causes.ts';
+import { jinxEnds } from './jinx-ends.ts';
 import { rebirthOf } from './reincarnation.ts';
 import {
 	W,
@@ -42,6 +46,7 @@ import {
 	executedOn,
 	holdsOf,
 	impaired,
+	isOn,
 	losesFor,
 	other,
 	ruled,
@@ -113,6 +118,11 @@ export interface GameEnd {
 	holds: GameHold[];
 	/** The special rule whose end it is, by name, for an end no character gives. */
 	ruleName?: string;
+	/**
+	 * Set when a jinx between `characterId` and this character gives the end (the Leviathan
+	 * nominating and executing the Soldier), so the jinx's own text says why.
+	 */
+	jinxedWith?: CharacterId;
 }
 
 export interface GameEndOptions {
@@ -519,18 +529,6 @@ function deadWithoutDemon(game: Game, characters: CharacterLookup): GameEnd[] {
 	];
 }
 
-/** Whether a player is `on`: an alignment, or a character type by true character. */
-function isOn(
-	game: Game,
-	seatId: SeatId,
-	on: Alignment | CharacterType,
-	characters: CharacterLookup
-): boolean {
-	return on === 'good' || on === 'evil'
-		? alignmentOf(game, seatId) === on
-		: typeOf(game, seatId, characters) === on;
-}
-
 /**
  * An ability's first logged use names a player who is `on`, so the team of the player who
  * used it loses (`used-on-loses`): the Klutz choosing an evil player
@@ -726,11 +724,25 @@ export function gameEnds(
 		else if ('key' in mind) out.push(mind);
 		else out.push({ ...end, holds: [...end.holds, mind] });
 	}
+	const jinxed = jinxEnds(game, characters, {
+		logs: days(game),
+		ended: endedDays(game, options),
+		executedOn,
+		alive: (id) => aliveForEnd(game, id, characters),
+		impaired: (id, characterId) => impaired(game, id, characterId, characters),
+		carrying: (characterId, label) => carrying(game, characterId, label),
+		wiki: (characterId) => wikiOf(characterId, characters)
+	});
 	out.push(
 		...executedLoses(game, characters),
 		...markedExecuted(game, characters),
 		...nominatedMarkedExecuted(game, characters),
-		...whileAlive(game, characters, options),
+		...jinxed.ends,
+		// A jinx end on a day replaces the character's own end that day (the Leviathan's day 5
+		// with the Mayor alive and no execution).
+		...whileAlive(game, characters, options).filter(
+			(e) => !jinxed.replaced.has(`${e.characterId}:${e.day}`)
+		),
 		...dayWithoutExecution(game, characters, options),
 		...aliveAtDusk(game, characters, options),
 		...deadWithoutDemon(game, characters),

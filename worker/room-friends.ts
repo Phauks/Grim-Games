@@ -4,7 +4,7 @@
  * it shows in (F6). Only the room's own Storyteller reads or changes them; friends and
  * groups see only `RoomFriendsView`.
  */
-import { hostedAccounts } from './room-accounts.ts';
+import { hostedAccounts, presentAccounts } from './room-accounts.ts';
 
 /** One change from the Storyteller: friends joining on or off, or one group shown or not. */
 export type RoomFriendsChange = { friendsJoin: boolean } | { group: string; show: boolean };
@@ -12,6 +12,8 @@ export type RoomFriendsChange = { friendsJoin: boolean } | { group: string; show
 export interface RoomFriends {
 	/** Every account in the room, the Storyteller's included. */
 	accounts: string[];
+	/** The accounts with a player's phone in the room now, for Room transfer (plan F14). */
+	present: string[];
 	friendsJoin: boolean;
 	groups: string[];
 }
@@ -46,5 +48,5 @@ export async function roomFriends(
 		else shown.delete(change.group);
 		await ctx.storage.put(GROUPS, [...shown]);
 	}
-	return { accounts, ...(await roomFriendsView(ctx)) };
+	return { accounts, present: presentAccounts(ctx), ...(await roomFriendsView(ctx)) };
 }
