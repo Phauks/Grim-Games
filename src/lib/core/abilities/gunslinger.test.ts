@@ -16,7 +16,8 @@ import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { dayUseDeath } from '#lib/core/rules/day-claims.ts';
-import { engineGap, scenario } from '#lib/core/testing/scenario.ts';
+import { todaysNominations } from '#lib/core/rules/nominations.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Gunslinger', () => {
 	const character = committedCharacter('gunslinger');
@@ -48,35 +49,35 @@ describe('Gunslinger', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Gunslinger#Examples)', () => {
-		it.fails("Example 1: Voter shot; Imp's execution still proceeds", () => {
+		it("Example 1: Voter shot; Imp's execution still proceeds", () => {
 			// Wiki: "The Imp has been nominated. There are 10 players alive, and five votes for the Imp,
 			// so the Imp is about to die. The Gunslinger chooses a voting player to die. They die, and the
 			// nomination continues, with the Imp still about to die."
-			// Waits on voting in the engine: who voted, and the nominee staying about to die.
+			// Votes are counted outside the app (Trevor, 2026-11-01): who voted, and who is about to
+			// die, are the Storyteller's. The app kills the voter and keeps the nomination going.
 			const s = scenario(['gunslinger', 'chef', 'imp', 'monk', 'poisoner'])
 				.do((at) => ({ type: 'SetAlignment', seatId: at.seat('gunslinger'), alignment: 'good' }))
 				.nominate('chef', 'imp');
 			expect(dayUseDeath(s.game, 'gunslinger', s.seat('monk'), s.characters)).toBe('dies');
-			engineGap(
-				'M9',
-				"the Gunslinger may choose only a player who voted, and the vote's result stands"
-			);
+			const shot = s.dies('monk', 'gunslinger');
+			expect(shot.game.seats[shot.seat('monk')].deathCause).toBe('gunslinger');
+			// The Imp is still executed by that nomination.
+			const executed = shot.execute('imp');
+			expect(executed.game.seats[executed.seat('imp')].dead).toBe(true);
 		});
-		it.fails("Example 2: Only the day's first vote tally counts", () => {
+		it("Example 2: Only the day's first vote tally counts", () => {
 			// Wiki: "The players exile the Thief. Then, the Butler is nominated for execution and gets one
 			// vote. This is the first nomination for execution, since the Thief’s exile does not count.
 			// The Gunslinger chooses to kill the single voting player. Later that day, the Saint is
 			// nominated and six players vote. The Gunslinger cannot use their ability now because this is
 			// not the first vote for execution today."
-			// An exile doesn't count as the first vote for execution.
-			scenario(['gunslinger', 'thief', 'butler', 'saint', 'imp', 'chef'])
+			// An exile doesn't count as the first vote for execution: the Butler's nomination is the
+			// day's first. Which vote the Gunslinger may act on is the Storyteller's to judge.
+			const s = scenario(['gunslinger', 'thief', 'butler', 'saint', 'imp', 'chef'])
 				.do((at) => ({ type: 'SetAlignment', seatId: at.seat('thief'), alignment: 'good' }))
 				.do((at) => ({ type: 'Exile', seatId: at.seat('thief') }))
 				.nominate('chef', 'butler');
-			engineGap(
-				'M9',
-				"the Gunslinger's ability is offered after the day's first vote for execution only"
-			);
+			expect(todaysNominations(s.game).map((n) => n.nominee)).toEqual([s.seat('butler')]);
 		});
 	});
 });

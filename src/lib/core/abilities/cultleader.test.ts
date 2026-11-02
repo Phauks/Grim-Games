@@ -19,7 +19,7 @@ import { abilityState } from '#lib/core/rules/ability.ts';
 import { neighbourAlignments } from '#lib/core/rules/becomes.ts';
 import { endCharacters } from '#lib/core/rules/end-reason.ts';
 import { gameEnds } from '#lib/core/rules/game-end.ts';
-import { engineGap, scenario } from '#lib/core/testing/scenario.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
 describe('Cult Leader', () => {
@@ -52,7 +52,7 @@ describe('Cult Leader', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Cult_Leader#Examples)', () => {
-		it.fails('Example 1: Good wins after unanimous day-three cult vote', () => {
+		it('Example 1: Good wins after unanimous day-three cult vote', () => {
 			// Wiki: "On day 3, the good Cult Leader’s living neighbors are the good Town Crier and the
 			// evil Goblin. The Cult Leader requests to form a cult, and all good players vote to join
 			// the cult. The game ends and the good team wins!"
@@ -66,12 +66,18 @@ describe('Cult Leader', () => {
 			});
 			expect(alignmentOf(s.game, s.seat('cultleader'))).toBe('good');
 			expect(endCharacters(s.game, s.characters)).toContain('cultleader');
-			engineGap(
-				'M9',
-				"a cult vote: when every good player joins a good Cult Leader's cult, good wins"
-			);
+			// Every good player joined: the Storyteller records the cult vote as passed.
+			const joined = s.do((at) => ({
+				type: 'UseAbility',
+				seatId: at.seat('cultleader'),
+				characterId: 'cultleader',
+				passed: true
+			}));
+			expect(gameEnds(joined.game, joined.characters)).toMatchObject([
+				{ rule: 'cult-joined', winner: 'good', characterId: 'cultleader' }
+			]);
 		});
-		it.fails("Example 2: Poisoned Cult Leader's full vote changes nothing", () => {
+		it("Example 2: Poisoned Cult Leader's full vote changes nothing", () => {
 			// Wiki: "The Cult Leader neighbors the No Dashii. On day 2, the Cult Leader attempts to form
 			// a cult. All players vote to join the cult, but a cult is not formed, because the Cult
 			// Leader is poisoned."
@@ -80,8 +86,17 @@ describe('Cult Leader', () => {
 				.newDay()
 				.poisoned('cultleader');
 			expect(abilityState(s.game, s.seat('cultleader'), s.characters).works).toBe(false);
-			expect(gameEnds(s.game, s.characters)).toEqual([]);
-			engineGap('M9', "a cult vote: a drunk or poisoned Cult Leader's cult is never formed");
+			// Everyone joined, but the poisoned Cult Leader's cult is not formed: the game end is
+			// only offered as the Storyteller's call.
+			const joined = s.do((at) => ({
+				type: 'UseAbility',
+				seatId: at.seat('cultleader'),
+				characterId: 'cultleader',
+				passed: true
+			}));
+			expect(gameEnds(joined.game, joined.characters)).toMatchObject([
+				{ rule: 'cult-joined', holds: [{ rule: 'impaired' }] }
+			]);
 		});
 		it('Example 3: Poisoned Cult Leader stays good despite evil neighbours', () => {
 			// Wiki: "The Cult Leader’s living neighbors are the evil Poisoner and the good Fortune
