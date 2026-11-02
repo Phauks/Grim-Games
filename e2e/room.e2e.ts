@@ -554,11 +554,8 @@ test('Share grim after End game lets each phone step through the History in the 
 	await page.goto(board);
 	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
 	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
-	await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
-	await page
-		.getByRole('dialog', { name: /^Status of/ })
-		.getByRole('button', { name: 'Executed' })
-		.tap();
+	await sheet.getByRole('combobox', { name: 'Status: Alive' }).tap();
+	await page.getByRole('listbox').getByRole('option', { name: 'Executed' }).tap();
 	await page.keyboard.press('Escape');
 	await expect(sheet).toHaveCount(0);
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
@@ -1876,11 +1873,8 @@ test("the players' Grim shows what the town knows, and each player's own guesses
 	// The Storyteller executes seat 1, and the ghost vote is spent in front of everyone.
 	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
 	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
-	await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
-	await page
-		.getByRole('dialog', { name: /^Status of/ })
-		.getByRole('button', { name: 'Executed' })
-		.tap();
+	await sheet.getByRole('combobox', { name: 'Status: Alive' }).tap();
+	await page.getByRole('listbox').getByRole('option', { name: 'Executed' }).tap();
 	await expect(seats.first()).toHaveAttribute(
 		'aria-label',
 		'Seat 1: Seat 1, dead, ghost vote not used'
@@ -2426,21 +2420,15 @@ test("a Banshee the Demon killed shows two votes and no ghost vote on the player
 	const picker = page.getByRole('dialog', { name: 'Character for Seat 1' });
 	await picker.getByText('Include characters not on the script').tap();
 	await picker.getByRole('button', { name: 'Banshee', exact: true }).tap();
-	await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Status of Seat 1' })
-		.getByRole('button', { name: 'The Demon' })
-		.tap();
+	await sheet.getByRole('combobox', { name: 'Status: Alive' }).tap();
+	await page.getByRole('listbox').getByRole('option', { name: 'The Demon' }).tap();
 	await expect(seat).toHaveAttribute('aria-label', 'Seat 1: Seat 1, dead, 2 votes per nomination');
 	// The skull, as on the board: no ghost to spend.
 	await expect(seat.getByTestId('dead-mark')).not.toHaveAttribute('data-vote');
 
 	// Executed instead, the Banshee is just dead, with a ghost vote like anyone.
-	await sheet.getByRole('button', { name: /^Status:/ }).tap();
-	await page
-		.getByRole('dialog', { name: 'Status of Seat 1' })
-		.getByRole('button', { name: 'Executed' })
-		.tap();
+	await sheet.getByRole('combobox', { name: /^Status:/ }).tap();
+	await page.getByRole('listbox').getByRole('option', { name: 'Executed' }).tap();
 	await expect(seat).toHaveAttribute('aria-label', 'Seat 1: Seat 1, dead, ghost vote not used');
 	await phoneContext.close();
 });

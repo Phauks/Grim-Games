@@ -131,11 +131,8 @@ test('a dead player may be nominated but is not offered as a nominator', async (
 	await startGame(page);
 	await trackNominations(page);
 	const seat = await openSeat(page, 4);
-	await seat.getByRole('button', { name: 'Status: Alive' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Status of Seat 4' })
-		.getByRole('button', { name: 'The Demon' })
-		.tap();
+	await seat.getByRole('combobox', { name: 'Status: Alive' }).tap();
+	await page.getByRole('listbox').getByRole('option', { name: 'The Demon' }).tap();
 	await expect(seat.getByTestId('sheet-nominated')).toBeDisabled();
 	await closeSheet(page);
 	const dead = page.getByTestId('seat').nth(3);
@@ -174,11 +171,8 @@ test('a Banshee the Demon killed nominates twice a day and votes twice with no t
 	const picker = page.getByRole('dialog', { name: 'Character for Seat 1' });
 	await picker.getByText('Include characters not on the script').tap();
 	await picker.getByRole('button', { name: 'Banshee', exact: true }).tap();
-	await seat.getByRole('button', { name: 'Status: Alive' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Status of Seat 1' })
-		.getByRole('button', { name: 'The Demon' })
-		.tap();
+	await seat.getByRole('combobox', { name: 'Status: Alive' }).tap();
+	await page.getByRole('listbox').getByRole('option', { name: 'The Demon' }).tap();
 	// No ghost vote to spend: two votes on every nomination.
 	await expect(seat.getByRole('button', { name: 'Ghost vote' })).toBeDisabled();
 	await expect(seat.getByRole('button', { name: 'Ghost vote' })).toContainText('2 votes');

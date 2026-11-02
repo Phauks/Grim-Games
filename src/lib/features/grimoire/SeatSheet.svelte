@@ -27,8 +27,7 @@
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import { causeLabel, isOrphan, placingAlignment } from './board.ts';
-	import CauseName from './CauseName.svelte';
-	import SeatStatusDialog from './SeatStatusDialog.svelte';
+	import SeatStatus from './SeatStatus.svelte';
 	import SeatMenu from './SeatMenu.svelte';
 	import SeatCharacterFlow from './SeatCharacterFlow.svelte';
 	import SeatBadge from './SeatBadge.svelte';
@@ -164,8 +163,7 @@
 		seatId !== undefined && abilityGivers(game, seatId, characters).length > 0
 	);
 
-	// ── Status: Alive, or dead with its cause, in one list (Trevor, 2026-10-16) ──
-	let causeOpen = $state(false);
+	// ── Status: Alive, or dead with its cause, in one drop-down (Trevor, 2026-11-02) ──
 	const statusText = $derived(
 		seat?.dead
 			? `Dead: ${causeLabel(seat.deathCause, characters, traveller)}`
@@ -301,24 +299,7 @@
 			</div>
 
 			<div class="row">
-				<span class="label">Status</span>
-				<button
-					type="button"
-					class="value status"
-					data-dead={seat.dead || undefined}
-					aria-label={`Status: ${statusText}`}
-					onclick={() => (causeOpen = true)}
-				>
-					<Icon name={seat.dead ? 'dead' : seat.notInPlay ? 'night' : 'alive'} />
-					<span class="status-text"
-						>{#if seat.dead}Dead: <CauseName
-								cause={seat.deathCause}
-								{characters}
-								{traveller}
-								interactive={false}
-							/>{:else if seat.notInPlay}{t('common.notInPlay')}{:else}Alive{/if}</span
-					>
-				</button>
+				<SeatStatus {grimoire} {seatId} {statusText} sheetOpen={open} {onExecute} />
 			</div>
 
 			<!-- Always here, so nothing moves when the player dies (Trevor, 2026-10-17). -->
@@ -439,8 +420,6 @@
 	/>{/if}
 
 <CharacterHistoryDialog bind:open={changesOpen} {grimoire} {seatId} />
-
-<SeatStatusDialog bind:open={causeOpen} {grimoire} {seatId} sheetOpen={open} {onExecute} />
 
 <!-- The seat's less frequent actions, in an overlay so the sheet stays short. -->
 <SeatMenu
@@ -572,20 +551,6 @@
 		justify-content: space-between;
 		gap: var(--space-2);
 		min-height: var(--tap-target);
-	}
-	/* One look for each state, here and on the board: Alive is plain ink with a heartbeat;
-	   Dead is the seat token's dark shroud with its skull. */
-	.status {
-		min-width: 0;
-	}
-	.status-text {
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-	.status[data-dead] {
-		background: var(--backdrop);
-		color: var(--on-surface);
 	}
 	.value {
 		display: inline-flex;

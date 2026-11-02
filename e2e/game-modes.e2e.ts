@@ -1910,11 +1910,8 @@ test('with I See Dead People a death is marked not to announce, its detail kept 
 	// The death is marked on the board (Trevor, 2026-10-20), then read in the day view.
 	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
 	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
-	await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Status of Seat 1' })
-		.getByRole('button', { name: 'The Demon', exact: true })
-		.tap();
+	await sheet.getByRole('combobox', { name: 'Status: Alive' }).tap();
+	await page.getByRole('listbox').getByRole('option', { name: 'The Demon', exact: true }).tap();
 	await page.keyboard.press('Escape');
 	await expect(sheet).toBeHidden();
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
@@ -2176,11 +2173,8 @@ test('Binary Supernovae asks for one more Demon, and an executed Demon wins it f
 		.getByRole('dialog', { name: 'Character for Seat 1' })
 		.getByRole('button', { name: 'Imp', exact: true })
 		.tap();
-	await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Status of Seat 1' })
-		.getByRole('button', { name: 'Executed' })
-		.tap();
+	await sheet.getByRole('combobox', { name: 'Status: Alive' }).tap();
+	await page.getByRole('listbox').getByRole('option', { name: 'Executed' }).tap();
 	const prompt = page.getByRole('alertdialog', { name: 'End game?' });
 	const line = prompt.locator('[data-rule="demon-executed"]');
 	await expect(line).toContainText('Binary Supernovae');

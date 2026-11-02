@@ -65,11 +65,11 @@ async function closeSeat(page: Page) {
 	await expect(seatSheet(page)).toBeHidden();
 }
 
-/** The Status dialog of a living seat on the board, listing the causes that fit. */
+/** The Status list of a living seat on the board (its drop-down), listing the causes that fit. */
 async function openStatus(page: Page, number: number) {
 	const sheet = await openSeat(page, number);
-	await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
-	const status = page.getByRole('dialog', { name: `Status of Seat ${number}` });
+	await sheet.getByRole('combobox', { name: 'Status: Alive' }).tap();
+	const status = page.getByRole('listbox');
 	await expect(status).toBeVisible();
 	return status;
 }
@@ -77,7 +77,7 @@ async function openStatus(page: Page, number: number) {
 /** Marks a seat dead on the board, with its cause. */
 async function markDead(page: Page, number: number, cause: string) {
 	const status = await openStatus(page, number);
-	await status.getByRole('button', { name: cause, exact: true }).tap();
+	await status.getByRole('option', { name: cause, exact: true }).tap();
 	await expect(status).toBeHidden();
 	await closeSeat(page);
 }
@@ -360,22 +360,21 @@ test('a Traveller is exiled, and a death offers only valid causes', async ({ pag
 	await closeDay(page);
 	const thief = await openStatus(page, 9);
 	// A Traveller is exiled, not executed.
-	await expect(thief.locator('button.cause')).toHaveText([
+	await expect(thief.getByRole('option')).toHaveText([
 		'Alive',
 		'Not in play',
 		'Exiled',
 		'The Demon'
 	]);
-	await expect(thief.getByRole('button', { name: 'Cancel' })).toBeVisible();
-	await thief.getByRole('button', { name: 'Exiled' }).tap();
+	await thief.getByRole('option', { name: 'Exiled' }).tap();
 	await closeSeat(page);
 	await expect(boardSeat(page, 'Seat 9: no name, Thief')).toHaveAccessibleName(/dead/);
 
 	// No characters are in play, so no character is offered.
 	const causes = await openStatus(page, 3);
 	// Only a Traveller is offered Not in play (Trevor, 2026-11-02).
-	await expect(causes.locator('button.cause')).toHaveText(['Alive', 'Executed', 'The Demon']);
-	await causes.getByRole('button', { name: 'The Demon', exact: true }).tap();
+	await expect(causes.getByRole('option')).toHaveText(['Alive', 'Executed', 'The Demon']);
+	await causes.getByRole('option', { name: 'The Demon', exact: true }).tap();
 	await expect(causes).toBeHidden();
 	await closeSeat(page);
 
@@ -865,7 +864,7 @@ test("Executed in a seat's status during the day asks as Execution does; a Sailo
 	await closeDay(page);
 	// The same as the day's Execution (Trevor, 2026-10-23): it asks, with the seat chosen.
 	const status = await openStatus(page, 3);
-	await status.getByRole('button', { name: 'Executed', exact: true }).tap();
+	await status.getByRole('option', { name: 'Executed', exact: true }).tap();
 	const ask = page.getByRole('alertdialog', { name: 'End the day?' });
 	await expect(ask).toBeVisible();
 	await expect(ask.getByRole('combobox', { name: 'Execution' })).toContainText('Seat 3');
@@ -1025,9 +1024,9 @@ test('Announcements name a player brought back to life in the night', async ({ p
 	await endTheDay(page);
 	// Night 2: seat 2 comes back (the Professor, say).
 	const sheet = await openSeat(page, 2);
-	await sheet.getByRole('button', { name: /^Status/ }).tap();
-	const status = page.getByRole('dialog', { name: 'Status of Seat 2' });
-	await status.getByRole('button', { name: 'Alive', exact: true }).tap();
+	await sheet.getByRole('combobox', { name: /^Status/ }).tap();
+	const status = page.getByRole('listbox');
+	await status.getByRole('option', { name: 'Alive', exact: true }).tap();
 	await page
 		.getByRole('alertdialog', { name: /back to life\?$/ })
 		.getByRole('button', { name: 'Confirm' })
@@ -1236,8 +1235,9 @@ test('a death marked by day on the Vizier is offered with a caution', async ({ p
 	await closeSeat(page);
 	// Night 1 has no caution: the Vizier can die at night.
 	let status = await openStatus(page, 3);
-	await expect(status.getByRole('button', { name: 'Why The Demon is marked' })).toHaveCount(0);
+	await expect(status.getByTestId('cause-flag')).toHaveCount(0);
 	await page.keyboard.press('Escape');
+	await expect(status).toBeHidden();
 	await closeSeat(page);
 	await openDay(page);
 	await daySheet(page).getByRole('button', { name: 'Execution', exact: true }).tap();
@@ -1250,8 +1250,15 @@ test('a death marked by day on the Vizier is offered with a caution', async ({ p
 		.tap();
 	await closeDay(page);
 	status = await openStatus(page, 3);
-	await expect(status.getByRole('button', { name: 'Why Executed is marked' })).toHaveCount(0);
-	await status.getByRole('button', { name: 'Why The Demon is marked' }).tap();
+	// The list marks the cause; once it is set, the row's warning says why.
+	await expect(
+		status.getByRole('option', { name: 'Executed' }).getByTestId('cause-flag')
+	).toHaveCount(0);
+	await expect(
+		status.getByRole('option', { name: 'The Demon' }).getByTestId('cause-flag')
+	).toHaveCount(1);
+	await status.getByRole('option', { name: 'The Demon' }).tap();
+	await seatSheet(page).getByRole('button', { name: 'Why The Demon is marked' }).tap();
 	const why = page.getByRole('dialog', { name: 'The Demon' });
 	await expect(why).toContainText(/Seat 3 can't die during the day\s*\(\s*Vizier\s*\)/);
 });

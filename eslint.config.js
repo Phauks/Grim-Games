@@ -54,7 +54,6 @@ const SEAT_NAME_TODO = [
 	'src/lib/features/grimoire/ReminderAsk.svelte',
 	'src/lib/features/grimoire/ReminderOrigin.svelte',
 	'src/lib/features/grimoire/ReminderPicker.svelte',
-	'src/lib/features/grimoire/SeatStatusDialog.svelte',
 	'src/lib/features/grimoire/SeatToken.svelte',
 	'src/lib/features/grimoire/StepAfflictions.svelte',
 	'src/lib/features/grimoire/board.ts',

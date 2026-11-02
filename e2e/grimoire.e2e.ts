@@ -390,36 +390,36 @@ test('the seat sheet names, assigns, shrouds and survives a reload', async ({ pa
 	await expect(picker).toBeHidden();
 	await expect(sheet.getByText('Imp', { exact: true }).first()).toBeVisible();
 
-	// Status is one list: Alive, then the causes of death.
-	await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
-	const cause = page.getByRole('dialog', { name: 'Status of Ana' });
-	await expect(cause.getByRole('button', { name: 'Alive' })).toHaveAttribute(
-		'aria-pressed',
+	// Status is one drop-down: Alive, then the causes of death (Trevor, 2026-11-02).
+	await sheet.getByRole('combobox', { name: 'Status: Alive' }).tap();
+	const cause = page.getByRole('listbox');
+	await expect(cause.getByRole('option', { name: 'Alive' })).toHaveAttribute(
+		'aria-selected',
 		'true'
 	);
-	await cause.getByRole('button', { name: 'Executed' }).tap();
+	await cause.getByRole('option', { name: 'Executed' }).tap();
 	await keepPlaying(page);
-	await expect(sheet.getByRole('button', { name: 'Status: Dead: Executed' })).toBeVisible();
+	await expect(sheet.getByRole('combobox', { name: 'Status: Dead: Executed' })).toBeVisible();
 	// Alive brings them back, after saying what changes.
-	await sheet.getByRole('button', { name: 'Status: Dead: Executed' }).tap();
-	await cause.getByRole('button', { name: 'Alive' }).tap();
+	await sheet.getByRole('combobox', { name: 'Status: Dead: Executed' }).tap();
+	await cause.getByRole('option', { name: 'Alive' }).tap();
 	const revive = page.getByRole('alertdialog', { name: 'Bring Ana back to life?' });
 	await expect(revive).toContainText(/Now\s*Dead: Executed\s*Becomes\s*Alive/);
 	await revive.getByRole('button', { name: 'Cancel' }).tap();
-	await expect(sheet.getByRole('button', { name: 'Status: Dead: Executed' })).toBeVisible();
+	await expect(sheet.getByRole('combobox', { name: 'Status: Dead: Executed' })).toBeVisible();
 	// The ghost vote can be marked used and given back (Trevor, 2026-10-17); it shows on the
 	// skull badge (Trevor, 2026-10-19: one badge for both), hollow once used.
 	const ghostMark = page.locator(
 		'[data-testid="seat"][aria-label^="Seat 1:"] [data-testid="dead-mark"]'
 	);
 	await expect(ghostMark).toHaveAttribute('data-vote', 'unused');
-	// One toggle, as wide as the Status button above it (Trevor, 2026-10-18).
+	// One toggle, as wide as the Status drop-down above it (Trevor, 2026-10-18).
 	const ghost = sheet.getByRole('button', { name: 'Ghost vote' });
 	const width = async (l: Locator) => (await l.boundingBox())!.width;
 	expect(
 		Math.abs(
 			(await width(ghost)) -
-				(await width(sheet.getByRole('button', { name: 'Status: Dead: Executed' })))
+				(await width(sheet.getByRole('combobox', { name: 'Status: Dead: Executed' })))
 		)
 	).toBeLessThan(1);
 	await expect(ghost).toHaveAttribute('aria-pressed', 'false');
@@ -466,7 +466,7 @@ test('the seat sheet names, assigns, shrouds and survives a reload', async ({ pa
 	const seat = page.getByRole('button', { name: /^Seat 1:/ });
 	await expect(seat).toHaveAccessibleName('Seat 1: Ana, Imp, dead, good');
 	sheet = await openSeat(page, 1);
-	await expect(sheet.getByRole('button', { name: 'Executed' })).toBeVisible();
+	await expect(sheet.getByRole('combobox', { name: 'Status: Dead: Executed' })).toBeVisible();
 });
 
 test('tapping the seat token shows the character; changing it goes through the … menu and asks', async ({
@@ -1564,22 +1564,23 @@ test('the cause of death offers only characters that could have killed the playe
 		await closeSheet(page);
 	}
 	let sheet = await openSeat(page, 2);
-	await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
-	let cause = page.getByRole('dialog', { name: 'Status of Seat 2' });
-	await expect(cause.getByRole('button', { name: 'Executed' })).toBeVisible();
-	await expect(cause.getByRole('button', { name: 'Slayer' })).toBeHidden();
-	// A death always has a cause: there is no "None", and Cancel leaves the player alive.
-	await expect(cause.getByRole('button', { name: 'None' })).toHaveCount(0);
-	await cause.getByRole('button', { name: 'Cancel' }).tap();
-	await expect(sheet.getByRole('button', { name: 'Status: Alive' })).toBeVisible();
+	await sheet.getByRole('combobox', { name: 'Status: Alive' }).tap();
+	let cause = page.getByRole('listbox');
+	await expect(cause.getByRole('option', { name: 'Executed' })).toBeVisible();
+	await expect(cause.getByRole('option', { name: 'Slayer' })).toBeHidden();
+	// A death always has a cause: there is no "None", and closing the list leaves them alive.
+	await expect(cause.getByRole('option', { name: 'None' })).toHaveCount(0);
+	await page.keyboard.press('Escape');
+	await expect(cause).toBeHidden();
+	await expect(sheet.getByRole('combobox', { name: 'Status: Alive' })).toBeVisible();
 	await closeSheet(page);
 
 	sheet = await openSeat(page, 3);
-	await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
-	cause = page.getByRole('dialog', { name: 'Status of Seat 3' });
-	await cause.getByRole('button', { name: 'Slayer' }).tap();
+	await sheet.getByRole('combobox', { name: 'Status: Alive' }).tap();
+	cause = page.getByRole('listbox');
+	await cause.getByRole('option', { name: 'Slayer' }).tap();
 	await keepPlaying(page);
-	await expect(sheet.getByRole('button', { name: 'Status: Dead: Slayer' })).toBeVisible();
+	await expect(sheet.getByRole('combobox', { name: 'Status: Dead: Slayer' })).toBeVisible();
 	await closeSheet(page);
 
 	// Dead (Trevor, 2026-10-16): the token dimmed with a badge, which carries the ghost vote.
@@ -1740,11 +1741,8 @@ test('a dead player whose ability has ended moves their reminders to the end of 
 	}
 	for (const number of [1, 3]) {
 		const sheet = await openSeat(page, number);
-		await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
-		await page
-			.getByRole('dialog', { name: `Status of Seat ${number}` })
-			.getByRole('button', { name: 'Executed' })
-			.tap();
+		await sheet.getByRole('combobox', { name: 'Status: Alive' }).tap();
+		await page.getByRole('listbox').getByRole('option', { name: 'Executed' }).tap();
 		await closeSheet(page);
 	}
 	const bank = page.getByRole('list', { name: 'Reminder bank' });
@@ -2530,11 +2528,8 @@ test("the Boffin gives the Demon a not-in-play good character's ability", async 
 	await expect(page.getByRole('dialog', { name: 'Players' })).toBeHidden();
 	// A dead Boffin takes it away.
 	const boffin = await openSeat(page, 1);
-	await boffin.getByRole('button', { name: 'Status: Alive' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Status of Seat 1' })
-		.getByRole('button', { name: 'Executed' })
-		.tap();
+	await boffin.getByRole('combobox', { name: 'Status: Alive' }).tap();
+	await page.getByRole('listbox').getByRole('option', { name: 'Executed' }).tap();
 	await closeSheet(page);
 	await expect(mark).toHaveAttribute('title', 'Holds the Chef ability (not now)');
 	// Vanilla (Trevor, 2026-10-30): the Chef's token beside the Demon, as the wiki runs it; the
@@ -2616,11 +2611,8 @@ test('the Hermit holds every other Outsider ability on the script', async ({ pag
 		await expect(held.and(page.locator(`[title="Holds the ${name} ability"]`))).toHaveCount(1);
 	// Dead, it keeps only the Recluse's, which works even if dead.
 	const again = await openSeat(page, 1);
-	await again.getByRole('button', { name: 'Status: Alive' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Status of Seat 1' })
-		.getByRole('button', { name: 'Executed' })
-		.tap();
+	await again.getByRole('combobox', { name: 'Status: Alive' }).tap();
+	await page.getByRole('listbox').getByRole('option', { name: 'Executed' }).tap();
 	await closeSheet(page);
 	const seat = page.getByTestId('seat').nth(0);
 	await expect(seat.locator('[title="Holds the Recluse ability"]')).toHaveCount(1);
@@ -2689,11 +2681,8 @@ test('a dead Plague Doctor gives the Storyteller a Minion ability, shown on the 
 	await day.getByRole('button', { name: 'Close' }).tap();
 	await expect(day).toBeHidden();
 	const doctor = await openSeat(page, 1);
-	await doctor.getByRole('button', { name: 'Status: Alive' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Status of Seat 1' })
-		.getByRole('button', { name: 'Executed' })
-		.tap();
+	await doctor.getByRole('combobox', { name: 'Status: Alive' }).tap();
+	await page.getByRole('listbox').getByRole('option', { name: 'Executed' }).tap();
 	await page
 		.getByRole('alertdialog', { name: 'End the day?' })
 		.getByRole('button', { name: 'Confirm', exact: true })
@@ -2838,11 +2827,8 @@ test("the Undertaker's step suggests the executed player's character", async ({ 
 	await day.getByRole('button', { name: 'Close' }).tap();
 	await expect(day).toBeHidden();
 	const executed = await openSeat(page, 2);
-	await executed.getByRole('button', { name: 'Status: Alive' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Status of Seat 2' })
-		.getByRole('button', { name: 'Executed' })
-		.tap();
+	await executed.getByRole('combobox', { name: 'Status: Alive' }).tap();
+	await page.getByRole('listbox').getByRole('option', { name: 'Executed' }).tap();
 	// During the day, Executed asks as the day's Execution does (Trevor, 2026-10-23).
 	await page
 		.getByRole('alertdialog', { name: 'End the day?' })
@@ -2906,11 +2892,8 @@ test('a met game end condition offers End game, listing every outcome', async ({
 	// Executions are marked on the board (Trevor, 2026-10-20).
 	const execute = async (seat: number) => {
 		const sheet = await openSeat(page, seat);
-		await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
-		await page
-			.getByRole('dialog', { name: `Status of Seat ${seat}` })
-			.getByRole('button', { name: 'Executed' })
-			.tap();
+		await sheet.getByRole('combobox', { name: 'Status: Alive' }).tap();
+		await page.getByRole('listbox').getByRole('option', { name: 'Executed' }).tap();
 	};
 	// The Saint executed: its team loses (https://wiki.bloodontheclocktower.com/Saint).
 	await execute(1);
@@ -2960,12 +2943,12 @@ test("the Demon executed with a living Mastermind doesn't offer End game", async
 	}
 	// The execution is marked on the board (Trevor, 2026-10-20).
 	const sheet = await openSeat(page, 1);
-	await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
-	const status = page.getByRole('dialog', { name: 'Status of Seat 1' });
-	await status.getByRole('button', { name: 'Executed' }).tap();
+	await sheet.getByRole('combobox', { name: 'Status: Alive' }).tap();
+	const status = page.getByRole('listbox');
+	await status.getByRole('option', { name: 'Executed' }).tap();
 	// The Mastermind plays one more day (https://wiki.bloodontheclocktower.com/Mastermind).
 	await expect(status).toBeHidden();
-	await expect(sheet.getByRole('button', { name: 'Status: Dead: Executed' })).toBeVisible();
+	await expect(sheet.getByRole('combobox', { name: 'Status: Dead: Executed' })).toBeVisible();
 	await expect(page.getByRole('alertdialog', { name: 'End game?' })).toHaveCount(0);
 });
 
@@ -5054,10 +5037,10 @@ test('Run Night Order skips dead players, except an ability set off by dying ton
 	for (const [seat, , dies] of seats) {
 		const sheet = await openSeat(page, seat);
 		if (dies) {
-			await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
+			await sheet.getByRole('combobox', { name: 'Status: Alive' }).tap();
 			await page
-				.getByRole('dialog', { name: `Status of Seat ${seat}` })
-				.getByRole('button', { name: seat === 2 ? 'Executed' : 'The Demon' })
+				.getByRole('listbox')
+				.getByRole('option', { name: seat === 2 ? 'Executed' : 'The Demon' })
 				.tap();
 			// During the day, Executed asks as the day's Execution does (Trevor, 2026-10-23),
 			// and its Confirm ends the day.
@@ -5067,7 +5050,7 @@ test('Run Night Order skips dead players, except an ability set off by dying ton
 				await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 				continue;
 			}
-			await expect(sheet.getByRole('button', { name: 'Status: Dead: The Demon' })).toBeVisible();
+			await expect(sheet.getByRole('combobox', { name: 'Status: Dead: The Demon' })).toBeVisible();
 		}
 		await closeSheet(page);
 	}
@@ -6168,7 +6151,7 @@ test('a Dead reminder put on a living player asks whether to mark them dead', as
 	await expect(
 		page
 			.locator('[data-scope="drawer"][data-part="content"]')
-			.getByRole('button', { name: /^Status: Dead: Imp/ })
+			.getByRole('combobox', { name: /^Status: Dead: Imp/ })
 	).toBeVisible();
 	await closeSheet(page);
 
@@ -6208,11 +6191,8 @@ test('when the Imp kills itself, a living Minion is chosen to become the Imp', a
 		await closeSheet(page);
 	}
 	const sheet = await openSeat(page, 3);
-	await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Status of Seat 3' })
-		.getByRole('button', { name: 'The Demon' })
-		.tap();
+	await sheet.getByRole('combobox', { name: 'Status: Alive' }).tap();
+	await page.getByRole('listbox').getByRole('option', { name: 'The Demon' }).tap();
 	const ask = page.getByRole('alertdialog', { name: 'Choose the new Imp' });
 	await expect(ask.getByRole('radio', { name: /Seat 4/, includeHidden: true })).toBeChecked();
 	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
@@ -6239,20 +6219,20 @@ test('the star pass is asked again when a revived Imp kills itself again', async
 		await closeSheet(page);
 	}
 	const ask = page.getByRole('alertdialog', { name: 'Choose the new Imp' });
-	const status = page.getByRole('dialog', { name: 'Status of Seat 3' });
+	const status = page.getByRole('listbox');
 	const sheet = await openSeat(page, 3);
-	await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
-	await status.getByRole('button', { name: 'The Demon' }).tap();
+	await sheet.getByRole('combobox', { name: 'Status: Alive' }).tap();
+	await status.getByRole('option', { name: 'The Demon' }).tap();
 	await ask.getByRole('button', { name: 'Cancel', exact: true }).tap();
 	await expect(ask).toBeHidden();
-	await sheet.getByRole('button', { name: /^Status: / }).tap();
-	await status.getByRole('button', { name: 'Alive', exact: true }).tap();
+	await sheet.getByRole('combobox', { name: /^Status: / }).tap();
+	await status.getByRole('option', { name: 'Alive', exact: true }).tap();
 	await page
 		.getByRole('alertdialog', { name: 'Bring Seat 3 back to life?' })
 		.getByRole('button', { name: 'Confirm', exact: true })
 		.tap();
-	await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
-	await status.getByRole('button', { name: 'The Demon' }).tap();
+	await sheet.getByRole('combobox', { name: 'Status: Alive' }).tap();
+	await status.getByRole('option', { name: 'The Demon' }).tap();
 	await expect(ask).toBeVisible();
 });
 
@@ -6554,11 +6534,8 @@ test("putting a dead character's reminder on the board asks first", async ({ pag
 			.getByRole('dialog', { name: `Character for Seat ${number}` })
 			.getByRole('button', { name, exact: true })
 			.tap();
-		await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
-		await page
-			.getByRole('dialog', { name: `Status of Seat ${number}` })
-			.getByRole('button', { name: 'Executed' })
-			.tap();
+		await sheet.getByRole('combobox', { name: 'Status: Alive' }).tap();
+		await page.getByRole('listbox').getByRole('option', { name: 'Executed' }).tap();
 		await closeSheet(page);
 	}
 	const bank = page.getByRole('list', { name: 'Reminder bank' });
@@ -6643,11 +6620,8 @@ test('a Fool marked dead is offered to survive their first death', async ({ page
 		await closeSheet(page);
 	}
 	const sheet = await openSeat(page, 1);
-	await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Status of Seat 1' })
-		.getByRole('button', { name: 'The Demon' })
-		.tap();
+	await sheet.getByRole('combobox', { name: 'Status: Alive' }).tap();
+	await page.getByRole('listbox').getByRole('option', { name: 'The Demon' }).tap();
 	const ask = page.getByRole('alertdialog', { name: 'Use the Fool’s ability?' });
 	await expect(ask).toContainText('No Ability');
 	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
@@ -6676,11 +6650,8 @@ test('with the Hindu, a player who dies is reincarnated as a Traveller', async (
 	await adding.getByRole('button', { name: 'Hindu', exact: true }).tap();
 	await expect(adding).toBeHidden();
 
-	await (await openSeat(page, 1)).getByRole('button', { name: 'Status: Alive' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Status of Seat 1' })
-		.getByRole('button', { name: 'The Demon' })
-		.tap();
+	await (await openSeat(page, 1)).getByRole('combobox', { name: 'Status: Alive' }).tap();
+	await page.getByRole('listbox').getByRole('option', { name: 'The Demon' }).tap();
 	const picker = page.getByRole('dialog', { name: 'Reincarnate Seat 1 as' });
 	// Each Traveller shows in the player's alignment, good here, not the Travellers' own colours.
 	const gunslinger = picker.getByRole('button', { name: 'Gunslinger, Recommended' });
@@ -6718,11 +6689,8 @@ test('with the Hindu, the Demon among the first four to die ends the game for go
 	await adding.getByRole('button', { name: 'Hindu', exact: true }).tap();
 	await expect(adding).toBeHidden();
 
-	await (await openSeat(page, 1)).getByRole('button', { name: 'Status: Alive' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Status of Seat 1' })
-		.getByRole('button', { name: 'Executed' })
-		.tap();
+	await (await openSeat(page, 1)).getByRole('combobox', { name: 'Status: Alive' }).tap();
+	await page.getByRole('listbox').getByRole('option', { name: 'Executed' }).tap();
 	const prompt = page.getByRole('alertdialog', { name: 'End game?' });
 	const line = prompt.locator('[data-rule="demon-dead"]');
 	// The line shows the Hindu's ability, so the Storyteller sees why.
@@ -6776,11 +6744,8 @@ test("with the Hindu's optional rule chosen at the start, a reborn Demon passes 
 			.tap();
 		await closeSheet(page);
 	}
-	await (await openSeat(page, 1)).getByRole('button', { name: 'Status: Alive' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Status of Seat 1' })
-		.getByRole('button', { name: 'Executed' })
-		.tap();
+	await (await openSeat(page, 1)).getByRole('combobox', { name: 'Status: Alive' }).tap();
+	await page.getByRole('listbox').getByRole('option', { name: 'Executed' }).tap();
 	await expect(page.getByRole('alertdialog', { name: 'End game?' })).toHaveCount(0);
 	const picker = page.getByRole('dialog', { name: 'Reincarnate Seat 1 as' });
 	await picker.getByRole('button', { name: 'Gunslinger, Recommended' }).tap();
@@ -6865,11 +6830,8 @@ test('with The Phantom Detectives, living Townsfolk sleep and the dead keep waki
 	// Dead, the Poisoner keeps its ability and still wakes.
 	await nextNight(page);
 	const sheet = await openSeat(page, 2);
-	await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Status of Seat 2' })
-		.getByRole('button', { name: 'Executed' })
-		.tap();
+	await sheet.getByRole('combobox', { name: 'Status: Alive' }).tap();
+	await page.getByRole('listbox').getByRole('option', { name: 'Executed' }).tap();
 	await closeSheet(page);
 	await walkTo(page, 'Poisoner');
 });
@@ -7033,7 +6995,7 @@ test('tapping the nomination marks records a nomination, and the Virgin executes
 	await expect(seatLabelled(page, 'Seat 2: no name, Chef, dead')).toBeAttached();
 	// The Virgin is the cause of death (Trevor, 2026-10-27).
 	const chef = await openSeat(page, 2);
-	await expect(chef.getByRole('button', { name: 'Status: Dead: Virgin' })).toBeVisible();
+	await expect(chef.getByRole('combobox', { name: 'Status: Dead: Virgin' })).toBeVisible();
 	await closeSheet(page);
 	// The Virgin's ability is used: her "No Ability" reminder is placed.
 	await expect(seatLabelled(page, 'Seat 1: no name, Virgin, 1 reminder')).toBeAttached();
@@ -7044,11 +7006,8 @@ test('tapping the nomination marks records a nomination, and the Virgin executes
 	// A player who died without nominating may still be nominated, but not nominate
 	// (Trevor, 2026-10-24): only the gavel.
 	const empath = await openSeat(page, 4);
-	await empath.getByRole('button', { name: 'Status: Alive' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Status of Seat 4' })
-		.getByRole('button', { name: 'The Demon' })
-		.tap();
+	await empath.getByRole('combobox', { name: 'Status: Alive' }).tap();
+	await page.getByRole('listbox').getByRole('option', { name: 'The Demon' }).tap();
 	await closeSheet(page);
 	await expect(seats.nth(3).getByTestId('nominated-mark')).toHaveCount(1);
 	await expect(seats.nth(3).getByTestId('nominator-mark')).toHaveCount(0);
@@ -7436,11 +7395,8 @@ test("the Barber's step swaps two players' characters, keeping alignments", asyn
 	await walkTo(page, 'Dusk');
 	await nextNight(page);
 	const sheet = await openSeat(page, 1);
-	await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Status of Seat 1' })
-		.getByRole('button', { name: 'Executed' })
-		.tap();
+	await sheet.getByRole('combobox', { name: 'Status: Alive' }).tap();
+	await page.getByRole('listbox').getByRole('option', { name: 'Executed' }).tap();
 	await closeSheet(page);
 
 	const strip = await walkTo(page, 'Barber');
@@ -7491,11 +7447,8 @@ test("the Hatter's step lets each Minion and Demon become another of their type"
 	await walkTo(page, 'Dusk');
 	await nextNight(page);
 	const sheet = await openSeat(page, 1);
-	await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Status of Seat 1' })
-		.getByRole('button', { name: 'Executed' })
-		.tap();
+	await sheet.getByRole('combobox', { name: 'Status: Alive' }).tap();
+	await page.getByRole('listbox').getByRole('option', { name: 'Executed' }).tap();
 	await closeSheet(page);
 
 	const strip = await walkTo(page, 'Hatter');

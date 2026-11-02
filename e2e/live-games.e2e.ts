@@ -61,12 +61,9 @@ test('an admin lists the open rooms and watches one, unseen and read-only', asyn
 	await seat.tap();
 	await page
 		.locator('[data-scope="drawer"][data-part="content"]')
-		.getByRole('button', { name: 'Status: Alive' })
+		.getByRole('combobox', { name: 'Status: Alive' })
 		.tap();
-	await page
-		.getByRole('dialog', { name: /^Status of/ })
-		.getByRole('button', { name: 'Executed' })
-		.tap();
+	await page.getByRole('listbox').getByRole('option', { name: 'Executed' }).tap();
 	await page.keyboard.press('Escape');
 	const label = await seat.getAttribute('aria-label');
 	expect(label).toMatch(/dead/i);

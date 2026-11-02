@@ -159,12 +159,9 @@ test("a table's tablet shows the players' grim live, with nothing to tap and no 
 	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
 	await page
 		.locator('[data-scope="drawer"][data-part="content"]')
-		.getByRole('button', { name: 'Status: Alive' })
+		.getByRole('combobox', { name: 'Status: Alive' })
 		.tap();
-	await page
-		.getByRole('dialog', { name: /^Status of/ })
-		.getByRole('button', { name: 'Executed' })
-		.tap();
+	await page.getByRole('listbox').getByRole('option', { name: 'Executed' }).tap();
 	await expect(seats.first()).toHaveAttribute(
 		'aria-label',
 		'Seat 1: Seat 1, dead, ghost vote not used'
