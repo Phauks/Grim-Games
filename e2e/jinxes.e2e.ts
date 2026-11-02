@@ -515,3 +515,111 @@ test("the Cannibal who eats the Juggler learns the Juggler's number", async ({ p
 		/learns what the\s*Juggler\s*would learn tonight/
 	);
 });
+
+// Lil' Monsta's babysitting jinxes (L116, https://wiki.bloodontheclocktower.com/Lil%27_Monsta#Related_Jinxes):
+// a Vizier babysitting Lil' Monsta dies when executed, so the Execution sheet no longer says
+// they survive.
+test('a Vizier babysitting Lil’ Monsta is no longer saved from execution', async ({ page }) => {
+	test.slow();
+	await startGame(page, 'Babysitting Vizier', [
+		'lilmonsta',
+		'vizier',
+		'poisoner',
+		'chef',
+		'empath',
+		'monk'
+	]);
+	await choose(page, 1, 'Vizier');
+	await choose(page, 2, 'Poisoner');
+	await choose(page, 3, 'Chef');
+	const first = await walkTo(page, 'Dusk');
+	await first.getByRole('button', { name: 'Next step' }).tap();
+	await bankNight(page, 'End night').tap();
+	await page
+		.getByRole('alertdialog', { name: 'End the night?' })
+		.getByRole('button', { name: 'Confirm', exact: true })
+		.tap();
+	const day = page.getByRole('dialog', { name: 'Day 1' });
+	const executeSeat1 = async () => {
+		await day.getByRole('button', { name: 'Execution', exact: true }).tap();
+		const ask = page.getByRole('alertdialog', { name: 'End the day?' });
+		await ask.getByRole('combobox', { name: 'Execution' }).tap();
+		await page.getByRole('option', { name: /^Seat 1\b/ }).tap();
+		return ask;
+	};
+	let ask = await executeSeat1();
+	await expect(ask.getByTestId('execution-saved')).toContainText('does not die');
+	await ask.getByRole('button', { name: 'Cancel' }).tap();
+	await expect(ask).toBeHidden();
+	await day.getByRole('button', { name: 'Close' }).tap();
+	await expect(day).toBeHidden();
+
+	await putReminder(page, 'Is The Demon', 1);
+	await closeBin(page);
+	await openDay(page);
+	ask = await executeSeat1();
+	await expect(ask.getByTestId('execution-saved')).not.toContainText('does not die');
+});
+
+// With the Magician alive, the Storyteller picks a Minion to babysit Lil' Monsta: Is The
+// Demon on anyone else is still placed, with a toast that a jinx says who carries it (L116).
+test('with the Magician alive, Lil’ Monsta’s Is The Demon on a non-Minion warns', async ({
+	page
+}) => {
+	test.slow();
+	await startGame(page, 'Babysitting Magician', [
+		'lilmonsta',
+		'magician',
+		'poisoner',
+		'chef',
+		'empath',
+		'monk'
+	]);
+	await choose(page, 1, 'Magician');
+	await choose(page, 2, 'Poisoner');
+	await choose(page, 3, 'Chef');
+	await putReminder(page, 'Is The Demon', 3);
+	await expect(page.getByText(/a jinx says who carries it/)).toBeVisible();
+	await expect(await openSeat(page, 3)).toContainText('Is The Demon');
+});
+
+// At the tea party a Demon who chooses Lil' Monsta also chooses a Minion, and becomes that
+// (L116, https://wiki.bloodontheclocktower.com/Hatter#Related_Jinxes).
+test('the Hatter’s Demon who chooses Lil’ Monsta also chooses a Minion to become', async ({
+	page
+}) => {
+	test.slow();
+	await startGame(page, 'Babysitting Hatter', [
+		'hatter',
+		'lilmonsta',
+		'imp',
+		'poisoner',
+		'spy',
+		'chef',
+		'empath'
+	]);
+	await choose(page, 1, 'Hatter');
+	await choose(page, 2, 'Chef');
+	await choose(page, 3, 'Poisoner');
+	await choose(page, 4, 'Imp');
+	await toSecondNight(page, 1);
+
+	const step = await openStep(page, 'Hatter');
+	await expect(step.getByTestId('also-becomes')).toContainText('also chooses a Minion to become');
+	const change = step.getByTestId('change-character');
+	await change.getByRole('button', { name: 'Choose' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Changes character' })
+		.getByRole('button', { name: /Seat 4/ })
+		.tap();
+	await page
+		.getByRole('dialog', { name: 'Choose a character' })
+		.getByRole('button', { name: "Lil' Monsta", exact: true })
+		.tap();
+	const minions = page.getByRole('dialog', { name: 'Also choose a Minion' });
+	await expect(minions.getByRole('button', { name: 'Imp', exact: true })).toHaveCount(0);
+	await minions.getByRole('button', { name: 'Spy', exact: true }).tap();
+	await expect(change).toContainText('Spy');
+	await step.getByRole('button', { name: 'Close' }).first().tap();
+	await expect(await openSeat(page, 4)).toContainText(/Minion · Evil · Seat 4[\s\S]*Spy/);
+});

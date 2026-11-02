@@ -213,6 +213,36 @@ describe('jinx rules data', () => {
 		]);
 	});
 
+	it("reads Lil' Monsta's babysitting jinx rules, and rejects bad ones", () => {
+		const issues = new Issues();
+		const good = {
+			a: { alsoBecomes: 'minion' },
+			b: { carrierType: 'minion' },
+			c: { keptByPartner: true },
+			d: { diesWhenExecuted: 'Is The Demon' }
+		};
+		expect(readJinxRules(good, 'jinxes', issues)).toEqual(good);
+		expect(issues.list).toEqual([]);
+		const bad = new Issues();
+		readJinxRules(
+			{
+				a: { alsoBecomes: 'goblin' },
+				b: { keptByPartner: 'yes' },
+				c: { diesWhenExecuted: 3 }
+			},
+			'jinxes',
+			bad
+		);
+		expect(bad.list.map((i) => i.split(': ')[0])).toEqual([
+			'jinxes.a.alsoBecomes',
+			'jinxes.a',
+			'jinxes.b.keptByPartner',
+			'jinxes.b',
+			'jinxes.c.diesWhenExecuted',
+			'jinxes.c'
+		]);
+	});
+
 	it('reads the night choice jinx rules, and rejects bad ones', () => {
 		const issues = new Issues();
 		const good = {

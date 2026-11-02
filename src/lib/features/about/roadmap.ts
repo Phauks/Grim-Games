@@ -504,9 +504,11 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		// the jinxes where a player learns something (the Cannibal's Butler, Zealot and Juggler,
 		// the Vortox's Banshee), L115 the Vizier's six (not declared, kept protection, woken with
 		// the Fearmonger, the Magician).
+		// L116 Lil' Monsta's babysitting jinxes (the Hatter, Magician, Poppy Grower, Psychopath,
+		// Scarlet Woman and Vizier).
 		title: 'Jinxes the app applies, not only shows',
 		area: 'engine',
-		parts: ['L99', 'L100', 'L107', 'L108', 'L109', 'L112', 'L113', 'L114', 'L115']
+		parts: ['L99', 'L100', 'L107', 'L108', 'L109', 'L112', 'L113', 'L114', 'L115', 'L116']
 	},
 	{
 		title: 'Co-Storytelling: two Storytellers on one game',

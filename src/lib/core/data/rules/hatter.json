@@ -48,6 +48,9 @@
 	"jinxes": {
 		"leviathan": {
 			"notCreatedAfterDay": 5
+		},
+		"lilmonsta": {
+			"alsoBecomes": "minion"
 		}
 	},
 	"infoTokenCharacters": {

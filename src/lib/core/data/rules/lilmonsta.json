@@ -84,5 +84,16 @@
 	"evilInfo": {
 		"hidesDemon": true
 	},
-	"carrierIsDemon": "Is The Demon"
+	"carrierIsDemon": "Is The Demon",
+	"jinxes": {
+		"magician": {
+			"carrierType": "minion"
+		},
+		"poppygrower": {
+			"carrierType": "minion"
+		},
+		"scarletwoman": {
+			"keptByPartner": true
+		}
+	}
 }
