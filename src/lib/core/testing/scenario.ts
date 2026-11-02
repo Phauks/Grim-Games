@@ -167,6 +167,9 @@ export function scenario(
 /**
  * Ends an `it.fails` example whose rule the engine doesn't have yet: `gap` is its roadmap ID
  * (src/lib/features/about/roadmap.ts), `needs` what the rule must answer. Always throws.
+ * Kept while no example waits on the engine, for the next one that does.
+ *
+ * @public
  */
 export function engineGap(gap: string, needs: string): never {
 	throw new Error(`waits on the engine (${gap}): ${needs}`);
