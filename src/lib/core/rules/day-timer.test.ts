@@ -3,6 +3,10 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
+	DAY_SECONDS_PER_ALIVE,
+	DAY_SECONDS_PER_ALIVE_CHOICES,
+	DAY_SECONDS_PER_ALIVE_MAX,
+	DAY_SECONDS_PER_ALIVE_MIN,
 	adjust,
 	dayTimer,
 	elapsed,
@@ -150,5 +154,15 @@ describe("players' day timer (Trevor, 2026-10-29: always a sun)", () => {
 		expect(dayLeft(t, 15_000)).toBe(0.75);
 		expect(dayLeft(t, 60_000)).toBe(0);
 		expect(dayLeft(t, 90_000)).toBe(0);
+	});
+});
+
+// Trevor, 2026-11-02: seconds per living player run from 15 to 60 in steps of 5.
+describe('seconds per living player', () => {
+	it('offers 15 to 60 seconds in steps of 5, with 30 the default', () => {
+		expect([...DAY_SECONDS_PER_ALIVE_CHOICES]).toEqual([15, 20, 25, 30, 35, 40, 45, 50, 55, 60]);
+		expect(DAY_SECONDS_PER_ALIVE_MIN).toBe(15);
+		expect(DAY_SECONDS_PER_ALIVE_MAX).toBe(60);
+		expect(DAY_SECONDS_PER_ALIVE_CHOICES).toContain(DAY_SECONDS_PER_ALIVE);
 	});
 });
