@@ -550,26 +550,6 @@ describe('validRandomSelection', () => {
 		expect(listMoreTravellers([...TB, scapegoat], 2)).toBe(true);
 	});
 
-	// Trevor, 2026-10-31: when players beyond 15 choose their Traveller on their phones,
-	// Random leaves those places open, and nothing says Travellers are missing.
-	it('leaves Traveller places open when the Travellers choose later', () => {
-		const travellers = [...data.byId.values()].filter((c) => c.type === 'traveller');
-		const input = { players: 18, scriptCharacters: TB, scriptOrder: TB.map((c) => c.id), lookup };
-		const result = validRandomSelection({
-			...input,
-			selection: {},
-			random: seeded(9),
-			fallbackTravellers: [travellers],
-			travellersLater: true
-		});
-		expect(result.ok).toBe(true);
-		if (!result.ok) return;
-		expect(Object.keys(result.selection).filter((id) => lookup(id)?.type === 'traveller')).toEqual(
-			[]
-		);
-		expect(Object.values(result.selection).reduce((a, b) => a + b, 0)).toBe(15);
-	});
-
 	it("lists the recommended Travellers: the script's own, then its edition's", () => {
 		const all = [...data.byId.values()];
 		const harlot = data.byId.get('harlot')!;

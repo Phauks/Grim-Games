@@ -42,9 +42,10 @@ import {
 } from '#lib/core/model/selectors.ts';
 import type { Game, ReminderId, SeatId } from '#lib/core/model/types.ts';
 import { keepsAbilityWhenDead } from './dead-characters.ts';
+import { heldAbilitiesOf } from './gained-abilities.ts';
 import { jinxedWith, ownJinxRules, registeredTo } from './jinxes.ts';
 import { effectImpairment } from './reminder-effects.ts';
-import { wishWithEffect } from './wishes.ts';
+import { drunkByWish } from './wishes.ts';
 
 const W = 'https://wiki.bloodontheclocktower.com/';
 
@@ -214,15 +215,8 @@ function impairmentsOf(
 					)
 				: seatOfCharacter(game, r.characterId, characters, seatId);
 			if (rule.whileWorks && !source) continue;
-			out.push({
-				reason: rule.reason,
-				source: {
-					characterId: r.characterId,
-					...(source ? { seatId: source } : {}),
-					reminderId: r.reminderId
-				},
-				wiki: wikiOf(r.characterId, characters)
-			});
+			const at = { characterId: r.characterId, reminderId: r.reminderId };
+			out.push(sourced(rule.reason, source ? { ...at, seatId: source } : at, characters));
 			continue;
 		}
 		const reason = impairmentOfLabel(r.label);
@@ -302,21 +296,15 @@ function impairmentsOf(
 				(visiting.has(source) || !abilityWorks(game, source, characters, visiting))
 			)
 				continue;
-			out.push({
-				reason: rule.reason,
-				source: { characterId: token.characterId, seatId: source, reminderId: token.reminderId },
-				wiki: wikiOf(token.characterId, characters)
-			});
+			const at = { characterId: token.characterId, seatId: source, reminderId: token.reminderId };
+			out.push(sourced(rule.reason, at, characters));
 			break others;
 		}
 	}
 
-	// A granted wish that makes every good player drunk for the rest of the game (the Wizard's
-	// example: https://wiki.bloodontheclocktower.com/Wizard). It lasts whatever happens to the
-	// wisher, until the Storyteller removes the wish.
-	const wish = wishWithEffect(game, 'good-drunk');
-	if (wish && alignmentOf(game, seatId) === 'good')
-		out.push(sourced('drunk', { characterId: wish.characterId, seatId: wish.seatId }, characters));
+	// A granted wish making every good player drunk (the Wizard's, wishes.ts).
+	const wish = drunkByWish(game, seatId);
+	if (wish) out.push(sourced('drunk', wish, characters));
 
 	// A token that makes its carrier sober and healthy while its character's ability works
 	// (the Barista's "Sober & Healthy": https://wiki.bloodontheclocktower.com/Barista). An
@@ -397,6 +385,8 @@ export interface Registration {
  *   Falsely?" is still in play: once it has been used, it comes off
  *   (https://wiki.bloodontheclocktower.com/Revolutionary).
  * A drunk or poisoned Recluse or Spy registers truly: they have no ability.
+ * A player holding such an ability registers by it too (the Hermit with the Recluse's,
+ * https://wiki.bloodontheclocktower.com/Hermit).
  *
  * With `viewer`, the character whose ability is asking, a jinx with it may change how a
  * player registers (`registersTo`, whatever that player's own ability's state): the
@@ -445,8 +435,16 @@ function ownRegistration(
 	const alignment = alignmentOf(game, seatId);
 	const type = typeOf(game, seatId, characters);
 	if (!alignment || !type) return undefined;
-	const self = id ? rulesOf(id, characters)?.registersAs?.self : undefined;
-	if (id && self && abilityState(game, seatId, characters).works) {
+	// Their own character's, else an ability they hold (the Hermit's Recluse).
+	const mine = id ? rulesOf(id, characters)?.registersAs?.self : undefined;
+	const by =
+		id && mine && abilityState(game, seatId, characters).works
+			? id
+			: heldAbilitiesOf(game, seatId, characters).find(
+					(h) => h.works && rulesOf(h.characterId, characters)?.registersAs?.self
+				)?.characterId;
+	const self = by ? rulesOf(by, characters)?.registersAs?.self : undefined;
+	if (by && self) {
 		return {
 			seatId,
 			alignments: [alignment, ...(self.alignments ?? [])].filter(
@@ -455,8 +453,8 @@ function ownRegistration(
 			types: [type, ...(self.types ?? [])].filter(
 				(t, i, all): t is CharacterType => all.indexOf(t) === i
 			),
-			source: { characterId: id, seatId },
-			wiki: wikiOf(id, characters)
+			source: { characterId: by, seatId },
+			wiki: wikiOf(by, characters)
 		};
 	}
 	for (const token of game.seats[seatId].reminders) {
