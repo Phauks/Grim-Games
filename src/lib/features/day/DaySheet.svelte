@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import type { SeatId } from '#lib/core/model/index.ts';
-	import { dayNumber } from '#lib/core/rules/index.ts';
+	import { dayNumber, type GamePhase } from '#lib/core/rules/index.ts';
 	import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
@@ -45,6 +45,11 @@
 		onSoundboard?: () => void;
 		/** Back to town on the day's timer (Trevor, 2026-11-01), as on the board's. */
 		town?: { can: boolean; called: boolean };
+		/**
+		 * Where the game is up to, as the board's corner says it: before Start game the sheet is
+		 * named Setup, not Day (Trevor, 2026-11-01).
+		 */
+		phase?: GamePhase;
 	}
 
 	let {
@@ -57,14 +62,21 @@
 		coverTimer,
 		coverActions,
 		onSoundboard,
-		town
+		town,
+		phase
 	}: Props = $props();
 
 	const day = $derived(new LiveDay(game));
 	// Which day it is (Trevor): Day 1 starts when the first night ends.
 	const number = $derived(dayNumber(game.game));
 	const assistance = $derived(preferences.current.assistance);
-	const title = $derived(number > 0 ? t('day.titleNumber', { number }) : t('day.title'));
+	const title = $derived(
+		phase?.kind === 'setup'
+			? t('day.setup')
+			: number > 0
+				? t('day.titleNumber', { number })
+				: t('day.title')
+	);
 </script>
 
 <Dialog bind:open {title} size="screen" scroll={false}>

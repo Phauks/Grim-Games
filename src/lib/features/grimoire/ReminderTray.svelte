@@ -51,8 +51,6 @@
 		header?: Snippet;
 		/** At its right end, kept at the foot when pulled up (BankRunButton). */
 		run?: Snippet;
-		/** Drawn in the tokens' row instead of them, the run button kept: Seating's bar. */
-		instead?: Snippet;
 		/** The token in hand's pill, over its foot. */
 		children?: Snippet;
 		/** The strip, for its holder to scroll a token into view. */
@@ -78,7 +76,6 @@
 		onEscape,
 		header,
 		run,
-		instead,
 		children,
 		row = $bindable(),
 		el = $bindable()
@@ -274,9 +271,7 @@
 				aria-hidden="true"
 				bind:offsetWidth={captionW[g.key]}>{g.caption}</span
 			>{/if}{/each}
-	{#if instead && !tall}
-		{@render instead()}
-	{:else if tall}
+	{#if tall}
 		<div class="every" aria-label={binLabel} role="region" data-testid="reminder-bin">
 			{@render header?.()}
 			<ReminderGroups label={binLabel} groups={binGroups} {keyOf} item={binToken} {size} />
@@ -327,9 +322,9 @@
 	<!-- The handle bar in the middle of its top edge: pulls it up over the board, or back down
 	     (Trevor, 2026-10-30). Clear of the run button (Trevor, 2026-10-29: "a drag above the
 	     red button is bad placement"). -->
-	{#if !instead}<div class="grab" bind:clientWidth={grabW}>
-			<SheetHandle label={handleLabel} expanded={open} onToggle={toggle} onPull={pull} />
-		</div>{/if}
+	<div class="grab" bind:clientWidth={grabW}>
+		<SheetHandle label={handleLabel} expanded={open} onToggle={toggle} onPull={pull} />
+	</div>
 	{@render run?.()}
 	<!-- Over the board's foot, above the handle bar (Trevor, 2026-10-30). -->
 	{@render children?.()}

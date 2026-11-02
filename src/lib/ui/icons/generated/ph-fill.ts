@@ -3,6 +3,8 @@ import type { IconMap } from '../types.ts';
 import ph_address_book_fill from '~icons/ph/address-book-fill';
 import ph_anchor_fill from '~icons/ph/anchor-fill';
 import ph_archive_fill from '~icons/ph/archive-fill';
+import ph_arrow_arc_left_fill from '~icons/ph/arrow-arc-left-fill';
+import ph_arrow_arc_right_fill from '~icons/ph/arrow-arc-right-fill';
 import ph_arrow_bend_up_right_fill from '~icons/ph/arrow-bend-up-right-fill';
 import ph_arrow_circle_right_fill from '~icons/ph/arrow-circle-right-fill';
 import ph_arrow_clockwise_fill from '~icons/ph/arrow-clockwise-fill';
@@ -75,6 +77,7 @@ import ph_dice_five_fill from '~icons/ph/dice-five-fill';
 import ph_door_fill from '~icons/ph/door-fill';
 import ph_door_open_fill from '~icons/ph/door-open-fill';
 import ph_dots_three_fill from '~icons/ph/dots-three-fill';
+import ph_dots_three_circle_fill from '~icons/ph/dots-three-circle-fill';
 import ph_dots_three_vertical_fill from '~icons/ph/dots-three-vertical-fill';
 import ph_download_simple_fill from '~icons/ph/download-simple-fill';
 import ph_drop_fill from '~icons/ph/drop-fill';
@@ -111,6 +114,7 @@ import ph_hand_grabbing_fill from '~icons/ph/hand-grabbing-fill';
 import ph_hand_heart_fill from '~icons/ph/hand-heart-fill';
 import ph_hand_palm_fill from '~icons/ph/hand-palm-fill';
 import ph_hand_pointing_fill from '~icons/ph/hand-pointing-fill';
+import ph_hand_tap_fill from '~icons/ph/hand-tap-fill';
 import ph_handbag_fill from '~icons/ph/handbag-fill';
 import ph_handshake_fill from '~icons/ph/handshake-fill';
 import ph_hard_drives_fill from '~icons/ph/hard-drives-fill';
@@ -239,6 +243,8 @@ const icons: IconMap = {
 	'ph:address-book-fill': ph_address_book_fill,
 	'ph:anchor-fill': ph_anchor_fill,
 	'ph:archive-fill': ph_archive_fill,
+	'ph:arrow-arc-left-fill': ph_arrow_arc_left_fill,
+	'ph:arrow-arc-right-fill': ph_arrow_arc_right_fill,
 	'ph:arrow-bend-up-right-fill': ph_arrow_bend_up_right_fill,
 	'ph:arrow-circle-right-fill': ph_arrow_circle_right_fill,
 	'ph:arrow-clockwise-fill': ph_arrow_clockwise_fill,
@@ -311,6 +317,7 @@ const icons: IconMap = {
 	'ph:door-fill': ph_door_fill,
 	'ph:door-open-fill': ph_door_open_fill,
 	'ph:dots-three-fill': ph_dots_three_fill,
+	'ph:dots-three-circle-fill': ph_dots_three_circle_fill,
 	'ph:dots-three-vertical-fill': ph_dots_three_vertical_fill,
 	'ph:download-simple-fill': ph_download_simple_fill,
 	'ph:drop-fill': ph_drop_fill,
@@ -347,6 +354,7 @@ const icons: IconMap = {
 	'ph:hand-heart-fill': ph_hand_heart_fill,
 	'ph:hand-palm-fill': ph_hand_palm_fill,
 	'ph:hand-pointing-fill': ph_hand_pointing_fill,
+	'ph:hand-tap-fill': ph_hand_tap_fill,
 	'ph:handbag-fill': ph_handbag_fill,
 	'ph:handshake-fill': ph_handshake_fill,
 	'ph:hard-drives-fill': ph_hard_drives_fill,
