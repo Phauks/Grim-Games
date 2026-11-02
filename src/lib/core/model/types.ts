@@ -162,6 +162,12 @@ export interface Seat {
 	notInPlay?: true;
 	/** How the player died, if the Storyteller recorded it. Only set while `dead`. */
 	deathCause?: DeathCause;
+	/**
+	 * Their ability was not working when they died (drunk or poisoned), so an ability that
+	 * acts on dying gives nothing (https://wiki.bloodontheclocktower.com/Banshee, a poisoned
+	 * Banshee killed by the Demon). Only set while `dead`.
+	 */
+	impairedAtDeath?: true;
 	/** True once a dead player has used their vote. */
 	ghostVoteUsed: boolean;
 	/** At most one override per field. */
