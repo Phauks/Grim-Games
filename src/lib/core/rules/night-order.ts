@@ -61,6 +61,12 @@ export interface NightOrderInput {
 	 * leave a step out (Tor's missing evil info).
 	 */
 	wholeSheet?: true;
+	/**
+	 * Characters in play whose players all have no ability (the Magician while the Vizier is
+	 * in play, https://wiki.bloodontheclocktower.com/Magician#Related_Jinxes): their notes on
+	 * the evil info steps are left out.
+	 */
+	noAbility?: readonly CharacterId[];
 }
 
 /**
@@ -407,7 +413,10 @@ export function nightOrder(input: NightOrderInput): NightOrder {
 				placement: custom && customIds.has(marker) ? 'custom-order' : 'marker',
 				notes: [
 					...candidate.notes,
-					...markerNotes(marker, input.inPlay),
+					...markerNotes(
+						marker,
+						input.inPlay.filter((c) => !input.noAbility?.includes(c.id))
+					),
 					...(marker === 'demoninfo' ? wakesWithNotes(undefined, input.inPlay) : [])
 				]
 			};
@@ -526,11 +535,12 @@ function wakesWithNotes(character: Character | undefined, inPlay: readonly Chara
 	if (character && character.type !== 'minion' && character.type !== 'demon') return [];
 	const characters = new Map(inPlay.map((c) => [c.id, c]));
 	return [...characters.values()].flatMap((c) =>
-		c.id !== character?.id && rulesOf(c.id, characters)?.wakesWithEvil
-			? [`${c.name} wakes too.`]
-			: []
+		c.id !== character?.id && rulesOf(c.id, characters)?.wakesWithEvil ? [wakesTooNote(c.name)] : []
 	);
 }
+
+/** The note on an evil player's step that a character waking with evil wakes too. */
+export const wakesTooNote = (name: string): string => `${name} wakes too.`;
 
 /**
  * The steps TPI's night sheet places after Dawn: announcements made as the day begins (the

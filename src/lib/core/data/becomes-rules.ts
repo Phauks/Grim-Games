@@ -19,7 +19,9 @@
  *
  * The change happens only while this character's player has a working ability (a drunk
  * Mezepheles turns nobody evil, https://wiki.bloodontheclocktower.com/Mezepheles), unless
- * `evenIfImpaired` (the Ogre becomes its friend's alignment even if drunk or poisoned).
+ * `evenIfImpaired` (the Ogre becomes its friend's alignment even if drunk or poisoned). `spent`:
+ * not once this own token is on this character's player (a Mezepheles marked No Ability turns
+ * no one else evil).
  */
 import {
 	ALIGNMENTS,
@@ -50,6 +52,7 @@ export interface Becomes {
 	when?: 'removed';
 	follows?: true;
 	evenIfImpaired?: true;
+	spent?: ReminderLabel;
 }
 
 /** Reads a `becomes` block; `token` must be one of the character's `reminders`. */
@@ -63,13 +66,14 @@ export function readBecomes(
 		issues.add(path, `expected object, got ${describe(raw)}`);
 		return undefined;
 	}
-	checkKeys(raw, ['token', 'into', 'when', 'follows', 'evenIfImpaired'], path, issues);
+	checkKeys(raw, ['token', 'into', 'when', 'follows', 'evenIfImpaired', 'spent'], path, issues);
 	if (raw.token === undefined) issues.add(`${path}.token`, 'missing');
 	const token = readToken(raw, 'token', path, issues, reminders);
 	const into = readEnum(raw, 'into', BECOMES_INTO, path, issues, true);
 	const when = readEnum(raw, 'when', BECOMES_WHEN, path, issues, false);
 	const follows = readBoolean(raw, 'follows', path, issues);
 	const evenIfImpaired = readBoolean(raw, 'evenIfImpaired', path, issues);
+	const spent = readToken(raw, 'spent', path, issues, reminders);
 	if (follows && into !== 'carrier-alignment')
 		issues.add(`${path}.follows`, 'only with into "carrier-alignment"');
 	if (token === undefined || into === undefined) return undefined;
@@ -78,7 +82,8 @@ export function readBecomes(
 		into,
 		...(when === 'removed' ? { when } : {}),
 		...(follows && into === 'carrier-alignment' ? { follows: true as const } : {}),
-		...(evenIfImpaired ? { evenIfImpaired: true as const } : {})
+		...(evenIfImpaired ? { evenIfImpaired: true as const } : {}),
+		...(spent ? { spent } : {})
 	};
 }
 

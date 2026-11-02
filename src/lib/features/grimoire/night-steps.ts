@@ -17,11 +17,13 @@ import {
 	type SeatId
 } from '#lib/core/model/index.ts';
 import {
+	abilityState,
 	characterStepSeats,
 	keepsAbilityWhenDead,
 	livesWhileDead,
 	MARKER_TEXT,
 	nightOrder,
+	notDeclared,
 	onDeathApplies,
 	onDeathTrigger,
 	pretendSeatsOf,
@@ -44,6 +46,25 @@ import {
 import type { GameLog } from '#lib/core/engine/index.ts';
 import { seatHasAbility, type AbilitiesRule, type SpecialRule } from '#lib/core/modes/index.ts';
 import type { IconSlot } from '#lib/ui/icons/catalogue.ts';
+
+/**
+ * Characters in play whose every player has no ability (a Magician while the Vizier is in
+ * play, L115), so their notes on the evil info steps are left out.
+ */
+function withoutAbility(game: Game, characters: CharacterLookup): CharacterId[] {
+	const seats = new Map<CharacterId, SeatId[]>();
+	for (const s of game.seating) {
+		const id = trueCharacter(game, s, characters);
+		if (id) seats.set(id, [...(seats.get(id) ?? []), s]);
+	}
+	return [...seats].flatMap(([id, at]) =>
+		at.every((s) =>
+			abilityState(game, s, characters).impairments.some((i) => i.reason === 'no-ability')
+		)
+			? [id]
+			: []
+	);
+}
 
 export function boardNightSteps(
 	game: Game,
@@ -78,7 +99,8 @@ export function boardNightSteps(
 			inPlay: [...inPlay, ...pretending],
 			players: inPlay.filter((c) => isSeatable(c.type) && c.type !== 'traveller').length,
 			customOrder: night === 'first' ? game.script.meta?.firstNight : game.script.meta?.otherNight,
-			overrides: game.nightOrderOverrides
+			overrides: game.nightOrderOverrides,
+			noAbility: withoutAbility(game, characters)
 		}).steps;
 	// The Storyteller's pretend evil team (M26) wakes too, so the table hears it: a step for each
 	// pretend character no one really is. Only its own steps: the night's markers (Minion info,
@@ -88,7 +110,7 @@ export function boardNightSteps(
 		.map((p) => characters.get(p.characterId))
 		.filter((c): c is Character => !!c && !inPlay.some((d) => d.id === c.id));
 	const realIds = new Set(real.map((s) => s.id));
-	const steps =
+	const sheet =
 		pretending.length === 0
 			? real
 			: order(pretending).flatMap((s): NightStep[] =>
@@ -98,6 +120,11 @@ export function boardNightSteps(
 							? [{ ...s, pretend: true }]
 							: []
 				);
+	// A jinx may say the Storyteller doesn't declare a character after Dawn (the Vizier with
+	// the Alsaahir or the Investigator, L115): its announcement step is left out.
+	const steps = sheet.filter(
+		(s) => !(s.afterDawn && s.character && notDeclared(game, s.character.id, characters))
+	);
 	// What the game says for each step (suggested answers, impairments), a step for each
 	// gained ability, and a step to choose any Traveller's alignment still unset. Dawn is the
 	// last step (Trevor, 2026-10-20); the board's End night button still ends the night.

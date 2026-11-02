@@ -27,7 +27,8 @@
  * - `noReminder`: only while that token is NOT on any player ("No Ability": unused);
  * - `cause`: with `self: 'dead'`, only if the death's cause is one of these ('demon' also
  *   matches any Demon's id). An unknown cause counts as a match, flagged `uncertain`.
- *   The app does not track day or night, so nothing here depends on the day number.
+ * - `day`: only on that day, day 1 being the day after the first night (the Juggler's
+ *   guesses);
  * - `minAlive`: only while at least this many players are alive;
  * - `targetAlive`: with `reminder`, only while the player carrying the token is alive;
  * - `nomineeChose: true`: one reminder per nomination today whose nominee chose a player
@@ -92,6 +93,8 @@ export interface DayCondition {
 	nomineeChose?: true;
 	/** Only while no wish of its player's has been granted. */
 	noWish?: true;
+	/** Only on this day, day 1 being the day after the first night. */
+	day?: number;
 }
 
 export interface DayReminderSpec {
@@ -166,7 +169,8 @@ function readCondition(
 			'minAlive',
 			'targetAlive',
 			'nomineeChose',
-			'noWish'
+			'noWish',
+			'day'
 		],
 		path,
 		issues
@@ -198,6 +202,11 @@ function readCondition(
 	const noWish = readBoolean(raw, 'noWish', path, issues);
 	if (noWish === false) issues.add(`${path}.noWish`, 'expected true, or leave it out');
 	if (noWish) out.noWish = true;
+	const day = readNumber(raw, 'day', path, issues);
+	if (day !== undefined) {
+		if (Number.isInteger(day) && day >= 1) out.day = day;
+		else issues.add(`${path}.day`, 'expected a whole number of at least 1');
+	}
 	if (out.reminder && out.nomineeChose) {
 		issues.add(`${path}.nomineeChose`, 'a reminder or nomineeChose, not both');
 	}
