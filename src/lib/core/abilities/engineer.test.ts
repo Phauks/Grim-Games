@@ -156,11 +156,9 @@ describe('Engineer', () => {
 			]);
 		});
 
-		it.fails('stops waking once marked No Ability', () => {
+		it('stops waking once marked No Ability', () => {
 			// Wiki: "The Engineer loses their ability—mark them with the NO ABILITY reminder and remove
 			// their night token from the night sheet."
-			// Waits on the engine (unplanned): the Engineer has no wake condition, so its night step
-			// still shows after its ability is spent.
 			const s = scenario(cast).reminder('engineer', 'engineer', 'No Ability').newDay();
 			expect(
 				wakeConditionMet(s.game, 'engineer', s.seat('engineer'), s.characters, new Set())

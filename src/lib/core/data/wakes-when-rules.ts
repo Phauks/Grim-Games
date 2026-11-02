@@ -9,7 +9,15 @@
  * - `nobodyDiedToday`: nobody died since the most recent New day (the Zombuul,
  *   https://wiki.bloodontheclocktower.com/Zombuul);
  * - `untilToken`: until its own reminder is on its player (the Seamstress's No Ability once
- *   its once-per-game ability is used, https://wiki.bloodontheclocktower.com/Seamstress).
+ *   its once-per-game ability is used, https://wiki.bloodontheclocktower.com/Seamstress);
+ * - `noneMarked`: while no player carries this reminder of its own (the Zombuul does not wake
+ *   while anyone is marked Died Today, https://wiki.bloodontheclocktower.com/Zombuul);
+ * - `markedDied`: on the first night, and on a later night only once a player carrying this
+ *   reminder of its own has died (the Bounty Hunter learns a new evil player when the one
+ *   marked Know dies, https://wiki.bloodontheclocktower.com/Bounty_Hunter);
+ * - `nightAfterDay`: only on the night after this day, day 1 being the day after the first
+ *   night (the Juggler learns on the night after the first day,
+ *   https://wiki.bloodontheclocktower.com/Juggler).
  */
 import type { CharacterId, ReminderLabel } from './types.ts';
 import {
@@ -18,6 +26,7 @@ import {
 	isObject,
 	readBoolean,
 	readEnum,
+	readNumber,
 	readStringArray,
 	type Issues
 } from './validate.ts';
@@ -28,6 +37,9 @@ export interface WakesWhen {
 	diedTonight?: { characters: CharacterId[]; by?: 'demon' };
 	nobodyDiedToday?: true;
 	untilToken?: ReminderLabel;
+	noneMarked?: ReminderLabel;
+	markedDied?: ReminderLabel;
+	nightAfterDay?: number;
 }
 
 /** Reads a `wakesWhen` block; `untilToken` must be one of the character's `reminders`. */
@@ -43,7 +55,15 @@ export function readWakesWhen(
 	}
 	checkKeys(
 		raw,
-		['deadAtLeastLiving', 'diedTonight', 'nobodyDiedToday', 'untilToken'],
+		[
+			'deadAtLeastLiving',
+			'diedTonight',
+			'nobodyDiedToday',
+			'untilToken',
+			'noneMarked',
+			'markedDied',
+			'nightAfterDay'
+		],
 		path,
 		issues
 	);
@@ -52,6 +72,15 @@ export function readWakesWhen(
 	if (readBoolean(raw, 'nobodyDiedToday', path, issues)) out.nobodyDiedToday = true;
 	const until = readToken(raw, 'untilToken', path, issues, reminders);
 	if (until) out.untilToken = until;
+	const noneMarked = readToken(raw, 'noneMarked', path, issues, reminders);
+	if (noneMarked) out.noneMarked = noneMarked;
+	const markedDied = readToken(raw, 'markedDied', path, issues, reminders);
+	if (markedDied) out.markedDied = markedDied;
+	const day = readNumber(raw, 'nightAfterDay', path, issues);
+	if (day !== undefined) {
+		if (Number.isInteger(day) && day >= 1) out.nightAfterDay = day;
+		else issues.add(`${path}.nightAfterDay`, 'expected a whole number of at least 1');
+	}
 	if (raw.diedTonight !== undefined) {
 		const at = `${path}.diedTonight`;
 		if (!isObject(raw.diedTonight)) {

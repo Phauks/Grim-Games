@@ -12,7 +12,8 @@ import { withGainedSteps, withStorytellerSteps } from '../gained-abilities.ts';
 import { withJinxChoiceSteps } from '../jinx-choices.ts';
 import { type DeathCheck, deathCheck } from '../night-deaths.ts';
 import { nightKill } from '../night-kill.ts';
-import type { Night, NightStep } from '../night-order.ts';
+import { type Night, type NightStep, wakesTooNote } from '../night-order.ts';
+import { trueCharacter } from '#lib/core/model/selectors.ts';
 import { type NightAnswer } from './reliability.ts';
 import { type NightToday, markedSeats, nightAnswer } from './answers.ts';
 import { type InfoPicker, infoPicker } from './picker.ts';
@@ -123,7 +124,12 @@ export function withNightInfo<T extends NightStep>(
 	// The first night, right after Dusk: who starts with the other alignment (the Bounty
 	// Hunter's evil Townsfolk), picked if still to pick, and told.
 	const withAlignments = night === 'first' ? withSetupAlignmentStep(all, game, characters) : all;
-	return withAlignments.map((step) => {
+	const asleep = asleepWithEvil(game, characters);
+	return withAlignments.map((each) => {
+		const step =
+			asleep.length > 0 && each.notes.some((n) => asleep.includes(n))
+				? { ...each, notes: each.notes.filter((n) => !asleep.includes(n)) }
+				: each;
 		// A wake step for a changed character shows the player; it works out nothing.
 		// Nor does one the Storyteller acts in: it wakes nobody. A jinx's night choice is
 		// recorded on its own step (`jinx-choices.ts`).
@@ -145,6 +151,26 @@ export function withNightInfo<T extends NightStep>(
 			...(info ? { info } : {}),
 			...(impaired.length > 0 ? { impaired } : {})
 		};
+	});
+}
+
+/**
+ * The "wakes too" notes to take off evil players' steps: a character that wakes with evil
+ * (`wakesWithEvil`) whose every player has lost their ability is not woken
+ * (https://wiki.bloodontheclocktower.com/Wraith).
+ */
+function asleepWithEvil(game: Game, characters: CharacterLookup): string[] {
+	const ids = new Set(
+		game.seating.flatMap((s) => {
+			const id = trueCharacter(game, s, characters);
+			return id !== undefined && rulesOf(id, characters)?.wakesWithEvil ? [id] : [];
+		})
+	);
+	return [...ids].flatMap((id) => {
+		const seats = game.seating.filter((s) => trueCharacter(game, s, characters) === id);
+		const asleep = seats.every((s) => !abilityState(game, s, characters).works);
+		const name = characters.get(id)?.name;
+		return asleep && name ? [wakesTooNote(name)] : [];
 	});
 }
 
