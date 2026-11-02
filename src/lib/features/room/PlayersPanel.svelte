@@ -18,22 +18,21 @@
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import { roomHost } from './host.svelte.ts';
 	import { removeFromRoom } from './host-seating.ts';
+	import PlayerDisc, { type Phone } from './PlayerDisc.svelte';
 	import PlayerInbox from './PlayerInbox.svelte';
 	import { playersDialog } from './players-dialog.svelte.ts';
 	import RemovedPlayers from './RemovedPlayers.svelte';
-	import { seatRoles } from '#lib/core/sync/seat-roles.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 
 	/**
 	 * Players (Trevor, 2026-10-29: "player management shouldn't be under share"): every seat,
-	 * phone or not, then the phones with no seat; each with their avatar (a tap opens their
-	 * profile), whether their phone is here, and what they have sent. Each player is a caret
-	 * section with their notes, messages and reported picture shown beneath them (Trevor,
-	 * 2026-10-31: "all notes and messages should populate beneath each player, not be hidden in
-	 * a sub-menu"; "allow carrot menuing each character"). The game's own notes are their own
-	 * section above the players (Trevor, 2026-10-31). Share is shown to players, so nothing here
-	 * is on it.
+	 * phone or not, then the phones with no seat. One line each (Trevor, 2026-11-01, "D"): the
+	 * seat and phone in one disc, name and character, how many notes, and what waits from them.
+	 * Tapping a line shows that player beside the list (below it on a phone): their messages,
+	 * then their notes (Trevor, 2026-11-01: "place messages on top of notes"), each a caret
+	 * section, and Block. The game's own notes have their own button on the board. Share is
+	 * shown to players, so nothing here is on it.
 	 */
 	interface Props {
 		game: OpenGame;
@@ -72,10 +71,8 @@
 		)
 	]);
 
-	type Phone = 'here' | 'away' | 'none';
 	const phoneOf = (entry: Entry): Phone =>
 		!entry.member ? 'none' : host.isHere(entry.member.memberId) ? 'here' : 'away';
-	const PHONE_ICON = { here: 'phoneHere', away: 'phoneAway', none: 'noPhone' } as const;
 	const PHONE_TEXT = {
 		here: 'room.players.here',
 		away: 'room.players.away',
@@ -88,23 +85,6 @@
 		return t('room.players.where', { seat, state: t(PHONE_TEXT[phoneOf(entry)]) });
 	}
 
-	// Who has seen their character, on each player's row (Trevor, 2026-10-30: "who has seen
-	// theirs and the above area seems duplicative, can you just combine").
-	const gameId = $derived(game.game.gameId);
-	const roles = $derived(seatRoles(game.game, game.characters));
-	const seen = $derived(new Set(host.rolesSeen));
-	function roleState(entry: Entry): string | undefined {
-		const seat = entry.seatId && game.game.seats[entry.seatId];
-		if (!seat || !seat.characterId) return undefined;
-		if (!roles[seat.seatId])
-			return game.characters.get(seat.characterId)?.type === 'traveller'
-				? t('room.roles.noAlignment')
-				: t('room.roles.withheld');
-		if (!entry.member) return undefined;
-		if (seen.has(seat.seatId)) return t('room.roles.seen');
-		return host.rolesShown.gameId === gameId ? t('room.roles.notSeen') : t('room.roles.hidden');
-	}
-
 	/** What waits from this player: unread messages and pictures still to judge. */
 	function waiting(memberId: string): { count: number; urgent: boolean } {
 		const items = host.inbox.items.filter((i) => i.memberId === memberId);
@@ -113,11 +93,16 @@
 		const urgent = fresh.some((i) => i.kind === 'picture' || i.consult);
 		return { count: fresh.length, urgent };
 	}
+	const inboxCount = (memberId: string) =>
+		host.inbox.items.filter((i) => i.memberId === memberId).length;
 
 	const pictureOf = (m: RoomMember) =>
 		m.picture && host.code ? roomImagePath(host.code, m.picture) : undefined;
 
-	/** The players list, to bring one player into view. */
+	// ── The player shown beside the list: the one tapped, else the first. ──
+	let chosenKey = $state<string>();
+	const chosen = $derived(entries.find((e) => e.key === chosenKey) ?? entries[0]);
+	/** The list, to bring a chosen player's line into view. */
 	let list = $state<HTMLElement>();
 	// A seat's pen mark or its ⋯ Notes opens Players at that player. Two frames on, once Players
 	// is laid out.
@@ -125,16 +110,17 @@
 		const seatId = playersDialog.seat;
 		if (seatId === undefined) return;
 		playersDialog.seat = undefined;
+		chosenKey = seatId;
 		requestAnimationFrame(() =>
 			requestAnimationFrame(() =>
 				list
 					?.querySelector(`[data-seat="${CSS.escape(seatId)}"]`)
-					?.scrollIntoView({ block: 'start' })
+					?.scrollIntoView({ block: 'nearest' })
 			)
 		);
 	});
 
-	// ── Remove from room (plan J37): this game only, and the Removed list can let them back ──
+	// ── Block (plan J37): this game only, and the Blocked list can let them back ──
 	let removing = $state<{ memberId: string; name: PlayerName }>();
 	let confirmRemove = $state(false);
 	function remove() {
@@ -142,28 +128,25 @@
 		removeFromRoom(host, game, removing.memberId);
 	}
 
-	// ── Notes: the game's (no seat) and each player's, the same notes as before ──
+	// ── Each player's notes, the same notes as before ──
 	const viewOnly = $derived(game.viewOnly);
 	const seatNotes = (seatId: SeatId | undefined) =>
 		(seatId && game.game.seats[seatId]?.notes) || [];
-	const gameNotes = $derived(game.game.notes ?? []);
 	let editor = $state<ReturnType<typeof NoteDraftEditor>>();
-	/** Whose note the editor has open; undefined for a game note. */
+	/** Whose note the editor has open. */
 	let noteSeat = $state<SeatId>();
-	function openNote(seatId: SeatId | undefined, noteId?: string) {
+	function openNote(seatId: SeatId, noteId?: string) {
 		noteSeat = seatId;
 		editor?.edit(noteId);
 	}
 	type Written = { noteId?: string; title: string; text: string; hidden: boolean };
-	function saveNote(seatId: SeatId | undefined, note: Written) {
-		if (viewOnly) return;
-		if (seatId) run({ type: 'SetSeatNote', seatId, ...note });
-		else run({ type: 'SetGameNote', ...note });
+	function saveNote(note: Written) {
+		if (viewOnly || !noteSeat) return;
+		run({ type: 'SetSeatNote', seatId: noteSeat, ...note });
 	}
-	function deleteNote(seatId: SeatId | undefined, noteId: string) {
-		if (viewOnly) return;
-		if (seatId) run({ type: 'DeleteSeatNote', seatId, noteId });
-		else run({ type: 'DeleteGameNote', noteId });
+	function deleteNote(noteId: string) {
+		if (viewOnly || !noteSeat) return;
+		run({ type: 'DeleteSeatNote', seatId: noteSeat, noteId });
 	}
 </script>
 
@@ -178,128 +161,140 @@
 		/>{:else}<PlayerBadge name={entry.name} />{/if}
 {/snippet}
 
-{#snippet avatar(entry: Entry)}
-	{#if entry.member}<SeatAvatarButton
-			name={entry.name}
-			avatar={entry.member.avatar ?? 'initials'}
-			picture={pictureOf(entry.member)}
-			frame={entry.member.frame}
-			words={wordsOf(entry.member)}
-			friend={host.code && entry.seatId ? { code: host.code, seatId: entry.seatId } : undefined}
-		/>{:else}<span class="no-phone" aria-hidden="true"
-			><span>{seatIndex(entry.seatId) || ''}</span></span
-		>{/if}
+{#snippet disc(entry: Entry)}
+	<PlayerDisc
+		name={entry.name}
+		seat={seatIndex(entry.seatId) || undefined}
+		phone={phoneOf(entry)}
+		avatar={entry.member?.avatar}
+		picture={entry.member && pictureOf(entry.member)}
+	/>
 {/snippet}
 
 <div class="players">
-	<!-- The whole game's notes, their own section above the players (Trevor, 2026-10-31). -->
-	<section aria-labelledby="game-notes-label" data-testid="game-notes">
-		<h2 id="game-notes-label">{t('room.players.gameNotes')}</h2>
-		<NoteCards
-			notes={gameNotes}
-			onOpen={(noteId) => openNote(undefined, noteId)}
-			onAdd={viewOnly ? undefined : () => openNote(undefined)}
-		/>
-	</section>
-	<section aria-labelledby="players-label">
-		<h2 id="players-label">{t('room.playersInRoom')}</h2>
-		{#if entries.length === 0}
-			<p class="none">{t('common.none')}</p>
-		{:else}
-			<ul class="list" aria-labelledby="players-label" bind:this={list}>
-				{#each entries as entry (entry.key)}
-					{@const wait = entry.member
-						? waiting(entry.member.memberId)
-						: { count: 0, urgent: false }}
-					<li class="member" data-testid="room-player" data-seat={entry.seatId}>
-						<!-- eslint-disable-next-line grim/names-as-badges -- never shown: the label snippet shows the badge -->
-						<Collapsible title={entry.name} level={3}>
-							{#snippet lead()}{@render avatar(entry)}{/snippet}
-							{#snippet label()}
-								<span class="row">
-									<!-- Name and character on one row (Trevor, 2026-10-30). -->
-									<span class="who">
-										<span class="name">{@render nameAndCharacter(entry)}</span>
-										{#if !entry.seatId}<span class="where">{t('room.noSeat')}</span>{/if}
-									</span>
-									<!-- Symbols, not words (Trevor, 2026-10-30): seen their character, then
-									     the phone; both keep their space so rows line up. -->
-									<span
-										class="mark seen"
-										data-testid="room-player-seen"
-										data-seen={entry.seatId && seen.has(entry.seatId) ? '' : undefined}
-										>{#if entry.seatId && seen.has(entry.seatId)}<Icon
-												name="roleSeen"
-												label={t('room.roles.seen')}
-											/>{/if}</span
-									>
-									<span
-										class="mark phone"
-										data-testid="room-player-phone"
-										data-phone={phoneOf(entry)}
-										title={t(PHONE_TEXT[phoneOf(entry)])}
-										><Icon
-											name={PHONE_ICON[phoneOf(entry)]}
-											label={t('room.players.phone', { state: t(PHONE_TEXT[phoneOf(entry)]) })}
-										/></span
-									>
-									<!-- Kept when there is nothing, so rows never shift as messages come in. -->
-									<span class="waiting">
-										{#if wait.count}<CountBadge
-												count={wait.count}
-												warn={wait.urgent}
-												testid="room-player-waiting"
-											/>{/if}
-									</span>
+	<div class="list-side">
+		<!-- A caret section whose count, while closed, is how many players there are (Trevor,
+		     2026-11-01). -->
+		<Collapsible
+			title={t('room.playersInRoom')}
+			storageKey="players-list"
+			pinned={false}
+			count={entries.length}
+		>
+			{#if entries.length === 0}
+				<p class="none">{t('common.none')}</p>
+			{:else}
+				<ul class="list" aria-label={t('room.playersInRoom')} bind:this={list}>
+					{#each entries as entry (entry.key)}
+						{@const wait = entry.member
+							? waiting(entry.member.memberId)
+							: { count: 0, urgent: false }}
+						{@const notes = seatNotes(entry.seatId).length}
+						<li data-testid="room-player" data-seat={entry.seatId}>
+							<button
+								type="button"
+								class="line"
+								aria-current={chosen?.key === entry.key ? 'true' : undefined}
+								onclick={() => (chosenKey = entry.key)}
+							>
+								{@render disc(entry)}
+								<span class="who">
+									{@render nameAndCharacter(entry)}
+									{#if !entry.seatId}<span class="muted">{t('room.noSeat')}</span>{/if}
 								</span>
-							{/snippet}
-							{#snippet aside()}
-								<!-- A red trash at the row's end, asking first (Trevor's UI rules). -->
-								{#if entry.member && host.code && !viewOnly}
-									{@const memberId = entry.member.memberId}
-									{@const name = entry.name}
-									<DeleteButton
-										label={t('room.players.remove')}
-										data-testid="room-player-remove"
-										onclick={() => {
-											removing = { memberId, name };
-											confirmRemove = true;
-										}}
-									/>
-								{/if}
-							{/snippet}
-							{@render details(entry)}
-						</Collapsible>
-					</li>
-				{/each}
-			</ul>
-		{/if}
+								<!-- Two fixed slots, so rows line up and never shift as notes and
+							     messages come and go. -->
+								<span class="slot notes" data-testid="room-player-notes"
+									>{#if notes}<Icon
+											name="notes"
+											label={t('room.players.notes', { count: notes })}
+										/><small aria-hidden="true">{notes}</small>{/if}</span
+								>
+								<span class="slot waiting">
+									{#if wait.count}<CountBadge
+											count={wait.count}
+											warn={wait.urgent}
+											testid="room-player-waiting"
+										/>{/if}
+								</span>
+							</button>
+						</li>
+					{/each}
+				</ul>
+			{/if}
+		</Collapsible>
+		{#if host.code}<RemovedPlayers />{/if}
+	</div>
+	<section class="chosen" aria-label={chosen?.name}>
+		{#if chosen}{@render details(chosen)}{/if}
 	</section>
-	{#if host.code}<RemovedPlayers />{/if}
 </div>
 
-<!-- What sits under each player: where they are, their character, notes and messages. -->
+<!-- The chosen player: who and where, then their messages and notes. -->
 {#snippet details(entry: Entry)}
-	<div class="details" data-testid="room-player-sheet">
-		<span class="where">{where(entry)}</span>
-		{#if entry.seatId}
-			{@const seat = game.game.seats[entry.seatId]}
-			{@const role = roleState(entry)}
-			<!-- The character is in the heading; this says whether the phone has seen it. -->
-			{#if seat?.characterId && role}<span class="where" data-testid="room-player-role">{role}</span
-				>{/if}
-			{@const seatId = entry.seatId}
-			<section class="notes" aria-labelledby="player-notes-{seatId}">
-				<h4 id="player-notes-{seatId}">{t('room.players.notesHeading')}</h4>
-				<NoteCards
-					notes={seatNotes(seatId)}
-					onOpen={(noteId) => openNote(seatId, noteId)}
-					onAdd={viewOnly ? undefined : () => openNote(seatId)}
-				/>
-			</section>
-		{/if}
-		{#if entry.member}<PlayerInbox memberId={entry.member.memberId} name={entry.name} />{/if}
-	</div>
+	{#key entry.key}
+		<div class="details" data-testid="room-player-sheet" data-seat={entry.seatId}>
+			<header class="head">
+				{#if entry.member}<SeatAvatarButton
+						name={entry.name}
+						avatar={entry.member.avatar ?? 'initials'}
+						picture={pictureOf(entry.member)}
+						frame={entry.member.frame}
+						words={wordsOf(entry.member)}
+						friend={host.code && entry.seatId
+							? { code: host.code, seatId: entry.seatId }
+							: undefined}
+					/>{:else}{@render disc(entry)}{/if}
+				<span class="head-text">
+					<span class="name">{@render nameAndCharacter(entry)}</span>
+					<span class="muted" data-testid="room-player-where">{where(entry)}</span>
+				</span>
+				<!-- A red trash, asking first (Trevor's UI rules). -->
+				{#if entry.member && host.code && !viewOnly}
+					{@const memberId = entry.member.memberId}
+					{@const name = entry.name}
+					<DeleteButton
+						label={t('room.players.remove')}
+						data-testid="room-player-remove"
+						onclick={() => {
+							removing = { memberId, name };
+							confirmRemove = true;
+						}}
+					/>
+				{/if}
+			</header>
+			{#if entry.member}
+				{@const count = inboxCount(entry.member.memberId)}
+				<Collapsible
+					title={t('room.inbox.title')}
+					level={3}
+					storageKey="players-messages"
+					pinned={false}
+					{count}
+					countOpen
+				>
+					<PlayerInbox memberId={entry.member.memberId} name={entry.name} />
+				</Collapsible>
+			{/if}
+			{#if entry.seatId}
+				{@const seatId = entry.seatId}
+				<Collapsible
+					title={t('room.players.notesHeading')}
+					level={3}
+					storageKey="players-notes"
+					pinned={false}
+					count={seatNotes(seatId).length}
+					countOpen
+				>
+					<NoteCards
+						notes={seatNotes(seatId)}
+						onOpen={(noteId) => openNote(seatId, noteId)}
+						onAdd={viewOnly ? undefined : () => openNote(seatId)}
+					/>
+				</Collapsible>
+			{/if}
+		</div>
+	{/key}
 {/snippet}
 
 <ConfirmDialog
@@ -312,33 +307,75 @@
 	<p>{t('room.players.removeBody')}</p>
 </ConfirmDialog>
 
-<!-- One editor for every note here, the game's or a player's. Never shown to players. -->
+<!-- One editor for every player's notes. Never shown to players. -->
 <NoteDraftEditor
 	bind:this={editor}
-	notes={noteSeat ? seatNotes(noteSeat) : gameNotes}
+	notes={seatNotes(noteSeat)}
 	readonly={viewOnly}
-	onSave={(note) => saveNote(noteSeat, note)}
-	onDelete={(noteId) => deleteNote(noteSeat, noteId)}
+	onSave={saveNote}
+	onDelete={deleteNote}
 />
 
 <style>
+	/*
+	 * Phone: the list above, the chosen player below as a raised panel docked at the bottom
+	 * (Trevor, 2026-11-01: "on a phone, it could use better delineation"), each scrolling on
+	 * its own so the list never scrolls away. Wider: side by side.
+	 */
 	.players {
 		display: grid;
-		gap: var(--space-5);
+		grid-template-columns: minmax(0, 1fr);
+		grid-template-rows: minmax(0, 1fr) minmax(0, 1.1fr);
+		flex: 1;
+		height: 100%;
+		min-height: 0;
 	}
-	section {
+	.list-side,
+	.chosen {
+		min-height: 0;
+		overflow-y: auto;
+		overscroll-behavior: contain;
+	}
+	.list-side {
 		display: grid;
-		gap: var(--space-2);
+		gap: var(--space-3);
 		align-content: start;
-		min-width: 0;
+		padding-bottom: var(--space-3);
 	}
-	h2 {
-		margin: 0;
-		font-size: 1.1rem;
+	/* The chosen player's panel and their line in the list share one fill, so they read as one. */
+	.chosen {
+		margin: 0 calc(-1 * var(--space-4));
+		padding: var(--space-3) var(--space-4) 0;
+		border-top: 1px solid var(--border);
+		border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+		background: var(--surface);
+		box-shadow: var(--shadow);
 	}
-	.none {
+	@media (min-width: 40rem) {
+		.players {
+			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+			grid-template-rows: minmax(0, 1fr);
+			gap: var(--space-4);
+		}
+		.chosen {
+			margin: 0;
+			padding: var(--space-3) var(--space-4) 0;
+			border: 1px solid var(--border);
+			border-radius: var(--radius-lg);
+			box-shadow: none;
+		}
+	}
+	@media (min-width: 64rem) {
+		.players {
+			grid-template-columns: minmax(0, 26rem) minmax(0, 1fr);
+		}
+	}
+	.none,
+	.muted {
 		margin: 0;
 		color: var(--on-surface-muted);
+		font-size: 0.95rem;
+		white-space: nowrap;
 	}
 	.list {
 		display: grid;
@@ -347,84 +384,67 @@
 		list-style: none;
 	}
 	/* Rows with dividers, not cards (Trevor). */
-	.member {
+	.list > li {
 		border-bottom: 1px solid var(--border);
 	}
-	/* The caret section's own heading row: name and character, then the marks. */
-	.row {
+	.line {
 		display: flex;
-		flex: 1;
 		align-items: center;
-		justify-content: space-between;
 		gap: var(--space-2);
-		min-width: 0;
+		width: 100%;
+		min-height: var(--tap-target);
+		padding: calc(0.25 * var(--u)) var(--space-1);
+		border: 0;
+		background: none;
+		color: inherit;
+		font: inherit;
+		text-align: left;
+		cursor: pointer;
 	}
-	.details {
-		display: grid;
-		gap: var(--space-3);
-	}
-	h4 {
-		margin: 0;
-		font-size: 1rem;
+	.line[aria-current] {
+		border-radius: var(--radius-md);
+		background: var(--surface);
+		box-shadow: inset 0 0 0 1px var(--border);
 	}
 	.who {
 		display: flex;
 		flex: 1;
-		flex-wrap: wrap;
 		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-1) var(--space-2);
+		gap: var(--space-2);
 		min-width: 0;
 	}
-	.where {
-		color: var(--on-surface-muted);
-		font-size: 0.95rem;
-	}
-	.waiting {
-		display: grid;
-		place-items: center;
+	.slot {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
 		flex: none;
-		min-width: 2em;
-	}
-	/* A seat with no phone: its number where the avatar would be, so every row lines up. */
-	.no-phone {
-		display: grid;
-		flex: none;
-		place-items: center;
-		width: var(--tap-target);
-		height: var(--tap-target);
-	}
-	.no-phone::before {
-		content: '';
-		grid-area: 1 / 1;
-		width: calc(2.5 * var(--u));
-		height: calc(2.5 * var(--u));
-		border: 0.0625rem dashed var(--on-surface-muted);
-		border-radius: 50%;
-	}
-	.no-phone > span {
-		grid-area: 1 / 1;
+		width: 1.9em;
 		color: var(--on-surface-muted);
+	}
+	.slot small {
+		font-size: 0.8rem;
+	}
+	.details {
+		display: grid;
+		gap: var(--space-2);
+		align-content: start;
+		padding-bottom: var(--space-4);
+	}
+	.head {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+	}
+	.head-text {
+		display: grid;
+		flex: 1;
+		gap: calc(0.25 * var(--u));
+		justify-items: start;
+		min-width: 0;
 	}
 	.name {
 		display: flex;
-		align-items: center;
-		gap: var(--space-1);
+		max-width: 100%;
 		min-width: 0;
-	}
-	.mark {
-		display: grid;
-		place-items: center;
-		flex: none;
-		width: 1.5em;
-		color: var(--on-surface-muted);
-	}
-	.seen,
-	.phone[data-phone='here'] {
-		color: var(--good-text);
-	}
-	.notes {
-		display: grid;
-		gap: var(--space-2);
 	}
 </style>

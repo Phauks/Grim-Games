@@ -8,6 +8,7 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import CoverButton from '#lib/features/show/CoverButton.svelte';
+	import GameNotesButton from '#lib/features/grimoire/GameNotesButton.svelte';
 	import GameLead from '#lib/features/shell/GameLead.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import type { CoverDetails } from '#lib/features/show/CoverScreen.svelte';
@@ -86,7 +87,7 @@
 				details={cover}
 				timer={coverTimer}
 				actions={coverActions}
-			/></GameLead
+			/><GameNotesButton {game} /></GameLead
 		>{/snippet}
 	{#snippet heading()}<span class="visually-hidden">{title}</span>{/snippet}
 	<!-- The Soundboard beside ✕, from the day as from the board (Trevor, 2026-10-27). -->
