@@ -8,6 +8,7 @@ import {
 	scriptCharacterIds,
 	typeOf
 } from '#lib/core/model/index.ts';
+import { abilityState } from '#lib/core/rules/ability.ts';
 import { cantTurnGood } from '#lib/core/rules/becomes.ts';
 import { barredAbilities, givenInstead } from '#lib/core/rules/jinxes.ts';
 import { neighbourFollows } from '#lib/core/rules/reminder-movement.ts';
@@ -75,6 +76,10 @@ export const CHARACTERS_DECIDERS: Deciders<
 		};
 		if (alignment !== undefined) assigned.alignment = alignment;
 		if (command.by !== undefined) assigned.by = characterOf(ctx, command.by).id;
+		// Only a Traveller sits out (Trevor, 2026-11-02): any other character comes into play.
+		if (seat.notInPlay && character.type !== 'traveller') {
+			return [assigned, { type: 'SeatInPlaySet', seatId: seat.seatId, inPlay: true }];
+		}
 		return [assigned];
 	},
 
@@ -317,6 +322,10 @@ export const CHARACTERS_DECIDERS: Deciders<
 		}
 		const death: GameEvent = { type: 'DeathSet', seatId: seat.seatId, dead: command.dead };
 		if (command.dead && cause !== undefined) death.cause = cause;
+		// A drunk or poisoned player's ability that acts on dying gives nothing (`afterDeath`).
+		if (command.dead && !abilityState(game, seat.seatId, ctx.characters).works) {
+			death.impaired = true;
+		}
 		const events: GameEvent[] = [death];
 		// A player who comes back to life has their vote again.
 		if (!command.dead && seat.ghostVoteUsed) {

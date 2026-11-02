@@ -8,7 +8,9 @@
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
  * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
- * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
+ * happened, then what the rules say. Quote the example word for word in a `// Wiki: "..."`
+ * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
+ * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment, type CharacterId } from '#lib/core/data/index.ts';
@@ -141,10 +143,36 @@ describe('Amnesiac', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Amnesiac#Examples)', () => {
-		it.todo('Example 1: Ability: check two players for a Minion');
-		// The Amnesiac learns a number each night about its living neighbours: the Storyteller
-		// gives it a working ability like the Empath's, so it wakes at the Empath's time.
+		it('Example 1: Ability: check two players for a Minion', () => {
+			// Wiki: "Each night, the Amnesiac wakes and is prompted to point at two players. The Storyteller
+			// shakes their head on the first night, and nods on the second. The Amnesiac guesses “Am I
+			// learning if both players are Minions?” The Storyteller says “Hot” because their ability is that
+			// they detect if either of the two players are a Minion."
+			// The Storyteller notes the ability at setup; the day log keeps the guess and its answer.
+			const s = scenario(['amnesiac', 'chef', 'imp', 'monk', 'poisoner'], { characters })
+				.do({
+					type: 'SetPrepValue',
+					key: 'amnesiac.ability',
+					value: 'Detects whether either of two players is a Minion'
+				})
+				.do((at) => ({
+					type: 'DayNote',
+					characterId: 'amnesiac',
+					seatId: at.seat('amnesiac'),
+					text: 'Am I learning if both players are Minions?',
+					answer: 'hot'
+				}));
+			expect(s.game.prepValues?.['amnesiac.ability']).toBe(
+				'Detects whether either of two players is a Minion'
+			);
+			expect(s.game.today.entries).toContainEqual(
+				expect.objectContaining({ kind: 'note', seatId: s.seat('amnesiac'), answer: 'hot' })
+			);
+		});
 		it('Example 2: an ability like the Empath’s wakes the Amnesiac at the Empath’s time', () => {
+			// Wiki: "Each night, the Amnesiac learns a number. The Amnesiac is learning how many of their
+			// living neighbours are Townsfolk."
+			// The Storyteller gives it a working ability like the Empath's, so it wakes at the Empath's time.
 			const s = scenario(['amnesiac', 'chef', 'imp', 'monk', 'poisoner'], { characters }).do(
 				(s) => ({
 					type: 'SetHeldAbility',

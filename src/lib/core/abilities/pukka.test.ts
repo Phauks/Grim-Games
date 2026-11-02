@@ -8,7 +8,9 @@
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
  * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
- * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
+ * happened, then what the rules say. Quote the example word for word in a `// Wiki: "..."`
+ * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
+ * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
 import type { Command } from '#lib/core/engine/index.ts';
@@ -22,6 +24,10 @@ import { abilityState } from '#lib/core/rules/ability.ts';
 import { nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
 import { placeholdersFor } from '#lib/core/rules/night-text.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
+import { survivesFirstDeath } from '#lib/core/rules/first-death.ts';
+import { reliability } from '#lib/core/rules/night-info.ts';
+import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Pukka', () => {
 	const character = committedCharacter('pukka');
@@ -53,10 +59,81 @@ describe('Pukka', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Pukka#Examples)', () => {
-		it.todo('Example 1: Poisoned Chambermaid misinformed, then dies next night');
-		it.todo("Example 2: Drunk Pukka's miss delays Gossip's death");
-		it.todo('Example 3: Exorcist blocks Pukka while poisoned Pacifist dies');
-		it.todo("Example 4: Poisoned Moonchild's curse target is spared");
+		const poisonedByThePukka = (s: Scenario, ref: string) =>
+			abilityState(s.game, s.seat(ref), s.characters).impairments.some(
+				(i) => i.reason === 'poisoned' && i.source.characterId === 'pukka'
+			);
+
+		it('Example 1: Poisoned Chambermaid misinformed, then dies next night', () => {
+			// Wiki: "The Pukka poisons the Chambermaid. The Chambermaid gets false information. The next
+			// night, the Chambermaid dies."
+			const s = scenario(['pukka', 'chambermaid', 'chef', 'empath', 'poisoner']).reminder(
+				'chambermaid',
+				'pukka',
+				'Poisoned'
+			);
+			const info = reliability(s.game, s.seat('chambermaid'), 'chambermaid', s.characters);
+			expect(info.unreliable).toBe('poisoned');
+			expect(info.impairments[0].source.characterId).toBe('pukka');
+			// The next night nothing protects the poisoned Chambermaid from the Pukka's kill.
+			const next = s.newDay();
+			expect(
+				nightStepAlerts(next.game, 'pukka', next.characters).filter((a) => a.kind === 'protected')
+			).toEqual([]);
+		});
+
+		it("Example 2: Drunk Pukka's miss delays Gossip's death", () => {
+			// Wiki: "The Pukka poisons the Fool. The next day, the Fool is executed and dies because they
+			// have no ability. The next night, nobody dies and the Pukka poisons the Gossip. The next night,
+			// the Pukka is drunk and tries to poison the Tinker, but does not. The next night, the Gossip
+			// dies because the Pukka is sober."
+			const cast = ['pukka', 'fool', 'gossip', 'tinker', 'goon', 'chef', 'poisoner'];
+			const fool = scenario(cast).reminder('fool', 'pukka', 'Poisoned');
+			expect(poisonedByThePukka(fool, 'fool')).toBe(true);
+			expect(
+				survivesFirstDeath(fool.game, fool.seat('fool'), 'execution', fool.characters)
+			).toBeUndefined();
+			expect(fool.newDay().execute('fool').game.seats[fool.seat('fool')].dead).toBe(true);
+
+			const drunkNight = scenario(cast)
+				.reminder('gossip', 'pukka', 'Poisoned')
+				.reminder('tinker', 'pukka', 'Poisoned')
+				.reminder('pukka', 'goon', 'Drunk');
+			expect(poisonedByThePukka(drunkNight, 'tinker')).toBe(false);
+
+			const soberNight = scenario(cast).reminder('gossip', 'pukka', 'Poisoned');
+			expect(poisonedByThePukka(soberNight, 'gossip')).toBe(true);
+		});
+
+		it('Example 3: Exorcist blocks Pukka while poisoned Pacifist dies', () => {
+			// Wiki: "The Pukka poisons the Pacifist. The next night, the Exorcist chooses the Pukka to not
+			// wake tonight. The Pacifist dies, but the Pukka does not wake to attack tonight."
+			const s = scenario(['pukka', 'pacifist', 'exorcist', 'chef', 'poisoner'])
+				.reminder('pacifist', 'pukka', 'Poisoned')
+				.newDay()
+				.reminder('pukka', 'exorcist', 'Chosen');
+			expect(nightStepAlerts(s.game, 'pukka', s.characters)).toContainEqual(
+				expect.objectContaining({ kind: 'blocked', seatId: s.seat('pukka'), works: true })
+			);
+			// The block stops the Pukka waking, not last night's poison from killing.
+			expect(poisonedByThePukka(s, 'pacifist')).toBe(true);
+		});
+
+		it("Example 4: Poisoned Moonchild's curse target is spared", () => {
+			// Wiki: "The Moonchild is executed, dies, and chooses the Courtier. That night, the Pukka
+			// chooses the Moonchild. The Courtier does not die because the Moonchild is poisoned."
+			const s = scenario(['moonchild', 'courtier', 'pukka', 'chef', 'poisoner'])
+				.execute('moonchild')
+				.reminder('courtier', 'moonchild', 'Dead')
+				.reminder('moonchild', 'pukka', 'Poisoned');
+			expect(poisonedByThePukka(s, 'moonchild')).toBe(true);
+			expect(validDeathCauses(s.game, s.seat('courtier'), s.characters)).toContainEqual(
+				expect.objectContaining({
+					cause: 'moonchild',
+					flags: [expect.objectContaining({ code: 'impaired' })]
+				})
+			);
+		});
 	});
 
 	/**

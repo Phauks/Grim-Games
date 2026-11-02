@@ -8,7 +8,9 @@
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
  * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
- * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
+ * happened, then what the rules say. Quote the example word for word in a `// Wiki: "..."`
+ * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
+ * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
@@ -47,6 +49,7 @@ describe('Undertaker', () => {
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Undertaker#Examples)', () => {
 		it('Example 1: Mayor executed, Undertaker shown the Mayor', () => {
+			// Wiki: "The Mayor is executed today. That night, the Undertaker is shown the Mayor token."
 			const s = scenario(['undertaker', 'mayor', 'imp', 'monk', 'poisoner']).execute('mayor');
 			expect(nightAnswer(s.game, s.seat('undertaker'), 'undertaker', s.characters)).toMatchObject({
 				kind: 'character',
@@ -55,7 +58,9 @@ describe('Undertaker', () => {
 		});
 
 		it('Example 2: Drunk executed, shown the Drunk token', () => {
-			// The Undertaker learns the true character, not the Virgin the Drunk thought they were.
+			// Wiki: "The Drunk, who thinks they are the Virgin, is executed today. At night, the
+			// Undertaker is shown the Drunk token, because the Undertaker learns a player's true
+			// character, as opposed to the one they believe they are."
 			const s = scenario(['undertaker', 'virgin', 'imp', 'monk', 'poisoner'])
 				.drunk('virgin')
 				.execute('virgin');
@@ -66,6 +71,9 @@ describe('Undertaker', () => {
 		});
 
 		it('Example 3: Spy executed after two exiles, shown as the Butler', () => {
+			// Wiki: "The Spy is executed. Two Travellers are exiled. That night, the Undertaker is shown
+			// the Butler token, because the Spy is registering as the Butler, and because the exiles are
+			// not executions."
 			// Exiles are not executions; the executed Spy may register as an Outsider such as the Butler.
 			const s = scenario(['undertaker', 'spy', 'imp', 'monk', 'chef', 'beggar', 'gunslinger'])
 				.do(
@@ -83,6 +91,7 @@ describe('Undertaker', () => {
 		});
 
 		it('Example 4: nobody executed, Undertaker learns nothing', () => {
+			// Wiki: "Nobody was executed today. That night, the Undertaker does not wake."
 			const s = scenario(['undertaker', 'mayor', 'imp', 'monk', 'poisoner']).newDay();
 			expect(nightAnswer(s.game, s.seat('undertaker'), 'undertaker', s.characters)?.kind).toBe(
 				'none'

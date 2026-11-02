@@ -271,15 +271,21 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	},
 	{
 		title:
-			'Travellers choose their own Traveller on their phones: the Storyteller sends the ones allowed, a tap holds one so no one else can take it, Confirm sends it; a Traveller who arrives mid-game sits at the table not in play until the night',
+			'Travellers choose their own Traveller on their phones: the Storyteller sends the ones allowed, a tap holds one so no one else can take it, Confirm sends it; a Traveller who arrives mid-game sits at the table not in play until the night offers to bring them in',
 		area: 'storyteller',
-		parts: ['L102', 'L102a']
+		parts: ['L102', 'L102a', 'L102b']
 	},
 	{
 		title:
 			'Crowded boards: reminders on spokes with a tether, duplicate from the bank, mark where a reminder came from',
 		area: 'storyteller',
 		parts: ['D2', 'B2', 'B3', 'B5', 'B1', 'B11', 'B12', 'B13']
+	},
+	{
+		title:
+			'Moving backgrounds behind the board: twelve scenes such as Hellfire, Tropical beach and Aurora, with a switch to keep them still',
+		area: 'storyteller',
+		parts: ['L113']
 	},
 	{
 		title: 'Seats that keep their names when players rotate, and random name colours',

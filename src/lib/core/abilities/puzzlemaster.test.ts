@@ -8,7 +8,9 @@
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
  * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
- * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
+ * happened, then what the rules say. Quote the example word for word in a `// Wiki: "..."`
+ * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
+ * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
@@ -84,6 +86,9 @@ describe('Puzzlemaster', () => {
 		const table = () => scenario(['puzzlemaster', 'imp', 'empath', 'sailor', 'chef']);
 
 		it('Example 1: guessing the player it made drunk learns the Demon player', () => {
+			// Wiki: "Alex is the Demon. Sarah is the Empath who has been made drunk by the Puzzlemaster
+			// and is getting false information. The Puzzlemaster publicly guesses that Sarah is drunk, and
+			// is told “Alex is the Demon” privately by the Storyteller."
 			// The Empath carries the Puzzlemaster's Drunk; guessing her is right: Alex, the Demon.
 			const s = table().reminder('empath', 'puzzlemaster', 'Drunk');
 			expect(
@@ -92,6 +97,9 @@ describe('Puzzlemaster', () => {
 		});
 
 		it('Example 2: a player drunk by another ability is a wrong guess', () => {
+			// Wiki: "Lewis is the Demon. Ben is dead and is drunk due to the Puzzlemaster. Marianna is
+			// alive and drunk due to the Sailor. The Puzzlemaster privately guesses Marianna, and is told
+			// “Evin is the Demon” privately by the Storyteller."
 			// The Chef is dead and drunk by the Puzzlemaster; the Sailor's own player is drunk by
 			// the Sailor. Guessing the Sailor's player is wrong: anyone but the Demon.
 			const s = table()
