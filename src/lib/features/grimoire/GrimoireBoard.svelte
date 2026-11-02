@@ -863,6 +863,7 @@
 					nw.guideOpen = true;
 				}}
 				onClose={() => (nw.walk = undefined)}
+				onCard={(token, filled) => infoSheet?.openWith(token, filled)}
 			/>
 		{/if}
 		{#if ended}

@@ -32,6 +32,13 @@ export interface SetupInput {
 	findById?: (id: CharacterId) => Character | undefined;
 	/** A game rule lets characters have more than one copy (Duplicate Characters). */
 	duplicatesAllowed?: AnyDuplicates;
+	/**
+	 * Setup changes that may apply through a jinx without their character in play (the
+	 * Alchemist-Summoner's [No Demon], `rules/jinx-setup.ts`): their counts are allowed as
+	 * well as the usual ones. `as` names who it applies through, "Alchemist with the Summoner
+	 * ability".
+	 */
+	mayApply?: readonly { character: Character; as: string }[];
 }
 
 export interface AppliedModifier extends SetupModifier {
@@ -200,6 +207,28 @@ export function analyseSetup(input: SetupInput): SetupAnalysis {
 		}
 	}
 
+	// A jinx's setup change that may apply: its counts join the usual ones.
+	const maybeSets: Partial<Record<SeatedType, number[]>> = {};
+	for (const { character, as } of input.mayApply ?? []) {
+		const modifier = setupModifierFor(character, input.findByName);
+		if (!modifier) continue;
+		const ops = modifier.ops.map((op): CountOp => {
+			if (op.kind !== 'delta') return op;
+			return { ...op, values: [...new Set([0, ...op.values])] };
+		});
+		for (const op of ops) {
+			if (op.kind !== 'set') applyOp(op);
+			else if (op.values !== 'most') (maybeSets[op.type] ??= []).push(...op.values);
+		}
+		modifiers.push({
+			...modifier,
+			ops,
+			name: character.name,
+			explanation: `${as}: ${modifier.summary}`
+		});
+		for (const note of modifier.notes) notes.push(`${as}: ${note}`);
+	}
+
 	// A Drunk or Marionette has no token in the bag: one more good character goes in instead,
 	// and who is secretly the Drunk or Marionette is decided once the tokens come back
 	// (Trevor, 2026-10-16; https://wiki.bloodontheclocktower.com/Drunk,
@@ -222,7 +251,7 @@ export function analyseSetup(input: SetupInput): SetupAnalysis {
 		let values: Set<number>;
 		if (free.has(type)) values = new Set(Array.from({ length: dealt + 1 }, (_, i) => i));
 		else {
-			values = sets[type] ?? new Set([split.counts[type]]);
+			values = new Set([...(sets[type] ?? [split.counts[type]]), ...(maybeSets[type] ?? [])]);
 			for (const d of deltas[type]) values = addAll(values, d);
 		}
 		expected[type] = [...values]
