@@ -78,14 +78,12 @@ describe('Fool', () => {
 				survivesFirstDeath(after.game, after.seat('fool'), 'execution', after.characters)
 			).toBeUndefined();
 		});
-		it.fails('Example 3: Protected twice; ability saves once', () => {
+		it('Example 3: Protected twice; ability saves once', () => {
 			// Wiki: "The Demon attacks the Fool, who is protected by the Tea Lady. The Fool remains
 			// alive and keeps their ability. Later, after the Tea Lady has died, the Demon attacks the
 			// Fool, who is now protected by the Innkeeper. The Fool remains alive and keeps their
 			// ability. Later, after the Innkeeper has died, the Demon attacks the Fool, who remains
 			// alive again but uses their ability, so next time they will die."
-			// Waits on the engine (bug): a protected Fool's survival still lists the Fool's own ability
-			// beside the protection, as if it were spent.
 			const s = scenario(['chef', 'tealady', 'fool', 'innkeeper', 'empath', 'imp'])
 				.reminder('chef', 'tealady', 'Cannot Die')
 				.reminder('fool', 'tealady', 'Cannot Die')
