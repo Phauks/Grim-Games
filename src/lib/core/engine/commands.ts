@@ -328,6 +328,13 @@ export type Command =
 			outcome?: ExecutionOutcome;
 	  }
 	/**
+	 * Sets the character a seat pretends to be while a character whose rules allow a pretend
+	 * evil team is in play (`pretendTeam`, the Atheist: M26); no `characterId` clears it. It warns,
+	 * never refuses: no such character in play, a character that is not a Minion or Demon, or one
+	 * not on the script.
+	 */
+	| { type: 'SetPretend'; seatId: SeatId; characterId?: CharacterId }
+	/**
 	 * Logs that a player nominated the Storyteller, which any living player may do
 	 * (https://wiki.bloodontheclocktower.com/Atheist). It counts as their nomination today.
 	 */
