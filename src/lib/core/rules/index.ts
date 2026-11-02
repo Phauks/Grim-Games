@@ -45,6 +45,7 @@ export * from './night-alerts.ts';
 export * from './demon-attack.ts';
 export * from './quiet-start.ts';
 export * from './wakes-when.ts';
+export * from './acts-twice.ts';
 export * from './night-numbers.ts';
 export * from './game-end.ts';
 export * from './becomes.ts';

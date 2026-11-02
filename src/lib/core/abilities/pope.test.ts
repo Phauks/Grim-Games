@@ -51,6 +51,24 @@ describe('Pope', () => {
 		});
 	});
 
+	// The ability names good duplicates only, though TPI's data also says evil ones may repeat:
+	// the rules block's `duplicates` keeps two Imps or two Poisoners a warning (M22).
+	it('lets good characters repeat, but not evil ones', () => {
+		const s = scenario(['empath', 'imp', 'poisoner', 'chef', 'monk']);
+		const warned = (ids: string[]) =>
+			analyseSetup({ players: 7, inPlay: ids.map((id) => s.characters.get(id)!) })
+				.warnings.filter((w) => w.code === 'duplicate')
+				.flatMap((w) => w.characters ?? []);
+		const pope = s.characters.get('pope') ? ['pope'] : [];
+		expect(pope).toEqual(['pope']);
+		expect(
+			warned(['empath', 'empath', 'chef', 'monk', 'saint', 'imp', 'poisoner', 'pope'])
+		).toEqual([]);
+		expect(
+			warned(['empath', 'chef', 'monk', 'saint', 'butler', 'poisoner', 'poisoner', 'imp', 'pope'])
+		).toContain('poisoner');
+	});
+
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Pope#Examples)', () => {
 		const duplicates = (players: number, ids: string[], s: ReturnType<typeof scenario>) =>
 			analyseSetup({ players, inPlay: ids.map((id) => s.characters.get(id)!) }).warnings.filter(
