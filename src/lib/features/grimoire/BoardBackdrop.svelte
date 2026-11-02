@@ -17,10 +17,33 @@
 	}
 
 	let { url, preset, vignette, contained = false }: Props = $props();
+
+	// SPIKE (animated backgrounds, not for merge): ?scene=hellfire|beach&engine=css|shader|video
+	import CssScene from './spike-scenes/CssScene.svelte';
+	import ShaderScene from './spike-scenes/ShaderScene.svelte';
+	import VideoScene from './spike-scenes/VideoScene.svelte';
+	import { spike } from './spike-scenes/spike-state.svelte.ts';
+	const spikeScene = $derived(spike.scene);
+	const spikeEngine = $derived(spike.engine);
+	const spikeStill = $derived(spike.still);
 </script>
 
+{#if spikeScene}
+	{#key `${spikeScene}${spikeEngine}${spikeStill}`}
+		{#if spikeEngine === 'shader'}
+			<ShaderScene scene={spikeScene} still={spikeStill} {contained} />
+		{:else if spikeEngine === 'video'}
+			<VideoScene src={`/spike-video/${spikeScene}.mp4`} still={spikeStill} {contained} />
+		{:else}
+			<CssScene scene={spikeScene} still={spikeStill} {contained} />
+		{/if}
+	{/key}
+{/if}
+
 <!-- The whole screen, under the toolbar and the safe areas too (Trevor, 2026-10-18). -->
-{#if url}
+{#if spikeScene}
+	<!-- spike scene above -->
+{:else if url}
 	<div
 		class="backdrop"
 		class:contained
