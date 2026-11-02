@@ -3,22 +3,22 @@
 	import type { Alignment, Character } from '#lib/core/data/index.ts';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import { EDITION_LABELS } from '#lib/features/reference/labels.ts';
-	import { fallbackIconUrl, iconUrl } from './icon-url.ts';
-	import { iconFallback } from '#lib/ui/token/icon-fallback.ts';
+	import CharacterPiece from './CharacterPiece.svelte';
 	import BoardReminder from '#lib/features/grimoire/BoardReminder.svelte';
 	import ReminderTokenRow from '#lib/features/grimoire/ReminderTokenRow.svelte';
 	import CharacterGroupDialog from './CharacterGroupDialog.svelte';
 	import { groupSourceOf } from '#lib/core/data/index.ts';
 
 	/**
-	 * A character at a glance: icon, character type and where it comes from, its ability and
-	 * its reminder tokens. The top of the character dialog, and of anything else that shows
-	 * whose a token is (the board's reminder dialog).
+	 * A character at a glance: the standard character row (icon, name, ability), then its
+	 * character type and where it comes from, then its reminder tokens (Trevor, 2026-11-02:
+	 * the character's page opens with the standard row, the type and edition lower). The top
+	 * of the character dialog and the Library's character pane.
 	 */
 	interface Props {
 		character: Character;
-		/** The seat's icon (its alignment); otherwise the character's own. */
-		icon?: string;
+		/** Its alignment when it isn't the type's own, for its icon. */
+		alignment?: Alignment;
 		/** Every reminder token under the ability. */
 		reminders?: boolean;
 		/**
@@ -28,9 +28,8 @@
 		seat?: { number: number; alignment?: Alignment };
 	}
 
-	let { character, icon: given, reminders: showReminders = true, seat }: Props = $props();
+	let { character, alignment, reminders: showReminders = true, seat }: Props = $props();
 
-	const icon = $derived(given ?? iconUrl(character));
 	const typeLabel = $derived(character.type[0].toUpperCase() + character.type.slice(1));
 	// Where the character comes from, as in the Reference: TPI's edition, or Homebrew for a
 	// script's own character. Fabled and Loric are their own edition, so it is not repeated.
@@ -56,17 +55,14 @@
 </script>
 
 <header class="character">
-	<span class="icon"
-		>{#if icon}<img
-				src={icon}
-				alt=""
-				width="64"
-				height="64"
-				referrerpolicy="no-referrer"
-				{@attach iconFallback(fallbackIconUrl(character))}
-			/>{/if}</span
-	>
-	<div>
+	<!-- No ring button: this is already the character's own page. -->
+	<CharacterPiece template="row" {character} alignment={seat?.alignment ?? alignment}>
+		{#snippet abilityText()}<GlossaryText
+				text={character.ability}
+				names={[character.name]}
+			/>{/snippet}
+	</CharacterPiece>
+	<div class="about">
 		{#if seat}<p class="type" data-testid="character-seat">
 				{t('characters.seatLine', {
 					number: seat.number,
@@ -95,7 +91,6 @@
 				source={groupSourceOf(character)}
 				type={character.type}
 			/>{/if}
-		<p class="ability"><GlossaryText text={character.ability} names={[character.name]} /></p>
 		<!-- Every reminder token, beside the ability on every section (Trevor, 2026-10-16), as
 		     the tokens themselves (Trevor, 2026-10-30). -->
 		{#if reminders.length}
@@ -112,21 +107,11 @@
 
 <style>
 	.character {
-		display: flex;
-		align-items: flex-start;
-		gap: var(--space-3);
+		display: grid;
+		gap: var(--space-2);
 		flex: none;
 		padding: var(--space-2) 0 var(--space-3);
 		border-bottom: var(--card-border);
-	}
-	.icon {
-		display: inline-grid;
-		flex: none;
-		place-items: center;
-		width: calc(4.5 * var(--u));
-		height: calc(4.5 * var(--u));
-		border-radius: 50%;
-		background: var(--token-face, var(--on-surface));
 	}
 	.type {
 		margin: 0;
@@ -150,12 +135,6 @@
 		content: '';
 		position: absolute;
 		inset: calc((1lh - var(--tap-target)) / 2) 0;
-	}
-	.ability {
-		margin: 0;
-		font-family: var(--font-ability);
-		font-size: 1.05rem;
-		line-height: 1.5;
 	}
 	.reminders {
 		margin-top: var(--space-3);
