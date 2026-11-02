@@ -16,7 +16,8 @@
  * and, when the step can kill (`NIGHT_KILLERS`), for each player it might kill:
  * - `protected`: they cannot die tonight (the Storyteller's override, the Sailor, the
  *   Soldier or Monk against the Demon, the Tea Lady, the Innkeeper);
- * - `may-bounce`: an ability that may move the kill elsewhere (the Mayor, against the Demon);
+ * - `may-bounce`: an ability that may move the kill elsewhere (the Mayor, against the Demon),
+ *   unless a working protection already keeps them safe;
  * - `survives-first-death`: an ability that stops its player's first death (the Fool), until
  *   its spent token is placed;
  * - `on-death`: dying sets off an ability (the Ravenkeeper wakes, the Farmer passes on,
@@ -42,6 +43,7 @@ import {
 	abilityState,
 	firstDeathSaver,
 	killRedirect,
+	protection,
 	protectors,
 	type AbilitySource,
 	type Impairment
@@ -288,9 +290,13 @@ function deathAlerts(
 		for (const { source } of protectors(game, seatId, characters, killer.by)) {
 			alert('protected', source, wikiOf(source));
 		}
-		const redirect = killRedirect(game, seatId, characters, killer.by);
+		// A player a working protection keeps safe doesn't die: no kill to move elsewhere (the
+		// Monk's Mayor example: https://wiki.bloodontheclocktower.com/Monk) and no first death
+		// spent (https://wiki.bloodontheclocktower.com/Fool, Example 3).
+		const safe = protection(game, seatId, characters, killer.by);
+		const redirect = safe ? undefined : killRedirect(game, seatId, characters, killer.by);
 		if (redirect) alert('may-bounce', redirect, wikiOf(redirect));
-		const saver = firstDeathSaver(game, seatId, characters);
+		const saver = safe ? undefined : firstDeathSaver(game, seatId, characters);
 		if (saver) alert('survives-first-death', saver.source, wikiOf(saver.source));
 	}
 

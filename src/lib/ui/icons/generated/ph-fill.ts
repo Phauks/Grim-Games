@@ -146,6 +146,7 @@ import ph_lock_simple_fill from '~icons/ph/lock-simple-fill';
 import ph_magnifying_glass_fill from '~icons/ph/magnifying-glass-fill';
 import ph_mask_sad_fill from '~icons/ph/mask-sad-fill';
 import ph_megaphone_fill from '~icons/ph/megaphone-fill';
+import ph_megaphone_simple_fill from '~icons/ph/megaphone-simple-fill';
 import ph_minus_fill from '~icons/ph/minus-fill';
 import ph_minus_circle_fill from '~icons/ph/minus-circle-fill';
 import ph_monitor_fill from '~icons/ph/monitor-fill';
@@ -387,6 +388,7 @@ const icons: IconMap = {
 	'ph:magnifying-glass-fill': ph_magnifying_glass_fill,
 	'ph:mask-sad-fill': ph_mask_sad_fill,
 	'ph:megaphone-fill': ph_megaphone_fill,
+	'ph:megaphone-simple-fill': ph_megaphone_simple_fill,
 	'ph:minus-fill': ph_minus_fill,
 	'ph:minus-circle-fill': ph_minus_circle_fill,
 	'ph:monitor-fill': ph_monitor_fill,
