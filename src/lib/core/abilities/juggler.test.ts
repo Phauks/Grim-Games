@@ -130,6 +130,21 @@ describe('Juggler', () => {
 			expect(answer(s)).toMatchObject({ kind: 'number', value: 1, because: [s.seat('savant')] });
 		});
 
+		// Trevor, 2026-11-02: "if you guess twice, it is two separate guesses, counts twice".
+		it('counts the same right guess made twice as two', () => {
+			const s = scenario(cast).do((s) => ({
+				type: 'DayNote',
+				characterId: 'juggler',
+				seatId: s.seat('juggler'),
+				text: '',
+				guesses: [
+					{ seatId: s.seat('witch'), characterId: 'witch' },
+					{ seatId: s.seat('witch'), characterId: 'witch' }
+				]
+			}));
+			expect(answer(s)).toMatchObject({ kind: 'number', value: 2, because: [s.seat('witch')] });
+		});
+
 		it('with no reminders and no right guesses, the Juggler learns 0', () => {
 			const s = scenario(cast).do((s) => ({
 				type: 'DayNote',

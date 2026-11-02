@@ -16,7 +16,6 @@ import type {
 } from '#lib/core/model/types.ts';
 import type { RegistrationWorld } from '../ability.ts';
 import type { Night } from '../night-order.ts';
-import { distinctGuesses } from '../day-claims.ts';
 import { causesOf } from '../night-deaths.ts';
 import type { ValidReason } from './picker.ts';
 import {
@@ -280,8 +279,8 @@ function marked(
  * Juggler: how many of today's guesses are correct
  * (https://wiki.bloodontheclocktower.com/Juggler). Guesses come from the Juggler's day notes
  * and are checked against each player's true character. Each guess is one player and one
- * character, so a player guessed as two characters is two guesses; the same pair twice
- * counts once.
+ * character, so a player guessed as two characters is two guesses, and the same player and
+ * character guessed twice is two guesses too (Trevor, 2026-11-02).
  *
  * The wiki's How to Run marks each correct guess with a Correct reminder and has the Juggler
  * learn how many there are. Once the Storyteller has placed any (rules `answers.token`), the
@@ -296,13 +295,9 @@ function correctGuesses(
 	characters: CharacterLookup,
 	rule: Answers
 ): NightAnswer {
-	const guesses = distinctGuesses(
-		entriesOf(game, 'note')
-			.filter(
-				(n) => n.characterId === characterId && (n.seatId === undefined || n.seatId === seatId)
-			)
-			.flatMap((n) => n.guesses ?? [])
-	);
+	const guesses = entriesOf(game, 'note')
+		.filter((n) => n.characterId === characterId && (n.seatId === undefined || n.seatId === seatId))
+		.flatMap((n) => n.guesses ?? []);
 	const right = (g: CharacterGuess) => trueCharacter(game, g.seatId, characters) === g.characterId;
 	const correct = guesses.filter(right);
 	const once = (seats: SeatId[]) => seats.filter((s, i) => seats.indexOf(s) === i);
