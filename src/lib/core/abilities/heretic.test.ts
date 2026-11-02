@@ -91,8 +91,8 @@ describe('Heretic', () => {
 		});
 		it('Example 4: Poisoned Heretic; Assassin kills Demon, good wins', () => {
 			// Wiki: "The Heretic is poisoned. The Assassin kills the Demon. Good wins."
-			// The Poisoner is in play, so the Heretic's poison lasts.
-			const s = scenario(['heretic', 'chef', 'empath', 'monk', 'assassin', 'imp', 'poisoner'])
+			// A Poisoner in play, as poison ends when no Poisoner is left.
+			const s = scenario(['heretic', 'poisoner', 'empath', 'monk', 'assassin', 'imp'])
 				.poisoned('heretic')
 				.dies('imp', 'assassin');
 			const ends = gameEnds(s.game, s.characters);
