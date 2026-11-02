@@ -100,7 +100,7 @@
 				{@attach iconFallback(fallback)}
 			/>{/if}</span
 	>
-	<span class="name"><span class="text">{label}</span></span>
+	<span class="name"><span class="trim">{label}</span></span>
 	{#if playerName}<span class="player"><PlayerBadge name={playerName} /></span>{/if}
 {/snippet}
 
@@ -275,7 +275,7 @@
 	 * the same room added back above and below so the box stays centred and descenders are
 	 * not clipped. A browser without text-box keeps the line box, as before.
 	 */
-	.text {
+	.trim {
 		display: block;
 		min-width: 0;
 		overflow: hidden;

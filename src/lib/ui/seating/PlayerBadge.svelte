@@ -16,7 +16,7 @@
 </script>
 
 <!-- eslint-disable-next-line grim/names-as-badges -- this is the badge -->
-<span class="player-badge" data-testid="player-badge"><span class="text">{name}</span></span>
+<span class="player-badge" data-testid="player-badge"><span class="trim">{name}</span></span>
 
 <style>
 	.player-badge {
@@ -44,7 +44,7 @@
 	 * does: trimmed to cap height and baseline, with the same room added back above and below
 	 * so descenders are not clipped. A long name ends in "…" inside the pill.
 	 */
-	.text {
+	.trim {
 		display: block;
 		min-width: 0;
 		overflow: hidden;
