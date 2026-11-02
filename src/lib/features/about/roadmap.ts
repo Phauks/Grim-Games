@@ -431,6 +431,14 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['M13a', 'M13b', 'M13']
 	},
 	{
+		// Wiki example gaps no other thread owned (Nov 2): M17a Knaves, M17b Wizard, M17c
+		// Yaggababble, M17d Ojo, M17e Al-Hadikhia, M17f Angel, M17g Savant.
+		title:
+			"The Knaves' lying Storyteller, the Wizard's wishes, the Yaggababble's phrase, the Ojo, the Al-Hadikhia, the Angel's punishment and the Savant's statements about people",
+		area: 'engine',
+		parts: ['M17a', 'M17b', 'M17c', 'M17d', 'M17e', 'M17f', 'M17g']
+	},
+	{
 		// Setup rules audit (Trevor, 2026-11-02): every bracketed setup change covered, starting
 		// with the Bounty Hunter's evil Townsfolk, picked, checked at Start game and told.
 		title: 'Every setup change covered: the Bounty Hunter makes a Townsfolk evil, and more',

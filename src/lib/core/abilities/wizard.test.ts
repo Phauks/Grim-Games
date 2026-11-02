@@ -17,7 +17,10 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { dayReminders, dayStateFromGame, renderReminder } from '#lib/core/rules/day-reminders.ts';
 import { gameEnds } from '#lib/core/rules/game-end.ts';
-import { engineGap, scenario, type Scenario } from '#lib/core/testing/scenario.ts';
+import { abilityState } from '#lib/core/rules/ability.ts';
+import { infoPicker } from '#lib/core/rules/night-info.ts';
+import { wishes } from '#lib/core/rules/wishes.ts';
+import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
 /** The Wizard's day reminders, as plain text. */
 const wizardLines = (s: Scenario) =>
@@ -57,27 +60,50 @@ describe('Wizard', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Wizard#Examples)', () => {
-		it.fails('Example 1: Wizard asks to view the Grimoire', () => {
+		it('Example 1: Wizard asks to view the Grimoire', () => {
 			// Wiki: "The Wizard wishes to see the Grimoire. The Storyteller grants this wish, and there
 			// is no price and no clue."
-			const s = scenario(['wizard', 'chef', 'empath', 'poisoner', 'imp']);
-			expect(wizardLines(s).join(' ')).toMatch(/wish/);
-			engineGap(
-				'unplanned',
-				'a record of the Wizard’s wish, whether it was granted, and its price and clue (here none)'
-			);
+			const before = scenario(['wizard', 'chef', 'empath', 'poisoner', 'imp']);
+			expect(wizardLines(before).join(' ')).toMatch(/wish/);
+			const s = before.do((at) => ({
+				type: 'RecordWish',
+				seatId: at.seat('wizard'),
+				characterId: 'wizard',
+				text: 'To see the Grimoire',
+				granted: true
+			}));
+			expect(wishes(s.game)).toMatchObject([{ granted: true, text: 'To see the Grimoire' }]);
+			expect(wishes(s.game)[0]).not.toHaveProperty('price');
+			expect(wishes(s.game)[0]).not.toHaveProperty('clue');
+			// Granted: the reminder that they may still wish goes.
+			expect(wizardLines(s)).toEqual([]);
 		});
-		it.fails('Example 2: Every good player drunk, info falsified', () => {
+		it('Example 2: Every good player drunk, info falsified', () => {
 			// Wiki: "The Wizard wishes that all good players are drunk. The Storyteller grants the
 			// wish. Later, they declare that the Wizard has made a wish and that “Things are wrong” but
 			// provide no further context. For the rest of the game, the Storyteller makes all
 			// information false."
-			const s = scenario(['wizard', 'chef', 'empath', 'poisoner', 'imp']);
-			expect(wizardLines(s).join(' ')).toMatch(/wish/);
-			engineGap(
-				'unplanned',
-				'a granted wish that makes every good player drunk for the rest of the game, so their information is false'
-			);
+			const s = scenario(['wizard', 'chef', 'empath', 'poisoner', 'imp'])
+				.do((at) => ({
+					type: 'RecordWish',
+					seatId: at.seat('wizard'),
+					characterId: 'wizard',
+					text: 'All good players are drunk',
+					granted: true,
+					clue: 'Things are wrong',
+					effect: 'good-drunk'
+				}))
+				.newDay()
+				.newDay();
+			// Days later, every good player's information is still unreliable.
+			for (const id of ['chef', 'empath'] as const) {
+				const picker = infoPicker(s.game, s.seat(id), id, s.characters)!;
+				expect(picker).toMatchObject({ unreliable: 'drunk', anyAllowed: true });
+				expect(picker.impairments[0].source).toMatchObject({ characterId: 'wizard' });
+			}
+			// Evil players are not drunk.
+			expect(abilityState(s.game, s.seat('poisoner'), s.characters).works).toBe(true);
+			expect(wishes(s.game)[0]).toMatchObject({ clue: 'Things are wrong' });
 		});
 		it('Example 3: Wizard becomes Demon, replacing the Lord of Typhon', () => {
 			// Wiki: "The Wizard wishes that they become a Demon. The Storyteller grants the wish. Later,
@@ -101,13 +127,20 @@ describe('Wizard', () => {
 				{ rule: 'demon-dead', winner: 'good' }
 			]);
 		});
-		it.fails('Example 5: Wish for five lives declined as too awkward', () => {
+		it('Example 5: Wish for five lives declined as too awkward', () => {
 			// Wiki: "The Wizard wishes that all players have 5 lives, and all reminder tokens for the
 			// script are added to characters. The Storyteller judges that this wish is too awkward,
 			// confusing and boring, declines the wish, and asks the Wizard to wish again."
-			const s = scenario(['wizard', 'chef', 'empath', 'poisoner', 'imp']);
+			const s = scenario(['wizard', 'chef', 'empath', 'poisoner', 'imp']).do((at) => ({
+				type: 'RecordWish',
+				seatId: at.seat('wizard'),
+				characterId: 'wizard',
+				text: 'All players have 5 lives',
+				granted: false
+			}));
+			expect(wishes(s.game)).toMatchObject([{ granted: false }]);
+			// Declined: they may still make a wish.
 			expect(wizardLines(s).join(' ')).toMatch(/wish/);
-			engineGap('unplanned', 'a declined wish leaves the Wizard free to wish again');
 		});
 	});
 });

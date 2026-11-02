@@ -60,6 +60,10 @@
 		]
 	},
 	"infoCard": "secret-phrase",
+	"dayTally": {
+		"label": "Phrase said today",
+		"kills": true
+	},
 	"jinxes": {
 		"exorcist": {
 			"noKill": "token"

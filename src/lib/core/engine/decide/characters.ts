@@ -12,8 +12,10 @@ import { extraEvilPlayers } from '#lib/core/rules/extra-evil.ts';
 import { abilityState } from '#lib/core/rules/ability.ts';
 import { cantTurnGood } from '#lib/core/rules/becomes.ts';
 import { barredAbilities, givenInstead } from '#lib/core/rules/jinxes.ts';
+import { tallyKiller, tallyKills } from '#lib/core/rules/day-tally.ts';
 import { neighbourFollows } from '#lib/core/rules/reminder-movement.ts';
-import type { Game } from '#lib/core/model/index.ts';
+import type { Game, SeatId } from '#lib/core/model/index.ts';
+import type { EngineContext } from '../context.ts';
 import type { GameEvent } from '../events.ts';
 import {
 	allowsDuplicates,
@@ -25,7 +27,8 @@ import {
 	seatOf,
 	seatableCharacter,
 	trulyInPlay,
-	type Deciders
+	type Deciders,
+	type Warn
 } from './shared.ts';
 
 /** Characters on seats, alignment, death, ghost votes, overrides and Fabled or Loric in play. */
@@ -325,7 +328,10 @@ export const CHARACTERS_DECIDERS: Deciders<
 		if (seat.dead === command.dead) {
 			// Marking a dead player dead again with a new cause records the cause.
 			if (command.dead && cause !== undefined && cause !== seat.deathCause) {
-				return [{ type: 'DeathCauseSet', seatId: seat.seatId, cause }];
+				return [
+					{ type: 'DeathCauseSet', seatId: seat.seatId, cause },
+					...tallyDeath(game, seat.seatId, cause, ctx, warn)
+				];
 			}
 			warn('no-change', command.dead ? 'already dead' : 'already alive');
 			return [];
@@ -337,6 +343,7 @@ export const CHARACTERS_DECIDERS: Deciders<
 			death.impaired = true;
 		}
 		const events: GameEvent[] = [death];
+		if (command.dead) events.push(...tallyDeath(game, seat.seatId, cause, ctx, warn));
 		// A player who comes back to life has their vote again.
 		if (!command.dead && seat.ghostVoteUsed) {
 			events.push({ type: 'GhostVoteRestored', seatId: seat.seatId });
@@ -354,7 +361,7 @@ export const CHARACTERS_DECIDERS: Deciders<
 		if (!seat.dead) refuse('not-dead', 'only a dead player has a cause of death');
 		const event: GameEvent = { type: 'DeathCauseSet', seatId: seat.seatId };
 		if (cause !== undefined) event.cause = cause;
-		return [event];
+		return [event, ...tallyDeath(game, seat.seatId, cause, ctx, warn)];
 	},
 
 	SpendGhostVote(game, command, ctx, warn) {
@@ -435,3 +442,24 @@ export const CHARACTERS_DECIDERS: Deciders<
 		return [{ type: 'RuleCharacterRemoved', characterId: command.characterId }];
 	}
 };
+
+/**
+ * A death by an ability with a `kills` day tally (the Yaggababble's) is logged against today's
+ * count, and warns once more have died than the count allows (warn, never lock).
+ */
+function tallyDeath(
+	game: Game,
+	seatId: SeatId,
+	cause: string | undefined,
+	ctx: EngineContext,
+	warn: Warn
+): GameEvent[] {
+	const characterId = tallyKiller(cause, ctx.characters);
+	if (!characterId) return [];
+	const kills = tallyKills(game, characterId, ctx.characters);
+	const died = kills?.died.filter((s) => s !== seatId).length ?? 0;
+	if (died + 1 > (kills?.count ?? 0)) {
+		warn('beyond-tally', 'more players die from this ability than its count today allows');
+	}
+	return [{ type: 'DayTallyDeath', characterId, seatId }];
+}

@@ -21,7 +21,10 @@
 					{
 						"text": "may make a wish"
 					}
-				]
+				],
+				"when": {
+					"noWish": true
+				}
 			}
 		]
 	},
@@ -30,5 +33,6 @@
 	},
 	"reminderMovement": {
 		"why": "The Storyteller decides what these mean."
-	}
+	},
+	"wish": true
 }

@@ -15,7 +15,8 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { engineGap, scenario } from '#lib/core/testing/scenario.ts';
+import { killChoice, namedCharacterKill } from '#lib/core/rules/chosen-kills.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Ojo', () => {
 	const character = committedCharacter('ojo');
@@ -47,20 +48,33 @@ describe('Ojo', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Ojo#Examples)', () => {
-		it.fails('Example 1: Ojo names absent Empath, so Shugenja dies', () => {
+		it('Example 1: Ojo names absent Empath, so Shugenja dies', () => {
 			// Wiki: "The Ojo chooses the Plague Doctor. The Plague Doctor dies. The next night, the Ojo
 			// chooses the Poppy Grower. The Poppy Grower dies. The next night, the Ojo chooses the Empath.
 			// There is no Empath in play, so the Storyteller chooses that the Shugenja dies instead."
-			const s = scenario(['ojo', 'plaguedoctor', 'poppygrower', 'shugenja', 'chef', 'poisoner'])
-				.dies('plaguedoctor', 'ojo')
-				.newDay()
-				.dies('poppygrower', 'ojo')
-				.newDay();
-			expect(s.game.seating.some((id) => s.game.seats[id].characterId === 'empath')).toBe(false);
-			engineGap(
-				'unplanned',
-				"the Ojo's night step names a character: that character's player dies, or with none in play the Storyteller picks who dies (the Shugenja)"
-			);
+			const start = scenario([
+				'ojo',
+				'plaguedoctor',
+				'poppygrower',
+				'shugenja',
+				'chef',
+				'poisoner'
+			]);
+			expect(killChoice('ojo', start.characters)).toBe('character');
+			expect(namedCharacterKill(start.game, 'plaguedoctor', start.characters)).toEqual({
+				storytellerChooses: false,
+				seats: [start.seat('plaguedoctor')]
+			});
+			const s = start.dies('plaguedoctor', 'ojo').newDay();
+			expect(namedCharacterKill(s.game, 'poppygrower', s.characters).seats).toEqual([
+				s.seat('poppygrower')
+			]);
+			const third = s.dies('poppygrower', 'ojo').newDay();
+			const empath = namedCharacterKill(third.game, 'empath', third.characters);
+			expect(empath.storytellerChooses).toBe(true);
+			expect(empath.seats).toContain(third.seat('shugenja'));
+			const after = third.dies('shugenja', 'ojo');
+			expect(after.game.seats[after.seat('shugenja')].dead).toBe(true);
 		});
 	});
 });
