@@ -10,6 +10,7 @@ import { infoTokensNamedIn } from '#lib/core/data/info-tokens.ts';
 import { parseCharacterRules } from '#lib/core/data/character-rules.ts';
 import { OFFICIAL_RULES } from '#lib/core/data/rules/index.ts';
 import { Issues } from '#lib/core/data/validate.ts';
+import { ruleEntries } from '#lib/core/data/info-token-rules.ts';
 import type { Character } from '#lib/core/data/types.ts';
 import {
 	filledInfoToken,
@@ -37,19 +38,19 @@ describe('info tokens filled in with the step’s own character', () => {
 		['barber', `${W}Barber`],
 		['barista', `${W}Barista`],
 		['harlot', `${W}Harlot`],
-		['duchess', `${W}Duchess`]
+		['duchess', `${W}Duchess`],
+		['cerenovus', `${W}Cerenovus`]
 	])('%s: "This character selected you" shows itself (%s)', (id) => {
 		expect(filled(id, 'selected-you')).toEqual({ characterIds: [id], upTo: 1 });
 	});
 
-	// Itself, then one more the Storyteller picks: the Cerenovus's madness character, the
-	// Boffin's not-in-play ability.
-	it.each([
-		['cerenovus', `${W}Cerenovus`],
-		['boffin', `${W}Boffin`]
-	])('%s: "This character selected you" shows itself and room for one more (%s)', (id) => {
-		expect(filled(id, 'selected-you')).toEqual({ characterIds: [id], upTo: 2 });
-	});
+	// Itself, then one more the Storyteller picks: the Boffin's not-in-play ability.
+	it.each([['boffin', `${W}Boffin`]])(
+		'%s: "This character selected you" shows itself and room for one more (%s)',
+		(id) => {
+			expect(filled(id, 'selected-you')).toEqual({ characterIds: [id], upTo: 2 });
+		}
+	);
 
 	// The player becomes, or is shown they are, this very character.
 	it.each([
@@ -71,11 +72,11 @@ describe('info tokens filled in with the step’s own character', () => {
 		expect(filled(id, 'this-player-is', 3)).toEqual({ characterIds: [id], upTo: 3 });
 	});
 
-	it('fills nothing in where the character shown changes', () => {
+	it('leaves a changed character to the change the step makes', () => {
 		// https://wiki.bloodontheclocktower.com/Pit-Hag : the new character is the one chosen.
-		expect(filled('pithag', 'you-are')).toBeUndefined();
+		expect(filled('pithag', 'you-are')).toEqual({ characterIds: [], upTo: 1 });
 		// https://wiki.bloodontheclocktower.com/Barber : the swapped players' new characters vary.
-		expect(filled('barber', 'you-are')).toBeUndefined();
+		expect(filled('barber', 'you-are')).toEqual({ characterIds: [], upTo: 1 });
 	});
 
 	it('only fills in a token the character’s own night text names, or its step offers', () => {
@@ -84,7 +85,7 @@ describe('info tokens filled in with the step’s own character', () => {
 				const named = (['first', 'other'] as const).some((night) =>
 					infoTokensNamedIn(nightTextFor(character(id), night)?.text).some((t) => t.id === token)
 				);
-				return named || rule.offer ? [] : [`${id}: ${token}`];
+				return named || ruleEntries(rule).some((e) => e.offer) ? [] : [`${id}: ${token}`];
 			})
 		);
 		expect(stray).toEqual([]);
@@ -187,7 +188,8 @@ describe('reading infoTokenCharacters', () => {
 		expect(parse({ 'this-is-the-demon': { characters: ['self'] } }).issues).toHaveLength(1);
 		expect(parse({ 'no-such-card': { characters: ['self'] } }).issues).toHaveLength(1);
 		expect(parse({ 'selected-you': { characters: ['self', 'imp'] } }).issues).toHaveLength(1);
-		expect(parse({ 'selected-you': { characters: [] } }).issues).toHaveLength(1);
+		expect(parse({ 'selected-you': { characters: [''] } }).issues).toHaveLength(1);
+		expect(parse({ 'selected-you': [] }).issues).toHaveLength(1);
 		expect(parse({ 'selected-you': { characters: ['self'], upTo: 9 } }).issues).toHaveLength(1);
 		expect(parse({ 'selected-you': { characters: ['self'], more: 1 } }).issues).toHaveLength(1);
 	});

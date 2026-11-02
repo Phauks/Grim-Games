@@ -126,8 +126,17 @@
 	/** What was filled into a fill-in custom card, kept while its characters are chosen. */
 	let pendingDetail: string | undefined;
 
+	/**
+	 * A step's card shown just after another (`filled.before`: the Cerenovus's "This character
+	 * selected you", then "You are mad as"): the cards shown first, together with this one.
+	 */
+	let lead: Card[] = [];
+
 	function choose(token: InfoToken, add = false, detail?: string, filled?: FilledInfoToken) {
 		adding = add;
+		lead = filled?.before
+			? [{ text: filled.before.token.text, characterIds: [...filled.before.characterIds] }]
+			: [];
 		quickShown = token.id === QUICK_CARD_ID && !add;
 		pendingDetail = detail;
 		// The Demon's bluffs, unless the step fills the card itself (the Storm Catcher shows its
@@ -185,14 +194,17 @@
 	) {
 		pendingDetail = undefined;
 		const card = { text, characterIds: [...characterIds], detail };
+		const before = lead;
+		lead = [];
 		view = { kind: 'list' };
-		if (adding) chainCards = [...chainCards, card];
-		else show([card]);
+		if (adding) chainCards = [...chainCards, ...before, card];
+		else show([...before, card]);
 		adding = false;
 	}
 
 	function toList() {
 		direct = false;
+		lead = [];
 		view = { kind: 'list' };
 	}
 
