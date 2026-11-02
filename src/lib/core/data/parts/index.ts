@@ -31,6 +31,7 @@ export { gainsAbilityOf } from './gains-ability-of.ts';
 export { gameEnd } from './game-end.ts';
 export { givesAbility } from './gives-ability.ts';
 export { guessLimit } from './guess-limit.ts';
+export { hidesRoles } from './hides-roles.ts';
 export { impairs } from './impairs.ts';
 export { infoCard } from './info-card.ts';
 export { infoKind } from './info-kind.ts';

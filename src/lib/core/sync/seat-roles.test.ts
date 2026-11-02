@@ -47,6 +47,15 @@ describe('the character each phone shows its player', () => {
 		expect(seatRoles(s.game, s.characters)[s.seat('chef')]).toEqual({ characterId: 'chef' });
 	});
 
+	// https://wiki.bloodontheclocktower.com/Tor: players learn their character and alignment
+	// only when they die (M22).
+	it('shows the living nothing while the Tor is in play, and the dead their role', () => {
+		const s = scenario(['chef', 'imp', 'empath']).rule('tor').dies('empath');
+		const roles = seatRoles(s.game, s.characters);
+		expect(roles[s.seat('chef')]).toBeUndefined();
+		expect(roles[s.seat('empath')]).toEqual({ characterId: 'empath' });
+	});
+
 	// https://wiki.bloodontheclocktower.com/Lunatic: the Lunatic is shown a Demon token.
 	it('shows what a bag tile showed, never the grimoire character', () => {
 		const { session, ctx, seats } = newGame(1, { ctx: testContext() });
