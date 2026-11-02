@@ -91,7 +91,7 @@ describe('Heretic', () => {
 		});
 		it('Example 4: Poisoned Heretic; Assassin kills Demon, good wins', () => {
 			// Wiki: "The Heretic is poisoned. The Assassin kills the Demon. Good wins."
-			const s = scenario(['heretic', 'chef', 'empath', 'monk', 'assassin', 'imp'])
+			const s = scenario(['heretic', 'chef', 'empath', 'monk', 'assassin', 'imp', 'poisoner'])
 				.poisoned('heretic')
 				.dies('imp', 'assassin');
 			const ends = gameEnds(s.game, s.characters);

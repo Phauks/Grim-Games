@@ -10,7 +10,7 @@ import { scenario } from '#lib/core/testing/scenario.ts';
 import { validDeathCauses } from './death-causes.ts';
 
 // Seating: Ana Amnesiac, Ben Imp, Cat Chef, Dan Empath.
-const game = () => scenario(['amnesiac', 'imp', 'chef', 'empath']);
+const game = () => scenario(['amnesiac', 'imp', 'chef', 'empath', 'poisoner']);
 const holding = (characterId: string) =>
 	game().do((s) => ({
 		type: 'SetHeldAbility',

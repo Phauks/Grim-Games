@@ -31,7 +31,7 @@ import type {
 } from '#lib/core/data/character-rules.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import { wikiUrl } from '#lib/core/data/wiki.ts';
-import type { CharacterLookup } from '#lib/core/model/characters.ts';
+import { isOnScript, type CharacterLookup } from '#lib/core/model/characters.ts';
 import {
 	alignmentOf,
 	aliveNeighbours,
@@ -137,6 +137,36 @@ function sourceWorks(
 	);
 }
 
+/**
+ * Whether anyone has `characterId`'s ability now: a player who is that character, living or
+ * dead (their true character or their token, as the Philosopher's or Alchemist's swapped
+ * token), a player who holds it without a token (`Seat.abilities`, the Boffin's; or their own
+ * `givesAbility` from the script, the Hermit's), the Storyteller (the Plague Doctor's), or it
+ * is a Fabled or Loric in play. Once nobody has it, its "Poisoned" and "Drunk" tokens do
+ * nothing: a Poisoner who becomes the Imp no longer poisons anyone
+ * (https://wiki.bloodontheclocktower.com/Poisoner, Example 5).
+ */
+function abilityInPlay(game: Game, characterId: CharacterId, characters: CharacterLookup): boolean {
+	if (game.ruleCharacters.includes(characterId)) return true;
+	if (game.storytellerAbilities?.some((a) => a.characterId === characterId)) return true;
+	const type = characters.get(characterId)?.type ?? '';
+	return game.seating.some((s) => {
+		const seat = game.seats[s];
+		if (seat.characterId === characterId) return true;
+		if (trueCharacter(game, s, characters) === characterId) return true;
+		if (seat.abilities?.some((a) => a.characterId === characterId)) return true;
+		const gives = seat.characterId
+			? rulesOf(seat.characterId, characters)?.givesAbility
+			: undefined;
+		return (
+			gives?.to === 'self' &&
+			gives.onScript === true &&
+			(gives.types as readonly string[]).includes(type) &&
+			isOnScript(game.script, characterId)
+		);
+	});
+}
+
 function impairmentsOf(
 	game: Game,
 	seatId: SeatId,
@@ -188,12 +218,15 @@ function impairmentsOf(
 		if (!reason) continue;
 		// Another character's "Poisoned" or "Drunk" lasts only while that character's ability
 		// works: once its player dies, is drunk or poisoned, the effect ends at once
-		// (https://wiki.bloodontheclocktower.com/Abilities, the dead Poisoner's Slayer). Tokens
-		// that last regardless say so with an `impairs.tokens` entry (the Sweetheart's). With no
-		// player of that character in play, the token is kept: it may come from a gained ability.
+		// (https://wiki.bloodontheclocktower.com/Abilities, the dead Poisoner's Slayer), and so
+		// it does once nobody has that ability, as when the Poisoner becomes the Imp
+		// (https://wiki.bloodontheclocktower.com/Poisoner, Example 5). Tokens that last
+		// regardless say so with an `impairs.tokens` entry (the Sweetheart's). A token whose
+		// ability someone holds without being that character (a gained ability) is kept.
 		if (
 			r.characterId !== characterId &&
-			!sourceWorks(game, seatId, r.characterId, characters, visiting)
+			(!abilityInPlay(game, r.characterId, characters) ||
+				!sourceWorks(game, seatId, r.characterId, characters, visiting))
 		)
 			continue;
 		const sourceSeat =

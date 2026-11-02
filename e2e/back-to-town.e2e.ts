@@ -20,7 +20,12 @@ test('Back to town makes every phone in the room sound and vibrate', async ({
 	browser
 }, testInfo) => {
 	const board = await startGame(page);
-	// Without a room there is nobody to call.
+	// On the day timer (Trevor, 2026-11-01), not in ⋯. Without a room there is nobody to
+	// call: it is there, disabled, so nothing moves when a room opens.
+	const timer = page.locator('.board-timer').getByTestId('day-timer');
+	const call = timer.getByRole('button', { name: 'Back to town' });
+	await expect(call).toBeDisabled();
+	const before = (await timer.boundingBox())!;
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	const menu = page.getByRole('dialog', { name: 'Grimoire' });
 	await expect(menu.getByRole('button', { name: 'Back to town' })).toHaveCount(0);
@@ -50,19 +55,18 @@ test('Back to town makes every phone in the room sound and vibrate', async ({
 	await phone.getByRole('tab', { name: 'Script' }).tap();
 
 	await page.goto(board);
+	await expect(call).toBeEnabled();
+	expect((await timer.boundingBox())!.width).toBe(before.width);
 	// A Cancel/Confirm sheet first (Trevor, 2026-10-27): Cancel calls nobody.
 	const confirm = page.getByRole('alertdialog', { name: 'Back to town?' });
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await menu.getByRole('button', { name: 'Back to town' }).tap();
-	await expect(menu).toBeHidden();
+	await call.tap();
 	await confirm.getByRole('button', { name: 'Cancel' }).tap();
 	await expect(confirm).toBeHidden();
 	await page.waitForTimeout(500);
 	expect(await phone.evaluate(() => (window as unknown as { alerts: string[] }).alerts)).toEqual(
 		[]
 	);
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	await menu.getByRole('button', { name: 'Back to town' }).tap();
+	await call.tap();
 	await confirm.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(confirm).toBeHidden();
 

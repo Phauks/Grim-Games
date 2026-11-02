@@ -18,7 +18,7 @@ import { wokeTonight } from './woke-tonight.ts';
 // nearest Townsfolk are Fay (anticlockwise, round the table) and Dan (clockwise, past the
 // Outsider and the Demon).
 const killed = () =>
-	scenario(['witch', 'klutz', 'vigormortis', 'sage', 'monk', 'chef'])
+	scenario(['witch', 'klutz', 'vigormortis', 'sage', 'monk', 'chef', 'poisoner'])
 		.dies('witch', 'vigormortis')
 		.reminder('witch', 'vigormortis', 'Dead')
 		.reminder('witch', 'vigormortis', 'Has Ability')
@@ -84,11 +84,15 @@ describe('kept ability (keepsAbility)', () => {
 	});
 
 	it('poisons nobody when no Minion keeps their ability', () => {
-		const s = scenario(['witch', 'klutz', 'vigormortis', 'sage', 'monk', 'chef']).reminder(
-			'sage',
+		const s = scenario([
+			'witch',
+			'klutz',
 			'vigormortis',
-			'Poisoned'
-		);
+			'sage',
+			'monk',
+			'chef',
+			'poisoner'
+		]).reminder('sage', 'vigormortis', 'Poisoned');
 		expect(abilityState(s.game, s.seat('sage'), s.characters).works).toBe(true);
 	});
 });
