@@ -12,5 +12,10 @@
 		},
 		"hidesDemon": true,
 		"shownAsOtherEvil": true
+	},
+	"jinxes": {
+		"legion": {
+			"demonLearnsGood": true
+		}
 	}
 }

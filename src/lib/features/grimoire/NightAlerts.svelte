@@ -15,6 +15,7 @@
 	 * Magician), a partner a jinx's night choice picked (the Leviathan's Sage), what a jinx has
 	 * a player learn about an ability gained today (the Cannibal's Butler) or keeps true (the
 	 * Vortox's Banshee), a jinxed player who wakes too or keeps their protection (the Vizier's),
+	 * learns they have no ability or might learn a player is a jinxed partner (Legion's),
 	 * and for a step
 	 * that can kill, who is protected, may bounce the death, survives it or sets something off
 	 * by dying. Short state lines with badges; the rules are core's
@@ -59,6 +60,8 @@
 		seating: 'warning',
 		'wakes-with': 'night',
 		'keeps-protection': 'protected',
+		'learns-no-ability': 'info',
+		'might-learn': 'info',
 		protected: 'protected',
 		'may-bounce': 'warning',
 		'survives-first-death': 'protected',
@@ -156,6 +159,13 @@
 					{:else if alert.kind === 'keeps-protection'}
 						{@render player(alert.seatId)}: {@render badge(sourceId(alert))}, learns they lost their
 						ability, which still protects them
+					{:else if alert.kind === 'learns-no-ability'}
+						{@render player(alert.seatId)}: {@render badge(sourceId(alert))}, learns they have no
+						ability ({@render badge(alert.partner)})
+					{:else if alert.kind === 'might-learn'}
+						{@render player(alert.seatId)}: {@render badge(sourceId(alert))}, might learn a player
+						is
+						{@render badge(alert.partner)}, who keeps their ability
 					{:else if alert.kind === 'protected'}
 						{@render player(alert.seatId)} can't die{#if alert.source === 'override'}
 							(set by hand){:else}: {@render badge(sourceId(alert))}{/if}

@@ -33,6 +33,10 @@ export const show = {
 	'show.evil.decoyChose': 'The decoy chose',
 	'show.evil.add': 'Add {name}',
 	'show.evil.hidden': 'in play: the Demon and Minions don’t learn each other',
+	// A jinx has the Demon's players learn who is good (the Magician with Legion, L117).
+	'show.evil.good': 'These players are good',
+	'show.evil.groups':
+		'in play: wake the Demon players in separate groups, and leave this player out',
 	// Fair-play warnings (FairPlayNotice), in Trevor's own words (2026-10-27).
 	'show.fairPlay.secret':
 		'This is for your eyes only. Please do not screenshot, photograph, or otherwise share this screen in any way that could compromise the integrity of this game.',

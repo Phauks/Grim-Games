@@ -92,6 +92,9 @@
 				"types": ["demon"],
 				"always": true
 			}
+		},
+		"legion": {
+			"allEvilBecome": true
 		}
 	},
 	"infoTokenCharacters": {
