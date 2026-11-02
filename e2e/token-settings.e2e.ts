@@ -163,7 +163,9 @@ test('names and reminders in text each have their own text, icon and badge sizes
 	const dialog = await openTokens(page);
 	const preview = dialog.getByTestId('in-text-preview');
 	const name = preview.locator('.line .badge');
-	const nameIcon = name.locator('.icon');
+	// The picture in the icon's disc: the disc itself fills the pill's end, so it grows with the
+	// badge (Trevor, 2026-11-02: "conforms to the shape of the pill").
+	const nameIcon = name.locator('.icon img');
 	const chip = preview.getByTestId('reminder-token');
 	const owner = chip.locator('img.owner');
 	const size = async (l: typeof name) => (await l.boundingBox())!;
