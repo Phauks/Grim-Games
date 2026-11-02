@@ -199,7 +199,9 @@ async function watchStep(page: Page, title: string) {
 			const step = dialogs.some(
 				(e) =>
 					e.getAttribute('data-state') === 'open' &&
-					getComputedStyle(e).opacity === '1' &&
+					// Opaque enough to hide the board: the last frame of a fade (0.999 on a slow
+					// runner) is not the board showing through; a fade from the start is.
+					Number(getComputedStyle(e).opacity) >= 0.95 &&
 					e.querySelector('[data-part="title"]')?.textContent?.trim() === title
 			);
 			const shown = document.querySelector<HTMLDialogElement>('[data-testid="show-to-player"]');
