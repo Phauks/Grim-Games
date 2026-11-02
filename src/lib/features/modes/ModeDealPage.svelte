@@ -97,7 +97,7 @@
 		const data = officialData.current;
 		if (!data) return [];
 		const script = fromScript(game.script, data).script;
-		return scriptJinxes(data.jinxes, byId.keys(), script.homebrewJinxes);
+		return scriptJinxes(data.jinxes, byId.keys(), script.homebrewJinxes, byId);
 	});
 	/**
 	 * With the slot machine on (a Bag draw setting), reels run through every character a player
