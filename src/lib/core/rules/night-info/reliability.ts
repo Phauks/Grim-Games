@@ -7,7 +7,13 @@ import type { Alignment, CharacterId, CharacterType } from '#lib/core/data/types
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import { wikiUrl } from '#lib/core/data/wiki.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
-import { getSeat, registersAsDead, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
+import {
+	alignmentOf,
+	getSeat,
+	registersAsDead,
+	trueCharacter,
+	typeOf
+} from '#lib/core/model/selectors.ts';
 import type { AbnormalCause, DayEntry, DayEntryId, Game, SeatId } from '#lib/core/model/types.ts';
 import {
 	type Impairment,
@@ -35,6 +41,13 @@ export interface Reliability {
 	vortox?: SeatId;
 	/** That character, when `mustBeFalse`. */
 	falseBy?: CharacterId;
+	/**
+	 * A character whose `falseInfo` says this information may be false (`may`) is in play and
+	 * not yet spent (the Fibbin, once per game for a good player,
+	 * https://wiki.bloodontheclocktower.com/Fibbin): any answer is allowed, even a true one
+	 * under the Vortox. Giving a false one spends it (`RecordNightInfo` places its token).
+	 */
+	mayBeFalse?: CharacterId;
 	/**
 	 * Players who might register falsely (Spy, Recluse, the Faux Paw player) where that could
 	 * change this information.
@@ -133,11 +146,60 @@ export function falseInfoSource(
 ): { seatId: SeatId; characterId: CharacterId } | undefined {
 	for (const seatId of game.seating) {
 		const characterId = trueCharacter(game, seatId, characters);
-		const types = characterId && rulesOf(characterId, characters)?.falseInfo?.types;
+		const rule = characterId ? rulesOf(characterId, characters)?.falseInfo : undefined;
+		const types = rule && !rule.may ? rule.types : undefined;
 		if (!characterId || !types || (type !== undefined && !types.includes(type))) continue;
 		if (abilityState(game, seatId, characters).works) return { seatId, characterId };
 	}
 	return undefined;
+}
+
+/** Whether any information may be given: the ability doesn't work, or it may be false. */
+export const anyInfo = (r: Pick<Reliability, 'unreliable' | 'mayBeFalse'>): boolean =>
+	r.unreliable !== undefined || r.mayBeFalse !== undefined;
+
+/** The abnormal cause a `mayBeFalse` character gives false information by (the Fibbin). */
+export const mayBeFalseCause = (characterId: CharacterId): AbnormalCause => ({
+	reason: 'vortox',
+	characterId
+});
+
+/**
+ * A character in play, held by a player whose ability works or as a rule character (the
+ * Fibbin), whose `falseInfo` says the information of `seatId`'s ability may be false: the
+ * player is of its `alignment` and of one of its `types` (each when given), and its
+ * `spentToken` is not in the grimoire yet. Undefined when there is none.
+ */
+export function mayBeFalseSource(
+	game: Game,
+	seatId: SeatId,
+	type: CharacterType | undefined,
+	characters: CharacterLookup
+): CharacterId | undefined {
+	const held = game.seating.flatMap((s) => {
+		const id = trueCharacter(game, s, characters);
+		return id && abilityState(game, s, characters).works ? [id] : [];
+	});
+	for (const characterId of [...game.ruleCharacters, ...held]) {
+		const rule = rulesOf(characterId, characters)?.falseInfo;
+		if (!rule?.may) continue;
+		if (rule.alignment && alignmentOf(game, seatId) !== rule.alignment) continue;
+		if (rule.types && (type === undefined || !rule.types.includes(type))) continue;
+		if (rule.spentToken && tokenPlaced(game, characterId, rule.spentToken)) continue;
+		return characterId;
+	}
+	return undefined;
+}
+
+/** Whether `characterId`'s `label` reminder is anywhere in the grimoire. */
+function tokenPlaced(game: Game, characterId: CharacterId, label: string): boolean {
+	const is = (r: { characterId: CharacterId; label: string }) =>
+		r.characterId === characterId && r.label === label;
+	return (
+		game.seating.some((s) => game.seats[s].reminders.some(is)) ||
+		Object.values(game.ruleReminders ?? {}).some((list) => list.some(is)) ||
+		(game.looseReminders ?? []).some(is)
+	);
 }
 
 /**
@@ -162,6 +224,8 @@ export function reliability(
 		out.vortox = falseBy.seatId;
 		out.falseBy = falseBy.characterId;
 	}
+	const mayBeFalse = mayBeFalseSource(game, seatId, type, characters);
+	if (mayBeFalse) out.mayBeFalse = mayBeFalse;
 	out.registrations = otherRegistrations(game, seatId, characters);
 	out.misregister = out.registrations.map((r) => r.seatId);
 	const shown = game.today.entries.findLast(

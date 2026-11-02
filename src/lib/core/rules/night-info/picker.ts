@@ -25,7 +25,9 @@ import {
 	type Why,
 	type WhyFact,
 	alternatives,
+	anyInfo,
 	fact,
+	mayBeFalseCause,
 	onlyRelevant,
 	relevantSeats,
 	reliability,
@@ -504,7 +506,7 @@ export function infoPicker(
 		...(spec.answer ? { answer: spec.answer } : {}),
 		options,
 		...(range ? { range } : {}),
-		anyAllowed: r.unreliable !== undefined,
+		anyAllowed: anyInfo(r),
 		why: {
 			facts: pickerFacts(game, seatId, characterId, spec, characters, worlds[0]),
 			alternatives: alternatives(game, all.registrations, relevant, worlds, numberIn, result)
@@ -580,6 +582,7 @@ export function abnormalCauses(picker: InfoPicker, choice: InfoChoice): Abnormal
 			}));
 	}
 	if (picker.impairments.length > 0) return causesOf(picker.impairments);
+	if (picker.mayBeFalse) return [mayBeFalseCause(picker.mayBeFalse)];
 	if (picker.mustBeFalse && picker.falseBy) {
 		return [
 			{
@@ -618,7 +621,10 @@ export type ValidReason =
 	| 'true'
 	/** True if the `registered` players register as something else (Spy, Recluse). */
 	| 'registers'
-	/** Any information is allowed: the waking player is drunk, poisoned or has no ability. */
+	/**
+	 * Any information is allowed: the waking player is drunk, poisoned or has no ability, or a
+	 * `falseInfo` character that may make it false is in play (the Fibbin, `mayBeFalse`).
+	 */
 	| 'unreliable'
 	/** The Vortox: only false information is allowed. */
 	| 'vortox';
@@ -666,9 +672,9 @@ export function validInformation(game: Game, picker: InfoPicker): ValidInfo[] {
 	const reasonOf = (o: InfoOption): Pick<ValidInfo, 'reason' | 'registered'> =>
 		o.registered ? { reason: 'registers', registered: o.registered } : { reason: 'true' };
 	// Under the Vortox the truthful options are exactly the ones not allowed.
-	const truthful: ValidInfo[] = picker.mustBeFalse && !picker.unreliable ? [] : groupOptions();
+	const truthful: ValidInfo[] = picker.mustBeFalse && !anyInfo(picker) ? [] : groupOptions();
 	const extra: ValidInfo[] = [];
-	const loose: ValidReason | undefined = picker.unreliable
+	const loose: ValidReason | undefined = anyInfo(picker)
 		? 'unreliable'
 		: picker.mustBeFalse
 			? 'vortox'

@@ -364,6 +364,34 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['M11', 'M12a', 'M12b', 'M12c']
 	},
 	{
+		// Gaps 5 and 12: one-off abilities and game rules nothing read yet (thread "Automate
+		// one-off characters and unread rules", 2026-11-01). M15a Toymaker, M15b Buddhist, M15c
+		// Barista, M15d Doomsayer, M15e Fibbin, M15f Duchess, M15g Vigormortis, M15h Lleech, M15i
+		// Amnesiac, M15j Summoner.
+		title:
+			"The Toymaker's skipped attack, the Buddhist's quiet veterans, the Barista's doubled ability, and more one-off characters",
+		area: 'engine',
+		parts: [
+			'M15a',
+			'M15b',
+			'M15c',
+			'M15d',
+			'M15e',
+			'M15f',
+			'M15g',
+			'M15h',
+			'M15i',
+			'M15j',
+			// Gaps the wiki examples found: M15k night wakes, M15l game ends, M15m protection and
+			// exile, M15n night information, M15o character changes and held abilities.
+			'M15k',
+			'M15l',
+			'M15m',
+			'M15n',
+			'M15o'
+		]
+	},
+	{
 		// Gap 1, last and separate (Trevor, 2026-10-28).
 		title:
 			'Voting and nominations: vote weight, who may vote or nominate, forced and blocked executions (Butler, Thief, Bureaucrat, Bishop, Legion and 12 more)',
