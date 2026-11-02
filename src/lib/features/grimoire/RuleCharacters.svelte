@@ -3,7 +3,7 @@
 	import { rulesOf } from '#lib/core/data/rules/index.ts';
 	import { ruleReminders, type ReminderId } from '#lib/core/model/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
-	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import CharacterDialog from '#lib/features/characters/CharacterDialog.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import BoardReminder from './BoardReminder.svelte';
@@ -143,10 +143,10 @@
 <Dialog bind:open={ruleShownOpen} title={ruleShownCharacter?.name ?? ''}>
 	{#if ruleShownCharacter}
 		{@const shown = ruleShownCharacter}
-		<CharacterRow character={shown} info={details}>
-			{#snippet ability()}<GlossaryText text={shown.ability} names={[shown.name]} />{/snippet}
+		<CharacterPiece template="row" character={shown} info={details}>
+			{#snippet abilityText()}<GlossaryText text={shown.ability} names={[shown.name]} />{/snippet}
 			{@render heldList(shown.id)}
-		</CharacterRow>
+		</CharacterPiece>
 	{/if}
 	{#snippet headActions()}
 		<!-- Beside the close X (Trevor, 2026-10-17); a red trash icon, named for screen readers. -->
@@ -167,8 +167,8 @@
 			{@const character = characters.get(id)}
 			{#if character}
 				<li>
-					<CharacterRow {character} info={details}>
-						{#snippet end()}
+					<CharacterPiece template="row" {character} info={details}>
+						{#snippet controls()}
 							<DeleteButton
 								label={removeRuleLabel(character.name)}
 								disabled={watching}
@@ -179,7 +179,7 @@
 							/>
 						{/snippet}
 						{@render heldList(id)}
-					</CharacterRow>
+					</CharacterPiece>
 				</li>
 			{/if}
 		{/each}
@@ -190,9 +190,9 @@
 <Dialog bind:open={abilityOpen} title="Storyteller's ability">
 	{#if abilityCharacter}
 		{@const held = abilityCharacter}
-		<CharacterRow character={held} info={details}>
-			{#snippet ability()}<GlossaryText text={held.ability} names={[held.name]} />{/snippet}
-		</CharacterRow>
+		<CharacterPiece template="row" character={held} info={details}>
+			{#snippet abilityText()}<GlossaryText text={held.ability} names={[held.name]} />{/snippet}
+		</CharacterPiece>
 		<div class="actions">
 			<Button variant="quiet" disabled={watching} onclick={() => (abilityPickOpen = true)}
 				>Change</Button

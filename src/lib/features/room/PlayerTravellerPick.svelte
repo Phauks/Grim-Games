@@ -4,7 +4,7 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
-	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { loadOfficialData, officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { roomScript } from './room-script.svelte.ts';
 	import type { RoomPlayer } from './player.svelte.ts';
@@ -68,7 +68,8 @@
 				{@const by = pick.held[character.id]}
 				{@const mine = pick.mine === character.id}
 				<li>
-					<CharacterRow
+					<CharacterPiece
+						template="row"
 						{character}
 						info
 						current={mine}

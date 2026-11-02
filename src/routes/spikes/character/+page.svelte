@@ -2,7 +2,7 @@
 	import PageMenuButton from '#lib/features/shell/PageMenuButton.svelte';
 	import { APP_NAME } from '#lib/core/app-name.ts';
 	import type { CharacterId, Jinx, PlayerName } from '#lib/core/data/index.ts';
-	import Character from '#lib/features/characters/Character.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import JinxMark from '#lib/features/characters/JinxMark.svelte';
 	import {
 		CHARACTER_TEMPLATE_NAMES,
@@ -114,7 +114,7 @@
 		</div>
 		<div class="stage" data-testid="character-stage">
 			{#key `${template}-${characterId}`}
-				<Character
+				<CharacterPiece
 					{template}
 					{characterId}
 					{playerName}
@@ -131,8 +131,8 @@
 				/>
 			{/key}
 			<p class="in-line">
-				In a sentence: <Character template="badge" {characterId} {playerName} /> has chosen
-				<Character
+				In a sentence: <CharacterPiece template="badge" {characterId} {playerName} /> has chosen
+				<CharacterPiece
 					template="badge"
 					characterId={'washerwoman' as CharacterId}
 					playerName={'Alex' as PlayerName}
