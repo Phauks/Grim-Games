@@ -53,5 +53,11 @@
 		"summoner": {
 			"withPartnerAbility": "partner-setup"
 		}
+	},
+	"infoTokenCharacters": {
+		"you-are": {
+			"characters": ["marked"],
+			"token": "Is The Alchemist"
+		}
 	}
 }
