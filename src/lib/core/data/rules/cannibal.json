@@ -42,7 +42,8 @@
 		"why": "Follows the most recent execution."
 	},
 	"gainedFrom": {
-		"token": "Lunch"
+		"token": "Lunch",
+		"wakes": true
 	},
 	"jinxes": {
 		"princess": {

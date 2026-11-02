@@ -130,6 +130,7 @@
 			}
 		]
 	},
+	"staysAsleep": "both",
 	"jinxes": {
 		"exorcist": {
 			"endsGame": {

@@ -8,8 +8,11 @@
  * (https://wiki.bloodontheclocktower.com/Farmer).
  *
  * The changes come from the game's log (`changedCharacters` in the engine). Each step goes
- * just before Dawn, in seating order. The step names the seat; the UI draws its player.
+ * just before Dawn, in seating order. The step names the seat; the UI draws its player. A
+ * new character's `evilInfo.lateNote` is a note on its step (a Snitch made tonight: each
+ * Minion learns 3 bluffs, https://wiki.bloodontheclocktower.com/Snitch).
  */
+import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
 import type { InfoTokenCharacterRules } from '#lib/core/data/info-token-rules.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
@@ -33,6 +36,7 @@ export function withCharacterChangeSteps<T extends NightStep>(
 	const added: NightStep[] = changes.flatMap(({ seatId, characterId }) => {
 		const character = characters.get(characterId);
 		if (!character) return [];
+		const late = rulesOf(characterId, characters)?.evilInfo?.lateNote;
 		return [
 			{
 				id: `${CHANGED_STEP}@${seatId}`,
@@ -41,7 +45,7 @@ export function withCharacterChangeSteps<T extends NightStep>(
 				reminder: `Wake this player. Show the *YOU ARE* info token, then the ${character.name} token.`,
 				afterDawn: false,
 				placement: 'marker',
-				notes: [],
+				notes: late ? [`${character.name}: ${late}`] : [],
 				changed: { seatId, characterId },
 				// The card shows the new character, whatever that character's own rules fill in.
 				infoTokenCharacters: SHOWN_OWN_CHARACTER

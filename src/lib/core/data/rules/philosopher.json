@@ -73,6 +73,7 @@
 	},
 	"gainedFrom": {
 		"token": "Drunk",
-		"swapped": true
+		"swapped": true,
+		"wakes": true
 	}
 }

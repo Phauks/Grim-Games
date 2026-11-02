@@ -1,6 +1,10 @@
 {
 	"kills": {
-		"by": "demon"
+		"by": "demon",
+		"charged": {
+			"token": "3 Attacks",
+			"count": 3
+		}
 	},
 	"reminderTargets": {
 		"3 Attacks": {

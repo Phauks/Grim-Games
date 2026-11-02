@@ -80,7 +80,7 @@ describe('Professor', () => {
 			).toBe(true);
 		});
 
-		it.fails('Example 3: Drunk Professor picks a dead Fool', () => {
+		it('Example 3: Drunk Professor picks a dead Fool', () => {
 			// Wiki: "The drunk Professor chooses to resurrect the Minstrel. Unbeknownst to the Professor, the
 			// Minstrel was regurgitated by the Shabaloth and is now alive. The Storyteller shakes their head
 			// no, because the Professor must choose a dead player. The Professor chooses the dead Fool

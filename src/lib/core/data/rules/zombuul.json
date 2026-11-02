@@ -59,5 +59,8 @@
 				]
 			}
 		]
+	},
+	"wakesWhen": {
+		"nobodyDiedToday": true
 	}
 }

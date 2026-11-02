@@ -55,5 +55,8 @@
 				"reason": "Says which token goes on whom."
 			}
 		}
+	},
+	"wakesWhen": {
+		"untilToken": "No Ability"
 	}
 }

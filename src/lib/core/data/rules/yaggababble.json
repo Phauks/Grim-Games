@@ -60,6 +60,7 @@
 		]
 	},
 	"infoCard": "secret-phrase",
+	"staysAsleep": "other",
 	"dayTally": {
 		"label": "Phrase said today",
 		"kills": true

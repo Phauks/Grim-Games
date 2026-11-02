@@ -5,7 +5,8 @@
  *   the living;
  * - https://wiki.bloodontheclocktower.com/Choirboy: wakes when the Demon kills the King, not
  *   when anything else does;
- * - https://wiki.bloodontheclocktower.com/Seamstress: once per game.
+ * - https://wiki.bloodontheclocktower.com/Seamstress: once per game;
+ * - https://wiki.bloodontheclocktower.com/Zombuul: only when nobody died today.
  */
 import { describe, expect, it } from 'vitest';
 import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
@@ -67,6 +68,23 @@ describe('wakeConditionMet', () => {
 		expect(wakeConditionMet(used.game, 'seamstress', used.seats[0], characters, new Set())).toBe(
 			false
 		);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Zombuul: wakes only when nobody died today.
+	it('wakes the Zombuul only when nobody died today', () => {
+		const cast = ['zombuul', 'chef', 'imp', 'monk'];
+		const quiet = castGame(cast);
+		expect(wakeConditionMet(quiet.game, 'zombuul', quiet.seats[0], characters, new Set())).toBe(
+			true
+		);
+		const died = castGame(cast, dead(1));
+		expect(
+			wakeConditionMet(died.game, 'zombuul', died.seats[0], characters, new Set([died.seats[1]]))
+		).toBe(false);
+		const executed = castGame(cast, (s) => ({ type: 'Execute', seatId: s[1] }));
+		expect(
+			wakeConditionMet(executed.game, 'zombuul', executed.seats[0], characters, new Set())
+		).toBe(false);
 	});
 
 	it('leaves characters without a condition alone', () => {

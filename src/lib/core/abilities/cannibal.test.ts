@@ -50,7 +50,7 @@ describe('Cannibal', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Cannibal#Examples)', () => {
-		it.fails('Example 1: Ate Clockmaker: gets a distance number', () => {
+		it('Example 1: Ate Clockmaker: gets a distance number', () => {
 			// Wiki: "The Clockmaker is executed and dies. That night, the Cannibal learns a “2” because
 			// the Demon and Minion are two steps apart."
 			// Waits on the engine (M15k): the Cannibal's gained ability doesn't wake them (its gainedFrom

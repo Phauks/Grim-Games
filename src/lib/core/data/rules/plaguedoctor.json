@@ -53,6 +53,7 @@
 			}
 		]
 	},
+	"staysAsleep": "other",
 	"jinxes": {
 		"baron": {
 			"givenInstead": "outsiders"

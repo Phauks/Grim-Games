@@ -61,7 +61,7 @@ describe('Chambermaid', () => {
 			)?.number;
 		};
 
-		it.fails('Example 1: Reads two, then zero: Exorcist woke Shabaloth', () => {
+		it('Example 1: Reads two, then zero: Exorcist woke Shabaloth', () => {
 			// Wiki: "The Chambermaid chooses the Exorcist and the Innkeeper, and learns a "2." The
 			// next night, the Exorcist chooses the Shabaloth, which will wake the Shabaloth. Later,
 			// Chambermaid chooses the Shabaloth and the Fool. Since the Shabaloth only woke due to the
@@ -94,7 +94,7 @@ describe('Chambermaid', () => {
 			expect(isAllowed(picker, choice)).toBe(true);
 			expect(learns(s, 'other', 'grandmother', 'goon')).not.toBe(2);
 		});
-		it.fails("Example 3: Assassin's idle wake counts; Gossip stays hidden", () => {
+		it("Example 3: Assassin's idle wake counts; Gossip stays hidden", () => {
 			// Wiki: "It is the first night. The Chambermaid chooses the Assassin and the Moonchild,
 			// and learns a "0" because the Assassin does not wake to use their ability on the first
 			// night. The next night, they choose the Assassin and the Gossip. The Assassin woke but

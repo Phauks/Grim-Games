@@ -6,6 +6,8 @@
  * - `diedTonight`: a player who is one of `characters` died tonight, killed `by` the Demon
  *   when given (the Choirboy wakes when the Demon kills the King,
  *   https://wiki.bloodontheclocktower.com/Choirboy);
+ * - `nobodyDiedToday`: nobody died since the most recent New day (the Zombuul,
+ *   https://wiki.bloodontheclocktower.com/Zombuul);
  * - `untilToken`: until its own reminder is on its player (the Seamstress's No Ability once
  *   its once-per-game ability is used, https://wiki.bloodontheclocktower.com/Seamstress).
  */
@@ -24,6 +26,7 @@ import { readToken } from './reminder-fields.ts';
 export interface WakesWhen {
 	deadAtLeastLiving?: true;
 	diedTonight?: { characters: CharacterId[]; by?: 'demon' };
+	nobodyDiedToday?: true;
 	untilToken?: ReminderLabel;
 }
 
@@ -38,9 +41,15 @@ export function readWakesWhen(
 		issues.add(path, `expected object, got ${describe(raw)}`);
 		return undefined;
 	}
-	checkKeys(raw, ['deadAtLeastLiving', 'diedTonight', 'untilToken'], path, issues);
+	checkKeys(
+		raw,
+		['deadAtLeastLiving', 'diedTonight', 'nobodyDiedToday', 'untilToken'],
+		path,
+		issues
+	);
 	const out: WakesWhen = {};
 	if (readBoolean(raw, 'deadAtLeastLiving', path, issues)) out.deadAtLeastLiving = true;
+	if (readBoolean(raw, 'nobodyDiedToday', path, issues)) out.nobodyDiedToday = true;
 	const until = readToken(raw, 'untilToken', path, issues, reminders);
 	if (until) out.untilToken = until;
 	if (raw.diedTonight !== undefined) {

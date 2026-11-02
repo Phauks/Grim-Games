@@ -48,6 +48,8 @@ export * from './quiet-start.ts';
 export * from './wakes-when.ts';
 export * from './acts-twice.ts';
 export * from './night-numbers.ts';
+export * from './revived-tonight.ts';
+export * from './night-kill.ts';
 export * from './game-end.ts';
 export * from './becomes.ts';
 export * from './madness.ts';

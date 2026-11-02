@@ -3,7 +3,8 @@
 		"Alive": "revive"
 	},
 	"kills": {
-		"by": "demon"
+		"by": "demon",
+		"count": 2
 	},
 	"reminderTargets": {
 		"Dead": {

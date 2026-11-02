@@ -87,7 +87,7 @@ describe('Philosopher', () => {
 			}
 		});
 
-		it.fails('Example 2: Philosopher becomes Clockmaker on night three', () => {
+		it('Example 2: Philosopher becomes Clockmaker on night three', () => {
 			// Wiki: "During the third night, the Philosopher chooses to gain the Clockmaker's ability.
 			// That night, they learn the distance from the Demon to their nearest Minion."
 			// Waits on the engine (M15k): a Philosopher swapped on a later night for a first-night-only

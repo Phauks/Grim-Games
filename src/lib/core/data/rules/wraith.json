@@ -5,6 +5,7 @@
 	"deathCause": {
 		"none": "wakes with evil"
 	},
+	"wakesWithEvil": true,
 	"optionalRule": {
 		"dayReminders": {
 			"reminders": [

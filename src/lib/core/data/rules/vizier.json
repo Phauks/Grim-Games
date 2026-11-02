@@ -38,5 +38,6 @@
 		"victim": {
 			"who": "not-self"
 		}
-	}
+	},
+	"staysAsleep": "first"
 }
