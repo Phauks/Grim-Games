@@ -4,12 +4,28 @@ import { checkKeys, describe, isObject, readStringArray } from '../validate.ts';
 import { objectPart } from './part.ts';
 
 /**
- * What a reminder whose effect the Storyteller picks can do, each one the rules know:
- * - `no-kill`: its player kills no one on one night (the Angel's Something Bad on the Demon,
- *   https://wiki.bloodontheclocktower.com/Angel: no attack the next night).
- * Anything else is the Storyteller's own words on the token.
+ * What a reminder whose effect the Storyteller picks can do, each one the rules know (the Angel's
+ * Something Bad, https://wiki.bloodontheclocktower.com/Angel: its How to Run and Examples list
+ * these punishments):
+ * - `no-kill`: its player kills no one on one night (no attack the next night);
+ * - `poisoned`: its player is poisoned while it is marked;
+ * - `mad`: its player is mad while it is marked (a day reminder line);
+ * - `no-vote-today`: its player may not vote for a day (a day reminder line);
+ * - `no-ability-today`: its player has no ability for a day;
+ * - `dies`: its player dies (the Storyteller marks them dead);
+ * - `other`: something the Storyteller makes up, in their own words in the reminder's note. The
+ *   app acts on none of it. Every picked-effect reminder offers it, listed or not (Trevor,
+ *   2026-11-02: "Allow for something not hard coded").
  */
-export const REMINDER_EFFECTS = ['no-kill'] as const;
+export const REMINDER_EFFECTS = [
+	'no-kill',
+	'poisoned',
+	'mad',
+	'no-vote-today',
+	'no-ability-today',
+	'dies',
+	'other'
+] as const;
 export type ReminderEffectKind = (typeof REMINDER_EFFECTS)[number];
 
 /** Its reminder `token`, whose effect the Storyteller picks from `effects` or writes. */
