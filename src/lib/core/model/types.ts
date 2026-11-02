@@ -16,6 +16,7 @@ import type {
 	PlayerName
 } from '#lib/core/data/index.ts';
 import type { DayMark } from '#lib/core/data/day-mark-rules.ts';
+import type { ReminderEffectKind } from '#lib/core/data/parts/picked-effect.ts';
 // Type-only: the Storyteller's night-order and day-reminder overrides are defined next to
 // the rules that apply them, and stored on the game.
 import type { DayReminderOverride } from '#lib/core/rules/day-reminders.ts';
@@ -74,6 +75,20 @@ export interface ReminderInstance extends Reminder {
 	 * the seats that reminder fits suggested.
 	 */
 	like?: Reminder;
+	/**
+	 * The effect the Storyteller picked for a reminder whose rules let them (`pickedEffect`: the
+	 * Angel's Something Bad, Trevor 2026-11-02). None until picked; their own words go in `note`.
+	 */
+	effect?: ReminderEffect;
+}
+
+/**
+ * A picked reminder effect (`REMINDER_EFFECTS`): `no-kill` stops its player killing on `night`
+ * only (the night numbered as the day view numbers them, `rules/game-phase.ts`).
+ */
+export interface ReminderEffect {
+	kind: ReminderEffectKind;
+	night: number;
 }
 
 /**
@@ -347,6 +362,15 @@ export interface AbnormalCause {
 	seatId?: SeatId;
 }
 
+/**
+ * One character's count today (`dayTally`), and the players its ability killed since this day
+ * began, by day or the night after it, in the order they died.
+ */
+export interface DayTallyLog {
+	count: number;
+	deaths?: SeatId[];
+}
+
 /** The day log: everything logged since the last "New day". */
 export interface DayLog {
 	entries: DayEntry[];
@@ -356,6 +380,11 @@ export interface DayLog {
 	 * missing until marked. Votes themselves are not tracked.
 	 */
 	marks?: Partial<Record<DayMark, boolean>>;
+	/**
+	 * Today's counts the Storyteller keeps (`dayTally`: how often the Yaggababble said its
+	 * phrase), by character. Absent while none.
+	 */
+	tallies?: Record<CharacterId, DayTallyLog>;
 	/** When "New day" closed this log (milliseconds since the epoch); only on past days. */
 	closedAt?: number;
 }

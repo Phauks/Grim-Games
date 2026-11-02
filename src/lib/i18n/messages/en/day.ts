@@ -118,6 +118,8 @@ export const day = {
 	'day.timerVibrate': 'Vibrate',
 	'day.timerPerPlayer': 'Seconds per living player',
 	'day.timerPerPlayerSeconds': { one: '{count} second', other: '{count} seconds' },
+	/** A day tally's count (`dayTally`: the Yaggababble's phrase said today, M17c). */
+	'day.tallyTimes': { one: '{count} time', other: '{count} times' },
 	'day.timerVibrateUnavailable': 'This device can’t vibrate.',
 	'day.timerKeepAwake': 'Keep screen on',
 	'day.timerKeepAwakeUnavailable': 'This browser can’t keep the screen on.',

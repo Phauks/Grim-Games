@@ -214,6 +214,8 @@ and one line in the index, never an edit to `character-rules.ts`.
 - Acts when dead (`dead-characters.ts`): `actsWhenDead`, moved
 - Stops waking (`night-alerts.ts`: the Exorcist's Chosen on the Demon): `stopsWaking`, new
 - Stops killing (`night-alerts.ts`: the Princess's Doesn't Kill on the Demon): `stopsKilling`, new
+- A count of times today (`rules/day-tally.ts` `tallyKills`, `DayLog.tallies`, set by `features/day/DayTallyField.svelte` on the character's day row: the Yaggababble's phrase said aloud; with `kills`, each one lets one player die from it by day or that night, and deaths past it warn): `dayTally`, new
+- A reminder whose effect the Storyteller picks (`rules/reminder-effects.ts`, `ReminderInstance.effect`, picked in the reminder dialog by `features/grimoire/ReminderEffectFields.svelte` with a note for anything else: the Angel's Something Bad; `no-kill` stops its player killing on the next night, shown by `night-alerts.ts`): `pickedEffect`, new
 - Own wake conditions (`rules/wakes-when.ts`, read by `night-steps.ts` `stepWakes`: the King once the dead equal or outnumber the living, the Choirboy when the Demon killed the King, the Seamstress until her No Ability): `wakesWhen`, new
 - Keeps its ability when dead (`dead-characters.ts`: the Vigormortis's Has Ability on a Minion it killed): `keepsAbility`, new
 - Abilities gained from another player (`gained-abilities.ts`, was the Pixie hard-code and `GAINED_FROM` in `death-causes.ts`: the Cannibal's Lunch, the Pixie's Mad and Has Ability, the Philosopher's swap or Drunk): `gainedFrom`, moved

@@ -17,7 +17,9 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { dayReminders, dayStateFromGame, renderReminder } from '#lib/core/rules/day-reminders.ts';
 import { gameEnds } from '#lib/core/rules/game-end.ts';
-import { engineGap, scenario, type Scenario } from '#lib/core/testing/scenario.ts';
+import { nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
+import { effectNight, pickedEffectOf } from '#lib/core/rules/reminder-effects.ts';
+import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
 /** The Angel's day reminders, as plain text. */
 const angelLines = (s: Scenario) =>
@@ -57,20 +59,35 @@ describe('Angel', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Angel#Examples)', () => {
-		it.fails('Example 1: Demon kills protected player, loses next attack', () => {
+		it('Example 1: Demon kills protected player, loses next attack', () => {
 			// Wiki: "The Angel protects Sarah. The Demon attacks and kills her. As punishment, the Demon
 			// cannot attack on the next night."
-			// Sarah is the Chef. The Storyteller marks the Demon Something Bad.
+			// Sarah is the Chef. The Storyteller marks the Demon Something Bad, and picks that it
+			// kills no one on the next night (night 2, picked during day 1).
 			const s = scenario(['chef', 'empath', 'monk', 'poisoner', 'imp'])
 				.rule('angel')
 				.reminder('chef', 'angel', 'Protected');
 			expect(angelLines(s)).toHaveLength(1);
 			const after = s.newDay().dies('chef', 'imp').reminder('imp', 'angel', 'Something Bad');
 			expect(after.game.seats[s.seat('chef')].dead).toBe(true);
-			engineGap(
-				'unplanned',
-				'the punishment the Storyteller picks for Something Bad, here that the Demon kills no one next night'
-			);
+			const token = after.game.seats[s.seat('imp')].reminders.find(
+				(r) => r.label === 'Something Bad'
+			)!;
+			expect(pickedEffectOf(token, after.characters)?.effects).toEqual(['no-kill']);
+			const night = effectNight(after.game, false);
+			expect(night).toBe(2);
+			const punished = after.do({
+				type: 'SetReminderEffect',
+				reminderId: token.reminderId,
+				effect: { kind: 'no-kill', night }
+			});
+			// Night 2: the Demon's step says it kills no one, and lists no one it might kill.
+			const night2 = nightStepAlerts(punished.game, 'imp', punished.characters);
+			expect(night2.map((a) => a.kind)).toEqual(['no-kill']);
+			expect(night2[0].source).toMatchObject({ characterId: 'angel' });
+			// Night 3: it attacks as normal again.
+			const night3 = nightStepAlerts(punished.newDay().game, 'imp', punished.characters);
+			expect(night3.map((a) => a.kind)).not.toContain('no-kill');
 		});
 		it('Example 2: Protected Demon spared until final-day execution', () => {
 			// Wiki: "Ben is the Demon and is protected by the Angel. The players do not execute him

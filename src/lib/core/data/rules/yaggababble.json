@@ -59,5 +59,9 @@
 			}
 		]
 	},
-	"infoCard": "secret-phrase"
+	"infoCard": "secret-phrase",
+	"dayTally": {
+		"label": "Phrase said today",
+		"kills": true
+	}
 }

@@ -20,6 +20,7 @@ import type {
 	GenericToken,
 	OverrideField,
 	Reminder,
+	ReminderEffect,
 	ReminderId,
 	ReminderInstance,
 	SeatId,
@@ -86,6 +87,8 @@ export type GameEvent =
 	| { type: 'LooseReminderPlaced'; reminder: ReminderInstance }
 	| { type: 'ReminderLoosened'; reminderId: ReminderId }
 	| { type: 'ReminderNoteSet'; reminderId: ReminderId; note?: string }
+	/** No `effect` clears it. */
+	| { type: 'ReminderEffectSet'; reminderId: ReminderId; effect?: ReminderEffect }
 	| { type: 'ReminderSymbolSet'; reminderId: ReminderId; symbol?: string }
 	| { type: 'ReminderSymbolColourSet'; reminderId: ReminderId; colour?: SymbolColour }
 	/** Without `fill`, the symbol goes back to an outline. */
@@ -144,6 +147,10 @@ export type GameEvent =
 	| { type: 'DayEntryRemoved'; entryId: DayEntryId }
 	/** No `value` clears the mark. */
 	| { type: 'DayMarkSet'; mark: DayMark; value?: boolean }
+	/** Today's count for a character's `dayTally`; 0 with no deaths clears it. */
+	| { type: 'DayTallySet'; characterId: CharacterId; count: number }
+	/** A player killed today by a character's `dayTally` ability (the Yaggababble's). */
+	| { type: 'DayTallyDeath'; characterId: CharacterId; seatId: SeatId }
 	/** Version 3 to 17's Demon voted mark; replays as `DayMarkSet` for `demon-voted`. */
 	| { type: 'DemonVotedSet'; voted?: boolean }
 	/** No `value` clears it. */
