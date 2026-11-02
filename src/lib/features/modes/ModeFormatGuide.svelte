@@ -6,9 +6,7 @@
 		GUIDE_PARTS,
 		GUIDE_TOP,
 		MINIMAL_EXAMPLE,
-		RULE_GUIDE_INTRO,
 		RULE_GUIDE_PARTS,
-		RULE_GUIDE_TOP,
 		gameModeById,
 		type GuideField
 	} from '#lib/core/modes/index.ts';
@@ -32,7 +30,7 @@
 	interface Props {
 		open?: boolean;
 		/**
-		 * Where it opens: a section (`top`, `rule-top`, `part:<name>`) and, in it, the field to
+		 * Where it opens: a section (`top`, `part:<name>`) and, in it, the field to
 		 * scroll to (Trevor, 2026-11-01: each Mode builder setting links "to the specific part
 		 * of the mode creation guide").
 		 */
@@ -46,11 +44,12 @@
 	const items: ContentsItem[] = [
 		{ id: 'overview', label: t('modes.guide.overview') },
 		{ id: 'top', label: t('modes.guide.top') },
-		...GUIDE_PARTS.map((p) => ({ id: `part:${p.part}`, label: modeLabel('part', p.part) })),
-		{ id: 'full', label: t('modes.guide.full') },
-		// A special rule's own header and parts; the mode parts it may set are written as above.
-		{ id: 'rule-top', label: t('modes.guide.ruleTop') },
-		...RULE_GUIDE_PARTS.map((p) => ({ id: `part:${p.part}`, label: modeLabel('part', p.part) }))
+		// One format for game modes and special rules (Trevor, 2026-11-01): every part, in order.
+		...[...GUIDE_PARTS, ...RULE_GUIDE_PARTS].map((p) => ({
+			id: `part:${p.part}`,
+			label: modeLabel('part', p.part)
+		})),
+		{ id: 'full', label: t('modes.guide.full') }
 	];
 	// Opens on the overview; on a phone, Back shows the list of sections.
 	let current = $state<string | undefined>('overview');
@@ -163,10 +162,6 @@
 					copyLabel={t('modes.copyFile')}
 					downloadLabel={t('modes.downloadFile')}
 				/>
-			{:else if current === 'rule-top'}
-				<h3>{t('modes.guide.ruleTop')}</h3>
-				{#each RULE_GUIDE_INTRO as line (line)}<p>{line}</p>{/each}
-				{@render fields(RULE_GUIDE_TOP)}
 			{:else if part}
 				<section class="part" data-part={part.part}>
 					<h3>{modeLabel('part', part.part)} <code>{part.part}</code></h3>

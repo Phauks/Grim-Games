@@ -1,8 +1,9 @@
 /**
- * How to write a game mode file, part by part: the guide on New game's Add mode dialog
- * (format-guide.ts).
+ * How to write a game mode or special rule file, part by part: the guide on New game's Add
+ * mode dialog and the Mode builder (format-guide.ts). One format for both since 2026-11-01
+ * (Trevor: "One format, auto-labelled").
  */
-import { CAMPAIGN_ENDS, GAME_MODE_FORMAT, MODE_PARTS } from './types.ts';
+import { CAMPAIGN_ENDS, FILE_PARTS, GAME_MODE_FORMAT, WHOLE_GAME_PARTS } from './types.ts';
 import {
 	counts,
 	GAME_MODE_REVISION,
@@ -14,8 +15,10 @@ import {
 } from './guide-fields.ts';
 
 export const GUIDE_INTRO = [
-	'A game mode is one JSON object. Paste it, or open a .json file, in Add mode. Every problem is listed with where it is (for example parts.assignment.offers), so a file can be fixed in one go.',
-	'Start from a built-in mode: Inspect any mode on the Game modes tab shows its whole file.',
+	'A game mode and a special rule are written the same way: one JSON object. Paste it, or open a .json file, in Add mode, or make one in the Mode builder. Every problem is listed with where it is (for example parts.assignment.offers), so a file can be fixed in one go.',
+	`The app labels each file from its parts. A file that sets ${WHOLE_GAME_PARTS.join(', ')}, or a pool other than script or script-plus-hidden, sets up the whole game, so it is a game mode: a game has one, picked on New game. Any other file only adds to a game, so it is a special rule: a game can have any number.`,
+	'When the mode and its rules, or two rules, set the same one-answer part differently, New game warns and the Storyteller decides. Lists are joined and count changes add up.',
+	'Start from a built-in mode or rule: Inspect shows its whole file.',
 	'Character ids are the official ones, lower case with no spaces or dashes (pithag, bountyhunter). Unknown ids are refused.',
 	'Every part is optional. A part left out is played as standard, and the app runs it. A part the app can’t run yet is shown in Inspect as run by the Storyteller.',
 	'Links must start with https://. A mode names its sources, if a page describes it, and an author only with a link to a page that names them.'
@@ -75,13 +78,20 @@ export const GUIDE_TOP: GuideField[] = [
 		type: 'list of part names',
 		required: false,
 		about: 'Parts no source confirms. Inspect marks them.',
-		values: MODE_PARTS
+		values: FILE_PARTS
+	},
+	{
+		name: 'conflictsWith',
+		type: 'object',
+		required: false,
+		about:
+			'{ "modes": [ids], "rules": [ids] }: modes and rules this one can’t sensibly be played with. Choosing both warns on New game.'
 	},
 	{
 		name: 'parts',
 		type: 'object',
 		required: true,
-		about: 'What the mode changes, by part (below). May be empty: {} is a standard game.'
+		about: 'What the file changes, by part (below). Every part is optional.'
 	}
 ];
 
