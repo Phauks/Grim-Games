@@ -172,6 +172,30 @@
 				"day": 5,
 				"winner": "good"
 			}
+		},
+		"banshee": {
+			"nightChoice": {
+				"who": "good",
+				"partner": "dies"
+			}
+		},
+		"farmer": {
+			"nightChoice": {
+				"who": "good",
+				"partner": "acts"
+			}
+		},
+		"ravenkeeper": {
+			"nightChoice": {
+				"who": "any",
+				"partner": "acts"
+			}
+		},
+		"sage": {
+			"nightChoice": {
+				"who": "good",
+				"partner": "acts"
+			}
 		}
 	}
 }

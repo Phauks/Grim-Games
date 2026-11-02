@@ -38,6 +38,7 @@ import type { AbilityState } from './ability.ts';
 import type { GainedAbility } from './gained-abilities.ts';
 import type { HeldAbility } from '#lib/core/model/types.ts';
 import type { NightStepInfo } from './night-info.ts';
+import type { JinxChoiceStep } from './jinx-choices.ts';
 import { evilTeamInfoRemovedBy, hasEvilTeamInfo } from './teensyville.ts';
 
 export type Night = 'first' | 'other';
@@ -143,6 +144,11 @@ export interface NightStep {
 	 * player woken to learn a new character is shown that character with "You are".
 	 */
 	infoTokenCharacters?: InfoTokenCharacterRules;
+	/**
+	 * On a step for a jinx's night choice (`withJinxChoiceSteps`): who chooses, for which
+	 * partners, and whom they may choose.
+	 */
+	jinxChoice?: JinxChoiceStep;
 	/**
 	 * On a second wake for a player whose ability works twice tonight: the seat and the
 	 * character whose token makes it so (`withActsTwiceSteps` in `acts-twice.ts`).

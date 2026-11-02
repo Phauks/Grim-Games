@@ -13,8 +13,9 @@
  */
 import type { Character, CharacterId, PlayerName } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
-import type { DeathCause, Game, Reminder, SeatId } from '#lib/core/model/types.ts';
+import type { DeathCause, Game, Reminder, ReminderEffect, SeatId } from '#lib/core/model/types.ts';
 import { abilityState, impairmentOfLabel, type AbilityState, type Impairment } from './ability.ts';
+import { keepsAbilityWhenDead } from './dead-characters.ts';
 import {
 	DAY_GROUP_TITLES,
 	DAY_GROUPS,
@@ -27,6 +28,7 @@ import {
 } from '#lib/core/data/day-reminder-rules.ts';
 import { rulesIn, rulesOf } from '#lib/core/data/rules/index.ts';
 import { wikiUrl } from '#lib/core/data/wiki.ts';
+import { effectDayLines, type DayLineEffect } from './reminder-effects.ts';
 import { grantedWishSeats } from './wishes.ts';
 
 export { DAY_GROUPS };
@@ -42,8 +44,14 @@ export interface DaySeat {
 	/** The character token in the grimoire; seats without one are skipped. */
 	characterId?: CharacterId;
 	dead: boolean;
+	/**
+	 * Dead, but keeps their ability (`keepsAbility`, a Minion the Vigormortis killed): the lines
+	 * about their living ability still show (https://wiki.bloodontheclocktower.com/Vigormortis).
+	 */
+	keepsAbility?: boolean;
 	deathCause?: DeathCause;
-	reminders: readonly Reminder[];
+	/** With the effect the Storyteller picked for it, if any (`reminder-effects.ts`). */
+	reminders: readonly (Reminder & { effect?: ReminderEffect })[];
 }
 
 /**
@@ -88,6 +96,8 @@ export interface DayState {
 	optionalRules?: readonly CharacterId[];
 	/** Seats whose player has had a wish granted (`wishes.ts`), for `when.noWish`. */
 	grantedWishes?: readonly SeatId[];
+	/** The days begun (`game.pastDays.length`), for effects that last a day. */
+	days?: number;
 }
 
 /** A badge for a character, with the seat and player name when there is one. */
@@ -246,7 +256,13 @@ export function dayStateFromGame(
 	characters?: CharacterLookup
 ): DayState {
 	return {
-		seats: game.seating.map((id) => game.seats[id]).filter((s) => s !== undefined),
+		seats: game.seating.flatMap((id) => {
+			const seat = game.seats[id];
+			if (!seat) return [];
+			return seat.dead && characters && keepsAbilityWhenDead(game, id, characters)
+				? [{ ...seat, keepsAbility: true }]
+				: [seat];
+		}),
 		ruleCharacters: game.ruleCharacters,
 		...(game.ruleReminders ? { ruleReminders: game.ruleReminders } : {}),
 		character,
@@ -256,6 +272,7 @@ export function dayStateFromGame(
 		...(game.prepValues ? { prepValues: game.prepValues } : {}),
 		...(game.optionalRules ? { optionalRules: game.optionalRules } : {}),
 		grantedWishes: grantedWishSeats(game),
+		days: game.pastDays.length,
 		...(overrides ? { overrides } : {}),
 		...(characters ? { ability: (seatId: SeatId) => abilityState(game, seatId, characters) } : {})
 	};
@@ -269,7 +286,7 @@ function ruleBlock(state: DayState, id: CharacterId) {
 
 /** Why a living seat's ability does not work: from `state.ability`, or its own tokens. */
 function seatImpairments(state: DayState, seat: DaySeat): Impairment[] {
-	if (seat.dead) return [];
+	if (seat.dead && !seat.keepsAbility) return [];
 	if (state.ability) return state.ability(seat.seatId).impairments;
 	return seat.reminders.flatMap((r): Impairment[] => {
 		const reason = impairmentOfLabel(r.label);
@@ -337,6 +354,39 @@ function impairedLine(
 		autoDetected: false,
 		...(wiki ? { wiki } : {})
 	};
+}
+
+const EFFECT_LINES: Record<DayLineEffect, { group: DayGroup; text: string }> = {
+	mad: { group: 'madness', text: 'is mad, because of' },
+	'no-vote-today': { group: 'vote', text: 'may not vote today, because of' },
+	dies: { group: 'execution-death', text: 'dies, because of' }
+};
+
+/**
+ * A line for each effect the Storyteller picked that the day view lists (the Angel's Something
+ * Bad: "[Imp · Ben] may not vote today, because of [Angel]").
+ */
+function effectLines(state: DayState): DayReminder[] {
+	return effectDayLines(state.seats, state.days ?? 0).flatMap((line) => {
+		const seat = state.seats.find((s) => s.seatId === line.seatId);
+		if (!seat?.characterId) return [];
+		const source = state.character(line.source);
+		const wiki = source && wikiUrl(source);
+		return [
+			{
+				key: `${line.source}#${line.kind}@${seat.seatId}`,
+				characterId: seat.characterId,
+				group: EFFECT_LINES[line.kind].group,
+				segments: [
+					{ kind: 'character', ref: refFor(seat, seat.characterId) },
+					{ kind: 'text', text: EFFECT_LINES[line.kind].text },
+					{ kind: 'character', ref: { characterId: line.source } }
+				],
+				autoDetected: false,
+				...(wiki ? { wiki } : {})
+			}
+		];
+	});
 }
 
 function refFor(seat: DaySeat | undefined, characterId: CharacterId): CharacterRef {
@@ -410,7 +460,7 @@ function conditionHolds(
 ): boolean | 'unknown' {
 	const self = when.self ?? 'alive';
 	const dead = seat?.dead ?? false;
-	if (self === 'alive' && dead) return false;
+	if (self === 'alive' && dead && !seat?.keepsAbility) return false;
 	if (self === 'dead' && !dead) return false;
 	if (when.minAlive !== undefined && alive < when.minAlive) return false;
 	if (when.cause && seat) return causeMatches(seat.deathCause, when.cause, state);
@@ -648,6 +698,7 @@ export function dayReminders(state: DayState): DayReminders {
 	for (const seat of state.seats) if (seat.characterId) visit(seat.characterId, seat);
 	for (const id of state.ruleCharacters ?? []) visit(id, undefined);
 	all.push(...interactions(state));
+	all.push(...effectLines(state));
 	const { shown, hidden } = applyDayOverrides(all, state.overrides ?? [], state);
 	const groups = DAY_GROUPS.map((group) => ({
 		group,

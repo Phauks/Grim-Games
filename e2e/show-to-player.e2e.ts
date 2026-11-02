@@ -110,6 +110,37 @@ test('the Standard and Custom sections collapse and stay that way', async ({ pag
 	await expect(page.getByRole('button', { name: 'You are', exact: true })).toBeVisible();
 });
 
+test('with "Show characters as tokens" off, a shown character is only its script row', async ({
+	page
+}) => {
+	await page.goto('/info-tokens');
+	// The Storyteller's choice (Trevor, 2026-11-02): tokens, or rows as the script lists them.
+	const settings = await openSettingsDialog(page);
+	await settings
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Storyteller', exact: true })
+		.tap();
+	await settings.getByText('Show characters as tokens', { exact: true }).tap();
+	await expect(
+		settings.getByRole('checkbox', { name: 'Show characters as tokens', includeHidden: true })
+	).not.toBeChecked();
+	await settings.getByRole('button', { name: 'Close' }).tap();
+	await expect(settings).toBeHidden();
+
+	await page.getByRole('button', { name: 'This player is', exact: true }).tap();
+	const search = page.getByRole('searchbox', { name: 'Search characters' });
+	await search.fill('Empath');
+	await page.getByRole('button', { name: 'Empath', exact: true }).tap();
+	await search.fill('Imp');
+	await page.getByRole('button', { name: 'Imp', exact: true }).tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	const shown = page.getByTestId('show-to-player');
+	await expect(shown.getByTestId('shown-rows').locator('.ring-row')).toHaveCount(2);
+	await expect(shown).toContainText('Each night, you learn how many of your 2 alive neighbors');
+	await expect(shown.getByTestId('shown-characters')).toHaveCount(0);
+	await expect(shown.getByTestId('shown-character')).toHaveCount(0);
+});
+
 test('"This player is" shows several characters, e.g. for the Dreamer', async ({ page }) => {
 	await page.goto('/info-tokens');
 	await page.getByRole('button', { name: 'This player is', exact: true }).tap();

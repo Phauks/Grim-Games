@@ -460,11 +460,21 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['M20']
 	},
 	{
+		// The nomination rules the wiki examples still waited on (Witch, Vigormortis, Golem, Riot,
+		// Bishop, Boffin, Butcher, Judge examples): a cursed nominator dies, nominees who die on the
+		// Riot's day 3 nominate, the Golem nominates once a game, the Butcher's extra execution,
+		// and abilities the Boffin gives the Demon act on nominations.
+		title:
+			"Nomination abilities: the Witch's curse, the Riot's day 3, the Golem's one nomination and the Butcher's second execution",
+		area: 'engine',
+		parts: ['M24']
+	},
+	{
 		// Trevor, 2026-10-30: on the roadmap, after a spike and research. L99 research, L100 the
 		// format with the Heretic and Boffin, L107 every jinx shown where it matters, L108 jinxes
 		// that reuse existing rules, L109 the Plague Doctor's and other built characters', L112
-		// the Leviathan's and Riot's game ends, King and late Demon, L113 the setup jinx gaps
-		// (the Damsel's Poisoned, the Alchemist's Summoner and Marionette).
+		// the Leviathan's and Riot's game ends, King, late Demon and night choices, L113 the
+		// setup jinx gaps (the Damsel's Poisoned, the Alchemist's Summoner and Marionette).
 		title: 'Jinxes the app applies, not only shows',
 		area: 'engine',
 		parts: ['L99', 'L100', 'L107', 'L108', 'L109', 'L112', 'L113']

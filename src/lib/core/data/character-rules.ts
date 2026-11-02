@@ -17,6 +17,7 @@ import { describe, isObject, type Issues } from './validate.ts';
 export type { ReminderPrompt } from './parts/reminder-prompts.ts';
 export type { KilledBy } from './parts/on-death.ts';
 export type { NominatedEffect } from './parts/on-nominated.ts';
+export type { NominatingEffect } from './parts/on-nominating.ts';
 export type { DayClaim } from './parts/day-claim.ts';
 export type { DayUse, DayUseAnswer, DayUseWho } from './parts/day-use.ts';
 export type { DeathCheckKind, DeathCheckRule } from './parts/death-check.ts';

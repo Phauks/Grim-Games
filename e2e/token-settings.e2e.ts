@@ -406,12 +406,9 @@ test('night order badges sit on the side leaves, counting this game’s characte
 
 	// A dead player's character drops out and the rest renumber (Trevor, 2026-10-17).
 	await page.getByRole('button', { name: /^Seat 2:/ }).tap();
-	await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Status of Seat 2' })
-		.getByRole('button', { name: 'Executed' })
-		.tap();
-	await expect(sheet.getByRole('button', { name: 'Status: Dead: Executed' })).toBeVisible();
+	await sheet.getByRole('combobox', { name: 'Status: Alive' }).tap();
+	await page.getByRole('listbox').getByRole('option', { name: 'Executed' }).tap();
+	await expect(sheet.getByRole('combobox', { name: 'Status: Dead: Executed' })).toBeVisible();
 	await page.keyboard.press('Escape');
 	await expect(sheet).toBeHidden();
 	await expect(badge(2, 'first')).toHaveCount(0);

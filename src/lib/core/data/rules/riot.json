@@ -54,6 +54,7 @@
 	"deathCause": {
 		"kind": "kills"
 	},
+	"nomineesNominate": "Day 3",
 	"reminderMovement": {
 		"why": "A counter the Storyteller advances."
 	},
@@ -116,6 +117,30 @@
 				"kind": "marked-executed",
 				"token": "Grandchild",
 				"winner": "evil"
+			}
+		},
+		"banshee": {
+			"nightChoice": {
+				"who": "good",
+				"partner": "dies"
+			}
+		},
+		"farmer": {
+			"nightChoice": {
+				"who": "good",
+				"partner": "acts"
+			}
+		},
+		"ravenkeeper": {
+			"nightChoice": {
+				"who": "good",
+				"partner": "acts"
+			}
+		},
+		"sage": {
+			"nightChoice": {
+				"who": "good",
+				"partner": "acts"
 			}
 		}
 	}

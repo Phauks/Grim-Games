@@ -83,8 +83,10 @@ export interface ReminderInstance extends Reminder {
 }
 
 /**
- * A picked reminder effect (`REMINDER_EFFECTS`): `no-kill` stops its player killing on `night`
- * only (the night numbered as the day view numbers them, `rules/game-phase.ts`).
+ * A picked reminder effect (`REMINDER_EFFECTS`). `night` is the next night after it was picked
+ * (numbered as the day view numbers them, `rules/game-phase.ts`): `no-kill` stops its player
+ * killing on that night only; a day-long one (`no-vote-today`, `no-ability-today`) lasts from
+ * the day before that night until the New day after it. The rest last while it is marked.
  */
 export interface ReminderEffect {
 	kind: ReminderEffectKind;

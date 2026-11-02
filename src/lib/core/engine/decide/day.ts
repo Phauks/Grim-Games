@@ -25,6 +25,7 @@ import {
 	dayUseUsers,
 	executionSavers,
 	exileSavers,
+	extraExecutionOpen,
 	isDayUseAlly,
 	mayBeFalseSource,
 	outcomeHolder,
@@ -225,7 +226,10 @@ export const DAY_DECIDERS: Deciders<
 		}
 		const forced = outcome?.kind === 'forced' && used ? { forcedBy: used.by } : {};
 		const before = used?.events ?? [];
-		if (executedToday(game)) warn('already-executed', 'there is usually one execution a day');
+		// A second execution an extra nomination made possible is no surprise (the Butcher).
+		if (executedToday(game) && !extraExecutionOpen(game, seat.seatId, ctx.characters)) {
+			warn('already-executed', 'there is usually one execution a day');
+		}
 		if (isTraveller(game, seat.seatId, ctx.characters)) {
 			warn('traveller-executed', 'Travellers are exiled, not executed');
 		}
