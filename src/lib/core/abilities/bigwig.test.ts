@@ -8,7 +8,9 @@
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
  * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
- * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
+ * happened, then what the rules say. Quote the example word for word in a `// Wiki: "..."`
+ * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
+ * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
@@ -48,6 +50,9 @@ describe('Big Wig', () => {
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Big_Wig#Examples)', () => {
 		it('Example 1: Nominee defended as Sailor, survives', () => {
+			// Wiki: "Alex is claiming to be the Sailor, and is nominated. Alex chooses Evin to speak on
+			// his behalf. Evin makes a convincing argument that Alex actually is the Sailor, and that
+			// Julian should be executed instead. Evin lives."
 			// A nominated player picks a defender, who argues they are good. Whether the defender
 			// broke madness is the Storyteller's call: the app offers it and does nothing itself.
 			const s = scenario(['chef', 'sailor', 'monk', 'imp']).rule('bigwig');
@@ -73,6 +78,9 @@ describe('Big Wig', () => {
 		});
 
 		it('Example 2: Defender calls secret Hermit a Minion, dies', () => {
+			// Wiki: "Marianna is the Hermit, but has not told many people that she is the Hermit. When
+			// nominated, she chooses Alex to defend her. Alex says that Marianna is probably a Minion and
+			// that it doesn’t matter if Marianna dies or not. Alex dies due to the Big Wig ability."
 			// The defender argues the nominee is evil, so breaks madness: the Storyteller kills
 			// them, with the Big Wig as the cause.
 			const s = scenario(['chef', 'hermit', 'monk', 'imp'])

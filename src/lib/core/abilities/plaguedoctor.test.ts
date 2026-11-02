@@ -8,7 +8,9 @@
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
  * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
- * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
+ * happened, then what the rules say. Quote the example word for word in a `// Wiki: "..."`
+ * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
+ * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
@@ -87,6 +89,8 @@ describe('Plague Doctor', () => {
 				.do({ type: 'SetStorytellerAbility', via: 'plaguedoctor', characterId });
 
 		it('Example 1: Storyteller gains Poisoner, poisoning nightly', () => {
+			// Wiki: "The Plague Doctor dies. The Storyteller gains the Poisoner ability and chooses a
+			// player to poison each night for the rest of the game."
 			// The Plague Doctor dies and the Storyteller takes the Poisoner's ability: each night
 			// there is a Poisoner step for the Storyteller, though no Poisoner is in play.
 			const s = gains(['plaguedoctor', 'imp', 'monk', 'empath', 'chef'], 'poisoner');
@@ -100,6 +104,9 @@ describe('Plague Doctor', () => {
 		});
 
 		it('Example 2: Storyteller as Pit-Hag makes a second Cerenovus', () => {
+			// Wiki: "The Plague Doctor is executed and the Storyteller gains the Cerenovus ability. That
+			// night, the Pit-Hag turns the Witch into the Cerenovus. There are now two Cerenovus abilities
+			// in play – the Storyteller’s and the new Cerenovus’."
 			// The Storyteller holds the Cerenovus ability and a player becomes the Cerenovus too:
 			// two Cerenovus steps, the Storyteller's right after the player's.
 			const s = gains(['plaguedoctor', 'imp', 'cerenovus', 'empath', 'chef'], 'cerenovus');
@@ -110,8 +117,10 @@ describe('Plague Doctor', () => {
 		});
 
 		it("Example 3: Later drunkenness doesn't remove the gained ability", () => {
-			// The Storyteller has had the Organ Grinder's ability for days when a Minstrel makes the
-			// Plague Doctor drunk: it was gained at the death, so it stays.
+			// Wiki: "The Plague Doctor has died and the Storyteller has had the Organ Grinder ability for
+			// two days. The Plague Doctor is made drunk by the Minstrel. The Storyteller still has the
+			// Organ Grinder ability as they gained it when the Plague Doctor died and the Plague Doctor
+			// now being drunk does not affect that."
 			const s = gains(
 				['plaguedoctor', 'imp', 'minstrel', 'empath', 'chef'],
 				'organgrinder'

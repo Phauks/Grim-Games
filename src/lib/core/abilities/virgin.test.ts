@@ -8,7 +8,9 @@
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
  * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
- * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
+ * happened, then what the rules say. Quote the example word for word in a `// Wiki: "..."`
+ * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
+ * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
@@ -47,6 +49,8 @@ describe('Virgin', () => {
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Virgin#Examples)', () => {
 		it('Example 1: Washerwoman nominates Virgin and is executed', () => {
+			// Wiki: "The Washerwoman nominates the Virgin. The Washerwoman is immediately executed and the
+			// day ends."
 			const s = scenario(['washerwoman', 'virgin', 'imp', 'chef', 'poisoner']).nominate(
 				'washerwoman',
 				'virgin'
@@ -57,7 +61,9 @@ describe('Virgin', () => {
 			]);
 		});
 		it('Example 2: Drunk nominates Virgin and survives; vote follows', () => {
-			// The Drunk is not a Townsfolk, so nothing happens to them. The Virgin's ability is used up.
+			// Wiki: "The Drunk, who thinks they are the Chef, nominates the Virgin. The Drunk remains
+			// alive, and the Virgin loses their ability. Players may now vote on whether or not to execute
+			// the Virgin. (This happens because the Drunk is not a Townsfolk.)"
 			const s = scenario(['chef', 'virgin', 'imp', 'monk', 'poisoner'])
 				.drunk('chef')
 				.nominate('chef', 'virgin');
@@ -68,7 +74,9 @@ describe('Virgin', () => {
 			expect(characterNominationPrompts(spent.game, monk, spent.characters)).toEqual([]);
 		});
 		it("Example 3: Dead nominator's nomination; ability intact", () => {
-			// The dead can't nominate, so the nomination doesn't count and the Virgin keeps the ability.
+			// Wiki: "A dead player nominates the Virgin. The dead, however, cannot nominate. The
+			// Storyteller declares that the nomination does not count. The Virgin does not lose their
+			// ability."
 			const s = scenario(['washerwoman', 'virgin', 'imp', 'chef', 'poisoner']).dies('chef');
 			expect(mayNominate(s.game, s.seat('chef'), s.characters)).toBe(false);
 			const nomination = { nominator: s.seat('washerwoman'), nominee: s.seat('virgin') };

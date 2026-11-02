@@ -8,14 +8,19 @@
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
  * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
- * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
+ * happened, then what the rules say. Quote the example word for word in a `// Wiki: "..."`
+ * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
+ * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import type { Command } from '#lib/core/engine/index.ts';
 import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
-import { infoPicker } from '#lib/core/rules/night-info/picker.ts';
+import type { SeatId } from '#lib/core/model/types.ts';
+import type { Night } from '#lib/core/rules/night-order.ts';
+import { infoPicker, isAllowed } from '#lib/core/rules/night-info/picker.ts';
+import { scenario, type Scenario, type SeatRef } from '#lib/core/testing/scenario.ts';
 
 describe('Chambermaid', () => {
 	const character = committedCharacter('chambermaid');
@@ -47,9 +52,61 @@ describe('Chambermaid', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Chambermaid#Examples)', () => {
-		it.todo('Example 1: Reads two, then zero: Exorcist woke Shabaloth');
-		it.todo("Example 2: Drunk Chambermaid's reading of two is wrong");
-		it.todo("Example 3: Assassin's idle wake counts; Gossip stays hidden");
+		/** The number the Chambermaid learns for two players tonight, from the grimoire. */
+		const learns = (s: Scenario, night: Night, a: SeatRef, b: SeatRef) => {
+			const picker = infoPicker(s.game, s.seat('chambermaid'), 'chambermaid', s.characters, night)!;
+			const pair: SeatId[] = [s.seat(a), s.seat(b)];
+			return picker.options.find(
+				(o) => o.seats.length === 2 && pair.every((id) => o.seats.includes(id))
+			)?.number;
+		};
+
+		it.fails('Example 1: Reads two, then zero: Exorcist woke Shabaloth', () => {
+			// Wiki: "The Chambermaid chooses the Exorcist and the Innkeeper, and learns a "2." The
+			// next night, the Exorcist chooses the Shabaloth, which will wake the Shabaloth. Later,
+			// Chambermaid chooses the Shabaloth and the Fool. Since the Shabaloth only woke due to the
+			// Exorcist ability, the Chambermaid learns a "0"."
+			// Waits on the engine: a Demon the Exorcist chose still counts as woken by its own
+			// ability (wokeTonight does not read the Exorcist's stopsWaking token).
+			const s = scenario(['chambermaid', 'exorcist', 'innkeeper', 'fool', 'shabaloth', 'goon'])
+				.newDay()
+				.newDay();
+			expect(learns(s, 'other', 'exorcist', 'innkeeper')).toBe(2);
+			const next = s.newDay().reminder('shabaloth', 'exorcist', 'Chosen');
+			expect(learns(next, 'other', 'shabaloth', 'fool')).toBe(0);
+		});
+		it("Example 2: Drunk Chambermaid's reading of two is wrong", () => {
+			// Wiki: "It is the second night. The Chambermaid chooses the Grandmother and the evil
+			// Goon, and learns a "2." Only the Goon will wake tonight, but the Chambermaid is drunk."
+			const s = scenario(['chambermaid', 'grandmother', 'goon', 'chef', 'imp'])
+				.do((at) => ({ type: 'SetAlignment', seatId: at.seat('goon'), alignment: 'evil' }))
+				.newDay()
+				.drunk('chambermaid');
+			const picker = infoPicker(
+				s.game,
+				s.seat('chambermaid'),
+				'chambermaid',
+				s.characters,
+				'other'
+			)!;
+			const choice = { seats: [s.seat('grandmother'), s.seat('goon')], number: 2 };
+			expect(picker.anyAllowed).toBe(true);
+			expect(isAllowed(picker, choice)).toBe(true);
+			expect(learns(s, 'other', 'grandmother', 'goon')).not.toBe(2);
+		});
+		it.fails("Example 3: Assassin's idle wake counts; Gossip stays hidden", () => {
+			// Wiki: "It is the first night. The Chambermaid chooses the Assassin and the Moonchild,
+			// and learns a "0" because the Assassin does not wake to use their ability on the first
+			// night. The next night, they choose the Assassin and the Gossip. The Assassin woke but
+			// did not use their ability. The Gossip ability is used, but the Gossip does not wake to
+			// use it. The Chambermaid learns a "1"."
+			// Waits on the engine: the Gossip's night step (the Storyteller's, not a wake) counts as
+			// the Gossip waking.
+			const s = scenario(['chambermaid', 'assassin', 'moonchild', 'gossip', 'imp']);
+			expect(learns(s, 'first', 'assassin', 'moonchild')).toBe(0);
+			const next = s.newDay();
+			expect(learns(next, 'other', 'assassin', 'gossip')).toBe(1);
+		});
 	});
 });
 

@@ -8,7 +8,9 @@
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
  * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
- * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
+ * happened, then what the rules say. Quote the example word for word in a `// Wiki: "..."`
+ * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
+ * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
@@ -17,6 +19,10 @@ import type { Command } from '#lib/core/engine/index.ts';
 import type { Game } from '#lib/core/model/types.ts';
 import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
 import { dayReminders, dayStateFromGame, renderReminder } from '#lib/core/rules/day-reminders.ts';
+import { abilityState } from '#lib/core/rules/ability.ts';
+import { endCharacters } from '#lib/core/rules/end-reason.ts';
+import { gameEnds, promptable } from '#lib/core/rules/game-end.ts';
+import { engineGap, scenario } from '#lib/core/testing/scenario.ts';
 
 /** This character's day reminders: their group and plain text. */
 const linesOf = (game: Game, characterId: string) =>
@@ -58,9 +64,37 @@ describe('Alsaahir', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Alsaahir#Examples)', () => {
-		it.todo('Example 1: Guessing four good players changes nothing');
-		it.todo('Example 2: Correct guess of all evil players wins');
-		it.todo('Example 3: Drunk guess fails, sober guess fails too');
+		it('Example 1: Guessing four good players changes nothing', () => {
+			// Wiki: "The Alsaahir guesses four good players. Nothing happens."
+			const s = scenario(['alsaahir', 'chef', 'empath', 'monk', 'soldier', 'poisoner', 'imp']);
+			expect(promptable(gameEnds(s.game, s.characters))).toEqual([]);
+		});
+
+		it.fails('Example 2: Correct guess of all evil players wins', () => {
+			// Wiki: "The Alsaahir guesses that Doug is the Demon, and Ben and Sarah are Minions. Doug is the
+			// Demon, and Ben and Sarah are Minions. Good wins immediately."
+			const s = scenario(['alsaahir', 'poisoner', 'chef', 'imp', 'empath', 'spy', 'monk']);
+			// End game offers the Alsaahir as the reason, for the Storyteller to pick.
+			expect(endCharacters(s.game, s.characters)).toContain('alsaahir');
+			engineGap(
+				'unplanned',
+				'a recorded Alsaahir guess that names every Demon and Minion ends the game, and good wins'
+			);
+		});
+
+		it('Example 3: Drunk guess fails, sober guess fails too', () => {
+			// Wiki: "The drunk Alsaahir guesses that Doug is the Demon, and Ben and Sarah are Minions. Doug is
+			// the Demon, and Ben and Sarah are Minions. Nothing happens and the game continues. The next day,
+			// the sober Alsaahir guesses that Ben is the Demon and Doug and Sarah are Minions. Nothing happens
+			// and the game continues."
+			const s = scenario(['alsaahir', 'poisoner', 'chef', 'imp', 'empath', 'spy', 'monk']);
+			const drunk = s.reminder('alsaahir', 'sweetheart', 'Drunk');
+			expect(abilityState(drunk.game, drunk.seat('alsaahir'), drunk.characters).works).toBe(false);
+			expect(promptable(gameEnds(drunk.game, drunk.characters))).toEqual([]);
+			const sober = s.newDay();
+			expect(abilityState(sober.game, sober.seat('alsaahir'), sober.characters).works).toBe(true);
+			expect(promptable(gameEnds(sober.game, sober.characters))).toEqual([]);
+		});
 	});
 });
 

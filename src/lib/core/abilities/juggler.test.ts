@@ -8,7 +8,9 @@
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
  * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
- * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
+ * happened, then what the rules say. Quote the example word for word in a `// Wiki: "..."`
+ * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
+ * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
@@ -54,6 +56,9 @@ describe('Juggler', () => {
 		// Three guesses on the first day, two of them naming the player's real character: the
 		// Juggler learns 2.
 		it("Example 1: Juggler's three guesses yield two correct", () => {
+			// Wiki: "During the first day, the Juggler guesses that Alex is the Town Crier, Mia is the No
+			// Dashii, and Julian is the Sage. That night, the Juggler learns a "2," meaning two of those
+			// guesses were correct."
 			const s = scenario(['juggler', 'towncrier', 'nodashii', 'savant']).do((s) => ({
 				type: 'DayNote',
 				characterId: 'juggler',
@@ -71,6 +76,9 @@ describe('Juggler', () => {
 		// A Juggler made mid-game guesses one player as two characters and another player as one
 		// of them; only one guess is right, so the Juggler learns 1.
 		it('Example 2: Savant-turned Juggler gets one right', () => {
+			// Wiki: "During the fourth night, the Savant gets turned into the Juggler. The next day, the
+			// new Juggler guesses that Benjamin is the Pit-Hag, that Benjamin is the Witch, and that Amy
+			// is the Pit-Hag. That night, the Juggler learns a "1.”"
 			const s = scenario(['juggler', 'witch', 'pithag', 'nodashii']).do((s) => ({
 				type: 'DayNote',
 				characterId: 'juggler',
