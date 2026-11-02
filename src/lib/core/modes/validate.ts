@@ -1,16 +1,17 @@
 /**
- * Reads a game mode from JSON (a shipped mode, or one someone wrote) and lists every
- * problem with its path, so a mode file can be fixed in one go. Character ids are checked
+ * Reads a game mode or special rule from JSON (a shipped one, or one someone wrote) and lists
+ * every problem with its path, so a file can be fixed in one go. Character ids are checked
  * against `known` when it is given.
  */
 import { isObject } from '#lib/core/data/validate.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
 import { SEATED_TYPES } from '#lib/core/rules/distribution.ts';
+import { fileKind } from './file-kind.ts';
 import { runsPart } from './pool.ts';
 import {
 	CAMPAIGN_ENDS,
+	FILE_PARTS,
 	GAME_MODE_FORMAT,
-	MODE_PARTS,
 	RULE_PARTS,
 	SPECIAL_RULE_FORMAT,
 	type CombinedParts,
@@ -48,34 +49,48 @@ const ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
  */
 export const INSTRUCTIONS_FROM_REVISION = 8;
 
+/** A `kind` a file may carry: only a hint, since its parts say what it is (`fileKind`). */
+const KIND_HINTS: readonly unknown[] = [undefined, 'game-mode', 'special-rule'];
+
+/**
+ * Reads a file as a game mode: it may set any part. A `kind` of special-rule written in it is
+ * dropped, since a file read as a mode is one (an older rule file that sets a whole-game part).
+ */
 export function parseGameMode(value: unknown, known?: ReadonlySet<CharacterId>): ParsedMode {
 	if (!isObject(value)) return { ok: false, issues: ['(root): must be an object'] };
 	const issues: string[] = [];
 	const add = (path: string, message: string) => issues.push(`${path}: ${message}`);
-	if (value.kind !== undefined && value.kind !== 'game-mode') add('kind', 'must be game-mode');
+	if (!KIND_HINTS.includes(value.kind)) add('kind', 'must be game-mode or special-rule');
 	if (value.format !== GAME_MODE_FORMAT) add('format', `must be ${GAME_MODE_FORMAT}`);
-	checkFile(value, MODE_PARTS, add, known);
-	return issues.length > 0
-		? { ok: false, issues }
-		: { ok: true, mode: value as unknown as GameMode };
+	checkRuleParts(value, add);
+	checkFile(value, FILE_PARTS, add, known);
+	if (issues.length > 0) return { ok: false, issues };
+	if (value.kind !== 'special-rule') return { ok: true, mode: value as unknown as GameMode };
+	const mode = { ...value };
+	delete mode.kind;
+	return { ok: true, mode: mode as unknown as GameMode };
 }
 
 export type ParsedRule = { ok: true; rule: SpecialRule } | { ok: false; issues: string[] };
 
-/** Why a special rule can't set a game mode part: it would replace, not add to, the game. */
+/** Why a file that sets this part is a game mode, not a special rule (`fileKind`). */
 const MODE_ONLY: Partial<Record<ModePart, string>> = {
-	counts: 'a special rule changes counts with countChanges',
-	assignment: 'only a game mode changes how characters are dealt',
-	towns: 'only a game mode adds towns',
-	betweenGames: 'only a game mode links games'
+	counts:
+		'sets up the whole game, so the file is a game mode (a rule changes counts with countChanges)',
+	assignment: 'deals the whole game, so the file is a game mode',
+	towns: 'adds towns, so the file is a game mode',
+	betweenGames: 'links games, so the file is a game mode'
 };
 
-/** Reads a special rule from JSON, listing every problem as `parseGameMode` does. */
+/**
+ * Reads a file as a special rule, listing every problem as `parseGameMode` does. A file that
+ * sets a whole-game part is a game mode, so each such part is a problem here.
+ */
 export function parseSpecialRule(value: unknown, known?: ReadonlySet<CharacterId>): ParsedRule {
 	if (!isObject(value)) return { ok: false, issues: ['(root): must be an object'] };
 	const issues: string[] = [];
 	const add = (path: string, message: string) => issues.push(`${path}: ${message}`);
-	if (value.kind !== 'special-rule') add('kind', 'must be special-rule');
+	if (!KIND_HINTS.includes(value.kind)) add('kind', 'must be game-mode or special-rule');
 	if (value.format !== SPECIAL_RULE_FORMAT) add('format', `must be ${SPECIAL_RULE_FORMAT}`);
 	const parts = isObject(value.parts) ? value.parts : {};
 	for (const key of Object.keys(parts)) {
@@ -83,7 +98,35 @@ export function parseSpecialRule(value: unknown, known?: ReadonlySet<CharacterId
 		if (reason) add(`parts.${key}`, reason);
 	}
 	if (isObject(parts.pool) && parts.pool.kind !== 'script-plus-hidden')
-		add('parts.pool.kind', 'a special rule can only add hidden characters to the script');
+		add(
+			'parts.pool.kind',
+			parts.pool.kind === 'script'
+				? 'script is the standard pool; leave pool out'
+				: 'replaces the script, so the file is a game mode'
+		);
+	checkRuleParts(value, add);
+	checkFile(value, RULE_PARTS, add, known);
+	return issues.length > 0
+		? { ok: false, issues }
+		: { ok: true, rule: { ...value, kind: 'special-rule' } as unknown as SpecialRule };
+}
+
+/** Reads any file: a game mode or a special rule, as its parts say (`fileKind`). */
+export function parseModeOrRule(
+	value: unknown,
+	known?: ReadonlySet<CharacterId>
+): ParsedMode | ParsedRule {
+	return fileKind(value) === 'special-rule'
+		? parseSpecialRule(value, known)
+		: parseGameMode(value, known);
+}
+
+/** The rule parts' own checks, and `conflictsWith`, for a file of either kind. */
+function checkRuleParts(
+	value: Record<string, unknown>,
+	add: (path: string, message: string) => void
+) {
+	const parts = isObject(value.parts) ? value.parts : {};
 	if (parts.text !== undefined && !isTextList(parts.text))
 		add('parts.text', 'must be a list of lines');
 	if (parts.countChanges !== undefined) checkCountChanges(parts.countChanges, add);
@@ -103,20 +146,6 @@ export function parseSpecialRule(value: unknown, known?: ReadonlySet<CharacterId
 		if (!isObject(c) || [c.modes, c.rules].some((l) => l !== undefined && !isTextList(l)))
 			add('conflictsWith', 'must list modes and rules by id');
 	}
-	checkFile(value, RULE_PARTS, add, known);
-	return issues.length > 0
-		? { ok: false, issues }
-		: { ok: true, rule: value as unknown as SpecialRule };
-}
-
-/** Reads either kind of file; one without `kind` is a game mode. */
-export function parseModeOrRule(
-	value: unknown,
-	known?: ReadonlySet<CharacterId>
-): ParsedMode | ParsedRule {
-	return isObject(value) && value.kind === 'special-rule'
-		? parseSpecialRule(value, known)
-		: parseGameMode(value, known);
 }
 
 const isTextList = (value: unknown): boolean =>

@@ -133,7 +133,7 @@ export function minionsLeft(game: Game, characters: CharacterLookup): number {
 /**
  * The players `characterId`'s `changesCharacter` may change: all, its `onlyFrom` ones, or
  * with `sameType` the players of its `types` (the Hatter's Minions and Demon); never one its
- * `notMarked` token is on (the Cacklejack's Not Me).
+ * `notMarked` token is on (the Cacklejack's Not Me), nor a Traveller with `notTravellers`.
  */
 export function changeableSeats(
 	game: Game,
@@ -143,6 +143,7 @@ export function changeableSeats(
 	const rule = rulesIn(game, characterId, characters)?.changesCharacter;
 	return game.seating.filter((id) => {
 		const own = trueCharacter(game, id, characters);
+		if (rule?.notTravellers && typeOf(game, id, characters) === 'traveller') return false;
 		if (rule?.upTo) {
 			const type = typeOf(game, id, characters);
 			if (own === characterId || (type && (rule.types as readonly string[]).includes(type)))

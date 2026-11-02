@@ -45,7 +45,7 @@
 		dayClaim,
 		type CharacterNominationPrompt
 	} from '#lib/core/rules/index.ts';
-	import { readGameMode } from '#lib/features/modes/game-mode-store.ts';
+	import { playedRules } from '#lib/features/modes/game-mode.ts';
 	import { allowedOffScriptIn } from '#lib/features/modes/game-mode.ts';
 	import { nominationPrompts, type NominationPrompt } from '#lib/core/modes/index.ts';
 	import DayTimer from '#lib/features/day/DayTimer.svelte';
@@ -109,7 +109,7 @@
 	import AlignmentAsk from './AlignmentAsk.svelte';
 	import type { WatchedTimer } from '#lib/features/day/watched-timer.svelte.ts';
 	import ExportGameDialog from '#lib/features/history/ExportGameDialog.svelte';
-	import { screenshot } from '#lib/ui/screenshot.ts';
+	import { screenshotPart } from '#lib/ui/screenshot.ts';
 	import { EXPORT_HASH } from '#lib/features/history/export-hash.ts';
 	import GameFeedbackSheet from '#lib/features/room/GameFeedbackSheet.svelte';
 	import { gameAt } from '#lib/features/history/recap.ts';
@@ -260,8 +260,8 @@
 		died: diedToday(grimoire.open.session.log, game)
 	});
 
-	/** The game's special rules, kept whole with the game (game-mode-store.ts). */
-	const gameRules = $derived(readGameMode(game.gameId)?.rules ?? []);
+	/** The game's special rules, with its mode's own rule parts first (playedRules). */
+	const gameRules = $derived(playedRules(game.gameId));
 	/**
 	 * Who has an ability under a special rule, when one changes it (The Phantom Detectives:
 	 * the dead keep theirs, living Townsfolk have none).
@@ -575,11 +575,11 @@
 	let exportOpen = $state(false);
 	/** Players' feedback on the finished game, saved on this device (Trevor, 2026-10-25). */
 	let feedbackOpen = $state(false);
-	/** The whole board as drawn, for Export's picture (Trevor, 2026-10-26). */
+	/** Export's picture: the board and its game info only (Trevor, 2026-10-26, 2026-11-01). */
 	let grimoireEl = $state<HTMLElement>();
 	const capture = (type?: 'image/png' | 'image/jpeg') => {
-		if (!grimoireEl) throw new Error('the board is not shown');
-		return screenshot(grimoireEl, type);
+		if (!grimoireEl || !board) throw new Error('the board is not shown');
+		return screenshotPart(grimoireEl, board, type);
 	};
 	const exportGame = async () => {
 		const session = grimoire.open.session;
@@ -922,38 +922,32 @@
 				{#if ended}
 					<!-- Above Game info (the corner), out of History's strip so the strip keeps
 					     its room for the change shown (Trevor, 2026-10-25); held off the corner's
-					     size, so ending the game moves nothing. Tapping it offers to reopen. -->
-					<button
-						type="button"
-						class="game-over"
-						data-testid="game-over"
-						data-team={ended.winner}
-						disabled={watching}
-						onclick={() => (reopenOpen = true)}
-					>
+					     size, so ending the game moves nothing. Only a label: Reopen game is in ⋯
+					     (Trevor, 2026-11-01: "do not allow reopen game from there"). -->
+					<span class="game-over" role="status" data-testid="game-over" data-team={ended.winner}>
 						Game over: {endedText}{grimoire.open.session.log.cursor !== grimoire.open.savedCursor
 							? ' · Shown from History'
 							: ''}
-					</button>
+					</span>
 				{/if}
 			{/snippet}
 		</BoardCorner>
 		<!-- A spectator is reminded the whole time they watch (Trevor, 2026-10-28). -->
 		{#if watching}<div class="fair-play"><FairPlayNotice kind="secret" short /></div>{/if}
-		<!-- The day timer on the board too (Trevor, 2026-10-17); one timer for the app. The
-		     soundboard beside it (Trevor, 2026-10-27: "Sound can be next to timer for now"), the
-		     Storyteller's only. -->
+		<!-- The day timer (Trevor, 2026-10-17) and the Storyteller's soundboard beside it (2026-10-27),
+		     both left out of Export's picture (2026-11-01). -->
 		<div class="board-timer" bind:clientWidth={sizing.timerW} bind:clientHeight={sizing.timerH}>
 			{#if !watching}
 				<IconButton
 					icon="soundboard"
+					data-screenshot="skip"
 					label={t('settings.soundboard')}
 					outlined
 					onclick={() => (soundboardOpen = true)}
 				/>
 			{/if}
 			<!-- Once the game ends the timer keeps its room, unseen, so no seat moves. -->
-			<div class="timer-slot" class:gone={!showTimer} inert={!showTimer}>
+			<div class="timer-slot" class:gone={!showTimer} inert={!showTimer} data-screenshot="skip">
 				<DayTimer
 					alive={livingByTeam(game).alive}
 					variant="compact"
@@ -1251,7 +1245,10 @@
 		color: var(--on-surface);
 		font-family: var(--font-heading);
 		font-size: 0.9rem;
-		pointer-events: auto;
+		/* A label, not a button: its line is the tap target's height, as the button's was. */
+		display: block;
+		box-sizing: border-box;
+		line-height: calc(var(--tap-target) - 2px); /* px-ok: the border's two hairlines */
 	}
 	.game-over[data-team='good'] {
 		background: var(--good);
