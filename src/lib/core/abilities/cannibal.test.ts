@@ -53,7 +53,7 @@ describe('Cannibal', () => {
 		it.fails('Example 1: Ate Clockmaker: gets a distance number', () => {
 			// Wiki: "The Clockmaker is executed and dies. That night, the Cannibal learns a “2” because
 			// the Demon and Minion are two steps apart."
-			// Waits on the engine: the Cannibal's gained ability doesn't wake them (its gainedFrom
+			// Waits on the engine (M15k): the Cannibal's gained ability doesn't wake them (its gainedFrom
 			// rule has no wakes), so no Clockmaker step is added for them that night.
 			const s = scenario(['cannibal', 'clockmaker', 'imp', 'chef', 'poisoner'])
 				.execute('clockmaker')

@@ -92,7 +92,8 @@ describe('Alchemist', () => {
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Alchemist#Examples)', () => {
 		it('Example 1: Alchemist with Baron ability: two extra Outsiders', () => {
 			// Wiki: "The Alchemist has the Baron ability. There are 2 extra Outsiders in play."
-			// The setup check counts the Alchemist as a Townsfolk, with the Baron's setup change.
+			// Waits on the engine (M15o): the setup check counts the Alchemist only as a Townsfolk, not the
+			// Minion ability it holds.
 			const s = alchemistAs('baron', ['chef', 'empath', 'butler', 'saint', 'poisoner', 'imp']);
 			expect(trueCharacter(s.game, s.seat(0), s.characters)).toBe('alchemist');
 			const inPlay = s.game.seating.map((id) =>

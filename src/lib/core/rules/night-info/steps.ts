@@ -6,7 +6,7 @@ import type { Character } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 import { type AbilityState, abilityState } from '../ability.ts';
-import { withTravellerAlignmentStep } from '../traveller-alignment.ts';
+import { withTravellerAlignmentStep, withTravellerJoinsStep } from '../traveller-alignment.ts';
 import { withGainedSteps, withStorytellerSteps } from '../gained-abilities.ts';
 import { type DeathCheck, deathCheck } from '../night-deaths.ts';
 import type { Night, NightStep } from '../night-order.ts';
@@ -58,7 +58,8 @@ export function nightStepInfo(
  * (answers, pickers, death checks), `impaired` (waking players whose ability does not
  * work, such as a Minion the Preacher chose), and, given `night`, a step for each gained
  * ability (the Pixie's, `withGainedSteps`) and a first step for Travellers without an
- * alignment (`withTravellerAlignmentStep`); `order` places a gained ability not in play.
+ * alignment (`withTravellerAlignmentStep`), and before that one for Travellers not in play
+ * (`withTravellerJoinsStep`); `order` places a gained ability not in play.
  * Steps get a copy; the order is not otherwise
  * changed.
  */
@@ -70,16 +71,20 @@ export function withNightInfo<T extends NightStep>(
 	today?: NightToday,
 	order?: readonly string[]
 ): (T | NightStep)[] {
-	const all = withTravellerAlignmentStep(
-		night
-			? withStorytellerSteps(
-					withGainedSteps(steps, game, characters, night, order),
-					game,
-					characters,
-					night,
-					order
-				)
-			: steps,
+	const all = withTravellerJoinsStep(
+		withTravellerAlignmentStep(
+			night
+				? withStorytellerSteps(
+						withGainedSteps(steps, game, characters, night, order),
+						game,
+						characters,
+						night,
+						order
+					)
+				: steps,
+			game,
+			characters
+		),
 		game,
 		characters
 	);

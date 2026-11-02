@@ -87,6 +87,10 @@ export const CHARACTERS_DECIDERS: Deciders<
 			type: 'ReminderRemoved',
 			reminderId: r.reminderId
 		}));
+		// Only a Traveller sits out (Trevor, 2026-11-02): any other character comes into play.
+		if (seat.notInPlay && character.type !== 'traveller') {
+			lifted.push({ type: 'SeatInPlaySet', seatId: seat.seatId, inPlay: true });
+		}
 		return [assigned, ...lifted];
 	},
 

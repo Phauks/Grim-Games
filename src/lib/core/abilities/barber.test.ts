@@ -102,7 +102,8 @@ describe('Barber', () => {
 				characterId: 'vortox',
 				alignment: 'evil'
 			});
-			// Only "another Demon" is barred: the Demon may choose itself.
+			// Waits on the engine (M15o): swappableSeats leaves out every Demon, though only "another Demon" is
+			// barred, so the Demon may choose itself.
 			expect(swappable(s)).toEqual(expect.arrayContaining([s.seat('vortox'), s.seat('witch')]));
 		});
 
@@ -122,7 +123,8 @@ describe('Barber', () => {
 				dead: false
 			});
 			expect(gameEnds(after.game, after.characters)).toEqual([]);
-			// Only "another Demon" is barred: the Demon may choose itself.
+			// Waits on the engine (M15o): swappableSeats leaves out every Demon, though only "another Demon" is
+			// barred, so the Demon may choose itself.
 			expect(swappable(s)).toEqual(
 				expect.arrayContaining([s.seat('vigormortis'), s.seat('sweetheart')])
 			);

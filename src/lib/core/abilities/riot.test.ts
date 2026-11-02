@@ -66,7 +66,7 @@ describe('Riot', () => {
 			expect(gameEnds(end.game, end.characters)).toMatchObject([
 				{ rule: 'demon-dead', winner: 'good' }
 			]);
-			// Waits on the engine: mayNominate says a dead Riot nominee may not nominate, though a
+			// Waits on the engine (M9): mayNominate says a dead Riot nominee may not nominate, though a
 			// Riot nominee who dies nominates again straight away (M9).
 			expect(mayNominate(first.game, first.seat(lewis), first.characters)).toBe(true);
 		});
