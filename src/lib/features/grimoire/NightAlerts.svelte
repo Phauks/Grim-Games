@@ -12,7 +12,10 @@
 	 * Game state that matters for a night step (Trevor, 2026-10-16): who is drunk or
 	 * poisoned, who doesn't wake tonight (the Exorcist's Demon), who acts twice (the Barista's),
 	 * what a jinx changes about the Grimoire a player sees (the Spy's with the Poppy Grower or the
-	 * Magician), a partner a jinx's night choice picked (the Leviathan's Sage), and for a step
+	 * Magician), a partner a jinx's night choice picked (the Leviathan's Sage), what a jinx has
+	 * a player learn about an ability gained today (the Cannibal's Butler) or keeps true (the
+	 * Vortox's Banshee), a jinxed player who wakes too or keeps their protection (the Vizier's),
+	 * and for a step
 	 * that can kill, who is protected, may bounce the death, survives it or sets something off
 	 * by dying. Short state lines with badges; the rules are core's
 	 * `nightStepAlerts`, worked out from the tokens on the board.
@@ -51,7 +54,11 @@
 		'no-grimoire': 'warning',
 		'grimoire-hides': 'warning',
 		'jinx-chosen': 'warning',
+		'learns-gained': 'info',
+		'true-info': 'info',
 		seating: 'warning',
+		'wakes-with': 'night',
+		'keeps-protection': 'protected',
 		protected: 'protected',
 		'may-bounce': 'warning',
 		'survives-first-death': 'protected',
@@ -129,10 +136,26 @@
 						'dies'
 							? 'dies and gains their ability'
 							: "uses their ability but doesn't die"}
+					{:else if alert.kind === 'learns-gained'}
+						{@render player(alert.seatId)}: {alert.learns === 'answer'
+							? 'learns what the'
+							: 'learns they have the'}
+						{@render badge(sourceId(alert))}{alert.learns === 'answer'
+							? ' would learn tonight'
+							: ' ability'}
+					{:else if alert.kind === 'true-info'}
+						{@render player(alert.seatId)}: given truly, {@render badge(sourceId(alert))} doesn't make
+						it false
 					{:else if alert.kind === 'seating'}
 						{@render player(alert.seatId)}: the evil players don't sit in one line with {@render badge(
 							sourceId(alert)
 						)} inside it
+					{:else if alert.kind === 'wakes-with'}
+						{@render player(alert.seatId)}: {@render badge(sourceId(alert))}, wakes too and learns
+						the choice
+					{:else if alert.kind === 'keeps-protection'}
+						{@render player(alert.seatId)}: {@render badge(sourceId(alert))}, learns they lost their
+						ability, which still protects them
 					{:else if alert.kind === 'protected'}
 						{@render player(alert.seatId)} can't die{#if alert.source === 'override'}
 							(set by hand){:else}: {@render badge(sourceId(alert))}{/if}

@@ -71,7 +71,12 @@ export function demonInfo(game: Game, characters: CharacterLookup): DemonInfo {
 			!game.seats[seatId].dead &&
 			(!evilInfo.whileWorking || abilityState(game, seatId, characters).works);
 		if (hides && out.hiddenBy === undefined) out.hiddenBy = id;
-		if (evilInfo?.shownAsOtherEvil) {
+		// A player with no ability shows nothing false (the Magician while the Vizier is in play,
+		// https://wiki.bloodontheclocktower.com/Magician#Related_Jinxes).
+		if (
+			evilInfo?.shownAsOtherEvil &&
+			!abilityState(game, seatId, characters).impairments.some((i) => i.reason === 'no-ability')
+		) {
 			out.shownAsMinions.push(seatId);
 			out.shownAsDemon.push(seatId);
 		}

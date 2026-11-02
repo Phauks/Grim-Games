@@ -98,6 +98,21 @@ export function registeredTo(
 }
 
 /**
+ * Whether a jinx on the game's script says the Storyteller doesn't declare `characterId` is
+ * in play (`notDeclared`: the Vizier with the Alsaahir or the Investigator,
+ * https://wiki.bloodontheclocktower.com/Vizier#Related_Jinxes). A jinx is in effect while
+ * both are on the script, so the partner need not be in play: declaring only when it isn't
+ * would tell everyone it isn't.
+ */
+export function notDeclared(
+	game: Pick<Game, 'script'>,
+	characterId: CharacterId,
+	characters?: RulesLookup
+): boolean {
+	return ownJinxes(game, characterId, (r) => r.notDeclared === true, characters).length > 0;
+}
+
+/**
  * The partners `changer`'s `changesCharacter` may no longer create, now that the day a jinx
  * names is over (`notCreatedAfterDay`: the Pit-Hag's and the Hatter's Leviathan, after day 5,
  * https://wiki.bloodontheclocktower.com/Leviathan#Related_Jinxes). A change is made at night,
