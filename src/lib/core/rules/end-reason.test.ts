@@ -67,10 +67,16 @@ describe('detectedEndReason', () => {
 
 describe('endCharacters', () => {
 	it('lists those on the script or in a seat that can decide the game, checked ones first', () => {
-		// Trouble Brewing has the Saint and the Mayor; the Klutz is only in a seat.
+		// The test script has the Saint, the Mayor and Legion; the Klutz is only in a seat.
 		const { session } = castGame(['klutz', 'chef', 'saint', 'poisoner', 'imp']);
 		// The Slayer's shot can kill the Demon.
-		expect(endCharacters(session.game, characters)).toEqual(['mayor', 'saint', 'slayer', 'klutz']);
+		expect(endCharacters(session.game, characters)).toEqual([
+			'mayor',
+			'saint',
+			'legion',
+			'klutz',
+			'slayer'
+		]);
 	});
 
 	// https://wiki.bloodontheclocktower.com/Politician: the Storyteller judges who was most
@@ -85,6 +91,7 @@ describe('endCharacters', () => {
 		expect(endCharacters(session.game, characters, 'character:fiddler')).toEqual([
 			'mayor',
 			'saint',
+			'legion',
 			'slayer',
 			'fiddler'
 		]);

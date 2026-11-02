@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { defaultAlignment, type Character } from '#lib/core/data/index.ts';
-	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { fallbackIconUrl, iconUrl } from '#lib/features/characters/icon-url.ts';
 	import { iconFallback } from '#lib/ui/token/icon-fallback.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
@@ -72,7 +72,8 @@
 	character page; tapping the rest toggles it (or removes one copy when there are several);
 	the + button adds a copy. Every mark has a fixed slot, so selecting never moves anything.
 -->
-<CharacterRow
+<CharacterPiece
+	template="row"
 	{character}
 	info
 	pressed={selected}
@@ -88,7 +89,7 @@
 			>{/if}
 		{#if outOfBag}<span id="{uid}-out" class="visually-hidden">{t('setup.notInBagLong')}</span>{/if}
 	{/snippet}
-	{#snippet afterName()}
+	{#snippet tags()}
 		{#if offScript}<span class="tag">{t('setup.offScript')}</span>{/if}
 	{/snippet}
 	<!-- Jinx partners and copies take room on the band only when there are any, so the name
@@ -122,7 +123,7 @@
 					>{/if}<Icon name="check" />{/if}</span
 		>
 	{/snippet}
-	{#snippet end()}
+	{#snippet controls()}
 		<!-- A bluff may also be chosen for the bag: the tag warns, never locks. -->
 		{#if onBluff}
 			<button
@@ -160,7 +161,7 @@
 			>
 		{/if}
 	{/snippet}
-</CharacterRow>
+</CharacterPiece>
 
 <style>
 	.tag,

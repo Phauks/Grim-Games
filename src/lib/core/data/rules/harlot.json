@@ -44,5 +44,9 @@
 		"selected-you": {
 			"characters": ["self"]
 		}
+	},
+	"learns": {
+		"measure": "character-of",
+		"alive": true
 	}
 }

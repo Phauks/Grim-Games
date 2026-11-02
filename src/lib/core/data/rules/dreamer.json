@@ -13,5 +13,9 @@
 			"order": "good-first",
 			"offer": true
 		}
+	},
+	"learns": {
+		"measure": "character-of",
+		"types": ["townsfolk", "outsider", "minion", "demon"]
 	}
 }

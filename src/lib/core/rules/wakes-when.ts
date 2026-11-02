@@ -2,9 +2,10 @@
  * Whether a character's own condition for waking holds tonight (`wakesWhen` in its rules
  * block, `data/wakes-when-rules.ts`): the King once the dead equal or outnumber the living,
  * the Choirboy when the Demon killed the King tonight, the Zombuul when nobody died today, the
- * Seamstress until its once-per-game ability is used. `diedTonight` is every seat that died
- * since the most recent New day (`diedSinceNewDay`). Every condition given must hold; a
- * character without one always may wake. A jinx may lower the King's dead count while its
+ * Seamstress until its once-per-game ability is used (unless its player acts twice,
+ * `acts-twice.ts`: a spent once-per-game ability may be used again). `diedTonight` is every seat
+ * that died since the most recent New day (`diedSinceNewDay`). Every condition given must hold;
+ * a character without one always may wake. A jinx may lower the King's dead count while its
  * partner is in play (`deadAtLeast`: one dead player is enough with the Leviathan or Riot,
  * https://wiki.bloodontheclocktower.com/King#Related_Jinxes).
  */
@@ -13,6 +14,7 @@ import type { CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
+import { actsTwice } from './acts-twice.ts';
 import { ownJinxes } from './jinxes.ts';
 
 export function wakeConditionMet(
@@ -57,7 +59,7 @@ export function wakeConditionMet(
 		const spent = game.seats[holder]?.reminders.some(
 			(r) => r.characterId === characterId && r.label === when.untilToken
 		);
-		if (spent) return false;
+		if (spent && !actsTwice(game, holder, characters)) return false;
 	}
 	return true;
 }

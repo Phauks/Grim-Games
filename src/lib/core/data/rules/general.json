@@ -4,5 +4,8 @@
 	},
 	"deathCause": {
 		"none": "info"
+	},
+	"answers": {
+		"question": "winning-alignment"
 	}
 }

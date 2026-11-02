@@ -42,6 +42,11 @@ export interface Reliability {
 	/** That character, when `mustBeFalse`. */
 	falseBy?: CharacterId;
 	/**
+	 * A character in play lets the Storyteller break the game rules (its `breaksRules`: the
+	 * Atheist, https://wiki.bloodontheclocktower.com/Atheist): any information may be given.
+	 */
+	anyBy?: CharacterId;
+	/**
 	 * A character whose `falseInfo` says this information may be false (`may`) is in play and
 	 * not yet spent (the Fibbin, once per game for a good player,
 	 * https://wiki.bloodontheclocktower.com/Fibbin): any answer is allowed, even a true one
@@ -104,6 +109,8 @@ export type AnswerValue =
 			value: CharacterId[];
 			more?: { count: number; type: CharacterType };
 	  }
+	/** Which team is winning, or neither (the General's thumb signal). */
+	| { kind: 'alignment'; value: Alignment | 'neither' }
 	/** Nothing to give yet: `reason` in our words ("Nobody died by execution today"). */
 	| { kind: 'none'; reason: string };
 
@@ -130,6 +137,11 @@ export type NightAnswer = AnswerValue &
 		possible?: AnswerValue[];
 		/** The Mathematician: which abilities worked abnormally since dawn. */
 		abnormal?: AbnormalUse[];
+		/**
+		 * The answer is the Storyteller's judgement, with no truth in the grimoire (the
+		 * General): each of these may be given.
+		 */
+		choices?: AnswerValue[];
 		why: Why;
 		wiki: string;
 	};
@@ -203,8 +215,48 @@ function tokenPlaced(game: Game, characterId: CharacterId, label: string): boole
 }
 
 /**
- * Drunk, poisoned or no ability (`abilityState`), Vortox, misregistration and recorded
- * info for a waking player.
+ * The first character in play whose rules let the Storyteller break the game rules
+ * (`breaksRules`: the Atheist, https://wiki.bloodontheclocktower.com/Atheist). A dead player's
+ * character is still in play (wiki Glossary, "In play").
+ */
+export function anyInfoSource(
+	game: Game,
+	characters: CharacterLookup
+): { seatId: SeatId; characterId: CharacterId } | undefined {
+	for (const seatId of game.seating) {
+		const characterId = trueCharacter(game, seatId, characters);
+		if (characterId && rulesOf(characterId, characters)?.breaksRules) {
+			return { seatId, characterId };
+		}
+	}
+	return undefined;
+}
+
+/**
+ * The player waking as `characterId` is really another character told they are this one
+ * (its `believesOtherCharacter`: the Marionette thinks they are a good character,
+ * https://wiki.bloodontheclocktower.com/Marionette), so they have no `characterId` ability.
+ */
+function believedAbility(
+	game: Game,
+	seatId: SeatId,
+	characterId: CharacterId,
+	characters: CharacterLookup
+): Impairment | undefined {
+	const own = trueCharacter(game, seatId, characters);
+	if (!own || own === characterId || !rulesOf(own, characters)?.believesOtherCharacter) {
+		return undefined;
+	}
+	return {
+		reason: 'no-ability',
+		source: { characterId: own, seatId },
+		wiki: wikiOf(own, characters)
+	};
+}
+
+/**
+ * Drunk, poisoned or no ability (`abilityState`, or a player told they are this character:
+ * the Marionette), Vortox, the Atheist, misregistration and recorded info for a waking player.
  */
 export function reliability(
 	game: Game,
@@ -216,6 +268,8 @@ export function reliability(
 	const seat = getSeat(game, seatId);
 	if (!seat) return out;
 	out.impairments = abilityState(game, seatId, characters).impairments;
+	const believed = believedAbility(game, seatId, characterId, characters);
+	if (believed) out.impairments = [...out.impairments, believed];
 	if (out.impairments.length > 0) out.unreliable = out.impairments[0].reason;
 	const type = characters.get(characterId)?.type;
 	const falseBy = type === undefined ? undefined : falseInfoSource(game, characters, type);
@@ -224,6 +278,8 @@ export function reliability(
 		out.vortox = falseBy.seatId;
 		out.falseBy = falseBy.characterId;
 	}
+	const anyBy = anyInfoSource(game, characters);
+	if (anyBy) out.anyBy = anyBy.characterId;
 	const mayBeFalse = mayBeFalseSource(game, seatId, type, characters);
 	if (mayBeFalse) out.mayBeFalse = mayBeFalse;
 	out.registrations = otherRegistrations(game, seatId, characters, characterId);
@@ -388,7 +444,7 @@ export function answer(
 	characters: CharacterLookup,
 	value: AnswerValue,
 	because: SeatId[],
-	extra: Pick<NightAnswer, 'possible' | 'abnormal'> & {
+	extra: Pick<NightAnswer, 'possible' | 'abnormal' | 'choices'> & {
 		/** Players whose registration matters; every one who may misregister when unset. */
 		relevant?: readonly SeatId[];
 		facts?: WhyFact[];
@@ -403,6 +459,7 @@ export function answer(
 		because,
 		...(extra.possible && extra.possible.length > 1 ? { possible: extra.possible } : {}),
 		...(extra.abnormal ? { abnormal: extra.abnormal } : {}),
+		...(extra.choices ? { choices: extra.choices } : {}),
 		why: { facts: extra.facts ?? [], alternatives: extra.alternatives ?? [] },
 		wiki: wikiOf(characterId, characters)
 	};

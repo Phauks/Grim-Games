@@ -1,6 +1,12 @@
 {
+	"dayClaim": "guesses",
 	"gameEnd": {
-		"decidedByStoryteller": true
+		"ends": [
+			{
+				"kind": "guesses-evil-team",
+				"winner": "good"
+			}
+		]
 	},
 	"dayReminders": {
 		"impairable": true,
