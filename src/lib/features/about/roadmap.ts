@@ -488,9 +488,11 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	},
 	{
 		// Trevor, 2026-11-02: every How to Run gap closed before beta goes to production. M32a the
-		// Hell's Librarian's picked Something Bad, the Pit-Hag's deaths once it makes a Demon and
-		// the Apprentice's gained ability, M32b the Hatter's tea party after the Hatter dies, M32c
-		// the Fiddler's contest and its tie, M32d an evil Politician who turns good and wins.
+		// Hell's Librarian's picked Something Bad, the Pit-Hag's deaths once it makes a Demon, the
+		// Apprentice's gained ability and the Hatter's tea party after the Hatter dies; M32b the
+		// Fiddler's contest (the Demon's opponent, evil wins a tie) and an evil Politician who wins
+		// with good, in the engine; M32c End game runs the fiddle contest; M32d End game marks a
+		// Politician who wins too.
 		title:
 			"Fiddler, Hatter, Pit-Hag, Apprentice, Politician and Hell's Librarian follow their full How to Run",
 		area: 'engine',
