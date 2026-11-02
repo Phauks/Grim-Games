@@ -12,6 +12,7 @@
 	import {
 		changeableSeats,
 		characterChanger,
+		createdTooLate,
 		jinxedPartners,
 		neighbourAlignments,
 		swappableSeats,
@@ -76,6 +77,11 @@
 					.flatMap((id) => trueCharacter(game, id, characters) ?? [])
 					.filter((id) => !spare.includes(id))
 			: []
+	);
+	// Characters a jinx bars once a day is over (the Pit-Hag's and Hatter's Leviathan after
+	// day 5, https://wiki.bloodontheclocktower.com/Leviathan#Related_Jinxes).
+	const tooLate = $derived(
+		step.character ? createdTooLate(game, step.character.id, characters) : []
 	);
 	// Characters whose player the Storyteller picks when this one creates them (the Pit-Hag's
 	// Damsel): said on the step, as the Storyteller picks the player here anyway.
@@ -167,7 +173,11 @@
 		rule?.sameType && !rule.anyType && chosenType ? [chosenType] : (rule?.types ?? [])
 	);
 	const chosenOwn = $derived(chosen ? trueCharacter(game, chosen, characters) : undefined);
-	const left = $derived(rule?.sameType && chosenOwn ? [...inPlay, chosenOwn] : inPlay);
+	const left = $derived([
+		...inPlay,
+		...tooLate,
+		...(rule?.sameType && chosenOwn ? [chosenOwn] : [])
+	]);
 	const playerName = (seatId: SeatId) => seatName(game, seatId);
 </script>
 

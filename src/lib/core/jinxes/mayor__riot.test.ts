@@ -30,5 +30,7 @@ describe('Mayor + Riot jinx', () => {
 		expect(jinxesAmong(data.jinxes, ['riot'])).not.toContain(jinx);
 	});
 
+	// Waits for the riot's day (L112 left it): the Mayor's public choice to stop the riot, and
+	// how many Riot are alive when they do, decide who wins.
 	it.todo('enforces the rule the jinx imposes');
 });

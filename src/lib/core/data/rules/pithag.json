@@ -38,6 +38,9 @@
 		},
 		"villageidiot": {
 			"spareToken": true
+		},
+		"leviathan": {
+			"notCreatedAfterDay": 5
 		}
 	}
 }

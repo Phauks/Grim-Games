@@ -10,8 +10,18 @@
  * of the two may be in play). Paraphrase, never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
-import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
+import { findJinx, jinxesAmong, type Script } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import type { Command } from '#lib/core/engine/index.ts';
+import type { Game } from '#lib/core/model/types.ts';
+import { castWith, type CastGame } from '#lib/core/model/fixtures.test-support.ts';
+import { gameEnds } from '#lib/core/rules/game-end.ts';
+import { ownJinxRules } from '#lib/core/rules/jinxes.ts';
+
+const scriptOf = (ids: string[]): Script => ({
+	meta: { name: 'Jinxed' },
+	entries: ids.map((id) => ({ kind: 'official' as const, id }))
+});
 
 describe('Leviathan + Mayor jinx', () => {
 	const data = committedGameData();
@@ -30,5 +40,59 @@ describe('Leviathan + Mayor jinx', () => {
 		expect(jinxesAmong(data.jinxes, ['mayor'])).not.toContain(jinx);
 	});
 
-	it.todo('enforces the rule the jinx imposes');
+	// Both pages' Related Jinxes: if the Leviathan and the Mayor are both alive on day 5 and
+	// nobody is executed, good wins, in place of the Leviathan's own win after day 5. A drunk
+	// or poisoned Mayor is a hold, the Storyteller's call, so both ends are listed.
+	describe('good wins on day 5 with the Mayor alive and no execution', () => {
+		const ids = ['leviathan', 'mayor', 'chef', 'empath', 'poisoner', 'washerwoman', 'butler'];
+		const cast = castWith({ script: scriptOf(ids) });
+		const newDay: Command = { type: 'NewDay' };
+		const five = [newDay, newDay, newDay, newDay, newDay];
+		const ended = (game: Game, ctx: CastGame['ctx']) =>
+			gameEnds(game, ctx.characters, { dayEnded: true }).map((e) => [
+				e.rule,
+				e.winner,
+				e.jinxedWith,
+				e.holds.length
+			]);
+
+		it("is data in the Leviathan's rules", () => {
+			expect(ownJinxRules({ script: scriptOf(ids) }, 'leviathan', 'mayor')).toEqual({
+				endsGame: { kind: 'day-without-execution', day: 5, winner: 'good' }
+			});
+		});
+
+		it('ends the game for good, not evil, when day 5 ends', () => {
+			const { game, ctx } = cast(ids, ...five);
+			expect(gameEnds(game, ctx.characters)).toEqual([]);
+			expect(ended(game, ctx)).toEqual([['day-without-execution', 'good', 'mayor', 0]]);
+		});
+
+		it('leaves the Leviathan its win after an execution on day 5, or with the Mayor dead', () => {
+			const executed = cast(ids, ...five, (s: string[]): Command => ({
+				type: 'Execute',
+				seatId: s[4]
+			}));
+			expect(ended(executed.game, executed.ctx)).toEqual([['survives-day', 'evil', undefined, 0]]);
+			const dead = cast(
+				ids,
+				(s: string[]): Command => ({ type: 'SetDead', seatId: s[1], dead: true, cause: 'demon' }),
+				...five
+			);
+			expect(ended(dead.game, dead.ctx)).toEqual([['survives-day', 'evil', undefined, 0]]);
+		});
+
+		it('lists both, with a hold, while the Mayor is poisoned', () => {
+			const poisoned = (s: string[]): Command => ({
+				type: 'AddReminder',
+				seatId: s[1],
+				reminder: { characterId: 'poisoner', label: 'Poisoned' }
+			});
+			const { game, ctx } = cast(ids, poisoned, ...five);
+			expect(ended(game, ctx)).toEqual([
+				['day-without-execution', 'good', 'mayor', 1],
+				['survives-day', 'evil', undefined, 0]
+			]);
+		});
+	});
 });

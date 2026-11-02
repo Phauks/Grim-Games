@@ -146,6 +146,54 @@ describe('jinx rules data', () => {
 		expect(bad.list).toHaveLength(8);
 	});
 
+	it('reads the Leviathan and Riot jinx rules, and rejects bad ones', () => {
+		const issues = new Issues();
+		const good = {
+			a: { endsGame: { kind: 'nominated-marked-executed', winner: 'good', token: 'Safe' } },
+			b: { endsGame: { kind: 'nominated-marked-executed', winner: 'good' } },
+			c: { endsGame: { kind: 'marked-executed', token: 'Grandchild', winner: 'evil' } },
+			d: { endsGame: { kind: 'day-without-execution', day: 5, winner: 'good' } },
+			e: { deadAtLeast: 1, notCreatedAfterDay: 5 }
+		};
+		expect(readJinxRules(good, 'jinxes', issues)).toEqual(good);
+		expect(issues.list).toEqual([]);
+		const bad = new Issues();
+		readJinxRules(
+			{
+				a: { endsGame: { kind: 'marked-executed', winner: 'evil' } },
+				b: { endsGame: { kind: 'day-without-execution', winner: 'good' } },
+				c: { endsGame: { kind: 'nominated-marked-executed', winner: 'good', day: 5 } },
+				d: { endsGame: { kind: 'sometimes', winner: 'good' } },
+				e: { deadAtLeast: 0, notCreatedAfterDay: 2.5 }
+			},
+			'jinxes',
+			bad
+		);
+		expect(bad.list.map((i) => i.split(': ')[0])).toEqual([
+			'jinxes.a.endsGame.token',
+			'jinxes.a',
+			'jinxes.b.endsGame.day',
+			'jinxes.b',
+			'jinxes.c.endsGame.day',
+			'jinxes.d.endsGame.kind',
+			'jinxes.d',
+			'jinxes.e.deadAtLeast',
+			'jinxes.e.notCreatedAfterDay',
+			'jinxes.e'
+		]);
+	});
+
+	it('names only tokens the partner has, in each endsGame jinx', () => {
+		for (const character of data.characters) {
+			for (const [partner, rule] of Object.entries(rulesOf(character.id)?.jinxes ?? {})) {
+				const token = rule.endsGame?.token;
+				if (token === undefined) continue;
+				const reminders = data.byId.get(partner)?.reminders ?? [];
+				expect(reminders, `${character.id}.jinxes.${partner}`).toContain(token);
+			}
+		}
+	});
+
 	it("reads only the owner's side for what one character does to the other", () => {
 		const of = (ids: string[]): Script => ({
 			meta: { name: 'Jinxed' },

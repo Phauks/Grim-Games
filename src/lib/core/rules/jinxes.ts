@@ -92,6 +92,26 @@ export function registeredTo(
 	};
 }
 
+/**
+ * The partners `changer`'s `changesCharacter` may no longer create, now that the day a jinx
+ * names is over (`notCreatedAfterDay`: the Pit-Hag's and the Hatter's Leviathan, after day 5,
+ * https://wiki.bloodontheclocktower.com/Leviathan#Related_Jinxes). A change is made at night,
+ * after the latest day, so day `n` is over once the game has reached it.
+ */
+export function createdTooLate(
+	game: Pick<Game, 'script' | 'pastDays'>,
+	changer: CharacterId,
+	characters?: RulesLookup
+): CharacterId[] {
+	const day = game.pastDays.length;
+	return ownJinxes(
+		game,
+		changer,
+		(r) => r.notCreatedAfterDay !== undefined && day >= r.notCreatedAfterDay,
+		characters
+	).map((j) => j.partner);
+}
+
 export interface ScriptJinx extends Jinx {
 	/** `official` from TPI's jinxes.json; `script` from a homebrew character's `jinxes`. */
 	source: 'official' | 'script';

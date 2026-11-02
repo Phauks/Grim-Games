@@ -197,3 +197,35 @@ test("the Pit-Hag's Goon made from an evil player is not offered to turn good", 
 	await expect(page.getByRole('alertdialog', { name: /^Make this player/ })).toHaveCount(0);
 	await expect(await openSeat(page, 3)).toContainText(/Outsider · Evil · Seat 3[\s\S]*Goon/);
 });
+
+// The Leviathan's jinxes (L112): a game end a jinx gives is offered with the jinx's own words
+// (https://wiki.bloodontheclocktower.com/Leviathan#Related_Jinxes).
+test("the Grandchild executed with the Leviathan in play offers the end, in the jinx's words", async ({
+	page
+}) => {
+	test.slow();
+	await startGame(page, 'Levi Grandchild', [
+		'leviathan',
+		'grandmother',
+		'chef',
+		'empath',
+		'poisoner',
+		'washerwoman'
+	]);
+	await choose(page, 1, 'Leviathan');
+	await choose(page, 2, 'Grandmother');
+	await choose(page, 3, 'Chef');
+	await putReminder(page, 'Grandchild', 3);
+	await closeBin(page);
+	const sheet = await openSeat(page, 3);
+	await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Status of Seat 3' })
+		.getByRole('button', { name: 'Executed' })
+		.tap();
+	const prompt = page.getByRole('alertdialog', { name: 'End game?' });
+	const end = prompt.locator('[data-rule="marked-executed"]');
+	await expect(end).toContainText('Evil wins');
+	await expect(end.getByTestId('end-jinx')).toContainText(/Grandchild\s+dies\s+by\s+execution/);
+	await expect(prompt.getByRole('combobox', { name: 'Winner' })).toContainText('Evil');
+});
