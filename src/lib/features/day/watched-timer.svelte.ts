@@ -1,6 +1,6 @@
 import { dayTimers } from '#lib/core/rules/index.ts';
 
-const { dayLeft, isFresh, isOver, isRunning, shown } = dayTimers;
+const { dayLeft, elapsed, isFresh, isOver, isRunning, shown } = dayTimers;
 
 /**
  * The Storyteller's day timer on a spectator's board (Trevor, 2026-10-19: "it should sync
@@ -21,6 +21,10 @@ export class WatchedTimer {
 	}
 	get clock(): string {
 		return this.#timer ? shown(this.#timer, this.now, this.mode) : '';
+	}
+	/** Time used so far, for a quiet start's countdown. */
+	get elapsed(): number {
+		return this.#timer ? elapsed(this.#timer, this.now) : 0;
 	}
 	get running(): boolean {
 		return !!this.#timer && isRunning(this.#timer);
