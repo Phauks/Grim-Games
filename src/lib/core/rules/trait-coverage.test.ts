@@ -54,9 +54,6 @@ const TRAIT_TODO: Record<string, Record<string, string>> = {
 		boffin: `"even if drunk or poisoned" qualifies the Demon's gained ability (${W}Boffin)`,
 		ogre: `"even if drunk or poisoned" qualifies its alignment change (${W}Ogre)`
 	},
-	protects: {
-		deviant: `only "can't die by exile" if funny today: the Storyteller judges it (${W}Deviant)`
-	},
 	registersAs: {
 		fortuneteller: `the Red Herring registers as a Demon only to its own answer, in learns (${W}Fortune_Teller)`,
 		zombuul: `registers as dead through gameEnd.aliveWhileDead (${W}Zombuul)`

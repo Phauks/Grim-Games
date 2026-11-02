@@ -1,7 +1,13 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { DeathCause, SeatId } from '#lib/core/model/index.ts';
-	import { isExecution, validDeathCauses, type ValidDeathCause } from '#lib/core/rules/index.ts';
+	import {
+		exileSavers,
+		isExecution,
+		protection,
+		validDeathCauses,
+		type ValidDeathCause
+	} from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
@@ -73,6 +79,36 @@
 		if (seatId) grimoire.run({ type: 'SetDead', seatId, dead: false });
 	}
 
+	// A Traveller whose own ability may keep them alive when exiled, as the Storyteller judges
+	// (the Deviant who was funny, https://wiki.bloodontheclocktower.com/Deviant): asked, never
+	// decided. A protection the grimoire applies by itself (the Tea Lady's) needs no question.
+	let exileOpen = $state(false);
+	let exileSeat = $state<SeatId | undefined>();
+	const exileSaver = $derived(
+		exileSeat ? exileSavers(game, exileSeat, characters).find((s) => !s.problem) : undefined
+	);
+	function exile(target: SeatId) {
+		const ask =
+			!protection(game, target, characters, 'exile') &&
+			exileSavers(game, target, characters).some((s) => !s.problem);
+		if (!ask) {
+			grimoire.run({ type: 'Exile', seatId: target });
+			return;
+		}
+		exileSeat = target;
+		exileOpen = true;
+	}
+	function confirmExile(survives: boolean) {
+		exileOpen = false;
+		if (!exileSeat) return;
+		const savedBy = survives ? exileSaver?.source.characterId : undefined;
+		grimoire.run(
+			savedBy
+				? { type: 'Exile', seatId: exileSeat, savedBy }
+				: { type: 'Exile', seatId: exileSeat, dies: true }
+		);
+	}
+
 	function setCause(cause: DeathCause) {
 		open = false;
 		if (!seat || !seatId) return;
@@ -81,7 +117,7 @@
 		// as the day's Players section logged it before it went (Trevor, 2026-10-20).
 		else if (cause === 'execution') {
 			if (!onExecute?.(seatId)) grimoire.run({ type: 'Execute', seatId });
-		} else if (cause === 'exile') grimoire.run({ type: 'Exile', seatId });
+		} else if (cause === 'exile') exile(seatId);
 		// A character's execution (the Virgin's nominator) is one too, with it as the cause.
 		else if (isExecution(cause, characters)) grimoire.run({ type: 'Execute', seatId, cause });
 		else grimoire.run({ type: 'SetDead', seatId, dead: true, cause });
@@ -165,6 +201,23 @@
 		<dd><span class="state-pill"><Icon name="alive" />Alive</span></dd>
 	</dl>
 </ConfirmDialog>
+
+<Dialog bind:open={exileOpen} title={`Does ${title} survive the exile?`}>
+	{#if exileSaver}
+		<p data-exile-saver>
+			<CharacterBadge
+				characterId={exileSaver.source.characterId}
+				character={characters.get(exileSaver.source.characterId)}
+				interactive={false}
+			/>
+			may keep them alive. You decide.
+		</p>
+	{/if}
+	{#snippet actions()}
+		<Button variant="quiet" onclick={() => confirmExile(true)}>Survives</Button>
+		<Button onclick={() => confirmExile(false)}>Dies</Button>
+	{/snippet}
+</Dialog>
 
 <Dialog
 	bind:open={flagOpen}

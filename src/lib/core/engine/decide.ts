@@ -10,6 +10,7 @@
  */
 import type { CharacterId } from '#lib/core/data/index.ts';
 import type { Game } from '#lib/core/model/index.ts';
+import { afterExecutionTokens } from '#lib/core/rules/after-execution.ts';
 import { startingRuleCharacters } from '#lib/core/rules/script-rules.ts';
 import type { Command, CommandOf, CommandType } from './commands.ts';
 import type { EngineContext } from './context.ts';
@@ -109,6 +110,7 @@ export type WarningCode =
 	| 'not-traveller'
 	| 'already-dead'
 	| 'survives-execution'
+	| 'survives-exile'
 	| 'save-may-not-apply'
 	| 'not-seat-character'
 	| 'already-used'
@@ -146,7 +148,7 @@ export function decide(game: Game | undefined, command: Command, ctx: EngineCont
 		}
 		if (!game) refuse('no-game', 'create a game first');
 		const events = decideFor(game, command, ctx, warn);
-		return { ok: true, events, warnings };
+		return { ok: true, events: [...events, ...afterExecution(game, events, ctx)], warnings };
 	} catch (e) {
 		if (e instanceof Refusal) return { ok: false, error: e.error };
 		throw e;
@@ -207,6 +209,22 @@ const DECIDERS: Deciders<CommandType> = {
 	...DAY_DECIDERS,
 	...LATE_PLAYER_DECIDERS
 };
+
+/**
+ * The tokens a death by execution puts on by itself (`afterExecutionTokens`: the Minstrel's
+ * Everyone Is Drunk after a Minion's execution), whichever command logged it.
+ */
+function afterExecution(game: Game, events: readonly GameEvent[], ctx: EngineContext): GameEvent[] {
+	const deaths = events.flatMap((e) =>
+		e.type === 'DeathSet' && e.dead ? [{ seatId: e.seatId, cause: e.cause }] : []
+	);
+	if (deaths.length === 0) return [];
+	return afterExecutionTokens(game, deaths, ctx.characters).map((t): GameEvent => ({
+		type: 'ReminderAdded',
+		seatId: t.seatId,
+		reminder: { reminderId: ctx.newId(), characterId: t.characterId, label: t.label }
+	}));
+}
 
 function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn): GameEvent[] {
 	const decider = DECIDERS[command.type] as Decider<CommandType>;

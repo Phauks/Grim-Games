@@ -282,7 +282,18 @@ export type DayEntry =
 			 */
 			savedBy?: { characterId?: CharacterId; seatId?: SeatId };
 	  }
-	| { kind: 'exile'; entryId: DayEntryId; seatId: SeatId; died: boolean }
+	| {
+			kind: 'exile';
+			entryId: DayEntryId;
+			seatId: SeatId;
+			died: boolean;
+			/**
+			 * Exiled and does not die: the ability that saved them (the Tea Lady's, or the
+			 * Deviant the Storyteller found funny), or no `characterId` for the Storyteller's
+			 * "can't die" override. Absent when they died or were already dead.
+			 */
+			savedBy?: { characterId?: CharacterId; seatId?: SeatId };
+	  }
 	| {
 			kind: 'ability';
 			entryId: DayEntryId;

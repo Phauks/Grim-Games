@@ -53,6 +53,13 @@ export function describeEntry(
 				name: seatName(entry.seatId)
 			});
 		case 'exile':
+			if (entry.savedBy)
+				return entry.savedBy.characterId
+					? t('day.logExiledSavedBy', {
+							name: seatName(entry.seatId),
+							character: characterName(entry.savedBy.characterId)
+						})
+					: t('day.logExiledSurvived', { name: seatName(entry.seatId) });
 			return t(entry.died ? 'day.logExiled' : 'day.logExiledDead', {
 				name: seatName(entry.seatId)
 			});
