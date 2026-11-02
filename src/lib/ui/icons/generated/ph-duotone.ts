@@ -3,6 +3,8 @@ import type { IconMap } from '../types.ts';
 import ph_address_book_duotone from '~icons/ph/address-book-duotone';
 import ph_anchor_duotone from '~icons/ph/anchor-duotone';
 import ph_archive_duotone from '~icons/ph/archive-duotone';
+import ph_arrow_arc_left_duotone from '~icons/ph/arrow-arc-left-duotone';
+import ph_arrow_arc_right_duotone from '~icons/ph/arrow-arc-right-duotone';
 import ph_arrow_bend_up_right_duotone from '~icons/ph/arrow-bend-up-right-duotone';
 import ph_arrow_circle_right_duotone from '~icons/ph/arrow-circle-right-duotone';
 import ph_arrow_clockwise_duotone from '~icons/ph/arrow-clockwise-duotone';
@@ -75,6 +77,7 @@ import ph_dice_five_duotone from '~icons/ph/dice-five-duotone';
 import ph_door_duotone from '~icons/ph/door-duotone';
 import ph_door_open_duotone from '~icons/ph/door-open-duotone';
 import ph_dots_three_duotone from '~icons/ph/dots-three-duotone';
+import ph_dots_three_circle_duotone from '~icons/ph/dots-three-circle-duotone';
 import ph_dots_three_vertical_duotone from '~icons/ph/dots-three-vertical-duotone';
 import ph_download_simple_duotone from '~icons/ph/download-simple-duotone';
 import ph_drop_duotone from '~icons/ph/drop-duotone';
@@ -111,6 +114,7 @@ import ph_hand_grabbing_duotone from '~icons/ph/hand-grabbing-duotone';
 import ph_hand_heart_duotone from '~icons/ph/hand-heart-duotone';
 import ph_hand_palm_duotone from '~icons/ph/hand-palm-duotone';
 import ph_hand_pointing_duotone from '~icons/ph/hand-pointing-duotone';
+import ph_hand_tap_duotone from '~icons/ph/hand-tap-duotone';
 import ph_handbag_duotone from '~icons/ph/handbag-duotone';
 import ph_handshake_duotone from '~icons/ph/handshake-duotone';
 import ph_hard_drives_duotone from '~icons/ph/hard-drives-duotone';
@@ -238,6 +242,8 @@ const icons: IconMap = {
 	'ph:address-book-duotone': ph_address_book_duotone,
 	'ph:anchor-duotone': ph_anchor_duotone,
 	'ph:archive-duotone': ph_archive_duotone,
+	'ph:arrow-arc-left-duotone': ph_arrow_arc_left_duotone,
+	'ph:arrow-arc-right-duotone': ph_arrow_arc_right_duotone,
 	'ph:arrow-bend-up-right-duotone': ph_arrow_bend_up_right_duotone,
 	'ph:arrow-circle-right-duotone': ph_arrow_circle_right_duotone,
 	'ph:arrow-clockwise-duotone': ph_arrow_clockwise_duotone,
@@ -310,6 +316,7 @@ const icons: IconMap = {
 	'ph:door-duotone': ph_door_duotone,
 	'ph:door-open-duotone': ph_door_open_duotone,
 	'ph:dots-three-duotone': ph_dots_three_duotone,
+	'ph:dots-three-circle-duotone': ph_dots_three_circle_duotone,
 	'ph:dots-three-vertical-duotone': ph_dots_three_vertical_duotone,
 	'ph:download-simple-duotone': ph_download_simple_duotone,
 	'ph:drop-duotone': ph_drop_duotone,
@@ -346,6 +353,7 @@ const icons: IconMap = {
 	'ph:hand-heart-duotone': ph_hand_heart_duotone,
 	'ph:hand-palm-duotone': ph_hand_palm_duotone,
 	'ph:hand-pointing-duotone': ph_hand_pointing_duotone,
+	'ph:hand-tap-duotone': ph_hand_tap_duotone,
 	'ph:handbag-duotone': ph_handbag_duotone,
 	'ph:handshake-duotone': ph_handshake_duotone,
 	'ph:hard-drives-duotone': ph_hard_drives_duotone,
