@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import IconGlyph from '#lib/ui/icons/IconGlyph.svelte';
 	import { ICON_SETS, withWeight } from '#lib/ui/icons/catalogue.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
@@ -23,8 +24,11 @@
 	{#if mark.kind === 'text'}{mark.text}
 	{:else if mark.kind === 'emoji'}<span class="emoji">{mark.emoji}</span>
 	{:else if mark.kind === 'symbol'}<IconGlyph id={withWeight(mark.icon, weight)} {set} />
+	{:else if mark.kind === 'player'}<PlayerBadge name={mark.name} />
 	{/if}
-	{#if mark.kind !== 'text' && mark.repeat}<span class="repeat">{mark.repeat}</span>{/if}
+	{#if mark.kind !== 'text' && mark.kind !== 'player' && mark.repeat}<span class="repeat"
+			>{mark.repeat}</span
+		>{/if}
 </span>
 
 <style>
@@ -36,6 +40,12 @@
 	.mark[data-kind='symbol'] :global(.icon) {
 		--icon-size: 1.6em;
 		display: block;
+	}
+	/* A name fills the tile's width, at the size of a name under a seat. */
+	.mark[data-kind='player'] {
+		width: 85%;
+		font-size: 0.45em;
+		font-weight: normal;
 	}
 	.emoji {
 		font-size: 1.2em;

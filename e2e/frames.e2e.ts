@@ -148,15 +148,15 @@ test('the Profile sets the player name with no room, kept for the next one', asy
 	await expect(again.getByTestId('profile-preview')).toContainText('Robin');
 });
 
-test('the Profile keeps a flavour text, edited in its own modal (Trevor, 2026-10-28)', async ({
+test('the Profile keeps a tag-line, edited in its own modal (Trevor, 2026-10-28, 2026-11-01)', async ({
 	page
 }) => {
 	await page.goto('/');
 	const dialog = await openProfile(page);
 	await expect(dialog.getByTestId('flavour-text')).toHaveText('None');
-	await dialog.getByRole('button', { name: 'Edit flavour text' }).tap();
-	const modal = page.getByRole('dialog', { name: 'Flavour text' });
-	await modal.getByRole('textbox', { name: 'Flavour text' }).fill('Always the Drunk.');
+	await dialog.getByRole('button', { name: 'Edit tag-line' }).tap();
+	const modal = page.getByRole('dialog', { name: 'Tag-line' });
+	await modal.getByRole('textbox', { name: 'Tag-line' }).fill('Always the Drunk.');
 	await modal.getByRole('button', { name: 'Save' }).tap();
 	await expect(modal).toBeHidden();
 	await expect(dialog.getByTestId('flavour-text')).toHaveText('Always the Drunk.');
@@ -164,6 +164,55 @@ test('the Profile keeps a flavour text, edited in its own modal (Trevor, 2026-10
 	await page.reload();
 	const again = await openProfile(page);
 	await expect(again.getByTestId('flavour-text')).toHaveText('Always the Drunk.');
+});
+
+test('the Profile takes optional details, from suggestions or written out (Trevor, 2026-11-01)', async ({
+	page
+}) => {
+	// "Let's add some custom text people can add per profile ... 'Favorite Script', 'Favorite
+	// Character Type' ... give people the opportunity to spruce up their profile, but also don't
+	// require it".
+	await page.goto('/');
+	const dialog = await openProfile(page);
+	await expect(dialog.getByTestId('profile-detail-text')).toHaveCount(0);
+	const add = dialog.getByTestId('profile-detail-new');
+	const box = (await add.boundingBox())!;
+	expect(box.height).toBeGreaterThanOrEqual(43.5);
+
+	// A suggestion fills in the label; the player writes the text.
+	await add.tap();
+	const modal = page.getByRole('dialog', { name: 'New detail' });
+	await expect(modal.getByRole('textbox', { name: 'Label' })).toBeDisabled();
+	await expect(modal.getByRole('button', { name: 'Save' })).toBeDisabled();
+	await modal.getByRole('textbox', { name: 'Text' }).fill('Trouble Brewing');
+	await modal.getByRole('button', { name: 'Save' }).tap();
+	await expect(modal).toBeHidden();
+
+	// Custom takes their own label.
+	await add.tap();
+	await pick(page, 'Detail', 'Custom');
+	await modal.getByRole('textbox', { name: 'Label' }).fill('Lucky dice');
+	await modal.getByRole('textbox', { name: 'Text' }).fill('The blue d20');
+	await modal.getByRole('button', { name: 'Save' }).tap();
+	await expect(modal).toBeHidden();
+	await expect(dialog.getByTestId('profile-detail-text')).toHaveText([
+		'Trouble Brewing',
+		'The blue d20'
+	]);
+
+	// Edited with the pencil, and deleted from the same dialog; kept after a reload.
+	await dialog.getByRole('button', { name: 'Edit Favorite script' }).tap();
+	const edit = page.getByRole('dialog', { name: 'Edit detail' });
+	await edit.getByRole('textbox', { name: 'Text' }).fill('Bad Moon Rising');
+	await edit.getByRole('button', { name: 'Save' }).tap();
+	await expect(edit).toBeHidden();
+	await dialog.getByRole('button', { name: 'Edit Lucky dice' }).tap();
+	await edit.getByRole('button', { name: 'Delete detail' }).tap();
+	await expect(edit).toBeHidden();
+
+	await page.reload();
+	const again = await openProfile(page);
+	await expect(again.getByTestId('profile-detail-text')).toHaveText(['Bad Moon Rising']);
 });
 
 test('a representative character sits on top of the laurel, still while it moves (Trevor, 2026-10-28)', async ({
