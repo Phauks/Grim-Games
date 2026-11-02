@@ -42,7 +42,7 @@
 	</header>
 {/snippet}
 
-<main>
+<main class:fill={players}>
 	<WithSavedGame {gameId} area="grimoire">
 		{#snippet children(game: OpenGame)}
 			{@render head(game)}
@@ -69,6 +69,12 @@
 		max-width: var(--page-max);
 		margin: 0 auto;
 		padding: var(--space-4) var(--page-gutter);
+	}
+	/* Players fills the screen: its list and its chosen player each scroll on their own. */
+	main.fill {
+		grid-template-rows: auto minmax(0, 1fr);
+		height: 100dvh;
+		box-sizing: border-box;
 	}
 	main > :global(*) {
 		min-width: 0;
