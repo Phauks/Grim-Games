@@ -459,14 +459,18 @@
 					{/if}
 					<p class="truth">
 						{#if written}
-							<Select
-								label={t('savant.mark', { number: i + 1 })}
-								hideLabel
-								value={marked[i] === undefined ? NONE : marked[i] ? 'true' : 'false'}
-								options={markOptions}
-								onChange={(v: string) =>
-									v === NONE ? (marked[i] = undefined) : mark(i, v === 'true')}
-							/>
+							<span
+								class="mark"
+								data-truth={marked[i] === undefined ? 'unknown' : marked[i] ? 'true' : 'false'}
+								><Select
+									label={t('savant.mark', { number: i + 1 })}
+									hideLabel
+									value={marked[i] === undefined ? NONE : marked[i] ? 'true' : 'false'}
+									options={markOptions}
+									onChange={(v: string) =>
+										v === NONE ? (marked[i] = undefined) : mark(i, v === 'true')}
+								/></span
+							>
 							<Select
 								label={t('savant.about', { number: i + 1 })}
 								hideLabel
