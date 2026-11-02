@@ -4,7 +4,8 @@
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import SettingRow from '#lib/ui/settings/SettingRow.svelte';
-	import { MAX_FLAVOUR, playerSettings } from './player-settings.svelte.ts';
+	import { MAX_TAGLINE } from '#lib/core/profile/index.ts';
+	import { playerSettings } from './player-settings.svelte.ts';
 
 	/**
 	 * The player's flavour text in their Profile (Trevor, 2026-10-28), edited like their name:
@@ -46,7 +47,7 @@
 		<textarea
 			aria-label={t('player.flavour')}
 			bind:value={text}
-			maxlength={MAX_FLAVOUR}
+			maxlength={MAX_TAGLINE}
 			rows="4"
 			enterkeyhint="done"
 			onkeydown={(event) => {

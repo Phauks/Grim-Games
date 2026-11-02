@@ -403,6 +403,13 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['F12', 'F13', 'F14']
 	},
 	{
+		// Trevor, 2026-11-01: hide empty rows, add the tag-line, and let people add their own
+		// details ("Favorite Script") without requiring them.
+		title: 'Your tag-line and your own details on your player profile',
+		area: 'profile',
+		parts: ['R15']
+	},
+	{
 		// Trevor, 2026-10-30: "number of games should be a statistic on a users page".
 		title: 'Games played on your profile, for anyone who taps it',
 		area: 'profile',

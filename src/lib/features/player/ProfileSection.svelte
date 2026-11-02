@@ -12,6 +12,7 @@
 	import AvatarPictureRow from './AvatarPictureRow.svelte';
 	import CharacterIconRow from './CharacterIconRow.svelte';
 	import FlavourTextRow from './FlavourTextRow.svelte';
+	import ProfileDetailsRows from './ProfileDetailsRows.svelte';
 	import { playerSettings } from './player-settings.svelte.ts';
 
 	/**
@@ -66,7 +67,7 @@
      2026-10-28: the Profile is where the player name is set). -->
 <PlayerNameRow player={joinedRoom.player} />
 
-<!-- A line about themselves, kept for later uses (Trevor, 2026-10-28). -->
+<!-- A line about themselves, their tag-line on their profile (Trevor, 2026-10-28, 2026-11-01). -->
 <FlavourTextRow />
 
 <!-- The character that represents them, on top of their laurel (Trevor, 2026-10-28). -->
@@ -86,6 +87,10 @@
 		playerSettings.update({ frame: frame === DEFAULT_FRAME ? undefined : frame })}
 	testid="player-frame-setting"
 />
+
+<!-- Their own details, such as "Favorite script", all optional (Trevor, 2026-11-01). Last, so
+     adding one moves nothing above it. -->
+<ProfileDetailsRows />
 
 <style>
 	.preview {
