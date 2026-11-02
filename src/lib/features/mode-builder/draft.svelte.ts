@@ -4,7 +4,7 @@
  * from, so Save replaces that one and Delete removes it. The key carries a version; a stored
  * draft that no longer reads starts again empty.
  */
-import { emptyFile, type BuildKind } from '#lib/core/modes/index.ts';
+import { emptyFile } from '#lib/core/modes/index.ts';
 import { readParsed, writeStored } from '#lib/ui/stored.ts';
 
 const KEY = 'grim-games:mode-builder:v1';
@@ -18,7 +18,7 @@ const isObject = (v: unknown): v is Record<string, unknown> =>
 	typeof v === 'object' && v !== null && !Array.isArray(v);
 
 function parse(raw: unknown): ModeDraft {
-	if (!isObject(raw) || !isObject(raw.file)) return { file: emptyFile('game-mode') };
+	if (!isObject(raw) || !isObject(raw.file)) return { file: emptyFile() };
 	return typeof raw.editing === 'string'
 		? { file: raw.file, editing: raw.editing }
 		: { file: raw.file };
@@ -45,8 +45,8 @@ export const modeDraft = {
 	setEditing(id: string | undefined) {
 		set(id ? { ...draft, editing: id } : { file: draft.file });
 	},
-	clear(kind: BuildKind = 'game-mode') {
-		set({ file: emptyFile(kind) });
+	clear() {
+		set({ file: emptyFile() });
 	}
 };
 

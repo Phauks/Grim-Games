@@ -110,9 +110,7 @@
 			: t('modes.conflictListed', { first, second });
 	}
 	const description = (m: GameMode | SpecialRule) =>
-		shownAbout(m) ??
-		(m.kind === 'special-rule' ? m.parts.text?.join(' ') : undefined) ??
-		t('common.none');
+		shownAbout(m) ?? m.parts.text?.join(' ') ?? t('common.none');
 
 	function toggle(id: string, on: boolean) {
 		onChange(on ? [...ruleIds.filter((x) => x !== id), id] : ruleIds.filter((x) => x !== id));
