@@ -1287,6 +1287,43 @@ test('the Puzzlemaster’s guess asks who was guessed and says what to tell them
 	).toHaveAttribute('aria-label', /1 reminder/);
 });
 
+// M15b, https://wiki.bloodontheclocktower.com/Buddhist: for the first two minutes of each day
+// the veterans may not talk. With the Buddhist in play the day timer counts that down on its
+// top edge, in place of its mode's name, so nothing moves.
+test('with the Buddhist in play the day timer counts down the veterans’ quiet', async ({
+	page
+}) => {
+	await page.clock.install();
+	await startGame(page);
+	await page.getByRole('button', { name: 'More' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Add Fabled or Loric', exact: true })
+		.tap();
+	await page
+		.getByRole('dialog', { name: 'Add Fabled or Loric' })
+		.getByRole('button', { name: 'Buddhist', exact: true })
+		.tap();
+	await expect(
+		page.getByRole('list', { name: 'Fabled and Loric' }).getByRole('button', { name: 'Buddhist' })
+	).toBeVisible();
+	await openDay(page);
+	const timer = page.getByTestId('day-toolbar').getByTestId('day-timer');
+	const quiet = timer.getByTestId('timer-quiet');
+	await expect(quiet).toHaveText('Veterans quiet 2:00');
+	await expect(timer.getByTestId('timer-mode')).toHaveCount(0);
+	const height = (await timer.boundingBox())!.height;
+	await timer.getByRole('button', { name: 'Start timer' }).tap();
+	await page.clock.runFor(30_000);
+	await expect(quiet).toHaveText('Veterans quiet 1:30');
+	await expect(timer).toHaveAttribute('aria-label', /Veterans may not talk for 1:30 more/);
+	await page.clock.runFor(91_000);
+	// Over: the mode's name is back, in the same place.
+	await expect(quiet).toHaveCount(0);
+	await expect(timer.getByTestId('timer-mode')).toHaveText('Timer');
+	expect((await timer.boundingBox())!.height).toBe(height);
+});
+
 /** Gives seat `number` a character from off the script, answering its alignment if asked. */
 async function chooseOffScript(page: Page, number: number, name: string) {
 	const sheet = await openSeat(page, number);

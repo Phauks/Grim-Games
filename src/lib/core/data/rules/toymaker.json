@@ -7,7 +7,21 @@
 		}
 	},
 	"setupPrep": {
-		"none": "its tokens are only used after the first night or when something happens"
+		"reminders": [
+			{
+				"label": "Final Night: No Attack",
+				"text": "Put [Final Night: No Attack] on the Demon",
+				"target": {
+					"choose": "demon",
+					"choice": "the Demon"
+				},
+				"reason": "Marks that the Demon has not yet chosen not to attack"
+			}
+		]
+	},
+	"demonAttack": {
+		"maySkip": true,
+		"mustSkipOnce": "Final Night: No Attack"
 	},
 	"dayReminders": {
 		"none": "night rule"

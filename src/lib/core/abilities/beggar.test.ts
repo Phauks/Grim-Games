@@ -8,7 +8,9 @@
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
  * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
- * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
+ * happened, then what the rules say. Quote the example word for word in a `// Wiki: "..."`
+ * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
+ * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
@@ -47,6 +49,9 @@ describe('Beggar', () => {
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Beggar#Examples)', () => {
 		// Vote tokens (the Beggar votes only with tokens given to them) wait on voting in the engine.
 		it.fails('Example 1: Evil Beggar falsely calls Monk evil', () => {
+			// Wiki: "The Beggar cannot vote. On the fourth day, the Monk gives her vote token to the
+			// Beggar. The Beggar may now vote (once), and learns that the player is good. The Beggar is
+			// evil and tells the group that the Monk player is evil."
 			scenario(['beggar', 'monk', 'imp', 'chef', 'poisoner']).do((at) => ({
 				type: 'SetAlignment',
 				seatId: at.seat('beggar'),
@@ -58,6 +63,9 @@ describe('Beggar', () => {
 			);
 		});
 		it.fails('Example 2: Beggar dies, losing all but one vote token', () => {
+			// Wiki: "The good Beggar has three vote tokens. The Recluse gives the Beggar their vote token,
+			// and the Beggar learns that they are evil. That day, the Beggar dies, and loses all their
+			// vote tokens except for one."
 			scenario(['beggar', 'recluse', 'imp', 'chef', 'poisoner'])
 				.do((at) => ({ type: 'SetAlignment', seatId: at.seat('beggar'), alignment: 'good' }))
 				.dies('beggar');

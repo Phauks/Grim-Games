@@ -41,6 +41,9 @@
 		impaired: 'poisoned',
 		blocked: 'warning',
 		'no-kill': 'protected',
+		'may-skip-attack': 'night',
+		'must-skip-attack': 'warning',
+		'final-night': 'warning',
 		seating: 'warning',
 		protected: 'protected',
 		'may-bounce': 'warning',
@@ -95,6 +98,15 @@
 						tonight
 					{:else if alert.kind === 'no-kill'}
 						{@render player(alert.seatId)}: {@render badge(sourceId(alert))}, doesn't kill tonight
+					{:else if alert.kind === 'may-skip-attack'}
+						{@render player(alert.seatId)}: {@render badge(sourceId(alert))}, may choose not to
+						attack
+					{:else if alert.kind === 'must-skip-attack'}
+						{@render player(alert.seatId)}: {@render badge(sourceId(alert))}, hasn't chosen not to
+						attack yet, must once this game
+					{:else if alert.kind === 'final-night'}
+						{@render player(alert.seatId)}: {@render badge(sourceId(alert))}, final night, doesn't
+						wake or attack tonight
 					{:else if alert.kind === 'seating'}
 						{@render player(alert.seatId)}: the evil players don't sit in one line with {@render badge(
 							sourceId(alert)

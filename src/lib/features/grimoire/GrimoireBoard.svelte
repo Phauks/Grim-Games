@@ -7,7 +7,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { boardNightSteps, stepWakes } from './night-steps.ts';
 	import { changedCharacters, diedToday } from '#lib/core/engine/index.ts';
-	import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
+	import { liveDayTimer, timerFacts } from '#lib/features/day/day-timer.svelte.ts';
 	import AlignmentDraw from './AlignmentDraw.svelte';
 	import { endedGames, type EndedGame } from './device-notes.ts';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
@@ -943,7 +943,7 @@
 			<!-- Once the game ends the timer keeps its room, unseen, so no seat moves. -->
 			<div class="timer-slot" class:gone={!showTimer} inert={!showTimer} data-screenshot="skip">
 				<DayTimer
-					alive={livingByTeam(game).alive}
+					{...timerFacts(game, characters)}
 					variant="compact"
 					readOnly={watching || !showTimer}
 					shown={watchedTimer}
@@ -1091,7 +1091,7 @@
 {/snippet}
 
 {#snippet coverTimer()}
-	{#if showTimer}<DayTimer alive={livingByTeam(game).alive} variant="compact" />{/if}
+	{#if showTimer}<DayTimer {...timerFacts(game, characters)} variant="compact" />{/if}
 {/snippet}
 
 <DaySheet
