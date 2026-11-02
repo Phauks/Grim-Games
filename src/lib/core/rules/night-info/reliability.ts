@@ -176,7 +176,7 @@ export function reliability(
 			out.falseBy = visit.by;
 		}
 	}
-	out.registrations = otherRegistrations(game, seatId, characters);
+	out.registrations = otherRegistrations(game, seatId, characters, characterId);
 	out.misregister = out.registrations.map((r) => r.seatId);
 	const shown = game.today.entries.findLast(
 		(e): e is Extract<DayEntry, { kind: 'info' }> =>
@@ -186,9 +186,18 @@ export function reliability(
 	return out;
 }
 
-/** Registrations of everyone but the waking player: info is about the others. */
-function otherRegistrations(game: Game, seatId: SeatId, characters: CharacterLookup) {
-	return registrations(game, characters).filter((r) => r.seatId !== seatId);
+/**
+ * Registrations of everyone but the waking player: info is about the others. As seen by the
+ * waking character (its true one unless given), since a jinx with it may change them
+ * (`registrations`' `viewer`).
+ */
+function otherRegistrations(
+	game: Game,
+	seatId: SeatId,
+	characters: CharacterLookup,
+	viewer: CharacterId | undefined = trueCharacter(game, seatId, characters)
+) {
+	return registrations(game, characters, viewer).filter((r) => r.seatId !== seatId);
 }
 
 export function fact(
