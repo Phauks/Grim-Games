@@ -36,13 +36,15 @@
 	},
 	"changesCharacter": {
 		"types": ["minion", "demon"],
-		"sameType": true
+		"sameType": true,
+		"afterDeath": true
 	},
 	"optionalRule": {
 		"changesCharacter": {
 			"types": ["minion", "demon"],
 			"sameType": true,
-			"anyType": true
+			"anyType": true,
+			"afterDeath": true
 		}
 	},
 	"jinxes": {

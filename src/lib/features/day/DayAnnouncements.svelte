@@ -3,7 +3,13 @@
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import { recentDeaths, recentRevivals } from '#lib/core/engine/index.ts';
 	import type { DeathCause, SeatId } from '#lib/core/model/index.ts';
-	import { afterDawn, dayNumber, preventedDeaths, type Night } from '#lib/core/rules/index.ts';
+	import {
+		afterDawn,
+		dayNumber,
+		notDeclared,
+		preventedDeaths,
+		type Night
+	} from '#lib/core/rules/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
@@ -92,7 +98,8 @@
 	/**
 	 * Announcements as the day begins (Trevor, 2026-10-16): TPI's steps after Dawn for the
 	 * night that just ended (the Vizier, the Leviathan), for characters in play, with TPI's
-	 * night text. A new day starts when the night ends, so Day 1 follows the first night.
+	 * night text. A new day starts when the night ends, so Day 1 follows the first night. Not
+	 * one a jinx says isn't declared (the Vizier with the Alsaahir or the Investigator, L115).
 	 */
 	const announcers = $derived.by(() => {
 		const day = dayNumber(g);
@@ -104,6 +111,7 @@
 			const text =
 				night === 'first' ? character?.firstNightReminder : character?.otherNightReminder;
 			const seatId = g.seating.find((s) => g.seats[s].characterId === characterId);
+			if (notDeclared(g, characterId, game.characters)) return [];
 			return character && text && seatId ? [{ character, text, seatId, night }] : [];
 		});
 	});

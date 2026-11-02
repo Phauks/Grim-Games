@@ -20,6 +20,7 @@ import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { alignmentOf, trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 import { abilityState } from './ability.ts';
+import { ownJinxes } from './jinxes.ts';
 import { todaysNominations } from './nominations.ts';
 
 /** TPI's reminder for a spent once-per-game ability (game data). */
@@ -36,9 +37,12 @@ export type OutcomeKind = 'fails' | 'force' | 'execute-now';
  * - `not-working`: no player of the character has a working ability;
  * - `not-nominated`: nobody nominated the player today;
  * - `own-nomination`: only the ability's own player nominated them (the Judge);
- * - `used`: the once-per-game ability is already spent ("No Ability", or `dayUse.spentToken`).
+ * - `used`: the once-per-game ability is already spent ("No Ability", or `dayUse.spentToken`);
+ * - `jinxed`: a jinx says the execute-now doesn't reach this nominee (`noExecuteNow`: the
+ *   Magician is immune to the Vizier, who can't execute the Fearmonger's choice at once,
+ *   https://wiki.bloodontheclocktower.com/Vizier#Related_Jinxes).
  */
-export type OutcomeProblem = 'not-working' | 'not-nominated' | 'own-nomination' | 'used';
+export type OutcomeProblem = 'not-working' | 'not-nominated' | 'own-nomination' | 'used' | 'jinxed';
 
 /** A character in play whose ability can change an execution's outcome. */
 export interface OutcomeHolder {
@@ -94,6 +98,27 @@ function spent(game: Game, holder: OutcomeHolder, characters: CharacterLookup): 
 	);
 }
 
+/**
+ * Whether a jinx of `characterId`'s keeps its execute-now from `nominee` (`noExecuteNow`): the
+ * partner's own player, or the player with the partner's token.
+ */
+function outOfReach(
+	game: Game,
+	characterId: CharacterId,
+	nominee: SeatId,
+	characters: CharacterLookup
+): boolean {
+	const seat = game.seats[nominee];
+	return ownJinxes(game, characterId, (r) => r.noExecuteNow !== undefined, characters).some(
+		({ partner, rule }) =>
+			rule.noExecuteNow?.who === 'partner'
+				? trueCharacter(game, nominee, characters) === partner
+				: seat?.reminders.some(
+						(r) => r.characterId === partner && r.label === rule.noExecuteNow?.token
+					) === true
+	);
+}
+
 /** Why `holder`'s outcome may not apply to an execution of `nominee`, if anything. */
 function problemOf(
 	game: Game,
@@ -103,6 +128,8 @@ function problemOf(
 ): OutcomeProblem | undefined {
 	if (!holder.works) return 'not-working';
 	if (holder.kind === 'fails') return undefined;
+	if (holder.kind === 'execute-now' && outOfReach(game, holder.characterId, nominee, characters))
+		return 'jinxed';
 	const nominations = todaysNominations(game).filter((n) => n.nominee === nominee);
 	if (nominations.length === 0) return 'not-nominated';
 	if (holder.kind === 'execute-now') return undefined;

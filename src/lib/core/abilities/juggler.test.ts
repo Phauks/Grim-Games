@@ -185,19 +185,15 @@ describe('Juggler', () => {
 			expect(guessLimit('juggler')).toBe(5);
 		});
 
-		it.fails('is not offered guesses after the first day', () => {
+		it('is not offered guesses after the first day', () => {
 			// Wiki: "During the first day, if the Juggler declares that they are using their ability,
 			// then you enter the circle, holding the Grimoire."
-			// Waits on the engine (unplanned): the Juggler's day reminder shows on every day until a
-			// Correct reminder is placed, not only on the first day.
 			const s = scenario(cast).newDay().newDay();
 			expect(mayJuggle(s)).toBe(false);
 		});
 
-		it.fails('wakes only on the night after the first day', () => {
+		it('wakes only on the night after the first day', () => {
 			// Wiki: "Remove the CORRECT reminders and the Juggler’s night token when convenient."
-			// Waits on the engine (unplanned): the Juggler still wakes on every night after the first;
-			// nothing takes its night token off once it has learned its number.
 			const s = scenario(cast).newDay();
 			expect(wokeTonight(s.game, s.seat('juggler'), s.characters, 'other')).toBe(true);
 			const later = s.newDay();

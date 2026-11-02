@@ -17,5 +17,6 @@
 	},
 	"deathCause": {
 		"none": "swaps seats"
-	}
+	},
+	"seatSwapsPerDay": 3
 }

@@ -124,11 +124,9 @@ describe('Psychopath', () => {
 			expect(warned(tomorrow.session, tomorrow.ctx, kill(tomorrow))).toEqual([]);
 		});
 
-		it.fails('warns when the Psychopath kills after nominations were called', () => {
+		it('warns when the Psychopath kills after nominations were called', () => {
 			// Wiki: "Once per day, before you have called for nominations, the Psychopath may publicly
 			// choose a player."
-			// Waits on the engine (unplanned): no warning for a Psychopath kill logged after today's
-			// first nomination.
 			const s = scenario(cast).nominate('chef', 'empath');
 			expect(warned(s.session, s.ctx, kill(s))).not.toEqual([]);
 		});

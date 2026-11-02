@@ -108,12 +108,15 @@ export function isExecution(cause: DeathCause | undefined, characters?: Characte
 	return deathCauseEntry(cause, characters)?.kind === 'execution';
 }
 
-/** `deathCauses` for a game: its script, the characters on seats and the Fabled and Loric. */
+/**
+ * `deathCauses` for a game: its script, the characters on seats and the Fabled and Loric. A
+ * rule that waits on a change (`afterChanging`) counts only once it has happened.
+ */
 export function gameDeathCauses(game: Game, characters: CharacterLookup): DeathCauseOption[] {
 	return deathCauses(scriptCharacterIds(game.script), characters, [
 		...charactersInPlay(game),
 		...game.ruleCharacters
-	]);
+	]).filter((o) => changedEnough(game, o.characterId, characters));
 }
 
 /**
@@ -315,6 +318,24 @@ export function validDeathCauses(
 			if (entry.kind !== 'general') entry.flags.push({ code: 'protected', source: guarded });
 	}
 	return out;
+}
+
+/**
+ * Whether a rule that waits on a change (`afterChanging`) holds: some player this character
+ * changed is now of that type (the Pit-Hag's made Demon, https://wiki.bloodontheclocktower.com/Pit-Hag).
+ * True for a rule without one.
+ */
+function changedEnough(game: Game, characterId: CharacterId, characters: CharacterLookup): boolean {
+	const type = deathCauseEntry(characterId, characters)?.afterChanging;
+	if (type === undefined) return true;
+	return game.seating.some((s) => {
+		const seat = game.seats[s];
+		return (
+			seat.changedBy?.via === characterId &&
+			seat.characterId !== undefined &&
+			characters.get(seat.characterId)?.type === type
+		);
+	});
 }
 
 /** Whether the player with the character at `holder` could have killed `victim`. */
