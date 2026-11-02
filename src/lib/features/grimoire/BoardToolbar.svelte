@@ -81,22 +81,16 @@
 		<Button variant="quiet" icon="add" aria-label="Add seat" onclick={onAddSeat}
 			><span class="tool-label">Add seat</span></Button
 		>
-		<!-- Phones move their seats while this is on (seating open); none with no room. -->
+		<!-- Phones move their seats while this is on (seating open); opens a room if none. -->
 		<Button
 			variant="quiet"
 			icon="phonesMove"
 			aria-label={t('room.seating.phones')}
 			aria-pressed={host.seatingOpen}
-			disabled={!host.code}
 			onclick={() => letPhonesMove(!host.seatingOpen)}
 			><span class="tool-label">{t('room.seating.phones')}</span></Button
 		>
-		<Button
-			variant="quiet"
-			icon="countOff"
-			aria-label={t('room.countOff.title')}
-			disabled={!host.code}
-			onclick={countOff}
+		<Button variant="quiet" icon="countOff" aria-label={t('room.countOff.title')} onclick={countOff}
 			><span class="tool-label">{t('room.countOff.title')}</span>{#if count}<span class="count"
 					><CountBadge count={count.tokens.length} total={count.size} /></span
 				>{/if}</Button
