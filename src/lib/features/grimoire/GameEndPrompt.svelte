@@ -200,6 +200,8 @@
 						{@render seat(end.seats[1])} nominated and executed {@render seat(end.seats[0])}.
 					{:else if end.rule === 'demon-executed'}
 						{#each end.seats as id (id)}{@render seat(id)}{/each} executed ({end.ruleName}).
+					{:else if end.rule === 'cult-joined'}
+						{@render seat(end.seats[0])}: every living good player joined.
 					{:else if end.rule === 'dead-without-demon'}
 						{#each end.seats as id (id)}{@render seat(id)}{/each} dead with no Demon.
 					{:else if end.characterId && end.seats.length > 0}

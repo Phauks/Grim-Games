@@ -364,11 +364,14 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['M11', 'M12a', 'M12b', 'M12c']
 	},
 	{
-		// Gap 1, last and separate (Trevor, 2026-10-28).
+		// Gap 1, last and separate (Trevor, 2026-10-28). M9a the vote record and vote weights
+		// (Thief, Bureaucrat, God of Ug, Butler, Zealot, Beggar), M9b voting across the table
+		// (Voudon, Organ Grinder, Ferryman), M9c who may nominate (Bishop, Golem, Gnome), M9d
+		// forced and failed executions (Legion, Judge, Vizier, Cult Leader), M9e the vote sheet.
 		title:
 			'Voting and nominations: vote weight, who may vote or nominate, forced and blocked executions (Butler, Thief, Bureaucrat, Bishop, Legion and 12 more)',
 		area: 'engine',
-		parts: ['M9']
+		parts: ['M9a', 'M9b', 'M9c', 'M9d', 'M9e']
 	},
 	{
 		// The wiki examples each character's test file lists as still to do, a batch per edition

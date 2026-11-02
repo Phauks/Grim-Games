@@ -35,5 +35,8 @@
 	},
 	"reminderMovement": {
 		"why": "Placed on a new choice each day."
+	},
+	"nominating": {
+		"by": "storyteller"
 	}
 }
