@@ -13,6 +13,7 @@
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { seatName, stepHolders, stepName } from './night-steps.ts';
 	import { setTermsPlain } from '#lib/features/glossary/term-handler.ts';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 
 	/**
 	 * Walking through the night (Trevor, 2026-10-16): the current step under the board, with
@@ -91,23 +92,60 @@
 		onclick={() => onIndex(index - 1)}
 	/>
 	{#if step}
-		<!-- Above Previous, where the side is free (Trevor, 2026-10-18). -->
-		<span class="icon">
-			<StepIcon {step} size={44} details />
-		</span>
-		<button type="button" class="step" class:ticked onclick={() => onOpen(step)}>
+		{#if step.character}
+			<!-- The character as every list draws it, with its ability turned off (Trevor,
+			     2026-11-02): the ring opens its details, the band names it and its player, and
+			     the band opens the step. The count is the night's, so it sits beside the band,
+			     not on it. -->
+			<span class="row" class:ticked>
+				<CharacterPiece
+					template="name"
+					character={step.character}
+					info
+					playerName={holders.length === 1 ? seatName(game, holders[0]) : undefined}
+					onclick={() => onOpen(step)}
+				>
+					{#snippet tags()}{#if step.again}<span class="again">again</span>{/if}{/snippet}
+					{#snippet aside()}<span class="count"
+							><CountBadge count={index + 1} total={steps.length} /></span
+						>{/snippet}
+				</CharacterPiece>
+			</span>
+		{:else}
+			<!-- Above Previous, where the side is free (Trevor, 2026-10-18). -->
+			<span class="icon">
+				<StepIcon {step} size={44} details />
+			</span>
+		{/if}
+		<button
+			type="button"
+			class="step"
+			class:ticked
+			class:with-row={!!step.character}
+			onclick={() => onOpen(step)}
+		>
 			<span class="body">
-				<!-- The character on the first line, its player on the second, and the count at the
-				     right of the top row, before ⋯ and X (Trevor, 2026-10-20). -->
-				<span class="name">
-					<strong>{stepName(step)}</strong>
-					<span class="count"><CountBadge count={index + 1} total={steps.length} /></span>
-				</span>
-				{#if holders.length > 0}<span class="who"
-						>{#each holders as seatId, i (seatId)}{i > 0 ? ', ' : ''}<PlayerBadge
-								name={seatName(game, seatId)}
-							/>{/each}</span
-					>{/if}
+				{#if step.character}
+					<!-- The step's name for the button's own label; the row above shows it. -->
+					<span class="name visually-hidden"><strong>{stepName(step)}</strong></span>
+					{#if holders.length > 1}<span class="who"
+							>{#each holders as seatId, i (seatId)}{i > 0 ? ', ' : ''}<PlayerBadge
+									name={seatName(game, seatId)}
+								/>{/each}</span
+						>{/if}
+				{:else}
+					<!-- The step on the first line, its players on the second, and the count at the
+					     right of the top row, before ⋯ and X (Trevor, 2026-10-20). -->
+					<span class="name">
+						<strong>{stepName(step)}</strong>
+						<span class="count"><CountBadge count={index + 1} total={steps.length} /></span>
+					</span>
+					{#if holders.length > 0}<span class="who"
+							>{#each holders as seatId, i (seatId)}{i > 0 ? ', ' : ''}<PlayerBadge
+									name={seatName(game, seatId)}
+								/>{/each}</span
+						>{/if}
+				{/if}
 				<!-- Inside the strip's fixed height, which scrolls, so nothing outside moves. -->
 				{#if asleepBy}<span class="asleep" data-testid="step-asleep"
 						>Poisoned: doesn’t wake ({asleepBy})</span
@@ -210,6 +248,7 @@
 		background: var(--surface-selected);
 	}
 	.step.ticked .body,
+	.row.ticked,
 	.strip:has(.step.ticked) .icon {
 		opacity: 0.6;
 	}
@@ -279,6 +318,28 @@
 		font-family: var(--font-ability);
 		font-size: 0.9rem;
 		line-height: 1.3;
+	}
+	/*
+	 * The character's row across the top, clear of ⋯ and X, its ring where the step's icon
+	 * was: as tall as a tap target, so the text below starts where it did.
+	 */
+	.row {
+		position: absolute;
+		top: var(--space-1);
+		left: var(--space-1);
+		right: calc(2 * var(--tap-target));
+		z-index: 1;
+		--character-ring: var(--tap-target);
+	}
+	.row .count {
+		position: static;
+		height: auto;
+	}
+	.again {
+		font-size: 0.75em;
+	}
+	.step.with-row .body {
+		padding-top: calc(var(--tap-target) - var(--space-1));
 	}
 	.none {
 		display: grid;
