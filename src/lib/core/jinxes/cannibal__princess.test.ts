@@ -10,8 +10,16 @@
  * of the two may be in play). Paraphrase, never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
-import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
+import { findJinx, jinxesAmong, type Script } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { castWith, run } from '#lib/core/model/fixtures.test-support.ts';
+import { nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
+import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
+
+const scriptOf = (ids: string[]): Script => ({
+	meta: { name: 'Jinxed' },
+	entries: ids.map((id) => ({ kind: 'official' as const, id }))
+});
 
 describe('Cannibal + Princess jinx', () => {
 	const data = committedGameData();
@@ -30,5 +38,52 @@ describe('Cannibal + Princess jinx', () => {
 		expect(jinxesAmong(data.jinxes, ['princess'])).not.toContain(jinx);
 	});
 
-	it.todo('enforces the rule the jinx imposes');
+	// Both pages' Related Jinxes: when the Cannibal nominated the Princess today and she died
+	// by execution, the Demon doesn't kill tonight. Read from today's log, shown at the
+	// Demon's step; the Storyteller still decides.
+	describe('no Demon kill after the Cannibal executes the Princess', () => {
+		const cast = castWith({
+			script: scriptOf(['imp', 'cannibal', 'princess', 'chef', 'empath', 'ravenkeeper'])
+		});
+		const noKill = (alerts: ReturnType<typeof nightStepAlerts>) =>
+			alerts.filter((a) => a.kind === 'no-kill');
+
+		it("is data in the Cannibal's rules", () => {
+			expect(jinxRulesBetween('cannibal', 'princess')).toEqual({ noKill: 'executed-partner' });
+		});
+
+		it('shows no kill at the Demon step when the Cannibal nominated her and she died', () => {
+			const { session, ctx, seats } = cast(['imp', 'cannibal', 'princess', 'chef', 'ravenkeeper']);
+			const { game } = run(
+				session,
+				ctx,
+				{ type: 'Nominate', nominator: seats[1], nominee: seats[2] },
+				{ type: 'Execute', seatId: seats[2] }
+			);
+			const alerts = nightStepAlerts(game, 'imp', ctx.characters);
+			expect(noKill(alerts).map((a) => [a.seatId, a.source])).toEqual([
+				[seats[0], { characterId: 'cannibal', seatId: seats[1] }]
+			]);
+			expect(alerts.some((a) => a.kind === 'on-death')).toBe(false);
+		});
+
+		it('does not when someone else nominated her, or she survived', () => {
+			const { session, ctx, seats } = cast(['imp', 'cannibal', 'princess', 'chef', 'ravenkeeper']);
+			const other = run(
+				session,
+				ctx,
+				{ type: 'Nominate', nominator: seats[3], nominee: seats[2] },
+				{ type: 'Execute', seatId: seats[2] }
+			);
+			expect(noKill(nightStepAlerts(other.game, 'imp', ctx.characters))).toEqual([]);
+			const lived = run(
+				session,
+				ctx,
+				{ type: 'SetOverride', seatId: seats[2], override: { field: 'canDie', value: false } },
+				{ type: 'Nominate', nominator: seats[1], nominee: seats[2] },
+				{ type: 'Execute', seatId: seats[2] }
+			);
+			expect(noKill(nightStepAlerts(lived.game, 'imp', ctx.characters))).toEqual([]);
+		});
+	});
 });

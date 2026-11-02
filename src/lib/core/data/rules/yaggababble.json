@@ -59,5 +59,10 @@
 			}
 		]
 	},
-	"infoCard": "secret-phrase"
+	"infoCard": "secret-phrase",
+	"jinxes": {
+		"exorcist": {
+			"noKill": "token"
+		}
+	}
 }
