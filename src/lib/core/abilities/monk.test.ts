@@ -68,7 +68,7 @@ describe('Monk', () => {
 			// Wiki: "The Monk protects the Mayor, and the Imp attacks the Mayor. The Mayor's "another
 			// player dies" ability does not trigger, because the Mayor is safe from the Imp. Nobody dies
 			// tonight."
-			// Waits on the engine: the survivor's reasons still list the Mayor's bounce beside the
+			// Waits on the engine (bug): the survivor's reasons still list the Mayor's bounce beside the
 			// Monk's protection.
 			const s = scenario(['monk', 'mayor', 'imp', 'chef', 'poisoner'])
 				.reminder('mayor', 'monk', 'Safe')

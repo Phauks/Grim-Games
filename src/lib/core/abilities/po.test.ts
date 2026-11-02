@@ -64,7 +64,7 @@ describe('Po', () => {
 				'not-self'
 			]);
 			// Waits on the engine: nothing says how many players the Po may attack on a night.
-			engineGap('unplanned', 'the Po attacks one player, or three after a night it chose nobody');
+			engineGap('M15k', 'the Po attacks one player, or three after a night it chose nobody');
 		});
 
 		it('Example 2: Poisoned triple attack fails; sober kill follows', () => {

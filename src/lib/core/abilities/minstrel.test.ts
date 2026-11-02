@@ -83,7 +83,7 @@ describe('Minstrel', () => {
 				.execute('devilsadvocate');
 			expect(day3.game.seats[day3.seat('devilsadvocate')].dead).toBe(true);
 			engineGap(
-				'unplanned',
+				'M15m',
 				"a Minion dying by execution today puts the Minstrel's Everyone Is Drunk on; a Townsfolk does not"
 			);
 		});
@@ -111,7 +111,7 @@ describe('Minstrel', () => {
 			).toBe(false);
 			expect(works(day3, 'imp')).toBe(true);
 			engineGap(
-				'unplanned',
+				'M15m',
 				"only a Minion's execution puts the Minstrel's Everyone Is Drunk on, never a Traveller's exile"
 			);
 		});

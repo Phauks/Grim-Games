@@ -84,7 +84,7 @@ describe('Fool', () => {
 			// Fool, who is now protected by the Innkeeper. The Fool remains alive and keeps their
 			// ability. Later, after the Innkeeper has died, the Demon attacks the Fool, who remains
 			// alive again but uses their ability, so next time they will die."
-			// Waits on the engine: a protected Fool's survival still lists the Fool's own ability
+			// Waits on the engine (bug): a protected Fool's survival still lists the Fool's own ability
 			// beside the protection, as if it were spent.
 			const s = scenario(['chef', 'tealady', 'fool', 'innkeeper', 'empath', 'imp'])
 				.reminder('chef', 'tealady', 'Cannot Die')

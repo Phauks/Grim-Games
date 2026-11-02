@@ -85,7 +85,7 @@ describe('Wraith', () => {
 			expect(steps).toContain('wraith');
 			expect(steps).toContain('imp');
 			engineGap(
-				'unplanned',
+				'M15k',
 				'the night order wakes the Wraith with each other evil player who wakes, such as the Demon'
 			);
 		});

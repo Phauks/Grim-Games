@@ -77,7 +77,7 @@ describe('Alsaahir', () => {
 			// End game offers the Alsaahir as the reason, for the Storyteller to pick.
 			expect(endCharacters(s.game, s.characters)).toContain('alsaahir');
 			engineGap(
-				'unplanned',
+				'M15l',
 				'a recorded Alsaahir guess that names every Demon and Minion ends the game, and good wins'
 			);
 		});

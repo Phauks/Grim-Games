@@ -103,7 +103,7 @@ describe('Dreamer', () => {
 			// Wiki: "The Dreamer chooses a player who is the Vortox. The Dreamer's information must be
 			// false because the Vortox is in play, so the Dreamer learns that this player is either the
 			// Oracle or the No Dashii."
-			// Waits on the engine: the Dreamer's card fills in the chosen player's true character even
+			// Waits on the engine (M15n): the Dreamer's card fills in the chosen player's true character even
 			// when the Vortox makes the Dreamer's information false.
 			const s = scenario(['dreamer', 'oracle', 'chef', 'witch', 'vortox']);
 			expect(reliability(s.game, s.seat('dreamer'), 'dreamer', s.characters)).toMatchObject({

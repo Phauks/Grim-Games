@@ -87,7 +87,7 @@ describe('Chef', () => {
 			// the Recluse is registering as evil for the Imp-Recluse pair, but as good for the
 			// Poisoner-Recluse pair."
 			// The Recluse may register as evil for one pair and good for the other in the same
-			// count. Waits on the engine: a registration is one world for the whole count, so only
+			// count. Waits on the engine (bug): a registration is one world for the whole count, so only
 			// 0 (both good) or 2 (both evil) is offered.
 			const s = scenario(['chef', 'imp', 'recluse', 'poisoner', 'monk', 'empath']);
 			const picker = infoPicker(s.game, s.seat('chef'), 'chef', s.characters)!;

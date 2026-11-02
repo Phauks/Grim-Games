@@ -71,7 +71,7 @@ describe('Deus ex Fiasco', () => {
 			// token is the Drunk. The Storyteller tells Doug that he is now the Mayor, replaces the Drunk
 			// token with the Mayor token in the Grimoire, and secretly makes the Ravenkeeper the Drunk
 			// instead. Later that day, the Storyteller declares that a mistack has been madde."
-			// Waits on the engine: the day line ignores a Whoopsie placed on the Fabled, as day
+			// Waits on the engine (M15o): the day line ignores a Whoopsie placed on the Fabled, as day
 			// reminders look for it on seats only.
 			const s = scenario(['drunk', 'ravenkeeper', 'imp', 'chef', 'poisoner'])
 				.rule('deusexfiasco')
@@ -92,7 +92,7 @@ describe('Deus ex Fiasco', () => {
 			// mistake, and the second number is correct. To avoid revealing too much, the Storyteller
 			// waits until the next day to inform the group that a mistake was made."
 			// A poisoned Recluse registers truly, as good: the Empath's true number is 0.
-			// Waits on the engine: the day line ignores a Whoopsie placed on the Fabled, as day
+			// Waits on the engine (M15o): the day line ignores a Whoopsie placed on the Fabled, as day
 			// reminders look for it on seats only.
 			const s = scenario(['empath', 'monk', 'imp', 'poisoner', 'recluse'])
 				.rule('deusexfiasco')
@@ -109,7 +109,7 @@ describe('Deus ex Fiasco', () => {
 			// and deliberately (and incorrectly) shows the Recluse token. Later that night, the
 			// Storyteller again wakes the Undertaker and shows the Imp token. In the morning, the
 			// Storyteller tells the group that a mistake was made in the night, but corrected."
-			// Waits on the engine: the day line ignores a Whoopsie placed on the Fabled, as day
+			// Waits on the engine (M15o): the day line ignores a Whoopsie placed on the Fabled, as day
 			// reminders look for it on seats only.
 			const s = scenario(['undertaker', 'recluse', 'imp', 'scarletwoman', 'chef', 'monk'])
 				.rule('deusexfiasco')
@@ -125,7 +125,7 @@ describe('Deus ex Fiasco', () => {
 			// game is over and good has wun. However, the Scarlet Woman is still alive. The Storyteller
 			// declares that a mistake has been made, and that the game continus."
 			// With five players alive the Scarlet Woman becomes the Demon, so the game goes on.
-			// Waits on the engine: the day line ignores a Whoopsie placed on the Fabled, as day
+			// Waits on the engine (M15o): the day line ignores a Whoopsie placed on the Fabled, as day
 			// reminders look for it on seats only.
 			const s = scenario(['yaggababble', 'scarletwoman', 'chef', 'monk', 'empath', 'soldier'])
 				.rule('deusexfiasco')
@@ -146,7 +146,7 @@ describe('Deus ex Fiasco', () => {
 			// Storyteller deliberately declares that Ben and Lewis have died. After 30 seconds or so, the
 			// Storyteller says “Whoops, I had my Grimoire facing the wrong way. Ben and Lewis should not
 			// have died. They are still alive. Amy and Doug died during the night. Sorry, my mistake.”"
-			// Waits on the engine: the day line ignores a Whoopsie placed on the Fabled, as day
+			// Waits on the engine (M15o): the day line ignores a Whoopsie placed on the Fabled, as day
 			// reminders look for it on seats only.
 			const announced = scenario(['chef', 'shabaloth', 'monk', 'empath', 'poisoner', 'soldier'])
 				.rule('deusexfiasco')

@@ -81,10 +81,7 @@ describe('Damsel', () => {
 			expect(correctGuesses(s.game, [guess], s.characters)).toEqual([guess]);
 			expect(dayUseOf('damsel', s.characters)).toMatchObject({ who: 'guesser' });
 			expect(endCharacters(s.game, s.characters)).toContain('damsel');
-			engineGap(
-				'unplanned',
-				"a Minion's right public guess of the Damsel ends the game: evil wins"
-			);
+			engineGap('M15l', "a Minion's right public guess of the Damsel ends the game: evil wins");
 		});
 		it.fails("Example 2: After a wrong guess, a Minion's right guess changes nothing", () => {
 			// Wiki: "Doug is the Damsel. The Boomdandy guesses that Julian is the Damsel. Nothing
@@ -98,7 +95,7 @@ describe('Damsel', () => {
 			const spent = s.reminder('damsel', 'damsel', 'Guess Used');
 			expect(gameEnds(spent.game, spent.characters)).toEqual([]);
 			engineGap(
-				'unplanned',
+				'M15l',
 				"once the Damsel's Guess Used is placed, a Minion's right guess ends nothing"
 			);
 		});

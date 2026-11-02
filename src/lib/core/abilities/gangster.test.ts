@@ -91,10 +91,7 @@ describe('Gangster', () => {
 				spentToken: 'No Ability'
 			});
 			expect(dayUseDeath(s.game, 'gangster', s.seat('fool'), s.characters)).not.toBe('dies');
-			engineGap(
-				'unplanned',
-				'the Gangster may use their ability once a day, even when the kill fails'
-			);
+			engineGap('M15m', 'the Gangster may use their ability once a day, even when the kill fails');
 		});
 	});
 });

@@ -90,7 +90,7 @@ describe('Harlot', () => {
 			}));
 			expect(s.game.seats[s.seat('harlot')].alignment).toBe('evil');
 			engineGap(
-				'unplanned',
+				'M15n',
 				"when the chosen player agrees, the Harlot's step shows the Harlot that player's true character (the Sage), whatever the Harlot later claims"
 			);
 		});

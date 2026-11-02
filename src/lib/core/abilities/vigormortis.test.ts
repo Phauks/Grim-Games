@@ -107,7 +107,7 @@ describe('Vigormortis', () => {
 			// Vigormortis kills the Witch, who curses and kills a player. The Pit-Hag turns the dead Witch
 			// into the Oracle, who now has no ability. The Pit-Hag turns the Vigormortis into a Vortox. The
 			// Pit-Hag now has no ability."
-			// Waits on the engine: a Has Ability token keeps working once no Vigormortis is in play.
+			// Waits on the engine (M15g): a Has Ability token keeps working once no Vigormortis is in play.
 			const s = scenario([
 				'vigormortis',
 				'pithag',

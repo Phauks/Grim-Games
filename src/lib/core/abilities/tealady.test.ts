@@ -82,7 +82,7 @@ describe('Tea Lady', () => {
 			expect(protection(s.game, s.seat('matron'), s.characters, 'execution')).toMatchObject({
 				characterId: 'tealady'
 			});
-			// Waits on the engine: Exile kills a living Traveller without checking protection.
+			// Waits on the engine (M15m): Exile kills a living Traveller without checking protection.
 			const exiled = s.do((at) => ({ type: 'Exile', seatId: at.seat('matron') }));
 			expect(exiled.game.seats[exiled.seat('matron')].dead).toBe(false);
 		});

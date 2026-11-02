@@ -53,7 +53,7 @@ describe('Ferryman', () => {
 			// excitement of voting. The Storyteller puts the Ferryman in play. Later in the game, when
 			// there are three players left alive, the Storyteller declares that it is the final day. Amy
 			// and Doug regain their vote tokens."
-			// Waits on the engine: the Ferryman in play on the final day doesn't give back spent ghost
+			// Waits on the engine (M9): the Ferryman in play on the final day doesn't give back spent ghost
 			// votes.
 			const spent = scenario(['chef', 'empath', 'monk', 'soldier', 'imp', 'poisoner'])
 				.dies('chef')
@@ -73,7 +73,7 @@ describe('Ferryman', () => {
 			// day, the Storyteller adds the Ferryman and those dead players regain their vote tokens.
 			// After a riotously entertaining final day, the Storyteller is celebrated for maximizing the
 			// players’ enjoyment."
-			// Waits on the engine, as in Example 1. Twelve seats at most here: nine dead, six of them
+			// Waits on the engine (M9): as in Example 1. Twelve seats at most here: nine dead, six of them
 			// with their vote spent, and three alive.
 			const cast = [
 				'washerwoman',

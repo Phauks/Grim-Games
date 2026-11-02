@@ -80,6 +80,7 @@ describe('Hatter', () => {
 			// Wiki: "The Vigormortis has killed their Pit-Hag, then later kills the Hatter. Both players
 			// choose to stay the same characters, so that they don't lose the effects of the
 			// Vigormortis."
+			// Waits on the engine (M15g): a dead Minion keeps the Vigormortis's Has Ability after the Vigormortis becomes another Demon.
 			const s = scenario(['hatter', 'pithag', 'vigormortis', 'chef', 'empath', 'monk', 'mayor'])
 				.dies('pithag', 'vigormortis')
 				.reminder('pithag', 'vigormortis', 'Has Ability')
@@ -107,7 +108,7 @@ describe('Hatter', () => {
 				.execute('hatter');
 			expect(changeableSeats(s.game, 'hatter', s.characters)).toContain(s.seat('mastermind'));
 			engineGap(
-				'unplanned',
+				'M15o',
 				'the tea party refuses a character another player already chose tonight, and the new Assassin has its once-per-game ability again'
 			);
 		});

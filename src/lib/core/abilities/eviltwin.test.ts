@@ -83,7 +83,7 @@ describe('Evil Twin', () => {
 			// Wiki: "The Pit-Hag turns a good player into the Evil Twin, who remains good. The group
 			// executes the good-aligned Evil Twin. Evil wins."
 			// The new Evil Twin is good, so its twin (marked Twin) is an evil player.
-			// Waits on the engine: the Twin game end reads only the player marked Twin as the good
+			// Waits on the engine (M15l): the Twin game end reads only the player marked Twin as the good
 			// twin, never a good-aligned Evil Twin.
 			const s = scenario(['chef', 'empath', 'monk', 'pithag', 'nodashii'])
 				.becomes('chef', 'eviltwin', 'good')

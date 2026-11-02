@@ -67,12 +67,13 @@ describe('High Priestess', () => {
 				expect(isAllowed(picker!, { seats: [s.seat(seat)] })).toBe(true);
 			}
 		});
-		// Waits on the engine: the High Priestess has no `learns` rule, so infoPicker gives her
+		// Waits on the engine (M15n): the High Priestess has no `learns` rule, so infoPicker gives her
 		// night step no picker of one player.
 		it.fails('Example 2: Saint for three nights, then the Imp', () => {
 			// Wiki: "For three nights in a row, the High Priestess learns Sarah. Sarah is the Saint and the
 			// good team are trying to execute her. On the last night, the High Priestess learns Lewis.
 			// Lewis is the Imp, and his story is clashing with several good players."
+			// Waits on the engine (M15n): no High Priestess learns rule and no info picker.
 			const s = scenario(['highpriestess', 'saint', 'imp', 'chef', 'monk', 'poisoner']);
 			const picker = infoPicker(s.game, s.seat('highpriestess'), 'highpriestess', s.characters);
 			expect(picker).toBeDefined();

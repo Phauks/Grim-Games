@@ -72,7 +72,7 @@ describe('Atheist', () => {
 			const pair = [s.seat('grandmother'), s.seat('seamstress')];
 			expect(isAllowed(picker, { seats: pair, characterId: 'boomdandy' })).toBe(true);
 			engineGap(
-				'unplanned',
+				'M15n',
 				'with the Atheist in play, any player may die at any time and any ability may do anything'
 			);
 		});
@@ -101,7 +101,7 @@ describe('Atheist', () => {
 			expect(analysis.warnings.map((w) => w.code)).not.toContain('count-mismatch');
 			expect(endCharacters(s.game, s.characters)).toContain('atheist');
 			engineGap(
-				'unplanned',
+				'M15l',
 				'executing the Storyteller while the Atheist is in play ends the game, and good wins'
 			);
 		});

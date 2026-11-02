@@ -65,7 +65,7 @@ describe('Toymaker', () => {
 			}));
 			expect(skipped.game.seats[skipped.seat('imp')].reminders).toEqual([]);
 			engineGap(
-				'unplanned',
+				'M15a',
 				'whether the Demon may attack tonight: not on the final night while the Toymaker reminder is on the Demon'
 			);
 		});
@@ -80,7 +80,7 @@ describe('Toymaker', () => {
 				.dies('soldier', 'execution');
 			expect(s.game.seating.filter((id) => !s.game.seats[id].dead)).toHaveLength(3);
 			engineGap(
-				'unplanned',
+				'M15a',
 				'whether the Demon may attack tonight: not on the final night while the Toymaker reminder is on the Demon'
 			);
 		});

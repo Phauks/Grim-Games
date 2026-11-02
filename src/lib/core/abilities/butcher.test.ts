@@ -52,7 +52,7 @@ describe('Butcher', () => {
 		it.fails("Example 1: Witch's execution enables a Sage execution", () => {
 			// Wiki: "The Witch is executed and dies. The Butcher then nominates the Sage, who gets enough
 			// votes to be executed. The Sage dies too."
-			// Waits on the engine: Execute warns already-executed even when the Butcher's extra
+			// Waits on the engine (M9): Execute warns already-executed even when the Butcher's extra
 			// nomination led to the day's second execution.
 			const s = scenario(['butcher', 'chef', 'witch', 'sage', 'fanggu'])
 				.do((at) => ({ type: 'SetAlignment', seatId: at.seat('butcher'), alignment: 'good' }))
@@ -95,7 +95,7 @@ describe('Butcher', () => {
 			// Mathematician gets more votes and is executed today. The game continues, and the Butcher
 			// nominates the Town Crier again. This time, enough hands are raised, and the Town Crier is
 			// executed."
-			// Waits on the engine: Execute warns already-executed even when the Butcher's extra
+			// Waits on the engine (M9): Execute warns already-executed even when the Butcher's extra
 			// nomination led to the day's second execution.
 			const s = scenario(['butcher', 'towncrier', 'mathematician', 'chef', 'nodashii'])
 				.do((at) => ({ type: 'SetAlignment', seatId: at.seat('butcher'), alignment: 'good' }))

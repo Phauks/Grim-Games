@@ -178,10 +178,7 @@ describe('Hermit', () => {
 			expect(isTruthful(picker, asDemon)).toBe(false);
 			const executed = s.newDay().execute('hermit');
 			expect(gameEnds(executed.game, executed.characters)).toEqual([]);
-			engineGap(
-				'unplanned',
-				'the Klutz choosing an evil player (the Wizard) ends the game: good loses'
-			);
+			engineGap('M15l', 'the Klutz choosing an evil player (the Wizard) ends the game: good loses');
 		});
 		// Waits on the engine: madnessOffer reads only a player whose true character is the
 		// Mutant, so a Hermit holding the Mutant ability is never offered the execution.
@@ -190,6 +187,7 @@ describe('Hermit', () => {
 			// that he is the Exorcist, he chooses a player each night. Lewis says that he thinks he might
 			// be the Drunk, so the Storyteller executes him due to the Mutant ability. Due to the
 			// Sweetheart ability, the Alchemist is now drunk."
+			// Waits on the engine (M15o): madnessOffer only treats a true Mutant as mad, not a Hermit holding the Mutant ability.
 			const outsiders: Script = {
 				entries: [
 					'hermit',

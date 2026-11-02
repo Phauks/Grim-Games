@@ -61,6 +61,7 @@ describe('Marionette', () => {
 			// learn who was executed that day, but her information is often wrong. Halfway through the
 			// game, the Demon tells her that she is the Marionette."
 			// She sits beside the Demon, shown the Undertaker, with the Marionette's reminder.
+			// Waits on the engine (M15n): Is The Marionette gives no impairment for the good character they think they are, so their info counts as reliable.
 			const s = scenario(['undertaker', 'imp', 'chef', 'empath', 'monk', 'poisoner'])
 				.reminder('undertaker', 'marionette', 'Is The Marionette')
 				.execute('chef');

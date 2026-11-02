@@ -68,7 +68,7 @@ describe('Banshee', () => {
 		it.fails('Example 2: Poisoned Banshee killed; no power gained', () => {
 			// Wiki: "The Banshee is poisoned. The Ojo kills the Banshee. Nobody learns that the Banshee has
 			// died, and for the rest of the game, the Banshee may not nominate, and has just one vote."
-			// Waits on the engine: a Banshee poisoned when the Demon killed them gains nothing, but
+			// Waits on the engine (M15m): a Banshee poisoned when the Demon killed them gains nothing, but
 			// afterDeath reads only the cause of death.
 			const s = scenario(['banshee', 'poisoner', 'ojo', 'chef', 'empath'])
 				.poisoned('banshee')

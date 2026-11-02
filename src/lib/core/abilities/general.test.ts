@@ -70,7 +70,7 @@ describe('General', () => {
 			];
 			const s = scenario(cast).newDay();
 			expect(livingByTeam(s.game)).toMatchObject({ alive: 9, good: 5, evil: 4 });
-			engineGap('unplanned', needs);
+			engineGap('M15n', needs);
 		});
 		it.fails('Example 2: Good holds solid info; only Minion dead', () => {
 			// Wiki: "The Good team has a lot of information, and believes that their false information
@@ -80,7 +80,7 @@ describe('General', () => {
 				.newDay();
 			const minions = s.game.seating.filter((id) => typeOf(s.game, id, s.characters) === 'minion');
 			expect(minions.every((id) => s.game.seats[id].dead)).toBe(true);
-			engineGap('unplanned', needs);
+			engineGap('M15n', needs);
 		});
 		it.fails('Example 3: Uncertain outcome as Po may strike', () => {
 			// Wiki: "The Po is a very experienced player and is coordinating well with the Minions. The
@@ -94,7 +94,7 @@ describe('General', () => {
 			expect(protection(s.game, s.seat('savant'), s.characters, 'demon')).toMatchObject({
 				characterId: 'monk'
 			});
-			engineGap('unplanned', needs);
+			engineGap('M15n', needs);
 		});
 	});
 });

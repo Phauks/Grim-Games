@@ -78,7 +78,7 @@ describe('Mastermind', () => {
 			// trigger yet, because the Zombuul's execution did not make the game end. When the Zombuul
 			// is executed a second time and dies for real, the Mastermind’s ability triggers, and the
 			// game continues for one more day."
-			// Waits on the engine: the extra day counts from the Zombuul's first execution, so the
+			// Waits on the engine (M15l): the extra day counts from the Zombuul's first execution, so the
 			// second one is read as an execution on the extra day (good wins) instead of starting it.
 			const first = scenario(['chef', 'empath', 'monk', 'mastermind', 'zombuul'])
 				.newDay()

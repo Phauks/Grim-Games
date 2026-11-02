@@ -59,7 +59,7 @@ describe('Bootlegger', () => {
 			// Wiki: "The character sheet contains the homebrew character the Peasant. The
 			// Storyteller announces that the Bootlegger is in play and then explains how the
 			// Peasant works."
-			// Waits on the engine: a game starts with the Bootlegger in play only when the script
+			// Waits on the engine (M15o): a game starts with the Bootlegger in play only when the script
 			// has Bootlegger lines, not when it has a homebrew character.
 			const issues = new Issues();
 			const peasant = parseCharacter(

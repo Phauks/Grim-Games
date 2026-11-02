@@ -62,7 +62,7 @@ describe('Farmer', () => {
 			expect(after.game.seats[after.seat('alchemist')].characterId).toBe('farmer');
 			expect(alignmentOf(after.game, after.seat('alchemist'))).toBe('good');
 			engineGap(
-				'unplanned',
+				'M15n',
 				'the players who may become the Farmer when it dies at night: good ones only, never the evil Fearmonger'
 			);
 		});
