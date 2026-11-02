@@ -48,7 +48,7 @@ test('any living player uses the Doomsayer once, and their ally dies by it', asy
 	await choose(page, 2, 'Dreamer');
 	await addFabled(page, 'Doomsayer');
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	const day = page.getByRole('dialog', { name: /^Day( \d+)?$/ });
+	const day = page.getByRole('dialog', { name: /^(Setup|Day( \d+)?)$/ });
 	await expect(day).toBeVisible();
 
 	const use = day.locator('li[data-character="doomsayer"]').getByTestId('day-use-anyone');
