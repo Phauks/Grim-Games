@@ -267,3 +267,94 @@ test('the Leviathan chooses the Sage at night, and the Sage acts without dying',
 	const sage = await openStep(page, 'Sage');
 	await expect(sage.getByTestId('night-alerts')).toContainText(chosen);
 });
+
+/** The day sheet: Setup before the first night, Day N after it. */
+async function openDay(page: Page) {
+	await page.getByRole('button', { name: 'Day', exact: true }).tap();
+	const day = page.getByRole('dialog', { name: /^(Setup|Day( \d+)?)$/ });
+	await expect(day).toBeVisible();
+	return day;
+}
+
+/** Turns on Settings › Storyteller › Track nominations, for the seats' nomination marks. */
+async function trackNominations(page: Page) {
+	await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();
+	await page.getByRole('dialog').getByRole('button', { name: 'Settings' }).tap();
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	await settings
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Storyteller' })
+		.tap();
+	await settings.getByText('Track nominations', { exact: true }).tap();
+	await settings.getByRole('button', { name: 'Close' }).first().tap();
+	await expect(settings).toBeHidden();
+}
+
+/** Taps seat `number`'s nomination marks and picks `nominee`: a seat number or the Storyteller. */
+async function nominate(page: Page, number: number, nominee: number | 'Storyteller') {
+	await page
+		.getByTestId('seat')
+		.nth(number - 1)
+		.getByTestId('nomination-marks')
+		.tap();
+	const chooser = page.getByRole('dialog', { name: `Who did Seat ${number} nominate?` });
+	if (nominee === 'Storyteller') await chooser.getByTestId('choose-storyteller').tap();
+	else await chooser.getByText(`Seat ${nominee}`, { exact: true }).tap();
+	await expect(chooser).toBeHidden();
+}
+
+// The Riot's jinx with the Mayor (L112): during the riot the Mayor may stop it, on the Riot's
+// own row of the day; with one Riot alive, good wins
+// (https://wiki.bloodontheclocktower.com/Riot#Related_Jinxes).
+test('the Mayor stops the riot from the Riot’s day row, and good wins with one Riot', async ({
+	page
+}) => {
+	test.slow();
+	await startGame(page, 'Riot Mayor', ['riot', 'mayor', 'chef', 'empath', 'poisoner', 'monk']);
+	await choose(page, 1, 'Riot');
+	await choose(page, 2, 'Mayor');
+	await choose(page, 3, 'Chef');
+	await putReminder(page, 'Day 3', 1);
+	await closeBin(page);
+	const day = await openDay(page);
+	const row = day.locator('li[data-character="riot"]').first();
+	const stop = row.getByTestId('jinx-stop');
+	await expect(stop).toContainText('Stopped by');
+	await stop.tap();
+	const ask = page.getByRole('alertdialog', { name: /^Did Mayor .* stop the Riot\s?\?$/ });
+	await expect(ask).toContainText(/has stopped the\s*Riot/);
+	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	const prompt = page.getByRole('alertdialog', { name: 'End game?' });
+	const end = prompt.locator('[data-rule="partner-stops"]');
+	await expect(end).toContainText('Good wins');
+	await expect(end.getByTestId('end-jinx')).toContainText(/stop the riot/);
+	await expect(prompt.getByRole('combobox', { name: 'Winner' })).toContainText('Good');
+});
+
+// The Riot's jinx with the Atheist (L112): during the riot a nominated Storyteller is voted on,
+// and when not executed their nominator nominates again, with no warning; executed, the game
+// ends (https://wiki.bloodontheclocktower.com/Riot#Related_Jinxes).
+test('during the riot a player who nominated the Storyteller nominates again, with no warning', async ({
+	page
+}) => {
+	test.slow();
+	await startGame(page, 'Riot Atheist', ['riot', 'atheist', 'chef', 'empath', 'poisoner', 'monk']);
+	await choose(page, 1, 'Riot');
+	await choose(page, 3, 'Chef');
+	await putReminder(page, 'Day 3', 1);
+	await closeBin(page);
+	await trackNominations(page);
+	await nominate(page, 3, 'Storyteller');
+	// The vote doesn't put the Storyteller to death: Seat 3 nominates again.
+	await nominate(page, 3, 4);
+	await expect(page.getByText('That player has already nominated today.')).toHaveCount(0);
+	// About to die: executed from the day's Execution, and the game ends.
+	const day = await openDay(page);
+	await day.getByRole('button', { name: 'Execution', exact: true }).tap();
+	const ask = page.getByRole('alertdialog', { name: 'End the day?' });
+	await ask.getByRole('combobox', { name: 'Execution' }).tap();
+	await page.getByRole('option', { name: 'Storyteller', exact: true }).tap();
+	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	const prompt = page.getByRole('alertdialog', { name: 'End game?' });
+	await expect(prompt.locator('[data-rule="storyteller-executed"]')).toContainText('Evil wins');
+});
