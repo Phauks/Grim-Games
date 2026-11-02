@@ -38,6 +38,8 @@
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import CharacterPane from './CharacterPane.svelte';
 	import CollectionPane from './CollectionPane.svelte';
+	import ModePane from './ModePane.svelte';
+	import { modeAt, modeItems, modeJson } from './mode-items.ts';
 	import FolderBar from './FolderBar.svelte';
 	import FolderNameDialog from './FolderNameDialog.svelte';
 	import ItemPane, { setLibraryPick, setLibraryWindow } from './ItemPane.svelte';
@@ -212,7 +214,8 @@
 			name: c.name,
 			haystack: foldForSearch(c.name),
 			sub: t('library.characterCount', { count: c.characters.length })
-		}))
+		})),
+		...modeItems()
 	]);
 
 	const items = $derived(onlyKind ? allItems.filter((item) => item.kind === onlyKind) : allItems);
@@ -365,10 +368,11 @@
 	const openCollection = $derived(
 		characterCollections.list.find((c) => collectionKey(c.id) === openKey)
 	);
+	const openMode = $derived(modeAt(openKey));
 	// Closing the pane, or the item going (deleted here or elsewhere), clears it.
 	const paneOpen = {
 		get open() {
-			return !!(openScript || openCharacter || openCollection);
+			return !!(openScript || openCharacter || openCollection || openMode);
 		},
 		set open(value: boolean) {
 			if (!value) openKey = undefined;
@@ -424,6 +428,9 @@
 		if (row.kind === 'script') json = scripts.find((s) => s.key === row.key)?.shareable.json;
 		else if (row.kind === 'character') {
 			json = characters.find(({ saved }) => characterKey(saved.savedId) === row.key)?.saved.entry;
+		} else if (row.kind === 'mode' || row.kind === 'rule') {
+			const mode = modeAt(row.key);
+			json = mode && modeJson(mode);
 		} else {
 			const collection = characterCollections.list.find((c) => collectionKey(c.id) === row.key);
 			json = collection && { ...emptyCollections(), collections: [collection] };
@@ -654,6 +661,12 @@
 			{data}
 			{inline}
 			onchanged={openItem}
+		/>
+	{:else if openMode}
+		<ModePane
+			bind:open={() => isOpen(inline), (v) => setOpen(inline, v)}
+			mode={openMode}
+			{inline}
 		/>
 	{:else if inline}
 		<ItemPane title={t('library.pane')} inline>{t('common.none')}</ItemPane>

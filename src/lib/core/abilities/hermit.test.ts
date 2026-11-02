@@ -112,7 +112,10 @@ describe('Hermit', () => {
 		});
 
 		it('has none while poisoned', () => {
-			const { game, seats } = cast(PLAYERS, poison(0));
+			const { game, seats } = cast(
+				['hermit', 'ravenkeeper', 'imp', 'empath', 'poisoner'],
+				poison(0)
+			);
 			expect(heldAbilitiesOf(game, seats[0], characters).every((h) => !h.works)).toBe(true);
 			expect(gainedAbilities(game, characters)).toEqual([]);
 		});

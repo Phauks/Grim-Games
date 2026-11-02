@@ -48,7 +48,7 @@ describe('actsTwice part', () => {
 
 describe('actsTwiceSource', () => {
 	it('names the token and its character, working while that ability works', () => {
-		const s = scenario(['barista', 'witch', 'imp', 'chef']).reminder(
+		const s = scenario(['barista', 'witch', 'imp', 'chef', 'poisoner']).reminder(
 			'witch',
 			'barista',
 			'Acts Twice'
@@ -102,7 +102,7 @@ describe('withActsTwiceSteps', () => {
 	});
 
 	it('changes nothing without the token, or while the Barista is poisoned', () => {
-		const s = scenario(['barista', 'witch', 'imp', 'chef']);
+		const s = scenario(['barista', 'witch', 'imp', 'chef', 'poisoner']);
 		expect(ids(s)).not.toContain(`witch:again:${s.seat('witch')}`);
 		const poisoned = s.reminder('witch', 'barista', 'Acts Twice').poisoned('barista');
 		expect(steps(poisoned).some((step) => step.again)).toBe(false);
@@ -136,7 +136,11 @@ describe('withActsTwiceSteps', () => {
 
 describe('night alerts', () => {
 	it('says at the step that the player acts twice, and whether the token works', () => {
-		const s = scenario(['barista', 'witch', 'imp']).reminder('witch', 'barista', 'Acts Twice');
+		const s = scenario(['barista', 'witch', 'imp', 'poisoner']).reminder(
+			'witch',
+			'barista',
+			'Acts Twice'
+		);
 		expect(nightStepAlerts(s.game, 'witch', s.characters)).toContainEqual(
 			expect.objectContaining({
 				kind: 'acts-twice',
