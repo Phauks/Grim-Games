@@ -2,7 +2,7 @@
 	import { rand, range, treeline } from './scene-shapes.ts';
 
 	/**
-	 * Sunset clouds (moving backgrounds, plan L113): a low sun behind a forest edge, two decks
+	 * Sunset clouds (moving backgrounds, plan L114): a low sun behind a forest edge, two decks
 	 * of cloud drifting past and birds gliding across. Drawn in CSS; each cloud deck is a 300%
 	 * wide repeating layer that slides one tile, a seamless loop.
 	 */

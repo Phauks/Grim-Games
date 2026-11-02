@@ -1,5 +1,5 @@
 /**
- * Moving backgrounds (plan L113): twelve built-in board backgrounds that move behind the
+ * Moving backgrounds (plan L114): twelve built-in board backgrounds that move behind the
  * board. Each is an ordinary preset (BackgroundChoice `{ kind: 'preset', id }`), so choosing,
  * saving and sharing it with the table's grims work as for any other preset. Its `css` is the
  * still frame: the swatch in Settings, and what shows while moving backgrounds are off, the

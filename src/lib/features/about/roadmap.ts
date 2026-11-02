@@ -285,7 +285,7 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		title:
 			'Moving backgrounds behind the board: twelve scenes such as Hellfire, Tropical beach and Aurora, with a switch to keep them still',
 		area: 'storyteller',
-		parts: ['L113']
+		parts: ['L114']
 	},
 	{
 		title: 'Seats that keep their names when players rotate, and random name colours',

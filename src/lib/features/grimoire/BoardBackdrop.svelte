@@ -18,7 +18,7 @@
 		vignette?: number;
 		/** Fills its positioned parent (the preview) instead of the whole screen. */
 		contained?: boolean;
-		/** A moving background moves (the Moving backgrounds switch, plan L113). */
+		/** A moving background moves (the Moving backgrounds switch, plan L114). */
 		moving?: boolean;
 	}
 
@@ -45,7 +45,7 @@
 		data-scene={scene}
 		style:background={PRESETS[preset].css}
 	></div>
-	<!-- A moving background moves over its still frame (plan L113). -->
+	<!-- A moving background moves over its still frame (plan L114). -->
 	{#if scene}
 		<SceneLayer
 			id={preset as CssSceneId | ShaderSceneId}
