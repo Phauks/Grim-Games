@@ -27,5 +27,10 @@
 	},
 	"evilInfo": {
 		"none": true
+	},
+	"infoTokenCharacters": {
+		"you-are": {
+			"characters": ["chosen"]
+		}
 	}
 }
