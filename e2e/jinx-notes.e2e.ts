@@ -134,7 +134,7 @@ test("the day view marks a jinxed character's row, and the mark opens the jinx",
 		['Slayer', 'Lleech']
 	);
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	const day = page.getByRole('dialog', { name: /^Day( \d+)?$/ });
+	const day = page.getByRole('dialog', { name: /^(Setup|Day( \d+)?)$/ });
 	await expect(day).toBeVisible();
 
 	const row = day.locator('li[data-character="slayer"]').first();
