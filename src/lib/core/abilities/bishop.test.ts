@@ -17,7 +17,8 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import { alignmentOf } from '#lib/core/model/selectors.ts';
 import { abilityState } from '#lib/core/rules/ability.ts';
 import { mayNominate, storytellerNominates } from '#lib/core/rules/nominations.ts';
-import { engineGap, scenario } from '#lib/core/testing/scenario.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
+import { warned } from '#lib/core/model/fixtures.test-support.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 
@@ -118,21 +119,23 @@ describe('Bishop', () => {
 			expect(storytellerNominates(nominated.game, nominated.characters)).toEqual(['bishop']);
 		});
 
-		it.fails(
-			"removes the Bishop's reminder once a player of the other alignment is nominated",
-			() => {
-				// Wiki: "When you nominate a player whose alignment is opposite the alignment of the
-				// Bishop, remove the Bishop’s reminder. You cannot end the nomination process if the
-				// Bishop is marked with their reminder."
-				// Waits on the engine (unplanned): nothing ties the Bishop's reminder to the alignment of
-				// the Storyteller's nominees, or warns at the end of nominations while it is still on.
-				const s = withBishop('good').newDay().reminder('bishop', 'bishop', 'Nominate Evil');
-				s.nominate('chef', 'imp');
-				engineGap(
-					'unplanned',
-					'the Bishop reminder comes off once an evil player is nominated, and ending nominations warns while it is on'
-				);
-			}
-		);
+		it("removes the Bishop's reminder once a player of the other alignment is nominated", () => {
+			// Wiki: "When you nominate a player whose alignment is opposite the alignment of the
+			// Bishop, remove the Bishop’s reminder. You cannot end the nomination process if the
+			// Bishop is marked with their reminder."
+			const s = withBishop('good').newDay().reminder('bishop', 'bishop', 'Nominate Evil');
+			const labels = (at: typeof s) =>
+				at.game.seats[at.seat('bishop')].reminders.map((r) => r.label);
+			// A good nominee leaves it on, and ending the day warns.
+			const good = s.nominate('chef', 'empath');
+			expect(labels(good)).toEqual(['Nominate Evil']);
+			expect(warned(good.session, good.ctx, { type: 'Dusk' })).toContain('nominations-unfinished');
+			// An evil nominee takes it off, and the day may end.
+			const evil = good.nominate('minstrel', 'imp');
+			expect(labels(evil)).toEqual([]);
+			expect(warned(evil.session, evil.ctx, { type: 'Dusk' })).not.toContain(
+				'nominations-unfinished'
+			);
+		});
 	});
 });

@@ -509,6 +509,12 @@ export interface DayLog {
 	 * information today, by seat. Absent while none.
 	 */
 	visits?: Record<SeatId, 0 | 1>;
+	/**
+	 * How many times two players swapped seats since this day began (the Matron's swaps,
+	 * `seatSwapsPerDay`), counted from each `SeatsSwapped` after the first dawn. Absent while
+	 * none.
+	 */
+	swaps?: number;
 	/** When "New day" closed this log (milliseconds since the epoch); only on past days. */
 	closedAt?: number;
 }

@@ -1,6 +1,6 @@
-import type { ReminderLabel } from '../types.ts';
+import { ALIGNMENTS, type Alignment, type ReminderLabel } from '../types.ts';
 import { ownReminder } from '../reminder-fields.ts';
-import { describe, isObject } from '../validate.ts';
+import { checkKeys, describe, isObject, readEnum } from '../validate.ts';
 import { objectPart } from './part.ts';
 
 /**
@@ -13,30 +13,50 @@ export const REMINDER_ENDS = ['dawn', 'dusk', 'dusk-after-dawn', 'owner-dies'] a
 export type ReminderEnd = (typeof REMINDER_ENDS)[number];
 
 /**
+ * A reminder that comes off once a player of this alignment is nominated (the Bishop's
+ * Nominate Evil and Nominate Good, https://wiki.bloodontheclocktower.com/Bishop). While one is
+ * still on, ending the day warns that nominations may not end yet.
+ */
+export interface EndsOnNomination {
+	nominated: Alignment;
+}
+
+/** When one of its reminders comes off: at a time of day, or at a nomination. */
+export type ReminderEndRule = ReminderEnd | EndsOnNomination;
+
+/**
  * Its reminders whose effect lasts only until the next Dawn or Dusk, keyed by label (the Monk's
  * Safe lasts the night, https://wiki.bloodontheclocktower.com/Monk; the Poisoner's Poisoned
  * lasts until dusk the next day, https://wiki.bloodontheclocktower.com/Poisoner; the
  * Minstrel's Everyone Is Drunk until dusk tomorrow, https://wiki.bloodontheclocktower.com/Minstrel;
  * the Philosopher's Drunk until the Philosopher dies,
- * https://wiki.bloodontheclocktower.com/Philosopher). The app takes each off then
+ * https://wiki.bloodontheclocktower.com/Philosopher), or until a player of an alignment is
+ * nominated (`{ "nominated": "evil" }`). The app takes each off then
  * (`rules/reminder-ends.ts`): a New day is Dawn, ticking Dusk is Dusk.
  */
 export const reminderEnds = objectPart(
 	'Reminders that come off',
-	'Its reminders that come off by themselves at dawn, at dusk, or when its player dies.',
-	(raw, path, issues, reminders): Readonly<Record<ReminderLabel, ReminderEnd>> | undefined => {
+	'Its reminders that come off by themselves at dawn, at dusk, at a nomination or when its player dies.',
+	(raw, path, issues, reminders): Readonly<Record<ReminderLabel, ReminderEndRule>> | undefined => {
 		if (!isObject(raw)) {
 			issues.add(path, `expected object, got ${describe(raw)}`);
 			return undefined;
 		}
-		const out: Record<ReminderLabel, ReminderEnd> = {};
+		const out: Record<ReminderLabel, ReminderEndRule> = {};
 		for (const [label, end] of Object.entries(raw)) {
+			const at = `${path}.${label}`;
 			if (!ownReminder(label, reminders)) {
-				issues.add(`${path}.${label}`, 'not one of this character’s reminders');
+				issues.add(at, 'not one of this character’s reminders');
+				continue;
+			}
+			if (isObject(end)) {
+				checkKeys(end, ['nominated'], at, issues);
+				const nominated = readEnum(end, 'nominated', ALIGNMENTS, at, issues, true);
+				if (nominated) out[label] = { nominated };
 				continue;
 			}
 			if (!(REMINDER_ENDS as readonly unknown[]).includes(end)) {
-				issues.add(`${path}.${label}`, `unknown value ${JSON.stringify(end)}`);
+				issues.add(at, `unknown value ${JSON.stringify(end)}`);
 				continue;
 			}
 			out[label] = end as ReminderEnd;

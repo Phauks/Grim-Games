@@ -54,5 +54,10 @@
 	},
 	"falseInfo": {
 		"types": ["townsfolk"]
+	},
+	"jinxes": {
+		"banshee": {
+			"trueInfo": true
+		}
 	}
 }

@@ -17,11 +17,13 @@ import {
 	type SeatId
 } from '#lib/core/model/index.ts';
 import {
+	abilityState,
 	characterStepSeats,
 	keepsAbilityWhenDead,
 	livesWhileDead,
 	MARKER_TEXT,
 	nightOrder,
+	notDeclared,
 	onDeathApplies,
 	onDeathTrigger,
 	SETUP_ALIGNMENT_STEP,
@@ -42,6 +44,25 @@ import {
 import type { GameLog } from '#lib/core/engine/index.ts';
 import { seatHasAbility, type AbilitiesRule, type SpecialRule } from '#lib/core/modes/index.ts';
 import type { IconSlot } from '#lib/ui/icons/catalogue.ts';
+
+/**
+ * Characters in play whose every player has no ability (a Magician while the Vizier is in
+ * play, L115), so their notes on the evil info steps are left out.
+ */
+function withoutAbility(game: Game, characters: CharacterLookup): CharacterId[] {
+	const seats = new Map<CharacterId, SeatId[]>();
+	for (const s of game.seating) {
+		const id = trueCharacter(game, s, characters);
+		if (id) seats.set(id, [...(seats.get(id) ?? []), s]);
+	}
+	return [...seats].flatMap(([id, at]) =>
+		at.every((s) =>
+			abilityState(game, s, characters).impairments.some((i) => i.reason === 'no-ability')
+		)
+			? [id]
+			: []
+	);
+}
 
 export function boardNightSteps(
 	game: Game,
@@ -68,15 +89,21 @@ export function boardNightSteps(
 		const c = id ? characters.get(id) : undefined;
 		if (c) inPlay.push(c);
 	}
-	const { steps } = nightOrder({
+	const { steps: sheet } = nightOrder({
 		night,
 		sheet: data.nightSheet,
 		official: data.byId,
 		inPlay,
 		players: inPlay.filter((c) => isSeatable(c.type) && c.type !== 'traveller').length,
 		customOrder: night === 'first' ? game.script.meta?.firstNight : game.script.meta?.otherNight,
-		overrides: game.nightOrderOverrides
+		overrides: game.nightOrderOverrides,
+		noAbility: withoutAbility(game, characters)
 	});
+	// A jinx may say the Storyteller doesn't declare a character after Dawn (the Vizier with
+	// the Alsaahir or the Investigator, L115): its announcement step is left out.
+	const steps = sheet.filter(
+		(s) => !(s.afterDawn && s.character && notDeclared(game, s.character.id, characters))
+	);
 	// What the game says for each step (suggested answers, impairments), a step for each
 	// gained ability, and a step to choose any Traveller's alignment still unset. Dawn is the
 	// last step (Trevor, 2026-10-20); the board's End night button still ends the night.

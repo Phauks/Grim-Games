@@ -16,6 +16,8 @@
  * - `alignment`: `good`/`evil`, or `same`/`opposite` to the character's player;
  * - `alignmentCounts`: at most this many copies of the token on players of each alignment
  *   (the Noble's three: two good, one evil);
+ * - `maxPlaced`: at most this many copies of the token on players at once (the Goon's Drunk,
+ *   which goes on a chooser only while nobody carries it);
  * - `life`: whether the target is alive or dead when the token goes down;
  * - `neighbour`: the nearest seat each way from the character's own seat (`of: 'self'`)
  *   or from the seat carrying another of its tokens (`of: <label>`), or from a seat whose
@@ -85,6 +87,7 @@ export interface TargetRule {
 	characters?: readonly CharacterId[];
 	alignment?: Alignment | 'same' | 'opposite';
 	alignmentCounts?: Readonly<Partial<Record<Alignment, number>>>;
+	maxPlaced?: number;
 	life?: 'alive' | 'dead';
 	neighbour?: NeighbourRule;
 	withLabel?: string;
@@ -108,6 +111,7 @@ const TARGET_KEYS = [
 	'characters',
 	'alignment',
 	'alignmentCounts',
+	'maxPlaced',
 	'life',
 	'neighbour',
 	'withLabel',
@@ -201,6 +205,11 @@ function readTarget(raw: unknown, path: string, issues: Issues): TargetRule | un
 	for (const key of ['global', 'info'] as const) {
 		const value = readBoolean(raw, key, path, issues);
 		if (value !== undefined) out[key] = value;
+	}
+	const maxPlaced = readNumber(raw, 'maxPlaced', path, issues);
+	if (maxPlaced !== undefined) {
+		if (Number.isInteger(maxPlaced) && maxPlaced >= 1) out.maxPlaced = maxPlaced;
+		else issues.add(`${path}.maxPlaced`, 'expected a whole number of at least 1');
 	}
 	const minOwners = readNumber(raw, 'minOwners', path, issues);
 	if (minOwners !== undefined) out.minOwners = minOwners;

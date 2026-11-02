@@ -127,6 +127,8 @@ export type WarningCode =
 	| 'outcome-may-not-apply'
 	| 'not-seat-character'
 	| 'already-used'
+	| 'after-nominations'
+	| 'nominations-unfinished'
 	| 'too-few-alive'
 	| 'not-ally'
 	| 'too-many-guesses'

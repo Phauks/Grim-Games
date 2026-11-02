@@ -460,7 +460,10 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 			const seating = [...game.seating];
 			seating[a] = event.seatB;
 			seating[b] = event.seatA;
-			return { ...game, seating };
+			// Swaps by day are counted (the Matron's); the setup's seating fixes are not.
+			if (game.pastDays.length === 0) return { ...game, seating };
+			const swaps = (game.today.swaps ?? 0) + 1;
+			return { ...game, seating, today: { ...game.today, swaps } };
 		}
 		case 'OverrideSet':
 			return updateSeat(game, event.seatId, (seat) => ({

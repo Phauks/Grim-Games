@@ -1,5 +1,6 @@
 {
 	"dayClaim": "guesses",
+	"claimsPerDay": 1,
 	"gameEnd": {
 		"ends": [
 			{

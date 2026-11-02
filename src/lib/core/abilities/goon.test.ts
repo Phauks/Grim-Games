@@ -165,10 +165,8 @@ describe('Goon', () => {
 			expect(reminderTargetMisses(s.game, drunk, s.seat('goon'), s.characters)).not.toEqual([]);
 		});
 
-		it.fails('flags a second Drunk while someone already carries the Goon’s Drunk', () => {
+		it('flags a second Drunk while someone already carries the Goon’s Drunk', () => {
 			// Wiki: "and nobody is marked with the Goon’s DRUNK reminder"
-			// Waits on the engine (unplanned): the Goon's Drunk has no one-at-a-time target rule, so a
-			// second chooser can be marked too.
 			const s = scenario(cast).newDay().reminder('courtier', 'goon', 'Drunk');
 			expect(reminderTargetMisses(s.game, drunk, s.seat('imp'), s.characters)).not.toEqual([]);
 		});

@@ -13,16 +13,67 @@
  * A token a jinx in play still needs by day stays until dusk instead: the Leviathan or Riot
  * executing the player the Monk protected last night ends the game
  * (`jinxes.endsGame.token`, https://wiki.bloodontheclocktower.com/Riot#Related_Jinxes).
+ *
+ * A token may instead come off at a nomination: the Bishop's Nominate Evil once an evil player
+ * is nominated (https://wiki.bloodontheclocktower.com/Bishop). Until then, ending the day
+ * warns (`nominationsUnfinished`); it never locks.
  */
-import type { ReminderEnd } from '#lib/core/data/parts/reminder-ends.ts';
+import type { ReminderEnd, ReminderEndRule } from '#lib/core/data/parts/reminder-ends.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
-import { trueCharacter } from '#lib/core/model/selectors.ts';
-import type { Game, ReminderId, ReminderInstance, SeatId } from '#lib/core/model/types.ts';
+import { alignmentOf, trueCharacter } from '#lib/core/model/selectors.ts';
+import type {
+	Game,
+	Reminder,
+	ReminderId,
+	ReminderInstance,
+	SeatId
+} from '#lib/core/model/types.ts';
 import { ownJinxes } from './jinxes.ts';
 import { ownerSeats } from './reminder-targets.ts';
 
-export type { ReminderEnd };
+export type { ReminderEnd, ReminderEndRule };
+
+/** When a placed reminder comes off by itself, from its character's `reminderEnds`. */
+export function reminderEndOf(
+	reminder: Reminder,
+	characters: CharacterLookup
+): ReminderEndRule | undefined {
+	const ends = rulesOf(reminder.characterId, characters)?.reminderEnds;
+	const label = reminder.label.toLowerCase();
+	const key = ends && Object.keys(ends).find((l) => l.toLowerCase() === label);
+	return key === undefined ? undefined : ends?.[key];
+}
+
+/** The reminders on the board that come off once a player of `nominee`'s alignment is nominated. */
+export function remindersEndingOnNomination(
+	game: Game,
+	nominee: SeatId,
+	characters: CharacterLookup
+): ReminderId[] {
+	const alignment = alignmentOf(game, nominee);
+	if (alignment === undefined) return [];
+	return waitingOnNomination(game, characters)
+		.filter(({ end }) => end.nominated === alignment)
+		.map(({ reminder }) => reminder.reminderId);
+}
+
+/**
+ * The reminders still on the board that wait on a nomination (the Bishop's): nominations may
+ * not end while one is on.
+ */
+export function nominationsUnfinished(game: Game, characters: CharacterLookup): ReminderInstance[] {
+	return waitingOnNomination(game, characters).map(({ reminder }) => reminder);
+}
+
+function waitingOnNomination(game: Game, characters: CharacterLookup) {
+	return game.seating.flatMap((seatId) =>
+		game.seats[seatId].reminders.flatMap((reminder) => {
+			const end = reminderEndOf(reminder, characters);
+			return typeof end === 'object' ? [{ reminder, end }] : [];
+		})
+	);
+}
 
 /** The moments the day turns: a New day (Dawn) and the night's Dusk step. */
 export type DayTurn = 'dawn' | 'dusk';
@@ -37,7 +88,7 @@ export function remindersEndingAt(
 	const days = game.pastDays.length;
 	return game.seating.flatMap((seatId) =>
 		game.seats[seatId].reminders.flatMap((r) => {
-			const at = endOf(r, characters);
+			const at = reminderEndOf(r, characters);
 			const effective = at === 'dawn' && kept.has(tokenKey(r.characterId, r.label)) ? 'dusk' : at;
 			return endsAt(effective, r.placedDays, days, turn) ? [r.reminderId] : [];
 		})
@@ -55,7 +106,7 @@ export function remindersEndingOnDeath(
 ): ReminderId[] {
 	return game.seating.flatMap((holder) =>
 		game.seats[holder].reminders.flatMap((r) => {
-			if (endOf(r, characters) !== 'owner-dies') return [];
+			if (reminderEndOf(r, characters) !== 'owner-dies') return [];
 			const owner =
 				r.ownerSeatId !== undefined
 					? r.ownerSeatId === seatId
@@ -63,15 +114,6 @@ export function remindersEndingOnDeath(
 			return owner ? [r.reminderId] : [];
 		})
 	);
-}
-
-/** When the reminder's rules say it comes off, if they do. */
-function endOf(r: ReminderInstance, characters: CharacterLookup): ReminderEnd | undefined {
-	const ends = rulesOf(r.characterId, characters)?.reminderEnds;
-	if (!ends) return undefined;
-	const label = r.label.toLowerCase();
-	const key = Object.keys(ends).find((l) => l.toLowerCase() === label);
-	return key === undefined ? undefined : ends[key];
 }
 
 /**
@@ -82,7 +124,7 @@ function endOf(r: ReminderInstance, characters: CharacterLookup): ReminderEnd | 
  * before it was recorded) comes off at the next dusk.
  */
 function endsAt(
-	end: ReminderEnd | undefined,
+	end: ReminderEndRule | undefined,
 	placed: number | undefined,
 	days: number,
 	turn: DayTurn
