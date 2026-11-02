@@ -5,7 +5,7 @@
 	import type { Game, SeatId } from '#lib/core/model/index.ts';
 	import type { DayStep, GameMode } from '#lib/core/modes/index.ts';
 	import type { VoteTally } from '#lib/core/sync/room.ts';
-	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import CharacterPicker from '#lib/features/characters/CharacterPicker.svelte';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
@@ -144,13 +144,13 @@
 					</Button>{/snippet}
 				<!-- The character as every list draws it (Trevor, 2026-11-02). -->
 				<div class="character" data-testid="specters-ability">
-					{#if character}<CharacterRow {character} info>
-							{#snippet ability()}<GlossaryText
+					{#if character}<CharacterPiece template="row" {character} info>
+							{#snippet abilityText()}<GlossaryText
 									text={character.ability}
 									names={[character.name]}
 								/>{/snippet}
-							{#snippet end()}{@render pick()}{/snippet}
-						</CharacterRow>{:else}{@render pick()}{/if}
+							{#snippet controls()}{@render pick()}{/snippet}
+						</CharacterPiece>{:else}{@render pick()}{/if}
 				</div>
 			{:else}
 				<TextField

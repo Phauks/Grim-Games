@@ -16,6 +16,7 @@ import type { CharacterId } from '#lib/core/data/types.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import {
 	DAY_MARKS,
+	dayUsesAllowed,
 	dayMarkSeats,
 	dayMarkValue,
 	markTokenSwap,
@@ -23,6 +24,7 @@ import {
 	dayUseOpen,
 	dayUseUsers,
 	executionSavers,
+	exileSavers,
 	isDayUseAlly,
 	mayBeFalseSource,
 	outcomeHolder,
@@ -269,6 +271,31 @@ export const DAY_DECIDERS: Deciders<
 			warn('already-dead', 'the player was already dead, so the exile is only logged');
 			return [{ type: 'DayEntryAdded', entry }];
 		}
+		// As an execution: a protection that stops any death (the Tea Lady's) applies, and the
+		// Storyteller's own pick (the Deviant they found funny) is applied as given.
+		const chosen =
+			command.savedBy === undefined
+				? undefined
+				: exileSavers(game, seat.seatId, ctx.characters).find(
+						(s) => s.source.characterId === command.savedBy
+					);
+		if (command.savedBy !== undefined && (!chosen || chosen.problem)) {
+			warn('save-may-not-apply', 'that character may not save this player from exile');
+		}
+		const saved =
+			command.dies === true
+				? undefined
+				: command.savedBy !== undefined
+					? (chosen?.source ?? { characterId: command.savedBy })
+					: protection(game, seat.seatId, ctx.characters, 'exile');
+		if (saved) {
+			warn('survives-exile', 'the player is exiled and does not die');
+			const savedBy =
+				saved === 'override'
+					? {}
+					: { characterId: saved.characterId, ...(saved.seatId ? { seatId: saved.seatId } : {}) };
+			return [{ type: 'DayEntryAdded', entry: { ...entry, died: false, savedBy } }];
+		}
 		return [
 			{ type: 'DayEntryAdded', entry },
 			{ type: 'DeathSet', seatId: seat.seatId, dead: true, cause: 'exile' }
@@ -294,18 +321,25 @@ export const DAY_DECIDERS: Deciders<
 		};
 		if (command.on !== undefined) entry.on = seatOf(game, command.on).seatId;
 		if (typeof command.passed === 'boolean') entry.passed = command.passed;
-		const usedToday = game.today.entries.some(
-			(e) => e.kind === 'ability' && e.seatId === seat.seatId && e.characterId === character.id
+		const usesToday = game.today.entries.filter(
+			(e): e is Extract<DayEntry, { kind: 'ability' }> =>
+				e.kind === 'ability' && e.seatId === seat.seatId && e.characterId === character.id
 		);
 		// The token that marks it spent: "No Ability", or its own (the Golem's May Not Nominate).
 		const spent = rulesOf(character.id, ctx.characters)?.dayUse?.spentToken ?? NO_ABILITY_LABEL;
 		if (!character.reminders.includes(spent)) {
-			if (usedToday) warn('already-used', `the ${character.name} already used it today`);
+			// A player who acts twice may use it twice today (`actsTwice`, M15c).
+			if (usesToday.length >= dayUsesAllowed(game, seat.seatId, ctx.characters, false))
+				warn('already-used', `the ${character.name} already used it today`);
 			return [{ type: 'DayEntryAdded', entry }];
 		}
-		const placed = seat.reminders.some((r) => r.characterId === character.id && r.label === spent);
+		const placed = seat.reminders.find((r) => r.characterId === character.id && r.label === spent);
 		if (placed) {
-			warn('already-used', `the ${character.name} already has "${spent}"`);
+			// Acting twice, a spent ability may be used once more, or twice if spent today (M15c).
+			const spentBefore = !usesToday.some((e) => e.reminderId === placed.reminderId);
+			const allowed = dayUsesAllowed(game, seat.seatId, ctx.characters, spentBefore);
+			if (usesToday.length >= allowed)
+				warn('already-used', `the ${character.name} already has "${spent}"`);
 			return [{ type: 'DayEntryAdded', entry }];
 		}
 		const reminderId = ctx.newId();

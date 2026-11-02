@@ -207,6 +207,7 @@ describe('a character that changes a chosen player (changesCharacter)', () => {
 			'huntsman',
 			'kazali',
 			'lordoftyphon',
+			'marionette',
 			'pithag',
 			'summoner'
 		]);

@@ -1,7 +1,7 @@
 /**
  * The looks a character takes (Trevor, 2026-11-02: "at each call location, allow them to
  * denote a certain generic type, which can be set in the component"). Each template is a
- * set of defaults for `Character.svelte`; a call site picks one and may still override any
+ * set of defaults for `CharacterPiece.svelte`; a call site picks one and may still override any
  * part. Adding a look is a new entry here, not a new component.
  */
 

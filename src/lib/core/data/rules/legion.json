@@ -73,6 +73,16 @@
 		"failsIf": "only-evil-voted"
 	},
 	"makesExtraEvil": true,
+	"gameEnd": {
+		"ends": [
+			{
+				"kind": "alignment-alive",
+				"alignment": "good",
+				"alive": 1,
+				"winner": "evil"
+			}
+		]
+	},
 	"registersAs": {
 		"self": {
 			"types": ["minion"]

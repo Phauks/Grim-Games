@@ -72,7 +72,7 @@ describe('Tea Lady', () => {
 			expect(protectedBy(evilGoon, 'courtier')).toBeUndefined();
 		});
 
-		it.fails('Example 2: Exiled protected neighbour still lives', () => {
+		it('Example 2: Exiled protected neighbour still lives', () => {
 			// Wiki: "The Tea Lady's alive neighbours are a good Matron and a good Judge. The Matron is exiled
 			// but remains alive."
 			const s = scenario(['tealady', 'matron', 'imp', 'chef', 'poisoner', 'judge'])
