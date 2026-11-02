@@ -3,7 +3,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Alignment, Character, CharacterId } from '#lib/core/data/index.ts';
 	import SharedPicker from '#lib/features/characters/CharacterPicker.svelte';
-	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import CharacterSearchBox from '#lib/features/characters/CharacterSearchBox.svelte';
 	import BluffTag from '#lib/features/bluffs/BluffTag.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
@@ -172,7 +172,8 @@
 					{#if character}
 						{@const blocked = warnInPlay && inPlay?.has(character.id)}
 						<li data-blocked={blocked ? '' : undefined}>
-							<CharacterRow
+							<CharacterPiece
+								template="row"
 								{character}
 								note={blocked
 									? t('show.inPlay')
@@ -183,7 +184,7 @@
 								onclick={() => toggle(character.id)}
 							>
 								{#snippet marks()}{#if bluffs}<BluffTag warn={blocked} />{/if}{/snippet}
-							</CharacterRow>
+							</CharacterPiece>
 						</li>
 					{:else}
 						<li class="empty" aria-hidden="true"></li>

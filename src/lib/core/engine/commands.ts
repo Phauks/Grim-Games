@@ -337,8 +337,14 @@ export type Command =
 	 * character in play says so (`storyteller-executed`, the Atheist), otherwise evil.
 	 */
 	| { type: 'ExecuteStoryteller' }
-	/** Logs a Traveller's exile and marks them dead by exile, if alive. Not an execution. */
-	| { type: 'Exile'; seatId: SeatId }
+	/**
+	 * Logs a Traveller's exile and marks them dead by exile, if alive. Not an execution. As
+	 * with `Execute`, a player whom the grimoire says cannot die (the Tea Lady's Cannot Die) is
+	 * logged as exiled and alive unless `dies`; `savedBy` is the character the Storyteller says
+	 * kept them alive (the Deviant who was funny), applied even when the grimoire disagrees,
+	 * with a warning.
+	 */
+	| { type: 'Exile'; seatId: SeatId; dies?: boolean; savedBy?: CharacterId }
 	/**
 	 * Logs that a character used its ability. A character with a "No Ability" reminder
 	 * token gets it placed on the seat; otherwise only the use is logged. `on` is the player

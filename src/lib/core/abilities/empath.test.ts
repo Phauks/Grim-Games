@@ -73,4 +73,25 @@ describe('Empath', () => {
 			expect(isTruthful(picker, { seats: [], number: 2 })).toBe(true);
 		});
 	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Empath#How_to_Run)', () => {
+		it('is shown a number and no players on the first night and every other night', () => {
+			// How to Run: every night, the Storyteller wakes the Empath and shows a count on their
+			// fingers.
+			const s = scenario(['empath', 'imp', 'monk', 'chef', 'poisoner']);
+			for (const night of ['first', 'other'] as const) {
+				const picker = infoPicker(s.game, s.seat('empath'), 'empath', s.characters, night)!;
+				expect(picker.kind).toBe('number');
+				expect(picker.seatCount).toBe(0);
+				expect(picker.range?.truth).toBe(2);
+			}
+		});
+
+		it('counts the neighbour across the ends of the seating order', () => {
+			// How to Run: the count is of the Empath's evil neighbours, zero to two.
+			const s = scenario(['empath', 'monk', 'chef', 'soldier', 'imp']);
+			const picker = infoPicker(s.game, s.seat('empath'), 'empath', s.characters)!;
+			expect(picker.range?.truth).toBe(1);
+		});
+	});
 });
