@@ -11,7 +11,7 @@
 	"setupPrep": {
 		"notes": [
 			{
-				"text": "Check the evil players sit in a line with the Lord of Typhon in the middle"
+				"text": "Deal no Minions; on the first night the players beside the Lord of Typhon become them"
 			}
 		],
 		"none": "its tokens are only used after the first night or when something happens"
@@ -20,16 +20,19 @@
 		"summary": "+1 Minion; −? to +? Outsiders",
 		"ops": [
 			{
-				"kind": "delta",
+				"kind": "set",
 				"type": "minion",
-				"values": [1]
+				"values": [0]
 			},
 			{
 				"kind": "any",
 				"type": "outsider"
 			}
 		],
-		"notes": ["Seat all evil players in a row with the Lord of Typhon inside it, not at an end."]
+		"notes": [
+			"Deal no Minions: good characters take their place.",
+			"On the first night the players beside the Lord of Typhon become the usual number of Minions plus one."
+		]
 	},
 	"dayReminders": {
 		"none": "night kills; setup change"
@@ -61,5 +64,14 @@
 		"you-are": {
 			"characters": ["chosen"]
 		}
+	},
+	"changesCharacter": {
+		"types": ["minion"],
+		"notInPlay": true,
+		"alignment": "evil",
+		"firstNight": true,
+		"upTo": "minions",
+		"extraMinions": 1,
+		"outward": true
 	}
 }

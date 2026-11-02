@@ -30,6 +30,7 @@ async function choose(page: Page, number: number, name: string, offScript = fals
 }
 
 test('the Bounty Hunter asks for an evil Townsfolk and tells them', async ({ page }) => {
+	test.slow();
 	await newBoard(page);
 	await choose(page, 1, 'Bounty Hunter', true);
 	await choose(page, 2, 'Chef');

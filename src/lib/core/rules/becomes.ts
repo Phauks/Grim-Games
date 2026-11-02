@@ -187,7 +187,8 @@ export function characterChanger(
 	const carries = (id: SeatId, label: string) =>
 		game.seats[id].reminders.some((r) => r.characterId === characterId && r.label === label);
 	if (rule.firstNight && game.pastDays.length > 0) return undefined;
-	if (rule.upTo === 'minions' && minionsLeft(game, characters) <= 0) return undefined;
+	if (rule.upTo === 'minions' && minionsLeft(game, characters, rule.extraMinions) <= 0)
+		return undefined;
 	const changer = game.seating.find(
 		(id) =>
 			(!game.seats[id].dead || rules?.actsWhenDead === true) &&
@@ -200,13 +201,13 @@ export function characterChanger(
 }
 
 /**
- * How many more Minions the player count usually has than are in play (`upTo: 'minions'`,
- * the Kazali's): Travellers are not counted.
+ * How many more Minions the player count usually has, plus `extra` (the Lord of Typhon's),
+ * than are in play (`upTo: 'minions'`, the Kazali's): Travellers are not counted.
  */
-export function minionsLeft(game: Game, characters: CharacterLookup): number {
+export function minionsLeft(game: Game, characters: CharacterLookup, extra = 0): number {
 	const dealt = game.seating.filter((id) => typeOf(game, id, characters) !== 'traveller');
 	const minions = dealt.filter((id) => typeOf(game, id, characters) === 'minion').length;
-	return baseCounts(dealt.length).minion - minions;
+	return baseCounts(dealt.length).minion + extra - minions;
 }
 
 /**
@@ -220,7 +221,11 @@ export function changeableSeats(
 	characters: CharacterLookup
 ): SeatId[] {
 	const rule = rulesIn(game, characterId, characters)?.changesCharacter;
+	const nearest = rule?.outward
+		? outwardSeats(game, characterId, rule.types, characters)
+		: undefined;
 	return game.seating.filter((id) => {
+		if (nearest && !nearest.includes(id)) return false;
 		const own = trueCharacter(game, id, characters);
 		if (rule?.notTravellers && typeOf(game, id, characters) === 'traveller') return false;
 		if (rule?.upTo) {
@@ -240,6 +245,33 @@ export function changeableSeats(
 		const type = typeOf(game, id, characters);
 		return type !== undefined && (rule.types as readonly string[]).includes(type);
 	});
+}
+
+/**
+ * Walking out from `characterId`'s player both ways round the table, the first player on each
+ * side who is not yet of `types` (`outward`: the Lord of Typhon's line of Minions).
+ */
+function outwardSeats(
+	game: Game,
+	characterId: CharacterId,
+	types: readonly string[],
+	characters: CharacterLookup
+): SeatId[] {
+	const seating = game.seating;
+	const n = seating.length;
+	const at = seating.findIndex((id) => trueCharacter(game, id, characters) === characterId);
+	if (at < 0) return [];
+	const out: SeatId[] = [];
+	for (const step of [-1, 1]) {
+		for (let i = 1; i < n; i++) {
+			const id = seating[(((at + step * i) % n) + n) % n];
+			const type = typeOf(game, id, characters);
+			if (type && types.includes(type)) continue;
+			if (!out.includes(id)) out.push(id);
+			break;
+		}
+	}
+	return out;
 }
 
 /**

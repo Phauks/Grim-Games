@@ -44,6 +44,7 @@ import { wikiUrl } from '#lib/core/data/wiki.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { alignmentOf, getSeat, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
 import type { DeathCause, Game, SeatId } from '#lib/core/model/types.ts';
+import { characterChanger } from './becomes.ts';
 import { isExecution } from './death-causes.ts';
 import { ownJinxes, ownJinxRules } from './jinxes.ts';
 import {
@@ -214,7 +215,12 @@ export function nightStepAlerts(
 			impairments: state.impairments
 		});
 	}
-	if (rulesOf(characterId, characters)?.turnsPlayersInto?.players === 'neighbours')
+	// Not while its own first-night step still makes the Minions beside it (M22): the line
+	// only exists once it has.
+	if (
+		rulesOf(characterId, characters)?.turnsPlayersInto?.players === 'neighbours' &&
+		characterChanger(game, characterId, characters) === undefined
+	)
 		for (const seatId of actors)
 			if (!evilInOneLine(game, seatId, characters))
 				out.push({
