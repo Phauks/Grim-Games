@@ -179,6 +179,7 @@ import ph_question_thin from '~icons/ph/question-thin';
 import ph_scales_thin from '~icons/ph/scales-thin';
 import ph_scan_thin from '~icons/ph/scan-thin';
 import ph_scroll_thin from '~icons/ph/scroll-thin';
+import ph_seal_check_thin from '~icons/ph/seal-check-thin';
 import ph_selection_thin from '~icons/ph/selection-thin';
 import ph_shapes_thin from '~icons/ph/shapes-thin';
 import ph_share_network_thin from '~icons/ph/share-network-thin';
@@ -203,6 +204,7 @@ import ph_speaker_high_thin from '~icons/ph/speaker-high-thin';
 import ph_spinner_thin from '~icons/ph/spinner-thin';
 import ph_square_thin from '~icons/ph/square-thin';
 import ph_square_split_horizontal_thin from '~icons/ph/square-split-horizontal-thin';
+import ph_stamp_thin from '~icons/ph/stamp-thin';
 import ph_star_thin from '~icons/ph/star-thin';
 import ph_star_half_thin from '~icons/ph/star-half-thin';
 import ph_sun_thin from '~icons/ph/sun-thin';
@@ -419,6 +421,7 @@ const icons: IconMap = {
 	'ph:scales-thin': ph_scales_thin,
 	'ph:scan-thin': ph_scan_thin,
 	'ph:scroll-thin': ph_scroll_thin,
+	'ph:seal-check-thin': ph_seal_check_thin,
 	'ph:selection-thin': ph_selection_thin,
 	'ph:shapes-thin': ph_shapes_thin,
 	'ph:share-network-thin': ph_share_network_thin,
@@ -443,6 +446,7 @@ const icons: IconMap = {
 	'ph:spinner-thin': ph_spinner_thin,
 	'ph:square-thin': ph_square_thin,
 	'ph:square-split-horizontal-thin': ph_square_split_horizontal_thin,
+	'ph:stamp-thin': ph_stamp_thin,
 	'ph:star-thin': ph_star_thin,
 	'ph:star-half-thin': ph_star_half_thin,
 	'ph:sun-thin': ph_sun_thin,

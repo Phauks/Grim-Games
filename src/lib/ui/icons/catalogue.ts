@@ -44,6 +44,8 @@ export const ICON_SLOTS = {
 	buildScript: { label: 'Script builder', choices: ['ph:hammer', 'ph:wrench'] },
 	buildCharacter: { label: 'Character builder', choices: ['ph:user-gear', 'ph:user-plus'] },
 	buildMode: { label: 'Mode builder', choices: ['ph:puzzle-piece', 'ph:sliders-horizontal'] },
+	/** A special rule someone added, in the Library (a game mode uses buildMode, as a character does buildCharacter). */
+	specialRule: { label: 'Special rule', choices: ['ph:stamp', 'ph:seal-check'] },
 	installApp: { label: 'Install app', choices: ['ph:device-mobile', 'ph:download-simple'] },
 	download: { label: 'Download', choices: ['ph:download-simple', 'ph:file-arrow-down'] },
 	open: { label: 'Open', choices: ['ph:folder-open', 'ph:folder'] },

@@ -114,7 +114,12 @@ describe('Puzzlemaster', () => {
 		});
 
 		it('gives any player while the Puzzlemaster is poisoned', () => {
-			const { game, seats } = table(drunkOn(2), reminder(0, 'poisoner', 'Poisoned'));
+			// The Chef's player is the Poisoner here: a Poisoned token needs a Poisoner in play.
+			const { game, seats } = table(
+				drunkOn(2),
+				(s) => ({ type: 'AssignCharacter', seatId: s[4], characterId: 'poisoner' }),
+				reminder(0, 'poisoner', 'Poisoned')
+			);
 			expect(dayUseAnswer(game, seats[0], 'puzzlemaster', seats[2], characters)).toEqual({
 				kind: 'any'
 			});
