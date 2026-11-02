@@ -204,7 +204,7 @@ and one line in the index, never an edit to `character-rules.ts`.
 - Protection (`ability.ts`, `night-alerts.ts`): `protects`, moved
 - Impairments (`ability.ts`, read by `impairs-rules.ts`: the Drunk, Witch, Minstrel, Preacher, Xaan; Barista's `clears`; other tokens end with their character unless an entry says they last): `impairs`, moved
 - Registration (`ability.ts`: the Spy, Recluse and Lycanthrope's Faux Paw; `asAnything` and `whileToken` for the Revolutionary's pair until Register Falsely? comes off): `registersAs`, moved
-- Night killers (`night-alerts.ts` `NIGHT_KILLERS`): `kills`, moved
+- Night killers (`night-alerts.ts` `NIGHT_KILLERS`): `kills`, moved; `kills.chooses` for a kill that names a character (the Ojo) or asks the chosen players to live or die (the Al-Hadikhia), `rules/chosen-kills.ts`, offered at the step by `features/grimoire/ChosenKillStep.svelte`
 - Death checks (`night-deaths.ts`: the Gambler, Acrobat, Lycanthrope and Grandmother): `deathCheck`, moved
 - Kill redirect and first-death survival (`ability.ts`, `first-death.ts`): `redirectsKill`, `survivesFirstDeath`, moved
 - Nomination abilities (`rules/nominations.ts`): `onNominated`, `afterDeath`, moved

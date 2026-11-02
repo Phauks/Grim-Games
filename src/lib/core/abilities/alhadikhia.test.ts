@@ -15,7 +15,8 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { engineGap, scenario } from '#lib/core/testing/scenario.ts';
+import { killChoice, liveOrDieChosen, resolveLiveOrDie } from '#lib/core/rules/chosen-kills.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Al-Hadikhia', () => {
 	const character = committedCharacter('alhadikhia');
@@ -47,20 +48,26 @@ describe('Al-Hadikhia', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Al-Hadikhia#Examples)', () => {
-		it.fails('Example 1: Two chosen players die; the third lives', () => {
+		it('Example 1: Two chosen players die; the third lives', () => {
 			// Wiki: "The Al-Hadikhia chooses Evin, Lachlan, and Sarah. Evin chooses to die. Lachlan chooses to
 			// die. Sarah chooses to live. In the morning, Evin and Lachlan are dead, and Sarah is alive."
-			scenario(['alhadikhia', 'chef', 'empath', 'monk', 'poisoner'])
+			const s = scenario(['alhadikhia', 'chef', 'empath', 'monk', 'poisoner'])
 				.reminder('chef', 'alhadikhia', '1')
 				.reminder('empath', 'alhadikhia', '2')
 				.reminder('monk', 'alhadikhia', '3');
-			engineGap(
-				'unplanned',
-				'each player the Al-Hadikhia chose dies when they choose to die, and lives when they choose to live'
-			);
+			expect(killChoice('alhadikhia', s.characters)).toBe('live-or-die');
+			const [evin, lachlan, sarah] = liveOrDieChosen(s.game, 'alhadikhia', s.characters);
+			expect([evin, lachlan, sarah]).toEqual([s.seat('chef'), s.seat('empath'), s.seat('monk')]);
+			const out = resolveLiveOrDie(s.game, [
+				{ seatId: evin, lives: false },
+				{ seatId: lachlan, lives: false },
+				{ seatId: sarah, lives: true }
+			]);
+			expect(out.allDie).toBe(false);
+			expect(out.results.map((r) => r.dead)).toEqual([true, true, false]);
 		});
 
-		it.fails('Example 2: All three choose to live, so all die', () => {
+		it('Example 2: All three choose to live, so all die', () => {
 			// Wiki: "The Al-Hadikhia chooses Alex, Lewis, and Doug, who is dead. Alex chooses life. Lewis
 			// chooses life. Doug chooses life, so is now alive. Since all players are now alive, all three
 			// players die."
@@ -70,10 +77,18 @@ describe('Al-Hadikhia', () => {
 				.reminder('empath', 'alhadikhia', '2')
 				.reminder('monk', 'alhadikhia', '3');
 			expect(s.game.seats[s.seat('monk')].dead).toBe(true);
-			engineGap(
-				'unplanned',
-				'a dead chosen player who chooses to live comes back to life, and if all three live, all three die'
+			const chosen = liveOrDieChosen(s.game, 'alhadikhia', s.characters);
+			const out = resolveLiveOrDie(
+				s.game,
+				chosen.map((seatId) => ({ seatId, lives: true }))
 			);
+			expect(out.allDie).toBe(true);
+			// Doug came back to life, then died with the others: a new death tonight.
+			expect(out.results.map((r) => [r.dead, r.died, r.revived])).toEqual([
+				[true, true, false],
+				[true, true, false],
+				[true, true, false]
+			]);
 		});
 	});
 });
