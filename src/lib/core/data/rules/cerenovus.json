@@ -68,8 +68,12 @@
 	},
 	"infoTokenCharacters": {
 		"selected-you": {
-			"characters": ["self"],
-			"upTo": 2
+			"characters": ["self"]
+		},
+		"mad-as": {
+			"characters": [],
+			"offer": true,
+			"after": "selected-you"
 		}
 	},
 	"marksChoice": ["Mad"],

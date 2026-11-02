@@ -62,5 +62,15 @@
 	"reminderMovement": {
 		"fixed": ["Twin"],
 		"why": "The twin is chosen once at setup."
+	},
+	"shownTo": {
+		"carrier": "Twin"
+	},
+	"learns": {
+		"measure": "character-of",
+		"alignment": "good",
+		"reminders": {
+			"target": "Twin"
+		}
 	}
 }

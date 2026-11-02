@@ -48,9 +48,11 @@
 		step: NightStep;
 		/** Show the new character to its player. */
 		onShow: (characterId: CharacterId) => void;
+		/** The characters made tonight on this step, the latest last, for its "You are" card. */
+		onChanges?: (characterIds: readonly CharacterId[]) => void;
 	}
 
-	let { grimoire, step, onShow }: Props = $props();
+	let { grimoire, step, onShow, onChanges }: Props = $props();
 
 	const game = $derived(grimoire.game);
 	const characters = $derived(grimoire.open.characters);
@@ -130,7 +132,11 @@
 			withSeatId: seatId,
 			keepAlignments: true as const
 		};
-		if (grimoire.run(command)) swapped = [seatA, seatId];
+		if (grimoire.run(command)) {
+			swapped = [seatA, seatId];
+			const ids = swapped.flatMap((s) => game.seats[s]?.characterId ?? []);
+			onChanges?.(ids);
+		}
 	}
 
 	let seatOpen = $state(false);
@@ -163,8 +169,10 @@
 			// Kept on the seat for the jinxes that hang on who made the change (`Seat.changedBy`).
 			...(step.character ? { by: step.character.id } : {})
 		};
-		if (grimoire.run(command))
+		if (grimoire.run(command)) {
 			made = [...made.filter((m) => m.seatId !== seatId), { seatId, characterId }];
+			onChanges?.(made.map((m) => m.characterId));
+		}
 	}
 	// With `sameType`, the chosen player picks from their own type, not their own character;
 	// with `anyType` too (the Hatter's optional rule), from any of the rule's types.

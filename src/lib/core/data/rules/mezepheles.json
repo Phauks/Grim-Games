@@ -79,5 +79,11 @@
 		"into": "evil",
 		"when": "removed"
 	},
-	"infoCard": "secret-word"
+	"infoCard": "secret-word",
+	"infoTokenCharacters": {
+		"you-are": {
+			"characters": [],
+			"upTo": 0
+		}
+	}
 }

@@ -26,6 +26,7 @@ import {
 	type NightSheet
 } from '#lib/core/data/types.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
+import type { InfoTokenCharacterRules } from '#lib/core/data/info-token-rules.ts';
 import {
 	placementReason,
 	recommendPlacement,
@@ -80,6 +81,8 @@ export type NightStepOverride =
 			/** Short heading for a step with no character. */
 			title?: string;
 			characterId?: CharacterId;
+			/** The step's own info token fills (`NightStep.infoTokenCharacters`). */
+			infoTokenCharacters?: InfoTokenCharacterRules;
 			after: string | null;
 			night?: Night;
 	  };
@@ -129,10 +132,10 @@ export interface NightStep {
 	 */
 	changed?: { seatId: string; characterId: CharacterId };
 	/**
-	 * On a second wake for a player whose ability works twice tonight: the seat and the
-	 * character whose token makes it so (`withActsTwiceSteps` in `acts-twice.ts`).
+	 * The step's own info token fills, which win over its character's (`stepInfoCards`): a
+	 * player woken to learn a new character is shown that character with "You are".
 	 */
-	again?: { seatId: string; characterId: CharacterId };
+	infoTokenCharacters?: InfoTokenCharacterRules;
 }
 
 export interface OmittedStep {
@@ -457,6 +460,7 @@ function applyNightOverrides(
 						kind: 'custom',
 						...(c ? { character: c } : {}),
 						...(o.title ? { title: o.title } : {}),
+						...(o.infoTokenCharacters ? { infoTokenCharacters: o.infoTokenCharacters } : {}),
 						reminder: o.text,
 						afterDawn: false,
 						placement: 'custom-order',
