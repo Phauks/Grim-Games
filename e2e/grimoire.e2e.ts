@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { tapStartGame } from './start-game.ts';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { openPlayers, openPlayerSheet } from './players.ts';
 import { chooseRulesOnSetup, pickScript, nameStoryteller, toBoard } from './new-game.ts';
@@ -1406,7 +1407,7 @@ test('tokens keep their size when the night walk-through opens', async ({ page }
 	const logo = page.locator('.board-logo');
 	await expect(logo).toBeVisible();
 	const logoBefore = (await logo.boundingBox())!;
-	await bankNight(page, 'Start game').tap();
+	await tapStartGame(page, bankNight(page, 'Start game'));
 	await expect(page.getByTestId('night-strip')).toBeVisible();
 	await expect
 		.poll(async () => Math.abs((await token.boundingBox())!.width - before))
@@ -1485,7 +1486,7 @@ test("a Traveller's alignment can wait for the night order", async ({ page }) =>
 	await closeSheet(page);
 
 	// The night starts by asking for it, after Dusk (core withTravellerAlignmentStep).
-	await bankNight(page, 'Start game').tap();
+	await tapStartGame(page, bankNight(page, 'Start game'));
 	const strip = page.getByTestId('night-strip');
 	await expect(strip.locator('.step .name strong')).toHaveText('Dusk');
 	await strip.getByRole('button', { name: 'Next step' }).tap();
@@ -2090,7 +2091,7 @@ test('the board background can be an image from the device, kept after a reload'
 	await expect(seatLabelled(page, 'Seat 1: Ana')).toBeAttached();
 	// Starting the night too, as the seats close up for the walk-through (Trevor, 2026-10-23).
 	const box = await backdrop.boundingBox();
-	await bankNight(page, 'Start game').tap();
+	await tapStartGame(page, bankNight(page, 'Start game'));
 	await expect(page.getByTestId('night-strip')).toBeVisible();
 	await expect(backdrop).toHaveAttribute('style', image!);
 	expect(await backdrop.boundingBox()).toEqual(box);
@@ -4147,7 +4148,7 @@ test("the walk-through points out the step's reminders: ringed, alone or first",
 			.tap();
 		await closeSheet(page);
 	}
-	await bankNight(page, 'Start game').tap();
+	await tapStartGame(page, bankNight(page, 'Start game'));
 	const strip = page.getByTestId('night-strip');
 	for (let i = 0; i < 6 && !(await strip.textContent())?.includes('Poisoner'); i++)
 		await strip.getByRole('button', { name: 'Next step' }).tap();
@@ -4266,7 +4267,7 @@ test("the step focus works for a script's own character too (Fall of Rome's Merc
 			.tap();
 		await closeSheet(page);
 	}
-	await bankNight(page, 'Start game').tap();
+	await tapStartGame(page, bankNight(page, 'Start game'));
 	const strip = page.getByTestId('night-strip');
 	for (let i = 0; i < 8 && !(await strip.textContent())?.includes('Merch'); i++)
 		await strip.getByRole('button', { name: 'Next step' }).tap();
@@ -5798,7 +5799,7 @@ test('the night walk-through rises into place, and appears at once with reduced 
 	const animations = () =>
 		page.evaluate(() => (window as unknown as { stripAnimations: number }).stripAnimations);
 	const strip = page.getByTestId('night-strip');
-	await bankNight(page, 'Start game').tap();
+	await tapStartGame(page, bankNight(page, 'Start game'));
 	await expect(strip).toBeVisible();
 	await expect.poll(animations).toBeGreaterThan(0);
 
@@ -5808,7 +5809,7 @@ test('the night walk-through rises into place, and appears at once with reduced 
 	await page.evaluate(
 		() => ((window as unknown as { stripAnimations: number }).stripAnimations = 0)
 	);
-	await bankNight(page, 'Start game').tap();
+	await tapStartGame(page, bankNight(page, 'Start game'));
 	await expect(strip).toBeVisible();
 	// No motion: the strip is there at once, fully shown.
 	await expect(strip).toHaveCSS('opacity', '1');
@@ -6019,7 +6020,7 @@ test('Dawn is the last night step, and Next on it lights up End night', async ({
 		.getByRole('button', { name: 'Empath', exact: true })
 		.tap();
 	await closeSheet(page);
-	await bankNight(page, 'Start game').tap();
+	await tapStartGame(page, bankNight(page, 'Start game'));
 	const strip = page.getByTestId('night-strip');
 	const next = strip.getByRole('button', { name: 'Next step' });
 	for (let i = 0; i < 30 && !(await lastStep(strip)); i++) await next.tap();
@@ -6581,6 +6582,26 @@ test('Start game with setup reminders still to place asks first, listing them', 
 	await ask.getByRole('button', { name: 'Cancel' }).tap();
 	await expect(page.getByTestId('night-strip')).toHaveCount(0);
 	await bankNight(page, 'Start game').tap();
+	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(page.getByTestId('night-strip')).toBeVisible();
+});
+
+test('Start game with players without a character asks first, listing them', async ({ page }) => {
+	// Trevor (2026-11-01): a game started with empty seats warns, never locks.
+	await startGame(page);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Imp', exact: true })
+		.tap();
+	await closeSheet(page);
+	await bankNight(page, 'Start game').tap();
+	const ask = page.getByRole('alertdialog', { name: 'Start the game?' });
+	await expect(ask).toContainText('Players without a character:');
+	const empty = ask.getByTestId('no-character');
+	await expect(empty).toContainText('Seat 2');
+	await expect(empty).not.toContainText('Seat 1');
 	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(page.getByTestId('night-strip')).toBeVisible();
 });
