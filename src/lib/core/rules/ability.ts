@@ -44,7 +44,7 @@ import type { Game, ReminderId, SeatId } from '#lib/core/model/types.ts';
 import { keepsAbilityWhenDead } from './dead-characters.ts';
 import { heldAbilitiesOf } from './gained-abilities.ts';
 import { jinxedWith, ownJinxRules, registeredTo } from './jinxes.ts';
-import { wishWithEffect } from './wishes.ts';
+import { drunkByWish } from './wishes.ts';
 
 const W = 'https://wiki.bloodontheclocktower.com/';
 
@@ -305,17 +305,9 @@ function impairmentsOf(
 		}
 	}
 
-	// A granted wish that makes every good player drunk for the rest of the game (the Wizard's
-	// example: https://wiki.bloodontheclocktower.com/Wizard). It lasts whatever happens to the
-	// wisher, until the Storyteller removes the wish.
-	const drunkWish = wishWithEffect(game, 'good-drunk');
-	if (drunkWish && alignmentOf(game, seatId) === 'good') {
-		out.push({
-			reason: 'drunk',
-			source: { characterId: drunkWish.characterId, seatId: drunkWish.seatId },
-			wiki: wikiOf(drunkWish.characterId, characters)
-		});
-	}
+	// A granted wish making every good player drunk (the Wizard's, wishes.ts).
+	const wish = drunkByWish(game, seatId);
+	if (wish) out.push({ reason: 'drunk', source: wish, wiki: wikiOf(wish.characterId, characters) });
 
 	// A token that makes its carrier sober and healthy while its character's ability works
 	// (the Barista's "Sober & Healthy": https://wiki.bloodontheclocktower.com/Barista). An

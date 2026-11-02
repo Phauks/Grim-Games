@@ -15,6 +15,7 @@
 import type { CharacterId } from '#lib/core/data/types.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
+import { alignmentOf } from '#lib/core/model/selectors.ts';
 import type { DayEntry, Game, SeatId, WishEffect } from '#lib/core/model/types.ts';
 
 export type Wish = Extract<DayEntry, { kind: 'wish' }>;
@@ -44,4 +45,18 @@ export function makesWish(characterId: CharacterId | undefined, characters?: Cha
 /** A granted wish whose effect is `effect`, the first one, if any. */
 export function wishWithEffect(game: Game, effect: WishEffect): Wish | undefined {
 	return wishes(game).find((w) => w.granted && w.effect === effect);
+}
+
+/**
+ * The granted wish that makes this player drunk (`good-drunk`, while they are good), as the
+ * source of that drunkenness for `abilityState`. It lasts whatever happens to the wisher,
+ * until the Storyteller removes the wish.
+ */
+export function drunkByWish(
+	game: Game,
+	seatId: SeatId
+): { characterId: CharacterId; seatId: SeatId } | undefined {
+	const wish = wishWithEffect(game, 'good-drunk');
+	if (!wish || alignmentOf(game, seatId) !== 'good') return undefined;
+	return { characterId: wish.characterId, seatId: wish.seatId };
 }
