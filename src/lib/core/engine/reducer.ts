@@ -6,7 +6,14 @@
 import { parseAvatarId } from '#lib/core/avatars/index.ts';
 import type { CharacterId, PlayerName } from '#lib/core/data/index.ts';
 import type { DayMark } from '#lib/core/data/day-mark-rules.ts';
-import type { Game, GameNote, ReminderInstance, Seat, SeatId } from '#lib/core/model/index.ts';
+import type {
+	DayTallyLog,
+	Game,
+	GameNote,
+	ReminderInstance,
+	Seat,
+	SeatId
+} from '#lib/core/model/index.ts';
 import type { GameEvent } from './events.ts';
 
 function newSeat(seatId: SeatId, playerName?: PlayerName, notInPlay?: true): Seat {
@@ -521,6 +528,10 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 			return event.name === undefined
 				? omit(game, 'storytellerName')
 				: { ...game, storytellerName: event.name };
+		case 'ReminderEffectSet':
+			return withReminder(game, event.reminderId, (r) =>
+				event.effect === undefined ? omit(r, 'effect') : { ...r, effect: { ...event.effect } }
+			);
 		case 'ReminderNoteSet':
 			return withReminder(game, event.reminderId, (r) =>
 				event.note === undefined ? omit(r, 'note') : { ...r, note: event.note }
@@ -659,11 +670,29 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 			return setDayMark(game, 'demon-voted', event.voted);
 		case 'DayMarkSet':
 			return setDayMark(game, event.mark, event.value);
+		case 'DayTallySet':
+			return setDayTally(game, event.characterId, (t) => ({ ...t, count: event.count }));
+		case 'DayTallyDeath':
+			return setDayTally(game, event.characterId, (t) =>
+				t.deaths?.includes(event.seatId) ? t : { ...t, deaths: [...(t.deaths ?? []), event.seatId] }
+			);
 		case 'PrepValueSet': {
 			const prepValues = { ...game.prepValues };
 			if (event.value === undefined) delete prepValues[event.key];
 			else prepValues[event.key] = event.value;
 			return { ...game, prepValues };
+		}
+		case 'StorytellerPairSet':
+			return event.pair
+				? { ...game, storytellerPair: structuredClone(event.pair) }
+				: omit(game, 'storytellerPair');
+		case 'StorytellerVisitSet': {
+			const visits = { ...game.today.visits };
+			if (event.storyteller === undefined) delete visits[event.seatId];
+			else visits[event.seatId] = event.storyteller;
+			const today =
+				Object.keys(visits).length > 0 ? { ...game.today, visits } : omit(game.today, 'visits');
+			return { ...game, today };
 		}
 		case 'DayStarted':
 			return {
@@ -695,6 +724,21 @@ export function applyEvents(
 	events: readonly GameEvent[]
 ): Game | undefined {
 	return events.reduce<Game | undefined>((g, e) => applyEvent(g, e), game);
+}
+
+/** Changes today's count for `characterId`; a count of 0 with no deaths leaves none. */
+function setDayTally(
+	game: Game,
+	characterId: CharacterId,
+	change: (tally: DayTallyLog) => DayTallyLog
+): Game {
+	const tallies = { ...game.today.tallies };
+	const next = change(tallies[characterId] ?? { count: 0 });
+	if (next.count === 0 && !next.deaths?.length) delete tallies[characterId];
+	else tallies[characterId] = next;
+	const today =
+		Object.keys(tallies).length > 0 ? { ...game.today, tallies } : omit(game.today, 'tallies');
+	return { ...game, today };
 }
 
 function setDayMark(game: Game, mark: DayMark, value: boolean | undefined): Game {
