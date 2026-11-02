@@ -59,10 +59,15 @@
  *   https://wiki.bloodontheclocktower.com/King#Related_Jinxes);
  * - `notCreatedAfterDay`: once day `n` is over, this character's `changesCharacter` doesn't
  *   offer the partner (the Pit-Hag's and the Hatter's Leviathan,
- *   https://wiki.bloodontheclocktower.com/Leviathan#Related_Jinxes).
+ *   https://wiki.bloodontheclocktower.com/Leviathan#Related_Jinxes);
+ * - `withPartnerAbility`: what setup needs when this character's player has the partner's
+ *   ability (`gainsAbilityOf`): `partner-setup`, the partner's own setup change applies as if
+ *   it were in play (the Alchemist-Summoner, [No Demon]); `partner-in-play`, the real partner
+ *   is in play as well (the Alchemist-Marionette has no ability and the Marionette is in
+ *   play, https://wiki.bloodontheclocktower.com/Alchemist#Related_Jinxes).
  *
  * Either character's file may hold the block. `registersTo`, `impairsPartner`, `noKill`,
- * `noGrimoire`, `grimoireHides`, `endsGame`, `deadAtLeast` and `notCreatedAfterDay` say what
+ * `noGrimoire`, `grimoireHides`, `endsGame`, `deadAtLeast`, `notCreatedAfterDay` and `withPartnerAbility` say what
  * this character does, or how it is treated, with the partner, so they are read from this
  * character's side only (`ownJinxRules`); the others are read from both sides
  * (`rules/jinxes.ts`). By convention a block goes in the file of the
@@ -134,7 +139,11 @@ export interface JinxRules {
 	endsGame?: JinxEnd;
 	deadAtLeast?: number;
 	notCreatedAfterDay?: number;
+	withPartnerAbility?: WithPartnerAbility;
 }
+
+export const WITH_PARTNER_ABILITY = ['partner-setup', 'partner-in-play'] as const;
+export type WithPartnerAbility = (typeof WITH_PARTNER_ABILITY)[number];
 
 export const GIVEN_INSTEAD = [
 	'a-minion',
@@ -158,7 +167,8 @@ export const JINX_RULE_KEYS = [
 	'grimoireHides',
 	'endsGame',
 	'deadAtLeast',
-	'notCreatedAfterDay'
+	'notCreatedAfterDay',
+	'withPartnerAbility'
 ] as const;
 
 /** A non-empty list of known values, or undefined (with an issue) when it is not one. */
@@ -301,6 +311,15 @@ export function readJinxRules(
 			const n = readPositive(entry, key, at, issues);
 			if (n !== undefined) rules[key] = n;
 		}
+		const withAbility = readEnum(
+			entry,
+			'withPartnerAbility',
+			WITH_PARTNER_ABILITY,
+			at,
+			issues,
+			false
+		);
+		if (withAbility) rules.withPartnerAbility = withAbility;
 		if (Object.keys(rules).length === 0) {
 			issues.add(at, 'a jinx entry needs at least one rule');
 			continue;

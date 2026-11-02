@@ -22,7 +22,7 @@ import type {
 	SetupTarget,
 	SetupTiming
 } from '#lib/core/data/setup-prep-rules.ts';
-import type { Alignment, CharacterId, CharacterType } from '#lib/core/data/types.ts';
+import type { Alignment, CharacterId, CharacterType, ReminderLabel } from '#lib/core/data/types.ts';
 import { wikiUrl } from '#lib/core/data/wiki.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import {
@@ -31,8 +31,16 @@ import {
 	seatsInOrder,
 	trueCharacter
 } from '#lib/core/model/selectors.ts';
-import type { Game, Reminder, Seat, SeatId } from '#lib/core/model/types.ts';
+import {
+	GENERIC_REMINDER_ID,
+	type Game,
+	type Reminder,
+	type ReminderInstance,
+	type Seat,
+	type SeatId
+} from '#lib/core/model/types.ts';
 import { NO_CHARACTER_NAMES, type CharacterNames } from './character-names.ts';
+import { jinxedWith } from './jinxes.ts';
 
 export type {
 	SeatFilter,
@@ -298,6 +306,7 @@ export function setupReminders(
 		const selfSeats = seats.filter((f) => f.truly === id || f.seat.characterId === id);
 		out.push(...suggest(game, lookup, entry, seats, selfSeats, timings));
 	}
+	if (timings.has('setup')) out.push(...jinxReminders(game, seats, lookup));
 	const first = (r: SetupReminder) =>
 		entryOf(r.characterId, lookup)?.reminders.some((s) => s.label === r.label && s.first) === true;
 	const marked = out.map((r) => (first(r) ? { ...r, first: true as const } : r));
@@ -402,6 +411,53 @@ function unseatedReminders(
 			timing: 'setup',
 			wiki: entry?.wiki ?? `${W}Setup`
 		});
+	}
+	return out;
+}
+
+/**
+ * A jinxed partner in play that another character in play impairs from the start
+ * (`impairsPartner`: the Spy or the Widow poisons the Damsel while it is or has been in play,
+ * https://wiki.bloodontheclocktower.com/Damsel#Related_Jinxes): a generic reminder with the
+ * impairment's word, on the partner's seat. The rules already treat the partner as impaired
+ * (`abilityState`); the token shows it on the board. The impairing character may have no such
+ * token of its own (the Spy), and the Widow's own Poisoned is for her first-night choice, so
+ * the token is the generic one. Skipped once the seat carries a reminder with that word.
+ */
+function jinxReminders(
+	game: Game,
+	seats: readonly SeatFacts[],
+	lookup: CharacterLookup
+): SetupReminder[] {
+	const out: SetupReminder[] = [];
+	const inPlay = (id: CharacterId) => seats.some((f) => f.truly === id);
+	for (const f of seats) {
+		const partner = f.truly;
+		if (partner === undefined) continue;
+		const jinxed = jinxedWith(game, partner, (r) => r.impairsPartner !== undefined, lookup);
+		for (const { characterId: by, rule } of jinxed) {
+			if (!rule.impairsPartner || !inPlay(by)) continue;
+			const label = (rule.impairsPartner[0].toUpperCase() +
+				rule.impairsPartner.slice(1)) as ReminderLabel;
+			const said = (r: ReminderInstance) =>
+				[r.label, r.note].some((w) => w?.toLowerCase() === rule.impairsPartner);
+			if (f.seat.reminders.some(said)) continue;
+			if (out.some((r) => r.seatId === f.seat.seatId && r.label === label)) continue;
+			const character = lookup.get(partner);
+			const name = character?.name ?? partner;
+			const byName = lookup.get(by)?.name ?? by;
+			const page = character && wikiUrl(character);
+			out.push({
+				characterId: GENERIC_REMINDER_ID,
+				label,
+				text: `Put [${label}] on the ${name}`,
+				seatId: f.seat.seatId,
+				reason: `Jinxed with the ${byName}: the ${name} is ${rule.impairsPartner} while the ${byName} is or has been in play`,
+				candidates: [],
+				timing: 'setup',
+				wiki: page ? `${page}#Related_Jinxes` : `${W}Djinn`
+			});
+		}
 	}
 	return out;
 }

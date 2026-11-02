@@ -10,11 +10,14 @@
  * of the two may be in play). Paraphrase, never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
-import { findJinx, jinxesAmong, type Script } from '#lib/core/data/index.ts';
+import { findJinx, jinxesAmong, type ReminderLabel, type Script } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { castWith, run } from '#lib/core/model/fixtures.test-support.ts';
 import { abilityState } from '#lib/core/rules/ability.ts';
 import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
+import { setupReminders } from '#lib/core/rules/setup-reminders.ts';
+import { GENERIC_REMINDER_ID, type Game } from '#lib/core/model/types.ts';
+import type { CharacterLookup } from '#lib/core/model/characters.ts';
 
 const scriptOf = (ids: string[]): Script => ({
 	meta: { name: 'Jinxed' },
@@ -62,6 +65,42 @@ describe('Damsel + Spy jinx', () => {
 		it('leaves the Damsel healthy with no Spy in play', () => {
 			const { game, ctx, seats } = cast(['damsel', 'chef', 'imp', 'empath', 'monk']);
 			expect(abilityState(game, seats[0], ctx.characters).works).toBe(true);
+		});
+	});
+
+	// The poisoning starts with the game, so setup suggests marking it on the Damsel.
+	describe('setup suggests Poisoned on the Damsel', () => {
+		const cast = castWith({ script: scriptOf(['damsel', 'spy', 'imp', 'chef', 'empath']) });
+		const jinxed = (game: Game, ctx: { characters: CharacterLookup }) =>
+			setupReminders(game, ctx.characters).filter((r) => r.characterId === GENERIC_REMINDER_ID);
+
+		it('as a generic Poisoned on the Damsel when both are in play', () => {
+			const { game, ctx, seats } = cast(['damsel', 'spy', 'imp', 'chef', 'empath']);
+			expect(jinxed(game, ctx)).toMatchObject([
+				{ label: 'Poisoned', seatId: seats[0], timing: 'setup', candidates: [] }
+			]);
+		});
+
+		it('not once the Damsel carries a Poisoned reminder', () => {
+			const { game, ctx } = cast(['damsel', 'spy', 'imp', 'chef', 'empath'], (seats) => ({
+				type: 'AddReminder',
+				seatId: seats[0],
+				reminder: { characterId: GENERIC_REMINDER_ID, label: 'Poisoned' as ReminderLabel }
+			}));
+			expect(jinxed(game, ctx)).toEqual([]);
+		});
+
+		it('once, with the Widow poisoning her too', () => {
+			const both = castWith({
+				script: scriptOf(['damsel', 'spy', 'widow', 'imp', 'chef', 'empath'])
+			});
+			const { game, ctx, seats } = both(['damsel', 'spy', 'widow', 'imp', 'chef']);
+			expect(jinxed(game, ctx).map((r) => [r.label, r.seatId])).toEqual([['Poisoned', seats[0]]]);
+		});
+
+		it('not with no Spy in play', () => {
+			const { game, ctx } = cast(['damsel', 'chef', 'imp', 'empath', 'monk']);
+			expect(jinxed(game, ctx)).toEqual([]);
 		});
 	});
 });
