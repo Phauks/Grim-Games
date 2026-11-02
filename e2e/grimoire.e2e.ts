@@ -1207,14 +1207,16 @@ test("the Demon's step says when the Exorcist's choice stops it waking", async (
 });
 
 // https://wiki.bloodontheclocktower.com/Lord_of_Typhon: the evil players sit in one line with
-// the Lord of Typhon inside it; its step warns when they don't.
+// the Lord of Typhon inside it; its step warns when they don't. Its Minions are all in play
+// here (eight players: the usual one plus one), so the step has none left to make (M22).
 test("the Lord of Typhon's step warns when the evil players don't sit in one line", async ({
 	page
 }) => {
 	await startGame(page);
 	for (const [seat, name] of [
 		[1, 'Lord of Typhon'],
-		[2, 'Poisoner']
+		[2, 'Poisoner'],
+		[5, 'Spy']
 	] as const) {
 		const sheet = await openSeat(page, seat);
 		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
