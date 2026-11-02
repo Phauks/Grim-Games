@@ -19,5 +19,8 @@
 	},
 	"deathCause": {
 		"none": "vote tokens"
+	},
+	"voting": {
+		"deadRegainToken": "final-day"
 	}
 }
