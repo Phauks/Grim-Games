@@ -68,13 +68,11 @@
 		/** Back to town on the timer (the grimoire's, Trevor 2026-11-01); none in the spike. */
 		town?: { can: boolean; called: boolean };
 	}
-
 	// No Undo or History here (Trevor, 2026-10-16): each day action is one entry in the
 	// game's History, in the grimoire's menu.
 	let { game, assistance, onOpenNight, onSavant, onExecute, town }: Props = $props();
 	// Every badge on the day screen names the script's own characters, homebrew included.
 	provideCharacters(() => game.characters);
-
 	const g = $derived(game.game);
 	const seats = $derived(g.seating.map((id) => g.seats[id]));
 	/**
@@ -93,7 +91,6 @@
 	 */
 	const inPlayJinxes = $derived(gameJinxes(g, officialData.current));
 	const jinxesOf = (id: CharacterId) => jinxesOnStep(inPlayJinxes.jinxes, id, inPlayJinxes.inPlay);
-
 	// ── Confirming a change: what it is now, and what it will be ──
 	// TPI's reminder token text (game data, not interface text).
 	const NO_ABILITY = 'No Ability';
