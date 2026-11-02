@@ -116,11 +116,11 @@ function nomineeNominatesNow(game: Game, seatId: SeatId, characters: CharacterLo
 }
 
 /**
- * Whether a player may nominate at all today (`nominationsPerDay`), and, for a character that
- * limits it to so many a game (`nominationsLeftThisGame`, the Golem), has one left.
+ * Whether a player may nominate at all today (`nominationsPerDay`). A character's limit for the
+ * whole game (`nominationsLeftThisGame`, the Golem) only warns when they nominate (warn, never
+ * lock), so it doesn't count here.
  */
 export function mayNominate(game: Game, seatId: SeatId, characters: CharacterLookup): boolean {
-	if (nominationsLeftThisGame(game, seatId, characters)?.left === 0) return false;
 	return nominationsPerDay(game, seatId, characters) > 0;
 }
 

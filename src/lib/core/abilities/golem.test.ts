@@ -15,7 +15,7 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { dayUseDeath, dayUseSuggestion } from '#lib/core/rules/day-claims.ts';
-import { mayNominate } from '#lib/core/rules/nominations.ts';
+import { nominationsLeftThisGame } from '#lib/core/rules/nominations.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
@@ -61,7 +61,9 @@ describe('Golem', () => {
 				.dies('poppygrower', 'golem')
 				.reminder('golem', 'golem', 'May Not Nominate')
 				.newDay();
-			expect(mayNominate(later.game, later.seat('golem'), later.characters)).toBe(false);
+			expect(nominationsLeftThisGame(later.game, later.seat('golem'), later.characters)?.left).toBe(
+				0
+			);
 		});
 		it('Example 2: Recluse seems Demon; voting still happens', () => {
 			// Wiki: "The Golem nominates the Recluse. The Recluse registers as the Demon. Nothing happens,
@@ -73,7 +75,9 @@ describe('Golem', () => {
 			expect(dayUseDeath(s.game, 'golem', s.seat('recluse'), s.characters)).toBe('maybe');
 			const later = s.reminder('golem', 'golem', 'May Not Nominate').newDay();
 			expect(later.game.seats[later.seat('recluse')].dead).toBe(false);
-			expect(mayNominate(later.game, later.seat('golem'), later.characters)).toBe(false);
+			expect(nominationsLeftThisGame(later.game, later.seat('golem'), later.characters)?.left).toBe(
+				0
+			);
 		});
 	});
 });
