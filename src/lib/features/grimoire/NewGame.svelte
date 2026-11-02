@@ -23,8 +23,8 @@
 		loadScriptChoice,
 		type ScriptChoice
 	} from '#lib/features/modes/script-choices.svelte.ts';
-	import { roomHost } from '#lib/features/room/host.svelte.ts';
-	import { takeVotePick } from '#lib/features/room/vote-pick.ts';
+	import { holdChoosing } from '#lib/features/room/choosing.ts';
+	import { takeVotePick, type VotePick } from '#lib/features/room/vote-pick.ts';
 	import { openedByBack, readDraft, saveDraft } from '#lib/features/modes/new-game-draft.ts';
 	import { readNextGame } from '#lib/features/game/next-game.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
@@ -33,8 +33,20 @@
 		/** In a sheet over the board (Game info's New game): the seat count of the game it
 		 *  replaces (next-game.ts). The layout, script preview included, is the same. */
 		compact?: boolean;
+		/**
+		 * Room vote in a sheet over the board, so running it never leaves the game screen
+		 * (Trevor, 2026-11-01); without it, Room vote is its own screen, /vote.
+		 */
+		onRoomVote?: () => void;
 	}
-	let { compact = false }: Props = $props();
+	let { compact = false, onRoomVote }: Props = $props();
+
+	/** What the Storyteller played from the room vote, over what New game showed. */
+	export function applyVote(voted: VotePick | undefined): void {
+		if (voted?.subject === 'mode') modeId = voted.id;
+		if (voted?.subject === 'rules') ruleIds = voted.ids;
+		if (voted?.subject === 'script') edition = voted.id;
+	}
 
 	/**
 	 * New game (its own screen, Trevor 2026-10-16): the script. The player count is Character
@@ -47,23 +59,20 @@
 		const carried = compact ? readNextGame()?.names.length : undefined;
 		// Played from the room vote's screen (Trevor, 2026-10-26), over what Back put back.
 		const voted = takeVotePick();
-		if (voted?.subject === 'mode') modeId = voted.id;
-		if (voted?.subject === 'rules') ruleIds = voted.ids;
+		applyVote(voted);
 		if (carried) players = carried;
-		else if (voted?.subject === 'script') edition = voted.id;
-		else if (quickPlayScript.takeRequest()) edition = `recent:${QUICK_PLAY_ID}`;
-		// Back from the start flow puts New game back as it was (Trevor, 2026-10-23).
-		else if (openedByBack()) {
-			const draft = readDraft();
-			if (draft.edition) edition = draft.edition as ScriptChoice;
-			if (draft.players) players = draft.players;
+		// A script the vote played, even over a carried game (seat count only), is kept.
+		else if (voted?.subject !== 'script') {
+			if (quickPlayScript.takeRequest()) edition = `recent:${QUICK_PLAY_ID}`;
+			// Back from the start flow puts New game back as it was (Trevor, 2026-10-23).
+			else if (openedByBack()) {
+				const draft = readDraft();
+				if (draft.edition) edition = draft.edition as ScriptChoice;
+				if (draft.players) players = draft.players;
+			}
 		}
 		// The room's phones see the Storyteller choosing the next script (plan R1).
-		const host = roomHost();
-		if (host.code) host.setChoosing(true);
-		return () => {
-			if (host.code) host.setChoosing(false);
-		};
+		return holdChoosing();
 	});
 	let modeId = $state(STANDARD.id);
 	/** The special rules chosen; the room vote's own when it played them (Trevor, 2026-10-26). */
@@ -128,8 +137,11 @@
 					<!-- Opens this device's room if it has none, so the table can gather and vote
 					     before any script is chosen (Trevor, 2026-10-23). -->
 					<!-- The vote is its own screen (Trevor, 2026-10-26: "Not a popup"). -->
-					<Button variant="quiet" icon="vote" href={resolve('/vote')}
-						>{t('room.scriptVote.button')}</Button
+					<Button
+						variant="quiet"
+						icon="vote"
+						href={onRoomVote ? undefined : resolve('/vote')}
+						onclick={onRoomVote}>{t('room.scriptVote.button')}</Button
 					>
 				{/snippet}
 				<ScriptPicker label="Script" hideLabel value={edition} onChange={(v) => (edition = v)} />
