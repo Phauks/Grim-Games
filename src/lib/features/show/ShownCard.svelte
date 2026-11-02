@@ -3,6 +3,8 @@
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import InfoTokenText from '#lib/features/info-tokens/InfoTokenText.svelte';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
+	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import type { ShownCharacter } from './shown.ts';
 
 	interface Props {
@@ -13,9 +15,17 @@
 		detail?: string;
 		/** Shares the screen with other cards: smaller text, no room kept for the close button. */
 		compact?: boolean;
+		/**
+		 * Characters as big tokens, or only as rows the way the script sheet lists them; the
+		 * Storyteller's choice in Settings (Trevor, 2026-11-02: "they can decide which they like
+		 * better").
+		 */
+		tokens?: boolean;
 	}
 
-	let { title, characters = [], detail, compact = false }: Props = $props();
+	let { title, characters = [], detail, compact = false, tokens }: Props = $props();
+
+	const asTokens = $derived(tokens ?? preferences.current.assistance.characterTokens);
 
 	let areaWidth = $state(0);
 	let areaHeight = $state(0);
@@ -93,7 +103,16 @@
 			{detail}
 		</p>
 	{/if}
-	{#if single}
+	{#if characters.length > 0 && !asTokens}
+		<!-- Rows only, as the script sheet lists them (the Storyteller's setting). -->
+		<div class="area rows-area">
+			<ul class="rows" data-testid="shown-rows">
+				{#each characters as shown (shown.character.id)}
+					<li><CharacterRow character={shown.character} alignment={shown.alignment} /></li>
+				{/each}
+			</ul>
+		</div>
+	{:else if single}
 		<!-- The token, its name and its ability, together in the middle of the screen. -->
 		<div class="area" bind:clientWidth={areaWidth} bind:clientHeight={areaHeight}>
 			<div class="single" data-testid="shown-character">
@@ -102,16 +121,10 @@
 					alignment={characters[0].alignment ?? defaultAlignment(single.type)}
 					{size}
 				/>
+				<!-- The name and ability as the Script tab shows them, under the token, as the bag
+				     draw's reveal does (Trevor, 2026-11-02: "the standard way we show characters"). -->
 				<div class="caption" bind:clientHeight={captionHeight}>
-					<span class="name"
-						><CharacterBadge
-							characterId={single.id}
-							character={single}
-							alignment={characters[0].alignment}
-							interactive={false}
-						/></span
-					>
-					<p class="ability">{single.ability}</p>
+					<CharacterRow character={single} alignment={characters[0].alignment} />
 				</div>
 			</div>
 		</div>
@@ -169,7 +182,8 @@
 	.content[data-compact] .title {
 		font-size: calc(clamp(1.3rem, 5vw, 2.4rem) * var(--card-fit, 1));
 	}
-	.content[data-compact] .ability {
+	.content[data-compact] .caption,
+	.content[data-compact] .rows {
 		font-size: 1.05rem;
 	}
 	.content:not([data-has-title]) {
@@ -234,12 +248,27 @@
 	.single {
 		display: grid;
 		justify-items: center;
+		width: 100%;
 		gap: var(--space-4);
 	}
 	.caption {
+		width: min(100%, 32rem);
+		font-size: clamp(1.1rem, 4.5vw, 1.5rem);
+		text-align: start;
+	}
+	/* Rows scroll inside the card's space rather than push it (no reflow). */
+	.rows-area {
+		overflow-y: auto;
+	}
+	.rows {
 		display: grid;
-		justify-items: center;
 		gap: var(--space-3);
+		width: min(100%, 32rem);
+		margin: 0;
+		padding: 0;
+		list-style: none;
+		font-size: clamp(1.1rem, 4.5vw, 1.5rem);
+		text-align: start;
 	}
 	.tokens {
 		/* Flex, not grid: a short last row sits in the middle. */
@@ -264,13 +293,6 @@
 	.name {
 		max-width: 100%;
 		font-size: clamp(1.3rem, 5vw, 1.8rem);
-	}
-	.ability {
-		margin: 0;
-		max-width: 32ch;
-		font-family: var(--font-ability);
-		font-size: clamp(1.25rem, 4.5vw, 1.8rem);
-		line-height: 1.35;
 	}
 	/* Several names share the width, so each is a size smaller than a single one. */
 	.tokens .name {
