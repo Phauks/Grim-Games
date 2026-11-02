@@ -94,9 +94,16 @@ test("a jinx's text shows on both characters' night steps once both are in play"
 		await expect(step.getByRole('heading', { name: 'Jinxes', level: 3 })).toBeVisible();
 		const note = notes.getByTestId('jinx-note');
 		await expect(note).toHaveCount(1);
-		// Both characters as badges, then TPI's text as it is.
-		await expect(note.locator('.pair .badge[data-character-id="spy"]')).toBeVisible();
-		await expect(note.locator('.pair .badge[data-character-id="poppygrower"]')).toBeVisible();
+		// Both characters as one split badge (Trevor, 2026-11-02), each half its own button, then
+		// TPI's text as it is.
+		await expect(note.locator('.pair .badge[data-character-id="spy"]')).toHaveAttribute(
+			'data-joined',
+			'start'
+		);
+		await expect(note.locator('.pair .badge[data-character-id="poppygrower"]')).toHaveAttribute(
+			'data-joined',
+			'end'
+		);
 		await expect(note.locator('.jinx-text')).toHaveText(reason);
 		await page.screenshot({
 			path: `test-results/jinx-step-${title.replace(' ', '-')}-${test.info().project.name}.png`

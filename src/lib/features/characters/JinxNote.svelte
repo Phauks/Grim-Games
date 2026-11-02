@@ -5,7 +5,7 @@
 	import { officialData } from './game-data.svelte.ts';
 
 	/**
-	 * One jinx as every screen shows it: both characters as badges, then the jinx's own text,
+	 * One jinx as every screen shows it: both characters as one split badge (Trevor, 2026-11-02), then the jinx's own text,
 	 * word for word (TPI's, or the script's homebrew wording; official game text is never
 	 * edited). The script sheet's Jinxes, a jinx mark's dialog (JinxMark) and a night step
 	 * all draw it (L107).
@@ -25,8 +25,10 @@
 
 <div class="jinx-note" data-testid="jinx-note" data-pair={`${a}+${b}`}>
 	<span class="pair">
-		<CharacterBadge characterId={a} character={characters?.get(a)} />
-		<CharacterBadge characterId={b} character={characters?.get(b)} />
+		<span class="joined">
+			<CharacterBadge characterId={a} character={characters?.get(a)} joined="start" />
+			<CharacterBadge characterId={b} character={characters?.get(b)} joined="end" />
+		</span>
 	</span>
 	<p class="jinx-text">
 		<GlossaryText text={jinx.reason} names={[nameOf(a), nameOf(b)]} />
@@ -50,6 +52,15 @@
 		align-items: center;
 		gap: var(--space-1);
 		min-height: var(--tap-target);
+	}
+	/* The split badge's outer edge, in the heading colour so the pair reads as a jinx. */
+	.joined {
+		display: inline-flex;
+		max-width: calc(100% - 0.24em);
+		/* Room for the edge, which a scrolling parent would otherwise clip. */
+		margin-inline: 0.12em;
+		border-radius: var(--radius-full);
+		box-shadow: 0 0 0 0.12em var(--heading);
 	}
 	.jinx-text {
 		margin: 0;

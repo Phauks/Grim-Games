@@ -34,6 +34,11 @@
 		 * drawn the same but is not a button of its own, so tapping it taps the parent.
 		 */
 		interactive?: boolean;
+		/**
+		 * One half of a joined pair (a jinx's two characters, JinxNote): the inner edge is
+		 * square, and the end half mirrors so its icon sits on the outside.
+		 */
+		joined?: 'start' | 'end';
 	}
 
 	let {
@@ -42,7 +47,8 @@
 		playerName,
 		text,
 		character: given,
-		interactive: tappable = true
+		interactive: tappable = true,
+		joined
 	}: Props = $props();
 	// Inside this character's own details, its badge would only open them again: it brings
 	// those details back into view instead (Trevor, 2026-10-20).
@@ -98,6 +104,7 @@
 		class="badge"
 		data-team={team}
 		data-character-id={characterId}
+		data-joined={joined}
 		aria-haspopup="dialog"
 		onpointerenter={() => character && prefetchWikiPage(character)}
 		onpointerdown={() => character && prefetchWikiPage(character)}
@@ -111,10 +118,14 @@
 		class="badge"
 		data-team={team}
 		data-character-id={characterId}
+		data-joined={joined}
 		data-own=""
 		onclick={() => shown?.focus()}>{@render face()}</button
-	>{:else}<span class="badge still" data-team={team} data-character-id={characterId}
-		>{@render face()}</span
+	>{:else}<span
+		class="badge still"
+		data-team={team}
+		data-character-id={characterId}
+		data-joined={joined}>{@render face()}</span
 	>{/if}{#if character && interactive}
 	{#if used}<CharacterDialog bind:open {character} {icon} />{/if}
 {/if}
@@ -187,6 +198,25 @@
 	.badge[data-team='loric'] {
 		background: var(--loric);
 		color: var(--on-loric);
+	}
+	/*
+	 * A joined pair reads as one split badge (Trevor picked it for jinxes, 2026-11-02): the
+	 * pair's frame (JinxNote) draws the outer edge, each half squares its inner edge, and a
+	 * line in the heading colour divides them. Each half still opens its own character.
+	 */
+	.badge[data-joined] {
+		box-shadow: none;
+		min-width: 0;
+		flex: 0 1 auto;
+	}
+	.badge[data-joined='start'] {
+		border-radius: var(--radius-full) 0 0 var(--radius-full);
+	}
+	.badge[data-joined='end'] {
+		flex-direction: row-reverse;
+		border-radius: 0 var(--radius-full) var(--radius-full) 0;
+		padding: 0 calc(0.1em * var(--inline-name-badge, 1)) 0 calc(0.5em * var(--inline-name-badge, 1));
+		box-shadow: inset 0.12em 0 0 var(--heading);
 	}
 	.icon {
 		display: inline-grid;
