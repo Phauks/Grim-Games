@@ -142,12 +142,29 @@ describe('pickedEffect', () => {
 		expect(refused(base.session, base.ctx, pick(0))).toBe('invalid-effect');
 	});
 
+	// Trevor, 2026-11-02: "Allow for something not hard coded for something bad as well".
+	it('takes something else the Storyteller writes, without acting on it', () => {
+		const other = pick(2, bad.reminderId, 'other');
+		expect(warned(base.session, base.ctx, other)).toEqual([]);
+		const s = base.do(other).do({
+			type: 'SetReminderNote',
+			reminderId: bad.reminderId,
+			note: 'Swaps seats with the Chef'
+		});
+		const token = s.game.seats[imp].reminders[0];
+		expect(token).toMatchObject({ effect: { kind: 'other' }, note: 'Swaps seats with the Chef' });
+		expect(abilityState(s.game, imp, s.characters).works).toBe(true);
+		expect(stopsKillingTonight(token.effect, s.game)).toBe(false);
+		expect(effectDeath(s.game, bad.reminderId)).toBeUndefined();
+		expect(lines(s)).toEqual([]);
+	});
+
 	it('reads its token and known effects', () => {
 		const issues = new Issues();
 		parseCharacterRules({ pickedEffect: { token: 'B', effects: ['x'] } }, 'y', issues, ['A']);
 		expect(issues.list).toEqual([
 			'y.pickedEffect.token: not one of this character’s reminders',
-			'y.pickedEffect.effects: expected some of no-kill, poisoned, mad, no-vote-today, no-ability-today, dies'
+			'y.pickedEffect.effects: expected some of no-kill, poisoned, mad, no-vote-today, no-ability-today, dies, other'
 		]);
 	});
 });

@@ -16,7 +16,7 @@
 	/**
 	 * What a reminder whose effect the Storyteller picks does (`pickedEffect`: the Angel's
 	 * Something Bad, M17f), in its reminder dialog: one the rules know (`reminder-effects.ts`), or
-	 * the Storyteller's own words. Mark dead is always shown, and only works while `dies` is
+	 * Something else, which the Storyteller writes in the note. Mark dead is always shown, and only works while `dies` is
 	 * picked and the marked player lives: tapping it is the Storyteller's confirmation.
 	 */
 	interface Props {
@@ -31,7 +31,7 @@
 	const rule = $derived(pickedEffectOf(reminder, grimoire.open.characters));
 	const options = $derived([
 		{ value: NONE as Choice, label: t('characters.effectNone') },
-		...(rule?.effects ?? []).map((kind) => ({
+		...[...new Set<ReminderEffectKind>([...(rule?.effects ?? []), 'other'])].map((kind) => ({
 			value: kind as Choice,
 			label: t(`characters.effect.${kind}`)
 		}))

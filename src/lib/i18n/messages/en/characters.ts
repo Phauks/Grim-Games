@@ -18,6 +18,7 @@ export const characters = {
 	'characters.effect.no-vote-today': 'May not vote for a day',
 	'characters.effect.no-ability-today': 'No ability for a day',
 	'characters.effect.dies': 'Dies',
+	'characters.effect.other': 'Something else',
 	'characters.effectNote': 'Note',
 	'characters.effectMarkDead': 'Mark dead',
 	'characters.wikiPage': 'Wiki page',

@@ -12,8 +12,10 @@ import { objectPart } from './part.ts';
  * - `mad`: its player is mad while it is marked (a day reminder line);
  * - `no-vote-today`: its player may not vote for a day (a day reminder line);
  * - `no-ability-today`: its player has no ability for a day;
- * - `dies`: its player dies (the Storyteller marks them dead).
- * Anything else is the Storyteller's own words on the token.
+ * - `dies`: its player dies (the Storyteller marks them dead);
+ * - `other`: something the Storyteller makes up, in their own words in the reminder's note. The
+ *   app acts on none of it. Every picked-effect reminder offers it, listed or not (Trevor,
+ *   2026-11-02: "Allow for something not hard coded").
  */
 export const REMINDER_EFFECTS = [
 	'no-kill',
@@ -21,7 +23,8 @@ export const REMINDER_EFFECTS = [
 	'mad',
 	'no-vote-today',
 	'no-ability-today',
-	'dies'
+	'dies',
+	'other'
 ] as const;
 export type ReminderEffectKind = (typeof REMINDER_EFFECTS)[number];
 
