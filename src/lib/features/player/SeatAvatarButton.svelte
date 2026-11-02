@@ -2,6 +2,7 @@
 	import type { AvatarId } from '#lib/core/avatars/index.ts';
 	import type { PlayerName } from '#lib/core/data/index.ts';
 	import type { FrameId } from '#lib/core/frames/index.ts';
+	import type { ProfileWords } from '#lib/core/profile/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import AvatarFace from '#lib/ui/seating/AvatarFace.svelte';
 	import PlayerProfileDialog from './PlayerProfileDialog.svelte';
@@ -15,11 +16,13 @@
 		avatar: AvatarId;
 		picture?: string;
 		frame?: FrameId;
+		/** Their tag-line and details, as their phone shared them. */
+		words?: ProfileWords;
 		/** The live room and seat, for Add friend (plan F2). */
 		friend?: { code: string; seatId: string };
 	}
 
-	let { name, avatar, picture, frame, friend }: Props = $props();
+	let { name, avatar, picture, frame, words, friend }: Props = $props();
 	let open = $state(false);
 </script>
 
@@ -31,7 +34,7 @@
 	onclick={() => (open = true)}
 	><span class="face"><AvatarFace {avatar} {name} {picture} /></span></button
 >
-<PlayerProfileDialog bind:open {name} {avatar} {picture} {frame} {friend} />
+<PlayerProfileDialog bind:open {name} {avatar} {picture} {frame} {words} {friend} />
 
 <style>
 	.seat-avatar {

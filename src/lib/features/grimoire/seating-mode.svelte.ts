@@ -1,7 +1,8 @@
 /**
  * The Seating mode (Trevor, 2026-10-31: arrange seats, open and lock seating, and count off
  * "are all very similar toolings", so one tool). On the board it is arranging seats
- * (seat-arranging.svelte.ts) with the room's seating along the bottom (SeatingBar): entering it
+ * (seat-arranging.svelte.ts) with the room's seating beside it in the top bar (BoardToolbar;
+ * Trevor, 2026-11-01: "all look similar"): entering it
  * with a room open lets phones move their seats ("switch starts on"), and Done locks seating,
  * finishes a count off, and goes back to Character selection when it was opened from there.
  */
@@ -10,6 +11,7 @@ import { resolve } from '$app/paths';
 import type { GameId } from '#lib/core/model/index.ts';
 import { finishCountOff } from '#lib/features/room/count-off.ts';
 import { roomHost } from '#lib/features/room/host.svelte.ts';
+import { playersDialog } from '#lib/features/room/players-dialog.svelte.ts';
 import type { Grimoire } from './grimoire.svelte.ts';
 import type { SeatArranging } from './seat-arranging.svelte.ts';
 
@@ -35,6 +37,13 @@ export function seatingRequested(gameId: GameId): boolean {
 export function letPhonesMove(open: boolean): void {
 	const host = roomHost();
 	if (host.code) host.send({ type: 'seating', open });
+}
+
+/** Count off: starts one if none is running, and opens its sheet. */
+export function countOff(): void {
+	const host = roomHost();
+	if (!host.countOff) host.send({ type: 'count-off' });
+	playersDialog.countOff = true;
 }
 
 export function enterSeating(seatArr: SeatArranging): void {

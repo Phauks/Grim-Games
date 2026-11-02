@@ -19,10 +19,13 @@ export function isRemoved(room: RoomState, memberId: string): boolean {
 export function removeMember(room: RoomState, memberId: string): RoomState {
 	const member = room.members.find((m) => m.memberId === memberId);
 	if (!member || isRemoved(room, memberId)) return room;
+	// Their look, not the words on their profile, which may be why they were removed.
+	const { tagline: _t, details: _d, ...look } = lookOf(member);
+	void [_t, _d];
 	const removed: RemovedMember = {
 		memberId,
 		...(member.name === undefined ? {} : { name: member.name }),
-		...lookOf(member)
+		...look
 	};
 	const next: RoomState = {
 		...room,
