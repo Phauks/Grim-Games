@@ -46,7 +46,7 @@
 		dayClaim,
 		type CharacterNominationPrompt
 	} from '#lib/core/rules/index.ts';
-	import { readGameMode } from '#lib/features/modes/game-mode-store.ts';
+	import { playedRules } from '#lib/features/modes/game-mode.ts';
 	import { allowedOffScriptIn } from '#lib/features/modes/game-mode.ts';
 	import { nominationPrompts, type NominationPrompt } from '#lib/core/modes/index.ts';
 	import DayTimer from '#lib/features/day/DayTimer.svelte';
@@ -65,7 +65,6 @@
 	} from '#lib/ui/seating/seat-layout.ts';
 	import { rememberBoard } from '#lib/ui/seating/last-board.svelte.ts';
 	import { SeatArranging } from './seat-arranging.svelte.ts';
-	import SeatingBar from './SeatingBar.svelte';
 	import { enterSeating, seatingRequested } from './seating-mode.svelte.ts';
 	import { BoardSizing, type BoardSizingContext } from './board-sizing.svelte.ts';
 	import { ReminderDragging } from './reminder-drag.svelte.ts';
@@ -265,8 +264,8 @@
 		const { entries, cursor } = grimoire.open.session.log;
 		return diedSinceNewDay(entries.slice(0, cursor).flatMap((e) => e.events));
 	});
-	/** The game's special rules, kept whole with the game (game-mode-store.ts). */
-	const gameRules = $derived(readGameMode(game.gameId)?.rules ?? []);
+	/** The game's special rules, with its mode's own rule parts first (playedRules). */
+	const gameRules = $derived(playedRules(game.gameId));
 	/**
 	 * Who has an ability under a special rule, when one changes it (The Phantom Detectives:
 	 * the dead keep theirs, living Townsfolk have none).
@@ -399,7 +398,6 @@
 		if (selected !== undefined && !game.seats[selected]) sheetOpen = false;
 	});
 
-	// ── Travellers ──
 	// ── Placing a new seat: the Storyteller taps where it goes (Trevor, 2026-10-16) ──
 	let placing = $state<((position: number) => void) | undefined>();
 	/** Seats already placed but not added yet (late players), shown at their spots. */
@@ -428,6 +426,8 @@
 				})
 			: []
 	);
+	/** The seat just appears (Trevor, 2026-10-16); with a room open, Travellers choose follows. */
+	const onAddSeat = () => startPlacing((p) => travellersForNewSeat(grimoire.addSeat(p), watching));
 	function placeAt(position: number) {
 		const add = placing;
 		placing = undefined;
@@ -730,7 +730,6 @@
 </script>
 
 <!-- The Seating mode's bar, in the bank's token row (Trevor, 2026-10-31). -->
-{#snippet seatingBar()}<SeatingBar />{/snippet}
 
 {#snippet ruleTokens(tokenSize: number)}
 	<BoardRules
@@ -769,6 +768,7 @@
 		{seatArr}
 		placing={!!placing}
 		onCancelPlacing={() => (placing = undefined)}
+		{onAddSeat}
 		showing={showingGrim}
 		onStopShowing={() => {
 			showingGrim = false;
@@ -883,7 +883,6 @@
 				onHints={(h) => (hints.tray = h)}
 				run={flow.run}
 				disabled={watching}
-				instead={seatArr.arranging ? seatingBar : undefined}
 				{remDrag}
 				onRemove={(id) => moveConfirm?.requestReturn(id)}
 			/>
@@ -984,9 +983,7 @@
 	onCharacterSelection={startedAt === undefined && !setUp && !watching
 		? () => goto(resolve('/grimoire/[gameId]/setup', { gameId: game.gameId }))
 		: undefined}
-	onAddSeat={() =>
-		// The seat just appears (Trevor, 2026-10-16); with a room open, Travellers choose follows.
-		startPlacing((p) => travellersForNewSeat(grimoire.addSeat(p), watching))}
+	{onAddSeat}
 	onAddRule={() => rules?.add()}
 	onArrange={() => enterSeating(seatArr)}
 	onExport={() => (exportOpen = true)}
@@ -1055,7 +1052,7 @@
 
 <ReminderAsk {grimoire} />
 
-<PhaseDialogs {flow} {game} {characters} />
+<PhaseDialogs {flow} {game} {characters} notStarted={phaseNow.kind === 'setup'} />
 
 <LeaveGuard {game} {watching} />
 
@@ -1106,6 +1103,7 @@
 <DaySheet
 	bind:open={dayOpen}
 	game={grimoire.open}
+	phase={phaseNow}
 	cover={coverDetails}
 	{coverTimer}
 	{coverActions}

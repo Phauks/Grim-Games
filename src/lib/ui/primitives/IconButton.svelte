@@ -21,6 +21,12 @@
 		rel?: string;
 		/** Drawn with the quiet Button's edge, so it reads as something to tap (Trevor, 2026-10-20). */
 		outlined?: boolean;
+		/**
+		 * Words beside the icon, for the one button in a row that needs them to be understood
+		 * (Show characters beside Players' ✕, Trevor 2026-10-31): the same height, edge and
+		 * tint as the icons around it, as a pill.
+		 */
+		children?: Snippet;
 	}
 
 	let {
@@ -31,6 +37,7 @@
 		href,
 		rel = 'noopener',
 		outlined = false,
+		children,
 		...rest
 	}: Props = $props();
 </script>
@@ -56,12 +63,14 @@
 		bind:this={ref}
 		class="icon-button"
 		data-outlined={outlined || undefined}
+		data-text={children ? '' : undefined}
 		type="button"
 		aria-label={label}
 		title={label}
 		{...rest}
 	>
 		{#if face}{@render face()}{:else}<Icon name={icon} />{/if}
+		{#if children}<span class="text">{@render children()}</span>{/if}
 	</button>
 {/if}
 
@@ -83,6 +92,17 @@
 	.icon-button[data-outlined] {
 		border-radius: var(--button-radius);
 		box-shadow: var(--button-ring);
+	}
+	/* With words: a pill as tall as its neighbours, the icon first. */
+	.icon-button[data-text] {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
+		width: auto;
+		padding: 0 var(--space-3);
+		border-radius: var(--radius-full);
+		font: inherit;
+		white-space: nowrap;
 	}
 	.icon-button:active {
 		background: var(--surface-selected);

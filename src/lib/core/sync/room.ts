@@ -10,6 +10,7 @@
 import type { Alignment, Script } from '#lib/core/data/index.ts';
 import type { AvatarId } from '#lib/core/avatars/index.ts';
 import type { FrameId } from '#lib/core/frames/index.ts';
+import type { ProfileDetail } from '#lib/core/profile/index.ts';
 import type { SeatId } from '#lib/core/model/index.ts';
 import type { PublicGameState } from './public-projection.ts';
 import { feedbackView, type MemberFeedback } from './room-feedback.ts';
@@ -17,7 +18,7 @@ import type { ScriptVote } from './script-vote.ts';
 import type { ClientMessage, HostView, PlayerView, TownView, VoteTally } from './room-protocol.ts';
 import { closeScriptVote, scriptVoteCount } from './room-script-vote.ts';
 import { memberRole, seatsSeen, type RoomRoles } from './room-roles.ts';
-import { lookOf } from './room-look.ts';
+import { lookOf, seatWords } from './room-look.ts';
 import {
 	pictureReports,
 	seatPictures,
@@ -65,6 +66,9 @@ export interface RoomMember {
 	frame?: FrameId;
 	/** Their own picture in the room (room-pictures.ts), by its hash; initials when absent. */
 	picture?: string;
+	/** The tag-line and details on their profile (Trevor, 2026-11-01); absent when they wrote none. */
+	tagline?: string;
+	details?: ProfileDetail[];
 	/**
 	 * The game on the table when this phone was last connected. A phone that sleeps or goes to
 	 * the background stays in that game's name lists (`HostView.away`) until it comes back.
@@ -350,6 +354,8 @@ export function playerView(
 	}
 	const pictures = seatPictures(room.members);
 	if (Object.keys(pictures).length) view.pictures = pictures;
+	const profiles = seatWords(room.members);
+	if (Object.keys(profiles).length) view.profiles = profiles;
 	if (room.inbox) view.inbox = true;
 	if (room.vote && isSpectator(me)) {
 		const choice = room.vote.votes[memberId];
@@ -372,6 +378,8 @@ export function townView(room: RoomState): TownView {
 	}
 	const pictures = seatPictures(room.members);
 	if (Object.keys(pictures).length) view.pictures = pictures;
+	const profiles = seatWords(room.members);
+	if (Object.keys(profiles).length) view.profiles = profiles;
 	return view;
 }
 

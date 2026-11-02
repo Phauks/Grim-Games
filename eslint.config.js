@@ -406,7 +406,7 @@ export default defineConfig(
 			'src/lib/features/library/CharacterPane.svelte',
 			// Shown to a player: the card hands them their character, a separate thing (Trevor,
 			// 2026-10-31).
-			'src/lib/features/room/YourCharacter.svelte',
+			'src/lib/features/room/RoleCard.svelte',
 			'src/lib/features/setup/RevealDialog.svelte',
 			'src/lib/features/show/ShownCard.svelte',
 			// Icon addresses to keep offline, not drawn.

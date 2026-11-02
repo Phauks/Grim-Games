@@ -153,7 +153,7 @@ test('the Storyteller covers the screen from the board, beside ☰, and from the
 	// From the day, which stays open under it: ☰ then the cover, where they are on the board,
 	// and the day's name at the bottom across from Execution (Trevor, 2026-10-27, G3).
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	const day = page.getByRole('dialog', { name: /^Day( \d+)?$/ });
+	const day = page.getByRole('dialog', { name: /^(Setup|Day( \d+)?)$/ });
 	await expect(day).toBeVisible();
 	const inDay = (await day.getByTestId('cover-button').boundingBox())!;
 	// On a phone the day fills the screen, so the cover stays where it was; a tablet's day is a
