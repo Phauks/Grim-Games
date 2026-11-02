@@ -63,7 +63,7 @@ describe('Tinker', () => {
 			expect(tinkerCause(s, 'empath')).toBeUndefined();
 		});
 
-		it.fails("Example 2: Tea Lady's protection keeps Tinker alive", () => {
+		it("Example 2: Tea Lady's protection keeps Tinker alive", () => {
 			// Wiki: "The Tea Lady sits next to the Tinker and another good player, protecting the Tinker from
 			// death. The Tinker cannot die from their ability."
 			const s = scenario(['tinker', 'tealady', 'chef', 'imp', 'poisoner']).reminder(

@@ -66,7 +66,7 @@ describe('Klutz', () => {
 			expect(gameEnds(s.game, s.characters)).toEqual([]);
 		});
 
-		it.fails('Example 2: Killed Klutz picks the Demon; evil wins', () => {
+		it('Example 2: Killed Klutz picks the Demon; evil wins', () => {
 			// Wiki: "The Demon kills Dave, the Klutz. In the morning, when the Storyteller informs the group
 			// that Dave is dead, Dave says "Ok everybody, I was the Klutz" and after discussion for a few
 			// minutes, Dave publicly chooses the player that is the Demon. The game ends immediately and

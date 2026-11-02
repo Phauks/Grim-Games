@@ -204,7 +204,7 @@ and one line in the index, never an edit to `character-rules.ts`.
 - Night text overrides (`night-text.ts`: Trevor's reviewed edits and the parked fuller text): `nightText`, moved
 - Info token characters (`info-token-characters.ts`: the character a night step's card always shows): `infoTokenCharacters`, new
 - On-death triggers (`night-alerts.ts` `ON_DEATH`): `onDeath`, moved
-- Protection (`ability.ts`, `night-alerts.ts`; `not-execution` for the Storm Catcher, `whileNeighboursGood` for the Tea Lady, `day` for the Vizier, flagged by day in a seat's Status by `validDeathCauses`): `protects`, moved
+- Protection (`ability.ts`, `night-alerts.ts`; `not-execution` for the Storm Catcher, `whileNeighboursGood` for the Tea Lady, `day` for the Vizier, flagged by day in a seat's Status by `validDeathCauses`; `exile` with `storytellerDecides` for the Deviant, asked when a seat's Status logs the exile; any protection flags the causes it stops in a seat's Status): `protects`, moved
 - On-death triggers (`night-alerts.ts` `ON_DEATH`; `onDeathApplies` reads `by` and `night` against the death cause): `onDeath`, moved
 - Protection (`ability.ts`, `night-alerts.ts`): `protects`, moved
 - Impairments (`ability.ts`, read by `impairs-rules.ts`: the Drunk, Witch, Minstrel, Preacher, Xaan; Barista's `clears`; other tokens end with their character unless an entry says they last): `impairs`, moved
@@ -220,6 +220,7 @@ and one line in the index, never an edit to `character-rules.ts`.
 - Acts when dead (`dead-characters.ts`): `actsWhenDead`, moved
 - Stops waking (`night-alerts.ts`: the Exorcist's Chosen on the Demon): `stopsWaking`, new
 - Stops killing (`night-alerts.ts`: the Princess's Doesn't Kill on the Demon): `stopsKilling`, new
+- Acts twice (`rules/acts-twice.ts`: the Barista's Acts Twice): a second wake after each of the carrier's night steps (`withActsTwiceSteps`, read by `night-steps.ts`, the step named "… again"), an alert at the step (`night-alerts.ts`), a spent once-per-game night step still waking (`wakes-when.ts`), and a second day use without a warning (`dayUsesAllowed`, `UseAbility`): `actsTwice`, new
 - Choosing not to attack (M15a, `rules/demon-attack.ts`, alerts in `night-alerts.ts`, No attack offered at the Demon's step by `features/grimoire/NoAttackStep.svelte`; the reminder goes on the Demon at setup by the `demon` seat filter: the Toymaker's Final Night: No Attack): `demonAttack` (`maySkip`, `mustSkipOnce`), new
 - A quiet start to each day (M15b, `rules/quiet-start.ts`, counted down on the day timer's top edge by `features/day/DayTimer.svelte`: the Buddhist's veterans): `quietStart` (`seconds`, `players`), new
 - Own wake conditions (`rules/wakes-when.ts`, read by `night-steps.ts` `stepWakes`: the King once the dead equal or outnumber the living, the Choirboy when the Demon killed the King, the Seamstress until her No Ability): `wakesWhen`, new

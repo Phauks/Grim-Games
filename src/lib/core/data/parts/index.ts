@@ -2,8 +2,10 @@
  * Every part a character's rules block may have (`part.ts`), one line each, in alphabetical
  * order. A new part is a new file in this folder and one line here.
  */
+export { actsTwice } from './acts-twice.ts';
 export { actsWhenDead } from './acts-when-dead.ts';
 export { afterDeath } from './after-death.ts';
+export { afterExecution } from './after-execution.ts';
 export { answers } from './answers.ts';
 export { becomes } from './becomes.ts';
 export { believesOtherCharacter } from './believes-other-character.ts';

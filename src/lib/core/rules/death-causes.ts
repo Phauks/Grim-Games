@@ -138,13 +138,17 @@ export function reminderDeathCause(
  *   Slayer, a Spy as a Townsfolk for the Virgin), by `source`'s ability;
  * - `impaired`: every player who has the character is drunk, poisoned or without ability
  *   now, so it did nothing unless that was not so when the player died;
- * - `unknown`: the player's alignment or character is not set, so the rule cannot be checked.
+ * - `unknown`: the player's alignment or character is not set, so the rule cannot be checked;
+ * - `protected-by-day`: the player can't die by day (the Vizier), and it is day;
+ * - `protected`: a working ability says the player can't die to another ability (the Tea
+ *   Lady's Cannot Die, the Innkeeper's Safe), so it did nothing unless that was not so then.
  */
 export type DeathCauseFlag =
 	| { code: 'registers'; source: AbilitySource; wiki: string }
 	| { code: 'impaired'; seatIds: SeatId[] }
 	| { code: 'unknown' }
-	| { code: 'protected-by-day'; source: AbilitySource };
+	| { code: 'protected-by-day'; source: AbilitySource }
+	| { code: 'protected'; source: AbilitySource };
 
 export interface ValidDeathCause {
 	cause: DeathCause;
@@ -190,7 +194,8 @@ function gainedFrom(
  *
  * With `day` (the Storyteller marks the death while it is day), every cause but the
  * execution is flagged for a player whose ability says they can't die by day (the Vizier,
- * https://wiki.bloodontheclocktower.com/Vizier): warn, never lock.
+ * https://wiki.bloodontheclocktower.com/Vizier): warn, never lock. Every character's cause is
+ * flagged for a player a working ability protects from any kill (the Tea Lady's neighbour).
  */
 export function validDeathCauses(
 	game: Game,
@@ -254,10 +259,16 @@ export function validDeathCauses(
 		}
 		out.push({ cause: characterId, kind, ...(gained ? { gained } : {}), flags });
 	}
+	// A protection from another ability's kill (the Tea Lady's: "The Tinker cannot die from their
+	// ability", https://wiki.bloodontheclocktower.com/Tinker) flags every character's cause.
+	const guarded = protection(game, seatId, characters, 'other');
 	const safe = day ? protection(game, seatId, characters, 'day') : undefined;
 	if (safe && safe !== 'override') {
 		for (const entry of out)
 			if (entry.cause !== removed) entry.flags.push({ code: 'protected-by-day', source: safe });
+	} else if (guarded && guarded !== 'override') {
+		for (const entry of out)
+			if (entry.kind !== 'general') entry.flags.push({ code: 'protected', source: guarded });
 	}
 	return out;
 }
