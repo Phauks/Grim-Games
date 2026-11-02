@@ -9,7 +9,7 @@ import type { Alignment, CharacterId } from '#lib/core/data/types.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { trueCharacter } from '#lib/core/model/selectors.ts';
-import type { Game } from '#lib/core/model/types.ts';
+import type { Game, SeatId } from '#lib/core/model/types.ts';
 import { gameEnds, type GameEnd, type GameEndOptions } from './game-end.ts';
 import { isExecution } from './death-causes.ts';
 
@@ -84,7 +84,8 @@ export function detectedEndReason(
  * character (the Fiddler) whose ability can decide the game, plus `extra` (a saved reason).
  * First those `gameEnds` checks (`gameEnd.ends`), then those whose ability can kill the
  * Demon (`killsDemon`), then those only the Storyteller can judge
- * (`gameEnd.decidedByStoryteller`: a public claim, guess or choice), each in the order found.
+ * (`gameEnd.decidedByStoryteller`: a public claim, guess or choice; `gameEnd.joinsWinner`: a
+ * player who may win with either team), each in the order found.
  * An inverted winner (the Heretic) is left out: it flips whichever end happened.
  */
 export function endCharacters(
@@ -106,7 +107,23 @@ export function endCharacters(
 	const listed = [
 		...[...present].filter((id) => (rules(id)?.ends?.length ?? 0) > 0),
 		...[...present].filter((id) => killsDemon(id, characters)),
-		...[...present].filter((id) => rules(id)?.decidedByStoryteller)
+		...[...present].filter((id) => rules(id)?.decidedByStoryteller || rules(id)?.joinsWinner)
 	];
 	return saved && !listed.includes(saved) ? [...listed, saved] : listed;
+}
+
+/**
+ * The players who may win with `winner` although not on that team, if the Storyteller judges
+ * their ability met (`gameEnd.joinsWinner`: the Politician most responsible for their own team
+ * losing, https://wiki.bloodontheclocktower.com/Politician), even if dead. In seating order.
+ */
+export function joinsWinners(game: Game, characters: CharacterLookup, winner: Alignment): SeatId[] {
+	return game.seating.filter((id) => {
+		const truly = trueCharacter(game, id, characters);
+		return (
+			truly !== undefined &&
+			game.seats[id].alignment !== winner &&
+			rulesOf(truly, characters)?.gameEnd?.joinsWinner === true
+		);
+	});
 }

@@ -25,6 +25,7 @@
 	import AlignmentPill from './AlignmentPill.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import CharacterPicker from './CharacterPicker.svelte';
+	import JinxedPick from './JinxedPick.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import SeatChooser from './SeatChooser.svelte';
 
@@ -207,11 +208,17 @@
 		chosen = seatId;
 		characterOpen = true;
 	}
+	let jinxed = $state<JinxedPick>();
 	function chooseCharacter(characterId: CharacterId) {
 		characterOpen = false;
 		const seatId = chosen;
 		chosen = undefined;
 		if (!seatId) return;
+		// A jinx may say it can't be in play with a character in play: ask first.
+		if (jinxed) jinxed.pick(seatId, characterId, () => change(seatId, characterId));
+		else change(seatId, characterId);
+	}
+	function change(seatId: SeatId, characterId: CharacterId) {
 		const command = {
 			type: 'AssignCharacter' as const,
 			seatId,
@@ -354,8 +361,10 @@
 		script={game.script}
 		types={pickTypes}
 		exclude={left}
+		faded={(c) => jinxed?.note(chosen, c)}
 		onPick={chooseCharacter}
 	/>
+	<JinxedPick bind:this={jinxed} {game} {characters} />
 {/if}
 
 <style>

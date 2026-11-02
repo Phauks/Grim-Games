@@ -34,6 +34,11 @@
 		filter?: (character: Character) => boolean;
 		/** Listed but not choosable, with the reason shown on the row. */
 		disabledReason?: (character: Character) => string | undefined;
+		/**
+		 * Listed and choosable, but drawn as if not, with this as the row's note: the host asks
+		 * before going ahead (a jinx says it can't be in play; warn, never lock).
+		 */
+		faded?: (character: Character) => string | undefined;
 		/** Multi mode: once this many are chosen, the rest are disabled until one is removed. */
 		max?: number;
 		/** A short note on the row that doesn't stop the choice, e.g. "In play". */
@@ -99,6 +104,7 @@
 		onSelect,
 		filter,
 		disabledReason,
+		faded,
 		max,
 		marker,
 		types = PICKER_TYPES,
@@ -142,7 +148,9 @@
 	const searching = $derived(query.trim() !== '');
 	const full = $derived(mode === 'multi' && max !== undefined && chosen.size >= max);
 	// The note sits on the name's line, so it never adds a line (Trevor, 2026-10-18: dense rows).
-	const notes = $derived(disabledReason !== undefined || marker !== undefined || max !== undefined);
+	const notes = $derived(
+		disabledReason !== undefined || faded !== undefined || marker !== undefined || max !== undefined
+	);
 
 	function reasonFor(character: Character, isChosen: boolean): string | undefined {
 		return (
@@ -159,7 +167,8 @@
 				selected: chosen.has(character.id),
 				disabledReason: reasonFor(character, chosen.has(character.id))
 			}}
-			{@const note = state.disabledReason ?? marker?.(character)}
+			{@const fade = state.disabledReason === undefined ? faded?.(character) : undefined}
+			{@const note = state.disabledReason ?? fade ?? marker?.(character)}
 			<li class:divided={!item}>
 				{#if item}
 					{@render item(character, state)}
@@ -175,6 +184,7 @@
 						pressed={mode === 'multi' ? state.selected : undefined}
 						current={mode === 'single' && state.selected}
 						disabled={state.disabledReason !== undefined}
+						faded={fade !== undefined}
 						onclick={() => onSelect(character.id)}
 					/>
 				{/if}

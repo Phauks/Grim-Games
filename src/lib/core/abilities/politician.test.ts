@@ -15,9 +15,9 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { endCharacters } from '#lib/core/rules/end-reason.ts';
+import { endCharacters, joinsWinners } from '#lib/core/rules/end-reason.ts';
 import { gameEnds, suggestedWinner } from '#lib/core/rules/game-end.ts';
-import { engineGap, scenario } from '#lib/core/testing/scenario.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Politician', () => {
 	const character = committedCharacter('politician');
@@ -49,7 +49,7 @@ describe('Politician', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Politician#Examples)', () => {
-		it.fails('Example 1: Politician blocks execution; bluffing Mayor wins', () => {
+		it('Example 1: Politician blocks execution; bluffing Mayor wins', () => {
 			// Wiki: "The Politician has been trying to execute the Demon all game, without success.
 			// With just three players alive, the Politician convinces the group to not execute, since
 			// someone is claiming to be the Mayor. There is no execution, and evil wins because a
@@ -64,11 +64,11 @@ describe('Politician', () => {
 			expect(dusk.filter((e) => e.winner === 'good')).toEqual([]);
 			const night = s.newDay().dies('politician', 'imp');
 			expect(suggestedWinner(gameEnds(night.game, night.characters))).toBe('evil');
+			// The Storyteller judges the Politician most responsible: End game offers it, and the
+			// dead Politician may win with evil.
 			expect(endCharacters(night.game, night.characters)).toContain('politician');
-			engineGap(
-				'M15l',
-				'the Politician wins with evil when the Storyteller judges them most responsible for good losing'
-			);
+			expect(joinsWinners(night.game, night.characters, 'evil')).toEqual([s.seat('politician')]);
+			expect(joinsWinners(night.game, night.characters, 'good')).toEqual([]);
 		});
 		it("Example 2: Politician's accusation fails; both lose", () => {
 			// Wiki: "On the final day, the Politician votes for the Empath, and tells the group that
@@ -84,16 +84,19 @@ describe('Politician', () => {
 			expect(ends.map((e) => e.rule)).toContain('executed-loses');
 			expect(s.game.seats[s.seat('politician')].alignment).toBe('good');
 		});
-		it.fails('Example 3: Atheist bluff gets Storyteller executed; evil wins', () => {
+		it('Example 3: Atheist bluff gets Storyteller executed; evil wins', () => {
 			// Wiki: "The Politician, believing that evil is winning, bluffs as the Atheist. The
 			// Storyteller is executed. Evil wins, and the Politician wins too."
 			// No Atheist is in play, so executing the Storyteller is a win for evil.
-			const s = scenario(['politician', 'chef', 'empath', 'imp', 'poisoner']);
-			expect(endCharacters(s.game, s.characters)).toContain('politician');
-			engineGap(
-				'M15l',
-				'executing the Storyteller with no Atheist in play wins for evil, and the Politician wins with them'
+			const s = scenario(['politician', 'chef', 'empath', 'imp', 'poisoner']).do(
+				(at) => ({ type: 'NominateStoryteller', nominator: at.seat('politician') }),
+				{ type: 'ExecuteStoryteller' }
 			);
+			const ends = gameEnds(s.game, s.characters);
+			expect(suggestedWinner(ends)).toBe('evil');
+			expect(ends.map((e) => e.rule)).toEqual(['storyteller-executed']);
+			expect(endCharacters(s.game, s.characters)).toContain('politician');
+			expect(joinsWinners(s.game, s.characters, 'evil')).toEqual([s.seat('politician')]);
 		});
 	});
 });

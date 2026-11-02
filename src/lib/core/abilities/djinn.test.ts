@@ -54,13 +54,11 @@ describe('Djinn', () => {
 		const data = committedGameData();
 		const pair = (ids: readonly string[]) => [...ids].sort().join('+');
 
-		it.fails('Example 1: Storyteller blocks Pit-Hag from creating Heretic', () => {
+		it('Example 1: Storyteller blocks Pit-Hag from creating Heretic', () => {
 			// Wiki: "The Pit-Hag and the Heretic are Jinxed. At the start of the game, the
 			// Storyteller reads out the Djinn's special rule: “A Pit-Hag cannot create a Heretic.”
 			// Later in the game, the Pit-Hag tries to create a Heretic. The Storyteller shakes
 			// their head, and the Pit-Hag must choose another character to create."
-			// Waits on the engine (L100): the jinx shows on the script and warns at setup, but turning a
-			// player into the Heretic while the Pit-Hag is in play gives no jinx warning.
 			const jinxes = scriptJinxes(data.jinxes, ['pithag', 'heretic', 'chef', 'imp']);
 			expect(jinxes.map((j) => pair(j.characters))).toEqual(['heretic+pithag']);
 			expect(jinxSetupWarnings(jinxes, ['pithag', 'heretic'])).toHaveLength(1);

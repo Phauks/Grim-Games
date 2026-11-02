@@ -11,7 +11,7 @@ import {
 import { extraEvilPlayers } from '#lib/core/rules/extra-evil.ts';
 import { abilityState } from '#lib/core/rules/ability.ts';
 import { cantTurnGood } from '#lib/core/rules/becomes.ts';
-import { barredAbilities, givenInstead } from '#lib/core/rules/jinxes.ts';
+import { barredAbilities, givenInstead, jinxForbidsBecoming } from '#lib/core/rules/jinxes.ts';
 import { tallyKiller, tallyKills } from '#lib/core/rules/day-tally.ts';
 import { neighbourFollows } from '#lib/core/rules/reminder-movement.ts';
 import type { Game, SeatId } from '#lib/core/model/index.ts';
@@ -61,6 +61,17 @@ export const CHARACTERS_DECIDERS: Deciders<
 		);
 		if (elsewhere && !allowsDuplicates(character)) {
 			warn('already-in-play', `${character.name} is already on another seat`, [character.id]);
+		}
+		// A jinx may say only one of the two can be in play (the Pit-Hag cannot create a
+		// Heretic, https://wiki.bloodontheclocktower.com/Djinn): warn, never lock.
+		const jinxed = jinxForbidsBecoming(game, seat.seatId, character.id, ctx.characters);
+		if (jinxed) {
+			const other = ctx.characters.get(jinxed)?.name ?? jinxed;
+			warn(
+				'jinxed-character',
+				`${character.name} and ${other} are jinxed: only one of them can be in play.`,
+				[character.id, jinxed]
+			);
 		}
 		const typeDefault = defaultAlignment(character.type);
 		let alignment = command.alignment;

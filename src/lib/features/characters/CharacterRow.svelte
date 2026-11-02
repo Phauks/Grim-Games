@@ -51,6 +51,11 @@
 		/** Single choice: aria-current, drawn as chosen. */
 		current?: boolean;
 		disabled?: boolean;
+		/**
+		 * Drawn as disabled but still choosable: the host asks before going ahead (a jinx says
+		 * it can't be in play, warn never lock).
+		 */
+		faded?: boolean;
 		/** Not on the script: a dashed edge. */
 		dashed?: boolean;
 		/** Accessible name; defaults to the name and any note. */
@@ -95,6 +100,7 @@
 		pressed,
 		current,
 		disabled = false,
+		faded = false,
 		dashed = false,
 		label,
 		describedby,
@@ -165,7 +171,7 @@
 	data-character-id={onclick ? undefined : character.id}
 	data-chosen={chosen ? '' : undefined}
 	data-dashed={dashed ? '' : undefined}
-	data-disabled={disabled ? '' : undefined}
+	data-disabled={disabled || faded ? '' : undefined}
 	data-interactive={onclick ? '' : undefined}
 	data-name-only={showAbility ? undefined : ''}
 	data-fit={fullWidth ? undefined : ''}
