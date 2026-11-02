@@ -5,7 +5,11 @@
  */
 import type { Alignment, CharacterId, Script, PlayerName } from '#lib/core/data/index.ts';
 import type { DayMark } from '#lib/core/data/day-mark-rules.ts';
-import type { DayReminderOverride, NightStepOverride } from '#lib/core/rules/index.ts';
+import type {
+	DayReminderOverride,
+	ExecutionOutcome,
+	NightStepOverride
+} from '#lib/core/rules/index.ts';
 import type { AvatarId } from '#lib/core/avatars/index.ts';
 import type { FrameId } from '#lib/core/frames/index.ts';
 import type {
@@ -250,7 +254,7 @@ export type Command =
 			bag: TileSpec[];
 	  }
 	// ── The day log (`Game.today`). Every entry can be removed or edited: an override. ──
-	/** Logs a nomination: who nominated whom. Votes are not tracked. */
+	/** Logs a nomination: who nominated whom. Votes are recorded with `RecordVotes`. */
 	| { type: 'Nominate'; nominator: SeatId; nominee: SeatId }
 	/** Changes who nominated whom in a logged nomination. */
 	| { type: 'EditNomination'; entryId: DayEntryId; nominator: SeatId; nominee: SeatId }
@@ -259,6 +263,19 @@ export type Command =
 	 * undefined clears it.
 	 */
 	| { type: 'ChooseForNomination'; entryId: DayEntryId; chosen?: SeatId }
+	/**
+	 * Records who voted on a logged nomination (M9a); undefined `voters` clears the record. It
+	 * spends each dead voter's ghost vote and each used vote token (`GiveVoteToken`), and gives
+	 * back those an earlier record of it spent. It never refuses a vote the rules forbid: it
+	 * warns (a Butler voting without their Master, a Zealot not voting, a voter with no ghost
+	 * vote or vote token).
+	 */
+	| { type: 'RecordVotes'; entryId: DayEntryId; voters?: SeatId[] }
+	/**
+	 * A dead player gives their vote token to a player whose character needs one to vote (the
+	 * Beggar): `from` spends their ghost vote and `to` holds one more token.
+	 */
+	| { type: 'GiveVoteToken'; from: SeatId; to: SeatId }
 	/**
 	 * Marks one of today's yes-or-no facts (whether the Demon voted, for the Flowergirl), and
 	 * swaps the tokens of each character in play that shows it (`dayMark`); undefined clears it.
@@ -278,18 +295,30 @@ export type Command =
 	 * character the Storyteller says saved them (the Execution sheet's Saved by, such as the
 	 * Pacifist's "might not die"), applied even when the grimoire disagrees, with a warning.
 	 * `cause` is the character whose ability executed them (the Virgin's), recorded as the cause
-	 * of death instead of a plain execution.
+	 * of death instead of a plain execution. `outcome` is an ability that decided it
+	 * (`executionOutcome`): `failed` logs a failed execution and nobody dies (the Legion's
+	 * only evil voted, the Judge's forced fail); `forced` executes them whatever the vote (the
+	 * Judge's forced pass, the Vizier's execute now). A character whose day use is marked
+	 * (`dayUse`, the Judge's once per game) gets it marked used on this player.
 	 */
-	| { type: 'Execute'; seatId: SeatId; dies?: boolean; savedBy?: CharacterId; cause?: CharacterId }
+	| {
+			type: 'Execute';
+			seatId: SeatId;
+			dies?: boolean;
+			savedBy?: CharacterId;
+			cause?: CharacterId;
+			outcome?: ExecutionOutcome;
+	  }
 	/** Logs a Traveller's exile and marks them dead by exile, if alive. Not an execution. */
 	| { type: 'Exile'; seatId: SeatId }
 	/**
 	 * Logs that a character used its ability. A character with a "No Ability" reminder
 	 * token gets it placed on the seat; otherwise only the use is logged. `on` is the player
 	 * the use was about, when its rules ask (`dayUse`: the Slayer's choice, the Virgin's
-	 * nominator).
+	 * nominator). `passed` says whether the vote it called passed (`dayUse.vote`: the Cult
+	 * Leader's cult vote).
 	 */
-	| { type: 'UseAbility'; seatId: SeatId; characterId: CharacterId; on?: SeatId }
+	| { type: 'UseAbility'; seatId: SeatId; characterId: CharacterId; on?: SeatId; passed?: boolean }
 	/**
 	 * A free-text note about a character (any length; may be empty with `guesses`). `holds`
 	 * marks a statement true or false (L58); `answer` answers a guess at the player's own
