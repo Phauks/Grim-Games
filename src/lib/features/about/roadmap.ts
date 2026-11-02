@@ -271,9 +271,9 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	},
 	{
 		title:
-			'Travellers choose their own Traveller on their phones: the Storyteller sends the ones allowed, a tap holds one so no one else can take it, Confirm sends it; a Traveller who arrives mid-game sits at the table not in play until the night',
+			'Travellers choose their own Traveller on their phones: the Storyteller sends the ones allowed, a tap holds one so no one else can take it, Confirm sends it; a Traveller who arrives mid-game sits at the table not in play until the night offers to bring them in',
 		area: 'storyteller',
-		parts: ['L102', 'L102a']
+		parts: ['L102', 'L102a', 'L102b']
 	},
 	{
 		title:
@@ -402,7 +402,8 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		// Gap 1, last and separate (Trevor, 2026-10-28). M9a the vote record and vote weights
 		// (Thief, Bureaucrat, God of Ug, Butler, Zealot, Beggar), M9b voting across the table
 		// (Voudon, Organ Grinder, Ferryman), M9c who may nominate (Bishop, Golem, Gnome), M9d
-		// forced and failed executions (Legion, Judge, Vizier, Cult Leader), M9e the vote sheet.
+		// forced and failed executions (Legion, Judge, Vizier, Cult Leader), M9e vote notes for the
+		// Storyteller's count (Trevor, 2026-11-01: votes are run outside the app, never recorded).
 		title:
 			'Voting and nominations: vote weight, who may vote or nominate, forced and blocked executions (Butler, Thief, Bureaucrat, Bishop, Legion and 12 more)',
 		area: 'engine',
@@ -419,10 +420,11 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		// Trevor, 2026-10-30: on the roadmap, after a spike and research. L99 research, L100 the
 		// format with the Heretic and Boffin, L107 every jinx shown where it matters, L108 jinxes
 		// that reuse existing rules, L109 the Plague Doctor's and other built characters', L112
-		// the Leviathan's and Riot's game ends, King and late Demon.
+		// the Leviathan's and Riot's game ends, King and late Demon, L113 the setup jinx gaps
+		// (the Damsel's Poisoned, the Alchemist's Summoner and Marionette).
 		title: 'Jinxes the app applies, not only shows',
 		area: 'engine',
-		parts: ['L99', 'L100', 'L107', 'L108', 'L109', 'L112']
+		parts: ['L99', 'L100', 'L107', 'L108', 'L109', 'L112', 'L113']
 	},
 	{
 		title: 'Co-Storytelling: two Storytellers on one game',

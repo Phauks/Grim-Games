@@ -83,6 +83,7 @@ describe('Mezepheles', () => {
 			// Wiki: "The Mezepheles privately tells the Noble the secret word – “Constantinople”. The
 			// Noble visits the Storyteller and says “Constantinople” in private. That night, the Courtier
 			// makes the Mezepheles drunk. The Noble stays good."
+			// Waits on the engine (M15o): becomesOffer still offers Turns Evil while the Mezepheles is drunk.
 			const s = scenario(['noble', 'mezepheles', 'courtier', 'empath', 'imp'])
 				.reminder('noble', 'mezepheles', 'Turns Evil')
 				.reminder('mezepheles', 'courtier', 'Drunk 3');

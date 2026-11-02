@@ -109,6 +109,7 @@ describe('Snake Charmer', () => {
 			// Wiki: "The Snake Charmer chooses a player who is the Pit-Hag, so nothing happens. The Snake
 			// Charmer simply goes to sleep. The next night, the Snake Charmer chooses themself, so nothing
 			// happens."
+			// Choosing a Minion, then themself, swaps nothing and poisons no one.
 			const start = scenario(['snakecharmer', 'pithag', 'vigormortis', 'chef']);
 			const s = charms(start, 'pithag');
 			expect(becomesOffer(s.game, s.seat('pithag'), charmed, s.characters)).toBeUndefined();
@@ -142,6 +143,8 @@ describe('Snake Charmer', () => {
 			// Wiki: "The Pit-Hag turns themself into the Snake Charmer. Then, the Snake Charmer chooses a
 			// player who is the Fang Gu. The Snake Charmer becomes the Fang Gu, while the Fang Gu becomes the
 			// Snake Charmer and gets poisoned. Both remain evil."
+			// The Pit-Hag made a player the Snake Charmer (an evil one), who then charms the
+			// Fang Gu: they swap characters, and both stay evil.
 			const start = scenario(['pithag', 'chef', 'fanggu', 'monk']).becomes(
 				'chef',
 				'snakecharmer',

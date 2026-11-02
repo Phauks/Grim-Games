@@ -74,7 +74,7 @@ describe('Tinker', () => {
 			expect(protection(s.game, s.seat('tinker'), s.characters, 'other')).toMatchObject({
 				characterId: 'tealady'
 			});
-			// Waits on the engine: the Tinker's own death is offered as a cause with no flag, though the
+			// Waits on the engine (M15m): the Tinker's own death is offered as a cause with no flag, though the
 			// Tea Lady protects them.
 			expect(tinkerCause(s, 'tinker')?.flags).not.toEqual([]);
 		});
