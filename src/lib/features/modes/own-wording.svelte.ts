@@ -23,6 +23,6 @@ export function showsOwnWording(mode: GameMode | SpecialRule): boolean {
  * Otherwise the description: approved, its own file's, or our own wording on.
  */
 export function shownAbout(mode: GameMode | SpecialRule): string | undefined {
-	if (mode.kind === 'special-rule' && mode.parts.text?.length) return mode.parts.text.join(' ');
+	if (mode.parts.text?.length) return mode.parts.text.join(' ');
 	return showsOwnWording(mode) || aboutApproved(mode.id, mode.about) ? mode.about : undefined;
 }

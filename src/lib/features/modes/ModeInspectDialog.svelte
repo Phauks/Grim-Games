@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import {
-		MODE_PARTS,
+		FILE_PARTS,
 		RULE_PARTS,
 		runsPart,
 		type CombinedParts,
@@ -38,9 +38,9 @@
 	const isRule = $derived(mode.kind === 'special-rule');
 	// A rule's own text is its description (shownAbout), so it isn't listed again as a part.
 	const partNames = $derived<readonly (ModePart | RulePart)[]>(
-		mode.kind === 'special-rule'
-			? RULE_PARTS.filter((part) => part !== 'text' || !mode.parts.text?.length)
-			: MODE_PARTS
+		(mode.kind === 'special-rule' ? RULE_PARTS : FILE_PARTS).filter(
+			(part) => part !== 'text' || !mode.parts.text?.length
+		)
 	);
 	const parts = $derived<CombinedParts>(shownParts(mode.id, mode.parts, showsOwnWording(mode)));
 	const unconfirmed = $derived<readonly string[]>(mode.unconfirmed ?? []);
