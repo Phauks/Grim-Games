@@ -56,6 +56,31 @@ describe('the character each phone shows its player', () => {
 		expect(roles[s.seat('empath')]).toEqual({ characterId: 'empath' });
 	});
 
+	// https://wiki.bloodontheclocktower.com/Hermit, second example: with the Drunk on the script
+	// the Hermit thinks they are a Townsfolk, so with no tile to say which, nothing is sent (M22).
+	it('never shows a Hermit-Drunk their Hermit', () => {
+		const script = {
+			entries: ['hermit', 'drunk', 'chef', 'empath', 'imp'].map((id) => ({
+				kind: 'official' as const,
+				id
+			}))
+		};
+		const withDrunk = scenario(['hermit', 'imp', 'chef'], { script });
+		expect(
+			seatRoles(withDrunk.game, withDrunk.characters)[withDrunk.seat('hermit')]
+		).toBeUndefined();
+		const noDrunk = {
+			entries: ['hermit', 'saint', 'chef', 'empath', 'imp'].map((id) => ({
+				kind: 'official' as const,
+				id
+			}))
+		};
+		const without = scenario(['hermit', 'imp', 'chef'], { script: noDrunk });
+		expect(seatRoles(without.game, without.characters)[without.seat('hermit')]).toEqual({
+			characterId: 'hermit'
+		});
+	});
+
 	// https://wiki.bloodontheclocktower.com/Lunatic: the Lunatic is shown a Demon token.
 	it('shows what a bag tile showed, never the grimoire character', () => {
 		const { session, ctx, seats } = newGame(1, { ctx: testContext() });

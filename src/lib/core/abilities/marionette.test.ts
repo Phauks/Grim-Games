@@ -17,8 +17,10 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
 import { abilityState } from '#lib/core/rules/ability.ts';
+import { changeableSeats, characterChanger } from '#lib/core/rules/becomes.ts';
+import { analyseSetup } from '#lib/core/rules/setup.ts';
 import { gameEnds, suggestedWinner } from '#lib/core/rules/game-end.ts';
-import { infoPicker, reliability } from '#lib/core/rules/night-info.ts';
+import { answerOptions, infoPicker, nightAnswer, reliability } from '#lib/core/rules/night-info.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Marionette', () => {
@@ -53,10 +55,56 @@ describe('Marionette', () => {
 		});
 	});
 
+	// How to Run: with three Minions, one more Minion token is swapped for a Townsfolk, and on
+	// the first night a good player becomes that Minion (M22).
+	describe('with three Minions', () => {
+		const good = ['chef', 'empath', 'monk', 'mayor', 'washerwoman', 'librarian', 'investigator'];
+		const thirteen = [
+			...good,
+			'fortuneteller',
+			'undertaker',
+			'ravenkeeper',
+			'imp',
+			'poisoner',
+			'soldier'
+		];
+
+		it('lets one Minion fewer be dealt only when there are usually three', () => {
+			const s = scenario(['chef', 'imp']);
+			const get = (ids: string[]) => ids.map((id) => s.characters.get(id)!);
+			const big = analyseSetup({ players: 13, inPlay: get([...thirteen.slice(1), 'marionette']) });
+			expect(big.expected.minion).toEqual([2, 3]);
+			const small = analyseSetup({
+				players: 7,
+				inPlay: get(['chef', 'empath', 'monk', 'mayor', 'saint', 'imp', 'marionette'])
+			});
+			expect(small.expected.minion).toEqual([1]);
+		});
+
+		it('makes the missing Minion from a good player on the first night', () => {
+			// Thirteen players usually have three Minions: the Marionette and the Poisoner are two.
+			const s = scenario(thirteen).reminder('chef', 'marionette', 'Is The Marionette');
+			expect(characterChanger(s.game, 'marionette', s.characters)).toBe(s.seat('chef'));
+			const offered = changeableSeats(s.game, 'marionette', s.characters);
+			expect(offered).not.toContain(s.seat('imp'));
+			expect(offered).not.toContain(s.seat('poisoner'));
+			expect(offered).not.toContain(s.seat('chef'));
+			const after = s.becomes('monk', 'spy', 'evil');
+			expect(characterChanger(after.game, 'marionette', after.characters)).toBeUndefined();
+		});
+
+		it('makes none with fewer Minions usual', () => {
+			const s = scenario(['chef', 'empath', 'monk', 'mayor', 'saint', 'imp', 'soldier']).reminder(
+				'chef',
+				'marionette',
+				'Is The Marionette'
+			);
+			expect(characterChanger(s.game, 'marionette', s.characters)).toBeUndefined();
+		});
+	});
+
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Marionette#Examples)', () => {
-		// Waits on the engine: a player marked Is The Marionette has no impairment for the good
-		// character they think they are (the Drunk has one), so their information counts as reliable.
-		it.fails('Example 1: Marionette thinks they are the Undertaker', () => {
+		it('Example 1: Marionette thinks they are the Undertaker', () => {
 			// Wiki: "Marianna is the Marionette, but thinks she is the Undertaker. She wakes each night to
 			// learn who was executed that day, but her information is often wrong. Halfway through the
 			// game, the Demon tells her that she is the Marionette."
@@ -68,9 +116,18 @@ describe('Marionette', () => {
 			expect(trueCharacter(s.game, s.seat('undertaker'), s.characters)).toBe('marionette');
 			expect(typeOf(s.game, s.seat('undertaker'), s.characters)).toBe('minion');
 			// She has no Undertaker ability, so her information need not be true.
-			expect(
-				reliability(s.game, s.seat('undertaker'), 'undertaker', s.characters).unreliable
-			).toBeDefined();
+			const r = reliability(s.game, s.seat('undertaker'), 'undertaker', s.characters);
+			expect(r).toMatchObject({
+				unreliable: 'no-ability',
+				impairments: [{ reason: 'no-ability', source: { characterId: 'marionette' } }]
+			});
+			// So any answer may be given, not only the Chef.
+			const a = nightAnswer(s.game, s.seat('undertaker'), 'undertaker', s.characters)!;
+			expect(answerOptions(s.game, a, s.characters)[0]).toMatchObject({
+				reason: 'true',
+				value: { kind: 'character', value: 'chef' }
+			});
+			expect(answerOptions(s.game, a, s.characters).length).toBeGreaterThan(1);
 		});
 		it('Example 2: Demon bluffs that another player is Marionette', () => {
 			// Wiki: "Lachlan is the Demon. He tells Sarah that she is the Marionette. Lachlan is lying.
