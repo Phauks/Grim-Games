@@ -324,8 +324,11 @@ export function hasAbilityOf(
 /**
  * The characters whose ability a player has by their own `gainsAbilityOf` (the Alchemist's
  * Minion, https://wiki.bloodontheclocktower.com/Alchemist): the token their seat shows, of that
- * type, while they are really another character. Their setup changes apply (`analyseSetup`'s
- * `abilities`). Only `seatIds`' players, all by default.
+ * type, while they are really another character. Also an ability they hold from a character
+ * whose `givesAbility` makes its `setup` change (the Boffin's good ability on the Demon,
+ * https://wiki.bloodontheclocktower.com/Boffin), made at setup whether or not it works later.
+ * Their setup changes apply (`analyseSetup`'s `abilities`). Only `seatIds`' players, all by
+ * default.
  */
 export function gainedSetupAbilities(
 	game: Game,
@@ -336,6 +339,11 @@ export function gainedSetupAbilities(
 		const shown = characters.get(game.seats[seatId]?.characterId ?? '');
 		const own = trueCharacter(game, seatId, characters);
 		const type = own === undefined ? undefined : rulesOf(own, characters)?.gainsAbilityOf;
-		return shown && own !== shown.id && type === shown.type ? [shown] : [];
+		const gained = shown && own !== shown.id && type === shown.type ? [shown] : [];
+		const held = (game.seats[seatId]?.abilities ?? []).flatMap((h) => {
+			const character = characters.get(h.characterId);
+			return character && rulesOf(h.via, characters)?.givesAbility?.setup ? [character] : [];
+		});
+		return [...gained, ...held];
 	});
 }

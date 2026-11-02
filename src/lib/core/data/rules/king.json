@@ -10,6 +10,11 @@
 	"deathCause": {
 		"none": "info"
 	},
+	"infoTokenCharacters": {
+		"this-player-is": {
+			"characters": ["self"]
+		}
+	},
 	"wakesWhen": {
 		"deadAtLeastLiving": true
 	},

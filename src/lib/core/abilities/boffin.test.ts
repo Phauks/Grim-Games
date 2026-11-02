@@ -93,7 +93,8 @@ describe('Boffin', () => {
 				to: 'demon',
 				types: ['townsfolk', 'outsider'],
 				notInPlay: true,
-				whileWorks: true
+				whileWorks: true,
+				setup: true
 			});
 		});
 
@@ -239,11 +240,9 @@ describe('Boffin', () => {
 	describe('How to Run (https://wiki.bloodontheclocktower.com/Boffin#How_to_Run)', () => {
 		const cast = ['boffin', 'imp', 'chef', 'empath', 'monk', 'soldier', 'butler'];
 
-		it.fails("makes the setup change in brackets on the Demon's good ability", () => {
+		it("makes the setup change in brackets on the Demon's good ability", () => {
 			// Wiki: "While setting up the game, before putting character tokens in the bag, make any
 			// changes that are indicated in brackets on the Demon's two character abilities."
-			// Waits on the engine (unplanned): the setup check leaves out a setup-changing ability the
-			// Boffin gives the Demon (here the Balloonist's extra Outsider).
 			const s = scenario(cast, { characters }).do(boffinGives('imp', 'balloonist'));
 			const abilities = gainedSetupAbilities(s.game, s.characters);
 			expect(abilities.map((c) => c.id)).toEqual(['balloonist']);
@@ -261,16 +260,14 @@ describe('Boffin', () => {
 				characters: s.characters
 			});
 			expect(cards.find((c) => c.token.id === 'selected-you')?.filled).toMatchObject({
-				characterIds: ['boffin'],
+				characterIds: ['boffin', 'chef'],
 				upTo: 2
 			});
 		});
 
-		it.fails('fills in the good character the Demon holds after the Boffin token', () => {
+		it('fills in the good character the Demon holds after the Boffin token', () => {
 			// Wiki: "Show the THIS CHARACTER SELECTED YOU info token, then the Boffin token, then the
 			// good character token."
-			// Waits on the engine (unplanned): the card fills in only the Boffin; the good ability the
-			// Demon holds is left for the Storyteller to pick.
 			const s = scenario(cast, { characters }).do(boffinGives('imp', 'chef'));
 			const boffin = s.characters.get('boffin')!;
 			const cards = stepInfoCards(boffin, boffin.firstNightReminder, {

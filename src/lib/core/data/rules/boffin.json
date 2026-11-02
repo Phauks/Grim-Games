@@ -21,11 +21,12 @@
 		"to": "demon",
 		"types": ["townsfolk", "outsider"],
 		"notInPlay": true,
-		"whileWorks": true
+		"whileWorks": true,
+		"setup": true
 	},
 	"infoTokenCharacters": {
 		"selected-you": {
-			"characters": ["self"],
+			"characters": ["self", "given"],
 			"upTo": 2
 		}
 	},
