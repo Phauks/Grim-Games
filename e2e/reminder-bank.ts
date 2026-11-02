@@ -34,7 +34,7 @@ export async function binToken(page: Page, label: string, nth = 0): Promise<Loca
 
 /**
  * Drags a token from the pulled-up bank onto the seat whose label starts `Seat N:` (or the
- * label given). The sheet stays open, under any dialog the drop asks; `closeBin` closes it.
+ * label given). The bank then closes back to its row (Trevor, 2026-11-02).
  */
 export async function dragToSeat(page: Page, token: Locator, seat: number | string) {
 	const start = typeof seat === 'number' ? `Seat ${seat}:` : seat;
