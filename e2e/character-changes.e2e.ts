@@ -166,7 +166,7 @@ test("the Snake Charmer's step swaps with the Demon it chooses and poisons the o
 	await choose(page, 2, 'Vigormortis');
 	await choose(page, 3, 'Clockmaker');
 	const strip = await walkTo(page, 'Snake Charmer');
-	await strip.locator('button.step .name strong').tap();
+	await strip.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong').tap();
 	const step = page.getByRole('dialog', { name: 'Snake Charmer' });
 	await expect(step).toBeVisible();
 	const swap = step.getByTestId('charm-swap');

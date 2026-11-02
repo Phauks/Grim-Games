@@ -65,7 +65,7 @@ async function openStep(page: Page, title: string) {
 		await strip.getByRole('button', { name: 'Next step' }).tap();
 	await expect(name).toHaveText(title);
 	// At its count: the step's name opens the character on a tablet.
-	await strip.locator('button.step .count').tap();
+	await strip.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong').tap();
 	const dialog = page.getByRole('dialog', { name: title });
 	await expect(dialog).toBeVisible();
 	return dialog;

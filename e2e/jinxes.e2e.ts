@@ -92,7 +92,11 @@ async function toSecondNight(page: Page, executed: number) {
 /** Opens a step from the walk-through by its name. */
 async function openStep(page: Page, title: string) {
 	// Its name: on a phone, a tap on the middle also reached the opened step's icon below it.
-	await (await walkTo(page, title)).locator('.step .name strong').tap();
+	await (
+		await walkTo(page, title)
+	)
+		.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong')
+		.tap();
 	const step = page.getByRole('dialog', { name: title });
 	await expect(step).toBeVisible();
 	return step;

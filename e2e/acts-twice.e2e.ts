@@ -61,7 +61,7 @@ test('a player who acts twice wakes again for their step', async ({ page }) => {
 
 	await next.tap();
 	await expect(name).toHaveText('Poisoner again');
-	await expect(strip.locator('.who')).toHaveText('Seat 1');
+	await expect(strip.locator('.row')).toContainText('Seat 1');
 	await expect(strip.getByTestId('night-alerts')).toContainText('acts twice tonight');
 
 	// The second wake opens like the first, with its own title.

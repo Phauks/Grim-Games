@@ -101,8 +101,9 @@ async function openStep(page: Page, title: string) {
 		}
 	}
 	await expect(name).toHaveText(title);
-	// By its name: a tap on the step's text could land on a character named in it.
-	await name.tap();
+	// By its name (the character's band): a tap on the step's text could land on a character
+	// named in it.
+	await strip.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong').tap();
 	const dialog = page.getByRole('dialog', { name: title });
 	await expect(dialog).toBeVisible();
 	return dialog;
