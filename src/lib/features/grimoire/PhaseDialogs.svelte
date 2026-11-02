@@ -15,9 +15,11 @@
 		flow: PhaseFlow;
 		game: Game;
 		characters: CharacterLookup;
+		/** Start game not yet tapped: the day's Execution warns (Trevor, 2026-11-01). */
+		notStarted?: boolean;
 	}
 
-	let { flow, game, characters }: Props = $props();
+	let { flow, game, characters, notStarted = false }: Props = $props();
 </script>
 
 <ConfirmDialog
@@ -54,6 +56,7 @@
 	{game}
 	{characters}
 	chosen={flow.executeChosen}
+	{notStarted}
 	onConfirm={(...args) => flow.executeAndEndDay(...args)}
 />
 

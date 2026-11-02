@@ -11,7 +11,6 @@ import type {
 	GameMode,
 	ModeParts,
 	Restrictions,
-	RuleParts,
 	SpecialRule
 } from './types.ts';
 
@@ -28,9 +27,16 @@ export interface Combined {
 	conflicts: RuleConflict[];
 }
 
-/** Parts with one answer per game: a second, different answer is a conflict. */
+/**
+ * Parts with one answer per game: a second, different answer is a conflict. The whole-game
+ * parts are here too (Trevor, 2026-11-01), though only a game mode sets them (`fileKind`).
+ */
 const SINGLE = [
 	'pool',
+	'counts',
+	'assignment',
+	'towns',
+	'betweenGames',
 	'setupModifiers',
 	'duplicates',
 	'bluffs',
@@ -63,7 +69,7 @@ export function combineRules(mode: GameMode, rules: readonly SpecialRule[]): Com
 		if (mode.parts[key as keyof ModeParts] !== undefined) setBy.set(key, mode.id);
 
 	for (const rule of rules) {
-		const add: RuleParts = rule.parts;
+		const add: CombinedParts = rule.parts;
 		for (const key of SINGLE) {
 			const value = add[key];
 			if (value === undefined) continue;
@@ -86,12 +92,12 @@ export function combineRules(mode: GameMode, rules: readonly SpecialRule[]): Com
 	}
 
 	const chosen = [mode, ...rules];
-	for (const rule of rules) {
-		const listed = [...(rule.conflictsWith?.modes ?? []), ...(rule.conflictsWith?.rules ?? [])];
+	for (const file of chosen) {
+		const listed = [...(file.conflictsWith?.modes ?? []), ...(file.conflictsWith?.rules ?? [])];
 		for (const other of chosen) {
-			if (other === rule || !listed.includes(other.id)) continue;
+			if (other === file || !listed.includes(other.id)) continue;
 			const ids: [string, string] =
-				chosen.indexOf(other) < chosen.indexOf(rule) ? [other.id, rule.id] : [rule.id, other.id];
+				chosen.indexOf(other) < chosen.indexOf(file) ? [other.id, file.id] : [file.id, other.id];
 			if (!conflicts.some((c) => !c.part && c.ids[0] === ids[0] && c.ids[1] === ids[1]))
 				conflicts.push({ ids });
 		}
