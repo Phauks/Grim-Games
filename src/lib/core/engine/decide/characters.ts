@@ -5,7 +5,8 @@ import {
 	isOnScript,
 	registersAsDead,
 	replacedBy,
-	scriptCharacterIds
+	scriptCharacterIds,
+	typeOf
 } from '#lib/core/model/index.ts';
 import { extraEvilPlayers } from '#lib/core/rules/extra-evil.ts';
 import { cantTurnGood } from '#lib/core/rules/becomes.ts';
