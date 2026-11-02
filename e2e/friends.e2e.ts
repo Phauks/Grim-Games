@@ -393,6 +393,83 @@ test('people from a finished game are on Recent players, with Add friend', async
 	await expect(ann.page.getByTestId('profile-games')).toHaveText('Games played: 1');
 });
 
+/** Ends the board's game from ⋯, as it stands. */
+async function endBoardGame(page: Page) {
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'End game', exact: true })
+		.tap();
+	const end = page.getByRole('alertdialog', { name: 'End game?' });
+	await end.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(page.getByTestId('game-over')).toBeVisible();
+}
+
+test('someone played with twice is suggested on Friends, with Add friend', async ({ browser }) => {
+	// Plan F13: Suggestions are people from Recent players with two or more games together who
+	// can be found and aren't a friend or asked yet. The section is always there, "None" first.
+	test.slow();
+	const ann = await signedIn(browser, 'ann');
+	const bob = await signedIn(browser, 'bob');
+	const { board, code } = await liveRoom(ann.page, 'Ann the Storyteller');
+	await bob.page.goto(`/join/${code}`);
+	await openProfile(bob.page);
+	await setPlayerName(bob.page, 'Bob');
+	await bob.page.keyboard.press('Escape');
+	await expect(ann.page.getByTestId('status-players')).toHaveText('1 player');
+	await nameSeat(ann.page, 3, 'Bob');
+	await expect(bob.page.getByTestId('you-row')).toHaveAttribute('data-seat', '3');
+
+	// One game together: Ann is a recent player, not yet a suggestion.
+	await ann.page.goto(board);
+	await endBoardGame(ann.page);
+	await bob.page.goto('/friends');
+	await expect(async () => {
+		await bob.page.reload();
+		await expect(bob.page.getByTestId('friend-recent')).toContainText('Games together: 1', {
+			timeout: 2000
+		});
+	}).toPass();
+	await expect(bob.page.getByTestId('friend-suggestions-none')).toHaveText('None');
+
+	// The next game in the same room, with Bob still in seat 3.
+	await ann.page.getByRole('button', { name: 'More', exact: true }).tap();
+	await ann.page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'New game' })
+		.tap();
+	await ann.page
+		.getByRole('dialog', { name: 'New game' })
+		.getByRole('button', { name: 'Create game' })
+		.tap();
+	await toBoard(ann.page);
+	await endBoardGame(ann.page);
+
+	// Two games: Ann is suggested, and Add friend asks her; her row stays, as Requested.
+	await expect(async () => {
+		await bob.page.reload();
+		await expect(bob.page.getByTestId('friend-suggestions')).toContainText(ann.username, {
+			timeout: 2000
+		});
+	}).toPass();
+	const row = bob.page.getByTestId('friend-suggestions').getByRole('listitem');
+	await expect(row).toContainText('Games together: 2');
+	const add = row.getByTestId('seat-friend');
+	await expect(add).toHaveAttribute('data-state', 'add');
+	await add.tap();
+	await expect(add).toHaveAttribute('data-state', 'requested');
+	await expect(bob.page.getByTestId('friend-outgoing')).toContainText(ann.username);
+	await expect(add).toHaveAttribute('data-state', 'requested');
+
+	// Asked, she is no longer suggested; Ann isn't offered Bob either, whose request waits.
+	await bob.page.reload();
+	await expect(bob.page.getByTestId('friend-suggestions-none')).toBeVisible();
+	await ann.page.goto('/friends');
+	await expect(ann.page.getByTestId('friend-incoming')).toContainText(bob.username);
+	await expect(ann.page.getByTestId('friend-recent')).toContainText('Games together: 2');
+	await expect(ann.page.getByTestId('friend-suggestions-none')).toBeVisible();
+});
+
 test('the Storyteller invites a friend, who joins from Friends', async ({ browser }) => {
 	// Plan F4: Invite friends on the room's Share; the invite waits on the friend's Friends
 	// page with Join, and the sidebar counts it.
@@ -633,4 +710,54 @@ test('a script sent to a friend, and one shown on a profile anyone can open', as
 	await expect(stranger.getByTestId('profile-page-scripts-none')).toBeVisible();
 	await stranger.goto(`/u/${unique('nobody')}`);
 	await expect(stranger.getByRole('status')).toHaveText('No one can be found with that username.');
+});
+
+test('the Storyteller hands the room to a friend in it, who takes over with no code', async ({
+	browser
+}) => {
+	// Plan F14: Room transfer lists friends with a phone in the room, each with Hand over; the
+	// friend's phone opens Room transfer with what comes, no code to type, and takes over.
+	// Two sign-ups, a friendship, a join and the hand-over: past the 30 s default.
+	test.slow();
+	const ann = await signedIn(browser, 'ann');
+	const bob = await signedIn(browser, 'bob');
+	await befriend(ann, bob);
+	const { board, code } = await liveRoom(ann.page, 'Ann');
+
+	// Room transfer, before Bob is in the room: no friends listed, in their place.
+	await ann.page.goto(board);
+	await ann.page.getByRole('button', { name: /^More/ }).tap();
+	await ann.page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Room transfer' })
+		.tap();
+	const dialog = ann.page.getByRole('dialog', { name: 'Room transfer' });
+	const friendsHere = dialog.getByRole('region', { name: 'Friends in the room' });
+	await expect(friendsHere.getByTestId('transfer-friends-none')).toHaveText('None');
+
+	// Bob joins as a player: the list shows him, with Hand over.
+	await bob.page.goto(`/join/${code}`);
+	await openProfile(bob.page);
+	await setPlayerName(bob.page, 'Bob');
+	await bob.page.keyboard.press('Escape');
+	const row = friendsHere
+		.getByTestId('transfer-friends')
+		.getByRole('listitem')
+		.filter({ hasText: bob.username });
+	await row.getByRole('button', { name: 'Hand over' }).tap();
+	await expect(row.getByRole('button', { name: 'Offered' })).toBeDisabled();
+
+	// Bob's phone opens Room transfer by itself, with what comes and no code field.
+	const take = bob.page.getByRole('dialog', { name: 'Room transfer' });
+	await expect(take).toContainText('The Storyteller is handing this room to you.');
+	await expect(take.getByTestId('transfer-status')).toContainText('Ann');
+	await expect(take.getByTestId('transfer-status')).toContainText('and a new game');
+	await expect(take.getByRole('textbox', { name: 'Transfer code' })).toHaveCount(0);
+	await take.getByRole('button', { name: 'Take over' }).tap();
+
+	// No Allow step: the Storyteller already chose Bob. His device runs the room now, and
+	// Ann's is put out of it, joining as a player.
+	await expect(bob.page).toHaveURL(/\/new$/);
+	await expect(ann.page).toHaveURL(new RegExp(`/join/${code}$`));
+	await expect(ann.page.getByText('This room has a new Storyteller.')).toBeVisible();
 });
