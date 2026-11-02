@@ -686,7 +686,7 @@ test('before Start game the day view says Setup and Execution warns', async ({ p
 	await setup.getByRole('button', { name: 'Execution', exact: true }).tap();
 	const ask = page.getByRole('alertdialog', { name: 'End the day?' });
 	await expect(ask.getByTestId('execution-not-started')).toHaveText(
-		'The game has not started yet, so there is no day to end. Start game begins Night 1.'
+		'The game has not started yet.'
 	);
 	// A warning, never a lock: the Storyteller can still choose and confirm.
 	await ask.getByRole('combobox', { name: 'Execution' }).tap();

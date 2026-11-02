@@ -78,26 +78,17 @@ export function dayUseDeath(
 }
 
 /**
- * Each guess once: a player may be guessed as several characters, and several players as the
- * same character (https://wiki.bloodontheclocktower.com/Juggler), but the same pair twice is
- * one guess.
+ * The guesses that name the guessed player's true character. Every guess counts, a player
+ * guessed as several characters and the same player and character guessed twice alike
+ * (Trevor, 2026-11-02: "if you guess twice, it is two separate guesses, counts twice";
+ * https://wiki.bloodontheclocktower.com/Juggler: one Correct reminder per correct guess).
  */
-export function distinctGuesses(guesses: readonly CharacterGuess[]): CharacterGuess[] {
-	return guesses.filter(
-		(g, i) =>
-			guesses.findIndex((o) => o.seatId === g.seatId && o.characterId === g.characterId) === i
-	);
-}
-
-/** The guesses that name the guessed player's true character, each pair once. */
 export function correctGuesses(
 	game: Game,
 	guesses: readonly CharacterGuess[],
 	characters: CharacterLookup
 ): CharacterGuess[] {
-	return distinctGuesses(guesses).filter(
-		(g) => trueCharacter(game, g.seatId, characters) === g.characterId
-	);
+	return guesses.filter((g) => trueCharacter(game, g.seatId, characters) === g.characterId);
 }
 
 /**
