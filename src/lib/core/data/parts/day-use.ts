@@ -40,7 +40,17 @@ const DAY_USE_ANSWERS = ['demon-if-marked'] as const;
 export type DayUseAnswer = (typeof DAY_USE_ANSWERS)[number];
 
 /**
- * A day ability's use (`dayUse`): who it was about (`who`); `kills` when that player dies
+ * A vote its player calls by day, recorded when its use is marked:
+ * - `all-good-join`: every living good player must join, and when they do its player's team
+ *   wins (the Cult Leader's cult vote, https://wiki.bloodontheclocktower.com/Cult_Leader,
+ *   checked by the `cult-joined` game end).
+ */
+const DAY_USE_VOTES = ['all-good-join'] as const;
+export type DayUseVote = (typeof DAY_USE_VOTES)[number];
+
+/**
+ * A day ability's use (`dayUse`): who it was about (`who`), or the vote it calls (`vote`,
+ * `DAY_USE_VOTES`), one of the two; `kills` when that player dies
  * straight away if the ability works (the Slayer, Psychopath, Gangster, Gunslinger, Golem),
  * checked against the character's `deathCause`; `spentToken`, the reminder that marks it
  * used when that is not "No Ability" (the Golem's May Not Nominate); `answer`, what its player
@@ -49,7 +59,8 @@ export type DayUseAnswer = (typeof DAY_USE_ANSWERS)[number];
  * at least that many players live.
  */
 export interface DayUse {
-	who: DayUseWho;
+	who?: DayUseWho;
+	vote?: DayUseVote;
 	kills?: true;
 	spentToken?: ReminderLabel;
 	answer?: DayUseAnswer;
@@ -66,8 +77,15 @@ export const dayUse = objectPart(
 			issues.add(path, `expected object, got ${describe(raw)}`);
 			return undefined;
 		}
-		checkKeys(raw, ['who', 'kills', 'spentToken', 'answer', 'anyone', 'minAlive'], path, issues);
-		const who = readEnum(raw, 'who', DAY_USE_WHO, path, issues, true);
+		checkKeys(
+			raw,
+			['who', 'vote', 'kills', 'spentToken', 'answer', 'anyone', 'minAlive'],
+			path,
+			issues
+		);
+		const vote = readEnum(raw, 'vote', DAY_USE_VOTES, path, issues, false);
+		const who = readEnum(raw, 'who', DAY_USE_WHO, path, issues, vote === undefined);
+		if (who && vote) issues.add(path, 'expected who or vote, not both');
 		const kills = readBoolean(raw, 'kills', path, issues);
 		if (kills === false) issues.add(`${path}.kills`, 'expected true');
 		const token = readString(raw, 'spentToken', path, issues, false);
@@ -79,9 +97,10 @@ export const dayUse = objectPart(
 		const minAlive = readNumber(raw, 'minAlive', path, issues);
 		if (minAlive !== undefined && (!Number.isInteger(minAlive) || minAlive < 1))
 			issues.add(`${path}.minAlive`, 'expected a whole number of at least 1');
-		if (!who || !tokenOk) return undefined;
+		if ((!who && !vote) || !tokenOk) return undefined;
 		return {
-			who,
+			...(who ? { who } : {}),
+			...(vote && !who ? { vote } : {}),
 			...(kills ? { kills: true as const } : {}),
 			...(token !== undefined ? { spentToken: token } : {}),
 			...(answer ? { answer } : {}),

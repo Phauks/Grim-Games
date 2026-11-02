@@ -40,6 +40,11 @@
 	 * An ability that kills an ally (`dayUse.who: 'ally'`: the Doomsayer, used by any living
 	 * player) offers every seat, its own player's included, with those who aren't a living
 	 * player of their alignment faded (`isDayUseAlly`); the Storyteller picks.
+	 *
+	 * An ability that calls a vote instead (`dayUse.vote`: the Cult Leader's cult vote,
+	 * https://wiki.bloodontheclocktower.com/Cult_Leader) asks no player: the confirm opens
+	 * straight away with whether the vote passed, off to start with. A passed cult vote is a
+	 * game end the End game prompt offers (`cult-joined`), never automatic.
 	 */
 	interface Props {
 		game: DayPort;
@@ -58,6 +63,7 @@
 	let use = $state<Use>();
 	let on = $state<SeatId>();
 	let dies = $state(false);
+	let passed = $state(false);
 	/** The token that marks it used: "No Ability", or its own (the Golem's May Not Nominate). */
 	const spent = $derived(use?.rule.spentToken ?? NO_ABILITY);
 	let chooserOpen = $state(false);
@@ -72,8 +78,10 @@
 	/** Starts asking for one seat's ability. */
 	export function ask(next: Use) {
 		use = next;
-		pick(dayUseSuggestion(game.game, next.seatId, next.rule.who));
-		if (on) confirmOpen = true;
+		passed = false;
+		const who = next.rule.who;
+		pick(who ? dayUseSuggestion(game.game, next.seatId, who) : undefined);
+		if (on || !who) confirmOpen = true;
 		else chooserOpen = true;
 	}
 
@@ -99,7 +107,13 @@
 	function confirm() {
 		if (!use) return;
 		const { seatId, characterId } = use;
-		game.run({ type: 'UseAbility', seatId, characterId, ...(on ? { on } : {}) });
+		game.run({
+			type: 'UseAbility',
+			seatId,
+			characterId,
+			...(on ? { on } : {}),
+			...(use.rule.vote ? { passed } : {})
+		});
 		if (on && dies && use.rule.kills)
 			game.run({ type: 'SetDead', seatId: on, dead: true, cause: characterId });
 	}
@@ -128,7 +142,7 @@
 
 <SeatChooser
 	bind:open={chooserOpen}
-	title={use ? t(`day.useWho.${use.rule.who}`, { who }) : ''}
+	title={use?.rule.who ? t(`day.useWho.${use.rule.who}`, { who }) : ''}
 	game={game.game}
 	characters={game.characters}
 	exclude={use?.rule.who === 'chosen' || use?.rule.who === 'ally' ? undefined : use?.seatId}
@@ -137,7 +151,7 @@
 	onNone={() => chose(undefined)}
 >
 	{#snippet heading()}
-		{#if use}<Sentence text={t(`day.useWho.${use.rule.who}`, { who })} {fill} />{/if}
+		{#if use?.rule.who}<Sentence text={t(`day.useWho.${use.rule.who}`, { who })} {fill} />{/if}
 	{/snippet}
 </SeatChooser>
 
@@ -158,20 +172,34 @@
 					{fill}
 				/>
 			</dd>
-			<dt>{t(`day.useOn.${use.rule.who}`)}</dt>
-			<dd>
-				<!-- eslint-disable grim/names-as-badges -- accessible name (aria-label) only -->
-				<Chip
-					data-testid="day-use-on"
-					aria-label={t('day.useOnChange', {
-						role: t(`day.useOn.${use.rule.who}`),
-						name: on ? game.seatName(on) : t('day.useOnNone')
-					})}
-					onclick={change}
-					>{#if on}<PlayerBadge name={game.seatName(on)} />{:else}{t('day.useOnNone')}{/if}</Chip
-				>
-				<!-- eslint-enable grim/names-as-badges -->
-			</dd>
+			{#if use.rule.who}
+				{@const role = t(`day.useOn.${use.rule.who}`)}
+				<dt>{role}</dt>
+				<dd>
+					<!-- eslint-disable grim/names-as-badges -- accessible name (aria-label) only -->
+					<Chip
+						data-testid="day-use-on"
+						aria-label={t('day.useOnChange', {
+							role,
+							name: on ? game.seatName(on) : t('day.useOnNone')
+						})}
+						onclick={change}
+						>{#if on}<PlayerBadge name={game.seatName(on)} />{:else}{t('day.useOnNone')}{/if}</Chip
+					>
+					<!-- eslint-enable grim/names-as-badges -->
+				</dd>
+			{/if}
+			{#if use.rule.vote}
+				<dt>{t(`day.useVote.${use.rule.vote}`)}</dt>
+				<dd>
+					<Toggle
+						hideLabel
+						label={t(`day.useVote.${use.rule.vote}`)}
+						checked={passed}
+						onChange={(value) => (passed = value)}
+					/>
+				</dd>
+			{/if}
 			{#if answer}
 				<dt>{t('day.useAnswer')}</dt>
 				<dd data-testid="day-use-answer" data-kind={answer.kind}>
