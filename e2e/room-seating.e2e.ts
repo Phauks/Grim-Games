@@ -8,6 +8,7 @@ import {
 } from '@playwright/test';
 import { openProfile, setPlayerName } from './player-name.ts';
 import { toBoard } from './new-game.ts';
+import { notATraveller } from './add-seat.ts';
 
 // Seating on the grim (plan J38; Trevor, 2026-10-29 22:36: "yes to drag circle, yes to claim",
 // with no left and right): while seating is open each phone drags its own disc onto the seat it
@@ -224,6 +225,7 @@ test('Character selection opens Seating, and Done comes back to it', async ({ pa
 		.getByRole('button', { name: /^Place between/ })
 		.first()
 		.tap();
+	await notATraveller(page);
 	await expect(bar.getByRole('button', { name: 'Open seating' })).toBeVisible();
 	await expect(seats).toHaveCount(before + 1);
 	await leaveSeating(page);

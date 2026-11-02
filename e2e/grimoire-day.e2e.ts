@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 import { pickNumber } from './number-select.ts';
 import { putReminder } from './reminder-bank.ts';
+import { notATraveller } from './add-seat.ts';
 
 // The day sheet over the board of a saved game: executions, exiles and deaths, all
 // by hand, each with a cause from the valid ones. Nominations happen off the grimoire.
@@ -25,6 +26,7 @@ async function addThief(page: Page) {
 		.getByRole('button', { name: 'Add seat' })
 		.tap();
 	await page.getByRole('button', { name: 'Place between Seat 8 and Seat 1' }).tap();
+	await notATraveller(page);
 	await page.getByRole('button', { name: /^Seat 9:/ }).tap();
 	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
 	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
