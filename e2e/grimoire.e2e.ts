@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { tapStartGame } from './start-game.ts';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { openPlayers, openPlayerSheet } from './players.ts';
 import { chooseRulesOnSetup, pickScript, nameStoryteller, toBoard } from './new-game.ts';
@@ -19,6 +20,7 @@ import {
 	tapToSeat
 } from './reminder-bank.ts';
 import { pickNumber } from './number-select.ts';
+import { addSeat } from './seating.ts';
 
 // The Storyteller's grimoire board: saved games, seats and the seat sheet (ROADMAP Phase 2).
 
@@ -517,8 +519,7 @@ test('tapping the seat token shows the character; changing it goes through the â
 test('history, add seat and remove', async ({ page }) => {
 	await startGame(page);
 	// Adding a seat asks where it goes: between two neighbours. The new seat then opens.
-	await menu(page, 'Add seat');
-	await page.getByRole('button', { name: 'Place between Seat 2 and Seat 3' }).tap();
+	await addSeat(page, 'Place between Seat 2 and Seat 3');
 	await expect(page.getByTestId('seat')).toHaveCount(9);
 	await expect(page.getByRole('button', { name: /^Place between/ })).toHaveCount(0);
 	// The new seat just appears; nothing opens by itself (Trevor, 2026-10-16).
@@ -587,8 +588,7 @@ test('an orphan character is flagged, and old names are not suggested', async ({
 test('Travellers join as a new seat, and Fabled sit in the corner', async ({ page }) => {
 	await startGame(page);
 	// A Traveller joins as a new seat: Add seat, then choose them for it.
-	await menu(page, 'Add seat');
-	await page.getByRole('button', { name: 'Place between Seat 8 and Seat 1' }).tap();
+	await addSeat(page, 'Place between Seat 8 and Seat 1');
 	await openSeat(page, 9);
 	await page
 		.locator('[data-scope="drawer"][data-part="content"]')
@@ -1407,7 +1407,7 @@ test('tokens keep their size when the night walk-through opens', async ({ page }
 	const logo = page.locator('.board-logo');
 	await expect(logo).toBeVisible();
 	const logoBefore = (await logo.boundingBox())!;
-	await bankNight(page, 'Start game').tap();
+	await tapStartGame(page, bankNight(page, 'Start game'));
 	await expect(page.getByTestId('night-strip')).toBeVisible();
 	await expect
 		.poll(async () => Math.abs((await token.boundingBox())!.width - before))
@@ -1464,8 +1464,7 @@ test("the board can go full screen from beside its â‹¯ menu's X, and back", asyn
 test("a Traveller's alignment can wait for the night order", async ({ page }) => {
 	await startGame(page);
 	// A Traveller joins as a new seat: Add seat, then choose them for it.
-	await menu(page, 'Add seat');
-	await page.getByRole('button', { name: 'Place between Seat 8 and Seat 1' }).tap();
+	await addSeat(page, 'Place between Seat 8 and Seat 1');
 	await openSeat(page, 9);
 	await page
 		.locator('[data-scope="drawer"][data-part="content"]')
@@ -1487,7 +1486,7 @@ test("a Traveller's alignment can wait for the night order", async ({ page }) =>
 	await closeSheet(page);
 
 	// The night starts by asking for it, after Dusk (core withTravellerAlignmentStep).
-	await bankNight(page, 'Start game').tap();
+	await tapStartGame(page, bankNight(page, 'Start game'));
 	const strip = page.getByTestId('night-strip');
 	await expect(strip.locator('.step .name strong')).toHaveText('Dusk');
 	await strip.getByRole('button', { name: 'Next step' }).tap();
@@ -2092,7 +2091,7 @@ test('the board background can be an image from the device, kept after a reload'
 	await expect(seatLabelled(page, 'Seat 1: Ana')).toBeAttached();
 	// Starting the night too, as the seats close up for the walk-through (Trevor, 2026-10-23).
 	const box = await backdrop.boundingBox();
-	await bankNight(page, 'Start game').tap();
+	await tapStartGame(page, bankNight(page, 'Start game'));
 	await expect(page.getByTestId('night-strip')).toBeVisible();
 	await expect(backdrop).toHaveAttribute('style', image!);
 	expect(await backdrop.boundingBox()).toEqual(box);
@@ -2360,8 +2359,7 @@ test('the Apprentice gains a Townsfolk ability and is marked "Is The Apprentice"
 	page
 }) => {
 	await startGame(page);
-	await menu(page, 'Add seat');
-	await page.getByRole('button', { name: 'Place between Seat 8 and Seat 1' }).tap();
+	await addSeat(page, 'Place between Seat 8 and Seat 1');
 	await openSeat(page, 9);
 	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
 	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
@@ -2694,8 +2692,7 @@ test('a dead Plague Doctor gives the Storyteller a Minion ability, shown on the 
 
 test("a Traveller's alignment can be drawn from face-down tokens", async ({ page }) => {
 	await startGame(page);
-	await menu(page, 'Add seat');
-	await page.getByRole('button', { name: 'Place between Seat 8 and Seat 1' }).tap();
+	await addSeat(page, 'Place between Seat 8 and Seat 1');
 	const sheet = await openSeat(page, 9);
 	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
 	await page
@@ -2740,8 +2737,7 @@ test('a joining Traveller draws their alignment, with the last mix remembered', 
 		[9, 8, 'Thief'],
 		[10, 9, 'Beggar']
 	] as const) {
-		await menu(page, 'Add seat');
-		await page.getByRole('button', { name: `Place between Seat ${after} and Seat 1` }).tap();
+		await addSeat(page, `Place between Seat ${after} and Seat 1`);
 		const sheet = await openSeat(page, number);
 		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
 		await page
@@ -3277,8 +3273,7 @@ test("the Script button opens the players' copy of the script", async ({ page })
 // knows it (Travellers say who they are: https://wiki.bloodontheclocktower.com/Travellers).
 test('a Traveller in play is marked on the script with its player', async ({ page }) => {
 	await startGame(page);
-	await menu(page, 'Add seat');
-	await page.getByRole('button', { name: 'Place between Seat 8 and Seat 1' }).tap();
+	await addSeat(page, 'Place between Seat 8 and Seat 1');
 	const sheet = await openSeat(page, 9);
 	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
 	await page
@@ -4153,7 +4148,7 @@ test("the walk-through points out the step's reminders: ringed, alone or first",
 			.tap();
 		await closeSheet(page);
 	}
-	await bankNight(page, 'Start game').tap();
+	await tapStartGame(page, bankNight(page, 'Start game'));
 	const strip = page.getByTestId('night-strip');
 	for (let i = 0; i < 6 && !(await strip.textContent())?.includes('Poisoner'); i++)
 		await strip.getByRole('button', { name: 'Next step' }).tap();
@@ -4272,7 +4267,7 @@ test("the step focus works for a script's own character too (Fall of Rome's Merc
 			.tap();
 		await closeSheet(page);
 	}
-	await bankNight(page, 'Start game').tap();
+	await tapStartGame(page, bankNight(page, 'Start game'));
 	const strip = page.getByTestId('night-strip');
 	for (let i = 0; i < 8 && !(await strip.textContent())?.includes('Merch'); i++)
 		await strip.getByRole('button', { name: 'Next step' }).tap();
@@ -4958,7 +4953,7 @@ test('the board menu names its groups, in two columns beside a phone', async ({ 
 	// Arranging seats, Open seating (plan J38) and Count off (J40) are one Seating mode
 	// (Trevor, 2026-10-31), which works with no room open too. Travellers choose (L102) comes
 	// with Add seat, not as its own button (Trevor, 2026-11-01).
-	expect(await names('Seats')).toEqual(['Add seat', 'Add Fabled or Loric', 'Seating']);
+	expect(await names('Seats')).toEqual(['Add Fabled or Loric', 'Seating']);
 	await expect(group('Seats').getByRole('button', { name: 'Seating' })).toBeEnabled();
 	expect(await names('App')).toEqual(['Settings', 'Report an issue']);
 	// Beside a phone, the game on the left and the rest on the right.
@@ -5804,7 +5799,7 @@ test('the night walk-through rises into place, and appears at once with reduced 
 	const animations = () =>
 		page.evaluate(() => (window as unknown as { stripAnimations: number }).stripAnimations);
 	const strip = page.getByTestId('night-strip');
-	await bankNight(page, 'Start game').tap();
+	await tapStartGame(page, bankNight(page, 'Start game'));
 	await expect(strip).toBeVisible();
 	await expect.poll(animations).toBeGreaterThan(0);
 
@@ -5814,7 +5809,7 @@ test('the night walk-through rises into place, and appears at once with reduced 
 	await page.evaluate(
 		() => ((window as unknown as { stripAnimations: number }).stripAnimations = 0)
 	);
-	await bankNight(page, 'Start game').tap();
+	await tapStartGame(page, bankNight(page, 'Start game'));
 	await expect(strip).toBeVisible();
 	// No motion: the strip is there at once, fully shown.
 	await expect(strip).toHaveCSS('opacity', '1');
@@ -6025,7 +6020,7 @@ test('Dawn is the last night step, and Next on it lights up End night', async ({
 		.getByRole('button', { name: 'Empath', exact: true })
 		.tap();
 	await closeSheet(page);
-	await bankNight(page, 'Start game').tap();
+	await tapStartGame(page, bankNight(page, 'Start game'));
 	const strip = page.getByTestId('night-strip');
 	const next = strip.getByRole('button', { name: 'Next step' });
 	for (let i = 0; i < 30 && !(await lastStep(strip)); i++) await next.tap();
@@ -6587,6 +6582,26 @@ test('Start game with setup reminders still to place asks first, listing them', 
 	await ask.getByRole('button', { name: 'Cancel' }).tap();
 	await expect(page.getByTestId('night-strip')).toHaveCount(0);
 	await bankNight(page, 'Start game').tap();
+	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(page.getByTestId('night-strip')).toBeVisible();
+});
+
+test('Start game with players without a character asks first, listing them', async ({ page }) => {
+	// Trevor (2026-11-01): a game started with empty seats warns, never locks.
+	await startGame(page);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Imp', exact: true })
+		.tap();
+	await closeSheet(page);
+	await bankNight(page, 'Start game').tap();
+	const ask = page.getByRole('alertdialog', { name: 'Start the game?' });
+	await expect(ask).toContainText('Players without a character:');
+	const empty = ask.getByTestId('no-character');
+	await expect(empty).toContainText('Seat 2');
+	await expect(empty).not.toContainText('Seat 1');
 	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(page.getByTestId('night-strip')).toBeVisible();
 });
