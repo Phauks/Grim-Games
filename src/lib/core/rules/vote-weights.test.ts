@@ -7,7 +7,7 @@
 import { describe, expect, it } from 'vitest';
 import { scenario, type Scenario, type SeatRef } from '#lib/core/testing/scenario.ts';
 import type { DayEntry } from '#lib/core/model/types.ts';
-import { tallyOf, voteHints, voteWorth } from './vote-weights.ts';
+import { tallyOf, voteHints, voteNotes, voteWorth } from './vote-weights.ts';
 
 type Nomination = Extract<DayEntry, { kind: 'nomination' }>;
 
@@ -162,5 +162,23 @@ describe('voteHints', () => {
 		const dead = given.dies('beggar', 'imp');
 		expect(hintOf(dead, 'beggar').needsToken).toBeUndefined();
 		expect(hintOf(dead, 'beggar').ghostVote).toBe('unused');
+	});
+});
+
+// Votes are run outside the app (Trevor, 2026-11-01), so the Storyteller counts from notes.
+describe('voteNotes', () => {
+	it('lists only the seats whose vote is unusual today', () => {
+		const s = scenario(['butler', 'thief', 'chef', 'empath', 'imp', 'poisoner'])
+			.reminder('chef', 'thief', 'Negative Vote')
+			.reminder('empath', 'butler', 'Master');
+		expect(voteNotes(s.game, s.characters).map((n) => n.seatId)).toEqual([
+			s.seat('butler'),
+			s.seat('chef')
+		]);
+	});
+
+	it('is empty when every vote counts once', () => {
+		const s = scenario(cast);
+		expect(voteNotes(s.game, s.characters)).toEqual([]);
 	});
 });
