@@ -31,11 +31,13 @@ import {
 	outcomeHolder,
 	outcomeProblem,
 	protection,
+	remindersEndingAt,
 	dayTallyOf,
 	tallyCount,
 	tallyKills,
 	type DayMark,
-	type ExecutionOutcome
+	type ExecutionOutcome,
+	type ReminderEnd
 } from '#lib/core/rules/index.ts';
 import type { EngineContext } from '../context.ts';
 import type { GameEvent } from '../events.ts';
@@ -113,6 +115,7 @@ export const DAY_DECIDERS: Deciders<
 	| 'RecordNightInfo'
 	| 'RemoveDayEntry'
 	| 'NewDay'
+	| 'Dusk'
 > = {
 	Nominate(game, command, ctx, warn) {
 		const nominator = seatOf(game, command.nominator).seatId;
@@ -506,9 +509,21 @@ export const DAY_DECIDERS: Deciders<
 		const tokens = marksInPlay(game, ctx.characters).flatMap((mark) =>
 			tokenEvents(game, mark, false, ctx)
 		);
-		return [{ type: 'DayStarted', at: ctx.now() }, ...tokens];
+		return [{ type: 'DayStarted', at: ctx.now() }, ...tokens, ...endingAt(game, 'dawn', ctx)];
+	},
+
+	Dusk(game, command, ctx) {
+		return endingAt(game, 'dusk', ctx);
 	}
 };
+
+/** Takes off the reminders that last only until `end` (`reminderEnds`). */
+function endingAt(game: Game, end: ReminderEnd, ctx: EngineContext): GameEvent[] {
+	return remindersEndingAt(game, end, ctx.characters).map((reminderId): GameEvent => ({
+		type: 'ReminderRemoved',
+		reminderId
+	}));
+}
 
 /**
  * What recording an execution's `outcome` sets off: a warning when it may not apply (warn,

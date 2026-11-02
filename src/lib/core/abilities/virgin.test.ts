@@ -144,10 +144,8 @@ describe('Virgin', () => {
 			);
 		});
 
-		it.fails('does not offer to execute a later Townsfolk nominator', () => {
+		it('does not offer to execute a later Townsfolk nominator', () => {
 			// How to Run: only the first player ever to nominate the Virgin can set off the ability.
-			// Waits on the engine (unplanned): the prompt reads only the No Ability reminder, not the
-			// nominations already logged, so it comes back if the Storyteller hasn't placed it.
 			const s = scenario(CAST).nominate('poisoner', 'virgin').newDay().nominate('chef', 'virgin');
 			const nomination = { nominator: s.seat('chef'), nominee: s.seat('virgin') };
 			expect(characterNominationPrompts(s.game, nomination, s.characters)).toEqual([]);

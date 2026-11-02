@@ -130,9 +130,8 @@ describe('Monk', () => {
 			);
 		});
 
-		it.fails('takes Safe off at dawn', () => {
+		it('takes Safe off at dawn', () => {
 			// How to Run: the Safe reminder comes off when the day starts.
-			// Waits on the engine (unplanned): a new day leaves the Monk's Safe reminder in place.
 			const s = scenario(['monk', 'chef', 'imp', 'empath', 'poisoner'])
 				.reminder('chef', 'monk', 'Safe')
 				.newDay();
@@ -141,10 +140,9 @@ describe('Monk', () => {
 			).toEqual([]);
 		});
 
-		it.fails("keeps the Safe player from the Demon's poisoning too", () => {
+		it("keeps the Safe player from the Demon's poisoning too", () => {
 			// How to Run: the protection covers every harmful effect of the Demon's ability, such as
 			// poisoning, not only death.
-			// Waits on the engine (unplanned): a Demon protection doesn't stop the Demon's own poison.
 			const s = scenario(['monk', 'chef', 'pukka', 'empath', 'poisoner'])
 				.reminder('chef', 'monk', 'Safe')
 				.reminder('chef', 'pukka', 'Poisoned');

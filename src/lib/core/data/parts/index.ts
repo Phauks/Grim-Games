@@ -66,6 +66,7 @@ export { quietStart } from './quiet-start.ts';
 export { redirectsKill } from './redirects-kill.ts';
 export { registersAs } from './registers-as.ts';
 export { reincarnates } from './reincarnates.ts';
+export { reminderEnds } from './reminder-ends.ts';
 export { reminderMovement } from './reminder-movement.ts';
 export { reminderPlaceholders } from './reminder-placeholders.ts';
 export { reminderPrompts } from './reminder-prompts.ts';

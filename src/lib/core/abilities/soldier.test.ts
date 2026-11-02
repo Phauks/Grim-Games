@@ -94,10 +94,9 @@ describe('Soldier', () => {
 			);
 		});
 
-		it.fails("keeps the Soldier from the Demon's poisoning too", () => {
+		it("keeps the Soldier from the Demon's poisoning too", () => {
 			// How to Run: the Soldier is safe from every harmful effect of the Demon's ability, such as
 			// poisoning, not only death.
-			// Waits on the engine (unplanned): a Demon protection doesn't stop the Demon's own poison.
 			const s = scenario(['soldier', 'chef', 'pukka', 'monk', 'poisoner']).reminder(
 				'soldier',
 				'pukka',

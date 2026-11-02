@@ -130,11 +130,9 @@ describe('Undertaker', () => {
 			});
 		});
 
-		it.fails('does not count a Died Today left on the board from an earlier day', () => {
+		it('does not count a Died Today left on the board from an earlier day', () => {
 			// How to Run: the Undertaker only wakes for an execution death today; yesterday's reminder
 			// may still be on the board because it comes off when convenient.
-			// Waits on the engine (unplanned): the answer falls back to any Died Today reminder,
-			// whatever day it was placed.
 			const s = scenario(cast).dies('mayor').reminder('mayor', 'undertaker', 'Died Today').newDay();
 			expect(nightAnswer(s.game, s.seat('undertaker'), 'undertaker', s.characters)?.kind).toBe(
 				'none'
@@ -155,15 +153,17 @@ describe('Undertaker', () => {
 			);
 		});
 
-		it.fails('offers either executee when two players were executed today', () => {
+		it('offers either executee when two players were executed today', () => {
 			// How to Run: outside Trouble Brewing there may be two executions in a day, and the
 			// Storyteller picks which character the Undertaker sees.
-			// Waits on the engine (unplanned): the answer names only the latest executee, with no
-			// choice of the earlier one.
 			const s = scenario(cast).execute('mayor').execute('monk');
 			const answer = nightAnswer(s.game, s.seat('undertaker'), 'undertaker', s.characters)!;
 			expect(answer).toMatchObject({ kind: 'character', value: 'monk' });
 			expect(answer.because).toEqual([s.seat('mayor'), s.seat('monk')]);
+			expect(answer.possible).toEqual([
+				{ kind: 'character', value: 'monk' },
+				{ kind: 'character', value: 'mayor' }
+			]);
 		});
 	});
 });

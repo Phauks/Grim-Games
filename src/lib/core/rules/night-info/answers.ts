@@ -135,7 +135,10 @@ function demonVoted(
  *
  * Today's execution comes from the day log; when the log has none (the Storyteller ran the
  * day without the day screen), from the dead player carrying the Undertaker's "Died Today"
- * reminder, which is how the Storyteller marks it on the board.
+ * reminder, which is how the Storyteller marks it on the board (it comes off at dawn,
+ * `reminderEnds`, so one left from an earlier day never counts). With two executions today
+ * (outside Trouble Brewing), the Storyteller picks which character to show: the answer names
+ * the latest, both are its reasons, and each is a `possible` answer.
  */
 function executedCharacter(
 	game: Game,
@@ -144,10 +147,14 @@ function executedCharacter(
 	characters: CharacterLookup,
 	rule: Answers
 ): NightAnswer {
-	const executed =
-		entriesOf(game, 'execution').findLast((e) => e.died && getSeat(game, e.seatId)?.dead) ??
-		(rule.token ? marked(game, characterId, rule.token) : undefined);
-	const id = executed && trueCharacter(game, executed.seatId, characters);
+	const logged = entriesOf(game, 'execution')
+		.filter((e) => e.died && getSeat(game, e.seatId)?.dead)
+		.map((e) => e.seatId);
+	const token =
+		logged.length === 0 && rule.token ? marked(game, characterId, rule.token) : undefined;
+	const executed = [...new Set(token ? [token.seatId] : logged)];
+	const latest = executed.at(-1);
+	const id = latest === undefined ? undefined : trueCharacter(game, latest, characters);
 	return answer(
 		game,
 		seatId,
@@ -156,10 +163,13 @@ function executedCharacter(
 		id === undefined
 			? { kind: 'none', reason: 'Nobody died by execution today' }
 			: { kind: 'character', value: id },
-		executed ? [executed.seatId] : [],
+		executed,
 		{
-			relevant: executed ? [executed.seatId] : [],
-			facts: executed ? [fact(game, executed.seatId, characters)] : []
+			relevant: executed,
+			facts: executed.map((s) => fact(game, s, characters)),
+			possible: [
+				...new Set([...executed].reverse().flatMap((s) => trueCharacter(game, s, characters) ?? []))
+			].map((value): AnswerValue => ({ kind: 'character', value }))
 		}
 	);
 }

@@ -1,6 +1,6 @@
 import { CHARACTER_TYPES, type CharacterType, type ReminderLabel } from '../types.ts';
 import { readToken } from '../reminder-fields.ts';
-import { checkKeys, describe, isObject, readEnum } from '../validate.ts';
+import { checkKeys, describe, isObject, readBoolean, readEnum } from '../validate.ts';
 import { objectPart } from './part.ts';
 
 /**
@@ -15,12 +15,14 @@ export type NominatedEffect = (typeof NOMINATED_EFFECTS)[number];
 /**
  * A nomination that sets off `effect`: of its own player, or with `carrier`, of the player
  * carrying that reminder of the character (the Gnome's Amigo); by a `by` character, or by
- * anyone when left out.
+ * anyone when left out. With `first`, only the first nomination of that player ever logged
+ * sets it off (the Virgin, https://wiki.bloodontheclocktower.com/Virgin).
  */
 export interface OnNominated {
 	by?: CharacterType;
 	carrier?: ReminderLabel;
 	effect: NominatedEffect;
+	first?: true;
 }
 
 /**
@@ -35,12 +37,13 @@ export const onNominated = objectPart(
 			issues.add(path, `expected object, got ${describe(raw)}`);
 			return undefined;
 		}
-		checkKeys(raw, ['by', 'carrier', 'effect'], path, issues);
+		checkKeys(raw, ['by', 'carrier', 'effect', 'first'], path, issues);
 		const by = readEnum(raw, 'by', CHARACTER_TYPES, path, issues, false);
 		const carrier = readToken(raw, 'carrier', path, issues, reminders);
 		const effect = readEnum(raw, 'effect', NOMINATED_EFFECTS, path, issues, true);
 		const ok = (raw.by === undefined || by) && (raw.carrier === undefined || carrier);
 		if (!effect || !ok) return undefined;
-		return { ...(by ? { by } : {}), ...(carrier ? { carrier } : {}), effect };
+		const first = readBoolean(raw, 'first', path, issues) ? { first: true as const } : {};
+		return { ...(by ? { by } : {}), ...(carrier ? { carrier } : {}), effect, ...first };
 	}
 );

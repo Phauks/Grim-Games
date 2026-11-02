@@ -48,5 +48,8 @@
 			}
 		}
 	},
-	"marksChoice": ["Poisoned"]
+	"marksChoice": ["Poisoned"],
+	"reminderEnds": {
+		"Poisoned": "dusk"
+	}
 }
