@@ -78,6 +78,8 @@ export type GameEvent =
 	| { type: 'DeathCauseSet'; seatId: SeatId; cause?: DeathCause }
 	| { type: 'GhostVoteSpent'; seatId: SeatId }
 	| { type: 'GhostVoteRestored'; seatId: SeatId }
+	/** The vote tokens a player holds (`Seat.voteTokens`); 0 clears it. */
+	| { type: 'VoteTokensSet'; seatId: SeatId; count: number }
 	| { type: 'ReminderAdded'; seatId: SeatId; reminder: ReminderInstance }
 	| { type: 'ReminderMoved'; reminderId: ReminderId; toSeatId: SeatId }
 	| { type: 'ReminderRemoved'; reminderId: ReminderId }
