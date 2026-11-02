@@ -61,8 +61,17 @@ export type GameEvent =
 	/** Adds or replaces the game note with `note.noteId`. */
 	| { type: 'GameNoteSet'; note: GameNote }
 	| { type: 'GameNoteDeleted'; noteId: string }
-	/** No `alignment`: not chosen yet (a Traveller's), so the seat has none. */
-	| { type: 'CharacterAssigned'; seatId: SeatId; characterId: CharacterId; alignment?: Alignment }
+	/**
+	 * No `alignment`: not chosen yet (a Traveller's), so the seat has none. `by`: the character
+	 * whose ability made the change (`Seat.changedBy`).
+	 */
+	| {
+			type: 'CharacterAssigned';
+			seatId: SeatId;
+			characterId: CharacterId;
+			alignment?: Alignment;
+			by?: CharacterId;
+	  }
 	| { type: 'CharacterCleared'; seatId: SeatId }
 	| { type: 'AlignmentSet'; seatId: SeatId; alignment: Alignment }
 	/** Sets (or, without `characterId`, takes away) the ability `via` gives this player. */

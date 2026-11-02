@@ -334,6 +334,19 @@ test("the day's sections fold with their caret and their headers stick under the
 	expect(headBox.y).toBeLessThan(toolbarBox.y + toolbarBox.height + 1);
 });
 
+// Votes are run outside the app; the votes dialog lists each unusual vote for the
+// Storyteller's count (Trevor, 2026-11-01; M9e).
+test('the votes dialog notes a Thief’s negative vote (M9e)', async ({ page }) => {
+	await startGame(page);
+	await addThief(page);
+	await putReminder(page, 'Negative Vote', 2);
+	await openDay(page);
+	await page.getByTestId('votes-needed').tap();
+	const notes = page.getByTestId('vote-notes');
+	await expect(notes.locator('tbody tr')).toHaveCount(1);
+	await expect(notes.locator('tbody tr')).toHaveText(/Seat 2.*Vote counts as -1/);
+});
+
 test('a Traveller is exiled, and a death offers only valid causes', async ({ page }) => {
 	const board = await startGame(page);
 	await addThief(page);
@@ -686,7 +699,7 @@ test('before Start game the day view says Setup and Execution warns', async ({ p
 	await setup.getByRole('button', { name: 'Execution', exact: true }).tap();
 	const ask = page.getByRole('alertdialog', { name: 'End the day?' });
 	await expect(ask.getByTestId('execution-not-started')).toHaveText(
-		'The game has not started yet, so there is no day to end. Start game begins Night 1.'
+		'The game has not started yet.'
 	);
 	// A warning, never a lock: the Storyteller can still choose and confirm.
 	await ask.getByRole('combobox', { name: 'Execution' }).tap();

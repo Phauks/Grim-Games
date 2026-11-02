@@ -25,9 +25,10 @@ export const day = {
 	'day.outcomeProblem.used': 'Already used',
 	'day.execution': 'Execution',
 	'day.executionChoose': 'Choose',
+	/** Start game with seats still empty (Trevor, 2026-11-01): a warning, never a lock. */
+	'day.startNoCharacter': 'Players without a character:',
 	/** The day's Execution before Start game (Trevor, 2026-11-01): a warning, never a lock. */
-	'day.executionNotStarted':
-		'The game has not started yet, so there is no day to end. Start game begins Night 1.',
+	'day.executionNotStarted': 'The game has not started yet.',
 	'day.noExecution': 'No execution',
 	'day.savedBy': 'Saved by',
 	'day.savedByNone': 'None',
@@ -184,6 +185,14 @@ export const day = {
 	},
 	'day.count.total': 'Total',
 	'day.count.mostVotes': 'Most votes, no majority needed',
+	'day.voteNotes.vote': 'Vote',
+	'day.voteNotes.worth': 'Vote counts as {count}',
+	'day.voteNotes.mayNotVote': 'May not vote today',
+	'day.voteNotes.onlyWith': 'Votes only if {players} votes',
+	'day.voteNotes.mustVote': 'Must vote on every nomination',
+	'day.voteNotes.needsToken': 'Votes only with a vote token, {count} held',
+	'day.voteNotes.free': 'Votes without a ghost vote',
+	'day.voteNotes.secret': 'Votes are secret',
 	'day.prevented': 'What didn’t happen',
 	'day.preventedButton': 'What didn’t happen: {count}',
 	'day.preventedChose': 'chose',
