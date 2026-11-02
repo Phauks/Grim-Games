@@ -226,10 +226,13 @@ export const handReminder = (reminder: Reminder & GenericLook): Reminder =>
 export const tokenLabel = (reminder: ReminderInstance | Reminder): ReminderLabel =>
 	reminderWords(reminder) || ((isGeneric(reminder) ? '∞' : '') as ReminderLabel);
 
-/** The words on a reminder token: its label, or a generic reminder's own text. */
+/**
+ * The words on a reminder token: its label, or a generic reminder's own text, else the label
+ * a setup suggestion gave it (the Damsel's jinxed Poisoned, `setupReminders`).
+ */
 export const reminderWords = (reminder: ReminderInstance | Reminder): ReminderLabel =>
 	isGeneric(reminder)
-		? ((('note' in reminder && reminder.note) || '') as ReminderLabel)
+		? ((('note' in reminder && reminder.note) || reminder.label || '') as ReminderLabel)
 		: reminder.label;
 
 /**
