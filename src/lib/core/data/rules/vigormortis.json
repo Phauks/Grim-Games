@@ -27,6 +27,19 @@
 		"token": "Has Ability",
 		"type": "minion"
 	},
+	"impairs": {
+		"tokens": {
+			"Poisoned": {
+				"reason": "poisoned",
+				"on": "carrier",
+				"whileWorks": true,
+				"whileKept": {
+					"token": "Has Ability",
+					"nearest": "townsfolk"
+				}
+			}
+		}
+	},
 	"setupPrep": {
 		"none": "its tokens are only used after the first night or when something happens"
 	},

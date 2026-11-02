@@ -51,7 +51,7 @@
 		]
 	},
 	"deathCause": {
-		"kind": "kills"
+		"kind": "gained-ability"
 	},
 	"reminderMovement": {
 		"why": "The Storyteller decides what these mean."

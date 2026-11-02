@@ -17,7 +17,8 @@
 		"ends": [
 			{
 				"kind": "dead-without-demon",
-				"winner": "good"
+				"winner": "good",
+				"night": 3
 			}
 		]
 	},

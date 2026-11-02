@@ -36,7 +36,9 @@ import {
  * - `nominated-marked-executed`: its player nominates the player with its `token` and they are
  *   executed, so that player's team loses (the Fearmonger's "Fear");
  * - `dead-without-demon`: there is no Demon and every player of it is dead, so `winner` wins
- *   (the Summoner, who can no longer summon one);
+ *   (the Summoner, who can no longer summon one); with `night`, also once that night is over
+ *   and still no Demon was made (the Summoner drunk or poisoned on its 3rd night, M15j). Before
+ *   then the game goes on without a Demon;
  * - `extra-day`: the Demon's execution would end the game, so play one more day; then whoever
  *   is executed loses for their team, and nobody executed means good wins (the Mastermind).
  */
@@ -60,6 +62,7 @@ export interface EndsGame {
 	alignment?: Alignment;
 	count?: number;
 	day?: number;
+	night?: number;
 }
 
 /**
@@ -110,9 +113,11 @@ const END_NEEDS: Readonly<Record<EndKind, readonly (keyof EndsGame)[]>> = {
 	'executions-of-alignment': ['alignment', 'count', 'winner'],
 	'survives-day': ['day', 'winner'],
 	'nominated-marked-executed': ['token'],
-	'dead-without-demon': ['winner'],
+	'dead-without-demon': ['winner', 'night'],
 	'extra-day': []
 };
+/** Parameters a kind may leave out. */
+const OPTIONAL: ReadonlySet<string> = new Set(['spentToken', 'night']);
 const HOLD_NEEDS: Readonly<Record<HoldKind, readonly (keyof HoldsGame)[]>> = {
 	'marked-alive': ['token'],
 	'becomes-demon': ['aliveAtLeast'],
@@ -164,7 +169,7 @@ function readKind<K extends string, T extends { kind: K }>(
 			value = readEnum(raw, key, ALIGNMENTS, path, issues, false);
 		else if (key === 'to') value = readEnum(raw, key, CHARACTER_TYPES, path, issues, false);
 		else value = readNumber(raw, key, path, issues);
-		if (raw[key] === undefined && key !== 'spentToken') issues.add(`${path}.${key}`, 'missing');
+		if (raw[key] === undefined && !OPTIONAL.has(key)) issues.add(`${path}.${key}`, 'missing');
 		if (value !== undefined) out[key] = value;
 	}
 	return out as T;

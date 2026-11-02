@@ -1,8 +1,8 @@
 {
 	"protects": {
 		"who": "self",
-		"from": "execution",
-		"storytellerDecides": true
+		"from": "any",
+		"whileCarrierAlive": "Poisoned"
 	},
 	"kills": {
 		"by": "demon"
