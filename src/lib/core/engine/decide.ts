@@ -86,6 +86,7 @@ export type WarningCode =
 	| 'not-on-script'
 	| 'already-in-play'
 	| 'kept-alignment'
+	| 'no-longer-hidden'
 	| 'extra-evil-limit'
 	| 'jinxed-ability'
 	| 'jinxed-alignment'
