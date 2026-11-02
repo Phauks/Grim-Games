@@ -34,10 +34,11 @@ test('badges are coloured by team', async ({ page }) => {
 	await expect(page.getByRole('button', { name: /Beggar/ })).toHaveAttribute('data-team', 'evil');
 });
 
-test("a seat's name is the badge's second half, as tall as the character, inside its colour", async ({
+test("a seat's name is the badge's second half, a capsule split straight across", async ({
 	page
 }) => {
-	// Trevor (2026-11-02): look 1, with the character's colour kept round the name as its edge.
+	// Trevor (2026-11-02): "color should split the token, like a pill", look C: the name on a
+	// pale tint of the character's colour, both halves full height.
 	await page.goto('/spikes/badges');
 	const badge = page.getByRole('button', { name: /Witch/ });
 	const name = badge.getByTestId('player-badge');
@@ -45,12 +46,25 @@ test("a seat's name is the badge's second half, as tall as the character, inside
 	await expect(name).toHaveCSS('box-shadow', 'none');
 	const outer = (await badge.boundingBox())!;
 	const inner = (await name.boundingBox())!;
-	// The name runs nearly the badge's full height, leaving a thin edge of the character's
-	// colour above, below and after it.
-	expect(inner.height).toBeGreaterThan(outer.height * 0.75);
-	expect(inner.y).toBeGreaterThan(outer.y);
-	expect(inner.y + inner.height).toBeLessThan(outer.y + outer.height);
-	expect(inner.x + inner.width).toBeLessThan(outer.x + outer.width);
+	expect(Math.abs(inner.height - outer.height)).toBeLessThanOrEqual(1);
+	expect(Math.abs(inner.x + inner.width - (outer.x + outer.width))).toBeLessThanOrEqual(1);
+	const [half, pill] = await Promise.all([
+		name.evaluate((el) => getComputedStyle(el).backgroundColor),
+		badge.evaluate((el) => getComputedStyle(el).backgroundColor)
+	]);
+	expect(half).not.toBe(pill);
+	expect(half).not.toBe('rgba(0, 0, 0, 0)');
+});
+
+test("a badge's icon fills the pill's rounded left end", async ({ page }) => {
+	// Trevor (2026-11-02): the token "conforms to the shape of the pill".
+	await page.goto('/spikes/badges');
+	const badge = page.getByRole('button', { name: /Saint/ });
+	const outer = (await badge.boundingBox())!;
+	const icon = (await badge.locator('.icon').boundingBox())!;
+	expect(Math.abs(icon.height - outer.height)).toBeLessThanOrEqual(1);
+	expect(Math.abs(icon.x - outer.x)).toBeLessThanOrEqual(1);
+	expect(Math.abs(icon.width - icon.height)).toBeLessThanOrEqual(1);
 });
 
 test('a Traveller badge is half good, half evil until its alignment is set', async ({ page }) => {
