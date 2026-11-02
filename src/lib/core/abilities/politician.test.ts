@@ -17,7 +17,7 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { endCharacters, joinsWinners } from '#lib/core/rules/end-reason.ts';
 import { gameEnds, suggestedWinner } from '#lib/core/rules/game-end.ts';
-import { scenario } from '#lib/core/testing/scenario.ts';
+import { engineGap, scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Politician', () => {
 	const character = committedCharacter('politician');
