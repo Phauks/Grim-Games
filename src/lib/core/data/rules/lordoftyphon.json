@@ -20,9 +20,10 @@
 		"summary": "+1 Minion; −? to +? Outsiders",
 		"ops": [
 			{
-				"kind": "set",
+				"kind": "delta",
 				"type": "minion",
-				"values": [0]
+				"values": [1],
+				"also": [0]
 			},
 			{
 				"kind": "any",
@@ -30,7 +31,7 @@
 			}
 		],
 		"notes": [
-			"Deal no Minions: good characters take their place.",
+			"Deal no Minions: good characters take their place. Minions seated beside it already count.",
 			"On the first night the players beside the Lord of Typhon become the usual number of Minions plus one."
 		]
 	},

@@ -129,16 +129,11 @@ describe('Lord of Typhon', () => {
 			// ability."
 			const cast = ['vizier', 'harpy', 'lordoftyphon', 'goblin', 'chef', 'empath', 'monk', 'mayor'];
 			expect(seating([...cast, 'saint', 'butler'])).toEqual([]);
-			// The bag holds no Minions (M22): good characters stand in for the three who become
-			// the Vizier, Harpy and Goblin on the first night.
-			const bag = ['lordoftyphon', 'chef', 'empath', 'monk', 'mayor', 'soldier', 'undertaker'];
-			const result = analyseSetup({
-				players: 10,
-				inPlay: get(...bag, 'washerwoman', 'saint', 'butler')
-			});
-			expect(result.expected.minion).toEqual([0]);
+			const result = analyseSetup({ players: 10, inPlay: get(...cast, 'saint', 'butler') });
+			// No Minions dealt, or the usual two plus one already seated (M22).
+			expect(result.expected.minion).toEqual([0, 3]);
 			expect(result.expected.outsider).toContain(2);
-			expect(result.chosen).toEqual({ townsfolk: 7, outsider: 2, minion: 0, demon: 1 });
+			expect(result.chosen).toEqual({ townsfolk: 4, outsider: 2, minion: 3, demon: 1 });
 			expect(result.warnings).toEqual([]);
 		});
 		it('Example 3: Puzzlemaster becomes Boomdandy, no Outsiders', () => {
@@ -157,22 +152,20 @@ describe('Lord of Typhon', () => {
 					(a) => a.kind === 'seating'
 				)
 			).toEqual([]);
-			// The bag held no Minions (M22): the Minions are made on the first night, and once the
-			// line is whole the step has nobody left to change.
-			const more = ['fortuneteller', 'undertaker', 'soldier'];
-			const bag = get(
-				...good,
-				...more,
-				'puzzlemaster',
+			const townsfolk = [...good, 'fortuneteller', 'undertaker', 'soldier'];
+			const inPlay = get(
+				...townsfolk,
+				'fearmonger',
+				'boomdandy',
 				'lordoftyphon',
-				'slayer',
-				'ravenkeeper',
-				'virgin'
+				'poisoner',
+				'mastermind'
 			);
-			const result = analyseSetup({ players: 15, inPlay: bag });
-			expect(result.expected.minion).toEqual([0]);
-			expect(result.expected.outsider).toContain(1);
-			expect(characterChanger(after.game, 'lordoftyphon', after.characters)).toBeUndefined();
+			const result = analyseSetup({ players: 15, inPlay });
+			expect(result.expected.minion).toEqual([0, 4]);
+			expect(result.expected.outsider).toContain(0);
+			expect(result.chosen).toEqual({ townsfolk: 10, outsider: 0, minion: 4, demon: 1 });
+			expect(result.warnings).toEqual([]);
 		});
 	});
 });

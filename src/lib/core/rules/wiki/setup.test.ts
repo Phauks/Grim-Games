@@ -236,9 +236,10 @@ describe('[bracketed] setup modifiers', () => {
 
 	// https://wiki.bloodontheclocktower.com/Lord_of_Typhon
 	// How to Run: no Minion tokens go in the bag; its neighbours become Minions on night 1.
-	it('Lord of Typhon: no Minions dealt, any Outsider count', () => {
+	it('Lord of Typhon: no Minions dealt (or one extra seated), any Outsider count', () => {
 		const result = analyse(10, get('lordoftyphon'));
-		expect(result.expected.minion).toEqual([0]);
+		// Ten players usually have two Minions: none are dealt, or three are seated already.
+		expect(result.expected.minion).toEqual([0, 3]);
 		expect(result.expected.outsider[0]).toBe(0);
 		expect(result.notes.join(' ')).toContain('plus one');
 	});

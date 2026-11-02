@@ -24,12 +24,14 @@ import {
 
 /**
  * One change to the count of a character type:
- * - `delta`: add one of these values ("+0 or +1" is `[0, 1]`);
+ * - `delta`: add one of these values ("+0 or +1" is `[0, 1]`); `also` lists counts allowed as
+ *   well, whatever the usual count (the Lord of Typhon's `[0]`: no Minions are dealt, and the
+ *   usual number plus one are made on the first night or seated by the Storyteller);
  * - `set`: the count becomes one of these values ("[No Demon]" is `[0]`), or `most` (Legion);
  * - `any`: the Storyteller picks freely ("-? to +? Outsiders").
  */
 export type CountOp =
-	| { kind: 'delta'; type: SeatedType; values: readonly number[] }
+	| { kind: 'delta'; type: SeatedType; values: readonly number[]; also?: readonly number[] }
 	| { kind: 'set'; type: SeatedType; values: readonly number[] | 'most' }
 	| { kind: 'any'; type: SeatedType };
 
@@ -79,7 +81,16 @@ function readOp(raw: unknown, path: string, issues: Issues): CountOp | undefined
 	}
 	const kind = readEnum(raw, 'kind', COUNT_OP_KINDS, path, issues, true);
 	const type = readEnum(raw, 'type', SEATED_TYPES, path, issues, true);
-	checkKeys(raw, kind === 'any' ? ['kind', 'type'] : ['kind', 'type', 'values'], path, issues);
+	checkKeys(
+		raw,
+		kind === 'any'
+			? ['kind', 'type']
+			: kind === 'delta'
+				? ['kind', 'type', 'values', 'also']
+				: ['kind', 'type', 'values'],
+		path,
+		issues
+	);
 	if (!kind || !type) return undefined;
 	if (kind === 'any') return { kind, type };
 	if (kind === 'set' && raw.values === 'most') return { kind, type, values: 'most' };
@@ -87,6 +98,18 @@ function readOp(raw: unknown, path: string, issues: Issues): CountOp | undefined
 	if (!Array.isArray(values) || values.length === 0 || !values.every(Number.isInteger)) {
 		issues.add(`${path}.values`, 'expected a list of whole numbers');
 		return undefined;
+	}
+	if (kind === 'delta' && raw.also !== undefined) {
+		const also = raw.also;
+		if (
+			!Array.isArray(also) ||
+			also.length === 0 ||
+			!also.every((v) => Number.isInteger(v) && v >= 0)
+		) {
+			issues.add(`${path}.also`, 'expected a list of whole numbers, 0 or more');
+			return undefined;
+		}
+		return { kind, type, values: values as number[], also: also as number[] };
 	}
 	return { kind, type, values: values as number[] };
 }

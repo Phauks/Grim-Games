@@ -174,9 +174,12 @@ export function analyseSetup(input: SetupInput): SetupAnalysis {
 	};
 	const sets: Partial<Record<SeatedType, Set<number>>> = {};
 	const free = new Set<SeatedType>();
+	const also: Partial<Record<SeatedType, number[]>> = {};
 	const applyOp = (op: CountOp) => {
-		if (op.kind === 'delta') deltas[op.type].push([...op.values]);
-		else if (op.kind === 'any') free.add(op.type);
+		if (op.kind === 'delta') {
+			deltas[op.type].push([...op.values]);
+			if (op.also) (also[op.type] ??= []).push(...op.also);
+		} else if (op.kind === 'any') free.add(op.type);
 		else {
 			const values =
 				op.values === 'most'
@@ -264,6 +267,7 @@ export function analyseSetup(input: SetupInput): SetupAnalysis {
 		else {
 			values = new Set([...(sets[type] ?? [split.counts[type]]), ...(maybeSets[type] ?? [])]);
 			for (const d of deltas[type]) values = addAll(values, d);
+			for (const v of also[type] ?? []) values.add(v);
 		}
 		expected[type] = [...values]
 			.map((v) => Math.max(0, v))
