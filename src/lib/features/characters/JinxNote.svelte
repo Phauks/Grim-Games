@@ -53,14 +53,14 @@
 		gap: var(--space-1);
 		min-height: var(--tap-target);
 	}
-	/* The split badge's outer edge, in the heading colour so the pair reads as a jinx. */
+	/* The split badge's outer edge, in the text colour so the pair stands apart from single badges. */
 	.joined {
 		display: inline-flex;
 		max-width: calc(100% - 0.24em);
 		/* Room for the edge, which a scrolling parent would otherwise clip. */
 		margin-inline: 0.12em;
 		border-radius: var(--radius-full);
-		box-shadow: 0 0 0 0.12em var(--heading);
+		box-shadow: 0 0 0 0.12em var(--on-surface);
 	}
 	.jinx-text {
 		margin: 0;

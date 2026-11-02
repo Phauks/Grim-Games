@@ -202,7 +202,7 @@
 	/*
 	 * A joined pair reads as one split badge (Trevor picked it for jinxes, 2026-11-02): the
 	 * pair's frame (JinxNote) draws the outer edge, each half squares its inner edge, and a
-	 * line in the heading colour divides them. Each half still opens its own character.
+	 * line in the text colour divides them. Each half still opens its own character.
 	 */
 	.badge[data-joined] {
 		box-shadow: none;
@@ -216,7 +216,7 @@
 		flex-direction: row-reverse;
 		border-radius: 0 var(--radius-full) var(--radius-full) 0;
 		padding: 0 calc(0.1em * var(--inline-name-badge, 1)) 0 calc(0.5em * var(--inline-name-badge, 1));
-		box-shadow: inset 0.12em 0 0 var(--heading);
+		box-shadow: inset 0.12em 0 0 var(--on-surface);
 	}
 	.icon {
 		display: inline-grid;
