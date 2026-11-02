@@ -378,10 +378,12 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['M13a', 'M13b', 'M13']
 	},
 	{
-		// Trevor, 2026-10-30: on the roadmap, after a spike and research.
+		// Trevor, 2026-10-30: on the roadmap, after a spike and research. L99 research, L100 the
+		// format with the Heretic and Boffin, L107 every jinx shown where it matters, L108 jinxes
+		// that reuse existing rules, L109 the Plague Doctor's and other built characters'.
 		title: 'Jinxes the app applies, not only shows',
 		area: 'engine',
-		parts: ['L99', 'L100']
+		parts: ['L99', 'L100', 'L107', 'L108', 'L109']
 	},
 	{
 		title: 'Co-Storytelling: two Storytellers on one game',
