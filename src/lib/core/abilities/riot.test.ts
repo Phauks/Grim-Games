@@ -49,14 +49,15 @@ describe('Riot', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Riot#Examples)', () => {
-		it.fails('Example 1: Chain of nominations kills all Riot; good wins', () => {
+		it('Example 1: Chain of nominations kills all Riot; good wins', () => {
 			// Wiki: "Alex nominates Lewis. Lewis dies and nominates Ben. Ben dies and nominates
 			// Marianna. Marianna dies and nominates Lachlan. Lachlan dies. All Riot players are dead.
 			// Good wins."
 			// Day 3: the Minions are all Riot now, so Lewis, Ben, Marianna and Lachlan are the Riot.
 			const s = scenario(['chef', 'riot', 'riot', 'riot', 'riot', 'empath', 'monk'])
 				.newDay()
-				.newDay();
+				.newDay()
+				.reminder(1, 'riot', 'Day 3');
 			const [lewis, ben, marianna, lachlan] = [1, 2, 3, 4];
 			const nominee = (at: typeof s, by: number, riot: number) =>
 				at.nominate(by, riot).dies(riot, 'riot');
@@ -66,9 +67,10 @@ describe('Riot', () => {
 			expect(gameEnds(end.game, end.characters)).toMatchObject([
 				{ rule: 'demon-dead', winner: 'good' }
 			]);
-			// Waits on the engine (M9): mayNominate says a dead Riot nominee may not nominate, though a
-			// Riot nominee who dies nominates again straight away (M9).
+			// A Riot nominee who dies nominates straight away, once.
 			expect(mayNominate(first.game, first.seat(lewis), first.characters)).toBe(true);
+			const second = nominee(first, lewis, ben);
+			expect(mayNominate(second.game, second.seat(lewis), second.characters)).toBe(false);
 		});
 	});
 });

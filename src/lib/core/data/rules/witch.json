@@ -73,5 +73,9 @@
 		}
 	},
 	"marksChoice": ["Cursed"],
-	"curses": "Cursed"
+	"curses": "Cursed",
+	"onNominating": {
+		"carrier": "Cursed",
+		"effect": "kills-nominator"
+	}
 }

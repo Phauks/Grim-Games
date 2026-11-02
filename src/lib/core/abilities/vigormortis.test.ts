@@ -17,8 +17,9 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { abilityState } from '#lib/core/rules/ability.ts';
 import { dayReminders, dayStateFromGame } from '#lib/core/rules/day-reminders.ts';
+import { characterNominationPrompts } from '#lib/core/rules/nominations.ts';
 import { neighbourSeats, reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
-import { engineGap, scenario, type Scenario } from '#lib/core/testing/scenario.ts';
+import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
 /** The players a character's day reminders name, such as the Witch's cursed player. */
 const dayTargets = (s: Scenario, characterId: string) =>
@@ -65,10 +66,9 @@ describe('Vigormortis', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Vigormortis#Examples)', () => {
-		it.fails("Example 1: Killed Witch's curse continues", () => {
+		it("Example 1: Killed Witch's curse continues", () => {
 			// Wiki: "The Vigormortis kills the Witch. The player that the Witch cursed tonight remains cursed.
 			// The next day, when the cursed player nominates, they die."
-			// Waits on the engine: the day view drops the curse of a dead Witch who keeps their ability.
 			const s = scenario(['vigormortis', 'witch', 'chef', 'empath', 'monk', 'sage'])
 				.reminder('chef', 'witch', 'Cursed')
 				.dies('witch', 'vigormortis')
@@ -76,11 +76,10 @@ describe('Vigormortis', () => {
 				.newDay();
 			expect(abilityState(s.game, s.seat('witch'), s.characters).works).toBe(true);
 			expect(dayTargets(s, 'witch')).toContain(s.seat('chef'));
-			s.nominate('chef', 'vigormortis');
-			engineGap(
-				'M9',
-				'a cursed player who nominates dies at once, while the Witch has their ability'
-			);
+			const nomination = { nominator: s.seat('chef'), nominee: s.seat('vigormortis') };
+			expect(characterNominationPrompts(s.game, nomination, s.characters)).toEqual([
+				{ kind: 'kills-nominator', characterId: 'witch', ...nomination }
+			]);
 		});
 
 		it('Example 2: Storyteller poisons Sage past the Klutz', () => {
