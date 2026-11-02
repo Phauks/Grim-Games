@@ -26,6 +26,7 @@ import { scriptCharacterIds } from '#lib/core/model/characters.ts';
 import { trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
 import type { Game, HeldAbility, SeatId } from '#lib/core/model/types.ts';
 import { abilityState, worksWhenDead } from './ability.ts';
+import { givenInstead } from './jinxes.ts';
 import type { Night, NightStep } from './night-order.ts';
 
 export interface GainedAbility {
@@ -94,6 +95,15 @@ export function holdsAbility(
 		const state = abilityState(game, holder, characters);
 		return (
 			state.impairments.length === 0 && (!seat.dead || worksWhenDead(held.characterId, characters))
+		);
+	}
+	if (rule?.to === 'storyteller') {
+		// A Minion holds it instead, by a jinx (the Plague Doctor's Spy,
+		// https://wiki.bloodontheclocktower.com/Plague_Doctor#Related_Jinxes).
+		const script = scriptCharacterIds(game.script);
+		return (
+			typeOf(game, holder, characters) === 'minion' &&
+			givenInstead(held.via, held.characterId, script, characters) === 'a-minion'
 		);
 	}
 	if (rule?.to !== 'demon' || typeOf(game, holder, characters) !== 'demon') return false;
