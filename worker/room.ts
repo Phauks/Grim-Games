@@ -7,8 +7,6 @@ import {
 	castScriptBallot,
 	castVote,
 	closeScriptVote,
-	closeTransfer,
-	openTransfer,
 	endScriptVote,
 	closeVote,
 	gameOver,
@@ -90,10 +88,9 @@ import type { FriendBook } from './friends/book.ts';
 import { recordGame } from './friends/routes.ts';
 import type { DataBinding } from './shared-data.ts';
 import {
-	answerTransfer,
 	claimGone,
 	claimMessage,
-	closeTransferGame,
+	hostTransfer,
 	keepsTransferGame,
 	type TransferRoom
 } from './room-transfer.ts';
@@ -474,16 +471,10 @@ export class Room extends DurableObject<RoomEnv> {
 				return;
 			}
 			case 'open-transfer':
-				room = openTransfer(room, message.codeHash, message.bringGame, Date.now());
-				await closeTransferGame(room, this.ctx.storage);
-				break;
 			case 'close-transfer':
-				room = closeTransfer(room);
-				await closeTransferGame(room, this.ctx.storage);
-				break;
 			case 'answer-transfer':
-				await answerTransfer(this.transferRoom(), room, message.allow);
-				return;
+			case 'offer-transfer':
+				return hostTransfer(this.transferRoom(), ws, room, message);
 			case 'unseat':
 				room = unseat(room, message.memberId);
 				break;
@@ -701,11 +692,7 @@ export class Room extends DurableObject<RoomEnv> {
 
 	/** What a transfer needs from this room (room-transfer.ts). */
 	private transferRoom(): TransferRoom {
-		return {
-			storage: this.ctx.storage,
-			sockets: () => this.ctx.getWebSockets(),
-			save: (room) => this.save(room)
-		};
+		return { ctx: this.ctx, env: this.env, save: (room) => this.save(room) };
 	}
 
 	/** Stores the room and sends every device its updated view. */

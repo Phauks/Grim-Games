@@ -160,6 +160,11 @@ export interface InviteRequest {
  */
 export interface InviteResponse {
 	here: string[];
+	/**
+	 * Friends with a phone in the room now, when no one is invited (plan F14: Room transfer's
+	 * list); missing from older Workers.
+	 */
+	present?: string[];
 	outcome?: 'sent' | 'here' | 'unavailable' | 'limit';
 }
 
