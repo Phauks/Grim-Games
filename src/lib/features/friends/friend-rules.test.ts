@@ -3,7 +3,6 @@ import {
 	MAX_FRIENDS,
 	MAX_PENDING,
 	REQUESTS_PER_DAY,
-	type FriendAccount,
 	type RecentPlayer,
 	type SeatFriendState
 } from './friends-protocol.ts';
