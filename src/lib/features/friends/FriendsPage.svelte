@@ -26,7 +26,7 @@
 	import { profileHref, scriptOpenHref } from './friend-links.ts';
 	import { friendScripts } from './friend-scripts.svelte.ts';
 	import { type InboxScript, type PublishedScript } from './friend-scripts-protocol.ts';
-	import { sinceUnit } from './friend-rules.ts';
+	import { sinceUnit, suggestedPlayers } from './friend-rules.ts';
 	import { friends } from './friends.svelte.ts';
 	import {
 		friendLink,
@@ -79,6 +79,16 @@
 			: undefined
 	);
 	// Signing in on this page loads the list too (friends.svelte.ts listens for it).
+
+	/** Everyone suggested on this visit, so someone just asked keeps their row (plan F13). */
+	// Plain, not reactive: it only remembers, and is never drawn.
+	const shown: Record<string, true> = {};
+	const suggestions = $derived.by(() => {
+		if (!friends.data) return [];
+		const list = suggestedPlayers(friends.data, (id) => shown[id] === true);
+		for (const other of list) shown[other.id] = true;
+		return list;
+	});
 
 	const nameOf = (other: FriendAccount) => other.username ?? t('friends.noUsername');
 
@@ -321,6 +331,23 @@
 						icon={(other) => other.icon}
 						label={friendLabel}
 						actions={friendActions}
+					/>
+				{:else}
+					<p class="muted">{friends.error || t('friends.loading')}</p>
+				{/if}
+			</PageSection>
+
+			<!-- Suggestions (plan F13): always in place, "None" until someone qualifies, so nothing
+			     moves when the first one appears. -->
+			<PageSection title={t('friends.suggestions')}>
+				{#if data}
+					<FriendRows
+						items={suggestions}
+						key={(other) => other.id}
+						testid="friend-suggestions"
+						icon={(other) => other.icon}
+						label={recentLabel}
+						actions={recentActions}
 					/>
 				{:else}
 					<p class="muted">{friends.error || t('friends.loading')}</p>
