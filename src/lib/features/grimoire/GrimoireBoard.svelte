@@ -65,7 +65,6 @@
 	} from '#lib/ui/seating/seat-layout.ts';
 	import { rememberBoard } from '#lib/ui/seating/last-board.svelte.ts';
 	import { SeatArranging } from './seat-arranging.svelte.ts';
-	import SeatingBar from './SeatingBar.svelte';
 	import { enterSeating, seatingRequested } from './seating-mode.svelte.ts';
 	import { BoardSizing, type BoardSizingContext } from './board-sizing.svelte.ts';
 	import { ReminderDragging } from './reminder-drag.svelte.ts';
@@ -428,6 +427,8 @@
 				})
 			: []
 	);
+	/** The seat just appears (Trevor, 2026-10-16); with a room open, Travellers choose follows. */
+	const onAddSeat = () => startPlacing((p) => travellersForNewSeat(grimoire.addSeat(p), watching));
 	function placeAt(position: number) {
 		const add = placing;
 		placing = undefined;
@@ -730,7 +731,6 @@
 </script>
 
 <!-- The Seating mode's bar, in the bank's token row (Trevor, 2026-10-31). -->
-{#snippet seatingBar()}<SeatingBar />{/snippet}
 
 {#snippet ruleTokens(tokenSize: number)}
 	<BoardRules
@@ -769,6 +769,7 @@
 		{seatArr}
 		placing={!!placing}
 		onCancelPlacing={() => (placing = undefined)}
+		{onAddSeat}
 		showing={showingGrim}
 		onStopShowing={() => {
 			showingGrim = false;
@@ -883,7 +884,6 @@
 				onHints={(h) => (hints.tray = h)}
 				run={flow.run}
 				disabled={watching}
-				instead={seatArr.arranging ? seatingBar : undefined}
 				{remDrag}
 				onRemove={(id) => moveConfirm?.requestReturn(id)}
 			/>
@@ -984,9 +984,7 @@
 	onCharacterSelection={startedAt === undefined && !setUp && !watching
 		? () => goto(resolve('/grimoire/[gameId]/setup', { gameId: game.gameId }))
 		: undefined}
-	onAddSeat={() =>
-		// The seat just appears (Trevor, 2026-10-16); with a room open, Travellers choose follows.
-		startPlacing((p) => travellersForNewSeat(grimoire.addSeat(p), watching))}
+	{onAddSeat}
 	onAddRule={() => rules?.add()}
 	onArrange={() => enterSeating(seatArr)}
 	onExport={() => (exportOpen = true)}

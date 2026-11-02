@@ -766,7 +766,7 @@ test('reminders: put on from the bank, then moved and removed from the seat shee
 	await expect(sheet.getByText('None', { exact: true }).last()).toBeVisible();
 });
 
-test('seats can be arranged: dragged anywhere, kept through a rotation, spread evenly', async ({
+test('seats can be arranged: dragged anywhere, kept through a rotation, distributed', async ({
 	page
 }) => {
 	await startGame(page);
@@ -816,16 +816,16 @@ test('seats can be arranged: dragged anywhere, kept through a rotation, spread e
 	await openSeat(page, 1);
 	await closeSheet(page);
 
-	// Spread evenly puts everyone back round the table.
+	// Distribute (Trevor, 2026-11-01: was Spread evenly) puts everyone back round the table.
 	await menu(page, 'Seating');
-	await toolbar.getByRole('button', { name: 'Spread evenly' }).tap();
-	await expect(toolbar.getByRole('button', { name: 'Spread evenly' })).toBeDisabled();
+	await toolbar.getByRole('button', { name: 'Distribute' }).tap();
+	await expect(toolbar.getByRole('button', { name: 'Distribute' })).toBeDisabled();
 	const spread = await centre(1);
 	expect(Math.abs(spread.x - from.x)).toBeLessThan(4);
 	expect(Math.abs(spread.y - from.y)).toBeLessThan(4);
 
 	// A seat dragged past its neighbours stays there: seats renumber to match (Trevor,
-	// 2026-10-16), then spread evenly. Seat 2 goes just past seat 4, towards seat 5.
+	// 2026-10-16), then Distribute. Seat 2 goes just past seat 4, towards seat 5.
 	const at = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => centre(n));
 	const [c2, c4, c5] = [await at[1], await at[3], await at[4]];
 	// Inside the circle, clear of the seats, so it is a placement, not a drop on a seat.
@@ -837,7 +837,7 @@ test('seats can be arranged: dragged anywhere, kept through a rotation, spread e
 	await page.mouse.move((c2.x + past.x) / 2, (c2.y + past.y) / 2, { steps: 4 });
 	await page.mouse.move(past.x, past.y, { steps: 4 });
 	await page.mouse.up();
-	await toolbar.getByRole('button', { name: 'Spread evenly' }).tap();
+	await toolbar.getByRole('button', { name: 'Distribute' }).tap();
 	// Seats 3 and 4 move up one place; the dragged seat is now Seat 4, where seat 4 was.
 	const four = await centre(4);
 	expect(Math.abs(four.x - c4.x)).toBeLessThan(4);
