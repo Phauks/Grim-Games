@@ -1,6 +1,14 @@
 {
 	"gameEnd": {
+		"ends": [
+			{
+				"kind": "cult-joined"
+			}
+		],
 		"decidedByStoryteller": true
+	},
+	"dayUse": {
+		"vote": "all-good-join"
 	},
 	"dayReminders": {
 		"impairable": true,

@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { toBoard } from './new-game.ts';
 import { pickNumber } from './number-select.ts';
+import { addSeat } from './seating.ts';
 
 // Seats not in play yet (Trevor, 2026-10-31): a Traveller who arrives mid-game sits down at
 // the table before the night they join at. The seat is greyed with a "Not in play" pill and
@@ -64,12 +65,7 @@ test('a seat added mid-game is not in play until the next night', async ({ page 
 	await endTheNight(page);
 
 	// Day 1: a Traveller arrives and sits down.
-	await page.getByRole('button', { name: 'More' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Add seat' })
-		.tap();
-	await page.getByRole('button', { name: 'Place between Seat 8 and Seat 1' }).tap();
+	await addSeat(page, 'Place between Seat 8 and Seat 1');
 	const arrival = page.getByRole('button', { name: /^Seat 9:/ });
 	await expect(arrival).toHaveAccessibleName(/not in play/);
 	await expect(arrival.getByTestId('not-in-play')).toHaveText('Not in play');

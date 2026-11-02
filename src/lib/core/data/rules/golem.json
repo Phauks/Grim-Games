@@ -42,5 +42,8 @@
 	"reminderMovement": {
 		"fixed": ["May Not Nominate"],
 		"why": "Marks that this character has used its once-per-game ability."
+	},
+	"nominating": {
+		"perGame": 1
 	}
 }
