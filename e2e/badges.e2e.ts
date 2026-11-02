@@ -34,6 +34,25 @@ test('badges are coloured by team', async ({ page }) => {
 	await expect(page.getByRole('button', { name: /Beggar/ })).toHaveAttribute('data-team', 'evil');
 });
 
+test("a seat's name is the badge's second half, as tall as the character, inside its colour", async ({
+	page
+}) => {
+	// Trevor (2026-11-02): look 1, with the character's colour kept round the name as its edge.
+	await page.goto('/spikes/badges');
+	const badge = page.getByRole('button', { name: /Witch/ });
+	const name = badge.getByTestId('player-badge');
+	await expect(name).toHaveText('Sam');
+	await expect(name).toHaveCSS('box-shadow', 'none');
+	const outer = (await badge.boundingBox())!;
+	const inner = (await name.boundingBox())!;
+	// The name runs nearly the badge's full height, leaving a thin edge of the character's
+	// colour above, below and after it.
+	expect(inner.height).toBeGreaterThan(outer.height * 0.75);
+	expect(inner.y).toBeGreaterThan(outer.y);
+	expect(inner.y + inner.height).toBeLessThan(outer.y + outer.height);
+	expect(inner.x + inner.width).toBeLessThan(outer.x + outer.width);
+});
+
 test('a Traveller badge is half good, half evil until its alignment is set', async ({ page }) => {
 	await page.goto('/reference');
 	await page.getByRole('searchbox').fill('Beggar');
