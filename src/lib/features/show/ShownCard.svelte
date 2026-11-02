@@ -3,6 +3,7 @@
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import InfoTokenText from '#lib/features/info-tokens/InfoTokenText.svelte';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
 	import type { ShownCharacter } from './shown.ts';
 
 	interface Props {
@@ -102,16 +103,10 @@
 					alignment={characters[0].alignment ?? defaultAlignment(single.type)}
 					{size}
 				/>
+				<!-- The name and ability as the Script tab shows them, under the token, as the bag
+				     draw's reveal does (Trevor, 2026-11-02: "the standard way we show characters"). -->
 				<div class="caption" bind:clientHeight={captionHeight}>
-					<span class="name"
-						><CharacterBadge
-							characterId={single.id}
-							character={single}
-							alignment={characters[0].alignment}
-							interactive={false}
-						/></span
-					>
-					<p class="ability">{single.ability}</p>
+					<CharacterRow character={single} alignment={characters[0].alignment} />
 				</div>
 			</div>
 		</div>
@@ -169,7 +164,7 @@
 	.content[data-compact] .title {
 		font-size: calc(clamp(1.3rem, 5vw, 2.4rem) * var(--card-fit, 1));
 	}
-	.content[data-compact] .ability {
+	.content[data-compact] .caption {
 		font-size: 1.05rem;
 	}
 	.content:not([data-has-title]) {
@@ -234,12 +229,13 @@
 	.single {
 		display: grid;
 		justify-items: center;
+		width: 100%;
 		gap: var(--space-4);
 	}
 	.caption {
-		display: grid;
-		justify-items: center;
-		gap: var(--space-3);
+		width: min(100%, 32rem);
+		font-size: clamp(1.1rem, 4.5vw, 1.5rem);
+		text-align: start;
 	}
 	.tokens {
 		/* Flex, not grid: a short last row sits in the middle. */
@@ -264,13 +260,6 @@
 	.name {
 		max-width: 100%;
 		font-size: clamp(1.3rem, 5vw, 1.8rem);
-	}
-	.ability {
-		margin: 0;
-		max-width: 32ch;
-		font-family: var(--font-ability);
-		font-size: clamp(1.25rem, 4.5vw, 1.8rem);
-		line-height: 1.35;
 	}
 	/* Several names share the width, so each is a size smaller than a single one. */
 	.tokens .name {

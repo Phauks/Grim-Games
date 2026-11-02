@@ -9,7 +9,7 @@ import { SHADERS } from './shaders.ts';
 const ids = Object.keys(PRESETS) as PresetId[];
 const ofKind = (kind: string) => ids.filter((id) => sceneOf(id) === kind).sort();
 
-describe('moving backgrounds (L113)', () => {
+describe('moving backgrounds (L114)', () => {
 	it('has twelve scenes, each a preset with a label and a still frame', () => {
 		const scenes = ids.filter((id) => sceneOf(id));
 		expect(scenes.sort()).toEqual(Object.keys(SCENE_PRESETS).sort());
