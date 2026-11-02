@@ -10,7 +10,10 @@
  * - `execution`: causes an execution or an extra one (Virgin, Butcher, Judge), or lets
  *   the Storyteller execute a player (Mutant, Cerenovus);
  * - `gained-ability`: causes a death only through another character's ability it has or
- *   gives (Philosopher, Pixie, Hermit, Plague Doctor).
+ *   gives (Philosopher, Pixie, Hermit, Plague Doctor), or the ability the Storyteller chose
+ *   for it (Amnesiac). The death is recorded as this character's; once the ability it holds
+ *   is known (`gainedFrom`, or `givesAbility` to `self`), that ability's rule says who it can
+ *   kill (`rules/death-causes.ts`).
  *
  * `onlyWith`: the rule applies only when one of these characters is also on the script or in
  * play (a jinx gives the ability its death).

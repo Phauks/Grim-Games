@@ -220,6 +220,8 @@
 						{#each end.seats as id (id)}{@render seat(id)}{/each} executed ({end.ruleName}).
 					{:else if end.rule === 'cult-joined'}
 						{@render seat(end.seats[0])}: every living good player joined.
+					{:else if end.rule === 'dead-without-demon' && end.day !== undefined && end.characterId}
+						{@render character(end.characterId)}: no Demon made by night {end.day}.
 					{:else if end.rule === 'dead-without-demon'}
 						{#each end.seats as id (id)}{@render seat(id)}{/each} dead with no Demon.
 					{:else if end.rule === 'used-on-loses'}

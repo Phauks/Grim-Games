@@ -11,6 +11,7 @@ import {
 	readBoolean,
 	readEnum,
 	readNumber,
+	readString,
 	readStringArray,
 	type Issues
 } from './validate.ts';
@@ -32,6 +33,12 @@ export interface TokenImpairment {
 	on: (typeof IMPAIRS_ON)[number];
 	type?: CharacterType;
 	whileWorks?: boolean;
+	/**
+	 * Only while a seat carrying this character's `token` keeps their ability (`keepsAbility`),
+	 * and with `nearest` only on that seat's nearest player of that type either way round: the
+	 * Vigormortis's Poisoned Townsfolk beside a Minion it killed (M15g).
+	 */
+	whileKept?: { token: ReminderLabel; nearest?: CharacterType };
 }
 
 /**
@@ -47,6 +54,27 @@ export interface Impairs {
 	self?: { reason: ImpairmentReason; aliveAtMost?: number };
 	tokens?: Readonly<Record<ReminderLabel, TokenImpairment>>;
 	clears?: readonly ReminderLabel[];
+}
+
+function readWhileKept(
+	raw: unknown,
+	path: string,
+	issues: Issues,
+	reminders: readonly ReminderLabel[] | undefined
+): TokenImpairment['whileKept'] {
+	if (!isObject(raw)) {
+		issues.add(path, `expected object, got ${describe(raw)}`);
+		return undefined;
+	}
+	checkKeys(raw, ['token', 'nearest'], path, issues);
+	const token = readString(raw, 'token', path, issues, true);
+	const nearest = readEnum(raw, 'nearest', CHARACTER_TYPES, path, issues, false);
+	if (token === undefined) return undefined;
+	if (!ownReminder(token, reminders)) {
+		issues.add(`${path}.token`, 'not one of this character’s reminders');
+		return undefined;
+	}
+	return { token, ...(nearest ? { nearest } : {}) };
 }
 
 export function readImpairs(
@@ -100,17 +128,22 @@ export function readImpairs(
 					issues.add(here, `expected object, got ${describe(value)}`);
 					continue;
 				}
-				checkKeys(value, ['reason', 'on', 'type', 'whileWorks'], here, issues);
+				checkKeys(value, ['reason', 'on', 'type', 'whileWorks', 'whileKept'], here, issues);
 				const reason = readEnum(value, 'reason', IMPAIRMENT_REASONS, here, issues, true);
 				const on = readEnum(value, 'on', IMPAIRS_ON, here, issues, true);
 				const type = readEnum(value, 'type', CHARACTER_TYPES, here, issues, false);
 				const whileWorks = readBoolean(value, 'whileWorks', here, issues);
+				const whileKept =
+					value.whileKept === undefined
+						? undefined
+						: readWhileKept(value.whileKept, `${here}.whileKept`, issues, reminders);
 				if (!reason || !on) continue;
 				tokens[label] = {
 					reason,
 					on,
 					...(type ? { type } : {}),
-					...(whileWorks !== undefined ? { whileWorks } : {})
+					...(whileWorks !== undefined ? { whileWorks } : {}),
+					...(whileKept ? { whileKept } : {})
 				};
 			}
 			out.tokens = tokens;
