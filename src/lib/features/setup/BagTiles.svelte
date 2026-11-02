@@ -107,6 +107,8 @@
 		grid-area: tile;
 		display: grid;
 		place-items: center;
+		/* The whole tile's width, so a player's name has room (TileMarkFace). */
+		width: 100%;
 		font-size: 2.25rem;
 		font-weight: 700;
 		line-height: 1;

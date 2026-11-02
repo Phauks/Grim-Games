@@ -34,7 +34,8 @@
 	/**
 	 * The room's vote on the next script (Trevor, 2026-10-20, plan R1): the Storyteller offers
 	 * scripts, players vote on their phones, and the Storyteller picks from the count. Its own
-	 * screen, /vote, reached from New game (Trevor, 2026-10-26); the room only counts. Scripts are found with New game's own script controls
+	 * screen, /vote, reached from New game (Trevor, 2026-10-26), or a sheet over the board once
+	 * the game is over (Trevor, 2026-11-01); the room only counts. Scripts are found with New game's own script controls
 	 * (Trevor, 2026-10-23: "same search controls as available outside in new game mode") and
 	 * added in rows, any number up to MAX_SCRIPT_VOTE_OPTIONS (Trevor, 2026-10-23: "should not
 	 * be limited to 2 or 3"). The same vote can be on the game mode, from New game's own list
@@ -62,9 +63,23 @@
 		onPickRules: (ids: string[]) => void;
 		/** Back to New game without the vote. */
 		onBack: () => void;
+		/**
+		 * In a sheet over the board whose X closes it (Trevor, 2026-11-01): no Back before a
+		 * vote opens; Cancel vote still closes an open one.
+		 */
+		hideBack?: boolean;
 	}
 
-	let { choices, onPick, modes, onPickMode, rules, onPickRules, onBack }: Props = $props();
+	let {
+		choices,
+		onPick,
+		modes,
+		onPickMode,
+		rules,
+		onPickRules,
+		onBack,
+		hideBack = false
+	}: Props = $props();
 
 	const TITLES = {
 		script: 'room.scriptVote.title',
@@ -360,9 +375,11 @@
 				/>
 			</div>
 			<div class="end">
-				<Button onclick={back} data-way-back
-					>{t(tally ? 'room.scriptVote.cancel' : 'room.scriptVote.back')}</Button
-				>
+				{#if tally}
+					<Button onclick={back} data-way-back>{t('room.scriptVote.cancel')}</Button>
+				{:else if !hideBack}
+					<Button onclick={back} data-way-back>{t('room.scriptVote.back')}</Button>
+				{/if}
 				{#if tally && !ended}
 					<!-- One button (Trevor, 2026-10-26: "duplicative end vote and close vote"): End
 					     vote closes it at once (2026-10-30), then it is New vote. -->
