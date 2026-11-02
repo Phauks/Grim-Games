@@ -101,13 +101,15 @@ test('a Traveller added mid-game is not in play until the night brings them in',
 
 	const arrival = await thiefArrives(page);
 	// The Status list can put them in play early or take them out.
-	await seatSheet(page).getByRole('button', { name: 'Status: Not in play' }).tap();
-	const status = page.getByRole('dialog', { name: 'Status of Seat 9' });
-	await status.getByRole('button', { name: 'Alive', exact: true }).tap();
-	await expect(seatSheet(page).getByRole('button', { name: 'Status: Alive' })).toBeVisible();
-	await seatSheet(page).getByRole('button', { name: 'Status: Alive' }).tap();
-	await status.getByRole('button', { name: 'Not in play', exact: true }).tap();
-	await expect(seatSheet(page).getByRole('button', { name: 'Status: Not in play' })).toBeVisible();
+	await seatSheet(page).getByRole('combobox', { name: 'Status: Not in play' }).tap();
+	const status = page.getByRole('listbox');
+	await status.getByRole('option', { name: 'Alive', exact: true }).tap();
+	await expect(seatSheet(page).getByRole('combobox', { name: 'Status: Alive' })).toBeVisible();
+	await seatSheet(page).getByRole('combobox', { name: 'Status: Alive' }).tap();
+	await status.getByRole('option', { name: 'Not in play', exact: true }).tap();
+	await expect(
+		seatSheet(page).getByRole('combobox', { name: 'Status: Not in play' })
+	).toBeVisible();
 	await page.keyboard.press('Escape');
 	await expect(seatSheet(page)).toBeHidden();
 	await expect(arrival).toHaveAccessibleName(/Thief.*not in play/);
@@ -137,8 +139,10 @@ test('a Traveller added mid-game is not in play until the night brings them in',
 test('only a Traveller is offered Not in play', async ({ page }) => {
 	await startGame(page);
 	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
-	await seatSheet(page).getByRole('button', { name: 'Status: Alive' }).tap();
-	const status = page.getByRole('dialog', { name: 'Status of Seat 1' });
-	await expect(status.getByRole('button', { name: 'Alive', exact: true })).toBeVisible();
-	await expect(status.getByRole('button', { name: 'Not in play', exact: true })).toHaveCount(0);
+	// The sheet has finished opening (a layer opening closes any list open under it).
+	await expect(seatSheet(page).getByRole('button', { name: 'Edit player name' })).toBeVisible();
+	await seatSheet(page).getByRole('combobox', { name: 'Status: Alive' }).tap();
+	const status = page.getByRole('listbox');
+	await expect(status.getByRole('option', { name: 'Alive', exact: true })).toBeVisible();
+	await expect(status.getByRole('option', { name: 'Not in play', exact: true })).toHaveCount(0);
 });
