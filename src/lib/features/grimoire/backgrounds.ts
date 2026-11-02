@@ -20,7 +20,7 @@ export type BackgroundChoice =
 export interface Preset {
 	label: string;
 	css: string;
-	/** A moving background's moving layer, over `css` as its still frame (plan L113). */
+	/** A moving background's moving layer, over `css` as its still frame (plan L114). */
 	scene?: { kind: SceneKind };
 }
 

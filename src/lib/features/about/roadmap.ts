@@ -46,6 +46,8 @@ export interface RoadmapItem {
 
 /** Parts whose PR titles didn't name them: the PR that finished each. */
 export const PART_PRS: Readonly<Record<string, number>> = {
+	// Moving backgrounds merged as "(L113)", an ID the setup jinx gaps also took.
+	L114: 1159,
 	L7: 323,
 	L19: 323,
 	L20: 323,
@@ -285,7 +287,7 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		title:
 			'Moving backgrounds behind the board: twelve scenes such as Hellfire, Tropical beach and Aurora, with a switch to keep them still',
 		area: 'storyteller',
-		parts: ['L113']
+		parts: ['L114']
 	},
 	{
 		title: 'Seats that keep their names when players rotate, and random name colours',
@@ -407,6 +409,13 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		title: 'Night steps fill in every info token with the right character',
 		area: 'engine',
 		parts: ['M18']
+	},
+	{
+		// Trevor, 2026-11-02: the Snake Charmer's night step does the whole swap with the Demon it
+		// chooses, a Philosopher with its ability swaps too, and the No Dashii's poison follows.
+		title: "The Snake Charmer's swap with the Demon, done in its night step",
+		area: 'engine',
+		parts: ['M20']
 	},
 	{
 		// Trevor, 2026-10-30: on the roadmap, after a spike and research. L99 research, L100 the
