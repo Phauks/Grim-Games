@@ -16,7 +16,7 @@ import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
-import { engineGap, scenario } from '#lib/core/testing/scenario.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe("Hell's Librarian", () => {
 	const character = committedCharacter('hellslibrarian');
@@ -51,15 +51,16 @@ describe("Hell's Librarian", () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Hell%27s_Librarian#Examples)', () => {
-		it.fails('Example 1: Loud players punished while rules are explained', () => {
+		it('Example 1: Loud players punished while rules are explained', () => {
 			// Wiki: "The Storyteller is attempting to explain the voting rules to a few new
 			// players. The group is loud and is not listening to the Storyteller’s requests for
 			// silence, so the Storyteller declares that the Hell's Librarian is in play. Two
 			// players continue to loudly talk, even though they know the possible penalty. The
 			// Storyteller decides that one dies and the other loses their vote for today. All
 			// players are silent whilst the rules are explained."
-			// One player's death can be recorded with the Hell's Librarian as its cause; nothing yet
-			// takes a living player's vote away for the day.
+			// One player's death is recorded with the Hell's Librarian as its cause. The other's lost
+			// vote is the Storyteller's to remember: votes are counted outside the app (Trevor,
+			// 2026-11-01).
 			const s = scenario(['chef', 'empath', 'monk', 'poisoner', 'imp'])
 				.rule('hellslibrarian')
 				.reminder('chef', 'hellslibrarian', 'Something Bad')
@@ -68,7 +69,7 @@ describe("Hell's Librarian", () => {
 			expect(causes).toContain('hellslibrarian');
 			const after = s.dies('chef', 'hellslibrarian');
 			expect(after.game.seats[after.seat('chef')].deathCause).toBe('hellslibrarian');
-			engineGap('M9', 'a living player who may not vote today (the second loud player)');
+			expect(after.game.seats[after.seat('empath')].dead).toBe(false);
 		});
 	});
 });

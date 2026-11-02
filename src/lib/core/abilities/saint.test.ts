@@ -18,7 +18,8 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { executedInstead } from '#lib/core/rules/executed-instead.ts';
-import { promptable } from '#lib/core/rules/game-end.ts';
+import { promptable, suggestedWinner } from '#lib/core/rules/game-end.ts';
+import { dayReminders, dayStateFromGame } from '#lib/core/rules/day-reminders.ts';
 
 describe('Saint', () => {
 	const character = committedCharacter('saint');
@@ -81,6 +82,33 @@ describe('Saint', () => {
 			]);
 			const after = s.execute('scapegoat');
 			expect(promptable(gameEnds(after.game, after.characters))).toEqual([]);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Saint#How_to_Run)', () => {
+		it('reminds the Storyteller by day that the Saint is alive', () => {
+			// How to Run: an executed Saint ends the game, so the Storyteller keeps it in mind
+			// whenever an execution is coming.
+			const s = scenario(['saint', 'chef', 'empath', 'baron', 'imp']).newDay();
+			const groups = dayReminders(
+				dayStateFromGame(s.game, (id) => s.characters.get(id), undefined, s.characters)
+			).groups;
+			const deaths = groups.find((g) => g.group === 'execution-death');
+			expect(deaths?.reminders.map((r) => r.characterId)).toContain('saint');
+		});
+
+		it('ends nothing when the Saint dies at night rather than by execution', () => {
+			// How to Run: only a death by execution ends the game.
+			const s = scenario(['saint', 'chef', 'empath', 'baron', 'imp']).newDay().dies('saint', 'imp');
+			expect(gameEnds(s.game, s.characters)).toEqual([]);
+		});
+
+		it('gives the win to good when an evil Saint is executed', () => {
+			// How to Run: the Saint's own team loses, so an evil Saint's execution means good wins.
+			const s = scenario(['saint', 'chef', 'empath', 'baron', 'imp'])
+				.becomes('saint', 'saint', 'evil')
+				.execute('saint');
+			expect(suggestedWinner(gameEnds(s.game, s.characters))).toBe('good');
 		});
 	});
 });

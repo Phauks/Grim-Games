@@ -15,8 +15,12 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { gameEnds, suggestedWinner } from '#lib/core/rules/game-end.ts';
+import { gameEnds, starPass, suggestedWinner } from '#lib/core/rules/game-end.ts';
 import { infoPicker, isTruthful } from '#lib/core/rules/night-info.ts';
+import { changedCharacters } from '#lib/core/engine/index.ts';
+import { becomesOffer } from '#lib/core/rules/becomes.ts';
+import { withCharacterChangeSteps } from '#lib/core/rules/character-changes.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Scarlet Woman', () => {
@@ -95,6 +99,108 @@ describe('Scarlet Woman', () => {
 				after.characters
 			)!;
 			expect(isTruthful(picker, { seats: chose, yes: true })).toBe(true);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Scarlet_Woman#How_to_Run)', () => {
+		it('offers to turn the Scarlet Woman into the dead Demon', () => {
+			// How to Run: when the Demon dies with five or more players alive just before, the
+			// Scarlet Woman's token is swapped for the Demon that died.
+			const s = scenario(['imp', 'scarletwoman', 'baron', 'chef', 'monk']).execute('imp');
+			const token = { characterId: 'scarletwoman', label: 'Is The Demon' };
+			expect(becomesOffer(s.game, s.seat('scarletwoman'), token, s.characters)).toEqual({
+				into: 'demon',
+				seatId: s.seat('scarletwoman'),
+				characterId: 'imp'
+			});
+		});
+
+		it('leaves the Scarlet Woman as she is when only four were alive', () => {
+			// How to Run: with fewer than five players alive just before the Demon died, she does not
+			// take over and good wins.
+			const s = scenario(['imp', 'scarletwoman', 'baron', 'chef', 'monk'])
+				.dies('monk', 'imp')
+				.execute('imp');
+			const ends = gameEnds(s.game, s.characters);
+			expect(ends).toMatchObject([{ rule: 'demon-dead', holds: [] }]);
+			expect(suggestedWinner(ends)).toBe('good');
+		});
+
+		it('wakes the new Imp that night to show You Are and the Imp token', () => {
+			// How to Run: that night, wake the player who became the Imp and show them who they are now.
+			const s = scenario(['imp', 'scarletwoman', 'baron', 'chef', 'monk'])
+				.newDay()
+				.execute('imp')
+				.becomes('scarletwoman', 'imp');
+			const changes = changedCharacters(s.session.log, s.game);
+			expect(changes).toEqual([
+				{ seatId: s.seat('scarletwoman'), from: 'scarletwoman', characterId: 'imp' }
+			]);
+			const steps = withCharacterChangeSteps([], changes, s.characters);
+			expect(steps).toMatchObject([
+				{ changed: { seatId: s.seat('scarletwoman'), characterId: 'imp' } }
+			]);
+			expect(steps[0].reminder).toContain('*YOU ARE*');
+		});
+
+		it('keeps the Is The Demon reminder on the Scarlet Woman only', () => {
+			// How to Run: in other editions, mark the Scarlet Woman who became the Demon with the
+			// Is The Demon reminder.
+			const s = scenario(['imp', 'scarletwoman', 'baron', 'chef', 'monk']);
+			const token = { characterId: 'scarletwoman', label: 'Is The Demon' };
+			expect(reminderTargetMisses(s.game, token, s.seat('scarletwoman'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, token, s.seat('baron'), s.characters)).toEqual([
+				'not-self'
+			]);
+		});
+	});
+
+	describe('the new Imp after a star pass (https://wiki.bloodontheclocktower.com/Scarlet_Woman#How_to_Run)', () => {
+		// Wiki: "If the Demon dies and there were five or more alive players immediately before the
+		// Demon died, replace the Scarlet Woman token with a spare Imp token, changing that player's
+		// character from the Scarlet Woman into the Imp."
+		// Wiki (https://wiki.bloodontheclocktower.com/Imp#How_to_Run): "If the Imp killed themself at
+		// night, choose an alive Minion and replace their character token with a spare Imp token,
+		// changing their character to the Imp."
+		it('with several living Minions, the Scarlet Woman is the one who becomes the Imp', () => {
+			const s = scenario(['imp', 'poisoner', 'baron', 'scarletwoman', 'chef', 'monk', 'empath'])
+				.newDay()
+				.dies('imp', 'imp');
+			expect(starPass(s.game, s.characters)).toEqual({
+				characterId: 'imp',
+				heirs: [s.seat('scarletwoman'), s.seat('poisoner'), s.seat('baron')],
+				preferred: s.seat('scarletwoman'),
+				preferredBy: 'scarletwoman'
+			});
+		});
+
+		it('five alive just before the Imp died is enough', () => {
+			const s = scenario(['imp', 'scarletwoman', 'baron', 'chef', 'monk'])
+				.newDay()
+				.dies('imp', 'imp');
+			expect(starPass(s.game, s.characters)).toMatchObject({
+				preferred: s.seat('scarletwoman'),
+				preferredBy: 'scarletwoman'
+			});
+		});
+
+		it('four alive just before: any alive Minion, nobody preferred', () => {
+			const s = scenario(['imp', 'scarletwoman', 'baron', 'chef']).newDay().dies('imp', 'imp');
+			expect(starPass(s.game, s.characters)).toEqual({
+				characterId: 'imp',
+				heirs: [s.seat('scarletwoman'), s.seat('baron')]
+			});
+		});
+
+		it('a poisoned Scarlet Woman has no ability, so nobody is preferred', () => {
+			// https://wiki.bloodontheclocktower.com/Glossary: a poisoned player's ability doesn't work.
+			const s = scenario(['imp', 'poisoner', 'scarletwoman', 'chef', 'monk', 'empath'])
+				.poisoned('scarletwoman')
+				.newDay()
+				.dies('imp', 'imp');
+			const pass = starPass(s.game, s.characters);
+			expect(pass?.preferred).toBeUndefined();
+			expect(pass?.heirs).toEqual([s.seat('poisoner'), s.seat('scarletwoman')]);
 		});
 	});
 });

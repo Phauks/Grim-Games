@@ -69,9 +69,9 @@
 		!!game.game.seats[seatId]?.characterId && !pick?.seats.some((s) => s.seatId === seatId);
 
 	/**
-	 * The seat Add seat just placed (Trevor, 2026-11-02: "when adding a character, give a pop-up
-	 * to add as a traveler"): its Traveller is picked here on this device, or the choice goes to
-	 * the phones and runs in the background while the Storyteller carries on.
+	 * The seat asked "Add as a Traveller?" from its empty token, a seat added mid-game and not in
+	 * play (Trevor, 2026-11-02): its Traveller is picked here on this device, or the choice goes
+	 * to the phones and runs in the background while the Storyteller carries on.
 	 */
 	let newSeat = $state<SeatId>();
 	let onPhones = $state(true);
@@ -111,7 +111,7 @@
 		if (pick) seats = pick.seats.map((s) => s.seatId);
 		editing = true;
 	}
-	// Opened from Add seat: the new seat is ticked, or joins the choice already open.
+	// Opened for a seat: it is ticked, or joins the choice already open.
 	$effect(() => {
 		const seatId = playersDialog.travellerSeat;
 		if (!playersDialog.travellers || seatId === undefined) return;
@@ -120,6 +120,8 @@
 			else seats = [];
 			if (!seats.includes(seatId)) seats = [...seats, seatId];
 			newSeat = seatId;
+			// To their phone only once a phone sits there (Trevor, 2026-11-02).
+			onPhones = hasPhone(seatId);
 			playersDialog.travellerSeat = undefined;
 		});
 	});
@@ -250,7 +252,14 @@
 	{/if}
 	{#snippet actions()}
 		{#if sending && !toPhones}
-			<Button variant="quiet" onclick={close}>{t('room.travellers.notTraveller')}</Button>
+			<Button
+				variant="quiet"
+				onclick={() => {
+					const next = playersDialog.notTraveller;
+					close();
+					next?.();
+				}}>{t('room.travellers.notTraveller')}</Button
+			>
 		{:else if sending}
 			<ModalActions
 				onCancel={() => (pick && !newSeat ? (editing = false) : close())}

@@ -15,7 +15,10 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { protection } from '#lib/core/rules/ability.ts';
+import { abilityState, protection } from '#lib/core/rules/ability.ts';
+import { nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
+import { nightTextPlain, nightTextSegments, placeholdersFor } from '#lib/core/rules/night-text.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 import { starPass } from '#lib/core/rules/game-end.ts';
 import { preventedDeaths } from '#lib/core/rules/prevented-deaths.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
@@ -86,6 +89,66 @@ describe('Monk', () => {
 				characterId: 'monk'
 			});
 			expect(starPass(s.game, s.characters)).toBeUndefined();
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Monk#How_to_Run)', () => {
+		it("the Monk's step on other nights places Safe on the chosen player", () => {
+			// How to Run: each night after the first, the Monk picks a player and that player gets Safe.
+			const placeholders = placeholdersFor(character, 'other');
+			const text = nightTextPlain(
+				nightTextSegments(character.otherNightReminder!, character, {
+					...(placeholders ? { placeholders } : {})
+				})
+			);
+			expect(text).toContain('[+Safe]');
+		});
+
+		it('allows Safe on any player except the Monk', () => {
+			// How to Run: the Monk may not pick themselves; any other player is a valid pick.
+			const s = scenario(['monk', 'chef', 'imp', 'empath', 'poisoner']).dies('empath');
+			const safe = { characterId: 'monk', label: 'Safe' };
+			expect(reminderTargetMisses(s.game, safe, s.seat('monk'), s.characters)).toEqual(['self']);
+			expect(reminderTargetMisses(s.game, safe, s.seat('chef'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, safe, s.seat('imp'), s.characters)).toEqual([]);
+		});
+
+		it("flags the Safe player as protected on the Demon's night step", () => {
+			// How to Run: a Demon attack on the Safe player doesn't kill them, so no death is marked.
+			const s = scenario(['monk', 'chef', 'imp', 'empath', 'poisoner']).reminder(
+				'chef',
+				'monk',
+				'Safe'
+			);
+			expect(nightStepAlerts(s.game, 'imp', s.characters)).toContainEqual(
+				expect.objectContaining({
+					kind: 'protected',
+					seatId: s.seat('chef'),
+					source: expect.objectContaining({ characterId: 'monk', seatId: s.seat('monk') }),
+					works: true
+				})
+			);
+		});
+
+		it.fails('takes Safe off at dawn', () => {
+			// How to Run: the Safe reminder comes off when the day starts.
+			// Waits on the engine (unplanned): a new day leaves the Monk's Safe reminder in place.
+			const s = scenario(['monk', 'chef', 'imp', 'empath', 'poisoner'])
+				.reminder('chef', 'monk', 'Safe')
+				.newDay();
+			expect(
+				s.game.seats[s.seat('chef')].reminders.filter((r) => r.characterId === 'monk')
+			).toEqual([]);
+		});
+
+		it.fails("keeps the Safe player from the Demon's poisoning too", () => {
+			// How to Run: the protection covers every harmful effect of the Demon's ability, such as
+			// poisoning, not only death.
+			// Waits on the engine (unplanned): a Demon protection doesn't stop the Demon's own poison.
+			const s = scenario(['monk', 'chef', 'pukka', 'empath', 'poisoner'])
+				.reminder('chef', 'monk', 'Safe')
+				.reminder('chef', 'pukka', 'Poisoned');
+			expect(abilityState(s.game, s.seat('chef'), s.characters).works).toBe(true);
 		});
 	});
 });

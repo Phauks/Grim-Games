@@ -16,6 +16,10 @@
  * `when` is the moment the token says so: `placed` (the default) or `removed`. `follows`, with
  * `carrier-alignment`: whenever the carrier's alignment changes later, this character's player
  * takes the new one too (the Ogre's optional rule: always the friend's alignment).
+ *
+ * The change happens only while this character's player has a working ability (a drunk
+ * Mezepheles turns nobody evil, https://wiki.bloodontheclocktower.com/Mezepheles), unless
+ * `evenIfImpaired` (the Ogre becomes its friend's alignment even if drunk or poisoned).
  */
 import {
 	ALIGNMENTS,
@@ -31,6 +35,7 @@ import {
 	isObject,
 	readBoolean,
 	readEnum,
+	readNumber,
 	readStringArray,
 	type Issues
 } from './validate.ts';
@@ -44,6 +49,7 @@ export interface Becomes {
 	into: (typeof BECOMES_INTO)[number];
 	when?: 'removed';
 	follows?: true;
+	evenIfImpaired?: true;
 }
 
 /** Reads a `becomes` block; `token` must be one of the character's `reminders`. */
@@ -57,12 +63,13 @@ export function readBecomes(
 		issues.add(path, `expected object, got ${describe(raw)}`);
 		return undefined;
 	}
-	checkKeys(raw, ['token', 'into', 'when', 'follows'], path, issues);
+	checkKeys(raw, ['token', 'into', 'when', 'follows', 'evenIfImpaired'], path, issues);
 	if (raw.token === undefined) issues.add(`${path}.token`, 'missing');
 	const token = readToken(raw, 'token', path, issues, reminders);
 	const into = readEnum(raw, 'into', BECOMES_INTO, path, issues, true);
 	const when = readEnum(raw, 'when', BECOMES_WHEN, path, issues, false);
 	const follows = readBoolean(raw, 'follows', path, issues);
+	const evenIfImpaired = readBoolean(raw, 'evenIfImpaired', path, issues);
 	if (follows && into !== 'carrier-alignment')
 		issues.add(`${path}.follows`, 'only with into "carrier-alignment"');
 	if (token === undefined || into === undefined) return undefined;
@@ -70,7 +77,8 @@ export function readBecomes(
 		token,
 		into,
 		...(when === 'removed' ? { when } : {}),
-		...(follows && into === 'carrier-alignment' ? { follows: true as const } : {})
+		...(follows && into === 'carrier-alignment' ? { follows: true as const } : {}),
+		...(evenIfImpaired ? { evenIfImpaired: true as const } : {})
 	};
 }
 
@@ -102,7 +110,12 @@ export function readBecomes(
  *   https://wiki.bloodontheclocktower.com/Kazali);
  * - `upTo: 'minions'`: one player after another until there are as many Minions as the
  *   player count usually has (the Kazali's Minions); a player already of one of `types` is not
- *   offered.
+ *   offered;
+ * - `extraMinions`: with `upTo`, that many Minions more than usual (the Lord of Typhon's
+ *   "+1 Minion", https://wiki.bloodontheclocktower.com/Lord_of_Typhon);
+ * - `outward`: only the nearest player on each side of its own player who is not yet of
+ *   `types`, so the new Minions spread out from it in a line (the Lord of Typhon's
+ *   neighbours).
  */
 export interface ChangesCharacter {
 	types: readonly SeatedType[];
@@ -117,6 +130,8 @@ export interface ChangesCharacter {
 	anyType?: true;
 	firstNight?: true;
 	upTo?: 'minions';
+	extraMinions?: number;
+	outward?: true;
 }
 
 /** Reads a `changesCharacter` block; its tokens must be among the character's `reminders`. */
@@ -144,7 +159,9 @@ export function readChangesCharacter(
 			'sameType',
 			'anyType',
 			'firstNight',
-			'upTo'
+			'upTo',
+			'extraMinions',
+			'outward'
 		],
 		path,
 		issues
@@ -167,6 +184,10 @@ export function readChangesCharacter(
 	if (anyType && !sameType) issues.add(`${path}.anyType`, 'only with sameType');
 	const firstNight = readBoolean(raw, 'firstNight', path, issues);
 	const upTo = readEnum(raw, 'upTo', ['minions'] as const, path, issues, false);
+	const extraMinions = readNumber(raw, 'extraMinions', path, issues);
+	if (extraMinions !== undefined && (!upTo || !Number.isInteger(extraMinions) || extraMinions < 1))
+		issues.add(`${path}.extraMinions`, 'expected a whole number of at least 1, with upTo');
+	const outward = readBoolean(raw, 'outward', path, issues);
 	if (types.length === 0) return undefined;
 	return {
 		types,
@@ -180,7 +201,9 @@ export function readChangesCharacter(
 		...(sameType ? { sameType: true as const } : {}),
 		...(anyType && sameType ? { anyType: true as const } : {}),
 		...(firstNight ? { firstNight: true as const } : {}),
-		...(upTo ? { upTo } : {})
+		...(upTo ? { upTo } : {}),
+		...(upTo && extraMinions !== undefined && extraMinions >= 1 ? { extraMinions } : {}),
+		...(outward ? { outward: true as const } : {})
 	};
 }
 
@@ -188,10 +211,12 @@ export function readChangesCharacter(
  * The `swapsCharacters` part: on its night step, two chosen players swap characters and keep
  * their alignments (the Barber's haircuts, the Demon choosing,
  * https://wiki.bloodontheclocktower.com/Barber). `notTypes` are the character types that may
- * not be chosen (the Barber's "not another Demon").
+ * not be chosen (the Barber's "not another Demon"); `chooser` is the character type of the
+ * player who chooses, who may still choose themself (the Demon swapping itself).
  */
 export interface SwapsCharacters {
 	notTypes?: readonly SeatedType[];
+	chooser?: SeatedType;
 }
 
 /** Reads a `swapsCharacters` block. */
@@ -204,11 +229,12 @@ export function readSwapsCharacters(
 		issues.add(path, `expected object, got ${describe(raw)}`);
 		return undefined;
 	}
-	checkKeys(raw, ['notTypes'], path, issues);
+	checkKeys(raw, ['notTypes', 'chooser'], path, issues);
+	const chooser = readEnum(raw, 'chooser', SEATED_TYPES, path, issues, false);
 	const notTypes = (readStringArray(raw, 'notTypes', path, issues) ?? []).filter((t, i) => {
 		const ok = (SEATED_TYPES as readonly string[]).includes(t);
 		if (!ok) issues.add(`${path}.notTypes[${i}]`, `unknown value ${JSON.stringify(t)}`);
 		return ok;
 	}) as SeatedType[];
-	return notTypes.length ? { notTypes } : {};
+	return { ...(notTypes.length ? { notTypes } : {}), ...(chooser ? { chooser } : {}) };
 }

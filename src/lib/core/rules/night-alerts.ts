@@ -20,6 +20,11 @@
  * - `grimoire-hides`: a jinx says this player's token comes off the Grimoire while the waking
  *   player sees it (`grimoireHides`: the Demon's and the Magician's, for the Spy and the
  *   Widow, https://wiki.bloodontheclocktower.com/Magician#Related_Jinxes);
+ * - `may-skip-attack` / `must-skip-attack` / `final-night`: a rule in play lets the Demon
+ *   choose not to attack, it still has to once (its reminder is on the Demon), or it is still
+ *   marked on a night its attack could end the game, so it doesn't wake and no kill alerts
+ *   follow (`demonAttack`, `demon-attack.ts`: the Toymaker,
+ *   https://wiki.bloodontheclocktower.com/Toymaker);
  * - `seating`: a character whose neighbours are turned evil at setup (`turnsPlayersInto`
  *   `neighbours`) is not inside one line of every evil player
  *   (https://wiki.bloodontheclocktower.com/Lord_of_Typhon);
@@ -48,7 +53,9 @@ import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { alignmentOf, getSeat, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
 import type { DeathCause, Game, SeatId } from '#lib/core/model/types.ts';
 import { actsTwiceSource } from './acts-twice.ts';
+import { characterChanger } from './becomes.ts';
 import { isExecution } from './death-causes.ts';
+import { noAttackState } from './demon-attack.ts';
 import { ownJinxes, ownJinxRules } from './jinxes.ts';
 import {
 	abilityState,
@@ -141,6 +148,9 @@ export type NightAlertKind =
 	| 'blocked'
 	| 'acts-twice'
 	| 'no-kill'
+	| 'may-skip-attack'
+	| 'must-skip-attack'
+	| 'final-night'
 	| 'no-grimoire'
 	| 'grimoire-hides'
 	| 'seating'
@@ -163,21 +173,29 @@ export interface NightAlert {
 }
 
 /**
- * Whether every evil player sits in one unbroken line round the table with `seatId` inside
- * it, an evil player on each side (the Lord of Typhon's setup). Warns only.
+ * Whether every evil Minion and Demon sits in one unbroken line of evil players round the
+ * table with `seatId` inside it, an evil player on each side (the Lord of Typhon's setup).
+ * Evil Townsfolk and evil Travellers may be part of the line but need not be
+ * (https://wiki.bloodontheclocktower.com/Lord_of_Typhon), so the Bounty Hunter's evil
+ * Townsfolk sitting apart is no warning. Warns only.
  */
-export function evilInOneLine(game: Game, seatId: SeatId): boolean {
+export function evilInOneLine(game: Game, seatId: SeatId, characters: CharacterLookup): boolean {
 	const seating = game.seating;
 	const n = seating.length;
 	const at = seating.indexOf(seatId);
 	if (at < 0 || n < 3) return true;
-	const evil = (i: number) => alignmentOf(game, seating[((i % n) + n) % n]) === 'evil';
+	const seatAt = (i: number) => seating[((i % n) + n) % n];
+	const evil = (i: number) => alignmentOf(game, seatAt(i)) === 'evil';
 	if (!evil(at - 1) || !evil(at + 1)) return false;
-	let left = 0;
-	while (left < n - 1 && evil(at - left - 1)) left += 1;
-	let right = 0;
-	while (left + right < n - 1 && evil(at + right + 1)) right += 1;
-	return seating.filter((_, i) => evil(i)).length === Math.min(n, 1 + left + right);
+	const line = new Set<SeatId>([seatId]);
+	for (let i = 1; i < n && evil(at - i); i++) line.add(seatAt(at - i));
+	for (let i = 1; i < n && evil(at + i); i++) line.add(seatAt(at + i));
+	return seating.every((s) => {
+		if (line.has(s) || alignmentOf(game, s) !== 'evil') return true;
+		const id = trueCharacter(game, s, characters);
+		const type = id === undefined ? undefined : characters.get(id)?.type;
+		return type !== 'minion' && type !== 'demon';
+	});
 }
 
 /** Seats whose true character, or token, is `characterId`. */
@@ -211,9 +229,14 @@ export function nightStepAlerts(
 			impairments: state.impairments
 		});
 	}
-	if (rulesOf(characterId, characters)?.turnsPlayersInto?.players === 'neighbours')
+	// Not while its own first-night step still makes the Minions beside it (M22): the line
+	// only exists once it has.
+	if (
+		rulesOf(characterId, characters)?.turnsPlayersInto?.players === 'neighbours' &&
+		characterChanger(game, characterId, characters) === undefined
+	)
 		for (const seatId of actors)
-			if (!evilInOneLine(game, seatId))
+			if (!evilInOneLine(game, seatId, characters))
 				out.push({
 					kind: 'seating',
 					seatId,
@@ -286,6 +309,31 @@ export function nightStepAlerts(
 				);
 		if (stopped.length > 0) noKill = true;
 	}
+	if (killer?.by === 'demon' && !noKill)
+		for (const seatId of actors) {
+			const state = noAttackState(game, seatId, characters);
+			if (!state) continue;
+			if (state.finalNight) noKill = true;
+			const kind = state.finalNight
+				? 'final-night'
+				: state.pending
+					? 'must-skip-attack'
+					: 'may-skip-attack';
+			const character = characters.get(state.rule.characterId);
+			out.push(
+				sourceAlert(
+					game,
+					kind,
+					seatId,
+					{
+						characterId: state.rule.characterId,
+						...(state.pending ? { reminderId: state.pending } : {})
+					},
+					characters,
+					character && wikiUrl(character)
+				)
+			);
+		}
 	if (!killer || noKill) return out;
 	const subjects = (killer.targets === 'self' ? actors : game.seating).filter(
 		(s) => getSeat(game, s)?.dead === false

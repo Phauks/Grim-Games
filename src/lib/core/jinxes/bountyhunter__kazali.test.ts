@@ -12,6 +12,8 @@
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { setupAlignmentTasks } from '#lib/core/rules/setup-alignment.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Bounty Hunter + Kazali jinx', () => {
 	const data = committedGameData();
@@ -30,5 +32,11 @@ describe('Bounty Hunter + Kazali jinx', () => {
 		expect(jinxesAmong(data.jinxes, ['kazali'])).not.toContain(jinx);
 	});
 
-	it.todo('enforces the rule the jinx imposes');
+	// A Bounty Hunter the Kazali makes a Minion creates no evil Townsfolk (M22).
+	it('creates no evil Townsfolk once the Kazali makes the Bounty Hunter a Minion', () => {
+		const s = scenario(['bountyhunter', 'chef', 'empath', 'kazali']);
+		expect(setupAlignmentTasks(s.game, s.characters)).toHaveLength(1);
+		const after = s.becomes('bountyhunter', 'poisoner', 'evil');
+		expect(setupAlignmentTasks(after.game, after.characters)).toEqual([]);
+	});
 });
