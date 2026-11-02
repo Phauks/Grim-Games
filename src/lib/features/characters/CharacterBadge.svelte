@@ -151,7 +151,7 @@
 		/* Overrides the 44px minimum every button gets; ::before keeps the tap area. */
 		min-height: 0;
 		max-width: 100%;
-		padding: 0 calc(0.5em * var(--inline-name-badge, 1)) 0 calc(0.1em * var(--inline-name-badge, 1));
+		padding: 0 calc(0.5em * var(--inline-name-badge, 1)) 0 0;
 		border: 0;
 		border-radius: var(--radius-full);
 		font: inherit;
@@ -198,19 +198,33 @@
 		background: var(--loric);
 		color: var(--on-loric);
 	}
+	/*
+	 * The icon's disc fills the pill's rounded left end, as tall as the pill, so its curve is the
+	 * pill's own (Trevor, 2026-11-02: "conforms to the shape of the pill"). Settings' icon size
+	 * still sizes the picture inside it.
+	 */
 	.icon {
 		display: inline-grid;
 		place-items: center;
-		width: calc(1.1em * var(--inline-name-icon, 1));
-		height: calc(1.1em * var(--inline-name-icon, 1));
+		align-self: stretch;
+		width: var(--badge-h);
 		flex: none;
 		border-radius: 50%;
 		background: var(--token-face, var(--on-surface));
 		overflow: hidden;
 	}
 	.icon img {
-		width: calc(0.95em * var(--inline-name-icon, 1));
-		height: calc(0.95em * var(--inline-name-icon, 1));
+		width: min(calc(0.85 * var(--badge-h)), calc(0.95em * var(--inline-name-icon, 1)));
+		height: min(calc(0.85 * var(--badge-h)), calc(0.95em * var(--inline-name-icon, 1)));
+	}
+	/* The pill's edge drawn over the icon and both halves, so it runs round the whole pill. */
+	.badge::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		border-radius: inherit;
+		box-shadow: var(--button-ring);
+		pointer-events: none;
 	}
 	/*
 	 * The badge has a fixed height in the line, so its name never wraps. In a space narrower
@@ -245,30 +259,50 @@
 		font-size: calc(1em * var(--inline-name-text, 1));
 	}
 	/*
-	 * With a player: the name is the pill's second half, as tall as the first, inside a thin
-	 * edge of the character's colour (the pill's own background, gradient and all), so the
-	 * name's edges show on any surface.
+	 * With a player: a capsule split straight across (Trevor, 2026-11-02: "color should split
+	 * the token, like a pill"), the character in its colour, then the name on a pale tint of
+	 * that colour in a dark shade of it; both halves full height.
 	 */
-	.badge.paired {
-		align-items: stretch;
-		gap: 0;
-		padding-right: 0.12em;
+	.badge {
+		--pale: var(--surface-raised);
+		--deep: var(--on-surface);
 	}
-	.paired .icon {
-		align-self: center;
+	.badge[data-team='good'] {
+		--pale: var(--good-pale);
+		--deep: var(--good-deep);
+	}
+	.badge[data-team='evil'],
+	.badge[data-team='traveller'] {
+		--pale: var(--evil-pale);
+		--deep: var(--evil-deep);
+	}
+	.badge[data-team='fabled'] {
+		--pale: var(--fabled-pale);
+		--deep: var(--fabled-deep);
+	}
+	.badge[data-team='loric'] {
+		--pale: var(--loric-pale);
+		--deep: var(--loric-deep);
+	}
+	.badge.paired {
+		gap: 0;
+		padding-right: 0;
 	}
 	.paired .name {
-		padding: 0 0.4em 0 0.25em;
+		align-self: stretch;
+		padding: 0 0.45em 0 0.25em;
 	}
 	.player {
+		align-self: stretch;
 		align-items: stretch;
-		margin: 0.12em 0;
 	}
 	.player :global(.player-badge) {
 		height: auto;
-		border-radius: 0.2em var(--radius-full) var(--radius-full) 0.2em;
+		padding: 0 0.6em 0 0.45em;
+		border-radius: 0 var(--radius-full) var(--radius-full) 0;
 		box-shadow: none;
+		background: var(--pale);
+		color: var(--deep);
 		font-size: 0.95em;
-		line-height: 1;
 	}
 </style>
