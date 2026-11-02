@@ -135,3 +135,21 @@ export function activeJinxes(
 	const chosen = new Set(inPlay);
 	return jinxes.filter((j) => chosen.has(j.characters[0]) && chosen.has(j.characters[1]));
 }
+
+/**
+ * The jinxes to show on one character's night step or day row: those involving it whose both
+ * characters are in play, in the order given. A jinx counts while both are in play, so the
+ * Storyteller sees it where either character is run (https://wiki.bloodontheclocktower.com/Djinn).
+ */
+export function jinxesOnStep<J extends Jinx>(
+	jinxes: readonly J[],
+	characterId: CharacterId,
+	inPlay: Iterable<CharacterId>
+): J[] {
+	const chosen = new Set(inPlay);
+	if (!chosen.has(characterId)) return [];
+	return jinxes.filter(
+		({ characters: [a, b] }) =>
+			(a === characterId && chosen.has(b)) || (b === characterId && chosen.has(a))
+	);
+}
