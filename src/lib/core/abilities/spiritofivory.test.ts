@@ -48,7 +48,7 @@ describe('Spirit of Ivory', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Spirit_of_Ivory#Examples)', () => {
-		it.fails('Example 1: Second evil conversion blocked; Goon stays good', () => {
+		it('Example 1: Second evil conversion blocked; Goon stays good', () => {
 			// Wiki: "The Fang Gu attacks an Outsider and creates an evil player. The Devil's
 			// Advocate chooses the Goon at night. Normally, the Goon would turn evil, but the Goon
 			// remains good because there is already 1 more evil character than normal in play."

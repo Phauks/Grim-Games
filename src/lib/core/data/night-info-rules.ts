@@ -85,6 +85,12 @@ export interface Learns {
  * "Abnormal"). `firstNight` is the question asked on the first night instead, for a
  * character that learns something else then (the Godfather starts knowing which Outsiders
  * are in play, https://wiki.bloodontheclocktower.com/Godfather).
+ * `evil-marked` counts the evil players among those carrying this character's reminders,
+ * the waking player included (the Duchess's visitors).
+ * `wakes: 'marked'` wakes each player carrying one of this character's reminders, for a
+ * character no player holds (a Fabled: https://wiki.bloodontheclocktower.com/Duchess).
+ * `falseToken` is the reminder whose player must get false information (the Duchess's
+ * "False Info").
  */
 const ANSWER_QUESTIONS = [
 	'minion-nominated',
@@ -95,12 +101,16 @@ const ANSWER_QUESTIONS = [
 	'evil-dead',
 	'abnormal-abilities',
 	'statement-true',
-	'outsiders-in-play'
+	'outsiders-in-play',
+	'evil-marked'
 ] as const;
+const ANSWER_WAKES = ['marked'] as const;
 export interface Answers {
 	question: (typeof ANSWER_QUESTIONS)[number];
 	token?: ReminderLabel;
 	firstNight?: (typeof ANSWER_QUESTIONS)[number];
+	wakes?: (typeof ANSWER_WAKES)[number];
+	falseToken?: ReminderLabel;
 }
 
 export function readLearns(
@@ -180,10 +190,18 @@ export function readAnswers(
 		issues.add(path, `expected object, got ${describe(raw)}`);
 		return undefined;
 	}
-	checkKeys(raw, ['question', 'token', 'firstNight'], path, issues);
+	checkKeys(raw, ['question', 'token', 'firstNight', 'wakes', 'falseToken'], path, issues);
 	const question = readEnum(raw, 'question', ANSWER_QUESTIONS, path, issues, true);
 	const token = readToken(raw, 'token', path, issues, reminders);
 	const firstNight = readEnum(raw, 'firstNight', ANSWER_QUESTIONS, path, issues, false);
+	const wakes = readEnum(raw, 'wakes', ANSWER_WAKES, path, issues, false);
+	const falseToken = readToken(raw, 'falseToken', path, issues, reminders);
 	if (!question) return undefined;
-	return { question, ...(token ? { token } : {}), ...(firstNight ? { firstNight } : {}) };
+	return {
+		question,
+		...(token ? { token } : {}),
+		...(firstNight ? { firstNight } : {}),
+		...(wakes ? { wakes } : {}),
+		...(falseToken ? { falseToken } : {})
+	};
 }

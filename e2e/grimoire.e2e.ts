@@ -1129,42 +1129,6 @@ test('a night step offers the info tokens its text names', async ({ page }) => {
 	expect(await gaps()).toEqual([]);
 });
 
-test("the night strip shows a step's info tokens without opening the step", async ({ page }) => {
-	// Trevor, 2026-11-02: the cards a step fills in, one tap from the board's night strip.
-	// https://wiki.bloodontheclocktower.com/Imp : a Minion who becomes the Imp is shown "You are".
-	await startGame(page);
-	const sheet = await openSeat(page, 1);
-	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
-	await page
-		.getByRole('dialog', { name: 'Character for Seat 1' })
-		.getByRole('button', { name: 'Imp', exact: true })
-		.tap();
-	await closeSheet(page);
-	// A step with no cards has no row (Trevor, 2026-11-02: areas show only with something in them).
-	const strip = await walkTo(page, 'Dusk');
-	await expect(strip.getByTestId('strip-info-tokens')).toHaveCount(0);
-	await endNight(page);
-	await page.keyboard.press('Escape');
-	await expect(page.getByRole('dialog', { name: 'Day 1' })).toBeHidden();
-
-	const row = (await walkTo(page, 'Imp')).getByTestId('strip-info-tokens');
-	await expect(row.getByRole('button')).toHaveCount(1);
-	// Inside the strip's fixed height: the row never pushes past the strip.
-	const stripBox = (await strip.boundingBox())!;
-	const rowBox = (await row.boundingBox())!;
-	expect(rowBox.y + rowBox.height).toBeLessThanOrEqual(stripBox.y + stripBox.height + 1);
-	expect(rowBox.x + rowBox.width).toBeLessThanOrEqual(stripBox.x + stripBox.width + 1);
-	await row.getByRole('button', { name: 'You are (Imp)', exact: true }).tap();
-	const shown = page.locator('[data-testid="show-to-player"][open]');
-	await expect(shown.getByRole('img', { name: /Imp token/ })).toBeVisible();
-	// The step never opened; closing the card goes straight back to the board.
-	await expect(page.getByRole('dialog', { name: 'Imp', exact: true })).toHaveCount(0);
-	await shown.getByRole('button', { name: 'Close' }).tap();
-	await expect(shown).toHaveCount(0);
-	await expect(page.getByRole('dialog', { name: 'Info tokens' })).toHaveCount(0);
-	await expect(page.getByTestId('night-strip')).toBeVisible();
-});
-
 test("the Demon's step says when the Exorcist's choice stops it waking", async ({ page }) => {
 	// https://wiki.bloodontheclocktower.com/Exorcist : a chosen Demon doesn't wake tonight
 	// (Trevor's Pukka flowchart, 2026-10-24).
@@ -1207,14 +1171,16 @@ test("the Demon's step says when the Exorcist's choice stops it waking", async (
 });
 
 // https://wiki.bloodontheclocktower.com/Lord_of_Typhon: the evil players sit in one line with
-// the Lord of Typhon inside it; its step warns when they don't.
+// the Lord of Typhon inside it; its step warns when they don't. Its Minions are all in play
+// here (eight players: the usual one plus one), so the step has none left to make (M22).
 test("the Lord of Typhon's step warns when the evil players don't sit in one line", async ({
 	page
 }) => {
 	await startGame(page);
 	for (const [seat, name] of [
 		[1, 'Lord of Typhon'],
-		[2, 'Poisoner']
+		[2, 'Poisoner'],
+		[5, 'Spy']
 	] as const) {
 		const sheet = await openSeat(page, seat);
 		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
@@ -2151,8 +2117,41 @@ test('copies of a reminder are in the bank one by one, or stacked with a count',
 		.tap();
 	await expect(seatLabelled(page, 'Seat 1: no name, Shabaloth, 1 reminder')).toBeAttached();
 	// One left, so no count.
+	await openBin(page);
 	await expect(dead).toHaveCount(1);
 	await expect(bin.getByLabel('2 copies')).toHaveCount(0);
+});
+
+test('dragging a token out of the pulled-up bank leaves the rest, back in its row', async ({
+	page
+}) => {
+	// Trevor, 2026-11-02: dragging out of the open bin made every other token vanish; it goes
+	// back to its closed state instead.
+	await startGame(page);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Poisoner', exact: true })
+		.tap();
+	await closeSheet(page);
+	const row = page.getByRole('list', { name: 'Reminder bank' });
+	const token = await binToken(page, 'Poisoned');
+	const from = (await token.boundingBox())!;
+	const to = (await boardSeat(page, 2).boundingBox())!;
+	await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+	await page.mouse.down();
+	await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2 + 20, { steps: 6 });
+	// While dragged, the bank shows its row with the other tokens still in it.
+	await expect(row).toBeVisible();
+	await expect(row.getByRole('button', { name: 'Generic reminder', exact: true })).toBeVisible();
+	await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 4 });
+	await page.mouse.up();
+	await expect(boardSeat(page, 2)).toHaveAttribute('aria-label', /1 reminder/);
+	// Let go, it stays closed: the row, every other token still there.
+	await expect(page.getByTestId('reminder-bin')).toBeHidden();
+	await expect(row).toBeVisible();
+	await expect(row.getByRole('button', { name: 'Generic reminder', exact: true })).toBeVisible();
 });
 
 test('the board background can be an image from the device, kept after a reload', async ({
@@ -2724,6 +2723,57 @@ test("the Courtier's step counts its Drunk token down each night", async ({ page
 	await page.keyboard.press('Escape');
 	// Drunk 2 on the board in place of Drunk 3.
 	await expect(page.getByRole('button', { name: 'Drunk 2 reminder' })).toHaveCount(1);
+});
+
+// M15a, https://wiki.bloodontheclocktower.com/Toymaker: the Demon may choose not to attack and
+// must once per game; Final Night: No Attack stays on the Demon until it has. The Demon's step
+// reminds the Storyteller and offers No attack, which takes the token off.
+test("with the Toymaker in play the Demon's step offers No attack", async ({ page }) => {
+	test.slow();
+	await startGame(page);
+	const sheet = await openSeat(page, 2);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 2' })
+		.getByRole('button', { name: 'Imp', exact: true })
+		.tap();
+	await closeSheet(page);
+	await menu(page, 'Add Fabled or Loric');
+	await page
+		.getByRole('dialog', { name: 'Add Fabled or Loric' })
+		.getByRole('button', { name: 'Toymaker', exact: true })
+		.tap();
+	const first = await walkTo(page, 'Dusk');
+	await first.getByRole('button', { name: 'Next step' }).tap();
+	await putReminder(page, 'Final Night: No Attack', 2);
+	await endNight(page);
+	const day = page.getByRole('dialog', { name: 'Day 1' });
+	await day.getByRole('button', { name: 'Close' }).tap();
+	await expect(day).toBeHidden();
+	// Opened by its name: the reminder line makes the strip's step taller, and a tap at its middle
+	// lands on the opened step's own icon, which opens the Imp's entry over it.
+	const strip = await walkTo(page, 'Imp');
+	// On the Demon's seat, so not in the bank.
+	const banked = page
+		.getByRole('list', { name: 'Reminder bank' })
+		.getByRole('button', { name: 'Final Night: No Attack reminder' });
+	await expect(banked).toHaveCount(0);
+	await strip.locator('.step .name strong').tap();
+	const step = page.getByRole('dialog', { name: 'Imp' });
+	await expect(step).toBeVisible();
+	await expect(step.getByTestId('night-alerts')).toContainText(
+		"hasn't chosen not to attack yet, must once this game"
+	);
+	const rows = step.getByTestId('no-attack');
+	await expect(rows).toContainText(/Seat 2.*comes off/);
+	await step.getByRole('button', { name: 'No attack', exact: true }).tap();
+	// Recorded: the token is off, so nothing is left to skip, and it may still choose not to.
+	await expect(rows).toHaveText('None');
+	await expect(step.getByRole('button', { name: 'No attack', exact: true })).toBeDisabled();
+	await expect(step.getByTestId('night-alerts')).toContainText('may choose not to attack');
+	await page.keyboard.press('Escape');
+	// Off the Demon's seat, back in the bank.
+	await expect(banked).toHaveCount(1);
 });
 
 // https://wiki.bloodontheclocktower.com/Plague_Doctor: when it dies, the Storyteller gains a
@@ -7411,7 +7461,8 @@ test('the reminder bank pulls up by its handle bar to show every token, and toke
 	await expect(bin.getByText('∞', { exact: true })).toBeVisible();
 	await page.screenshot({ path: testInfo.outputPath('bin-open.png') });
 
-	// Dragged out: the bank drops back to its row, then comes back up once it is put down.
+	// Dragged out: the bank drops back to its row, tokens and all, and stays down once it is
+	// put down (Trevor, 2026-11-02: back to its closed state).
 	const token = bin.getByRole('button', { name: 'Generic reminder' });
 	const from = (await token.boundingBox())!;
 	const to = (await seatLabelled(page, 'Seat 1:').boundingBox())!;
@@ -7419,11 +7470,14 @@ test('the reminder bank pulls up by its handle bar to show every token, and toke
 	await page.mouse.down();
 	await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2 + 20, { steps: 6 });
 	await expect(bank).toHaveClass(/lowered/);
+	await expect(page.getByRole('list', { name: 'Reminder bank' })).toBeVisible();
 	await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 4 });
 	await page.mouse.up();
 	await expect(seatLabelled(page, 'Seat 1: no name, no character, 1 reminder')).toBeAttached();
 	await expect(bank).not.toHaveClass(/lowered/);
-	await expect(bin).toBeVisible();
+	await expect(bin).toBeHidden();
+	await expect(handle).toHaveAttribute('aria-expanded', 'false');
+	await openBin(page);
 
 	// A tap holds it, as in the row, and lowers the bank to its row, tokens and all, while a
 	// seat is tapped (Trevor, 2026-10-30: not an empty pulled-up bank).

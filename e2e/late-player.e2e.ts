@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import { pickScript } from './new-game.ts';
 import { openProfile, setPlayerName } from './player-name.ts';
 import { pickNumber } from './number-select.ts';
@@ -6,6 +6,19 @@ import { clippedBands } from './type-bands.ts';
 
 // Add late player (Trevor, 2026-10-30): someone arrives after the tiles are dealt and joins as
 // one more player instead of a Traveller. Roll suggests who changes; the Storyteller confirms.
+
+/** Options a drop-down's open list shows but something else is drawn over, by label. */
+const coveredOptions = (listbox: Locator) =>
+	listbox.evaluate((list) => {
+		const shown = list.getBoundingClientRect();
+		return [...list.querySelectorAll('[role="option"]')].flatMap((option) => {
+			const box = option.getBoundingClientRect();
+			const y = box.top + box.height / 2;
+			if (y < shown.top || y > shown.bottom) return [];
+			const top = document.elementFromPoint(box.left + box.width / 2, y);
+			return top && option.contains(top) ? [] : [option.textContent?.trim() ?? ''];
+		});
+	});
 
 const choice = (page: Page, name: string) =>
 	page.getByRole('button', { name, exact: true }).and(page.locator('[aria-pressed]'));
@@ -39,6 +52,15 @@ test('Add late player seats late players where tapped and makes room in the bag'
 	// Every character type's band is drawn whole (Trevor, 2026-11-01: a cut-off pill).
 	await expect(sheet.getByRole('button', { name: 'Townsfolk', exact: true })).toBeVisible();
 	expect(await clippedBands(page)).toEqual([]);
+	// The Players list is drawn over everything else in the dialog: no option it shows is
+	// covered by the counts, search or a type's band (Trevor, 2026-11-02).
+	await sheet.getByRole('combobox', { name: 'Players', exact: true }).tap();
+	const listbox = page.getByRole('listbox');
+	await expect(listbox).toBeVisible();
+	expect(await coveredOptions(listbox)).toEqual([]);
+	await page.keyboard.press('Escape');
+	await expect(listbox).toBeHidden();
+	await expect(sheet).toBeVisible();
 	await sheet.getByRole('combobox', { name: 'Name' }).fill('Max');
 	await sheet.getByTestId('late-place').tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
