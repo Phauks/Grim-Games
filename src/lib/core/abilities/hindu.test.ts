@@ -8,7 +8,9 @@
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
  * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
- * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
+ * happened, then what the rules say. Quote the example word for word in a `// Wiki: "..."`
+ * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
+ * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
@@ -196,6 +198,7 @@ describe('Hindu', () => {
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Hindu#Examples)', () => {
 		// The Princess is executed and comes back as the Gangster, still good.
 		it('Example 1: the executed Princess becomes the Gangster', () => {
+			// Wiki: "Julian is a Princess. He is executed and becomes the Gangster."
 			const s = scenario(['princess', 'chef', 'empath', 'monk', 'poisoner', 'imp'])
 				.rule('hindu')
 				.dies('princess', 'execution')
@@ -211,6 +214,10 @@ describe('Hindu', () => {
 		// Two players die and are reborn; then the Demon kills three at once, one at a time:
 		// the first two are reborn, and the fifth death is a normal one.
 		it('Example 2: four rebirths, then the fifth player stays dead', () => {
+			// Wiki: "Lachlan is the Sweetheart. He dies and becomes the Cacklejack. Nobody is drunk
+			// because the Sweetheart is no longer in play. Evin is the Engineer. He dies and becomes the
+			// Judge. That night, the Po kills Marianna, Abdallah, and Lewis. Marianna becomes the Gnome
+			// and Abdallah becomes the Harlot."
 			const reborn = (i: number, characterId: string) => (s: Scenario) =>
 				s.dies(i, 'demon').do({ type: 'Reincarnate', seatId: s.seat(i), characterId });
 			let s = scenario(['sweetheart', 'engineer', 'chef', 'empath', 'monk', 'poisoner', 'po']).rule(

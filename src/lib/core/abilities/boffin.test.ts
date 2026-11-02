@@ -8,7 +8,9 @@
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
  * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
- * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
+ * happened, then what the rules say. Quote the example word for word in a `// Wiki: "..."`
+ * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
+ * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
@@ -22,6 +24,18 @@ import {
 	withGainedSteps
 } from '#lib/core/rules/gained-abilities.ts';
 import { nightOrder } from '#lib/core/rules/night-order.ts';
+import { characterNominationPrompts, nominationsPerDay } from '#lib/core/rules/nominations.ts';
+import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
+
+/** The Storyteller gives the Demon in `demon`'s seat a good ability through the Boffin. */
+const boffinGives =
+	(demon: string, characterId: string) =>
+	(s: Scenario): Command => ({
+		type: 'SetHeldAbility',
+		seatId: s.seat(demon),
+		via: 'boffin',
+		characterId
+	});
 import {
 	committedCharacter,
 	committedGameData,
@@ -168,8 +182,56 @@ describe('Boffin', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Boffin#Examples)', () => {
-		it.todo("Example 1: Imp with Virgin ability executed by Alsaahir's nomination");
-		it.todo('Example 2: Lord of Typhon with Chambermaid; Boffin drunk');
-		it.todo('Example 3: Dead Kazali gets two nominations and votes a day');
+		it.fails("Example 1: Imp with Virgin ability executed by Alsaahir's nomination", () => {
+			// Wiki: "The Imp has the Virgin ability. The Alsaahir nominates the Imp, and is immediately
+			// executed."
+			// Waits on the engine (M9): a nomination sets off only the nominee's own character's ability, not
+			// one the Boffin gave them.
+			const s = scenario(['boffin', 'imp', 'alsaahir', 'chef', 'empath'], { characters }).do(
+				boffinGives('imp', 'virgin')
+			);
+			expect(heldAbilitiesOf(s.game, s.seat('imp'), s.characters)).toEqual([
+				{ characterId: 'virgin', via: 'boffin', works: true }
+			]);
+			const nomination = { nominator: s.seat('alsaahir'), nominee: s.seat('imp') };
+			expect(characterNominationPrompts(s.game, nomination, s.characters)).toContainEqual({
+				kind: 'execute-nominator',
+				characterId: 'virgin',
+				...nomination
+			});
+		});
+
+		it('Example 2: Lord of Typhon with Chambermaid; Boffin drunk', () => {
+			// Wiki: "The Lord of Typhon has the Chambermaid ability. Each night, the Lord of Typhon wakes,
+			// chooses two players, and learns how many woke tonight. On the 4th night, the Boffin is drunk, so
+			// the Demon has no Chambermaid ability, so does not wake."
+			const s = scenario(['boffin', 'lordoftyphon', 'poisoner', 'chef', 'empath', 'sweetheart'], {
+				characters
+			}).do(boffinGives('lordoftyphon', 'chambermaid'));
+			expect(gainedAbilities(s.game, s.characters)).toEqual([
+				expect.objectContaining({ seatId: s.seat('lordoftyphon'), characterId: 'chambermaid' })
+			]);
+			const night4 = s.dies('sweetheart').reminder('boffin', 'sweetheart', 'Drunk');
+			expect(gainedAbilities(night4.game, night4.characters)).toEqual([]);
+			expect(heldAbilitiesOf(night4.game, night4.seat('lordoftyphon'), night4.characters)).toEqual([
+				{ characterId: 'chambermaid', via: 'boffin', works: false }
+			]);
+		});
+
+		it.fails('Example 3: Dead Kazali gets two nominations and votes a day', () => {
+			// Wiki: "The Kazali has the Banshee ability. The Kazali dies at night, and the Scarlet Woman
+			// becomes the Kazali. The dead Kazali may nominate and vote twice per day."
+			// Waits on the engine (M9): a dead player's extra nominations come only from their own
+			// character, not from an ability the Boffin gave them.
+			const s = scenario(['boffin', 'kazali', 'scarletwoman', 'chef', 'empath', 'monk'], {
+				characters
+			})
+				.do(boffinGives('kazali', 'banshee'))
+				.dies('kazali', 'kazali')
+				.reminder('scarletwoman', 'scarletwoman', 'Is The Demon')
+				.becomes('scarletwoman', 'kazali')
+				.newDay();
+			expect(nominationsPerDay(s.game, s.seat('kazali'), s.characters)).toBe(2);
+		});
 	});
 });

@@ -8,11 +8,24 @@
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
  * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
- * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
+ * happened, then what the rules say. Quote the example word for word in a `// Wiki: "..."`
+ * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
+ * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { dayReminders, dayStateFromGame, renderReminder } from '#lib/core/rules/day-reminders.ts';
+import { gameEnds } from '#lib/core/rules/game-end.ts';
+import { engineGap, scenario, type Scenario } from '#lib/core/testing/scenario.ts';
+
+/** The Wizard's day reminders, as plain text. */
+const wizardLines = (s: Scenario) =>
+	dayReminders(
+		dayStateFromGame(s.game, (id) => s.characters.get(id), undefined, s.characters)
+	).groups.flatMap((g) =>
+		g.reminders.filter((r) => r.characterId === 'wizard').map((r) => renderReminder(r.segments))
+	);
 
 describe('Wizard', () => {
 	const character = committedCharacter('wizard');
@@ -44,10 +57,57 @@ describe('Wizard', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Wizard#Examples)', () => {
-		it.todo('Example 1: Wizard asks to view the Grimoire');
-		it.todo('Example 2: Every good player drunk, info falsified');
-		it.todo('Example 3: Wizard becomes Demon, replacing the Lord of Typhon');
-		it.todo('Example 4: Wish for victory, narrowed to three suspects');
-		it.todo('Example 5: Five lives each rejected as too awkward');
+		it.fails('Example 1: Wizard asks to view the Grimoire', () => {
+			// Wiki: "The Wizard wishes to see the Grimoire. The Storyteller grants this wish, and there
+			// is no price and no clue."
+			const s = scenario(['wizard', 'chef', 'empath', 'poisoner', 'imp']);
+			expect(wizardLines(s).join(' ')).toMatch(/wish/);
+			engineGap(
+				'unplanned',
+				'a record of the Wizard’s wish, whether it was granted, and its price and clue (here none)'
+			);
+		});
+		it.fails('Example 2: Every good player drunk, info falsified', () => {
+			// Wiki: "The Wizard wishes that all good players are drunk. The Storyteller grants the
+			// wish. Later, they declare that the Wizard has made a wish and that “Things are wrong” but
+			// provide no further context. For the rest of the game, the Storyteller makes all
+			// information false."
+			const s = scenario(['wizard', 'chef', 'empath', 'poisoner', 'imp']);
+			expect(wizardLines(s).join(' ')).toMatch(/wish/);
+			engineGap(
+				'unplanned',
+				'a granted wish that makes every good player drunk for the rest of the game, so their information is false'
+			);
+		});
+		it('Example 3: Wizard becomes Demon, replacing the Lord of Typhon', () => {
+			// Wiki: "The Wizard wishes that they become a Demon. The Storyteller grants the wish. Later,
+			// they declare that the Wizard has made a wish, and that “The student has become the
+			// master.” The Storyteller kills the Lord of Typhon and turns the Wizard into the Ojo."
+			const s = scenario(['wizard', 'chef', 'poisoner', 'lordoftyphon', 'witch', 'empath'])
+				.dies('lordoftyphon')
+				.becomes('wizard', 'ojo', 'evil');
+			// The Wizard's player is the Demon now, so the Lord of Typhon's death doesn't end the game.
+			expect(gameEnds(s.game, s.characters)).toEqual([]);
+		});
+		it('Example 4: Wish for victory, narrowed to three suspects', () => {
+			// Wiki: "The Wizard wishes to win the game. The Storyteller grants the wish, and tells the
+			// Wizard that the evil team will win the game at the end of the day. The Storyteller
+			// declares that the Wizard has made a wish, and that either Ben, Amy, or Lewis is the
+			// Demon. The group executes Ben, who is the Demon, and good wins."
+			const s = scenario(['wizard', 'imp', 'chef', 'empath', 'poisoner', 'monk'])
+				.newDay()
+				.execute('imp');
+			expect(gameEnds(s.game, s.characters)).toMatchObject([
+				{ rule: 'demon-dead', winner: 'good' }
+			]);
+		});
+		it.fails('Example 5: Wish for five lives declined as too awkward', () => {
+			// Wiki: "The Wizard wishes that all players have 5 lives, and all reminder tokens for the
+			// script are added to characters. The Storyteller judges that this wish is too awkward,
+			// confusing and boring, declines the wish, and asks the Wizard to wish again."
+			const s = scenario(['wizard', 'chef', 'empath', 'poisoner', 'imp']);
+			expect(wizardLines(s).join(' ')).toMatch(/wish/);
+			engineGap('unplanned', 'a declined wish leaves the Wizard free to wish again');
+		});
 	});
 });

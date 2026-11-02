@@ -271,15 +271,21 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	},
 	{
 		title:
-			'Travellers choose their own Traveller on their phones: the Storyteller sends the ones allowed, a tap holds one so no one else can take it, Confirm sends it; a Traveller who arrives mid-game sits at the table not in play until the night',
+			'Travellers choose their own Traveller on their phones: the Storyteller sends the ones allowed, a tap holds one so no one else can take it, Confirm sends it; a Traveller who arrives mid-game sits at the table not in play until the night offers to bring them in',
 		area: 'storyteller',
-		parts: ['L102', 'L102a']
+		parts: ['L102', 'L102a', 'L102b']
 	},
 	{
 		title:
 			'Crowded boards: reminders on spokes with a tether, duplicate from the bank, mark where a reminder came from',
 		area: 'storyteller',
 		parts: ['D2', 'B2', 'B3', 'B5', 'B1', 'B11', 'B12', 'B13']
+	},
+	{
+		title:
+			'Moving backgrounds behind the board: twelve scenes such as Hellfire, Tropical beach and Aurora, with a switch to keep them still',
+		area: 'storyteller',
+		parts: ['L113']
 	},
 	{
 		title: 'Seats that keep their names when players rotate, and random name colours',
@@ -374,7 +380,8 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		// Gap 1, last and separate (Trevor, 2026-10-28). M9a the vote record and vote weights
 		// (Thief, Bureaucrat, God of Ug, Butler, Zealot, Beggar), M9b voting across the table
 		// (Voudon, Organ Grinder, Ferryman), M9c who may nominate (Bishop, Golem, Gnome), M9d
-		// forced and failed executions (Legion, Judge, Vizier, Cult Leader), M9e the vote sheet.
+		// forced and failed executions (Legion, Judge, Vizier, Cult Leader), M9e vote notes for the
+		// Storyteller's count (Trevor, 2026-11-01: votes are run outside the app, never recorded).
 		title:
 			'Voting and nominations: vote weight, who may vote or nominate, forced and blocked executions (Butler, Thief, Bureaucrat, Bishop, Legion and 12 more)',
 		area: 'engine',

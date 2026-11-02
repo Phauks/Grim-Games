@@ -8,7 +8,9 @@
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
  * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
- * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
+ * happened, then what the rules say. Quote the example word for word in a `// Wiki: "..."`
+ * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
+ * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment, type CharacterId, type Script } from '#lib/core/data/index.ts';
@@ -21,7 +23,11 @@ import {
 	withGainedSteps
 } from '#lib/core/rules/gained-abilities.ts';
 import { nightOrder } from '#lib/core/rules/night-order.ts';
-import { scenario } from '#lib/core/testing/scenario.ts';
+import { engineGap, scenario } from '#lib/core/testing/scenario.ts';
+import { abilityState } from '#lib/core/rules/ability.ts';
+import { gameEnds } from '#lib/core/rules/game-end.ts';
+import { madnessOffer } from '#lib/core/rules/madness.ts';
+import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night-info.ts';
 import {
 	committedCharacter,
 	committedGameData,
@@ -128,6 +134,10 @@ describe('Hermit', () => {
 		// The Hermit has the Klutz, Butler and Recluse abilities: it picks a master each night as
 		// the Butler, though no Butler is in play.
 		it('Example 1: the Hermit wakes each night to choose a master, as the Butler would', () => {
+			// Wiki: "Marianna is the Hermit, and has the Klutz, Butler, and Recluse abilities. Each night,
+			// she chooses a player as her master due to the Butler ability. The Ravenkeeper dies and
+			// learns that she is the Lord of Typhon, due to the Recluse ability. Marianna is executed,
+			// and chooses a player due to the Klutz ability. She chooses the Wizard. Good loses."
 			const s = scenario(PLAYERS, { script, characters });
 			const inPlay = s.game.seating.map((id) => characters.get(s.game.seats[id].characterId!)!);
 			const order = data.nightSheet.otherNight;
@@ -146,7 +156,67 @@ describe('Hermit', () => {
 			// The Klutz and Recluse have no night text, so add no step.
 			expect(steps.filter((step) => step.gained?.via === 'hermit')).toHaveLength(1);
 		});
-		it.todo('Example 1 (rest): the Klutz choice after execution: good loses');
-		it.todo('Example 2: Hermit as mistaken Exorcist executed; Alchemist drunk');
+		// Waits on the engine: the Hermit's Recluse ability doesn't let it register as an evil
+		// character to the Ravenkeeper, and the Klutz's choice has no game end rule.
+		it.fails('Example 1 (rest): the Klutz choice after execution: good loses', () => {
+			// Wiki: "Marianna is the Hermit, and has the Klutz, Butler, and Recluse abilities. Each night,
+			// she chooses a player as her master due to the Butler ability. The Ravenkeeper dies and
+			// learns that she is the Lord of Typhon, due to the Recluse ability. Marianna is executed,
+			// and chooses a player due to the Klutz ability. She chooses the Wizard. Good loses."
+			// The same script with the Lord of Typhon and the Wizard as its evil characters.
+			const typhon: Script = {
+				entries: [
+					...IDS.filter((id) => id !== 'imp' && id !== 'poisoner'),
+					'lordoftyphon',
+					'wizard'
+				].map((id) => ({ kind: 'official' as const, id }))
+			};
+			const s = scenario(['hermit', 'ravenkeeper', 'wizard', 'lordoftyphon', 'empath', 'monk'], {
+				script: typhon,
+				characters
+			}).dies('ravenkeeper', 'lordoftyphon');
+			const picker = infoPicker(s.game, s.seat('ravenkeeper'), 'ravenkeeper', s.characters)!;
+			const asDemon = { seats: [s.seat('hermit')], characterId: 'lordoftyphon' };
+			expect(isAllowed(picker, asDemon)).toBe(true);
+			expect(isTruthful(picker, asDemon)).toBe(false);
+			const executed = s.newDay().execute('hermit');
+			expect(gameEnds(executed.game, executed.characters)).toEqual([]);
+			engineGap('M15l', 'the Klutz choosing an evil player (the Wizard) ends the game: good loses');
+		});
+		// Waits on the engine: madnessOffer reads only a player whose true character is the
+		// Mutant, so a Hermit holding the Mutant ability is never offered the execution.
+		it.fails('Example 2: Hermit as mistaken Exorcist executed; Alchemist drunk', () => {
+			// Wiki: "Lewis is the Hermit and has the Drunk, Mutant, and Sweetheart abilities. Thinking
+			// that he is the Exorcist, he chooses a player each night. Lewis says that he thinks he might
+			// be the Drunk, so the Storyteller executes him due to the Mutant ability. Due to the
+			// Sweetheart ability, the Alchemist is now drunk."
+			// Waits on the engine (M15o): madnessOffer only treats a true Mutant as mad, not a Hermit holding the Mutant ability.
+			const outsiders: Script = {
+				entries: [
+					'hermit',
+					'drunk',
+					'mutant',
+					'sweetheart',
+					'exorcist',
+					'alchemist',
+					'empath',
+					'monk',
+					'poisoner',
+					'imp'
+				].map((id) => ({ kind: 'official' as const, id }))
+			};
+			const s = scenario(['hermit', 'alchemist', 'empath', 'monk', 'imp'], {
+				script: outsiders,
+				characters
+			});
+			expect(
+				heldAbilitiesOf(s.game, s.seat('hermit'), characters).map((h) => h.characterId)
+			).toEqual(['drunk', 'mutant', 'sweetheart']);
+			expect(madnessOffer(s.game, 'mutant', s.seat('hermit'), characters)).toMatchObject({
+				breaking: 'execution'
+			});
+			const after = s.execute('hermit').reminder('alchemist', 'sweetheart', 'Drunk');
+			expect(abilityState(after.game, after.seat('alchemist'), characters).works).toBe(false);
+		});
 	});
 });

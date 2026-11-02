@@ -8,11 +8,16 @@
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
  * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
- * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
+ * happened, then what the rules say. Quote the example word for word in a `// Wiki: "..."`
+ * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
+ * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { gameEnds, suggestedWinner } from '#lib/core/rules/game-end.ts';
+import { mayNominate } from '#lib/core/rules/nominations.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Riot', () => {
 	const character = committedCharacter('riot');
@@ -44,6 +49,26 @@ describe('Riot', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Riot#Examples)', () => {
-		it.todo('Example 1: Chain of nominations kills all Riot; good wins');
+		it.fails('Example 1: Chain of nominations kills all Riot; good wins', () => {
+			// Wiki: "Alex nominates Lewis. Lewis dies and nominates Ben. Ben dies and nominates
+			// Marianna. Marianna dies and nominates Lachlan. Lachlan dies. All Riot players are dead.
+			// Good wins."
+			// Day 3: the Minions are all Riot now, so Lewis, Ben, Marianna and Lachlan are the Riot.
+			const s = scenario(['chef', 'riot', 'riot', 'riot', 'riot', 'empath', 'monk'])
+				.newDay()
+				.newDay();
+			const [lewis, ben, marianna, lachlan] = [1, 2, 3, 4];
+			const nominee = (at: typeof s, by: number, riot: number) =>
+				at.nominate(by, riot).dies(riot, 'riot');
+			const first = nominee(s, 0, lewis);
+			const end = nominee(nominee(nominee(first, lewis, ben), ben, marianna), marianna, lachlan);
+			expect(suggestedWinner(gameEnds(end.game, end.characters))).toBe('good');
+			expect(gameEnds(end.game, end.characters)).toMatchObject([
+				{ rule: 'demon-dead', winner: 'good' }
+			]);
+			// Waits on the engine (M9): mayNominate says a dead Riot nominee may not nominate, though a
+			// Riot nominee who dies nominates again straight away (M9).
+			expect(mayNominate(first.game, first.seat(lewis), first.characters)).toBe(true);
+		});
 	});
 });
