@@ -37,6 +37,11 @@
 		now?: boolean;
 		/** Only follows the finger: hidden from assistive tech. */
 		ghost?: boolean;
+		/**
+		 * A token that stays where it was first put (its character's `reminderMovement.fixed`):
+		 * its word band is filled in its team colour (Trevor, 2026-11-02).
+		 */
+		fixed?: boolean;
 		onTap: () => void;
 		onDrag?: (x: number, y: number, end: boolean) => void;
 		onCancel?: () => void;
@@ -56,6 +61,7 @@
 		unassigned = false,
 		now = false,
 		ghost = false,
+		fixed = false,
 		onTap,
 		onDrag,
 		onCancel
@@ -73,6 +79,8 @@
 	class:unassigned
 	data-unassigned={unassigned ? '' : undefined}
 	class:now
+	class:fixed
+	data-fixed={fixed ? '' : undefined}
 	style:left="{at.x}%"
 	style:top="{at.y}%"
 	aria-hidden={ghost ? 'true' : undefined}
@@ -105,6 +113,17 @@
 		outline: var(--reminder-lit-ring, 0.2rem solid var(--accent));
 		outline-offset: 0.15rem;
 		filter: var(--reminder-lit-glow, none);
+	}
+	/* A token that stays put (Trevor, 2026-11-02, mockup A): its word band filled in its rim's
+	   team colour, the words in the token's face colour. */
+	.chip-slot.fixed > :global(.reminder) > :global(.label) {
+		background: var(--rim);
+		color: var(--reminder-face);
+		box-shadow: none;
+	}
+	/* A Traveller's rim is half good, half evil, so its band is too. */
+	.chip-slot.fixed > :global(.reminder[data-type='traveller']) > :global(.label) {
+		background: linear-gradient(to right, var(--good) 50%, var(--evil) 50%);
 	}
 	.chip-slot.dragging {
 		z-index: 3;

@@ -16,7 +16,7 @@ import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { gameEnds } from '#lib/core/rules/game-end.ts';
-import { engineGap, scenario } from '#lib/core/testing/scenario.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Legion', () => {
 	const character = committedCharacter('legion');
@@ -76,6 +76,7 @@ describe('Legion', () => {
 			// not executed. Alex, who has 2 votes, 1 of which is a good player, is executed instead. Evil
 			// wins."
 			// Julian is a Legion; Alex, the Chef, is the only good player alive.
+			// Waits on the engine (M15l): no game end for evil once no good player is alive.
 			const s = scenario(['chef', 'legion', 'legion', 'legion', 'empath', 'monk'])
 				.dies('empath', 'legion')
 				.dies('monk', 'legion')
@@ -83,10 +84,16 @@ describe('Legion', () => {
 				.nominate(2, 1)
 				.nominate(3, 'chef');
 			expect(s.game.today.entries.filter((e) => e.kind === 'nomination')).toHaveLength(2);
-			engineGap(
-				'M9',
-				"a nomination only evil players voted for has a tally of zero, so Alex's 2 votes win and he is executed, leaving no good player: evil wins"
-			);
+			// Only evil voted for Julian: Legion makes that execution fail. Alex is executed instead.
+			const failed = s.do((at) => ({
+				type: 'Execute',
+				seatId: at.seat(1),
+				outcome: { kind: 'failed', characterId: 'legion' }
+			}));
+			expect(failed.game.seats[failed.seat(1)].dead).toBe(false);
+			const end = failed.execute('chef');
+			expect(end.game.seats[end.seat('chef')].dead).toBe(true);
+			expect(gameEnds(end.game, end.characters)).toMatchObject([{ winner: 'evil' }]);
 		});
 	});
 });
