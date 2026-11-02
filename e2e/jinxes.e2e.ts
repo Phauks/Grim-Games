@@ -623,3 +623,123 @@ test('the Hatter’s Demon who chooses Lil’ Monsta also chooses a Minion to be
 	await step.getByRole('button', { name: 'Close' }).first().tap();
 	await expect(await openSeat(page, 4)).toContainText(/Minion · Evil · Seat 4[\s\S]*Spy/);
 });
+
+// Legion's jinxes (L117, https://wiki.bloodontheclocktower.com/Legion#Related_Jinxes): the
+// Engineer with Legion in play learns on the first night they have no ability.
+test('the Engineer with Legion in play learns they have no ability', async ({ page }) => {
+	test.slow();
+	await startGame(page, 'Legion Engineer', [
+		'legion',
+		'engineer',
+		'chef',
+		'empath',
+		'monk',
+		'soldier',
+		'imp'
+	]);
+	await choose(page, 1, 'Legion');
+	await choose(page, 2, 'Legion');
+	await choose(page, 3, 'Engineer');
+	await choose(page, 4, 'Chef');
+
+	const step = await openStep(page, 'Engineer');
+	await expect(step.getByTestId('night-alerts')).toContainText(
+		/Engineer\s*,\s*learns they have no\s+ability\s*\(\s*Legion\s*\)/
+	);
+});
+
+// The Engineer who makes Legion makes every evil player Legion, said on the step first.
+test('the Engineer who creates Legion makes every evil player Legion', async ({ page }) => {
+	test.slow();
+	await startGame(page, 'Engineer Legion', [
+		'engineer',
+		'legion',
+		'imp',
+		'poisoner',
+		'chef',
+		'empath',
+		'monk'
+	]);
+	await choose(page, 1, 'Engineer');
+	await choose(page, 2, 'Imp');
+	await choose(page, 3, 'Poisoner');
+	await choose(page, 4, 'Chef');
+
+	const step = await openStep(page, 'Engineer');
+	await expect(step.getByTestId('all-evil-become')).toContainText(
+		/Legion\s*:\s+if\s+created,\s+every\s+evil\s+player\s+becomes\s+it\./
+	);
+	await step.getByTestId('change-character').getByRole('button', { name: 'Choose' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Changes character' })
+		.getByRole('button', { name: /Imp/ })
+		.tap();
+	await page
+		.getByRole('dialog', { name: 'Choose a character' })
+		.getByRole('button', { name: 'Legion', exact: true })
+		.tap();
+	const made = step.getByTestId('change-character');
+	await expect(made.getByRole('button', { name: 'Show to player' })).toHaveCount(2);
+	await page.keyboard.press('Escape');
+	await expect(step).toBeHidden();
+	await expect(await openSeat(page, 3)).toContainText(/Demon · Evil · Seat 3[\s\S]*Legion/);
+});
+
+// The Preacher who chooses Legion: Legion keeps their ability, and the Preacher's step says
+// the Preacher might learn they are Legion.
+test('the Preacher who chooses Legion might learn they are Legion', async ({ page }) => {
+	test.slow();
+	await startGame(page, 'Legion Preacher', [
+		'legion',
+		'preacher',
+		'chef',
+		'empath',
+		'monk',
+		'soldier',
+		'imp'
+	]);
+	await choose(page, 1, 'Legion');
+	await choose(page, 2, 'Legion');
+	await choose(page, 3, 'Preacher');
+	await choose(page, 4, 'Chef');
+	await putReminder(page, 'No Ability', 1);
+	await closeBin(page);
+
+	const step = await openStep(page, 'Preacher');
+	await expect(step.getByTestId('night-alerts')).toContainText(
+		/Preacher\s*,\s*might learn a player\s+is\s*Legion\s*,\s*who keeps their ability/
+	);
+});
+
+// With the Magician in play, Demon info shows Legion the good players but not the Magician.
+test('Demon info with Legion and the Magician shows the good players, not the Magician', async ({
+	page
+}) => {
+	test.slow();
+	await startGame(page, 'Legion Magician', [
+		'legion',
+		'magician',
+		'chef',
+		'empath',
+		'monk',
+		'soldier',
+		'imp'
+	]);
+	await choose(page, 1, 'Legion');
+	await choose(page, 2, 'Legion');
+	await choose(page, 3, 'Legion');
+	await choose(page, 4, 'Legion');
+	await choose(page, 5, 'Magician');
+	await choose(page, 6, 'Chef');
+	await choose(page, 7, 'Empath');
+
+	const info = await openStep(page, 'Demon info');
+	const good = info.locator('[data-testid="evil-info-card"][data-row="good"]');
+	await expect(good).toContainText('These players are good');
+	await expect(good).toContainText('Seat 6');
+	await expect(good).toContainText('Seat 7');
+	await expect(good).not.toContainText('Seat 5');
+	await expect(good).toContainText(/wake the Demon players in separate groups/);
+	const minions = info.locator('[data-testid="evil-info-card"][data-row="minions"]');
+	await expect(minions).not.toContainText('Seat 5');
+});

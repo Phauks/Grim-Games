@@ -517,10 +517,12 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		// the Vortox's Banshee), L115 the Vizier's six (not declared, kept protection, woken with
 		// the Fearmonger, the Magician).
 		// L116 Lil' Monsta's babysitting jinxes (the Hatter, Magician, Poppy Grower, Psychopath,
-		// Scarlet Woman and Vizier).
+		// Scarlet Woman and Vizier). L117 Legion's (every evil player becomes Legion, the Engineer
+		// and Hatter with no ability, Legion keeps their ability from the Minstrel and Preacher,
+		// the Magician's Demon info).
 		title: 'Jinxes the app applies, not only shows',
 		area: 'engine',
-		parts: ['L99', 'L100', 'L107', 'L108', 'L109', 'L112', 'L113', 'L114', 'L115', 'L116']
+		parts: ['L99', 'L100', 'L107', 'L108', 'L109', 'L112', 'L113', 'L114', 'L115', 'L116', 'L117']
 	},
 	{
 		title: 'Co-Storytelling: two Storytellers on one game',

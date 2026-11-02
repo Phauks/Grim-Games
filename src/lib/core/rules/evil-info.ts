@@ -9,7 +9,9 @@
 import type { CharacterId } from '#lib/core/data/index.ts';
 import { rulesIn, rulesOf } from '#lib/core/data/rules/index.ts';
 import { abilityState } from './ability.ts';
+import { ownJinxes } from './jinxes.ts';
 import {
+	alignmentOf,
 	trueCharacter,
 	type CharacterLookup,
 	type FakeEvilInfo,
@@ -57,6 +59,11 @@ export interface DemonInfo {
 	shownAsMinions: SeatId[];
 	/** Players the Minions are shown as the Demon though they are not (the Magician). */
 	shownAsDemon: SeatId[];
+	/**
+	 * A jinx has the Demon's players wake in separate groups and learn which players are good
+	 * (`demonLearnsGood`: the Magician with Legion): those players, never `hiddenBy`'s.
+	 */
+	goodShown?: { seats: SeatId[]; hiddenBy: CharacterId };
 }
 
 /** How the evil team's first-night info differs from the plain truth in this game. */
@@ -81,7 +88,41 @@ export function demonInfo(game: Game, characters: CharacterLookup): DemonInfo {
 			out.shownAsDemon.push(seatId);
 		}
 	}
+	const good = demonLearnsGood(game, characters);
+	if (good) {
+		out.goodShown = good;
+		out.shownAsMinions = out.shownAsMinions.filter(
+			(s) => trueCharacter(game, s, characters) !== good.hiddenBy
+		);
+	}
 	return out;
+}
+
+/**
+ * With a jinx that says so in play (`demonLearnsGood`), the good players the Demon's groups
+ * learn at Demon info, and the character never shown: "If the Magician is in play, during the
+ * Demon info step, Legion wake in separate groups"
+ * (https://wiki.bloodontheclocktower.com/Legion#Related_Jinxes).
+ */
+function demonLearnsGood(
+	game: Game,
+	characters: CharacterLookup
+): { seats: SeatId[]; hiddenBy: CharacterId } | undefined {
+	const playing = (id: CharacterId) =>
+		game.seating.filter((s) => trueCharacter(game, s, characters) === id);
+	for (const seatId of game.seating) {
+		const id = trueCharacter(game, seatId, characters);
+		if (id === undefined) continue;
+		const jinx = ownJinxes(game, id, (r) => r.demonLearnsGood === true, characters).find(
+			(j) => playing(j.partner).length > 0
+		);
+		if (!jinx) continue;
+		const seats = game.seating.filter(
+			(s) => alignmentOf(game, s) === 'good' && trueCharacter(game, s, characters) !== id
+		);
+		return { seats, hiddenBy: id };
+	}
+	return undefined;
 }
 
 /** This player's fake world, leaving out seats no longer in the game. */

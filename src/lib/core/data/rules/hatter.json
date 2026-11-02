@@ -48,6 +48,9 @@
 		}
 	},
 	"jinxes": {
+		"legion": {
+			"allEvilBecome": true
+		},
 		"leviathan": {
 			"notCreatedAfterDay": 5
 		},

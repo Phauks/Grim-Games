@@ -21,7 +21,7 @@ import {
 	scriptCharacterIds,
 	type CharacterLookup
 } from '#lib/core/model/characters.ts';
-import { trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
+import { alignmentOf, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 
 type RulesLookup = ReadonlyMap<CharacterId, { rules?: CharacterRules }>;
@@ -392,5 +392,23 @@ export function jinxForbidsBecoming(
 	}
 	return [...inPlay].find(
 		(other) => other !== characterId && jinxRulesBetween(characterId, other, characters)?.exclusive
+	);
+}
+
+/**
+ * The other players who become `created` too, now that `changer`'s `changesCharacter` made
+ * one player it (`allEvilBecome`: when the Engineer, the Hatter or the Summoner creates Legion,
+ * every evil player becomes Legion, https://wiki.bloodontheclocktower.com/Legion#Related_Jinxes):
+ * every evil player, alive or dead, who isn't it yet. Empty when no jinx says so.
+ */
+export function allEvilBecoming(
+	game: Game,
+	changer: CharacterId,
+	created: CharacterId,
+	characters: CharacterLookup
+): SeatId[] {
+	if (!ownJinxRules(game, changer, created, characters)?.allEvilBecome) return [];
+	return game.seating.filter(
+		(id) => alignmentOf(game, id) === 'evil' && trueCharacter(game, id, characters) !== created
 	);
 }
