@@ -15,7 +15,8 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { protection } from '#lib/core/rules/ability.ts';
+import { abilityState, protection } from '#lib/core/rules/ability.ts';
+import { nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
 import { preventedDeaths } from '#lib/core/rules/prevented-deaths.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
@@ -76,6 +77,33 @@ describe('Soldier', () => {
 			// Wiki: "The Imp attacks the Soldier. The Soldier dies, because they are actually the Drunk."
 			const s = scenario(['soldier', 'chef', 'imp', 'monk', 'poisoner']).drunk('soldier');
 			expect(protection(s.game, s.seat('soldier'), s.characters, 'demon')).toBeUndefined();
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Soldier#How_to_Run)', () => {
+		it("flags the Soldier as protected on the Demon's night step", () => {
+			// How to Run: a Demon attack on the Soldier doesn't kill them, so no death is marked.
+			const s = scenario(['soldier', 'chef', 'imp', 'monk', 'poisoner']);
+			expect(nightStepAlerts(s.game, 'imp', s.characters)).toContainEqual(
+				expect.objectContaining({
+					kind: 'protected',
+					seatId: s.seat('soldier'),
+					source: expect.objectContaining({ characterId: 'soldier', seatId: s.seat('soldier') }),
+					works: true
+				})
+			);
+		});
+
+		it.fails("keeps the Soldier from the Demon's poisoning too", () => {
+			// How to Run: the Soldier is safe from every harmful effect of the Demon's ability, such as
+			// poisoning, not only death.
+			// Waits on the engine (unplanned): a Demon protection doesn't stop the Demon's own poison.
+			const s = scenario(['soldier', 'chef', 'pukka', 'monk', 'poisoner']).reminder(
+				'soldier',
+				'pukka',
+				'Poisoned'
+			);
+			expect(abilityState(s.game, s.seat('soldier'), s.characters).works).toBe(true);
 		});
 	});
 });

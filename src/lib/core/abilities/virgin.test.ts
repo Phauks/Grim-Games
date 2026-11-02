@@ -16,6 +16,10 @@ import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { characterNominationPrompts, mayNominate } from '#lib/core/rules/nominations.ts';
+import { warned } from '#lib/core/model/fixtures.test-support.ts';
+import { dayUseSuggestion } from '#lib/core/rules/day-claims.ts';
+import { isOnceOnlyDayAbility } from '#lib/core/rules/day-reminders.ts';
+import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Virgin', () => {
@@ -81,6 +85,72 @@ describe('Virgin', () => {
 			expect(mayNominate(s.game, s.seat('chef'), s.characters)).toBe(false);
 			const nomination = { nominator: s.seat('washerwoman'), nominee: s.seat('virgin') };
 			expect(characterNominationPrompts(s.game, nomination, s.characters)).toHaveLength(1);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Virgin#How_to_Run)', () => {
+		const CAST = ['washerwoman', 'virgin', 'imp', 'chef', 'poisoner'];
+
+		it('executes a Townsfolk nominator by the Virgin and spends the Virgin', () => {
+			// How to Run: when a Townsfolk is the first to nominate the Virgin, that player is executed
+			// and dies at once, and the Virgin gets No Ability.
+			const s = scenario(CAST)
+				.nominate('washerwoman', 'virgin')
+				.do(
+					(at) => ({ type: 'Execute', seatId: at.seat('washerwoman'), cause: 'virgin' }),
+					(at) => ({
+						type: 'UseAbility',
+						seatId: at.seat('virgin'),
+						characterId: 'virgin',
+						on: at.seat('washerwoman')
+					})
+				);
+			const nominator = s.game.seats[s.seat('washerwoman')];
+			expect(nominator).toMatchObject({ dead: true, deathCause: 'virgin' });
+			expect(s.game.seats[s.seat('virgin')].reminders).toContainEqual(
+				expect.objectContaining({ characterId: 'virgin', label: 'No Ability' })
+			);
+			expect(
+				validDeathCauses(s.game, s.seat('washerwoman'), s.characters).map((c) => c.cause)
+			).toContain('virgin');
+		});
+
+		it('warns when anyone else is executed the same day', () => {
+			// How to Run: the nominations end there, so nobody else can be executed today.
+			const s = scenario(CAST)
+				.nominate('washerwoman', 'virgin')
+				.do((at) => ({ type: 'Execute', seatId: at.seat('washerwoman'), cause: 'virgin' }));
+			expect(warned(s.session, s.ctx, { type: 'Execute', seatId: s.seat('chef') })).toContain(
+				'already-executed'
+			);
+		});
+
+		it("marks the Virgin's ability used on a non-Townsfolk nomination, naming the nominator", () => {
+			// How to Run: when the first nominator is not a Townsfolk, the vote goes on as usual, and
+			// the Virgin still gets No Ability.
+			const s = scenario(CAST).nominate('poisoner', 'virgin');
+			const nomination = { nominator: s.seat('poisoner'), nominee: s.seat('virgin') };
+			expect(characterNominationPrompts(s.game, nomination, s.characters)).toEqual([]);
+			expect(isOnceOnlyDayAbility('virgin', s.characters)).toBe(true);
+			expect(dayUseSuggestion(s.game, s.seat('virgin'), 'nominator')).toBe(s.seat('poisoner'));
+			const used = s.do((at) => ({
+				type: 'UseAbility',
+				seatId: at.seat('virgin'),
+				characterId: 'virgin',
+				on: at.seat('poisoner')
+			}));
+			expect(used.game.seats[used.seat('virgin')].reminders).toContainEqual(
+				expect.objectContaining({ characterId: 'virgin', label: 'No Ability' })
+			);
+		});
+
+		it.fails('does not offer to execute a later Townsfolk nominator', () => {
+			// How to Run: only the first player ever to nominate the Virgin can set off the ability.
+			// Waits on the engine (unplanned): the prompt reads only the No Ability reminder, not the
+			// nominations already logged, so it comes back if the Storyteller hasn't placed it.
+			const s = scenario(CAST).nominate('poisoner', 'virgin').newDay().nominate('chef', 'virgin');
+			const nomination = { nominator: s.seat('chef'), nominee: s.seat('virgin') };
+			expect(characterNominationPrompts(s.game, nomination, s.characters)).toEqual([]);
 		});
 	});
 });

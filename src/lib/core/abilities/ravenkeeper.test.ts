@@ -15,6 +15,7 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night-info.ts';
+import { nightStepAlerts, onDeathApplies, onDeathTrigger } from '#lib/core/rules/night-alerts.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
@@ -72,13 +73,34 @@ describe('Ravenkeeper', () => {
 			expect(isTruthful(picker, minion)).toBe(false);
 			expect(isTruthful(picker, { seats: [s.seat('recluse')], characterId: 'recluse' })).toBe(true);
 		});
+	});
 
-		it('may choose any player, themselves included (How to Run)', () => {
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Ravenkeeper#How_to_Run)', () => {
+		it("flags the Ravenkeeper's death trigger on the Demon's night step", () => {
+			// How to Run: the Ravenkeeper wakes on the night they die, so the kill is worth a reminder.
+			const s = scenario(['ravenkeeper', 'empath', 'imp', 'monk', 'poisoner']);
+			expect(nightStepAlerts(s.game, 'imp', s.characters)).toContainEqual(
+				expect.objectContaining({ kind: 'on-death', seatId: s.seat('ravenkeeper') })
+			);
+		});
+
+		it('wakes after any death at night, but not after an execution', () => {
+			// How to Run: wake the Ravenkeeper only if they died tonight.
+			const { characters } = scenario(['ravenkeeper', 'empath', 'imp', 'monk', 'godfather']);
+			const trigger = onDeathTrigger('ravenkeeper', characters)!;
+			expect(onDeathApplies(trigger, 'demon', characters)).toBe(true);
+			expect(onDeathApplies(trigger, 'godfather', characters)).toBe(true);
+			expect(onDeathApplies(trigger, 'execution', characters)).toBe(false);
+		});
+
+		it('may choose any player, themselves included', () => {
+			// How to Run: the Ravenkeeper points at any player and is shown that player's character.
 			const s = scenario(['ravenkeeper', 'empath', 'imp', 'monk', 'poisoner']);
 			const picker = infoPicker(s.game, s.seat('ravenkeeper'), 'ravenkeeper', s.characters)!;
 			expect(
 				isTruthful(picker, { seats: [s.seat('ravenkeeper')], characterId: 'ravenkeeper' })
 			).toBe(true);
+			expect(isTruthful(picker, { seats: [s.seat('imp')], characterId: 'imp' })).toBe(true);
 		});
 	});
 });

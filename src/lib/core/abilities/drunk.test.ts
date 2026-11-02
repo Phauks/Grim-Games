@@ -14,9 +14,24 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { protection } from '#lib/core/rules/ability.ts';
-import { infoPicker, isAllowed, isTruthful, nightAnswer } from '#lib/core/rules/night-info.ts';
+import {
+	committedCharacter,
+	committedGameData,
+	nightSheetPresence
+} from '#lib/core/testing/committed-data.ts';
+import { trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
+import { abilityState, protection } from '#lib/core/rules/ability.ts';
+import { planBag } from '#lib/core/rules/bag-plan.ts';
+import { nightOrder } from '#lib/core/rules/night-order.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { setupReminders } from '#lib/core/rules/setup-reminders.ts';
+import {
+	infoPicker,
+	isAllowed,
+	isTruthful,
+	nightAnswer,
+	withNightInfo
+} from '#lib/core/rules/night-info.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Drunk', () => {
@@ -93,6 +108,66 @@ describe('Drunk', () => {
 				value: 'fortuneteller',
 				unreliable: 'drunk'
 			});
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Drunk#How_to_Run)', () => {
+		it('keeps the Drunk token out of the bag and holds back its Is The Drunk reminder', () => {
+			// How to Run: at setup the Drunk token never goes in the bag; a Townsfolk token goes in
+			// instead, and the Is The Drunk reminder waits in the Grimoire.
+			const data = committedGameData();
+			const ids = ['chef', 'empath', 'monk', 'drunk', 'poisoner', 'imp'];
+			const result = planBag({
+				selection: Object.fromEntries(ids.map((id) => [id, 1])),
+				scriptCharacters: ids.map((id) => data.byId.get(id)!),
+				lookup: (id) => data.byId.get(id)
+			});
+			expect(result.tiles.map((t) => t.grimoire)).not.toContain('drunk');
+			expect(result.unseated).toEqual([{ characterId: 'drunk', label: 'Is The Drunk' }]);
+		});
+
+		it('puts Is The Drunk on the Drunk first, beside a Townsfolk token only', () => {
+			// How to Run: before the first night, the Is The Drunk reminder goes by a Townsfolk
+			// token, and that player is really the Drunk.
+			const s = scenario(['washerwoman', 'chef', 'drunk', 'imp', 'saint']);
+			expect(setupReminders(s.game, s.characters)[0]).toMatchObject({
+				label: 'Is The Drunk',
+				seatId: s.seat('drunk'),
+				first: true
+			});
+			const token = { characterId: 'drunk', label: 'Is The Drunk' };
+			expect(reminderTargetMisses(s.game, token, s.seat('chef'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, token, s.seat('saint'), s.characters)).toEqual(['type']);
+		});
+
+		it('makes that player an Outsider without the Townsfolk ability they were shown', () => {
+			// How to Run: the marked player is the Drunk, an Outsider, and has no Townsfolk ability
+			// though they believe they do.
+			const s = scenario(['chef', 'empath', 'imp', 'monk', 'poisoner']).drunk('chef');
+			expect(trueCharacter(s.game, s.seat('chef'), s.characters)).toBe('drunk');
+			expect(typeOf(s.game, s.seat('chef'), s.characters)).toBe('outsider');
+			const state = abilityState(s.game, s.seat('chef'), s.characters);
+			expect(state.works).toBe(false);
+			expect(state.impairments.map((i) => i.reason)).toEqual(['drunk']);
+		});
+
+		it("wakes the Drunk at the shown Townsfolk's night step, flagged as drunk", () => {
+			// How to Run: run the Drunk as the Townsfolk they think they are, waking them when that
+			// character would wake; their information may be false.
+			const s = scenario(['washerwoman', 'empath', 'imp', 'monk', 'poisoner']).drunk('washerwoman');
+			const data = committedGameData();
+			const inPlay = s.game.seating.map((id) => s.characters.get(s.game.seats[id].characterId!)!);
+			const steps = withNightInfo(
+				nightOrder({ night: 'first', sheet: data.nightSheet, inPlay, players: 5 }).steps,
+				s.game,
+				s.characters,
+				'first',
+				{ died: [] },
+				data.nightSheet.firstNight
+			);
+			const step = steps.find((step) => step.id === 'washerwoman');
+			expect(step?.impaired?.map((a) => a.seatId)).toEqual([s.seat('washerwoman')]);
+			expect(step?.info).toMatchObject({ pickers: [{ unreliable: 'drunk' }] });
 		});
 	});
 });

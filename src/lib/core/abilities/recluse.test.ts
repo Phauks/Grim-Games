@@ -17,6 +17,8 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { dayUseDeath } from '#lib/core/rules/day-claims.ts';
 import { gameEnds } from '#lib/core/rules/game-end.ts';
+import { registrations } from '#lib/core/rules/ability.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 import { infoPicker, isAllowed, isTruthful, nightAnswer } from '#lib/core/rules/night-info.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
@@ -106,6 +108,26 @@ describe('Recluse', () => {
 			const picker = infoPicker(s.game, s.seat('chef'), 'chef', s.characters)!;
 			expect(picker.range).toEqual({ truth: 0, possible: [0, 1, 2] });
 			expect(isTruthful(picker, { seats: [], number: 0 })).toBe(true);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Recluse#How_to_Run)', () => {
+		it('lets the Storyteller choose an evil alignment and a Minion or Demon for the Recluse', () => {
+			// How to Run: when an ability looks for evil, the Storyteller decides whether the Recluse
+			// shows up as evil, and as which Minion or Demon.
+			const s = scenario(['recluse', 'chef', 'imp', 'monk', 'poisoner']);
+			expect(
+				registrations(s.game, s.characters).find((r) => r.seatId === s.seat('recluse'))
+			).toMatchObject({ alignments: ['good', 'evil'], types: ['outsider', 'minion', 'demon'] });
+		});
+
+		it("lets an ability aimed at Minions treat the Recluse as one, such as the Investigator's", () => {
+			// How to Run: show the Recluse as evil when that suits, so an ability that only works on
+			// Minions or Demons can work on them.
+			const s = scenario(['investigator', 'recluse', 'chef', 'imp', 'poisoner']);
+			const minion = { characterId: 'investigator', label: 'Minion' };
+			expect(reminderTargetMisses(s.game, minion, s.seat('recluse'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, minion, s.seat('chef'), s.characters)).toEqual(['type']);
 		});
 	});
 });

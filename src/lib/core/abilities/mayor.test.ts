@@ -18,6 +18,8 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { preventedDeaths } from '#lib/core/rules/prevented-deaths.ts';
+import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
+import { nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
 
 describe('Mayor', () => {
 	const character = committedCharacter('mayor');
@@ -92,6 +94,53 @@ describe('Mayor', () => {
 			expect(gameEnds(s.game, s.characters, { dayEnded: true })).toMatchObject([
 				{ rule: 'alive-at-dusk', winner: 'good' }
 			]);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Mayor#How_to_Run)', () => {
+		it("flags that the Mayor's death may bounce on the Demon's night step", () => {
+			// How to Run: if the Mayor would die at night, the Storyteller picks whether they die or
+			// someone else dies in their place.
+			const s = scenario(['mayor', 'ravenkeeper', 'imp', 'chef', 'poisoner']);
+			expect(nightStepAlerts(s.game, 'imp', s.characters)).toContainEqual(
+				expect.objectContaining({
+					kind: 'may-bounce',
+					seatId: s.seat('mayor'),
+					source: expect.objectContaining({ characterId: 'mayor' }),
+					works: true
+				})
+			);
+		});
+
+		it("marks the player who dies instead with the Demon's Dead reminder", () => {
+			// How to Run: the Demon's Dead reminder and the shroud go on the other player, not the
+			// Mayor, who stays alive and unmarked.
+			const s = scenario(['mayor', 'ravenkeeper', 'imp', 'chef', 'poisoner'])
+				.reminder('ravenkeeper', 'imp', 'Dead')
+				.dies('ravenkeeper', 'demon');
+			expect(preventedDeaths(s.game, s.characters)).toEqual([]);
+			expect(s.game.seats[s.seat('mayor')].dead).toBe(false);
+			expect(
+				validDeathCauses(s.game, s.seat('ravenkeeper'), s.characters).map((c) => c.cause)
+			).toContain('demon');
+		});
+
+		it('gives no win at dusk on a day with an execution', () => {
+			// How to Run: good wins at dusk only with exactly three alive and nobody executed today.
+			const s = scenario(['mayor', 'chef', 'empath', 'baron', 'imp'])
+				.newDay()
+				.dies('chef', 'demon')
+				.execute('empath');
+			expect(gameEnds(s.game, s.characters, { dayEnded: true })).toEqual([]);
+		});
+
+		it('gives the win only once the day ends', () => {
+			// How to Run: the check is made at dusk.
+			const s = scenario(['mayor', 'chef', 'empath', 'baron', 'imp'])
+				.newDay()
+				.dies('chef', 'demon')
+				.dies('empath', 'demon');
+			expect(gameEnds(s.game, s.characters)).toEqual([]);
 		});
 	});
 });

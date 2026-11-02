@@ -15,8 +15,10 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night-info.ts';
-import { scenario } from '#lib/core/testing/scenario.ts';
+import { infoPicker, isAllowed, isTruthful, learnedRoles } from '#lib/core/rules/night-info.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { setupPrep } from '#lib/core/rules/setup-reminders.ts';
+import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Librarian', () => {
 	const character = committedCharacter('librarian');
@@ -73,6 +75,80 @@ describe('Librarian', () => {
 			const shown = { seats: [s.seat('monk'), s.seat('undertaker')], characterId: 'drunk' };
 			expect(isTruthful(picker, shown)).toBe(true);
 			expect(isAllowed(picker, { seats: [], none: true })).toBe(false);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Librarian#How_to_Run)', () => {
+		const cast = ['librarian', 'saint', 'chef', 'imp', 'poisoner'];
+		const marked = (s: Scenario) =>
+			s.reminder('saint', 'librarian', 'Outsider').reminder('imp', 'librarian', 'Wrong');
+
+		it('lists the Outsider and Wrong reminders to place before the first night', () => {
+			// How to Run: before night one, the Storyteller marks one Outsider with Outsider and a
+			// second player with Wrong.
+			const s = scenario(cast);
+			expect(setupPrep('librarian', character.name, s.characters).map((p) => p.tokens)).toEqual([
+				['Outsider'],
+				['Wrong']
+			]);
+		});
+
+		it('puts the Outsider reminder only on a Outsider', () => {
+			// How to Run: the Outsider reminder goes beside a Outsider's character token.
+			const s = scenario(cast);
+			const reminder = { characterId: 'librarian', label: 'Outsider' };
+			expect(reminderTargetMisses(s.game, reminder, s.seat('saint'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, reminder, s.seat('chef'), s.characters)).toEqual([
+				'type'
+			]);
+		});
+
+		it('puts the Wrong reminder on any other seat, never the one marked Outsider', () => {
+			// How to Run: the Wrong reminder goes beside a different character token.
+			const s = scenario(cast).reminder('saint', 'librarian', 'Outsider');
+			const reminder = { characterId: 'librarian', label: 'Wrong' };
+			expect(reminderTargetMisses(s.game, reminder, s.seat('imp'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, reminder, s.seat('saint'), s.characters)).toEqual([
+				'not-with-label'
+			]);
+		});
+
+		it('on the first night, shows the two marked players and the marked character', () => {
+			// How to Run: on night one, point at the seats marked Outsider and Wrong, and show the
+			// character marked Outsider.
+			const s = marked(scenario(cast));
+			const picker = infoPicker(s.game, s.seat('librarian'), 'librarian', s.characters, 'first')!;
+			expect(picker.seatCount).toBe(2);
+			expect(learnedRoles(s.game, picker, s.characters)?.rows[0]).toMatchObject({
+				target: s.seat('saint'),
+				other: s.seat('imp'),
+				characterIds: ['saint'],
+				marked: true
+			});
+		});
+
+		it('lets the Storyteller remove both reminders once they are shown', () => {
+			// How to Run: the reminders come off whenever it suits the Storyteller.
+			const s = marked(scenario(cast)).newDay();
+			const ids = s.game.seating.flatMap((id) =>
+				s.game.seats[id].reminders
+					.filter((r) => r.characterId === 'librarian')
+					.map((r) => r.reminderId)
+			);
+			expect(ids).toHaveLength(2);
+			const cleared = s.do(
+				...ids.map((reminderId) => ({ type: 'RemoveReminder' as const, reminderId }))
+			);
+			const picker = infoPicker(
+				cleared.game,
+				cleared.seat('librarian'),
+				'librarian',
+				cleared.characters,
+				'first'
+			)!;
+			expect(
+				learnedRoles(cleared.game, picker, cleared.characters)?.rows.some((r) => r.marked)
+			).toBe(false);
 		});
 	});
 });

@@ -15,7 +15,10 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { registrations } from '#lib/core/rules/ability.ts';
 import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { seesGrimoire } from '#lib/core/rules/sees-grimoire.ts';
 import { infoPicker, isAllowed, isTruthful, nightAnswer } from '#lib/core/rules/night-info.ts';
 import { characterNominationPrompts } from '#lib/core/rules/nominations.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
@@ -103,6 +106,33 @@ describe('Spy', () => {
 				misregister: [after.seat('spy')]
 			});
 			expect(answer.registrations[0]?.types).toContain('outsider');
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Spy#How_to_Run)', () => {
+		it('wakes the Spy every night to look at the Grimoire', () => {
+			// How to Run: each night the Spy wakes and sees the Grimoire for as long as they like.
+			expect(seesGrimoire(character)).toBe(true);
+		});
+
+		it('lets the Storyteller choose a good alignment and a Townsfolk or Outsider for the Spy', () => {
+			// How to Run: whenever an ability detects or affects good, the Storyteller picks which
+			// character and alignment the Spy registers as.
+			const s = scenario(['spy', 'chef', 'imp', 'monk', 'empath']);
+			expect(
+				registrations(s.game, s.characters).find((r) => r.seatId === s.seat('spy'))
+			).toMatchObject({ alignments: ['evil', 'good'], types: ['minion', 'townsfolk', 'outsider'] });
+		});
+
+		it("lets an ability aimed at Townsfolk treat the Spy as one, such as the Washerwoman's", () => {
+			// How to Run: show the Spy as good when that suits, so an ability that only works on
+			// good players, Townsfolk or Outsiders can work on them.
+			const s = scenario(['washerwoman', 'spy', 'chef', 'imp', 'monk']);
+			const townsfolk = { characterId: 'washerwoman', label: 'Townsfolk' };
+			expect(reminderTargetMisses(s.game, townsfolk, s.seat('spy'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, townsfolk, s.seat('imp'), s.characters)).toEqual([
+				'type'
+			]);
 		});
 	});
 });

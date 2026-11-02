@@ -17,6 +17,10 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { gameEnds, suggestedWinner } from '#lib/core/rules/game-end.ts';
 import { infoPicker, isTruthful } from '#lib/core/rules/night-info.ts';
+import { changedCharacters } from '#lib/core/engine/index.ts';
+import { becomesOffer } from '#lib/core/rules/becomes.ts';
+import { withCharacterChangeSteps } from '#lib/core/rules/character-changes.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Scarlet Woman', () => {
@@ -95,6 +99,59 @@ describe('Scarlet Woman', () => {
 				after.characters
 			)!;
 			expect(isTruthful(picker, { seats: chose, yes: true })).toBe(true);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Scarlet_Woman#How_to_Run)', () => {
+		it('offers to turn the Scarlet Woman into the dead Demon', () => {
+			// How to Run: when the Demon dies with five or more players alive just before, the
+			// Scarlet Woman's token is swapped for the Demon that died.
+			const s = scenario(['imp', 'scarletwoman', 'baron', 'chef', 'monk']).execute('imp');
+			const token = { characterId: 'scarletwoman', label: 'Is The Demon' };
+			expect(becomesOffer(s.game, s.seat('scarletwoman'), token, s.characters)).toEqual({
+				into: 'demon',
+				seatId: s.seat('scarletwoman'),
+				characterId: 'imp'
+			});
+		});
+
+		it('leaves the Scarlet Woman as she is when only four were alive', () => {
+			// How to Run: with fewer than five players alive just before the Demon died, she does not
+			// take over and good wins.
+			const s = scenario(['imp', 'scarletwoman', 'baron', 'chef', 'monk'])
+				.dies('monk', 'imp')
+				.execute('imp');
+			const ends = gameEnds(s.game, s.characters);
+			expect(ends).toMatchObject([{ rule: 'demon-dead', holds: [] }]);
+			expect(suggestedWinner(ends)).toBe('good');
+		});
+
+		it('wakes the new Imp that night to show You Are and the Imp token', () => {
+			// How to Run: that night, wake the player who became the Imp and show them who they are now.
+			const s = scenario(['imp', 'scarletwoman', 'baron', 'chef', 'monk'])
+				.newDay()
+				.execute('imp')
+				.becomes('scarletwoman', 'imp');
+			const changes = changedCharacters(s.session.log, s.game);
+			expect(changes).toEqual([
+				{ seatId: s.seat('scarletwoman'), from: 'scarletwoman', characterId: 'imp' }
+			]);
+			const steps = withCharacterChangeSteps([], changes, s.characters);
+			expect(steps).toMatchObject([
+				{ changed: { seatId: s.seat('scarletwoman'), characterId: 'imp' } }
+			]);
+			expect(steps[0].reminder).toContain('*YOU ARE*');
+		});
+
+		it('keeps the Is The Demon reminder on the Scarlet Woman only', () => {
+			// How to Run: in other editions, mark the Scarlet Woman who became the Demon with the
+			// Is The Demon reminder.
+			const s = scenario(['imp', 'scarletwoman', 'baron', 'chef', 'monk']);
+			const token = { characterId: 'scarletwoman', label: 'Is The Demon' };
+			expect(reminderTargetMisses(s.game, token, s.seat('scarletwoman'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, token, s.seat('baron'), s.characters)).toEqual([
+				'not-self'
+			]);
 		});
 	});
 });
