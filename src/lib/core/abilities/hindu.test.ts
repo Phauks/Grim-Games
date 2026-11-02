@@ -14,7 +14,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import type { Command } from '#lib/core/engine/index.ts';
+import { decide, type Command } from '#lib/core/engine/index.ts';
 import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
 import { alignmentOf } from '#lib/core/model/selectors.ts';
 import { gameEnds, promptable } from '#lib/core/rules/game-end.ts';
@@ -233,6 +233,31 @@ describe('Hindu', () => {
 			expect(s.game.reincarnated).toEqual(s.seats.slice(0, 4));
 			const fifth = s.dies(4, 'demon');
 			expect(reincarnatedBy(fifth.game, fifth.seat(4), fifth.characters)).toBeUndefined();
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Hindu#How_to_Run)', () => {
+		it('offers a rebirth to a player who is executed, as to one killed at night', () => {
+			// Wiki: "If a player dies, they become a Traveller character of your choice."
+			const s = scenario(['princess', 'chef', 'empath', 'monk', 'poisoner', 'imp'])
+				.rule('hindu')
+				.newDay()
+				.execute('chef');
+			expect(reincarnatedBy(s.game, s.seat('chef'), s.characters)).toBe('hindu');
+		});
+
+		it('warns when a dead player is reborn as a character that is not a Traveller', () => {
+			// Wiki: "If a player dies, they become a Traveller character of your choice. Declare which
+			// Traveller they are."
+			const s = scenario(['princess', 'chef', 'empath', 'monk', 'poisoner', 'imp'])
+				.rule('hindu')
+				.dies('chef', 'demon');
+			const reborn = (characterId: string) =>
+				decide(s.game, { type: 'Reincarnate', seatId: s.seat('chef'), characterId }, s.ctx);
+			const soldier = reborn('soldier');
+			expect(soldier.ok && soldier.warnings.map((w) => w.code)).toEqual(['not-traveller']);
+			const gunslinger = reborn('gunslinger');
+			expect(gunslinger.ok && gunslinger.warnings).toEqual([]);
 		});
 	});
 });

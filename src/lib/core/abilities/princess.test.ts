@@ -17,6 +17,9 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
 import { reliability } from '#lib/core/rules/night-info.ts';
+import { nightKill } from '#lib/core/rules/night-kill.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { stoppedWaking } from '#lib/core/rules/woke-tonight.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Princess', () => {
@@ -84,6 +87,30 @@ describe('Princess', () => {
 			expect(nightStepAlerts(s.game, 'kazali', s.characters)).toContainEqual(
 				expect.objectContaining({ kind: 'no-kill', seatId: s.seat('kazali') })
 			);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Princess#How_to_Run)', () => {
+		const cast = ['princess', 'chef', 'empath', 'poisoner', 'imp'];
+
+		it("puts Doesn't Kill on the Demon, never on another player", () => {
+			// Wiki: "If the Princess nominates and executes a player, mark the Demon with the DOESN'T
+			// KILL reminder."
+			const s = scenario(cast).nominate('princess', 'chef').execute('chef');
+			const token = { characterId: 'princess', label: "Doesn't Kill" };
+			expect(reminderTargetMisses(s.game, token, s.seat('imp'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, token, s.seat('poisoner'), s.characters)).not.toEqual([]);
+			expect(reminderTargetMisses(s.game, token, s.seat('empath'), s.characters)).not.toEqual([]);
+		});
+
+		it('still wakes the Demon that night, who may kill nobody', () => {
+			// Wiki: "Tonight, if the Demon would wake to choose a player, wake them as normal. The
+			// Demon does not kill."
+			const s = scenario(cast).nominate('princess', 'chef').execute('chef');
+			expect(nightKill(s.game, s.seat('imp'), 'imp', s.characters)?.max).toBe(1);
+			const marked = s.reminder('imp', 'princess', "Doesn't Kill");
+			expect(stoppedWaking(marked.game, marked.seat('imp'), marked.characters)).toBe(false);
+			expect(nightKill(marked.game, marked.seat('imp'), 'imp', marked.characters)?.max).toBe(0);
 		});
 	});
 });

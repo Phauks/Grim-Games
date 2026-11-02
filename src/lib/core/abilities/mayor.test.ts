@@ -99,8 +99,10 @@ describe('Mayor', () => {
 
 	describe('How to Run (https://wiki.bloodontheclocktower.com/Mayor#How_to_Run)', () => {
 		it("flags that the Mayor's death may bounce on the Demon's night step", () => {
-			// How to Run: if the Mayor would die at night, the Storyteller picks whether they die or
-			// someone else dies in their place.
+			// Wiki: "During the night, if the Mayor would die, you choose if the Mayor actually dies, or
+			// if the Mayor remains alive and another character dies instead—put the Demon's DEAD
+			// reminder token by that character token instead of the Mayor, and put a shroud on that
+			// character token instead of the Mayor."
 			const s = scenario(['mayor', 'ravenkeeper', 'imp', 'chef', 'poisoner']);
 			expect(nightStepAlerts(s.game, 'imp', s.characters)).toContainEqual(
 				expect.objectContaining({
@@ -113,8 +115,10 @@ describe('Mayor', () => {
 		});
 
 		it("marks the player who dies instead with the Demon's Dead reminder", () => {
-			// How to Run: the Demon's Dead reminder and the shroud go on the other player, not the
-			// Mayor, who stays alive and unmarked.
+			// Wiki: "During the night, if the Mayor would die, you choose if the Mayor actually dies, or
+			// if the Mayor remains alive and another character dies instead—put the Demon's DEAD
+			// reminder token by that character token instead of the Mayor, and put a shroud on that
+			// character token instead of the Mayor."
 			const s = scenario(['mayor', 'ravenkeeper', 'imp', 'chef', 'poisoner'])
 				.reminder('ravenkeeper', 'imp', 'Dead')
 				.dies('ravenkeeper', 'demon');
@@ -126,7 +130,8 @@ describe('Mayor', () => {
 		});
 
 		it('gives no win at dusk on a day with an execution', () => {
-			// How to Run: good wins at dusk only with exactly three alive and nobody executed today.
+			// Wiki: "At dusk, if exactly three players are alive and no player was executed today,
+			// declare that the game ends and good wins."
 			const s = scenario(['mayor', 'chef', 'empath', 'baron', 'imp'])
 				.newDay()
 				.dies('chef', 'demon')
@@ -135,7 +140,8 @@ describe('Mayor', () => {
 		});
 
 		it('gives the win only once the day ends', () => {
-			// How to Run: the check is made at dusk.
+			// Wiki: "At dusk, if exactly three players are alive and no player was executed today,
+			// declare that the game ends and good wins."
 			const s = scenario(['mayor', 'chef', 'empath', 'baron', 'imp'])
 				.newDay()
 				.dies('chef', 'demon')

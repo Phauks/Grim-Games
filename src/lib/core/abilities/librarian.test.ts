@@ -84,8 +84,9 @@ describe('Librarian', () => {
 			s.reminder('saint', 'librarian', 'Outsider').reminder('imp', 'librarian', 'Wrong');
 
 		it('lists the Outsider and Wrong reminders to place before the first night', () => {
-			// How to Run: before night one, the Storyteller marks one Outsider with Outsider and a
-			// second player with Wrong.
+			// Wiki: "While preparing the first night, put the Librarian's OUTSIDER reminder token by any
+			// Outsider character token, and put the Librarian's WRONG reminder token by any other
+			// character token."
 			const s = scenario(cast);
 			expect(setupPrep('librarian', character.name, s.characters).map((p) => p.tokens)).toEqual([
 				['Outsider'],
@@ -94,7 +95,9 @@ describe('Librarian', () => {
 		});
 
 		it('puts the Outsider reminder only on a Outsider', () => {
-			// How to Run: the Outsider reminder goes beside a Outsider's character token.
+			// Wiki: "While preparing the first night, put the Librarian's OUTSIDER reminder token by any
+			// Outsider character token, and put the Librarian's WRONG reminder token by any other
+			// character token."
 			const s = scenario(cast);
 			const reminder = { characterId: 'librarian', label: 'Outsider' };
 			expect(reminderTargetMisses(s.game, reminder, s.seat('saint'), s.characters)).toEqual([]);
@@ -104,7 +107,9 @@ describe('Librarian', () => {
 		});
 
 		it('puts the Wrong reminder on any other seat, never the one marked Outsider', () => {
-			// How to Run: the Wrong reminder goes beside a different character token.
+			// Wiki: "While preparing the first night, put the Librarian's OUTSIDER reminder token by any
+			// Outsider character token, and put the Librarian's WRONG reminder token by any other
+			// character token."
 			const s = scenario(cast).reminder('saint', 'librarian', 'Outsider');
 			const reminder = { characterId: 'librarian', label: 'Wrong' };
 			expect(reminderTargetMisses(s.game, reminder, s.seat('imp'), s.characters)).toEqual([]);
@@ -114,8 +119,8 @@ describe('Librarian', () => {
 		});
 
 		it('on the first night, shows the two marked players and the marked character', () => {
-			// How to Run: on night one, point at the seats marked Outsider and Wrong, and show the
-			// character marked Outsider.
+			// Wiki: "During the first night, wake the Librarian and point to the players marked OUTSIDER
+			// and WRONG. Show the character token marked OUTSIDER to the Librarian."
 			const s = marked(scenario(cast));
 			const picker = infoPicker(s.game, s.seat('librarian'), 'librarian', s.characters, 'first')!;
 			expect(picker.seatCount).toBe(2);
@@ -128,7 +133,7 @@ describe('Librarian', () => {
 		});
 
 		it('lets the Storyteller remove both reminders once they are shown', () => {
-			// How to Run: the reminders come off whenever it suits the Storyteller.
+			// Wiki: "Remove the Librarian's reminder tokens when convenient."
 			const s = marked(scenario(cast)).newDay();
 			const ids = s.game.seating.flatMap((id) =>
 				s.game.seats[id].reminders

@@ -17,6 +17,7 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { infoPicker } from '#lib/core/rules/night-info.ts';
 import { analyseSetup } from '#lib/core/rules/setup.ts';
+import { decide } from '#lib/core/engine/index.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Pope', () => {
@@ -108,6 +109,35 @@ describe('Pope', () => {
 			expect(duplicates(7, [...tokens, 'pope'], s)).toEqual([]);
 			expect(duplicates(7, tokens, s)).not.toEqual([]);
 			expect(s.game.seats[s.seat(2)].characterId).toBe('general');
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Pope#How_to_Run)', () => {
+		it('allows a duplicated Outsider as well as a duplicated Townsfolk', () => {
+			// Wiki: "During setup, swap any Townsfolk tokens for duplicates of an in-play Townsfolk or
+			// Outsider character token. You may do this more than once."
+			const s = scenario(['empath', 'imp', 'chef', 'saint', 'poisoner']);
+			const ids = ['empath', 'empath', 'chef', 'saint', 'saint', 'saint', 'poisoner', 'imp'];
+			const duplicates = (extra: string[]) =>
+				analyseSetup({ players: 8, inPlay: [...ids, ...extra].map((id) => s.characters.get(id)!) })
+					.warnings.filter((w) => w.code === 'duplicate')
+					.flatMap((w) => w.characters ?? []);
+			expect(duplicates([])).toEqual(['empath', 'saint']);
+			expect(duplicates(['pope'])).toEqual([]);
+		});
+
+		it.fails('lets the Demon be given duplicated in-play good characters as bluffs', () => {
+			// Wiki: "During the DEMON INFO step, you may give the Demon one, two, or three of these
+			// duplicate character tokens as bluffs."
+			// Waits on the engine (unplanned): Set bluffs warns that a bluff is in play even when the
+			// Pope makes it a duplicate the Demon may be given.
+			const s = scenario(['empath', 'empath', 'chef', 'saint', 'poisoner', 'imp']).rule('pope');
+			const result = decide(
+				s.game,
+				{ type: 'SetBluffs', set: 0, characterIds: ['empath', 'chef', 'saint'] },
+				s.ctx
+			);
+			expect(result.ok && result.warnings.map((w) => w.code)).not.toContain('bluff-in-play');
 		});
 	});
 });

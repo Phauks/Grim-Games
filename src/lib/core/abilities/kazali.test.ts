@@ -18,6 +18,12 @@ import { committedCharacter, nightSheetPresence } from '#lib/core/testing/commit
 import { alignmentOf } from '#lib/core/model/selectors.ts';
 import { changeableSeats, characterChanger, minionsLeft } from '#lib/core/rules/becomes.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
+import { rulesOf } from '#lib/core/data/rules/index.ts';
+import { filledInfoToken } from '#lib/core/rules/info-token-characters.ts';
+import { nightKill } from '#lib/core/rules/night-kill.ts';
+import { nightTextPlain, nightTextSegments, placeholdersFor } from '#lib/core/rules/night-text.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { analyseSetup } from '#lib/core/rules/setup.ts';
 
 describe('Kazali', () => {
 	const character = committedCharacter('kazali');
@@ -78,6 +84,60 @@ describe('Kazali', () => {
 			expect(alignmentOf(two.game, two.seat('empath'))).toBe('evil');
 			expect(minionsLeft(two.game, two.characters)).toBe(0);
 			expect(characterChanger(two.game, 'kazali', two.characters)).toBeUndefined();
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Kazali#How_to_Run)', () => {
+		const cast = ['kazali', 'chef', 'empath', 'monk', 'mayor', 'saint', 'soldier'];
+
+		it('deals no Minions and lets the Outsider count change', () => {
+			// Wiki: "While setting up the game, remove all Minion tokens and add Townsfolk or Outsider
+			// tokens."
+			const s = scenario(cast);
+			const result = analyseSetup({
+				players: 7,
+				inPlay: cast.map((id) => s.characters.get(id)!)
+			});
+			expect(result.expected.minion).toEqual([0]);
+			expect(result.expected.outsider).toEqual(expect.arrayContaining([0, 1, 2]));
+			expect(result.warnings).toEqual([]);
+		});
+
+		it('turns the chosen players into evil Minions not in play on the first night only', () => {
+			// Wiki: "During the first night, wake the Kazali. The Kazali points at a player and a Minion
+			// on the character sheet. Replace their old character token with the Minion token, show them
+			// the “You Are” info token then the Minion character token, and give a thumbs down. Repeat
+			// until the normal number of Minions exist. Put the Kazali to sleep."
+			const s = scenario(cast);
+			expect(rulesOf('kazali', s.characters)?.changesCharacter).toMatchObject({
+				types: ['minion'],
+				notInPlay: true,
+				alignment: 'evil',
+				firstNight: true
+			});
+			expect(characterChanger(s.game, 'kazali', s.characters)).toBe(s.seat('kazali'));
+			expect(filledInfoToken(character, 'you-are', 1)).toBeDefined();
+			const later = s.newDay();
+			expect(characterChanger(later.game, 'kazali', later.characters)).toBeUndefined();
+		});
+
+		it('kills the player the Kazali points at on each night after the first', () => {
+			// Wiki: "Each night except the first, wake the Kazali. They point at any player. That player
+			// dies."
+			const placeholders = placeholdersFor(character, 'other');
+			const text = nightTextPlain(
+				nightTextSegments(character.otherNightReminder!, character, {
+					...(placeholders ? { placeholders } : {})
+				})
+			);
+			expect(text).toContain('[+Dead]');
+			const s = scenario(cast).newDay().dusk();
+			expect(nightKill(s.game, s.seat('kazali'), 'kazali', s.characters)).toEqual({
+				max: 1,
+				delayed: []
+			});
+			const dead = { characterId: 'kazali', label: 'Dead' };
+			expect(reminderTargetMisses(s.game, dead, s.seat('kazali'), s.characters)).toEqual([]);
 		});
 	});
 });

@@ -15,6 +15,9 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { nightAnswer, reminderTargets } from '#lib/core/rules/index.ts';
+import { dayClaim, guessLimit } from '#lib/core/rules/day-claims.ts';
+import { dayReminders, dayStateFromGame } from '#lib/core/rules/day-reminders.ts';
+import { wokeTonight } from '#lib/core/rules/woke-tonight.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
@@ -94,8 +97,8 @@ describe('Juggler', () => {
 		});
 	});
 
-	// How to Run: each correct guess gets a Correct reminder, and the Juggler learns how many
-	// Correct reminders there are. Trevor (2026-11-02): the reminder goes on the player guessed
+	// Wiki (How to Run): "For each correct guess, mark the Juggler with a CORRECT reminder."
+	// "Show them fingers (0, 1, 2, etc.) equaling the number of CORRECT reminders." Trevor (2026-11-02): the reminder goes on the player guessed
 	// right, which may be the Juggler themselves, the same player more than once, or nobody.
 	describe('Correct reminders', () => {
 		const cast = ['juggler', 'witch', 'nodashii', 'savant'];
@@ -162,6 +165,43 @@ describe('Juggler', () => {
 				guesses: [{ seatId: s.seat('witch'), characterId: 'savant' }]
 			}));
 			expect(answer(s)).toMatchObject({ kind: 'number', value: 0, because: [] });
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Juggler#How_to_Run)', () => {
+		const cast = ['juggler', 'witch', 'nodashii', 'savant', 'chef'];
+		const mayJuggle = (s: Scenario) =>
+			dayReminders(dayStateFromGame(s.game, (id) => s.characters.get(id), undefined, s.characters))
+				.groups.flatMap((g) => g.reminders)
+				.some((r) => r.characterId === 'juggler');
+
+		it('may make up to five guesses on the first day', () => {
+			// Wiki: "During the first day, if the Juggler declares that they are using their ability,
+			// then you enter the circle, holding the Grimoire. The Juggler can make up to five guesses,
+			// each of any one player and any one character."
+			const s = scenario(cast).newDay();
+			expect(mayJuggle(s)).toBe(true);
+			expect(dayClaim('juggler')).toBe('guesses');
+			expect(guessLimit('juggler')).toBe(5);
+		});
+
+		it.fails('is not offered guesses after the first day', () => {
+			// Wiki: "During the first day, if the Juggler declares that they are using their ability,
+			// then you enter the circle, holding the Grimoire."
+			// Waits on the engine (unplanned): the Juggler's day reminder shows on every day until a
+			// Correct reminder is placed, not only on the first day.
+			const s = scenario(cast).newDay().newDay();
+			expect(mayJuggle(s)).toBe(false);
+		});
+
+		it.fails('wakes only on the night after the first day', () => {
+			// Wiki: "Remove the CORRECT reminders and the Juggler’s night token when convenient."
+			// Waits on the engine (unplanned): the Juggler still wakes on every night after the first;
+			// nothing takes its night token off once it has learned its number.
+			const s = scenario(cast).newDay();
+			expect(wokeTonight(s.game, s.seat('juggler'), s.characters, 'other')).toBe(true);
+			const later = s.newDay();
+			expect(wokeTonight(later.game, later.seat('juggler'), later.characters, 'other')).toBe(false);
 		});
 	});
 });

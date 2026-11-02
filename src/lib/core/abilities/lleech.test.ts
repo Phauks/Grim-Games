@@ -15,9 +15,12 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { abilityState } from '#lib/core/rules/ability.ts';
+import { abilityState, protection } from '#lib/core/rules/ability.ts';
 import { gameEnds, suggestedWinner } from '#lib/core/rules/game-end.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
+import { nightKill } from '#lib/core/rules/night-kill.ts';
+import { nightTextPlain, nightTextSegments, placeholdersFor } from '#lib/core/rules/night-text.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 
 describe('Lleech', () => {
 	const character = committedCharacter('lleech');
@@ -77,6 +80,64 @@ describe('Lleech', () => {
 			expect(gameEnds(s.game, s.characters)).toEqual([]);
 			const executed = s.newDay().execute('lleech');
 			const ends = gameEnds(executed.game, executed.characters);
+			expect(ends).toMatchObject([{ rule: 'demon-dead', winner: 'good' }]);
+			expect(suggestedWinner(ends)).toBe('good');
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Lleech#How_to_Run)', () => {
+		const cast = ['noble', 'chef', 'empath', 'monk', 'poisoner', 'lleech'];
+		const textFor = (night: 'first' | 'other') => {
+			const placeholders = placeholdersFor(character, night);
+			const reminder =
+				night === 'first' ? character.firstNightReminder! : character.otherNightReminder!;
+			return nightTextPlain(
+				nightTextSegments(reminder, character, { ...(placeholders ? { placeholders } : {}) })
+			);
+		};
+
+		it('marks the chosen player Poisoned on the first night', () => {
+			// Wiki: "During the first night, wake the Lleech. They point at any player. That player is
+			// poisoned—mark them with the POISONED reminder. Put the Lleech to sleep."
+			expect(textFor('first')).toContain('[+Poisoned]');
+			expect(textFor('first')).not.toContain('[+Dead]');
+			const s = scenario(cast);
+			const poisoned = { characterId: 'lleech', label: 'Poisoned' };
+			expect(reminderTargetMisses(s.game, poisoned, s.seat('chef'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, poisoned, s.seat('poisoner'), s.characters)).toEqual([]);
+		});
+
+		it('kills the chosen player on each night after the first', () => {
+			// Wiki: "Each night except the first, wake the Lleech. They point at any player. That
+			// player dies—mark them with the DEAD reminder. Put the Lleech to sleep."
+			expect(textFor('other')).toContain('[+Dead]');
+			const s = scenario(cast).newDay().dusk();
+			expect(nightKill(s.game, s.seat('lleech'), 'lleech', s.characters)).toEqual({
+				max: 1,
+				delayed: []
+			});
+		});
+
+		it('keeps the Lleech from dying while the Poisoned player lives', () => {
+			// Wiki: "If the Lleech would die but the player marked with the Lleech’s POISONED reminder is
+			// alive, the Lleech does not die."
+			const s = scenario(cast).reminder('chef', 'lleech', 'Poisoned');
+			for (const by of ['execution', 'other'] as const) {
+				expect(protection(s.game, s.seat('lleech'), s.characters, by)).toMatchObject({
+					characterId: 'lleech'
+				});
+			}
+			const hostDead = s.dies('chef', 'execution');
+			expect(
+				protection(hostDead.game, hostDead.seat('lleech'), hostDead.characters, 'execution')
+			).toBeUndefined();
+		});
+
+		it('gives good the win when the Lleech kills the Poisoned player at night', () => {
+			// Wiki: "If the player marked with the Lleech’s POISONED reminder is dead, the Lleech dies
+			// and the good team wins."
+			const s = scenario(cast).reminder('chef', 'lleech', 'Poisoned').dies('chef', 'lleech');
+			const ends = gameEnds(s.game, s.characters);
 			expect(ends).toMatchObject([{ rule: 'demon-dead', winner: 'good' }]);
 			expect(suggestedWinner(ends)).toBe('good');
 		});

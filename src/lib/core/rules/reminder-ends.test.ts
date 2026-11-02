@@ -60,6 +60,22 @@ describe('reminderEnds', () => {
 		expect(night.dusk().session.log).toBe(night.session.log);
 	});
 
+	it('leaves every reminder when the Storyteller turns timed reminders off', () => {
+		// Settings › Take reminders off on time, off (Trevor, 2026-11-02): New day and Dusk change
+		// no tokens, the Flowergirl's swap included.
+		const s = scenario(['monk', 'chef', 'imp', 'flowergirl', 'poisoner'])
+			.reminder('chef', 'monk', 'Safe')
+			.poisoned('chef');
+		const day = s.do({ type: 'NewDay', keepReminders: true });
+		expect(labelsOf(day, 'monk')).toEqual(['Safe']);
+		expect(labelsOf(day, 'flowergirl')).toEqual(labelsOf(s, 'flowergirl'));
+		expect(day.game.pastDays).toHaveLength(s.game.pastDays.length + 1);
+		// With the setting on, the same dawn changes the Flowergirl's tokens.
+		expect(labelsOf(s.newDay(), 'flowergirl')).not.toEqual(labelsOf(s, 'flowergirl'));
+		const night = day.do({ type: 'Dusk', keepReminders: true });
+		expect(labelsOf(night, 'poisoner')).toEqual(['Poisoned']);
+	});
+
 	it('keeps a dawn token a jinx in play reads by day until dusk', () => {
 		// https://wiki.bloodontheclocktower.com/Riot#Related_Jinxes: Riot executing the player the
 		// Monk protects ends the game, so the Safe stays through the day.

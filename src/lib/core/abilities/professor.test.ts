@@ -14,11 +14,18 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import {
+	committedCharacter,
+	committedGameData,
+	nightSheetPresence
+} from '#lib/core/testing/committed-data.ts';
 import { abilityState } from '#lib/core/rules/ability.ts';
 import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 import { wakeConditionMet } from '#lib/core/rules/wakes-when.ts';
-import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
+import { engineGap, scenario, type Scenario } from '#lib/core/testing/scenario.ts';
+import { nightTextPlain, nightTextSegments, placeholdersFor } from '#lib/core/rules/night-text.ts';
+import { promptApplies, reminderPrompt } from '#lib/core/rules/reminder-prompts.ts';
+import { revivedAfterStep } from '#lib/core/rules/revived-tonight.ts';
 
 describe('Professor', () => {
 	const character = committedCharacter('professor');
@@ -106,6 +113,72 @@ describe('Professor', () => {
 					new Set()
 				)
 			).toBe(false);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Professor#How_to_Run)', () => {
+		const cast = ['professor', 'innkeeper', 'empath', 'chef', 'poisoner', 'imp'];
+
+		it('may choose a dead player, or no one, each night but the first', () => {
+			// Wiki: "Each night except the first, wake the Professor. The Professor either shakes their
+			// head no or points to a dead player. Put the Professor to sleep."
+			const s = scenario(cast).newDay();
+			const placeholders = placeholdersFor(character, 'other');
+			const text = nightTextPlain(
+				nightTextSegments(character.otherNightReminder!, character, {
+					...(placeholders ? { placeholders } : {})
+				})
+			);
+			expect(text).toContain('might choose a dead player');
+			expect(
+				wakeConditionMet(s.game, 'professor', s.seat('professor'), s.characters, new Set())
+			).toBe(true);
+		});
+
+		it('revives a dead Townsfolk marked Alive, who wakes only at their steps after the Professor', () => {
+			// Wiki: "If the Professor chose a dead Townsfolk, the chosen player becomes alive again—mark
+			// them with the Professor’s ALIVE reminder and remove their shroud. (They wake later
+			// tonight if they normally would."
+			expect(reminderPrompt('Alive', 'professor')).toBe('revive');
+			expect(promptApplies('revive', true)).toBe(true);
+			const s = scenario(cast)
+				.newDay()
+				.dies('innkeeper', 'imp')
+				.dies('empath', 'imp')
+				.reminder('innkeeper', 'professor', 'Alive')
+				.reminder('empath', 'professor', 'Alive')
+				.do(
+					(at) => ({ type: 'SetDead', seatId: at.seat('innkeeper'), dead: false }),
+					(at) => ({ type: 'SetDead', seatId: at.seat('empath'), dead: false })
+				);
+			const order = committedGameData().nightSheet.otherNight;
+			const revived = new Set([s.seat('innkeeper'), s.seat('empath')]);
+			const skips = (seat: 'innkeeper' | 'empath') =>
+				revivedAfterStep(s.game, s.seat(seat), seat, order, s.characters, revived);
+			expect(skips('innkeeper')).toBe(true);
+			expect(skips('empath')).toBe(false);
+		});
+
+		it.fails('wakes a revived first-night-only Townsfolk straight away', () => {
+			// Wiki: "If they wake on the first night only, they wake now to use their ability."
+			// Waits on the engine (unplanned): nothing adds a first-night step tonight for a player the
+			// Professor revives.
+			const s = scenario(cast)
+				.newDay()
+				.dies('chef', 'imp')
+				.reminder('chef', 'professor', 'Alive')
+				.do((at) => ({ type: 'SetDead', seatId: at.seat('chef'), dead: false }));
+			expect(s.game.seats[s.seat('chef')].dead).toBe(false);
+			engineGap('unplanned', "tonight's night order adds the revived Chef's first-night step");
+		});
+
+		it('marks the Professor No Ability once they have chosen', () => {
+			// Wiki: "The Professor loses their ability—mark them with the NO ABILITY reminder and
+			// remove their night token from the night sheet."
+			const s = scenario(cast).newDay();
+			const spent = { characterId: 'professor', label: 'No Ability' };
+			expect(reminderTargetMisses(s.game, spent, s.seat('professor'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, spent, s.seat('chef'), s.characters)).not.toEqual([]);
 		});
 	});
 });

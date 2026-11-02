@@ -12,7 +12,14 @@
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import { jinxRulesBetween, jinxSetupWarnings, scriptJinxes } from '#lib/core/rules/jinxes.ts';
+import { dispatch } from '#lib/core/engine/index.ts';
+import {
+	jinxForbidsBecoming,
+	jinxRulesBetween,
+	jinxSetupWarnings,
+	scriptJinxes
+} from '#lib/core/rules/jinxes.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Heretic + Pit-Hag jinx', () => {
 	const data = committedGameData();
@@ -42,5 +49,27 @@ describe('Heretic + Pit-Hag jinx', () => {
 		expect(jinxes.map((j) => j.exclusive)).toEqual([true]);
 		expect(jinxSetupWarnings(jinxes, ['heretic', 'pithag'])).toHaveLength(1);
 		expect(jinxSetupWarnings(jinxes, ['heretic', 'chef'])).toEqual([]);
+	});
+
+	// The Djinn's page: the Pit-Hag cannot create a Heretic. A change made anyway warns.
+	it('warns when a player becomes one while the other is in play, either way round', () => {
+		const s = scenario(['pithag', 'chef', 'empath', 'imp']);
+		const codes = (seat: string, characterId: string) => {
+			const result = dispatch(
+				s.session,
+				{ type: 'AssignCharacter', seatId: s.seat(seat), characterId },
+				s.ctx
+			);
+			return result.ok ? result.warnings.map((w) => w.code) : [];
+		};
+		expect(jinxForbidsBecoming(s.game, s.seat('chef'), 'heretic', s.characters)).toBe('pithag');
+		expect(codes('chef', 'heretic')).toContain('jinxed-character');
+		// The Pit-Hag's own seat becoming the Heretic leaves no Pit-Hag in play.
+		expect(jinxForbidsBecoming(s.game, s.seat('pithag'), 'heretic', s.characters)).toBeUndefined();
+		const heretic = scenario(['heretic', 'chef', 'empath', 'imp']);
+		expect(
+			jinxForbidsBecoming(heretic.game, heretic.seat('chef'), 'pithag', heretic.characters)
+		).toBe('heretic');
+		expect(jinxForbidsBecoming(s.game, s.seat('chef'), 'saint', s.characters)).toBeUndefined();
 	});
 });

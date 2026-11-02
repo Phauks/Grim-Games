@@ -77,7 +77,7 @@ describe('Ravenkeeper', () => {
 
 	describe('How to Run (https://wiki.bloodontheclocktower.com/Ravenkeeper#How_to_Run)', () => {
 		it("flags the Ravenkeeper's death trigger on the Demon's night step", () => {
-			// How to Run: the Ravenkeeper wakes on the night they die, so the kill is worth a reminder.
+			// Wiki: "If the Ravenkeeper died tonight, wake them."
 			const s = scenario(['ravenkeeper', 'empath', 'imp', 'monk', 'poisoner']);
 			expect(nightStepAlerts(s.game, 'imp', s.characters)).toContainEqual(
 				expect.objectContaining({ kind: 'on-death', seatId: s.seat('ravenkeeper') })
@@ -85,7 +85,7 @@ describe('Ravenkeeper', () => {
 		});
 
 		it('wakes after any death at night, but not after an execution', () => {
-			// How to Run: wake the Ravenkeeper only if they died tonight.
+			// Wiki: "If the Ravenkeeper died tonight, wake them."
 			const { characters } = scenario(['ravenkeeper', 'empath', 'imp', 'monk', 'godfather']);
 			const trigger = onDeathTrigger('ravenkeeper', characters)!;
 			expect(onDeathApplies(trigger, 'demon', characters)).toBe(true);
@@ -94,7 +94,8 @@ describe('Ravenkeeper', () => {
 		});
 
 		it('may choose any player, themselves included', () => {
-			// How to Run: the Ravenkeeper points at any player and is shown that player's character.
+			// Wiki: "They point at any player. Show the chosen player's character token to the
+			// Ravenkeeper."
 			const s = scenario(['ravenkeeper', 'empath', 'imp', 'monk', 'poisoner']);
 			const picker = infoPicker(s.game, s.seat('ravenkeeper'), 'ravenkeeper', s.characters)!;
 			expect(

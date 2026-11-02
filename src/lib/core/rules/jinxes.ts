@@ -16,8 +16,13 @@ import { pairKey } from '#lib/core/data/parse.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterRules } from '#lib/core/data/character-rules.ts';
 import type { Alignment, CharacterId, CharacterType, Jinx } from '#lib/core/data/types.ts';
-import { isOnScript, scriptCharacterIds } from '#lib/core/model/characters.ts';
-import type { Game } from '#lib/core/model/types.ts';
+import {
+	isOnScript,
+	scriptCharacterIds,
+	type CharacterLookup
+} from '#lib/core/model/characters.ts';
+import { trueCharacter } from '#lib/core/model/selectors.ts';
+import type { Game, SeatId } from '#lib/core/model/types.ts';
 
 type RulesLookup = ReadonlyMap<CharacterId, { rules?: CharacterRules }>;
 
@@ -279,5 +284,29 @@ export function jinxesOnStep<J extends Jinx>(
 	return jinxes.filter(
 		({ characters: [a, b] }) =>
 			(a === characterId && chosen.has(b)) || (b === characterId && chosen.has(a))
+	);
+}
+
+/**
+ * The character in play that a jinx says can't be in play alongside `characterId`, were
+ * `seatId` to become it (`exclusive`: the Pit-Hag cannot create a Heretic,
+ * https://wiki.bloodontheclocktower.com/Djinn): a true character on another seat, or a rule
+ * character. Undefined when nothing forbids it. Only one of an exclusive pair may be in play,
+ * so this holds wherever the change comes from; the Storyteller is warned, never stopped.
+ */
+export function jinxForbidsBecoming(
+	game: Game,
+	seatId: SeatId,
+	characterId: CharacterId,
+	characters: CharacterLookup
+): CharacterId | undefined {
+	const inPlay = new Set<CharacterId>(game.ruleCharacters);
+	for (const id of game.seating) {
+		if (id === seatId) continue;
+		const truly = trueCharacter(game, id, characters);
+		if (truly !== undefined) inPlay.add(truly);
+	}
+	return [...inPlay].find(
+		(other) => other !== characterId && jinxRulesBetween(characterId, other, characters)?.exclusive
 	);
 }

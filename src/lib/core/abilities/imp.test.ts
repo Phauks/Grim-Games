@@ -88,8 +88,9 @@ describe('Imp', () => {
 
 	describe('How to Run (https://wiki.bloodontheclocktower.com/Imp#How_to_Run)', () => {
 		it('places the Dead reminder at the Imp step on every night but the first', () => {
-			// How to Run: from the second night on, the Imp picks a player, who dies and gets the
-			// Dead reminder.
+			// Wiki: "Each night except the first, wake the Imp. The Imp points at any player. Put the
+			// Imp to sleep. The chosen player dies—put the Imp's DEAD reminder by the chosen player's
+			// character token in the Grimoire and put a shroud on it."
 			expect(placeholdersFor(character, 'first')).toBeUndefined();
 			expect(placeholdersFor(character, 'other')).toEqual([
 				{ tokens: [{ label: 'Dead', action: 'place' }] }
@@ -97,14 +98,16 @@ describe('Imp', () => {
 		});
 
 		it('lets the Imp choose any player, itself or a dead player included', () => {
-			// How to Run: the Imp may attack anyone, alive or dead, and itself.
+			// Wiki: "If the Imp attacks a dead player at night, let them do so. Whenever a character's
+			// ability says "choose a player," that means that any player—alive or dead—can be chosen."
 			const s = scenario(['imp', 'poisoner', 'chef', 'empath', 'monk']).dies('chef', 'execution');
 			const dead = { characterId: 'imp', label: 'Dead' };
 			expect(reminderTargets(s.game, dead, s.characters).flatMap((t) => t.misses)).toEqual([]);
 		});
 
 		it('passes the Imp only to an alive Minion when the Imp kills itself', () => {
-			// How to Run: if the Imp kills itself, an alive Minion becomes the Imp.
+			// Wiki: "If the Imp killed themself at night, choose an alive Minion and replace their
+			// character token with a spare Imp token, changing their character to the Imp."
 			const s = scenario(['imp', 'poisoner', 'spy', 'chef', 'empath', 'monk', 'saint'])
 				.dies('poisoner', 'execution')
 				.dies('imp', 'imp');
@@ -112,7 +115,8 @@ describe('Imp', () => {
 		});
 
 		it('wakes the new Imp to show You Are and the Imp token', () => {
-			// How to Run: the Minion who became the Imp is woken and shown who they are now.
+			// Wiki: "Wake the new Imp, show them the YOU ARE info token, then show them the Imp token.
+			// Put the new Imp to sleep."
 			const s = scenario(['imp', 'poisoner', 'chef', 'empath', 'monk'])
 				.newDay()
 				.dies('imp', 'imp')
@@ -126,7 +130,7 @@ describe('Imp', () => {
 		});
 
 		it("lists the Imp's victim among the night's deaths to announce at dawn", () => {
-			// How to Run: at dawn, say who died in the night, but not how.
+			// Wiki: "At dawn, declare which player died at night. (Do not say how they died.)"
 			const s = scenario(['imp', 'poisoner', 'chef', 'empath', 'monk'])
 				.newDay()
 				.execute('monk')

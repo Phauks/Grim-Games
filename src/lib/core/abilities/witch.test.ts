@@ -17,12 +17,15 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { abilityState } from '#lib/core/rules/ability.ts';
 import { dayReminders, dayStateFromGame } from '#lib/core/rules/day-reminders.ts';
+import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
 import { gameEnds, promptable } from '#lib/core/rules/game-end.ts';
 import {
 	characterNominationPrompts,
 	mayNominate,
 	todaysNominations
 } from '#lib/core/rules/nominations.ts';
+import { placeholdersFor } from '#lib/core/rules/night-text.ts';
+import { reminderTargets } from '#lib/core/rules/reminder-targets.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
 /** The players the Witch's day reminders name: the cursed player while the curse holds. */
@@ -155,6 +158,57 @@ describe('Witch', () => {
 			expect(todaysNominations(s.game)).toEqual([]);
 			expect(s.game.seats[s.seat('juggler')].dead).toBe(false);
 			expect(mayNominate(s.game, s.seat('juggler'), s.characters)).toBe(true);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Witch#How_to_Run)', () => {
+		it('places Cursed each night, on any player', () => {
+			// Wiki: "Each night, wake the Witch. They point at any player. Put the Witch to sleep. Mark the
+			// chosen player with the CURSED reminder."
+			const place = [{ tokens: [{ label: 'Cursed', action: 'place' }] }];
+			expect(placeholdersFor(character, 'first')).toEqual(place);
+			expect(placeholdersFor(character, 'other')).toEqual(place);
+			const s = scenario(['witch', 'sage', 'dreamer', 'imp', 'chef', 'monk']).dies('chef');
+			const cursed = { characterId: 'witch', label: 'Cursed' };
+			expect(reminderTargets(s.game, cursed, s.characters).flatMap((t) => t.misses)).toEqual([]);
+		});
+
+		it('only the cursed player dies for nominating, and the Witch is the cause', () => {
+			// Wiki: "The next day, if the player marked CURSED makes a nomination, immediately declare that
+			// they die."
+			const s = scenario(['witch', 'sage', 'dreamer', 'imp', 'chef', 'monk'])
+				.reminder('sage', 'witch', 'Cursed')
+				.newDay();
+			expect(curseKills(s, 'chef', 'imp')).toEqual([]);
+			const nominated = s.nominate('sage', 'imp');
+			expect(
+				validDeathCauses(nominated.game, nominated.seat('sage'), nominated.characters, {
+					day: true
+				})
+			).toContainEqual(expect.objectContaining({ cause: 'witch', flags: [] }));
+		});
+
+		it('other players may still nominate after the cursed player dies', () => {
+			// Wiki: "(Nominations continue as normal.)"
+			const s = scenario(['witch', 'sage', 'dreamer', 'imp', 'chef', 'monk'])
+				.reminder('sage', 'witch', 'Cursed')
+				.newDay()
+				.nominate('sage', 'imp')
+				.dies('sage', 'witch');
+			expect(mayNominate(s.game, s.seat('dreamer'), s.characters)).toBe(true);
+			expect(curseKills(s, 'dreamer', 'imp')).toEqual([]);
+		});
+
+		it.fails("last night's curse no longer kills on a later day", () => {
+			// Wiki: "The next day, if the player marked CURSED makes a nomination, immediately declare that
+			// they die."
+			// Waits on the engine (unplanned): Cursed has no reminderEnds, so a curse left from an earlier
+			// night still prompts a death on every later day.
+			const s = scenario(['witch', 'sage', 'dreamer', 'imp', 'chef', 'monk'])
+				.reminder('sage', 'witch', 'Cursed')
+				.newDay()
+				.newDay();
+			expect(curseKills(s, 'sage', 'imp')).toEqual([]);
 		});
 	});
 });

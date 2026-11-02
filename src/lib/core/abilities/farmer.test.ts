@@ -17,6 +17,7 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import { alignmentOf } from '#lib/core/model/selectors.ts';
 import { onDeathApplies, onDeathTrigger } from '#lib/core/rules/night-alerts.ts';
 import { passOnSeats } from '#lib/core/rules/becomes.ts';
+import { stepInfoCards } from '#lib/core/rules/info-token-characters.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
@@ -95,6 +96,23 @@ describe('Farmer', () => {
 		});
 	});
 
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Farmer#How_to_Run)', () => {
+		it('is set off by a death at night, not by an execution', () => {
+			// Wiki: "If the Farmer died tonight, wake an alive good player."
+			const { characters } = scenario(['farmer', 'chef', 'imp', 'poisoner', 'monk']);
+			const trigger = onDeathTrigger('farmer', characters)!;
+			expect(onDeathApplies(trigger, 'imp', characters)).toBe(true);
+			expect(onDeathApplies(trigger, 'execution', characters)).toBe(false);
+		});
+
+		it('shows the new Farmer You Are with the Farmer token', () => {
+			// Wiki: "Show them the YOU ARE info token and a Farmer character token, then put them to
+			// sleep."
+			const farmer = committedCharacter('farmer');
+			const cards = stepInfoCards(farmer, farmer.otherNightReminder);
+			expect(cards.find((c) => c.token.id === 'you-are')?.filled?.characterIds).toEqual(['farmer']);
+		});
+	});
 	describe('who may become the Farmer (its `passesOn` rule)', () => {
 		it('leaves out dead players and players already a Farmer', () => {
 			const s = scenario(['farmer', 'choirboy', 'heretic', 'imp', 'poisoner', 'chef'])

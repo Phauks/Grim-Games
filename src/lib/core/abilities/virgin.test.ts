@@ -92,8 +92,10 @@ describe('Virgin', () => {
 		const CAST = ['washerwoman', 'virgin', 'imp', 'chef', 'poisoner'];
 
 		it('executes a Townsfolk nominator by the Virgin and spends the Virgin', () => {
-			// How to Run: when a Townsfolk is the first to nominate the Virgin, that player is executed
-			// and dies at once, and the Virgin gets No Ability.
+			// Wiki: "If the first player to ever nominate the Virgin is a Townsfolk, immediately declare
+			// that the nominating player is executed. That player dies—put a shroud on their character
+			// token in the Grimoire. The Virgin loses their ability—put the Virgin's NO ABILITY reminder
+			// token by the Virgin token."
 			const s = scenario(CAST)
 				.nominate('washerwoman', 'virgin')
 				.do(
@@ -116,7 +118,8 @@ describe('Virgin', () => {
 		});
 
 		it('warns when anyone else is executed the same day', () => {
-			// How to Run: the nominations end there, so nobody else can be executed today.
+			// Wiki: "End the nomination process and proceed to the night phase. (No one else can be
+			// executed today.)"
 			const s = scenario(CAST)
 				.nominate('washerwoman', 'virgin')
 				.do((at) => ({ type: 'Execute', seatId: at.seat('washerwoman'), cause: 'virgin' }));
@@ -126,8 +129,9 @@ describe('Virgin', () => {
 		});
 
 		it("marks the Virgin's ability used on a non-Townsfolk nomination, naming the nominator", () => {
-			// How to Run: when the first nominator is not a Townsfolk, the vote goes on as usual, and
-			// the Virgin still gets No Ability.
+			// Wiki: "If the first player to ever nominate the Virgin is not a Townsfolk, continue the
+			// vote as normal. The Virgin loses their ability—put the Virgin's NO ABILITY reminder token
+			// by the Virgin token."
 			const s = scenario(CAST).nominate('poisoner', 'virgin');
 			const nomination = { nominator: s.seat('poisoner'), nominee: s.seat('virgin') };
 			expect(characterNominationPrompts(s.game, nomination, s.characters)).toEqual([]);
@@ -145,7 +149,8 @@ describe('Virgin', () => {
 		});
 
 		it('does not offer to execute a later Townsfolk nominator', () => {
-			// How to Run: only the first player ever to nominate the Virgin can set off the ability.
+			// Wiki: "If the first player to ever nominate the Virgin is a Townsfolk, immediately declare
+			// that the nominating player is executed."
 			const s = scenario(CAST).nominate('poisoner', 'virgin').newDay().nominate('chef', 'virgin');
 			const nomination = { nominator: s.seat('chef'), nominee: s.seat('virgin') };
 			expect(characterNominationPrompts(s.game, nomination, s.characters)).toEqual([]);

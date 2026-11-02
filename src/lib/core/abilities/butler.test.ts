@@ -87,7 +87,8 @@ describe('Butler', () => {
 
 	describe('How to Run (https://wiki.bloodontheclocktower.com/Butler#How_to_Run)', () => {
 		it("the Butler's step each night places Master on the chosen player", () => {
-			// How to Run: every night the Butler picks a player, who gets the Master reminder.
+			// Wiki: "Each night, wake the Butler. They point at any player. Mark this player with the
+			// MASTER reminder token. Put the Butler to sleep."
 			for (const night of ['first', 'other'] as const) {
 				const placeholders = placeholdersFor(character, night);
 				const source =
@@ -100,7 +101,7 @@ describe('Butler', () => {
 		});
 
 		it('allows Master on any player but the Butler, dead players included', () => {
-			// How to Run: the Butler points at any player to be their Master.
+			// Wiki: "They point at any player."
 			const s = scenario(['butler', 'chef', 'empath', 'monk', 'imp', 'poisoner']).dies('monk');
 			const master = { characterId: 'butler', label: 'Master' };
 			expect(reminderTargetMisses(s.game, master, s.seat('butler'), s.characters)).toEqual([
@@ -111,7 +112,7 @@ describe('Butler', () => {
 		});
 
 		it('counts an illegal Butler vote in the tally', () => {
-			// How to Run: if the Butler votes when they shouldn't, count the vote anyway.
+			// Wiki: "If the Butler accidentally votes illegally, tally the Butler's vote anyway."
 			const s = scenario(['butler', 'chef', 'empath', 'monk', 'imp', 'poisoner'])
 				.reminder('monk', 'butler', 'Master')
 				.nominate('chef', 'imp');

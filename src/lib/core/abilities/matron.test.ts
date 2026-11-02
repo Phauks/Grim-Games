@@ -16,8 +16,9 @@ import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { aliveNeighbours } from '#lib/core/model/selectors.ts';
 import { protection } from '#lib/core/rules/ability.ts';
-import { scenario } from '#lib/core/testing/scenario.ts';
+import { scenario, type Scenario, type SeatRef } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { warned } from '#lib/core/model/fixtures.test-support.ts';
 
 describe('Matron', () => {
 	const character = committedCharacter('matron');
@@ -87,6 +88,45 @@ describe('Matron', () => {
 			expect(aliveNeighbours(swapped.game, swapped.seat('imp'))).not.toContain(
 				swapped.seat('poisoner')
 			);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Matron#How_to_Run)', () => {
+		const cast = ['matron', 'chef', 'empath', 'monk', 'poisoner', 'imp'];
+
+		it('swaps two players with their character tokens and reminders', () => {
+			// Wiki: "Each day, the Matron may choose two players and declare that they swap seating
+			// positions. Ask them to do so. Swap their character tokens and any reminders they have in
+			// the Grimoire."
+			const s = scenario(cast).poisoned('chef').newDay();
+			const swapped = s.do((at) => ({
+				type: 'SwapSeats',
+				seatA: at.seat('chef'),
+				seatB: at.seat('monk')
+			}));
+			expect(swapped.game.seating.indexOf(swapped.seat('chef'))).toBe(
+				s.game.seating.indexOf(s.seat('monk'))
+			);
+			expect(swapped.game.seats[swapped.seat('chef')]).toMatchObject({
+				characterId: 'chef',
+				reminders: [{ characterId: 'poisoner', label: 'Poisoned' }]
+			});
+		});
+
+		it.fails('warns at a fourth swap in one day', () => {
+			// Wiki: "The Matron may do this up to three times, but all swaps happen one after the
+			// other."
+			// Waits on the engine (unplanned): nothing counts the day's seat swaps against the
+			// Matron's three.
+			const swap = (a: SeatRef, b: SeatRef) => (at: Scenario) => ({
+				type: 'SwapSeats' as const,
+				seatA: at.seat(a),
+				seatB: at.seat(b)
+			});
+			const s = scenario(cast)
+				.newDay()
+				.do(swap('chef', 'monk'), swap('empath', 'imp'), swap('chef', 'poisoner'));
+			expect(warned(s.session, s.ctx, swap('monk', 'empath')(s))).not.toEqual([]);
 		});
 	});
 });

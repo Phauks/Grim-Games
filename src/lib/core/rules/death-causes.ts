@@ -34,6 +34,7 @@ import { gainedBy, heldAbilitiesOf } from './gained-abilities.ts';
 import {
 	type DeathCauseRule,
 	type DeathKind,
+	type RegistersAs,
 	type VictimRule
 } from '#lib/core/data/death-cause-rules.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
@@ -134,10 +135,11 @@ export function reminderDeathCause(
 
 /**
  * Why a cause is offered with a caution rather than plainly:
- * - `registers`: only if the player registered falsely (a Recluse as the Demon for the
- *   Slayer, a Spy as a Townsfolk for the Virgin), by `source`'s ability; with `unless`, the
- *   other way round: unless they registered falsely (a Recluse as the Demon for the Golem,
- *   https://wiki.bloodontheclocktower.com/Golem);
+ * - `registers`: the death depends on what the player registers as, through `source`'s
+ *   ability: a Recluse as the Demon for the Slayer, a Spy as a Townsfolk for the Virgin, or
+ *   (`unless`: they truly are what the rule needs, but may register otherwise) a Recluse as
+ *   the Demon for the Golem (https://wiki.bloodontheclocktower.com/Golem). `as` is what the
+ *   rule needs;
  * - `impaired`: every player who has the character is drunk, poisoned or without ability
  *   now, so it did nothing unless that was not so when the player died;
  * - `unknown`: the player's alignment or character is not set, so the rule cannot be checked;
@@ -146,7 +148,14 @@ export function reminderDeathCause(
  *   Lady's Cannot Die, the Innkeeper's Safe), so it did nothing unless that was not so then.
  */
 export type DeathCauseFlag =
-	| { code: 'registers'; source: AbilitySource; wiki: string; unless?: true }
+	| {
+			code: 'registers';
+			source: AbilitySource;
+			wiki: string;
+			/** What the rule needs the player to register as. */
+			as: RegistersAs;
+			unless?: true;
+	  }
 	| { code: 'impaired'; seatIds: SeatId[] }
 	| { code: 'unknown' }
 	| { code: 'protected-by-day'; source: AbilitySource }
@@ -276,7 +285,14 @@ export function validDeathCauses(
 			if (verdict === 'falsely' || verdict === 'unless-falsely') {
 				const reg = regs.find((r) => r.seatId === seatId);
 				const unless = verdict === 'unless-falsely' ? { unless: true as const } : {};
-				if (reg) flags.push({ code: 'registers', source: reg.source, wiki: reg.wiki, ...unless });
+				if (reg)
+					flags.push({
+						code: 'registers',
+						source: reg.source,
+						wiki: reg.wiki,
+						as: rule.as,
+						...unless
+					});
 			}
 		}
 		if (
@@ -355,7 +371,7 @@ export function carriesDemonToken(
 function registersAs(
 	game: Game,
 	seatId: SeatId,
-	as: 'demon' | 'not-demon' | 'good' | 'townsfolk',
+	as: RegistersAs,
 	worlds: readonly RegistrationWorld[],
 	characters: CharacterLookup
 ): 'truly' | 'unless-falsely' | 'falsely' | 'never' | 'unknown' {

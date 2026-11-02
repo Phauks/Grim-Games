@@ -14,7 +14,13 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import {
+	committedCharacter,
+	committedGameData,
+	nightSheetPresence
+} from '#lib/core/testing/committed-data.ts';
+import { dayReminders, dayStateFromGame, renderReminder } from '#lib/core/rules/day-reminders.ts';
+import { nightOrder } from '#lib/core/rules/night-order.ts';
 import { warned } from '#lib/core/model/fixtures.test-support.ts';
 import { executionSavers, protection } from '#lib/core/rules/ability.ts';
 import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
@@ -91,6 +97,43 @@ describe('Vizier', () => {
 			const day = s.nominate('chef', 'vizier').execute('vizier');
 			expect(day.game.seats[s.seat('vizier')].dead).toBe(false);
 			expect(protection(day.game, s.seat('vizier'), day.characters, 'demon')).toBeUndefined();
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Vizier#How_to_Run)', () => {
+		it('announces the Vizier after dawn on the first night', () => {
+			// Wiki: "When the first night has ended, declare that the Vizier is in play, and which player
+			// it is."
+			const data = committedGameData();
+			const inPlay = ['vizier', 'chef', 'empath', 'poisoner', 'imp'].map((id) =>
+				data.byId.get(id)!
+			);
+			const steps = nightOrder({
+				night: 'first',
+				sheet: data.nightSheet,
+				inPlay,
+				players: 5
+			}).steps;
+			const vizier = steps.find((step) => step.id === 'vizier');
+			expect(vizier).toMatchObject({ afterDawn: true });
+			expect(steps.indexOf(vizier!)).toBeGreaterThan(steps.findIndex((step) => step.id === 'dawn'));
+		});
+
+		it('reminds the Storyteller by day that everyone knows who the Vizier is', () => {
+			// Wiki: "When the first night has ended, declare that the Vizier is in play, and which player
+			// it is."
+			const s = scenario(['vizier', 'chef', 'empath', 'poisoner', 'imp']).newDay();
+			const reminders = dayReminders(
+				dayStateFromGame(s.game, (id) => s.characters.get(id), undefined, s.characters)
+			).groups.flatMap((g) =>
+				g.reminders
+					.filter((r) => r.characterId === 'vizier')
+					.map((r) => ({ group: g.group, text: renderReminder(r.segments) }))
+			);
+			expect(reminders).toContainEqual({
+				group: 'announcement',
+				text: expect.stringMatching(/known to all/)
+			});
 		});
 	});
 });

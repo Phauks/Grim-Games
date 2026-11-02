@@ -18,7 +18,9 @@ import { committedCharacter, nightSheetPresence } from '#lib/core/testing/commit
 import { executionSavers, protection } from '#lib/core/rules/ability.ts';
 import { dayUseDeath, dayUseOf } from '#lib/core/rules/day-claims.ts';
 import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
-import { scenario } from '#lib/core/testing/scenario.ts';
+import { warned } from '#lib/core/model/fixtures.test-support.ts';
+import { nominatorsAfterExecution } from '#lib/core/rules/nominations.ts';
+import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Psychopath', () => {
 	const character = committedCharacter('psychopath');
@@ -90,6 +92,55 @@ describe('Psychopath', () => {
 			expect(day2.game.seats[s.seat('psychopath')].dead).toBe(false);
 			const day3 = day2.newDay().nominate('barber', 'psychopath').execute('psychopath');
 			expect(day3.game.seats[s.seat('psychopath')].dead).toBe(true);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Psychopath#How_to_Run)', () => {
+		const cast = ['psychopath', 'chef', 'empath', 'monk', 'imp'];
+		const kill = (s: Scenario) =>
+			({
+				type: 'UseAbility',
+				seatId: s.seat('psychopath'),
+				characterId: 'psychopath',
+				on: s.seat('monk')
+			}) as const;
+
+		it('kills the chosen player straight away, by the Psychopath', () => {
+			// Wiki: "Once per day, before you have called for nominations, the Psychopath may publicly
+			// choose a player. That player dies."
+			const s = scenario(cast);
+			expect(dayUseDeath(s.game, 'psychopath', s.seat('monk'), s.characters)).toBe('dies');
+			const causes = validDeathCauses(s.game, s.seat('monk'), s.characters, { day: true });
+			expect(causes.map((c) => c.cause)).toContain('psychopath');
+		});
+
+		it('may use the ability once each day, again the next day', () => {
+			// Wiki: "Once per day, before you have called for nominations, the Psychopath may publicly
+			// choose a player."
+			const s = scenario(cast);
+			const used = s.do(kill(s));
+			expect(warned(used.session, used.ctx, kill(used))).toContain('already-used');
+			const tomorrow = used.newDay();
+			expect(warned(tomorrow.session, tomorrow.ctx, kill(tomorrow))).toEqual([]);
+		});
+
+		it.fails('warns when the Psychopath kills after nominations were called', () => {
+			// Wiki: "Once per day, before you have called for nominations, the Psychopath may publicly
+			// choose a player."
+			// Waits on the engine (unplanned): no warning for a Psychopath kill logged after today's
+			// first nomination.
+			const s = scenario(cast).nominate('chef', 'empath');
+			expect(warned(s.session, s.ctx, kill(s))).not.toEqual([]);
+		});
+
+		it('ends the day once the Psychopath is executed, whether they die or not', () => {
+			// Wiki: "If the Psychopath draws or wins, they live. Either way, the day ends, since there is
+			// only one execution per day."
+			const s = scenario(cast)
+				.nominate('chef', 'psychopath')
+				.do((at) => ({ type: 'Execute', seatId: at.seat('psychopath'), savedBy: 'psychopath' }));
+			expect(s.game.seats[s.seat('psychopath')].dead).toBe(false);
+			expect(nominatorsAfterExecution(s.game, undefined, s.characters)).toEqual([]);
 		});
 	});
 });

@@ -20,6 +20,11 @@ import { evilLearns, prepValueCharacter, prepValueKey } from '#lib/core/rules/in
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { protection } from '#lib/core/rules/ability.ts';
+import { dayUseDeath } from '#lib/core/rules/day-claims.ts';
+import { stepInfoCards } from '#lib/core/rules/info-token-characters.ts';
+import { nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { setupPrep, setupReminders } from '#lib/core/rules/setup-reminders.ts';
 
 describe('Storm Catcher', () => {
 	const character = committedCharacter('stormcatcher');
@@ -101,6 +106,55 @@ describe('Storm Catcher', () => {
 			expect(evilLearns(s.game, 'stormcatcher', s.characters)).toEqual({
 				evil: [s.seat('poisoner'), s.seat('imp')]
 			});
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Storm_Catcher#How_to_Run)', () => {
+		it('asks at setup to name a good character, and marks only a good player', () => {
+			// Wiki: "Declare which good character is favoured by the Storm Catcher. If the favoured
+			// character is in play, mark them with the Storm Catcher’s SAFE reminder."
+			const s = scenario(['general', 'chef', 'saint', 'poisoner', 'imp']).rule('stormcatcher');
+			expect(setupPrep('stormcatcher', 'Storm Catcher', s.characters)).toContainEqual(
+				expect.objectContaining({ value: expect.objectContaining({ key: 'named' }) })
+			);
+			const prep = setupReminders(s.game, s.characters).filter(
+				(r) => r.characterId === 'stormcatcher'
+			);
+			expect(prep).toMatchObject([
+				{ label: 'Stormcaught', candidates: [s.seat('general'), s.seat('chef'), s.seat('saint')] }
+			]);
+			const token = { characterId: 'stormcatcher', label: 'Stormcaught' };
+			expect(reminderTargetMisses(s.game, token, s.seat('poisoner'), s.characters)).toEqual([
+				'type'
+			]);
+		});
+
+		it('shows the evil players the named character as not in play when no one is marked', () => {
+			// Wiki: "If no one is marked with the Storm Catcher’s SAFE reminder, show the evil player
+			// the THESE CHARACTERS ARE NOT IN PLAY info token and the good character token, then put
+			// the evil player to sleep."
+			const storm = committedCharacter('stormcatcher');
+			expect(
+				stepInfoCards(storm, storm.firstNightReminder, {
+					prepValues: { [prepValueKey('stormcatcher', 'named')]: 'empath' }
+				})
+			).toMatchObject([{ token: { id: 'not-in-play' }, filled: { characterIds: ['empath'] } }]);
+		});
+
+		it("flags the Demon's attack and a day kill on the marked player as blocked", () => {
+			// Wiki: "If they would die by other means, they remain alive."
+			const s = scenario(['general', 'chef', 'poisoner', 'imp'])
+				.rule('stormcatcher')
+				.rule('doomsayer')
+				.reminder('general', 'stormcatcher', 'Stormcaught');
+			expect(nightStepAlerts(s.game, 'imp', s.characters)).toContainEqual(
+				expect.objectContaining({
+					kind: 'protected',
+					seatId: s.seat('general'),
+					source: expect.objectContaining({ characterId: 'stormcatcher' })
+				})
+			);
+			expect(dayUseDeath(s.game, 'doomsayer', s.seat('general'), s.characters)).toBe('maybe');
 		});
 	});
 

@@ -14,6 +14,8 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
+import { warned } from '#lib/core/model/fixtures.test-support.ts';
+import { exileSavers } from '#lib/core/rules/protection.ts';
 import { exileThreshold } from '#lib/core/rules/voting.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
@@ -94,6 +96,40 @@ describe('Deviant', () => {
 				dead: true,
 				deathCause: 'exile'
 			});
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Deviant#How_to_Run)', () => {
+		const table = () =>
+			scenario(['deviant', 'chef', 'empath', 'gunslinger', 'witch', 'nodashii']).do(
+				(at) => ({ type: 'SetAlignment', seatId: at.seat('deviant'), alignment: 'good' }),
+				(at) => ({ type: 'SetAlignment', seatId: at.seat('gunslinger'), alignment: 'good' })
+			);
+
+		it('offers the Storyteller the Deviant to keep the exiled Deviant alive', () => {
+			// Wiki: "If the Deviant would be exiled, you may declare that the Deviant remains alive."
+			const s = table();
+			const saver = exileSavers(s.game, s.seat('deviant'), s.characters).find(
+				(x) => x.source.characterId === 'deviant'
+			);
+			expect(saver).toBeDefined();
+			expect(saver?.problem).toBeUndefined();
+		});
+
+		it('keeps only the Deviant alive, never another exiled Traveller', () => {
+			// Wiki: "If the Deviant would be exiled, you may declare that the Deviant remains alive."
+			const s = table();
+			const other = exileSavers(s.game, s.seat('gunslinger'), s.characters).filter(
+				(saver) => saver.source.characterId === 'deviant'
+			);
+			expect(other.every((saver) => saver.problem !== undefined)).toBe(true);
+			expect(
+				warned(s.session, s.ctx, {
+					type: 'Exile',
+					seatId: s.seat('gunslinger'),
+					savedBy: 'deviant'
+				})
+			).toContain('save-may-not-apply');
 		});
 	});
 });

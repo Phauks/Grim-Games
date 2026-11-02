@@ -19,6 +19,9 @@ import { abilityState } from '#lib/core/rules/ability.ts';
 import { filledInfoToken } from '#lib/core/rules/info-token-characters.ts';
 import { reliability } from '#lib/core/rules/night-info.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
+import { nightTextPlain, nightTextSegments, placeholdersFor } from '#lib/core/rules/night-text.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { wakeConditionMet } from '#lib/core/rules/wakes-when.ts';
 
 describe('Nightwatchman', () => {
 	const character = committedCharacter('nightwatchman');
@@ -81,6 +84,54 @@ describe('Nightwatchman', () => {
 			expect(
 				reliability(s.game, s.seat('nightwatchman'), 'nightwatchman', s.characters)
 			).toMatchObject({ mustBeFalse: true, falseBy: 'vortox', vortox: s.seat('vortox') });
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Nightwatchman#How_to_Run)', () => {
+		const cast = ['nightwatchman', 'chef', 'empath', 'poisoner', 'imp'];
+		const spent = { characterId: 'nightwatchman', label: 'No Ability' };
+
+		it('marks the Nightwatchman No Ability at its step once they choose a player', () => {
+			// Wiki: "The Nightwatchman loses their ability – mark them with a NO ABILITY reminder and
+			// remove their night token from the night sheet."
+			for (const night of ['first', 'other'] as const) {
+				const placeholders = placeholdersFor(character, night);
+				const reminder =
+					night === 'first' ? character.firstNightReminder! : character.otherNightReminder!;
+				const text = nightTextPlain(
+					nightTextSegments(reminder, character, { ...(placeholders ? { placeholders } : {}) })
+				);
+				expect(text).toContain('[+No Ability]');
+			}
+			const s = scenario(cast);
+			expect(reminderTargetMisses(s.game, spent, s.seat('nightwatchman'), s.characters)).toEqual(
+				[]
+			);
+			expect(reminderTargetMisses(s.game, spent, s.seat('chef'), s.characters)).toEqual([
+				'not-self'
+			]);
+		});
+
+		it.fails('stops waking the Nightwatchman once they are marked No Ability', () => {
+			// Wiki: "Each night, wake the Nightwatchman. The Nightwatchman either shakes their head or
+			// points at any player. Put the Nightwatchman to sleep."
+			// Wiki: "The Nightwatchman loses their ability – mark them with a NO ABILITY reminder and
+			// remove their night token from the night sheet."
+			// Waits on the engine (unplanned): the Nightwatchman has no wakes-when rule, so its step still wakes it after No Ability.
+			const s = scenario(cast);
+			expect(
+				wakeConditionMet(s.game, 'nightwatchman', s.seat('nightwatchman'), s.characters, new Set())
+			).toBe(true);
+			const used = s.reminder('nightwatchman', 'nightwatchman', 'No Ability');
+			expect(
+				wakeConditionMet(
+					used.game,
+					'nightwatchman',
+					used.seat('nightwatchman'),
+					used.characters,
+					new Set()
+				)
+			).toBe(false);
 		});
 	});
 });

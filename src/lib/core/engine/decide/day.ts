@@ -507,6 +507,8 @@ export const DAY_DECIDERS: Deciders<
 		// Each dawn the "no" token goes on and the "yes" one comes off; the mark itself stays
 		// unset until the Storyteller marks it (wiki How to Run:
 		// https://wiki.bloodontheclocktower.com/Flowergirl, /Town_Crier).
+		// All of a dawn's automatic token changes, which the Storyteller can turn off together.
+		if (command.keepReminders) return [{ type: 'DayStarted', at: ctx.now() }];
 		const tokens = marksInPlay(game, ctx.characters).flatMap((mark) =>
 			tokenEvents(game, mark, false, ctx)
 		);
@@ -514,7 +516,7 @@ export const DAY_DECIDERS: Deciders<
 	},
 
 	Dusk(game, command, ctx) {
-		return endingAt(game, 'dusk', ctx);
+		return command.keepReminders ? [] : endingAt(game, 'dusk', ctx);
 	}
 };
 

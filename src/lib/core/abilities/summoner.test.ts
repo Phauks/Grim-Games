@@ -17,6 +17,11 @@ import { gameEnds } from '#lib/core/rules/game-end.ts';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { changeableSeats, characterChanger } from '#lib/core/rules/becomes.ts';
 import { dayNumber, nightOrder } from '#lib/core/rules/night-order.ts';
+import { stepInfoCards } from '#lib/core/rules/info-token-characters.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { setupModifierFor } from '#lib/core/rules/setup-modifiers.ts';
+import { setupPrep } from '#lib/core/rules/setup-reminders.ts';
+import { rulesOf } from '#lib/core/data/rules/index.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import {
 	committedCharacter,
@@ -105,6 +110,71 @@ describe('Summoner', () => {
 			}).steps;
 			expect(steps.find((step) => step.id === 'leviathan')).toMatchObject({ afterDawn: true });
 			expect(dayNumber(s.newDay().game)).toBe(3);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Summoner#How_to_Run)', () => {
+		const cast = ['summoner', 'snitch', 'chef', 'empath', 'monk', 'mayor'];
+
+		it('deals no Demon, a Townsfolk in its place', () => {
+			// Wiki: "During the setup phase, remove the Demon and add a Townsfolk."
+			expect(setupModifierFor(character)).toMatchObject({
+				ops: [{ kind: 'set', type: 'demon', values: [0] }],
+				notes: ['Put a Townsfolk in the bag instead of the Demon.']
+			});
+		});
+
+		it('counts the nights with Night 1, Night 2 and Night 3 on the Summoner', () => {
+			// Wiki: "When preparing the first night, put the Summoner’s NIGHT 1 reminder by the
+			// Summoner. When preparing the second night, put the Summoner’s NIGHT 2 reminder by the
+			// Summoner. When preparing the third night, put the Summoner’s NIGHT 3 reminder by the
+			// Summoner."
+			expect(setupPrep('summoner', 'Summoner')[0]).toMatchObject({
+				tokens: ['Night 1'],
+				target: 'the Summoner'
+			});
+			const s = scenario(cast);
+			for (const label of ['Night 1', 'Night 2', 'Night 3']) {
+				const token = { characterId: 'summoner', label };
+				expect(reminderTargetMisses(s.game, token, s.seat('summoner'), s.characters)).toEqual([]);
+				expect(reminderTargetMisses(s.game, token, s.seat('chef'), s.characters)).toContain(
+					'not-self'
+				);
+			}
+		});
+
+		it('gives the Summoner the 3 bluffs on the first night', () => {
+			// Wiki: "During the first night, show the Summoner 3 not-in-play characters as bluffs."
+			expect(setupPrep('summoner', 'Summoner')[1]).toMatchObject({
+				text: 'Choose 3 not-in-play good characters as the Summoner’s bluffs'
+			});
+			expect(rulesOf('summoner')?.evilInfo?.notes?.demoninfo).toBe(
+				'there is no Demon yet; the Summoner gets the bluffs.'
+			);
+		});
+
+		it('makes an evil Demon only on the night the Summoner has Night 3', () => {
+			// Wiki: "During the night, if the Summoner has a NIGHT 3 reminder, wake the Summoner. They
+			// point at a player, and to a Demon icon on the character sheet."
+			const night2 = scenario(cast).newDay().reminder('summoner', 'summoner', 'Night 2');
+			expect(characterChanger(night2.game, 'summoner', night2.characters)).toBeUndefined();
+			expect(rulesOf('summoner')?.changesCharacter).toMatchObject({
+				types: ['demon'],
+				alignment: 'evil',
+				token: 'Night 3'
+			});
+		});
+
+		it('shows the chosen player the Demon they became', () => {
+			// Wiki: "Wake the chosen player. Show the YOU ARE info token, then the Demon token. Show the
+			// YOU ARE info token, then give a thumbs down. Replace their character token with the Demon
+			// token and put the new Demon to sleep."
+			const cards = stepInfoCards(character, character.otherNightReminder, {
+				changed: ['lleech']
+			});
+			expect(cards.find((card) => card.token.id === 'you-are')?.filled?.characterIds).toEqual([
+				'lleech'
+			]);
 		});
 	});
 });

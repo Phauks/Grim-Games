@@ -22,7 +22,9 @@ import { dayReminders, dayStateFromGame, renderReminder } from '#lib/core/rules/
 import { abilityState } from '#lib/core/rules/ability.ts';
 import { endCharacters } from '#lib/core/rules/end-reason.ts';
 import { gameEnds, promptable } from '#lib/core/rules/game-end.ts';
-import { scenario } from '#lib/core/testing/scenario.ts';
+import { dayClaim } from '#lib/core/rules/day-claims.ts';
+import { warned } from '#lib/core/model/fixtures.test-support.ts';
+import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
 /** This character's day reminders: their group and plain text. */
 const linesOf = (game: Game, characterId: string) =>
@@ -105,6 +107,44 @@ describe('Alsaahir', () => {
 			const sober = s.newDay();
 			expect(abilityState(sober.game, sober.seat('alsaahir'), sober.characters).works).toBe(true);
 			expect(promptable(gameEnds(sober.game, sober.characters))).toEqual([]);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Alsaahir#How_to_Run)', () => {
+		/** The Alsaahir's guess, logged in the day: each player paired with the character guessed. */
+		const guess =
+			(...pairs: [string, string][]) =>
+			(at: Scenario): Command => ({
+				type: 'DayNote',
+				characterId: 'alsaahir',
+				seatId: at.seat('alsaahir'),
+				text: '',
+				guesses: pairs.map(([seat, characterId]) => ({ seatId: at.seat(seat), characterId }))
+			});
+
+		it('logs the guess in the day as a claim of the Demon and Minions', () => {
+			// Wiki: "Each day, once only, if the Alsaahir declares that they wish to use their ability,
+			// prompt them to guess which player is the Demon, and which player(s) are Minions."
+			expect(dayClaim('alsaahir', characters)).toBe('guesses');
+		});
+
+		it.fails('warns of a second guess on the same day', () => {
+			// Wiki: "Each day, once only, if the Alsaahir declares that they wish to use their ability,
+			// prompt them to guess which player is the Demon, and which player(s) are Minions."
+			// Waits on the engine (unplanned): a second Alsaahir guess logged the same day is taken
+			// without a warning.
+			const s = scenario(['alsaahir', 'poisoner', 'chef', 'imp', 'empath', 'spy', 'monk'])
+				.newDay()
+				.do(guess(['chef', 'imp']));
+			expect(warned(s.session, s.ctx, guess(['empath', 'imp'])(s))).toContain('already-used');
+		});
+
+		it('a guess with the right Demon but a wrong Minion ends nothing', () => {
+			// Wiki: "If incorrect, nothing happens and the game continues."
+			const s = scenario(['alsaahir', 'poisoner', 'chef', 'imp', 'empath', 'spy', 'monk'])
+				.newDay()
+				.do(guess(['imp', 'imp'], ['poisoner', 'poisoner'], ['chef', 'spy']));
+			expect(promptable(gameEnds(s.game, s.characters))).toEqual([]);
 		});
 	});
 });

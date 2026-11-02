@@ -82,7 +82,8 @@ describe('Soldier', () => {
 
 	describe('How to Run (https://wiki.bloodontheclocktower.com/Soldier#How_to_Run)', () => {
 		it("flags the Soldier as protected on the Demon's night step", () => {
-			// How to Run: a Demon attack on the Soldier doesn't kill them, so no death is marked.
+			// Wiki: "During the night, if the Demon attacks the Soldier, the Soldier remains alive. (At
+			// dawn, declare that no one died at night.)"
 			const s = scenario(['soldier', 'chef', 'imp', 'monk', 'poisoner']);
 			expect(nightStepAlerts(s.game, 'imp', s.characters)).toContainEqual(
 				expect.objectContaining({
@@ -95,8 +96,8 @@ describe('Soldier', () => {
 		});
 
 		it("keeps the Soldier from the Demon's poisoning too", () => {
-			// How to Run: the Soldier is safe from every harmful effect of the Demon's ability, such as
-			// poisoning, not only death.
+			// Wiki: "The Soldier is also protected from all other harmful effects of the Demon's
+			// ability, such as poisoning or turning the Soldier evil."
 			const s = scenario(['soldier', 'chef', 'pukka', 'monk', 'poisoner']).reminder(
 				'soldier',
 				'pukka',

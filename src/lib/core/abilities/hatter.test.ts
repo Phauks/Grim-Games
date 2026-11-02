@@ -22,6 +22,9 @@ import { typeOf } from '#lib/core/model/selectors.ts';
 import { abilityState } from '#lib/core/rules/ability.ts';
 import { changeableSeats, characterChanger } from '#lib/core/rules/becomes.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
+import { filledInfoToken } from '#lib/core/rules/info-token-characters.ts';
+import { remindersEndingAt } from '#lib/core/rules/reminder-ends.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 
 describe('Hatter', () => {
 	const character = committedCharacter('hatter');
@@ -124,6 +127,61 @@ describe('Hatter', () => {
 					(r) => r.characterId === 'assassin' && r.label === 'No Ability'
 				)
 			).toBe(false);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Hatter#How_to_Run)', () => {
+		const cast = ['hatter', 'chef', 'empath', 'monk', 'poisoner', 'imp'];
+
+		it('puts Tea Party Tonight only on the Hatter', () => {
+			// Wiki: "If the Hatter dies, mark them with the TEA PARTY TONIGHT reminder."
+			const s = scenario(cast).dies('hatter', 'imp');
+			const party = { characterId: 'hatter', label: 'Tea Party Tonight' };
+			expect(reminderTargetMisses(s.game, party, s.seat('hatter'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, party, s.seat('chef'), s.characters)).toEqual([
+				'not-self'
+			]);
+		});
+
+		it.fails('holds a tea party only once the Hatter has died', () => {
+			// Wiki: "If the Hatter dies, mark them with the TEA PARTY TONIGHT reminder. During that
+			// night, wake the Minions and Demon."
+			// Waits on the engine (unplanned): characterChanger offers the Hatter's change while the Hatter is alive, as nothing ties it to their death or the Tea Party Tonight reminder.
+			const s = scenario(cast);
+			expect(characterChanger(s.game, 'hatter', s.characters)).toBeUndefined();
+			const party = s.dies('hatter', 'imp').reminder('hatter', 'hatter', 'Tea Party Tonight');
+			expect(characterChanger(party.game, 'hatter', party.characters)).toBe(party.seat('hatter'));
+		});
+
+		it.fails('shows the Minions and Demon the Hatter token on This character selected you', () => {
+			// Wiki: "Show them the THIS CHARACTER SELECTED YOU info token, then the Hatter token."
+			// Waits on the engine (unplanned): the Hatter's rules fill only the You are token, not This character selected you.
+			expect(filledInfoToken(character, 'selected-you', 1)).toMatchObject({
+				characterIds: ['hatter']
+			});
+		});
+
+		it('lets each Minion and the Demon change to a character of their own type', () => {
+			// Wiki: "Each player either shakes their head no or points to another character of the same
+			// type as their current character."
+			const s = scenario(cast).dies('hatter', 'imp');
+			expect(changeableSeats(s.game, 'hatter', s.characters)).toEqual([
+				s.seat('poisoner'),
+				s.seat('imp')
+			]);
+			const after = s.becomes('poisoner', 'spy').becomes('imp', 'nodashii');
+			expect(typeOf(after.game, after.seat('poisoner'), after.characters)).toBe('minion');
+			expect(typeOf(after.game, after.seat('imp'), after.characters)).toBe('demon');
+		});
+
+		it.fails('takes Tea Party Tonight off by the next day', () => {
+			// Wiki: "Put them to sleep. Remove the TEA PARTY TONIGHT reminder. Change each player to the
+			// character they chose."
+			// Waits on the engine (unplanned): Tea Party Tonight has no reminder end, so nothing takes it off after the night.
+			const s = scenario(cast)
+				.dies('hatter', 'imp')
+				.reminder('hatter', 'hatter', 'Tea Party Tonight');
+			expect(remindersEndingAt(s.game, 'dawn', s.characters)).toHaveLength(1);
 		});
 	});
 });

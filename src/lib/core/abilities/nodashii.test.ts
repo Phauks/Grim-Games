@@ -15,7 +15,11 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { abilityState } from '#lib/core/rules/ability.ts';
+import { nightKill } from '#lib/core/rules/night-kill.ts';
+import { placeholdersFor } from '#lib/core/rules/night-text.ts';
+import { neighbourFollows } from '#lib/core/rules/reminder-movement.ts';
 import { neighbourSeats, reminderTargets } from '#lib/core/rules/reminder-targets.ts';
+import { setupPrep } from '#lib/core/rules/setup-reminders.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
@@ -117,6 +121,52 @@ describe('No Dashii', () => {
 			expect(
 				abilityState(poisoned.game, poisoned.seat('mathematician'), poisoned.characters).works
 			).toBe(true);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/No_Dashii#How_to_Run)', () => {
+		it('setup puts Poisoned on the nearest Townsfolk each way round', () => {
+			// Wiki: "While preparing the first night, the two Townsfolk neighboring the No Dashii become
+			// poisoned - mark them with POISONED reminders."
+			expect(setupPrep('nodashii', 'No Dashii')).toMatchObject([
+				{ tokens: ['Poisoned'], target: 'the nearest Townsfolk anticlockwise' },
+				{ tokens: ['Poisoned'], target: 'the nearest Townsfolk clockwise' }
+			]);
+		});
+
+		it('a poisoned neighbour who stops being a Townsfolk passes Poisoned to the next Townsfolk', () => {
+			// Wiki: "If a Townsfolk poisoned by the No Dashii becomes a non-Townsfolk character, or the No
+			// Dashii turns into a different character, or if a new player becomes the No Dashii, the new
+			// neighbors of the No Dashii become poisoned, and the old neighbors become healthy - move the
+			// No Dashii’s POISONED reminders immediately if needed."
+			const s = scenario([
+				'nodashii',
+				'philosopher',
+				'mathematician',
+				'chef',
+				'seamstress',
+				'witch'
+			])
+				.reminder('philosopher', 'nodashii', 'Poisoned')
+				.reminder('seamstress', 'nodashii', 'Poisoned');
+			const after = s.becomes('philosopher', 'mutant');
+			const moves = neighbourFollows(s.game, after.game, after.characters);
+			expect(moves).toMatchObject([
+				{ fromSeatId: s.seat('philosopher'), toSeatId: s.seat('mathematician') }
+			]);
+		});
+
+		it('kills one player of its choice each night after the first, marked Dead', () => {
+			// Wiki: "Each night except the first, wake the No Dashii. They point at any player. That player
+			// dies - mark them with the DEAD reminder."
+			expect(placeholdersFor(character, 'first')).toBeUndefined();
+			expect(placeholdersFor(character, 'other')).toEqual([
+				{ tokens: [{ label: 'Dead', action: 'place' }] }
+			]);
+			const s = scenario(['nodashii', 'philosopher', 'mathematician', 'chef', 'witch']).newDay();
+			expect(nightKill(s.game, s.seat('nodashii'), 'nodashii', s.characters)?.max).toBe(1);
+			const dead = { characterId: 'nodashii', label: 'Dead' };
+			expect(reminderTargets(s.game, dead, s.characters).flatMap((t) => t.misses)).toEqual([]);
 		});
 	});
 });

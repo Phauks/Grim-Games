@@ -22,6 +22,10 @@ import { analyseSetup } from '#lib/core/rules/setup.ts';
 import { gameEnds, suggestedWinner } from '#lib/core/rules/game-end.ts';
 import { answerOptions, infoPicker, nightAnswer, reliability } from '#lib/core/rules/night-info.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
+import { isReplacedAfterDraw } from '#lib/core/rules/bag-characters.ts';
+import { filledInfoToken } from '#lib/core/rules/info-token-characters.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { setupPrep } from '#lib/core/rules/setup-reminders.ts';
 
 describe('Marionette', () => {
 	const character = committedCharacter('marionette');
@@ -55,8 +59,11 @@ describe('Marionette', () => {
 		});
 	});
 
-	// How to Run: with three Minions, one more Minion token is swapped for a Townsfolk, and on
-	// the first night a good player becomes that Minion (M22).
+	// With three Minions, one more Minion token is swapped for a Townsfolk, and on the first night
+	// a good player becomes that Minion (M22).
+	// Wiki (How to Run): "If there are three Minions in play, remove another Minion token and add
+	// another Townsfolk token. During the first night, swap a good player’s character token with a
+	// not-in-play Minion character token."
 	describe('with three Minions', () => {
 		const good = ['chef', 'empath', 'monk', 'mayor', 'washerwoman', 'librarian', 'investigator'];
 		const thirteen = [
@@ -151,6 +158,40 @@ describe('Marionette', () => {
 			const ends = gameEnds(s.game, s.characters);
 			expect(ends).toMatchObject([{ rule: 'demon-dead', winner: 'good' }]);
 			expect(suggestedWinner(ends)).toBe('good');
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Marionette#How_to_Run)', () => {
+		const cast = ['chef', 'imp', 'empath', 'monk', 'poisoner', 'mayor'];
+
+		it('puts a Townsfolk in the bag in place of the Marionette', () => {
+			// Wiki: "While setting up the game, before putting tokens in the bag, remove the Marionette
+			// token and add any Townsfolk token."
+			expect(isReplacedAfterDraw(character)).toBe(true);
+			const s = scenario(cast);
+			expect(setupPrep('marionette', character.name, s.characters)).toMatchObject([
+				{ tokens: ['Is The Marionette'] }
+			]);
+		});
+
+		it('puts Is The Marionette only on a good neighbour of the Demon', () => {
+			// Wiki: "During the first night, mark a good player neighboring the Demon with the IS THE
+			// MARIONETTE reminder."
+			const s = scenario(cast);
+			const token = { characterId: 'marionette', label: 'Is The Marionette' };
+			expect(reminderTargetMisses(s.game, token, s.seat('chef'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, token, s.seat('empath'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, token, s.seat('monk'), s.characters)).toEqual([
+				'neighbour'
+			]);
+		});
+
+		it('shows the Demon the Marionette token on This player is', () => {
+			// Wiki: "Wake the Demon. Point to the player marked IS THE MARIONETTE and show the
+			// Marionette character token. Put the Demon to sleep."
+			expect(filledInfoToken(character, 'this-player-is', 1)).toMatchObject({
+				characterIds: ['marionette']
+			});
 		});
 	});
 });

@@ -18,6 +18,9 @@ import { committedCharacter, nightSheetPresence } from '#lib/core/testing/commit
 import { answerOptions } from '#lib/core/rules/night-info/answers.ts';
 import { nightStepInfo } from '#lib/core/rules/night-info/steps.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
+import { dayReminders, dayStateFromGame, renderReminder } from '#lib/core/rules/day-reminders.ts';
+import { stepInfoCards } from '#lib/core/rules/info-token-characters.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 
 describe('Duchess', () => {
 	const character = committedCharacter('duchess');
@@ -118,6 +121,74 @@ describe('Duchess', () => {
 			expect(truth(s, 'mastermind')).toBe(2);
 			expect(truth(s, 'minstrel')).toBe(2);
 			expect(falseGiven(s, 'imp', 1)).toBe(true);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Duchess#How_to_Run)', () => {
+		const lines = (s: ReturnType<typeof scenario>) =>
+			dayReminders(
+				dayStateFromGame(s.game, (id) => s.characters.get(id), undefined, s.characters)
+			).groups.flatMap((g) =>
+				g.reminders
+					.filter((r) => r.characterId === 'duchess')
+					.map((r) => ({ group: g.group, text: renderReminder(r.segments) }))
+			);
+
+		it('says on the day panel that the Duchess is taking visitors', () => {
+			// Wiki: "Each day, any player may volunteer to visit the Duchess tonight."
+			const s = scenario(['chef', 'empath', 'monk', 'poisoner', 'imp']).rule('duchess');
+			expect(lines(s)).toEqual([{ group: 'day-ability', text: '[duchess] is taking visitors' }]);
+			expect(lines(s.newDay())).toHaveLength(1);
+		});
+
+		it('puts False Info on a third visitor, never on a player marked Visitor', () => {
+			// Wiki: "If exactly three players volunteer to visit the Duchess tonight, then mark two of
+			// them with a VISITOR reminder and one of them with a FALSE INFO reminder."
+			const s = scenario(['chef', 'empath', 'monk', 'poisoner', 'imp'])
+				.rule('duchess')
+				.reminder('chef', 'duchess', 'Visitor')
+				.reminder('empath', 'duchess', 'Visitor');
+			const falseInfo = { characterId: 'duchess', label: 'False Info' };
+			expect(reminderTargetMisses(s.game, falseInfo, s.seat('chef'), s.characters)).toEqual([
+				'not-with-label'
+			]);
+			expect(reminderTargetMisses(s.game, falseInfo, s.seat('imp'), s.characters)).toEqual([]);
+		});
+
+		it('wakes only the players marked Visitor or False Info, and shows them the Duchess', () => {
+			// Wiki: "At night, wake each player marked VISITOR or FALSE INFO one at a time. Show the
+			// woken player the Duchess token."
+			const s = scenario(['chef', 'empath', 'monk', 'poisoner', 'imp']).rule('duchess');
+			const woken = (at: ReturnType<typeof scenario>) => {
+				const info = nightStepInfo(
+					at.game,
+					{ id: 'duchess' },
+					at.characters,
+					undefined,
+					undefined,
+					'other'
+				);
+				return info?.kind === 'answer' ? info.answers.map((a) => a.seatId) : [];
+			};
+			expect(woken(s)).toEqual([]);
+			const marked = s
+				.reminder('chef', 'duchess', 'Visitor')
+				.reminder('monk', 'duchess', 'Visitor')
+				.reminder('imp', 'duchess', 'False Info');
+			expect(woken(marked)).toEqual([marked.seat('chef'), marked.seat('monk'), marked.seat('imp')]);
+			const duchess = s.characters.get('duchess')!;
+			expect(stepInfoCards(duchess, duchess.otherNightReminder)).toMatchObject([
+				{ token: { id: 'selected-you' }, filled: { characterIds: ['duchess'] } }
+			]);
+		});
+
+		it('takes the Duchess and its day reminder out of play when it is removed', () => {
+			// Wiki: "Remove the Duchess at any time, declaring when you do so."
+			const s = scenario(['chef', 'empath', 'monk', 'poisoner', 'imp'])
+				.rule('duchess')
+				.do({ type: 'RemoveRuleCharacter', characterId: 'duchess' });
+			expect(s.game.ruleCharacters).not.toContain('duchess');
+			expect(lines(s)).toEqual([]);
 		});
 	});
 });

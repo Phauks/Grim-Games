@@ -23,6 +23,7 @@ import {
 import { correctGuesses, dayUseOf } from '#lib/core/rules/day-claims.ts';
 import { endCharacters } from '#lib/core/rules/end-reason.ts';
 import { gameEnds } from '#lib/core/rules/game-end.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { shownAtMinionInfo, shownToSeats } from '#lib/core/rules/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
@@ -113,6 +114,38 @@ describe('Damsel', () => {
 		});
 	});
 
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Damsel#How_to_Run)', () => {
+		it('the Guess Used reminder goes on the Damsel only', () => {
+			// Wiki: "At any time during the game, if a Minion publicly guesses which player is the Damsel
+			// and is incorrect, mark the Damsel with the GUESS USED reminder. Future guesses by Minion
+			// players have no effect."
+			const s = scenario(['damsel', 'witch', 'imp', 'chef', 'monk']);
+			const token = { characterId: 'damsel', label: 'Guess Used' };
+			expect(reminderTargetMisses(s.game, token, s.seat('damsel'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, token, s.seat('chef'), s.characters)).toEqual([
+				'not-self'
+			]);
+		});
+
+		it("only a Minion's correct guess ends the game", () => {
+			// Wiki: "At any time during the game, if a Minion publicly guesses which player is the Damsel
+			// and is correct, the game ends. Declare that the evil team wins."
+			const s = scenario(['damsel', 'witch', 'imp', 'chef', 'monk']);
+			const guessedBy = (guesser: string) =>
+				s.do((at) => ({
+					type: 'UseAbility',
+					seatId: at.seat('damsel'),
+					characterId: 'damsel',
+					on: at.seat(guesser)
+				}));
+			const byDemon = guessedBy('imp');
+			expect(gameEnds(byDemon.game, byDemon.characters)).toEqual([]);
+			const byMinion = guessedBy('witch');
+			expect(gameEnds(byMinion.game, byMinion.characters)).toMatchObject([
+				{ rule: 'used-on-loses', winner: 'evil' }
+			]);
+		});
+	});
 	// "All Minions know a Damsel is in play": each Minion is shown the Damsel token, at Minion
 	// info (https://wiki.bloodontheclocktower.com/Damsel).
 	describe('Minions are shown the Damsel token', () => {

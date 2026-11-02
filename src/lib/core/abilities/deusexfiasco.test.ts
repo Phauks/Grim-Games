@@ -18,6 +18,8 @@ import { abilityState } from '#lib/core/rules/ability.ts';
 import { dayReminders, dayStateFromGame } from '#lib/core/rules/day-reminders.ts';
 import { gameEnds, promptable, suggestedWinner } from '#lib/core/rules/game-end.ts';
 import { infoPicker, isAllowed, isTruthful, nightAnswer } from '#lib/core/rules/night-info.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { setupPrep } from '#lib/core/rules/setup-reminders.ts';
 import { type Scenario, scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
@@ -197,6 +199,44 @@ describe('Deus ex Fiasco', () => {
 			const picker = infoPicker(s.game, s.seat('chambermaid'), 'chambermaid', s.characters)!;
 			expect(picker.options.some((o) => o.seats.includes(s.seat('chef')))).toBe(false);
 			expect(picker.options.some((o) => o.seats.includes(s.seat('soldier')))).toBe(true);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Deus_ex_Fiasco#How_to_Run)', () => {
+		const whoopsie = {
+			type: 'AddRuleReminder',
+			characterId: 'deusexfiasco',
+			reminder: { characterId: 'deusexfiasco', label: 'Whoopsie' }
+		} as const;
+
+		it.fails('reminds the Storyteller to declare it in play at the start', () => {
+			// Wiki: "At the start of the game, declare that the Deus ex Fiasco is in play. Ignore any
+			// groans and complaints from players."
+			// Waits on the engine (unplanned): its setup prep is empty, so nothing prompts the
+			// declaration before the game starts.
+			const s = scenario(['chef', 'imp', 'monk', 'empath', 'poisoner']).rule('deusexfiasco');
+			expect(setupPrep('deusexfiasco', 'Deus ex Fiasco', s.characters)).not.toEqual([]);
+		});
+
+		it('the Whoopsie reminder goes in the Grimoire, not on a player', () => {
+			// Wiki: "At any time, if you make a misteak, correct it as best you can, bending the rules if
+			// needed. Afterwards you declare that you have made a mistake. Add the WHOOPSIE reminder to
+			// the Grimoire."
+			const s = scenario(['chef', 'imp', 'monk', 'empath', 'poisoner']).rule('deusexfiasco');
+			const token = { characterId: 'deusexfiasco', label: 'Whoopsie' };
+			expect(reminderTargetMisses(s.game, token, s.seat('chef'), s.characters)).toEqual(['global']);
+			expect(s.do(whoopsie).game.ruleReminders?.deusexfiasco).toMatchObject([token]);
+		});
+
+		it('adds another Whoopsie for each mistake declared', () => {
+			// Wiki: "At any time, you may deliberately break the rules, then correct it. Afterwards,
+			// declare that you have made a mistkae. Add the WHOOPSIE reminder to the Grimoire."
+			const s = scenario(['chef', 'imp', 'monk', 'empath', 'poisoner'])
+				.rule('deusexfiasco')
+				.do(whoopsie)
+				.newDay()
+				.do(whoopsie);
+			expect(s.game.ruleReminders?.deusexfiasco).toHaveLength(2);
 		});
 	});
 });

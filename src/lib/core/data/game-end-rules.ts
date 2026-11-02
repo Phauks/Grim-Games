@@ -117,7 +117,11 @@ export interface HoldsGame {
  *   (the Heretic);
  * - `decidedByStoryteller`: the ability can decide the game through a public claim, guess or
  *   choice only the Storyteller sees, so End game offers it as a reason but nothing checks it
- *   (the Atheist, Cult Leader, Fiddler, Politician).
+ *   (the Atheist, Cult Leader, Fiddler);
+ * - `joinsWinner`: its player may win with whichever team wins, whatever their alignment and
+ *   even if dead, when the Storyteller judges their ability met (the Politician, most
+ *   responsible for their own team losing). End game offers it as a reason, and
+ *   `joinsWinners` lists who may win too; nothing checks it.
  */
 export interface GameEndRules {
 	ends?: readonly EndsGame[];
@@ -125,6 +129,7 @@ export interface GameEndRules {
 	aliveWhileDead?: { untilToken?: ReminderLabel; whileCarrierAlive?: ReminderLabel };
 	invertWinner?: boolean;
 	decidedByStoryteller?: boolean;
+	joinsWinner?: boolean;
 }
 
 /** The parameters each kind needs. */
@@ -218,7 +223,7 @@ export function readGameEnd(
 	}
 	checkKeys(
 		raw,
-		['ends', 'holds', 'aliveWhileDead', 'invertWinner', 'decidedByStoryteller'],
+		['ends', 'holds', 'aliveWhileDead', 'invertWinner', 'decidedByStoryteller', 'joinsWinner'],
 		path,
 		issues
 	);
@@ -272,7 +277,7 @@ export function readGameEnd(
 			};
 		}
 	}
-	for (const key of ['invertWinner', 'decidedByStoryteller'] as const) {
+	for (const key of ['invertWinner', 'decidedByStoryteller', 'joinsWinner'] as const) {
 		const value = readBoolean(raw, key, path, issues);
 		if (value !== undefined) out[key] = value;
 	}

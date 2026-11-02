@@ -16,6 +16,8 @@ import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night-info.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { setupPrep } from '#lib/core/rules/setup-reminders.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Steward', () => {
@@ -65,6 +67,31 @@ describe('Steward', () => {
 			const picker = infoPicker(s.game, s.seat('poppygrower'), 'steward', s.characters)!;
 			expect(isAllowed(picker, { seats: [s.seat('spy')] })).toBe(true);
 			expect(isAllowed(picker, { seats: [s.seat('imp')] })).toBe(false);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Steward#How_to_Run)', () => {
+		const cast = ['steward', 'undertaker', 'chef', 'poisoner', 'imp'];
+
+		it('prepares Know on a good player, never an evil one', () => {
+			// Wiki: "While preparing the first night, put the KNOW reminder by any good character token."
+			expect(setupPrep('steward', 'Steward')).toEqual([
+				expect.objectContaining({ tokens: ['Know'], target: 'a good player' })
+			]);
+			const s = scenario(cast);
+			const know = { characterId: 'steward', label: 'Know' };
+			expect(reminderTargetMisses(s.game, know, s.seat('chef'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, know, s.seat('poisoner'), s.characters)).not.toEqual([]);
+			expect(reminderTargetMisses(s.game, know, s.seat('imp'), s.characters)).not.toEqual([]);
+		});
+
+		it('shows the Steward the player marked Know', () => {
+			// Wiki: "During the first night, wake the Steward. Point to the player marked KNOW. Put the
+			// Steward to sleep."
+			const s = scenario(cast).reminder('chef', 'steward', 'Know');
+			const picker = infoPicker(s.game, s.seat('steward'), 'steward', s.characters)!;
+			expect(picker.reminders).toEqual({ each: 'Know' });
+			expect(isTruthful(picker, { seats: [s.seat('chef')] })).toBe(true);
 		});
 	});
 });

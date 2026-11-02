@@ -49,7 +49,7 @@ test('the Lord of Typhon makes its neighbours Minions, one more than usual', asy
 	const next = strip.getByRole('button', { name: 'Next step' });
 	for (let i = 0; i < 10 && (await name.textContent()) !== 'Lord of Typhon'; i++) await next.tap();
 	await expect(name).toHaveText('Lord of Typhon');
-	await strip.locator('button.step .name strong').tap();
+	await strip.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong').tap();
 	const step = page.getByRole('dialog', { name: 'Lord of Typhon' });
 	const change = step.getByTestId('change-character');
 

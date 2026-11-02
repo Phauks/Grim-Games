@@ -24,6 +24,9 @@ import {
 	withGainedSteps
 } from '#lib/core/rules/gained-abilities.ts';
 import { nightOrder } from '#lib/core/rules/night-order.ts';
+import { dayReminders, dayStateFromGame, renderReminder } from '#lib/core/rules/day-reminders.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { setupPrep } from '#lib/core/rules/setup-reminders.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import {
 	committedCharacter,
@@ -64,8 +67,9 @@ describe('Amnesiac', () => {
 		});
 	});
 
-	// How to Run: the Storyteller decides the ability at setup and treats the player as having
-	// it, waking them when it needs to.
+	// Wiki (How to Run): "During setup, decide what ability the Amnesiac player has. During the
+	// game, treat that player as if they had that ability, waking them when needed, prompting them
+	// to choose players when needed, or whatever else is appropriate."
 	describe('its ability, as the Storyteller decides it', () => {
 		it('is picked from its own seat only', () => {
 			const { game, seats } = cast(PLAYERS);
@@ -196,6 +200,42 @@ describe('Amnesiac', () => {
 			expect(empath).toHaveLength(1);
 			expect(empath[0].gained?.seatId).toBe(s.seat('amnesiac'));
 			expect(empath[0].reminder).toBe(s.characters.get('empath')?.otherNightReminder);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Amnesiac#How_to_Run)', () => {
+		it("asks the Storyteller at setup to decide and note the Amnesiac's ability", () => {
+			// Wiki: "During setup, decide what ability the Amnesiac player has."
+			expect(setupPrep('amnesiac', 'Amnesiac', characters)).toEqual([
+				expect.objectContaining({ tokens: ['?'], value: { key: 'ability', label: 'Ability' } })
+			]);
+		});
+
+		it('keeps the noted ability in the day reminders, to treat the player as having it', () => {
+			// Wiki: "During the game, treat that player as if they had that ability, waking them when
+			// needed, prompting them to choose players when needed, or whatever else is appropriate."
+			const s = scenario(PLAYERS, { characters }).do({
+				type: 'SetPrepValue',
+				key: 'amnesiac.ability',
+				value: 'Learns a number'
+			});
+			const lines = dayReminders(
+				dayStateFromGame(s.game, (id) => s.characters.get(id), undefined, s.characters)
+			).groups.flatMap((g) =>
+				g.reminders
+					.filter((r) => r.characterId === 'amnesiac')
+					.map((r) => renderReminder(r.segments))
+			);
+			expect(lines).toContain('[amnesiac · Ana] ability is (Learns a number)');
+		});
+
+		it('the ? reminders may go on any player', () => {
+			// Wiki: "Use the Amnesiac’s ? reminders if you need to."
+			const s = scenario(PLAYERS, { characters }).dies('monk', 'imp');
+			for (const seatId of s.game.seating)
+				expect(
+					reminderTargetMisses(s.game, { characterId: 'amnesiac', label: '?' }, seatId, characters)
+				).toEqual([]);
 		});
 	});
 });

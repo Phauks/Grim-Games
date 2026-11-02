@@ -93,4 +93,32 @@ describe('Oracle', () => {
 			});
 		});
 	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Oracle#How_to_Run)', () => {
+		it('learns a number on each night after the first', () => {
+			// Wiki: "Each night except the first, wake the Oracle. Show fingers (0, 1, 2, etc.) equaling
+			// the number of dead evil players."
+			const s = scenario(['oracle', 'chef', 'witch', 'cerenovus', 'fanggu'])
+				.newDay()
+				.dies('witch', 'fanggu');
+			expect(
+				nightAnswer(s.game, s.seat('oracle'), 'oracle', s.characters, undefined, 'other')
+			).toMatchObject({ kind: 'number', value: 1, because: [s.seat('witch')] });
+		});
+
+		it('counts dead players by alignment, not by character type', () => {
+			// Wiki: "Show fingers (0, 1, 2, etc.) equaling the number of dead evil players."
+			const s = scenario(['oracle', 'chef', 'empath', 'witch', 'fanggu'])
+				.becomes('chef', 'nodashii', 'good')
+				.do((at) => ({ type: 'SetAlignment', seatId: at.seat('empath'), alignment: 'evil' }))
+				.newDay()
+				.dies('chef', 'fanggu')
+				.dies('empath', 'fanggu');
+			expect(nightAnswer(s.game, s.seat('oracle'), 'oracle', s.characters)).toMatchObject({
+				kind: 'number',
+				value: 1,
+				because: [s.seat('empath')]
+			});
+		});
+	});
 });

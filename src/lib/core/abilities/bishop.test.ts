@@ -17,8 +17,9 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import { alignmentOf } from '#lib/core/model/selectors.ts';
 import { abilityState } from '#lib/core/rules/ability.ts';
 import { mayNominate, storytellerNominates } from '#lib/core/rules/nominations.ts';
-import { scenario } from '#lib/core/testing/scenario.ts';
+import { engineGap, scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 
 describe('Bishop', () => {
 	const character = committedCharacter('bishop');
@@ -83,5 +84,55 @@ describe('Bishop', () => {
 			expect(mayNominate(exiled.game, exiled.seat('chef'), exiled.characters)).toBe(true);
 			expect(storytellerNominates(exiled.game, exiled.characters)).toEqual([]);
 		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Bishop#How_to_Run)', () => {
+		const cast = ['bishop', 'minstrel', 'chef', 'empath', 'goon', 'poisoner', 'imp'];
+		const withBishop = (alignment: 'good' | 'evil') =>
+			scenario(cast).do((s) => ({ type: 'SetAlignment', seatId: s.seat('bishop'), alignment }));
+
+		it('puts Nominate Evil on a good Bishop and Nominate Good on an evil Bishop', () => {
+			// Wiki: "Each dawn, mark the good Bishop with their NOMINATE EVIL reminder, or mark the evil
+			// Bishop with their NOMINATE GOOD reminder."
+			const evil = { characterId: 'bishop', label: 'Nominate Evil' };
+			const good = { characterId: 'bishop', label: 'Nominate Good' };
+			const g = withBishop('good');
+			expect(reminderTargetMisses(g.game, evil, g.seat('bishop'), g.characters)).toEqual([]);
+			expect(reminderTargetMisses(g.game, good, g.seat('bishop'), g.characters)).toEqual([
+				'alignment'
+			]);
+			const e = withBishop('evil');
+			expect(reminderTargetMisses(e.game, good, e.seat('bishop'), e.characters)).toEqual([]);
+			expect(reminderTargetMisses(e.game, evil, e.seat('bishop'), e.characters)).toEqual([
+				'alignment'
+			]);
+		});
+
+		it('has the Storyteller nominate, and logs their nominations as usual', () => {
+			// Wiki: "During the nomination process for execution, the players cannot make
+			// nominations, but you can. (Voting happens as normal.)"
+			const s = withBishop('good').newDay();
+			expect(storytellerNominates(s.game, s.characters)).toEqual(['bishop']);
+			const nominated = s.nominate('chef', 'imp');
+			expect(nominated.game.today.entries.filter((e) => e.kind === 'nomination')).toHaveLength(1);
+			expect(storytellerNominates(nominated.game, nominated.characters)).toEqual(['bishop']);
+		});
+
+		it.fails(
+			"removes the Bishop's reminder once a player of the other alignment is nominated",
+			() => {
+				// Wiki: "When you nominate a player whose alignment is opposite the alignment of the
+				// Bishop, remove the Bishop’s reminder. You cannot end the nomination process if the
+				// Bishop is marked with their reminder."
+				// Waits on the engine (unplanned): nothing ties the Bishop's reminder to the alignment of
+				// the Storyteller's nominees, or warns at the end of nominations while it is still on.
+				const s = withBishop('good').newDay().reminder('bishop', 'bishop', 'Nominate Evil');
+				s.nominate('chef', 'imp');
+				engineGap(
+					'unplanned',
+					'the Bishop reminder comes off once an evil player is nominated, and ending nominations warns while it is on'
+				);
+			}
+		);
 	});
 });

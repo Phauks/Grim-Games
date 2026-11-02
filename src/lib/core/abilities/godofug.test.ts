@@ -20,6 +20,8 @@ import type { Game } from '#lib/core/model/types.ts';
 import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
 import { dayReminders, dayStateFromGame, renderReminder } from '#lib/core/rules/day-reminders.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
+import { setupReminders } from '#lib/core/rules/setup-reminders.ts';
+import { voteWorth } from '#lib/core/rules/vote-weights.ts';
 
 /** This character's day reminders: their group and plain text. */
 const linesOf = (game: Game, characterId: string) =>
@@ -97,6 +99,31 @@ describe('God of Ug', () => {
 				{ group: 'vote', text: expect.stringContaining('Ben') }
 			]);
 			expect(moved.game.seats[moved.seat('chef')].reminders).toEqual([]);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/God_of_Ug#How_to_Run)', () => {
+		it('asks at setup which player gets the Ug hat, from any seat', () => {
+			// Wiki: "When the game begins, give the Ug hat to any player."
+			const s = scenario(['chef', 'empath', 'monk', 'poisoner', 'imp']).rule('godofug');
+			const prep = setupReminders(s.game, s.characters).filter((r) => r.characterId === 'godofug');
+			expect(prep).toMatchObject([{ label: 'Hat', candidates: s.seats }]);
+		});
+
+		it("counts the hat wearer's vote as two, and follows the hat when it moves", () => {
+			// Wiki: "If the player wearing the Ug hat votes, it counts as two votes."
+			const s = scenario(['chef', 'empath', 'monk', 'poisoner', 'imp'])
+				.rule('godofug')
+				.reminder('chef', 'godofug', 'Hat');
+			expect(voteWorth(s.game, s.seat('chef'), s.characters)).toBe(2);
+			expect(voteWorth(s.game, s.seat('empath'), s.characters)).toBe(1);
+			const moved = s.do((at) => ({
+				type: 'MoveReminder',
+				reminderId: at.game.seats[at.seat('chef')].reminders[0].reminderId,
+				toSeatId: at.seat('empath')
+			}));
+			expect(voteWorth(moved.game, moved.seat('chef'), moved.characters)).toBe(1);
+			expect(voteWorth(moved.game, moved.seat('empath'), moved.characters)).toBe(2);
 		});
 	});
 });

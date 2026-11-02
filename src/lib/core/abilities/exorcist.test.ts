@@ -18,6 +18,10 @@ import { nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
 import { nightKill } from '#lib/core/rules/night-kill.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { stepInfoTokens } from '#lib/core/rules/info-token-characters.ts';
+import { nightTextPlain, nightTextSegments, placeholdersFor } from '#lib/core/rules/night-text.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { wokeTonight } from '#lib/core/rules/woke-tonight.ts';
 
 describe('Exorcist', () => {
 	const character = committedCharacter('exorcist');
@@ -107,6 +111,47 @@ describe('Exorcist', () => {
 			// Blocked, the Po chooses no one; its 3 Attacks stays, so it attacks three next time.
 			expect(nightKill(blocked.game, blocked.seat('po'), 'po', blocked.characters)?.max).toBe(0);
 			expect(nightKill(next.game, next.seat('po'), 'po', next.characters)?.max).toBe(3);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Exorcist#How_to_Run)', () => {
+		const cast = ['exorcist', 'chef', 'empath', 'assassin', 'shabaloth'];
+
+		it('marks the chosen player Chosen, any player', () => {
+			// Wiki: "Each night except the first, wake the Exorcist. They point at any player. Mark the
+			// chosen player’s character token with the CHOSEN reminder. Put the Exorcist to sleep."
+			const s = scenario(cast).newDay();
+			const chosen = { characterId: 'exorcist', label: 'Chosen' };
+			for (const seat of ['chef', 'assassin', 'shabaloth'] as const)
+				expect(reminderTargetMisses(s.game, chosen, s.seat(seat), s.characters), seat).toEqual([]);
+			const placeholders = placeholdersFor(character, 'other');
+			const text = nightTextPlain(
+				nightTextSegments(character.otherNightReminder!, character, {
+					...(placeholders ? { placeholders } : {})
+				})
+			);
+			expect(text).toContain('The Exorcist chooses a player. [+Chosen]');
+		});
+
+		it('shows the Demon the This Character Selected You info token', () => {
+			// Wiki: "If the Exorcist chose the Demon, wake the Demon. Show them the THIS CHARACTER
+			// SELECTED YOU info token and the Exorcist token, then point at the Exorcist player."
+			const tokens = stepInfoTokens(character, character.otherNightReminder);
+			expect(tokens.map((t) => t.id)).toContain('selected-you');
+		});
+
+		it('does not wake a chosen Demon for their own ability, but does wake another chosen player', () => {
+			// Wiki: "Put the Demon to sleep. Later tonight, do not wake the Demon."
+			const s = scenario(cast).newDay();
+			expect(wokeTonight(s.game, s.seat('shabaloth'), s.characters, 'other')).toBe(true);
+			const demon = s.reminder('shabaloth', 'exorcist', 'Chosen');
+			expect(wokeTonight(demon.game, demon.seat('shabaloth'), demon.characters, 'other')).toBe(
+				false
+			);
+			const minion = s.reminder('assassin', 'exorcist', 'Chosen');
+			expect(wokeTonight(minion.game, minion.seat('assassin'), minion.characters, 'other')).toBe(
+				true
+			);
 		});
 	});
 });

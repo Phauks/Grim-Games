@@ -15,6 +15,7 @@ import type { Alignment, CharacterId, ReminderLabel } from '#lib/core/data/index
 import { keepIconsOffline } from '#lib/features/offline/keep-offline.ts';
 import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 import { toast } from '#lib/ui/primitives/toaster.ts';
+import { preferences } from '#lib/ui/preferences.svelte.ts';
 import { reminderFitWarning, warningText } from './board.ts';
 import { reminderKey } from './reminders.ts';
 import {
@@ -40,6 +41,14 @@ import {
  * refusals as toasts (overlays, so the board never moves), plus the device-only seat
  * layout.
  */
+/**
+ * Dawn's and dusk's automatic reminder changes, all behind one Storyteller setting, "Take
+ * reminders off on time" (Trevor, 2026-11-02).
+ */
+function keepReminders(): { keepReminders?: true } {
+	return preferences.current.assistance.timedReminders ? {} : { keepReminders: true };
+}
+
 export class Grimoire {
 	layout = $state.raw<SeatLayout>(DEFAULT_SEAT_LAYOUT);
 	/** Someone else's board: the background its Storyteller shared (Grim view). */
@@ -125,8 +134,8 @@ export class Grimoire {
 		});
 		const tonight = ticking && this.nightDay === this.game.pastDays.length;
 		// Dusk takes off the reminders that last until dusk (the Poisoner's Poisoned).
-		if (tonight && step.id === 'dusk') this.run({ type: 'Dusk' });
-		if (startDay && tonight && step.id === 'dawn') this.run({ type: 'NewDay' });
+		if (tonight && step.id === 'dusk') this.run({ type: 'Dusk', ...keepReminders() });
+		if (startDay && tonight && step.id === 'dawn') this.run({ type: 'NewDay', ...keepReminders() });
 	}
 
 	/**
@@ -159,7 +168,7 @@ export class Grimoire {
 			return false;
 		}
 		if (this.nightDay !== this.game.pastDays.length) return false;
-		return this.run({ type: 'NewDay' });
+		return this.run({ type: 'NewDay', ...keepReminders() });
 	}
 
 	/** Where reminders were dropped, for reminders that stay where they are dropped. */

@@ -101,4 +101,28 @@ describe('Clockmaker', () => {
 			expect(picker.range?.truth).toBe(2);
 		});
 	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Clockmaker#How_to_Run)', () => {
+		it('is shown a number, and no players, on the first night', () => {
+			// Wiki: "During the first night, wake the Clockmaker. Show fingers (1, 2, etc.) equaling the
+			// distance in players from the Demon to the nearest Minion, starting with the player
+			// neighboring the Demon closer to that Minion."
+			const s = scenario(['clockmaker', 'fanggu', 'chef', 'pithag', 'empath', 'sweetheart']);
+			const picker = infoPicker(s.game, s.seat('clockmaker'), 'clockmaker', s.characters, 'first')!;
+			expect(picker.kind).toBe('number');
+			expect(picker.seatCount).toBe(0);
+			expect(picker.range?.truth).toBe(2);
+		});
+
+		it('counts from the Demon the shorter way round, anticlockwise too', () => {
+			// Wiki: "Show fingers (1, 2, etc.) equaling the distance in players from the Demon to the
+			// nearest Minion, starting with the player neighboring the Demon closer to that Minion."
+			// Seating order runs clockwise: the Witch sits two seats anticlockwise of the No Dashii and
+			// four seats clockwise.
+			const s = scenario(['nodashii', 'clockmaker', 'chef', 'empath', 'witch', 'sage']);
+			const picker = infoPicker(s.game, s.seat('clockmaker'), 'clockmaker', s.characters)!;
+			expect(picker.range?.truth).toBe(2);
+			expect(isTruthful(picker, { seats: [], number: 4 })).toBe(false);
+		});
+	});
 });

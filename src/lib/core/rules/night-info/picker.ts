@@ -13,7 +13,13 @@ import {
 	typeOf
 } from '#lib/core/model/selectors.ts';
 import type { AbnormalCause, Game, Reminder, SeatId } from '#lib/core/model/types.ts';
-import { type Registration, type RegistrationWorld, registrationWorlds } from '../ability.ts';
+import {
+	type Registration,
+	type RegistrationWorld,
+	registrationWorlds,
+	registrations
+} from '../ability.ts';
+import { pretendGame } from '../pretend.ts';
 import { causesOf } from '../night-deaths.ts';
 import type { Night } from '../night-order.ts';
 import { wokeTonight } from '../woke-tonight.ts';
@@ -106,6 +112,11 @@ export interface InfoPicker extends Reliability {
 	 * Storyteller may break the rules (`anyBy`: the Atheist).
 	 */
 	anyAllowed: boolean;
+	/**
+	 * The options that fit the Storyteller's pretend evil team (`pretendGame`, M26), as if those
+	 * players were their pretend characters; absent with no pretend team. Suggested first.
+	 */
+	pretend?: InfoOption[];
 	why: Why;
 	/**
 	 * Reminder tokens to place: `target` on the player who is the shown character (or the
@@ -506,6 +517,10 @@ export function infoPicker(
 		const n = optionsOf(w)[0]?.number;
 		return spec.kind === 'number' && n !== undefined ? { kind: 'number', value: n } : undefined;
 	};
+	const fake = pretendGame(game, characters);
+	const pretend = fake
+		? truthfulOptions(fake, seatId, characterId, spec, characters, registrations(fake, characters))
+		: undefined;
 	const truth = options.find((o) => !o.registered && o.number !== undefined)?.number;
 	const range: NumberRange | undefined =
 		spec.kind === 'number' && truth !== undefined
@@ -526,6 +541,7 @@ export function infoPicker(
 		options,
 		...(range ? { range } : {}),
 		anyAllowed: anyInfo(r) || r.anyBy !== undefined,
+		...(pretend ? { pretend } : {}),
 		why: {
 			facts: pickerFacts(game, seatId, characterId, spec, characters, worlds[0]),
 			alternatives: alternatives(game, all.registrations, relevant, worlds, numberIn, result)

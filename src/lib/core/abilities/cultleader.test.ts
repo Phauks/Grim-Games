@@ -19,7 +19,7 @@ import { abilityState } from '#lib/core/rules/ability.ts';
 import { neighbourAlignments } from '#lib/core/rules/becomes.ts';
 import { endCharacters } from '#lib/core/rules/end-reason.ts';
 import { gameEnds } from '#lib/core/rules/game-end.ts';
-import { scenario } from '#lib/core/testing/scenario.ts';
+import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
 describe('Cult Leader', () => {
@@ -112,6 +112,53 @@ describe('Cult Leader', () => {
 			expect(neighbourAlignments(s.game, 'cultleader', s.characters)?.alignments).toEqual(['evil']);
 			expect(abilityState(s.game, s.seat('cultleader'), s.characters).works).toBe(false);
 			expect(alignmentOf(s.game, s.seat('cultleader'))).toBe('good');
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Cult_Leader#How_to_Run)', () => {
+		const cultVote = (at: Scenario, passed: boolean) =>
+			at.do((s) => ({
+				type: 'UseAbility',
+				seatId: s.seat('cultleader'),
+				characterId: 'cultleader',
+				passed
+			}));
+
+		it('takes the alignment of its living neighbours, skipping the dead', () => {
+			// Wiki: "Each night, turn the Cult Leader character token right side up (if both alive
+			// neighbors are good) or upside down (if both alive neighbors are evil) or either (if one
+			// alive neighbor is good and the other alive neighbor is evil)."
+			const s = scenario(['cultleader', 'chef', 'monk', 'empath', 'imp']);
+			expect(neighbourAlignments(s.game, 'cultleader', s.characters)?.alignments).toEqual([
+				'evil',
+				'good'
+			]);
+			const dead = s.dies('imp', 'execution');
+			expect(neighbourAlignments(dead.game, 'cultleader', dead.characters)?.alignments).toEqual([
+				'good'
+			]);
+		});
+
+		it("a passed cult vote wins for the Cult Leader's team, evil too", () => {
+			// Wiki: "During the day, the Cult Leader may declare that they wish to use their ability. If
+			// so, enter the circle and run a vote in the same way that you would for an Exile. If all good
+			// players raise their hand, declare which team has won."
+			const evil = scenario(['cultleader', 'chef', 'imp', 'poisoner', 'empath', 'monk'])
+				.newDay()
+				.do((at) => ({ type: 'SetAlignment', seatId: at.seat('cultleader'), alignment: 'evil' }));
+			const joined = cultVote(evil, true);
+			expect(gameEnds(joined.game, joined.characters)).toMatchObject([
+				{ rule: 'cult-joined', winner: 'evil', characterId: 'cultleader' }
+			]);
+		});
+
+		it('a cult vote that not every good player joins ends nothing', () => {
+			// Wiki: "If not all good players raise their hand, nothing happens."
+			const s = cultVote(
+				scenario(['cultleader', 'chef', 'imp', 'poisoner', 'empath', 'monk']).newDay(),
+				false
+			);
+			expect(gameEnds(s.game, s.characters)).toEqual([]);
 		});
 	});
 });

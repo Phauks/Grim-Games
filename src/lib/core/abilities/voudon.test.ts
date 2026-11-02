@@ -141,4 +141,32 @@ describe('Voudon', () => {
 			expect(total(votes(gossip, 'voudon', 'fool', 'zombuul'))).toBe(3);
 		});
 	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Voudon#How_to_Run)', () => {
+		const cast = ['voudon', 'chef', 'empath', 'monk', 'fool', 'poisoner', 'imp'];
+
+		it('lets only the dead and the Voudon vote', () => {
+			// Wiki: "During votes for execution, only dead players and the Voudon may raise their hand
+			// to vote."
+			const s = scenario(cast).newDay().dies('fool', 'imp').nominate('chef', 'imp');
+			expect(voteWarnings(s, 'voudon', 'fool')).toEqual([]);
+			expect(voteWarnings(s, 'empath')).not.toEqual([]);
+		});
+
+		it('lets a dead player with no vote token vote, and spends no token', () => {
+			// Wiki: "The dead may vote even if they have no vote token, and voting does not use a vote
+			// token."
+			const s = scenario(cast)
+				.newDay()
+				.dies('fool', 'imp')
+				.dies('monk', 'imp')
+				.nominate('chef', 'imp');
+			const spent = votes(s, 'monk').nominate('empath', 'poisoner');
+			expect(spent.game.seats[spent.seat('monk')].ghostVoteUsed).toBe(false);
+			const noToken = spent.do((at) => ({ type: 'SpendGhostVote', seatId: at.seat('fool') }));
+			expect(noToken.game.seats[noToken.seat('fool')].ghostVoteUsed).toBe(true);
+			expect(voteWarnings(noToken, 'fool')).toEqual([]);
+			expect(total(votes(noToken, 'fool', 'monk'))).toBe(2);
+		});
+	});
 });

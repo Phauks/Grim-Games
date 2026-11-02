@@ -17,6 +17,8 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { abilityState } from '#lib/core/rules/ability.ts';
 import { becomesOffer, swapChoice } from '#lib/core/rules/becomes.ts';
+import { stepInfoCards } from '#lib/core/rules/info-token-characters.ts';
+import { placeholdersFor } from '#lib/core/rules/night-text.ts';
 import { trueCharacter } from '#lib/core/model/selectors.ts';
 import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 import { scenario, type Scenario, type SeatRef } from '#lib/core/testing/scenario.ts';
@@ -70,6 +72,9 @@ describe('Snake Charmer', () => {
 
 	describe('the Poisoned token (https://wiki.bloodontheclocktower.com/Snake_Charmer#How_to_Run)', () => {
 		it('fits only the living Demon, the player it goes on before the swap', () => {
+			// Wiki: "If that player is the Demon, the old Snake Charmer changes into the new (evil) Demon,
+			// and the old Demon changes into the new (good) Snake Charmer—swap the Snake Charmer token and
+			// the Demon’s token. The new Snake Charmer is poisoned - mark them with the POISONED reminder."
 			// The token marks the Demon the Snake Charmer chose; the swap then leaves it on
 			// the old Demon, now the Snake Charmer. Before the swap, the Snake Charmer's own
 			// seat is not where it goes.
@@ -86,6 +91,9 @@ describe('Snake Charmer', () => {
 		});
 
 		it('ends on the old Demon, who is the poisoned good Snake Charmer', () => {
+			// Wiki: "If that player is the Demon, the old Snake Charmer changes into the new (evil) Demon,
+			// and the old Demon changes into the new (good) Snake Charmer—swap the Snake Charmer token and
+			// the Demon’s token. The new Snake Charmer is poisoned - mark them with the POISONED reminder."
 			const s = charms(scenario(['snakecharmer', 'chef', 'imp']), 'imp');
 			const was = s.game.seats[s.seat('imp')];
 			expect(was).toMatchObject({ characterId: 'snakecharmer', alignment: 'good' });
@@ -100,6 +108,7 @@ describe('Snake Charmer', () => {
 		});
 
 		it('keeps poisoning for good: the ability says the old Demon is then poisoned', () => {
+			// Wiki: "The new Snake Charmer is poisoned - mark them with the POISONED reminder."
 			const s = charms(scenario(['snakecharmer', 'chef', 'imp']), 'imp').dies('snakecharmer');
 			expect(poisonedBy(s, 'imp')).toBe(true);
 		});
@@ -113,6 +122,9 @@ describe('Snake Charmer', () => {
 		};
 
 		it('swaps with the Demon chosen and poisons the old Demon, as one change', () => {
+			// Wiki: "If that player is the Demon, the old Snake Charmer changes into the new (evil) Demon,
+			// and the old Demon changes into the new (good) Snake Charmer—swap the Snake Charmer token and
+			// the Demon’s token. The new Snake Charmer is poisoned - mark them with the POISONED reminder."
 			const s = scenario(['snakecharmer', 'chef', 'imp']);
 			expect(swapChoice(s.game, 'snakecharmer', s.seat('imp'), s.characters)).toEqual({
 				seatId: s.seat('imp'),
@@ -136,6 +148,7 @@ describe('Snake Charmer', () => {
 		});
 
 		it('does nothing when the player chosen is not the Demon', () => {
+			// Wiki: "If that player is not the Demon, nothing happens. Put the Snake Charmer to sleep."
 			const s = scenario(['snakecharmer', 'chef', 'imp']);
 			expect(swapChoice(s.game, 'snakecharmer', s.seat('chef'), s.characters)).toBeUndefined();
 			expect(
@@ -144,6 +157,9 @@ describe('Snake Charmer', () => {
 		});
 
 		it('a Philosopher with the ability swaps too, and the Demon becomes a poisoned Philosopher', () => {
+			// Wiki: "If that player is the Demon, the old Snake Charmer changes into the new (evil) Demon,
+			// and the old Demon changes into the new (good) Snake Charmer—swap the Snake Charmer token and
+			// the Demon’s token. The new Snake Charmer is poisoned - mark them with the POISONED reminder."
 			// The ability's Philosopher case: the Philosopher's token is now the Snake Charmer.
 			const s = scenario(['philosopher', 'chef', 'imp'])
 				.becomes('philosopher', 'snakecharmer')
@@ -162,11 +178,17 @@ describe('Snake Charmer', () => {
 		});
 
 		it('a Drunk who thinks they are the Snake Charmer swaps with no one', () => {
+			// Wiki: "If that player is the Demon, the old Snake Charmer changes into the new (evil) Demon,
+			// and the old Demon changes into the new (good) Snake Charmer—swap the Snake Charmer token and
+			// the Demon’s token."
 			const s = scenario(['snakecharmer', 'chef', 'imp']).drunk('snakecharmer');
 			expect(swapChoice(s.game, 'snakecharmer', s.seat('imp'), s.characters)).toBeUndefined();
 		});
 
 		it("moves the No Dashii's poisoned neighbours to the new No Dashii's neighbours", () => {
+			// Wiki: "If that player is the Demon, the old Snake Charmer changes into the new (evil) Demon,
+			// and the old Demon changes into the new (good) Snake Charmer—swap the Snake Charmer token and
+			// the Demon’s token."
 			// https://wiki.bloodontheclocktower.com/No_Dashii: its two nearest Townsfolk are poisoned.
 			const s = scenario(['snakecharmer', 'chef', 'nodashii', 'monk', 'empath', 'mayor'])
 				.reminder('chef', 'nodashii', 'Poisoned')
@@ -178,6 +200,45 @@ describe('Snake Charmer', () => {
 				)
 			);
 			expect(poisoned.sort()).toEqual([after.seat('chef'), after.seat('mayor')].sort());
+		});
+
+		it('wakes on the first night and every other night to choose a player', () => {
+			// Wiki: "Each night, wake the Snake Charmer. They point at any player."
+			const place = [{ tokens: [{ label: 'Poisoned', action: 'place' }] }];
+			expect(placeholdersFor(character, 'first')).toEqual(place);
+			expect(placeholdersFor(character, 'other')).toEqual(place);
+		});
+
+		it('shows the new Demon their Demon, and the new Snake Charmer the Snake Charmer', () => {
+			// Wiki: "Wake the new Demon and show them the YOU ARE info token, a thumbs-down, the YOU ARE
+			// token, then the Demon’s token. (This shows they are now evil and the Demon.) Put the new
+			// Demon to sleep. Wake the new Snake Charmer and show them the YOU ARE info token, a
+			// thumbs-up, the YOU ARE info token, then the Snake Charmer token."
+			const s = scenario(['snakecharmer', 'chef', 'nodashii']);
+			const youAre = stepInfoCards(character, character.otherNightReminder, {
+				game: s.game,
+				characters: s.characters
+			}).filter((c) => c.token.id === 'you-are');
+			expect(youAre.map((c) => c.filled?.characterIds)).toEqual([['nodashii'], ['snakecharmer']]);
+		});
+
+		it('a good Demon chosen swaps alignments as they are: both stay good', () => {
+			// Wiki: "In the strange situation that the Snake Charmer is evil, or the Demon good, swap their
+			// alignments as appropriate."
+			const s = scenario(['snakecharmer', 'pithag', 'chef', 'monk']).becomes(
+				'chef',
+				'vortox',
+				'good'
+			);
+			const after = choose(s, 'chef');
+			expect(after.game.seats[after.seat('snakecharmer')]).toMatchObject({
+				characterId: 'vortox',
+				alignment: 'good'
+			});
+			expect(after.game.seats[after.seat('chef')]).toMatchObject({
+				characterId: 'snakecharmer',
+				alignment: 'good'
+			});
 		});
 	});
 

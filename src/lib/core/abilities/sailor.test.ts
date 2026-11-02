@@ -15,10 +15,12 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { protection } from '#lib/core/rules/ability.ts';
+import { abilityState, protection } from '#lib/core/rules/ability.ts';
 import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
 import { preventedDeaths } from '#lib/core/rules/prevented-deaths.ts';
+import { placeholdersFor } from '#lib/core/rules/night-text.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 
 describe('Sailor', () => {
 	const character = committedCharacter('sailor');
@@ -95,6 +97,44 @@ describe('Sailor', () => {
 			);
 			expect(protection(s.game, s.seat('sailor'), s.characters, 'execution')).toBeUndefined();
 			expect(s.newDay().execute('sailor').game.seats[s.seat('sailor')].dead).toBe(true);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Sailor#How_to_Run)', () => {
+		const cast = ['sailor', 'exorcist', 'chef', 'empath', 'poisoner', 'imp'];
+
+		it('marks the Sailor or the chosen player Drunk, on the first night and every other night', () => {
+			// Wiki: "Each night, wake the Sailor. They point at any player. Put the Sailor to sleep.
+			// Either the Sailor or this chosen player becomes drunk—mark them with the DRUNK reminder."
+			const s = scenario(cast);
+			const drunk = { characterId: 'sailor', label: 'Drunk' };
+			for (const seat of ['sailor', 'exorcist', 'imp'] as const)
+				expect(reminderTargetMisses(s.game, drunk, s.seat(seat), s.characters), seat).toEqual([]);
+			for (const night of ['first', 'other'] as const)
+				expect(placeholdersFor(character, night), night).toEqual([
+					{ tokens: [{ label: 'Drunk', action: 'place' }] }
+				]);
+			const chosen = s.reminder('exorcist', 'sailor', 'Drunk');
+			expect(
+				abilityState(chosen.game, chosen.seat('exorcist'), chosen.characters).impairments
+			).toMatchObject([{ reason: 'drunk', source: { characterId: 'sailor' } }]);
+		});
+
+		it('keeps a sober, healthy Sailor alive whatever would kill them, only the Sailor', () => {
+			// Wiki: "If the sober Sailor would die, the Sailor remains alive. If the sober Sailor is
+			// executed, declare that this player is executed but remains alive. (Do not say why.)"
+			const s = scenario(cast).reminder('exorcist', 'sailor', 'Drunk');
+			for (const by of ['demon', 'other', 'execution'] as const) {
+				expect(protection(s.game, s.seat('sailor'), s.characters, by), by).toMatchObject({
+					characterId: 'sailor',
+					seatId: s.seat('sailor')
+				});
+				expect(protection(s.game, s.seat('chef'), s.characters, by), by).toBeUndefined();
+			}
+			const poisoned = s.poisoned('sailor');
+			expect(
+				protection(poisoned.game, poisoned.seat('sailor'), poisoned.characters, 'demon')
+			).toBeUndefined();
 		});
 	});
 });

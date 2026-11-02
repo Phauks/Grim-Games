@@ -21,6 +21,8 @@ import {
 } from '#lib/core/testing/committed-data.ts';
 import { analyseSetup } from '#lib/core/rules/setup.ts';
 import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night-info.ts';
+import { reminderOffered, reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { setupModifierFor } from '#lib/core/rules/setup-modifiers.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Village Idiot', () => {
@@ -111,6 +113,40 @@ describe('Village Idiot', () => {
 			const marianna = infoPicker(s.game, s.seat(1), 'villageidiot', s.characters)!;
 			expect(isTruthful(marianna, { seats: [s.seat('heretic')], yes: false })).toBe(true);
 			expect(isAllowed(marianna, { seats: [s.seat('heretic')], yes: false })).toBe(true);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Village_Idiot#How_to_Run)', () => {
+		it('lets zero, one or two more Village Idiots replace Townsfolk in the bag', () => {
+			// Wiki: "While setting up the game, before putting the character tokens in the bag, replace
+			// zero, one or two Townsfolk tokens with Village Idiot tokens."
+			expect(setupModifierFor(character)).toMatchObject({ ops: [], copies: [0, 1, 2] });
+		});
+
+		it('puts Drunk on one Village Idiot, only when there are several', () => {
+			// Wiki: "While preparing the first night, mark one Village Idiot with the DRUNK reminder."
+			const drunk = { characterId: 'villageidiot', label: 'Drunk' };
+			const two = scenario(['villageidiot', 'villageidiot', 'chef', 'empath', 'imp', 'poisoner']);
+			expect(reminderTargetMisses(two.game, drunk, two.seat(1), two.characters)).toEqual([]);
+			expect(reminderTargetMisses(two.game, drunk, two.seat('chef'), two.characters)).not.toEqual(
+				[]
+			);
+			expect(reminderOffered(two.game, drunk, two.characters)).toBe(true);
+			const one = scenario(['villageidiot', 'chef', 'empath', 'imp', 'poisoner']);
+			expect(reminderOffered(one.game, drunk, one.characters)).toBe(false);
+		});
+
+		it("gives each Village Idiot a thumb for its chosen player's alignment", () => {
+			// Wiki: "During each night, wake any Village Idiot. They point to a player. Give a thumbs up
+			// or a thumbs down. Put that Village Idiot to sleep. Repeat until all Village Idiots have
+			// acted."
+			const s = scenario(['villageidiot', 'villageidiot', 'chef', 'empath', 'imp', 'poisoner']);
+			for (const seat of [0, 1]) {
+				const picker = infoPicker(s.game, s.seat(seat), 'villageidiot', s.characters)!;
+				expect(isTruthful(picker, { seats: [s.seat('chef')], yes: false })).toBe(true);
+				expect(isAllowed(picker, { seats: [s.seat('chef')], yes: true })).toBe(false);
+				expect(isTruthful(picker, { seats: [s.seat('poisoner')], yes: true })).toBe(true);
+			}
 		});
 	});
 });

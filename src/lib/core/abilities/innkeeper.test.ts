@@ -14,11 +14,12 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { protection } from '#lib/core/rules/ability.ts';
+import { abilityState, protection } from '#lib/core/rules/ability.ts';
 import { survivesFirstDeath } from '#lib/core/rules/first-death.ts';
 import { preventedDeaths } from '#lib/core/rules/prevented-deaths.ts';
 import { scenario, type SeatRef } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 
 describe('Innkeeper', () => {
 	const character = committedCharacter('innkeeper');
@@ -103,6 +104,60 @@ describe('Innkeeper', () => {
 			expect(preventedDeaths(s.game, s.characters)).toMatchObject([
 				{ seatId: s.seat('pacifist'), because: [] }
 			]);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Innkeeper#How_to_Run)', () => {
+		const cast = ['innkeeper', 'chef', 'empath', 'monk', 'godfather', 'imp'];
+
+		it('marks two players Safe and one of those two Drunk', () => {
+			// Wiki: "Each night except the first, wake the Innkeeper. They point at any two players.
+			// Put the Innkeeper to sleep. Mark the two chosen players with SAFE reminders. One of the
+			// chosen players becomes drunk—mark them with the DRUNK reminder."
+			const s = scenario(cast).newDay();
+			const safe = { characterId: 'innkeeper', label: 'Safe' };
+			const drunk = { characterId: 'innkeeper', label: 'Drunk' };
+			for (const seat of ['innkeeper', 'chef', 'imp'] as const)
+				expect(reminderTargetMisses(s.game, safe, s.seat(seat), s.characters), seat).toEqual([]);
+			const marked = s
+				.reminder('chef', 'innkeeper', 'Safe')
+				.reminder('empath', 'innkeeper', 'Safe');
+			expect(
+				reminderTargetMisses(marked.game, drunk, marked.seat('chef'), marked.characters)
+			).toEqual([]);
+			expect(
+				reminderTargetMisses(marked.game, drunk, marked.seat('monk'), marked.characters)
+			).toEqual(['with-label']);
+			const chef = marked.reminder('chef', 'innkeeper', 'Drunk');
+			expect(abilityState(chef.game, chef.seat('chef'), chef.characters).impairments).toMatchObject(
+				[{ reason: 'drunk', source: { characterId: 'innkeeper' } }]
+			);
+		});
+
+		it('keeps a Safe player from dying tonight, by the Demon or by another ability', () => {
+			// Wiki: "The players marked SAFE cannot die tonight."
+			const s = scenario(cast).newDay().reminder('chef', 'innkeeper', 'Safe');
+			for (const by of ['demon', 'other'] as const)
+				expect(protection(s.game, s.seat('chef'), s.characters, by), by).toMatchObject({
+					characterId: 'innkeeper'
+				});
+			expect(protection(s.game, s.seat('empath'), s.characters, 'demon')).toBeUndefined();
+		});
+
+		it.fails('takes the Safe reminders off at dawn', () => {
+			// Wiki: "At dawn, remove the SAFE reminders."
+			// Waits on the engine (unplanned): the Innkeeper's rules have no reminderEnds for Safe, so
+			// New day leaves them on.
+			const s = scenario(cast).newDay().reminder('chef', 'innkeeper', 'Safe').newDay();
+			expect(s.game.seats[s.seat('chef')].reminders).toEqual([]);
+		});
+
+		it.fails('takes the Drunk reminder off at dusk', () => {
+			// Wiki: "At dusk, remove the DRUNK reminder."
+			// Waits on the engine (unplanned): the Innkeeper's rules have no reminderEnds for Drunk, so
+			// Dusk leaves it on.
+			const s = scenario(cast).newDay().reminder('chef', 'innkeeper', 'Drunk').newDay().dusk();
+			expect(s.game.seats[s.seat('chef')].reminders).toEqual([]);
 		});
 	});
 });

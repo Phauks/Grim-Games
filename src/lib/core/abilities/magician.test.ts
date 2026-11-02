@@ -14,9 +14,14 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import {
+	committedCharacter,
+	committedGameData,
+	nightSheetPresence
+} from '#lib/core/testing/committed-data.ts';
 import { demonInfo } from '#lib/core/rules/evil-info.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
+import { nightOrder } from '#lib/core/rules/night-order.ts';
 
 describe('Magician', () => {
 	const character = committedCharacter('magician');
@@ -65,6 +70,34 @@ describe('Magician', () => {
 				shownAsMinions: [s.seat('magician')],
 				shownAsDemon: [s.seat('magician')]
 			});
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Magician#How_to_Run)', () => {
+		const cast = ['magician', 'fearmonger', 'leviathan', 'chef', 'empath', 'monk', 'mayor'];
+		const steps = () => {
+			const data = committedGameData();
+			const inPlay = cast.map((id) => data.byId.get(id)!);
+			return nightOrder({ night: 'first', sheet: data.nightSheet, inPlay, players: 7 }).steps;
+		};
+
+		it('has Minion Info point to the Magician as well as the Demon', () => {
+			// Wiki: "During the first night, wake the Minions. Show them the THIS IS THE DEMON info
+			// token, then point to the Demon and the Magician. Put the Minions to sleep."
+			const minionInfo = steps().find((step) => step.id === 'minioninfo')!;
+			expect(minionInfo.notes.some((note) => note.startsWith('Magician:'))).toBe(true);
+			const s = scenario(cast);
+			expect(demonInfo(s.game, s.characters).shownAsDemon).toEqual([s.seat('magician')]);
+		});
+
+		it('has Demon Info point to the Magician among the Minions', () => {
+			// Wiki: "During the first night, wake the Demon. Show the THESE ARE YOUR MINIONS info token,
+			// then point to all Minions and the Magician. Show the THESE CHARACTERS ARE NOT IN PLAY info
+			// token and three character tokens. Put the Demon to sleep."
+			const info = steps().find((step) => step.id === 'demoninfo')!;
+			expect(info.notes.some((note) => note.startsWith('Magician:'))).toBe(true);
+			const s = scenario(cast);
+			expect(demonInfo(s.game, s.characters).shownAsMinions).toEqual([s.seat('magician')]);
 		});
 	});
 });

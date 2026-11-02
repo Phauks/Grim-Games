@@ -24,6 +24,12 @@ import {
 	nightSheetPresence
 } from '#lib/core/testing/committed-data.ts';
 import { analyseSetup } from '#lib/core/rules/setup.ts';
+import { decide } from '#lib/core/engine/index.ts';
+import { filledInfoToken } from '#lib/core/rules/info-token-characters.ts';
+import { nightKill } from '#lib/core/rules/night-kill.ts';
+import { nightOrder } from '#lib/core/rules/night-order.ts';
+import { nightTextPlain, nightTextSegments, placeholdersFor } from '#lib/core/rules/night-text.ts';
+import { setupPrep } from '#lib/core/rules/setup-reminders.ts';
 
 const data = committedGameData();
 const get = (...ids: string[]) => ids.map((id) => data.byId.get(id)!);
@@ -65,7 +71,7 @@ describe('Lord of Typhon', () => {
 		});
 	});
 
-	// How to Run: the evil players sit in one line, the Lord of Typhon inside it with a Minion on
+	// The ability: the evil players sit in one line, the Lord of Typhon inside it with a Minion on
 	// each side. The app warns on its night step when they don't; it never moves anyone.
 	describe('seating', () => {
 		it('warns when the Lord of Typhon sits at the end of the evil line', () => {
@@ -97,8 +103,10 @@ describe('Lord of Typhon', () => {
 		});
 	});
 
-	// How to Run: on the first night the players either side become Minions, the usual
-	// number plus one, spreading out from the Lord of Typhon (M22).
+	// The players either side become Minions, the usual number plus one, spreading out from the
+	// Lord of Typhon (M22).
+	// Wiki (How to Run): "During the first night, wake the appropriate number of players directly
+	// clockwise and anti-clockwise from the Lord of Typhon."
 	describe('first night Minions', () => {
 		it('offers only the nearest non-Minion on each side, until there is one Minion extra', () => {
 			let s = scenario(['lordoftyphon', 'chef', 'empath', 'monk', 'saint', 'butler', 'mayor']);
@@ -166,6 +174,66 @@ describe('Lord of Typhon', () => {
 			expect(result.expected.outsider).toContain(0);
 			expect(result.chosen).toEqual({ townsfolk: 10, outsider: 0, minion: 4, demon: 1 });
 			expect(result.warnings).toEqual([]);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Lord_of_Typhon#How_to_Run)', () => {
+		const cast = ['lordoftyphon', 'chef', 'empath', 'monk', 'saint', 'butler', 'mayor'];
+
+		it('deals no Minions and lets the Outsider count change', () => {
+			// Wiki: "During setup, remove all Minion tokens and add Townsfolk or Outsider tokens."
+			expect(setupPrep('lordoftyphon', character.name, data.byId)).toMatchObject([
+				{ text: expect.stringContaining('Deal no Minions') }
+			]);
+			const result = analyseSetup({ players: 7, inPlay: get(...cast) });
+			expect(result.expected.minion).toContain(0);
+			expect(result.expected.outsider).toEqual(expect.arrayContaining([0, 1, 2]));
+			expect(result.warnings).toEqual([]);
+		});
+
+		it('shows each new Minion a different Minion token', () => {
+			// Wiki: "Show each of these players a unique Minion token, and give a thumbs down. Replace
+			// these players' good character tokens with these Minion tokens and put these players to
+			// sleep."
+			const s = scenario(cast).becomes('chef', 'poisoner', 'evil');
+			const same = decide(
+				s.game,
+				{ type: 'AssignCharacter', seatId: s.seat('mayor'), characterId: 'poisoner' },
+				s.ctx
+			);
+			expect(same.ok && same.warnings.map((w) => w.code)).toContain('already-in-play');
+			expect(filledInfoToken(character, 'you-are', 1)).toBeDefined();
+		});
+
+		it('keeps the Minion Info and Demon Info steps after it on the first night', () => {
+			// Wiki: "Then, do the Minion Info and Demon Info steps as normal."
+			const { steps } = nightOrder({
+				night: 'first',
+				sheet: data.nightSheet,
+				inPlay: get(...cast),
+				players: 7
+			});
+			const ids = steps.map((step) => step.id);
+			expect(ids).toContain('minioninfo');
+			expect(ids.indexOf('lordoftyphon')).toBeLessThan(ids.indexOf('minioninfo'));
+			expect(ids.indexOf('lordoftyphon')).toBeLessThan(ids.indexOf('demoninfo'));
+		});
+
+		it('kills the chosen player on each night after the first', () => {
+			// Wiki: "Each night except the first, wake the Lord of Typhon. They point at any player.
+			// That player dies—mark them with the DEAD reminder. Put the Lord of Typhon to sleep."
+			const placeholders = placeholdersFor(character, 'other');
+			const text = nightTextPlain(
+				nightTextSegments(character.otherNightReminder!, character, {
+					...(placeholders ? { placeholders } : {})
+				})
+			);
+			expect(text).toContain('[+Dead]');
+			const s = scenario(cast).newDay().dusk();
+			expect(nightKill(s.game, s.seat('lordoftyphon'), 'lordoftyphon', s.characters)).toEqual({
+				max: 1,
+				delayed: []
+			});
 		});
 	});
 });

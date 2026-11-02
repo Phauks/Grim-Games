@@ -19,6 +19,10 @@ import { alignmentOf } from '#lib/core/model/selectors.ts';
 import { abilityState } from '#lib/core/rules/ability.ts';
 import { becomesOffer } from '#lib/core/rules/becomes.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
+import { rulesOf } from '#lib/core/data/rules/index.ts';
+import { nightTextPlain, nightTextSegments, placeholdersFor } from '#lib/core/rules/night-text.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { setupPrep } from '#lib/core/rules/setup-reminders.ts';
 
 const TURNS_EVIL = { characterId: 'mezepheles', label: 'Turns Evil' };
 
@@ -89,6 +93,65 @@ describe('Mezepheles', () => {
 			expect(abilityState(s.game, s.seat('mezepheles'), s.characters).works).toBe(false);
 			expect(
 				becomesOffer(s.game, s.seat('noble'), TURNS_EVIL, s.characters, 'removed')
+			).toBeUndefined();
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Mezepheles#How_to_Run)', () => {
+		const cast = ['barber', 'mezepheles', 'chef', 'empath', 'imp'];
+
+		it('lists the secret word to choose before the game and shows it on the first night', () => {
+			// Wiki: "While setting up the game, write a single word on a piece of paper or on a phone or
+			// other device. During the first night, wake the Mezepheles, show the written word, then put
+			// them to sleep."
+			const s = scenario(cast);
+			expect(setupPrep('mezepheles', character.name, s.characters)).toMatchObject([
+				{ text: expect.stringContaining('secret word') }
+			]);
+			expect(rulesOf('mezepheles', s.characters)?.infoCard).toBe('secret-word');
+			expect(nightSheetPresence('mezepheles').firstNight).toBe(true);
+		});
+
+		it('puts Turns Evil only on a good player', () => {
+			// Wiki: "The first time you hear a good player say the secret word, mark them with the TURNS
+			// EVIL reminder."
+			const s = scenario(cast);
+			expect(reminderTargetMisses(s.game, TURNS_EVIL, s.seat('barber'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, TURNS_EVIL, s.seat('imp'), s.characters)).toEqual([
+				'alignment'
+			]);
+		});
+
+		it('turns the marked player evil at night and marks the Mezepheles No Ability', () => {
+			// Wiki: "Each night, if a player is marked with the TURNS EVIL reminder, wake them. Show the
+			// YOU ARE info token then give a thumbs down. Put them to sleep. Turn their character token
+			// upside down. (This shows they are now evil.) The Mezepheles loses their ability—mark them
+			// with the NO ABILITY reminder and remove their night token from the night sheet."
+			const placeholders = placeholdersFor(character, 'other');
+			const text = nightTextPlain(
+				nightTextSegments(character.otherNightReminder!, character, {
+					...(placeholders ? { placeholders } : {})
+				})
+			);
+			expect(text).toContain('[-Turns Evil]');
+			expect(text).toContain('[+No Ability]');
+			const s = scenario(cast);
+			const spent = { characterId: 'mezepheles', label: 'No Ability' };
+			expect(reminderTargetMisses(s.game, spent, s.seat('mezepheles'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, spent, s.seat('barber'), s.characters)).toEqual([
+				'not-self'
+			]);
+		});
+
+		it.fails('turns no one else evil once the Mezepheles is marked No Ability', () => {
+			// Wiki: "The Mezepheles loses their ability—mark them with the NO ABILITY reminder and
+			// remove their night token from the night sheet."
+			// Waits on the engine (unplanned): becomesOffer still offers Turns Evil after the Mezepheles is marked No Ability.
+			const s = scenario(cast)
+				.reminder('mezepheles', 'mezepheles', 'No Ability')
+				.reminder('chef', 'mezepheles', 'Turns Evil');
+			expect(
+				becomesOffer(s.game, s.seat('chef'), TURNS_EVIL, s.characters, 'removed')
 			).toBeUndefined();
 		});
 	});

@@ -14,11 +14,13 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
+import { warned } from '#lib/core/model/fixtures.test-support.ts';
 import { dayUseWho } from '#lib/core/rules/day-claims.ts';
+import { dayReminders, dayStateFromGame } from '#lib/core/rules/day-reminders.ts';
 import { endCharacters } from '#lib/core/rules/end-reason.ts';
 import { gameEnds } from '#lib/core/rules/game-end.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { scenario } from '#lib/core/testing/scenario.ts';
+import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Klutz', () => {
 	const character = committedCharacter('klutz');
@@ -84,6 +86,51 @@ describe('Klutz', () => {
 				}));
 			expect(endCharacters(s.game, s.characters)).toContain('klutz');
 			expect(gameEnds(s.game, s.characters)).toMatchObject([{ winner: 'evil' }]);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Klutz#How_to_Run)', () => {
+		const reminded = (s: Scenario) =>
+			dayReminders(dayStateFromGame(s.game, (id) => s.characters.get(id), undefined, s.characters))
+				.groups.flatMap((g) => g.reminders)
+				.some((r) => r.characterId === 'klutz');
+
+		it('reminds the Storyteller once the Klutz is dead, so they choose a player', () => {
+			// Wiki: "If the Klutz player doesn’t realize that they must choose a player when they die,
+			// privately remind them."
+			const s = scenario(['klutz', 'seamstress', 'chef', 'witch', 'vortox']).newDay();
+			expect(reminded(s)).toBe(false);
+			expect(reminded(s.dies('klutz', 'vortox'))).toBe(true);
+		});
+
+		it('the dead Klutz may choose any player', () => {
+			// Wiki: "When the Klutz player is declared dead, they must declare that they are the Klutz and
+			// then point at any player."
+			const s = scenario(['klutz', 'seamstress', 'chef', 'witch', 'vortox']).execute('klutz');
+			for (const on of ['klutz', 'chef', 'vortox'] as const)
+				expect(
+					warned(s.session, s.ctx, {
+						type: 'UseAbility',
+						seatId: s.seat('klutz'),
+						characterId: 'klutz',
+						on: s.seat(on)
+					})
+				).toEqual([]);
+		});
+
+		it('an evil Klutz choosing an evil player wins the game for good', () => {
+			// Wiki: "In the strange situation where the Klutz is evil and chooses an evil player, then the
+			// game ends and the good team wins instead."
+			const s = scenario(['klutz', 'seamstress', 'chef', 'witch', 'vortox'])
+				.do((at) => ({ type: 'SetAlignment', seatId: at.seat('klutz'), alignment: 'evil' }))
+				.execute('klutz')
+				.do((at) => ({
+					type: 'UseAbility',
+					seatId: at.seat('klutz'),
+					characterId: 'klutz',
+					on: at.seat('witch')
+				}));
+			expect(gameEnds(s.game, s.characters)).toMatchObject([{ winner: 'good' }]);
 		});
 	});
 });

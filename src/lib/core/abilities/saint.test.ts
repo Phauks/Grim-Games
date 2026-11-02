@@ -87,8 +87,7 @@ describe('Saint', () => {
 
 	describe('How to Run (https://wiki.bloodontheclocktower.com/Saint#How_to_Run)', () => {
 		it('reminds the Storyteller by day that the Saint is alive', () => {
-			// How to Run: an executed Saint ends the game, so the Storyteller keeps it in mind
-			// whenever an execution is coming.
+			// Wiki: "If the Saint dies by execution, declare that the game ends and evil wins."
 			const s = scenario(['saint', 'chef', 'empath', 'baron', 'imp']).newDay();
 			const groups = dayReminders(
 				dayStateFromGame(s.game, (id) => s.characters.get(id), undefined, s.characters)
@@ -98,13 +97,13 @@ describe('Saint', () => {
 		});
 
 		it('ends nothing when the Saint dies at night rather than by execution', () => {
-			// How to Run: only a death by execution ends the game.
+			// Wiki: "If the Saint dies by execution, declare that the game ends and evil wins."
 			const s = scenario(['saint', 'chef', 'empath', 'baron', 'imp']).newDay().dies('saint', 'imp');
 			expect(gameEnds(s.game, s.characters)).toEqual([]);
 		});
 
 		it('gives the win to good when an evil Saint is executed', () => {
-			// How to Run: the Saint's own team loses, so an evil Saint's execution means good wins.
+			// Wiki: "If the evil Saint is executed, good wins."
 			const s = scenario(['saint', 'chef', 'empath', 'baron', 'imp'])
 				.becomes('saint', 'saint', 'evil')
 				.execute('saint');

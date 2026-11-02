@@ -21,7 +21,11 @@ import {
 	testCharacters as characters
 } from '#lib/core/model/fixtures.test-support.ts';
 import { dayUseAnswer, dayUseOf } from '#lib/core/rules/index.ts';
-import { scenario } from '#lib/core/testing/scenario.ts';
+import { abilityState } from '#lib/core/rules/ability.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { setupPrep } from '#lib/core/rules/setup-reminders.ts';
+import { warned } from '#lib/core/model/fixtures.test-support.ts';
+import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
 /**
@@ -142,6 +146,48 @@ describe('Puzzlemaster', () => {
 			expect(dayUseAnswer(game, seats[0], 'puzzlemaster', seats[2], characters)).toEqual({
 				kind: 'dead'
 			});
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Puzzlemaster#How_to_Run)', () => {
+		const cast = ['puzzlemaster', 'imp', 'empath', 'sailor', 'poisoner'];
+		const guess = (s: Scenario) =>
+			({
+				type: 'UseAbility',
+				seatId: s.seat('puzzlemaster'),
+				characterId: 'puzzlemaster',
+				on: s.seat('empath')
+			}) as const;
+
+		it('prepares Drunk on any one player, who is then drunk', () => {
+			// Wiki: "While preparing the first night, mark any player with the Puzzlemaster’s DRUNK
+			// reminder. This player is drunk."
+			expect(setupPrep('puzzlemaster', 'Puzzlemaster').map((step) => step.tokens)).toEqual([
+				['Drunk']
+			]);
+			const s = scenario(cast);
+			const drunk = { characterId: 'puzzlemaster', label: 'Drunk' };
+			for (const seat of s.seats)
+				expect(reminderTargetMisses(s.game, drunk, seat, s.characters)).toEqual([]);
+			const marked = s.reminder('poisoner', 'puzzlemaster', 'Drunk');
+			expect(abilityState(marked.game, marked.seat('poisoner'), marked.characters)).toMatchObject({
+				works: false,
+				impairments: [expect.objectContaining({ reason: 'drunk' })]
+			});
+		});
+
+		it('marks the Puzzlemaster Guess Used after a guess, and allows only one', () => {
+			// Wiki: "Either way, mark the Puzzlemaster with the GUESS USED reminder."
+			const s = scenario(cast).reminder('empath', 'puzzlemaster', 'Drunk');
+			const used = s.do(guess(s));
+			expect(used.game.seats[used.seat('puzzlemaster')].reminders).toContainEqual(
+				expect.objectContaining({ characterId: 'puzzlemaster', label: 'Guess Used' })
+			);
+			const guessUsed = { characterId: 'puzzlemaster', label: 'Guess Used' };
+			expect(reminderTargetMisses(s.game, guessUsed, s.seat('empath'), s.characters)).toContain(
+				'not-self'
+			);
+			expect(warned(used.newDay().session, used.ctx, guess(used))).toContain('already-used');
 		});
 	});
 });

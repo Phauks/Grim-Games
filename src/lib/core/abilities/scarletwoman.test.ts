@@ -104,8 +104,9 @@ describe('Scarlet Woman', () => {
 
 	describe('How to Run (https://wiki.bloodontheclocktower.com/Scarlet_Woman#How_to_Run)', () => {
 		it('offers to turn the Scarlet Woman into the dead Demon', () => {
-			// How to Run: when the Demon dies with five or more players alive just before, the
-			// Scarlet Woman's token is swapped for the Demon that died.
+			// Wiki: "If the Demon dies and there were five or more alive players immediately before the
+			// Demon died, replace the Scarlet Woman token with a spare Imp token, changing that player's
+			// character from the Scarlet Woman into the Imp."
 			const s = scenario(['imp', 'scarletwoman', 'baron', 'chef', 'monk']).execute('imp');
 			const token = { characterId: 'scarletwoman', label: 'Is The Demon' };
 			expect(becomesOffer(s.game, s.seat('scarletwoman'), token, s.characters)).toEqual({
@@ -116,8 +117,9 @@ describe('Scarlet Woman', () => {
 		});
 
 		it('leaves the Scarlet Woman as she is when only four were alive', () => {
-			// How to Run: with fewer than five players alive just before the Demon died, she does not
-			// take over and good wins.
+			// Wiki: "If the Demon dies and there were five or more alive players immediately before the
+			// Demon died, replace the Scarlet Woman token with a spare Imp token, changing that player's
+			// character from the Scarlet Woman into the Imp."
 			const s = scenario(['imp', 'scarletwoman', 'baron', 'chef', 'monk'])
 				.dies('monk', 'imp')
 				.execute('imp');
@@ -127,7 +129,8 @@ describe('Scarlet Woman', () => {
 		});
 
 		it('wakes the new Imp that night to show You Are and the Imp token', () => {
-			// How to Run: that night, wake the player who became the Imp and show them who they are now.
+			// Wiki: "That night, wake the new Imp, show them the YOU ARE info token, then show them the
+			// Imp token."
 			const s = scenario(['imp', 'scarletwoman', 'baron', 'chef', 'monk'])
 				.newDay()
 				.execute('imp')
@@ -144,8 +147,8 @@ describe('Scarlet Woman', () => {
 		});
 
 		it('keeps the Is The Demon reminder on the Scarlet Woman only', () => {
-			// How to Run: in other editions, mark the Scarlet Woman who became the Demon with the
-			// Is The Demon reminder.
+			// Wiki: "When this happens, mark the Scarlet Woman with the IS THE DEMON reminder and refer
+			// to that Demon's "How to Run" instructions."
 			const s = scenario(['imp', 'scarletwoman', 'baron', 'chef', 'monk']);
 			const token = { characterId: 'scarletwoman', label: 'Is The Demon' };
 			expect(reminderTargetMisses(s.game, token, s.seat('scarletwoman'), s.characters)).toEqual([]);

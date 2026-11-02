@@ -19,6 +19,9 @@ import { blockThreshold } from '#lib/core/rules/voting.ts';
 import { votesSecret } from '#lib/core/rules/voting-table.ts';
 import { total, votes } from '#lib/core/testing/votes.ts';
 import { gameEnds } from '#lib/core/rules/game-end.ts';
+import { abilityState } from '#lib/core/rules/ability.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { remindersEndingAt } from '#lib/core/rules/reminder-ends.ts';
 import { scenario, type SeatRef } from '#lib/core/testing/scenario.ts';
 
 describe('Organ Grinder', () => {
@@ -85,6 +88,52 @@ describe('Organ Grinder', () => {
 			expect(gameEnds(executed.game, executed.characters)).toMatchObject([
 				{ rule: 'demon-dead', winner: 'good' }
 			]);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Organ_Grinder#How_to_Run)', () => {
+		const cast = ['organgrinder', 'chef', 'empath', 'imp', 'poisoner'];
+
+		it('puts Drunk only on the Organ Grinder, who is then drunk', () => {
+			// Wiki: "Each night, wake the Organ Grinder. The Organ Grinder either nods or shakes their
+			// head. If they nod their head, mark them with the DRUNK reminder."
+			const s = scenario(cast);
+			const drunk = { characterId: 'organgrinder', label: 'Drunk' };
+			expect(reminderTargetMisses(s.game, drunk, s.seat('organgrinder'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, drunk, s.seat('chef'), s.characters)).toEqual([
+				'not-self'
+			]);
+			const nodded = s.reminder('organgrinder', 'organgrinder', 'Drunk');
+			expect(
+				abilityState(nodded.game, nodded.seat('organgrinder'), nodded.characters)
+			).toMatchObject({ works: false });
+		});
+
+		it('keeps votes secret only while the Organ Grinder is sober', () => {
+			// Wiki: "When a player has been nominated and a vote is just about to begin, and the Organ
+			// Grinder is sober, ask all players to close their eyes."
+			const s = scenario(cast);
+			expect(votesSecret(s.game, s.characters)).toBe(true);
+			const drunk = s.reminder('organgrinder', 'organgrinder', 'Drunk');
+			expect(votesSecret(drunk.game, drunk.characters)).toBe(false);
+		});
+
+		it('marks a living nominee with enough votes About To Die', () => {
+			// Wiki: "If there were enough votes to execute the nominee, mark them with the ABOUT TO DIE
+			// reminder."
+			const s = scenario(cast).dies('empath');
+			const about = { characterId: 'organgrinder', label: 'About To Die' };
+			expect(reminderTargetMisses(s.game, about, s.seat('chef'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, about, s.seat('imp'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, about, s.seat('empath'), s.characters)).not.toEqual([]);
+		});
+
+		it.fails('takes Drunk off the Organ Grinder at each dusk', () => {
+			// Wiki: "Each dusk, remove the DRUNK reminder."
+			// Waits on the engine (unplanned): the Organ Grinder's Drunk has no reminderEnds at dusk.
+			const s = scenario(cast).reminder('organgrinder', 'organgrinder', 'Drunk');
+			const drunkId = s.game.seats[s.seat('organgrinder')].reminders[0]!.reminderId;
+			expect(remindersEndingAt(s.game, 'dusk', s.characters)).toContain(drunkId);
 		});
 	});
 });

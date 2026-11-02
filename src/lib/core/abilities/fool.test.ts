@@ -20,6 +20,7 @@ import { survivesFirstDeath } from '#lib/core/rules/first-death.ts';
 import { preventedDeaths } from '#lib/core/rules/prevented-deaths.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 
 const CAST = ['fool', 'chef', 'poisoner', 'assassin', 'imp'];
 
@@ -106,6 +107,46 @@ describe('Fool', () => {
 			// Protected, the Fool keeps their ability: protection is the only reason they live.
 			const [survivor] = preventedDeaths(s.game, s.characters);
 			expect(survivor.because.map((b) => b.kind)).toEqual(['protected']);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Fool#How_to_Run)', () => {
+		const cast = ['fool', 'chef', 'innkeeper', 'empath', 'imp'];
+
+		it('lists a Fool the Demon chose as surviving, unless the Fool is drunk', () => {
+			// Wiki: "If the Fool would die, they remain alive. (But they die if they are drunk or
+			// poisoned.)"
+			const s = scenario(cast).newDay().reminder('fool', 'imp', 'Dead');
+			const [survivor] = preventedDeaths(s.game, s.characters);
+			expect(survivor).toMatchObject({ killer: 'imp', seatId: s.seat('fool') });
+			expect(survivor.because.map((b) => b.kind)).toEqual(['survives-first-death']);
+			const drunk = s.reminder('fool', 'innkeeper', 'Drunk');
+			expect(
+				survivesFirstDeath(drunk.game, drunk.seat('fool'), 'demon', drunk.characters)
+			).toBeUndefined();
+		});
+
+		it('offers to keep an executed Fool alive, once the execution is logged', () => {
+			// Wiki: "If the Fool was executed, declare that the player was executed but remains alive.
+			// (Do not say why.)"
+			const s = scenario(cast).newDay().execute('fool');
+			expect(s.game.today.entries.filter((e) => e.kind === 'execution')).toMatchObject([
+				{ seatId: s.seat('fool') }
+			]);
+			expect(survivesFirstDeath(s.game, s.seat('fool'), 'execution', s.characters)).toMatchObject({
+				source: { characterId: 'fool', seatId: s.seat('fool') },
+				spentToken: 'No Ability'
+			});
+		});
+
+		it('marks the Fool No Ability, after which a kill is no longer stopped', () => {
+			// Wiki: "Either way, the Fool loses their ability—mark them with the NO ABILITY reminder."
+			const s = scenario(cast).newDay();
+			const spent = { characterId: 'fool', label: 'No Ability' };
+			expect(reminderTargetMisses(s.game, spent, s.seat('fool'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, spent, s.seat('chef'), s.characters)).not.toEqual([]);
+			const used = s.reminder('fool', 'fool', 'No Ability').reminder('fool', 'imp', 'Dead');
+			expect(preventedDeaths(used.game, used.characters)).toMatchObject([{ because: [] }]);
 		});
 	});
 

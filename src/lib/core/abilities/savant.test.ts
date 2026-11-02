@@ -19,11 +19,14 @@ import type { Script } from '#lib/core/data/index.ts';
 import {
 	pairFits,
 	partnerTruth,
+	savantPair,
 	savantSituation,
 	savantStatements,
 	typedStatement
 } from '#lib/core/rules/savant.ts';
-import { scenario } from '#lib/core/testing/scenario.ts';
+import { dayClaim } from '#lib/core/rules/day-claims.ts';
+import { dayReminders, dayStateFromGame } from '#lib/core/rules/day-reminders.ts';
+import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
 /** A script with the characters these examples seat. */
 const script: Script = {
@@ -163,6 +166,35 @@ describe('Savant', () => {
 					'one-each'
 				)
 			).toBe(false);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Savant#How_to_Run)', () => {
+		const cast = ['savant', 'chef', 'empath', 'mutant', 'poisoner', 'imp'];
+		const mayVisit = (s: Scenario) =>
+			dayReminders(dayStateFromGame(s.game, (id) => s.characters.get(id), undefined, s.characters))
+				.groups.flatMap((g) => g.reminders)
+				.some((r) => r.characterId === 'savant');
+
+		it('may visit the Storyteller on every day', () => {
+			// Wiki: "Once per day, if the Savant requests a private chat with you, take them away from the
+			// circle so you cannot be overheard."
+			const s = scenario(cast, { script }).newDay();
+			expect(mayVisit(s)).toBe(true);
+			expect(mayVisit(s.newDay())).toBe(true);
+			expect(dayClaim('savant')).toBe('statements');
+		});
+
+		it('suggests two statements from the grimoire, one true and one false', () => {
+			// Wiki: "Whisper two pieces of information, one true and one false, to the Savant."
+			const s = scenario(cast, { script }).newDay();
+			const { mode } = savantSituation(s.game, s.seat('savant'), s.characters);
+			expect(mode).toBe('one-each');
+			const pool = savantStatements(s.game, s.seat('savant'), s.characters);
+			for (const seed of [0.1, 0.6, 0.9]) {
+				const pair = savantPair(pool, mode, () => seed);
+				expect(pair.map((x) => x.truth).sort()).toEqual(['false', 'true']);
+			}
 		});
 	});
 });

@@ -23,7 +23,7 @@
 	},
 	"makesExtraEvil": true,
 	"gameEnd": {
-		"decidedByStoryteller": true
+		"joinsWinner": true
 	},
 	"jinxes": {
 		"legion": {

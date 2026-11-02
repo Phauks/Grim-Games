@@ -17,6 +17,7 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { dayReminders, dayStateFromGame } from '#lib/core/rules/day-reminders.ts';
 import { trueCharacter } from '#lib/core/model/selectors.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Artist', () => {
@@ -95,6 +96,39 @@ describe('Artist', () => {
 			const after = asked(s);
 			expect(spent(after)).toBe(true);
 			expect(mayAsk(after)).toBe(false);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Artist#How_to_Run)', () => {
+		const mayAsk = (s: Scenario) =>
+			dayReminders(dayStateFromGame(s.game, (id) => s.characters.get(id), undefined, s.characters))
+				.groups.flatMap((g) => g.reminders)
+				.some((r) => r.characterId === 'artist');
+
+		it('may ask their question on any day, not only the first', () => {
+			// Wiki: "During any day, the Artist can request a private chat with you."
+			const s = scenario(['artist', 'imp', 'chef', 'empath', 'poisoner']).newDay();
+			expect(mayAsk(s.newDay())).toBe(true);
+			expect(mayAsk(s.newDay().newDay())).toBe(true);
+		});
+
+		it('the No Ability reminder goes on the Artist only', () => {
+			// Wiki: "The Artist loses their ability - mark them with the NO ABILITY reminder."
+			const s = scenario(['artist', 'imp', 'chef', 'empath', 'poisoner']);
+			const spent = { characterId: 'artist', label: 'No Ability' };
+			expect(reminderTargetMisses(s.game, spent, s.seat('artist'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, spent, s.seat('chef'), s.characters)).toEqual([
+				'not-self'
+			]);
+		});
+
+		it('a spent Artist is not offered another question on a later day', () => {
+			// Wiki: "The Artist loses their ability - mark them with the NO ABILITY reminder."
+			const s = scenario(['artist', 'imp', 'chef', 'empath', 'poisoner'])
+				.newDay()
+				.reminder('artist', 'artist', 'No Ability')
+				.newDay();
+			expect(mayAsk(s)).toBe(false);
 		});
 	});
 });

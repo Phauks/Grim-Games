@@ -15,9 +15,11 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
-import { deathVerdict } from '#lib/core/rules/night-deaths.ts';
+import { deathCheck, deathVerdict } from '#lib/core/rules/night-deaths.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 
 describe('Gambler', () => {
 	const character = committedCharacter('gambler');
@@ -87,6 +89,35 @@ describe('Gambler', () => {
 					s.characters
 				)
 			).toMatchObject({ kind: 'dies', seatIds: [s.seat('gambler')], because: 'wrong-guess' });
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Gambler#How_to_Run)', () => {
+		const cast = ['gambler', 'minstrel', 'chef', 'empath', 'imp'];
+
+		it('asks for a player and a character each night but the first', () => {
+			// Wiki: "Each night except the first, wake the Gambler. They point at any player, then
+			// point at any character icon on their character sheet. Put the Gambler to sleep."
+			const s = scenario(cast).newDay();
+			expect(deathCheck(s.game, s.seat('gambler'), 'gambler', s.characters)).toMatchObject({
+				needs: 'player-character'
+			});
+			expect(
+				deathVerdict(s.game, s.seat('gambler'), 'gambler', { seatId: s.seat('chef') }, s.characters)
+			).toEqual({ kind: 'choose', missing: 'character' });
+		});
+
+		it('marks only the Gambler Dead, and offers the Gambler as a cause only for themself', () => {
+			// Wiki: "If the chosen player is a different character from the chosen character icon, the
+			// Gambler dies—mark them with the DEAD reminder."
+			const s = scenario(cast).newDay();
+			const dead = { characterId: 'gambler', label: 'Dead' };
+			expect(reminderTargetMisses(s.game, dead, s.seat('gambler'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, dead, s.seat('chef'), s.characters)).not.toEqual([]);
+			const causes = (seat: 'gambler' | 'chef') =>
+				validDeathCauses(s.game, s.seat(seat), s.characters).map((c) => c.cause);
+			expect(causes('gambler')).toContain('gambler');
+			expect(causes('chef')).not.toContain('gambler');
 		});
 	});
 });

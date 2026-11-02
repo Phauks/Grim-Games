@@ -99,8 +99,9 @@ describe('Investigator', () => {
 			s.reminder('poisoner', 'investigator', 'Minion').reminder('chef', 'investigator', 'Wrong');
 
 		it('lists the Minion and Wrong reminders to place before the first night', () => {
-			// How to Run: before night one, the Storyteller marks one Minion with Minion and a
-			// second player with Wrong.
+			// Wiki: "While preparing the first night, put the Investigator's MINION reminder token by
+			// any Minion character token, and put the Investigator's WRONG reminder token by any other
+			// character token."
 			const s = scenario(cast);
 			expect(setupPrep('investigator', character.name, s.characters).map((p) => p.tokens)).toEqual([
 				['Minion'],
@@ -109,7 +110,9 @@ describe('Investigator', () => {
 		});
 
 		it('puts the Minion reminder only on a Minion', () => {
-			// How to Run: the Minion reminder goes beside a Minion's character token.
+			// Wiki: "While preparing the first night, put the Investigator's MINION reminder token by
+			// any Minion character token, and put the Investigator's WRONG reminder token by any other
+			// character token."
 			const s = scenario(cast);
 			const reminder = { characterId: 'investigator', label: 'Minion' };
 			expect(reminderTargetMisses(s.game, reminder, s.seat('poisoner'), s.characters)).toEqual([]);
@@ -119,7 +122,9 @@ describe('Investigator', () => {
 		});
 
 		it('puts the Wrong reminder on any other seat, never the one marked Minion', () => {
-			// How to Run: the Wrong reminder goes beside a different character token.
+			// Wiki: "While preparing the first night, put the Investigator's MINION reminder token by
+			// any Minion character token, and put the Investigator's WRONG reminder token by any other
+			// character token."
 			const s = scenario(cast).reminder('poisoner', 'investigator', 'Minion');
 			const reminder = { characterId: 'investigator', label: 'Wrong' };
 			expect(reminderTargetMisses(s.game, reminder, s.seat('chef'), s.characters)).toEqual([]);
@@ -129,8 +134,8 @@ describe('Investigator', () => {
 		});
 
 		it('on the first night, shows the two marked players and the marked character', () => {
-			// How to Run: on night one, point at the seats marked Minion and Wrong, and show the
-			// character marked Minion.
+			// Wiki: "During the first night, wake the Investigator and point to the players marked
+			// MINION and WRONG. Show the character token marked MINION to the Investigator."
 			const s = marked(scenario(cast));
 			const picker = infoPicker(
 				s.game,
@@ -149,7 +154,7 @@ describe('Investigator', () => {
 		});
 
 		it('lets the Storyteller remove both reminders once they are shown', () => {
-			// How to Run: the reminders come off whenever it suits the Storyteller.
+			// Wiki: "Remove the Investigator's reminder tokens when convenient."
 			const s = marked(scenario(cast)).newDay();
 			const ids = s.game.seating.flatMap((id) =>
 				s.game.seats[id].reminders

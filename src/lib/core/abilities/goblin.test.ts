@@ -18,6 +18,7 @@ import { endCharacters } from '#lib/core/rules/end-reason.ts';
 import { gameEnds } from '#lib/core/rules/game-end.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 
 describe('Goblin', () => {
 	const character = committedCharacter('goblin');
@@ -87,6 +88,33 @@ describe('Goblin', () => {
 				.nominate('empath', 'goblin')
 				.execute('goblin');
 			expect(gameEnds(s.game, s.characters)).toEqual([]);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Goblin#How_to_Run)', () => {
+		const cast = ['goblin', 'artist', 'imp', 'chef', 'monk', 'empath'];
+
+		it('puts Claimed only on the Goblin', () => {
+			// Wiki: "If the Goblin claims to be the Goblin when nominated (and before voting begins),
+			// declare that this player has claimed to be the Goblin, so that all the group hears. Put
+			// the CLAIMED reminder by the Goblin token."
+			const s = scenario(cast);
+			const claimed = { characterId: 'goblin', label: 'Claimed' };
+			expect(reminderTargetMisses(s.game, claimed, s.seat('goblin'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, claimed, s.seat('artist'), s.characters)).toEqual([
+				'not-self'
+			]);
+		});
+
+		it('ends the game for evil when the Goblin marked Claimed is executed', () => {
+			// Wiki: "If the Goblin is executed, and they are marked CLAIMED, then declare that evil
+			// wins."
+			const s = scenario(cast).newDay().reminder('goblin', 'goblin', 'Claimed');
+			expect(gameEnds(s.game, s.characters)).toEqual([]);
+			const executed = s.execute('goblin');
+			expect(gameEnds(executed.game, executed.characters)).toMatchObject([
+				{ characterId: 'goblin', winner: 'evil' }
+			]);
 		});
 	});
 });

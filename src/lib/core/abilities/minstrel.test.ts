@@ -131,4 +131,47 @@ describe('Minstrel', () => {
 			]);
 		});
 	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Minstrel#How_to_Run)', () => {
+		const cast = ['minstrel', 'chef', 'gunslinger', 'godfather', 'devilsadvocate', 'imp'];
+		const tokens = (s: Scenario) =>
+			s.game.seats[s.seat('minstrel')].reminders.filter((r) => r.label === 'Everyone Is Drunk');
+
+		it('makes everyone but the Minstrel and Travellers drunk once a Minion dies by execution', () => {
+			// Wiki: "During the day, if a Minion dies by execution, all other players except
+			// Travellers become drunk—put the Minstrel’s EVERYONE IS DRUNK reminder in the center of
+			// the left side of the Grimoire."
+			const s = scenario(cast)
+				.becomes('gunslinger', 'gunslinger', 'good')
+				.newDay()
+				.execute('godfather');
+			expect(tokens(s)).toHaveLength(1);
+			const works = (on: SeatRef) => abilityState(s.game, s.seat(on), s.characters).works;
+			expect(works('chef')).toBe(false);
+			expect(works('imp')).toBe(false);
+			expect(works('minstrel')).toBe(true);
+			expect(works('gunslinger')).toBe(true);
+		});
+
+		it('does nothing when an executed Minion survives', () => {
+			// Wiki: "During the day, if a Minion dies by execution"
+			const s = scenario(cast)
+				.reminder('godfather', 'devilsadvocate', 'Survives Execution')
+				.newDay()
+				.execute('godfather');
+			expect(s.game.seats[s.seat('godfather')].dead).toBe(false);
+			expect(tokens(s)).toEqual([]);
+		});
+
+		it.fails('takes Everyone Is Drunk off at dusk the next day', () => {
+			// Wiki: "At dusk tomorrow, all players made drunk by the Minstrel become sober—remove the
+			// EVERYONE IS DRUNK reminder."
+			// Waits on the engine (unplanned): the Minstrel's rules have no reminderEnds for Everyone
+			// Is Drunk (it would need "dusk tomorrow", not tonight's dusk), so Dusk leaves it on.
+			const tonight = scenario(cast).newDay().execute('godfather').dusk();
+			expect(tokens(tonight)).toHaveLength(1);
+			const tomorrow = tonight.newDay().dusk();
+			expect(tokens(tomorrow)).toEqual([]);
+		});
+	});
 });

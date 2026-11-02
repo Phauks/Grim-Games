@@ -20,6 +20,10 @@ import { gameEnds } from '#lib/core/rules/game-end.ts';
 import { nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
 import { effectNight, pickedEffectOf } from '#lib/core/rules/reminder-effects.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
+import { abilityState } from '#lib/core/rules/ability.ts';
+import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { setupReminders } from '#lib/core/rules/setup-reminders.ts';
 
 /** The Angel's day reminders, as plain text. */
 const angelLines = (s: Scenario) =>
@@ -103,6 +107,77 @@ describe('Angel', () => {
 			expect(gameEnds(s.game, s.characters)).toMatchObject([
 				{ rule: 'demon-dead', winner: 'good' }
 			]);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Angel#How_to_Run)', () => {
+		it('asks at setup which players the Angel protects, from any seat', () => {
+			// Wiki: "Declare which player or players it is protecting, with their consent. Add the
+			// Angel token and their reminders to the Grimoire, and mark each protected player with a
+			// PROTECTED reminder."
+			const s = scenario(['chef', 'empath', 'monk', 'poisoner', 'imp']).rule('angel');
+			const prep = setupReminders(s.game, s.characters).filter((r) => r.characterId === 'angel');
+			expect(prep).toMatchObject([{ label: 'Protected', candidates: s.seats }]);
+		});
+
+		it('lets Something Bad go on any player, and offers the Angel as a cause of death', () => {
+			// Wiki: "If a player marked PROTECTED dies, something bad happens to the player
+			// responsible for the death. You may need to mark their character token with the
+			// SOMETHING BAD reminder"
+			const s = scenario(['chef', 'empath', 'monk', 'poisoner', 'imp'])
+				.rule('angel')
+				.reminder('chef', 'angel', 'Protected')
+				.dies('chef', 'imp');
+			const token = { characterId: 'angel', label: 'Something Bad' };
+			for (const seat of s.seats)
+				expect(reminderTargetMisses(s.game, token, seat, s.characters)).toEqual([]);
+			const causes = validDeathCauses(s.game, s.seat('imp'), s.characters);
+			expect(causes.map((c) => c.cause)).toContain('angel');
+		});
+
+		it('poisons a player whose Something Bad is picked as poisoned, and lists one picked as mad', () => {
+			// Wiki: "to remind you that they are now poisoned, or mad, or can’t vote today, or simply
+			// as a reminder to decide on what to do later."
+			const s = scenario(['chef', 'empath', 'monk', 'poisoner', 'imp'])
+				.rule('angel')
+				.reminder('poisoner', 'angel', 'Something Bad')
+				.reminder('monk', 'angel', 'Something Bad');
+			const tokenOn = (seat: string) =>
+				s.game.seats[s.seat(seat)].reminders.find((r) => r.label === 'Something Bad')!.reminderId;
+			const night = effectNight(s.game, false);
+			const after = s.do(
+				{
+					type: 'SetReminderEffect',
+					reminderId: tokenOn('poisoner'),
+					effect: { kind: 'poisoned', night }
+				},
+				{ type: 'SetReminderEffect', reminderId: tokenOn('monk'), effect: { kind: 'mad', night } }
+			);
+			expect(abilityState(after.game, after.seat('poisoner'), after.characters)).toMatchObject({
+				works: false,
+				impairments: [{ reason: 'poisoned', source: { characterId: 'angel' } }]
+			});
+			expect(
+				dayReminders(
+					dayStateFromGame(
+						after.game,
+						(id) => after.characters.get(id),
+						undefined,
+						after.characters
+					)
+				).groups.find((g) => g.group === 'madness')?.reminders
+			).toHaveLength(1);
+		});
+
+		it('takes the Angel and its day reminder out of play when it is removed', () => {
+			// Wiki: "Remove the Angel at any time, declaring when you do so."
+			const s = scenario(['chef', 'empath', 'monk', 'poisoner', 'imp'])
+				.rule('angel')
+				.reminder('chef', 'angel', 'Protected');
+			expect(angelLines(s)).toHaveLength(1);
+			const removed = s.do({ type: 'RemoveRuleCharacter', characterId: 'angel' });
+			expect(removed.game.ruleCharacters).not.toContain('angel');
+			expect(angelLines(removed)).toEqual([]);
 		});
 	});
 });

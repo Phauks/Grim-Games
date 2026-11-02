@@ -18,7 +18,10 @@ import { committedCharacter, nightSheetPresence } from '#lib/core/testing/commit
 import { abilityState } from '#lib/core/rules/ability.ts';
 import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
 import { nightAnswer } from '#lib/core/rules/night-info.ts';
+import { placeholdersFor } from '#lib/core/rules/night-text.ts';
 import { nominatorsAfterExecution } from '#lib/core/rules/nominations.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { wokeTonight } from '#lib/core/rules/woke-tonight.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Bone Collector', () => {
@@ -131,6 +134,77 @@ describe('Bone Collector', () => {
 				kind: 'number',
 				value: 3
 			});
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Bone_Collector#How_to_Run)', () => {
+		const has = { characterId: 'bonecollector', label: 'Has Ability' };
+		const spent = { characterId: 'bonecollector', label: 'No Ability' };
+
+		it('Has Ability goes on a dead player only', () => {
+			// Wiki: "They either shake their head no or point at any dead player."
+			const s = scenario(['bonecollector', 'flowergirl', 'imp', 'chef', 'poisoner']).dies(
+				'flowergirl'
+			);
+			expect(reminderTargetMisses(s.game, has, s.seat('flowergirl'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, has, s.seat('chef'), s.characters)).toEqual(['life']);
+		});
+
+		it('the chosen dead player wakes tonight to use their ability', () => {
+			// Wiki: "If they pointed at a dead player, the chosen player regains their ability—mark their
+			// character token with the Bone Collector’s HAS ABILITY reminder. (They may need to be woken
+			// tonight to use their ability.)"
+			const s = scenario(['bonecollector', 'flowergirl', 'imp', 'chef', 'poisoner'])
+				.dies('flowergirl')
+				.newDay();
+			expect(wokeTonight(s.game, s.seat('flowergirl'), s.characters, 'other')).toBe(false);
+			const chosen = s.reminder('flowergirl', 'bonecollector', 'Has Ability');
+			expect(wokeTonight(chosen.game, chosen.seat('flowergirl'), chosen.characters, 'other')).toBe(
+				true
+			);
+		});
+
+		it('places Has Ability and No Ability at its step, No Ability on the Bone Collector', () => {
+			// Wiki: "The Bone Collector loses their ability—mark them with their NO ABILITY reminder."
+			expect(placeholdersFor(character, 'other')).toEqual([
+				{
+					tokens: [
+						{ label: 'Has Ability', action: 'place' },
+						{ label: 'No Ability', action: 'place' }
+					]
+				}
+			]);
+			const s = scenario(['bonecollector', 'flowergirl', 'imp', 'chef', 'poisoner']);
+			expect(reminderTargetMisses(s.game, spent, s.seat('bonecollector'), s.characters)).toEqual(
+				[]
+			);
+			expect(reminderTargetMisses(s.game, spent, s.seat('chef'), s.characters)).toEqual([
+				'not-self'
+			]);
+		});
+
+		it.fails('a spent Bone Collector no longer wakes', () => {
+			// Wiki: "The Bone Collector loses their ability—mark them with their NO ABILITY reminder."
+			// Waits on the engine (unplanned): the Bone Collector has no wakesWhen rule, so it still
+			// wakes once marked No Ability.
+			const s = scenario(['bonecollector', 'flowergirl', 'imp', 'chef', 'poisoner'])
+				.newDay()
+				.reminder('bonecollector', 'bonecollector', 'No Ability');
+			expect(wokeTonight(s.game, s.seat('bonecollector'), s.characters, 'other')).toBe(false);
+		});
+
+		it.fails('the chosen player loses their ability again at the next dusk', () => {
+			// Wiki: "The next dusk, the chosen player loses their ability—remove the HAS ABILITY
+			// reminder."
+			// Waits on the engine (unplanned): Has Ability has no reminderEnds, so it stays on the dead
+			// player past dusk and they keep their ability.
+			const s = scenario(['bonecollector', 'flowergirl', 'imp', 'chef', 'poisoner'])
+				.dies('flowergirl')
+				.newDay()
+				.reminder('flowergirl', 'bonecollector', 'Has Ability')
+				.newDay()
+				.dusk();
+			expect(abilityState(s.game, s.seat('flowergirl'), s.characters).works).toBe(false);
 		});
 	});
 });

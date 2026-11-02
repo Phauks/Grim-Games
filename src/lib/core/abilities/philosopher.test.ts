@@ -20,6 +20,8 @@ import { abilityState } from '#lib/core/rules/ability.ts';
 import { gainedBy } from '#lib/core/rules/gained-abilities.ts';
 import { infoPicker, withNightInfo } from '#lib/core/rules/night-info.ts';
 import { nightOrder, type Night } from '#lib/core/rules/night-order.ts';
+import { placeholdersFor } from '#lib/core/rules/night-text.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 import {
 	committedCharacter,
 	committedGameData,
@@ -129,6 +131,62 @@ describe('Philosopher', () => {
 			expect(abilityState(poisoned.game, poisoned.seat('artist'), poisoned.characters).works).toBe(
 				true
 			);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Philosopher#How_to_Run)', () => {
+		const drunk = { characterId: 'philosopher', label: 'Drunk' };
+		const swappedMark = { characterId: 'philosopher', label: 'Is The Philosopher' };
+
+		it('each night places either Drunk or Is The Philosopher', () => {
+			// Wiki: "Each night, wake the Philosopher. They either shake their head no or point at any
+			// Townsfolk icon or any Outsider icon on their character sheet."
+			const either = [
+				{
+					tokens: [
+						{ label: 'Drunk', action: 'place' },
+						{ label: 'Is The Philosopher', action: 'place' }
+					],
+					either: true
+				}
+			];
+			expect(placeholdersFor(character, 'first')).toEqual(either);
+			expect(placeholdersFor(character, 'other')).toEqual(either);
+		});
+
+		it('Is The Philosopher goes on the Philosopher only', () => {
+			// Wiki: "If they pointed to an icon of a character not in play, swap the Philosopher token
+			// with the chosen character token and mark them with the IS THE PHILOSOPHER reminder."
+			const s = scenario(['philosopher', 'artist', 'chef', 'witch', 'nodashii']);
+			expect(
+				reminderTargetMisses(s.game, swappedMark, s.seat('philosopher'), s.characters)
+			).toEqual([]);
+			expect(reminderTargetMisses(s.game, swappedMark, s.seat('chef'), s.characters)).toEqual([
+				'not-self'
+			]);
+		});
+
+		it('Drunk goes on the player of a good character in play, never on evil or the Philosopher', () => {
+			// Wiki: "If they pointed to an icon of a character in play, the player of the chosen character
+			// becomes drunk - mark them with the DRUNK reminder."
+			const s = scenario(['philosopher', 'artist', 'mutant', 'witch', 'nodashii']);
+			expect(reminderTargetMisses(s.game, drunk, s.seat('artist'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, drunk, s.seat('mutant'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, drunk, s.seat('witch'), s.characters)).not.toEqual([]);
+			expect(reminderTargetMisses(s.game, drunk, s.seat('philosopher'), s.characters)).toContain(
+				'self'
+			);
+		});
+
+		it.fails('takes the Drunk reminder off when the Philosopher dies', () => {
+			// Wiki: "If the Philosopher dies, the player made drunk by the Philosopher becomes sober -
+			// remove the DRUNK reminder."
+			// Waits on the engine (unplanned): the Philosopher's death sobers the player but leaves the
+			// Drunk reminder on them.
+			const s = scenario(['philosopher', 'artist', 'chef', 'witch', 'nodashii'])
+				.reminder('artist', 'philosopher', 'Drunk')
+				.dies('philosopher', 'nodashii');
+			expect(s.game.seats[s.seat('artist')].reminders).toEqual([]);
 		});
 	});
 });

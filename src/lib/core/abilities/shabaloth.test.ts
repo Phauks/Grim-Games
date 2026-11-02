@@ -25,6 +25,9 @@ import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 import { revivedSinceNewDay } from '#lib/core/rules/night-numbers.ts';
 import { revivedAfterStep } from '#lib/core/rules/revived-tonight.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
+import { nightKill } from '#lib/core/rules/night-kill.ts';
+import { placeholdersFor } from '#lib/core/rules/night-text.ts';
+import { reminderPrompt } from '#lib/core/rules/reminder-prompts.ts';
 
 describe('Shabaloth', () => {
 	const character = committedCharacter('shabaloth');
@@ -128,6 +131,47 @@ describe('Shabaloth', () => {
 			expect(protection(s.game, s.seat('tealady'), s.characters, 'demon')).toBeUndefined();
 			const after = s.dies('tealady', 'shabaloth');
 			expect(after.game.seats[after.seat('chef')].dead).toBe(false);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Shabaloth#How_to_Run)', () => {
+		const cast = ['shabaloth', 'gossip', 'gambler', 'chef', 'poisoner'];
+
+		it('attacks two players each night but the first, alive or dead, each marked Dead', () => {
+			// Wiki: "Each night except the first, wake the Shabaloth. They point at any two players, one
+			// at a time. Put the Shabaloth to sleep. In the order chosen, each chosen player dies—mark
+			// them with DEAD reminders."
+			const s = scenario(cast).newDay().dies('chef', 'execution');
+			expect(nightKill(s.game, s.seat('shabaloth'), 'shabaloth', s.characters)?.max).toBe(2);
+			const dead = { characterId: 'shabaloth', label: 'Dead' };
+			for (const seat of ['shabaloth', 'gossip', 'chef'] as const)
+				expect(reminderTargetMisses(s.game, dead, s.seat(seat), s.characters), seat).toEqual([]);
+			expect(placeholdersFor(character, 'other')?.slice(1)).toEqual([
+				{ tokens: [{ label: 'Dead', action: 'place' }] },
+				{ tokens: [{ label: 'Dead', action: 'place' }] }
+			]);
+		});
+
+		it("may bring back a player it killed, marked Alive, just before the Shabaloth's attack", () => {
+			// Wiki: "Each later night, just before waking the Shabaloth, you can choose one character
+			// marked with the Shabaloth’s DEAD reminder, and the chosen player becomes alive again"
+			expect(placeholdersFor(character, 'other')?.[0]).toMatchObject({
+				tokens: [{ label: 'Alive', action: 'place' }]
+			});
+			expect(reminderPrompt('Alive', 'shabaloth')).toBe('revive');
+		});
+
+		it.fails("replaces the regurgitated player's Dead with Alive", () => {
+			// Wiki: "replace the DEAD reminder with the Shabaloth’s ALIVE reminder, and remove their
+			// shroud."
+			// Waits on the engine (unplanned): the Shabaloth's step places Alive but has no step that
+			// takes that player's Dead off.
+			expect(placeholdersFor(character, 'other')?.[0]).toEqual({
+				tokens: [
+					{ label: 'Alive', action: 'place' },
+					{ label: 'Dead', action: 'remove' }
+				]
+			});
 		});
 	});
 });
