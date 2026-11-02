@@ -14,7 +14,9 @@
 	import type { SetupGamePort } from './game-port.ts';
 	import RevealDialog from './RevealDialog.svelte';
 	import { seatLabel } from './seat-label.ts';
-	import { tileMarks } from './tile-face.ts';
+	import { tileMarks, type TileMark } from './tile-face.ts';
+	import { seatName } from '#lib/features/game/seat-label.ts';
+	import { noPhoneDraw } from '#lib/features/room/no-phone-draw.svelte.ts';
 	import BagTiles from './BagTiles.svelte';
 	import SetupNav from './SetupNav.svelte';
 	import LeaveGuard from './LeaveGuard.svelte';
@@ -45,20 +47,38 @@
 	const game = $derived(port.game);
 	const lookup = $derived(port.lookup);
 	const bag = $derived(game?.bag);
-	const slots = $derived(bag ? bagSlots(bag) : []);
+	const drawSlots = $derived(bag ? bagSlots(bag) : []);
+	// Players with no phone, after Show characters (Trevor, 2026-11-01): each one's dealt tile
+	// is held again, with their name on it, for the usual reveal and Confirm on this device.
+	const noPhone = $derived(new Set(noPhoneDraw.waiting(game?.gameId)));
+	const slots = $derived(
+		drawSlots.map((s) =>
+			s.state === 'drawn' && s.seatId && noPhone.has(s.seatId)
+				? { ...s, state: 'held' as const }
+				: s
+		)
+	);
 	const next = $derived(game ? nextDrawSeat(game) : undefined);
 	// A stray tap mid-draw must not leave the draw (Trevor, 2026-10-16).
-	const inBag = $derived(slots.filter((s) => s.state !== 'drawn').length);
+	const inBag = $derived(drawSlots.filter((s) => s.state !== 'drawn').length);
 	// Numbers, letters, symbols, colours or Random on the face-down tiles (Storyteller
 	// settings). Random is seeded by the game and bag, so it stays put across reloads.
 	const face = $derived(preferences.current.tileFace);
-	const marks = $derived(
+	const faces = $derived(
 		tileMarks(
 			slots.length,
 			face,
 			`${game?.gameId ?? ''}:${slots[0]?.tileId ?? ''}`,
 			gameSettings.current.tileOrderRandom
 		)
+	);
+	const marks = $derived<TileMark[]>(
+		faces.map((mark, i) => {
+			const seatId = slots.find((s) => s.number === i + 1)?.seatId;
+			return game && seatId && noPhone.has(seatId)
+				? { kind: 'player', name: seatName(game, seatId) }
+				: mark;
+		})
 	);
 	const markName = (number: number) => marks[number - 1]?.name ?? String(number);
 	let revealing = $state<TileId | undefined>(undefined);
@@ -244,7 +264,10 @@
 		if (!tile?.drawnBySeat) return;
 		const seatId = tile.drawnBySeat;
 		const name = details.playerName.trim();
-		if (!send({ type: 'ConfirmDraw', tileId: tile.tileId, alignment: details.alignment })) return;
+		// A player with no phone seeing a tile dealt to them: already theirs in the grimoire.
+		if (tile.confirmed) noPhoneDraw.done(seatId);
+		else if (!send({ type: 'ConfirmDraw', tileId: tile.tileId, alignment: details.alignment }))
+			return;
 		if (name !== (game?.seats[seatId]?.playerName ?? '')) {
 			send({ type: 'RenameSeat', seatId, playerName: name });
 		}
@@ -325,7 +348,7 @@
 			bind:open={revealOpen}
 			number={markName(slot.number)}
 			{shows}
-			needsAlignment={lookup.get(tile.grimoire)?.type === 'traveller'}
+			needsAlignment={!tile.confirmed && lookup.get(tile.grimoire)?.type === 'traveller'}
 			seatLabel={label(tile.drawnBySeat)}
 			playerName={(tile.drawnBySeat && game?.seats[tile.drawnBySeat]?.playerName) || ''}
 			taken={takenNames(tile.drawnBySeat)}

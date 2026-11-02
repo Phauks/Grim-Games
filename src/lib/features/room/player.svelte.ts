@@ -6,6 +6,7 @@
 import type { CharacterId, Script } from '#lib/core/data/index.ts';
 import type { GameFeedback } from '#lib/core/feedback/index.ts';
 import type { SeatId } from '#lib/core/model/index.ts';
+import { sameDetails } from '#lib/core/profile/index.ts';
 import { buildInfo } from '#lib/build-info.ts';
 import { sha256Hex } from '#lib/core/codes/hash.ts';
 import {
@@ -283,23 +284,34 @@ export class RoomPlayer {
 	}
 
 	/**
-	 * Tells the room this phone's avatar, frame and picture (plan R6) when they differ from
+	 * Tells the room this phone's avatar, frame, picture (plan R6), tag-line and details
+	 * (2026-11-01) when they differ from
 	 * what it has: on every connect, and when the player picks again. The picture is uploaded
 	 * once a game, since the room deletes one the Storyteller took away; a look the room turned
 	 * down is not sent again until something in it changes.
 	 */
 	async sendLook(): Promise<void> {
-		const { avatar, frame } = playerSettings.current;
+		const { avatar, frame, flavour: tagline, details } = playerSettings.current;
 		const picture = await this.#picture();
 		const me = this.view?.me;
-		if (me && me.avatar === avatar && me.frame === frame && me.picture === picture) return;
-		const look = `${this.view?.gameId}|${avatar}|${frame}|${picture}`;
+		if (
+			me &&
+			me.avatar === avatar &&
+			me.frame === frame &&
+			me.picture === picture &&
+			me.tagline === tagline &&
+			sameDetails(me.details, details)
+		)
+			return;
+		const look = JSON.stringify([this.view?.gameId, avatar, frame, picture, tagline, details]);
 		if (look === this.#lastLook) return;
 		const sent = this.#socket.send({
 			type: 'look',
 			...(avatar ? { avatar } : {}),
 			...(frame ? { frame } : {}),
-			...(picture ? { picture } : {})
+			...(picture ? { picture } : {}),
+			...(tagline ? { tagline } : {}),
+			...(details?.length ? { details } : {})
 		});
 		if (sent) this.#lastLook = look;
 	}

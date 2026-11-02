@@ -5,6 +5,7 @@
 import type { Alignment, Script } from '#lib/core/data/index.ts';
 import type { GameFeedback } from '#lib/core/feedback/index.ts';
 import type { SeatId } from '#lib/core/model/index.ts';
+import type { ProfileDetail, ProfileWords } from '#lib/core/profile/index.ts';
 import type { PublicGameState } from './public-projection.ts';
 import type { SharedGrimoire } from './shared-grimoire.ts';
 import type { SoundOutput } from '#lib/core/sound/soundboard.ts';
@@ -53,7 +54,14 @@ export type ClientMessage =
 	| { type: 'request'; name: string; seatId?: SeatId }
 	| { type: 'leave-seat' }
 	/** The player's avatar, frame and uploaded picture (plan R6); a missing one clears it. */
-	| { type: 'look'; avatar?: string; frame?: string; picture?: string }
+	| {
+			type: 'look';
+			avatar?: string;
+			frame?: string;
+			picture?: string;
+			tagline?: string;
+			details?: ProfileDetail[];
+	  }
 	/** Reports the picture on another player's seat to the Storyteller (2026-10-27). */
 	| { type: 'report-picture'; seatId: SeatId }
 	| { type: 'message'; text: string; consult?: boolean } // To the Storyteller (2026-10-27).
@@ -290,6 +298,7 @@ export interface PlayerView {
 	};
 	role?: SeatRole; // This player's own character, while players may see theirs.
 	pictures?: Partial<Record<SeatId, string>>; // Each seat's player's picture (room-pictures.ts).
+	profiles?: Partial<Record<SeatId, ProfileWords>>; // Each seat's player's tag-line and details.
 	inbox?: true; // The Storyteller's app takes messages, so this phone may send one.
 	seatingOpen?: true; // This phone may drag its own disc (plan J38).
 	countOff?: CountOffView; // The count off, with this phone's own number marked (plan J40).
@@ -308,6 +317,7 @@ export interface TownView {
 	/** The current game is over, as phones are told, so the finished grimoire can show. */
 	ended?: Omit<GameOver, 'gameId'>;
 	pictures?: Partial<Record<SeatId, string>>;
+	profiles?: Partial<Record<SeatId, ProfileWords>>;
 }
 
 /** The game's script, sent to a phone when it joins and whenever the Storyteller changes it. */
