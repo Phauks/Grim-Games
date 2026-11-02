@@ -3,6 +3,8 @@
 	import type { Game } from '#lib/core/model/index.ts';
 	import { carryFrom, clearNextGame, setNextGame } from '#lib/features/game/next-game.ts';
 	import NewGame from '#lib/features/grimoire/NewGame.svelte';
+	import RoomVoteSheet from '#lib/features/room/RoomVoteSheet.svelte';
+	import { pickFromVote, type VotePick } from '#lib/features/room/vote-pick.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -11,7 +13,7 @@
 	/**
 	 * New game from inside a game (Trevor, 2026-10-24): no script change mid-game, but "a way
 	 * to Start A New Game", as "a tiny modal version of the new game screen" so the game mode,
-	 * special rules and the room's vote can change too. The room, seat count and names carry
+	 * special rules and the room's vote can change too; the vote runs over the board too. The room, seat count and names carry
 	 * over (next-game.ts); the current game ends when the new one starts, so closing the sheet
 	 * changes nothing. A game not yet begun is dropped without asking.
 	 */
@@ -27,12 +29,29 @@
 
 	let asking = $state(false);
 	let open = $state(false);
+	let voting = $state(false);
+	let newGame = $state<NewGame>();
 
 	/** Game info's New game: asks first when there is a game to end. */
 	export function begin() {
 		const drop = !started && notBegun(game);
 		if (drop || ended) show(drop);
 		else asking = true;
+	}
+	/**
+	 * Room vote, on the game screen (Trevor, 2026-11-01): from the board's ⋯ once the game is
+	 * over, or from this sheet's own Room vote.
+	 */
+	export function vote() {
+		voting = true;
+	}
+	/** Play from the vote: into the open sheet, or opening it with the winner chosen. */
+	function play(pick: VotePick) {
+		if (open && newGame) newGame.applyVote(pick);
+		else {
+			pickFromVote(pick);
+			begin();
+		}
 	}
 	function show(drop: boolean) {
 		setNextGame(carryFrom(game, drop));
@@ -55,5 +74,7 @@
 />
 
 <Dialog bind:open title={t('setup.newGame')} size="max">
-	{#if open}<NewGame compact />{/if}
+	{#if open}<NewGame bind:this={newGame} compact onRoomVote={vote} />{/if}
 </Dialog>
+
+<RoomVoteSheet bind:open={voting} onPlay={play} />

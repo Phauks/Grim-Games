@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Snippet } from 'svelte';
+	import { untrack, type Snippet } from 'svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import CopyButton from './CopyButton.svelte';
@@ -18,14 +18,15 @@
 		status?: Snippet;
 		/**
 		 * An eye beside Copy hides the code from anyone looking at the screen, as a password
-		 * field's eye does (Room transfer, Trevor 2026-10-31). Copy still copies it.
+		 * field's eye does (Room transfer, Trevor 2026-10-31). Copy still copies it. It starts
+		 * hidden (Trevor, 2026-11-01: "room transfer code should start hidden").
 		 */
 		hideable?: boolean;
 	}
 
 	let { label, value, testid = 'share-code', status, hideable = false }: Props = $props();
 
-	let hidden = $state(false);
+	let hidden = $state(untrack(() => hideable));
 	/** One dot per character, spaces kept, so the hidden code reads as the same shape. */
 	const masked = $derived(value?.replace(/\S/g, '•'));
 
