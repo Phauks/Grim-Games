@@ -2172,8 +2172,7 @@ test('a player puts reminder tokens on seats in their own Grim', async ({
 		'aria-label',
 		'Seat 3: Seat 3, your reminders: Dead'
 	);
-	// Its handle lowers it again.
-	await phone.getByRole('button', { name: 'Every reminder' }).tap();
+	// Let go, it stays down in its row (Trevor, 2026-11-02: back to its closed state).
 	await expect(bin).toBeHidden();
 	// The seat's sheet lists them, with none to add there.
 	await seat.tap();
