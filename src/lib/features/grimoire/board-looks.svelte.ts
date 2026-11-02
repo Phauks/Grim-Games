@@ -16,8 +16,7 @@ import {
  * - the frame round seat tokens whose player has not picked their own (L4);
  * - which reminders light up while a seat's token is held;
  * - when a reminder shows its line back to its seat (reminder-lines.ts);
- * - how a seat shows an ability it holds without its token (the Boffin's good character);
- * - whether a moving background moves (plan L114).
+ * - how a seat shows an ability it holds without its token (the Boffin's good character).
  */
 export interface BoardLooks {
 	vignette: boolean;
@@ -55,11 +54,6 @@ export interface BoardLooks {
 	 * runs it.
 	 */
 	truthLook: 'grimbinder' | 'vanilla';
-	/**
-	 * A moving background moves (plan L114); off, every scene shows its still frame. A device
-	 * that asks for less motion always gets the still frame.
-	 */
-	movingBackgrounds: boolean;
 }
 
 /** The player name badge's size range (Trevor, 2026-10-17: "should be an option"). */
@@ -81,8 +75,7 @@ export const DEFAULT_BOARD_LOOKS: BoardLooks = {
 	reminderLines: DEFAULT_REMINDER_LINES,
 	abilityLook: 'grimbinder',
 	// The mockup's promise (2026-10-31): nothing changes until a Storyteller picks it.
-	truthLook: 'vanilla',
-	movingBackgrounds: true
+	truthLook: 'vanilla'
 };
 const KEY = 'grim.boardLooks';
 
@@ -111,8 +104,7 @@ export function parseBoardLooks(raw: unknown): BoardLooks {
 		usedGhostVote: value.usedGhostVote === 'struck' ? 'struck' : 'hollow',
 		reminderLines: parseReminderLines(value.reminderLines),
 		abilityLook: value.abilityLook === 'vanilla' ? 'vanilla' : 'grimbinder',
-		truthLook: value.truthLook === 'grimbinder' ? 'grimbinder' : 'vanilla',
-		movingBackgrounds: value.movingBackgrounds !== false
+		truthLook: value.truthLook === 'grimbinder' ? 'grimbinder' : 'vanilla'
 		// Earlier builds' `reminders: 'free'` ("Stay where dropped") is dropped: reminders are
 		// always held by their seat (Trevor, 2026-10-31).
 		// Earlier builds' `reminderStacks` switch is dropped: every reminder is always on the

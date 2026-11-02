@@ -390,7 +390,6 @@
 							: undefined)}
 				preset={look.preset}
 				vignette={look.vignette}
-				moving={boardLooks.current.movingBackgrounds}
 			/>
 			{#if look.logo !== undefined}
 				<BoardLogo

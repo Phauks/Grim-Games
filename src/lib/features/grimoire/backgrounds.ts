@@ -8,7 +8,6 @@
  * only fetched once the Storyteller chooses it.
  */
 import { unpackPicture } from '#lib/ui/picked-picture.ts';
-import { SCENE_PRESETS, type SceneKind } from './scenes/scene-presets.ts';
 
 export type BackgroundChoice =
 	| { kind: 'none' }
@@ -16,17 +15,9 @@ export type BackgroundChoice =
 	| { kind: 'script' }
 	| { kind: 'preset'; id: PresetId };
 
-/** A built-in background: its name, and its CSS `background` value. */
-export interface Preset {
-	label: string;
-	css: string;
-	/** A moving background's moving layer, over `css` as its still frame (plan L114). */
-	scene?: { kind: SceneKind };
-}
-
 /**
  * Built-in backgrounds (Trevor, 2026-10-16), drawn in CSS so there is nothing to license
- * or precache. Each is a CSS `background` value; the moving backgrounds follow.
+ * or precache. Each is a CSS `background` value.
  */
 export const PRESETS = {
 	wood: {
@@ -53,12 +44,9 @@ export const PRESETS = {
 	stone: {
 		label: 'Stone',
 		css: `radial-gradient(ellipse at center, oklch(0.42 0.01 60) 0%, oklch(0.28 0.01 60) 80%)`
-	},
-	...SCENE_PRESETS
-} as const satisfies Record<string, Preset>;
+	}
+} as const;
 export type PresetId = keyof typeof PRESETS;
-/** How a preset's moving layer is drawn, or undefined for a background that stays still. */
-export const sceneOf = (id: PresetId): SceneKind | undefined => (PRESETS[id] as Preset).scene?.kind;
 const isPreset = (id: unknown): id is PresetId => typeof id === 'string' && id in PRESETS;
 
 /**
@@ -103,8 +91,7 @@ async function run<T>(mode: IDBTransactionMode, act: (store: IDBObjectStore) => 
 	});
 }
 
-/** A saved choice, if it is still a valid one (a preset this build knows, an image). */
-export function parseBackground(raw: unknown): BackgroundChoice | undefined {
+function parse(raw: unknown): BackgroundChoice | undefined {
 	if (!raw || typeof raw !== 'object') return undefined;
 	const value = raw as { kind?: unknown; image?: unknown; id?: unknown };
 	if (value.kind === 'none' || value.kind === 'script') return { kind: value.kind };
@@ -118,7 +105,7 @@ export function parseBackground(raw: unknown): BackgroundChoice | undefined {
 export async function readBackground(
 	scope: BackgroundScope
 ): Promise<BackgroundChoice | undefined> {
-	return parseBackground(await run('readonly', (store) => store.get(keyOf(scope))));
+	return parse(await run('readonly', (store) => store.get(keyOf(scope))));
 }
 
 /** A game's background: its own choice, else the default, else none. */
