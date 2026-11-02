@@ -9,6 +9,7 @@ import { type AbilityState, abilityState } from '../ability.ts';
 import { withSetupAlignmentStep } from '../setup-alignment.ts';
 import { withTravellerAlignmentStep, withTravellerJoinsStep } from '../traveller-alignment.ts';
 import { withGainedSteps, withStorytellerSteps } from '../gained-abilities.ts';
+import { withJinxChoiceSteps } from '../jinx-choices.ts';
 import { type DeathCheck, deathCheck } from '../night-deaths.ts';
 import type { Night, NightStep } from '../night-order.ts';
 import { type NightAnswer } from './reliability.ts';
@@ -78,7 +79,8 @@ export const wakesMarked = (characterId: CharacterId, characters: CharacterLooku
  * Adds what the game says to the steps of a night order (see `nightOrder`): `info`
  * (answers, pickers, death checks), `impaired` (waking players whose ability does not
  * work, such as a Minion the Preacher chose), and, given `night`, a step for each gained
- * ability (the Pixie's, `withGainedSteps`) and a first step for Travellers without an
+ * ability (the Pixie's, `withGainedSteps`), a step for each jinx night choice (the
+ * Leviathan's with the Sage, `withJinxChoiceSteps`) and a first step for Travellers without an
  * alignment (`withTravellerAlignmentStep`), and before that one for Travellers not in play
  * (`withTravellerJoinsStep`); on the first night a step for players a setup change makes start
  * with the other alignment (`withSetupAlignmentStep`); `order` places a gained ability not in
@@ -97,8 +99,14 @@ export function withNightInfo<T extends NightStep>(
 	const all = withTravellerJoinsStep(
 		withTravellerAlignmentStep(
 			night
-				? withStorytellerSteps(
-						withGainedSteps(steps, game, characters, night, order),
+				? withJinxChoiceSteps(
+						withStorytellerSteps(
+							withGainedSteps(steps, game, characters, night, order),
+							game,
+							characters,
+							night,
+							order
+						),
 						game,
 						characters,
 						night,
@@ -116,8 +124,9 @@ export function withNightInfo<T extends NightStep>(
 	const withAlignments = night === 'first' ? withSetupAlignmentStep(all, game, characters) : all;
 	return withAlignments.map((step) => {
 		// A wake step for a changed character shows the player; it works out nothing.
-		// Nor does one the Storyteller acts in: it wakes nobody.
-		if (!step.character || step.changed || step.storytellerAbility) return step;
+		// Nor does one the Storyteller acts in: it wakes nobody. A jinx's night choice is
+		// recorded on its own step (`jinx-choices.ts`).
+		if (!step.character || step.changed || step.storytellerAbility || step.jinxChoice) return step;
 		const gained = step.gained;
 		const seats = gained
 			? [gained.seatId]

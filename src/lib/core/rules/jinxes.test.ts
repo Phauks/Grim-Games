@@ -184,6 +184,33 @@ describe('jinx rules data', () => {
 		]);
 	});
 
+	it('reads the night choice jinx rules, and rejects bad ones', () => {
+		const issues = new Issues();
+		const good = {
+			a: { nightChoice: { who: 'good', partner: 'acts' } },
+			b: { nightChoice: { who: 'any', partner: 'dies' } }
+		};
+		expect(readJinxRules(good, 'jinxes', issues)).toEqual(good);
+		expect(issues.list).toEqual([]);
+		const bad = new Issues();
+		readJinxRules(
+			{
+				a: { nightChoice: { who: 'evil', partner: 'acts' } },
+				b: { nightChoice: { who: 'good' } },
+				c: { nightChoice: { who: 'good', partner: 'acts', night: 2 } }
+			},
+			'jinxes',
+			bad
+		);
+		expect(bad.list.map((i) => i.split(': ')[0])).toEqual([
+			'jinxes.a.nightChoice.who',
+			'jinxes.a',
+			'jinxes.b.nightChoice.partner',
+			'jinxes.b',
+			'jinxes.c.nightChoice.night'
+		]);
+	});
+
 	it('names only tokens the partner has, in each endsGame jinx', () => {
 		for (const character of data.characters) {
 			for (const [partner, rule] of Object.entries(rulesOf(character.id)?.jinxes ?? {})) {

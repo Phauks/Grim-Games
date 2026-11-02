@@ -223,3 +223,43 @@ test("the Grandchild executed with the Leviathan in play offers the end, in the 
 	await expect(end.getByTestId('end-jinx')).toContainText(/Grandchild\s+dies\s+by\s+execution/);
 	await expect(prompt.getByRole('combobox', { name: 'Winner' })).toContainText('Evil');
 });
+
+// The Leviathan's night choice (L112): each night after the first it chooses a player on a step
+// of its own, before the partner's, and a chosen Sage acts without dying
+// (https://wiki.bloodontheclocktower.com/Leviathan#Related_Jinxes).
+test('the Leviathan chooses the Sage at night, and the Sage acts without dying', async ({
+	page
+}) => {
+	test.slow();
+	await startGame(page, 'Levi Sage', [
+		'leviathan',
+		'sage',
+		'chef',
+		'empath',
+		'poisoner',
+		'washerwoman'
+	]);
+	await choose(page, 1, 'Leviathan');
+	await choose(page, 2, 'Sage');
+	await choose(page, 3, 'Chef');
+	await toSecondNight(page, 3);
+
+	const step = await openStep(page, 'Leviathan');
+	const row = step.getByTestId('jinx-choice');
+	await expect(row).toContainText('None');
+	await row.getByRole('button', { name: 'Choose' }).tap();
+	const chooser = page.getByRole('dialog', { name: 'Leviathan chose' });
+	// The executed Chef is faded, still choosable: the Storyteller decides.
+	await expect(chooser.locator('button[data-misfit]')).toContainText(['Chef']);
+	await chooser.getByRole('button', { name: /Sage/ }).tap();
+	await expect(chooser).toBeHidden();
+	await expect(row).toContainText('Sage');
+	await expect(row.getByRole('button', { name: 'Change' })).toBeVisible();
+	const chosen = /chosen by\s*Leviathan\s*,\s*uses their ability but doesn't die/;
+	await expect(step.getByTestId('night-alerts')).toContainText(chosen);
+	await page.keyboard.press('Escape');
+	await expect(step).toBeHidden();
+
+	const sage = await openStep(page, 'Sage');
+	await expect(sage.getByTestId('night-alerts')).toContainText(chosen);
+});

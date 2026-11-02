@@ -12,6 +12,7 @@
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { nightChoiceTests } from './night-choice.test-support.ts';
 
 describe('Banshee + Leviathan jinx', () => {
 	const data = committedGameData();
@@ -30,7 +31,7 @@ describe('Banshee + Leviathan jinx', () => {
 		expect(jinxesAmong(data.jinxes, ['leviathan'])).not.toContain(jinx);
 	});
 
-	// Waits for a Demon night step (L112 left it): each night after the first the Demon picks
-	// an alive good player, never the same twice, and a chosen partner acts as if killed.
-	it.todo('enforces the rule the jinx imposes');
+	// Both pages' Related Jinxes: each night after the first the Demon picks an alive player not
+	// picked before, and the partner, if picked, acts as if the Demon killed it (the Banshee really dies).
+	nightChoiceTests('leviathan', 'banshee', { who: 'good', partner: 'dies' });
 });
