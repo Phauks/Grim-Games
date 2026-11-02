@@ -8,6 +8,7 @@
 	import JinxChoiceStep from './JinxChoiceStep.svelte';
 	import CountdownStep from './CountdownStep.svelte';
 	import ChosenKillStep from './ChosenKillStep.svelte';
+	import TallyKillStep from './TallyKillStep.svelte';
 	import NoAttackStep from './NoAttackStep.svelte';
 	import NightSuggested from './NightSuggested.svelte';
 	import StorytellerVisit from './StorytellerVisit.svelte';
@@ -499,6 +500,8 @@
 				{#if night === 'other'}<CountdownStep {grimoire} {step} />{/if}
 				<!-- The Ojo's named character, the Al-Hadikhia's live or die. -->
 				<ChosenKillStep {grimoire} {step} />
+				<!-- The Yaggababble's phrase count from the day just ended. -->
+				<TallyKillStep {grimoire} {step} />
 				<!-- M15a: the Toymaker's No attack, on the Demon's step. -->
 				<NoAttackStep {grimoire} {step} />
 			{/if}
