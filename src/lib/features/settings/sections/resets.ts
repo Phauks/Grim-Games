@@ -65,7 +65,6 @@ export const resets = {
 				'requireName',
 				'holdToReveal',
 				'slotMachine',
-				'travellersChoose',
 				'ownWording',
 				'timerMode',
 				'timerKeepAwake',

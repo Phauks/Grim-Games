@@ -42,9 +42,3 @@
 	checked={values.slotMachine}
 	onChange={(slotMachine) => onChange({ slotMachine })}
 />
-<SettingToggle
-	label={t('settings.travellersChoose')}
-	description={t('settings.travellersChooseHelp')}
-	checked={values.travellersChoose}
-	onChange={(travellersChoose) => onChange({ travellersChoose })}
-/>
