@@ -26,12 +26,20 @@ import {
  * One change to the count of a character type:
  * - `delta`: add one of these values ("+0 or +1" is `[0, 1]`); `also` lists counts allowed as
  *   well, whatever the usual count (the Lord of Typhon's `[0]`: no Minions are dealt, and the
- *   usual number plus one are made on the first night or seated by the Storyteller);
+ *   usual number plus one are made on the first night or seated by the Storyteller); `minUsual`
+ *   applies it only when the usual count of its type is at least that (the Marionette's
+ *   "if there are three Minions", https://wiki.bloodontheclocktower.com/Marionette);
  * - `set`: the count becomes one of these values ("[No Demon]" is `[0]`), or `most` (Legion);
  * - `any`: the Storyteller picks freely ("-? to +? Outsiders").
  */
 export type CountOp =
-	| { kind: 'delta'; type: SeatedType; values: readonly number[]; also?: readonly number[] }
+	| {
+			kind: 'delta';
+			type: SeatedType;
+			values: readonly number[];
+			also?: readonly number[];
+			minUsual?: number;
+	  }
 	| { kind: 'set'; type: SeatedType; values: readonly number[] | 'most' }
 	| { kind: 'any'; type: SeatedType };
 
@@ -65,6 +73,13 @@ export interface SetupModifierRules {
 	 * `[0, 1, 2]`): more than the largest warns.
 	 */
 	copies?: readonly number[];
+	/**
+	 * Which characters may repeat while this one is in play, in place of TPI's
+	 * `good-duplicate`/`evil-duplicate` data: `good` (Townsfolk and Outsiders), `evil` (Minions
+	 * and Demons) or both. The Pope's says only good ones (https://wiki.bloodontheclocktower.com/Pope),
+	 * though TPI's data gives it both.
+	 */
+	duplicates?: readonly Alignment[];
 	/** Extra Storyteller notes for setup (bag contents, seating). */
 	notes?: readonly string[];
 	/**
@@ -86,7 +101,7 @@ function readOp(raw: unknown, path: string, issues: Issues): CountOp | undefined
 		kind === 'any'
 			? ['kind', 'type']
 			: kind === 'delta'
-				? ['kind', 'type', 'values', 'also']
+				? ['kind', 'type', 'values', 'also', 'minUsual']
 				: ['kind', 'type', 'values'],
 		path,
 		issues
@@ -99,6 +114,12 @@ function readOp(raw: unknown, path: string, issues: Issues): CountOp | undefined
 		issues.add(`${path}.values`, 'expected a list of whole numbers');
 		return undefined;
 	}
+	const minUsual = kind === 'delta' ? raw.minUsual : undefined;
+	if (minUsual !== undefined && !(Number.isInteger(minUsual) && (minUsual as number) >= 1)) {
+		issues.add(`${path}.minUsual`, 'expected a whole number of at least 1');
+		return undefined;
+	}
+	const usual = minUsual !== undefined ? { minUsual: minUsual as number } : {};
 	if (kind === 'delta' && raw.also !== undefined) {
 		const also = raw.also;
 		if (
@@ -109,8 +130,9 @@ function readOp(raw: unknown, path: string, issues: Issues): CountOp | undefined
 			issues.add(`${path}.also`, 'expected a list of whole numbers, 0 or more');
 			return undefined;
 		}
-		return { kind, type, values: values as number[], also: also as number[] };
+		return { kind, type, values: values as number[], also: also as number[], ...usual };
 	}
+	if (kind === 'delta') return { kind, type, values: values as number[], ...usual };
 	return { kind, type, values: values as number[] };
 }
 
@@ -143,7 +165,7 @@ export function readSetupModifier(
 	}
 	checkKeys(
 		raw,
-		['summary', 'ops', 'requires', 'alignments', 'copies', 'notes', 'readsBrackets'],
+		['summary', 'ops', 'requires', 'alignments', 'copies', 'duplicates', 'notes', 'readsBrackets'],
 		path,
 		issues
 	);
@@ -178,6 +200,13 @@ export function readSetupModifier(
 			issues.add(`${path}.copies`, 'expected a list of whole numbers of at least 0');
 		else copies = v as number[];
 	}
+	let duplicates: Alignment[] | undefined;
+	if (raw.duplicates !== undefined) {
+		const v = raw.duplicates;
+		if (!Array.isArray(v) || !v.every((a) => (ALIGNMENTS as readonly unknown[]).includes(a)))
+			issues.add(`${path}.duplicates`, 'expected a list of alignments: good, evil');
+		else duplicates = v as Alignment[];
+	}
 	const notes = readStringArray(raw, 'notes', path, issues);
 	if (raw.readsBrackets !== undefined && raw.readsBrackets !== true) {
 		issues.add(`${path}.readsBrackets`, 'expected true');
@@ -189,6 +218,7 @@ export function readSetupModifier(
 		...(requires ? { requires } : {}),
 		...(alignments.length > 0 ? { alignments } : {}),
 		...(copies ? { copies } : {}),
+		...(duplicates ? { duplicates } : {}),
 		...(notes ? { notes } : {}),
 		...(raw.readsBrackets === true ? { readsBrackets: true as const } : {})
 	};

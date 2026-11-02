@@ -241,6 +241,8 @@ export function characterChanger(
 	if (rule.firstNight && game.pastDays.length > 0) return undefined;
 	if (rule.upTo === 'minions' && minionsLeft(game, characters, rule.extraMinions) <= 0)
 		return undefined;
+	if (rule.minMinions !== undefined && usualMinions(game, characters) < rule.minMinions)
+		return undefined;
 	const changer = game.seating.find(
 		(id) =>
 			(!game.seats[id].dead || rules?.actsWhenDead === true) &&
@@ -256,6 +258,12 @@ export function characterChanger(
  * How many more Minions the player count usually has, plus `extra` (the Lord of Typhon's),
  * than are in play (`upTo: 'minions'`, the Kazali's): Travellers are not counted.
  */
+/** How many Minions the player count usually has: Travellers are not counted. */
+function usualMinions(game: Game, characters: CharacterLookup): number {
+	const dealt = game.seating.filter((id) => typeOf(game, id, characters) !== 'traveller');
+	return baseCounts(dealt.length).minion;
+}
+
 export function minionsLeft(game: Game, characters: CharacterLookup, extra = 0): number {
 	const dealt = game.seating.filter((id) => typeOf(game, id, characters) !== 'traveller');
 	const minions = dealt.filter((id) => typeOf(game, id, characters) === 'minion').length;
@@ -281,8 +289,14 @@ export function changeableSeats(
 		const own = trueCharacter(game, id, characters);
 		if (rule?.notTravellers && typeOf(game, id, characters) === 'traveller') return false;
 		if (rule?.upTo) {
+			// Never its own player, one already of `types`, nor the Demon (the Marionette's
+			// extra Minion comes from a good player).
 			const type = typeOf(game, id, characters);
-			if (own === characterId || (type && (rule.types as readonly string[]).includes(type)))
+			if (
+				own === characterId ||
+				type === 'demon' ||
+				(type && (rule.types as readonly string[]).includes(type))
+			)
 				return false;
 		}
 		if (rule?.onlyFrom && (own === undefined || !rule.onlyFrom.includes(own))) return false;
