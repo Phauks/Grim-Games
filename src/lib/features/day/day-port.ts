@@ -80,6 +80,12 @@ export function describeEntry(
 				? t('day.logGuesses', { line, count: entry.guesses.length })
 				: line;
 		}
+		case 'wish':
+			return t(entry.granted ? 'day.logWishGranted' : 'day.logWishDeclined', {
+				character: characterName(entry.characterId),
+				seat: seatName(entry.seatId),
+				text: entry.text || t('day.wishUnwritten')
+			});
 		case 'info':
 			return t('day.logInfo', {
 				character: characterName(entry.characterId),

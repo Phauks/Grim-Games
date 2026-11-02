@@ -665,6 +665,18 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 			else prepValues[event.key] = event.value;
 			return { ...game, prepValues };
 		}
+		case 'StorytellerPairSet':
+			return event.pair
+				? { ...game, storytellerPair: structuredClone(event.pair) }
+				: omit(game, 'storytellerPair');
+		case 'StorytellerVisitSet': {
+			const visits = { ...game.today.visits };
+			if (event.storyteller === undefined) delete visits[event.seatId];
+			else visits[event.seatId] = event.storyteller;
+			const today =
+				Object.keys(visits).length > 0 ? { ...game.today, visits } : omit(game.today, 'visits');
+			return { ...game, today };
+		}
 		case 'DayStarted':
 			return {
 				...game,

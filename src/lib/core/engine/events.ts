@@ -24,6 +24,7 @@ import type {
 	ReminderInstance,
 	SeatId,
 	SeatOverride,
+	StorytellerPair,
 	SymbolColour,
 	Tile,
 	TileId
@@ -148,6 +149,10 @@ export type GameEvent =
 	| { type: 'DemonVotedSet'; voted?: boolean }
 	/** No `value` clears it. */
 	| { type: 'PrepValueSet'; key: string; value?: string }
+	/** Replaces `Game.storytellerPair`; no `pair` clears it. */
+	| { type: 'StorytellerPairSet'; pair?: StorytellerPair }
+	/** Which Storyteller the player went to today; no `storyteller` clears it. */
+	| { type: 'StorytellerVisitSet'; seatId: SeatId; storyteller?: 0 | 1 }
 	/** Today's log moves to `pastDays` and an empty one starts. */
 	| { type: 'DayStarted'; at: number };
 

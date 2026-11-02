@@ -22,6 +22,8 @@
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
 	import type { Grimoire } from '#lib/features/grimoire/grimoire.svelte.ts';
+	import StorytellerVisit from '#lib/features/grimoire/StorytellerVisit.svelte';
+	import type { Command } from '#lib/core/engine/index.ts';
 	import Chip from '#lib/ui/primitives/Chip.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
@@ -158,6 +160,12 @@
 					.reverse()
 	);
 
+	/** Records whom the Savant went to, then deals in the mode that now applies. */
+	function visit(command: Command) {
+		grimoire.run(command);
+		setMode(situation?.mode ?? 'one-each');
+	}
+
 	// Today's saved statements when the sheet opens (Trevor, 2026-10-24: they seemed not to
 	// save, as a fresh pair was dealt each time); otherwise a new pair in the mode the rules
 	// point to. Only `open` is tracked: locking or cycling must not start again.
@@ -225,12 +233,20 @@
 					),
 					characterId: holder
 				}
-			: situation?.falseBy !== undefined
+			: situation?.storyteller && holder !== undefined
 				? {
-						text: t('savant.vortox', { character: slot('character') }),
-						characterId: situation.falseBy
+						text: t(
+							situation.storyteller.lies ? 'storytellers.savantLies' : 'storytellers.savantTruth',
+							{ character: slot('character') }
+						),
+						characterId: situation.storyteller.by
 					}
-				: undefined
+				: situation?.falseBy !== undefined
+					? {
+							text: t('savant.vortox', { character: slot('character') }),
+							characterId: situation.falseBy
+						}
+					: undefined
 	);
 
 	/** True, False, or the seats it depends on (a `seats` slot, drawn as their badges). */
@@ -317,6 +333,17 @@
 		</section>{/snippet}
 	<div class="savant">
 		<h3 class="pane-title">{t('savant.today')}</h3>
+		<!-- Two Storytellers (the Knaves): whom the Savant went to sets the mode. -->
+		{#if seatId !== undefined}
+			<StorytellerVisit
+				{game}
+				{characters}
+				{seatId}
+				seatLabel={// eslint-disable-next-line grim/names-as-badges -- the group's accessible name only
+				seatLabel(game, seatId)}
+				run={visit}
+			/>
+		{/if}
 		<Select
 			label={t('savant.mode')}
 			value={mode}
