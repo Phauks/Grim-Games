@@ -13,6 +13,11 @@ import {
 	livingByTeam,
 	townCounts
 } from '#lib/core/rules/voting.ts';
+import {
+	TRAVELLER_JOINS_STEP,
+	travellersNotInPlay,
+	withTravellerJoinsStep
+} from '#lib/core/rules/traveller-alignment.ts';
 import { undo } from './log.ts';
 
 const names = ['Ana', 'Ben', 'Cat', 'Dev', 'Eve'];
@@ -75,5 +80,51 @@ describe('seats not in play', () => {
 		expect(warned(session, ctx, { type: 'Nominate', nominator: seats[0], nominee: fay })).toEqual([
 			'not-in-play'
 		]);
+	});
+
+	// Only a Traveller sits out (Trevor, 2026-11-02).
+	it('warns when a seat with a character other than a Traveller is taken out of play', () => {
+		const { session, ctx, seats, fay } = withArrival();
+		const named = run(session, ctx, {
+			type: 'AssignCharacter',
+			seatId: seats[0],
+			characterId: 'chef'
+		});
+		expect(warned(named, ctx, { type: 'SetInPlay', seatIds: [seats[0]], inPlay: false })).toEqual([
+			'not-traveller'
+		]);
+		// A seat with no character yet may be an arriving Traveller: no warning.
+		const back = run(named, ctx, { type: 'SetInPlay', seatIds: [fay], inPlay: true });
+		expect(warned(back, ctx, { type: 'SetInPlay', seatIds: [fay], inPlay: false })).toEqual([]);
+	});
+
+	it('puts a seat in play when it is given a character other than a Traveller', () => {
+		const { session, ctx, fay } = withArrival();
+		const chef = run(session, ctx, { type: 'AssignCharacter', seatId: fay, characterId: 'chef' });
+		expect(chef.game.seats[fay].notInPlay).toBeUndefined();
+		// One change: Undo takes the character and the change of status back together.
+		expect(undo(chef).game.seats[fay].notInPlay).toBe(true);
+		const thief = run(session, ctx, {
+			type: 'AssignCharacter',
+			seatId: fay,
+			characterId: 'thief'
+		});
+		expect(thief.game.seats[fay].notInPlay).toBe(true);
+	});
+
+	it('offers a night step to bring each Traveller not in play into play', () => {
+		const { session, ctx, fay } = withArrival();
+		// No character yet: nothing to offer.
+		expect(travellersNotInPlay(session.game, ctx.characters)).toEqual([]);
+		expect(withTravellerJoinsStep([], session.game, ctx.characters)).toEqual([]);
+		const thief = run(session, ctx, {
+			type: 'AssignCharacter',
+			seatId: fay,
+			characterId: 'thief'
+		});
+		const [step] = withTravellerJoinsStep([], thief.game, ctx.characters);
+		expect(step).toMatchObject({ id: TRAVELLER_JOINS_STEP, travellers: [fay] });
+		const joined = run(thief, ctx, { type: 'SetInPlay', seatIds: [fay], inPlay: true });
+		expect(withTravellerJoinsStep([], joined.game, ctx.characters)).toEqual([]);
 	});
 });
