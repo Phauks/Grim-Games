@@ -48,9 +48,7 @@ describe('High Priestess', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/High_Priestess#Examples)', () => {
-		// Waits on the engine: the High Priestess has no `learns` rule, so infoPicker gives her
-		// night step no picker of one player.
-		it.fails('Example 1: Three nights: Chef, Goblin, then misleading Drunk', () => {
+		it('Example 1: Three nights: Chef, Goblin, then misleading Drunk', () => {
 			// Wiki: "On the first night, the High Priestess learns Julian. Julian is the Chef and has
 			// useful information to share. On the second night, the High Priestess is shown Marianna.
 			// Marianna is the Goblin and the Storyteller thinks that the High Priestess would benefit
@@ -67,9 +65,7 @@ describe('High Priestess', () => {
 				expect(isAllowed(picker!, { seats: [s.seat(seat)] })).toBe(true);
 			}
 		});
-		// Waits on the engine: the High Priestess has no `learns` rule, so infoPicker gives her
-		// night step no picker of one player.
-		it.fails('Example 2: Saint for three nights, then the Imp', () => {
+		it('Example 2: Saint for three nights, then the Imp', () => {
 			// Wiki: "For three nights in a row, the High Priestess learns Sarah. Sarah is the Saint and the
 			// good team are trying to execute her. On the last night, the High Priestess learns Lewis.
 			// Lewis is the Imp, and his story is clashing with several good players."
@@ -78,6 +74,24 @@ describe('High Priestess', () => {
 			expect(picker).toBeDefined();
 			expect(isAllowed(picker!, { seats: [s.seat('saint')] })).toBe(true);
 			expect(isAllowed(picker!, { seats: [s.seat('imp')] })).toBe(true);
+		});
+	});
+
+	describe('the player the Storyteller picks (its `storyteller-pick` learns rule)', () => {
+		it('offers every other player, never herself, with nothing to check', () => {
+			const s = scenario(['highpriestess', 'saint', 'imp', 'chef', 'monk', 'poisoner']);
+			const picker = infoPicker(s.game, s.seat('highpriestess'), 'highpriestess', s.characters)!;
+			expect(picker).toMatchObject({ kind: 'players', seatCount: 1, anyAllowed: false });
+			expect(picker.options.map((o) => o.seats[0])).toEqual(
+				s.game.seating.filter((id) => id !== s.seat('highpriestess'))
+			);
+		});
+
+		it('is still the Storyteller’s pick under the Vortox: no answer must be false', () => {
+			const s = scenario(['highpriestess', 'saint', 'vortox', 'chef', 'monk', 'witch']);
+			const picker = infoPicker(s.game, s.seat('highpriestess'), 'highpriestess', s.characters)!;
+			expect(picker.mustBeFalse).toBeUndefined();
+			expect(isAllowed(picker, { seats: [s.seat('vortox')] })).toBe(true);
 		});
 	});
 });

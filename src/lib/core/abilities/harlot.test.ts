@@ -17,7 +17,8 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
 import { filledInfoToken } from '#lib/core/rules/info-token-characters.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { engineGap, scenario } from '#lib/core/testing/scenario.ts';
+import { infoPicker, isAllowed } from '#lib/core/rules/night-info.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Harlot', () => {
 	const character = committedCharacter('harlot');
@@ -80,7 +81,7 @@ describe('Harlot', () => {
 			}
 		});
 
-		it.fails('Example 2: Evil Harlot falsely claims revealed Sage is Witch', () => {
+		it('Example 2: Evil Harlot falsely claims revealed Sage is Witch', () => {
 			// Wiki: "The evil Harlot chooses the Sage, who reveals. The next day, the Harlot says the Sage is
 			// actually the Witch."
 			const s = scenario(['harlot', 'sage', 'chef', 'witch', 'nodashii']).do((at) => ({
@@ -89,10 +90,23 @@ describe('Harlot', () => {
 				alignment: 'evil'
 			}));
 			expect(s.game.seats[s.seat('harlot')].alignment).toBe('evil');
-			engineGap(
-				'unplanned',
-				"when the chosen player agrees, the Harlot's step shows the Harlot that player's true character (the Sage), whatever the Harlot later claims"
-			);
+			// The Sage agreed: the Harlot's step offers the Sage's true character to show. What the
+			// Harlot claims by day is up to them.
+			const picker = infoPicker(s.game, s.seat('harlot'), 'harlot', s.characters)!;
+			const sage = [s.seat('sage')];
+			expect(isAllowed(picker, { seats: sage, characterId: 'sage' })).toBe(true);
+			expect(isAllowed(picker, { seats: sage, characterId: 'witch' })).toBe(false);
+		});
+	});
+
+	describe('learning the chosen player’s character (its `character-of` learns rule)', () => {
+		it('offers living players only, never the Harlot', () => {
+			const s = scenario(['harlot', 'sage', 'chef', 'witch', 'nodashii'])
+				.newDay()
+				.dies('chef', 'nodashii');
+			const picker = infoPicker(s.game, s.seat('harlot'), 'harlot', s.characters)!;
+			const seats = picker.options.map((o) => o.seats[0]);
+			expect(seats).toEqual([s.seat('sage'), s.seat('witch'), s.seat('nodashii')]);
 		});
 	});
 });

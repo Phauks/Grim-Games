@@ -16,7 +16,8 @@ import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { alignmentOf } from '#lib/core/model/selectors.ts';
 import { onDeathApplies, onDeathTrigger } from '#lib/core/rules/night-alerts.ts';
-import { engineGap, scenario } from '#lib/core/testing/scenario.ts';
+import { passOnSeats } from '#lib/core/rules/becomes.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
 describe('Farmer', () => {
@@ -49,7 +50,7 @@ describe('Farmer', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Farmer#Examples)', () => {
-		it.fails('Example 1: Alchemist becomes Farmer, skipping evil Fearmonger', () => {
+		it('Example 1: Alchemist becomes Farmer, skipping evil Fearmonger', () => {
 			// Wiki: "Julian is the Farmer. The Demon kills him at night. Evin is the Fearmonger, and Sarah
 			// is the Alchemist. Sarah becomes the Farmer that night. Evin could not become the Farmer,
 			// because he is evil."
@@ -58,13 +59,14 @@ describe('Farmer', () => {
 				.dies('farmer', 'imp');
 			const trigger = onDeathTrigger('farmer', s.characters)!;
 			expect(onDeathApplies(trigger, 'imp', s.characters)).toBe(true);
+			// Only the alive good players may become the Farmer: never the evil Fearmonger or the Imp.
+			expect(passOnSeats(s.game, 'farmer', s.characters)).toEqual([
+				s.seat('alchemist'),
+				s.seat('chef')
+			]);
 			const after = s.becomes('alchemist', 'farmer');
 			expect(after.game.seats[after.seat('alchemist')].characterId).toBe('farmer');
 			expect(alignmentOf(after.game, after.seat('alchemist'))).toBe('good');
-			engineGap(
-				'unplanned',
-				'the players who may become the Farmer when it dies at night: good ones only, never the evil Fearmonger'
-			);
 		});
 		it('Example 2: Farmer chain passes to Choirboy, then Heretic', () => {
 			// Wiki: "On the 2nd night, the Farmer dies. The Choirboy becomes the Farmer. On the 3rd night,
@@ -90,6 +92,22 @@ describe('Farmer', () => {
 			);
 			expect(farmers).toHaveLength(3);
 			expect(farmers.filter((id) => after.game.seats[id].dead)).toHaveLength(2);
+		});
+	});
+
+	describe('who may become the Farmer (its `passesOn` rule)', () => {
+		it('leaves out dead players and players already a Farmer', () => {
+			const s = scenario(['farmer', 'choirboy', 'heretic', 'imp', 'poisoner', 'chef'])
+				.newDay()
+				.dies('farmer', 'imp')
+				.becomes('choirboy', 'farmer')
+				.dies('chef', 'imp');
+			expect(passOnSeats(s.game, 'farmer', s.characters)).toEqual([s.seat('heretic')]);
+		});
+
+		it('is empty for a character without the rule', () => {
+			const s = scenario(['farmer', 'chef', 'imp', 'poisoner', 'monk']);
+			expect(passOnSeats(s.game, 'chef', s.characters)).toEqual([]);
 		});
 	});
 });

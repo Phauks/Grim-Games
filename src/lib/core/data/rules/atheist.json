@@ -44,5 +44,6 @@
 	},
 	"deathCause": {
 		"none": "win condition"
-	}
+	},
+	"breaksRules": true
 }

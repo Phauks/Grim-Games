@@ -200,3 +200,24 @@ export function neighbourAlignments(
 	].sort();
 	return alignments.length ? { seatId, alignments } : undefined;
 }
+
+/**
+ * The players who may become `characterId` when its player dies (`passesOn`: the Farmer's
+ * alive good player, https://wiki.bloodontheclocktower.com/Farmer): alive ones when the rule
+ * says so, of its alignment when it names one, and never a player who already is that
+ * character. Empty for a character without the rule. The Storyteller picks among them.
+ */
+export function passOnSeats(
+	game: Game,
+	characterId: CharacterId,
+	characters: CharacterLookup
+): SeatId[] {
+	const rule = rulesIn(game, characterId, characters)?.passesOn;
+	if (!rule) return [];
+	return game.seating.filter(
+		(id) =>
+			trueCharacter(game, id, characters) !== characterId &&
+			(!rule.alive || !game.seats[id].dead) &&
+			(!rule.alignment || alignmentOf(game, id) === rule.alignment)
+	);
+}

@@ -100,6 +100,7 @@
 			case 'character':
 				return `Show the ${game.characterName(a.value)}: ${who.join(', ')} died by execution`;
 			case 'characters':
+			case 'alignment':
 				return valueText(game, a);
 			case 'number':
 				if (a.abnormal) {

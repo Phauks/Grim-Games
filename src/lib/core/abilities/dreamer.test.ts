@@ -16,7 +16,7 @@ import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { trueCharacter } from '#lib/core/model/selectors.ts';
 import { filledInfoToken, shownOrder, withChosen } from '#lib/core/rules/info-token-characters.ts';
-import { reliability } from '#lib/core/rules/night-info.ts';
+import { infoPicker, isAllowed, reliability } from '#lib/core/rules/night-info.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { scenario, type Scenario, type SeatRef } from '#lib/core/testing/scenario.ts';
 
@@ -54,7 +54,9 @@ describe('Dreamer', () => {
 		const card = (s: Scenario, chosen: SeatRef) => {
 			const filled = filledInfoToken(s.characters.get('dreamer')!, 'this-player-is', 2)!;
 			const id = trueCharacter(s.game, s.seat(chosen), s.characters)!;
-			return withChosen(filled, s.characters.get(id)!);
+			// Under the Vortox the true character is not filled in (the Dreamer's info is false).
+			const vortox = reliability(s.game, s.seat('dreamer'), 'dreamer', s.characters).mustBeFalse;
+			return withChosen(filled, s.characters.get(id)!, vortox === true);
 		};
 		const typeOf = (s: Scenario) => (id: string) => s.characters.get(id)?.type;
 
@@ -99,18 +101,46 @@ describe('Dreamer', () => {
 			expect(shownOrder(shown, ['eviltwin', 'artist'], typeOf(s))).toEqual(['artist', 'eviltwin']);
 		});
 
-		it.fails('Example 4: Vortox target misreads as Oracle or No Dashii', () => {
+		it('Example 4: Vortox target misreads as Oracle or No Dashii', () => {
 			// Wiki: "The Dreamer chooses a player who is the Vortox. The Dreamer's information must be
 			// false because the Vortox is in play, so the Dreamer learns that this player is either the
 			// Oracle or the No Dashii."
-			// Waits on the engine: the Dreamer's card fills in the chosen player's true character even
-			// when the Vortox makes the Dreamer's information false.
 			const s = scenario(['dreamer', 'oracle', 'chef', 'witch', 'vortox']);
 			expect(reliability(s.game, s.seat('dreamer'), 'dreamer', s.characters)).toMatchObject({
 				mustBeFalse: true,
 				falseBy: 'vortox'
 			});
 			expect(card(s, 'vortox').characterIds).not.toContain('vortox');
+			// Neither character shown may be the Vortox: the Oracle and the No Dashii are both valid.
+			const picker = infoPicker(s.game, s.seat('dreamer'), 'dreamer', s.characters)!;
+			const vortox = [s.seat('vortox')];
+			expect(isAllowed(picker, { seats: vortox, characterId: 'vortox' })).toBe(false);
+			for (const characterId of ['oracle', 'nodashii']) {
+				expect(isAllowed(picker, { seats: vortox, characterId })).toBe(true);
+			}
+		});
+	});
+
+	describe('the chosen player’s character (its `character-of` learns rule)', () => {
+		it('offers every other player but Travellers, each with their true character', () => {
+			const s = scenario(['dreamer', 'mutant', 'cerenovus', 'chef', 'nodashii', 'gunslinger']);
+			const picker = infoPicker(s.game, s.seat('dreamer'), 'dreamer', s.characters)!;
+			expect(picker.options.map((o) => [o.seats[0], o.characterId])).toEqual(
+				(['mutant', 'cerenovus', 'chef', 'nodashii'] as const).map((id) => [s.seat(id), id])
+			);
+		});
+
+		it('fills in the true character on the card when no Vortox is in play', () => {
+			const s = scenario(['dreamer', 'mutant', 'cerenovus', 'chef', 'nodashii']);
+			const filled = filledInfoToken(s.characters.get('dreamer')!, 'this-player-is', 2)!;
+			expect(withChosen(filled, s.characters.get('mutant')!, false).characterIds).toEqual([
+				'mutant'
+			]);
+			expect(withChosen(filled, s.characters.get('mutant')!, true)).toEqual({
+				characterIds: [],
+				upTo: 2,
+				goodFirst: true
+			});
 		});
 	});
 });

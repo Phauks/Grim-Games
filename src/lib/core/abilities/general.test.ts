@@ -17,7 +17,8 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import { typeOf } from '#lib/core/model/selectors.ts';
 import { protection } from '#lib/core/rules/ability.ts';
 import { livingByTeam } from '#lib/core/rules/voting.ts';
-import { engineGap, scenario } from '#lib/core/testing/scenario.ts';
+import { answerOptions, nightAnswer } from '#lib/core/rules/night-info.ts';
+import { type Scenario, scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
 describe('General', () => {
@@ -50,10 +51,23 @@ describe('General', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/General#Examples)', () => {
-		// No rule gives the General's answer: the Storyteller judges which team is winning.
-		const needs = "the General's answer: a thumbs up, down or to the side, the Storyteller's call";
+		/**
+		 * The General's step offers all three answers, the Storyteller's judgement, and the one
+		 * they give is among them.
+		 */
+		const offers = (s: Scenario, given: 'good' | 'evil' | 'neither') => {
+			const a = nightAnswer(s.game, s.seat('general'), 'general', s.characters)!;
+			const options = answerOptions(s.game, a, s.characters);
+			expect(options).toEqual(
+				(['good', 'evil', 'neither'] as const).map((value) => ({
+					reason: 'judgement',
+					value: { kind: 'alignment', value }
+				}))
+			);
+			expect(options.map((o) => o.value)).toContainEqual({ kind: 'alignment', value: given });
+		};
 
-		it.fails('Example 1: Trusted Scarlet Woman tips evil ahead', () => {
+		it('Example 1: Trusted Scarlet Woman tips evil ahead', () => {
 			// Wiki: "There are 5 good players alive and 4 evil players alive. Even though the Demon is
 			// very suspicious and will probably be executed next, there is a Scarlet Woman in play, who
 			// is very trustworthy. The Storyteller gives a thumbs down."
@@ -70,9 +84,9 @@ describe('General', () => {
 			];
 			const s = scenario(cast).newDay();
 			expect(livingByTeam(s.game)).toMatchObject({ alive: 9, good: 5, evil: 4 });
-			engineGap('unplanned', needs);
+			offers(s, 'evil');
 		});
-		it.fails('Example 2: Good holds solid info; only Minion dead', () => {
+		it('Example 2: Good holds solid info; only Minion dead', () => {
 			// Wiki: "The Good team has a lot of information, and believes that their false information
 			// is indeed false. The only Minion is dead. The Storyteller gives a thumbs up."
 			const s = scenario(['general', 'chef', 'empath', 'monk', 'imp', 'poisoner'])
@@ -80,9 +94,9 @@ describe('General', () => {
 				.newDay();
 			const minions = s.game.seating.filter((id) => typeOf(s.game, id, s.characters) === 'minion');
 			expect(minions.every((id) => s.game.seats[id].dead)).toBe(true);
-			engineGap('unplanned', needs);
+			offers(s, 'good');
 		});
-		it.fails('Example 3: Uncertain outcome as Po may strike', () => {
+		it('Example 3: Uncertain outcome as Po may strike', () => {
 			// Wiki: "The Po is a very experienced player and is coordinating well with the Minions. The
 			// Monk is successfully protecting the Savant each night and the good team have correctly
 			// identified several good players. However, the Po will probably kill 3 times tomorrow night,
@@ -94,7 +108,7 @@ describe('General', () => {
 			expect(protection(s.game, s.seat('savant'), s.characters, 'demon')).toMatchObject({
 				characterId: 'monk'
 			});
-			engineGap('unplanned', needs);
+			offers(s, 'neither');
 		});
 	});
 });

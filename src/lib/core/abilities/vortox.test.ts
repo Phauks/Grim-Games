@@ -26,7 +26,7 @@ import {
 import { savantSituation } from '#lib/core/rules/savant.ts';
 import { gameEnds } from '#lib/core/rules/game-end.ts';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { engineGap, scenario } from '#lib/core/testing/scenario.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
 describe('Vortox', () => {
@@ -86,7 +86,7 @@ describe('Vortox', () => {
 			}
 		});
 
-		it.fails('Example 3: Dreamer narrows Savant to two characters', () => {
+		it('Example 3: Dreamer narrows Savant to two characters', () => {
 			// Wiki: "The Savant is in play, and learns two pieces of information each day. Both are false.
 			// That night, the Dreamer chooses a player who is the Savant, and learns that player is either the
 			// Philosopher or the No Dashii."
@@ -95,11 +95,15 @@ describe('Vortox', () => {
 				mode: 'both-false',
 				vortox: s.seat('vortox')
 			});
-			expect(infoPicker(s.game, s.seat('dreamer'), 'dreamer', s.characters)).toBeDefined();
-			engineGap(
-				'unplanned',
-				"the Dreamer's information: one good and one evil character, both wrong under the Vortox"
-			);
+			// The Dreamer's information is false too: the Savant's own character may not be shown,
+			// and the Philosopher and No Dashii, both wrong, may.
+			const picker = infoPicker(s.game, s.seat('dreamer'), 'dreamer', s.characters)!;
+			expect(picker.mustBeFalse).toBe(true);
+			const savant = [s.seat('savant')];
+			expect(isAllowed(picker, { seats: savant, characterId: 'savant' })).toBe(false);
+			for (const characterId of ['philosopher', 'nodashii']) {
+				expect(isAllowed(picker, { seats: savant, characterId })).toBe(true);
+			}
 		});
 
 		it("Example 4: Pit-Hag's change gives Juggler true info", () => {

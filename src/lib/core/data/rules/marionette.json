@@ -48,5 +48,6 @@
 	},
 	"evilInfo": {
 		"hidesDemon": true
-	}
+	},
+	"believesOtherCharacter": true
 }

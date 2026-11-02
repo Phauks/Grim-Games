@@ -16,7 +16,13 @@ import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { endCharacters } from '#lib/core/rules/end-reason.ts';
-import { infoPicker, isAllowed } from '#lib/core/rules/night-info.ts';
+import {
+	anyInfoSource,
+	infoPicker,
+	isAllowed,
+	reliability,
+	validInformation
+} from '#lib/core/rules/night-info.ts';
 import { analyseSetup } from '#lib/core/rules/setup.ts';
 import { engineGap, scenario } from '#lib/core/testing/scenario.ts';
 
@@ -53,12 +59,12 @@ describe('Atheist', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Atheist#Examples)', () => {
-		it.fails('Example 1: False info and unexplained deaths in one night', () => {
+		it('Example 1: False info and unexplained deaths in one night', () => {
 			// Wiki: "The Investigator learns that either the Grandmother or the Seamstress is the Boomdandy.
 			// The Sweetheart nominates, and dies, even though there is no Witch in play. The Slayer uses their
 			// ability on the Gossip, who dies."
-			// Waits on the engine: with the Atheist in play the Storyteller may break the rules, so any
-			// information may be given, but the Investigator's picker still holds them to the truth.
+			// With the Atheist in play the Storyteller may break the rules: any information may be
+			// given, and players die whenever the Storyteller says.
 			const s = scenario([
 				'atheist',
 				'investigator',
@@ -70,11 +76,12 @@ describe('Atheist', () => {
 			]);
 			const picker = infoPicker(s.game, s.seat('investigator'), 'investigator', s.characters)!;
 			const pair = [s.seat('grandmother'), s.seat('seamstress')];
+			expect(picker.anyBy).toBe('atheist');
 			expect(isAllowed(picker, { seats: pair, characterId: 'boomdandy' })).toBe(true);
-			engineGap(
-				'unplanned',
-				'with the Atheist in play, any player may die at any time and any ability may do anything'
-			);
+			const after = s.dies('sweetheart').dies('gossip');
+			for (const seat of ['sweetheart', 'gossip'] as const) {
+				expect(after.game.seats[after.seat(seat)].dead).toBe(true);
+			}
 		});
 
 		it.fails('Example 2: Extra Outsider appears; executing Storyteller wins', () => {
@@ -104,6 +111,35 @@ describe('Atheist', () => {
 				'unplanned',
 				'executing the Storyteller while the Atheist is in play ends the game, and good wins'
 			);
+		});
+	});
+
+	describe('the Storyteller may break the rules (its `breaksRules` rule)', () => {
+		const cast = ['atheist', 'investigator', 'grandmother', 'seamstress', 'chef', 'empath'];
+
+		it('lists any other information as valid, marked as allowed by the Atheist', () => {
+			const s = scenario(cast);
+			const picker = infoPicker(s.game, s.seat('chef'), 'chef', s.characters)!;
+			expect(picker.anyAllowed).toBe(true);
+			const valid = validInformation(s.game, picker);
+			expect(valid[0]).toMatchObject({ reason: 'true', number: 0 });
+			expect(valid.slice(1).every((v) => v.reason === 'any')).toBe(true);
+			expect(anyInfoSource(s.game, s.characters)).toEqual({
+				seatId: s.seat('atheist'),
+				characterId: 'atheist'
+			});
+		});
+
+		it('still counts once the Atheist is dead: their character is in play', () => {
+			const s = scenario(cast).dies('atheist');
+			expect(reliability(s.game, s.seat('chef'), 'chef', s.characters).anyBy).toBe('atheist');
+		});
+
+		it('allows nothing extra without the Atheist', () => {
+			const s = scenario(cast.slice(1).concat('monk'));
+			const picker = infoPicker(s.game, s.seat('chef'), 'chef', s.characters)!;
+			expect(picker.anyAllowed).toBe(false);
+			expect(picker.anyBy).toBeUndefined();
 		});
 	});
 });

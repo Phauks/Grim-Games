@@ -98,7 +98,10 @@ export interface InfoPicker extends Reliability {
 	options: InfoOption[];
 	/** For `number`: the true number and the range registration allows. */
 	range?: NumberRange;
-	/** Every option is allowed, because the waking player's ability does not work. */
+	/**
+	 * Every option is allowed, because the waking player's ability does not work, or the
+	 * Storyteller may break the rules (`anyBy`: the Atheist).
+	 */
 	anyAllowed: boolean;
 	why: Why;
 	/**
@@ -124,11 +127,16 @@ interface PickerSpec extends Learns {
 	answer?: PickerAnswer;
 	/** For `woke-tonight`: the players who woke tonight by their own ability. */
 	woke?: ReadonlySet<SeatId>;
+	/**
+	 * The answer is the Storyteller's judgement, with no truth the grimoire holds (the High
+	 * Priestess): every option is valid, and the Vortox has nothing to make false.
+	 */
+	judgement?: true;
 }
 
 /** The picker each `learns` measure shows: its kind and how many players are tapped. */
 const MEASURE_PICKERS: Readonly<
-	Record<Learns['measure'], Pick<PickerSpec, 'kind' | 'seatCount' | 'answer'>>
+	Record<Learns['measure'], Pick<PickerSpec, 'kind' | 'seatCount' | 'answer' | 'judgement'>>
 > = {
 	'pair-of-type': { kind: 'pair-character', seatCount: 2 },
 	'evil-pairs': { kind: 'number', seatCount: 0 },
@@ -146,7 +154,8 @@ const MEASURE_PICKERS: Readonly<
 	'closest-evil-direction': { kind: 'yes-no', seatCount: 0, answer: 'direction' },
 	'chosen-alignment': { kind: 'yes-no', seatCount: 1, answer: 'alignment' },
 	'type-differs-from-token': { kind: 'players', seatCount: 1 },
-	'woke-tonight': { kind: 'number', seatCount: 2 }
+	'woke-tonight': { kind: 'number', seatCount: 2 },
+	'storyteller-pick': { kind: 'players', seatCount: 1, judgement: true }
 };
 
 /**
@@ -320,6 +329,10 @@ function optionsIn(
 				others.filter((s) => !game.seats[s].dead),
 				2
 			).map((pair) => ({ seats: pair, number: pair.filter((s) => spec.woke?.has(s)).length }));
+		case 'storyteller-pick':
+			// https://wiki.bloodontheclocktower.com/High_Priestess: the player the Storyteller
+			// believes they should talk to most, their judgement, so any other player.
+			return others.map((s) => ({ seats: [s], pivot: s }));
 		case 'type-differs-from-token': {
 			// https://wiki.bloodontheclocktower.com/Balloonist: a player of a different character
 			// type than the one shown last time (any player the first time). Alive or dead.
@@ -440,6 +453,7 @@ function pickerFacts(
 		case 'chosen-alignment':
 		case 'good-player':
 		case 'character-of':
+		case 'storyteller-pick':
 			return [];
 	}
 }
@@ -469,6 +483,11 @@ export function infoPicker(
 	const result = (w: RegistrationWorld) => JSON.stringify(optionsOf(w).map(optionKey).sort());
 	const relevant = relevantSeats(game, all.registrations, worlds, result);
 	const r = onlyRelevant(all, relevant);
+	if (spec.judgement) {
+		delete r.mustBeFalse;
+		delete r.vortox;
+		delete r.falseBy;
+	}
 	// A number is one value; other pickers have many options, so no single alternative.
 	const numberIn = (w: RegistrationWorld): AnswerValue | undefined => {
 		const n = optionsOf(w)[0]?.number;
@@ -493,7 +512,7 @@ export function infoPicker(
 		...(spec.answer ? { answer: spec.answer } : {}),
 		options,
 		...(range ? { range } : {}),
-		anyAllowed: r.unreliable !== undefined,
+		anyAllowed: r.unreliable !== undefined || r.anyBy !== undefined,
 		why: {
 			facts: pickerFacts(game, seatId, characterId, spec, characters, worlds[0]),
 			alternatives: alternatives(game, all.registrations, relevant, worlds, numberIn, result)
@@ -609,6 +628,8 @@ export type ValidReason =
 	| 'registers'
 	/** Any information is allowed: the waking player is drunk, poisoned or has no ability. */
 	| 'unreliable'
+	/** Any information is allowed: the Storyteller may break the rules (the Atheist). */
+	| 'any'
 	/** The Vortox: only false information is allowed. */
 	| 'vortox';
 
@@ -634,7 +655,7 @@ export interface ValidInfo {
 	 * players the information is about (Fortune Teller's pair, Steward's or Noble's choice).
 	 */
 	seats: SeatId[];
-	/** Any other choice is valid too, for `unreliable` or `vortox` (too many to list). */
+	/** Any other choice is valid too, for `unreliable`, `any` or `vortox` (too many to list). */
 	anyOther?: boolean;
 }
 
@@ -659,9 +680,11 @@ export function validInformation(game: Game, picker: InfoPicker): ValidInfo[] {
 	const extra: ValidInfo[] = [];
 	const loose: ValidReason | undefined = picker.unreliable
 		? 'unreliable'
-		: picker.mustBeFalse
-			? 'vortox'
-			: undefined;
+		: picker.anyBy
+			? 'any'
+			: picker.mustBeFalse
+				? 'vortox'
+				: undefined;
 	if (loose) {
 		if (picker.kind === 'number') {
 			const taken = new Set(truthful.map((v) => v.number));

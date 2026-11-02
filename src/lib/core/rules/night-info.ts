@@ -44,6 +44,7 @@ export {
 	type AnswerValue,
 	type AbnormalUse,
 	type NightAnswer,
+	anyInfoSource,
 	falseInfoSource,
 	reliability
 } from './night-info/reliability.ts';

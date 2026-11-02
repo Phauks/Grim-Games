@@ -17,5 +17,9 @@
 		"you-are": {
 			"characters": ["self"]
 		}
+	},
+	"passesOn": {
+		"alive": true,
+		"alignment": "good"
 	}
 }

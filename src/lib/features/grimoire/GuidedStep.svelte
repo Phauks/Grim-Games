@@ -11,7 +11,11 @@
 	import NightYesNo from './NightYesNo.svelte';
 	import TravellerAlignment from './TravellerAlignment.svelte';
 	import { STANDARD_INFO_TOKENS, type CharacterId } from '#lib/core/data/index.ts';
-	import { believesDemon, TRAVELLER_ALIGNMENT_STEP } from '#lib/core/rules/index.ts';
+	import {
+		believesDemon,
+		falseInfoSource,
+		TRAVELLER_ALIGNMENT_STEP
+	} from '#lib/core/rules/index.ts';
 	import { seesGrimoire } from '#lib/core/rules/sees-grimoire.ts';
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import type { InfoChoice, InfoPicker, Night, NightStep } from '#lib/core/rules/index.ts';
@@ -162,7 +166,13 @@
 		const id = trueCharacter(game, seatId, characters);
 		const character = id ? characters.get(id) : undefined;
 		if (!ask) return;
-		onInfoTokens(ask.token, character ? withChosen(ask.filled, character) : ask.filled);
+		// Under the Vortox the waking Townsfolk's card must not show the true character.
+		const type = step?.character?.type;
+		const mustBeFalse = type !== undefined && falseInfoSource(game, characters, type) !== undefined;
+		onInfoTokens(
+			ask.token,
+			character ? withChosen(ask.filled, character, mustBeFalse) : ask.filled
+		);
 	}
 	/**
 	 * The seats the token being put doesn't fit, faded in the list (Trevor, 2026-10-27: only
