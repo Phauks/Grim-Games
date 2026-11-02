@@ -110,6 +110,9 @@ export const STANDARD_INFO_TOKENS: readonly InfoToken[] = [
 	{ id: 'choose-again', text: 'Please choose again', source: 'standard', extra: true },
 	// Trevor's wording (2026-10-25).
 	{ id: 'are-you-sure', text: 'Are you sure?', source: 'standard', extra: true },
+	// Asked of the player the Harlot chose; with a yes, the Harlot learns their character
+	// (Trevor's wording, 2026-11-02; https://wiki.bloodontheclocktower.com/Harlot).
+	{ id: 'sleep-with-harlot', text: 'Sleep with the Harlot?', source: 'standard', extra: true },
 	// The character a player must be mad about, after "This character selected you" for the
 	// Cerenovus (Trevor's wording, 2026-11-01; https://wiki.bloodontheclocktower.com/Cerenovus).
 	{

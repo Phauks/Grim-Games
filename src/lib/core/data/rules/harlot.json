@@ -43,6 +43,15 @@
 	"infoTokenCharacters": {
 		"selected-you": {
 			"characters": ["self"]
+		},
+		"sleep-with-harlot": {
+			"characters": [],
+			"offer": true
+		},
+		"this-player-is": {
+			"characters": ["chosen"],
+			"upTo": 1,
+			"offer": true
 		}
 	},
 	"learns": {

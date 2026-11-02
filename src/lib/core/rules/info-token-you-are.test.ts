@@ -182,6 +182,24 @@ describe(`the Cerenovus (${W}Cerenovus)`, () => {
 	});
 });
 
+describe(`the Harlot (${W}Harlot)`, () => {
+	// Trevor (2026-11-02): the chosen player is asked "Sleep with the Harlot?"; with a yes, the
+	// Harlot is shown "This player is" with that player's character.
+	it('asks the chosen player, then shows the Harlot their character', () => {
+		const shown = stepInfoCards(
+			character('harlot'),
+			nightTextFor(character('harlot'), 'other')?.text
+		);
+		expect(shown.map((c) => c.token.id)).toEqual([
+			'selected-you',
+			'sleep-with-harlot',
+			'this-player-is'
+		]);
+		expect(shown[1].filled).toBeUndefined();
+		expect(shown[2].filled).toEqual({ characterIds: [], upTo: 1, chosenAt: 0 });
+	});
+});
+
 describe('reading several cards for one token', () => {
 	it('rejects a marked character without its token, and an unknown card shown before', async () => {
 		const { parseCharacterRules } = await import('#lib/core/data/character-rules.ts');
@@ -196,5 +214,8 @@ describe('reading several cards for one token', () => {
 		expect(parse({ 'you-are': { characters: ['marked'], token: 'Mad' } })).toEqual([]);
 		expect(parse({ 'mad-as': { characters: [], after: 'no-such-card' } })).toHaveLength(1);
 		expect(parse({ 'you-are': { characters: [], upTo: -1 } })).toHaveLength(1);
+		// A card that shows no characters takes none.
+		expect(parse({ 'sleep-with-harlot': { characters: [], offer: true } })).toEqual([]);
+		expect(parse({ 'sleep-with-harlot': { characters: ['self'] } })).toHaveLength(1);
 	});
 });

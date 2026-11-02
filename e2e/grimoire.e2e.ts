@@ -7334,6 +7334,53 @@ test('the Flowergirl and Town Crier steps show their answer as the Yes/No card',
 	}
 });
 
+// Trevor (2026-11-02): the Harlot's chosen player is asked "Sleep with the Harlot?"; with a
+// yes, the Harlot is shown "This player is" with their character
+// (https://wiki.bloodontheclocktower.com/Harlot).
+test('the Harlot step asks the chosen player, then shows the Harlot their character', async ({
+	page
+}) => {
+	test.slow();
+	await startGame(page, 'Sects & Violets');
+	for (const [number, name] of [
+		[1, 'Harlot'],
+		[2, 'Clockmaker']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name: new RegExp(`^${name}(, Recommended)?$`) })
+			.tap();
+		// The Harlot is a Traveller: its alignment first.
+		if (name === 'Harlot')
+			await page
+				.getByRole('dialog', { name: 'Alignment' })
+				.getByRole('button', { name: 'Good' })
+				.tap();
+		await closeSheet(page);
+	}
+	const first = await walkTo(page, 'Dusk');
+	await first.getByRole('button', { name: 'Next step' }).tap();
+	await endNight(page);
+	const day = page.getByRole('dialog', { name: 'Day 1' });
+	await day.getByRole('button', { name: 'Close' }).tap();
+	await expect(day).toBeHidden();
+	await (await walkTo(page, 'Harlot')).locator('button.step .count').tap();
+	const step = page.getByRole('dialog', { name: 'Harlot' });
+	const tiles = step.getByTestId('step-info-tokens');
+	const shown = page.locator('[data-testid="show-to-player"][open]');
+	await tiles.getByRole('button', { name: 'Sleep with the Harlot?', exact: true }).tap();
+	await expect(shown).toHaveAccessibleName('Sleep with the Harlot?');
+	await shown.getByRole('button', { name: 'Close' }).tap();
+	await tiles.getByRole('button', { name: 'This player is', exact: true }).tap();
+	await page
+		.getByRole('dialog', { name: 'Harlot chose' })
+		.getByRole('button', { name: /Clockmaker Seat 2/ })
+		.tap();
+	await expect(shown).toHaveAccessibleName('This player is: Clockmaker');
+});
+
 /** Turns on Settings > Storyteller > Track nominations. */
 async function trackNominations(page: Page) {
 	await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();

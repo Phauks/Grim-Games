@@ -95,11 +95,13 @@ export function readInfoTokenCharacters(
 	const out: Record<string, InfoTokenCharacterRule> = {};
 	for (const [id, entry] of Object.entries(raw)) {
 		const at = `${path}.${id}`;
-		const count = STANDARD_INFO_TOKENS.find((t) => t.id === id)?.asks?.characters;
-		if (count === undefined) {
-			issues.add(at, 'not an info token shown with characters');
+		const token = STANDARD_INFO_TOKENS.find((t) => t.id === id);
+		if (!token) {
+			issues.add(at, 'not an info token');
 			continue;
 		}
+		// A card shown without characters takes only `characters: []` (offered or left out).
+		const count = token.asks?.characters ?? 0;
 		if (Array.isArray(entry)) {
 			if (entry.length === 0) {
 				issues.add(at, 'expected at least one card');
@@ -169,6 +171,8 @@ function readEntry(
 	const usesMarked = characters.includes('marked');
 	if (upTo !== undefined && (!Number.isInteger(upTo) || upTo < 0 || upTo > MAX_ASKED_CHARACTERS)) {
 		issues.add(`${at}.upTo`, `expected a whole number up to ${MAX_ASKED_CHARACTERS}`);
+	} else if (count === 0 && upTo !== undefined) {
+		issues.add(`${at}.upTo`, 'the card shows no characters');
 	} else if (characters.length > most) {
 		issues.add(`${at}.characters`, `more than the ${most} the card shows`);
 	} else if (chosen > 1) {
