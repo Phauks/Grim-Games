@@ -65,7 +65,7 @@ describe('Deus ex Fiasco', () => {
 				reminder: { characterId: 'deusexfiasco', label: 'Whoopsie' }
 			});
 
-		it.fails('Example 1: Mayor shown; Ravenkeeper secretly made Drunk', () => {
+		it('Example 1: Mayor shown; Ravenkeeper secretly made Drunk', () => {
 			// Wiki: "During the first day, Doug talks privately with the Storyteller and says that he drew
 			// the Drunk token from the bag. The Storyteller looks in the Grimoire and notices that Doug’s
 			// token is the Drunk. The Storyteller tells Doug that he is now the Mayor, replaces the Drunk
@@ -84,7 +84,7 @@ describe('Deus ex Fiasco', () => {
 			expect(awaitsMistake(s)).toBe(true);
 			expect(awaitsMistake(whoopsie(s))).toBe(false);
 		});
-		it.fails('Example 2: Empath given wrong number, fixed next night', () => {
+		it('Example 2: Empath given wrong number, fixed next night', () => {
 			// Wiki: "The Empath is sitting next to the Monk and the poisoned Recluse. The Storyteller,
 			// forgetting that the Recluse is poisoned, accidentally gives the Empath a “1”. Later that
 			// night, the Storyteller wakes the Empath again and gives a “0”. The following day, when the
@@ -104,7 +104,7 @@ describe('Deus ex Fiasco', () => {
 			expect(awaitsMistake(told)).toBe(true);
 			expect(awaitsMistake(whoopsie(told))).toBe(false);
 		});
-		it.fails('Example 3: Undertaker shown wrong token, corrected next night', () => {
+		it('Example 3: Undertaker shown wrong token, corrected next night', () => {
 			// Wiki: "The Imp was executed today. The Storyteller wakes the sober & healthy Undertaker,
 			// and deliberately (and incorrectly) shows the Recluse token. Later that night, the
 			// Storyteller again wakes the Undertaker and shows the Imp token. In the morning, the
@@ -120,7 +120,7 @@ describe('Deus ex Fiasco', () => {
 			});
 			expect(awaitsMistake(whoopsie(s.newDay()))).toBe(false);
 		});
-		it.fails('Example 4: Premature game-over call; Scarlet Woman lives', () => {
+		it('Example 4: Premature game-over call; Scarlet Woman lives', () => {
 			// Wiki: "The Yaggababble is executed and dies. The Storyteller accidentally declares that the
 			// game is over and good has wun. However, the Scarlet Woman is still alive. The Storyteller
 			// declares that a mistake has been made, and that the game continus."
@@ -141,7 +141,7 @@ describe('Deus ex Fiasco', () => {
 			expect(suggestedWinner(ends)).toBeUndefined();
 			expect(awaitsMistake(whoopsie(s))).toBe(false);
 		});
-		it.fails('Example 5: Wrong deaths announced for two players', () => {
+		it('Example 5: Wrong deaths announced for two players', () => {
 			// Wiki: "Ben is the Shabaloth. At night, Ben kills Amy and Doug. In the morning, the
 			// Storyteller deliberately declares that Ben and Lewis have died. After 30 seconds or so, the
 			// Storyteller says “Whoops, I had my Grimoire facing the wrong way. Ben and Lewis should not

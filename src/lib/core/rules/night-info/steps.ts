@@ -6,6 +6,7 @@ import type { Character, CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 import { type AbilityState, abilityState } from '../ability.ts';
+import { withSetupAlignmentStep } from '../setup-alignment.ts';
 import { withTravellerAlignmentStep, withTravellerJoinsStep } from '../traveller-alignment.ts';
 import { withGainedSteps, withStorytellerSteps } from '../gained-abilities.ts';
 import { type DeathCheck, deathCheck } from '../night-deaths.ts';
@@ -80,7 +81,9 @@ export const wakesMarked = (characterId: CharacterId, characters: CharacterLooku
  * work, such as a Minion the Preacher chose), and, given `night`, a step for each gained
  * ability (the Pixie's, `withGainedSteps`) and a first step for Travellers without an
  * alignment (`withTravellerAlignmentStep`), and before that one for Travellers not in play
- * (`withTravellerJoinsStep`); `order` places a gained ability not in play.
+ * (`withTravellerJoinsStep`); on the first night a step for players a setup change makes start
+ * with the other alignment (`withSetupAlignmentStep`); `order` places a gained ability not in
+ * play.
  * Steps get a copy; the order is not otherwise
  * changed.
  */
@@ -109,7 +112,10 @@ export function withNightInfo<T extends NightStep>(
 		game,
 		characters
 	);
-	return all.map((step) => {
+	// The first night, right after Dusk: who starts with the other alignment (the Bounty
+	// Hunter's evil Townsfolk), picked if still to pick, and told.
+	const withAlignments = night === 'first' ? withSetupAlignmentStep(all, game, characters) : all;
+	return withAlignments.map((step) => {
 		// A wake step for a changed character shows the player; it works out nothing.
 		// Nor does one the Storyteller acts in: it wakes nobody.
 		if (!step.character || step.changed || step.storytellerAbility) return step;
