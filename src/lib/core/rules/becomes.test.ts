@@ -358,9 +358,7 @@ describe('a character whose step swaps two players (swapsCharacters)', () => {
 	it('offers every player, a Demon only to swap itself, not another Demon', () => {
 		const { session, seats } = castGame(['barber', 'chef', 'empath', 'imp', 'pukka']);
 		expect(swappableSeats(session.game, 'barber', characters)).toEqual(seats);
-		expect(swappableSeats(session.game, 'barber', characters, seats[3])).toEqual(
-			seats.slice(0, 3)
-		);
+		expect(swappableSeats(session.game, 'barber', characters, seats[3])).toEqual(seats.slice(0, 3));
 		expect(swappableSeats(session.game, 'barber', characters, seats[1])).toEqual([
 			seats[0],
 			seats[2],

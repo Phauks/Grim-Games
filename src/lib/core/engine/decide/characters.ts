@@ -1,12 +1,6 @@
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
-import {
-	OVERRIDE_FIELDS,
-	isOnScript,
-	registersAsDead,
-	replacedBy,
-	typeOf
-} from '#lib/core/model/index.ts';
+import { OVERRIDE_FIELDS, isOnScript, registersAsDead, replacedBy } from '#lib/core/model/index.ts';
 import { extraEvilPlayers } from '#lib/core/rules/extra-evil.ts';
 import type { GameEvent } from '../events.ts';
 import {
@@ -79,9 +73,10 @@ export const CHARACTERS_DECIDERS: Deciders<
 			const name = ctx.characters.get(r.characterId)?.name ?? r.characterId;
 			warn('no-longer-hidden', `No longer the ${name}: the “${r.label}” reminder came off.`);
 		}
-		const lifted = hidden.map(
-			(r): GameEvent => ({ type: 'ReminderRemoved', reminderId: r.reminderId })
-		);
+		const lifted = hidden.map((r): GameEvent => ({
+			type: 'ReminderRemoved',
+			reminderId: r.reminderId
+		}));
 		return [assigned, ...lifted];
 	},
 

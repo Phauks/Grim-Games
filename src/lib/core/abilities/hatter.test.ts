@@ -21,7 +21,7 @@ import { rulesIn } from '#lib/core/data/rules/index.ts';
 import { typeOf } from '#lib/core/model/selectors.ts';
 import { abilityState } from '#lib/core/rules/ability.ts';
 import { changeableSeats, characterChanger } from '#lib/core/rules/becomes.ts';
-import { engineGap, scenario } from '#lib/core/testing/scenario.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Hatter', () => {
 	const character = committedCharacter('hatter');

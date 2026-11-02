@@ -8,7 +8,7 @@ import type { CharacterId } from '#lib/core/data/types.ts';
 import type { MadnessBreaking } from '#lib/core/data/madness-rules.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
-import { getSeat, trueCharacter } from '#lib/core/model/selectors.ts';
+import { getSeat } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 import { hasAbilityOf } from './gained-abilities.ts';
 import { todaysNominations } from './nominations.ts';
