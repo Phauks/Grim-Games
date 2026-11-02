@@ -115,7 +115,7 @@ describe('Snitch', () => {
 				.newDay()
 				.newDay()
 				.becomes('chef', 'snitch');
-			// Waits on the engine: a Snitch made after the first night adds no step or note that
+			// Waits on the engine (M15k): a Snitch made after the first night adds no step or note that
 			// night telling the Storyteller to show each Minion three bluffs.
 			const notes = notesTonight(s, 'other')
 				.map((step) => step.notes)

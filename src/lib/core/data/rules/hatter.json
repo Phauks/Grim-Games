@@ -44,5 +44,15 @@
 			"sameType": true,
 			"anyType": true
 		}
+	},
+	"jinxes": {
+		"leviathan": {
+			"notCreatedAfterDay": 5
+		}
+	},
+	"infoTokenCharacters": {
+		"you-are": {
+			"characters": ["changed"]
+		}
 	}
 }

@@ -7,7 +7,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { boardNightSteps, stepWakes } from './night-steps.ts';
 	import { changedCharacters, diedToday } from '#lib/core/engine/index.ts';
-	import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
+	import { liveDayTimer, timerFacts } from '#lib/features/day/day-timer.svelte.ts';
 	import AlignmentDraw from './AlignmentDraw.svelte';
 	import { endedGames, type EndedGame } from './device-notes.ts';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
@@ -39,6 +39,7 @@
 		setupComplete,
 		diedSinceNewDay,
 		stepNightNumbers,
+		storytellerNominators,
 		todaysNominations,
 		mayNominate,
 		characterNominationPrompts,
@@ -84,7 +85,6 @@
 	import SavantSheet from '#lib/features/savant/SavantSheet.svelte';
 	import AidMenu from '#lib/features/settings/AidMenu.svelte';
 	import { playersDialog } from '#lib/features/room/players-dialog.svelte.ts';
-	import { travellersForNewSeat } from '#lib/features/room/add-seat-travellers.ts';
 	import { DAY_HASH } from '#lib/features/day/day-hash.ts';
 	import SeatSheet from './SeatSheet.svelte';
 	import SeatProfileDialog from './SeatProfileDialog.svelte';
@@ -96,7 +96,7 @@
 	import BankReminderDialog from './BankReminderDialog.svelte';
 	import { ReminderHand } from './reminder-hand.svelte.ts';
 	import BoardCorner from './BoardCorner.svelte';
-	import GameNotesToken from './GameNotesToken.svelte';
+	import GameNotesButton from './GameNotesButton.svelte';
 	import LeaveGuard from './LeaveGuard.svelte';
 	import BoardMenu from './BoardMenu.svelte';
 	import BoardToolbar from './BoardToolbar.svelte';
@@ -226,7 +226,7 @@
 		if (!gameSettings.of(game.gameId).trackNominations) return undefined;
 		const today = todaysNominations(game);
 		return {
-			made: new Set(today.map((n) => n.nominator)),
+			made: new Set([...today.map((n) => n.nominator), ...storytellerNominators(game)]),
 			received: new Set(today.map((n) => n.nominee))
 		};
 	});
@@ -405,8 +405,9 @@
 		pending: readonly { position: number; name: string }[] = []
 	) {
 		placing = add;
+		// No hint over the board: it covers where the Storyteller is about to tap (Trevor,
+		// 2026-11-02); the spots between neighbours show where a seat can go.
 		pendingSeats = pending;
-		toast('Add a seat', 'Tap between two players to put the new seat there.');
 	}
 	/** One spot between each pair of neighbours; the one after the last seat wraps round. */
 	const placeSpots = $derived(
@@ -425,7 +426,9 @@
 			: []
 	);
 	/** The seat just appears (Trevor, 2026-10-16); with a room open, Travellers choose follows. */
-	const onAddSeat = () => startPlacing((p) => travellersForNewSeat(grimoire.addSeat(p), watching));
+	// The seat just appears; a mid-game one is not in play, and its empty token asks whether it
+	// is a Traveller once someone sits there (Trevor, 2026-11-02).
+	const onAddSeat = () => startPlacing((p) => void grimoire.addSeat(p));
 	function placeAt(position: number) {
 		const add = placing;
 		placing = undefined;
@@ -726,9 +729,6 @@
 		untrack(() => grimoire.run({ type: 'SetStorytellerName', name }));
 	});
 
-	/** The Storyteller's notes on the game; never on a spectator's board. */
-	const gameNotes = $derived(watching ? 0 : (game.notes?.length ?? 0));
-
 	// ── Fabled and Loric: their dialogs (RuleCharacters) ──
 	let rules = $state<ReturnType<typeof RuleCharacters>>();
 </script>
@@ -794,6 +794,12 @@
 					timer={coverTimer}
 					actions={coverActions}
 					outlined
+				/>
+				<GameNotesButton
+					game={grimoire.open}
+					run={(command) => grimoire.run(command)}
+					outlined
+					board
 				/>
 			{/if}
 		{/snippet}
@@ -894,15 +900,10 @@
 
 		<!-- Measures the tap target, the height every reminder takes on the board. -->
 		<span class="tap-probe" aria-hidden="true" bind:clientHeight={sizing.tapPx}></span>
-		{#if boardRuleCount(game) > 0 || gameNotes > 0}
+		{#if boardRuleCount(game) > 0}
 			{@const tokenSize = Math.max(sizing.tapPx, Math.round(size * 0.5))}
 			<div class="rules-edge" bind:clientWidth={sizing.edgeW} bind:clientHeight={sizing.edgeH}>
-				{#if boardRuleCount(game) > 0}{@render ruleTokens(tokenSize)}{/if}
-				<!-- The game's notes after the Fabled and Loric, at their size, while there are any
-				     (Trevor, 2026-10-31). Kept off a player's sight while the grim is shown. -->
-				{#if gameNotes > 0}
-					<GameNotesToken size={tokenSize} count={gameNotes} onclick={() => playersDialog.show()} />
-				{/if}
+				{@render ruleTokens(tokenSize)}
 			</div>
 		{/if}
 		<BoardCorner
@@ -926,11 +927,10 @@
 					<!-- Above Game info (the corner), out of History's strip so the strip keeps
 					     its room for the change shown (Trevor, 2026-10-25); held off the corner's
 					     size, so ending the game moves nothing. Only a label: Reopen game is in ⋯
-					     (Trevor, 2026-11-01: "do not allow reopen game from there"). -->
+					     (Trevor, 2026-11-01: "do not allow reopen game from there"). It says the same
+					     while History steps back; the strip says which change shows (Trevor, 2026-11-02). -->
 					<span class="game-over" role="status" data-testid="game-over" data-team={ended.winner}>
-						Game over: {endedText}{grimoire.open.session.log.cursor !== grimoire.open.savedCursor
-							? ' · Shown from History'
-							: ''}
+						Game over: {endedText}
 					</span>
 				{/if}
 			{/snippet}
@@ -943,7 +943,7 @@
 			<!-- Once the game ends the timer keeps its room, unseen, so no seat moves. -->
 			<div class="timer-slot" class:gone={!showTimer} inert={!showTimer} data-screenshot="skip">
 				<DayTimer
-					alive={livingByTeam(game).alive}
+					{...timerFacts(game, characters)}
 					variant="compact"
 					readOnly={watching || !showTimer}
 					shown={watchedTimer}
@@ -1091,7 +1091,7 @@
 {/snippet}
 
 {#snippet coverTimer()}
-	{#if showTimer}<DayTimer alive={livingByTeam(game).alive} variant="compact" />{/if}
+	{#if showTimer}<DayTimer {...timerFacts(game, characters)} variant="compact" />{/if}
 {/snippet}
 
 <DaySheet
@@ -1253,8 +1253,7 @@
 	}
 	/* Shown to a player: the seats only, with the room for the rest kept so nothing moves. */
 	.board.showing :global(:is([data-tray], [data-testid='night-strip'])),
-	.board.showing .board-timer,
-	.board.showing :global([data-testid='game-notes-token']) {
+	.board.showing .board-timer {
 		visibility: hidden;
 	}
 	/* The day timer in the board's top right corner, clear of the seats' ring. */

@@ -10,8 +10,10 @@
 
 	/**
 	 * Game state that matters for a night step (Trevor, 2026-10-16): who is drunk or
-	 * poisoned, who doesn't wake tonight (the Exorcist's Demon), and for a step that can kill, who is protected, may bounce the death, survives
-	 * it or sets something off by dying. Short state lines with badges; the rules are core's
+	 * poisoned, who doesn't wake tonight (the Exorcist's Demon), what a jinx changes about the
+	 * Grimoire a player sees (the Spy's with the Poppy Grower or the Magician), and for a step
+	 * that can kill, who is protected, may bounce the death, survives it or sets something off
+	 * by dying. Short state lines with badges; the rules are core's
 	 * `nightStepAlerts`, worked out from the tokens on the board.
 	 */
 	interface Props {
@@ -41,6 +43,11 @@
 		impaired: 'poisoned',
 		blocked: 'warning',
 		'no-kill': 'protected',
+		'may-skip-attack': 'night',
+		'must-skip-attack': 'warning',
+		'final-night': 'warning',
+		'no-grimoire': 'warning',
+		'grimoire-hides': 'warning',
 		seating: 'warning',
 		protected: 'protected',
 		'may-bounce': 'warning',
@@ -95,6 +102,23 @@
 						tonight
 					{:else if alert.kind === 'no-kill'}
 						{@render player(alert.seatId)}: {@render badge(sourceId(alert))}, doesn't kill tonight
+					{:else if alert.kind === 'may-skip-attack'}
+						{@render player(alert.seatId)}: {@render badge(sourceId(alert))}, may choose not to
+						attack
+					{:else if alert.kind === 'must-skip-attack'}
+						{@render player(alert.seatId)}: {@render badge(sourceId(alert))}, hasn't chosen not to
+						attack yet, must once this game
+					{:else if alert.kind === 'final-night'}
+						{@render player(alert.seatId)}: {@render badge(sourceId(alert))}, final night, doesn't
+						wake or attack tonight
+					{:else if alert.kind === 'no-grimoire'}
+						{@render player(alert.seatId)}: doesn't see the Grimoire while {@render badge(
+							sourceId(alert)
+						)} has its ability
+					{:else if alert.kind === 'grimoire-hides'}
+						{@render player(alert.seatId)}: token off while the Grimoire is shown ({@render badge(
+							sourceId(alert)
+						)})
 					{:else if alert.kind === 'seating'}
 						{@render player(alert.seatId)}: the evil players don't sit in one line with {@render badge(
 							sourceId(alert)

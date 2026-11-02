@@ -10,8 +10,16 @@
  * of the two may be in play). Paraphrase, never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
-import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
+import { findJinx, jinxesAmong, type Script } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { castWith } from '#lib/core/model/fixtures.test-support.ts';
+import { nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
+import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
+
+const scriptOf = (ids: string[]): Script => ({
+	meta: { name: 'Jinxed' },
+	entries: ids.map((id) => ({ kind: 'official' as const, id }))
+});
 
 describe('Magician + Spy jinx', () => {
 	const data = committedGameData();
@@ -30,5 +38,33 @@ describe('Magician + Spy jinx', () => {
 		expect(jinxesAmong(data.jinxes, ['spy'])).not.toContain(jinx);
 	});
 
-	it.todo('enforces the rule the jinx imposes');
+	// Both pages' Related Jinxes: when the Spy sees the Grimoire, the Demon's and the
+	// Magician's character tokens come off it. Its step names those players.
+	describe('the Demon and Magician tokens come off when the Spy sees the Grimoire', () => {
+		const cast = castWith({ script: scriptOf(['spy', 'magician', 'imp', 'chef', 'empath']) });
+
+		it("is data in the Spy's rules", () => {
+			expect(jinxRulesBetween('spy', 'magician')).toEqual({
+				grimoireHides: ['partner', 'demon']
+			});
+		});
+
+		it('names the Magician and the Demon at its step', () => {
+			const { game, ctx, seats } = cast(['spy', 'magician', 'imp', 'chef', 'empath']);
+			const hidden = nightStepAlerts(game, 'spy', ctx.characters).filter(
+				(a) => a.kind === 'grimoire-hides'
+			);
+			expect(hidden.map((a) => [a.seatId, a.source])).toEqual([
+				[seats[1], { characterId: 'magician', seatId: seats[1] }],
+				[seats[2], { characterId: 'magician', seatId: seats[1] }]
+			]);
+		});
+
+		it('names nobody when the Magician is not in play', () => {
+			const { game, ctx } = cast(['spy', 'chef', 'imp', 'empath', 'monk']);
+			expect(
+				nightStepAlerts(game, 'spy', ctx.characters).some((a) => a.kind === 'grimoire-hides')
+			).toBe(false);
+		});
+	});
 });

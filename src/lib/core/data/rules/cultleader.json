@@ -1,6 +1,14 @@
 {
 	"gameEnd": {
+		"ends": [
+			{
+				"kind": "cult-joined"
+			}
+		],
 		"decidedByStoryteller": true
+	},
+	"dayUse": {
+		"vote": "all-good-join"
 	},
 	"dayReminders": {
 		"impairable": true,
@@ -22,5 +30,11 @@
 		"none": "changes alignment; win condition"
 	},
 	"makesExtraEvil": true,
-	"takesNeighbourAlignment": true
+	"takesNeighbourAlignment": true,
+	"infoTokenCharacters": {
+		"you-are": {
+			"characters": [],
+			"upTo": 0
+		}
+	}
 }

@@ -95,7 +95,7 @@ describe('Professor', () => {
 			expect(misses(s, 'fool')).toEqual([]);
 			expect(abilityState(s.game, s.seat('professor'), s.characters).works).toBe(false);
 			const spent = s.reminder('professor', 'professor', 'No Ability');
-			// Waits on the engine: the Professor's step has no condition that stops it waking once its
+			// Waits on the engine (M15k): the Professor's step has no condition that stops it waking once its
 			// No Ability token is placed (as the Seamstress's has).
 			expect(
 				wakeConditionMet(

@@ -1,4 +1,4 @@
-import type { Game, GameNote, SeatId } from '#lib/core/model/index.ts';
+import { isTraveller, type Game, type GameNote, type SeatId } from '#lib/core/model/index.ts';
 import { neighbourFollows } from '#lib/core/rules/reminder-movement.ts';
 import type { EngineContext } from '../context.ts';
 import type { GameEvent } from '../events.ts';
@@ -125,11 +125,20 @@ export const SEATS_DECIDERS: Deciders<
 		return [event];
 	},
 
-	SetInPlay(game, command, _ctx, warn) {
+	SetInPlay(game, command, ctx, warn) {
 		const events: GameEvent[] = [];
 		for (const id of new Set(command.seatIds)) {
 			const seat = seatOf(game, id);
 			if (!seat.notInPlay === command.inPlay) continue;
+			// Only a Traveller sits out (Trevor, 2026-11-02); a seat with no character yet may be
+			// an arriving one. The Storyteller still can, with a warning.
+			if (
+				!command.inPlay &&
+				seat.characterId !== undefined &&
+				!isTraveller(game, seat.seatId, ctx.characters)
+			) {
+				warn('not-traveller', 'only a Traveller can be not in play');
+			}
 			events.push({ type: 'SeatInPlaySet', seatId: seat.seatId, inPlay: command.inPlay });
 		}
 		if (events.length === 0) warn('no-change', 'nothing changes');

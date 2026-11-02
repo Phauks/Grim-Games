@@ -6,7 +6,7 @@
 	import ScratchThumb from '#lib/ui/scratch/ScratchThumb.svelte';
 	import { padShape } from '#lib/ui/scratch/pad-shape.svelte.ts';
 	import type { ScratchPadState } from '#lib/ui/scratch/scratch-store.svelte.ts';
-	import NoteCards from '#lib/ui/notes/NoteCards.svelte';
+	import NoteList from '#lib/ui/notes/NoteList.svelte';
 	import type { TitledNote } from '#lib/ui/notes/note.ts';
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import SeatNoteEntry from '#lib/features/grimoire/SeatNoteEntry.svelte';
@@ -16,8 +16,8 @@
 		notes: readonly PlayerNote[];
 		/** Handwriting scratch pads, oldest first; undefined while they load. */
 		pads: readonly ScratchPadState[] | undefined;
-		onAdd: () => void;
-		onOpenNote: (noteId: string) => void;
+		onSaveNote: (note: Omit<TitledNote, 'noteId'> & { noteId?: string }) => void;
+		onDeleteNote: (noteId: string) => void;
 		onAddScratch: () => void;
 		onOpenScratch: (pad: ScratchPadState) => void;
 		/** The seats of the game this phone is in, with the player's notes on each. */
@@ -28,19 +28,23 @@
 			/** The seat's characters as this player sees them, shown after its name. */
 			characterIds: readonly CharacterId[];
 		}[];
-		/** Opens a seat's note, or a new one without `noteId`. */
-		onOpenSeatNote?: (seatId: string, noteId?: string) => void;
+		onSaveSeatNote?: (
+			seatId: string,
+			note: Omit<TitledNote, 'noteId'> & { noteId?: string }
+		) => void;
+		onDeleteSeatNote?: (seatId: string, noteId: string) => void;
 	}
 
 	let {
 		notes,
 		pads,
-		onAdd,
-		onOpenNote,
+		onSaveNote,
+		onDeleteNote,
 		onAddScratch,
 		onOpenScratch,
 		seats,
-		onOpenSeatNote
+		onSaveSeatNote,
+		onDeleteSeatNote
 	}: Props = $props();
 
 	/** The notes written on players, not the number of seats (Trevor, 2026-10-27). */
@@ -50,10 +54,10 @@
 <!-- Each section closes from its header and stays as left on this device, as the Script tab's
      do (Trevor, 2026-10-26). -->
 <SectionStack>
-	<!-- New ones start from a dashed card in the list itself, not a button in the header
-	     (Trevor, 2026-10-24). -->
+	<!-- New ones start from a dashed "+ New note" in the list itself, not a button in the
+	     header (Trevor, 2026-10-24); each note is written where it sits (Trevor, 2026-11-02). -->
 	<Collapsible title={t('player.myNotes')} storageKey="play:notes:mine" count={notes.length}>
-		<NoteCards {notes} onOpen={onOpenNote} {onAdd} />
+		<NoteList {notes} onSave={onSaveNote} onDelete={onDeleteNote} />
 	</Collapsible>
 
 	<!-- For writing by hand with a finger or pen (Trevor, 2026-10-16). Several pads, kept like
@@ -75,7 +79,7 @@
 					</button>
 				</li>
 			{/each}
-			<!-- As the notes' "+ New note" (NoteCards): a dashed edge, as tall as a pad. -->
+			<!-- As the notes' "+ New note" (NoteList): a dashed edge, as tall as a pad. -->
 			<li>
 				<button
 					type="button"
@@ -104,8 +108,8 @@
 							guesses={seat.characterIds}
 							label={seat.name}
 							notes={seat.notes}
-							onOpen={(noteId) => onOpenSeatNote?.(seat.seatId, noteId)}
-							onAdd={() => onOpenSeatNote?.(seat.seatId)}
+							onSave={(note) => onSaveSeatNote?.(seat.seatId, note)}
+							onDelete={(noteId) => onDeleteSeatNote?.(seat.seatId, noteId)}
 						/>
 					</li>
 				{/each}

@@ -34,11 +34,15 @@ import {
 	DAY_GROUPS,
 	guessLimit,
 	extraNominationOpen,
+	nominationsLeftThisGame,
 	nominationsPerDay,
+	storytellerNominates,
 	type DayReminderOverride,
 	type Night,
 	type NightStepOverride
 } from '#lib/core/rules/index.ts';
+import { readInfoTokenCharacters } from '#lib/core/data/info-token-rules.ts';
+import { Issues } from '#lib/core/data/validate.ts';
 import type { CommandOf, CommandType } from '../commands.ts';
 import type { EngineContext } from '../context.ts';
 import type { GameEvent } from '../events.ts';
@@ -346,6 +350,12 @@ export function nightOverride(o: NightStepOverride, ctx: EngineContext): NightSt
 			const title = o.title?.trim();
 			if (title) copy.title = title;
 			if (o.characterId !== undefined) copy.characterId = characterOf(ctx, o.characterId).id;
+			if (o.infoTokenCharacters !== undefined) {
+				const issues = new Issues();
+				const fills = readInfoTokenCharacters(o.infoTokenCharacters, 'infoTokenCharacters', issues);
+				if (!fills) badOverride(`info token fills: ${issues.list.join('; ')}`);
+				copy.infoTokenCharacters = fills;
+			}
 			return copy;
 		}
 		default:
@@ -457,11 +467,18 @@ export function checkGuessLimit(
 /** The reminder token a character places when its once-only ability is used. */
 export const NO_ABILITY_LABEL = 'No Ability';
 
+/** Whether a reminder is still in the grimoire: on a seat or beside a rule character. */
 export function hasPlacedReminder(game: Game, reminderId: string): boolean {
-	return game.seating.some((id) =>
-		game.seats[id].reminders.some((r) => r.reminderId === reminderId)
+	return (
+		game.seating.some((id) => game.seats[id].reminders.some((r) => r.reminderId === reminderId)) ||
+		Object.values(game.ruleReminders ?? {}).some((list) =>
+			list.some((r) => r.reminderId === reminderId)
+		)
 	);
 }
+
+/** The Storyteller as a nominee (`NominateStoryteller`). */
+export const STORYTELLER = 'storyteller';
 
 /**
  * Checks a nomination. Each player may nominate once per day and be nominated once per
@@ -475,24 +492,38 @@ export function checkNomination(
 	game: Game,
 	characters: CharacterLookup,
 	nominator: string,
-	nominee: string,
+	nominee: string | typeof STORYTELLER,
 	warn: Warn,
 	ignore?: string
 ): void {
 	const others = game.today.entries.filter(
-		(e): e is Extract<DayEntry, { kind: 'nomination' }> =>
-			e.kind === 'nomination' && e.entryId !== ignore
+		(e): e is Extract<DayEntry, { kind: 'nomination' | 'storyteller-nomination' }> =>
+			(e.kind === 'nomination' || e.kind === 'storyteller-nomination') && e.entryId !== ignore
 	);
 	if (game.seats[nominator]?.notInPlay) warn('not-in-play', 'the nominator is not in play yet');
-	if (game.seats[nominee]?.notInPlay) warn('not-in-play', 'the nominee is not in play yet');
+	if (nominee !== STORYTELLER && game.seats[nominee]?.notInPlay)
+		warn('not-in-play', 'the nominee is not in play yet');
 	const allowed = nominationsPerDay(game, nominator, characters);
 	if (allowed === 0) warn('dead-nominator', 'dead players may not nominate');
+	// The Bishop: only the Storyteller nominates; their nomination is logged as usual.
+	const onlyStoryteller = storytellerNominates(game, characters);
+	if (onlyStoryteller.length > 0) {
+		warn('storyteller-nominates', 'only the Storyteller nominates now', onlyStoryteller);
+	}
+	// The Golem: once per game.
+	const perGame = nominationsLeftThisGame(game, nominator, characters, ignore);
+	if (perGame?.left === 0) {
+		warn('nominated-this-game', 'this player may not nominate again this game', [
+			perGame.characterId
+		]);
+	}
 	// The Butcher's extra nomination after the day's first execution: no once-a-day limits.
 	if (extraNominationOpen(game, nominator, characters, ignore)) return;
 	if (others.filter((e) => e.nominator === nominator).length >= Math.max(allowed, 1)) {
 		warn('already-nominated', 'this player has already nominated today');
 	}
-	if (others.some((e) => e.nominee === nominee)) {
+	const nominees = others.map((e) => (e.kind === 'nomination' ? e.nominee : STORYTELLER));
+	if (nominees.includes(nominee)) {
 		warn('already-nominee', 'this player has already been nominated today');
 	}
 }

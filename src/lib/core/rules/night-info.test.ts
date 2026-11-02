@@ -332,7 +332,7 @@ describe('Juggler', () => {
 	});
 
 	// Wiki Juggler example 2, paraphrased: one player guessed as two characters is two guesses.
-	it('counts each guess of a player guessed as several characters, the same guess once', () => {
+	it('counts each guess of a player guessed as several characters, the same guess twice', () => {
 		const { game: g, seats } = castGame(
 			['juggler', 'witch', 'nodashii'],
 			(s) => ({
@@ -353,8 +353,9 @@ describe('Juggler', () => {
 			})
 		);
 		const out = answerOf(g, seats[0], 'juggler', characters);
-		expect(out).toMatchObject({ value: 1, because: [seats[1]] });
-		expect(out.why.facts).toHaveLength(3);
+		// Trevor, 2026-11-02: guessing the same player and character twice counts twice.
+		expect(out).toMatchObject({ value: 2, because: [seats[1]] });
+		expect(out.why.facts).toHaveLength(4);
 	});
 
 	it('has no answer with no guesses logged', () => {

@@ -94,6 +94,7 @@
 					length={ROOM_CODE_LENGTH}
 					group={3}
 					clearLabel={t('room.testRoom.clearCode')}
+					oncomplete={() => bench.joinCode(typed)}
 				/>
 				<Button type="submit" disabled={typed.length !== ROOM_CODE_LENGTH}
 					>{t('room.testRoom.join')}</Button

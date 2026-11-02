@@ -17,6 +17,8 @@ import { gameEnds } from '#lib/core/rules/game-end.ts';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { infoPicker, learnedRoles } from '#lib/core/rules/night-info.ts';
+import { shownToSeats } from '#lib/core/rules/shown-to.ts';
 
 describe('Evil Twin', () => {
 	const character = committedCharacter('eviltwin');
@@ -44,6 +46,32 @@ describe('Evil Twin', () => {
 
 		it('has no special app hooks', () => {
 			expect(character.special).toEqual([]);
+		});
+	});
+
+	// The twins learn each other: the Evil Twin is shown the good twin's character, and the good
+	// twin the Evil Twin's (TPI's night text; Trevor, 2026-11-01: "App does not show the token").
+	describe('the twins are shown each other', () => {
+		const twins = () =>
+			scenario(['chef', 'empath', 'eviltwin', 'imp', 'monk']).reminder(
+				'empath',
+				'eviltwin',
+				'Twin'
+			);
+
+		it('shows the Evil Twin the good twin and their character', () => {
+			const s = twins();
+			const picker = infoPicker(s.game, s.seat('eviltwin'), 'eviltwin', s.characters)!;
+			expect(learnedRoles(s.game, picker, s.characters)!.rows[0]).toMatchObject({
+				target: s.seat('empath'),
+				characterIds: ['empath'],
+				marked: true
+			});
+		});
+
+		it('shows the good twin the Evil Twin', () => {
+			const s = twins();
+			expect(shownToSeats(s.game, 'eviltwin', s.characters)).toEqual([s.seat('empath')]);
 		});
 	});
 
@@ -79,11 +107,11 @@ describe('Evil Twin', () => {
 				{ rule: 'demon-dead', holds: [{ rule: 'marked-alive' }] }
 			]);
 		});
-		it.fails('Example 4: New good twin executed; evil wins', () => {
+		it('Example 4: New good twin executed; evil wins', () => {
 			// Wiki: "The Pit-Hag turns a good player into the Evil Twin, who remains good. The group
 			// executes the good-aligned Evil Twin. Evil wins."
 			// The new Evil Twin is good, so its twin (marked Twin) is an evil player.
-			// Waits on the engine: the Twin game end reads only the player marked Twin as the good
+			// Waits on the engine (M15l): the Twin game end reads only the player marked Twin as the good
 			// twin, never a good-aligned Evil Twin.
 			const s = scenario(['chef', 'empath', 'monk', 'pithag', 'nodashii'])
 				.becomes('chef', 'eviltwin', 'good')

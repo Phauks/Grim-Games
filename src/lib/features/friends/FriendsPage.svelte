@@ -4,6 +4,8 @@
 	import { account } from '#lib/features/account/account.svelte.ts';
 	import ProfileAvatar from '#lib/features/player/ProfileAvatar.svelte';
 	import UsernameDialog from '#lib/features/account/UsernameDialog.svelte';
+	import PrivacyConsent from '#lib/features/account/PrivacyConsent.svelte';
+	import SignInPanel from '#lib/features/account/SignInPanel.svelte';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import { intl, t } from '#lib/i18n/locale.svelte.ts';
 	import Page from '#lib/ui/layout/Page.svelte';
@@ -22,12 +24,14 @@
 	import SeatFriendButton from './SeatFriendButton.svelte';
 	import FriendRows from './FriendRows.svelte';
 	import GroupsSection from './GroupsSection.svelte';
+	import InvitePushToggle from './InvitePushToggle.svelte';
 	import { roomJoinPath } from '#lib/features/room/join-link.ts';
 	import { profileHref, scriptOpenHref } from './friend-links.ts';
 	import { friendScripts } from './friend-scripts.svelte.ts';
 	import { type InboxScript, type PublishedScript } from './friend-scripts-protocol.ts';
-	import { sinceUnit } from './friend-rules.ts';
+	import { byGamesTogether, sinceUnit } from './friend-rules.ts';
 	import { friends } from './friends.svelte.ts';
+	import { clearPendingFriend, keepPendingFriend, pendingFriend } from './pending-friend.ts';
 	import {
 		friendLink,
 		readFriendLink,
@@ -52,18 +56,41 @@
 	/** A username from a scanned friend code's link, filled into Add friend. */
 	let linked = $state('');
 
-	/** A friend link (`/friends#friend=…`) opens Add friend with its username in. */
+	/**
+	 * A friend link's username (`/friends#friend=…`), waiting to open Add friend. Signed out, it
+	 * waits on the device while the page shows sign-in (plan F12).
+	 */
+	let waiting = $state<string | undefined>();
+	/** Whether a waiting link already asked a new account for its username. */
+	let askedUsername = false;
+
 	function openFriendLink(): void {
 		const username = readFriendLink(location.hash);
 		if (!username) return;
 		history.replaceState(history.state, '', location.pathname);
-		linked = username;
-		adding = true;
+		keepPendingFriend(username);
+		waiting = username;
 	}
+
+	// Signed in, the waiting name opens Add friend. An account without a username picks one
+	// first, or the request would be refused.
+	$effect(() => {
+		if (account.status !== 'signed-in' || !waiting || editUsername) return;
+		if (!account.user?.username && !askedUsername) {
+			askedUsername = true;
+			editUsername = true;
+			return;
+		}
+		linked = waiting;
+		adding = true;
+		waiting = undefined;
+		clearPendingFriend();
+	});
 
 	onMount(() => {
 		void friends.load();
 		void friendScripts.load();
+		waiting = pendingFriend();
 		openFriendLink();
 		window.addEventListener('hashchange', openFriendLink);
 		return () => window.removeEventListener('hashchange', openFriendLink);
@@ -79,6 +106,8 @@
 			: undefined
 	);
 	// Signing in on this page loads the list too (friends.svelte.ts listens for it).
+
+	const recent = $derived(byGamesTogether(friends.data?.recent));
 
 	const nameOf = (other: FriendAccount) => other.username ?? t('friends.noUsername');
 
@@ -330,7 +359,7 @@
 			<PageSection title={t('friends.recent')}>
 				{#if data}
 					<FriendRows
-						items={data.recent ?? []}
+						items={recent}
 						key={(other) => other.id}
 						testid="friend-recent"
 						icon={(other) => other.icon}
@@ -406,6 +435,7 @@
 					disabled={!data || busy}
 					onChange={(show) => void setShowPresence(show)}
 				/>
+				<InvitePushToggle />
 			</PageSection>
 
 			<PageSection title={t('friends.blocked')}>
@@ -415,7 +445,12 @@
 			<section class="card" aria-labelledby="friends-sign-in">
 				<h2 id="friends-sign-in">{t('friends.signIn')}</h2>
 				<p class="muted">{t('friends.signedOut')}</p>
-				<Button variant="accent" href={resolve('/account')}>{t('friends.signIn')}</Button>
+				{#if waiting}
+					<!-- From someone's friend code: sign in here, then Add friend opens (plan F12). -->
+					<SignInPanel />
+				{:else}
+					<Button variant="accent" href={resolve('/account')}>{t('friends.signIn')}</Button>
+				{/if}
 			</section>
 		{/if}
 	</ErrorBoundary>
@@ -423,6 +458,7 @@
 
 <AddFriendDialog bind:open={adding} initial={linked} />
 <UsernameDialog bind:open={editUsername} />
+<PrivacyConsent />
 
 {#if confirming}
 	{@const { action, other } = confirming}

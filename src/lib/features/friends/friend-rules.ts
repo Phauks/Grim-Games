@@ -6,8 +6,21 @@ import {
 	MAX_FRIENDS,
 	MAX_PENDING,
 	REQUESTS_PER_DAY,
+	type RecentPlayer,
 	type RequestRefusal
 } from './friends-protocol.ts';
+
+/**
+ * Recent players in the order Friends lists them (Trevor, 2026-11-02: "Why not just sort by
+ * most to least games together?"): most games together first, and among equals the order the
+ * Worker gave, which is most recently played first.
+ */
+export function byGamesTogether(recent: readonly RecentPlayer[] | undefined): RecentPlayer[] {
+	return (recent ?? [])
+		.map((other, index) => ({ other, index }))
+		.sort((a, b) => b.other.games - a.other.games || a.index - b.index)
+		.map(({ other }) => other);
+}
 
 /** What one account holds about another. */
 export interface Relation {

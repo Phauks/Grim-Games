@@ -10,6 +10,11 @@
  * of the two may be in play). Paraphrase, never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
+import type { Script } from '#lib/core/data/index.ts';
+import { castWith, codes, run } from '#lib/core/model/fixtures.test-support.ts';
+import { scriptCharacterIds } from '#lib/core/model/characters.ts';
+import { heldAbilitiesOf } from '#lib/core/rules/gained-abilities.ts';
+import { givenInstead, jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 
@@ -30,5 +35,61 @@ describe('Plague Doctor + Wraith jinx', () => {
 		expect(jinxesAmong(data.jinxes, ['wraith'])).not.toContain(jinx);
 	});
 
-	it.todo('enforces the rule the jinx imposes');
+	// Both pages' Related Jinxes: instead of the Storyteller gaining the Wraith ability when the
+	// Plague Doctor dies, a Minion gains it and is told so.
+	describe('a Minion gains the Wraith ability instead of the Storyteller', () => {
+		const script: Script = {
+			meta: { name: 'Jinxed' },
+			entries: ['plaguedoctor', 'imp', 'wraith', 'poisoner', 'chef', 'empath', 'monk', 'saint'].map(
+				(id) => ({
+					kind: 'official' as const,
+					id
+				})
+			)
+		};
+		const ids = scriptCharacterIds(script);
+		const cast = castWith({ script });
+
+		it("is data in the Plague Doctor's rules", () => {
+			expect(jinxRulesBetween('plaguedoctor', 'wraith')).toEqual({ givenInstead: 'a-minion' });
+			expect(givenInstead('plaguedoctor', 'wraith', ids)).toBe('a-minion');
+			expect(givenInstead('plaguedoctor', 'wraith', ['plaguedoctor', 'imp'])).toBeUndefined();
+			expect(givenInstead('plaguedoctor', 'poisoner', ids)).toBeUndefined();
+		});
+
+		it('warns when the Storyteller takes it anyway', () => {
+			const { session, ctx } = cast(['plaguedoctor', 'imp', 'poisoner', 'chef', 'empath']);
+			const taken = run(session, ctx, {
+				type: 'SetStorytellerAbility',
+				via: 'plaguedoctor',
+				characterId: 'wraith'
+			});
+			expect(codes(taken)).toEqual(['jinxed-ability']);
+			expect(taken.game.storytellerAbilities).toEqual([
+				{ characterId: 'wraith', via: 'plaguedoctor' }
+			]);
+		});
+
+		it('a Minion holds it and has it; a good player given it only warns', () => {
+			const { session, ctx, seats } = cast(['plaguedoctor', 'imp', 'poisoner', 'chef', 'empath']);
+			const given = run(session, ctx, {
+				type: 'SetHeldAbility',
+				seatId: seats[2],
+				via: 'plaguedoctor',
+				characterId: 'wraith'
+			});
+			expect(codes(given)).toEqual([]);
+			expect(heldAbilitiesOf(given.game, seats[2], ctx.characters)).toEqual([
+				{ characterId: 'wraith', via: 'plaguedoctor', works: true }
+			]);
+			const good = run(session, ctx, {
+				type: 'SetHeldAbility',
+				seatId: seats[3],
+				via: 'plaguedoctor',
+				characterId: 'wraith'
+			});
+			expect(codes(good)).toEqual(['not-minion']);
+			expect(heldAbilitiesOf(good.game, seats[3], ctx.characters)[0]?.works).toBe(false);
+		});
+	});
 });

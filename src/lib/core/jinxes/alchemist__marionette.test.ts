@@ -12,6 +12,10 @@
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { analyseSelection, type BagSelection } from '#lib/core/rules/bag-plan.ts';
+import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
+
+const pick = (...ids: string[]): BagSelection => Object.fromEntries(ids.map((id) => [id, 1]));
 
 describe('Alchemist + Marionette jinx', () => {
 	const data = committedGameData();
@@ -30,5 +34,51 @@ describe('Alchemist + Marionette jinx', () => {
 		expect(jinxesAmong(data.jinxes, ['marionette'])).not.toContain(jinx);
 	});
 
-	it.todo('enforces the rule the jinx imposes');
+	// Both pages' Related Jinxes: an Alchemist with the Marionette ability has no ability, and
+	// the real Marionette is in play. The Alchemist picks its Minion ability only once the
+	// tokens are out, so the bag gets a note and its counts are unchanged.
+	describe('the real Marionette is in play with an Alchemist-Marionette', () => {
+		const lookup = (id: string) => data.byId.get(id);
+		const script = [
+			'alchemist',
+			'chef',
+			'empath',
+			'monk',
+			'soldier',
+			'mayor',
+			'marionette',
+			'poisoner',
+			'imp'
+		];
+		const analyse = (selection: BagSelection, order = script) =>
+			analyseSelection({ players: 7, selection, scriptOrder: order, lookup });
+		const note =
+			'Alchemist with the Marionette ability: the Marionette is in play too, and the Alchemist has no ability.';
+
+		it("is data in the Alchemist's rules", () => {
+			expect(jinxRulesBetween('alchemist', 'marionette')).toEqual({
+				withPartnerAbility: 'partner-in-play'
+			});
+		});
+
+		it('notes it at setup when the Alchemist is chosen, counts unchanged', () => {
+			const result = analyse(
+				pick('alchemist', 'chef', 'empath', 'monk', 'soldier', 'poisoner', 'imp')
+			);
+			expect(result.notes).toContain(note);
+			expect(result.expected.demon).toEqual([1]);
+			expect(result.warnings).toEqual([]);
+		});
+
+		it('says nothing without the Alchemist, or with the Marionette off the script', () => {
+			expect(
+				analyse(pick('chef', 'empath', 'monk', 'soldier', 'mayor', 'poisoner', 'imp')).notes
+			).not.toContain(note);
+			const offScript = analyse(
+				pick('alchemist', 'chef', 'empath', 'monk', 'soldier', 'poisoner', 'imp'),
+				script.filter((id) => id !== 'marionette')
+			);
+			expect(offScript.notes).not.toContain(note);
+		});
+	});
 });

@@ -5,11 +5,79 @@
  * Storyteller confirms it or leaves the player as they are.
  */
 import { rulesIn } from '#lib/core/data/rules/index.ts';
+import { abilityState } from './ability.ts';
 import { baseCounts } from './distribution.ts';
 import type { Alignment, CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
-import { aliveNeighbours, alignmentOf, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
+import { scriptCharacterIds } from '#lib/core/model/characters.ts';
+import { jinxedPartners } from './jinxes.ts';
+import {
+	aliveNeighbours,
+	alignmentOf,
+	registersAsDead,
+	replacedBy,
+	trueCharacter,
+	typeOf
+} from '#lib/core/model/selectors.ts';
 import type { Game, Reminder, SeatId } from '#lib/core/model/types.ts';
+import { registrations } from './ability.ts';
+
+/**
+ * Why `seatId` can't turn good by an ability, by a jinx on the script that says `noTurnGood`:
+ * the ability they hold from a giver (the Boffin's Demon with the Goon ability,
+ * https://wiki.bloodontheclocktower.com/Boffin#Related_Jinxes), or their own character, which
+ * a changer gave them while they were evil (an evil player the Pit-Hag turns into the Cult
+ * Leader, https://wiki.bloodontheclocktower.com/Pit-Hag#Related_Jinxes). `characterId` is
+ * the ability that can't turn them good, `via` the jinxed giver or changer. Undefined when
+ * nothing stops them.
+ */
+export function cantTurnGood(
+	game: Game,
+	seatId: SeatId,
+	characters: CharacterLookup
+): { characterId: CharacterId; via: CharacterId } | undefined {
+	const seat = game.seats[seatId];
+	if (!seat) return undefined;
+	const script = scriptCharacterIds(game.script);
+	const jinxed = (via: CharacterId, id: CharacterId) =>
+		jinxedPartners(via, 'noTurnGood', script, characters).includes(id);
+	for (const held of seat.abilities ?? []) {
+		if (jinxed(held.via, held.characterId)) return { ...held };
+	}
+	const own = trueCharacter(game, seatId, characters);
+	const by = seat.changedBy;
+	if (own !== undefined && by?.alignment === 'evil' && jinxed(by.via, own))
+		return { characterId: own, via: by.via };
+	return undefined;
+}
+
+/**
+ * The good players who neighbour a Demon: each Demon's nearest living good player each way,
+ * skipping dead and evil players, as the Marionette's own neighbour is counted
+ * (https://wiki.bloodontheclocktower.com/Marionette). For a jinx that makes one of them a
+ * character (`givenInstead: 'demon-neighbour-becomes'`, the Plague Doctor's Marionette).
+ */
+export function demonGoodNeighbours(game: Game, characters: CharacterLookup): SeatId[] {
+	const demons = game.seating.filter((id) => typeOf(game, id, characters) === 'demon');
+	const skip = (id: SeatId) => registersAsDead(game, id) || alignmentOf(game, id) !== 'good';
+	return [...new Set(demons.flatMap((id) => aliveNeighbours(game, id, skip)))];
+}
+
+/**
+ * The reminder of `characterId` that says its carrier truly is that character, under the
+ * token they were shown (`replacedBy`: the Marionette's Is The Marionette), so a player can
+ * become it without being told. Undefined for a character with none.
+ */
+export function replacingReminder(
+	characterId: CharacterId,
+	characters: CharacterLookup
+): Reminder | undefined {
+	const character = characters.get(characterId);
+	if (!character) return undefined;
+	return [...character.reminders, ...character.remindersGlobal]
+		.map((label) => ({ characterId, label }))
+		.find((reminder) => replacedBy(reminder, characters)?.id === characterId);
+}
 
 /**
  * The change to offer:
@@ -37,6 +105,16 @@ export function becomesOffer(
 	const rule = rulesIn(game, reminder.characterId, characters)?.becomes;
 	if (rule?.token !== reminder.label || (rule.when ?? 'placed') !== when) return undefined;
 	if (!game.seats[seatId]) return undefined;
+	// Its player's ability must work, unless the rule says even if drunk or poisoned.
+	const owners = game.seating.filter(
+		(id) => trueCharacter(game, id, characters) === reminder.characterId
+	);
+	if (
+		!rule.evenIfImpaired &&
+		owners.length > 0 &&
+		!owners.some((id) => abilityState(game, id, characters).works)
+	)
+		return undefined;
 	const isDemon = typeOf(game, seatId, characters) === 'demon';
 
 	if (rule.into === 'evil') {
@@ -45,20 +123,30 @@ export function becomesOffer(
 		return { into: 'evil', seatId, characterId };
 	}
 	if (rule.into === 'carrier-alignment') {
-		// The token's character's own player takes the carrier's alignment.
-		const alignment = alignmentOf(game, seatId);
+		// The token's character's own player takes the carrier's alignment: the one the carrier
+		// registers as to that character, which may differ from their true one (the Recluse
+		// might register as evil to the Ogre, the Spy always registers as evil to it:
+		// https://wiki.bloodontheclocktower.com/Ogre#Related_Jinxes). The first that would
+		// change the owner is offered; the Storyteller confirms it or leaves them as they are.
+		const truly = alignmentOf(game, seatId);
 		const owner = game.seating.find(
 			(id) => id !== seatId && trueCharacter(game, id, characters) === reminder.characterId
 		);
-		if (owner === undefined || alignment === undefined) return undefined;
-		if (alignmentOf(game, owner) === alignment) return undefined;
+		if (owner === undefined || truly === undefined) return undefined;
+		const registered = registrations(game, characters, reminder.characterId).find(
+			(r) => r.seatId === seatId
+		);
+		// A jinx may keep the owner from turning good by this ability.
+		const blocked = (a: Alignment) => a === 'good' && cantTurnGood(game, owner, characters);
+		const alignment = (registered?.alignments ?? [truly]).find(
+			(a) => a !== alignmentOf(game, owner) && !blocked(a)
+		);
+		if (alignment === undefined) return undefined;
 		return { into: 'alignment', seatId: owner, characterId: reminder.characterId, alignment };
 	}
 	if (rule.into === 'swap') {
 		// The Demon the token's character chose swaps with that character's player.
-		const withSeatId = game.seating.find(
-			(id) => id !== seatId && trueCharacter(game, id, characters) === reminder.characterId
-		);
+		const withSeatId = swapPartner(game, reminder.characterId, characters, seatId);
 		return isDemon && withSeatId !== undefined ? { into: 'swap', seatId, withSeatId } : undefined;
 	}
 	// The dead Demon's character (the one taken over), else another Demon in play.
@@ -69,6 +157,49 @@ export function becomesOffer(
 	const taken = demons.find((id) => game.seats[id].dead) ?? demons[0];
 	const characterId = taken === undefined ? undefined : trueCharacter(game, taken, characters);
 	return characterId === undefined ? undefined : { into: 'demon', seatId, characterId };
+}
+
+/**
+ * The player who swaps when `characterId`'s ability picks the Demon (`becomes.into: 'swap'`):
+ * its own player, else a player who gained its ability (the Philosopher who chose the Snake
+ * Charmer, https://wiki.bloodontheclocktower.com/Snake_Charmer). A Drunk who only thinks they
+ * are it has no ability, so is never one.
+ */
+export function swapPartner(
+	game: Game,
+	characterId: CharacterId,
+	characters: CharacterLookup,
+	except?: SeatId
+): SeatId | undefined {
+	const own = game.seating.find(
+		(id) => id !== except && trueCharacter(game, id, characters) === characterId
+	);
+	if (own !== undefined) return own;
+	// A player who took its token for their own (`gainedFrom.swapped`: the Philosopher).
+	return game.seating.find((id) => {
+		if (id === except || game.seats[id].characterId !== characterId) return false;
+		const own = trueCharacter(game, id, characters);
+		return own !== undefined && rulesIn(game, own, characters)?.gainedFrom?.swapped === true;
+	});
+}
+
+/**
+ * What `chooser`, with `characterId`'s swap ability (`becomes.into: 'swap'`), choosing
+ * `chosen` tonight does: with the Demon, the two swap characters and alignments and its
+ * `token` goes on the old Demon, now `characterId`; with anyone else, nothing (undefined).
+ */
+export function swapChoice(
+	game: Game,
+	characterId: CharacterId,
+	chosen: SeatId,
+	characters: CharacterLookup
+): { seatId: SeatId; withSeatId: SeatId; mark: Reminder } | undefined {
+	const rule = rulesIn(game, characterId, characters)?.becomes;
+	if (rule?.into !== 'swap') return undefined;
+	if (typeOf(game, chosen, characters) !== 'demon') return undefined;
+	const withSeatId = swapPartner(game, characterId, characters, chosen);
+	if (withSeatId === undefined) return undefined;
+	return { seatId: chosen, withSeatId, mark: { characterId, label: rule.token } };
 }
 
 /**
@@ -108,7 +239,8 @@ export function characterChanger(
 	const carries = (id: SeatId, label: string) =>
 		game.seats[id].reminders.some((r) => r.characterId === characterId && r.label === label);
 	if (rule.firstNight && game.pastDays.length > 0) return undefined;
-	if (rule.upTo === 'minions' && minionsLeft(game, characters) <= 0) return undefined;
+	if (rule.upTo === 'minions' && minionsLeft(game, characters, rule.extraMinions) <= 0)
+		return undefined;
 	const changer = game.seating.find(
 		(id) =>
 			(!game.seats[id].dead || rules?.actsWhenDead === true) &&
@@ -121,13 +253,13 @@ export function characterChanger(
 }
 
 /**
- * How many more Minions the player count usually has than are in play (`upTo: 'minions'`,
- * the Kazali's): Travellers are not counted.
+ * How many more Minions the player count usually has, plus `extra` (the Lord of Typhon's),
+ * than are in play (`upTo: 'minions'`, the Kazali's): Travellers are not counted.
  */
-export function minionsLeft(game: Game, characters: CharacterLookup): number {
+export function minionsLeft(game: Game, characters: CharacterLookup, extra = 0): number {
 	const dealt = game.seating.filter((id) => typeOf(game, id, characters) !== 'traveller');
 	const minions = dealt.filter((id) => typeOf(game, id, characters) === 'minion').length;
-	return baseCounts(dealt.length).minion - minions;
+	return baseCounts(dealt.length).minion + extra - minions;
 }
 
 /**
@@ -141,7 +273,11 @@ export function changeableSeats(
 	characters: CharacterLookup
 ): SeatId[] {
 	const rule = rulesIn(game, characterId, characters)?.changesCharacter;
+	const nearest = rule?.outward
+		? outwardSeats(game, characterId, rule.types, characters)
+		: undefined;
 	return game.seating.filter((id) => {
+		if (nearest && !nearest.includes(id)) return false;
 		const own = trueCharacter(game, id, characters);
 		if (rule?.notTravellers && typeOf(game, id, characters) === 'traveller') return false;
 		if (rule?.upTo) {
@@ -164,19 +300,53 @@ export function changeableSeats(
 }
 
 /**
+ * Walking out from `characterId`'s player both ways round the table, the first player on each
+ * side who is not yet of `types` (`outward`: the Lord of Typhon's line of Minions).
+ */
+function outwardSeats(
+	game: Game,
+	characterId: CharacterId,
+	types: readonly string[],
+	characters: CharacterLookup
+): SeatId[] {
+	const seating = game.seating;
+	const n = seating.length;
+	const at = seating.findIndex((id) => trueCharacter(game, id, characters) === characterId);
+	if (at < 0) return [];
+	const out: SeatId[] = [];
+	for (const step of [-1, 1]) {
+		for (let i = 1; i < n; i++) {
+			const id = seating[(((at + step * i) % n) + n) % n];
+			const type = typeOf(game, id, characters);
+			if (type && types.includes(type)) continue;
+			if (!out.includes(id)) out.push(id);
+			break;
+		}
+	}
+	return out;
+}
+
+/**
  * The players `characterId`'s `swapsCharacters` may choose to swap: those with a character,
- * except its `notTypes` (the Barber's "not another Demon").
+ * except its `notTypes` (the Barber's "not another Demon"). A player of its `chooser` type is
+ * still offered, as the one choosing may pick themself (the Demon), unless `first`, the player
+ * already picked, is of that type too: then they are "another" one.
  */
 export function swappableSeats(
 	game: Game,
 	characterId: CharacterId,
-	characters: CharacterLookup
+	characters: CharacterLookup,
+	first?: SeatId
 ): SeatId[] {
 	const rule = rulesIn(game, characterId, characters)?.swapsCharacters;
 	if (!rule) return [];
+	const barred = (rule.notTypes ?? []) as readonly string[];
+	const firstIsChooser = first !== undefined && typeOf(game, first, characters) === rule.chooser;
 	return game.seating.filter((id) => {
 		const type = typeOf(game, id, characters);
-		return type !== undefined && !(rule.notTypes as readonly string[] | undefined)?.includes(type);
+		if (type === undefined || id === first) return false;
+		if (!barred.includes(type)) return true;
+		return type === rule.chooser && !firstIsChooser;
 	});
 }
 
@@ -196,8 +366,33 @@ export function neighbourAlignments(
 		(id) => !game.seats[id].dead && trueCharacter(game, id, characters) === characterId
 	);
 	if (seatId === undefined) return undefined;
+	// A jinx may keep them from turning good by this ability (`cantTurnGood`).
+	const noGood = cantTurnGood(game, seatId, characters) !== undefined;
 	const alignments = [
 		...new Set(aliveNeighbours(game, seatId).flatMap((id) => alignmentOf(game, id) ?? []))
-	].sort();
+	]
+		.filter((a) => !noGood || a !== 'good')
+		.sort();
 	return alignments.length ? { seatId, alignments } : undefined;
+}
+
+/**
+ * The players who may become `characterId` when its player dies (`passesOn`: the Farmer's
+ * alive good player, https://wiki.bloodontheclocktower.com/Farmer): alive ones when the rule
+ * says so, of its alignment when it names one, and never a player who already is that
+ * character. Empty for a character without the rule. The Storyteller picks among them.
+ */
+export function passOnSeats(
+	game: Game,
+	characterId: CharacterId,
+	characters: CharacterLookup
+): SeatId[] {
+	const rule = rulesIn(game, characterId, characters)?.passesOn;
+	if (!rule) return [];
+	return game.seating.filter(
+		(id) =>
+			trueCharacter(game, id, characters) !== characterId &&
+			(!rule.alive || !game.seats[id].dead) &&
+			(!rule.alignment || alignmentOf(game, id) === rule.alignment)
+	);
 }

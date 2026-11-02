@@ -8,12 +8,22 @@ import { rulesOf } from '#lib/core/data/rules/index.ts';
 import {
 	activeJinxes,
 	barredAbilities,
+	givenInstead,
 	isExclusiveJinx,
+	jinxedPartners,
 	jinxIsExclusive,
+	jinxesOnStep,
 	jinxRulesBetween,
 	jinxSetupWarnings,
+	jinxedWith,
+	ownJinxes,
+	ownJinxRules,
+	registeredTo,
 	scriptJinxes
 } from './jinxes.ts';
+import { readJinxRules } from '#lib/core/data/jinx-rules.ts';
+import { Issues } from '#lib/core/data/validate.ts';
+import type { Script } from '#lib/core/data/index.ts';
 
 const data = committedGameData();
 const name = (id: string) => data.byId.get(id)?.name ?? id;
@@ -102,7 +112,126 @@ describe('jinx rules data', () => {
 	it('reads either side of the pair, and nothing for a jinx that is text only', () => {
 		expect(jinxRulesBetween('boffin', 'drunk')).toEqual({ notGiven: true });
 		expect(jinxRulesBetween('drunk', 'boffin')).toEqual({ notGiven: true });
-		expect(jinxRulesBetween('spy', 'magician')).toBeUndefined();
+		expect(jinxRulesBetween('alchemist', 'boffin')).toBeUndefined();
+	});
+
+	it('reads the jinx rules that reuse other rules, and rejects bad ones', () => {
+		const issues = new Issues();
+		expect(
+			readJinxRules(
+				{
+					a: { registersTo: { alignments: ['evil'], always: true } },
+					b: { impairsPartner: 'poisoned', noKill: 'token' },
+					c: { noGrimoire: true, grimoireHides: ['partner', 'demon'] }
+				},
+				'jinxes',
+				issues
+			)
+		).toEqual({
+			a: { registersTo: { alignments: ['evil'], always: true } },
+			b: { impairsPartner: 'poisoned', noKill: 'token' },
+			c: { noGrimoire: true, grimoireHides: ['partner', 'demon'] }
+		});
+		expect(issues.list).toEqual([]);
+		const bad = new Issues();
+		readJinxRules(
+			{
+				a: { registersTo: { always: true } },
+				b: { impairsPartner: 'no-ability' },
+				c: { noKill: 'sometimes' },
+				d: { grimoireHides: ['minion', 'everyone'] }
+			},
+			'jinxes',
+			bad
+		);
+		expect(bad.list).toHaveLength(8);
+	});
+
+	it('reads the Leviathan and Riot jinx rules, and rejects bad ones', () => {
+		const issues = new Issues();
+		const good = {
+			a: { endsGame: { kind: 'nominated-marked-executed', winner: 'good', token: 'Safe' } },
+			b: { endsGame: { kind: 'nominated-marked-executed', winner: 'good' } },
+			c: { endsGame: { kind: 'marked-executed', token: 'Grandchild', winner: 'evil' } },
+			d: { endsGame: { kind: 'day-without-execution', day: 5, winner: 'good' } },
+			e: { deadAtLeast: 1, notCreatedAfterDay: 5 }
+		};
+		expect(readJinxRules(good, 'jinxes', issues)).toEqual(good);
+		expect(issues.list).toEqual([]);
+		const bad = new Issues();
+		readJinxRules(
+			{
+				a: { endsGame: { kind: 'marked-executed', winner: 'evil' } },
+				b: { endsGame: { kind: 'day-without-execution', winner: 'good' } },
+				c: { endsGame: { kind: 'nominated-marked-executed', winner: 'good', day: 5 } },
+				d: { endsGame: { kind: 'sometimes', winner: 'good' } },
+				e: { deadAtLeast: 0, notCreatedAfterDay: 2.5 }
+			},
+			'jinxes',
+			bad
+		);
+		expect(bad.list.map((i) => i.split(': ')[0])).toEqual([
+			'jinxes.a.endsGame.token',
+			'jinxes.a',
+			'jinxes.b.endsGame.day',
+			'jinxes.b',
+			'jinxes.c.endsGame.day',
+			'jinxes.d.endsGame.kind',
+			'jinxes.d',
+			'jinxes.e.deadAtLeast',
+			'jinxes.e.notCreatedAfterDay',
+			'jinxes.e'
+		]);
+	});
+
+	it('names only tokens the partner has, in each endsGame jinx', () => {
+		for (const character of data.characters) {
+			for (const [partner, rule] of Object.entries(rulesOf(character.id)?.jinxes ?? {})) {
+				const token = rule.endsGame?.token;
+				if (token === undefined) continue;
+				const reminders = data.byId.get(partner)?.reminders ?? [];
+				expect(reminders, `${character.id}.jinxes.${partner}`).toContain(token);
+			}
+		}
+	});
+
+	it("reads only the owner's side for what one character does to the other", () => {
+		const of = (ids: string[]): Script => ({
+			meta: { name: 'Jinxed' },
+			entries: ids.map((id) => ({ kind: 'official' as const, id }))
+		});
+		const script = of(['spy', 'chef', 'imp']);
+		const both = { script: of(['spy', 'chef', 'imp', 'ogre']) };
+		expect(ownJinxRules(both, 'spy', 'ogre')?.registersTo).toEqual({
+			alignments: ['evil'],
+			always: true
+		});
+		expect(ownJinxRules(both, 'ogre', 'spy')).toBeUndefined();
+		// Not in effect unless the script holds both.
+		expect(ownJinxRules({ script }, 'spy', 'ogre')).toBeUndefined();
+		expect(ownJinxes(both, 'spy', (r) => r.registersTo !== undefined)).toEqual([
+			{ partner: 'ogre', rule: { registersTo: { alignments: ['evil'], always: true } } }
+		]);
+		expect(jinxedWith(both, 'ogre', (r) => r.registersTo !== undefined)).toEqual([
+			{ characterId: 'spy', rule: { registersTo: { alignments: ['evil'], always: true } } }
+		]);
+	});
+
+	it('adds a jinx registration to the usual ones, or replaces them when always', () => {
+		const usual = {
+			alignments: ['evil', 'good'] as const,
+			types: ['minion', 'townsfolk'] as const
+		};
+		expect(registeredTo(usual, { alignments: ['evil'], always: true })).toEqual({
+			alignments: ['evil'],
+			types: ['minion', 'townsfolk']
+		});
+		expect(
+			registeredTo({ alignments: ['good'], types: ['townsfolk'] }, { alignments: ['evil'] })
+		).toEqual({ alignments: ['good', 'evil'], types: ['townsfolk'] });
+		expect(
+			registeredTo({ alignments: ['evil'], types: ['minion'] }, { types: ['demon'], always: true })
+		).toEqual({ alignments: ['evil'], types: ['demon'] });
 	});
 
 	it("reads a custom character's own jinx rules", () => {
@@ -110,5 +239,66 @@ describe('jinx rules data', () => {
 			['giver', { rules: { jinxes: { chef: { notGiven: true as const } } } }]
 		]);
 		expect(barredAbilities('giver', ['giver', 'chef', 'empath'], custom)).toEqual(['chef']);
+	});
+
+	it("reads a custom character's givenInstead and partner keys", () => {
+		const custom = new Map([
+			[
+				'giver',
+				{
+					rules: {
+						jinxes: {
+							spy: { givenInstead: 'a-minion' as const },
+							chef: { spareToken: true as const, noTurnGood: true as const }
+						}
+					}
+				}
+			]
+		]);
+		const script = ['giver', 'chef', 'spy', 'empath'];
+		expect(givenInstead('giver', 'spy', script, custom)).toBe('a-minion');
+		expect(givenInstead('giver', 'chef', script, custom)).toBeUndefined();
+		expect(givenInstead('giver', 'spy', ['giver'], custom)).toBeUndefined();
+		expect(jinxedPartners('giver', 'spareToken', script, custom)).toEqual(['chef']);
+		expect(jinxedPartners('giver', 'noTurnGood', script, custom)).toEqual(['chef']);
+		expect(jinxedPartners('giver', 'storytellerPicksPlayer', script, custom)).toEqual([]);
+	});
+});
+
+describe('jinxesOnStep', () => {
+	const jinxes = scriptJinxes(data.jinxes, ['spy', 'magician', 'poppygrower', 'chef']);
+	const pairs = (list: readonly { characters: readonly string[] }[]) =>
+		list.map((j) => [...j.characters].sort().join('+'));
+
+	// https://wiki.bloodontheclocktower.com/Djinn: a jinx is in effect while both are in play.
+	it('shows each jinx on both characters once both are in play', () => {
+		const inPlay = ['spy', 'poppygrower', 'chef'];
+		expect(pairs(jinxesOnStep(jinxes, 'spy', inPlay))).toEqual(['poppygrower+spy']);
+		expect(pairs(jinxesOnStep(jinxes, 'poppygrower', inPlay))).toEqual(['poppygrower+spy']);
+		expect(jinxesOnStep(jinxes, 'chef', inPlay)).toEqual([]);
+	});
+
+	it('shows every jinx a character has with characters in play, in the given order', () => {
+		const inPlay = ['spy', 'magician', 'poppygrower'];
+		expect(pairs(jinxesOnStep(jinxes, 'spy', inPlay))).toEqual(
+			pairs(jinxes.filter((j) => j.characters.includes('spy')))
+		);
+		expect(pairs(jinxesOnStep(jinxes, 'magician', inPlay))).toEqual(['magician+spy']);
+	});
+
+	it('shows nothing while only one of the pair is in play, or the character is not', () => {
+		expect(jinxesOnStep(jinxes, 'spy', ['spy', 'chef'])).toEqual([]);
+		expect(jinxesOnStep(jinxes, 'spy', ['magician', 'poppygrower'])).toEqual([]);
+	});
+
+	it("keeps a script's own wording as it is", () => {
+		const own = scriptJinxes(
+			data.jinxes,
+			['spy', 'custom'],
+			[{ characters: ['custom', 'spy'], reason: 'Homebrew wording.' }]
+		);
+		expect(jinxesOnStep(own, 'custom', ['spy', 'custom']).map((j) => j.reason)).toEqual([
+			'Homebrew wording.'
+		]);
 	});
 });

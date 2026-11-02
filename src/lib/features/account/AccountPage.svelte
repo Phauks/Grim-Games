@@ -25,7 +25,7 @@
 	// Scripts are shown in the Library now, but signing in here still saves the device's
 	// scripts to the profile, which this module does when the user changes.
 	import './profile-scripts.svelte.ts';
-	import SignInForm from './SignInForm.svelte';
+	import SignInPanel from './SignInPanel.svelte';
 	import PrivacyConsent from './PrivacyConsent.svelte';
 	import FirstSignIn from './FirstSignIn.svelte';
 	import { withPrivacyConsent } from './privacy-consent.svelte.ts';
@@ -381,14 +381,7 @@
 			<section class="card" aria-labelledby="sign-in">
 				<h2 id="sign-in">{t('account.signIn.title')}</h2>
 				<p class="muted">{t('account.signIn.intro')}</p>
-				{#if account.status === 'checking'}
-					<p class="muted">{t('account.signIn.checking')}</p>
-				{:else}
-					{#if account.status === 'offline'}
-						<p class="muted">{t('account.signIn.offline')}</p>
-					{/if}
-					<SignInForm notice={linkError} />
-				{/if}
+				<SignInPanel notice={linkError} />
 			</section>
 		{/if}
 	</ErrorBoundary>

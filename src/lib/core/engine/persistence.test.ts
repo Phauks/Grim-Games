@@ -293,6 +293,28 @@ describe('version 25 saves', () => {
 	});
 });
 
+describe('version 26 saves', () => {
+	// Before a character change kept who made it (the Pit-Hag's jinxes): none is recorded.
+	it('migrates a version 26 game with no changes recorded, then records one', () => {
+		const { session, ctx, seats } = newGame(['Sam', 'Ana', 'Kim', 'Lee', 'Max']);
+		const v26 = { ...JSON.parse(JSON.stringify(toSavedGame(session, 1))), schemaVersion: 26 };
+		const loaded = migrateSavedGame(v26);
+		expect(loaded.schemaVersion).toBe(SAVED_GAME_VERSION);
+		expect(loaded.log).toEqual(v26.log);
+		const opened = openSession(loaded.log);
+		expect(Object.values(opened.game.seats).some((s) => s.changedBy)).toBe(false);
+		const changed = run(opened, ctx, {
+			type: 'AssignCharacter',
+			seatId: seats[0],
+			characterId: 'saint',
+			alignment: 'evil',
+			by: 'philosopher'
+		});
+		const again = openSession(migrateSavedGame(toSavedGame(changed, 2)).log);
+		expect(again.game.seats[seats[0]].changedBy).toEqual({ via: 'philosopher', alignment: 'evil' });
+	});
+});
+
 describe('version 18 saves', () => {
 	// Before several notes per seat (Trevor, 2026-10-26): an older seat's single note
 	// (`SeatNoteSet`) opens as its untitled first note, and more can be added.

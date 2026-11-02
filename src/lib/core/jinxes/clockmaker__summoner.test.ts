@@ -10,8 +10,17 @@
  * of the two may be in play). Paraphrase, never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
-import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
+import { findJinx, jinxesAmong, type Script } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { castWith } from '#lib/core/model/fixtures.test-support.ts';
+import { registrations } from '#lib/core/rules/ability.ts';
+import { infoPicker } from '#lib/core/rules/night-info.ts';
+import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
+
+const scriptOf = (ids: string[]): Script => ({
+	meta: { name: 'Jinxed' },
+	entries: ids.map((id) => ({ kind: 'official' as const, id }))
+});
 
 describe('Clockmaker + Summoner jinx', () => {
 	const data = committedGameData();
@@ -30,5 +39,31 @@ describe('Clockmaker + Summoner jinx', () => {
 		expect(jinxesAmong(data.jinxes, ['summoner'])).not.toContain(jinx);
 	});
 
-	it.todo('enforces the rule the jinx imposes');
+	// Both pages' Related Jinxes: the Summoner registers as the Demon to the Clockmaker, so
+	// the Clockmaker counts from the Summoner while there is no Demon.
+	describe('the Summoner registers as the Demon to the Clockmaker', () => {
+		const cast = castWith({
+			script: scriptOf(['clockmaker', 'summoner', 'poisoner', 'chef', 'empath'])
+		});
+
+		it("is data in the Summoner's rules", () => {
+			expect(jinxRulesBetween('summoner', 'clockmaker')).toEqual({
+				registersTo: { types: ['demon'], always: true }
+			});
+		});
+
+		it('registers as the Demon to the Clockmaker only', () => {
+			const { game, ctx, seats } = cast(['clockmaker', 'summoner', 'chef', 'poisoner', 'empath']);
+			const as = (viewer?: string) =>
+				registrations(game, ctx.characters, viewer).find((r) => r.seatId === seats[1]);
+			expect(as('clockmaker')?.types).toEqual(['demon']);
+			expect(as()).toBeUndefined();
+		});
+
+		it('gives the Clockmaker the steps from the Summoner to the nearest Minion', () => {
+			const { game, ctx, seats } = cast(['clockmaker', 'summoner', 'chef', 'poisoner', 'empath']);
+			const picker = infoPicker(game, seats[0], 'clockmaker', ctx.characters)!;
+			expect(picker.options.map((o) => o.number)).toEqual([2]);
+		});
+	});
 });

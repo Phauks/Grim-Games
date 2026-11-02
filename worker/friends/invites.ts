@@ -1,7 +1,8 @@
 /**
  * Game invites (plan F4): the Storyteller of a live room invites friends to it, and each
- * invite waits on the friend's Friends page until they join, decline, or it expires. The
- * room code travels in request bodies only, never a URL (CLAUDE.md).
+ * invite waits on the friend's Friends page until they join, decline, or it expires, and is
+ * pushed to their phones when they turned that on (plan F8, invite-push.ts). The room code
+ * travels in request bodies only, never a URL (CLAUDE.md).
  */
 import {
 	FRIEND_INVITE_API,
@@ -12,6 +13,7 @@ import {
 } from '../../src/lib/features/friends/friends-protocol.ts';
 import { normaliseRoomCode } from '../../src/lib/core/sync/room-code.ts';
 import { readBody } from '../account/routes.ts';
+import { invitePushTargets, pushInvite } from './invite-push.ts';
 import { describe, fail, friendBook, json, type FriendsEnv } from './routes.ts';
 
 /** The account's open invites from current friends; empty while the data Worker is older. */
@@ -40,7 +42,10 @@ export async function friendInvites(env: FriendsEnv, accountId: string): Promise
 	});
 }
 
-/** Which friends are in the room, or invites one: only from the room's own Storyteller. */
+/**
+ * Which friends are in the room (and which have a phone there now, for Room transfer, plan
+ * F14), or invites one: only from the room's own Storyteller.
+ */
 async function invite(
 	env: FriendsEnv,
 	accountId: string,
@@ -48,19 +53,25 @@ async function invite(
 ): Promise<InviteResponse> {
 	const code = typeof body?.code === 'string' ? normaliseRoomCode(body.code) : undefined;
 	if (!code) return { here: [], outcome: 'unavailable' };
-	const inRoom = (await env.ROOMS.get(env.ROOMS.idFromName(code)).friendsRoom(accountId))?.accounts;
-	if (!inRoom) return { here: [], outcome: 'unavailable' };
+	const room = await env.ROOMS.get(env.ROOMS.idFromName(code)).friendsRoom(accountId);
+	if (!room) return { here: [], outcome: 'unavailable' };
 	const mine = friendBook(env, accountId);
 	const { friends } = await mine.contents(Date.now());
 	const friendIds = new Set(friends.map((friend) => friend.id));
-	const here = inRoom.filter((id) => id !== accountId && friendIds.has(id));
+	const here = room.accounts.filter((id) => id !== accountId && friendIds.has(id));
 	const other = body?.id;
-	if (typeof other !== 'string') return { here };
+	if (typeof other !== 'string') {
+		const present = room.present.filter((id) => id !== accountId && friendIds.has(id));
+		return { here, present };
+	}
 	if (!friendIds.has(other)) return { here, outcome: 'unavailable' };
 	if (here.includes(other)) return { here, outcome: 'here' };
 	const title = typeof body?.title === 'string' ? body.title.trim().slice(0, MAX_INVITE_TITLE) : '';
 	if (!(await mine.spendInvite(Date.now()))) return { here, outcome: 'limit' };
+	// Read before the invite is kept, so one sent again renews it without notifying twice (F8).
+	const push = await invitePushTargets(env, other, accountId, code);
 	const sent = await friendBook(env, other).receiveInvite(accountId, { code, title }, Date.now());
+	if (sent) await pushInvite(env, other, accountId, title, push);
 	return { here, outcome: sent ? 'sent' : 'unavailable' };
 }
 

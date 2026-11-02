@@ -5,6 +5,10 @@
 			"seat": "self"
 		}
 	},
+	"afterExecution": {
+		"of": "minion",
+		"token": "Everyone Is Drunk"
+	},
 	"impairs": {
 		"tokens": {
 			"Everyone Is Drunk": {

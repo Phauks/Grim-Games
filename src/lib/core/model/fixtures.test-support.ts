@@ -184,7 +184,15 @@ export function castWith(options: { script?: Script; characters?: CharacterLooku
 			'Ivy',
 			'Jo',
 			'Kit',
-			'Lu'
+			'Lu',
+			'Mo',
+			'Ned',
+			'Oz',
+			'Pip',
+			'Quin',
+			'Roz',
+			'Sam',
+			'Tia'
 		];
 		const { session, ctx, seats } = newGame(names.slice(0, cast.length), {
 			script: options.script,

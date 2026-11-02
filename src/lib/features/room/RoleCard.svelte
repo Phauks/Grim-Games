@@ -4,6 +4,7 @@
 	import type { SeatRole } from '#lib/core/sync/seat-roles.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
+	import { iconUrl } from '#lib/features/characters/icon-url.ts';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import FairPlayNotice from '#lib/features/show/FairPlayNotice.svelte';
@@ -64,7 +65,13 @@
 <Dialog bind:open title={name ?? t('room.role.open')}>
 	{#snippet heading()}{#if name}<PlayerBadge {name} />{:else}{t('room.role.open')}{/if}{/snippet}
 	<div class="role" data-testid="role-card" {@attach noLongPress}>
-		<HoldToSee label={t('setup.reveal.hold')} testid="role-hold" bind:held {onhold}>
+		<HoldToSee
+			label={t('setup.reveal.hold')}
+			testid="role-hold"
+			bind:held
+			preload={[character && iconUrl(character)]}
+			{onhold}
+		>
 			{#if character}
 				<CharacterToken {character} size={160} />
 			{:else}

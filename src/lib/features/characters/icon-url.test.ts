@@ -46,7 +46,8 @@ describe('iconUrl (a reminder or token icon shows its player’s alignment)', ()
 		expect(fallbackIconUrl(homebrew)).toBe('/data/icons/generic/townsfolk_g.webp');
 		expect(fallbackIconUrl(homebrew, 'evil')).toBe('/data/icons/generic/townsfolk_e.webp');
 	});
-	it('needs no fallback for official characters, whose icons ship with the app', () => {
-		expect(fallbackIconUrl(get('washerwoman'))).toBeUndefined();
+	it('falls back to the generic icon for an official character too, never a broken image', () => {
+		expect(fallbackIconUrl(get('washerwoman'))).toBe('/data/icons/generic/townsfolk_g.webp');
+		expect(fallbackIconUrl(get('imp'))).toBe('/data/icons/generic/demon_e.webp');
 	});
 });

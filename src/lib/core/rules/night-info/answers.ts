@@ -16,15 +16,16 @@ import type {
 } from '#lib/core/model/types.ts';
 import type { RegistrationWorld } from '../ability.ts';
 import type { Night } from '../night-order.ts';
-import { distinctGuesses } from '../day-claims.ts';
 import { causesOf } from '../night-deaths.ts';
 import type { ValidReason } from './picker.ts';
 import {
+	mayBeFalseCause,
 	type AbnormalUse,
 	type AnswerValue,
 	type NightAnswer,
 	type Reliability,
 	answer,
+	anyInfo,
 	byWorld,
 	fact
 } from './reliability.ts';
@@ -280,40 +281,58 @@ function marked(
  * Juggler: how many of today's guesses are correct
  * (https://wiki.bloodontheclocktower.com/Juggler). Guesses come from the Juggler's day notes
  * and are checked against each player's true character. Each guess is one player and one
- * character, so a player guessed as two characters is two guesses; the same pair twice
- * counts once.
+ * character, so a player guessed as two characters is two guesses, and the same player and
+ * character guessed twice is two guesses too (Trevor, 2026-11-02).
+ *
+ * The wiki's How to Run marks each correct guess with a Correct reminder and has the Juggler
+ * learn how many there are. Once the Storyteller has placed any (rules `answers.token`), the
+ * answer is how many tokens are on the board, their call: each token counts, wherever it
+ * sits, so one player may carry several and the Juggler may carry their own (Trevor,
+ * 2026-11-02). Until then it is counted from the logged guesses.
  */
 function correctGuesses(
 	game: Game,
 	seatId: SeatId,
 	characterId: CharacterId,
-	characters: CharacterLookup
+	characters: CharacterLookup,
+	rule: Answers
 ): NightAnswer {
-	const guesses = distinctGuesses(
-		entriesOf(game, 'note')
-			.filter(
-				(n) => n.characterId === characterId && (n.seatId === undefined || n.seatId === seatId)
-			)
-			.flatMap((n) => n.guesses ?? [])
-	);
+	const guesses = entriesOf(game, 'note')
+		.filter((n) => n.characterId === characterId && (n.seatId === undefined || n.seatId === seatId))
+		.flatMap((n) => n.guesses ?? []);
 	const right = (g: CharacterGuess) => trueCharacter(game, g.seatId, characters) === g.characterId;
 	const correct = guesses.filter(right);
 	const once = (seats: SeatId[]) => seats.filter((s, i) => seats.indexOf(s) === i);
+	// Each token counts: one seat may carry several, and the Juggler may carry their own.
+	const tokens = rule.token
+		? game.seating.flatMap((s) =>
+				game.seats[s].reminders
+					.filter((r) => r.characterId === characterId && r.label === rule.token)
+					.map(() => s)
+			)
+		: [];
+	const value: AnswerValue | undefined =
+		tokens.length > 0
+			? { kind: 'number', value: tokens.length }
+			: guesses.length > 0
+				? { kind: 'number', value: correct.length }
+				: undefined;
 	return answer(
 		game,
 		seatId,
 		characterId,
 		characters,
-		guesses.length === 0
-			? { kind: 'none', reason: 'No guesses logged today' }
-			: { kind: 'number', value: correct.length },
-		once(correct.map((g) => g.seatId)),
+		value ?? { kind: 'none', reason: 'No guesses logged today' },
+		once(tokens.length > 0 ? tokens : correct.map((g) => g.seatId)),
 		{
 			relevant: once(guesses.map((g) => g.seatId)),
-			facts: guesses.map((g) => ({
-				...fact(game, g.seatId, characters),
-				guess: { characterId: g.characterId, correct: right(g) }
-			}))
+			facts:
+				guesses.length > 0
+					? guesses.map((g) => ({
+							...fact(game, g.seatId, characters),
+							guess: { characterId: g.characterId, correct: right(g) }
+						}))
+					: once(tokens).map((s) => fact(game, s, characters))
 		}
 	);
 }
@@ -391,6 +410,57 @@ function evilDead(
 	);
 }
 
+/** The players carrying one of `characterId`'s reminders, in seating order. */
+export function markedSeats(game: Game, characterId: CharacterId): SeatId[] {
+	return game.seating.filter((s) =>
+		game.seats[s].reminders.some((r) => r.characterId === characterId)
+	);
+}
+
+/**
+ * Duchess: how many of the players carrying this character's reminders are evil, the waking
+ * player included (each visitor counts themself, https://wiki.bloodontheclocktower.com/Duchess).
+ * The player carrying `falseToken` ("False Info") must be told any other number: the answer is
+ * marked `mustBeFalse` with this character as `falseBy`.
+ */
+function evilMarked(
+	game: Game,
+	seatId: SeatId,
+	characterId: CharacterId,
+	characters: CharacterLookup,
+	rule: Answers
+): NightAnswer {
+	const marked = markedSeats(game, characterId);
+	const evilIn = (w: RegistrationWorld) => marked.filter((s) => w.alignment(s) === 'evil');
+	const w = byWorld(game, seatId, characters, (world) => ({
+		kind: 'number',
+		value: evilIn(world).length
+	}));
+	const [base] = w.worlds;
+	const evil = evilIn(base);
+	const out = answer(
+		game,
+		seatId,
+		characterId,
+		characters,
+		{ kind: 'number', value: evil.length },
+		evil,
+		{
+			possible: w.possible,
+			relevant: w.relevant,
+			facts: marked.map((s) => fact(game, s, characters, base)),
+			alternatives: w.alternatives
+		}
+	);
+	const falseInfo =
+		rule.falseToken !== undefined &&
+		game.seats[seatId]?.reminders.some(
+			(r) => r.characterId === characterId && r.label === rule.falseToken
+		);
+	if (!falseInfo) return out;
+	return { ...out, mustBeFalse: true, falseBy: characterId };
+}
+
 /**
  * Every ability that worked abnormally since dawn because of another character, from the
  * night info the Storyteller recorded (its `abnormal` causes), one per player and
@@ -456,6 +526,34 @@ function abnormalAbilities(
 	);
 }
 
+/**
+ * General: which team the Storyteller believes is winning, good, evil or neither
+ * (https://wiki.bloodontheclocktower.com/General). Only the Storyteller can judge it, so there
+ * is no answer to work out: all three are offered (`choices`).
+ */
+function winningAlignment(
+	game: Game,
+	seatId: SeatId,
+	characterId: CharacterId,
+	characters: CharacterLookup
+): NightAnswer {
+	return answer(
+		game,
+		seatId,
+		characterId,
+		characters,
+		{ kind: 'none', reason: 'Your call: which team is winning' },
+		[],
+		{
+			relevant: [],
+			choices: (['good', 'evil', 'neither'] as const).map((value) => ({
+				kind: 'alignment',
+				value
+			}))
+		}
+	);
+}
+
 type AnswerFn = (
 	game: Game,
 	seatId: SeatId,
@@ -476,7 +574,10 @@ const QUESTIONS: Readonly<Record<Answers['question'], AnswerFn>> = {
 	'abnormal-abilities': abnormalAbilities,
 	'statement-true': statementTrue,
 	'outsiders-in-play': (game, seatId, characterId, characters) =>
-		outsidersInPlay(game, seatId, characterId, characters)
+		outsidersInPlay(game, seatId, characterId, characters),
+	'winning-alignment': (game, seatId, characterId, characters) =>
+		winningAlignment(game, seatId, characterId, characters),
+	'evil-marked': evilMarked
 };
 
 /**
@@ -505,6 +606,7 @@ export function nightAnswer(
  */
 export function answerCauses(a: Reliability & { because?: SeatId[] }): AbnormalCause[] {
 	if (a.impairments.length > 0) return causesOf(a.impairments);
+	if (a.mayBeFalse) return [mayBeFalseCause(a.mayBeFalse)];
 	if (a.mustBeFalse && a.falseBy) {
 		return [
 			{ reason: 'vortox', characterId: a.falseBy, ...(a.vortox ? { seatId: a.vortox } : {}) }
@@ -519,8 +621,11 @@ export function answerCauses(a: Reliability & { because?: SeatId[] }): AbnormalC
 
 /** One answer the Storyteller may give, for listing every valid one. */
 export interface AnswerOption {
-	/** `invalid`: the true answer under the Vortox, which must not be given. */
-	reason: ValidReason | 'invalid';
+	/**
+	 * `invalid`: the true answer under the Vortox, which must not be given. `judgement`: one of
+	 * the answers the Storyteller judges between (the General's).
+	 */
+	reason: ValidReason | 'invalid' | 'judgement';
 	value: AnswerValue;
 	/** Any other character (`value` is the true one): the script's, to pick from. */
 	otherCharacters?: CharacterId[];
@@ -533,19 +638,23 @@ export interface AnswerOption {
  * (drunk, poisoned, no ability: any information,
  * https://wiki.bloodontheclocktower.com/Poisoner) or must be false (the Vortox,
  * https://wiki.bloodontheclocktower.com/Vortox): the true answers first, then each false
- * one. Empty when only the truth may be given, or there is nothing to give.
+ * one. Empty when only the truth may be given, or there is nothing to give. An answer that is
+ * the Storyteller's judgement (`choices`, the General's) lists each choice.
  */
 export function answerOptions(
 	game: Game,
 	a: NightAnswer,
 	characters: CharacterLookup
 ): AnswerOption[] {
+	if (a.choices) return a.choices.map((value) => ({ reason: 'judgement', value }));
 	if (a.kind === 'none') return [];
-	const loose: ValidReason | undefined = a.unreliable
+	const loose: ValidReason | undefined = anyInfo(a)
 		? 'unreliable'
-		: a.mustBeFalse
-			? 'vortox'
-			: undefined;
+		: a.anyBy
+			? 'any'
+			: a.mustBeFalse
+				? 'vortox'
+				: undefined;
 	if (!loose) return [];
 	const truthful: AnswerValue[] = a.possible ?? [answerValue(a)];
 	const key = (v: AnswerValue) => JSON.stringify(v);
@@ -560,6 +669,9 @@ export function answerOptions(
 	switch (a.kind) {
 		case 'yes-no':
 			add({ kind: 'yes-no', value: !a.value });
+			break;
+		case 'alignment':
+			for (const value of ['good', 'evil', 'neither'] as const) add({ kind: 'alignment', value });
 			break;
 		case 'number':
 			for (let n = 0; n <= highestAnswer(game, a.characterId, characters); n++) {
@@ -588,6 +700,8 @@ function answerValue(a: NightAnswer): AnswerValue {
 	switch (a.kind) {
 		case 'yes-no':
 			return { kind: 'yes-no', value: a.value };
+		case 'alignment':
+			return { kind: 'alignment', value: a.value };
 		case 'character':
 			return { kind: 'character', value: a.value };
 		case 'number':
@@ -615,6 +729,8 @@ function highestAnswer(game: Game, characterId: CharacterId, characters: Charact
 			return game.seating.filter((s) => registersAsDead(game, s)).length;
 		case 'correct-guesses':
 			return 5;
+		case 'evil-marked':
+			return markedSeats(game, characterId).length;
 		default:
 			return game.seating.length;
 	}

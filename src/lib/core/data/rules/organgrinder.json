@@ -71,5 +71,8 @@
 				"reason": "Says when the Drunk token goes on and comes off."
 			}
 		}
+	},
+	"voting": {
+		"secret": true
 	}
 }

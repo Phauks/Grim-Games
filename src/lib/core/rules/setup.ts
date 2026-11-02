@@ -26,12 +26,25 @@ export interface SetupInput {
 	 * A character listed twice is two copies (Village Idiot, Legion).
 	 */
 	inPlay: readonly Character[];
+	/**
+	 * Characters not in play whose ability a player has (the Alchemist's Minion,
+	 * https://wiki.bloodontheclocktower.com/Alchemist): their setup change applies too, but they
+	 * are not counted.
+	 */
+	abilities?: readonly Character[];
 	/** Looks up a character by name, so homebrew "+the King" text can be resolved. */
 	findByName?: (name: string) => CharacterId | undefined;
 	/** Looks up a character by id, for requirements such as Huntsman → Damsel. */
 	findById?: (id: CharacterId) => Character | undefined;
 	/** A game rule lets characters have more than one copy (Duplicate Characters). */
 	duplicatesAllowed?: AnyDuplicates;
+	/**
+	 * Setup changes that may apply through a jinx without their character in play (the
+	 * Alchemist-Summoner's [No Demon], `rules/jinx-setup.ts`): their counts are allowed as
+	 * well as the usual ones. `as` names who it applies through, "Alchemist with the Summoner
+	 * ability".
+	 */
+	mayApply?: readonly { character: Character; as: string }[];
 }
 
 export interface AppliedModifier extends SetupModifier {
@@ -131,7 +144,7 @@ export function analyseSetup(input: SetupInput): SetupAnalysis {
 	const modifiers: AppliedModifier[] = [];
 	const seenIds = new Set<CharacterId>();
 	const inPlayIds = new Set(input.inPlay.map((c) => c.id));
-	for (const character of input.inPlay) {
+	for (const character of [...input.inPlay, ...(input.abilities ?? [])]) {
 		if (seenIds.has(character.id)) continue;
 		seenIds.add(character.id);
 		const modifier = setupModifierFor(character, input.findByName);
@@ -147,6 +160,7 @@ export function analyseSetup(input: SetupInput): SetupAnalysis {
 			modifier.source === 'ability-text' &&
 			modifier.ops.length === 0 &&
 			!modifier.requires &&
+			!modifier.alignments &&
 			!modifier.copies
 		) {
 			warnings.push({
@@ -166,9 +180,12 @@ export function analyseSetup(input: SetupInput): SetupAnalysis {
 	};
 	const sets: Partial<Record<SeatedType, Set<number>>> = {};
 	const free = new Set<SeatedType>();
+	const also: Partial<Record<SeatedType, number[]>> = {};
 	const applyOp = (op: CountOp) => {
-		if (op.kind === 'delta') deltas[op.type].push([...op.values]);
-		else if (op.kind === 'any') free.add(op.type);
+		if (op.kind === 'delta') {
+			deltas[op.type].push([...op.values]);
+			if (op.also) (also[op.type] ??= []).push(...op.also);
+		} else if (op.kind === 'any') free.add(op.type);
 		else {
 			const values =
 				op.values === 'most'
@@ -200,14 +217,46 @@ export function analyseSetup(input: SetupInput): SetupAnalysis {
 		}
 	}
 
+	// A jinx's setup change that may apply: its counts join the usual ones.
+	const maybeSets: Partial<Record<SeatedType, number[]>> = {};
+	for (const { character, as } of input.mayApply ?? []) {
+		const modifier = setupModifierFor(character, input.findByName);
+		if (!modifier) continue;
+		const ops = modifier.ops.map((op): CountOp => {
+			if (op.kind !== 'delta') return op;
+			return { ...op, values: [...new Set([0, ...op.values])] };
+		});
+		for (const op of ops) {
+			if (op.kind !== 'set') applyOp(op);
+			else if (op.values !== 'most') (maybeSets[op.type] ??= []).push(...op.values);
+		}
+		modifiers.push({
+			...modifier,
+			ops,
+			name: character.name,
+			explanation: `${as}: ${modifier.summary}`
+		});
+		for (const note of modifier.notes) notes.push(`${as}: ${note}`);
+	}
+
 	// A Drunk or Marionette has no token in the bag: one more good character goes in instead,
 	// and who is secretly the Drunk or Marionette is decided once the tokens come back
 	// (Trevor, 2026-10-16; https://wiki.bloodontheclocktower.com/Drunk,
 	// https://wiki.bloodontheclocktower.com/Marionette). The Drunk's extra is a Townsfolk; the
 	// Marionette's a Townsfolk or an Outsider.
+	// A stand-in whose type no one is dealt (a Marionette with the Kazali, who makes the
+	// Minions on the first night): it enters play after the Demon, as its neighbour, so it is
+	// neither counted nor given a token of its own (the Marionette's Kazali jinx,
+	// https://wiki.bloodontheclocktower.com/Marionette#Related_Jinxes).
+	const entersLater = (character: Character) =>
+		isDealt(character.type) &&
+		isReplacedAfterDraw(character) &&
+		sets[character.type]?.size === 1 &&
+		sets[character.type]?.has(0) === true;
 	const extraFor: Character[] = [];
 	for (const character of input.inPlay) {
-		if (isDealt(character.type) && isReplacedAfterDraw(character)) extraFor.push(character);
+		if (isDealt(character.type) && isReplacedAfterDraw(character) && !entersLater(character))
+			extraFor.push(character);
 	}
 	for (const character of extraFor) {
 		if (character.type !== 'outsider') {
@@ -222,8 +271,9 @@ export function analyseSetup(input: SetupInput): SetupAnalysis {
 		let values: Set<number>;
 		if (free.has(type)) values = new Set(Array.from({ length: dealt + 1 }, (_, i) => i));
 		else {
-			values = sets[type] ?? new Set([split.counts[type]]);
+			values = new Set([...(sets[type] ?? [split.counts[type]]), ...(maybeSets[type] ?? [])]);
 			for (const d of deltas[type]) values = addAll(values, d);
+			for (const v of also[type] ?? []) values.add(v);
 		}
 		expected[type] = [...values]
 			.map((v) => Math.max(0, v))
@@ -250,7 +300,7 @@ export function analyseSetup(input: SetupInput): SetupAnalysis {
 		if (!isDealt(character.type)) continue;
 		// Chosen but never dealt to a player, with no stand-in token: nobody is the Lil' Monsta,
 		// a Minion babysits it (https://wiki.bloodontheclocktower.com/Lil%27_Monsta).
-		if (isNotDealt(character)) {
+		if (isNotDealt(character) || entersLater(character)) {
 			if (!notDealt.includes(character.id)) notDealt.push(character.id);
 			continue;
 		}

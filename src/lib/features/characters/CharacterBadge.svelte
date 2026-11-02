@@ -20,7 +20,12 @@
 		characterId: CharacterId;
 		/** The seat's alignment; defaults from the character's type. */
 		alignment?: Alignment;
-		/** Shown after the role, as a PlayerBadge inside the pill, when the seat has a name. */
+		/**
+		 * Shown after the role when the seat has a name: one pill in two halves of the same
+		 * height, the character in its colour then the name in the seat pill's, the character's
+		 * colour running round the name as its edge (Trevor, 2026-11-02: look 1, "keep the
+		 * border ... color of the character").
+		 */
 		playerName?: PlayerName;
 		/** The words as written ("Village Idiots"); defaults to the character's name. */
 		text?: CharacterName;
@@ -34,6 +39,11 @@
 		 * drawn the same but is not a button of its own, so tapping it taps the parent.
 		 */
 		interactive?: boolean;
+		/**
+		 * One half of a joined pair (a jinx's two characters, JinxNote): the inner edge is
+		 * square, and the end half mirrors so its icon sits on the outside.
+		 */
+		joined?: 'start' | 'end';
 	}
 
 	let {
@@ -42,7 +52,8 @@
 		playerName,
 		text,
 		character: given,
-		interactive: tappable = true
+		interactive: tappable = true,
+		joined
 	}: Props = $props();
 	// Inside this character's own details, its badge would only open them again: it brings
 	// those details back into view instead (Trevor, 2026-10-20).
@@ -96,8 +107,10 @@
 {#if interactive}<button
 		type="button"
 		class="badge"
+		class:paired={!!playerName}
 		data-team={team}
 		data-character-id={characterId}
+		data-joined={joined}
 		aria-haspopup="dialog"
 		onpointerenter={() => character && prefetchWikiPage(character)}
 		onpointerdown={() => character && prefetchWikiPage(character)}
@@ -109,12 +122,18 @@
 	>{:else if tappable && own}<button
 		type="button"
 		class="badge"
+		class:paired={!!playerName}
 		data-team={team}
 		data-character-id={characterId}
+		data-joined={joined}
 		data-own=""
 		onclick={() => shown?.focus()}>{@render face()}</button
-	>{:else}<span class="badge still" data-team={team} data-character-id={characterId}
-		>{@render face()}</span
+	>{:else}<span
+		class="badge still"
+		class:paired={!!playerName}
+		data-team={team}
+		data-character-id={characterId}
+		data-joined={joined}>{@render face()}</span
 	>{/if}{#if character && interactive}
 	{#if used}<CharacterDialog bind:open {character} {icon} />{/if}
 {/if}
@@ -188,6 +207,25 @@
 		background: var(--loric);
 		color: var(--on-loric);
 	}
+	/*
+	 * A joined pair reads as one split badge (Trevor picked it for jinxes, 2026-11-02): the
+	 * pair's frame (JinxNote) draws the outer edge, each half squares its inner edge, and a
+	 * line in the text colour divides them. Each half still opens its own character.
+	 */
+	.badge[data-joined] {
+		box-shadow: none;
+		min-width: 0;
+		flex: 0 1 auto;
+	}
+	.badge[data-joined='start'] {
+		border-radius: var(--radius-full) 0 0 var(--radius-full);
+	}
+	.badge[data-joined='end'] {
+		flex-direction: row-reverse;
+		border-radius: 0 var(--radius-full) var(--radius-full) 0;
+		padding: 0 calc(0.1em * var(--inline-name-badge, 1)) 0 calc(0.5em * var(--inline-name-badge, 1));
+		box-shadow: inset 0.12em 0 0 var(--on-surface);
+	}
 	.icon {
 		display: inline-grid;
 		place-items: center;
@@ -219,9 +257,35 @@
 		font-weight: var(--font-character-weight);
 		font-size: calc(1em * var(--inline-name-text, 1));
 	}
-	/* The player's own badge, a little smaller so it sits inside the character's pill. */
+	/*
+	 * With a player: the name is the pill's second half, as tall as the first, inside a thin
+	 * edge of the character's colour (the pill's own background, gradient and all), so the
+	 * name's edges show on any surface.
+	 */
+	.badge.paired {
+		align-items: stretch;
+		gap: 0;
+		padding-right: 0.12em;
+	}
+	.paired .icon {
+		align-self: center;
+	}
+	.paired .name {
+		display: inline-flex;
+		align-items: center;
+		padding: 0 0.4em 0 0.25em;
+	}
 	.player {
 		display: inline-flex;
-		font-size: 0.85em;
+		margin: 0.12em 0;
+	}
+	.player :global(.player-badge) {
+		display: inline-flex;
+		align-items: center;
+		height: auto;
+		border-radius: 0.2em var(--radius-full) var(--radius-full) 0.2em;
+		box-shadow: none;
+		font-size: 0.95em;
+		line-height: 1;
 	}
 </style>

@@ -5,8 +5,11 @@ import {
 	citesPage,
 	countFails,
 	countTodos,
+	engineGaps,
+	gapCounts,
 	jinxTestFile,
 	renderCharacterTest,
+	renderGapList,
 	renderJinxTest,
 	wikiUrl,
 	type CoverageInput
@@ -88,6 +91,50 @@ describe('countFails', () => {
 		expect(
 			countFails("it.fails('a', () => {});\ntest.fails ('b', () => {});\nit('c', () => {});")
 		).toBe(2);
+	});
+});
+
+describe('engineGaps', () => {
+	const source = [
+		"it.fails('Example 1: a', () => {",
+		'\t// Wiki: "quoted text"',
+		'\t// Waits on the engine (M15k): the step has no wake',
+		'\t// condition yet.',
+		'\texpect(1).toBe(2);',
+		'});',
+		"it('Example 2: b', () => {",
+		'\t// Waits on the engine (M9): not inside an it.fails, so ignored',
+		'});',
+		"it.fails('Example 3: c', () => {",
+		"\tengineGap('M9', 'a vote tally');",
+		'});',
+		"it.fails('Example 4: d', () => {",
+		'\t// Waits on the engine: no plan named.',
+		'});'
+	].join('\n');
+
+	it('reads each it.fails with the plan ID and need from its note or engineGap call', () => {
+		expect(engineGaps(source)).toEqual([
+			{ title: 'Example 1: a', gap: 'M15k', needs: 'the step has no wake condition yet.' },
+			{ title: 'Example 3: c', gap: 'M9', needs: 'a vote tally' },
+			{ title: 'Example 4: d', gap: undefined, needs: 'no plan named.' }
+		]);
+	});
+
+	it('counts and lists them by plan ID, untagged last', () => {
+		expect(gapCounts([source])).toBe('M9 1, M15k 1, no plan ID yet 1');
+		expect(renderGapList(new Map([['chef.test.ts', source]]))).toBe(
+			[
+				'## M9 (1)',
+				'- chef: Example 3: c. a vote tally',
+				'',
+				'## M15k (1)',
+				'- chef: Example 1: a. the step has no wake condition yet.',
+				'',
+				'## no plan ID yet (1)',
+				'- chef: Example 4: d. no plan named.'
+			].join('\n')
+		);
 	});
 });
 

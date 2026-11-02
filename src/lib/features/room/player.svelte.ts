@@ -179,6 +179,11 @@ export class RoomPlayer {
 	script = $state.raw<Script>();
 	/** The finished grimoire, once the Storyteller shares it after the game (plan R5). */
 	revealed = $state.raw<{ gameId: string; grimoire: SharedGrimoire }>();
+	/**
+	 * Times the Storyteller handed this phone's account the room (plan F14): each one opens
+	 * Room transfer with no code (JoinPanel).
+	 */
+	transferOffers = $state(0);
 	/** Pictures this phone reported, by hash, so its menu says so (no success popup). */
 	reported = $state.raw<readonly string[]>([]);
 	readonly code: string;
@@ -245,6 +250,8 @@ export class RoomPlayer {
 				} else if (m.type === 'town-sound') {
 					const command = parseTownSound(m);
 					if (command) this.#sounds.hear(command);
+				} else if (m.type === 'transfer-offer') {
+					this.transferOffers++;
 				} else if (m.type === 'message-delivered') {
 					// The only trace a sent message leaves on the phone (Trevor, 2026-10-28).
 					toast(t(m.delivered ? 'room.message.delivered' : 'room.message.notDelivered'));

@@ -17,6 +17,12 @@ import {
 } from '../../src/lib/features/friends/friend-scripts-protocol.ts';
 import { GROUPS_PER_DAY, MAX_GROUPS } from '../../src/lib/features/friends/groups-protocol.ts';
 import {
+	addPushDevice,
+	dropPushDevices,
+	type PushDevice
+} from '../../src/lib/core/sync/invite-push.ts';
+import type { PushAddress } from '../../src/lib/core/sync/web-push.ts';
+import {
 	planReceive,
 	planSend,
 	type BookCounts,
@@ -135,6 +141,22 @@ export class FriendBook extends DurableObject {
 			-- Groups this account is in (plan F6), by join code, and when it started each of its own.
 			CREATE TABLE IF NOT EXISTS grouped (code TEXT PRIMARY KEY, joined_at INTEGER NOT NULL);
 			CREATE TABLE IF NOT EXISTS group_started (at INTEGER NOT NULL);
+			-- Games this account finished in a live room (plan F11), and the last one's id, so a
+			-- game counts once.
+			CREATE TABLE IF NOT EXISTS stats (
+				id INTEGER PRIMARY KEY CHECK (id = 1),
+				games INTEGER NOT NULL,
+				last_game TEXT NOT NULL
+			);
+			-- Devices this account gets game invite notifications on (plan F8), by push address,
+			-- and when an invite was last pushed to each.
+			CREATE TABLE IF NOT EXISTS push_device (
+				endpoint TEXT PRIMARY KEY,
+				p256dh TEXT NOT NULL,
+				auth TEXT NOT NULL,
+				added_at INTEGER NOT NULL,
+				pushed_at INTEGER
+			);
 		`);
 	}
 
@@ -400,11 +422,76 @@ export class FriendBook extends DurableObject {
 		this.sql.exec('DELETE FROM invite WHERE id = ?', id);
 	}
 
+	private pushRows(): (PushDevice & { pushedAt: number | null })[] {
+		return this.sql
+			.exec<{ endpoint: string; p256dh: string; auth: string; at: number; pushed: number | null }>(
+				'SELECT endpoint, p256dh, auth, added_at AS at, pushed_at AS pushed FROM push_device ORDER BY added_at DESC'
+			)
+			.toArray()
+			.map(({ endpoint, p256dh, auth, at, pushed }) => ({
+				endpoint,
+				keys: { p256dh, auth },
+				at,
+				pushedAt: pushed
+			}));
+	}
+
+	/** Keeps exactly `devices`; one already kept keeps when it was last pushed to. */
+	private keepPushDevices(devices: PushDevice[]): void {
+		const kept = new Set(devices.map((device) => device.endpoint));
+		for (const row of this.pushRows()) {
+			if (!kept.has(row.endpoint)) {
+				this.sql.exec('DELETE FROM push_device WHERE endpoint = ?', row.endpoint);
+			}
+		}
+		for (const { endpoint, keys, at } of devices) {
+			this.sql.exec(
+				`INSERT INTO push_device (endpoint, p256dh, auth, added_at) VALUES (?, ?, ?, ?)
+				ON CONFLICT (endpoint) DO UPDATE SET
+					p256dh = excluded.p256dh, auth = excluded.auth, added_at = excluded.added_at`,
+				endpoint,
+				keys.p256dh,
+				keys.auth,
+				at
+			);
+		}
+	}
+
+	/** Game invites are pushed to this device too (plan F8); the oldest past the cap goes. */
+	async addPushDevice(address: PushAddress, now: number): Promise<void> {
+		this.keepPushDevices(addPushDevice(this.pushRows(), address, now));
+	}
+
+	/** These devices stop getting invite notifications: turned off, or gone. */
+	async dropPushDevices(endpoints: string[]): Promise<void> {
+		this.keepPushDevices(dropPushDevices(this.pushRows(), endpoints));
+	}
+
+	/** Whether the device at `endpoint` gets invite notifications, and when one was last pushed. */
+	async pushDevice(endpoint: string): Promise<{ on: boolean; pushedAt?: number }> {
+		const row = this.pushRows().find((device) => device.endpoint === endpoint);
+		if (!row) return { on: false };
+		return row.pushedAt === null ? { on: true } : { on: true, pushedAt: row.pushedAt };
+	}
+
+	/** The devices a new invite is pushed to, noting that it was. */
+	async invitePushTargets(now: number): Promise<PushAddress[]> {
+		this.sql.exec('UPDATE push_device SET pushed_at = ?', now);
+		return this.pushRows().map(({ endpoint, keys }) => ({ endpoint, keys }));
+	}
+
 	/**
 	 * This account finished game `game` with `others` (plan F3). Safe to run twice: a game
 	 * counts once per person. Someone this account blocked isn't kept; the newest are.
 	 */
 	async played(game: string, others: GamePlayer[], now: number): Promise<void> {
+		this.sql.exec(
+			`INSERT INTO stats (id, games, last_game) VALUES (1, 1, ?)
+			ON CONFLICT (id) DO UPDATE SET
+				games = games + (CASE WHEN last_game = excluded.last_game THEN 0 ELSE 1 END),
+				last_game = excluded.last_game`,
+			game
+		);
 		for (const other of others) {
 			if (this.relation(other.id).blocked) continue;
 			this.sql.exec(
@@ -422,6 +509,14 @@ export class FriendBook extends DurableObject {
 			'DELETE FROM recent WHERE id NOT IN (SELECT id FROM recent ORDER BY last_at DESC LIMIT ?)',
 			MAX_RECENT
 		);
+	}
+
+	/** How many games this account finished in a live room (plan F11). */
+	async gamesPlayed(): Promise<number> {
+		const row = this.sql
+			.exec<{ games: number }>('SELECT games FROM stats WHERE id = 1')
+			.toArray()[0];
+		return row?.games ?? 0;
 	}
 
 	/** People this account finished a game with, the latest first. */

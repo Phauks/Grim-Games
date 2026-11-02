@@ -2,12 +2,15 @@
 	import { untrack } from 'svelte';
 	import {
 		townCounts,
+		townVoting,
 		type dayTimers,
 		type PlayersPhase,
 		type SetupLook,
 		type TownSeat
 	} from '#lib/core/rules/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
+	import { contextCharacters } from '#lib/features/characters/character-context.ts';
+	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import type { Candle, SeatConnection } from '#lib/core/sync/seat-presence.ts';
@@ -92,13 +95,22 @@
 	const showsConnected = $derived(
 		wide && phase.kind === 'setup' && setupLook === 'candles' && !!connections
 	);
-	const counts = $derived(!showsConnected && seats ? townCounts(seats) : undefined);
+	const characters = contextCharacters();
+	/** The voting rules of the Travellers the town knows (the Voudon: most votes, no majority). */
+	const table = $derived.by(() => {
+		const lookup = characters?.() ?? officialData.current?.byId;
+		return seats && lookup ? townVoting(seats, lookup) : {};
+	});
+	const counts = $derived(!showsConnected && seats ? townCounts(seats, table) : undefined);
 	const taps = $derived(showsConnected || !!counts);
 	const aliveLabel = $derived(
 		counts && t('day.aliveLabel', { count: counts.alive, total: counts.total })
 	);
 	const votesLabel = $derived(
-		counts && t('day.votesBadgeLabel', { count: counts.needed, alive: counts.alive })
+		counts &&
+			(table.noMajority
+				? t('day.count.mostVotes')
+				: t('day.votesBadgeLabel', { count: counts.needed, alive: counts.alive }))
 	);
 	const exileLabel = $derived(
 		counts?.exile !== undefined

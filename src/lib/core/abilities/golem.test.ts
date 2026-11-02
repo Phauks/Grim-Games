@@ -52,7 +52,7 @@ describe('Golem', () => {
 		it.fails("Example 1: Golem's nominee dies; Golem can't nominate again", () => {
 			// Wiki: "The Golem nominates the Poppy Grower. The Poppy Grower dies. The Golem may not
 			// nominate again this game."
-			// Waits on the engine: mayNominate ignores the Golem's one nomination per game.
+			// Waits on the engine (M9): mayNominate ignores the Golem's one nomination per game.
 			const s = scenario(['golem', 'poppygrower', 'imp', 'chef', 'poisoner'])
 				.newDay()
 				.nominate('golem', 'poppygrower');
@@ -68,7 +68,7 @@ describe('Golem', () => {
 			// Wiki: "The Golem nominates the Recluse. The Recluse registers as the Demon. Nothing happens,
 			// and the Storyteller begins counting votes for the Recluse to be executed. The Golem may not
 			// nominate again this game."
-			// Waits on the engine: dayUseDeath says the Recluse dies, missing that they might register
+			// Waits on the engine (M9): dayUseDeath says the Recluse dies, missing that they might register
 			// as the Demon; and, as in Example 1, mayNominate ignores the Golem's one nomination.
 			const s = scenario(['golem', 'recluse', 'imp', 'chef', 'poisoner'])
 				.newDay()

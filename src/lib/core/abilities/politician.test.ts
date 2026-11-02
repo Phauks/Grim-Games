@@ -66,7 +66,7 @@ describe('Politician', () => {
 			expect(suggestedWinner(gameEnds(night.game, night.characters))).toBe('evil');
 			expect(endCharacters(night.game, night.characters)).toContain('politician');
 			engineGap(
-				'unplanned',
+				'M15l',
 				'the Politician wins with evil when the Storyteller judges them most responsible for good losing'
 			);
 		});
@@ -91,7 +91,7 @@ describe('Politician', () => {
 			const s = scenario(['politician', 'chef', 'empath', 'imp', 'poisoner']);
 			expect(endCharacters(s.game, s.characters)).toContain('politician');
 			engineGap(
-				'unplanned',
+				'M15l',
 				'executing the Storyteller with no Atheist in play wins for evil, and the Politician wins with them'
 			);
 		});

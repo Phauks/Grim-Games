@@ -49,10 +49,31 @@ export function describeEntry(
 							character: characterName(entry.savedBy.characterId)
 						})
 					: t('day.logExecutedSurvived', { name: seatName(entry.seatId) });
+			if (entry.forcedBy)
+				return t('day.logExecutedForced', {
+					name: seatName(entry.seatId),
+					character: characterName(entry.forcedBy.characterId)
+				});
 			return t(entry.died ? 'day.logExecuted' : 'day.logExecutedDead', {
 				name: seatName(entry.seatId)
 			});
+		case 'execution-failed':
+			return t('day.logExecutionFailed', {
+				name: seatName(entry.seatId),
+				character: characterName(entry.by.characterId)
+			});
+		case 'storyteller-nomination':
+			return t('day.logStorytellerNominated', { nominator: seatName(entry.nominator) });
+		case 'storyteller-execution':
+			return t('day.logStorytellerExecuted');
 		case 'exile':
+			if (entry.savedBy)
+				return entry.savedBy.characterId
+					? t('day.logExiledSavedBy', {
+							name: seatName(entry.seatId),
+							character: characterName(entry.savedBy.characterId)
+						})
+					: t('day.logExiledSurvived', { name: seatName(entry.seatId) });
 			return t(entry.died ? 'day.logExiled' : 'day.logExiledDead', {
 				name: seatName(entry.seatId)
 			});
@@ -61,9 +82,12 @@ export function describeEntry(
 				character: characterName(entry.characterId),
 				seat: seatName(entry.seatId)
 			};
-			if (entry.on === undefined) return t('day.logAbility', names);
+			if (entry.passed !== undefined)
+				return t(entry.passed ? 'day.logAbilityVotePassed' : 'day.logAbilityVoteFailed', names);
 			// Official characters' rules only: a custom one's use reads as "on" its player.
 			const who = dayUseWho(entry.characterId) ?? 'chosen';
+			if (entry.on === undefined)
+				return t(who === 'ally' ? 'day.logAbilityAnyone' : 'day.logAbility', names);
 			return t(`day.logAbilityOn.${who}`, { ...names, on: seatName(entry.on) });
 		}
 		case 'note': {

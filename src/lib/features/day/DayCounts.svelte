@@ -23,7 +23,7 @@
 	const g = $derived(inPlay(game.game));
 
 	/** Votes for the first nominee, from who is alive now (core `blockThreshold`). */
-	const block = $derived(blockThreshold(g));
+	const block = $derived(blockThreshold(g, game.characters));
 	/** Living players on each team (Trevor, 2026-10-17), beside the votes badge. */
 	const teams = $derived(livingByTeam(g));
 	const ghostVotes = $derived(ghostVotesLeft(g, game.characters));
@@ -35,7 +35,9 @@
 	const exile = $derived(exileThreshold(g, game.characters));
 	const votesLabel = $derived(
 		[
-			t('day.votesBadgeLabel', { count: block.needed, alive: block.alive }),
+			block.mostVotes
+				? t('day.count.mostVotes')
+				: t('day.votesBadgeLabel', { count: block.needed, alive: block.alive }),
 			...(exile === undefined
 				? []
 				: [t('day.exileLabel', { count: exile, total: g.seating.length })])

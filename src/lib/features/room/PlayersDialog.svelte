@@ -13,9 +13,9 @@
 	let { game, run }: { game: OpenGame; run?: (command: Command) => boolean } = $props();
 </script>
 
-<Dialog bind:open={playersDialog.open} title={t('room.players.title')} size="full">
+<Dialog bind:open={playersDialog.open} title={t('room.players.title')} size="full" scroll={false}>
 	{#snippet headActions()}<ShowRolesButton {game} />{/snippet}
 	<PlayersPanel {game} {run} />
 </Dialog>
 <CountOffDialog {game} {run} />
-<TravellerPickDialog {game} />
+<TravellerPickDialog {game} {run} />

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Command } from '#lib/core/engine/index.ts';
 import type { Script } from '#lib/core/data/index.ts';
-import type { Game, SeatId } from '#lib/core/model/index.ts';
+import { GENERIC_REMINDER_ID, type Game, type SeatId } from '#lib/core/model/index.ts';
 import {
 	newGame,
 	run,
@@ -52,6 +52,29 @@ describe('freshAsks', () => {
 		const { game, before, seats } = setup((seats) => [fangGuDead(seats[2])]);
 		expect(freshAsks(game, characters, before).asks).toEqual([
 			{ seatId: seats[2], prompt: 'markDead', cause: 'fanggu' }
+		]);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Vortox: the Vortox kills each night*, so its Dead
+	// reminder asks too. A copy made on "+ New token" shows the same words and art, so it asks
+	// as the reminder it copies (M21; Trevor, 2026-11-02: a Vortox Dead didn't ask).
+	it('asks for a copy of a Dead reminder as for the reminder itself, and for an ∞ token saying Dead', () => {
+		const like = { characterId: 'fanggu', label: 'Dead' };
+		const generic = { characterId: GENERIC_REMINDER_ID, label: '' };
+		const { game, before, seats, more } = setup(() => [
+			{ type: 'AddGenericToken', look: { note: 'Dead', like } },
+			{ type: 'AddGenericToken', look: { note: 'dead' } },
+			{ type: 'AddGenericToken', look: { note: 'Safe', like } }
+		]);
+		const [copy, words, renamed] = game.genericTokens!;
+		const placed = more(
+			{ type: 'AddReminder', seatId: seats[0], reminder: generic, tokenId: copy.tokenId },
+			{ type: 'AddReminder', seatId: seats[1], reminder: generic, tokenId: words.tokenId },
+			{ type: 'AddReminder', seatId: seats[2], reminder: generic, tokenId: renamed.tokenId }
+		);
+		expect(freshAsks(placed, characters, before).asks).toEqual([
+			{ seatId: seats[0], prompt: 'markDead', cause: 'fanggu' },
+			{ seatId: seats[1], prompt: 'markDead', cause: undefined }
 		]);
 	});
 

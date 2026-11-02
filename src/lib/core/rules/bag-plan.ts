@@ -21,6 +21,7 @@ import type { Bag, Game, Reminder, SeatId, TileId } from '#lib/core/model/types.
 import { SEATED_TYPES, type SeatedType } from './distribution.ts';
 import { analyseSetup, type SetupAnalysis, type SetupWarning } from './setup.ts';
 import { jinxSetupWarnings, type ScriptJinx } from './jinxes.ts';
+import { abilityJinxSetup } from './jinx-setup.ts';
 import {
 	canDuplicate,
 	isBagDisabled,
@@ -206,11 +207,6 @@ export interface SelectionAnalysisInput {
 	 * are counted among the players instead, so the other counts are for that many fewer.
 	 */
 	travellersInBag?: number;
-	/**
-	 * Players beyond 15 choose their own Traveller on their phones (Trevor, 2026-10-31), so
-	 * none needs selecting here: Random leaves those places open.
-	 */
-	travellersLater?: boolean;
 	/** Fabled and Loric in play, which can change setup (the Sentinel). */
 	ruleCharacters?: readonly CharacterId[];
 	scriptOrder: readonly CharacterId[];
@@ -218,6 +214,11 @@ export interface SelectionAnalysisInput {
 	findByName?: (name: string) => CharacterId | undefined;
 	/** A game rule lets characters have more than one copy (Duplicate Characters). */
 	duplicatesAllowed?: AnyDuplicates;
+	/**
+	 * Leave out setup changes that only may apply (a jinx through an ability chosen after the
+	 * draw, `abilityJinxSetup`), so a random bag keeps the usual counts.
+	 */
+	usualCountsOnly?: boolean;
 }
 
 /**
@@ -238,14 +239,25 @@ export function analyseSelection(input: SelectionAnalysisInput): SetupAnalysis {
 	const players = input.travellersInBag
 		? input.players
 		: input.players + travellers - Math.max(0, input.players - 15);
-	return analyseSetup({
+	// A jinx may change setup through a chosen character's gained ability (the
+	// Alchemist-Summoner's [No Demon]), which is only chosen after the draw.
+	const jinxed = abilityJinxSetup(
+		characters.map((c) => c.id),
+		input.scriptOrder,
+		input.lookup
+	);
+	const analysis = analyseSetup({
 		players,
 		travellers,
 		inPlay: characters,
 		findByName: input.findByName,
 		findById: input.lookup,
-		duplicatesAllowed: input.duplicatesAllowed
+		duplicatesAllowed: input.duplicatesAllowed,
+		mayApply: input.usualCountsOnly ? [] : jinxed.mayApply
 	});
+	return jinxed.notes.length > 0
+		? { ...analysis, notes: [...analysis.notes, ...jinxed.notes] }
+		: analysis;
 }
 
 /**
@@ -344,7 +356,7 @@ export function randomSelection(input: RandomSelectionInput): Record<CharacterId
 	}
 	const order: SeatedType[] = ['demon', 'minion', 'outsider', 'townsfolk'];
 	for (const type of order) {
-		const analysis = analyseSelection({ ...input, selection });
+		const analysis = analyseSelection({ ...input, selection, usualCountsOnly: true });
 		const have = analysis.chosen[type];
 		let target: number;
 		if (type === 'townsfolk') {
@@ -359,9 +371,8 @@ export function randomSelection(input: RandomSelectionInput): Record<CharacterId
 		}
 		take(type, target - have);
 	}
-	const analysis = analyseSelection({ ...input, selection });
-	const needed = () =>
-		input.travellersLater ? 0 : Math.max(0, input.players - analysis.dealt - travellersSelected());
+	const analysis = analyseSelection({ ...input, selection, usualCountsOnly: true });
+	const needed = () => Math.max(0, input.players - analysis.dealt - travellersSelected());
 	take('traveller', needed());
 	for (const group of input.fallbackTravellers ?? []) {
 		const pool = group.filter((c) => c.type === 'traveller' && !(selection[c.id] > 0));
@@ -408,7 +419,7 @@ export function selectionProblems(input: SelectionCheckInput): string[] {
 		...plan.issues
 			.filter((i) => i.code === 'no-stand-in' || i.code === 'unknown-character')
 			.map((i) => i.message),
-		...(travellers < analysis.travellers && !input.travellersLater
+		...(travellers < analysis.travellers
 			? [`${analysis.travellers} Travellers needed; ${travellers} chosen.`]
 			: []),
 		...jinxSetupWarnings(input.jinxes ?? [], ids, (id) => input.lookup(id)?.name ?? id).map(

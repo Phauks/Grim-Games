@@ -66,7 +66,7 @@ describe('Chambermaid', () => {
 			// next night, the Exorcist chooses the Shabaloth, which will wake the Shabaloth. Later,
 			// Chambermaid chooses the Shabaloth and the Fool. Since the Shabaloth only woke due to the
 			// Exorcist ability, the Chambermaid learns a "0"."
-			// Waits on the engine: a Demon the Exorcist chose still counts as woken by its own
+			// Waits on the engine (M15k): a Demon the Exorcist chose still counts as woken by its own
 			// ability (wokeTonight does not read the Exorcist's stopsWaking token).
 			const s = scenario(['chambermaid', 'exorcist', 'innkeeper', 'fool', 'shabaloth', 'goon'])
 				.newDay()
@@ -100,7 +100,7 @@ describe('Chambermaid', () => {
 			// night. The next night, they choose the Assassin and the Gossip. The Assassin woke but
 			// did not use their ability. The Gossip ability is used, but the Gossip does not wake to
 			// use it. The Chambermaid learns a "1"."
-			// Waits on the engine: the Gossip's night step (the Storyteller's, not a wake) counts as
+			// Waits on the engine (M15k): the Gossip's night step (the Storyteller's, not a wake) counts as
 			// the Gossip waking.
 			const s = scenario(['chambermaid', 'assassin', 'moonchild', 'gossip', 'imp']);
 			expect(learns(s, 'first', 'assassin', 'moonchild')).toBe(0);

@@ -10,8 +10,16 @@
  * of the two may be in play). Paraphrase, never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
-import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
+import { findJinx, jinxesAmong, type Script } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { castWith } from '#lib/core/model/fixtures.test-support.ts';
+import { registrations } from '#lib/core/rules/ability.ts';
+import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
+
+const scriptOf = (ids: string[]): Script => ({
+	meta: { name: 'Jinxed' },
+	entries: ids.map((id) => ({ kind: 'official' as const, id }))
+});
 
 describe('Politician + Vizier jinx', () => {
 	const data = committedGameData();
@@ -30,5 +38,37 @@ describe('Politician + Vizier jinx', () => {
 		expect(jinxesAmong(data.jinxes, ['vizier'])).not.toContain(jinx);
 	});
 
-	it.todo('enforces the rule the jinx imposes');
+	// The Politician's Related Jinxes: it might register as evil to the Vizier. Nothing in
+	// the app reads alignment for the Vizier's ability yet (who voted is not tracked), so
+	// this is the registration as the Vizier sees it, ready for that check.
+	describe('the Politician might register as evil to the Vizier', () => {
+		const cast = castWith({
+			script: scriptOf(['vizier', 'politician', 'chef', 'empath', 'monk', 'saint', 'imp'])
+		});
+
+		it("is data in the Politician's rules", () => {
+			expect(jinxRulesBetween('politician', 'vizier')).toEqual({
+				registersTo: { alignments: ['evil'] }
+			});
+		});
+
+		it('registers as good or evil to the Vizier, and only to the Vizier', () => {
+			const { game, ctx, seats } = cast(['imp', 'vizier', 'politician', 'chef', 'empath']);
+			const as = (viewer?: string) =>
+				registrations(game, ctx.characters, viewer).find((r) => r.seatId === seats[2]);
+			expect(as('vizier')?.alignments).toEqual(['good', 'evil']);
+			expect(as('vizier')?.source.characterId).toBe('politician');
+			expect(as()).toBeUndefined();
+			expect(as('chef')).toBeUndefined();
+		});
+
+		it('does not apply when the script lacks the Vizier', () => {
+			const { game, ctx, seats } = castWith({
+				script: scriptOf(['imp', 'politician', 'chef', 'empath', 'monk', 'saint'])
+			})(['imp', 'politician', 'chef', 'empath', 'monk']);
+			expect(registrations(game, ctx.characters, 'vizier').some((r) => r.seatId === seats[1])).toBe(
+				false
+			);
+		});
+	});
 });

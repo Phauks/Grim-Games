@@ -19,6 +19,10 @@ async function startGame(page: Page, players = 8, script = 'Trouble Brewing') {
 }
 
 async function addThief(page: Page) {
+	await addTraveller(page, 'Thief, Recommended', 'Evil');
+}
+
+async function addTraveller(page: Page, choice: string, alignment: 'Good' | 'Evil') {
 	// A Traveller joins as a new seat: Add seat (the board asks where), then choose them.
 	await addSeat(page, 'Place between Seat 8 and Seat 1');
 	await page.getByRole('button', { name: /^Seat 9:/ }).tap();
@@ -26,13 +30,17 @@ async function addThief(page: Page) {
 	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
 	await page
 		.getByRole('dialog', { name: 'Character for Seat 9' })
-		.getByRole('button', { name: 'Thief, Recommended', exact: true })
+		.getByRole('button', { name: choice, exact: true })
 		.tap();
-	await page.getByRole('dialog', { name: 'Alignment' }).getByRole('button', { name: 'Evil' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Alignment' })
+		.getByRole('button', { name: alignment })
+		.tap();
 	await page.keyboard.press('Escape');
 	await expect(sheet).toBeHidden();
+	const name = choice.split(',')[0];
 	await expect(
-		page.locator('[data-testid="seat"][aria-label^="Seat 9: no name, Thief"]')
+		page.locator(`[data-testid="seat"][aria-label^="Seat 9: no name, ${name}"]`)
 	).toBeAttached();
 }
 
@@ -334,6 +342,54 @@ test("the day's sections fold with their caret and their headers stick under the
 	expect(headBox.y).toBeLessThan(toolbarBox.y + toolbarBox.height + 1);
 });
 
+// https://wiki.bloodontheclocktower.com/Deviant: whether they were funny is the Storyteller's call.
+test('exiling a Deviant asks whether they survive', async ({ page }) => {
+	await startGame(page);
+	await addTraveller(page, 'Deviant', 'Good');
+	const status = await openStatus(page, 9);
+	await status.getByRole('button', { name: 'Exiled' }).tap();
+	const ask = page.getByRole('dialog', { name: 'Does Seat 9 survive the exile?' });
+	await expect(ask).toBeVisible();
+	await expect(ask.locator('[data-exile-saver]')).toContainText('Deviant');
+	await ask.getByRole('button', { name: 'Survives' }).tap();
+	await expect(ask).toBeHidden();
+	await closeSeat(page);
+	await expect(boardSeat(page, 'Seat 9: no name, Deviant')).not.toHaveAccessibleName(/dead/);
+
+	const again = await openStatus(page, 9);
+	await again.getByRole('button', { name: 'Exiled' }).tap();
+	await ask.getByRole('button', { name: 'Dies' }).tap();
+	await expect(ask).toBeHidden();
+	await closeSeat(page);
+	await expect(boardSeat(page, 'Seat 9: no name, Deviant')).toHaveAccessibleName(/dead/);
+});
+
+// Votes are run outside the app; the votes dialog lists each unusual vote for the
+// Storyteller's count (Trevor, 2026-11-01; M9e).
+test('the votes dialog notes a Thief’s negative vote (M9e)', async ({ page }) => {
+	await startGame(page);
+	await addThief(page);
+	await putReminder(page, 'Negative Vote', 2);
+	await openDay(page);
+	await page.getByTestId('votes-needed').tap();
+	const notes = page.getByTestId('vote-notes');
+	await expect(notes.locator('tbody tr')).toHaveCount(1);
+	await expect(notes.locator('tbody tr')).toHaveText(/Seat 2.*Vote counts as -1/);
+});
+
+// The Master shows as a player badge, never a raw seat id (Trevor, 2026-11-02).
+test('the votes dialog names the Butler’s Master as a player badge (M9e)', async ({ page }) => {
+	await startGame(page);
+	await chooseCharacter(page, 3, 'Butler');
+	await putReminder(page, 'Master', 1);
+	await openDay(page);
+	await page.getByTestId('votes-needed').tap();
+	const row = page.getByTestId('vote-notes').locator('tbody tr');
+	await expect(row).toHaveCount(1);
+	await expect(row).toHaveText(/Seat 3.*Votes only if\s*Seat 1\s*votes/);
+	await expect(row).not.toContainText('-');
+});
+
 test('a Traveller is exiled, and a death offers only valid causes', async ({ page }) => {
 	const board = await startGame(page);
 	await addThief(page);
@@ -360,12 +416,8 @@ test('a Traveller is exiled, and a death offers only valid causes', async ({ pag
 
 	// No characters are in play, so no character is offered.
 	const causes = await openStatus(page, 3);
-	await expect(causes.locator('button.cause')).toHaveText([
-		'Alive',
-		'Not in play',
-		'Executed',
-		'The Demon'
-	]);
+	// Only a Traveller is offered Not in play (Trevor, 2026-11-02).
+	await expect(causes.locator('button.cause')).toHaveText(['Alive', 'Executed', 'The Demon']);
 	await causes.getByRole('button', { name: 'The Demon', exact: true }).tap();
 	await expect(causes).toBeHidden();
 	await closeSeat(page);
@@ -686,7 +738,7 @@ test('before Start game the day view says Setup and Execution warns', async ({ p
 	await setup.getByRole('button', { name: 'Execution', exact: true }).tap();
 	const ask = page.getByRole('alertdialog', { name: 'End the day?' });
 	await expect(ask.getByTestId('execution-not-started')).toHaveText(
-		'The game has not started yet, so there is no day to end. Start game begins Night 1.'
+		'The game has not started yet.'
 	);
 	// A warning, never a lock: the Storyteller can still choose and confirm.
 	await ask.getByRole('combobox', { name: 'Execution' }).tap();
@@ -1285,4 +1337,189 @@ test('the Puzzlemaster’s guess asks who was guessed and says what to tell them
 	await expect(
 		page.locator('[data-testid="seat"][aria-label^="Seat 1: no name, Puzzlemaster"]')
 	).toHaveAttribute('aria-label', /1 reminder/);
+});
+
+// M15b, https://wiki.bloodontheclocktower.com/Buddhist: for the first two minutes of each day
+// the veterans may not talk. With the Buddhist in play the day timer counts that down on its
+// top edge, in place of its mode's name, so nothing moves.
+test('with the Buddhist in play the day timer counts down the veterans’ quiet', async ({
+	page
+}) => {
+	await page.clock.install();
+	await startGame(page);
+	await page.getByRole('button', { name: 'More' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Add Fabled or Loric', exact: true })
+		.tap();
+	await page
+		.getByRole('dialog', { name: 'Add Fabled or Loric' })
+		.getByRole('button', { name: 'Buddhist', exact: true })
+		.tap();
+	await expect(
+		page.getByRole('list', { name: 'Fabled and Loric' }).getByRole('button', { name: 'Buddhist' })
+	).toBeVisible();
+	await openDay(page);
+	const timer = page.getByTestId('day-toolbar').getByTestId('day-timer');
+	const quiet = timer.getByTestId('timer-quiet');
+	await expect(quiet).toHaveText('Veterans quiet 2:00');
+	await expect(timer.getByTestId('timer-mode')).toHaveCount(0);
+	const height = (await timer.boundingBox())!.height;
+	await timer.getByRole('button', { name: 'Start timer' }).tap();
+	await page.clock.runFor(30_000);
+	await expect(quiet).toHaveText('Veterans quiet 1:30');
+	await expect(timer).toHaveAttribute('aria-label', /Veterans may not talk for 1:30 more/);
+	await page.clock.runFor(91_000);
+	// Over: the mode's name is back, in the same place.
+	await expect(quiet).toHaveCount(0);
+	await expect(timer.getByTestId('timer-mode')).toHaveText('Timer');
+	expect((await timer.boundingBox())!.height).toBe(height);
+});
+
+/** Gives seat `number` a character from off the script, answering its alignment if asked. */
+async function chooseOffScript(page: Page, number: number, name: string) {
+	const sheet = await openSeat(page, number);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	const picker = page.getByRole('dialog', { name: `Character for Seat ${number}` });
+	await picker.getByText('Include characters not on the script').tap();
+	await picker.getByRole('button', { name: new RegExp(`^${name}(,|$)`) }).tap();
+	const ask = page.getByRole('dialog', { name: 'Alignment' });
+	if (await ask.isVisible().catch(() => false))
+		await ask.getByRole('button', { name: 'Good' }).tap();
+	await closeSeat(page);
+}
+
+test('Execution asks whether only evil voted while the Legion works; yes fails it and the day goes on (M9d)', async ({
+	page
+}) => {
+	// https://wiki.bloodontheclocktower.com/Legion: an execution fails when only evil players
+	// voted. Votes aren't recorded, so the Storyteller answers.
+	await startGame(page);
+	await chooseCharacter(page, 1, 'Chef');
+	await chooseOffScript(page, 2, 'Legion');
+	const day = await openDay(page);
+	await day.getByRole('button', { name: 'Execution', exact: true }).tap();
+	const ask = page.getByRole('alertdialog', { name: 'End the day?' });
+	const onlyEvil = ask.getByRole('checkbox', {
+		name: 'Only evil voted, for the Legion',
+		includeHidden: true
+	});
+	// There while the Legion works, disabled until a living player is chosen (no reflow).
+	await expect(onlyEvil).toBeDisabled();
+	await ask.getByRole('combobox', { name: 'Execution' }).tap();
+	await page.getByRole('option', { name: /^Seat 1\b/ }).tap();
+	await expect(onlyEvil).toBeEnabled();
+	await ask.getByTestId('outcome-fails').locator('[data-part="control"]').tap();
+	await expect(onlyEvil).toBeChecked();
+	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	// The execution failed: Seat 1 lives, and the day stays open for another nomination.
+	await expect(ask).toBeHidden();
+	await expect(day).toBeVisible();
+	await expect(page.getByTestId('night-strip')).toHaveCount(0);
+	await expect(boardSeat(page, 'Seat 1')).not.toHaveAccessibleName(/dead/);
+});
+
+test('a player nominates the Storyteller, who is executed, and good wins with the Atheist (M15l)', async ({
+	page
+}) => {
+	// https://wiki.bloodontheclocktower.com/Atheist: any living player may nominate the
+	// Storyteller; executed, good wins if the Atheist is in play.
+	await startGame(page);
+	await chooseCharacter(page, 1, 'Chef');
+	await chooseOffScript(page, 2, 'Atheist');
+	await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();
+	await page.getByRole('dialog').getByRole('button', { name: 'Settings' }).tap();
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	await settings
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Storyteller' })
+		.tap();
+	await settings.getByText('Track nominations', { exact: true }).tap();
+	await settings.getByRole('button', { name: 'Close' }).first().tap();
+	await expect(settings).toBeHidden();
+	await page.getByTestId('seat').nth(0).getByTestId('nomination-marks').tap();
+	await page
+		.getByRole('dialog', { name: 'Who did Seat 1 nominate?' })
+		.getByTestId('choose-storyteller')
+		.tap();
+	const day = await openDay(page);
+	await day.getByRole('button', { name: 'Execution', exact: true }).tap();
+	const ask = page.getByRole('alertdialog', { name: 'End the day?' });
+	await ask.getByRole('combobox', { name: 'Execution' }).tap();
+	await page.getByRole('option', { name: 'Storyteller', exact: true }).tap();
+	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	const prompt = page.getByRole('alertdialog', { name: 'End game?' });
+	const end = prompt.locator('[data-rule="storyteller-executed"]');
+	await expect(end).toContainText('The Storyteller was executed, and the');
+	await expect(end.locator('[data-character-id="atheist"]')).toBeVisible();
+	await expect(prompt.getByTestId('game-end-prompt')).toContainText('Good wins');
+});
+
+test("Execution records the Judge's forced pass and marks the ruling used (M9d)", async ({
+	page
+}) => {
+	// https://wiki.bloodontheclocktower.com/Judge: once per game, on another player's
+	// nomination, the Judge may force the execution to pass; "No Ability" then marks it used.
+	await startGame(page);
+	await chooseCharacter(page, 1, 'Chef');
+	await chooseCharacter(page, 2, 'Empath');
+	await chooseOffScript(page, 3, 'Judge');
+	await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();
+	await page.getByRole('dialog').getByRole('button', { name: 'Settings' }).tap();
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	await settings
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Storyteller' })
+		.tap();
+	await settings.getByText('Track nominations', { exact: true }).tap();
+	await settings.getByRole('button', { name: 'Close' }).first().tap();
+	await expect(settings).toBeHidden();
+	await page.getByTestId('seat').nth(0).getByTestId('nomination-marks').tap();
+	await page
+		.getByRole('dialog', { name: 'Who did Seat 1 nominate?' })
+		.getByText('Seat 2', { exact: true })
+		.tap();
+	const day = await openDay(page);
+	await day.getByRole('button', { name: 'Execution', exact: true }).tap();
+	const ask = page.getByRole('alertdialog', { name: 'End the day?' });
+	const ruling = ask.getByRole('combobox', { name: 'Ruling by the Judge' });
+	await expect(ruling).toBeDisabled();
+	await ask.getByRole('combobox', { name: 'Execution' }).tap();
+	await page.getByRole('option', { name: /^Seat 2\b/ }).tap();
+	await expect(ruling).toBeEnabled();
+	await ruling.tap();
+	await page.getByRole('option', { name: 'Forced to pass' }).tap();
+	await expect(ruling).toContainText('Forced to pass');
+	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(page.getByTestId('night-strip')).toBeVisible();
+	await expect(boardSeat(page, 'Seat 2')).toHaveAccessibleName(/dead/);
+	await expect(boardSeat(page, 'Seat 3')).toHaveAccessibleName(/1 reminder/);
+});
+
+test("the Cult Leader's cult vote asks whether every good player joined, then offers the win (M9d)", async ({
+	page
+}) => {
+	// https://wiki.bloodontheclocktower.com/Cult_Leader: when every living good player joins
+	// the cult, the Cult Leader's team wins. Offered by End game, never automatic.
+	await startGame(page);
+	await chooseOffScript(page, 1, 'Cult Leader');
+	await chooseCharacter(page, 2, 'Chef');
+	await chooseCharacter(page, 3, 'Imp');
+	const day = await openDay(page);
+	await day
+		.locator('li[data-character="cultleader"]')
+		.getByRole('button', { name: /^Used: Cult Leader/ })
+		.tap();
+	// No player to pick: the confirm opens straight away, with the vote off.
+	const confirm = page.getByRole('alertdialog', { name: /^Mark Cult Leader .* as used\?$/ });
+	const joined = confirm.getByRole('checkbox', {
+		name: 'Every living good player joined',
+		includeHidden: true
+	});
+	await expect(joined).not.toBeChecked();
+	await confirm.getByTestId('day-use').locator('[data-part="control"]').tap();
+	await expect(joined).toBeChecked();
+	await confirm.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	const end = page.getByRole('alertdialog', { name: 'End game?' });
+	await expect(end.locator('li[data-rule="cult-joined"]')).toBeVisible();
 });

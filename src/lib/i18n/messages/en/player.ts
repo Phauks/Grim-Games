@@ -61,7 +61,8 @@ export const player = {
 	'player.cannotSave': 'This browser cannot save',
 	'player.cannotSaveDetail': 'Notes are lost when the page closes.',
 
-	'player.recommendedTravellers': 'Recommended Travellers',
+	'player.recommended': 'Recommended',
+	'player.notRecommended': 'Not recommended',
 	'player.jinxes': 'Jinxes',
 	'player.modeAndRules': 'Game mode and special rules',
 	'player.chooseScript': 'Choose a script',

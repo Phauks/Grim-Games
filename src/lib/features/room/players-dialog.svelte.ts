@@ -7,20 +7,23 @@ class PlayersDialog {
 	seat = $state<SeatId>();
 	/** Count off (plan J40), from the board's ⋯. */
 	countOff = $state(false);
-	/** Travellers choose on their phones, from Add seat or a choosing seat's sheet. */
+	/** Travellers choose on their phones, from an arriving or choosing seat's sheet. */
 	travellers = $state(false);
-	/** The seat just added, ticked in the Travellers form (or added to the open choice). */
+	/** The seat asked about, ticked in the Travellers form (or added to the open choice). */
 	travellerSeat = $state<SeatId>();
+	/** Not a Traveller goes on to the seat's own character picker. */
+	notTraveller: (() => void) | undefined;
 
 	show(): void {
 		this.open = true;
 	}
 
 	/**
-	 * Travellers choose, as part of Add seat (Trevor, 2026-11-01: "integrated into the add seat
-	 * button, when you add a player"), or to watch an open choice.
+	 * Travellers choose for a seat added mid-game, from its empty token (Trevor, 2026-11-02), or
+	 * to watch an open choice.
 	 */
-	showTravellers(seatId?: SeatId): void {
+	showTravellers(seatId?: SeatId, notTraveller?: () => void): void {
+		this.notTraveller = notTraveller;
 		this.travellerSeat = seatId;
 		this.travellers = true;
 	}

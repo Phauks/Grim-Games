@@ -10,6 +10,7 @@
  */
 import type { CharacterId } from '#lib/core/data/index.ts';
 import type { Game } from '#lib/core/model/index.ts';
+import { afterExecutionTokens } from '#lib/core/rules/after-execution.ts';
 import { startingRuleCharacters } from '#lib/core/rules/script-rules.ts';
 import type { Command, CommandOf, CommandType } from './commands.ts';
 import type { EngineContext } from './context.ts';
@@ -20,6 +21,7 @@ import { OVERRIDES_DECIDERS } from './decide/overrides.ts';
 import { REMINDERS_DECIDERS } from './decide/reminders.ts';
 import { BLUFFS_BAG_DECIDERS } from './decide/bluffs-bag.ts';
 import { DAY_DECIDERS } from './decide/day.ts';
+import { VOTES_DECIDERS } from './decide/votes.ts';
 import { LATE_PLAYER_DECIDERS } from './decide/late-player.ts';
 import {
 	MAX_PLAYERS,
@@ -81,8 +83,12 @@ export type WarningCode =
 	| 'not-on-script'
 	| 'already-in-play'
 	| 'kept-alignment'
+	| 'no-longer-hidden'
 	| 'extra-evil-limit'
 	| 'jinxed-ability'
+	| 'jinxed-alignment'
+	| 'not-given-to-player'
+	| 'not-minion'
 	| 'alignment-differs-from-true-character'
 	| 'seat-has-character'
 	| 'draw-cancelled'
@@ -104,21 +110,34 @@ export type WarningCode =
 	| 'not-in-play'
 	| 'already-nominated'
 	| 'already-nominee'
+	| 'storyteller-nominates'
+	| 'nominated-this-game'
 	| 'already-executed'
 	| 'traveller-executed'
 	| 'not-traveller'
 	| 'already-dead'
 	| 'survives-execution'
+	| 'survives-exile'
 	| 'save-may-not-apply'
+	| 'outcome-may-not-apply'
 	| 'not-seat-character'
 	| 'already-used'
+	| 'too-few-alive'
+	| 'not-ally'
 	| 'too-many-guesses'
 	| 'empty-day'
 	| 'reminder-fixed'
 	| 'reminder-followed'
 	| 'no-cause'
 	| 'not-a-believer'
-	| 'late-player-in-play';
+	| 'late-player-in-play'
+	| 'no-ghost-vote'
+	| 'only-votes-with'
+	| 'must-vote'
+	| 'no-vote-token'
+	| 'needs-no-token'
+	| 'giver-not-dead'
+	| 'may-not-vote';
 
 export interface Issue<C extends string> {
 	code: C;
@@ -146,7 +165,7 @@ export function decide(game: Game | undefined, command: Command, ctx: EngineCont
 		}
 		if (!game) refuse('no-game', 'create a game first');
 		const events = decideFor(game, command, ctx, warn);
-		return { ok: true, events, warnings };
+		return { ok: true, events: [...events, ...afterExecution(game, events, ctx)], warnings };
 	} catch (e) {
 		if (e instanceof Refusal) return { ok: false, error: e.error };
 		throw e;
@@ -205,8 +224,25 @@ const DECIDERS: Deciders<CommandType> = {
 	...REMINDERS_DECIDERS,
 	...BLUFFS_BAG_DECIDERS,
 	...DAY_DECIDERS,
+	...VOTES_DECIDERS,
 	...LATE_PLAYER_DECIDERS
 };
+
+/**
+ * The tokens a death by execution puts on by itself (`afterExecutionTokens`: the Minstrel's
+ * Everyone Is Drunk after a Minion's execution), whichever command logged it.
+ */
+function afterExecution(game: Game, events: readonly GameEvent[], ctx: EngineContext): GameEvent[] {
+	const deaths = events.flatMap((e) =>
+		e.type === 'DeathSet' && e.dead ? [{ seatId: e.seatId, cause: e.cause }] : []
+	);
+	if (deaths.length === 0) return [];
+	return afterExecutionTokens(game, deaths, ctx.characters).map((t): GameEvent => ({
+		type: 'ReminderAdded',
+		seatId: t.seatId,
+		reminder: { reminderId: ctx.newId(), characterId: t.characterId, label: t.label }
+	}));
+}
 
 function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn): GameEvent[] {
 	const decider = DECIDERS[command.type] as Decider<CommandType>;

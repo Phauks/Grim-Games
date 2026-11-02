@@ -34,6 +34,25 @@ test('badges are coloured by team', async ({ page }) => {
 	await expect(page.getByRole('button', { name: /Beggar/ })).toHaveAttribute('data-team', 'evil');
 });
 
+test("a seat's name is the badge's second half, as tall as the character, inside its colour", async ({
+	page
+}) => {
+	// Trevor (2026-11-02): look 1, with the character's colour kept round the name as its edge.
+	await page.goto('/spikes/badges');
+	const badge = page.getByRole('button', { name: /Witch/ });
+	const name = badge.getByTestId('player-badge');
+	await expect(name).toHaveText('Sam');
+	await expect(name).toHaveCSS('box-shadow', 'none');
+	const outer = (await badge.boundingBox())!;
+	const inner = (await name.boundingBox())!;
+	// The name runs nearly the badge's full height, leaving a thin edge of the character's
+	// colour above, below and after it.
+	expect(inner.height).toBeGreaterThan(outer.height * 0.75);
+	expect(inner.y).toBeGreaterThan(outer.y);
+	expect(inner.y + inner.height).toBeLessThan(outer.y + outer.height);
+	expect(inner.x + inner.width).toBeLessThan(outer.x + outer.width);
+});
+
 test('a Traveller badge is half good, half evil until its alignment is set', async ({ page }) => {
 	await page.goto('/reference');
 	await page.getByRole('searchbox').fill('Beggar');
@@ -275,13 +294,12 @@ test("a character's type and source open every character of that group", async (
 	await expect(page.getByRole('dialog', { name: 'Sects & Violets Minions' })).toBeVisible();
 	// The title follows the choices below.
 	const group = page.getByRole('dialog').filter({ has: page.getByTestId('character-group') });
-	const entries = group.getByTestId('character-group').locator('.entry');
+	// Each as every list draws a character, with its ability (Trevor, 2026-11-02).
+	const entries = group.getByTestId('character-group').locator('.ring-row');
 	await expect(entries).toHaveCount(4);
-	await expect(entries.locator('.badge[data-character-id="witch"]')).toHaveCount(1);
-	// Each with its ability.
-	await expect(
-		entries.locator('.badge[data-character-id="witch"]').locator('xpath=../..')
-	).toContainText('if they nominate tomorrow');
+	await expect(entries.and(page.locator('[data-character-id="witch"]'))).toContainText(
+		'if they nominate tomorrow'
+	);
 
 	// The type and source can be changed here.
 	await group.getByRole('combobox', { name: 'Character type' }).tap();
@@ -290,10 +308,10 @@ test("a character's type and source open every character of that group", async (
 	await expect(entries).toHaveCount(4);
 	await group.getByRole('combobox', { name: 'Source' }).tap();
 	await page.getByRole('option', { name: 'Trouble Brewing', exact: true }).tap();
-	await expect(entries.locator('.bar .badge')).toHaveAttribute('data-character-id', 'imp');
+	await expect(entries).toHaveAttribute('data-character-id', 'imp');
 
 	// A character there opens its own details, over the list.
-	await entries.locator('.bar .badge').tap();
+	await group.getByRole('button', { name: 'About the Imp' }).tap();
 	await expect(page.getByRole('dialog', { name: 'Imp' })).toBeVisible();
 });
 

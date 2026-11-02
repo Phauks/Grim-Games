@@ -24,5 +24,22 @@
 	},
 	"deathCause": {
 		"none": "info; registration"
+	},
+	"jinxes": {
+		"damsel": {
+			"impairsPartner": "poisoned"
+		},
+		"magician": {
+			"grimoireHides": ["partner", "demon"]
+		},
+		"ogre": {
+			"registersTo": {
+				"alignments": ["evil"],
+				"always": true
+			}
+		},
+		"poppygrower": {
+			"noGrimoire": true
+		}
 	}
 }

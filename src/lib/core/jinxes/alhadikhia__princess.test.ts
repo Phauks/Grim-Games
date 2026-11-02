@@ -10,8 +10,16 @@
  * of the two may be in play). Paraphrase, never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
-import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
+import { findJinx, jinxesAmong, type Script } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { castWith, run } from '#lib/core/model/fixtures.test-support.ts';
+import { nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
+import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
+
+const scriptOf = (ids: string[]): Script => ({
+	meta: { name: 'Jinxed' },
+	entries: ids.map((id) => ({ kind: 'official' as const, id }))
+});
 
 describe('Al-Hadikhia + Princess jinx', () => {
 	const data = committedGameData();
@@ -30,5 +38,30 @@ describe('Al-Hadikhia + Princess jinx', () => {
 		expect(jinxesAmong(data.jinxes, ['princess'])).not.toContain(jinx);
 	});
 
-	it.todo('enforces the rule the jinx imposes');
+	// Both pages' Related Jinxes: after the Princess nominated and executed a player on her
+	// first day, nobody dies to the Al-Hadikhia tonight. The Princess's Doesn't Kill on the
+	// Al-Hadikhia says so at its step, and no kill alerts follow.
+	describe('nobody dies to the Al-Hadikhia after the Princess executes', () => {
+		const cast = castWith({
+			script: scriptOf(['alhadikhia', 'princess', 'chef', 'empath', 'monk', 'ravenkeeper'])
+		});
+
+		it("is data in the Al-Hadikhia's rules", () => {
+			expect(jinxRulesBetween('alhadikhia', 'princess')).toEqual({ noKill: 'token' });
+		});
+
+		it("shows no kill tonight while the Princess's token is on it", () => {
+			const { session, ctx, seats } = cast(['alhadikhia', 'princess', 'chef', 'ravenkeeper']);
+			const before = nightStepAlerts(session.game, 'alhadikhia', ctx.characters);
+			expect(before.some((a) => a.kind === 'on-death')).toBe(true);
+			const { game } = run(session, ctx, {
+				type: 'AddReminder',
+				seatId: seats[0],
+				reminder: { characterId: 'princess', label: "Doesn't Kill" }
+			});
+			const alerts = nightStepAlerts(game, 'alhadikhia', ctx.characters);
+			expect(alerts.map((a) => a.kind)).toEqual(['no-kill']);
+			expect(alerts[0].source).toMatchObject({ characterId: 'princess', seatId: seats[1] });
+		});
+	});
 });

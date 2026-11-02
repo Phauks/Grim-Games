@@ -15,7 +15,11 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { changedCharacters, recentDeaths } from '#lib/core/engine/index.ts';
+import { withCharacterChangeSteps } from '#lib/core/rules/character-changes.ts';
 import { demonInfo } from '#lib/core/rules/evil-info.ts';
+import { placeholdersFor } from '#lib/core/rules/night-text.ts';
+import { reminderTargets } from '#lib/core/rules/reminder-targets.ts';
 import { gameEnds, starPass, suggestedWinner } from '#lib/core/rules/game-end.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
@@ -79,6 +83,56 @@ describe('Imp', () => {
 			});
 			const after = s.becomes('poisoner', 'imp');
 			expect(gameEnds(after.game, after.characters)).toEqual([]);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Imp#How_to_Run)', () => {
+		it('places the Dead reminder at the Imp step on every night but the first', () => {
+			// How to Run: from the second night on, the Imp picks a player, who dies and gets the
+			// Dead reminder.
+			expect(placeholdersFor(character, 'first')).toBeUndefined();
+			expect(placeholdersFor(character, 'other')).toEqual([
+				{ tokens: [{ label: 'Dead', action: 'place' }] }
+			]);
+		});
+
+		it('lets the Imp choose any player, itself or a dead player included', () => {
+			// How to Run: the Imp may attack anyone, alive or dead, and itself.
+			const s = scenario(['imp', 'poisoner', 'chef', 'empath', 'monk']).dies('chef', 'execution');
+			const dead = { characterId: 'imp', label: 'Dead' };
+			expect(reminderTargets(s.game, dead, s.characters).flatMap((t) => t.misses)).toEqual([]);
+		});
+
+		it('passes the Imp only to an alive Minion when the Imp kills itself', () => {
+			// How to Run: if the Imp kills itself, an alive Minion becomes the Imp.
+			const s = scenario(['imp', 'poisoner', 'spy', 'chef', 'empath', 'monk', 'saint'])
+				.dies('poisoner', 'execution')
+				.dies('imp', 'imp');
+			expect(starPass(s.game, s.characters)).toMatchObject({ heirs: [s.seat('spy')] });
+		});
+
+		it('wakes the new Imp to show You Are and the Imp token', () => {
+			// How to Run: the Minion who became the Imp is woken and shown who they are now.
+			const s = scenario(['imp', 'poisoner', 'chef', 'empath', 'monk'])
+				.newDay()
+				.dies('imp', 'imp')
+				.becomes('poisoner', 'imp');
+			const changes = changedCharacters(s.session.log, s.game);
+			const steps = withCharacterChangeSteps([], changes, s.characters);
+			expect(steps).toMatchObject([
+				{ changed: { seatId: s.seat('poisoner'), characterId: 'imp' } }
+			]);
+			expect(steps[0].reminder).toContain('*YOU ARE*');
+		});
+
+		it("lists the Imp's victim among the night's deaths to announce at dawn", () => {
+			// How to Run: at dawn, say who died in the night, but not how.
+			const s = scenario(['imp', 'poisoner', 'chef', 'empath', 'monk'])
+				.newDay()
+				.execute('monk')
+				.dies('chef', 'imp')
+				.newDay();
+			expect(recentDeaths(s.session.log, s.game).map((d) => d.seatId)).toEqual([s.seat('chef')]);
 		});
 	});
 });

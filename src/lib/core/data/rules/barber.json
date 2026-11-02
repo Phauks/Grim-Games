@@ -38,9 +38,13 @@
 	"infoTokenCharacters": {
 		"selected-you": {
 			"characters": ["self"]
+		},
+		"you-are": {
+			"characters": ["changed"]
 		}
 	},
 	"swapsCharacters": {
-		"notTypes": ["demon"]
+		"notTypes": ["demon"],
+		"chooser": "demon"
 	}
 }

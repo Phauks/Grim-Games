@@ -23,7 +23,7 @@ import {
 import { correctGuesses, dayUseOf } from '#lib/core/rules/day-claims.ts';
 import { endCharacters } from '#lib/core/rules/end-reason.ts';
 import { gameEnds } from '#lib/core/rules/game-end.ts';
-import { engineGap, scenario } from '#lib/core/testing/scenario.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 import { shownAtMinionInfo, shownToSeats } from '#lib/core/rules/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
@@ -73,7 +73,7 @@ describe('Damsel', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Damsel#Examples)', () => {
-		it.fails('Example 1: Witch names bluffing Damsel; evil wins', () => {
+		it('Example 1: Witch names bluffing Damsel; evil wins', () => {
 			// Wiki: "Marianna is the Damsel. She is bluffing as the Lycanthrope. The Witch guesses that
 			// Marianna is the Damsel. Evil wins."
 			const s = scenario(['damsel', 'witch', 'imp', 'chef', 'monk']);
@@ -81,12 +81,18 @@ describe('Damsel', () => {
 			expect(correctGuesses(s.game, [guess], s.characters)).toEqual([guess]);
 			expect(dayUseOf('damsel', s.characters)).toMatchObject({ who: 'guesser' });
 			expect(endCharacters(s.game, s.characters)).toContain('damsel');
-			engineGap(
-				'unplanned',
-				"a Minion's right public guess of the Damsel ends the game: evil wins"
-			);
+			// The Witch's guess is logged as the Damsel's ability used, about its guesser.
+			const guessed = s.do((at) => ({
+				type: 'UseAbility',
+				seatId: at.seat('damsel'),
+				characterId: 'damsel',
+				on: at.seat('witch')
+			}));
+			expect(gameEnds(guessed.game, guessed.characters)).toMatchObject([
+				{ rule: 'used-on-loses', winner: 'evil', characterId: 'damsel' }
+			]);
 		});
-		it.fails("Example 2: After a wrong guess, a Minion's right guess changes nothing", () => {
+		it("Example 2: After a wrong guess, a Minion's right guess changes nothing", () => {
 			// Wiki: "Doug is the Damsel. The Boomdandy guesses that Julian is the Damsel. Nothing
 			// happens, and the game continues. The Goblin guesses that Doug is the Damsel. Nothing
 			// happens, and the game continues."
@@ -97,10 +103,13 @@ describe('Damsel', () => {
 			expect(dayUseOf('damsel', s.characters)?.spentToken).toBe('Guess Used');
 			const spent = s.reminder('damsel', 'damsel', 'Guess Used');
 			expect(gameEnds(spent.game, spent.characters)).toEqual([]);
-			engineGap(
-				'unplanned',
-				"once the Damsel's Guess Used is placed, a Minion's right guess ends nothing"
-			);
+			const goblin = spent.do((at) => ({
+				type: 'UseAbility',
+				seatId: at.seat('damsel'),
+				characterId: 'damsel',
+				on: at.seat('goblin')
+			}));
+			expect(gameEnds(goblin.game, goblin.characters)).toEqual([]);
 		});
 	});
 

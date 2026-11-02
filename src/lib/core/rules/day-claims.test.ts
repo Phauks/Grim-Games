@@ -27,7 +27,6 @@ import {
 	dayUseOf,
 	dayUseSuggestion,
 	dayUseWho,
-	distinctGuesses,
 	guessLimit
 } from './day-claims.ts';
 
@@ -174,7 +173,7 @@ describe('correctGuesses', () => {
 
 	// Wiki Juggler example 2, paraphrased: one player guessed as two characters, and a second
 	// player as one of the same characters; only one of the three is right.
-	it('takes several guesses of one player, and counts the same guess once', () => {
+	it('takes several guesses of one player, and counts the same guess twice', () => {
 		const { session, ctx, seats } = newGame(['Ana', 'Ben', 'Cat']);
 		const s = run(
 			session,
@@ -191,10 +190,11 @@ describe('correctGuesses', () => {
 			{ seatId: seats[2], characterId: 'pithag' },
 			{ seatId: seats[1], characterId: 'pithag' }
 		];
+		// Trevor, 2026-11-02: the same guess made twice is two guesses, so it counts twice.
 		expect(correctGuesses(s.game, guesses, characters)).toEqual([
+			{ seatId: seats[1], characterId: 'pithag' },
 			{ seatId: seats[1], characterId: 'pithag' }
 		]);
-		expect(distinctGuesses(guesses)).toHaveLength(3);
 	});
 });
 

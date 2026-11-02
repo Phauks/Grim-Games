@@ -625,7 +625,7 @@ test('with Require a name, the token stays hidden until a name is typed', async 
 	await expect(reveal.getByTestId('reveal-name')).toHaveText('');
 	const show = page.getByRole('button', { name: 'Reveal' });
 	await expect(show).toBeDisabled();
-	await reveal.getByRole('textbox', { name: 'Name' }).fill('Ana');
+	await reveal.getByRole('combobox', { name: 'Name' }).fill('Ana');
 	await show.tap();
 	await expect(reveal.getByTestId('reveal-name')).not.toBeEmpty();
 	await page.getByRole('button', { name: 'Confirm' }).tap();
@@ -644,9 +644,8 @@ test('with no room, the draw offers no names, even ones kept by earlier builds',
 	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
 	await page.getByRole('button', { name: 'Build bag' }).tap();
 	await page.getByRole('button', { name: 'Tile 1', exact: true }).tap();
-	await expect(
-		page.getByTestId('reveal').getByRole('button', { name: 'Pick your name' })
-	).toBeDisabled();
+	await page.getByTestId('reveal').getByRole('combobox', { name: 'Name' }).tap();
+	await expect(page.getByRole('option')).toHaveCount(0);
 });
 
 test("the player picks their name from the room's phones", async ({ page, browser }, testInfo) => {
@@ -671,17 +670,20 @@ test("the player picks their name from the room's phones", async ({ page, browse
 	await page.getByRole('button', { name: 'Build bag' }).tap();
 	await page.getByRole('button', { name: 'Tile 1', exact: true }).tap();
 	const reveal = page.getByTestId('reveal');
-	await reveal.getByRole('button', { name: 'Pick your name' }).tap();
-	const sheet = page.getByRole('dialog', { name: 'Pick your name' });
-	await expect(sheet.getByRole('button')).toHaveText(['Alex']);
-	await sheet.getByRole('button', { name: 'Alex' }).tap();
-	await expect(sheet).toBeHidden();
-	await expect(reveal.getByRole('textbox', { name: 'Name' })).toHaveValue('Alex');
+	// One typable drop-down: the room's names are its list (Trevor, 2026-11-02).
+	const name = reveal.getByRole('combobox', { name: 'Name' });
+	await expect(name).toHaveAttribute('placeholder', 'Pick your name');
+	await name.tap();
+	await expect(page.getByRole('option')).toHaveText(['Alex']);
+	await page.getByRole('option', { name: 'Alex' }).tap();
+	await expect(page.getByRole('option')).toHaveCount(0);
+	await expect(name).toHaveValue('Alex');
 	await page.getByRole('button', { name: 'Confirm' }).tap();
 
 	// Alex has a seat now, so the next player has no name to pick.
 	await page.getByRole('button', { name: 'Tile 2', exact: true }).tap();
-	await expect(reveal.getByRole('button', { name: 'Pick your name' })).toBeDisabled();
+	await reveal.getByRole('combobox', { name: 'Name' }).tap();
+	await expect(page.getByRole('option')).toHaveCount(0);
 	await phoneContext.close();
 });
 
@@ -714,9 +716,8 @@ test('a player whose phone sleeps stays in the names list', async ({ page, brows
 	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
 	await page.getByRole('button', { name: 'Build bag' }).tap();
 	await page.getByRole('button', { name: 'Tile 1', exact: true }).tap();
-	await page.getByTestId('reveal').getByRole('button', { name: 'Pick your name' }).tap();
-	const sheet = page.getByRole('dialog', { name: 'Pick your name' });
-	await expect(sheet.getByRole('button')).toHaveText(['Alex', 'Ben']);
+	await page.getByTestId('reveal').getByRole('combobox', { name: 'Name' }).tap();
+	await expect(page.getByRole('option')).toHaveText(['Alex', 'Ben']);
 	await ben.context().close();
 });
 
@@ -802,7 +803,7 @@ test('the draw reveals tiles, keeps a held tile and lands on seats', async ({ pa
 	expect(token.y + token.height).toBeLessThanOrEqual(caption.y + 1);
 	// The name and ability are Character selection's shared row, not their own text (Trevor, 2026-10-31).
 	await expect(reveal.getByTestId('reveal-name').locator('.ring-row')).toHaveCount(1);
-	await reveal.getByRole('textbox', { name: 'Name' }).fill('Ana');
+	await reveal.getByRole('combobox', { name: 'Name' }).fill('Ana');
 	await page.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByRole('button', { name: 'Tile 1, drawn' })).toBeDisabled();
 
@@ -818,7 +819,7 @@ test('the draw reveals tiles, keeps a held tile and lands on seats', async ({ pa
 	// The rest are drawn one by one; Enter in the name field closes the keyboard, not the reveal.
 	for (let n = 3; n <= 5; n++) {
 		await page.getByRole('button', { name: `Tile ${n}`, exact: true }).tap();
-		const name = reveal.getByRole('textbox', { name: 'Name' });
+		const name = reveal.getByRole('combobox', { name: 'Name' });
 		await expect(name).toHaveAttribute('enterkeyhint', 'done');
 		await name.fill(`P${n}`);
 		await name.press('Enter');
@@ -891,9 +892,9 @@ test.describe('in a computer window', () => {
 		await page.keyboard.press('Enter');
 		const reveal = page.getByTestId('reveal');
 		await expect(reveal).toBeVisible();
-		await reveal.getByRole('textbox', { name: 'Name' }).fill('Ana');
+		await reveal.getByRole('combobox', { name: 'Name' }).fill('Ana');
 		await page.keyboard.press('Enter');
-		await expect(reveal.getByRole('textbox', { name: 'Name' })).not.toBeFocused();
+		await expect(reveal.getByRole('combobox', { name: 'Name' })).not.toBeFocused();
 		await page.keyboard.press('Enter');
 		await expect(reveal).toBeHidden();
 		// Enter takes a tile at random, so any one of them is now drawn.
@@ -1361,7 +1362,6 @@ async function lockDraw(page: Page, pin = '2468') {
 	const dialog = page.getByRole('dialog', { name: 'Lock the draw' });
 	await dialog.getByLabel('PIN', { exact: true }).fill(pin);
 	await dialog.getByLabel('PIN again').fill(pin);
-	await dialog.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByTestId('draw-lock')).toHaveAttribute('aria-pressed', 'true');
 }
 
@@ -1374,7 +1374,7 @@ async function lockedDraw(page: Page) {
 }
 
 // Trevor (2026-10-25, Pixel): the keyboard's action key did nothing, and the keyboard hid
-// Confirm. Typed with the keyboard alone: the 4th digit moves on, Enter locks.
+// Confirm. Typed with the keyboard alone: the 4th digit moves on, the 8th locks.
 test('the PIN sheet is typed with the keyboard alone and stays above it', async ({ page }) => {
 	await selectionFor(page, 5);
 	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
@@ -1395,9 +1395,16 @@ test('the PIN sheet is typed with the keyboard alone and stays above it', async 
 	);
 	const confirm = await dialog.getByRole('button', { name: 'Confirm' }).boundingBox();
 	expect(confirm!.y + confirm!.height).toBeLessThanOrEqual(height * 0.55 + 1);
+	// The last digit of PIN again locks, with no Enter (Trevor, 2026-11-02: "like a phone").
 	await page.keyboard.type('1357');
-	await page.keyboard.press('Enter');
 	await expect(page.getByTestId('draw-lock')).toHaveAttribute('aria-pressed', 'true');
+	// Unlocking: the 4th digit checks the PIN on its own too.
+	await page.getByTestId('draw-lock').tap();
+	const pin = page.getByRole('dialog', { name: 'Enter the Storyteller PIN' });
+	await expect(pin.getByLabel('PIN', { exact: true })).toHaveAttribute('enterkeyhint', 'done');
+	await pin.getByLabel('PIN', { exact: true }).focus();
+	await page.keyboard.type('1357');
+	await expect(page.getByTestId('draw-lock')).toHaveAttribute('aria-pressed', 'false');
 });
 
 // Trevor (2026-10-20, Pixel): the page's end was cut off under the Draw page's bottom bar.
@@ -1430,7 +1437,6 @@ test('Back on a locked draw stays on the draw and asks for the PIN', async ({ pa
 	await expect(pin).toBeVisible();
 	// The right PIN unlocks and stays on the draw.
 	await pin.getByLabel('PIN', { exact: true }).fill('2468');
-	await pin.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByTestId('draw-lock')).toHaveAttribute('aria-pressed', 'false');
 	expect(page.url()).toBe(draw);
 });
@@ -1474,7 +1480,6 @@ test('the locked draw goes into history only after the PIN sheet has gone', asyn
 	const dialog = page.getByRole('dialog', { name: 'Lock the draw' });
 	await dialog.getByLabel('PIN', { exact: true }).fill('2468');
 	await dialog.getByLabel('PIN again').fill('2468');
-	await dialog.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByTestId('draw-lock')).toHaveAttribute('aria-pressed', 'true');
 	await expect
 		.poll(() => page.evaluate(() => (window as unknown as { pushes: unknown[] }).pushes.length))
@@ -1495,7 +1500,6 @@ test('the game keeps its PIN: locking again needs no new one', async ({ page }) 
 	const pin = page.getByRole('dialog', { name: 'Enter the Storyteller PIN' });
 	await lock.tap();
 	await pin.getByLabel('PIN', { exact: true }).fill('2468');
-	await pin.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(lock).toHaveAttribute('aria-pressed', 'false');
 	// One tap locks again, with no Lock the draw sheet.
 	await lock.tap();
@@ -1504,7 +1508,6 @@ test('the game keeps its PIN: locking again needs no new one', async ({ page }) 
 	// The same PIN unlocks it.
 	await lock.tap();
 	await pin.getByLabel('PIN', { exact: true }).fill('2468');
-	await pin.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(lock).toHaveAttribute('aria-pressed', 'false');
 });
 
@@ -1546,11 +1549,9 @@ test('a locked draw asks for the PIN to unlock and shows tokens only while held'
 	await page.getByTestId('draw-lock').tap();
 	const pin = page.getByRole('dialog', { name: 'Enter the Storyteller PIN' });
 	await pin.getByLabel('PIN', { exact: true }).fill('1111');
-	await pin.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(pin.getByTestId('pin-message')).toHaveText('Wrong PIN.');
 	await expect(page.getByTestId('draw-lock')).toHaveAttribute('aria-pressed', 'true');
 	await pin.getByLabel('PIN', { exact: true }).fill('2468');
-	await pin.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(title).toHaveText('Draw');
 	await page.locator('.setup-nav').getByRole('link', { name: 'Characters' }).tap();
 	// Unlocked, tiles still in the bag ask the usual question.
@@ -1570,7 +1571,6 @@ test('three wrong PINs make entry wait', async ({ page }) => {
 	const pin = page.getByRole('dialog', { name: 'Enter the Storyteller PIN' });
 	for (let n = 0; n < 3; n++) {
 		await pin.getByLabel('PIN', { exact: true }).fill('0000');
-		await pin.getByRole('button', { name: 'Confirm' }).tap();
 		await expect(pin.getByLabel('PIN', { exact: true })).toHaveValue('');
 	}
 	await expect(pin.getByTestId('pin-message')).toHaveText(/^Try again in (30|29) seconds\.$/);
@@ -1582,10 +1582,10 @@ test('three wrong PINs make entry wait', async ({ page }) => {
 	expect(Math.abs(cancel!.y - confirm!.y)).toBeLessThan(2);
 	// Forgot PIN counts down where everyone can see it, and can be stopped.
 	await pin.getByRole('button', { name: 'PIN options' }).tap();
-	await page.getByRole('button', { name: 'Forgot PIN' }).tap();
+	await page.getByRole('menuitem', { name: 'Forgot PIN' }).tap();
 	await expect(pin.getByTestId('pin-message')).toHaveText(/^Unlocking in (60|59) seconds\.$/);
 	await pin.getByRole('button', { name: 'PIN options' }).tap();
-	await page.getByRole('button', { name: 'Keep locked' }).tap();
+	await page.getByRole('menuitem', { name: 'Keep locked' }).tap();
 	await expect(pin.getByTestId('pin-message')).toHaveText(/^Try again in/);
 });
 
@@ -1663,7 +1663,6 @@ test('the board stays locked while the draw is, until the Storyteller PIN', asyn
 	await locked.getByRole('button', { name: 'Unlock the draw' }).tap();
 	const pin = page.getByRole('dialog', { name: 'Enter the Storyteller PIN' });
 	await pin.getByLabel('PIN', { exact: true }).fill('2468');
-	await pin.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(locked).toHaveCount(0);
 	await expect(page.getByTestId('seat')).toHaveCount(5);
 });
@@ -1722,8 +1721,23 @@ test('Hold to see character, a Bag draw setting, shows the token only while held
 	await page.keyboard.press('Escape');
 	await page.getByRole('button', { name: 'Tile 1, held by Seat 1' }).tap();
 	await expect(reveal.getByRole('button', { name: 'Confirm' })).toBeDisabled();
-	await hold.dispatchEvent('pointerdown', { pointerId: 1, isPrimary: true });
+	// The icon is fetched and decoded while the token is still hidden, so the first hold shows
+	// it at once rather than a blank token for a moment (Trevor, 2026-11-01).
+	await expect(hold).toHaveAttribute('data-preloaded', '');
+	// The token keeps its place when the character's row fills in under it (Trevor, 2026-11-02).
+	const before = (await hold.boundingBox())!;
+	const drawnAtOnce = await hold.evaluate(async (el) => {
+		el.dispatchEvent(
+			new PointerEvent('pointerdown', { pointerId: 1, isPrimary: true, bubbles: true })
+		);
+		await new Promise(requestAnimationFrame);
+		const img = el.querySelector('img');
+		return !!img && img.complete && img.naturalWidth > 0;
+	});
+	expect(drawnAtOnce).toBe(true);
 	await expect(reveal.getByTestId('reveal-name')).not.toBeEmpty();
+	const held = (await hold.boundingBox())!;
+	expect(Math.abs(held.y + held.height / 2 - (before.y + before.height / 2))).toBeLessThan(1);
 	await hold.dispatchEvent('pointerup', { pointerId: 1, isPrimary: true });
 	await expect(reveal.getByTestId('reveal-name')).toBeEmpty();
 	await expect(reveal.getByRole('button', { name: 'Confirm' })).toBeEnabled();

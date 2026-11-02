@@ -12,6 +12,10 @@
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { analyseSelection, randomSelection, type BagSelection } from '#lib/core/rules/bag-plan.ts';
+import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
+
+const pick = (...ids: string[]): BagSelection => Object.fromEntries(ids.map((id) => [id, 1]));
 
 describe('Alchemist + Summoner jinx', () => {
 	const data = committedGameData();
@@ -30,5 +34,71 @@ describe('Alchemist + Summoner jinx', () => {
 		expect(jinxesAmong(data.jinxes, ['summoner'])).not.toContain(jinx);
 	});
 
-	it.todo('enforces the rule the jinx imposes');
+	// Both pages' Related Jinxes: an Alchemist with the Summoner ability means no Demon at
+	// setup. The Alchemist picks its Minion ability only once the tokens are out, so at the bag
+	// a game with no Demon is allowed as well as the usual one, and nothing is required.
+	describe('[No Demon] when the Alchemist has the Summoner ability', () => {
+		const lookup = (id: string) => data.byId.get(id);
+		const script = [
+			'alchemist',
+			'chef',
+			'empath',
+			'monk',
+			'soldier',
+			'mayor',
+			'saint',
+			'poisoner',
+			'summoner',
+			'imp'
+		];
+		const analyse = (selection: BagSelection, order = script) =>
+			analyseSelection({ players: 7, selection, scriptOrder: order, lookup });
+
+		it("is data in the Alchemist's rules", () => {
+			expect(jinxRulesBetween('alchemist', 'summoner')).toEqual({
+				withPartnerAbility: 'partner-setup'
+			});
+		});
+
+		it('allows a bag with no Demon and an extra Townsfolk, or the usual one', () => {
+			const none = analyse(
+				pick('alchemist', 'chef', 'empath', 'monk', 'soldier', 'mayor', 'poisoner')
+			);
+			expect(none.expected.demon).toEqual([0, 1]);
+			expect(none.warnings).toEqual([]);
+			expect(none.reasons.demon).toEqual(['Alchemist with the Summoner ability: No Demon']);
+			const usual = analyse(
+				pick('alchemist', 'chef', 'empath', 'monk', 'soldier', 'poisoner', 'imp')
+			);
+			expect(usual.warnings).toEqual([]);
+		});
+
+		it('changes nothing without the Alchemist, or with the Summoner off the script', () => {
+			const noAlchemist = analyse(
+				pick('chef', 'empath', 'monk', 'soldier', 'mayor', 'poisoner', 'imp')
+			);
+			expect(noAlchemist.expected.demon).toEqual([1]);
+			const offScript = analyse(
+				pick('alchemist', 'chef', 'empath', 'monk', 'soldier', 'poisoner', 'imp'),
+				script.filter((id) => id !== 'summoner')
+			);
+			expect(offScript.expected.demon).toEqual([1]);
+			expect(offScript.modifiers).toEqual([]);
+		});
+
+		it('keeps a Demon in a random bag', () => {
+			const scriptCharacters = script.map((id) => lookup(id)!);
+			for (const r of [0, 0.3, 0.6, 0.99]) {
+				const selection = randomSelection({
+					players: 7,
+					selection: pick('alchemist'),
+					scriptCharacters,
+					scriptOrder: script,
+					lookup,
+					random: () => r
+				});
+				expect(selection.imp).toBe(1);
+			}
+		});
+	});
 });

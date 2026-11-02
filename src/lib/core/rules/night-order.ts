@@ -18,6 +18,7 @@
  *   `firstNight` / `otherNight` only says that they wake: TPI publishes no numbers for
  *   official characters to match it against.
  */
+import type { SetupAlignmentTask } from './setup-alignment.ts';
 import {
 	NIGHT_MARKERS,
 	type Character,
@@ -26,6 +27,7 @@ import {
 	type NightSheet
 } from '#lib/core/data/types.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
+import type { InfoTokenCharacterRules } from '#lib/core/data/info-token-rules.ts';
 import {
 	placementReason,
 	recommendPlacement,
@@ -80,6 +82,8 @@ export type NightStepOverride =
 			/** Short heading for a step with no character. */
 			title?: string;
 			characterId?: CharacterId;
+			/** The step's own info token fills (`NightStep.infoTokenCharacters`). */
+			infoTokenCharacters?: InfoTokenCharacterRules;
 			after: string | null;
 			night?: Night;
 	  };
@@ -119,15 +123,26 @@ export interface NightStep {
 	/** Set on a step for an ability the Storyteller holds, by `withStorytellerSteps`. */
 	storytellerAbility?: HeldAbility;
 	/**
-	 * On the first step, before Dusk, when Travellers have no alignment yet: their seats
-	 * (`withTravellerAlignmentStep`).
+	 * On the step for Travellers with no alignment yet (`withTravellerAlignmentStep`) or not
+	 * in play (`withTravellerJoinsStep`): their seats.
 	 */
 	travellers?: string[];
+	/**
+	 * On the first night's step right after Dusk, when a setup change makes players start with
+	 * the other alignment (the Bounty Hunter's evil Townsfolk): who fits and who is still to
+	 * pick (`withSetupAlignmentStep`).
+	 */
+	setupAlignments?: SetupAlignmentTask[];
 	/**
 	 * On a step that wakes a player whose character changed since dawn: the seat and its new
 	 * character (`withCharacterChangeSteps`).
 	 */
 	changed?: { seatId: string; characterId: CharacterId };
+	/**
+	 * The step's own info token fills, which win over its character's (`stepInfoCards`): a
+	 * player woken to learn a new character is shown that character with "You are".
+	 */
+	infoTokenCharacters?: InfoTokenCharacterRules;
 }
 
 export interface OmittedStep {
@@ -452,6 +467,7 @@ function applyNightOverrides(
 						kind: 'custom',
 						...(c ? { character: c } : {}),
 						...(o.title ? { title: o.title } : {}),
+						...(o.infoTokenCharacters ? { infoTokenCharacters: o.infoTokenCharacters } : {}),
 						reminder: o.text,
 						afterDawn: false,
 						placement: 'custom-order',

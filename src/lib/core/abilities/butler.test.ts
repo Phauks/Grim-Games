@@ -15,7 +15,10 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { engineGap, scenario } from '#lib/core/testing/scenario.ts';
+import { latest, total, voteWarnings, votes } from '#lib/core/testing/votes.ts';
+import { nightTextPlain, nightTextSegments, placeholdersFor } from '#lib/core/rules/night-text.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Butler', () => {
 	const character = committedCharacter('butler');
@@ -48,30 +51,71 @@ describe('Butler', () => {
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Butler#Examples)', () => {
 		// The Butler's vote rule (votes only while the Master votes) waits on voting in the engine.
-		it.fails('Example 1: Butler votes with master, or not at all', () => {
+		it('Example 1: Butler votes with master, or not at all', () => {
 			// Wiki: "The Butler chooses Filip to be their Master. Tomorrow, if Filip raises his hand to
 			// vote on an execution, then the Butler may too. If not, then the Butler may not raise their
 			// hand."
-			scenario(['butler', 'chef', 'imp', 'monk', 'poisoner']).reminder('chef', 'butler', 'Master');
-			engineGap('M9', "the Butler's hand may be raised only while the Master's is");
+			const s = scenario(['butler', 'chef', 'empath', 'monk', 'imp', 'poisoner'])
+				.reminder('monk', 'butler', 'Master')
+				.nominate('chef', 'imp');
+			expect(voteWarnings(s, 'monk', 'butler')).toEqual([]);
+			expect(voteWarnings(s, 'butler')).toEqual(['only-votes-with']);
 		});
-		it.fails('Example 2: Master lowers hand late; Butler follows', () => {
+		it('Example 2: Master lowers hand late; Butler follows', () => {
 			// Wiki: "A nomination is in progress. The Butler and their Master both have their hands raised
 			// to vote. As the Storyteller is counting votes, the Master lowers their hand at the last
 			// second. The Butler must lower their hand immediately."
-			scenario(['butler', 'chef', 'imp', 'monk', 'poisoner'])
-				.reminder('chef', 'butler', 'Master')
-				.nominate('monk', 'imp');
-			engineGap('M9', 'when the Master lowers their hand during the count, the Butler must too');
+			// The Storyteller still records the vote, with a warning.
+			const s = scenario(['butler', 'chef', 'empath', 'monk', 'imp', 'poisoner'])
+				.reminder('monk', 'butler', 'Master')
+				.nominate('chef', 'imp');
+			const recorded = votes(s, 'butler', 'empath');
+			expect(latest(recorded).votes?.voters).toEqual([s.seat('butler'), s.seat('empath')]);
+			expect(voteWarnings(s, 'butler', 'empath')).toEqual(['only-votes-with']);
 		});
-		it.fails('Example 3: Dead Butler votes freely using their ghost vote', () => {
+		it('Example 3: Dead Butler votes freely using their ghost vote', () => {
 			// Wiki: "The Butler is dead. Because dead players have no ability, the Butler may vote with
 			// their vote token at any time."
-			// The dead have no ability, so the Butler's rule no longer binds them.
-			scenario(['butler', 'chef', 'imp', 'monk', 'poisoner'])
-				.reminder('chef', 'butler', 'Master')
-				.dies('butler');
-			engineGap('M9', 'a dead Butler may spend their vote token without the Master voting');
+			const s = scenario(['butler', 'chef', 'empath', 'monk', 'imp', 'poisoner'])
+				.reminder('monk', 'butler', 'Master')
+				.dies('butler', 'imp')
+				.nominate('chef', 'imp');
+			expect(voteWarnings(s, 'butler')).toEqual([]);
+			expect(votes(s, 'butler').game.seats[s.seat('butler')].ghostVoteUsed).toBe(true);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Butler#How_to_Run)', () => {
+		it("the Butler's step each night places Master on the chosen player", () => {
+			// How to Run: every night the Butler picks a player, who gets the Master reminder.
+			for (const night of ['first', 'other'] as const) {
+				const placeholders = placeholdersFor(character, night);
+				const source =
+					night === 'first' ? character.firstNightReminder : character.otherNightReminder;
+				const text = nightTextPlain(
+					nightTextSegments(source!, character, { ...(placeholders ? { placeholders } : {}) })
+				);
+				expect(text, night).toContain('[+Master]');
+			}
+		});
+
+		it('allows Master on any player but the Butler, dead players included', () => {
+			// How to Run: the Butler points at any player to be their Master.
+			const s = scenario(['butler', 'chef', 'empath', 'monk', 'imp', 'poisoner']).dies('monk');
+			const master = { characterId: 'butler', label: 'Master' };
+			expect(reminderTargetMisses(s.game, master, s.seat('butler'), s.characters)).toEqual([
+				'self'
+			]);
+			expect(reminderTargetMisses(s.game, master, s.seat('monk'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, master, s.seat('imp'), s.characters)).toEqual([]);
+		});
+
+		it('counts an illegal Butler vote in the tally', () => {
+			// How to Run: if the Butler votes when they shouldn't, count the vote anyway.
+			const s = scenario(['butler', 'chef', 'empath', 'monk', 'imp', 'poisoner'])
+				.reminder('monk', 'butler', 'Master')
+				.nominate('chef', 'imp');
+			expect(total(votes(s, 'butler', 'empath'))).toBe(2);
 		});
 	});
 });

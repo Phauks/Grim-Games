@@ -1,18 +1,16 @@
 <script lang="ts">
 	import { typeTone, type TypeTone } from '#lib/core/data/character-type.ts';
-	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Character } from '#lib/core/data/index.ts';
 	import type { ScriptJinx } from '#lib/core/rules/jinxes.ts';
 	import type { PublicRule } from '#lib/core/sync/public-projection.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
-	import { fallbackIconUrl, iconUrl } from '#lib/features/characters/icon-url.ts';
-	import { iconFallback } from '#lib/ui/token/icon-fallback.ts';
+	import JinxMark from '#lib/features/characters/JinxMark.svelte';
+	import JinxNote from '#lib/features/characters/JinxNote.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import { TYPE_PLURALS } from '#lib/features/reference/labels.ts';
 	import SectionStack from '#lib/ui/layout/SectionStack.svelte';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
-	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import type { Snippet } from 'svelte';
 	import PlayerCounts from './PlayerCounts.svelte';
 	import { scriptMaxPlayers } from '#lib/core/rules/index.ts';
@@ -38,6 +36,11 @@
 		inPlay?: readonly string[];
 		/** Travellers the town knows are in play: each shows who plays it (Trevor, 2026-10-19). */
 		travellers?: readonly TravellerInPlay[];
+		/**
+		 * The script's recommended Travellers: each Traveller row says on its band whether it is
+		 * one (Trevor, 2026-11-02, as Not in play and Bluff are marked).
+		 */
+		recommended?: ReadonlySet<string>;
 		/** False leaves the Jinxes section out (a printed sheet without them). */
 		showJinxes?: boolean;
 		/** The game mode and special rules, in their own section under Jinxes; none, none shown. */
@@ -57,6 +60,7 @@
 		flat = false,
 		inPlay,
 		travellers,
+		recommended,
 		showJinxes = true,
 		rules = [],
 		ruleCharacters = [],
@@ -76,7 +80,12 @@
 		!!playing && !jinxes.some((j) => j.characters.every((id) => playing.has(id)))
 	);
 	const density = $derived(fixed ?? 'normal');
-	const groups = $derived(groupByType(characters));
+	// In a game the Travellers section stays, with None, until one comes into play.
+	const groups = $derived(groupByType(characters, playing ? 'traveller' : undefined));
+	const travellerNote = (c: Character) =>
+		c.type === 'traveller' && recommended
+			? t(recommended.has(c.id) ? 'player.recommended' : 'player.notRecommended')
+			: undefined;
 	const names = $derived(characters.map((c) => c.name));
 	const byId = $derived(new Map(characters.map((c) => [c.id, c])));
 	// Each character's jinxes, for the small icons beside its name (Trevor approved, 2026-10-16).
@@ -85,11 +94,6 @@
 		for (const j of jinxes) for (const id of j.characters) (byCharacter[id] ??= []).push(j);
 		return byCharacter;
 	});
-	const partner = (j: ScriptJinx, id: string) =>
-		j.characters[0] === id ? j.characters[1] : j.characters[0];
-	let jinxFor = $state<Character>();
-	let jinxOpen = $state(false);
-	const nameOf = (id: string) => byId.get(id)?.name ?? id;
 </script>
 
 <!-- On screen a character is its icon in a ring of its alignment's colour, with a band of
@@ -100,55 +104,20 @@
 	{@const own = jinxesOf[c.id]}
 	{@const who = playersOf(c.id)}
 	<li class="character" data-character={c.id}>
-		<CharacterRow character={c} info>
-			{#snippet afterName()}
-				{#if own}{@render jinxMark(c, own)}{/if}
+		<CharacterPiece template="row" character={c} info note={travellerNote(c)}>
+			{#snippet tags()}
+				{#if own}<JinxMark characterId={c.id} jinxes={own} characters={byId} />{/if}
 				{#if who.length}<span class="in-play" data-testid="traveller-in-play"
 						>{t('player.travellerInPlay', { names: who.join(', ') })}</span
 					>{/if}
 			{/snippet}
-			{#snippet ability()}<GlossaryText text={c.ability} {names} />{/snippet}
-		</CharacterRow>
+			{#snippet abilityText()}<GlossaryText text={c.ability} {names} />{/snippet}
+		</CharacterPiece>
 	</li>
-{/snippet}
-
-{#snippet jinxMark(c: Character, own: ScriptJinx[])}
-	{@const partners = own.map((j) => byId.get(partner(j, c.id))).filter((x) => !!x)}
-	<button
-		type="button"
-		class="jinx-mark"
-		data-testid="jinx-mark"
-		aria-label={t('player.jinxedWith', { names: partners.map((p) => p.name).join(', ') })}
-		onclick={() => {
-			jinxFor = c;
-			jinxOpen = true;
-		}}
-	>
-		{#each partners as p (p.id)}
-			{@const src = iconUrl(p)}
-			{#if src}<img
-					{src}
-					alt=""
-					referrerpolicy="no-referrer"
-					{@attach iconFallback(fallbackIconUrl(p))}
-				/>{:else}<span class="dot"></span>{/if}
-		{/each}
-	</button>
 {/snippet}
 
 {#snippet jinxItem(jinx: ScriptJinx)}
-	<li class="jinx">
-		<span class="pair">
-			<CharacterBadge characterId={jinx.characters[0]} character={byId.get(jinx.characters[0])} />
-			<CharacterBadge characterId={jinx.characters[1]} character={byId.get(jinx.characters[1])} />
-		</span>
-		<p class="ability">
-			<GlossaryText
-				text={jinx.reason}
-				names={[nameOf(jinx.characters[0]), nameOf(jinx.characters[1])]}
-			/>
-		</p>
-	</li>
+	<li class="jinx"><JinxNote {jinx} characters={byId} /></li>
 {/snippet}
 
 <!-- On screen every section closes from its header (Trevor); in print each is a plain heading. -->
@@ -173,12 +142,16 @@
 {#snippet sections()}
 	{#each groups as group (group.type)}
 		{#snippet list()}
-			<ul>
-				{#each group.characters as c (c.id)}{@render ringRow(c)}{/each}
-			</ul>
+			{#if group.characters.length}
+				<ul>
+					{#each group.characters as c (c.id)}{@render ringRow(c)}{/each}
+				</ul>
+			{:else}
+				<p class="none" data-testid="no-travellers">{t('common.none')}</p>
+			{/if}
 		{/snippet}
 		{@render section(
-			group.type === 'traveller' ? t('player.recommendedTravellers') : TYPE_PLURALS[group.type],
+			TYPE_PLURALS[group.type],
 			`play:${group.type}`,
 			list,
 			typeTone(group.type),
@@ -240,16 +213,6 @@
 	{#if flat}{@render sections()}{:else}<SectionStack>{@render sections()}</SectionStack>{/if}
 </div>
 
-{#if jinxFor}
-	<Dialog bind:open={jinxOpen} title={t('player.jinxes')}>
-		<ul class="jinx-dialog">
-			{#each jinxesOf[jinxFor.id] ?? [] as jinx (jinx.characters.join('+'))}
-				{@render jinxItem(jinx)}
-			{/each}
-		</ul>
-	</Dialog>
-{/if}
-
 <style>
 	.sheet {
 		display: grid;
@@ -273,25 +236,11 @@
 		list-style: none;
 	}
 	.character,
-	.jinx,
 	.rule {
 		display: grid;
 		justify-items: start;
 		gap: calc(0.125 * var(--u));
 		align-content: start;
-	}
-	.pair {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-1);
-	}
-	/*
-	 * A badge above its ability keeps the row it had as a tall pill: its 44px tap area then
-	 * stays clear of the rules terms' tap areas on the line below, and nothing moves.
-	 */
-	.pair {
-		min-height: var(--tap-target);
-		align-items: center;
 	}
 	.ability {
 		margin: 0;
@@ -311,26 +260,6 @@
 		font-family: var(--font-control);
 		font-weight: 600;
 	}
-	/* One tap target holding the icons of the characters this one is jinxed with. */
-	.jinx-mark {
-		display: inline-flex;
-		align-items: center;
-		gap: calc(0.125 * var(--u));
-		min-width: var(--tap-target);
-		min-height: var(--tap-target);
-		padding: 0 var(--space-1);
-		border: 0;
-		background: none;
-		cursor: pointer;
-		touch-action: manipulation;
-	}
-	.jinx-mark img,
-	.jinx-mark .dot {
-		width: 1.6em;
-		height: 1.6em;
-		border-radius: 50%;
-		background: var(--token-face);
-	}
 	.in-play {
 		padding: 0 0.5em;
 		border-radius: var(--radius-full);
@@ -339,9 +268,6 @@
 		font-family: var(--font-control);
 		font-size: 0.75rem;
 		font-weight: 600;
-	}
-	.jinx-dialog {
-		grid-template-columns: minmax(0, 1fr);
 	}
 	/* A faint line under each jinx, as in the Reference's lists (Trevor, 2026-10-18). */
 	.jinx {
@@ -373,7 +299,8 @@
 		grid-template-columns: repeat(auto-fill, minmax(min(100%, calc(24 * var(--u))), 1fr));
 		gap: var(--space-1) var(--space-3);
 	}
-	[data-density='compact'] .ability {
+	[data-density='compact'] .ability,
+	[data-density='compact'] :global(.jinx-note .jinx-text) {
 		font-size: 0.9rem;
 		line-height: 1.25;
 		padding-left: 0;
@@ -386,35 +313,11 @@
 		grid-template-columns: repeat(auto-fill, minmax(min(100%, calc(22 * var(--u))), 1fr));
 		gap: calc(0.25 * var(--u)) var(--space-2);
 	}
-	[data-density='super'] .ability {
+	[data-density='super'] .ability,
+	[data-density='super'] :global(.jinx-note .jinx-text) {
 		font-size: 0.8rem;
 		line-height: 1.15;
 		padding-left: 0;
-	}
-	[data-density='super'] .jinx-mark img,
-	[data-density='super'] .jinx-mark .dot {
-		width: 1.3em;
-		height: 1.3em;
-	}
-	/* In the band the jinx icons keep a 44px tap area without making the band taller. */
-	.character .jinx-mark {
-		position: relative;
-		flex: 0 4 auto;
-		min-width: 0;
-		min-height: 0;
-		padding: 0;
-		/* Many partners (a script with every character) end at the band's end, never past it. */
-		overflow-x: clip;
-	}
-	.character .jinx-mark::before {
-		content: '';
-		position: absolute;
-		inset: calc((1.6em - var(--tap-target)) / 2) 0;
-	}
-	.character .jinx-mark img,
-	.character .jinx-mark .dot {
-		width: 1.3em;
-		height: 1.3em;
 	}
 	/* Printed compact sheets: smaller rings, so more fits a page. */
 	[data-density='compact'] .character {

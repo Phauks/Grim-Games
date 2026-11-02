@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { SETUP_LOOKS } from '#lib/core/rules/index.ts';
+	import { dayTimers, quietLeft } from '#lib/core/rules/index.ts';
+	import type { QuietStart } from '#lib/core/data/parts/quiet-start.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
-	import { gameSettings } from '#lib/features/game-settings/game-settings.svelte.ts';
 	import { TIMER_SOUNDS, type TimerSound } from '#lib/ui/preferences.ts';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
@@ -45,6 +45,11 @@
 		/** Shown instead of this device's timer: the Storyteller's, on a spectator's board. */
 		shown?: WatchedTimer;
 		/**
+		 * A quiet start to each day in play (M15b, `quietStart`: the Buddhist's veterans), counted
+		 * down on the timer's top edge from its time used, in place of the mode's name.
+		 */
+		quiet?: QuietStart;
+		/**
 		 * Back to town on the timer (plan U2). `can`: a live room and the game not over; it is
 		 * drawn, disabled, without one, so nothing moves when a room opens. `called`: the rest
 		 * of today is Town, which the clock then shows, as players' phones do.
@@ -58,6 +63,7 @@
 		soundButton = true,
 		readOnly = false,
 		shown,
+		quiet,
 		town
 	}: Props = $props();
 
@@ -65,6 +71,15 @@
 	const live = liveDayTimer;
 	const timer = $derived(shown ?? live);
 	$effect(() => live.follow(alive));
+	const quietMs = $derived(quiet ? quietLeft(quiet, timer.elapsed) : 0);
+	const quietText = $derived(
+		quiet && quietMs > 0
+			? {
+					shown: t(`day.quiet.${quiet.players}`, { clock: dayTimers.formatClock(quietMs) }),
+					label: t(`day.quietLabel.${quiet.players}`, { clock: dayTimers.formatClock(quietMs) })
+				}
+			: undefined
+	);
 
 	let soundOpen = $state(false);
 	let controlsOpen = $state(false);
@@ -106,22 +121,11 @@
 	{/if}
 {/snippet}
 
-{#snippet forPlayers()}
-	<!-- What phones show beside Setup, before the first night (Trevor, 2026-10-28); also in
-	     Settings > Storyteller > Day. -->
-	<Select
-		label={t('day.setupForPlayers')}
-		value={gameSettings.current.setupForPlayers}
-		options={SETUP_LOOKS.map((value) => ({ value, label: t(`day.setupForPlayers.${value}`) }))}
-		onChange={(setupForPlayers) => gameSettings.set(gameSettings.gameId, { setupForPlayers })}
-	/>
-{/snippet}
-
 <div
 	class="timer"
 	data-variant={variant}
 	role="group"
-	aria-label={t('day.timer')}
+	aria-label={quietText ? `${t('day.timer')}, ${quietText.label}` : t('day.timer')}
 	data-testid="day-timer"
 	data-running={timer.running ? '' : undefined}
 	data-done={timer.done ? '' : undefined}
@@ -149,9 +153,15 @@
 					: preferences.update({ timerMode: timer.mode === 'down' ? 'up' : 'down' })}
 			{@attach hold(() => live.reset(alive))}
 		>
-			<span class="caption" data-testid="timer-mode" aria-hidden="true"
-				>{timer.mode === 'down' ? t('day.timerModeDown') : t('day.timerModeUp')}</span
-			>
+			{#if quietText}
+				<span class="caption quiet" data-testid="timer-quiet" aria-hidden="true"
+					>{quietText.shown}</span
+				>
+			{:else}
+				<span class="caption" data-testid="timer-mode" aria-hidden="true"
+					>{timer.mode === 'down' ? t('day.timerModeDown') : t('day.timerModeUp')}</span
+				>
+			{/if}
 			<span class="clock" role="timer" aria-live={timer.done ? 'assertive' : 'off'}>{clock}</span>
 		</button>
 	{:else}
@@ -163,6 +173,12 @@
 			onclick={() => (controlsOpen = true)}
 			{@attach hold(() => !readOnly && live.reset(alive))}
 		>
+			<!-- On the board's timer too, on its top edge, so it takes no height. -->
+			{#if quietText}
+				<span class="caption quiet" data-testid="timer-quiet" aria-hidden="true"
+					>{quietText.shown}</span
+				>
+			{/if}
 			<span class="clock" role="timer" aria-live={timer.done ? 'assertive' : 'off'}>{clock}</span>
 		</button>
 	{/if}
@@ -211,14 +227,13 @@
 			<VibrateToggle />
 			{@render keepAwake()}
 			<TimerPerPlayerRow game />
-			{@render forPlayers()}
 		</div>
 	</BottomSheet>
 {:else}
 	<!-- The timer's own controls and settings, over the board; nothing leads to Settings. -->
 	<BottomSheet bind:open={controlsOpen} title={t('day.timer')}>
 		<div class="controls" data-testid="timer-sheet">
-			<DayTimer {alive} soundButton={false} />
+			<DayTimer {alive} soundButton={false} {quiet} />
 			<Select
 				label={t('day.timerSoundTitle')}
 				value={preferences.current.timerSound}
@@ -229,7 +244,6 @@
 			<VibrateToggle />
 			{@render keepAwake()}
 			<TimerPerPlayerRow game />
-			{@render forPlayers()}
 		</div>
 	</BottomSheet>
 {/if}
@@ -343,6 +357,13 @@
 		text-transform: uppercase;
 		white-space: nowrap;
 		transform: translate(-50%, -50%);
+	}
+	/* The quiet start stands out from the mode's name: a rule in force for now. */
+	.caption.quiet {
+		color: var(--timer-surround-text, var(--on-surface));
+		font-weight: 700;
+		letter-spacing: normal;
+		text-transform: none;
 	}
 	.timer[data-done] {
 		border-color: var(--evil);

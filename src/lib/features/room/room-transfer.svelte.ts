@@ -4,6 +4,8 @@
  * types the room code on Join game, then the transfer code (`RoomClaim`), and asks to take
  * over; once the Storyteller's device allows it (`answer`), it is the room's Storyteller and the
  * old device is put out of the room. The players stay, and the game comes too when brought.
+ * Or the Storyteller hands it to a friend in the room (`offer`, plan F14), whose phone opens
+ * the same prompt with no code (`RoomClaim` with `offered`) and takes over at once.
  */
 import { goto } from '$app/navigation';
 import { resolve } from '$app/paths';
@@ -60,6 +62,14 @@ class RoomTransferHost {
 		this.#reset();
 	}
 
+	/**
+	 * Hands the open transfer to a friend with a phone in the room, by account (plan F14);
+	 * false when it can't be sent.
+	 */
+	offer(accountId: string): boolean {
+		return roomHost().send({ type: 'offer-transfer', to: accountId });
+	}
+
 	/** Allows, or turns down, the device asking to take over; false when it can't be sent. */
 	answer(allow: boolean): boolean {
 		return roomHost().send({ type: 'answer-transfer', allow });
@@ -85,6 +95,7 @@ class RoomTransferHost {
 	#heard(message: ServerMessage): void {
 		// The room no longer has this transfer: it ran out, or wrong codes ended it.
 		if (message.type === 'host-view' && !message.transfer && this.code) this.#reset();
+		if (message.type === 'transfer-offer-refused') toast(t('room.transfer.offerFailed'));
 		if (message.type !== 'handed-over') return;
 		const room = roomHost().code;
 		this.#reset();
@@ -116,7 +127,10 @@ export function roomTransfer(): RoomTransferHost {
 export type ClaimProblem =
 	{ kind: 'wrong'; triesLeft: number } | { kind: 'none' } | { kind: 'denied' };
 
-/** The other side: a device typing the transfer code for room `roomCode`. */
+/**
+ * The other side: a device typing the transfer code for room `roomCode`, or, `offered`, one
+ * whose signed-in account the Storyteller handed it to (plan F14), which types nothing.
+ */
 export class RoomClaim {
 	/** What comes with the room, once the code is right. */
 	details = $state.raw<TransferDetails>();
@@ -128,14 +142,16 @@ export class RoomClaim {
 	 */
 	matchCheck = $state<string>();
 	readonly #roomCode: string;
+	readonly #offered: boolean;
 	readonly #key = randomKey();
 	readonly #socket: RoomSocket;
 	#code = '';
 	#taken: ((gameId: GameId | undefined) => void) | undefined;
 	#denied: ((error: Error) => void) | undefined;
 
-	constructor(roomCode: string) {
+	constructor(roomCode: string, offered = false) {
 		this.#roomCode = roomCode;
+		this.#offered = offered;
 		void sha256Hex(this.#key).then((hash) => (this.matchCheck = transferCheck(hash)));
 		this.#socket = new RoomSocket(
 			roomCode,
@@ -161,7 +177,8 @@ export class RoomClaim {
 	}
 
 	#send(): void {
-		if (this.#code.length === TRANSFER_CODE_LENGTH) {
+		if (this.#offered) this.#socket.send({ type: 'check-transfer', offer: true });
+		else if (this.#code.length === TRANSFER_CODE_LENGTH) {
 			this.#socket.send({ type: 'check-transfer', code: this.#code });
 		}
 	}
@@ -174,7 +191,11 @@ export class RoomClaim {
 	take(): Promise<GameId | undefined> {
 		return new Promise((done, fail) => {
 			const name = playerName.current.trim();
-			const message = { type: 'take-room' as const, code: this.#code, ...(name ? { name } : {}) };
+			const message = {
+				type: 'take-room' as const,
+				...(this.#offered ? { offer: true as const } : { code: this.#code }),
+				...(name ? { name } : {})
+			};
 			if (!this.details || !this.#socket.send(message)) {
 				fail(new Error('Not connected'));
 				return;

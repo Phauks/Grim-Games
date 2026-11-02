@@ -83,11 +83,10 @@
 	>
 {/snippet}
 
-<h3 id="player-inbox-{memberId}">{t('room.inbox.title')}</h3>
 {#if shown.length === 0}
 	<p class="none">{t('common.none')}</p>
 {:else}
-	<ul class="items" data-testid="inbox" aria-labelledby="player-inbox-{memberId}">
+	<ul class="items" data-testid="inbox" aria-label={t('room.inbox.title')}>
 		{#each shown as item (key(item))}
 			<li>
 				<button
@@ -169,10 +168,6 @@
 </Dialog>
 
 <style>
-	h3 {
-		margin: 0;
-		font-size: 1rem;
-	}
 	.none {
 		margin: 0;
 		color: var(--on-surface-muted);

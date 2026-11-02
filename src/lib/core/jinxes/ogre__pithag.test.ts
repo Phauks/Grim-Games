@@ -10,6 +10,12 @@
  * of the two may be in play). Paraphrase, never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
+import type { Script } from '#lib/core/data/index.ts';
+import { castWith, codes, run } from '#lib/core/model/fixtures.test-support.ts';
+import { scriptCharacterIds } from '#lib/core/model/characters.ts';
+import { cantTurnGood } from '#lib/core/rules/becomes.ts';
+import { becomesOffer } from '#lib/core/rules/becomes.ts';
+import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 
@@ -30,5 +36,70 @@ describe('Ogre + Pit-Hag jinx', () => {
 		expect(jinxesAmong(data.jinxes, ['pithag'])).not.toContain(jinx);
 	});
 
-	it.todo('enforces the rule the jinx imposes');
+	// Both pages' Related Jinxes: an evil player the Pit-Hag turns into the Ogre can't turn
+	// good because of their own ability.
+	describe("an evil player the Pit-Hag turns into the Ogre can't turn good by it", () => {
+		const script: Script = {
+			meta: { name: 'Jinxed' },
+			entries: ['pithag', 'imp', 'ogre', 'poisoner', 'chef', 'empath', 'monk', 'saint'].map(
+				(id) => ({
+					kind: 'official' as const,
+					id
+				})
+			)
+		};
+		const ids = scriptCharacterIds(script);
+		const cast = castWith({ script });
+
+		// The Pit-Hag (`by`), or the Storyteller by hand, turns a player into the Ogre.
+		const turn = (at: number, byPitHag: boolean) => (seats: string[]) => ({
+			type: 'AssignCharacter' as const,
+			seatId: seats[at],
+			characterId: 'ogre',
+			...(byPitHag ? { by: 'pithag' } : {})
+		});
+
+		it("is data in the Pit-Hag's rules", () => {
+			expect(jinxRulesBetween('pithag', 'ogre')).toEqual({ noTurnGood: true });
+			expect(ids).toContain('ogre');
+		});
+
+		it('warns when an evil player the Pit-Hag changed is turned good', () => {
+			const { game, session, ctx, seats } = cast(
+				['pithag', 'imp', 'poisoner', 'chef', 'empath', 'monk'],
+				turn(2, true)
+			);
+			expect(game.seats[seats[2]].alignment).toBe('evil');
+			expect(cantTurnGood(game, seats[2], ctx.characters)).toEqual({
+				characterId: 'ogre',
+				via: 'pithag'
+			});
+			const turned = run(session, ctx, {
+				type: 'SetAlignment',
+				seatId: seats[2],
+				alignment: 'good'
+			});
+			expect(codes(turned)).toEqual(['jinxed-alignment']);
+			expect(turned.game.seats[seats[2]].alignment).toBe('good');
+		});
+
+		it('says nothing for a good player turned, or a change by hand', () => {
+			const good = cast(['pithag', 'imp', 'poisoner', 'chef', 'empath', 'monk'], turn(3, true));
+			expect(cantTurnGood(good.game, good.seats[3], good.ctx.characters)).toBeUndefined();
+			const byHand = cast(['pithag', 'imp', 'poisoner', 'chef', 'empath', 'monk'], turn(2, false));
+			expect(cantTurnGood(byHand.game, byHand.seats[2], byHand.ctx.characters)).toBeUndefined();
+		});
+
+		it("offers no change to good when the Ogre's friend is good", () => {
+			const friend = { characterId: 'ogre', label: 'Friend' };
+			const jinxed = cast(['pithag', 'imp', 'poisoner', 'chef', 'empath', 'monk'], turn(2, true));
+			expect(
+				becomesOffer(jinxed.game, jinxed.seats[3], friend, jinxed.ctx.characters)
+			).toBeUndefined();
+			const plain = cast(['pithag', 'imp', 'poisoner', 'chef', 'empath', 'monk'], turn(2, false));
+			expect(becomesOffer(plain.game, plain.seats[3], friend, plain.ctx.characters)?.into).toBe(
+				'alignment'
+			);
+		});
+	});
 });

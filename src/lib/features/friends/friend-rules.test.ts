@@ -1,8 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { MAX_FRIENDS, MAX_PENDING, REQUESTS_PER_DAY } from './friends-protocol.ts';
+import {
+	MAX_FRIENDS,
+	MAX_PENDING,
+	REQUESTS_PER_DAY,
+	type RecentPlayer,
+	type SeatFriendState
+} from './friends-protocol.ts';
 import {
 	gamePlayers,
 	sinceUnit,
+	byGamesTogether,
 	NO_RELATION,
 	planReceive,
 	planSend,
@@ -122,5 +129,30 @@ describe('how long ago a friend was last seen', () => {
 
 	it('reads a time from a fast clock as now', () => {
 		expect(sinceUnit(now + hour, now)).toEqual({ value: 0, unit: 'hour' });
+	});
+});
+
+describe('recent players order', () => {
+	const recent = (id: string, games: number): RecentPlayer => ({
+		id,
+		username: id,
+		icon: null,
+		at: 1,
+		games,
+		state: 'add' as SeatFriendState
+	});
+
+	it('lists the most games together first', () => {
+		const list = [recent('ann', 1), recent('bob', 5), recent('cat', 2)];
+		expect(byGamesTogether(list).map((other) => other.id)).toEqual(['bob', 'cat', 'ann']);
+	});
+
+	it('keeps the most recently played first among equal counts', () => {
+		const list = [recent('ann', 2), recent('bob', 3), recent('cat', 2)];
+		expect(byGamesTogether(list).map((other) => other.id)).toEqual(['bob', 'ann', 'cat']);
+	});
+
+	it('lists nobody from a Worker with no Recent players', () => {
+		expect(byGamesTogether(undefined)).toEqual([]);
 	});
 });

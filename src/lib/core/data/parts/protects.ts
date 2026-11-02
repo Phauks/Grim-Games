@@ -10,9 +10,17 @@ const PROTECTS_WHO = ['self', 'marked', 'good'] as const;
  * execution (the Storm Catcher's good character "can only die by execution",
  * https://wiki.bloodontheclocktower.com/Storm_Catcher), or any death by day, an execution
  * included (the Vizier "cannot die during the day",
- * https://wiki.bloodontheclocktower.com/Vizier).
+ * https://wiki.bloodontheclocktower.com/Vizier), or only an exile (the Deviant "cannot be
+ * exiled" if funny, https://wiki.bloodontheclocktower.com/Deviant).
  */
-export const PROTECTS_FROM = ['demon', 'any', 'execution', 'not-execution', 'day'] as const;
+export const PROTECTS_FROM = [
+	'demon',
+	'any',
+	'execution',
+	'not-execution',
+	'day',
+	'exile'
+] as const;
 /**
  * `night`: it lasts only the night it is given ("can't die tonight"), so never stops an
  * execution. `storytellerDecides`: the player only "might not die" (the Pacifist, the

@@ -8,7 +8,7 @@
 	} from '#lib/core/modes/index.ts';
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
-	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { optionalRuleText, prefetchWikiPage } from '#lib/features/characters/wiki-page.svelte.ts';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
@@ -184,11 +184,11 @@
 					<li class="optional">
 						{#if rule.character}
 							{@const character = rule.character}
-							<CharacterRow {character} info
-								>{#snippet ability()}<GlossaryText
+							<CharacterPiece template="row" {character} info
+								>{#snippet abilityText()}<GlossaryText
 										text={character.ability}
 										names={[character.name]}
-									/>{/snippet}</CharacterRow
+									/>{/snippet}</CharacterPiece
 							>
 						{:else}
 							<CharacterBadge characterId={rule.characterId} />

@@ -1,7 +1,15 @@
 <script lang="ts">
 	import { Toast, Toaster } from '@ark-ui/svelte/toast';
 	import Icon from '#lib/ui/icons/Icon.svelte';
+	import type { Snippet } from 'svelte';
 	import { toaster } from './toaster.ts';
+
+	interface Props {
+		/** Draws a description, so a feature can turn names in it into badges. */
+		describe?: Snippet<[string]>;
+	}
+
+	let { describe }: Props = $props();
 </script>
 
 <Toaster {toaster}>
@@ -9,7 +17,10 @@
 		<Toast.Root>
 			<div class="text">
 				<Toast.Title>{toast().title}</Toast.Title>
-				{#if toast().description}<Toast.Description>{toast().description}</Toast.Description>{/if}
+				{#if toast().description}<Toast.Description
+						>{#if describe}{@render describe(`${toast().description}`)}{:else}{toast()
+								.description}{/if}</Toast.Description
+					>{/if}
 			</div>
 			<Toast.CloseTrigger aria-label="Dismiss"><Icon name="close" /></Toast.CloseTrigger>
 		</Toast.Root>

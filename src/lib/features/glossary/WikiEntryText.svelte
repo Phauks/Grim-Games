@@ -4,6 +4,7 @@
 	import { linkTarget, type WikiEntry } from './wiki-glossary.ts';
 	import { wikiGlossary } from './wiki-glossary.svelte.ts';
 	import GlossaryText from './GlossaryText.svelte';
+	import { explainBlock } from './glossary.svelte.ts';
 
 	interface Props {
 		entry: WikiEntry;
@@ -18,6 +19,15 @@
 	let { entry, cite, onTerm, term }: Props = $props();
 	const characters = $derived(officialData.current?.characters ?? []);
 	const names = $derived(characters.map((c) => c.name));
+	// The runs between links marked together: a term is underlined once in the whole entry,
+	// not again after each link.
+	const marked = $derived(
+		explainBlock(
+			entry.parts.map((p) => (p.href ? '' : p.text)),
+			[],
+			term ? [term] : []
+		)
+	);
 	const idOf = (name: string) => characters.find((c) => c.name === name)?.id ?? name;
 </script>
 
@@ -30,8 +40,7 @@
 <!-- eslint-disable svelte/no-navigation-without-resolve -->
 <blockquote class="definition" {cite} data-testid="wiki-definition">
 	{#each entry.parts as part, i (i)}{#if !part.href}<GlossaryText
-				text={part.text}
-				skip={term}
+				segments={marked[i] ?? []}
 			/>{:else}{@const target = linkTarget(
 				part.href,
 				wikiGlossary.entries,

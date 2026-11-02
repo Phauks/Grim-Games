@@ -21,7 +21,7 @@ export async function leaveSeating(page: Page): Promise<void> {
 
 /**
  * Adds a seat from Seating, placed at the spot named `place` ("Place between ..."), then leaves
- * Seating unless `stay` (something such as Travellers choose opens over it first).
+ * Seating unless `stay`.
  */
 export async function addSeat(
 	page: Page,

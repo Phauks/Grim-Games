@@ -32,6 +32,11 @@ export interface RoomTransfer {
 	bringGame: boolean;
 	/** A device with the right code asking to take over, until the Storyteller answers. */
 	asking?: TransferAsk;
+	/**
+	 * The friend in the room the Storyteller handed it to (plan F14), by account: that
+	 * account's signed-in device may take over with no code (`offeredTransfer`).
+	 */
+	offeredTo?: string;
 }
 
 /** A device asking to take the room over: its new host key's hash, and its Profile name. */
@@ -49,6 +54,8 @@ export interface TransferStatus {
 	 * asker's match check (`transferCheck`).
 	 */
 	asking?: { name?: string; check?: string };
+	/** The account of the friend it was handed to (plan F14), so their row says so. */
+	offered?: string;
 }
 
 /** Digits in a transfer's match check. */
@@ -104,6 +111,7 @@ export function openTransfer(
 		bringGame: bringGame === true
 	};
 	if (same && room.transfer!.asking) transfer.asking = room.transfer!.asking;
+	if (same && room.transfer!.offeredTo) transfer.offeredTo = room.transfer!.offeredTo;
 	return { ...room, transfer };
 }
 
@@ -152,6 +160,29 @@ export function askTransfer(room: RoomState, keyHash: string, name: unknown): Ro
 	const trimmed = typeof name === 'string' ? name.trim().slice(0, MAX_NAME) : '';
 	if (trimmed) asking.name = trimmed;
 	return { ...room, transfer: { ...room.transfer, asking } };
+}
+
+/**
+ * The Storyteller hands the live transfer to a friend in the room (plan F14), replacing any
+ * earlier one; the worker checks first that they are friends and here. With no live transfer
+ * or no account, nothing changes.
+ */
+export function offerTransfer(room: RoomState, accountId: unknown, now: number): RoomState {
+	const transfer = liveTransfer(room, now);
+	if (!transfer || typeof accountId !== 'string' || !accountId) return room;
+	return { ...room, transfer: { ...transfer, offeredTo: accountId } };
+}
+
+/**
+ * Whether the device signed in as `accountId` may take the room with no code: the live
+ * transfer was handed to that account. A device signed out never may.
+ */
+export function offeredTransfer(
+	room: RoomState,
+	accountId: string | undefined,
+	now: number
+): boolean {
+	return !!accountId && liveTransfer(room, now)?.offeredTo === accountId;
 }
 
 /** The Storyteller said no, or the asking device went: the transfer stays open, unasked. */

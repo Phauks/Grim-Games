@@ -23,7 +23,7 @@ import {
 	withGainedSteps
 } from '#lib/core/rules/gained-abilities.ts';
 import { nightOrder } from '#lib/core/rules/night-order.ts';
-import { engineGap, scenario } from '#lib/core/testing/scenario.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 import { abilityState } from '#lib/core/rules/ability.ts';
 import { gameEnds } from '#lib/core/rules/game-end.ts';
 import { madnessOffer } from '#lib/core/rules/madness.ts';
@@ -156,9 +156,7 @@ describe('Hermit', () => {
 			// The Klutz and Recluse have no night text, so add no step.
 			expect(steps.filter((step) => step.gained?.via === 'hermit')).toHaveLength(1);
 		});
-		// Waits on the engine: the Hermit's Recluse ability doesn't let it register as an evil
-		// character to the Ravenkeeper, and the Klutz's choice has no game end rule.
-		it.fails('Example 1 (rest): the Klutz choice after execution: good loses', () => {
+		it('Example 1 (rest): the Klutz choice after execution: good loses', () => {
 			// Wiki: "Marianna is the Hermit, and has the Klutz, Butler, and Recluse abilities. Each night,
 			// she chooses a player as her master due to the Butler ability. The Ravenkeeper dies and
 			// learns that she is the Lord of Typhon, due to the Recluse ability. Marianna is executed,
@@ -181,18 +179,22 @@ describe('Hermit', () => {
 			expect(isTruthful(picker, asDemon)).toBe(false);
 			const executed = s.newDay().execute('hermit');
 			expect(gameEnds(executed.game, executed.characters)).toEqual([]);
-			engineGap(
-				'unplanned',
-				'the Klutz choosing an evil player (the Wizard) ends the game: good loses'
-			);
+			const chose = executed.do((at) => ({
+				type: 'UseAbility',
+				seatId: at.seat('hermit'),
+				characterId: 'klutz',
+				on: at.seat('wizard')
+			}));
+			expect(gameEnds(chose.game, chose.characters)).toMatchObject([
+				{ rule: 'used-on-loses', winner: 'evil', characterId: 'klutz' }
+			]);
 		});
-		// Waits on the engine: madnessOffer reads only a player whose true character is the
-		// Mutant, so a Hermit holding the Mutant ability is never offered the execution.
-		it.fails('Example 2: Hermit as mistaken Exorcist executed; Alchemist drunk', () => {
+		it('Example 2: Hermit as mistaken Exorcist executed; Alchemist drunk', () => {
 			// Wiki: "Lewis is the Hermit and has the Drunk, Mutant, and Sweetheart abilities. Thinking
 			// that he is the Exorcist, he chooses a player each night. Lewis says that he thinks he might
 			// be the Drunk, so the Storyteller executes him due to the Mutant ability. Due to the
 			// Sweetheart ability, the Alchemist is now drunk."
+			// Waits on the engine (M15o): madnessOffer only treats a true Mutant as mad, not a Hermit holding the Mutant ability.
 			const outsiders: Script = {
 				entries: [
 					'hermit',

@@ -272,14 +272,15 @@
 				30 days.
 			</li>
 			<li>
-				Other people see only your username and profile icon, and the scripts you chose to show on
-				your profile; never your email address.
+				Other people see only your username and profile icon, the scripts you chose to show on your
+				profile and how many games you've played; never your email address.
 			</li>
 			<li>
-				Your profile page shows your username, profile icon and the scripts you chose to show on it,
-				to anyone with its link, even without an account, whether or not people can find you by
-				username. A script you send a friend is kept on their account until they dismiss it; only
-				the newest 50 are kept.
+				Your profile page shows your username, profile icon, the scripts you chose to show on it and
+				how many games you've finished in a live room with someone else signed in, to anyone with
+				its link, even without an account, whether or not people can find you by username. A script
+				you send a friend is kept on their account until they dismiss it; only the newest 50 are
+				kept.
 			</li>
 			<li>
 				Someone can find you only by typing your exact username, and you can turn that off on the
@@ -301,6 +302,11 @@
 				A Storyteller can invite friends to their live room. The invite (who sent it, the room's
 				code and the script's name) waits on the friend's account until they decline it or 12 hours
 				pass. Each account can send a limited number of invites a day.
+			</li>
+			<li>
+				If you turn on "Notify me of game invites" on Friends, your account keeps that device's push
+				address (up to 5 devices) to send it your invites, until you turn it off. Signing out on
+				that device stops its address working.
 			</li>
 			<li>
 				Your friends see when you were last on (to the hour) and whether you're in a live game.

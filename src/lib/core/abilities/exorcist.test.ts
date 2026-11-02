@@ -77,10 +77,7 @@ describe('Exorcist', () => {
 				.newDay()
 				.reminder('pukka', 'exorcist', 'Chosen');
 			expect(alerts(s, 'pukka')).toContain('blocked');
-			engineGap(
-				'unplanned',
-				'a Pukka the Exorcist chose still kills the player it poisoned last night'
-			);
+			engineGap('M15k', 'a Pukka the Exorcist chose still kills the player it poisoned last night');
 		});
 		it.fails('Example 3: Po idles, then later strikes three', () => {
 			// Wiki: "The Po chooses to attack no one. The next night, the Exorcist chooses the Po. The
@@ -103,7 +100,7 @@ describe('Exorcist', () => {
 			expect(alerts(next, 'assassin')).not.toContain('blocked');
 			expect(alerts(next, 'po')).not.toContain('blocked');
 			engineGap(
-				'unplanned',
+				'M15k',
 				'the Po, whose last choice was no one, attacks three players the next night it wakes'
 			);
 		});

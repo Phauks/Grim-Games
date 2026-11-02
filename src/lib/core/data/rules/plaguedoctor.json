@@ -52,5 +52,34 @@
 				]
 			}
 		]
+	},
+	"jinxes": {
+		"baron": {
+			"givenInstead": "outsiders"
+		},
+		"boomdandy": {
+			"givenInstead": "a-player-becomes"
+		},
+		"eviltwin": {
+			"givenInstead": "a-player-becomes"
+		},
+		"fearmonger": {
+			"givenInstead": "a-minion"
+		},
+		"goblin": {
+			"givenInstead": "a-minion"
+		},
+		"marionette": {
+			"givenInstead": "demon-neighbour-becomes"
+		},
+		"scarletwoman": {
+			"givenInstead": "a-minion"
+		},
+		"spy": {
+			"givenInstead": "a-minion"
+		},
+		"wraith": {
+			"givenInstead": "a-minion"
+		}
 	}
 }

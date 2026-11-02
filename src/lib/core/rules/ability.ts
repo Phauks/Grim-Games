@@ -23,18 +23,12 @@ import {
 	type CharacterType,
 	type ReminderLabel
 } from '#lib/core/data/types.ts';
-import type {
-	ImpairmentReason,
-	PROTECTS_FROM,
-	Protects,
-	TokenImpairment
-} from '#lib/core/data/character-rules.ts';
+import type { ImpairmentReason, TokenImpairment } from '#lib/core/data/character-rules.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import { wikiUrl } from '#lib/core/data/wiki.ts';
 import { isOnScript, type CharacterLookup } from '#lib/core/model/characters.ts';
 import {
 	alignmentOf,
-	aliveNeighbours,
 	getSeat,
 	isTraveller,
 	nearestOfType,
@@ -43,6 +37,8 @@ import {
 } from '#lib/core/model/selectors.ts';
 import type { Game, ReminderId, SeatId } from '#lib/core/model/types.ts';
 import { keepsAbilityWhenDead } from './dead-characters.ts';
+import { heldAbilitiesOf } from './gained-abilities.ts';
+import { jinxedWith, ownJinxRules, registeredTo } from './jinxes.ts';
 
 const W = 'https://wiki.bloodontheclocktower.com/';
 
@@ -101,7 +97,7 @@ function wikiOf(characterId: CharacterId, characters: CharacterLookup): string {
 const ORDER: Record<ImpairmentReason, number> = { 'no-ability': 0, poisoned: 1, drunk: 2 };
 
 /** The first seat whose true character is `characterId`, other than `not`. */
-function seatOfCharacter(
+export function seatOfCharacter(
 	game: Game,
 	characterId: CharacterId,
 	characters: CharacterLookup,
@@ -263,6 +259,24 @@ function impairmentsOf(
 		}
 	}
 
+	// A jinxed character in play, alive or dead, impairs this one whatever its own ability's
+	// state (`impairsPartner`: the Spy or the Widow poisons the Damsel,
+	// https://wiki.bloodontheclocktower.com/Damsel#Related_Jinxes). The jinx also covers one
+	// that has been in play; the game keeps no record of a character that left play, so only
+	// one in play now counts.
+	if (characterId) {
+		const jinxed = jinxedWith(game, characterId, (r) => r.impairsPartner !== undefined, characters);
+		for (const { characterId: by, rule } of jinxed) {
+			const source = seatOfCharacter(game, by, characters, seatId);
+			if (!source || !rule.impairsPartner) continue;
+			out.push({
+				reason: rule.impairsPartner,
+				source: { characterId: by, seatId: source },
+				wiki: wikiOf(by, characters)
+			});
+		}
+	}
+
 	// A token that impairs every other player but Travellers while it is on the board (the
 	// Minstrel's "Everyone Is Drunk": https://wiki.bloodontheclocktower.com/Minstrel), or only
 	// `type` players while its character's ability works (the Xaan's "X", every Townsfolk:
@@ -418,58 +432,105 @@ export interface Registration {
  *   Falsely?" is still in play: once it has been used, it comes off
  *   (https://wiki.bloodontheclocktower.com/Revolutionary).
  * A drunk or poisoned Recluse or Spy registers truly: they have no ability.
+ * A player holding such an ability registers by it too (the Hermit with the Recluse's,
+ * https://wiki.bloodontheclocktower.com/Hermit).
+ *
+ * With `viewer`, the character whose ability is asking, a jinx with it may change how a
+ * player registers (`registersTo`, whatever that player's own ability's state): the
+ * Politician might register as evil to Legion
+ * (https://wiki.bloodontheclocktower.com/Politician#Related_Jinxes), the Summoner registers as
+ * the Demon to the Clockmaker (https://wiki.bloodontheclocktower.com/Summoner#Related_Jinxes).
  */
-export function registrations(game: Game, characters: CharacterLookup): Registration[] {
+export function registrations(
+	game: Game,
+	characters: CharacterLookup,
+	viewer?: CharacterId
+): Registration[] {
 	const out: Registration[] = [];
 	for (const seatId of game.seating) {
+		const own = ownRegistration(game, seatId, characters);
 		const id = trueCharacter(game, seatId, characters);
+		const rule = viewer && id ? ownJinxRules(game, id, viewer, characters)?.registersTo : undefined;
 		const alignment = alignmentOf(game, seatId);
 		const type = typeOf(game, seatId, characters);
-		if (!alignment || !type) continue;
-		const self = id ? rulesOf(id, characters)?.registersAs?.self : undefined;
-		if (id && self && abilityState(game, seatId, characters).works) {
-			out.push({
-				seatId,
-				alignments: [alignment, ...(self.alignments ?? [])].filter(
-					(a, i, all): a is Alignment => all.indexOf(a) === i
-				),
-				types: [type, ...(self.types ?? [])].filter(
-					(t, i, all): t is CharacterType => all.indexOf(t) === i
-				),
-				source: { characterId: id, seatId },
-				wiki: wikiOf(id, characters)
-			});
+		if (!rule || !id || !alignment || !type) {
+			if (own) out.push(own);
 			continue;
 		}
-		for (const token of game.seats[seatId].reminders) {
-			const rule = rulesOf(token.characterId, characters)?.registersAs?.tokens?.[token.label];
-			if (!rule || (rule.carrierAlignment && rule.carrierAlignment !== alignment)) continue;
-			if (rule.whileToken && !inPlayToken(game, token.characterId, rule.whileToken)) continue;
-			const source = game.seating.find(
-				(s) =>
-					trueCharacter(game, s, characters) === token.characterId &&
-					abilityState(game, s, characters).works
-			);
-			// A Fabled has no seat: its tokens work while it is in play.
-			if (!source && !game.ruleCharacters.includes(token.characterId)) continue;
-			const fixed = rule.asAnything
-				? { alignments: [alignment, ...ALIGNMENTS], types: [type, ...SEATED_TYPES] }
-				: { alignments: rule.alignments ?? [alignment], types: rule.types ?? [type] };
-			out.push({
-				seatId,
-				alignments: fixed.alignments.filter((a, i, all): a is Alignment => all.indexOf(a) === i),
-				types: fixed.types.filter((t, i, all): t is CharacterType => all.indexOf(t) === i),
-				source: {
-					characterId: token.characterId,
-					...(source ? { seatId: source } : {}),
-					reminderId: token.reminderId
-				},
-				wiki: wikiOf(token.characterId, characters)
-			});
-			break;
-		}
+		const to = registeredTo(own ?? { alignments: [alignment], types: [type] }, rule);
+		// Registering only as they truly are is no registration at all.
+		const truly = (list: readonly string[], value: string) =>
+			list.length === 1 && list[0] === value;
+		if (truly(to.alignments, alignment) && truly(to.types, type)) continue;
+		out.push({
+			seatId,
+			...to,
+			source: own?.source ?? { characterId: id, seatId },
+			wiki: own?.wiki ?? wikiOf(id, characters)
+		});
 	}
 	return out;
+}
+
+/** How one player may register to everyone, by their own or another character's ability. */
+function ownRegistration(
+	game: Game,
+	seatId: SeatId,
+	characters: CharacterLookup
+): Registration | undefined {
+	const id = trueCharacter(game, seatId, characters);
+	const alignment = alignmentOf(game, seatId);
+	const type = typeOf(game, seatId, characters);
+	if (!alignment || !type) return undefined;
+	// Their own character's, else an ability they hold (the Hermit's Recluse).
+	const mine = id ? rulesOf(id, characters)?.registersAs?.self : undefined;
+	const by =
+		id && mine && abilityState(game, seatId, characters).works
+			? id
+			: heldAbilitiesOf(game, seatId, characters).find(
+					(h) => h.works && rulesOf(h.characterId, characters)?.registersAs?.self
+				)?.characterId;
+	const self = by ? rulesOf(by, characters)?.registersAs?.self : undefined;
+	if (by && self) {
+		return {
+			seatId,
+			alignments: [alignment, ...(self.alignments ?? [])].filter(
+				(a, i, all): a is Alignment => all.indexOf(a) === i
+			),
+			types: [type, ...(self.types ?? [])].filter(
+				(t, i, all): t is CharacterType => all.indexOf(t) === i
+			),
+			source: { characterId: by, seatId },
+			wiki: wikiOf(by, characters)
+		};
+	}
+	for (const token of game.seats[seatId].reminders) {
+		const rule = rulesOf(token.characterId, characters)?.registersAs?.tokens?.[token.label];
+		if (!rule || (rule.carrierAlignment && rule.carrierAlignment !== alignment)) continue;
+		if (rule.whileToken && !inPlayToken(game, token.characterId, rule.whileToken)) continue;
+		const source = game.seating.find(
+			(s) =>
+				trueCharacter(game, s, characters) === token.characterId &&
+				abilityState(game, s, characters).works
+		);
+		// A Fabled has no seat: its tokens work while it is in play.
+		if (!source && !game.ruleCharacters.includes(token.characterId)) continue;
+		const fixed = rule.asAnything
+			? { alignments: [alignment, ...ALIGNMENTS], types: [type, ...SEATED_TYPES] }
+			: { alignments: rule.alignments ?? [alignment], types: rule.types ?? [type] };
+		return {
+			seatId,
+			alignments: fixed.alignments.filter((a, i, all): a is Alignment => all.indexOf(a) === i),
+			types: fixed.types.filter((t, i, all): t is CharacterType => all.indexOf(t) === i),
+			source: {
+				characterId: token.characterId,
+				...(source ? { seatId: source } : {}),
+				reminderId: token.reminderId
+			},
+			wiki: wikiOf(token.characterId, characters)
+		};
+	}
+	return undefined;
 }
 
 /** Whether `characterId`'s reminder `label` is on any seat. */
@@ -557,235 +618,15 @@ export function registrationWorlds(
 	});
 }
 
-// ── Protection ──────────────────────────────────────────────────────────────
-
-/** One ability that protects a player from a kill, and the reminder that says so if any. */
-export interface Protector {
-	source: AbilitySource;
-	/** Against the Demon's kill only, any death, an execution only, or all but an execution. */
-	from: (typeof PROTECTS_FROM)[number];
-}
-
-/**
- * What a death is from: the Demon's kill, another ability's at night, the day's execution, or
- * another ability's by day (`day`: a Slayer's shot, a Witch's curse, recorded while it is day).
- */
-export type DeathBy = 'demon' | 'other' | 'execution' | 'day';
-
-/** Whether a protection stops a death `by` this: one lasting only the night stops none by day. */
-function stops(rule: Protects, by: DeathBy): boolean {
-	const byDay = by === 'execution' || by === 'day';
-	const covers =
-		rule.from === 'any' ||
-		rule.from === by ||
-		(rule.from === 'not-execution' && by !== 'execution') ||
-		(rule.from === 'day' && byDay);
-	return covers && !(rule.night && byDay);
-}
-
-/**
- * The protection `characterId` gives `seatId`, if its rule covers that player: its own
- * player (`self`), the player its token marks (`marked`), or any good player (`good`).
- */
-function protectionFor(
-	game: Game,
-	seatId: SeatId,
-	characterId: CharacterId,
-	rule: Protects,
-	characters: CharacterLookup
-): AbilitySource | undefined {
-	const seat = getSeat(game, seatId);
-	if (!seat) return undefined;
-	const from = seatOfCharacter(game, characterId, characters);
-	if (rule.whileNeighboursGood) {
-		const near = from === undefined ? [] : aliveNeighbours(game, from);
-		if (near.length === 0 || near.some((id) => alignmentOf(game, id) !== 'good')) return undefined;
-	}
-	// Only while a player carrying its token lives (the Lleech's host: M15h).
-	const carrier = rule.whileCarrierAlive;
-	if (
-		carrier &&
-		!game.seating.some(
-			(id) =>
-				!game.seats[id].dead &&
-				game.seats[id].reminders.some((r) => r.characterId === characterId && r.label === carrier)
-		)
-	)
-		return undefined;
-	switch (rule.who) {
-		case 'self':
-			return trueCharacter(game, seatId, characters) === characterId
-				? { characterId, seatId }
-				: undefined;
-		case 'good':
-			return alignmentOf(game, seatId) === 'good'
-				? { characterId, ...(from ? { seatId: from } : {}) }
-				: undefined;
-		case 'marked': {
-			const token = rule.token.toLowerCase();
-			const r = seat.reminders.find(
-				(r) => r.characterId === characterId && r.label.toLowerCase() === token
-			);
-			return r
-				? { characterId, ...(from ? { seatId: from } : {}), reminderId: r.reminderId }
-				: undefined;
-		}
-	}
-}
-
-/**
- * Every ability that would stop `seatId` dying to a kill `by` the Demon or another ability,
- * in this order: its own (`protects.who: self`, the Sailor, the Soldier), then each reminder
- * on the seat whose character's rules say it protects the player it marks (the Tea Lady's
- * "Cannot Die", the Innkeeper's and Monk's "Safe", the Devil's Advocate's "Survives
- * Execution"). From the rules blocks (`protects`), so a custom character can protect too. An
- * execution is never stopped by a protection that lasts only the night (`night`), and a
- * player who only "might not die" (`storytellerDecides`) is never protected here: the
- * Storyteller applies that in the Execution sheet (`executionSavers`). Whether each ability
- * works is the caller's to check.
- */
-export function protectors(
-	game: Game,
-	seatId: SeatId,
-	characters: CharacterLookup,
-	by: DeathBy
-): Protector[] {
-	const seat = getSeat(game, seatId);
-	if (!seat) return [];
-	const out: Protector[] = [];
-	const add = (characterId: CharacterId) => {
-		const rule = rulesOf(characterId, characters)?.protects;
-		if (!rule || rule.storytellerDecides || !stops(rule, by)) return;
-		if (out.some((p) => p.source.characterId === characterId)) return;
-		const source = protectionFor(game, seatId, characterId, rule, characters);
-		if (source) out.push({ source, from: rule.from });
-	};
-	const id = trueCharacter(game, seatId, characters);
-	if (id) add(id);
-	for (const r of seat.reminders) add(r.characterId);
-	for (const other of game.seating) {
-		const characterId = trueCharacter(game, other, characters);
-		if (characterId && rulesOf(characterId, characters)?.protects?.who === 'good') add(characterId);
-	}
-	return out;
-}
-
-/** One ability the Storyteller may say saves an executed player, and why it might not. */
-export interface ExecutionSaver {
-	source: AbilitySource;
-	/**
-	 * Why it may not save this player: its character is not in play, its rule does not cover
-	 * them (the Pacifist's good players, the Devil's Advocate's marked one), or it is drunk,
-	 * poisoned or spent. The Storyteller may apply it anyway (warn, never lock).
-	 */
-	problem?: 'not-in-play' | 'not-this-player' | 'impaired';
-}
-
-/**
- * Every character on the script or in play whose ability can stop an execution death
- * (`protects` from `any` or `execution`, not lasting only the night), for the Execution
- * sheet's Saved by (Trevor, 2026-10-24: "a modifier slot to the execution area"). Those that
- * apply to `seatId` and work come first. Includes the ones the Storyteller decides
- * (`storytellerDecides`: the Pacifist, the Psychopath's roshambo, the
- * Ventriloquist's mad nominee). https://wiki.bloodontheclocktower.com/Pacifist,
- * /Devil%27s_Advocate, /Sailor, /Tea_Lady, /Vizier, /Psychopath, /Lleech, /Ventriloquist
- */
-export function executionSavers(
-	game: Game,
-	seatId: SeatId,
-	characters: CharacterLookup
-): ExecutionSaver[] {
-	const ids = new Set<CharacterId>();
-	for (const entry of game.script.entries)
-		ids.add(entry.kind === 'official' ? entry.id : entry.character.id);
-	for (const id of game.ruleCharacters) ids.add(id);
-	for (const s of game.seating) {
-		const id = trueCharacter(game, s, characters);
-		if (id) ids.add(id);
-	}
-	const out: ExecutionSaver[] = [];
-	for (const characterId of ids) {
-		const rule = rulesOf(characterId, characters)?.protects;
-		if (!rule || !stops(rule, 'execution')) continue;
-		const from = seatOfCharacter(game, characterId, characters);
-		const source = protectionFor(game, seatId, characterId, rule, characters);
-		const inPlay = from !== undefined || game.ruleCharacters.includes(characterId);
-		const owner = source?.seatId ?? from;
-		const problem = !inPlay
-			? 'not-in-play'
-			: !source
-				? 'not-this-player'
-				: owner && !abilityState(game, owner, characters).works
-					? 'impaired'
-					: undefined;
-		out.push({
-			source: source ?? { characterId, ...(from ? { seatId: from } : {}) },
-			...(problem ? { problem } : {})
-		});
-	}
-	return out.sort((a, b) => Number(!!a.problem) - Number(!!b.problem));
-}
-
-/**
- * Why a player cannot die tonight, when the grimoire says so: the Storyteller's "can die"
- * override, else the first working ability from `protectors` (the Sailor, the Tea Lady, the
- * Innkeeper, and against the Demon only the Soldier and the Monk).
- * https://wiki.bloodontheclocktower.com/Sailor, /Tea_Lady, /Innkeeper, /Soldier, /Monk
- */
-export function protection(
-	game: Game,
-	seatId: SeatId,
-	characters: CharacterLookup,
-	by: DeathBy
-): AbilitySource | 'override' | undefined {
-	const seat = getSeat(game, seatId);
-	if (!seat) return undefined;
-	const override = seat.overrides.find((o) => o.field === 'canDie');
-	if (override) return override.value ? undefined : 'override';
-	const works = (s: SeatId) => abilityState(game, s, characters).works;
-	return protectors(game, seatId, characters, by).find(
-		(p) => !p.source.seatId || works(p.source.seatId)
-	)?.source;
-}
-
-/**
- * The seat's own ability that may move a kill `by` the Demon or another ability onto another
- * player (`redirectsKill`, the Mayor against the Demon:
- * https://wiki.bloodontheclocktower.com/Mayor). Whether it works is the caller's to check.
- */
-export function killRedirect(
-	game: Game,
-	seatId: SeatId,
-	characters: CharacterLookup,
-	by: 'demon' | 'other'
-): AbilitySource | undefined {
-	const id = trueCharacter(game, seatId, characters);
-	const rule = id ? rulesOf(id, characters)?.redirectsKill : undefined;
-	if (!id || !rule || (rule.from === 'demon' && by !== 'demon')) return undefined;
-	return { characterId: id, seatId };
-}
-
-/** An ability that stops its player's first death, and the token that marks it spent. */
-export interface FirstDeathSaver {
-	source: AbilitySource;
-	spentToken: ReminderLabel;
-}
-
-/**
- * The seat's own ability that stops its first death (`survivesFirstDeath`, the Fool's), while
- * its spent token is not on the seat. Whether it works is the caller's to check.
- */
-export function firstDeathSaver(
-	game: Game,
-	seatId: SeatId,
-	characters: CharacterLookup
-): FirstDeathSaver | undefined {
-	const seat = getSeat(game, seatId);
-	const id = trueCharacter(game, seatId, characters);
-	const rule = id ? rulesOf(id, characters)?.survivesFirstDeath : undefined;
-	if (!seat || !id || !rule) return undefined;
-	const spent = rule.spentToken.toLowerCase();
-	if (seat.reminders.some((r) => r.characterId === id && r.label.toLowerCase() === spent))
-		return undefined;
-	return { source: { characterId: id, seatId }, spentToken: rule.spentToken };
-}
+export {
+	type Protector,
+	type DeathBy,
+	type ExecutionSaver,
+	type FirstDeathSaver,
+	protection,
+	protectors,
+	executionSavers,
+	exileSavers,
+	killRedirect,
+	firstDeathSaver
+} from './protection.ts';

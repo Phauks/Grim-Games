@@ -11,8 +11,10 @@ import {
 	type Script
 } from '#lib/core/data/index.ts';
 import type { EngineWarning } from '#lib/core/engine/index.ts';
+import { slot } from '#lib/features/characters/slots.ts';
 import {
 	analyseSetup,
+	gainedSetupAbilities,
 	reminderTargetMisses,
 	targetRule,
 	type DeathCauseFlag,
@@ -170,6 +172,8 @@ export function causeFlagText(
 			return { text: `${victim}'s alignment or character is not set, so this can't be checked.` };
 		case 'protected-by-day':
 			return { text: `${victim} can't die during the day`, by: flag.source.characterId };
+		case 'protected':
+			return { text: `${victim} is protected from dying now`, by: flag.source.characterId };
 	}
 }
 
@@ -199,6 +203,16 @@ export function warningText(warning: EngineWarning): string | undefined {
 			return 'That player has already nominated today.';
 		case 'already-nominee':
 			return 'That player has already been nominated today.';
+		// https://wiki.bloodontheclocktower.com/Bishop and /Golem (`nominating`).
+		case 'storyteller-nominates':
+			return 'Only the Storyteller may nominate now.';
+		case 'nominated-this-game': {
+			// The character as a badge (Trevor, 2026-11-02: "that player {Golem}").
+			const id = warning.characters?.[0];
+			return id
+				? `That player (${slot(id)}) may not nominate again this game.`
+				: 'That player may not nominate again this game.';
+		}
 		case 'dead-nominator':
 			return 'Dead players may not nominate.';
 		case 'not-in-play':
@@ -262,6 +276,12 @@ function tableProblems(
 		players: seats.length,
 		travellers,
 		inPlay,
+		// The Alchemist's Minion ability changes setup as that Minion would.
+		abilities: gainedSetupAbilities(
+			game,
+			characters,
+			seats.map((s) => s.seatId)
+		),
 		findById: (id) => characters.get(id),
 		// Homebrew brackets name characters: "[+ Spartacus]".
 		findByName: (name) =>

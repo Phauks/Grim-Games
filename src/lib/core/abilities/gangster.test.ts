@@ -17,7 +17,8 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import { dayUseDeath } from '#lib/core/rules/day-claims.ts';
 import { survivesFirstDeath } from '#lib/core/rules/first-death.ts';
 import { gameEnds } from '#lib/core/rules/game-end.ts';
-import { engineGap, scenario } from '#lib/core/testing/scenario.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
+import { warned } from '#lib/core/model/fixtures.test-support.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
 describe('Gangster', () => {
@@ -80,21 +81,30 @@ describe('Gangster', () => {
 				{ rule: 'demon-dead', winner: 'good', holds: [] }
 			]);
 		});
-		it.fails("Example 3: Fool's ability blocks Sage and Gangster's kill", () => {
+		it("Example 3: Fool's ability blocks Sage and Gangster's kill", () => {
 			// Wiki: "The Gangster neighbours the Fool and the Sage. The Sage and the Gangster kill the
 			// Fool but the Fool doesn’t die, because of the Fool's ability. The Gangster may not use their
 			// ability again today."
-			// Waits on the engine: dayUseDeath says the Fool dies to the Gangster although the Fool's
-			// unspent ability stops that first death; nothing yet limits the Gangster to once a day.
 			const s = scenario(['gangster', 'fool', 'imp', 'chef', 'sage']).newDay();
 			expect(survivesFirstDeath(s.game, s.seat('fool'), 'gangster', s.characters)).toMatchObject({
 				spentToken: 'No Ability'
 			});
 			expect(dayUseDeath(s.game, 'gangster', s.seat('fool'), s.characters)).not.toBe('dies');
-			engineGap(
-				'unplanned',
-				'the Gangster may use their ability once a day, even when the kill fails'
-			);
+			// Once a day: a second use today is logged with a warning, even after a kill that failed.
+			const used = s.do((at) => ({
+				type: 'UseAbility',
+				seatId: at.seat('gangster'),
+				characterId: 'gangster',
+				on: at.seat('fool')
+			}));
+			expect(
+				warned(used.session, used.ctx, {
+					type: 'UseAbility',
+					seatId: used.seat('gangster'),
+					characterId: 'gangster',
+					on: used.seat('sage')
+				})
+			).toEqual(['already-used']);
 		});
 	});
 });

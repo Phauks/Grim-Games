@@ -24,6 +24,19 @@ describe('reminderPrompt', () => {
 		expect(marksDeath('Died Today')).toBe(true);
 	});
 
+	it('asks to mark dead for every official character whose reminder records a death', () => {
+		// The Vortox kills a player each night* (https://wiki.bloodontheclocktower.com/Vortox), as
+		// do the other Demons with a "Dead" reminder; Trevor (2026-11-02, M21) found the Vortox's
+		// not asking, so each one is checked by its own id, not only by its words.
+		const deaths = data.characters.flatMap((c) =>
+			c.reminders
+				.filter((label) => /^(dead|died today)$/i.test(label))
+				.map((label) => [c.id, label] as const)
+		);
+		expect(deaths.map(([id]) => id)).toContain('vortox');
+		for (const [id, label] of deaths) expect(reminderPrompt(label, id), id).toBe('markDead');
+	});
+
 	it('asks to revive for the reminders that bring a dead player back', () => {
 		// The Professor once per game may resurrect a dead player
 		// (https://wiki.bloodontheclocktower.com/Professor); the Shabaloth may regurgitate a

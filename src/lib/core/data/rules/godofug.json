@@ -1,4 +1,5 @@
 {
+	"voteWeight": { "reminder": "Hat", "weight": 2 },
 	"reminderTargets": {
 		"Hat": {
 			"seat": "any",

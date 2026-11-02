@@ -50,7 +50,7 @@ describe('Fibbin', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Fibbin#Examples)', () => {
-		it.fails('Example 1: Empath is falsely told an evil neighbour', () => {
+		it('Example 1: Empath is falsely told an evil neighbour', () => {
 			// Wiki: "On the first night, all players get correct information. On the second night,
 			// the Empath learns they are neighbouring one evil player, but both their neighbours
 			// are actually good. For the rest of the game, all good players get correct
@@ -62,7 +62,7 @@ describe('Fibbin', () => {
 			expect(isTruthful(picker, { seats: [], number: 0 })).toBe(true);
 			expect(isAllowed(picker, { seats: [], number: 1 })).toBe(true);
 		});
-		it.fails('Example 2: Dying Ravenkeeper is told false information', () => {
+		it('Example 2: Dying Ravenkeeper is told false information', () => {
 			// Wiki: "The Virgin is nominated by a Townsfolk. This Townsfolk is executed immediately
 			// because the Fibbin cannot make an ability malfunction. Later, the Monk protects a
 			// player. Again, the Monk's ability cannot fail due to the Fibbin ability. Later, the

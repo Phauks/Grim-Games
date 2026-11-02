@@ -38,6 +38,14 @@ export const friends = {
 	'friends.failed': 'That didn’t work',
 	'friends.privacy': 'Privacy',
 	'friends.findable': 'Let people find me by username',
+	// Plan F8: invites pushed to this device. The service worker words the notification.
+	'friends.invitePush': 'Notify me of game invites',
+	'friends.invitePush.failed':
+		'Couldn’t turn on invite notifications. Check the connection and try again.',
+	'friends.invitePush.title': 'Game invite',
+	'friends.invitePush.body': '{name} invites you to their game',
+	'friends.invitePush.bodyWithScript': '{name} invites you to {title}',
+	'friends.invitePush.someone': 'A friend',
 	'friends.yourUsername': 'Your username',
 	'friends.addDialog.title': 'Add friend',
 	'friends.addDialog.username': 'Username',
@@ -76,6 +84,7 @@ export const friends = {
 	'friends.profile': 'Your profile',
 	'friends.profile.open': 'Open profile',
 	'friends.profile.scripts': 'Scripts',
+	'friends.profile.games': 'Games played: {games}',
 	'friends.profile.tooMany': 'Too many tries. Wait a minute and try again.',
 	'friends.groups': 'Groups',
 	'friends.groups.add': 'Add a group',
