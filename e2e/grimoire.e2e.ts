@@ -1120,6 +1120,42 @@ test('a night step offers the info tokens its text names', async ({ page }) => {
 	expect(await gaps()).toEqual([]);
 });
 
+test("the night strip shows a step's info tokens without opening the step", async ({ page }) => {
+	// Trevor, 2026-11-02: the cards a step fills in, one tap from the board's night strip.
+	// https://wiki.bloodontheclocktower.com/Imp : a Minion who becomes the Imp is shown "You are".
+	await startGame(page);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Imp', exact: true })
+		.tap();
+	await closeSheet(page);
+	// A step with no cards has no row (Trevor, 2026-11-02: areas show only with something in them).
+	const strip = await walkTo(page, 'Dusk');
+	await expect(strip.getByTestId('strip-info-tokens')).toHaveCount(0);
+	await endNight(page);
+	await page.keyboard.press('Escape');
+	await expect(page.getByRole('dialog', { name: 'Day 1' })).toBeHidden();
+
+	const row = (await walkTo(page, 'Imp')).getByTestId('strip-info-tokens');
+	await expect(row.getByRole('button')).toHaveCount(1);
+	// Inside the strip's fixed height: the row never pushes past the strip.
+	const stripBox = (await strip.boundingBox())!;
+	const rowBox = (await row.boundingBox())!;
+	expect(rowBox.y + rowBox.height).toBeLessThanOrEqual(stripBox.y + stripBox.height + 1);
+	expect(rowBox.x + rowBox.width).toBeLessThanOrEqual(stripBox.x + stripBox.width + 1);
+	await row.getByRole('button', { name: 'You are (Imp)', exact: true }).tap();
+	const shown = page.locator('[data-testid="show-to-player"][open]');
+	await expect(shown.getByRole('img', { name: /Imp token/ })).toBeVisible();
+	// The step never opened; closing the card goes straight back to the board.
+	await expect(page.getByRole('dialog', { name: 'Imp', exact: true })).toHaveCount(0);
+	await shown.getByRole('button', { name: 'Close' }).tap();
+	await expect(shown).toHaveCount(0);
+	await expect(page.getByRole('dialog', { name: 'Info tokens' })).toHaveCount(0);
+	await expect(page.getByTestId('night-strip')).toBeVisible();
+});
+
 test("the Demon's step says when the Exorcist's choice stops it waking", async ({ page }) => {
 	// https://wiki.bloodontheclocktower.com/Exorcist : a chosen Demon doesn't wake tonight
 	// (Trevor's Pukka flowchart, 2026-10-24).
