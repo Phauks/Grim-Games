@@ -77,7 +77,8 @@
 	"becomes": {
 		"token": "Turns Evil",
 		"into": "evil",
-		"when": "removed"
+		"when": "removed",
+		"spent": "No Ability"
 	},
 	"infoCard": "secret-word",
 	"infoTokenCharacters": {
@@ -85,5 +86,8 @@
 			"characters": [],
 			"upTo": 0
 		}
+	},
+	"wakesWhen": {
+		"untilToken": "No Ability"
 	}
 }

@@ -186,11 +186,9 @@ describe('Courtier', () => {
 			expect(nightText('first')).toContain('[+No Ability]');
 		});
 
-		it.fails('stops waking the Courtier once they have chosen a character', () => {
+		it('stops waking the Courtier once they have chosen a character', () => {
 			// Wiki: "and remove their night token from the night sheet. After the Courtier chooses a
 			// character to make drunk, do not wake the Courtier for the rest of the game."
-			// Waits on the engine (unplanned): the Courtier's rules have no wakesWhen untilToken "No
-			// Ability", so a spent Courtier still counts as waking.
 			const s = scenario(cast).newDay();
 			expect(wokeTonight(s.game, s.seat('courtier'), s.characters, 'other')).toBe(true);
 			const spent = s.reminder('courtier', 'courtier', 'No Ability');

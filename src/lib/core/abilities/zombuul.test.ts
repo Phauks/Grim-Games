@@ -123,11 +123,9 @@ describe('Zombuul', () => {
 			expect(reminderPrompt('Died Today', 'zombuul')).toBe('markDead');
 		});
 
-		it.fails('does not wake while any player is marked Died Today', () => {
+		it('does not wake while any player is marked Died Today', () => {
 			// Wiki: "Each night except the first, if any player is marked DIED TODAY, do not wake the
 			// Zombuul."
-			// Waits on the engine (unplanned): the Zombuul's wake condition reads the deaths logged
-			// since the New day, not its Died Today reminder.
 			const s = scenario(cast).newDay().reminder('chef', 'zombuul', 'Died Today');
 			expect(wakeConditionMet(s.game, 'zombuul', s.seat('zombuul'), s.characters, new Set())).toBe(
 				false

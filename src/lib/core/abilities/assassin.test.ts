@@ -183,11 +183,9 @@ describe('Assassin', () => {
 			expect(otherNightText()).toContain('[+No Ability]');
 		});
 
-		it.fails('stops waking the Assassin once they are marked No Ability', () => {
+		it('stops waking the Assassin once they are marked No Ability', () => {
 			// Wiki: "and remove their night token from the night sheet. (The Assassin won’t wake
 			// again.)"
-			// Waits on the engine (unplanned): the Assassin's rules have no wakesWhen untilToken "No
-			// Ability", so a spent Assassin still counts as waking.
 			const s = scenario(cast).newDay();
 			expect(wokeTonight(s.game, s.seat('assassin'), s.characters, 'other')).toBe(true);
 			const spent = s.reminder('assassin', 'assassin', 'No Ability');

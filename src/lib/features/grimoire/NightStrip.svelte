@@ -334,6 +334,15 @@
 	.row .count {
 		position: static;
 		height: auto;
+		/* As "Seat 7" on the band beside it (Trevor, 2026-11-02). */
+		font-size: 0.95rem;
+	}
+	/* As tall as the band, in the player names' font (Trevor, 2026-11-02). */
+	.row .count :global(.count-badge) {
+		height: 1.7rem;
+		font-family: var(--font-player);
+		font-weight: var(--font-player-weight, 700);
+		font-variant-numeric: lining-nums tabular-nums;
 	}
 	.again {
 		font-size: 0.75em;
