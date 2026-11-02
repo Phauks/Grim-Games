@@ -43,6 +43,7 @@ import {
 import type { Game, ReminderId, SeatId } from '#lib/core/model/types.ts';
 import { keepsAbilityWhenDead } from './dead-characters.ts';
 import { jinxedWith, ownJinxRules, registeredTo } from './jinxes.ts';
+import { effectImpairment } from './reminder-effects.ts';
 import { wishWithEffect } from './wishes.ts';
 
 const W = 'https://wiki.bloodontheclocktower.com/';
@@ -97,6 +98,11 @@ function tokenImpairment(
 function wikiOf(characterId: CharacterId, characters: CharacterLookup): string {
 	const character = characters.get(characterId);
 	return (character && wikiUrl(character)) ?? `${W}Glossary`;
+}
+
+/** An impairment from `source`, linked to its character's wiki page. */
+function sourced(reason: ImpairmentReason, source: AbilitySource, characters: CharacterLookup) {
+	return { reason, source, wiki: wikiOf(source.characterId, characters) };
 }
 
 const ORDER: Record<ImpairmentReason, number> = { 'no-ability': 0, poisoned: 1, drunk: 2 };
@@ -180,6 +186,15 @@ function impairmentsOf(
 	const characterId = trueCharacter(game, seatId, characters);
 
 	for (const r of seat.reminders) {
+		// An effect the Storyteller picked for the token (the Angel's Something Bad: poisoned, or
+		// no ability for a day, https://wiki.bloodontheclocktower.com/Angel).
+		const picked = effectImpairment(r.effect, game);
+		if (picked) {
+			out.push(
+				sourced(picked, { characterId: r.characterId, reminderId: r.reminderId }, characters)
+			);
+			continue;
+		}
 		const rule = tokenImpairment(r, characters);
 		if (rule?.on === 'others') continue;
 		if (rule) {
@@ -251,11 +266,7 @@ function impairmentsOf(
 				? alive <= self.aliveAtMost
 				: !out.some((i) => i.source.characterId === characterId);
 		if (applies) {
-			out.push({
-				reason: self.reason,
-				source: { characterId, seatId },
-				wiki: wikiOf(characterId, characters)
-			});
+			out.push(sourced(self.reason, { characterId, seatId }, characters));
 		}
 	}
 
@@ -269,11 +280,7 @@ function impairmentsOf(
 		for (const { characterId: by, rule } of jinxed) {
 			const source = seatOfCharacter(game, by, characters, seatId);
 			if (!source || !rule.impairsPartner) continue;
-			out.push({
-				reason: rule.impairsPartner,
-				source: { characterId: by, seatId: source },
-				wiki: wikiOf(by, characters)
-			});
+			out.push(sourced(rule.impairsPartner, { characterId: by, seatId: source }, characters));
 		}
 	}
 
@@ -307,14 +314,9 @@ function impairmentsOf(
 	// A granted wish that makes every good player drunk for the rest of the game (the Wizard's
 	// example: https://wiki.bloodontheclocktower.com/Wizard). It lasts whatever happens to the
 	// wisher, until the Storyteller removes the wish.
-	const drunkWish = wishWithEffect(game, 'good-drunk');
-	if (drunkWish && alignmentOf(game, seatId) === 'good') {
-		out.push({
-			reason: 'drunk',
-			source: { characterId: drunkWish.characterId, seatId: drunkWish.seatId },
-			wiki: wikiOf(drunkWish.characterId, characters)
-		});
-	}
+	const wish = wishWithEffect(game, 'good-drunk');
+	if (wish && alignmentOf(game, seatId) === 'good')
+		out.push(sourced('drunk', { characterId: wish.characterId, seatId: wish.seatId }, characters));
 
 	// A token that makes its carrier sober and healthy while its character's ability works
 	// (the Barista's "Sober & Healthy": https://wiki.bloodontheclocktower.com/Barista). An
