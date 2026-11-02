@@ -23,13 +23,7 @@
 		tokens?: boolean;
 	}
 
-	let {
-		title,
-		characters = [],
-		detail,
-		compact = false,
-		tokens
-	}: Props = $props();
+	let { title, characters = [], detail, compact = false, tokens }: Props = $props();
 
 	const asTokens = $derived(tokens ?? preferences.current.assistance.characterTokens);
 
