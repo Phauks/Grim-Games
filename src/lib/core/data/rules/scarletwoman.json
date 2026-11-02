@@ -45,5 +45,10 @@
 	"becomes": {
 		"token": "Is The Demon",
 		"into": "demon"
+	},
+	"infoTokenCharacters": {
+		"you-are": {
+			"characters": ["demon"]
+		}
 	}
 }

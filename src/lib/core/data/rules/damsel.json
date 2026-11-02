@@ -42,5 +42,10 @@
 	"reminderMovement": {
 		"fixed": ["Guess Used"],
 		"why": "Marks that this character has used its once-per-game ability."
+	},
+	"infoTokenCharacters": {
+		"you-are": {
+			"characters": ["chosen"]
+		}
 	}
 }

@@ -44,5 +44,10 @@
 			"sameType": true,
 			"anyType": true
 		}
+	},
+	"infoTokenCharacters": {
+		"you-are": {
+			"characters": ["changed"]
+		}
 	}
 }

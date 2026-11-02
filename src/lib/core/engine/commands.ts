@@ -93,7 +93,18 @@ export type Command =
 	 * https://wiki.bloodontheclocktower.com/Snake_Charmer), or only characters with
 	 * `keepAlignments` (the Barber's haircuts, https://wiki.bloodontheclocktower.com/Barber).
 	 */
-	| { type: 'SwapCharacters'; seatId: SeatId; withSeatId: SeatId; keepAlignments?: true }
+	/**
+	 * Two players swap characters, and alignments unless `keepAlignments` (the Barber's). With
+	 * `mark`, that reminder goes on `seatId` once swapped (the Snake Charmer's Poisoned on the
+	 * old Demon), as one change.
+	 */
+	| {
+			type: 'SwapCharacters';
+			seatId: SeatId;
+			withSeatId: SeatId;
+			keepAlignments?: true;
+			mark?: Reminder;
+	  }
 	| { type: 'SetAlignment'; seatId: SeatId; alignment: Alignment }
 	/**
 	 * Gives a player the ability of `characterId` by `via`'s `givesAbility` rule, replacing any

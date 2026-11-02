@@ -15,6 +15,8 @@ import { gameEnds } from '#lib/core/rules/game-end.ts';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { infoPicker, learnedRoles } from '#lib/core/rules/night-info.ts';
+import { shownToSeats } from '#lib/core/rules/shown-to.ts';
 
 describe('Evil Twin', () => {
 	const character = committedCharacter('eviltwin');
@@ -42,6 +44,32 @@ describe('Evil Twin', () => {
 
 		it('has no special app hooks', () => {
 			expect(character.special).toEqual([]);
+		});
+	});
+
+	// The twins learn each other: the Evil Twin is shown the good twin's character, and the good
+	// twin the Evil Twin's (TPI's night text; Trevor, 2026-11-01: "App does not show the token").
+	describe('the twins are shown each other', () => {
+		const twins = () =>
+			scenario(['chef', 'empath', 'eviltwin', 'imp', 'monk']).reminder(
+				'empath',
+				'eviltwin',
+				'Twin'
+			);
+
+		it('shows the Evil Twin the good twin and their character', () => {
+			const s = twins();
+			const picker = infoPicker(s.game, s.seat('eviltwin'), 'eviltwin', s.characters)!;
+			expect(learnedRoles(s.game, picker, s.characters)!.rows[0]).toMatchObject({
+				target: s.seat('empath'),
+				characterIds: ['empath'],
+				marked: true
+			});
+		});
+
+		it('shows the good twin the Evil Twin', () => {
+			const s = twins();
+			expect(shownToSeats(s.game, 'eviltwin', s.characters)).toEqual([s.seat('empath')]);
 		});
 	});
 

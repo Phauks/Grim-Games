@@ -39,6 +39,8 @@ import {
 	type Night,
 	type NightStepOverride
 } from '#lib/core/rules/index.ts';
+import { readInfoTokenCharacters } from '#lib/core/data/info-token-rules.ts';
+import { Issues } from '#lib/core/data/validate.ts';
 import type { CommandOf, CommandType } from '../commands.ts';
 import type { EngineContext } from '../context.ts';
 import type { GameEvent } from '../events.ts';
@@ -346,6 +348,12 @@ export function nightOverride(o: NightStepOverride, ctx: EngineContext): NightSt
 			const title = o.title?.trim();
 			if (title) copy.title = title;
 			if (o.characterId !== undefined) copy.characterId = characterOf(ctx, o.characterId).id;
+			if (o.infoTokenCharacters !== undefined) {
+				const issues = new Issues();
+				const fills = readInfoTokenCharacters(o.infoTokenCharacters, 'infoTokenCharacters', issues);
+				if (!fills) badOverride(`info token fills: ${issues.list.join('; ')}`);
+				copy.infoTokenCharacters = fills;
+			}
 			return copy;
 		}
 		default:

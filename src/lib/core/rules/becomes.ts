@@ -56,9 +56,7 @@ export function becomesOffer(
 	}
 	if (rule.into === 'swap') {
 		// The Demon the token's character chose swaps with that character's player.
-		const withSeatId = game.seating.find(
-			(id) => id !== seatId && trueCharacter(game, id, characters) === reminder.characterId
-		);
+		const withSeatId = swapPartner(game, reminder.characterId, characters, seatId);
 		return isDemon && withSeatId !== undefined ? { into: 'swap', seatId, withSeatId } : undefined;
 	}
 	// The dead Demon's character (the one taken over), else another Demon in play.
@@ -69,6 +67,49 @@ export function becomesOffer(
 	const taken = demons.find((id) => game.seats[id].dead) ?? demons[0];
 	const characterId = taken === undefined ? undefined : trueCharacter(game, taken, characters);
 	return characterId === undefined ? undefined : { into: 'demon', seatId, characterId };
+}
+
+/**
+ * The player who swaps when `characterId`'s ability picks the Demon (`becomes.into: 'swap'`):
+ * its own player, else a player who gained its ability (the Philosopher who chose the Snake
+ * Charmer, https://wiki.bloodontheclocktower.com/Snake_Charmer). A Drunk who only thinks they
+ * are it has no ability, so is never one.
+ */
+export function swapPartner(
+	game: Game,
+	characterId: CharacterId,
+	characters: CharacterLookup,
+	except?: SeatId
+): SeatId | undefined {
+	const own = game.seating.find(
+		(id) => id !== except && trueCharacter(game, id, characters) === characterId
+	);
+	if (own !== undefined) return own;
+	// A player who took its token for their own (`gainedFrom.swapped`: the Philosopher).
+	return game.seating.find((id) => {
+		if (id === except || game.seats[id].characterId !== characterId) return false;
+		const own = trueCharacter(game, id, characters);
+		return own !== undefined && rulesIn(game, own, characters)?.gainedFrom?.swapped === true;
+	});
+}
+
+/**
+ * What `chooser`, with `characterId`'s swap ability (`becomes.into: 'swap'`), choosing
+ * `chosen` tonight does: with the Demon, the two swap characters and alignments and its
+ * `token` goes on the old Demon, now `characterId`; with anyone else, nothing (undefined).
+ */
+export function swapChoice(
+	game: Game,
+	characterId: CharacterId,
+	chosen: SeatId,
+	characters: CharacterLookup
+): { seatId: SeatId; withSeatId: SeatId; mark: Reminder } | undefined {
+	const rule = rulesIn(game, characterId, characters)?.becomes;
+	if (rule?.into !== 'swap') return undefined;
+	if (typeOf(game, chosen, characters) !== 'demon') return undefined;
+	const withSeatId = swapPartner(game, characterId, characters, chosen);
+	if (withSeatId === undefined) return undefined;
+	return { seatId: chosen, withSeatId, mark: { characterId, label: rule.token } };
 }
 
 /**

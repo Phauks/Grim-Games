@@ -9,9 +9,10 @@
 	},
 	"reminderTargets": {
 		"Poisoned": {
-			"seat": "any",
-			"characters": ["snakecharmer"],
-			"note": "On the player who was the Demon and has just become the new Snake Charmer after the swap."
+			"seat": "other",
+			"types": ["demon"],
+			"life": "alive",
+			"note": "Put on the living Demon the Snake Charmer chose: that player and the Snake Charmer then swap, so the token ends on the old Demon, now the Snake Charmer."
 		}
 	},
 	"setupPrep": {
@@ -69,5 +70,15 @@
 		"token": "Poisoned",
 		"into": "swap"
 	},
-	"choosesUnmarked": true
+	"choosesUnmarked": true,
+	"infoTokenCharacters": {
+		"you-are": [
+			{
+				"characters": ["demon"]
+			},
+			{
+				"characters": ["self"]
+			}
+		]
+	}
 }
