@@ -47,10 +47,15 @@
 	}: Props = $props();
 
 	const name = $derived(label ?? plainText(text));
-	const badges = $derived([
-		...(quick ? [{ icon: 'quickCard' as const, label: t('info-tokens.quickAbout') }] : []),
-		...askBadges(asks)
-	]);
+	// The compact row has no room for the corner icons, so it draws none.
+	const badges = $derived(
+		compact
+			? []
+			: [
+					...(quick ? [{ icon: 'quickCard' as const, label: t('info-tokens.quickAbout') }] : []),
+					...askBadges(asks)
+				]
+	);
 	// Read as the card's words, then its characters, though the characters show first.
 	const spoken = $derived(
 		owners.length
@@ -247,12 +252,6 @@
 		justify-content: flex-start;
 		padding: 0 var(--space-2);
 		font-size: 0.85rem;
-	}
-	.compact .card[data-asks] {
-		padding-inline-end: var(--space-2);
-	}
-	.compact .asks {
-		display: none;
 	}
 	/* The words first, so a narrow row cuts the characters before the words. */
 	.compact .owners {
