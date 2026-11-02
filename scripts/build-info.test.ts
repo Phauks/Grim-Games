@@ -8,6 +8,12 @@ import { readHistory, supersedingCommit } from '../build-info.ts';
 // Trevor (2026-10-28): an update listed 0 changes, then the Changelog listed only one PR. A build
 // of an older commit had deployed after a newer one, and its clone kept only its own commit.
 
+// The pre-push hook runs these tests with GIT_DIR (and sometimes GIT_WORK_TREE, GIT_INDEX_FILE)
+// pointing at the real repository. Git obeys them over `cwd`, so every command here, and in
+// build-info.ts, would commit, configure and fetch in the real repository instead of the temporary
+// ones. Clear them for this file.
+for (const name of ['GIT_DIR', 'GIT_WORK_TREE', 'GIT_INDEX_FILE']) delete process.env[name];
+
 const dirs: string[] = [];
 afterAll(() => dirs.forEach((dir) => rmSync(dir, { recursive: true, force: true })));
 

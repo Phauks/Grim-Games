@@ -86,14 +86,15 @@ describe('Recluse', () => {
 		});
 		it('Example 5: Chef sees zero, sparing a revealing two', () => {
 			// Between the Imp and an evil Traveller, the Recluse may register as evil (2), but the
-			// Storyteller may give the true answer, 0.
+			// Storyteller may give the true answer, 0. It may register differently for each pair
+			// (Chef Example 4), so 1 is offered too.
 			const s = scenario(['chef', 'imp', 'recluse', 'gunslinger', 'monk']).do((at) => ({
 				type: 'SetAlignment',
 				seatId: at.seat('gunslinger'),
 				alignment: 'evil'
 			}));
 			const picker = infoPicker(s.game, s.seat('chef'), 'chef', s.characters)!;
-			expect(picker.range).toEqual({ truth: 0, possible: [0, 2] });
+			expect(picker.range).toEqual({ truth: 0, possible: [0, 1, 2] });
 			expect(isTruthful(picker, { seats: [], number: 0 })).toBe(true);
 		});
 	});
