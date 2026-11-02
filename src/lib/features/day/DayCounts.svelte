@@ -35,7 +35,9 @@
 	const exile = $derived(exileThreshold(g, game.characters));
 	const votesLabel = $derived(
 		[
-			t('day.votesBadgeLabel', { count: block.needed, alive: block.alive }),
+			block.mostVotes
+				? t('day.count.mostVotes')
+				: t('day.votesBadgeLabel', { count: block.needed, alive: block.alive }),
 			...(exile === undefined
 				? []
 				: [t('day.exileLabel', { count: exile, total: g.seating.length })])

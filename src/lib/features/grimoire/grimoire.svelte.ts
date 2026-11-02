@@ -244,7 +244,7 @@ export class Grimoire {
 			return false;
 		}
 		for (const warning of result.warnings) {
-			const text = warningText(warning);
+			const text = warningText(warning, this.open.characters);
 			if (text) toast('Note', text);
 		}
 		const becomes = this.askBecomes(command, before);

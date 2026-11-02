@@ -174,7 +174,10 @@ export function causeFlagText(
 }
 
 /** What a toast says for a warning the Storyteller went ahead with. */
-export function warningText(warning: EngineWarning): string | undefined {
+export function warningText(
+	warning: EngineWarning,
+	characters?: CharacterLookup
+): string | undefined {
 	switch (warning.code) {
 		// "reminder-fixed" and "reminder-not-from-rule-character" were asked about before the
 		// move (ReminderMoveConfirm); ticking Dawn
@@ -202,8 +205,13 @@ export function warningText(warning: EngineWarning): string | undefined {
 		// https://wiki.bloodontheclocktower.com/Bishop and /Golem (`nominating`).
 		case 'storyteller-nominates':
 			return 'Only the Storyteller may nominate now.';
-		case 'nominated-this-game':
-			return 'That player may not nominate again this game.';
+		case 'nominated-this-game': {
+			// Named, as the toast can't draw a badge (Trevor, 2026-11-02: "that player {Golem}").
+			const name = warning.characters?.[0] && characters?.get(warning.characters[0])?.name;
+			return name
+				? `That player (${name}) may not nominate again this game.`
+				: 'That player may not nominate again this game.';
+		}
 		case 'dead-nominator':
 			return 'Dead players may not nominate.';
 		case 'not-in-play':

@@ -33,7 +33,7 @@ export class LiveDay implements DayPort {
 			return false;
 		}
 		for (const warning of result.warnings) {
-			const text = warningText(warning);
+			const text = warningText(warning, this.open.characters);
 			if (text) toast(t('day.toastNote'), text);
 		}
 		return true;
