@@ -1702,6 +1702,8 @@ test('Hold to see character, a Bag draw setting, shows the token only while held
 	await selectionFor(page, 5);
 	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
 	await page.getByRole('button', { name: 'Build bag' }).tap();
+	// Character selection has its own Bag draw button: wait for the draw before opening it.
+	await expect(page).toHaveURL(/\/draw$/);
 	await page.getByRole('button', { name: 'Bag draw' }).tap();
 	await page.getByTestId('bag-settings').getByText('Hold to see character', { exact: true }).tap();
 	await page.keyboard.press('Escape');
@@ -1753,6 +1755,8 @@ test("Slot machine reveal, a Bag draw setting, spins the token before it stops o
 	await selectionFor(page, 5);
 	await select(page, 'Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp');
 	await page.getByRole('button', { name: 'Build bag' }).tap();
+	// Character selection has its own Bag draw button: wait for the draw before opening it.
+	await expect(page).toHaveURL(/\/draw$/);
 	await page.getByRole('button', { name: 'Bag draw' }).tap();
 	const setting = page
 		.getByTestId('bag-settings')

@@ -316,12 +316,11 @@ test('a Traveller’s phone holds to see only "You are Evil"', async ({
 	await phone.getByTestId('your-character').tap();
 	const card = phone.getByRole('dialog', { name: 'Your character' });
 	const hold = card.getByTestId('role-hold');
-	// Kept loaded under the cover so it shows at once, but unseen until held.
-	await expect(card.getByText('You are Evil')).toBeHidden();
+	await expect(card).not.toContainText('You are Evil');
 	await hold.dispatchEvent('pointerdown', { pointerId: 1, isPrimary: true });
 	await expect(hold).toHaveText('You are Evil');
 	await expect(card.getByTestId('role-name')).toHaveText('');
 	await hold.dispatchEvent('pointerup', { pointerId: 1, isPrimary: true });
-	await expect(card.getByText('You are Evil')).toBeHidden();
+	await expect(card).not.toContainText('You are Evil');
 	await phoneContext.close();
 });

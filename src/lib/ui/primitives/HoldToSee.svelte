@@ -88,12 +88,15 @@
 	onkeyup={(e) => e.key === ' ' && hold(false)}
 	onblur={() => hold(false)}
 >
-	<!-- The secret stays mounted under the face, unseen and out of the accessibility tree, so its
-	     images are already loaded and drawn the moment it is held (a newly made image could be
-	     fetched again and show a frame late). -->
-	<span class="secret" data-held={held ? '' : undefined} aria-hidden={!held}
-		>{@render children()}</span
-	>{#if !held}<span class="hidden-face">{label}</span>{/if}
+	<!-- With images to show, the secret stays mounted under the face, unseen and out of the
+	     accessibility tree, so they are already loaded and drawn the moment it is held (a newly
+	     made image could be fetched again and show a frame late). Text alone mounts only when
+	     held. -->
+	{#if held || preload.some(Boolean)}<span
+			class="secret"
+			data-held={held ? '' : undefined}
+			aria-hidden={!held}>{@render children()}</span
+		>{/if}{#if !held}<span class="hidden-face">{label}</span>{/if}
 </button>
 
 <style>
