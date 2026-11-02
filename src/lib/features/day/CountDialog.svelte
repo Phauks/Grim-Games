@@ -5,11 +5,16 @@
 		counts,
 		exileThreshold,
 		seatsBehind,
+		votesSecret,
 		votesWithoutToken,
-		type DayCount
+		voteNotes,
+		type DayCount,
+		type VoteHint
 	} from '#lib/core/rules/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import Sentence from '#lib/features/characters/Sentence.svelte';
+	import { slot } from '#lib/features/characters/slots.ts';
 	import { seatName } from '#lib/features/game/seat-label.ts';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -39,6 +44,25 @@
 	const blockLine = $derived(
 		block.mostVotes ? t('day.count.mostVotes') : t('day.blockLine', { alive: block.alive })
 	);
+	/** Seats whose vote is unusual today; the Storyteller counts the votes (M9e). */
+	const notes = $derived(count === 'votes' ? voteNotes(game, characters) : []);
+	const secret = $derived(count === 'votes' && votesSecret(game, characters));
+	const noteLines = (hint: VoteHint): string[] => {
+		if (hint.mayNotVote) return [t('day.voteNotes.mayNotVote')];
+		const players = (seats: string[]) =>
+			seats.length ? seats.map((s) => slot(s)).join(', ') : t('common.none');
+		return [
+			hint.worth !== 1 ? t('day.voteNotes.worth', { count: hint.worth }) : undefined,
+			hint.onlyWith
+				? t('day.voteNotes.onlyWith', { players: players(hint.onlyWith.seats) })
+				: undefined,
+			hint.mustVote ? t('day.voteNotes.mustVote') : undefined,
+			hint.needsToken
+				? t('day.voteNotes.needsToken', { count: hint.needsToken.tokens })
+				: undefined,
+			hint.ghostVote === 'free' ? t('day.voteNotes.free') : undefined
+		].filter((line): line is string => line !== undefined);
+	};
 	const seats = $derived(count && count !== 'votes' ? seatsBehind(game, count) : []);
 	const total = $derived(
 		count && count !== 'votes'
@@ -60,6 +84,8 @@
 	);
 </script>
 
+{#snippet seatBadge(seatId: string)}<PlayerBadge name={seatName(game, seatId)} />{/snippet}
+
 <Dialog bind:open {title}>
 	{#if count === 'votes'}
 		<ul class="votes" data-testid="count-votes">
@@ -78,7 +104,38 @@
 					><span>{t('day.exileLine', { total: game.seating.length })}</span>
 				</li>
 			{/if}
+			{#if secret}<li data-testid="votes-secret">{t('day.voteNotes.secret')}</li>{/if}
 		</ul>
+		{#if notes.length}
+			<table class="count" data-testid="vote-notes">
+				<thead>
+					<tr>
+						<th scope="col">{t('day.count.player')}</th>
+						<th scope="col">{t('day.count.character')}</th>
+						<th scope="col">{t('day.voteNotes.vote')}</th>
+					</tr>
+				</thead>
+				<tbody>
+					{#each notes as hint (hint.seatId)}
+						{@const seat = game.seats[hint.seatId]}
+						<tr data-seat={hint.seatId}>
+							<td><PlayerBadge name={seatName(game, hint.seatId)} /></td>
+							<td
+								>{#if seat.characterId}<CharacterBadge
+										characterId={seat.characterId}
+										alignment={alignmentOf(game, hint.seatId)}
+									/>{:else}{t('common.none')}{/if}</td
+							>
+							<td
+								>{#each noteLines(hint) as line (line)}<span class="note"
+										><Sentence text={line} fill={seatBadge} /></span
+									>{/each}</td
+							>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		{/if}
 	{:else if count}
 		<table class="count" data-testid="count-table">
 			<thead>
@@ -121,7 +178,7 @@
 	.votes {
 		display: grid;
 		gap: var(--space-2);
-		margin: 0;
+		margin: 0 0 var(--space-3);
 		padding: 0;
 		list-style: none;
 	}
@@ -136,6 +193,9 @@
 		flex-shrink: 0;
 		container-type: inline-size;
 		inline-size: calc(var(--tap-target) * 1.6);
+	}
+	.note {
+		display: block;
 	}
 	.count {
 		width: 100%;

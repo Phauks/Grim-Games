@@ -201,3 +201,19 @@ export function voteHints(game: Game, characters: CharacterLookup): VoteHint[] {
 			return hint;
 		});
 }
+
+/**
+ * The seats whose vote is unusual today, for the Storyteller to count by (M9e; Trevor,
+ * 2026-11-01: votes are run outside the app, so nothing is recorded).
+ */
+export function voteNotes(game: Game, characters: CharacterLookup): VoteHint[] {
+	return voteHints(game, characters).filter(
+		(hint) =>
+			hint.worth !== 1 ||
+			hint.mayNotVote ||
+			hint.onlyWith ||
+			hint.mustVote ||
+			hint.needsToken ||
+			hint.ghostVote === 'free'
+	);
+}
