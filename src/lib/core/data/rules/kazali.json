@@ -60,5 +60,10 @@
 		"alignment": "evil",
 		"firstNight": true,
 		"upTo": "minions"
+	},
+	"infoTokenCharacters": {
+		"you-are": {
+			"characters": ["changed"]
+		}
 	}
 }

@@ -1216,11 +1216,11 @@ test("the Demon's step says when the Princess stops its kill tonight", async ({ 
 	await expect(alerts).not.toContainText(/Soldier/);
 });
 
-test('a filled-in info token with room left opens its picker with the filled ones picked', async ({
+test('the Cerenovus shows "This character selected you", then "You are mad as" the character', async ({
 	page
 }) => {
 	// https://wiki.bloodontheclocktower.com/Cerenovus : the target learns the Cerenovus chose
-	// them and which character to be mad about (Trevor, 2026-10-24: its own token is filled in).
+	// them and which character to be mad about (Trevor, 2026-11-01: the two cards together).
 	await startGame(page, 'Sects & Violets');
 	const sheet = await openSeat(page, 1);
 	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
@@ -1232,19 +1232,82 @@ test('a filled-in info token with room left opens its picker with the filled one
 
 	await (await walkTo(page, 'Cerenovus')).locator('button.step .count').tap();
 	const step = page.getByRole('dialog', { name: 'Cerenovus' });
-	await step
-		.getByTestId('step-info-tokens')
-		.getByRole('button', { name: 'This character selected you (Cerenovus)', exact: true })
-		.tap();
-	// The Cerenovus is already picked; the Storyteller adds the madness character.
+	const tiles = step.getByTestId('step-info-tokens');
+	await expect(
+		tiles.getByRole('button', { name: 'This character selected you (Cerenovus)', exact: true })
+	).toBeVisible();
+	await tiles.getByRole('button', { name: 'You are mad as', exact: true }).tap();
+	// The Storyteller picks the madness character; both cards then show together.
 	const confirm = page.getByRole('button', { name: 'Confirm' });
-	await expect(confirm).toBeEnabled();
+	await expect(confirm).toBeDisabled();
 	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Clockmaker');
 	await page.getByRole('button', { name: /^Clockmaker/ }).tap();
 	await confirm.tap();
+	const shown = page.locator('[data-testid="show-to-player"][open]');
+	await expect(shown).toHaveAccessibleName('This character selected you: Cerenovus');
+	await expect(shown).toContainText('You are mad as');
+	await expect(shown.getByRole('img', { name: /Clockmaker token/ })).toBeVisible();
+});
+
+// Trevor (2026-11-01): "You are" is filled with the character the player now is. The Snake
+// Charmer who chose the Demon learns they are the Demon; the old Demon learns they are the
+// Snake Charmer (https://wiki.bloodontheclocktower.com/Snake_Charmer).
+test('the Snake Charmer step fills "You are" with the Demon, then with the Snake Charmer', async ({
+	page
+}) => {
+	await startGame(page, 'Sects & Violets');
+	for (const [seat, name] of [
+		[1, 'Snake Charmer'],
+		[2, 'Vigormortis']
+	] as const) {
+		const sheet = await openSeat(page, seat);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${seat}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	await (await walkTo(page, 'Snake Charmer')).locator('button.step .count').tap();
+	const step = page.getByRole('dialog', { name: 'Snake Charmer' });
+	const tiles = step.getByTestId('step-info-tokens');
+	await expect(tiles.getByRole('button')).toHaveCount(2);
 	await expect(
-		page.getByRole('dialog', { name: 'This character selected you: Cerenovus: Clockmaker' })
+		tiles.getByRole('button', { name: 'You are (Vigormortis)', exact: true })
 	).toBeVisible();
+	await tiles.getByRole('button', { name: 'You are (Snake Charmer)', exact: true }).tap();
+	const shown = page.locator('[data-testid="show-to-player"][open]');
+	await expect(shown).toHaveAccessibleName('You are: Snake Charmer');
+	await expect(shown.getByRole('img', { name: /Snake Charmer token/ })).toBeVisible();
+});
+
+// Trevor (2026-11-01): "App does not show the token". The twins learn each other: the Evil
+// Twin sees the good twin's character, and the good twin the Evil Twin
+// (https://wiki.bloodontheclocktower.com/Evil_Twin).
+test('the Evil Twin step shows each twin the other', async ({ page }) => {
+	await startGame(page, 'Sects & Violets');
+	for (const [seat, name] of [
+		[1, 'Evil Twin'],
+		[2, 'Clockmaker']
+	] as const) {
+		const sheet = await openSeat(page, seat);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${seat}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	await putReminder(page, 'Twin', 2);
+	const step = await openStep(page, 'Evil Twin');
+	const rows = step.getByTestId('learned-roles').getByRole('listitem');
+	await expect(rows.first()).toContainText('Clockmaker');
+	await expect(rows.first()).toContainText('Seat 2');
+	const shownTo = step.getByTestId('night-shown-to');
+	await expect(shownTo).toContainText(/Seat 2\s*is shown\s*Evil Twin/);
+	await shownTo.getByRole('button', { name: 'Show to player' }).tap();
+	const shown = page.locator('[data-testid="show-to-player"][open]');
+	await expect(shown.getByRole('img', { name: /Evil Twin token/ })).toBeVisible();
 });
 
 test("the Dreamer's card shows the chosen player's character and one of the other alignment", async ({

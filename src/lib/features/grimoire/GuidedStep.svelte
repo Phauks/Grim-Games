@@ -24,7 +24,7 @@
 	import StepInfoTokens from '#lib/features/info-tokens/StepInfoTokens.svelte';
 	import { withChosen, type FilledInfoToken } from '#lib/core/rules/info-token-characters.ts';
 	import { trueCharacter } from '#lib/core/model/index.ts';
-	import type { InfoToken } from '#lib/core/data/info-tokens.ts';
+	import { infoTokensNamedIn, type InfoToken } from '#lib/core/data/info-tokens.ts';
 	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
 	import type { ShownInfoCard } from '#lib/features/show/shown.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -196,6 +196,15 @@
 				reminder: { characterId: id, label: picked.label }
 			});
 	}
+
+	/** The characters this step changed players into tonight (ChangeCharacterStep), the latest last. */
+	let stepChanges = $state<readonly CharacterId[]>([]);
+	$effect.pre(() => {
+		void step?.id;
+		stepChanges = [];
+	});
+	/** "You are", when the step's text names it. */
+	const youAreCard = $derived(infoTokensNamedIn(step?.reminder).find((t) => t.id === 'you-are'));
 
 	let showOpen = $state(false);
 	/** Shown: the step's character, or a suggested answer's (the Undertaker's). */
@@ -376,9 +385,16 @@
 				<ChangeCharacterStep
 					{grimoire}
 					{step}
+					onChanges={(ids) => (stepChanges = ids)}
 					onShow={(id) => {
-						shownCard = undefined;
-						shownId = id;
+						// With "You are" when the step's text names it: the player learns their new
+						// character (the Pit-Hag's "Show the *YOU ARE* token & their new character token").
+						const character = characters.get(id);
+						shownId = youAreCard && character ? undefined : id;
+						shownCard =
+							youAreCard && character
+								? { title: youAreCard.text, characters: [{ character }] }
+								: undefined;
 						showOpen = true;
 					}}
 				/>
@@ -446,7 +462,9 @@
 					text={step.reminder}
 					character={step.character}
 					{characters}
-					prepValues={game.prepValues}
+					{game}
+					changed={stepChanges}
+					own={step.infoTokenCharacters}
 					onchoose={chooseCard}
 				/>
 			{/if}

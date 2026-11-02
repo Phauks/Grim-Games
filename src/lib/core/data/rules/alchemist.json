@@ -45,5 +45,11 @@
 		"token": "Is The Alchemist",
 		"good": ["minion"],
 		"evil": ["minion"]
+	},
+	"infoTokenCharacters": {
+		"you-are": {
+			"characters": ["marked"],
+			"token": "Is The Alchemist"
+		}
 	}
 }

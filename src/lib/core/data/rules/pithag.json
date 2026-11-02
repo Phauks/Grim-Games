@@ -19,5 +19,10 @@
 			"types": ["townsfolk", "outsider", "minion", "demon"],
 			"notInPlay": true
 		}
+	},
+	"infoTokenCharacters": {
+		"you-are": {
+			"characters": ["changed"]
+		}
 	}
 }
