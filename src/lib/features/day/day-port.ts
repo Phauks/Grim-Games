@@ -84,9 +84,10 @@ export function describeEntry(
 			};
 			if (entry.passed !== undefined)
 				return t(entry.passed ? 'day.logAbilityVotePassed' : 'day.logAbilityVoteFailed', names);
-			if (entry.on === undefined) return t('day.logAbility', names);
 			// Official characters' rules only: a custom one's use reads as "on" its player.
 			const who = dayUseWho(entry.characterId) ?? 'chosen';
+			if (entry.on === undefined)
+				return t(who === 'ally' ? 'day.logAbilityAnyone' : 'day.logAbility', names);
 			return t(`day.logAbilityOn.${who}`, { ...names, on: seatName(entry.on) });
 		}
 		case 'note': {

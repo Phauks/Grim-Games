@@ -19,11 +19,13 @@ import type { Night } from '../night-order.ts';
 import { causesOf } from '../night-deaths.ts';
 import type { ValidReason } from './picker.ts';
 import {
+	mayBeFalseCause,
 	type AbnormalUse,
 	type AnswerValue,
 	type NightAnswer,
 	type Reliability,
 	answer,
+	anyInfo,
 	byWorld,
 	fact
 } from './reliability.ts';
@@ -408,6 +410,57 @@ function evilDead(
 	);
 }
 
+/** The players carrying one of `characterId`'s reminders, in seating order. */
+export function markedSeats(game: Game, characterId: CharacterId): SeatId[] {
+	return game.seating.filter((s) =>
+		game.seats[s].reminders.some((r) => r.characterId === characterId)
+	);
+}
+
+/**
+ * Duchess: how many of the players carrying this character's reminders are evil, the waking
+ * player included (each visitor counts themself, https://wiki.bloodontheclocktower.com/Duchess).
+ * The player carrying `falseToken` ("False Info") must be told any other number: the answer is
+ * marked `mustBeFalse` with this character as `falseBy`.
+ */
+function evilMarked(
+	game: Game,
+	seatId: SeatId,
+	characterId: CharacterId,
+	characters: CharacterLookup,
+	rule: Answers
+): NightAnswer {
+	const marked = markedSeats(game, characterId);
+	const evilIn = (w: RegistrationWorld) => marked.filter((s) => w.alignment(s) === 'evil');
+	const w = byWorld(game, seatId, characters, (world) => ({
+		kind: 'number',
+		value: evilIn(world).length
+	}));
+	const [base] = w.worlds;
+	const evil = evilIn(base);
+	const out = answer(
+		game,
+		seatId,
+		characterId,
+		characters,
+		{ kind: 'number', value: evil.length },
+		evil,
+		{
+			possible: w.possible,
+			relevant: w.relevant,
+			facts: marked.map((s) => fact(game, s, characters, base)),
+			alternatives: w.alternatives
+		}
+	);
+	const falseInfo =
+		rule.falseToken !== undefined &&
+		game.seats[seatId]?.reminders.some(
+			(r) => r.characterId === characterId && r.label === rule.falseToken
+		);
+	if (!falseInfo) return out;
+	return { ...out, mustBeFalse: true, falseBy: characterId };
+}
+
 /**
  * Every ability that worked abnormally since dawn because of another character, from the
  * night info the Storyteller recorded (its `abnormal` causes), one per player and
@@ -493,7 +546,8 @@ const QUESTIONS: Readonly<Record<Answers['question'], AnswerFn>> = {
 	'abnormal-abilities': abnormalAbilities,
 	'statement-true': statementTrue,
 	'outsiders-in-play': (game, seatId, characterId, characters) =>
-		outsidersInPlay(game, seatId, characterId, characters)
+		outsidersInPlay(game, seatId, characterId, characters),
+	'evil-marked': evilMarked
 };
 
 /**
@@ -522,6 +576,7 @@ export function nightAnswer(
  */
 export function answerCauses(a: Reliability & { because?: SeatId[] }): AbnormalCause[] {
 	if (a.impairments.length > 0) return causesOf(a.impairments);
+	if (a.mayBeFalse) return [mayBeFalseCause(a.mayBeFalse)];
 	if (a.mustBeFalse && a.falseBy) {
 		return [
 			{ reason: 'vortox', characterId: a.falseBy, ...(a.vortox ? { seatId: a.vortox } : {}) }
@@ -558,7 +613,7 @@ export function answerOptions(
 	characters: CharacterLookup
 ): AnswerOption[] {
 	if (a.kind === 'none') return [];
-	const loose: ValidReason | undefined = a.unreliable
+	const loose: ValidReason | undefined = anyInfo(a)
 		? 'unreliable'
 		: a.mustBeFalse
 			? 'vortox'
@@ -632,6 +687,8 @@ function highestAnswer(game: Game, characterId: CharacterId, characters: Charact
 			return game.seating.filter((s) => registersAsDead(game, s)).length;
 		case 'correct-guesses':
 			return 5;
+		case 'evil-marked':
+			return markedSeats(game, characterId).length;
 		default:
 			return game.seating.length;
 	}
