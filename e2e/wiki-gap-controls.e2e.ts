@@ -183,6 +183,13 @@ test('the Angel’s Something Bad reminder says what happens', async ({ page }) 
 		'Kills no one next night'
 	);
 	await expect(about.getByRole('textbox', { name: 'Note' })).toHaveValue('Seat 3 made it happen');
+
+	// Something not on the list: the Storyteller's own words in the note.
+	await about.getByRole('combobox', { name: 'What happens' }).tap();
+	await page.getByRole('option', { name: 'Something else' }).tap();
+	await expect(about.getByRole('combobox', { name: 'What happens' })).toContainText(
+		'Something else'
+	);
 });
 
 // https://wiki.bloodontheclocktower.com/Ojo: the Ojo chooses a character; its player dies.
