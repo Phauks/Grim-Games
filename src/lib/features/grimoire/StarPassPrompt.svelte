@@ -50,5 +50,6 @@
 		characterId={shown.characterId}
 		heirs={shown.heirs}
 		preferred={shown.preferred}
+		preferredBy={shown.preferredBy}
 	/>
 {/if}

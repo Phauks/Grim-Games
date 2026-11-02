@@ -39,6 +39,7 @@
 		setupComplete,
 		diedSinceNewDay,
 		stepNightNumbers,
+		storytellerNominators,
 		todaysNominations,
 		mayNominate,
 		characterNominationPrompts,
@@ -226,7 +227,7 @@
 		if (!gameSettings.of(game.gameId).trackNominations) return undefined;
 		const today = todaysNominations(game);
 		return {
-			made: new Set(today.map((n) => n.nominator)),
+			made: new Set([...today.map((n) => n.nominator), ...storytellerNominators(game)]),
 			received: new Set(today.map((n) => n.nominee))
 		};
 	});
