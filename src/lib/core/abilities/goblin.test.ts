@@ -8,10 +8,15 @@
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
  * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
- * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
+ * happened, then what the rules say. Quote the example word for word in a `// Wiki: "..."`
+ * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
+ * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
+import { endCharacters } from '#lib/core/rules/end-reason.ts';
+import { gameEnds } from '#lib/core/rules/game-end.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
 describe('Goblin', () => {
@@ -44,8 +49,43 @@ describe('Goblin', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Goblin#Examples)', () => {
-		it.todo("Example 1: Goblin's public claim leads to evil victory");
-		it.todo("Example 2: Artist's false Goblin claim changes nothing");
-		it.todo("Example 3: Yesterday's Goblin claim doesn't count today");
+		const cast = ['goblin', 'artist', 'imp', 'chef', 'monk', 'empath'];
+
+		it("Example 1: Goblin's public claim leads to evil victory", () => {
+			// Wiki: "Abdallah is the Goblin. Alex nominates Abdallah, and Abdallah claims to be the
+			// Goblin. Votes are counted, and Abdallah is about to die. Other nominations occur later
+			// today, but Abdallah has the most votes and is executed. Evil wins."
+			const s = scenario(cast)
+				.newDay()
+				.nominate('chef', 'goblin')
+				.reminder('goblin', 'goblin', 'Claimed')
+				.nominate('monk', 'empath')
+				.execute('goblin');
+			expect(endCharacters(s.game, s.characters)).toContain('goblin');
+			expect(gameEnds(s.game, s.characters)).toMatchObject([{ winner: 'evil' }]);
+		});
+		it("Example 2: Artist's false Goblin claim changes nothing", () => {
+			// Wiki: "Lewis is the Artist, and claims to be the Goblin when nominated. He is executed, and
+			// the game continues."
+			const s = scenario(cast)
+				.newDay()
+				.nominate('chef', 'artist')
+				.reminder('artist', 'goblin', 'Claimed')
+				.execute('artist');
+			expect(gameEnds(s.game, s.characters)).toEqual([]);
+		});
+		it("Example 3: Yesterday's Goblin claim doesn't count today", () => {
+			// Wiki: "Doug is the Goblin. He claimed to be the Goblin yesterday and the day before, but not
+			// today. He is executed. The game continues."
+			const s = scenario(cast)
+				.newDay()
+				.nominate('chef', 'goblin')
+				.newDay()
+				.nominate('monk', 'goblin')
+				.newDay()
+				.nominate('empath', 'goblin')
+				.execute('goblin');
+			expect(gameEnds(s.game, s.characters)).toEqual([]);
+		});
 	});
 });

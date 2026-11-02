@@ -165,6 +165,9 @@ describe('parseCharacterRules', () => {
 		expect(parse({ gameEnd: { ends: [{ kind: 'survives-day', day: 5 }] } }).issues).toEqual([
 			'rules.gameEnd.ends[0].winner: missing'
 		]);
+		expect(parse({ gameEnd: { ends: [{ kind: 'used-on-loses', on: 'wizard' }] } }).issues).toEqual([
+			'rules.gameEnd.ends[0].on: unknown value "wizard"'
+		]);
 		expect(parse({ gameEnd: { holds: [{ kind: 'marked-alive', token: 'Twin' }] } }).issues).toEqual(
 			['rules.gameEnd.holds[0].token: not one of this character’s reminders']
 		);
