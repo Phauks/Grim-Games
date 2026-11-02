@@ -31,6 +31,7 @@ import {
 	isObject,
 	readBoolean,
 	readEnum,
+	readNumber,
 	readStringArray,
 	type Issues
 } from './validate.ts';
@@ -102,7 +103,12 @@ export function readBecomes(
  *   https://wiki.bloodontheclocktower.com/Kazali);
  * - `upTo: 'minions'`: one player after another until there are as many Minions as the
  *   player count usually has (the Kazali's Minions); a player already of one of `types` is not
- *   offered.
+ *   offered;
+ * - `extraMinions`: with `upTo`, that many Minions more than usual (the Lord of Typhon's
+ *   "+1 Minion", https://wiki.bloodontheclocktower.com/Lord_of_Typhon);
+ * - `outward`: only the nearest player on each side of its own player who is not yet of
+ *   `types`, so the new Minions spread out from it in a line (the Lord of Typhon's
+ *   neighbours).
  */
 export interface ChangesCharacter {
 	types: readonly SeatedType[];
@@ -117,6 +123,8 @@ export interface ChangesCharacter {
 	anyType?: true;
 	firstNight?: true;
 	upTo?: 'minions';
+	extraMinions?: number;
+	outward?: true;
 }
 
 /** Reads a `changesCharacter` block; its tokens must be among the character's `reminders`. */
@@ -144,7 +152,9 @@ export function readChangesCharacter(
 			'sameType',
 			'anyType',
 			'firstNight',
-			'upTo'
+			'upTo',
+			'extraMinions',
+			'outward'
 		],
 		path,
 		issues
@@ -167,6 +177,10 @@ export function readChangesCharacter(
 	if (anyType && !sameType) issues.add(`${path}.anyType`, 'only with sameType');
 	const firstNight = readBoolean(raw, 'firstNight', path, issues);
 	const upTo = readEnum(raw, 'upTo', ['minions'] as const, path, issues, false);
+	const extraMinions = readNumber(raw, 'extraMinions', path, issues);
+	if (extraMinions !== undefined && (!upTo || !Number.isInteger(extraMinions) || extraMinions < 1))
+		issues.add(`${path}.extraMinions`, 'expected a whole number of at least 1, with upTo');
+	const outward = readBoolean(raw, 'outward', path, issues);
 	if (types.length === 0) return undefined;
 	return {
 		types,
@@ -180,7 +194,9 @@ export function readChangesCharacter(
 		...(sameType ? { sameType: true as const } : {}),
 		...(anyType && sameType ? { anyType: true as const } : {}),
 		...(firstNight ? { firstNight: true as const } : {}),
-		...(upTo ? { upTo } : {})
+		...(upTo ? { upTo } : {}),
+		...(upTo && extraMinions !== undefined && extraMinions >= 1 ? { extraMinions } : {}),
+		...(outward ? { outward: true as const } : {})
 	};
 }
 

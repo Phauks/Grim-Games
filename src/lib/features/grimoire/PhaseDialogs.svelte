@@ -1,6 +1,6 @@
 <!--
 	The questions the board asks before the game moves on (phase-flow.svelte.ts): Start game
-	with setup reminders left, End night, and the day's Execution.
+	with setup reminders or a starting alignment left, End night, and the day's Execution.
 -->
 <script lang="ts">
 	import type { CharacterLookup, Game } from '#lib/core/model/index.ts';
@@ -10,6 +10,7 @@
 	import type { PhaseFlow } from '#lib/features/grimoire/phase-flow.svelte.ts';
 	import AidMenu from '#lib/features/settings/AidMenu.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
+	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import { seatName } from '#lib/features/game/seat-label.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
@@ -53,6 +54,21 @@
 			{/each}
 		</ReminderTokenRow>
 	{/if}
+	<!-- A setup change not yet made (M22): the Bounty Hunter with no evil Townsfolk. The first
+	     night's Starting alignment step offers the choice too. -->
+	{#if flow.alignmentsLeft.length > 0}
+		<p class="ask-note">Starting alignment not yet chosen:</p>
+		<ul class="alignments-left" data-testid="alignments-left">
+			{#each flow.alignmentsLeft as task (`${task.characterId}:${task.type}:${task.alignment}`)}
+				<li>
+					<CharacterBadge
+						characterId={task.characterId}
+						character={characters.get(task.characterId)}
+					/>: {task.summary}
+				</li>
+			{/each}
+		</ul>
+	{/if}
 </ConfirmDialog>
 
 <ConfirmDialog
@@ -77,6 +93,11 @@
 <style>
 	.ask-note {
 		margin: 0;
+	}
+	.alignments-left {
+		margin: 0;
+		padding: 0;
+		list-style: none;
 	}
 	.no-character {
 		display: flex;
