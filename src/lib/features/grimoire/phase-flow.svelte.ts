@@ -10,6 +10,7 @@ import type { CharacterLookup, Game, SeatId } from '#lib/core/model/index.ts';
 import {
 	pendingSetupAlignments,
 	type DayMark,
+	type ExecutionOutcome,
 	type SetupAlignmentTask
 } from '#lib/core/rules/index.ts';
 import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
@@ -52,6 +53,8 @@ export class PhaseFlow {
 	setupLeft = $state<TrayItem[]>([]);
 	/** Setup alignment changes not yet made (the Bounty Hunter's evil Townsfolk, M22). */
 	alignmentsLeft = $state<SetupAlignmentTask[]>([]);
+	/** Start game asked with seats still without a character (Trevor, 2026-11-01): those seats. */
+	noCharacter = $state<SeatId[]>([]);
 	/** A seat's status chose Executed: during the day, the day's Execution asks with them chosen. */
 	executeChosen = $state<SeatId>();
 	/** A mad player broke madness: the character whose madness executes them (L84). */
@@ -112,7 +115,8 @@ export class PhaseFlow {
 		seatId: SeatId | undefined,
 		save: CharacterId | 'dies' | undefined,
 		marks: Partial<Record<DayMark, boolean>>,
-		keepGoing: boolean
+		keepGoing: boolean,
+		outcome?: ExecutionOutcome
 	): void {
 		const { grimoire, game } = this.#context();
 		for (const [mark, value] of Object.entries(marks) as [DayMark, boolean][])
@@ -124,7 +128,8 @@ export class PhaseFlow {
 				type: 'Execute',
 				seatId,
 				...(save === 'dies' ? { dies: true } : save ? { savedBy: save } : {}),
-				...(cause ? { cause } : {})
+				...(cause ? { cause } : {}),
+				...(outcome ? { outcome } : {})
 			});
 		// Keep the day going (Trevor, 2026-10-26): a player may still nominate after it. An
 		// explosion (the Boomdandy's) keeps it too, for who lives and the pointing.
@@ -132,17 +137,21 @@ export class PhaseFlow {
 	}
 
 	/**
-	 * Start game with setup reminders still in the bank's Setup stretch asks first (Trevor,
-	 * 2026-10-20), listing them; Confirm starts anyway (warn, never lock). So does a setup
-	 * alignment change not yet made, such as no evil Townsfolk with the Bounty Hunter (M22).
+	 * Start game with setup reminders still in the bank's Setup stretch (Trevor, 2026-10-20),
+	 * or with seats that have no character (Trevor, 2026-11-01: "i was able to start a game
+	 * with 0 characters"), asks first, listing them; Confirm starts anyway (warn, never lock).
+	 * So does a setup alignment change not yet made, such as no evil Townsfolk with the Bounty
+	 * Hunter (M22).
 	 */
 	startGame(): void {
 		const { game, characters } = this.#context();
 		const left = pendingSetup(game, characters);
 		const alignments = pendingSetupAlignments(game, characters);
-		if (left.length > 0 || alignments.length > 0) {
+		const empty = game.seating.filter((id) => game.seats[id]?.characterId === undefined);
+		if (left.length > 0 || empty.length > 0 || alignments.length > 0) {
 			this.setupLeft = left;
 			this.alignmentsLeft = alignments;
+			this.noCharacter = empty;
 			this.startAskOpen = true;
 			return;
 		}

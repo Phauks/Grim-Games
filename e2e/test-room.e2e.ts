@@ -36,11 +36,10 @@ test('fake players join a room, each on its own device, and can be shown', async
 	await expect(rows.nth(0)).toContainText('iPhone SE');
 	await expect(rows.nth(1)).toContainText('iPhone 13 mini');
 
-	// The room is storytold on another device, so its code is typed in.
+	// The room is storytold on another device, so its code is typed in; the 6th digit joins.
 	const storyteller = await (await browser.newContext({ ...testInfo.project.use })).newPage();
 	const code = await openRoom(storyteller);
 	await page.getByRole('textbox', { name: 'Room code' }).pressSequentially(code);
-	await page.getByRole('button', { name: 'Join', exact: true }).tap();
 	await expect(page.getByTestId('test-room-status')).toHaveText(
 		/^Room \d{3} \d{3} · 2 of 2 players connected$/
 	);

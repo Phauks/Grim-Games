@@ -146,6 +146,7 @@ import ph_lock_simple_bold from '~icons/ph/lock-simple-bold';
 import ph_magnifying_glass_bold from '~icons/ph/magnifying-glass-bold';
 import ph_mask_sad_bold from '~icons/ph/mask-sad-bold';
 import ph_megaphone_bold from '~icons/ph/megaphone-bold';
+import ph_megaphone_simple_bold from '~icons/ph/megaphone-simple-bold';
 import ph_minus_bold from '~icons/ph/minus-bold';
 import ph_minus_circle_bold from '~icons/ph/minus-circle-bold';
 import ph_monitor_bold from '~icons/ph/monitor-bold';
@@ -178,6 +179,7 @@ import ph_question_bold from '~icons/ph/question-bold';
 import ph_scales_bold from '~icons/ph/scales-bold';
 import ph_scan_bold from '~icons/ph/scan-bold';
 import ph_scroll_bold from '~icons/ph/scroll-bold';
+import ph_seal_check_bold from '~icons/ph/seal-check-bold';
 import ph_selection_bold from '~icons/ph/selection-bold';
 import ph_shapes_bold from '~icons/ph/shapes-bold';
 import ph_share_network_bold from '~icons/ph/share-network-bold';
@@ -202,6 +204,7 @@ import ph_speaker_high_bold from '~icons/ph/speaker-high-bold';
 import ph_spinner_bold from '~icons/ph/spinner-bold';
 import ph_square_bold from '~icons/ph/square-bold';
 import ph_square_split_horizontal_bold from '~icons/ph/square-split-horizontal-bold';
+import ph_stamp_bold from '~icons/ph/stamp-bold';
 import ph_star_bold from '~icons/ph/star-bold';
 import ph_star_half_bold from '~icons/ph/star-half-bold';
 import ph_sun_bold from '~icons/ph/sun-bold';
@@ -385,6 +388,7 @@ const icons: IconMap = {
 	'ph:magnifying-glass-bold': ph_magnifying_glass_bold,
 	'ph:mask-sad-bold': ph_mask_sad_bold,
 	'ph:megaphone-bold': ph_megaphone_bold,
+	'ph:megaphone-simple-bold': ph_megaphone_simple_bold,
 	'ph:minus-bold': ph_minus_bold,
 	'ph:minus-circle-bold': ph_minus_circle_bold,
 	'ph:monitor-bold': ph_monitor_bold,
@@ -417,6 +421,7 @@ const icons: IconMap = {
 	'ph:scales-bold': ph_scales_bold,
 	'ph:scan-bold': ph_scan_bold,
 	'ph:scroll-bold': ph_scroll_bold,
+	'ph:seal-check-bold': ph_seal_check_bold,
 	'ph:selection-bold': ph_selection_bold,
 	'ph:shapes-bold': ph_shapes_bold,
 	'ph:share-network-bold': ph_share_network_bold,
@@ -441,6 +446,7 @@ const icons: IconMap = {
 	'ph:spinner-bold': ph_spinner_bold,
 	'ph:square-bold': ph_square_bold,
 	'ph:square-split-horizontal-bold': ph_square_split_horizontal_bold,
+	'ph:stamp-bold': ph_stamp_bold,
 	'ph:star-bold': ph_star_bold,
 	'ph:star-half-bold': ph_star_half_bold,
 	'ph:sun-bold': ph_sun_bold,

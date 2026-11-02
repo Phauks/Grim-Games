@@ -1,38 +1,11 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+import { clippedBands } from './type-bands.ts';
 import { toBoard } from './new-game.ts';
 
 // A character type's heading is a band that reaches out into the gutter (Collapsible), so a
 // box that clips sideways with no room round it cut the band's ends off. Trevor (2026-11-01),
 // on the board's Script view, sent the Townsfolk band with its ends cut and "still covered".
 // This checks every band on screen is shown whole on each screen that lists characters by type.
-
-/** Bands drawn wider than the boxes around them show, by heading. */
-async function clippedBands(page: Page): Promise<string[]> {
-	await page.waitForFunction(() =>
-		document.getAnimations().every((a) => a.playState !== 'running')
-	);
-	return page.evaluate(() => {
-		const out: string[] = [];
-		for (const band of document.querySelectorAll('[data-type-band]')) {
-			const drawn = band.getBoundingClientRect();
-			if (drawn.width < 2 || drawn.height < 2) continue;
-			let left = drawn.left;
-			let right = drawn.right;
-			for (let box = band.parentElement; box; box = box.parentElement) {
-				const style = getComputedStyle(box);
-				if (style.overflowX === 'visible') continue;
-				const shown = box.getBoundingClientRect();
-				left = Math.max(left, shown.left + parseFloat(style.borderLeftWidth));
-				right = Math.min(right, shown.right - parseFloat(style.borderRightWidth));
-			}
-			if (left > drawn.left + 0.5 || right < drawn.right - 0.5)
-				out.push(
-					`${band.textContent?.trim()}: ${Math.round(drawn.left)} to ${Math.round(drawn.right)}, shown ${Math.round(left)} to ${Math.round(right)}`
-				);
-		}
-		return out;
-	});
-}
 
 test("a character type's band is shown whole wherever characters are listed by type", async ({
 	page
