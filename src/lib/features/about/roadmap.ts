@@ -277,15 +277,9 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	},
 	{
 		title:
-			'Crowded boards: reminders on spokes with a tether, duplicate from the bank, mark where a reminder came from',
+			'Crowded boards: reminders on spokes with a tether, duplicate from the bank, mark where a reminder came from, reminders that stay put marked by a filled word band',
 		area: 'storyteller',
-		parts: ['D2', 'B2', 'B3', 'B5', 'B1', 'B11', 'B12', 'B13']
-	},
-	{
-		title:
-			'Moving backgrounds behind the board: twelve scenes such as Hellfire, Tropical beach and Aurora, with a switch to keep them still',
-		area: 'storyteller',
-		parts: ['L113']
+		parts: ['D2', 'B2', 'B3', 'B5', 'B1', 'B11', 'B12', 'B13', 'B14']
 	},
 	{
 		title: 'Seats that keep their names when players rotate, and random name colours',
@@ -370,11 +364,25 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['M19']
 	},
 	{
+		// Trevor, 2026-11-02: when the Imp kills itself with several Minions alive, the Scarlet
+		// Woman stands out as the new Imp while her ability applies; any Minion can still be chosen.
+		title: 'The Scarlet Woman stands out when choosing the new Demon',
+		area: 'engine',
+		parts: ['M23']
+	},
+	{
 		// Gap 8: the Bigwig's chosen speaker; gap 12: one-offs with no behaviour yet: M12a the
 		// Scapegoat, M12b the Boomdandy, M12c the Courtier's countdown.
 		title: "The Bigwig's speaker, the Scapegoat, the Boomdandy and the Courtier's three nights",
 		area: 'engine',
 		parts: ['M11', 'M12a', 'M12b', 'M12c']
+	},
+	{
+		// Trevor, 2026-11-02: "just let them set what character they are, but not location for now".
+		title:
+			'The Gardener: the Storyteller sets each character on the board, and players with no phone still see theirs',
+		area: 'engine',
+		parts: ['M16']
 	},
 	{
 		// Gap 1, last and separate (Trevor, 2026-10-28). M9a the vote record and vote weights
@@ -393,6 +401,20 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		title: 'Every wiki example tested, for every character',
 		area: 'engine',
 		parts: ['M13a', 'M13b', 'M13']
+	},
+	{
+		// Trevor, 2026-11-01: every "You are" and character token a night step shows is filled in
+		// with the right character (the Snake Charmer's, the Evil Twin's, the Cerenovus's).
+		title: 'Night steps fill in every info token with the right character',
+		area: 'engine',
+		parts: ['M18']
+	},
+	{
+		// Trevor, 2026-11-02: the Snake Charmer's night step does the whole swap with the Demon it
+		// chooses, a Philosopher with its ability swaps too, and the No Dashii's poison follows.
+		title: "The Snake Charmer's swap with the Demon, done in its night step",
+		area: 'engine',
+		parts: ['M20']
 	},
 	{
 		// Trevor, 2026-10-30: on the roadmap, after a spike and research. L99 research, L100 the

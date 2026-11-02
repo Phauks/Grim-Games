@@ -144,6 +144,19 @@ export const FRIEND_ROOM_API = `${FRIENDS_API}/room`;
 /** A room counts as someone's live game for this long after they last connected to it. */
 export const PRESENCE_TTL_MS = 12 * 60 * 60 * 1000;
 
+/**
+ * Game invite notifications on this device (plan F8): `PUT {on: true, address}` turns them on,
+ * `PUT {on: false, endpoint}` off, and `POST {endpoint}` asks whether they are on. Each answers
+ * `InvitePushState`. The push address goes in the body, never the URL.
+ */
+export const FRIEND_PUSH_API = `${FRIENDS_API}/push`;
+
+/** Whether this device gets invite notifications, and when an invite was last pushed to it. */
+export interface InvitePushState {
+	on: boolean;
+	pushedAt?: number;
+}
+
 /** Declines an invite: `POST {id}`. */
 export const FRIEND_INVITE_DISMISS_API = `${FRIENDS_API}/invites/dismiss`;
 

@@ -24,7 +24,7 @@
 	 *
 	 * A choosable row has one hover: ring, text, marks and `end` controls alike (Trevor,
 	 * 2026-10-20). Marks and controls keep fixed places, so choosing never moves the name or
-	 * the ability.
+	 * the ability. A homebrew character (one without an edition) gets a Custom tag after its name.
 	 */
 	interface Props {
 		character: Character;
@@ -66,6 +66,19 @@
 		end?: Snippet;
 		/** Under the ability, inside the row (the day's state sentence). */
 		children?: Snippet;
+		/**
+		 * The ability under the band; off, the row is the name on its band beside the ring
+		 * (Trevor, 2026-11-02: the same piece with the ability turned off). Use Character's
+		 * `name` template.
+		 */
+		showAbility?: boolean;
+		/** Runs its list's width; off, only as wide as it needs (the night order). */
+		fullWidth?: boolean;
+		/**
+		 * The host's own data on the band's line, after the band and outside its colour (a
+		 * night step's count, a ⋯), so the band only ever shows the character.
+		 */
+		aside?: Snippet;
 		onclick?: () => void;
 	}
 
@@ -90,6 +103,9 @@
 		hidden,
 		end,
 		children,
+		showAbility = true,
+		fullWidth = true,
+		aside,
 		onclick
 	}: Props = $props();
 
@@ -124,6 +140,9 @@
 	<span class="band">
 		<!-- eslint-disable-next-line grim/names-as-badges -- the band is the character's badge; its icon is in the ring -->
 		<span class="band-name">{character.name}</span>
+		{#if !character.edition}<span class="custom" data-testid="custom-tag"
+				>{t('characters.custom')}</span
+			>{/if}
 		{#if playerName}<span class="player"><PlayerBadge name={playerName} /></span>{/if}
 		{#if afterName}{@render afterName()}{/if}
 		{#if withNote || note}<span class="note">{note ?? ''}</span>{/if}
@@ -133,9 +152,9 @@
 					>{/if}</span
 			>{/if}
 	</span>
-	<span class="ring-ability">
-		{#if ability}{@render ability()}{:else}{character.ability}{/if}
-	</span>
+	{#if showAbility}<span class="ring-ability">
+			{#if ability}{@render ability()}{:else}{character.ability}{/if}
+		</span>{/if}
 	{#if children}<span class="ring-below">{@render children()}</span>{/if}
 {/snippet}
 
@@ -148,6 +167,9 @@
 	data-dashed={dashed ? '' : undefined}
 	data-disabled={disabled ? '' : undefined}
 	data-interactive={onclick ? '' : undefined}
+	data-name-only={showAbility ? undefined : ''}
+	data-fit={fullWidth ? undefined : ''}
+	data-aside={aside ? '' : undefined}
 	style:--ring-end={end ? `${endWidth}px` : undefined}
 >
 	{#if info}
@@ -178,6 +200,7 @@
 		<div class="ring-main">{@render ringText()}</div>
 	{/if}
 	{#if end}<span class="end" bind:offsetWidth={endWidth}>{@render end()}</span>{/if}
+	{#if aside}<span class="aside">{@render aside()}</span>{/if}
 </div>
 {#if infoUsed}<CharacterDialog
 		bind:open={infoOpen}
@@ -190,6 +213,21 @@
 	.player {
 		display: inline-flex;
 		min-width: 0;
+	}
+	/*
+	 * A script's own (homebrew) character, tagged after its name (Trevor, 2026-11-02): an
+	 * outlined pill in the band's own text colour, so it suits every team's band.
+	 */
+	.custom {
+		flex: none;
+		padding: 0 0.5em;
+		border: 0.0625rem solid currentColor;
+		border-radius: var(--radius-full);
+		font-family: var(--font-control);
+		font-size: 0.75rem;
+		font-weight: 600;
+		line-height: 1.3;
+		white-space: nowrap;
 	}
 	.note {
 		flex: 0 1 auto;
@@ -237,6 +275,28 @@
 		grid-template-columns: var(--ring) minmax(0, 1fr) auto;
 		width: 100%;
 		min-height: var(--ring);
+	}
+	/* Only as wide as its name and ability need, never past its space. */
+	.ring-row[data-fit] {
+		width: fit-content;
+		max-width: 100%;
+	}
+	/* The host's place on the band's line, past the end controls' column. */
+	.ring-row[data-aside] {
+		grid-template-columns: var(--ring) minmax(0, 1fr) auto auto;
+	}
+	.ring-row[data-aside] .ring-main {
+		grid-column: 1 / 4;
+	}
+	.aside {
+		display: flex;
+		grid-row: 1;
+		grid-column: 4;
+		align-items: center;
+		align-self: start;
+		gap: var(--space-1);
+		min-height: 1.7em;
+		padding-inline-start: var(--space-2);
 	}
 	.ring {
 		z-index: 1;

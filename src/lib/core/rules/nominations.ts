@@ -21,6 +21,38 @@ export function todaysNominations(game: Game): Nomination[] {
 }
 
 /**
+ * Whether the Storyteller may be nominated and executed in this game: a character on the
+ * script, in a seat or in play as a rule character has a `storyteller-executed` end (the
+ * Atheist; Trevor, 2026-11-02: an option in every game that has one or could have one), or
+ * it already happened today.
+ */
+export function storytellerNominee(game: Game, characters: CharacterLookup): boolean {
+	if (
+		game.today.entries.some(
+			(e) => e.kind === 'storyteller-nomination' || e.kind === 'storyteller-execution'
+		)
+	)
+		return true;
+	const ids = new Set<CharacterId>(game.ruleCharacters);
+	for (const entry of game.script.entries)
+		ids.add(entry.kind === 'official' ? entry.id : entry.character.id);
+	for (const seatId of game.seating) {
+		const id = trueCharacter(game, seatId, characters);
+		if (id) ids.add(id);
+	}
+	return [...ids].some((id) =>
+		rulesOf(id, characters)?.gameEnd?.ends?.some((e) => e.kind === 'storyteller-executed')
+	);
+}
+
+/** The players who nominated the Storyteller today. */
+export function storytellerNominators(game: Game): SeatId[] {
+	return game.today.entries.flatMap((e) =>
+		e.kind === 'storyteller-nomination' ? [e.nominator] : []
+	);
+}
+
+/**
  * A seat's part in today's nominations: the latest it made (`allMade` has every one, for a
  * player who may nominate more than once) and the latest it received, if any.
  */
@@ -46,6 +78,8 @@ export function afterDeath(
 	characters: CharacterLookup
 ): AfterDeath | undefined {
 	if (!registersAsDead(game, seatId)) return undefined;
+	// Drunk or poisoned as they died: no power gained (https://wiki.bloodontheclocktower.com/Banshee).
+	if (game.seats[seatId]?.impairedAtDeath) return undefined;
 	const characterId = trueCharacter(game, seatId, characters);
 	const rule = characterId === undefined ? undefined : rulesOf(characterId, characters)?.afterDeath;
 	if (!rule) return undefined;
@@ -280,7 +314,10 @@ export function nominationsLeftThisGame(
 	if (!abilityState(game, seatId, characters).works) return undefined;
 	const all = [...game.pastDays, game.today]
 		.flatMap((day) => day.entries)
-		.filter((e) => e.kind === 'nomination' && e.nominator === seatId);
+		.filter(
+			(e) =>
+				(e.kind === 'nomination' || e.kind === 'storyteller-nomination') && e.nominator === seatId
+		);
 	const made = all.filter((e) => e.entryId !== ignore);
 	// Changing the nomination that spent it doesn't count the spent reminder again.
 	const editing = made.length < all.length;

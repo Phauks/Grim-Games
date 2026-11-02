@@ -41,6 +41,8 @@ import {
 	type Night,
 	type NightStepOverride
 } from '#lib/core/rules/index.ts';
+import { readInfoTokenCharacters } from '#lib/core/data/info-token-rules.ts';
+import { Issues } from '#lib/core/data/validate.ts';
 import type { CommandOf, CommandType } from '../commands.ts';
 import type { EngineContext } from '../context.ts';
 import type { GameEvent } from '../events.ts';
@@ -348,6 +350,12 @@ export function nightOverride(o: NightStepOverride, ctx: EngineContext): NightSt
 			const title = o.title?.trim();
 			if (title) copy.title = title;
 			if (o.characterId !== undefined) copy.characterId = characterOf(ctx, o.characterId).id;
+			if (o.infoTokenCharacters !== undefined) {
+				const issues = new Issues();
+				const fills = readInfoTokenCharacters(o.infoTokenCharacters, 'infoTokenCharacters', issues);
+				if (!fills) badOverride(`info token fills: ${issues.list.join('; ')}`);
+				copy.infoTokenCharacters = fills;
+			}
 			return copy;
 		}
 		default:
@@ -465,6 +473,9 @@ export function hasPlacedReminder(game: Game, reminderId: string): boolean {
 	);
 }
 
+/** The Storyteller as a nominee (`NominateStoryteller`). */
+export const STORYTELLER = 'storyteller';
+
 /**
  * Checks a nomination. Each player may nominate once per day and be nominated once per
  * day, and dead players may not nominate (https://wiki.bloodontheclocktower.com/Glossary,
@@ -477,16 +488,17 @@ export function checkNomination(
 	game: Game,
 	characters: CharacterLookup,
 	nominator: string,
-	nominee: string,
+	nominee: string | typeof STORYTELLER,
 	warn: Warn,
 	ignore?: string
 ): void {
 	const others = game.today.entries.filter(
-		(e): e is Extract<DayEntry, { kind: 'nomination' }> =>
-			e.kind === 'nomination' && e.entryId !== ignore
+		(e): e is Extract<DayEntry, { kind: 'nomination' | 'storyteller-nomination' }> =>
+			(e.kind === 'nomination' || e.kind === 'storyteller-nomination') && e.entryId !== ignore
 	);
 	if (game.seats[nominator]?.notInPlay) warn('not-in-play', 'the nominator is not in play yet');
-	if (game.seats[nominee]?.notInPlay) warn('not-in-play', 'the nominee is not in play yet');
+	if (nominee !== STORYTELLER && game.seats[nominee]?.notInPlay)
+		warn('not-in-play', 'the nominee is not in play yet');
 	const allowed = nominationsPerDay(game, nominator, characters);
 	if (allowed === 0) warn('dead-nominator', 'dead players may not nominate');
 	// The Bishop: only the Storyteller nominates; their nomination is logged as usual.
@@ -506,7 +518,8 @@ export function checkNomination(
 	if (others.filter((e) => e.nominator === nominator).length >= Math.max(allowed, 1)) {
 		warn('already-nominated', 'this player has already nominated today');
 	}
-	if (others.some((e) => e.nominee === nominee)) {
+	const nominees = others.map((e) => (e.kind === 'nomination' ? e.nominee : STORYTELLER));
+	if (nominees.includes(nominee)) {
 		warn('already-nominee', 'this player has already been nominated today');
 	}
 }

@@ -31,16 +31,11 @@ const SCRIPT_NAME_TODO = ['src/lib/features/grimoire/BoardCorner.svelte'];
  */
 const CHARACTER_DISPLAY_TODO = [
 	'src/lib/features/character-builder/CharacterPreview.svelte',
-	'src/lib/features/characters/CharacterGroupDialog.svelte',
+	'src/lib/features/characters/JinxMark.svelte',
 	'src/lib/features/day/PreventedSheet.svelte',
 	'src/lib/features/errors/ErrorPage.svelte',
-	'src/lib/features/grimoire/FirstDeathAsk.svelte',
 	'src/lib/features/grimoire/GameEndPrompt.svelte',
-	'src/lib/features/grimoire/RuleCharacters.svelte',
-	'src/lib/features/grimoire/StarPassPrompt.svelte',
-	'src/lib/features/modes/SpectersSheet.svelte',
 	'src/lib/features/player/GuessMarks.svelte',
-	'src/lib/features/player/ScriptSheet.svelte',
 	'src/lib/features/reference/FieldValue.svelte',
 	'src/lib/features/setup/CharacterChoice.svelte'
 ];
@@ -406,7 +401,6 @@ export default defineConfig(
 			// 2026-10-31).
 			'src/lib/features/room/RoleCard.svelte',
 			'src/lib/features/setup/RevealDialog.svelte',
-			'src/lib/features/show/ShownCard.svelte',
 			// Icon addresses to keep offline, not drawn.
 			'src/lib/features/offline/keep-offline.ts',
 			...CHARACTER_DISPLAY_TODO

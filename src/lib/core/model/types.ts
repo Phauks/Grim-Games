@@ -162,6 +162,12 @@ export interface Seat {
 	notInPlay?: true;
 	/** How the player died, if the Storyteller recorded it. Only set while `dead`. */
 	deathCause?: DeathCause;
+	/**
+	 * Their ability was not working when they died (drunk or poisoned), so an ability that
+	 * acts on dying gives nothing (https://wiki.bloodontheclocktower.com/Banshee, a poisoned
+	 * Banshee killed by the Demon). Only set while `dead`.
+	 */
+	impairedAtDeath?: true;
 	/** True once a dead player has used their vote. */
 	ghostVoteUsed: boolean;
 	/**
@@ -265,6 +271,10 @@ export interface CharacterGuess {
  *   player the nominee chose because a character in play says so (the Big Wig's speaker,
  *   https://wiki.bloodontheclocktower.com/Big_Wig).
  * - `execution`: the player was executed (and marked dead by execution if they were alive).
+ * - `storyteller-nomination` / `storyteller-execution`: a player nominated the Storyteller,
+ *   and the Storyteller was executed. Any living player may, and the game ends: good wins if
+ *   a character in play says so (the Atheist), otherwise evil
+ *   (https://wiki.bloodontheclocktower.com/Atheist).
  * - `exile`: a Traveller was exiled (and marked dead by exile if alive). Exile is not an
  *   execution: abilities about executions ignore it
  *   (https://wiki.bloodontheclocktower.com/Exile).
@@ -314,6 +324,8 @@ export type DayEntry =
 			seatId: SeatId;
 			by: { characterId: CharacterId; seatId?: SeatId };
 	  }
+	| { kind: 'storyteller-nomination'; entryId: DayEntryId; nominator: SeatId }
+	| { kind: 'storyteller-execution'; entryId: DayEntryId }
 	| { kind: 'exile'; entryId: DayEntryId; seatId: SeatId; died: boolean }
 	| {
 			kind: 'ability';

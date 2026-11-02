@@ -40,6 +40,12 @@
 		/** Shown in place but not usable, so nothing moves when it becomes usable. */
 		disabled?: boolean;
 		testid?: string;
+		/**
+		 * Any typed text is the value, the options only fill it in (a player's name: picked from
+		 * the room's phones or typed, PlayerNameInput). `onChange` runs on every keystroke, and
+		 * Enter with the list closed keeps the text and closes the phone keyboard.
+		 */
+		free?: boolean;
 	}
 
 	let {
@@ -53,12 +59,13 @@
 		empty,
 		item,
 		disabled = false,
-		testid
+		testid,
+		free = false
 	}: Props = $props();
 
 	const current = $derived(options.find((o) => o.value === value));
 	// The field shows the chosen option, and again whenever the choice changes.
-	let text = $derived(current?.label ?? '');
+	let text = $derived(free ? (value ?? '') : (current?.label ?? ''));
 	let open = $state(false);
 
 	/** The typed text, unless it is just the chosen option's name (then every option shows). */
@@ -123,7 +130,11 @@
 	inputValue={text}
 	{open}
 	onOpenChange={(details) => (open = details.open)}
-	onInputValueChange={(details) => (text = details.inputValue)}
+	onInputValueChange={(details) => {
+		text = details.inputValue;
+		if (free) onChange?.(details.inputValue as T);
+	}}
+	allowCustomValue={free}
 	onValueChange={(details) => change(details.value)}
 	openOnClick
 	selectionBehavior="replace"
@@ -135,27 +146,47 @@
 >
 	<Combobox.Label class={hideLabel ? 'visually-hidden' : undefined}>{label}</Combobox.Label>
 	<Combobox.Control>
-		<span class="search"><Icon name="search" /></span>
-		<ClearableField bind:value={text} {disabled} onclear={() => (open = true)}>
-			<Combobox.Input {placeholder} />
+		<!-- A name is typed, not searched for: no search icon. -->
+		{#if !free}<span class="search"><Icon name="search" /></span>{/if}
+		<ClearableField
+			bind:value={text}
+			{disabled}
+			onclear={() => {
+				if (free) onChange?.('' as T);
+				open = true;
+			}}
+		>
+			<Combobox.Input
+				{placeholder}
+				enterkeyhint={free ? 'done' : undefined}
+				onkeydown={(event) => {
+					// No option highlighted: Enter keeps what was typed.
+					const input = event.currentTarget as HTMLInputElement;
+					if (!free || event.key !== 'Enter' || input.getAttribute('aria-activedescendant')) return;
+					open = false;
+					// After the list has closed, as closing it puts the focus back in the field.
+					setTimeout(() => input.blur());
+				}}
+			/>
 		</ClearableField>
 		<Combobox.Trigger aria-label={label}><Icon name="forward" /></Combobox.Trigger>
 	</Combobox.Control>
-	<Combobox.Positioner>
-		<Combobox.Content>
-			{#each groups as group, i (group.title ?? i)}
-				{#if group.title}
-					<Combobox.ItemGroup>
-						<Combobox.ItemGroupLabel>{group.title}</Combobox.ItemGroupLabel>
+	<!-- A free field with nothing to fill in shows no list: the typed text is the answer. -->
+	{#if !free || matching.length > 0}<Combobox.Positioner>
+			<Combobox.Content>
+				{#each groups as group, i (group.title ?? i)}
+					{#if group.title}
+						<Combobox.ItemGroup>
+							<Combobox.ItemGroupLabel>{group.title}</Combobox.ItemGroupLabel>
+							{#each group.options as option (option.value)}{@render optionItem(option)}{/each}
+						</Combobox.ItemGroup>
+					{:else}
 						{#each group.options as option (option.value)}{@render optionItem(option)}{/each}
-					</Combobox.ItemGroup>
-				{:else}
-					{#each group.options as option (option.value)}{@render optionItem(option)}{/each}
-				{/if}
-			{/each}
-			{#if matching.length === 0}<p class="empty">{empty}</p>{/if}
-		</Combobox.Content>
-	</Combobox.Positioner>
+					{/if}
+				{/each}
+				{#if matching.length === 0}<p class="empty">{empty}</p>{/if}
+			</Combobox.Content>
+		</Combobox.Positioner>{/if}
 </Combobox.Root>
 
 <style>
