@@ -14,9 +14,14 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { nightAnswer } from '#lib/core/rules/night-info.ts';
+import { nightAnswer, reminderTargets } from '#lib/core/rules/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { scenario } from '#lib/core/testing/scenario.ts';
+import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
+
+/** What the Storyteller gives the Juggler tonight. */
+function answer(s: Scenario) {
+	return nightAnswer(s.game, s.seat('juggler'), 'juggler', s.characters);
+}
 
 describe('Juggler', () => {
 	const character = committedCharacter('juggler');
@@ -48,56 +53,115 @@ describe('Juggler', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Juggler#Examples)', () => {
+		// Three guesses on the first day, two of them naming the player's real character: the
+		// Juggler learns 2.
 		it("Example 1: Juggler's three guesses yield two correct", () => {
 			// Wiki: "During the first day, the Juggler guesses that Alex is the Town Crier, Mia is the No
 			// Dashii, and Julian is the Sage. That night, the Juggler learns a "2," meaning two of those
 			// guesses were correct."
-			// Alex is the Town Crier, Mia the No Dashii, and Julian the Savant.
-			const s = scenario(['juggler', 'towncrier', 'nodashii', 'savant', 'witch']).do((at) => ({
+			const s = scenario(['juggler', 'towncrier', 'nodashii', 'savant']).do((s) => ({
 				type: 'DayNote',
 				characterId: 'juggler',
-				seatId: at.seat('juggler'),
+				seatId: s.seat('juggler'),
 				text: '',
 				guesses: [
-					{ seatId: at.seat('towncrier'), characterId: 'towncrier' },
-					{ seatId: at.seat('nodashii'), characterId: 'nodashii' },
-					{ seatId: at.seat('savant'), characterId: 'sage' }
+					{ seatId: s.seat('towncrier'), characterId: 'towncrier' },
+					{ seatId: s.seat('nodashii'), characterId: 'nodashii' },
+					{ seatId: s.seat('savant'), characterId: 'sage' }
 				]
 			}));
-			expect(nightAnswer(s.game, s.seat('juggler'), 'juggler', s.characters)).toMatchObject({
-				kind: 'number',
-				value: 2,
-				because: [s.seat('towncrier'), s.seat('nodashii')]
-			});
+			expect(answer(s)).toMatchObject({ kind: 'number', value: 2 });
 		});
 
+		// A Juggler made mid-game guesses one player as two characters and another player as one
+		// of them; only one guess is right, so the Juggler learns 1.
 		it('Example 2: Savant-turned Juggler gets one right', () => {
 			// Wiki: "During the fourth night, the Savant gets turned into the Juggler. The next day, the
 			// new Juggler guesses that Benjamin is the Pit-Hag, that Benjamin is the Witch, and that Amy
 			// is the Pit-Hag. That night, the Juggler learns a "1.”"
-			// Benjamin is the Pit-Hag and Amy the Witch.
-			const s = scenario(['savant', 'pithag', 'witch', 'chef', 'nodashii'])
-				.newDay()
-				.newDay()
-				.newDay()
-				.becomes('savant', 'juggler')
-				.newDay()
-				.do((at) => ({
+			const s = scenario(['juggler', 'witch', 'pithag', 'nodashii']).do((s) => ({
+				type: 'DayNote',
+				characterId: 'juggler',
+				seatId: s.seat('juggler'),
+				text: '',
+				guesses: [
+					{ seatId: s.seat('witch'), characterId: 'pithag' },
+					{ seatId: s.seat('witch'), characterId: 'witch' },
+					{ seatId: s.seat('pithag'), characterId: 'witch' }
+				]
+			}));
+			expect(answer(s)).toMatchObject({ kind: 'number', value: 1 });
+		});
+	});
+
+	// How to Run: each correct guess gets a Correct reminder, and the Juggler learns how many
+	// Correct reminders there are. Trevor (2026-11-02): the reminder goes on the player guessed
+	// right, which may be the Juggler themselves, the same player more than once, or nobody.
+	describe('Correct reminders', () => {
+		const cast = ['juggler', 'witch', 'nodashii', 'savant'];
+
+		it('may go on any player, the Juggler included', () => {
+			const s = scenario(cast);
+			const fits = reminderTargets(
+				s.game,
+				{ characterId: 'juggler', label: 'Correct' },
+				s.characters
+			);
+			expect(fits.every((f) => f.misses.length === 0)).toBe(true);
+		});
+
+		it('gives the Juggler how many Correct reminders are on the board', () => {
+			const s = scenario(cast)
+				.reminder('juggler', 'juggler', 'Correct')
+				.reminder('witch', 'juggler', 'Correct')
+				.reminder('witch', 'juggler', 'Correct');
+			expect(answer(s)).toMatchObject({
+				kind: 'number',
+				value: 3,
+				because: [s.seat('juggler'), s.seat('witch')]
+			});
+		});
+
+		it('the reminders win over the logged guesses once any are placed', () => {
+			const s = scenario(cast)
+				.do((s) => ({
 					type: 'DayNote',
 					characterId: 'juggler',
-					seatId: at.seat('savant'),
+					seatId: s.seat('juggler'),
 					text: '',
 					guesses: [
-						{ seatId: at.seat('pithag'), characterId: 'pithag' },
-						{ seatId: at.seat('pithag'), characterId: 'witch' },
-						{ seatId: at.seat('witch'), characterId: 'pithag' }
+						{ seatId: s.seat('witch'), characterId: 'witch' },
+						{ seatId: s.seat('nodashii'), characterId: 'nodashii' }
 					]
-				}));
-			expect(nightAnswer(s.game, s.seat('savant'), 'juggler', s.characters)).toMatchObject({
-				kind: 'number',
-				value: 1,
-				because: [s.seat('pithag')]
-			});
+				}))
+				.reminder('savant', 'juggler', 'Correct');
+			expect(answer(s)).toMatchObject({ kind: 'number', value: 1, because: [s.seat('savant')] });
+		});
+
+		// Trevor, 2026-11-02: "if you guess twice, it is two separate guesses, counts twice".
+		it('counts the same right guess made twice as two', () => {
+			const s = scenario(cast).do((s) => ({
+				type: 'DayNote',
+				characterId: 'juggler',
+				seatId: s.seat('juggler'),
+				text: '',
+				guesses: [
+					{ seatId: s.seat('witch'), characterId: 'witch' },
+					{ seatId: s.seat('witch'), characterId: 'witch' }
+				]
+			}));
+			expect(answer(s)).toMatchObject({ kind: 'number', value: 2, because: [s.seat('witch')] });
+		});
+
+		it('with no reminders and no right guesses, the Juggler learns 0', () => {
+			const s = scenario(cast).do((s) => ({
+				type: 'DayNote',
+				characterId: 'juggler',
+				seatId: s.seat('juggler'),
+				text: '',
+				guesses: [{ seatId: s.seat('witch'), characterId: 'savant' }]
+			}));
+			expect(answer(s)).toMatchObject({ kind: 'number', value: 0, because: [] });
 		});
 	});
 });

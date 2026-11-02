@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { tapStartGame } from './start-game.ts';
 import { pickScript, toBoard } from './new-game.ts';
 
 // The Savant information sheet (L2): one true and one false statement from the grimoire,
@@ -150,7 +151,7 @@ test('the end of the night offers to set the Savant’s information', async ({ p
 		await closeSheet(page);
 	}
 	const bank = page.getByRole('list', { name: 'Reminder bank' }).locator('..');
-	await bank.getByRole('button', { name: 'Start game', exact: true }).tap();
+	await tapStartGame(page, bank.getByRole('button', { name: 'Start game', exact: true }));
 	await bank.getByRole('button', { name: 'End night', exact: true }).tap();
 	await page
 		.getByRole('alertdialog', { name: 'End the night?' })
@@ -256,7 +257,7 @@ test('earlier days’ Savant information sits beside today’s, which is edited 
 	};
 	const savant = page.getByRole('dialog', { name: /^Savant information/ });
 	const earlier = savant.getByRole('region', { name: 'Earlier days' });
-	await bank.getByRole('button', { name: 'Start game', exact: true }).tap();
+	await tapStartGame(page, bank.getByRole('button', { name: 'Start game', exact: true }));
 	await endNight();
 	// Day 1: nothing earlier yet. Today's lines are written in the shared text field.
 	await expect(earlier).toContainText('None');

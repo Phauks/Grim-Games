@@ -1,12 +1,13 @@
 {
 	"reminderTargets": {
 		"Correct": {
-			"seat": "self",
-			"note": "On the Juggler, one per correct guess."
+			"seat": "any",
+			"note": "One per correct guess, on the guessed player or on the Juggler. A player guessed right more than once carries more than one."
 		}
 	},
 	"answers": {
-		"question": "correct-guesses"
+		"question": "correct-guesses",
+		"token": "Correct"
 	},
 	"dayClaim": "guesses",
 	"guessLimit": 5,
