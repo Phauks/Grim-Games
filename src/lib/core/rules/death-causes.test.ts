@@ -89,12 +89,12 @@ describe('kinds', () => {
 		expect(kindOf('witch')).toBe('kills');
 	});
 
-	// https://wiki.bloodontheclocktower.com/Pit-Hag: making a Demon makes tonight's deaths
-	// the Storyteller's choice; the Pit-Hag's ability itself kills no one (Trevor, 2026-10-23:
-	// "not a source of direct death").
-	it('the Pit-Hag is not a cause of death', () => {
-		expect(kindOf('pithag')).toBeUndefined();
-		expect(Object.hasOwn(NO_DEATH, 'pithag')).toBe(true);
+	// https://wiki.bloodontheclocktower.com/Pit-Hag: the Pit-Hag's ability itself kills no one
+	// (Trevor, 2026-10-23: "not a source of direct death"), but once it makes a Demon, other deaths
+	// that night are its attacks (M32), so it kills only after changing a player into a Demon.
+	it('the Pit-Hag kills only once it has made a Demon', () => {
+		expect(kindOf('pithag')).toBe('kills');
+		expect(deathCauseEntry('pithag')?.afterChanging).toBe('demon');
 	});
 
 	// https://wiki.bloodontheclocktower.com/Barber: only swaps characters.
@@ -265,8 +265,8 @@ describe('deathCauses', () => {
 });
 
 describe('the Minions that can cause a death', () => {
-	// Each cites its wiki page in its rules block; the Pit-Hag is not one (Trevor,
-	// 2026-10-23), nor is any Minion whose ability only informs, poisons or changes things.
+	// Each cites its wiki page in its rules block; the Pit-Hag only once it has made a Demon
+	// (Trevor, 2026-10-23; M32). No Minion whose ability only informs or poisons is one.
 	it('are exactly these', () => {
 		const minions = Object.keys(DEATH_CAUSE_ENTRIES)
 			.filter((id) => characters.get(id)?.type === 'minion')
@@ -278,6 +278,7 @@ describe('the Minions that can cause a death', () => {
 			'cerenovus',
 			'godfather',
 			'harpy',
+			'pithag',
 			'psychopath',
 			'vizier',
 			'witch',
@@ -295,7 +296,8 @@ describe('the cause a reminder gives a death', () => {
 		}).session.game;
 		expect(reminderDeathCause(game, characters, 'fanggu')).toBe('fanggu');
 	});
-	// https://wiki.bloodontheclocktower.com/Pit-Hag and /Chef: neither ability kills.
+	// https://wiki.bloodontheclocktower.com/Pit-Hag and /Chef: neither ability kills (the Pit-Hag
+	// only once it has made a Demon).
 	it('is none for a character that never kills, or the ∞ reminder', () => {
 		const game = newGame(3, {
 			script: { entries: ['fanggu', 'pithag', 'chef'].map((id) => ({ kind: 'official', id })) }

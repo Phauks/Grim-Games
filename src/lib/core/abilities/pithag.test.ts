@@ -161,15 +161,21 @@ describe('Pit-Hag', () => {
 			});
 		});
 
-		it.fails('once a Demon is created, other deaths tonight may be put down to the Pit-Hag', () => {
+		it('once a Demon is created, other deaths tonight may be put down to the Pit-Hag', () => {
 			// Wiki: "If a Demon is created, you may choose any players to kill or to protect throughout
 			// the night to balance the game. Additional deaths are considered attacks from the Pit-Hag."
-			// Waits on the engine (unplanned): the Pit-Hag has no death cause, so the death list never
-			// offers it, even after it creates a Demon.
-			const s = scenario(['pithag', 'clockmaker', 'chef', 'empath', 'nodashii'])
-				.newDay()
-				.becomes('chef', 'vortox');
-			const causes = validDeathCauses(s.game, s.seat('empath'), s.characters).map((c) => c.cause);
+			const s = scenario(['pithag', 'clockmaker', 'chef', 'empath', 'nodashii']).newDay();
+			const before = validDeathCauses(s.game, s.seat('empath'), s.characters).map((c) => c.cause);
+			expect(before).not.toContain('pithag');
+			const after = s.do({
+				type: 'AssignCharacter',
+				seatId: s.seat('chef'),
+				characterId: 'vortox',
+				by: 'pithag'
+			});
+			const causes = validDeathCauses(after.game, after.seat('empath'), after.characters).map(
+				(c) => c.cause
+			);
 			expect(causes).toContain('pithag');
 		});
 	});

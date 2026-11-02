@@ -496,6 +496,18 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['M28']
 	},
 	{
+		// Trevor, 2026-11-02: every How to Run gap closed before beta goes to production. M32a the
+		// Hell's Librarian's picked Something Bad, the Pit-Hag's deaths once it makes a Demon, the
+		// Apprentice's gained ability and the Hatter's tea party after the Hatter dies; M32b the
+		// Fiddler's contest (the Demon's opponent, evil wins a tie) and an evil Politician who wins
+		// with good, in the engine; M32c End game runs the fiddle contest; M32d End game marks a
+		// Politician who wins too.
+		title:
+			"Fiddler, Hatter, Pit-Hag, Apprentice, Politician and Hell's Librarian follow their full How to Run",
+		area: 'engine',
+		parts: ['M32a', 'M32b', 'M32c', 'M32d']
+	},
+	{
 		// Trevor, 2026-11-02: beta goes to production only once the How to Run gaps are closed.
 		// M29a and M29b the warnings still missing (a second Alsaahir guess, a fourth Matron swap,
 		// the Goon's Drunk, the Pope's duplicate bluffs and more), M30a and M30b the info tokens
