@@ -40,7 +40,10 @@ export async function friendInvites(env: FriendsEnv, accountId: string): Promise
 	});
 }
 
-/** Which friends are in the room, or invites one: only from the room's own Storyteller. */
+/**
+ * Which friends are in the room (and which have a phone there now, for Room transfer, plan
+ * F14), or invites one: only from the room's own Storyteller.
+ */
 async function invite(
 	env: FriendsEnv,
 	accountId: string,
@@ -48,14 +51,17 @@ async function invite(
 ): Promise<InviteResponse> {
 	const code = typeof body?.code === 'string' ? normaliseRoomCode(body.code) : undefined;
 	if (!code) return { here: [], outcome: 'unavailable' };
-	const inRoom = (await env.ROOMS.get(env.ROOMS.idFromName(code)).friendsRoom(accountId))?.accounts;
-	if (!inRoom) return { here: [], outcome: 'unavailable' };
+	const room = await env.ROOMS.get(env.ROOMS.idFromName(code)).friendsRoom(accountId);
+	if (!room) return { here: [], outcome: 'unavailable' };
 	const mine = friendBook(env, accountId);
 	const { friends } = await mine.contents(Date.now());
 	const friendIds = new Set(friends.map((friend) => friend.id));
-	const here = inRoom.filter((id) => id !== accountId && friendIds.has(id));
+	const here = room.accounts.filter((id) => id !== accountId && friendIds.has(id));
 	const other = body?.id;
-	if (typeof other !== 'string') return { here };
+	if (typeof other !== 'string') {
+		const present = room.present.filter((id) => id !== accountId && friendIds.has(id));
+		return { here, present };
+	}
 	if (!friendIds.has(other)) return { here, outcome: 'unavailable' };
 	if (here.includes(other)) return { here, outcome: 'here' };
 	const title = typeof body?.title === 'string' ? body.title.trim().slice(0, MAX_INVITE_TITLE) : '';

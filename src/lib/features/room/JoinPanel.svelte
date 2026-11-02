@@ -214,6 +214,18 @@
 	);
 
 	let transferOpen = $state(false);
+	/**
+	 * The Storyteller handed this phone's account the room (plan F14): Room transfer opens with
+	 * what comes and Take over, no code to type.
+	 */
+	let offerOpen = $state(false);
+	let offersSeen = 0;
+	$effect(() => {
+		const offers = player?.transferOffers ?? 0;
+		if (offers <= offersSeen) return;
+		offersSeen = offers;
+		offerOpen = true;
+	});
 
 	function openRoom(roomCode: string) {
 		if (onCode) onCode(roomCode);
@@ -534,6 +546,7 @@
 </Dialog>
 
 {#if player}<FeedbackSheet {player} bind:open={rating} />{/if}
+{#if player}<TransferClaimDialog bind:open={offerOpen} roomCode={player.code} offered />{/if}
 
 <style>
 	form {
