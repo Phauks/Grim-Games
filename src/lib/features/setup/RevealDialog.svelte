@@ -13,6 +13,7 @@
 	import PlayerNameInput from './PlayerNameInput.svelte';
 	import HoldToSee from '#lib/ui/primitives/HoldToSee.svelte';
 	import { noLongPress } from '#lib/ui/no-long-press.ts';
+	import { iconUrl } from '#lib/features/characters/icon-url.ts';
 
 	interface Props {
 		open: boolean;
@@ -181,6 +182,7 @@
 							label={t('setup.reveal.hold')}
 							testid="reveal-hold"
 							bind:held
+							preload={[iconUrl(face.character)]}
 							onhold={(on) => on && (seen = true)}
 						>
 							<CharacterToken character={spinning ?? face.character} size={pair ? 140 : 240} />

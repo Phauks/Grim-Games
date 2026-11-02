@@ -17,9 +17,31 @@
 		/** Told on every press and release. */
 		onhold?: (on: boolean) => void;
 		testid?: string;
+		/**
+		 * Images the held content shows (a character's icon), fetched and decoded while it is
+		 * still hidden. The content is only created on the first hold, and its lazy image would
+		 * otherwise leave the token blank for a moment (Trevor, 2026-11-01); an image already in
+		 * the browser's memory cache shows at once, as on every later hold.
+		 */
+		preload?: readonly (string | undefined)[];
 	}
 
-	let { held = $bindable(false), label, children, onhold, testid }: Props = $props();
+	let { held = $bindable(false), label, children, onhold, testid, preload = [] }: Props = $props();
+
+	// Kept referenced until the content goes, so the browser keeps the decoded images in memory.
+	$effect(() => {
+		const warmed = preload
+			.filter((src): src is string => !!src)
+			.map((src) => {
+				const img = new Image();
+				// As the token's own <img>, so homebrew hosts that block hotlinking still answer.
+				img.referrerPolicy = 'no-referrer';
+				img.src = src;
+				img.decode().catch(() => undefined);
+				return img;
+			});
+		return () => void warmed.splice(0);
+	});
 
 	function hold(on: boolean) {
 		if (held === on) return;
