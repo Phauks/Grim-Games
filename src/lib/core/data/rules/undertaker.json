@@ -36,5 +36,8 @@
 	},
 	"reminderMovement": {
 		"why": "Marks whoever was executed today."
+	},
+	"reminderEnds": {
+		"Died Today": "dawn"
 	}
 }

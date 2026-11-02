@@ -6,8 +6,8 @@
  * 1. who sits where: `scenario([...characters])`, one named seat per character in seating
  *    order (Ana, Ben, Cat, ...), on the test script;
  * 2. what has happened: steps such as `.drunk('chef')`, `.poisoned(1)`, `.dies('king')`,
- *    `.nominate('chef', 'imp')`, `.execute('imp')`, `.newDay()`, or any engine command with
- *    `.do(...)`;
+ *    `.nominate('chef', 'imp')`, `.execute('imp')`, `.dusk()`, `.newDay()`, or any engine
+ *    command with `.do(...)`;
  * 3. what the rules say now: `expect` on the scenario's `game`, calling the rule under test
  *    (`infoPicker`, `gameEnds`, `madnessOffer`, ...) with `characters`.
  *
@@ -141,9 +141,14 @@ export class Scenario {
 		return this.do({ type: 'Execute', seatId: this.seat(on) });
 	}
 
-	/** Starts a new day: today's log moves to the past days. */
+	/** Starts a new day (Dawn): today's log moves to the past days. */
 	newDay(): Scenario {
 		return this.do({ type: 'NewDay' });
+	}
+
+	/** Ends the day (Dusk): the night begins. */
+	dusk(): Scenario {
+		return this.do({ type: 'Dusk' });
 	}
 }
 

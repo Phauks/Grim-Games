@@ -27,7 +27,7 @@ import { infoPicker, isAllowed, nightAnswer, withNightInfo } from '#lib/core/rul
 import { nightOrder } from '#lib/core/rules/night-order.ts';
 import { placeholdersFor } from '#lib/core/rules/night-text.ts';
 import { reminderTargets } from '#lib/core/rules/reminder-targets.ts';
-import { engineGap, scenario } from '#lib/core/testing/scenario.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Poisoner', () => {
 	const character = committedCharacter('poisoner');
@@ -165,13 +165,15 @@ describe('Poisoner', () => {
 			expect(step?.info).toMatchObject({ pickers: [{ unreliable: 'poisoned' }] });
 		});
 
-		it.fails('makes the poisoned player healthy again at dusk', () => {
+		it('makes the poisoned player healthy again at dusk', () => {
 			// How to Run: at each dusk the poisoned player recovers and the Poisoned reminder comes off.
-			// Waits on the engine (unplanned): the game has no dusk, so last night's Poisoned
-			// reminder stays until the Storyteller moves it.
 			const s = scenario(['empath', 'chef', 'imp', 'monk', 'poisoner']).poisoned('empath').newDay();
 			expect(abilityState(s.game, s.seat('empath'), s.characters).works).toBe(false);
-			engineGap('unplanned', "a dusk step that takes last night's Poisoned reminder off");
+			const dusk = s.dusk();
+			expect(abilityState(dusk.game, dusk.seat('empath'), dusk.characters).works).toBe(true);
+			expect(
+				dusk.game.seats[dusk.seat('empath')].reminders.filter((r) => r.characterId === 'poisoner')
+			).toEqual([]);
 		});
 	});
 });

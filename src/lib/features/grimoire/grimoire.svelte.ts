@@ -123,8 +123,10 @@ export class Grimoire {
 			day: this.nightDay,
 			done: [...this.nightDone]
 		});
-		if (startDay && ticking && step.id === 'dawn' && this.nightDay === this.game.pastDays.length)
-			this.run({ type: 'NewDay' });
+		const tonight = ticking && this.nightDay === this.game.pastDays.length;
+		// Dusk takes off the reminders that last until dusk (the Poisoner's Poisoned).
+		if (tonight && step.id === 'dusk') this.run({ type: 'Dusk' });
+		if (startDay && tonight && step.id === 'dawn') this.run({ type: 'NewDay' });
 	}
 
 	/**

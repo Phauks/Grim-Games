@@ -311,7 +311,8 @@ export function nomineeChooses(game: Game, characters: CharacterLookup): Charact
  * player's whose `carrier` reminder the nominee has (the Gnome's Amigo,
  * https://wiki.bloodontheclocktower.com/Gnome: the Gnome may kill whoever nominates them, any
  * number of times). Each only while its ability works and isn't spent (a "No Ability" reminder
- * of its own), and when the nominator is, or might register as, its `by` type, if it has one.
+ * of its own or, with `first`, an earlier nomination of the player logged), and when the
+ * nominator is, or might register as, its `by` type, if it has one.
  */
 function nomineeAbilityPrompts(
 	game: Game,
@@ -333,7 +334,7 @@ function nomineeAbilityPrompts(
 				const spent = game.seats[seatId]?.reminders.some(
 					(r) => r.characterId === characterId && r.label === 'No Ability'
 				);
-				if (spent) return [];
+				if (spent || (rule.first && nominationsOf(game, nominee) > 1)) return [];
 				const by = rule.by;
 				const registersAs =
 					by === undefined ||
@@ -345,6 +346,13 @@ function nomineeAbilityPrompts(
 			}
 		)
 	);
+}
+
+/** How many nominations of `seatId` are logged, on any day (this one included, once logged). */
+function nominationsOf(game: Game, seatId: SeatId): number {
+	return [...game.pastDays, game.today]
+		.flatMap((day) => day.entries)
+		.filter((e) => e.kind === 'nomination' && e.nominee === seatId).length;
 }
 
 /** Whether `reminders` hold `label` of `characterId`, placed by `ownerSeatId` or nobody known. */
