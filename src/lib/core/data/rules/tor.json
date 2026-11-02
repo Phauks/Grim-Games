@@ -32,5 +32,6 @@
 		"you-are": {
 			"characters": ["chosen"]
 		}
-	}
+	},
+	"hidesRoles": true
 }

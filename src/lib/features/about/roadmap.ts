@@ -431,6 +431,13 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['M13a', 'M13b', 'M13']
 	},
 	{
+		// Setup rules audit (Trevor, 2026-11-02): every bracketed setup change covered, starting
+		// with the Bounty Hunter's evil Townsfolk, picked, checked at Start game and told.
+		title: 'Every setup change covered: the Bounty Hunter makes a Townsfolk evil, and more',
+		area: 'engine',
+		parts: ['M22']
+	},
+	{
 		// Trevor, 2026-11-01: every "You are" and character token a night step shows is filled in
 		// with the right character (the Snake Charmer's, the Evil Twin's, the Cerenovus's).
 		title: 'Night steps fill in every info token with the right character',

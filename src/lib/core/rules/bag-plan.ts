@@ -207,11 +207,6 @@ export interface SelectionAnalysisInput {
 	 * are counted among the players instead, so the other counts are for that many fewer.
 	 */
 	travellersInBag?: number;
-	/**
-	 * Players beyond 15 choose their own Traveller on their phones (Trevor, 2026-10-31), so
-	 * none needs selecting here: Random leaves those places open.
-	 */
-	travellersLater?: boolean;
 	/** Fabled and Loric in play, which can change setup (the Sentinel). */
 	ruleCharacters?: readonly CharacterId[];
 	scriptOrder: readonly CharacterId[];
@@ -377,8 +372,7 @@ export function randomSelection(input: RandomSelectionInput): Record<CharacterId
 		take(type, target - have);
 	}
 	const analysis = analyseSelection({ ...input, selection, usualCountsOnly: true });
-	const needed = () =>
-		input.travellersLater ? 0 : Math.max(0, input.players - analysis.dealt - travellersSelected());
+	const needed = () => Math.max(0, input.players - analysis.dealt - travellersSelected());
 	take('traveller', needed());
 	for (const group of input.fallbackTravellers ?? []) {
 		const pool = group.filter((c) => c.type === 'traveller' && !(selection[c.id] > 0));
@@ -425,7 +419,7 @@ export function selectionProblems(input: SelectionCheckInput): string[] {
 		...plan.issues
 			.filter((i) => i.code === 'no-stand-in' || i.code === 'unknown-character')
 			.map((i) => i.message),
-		...(travellers < analysis.travellers && !input.travellersLater
+		...(travellers < analysis.travellers
 			? [`${analysis.travellers} Travellers needed; ${travellers} chosen.`]
 			: []),
 		...jinxSetupWarnings(input.jinxes ?? [], ids, (id) => input.lookup(id)?.name ?? id).map(
