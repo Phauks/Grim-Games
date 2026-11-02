@@ -24,6 +24,10 @@
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterEntry from '#lib/features/characters/CharacterEntry.svelte';
 	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
+	import JinxMark from '#lib/features/characters/JinxMark.svelte';
+	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
+	import { gameJinxes } from '#lib/features/game/game-jinxes.ts';
+	import { jinxesOnStep } from '#lib/core/rules/jinxes.ts';
 	import { provideCharacters } from '#lib/features/characters/character-context.ts';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
@@ -77,6 +81,12 @@
 	 * is the day log's, so it starts unset each new day and History can undo it.
 	 */
 	const marks = $derived(marksInPlay(g, game.characters));
+	/**
+	 * Jinxes between characters in play, as a mark on each one's band that opens their text
+	 * (L107; https://wiki.bloodontheclocktower.com/Djinn): on the band, so no row moves.
+	 */
+	const inPlayJinxes = $derived(gameJinxes(g, officialData.current));
+	const jinxesOf = (id: CharacterId) => jinxesOnStep(inPlayJinxes.jinxes, id, inPlayJinxes.inPlay);
 
 	// ── Confirming a change: what it is now, and what it will be ──
 	// TPI's reminder token text (game data, not interface text).
@@ -471,6 +481,7 @@
 										alignment={head?.ref.seatId ? g.seats[head.ref.seatId]?.alignment : undefined}
 										playerName={head?.ref.seatId ? game.seatName(head.ref.seatId) : undefined}
 									>
+										{#snippet afterName()}{@render jinxMark(character.id)}{/snippet}
 										{#snippet ability()}<GlossaryText text={character.ability} />{/snippet}
 										<span class="state-line"
 											>{@render sentence()}{#if buttonRows[reminder.key]}{@render dayEnd(
@@ -548,6 +559,7 @@
 									alignment={seat.alignment}
 									playerName={game.seatName(seat.seatId)}
 								>
+									{#snippet afterName()}{@render jinxMark(character.id)}{/snippet}
 									{#snippet ability()}<GlossaryText text={character.ability} />{/snippet}
 									{#if hasDayButton(seat.characterId)}<span class="state-line"
 											>{@render dayEnd(seat.characterId, seat.seatId)}</span
@@ -571,6 +583,12 @@
 	valueKey={valueFor?.key}
 />
 <DayUseDialog bind:this={dayUse} {game} />
+
+<!-- A character's jinxes with characters in play, on its band (JinxMark). -->
+{#snippet jinxMark(id: CharacterId)}
+	{@const own = jinxesOf(id)}
+	{#if own.length > 0}<JinxMark characterId={id} jinxes={own} characters={game.characters} />{/if}
+{/snippet}
 
 <!-- A character as a badge; false inside a button, so it does not open the character. -->
 {#snippet badge(id: CharacterId | undefined, interactive = true)}{#if id}<CharacterBadge
