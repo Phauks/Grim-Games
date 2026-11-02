@@ -7,6 +7,7 @@
 		"Dead": {
 			"seat": "other",
 			"alignment": "good",
+			"life": "alive",
 			"note": "On the alive player the Moonchild chose, only if that player is good."
 		}
 	},
