@@ -21,6 +21,7 @@ import { OVERRIDES_DECIDERS } from './decide/overrides.ts';
 import { REMINDERS_DECIDERS } from './decide/reminders.ts';
 import { BLUFFS_BAG_DECIDERS } from './decide/bluffs-bag.ts';
 import { DAY_DECIDERS } from './decide/day.ts';
+import { VOTES_DECIDERS } from './decide/votes.ts';
 import { LATE_PLAYER_DECIDERS } from './decide/late-player.ts';
 import {
 	MAX_PLAYERS,
@@ -105,6 +106,8 @@ export type WarningCode =
 	| 'not-in-play'
 	| 'already-nominated'
 	| 'already-nominee'
+	| 'storyteller-nominates'
+	| 'nominated-this-game'
 	| 'already-executed'
 	| 'traveller-executed'
 	| 'not-traveller'
@@ -112,6 +115,7 @@ export type WarningCode =
 	| 'survives-execution'
 	| 'survives-exile'
 	| 'save-may-not-apply'
+	| 'outcome-may-not-apply'
 	| 'not-seat-character'
 	| 'already-used'
 	| 'too-many-guesses'
@@ -120,7 +124,14 @@ export type WarningCode =
 	| 'reminder-followed'
 	| 'no-cause'
 	| 'not-a-believer'
-	| 'late-player-in-play';
+	| 'late-player-in-play'
+	| 'no-ghost-vote'
+	| 'only-votes-with'
+	| 'must-vote'
+	| 'no-vote-token'
+	| 'needs-no-token'
+	| 'giver-not-dead'
+	| 'may-not-vote';
 
 export interface Issue<C extends string> {
 	code: C;
@@ -207,6 +218,7 @@ const DECIDERS: Deciders<CommandType> = {
 	...REMINDERS_DECIDERS,
 	...BLUFFS_BAG_DECIDERS,
 	...DAY_DECIDERS,
+	...VOTES_DECIDERS,
 	...LATE_PLAYER_DECIDERS
 };
 
