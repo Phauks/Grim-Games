@@ -29,15 +29,7 @@
 		onchoose: (token: InfoToken, filled?: FilledInfoToken) => void;
 	}
 
-	let {
-		text,
-		character,
-		characters,
-		game,
-		changed,
-		own,
-		onchoose
-	}: Props = $props();
+	let { text, character, characters, game, changed, own, onchoose }: Props = $props();
 
 	const tokens = $derived(
 		stepInfoCards(
