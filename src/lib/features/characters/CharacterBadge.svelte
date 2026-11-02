@@ -261,6 +261,7 @@
 		padding: 0 0.4em 0 0.25em;
 	}
 	.player {
+		align-items: stretch;
 		margin: 0.12em 0;
 	}
 	.player :global(.player-badge) {
