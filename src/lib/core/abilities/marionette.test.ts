@@ -18,12 +18,7 @@ import { committedCharacter, nightSheetPresence } from '#lib/core/testing/commit
 import { trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
 import { abilityState } from '#lib/core/rules/ability.ts';
 import { gameEnds, suggestedWinner } from '#lib/core/rules/game-end.ts';
-import {
-	answerOptions,
-	infoPicker,
-	nightAnswer,
-	reliability
-} from '#lib/core/rules/night-info.ts';
+import { answerOptions, infoPicker, nightAnswer, reliability } from '#lib/core/rules/night-info.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Marionette', () => {

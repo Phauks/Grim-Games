@@ -54,10 +54,8 @@
 				character={characters.get(falseBy)}
 			/>{/if}</span
 	>{:else if reason === 'any'}<span class="tag"
-		>{#if anyBy}<CharacterBadge
-				characterId={anyBy}
-				character={characters.get(anyBy)}
-			/>{/if}Any allowed</span
+		>{#if anyBy}<CharacterBadge characterId={anyBy} character={characters.get(anyBy)} />{/if}Any
+		allowed</span
 	>{:else if reason === 'invalid'}<span class="tag warn"><Icon name="warning" />Not valid</span
 	>{/if}
 
