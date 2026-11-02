@@ -75,11 +75,8 @@ test('a Fang Gu that kills itself asks which Outsider becomes the evil Fang Gu',
 	await choose(page, 2, 'Klutz');
 	// The jump: the Fang Gu dies by its own kill instead of the Klutz.
 	const sheet = await openSeat(page, 1);
-	await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Status of Seat 1' })
-		.getByRole('button', { name: 'The Demon' })
-		.tap();
+	await sheet.getByRole('combobox', { name: 'Status: Alive' }).tap();
+	await page.getByRole('listbox').getByRole('option', { name: 'The Demon' }).tap();
 	const ask = page.getByRole('alertdialog', { name: 'Choose the new Fang Gu' });
 	await expect(ask.getByRole('radio', { name: /Seat 2/, includeHidden: true })).toBeChecked();
 	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
