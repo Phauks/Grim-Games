@@ -25,7 +25,9 @@ import {
 	type Why,
 	type WhyFact,
 	alternatives,
+	anyInfo,
 	fact,
+	mayBeFalseCause,
 	onlyRelevant,
 	relevantSeats,
 	reliability,
@@ -523,7 +525,7 @@ export function infoPicker(
 		...(spec.answer ? { answer: spec.answer } : {}),
 		options,
 		...(range ? { range } : {}),
-		anyAllowed: r.unreliable !== undefined || r.anyBy !== undefined,
+		anyAllowed: anyInfo(r) || r.anyBy !== undefined,
 		why: {
 			facts: pickerFacts(game, seatId, characterId, spec, characters, worlds[0]),
 			alternatives: alternatives(game, all.registrations, relevant, worlds, numberIn, result)
@@ -599,6 +601,7 @@ export function abnormalCauses(picker: InfoPicker, choice: InfoChoice): Abnormal
 			}));
 	}
 	if (picker.impairments.length > 0) return causesOf(picker.impairments);
+	if (picker.mayBeFalse) return [mayBeFalseCause(picker.mayBeFalse)];
 	if (picker.mustBeFalse && picker.falseBy) {
 		return [
 			{

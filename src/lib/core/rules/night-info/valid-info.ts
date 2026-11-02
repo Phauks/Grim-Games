@@ -6,6 +6,7 @@ import type { Learns } from '#lib/core/data/character-rules.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 import type { InfoOption, InfoPicker } from './picker.ts';
+import { anyInfo } from './reliability.ts';
 
 /** Why a piece of information is valid to show. */
 export type ValidReason =
@@ -13,7 +14,10 @@ export type ValidReason =
 	| 'true'
 	/** True if the `registered` players register as something else (Spy, Recluse). */
 	| 'registers'
-	/** Any information is allowed: the waking player is drunk, poisoned or has no ability. */
+	/**
+	 * Any information is allowed: the waking player is drunk, poisoned or has no ability, or a
+	 * `falseInfo` character that may make it false is in play (the Fibbin, `mayBeFalse`).
+	 */
 	| 'unreliable'
 	/** Any information is allowed: the Storyteller may break the rules (the Atheist). */
 	| 'any'
@@ -63,9 +67,9 @@ export function validInformation(game: Game, picker: InfoPicker): ValidInfo[] {
 	const reasonOf = (o: InfoOption): Pick<ValidInfo, 'reason' | 'registered'> =>
 		o.registered ? { reason: 'registers', registered: o.registered } : { reason: 'true' };
 	// Under the Vortox the truthful options are exactly the ones not allowed.
-	const truthful: ValidInfo[] = picker.mustBeFalse && !picker.unreliable ? [] : groupOptions();
+	const truthful: ValidInfo[] = picker.mustBeFalse && !anyInfo(picker) ? [] : groupOptions();
 	const extra: ValidInfo[] = [];
-	const loose: ValidReason | undefined = picker.unreliable
+	const loose: ValidReason | undefined = anyInfo(picker)
 		? 'unreliable'
 		: picker.anyBy
 			? 'any'

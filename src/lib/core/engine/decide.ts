@@ -119,6 +119,8 @@ export type WarningCode =
 	| 'outcome-may-not-apply'
 	| 'not-seat-character'
 	| 'already-used'
+	| 'too-few-alive'
+	| 'not-ally'
 	| 'too-many-guesses'
 	| 'empty-day'
 	| 'reminder-fixed'

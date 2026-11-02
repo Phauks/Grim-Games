@@ -17,6 +17,7 @@ import {
 	type SeatId
 } from '#lib/core/model/index.ts';
 import {
+	characterStepSeats,
 	keepsAbilityWhenDead,
 	livesWhileDead,
 	MARKER_TEXT,
@@ -28,6 +29,7 @@ import {
 	wakeConditionMet,
 	withCharacterChangeSteps,
 	withNightInfo,
+	wakesMarked,
 	type AnswerValue,
 	type Night,
 	type NightStep
@@ -166,7 +168,7 @@ export function stepHolders(game: Game, step: NightStep, characters: CharacterLo
 	}
 	if (step.changed) return [step.changed.seatId];
 	const id = step.character?.id;
-	return id ? game.seating.filter((s) => game.seats[s].characterId === id) : [];
+	return id ? characterStepSeats(game, id, characters) : [];
 }
 
 /**
@@ -178,7 +180,8 @@ export function stepHolders(game: Game, step: NightStep, characters: CharacterLo
  * first death), or one dead since the day began whose ability that death sets off (`onDeath`:
  * the Ravenkeeper killed at night, not executed; the Sage killed by the Demon). A character's
  * own condition must hold too (`wakesWhen`: the King once the dead equal or outnumber the
- * living, the Choirboy when the Demon killed the King, the Seamstress until it is used).
+ * living, the Choirboy when the Demon killed the King, the Seamstress until it is used). A step
+ * that wakes the players its character marks wakes while anyone is marked.
  */
 export function stepWakes(
 	game: Game,
@@ -188,6 +191,9 @@ export function stepWakes(
 ): boolean {
 	const holders = stepHolders(game, step, characters);
 	const id = step.character?.id;
+	// A step that wakes the players its character marks (the Duchess's visitors) wakes only
+	// when someone is marked: no visitors, no visits tonight.
+	if (id !== undefined && !step.gained && wakesMarked(id, characters)) return holders.length > 0;
 	return (
 		holders.length === 0 ||
 		holders.some(
