@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { typeTone, type TypeTone } from '#lib/core/data/character-type.ts';
-	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Character } from '#lib/core/data/index.ts';
 	import type { ScriptJinx } from '#lib/core/rules/jinxes.ts';
@@ -104,15 +104,15 @@
 	{@const own = jinxesOf[c.id]}
 	{@const who = playersOf(c.id)}
 	<li class="character" data-character={c.id}>
-		<CharacterRow character={c} info note={travellerNote(c)}>
-			{#snippet afterName()}
+		<CharacterPiece template="row" character={c} info note={travellerNote(c)}>
+			{#snippet tags()}
 				{#if own}<JinxMark characterId={c.id} jinxes={own} characters={byId} />{/if}
 				{#if who.length}<span class="in-play" data-testid="traveller-in-play"
 						>{t('player.travellerInPlay', { names: who.join(', ') })}</span
 					>{/if}
 			{/snippet}
-			{#snippet ability()}<GlossaryText text={c.ability} {names} />{/snippet}
-		</CharacterRow>
+			{#snippet abilityText()}<GlossaryText text={c.ability} {names} />{/snippet}
+		</CharacterPiece>
 	</li>
 {/snippet}
 

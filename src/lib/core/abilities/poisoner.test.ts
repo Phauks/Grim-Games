@@ -14,13 +14,20 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import {
+	committedCharacter,
+	committedGameData,
+	nightSheetPresence
+} from '#lib/core/testing/committed-data.ts';
 import { abilityState } from '#lib/core/rules/ability.ts';
 import { dayUseDeath } from '#lib/core/rules/day-claims.ts';
 import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
 import { gameEnds, promptable } from '#lib/core/rules/game-end.ts';
-import { infoPicker, isAllowed, nightAnswer } from '#lib/core/rules/night-info.ts';
-import { scenario } from '#lib/core/testing/scenario.ts';
+import { infoPicker, isAllowed, nightAnswer, withNightInfo } from '#lib/core/rules/night-info.ts';
+import { nightOrder } from '#lib/core/rules/night-order.ts';
+import { placeholdersFor } from '#lib/core/rules/night-text.ts';
+import { reminderTargets } from '#lib/core/rules/reminder-targets.ts';
+import { engineGap, scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Poisoner', () => {
 	const character = committedCharacter('poisoner');
@@ -117,6 +124,54 @@ describe('Poisoner', () => {
 			expect(abilityState(s.game, s.seat('mayor'), s.characters).works).toBe(false);
 			const after = s.dies('imp', 'imp').becomes('poisoner', 'imp');
 			expect(abilityState(after.game, after.seat('mayor'), after.characters).works).toBe(true);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Poisoner#How_to_Run)', () => {
+		it('places the Poisoned reminder at the Poisoner step every night', () => {
+			// How to Run: each night the Poisoner picks a player, who gets the Poisoned reminder.
+			const place = [{ tokens: [{ label: 'Poisoned', action: 'place' }] }];
+			expect(placeholdersFor(character, 'first')).toEqual(place);
+			expect(placeholdersFor(character, 'other')).toEqual(place);
+		});
+
+		it('lets the Poisoned reminder go on any player, the Poisoner and the dead included', () => {
+			// How to Run: the Poisoner may point at any player.
+			const s = scenario(['poisoner', 'chef', 'imp', 'monk', 'empath']).dies('chef', 'imp');
+			const poisoned = { characterId: 'poisoner', label: 'Poisoned' };
+			expect(reminderTargets(s.game, poisoned, s.characters).flatMap((t) => t.misses)).toEqual([]);
+		});
+
+		it('still wakes the poisoned player, flagged as having no ability', () => {
+			// How to Run: the poisoned player wakes and acts as usual, with no ability, and may be
+			// given false information.
+			const s = scenario(['washerwoman', 'chef', 'imp', 'monk', 'poisoner']).poisoned(
+				'washerwoman'
+			);
+			const data = committedGameData();
+			const inPlay = s.game.seating.map((id) => s.characters.get(s.game.seats[id].characterId!)!);
+			const steps = withNightInfo(
+				nightOrder({ night: 'first', sheet: data.nightSheet, inPlay, players: 5 }).steps,
+				s.game,
+				s.characters,
+				'first',
+				{ died: [] },
+				data.nightSheet.firstNight
+			);
+			const step = steps.find((step) => step.id === 'washerwoman');
+			expect(step?.impaired).toMatchObject([
+				{ seatId: s.seat('washerwoman'), works: false, impairments: [{ reason: 'poisoned' }] }
+			]);
+			expect(step?.info).toMatchObject({ pickers: [{ unreliable: 'poisoned' }] });
+		});
+
+		it.fails('makes the poisoned player healthy again at dusk', () => {
+			// How to Run: at each dusk the poisoned player recovers and the Poisoned reminder comes off.
+			// Waits on the engine (unplanned): the game has no dusk, so last night's Poisoned
+			// reminder stays until the Storyteller moves it.
+			const s = scenario(['empath', 'chef', 'imp', 'monk', 'poisoner']).poisoned('empath').newDay();
+			expect(abilityState(s.game, s.seat('empath'), s.characters).works).toBe(false);
+			engineGap('unplanned', "a dusk step that takes last night's Poisoned reminder off");
 		});
 	});
 });

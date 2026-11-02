@@ -1,4 +1,9 @@
 {
+	"protects": {
+		"who": "self",
+		"from": "exile",
+		"storytellerDecides": true
+	},
 	"dayReminders": {
 		"impairable": true,
 		"reminders": [
