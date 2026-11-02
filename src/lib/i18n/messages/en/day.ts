@@ -89,6 +89,15 @@ export const day = {
 	'day.unmarkUsedTitle': 'Mark {who} as not used?',
 	'day.unmarkUsedNowToken': '{who} has used their ability and has the {reminder} reminder.',
 	'day.unmarkUsed': 'Mark not used',
+	// A jinx's partner stopping a character's ability (the Mayor stopping the riot, L112).
+	'day.stoppedBy': 'Stopped by',
+	'day.stoppedByLabel': 'Stopped by {who}',
+	'day.markStopped': 'Mark stopped',
+	'day.markStoppedTitle': 'Did {who} stop the {other}?',
+	'day.markStoppedNow': '{who} has not stopped the {other}.',
+	'day.markStoppedAfter': '{who} has stopped the {other}.',
+	'day.unmarkStopped': 'Mark not stopped',
+	'day.unmarkStoppedTitle': 'Mark {who} as not having stopped the {other}?',
 	// Who a day ability was used on (Trevor, 2026-10-30).
 	'day.useWho.chosen': 'Who did {who} choose?',
 	'day.useWho.nominator': 'Who nominated {who}?',

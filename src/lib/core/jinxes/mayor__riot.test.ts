@@ -10,8 +10,18 @@
  * of the two may be in play). Paraphrase, never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
-import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
+import { findJinx, jinxesAmong, type Script } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { gameEnds } from '#lib/core/rules/game-end.ts';
+import { jinxStoppers } from '#lib/core/rules/jinx-ends.ts';
+import { ownJinxRules } from '#lib/core/rules/jinxes.ts';
+import { nomineesNominateNow } from '#lib/core/rules/nominations.ts';
+import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
+
+const scriptOf = (ids: string[]): Script => ({
+	meta: { name: 'Jinxed' },
+	entries: ids.map((id) => ({ kind: 'official' as const, id }))
+});
 
 describe('Mayor + Riot jinx', () => {
 	const data = committedGameData();
@@ -30,7 +40,73 @@ describe('Mayor + Riot jinx', () => {
 		expect(jinxesAmong(data.jinxes, ['riot'])).not.toContain(jinx);
 	});
 
-	// Waits for the riot's day (L112 left it): the Mayor's public choice to stop the riot, and
-	// how many Riot are alive when they do, decide who wins.
-	it.todo('enforces the rule the jinx imposes');
+	// Both pages' Related Jinxes: the Mayor may choose to end the riot. Good wins if exactly one
+	// Riot is alive when they do; with more alive, evil wins. The Mayor's choice is recorded as
+	// their day use, which stops the riot.
+	describe('the Mayor stops the riot', () => {
+		const cast = ['mayor', 'riot', 'riot', 'riot', 'chef', 'empath', 'monk'];
+		const ids = [...new Set(cast)];
+		const riotDay = (script = scriptOf(ids), more: string[] = []) =>
+			scenario([...cast, ...more], { script })
+				.newDay()
+				.newDay()
+				.reminder(1, 'riot', 'Day 3');
+		const stop = (s: Scenario) =>
+			s.do((at) => ({
+				type: 'UseAbility',
+				seatId: at.seat('mayor'),
+				characterId: 'mayor',
+				stops: 'riot'
+			}));
+		const ended = (s: Scenario) =>
+			gameEnds(s.game, s.characters).map((e) => [e.rule, e.winner, e.jinxedWith, e.holds.length]);
+
+		it("is data in the Riot's rules", () => {
+			expect(ownJinxRules({ script: scriptOf(ids) }, 'riot', 'mayor')).toEqual({
+				endsGame: { kind: 'partner-stops', alive: 1, winner: 'good' }
+			});
+		});
+
+		it('offers the Mayor the choice during the riot', () => {
+			const s = riotDay();
+			expect(jinxStoppers(s.game, 'riot', s.characters)).toEqual([
+				{ partner: 'mayor', seatId: s.seat('mayor'), stopped: false }
+			]);
+			expect(jinxStoppers(stop(s).game, 'riot', s.characters)).toEqual([
+				{ partner: 'mayor', seatId: s.seat('mayor'), stopped: true }
+			]);
+			const without = riotDay(scriptOf(['riot', 'chef', 'empath', 'monk']));
+			expect(jinxStoppers(without.game, 'riot', without.characters)).toEqual([]);
+		});
+
+		it('with only one Riot alive, good wins', () => {
+			const s = stop(riotDay().dies(2, 'riot').dies(3, 'riot'));
+			expect(ended(s)).toEqual([['partner-stops', 'good', 'mayor', 0]]);
+			expect(gameEnds(s.game, s.characters)[0].seats).toEqual([s.seat('mayor'), s.seat(1)]);
+		});
+
+		it('with more than one Riot alive, evil wins', () => {
+			expect(ended(stop(riotDay().dies(3, 'riot')))).toEqual([
+				['partner-stops', 'evil', 'mayor', 0]
+			]);
+		});
+
+		it('ends the riot: nominees no longer nominate straight away', () => {
+			const s = riotDay();
+			expect(nomineesNominateNow(s.game, s.characters)).toEqual(['riot']);
+			expect(nomineesNominateNow(stop(s).game, s.characters)).toEqual([]);
+		});
+
+		it('a poisoned Mayor may not have stopped it: listed with a hold', () => {
+			// A Poisoner in play (the test's own setup) poisons the Mayor.
+			const poisoned = riotDay(scriptOf([...ids, 'poisoner']), ['poisoner']).poisoned('mayor');
+			const s = stop(poisoned.dies(2, 'riot').dies(3, 'riot'));
+			expect(ended(s)).toEqual([['partner-stops', 'good', 'mayor', 1]]);
+		});
+
+		it('without the jinx on the script, stopping ends nothing', () => {
+			const s = stop(riotDay(scriptOf(['riot', 'chef', 'empath', 'monk'])).dies(2, 'riot'));
+			expect(ended(s)).toEqual([]);
+		});
+	});
 });
