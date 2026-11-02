@@ -44,17 +44,29 @@ test("players' phones show where the game is up to, with the day timer as a sun 
 		'aria-label',
 		`0 of ${seatCount} seats with a player here. 1 more unassigned`
 	);
-	// The Storyteller can show the town at dusk instead, from the timer's own controls.
+	// The Storyteller can show the town at dusk instead, from Game settings; not from the
+	// timer's controls (Trevor, 2026-11-02: "does not belong in timer").
 	await page.getByRole('button', { name: /^Day timer, .*; open its controls$/ }).tap();
 	const timerSheet = page.getByTestId('timer-sheet');
-	await timerSheet.getByRole('combobox', { name: 'Setup on players’ phones' }).tap();
-	await page.getByRole('option', { name: 'Town at dusk', exact: true }).tap();
-	await expect(setupSky).toHaveAttribute('data-look', 'town');
-	await timerSheet.getByRole('combobox', { name: 'Setup on players’ phones' }).tap();
-	await page.getByRole('option', { name: 'Candles for the seats', exact: true }).tap();
-	await expect(setupSky).toHaveAttribute('data-look', 'candles');
+	await expect(timerSheet.getByRole('combobox', { name: 'Setup on players’ phones' })).toHaveCount(
+		0
+	);
 	await page.keyboard.press('Escape');
 	await expect(timerSheet).toBeHidden();
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Game settings' })
+		.tap();
+	const gameSettings = page.getByRole('dialog', { name: 'Game settings' });
+	await gameSettings.getByRole('combobox', { name: 'Setup on players’ phones' }).tap();
+	await page.getByRole('option', { name: 'Town at dusk', exact: true }).tap();
+	await expect(setupSky).toHaveAttribute('data-look', 'town');
+	await gameSettings.getByRole('combobox', { name: 'Setup on players’ phones' }).tap();
+	await page.getByRole('option', { name: 'Candles for the seats', exact: true }).tap();
+	await expect(setupSky).toHaveAttribute('data-look', 'candles');
+	await gameSettings.getByRole('button', { name: 'Close' }).tap();
+	await expect(gameSettings).toBeHidden();
 	// Alone on its row, across the whole of it (Trevor, 2026-10-27: "the game status bar should
 	// then take up the entire horizontal of that line area").
 	const across = (await phone.getByRole('tablist').boundingBox())!.width;
