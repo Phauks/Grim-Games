@@ -26,6 +26,9 @@ test('Deal gives every seat a character, and a seated phone holds to see its own
 	page,
 	browser
 }, testInfo) => {
+	// Two devices, a deal, the draw and the minute's timer: more than the default 30 seconds
+	// when the machine is busy (it ran out on the later taps, 2026-11-02).
+	test.slow();
 	// The Storyteller's clock, so the minute players may look can be skipped.
 	await page.clock.install();
 	await page.goto('/new');
@@ -158,7 +161,10 @@ test('Deal gives every seat a character, and a seated phone holds to see its own
 	await expect(named).toHaveCount(3);
 	await expect(page.getByRole('button', { name: /^Tile \S+, drawn$/ })).toHaveCount(2);
 	await page.goto(`${board}/players`);
+	// The page is ready (players can still look) before the tap that hides them.
+	await expect(toggle).toHaveAccessibleName(/^Hide characters/);
 	await toggle.tap();
+	await expect(toggle).toHaveAccessibleName('Show characters');
 	await expect(phone.getByTestId('your-character')).toBeDisabled();
 	// Off for the Storyteller's player view too.
 	await page.goto(board);
