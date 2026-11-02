@@ -30,6 +30,8 @@
 		 * empty takes no room. A phone also says it is joining or offline here.
 		 */
 		status?: string;
+		/** The team that won, once the game is over: the status takes its colour. */
+		winner?: 'good' | 'evil';
 		/** This phone's seat number, for tests to read; the screen doesn't say it. */
 		seatNumber?: number;
 		after?: Snippet;
@@ -42,6 +44,7 @@
 		mySeat,
 		unseatedNames,
 		status,
+		winner,
 		seatNumber,
 		after
 	}: Props = $props();
@@ -62,7 +65,13 @@
 		{#if status !== undefined}
 			<!-- With nothing to say the box takes no room, so the game's status starts the row
 			     (Trevor, 2026-10-26: "remove the empty space next to the game state tracker"). -->
-			<p class="you" class:quiet={!status} data-testid="you-row" data-seat={seatNumber}>
+			<p
+				class="you"
+				class:quiet={!status}
+				data-testid="you-row"
+				data-seat={seatNumber}
+				data-team={winner}
+			>
 				<span class="summary" role="status" data-testid="join-status">{status}</span>
 			</p>
 		{/if}
@@ -114,6 +123,17 @@
 		border: 1px solid var(--border);
 		border-radius: var(--radius-md);
 		background: var(--surface-raised);
+	}
+	/* Who won, in their team's colour (Trevor, 2026-11-01). */
+	.you[data-team='good'] {
+		border-color: var(--good);
+		background: var(--good);
+		color: var(--on-good);
+	}
+	.you[data-team='evil'] {
+		border-color: var(--evil);
+		background: var(--evil);
+		color: var(--on-evil);
 	}
 	.you.quiet {
 		display: none;

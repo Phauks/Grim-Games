@@ -142,76 +142,86 @@
 	}
 </script>
 
+<!-- Two columns where there's room (Trevor, 2026-11-01: "the code on the left and the info on
+     the right"): the QR code, then the code, link and the caller's buttons beside it. A phone
+     keeps one column, the code over the QR. -->
 <div class="share">
-	{#if code}
-		<ShareCode label={code.label} value={code.value} status={codeStatus} />
-	{/if}
-	<div class="qr" class:hidden={url && hidden}>
-		{#if frames?.length}
-			<QrCode
-				value={frames[frame % frames.length]}
-				label={qrLabel}
-				caption={qrCaption}
-				modules={preferences.current.qrModules}
-				finders={preferences.current.qrFinders}
-			/>
-		{:else if url && fitsQrCode(url)}
-			<!-- Hidden keeps the QR's place, covered, so nothing moves. -->
-			<QrCode
-				value={url}
-				label={qrLabel}
-				center={middle}
-				centerShape={middleShape}
-				caption={qrCaption}
-				modules={preferences.current.qrModules}
-				finders={preferences.current.qrFinders}
-			/>
-			{#if hidden}<p class="placeholder cover" data-testid="share-hidden">
-					{t('share.hidden')}
-				</p>{/if}
-		{:else}
-			<p class="placeholder" aria-busy={!url}>{url ? t('share.tooLong') : pending}</p>
-		{/if}
-	</div>
-	<div class="link">
-		<h2 class="header" id={urlId}>{t('share.link')}</h2>
-		<div class="link-row">
-			<input
-				aria-labelledby={urlId}
-				type="text"
-				readonly
-				value={url && hidden ? t('share.hidden') : (url ?? '')}
-				placeholder={t('common.none')}
-				data-testid="share-url"
-			/>
-			<CopyButton
-				label={t('share.copy')}
-				text={url && (text ? `${text}\n${url}` : url)}
-				failed={t('share.copyFailed')}
-			/>
-			{#if refresh}
-				<IconButton
-					icon="refresh"
-					label={refresh.label}
-					onclick={refresh.onclick}
-					disabled={refresh.disabled}
+	<div class="layout">
+		<div class="qr" class:hidden={url && hidden}>
+			{#if frames?.length}
+				<QrCode
+					value={frames[frame % frames.length]}
+					label={qrLabel}
+					caption={qrCaption}
+					modules={preferences.current.qrModules}
+					finders={preferences.current.qrFinders}
 				/>
+			{:else if url && fitsQrCode(url)}
+				<!-- Hidden keeps the QR's place, covered, so nothing moves. -->
+				<QrCode
+					value={url}
+					label={qrLabel}
+					center={middle}
+					centerShape={middleShape}
+					caption={qrCaption}
+					modules={preferences.current.qrModules}
+					finders={preferences.current.qrFinders}
+				/>
+				{#if hidden}<p class="placeholder cover" data-testid="share-hidden">
+						{t('share.hidden')}
+					</p>{/if}
+			{:else}
+				<p class="placeholder" aria-busy={!url}>{url ? t('share.tooLong') : pending}</p>
 			{/if}
-			{#if canShare}
-				<IconButton icon="share" label={t('share.share')} onclick={share} disabled={!url} />
+		</div>
+		<div class="info">
+			{#if code}
+				<div class="code">
+					<ShareCode label={code.label} value={code.value} status={codeStatus} />
+				</div>
 			{/if}
-			<!-- The QR's look, set where it shows as well as in Settings. -->
-			<IconButton
-				icon="settings"
-				label={t('share.qrSettings')}
-				onclick={() => (centreOpen = true)}
-			/>
+			<div class="link">
+				<h2 class="header" id={urlId}>{t('share.link')}</h2>
+				<div class="link-row">
+					<input
+						aria-labelledby={urlId}
+						type="text"
+						readonly
+						value={url && hidden ? t('share.hidden') : (url ?? '')}
+						placeholder={t('common.none')}
+						data-testid="share-url"
+					/>
+					<CopyButton
+						label={t('share.copy')}
+						text={url && (text ? `${text}\n${url}` : url)}
+						failed={t('share.copyFailed')}
+					/>
+					{#if refresh}
+						<IconButton
+							icon="refresh"
+							label={refresh.label}
+							onclick={refresh.onclick}
+							disabled={refresh.disabled}
+						/>
+					{/if}
+					{#if canShare}
+						<IconButton icon="share" label={t('share.share')} onclick={share} disabled={!url} />
+					{/if}
+					<!-- The QR's look, set where it shows as well as in Settings. -->
+					<IconButton
+						icon="settings"
+						label={t('share.qrSettings')}
+						onclick={() => (centreOpen = true)}
+					/>
+				</div>
+			</div>
+			{#if actions || canShareFile}<div class="actions">
+					{#if canShareFile}<Button onclick={() => void shareFile()}>{t('share.sendFile')}</Button
+						>{/if}
+					{@render actions?.()}
+				</div>{/if}
 		</div>
 	</div>
-	{#if actions || canShareFile}<div class="actions">
-			{#if canShareFile}<Button onclick={() => void shareFile()}>{t('share.sendFile')}</Button>{/if}
-			{@render actions?.()}
-		</div>{/if}
 </div>
 
 {#snippet pictureCentre()}
@@ -264,10 +274,41 @@
 		gap: var(--space-2);
 	}
 	.share {
+		container: share / inline-size;
+		min-width: 0;
+	}
+	.layout,
+	.info {
 		display: grid;
 		gap: var(--space-3);
 		align-content: start;
 		min-width: 0;
+	}
+	/* One column: the info's parts sit among the QR's, the code first. */
+	.info {
+		display: contents;
+	}
+	.qr {
+		order: 1;
+	}
+	.link {
+		order: 2;
+	}
+	.actions {
+		order: 3;
+	}
+	@container share (min-width: 36rem) {
+		.layout {
+			grid-template-columns: calc(16 * var(--u)) minmax(0, 1fr);
+			align-items: start;
+		}
+		.info {
+			display: grid;
+		}
+		.qr {
+			order: 0;
+			width: 100%;
+		}
 	}
 	/* The caption's room is kept with or without one (QrCode's 0.8em), so turning on the
 	   offline code's warning moves nothing below it (Trevor, 2026-10-29). */

@@ -7,6 +7,7 @@
 		type EndReason
 	} from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import AlignmentPill from './AlignmentPill.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import { endReasonLabel } from './end-reason-label.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
@@ -50,6 +51,15 @@
 	);
 </script>
 
+<!-- Good and Evil in their team colours (Trevor, 2026-11-01). -->
+{#snippet winnerLabel(option: { value: string; label: string })}
+	{#if option.value === 'good' || option.value === 'evil'}
+		<AlignmentPill alignment={option.value} text={option.label} />
+	{:else}
+		{option.label}
+	{/if}
+{/snippet}
+
 {#snippet reasonLabel(option: { value: EndReason; label: string })}
 	{@const id = endReasonCharacter(option.value)}
 	{#if id}
@@ -69,7 +79,10 @@
 			{ value: 'none', label: 'Not recorded' }
 		]}
 		onChange={(team) => (winner = team === 'none' ? undefined : team)}
-	/>
+	>
+		{#snippet item(option)}{@render winnerLabel(option)}{/snippet}
+		{#snippet selected(option)}{@render winnerLabel(option)}{/snippet}
+	</Select>
 	<Select
 		label="How it ended"
 		value={reason}
