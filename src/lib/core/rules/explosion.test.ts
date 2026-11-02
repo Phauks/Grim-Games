@@ -21,7 +21,8 @@ describe('explosionOf', () => {
 	});
 
 	it('does not explode while poisoned or for a Drunk who thinks they are the Boomdandy', () => {
-		const poisoned = base.poisoned('boomdandy');
+		// A Poisoned token needs a Poisoner in play (https://wiki.bloodontheclocktower.com/Poisoner).
+		const poisoned = base.becomes('monk', 'poisoner').poisoned('boomdandy');
 		expect(explosionOf(poisoned.game, poisoned.seat('boomdandy'), poisoned.characters)).toBe(
 			undefined
 		);
