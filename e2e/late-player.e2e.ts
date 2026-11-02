@@ -35,23 +35,23 @@ test('Add late player seats late players where tapped and makes room in the bag'
 	const sheet = page.getByRole('dialog', { name: 'Add late player' });
 	await expect(sheet.getByTestId('late-player-row')).toHaveCount(1);
 	await expect(sheet.getByTestId('late-player-row')).toContainText('Seat not chosen yet');
-	await sheet.getByRole('textbox', { name: 'Name' }).fill('Max');
+	await sheet.getByRole('combobox', { name: 'Name' }).fill('Max');
 	await sheet.getByTestId('late-place').tap();
 	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
 	await page.getByRole('button', { name: /^Place between Seat 1 and Seat 2$/ }).tap();
-	await expect(sheet.getByRole('textbox', { name: 'Name' })).toHaveValue('Max');
+	await expect(sheet.getByRole('combobox', { name: 'Name' })).toHaveValue('Max');
 	await expect(sheet.getByTestId('late-player-row')).toContainText('Between');
 	// A second late player, placed at their own spot.
 	await sheet.getByTestId('late-add-another').tap();
 	await expect(sheet.getByTestId('late-player-row')).toHaveCount(2);
-	await sheet.getByRole('textbox', { name: 'Name' }).nth(1).fill('Noa');
+	await sheet.getByRole('combobox', { name: 'Name' }).nth(1).fill('Noa');
 	await sheet.getByTestId('late-place').nth(1).tap();
 	await expect(sheet).toBeHidden();
 	// Max shows where he goes, so Noa can sit elsewhere or beside him (Trevor, 2026-10-31).
 	await expect(page.getByTestId('place-pending')).toHaveText('Max');
 	await page.getByRole('button', { name: /^Place between Seat 3 and Seat 4$/ }).tap();
 	await expect(sheet.getByTestId('late-player-row')).toHaveCount(2);
-	await expect(sheet.getByRole('textbox', { name: 'Name' }).first()).toHaveValue('Max');
+	await expect(sheet.getByRole('combobox', { name: 'Name' }).first()).toHaveValue('Max');
 	// Character selection's own player count (Trevor, 2026-10-31): one more adds a late
 	// player, one fewer takes the last one away.
 	const count = sheet.getByRole('combobox', { name: 'Players', exact: true });
@@ -60,7 +60,7 @@ test('Add late player seats late players where tapped and makes room in the bag'
 	await expect(sheet.getByTestId('late-player-row')).toHaveCount(3);
 	await pickNumber(sheet, 'Players', 7);
 	await expect(sheet.getByTestId('late-player-row')).toHaveCount(2);
-	await expect(sheet.getByRole('textbox', { name: 'Name' }).nth(1)).toHaveValue('Noa');
+	await expect(sheet.getByRole('combobox', { name: 'Name' }).nth(1)).toHaveValue('Noa');
 
 	// Character selection's own list and counts, pinned at the top (Trevor, 2026-10-31).
 	// Seven players have 5, 0, 1, 1 (https://wiki.bloodontheclocktower.com/Setup); a count
@@ -146,12 +146,9 @@ test('Add late player can seat a phone in the room, as the bag draw does', async
 	// The late player's name is picked from the room's phones, the reveal's own field.
 	await page.getByRole('button', { name: 'Add late player' }).tap();
 	const sheet = page.getByRole('dialog', { name: 'Add late player' });
-	await sheet.getByRole('button', { name: 'Pick a phone in the room' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Pick a phone in the room' })
-		.getByRole('button', { name: 'Zed', exact: true })
-		.tap();
-	await expect(sheet.getByRole('textbox', { name: 'Name' })).toHaveValue('Zed');
+	await sheet.getByRole('combobox', { name: 'Name' }).tap();
+	await page.getByRole('option', { name: 'Zed', exact: true }).tap();
+	await expect(sheet.getByRole('combobox', { name: 'Name' })).toHaveValue('Zed');
 	await sheet.getByTestId('late-roll').tap();
 	await sheet.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(sheet).toBeHidden();
