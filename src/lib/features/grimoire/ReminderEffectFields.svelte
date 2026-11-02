@@ -2,19 +2,22 @@
 	import { onDestroy } from 'svelte';
 	import { reminderHolder, type ReminderInstance } from '#lib/core/model/index.ts';
 	import {
+		effectDeath,
 		effectNight,
 		pickedEffectOf,
 		type ReminderEffectKind
 	} from '#lib/core/rules/reminder-effects.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
+	import Button from '#lib/ui/primitives/Button.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 
 	/**
 	 * What a reminder whose effect the Storyteller picks does (`pickedEffect`: the Angel's
-	 * Something Bad, M17f), in its reminder dialog: one the rules know (the marked player kills no
-	 * one on the next night, shown at their night step), or the Storyteller's own words.
+	 * Something Bad, M17f), in its reminder dialog: one the rules know (`reminder-effects.ts`), or
+	 * the Storyteller's own words. Mark dead is always shown, and only works while `dies` is
+	 * picked and the marked player lives: tapping it is the Storyteller's confirmation.
 	 */
 	interface Props {
 		grimoire: Grimoire;
@@ -46,6 +49,12 @@
 		});
 	}
 
+	const dies = $derived(effectDeath(grimoire.game, reminder.reminderId));
+	function markDead() {
+		if (dies === undefined) return;
+		grimoire.run({ type: 'SetDead', seatId: dies, dead: true, cause: reminder.characterId });
+	}
+
 	const saved = $derived(reminder.note ?? '');
 	// Typed text, reset whenever the saved note changes.
 	let text = $derived(saved);
@@ -71,6 +80,12 @@
 		oncommit={save}
 		testid="reminder-effect-note"
 	/>
+	<Button
+		variant="danger"
+		disabled={dies === undefined}
+		onclick={markDead}
+		data-testid="reminder-effect-dies">{t('characters.effectMarkDead')}</Button
+	>
 </div>
 
 <style>

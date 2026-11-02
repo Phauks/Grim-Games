@@ -65,6 +65,6 @@
 	},
 	"pickedEffect": {
 		"token": "Something Bad",
-		"effects": ["no-kill"]
+		"effects": ["no-kill", "poisoned", "mad", "no-vote-today", "no-ability-today", "dies"]
 	}
 }
