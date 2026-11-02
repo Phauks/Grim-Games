@@ -3,14 +3,18 @@
  * turns the alerts on gives the room its push address (web-push.ts), and a call goes to every
  * such phone that isn't showing the app. A phone showing it hears the call on its socket.
  */
+import type { InvitePushMessage } from './invite-push.ts';
 import type { PushAddress } from './web-push.ts';
 
 /** What the room pushes; the service worker shows it as a notification (src/service-worker.ts). */
-export interface PushMessage {
+export interface CallTownPushMessage {
 	type: 'call-town';
 	/** The room's code, so a tap opens that room's player screen. */
 	code?: string;
 }
+
+/** Every push the Worker sends: Back to town, or a friend's game invite (plan F8). */
+export type PushMessage = CallTownPushMessage | InvitePushMessage;
 
 /**
  * A call is about now: a phone out of signal for longer than this would only hear it late, so
