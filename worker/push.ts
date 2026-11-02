@@ -59,12 +59,14 @@ export async function handlePushKey(
 
 /**
  * Pushes `message` to each phone, and returns the members whose address the push service says
- * is gone, for the room to forget. A push that fails otherwise is only missed.
+ * is gone, for the room (or account) to forget. A push that fails otherwise is only missed.
+ * `ttl`: how long the push service may hold it for a phone that is off, in seconds.
  */
 export async function pushToPhones(
 	env: PushEnv,
 	to: [string, PushAddress][],
-	message: PushMessage
+	message: PushMessage,
+	ttl = CALL_TOWN_PUSH_TTL_SECONDS
 ): Promise<string[]> {
 	if (!to.length || env.OTHER_SITES === 'off') return [];
 	const keys = await keyStore(env).keys();
@@ -72,13 +74,7 @@ export async function pushToPhones(
 	const gone = await Promise.all(
 		to.map(async ([id, address]) => {
 			try {
-				const { url, init } = await pushRequest(
-					address,
-					body,
-					keys,
-					Date.now(),
-					CALL_TOWN_PUSH_TTL_SECONDS
-				);
+				const { url, init } = await pushRequest(address, body, keys, Date.now(), ttl);
 				const response = await fetch(url, init);
 				return pushAddressGone(response.status) ? id : undefined;
 			} catch {
