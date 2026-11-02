@@ -6316,11 +6316,8 @@ test('with several living Minions, the Scarlet Woman stands out as the new Imp',
 		await closeSheet(page);
 	}
 	const sheet = await openSeat(page, 3);
-	await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Status of Seat 3' })
-		.getByRole('button', { name: 'The Demon' })
-		.tap();
+	await sheet.getByRole('combobox', { name: 'Status: Alive' }).tap();
+	await page.getByRole('listbox').getByRole('option', { name: 'The Demon' }).tap();
 	const ask = page.getByRole('alertdialog', { name: 'Choose the new Imp' });
 	const scarlet = ask.locator('[data-part="item"][data-emphasized]');
 	await expect(scarlet).toHaveAttribute('data-emphasized', 'chosen');
