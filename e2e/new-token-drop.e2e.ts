@@ -106,3 +106,33 @@ test('a reminder dropped on "+ New token" becomes a new ∞ token with its words
 		/1 reminder/
 	);
 });
+
+// https://wiki.bloodontheclocktower.com/Imp: the Imp kills, so its Dead reminder asks to mark
+// the player dead; a copy reads the same, so it asks too (M21; Trevor, 2026-11-02).
+test('a copy of a Dead reminder asks to mark the player dead, as the reminder does', async ({
+	page
+}) => {
+	await startGame(page);
+	await page.getByRole('button', { name: /^Seat 2:/ }).tap();
+	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 2' })
+		.getByRole('button', { name: 'Imp', exact: true })
+		.tap();
+	await page.keyboard.press('Escape');
+	await expect(sheet).toBeHidden();
+	const bank = page.getByRole('list', { name: 'Reminder bank' });
+	const plus = bank.getByRole('button', { name: 'New token' });
+	await lift(page, bank.getByRole('button', { name: 'Dead reminder' }), plus);
+	await page.mouse.up();
+	const copy = bank.getByRole('button', { name: 'Generic reminder: Dead' });
+	await expect(copy).toHaveCount(1);
+	await tapToSeat(page, copy, 3);
+	const ask = page.getByRole('alertdialog', { name: /^Mark .*Seat 3 dead\?$/ });
+	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(page.locator('[data-testid="seat"][aria-label^="Seat 3:"]')).toHaveAttribute(
+		'aria-label',
+		/dead/
+	);
+});
