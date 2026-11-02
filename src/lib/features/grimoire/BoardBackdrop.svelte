@@ -20,10 +20,11 @@
 
 	// SPIKE (animated backgrounds, not for merge): ?scene=hellfire|beach&engine=css|shader|video
 	import CssScene from './spike-scenes/CssScene.svelte';
+	import CssMore from './spike-scenes/CssMore.svelte';
 	import ShaderScene from './spike-scenes/ShaderScene.svelte';
 	import VideoScene from './spike-scenes/VideoScene.svelte';
 	import { spike } from './spike-scenes/spike-state.svelte.ts';
-	const spikeScene = $derived(spike.scene);
+	const spikeScene = $derived(spike.scene as never);
 	const spikeEngine = $derived(spike.engine);
 	const spikeStill = $derived(spike.still);
 </script>
@@ -34,8 +35,10 @@
 			<ShaderScene scene={spikeScene} still={spikeStill} {contained} />
 		{:else if spikeEngine === 'video'}
 			<VideoScene src={`/spike-video/${spikeScene}.mp4`} still={spikeStill} {contained} />
-		{:else}
+		{:else if spikeScene === 'hellfire' || spikeScene === 'beach'}
 			<CssScene scene={spikeScene} still={spikeStill} {contained} />
+		{:else}
+			<CssMore scene={spikeScene} still={spikeStill} {contained} />
 		{/if}
 	{/key}
 {/if}
