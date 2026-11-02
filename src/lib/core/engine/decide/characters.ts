@@ -11,6 +11,7 @@ import {
 import { extraEvilPlayers } from '#lib/core/rules/extra-evil.ts';
 import { abilityState } from '#lib/core/rules/ability.ts';
 import { cantTurnGood } from '#lib/core/rules/becomes.ts';
+import { PRETEND_TYPES, pretendTeamSource } from '#lib/core/rules/pretend.ts';
 import { barredAbilities, givenInstead, jinxForbidsBecoming } from '#lib/core/rules/jinxes.ts';
 import { tallyKiller, tallyKills } from '#lib/core/rules/day-tally.ts';
 import { neighbourFollows } from '#lib/core/rules/reminder-movement.ts';
@@ -49,7 +50,28 @@ export const CHARACTERS_DECIDERS: Deciders<
 	| 'ClearOverride'
 	| 'AddRuleCharacter'
 	| 'RemoveRuleCharacter'
+	| 'SetPretend'
 > = {
+	SetPretend(game, command, ctx, warn) {
+		const seat = seatOf(game, command.seatId);
+		if (command.characterId === game.pretend?.[seat.seatId]) {
+			warn('no-change', 'the pretend character is unchanged');
+			return [];
+		}
+		if (command.characterId === undefined) return [{ type: 'PretendSet', seatId: seat.seatId }];
+		const character = characterOf(ctx, command.characterId);
+		if (!pretendTeamSource(game, ctx.characters)) {
+			warn('no-pretend-team', 'no character in play allows a pretend evil team');
+		}
+		if (!(PRETEND_TYPES as readonly string[]).includes(character.type)) {
+			warn('not-pretend-type', `${character.name} is not a Minion or Demon`, [character.id]);
+		}
+		if (!isOnScript(game.script, character.id)) {
+			warn('not-on-script', `${character.name} is not on the script`, [character.id]);
+		}
+		return [{ type: 'PretendSet', seatId: seat.seatId, characterId: character.id }];
+	},
+
 	AssignCharacter(game, command, ctx, warn) {
 		const seat = seatOf(game, command.seatId);
 		const character = seatableCharacter(ctx, command.characterId);

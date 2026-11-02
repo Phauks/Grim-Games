@@ -168,6 +168,8 @@ export type GameEvent =
 	| { type: 'DemonVotedSet'; voted?: boolean }
 	/** No `value` clears it. */
 	| { type: 'PrepValueSet'; key: string; value?: string }
+	/** No `characterId` clears the seat's pretend character. */
+	| { type: 'PretendSet'; seatId: SeatId; characterId?: CharacterId }
 	/** Replaces `Game.storytellerPair`; no `pair` clears it. */
 	| { type: 'StorytellerPairSet'; pair?: StorytellerPair }
 	/** Which Storyteller the player went to today; no `storyteller` clears it. */
