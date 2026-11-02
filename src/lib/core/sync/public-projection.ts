@@ -26,6 +26,7 @@ import { parsePublicTimer, type PublicDayTimer } from '#lib/core/rules/day-timer
 import { parsePublicSound, type PublicSound } from './room-sound.ts';
 import type { AvatarId } from '#lib/core/avatars/index.ts';
 import type { FrameId } from '#lib/core/frames/index.ts';
+import type { ProfileWords } from '#lib/core/profile/index.ts';
 import { isImageHash } from './room-images.ts';
 
 export interface PublicSeat {
@@ -178,9 +179,10 @@ export interface PublicRule {
 /**
  * The Storyteller's own avatar, laurel and picture (by its name among the room's pictures), as
  * a player's phone shares its own (RoomMember), so a phone shows the Storyteller's profile as
- * it shows a player's (Trevor, 2026-10-30). Each is left out when none is picked.
+ * it shows a player's (Trevor, 2026-10-30), with their tag-line and details (2026-11-01). Each
+ * is left out when none is picked.
  */
-export interface PublicStoryteller {
+export interface PublicStoryteller extends ProfileWords {
 	avatar?: AvatarId;
 	frame?: FrameId;
 	picture?: string;

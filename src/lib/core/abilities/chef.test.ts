@@ -82,13 +82,12 @@ describe('Chef', () => {
 			expect(picker.range?.truth).toBe(3);
 		});
 
-		it.fails('Example 4: Recluse between Imp and Poisoner, learns one', () => {
+		it('Example 4: Recluse between Imp and Poisoner, learns one', () => {
 			// Wiki: "The Recluse is sitting between the Imp and the Poisoner. The Chef learns a '1'. Here,
 			// the Recluse is registering as evil for the Imp-Recluse pair, but as good for the
 			// Poisoner-Recluse pair."
 			// The Recluse may register as evil for one pair and good for the other in the same
-			// count. Waits on the engine: a registration is one world for the whole count, so only
-			// 0 (both good) or 2 (both evil) is offered.
+			// count.
 			const s = scenario(['chef', 'imp', 'recluse', 'poisoner', 'monk', 'empath']);
 			const picker = infoPicker(s.game, s.seat('chef'), 'chef', s.characters)!;
 			expect(isAllowed(picker, { seats: [], number: 1 })).toBe(true);
