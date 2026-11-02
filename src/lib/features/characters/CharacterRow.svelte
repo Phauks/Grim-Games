@@ -24,7 +24,7 @@
 	 *
 	 * A choosable row has one hover: ring, text, marks and `end` controls alike (Trevor,
 	 * 2026-10-20). Marks and controls keep fixed places, so choosing never moves the name or
-	 * the ability.
+	 * the ability. A homebrew character (one without an edition) gets a Custom tag after its name.
 	 */
 	interface Props {
 		character: Character;
@@ -124,6 +124,9 @@
 	<span class="band">
 		<!-- eslint-disable-next-line grim/names-as-badges -- the band is the character's badge; its icon is in the ring -->
 		<span class="band-name">{character.name}</span>
+		{#if !character.edition}<span class="custom" data-testid="custom-tag"
+				>{t('characters.custom')}</span
+			>{/if}
 		{#if playerName}<span class="player"><PlayerBadge name={playerName} /></span>{/if}
 		{#if afterName}{@render afterName()}{/if}
 		{#if withNote || note}<span class="note">{note ?? ''}</span>{/if}
@@ -190,6 +193,21 @@
 	.player {
 		display: inline-flex;
 		min-width: 0;
+	}
+	/*
+	 * A script's own (homebrew) character, tagged after its name (Trevor, 2026-11-02): an
+	 * outlined pill in the band's own text colour, so it suits every team's band.
+	 */
+	.custom {
+		flex: none;
+		padding: 0 0.5em;
+		border: 0.0625rem solid currentColor;
+		border-radius: var(--radius-full);
+		font-family: var(--font-control);
+		font-size: 0.75rem;
+		font-weight: 600;
+		line-height: 1.3;
+		white-space: nowrap;
 	}
 	.note {
 		flex: 0 1 auto;
