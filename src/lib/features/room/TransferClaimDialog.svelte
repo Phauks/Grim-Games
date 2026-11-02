@@ -10,6 +10,7 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
+	import { leaveWithoutAsking } from '#lib/features/shell/shell.ts';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import { RoomClaim } from './room-transfer.svelte.ts';
 
@@ -19,24 +20,30 @@
 	 * it is right, it says who hands over what; Take over asks the Storyteller's device, and
 	 * once it allows it, this device is the Storyteller and opens the game that came along, or
 	 * New game.
+	 * `offered` (plan F14): the Storyteller handed the room to this phone's signed-in account
+	 * from the friends in the room, so there is no code to type and no match check to compare:
+	 * the Storyteller already chose who, and Take over hands it over at once.
 	 */
 	interface Props {
 		open: boolean;
 		roomCode: string;
+		offered?: boolean;
 	}
 
-	let { open = $bindable(), roomCode }: Props = $props();
+	let { open = $bindable(), roomCode, offered = false }: Props = $props();
 
 	let code = $state('');
 	let claim = $state.raw<RoomClaim>();
 	$effect(() => {
 		if (!open) return;
-		const next = new RoomClaim(roomCode);
+		const next = new RoomClaim(roomCode, offered);
 		claim = next;
 		code = '';
 		return () => next.stop();
 	});
-	$effect(() => claim?.check(code));
+	$effect(() => {
+		if (!offered) claim?.check(code);
+	});
 
 	function what(details: TransferDetails): string {
 		const players = t('common.players', { count: details.players });
@@ -52,7 +59,10 @@
 		try {
 			const gameId = await claim.take();
 			open = false;
-			await goto(gameId ? resolve('/grimoire/[gameId]', { gameId }) : resolve('/new'));
+			const to = gameId ? resolve('/grimoire/[gameId]', { gameId }) : resolve('/new');
+			// Taken over from a player's screen (plan F14): its leave guard doesn't ask, as
+			// this device runs the room now.
+			leaveWithoutAsking(() => void goto(to));
 		} catch {
 			// A turned-down or refused ask says so on the status line.
 			if (!claim.problem) toast(t('room.transfer.takeFailed'));
@@ -72,17 +82,21 @@
 			void take();
 		}}
 	>
-		<label for="transfer-code">{t('room.transfer.code')}</label>
-		<CodeField
-			id="transfer-code"
-			bind:value={code}
-			length={TRANSFER_CODE_LENGTH}
-			group={TRANSFER_CODE_LENGTH / 2}
-			centred
-		/>
+		{#if offered}
+			<p class="offered">{t('room.transfer.offeredTo')}</p>
+		{:else}
+			<label for="transfer-code">{t('room.transfer.code')}</label>
+			<CodeField
+				id="transfer-code"
+				bind:value={code}
+				length={TRANSFER_CODE_LENGTH}
+				group={TRANSFER_CODE_LENGTH / 2}
+				centred
+			/>
+		{/if}
 		<!-- One line, always in its place: who hands over what, or why the code was turned down. -->
 		<p class="status" role="status" data-testid="transfer-status">
-			{#if claim?.taking}
+			{#if claim?.taking && !offered}
 				{t('room.transfer.waiting')}
 			{:else if problem?.kind === 'denied'}
 				{t('room.transfer.denied')}
@@ -98,10 +112,12 @@
 		</p>
 		<!-- The match check (Trevor, 2026-10-31): the Storyteller's Allow prompt shows the same
 		     number for this device only. In its place before it is asked, so nothing moves. -->
-		<div class="check" data-testid="transfer-check" class:waiting={!claim?.taking}>
-			<span>{t('room.transfer.check')}</span>
-			<strong>{claim?.taking && claim.matchCheck ? claim.matchCheck : '····'}</strong>
-		</div>
+		{#if !offered}
+			<div class="check" data-testid="transfer-check" class:waiting={!claim?.taking}>
+				<span>{t('room.transfer.check')}</span>
+				<strong>{claim?.taking && claim.matchCheck ? claim.matchCheck : '····'}</strong>
+			</div>
+		{/if}
 		<ModalActions
 			onCancel={() => (open = false)}
 			submit
@@ -116,8 +132,12 @@
 		display: grid;
 		gap: var(--space-3);
 	}
-	.claim label {
+	.claim label,
+	.offered {
 		font-size: 1.1rem;
+	}
+	.offered {
+		margin: 0;
 	}
 	.status {
 		margin: 0;

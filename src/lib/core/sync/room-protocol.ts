@@ -184,14 +184,23 @@ export type ClientMessage =
 	| { type: 'close-transfer' }
 	/** Allows, or turns down, the device asking to take over (`HostView.transfer.asking`). */
 	| { type: 'answer-transfer'; allow: boolean }
+	/**
+	 * Hands the open transfer to a friend in the room, by account (plan F14): their phone is
+	 * told (`transfer-offer`), or this device hears `transfer-offer-refused`.
+	 */
+	| { type: 'offer-transfer'; to: string }
 	// From a device taking the room over (hello role `claim`).
-	/** Is this the transfer code? Answered with `transfer` or `transfer-refused`. */
-	| { type: 'check-transfer'; code: string }
+	/**
+	 * Is this the transfer code? Answered with `transfer` or `transfer-refused`. `offer`, with no
+	 * code: was the transfer handed to this device's signed-in account (plan F14)?
+	 */
+	| { type: 'check-transfer'; code?: string; offer?: true }
 	/**
 	 * Asks to take the room with this transfer code, under this Profile name: the Storyteller's
-	 * device allows it (`transferred`) or turns it down (`transfer-denied`).
+	 * device allows it (`transferred`) or turns it down (`transfer-denied`). `offer`, with no
+	 * code: takes the room handed to this account, which the Storyteller already chose.
 	 */
-	| { type: 'take-room'; code: string; name?: string }
+	| { type: 'take-room'; code?: string; offer?: true; name?: string }
 	| { type: 'unread-messages'; ids: string[] } // The Storyteller marked them unread again.
 	| { type: 'close' };
 
@@ -361,6 +370,13 @@ export type ServerMessage =
 	| { type: 'transferred'; grimoire?: SharedGrimoire }
 	/** To the Storyteller's old device: another device took the room over. */
 	| { type: 'handed-over' }
+	/**
+	 * To a friend's phone in the room: the Storyteller handed it the room (plan F14), so it
+	 * opens Room transfer with no code to type. Older apps ignore it.
+	 */
+	| { type: 'transfer-offer' }
+	/** To the Storyteller's device: that friend can't be handed the room (gone, or not a friend). */
+	| { type: 'transfer-offer-refused' }
 	/**
 	 * To the phone that sent a message to the Storyteller: whether the room took it (Trevor,
 	 * 2026-10-28). Says nothing of what was sent; older apps ignore it.
