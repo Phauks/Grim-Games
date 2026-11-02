@@ -12,6 +12,7 @@
 import { defaultAlignment, type Alignment, type CharacterId } from '#lib/core/data/index.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
+import { scriptCharacterIds } from '#lib/core/model/characters.ts';
 import { trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 import { standInKind } from '#lib/core/rules/bag-plan.ts';
@@ -41,6 +42,7 @@ export function seatRoles(game: Game, characters: CharacterLookup): Record<SeatI
 		}
 	}
 	const roles: Record<SeatId, SeatRole> = {};
+	const script = scriptCharacterIds(game.script).flatMap((id) => characters.get(id) ?? []);
 	// A rule character that hides roles (the Tor, https://wiki.bloodontheclocktower.com/Tor):
 	// living players learn nothing; each learns theirs on death (M22).
 	const hidden = [
@@ -58,7 +60,7 @@ export function seatRoles(game: Game, characters: CharacterLookup): Record<SeatI
 			continue;
 		}
 		const shows = shownBy.get(seatId);
-		if (shows === undefined && standInKind(truth)) continue;
+		if (shows === undefined && standInKind(truth, script)) continue;
 		const role: SeatRole = { characterId: shows ?? truth.id };
 		// Measured against who they really are: a Marionette sits on a good token but is evil
 		// by their own type, and must think they are good, so nothing is said
