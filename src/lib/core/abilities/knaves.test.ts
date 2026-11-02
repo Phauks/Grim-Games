@@ -15,8 +15,9 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { infoPicker } from '#lib/core/rules/night-info.ts';
-import { engineGap, scenario } from '#lib/core/testing/scenario.ts';
+import { infoPicker, isAllowed, validInformation } from '#lib/core/rules/night-info.ts';
+import { savantSituation } from '#lib/core/rules/savant.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Knaves', () => {
 	const character = committedCharacter('knaves');
@@ -48,35 +49,44 @@ describe('Knaves', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Knaves#Examples)', () => {
-		it.fails('Example 1: Chef asks the liar, gets impossible number', () => {
+		it('Example 1: Chef asks the liar, gets impossible number', () => {
 			// Wiki: "There are two Storytellers, Ben and Lachlan. The Chef wakes and chooses
 			// Lachlan, who is the lying Storyteller. The Chef learns a "3", even though there are
 			// only 2 pairs of evil players."
-			// The true number is two; nothing yet knows which Storyteller the Chef chose.
-			const s = scenario([
-				'chef',
-				'poisoner',
-				'imp',
-				'scarletwoman',
-				'empath',
-				'monk',
-				'soldier'
-			]).rule('knaves');
-			expect(infoPicker(s.game, s.seat('chef'), 'chef', s.characters)!.range?.truth).toBe(2);
-			engineGap(
-				'unplanned',
-				'which of the two Storytellers lies, so the information from the lying one must be false'
-			);
+			const s = scenario(['chef', 'poisoner', 'imp', 'scarletwoman', 'empath', 'monk', 'soldier'])
+				.rule('knaves')
+				.do({ type: 'SetStorytellers', names: ['Ben', 'Lachlan'], liar: 1 }, (at) => ({
+					type: 'SetStorytellerVisit',
+					seatId: at.seat('chef'),
+					storyteller: 1
+				}));
+			const picker = infoPicker(s.game, s.seat('chef'), 'chef', s.characters)!;
+			// The true number is two; the lying Storyteller must give anything else.
+			expect(picker.range?.truth).toBe(2);
+			expect(picker).toMatchObject({ mustBeFalse: true, falseBy: 'knaves', anyAllowed: false });
+			expect(isAllowed(picker, { seats: [], number: 3 })).toBe(true);
+			expect(isAllowed(picker, { seats: [], number: 2 })).toBe(false);
+			const numbers = validInformation(s.game, picker).map((v) => v.number);
+			expect(numbers).toContain(3);
+			expect(numbers).not.toContain(2);
 		});
-		it.fails('Example 2: After swap, Savant picks the truthful one', () => {
+		it('Example 2: After swap, Savant picks the truthful one', () => {
 			// Wiki: "Later that game, the Storytellers switch. The Savant visits Ben and Lachlan
 			// and chooses Lachlan. The Savant learns 2 pieces of true information."
-			const s = scenario(['savant', 'chef', 'empath', 'poisoner', 'imp']).rule('knaves');
-			expect(s.game.ruleCharacters).toContain('knaves');
-			engineGap(
-				'unplanned',
-				'which Storyteller lies now that they have switched, so the Savant who chose the truthful one gets two true statements'
-			);
+			const s = scenario(['savant', 'chef', 'empath', 'poisoner', 'imp'])
+				.rule('knaves')
+				.do({ type: 'SetStorytellers', names: ['Ben', 'Lachlan'], liar: 1 })
+				.newDay()
+				.do({ type: 'SwitchStorytellers' }, (at) => ({
+					type: 'SetStorytellerVisit',
+					seatId: at.seat('savant'),
+					storyteller: 1
+				}));
+			expect(s.game.storytellerPair).toMatchObject({ liar: 0, switched: true });
+			expect(savantSituation(s.game, s.seat('savant'), s.characters)).toMatchObject({
+				mode: 'both-true',
+				storyteller: { by: 'knaves', lies: false }
+			});
 		});
 	});
 });

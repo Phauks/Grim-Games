@@ -11,9 +11,11 @@
  *   https://wiki.bloodontheclocktower.com/Barista);
  * - `no-kill`: another ability's token stops them killing tonight, so no kill alerts follow
  *   (`stopsKilling`: the Princess's Doesn't Kill on the Demon,
- *   https://wiki.bloodontheclocktower.com/Princess), or a jinx does (`noKill` in the `jinxes`
+ *   https://wiki.bloodontheclocktower.com/Princess), a jinx does (`noKill` in the `jinxes`
  *   block: the Exorcist's Chosen on the Yaggababble, the Cannibal who nominated and executed
- *   the Princess today, https://wiki.bloodontheclocktower.com/Princess#Related_Jinxes);
+ *   the Princess today, https://wiki.bloodontheclocktower.com/Princess#Related_Jinxes),
+ *   or a `no-kill` effect the Storyteller picked for this night (`pickedEffect`: the Angel's
+ *   Something Bad);
  * - `no-grimoire`: a jinx says the waking player does not see the Grimoire while another
  *   character's ability works (`noGrimoire`: the Spy and the Widow while the Poppy Grower has
  *   its ability, https://wiki.bloodontheclocktower.com/Poppy_Grower#Related_Jinxes);
@@ -55,6 +57,7 @@ import type { DeathCause, Game, SeatId } from '#lib/core/model/types.ts';
 import { actsTwiceSource } from './acts-twice.ts';
 import { characterChanger } from './becomes.ts';
 import { isExecution } from './death-causes.ts';
+import { stopsKillingTonight } from './reminder-effects.ts';
 import { noAttackState } from './demon-attack.ts';
 import { ownJinxes, ownJinxRules } from './jinxes.ts';
 import {
@@ -269,11 +272,13 @@ export function nightStepAlerts(
 			const rules = rulesOf(r.characterId, characters);
 			let waking = rules?.stopsWaking?.token === r.label;
 			const stops = waking ? rules?.stopsWaking : rules?.stopsKilling;
-			if (stops?.token !== r.label) continue;
-			if (stops.type && typeOf(game, seatId, characters) !== stops.type) continue;
+			// Or the effect the Storyteller picked for it, on its own night (`pickedEffect`).
+			const picked = !waking && stopsKillingTonight(r.effect, game);
+			if (!picked && stops?.token !== r.label) continue;
+			if (!picked && stops?.type && typeOf(game, seatId, characters) !== stops.type) continue;
 			// A jinx may make a token that stops waking stop the kill too (the Exorcist's Chosen
 			// on the Yaggababble, https://wiki.bloodontheclocktower.com/Yaggababble#Related_Jinxes).
-			if (ownJinxRules(game, characterId, r.characterId, characters)?.noKill === 'token')
+			if (waking && ownJinxRules(game, characterId, r.characterId, characters)?.noKill === 'token')
 				waking = false;
 			if (!waking) noKill = true;
 			const source = game.seating.find(

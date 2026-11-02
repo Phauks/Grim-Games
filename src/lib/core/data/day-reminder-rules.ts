@@ -32,6 +32,8 @@
  * - `targetAlive`: with `reminder`, only while the player carrying the token is alive;
  * - `nomineeChose: true`: one reminder per nomination today whose nominee chose a player
  *   (the Big Wig's speaker, recorded on the nomination).
+ * - `noWish: true`: only while no wish of its player's has been granted (`rules/wishes.ts`);
+ *   a declined wish leaves it.
  *
  * Text here is our own summary, never wiki prose.
  */
@@ -88,6 +90,8 @@ export interface DayCondition {
 	targetAlive?: boolean;
 	/** One reminder per nomination today whose nominee chose a player. */
 	nomineeChose?: true;
+	/** Only while no wish of its player's has been granted. */
+	noWish?: true;
 }
 
 export interface DayReminderSpec {
@@ -154,7 +158,16 @@ function readCondition(
 	}
 	checkKeys(
 		raw,
-		['self', 'reminder', 'noReminder', 'cause', 'minAlive', 'targetAlive', 'nomineeChose'],
+		[
+			'self',
+			'reminder',
+			'noReminder',
+			'cause',
+			'minAlive',
+			'targetAlive',
+			'nomineeChose',
+			'noWish'
+		],
 		path,
 		issues
 	);
@@ -182,6 +195,9 @@ function readCondition(
 	const nomineeChose = readBoolean(raw, 'nomineeChose', path, issues);
 	if (nomineeChose === false) issues.add(`${path}.nomineeChose`, 'expected true, or leave it out');
 	if (nomineeChose) out.nomineeChose = true;
+	const noWish = readBoolean(raw, 'noWish', path, issues);
+	if (noWish === false) issues.add(`${path}.noWish`, 'expected true, or leave it out');
+	if (noWish) out.noWish = true;
 	if (out.reminder && out.nomineeChose) {
 		issues.add(`${path}.nomineeChose`, 'a reminder or nomineeChose, not both');
 	}

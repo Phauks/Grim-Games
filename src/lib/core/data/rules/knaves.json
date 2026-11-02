@@ -4,5 +4,6 @@
 	},
 	"deathCause": {
 		"none": "Storytellers"
-	}
+	},
+	"twoStorytellers": true
 }

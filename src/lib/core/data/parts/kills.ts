@@ -13,6 +13,7 @@ import { objectPart } from './part.ts';
 
 const KILLS_BY = ['demon', 'other'] as const;
 const KILLS_TARGETS = ['any', 'self'] as const;
+const KILLS_CHOOSES = ['character', 'live-or-die'] as const;
 export interface Kills {
 	by: (typeof KILLS_BY)[number];
 	targets?: (typeof KILLS_TARGETS)[number];
@@ -23,14 +24,22 @@ export interface Kills {
 	charged?: { token: ReminderLabel; count: number };
 	/** Its kill falls on the player carrying this token of its own, and needs no waking. */
 	delayed?: ReminderLabel;
+	/**
+	 * What the ability chooses instead of a player (`rules/chosen-kills.ts`): `character`, a
+	 * character whose player dies, or the Storyteller's pick when it is not in play (the Ojo);
+	 * `live-or-die`, the players its reminders mark, who each choose to live or die, and all
+	 * die if all live (the Al-Hadikhia).
+	 */
+	chooses?: (typeof KILLS_CHOOSES)[number];
 }
 
 /**
  * The ability kills at night: the Demon's kill or another ability's (`by`), any player or
- * only its own (`targets: self`, the Gambler), and ignoring protection (the Assassin). `count`
- * players a night (the Shabaloth's 2), or `charged.count` while its `charged.token` is on its
- * player (the Po's 3 Attacks after choosing no one); a `delayed` kill falls on the carrier of
- * its token though it does not wake (the Pukka's Poisoned) (`rules/night-kill.ts`).
+ * only its own (`targets: self`, the Gambler), ignoring protection (the Assassin), and what
+ * it chooses when that is not a player (`chooses`). `count` players a night (the Shabaloth's 2),
+ * or `charged.count` while its `charged.token` is on its player (the Po's 3 Attacks after
+ * choosing no one); a `delayed` kill falls on the carrier of its token though it does not wake
+ * (the Pukka's Poisoned) (`rules/night-kill.ts`).
  */
 export const kills = objectPart(
 	'Kills',
@@ -42,13 +51,14 @@ export const kills = objectPart(
 		}
 		checkKeys(
 			raw,
-			['by', 'targets', 'ignoresProtection', 'count', 'charged', 'delayed'],
+			['by', 'targets', 'ignoresProtection', 'count', 'charged', 'delayed', 'chooses'],
 			path,
 			issues
 		);
 		const by = readEnum(raw, 'by', KILLS_BY, path, issues, true);
 		const targets = readEnum(raw, 'targets', KILLS_TARGETS, path, issues, false);
 		const ignoresProtection = readBoolean(raw, 'ignoresProtection', path, issues);
+		const chooses = readEnum(raw, 'chooses', KILLS_CHOOSES, path, issues, false);
 		if (!by) return undefined;
 		const out: Kills = { by };
 		if (targets) out.targets = targets;
@@ -70,6 +80,7 @@ export const kills = objectPart(
 				if (token && charged !== undefined) out.charged = { token, count: charged };
 			}
 		}
+		if (chooses) out.chooses = chooses;
 		return out;
 	}
 );

@@ -21,6 +21,9 @@ import {
 	savantPair,
 	savantSituation,
 	savantStatements,
+	holdsAsGiven,
+	pairFits,
+	typedStatement,
 	type SavantStatement
 } from './savant.ts';
 import { dawnGames } from '#lib/core/engine/index.ts';
@@ -289,6 +292,52 @@ describe('Savant statements from the game so far', () => {
 			(s) => s.truth === 'check'
 		);
 		expect(checks.map((s) => s.template)).toEqual(['declined']);
+	});
+});
+
+// Statements about the players as people in the room, which the Storyteller types and marks
+// (https://wiki.bloodontheclocktower.com/Savant, Examples: what players wear, where they sit).
+describe('typed Savant statements', () => {
+	it('is unknown until marked, then holds as marked', () => {
+		const { game: g } = castGame(cast);
+		const open = typedStatement(g, characters, { words: '  Someone in red is evil. ' });
+		expect(open.truth).toBe('unknown');
+		expect(open.parts).toEqual([{ text: 'Someone in red is evil.' }]);
+		expect(open.why).toEqual([]);
+		expect(holdsAsGiven(open, false)).toBe(false);
+		expect(typedStatement(g, characters, { words: 'x', marked: false }).truth).toBe('false');
+		expect(typedStatement(g, characters, { words: 'x', marked: true }).truth).toBe('true');
+	});
+
+	it('names who sits in a linked seat', () => {
+		const { game: g, seats } = castGame(cast);
+		const s = typedStatement(g, characters, {
+			words: 'This player wears a hat.',
+			about: { seat: seats[3] },
+			marked: true
+		});
+		expect(s.about).toEqual({ seat: seats[3] });
+		expect(s.why).toEqual([
+			[{ seat: seats[3] }, { text: ' (' }, { character: 'butler' }, { text: ')' }]
+		]);
+		expect(s.key).not.toBe(
+			typedStatement(g, characters, { words: 'This player wears a hat.' }).key
+		);
+	});
+
+	it('pairs with a worked-out statement by the mode', () => {
+		const { game: g, seats } = castGame(cast);
+		const all = savantStatements(g, seats[0], characters);
+		const yes = byKey(all, 'in-play:chef')!;
+		const no = byKey(all, 'in-play:washerwoman')!;
+		const typedFalse = typedStatement(g, characters, { words: 'x', marked: false });
+		expect(pairFits(typedFalse, yes, 'one-each')).toBe(true);
+		expect(pairFits(typedFalse, no, 'one-each')).toBe(false);
+		expect(pairFits(typedFalse, no, 'both-false')).toBe(true);
+		expect(pairFits(typedFalse, yes, 'both-true')).toBe(false);
+		expect(
+			pairFits(typedStatement(g, characters, { words: 'x' }), yes, 'one-each')
+		).toBeUndefined();
 	});
 });
 

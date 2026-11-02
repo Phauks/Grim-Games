@@ -1,6 +1,7 @@
 {
 	"kills": {
-		"by": "demon"
+		"by": "demon",
+		"chooses": "live-or-die"
 	},
 	"reminderTargets": {
 		"1": {
