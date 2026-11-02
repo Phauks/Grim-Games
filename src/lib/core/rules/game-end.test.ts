@@ -249,8 +249,9 @@ describe('Imp (https://wiki.bloodontheclocktower.com/Imp)', () => {
 		const sw = castGame(cast, dead(6, 'imp'));
 		expect(starPass(sw.session.game, characters)).toEqual({
 			characterId: 'imp',
-			heirs: [sw.seats[4], sw.seats[5]],
-			preferred: sw.seats[5]
+			heirs: [sw.seats[5], sw.seats[4]],
+			preferred: sw.seats[5],
+			preferredBy: 'scarletwoman'
 		});
 		// Once a Minion is the Imp, a Demon lives again.
 		const passed = castGame(TB, dead(6, 'imp'), (s) => ({

@@ -755,16 +755,34 @@ export function suggestedWinner(ends: readonly GameEnd[]): Alignment | undefined
  * https://wiki.bloodontheclocktower.com/Imp; the Fang Gu's Outsiders, once,
  * https://wiki.bloodontheclocktower.com/Fang_Gu): that Demon, the players who may become it,
  * and the player whose ability makes it theirs (the Scarlet Woman:
- * https://wiki.bloodontheclocktower.com/Scarlet_Woman). Undefined once a Demon lives.
+ * https://wiki.bloodontheclocktower.com/Scarlet_Woman), with the character whose rule
+ * (`gameEnd.holds` `becomes-demon`) says so. A drunk or poisoned player's ability doesn't work
+ * (https://wiki.bloodontheclocktower.com/Glossary), so they aren't preferred. Undefined once a
+ * Demon lives.
  */
 export function starPass(
 	game: Game,
 	characters: CharacterLookup
-): { characterId: CharacterId; heirs: SeatId[]; preferred?: SeatId } | undefined {
+):
+	| { characterId: CharacterId; heirs: SeatId[]; preferred?: SeatId; preferredBy?: CharacterId }
+	| undefined {
 	const holds = demonDead(game, characters).flatMap((end) => end.holds);
 	const pass = holds.find((h) => h.rule === 'death-passes');
 	if (!pass) return undefined;
-	const heir = holds.find((h) => h.rule === 'becomes-demon')?.seats[0];
-	const preferred = heir && pass.seats.includes(heir) ? heir : undefined;
-	return { characterId: pass.characterId, heirs: pass.seats, ...(preferred ? { preferred } : {}) };
+	const rule = holds.find(
+		(h) =>
+			h.rule === 'becomes-demon' &&
+			pass.seats.includes(h.seats[0]) &&
+			!holds.some(
+				(i) => i.rule === 'impaired' && i.characterId === h.characterId && i.seats[0] === h.seats[0]
+			)
+	);
+	const heirs = rule
+		? [rule.seats[0], ...pass.seats.filter((id) => id !== rule.seats[0])]
+		: pass.seats;
+	return {
+		characterId: pass.characterId,
+		heirs,
+		...(rule ? { preferred: rule.seats[0], preferredBy: rule.characterId } : {})
+	};
 }

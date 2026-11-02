@@ -1,6 +1,7 @@
 <script lang="ts" generics="T extends string">
 	import { RadioGroup } from '@ark-ui/svelte/radio-group';
 	import type { Snippet } from 'svelte';
+	import Icon from '#lib/ui/icons/Icon.svelte';
 
 	interface Option {
 		value: T;
@@ -20,6 +21,12 @@
 		layout?: 'cards' | 'row';
 		/** Custom content for one option; defaults to its label. */
 		item?: Snippet<[Option]>;
+		/**
+		 * The option a rule says should be chosen (the Scarlet Woman as the new Demon): it takes a
+		 * whole line in the host's `--choice-emphasis` colour, and keeps it, with a warning edge,
+		 * while another option is chosen. Never locks the choice.
+		 */
+		emphasized?: T;
 	}
 
 	let {
@@ -30,7 +37,8 @@
 		options,
 		onChange,
 		layout = 'cards',
-		item
+		item,
+		emphasized
 	}: Props = $props();
 </script>
 
@@ -46,11 +54,23 @@
 	{/if}
 	<div class="options">
 		{#each options as option (option.value)}
-			<RadioGroup.Item value={option.value}>
+			<RadioGroup.Item
+				value={option.value}
+				data-emphasized={option.value === emphasized
+					? value === emphasized
+						? 'chosen'
+						: 'passed-over'
+					: undefined}
+			>
 				<RadioGroup.ItemControl />
 				<RadioGroup.ItemText>
 					{#if item}{@render item(option)}{:else}{option.label}{/if}
 				</RadioGroup.ItemText>
+				{#if option.value === emphasized && value !== emphasized}<span
+						class="passed-over"
+						role="img"
+						aria-label="Warning"><Icon name="warning" /></span
+					>{/if}
 				<RadioGroup.ItemHiddenInput />
 			</RadioGroup.Item>
 		{/each}
@@ -99,6 +119,22 @@
 		border-color: var(--choice-selected-border);
 		background: var(--choice-selected-background);
 		box-shadow: inset 0 0 0 1px var(--choice-selected-border);
+	}
+	/* The option a rule says should be chosen: a whole line, a thick edge and a glow. */
+	:global([data-scope='radio-group'][data-part='item'][data-emphasized]) {
+		grid-column: 1 / -1;
+		border: calc(0.25 * var(--u)) solid var(--choice-emphasis, var(--accent));
+		box-shadow: 0 0 var(--space-3) var(--choice-emphasis, var(--accent));
+	}
+	:global([data-scope='radio-group'][data-part='item'][data-emphasized='passed-over']) {
+		border-style: dashed;
+		box-shadow: none;
+	}
+	.passed-over {
+		flex: none;
+		margin-left: var(--space-2);
+		color: var(--choice-emphasis, var(--accent));
+		font-size: 1.25em;
 	}
 	:global([data-scope='radio-group'][data-part='item'][data-focus-visible]) {
 		outline: 3px solid var(--focus);

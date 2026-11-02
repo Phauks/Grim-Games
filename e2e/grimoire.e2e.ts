@@ -6223,6 +6223,57 @@ test('when the Imp kills itself, a living Minion is chosen to become the Imp', a
 	await expect(page.getByRole('alertdialog')).toHaveCount(0);
 });
 
+test('with several living Minions, the Scarlet Woman stands out as the new Imp', async ({
+	page
+}) => {
+	// Trevor (2026-11-02): her ability makes her the Imp with 5 or more alive
+	// (https://wiki.bloodontheclocktower.com/Scarlet_Woman); warn, never lock.
+	await startGame(page);
+	for (const [number, name] of [
+		[1, 'Chef'],
+		[2, 'Monk'],
+		[3, 'Imp'],
+		[4, 'Poisoner'],
+		[5, 'Scarlet Woman'],
+		[6, 'Empath']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	const sheet = await openSeat(page, 3);
+	await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Status of Seat 3' })
+		.getByRole('button', { name: 'The Demon' })
+		.tap();
+	const ask = page.getByRole('alertdialog', { name: 'Choose the new Imp' });
+	const scarlet = ask.locator('[data-part="item"][data-emphasized]');
+	await expect(scarlet).toHaveAttribute('data-emphasized', 'chosen');
+	await expect(scarlet.getByRole('radio', { includeHidden: true })).toBeChecked();
+	await expect(scarlet).toContainText('Seat 5');
+	// Her ability says why, under the Imp's.
+	await expect(ask.locator('.ring-row[data-character-id="scarletwoman"]')).toBeVisible();
+	if (process.env.SHOT_DIR) await ask.screenshot({ path: `${process.env.SHOT_DIR}/chosen.png` });
+	// Choosing another Minion is allowed, with a warning on her.
+	// Its badge opens the character's page, so tap the card beside it.
+	const poisoner = ask.locator('[data-part="item"]', { hasText: 'Seat 4' });
+	const box = (await poisoner.boundingBox())!;
+	await poisoner.tap({ position: { x: box.width - 4, y: box.height / 2 } });
+	await expect(scarlet).toHaveAttribute('data-emphasized', 'passed-over');
+	await expect(scarlet.getByRole('img', { name: 'Warning' })).toBeVisible();
+	if (process.env.SHOT_DIR)
+		await ask.screenshot({ path: `${process.env.SHOT_DIR}/passed-over.png` });
+	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(ask).toBeHidden();
+	await closeSheet(page);
+	await expect(seatLabelled(page, 'Seat 4: no name, Imp')).toBeAttached();
+});
+
 test('the star pass is asked again when a revived Imp kills itself again', async ({ page }) => {
 	// Trevor (2026-10-31): Cancel once, bring the Imp back, kill it by its own kill again.
 	await startGame(page);

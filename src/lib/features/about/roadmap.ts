@@ -370,6 +370,13 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['M19']
 	},
 	{
+		// Trevor, 2026-11-02: when the Imp kills itself with several Minions alive, the Scarlet
+		// Woman stands out as the new Imp while her ability applies; any Minion can still be chosen.
+		title: 'The Scarlet Woman stands out when choosing the new Demon',
+		area: 'engine',
+		parts: ['M23']
+	},
+	{
 		// Gap 8: the Bigwig's chosen speaker; gap 12: one-offs with no behaviour yet: M12a the
 		// Scapegoat, M12b the Boomdandy, M12c the Courtier's countdown.
 		title: "The Bigwig's speaker, the Scapegoat, the Boomdandy and the Courtier's three nights",

@@ -22,9 +22,21 @@
 		heirs: SeatId[];
 		/** Chosen first: the player a rule says takes it on (the Scarlet Woman). */
 		preferred?: SeatId;
+		/**
+		 * The character whose rule makes it `preferred`'s (`starPass`): its ability is shown under
+		 * the Demon's, and that player's option stands out (Trevor, 2026-11-02).
+		 */
+		preferredBy?: CharacterId;
 	}
 
-	let { grimoire, open = $bindable(), characterId, heirs, preferred }: Props = $props();
+	let {
+		grimoire,
+		open = $bindable(),
+		characterId,
+		heirs,
+		preferred,
+		preferredBy
+	}: Props = $props();
 
 	const game = $derived(grimoire.game);
 	const characters = $derived(grimoire.open.characters);
@@ -33,6 +45,9 @@
 	const title = $derived(`Choose the new ${demon?.name ?? 'Demon'}`);
 	// eslint-disable-next-line grim/names-as-badges -- a field label is plain text ("New Imp"); the badge is in the body
 	const choiceLabel = $derived(`New ${demon?.name ?? 'Demon'}`);
+
+	const reason = $derived(preferred && preferredBy ? characters.get(preferredBy) : undefined);
+	const reasonSeat = $derived(preferred ? game.seats[preferred] : undefined);
 
 	let choice = $state<SeatId>('');
 	$effect(() => {
@@ -51,11 +66,22 @@
 				{#snippet ability()}<GlossaryText text={demon.ability} names={[demon.name]} />{/snippet}
 			</CharacterRow>
 		</div>{/if}
+	{#if reason && reasonSeat}<div class="ability reason">
+			<CharacterRow
+				character={reason}
+				alignment={reasonSeat.alignment}
+				playerName={seatName(game, preferred!)}
+				info
+			>
+				{#snippet ability()}<GlossaryText text={reason.ability} names={[reason.name]} />{/snippet}
+			</CharacterRow>
+		</div>{/if}
 	<ChoiceGroup
 		label={choiceLabel}
 		value={choice}
 		options={heirs.map((id) => ({ value: id, label: seatName(game, id) }))}
 		onChange={(id) => (choice = id)}
+		emphasized={reason ? preferred : undefined}
 	>
 		{#snippet item(option)}
 			{@const s = game.seats[option.value]}
@@ -72,5 +98,12 @@
 <style>
 	.ability {
 		margin: 0 0 var(--space-3);
+	}
+	/* Why one player should take it on: the rule character's ability, framed like that option. */
+	.reason {
+		padding: var(--space-2);
+		border: calc(0.25 * var(--u)) solid var(--accent);
+		border-radius: var(--card-radius);
+		box-shadow: 0 0 var(--space-3) var(--accent);
 	}
 </style>
