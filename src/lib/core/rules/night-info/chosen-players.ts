@@ -11,6 +11,7 @@
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 import type { LearnedRoleReason } from './learned-roles.ts';
 import { type InfoPicker, type ValidReason, isTruthful, matchingOption } from './picker.ts';
+import { anyInfo } from './reliability.ts';
 
 export interface ChosenPlayersRow {
 	/** The Steward's good player, the evil one of the Noble's three. */
@@ -51,13 +52,13 @@ function markedSeats(game: Game, picker: InfoPicker): SeatId[] {
  */
 export function chosenPlayers(game: Game, picker: InfoPicker): ChosenPlayers | undefined {
 	if (picker.kind !== 'players') return undefined;
-	const anyOther: ValidReason | undefined = picker.unreliable
+	const anyOther: ValidReason | undefined = anyInfo(picker)
 		? 'unreliable'
 		: picker.mustBeFalse
 			? 'vortox'
 			: undefined;
 	// Under the Vortox the truthful options are exactly the ones not allowed.
-	const truthful = picker.mustBeFalse && !picker.unreliable ? [] : picker.options;
+	const truthful = picker.mustBeFalse && !anyInfo(picker) ? [] : picker.options;
 
 	const groups = new Map<string, ChosenPlayersRow>();
 	for (const o of truthful) {
@@ -92,7 +93,7 @@ export function chosenPlayers(game: Game, picker: InfoPicker): ChosenPlayers | u
 	// overrides anything; warn, never lock).
 	const choice = { seats: marked };
 	const o = matchingOption(picker, choice);
-	const reason: LearnedRoleReason = picker.unreliable
+	const reason: LearnedRoleReason = anyInfo(picker)
 		? 'unreliable'
 		: picker.mustBeFalse
 			? isTruthful(picker, choice)

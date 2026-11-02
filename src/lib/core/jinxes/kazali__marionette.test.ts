@@ -12,6 +12,7 @@
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { analyseSetup } from '#lib/core/rules/setup.ts';
 
 describe('Kazali + Marionette jinx', () => {
 	const data = committedGameData();
@@ -30,5 +31,15 @@ describe('Kazali + Marionette jinx', () => {
 		expect(jinxesAmong(data.jinxes, ['marionette'])).not.toContain(jinx);
 	});
 
-	it.todo('enforces the rule the jinx imposes');
+	// The Kazali deals no Minions; the Marionette enters play after it as its neighbour, so it
+	// is neither counted nor given a good token of its own (M22).
+	it('leaves the Marionette out of the setup counts', () => {
+		const get = (...ids: string[]) => ids.map((id) => data.byId.get(id)!);
+		const result = analyseSetup({
+			players: 7,
+			inPlay: get('kazali', 'marionette', 'chef', 'empath', 'monk', 'mayor', 'saint', 'butler')
+		});
+		expect(result.notDealt).toContain('marionette');
+		expect(result.warnings.filter((w) => w.code !== 'player-count')).toEqual([]);
+	});
 });
