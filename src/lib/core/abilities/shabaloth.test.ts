@@ -86,7 +86,7 @@ describe('Shabaloth', () => {
 			);
 			// Waits on the engine: the night order doesn't skip a revived player's step that came before
 			// the Shabaloth's tonight.
-			engineGap('unplanned', 'a player revived by the Shabaloth does not act earlier that night');
+			engineGap('M15k', 'a player revived by the Shabaloth does not act earlier that night');
 		});
 
 		it('Example 3: Protected neighbour lives; Tea Lady then dies', () => {

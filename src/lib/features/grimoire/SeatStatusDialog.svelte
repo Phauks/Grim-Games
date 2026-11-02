@@ -61,7 +61,8 @@
 	}
 	/**
 	 * At the table but not in play yet (Trevor, 2026-10-31): a Traveller who arrives mid-game
-	 * sits down before the night they join at. The next night brings them in (grimoire.svelte.ts).
+	 * sits down before the night they join at. The night's "Travellers not in play" step
+	 * offers to bring them in (Trevor, 2026-11-02).
 	 */
 	function pickNotInPlay() {
 		open = false;
@@ -101,12 +102,20 @@
 				Alive
 			</button>
 		</div>
-		<div class="cause-row">
-			<button type="button" class="cause" aria-pressed={!!seat?.notInPlay} onclick={pickNotInPlay}>
-				<span class="slot status-icon"><Icon name="night" /></span>
-				{t('common.notInPlay')}
-			</button>
-		</div>
+		<!-- Only a Traveller sits out (Trevor, 2026-11-02); a seat already out still shows it. -->
+		{#if traveller || seat?.notInPlay}
+			<div class="cause-row">
+				<button
+					type="button"
+					class="cause"
+					aria-pressed={!!seat?.notInPlay}
+					onclick={pickNotInPlay}
+				>
+					<span class="slot status-icon"><Icon name="night" /></span>
+					{t('common.notInPlay')}
+				</button>
+			</div>
+		{/if}
 		{#each causes as { cause, flags, gained }, i (cause)}
 			{@const killer = characters.get(cause)}
 			<div class="cause-row">

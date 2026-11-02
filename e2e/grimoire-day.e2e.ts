@@ -334,6 +334,19 @@ test("the day's sections fold with their caret and their headers stick under the
 	expect(headBox.y).toBeLessThan(toolbarBox.y + toolbarBox.height + 1);
 });
 
+// Votes are run outside the app; the votes dialog lists each unusual vote for the
+// Storyteller's count (Trevor, 2026-11-01; M9e).
+test('the votes dialog notes a Thief’s negative vote (M9e)', async ({ page }) => {
+	await startGame(page);
+	await addThief(page);
+	await putReminder(page, 'Negative Vote', 2);
+	await openDay(page);
+	await page.getByTestId('votes-needed').tap();
+	const notes = page.getByTestId('vote-notes');
+	await expect(notes.locator('tbody tr')).toHaveCount(1);
+	await expect(notes.locator('tbody tr')).toHaveText(/Seat 2.*Vote counts as -1/);
+});
+
 test('a Traveller is exiled, and a death offers only valid causes', async ({ page }) => {
 	const board = await startGame(page);
 	await addThief(page);
@@ -360,12 +373,8 @@ test('a Traveller is exiled, and a death offers only valid causes', async ({ pag
 
 	// No characters are in play, so no character is offered.
 	const causes = await openStatus(page, 3);
-	await expect(causes.locator('button.cause')).toHaveText([
-		'Alive',
-		'Not in play',
-		'Executed',
-		'The Demon'
-	]);
+	// Only a Traveller is offered Not in play (Trevor, 2026-11-02).
+	await expect(causes.locator('button.cause')).toHaveText(['Alive', 'Executed', 'The Demon']);
 	await causes.getByRole('button', { name: 'The Demon', exact: true }).tap();
 	await expect(causes).toBeHidden();
 	await closeSeat(page);
@@ -1300,7 +1309,7 @@ async function chooseOffScript(page: Page, number: number, name: string) {
 	await closeSeat(page);
 }
 
-test('Execution asks whether only evil voted while the Legion works; yes fails it (M9d)', async ({
+test('Execution asks whether only evil voted while the Legion works; yes fails it and the day goes on (M9d)', async ({
 	page
 }) => {
 	// https://wiki.bloodontheclocktower.com/Legion: an execution fails when only evil players
@@ -1323,8 +1332,10 @@ test('Execution asks whether only evil voted while the Legion works; yes fails i
 	await ask.getByTestId('outcome-fails').locator('[data-part="control"]').tap();
 	await expect(onlyEvil).toBeChecked();
 	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
-	await expect(page.getByTestId('night-strip')).toBeVisible();
-	// The execution failed: Seat 1 lives.
+	// The execution failed: Seat 1 lives, and the day stays open for another nomination.
+	await expect(ask).toBeHidden();
+	await expect(day).toBeVisible();
+	await expect(page.getByTestId('night-strip')).toHaveCount(0);
 	await expect(boardSeat(page, 'Seat 1')).not.toHaveAccessibleName(/dead/);
 });
 
