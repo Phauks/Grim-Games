@@ -128,11 +128,9 @@ describe('Alsaahir', () => {
 			expect(dayClaim('alsaahir', characters)).toBe('guesses');
 		});
 
-		it.fails('warns of a second guess on the same day', () => {
+		it('warns of a second guess on the same day', () => {
 			// Wiki: "Each day, once only, if the Alsaahir declares that they wish to use their ability,
 			// prompt them to guess which player is the Demon, and which player(s) are Minions."
-			// Waits on the engine (unplanned): a second Alsaahir guess logged the same day is taken
-			// without a warning.
 			const s = scenario(['alsaahir', 'poisoner', 'chef', 'imp', 'empath', 'spy', 'monk'])
 				.newDay()
 				.do(guess(['chef', 'imp']));

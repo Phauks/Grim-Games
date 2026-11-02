@@ -50,6 +50,7 @@ export const REMINDER_TARGETS: Readonly<Record<CharacterId, CharacterTargets>> =
  *   wrong;
  * - `neighbour`: not a neighbour as the rule counts them;
  * - `with-label` / `not-with-label`: missing, or already carrying, the owner's other token;
+ * - `max-placed`: as many copies of the token as may be out at once are on other players;
  * - `last-night`: the ability says "different to last night", and this player carried the
  *   token at the latest dawn (or, for `type`, has that player's character type);
  * - `jinx`: a jinx on the script says who carries this `carrierIsDemon` token, and it is not
@@ -67,6 +68,7 @@ export type TargetMiss =
 	| 'neighbour'
 	| 'with-label'
 	| 'not-with-label'
+	| 'max-placed'
 	| 'last-night'
 	| 'jinx';
 
@@ -266,6 +268,18 @@ export function reminderTargetMisses(
 				).length;
 			if (placed >= max) misses.push('alignment');
 		}
+	}
+	if (rule.maxPlaced !== undefined) {
+		const self = 'reminderId' in reminder ? (reminder as ReminderInstance).reminderId : undefined;
+		const placed = game.seating
+			.flatMap((id) => game.seats[id].reminders)
+			.filter(
+				(r) =>
+					r.characterId === reminder.characterId &&
+					r.label === reminder.label &&
+					r.reminderId !== self
+			).length;
+		if (placed >= rule.maxPlaced) misses.push('max-placed');
 	}
 	if (rule.life) {
 		const dead = game.seats[seatId].dead;

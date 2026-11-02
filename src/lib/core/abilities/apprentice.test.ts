@@ -126,11 +126,9 @@ describe('Apprentice', () => {
 			expect(reminderTargetMisses(s.game, mark, s.seat('chef'), s.characters)).not.toEqual([]);
 		});
 
-		it.fails("gains the swapped token's ability while staying the Apprentice", () => {
+		it("gains the swapped token's ability while staying the Apprentice", () => {
 			// Wiki: "That player remains the Apprentice but gains the ability of their character
 			// token."
-			// Waits on the engine (unplanned): hasAbilityOf doesn't count the ability of the token an
-			// Apprentice's seat was swapped for (swapsForAbility), only gainsAbilityOf and held ones.
 			const s = scenario(['apprentice', 'chef', 'empath', 'monk', 'imp'])
 				.becomes('apprentice', 'innkeeper', 'good')
 				.reminder('apprentice', 'apprentice', 'Is The Apprentice');

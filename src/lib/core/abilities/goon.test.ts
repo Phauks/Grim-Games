@@ -165,19 +165,15 @@ describe('Goon', () => {
 			expect(reminderTargetMisses(s.game, drunk, s.seat('goon'), s.characters)).not.toEqual([]);
 		});
 
-		it.fails('flags a second Drunk while someone already carries the Goon’s Drunk', () => {
+		it('flags a second Drunk while someone already carries the Goon’s Drunk', () => {
 			// Wiki: "and nobody is marked with the Goon’s DRUNK reminder"
-			// Waits on the engine (unplanned): the Goon's Drunk has no one-at-a-time target rule, so a
-			// second chooser can be marked too.
 			const s = scenario(cast).newDay().reminder('courtier', 'goon', 'Drunk');
 			expect(reminderTargetMisses(s.game, drunk, s.seat('imp'), s.characters)).not.toEqual([]);
 		});
 
-		it.fails('takes the Goon’s Drunk off at the next dusk', () => {
+		it('takes the Goon’s Drunk off at the next dusk', () => {
 			// Wiki: "The next dusk, the player that the Goon made drunk becomes sober—remove the Goon’s
 			// DRUNK reminder."
-			// Waits on the engine (unplanned): the Goon's rules have no reminderEnds for Drunk, so Dusk
-			// leaves it on.
 			const s = scenario(cast).newDay().reminder('courtier', 'goon', 'Drunk').newDay().dusk();
 			expect(s.game.seats[s.seat('courtier')].reminders).toEqual([]);
 			expect(abilityState(s.game, s.seat('courtier'), s.characters).works).toBe(true);

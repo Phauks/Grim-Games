@@ -18,6 +18,10 @@
  * `onlyWith`: the rule applies only when one of these characters is also on the script or in
  * play (a jinx gives the ability its death).
  *
+ * `afterChanging`: the rule applies only once a player this character changed (`Seat.changedBy`)
+ * is of this character type: the Pit-Hag's extra deaths once it has made a Demon
+ * (https://wiki.bloodontheclocktower.com/Pit-Hag).
+ *
  * `victim`: who the ability can kill, when that is narrower than any player (`own-death`
  * needs none: it only ever kills its own player):
  * - `self`: only its own player (the Mutant and Scapegoat are the ones executed);
@@ -58,8 +62,18 @@ export type VictimRule =
 	| { who: 'alive-neighbour' }
 	| { who: 'registers'; as: RegistersAs; notSelf?: true };
 
+const CHANGED_TYPES = ['townsfolk', 'outsider', 'minion', 'demon'] as const;
+/** The character type an `afterChanging` rule waits for. */
+export type ChangedType = (typeof CHANGED_TYPES)[number];
+
 export type DeathCauseRule =
-	{ kind: DeathKind; onlyWith?: readonly CharacterId[]; victim?: VictimRule } | { none: string };
+	| {
+			kind: DeathKind;
+			onlyWith?: readonly CharacterId[];
+			afterChanging?: ChangedType;
+			victim?: VictimRule;
+	  }
+	| { none: string };
 
 function readVictim(raw: unknown, path: string, issues: Issues): VictimRule | undefined {
 	if (!isObject(raw)) {
@@ -91,11 +105,17 @@ export function readDeathCause(
 		const none = readString(raw, 'none', path, issues, true);
 		return none === undefined ? undefined : { none };
 	}
-	checkKeys(raw, ['kind', 'onlyWith', 'victim'], path, issues);
+	checkKeys(raw, ['kind', 'onlyWith', 'afterChanging', 'victim'], path, issues);
 	const kind = readEnum(raw, 'kind', DEATH_KINDS, path, issues, true);
 	const onlyWith = readStringArray(raw, 'onlyWith', path, issues);
+	const afterChanging = readEnum(raw, 'afterChanging', CHANGED_TYPES, path, issues, false);
 	const victim =
 		raw.victim === undefined ? undefined : readVictim(raw.victim, `${path}.victim`, issues);
 	if (!kind) return undefined;
-	return { kind, ...(onlyWith ? { onlyWith } : {}), ...(victim ? { victim } : {}) };
+	return {
+		kind,
+		...(onlyWith ? { onlyWith } : {}),
+		...(afterChanging ? { afterChanging } : {}),
+		...(victim ? { victim } : {})
+	};
 }

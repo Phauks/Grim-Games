@@ -33,7 +33,8 @@
 	},
 	"dayUse": {
 		"who": "chosen",
-		"kills": true
+		"kills": true,
+		"beforeNominations": true
 	},
 	"deathCause": {
 		"kind": "kills"

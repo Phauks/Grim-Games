@@ -1,4 +1,11 @@
-import { isTraveller, type Game, type GameNote, type SeatId } from '#lib/core/model/index.ts';
+import { rulesOf } from '#lib/core/data/rules/index.ts';
+import {
+	isTraveller,
+	trueCharacter,
+	type Game,
+	type GameNote,
+	type SeatId
+} from '#lib/core/model/index.ts';
 import { neighbourFollows } from '#lib/core/rules/reminder-movement.ts';
 import type { EngineContext } from '../context.ts';
 import type { GameEvent } from '../events.ts';
@@ -78,6 +85,24 @@ function reseated(
 			toSeatId: f.toSeatId
 		}))
 	];
+}
+
+/**
+ * Warns at one swap more than a living player's character allows today (`seatSwapsPerDay`, the
+ * Matron's three). Before the first dawn nothing is counted: that is the Storyteller seating
+ * the players.
+ */
+function checkSeatSwaps(game: Game, ctx: EngineContext, warn: Warn): void {
+	if (game.pastDays.length === 0) return;
+	for (const seatId of game.seating) {
+		if (game.seats[seatId].dead) continue;
+		const id = trueCharacter(game, seatId, ctx.characters);
+		const limit = id === undefined ? undefined : rulesOf(id, ctx.characters)?.seatSwapsPerDay;
+		if (limit === undefined || (game.today.swaps ?? 0) < limit) continue;
+		const name = ctx.characters.get(id!)?.name ?? id;
+		warn('already-used', `the ${name} may swap seats only ${limit} times a day`);
+		return;
+	}
 }
 
 /** Seats, the script, the Storyteller name and game notes. */
@@ -231,6 +256,7 @@ export const SEATS_DECIDERS: Deciders<
 		const seating = game.seating.map((id) =>
 			id === a.seatId ? b.seatId : id === b.seatId ? a.seatId : id
 		);
+		checkSeatSwaps(game, ctx, warn);
 		const swap: GameEvent = { type: 'SeatsSwapped', seatA: a.seatId, seatB: b.seatId };
 		return [...seatNumberNames(game), ...reseated(game, seating, swap, ctx, warn)];
 	},
