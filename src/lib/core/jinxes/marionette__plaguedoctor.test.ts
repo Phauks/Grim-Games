@@ -10,6 +10,12 @@
  * of the two may be in play). Paraphrase, never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
+import type { Script } from '#lib/core/data/index.ts';
+import { castWith, codes, run } from '#lib/core/model/fixtures.test-support.ts';
+import { scriptCharacterIds } from '#lib/core/model/characters.ts';
+import { trueCharacter } from '#lib/core/model/selectors.ts';
+import { demonGoodNeighbours, replacingReminder } from '#lib/core/rules/becomes.ts';
+import { givenInstead, jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 
@@ -30,5 +36,60 @@ describe('Marionette + Plague Doctor jinx', () => {
 		expect(jinxesAmong(data.jinxes, ['plaguedoctor'])).not.toContain(jinx);
 	});
 
-	it.todo('enforces the rule the jinx imposes');
+	// Both pages' Related Jinxes: instead of the Storyteller gaining the Marionette ability,
+	// a good player sitting next to the Demon becomes the Marionette.
+	describe("one of the Demon's good neighbours becomes the Marionette", () => {
+		const script: Script = {
+			meta: { name: 'Jinxed' },
+			entries: ['plaguedoctor', 'imp', 'marionette', 'poisoner', 'chef', 'empath', 'monk'].map(
+				(id) => ({
+					kind: 'official' as const,
+					id
+				})
+			)
+		};
+		const ids = scriptCharacterIds(script);
+		const cast = castWith({ script });
+
+		it("is data in the Plague Doctor's rules", () => {
+			expect(jinxRulesBetween('plaguedoctor', 'marionette')).toEqual({
+				givenInstead: 'demon-neighbour-becomes'
+			});
+			expect(givenInstead('plaguedoctor', 'marionette', ids)).toBe('demon-neighbour-becomes');
+		});
+
+		it("offers the Demon's nearest living good neighbours, skipping the dead and evil", () => {
+			const { session, ctx, seats } = cast([
+				'plaguedoctor',
+				'imp',
+				'poisoner',
+				'chef',
+				'empath',
+				'monk'
+			]);
+			expect(demonGoodNeighbours(session.game, ctx.characters)).toEqual([seats[0], seats[3]]);
+			const died = run(session, ctx, {
+				type: 'SetDead',
+				seatId: seats[0],
+				dead: true,
+				cause: 'execution'
+			});
+			expect(demonGoodNeighbours(died.game, ctx.characters)).toEqual([seats[5], seats[3]]);
+		});
+
+		it('makes them the Marionette under the token they were shown', () => {
+			const { session, ctx, seats } = cast(['plaguedoctor', 'imp', 'poisoner', 'chef', 'empath']);
+			const reminder = replacingReminder('marionette', ctx.characters);
+			expect(reminder).toEqual({ characterId: 'marionette', label: 'Is The Marionette' });
+			const marked = run(session, ctx, {
+				type: 'AddReminder',
+				seatId: seats[3],
+				reminder: reminder!
+			});
+			// Still good: the board asks whether to make them evil, as at setup.
+			expect(codes(marked)).toEqual(['alignment-differs-from-true-character']);
+			expect(marked.game.seats[seats[3]].characterId).toBe('chef');
+			expect(trueCharacter(marked.game, seats[3], ctx.characters)).toBe('marionette');
+		});
+	});
 });
