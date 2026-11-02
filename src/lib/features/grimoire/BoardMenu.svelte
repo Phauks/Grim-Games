@@ -42,7 +42,6 @@
 		onGameInfo: () => void;
 		/** Back to Character selection; only until Start game (Trevor, 2026-10-24). */
 		onCharacterSelection?: () => void;
-		onAddSeat: () => void;
 		onAddRule: () => void;
 		onArrange: () => void;
 		onExport: () => void;
@@ -75,7 +74,6 @@
 		onCallTown,
 		onGameInfo,
 		onCharacterSelection,
-		onAddSeat,
 		onAddRule,
 		onArrange,
 		onExport,
@@ -262,9 +260,7 @@
 		<div class="column">
 			<section class="group" aria-labelledby="board-menu-seats">
 				<h3 id="board-menu-seats" class="group-title">Seats</h3>
-				<Button disabled={watching} variant="quiet" icon="add" onclick={() => fromMenu(onAddSeat)}
-					>Add seat</Button
-				>
+				<!-- Add seat is in Seating's bar only (Trevor, 2026-11-01). -->
 				<Button
 					disabled={watching}
 					variant="quiet"

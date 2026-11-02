@@ -983,7 +983,6 @@
 	onCharacterSelection={startedAt === undefined && !setUp && !watching
 		? () => goto(resolve('/grimoire/[gameId]/setup', { gameId: game.gameId }))
 		: undefined}
-	{onAddSeat}
 	onAddRule={() => rules?.add()}
 	onArrange={() => enterSeating(seatArr)}
 	onExport={() => (exportOpen = true)}

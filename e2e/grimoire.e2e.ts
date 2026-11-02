@@ -19,6 +19,7 @@ import {
 	tapToSeat
 } from './reminder-bank.ts';
 import { pickNumber } from './number-select.ts';
+import { addSeat } from './seating.ts';
 
 // The Storyteller's grimoire board: saved games, seats and the seat sheet (ROADMAP Phase 2).
 
@@ -517,8 +518,7 @@ test('tapping the seat token shows the character; changing it goes through the â
 test('history, add seat and remove', async ({ page }) => {
 	await startGame(page);
 	// Adding a seat asks where it goes: between two neighbours. The new seat then opens.
-	await menu(page, 'Add seat');
-	await page.getByRole('button', { name: 'Place between Seat 2 and Seat 3' }).tap();
+	await addSeat(page, 'Place between Seat 2 and Seat 3');
 	await expect(page.getByTestId('seat')).toHaveCount(9);
 	await expect(page.getByRole('button', { name: /^Place between/ })).toHaveCount(0);
 	// The new seat just appears; nothing opens by itself (Trevor, 2026-10-16).
@@ -587,8 +587,7 @@ test('an orphan character is flagged, and old names are not suggested', async ({
 test('Travellers join as a new seat, and Fabled sit in the corner', async ({ page }) => {
 	await startGame(page);
 	// A Traveller joins as a new seat: Add seat, then choose them for it.
-	await menu(page, 'Add seat');
-	await page.getByRole('button', { name: 'Place between Seat 8 and Seat 1' }).tap();
+	await addSeat(page, 'Place between Seat 8 and Seat 1');
 	await openSeat(page, 9);
 	await page
 		.locator('[data-scope="drawer"][data-part="content"]')
@@ -1464,8 +1463,7 @@ test("the board can go full screen from beside its â‹¯ menu's X, and back", asyn
 test("a Traveller's alignment can wait for the night order", async ({ page }) => {
 	await startGame(page);
 	// A Traveller joins as a new seat: Add seat, then choose them for it.
-	await menu(page, 'Add seat');
-	await page.getByRole('button', { name: 'Place between Seat 8 and Seat 1' }).tap();
+	await addSeat(page, 'Place between Seat 8 and Seat 1');
 	await openSeat(page, 9);
 	await page
 		.locator('[data-scope="drawer"][data-part="content"]')
@@ -2360,8 +2358,7 @@ test('the Apprentice gains a Townsfolk ability and is marked "Is The Apprentice"
 	page
 }) => {
 	await startGame(page);
-	await menu(page, 'Add seat');
-	await page.getByRole('button', { name: 'Place between Seat 8 and Seat 1' }).tap();
+	await addSeat(page, 'Place between Seat 8 and Seat 1');
 	await openSeat(page, 9);
 	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
 	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
@@ -2694,8 +2691,7 @@ test('a dead Plague Doctor gives the Storyteller a Minion ability, shown on the 
 
 test("a Traveller's alignment can be drawn from face-down tokens", async ({ page }) => {
 	await startGame(page);
-	await menu(page, 'Add seat');
-	await page.getByRole('button', { name: 'Place between Seat 8 and Seat 1' }).tap();
+	await addSeat(page, 'Place between Seat 8 and Seat 1');
 	const sheet = await openSeat(page, 9);
 	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
 	await page
@@ -2740,8 +2736,7 @@ test('a joining Traveller draws their alignment, with the last mix remembered', 
 		[9, 8, 'Thief'],
 		[10, 9, 'Beggar']
 	] as const) {
-		await menu(page, 'Add seat');
-		await page.getByRole('button', { name: `Place between Seat ${after} and Seat 1` }).tap();
+		await addSeat(page, `Place between Seat ${after} and Seat 1`);
 		const sheet = await openSeat(page, number);
 		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
 		await page
@@ -3274,8 +3269,7 @@ test("the Script button opens the players' copy of the script", async ({ page })
 // knows it (Travellers say who they are: https://wiki.bloodontheclocktower.com/Travellers).
 test('a Traveller in play is marked on the script with its player', async ({ page }) => {
 	await startGame(page);
-	await menu(page, 'Add seat');
-	await page.getByRole('button', { name: 'Place between Seat 8 and Seat 1' }).tap();
+	await addSeat(page, 'Place between Seat 8 and Seat 1');
 	const sheet = await openSeat(page, 9);
 	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
 	await page
@@ -4955,7 +4949,7 @@ test('the board menu names its groups, in two columns beside a phone', async ({ 
 	// Arranging seats, Open seating (plan J38) and Count off (J40) are one Seating mode
 	// (Trevor, 2026-10-31), which works with no room open too. Travellers choose (L102) comes
 	// with Add seat, not as its own button (Trevor, 2026-11-01).
-	expect(await names('Seats')).toEqual(['Add seat', 'Add Fabled or Loric', 'Seating']);
+	expect(await names('Seats')).toEqual(['Add Fabled or Loric', 'Seating']);
 	await expect(group('Seats').getByRole('button', { name: 'Seating' })).toBeEnabled();
 	expect(await names('App')).toEqual(['Settings', 'Report an issue']);
 	// Beside a phone, the game on the left and the rest on the right.
