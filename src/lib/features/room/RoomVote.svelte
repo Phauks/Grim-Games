@@ -1,32 +1,38 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { goto } from '$app/navigation';
-	import { resolve } from '$app/paths';
 	import { STANDARD } from '#lib/core/modes/index.ts';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { allModes } from '#lib/features/modes/custom-modes.svelte.ts';
 	import { allRules } from '#lib/features/modes/custom-rules.svelte.ts';
 	import { scriptChoices, searchableScripts } from '#lib/features/modes/script-choices.svelte.ts';
 	import { restoreScripts } from '#lib/features/scripts/current-script.svelte.ts';
+	import { holdChoosing } from './choosing.ts';
 	import { roomHost } from './host.svelte.ts';
 	import ScriptVotePanel from './ScriptVotePanel.svelte';
-	import { pickFromVote, type VotePick } from './vote-pick.ts';
+	import type { VotePick } from './vote-pick.ts';
+
+	interface Props {
+		/** Play: New game with the winner chosen. */
+		onPlay: (pick: VotePick) => void;
+		/** Back, or Cancel vote: to where the vote was opened from. */
+		onBack: () => void;
+		/** In a sheet whose X closes it: no Back before a vote opens. */
+		hideBack?: boolean;
+	}
+	let { onPlay, onBack, hideBack = false }: Props = $props();
 
 	/**
-	 * The room vote's own screen (Trevor, 2026-10-26: "voting should be its own screen. Not a
-	 * popup"), reached from New game's Room vote. It opens this device's room if it has none,
-	 * and phones see the Storyteller choosing meanwhile. Play goes back to New game with the
-	 * winner chosen. The vote lives in the room, so leaving this screen keeps it running.
+	 * The room vote (Trevor, 2026-10-26: "voting should be its own screen. Not a popup"): /vote
+	 * from New game's Room vote, or a sheet filling the game screen once a game is over, so
+	 * running it never leaves the board (Trevor, 2026-11-01). It opens this device's room if it
+	 * has none, and phones see the Storyteller choosing meanwhile. The vote lives in the room,
+	 * so leaving this screen keeps it running.
 	 */
 	onMount(() => {
 		void restoreScripts();
 		void loadOfficialData();
-		const host = roomHost();
-		host.prepare();
-		host.setChoosing(true);
-		return () => {
-			if (host.code) host.setChoosing(false);
-		};
+		roomHost().prepare();
+		return holdChoosing();
 	});
 
 	/** New game's own scripts: the base three, recent and saved, and search results. */
@@ -44,19 +50,15 @@
 
 	/** New game's special rules, built-in first (Trevor, 2026-10-26). */
 	const rules = $derived(allRules().map((r) => ({ value: r.id, label: r.name })));
-
-	function play(pick: VotePick) {
-		pickFromVote(pick);
-		void goto(resolve('/new'));
-	}
 </script>
 
 <ScriptVotePanel
 	{choices}
 	{modes}
-	onPick={(id) => play({ subject: 'script', id })}
-	onPickMode={(id) => play({ subject: 'mode', id })}
+	onPick={(id) => onPlay({ subject: 'script', id })}
+	onPickMode={(id) => onPlay({ subject: 'mode', id })}
 	{rules}
-	onPickRules={(ids) => play({ subject: 'rules', ids })}
-	onBack={() => void goto(resolve('/new'))}
+	onPickRules={(ids) => onPlay({ subject: 'rules', ids })}
+	{onBack}
+	{hideBack}
 />
