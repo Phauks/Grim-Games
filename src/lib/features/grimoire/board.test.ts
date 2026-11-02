@@ -4,6 +4,7 @@ import { characterLookup, type Game, type Seat } from '#lib/core/model/index.ts'
 import { createGame, dispatch } from '#lib/core/engine/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import {
+	causeFlagText,
 	causeLabel,
 	isOrphan,
 	placingAlignment,
@@ -71,6 +72,31 @@ describe('causeLabel', () => {
 		expect(causeLabel('execution', characters)).toBe('Executed');
 		expect(causeLabel('execution', characters, true)).toBe('Exiled');
 		expect(causeLabel('exile', characters)).toBe('Exiled');
+	});
+});
+
+describe('causeFlagText', () => {
+	// Trevor (2026-11-02): "Unless Player registers as Demon" and "Only if Player registers as Demon".
+	const game = { seats: {}, seating: [] } as unknown as Game;
+	const flag = (as: 'demon' | 'not-demon') => ({
+		code: 'registers' as const,
+		source: { characterId: 'recluse', seatId: 's' },
+		wiki: 'https://wiki.bloodontheclocktower.com/Recluse',
+		as
+	});
+
+	it('the Slayer on a Recluse: only if they register as Demon', () => {
+		expect(causeFlagText(flag('demon'), game, characters, 'Ana')).toEqual({
+			text: 'Only if Ana registers as Demon',
+			by: 'recluse'
+		});
+	});
+
+	it('the Golem on a Recluse: unless they register as Demon', () => {
+		expect(causeFlagText({ ...flag('not-demon'), unless: true }, game, characters, 'Ana')).toEqual({
+			text: 'Unless Ana registers as Demon',
+			by: 'recluse'
+		});
 	});
 });
 
