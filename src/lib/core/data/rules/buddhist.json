@@ -17,6 +17,10 @@
 			}
 		]
 	},
+	"quietStart": {
+		"seconds": 120,
+		"players": "veterans"
+	},
 	"deathCause": {
 		"none": "talking rule"
 	}

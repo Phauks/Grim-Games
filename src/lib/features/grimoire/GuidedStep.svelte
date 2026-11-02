@@ -8,6 +8,7 @@
 	import CountdownStep from './CountdownStep.svelte';
 	import ChosenKillStep from './ChosenKillStep.svelte';
 	import TallyKillStep from './TallyKillStep.svelte';
+	import NoAttackStep from './NoAttackStep.svelte';
 	import NightSuggested from './NightSuggested.svelte';
 	import StorytellerVisit from './StorytellerVisit.svelte';
 	import NightShownTo from './NightShownTo.svelte';
@@ -479,6 +480,8 @@
 				<ChosenKillStep {grimoire} {step} />
 				<!-- The Yaggababble's phrase count from the day just ended. -->
 				<TallyKillStep {grimoire} {step} />
+				<!-- M15a: the Toymaker's No attack, on the Demon's step. -->
+				<NoAttackStep {grimoire} {step} />
 			{/if}
 			{#if numberStep}
 				<h3>Info token</h3>
