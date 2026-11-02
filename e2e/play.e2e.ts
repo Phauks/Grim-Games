@@ -315,8 +315,9 @@ test('the script tab lists characters by type with their abilities', async ({ pa
 	await expect(page.getByRole('heading', { name: 'Townsfolk' })).toBeVisible();
 	// 22 on the character sheet plus its 5 recommended Travellers (wiki: Trouble Brewing).
 	await expect(page.locator('[data-character]')).toHaveCount(27);
-	await expect(page.getByRole('heading', { name: 'Recommended Travellers' })).toBeVisible();
-	await expect(page.locator('[data-character="scapegoat"]')).toBeVisible();
+	// Outside a game the Travellers are the recommended ones, each marked so (Trevor, 2026-11-02).
+	await expect(page.getByRole('heading', { name: 'Travellers', exact: true })).toBeVisible();
+	await expect(page.locator('[data-character="scapegoat"]')).toContainText('Recommended');
 	const empath = page.locator('[data-character="empath"]');
 	await expect(empath).toContainText('Each night, you learn how many of your 2 alive neighbors');
 	await empath.getByRole('button', { name: /Empath/ }).tap();
