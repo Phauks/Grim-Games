@@ -83,7 +83,6 @@ describe('parsePreferences', () => {
 			requireName: true,
 			holdToReveal: true,
 			slotMachine: true,
-			travellersChoose: true,
 			tileOrderRandom: true,
 			ownWording: true,
 			soundVolume: 0.35,

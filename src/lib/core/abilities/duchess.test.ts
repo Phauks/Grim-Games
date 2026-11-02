@@ -15,7 +15,8 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { infoPicker, isTruthful } from '#lib/core/rules/night-info.ts';
+import { answerOptions } from '#lib/core/rules/night-info/answers.ts';
+import { nightStepInfo } from '#lib/core/rules/night-info/steps.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Duchess', () => {
@@ -48,16 +49,45 @@ describe('Duchess', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Duchess#Examples)', () => {
-		// Waits on the engine (all three): the Duchess has no night information rule, so there is
-		// no picker giving each visitor how many visitors are evil, nor one false answer.
+		// Each visitor's true number is how many visitors are evil (M15f); the False Info visitor's
+		// number must be false.
 		const visits = (cast: string[], visitors: [string, string], liar: string) =>
 			scenario(cast)
 				.rule('duchess')
 				.reminder(visitors[0], 'duchess', 'Visitor')
 				.reminder(visitors[1], 'duchess', 'Visitor')
 				.reminder(liar, 'duchess', 'False Info');
+		const answer = (s: ReturnType<typeof visits>, seat: string) => {
+			const info = nightStepInfo(
+				s.game,
+				{ id: 'duchess' },
+				s.characters,
+				undefined,
+				undefined,
+				'other'
+			);
+			const a =
+				info?.kind === 'answer' ? info.answers.find((x) => x.seatId === s.seat(seat)) : undefined;
+			return a!;
+		};
+		const truth = (s: ReturnType<typeof visits>, seat: string) => {
+			const a = answer(s, seat);
+			return a.kind === 'number' ? a.value : undefined;
+		};
+		/** The number is an allowed answer for the False Info visitor, and the truth is not. */
+		const falseGiven = (s: ReturnType<typeof visits>, seat: string, n: number) => {
+			const a = answer(s, seat);
+			const options = answerOptions(s.game, a, s.characters);
+			const reason = (v: number) =>
+				options.find((o) => o.value.kind === 'number' && o.value.value === v)?.reason;
+			return (
+				a.mustBeFalse === true &&
+				![undefined, 'invalid'].includes(reason(n)) &&
+				reason(truth(s, seat)!) === 'invalid'
+			);
+		};
 
-		it.fails('Example 1: Two learn zero, the Sage learns one', () => {
+		it('Example 1: Two learn zero, the Sage learns one', () => {
 			// Wiki: "The Soldier, Pacifist, and Sage visit the Duchess. The Soldier and Pacifist
 			// learn a "0.” The Sage learns a "1.”"
 			const s = visits(
@@ -65,21 +95,19 @@ describe('Duchess', () => {
 				['soldier', 'pacifist'],
 				'sage'
 			);
-			const picker = (seat: string) => infoPicker(s.game, s.seat(seat), 'duchess', s.characters);
-			expect(picker('soldier')?.range?.truth).toBe(0);
-			expect(picker('pacifist')?.range?.truth).toBe(0);
-			expect(isTruthful(picker('sage')!, { seats: [], number: 1 })).toBe(false);
+			expect(truth(s, 'soldier')).toBe(0);
+			expect(truth(s, 'pacifist')).toBe(0);
+			expect(falseGiven(s, 'sage', 1)).toBe(true);
 		});
-		it.fails('Example 2: Butler gets two, Mutant and Po one', () => {
+		it('Example 2: Butler gets two, Mutant and Po one', () => {
 			// Wiki: "The Mutant, Butler, and Po visit the Duchess. The Mutant learns a "1,” the
 			// Butler learns a "2," and the Po learns a "1.”"
 			const s = visits(['mutant', 'butler', 'po', 'poisoner', 'chef'], ['mutant', 'po'], 'butler');
-			const picker = (seat: string) => infoPicker(s.game, s.seat(seat), 'duchess', s.characters);
-			expect(picker('mutant')?.range?.truth).toBe(1);
-			expect(picker('po')?.range?.truth).toBe(1);
-			expect(isTruthful(picker('butler')!, { seats: [], number: 2 })).toBe(false);
+			expect(truth(s, 'mutant')).toBe(1);
+			expect(truth(s, 'po')).toBe(1);
+			expect(falseGiven(s, 'butler', 2)).toBe(true);
 		});
-		it.fails('Example 3: Mastermind and Minstrel see two, Imp one', () => {
+		it('Example 3: Mastermind and Minstrel see two, Imp one', () => {
 			// Wiki: "The Mastermind, Imp, and Minstrel visit the Duchess. The Mastermind learns a
 			// "2,” the Imp learns a "1," and the Minstrel learns a "2.”"
 			const s = visits(
@@ -87,10 +115,9 @@ describe('Duchess', () => {
 				['mastermind', 'minstrel'],
 				'imp'
 			);
-			const picker = (seat: string) => infoPicker(s.game, s.seat(seat), 'duchess', s.characters);
-			expect(picker('mastermind')?.range?.truth).toBe(2);
-			expect(picker('minstrel')?.range?.truth).toBe(2);
-			expect(isTruthful(picker('imp')!, { seats: [], number: 1 })).toBe(false);
+			expect(truth(s, 'mastermind')).toBe(2);
+			expect(truth(s, 'minstrel')).toBe(2);
+			expect(falseGiven(s, 'imp', 1)).toBe(true);
 		});
 	});
 });

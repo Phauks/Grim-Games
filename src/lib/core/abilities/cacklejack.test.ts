@@ -84,7 +84,7 @@ describe('Cacklejack', () => {
 			expect(s.game.seats[s.seat('acrobat')].characterId).toBe('clockmaker');
 			expect(alignmentOf(s.game, s.seat('acrobat'))).toBe('good');
 		});
-		it.fails('Example 2: Drunk player becomes Flowergirl unknowingly', () => {
+		it('Example 2: Drunk player becomes Flowergirl unknowingly', () => {
 			// Wiki: "During the day, the Cacklejack chooses Abdallah. That night, Julian changes from the
 			// Drunk into the Flowergirl. Julian does not learn that he is now sober."
 			// Waits on the engine (M15o): changing the Drunk's character leaves the Is The Drunk reminder on
