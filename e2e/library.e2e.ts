@@ -953,3 +953,68 @@ test('a file of homebrew characters is guessed as a collection or a character, w
 	// As a script it goes through the Script check like any other.
 	await expect(page.getByRole('dialog', { name: 'Script check' })).toBeVisible();
 });
+
+test('game mode and special rule files are Library items, added and opened like scripts', async ({
+	page
+}) => {
+	// Trevor (2026-11-01): mode files go in the Library beside scripts and characters.
+	await page.goto('/library');
+	const addFile = (name: string, json: unknown) =>
+		page.getByLabel('Script file').setInputFiles({
+			name,
+			mimeType: 'application/json',
+			buffer: Buffer.from(JSON.stringify(json))
+		});
+	await addFile('tiny-mode.json', {
+		format: 1,
+		id: 'tiny-mode',
+		name: 'Tiny Mode',
+		sources: [{ title: 'Our group', url: 'https://example.com/tiny' }],
+		// Setting the counts makes it a game mode (one format, labelled by its parts).
+		parts: { counts: { kind: 'standard' }, restricted: { banned: ['pithag'] } }
+	});
+	const mode = pane(page, 'Tiny Mode');
+	await expect(mode.getByTestId('library-mode')).toBeVisible();
+	await mode.getByRole('button', { name: 'Close' }).tap();
+
+	await addFile('quiet-rule.json', {
+		kind: 'special-rule',
+		format: 1,
+		id: 'quiet-rule',
+		name: 'Quiet Rule',
+		sources: [],
+		parts: { text: ['No talking at night.'] }
+	});
+	const rule = pane(page, 'Quiet Rule');
+	await expect(rule.getByTestId('library-mode')).toBeVisible();
+	await rule.getByRole('button', { name: 'Close' }).tap();
+
+	// Each kind has its own place in the sidebar.
+	await sidebar(page).getByRole('button', { name: 'Game modes', exact: true }).tap();
+	await expect(table(page).locator('tbody tr')).toHaveCount(1);
+	await expect(row(page, 'Tiny Mode')).toBeVisible();
+	await sidebar(page).getByRole('button', { name: 'Special rules', exact: true }).tap();
+	await expect(row(page, 'Quiet Rule')).toBeVisible();
+
+	// A file with problems says so and adds nothing.
+	await addFile('broken.json', { format: 1, id: 'Bad Id', parts: {} });
+	await expect(page.getByText(/This mode file has \d+ problems/).first()).toBeVisible();
+
+	// Edit opens it in the Mode builder.
+	await sidebar(page).getByRole('button', { name: 'Everything' }).tap();
+	await open(row(page, 'Tiny Mode'));
+	await mode.getByRole('button', { name: 'Edit Tiny Mode in the Mode builder' }).tap();
+	await expect(page).toHaveURL(/\/build-mode/);
+	await expect(page.getByRole('textbox', { name: /^Name/ })).toHaveValue('Tiny Mode');
+
+	// Deleted from the Library, it is gone from New game too.
+	await page.goto('/library');
+	await open(row(page, 'Tiny Mode'));
+	await mode.getByRole('button', { name: 'Delete Tiny Mode' }).tap();
+	await page
+		.getByRole('alertdialog', { name: 'Delete Tiny Mode from this device?' })
+		.getByRole('button', { name: 'Confirm' })
+		.tap();
+	await expect(row(page, 'Tiny Mode')).toHaveCount(0);
+	await expect(row(page, 'Quiet Rule')).toBeVisible();
+});

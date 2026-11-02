@@ -11,6 +11,10 @@
 		type ScriptLoadResult
 	} from '#lib/core/data/index.ts';
 	import { addAsCharacters, addAsCollection } from '#lib/features/library/add-as-kind.ts';
+	import { modeKey, ruleKey } from '#lib/features/library/library-items.ts';
+	import { modeFileKind, type BuildKind } from '#lib/core/modes/index.ts';
+	import { customModes } from '#lib/features/modes/custom-modes.svelte.ts';
+	import { customRules } from '#lib/features/modes/custom-rules.svelte.ts';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { errorMessage } from '#lib/features/errors/app-error.ts';
@@ -118,6 +122,8 @@
 	async function settle(fetched: FetchedScript) {
 		if (!onloaded) {
 			const json = parsed(fetched.text);
+			const modeKind = modeFileKind(json);
+			if (modeKind) return addMode(json, modeKind);
 			const guess = guessScriptKind(json, scriptOnly(fetched.source));
 			if (guess.kind !== 'script') {
 				addOpen = false;
@@ -128,6 +134,29 @@
 			}
 		}
 		await settleScript(fetched);
+	}
+
+	/**
+	 * A game mode or special rule file goes into its own store, as New game's Add mode does,
+	 * and opens in the Library (Trevor, 2026-11-01). Problems are listed like a link's.
+	 */
+	async function addMode(json: unknown, kind: BuildKind) {
+		const known = new Set((await loadOfficialData()).characters.map((c) => c.id));
+		const result =
+			kind === 'special-rule'
+				? customRules.add(json, known)
+				: customModes.add(JSON.stringify(json), known);
+		if (!result.ok) {
+			error = t('library.addMode.failed', {
+				count: result.issues.length,
+				problem: result.issues[0] ?? ''
+			});
+			if (!addOpen) toast(t('scripts.add.failed'), error);
+			return;
+		}
+		addOpen = false;
+		const id = 'rule' in result ? result.rule.id : result.mode.id;
+		onadded?.(kind === 'special-rule' ? ruleKey(id) : modeKey(id));
 	}
 
 	/** Adds what the kind confirmation settled on. */

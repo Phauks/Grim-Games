@@ -2977,9 +2977,13 @@ test('End game keeps the Storyteller on the board, says it is over, and can be r
 	await closeSheet(page);
 	await menu(page, 'End game');
 	const end = page.getByRole('alertdialog', { name: 'End game?' });
-	await expect(end).toContainText(/Now\s*In Continue game\s*Becomes\s*Ended, in History/);
+	// What the board shows, not where the save goes (Trevor, 2026-11-01).
+	await expect(end).toContainText(
+		/Now\s*(Setup|Night \d+|Day \d+)\s*Becomes\s*Game over: Winner not recorded/
+	);
 	await end.getByRole('combobox', { name: 'Winner' }).tap();
 	await page.getByRole('option', { name: 'Evil', exact: true }).tap();
+	await expect(end).toContainText(/Becomes\s*Game over: Evil won/);
 	await end.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	// Still on the board (Trevor, 2026-10-17), which says the game is over.
 	expect(page.url()).toBe(board);
@@ -3037,10 +3041,11 @@ test('End game keeps the Storyteller on the board, says it is over, and can be r
 		.getByRole('dialog', { name: 'Grimoire' })
 		.getByRole('button', { name: 'Reopen game' })
 		.tap();
-	await page
-		.getByRole('alertdialog', { name: 'Reopen game?' })
-		.getByRole('button', { name: 'Confirm', exact: true })
-		.tap();
+	const reopen = page.getByRole('alertdialog', { name: 'Reopen game?' });
+	await expect(reopen).toContainText(
+		/Now\s*Game over: Evil won\s*Becomes\s*(Setup|Night \d+|Day \d+)/
+	);
+	await reopen.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(page.getByTestId('game-over')).toHaveCount(0);
 	await page.goto('/join');
 	await expect(page.getByRole('link', { name: /Trouble Brewing.*Setting up/ })).toBeVisible();

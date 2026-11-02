@@ -6,9 +6,14 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Alignment, CharacterId } from '#lib/core/data/index.ts';
-	import { charactersInPlay, trueCharacter, type SeatId } from '#lib/core/model/index.ts';
+	import {
+		charactersInPlay,
+		scriptCharacterIds,
+		trueCharacter,
+		type SeatId
+	} from '#lib/core/model/index.ts';
 	import { rulesOf } from '#lib/core/data/rules/index.ts';
-	import { abilityGivers } from '#lib/core/rules/index.ts';
+	import { abilityGivers, barredAbilities } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import BoardReminder from '#lib/features/grimoire/BoardReminder.svelte';
 	import AlignmentPill from '#lib/features/grimoire/AlignmentPill.svelte';
@@ -177,11 +182,15 @@
 		return id && rule ? { id, rule } : undefined;
 	});
 	const held = $derived(seat?.abilities?.find((a) => a.via === giver?.id)?.characterId);
+	// Not in play (`notInPlay`), and none a jinx bars (the Boffin's Demon cannot have the
+	// Drunk ability, https://wiki.bloodontheclocktower.com/Boffin#Related_Jinxes).
 	const heldExclude = $derived.by(() => {
-		if (!giver?.rule.notInPlay) return [];
+		if (!giver) return [];
+		const barred = barredAbilities(giver.id, scriptCharacterIds(game.script), characters);
+		if (!giver.rule.notInPlay) return barred.filter((id) => id !== held);
 		const tokens = charactersInPlay(game);
 		const truly = game.seating.flatMap((s) => trueCharacter(game, s, characters) ?? []);
-		return [...new Set([...tokens, ...truly])].filter((id) => id !== held);
+		return [...new Set([...tokens, ...truly, ...barred])].filter((id) => id !== held);
 	});
 	function hold(characterId: CharacterId | undefined) {
 		heldOpen = false;
