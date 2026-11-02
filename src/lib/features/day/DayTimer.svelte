@@ -24,8 +24,8 @@
 	 * settings over the board, without the day view (Trevor, 2026-10-17). Holding the clock
 	 * resets it to the time per living player (Trevor, 2026-10-19).
 	 *
-	 * With `town`, Back to town is part of the timer (Trevor, 2026-11-01): the compact timer's
-	 * front and the full timer's end, in place of its sound button (the sound is in the Timer
+	 * With `town`, Back to town is part of the timer (Trevor, 2026-11-01): its front, on the
+	 * board and in the day alike (2026-11-02), in place of the full timer's sound button (the sound is in the Timer
 	 * sheet, which tapping the clock opens, as on the board). It lights when the time is up and
 	 * the clock reads Town once it is called.
 	 */
@@ -43,9 +43,10 @@
 		/** Shown instead of this device's timer: the Storyteller's, on a spectator's board. */
 		shown?: WatchedTimer;
 		/**
-		 * Back to town on the timer (plan U2). `can`: a live room and the game not over; it is
-		 * drawn, disabled, without one, so nothing moves when a room opens. `called`: the rest
-		 * of today is Town, which the clock then shows, as players' phones do.
+		 * Back to town on the timer (plan U2). `can`: whenever the game isn't over and the board
+		 * isn't a spectator's, whatever the timer shows (Trevor, 2026-11-02: "always available");
+		 * otherwise drawn, disabled, so nothing moves. `called`: the rest of today is Town, which
+		 * the clock then shows, as players' phones do.
 		 */
 		town?: { can: boolean; called: boolean };
 	}
@@ -113,7 +114,8 @@
 	data-running={timer.running ? '' : undefined}
 	data-done={timer.done ? '' : undefined}
 >
-	{#if variant === 'compact'}{@render townButton()}{/if}
+	<!-- At the front, on the board and in the day alike (Trevor, 2026-11-02). -->
+	{@render townButton()}
 	{#if variant === 'full'}
 		<IconButton icon="minus" label={t('day.timerLess')} onclick={() => live.adjust(-1)} />
 	{/if}
@@ -169,9 +171,7 @@
 			disabled={timer.fresh}
 			onclick={() => live.reset(alive)}
 		/>
-		{#if town}
-			{@render townButton()}
-		{:else if soundButton}
+		{#if soundButton && !town}
 			<IconButton
 				icon="sound"
 				label={t('day.timerSoundButton', { sound: soundLabel(preferences.current.timerSound) })}
@@ -275,9 +275,9 @@
 	.timer[data-variant='compact'] .clock {
 		padding-inline-start: var(--space-3);
 	}
-	/* Back to town opens the board's timer, set off from the clock by a line, so the clock
-	   keeps its usual inset beside it. */
-	.timer[data-variant='compact'] :global([data-call-town]) {
+	/* Back to town opens the timer, set off from the rest by a line, on the board and in the
+	   day alike. */
+	.timer :global([data-call-town]) {
 		border-inline-end: 1px solid var(--button-edge);
 		border-start-end-radius: 0;
 		border-end-end-radius: 0;

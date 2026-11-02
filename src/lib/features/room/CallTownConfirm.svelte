@@ -13,11 +13,10 @@
 	let { open = $bindable(false) }: { open?: boolean } = $props();
 
 	function call(): void {
-		if (!roomHost().callTown()) {
-			toast(t('room.callTownFailed'));
-			return;
-		}
+		// The day timer stops either way (Trevor, 2026-11-02: always available); without phones
+		// in a room to reach, it says so.
 		if (liveDayTimer.running) liveDayTimer.toggle();
+		if (!roomHost().callTown()) toast(t('room.callTownFailed'));
 	}
 </script>
 

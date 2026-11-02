@@ -20,11 +20,10 @@ test('Back to town makes every phone in the room sound and vibrate', async ({
 	browser
 }, testInfo) => {
 	const board = await startGame(page);
-	// On the day timer (Trevor, 2026-11-01), not in ⋯. Without a room there is nobody to
-	// call: it is there, disabled, so nothing moves when a room opens.
+	// On the day timer (Trevor, 2026-11-01), not in ⋯, and always available (2026-11-02).
 	const timer = page.locator('.board-timer').getByTestId('day-timer');
 	const call = timer.getByRole('button', { name: 'Back to town' });
-	await expect(call).toBeDisabled();
+	await expect(call).toBeEnabled();
 	const before = (await timer.boundingBox())!;
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	const menu = page.getByRole('dialog', { name: 'Grimoire' });
@@ -85,4 +84,47 @@ test('Back to town makes every phone in the room sound and vibrate', async ({
 	await expect(confirm).toBeHidden();
 	await expect(cover).toBeVisible();
 	await phoneContext.close();
+});
+
+// Trevor, 2026-11-02: "Back to town button should always be available, even if timer is not
+// complete". Before the time is up, and with no room, it still asks and stops the timer.
+test('Back to town can be called before the time is up, and stops the timer', async ({ page }) => {
+	await page.clock.install();
+	await startGame(page);
+	const timer = page.locator('.board-timer').getByTestId('day-timer');
+	const call = timer.getByRole('button', { name: 'Back to town' });
+	await timer.getByRole('button', { name: 'Start timer' }).tap();
+	await page.clock.runFor(10_000);
+	await expect(timer.getByRole('timer')).toHaveText('3:50');
+	// Not lit yet, but there to tap.
+	await expect(call).toBeEnabled();
+	await expect(call).not.toHaveAttribute('data-lit', '');
+	await call.tap();
+	const confirm = page.getByRole('alertdialog', { name: 'Back to town?' });
+	await confirm.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(confirm).toBeHidden();
+	// No room here, so no phones were reached, and it says so; the timer stops all the same.
+	await expect(page.getByText('Couldn’t reach the players’ phones.')).toBeVisible();
+	await expect(timer.getByRole('button', { name: 'Start timer' })).toBeVisible();
+	await page.clock.runFor(10_000);
+	await expect(timer.getByRole('timer')).toHaveText('3:50');
+
+	// The same in the day view and on the grim cover.
+	await page.getByRole('button', { name: 'Day', exact: true }).tap();
+	await expect(
+		page.getByTestId('day-toolbar').getByRole('button', { name: 'Back to town' })
+	).toBeEnabled();
+	// At the timer's front, as on the board's (Trevor, 2026-11-02).
+	const dayTimer = page.getByTestId('day-toolbar').getByTestId('day-timer');
+	expect(await dayTimer.evaluate((el) => el.firstElementChild?.getAttribute('aria-label'))).toBe(
+		'Back to town'
+	);
+	await page.keyboard.press('Escape');
+	await expect(page.getByRole('dialog', { name: /^(Day|Setup)( \d+)?$/ })).toBeHidden();
+	await page.getByTestId('cover-button').tap();
+	await expect(
+		page
+			.getByRole('dialog', { name: 'Screen covered' })
+			.getByRole('button', { name: 'Back to town' })
+	).toBeEnabled();
 });

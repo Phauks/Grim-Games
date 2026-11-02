@@ -442,11 +442,11 @@ test('the day timer starts at 30 seconds per living player and signals time up',
 	await expect(timer).toHaveAttribute('data-done', '');
 	await expect(timer.getByRole('button', { name: 'Start timer' })).toBeDisabled();
 	expect(await page.evaluate(() => (window as unknown as { vibrated: number }).vibrated)).toBe(1);
-	// Back to town ends the timer, in place of its sound button (Trevor, 2026-11-01); with no
-	// room it is there but can't be pressed, and isn't lit.
+	// Back to town ends the timer, in place of its sound button (Trevor, 2026-11-01): always
+	// available (2026-11-02), and lit once the time is up.
 	const call = timer.getByRole('button', { name: 'Back to town' });
-	await expect(call).toBeDisabled();
-	await expect(call).not.toHaveAttribute('data-lit', '');
+	await expect(call).toBeEnabled();
+	await expect(call).toHaveAttribute('data-lit', '');
 	await expect(timer.getByRole('button', { name: /^Timer sound/ })).toHaveCount(0);
 	// The finishing sound is the Storyteller's choice, kept as a setting: in the Timer sheet,
 	// which the clock opens, as on the board.

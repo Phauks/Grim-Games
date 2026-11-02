@@ -623,11 +623,12 @@
 	// that join get the script, never anything from the game but names and deaths. ──
 	let phonesOpen = $state(false);
 	/**
-	 * Back to town on the day timer, on the board and in the day (Trevor, 2026-11-01); drawn,
-	 * disabled, without a live room, and on a spectator's board.
+	 * Back to town on the day timer, on the board and in the day (Trevor, 2026-11-01). Always
+	 * available, whatever the timer shows (Trevor, 2026-11-02); disabled only on a spectator's
+	 * board and once the game is over.
 	 */
 	const town = $derived({
-		can: !watching && !ended && !!roomHost().code,
+		can: !watching && !ended,
 		called: roomHost().playersPhase(game.gameId)?.kind === 'town'
 	});
 	// ── The players' copy of the script ──
@@ -1087,7 +1088,7 @@
 </Dialog>
 
 {#snippet coverActions()}
-	<GrimCoverActions callTown={!ended && !!roomHost().code} view={playerView} />
+	<GrimCoverActions callTown={town.can} view={playerView} />
 {/snippet}
 
 {#snippet coverTimer()}

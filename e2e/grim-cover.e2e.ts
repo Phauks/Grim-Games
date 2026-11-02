@@ -118,10 +118,10 @@ test('the Storyteller covers the screen from the board, beside ☰, and from the
 
 	// The players' view, over the cover, as on /play: its title-line buttons, every tab and the
 	// notes (Trevor, 2026-10-27: "As if they were within the app. We shouldn't even block
-	// notes"). Without a room there is nobody to call.
+	// notes"). Back to town is here too, always (Trevor, 2026-11-02).
 	await page.getByTestId('cover-button').tap();
 	const cover = page.getByRole('dialog', { name: 'Screen covered' });
-	await expect(cover.getByRole('button', { name: 'Back to town' })).toHaveCount(0);
+	await expect(cover.getByRole('button', { name: 'Back to town' })).toBeEnabled();
 	await cover.getByRole('button', { name: 'Player view' }).tap();
 	const view = page.getByTestId('cover-player-view');
 	const viewDialog = page.getByRole('dialog', { name: 'Trouble Brewing' });
