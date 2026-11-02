@@ -24,6 +24,7 @@
 	import SeatFriendButton from './SeatFriendButton.svelte';
 	import FriendRows from './FriendRows.svelte';
 	import GroupsSection from './GroupsSection.svelte';
+	import InvitePushToggle from './InvitePushToggle.svelte';
 	import { roomJoinPath } from '#lib/features/room/join-link.ts';
 	import { profileHref, scriptOpenHref } from './friend-links.ts';
 	import { friendScripts } from './friend-scripts.svelte.ts';
@@ -459,6 +460,7 @@
 					disabled={!data || busy}
 					onChange={(show) => void setShowPresence(show)}
 				/>
+				<InvitePushToggle />
 			</PageSection>
 
 			<PageSection title={t('friends.blocked')}>

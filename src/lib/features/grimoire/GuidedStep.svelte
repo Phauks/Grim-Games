@@ -31,7 +31,7 @@
 	import StepInfoTokens from '#lib/features/info-tokens/StepInfoTokens.svelte';
 	import { withChosen, type FilledInfoToken } from '#lib/core/rules/info-token-characters.ts';
 	import { trueCharacter } from '#lib/core/model/index.ts';
-	import type { InfoToken } from '#lib/core/data/info-tokens.ts';
+	import { infoTokensNamedIn, type InfoToken } from '#lib/core/data/info-tokens.ts';
 	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
 	import type { ShownInfoCard } from '#lib/features/show/shown.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -46,6 +46,11 @@
 	import SeatChooser from './SeatChooser.svelte';
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
 	import { shownCommands } from './record-shown.ts';
+	import JinxNote from '#lib/features/characters/JinxNote.svelte';
+	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
+	import { gameJinxes } from '#lib/features/game/game-jinxes.ts';
+	import { jinxesOnStep } from '#lib/core/rules/jinxes.ts';
+	import { t } from '#lib/i18n/locale.svelte.ts';
 
 	/**
 	 * One night step, filled in with help (Trevor, 2026-10-16): TPI's text, who has the
@@ -115,6 +120,16 @@
 	const characters = $derived(grimoire.open.characters);
 	const holders = $derived(step ? stepHolders(game, step, characters) : []);
 	const believers = $derived(holders.filter((s) => believesDemon(game, s, characters)));
+	/**
+	 * The step's character's jinxes with characters in play, word for word, where the
+	 * Storyteller runs it (L107; https://wiki.bloodontheclocktower.com/Djinn).
+	 */
+	const stepJinxes = $derived.by(() => {
+		const id = step?.character?.id;
+		if (!id) return [];
+		const { jinxes, inPlay } = gameJinxes(game, officialData.current);
+		return jinxesOnStep(jinxes, id, inPlay);
+	});
 	/**
 	 * The character's own reminder tokens, one row per copy the game has (the Mathematician's
 	 * five "Abnormal", Trevor 2026-10-17), each placed or moved on its own.
@@ -210,6 +225,15 @@
 			});
 	}
 
+	/** The characters this step changed players into tonight (ChangeCharacterStep), the latest last. */
+	let stepChanges = $state<readonly CharacterId[]>([]);
+	$effect.pre(() => {
+		void step?.id;
+		stepChanges = [];
+	});
+	/** "You are", when the step's text names it. */
+	const youAreCard = $derived(infoTokensNamedIn(step?.reminder).find((t) => t.id === 'you-are'));
+
 	let showOpen = $state(false);
 	/** Shown: the step's character, or a suggested answer's (the Undertaker's). */
 	let shownId = $state<CharacterId | undefined>();
@@ -234,6 +258,12 @@
 	function record(picker: InfoPicker, choice: InfoChoice) {
 		if (grimoire.open.viewOnly) return;
 		for (const command of shownCommands(game, characters, picker, choice)) grimoire.run(command);
+	}
+	/** The Yes/No info token, only its answer, as the Info tokens sheet shows it. */
+	function showAnswer(answer: string) {
+		shownId = undefined;
+		shownCard = { detail: answer };
+		showOpen = true;
 	}
 	function showNumber(n: number) {
 		// Over the open step, as with a suggestion's Show to player.
@@ -341,6 +371,14 @@
 				>
 			{/if}
 			<NightAlerts {grimoire} {step} withoutImpaired />
+			{#if stepJinxes.length > 0}
+				<h3>{t('characters.jinxes')}</h3>
+				<ul class="jinxes" data-testid="step-jinxes">
+					{#each stepJinxes as jinx (jinx.characters.join('+'))}
+						<li><JinxNote {jinx} {characters} /></li>
+					{/each}
+				</ul>
+			{/if}
 			{#if step.id === TRAVELLER_JOINS_STEP}
 				<TravellerJoins {grimoire} travellers={step.travellers ?? []} />
 			{/if}
@@ -358,6 +396,7 @@
 				{grimoire}
 				{step}
 				onShowNumber={numberStep ? showNumber : undefined}
+				onShowAnswer={showAnswer}
 				onRecord={record}
 				onShow={(id) => {
 					// Over the open step: closing the step in the same update threw inside the
@@ -397,25 +436,22 @@
 					showOpen = true;
 				}}
 			/>
-			<NightYesNo
-				{grimoire}
-				{step}
-				onShowAnswer={(answer) => {
-					// The Yes/No info token, only its answer, as the Info tokens sheet shows it.
-					shownId = undefined;
-					shownCard = { detail: answer };
-					showOpen = true;
-				}}
-				onRecord={record}
-			/>
+			<NightYesNo {grimoire} {step} onShowAnswer={showAnswer} onRecord={record} />
 			{#if step.character}
 				<!-- Over the open step, as with a suggestion's Show to player. -->
 				<ChangeCharacterStep
 					{grimoire}
 					{step}
+					onChanges={(ids) => (stepChanges = ids)}
 					onShow={(id) => {
-						shownCard = undefined;
-						shownId = id;
+						// With "You are" when the step's text names it: the player learns their new
+						// character (the Pit-Hag's "Show the *YOU ARE* token & their new character token").
+						const character = characters.get(id);
+						shownId = youAreCard && character ? undefined : id;
+						shownCard =
+							youAreCard && character
+								? { title: youAreCard.text, characters: [{ character }] }
+								: undefined;
 						showOpen = true;
 					}}
 				/>
@@ -491,7 +527,9 @@
 					text={step.reminder}
 					character={step.character}
 					{characters}
-					prepValues={game.prepValues}
+					{game}
+					changed={stepChanges}
+					own={step.infoTokenCharacters}
 					onchoose={chooseCard}
 				/>
 			{/if}
@@ -621,6 +659,13 @@
 	h3 {
 		margin: var(--space-2) 0 var(--space-1);
 		font-size: 1rem;
+	}
+	.jinxes {
+		display: grid;
+		gap: var(--space-2);
+		margin: 0 0 var(--space-2);
+		padding: 0;
+		list-style: none;
 	}
 	/* Room under each token for its words' band, and beside it for words wider than it. */
 	.reminders {

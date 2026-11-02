@@ -92,5 +92,10 @@
 				"always": true
 			}
 		}
+	},
+	"infoTokenCharacters": {
+		"you-are": {
+			"characters": ["changed"]
+		}
 	}
 }
