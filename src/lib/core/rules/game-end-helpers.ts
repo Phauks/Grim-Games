@@ -111,7 +111,7 @@ export function livesWhileDead(game: Game, seatId: SeatId, characters: Character
  * the Zombuul's first death, a Lleech whose host lives.
  */
 export function aliveForEnd(game: Game, seatId: SeatId, characters: CharacterLookup): boolean {
-	if (isAliveForWin(game, seatId)) return true;
+	if (isAliveForWin(game, seatId)) return !diesWithCarrier(game, seatId, characters);
 	const seat = game.seats[seatId];
 	if (!seat) return false;
 	const characterId = trueCharacter(game, seatId, characters);
@@ -206,4 +206,20 @@ export function guessesEvilTeam(game: Game, characters: CharacterLookup): GameEn
 		});
 	}
 	return out;
+}
+
+/**
+ * A living player whose ability says they die once every player carrying its
+ * `aliveWhileDead.whileCarrierAlive` token is dead, and it is: the Lleech dies with its host
+ * though the Storyteller has not marked it yet, so good wins at once
+ * (https://wiki.bloodontheclocktower.com/Lleech, M15h). Only while sober: a drunk or poisoned
+ * Lleech lives on. With no token on anyone (no host chosen yet) it lives.
+ */
+function diesWithCarrier(game: Game, seatId: SeatId, characters: CharacterLookup): boolean {
+	const characterId = trueCharacter(game, seatId, characters);
+	const token = gameEndRules(characterId, characters)?.aliveWhileDead?.whileCarrierAlive;
+	if (!characterId || !token) return false;
+	const carriers = carrying(game, characterId, token).filter((id) => id !== seatId);
+	if (carriers.length === 0 || carriers.some((id) => isAliveForWin(game, id))) return false;
+	return abilityState(game, seatId, characters).works;
 }

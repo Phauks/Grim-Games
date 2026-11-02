@@ -31,6 +31,7 @@ import {
 	alignmentOf,
 	getSeat,
 	isTraveller,
+	nearestOfType,
 	trueCharacter,
 	typeOf
 } from '#lib/core/model/selectors.ts';
@@ -209,6 +210,11 @@ function impairmentsOf(
 					)
 				: seatOfCharacter(game, r.characterId, characters, seatId);
 			if (rule.whileWorks && !source) continue;
+			if (
+				rule.whileKept &&
+				!keptSourceHolds(game, seatId, r.characterId, rule.whileKept, characters, visiting)
+			)
+				continue;
 			const at = { characterId: r.characterId, reminderId: r.reminderId };
 			out.push(sourced(rule.reason, source ? { ...at, seatId: source } : at, characters));
 			continue;
@@ -325,8 +331,57 @@ function abilityWorks(
 	return (
 		!seat.dead ||
 		worksWhenDead(trueCharacter(game, seatId, characters), characters) ||
-		keepsAbilityWhenDead(game, seatId, characters)
+		keepsAbility(game, seatId, characters, next)
 	);
+}
+
+/**
+ * Whether a dead player keeps their ability by another character's token (`keepsAbility`),
+ * only while that character's ability works: a dead, drunk or poisoned Vigormortis's Minions
+ * lose theirs (https://wiki.bloodontheclocktower.com/Vigormortis, M15g).
+ */
+function keepsAbility(
+	game: Game,
+	seatId: SeatId,
+	characters: CharacterLookup,
+	visiting: Set<SeatId>
+): boolean {
+	return keepsAbilityWhenDead(
+		game,
+		seatId,
+		characters,
+		(s) => !visiting.has(s) && abilityWorks(game, s, characters, visiting)
+	);
+}
+
+/**
+ * Whether a token with `whileKept` still impairs `carrier`: some seat carrying its character's
+ * `whileKept.token` keeps their ability (`keepsAbility`), and, with `nearest`, the carrier is
+ * that seat's nearest player of that type either way round (the Vigormortis's Poisoned
+ * Townsfolk beside a Minion it killed, healthy again once that Minion loses their ability or
+ * is no longer a Minion: https://wiki.bloodontheclocktower.com/Vigormortis, M15g).
+ */
+function keptSourceHolds(
+	game: Game,
+	carrier: SeatId,
+	characterId: CharacterId,
+	whileKept: NonNullable<TokenImpairment['whileKept']>,
+	characters: CharacterLookup,
+	visiting: Set<SeatId>
+): boolean {
+	return game.seating.some((s) => {
+		if (s === carrier) return false;
+		if (
+			!game.seats[s].reminders.some(
+				(r) => r.characterId === characterId && r.label === whileKept.token
+			)
+		)
+			return false;
+		if (!keepsAbility(game, s, characters, visiting)) return false;
+		if (!whileKept.nearest) return true;
+		const near = nearestOfType(game, s, whileKept.nearest, characters);
+		return near.anticlockwise === carrier || near.clockwise === carrier;
+	});
 }
 
 /** Whether a seat's ability works, and if not, every reason with its source. */
@@ -341,7 +396,7 @@ export function abilityState(
 	const dead =
 		(seat?.dead ?? false) &&
 		!worksWhenDead(characterId, characters) &&
-		!keepsAbilityWhenDead(game, seatId, characters);
+		!keepsAbility(game, seatId, characters, new Set([seatId]));
 	return {
 		seatId,
 		...(characterId !== undefined ? { characterId } : {}),
