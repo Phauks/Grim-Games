@@ -1,4 +1,5 @@
 <script lang="ts">
+	import GroupGames from '#lib/features/friends/GroupGames.svelte';
 	import { offerScriptToReports } from '#lib/features/reports/report-script.svelte.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { onMount } from 'svelte';
@@ -266,6 +267,7 @@
 				onRoom={(room) => (joinedRoom = room)}
 			/>
 		{/key}
+		{#if join && !joining}<GroupGames onJoin={openRoom} />{/if}
 		{#if offline}<OfflineGame room={offlineScript.room} />{/if}
 	{/if}
 	{#if voting}
