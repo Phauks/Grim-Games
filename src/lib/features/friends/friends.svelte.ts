@@ -111,7 +111,8 @@ export const friends = {
 	}
 };
 
-// Invites arrive when the app opens or comes back to the front (plan F4: no push yet).
+// Invites arrive when the app opens or comes back to the front (plan F4), and as a
+// notification with the app closed once that is turned on (plan F8, invite-push.svelte.ts).
 if (typeof document !== 'undefined') {
 	document.addEventListener('visibilitychange', () => {
 		if (document.visibilityState === 'visible') void friends.load();
