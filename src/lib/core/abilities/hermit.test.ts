@@ -198,6 +198,7 @@ describe('Hermit', () => {
 			// that he is the Exorcist, he chooses a player each night. Lewis says that he thinks he might
 			// be the Drunk, so the Storyteller executes him due to the Mutant ability. Due to the
 			// Sweetheart ability, the Alchemist is now drunk."
+			// Waits on the engine (M15o): madnessOffer only treats a true Mutant as mad, not a Hermit holding the Mutant ability.
 			const outsiders: Script = {
 				entries: [
 					'hermit',
