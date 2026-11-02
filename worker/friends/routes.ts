@@ -29,17 +29,19 @@ import {
 import { getUser, readBody, sameOriginJson } from '../account/routes.ts';
 import { nameStub, userStub, type AccountEnv } from '../account/objects.ts';
 import { remote, type DataBinding } from '../shared-data.ts';
+import type { PushEnv } from '../push.ts';
 import { normaliseRoomCode } from '../../src/lib/core/sync/room-code.ts';
 import type { Room } from '../room.ts';
 import type { GamePlayer } from '../../src/lib/features/friends/friend-rules.ts';
 import type { BookEntry, FriendBook, RecentEntry } from './book.ts';
 import type { FriendGroup } from './group.ts';
 import { handleGroups, leaveGroups } from './groups.ts';
+import { handleInvitePush } from './invite-push.ts';
 import { friendInvites, handleInvites } from './invites.ts';
 import { friendsPresence, handleFriendRoom, showsPresence } from './presence.ts';
 import { handleFriendScripts } from './scripts.ts';
 
-export interface FriendsEnv extends AccountEnv {
+export interface FriendsEnv extends AccountEnv, PushEnv {
 	FRIEND_BOOKS: DurableObjectNamespace<FriendBook>;
 	/** Groups by join code (plan F6). */
 	FRIEND_GROUPS: DurableObjectNamespace<FriendGroup>;
@@ -348,6 +350,9 @@ export async function handleFriends(
 
 	const invites = await handleInvites(request, env, path, accountId);
 	if (invites) return invites;
+
+	const push = await handleInvitePush(request, env, path, accountId);
+	if (push) return push;
 
 	if (path === FRIEND_PRESENCE_API && method === 'PUT') {
 		const show = (await readBody(request))?.show;
