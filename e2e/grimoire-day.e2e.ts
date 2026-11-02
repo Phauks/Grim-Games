@@ -347,6 +347,19 @@ test('the votes dialog notes a Thief’s negative vote (M9e)', async ({ page }) 
 	await expect(notes.locator('tbody tr')).toHaveText(/Seat 2.*Vote counts as -1/);
 });
 
+// The Master shows as a player badge, never a raw seat id (Trevor, 2026-11-02).
+test('the votes dialog names the Butler’s Master as a player badge (M9e)', async ({ page }) => {
+	await startGame(page);
+	await chooseCharacter(page, 3, 'Butler');
+	await putReminder(page, 'Master', 1);
+	await openDay(page);
+	await page.getByTestId('votes-needed').tap();
+	const row = page.getByTestId('vote-notes').locator('tbody tr');
+	await expect(row).toHaveCount(1);
+	await expect(row).toHaveText(/Seat 3.*Votes only if\s*Seat 1\s*votes/);
+	await expect(row).not.toContainText('-');
+});
+
 test('a Traveller is exiled, and a death offers only valid causes', async ({ page }) => {
 	const board = await startGame(page);
 	await addThief(page);
