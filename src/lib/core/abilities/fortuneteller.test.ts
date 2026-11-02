@@ -16,6 +16,8 @@ import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { infoPicker, isTruthful } from '#lib/core/rules/night-info.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { setupPrep } from '#lib/core/rules/setup-reminders.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Fortune Teller', () => {
@@ -90,6 +92,64 @@ describe('Fortune Teller', () => {
 			const picker = infoPicker(s.game, s.seat('fortuneteller'), 'fortuneteller', s.characters)!;
 			const chose = [s.seat('fortuneteller'), s.seat('saint')];
 			expect(isTruthful(picker, { seats: chose, yes: true })).toBe(true);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Fortune_Teller#How_to_Run)', () => {
+		const cast = ['fortuneteller', 'monk', 'chef', 'imp', 'poisoner'];
+
+		it('lists the Red Herring reminder to place before the first night', () => {
+			// How to Run: before night one, the Storyteller marks one good player as the Red Herring.
+			const s = scenario(cast);
+			expect(setupPrep('fortuneteller', character.name, s.characters)).toMatchObject([
+				{ tokens: ['Red Herring'] }
+			]);
+		});
+
+		it('puts the Red Herring only on a good player', () => {
+			// How to Run: the Red Herring reminder goes beside a good character token.
+			const s = scenario(cast);
+			const reminder = { characterId: 'fortuneteller', label: 'Red Herring' };
+			expect(reminderTargetMisses(s.game, reminder, s.seat('monk'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, reminder, s.seat('poisoner'), s.characters)).toEqual([
+				'alignment'
+			]);
+		});
+
+		it('chooses two players and learns yes or no, on the first night and every other night', () => {
+			// How to Run: every night, the Fortune Teller points at two players and the Storyteller
+			// nods or shakes their head.
+			const s = scenario(cast);
+			for (const night of ['first', 'other'] as const) {
+				const picker = infoPicker(
+					s.game,
+					s.seat('fortuneteller'),
+					'fortuneteller',
+					s.characters,
+					night
+				)!;
+				expect(picker.kind).toBe('yes-no');
+				expect(picker.seatCount).toBe(2);
+			}
+		});
+
+		it('may be their own Red Herring, so choosing themselves gives yes', () => {
+			// How to Run: in small games the Fortune Teller can be their own Red Herring.
+			const s = scenario(cast);
+			const reminder = { characterId: 'fortuneteller', label: 'Red Herring' };
+			expect(reminderTargetMisses(s.game, reminder, s.seat('fortuneteller'), s.characters)).toEqual(
+				[]
+			);
+			const own = s.reminder('fortuneteller', 'fortuneteller', 'Red Herring');
+			const picker = infoPicker(
+				own.game,
+				own.seat('fortuneteller'),
+				'fortuneteller',
+				own.characters
+			)!;
+			const chose = [own.seat('fortuneteller'), own.seat('monk')];
+			expect(isTruthful(picker, { seats: chose, yes: true })).toBe(true);
+			expect(isTruthful(picker, { seats: chose, yes: false })).toBe(false);
 		});
 	});
 });
