@@ -6916,6 +6916,47 @@ test('with Council of the Dead, night 4 starts with the dead waking together', a
 	);
 });
 
+// One format for game modes and special rules (Trevor, 2026-11-01): a game mode may set a
+// rule's parts, and the night plays its step as it plays Council of the Dead's.
+test('a game mode that sets a night step adds it to the night, headed by the mode', async ({
+	page
+}) => {
+	const mode = {
+		format: 1,
+		id: 'dead-wake',
+		name: 'Dead Wake',
+		sources: [],
+		parts: {
+			assignment: { kind: 'bag' },
+			nightSteps: [{ kind: 'wake', when: 'one-night', night: 1, dead: true }]
+		}
+	};
+	await page.goto('/new');
+	await page.evaluate((m) => {
+		localStorage.setItem('grim-games:custom-modes:v1', JSON.stringify([m]));
+	}, mode);
+	await page.reload();
+	await pickScript(page, 'Trouble Brewing');
+	const modes = page.getByRole('main').getByRole('combobox', { name: 'Game mode' });
+	await modes.tap();
+	await page.getByRole('option', { name: 'Dead Wake', exact: true }).tap();
+	await expect(modes).toContainText('Dead Wake');
+	await page.getByRole('button', { name: 'Create game' }).tap();
+	await toBoard(page);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Imp', exact: true })
+		.tap();
+	await closeSheet(page);
+	await walkTo(page, 'Dusk');
+	await page.getByTestId('night-strip').getByRole('button', { name: 'Next step' }).tap();
+	await expect(page.getByTestId('night-strip').locator('.step .name strong')).toHaveText(
+		'Dead Wake'
+	);
+});
+
 test('with Track nominations on, a seat sheet records who nominated whom under the ghost vote', async ({
 	page
 }) => {

@@ -2,6 +2,7 @@
 	import { account } from '#lib/features/account/account.svelte.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { friends } from './friends.svelte.ts';
 	import type { FriendTarget, SeatFriendState } from './friends-protocol.ts';
@@ -18,9 +19,14 @@
 		target: FriendTarget;
 		/** What the list already says (Recent players), so no lookup is needed. */
 		known?: SeatFriendState;
+		/**
+		 * Only the Friends icon, its state in its name and tooltip: in a profile's header beside
+		 * Close (Trevor, 2026-11-01: "friend as icon").
+		 */
+		iconOnly?: boolean;
 	}
 
-	let { open, target, known }: Props = $props();
+	let { open, target, known, iconOnly = false }: Props = $props();
 
 	let seat = $state<SeatFriendState>();
 	let busy = $state(false);
@@ -73,11 +79,22 @@
 	);
 </script>
 
-<Button
-	variant="quiet"
-	icon="add"
-	data-testid="seat-friend"
-	data-state={signedIn ? (seat ?? 'loading') : 'signed-out'}
-	disabled={!signedIn || seat !== 'add' || busy}
-	onclick={() => void add()}>{label}</Button
->
+{#if iconOnly}
+	<IconButton
+		icon="friends"
+		{label}
+		data-testid="seat-friend"
+		data-state={signedIn ? (seat ?? 'loading') : 'signed-out'}
+		disabled={!signedIn || seat !== 'add' || busy}
+		onclick={() => void add()}
+	/>
+{:else}
+	<Button
+		variant="quiet"
+		icon="add"
+		data-testid="seat-friend"
+		data-state={signedIn ? (seat ?? 'loading') : 'signed-out'}
+		disabled={!signedIn || seat !== 'add' || busy}
+		onclick={() => void add()}>{label}</Button
+	>
+{/if}

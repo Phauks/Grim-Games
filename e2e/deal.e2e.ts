@@ -114,15 +114,17 @@ test('Deal gives every seat a character, and a seated phone holds to see its own
 
 	// A minute after it was turned on, it turns itself off and the phone can no longer open it
 	// (Trevor, 2026-10-28: "only be available for 1 minute, then turn off"). A button, not a
-	// switch (Trevor, 2026-10-30).
+	// switch (Trevor, 2026-10-30), beside the ✕, that turns into the timer while players can
+	// look (Trevor, 2026-10-31).
 	const toggle = page.getByTestId('roles-show');
-	await expect(toggle).toHaveText('Hide their characters');
+	await expect(toggle).toHaveAttribute('data-shown', 'true');
+	await expect(toggle).toHaveAccessibleName(/^Hide characters, 0:[0-5]\d left$/);
 	// The Storyteller sees how much longer (Trevor, 2026-10-29).
 	const timeLeft = page.getByTestId('roles-time-left');
-	await expect(timeLeft).toHaveText(/^Players can see theirs for 0:[0-5]\d more$/);
+	await expect(timeLeft).toHaveText(/^Hide · 0:[0-5]\d$/);
 	await page.clock.fastForward('01:01');
-	await expect(toggle).toHaveText('Show players their characters');
-	await expect(timeLeft).toHaveCount(0);
+	await expect(toggle).toHaveAccessibleName('Show characters');
+	await expect(timeLeft).toBeHidden();
 	await expect(card).toBeHidden();
 	await expect(phone.getByTestId('your-character')).toBeDisabled();
 	// Who has looked stays.
@@ -138,10 +140,27 @@ test('Deal gives every seat a character, and a seated phone holds to see its own
 	await expect(gaps.first()).toContainText('No phone');
 	await expect(warning).not.toContainText('Alex');
 	await warning.getByRole('button', { name: 'Cancel' }).tap();
-	await expect(toggle).toHaveText('Show players their characters');
+	await expect(toggle).toHaveAccessibleName('Show characters');
 	await toggle.tap();
 	await warning.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(phone.getByTestId('your-character')).toBeEnabled();
+	// Then the draw, where each player with no phone has their tile held again with their name
+	// on it, for the usual reveal and Confirm on this device, in any order (Trevor, 2026-11-01:
+	// "it should use the normal draw area").
+	await expect(page).toHaveURL(`${board}/draw`);
+	const named = page.getByRole('button', { name: /^Tile Seat \d, held by/ });
+	await expect(named).toHaveCount(4);
+	await expect(named.nth(0)).toContainText('Seat');
+	await page.getByRole('button', { name: /^Tile Seat 4, held by/ }).tap();
+	const reveal = page.getByTestId('reveal');
+	await expect(reveal.getByTestId('reveal-name')).toHaveText(
+		/Washerwoman|Empath|Monk|Poisoner|Imp/
+	);
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(reveal).toBeHidden();
+	await expect(named).toHaveCount(3);
+	await expect(page.getByRole('button', { name: /^Tile \S+, drawn$/ })).toHaveCount(2);
+	await page.goto(`${board}/players`);
 	await toggle.tap();
 	await expect(phone.getByTestId('your-character')).toBeDisabled();
 	// Off for the Storyteller's player view too.

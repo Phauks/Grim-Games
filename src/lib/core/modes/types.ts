@@ -255,7 +255,11 @@ export const CAMPAIGN_ENDS = [
 ] as const;
 export type CampaignEnd = (typeof CAMPAIGN_ENDS)[number];
 
-export interface ModeParts {
+/**
+ * Every part a file can set (Trevor, 2026-11-01: one format for game modes and special rules).
+ * The rule parts (`RuleOnlyParts`) are named for where they began; a game mode may set them too.
+ */
+export interface ModeParts extends RuleOnlyParts {
 	pool?: PoolRule;
 	restricted?: Restrictions;
 	counts?: CountsRule;
@@ -300,15 +304,18 @@ export interface GameMode {
 	 */
 	about?: string;
 	/** Parts no source confirms; Inspect marks them. */
-	unconfirmed?: ModePart[];
+	unconfirmed?: FilePart[];
+	/** Modes and rules this one can't sensibly be played with; choosing both warns. */
+	conflictsWith?: { modes?: string[]; rules?: string[] };
 	parts: ModeParts;
 }
 
 /**
  * Special rules (Trevor, 2026-10-18: "Yes, split"): a game has one game mode, and any number
- * of special rules on top. A mode may replace what the game is played with or how it is
- * dealt (pool, assignment, towns, between games); a rule only adds to a game, so several can
- * stack. The World Cup 2025 scripts carry their rule this way, as Bootlegger lines
+ * of special rules on top. Since 2026-11-01 (Trevor: one format, auto-labelled) both are one
+ * format, and a file's parts say which it is (`fileKind`): one that sets a whole-game part
+ * (`WHOLE_GAME_PARTS`, or a pool other than the script) is a game mode, any other a special
+ * rule, so several rules can stack. The World Cup 2025 scripts carry their rule this way, as Bootlegger lines
  * (https://botc-script-viewer.sthom.kiwi/wc25/). Design:
  * /mnt/project-files/world-cup-rules/format-design.md.
  */
@@ -347,6 +354,22 @@ export type RuleOnlyPart = (typeof RULE_ONLY_PARTS)[number];
 /** Every part a special rule can set. */
 export const RULE_PARTS = [...STACKING_PARTS, ...RULE_ONLY_PARTS] as const;
 export type RulePart = (typeof RULE_PARTS)[number];
+
+/** Every part any file can set: the game mode parts, then the rule parts. */
+export const FILE_PARTS = [...MODE_PARTS, ...RULE_ONLY_PARTS] as const;
+export type FilePart = (typeof FILE_PARTS)[number];
+
+/**
+ * Parts that make a file a game mode: each sets up or deals the whole game, so a game has one
+ * answer for it. A pool other than the script (or the script plus hidden characters) does too.
+ */
+export const WHOLE_GAME_PARTS = [
+	'counts',
+	'assignment',
+	'towns',
+	'betweenGames'
+] as const satisfies readonly ModePart[];
+export type WholeGamePart = (typeof WHOLE_GAME_PARTS)[number];
 
 /** Travellers dealt from the bag like other characters (Stowed Away). */
 export interface TravellersRule extends Cited {
@@ -432,9 +455,10 @@ export type RuleParts = Omit<Pick<ModeParts, StackingPart>, 'pool'> & {
 } & RuleOnlyParts;
 
 /** A game mode with its special rules folded in (`combineRules`). */
-export type CombinedParts = ModeParts & RuleOnlyParts;
+export type CombinedParts = ModeParts;
 
 export interface SpecialRule {
+	/** Set by the parser from the file's parts (`fileKind`); a file need not say it. */
 	kind: 'special-rule';
 	format: typeof SPECIAL_RULE_FORMAT;
 	/** Lower-case letters, digits and dashes; unique among special rules. */

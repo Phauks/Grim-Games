@@ -220,7 +220,8 @@
 							corner: table.corner,
 							look: table.look,
 							roomCode: room,
-							pictures: town?.view?.pictures
+							pictures: town?.view?.pictures,
+							profiles: town?.view?.profiles
 						}}
 					/>{/if}
 			{:else}
