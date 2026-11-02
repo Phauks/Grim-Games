@@ -135,7 +135,7 @@
 		data-character-id={characterId}
 		data-joined={joined}>{@render face()}</span
 	>{/if}{#if character && interactive}
-	{#if used}<CharacterDialog bind:open {character} {icon} />{/if}
+	{#if used}<CharacterDialog bind:open {character} {alignment} />{/if}
 {/if}
 
 <style>
