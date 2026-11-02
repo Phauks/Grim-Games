@@ -3,6 +3,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Character, CharacterId, PlayerName } from '#lib/core/data/index.ts';
 	import { fromScript } from '#lib/core/data/index.ts';
+	import type { Command } from '#lib/core/engine/index.ts';
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import { moreTravellers, recommendedTravellers } from '#lib/core/rules/index.ts';
 	import CharacterPicker from '#lib/features/characters/CharacterPicker.svelte';
@@ -30,7 +31,7 @@
 	 * the seat (Trevor, 2026-11-01; https://wiki.bloodontheclocktower.com/Glossary, "Traveller").
 	 * Seats with no phone are picked for here.
 	 */
-	let { game }: { game: OpenGame } = $props();
+	let { game, run }: { game: OpenGame; run?: (command: Command) => boolean } = $props();
 
 	const host = roomHost();
 	const pick = $derived(host.travellerPick);
@@ -67,6 +68,33 @@
 	const taken = (seatId: SeatId) =>
 		!!game.game.seats[seatId]?.characterId && !pick?.seats.some((s) => s.seatId === seatId);
 
+	/**
+	 * The seat Add seat just placed (Trevor, 2026-11-02: "when adding a character, give a pop-up
+	 * to add as a traveler"): its Traveller is picked here on this device, or the choice goes to
+	 * the phones and runs in the background while the Storyteller carries on.
+	 */
+	let newSeat = $state<SeatId>();
+	let onPhones = $state(true);
+	const toPhones = $derived(!!host.code && onPhones);
+	/** Picked here: the Travellers the Selection allows, to tap one. */
+	const here = $derived(
+		(allowed === 'recommended' ? recommended : [...recommended, ...others]).filter(
+			(c) => !game.game.seating.some((id) => game.game.seats[id]?.characterId === c.id)
+		)
+	);
+	function pickHere(character: Character) {
+		const command: Command = {
+			type: 'AssignCharacter',
+			seatId: newSeat!,
+			characterId: character.id
+		};
+		if (run ? run(command) : game.run(command).ok) close();
+	}
+	function close() {
+		playersDialog.travellers = false;
+		newSeat = undefined;
+	}
+
 	function send() {
 		host.send({
 			type: 'open-traveller-pick',
@@ -76,6 +104,8 @@
 			seats: seats.filter((seatId) => !taken(seatId))
 		});
 		editing = false;
+		// The phones choose in the background; the seat's token opens the list again.
+		close();
 	}
 	function change() {
 		if (pick) seats = pick.seats.map((s) => s.seatId);
@@ -89,6 +119,7 @@
 			if (pick) change();
 			else seats = [];
 			if (!seats.includes(seatId)) seats = [...seats, seatId];
+			newSeat = seatId;
 			playersDialog.travellerSeat = undefined;
 		});
 	});
@@ -116,21 +147,41 @@
 	}
 </script>
 
-<Dialog bind:open={playersDialog.travellers} title={t('room.travellers.title')}>
+<Dialog
+	bind:open={() => playersDialog.travellers, (open) => (open ? undefined : close())}
+	title={t(newSeat ? 'room.travellers.addAs' : 'room.travellers.title')}
+>
 	{#if sending}
 		<div class="form" data-testid="traveller-pick-send">
+			{#if newSeat}
+				<!-- Here or on the phones, on this screen (Trevor, 2026-11-02); phones need a room. -->
+				<Toggle
+					label={t('room.travellers.toPhones')}
+					checked={toPhones}
+					disabled={!host.code}
+					onChange={(on) => (onPhones = on)}
+				/>
+			{/if}
 			<Select
 				label={t('room.travellers.allowed')}
-				value={allowed}
+				value={toPhones || allowed !== 'chosen' ? allowed : 'any'}
 				options={[
 					{ value: 'any', label: t('room.travellers.any') },
 					{ value: 'recommended', label: t('room.travellers.recommended') },
-					{ value: 'chosen', label: t('room.travellers.chosen') }
+					...(toPhones ? [{ value: 'chosen' as const, label: t('room.travellers.chosen') }] : [])
 				]}
 				onChange={(value) => (allowed = value)}
 			/>
-			<!-- Recommended shows those; Custom the whole list to pick from (Trevor, 2026-11-01). -->
-			{#if allowed === 'recommended'}
+			{#if !toPhones}
+				<ul class="rows" data-testid="traveller-pick-here">
+					{#each here as character (character.id)}
+						<li><CharacterRow {character} info onclick={() => pickHere(character)} /></li>
+					{:else}
+						<li class="row">{t('common.none')}</li>
+					{/each}
+				</ul>
+			{:else if allowed === 'recommended'}
+				<!-- Recommended shows those; Custom the whole list to pick from (Trevor, 2026-11-01). -->
 				<ul class="rows" data-testid="traveller-pick-recommended">
 					{#each recommended as character (character.id)}
 						<li><CharacterRow {character} info /></li>
@@ -148,23 +199,25 @@
 						(chosen = chosen.includes(id) ? chosen.filter((c) => c !== id) : [...chosen, id])}
 				/>
 			{/if}
-			<h3 class="heading">{t('room.travellers.who')}</h3>
-			<ul class="rows">
-				{#each game.game.seating as seatId (seatId)}
-					<li class="row">
-						<Toggle
-							label={seatName(seatId)}
-							checked={seats.includes(seatId)}
-							disabled={taken(seatId)}
-							onChange={(on) =>
-								(seats = on ? [...seats, seatId] : seats.filter((s) => s !== seatId))}
-						/>
-						<span class="tag"
-							>{t(hasPhone(seatId) ? 'room.travellers.phone' : 'room.travellers.noPhone')}</span
-						>
-					</li>
-				{/each}
-			</ul>
+			{#if toPhones}
+				<h3 class="heading">{t('room.travellers.who')}</h3>
+				<ul class="rows">
+					{#each game.game.seating as seatId (seatId)}
+						<li class="row">
+							<Toggle
+								label={seatName(seatId)}
+								checked={seats.includes(seatId)}
+								disabled={taken(seatId)}
+								onChange={(on) =>
+									(seats = on ? [...seats, seatId] : seats.filter((s) => s !== seatId))}
+							/>
+							<span class="tag"
+								>{t(hasPhone(seatId) ? 'room.travellers.phone' : 'room.travellers.noPhone')}</span
+							>
+						</li>
+					{/each}
+				</ul>
+			{/if}
 		</div>
 	{:else if pick}
 		<ul class="rows" data-testid="traveller-pick-status">
@@ -196,9 +249,11 @@
 		</ul>
 	{/if}
 	{#snippet actions()}
-		{#if sending}
+		{#if sending && !toPhones}
+			<Button variant="quiet" onclick={close}>{t('room.travellers.notTraveller')}</Button>
+		{:else if sending}
 			<ModalActions
-				onCancel={() => (pick ? (editing = false) : (playersDialog.travellers = false))}
+				onCancel={() => (pick && !newSeat ? (editing = false) : close())}
 				onConfirm={send}
 				disabled={options.length === 0 || !seats.some((seatId) => !taken(seatId))}
 				confirmLabel={t('room.travellers.send')}

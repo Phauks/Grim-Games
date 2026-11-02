@@ -19,6 +19,7 @@ import {
 	tapToSeat
 } from './reminder-bank.ts';
 import { pickNumber } from './number-select.ts';
+import { notATraveller } from './add-seat.ts';
 
 // The Storyteller's grimoire board: saved games, seats and the seat sheet (ROADMAP Phase 2).
 
@@ -521,7 +522,9 @@ test('history, add seat and remove', async ({ page }) => {
 	await page.getByRole('button', { name: 'Place between Seat 2 and Seat 3' }).tap();
 	await expect(page.getByTestId('seat')).toHaveCount(9);
 	await expect(page.getByRole('button', { name: /^Place between/ })).toHaveCount(0);
-	// The new seat just appears; nothing opens by itself (Trevor, 2026-10-16).
+	// The new seat just appears (Trevor, 2026-10-16), and asks whether it's a Traveller
+	// (Trevor, 2026-11-02); answering no opens nothing else.
+	await notATraveller(page);
 	await expect(page.locator('[data-scope="drawer"][data-part="content"]')).toHaveCount(0);
 
 	// History lists the change; going back to before it asks first.
@@ -589,6 +592,7 @@ test('Travellers join as a new seat, and Fabled sit in the corner', async ({ pag
 	// A Traveller joins as a new seat: Add seat, then choose them for it.
 	await menu(page, 'Add seat');
 	await page.getByRole('button', { name: 'Place between Seat 8 and Seat 1' }).tap();
+	await notATraveller(page);
 	await openSeat(page, 9);
 	await page
 		.locator('[data-scope="drawer"][data-part="content"]')
@@ -1466,6 +1470,7 @@ test("a Traveller's alignment can wait for the night order", async ({ page }) =>
 	// A Traveller joins as a new seat: Add seat, then choose them for it.
 	await menu(page, 'Add seat');
 	await page.getByRole('button', { name: 'Place between Seat 8 and Seat 1' }).tap();
+	await notATraveller(page);
 	await openSeat(page, 9);
 	await page
 		.locator('[data-scope="drawer"][data-part="content"]')
@@ -2362,6 +2367,7 @@ test('the Apprentice gains a Townsfolk ability and is marked "Is The Apprentice"
 	await startGame(page);
 	await menu(page, 'Add seat');
 	await page.getByRole('button', { name: 'Place between Seat 8 and Seat 1' }).tap();
+	await notATraveller(page);
 	await openSeat(page, 9);
 	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
 	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
@@ -2696,6 +2702,7 @@ test("a Traveller's alignment can be drawn from face-down tokens", async ({ page
 	await startGame(page);
 	await menu(page, 'Add seat');
 	await page.getByRole('button', { name: 'Place between Seat 8 and Seat 1' }).tap();
+	await notATraveller(page);
 	const sheet = await openSeat(page, 9);
 	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
 	await page
@@ -2742,6 +2749,7 @@ test('a joining Traveller draws their alignment, with the last mix remembered', 
 	] as const) {
 		await menu(page, 'Add seat');
 		await page.getByRole('button', { name: `Place between Seat ${after} and Seat 1` }).tap();
+		await notATraveller(page);
 		const sheet = await openSeat(page, number);
 		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
 		await page
@@ -3276,6 +3284,7 @@ test('a Traveller in play is marked on the script with its player', async ({ pag
 	await startGame(page);
 	await menu(page, 'Add seat');
 	await page.getByRole('button', { name: 'Place between Seat 8 and Seat 1' }).tap();
+	await notATraveller(page);
 	const sheet = await openSeat(page, 9);
 	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
 	await page
