@@ -13,7 +13,7 @@ import {
 	type SeatId
 } from '#lib/core/model/index.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
+import { rulesIn, rulesOf } from '#lib/core/data/rules/index.ts';
 import {
 	DAY_MARKS,
 	dayUsesAllowed,
@@ -31,7 +31,9 @@ import {
 	outcomeHolder,
 	outcomeProblem,
 	protection,
+	nominationsUnfinished,
 	remindersEndingAt,
+	remindersEndingOnNomination,
 	dayTallyOf,
 	tallyCount,
 	tallyKills,
@@ -126,7 +128,8 @@ export const DAY_DECIDERS: Deciders<
 				type: 'DayEntryAdded',
 				entry: { kind: 'nomination', entryId: ctx.newId(), nominator, nominee }
 			},
-			...minionNominated(game, nominator, ctx)
+			...minionNominated(game, nominator, ctx),
+			...endingOnNomination(game, nominee, ctx)
 		];
 	},
 
@@ -154,7 +157,10 @@ export const DAY_DECIDERS: Deciders<
 		// Whom the nominee chose was the old nominee's choice: a new nominee chooses again.
 		const next: typeof entry = { ...entry, nominator, nominee };
 		if (nominee !== entry.nominee) delete next.chosen;
-		return [{ type: 'DayEntryReplaced', entry: next }];
+		return [
+			{ type: 'DayEntryReplaced', entry: next },
+			...(nominee !== entry.nominee ? endingOnNomination(game, nominee, ctx) : [])
+		];
 	},
 
 	ChooseForNomination(game, command, ctx, warn) {
@@ -352,6 +358,15 @@ export const DAY_DECIDERS: Deciders<
 		if (command.on !== undefined) entry.on = seatOf(game, command.on).seatId;
 		if (typeof command.passed === 'boolean') entry.passed = command.passed;
 		if (command.stops !== undefined) entry.stops = characterOf(ctx, command.stops).id;
+		// Only before the day's first nomination (the Psychopath's): warn, never lock.
+		if (
+			rule?.beforeNominations &&
+			game.today.entries.some((e) => e.kind === 'nomination' || e.kind === 'storyteller-nomination')
+		)
+			warn(
+				'after-nominations',
+				`the ${character.name} acts only before nominations, which have begun`
+			);
 		const usesToday = game.today.entries.filter(
 			(e): e is Extract<DayEntry, { kind: 'ability' }> =>
 				e.kind === 'ability' && e.seatId === seat.seatId && e.characterId === character.id
@@ -403,6 +418,7 @@ export const DAY_DECIDERS: Deciders<
 		if (guesses.length > 0) entry.guesses = guesses;
 		if (typeof command.holds === 'boolean') entry.holds = command.holds;
 		answerNote(entry, command);
+		checkClaimsPerDay(game, entry, ctx, warn);
 		return [{ type: 'DayEntryAdded', entry }];
 	},
 
@@ -515,10 +531,59 @@ export const DAY_DECIDERS: Deciders<
 		return [{ type: 'DayStarted', at: ctx.now() }, ...tokens, ...endingAt(game, 'dawn', ctx)];
 	},
 
-	Dusk(game, command, ctx) {
+	Dusk(game, command, ctx, warn) {
+		// Nominations may not end while a token waits on one (the Bishop's): warn, never lock.
+		for (const r of nominationsUnfinished(game, ctx.characters)) {
+			const name = ctx.characters.get(r.characterId)?.name ?? r.characterId;
+			warn(
+				'nominations-unfinished',
+				`the ${name}'s "${r.label}" is still on, so nominations may not end yet`
+			);
+		}
 		return command.keepReminders ? [] : endingAt(game, 'dusk', ctx);
 	}
 };
+
+/**
+ * Warns when a player logs more of a character's day claims today than its `claimsPerDay`
+ * allows (the Alsaahir's once each day): for a `guesses` claim, the notes that hold guesses.
+ * Counted for the note's player, so each player bluffing the character has their own.
+ */
+function checkClaimsPerDay(
+	game: Game,
+	note: Extract<DayEntry, { kind: 'note' }>,
+	ctx: EngineContext,
+	warn: Warn
+): void {
+	const rules = rulesIn(game, note.characterId, ctx.characters);
+	const limit = rules?.claimsPerDay;
+	if (limit === undefined) return;
+	const counts = (e: Extract<DayEntry, { kind: 'note' }>) =>
+		rules?.dayClaim !== 'guesses' || (e.guesses?.length ?? 0) > 0;
+	if (!counts(note)) return;
+	const before = game.today.entries.filter(
+		(e) =>
+			e.kind === 'note' &&
+			e.characterId === note.characterId &&
+			e.seatId === note.seatId &&
+			counts(e)
+	).length;
+	if (before < limit) return;
+	const name = characterOf(ctx, note.characterId).name;
+	warn(
+		'already-used',
+		limit === 1
+			? `the ${name} already used it today`
+			: `the ${name} may use it only ${limit} times a day`
+	);
+}
+
+/** Takes off the reminders that come off once a player like `nominee` is nominated. */
+function endingOnNomination(game: Game, nominee: SeatId, ctx: EngineContext): GameEvent[] {
+	return remindersEndingOnNomination(game, nominee, ctx.characters).map(
+		(reminderId): GameEvent => ({ type: 'ReminderRemoved', reminderId })
+	);
+}
 
 /** Takes off the reminders that last only until `end` (`reminderEnds`). */
 function endingAt(game: Game, end: ReminderEnd, ctx: EngineContext): GameEvent[] {

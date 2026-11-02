@@ -2,6 +2,7 @@
 	"reminderTargets": {
 		"Drunk": {
 			"seat": "other",
+			"maxPlaced": 1,
 			"note": "On the first player that night to choose the Goon with their own ability."
 		}
 	},
@@ -21,5 +22,8 @@
 	"becomes": {
 		"token": "Drunk",
 		"into": "carrier-alignment"
+	},
+	"reminderEnds": {
+		"Drunk": "dusk"
 	}
 }

@@ -113,11 +113,9 @@ describe('Matron', () => {
 			});
 		});
 
-		it.fails('warns at a fourth swap in one day', () => {
+		it('warns at a fourth swap in one day', () => {
 			// Wiki: "The Matron may do this up to three times, but all swaps happen one after the
 			// other."
-			// Waits on the engine (unplanned): nothing counts the day's seat swaps against the
-			// Matron's three.
 			const swap = (a: SeatRef, b: SeatRef) => (at: Scenario) => ({
 				type: 'SwapSeats' as const,
 				seatA: at.seat(a),
