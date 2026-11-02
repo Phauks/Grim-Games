@@ -222,6 +222,10 @@ export const day = {
 	'day.logExecutedSavedBy': '{name} has been executed and does not die ({character})',
 	'day.logExecutedForced': '{name} executed, whatever the vote ({character})',
 	'day.logExecutionFailed': '{name} was not executed: the execution failed ({character})',
+	// Trevor approved these three, 2026-11-02 (the Atheist).
+	'day.storyteller': 'Storyteller',
+	'day.logStorytellerNominated': '{nominator} nominated the Storyteller',
+	'day.logStorytellerExecuted': 'The Storyteller was executed',
 	'day.logExiled': '{name} exiled',
 	'day.logExiledDead': '{name} exiled (already dead)',
 	'day.logAbility': '{character} ({seat}) used their ability',

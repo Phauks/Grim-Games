@@ -279,9 +279,9 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	},
 	{
 		title:
-			'Crowded boards: reminders on spokes with a tether, duplicate from the bank, mark where a reminder came from',
+			'Crowded boards: reminders on spokes with a tether, duplicate from the bank, mark where a reminder came from, reminders that stay put marked by a filled word band',
 		area: 'storyteller',
-		parts: ['D2', 'B2', 'B3', 'B5', 'B1', 'B11', 'B12', 'B13']
+		parts: ['D2', 'B2', 'B3', 'B5', 'B1', 'B11', 'B12', 'B13', 'B14']
 	},
 	{
 		title:
@@ -370,6 +370,13 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		title: "The Juggler's number from the Correct reminders on the board",
 		area: 'engine',
 		parts: ['M19']
+	},
+	{
+		// Trevor, 2026-11-02: when the Imp kills itself with several Minions alive, the Scarlet
+		// Woman stands out as the new Imp while her ability applies; any Minion can still be chosen.
+		title: 'The Scarlet Woman stands out when choosing the new Demon',
+		area: 'engine',
+		parts: ['M23']
 	},
 	{
 		// Gap 8: the Bigwig's chosen speaker; gap 12: one-offs with no behaviour yet: M12a the
