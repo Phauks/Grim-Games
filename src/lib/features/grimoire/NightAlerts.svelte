@@ -10,9 +10,9 @@
 
 	/**
 	 * Game state that matters for a night step (Trevor, 2026-10-16): who is drunk or
-	 * poisoned, who doesn't wake tonight (the Exorcist's Demon), what a jinx changes about the
-	 * Grimoire a player sees (the Spy's with the Poppy Grower or the Magician), a partner a jinx's
-	 * night choice picked (the Leviathan's Sage), and for a step
+	 * poisoned, who doesn't wake tonight (the Exorcist's Demon), who acts twice (the Barista's),
+	 * what a jinx changes about the Grimoire a player sees (the Spy's with the Poppy Grower or the
+	 * Magician), a partner a jinx's night choice picked (the Leviathan's Sage), and for a step
 	 * that can kill, who is protected, may bounce the death, survives it or sets something off
 	 * by dying. Short state lines with badges; the rules are core's
 	 * `nightStepAlerts`, worked out from the tokens on the board.
@@ -43,6 +43,7 @@
 	const ICON = {
 		impaired: 'poisoned',
 		blocked: 'warning',
+		'acts-twice': 'warning',
 		'no-kill': 'protected',
 		'may-skip-attack': 'night',
 		'must-skip-attack': 'warning',
@@ -102,6 +103,8 @@
 					{:else if alert.kind === 'blocked'}
 						{@render player(alert.seatId)}: chosen by {@render badge(sourceId(alert))}, doesn't wake
 						tonight
+					{:else if alert.kind === 'acts-twice'}
+						{@render player(alert.seatId)}: {@render badge(sourceId(alert))}, acts twice tonight
 					{:else if alert.kind === 'no-kill'}
 						{@render player(alert.seatId)}: {@render badge(sourceId(alert))}, doesn't kill tonight
 					{:else if alert.kind === 'may-skip-attack'}

@@ -241,6 +241,8 @@ export function characterChanger(
 	if (rule.firstNight && game.pastDays.length > 0) return undefined;
 	if (rule.upTo === 'minions' && minionsLeft(game, characters, rule.extraMinions) <= 0)
 		return undefined;
+	if (rule.minMinions !== undefined && usualMinions(game, characters) < rule.minMinions)
+		return undefined;
 	const changer = game.seating.find(
 		(id) =>
 			(!game.seats[id].dead || rules?.actsWhenDead === true) &&
@@ -256,6 +258,12 @@ export function characterChanger(
  * How many more Minions the player count usually has, plus `extra` (the Lord of Typhon's),
  * than are in play (`upTo: 'minions'`, the Kazali's): Travellers are not counted.
  */
+/** How many Minions the player count usually has: Travellers are not counted. */
+function usualMinions(game: Game, characters: CharacterLookup): number {
+	const dealt = game.seating.filter((id) => typeOf(game, id, characters) !== 'traveller');
+	return baseCounts(dealt.length).minion;
+}
+
 export function minionsLeft(game: Game, characters: CharacterLookup, extra = 0): number {
 	const dealt = game.seating.filter((id) => typeOf(game, id, characters) !== 'traveller');
 	const minions = dealt.filter((id) => typeOf(game, id, characters) === 'minion').length;
@@ -281,8 +289,14 @@ export function changeableSeats(
 		const own = trueCharacter(game, id, characters);
 		if (rule?.notTravellers && typeOf(game, id, characters) === 'traveller') return false;
 		if (rule?.upTo) {
+			// Never its own player, one already of `types`, nor the Demon (the Marionette's
+			// extra Minion comes from a good player).
 			const type = typeOf(game, id, characters);
-			if (own === characterId || (type && (rule.types as readonly string[]).includes(type)))
+			if (
+				own === characterId ||
+				type === 'demon' ||
+				(type && (rule.types as readonly string[]).includes(type))
+			)
 				return false;
 		}
 		if (rule?.onlyFrom && (own === undefined || !rule.onlyFrom.includes(own))) return false;
@@ -374,4 +388,25 @@ export function neighbourAlignments(
 		.filter((a) => !noGood || a !== 'good')
 		.sort();
 	return alignments.length ? { seatId, alignments } : undefined;
+}
+
+/**
+ * The players who may become `characterId` when its player dies (`passesOn`: the Farmer's
+ * alive good player, https://wiki.bloodontheclocktower.com/Farmer): alive ones when the rule
+ * says so, of its alignment when it names one, and never a player who already is that
+ * character. Empty for a character without the rule. The Storyteller picks among them.
+ */
+export function passOnSeats(
+	game: Game,
+	characterId: CharacterId,
+	characters: CharacterLookup
+): SeatId[] {
+	const rule = rulesIn(game, characterId, characters)?.passesOn;
+	if (!rule) return [];
+	return game.seating.filter(
+		(id) =>
+			trueCharacter(game, id, characters) !== characterId &&
+			(!rule.alive || !game.seats[id].dead) &&
+			(!rule.alignment || alignmentOf(game, id) === rule.alignment)
+	);
 }

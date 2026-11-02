@@ -13,6 +13,9 @@
  *   at all (https://wiki.bloodontheclocktower.com/Lil%27_Monsta).
  * - The Lunatic's tile shows a Demon and puts the Lunatic in the grimoire
  *   (https://wiki.bloodontheclocktower.com/Lunatic).
+ * - A character with every Outsider ability on the script (the Hermit) has the Drunk's too
+ *   when the Drunk is on it, so it thinks it is a Townsfolk: its tile shows one and puts it in
+ *   the grimoire (https://wiki.bloodontheclocktower.com/Hermit, second example).
  * - Fabled and Loric are rule characters and never go in the bag.
  */
 import { rulesOf } from '#lib/core/data/rules/index.ts';
@@ -44,8 +47,8 @@ export interface PlannedTile {
 	reminders?: Reminder[];
 }
 
-/** What a stand-in tile shows: (Lunatic) a Demon. */
-export type StandInKind = 'demon';
+/** What a stand-in tile shows: a Demon (the Lunatic) or a Townsfolk (a Hermit-Drunk). */
+export type StandInKind = 'demon' | 'townsfolk';
 
 export interface StandIn {
 	/** The selected character that is not put in the bag as itself. */
@@ -92,10 +95,30 @@ export interface BagPlanInput {
 	random?: () => number;
 }
 
-/** Whether the character's tile shows something else, and what kind. */
-export function standInKind(character: Character): StandInKind | undefined {
-	const believes = rulesOf(character.id, new Map([[character.id, character]]))?.believesType;
-	return believes === 'demon' ? 'demon' : undefined;
+/**
+ * Whether the character's tile shows something else, and what kind. `script` is the script's
+ * characters: holding every ability of a type on it (`givesAbility.onScript`, the Hermit's
+ * Outsiders) takes in one whose player thinks they are a Townsfolk (the Drunk), so the
+ * holder thinks so too (https://wiki.bloodontheclocktower.com/Hermit, second example).
+ */
+export function standInKind(
+	character: Character,
+	script: readonly Character[] = []
+): StandInKind | undefined {
+	const rules = rulesOf(character.id, new Map([[character.id, character]]));
+	if (rules?.believesType === 'demon') return 'demon';
+	const gives = rules?.givesAbility;
+	if (gives?.to === 'self' && gives.onScript) {
+		const drunkLike = script.some(
+			(c) =>
+				c.id !== character.id &&
+				c.type === 'outsider' &&
+				(gives.types as readonly string[]).includes(c.type) &&
+				isReplacedAfterDraw(c)
+		);
+		if (drunkLike) return 'townsfolk';
+	}
+	return undefined;
 }
 
 export function isRuleCharacter(type: CharacterType): boolean {
@@ -161,20 +184,25 @@ export function planBag(input: BagPlanInput): BagPlan {
 			continue;
 		}
 		if (character.type === 'traveller') includeTravellers = true;
-		const kind = standInKind(character);
+		const kind = standInKind(character, scriptCharacters);
 		if (!kind) {
 			tiles.push({ shows: id, grimoire: id });
 			continue;
 		}
-		// A Lunatic is shown a Demon, usually the one in play.
+		// A Lunatic is shown a Demon, usually the one in play. A Hermit-Drunk is shown a
+		// Townsfolk, as the Drunk is: one not in play (https://wiki.bloodontheclocktower.com/Drunk).
 		const options = scriptCharacters
-			.filter((c) => c.type === 'demon' && !isBagDisabled(c) && c.id !== id)
+			.filter((c) => c.type === kind && !isBagDisabled(c) && c.id !== id)
 			.map((c) => c.id);
 		const chosen = input.standIns?.[id];
-		const shows =
-			chosen !== undefined && lookup(chosen)
-				? chosen
-				: (options.find((o) => selected.has(o)) ?? pick(options, input.random));
+		const fallback =
+			kind === 'demon'
+				? (options.find((o) => selected.has(o)) ?? pick(options, input.random))
+				: pick(
+						options.filter((o) => !selected.has(o)),
+						input.random
+					);
+		const shows = chosen !== undefined && lookup(chosen) ? chosen : fallback;
 		standIns.push({
 			characterId: id,
 			kind,

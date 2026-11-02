@@ -4,5 +4,8 @@
 	},
 	"deathCause": {
 		"none": "info"
+	},
+	"learns": {
+		"measure": "storyteller-pick"
 	}
 }

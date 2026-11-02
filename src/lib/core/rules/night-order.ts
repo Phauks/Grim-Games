@@ -149,6 +149,11 @@ export interface NightStep {
 	 * partners, and whom they may choose.
 	 */
 	jinxChoice?: JinxChoiceStep;
+	/**
+	 * On a second wake for a player whose ability works twice tonight: the seat and the
+	 * character whose token makes it so (`withActsTwiceSteps` in `acts-twice.ts`).
+	 */
+	again?: { seatId: string; characterId: CharacterId };
 }
 
 export interface OmittedStep {

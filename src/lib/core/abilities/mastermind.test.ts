@@ -73,7 +73,7 @@ describe('Mastermind', () => {
 				{ rule: 'extra-day', winner: 'good', seats: [s.seat('godfather')] }
 			]);
 		});
-		it.fails("Example 3: Zombuul's second death extends the game a day", () => {
+		it("Example 3: Zombuul's second death extends the game a day", () => {
 			// Wiki: "The Zombuul is executed and appears to die. The Mastermind’s ability does not
 			// trigger yet, because the Zombuul's execution did not make the game end. When the Zombuul
 			// is executed a second time and dies for real, the Mastermind’s ability triggers, and the

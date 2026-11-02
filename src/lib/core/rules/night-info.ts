@@ -44,6 +44,7 @@ export {
 	type AnswerValue,
 	type AbnormalUse,
 	type NightAnswer,
+	anyInfoSource,
 	falseInfoSource,
 	mayBeFalseSource,
 	reliability

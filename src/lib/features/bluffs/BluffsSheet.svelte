@@ -13,7 +13,7 @@
 	import { scriptCharacterIds, type CharacterLookup, type Game } from '#lib/core/model/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import BluffTag from './BluffTag.svelte';
-	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import Sentence from '#lib/features/characters/Sentence.svelte';
 	import { slot } from '#lib/features/characters/slots.ts';
 	import CharacterPicker from '#lib/features/show/CharacterPicker.svelte';
@@ -220,12 +220,12 @@
 								<li data-in-play={playing ? '' : undefined}>
 									{#if character}
 										<!-- As the script draws it (Trevor, 2026-10-28); in play, a warning on the band. -->
-										<CharacterRow {character} alignment="good" info>
-											{#snippet afterName()}{#if playing}<span class="flag"
+										<CharacterPiece template="row" {character} alignment="good" info>
+											{#snippet tags()}{#if playing}<span class="flag"
 														><Icon name="warning" /> {t('bluffs.inPlayReplace')}</span
 													>{/if}{/snippet}
 											{#snippet marks()}<BluffTag />{/snippet}
-										</CharacterRow>
+										</CharacterPiece>
 									{:else}
 										<span class="none">{t('common.none')}</span>
 									{/if}

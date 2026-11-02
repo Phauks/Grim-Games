@@ -33,7 +33,10 @@
 				"values": [0, -1]
 			}
 		],
-		"notes": ["The Hermit counts as one of the Outsiders and may be the one removed."]
+		"notes": [
+			"The Hermit counts as one of the Outsiders and may be the one removed.",
+			"With the Drunk on the script the Hermit has its ability too, so its token shows a Townsfolk."
+		]
 	},
 	"dayReminders": {
 		"impairable": true,

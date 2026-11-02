@@ -138,6 +138,28 @@ describe('planBag', () => {
 		expect(result.standIns[0]).toMatchObject({ kind: 'demon', options: ['imp', 'nodashii'] });
 	});
 
+	// https://wiki.bloodontheclocktower.com/Hermit, second example: a Hermit with the Drunk's
+	// ability thinks they are a Townsfolk (M22).
+	it('Hermit with the Drunk on the script: shown a Townsfolk not in play, Hermit in the grimoire', () => {
+		const result = planBag({
+			selection: pick('chef', 'hermit', 'imp'),
+			scriptCharacters: script(['chef', 'empath', 'hermit', 'drunk', 'imp']),
+			lookup
+		});
+		expect(result.tiles[1]).toEqual({ shows: 'empath', grimoire: 'hermit' });
+		expect(result.standIns[0]).toMatchObject({ kind: 'townsfolk', options: ['chef', 'empath'] });
+	});
+
+	it('Hermit without the Drunk on the script: its own tile', () => {
+		const result = planBag({
+			selection: pick('chef', 'hermit', 'imp'),
+			scriptCharacters: script(['chef', 'empath', 'hermit', 'saint', 'imp']),
+			lookup
+		});
+		expect(result.tiles[1]).toEqual({ shows: 'hermit', grimoire: 'hermit' });
+		expect(result.standIns).toEqual([]);
+	});
+
 	// https://wiki.bloodontheclocktower.com/Lil%27_Monsta: no Demon is dealt.
 	it("Lil' Monsta: no tile, and an issue says so", () => {
 		const result = planBag({

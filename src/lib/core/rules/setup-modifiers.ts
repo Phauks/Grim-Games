@@ -14,7 +14,7 @@ import type {
 	CountOp,
 	SetupModifierRules
 } from '#lib/core/data/setup-modifier-rules.ts';
-import type { Character, CharacterId } from '#lib/core/data/types.ts';
+import type { Alignment, Character, CharacterId } from '#lib/core/data/types.ts';
 import { wikiUrl } from '#lib/core/data/wiki.ts';
 import { SEATED_TYPES, type SeatedType } from './distribution.ts';
 
@@ -39,6 +39,8 @@ export interface SetupModifier {
 	 * whether an official character may repeat at all is TPI's `special` data.
 	 */
 	copies?: readonly number[];
+	/** Which characters may repeat while this one is in play, over TPI's data (the Pope's). */
+	duplicates?: readonly Alignment[];
 	/** Extra Storyteller notes for setup (bag contents, seating), in our words. */
 	notes: readonly string[];
 	/** Wiki page this entry encodes; none for homebrew characters. */
@@ -83,6 +85,7 @@ function fromRules(character: Character, entry: SetupModifierRules): SetupModifi
 		...(entry.requires ? { requires: entry.requires } : {}),
 		...(entry.alignments ? { alignments: entry.alignments } : {}),
 		...(entry.copies ? { copies: entry.copies } : {}),
+		...(entry.duplicates ? { duplicates: entry.duplicates } : {}),
 		notes: entry.notes ?? [],
 		...(wiki ? { wiki } : {}),
 		source: 'table'

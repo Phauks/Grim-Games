@@ -15,8 +15,10 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night-info.ts';
-import { scenario } from '#lib/core/testing/scenario.ts';
+import { infoPicker, isAllowed, isTruthful, learnedRoles } from '#lib/core/rules/night-info.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { setupPrep } from '#lib/core/rules/setup-reminders.ts';
+import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Washerwoman', () => {
 	const character = committedCharacter('washerwoman');
@@ -77,6 +79,84 @@ describe('Washerwoman', () => {
 			const shown = { seats: [s.seat('spy'), s.seat('scarletwoman')], characterId: 'ravenkeeper' };
 			expect(isAllowed(picker, shown)).toBe(true);
 			expect(isTruthful(picker, shown)).toBe(false);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Washerwoman#How_to_Run)', () => {
+		const cast = ['washerwoman', 'chef', 'ravenkeeper', 'imp', 'poisoner'];
+		const marked = (s: Scenario) =>
+			s.reminder('chef', 'washerwoman', 'Townsfolk').reminder('imp', 'washerwoman', 'Wrong');
+
+		it('lists the Townsfolk and Wrong reminders to place before the first night', () => {
+			// How to Run: before night one, the Storyteller marks one Townsfolk with Townsfolk and a
+			// second player with Wrong.
+			const s = scenario(cast);
+			expect(setupPrep('washerwoman', character.name, s.characters).map((p) => p.tokens)).toEqual([
+				['Townsfolk'],
+				['Wrong']
+			]);
+		});
+
+		it('puts the Townsfolk reminder only on a Townsfolk', () => {
+			// How to Run: the Townsfolk reminder goes beside a Townsfolk's character token.
+			const s = scenario(cast);
+			const reminder = { characterId: 'washerwoman', label: 'Townsfolk' };
+			expect(reminderTargetMisses(s.game, reminder, s.seat('chef'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, reminder, s.seat('imp'), s.characters)).toEqual(['type']);
+		});
+
+		it('puts the Wrong reminder on any other seat, never the one marked Townsfolk', () => {
+			// How to Run: the Wrong reminder goes beside a different character token.
+			const s = scenario(cast).reminder('chef', 'washerwoman', 'Townsfolk');
+			const reminder = { characterId: 'washerwoman', label: 'Wrong' };
+			expect(reminderTargetMisses(s.game, reminder, s.seat('imp'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, reminder, s.seat('chef'), s.characters)).toEqual([
+				'not-with-label'
+			]);
+		});
+
+		it('on the first night, shows the two marked players and the marked character', () => {
+			// How to Run: on night one, point at the seats marked Townsfolk and Wrong, and show the
+			// character marked Townsfolk.
+			const s = marked(scenario(cast));
+			const picker = infoPicker(
+				s.game,
+				s.seat('washerwoman'),
+				'washerwoman',
+				s.characters,
+				'first'
+			)!;
+			expect(picker.seatCount).toBe(2);
+			expect(learnedRoles(s.game, picker, s.characters)?.rows[0]).toMatchObject({
+				target: s.seat('chef'),
+				other: s.seat('imp'),
+				characterIds: ['chef'],
+				marked: true
+			});
+		});
+
+		it('lets the Storyteller remove both reminders once they are shown', () => {
+			// How to Run: the reminders come off whenever it suits the Storyteller.
+			const s = marked(scenario(cast)).newDay();
+			const ids = s.game.seating.flatMap((id) =>
+				s.game.seats[id].reminders
+					.filter((r) => r.characterId === 'washerwoman')
+					.map((r) => r.reminderId)
+			);
+			expect(ids).toHaveLength(2);
+			const cleared = s.do(
+				...ids.map((reminderId) => ({ type: 'RemoveReminder' as const, reminderId }))
+			);
+			const picker = infoPicker(
+				cleared.game,
+				cleared.seat('washerwoman'),
+				'washerwoman',
+				cleared.characters,
+				'first'
+			)!;
+			expect(
+				learnedRoles(cleared.game, picker, cleared.characters)?.rows.some((r) => r.marked)
+			).toBe(false);
 		});
 	});
 });

@@ -2,7 +2,7 @@
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import { survivorsLackDemon } from '#lib/core/rules/index.ts';
 	import { seatName } from '#lib/features/game/seat-label.ts';
-	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
@@ -70,12 +70,12 @@
 	onCancel={() => (grimoire.explosionAsk = undefined)}
 >
 	{#if ask && character}
-		<CharacterRow {character} info>
-			{#snippet ability()}<GlossaryText
+		<CharacterPiece template="row" {character} info>
+			{#snippet abilityText()}<GlossaryText
 					text={character.ability}
 					names={[character.name]}
 				/>{/snippet}
-		</CharacterRow>
+		</CharacterPiece>
 		<ul class="rows" data-testid="explosion-lives">
 			{#each living as seatId (seatId)}
 				<li>

@@ -17,6 +17,7 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { analyseSetup } from '#lib/core/rules/setup.ts';
+import { setupReminders } from '#lib/core/rules/setup-reminders.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Baron', () => {
@@ -93,6 +94,28 @@ describe('Baron', () => {
 			// In the grimoire the Drunk sits as the Townsfolk they think they are.
 			const s = scenario(['slayer', 'recluse', 'baron', 'imp', 'chef']).drunk('slayer');
 			expect(s.game.seats[s.seat('slayer')].characterId).toBe('slayer');
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Baron#How_to_Run)', () => {
+		it('flags a bag that still holds the Townsfolk the Baron swaps for two Outsiders', () => {
+			// How to Run: at setup, take out two Townsfolk tokens and put in two Outsider tokens.
+			const data = committedGameData();
+			const ids = ['chef', 'empath', 'monk', 'slayer', 'soldier', 'baron', 'imp'];
+			const result = analyseSetup({ players: 7, inPlay: ids.map((id) => data.byId.get(id)!) });
+			expect(result.reasons.outsider).toEqual(['Baron: +2 Outsiders']);
+			expect(result.expected).toMatchObject({ townsfolk: [3], outsider: [2] });
+			expect(result.warnings.map((w) => w.code)).toContain('count-mismatch');
+		});
+
+		it("adds the Drunk's own setup step when one of the Outsiders is the Drunk", () => {
+			// How to Run: an added Drunk brings its own setup instructions with it.
+			const s = scenario(['chef', 'empath', 'monk', 'drunk', 'butler', 'baron', 'imp']);
+			expect(setupReminders(s.game, s.characters)[0]).toMatchObject({
+				characterId: 'drunk',
+				label: 'Is The Drunk',
+				seatId: s.seat('drunk')
+			});
 		});
 	});
 });

@@ -28,6 +28,7 @@ import {
 	TRAVELLER_ALIGNMENT_STEP,
 	TRAVELLER_JOINS_STEP,
 	wakeConditionMet,
+	withActsTwiceSteps,
 	withCharacterChangeSteps,
 	withNightInfo,
 	wakesMarked,
@@ -80,15 +81,20 @@ export function boardNightSteps(
 	const woken =
 		night === 'other' ? withCharacterChangeSteps(steps, today.changes ?? [], characters) : steps;
 	const number = night === 'first' ? 1 : game.pastDays.length + 1;
+	// A player whose ability works twice tonight wakes again straight after each of their steps.
 	return duskToDawn([
 		...ruleNightSteps(rules, number),
-		...withNightInfo(
-			woken,
+		...withActsTwiceSteps(
+			withNightInfo(
+				woken,
+				game,
+				characters,
+				night,
+				{ died: today.died ?? [] },
+				data.nightSheet[night === 'first' ? 'firstNight' : 'otherNight']
+			),
 			game,
-			characters,
-			night,
-			{ died: today.died ?? [] },
-			data.nightSheet[night === 'first' ? 'firstNight' : 'otherNight']
+			characters
 		)
 	]);
 }
@@ -140,8 +146,10 @@ export const tonight = (game: Game): Night => (game.pastDays.length === 0 ? 'fir
 
 export function stepName(step: NightStep): string {
 	if (step.kind === 'marker') return MARKER_TEXT[step.id as NightMarker].name;
+	// A second wake for a player who acts twice (`withActsTwiceSteps`) says "again".
+	const again = step.again ? ' again' : '';
 	// eslint-disable-next-line grim/names-as-badges -- a caption beside the step's own icon (StepIcon)
-	return step.title ?? step.character?.name ?? step.id;
+	return `${step.title ?? step.character?.name ?? step.id}${again}`;
 }
 
 /** Steps with no character get an icon of their own. */
@@ -169,6 +177,7 @@ export function stepHolders(game: Game, step: NightStep, characters: CharacterLo
 		});
 	}
 	if (step.changed) return [step.changed.seatId];
+	if (step.again) return [step.again.seatId];
 	// Starting alignment: the players who start with the other alignment (the evil Townsfolk).
 	if (step.setupAlignments) return step.setupAlignments.flatMap((t) => t.seats);
 	const id = step.character?.id;
@@ -252,7 +261,14 @@ export function answerValueText(v: AnswerValue): string {
 			return v.value.join(', ');
 		case 'number':
 			return String(v.value);
+		case 'alignment':
+			return alignmentText(v.value);
 		case 'none':
 			return v.reason;
 	}
+}
+
+/** A General's answer in words: Good, Evil or Neither. */
+export function alignmentText(value: 'good' | 'evil' | 'neither'): string {
+	return value === 'good' ? 'Good' : value === 'evil' ? 'Evil' : 'Neither';
 }

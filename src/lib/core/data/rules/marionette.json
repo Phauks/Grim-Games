@@ -25,11 +25,27 @@
 	},
 	"setupModifier": {
 		"summary": "Neighbours the Demon",
-		"ops": [],
+		"ops": [
+			{
+				"kind": "delta",
+				"type": "minion",
+				"values": [0, -1],
+				"minUsual": 3
+			}
+		],
 		"notes": [
 			"Put a Townsfolk in the bag instead of the Marionette.",
-			"Seat the Marionette next to the Demon."
+			"Seat the Marionette next to the Demon.",
+			"With three Minions, put one more Townsfolk in the bag instead of a Minion; on the first night a good player becomes that Minion."
 		]
+	},
+	"changesCharacter": {
+		"types": ["minion"],
+		"notInPlay": true,
+		"alignment": "evil",
+		"firstNight": true,
+		"upTo": "minions",
+		"minMinions": 3
 	},
 	"dayReminders": {
 		"none": "setup only"
@@ -48,5 +64,6 @@
 	},
 	"evilInfo": {
 		"hidesDemon": true
-	}
+	},
+	"believesOtherCharacter": true
 }
