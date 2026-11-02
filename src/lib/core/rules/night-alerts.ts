@@ -17,6 +17,10 @@
  * - `grimoire-hides`: a jinx says this player's token comes off the Grimoire while the waking
  *   player sees it (`grimoireHides`: the Demon's and the Magician's, for the Spy and the
  *   Widow, https://wiki.bloodontheclocktower.com/Magician#Related_Jinxes);
+ * - `jinx-chosen`: a jinx's night choice picked a partner tonight, who uses its ability
+ *   without dying or dies and gains it (`outcome`), shown at the partner's step and the
+ *   chooser's (`nightChoice`: the Leviathan's and Riot's Sage, Farmer, Ravenkeeper and
+ *   Banshee, https://wiki.bloodontheclocktower.com/Leviathan#Related_Jinxes);
  * - `seating`: a character whose neighbours are turned evil at setup (`turnsPlayersInto`
  *   `neighbours`) is not inside one line of every evil player
  *   (https://wiki.bloodontheclocktower.com/Lord_of_Typhon);
@@ -46,6 +50,8 @@ import { alignmentOf, getSeat, trueCharacter, typeOf } from '#lib/core/model/sel
 import type { DeathCause, Game, SeatId } from '#lib/core/model/types.ts';
 import { isExecution } from './death-causes.ts';
 import { ownJinxes, ownJinxRules } from './jinxes.ts';
+import { jinxChosenTonight } from './jinx-choices.ts';
+import type { NightChoice } from '#lib/core/data/jinx-rules.ts';
 import {
 	abilityState,
 	firstDeathSaver,
@@ -138,6 +144,7 @@ export type NightAlertKind =
 	| 'no-kill'
 	| 'no-grimoire'
 	| 'grimoire-hides'
+	| 'jinx-chosen'
 	| 'seating'
 	| 'protected'
 	| 'may-bounce'
@@ -155,6 +162,8 @@ export interface NightAlert {
 	/** Why the source's ability does not work (empty when it works). */
 	impairments: Impairment[];
 	wiki?: string;
+	/** For `jinx-chosen`: whether the chosen partner acts without dying, or dies. */
+	outcome?: NightChoice['partner'];
 }
 
 /**
@@ -251,6 +260,7 @@ export function nightStepAlerts(
 	}
 
 	out.push(...grimoireAlerts(game, characterId, actors, characters));
+	out.push(...jinxChoiceAlerts(game, characterId, actors, characters));
 
 	const killer = nightKiller(characterId, characters);
 	if (killer?.by === 'demon') {
@@ -353,6 +363,38 @@ function grimoireAlerts(
 		}
 	}
 	return out;
+}
+
+/**
+ * A partner a jinx's night choice picked tonight (`jinxChosenTonight`), at the partner's
+ * step (its own player) and at the chooser's. The jinx itself applies it, whatever the
+ * chooser's ability's state.
+ */
+function jinxChoiceAlerts(
+	game: Game,
+	characterId: CharacterId,
+	actors: readonly SeatId[],
+	characters: CharacterLookup
+): NightAlert[] {
+	return jinxChosenTonight(game, characters)
+		.filter(
+			(c) =>
+				c.by.characterId === characterId || (c.partner === characterId && actors.includes(c.seatId))
+		)
+		.map((c) => {
+			const source: AbilitySource = c.by;
+			const alert: NightAlert = {
+				kind: 'jinx-chosen',
+				seatId: c.seatId,
+				source,
+				works: true,
+				impairments: [],
+				outcome: c.outcome
+			};
+			const wiki = wikiOf(source, characters);
+			if (wiki) alert.wiki = wiki;
+			return alert;
+		});
 }
 
 function sourceAlert(

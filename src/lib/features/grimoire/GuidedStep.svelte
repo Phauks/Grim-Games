@@ -5,6 +5,7 @@
 	import StepAfflictions from './StepAfflictions.svelte';
 	import ChangeCharacterStep from './ChangeCharacterStep.svelte';
 	import StorytellerAbilityStep from './StorytellerAbilityStep.svelte';
+	import JinxChoiceStep from './JinxChoiceStep.svelte';
 	import CountdownStep from './CountdownStep.svelte';
 	import NightSuggested from './NightSuggested.svelte';
 	import NightShownTo from './NightShownTo.svelte';
@@ -136,7 +137,8 @@
 	const total = $derived(reminderCopies(game, characters, grimoire.copies, grimoire.bankCopies));
 	const rows = $derived.by(() => {
 		const character = step?.character;
-		if (!character) return [];
+		// A jinx's night choice places none of its character's reminders (JinxChoiceStep).
+		if (!character || step?.jinxChoice) return [];
 		return [...new Set(character.reminders)].flatMap((label) => {
 			const on = placedAll(label);
 			const n = Math.max(
@@ -363,6 +365,7 @@
 					}}>Show the Grimoire</Button
 				>
 			{/if}
+			<JinxChoiceStep {grimoire} {step} />
 			<NightAlerts {grimoire} {step} withoutImpaired />
 			{#if stepJinxes.length > 0}
 				<h3>{t('characters.jinxes')}</h3>

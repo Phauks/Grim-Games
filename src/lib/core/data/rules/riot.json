@@ -117,6 +117,30 @@
 				"token": "Grandchild",
 				"winner": "evil"
 			}
+		},
+		"banshee": {
+			"nightChoice": {
+				"who": "good",
+				"partner": "dies"
+			}
+		},
+		"farmer": {
+			"nightChoice": {
+				"who": "good",
+				"partner": "acts"
+			}
+		},
+		"ravenkeeper": {
+			"nightChoice": {
+				"who": "good",
+				"partner": "acts"
+			}
+		},
+		"sage": {
+			"nightChoice": {
+				"who": "good",
+				"partner": "acts"
+			}
 		}
 	}
 }
