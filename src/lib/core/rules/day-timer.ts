@@ -7,14 +7,14 @@
 
 /** Trevor's rule of thumb: 30 seconds of discussion per living player, the default. */
 export const DAY_SECONDS_PER_ALIVE = 30;
-/** The setting's range (Trevor, 2026-10-19: "amount of time ... based upon player count"). */
-export const DAY_SECONDS_PER_ALIVE_MIN = 5;
-export const DAY_SECONDS_PER_ALIVE_MAX = 300;
 /**
- * The times its drop-down offers (Trevor, 2026-10-30: a drop-down, not a typed number). A time
- * saved before then that isn't one of them is still offered while it is chosen.
+ * The setting's range (Trevor, 2026-10-19: "amount of time ... based upon player count";
+ * 2026-11-02: 15 to 60 seconds in steps of 5). A saved time outside it falls back to 30.
  */
-export const DAY_SECONDS_PER_ALIVE_CHOICES = [10, 15, 20, 30, 45, 60, 90, 120] as const;
+export const DAY_SECONDS_PER_ALIVE_MIN = 15;
+export const DAY_SECONDS_PER_ALIVE_MAX = 60;
+/** The times its drop-down offers (Trevor, 2026-10-30: a drop-down, not a typed number). */
+export const DAY_SECONDS_PER_ALIVE_CHOICES = [15, 20, 25, 30, 35, 40, 45, 50, 55, 60] as const;
 /**
  * Counting down shows the time left and stops at 0:00; counting up shows the time used
  * from 0:00 and keeps going past the target (Trevor, 2026-10-17: "count up or down").
