@@ -364,6 +364,19 @@ test('exiling a Deviant asks whether they survive', async ({ page }) => {
 	await expect(boardSeat(page, 'Seat 9: no name, Deviant')).toHaveAccessibleName(/dead/);
 });
 
+// Votes are run outside the app; the votes dialog lists each unusual vote for the
+// Storyteller's count (Trevor, 2026-11-01; M9e).
+test('the votes dialog notes a Thief’s negative vote (M9e)', async ({ page }) => {
+	await startGame(page);
+	await addThief(page);
+	await putReminder(page, 'Negative Vote', 2);
+	await openDay(page);
+	await page.getByTestId('votes-needed').tap();
+	const notes = page.getByTestId('vote-notes');
+	await expect(notes.locator('tbody tr')).toHaveCount(1);
+	await expect(notes.locator('tbody tr')).toHaveText(/Seat 2.*Vote counts as -1/);
+});
+
 test('a Traveller is exiled, and a death offers only valid causes', async ({ page }) => {
 	const board = await startGame(page);
 	await addThief(page);
@@ -1330,7 +1343,7 @@ async function chooseOffScript(page: Page, number: number, name: string) {
 	await closeSeat(page);
 }
 
-test('Execution asks whether only evil voted while the Legion works; yes fails it (M9d)', async ({
+test('Execution asks whether only evil voted while the Legion works; yes fails it and the day goes on (M9d)', async ({
 	page
 }) => {
 	// https://wiki.bloodontheclocktower.com/Legion: an execution fails when only evil players
@@ -1353,8 +1366,10 @@ test('Execution asks whether only evil voted while the Legion works; yes fails i
 	await ask.getByTestId('outcome-fails').locator('[data-part="control"]').tap();
 	await expect(onlyEvil).toBeChecked();
 	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
-	await expect(page.getByTestId('night-strip')).toBeVisible();
-	// The execution failed: Seat 1 lives.
+	// The execution failed: Seat 1 lives, and the day stays open for another nomination.
+	await expect(ask).toBeHidden();
+	await expect(day).toBeVisible();
+	await expect(page.getByTestId('night-strip')).toHaveCount(0);
 	await expect(boardSeat(page, 'Seat 1')).not.toHaveAccessibleName(/dead/);
 });
 
