@@ -43,20 +43,20 @@ interface StartInput<G> {
 }
 
 /**
- * A mode's script with the chosen rules: the combined pool's script, with each rule's own
- * lines added to the script's Bootlegger lines so they show where a script's rules do. New
- * game's preview shows the same script before the game starts.
+ * A mode's script with the chosen rules (`mode` is the mode with its rules folded in,
+ * `withRules`): the combined pool's script, with the mode's and each rule's own lines added to
+ * the script's Bootlegger lines so they show where a script's rules do. New game's preview
+ * shows the same script before the game starts.
  */
 export function rulesScript(
 	mode: GameMode,
-	rules: readonly SpecialRule[],
 	script: Script,
 	scriptCharacters: LoadedScript['characters'],
 	data: GameData,
 	restrictions: StorytellerRestrictions
 ): Script {
 	const out = modeScript(mode, script, scriptCharacters, data.characters, restrictions);
-	const lines = rules.flatMap((rule) => rule.parts.text ?? []);
+	const lines = mode.parts.text ?? [];
 	if (!lines.length) return out;
 	const meta = out.meta ?? { name: '' };
 	return { ...out, meta: { ...meta, bootlegger: [...(meta.bootlegger ?? []), ...lines] } };
@@ -75,7 +75,6 @@ export async function startInMode<
 	const mode = withRules(base, input.rules);
 	const script = rulesScript(
 		mode,
-		input.rules,
 		toScript(input.loaded),
 		input.loaded.characters,
 		input.data,
@@ -139,7 +138,6 @@ export async function startTowns<G extends { game: { gameId: GameId } }>(
 	for (const [i, loaded] of input.scripts.entries()) {
 		const script = rulesScript(
 			mode,
-			input.rules,
 			toScript(loaded),
 			loaded.characters,
 			input.data,

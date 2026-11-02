@@ -25,7 +25,9 @@
 	 * summary entry or a part's JSON lines jump to that setting.
 	 */
 	interface Props {
+		/** What the file is, from its parts (`fileKind`), and the parts that make it a game mode. */
 		kind: BuildKind;
+		because: readonly string[];
 		file: Record<string, unknown>;
 		parts: readonly GuidePart[];
 		/** The checker's problems, and Save's when it refused. */
@@ -36,7 +38,16 @@
 		actions?: Snippet;
 	}
 
-	let { kind, file, parts, issues, onJump, actions }: Props = $props();
+	let { kind, because, file, parts, issues, onJump, actions }: Props = $props();
+
+	/** "Game mode, because it sets Setup counts", or "Special rule" (Trevor, 2026-11-01). */
+	const label = $derived(
+		kind === 'game-mode'
+			? t('modes.builder.labelMode', {
+					parts: because.map((p) => modeLabel('part', p)).join(', ')
+				})
+			: t('modes.builder.makes.special-rule')
+	);
 
 	const partsValue = $derived(
 		typeof file.parts === 'object' && file.parts !== null && !Array.isArray(file.parts)
@@ -92,7 +103,7 @@
 		<ul class="list" data-testid="mode-builder-summary">
 			<li>
 				<button type="button" class="entry" onclick={() => onJump('id')}>
-					<span class="key">{t(`modes.builder.makes.${kind}`)}</span>
+					<span class="key" data-testid="mode-builder-kind">{label}</span>
 					<span>{name ?? t('common.none')} <code>{id}</code></span>
 				</button>
 			</li>
