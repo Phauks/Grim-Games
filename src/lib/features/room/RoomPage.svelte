@@ -10,6 +10,7 @@
 	import { prepareRoom } from './host.svelte.ts';
 	import PlayersPanel from './PlayersPanel.svelte';
 	import RoomPanel from './RoomPanel.svelte';
+	import ShowRolesButton from './ShowRolesButton.svelte';
 
 	interface Props {
 		gameId: GameId;
@@ -24,7 +25,9 @@
 	if (!untrack(() => players)) prepareRoom();
 </script>
 
-<main class:fill={players}>
+<!-- The header goes inside the game's loading, so Players can carry Show characters at its
+     right as its dialog does beside the ✕ (Trevor, 2026-10-31). -->
+{#snippet head(game?: OpenGame)}
 	<header>
 		<Button
 			href={resolve('/grimoire/[gameId]', { gameId })}
@@ -35,12 +38,18 @@
 			{t('room.back')}
 		</Button>
 		<h1>{players ? t('room.players.title') : t('room.title')}</h1>
+		{#if players && game}<span class="end"><ShowRolesButton {game} /></span>{/if}
 	</header>
+{/snippet}
+
+<main class:fill={players}>
 	<WithSavedGame {gameId} area="grimoire">
 		{#snippet children(game: OpenGame)}
+			{@render head(game)}
 			{#if players}<PlayersPanel {game} />{:else}<RoomPanel {game} />{/if}
 		{/snippet}
 		{#snippet fallback({ kind, message })}
+			{@render head()}
 			<p
 				class="message"
 				aria-busy={kind === 'loading'}
@@ -76,6 +85,8 @@
 		gap: var(--space-2);
 	}
 	h1 {
+		flex: 1;
+		min-width: 0;
 		margin: 0;
 		font-size: 1.4rem;
 	}

@@ -5,6 +5,7 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { playersDialog } from './players-dialog.svelte.ts';
 	import PlayersPanel from './PlayersPanel.svelte';
+	import ShowRolesButton from './ShowRolesButton.svelte';
 	import CountOffDialog from './CountOffDialog.svelte';
 	import TravellerPickDialog from './TravellerPickDialog.svelte';
 
@@ -13,6 +14,7 @@
 </script>
 
 <Dialog bind:open={playersDialog.open} title={t('room.players.title')} size="full" scroll={false}>
+	{#snippet headActions()}<ShowRolesButton {game} />{/snippet}
 	<PlayersPanel {game} {run} />
 </Dialog>
 <CountOffDialog {game} {run} />
