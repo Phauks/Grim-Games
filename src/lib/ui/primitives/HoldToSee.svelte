@@ -88,7 +88,12 @@
 	onkeyup={(e) => e.key === ' ' && hold(false)}
 	onblur={() => hold(false)}
 >
-	{#if held}{@render children()}{:else}<span class="hidden-face">{label}</span>{/if}
+	<!-- The secret stays mounted under the face, unseen and out of the accessibility tree, so its
+	     images are already loaded and drawn the moment it is held (a newly made image could be
+	     fetched again and show a frame late). -->
+	<span class="secret" data-held={held ? '' : undefined} aria-hidden={!held}
+		>{@render children()}</span
+	>{#if !held}<span class="hidden-face">{label}</span>{/if}
 </button>
 
 <style>
@@ -107,6 +112,14 @@
 		user-select: none;
 		-webkit-touch-callout: none;
 		-webkit-user-select: none;
+	}
+	/* The secret and the face share one cell, so seeing it moves nothing. */
+	.secret,
+	.hidden-face {
+		grid-area: 1 / 1;
+	}
+	.secret:not([data-held]) {
+		visibility: hidden;
 	}
 	/* The same size as the token it hides, so seeing it moves nothing. */
 	.hidden-face {
