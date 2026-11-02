@@ -63,11 +63,15 @@ describe('"You are" cards', () => {
 		});
 	});
 
-	// The real Demon is told they are the Demon while a Lunatic thinks they are
-	// (https://wiki.bloodontheclocktower.com/Lunatic); the Scarlet Woman learns which Demon
-	// she has become (https://wiki.bloodontheclocktower.com/Scarlet_Woman).
+	// Trevor (2026-11-02): players draw the Demon token and the Storyteller decides who is the
+	// Lunatic, so the real Demon needs no "You are" (https://wiki.bloodontheclocktower.com/Lunatic).
+	it('the Lunatic step offers no "You are"', () => {
+		expect(cards('lunatic', 'first').map((c) => c.token)).not.toContain('you-are');
+	});
+
+	// The Scarlet Woman learns which Demon she has become
+	// (https://wiki.bloodontheclocktower.com/Scarlet_Woman).
 	it.each([
-		['lunatic', 'first', ['lunatic', 'nodashii', 'chef', 'poisoner', 'empath'], 'nodashii'],
 		['scarletwoman', 'other', ['scarletwoman', 'fanggu', 'chef', 'mutant', 'empath'], 'fanggu']
 	] as const)('%s: "You are" shows the Demon in play', (id, night, cast, demon) => {
 		const s = scenario([...cast]);

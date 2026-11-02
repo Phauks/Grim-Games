@@ -114,6 +114,7 @@ export function stepInfoCards(
 	return tokens.flatMap((token) => {
 		const entries = ruleEntries(rules[token.id]);
 		if (entries.length === 0) return [{ token }];
+		if (entries.every((e) => e.omit)) return [];
 		return entries.map((entry) => {
 			const filled = fill(token, entry);
 			const lead = entry.after ? STANDARD_INFO_TOKENS.find((t) => t.id === entry.after) : undefined;

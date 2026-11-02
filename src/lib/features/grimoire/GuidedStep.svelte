@@ -231,6 +231,12 @@
 		if (grimoire.open.viewOnly) return;
 		for (const command of shownCommands(game, characters, picker, choice)) grimoire.run(command);
 	}
+	/** The Yes/No info token, only its answer, as the Info tokens sheet shows it. */
+	function showAnswer(answer: string) {
+		shownId = undefined;
+		shownCard = { detail: answer };
+		showOpen = true;
+	}
 	function showNumber(n: number) {
 		// Over the open step, as with a suggestion's Show to player.
 		shownId = undefined;
@@ -330,6 +336,7 @@
 				{grimoire}
 				{step}
 				onShowNumber={numberStep ? showNumber : undefined}
+				onShowAnswer={showAnswer}
 				onRecord={record}
 				onShow={(id) => {
 					// Over the open step: closing the step in the same update threw inside the
@@ -369,17 +376,7 @@
 					showOpen = true;
 				}}
 			/>
-			<NightYesNo
-				{grimoire}
-				{step}
-				onShowAnswer={(answer) => {
-					// The Yes/No info token, only its answer, as the Info tokens sheet shows it.
-					shownId = undefined;
-					shownCard = { detail: answer };
-					showOpen = true;
-				}}
-				onRecord={record}
-			/>
+			<NightYesNo {grimoire} {step} onShowAnswer={showAnswer} onRecord={record} />
 			{#if step.character}
 				<!-- Over the open step, as with a suggestion's Show to player. -->
 				<ChangeCharacterStep

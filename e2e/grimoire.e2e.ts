@@ -7128,6 +7128,47 @@ test("the Town Crier's step reads today's recorded nominations", async ({ page }
 	await expect(suggested.locator('.because')).toContainText('Seat 2');
 });
 
+// Trevor (2026-11-02): "flowergirl, is not populating the yes/no info token". Each answer the
+// day's marks give is shown as the Yes/No card, only its answer
+// (https://wiki.bloodontheclocktower.com/Flowergirl, https://wiki.bloodontheclocktower.com/Town_Crier).
+test('the Flowergirl and Town Crier steps show their answer as the Yes/No card', async ({
+	page
+}) => {
+	test.slow();
+	await startGame(page, 'Sects & Violets');
+	for (const [number, name] of [
+		[1, 'Flowergirl'],
+		[2, 'Town Crier'],
+		[3, 'Fang Gu']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	const first = await walkTo(page, 'Dusk');
+	await first.getByRole('button', { name: 'Next step' }).tap();
+	await endNight(page);
+	const day = page.getByRole('dialog', { name: 'Day 1' });
+	await day.getByRole('button', { name: 'Close' }).tap();
+	await expect(day).toBeHidden();
+	// Ending the day marks that the Demon didn't vote and no Minion nominated.
+	const shown = page.locator('[data-testid="show-to-player"][open]');
+	for (const title of ['Flowergirl', 'Town Crier']) {
+		const step = await openStep(page, title);
+		const suggested = step.getByTestId('night-suggested');
+		await expect(suggested).toContainText('No');
+		await suggested.getByRole('button', { name: 'Show to player' }).tap();
+		await expect(shown).toContainText('No');
+		await shown.getByRole('button', { name: 'Close' }).tap();
+		await step.getByRole('button', { name: 'Close' }).tap();
+		await expect(step).toBeHidden();
+	}
+});
+
 /** Turns on Settings > Storyteller > Track nominations. */
 async function trackNominations(page: Page) {
 	await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();

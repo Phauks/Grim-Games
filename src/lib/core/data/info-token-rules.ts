@@ -26,7 +26,10 @@
  * - `shuffle`: shown to the player in random order, so the true one isn't always first;
  * - `order`: shown to the player in a fixed order instead: `good-first`, good characters
  *   above evil ones, whichever is true (Trevor, 2026-10-27: the Dreamer's);
- * - `offer`: offered on the step though its night text doesn't name the card.
+ * - `offer`: offered on the step though its night text doesn't name the card;
+ * - `omit`: not offered though the night text names it (Trevor, 2026-11-02: the Lunatic's
+ *   real Demon needs no "You are": players draw the Demon token, and the Storyteller decides
+ *   who is the Lunatic).
  *
  * The Storyteller can still change them: a card with room left opens with these picked.
  */
@@ -61,6 +64,7 @@ export interface InfoTokenCharacters {
 	shuffle?: true;
 	order?: (typeof INFO_TOKEN_ORDERS)[number];
 	offer?: true;
+	omit?: true;
 	value?: string;
 	token?: string;
 	after?: string;
@@ -124,7 +128,18 @@ function readEntry(
 	}
 	checkKeys(
 		entry,
-		['characters', 'upTo', 'others', 'shuffle', 'order', 'offer', 'value', 'token', 'after'],
+		[
+			'characters',
+			'upTo',
+			'others',
+			'shuffle',
+			'order',
+			'offer',
+			'omit',
+			'value',
+			'token',
+			'after'
+		],
 		at,
 		issues
 	);
@@ -140,8 +155,8 @@ function readEntry(
 	const most = upTo ?? count;
 	const others = readEnum(entry, 'others', INFO_TOKEN_OTHERS, at, issues, false);
 	const order = readEnum(entry, 'order', INFO_TOKEN_ORDERS, at, issues, false);
-	const flags: { shuffle?: true; offer?: true } = {};
-	for (const flag of ['shuffle', 'offer'] as const) {
+	const flags: { shuffle?: true; offer?: true; omit?: true } = {};
+	for (const flag of ['shuffle', 'offer', 'omit'] as const) {
 		if (entry[flag] === undefined) continue;
 		if (entry[flag] === true) flags[flag] = true;
 		else issues.add(`${at}.${flag}`, 'expected true');

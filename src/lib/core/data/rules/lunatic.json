@@ -32,7 +32,8 @@
 			"characters": ["self"]
 		},
 		"you-are": {
-			"characters": ["demon"]
+			"characters": [],
+			"omit": true
 		}
 	},
 	"evilInfo": {
