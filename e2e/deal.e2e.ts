@@ -102,14 +102,13 @@ test('Deal gives every seat a character, and a seated phone holds to see its own
 	await page.keyboard.press('Escape');
 	await expect(stCard).toBeHidden();
 
-	// Each player's row on Players marks who has seen theirs (Trevor, 2026-10-30: combined
-	// with the list of players): seat 2 has, the others have no phone.
+	// Players lists every seat; who has seen theirs is no longer marked (Trevor, 2026-11-01:
+	// "remove 'has seen theirs'"). Seat 2 has a phone, the others none.
 	await page.goto(`${board}/players`);
 	const rows = page.getByTestId('room-player');
 	await expect(rows).toHaveCount(5);
-	await expect(rows.nth(1).getByTestId('room-player-seen')).toHaveAttribute('data-seen', '');
-	await expect(rows.nth(1).getByRole('img', { name: 'Seen' })).toBeVisible();
-	await expect(rows.nth(0).getByTestId('room-player-seen')).not.toHaveAttribute('data-seen');
+	await expect(page.getByTestId('room-player-seen')).toHaveCount(0);
+	await expect(rows.nth(1).getByTestId('room-player-phone')).toHaveAttribute('data-phone', 'here');
 	await expect(rows.nth(0).getByTestId('room-player-phone')).toHaveAttribute('data-phone', 'none');
 
 	// A minute after it was turned on, it turns itself off and the phone can no longer open it
@@ -127,8 +126,6 @@ test('Deal gives every seat a character, and a seated phone holds to see its own
 	await expect(timeLeft).toBeHidden();
 	await expect(card).toBeHidden();
 	await expect(phone.getByTestId('your-character')).toBeDisabled();
-	// Who has looked stays.
-	await expect(rows.nth(1).getByTestId('room-player-seen')).toHaveAttribute('data-seen', '');
 
 	// Shown again, and hidden by hand. Every seat has a character but only seat 2 has a phone,
 	// so it first says who won't see theirs (Trevor, 2026-10-31); Cancel shows nothing.
@@ -168,6 +165,61 @@ test('Deal gives every seat a character, and a seated phone holds to see its own
 	await page.getByRole('button', { name: 'Script', exact: true }).tap();
 	await expect(view.getByTestId('your-character')).toBeDisabled();
 	await phoneContext.close();
+});
+
+// The Gardener (M16, Trevor 2026-11-02: "just let them set what character they are, but not
+// location for now"): no bag, the Storyteller sets each character on the board, and after Show
+// characters each player with no phone gets a tile with their name for the usual reveal.
+// Wiki: https://wiki.bloodontheclocktower.com/Gardener
+test('characters set on the board give players with no phone a name tile to see theirs', async ({
+	page
+}) => {
+	await page.goto('/new');
+	await pickScript(page, 'Trouble Brewing');
+	await page.getByRole('button', { name: 'Create game' }).tap();
+	await pickNumber(page, 'Players', 5);
+	await toBoard(page);
+	const board = new URL(page.url()).pathname;
+	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
+	for (const [number, character] of [
+		[1, 'Empath'],
+		[2, 'Imp']
+	] as const) {
+		await page.getByRole('button', { name: new RegExp(`^Seat ${number}:`) }).tap();
+		await sheet.getByRole('button', { name: 'Choose character' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name: character, exact: true })
+			.tap();
+		await page.keyboard.press('Escape');
+		await expect(sheet).toBeHidden();
+	}
+
+	await page.goto(`${board}/room`);
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
+	await page.goto(`${board}/players`);
+	await page.getByTestId('roles-show').tap();
+	await page
+		.getByRole('alertdialog', { name: 'Not every player will see a character' })
+		.getByRole('button', { name: 'Confirm' })
+		.tap();
+
+	// No bag, yet the draw has a tile for each, held, with the player's name on it.
+	await expect(page).toHaveURL(`${board}/draw`);
+	await expect(page.getByTestId('no-bag')).toBeHidden();
+	const named = page.getByRole('button', { name: /^Tile Seat \d, held by/ });
+	await expect(named).toHaveCount(2);
+	await page.getByRole('button', { name: /^Tile Seat 1, held by/ }).tap();
+	const reveal = page.getByTestId('reveal');
+	await expect(reveal.getByTestId('reveal-name')).toHaveText(/^\s*Empath\b/);
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(reveal).toBeHidden();
+	await expect(named).toHaveCount(1);
+	await page.getByRole('button', { name: /^Tile Seat 2, held by/ }).tap();
+	await expect(reveal.getByTestId('reveal-name')).toHaveText(/^\s*Imp\b/);
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(named).toHaveCount(0);
+	await expect(page.getByTestId('no-bag')).toBeVisible();
 });
 
 // Playtest (Trevor, 2026-10-26: "I joined a game as Phone ... I did not get notified, and my
