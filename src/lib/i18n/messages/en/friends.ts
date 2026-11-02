@@ -76,6 +76,7 @@ export const friends = {
 	'friends.profile': 'Your profile',
 	'friends.profile.open': 'Open profile',
 	'friends.profile.scripts': 'Scripts',
+	'friends.profile.games': 'Games played: {games}',
 	'friends.profile.tooMany': 'Too many tries. Wait a minute and try again.',
 	'friends.groups': 'Groups',
 	'friends.groups.add': 'Add a group',
