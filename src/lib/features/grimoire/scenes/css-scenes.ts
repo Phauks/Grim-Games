@@ -8,7 +8,7 @@ import VoidScene from './VoidScene.svelte';
 import type { SceneIdOf } from './scene-presets.ts';
 
 /**
- * The CSS scenes (moving backgrounds, plan L113), by preset id. SceneLayer.svelte draws one
+ * The CSS scenes (moving backgrounds, plan L114), by preset id. SceneLayer.svelte draws one
  * inside its frame; a scene's label and still frame are its preset (scene-presets.ts).
  */
 export const CSS_SCENES = {
