@@ -10,6 +10,9 @@
 	import type { PhaseFlow } from '#lib/features/grimoire/phase-flow.svelte.ts';
 	import AidMenu from '#lib/features/settings/AidMenu.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
+	import { seatName } from '#lib/features/game/seat-label.ts';
+	import { t } from '#lib/i18n/locale.svelte.ts';
+	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 
 	interface Props {
 		flow: PhaseFlow;
@@ -27,18 +30,29 @@
 	title="Start the game?"
 	onConfirm={() => flow.beginGame()}
 >
-	<p class="ask-note">Setup reminders not yet placed:</p>
-	<!-- The tokens themselves, as on the board (Trevor, 2026-10-30). -->
-	<ReminderTokenRow testid="setup-left">
-		{#each flow.setupLeft as { key, suggestion } (key)}
-			<li>
-				<BoardReminder
-					label={suggestion.label}
-					character={characters.get(suggestion.characterId)}
-				/>
-			</li>
-		{/each}
-	</ReminderTokenRow>
+	{#if flow.noCharacter.length > 0}
+		<p class="ask-note">{t('day.startNoCharacter')}</p>
+		<!-- Each seat as its name badge (Trevor: player names are badges). -->
+		<ul class="no-character" data-testid="no-character">
+			{#each flow.noCharacter as seatId (seatId)}
+				<li><PlayerBadge name={seatName(game, seatId)} /></li>
+			{/each}
+		</ul>
+	{/if}
+	{#if flow.setupLeft.length > 0}
+		<p class="ask-note">Setup reminders not yet placed:</p>
+		<!-- The tokens themselves, as on the board (Trevor, 2026-10-30). -->
+		<ReminderTokenRow testid="setup-left">
+			{#each flow.setupLeft as { key, suggestion } (key)}
+				<li>
+					<BoardReminder
+						label={suggestion.label}
+						character={characters.get(suggestion.characterId)}
+					/>
+				</li>
+			{/each}
+		</ReminderTokenRow>
+	{/if}
 </ConfirmDialog>
 
 <ConfirmDialog
@@ -63,5 +77,13 @@
 <style>
 	.ask-note {
 		margin: 0;
+	}
+	.no-character {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-1) var(--space-2);
+		margin: 0;
+		padding: 0;
+		list-style: none;
 	}
 </style>

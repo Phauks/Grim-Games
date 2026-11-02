@@ -46,6 +46,8 @@ export class PhaseFlow {
 	/** Start game asked with setup reminders still in the bank: those reminders. */
 	startAskOpen = $state(false);
 	setupLeft = $state<TrayItem[]>([]);
+	/** Start game asked with seats still without a character (Trevor, 2026-11-01): those seats. */
+	noCharacter = $state<SeatId[]>([]);
 	/** A seat's status chose Executed: during the day, the day's Execution asks with them chosen. */
 	executeChosen = $state<SeatId>();
 	/** A mad player broke madness: the character whose madness executes them (L84). */
@@ -128,14 +130,17 @@ export class PhaseFlow {
 	}
 
 	/**
-	 * Start game with setup reminders still in the bank's Setup stretch asks first (Trevor,
-	 * 2026-10-20), listing them; Confirm starts anyway (warn, never lock).
+	 * Start game with setup reminders still in the bank's Setup stretch (Trevor, 2026-10-20),
+	 * or with seats that have no character (Trevor, 2026-11-01: "i was able to start a game
+	 * with 0 characters"), asks first, listing them; Confirm starts anyway (warn, never lock).
 	 */
 	startGame(): void {
 		const { game, characters } = this.#context();
 		const left = pendingSetup(game, characters);
-		if (left.length > 0) {
+		const empty = game.seating.filter((id) => game.seats[id]?.characterId === undefined);
+		if (left.length > 0 || empty.length > 0) {
 			this.setupLeft = left;
+			this.noCharacter = empty;
 			this.startAskOpen = true;
 			return;
 		}
