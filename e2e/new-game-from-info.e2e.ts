@@ -81,7 +81,13 @@ test('New game in the board menu, once the game ends, starts the next game with 
 	// New game in a sheet over the board: script, mode and room vote, and the same script
 	// preview as the New game screen (Trevor, 2026-10-24).
 	const newGame = page.getByRole('dialog', { name: 'New game' });
-	await expect(newGame.getByRole('link', { name: 'Room vote' })).toBeVisible();
+	// Its Room vote opens over the board, not /vote (Trevor, 2026-11-01, plan J43).
+	await newGame.getByRole('button', { name: 'Room vote' }).tap();
+	const vote = page.getByRole('dialog', { name: 'Room vote' });
+	await expect(vote.getByRole('heading', { name: 'Vote on the next script' })).toBeVisible();
+	expect(page.url()).toBe(board);
+	await vote.getByRole('button', { name: 'Close' }).tap();
+	await expect(vote).toHaveCount(0);
 	const preview = newGame.getByTestId('script-preview');
 	await expect(preview).toContainText('Washerwoman');
 	await newGame
