@@ -10,8 +10,18 @@
  * of the two may be in play). Paraphrase, never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
-import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
+import { findJinx, jinxesAmong, type Script } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { warned } from '#lib/core/model/fixtures.test-support.ts';
+import { gameEnds } from '#lib/core/rules/game-end.ts';
+import { ownJinxRules } from '#lib/core/rules/jinxes.ts';
+import { mayNominate, nominationsPerDay, storytellerNominee } from '#lib/core/rules/nominations.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
+
+const scriptOf = (ids: string[]): Script => ({
+	meta: { name: 'Jinxed' },
+	entries: ids.map((id) => ({ kind: 'official' as const, id }))
+});
 
 describe('Atheist + Riot jinx', () => {
 	const data = committedGameData();
@@ -30,7 +40,90 @@ describe('Atheist + Riot jinx', () => {
 		expect(jinxesAmong(data.jinxes, ['riot'])).not.toContain(jinx);
 	});
 
-	// Waits for voting (M9): during the riot a nominated Storyteller is voted on, and the vote
-	// ends the game or the players nominate again.
-	it.todo('enforces the rule the jinx imposes');
+	// Both pages' Related Jinxes: during the riot a nominated Storyteller doesn't die like a
+	// Riot nominee. The players vote; the Storyteller judges whether that vote would put them
+	// to death (votes are counted outside the app), and if so they are executed and the game
+	// ends. If not, whoever nominated them nominates again.
+	describe('during the riot, a nominated Storyteller is voted on', () => {
+		const cast = ['chef', 'riot', 'riot', 'empath', 'monk', 'soldier'];
+		const ids = [...cast, 'atheist'];
+		/** Day 3: the Minions are Riot, and the Riot carries Day 3. */
+		const riotDay = (script = scriptOf(ids)) =>
+			scenario(cast, { script }).newDay().newDay().reminder(1, 'riot', 'Day 3');
+
+		it("is data in the Riot's rules", () => {
+			expect(ownJinxRules({ script: scriptOf(ids) }, 'riot', 'atheist')).toEqual({
+				storytellerVote: true
+			});
+		});
+
+		it('lets the Storyteller be nominated while the Atheist is on the script', () => {
+			const s = riotDay();
+			expect(storytellerNominee(s.game, s.characters)).toBe(true);
+		});
+
+		it('not executed: the nominator nominates again, with no warning', () => {
+			const s = riotDay().do((at) => ({ type: 'NominateStoryteller', nominator: at.seat('chef') }));
+			expect(nominationsPerDay(s.game, s.seat('chef'), s.characters)).toBe(2);
+			expect(
+				warned(s.session, s.ctx, {
+					type: 'Nominate',
+					nominator: s.seat('chef'),
+					nominee: s.seat(1)
+				})
+			).not.toContain('already-nominated');
+			// Once is all: a third nomination warns as usual.
+			const again = s.nominate('chef', 1);
+			expect(
+				warned(again.session, again.ctx, {
+					type: 'Nominate',
+					nominator: again.seat('chef'),
+					nominee: again.seat(2)
+				})
+			).toContain('already-nominated');
+		});
+
+		it('a Riot nominee who died and nominated the Storyteller nominates again', () => {
+			const s = riotDay()
+				.nominate('chef', 'empath')
+				.dies('empath', 'riot')
+				.do((at) => ({ type: 'NominateStoryteller', nominator: at.seat('empath') }));
+			expect(mayNominate(s.game, s.seat('empath'), s.characters)).toBe(true);
+			expect(
+				warned(s.session, s.ctx, {
+					type: 'Nominate',
+					nominator: s.seat('empath'),
+					nominee: s.seat(1)
+				})
+			).toEqual([]);
+		});
+
+		it('about to die: executing the Storyteller ends the game, and evil wins', () => {
+			// With the Riot in play there is no Atheist, so the Storyteller's execution is evil's.
+			const s = riotDay().do(
+				(at) => ({ type: 'NominateStoryteller', nominator: at.seat('chef') }),
+				{ type: 'ExecuteStoryteller' }
+			);
+			expect(gameEnds(s.game, s.characters)).toMatchObject([
+				{ rule: 'storyteller-executed', winner: 'evil', seats: [] }
+			]);
+		});
+
+		it('outside the riot, or without the Atheist on the script, a second nomination warns', () => {
+			const day2 = scenario(cast, { script: scriptOf(ids) })
+				.newDay()
+				.reminder(1, 'riot', 'Day 2')
+				.do((at) => ({ type: 'NominateStoryteller', nominator: at.seat('chef') }));
+			expect(nominationsPerDay(day2.game, day2.seat('chef'), day2.characters)).toBe(1);
+			expect(
+				warned(day2.session, day2.ctx, {
+					type: 'Nominate',
+					nominator: day2.seat('chef'),
+					nominee: day2.seat(1)
+				})
+			).toContain('already-nominated');
+			const without = riotDay(scriptOf(cast));
+			expect(storytellerNominee(without.game, without.characters)).toBe(false);
+		});
+	});
 });

@@ -13,6 +13,7 @@ import { registersAsDead, trueCharacter, typeOf } from '#lib/core/model/selector
 import type { DayEntry, Game, SeatId } from '#lib/core/model/types.ts';
 import { abilityState, registrations } from './ability.ts';
 import { heldAbilitiesOf } from './gained-abilities.ts';
+import { ownJinxes } from './jinxes.ts';
 
 /**
  * The abilities `seatId` has now: its own character's, while it works, and each it holds
@@ -111,19 +112,42 @@ export function afterDeath(
 /**
  * How many nominations a player may make today (https://wiki.bloodontheclocktower.com/Glossary,
  * "Nomination"): one while alive, none once dead, unless their character says otherwise
- * (`afterDeath`).
+ * (`afterDeath`). Each nomination of the Storyteller that a jinx has nominate again
+ * (`storytellerRenominations`) adds one.
  */
 export function nominationsPerDay(game: Game, seatId: SeatId, characters: CharacterLookup): number {
-	if (!registersAsDead(game, seatId)) return 1;
+	const again = storytellerRenominations(game, seatId, characters);
+	if (!registersAsDead(game, seatId)) return 1 + again;
 	const own = afterDeath(game, seatId, characters)?.nominations ?? 0;
-	return Math.max(own, nomineeNominatesNow(game, seatId, characters) ? 1 : 0);
+	return Math.max(own, nomineeNominatesNow(game, seatId, characters) ? 1 : 0) + again;
+}
+
+/**
+ * The characters whose nominees nominate straight away now (`nomineesNominate`, the Riot on
+ * day 3, https://wiki.bloodontheclocktower.com/Riot): a player of that character whose ability
+ * works, with that reminder of it in play, and nobody stopped it today (a jinx's
+ * `partner-stops` end, recorded as the partner's day use with `stops`).
+ */
+export function nomineesNominateNow(game: Game, characters: CharacterLookup): CharacterId[] {
+	const marked = (characterId: CharacterId, label: string) =>
+		game.seating.some((s) =>
+			game.seats[s]?.reminders.some((r) => r.characterId === characterId && r.label === label)
+		);
+	const stopped = (characterId: CharacterId) =>
+		game.today.entries.some((e) => e.kind === 'ability' && e.stops === characterId);
+	const out = new Set<CharacterId>();
+	for (const s of game.seating) {
+		const id = trueCharacter(game, s, characters);
+		const token = id === undefined ? undefined : rulesIn(game, id, characters)?.nomineesNominate;
+		if (id === undefined || token === undefined || out.has(id)) continue;
+		if (marked(id, token) && !stopped(id) && abilityState(game, s, characters).works) out.add(id);
+	}
+	return [...out];
 }
 
 /**
  * Whether a dead player was nominated today while a nominee who dies nominates straight away
- * (`nomineesNominate`, the Riot on day 3, https://wiki.bloodontheclocktower.com/Riot), and has
- * not nominated since: a player of that character whose ability works, with that reminder of
- * it in play.
+ * (`nomineesNominateNow`), and has not nominated since.
  */
 function nomineeNominatesNow(game: Game, seatId: SeatId, characters: CharacterLookup): boolean {
 	const entries = game.today.entries;
@@ -131,20 +155,28 @@ function nomineeNominatesNow(game: Game, seatId: SeatId, characters: CharacterLo
 	if (received < 0) return false;
 	const since = entries.slice(received + 1);
 	if (since.some((e) => e.kind === 'nomination' && e.nominator === seatId)) return false;
-	const marked = (characterId: CharacterId, label: string) =>
-		game.seating.some((s) =>
-			game.seats[s]?.reminders.some((r) => r.characterId === characterId && r.label === label)
-		);
-	return game.seating.some((s) => {
-		const id = trueCharacter(game, s, characters);
-		const token = id === undefined ? undefined : rulesIn(game, id, characters)?.nomineesNominate;
-		return (
-			id !== undefined &&
-			token !== undefined &&
-			marked(id, token) &&
-			abilityState(game, s, characters).works
-		);
-	});
+	return nomineesNominateNow(game, characters).length > 0;
+}
+
+/**
+ * How many times `seatId` nominated the Storyteller today while a character whose nominees
+ * nominate straight away (`nomineesNominateNow`) has a `storytellerVote` jinx on the script.
+ * The Storyteller is voted on instead, and is executed (`ExecuteStoryteller`, the game ends)
+ * when the Storyteller judges them about to die; otherwise the nominator nominates again, so
+ * each such nomination gives them one more today (the Riot with the Atheist, each page's
+ * Related Jinxes, https://wiki.bloodontheclocktower.com/Riot).
+ */
+export function storytellerRenominations(
+	game: Game,
+	seatId: SeatId,
+	characters: CharacterLookup
+): number {
+	const made = storytellerNominators(game).filter((s) => s === seatId).length;
+	if (made === 0) return 0;
+	const voted = nomineesNominateNow(game, characters).some(
+		(id) => ownJinxes(game, id, (r) => r.storytellerVote === true, characters).length > 0
+	);
+	return voted ? made : 0;
 }
 
 /**
