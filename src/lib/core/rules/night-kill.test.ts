@@ -37,7 +37,7 @@ describe('nightKill', () => {
 	});
 
 	it('ignores a stopping token from a poisoned source', () => {
-		const s = scenario(['po', 'exorcist', 'chef', 'empath'])
+		const s = scenario(['po', 'exorcist', 'chef', 'empath', 'poisoner'])
 			.reminder('po', 'exorcist', 'Chosen')
 			.poisoned('exorcist');
 		expect(nightKill(s.game, s.seat('po'), 'po', s.characters)?.max).toBe(1);
