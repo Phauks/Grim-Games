@@ -20,7 +20,12 @@
 		characterId: CharacterId;
 		/** The seat's alignment; defaults from the character's type. */
 		alignment?: Alignment;
-		/** Shown after the role, as a PlayerBadge inside the pill, when the seat has a name. */
+		/**
+		 * Shown after the role when the seat has a name: one pill in two halves of the same
+		 * height, the character in its colour then the name in the seat pill's, the character's
+		 * colour running round the name as its edge (Trevor, 2026-11-02: look 1, "keep the
+		 * border ... color of the character").
+		 */
 		playerName?: PlayerName;
 		/** The words as written ("Village Idiots"); defaults to the character's name. */
 		text?: CharacterName;
@@ -96,6 +101,7 @@
 {#if interactive}<button
 		type="button"
 		class="badge"
+		class:paired={!!playerName}
 		data-team={team}
 		data-character-id={characterId}
 		aria-haspopup="dialog"
@@ -109,12 +115,16 @@
 	>{:else if tappable && own}<button
 		type="button"
 		class="badge"
+		class:paired={!!playerName}
 		data-team={team}
 		data-character-id={characterId}
 		data-own=""
 		onclick={() => shown?.focus()}>{@render face()}</button
-	>{:else}<span class="badge still" data-team={team} data-character-id={characterId}
-		>{@render face()}</span
+	>{:else}<span
+		class="badge still"
+		class:paired={!!playerName}
+		data-team={team}
+		data-character-id={characterId}>{@render face()}</span
 	>{/if}{#if character && interactive}
 	{#if used}<CharacterDialog bind:open {character} {icon} />{/if}
 {/if}
@@ -219,9 +229,35 @@
 		font-weight: var(--font-character-weight);
 		font-size: calc(1em * var(--inline-name-text, 1));
 	}
-	/* The player's own badge, a little smaller so it sits inside the character's pill. */
+	/*
+	 * With a player: the name is the pill's second half, as tall as the first, inside a thin
+	 * edge of the character's colour (the pill's own background, gradient and all), so the
+	 * name's edges show on any surface.
+	 */
+	.badge.paired {
+		align-items: stretch;
+		gap: 0;
+		padding-right: 0.12em;
+	}
+	.paired .icon {
+		align-self: center;
+	}
+	.paired .name {
+		display: inline-flex;
+		align-items: center;
+		padding: 0 0.4em 0 0.25em;
+	}
 	.player {
 		display: inline-flex;
-		font-size: 0.85em;
+		margin: 0.12em 0;
+	}
+	.player :global(.player-badge) {
+		display: inline-flex;
+		align-items: center;
+		height: auto;
+		border-radius: 0.2em var(--radius-full) var(--radius-full) 0.2em;
+		box-shadow: none;
+		font-size: 0.95em;
+		line-height: 1;
 	}
 </style>
