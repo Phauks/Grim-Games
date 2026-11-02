@@ -4,6 +4,7 @@
  */
 export { actsWhenDead } from './acts-when-dead.ts';
 export { afterDeath } from './after-death.ts';
+export { afterExecution } from './after-execution.ts';
 export { answers } from './answers.ts';
 export { becomes } from './becomes.ts';
 export { believesOtherCharacter } from './believes-other-character.ts';

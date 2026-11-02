@@ -67,6 +67,13 @@ export function describeEntry(
 		case 'storyteller-execution':
 			return t('day.logStorytellerExecuted');
 		case 'exile':
+			if (entry.savedBy)
+				return entry.savedBy.characterId
+					? t('day.logExiledSavedBy', {
+							name: seatName(entry.seatId),
+							character: characterName(entry.savedBy.characterId)
+						})
+					: t('day.logExiledSurvived', { name: seatName(entry.seatId) });
 			return t(entry.died ? 'day.logExiled' : 'day.logExiledDead', {
 				name: seatName(entry.seatId)
 			});
