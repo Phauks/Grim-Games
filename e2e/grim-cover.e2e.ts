@@ -153,7 +153,7 @@ test('the Storyteller covers the screen from the board, beside ☰, and from the
 	// From the day, which stays open under it: ☰ then the cover, where they are on the board,
 	// and the day's name at the bottom across from Execution (Trevor, 2026-10-27, G3).
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	const day = page.getByRole('dialog', { name: /^Day( \d+)?$/ });
+	const day = page.getByRole('dialog', { name: /^(Setup|Day( \d+)?)$/ });
 	await expect(day).toBeVisible();
 	const inDay = (await day.getByTestId('cover-button').boundingBox())!;
 	// On a phone the day fills the screen, so the cover stays where it was; a tablet's day is a
@@ -196,7 +196,6 @@ test('with the PIN setting on, the cover sets the PIN first and asks for it to c
 	const set = page.getByRole('dialog', { name: 'Set the Storyteller PIN' });
 	await set.getByLabel('PIN', { exact: true }).fill('2468');
 	await set.getByLabel('PIN again').fill('2468');
-	await set.getByRole('button', { name: 'Confirm' }).tap();
 	const cover = page.getByRole('dialog', { name: 'Screen covered' });
 	await expect(cover).toBeVisible();
 
@@ -211,11 +210,9 @@ test('with the PIN setting on, the cover sets the PIN first and asks for it to c
 	// A wrong PIN keeps it covered; the right one takes it off.
 	await cover.getByRole('button', { name: 'Close' }).first().tap();
 	await pin.getByLabel('PIN', { exact: true }).fill('1111');
-	await pin.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(pin.getByTestId('pin-message')).toHaveText('Wrong PIN.');
 	await expect(cover).toBeVisible();
 	await pin.getByLabel('PIN', { exact: true }).fill('2468');
-	await pin.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(cover).toBeHidden();
 	await expect(page.getByRole('button', { name: /^Seat 1:/ })).toBeVisible();
 
@@ -241,7 +238,6 @@ test('the cover has its own lock, and Settings sets, changes and removes the PIN
 	const set = page.getByRole('dialog', { name: 'Set the Storyteller PIN' });
 	await set.getByLabel('PIN', { exact: true }).fill('2468');
 	await set.getByLabel('PIN again').fill('2468');
-	await set.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(lock).toHaveAttribute('aria-pressed', 'true');
 
 	// Off takes the PIN, so a player can't switch it off.
@@ -251,14 +247,12 @@ test('the cover has its own lock, and Settings sets, changes and removes the PIN
 	await expect(lock).toHaveAttribute('aria-pressed', 'true');
 	await lock.tap();
 	await pin.getByLabel('PIN', { exact: true }).fill('2468');
-	await pin.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(lock).toHaveAttribute('aria-pressed', 'false');
 	// Back on is one tap: the game keeps its PIN.
 	await lock.tap();
 	await expect(lock).toHaveAttribute('aria-pressed', 'true');
 	await cover.getByRole('button', { name: 'Close' }).first().tap();
 	await pin.getByLabel('PIN', { exact: true }).fill('2468');
-	await pin.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(cover).toBeHidden();
 
 	// Settings > Storyteller > PIN and locks: the same switch, and the game's PIN.
@@ -283,19 +277,15 @@ test('the cover has its own lock, and Settings sets, changes and removes the PIN
 	// Change: the old PIN, then a new one.
 	await settings.getByRole('button', { name: 'Change PIN' }).tap();
 	await pin.getByLabel('PIN', { exact: true }).fill('2468');
-	await pin.getByRole('button', { name: 'Confirm' }).tap();
 	await set.getByLabel('PIN', { exact: true }).fill('1357');
 	await set.getByLabel('PIN again').fill('1357');
-	await set.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(set).toBeHidden();
 
 	// Remove takes the new PIN.
 	await settings.getByRole('button', { name: 'Remove PIN' }).tap();
 	await pin.getByLabel('PIN', { exact: true }).fill('2468');
-	await pin.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(pin.getByTestId('pin-message')).toHaveText('Wrong PIN.');
 	await pin.getByLabel('PIN', { exact: true }).fill('1357');
-	await pin.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(settings.getByText('None for this game.')).toBeVisible();
 	await expect(settings.getByRole('button', { name: 'Set PIN' })).toBeVisible();
 	await expect(settings.getByRole('button', { name: 'Remove PIN' })).toBeDisabled();

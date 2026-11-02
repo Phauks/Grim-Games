@@ -3,6 +3,8 @@ import type { IconMap } from '../types.ts';
 import ph_address_book_bold from '~icons/ph/address-book-bold';
 import ph_anchor_bold from '~icons/ph/anchor-bold';
 import ph_archive_bold from '~icons/ph/archive-bold';
+import ph_arrow_arc_left_bold from '~icons/ph/arrow-arc-left-bold';
+import ph_arrow_arc_right_bold from '~icons/ph/arrow-arc-right-bold';
 import ph_arrow_bend_up_right_bold from '~icons/ph/arrow-bend-up-right-bold';
 import ph_arrow_circle_right_bold from '~icons/ph/arrow-circle-right-bold';
 import ph_arrow_clockwise_bold from '~icons/ph/arrow-clockwise-bold';
@@ -75,6 +77,7 @@ import ph_dice_five_bold from '~icons/ph/dice-five-bold';
 import ph_door_bold from '~icons/ph/door-bold';
 import ph_door_open_bold from '~icons/ph/door-open-bold';
 import ph_dots_three_bold from '~icons/ph/dots-three-bold';
+import ph_dots_three_circle_bold from '~icons/ph/dots-three-circle-bold';
 import ph_dots_three_vertical_bold from '~icons/ph/dots-three-vertical-bold';
 import ph_download_simple_bold from '~icons/ph/download-simple-bold';
 import ph_drop_bold from '~icons/ph/drop-bold';
@@ -111,6 +114,7 @@ import ph_hand_grabbing_bold from '~icons/ph/hand-grabbing-bold';
 import ph_hand_heart_bold from '~icons/ph/hand-heart-bold';
 import ph_hand_palm_bold from '~icons/ph/hand-palm-bold';
 import ph_hand_pointing_bold from '~icons/ph/hand-pointing-bold';
+import ph_hand_tap_bold from '~icons/ph/hand-tap-bold';
 import ph_handbag_bold from '~icons/ph/handbag-bold';
 import ph_handshake_bold from '~icons/ph/handshake-bold';
 import ph_hard_drives_bold from '~icons/ph/hard-drives-bold';
@@ -142,6 +146,7 @@ import ph_lock_simple_bold from '~icons/ph/lock-simple-bold';
 import ph_magnifying_glass_bold from '~icons/ph/magnifying-glass-bold';
 import ph_mask_sad_bold from '~icons/ph/mask-sad-bold';
 import ph_megaphone_bold from '~icons/ph/megaphone-bold';
+import ph_megaphone_simple_bold from '~icons/ph/megaphone-simple-bold';
 import ph_minus_bold from '~icons/ph/minus-bold';
 import ph_minus_circle_bold from '~icons/ph/minus-circle-bold';
 import ph_monitor_bold from '~icons/ph/monitor-bold';
@@ -174,6 +179,7 @@ import ph_question_bold from '~icons/ph/question-bold';
 import ph_scales_bold from '~icons/ph/scales-bold';
 import ph_scan_bold from '~icons/ph/scan-bold';
 import ph_scroll_bold from '~icons/ph/scroll-bold';
+import ph_seal_check_bold from '~icons/ph/seal-check-bold';
 import ph_selection_bold from '~icons/ph/selection-bold';
 import ph_shapes_bold from '~icons/ph/shapes-bold';
 import ph_share_network_bold from '~icons/ph/share-network-bold';
@@ -198,6 +204,7 @@ import ph_speaker_high_bold from '~icons/ph/speaker-high-bold';
 import ph_spinner_bold from '~icons/ph/spinner-bold';
 import ph_square_bold from '~icons/ph/square-bold';
 import ph_square_split_horizontal_bold from '~icons/ph/square-split-horizontal-bold';
+import ph_stamp_bold from '~icons/ph/stamp-bold';
 import ph_star_bold from '~icons/ph/star-bold';
 import ph_star_half_bold from '~icons/ph/star-half-bold';
 import ph_sun_bold from '~icons/ph/sun-bold';
@@ -238,6 +245,8 @@ const icons: IconMap = {
 	'ph:address-book-bold': ph_address_book_bold,
 	'ph:anchor-bold': ph_anchor_bold,
 	'ph:archive-bold': ph_archive_bold,
+	'ph:arrow-arc-left-bold': ph_arrow_arc_left_bold,
+	'ph:arrow-arc-right-bold': ph_arrow_arc_right_bold,
 	'ph:arrow-bend-up-right-bold': ph_arrow_bend_up_right_bold,
 	'ph:arrow-circle-right-bold': ph_arrow_circle_right_bold,
 	'ph:arrow-clockwise-bold': ph_arrow_clockwise_bold,
@@ -310,6 +319,7 @@ const icons: IconMap = {
 	'ph:door-bold': ph_door_bold,
 	'ph:door-open-bold': ph_door_open_bold,
 	'ph:dots-three-bold': ph_dots_three_bold,
+	'ph:dots-three-circle-bold': ph_dots_three_circle_bold,
 	'ph:dots-three-vertical-bold': ph_dots_three_vertical_bold,
 	'ph:download-simple-bold': ph_download_simple_bold,
 	'ph:drop-bold': ph_drop_bold,
@@ -346,6 +356,7 @@ const icons: IconMap = {
 	'ph:hand-heart-bold': ph_hand_heart_bold,
 	'ph:hand-palm-bold': ph_hand_palm_bold,
 	'ph:hand-pointing-bold': ph_hand_pointing_bold,
+	'ph:hand-tap-bold': ph_hand_tap_bold,
 	'ph:handbag-bold': ph_handbag_bold,
 	'ph:handshake-bold': ph_handshake_bold,
 	'ph:hard-drives-bold': ph_hard_drives_bold,
@@ -377,6 +388,7 @@ const icons: IconMap = {
 	'ph:magnifying-glass-bold': ph_magnifying_glass_bold,
 	'ph:mask-sad-bold': ph_mask_sad_bold,
 	'ph:megaphone-bold': ph_megaphone_bold,
+	'ph:megaphone-simple-bold': ph_megaphone_simple_bold,
 	'ph:minus-bold': ph_minus_bold,
 	'ph:minus-circle-bold': ph_minus_circle_bold,
 	'ph:monitor-bold': ph_monitor_bold,
@@ -409,6 +421,7 @@ const icons: IconMap = {
 	'ph:scales-bold': ph_scales_bold,
 	'ph:scan-bold': ph_scan_bold,
 	'ph:scroll-bold': ph_scroll_bold,
+	'ph:seal-check-bold': ph_seal_check_bold,
 	'ph:selection-bold': ph_selection_bold,
 	'ph:shapes-bold': ph_shapes_bold,
 	'ph:share-network-bold': ph_share_network_bold,
@@ -433,6 +446,7 @@ const icons: IconMap = {
 	'ph:spinner-bold': ph_spinner_bold,
 	'ph:square-bold': ph_square_bold,
 	'ph:square-split-horizontal-bold': ph_square_split_horizontal_bold,
+	'ph:stamp-bold': ph_stamp_bold,
 	'ph:star-bold': ph_star_bold,
 	'ph:star-half-bold': ph_star_half_bold,
 	'ph:sun-bold': ph_sun_bold,

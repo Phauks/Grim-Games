@@ -44,6 +44,8 @@ export const ICON_SLOTS = {
 	buildScript: { label: 'Script builder', choices: ['ph:hammer', 'ph:wrench'] },
 	buildCharacter: { label: 'Character builder', choices: ['ph:user-gear', 'ph:user-plus'] },
 	buildMode: { label: 'Mode builder', choices: ['ph:puzzle-piece', 'ph:sliders-horizontal'] },
+	/** A special rule someone added, in the Library (a game mode uses buildMode, as a character does buildCharacter). */
+	specialRule: { label: 'Special rule', choices: ['ph:stamp', 'ph:seal-check'] },
 	installApp: { label: 'Install app', choices: ['ph:device-mobile', 'ph:download-simple'] },
 	download: { label: 'Download', choices: ['ph:download-simple', 'ph:file-arrow-down'] },
 	open: { label: 'Open', choices: ['ph:folder-open', 'ph:folder'] },
@@ -64,6 +66,11 @@ export const ICON_SLOTS = {
 	timer: { label: 'Timer', choices: ['ph:timer', 'ph:hourglass'] },
 	loading: { label: 'Loading', choices: ['ph:circle-notch', 'ph:spinner'] },
 	sound: { label: 'Sound', choices: ['ph:speaker-high', 'ph:bell'] },
+	/**
+	 * Back to town (plan U2): the Storyteller calls the players back, on the day timer (Trevor,
+	 * 2026-11-01). Its own icon, not the timer's sound.
+	 */
+	callTown: { label: 'Back to town', choices: ['ph:megaphone', 'ph:megaphone-simple'] },
 	/** The Storyteller's soundboard (plan U6): bells at a tap. */
 	soundboard: { label: 'Soundboard', choices: ['ph:bell-simple-ringing', 'ph:bell'] },
 	/** Holds the soundboard and day and night sound where they are (Trevor, 2026-10-27). */
@@ -191,6 +198,10 @@ export const ICON_SLOTS = {
 	/** Seating on the grim (plan J38): phones may move their own seat, until it is locked. */
 	/** Count off (plan J40): players count round the clock from number 1. */
 	countOff: { label: 'Count off', choices: ['ph:clock-clockwise', 'ph:list-numbers'] },
+	phonesMove: { label: 'Open seating', choices: ['ph:device-mobile', 'ph:hand-tap'] },
+	rotateAnticlockwise: { label: 'Rotate anticlockwise', choices: ['ph:arrow-arc-left'] },
+	rotateClockwise: { label: 'Rotate clockwise', choices: ['ph:arrow-arc-right'] },
+	spread: { label: 'Distribute', choices: ['ph:circle-dashed', 'ph:dots-three-circle'] },
 	/** Room transfer: the room goes to another Storyteller's device (Trevor, 2026-10-28). */
 	transfer: { label: 'Room transfer', choices: ['ph:hand-arrow-up', 'ph:arrow-square-out'] },
 	/** Marks an opened message unread again (Trevor, 2026-10-28: "an eyeball next to the x"). */

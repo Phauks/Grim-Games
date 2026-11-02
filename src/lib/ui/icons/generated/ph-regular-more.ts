@@ -35,6 +35,7 @@ import ph_crown from '~icons/ph/crown';
 import ph_diamond from '~icons/ph/diamond';
 import ph_dice_five from '~icons/ph/dice-five';
 import ph_door_open from '~icons/ph/door-open';
+import ph_dots_three_circle from '~icons/ph/dots-three-circle';
 import ph_dots_three_vertical from '~icons/ph/dots-three-vertical';
 import ph_drop from '~icons/ph/drop';
 import ph_envelope_simple from '~icons/ph/envelope-simple';
@@ -55,6 +56,7 @@ import ph_hand_coins from '~icons/ph/hand-coins';
 import ph_hand_fist from '~icons/ph/hand-fist';
 import ph_hand_grabbing from '~icons/ph/hand-grabbing';
 import ph_hand_heart from '~icons/ph/hand-heart';
+import ph_hand_tap from '~icons/ph/hand-tap';
 import ph_hard_drives from '~icons/ph/hard-drives';
 import ph_heart from '~icons/ph/heart';
 import ph_hexagon from '~icons/ph/hexagon';
@@ -68,7 +70,7 @@ import ph_list_dashes from '~icons/ph/list-dashes';
 import ph_list_magnifying_glass from '~icons/ph/list-magnifying-glass';
 import ph_list_numbers from '~icons/ph/list-numbers';
 import ph_lock from '~icons/ph/lock';
-import ph_megaphone from '~icons/ph/megaphone';
+import ph_megaphone_simple from '~icons/ph/megaphone-simple';
 import ph_monitor from '~icons/ph/monitor';
 import ph_notepad from '~icons/ph/notepad';
 import ph_paint_brush from '~icons/ph/paint-brush';
@@ -80,6 +82,7 @@ import ph_qr_code from '~icons/ph/qr-code';
 import ph_question from '~icons/ph/question';
 import ph_scales from '~icons/ph/scales';
 import ph_scan from '~icons/ph/scan';
+import ph_seal_check from '~icons/ph/seal-check';
 import ph_selection from '~icons/ph/selection';
 import ph_shield_check from '~icons/ph/shield-check';
 import ph_shield_star from '~icons/ph/shield-star';
@@ -147,6 +150,7 @@ const icons: IconMap = {
 	'ph:diamond': ph_diamond,
 	'ph:dice-five': ph_dice_five,
 	'ph:door-open': ph_door_open,
+	'ph:dots-three-circle': ph_dots_three_circle,
 	'ph:dots-three-vertical': ph_dots_three_vertical,
 	'ph:drop': ph_drop,
 	'ph:envelope-simple': ph_envelope_simple,
@@ -167,6 +171,7 @@ const icons: IconMap = {
 	'ph:hand-fist': ph_hand_fist,
 	'ph:hand-grabbing': ph_hand_grabbing,
 	'ph:hand-heart': ph_hand_heart,
+	'ph:hand-tap': ph_hand_tap,
 	'ph:hard-drives': ph_hard_drives,
 	'ph:heart': ph_heart,
 	'ph:hexagon': ph_hexagon,
@@ -180,7 +185,7 @@ const icons: IconMap = {
 	'ph:list-magnifying-glass': ph_list_magnifying_glass,
 	'ph:list-numbers': ph_list_numbers,
 	'ph:lock': ph_lock,
-	'ph:megaphone': ph_megaphone,
+	'ph:megaphone-simple': ph_megaphone_simple,
 	'ph:monitor': ph_monitor,
 	'ph:notepad': ph_notepad,
 	'ph:paint-brush': ph_paint_brush,
@@ -192,6 +197,7 @@ const icons: IconMap = {
 	'ph:question': ph_question,
 	'ph:scales': ph_scales,
 	'ph:scan': ph_scan,
+	'ph:seal-check': ph_seal_check,
 	'ph:selection': ph_selection,
 	'ph:shield-check': ph_shield_check,
 	'ph:shield-star': ph_shield_star,

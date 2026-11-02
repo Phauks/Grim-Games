@@ -19,6 +19,7 @@ import {
 	tapToSeat
 } from './reminder-bank.ts';
 import { pickNumber } from './number-select.ts';
+import { addSeat } from './seating.ts';
 
 // The Storyteller's grimoire board: saved games, seats and the seat sheet (ROADMAP Phase 2).
 
@@ -517,8 +518,7 @@ test('tapping the seat token shows the character; changing it goes through the �
 test('history, add seat and remove', async ({ page }) => {
 	await startGame(page);
 	// Adding a seat asks where it goes: between two neighbours. The new seat then opens.
-	await menu(page, 'Add seat');
-	await page.getByRole('button', { name: 'Place between Seat 2 and Seat 3' }).tap();
+	await addSeat(page, 'Place between Seat 2 and Seat 3');
 	await expect(page.getByTestId('seat')).toHaveCount(9);
 	await expect(page.getByRole('button', { name: /^Place between/ })).toHaveCount(0);
 	// The new seat just appears; nothing opens by itself (Trevor, 2026-10-16).
@@ -587,8 +587,7 @@ test('an orphan character is flagged, and old names are not suggested', async ({
 test('Travellers join as a new seat, and Fabled sit in the corner', async ({ page }) => {
 	await startGame(page);
 	// A Traveller joins as a new seat: Add seat, then choose them for it.
-	await menu(page, 'Add seat');
-	await page.getByRole('button', { name: 'Place between Seat 8 and Seat 1' }).tap();
+	await addSeat(page, 'Place between Seat 8 and Seat 1');
 	await openSeat(page, 9);
 	await page
 		.locator('[data-scope="drawer"][data-part="content"]')
@@ -700,7 +699,7 @@ test('the board leads to setup and the day; setup ends on the setup reminders', 
 	await page.goto(`${board}#setup-reminders`);
 	await expect(page).toHaveURL(board);
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	await expect(page.getByRole('dialog', { name: 'Day' })).toBeVisible();
+	await expect(page.getByRole('dialog', { name: /^(Setup|Day( \d+)?)$/ })).toBeVisible();
 	await expect(page).toHaveURL(board);
 });
 
@@ -766,7 +765,7 @@ test('reminders: put on from the bank, then moved and removed from the seat shee
 	await expect(sheet.getByText('None', { exact: true }).last()).toBeVisible();
 });
 
-test('seats can be arranged: dragged anywhere, kept through a rotation, spread evenly', async ({
+test('seats can be arranged: dragged anywhere, kept through a rotation, distributed', async ({
 	page
 }) => {
 	await startGame(page);
@@ -816,16 +815,16 @@ test('seats can be arranged: dragged anywhere, kept through a rotation, spread e
 	await openSeat(page, 1);
 	await closeSheet(page);
 
-	// Spread evenly puts everyone back round the table.
+	// Distribute (Trevor, 2026-11-01: was Spread evenly) puts everyone back round the table.
 	await menu(page, 'Seating');
-	await toolbar.getByRole('button', { name: 'Spread evenly' }).tap();
-	await expect(toolbar.getByRole('button', { name: 'Spread evenly' })).toBeDisabled();
+	await toolbar.getByRole('button', { name: 'Distribute' }).tap();
+	await expect(toolbar.getByRole('button', { name: 'Distribute' })).toBeDisabled();
 	const spread = await centre(1);
 	expect(Math.abs(spread.x - from.x)).toBeLessThan(4);
 	expect(Math.abs(spread.y - from.y)).toBeLessThan(4);
 
 	// A seat dragged past its neighbours stays there: seats renumber to match (Trevor,
-	// 2026-10-16), then spread evenly. Seat 2 goes just past seat 4, towards seat 5.
+	// 2026-10-16), then Distribute. Seat 2 goes just past seat 4, towards seat 5.
 	const at = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => centre(n));
 	const [c2, c4, c5] = [await at[1], await at[3], await at[4]];
 	// Inside the circle, clear of the seats, so it is a placement, not a drop on a seat.
@@ -837,7 +836,7 @@ test('seats can be arranged: dragged anywhere, kept through a rotation, spread e
 	await page.mouse.move((c2.x + past.x) / 2, (c2.y + past.y) / 2, { steps: 4 });
 	await page.mouse.move(past.x, past.y, { steps: 4 });
 	await page.mouse.up();
-	await toolbar.getByRole('button', { name: 'Spread evenly' }).tap();
+	await toolbar.getByRole('button', { name: 'Distribute' }).tap();
 	// Seats 3 and 4 move up one place; the dragged seat is now Seat 4, where seat 4 was.
 	const four = await centre(4);
 	expect(Math.abs(four.x - c4.x)).toBeLessThan(4);
@@ -1464,8 +1463,7 @@ test("the board can go full screen from beside its ⋯ menu's X, and back", asyn
 test("a Traveller's alignment can wait for the night order", async ({ page }) => {
 	await startGame(page);
 	// A Traveller joins as a new seat: Add seat, then choose them for it.
-	await menu(page, 'Add seat');
-	await page.getByRole('button', { name: 'Place between Seat 8 and Seat 1' }).tap();
+	await addSeat(page, 'Place between Seat 8 and Seat 1');
 	await openSeat(page, 9);
 	await page
 		.locator('[data-scope="drawer"][data-part="content"]')
@@ -2360,8 +2358,7 @@ test('the Apprentice gains a Townsfolk ability and is marked "Is The Apprentice"
 	page
 }) => {
 	await startGame(page);
-	await menu(page, 'Add seat');
-	await page.getByRole('button', { name: 'Place between Seat 8 and Seat 1' }).tap();
+	await addSeat(page, 'Place between Seat 8 and Seat 1');
 	await openSeat(page, 9);
 	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
 	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
@@ -2420,7 +2417,7 @@ test('the Storyteller writes the Amnesiac’s ability and picks what it works li
 	);
 
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	const day = page.getByRole('dialog', { name: 'Day' });
+	const day = page.getByRole('dialog', { name: /^(Setup|Day( \d+)?)$/ });
 	const value = day.getByTestId('prep-value');
 	await expect(value).toHaveText('(ABILITY)');
 	await value.tap();
@@ -2694,8 +2691,7 @@ test('a dead Plague Doctor gives the Storyteller a Minion ability, shown on the 
 
 test("a Traveller's alignment can be drawn from face-down tokens", async ({ page }) => {
 	await startGame(page);
-	await menu(page, 'Add seat');
-	await page.getByRole('button', { name: 'Place between Seat 8 and Seat 1' }).tap();
+	await addSeat(page, 'Place between Seat 8 and Seat 1');
 	const sheet = await openSeat(page, 9);
 	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
 	await page
@@ -2740,8 +2736,7 @@ test('a joining Traveller draws their alignment, with the last mix remembered', 
 		[9, 8, 'Thief'],
 		[10, 9, 'Beggar']
 	] as const) {
-		await menu(page, 'Add seat');
-		await page.getByRole('button', { name: `Place between Seat ${after} and Seat 1` }).tap();
+		await addSeat(page, `Place between Seat ${after} and Seat 1`);
 		const sheet = await openSeat(page, number);
 		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
 		await page
@@ -2941,9 +2936,13 @@ test('End game keeps the Storyteller on the board, says it is over, and can be r
 	await closeSheet(page);
 	await menu(page, 'End game');
 	const end = page.getByRole('alertdialog', { name: 'End game?' });
-	await expect(end).toContainText(/Now\s*In Continue game\s*Becomes\s*Ended, in History/);
+	// What the board shows, not where the save goes (Trevor, 2026-11-01).
+	await expect(end).toContainText(
+		/Now\s*(Setup|Night \d+|Day \d+)\s*Becomes\s*Game over: Winner not recorded/
+	);
 	await end.getByRole('combobox', { name: 'Winner' }).tap();
 	await page.getByRole('option', { name: 'Evil', exact: true }).tap();
+	await expect(end).toContainText(/Becomes\s*Game over: Evil won/);
 	await end.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	// Still on the board (Trevor, 2026-10-17), which says the game is over.
 	expect(page.url()).toBe(board);
@@ -3001,10 +3000,11 @@ test('End game keeps the Storyteller on the board, says it is over, and can be r
 		.getByRole('dialog', { name: 'Grimoire' })
 		.getByRole('button', { name: 'Reopen game' })
 		.tap();
-	await page
-		.getByRole('alertdialog', { name: 'Reopen game?' })
-		.getByRole('button', { name: 'Confirm', exact: true })
-		.tap();
+	const reopen = page.getByRole('alertdialog', { name: 'Reopen game?' });
+	await expect(reopen).toContainText(
+		/Now\s*Game over: Evil won\s*Becomes\s*(Setup|Night \d+|Day \d+)/
+	);
+	await reopen.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(page.getByTestId('game-over')).toHaveCount(0);
 	await page.goto('/join');
 	await expect(page.getByRole('link', { name: /Trouble Brewing.*Setting up/ })).toBeVisible();
@@ -3140,14 +3140,12 @@ test('a finished game exports as a recap file and a grimoire image', async ({ pa
 		return ctx.getImageData(1, 1, 1, 1).data[3];
 	}, png.toString('base64'));
 	expect(opaque).toBe(255);
-	// The controls are left out: History's strip, the soundboard and the timer.
+	// The controls are left out: History's strip and the timer, with Back to town on it (the
+	// Soundboard is in ⋯ since 2026-11-01).
 	await expect(page.getByTestId('history-strip')).toHaveAttribute('data-screenshot', 'skip');
 	await expect(page.locator('.board-timer .timer-slot')).toHaveAttribute('data-screenshot', 'skip');
 	// By its label: the open Export dialog hides the board from getByRole.
-	await expect(page.locator('.board-timer [aria-label="Soundboard"]')).toHaveAttribute(
-		'data-screenshot',
-		'skip'
-	);
+	await expect(page.locator('.board-timer .timer-slot [aria-label="Back to town"]')).toBeAttached();
 	await page.keyboard.press('Escape');
 
 	// The same from History, which opens the board first so the picture is the board
@@ -3274,8 +3272,7 @@ test("the Script button opens the players' copy of the script", async ({ page })
 // knows it (Travellers say who they are: https://wiki.bloodontheclocktower.com/Travellers).
 test('a Traveller in play is marked on the script with its player', async ({ page }) => {
 	await startGame(page);
-	await menu(page, 'Add seat');
-	await page.getByRole('button', { name: 'Place between Seat 8 and Seat 1' }).tap();
+	await addSeat(page, 'Place between Seat 8 and Seat 1');
 	const sheet = await openSeat(page, 9);
 	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
 	await page
@@ -3343,7 +3340,7 @@ test("the day's Announcements explain a kill that didn't happen", async ({ page 
 		await closeSheet(page);
 	}
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	const day = page.getByRole('dialog', { name: 'Day' });
+	const day = page.getByRole('dialog', { name: /^(Setup|Day( \d+)?)$/ });
 	// Nothing to explain yet: the button is there but off, so nothing moves (Trevor).
 	await expect(day.getByTestId('prevented-button')).toBeDisabled();
 	await day.getByRole('button', { name: 'Close' }).tap();
@@ -4480,7 +4477,7 @@ test('the Storm Catcher named character is picked before the day and kept at its
 	test.slow();
 	await stormCatcherGame(page);
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	const day = page.getByRole('dialog', { name: 'Day' });
+	const day = page.getByRole('dialog', { name: /^(Setup|Day( \d+)?)$/ });
 	const value = day.getByTestId('prep-value').first();
 	await expect(value).toHaveText('(CHARACTER)');
 	await value.tap();
@@ -4948,14 +4945,14 @@ test('the board menu names its groups, in two columns beside a phone', async ({ 
 				els.filter((e) => e.checkVisibility()).map((e) => (e.textContent ?? '').trim())
 			);
 	expect((await names('Game')).join(' ')).toMatch(
-		/^Players History Demon bluffs( Game info)? Game settings$/
+		/^Players History Demon bluffs Soundboard( Game info)? Game settings$/
 	);
 	expect((await names('Session')).join(' ')).toMatch(/^(Character selection )?End game$/);
 	const session = (await group('Session').boundingBox())!;
 	// Arranging seats, Open seating (plan J38) and Count off (J40) are one Seating mode
 	// (Trevor, 2026-10-31), which works with no room open too. Travellers choose (L102) comes
 	// with Add seat, not as its own button (Trevor, 2026-11-01).
-	expect(await names('Seats')).toEqual(['Add seat', 'Add Fabled or Loric', 'Seating']);
+	expect(await names('Seats')).toEqual(['Add Fabled or Loric', 'Seating']);
 	await expect(group('Seats').getByRole('button', { name: 'Seating' })).toBeEnabled();
 	expect(await names('App')).toEqual(['Settings', 'Report an issue']);
 	// Beside a phone, the game on the left and the rest on the right.

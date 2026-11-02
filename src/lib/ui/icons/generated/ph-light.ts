@@ -3,6 +3,8 @@ import type { IconMap } from '../types.ts';
 import ph_address_book_light from '~icons/ph/address-book-light';
 import ph_anchor_light from '~icons/ph/anchor-light';
 import ph_archive_light from '~icons/ph/archive-light';
+import ph_arrow_arc_left_light from '~icons/ph/arrow-arc-left-light';
+import ph_arrow_arc_right_light from '~icons/ph/arrow-arc-right-light';
 import ph_arrow_bend_up_right_light from '~icons/ph/arrow-bend-up-right-light';
 import ph_arrow_circle_right_light from '~icons/ph/arrow-circle-right-light';
 import ph_arrow_clockwise_light from '~icons/ph/arrow-clockwise-light';
@@ -75,6 +77,7 @@ import ph_dice_five_light from '~icons/ph/dice-five-light';
 import ph_door_light from '~icons/ph/door-light';
 import ph_door_open_light from '~icons/ph/door-open-light';
 import ph_dots_three_light from '~icons/ph/dots-three-light';
+import ph_dots_three_circle_light from '~icons/ph/dots-three-circle-light';
 import ph_dots_three_vertical_light from '~icons/ph/dots-three-vertical-light';
 import ph_download_simple_light from '~icons/ph/download-simple-light';
 import ph_drop_light from '~icons/ph/drop-light';
@@ -111,6 +114,7 @@ import ph_hand_grabbing_light from '~icons/ph/hand-grabbing-light';
 import ph_hand_heart_light from '~icons/ph/hand-heart-light';
 import ph_hand_palm_light from '~icons/ph/hand-palm-light';
 import ph_hand_pointing_light from '~icons/ph/hand-pointing-light';
+import ph_hand_tap_light from '~icons/ph/hand-tap-light';
 import ph_handbag_light from '~icons/ph/handbag-light';
 import ph_handshake_light from '~icons/ph/handshake-light';
 import ph_hard_drives_light from '~icons/ph/hard-drives-light';
@@ -142,6 +146,7 @@ import ph_lock_simple_light from '~icons/ph/lock-simple-light';
 import ph_magnifying_glass_light from '~icons/ph/magnifying-glass-light';
 import ph_mask_sad_light from '~icons/ph/mask-sad-light';
 import ph_megaphone_light from '~icons/ph/megaphone-light';
+import ph_megaphone_simple_light from '~icons/ph/megaphone-simple-light';
 import ph_minus_light from '~icons/ph/minus-light';
 import ph_minus_circle_light from '~icons/ph/minus-circle-light';
 import ph_monitor_light from '~icons/ph/monitor-light';
@@ -174,6 +179,7 @@ import ph_question_light from '~icons/ph/question-light';
 import ph_scales_light from '~icons/ph/scales-light';
 import ph_scan_light from '~icons/ph/scan-light';
 import ph_scroll_light from '~icons/ph/scroll-light';
+import ph_seal_check_light from '~icons/ph/seal-check-light';
 import ph_selection_light from '~icons/ph/selection-light';
 import ph_shapes_light from '~icons/ph/shapes-light';
 import ph_share_network_light from '~icons/ph/share-network-light';
@@ -198,6 +204,7 @@ import ph_speaker_high_light from '~icons/ph/speaker-high-light';
 import ph_spinner_light from '~icons/ph/spinner-light';
 import ph_square_light from '~icons/ph/square-light';
 import ph_square_split_horizontal_light from '~icons/ph/square-split-horizontal-light';
+import ph_stamp_light from '~icons/ph/stamp-light';
 import ph_star_light from '~icons/ph/star-light';
 import ph_star_half_light from '~icons/ph/star-half-light';
 import ph_sun_light from '~icons/ph/sun-light';
@@ -238,6 +245,8 @@ const icons: IconMap = {
 	'ph:address-book-light': ph_address_book_light,
 	'ph:anchor-light': ph_anchor_light,
 	'ph:archive-light': ph_archive_light,
+	'ph:arrow-arc-left-light': ph_arrow_arc_left_light,
+	'ph:arrow-arc-right-light': ph_arrow_arc_right_light,
 	'ph:arrow-bend-up-right-light': ph_arrow_bend_up_right_light,
 	'ph:arrow-circle-right-light': ph_arrow_circle_right_light,
 	'ph:arrow-clockwise-light': ph_arrow_clockwise_light,
@@ -310,6 +319,7 @@ const icons: IconMap = {
 	'ph:door-light': ph_door_light,
 	'ph:door-open-light': ph_door_open_light,
 	'ph:dots-three-light': ph_dots_three_light,
+	'ph:dots-three-circle-light': ph_dots_three_circle_light,
 	'ph:dots-three-vertical-light': ph_dots_three_vertical_light,
 	'ph:download-simple-light': ph_download_simple_light,
 	'ph:drop-light': ph_drop_light,
@@ -346,6 +356,7 @@ const icons: IconMap = {
 	'ph:hand-heart-light': ph_hand_heart_light,
 	'ph:hand-palm-light': ph_hand_palm_light,
 	'ph:hand-pointing-light': ph_hand_pointing_light,
+	'ph:hand-tap-light': ph_hand_tap_light,
 	'ph:handbag-light': ph_handbag_light,
 	'ph:handshake-light': ph_handshake_light,
 	'ph:hard-drives-light': ph_hard_drives_light,
@@ -377,6 +388,7 @@ const icons: IconMap = {
 	'ph:magnifying-glass-light': ph_magnifying_glass_light,
 	'ph:mask-sad-light': ph_mask_sad_light,
 	'ph:megaphone-light': ph_megaphone_light,
+	'ph:megaphone-simple-light': ph_megaphone_simple_light,
 	'ph:minus-light': ph_minus_light,
 	'ph:minus-circle-light': ph_minus_circle_light,
 	'ph:monitor-light': ph_monitor_light,
@@ -409,6 +421,7 @@ const icons: IconMap = {
 	'ph:scales-light': ph_scales_light,
 	'ph:scan-light': ph_scan_light,
 	'ph:scroll-light': ph_scroll_light,
+	'ph:seal-check-light': ph_seal_check_light,
 	'ph:selection-light': ph_selection_light,
 	'ph:shapes-light': ph_shapes_light,
 	'ph:share-network-light': ph_share_network_light,
@@ -433,6 +446,7 @@ const icons: IconMap = {
 	'ph:spinner-light': ph_spinner_light,
 	'ph:square-light': ph_square_light,
 	'ph:square-split-horizontal-light': ph_square_split_horizontal_light,
+	'ph:stamp-light': ph_stamp_light,
 	'ph:star-light': ph_star_light,
 	'ph:star-half-light': ph_star_half_light,
 	'ph:sun-light': ph_sun_light,

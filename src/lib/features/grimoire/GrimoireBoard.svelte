@@ -11,7 +11,6 @@
 	import AlignmentDraw from './AlignmentDraw.svelte';
 	import { endedGames, type EndedGame } from './device-notes.ts';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
-	import CallTownConfirm from '#lib/features/room/CallTownConfirm.svelte';
 	import RoomPanel from '#lib/features/room/RoomPanel.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import { gameSettings } from '#lib/features/game-settings/game-settings.svelte.ts';
@@ -65,7 +64,6 @@
 	} from '#lib/ui/seating/seat-layout.ts';
 	import { rememberBoard } from '#lib/ui/seating/last-board.svelte.ts';
 	import { SeatArranging } from './seat-arranging.svelte.ts';
-	import SeatingBar from './SeatingBar.svelte';
 	import { enterSeating, seatingRequested } from './seating-mode.svelte.ts';
 	import { BoardSizing, type BoardSizingContext } from './board-sizing.svelte.ts';
 	import { ReminderDragging } from './reminder-drag.svelte.ts';
@@ -82,7 +80,6 @@
 	import BoardRules from './BoardRules.svelte';
 	import CoverButton from '#lib/features/show/CoverButton.svelte';
 	import FairPlayNotice from '#lib/features/show/FairPlayNotice.svelte';
-	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import type { CoverDetails } from '#lib/features/show/CoverScreen.svelte';
 	import SavantSheet from '#lib/features/savant/SavantSheet.svelte';
 	import AidMenu from '#lib/features/settings/AidMenu.svelte';
@@ -399,7 +396,6 @@
 		if (selected !== undefined && !game.seats[selected]) sheetOpen = false;
 	});
 
-	// ── Travellers ──
 	// ── Placing a new seat: the Storyteller taps where it goes (Trevor, 2026-10-16) ──
 	let placing = $state<((position: number) => void) | undefined>();
 	/** Seats already placed but not added yet (late players), shown at their spots. */
@@ -428,6 +424,8 @@
 				})
 			: []
 	);
+	/** The seat just appears (Trevor, 2026-10-16); with a room open, Travellers choose follows. */
+	const onAddSeat = () => startPlacing((p) => travellersForNewSeat(grimoire.addSeat(p), watching));
 	function placeAt(position: number) {
 		const add = placing;
 		placing = undefined;
@@ -624,8 +622,14 @@
 	// ── Share: one screen, the room's join code, QR and link (Trevor, 2026-10-18). Phones
 	// that join get the script, never anything from the game but names and deaths. ──
 	let phonesOpen = $state(false);
-	/** Back to town's Cancel/Confirm, from ⋯ or from the grim cover. */
-	let callTownOpen = $state(false);
+	/**
+	 * Back to town on the day timer, on the board and in the day (Trevor, 2026-11-01); drawn,
+	 * disabled, without a live room, and on a spectator's board.
+	 */
+	const town = $derived({
+		can: !watching && !ended && !!roomHost().code,
+		called: roomHost().playersPhase(game.gameId)?.kind === 'town'
+	});
 	// ── The players' copy of the script ──
 	let scriptOpen = $state(false);
 	const loadedScript = $derived(
@@ -730,7 +734,6 @@
 </script>
 
 <!-- The Seating mode's bar, in the bank's token row (Trevor, 2026-10-31). -->
-{#snippet seatingBar()}<SeatingBar />{/snippet}
 
 {#snippet ruleTokens(tokenSize: number)}
 	<BoardRules
@@ -769,6 +772,7 @@
 		{seatArr}
 		placing={!!placing}
 		onCancelPlacing={() => (placing = undefined)}
+		{onAddSeat}
 		showing={showingGrim}
 		onStopShowing={() => {
 			showingGrim = false;
@@ -883,7 +887,6 @@
 				onHints={(h) => (hints.tray = h)}
 				run={flow.run}
 				disabled={watching}
-				instead={seatArr.arranging ? seatingBar : undefined}
 				{remDrag}
 				onRemove={(id) => moveConfirm?.requestReturn(id)}
 			/>
@@ -934,18 +937,9 @@
 		</BoardCorner>
 		<!-- A spectator is reminded the whole time they watch (Trevor, 2026-10-28). -->
 		{#if watching}<div class="fair-play"><FairPlayNotice kind="secret" short /></div>{/if}
-		<!-- The day timer (Trevor, 2026-10-17) and the Storyteller's soundboard beside it (2026-10-27),
-		     both left out of Export's picture (2026-11-01). -->
+		<!-- The day timer (Trevor, 2026-10-17), with Back to town at its front (2026-11-01), left
+		     out of Export's picture (2026-11-01). The Soundboard is in ⋯. -->
 		<div class="board-timer" bind:clientWidth={sizing.timerW} bind:clientHeight={sizing.timerH}>
-			{#if !watching}
-				<IconButton
-					icon="soundboard"
-					data-screenshot="skip"
-					label={t('settings.soundboard')}
-					outlined
-					onclick={() => (soundboardOpen = true)}
-				/>
-			{/if}
 			<!-- Once the game ends the timer keeps its room, unseen, so no seat moves. -->
 			<div class="timer-slot" class:gone={!showTimer} inert={!showTimer} data-screenshot="skip">
 				<DayTimer
@@ -953,6 +947,7 @@
 					variant="compact"
 					readOnly={watching || !showTimer}
 					shown={watchedTimer}
+					{town}
 				/>
 			</div>
 		</div>
@@ -979,20 +974,17 @@
 	ended={!!ended}
 	onHistory={() => (historyOpen = true)}
 	onBluffs={() => (bluffsOpen = true)}
-	onCallTown={!watching && !ended && roomHost().code ? () => (callTownOpen = true) : undefined}
+	onSoundboard={watching ? undefined : () => (soundboardOpen = true)}
 	onGameInfo={() => (modeMenuOpen = true)}
 	onCharacterSelection={startedAt === undefined && !setUp && !watching
 		? () => goto(resolve('/grimoire/[gameId]/setup', { gameId: game.gameId }))
 		: undefined}
-	onAddSeat={() =>
-		// The seat just appears (Trevor, 2026-10-16); with a room open, Travellers choose follows.
-		startPlacing((p) => travellersForNewSeat(grimoire.addSeat(p), watching))}
 	onAddRule={() => rules?.add()}
 	onArrange={() => enterSeating(seatArr)}
 	onExport={() => (exportOpen = true)}
 	onFeedback={watching ? undefined : () => (feedbackOpen = true)}
 	onReopen={() => (reopenOpen = true)}
-	onNewGame={watching ? undefined : () => newGameSheet?.begin()}
+	newGame={watching ? undefined : newGameSheet}
 	onCloseRoom={!watching && roomHost().code ? () => roomHost().close() : undefined}
 	onShareGrim={!watching &&
 	roomHost().status === 'open' &&
@@ -1031,6 +1023,7 @@
 	{grimoire}
 	{ended}
 	{endedText}
+	{phase}
 	bind:endOpen
 	bind:reopenOpen
 	onChange={() => (endedRead += 1)}
@@ -1055,7 +1048,7 @@
 
 <ReminderAsk {grimoire} />
 
-<PhaseDialogs {flow} {game} {characters} />
+<PhaseDialogs {flow} {game} {characters} notStarted={phaseNow.kind === 'setup'} />
 
 <LeaveGuard {game} {watching} />
 
@@ -1088,8 +1081,6 @@
 
 <BoardScriptDialog bind:open={scriptOpen} {...playerView} testid="script-scroll" />
 
-<CallTownConfirm bind:open={callTownOpen} />
-
 <!-- Over the board, so the Storyteller never leaves the game (Trevor, 2026-10-17). -->
 <Dialog bind:open={phonesOpen} title={t('room.title')} size="full" shownToPlayers>
 	<RoomPanel game={grimoire.open} />
@@ -1106,10 +1097,12 @@
 <DaySheet
 	bind:open={dayOpen}
 	game={grimoire.open}
+	phase={phaseNow}
 	cover={coverDetails}
 	{coverTimer}
 	{coverActions}
 	onSoundboard={watching ? undefined : () => (soundboardOpen = true)}
+	{town}
 	onEndDay={() => (flow.endDayOpen = true)}
 	onExecute={(seatId, cause) => flow.executeForMadness(seatId, cause)}
 	onSavant={(seatId) => {
@@ -1279,10 +1272,6 @@
 	}
 	.timer-slot.gone {
 		visibility: hidden;
-	}
-	/* The soundboard's button has the timer's solid fill, so it reads on any background. */
-	.board-timer :global(.icon-button[data-outlined]) {
-		background: var(--surface);
 	}
 	/* Small, in the board's top left corner, clear of the seats' ring. */
 	.rules-edge {

@@ -3,6 +3,8 @@ import type { IconMap } from '../types.ts';
 import ph_address_book_thin from '~icons/ph/address-book-thin';
 import ph_anchor_thin from '~icons/ph/anchor-thin';
 import ph_archive_thin from '~icons/ph/archive-thin';
+import ph_arrow_arc_left_thin from '~icons/ph/arrow-arc-left-thin';
+import ph_arrow_arc_right_thin from '~icons/ph/arrow-arc-right-thin';
 import ph_arrow_bend_up_right_thin from '~icons/ph/arrow-bend-up-right-thin';
 import ph_arrow_circle_right_thin from '~icons/ph/arrow-circle-right-thin';
 import ph_arrow_clockwise_thin from '~icons/ph/arrow-clockwise-thin';
@@ -75,6 +77,7 @@ import ph_dice_five_thin from '~icons/ph/dice-five-thin';
 import ph_door_thin from '~icons/ph/door-thin';
 import ph_door_open_thin from '~icons/ph/door-open-thin';
 import ph_dots_three_thin from '~icons/ph/dots-three-thin';
+import ph_dots_three_circle_thin from '~icons/ph/dots-three-circle-thin';
 import ph_dots_three_vertical_thin from '~icons/ph/dots-three-vertical-thin';
 import ph_download_simple_thin from '~icons/ph/download-simple-thin';
 import ph_drop_thin from '~icons/ph/drop-thin';
@@ -111,6 +114,7 @@ import ph_hand_grabbing_thin from '~icons/ph/hand-grabbing-thin';
 import ph_hand_heart_thin from '~icons/ph/hand-heart-thin';
 import ph_hand_palm_thin from '~icons/ph/hand-palm-thin';
 import ph_hand_pointing_thin from '~icons/ph/hand-pointing-thin';
+import ph_hand_tap_thin from '~icons/ph/hand-tap-thin';
 import ph_handbag_thin from '~icons/ph/handbag-thin';
 import ph_handshake_thin from '~icons/ph/handshake-thin';
 import ph_hard_drives_thin from '~icons/ph/hard-drives-thin';
@@ -142,6 +146,7 @@ import ph_lock_simple_thin from '~icons/ph/lock-simple-thin';
 import ph_magnifying_glass_thin from '~icons/ph/magnifying-glass-thin';
 import ph_mask_sad_thin from '~icons/ph/mask-sad-thin';
 import ph_megaphone_thin from '~icons/ph/megaphone-thin';
+import ph_megaphone_simple_thin from '~icons/ph/megaphone-simple-thin';
 import ph_minus_thin from '~icons/ph/minus-thin';
 import ph_minus_circle_thin from '~icons/ph/minus-circle-thin';
 import ph_monitor_thin from '~icons/ph/monitor-thin';
@@ -174,6 +179,7 @@ import ph_question_thin from '~icons/ph/question-thin';
 import ph_scales_thin from '~icons/ph/scales-thin';
 import ph_scan_thin from '~icons/ph/scan-thin';
 import ph_scroll_thin from '~icons/ph/scroll-thin';
+import ph_seal_check_thin from '~icons/ph/seal-check-thin';
 import ph_selection_thin from '~icons/ph/selection-thin';
 import ph_shapes_thin from '~icons/ph/shapes-thin';
 import ph_share_network_thin from '~icons/ph/share-network-thin';
@@ -198,6 +204,7 @@ import ph_speaker_high_thin from '~icons/ph/speaker-high-thin';
 import ph_spinner_thin from '~icons/ph/spinner-thin';
 import ph_square_thin from '~icons/ph/square-thin';
 import ph_square_split_horizontal_thin from '~icons/ph/square-split-horizontal-thin';
+import ph_stamp_thin from '~icons/ph/stamp-thin';
 import ph_star_thin from '~icons/ph/star-thin';
 import ph_star_half_thin from '~icons/ph/star-half-thin';
 import ph_sun_thin from '~icons/ph/sun-thin';
@@ -238,6 +245,8 @@ const icons: IconMap = {
 	'ph:address-book-thin': ph_address_book_thin,
 	'ph:anchor-thin': ph_anchor_thin,
 	'ph:archive-thin': ph_archive_thin,
+	'ph:arrow-arc-left-thin': ph_arrow_arc_left_thin,
+	'ph:arrow-arc-right-thin': ph_arrow_arc_right_thin,
 	'ph:arrow-bend-up-right-thin': ph_arrow_bend_up_right_thin,
 	'ph:arrow-circle-right-thin': ph_arrow_circle_right_thin,
 	'ph:arrow-clockwise-thin': ph_arrow_clockwise_thin,
@@ -310,6 +319,7 @@ const icons: IconMap = {
 	'ph:door-thin': ph_door_thin,
 	'ph:door-open-thin': ph_door_open_thin,
 	'ph:dots-three-thin': ph_dots_three_thin,
+	'ph:dots-three-circle-thin': ph_dots_three_circle_thin,
 	'ph:dots-three-vertical-thin': ph_dots_three_vertical_thin,
 	'ph:download-simple-thin': ph_download_simple_thin,
 	'ph:drop-thin': ph_drop_thin,
@@ -346,6 +356,7 @@ const icons: IconMap = {
 	'ph:hand-heart-thin': ph_hand_heart_thin,
 	'ph:hand-palm-thin': ph_hand_palm_thin,
 	'ph:hand-pointing-thin': ph_hand_pointing_thin,
+	'ph:hand-tap-thin': ph_hand_tap_thin,
 	'ph:handbag-thin': ph_handbag_thin,
 	'ph:handshake-thin': ph_handshake_thin,
 	'ph:hard-drives-thin': ph_hard_drives_thin,
@@ -377,6 +388,7 @@ const icons: IconMap = {
 	'ph:magnifying-glass-thin': ph_magnifying_glass_thin,
 	'ph:mask-sad-thin': ph_mask_sad_thin,
 	'ph:megaphone-thin': ph_megaphone_thin,
+	'ph:megaphone-simple-thin': ph_megaphone_simple_thin,
 	'ph:minus-thin': ph_minus_thin,
 	'ph:minus-circle-thin': ph_minus_circle_thin,
 	'ph:monitor-thin': ph_monitor_thin,
@@ -409,6 +421,7 @@ const icons: IconMap = {
 	'ph:scales-thin': ph_scales_thin,
 	'ph:scan-thin': ph_scan_thin,
 	'ph:scroll-thin': ph_scroll_thin,
+	'ph:seal-check-thin': ph_seal_check_thin,
 	'ph:selection-thin': ph_selection_thin,
 	'ph:shapes-thin': ph_shapes_thin,
 	'ph:share-network-thin': ph_share_network_thin,
@@ -433,6 +446,7 @@ const icons: IconMap = {
 	'ph:spinner-thin': ph_spinner_thin,
 	'ph:square-thin': ph_square_thin,
 	'ph:square-split-horizontal-thin': ph_square_split_horizontal_thin,
+	'ph:stamp-thin': ph_stamp_thin,
 	'ph:star-thin': ph_star_thin,
 	'ph:star-half-thin': ph_star_half_thin,
 	'ph:sun-thin': ph_sun_thin,
