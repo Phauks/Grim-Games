@@ -319,6 +319,16 @@ export type Command =
 			outcome?: ExecutionOutcome;
 	  }
 	/**
+	 * Logs that a player nominated the Storyteller, which any living player may do
+	 * (https://wiki.bloodontheclocktower.com/Atheist). It counts as their nomination today.
+	 */
+	| { type: 'NominateStoryteller'; nominator: SeatId }
+	/**
+	 * Logs that the Storyteller was executed. It ends the game (`gameEnds`): good wins if a
+	 * character in play says so (`storyteller-executed`, the Atheist), otherwise evil.
+	 */
+	| { type: 'ExecuteStoryteller' }
+	/**
 	 * Logs a Traveller's exile and marks them dead by exile, if alive. Not an execution. As
 	 * with `Execute`, a player whom the grimoire says cannot die (the Tea Lady's Cannot Die) is
 	 * logged as exiled and alive unless `dies`; `savedBy` is the character the Storyteller says

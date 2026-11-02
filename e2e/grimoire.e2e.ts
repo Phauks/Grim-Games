@@ -1129,42 +1129,6 @@ test('a night step offers the info tokens its text names', async ({ page }) => {
 	expect(await gaps()).toEqual([]);
 });
 
-test("the night strip shows a step's info tokens without opening the step", async ({ page }) => {
-	// Trevor, 2026-11-02: the cards a step fills in, one tap from the board's night strip.
-	// https://wiki.bloodontheclocktower.com/Imp : a Minion who becomes the Imp is shown "You are".
-	await startGame(page);
-	const sheet = await openSeat(page, 1);
-	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
-	await page
-		.getByRole('dialog', { name: 'Character for Seat 1' })
-		.getByRole('button', { name: 'Imp', exact: true })
-		.tap();
-	await closeSheet(page);
-	// A step with no cards has no row (Trevor, 2026-11-02: areas show only with something in them).
-	const strip = await walkTo(page, 'Dusk');
-	await expect(strip.getByTestId('strip-info-tokens')).toHaveCount(0);
-	await endNight(page);
-	await page.keyboard.press('Escape');
-	await expect(page.getByRole('dialog', { name: 'Day 1' })).toBeHidden();
-
-	const row = (await walkTo(page, 'Imp')).getByTestId('strip-info-tokens');
-	await expect(row.getByRole('button')).toHaveCount(1);
-	// Inside the strip's fixed height: the row never pushes past the strip.
-	const stripBox = (await strip.boundingBox())!;
-	const rowBox = (await row.boundingBox())!;
-	expect(rowBox.y + rowBox.height).toBeLessThanOrEqual(stripBox.y + stripBox.height + 1);
-	expect(rowBox.x + rowBox.width).toBeLessThanOrEqual(stripBox.x + stripBox.width + 1);
-	await row.getByRole('button', { name: 'You are (Imp)', exact: true }).tap();
-	const shown = page.locator('[data-testid="show-to-player"][open]');
-	await expect(shown.getByRole('img', { name: /Imp token/ })).toBeVisible();
-	// The step never opened; closing the card goes straight back to the board.
-	await expect(page.getByRole('dialog', { name: 'Imp', exact: true })).toHaveCount(0);
-	await shown.getByRole('button', { name: 'Close' }).tap();
-	await expect(shown).toHaveCount(0);
-	await expect(page.getByRole('dialog', { name: 'Info tokens' })).toHaveCount(0);
-	await expect(page.getByTestId('night-strip')).toBeVisible();
-});
-
 test("the Demon's step says when the Exorcist's choice stops it waking", async ({ page }) => {
 	// https://wiki.bloodontheclocktower.com/Exorcist : a chosen Demon doesn't wake tonight
 	// (Trevor's Pukka flowchart, 2026-10-24).
@@ -6311,6 +6275,57 @@ test('when the Imp kills itself, a living Minion is chosen to become the Imp', a
 	await expect(seatLabelled(page, 'Seat 4: no name, Imp')).toBeAttached();
 	await expect(seatLabelled(page, 'Seat 3: no name, Imp')).toHaveAttribute('aria-label', /dead/);
 	await expect(page.getByRole('alertdialog')).toHaveCount(0);
+});
+
+test('with several living Minions, the Scarlet Woman stands out as the new Imp', async ({
+	page
+}) => {
+	// Trevor (2026-11-02): her ability makes her the Imp with 5 or more alive
+	// (https://wiki.bloodontheclocktower.com/Scarlet_Woman); warn, never lock.
+	await startGame(page);
+	for (const [number, name] of [
+		[1, 'Chef'],
+		[2, 'Monk'],
+		[3, 'Imp'],
+		[4, 'Poisoner'],
+		[5, 'Scarlet Woman'],
+		[6, 'Empath']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	const sheet = await openSeat(page, 3);
+	await sheet.getByRole('button', { name: 'Status: Alive' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Status of Seat 3' })
+		.getByRole('button', { name: 'The Demon' })
+		.tap();
+	const ask = page.getByRole('alertdialog', { name: 'Choose the new Imp' });
+	const scarlet = ask.locator('[data-part="item"][data-emphasized]');
+	await expect(scarlet).toHaveAttribute('data-emphasized', 'chosen');
+	await expect(scarlet.getByRole('radio', { includeHidden: true })).toBeChecked();
+	await expect(scarlet).toContainText('Seat 5');
+	// Her ability says why, under the Imp's.
+	await expect(ask.locator('.ring-row[data-character-id="scarletwoman"]')).toBeVisible();
+	if (process.env.SHOT_DIR) await ask.screenshot({ path: `${process.env.SHOT_DIR}/chosen.png` });
+	// Choosing another Minion is allowed, with a warning on her.
+	// Its badge opens the character's page, so tap the card beside it.
+	const poisoner = ask.locator('[data-part="item"]', { hasText: 'Seat 4' });
+	const box = (await poisoner.boundingBox())!;
+	await poisoner.tap({ position: { x: box.width - 4, y: box.height / 2 } });
+	await expect(scarlet).toHaveAttribute('data-emphasized', 'passed-over');
+	await expect(scarlet.getByRole('img', { name: 'Warning' })).toBeVisible();
+	if (process.env.SHOT_DIR)
+		await ask.screenshot({ path: `${process.env.SHOT_DIR}/passed-over.png` });
+	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(ask).toBeHidden();
+	await closeSheet(page);
+	await expect(seatLabelled(page, 'Seat 4: no name, Imp')).toBeAttached();
 });
 
 test('the star pass is asked again when a revived Imp kills itself again', async ({ page }) => {

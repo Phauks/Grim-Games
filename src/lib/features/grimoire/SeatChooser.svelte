@@ -5,6 +5,7 @@
 	import type { CharacterLookup, Game, SeatId } from '#lib/core/model/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
+	import { t } from '#lib/i18n/locale.svelte.ts';
 
 	interface Props {
 		open: boolean;
@@ -20,6 +21,11 @@
 		onChoose: (seatId: SeatId) => void;
 		/** A first "None" row, for a choice that can be cleared (a nomination). */
 		onNone?: () => void;
+		/**
+		 * A last "Storyteller" row, for a nomination of the Storyteller (the Atheist on the
+		 * script, `storytellerNominee`).
+		 */
+		onStoryteller?: () => void;
 		/** Only these seats are offered (a nomination's nominator: not the dead). */
 		offer?: (seatId: SeatId) => boolean;
 		/** Marks at the end of each row, in a column of their own (today's nominations). */
@@ -41,6 +47,7 @@
 		exclude,
 		onChoose,
 		onNone,
+		onStoryteller,
 		offer,
 		rowMarks,
 		misfits
@@ -85,6 +92,16 @@
 				</li>
 			{/if}
 		{/each}
+		{#if onStoryteller}
+			<li>
+				<button
+					type="button"
+					class="none"
+					data-testid="choose-storyteller"
+					onclick={() => onStoryteller?.()}>{t('day.storyteller')}</button
+				>
+			</li>
+		{/if}
 	</ul>
 </Dialog>
 
