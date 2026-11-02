@@ -13,9 +13,10 @@
 	import { STANDARD_INFO_TOKENS, type CharacterId } from '#lib/core/data/index.ts';
 	import { believesDemon, TRAVELLER_ALIGNMENT_STEP } from '#lib/core/rules/index.ts';
 	import { seesGrimoire } from '#lib/core/rules/sees-grimoire.ts';
-	import type { SeatId } from '#lib/core/model/index.ts';
+	import { alignmentOf, type SeatId } from '#lib/core/model/index.ts';
 	import type { InfoChoice, InfoPicker, Night, NightStep } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
 	import BoardReminder from './BoardReminder.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import { TYPE_PLURALS } from '#lib/features/reference/labels.ts';
@@ -265,25 +266,46 @@
 		onpointercancel={() => (swipeFrom = undefined)}
 	>
 		{#if step}
-			<div class="head">
-				<span class="icon">
-					<StepIcon {step} size={56} details />
-				</span>
-				<div class="head-text">
-					<!-- An ability the Storyteller holds wakes nobody: the Storyteller acts. -->
-					<p class="who" data-testid="step-who">
-						{#if step.storytellerAbility}Storyteller{:else}{#each holders as s, i (s)}{i > 0
-									? ', '
-									: ''}<PlayerBadge name={seatName(game, s)} />{:else}None{/each}{/if}
-					</p>
-					<!-- The whole ability up top, beside the icon and name (Trevor, 2026-10-17). -->
-					{#if step.character?.ability}
-						<p class="ability" data-testid="step-ability">
-							<GlossaryText text={step.character.ability} names={[step.character.name]} />
-						</p>
-					{/if}
+			<!-- A character's step heads with the standard row, as every list of characters shows
+			     it (Trevor, 2026-11-02): icon in its ring, the name band with who wakes, the whole
+			     ability beneath. A step without a character keeps its marker and who wakes. -->
+			{#if step.character}
+				{@const one = !step.storytellerAbility && holders.length === 1 ? holders[0] : undefined}
+				<div class="row-head">
+					<CharacterRow
+						character={step.character}
+						info
+						alignment={one ? alignmentOf(game, one) : undefined}
+						playerName={one ? seatName(game, one) : undefined}
+					>
+						{#snippet afterName()}
+							<!-- An ability the Storyteller holds wakes nobody: the Storyteller acts. -->
+							{#if step.storytellerAbility}<span class="who" data-testid="step-who"
+									>Storyteller</span
+								>{:else if holders.length > 1}<span class="who" data-testid="step-who"
+									>{#each holders as s (s)}<PlayerBadge name={seatName(game, s)} />{/each}</span
+								>{/if}
+						{/snippet}
+						{#snippet ability()}<span data-testid="step-ability"
+								><GlossaryText
+									text={step.character!.ability}
+									names={[step.character!.name]}
+								/></span
+							>{/snippet}
+					</CharacterRow>
 				</div>
-			</div>
+			{:else}
+				<div class="head">
+					<span class="icon">
+						<StepIcon {step} size={56} details />
+					</span>
+					<p class="who" data-testid="step-who">
+						{#each holders as s, i (s)}{i > 0 ? ', ' : ''}<PlayerBadge
+								name={seatName(game, s)}
+							/>{:else}None{/each}
+					</p>
+				</div>
+			{/if}
 			<!-- What to do comes before any information (Trevor, 2026-10-20). -->
 			{#if step.reminder}
 				<p class="text">
@@ -556,18 +578,18 @@
 	.card-text {
 		font-weight: 600;
 	}
-	.head-text {
-		flex: 1;
-		min-width: 0;
-	}
 	.who {
 		margin: 0;
 		color: var(--on-surface-muted);
 	}
-	.ability {
-		margin: var(--space-1) 0 0;
-		font-family: var(--font-ability);
-		line-height: 1.4;
+	/* Several waking players, after the name on the band. */
+	span.who {
+		display: inline-flex;
+		gap: var(--space-1);
+		min-width: 0;
+	}
+	.row-head {
+		margin-bottom: var(--space-1);
 	}
 	.text {
 		font-family: var(--font-ability);

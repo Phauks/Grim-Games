@@ -3649,6 +3649,10 @@ test("a night step lists every copy of a character's reminder (the Mathematician
 	// The whole ability sits at the top, beside the icon and name.
 	await expect(guide.getByTestId('step-ability')).toContainText('abnormally');
 	await expect(guide.getByTestId('step-ability')).toBeInViewport();
+	// The standard character row (Trevor, 2026-11-02): its ring opens the character page.
+	await expect(guide.getByRole('button', { name: 'About the Mathematician' })).toBeVisible();
+	// Nobody is drunk or poisoned, so no Afflictions section (Trevor, 2026-11-02).
+	await expect(guide.getByRole('heading', { name: 'Afflictions' })).toHaveCount(0);
 	await page.screenshot({ path: `test-results/step-ability-${test.info().project.name}.png` });
 	// https://wiki.bloodontheclocktower.com/Mathematician : five "Abnormal" tokens in TPI's data.
 	const place = guide.getByRole('button', { name: 'Place' });

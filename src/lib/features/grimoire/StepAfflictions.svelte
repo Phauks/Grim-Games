@@ -9,8 +9,9 @@
 	/**
 	 * The waking players' afflictions, as their own section laid out like the step's
 	 * reminders (Trevor, 2026-10-17): drunk, poisoned or without an ability, the player, and
-	 * the character (with its player) causing it. From core's `nightStepAlerts`; "None" holds
-	 * the place when nobody is afflicted.
+	 * the character (with its player) causing it. From core's `nightStepAlerts`. Nothing at all
+	 * when nobody is afflicted: a step only shows sections with something in them (Trevor,
+	 * 2026-11-02).
 	 */
 	interface Props {
 		grimoire: Grimoire;
@@ -45,10 +46,8 @@
 		/>{:else}<strong>{playerName(seatId)}</strong>{/if}
 {/snippet}
 
-<h3>Afflictions</h3>
-{#if rows.length === 0}
-	<p class="none">None</p>
-{:else}
+{#if rows.length > 0}
+	<h3>Afflictions</h3>
 	<ul class="afflictions" data-testid="step-afflictions">
 		{#each rows as { seatId, impairment }, i (i)}
 			<li>
@@ -78,10 +77,6 @@
 	h3 {
 		margin: var(--space-3) 0 var(--space-1);
 		font-size: 0.95rem;
-	}
-	.none {
-		margin: 0;
-		color: var(--on-surface-muted);
 	}
 	.afflictions {
 		display: grid;
