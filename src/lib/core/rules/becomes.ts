@@ -5,6 +5,7 @@
  * Storyteller confirms it or leaves the player as they are.
  */
 import { rulesIn } from '#lib/core/data/rules/index.ts';
+import { abilityState } from './ability.ts';
 import { baseCounts } from './distribution.ts';
 import type { Alignment, CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
@@ -104,6 +105,16 @@ export function becomesOffer(
 	const rule = rulesIn(game, reminder.characterId, characters)?.becomes;
 	if (rule?.token !== reminder.label || (rule.when ?? 'placed') !== when) return undefined;
 	if (!game.seats[seatId]) return undefined;
+	// Its player's ability must work, unless the rule says even if drunk or poisoned.
+	const owners = game.seating.filter(
+		(id) => trueCharacter(game, id, characters) === reminder.characterId
+	);
+	if (
+		!rule.evenIfImpaired &&
+		owners.length > 0 &&
+		!owners.some((id) => abilityState(game, id, characters).works)
+	)
+		return undefined;
 	const isDemon = typeOf(game, seatId, characters) === 'demon';
 
 	if (rule.into === 'evil') {
@@ -317,18 +328,25 @@ function outwardSeats(
 
 /**
  * The players `characterId`'s `swapsCharacters` may choose to swap: those with a character,
- * except its `notTypes` (the Barber's "not another Demon").
+ * except its `notTypes` (the Barber's "not another Demon"). A player of its `chooser` type is
+ * still offered, as the one choosing may pick themself (the Demon), unless `first`, the player
+ * already picked, is of that type too: then they are "another" one.
  */
 export function swappableSeats(
 	game: Game,
 	characterId: CharacterId,
-	characters: CharacterLookup
+	characters: CharacterLookup,
+	first?: SeatId
 ): SeatId[] {
 	const rule = rulesIn(game, characterId, characters)?.swapsCharacters;
 	if (!rule) return [];
+	const barred = (rule.notTypes ?? []) as readonly string[];
+	const firstIsChooser = first !== undefined && typeOf(game, first, characters) === rule.chooser;
 	return game.seating.filter((id) => {
 		const type = typeOf(game, id, characters);
-		return type !== undefined && !(rule.notTypes as readonly string[] | undefined)?.includes(type);
+		if (type === undefined || id === first) return false;
+		if (!barred.includes(type)) return true;
+		return type === rule.chooser && !firstIsChooser;
 	});
 }
 
@@ -356,4 +374,25 @@ export function neighbourAlignments(
 		.filter((a) => !noGood || a !== 'good')
 		.sort();
 	return alignments.length ? { seatId, alignments } : undefined;
+}
+
+/**
+ * The players who may become `characterId` when its player dies (`passesOn`: the Farmer's
+ * alive good player, https://wiki.bloodontheclocktower.com/Farmer): alive ones when the rule
+ * says so, of its alignment when it names one, and never a player who already is that
+ * character. Empty for a character without the rule. The Storyteller picks among them.
+ */
+export function passOnSeats(
+	game: Game,
+	characterId: CharacterId,
+	characters: CharacterLookup
+): SeatId[] {
+	const rule = rulesIn(game, characterId, characters)?.passesOn;
+	if (!rule) return [];
+	return game.seating.filter(
+		(id) =>
+			trueCharacter(game, id, characters) !== characterId &&
+			(!rule.alive || !game.seats[id].dead) &&
+			(!rule.alignment || alignmentOf(game, id) === rule.alignment)
+	);
 }

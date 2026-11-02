@@ -44,6 +44,8 @@ export function valueText(game: DayGame, v: AnswerValue): string {
 		}
 		case 'number':
 			return String(v.value);
+		case 'alignment':
+			return v.value === 'good' ? 'Good' : v.value === 'evil' ? 'Evil' : 'Neither';
 		case 'none':
 			return v.reason;
 	}
