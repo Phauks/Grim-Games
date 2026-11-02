@@ -41,6 +41,7 @@ import { abilityState, type AbilitySource } from './ability.ts';
 import { carriesDemonToken, isExecution } from './death-causes.ts';
 import { jinxEnds } from './jinx-ends.ts';
 import { rebirthOf } from './reincarnation.ts';
+import { storytellerExecuted } from './storyteller-end.ts';
 
 const W = 'https://wiki.bloodontheclocktower.com/';
 
@@ -61,6 +62,8 @@ const W = 'https://wiki.bloodontheclocktower.com/';
  * - `extra-day`: on the extra day, a player was executed (their team loses) or nobody was
  *   (good wins);
  * - `cult-joined`: its player's vote passed today (`seats`: them);
+ * - `storyteller-executed`: the Storyteller was executed: `winner` from a character in play
+ *   (`seats`: its players, dead or alive), otherwise evil with no `characterId`;
  * - `demon-executed`: a special rule says good wins when a Demon dies by execution (Binary
  *   Supernovae), and one has (`seats`: the executed Demons; `ruleName`: the rule).
  */
@@ -692,9 +695,12 @@ export function gameEnds(
 	const game = inPlay(full);
 	if (game.seating.every((id) => game.seats[id].characterId === undefined)) return [];
 
-	const out: GameEnd[] = options.demonExecutedBy
-		? demonExecuted(game, characters, options.demonExecutedBy)
-		: [];
+	const out: GameEnd[] = [
+		...storytellerExecuted(days(game), endsOf(game, characters, 'storyteller-executed'), (id) =>
+			wikiOf(id, characters)
+		),
+		...(options.demonExecutedBy ? demonExecuted(game, characters, options.demonExecutedBy) : [])
+	];
 	const demon = demonDead(game, characters);
 	for (const end of demon) {
 		const mind = extraDay(game, characters, options, end);
