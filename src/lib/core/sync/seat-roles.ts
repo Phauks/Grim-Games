@@ -11,6 +11,8 @@
  */
 import { defaultAlignment, type Alignment, type CharacterId } from '#lib/core/data/index.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
+import { rulesOf } from '#lib/core/data/rules/index.ts';
+import { trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 import { standInKind } from '#lib/core/rules/bag-plan.ts';
 
@@ -39,10 +41,17 @@ export function seatRoles(game: Game, characters: CharacterLookup): Record<SeatI
 		}
 	}
 	const roles: Record<SeatId, SeatRole> = {};
+	// A rule character that hides roles (the Tor, https://wiki.bloodontheclocktower.com/Tor):
+	// living players learn nothing; each learns theirs on death (M22).
+	const hidden = [
+		...game.ruleCharacters,
+		...game.seating.flatMap((s) => game.seats[s]?.characterId ?? [])
+	].some((id) => rulesOf(id, characters)?.hidesRoles === true);
 	for (const seatId of game.seating) {
 		const seat = game.seats[seatId];
 		const truth = seat?.characterId && characters.get(seat.characterId);
 		if (!seat || !truth) continue;
+		if (hidden && !seat.dead) continue;
 		if (truth.type === 'traveller') {
 			// Nothing to tell until the Storyteller has chosen it.
 			if (seat.alignment) roles[seatId] = { alignment: seat.alignment };
@@ -51,7 +60,12 @@ export function seatRoles(game: Game, characters: CharacterLookup): Record<SeatI
 		const shows = shownBy.get(seatId);
 		if (shows === undefined && standInKind(truth)) continue;
 		const role: SeatRole = { characterId: shows ?? truth.id };
-		if (seat.alignment && seat.alignment !== defaultAlignment(truth.type))
+		// Measured against who they really are: a Marionette sits on a good token but is evil
+		// by their own type, and must think they are good, so nothing is said
+		// (https://wiki.bloodontheclocktower.com/Marionette). The Bounty Hunter's evil
+		// Townsfolk is told (https://wiki.bloodontheclocktower.com/Bounty_Hunter).
+		const real = characters.get(trueCharacter(game, seatId, characters) ?? '') ?? truth;
+		if (seat.alignment && seat.alignment !== defaultAlignment(real.type))
 			role.alignment = seat.alignment;
 		roles[seatId] = role;
 	}

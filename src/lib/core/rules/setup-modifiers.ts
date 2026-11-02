@@ -9,12 +9,16 @@
  * The reminder text is our own words.
  */
 import { rulesOf } from '#lib/core/data/rules/index.ts';
-import type { CountOp, SetupModifierRules } from '#lib/core/data/setup-modifier-rules.ts';
+import type {
+	AlignmentOp,
+	CountOp,
+	SetupModifierRules
+} from '#lib/core/data/setup-modifier-rules.ts';
 import type { Character, CharacterId } from '#lib/core/data/types.ts';
 import { wikiUrl } from '#lib/core/data/wiki.ts';
 import { SEATED_TYPES, type SeatedType } from './distribution.ts';
 
-export type { CountOp };
+export type { AlignmentOp, CountOp };
 
 export interface SetupModifier {
 	id: CharacterId;
@@ -27,10 +31,12 @@ export interface SetupModifier {
 	 * its type.
 	 */
 	requires?: CharacterId;
+	/** Players who start with the other alignment ("[1 Townsfolk is evil]"). */
+	alignments?: readonly AlignmentOp[];
 	/**
 	 * Extra copies of this same character that may go in the bag ("+0 to +2 Legionary" is
-	 * `[0, 1, 2]`). Read from homebrew text only; official characters with copies (Village
-	 * Idiot, Legion) say so in TPI's `special` data instead.
+	 * `[0, 1, 2]`). Read from homebrew text, or a rules block's `copies` (the Village Idiot's);
+	 * whether an official character may repeat at all is TPI's `special` data.
 	 */
 	copies?: readonly number[];
 	/** Extra Storyteller notes for setup (bag contents, seating), in our words. */
@@ -75,6 +81,8 @@ function fromRules(character: Character, entry: SetupModifierRules): SetupModifi
 		summary: entry.summary,
 		ops: entry.ops,
 		...(entry.requires ? { requires: entry.requires } : {}),
+		...(entry.alignments ? { alignments: entry.alignments } : {}),
+		...(entry.copies ? { copies: entry.copies } : {}),
 		notes: entry.notes ?? [],
 		...(wiki ? { wiki } : {}),
 		source: 'table'
@@ -111,6 +119,7 @@ export function modifierFromText(
 	const ops: CountOp[] = [];
 	const notes: string[] = [];
 	let requires: CharacterId | undefined;
+	const alignments: AlignmentOp[] = [];
 	let copies: readonly number[] | undefined;
 	const clean = text.replace(/[−–]/g, '-');
 
@@ -149,6 +158,15 @@ export function modifierFromText(
 			const type = TYPE_WORDS[m[1].toLowerCase()];
 			if (type) {
 				ops.push(any(type));
+				continue;
+			}
+		}
+		// "1 Townsfolk is evil": players of a type who start with the other alignment.
+		if ((m = /^(\d+)\s+(\w+)\s+(?:is|are)\s+(good|evil)$/i.exec(clause))) {
+			const type = TYPE_WORDS[m[2].toLowerCase()];
+			if (type && Number(m[1]) > 0) {
+				const alignment = m[3].toLowerCase() as AlignmentOp['alignment'];
+				alignments.push({ type, alignment, count: Number(m[1]) });
 				continue;
 			}
 		}
@@ -194,6 +212,7 @@ export function modifierFromText(
 		summary: text,
 		ops,
 		...(requires ? { requires } : {}),
+		...(alignments.length > 0 ? { alignments } : {}),
 		...(copies ? { copies } : {}),
 		notes,
 		...(wikiUrl(character) ? { wiki: wikiUrl(character) } : {}),

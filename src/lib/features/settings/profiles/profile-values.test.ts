@@ -47,9 +47,7 @@ describe('settings profile values', () => {
 		expect(read.preferences).not.toHaveProperty('allowZoom');
 		expect(read.boardLooks.vignette).toBe(false);
 		expect(read.background).toEqual({ kind: 'preset', id: 'felt' });
-		expect(
-			parseProfileValues({ background: { kind: 'preset', id: 'quicksand' } }).background
-		).toEqual({
+		expect(parseProfileValues({ background: { kind: 'preset', id: 'lava' } }).background).toEqual({
 			kind: 'none'
 		});
 	});

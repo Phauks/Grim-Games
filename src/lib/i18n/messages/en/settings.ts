@@ -171,9 +171,6 @@ export const settings = {
 	'settings.backgroundFile': 'Background image file',
 	'settings.backgroundSaveError': 'The background could not be saved on this device.',
 	'settings.backgroundImageError': 'That file could not be read as an image.',
-	'settings.movingBackgrounds': 'Moving backgrounds',
-	'settings.movingBackgroundsHelp':
-		'Off, or while your device asks for less motion, a moving background stays still.',
 	'settings.vignette': 'Vignette',
 	'settings.vignetteStrength': 'Vignette strength',
 	'settings.scriptLogo': 'Script logo',
@@ -216,9 +213,6 @@ export const settings = {
 	'settings.requireName': 'Require a name before drawing',
 	'settings.holdToReveal': 'Hold to see character',
 	'settings.slotMachine': 'Slot machine reveal',
-	'settings.travellersChoose': 'Travellers choose on their phones',
-	'settings.travellersChooseHelp':
-		'Random selection leaves the Travellers for players past 15 open; send them the choice from ⋯ › Travellers choose.',
 	'settings.ownWording': 'Show our own wording',
 	'settings.ownWordingHelp':
 		'Game mode descriptions written for this app. Off, a mode shows its source link instead.',
