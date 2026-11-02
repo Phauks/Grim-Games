@@ -20,6 +20,7 @@ export const ASSIST_KEYS = [
 	'trackNominations',
 	'dayAfterNight',
 	'stackReminders',
+	'characterTokens',
 	'explainTerms'
 ] as const;
 export type AssistKey = (typeof ASSIST_KEYS)[number];
@@ -98,6 +99,11 @@ export const ASSIST_LABELS: Record<AssistKey, { label: string; description: stri
 		label: 'Stack duplicate reminders',
 		description:
 			'Show several copies of one reminder as a single token with a count. Off shows each copy.'
+	},
+	characterTokens: {
+		label: 'Show characters as tokens',
+		description:
+			'When you show a player a character, such as You are, a big token with its name and ability. Off lists them as the script does.'
 	},
 	// Shown in Settings › Rules terms, not Storyteller settings: players use it too (Trevor).
 	explainTerms: {
