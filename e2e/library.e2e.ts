@@ -970,7 +970,8 @@ test('game mode and special rule files are Library items, added and opened like 
 		id: 'tiny-mode',
 		name: 'Tiny Mode',
 		sources: [{ title: 'Our group', url: 'https://example.com/tiny' }],
-		parts: { restricted: { banned: ['pithag'] } }
+		// Setting the counts makes it a game mode (one format, labelled by its parts).
+		parts: { counts: { kind: 'standard' }, restricted: { banned: ['pithag'] } }
 	});
 	const mode = pane(page, 'Tiny Mode');
 	await expect(mode.getByTestId('library-mode')).toBeVisible();

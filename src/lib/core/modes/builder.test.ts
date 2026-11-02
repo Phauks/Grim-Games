@@ -15,21 +15,17 @@ import {
 	partFields,
 	pathText,
 	setAt,
-	topFields,
-	type BuildKind
+	topFields
 } from './builder.ts';
+import { fileKind } from './file-kind.ts';
 import { GUIDE_PARTS, GUIDE_TOP } from './mode-guide.ts';
-import { RULE_GUIDE_PARTS, RULE_GUIDE_TOP } from './rule-guide.ts';
-import { parseGameMode, parseSpecialRule } from './validate.ts';
-import { STACKING_PARTS } from './types.ts';
+import { FILE_GUIDE_PARTS } from './rule-guide.ts';
+import { parseModeOrRule } from './validate.ts';
+import { FILE_PARTS, WHOLE_GAME_PARTS } from './types.ts';
 
 const allFields = () => [
 	...GUIDE_TOP,
-	...RULE_GUIDE_TOP,
-	...[...GUIDE_PARTS, ...RULE_GUIDE_PARTS].flatMap((p) => [
-		...p.fields,
-		...p.kinds.flatMap((k) => k.fields)
-	])
+	...FILE_GUIDE_PARTS.flatMap((p) => [...p.fields, ...p.kinds.flatMap((k) => k.fields)])
 ];
 
 describe('the Mode builder form, drawn from the format guide', () => {
@@ -38,15 +34,14 @@ describe('the Mode builder form, drawn from the format guide', () => {
 		expect(unknown).toEqual([]);
 	});
 
-	it('offers every part of the guide: a mode all of them, a rule its own and the stacking ones', () => {
-		expect(buildParts('game-mode').map((p) => p.part)).toEqual(GUIDE_PARTS.map((p) => p.part));
-		const rule = buildParts('special-rule').map((p) => p.part);
-		for (const p of RULE_GUIDE_PARTS) expect(rule).toContain(p.part);
-		for (const p of STACKING_PARTS) expect(rule).toContain(p);
+	it('offers every part of the format, those that make a game mode apart', () => {
+		const { any, wholeGame } = buildParts();
+		expect(wholeGame.map((p) => p.part)).toEqual([...WHOLE_GAME_PARTS]);
+		expect([...any, ...wholeGame].map((p) => p.part).sort()).toEqual([...FILE_PARTS].sort());
 	});
 
 	it('leaves the kind, format, revision and parts to the builder', () => {
-		const names = topFields('special-rule').map((f) => f.name);
+		const names = topFields().map((f) => f.name);
 		expect(names).toContain('id');
 		expect(names).not.toContain('format');
 		expect(names).not.toContain('parts');
@@ -71,20 +66,21 @@ describe('the Mode builder form, drawn from the format guide', () => {
 			'cite',
 			'instructions'
 		]);
-		for (const kind of ['game-mode', 'special-rule'] as BuildKind[]) {
-			const file = { ...emptyFile(kind), id: 'mine', name: 'Mine' };
-			const parse = kind === 'game-mode' ? parseGameMode : parseSpecialRule;
-			expect(parse(file).ok, kind).toBe(true);
-			for (const part of buildParts(kind)) {
-				const value = newPartValue(part);
-				const withPart = setAt(file, ['parts', part.part], part.list ? [value] : value);
-				// Problems may be listed (required fields), but always at the part.
-				const parsed = parse(withPart);
-				if (!parsed.ok)
-					for (const issue of parsed.issues)
-						expect(issue.startsWith(`parts.${part.part}`), `${kind} ${issue}`).toBe(true);
-			}
+		const file = { ...emptyFile(), id: 'mine', name: 'Mine' };
+		expect(parseModeOrRule(file).ok).toBe(true);
+		const { any, wholeGame } = buildParts();
+		for (const part of [...any, ...wholeGame]) {
+			const value = newPartValue(part);
+			const withPart = setAt(file, ['parts', part.part], part.list ? [value] : value);
+			// Problems may be listed (required fields), but always at the part.
+			const parsed = parseModeOrRule(withPart);
+			if (!parsed.ok)
+				for (const issue of parsed.issues)
+					expect(issue.startsWith(`parts.${part.part}`), issue).toBe(true);
 		}
+		// The empty file is a special rule; a whole-game part makes it a game mode.
+		expect(fileKind(file)).toBe('special-rule');
+		expect(fileKind(setAt(file, ['parts', 'counts'], { kind: 'standard' }))).toBe('game-mode');
 	});
 });
 
@@ -115,9 +111,11 @@ describe('editing the file', () => {
 });
 
 describe('telling a mode file from a script', () => {
-	it('reads a game mode or special rule file, and not a script or a character', () => {
-		expect(modeFileKind(emptyFile('game-mode'))).toBe('game-mode');
-		expect(modeFileKind(emptyFile('special-rule'))).toBe('special-rule');
+	it('reads a mode file, labelled by its parts, and not a script or a character', () => {
+		// Labelled by its parts: one that sets the whole game is a game mode.
+		const counts = { kind: 'standard' };
+		expect(modeFileKind({ ...emptyFile(), parts: { counts } })).toBe('game-mode');
+		expect(modeFileKind(emptyFile())).toBe('special-rule');
 		expect(modeFileKind([{ id: '_meta', name: 'S' }, 'washerwoman'])).toBeUndefined();
 		expect(modeFileKind({ id: 'x', name: 'X', ability: 'Each night...' })).toBeUndefined();
 		expect(modeFileKind({ format: 1, parts: [] })).toBeUndefined();

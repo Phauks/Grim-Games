@@ -1,10 +1,15 @@
 /**
- * Reads the `registersAs` part of a character's rules block (types in `character-rules.ts`):
+ * Reads the `registersAs` part of a character's rules block:
  * the Spy and Recluse themselves, and tokens such as the Lycanthrope's Faux Paw on a carrier.
  */
-import type { RegistersAs, TokenRegisters } from './character-rules.ts';
 import { ownReminder, readToken } from './reminder-fields.ts';
-import { ALIGNMENTS, CHARACTER_TYPES, type ReminderLabel } from './types.ts';
+import {
+	ALIGNMENTS,
+	CHARACTER_TYPES,
+	type Alignment,
+	type CharacterType,
+	type ReminderLabel
+} from './types.ts';
 import {
 	checkKeys,
 	describe,
@@ -14,6 +19,37 @@ import {
 	readStringArray,
 	type Issues
 } from './validate.ts';
+
+/** What a player may also register as, besides their true alignment and character type. */
+export interface Registers {
+	alignments?: readonly Alignment[];
+	types?: readonly CharacterType[];
+}
+
+/**
+ * Who may register as something else while this character's ability works: `self`, its own
+ * player, even if dead (the Spy as good and a Townsfolk or Outsider, the Recluse as evil and a
+ * Minion or Demon); `tokens`, the player carrying one of its reminders, by label, only while
+ * their alignment is `carrierAlignment` when given (the Lycanthrope's "Faux Paw" on a good
+ * player, as evil; `TokenRegisters`). A Fabled's tokens work while it is in play.
+ */
+export interface RegistersAs {
+	self?: Registers;
+	tokens?: Readonly<Record<ReminderLabel, TokenRegisters>>;
+}
+
+/**
+ * A `registersAs.tokens` entry. `asAnything`: the carrier may register as either alignment and
+ * any seated character type, its true ones first; `whileToken`: only while another of this
+ * character's reminders is still in play (the Revolutionary's pair, each "Aligned", may
+ * register falsely until "Register Falsely?" comes off,
+ * https://wiki.bloodontheclocktower.com/Revolutionary).
+ */
+export type TokenRegisters = Registers & {
+	carrierAlignment?: Alignment;
+	asAnything?: true;
+	whileToken?: ReminderLabel;
+};
 
 function readEnumList<T extends string>(
 	raw: Record<string, unknown>,

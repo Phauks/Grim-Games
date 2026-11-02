@@ -9,12 +9,13 @@
  */
 import { CITE, GAME_MODE_REVISION, IDS, INSTRUCTIONS, TYPES } from './guide-fields.ts';
 import type { GuideField, GuidePart } from './guide-fields.ts';
-import { GUIDE_PARTS, GUIDE_TOP } from './mode-guide.ts';
-import { RULE_GUIDE_PARTS, RULE_GUIDE_TOP } from './rule-guide.ts';
-import { GAME_MODE_FORMAT, SPECIAL_RULE_FORMAT, STACKING_PARTS } from './types.ts';
+import { GUIDE_TOP } from './mode-guide.ts';
+import { FILE_GUIDE_PARTS } from './rule-guide.ts';
+import { GAME_MODE_FORMAT, WHOLE_GAME_PARTS } from './types.ts';
+import { fileKind, type FileKind } from './file-kind.ts';
 
-/** What the builder makes: a game mode, or a special rule that stacks on one. */
-export type BuildKind = 'game-mode' | 'special-rule';
+/** What the builder makes: a game mode, or a special rule that stacks on one (`fileKind`). */
+export type BuildKind = FileKind;
 
 /** How a field is edited, read from the guide's description of its type. */
 export type FieldControl =
@@ -69,19 +70,24 @@ export function knownType(type: string): boolean {
 	return type in CONTROLS || JSON_TYPES.has(type);
 }
 
-/** Top-level fields the builder fills in itself: the kind, format, revision and parts. */
+/** Top-level fields the builder fills in itself: the format, revision and parts. */
 const AUTOMATIC = new Set(['kind', 'format', 'revision', 'parts']);
 
 /** The file's own fields (id, name, sources and the rest), as the guide lists them. */
-export function topFields(kind: BuildKind): GuideField[] {
-	return (kind === 'game-mode' ? GUIDE_TOP : RULE_GUIDE_TOP).filter((f) => !AUTOMATIC.has(f.name));
+export function topFields(): GuideField[] {
+	return GUIDE_TOP.filter((f) => !AUTOMATIC.has(f.name));
 }
 
-/** The parts a file of this kind may set: a rule's own, then the mode parts it may stack. */
-export function buildParts(kind: BuildKind): GuidePart[] {
-	if (kind === 'game-mode') return GUIDE_PARTS;
-	const stacking: readonly string[] = STACKING_PARTS;
-	return [...RULE_GUIDE_PARTS, ...GUIDE_PARTS.filter((p) => stacking.includes(p.part))];
+/**
+ * Every part a file can set, in two groups (Trevor, 2026-11-01: one format, auto-labelled):
+ * the parts any file can set, then those that make it a game mode (`WHOLE_GAME_PARTS`).
+ */
+export function buildParts(): { any: GuidePart[]; wholeGame: GuidePart[] } {
+	const whole: readonly string[] = WHOLE_GAME_PARTS;
+	return {
+		any: FILE_GUIDE_PARTS.filter((p) => !whole.includes(p.part)),
+		wholeGame: FILE_GUIDE_PARTS.filter((p) => whole.includes(p.part))
+	};
 }
 
 /** A part whose items are plain lines (a rule's `text`): no fields and no kinds. */
@@ -95,11 +101,10 @@ export function partFields(part: GuidePart, kind: string | undefined): GuideFiel
 	return [...part.fields, ...own, CITE, INSTRUCTIONS];
 }
 
-/** A new, empty file of this kind: nothing but what every file needs. */
-export function emptyFile(kind: BuildKind): Record<string, unknown> {
+/** A new, empty file: nothing but what every file needs. Its parts make it a mode or a rule. */
+export function emptyFile(): Record<string, unknown> {
 	return {
-		...(kind === 'special-rule' ? { kind } : {}),
-		format: kind === 'game-mode' ? GAME_MODE_FORMAT : SPECIAL_RULE_FORMAT,
+		format: GAME_MODE_FORMAT,
 		revision: GAME_MODE_REVISION,
 		id: '',
 		name: '',
@@ -108,15 +113,11 @@ export function emptyFile(kind: BuildKind): Record<string, unknown> {
 	};
 }
 
-/** What a file is, from its own `kind`. */
-export function buildKindOf(file: Record<string, unknown>): BuildKind {
-	return file.kind === 'special-rule' ? 'special-rule' : 'game-mode';
-}
-
 /**
  * Whether loaded JSON is a mode file, and which kind (the Library's Add takes them beside
- * scripts): an object with a numeric `format` and a `parts` object. A script is a list, and
- * a single character has no `parts`, so neither reads as one.
+ * scripts): an object with a numeric `format` and a `parts` object, labelled by its parts
+ * (`fileKind`). A script is a list, and a single character has no `parts`, so neither reads
+ * as one.
  */
 export function modeFileKind(json: unknown): BuildKind | undefined {
 	if (typeof json !== 'object' || json === null || Array.isArray(json)) return undefined;
@@ -125,7 +126,7 @@ export function modeFileKind(json: unknown): BuildKind | undefined {
 	if (typeof file.format !== 'number' || typeof parts !== 'object' || parts === null) {
 		return undefined;
 	}
-	return Array.isArray(parts) ? undefined : buildKindOf(file);
+	return Array.isArray(parts) ? undefined : fileKind(file);
 }
 
 /** A new part or list item: its first kind, or no fields at all. */
