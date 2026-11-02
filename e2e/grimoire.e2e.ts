@@ -3227,9 +3227,9 @@ test("the Script button opens the players' copy of the script", async ({ page })
 	await startGame(page);
 	await page.getByRole('button', { name: 'Script', exact: true }).tap();
 	const sheet = page.getByRole('dialog', { name: 'Trouble Brewing' });
-	// The same component as /play's Script tab (Trevor, 2026-10-16): 22 characters plus the
-	// edition's 5 recommended Travellers (wiki: Trouble Brewing).
-	await expect(sheet.locator('[data-character]')).toHaveCount(27);
+	// The same component as /play's Script tab (Trevor, 2026-10-16): 22 characters. In a game
+	// the Travellers are the ones in play, none yet (Trevor, 2026-11-02).
+	await expect(sheet.locator('[data-character]')).toHaveCount(22);
 	// Like /play's title line (Trevor, 2026-10-19): who wrote it, Print and Share.
 	await expect(sheet.getByTestId('script-byline')).toHaveText('by The Pandemonium Institute');
 	for (const name of ['Print script', 'Share script'])
@@ -3239,7 +3239,7 @@ test("the Script button opens the players' copy of the script", async ({ page })
 	);
 	// In a game, Travellers and Jinxes start closed while none of theirs is in play
 	// (Trevor, 2026-10-18); the header still opens them.
-	const travellers = sheet.getByRole('button', { name: 'Recommended Travellers' });
+	const travellers = sheet.getByRole('button', { name: 'Travellers', exact: true });
 	await expect(travellers).toHaveAttribute('aria-expanded', 'false');
 	await expect(sheet.getByRole('button', { name: 'Jinxes' })).toHaveAttribute(
 		'aria-expanded',
@@ -3247,7 +3247,7 @@ test("the Script button opens the players' copy of the script", async ({ page })
 	);
 	await expect(sheet.getByTestId('no-jinxes')).toBeHidden();
 	await travellers.tap();
-	await expect(sheet.locator('[data-character="gunslinger"]')).toBeVisible();
+	await expect(sheet.getByTestId('no-travellers')).toHaveText('None');
 	// It scrolls to the end (Trevor, 2026-10-16: it couldn't be scrolled).
 	const scroller = sheet.getByTestId('script-scroll');
 	const box = (await scroller.boundingBox())!;
@@ -3287,11 +3287,14 @@ test('a Traveller in play is marked on the script with its player', async ({ pag
 	await closeSheet(page);
 	await page.getByRole('button', { name: 'Script', exact: true }).tap();
 	const script = page.getByRole('dialog', { name: 'Trouble Brewing' });
-	const travellers = script.getByRole('button', { name: 'Recommended Travellers' });
+	const travellers = script.getByRole('button', { name: 'Travellers', exact: true });
 	await expect(travellers).toHaveAttribute('aria-expanded', 'true');
 	await expect(
 		script.locator('[data-character="thief"]').getByTestId('traveller-in-play')
 	).toHaveText('In play: Seat 9');
+	// Only the Travellers in play, each marked recommended or not (Trevor, 2026-11-02).
+	await expect(script.locator('[data-character="thief"]')).toContainText('Recommended');
+	await expect(script.locator('[data-character="gunslinger"]')).toHaveCount(0);
 	// The Players section counts the Traveller apart, and the Sentinel the Storyteller
 	// announces makes the Outsiders 0 to 2 (Trevor, 2026-10-27;
 	// https://wiki.bloodontheclocktower.com/Sentinel).

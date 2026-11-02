@@ -60,15 +60,25 @@
 		if (!officialData.current) void loadOfficialData();
 	});
 	const data = $derived(officialData.current);
-	// A Traveller in play that the script doesn't list still shows, so its player is named.
+	const listed = $derived(data ? sheetCharacters(script, data) : []);
+	/** The script's recommended Travellers, marked as such on their rows. */
+	const recommended = $derived(
+		new Set(listed.filter((c) => c.type === 'traveller').map((c) => c.id))
+	);
+	// In a game the Travellers are the ones in play, each marked recommended or not, rather
+	// than the recommended list (Trevor, 2026-11-02: a Voudon added though not recommended
+	// showed under Recommended Travellers). Outside a game, the recommended ones.
 	const characters = $derived.by(() => {
 		if (!data) return [];
-		const listed = sheetCharacters(script, data);
-		const extra = (travellers ?? [])
-			.map((p) => p.characterId)
-			.filter((id, i, all) => all.indexOf(id) === i && !listed.some((c) => c.id === id))
-			.flatMap((id) => data.byId.get(id) ?? []);
-		return [...listed, ...extra];
+		if (inPlay === undefined && travellers === undefined) return listed;
+		const ids = [...(travellers ?? []).map((p) => p.characterId), ...(inPlay ?? [])];
+		const playing = ids
+			.filter((id, i) => ids.indexOf(id) === i)
+			.flatMap((id) => {
+				const c = listed.find((l) => l.id === id) ?? data.byId.get(id);
+				return c?.type === 'traveller' ? [c] : [];
+			});
+		return [...listed.filter((c) => c.type !== 'traveller'), ...playing];
 	});
 	const jinxes = $derived(data ? playerJinxes(script, data) : []);
 	// A custom Fabled or Loric is found on the script.
@@ -105,6 +115,7 @@
 			{players}
 			{inPlay}
 			{travellers}
+			{recommended}
 			{rules}
 			{ruleCharacters}
 			{showBreakdown}
