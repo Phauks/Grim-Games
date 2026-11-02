@@ -14,8 +14,15 @@ import {
 	jinxIsExclusive,
 	jinxRulesBetween,
 	jinxSetupWarnings,
+	jinxedWith,
+	ownJinxes,
+	ownJinxRules,
+	registeredTo,
 	scriptJinxes
 } from './jinxes.ts';
+import { readJinxRules } from '#lib/core/data/jinx-rules.ts';
+import { Issues } from '#lib/core/data/validate.ts';
+import type { Script } from '#lib/core/data/index.ts';
 
 const data = committedGameData();
 const name = (id: string) => data.byId.get(id)?.name ?? id;
@@ -104,7 +111,78 @@ describe('jinx rules data', () => {
 	it('reads either side of the pair, and nothing for a jinx that is text only', () => {
 		expect(jinxRulesBetween('boffin', 'drunk')).toEqual({ notGiven: true });
 		expect(jinxRulesBetween('drunk', 'boffin')).toEqual({ notGiven: true });
-		expect(jinxRulesBetween('spy', 'magician')).toBeUndefined();
+		expect(jinxRulesBetween('alchemist', 'boffin')).toBeUndefined();
+	});
+
+	it('reads the jinx rules that reuse other rules, and rejects bad ones', () => {
+		const issues = new Issues();
+		expect(
+			readJinxRules(
+				{
+					a: { registersTo: { alignments: ['evil'], always: true } },
+					b: { impairsPartner: 'poisoned', noKill: 'token' },
+					c: { noGrimoire: true, grimoireHides: ['partner', 'demon'] }
+				},
+				'jinxes',
+				issues
+			)
+		).toEqual({
+			a: { registersTo: { alignments: ['evil'], always: true } },
+			b: { impairsPartner: 'poisoned', noKill: 'token' },
+			c: { noGrimoire: true, grimoireHides: ['partner', 'demon'] }
+		});
+		expect(issues.list).toEqual([]);
+		const bad = new Issues();
+		readJinxRules(
+			{
+				a: { registersTo: { always: true } },
+				b: { impairsPartner: 'no-ability' },
+				c: { noKill: 'sometimes' },
+				d: { grimoireHides: ['minion', 'everyone'] }
+			},
+			'jinxes',
+			bad
+		);
+		expect(bad.list).toHaveLength(8);
+	});
+
+	it("reads only the owner's side for what one character does to the other", () => {
+		const of = (ids: string[]): Script => ({
+			meta: { name: 'Jinxed' },
+			entries: ids.map((id) => ({ kind: 'official' as const, id }))
+		});
+		const script = of(['spy', 'chef', 'imp']);
+		const both = { script: of(['spy', 'chef', 'imp', 'ogre']) };
+		expect(ownJinxRules(both, 'spy', 'ogre')?.registersTo).toEqual({
+			alignments: ['evil'],
+			always: true
+		});
+		expect(ownJinxRules(both, 'ogre', 'spy')).toBeUndefined();
+		// Not in effect unless the script holds both.
+		expect(ownJinxRules({ script }, 'spy', 'ogre')).toBeUndefined();
+		expect(ownJinxes(both, 'spy', (r) => r.registersTo !== undefined)).toEqual([
+			{ partner: 'ogre', rule: { registersTo: { alignments: ['evil'], always: true } } }
+		]);
+		expect(jinxedWith(both, 'ogre', (r) => r.registersTo !== undefined)).toEqual([
+			{ characterId: 'spy', rule: { registersTo: { alignments: ['evil'], always: true } } }
+		]);
+	});
+
+	it('adds a jinx registration to the usual ones, or replaces them when always', () => {
+		const usual = {
+			alignments: ['evil', 'good'] as const,
+			types: ['minion', 'townsfolk'] as const
+		};
+		expect(registeredTo(usual, { alignments: ['evil'], always: true })).toEqual({
+			alignments: ['evil'],
+			types: ['minion', 'townsfolk']
+		});
+		expect(
+			registeredTo({ alignments: ['good'], types: ['townsfolk'] }, { alignments: ['evil'] })
+		).toEqual({ alignments: ['good', 'evil'], types: ['townsfolk'] });
+		expect(
+			registeredTo({ alignments: ['evil'], types: ['minion'] }, { types: ['demon'], always: true })
+		).toEqual({ alignments: ['evil'], types: ['demon'] });
 	});
 
 	it("reads a custom character's own jinx rules", () => {

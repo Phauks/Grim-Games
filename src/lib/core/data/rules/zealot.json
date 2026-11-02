@@ -20,5 +20,17 @@
 	},
 	"deathCause": {
 		"none": "vote restriction"
+	},
+	"jinxes": {
+		"legion": {
+			"registersTo": {
+				"alignments": ["evil"]
+			}
+		},
+		"vizier": {
+			"registersTo": {
+				"alignments": ["evil"]
+			}
+		}
 	}
 }
