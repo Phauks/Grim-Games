@@ -48,7 +48,10 @@ import {
  * - `alignment-alive`: while its player lives, at most `alive` players of `alignment` live
  *   (Travellers not counted), so `winner` wins (Legion with one good player left);
  * - `guesses-evil-team`: its player's logged guesses name every Demon as a Demon and every
- *   Minion as a Minion, and nobody else, so `winner` wins (the Alsaahir).
+ *   Minion as a Minion, and nobody else, so `winner` wins (the Alsaahir);
+ * - `cult-joined`: its player's vote passed today (`dayUse.vote`, marked when its use is), so
+ *   its player's team wins (the Cult Leader's cult,
+ *   https://wiki.bloodontheclocktower.com/Cult_Leader).
  */
 const END_KINDS = [
 	'executed-loses',
@@ -63,7 +66,8 @@ const END_KINDS = [
 	'used-on-loses',
 	'executed-with-token',
 	'alignment-alive',
-	'guesses-evil-team'
+	'guesses-evil-team',
+	'cult-joined'
 ] as const;
 export type EndKind = (typeof END_KINDS)[number];
 export interface EndsGame {
@@ -130,7 +134,8 @@ const END_NEEDS: Readonly<Record<EndKind, readonly (keyof EndsGame)[]>> = {
 	'used-on-loses': ['on'],
 	'executed-with-token': ['token'],
 	'alignment-alive': ['alignment', 'alive', 'winner'],
-	'guesses-evil-team': ['winner']
+	'guesses-evil-team': ['winner'],
+	'cult-joined': []
 };
 const HOLD_NEEDS: Readonly<Record<HoldKind, readonly (keyof HoldsGame)[]>> = {
 	'marked-alive': ['token'],

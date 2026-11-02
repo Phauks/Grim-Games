@@ -48,5 +48,9 @@
 	"reminderMovement": {
 		"fixed": ["Amigo"],
 		"why": "The amigo is chosen once, on the first night."
+	},
+	"onNominated": {
+		"carrier": "Amigo",
+		"effect": "may-kill-nominator"
 	}
 }
