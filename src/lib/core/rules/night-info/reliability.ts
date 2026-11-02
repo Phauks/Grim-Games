@@ -24,6 +24,7 @@ import {
 	registrationWorlds,
 	registrations
 } from '../ability.ts';
+import { type StorytellerVisit, storytellerVisit } from '../storytellers.ts';
 
 const W = 'https://wiki.bloodontheclocktower.com/';
 
@@ -41,6 +42,11 @@ export interface Reliability {
 	vortox?: SeatId;
 	/** That character, when `mustBeFalse`. */
 	falseBy?: CharacterId;
+	/**
+	 * Which of two Storytellers the player went to today (`storytellers.ts`, the Knaves): the
+	 * lying one makes `mustBeFalse`, with that rule character in `falseBy` and no `vortox`.
+	 */
+	storyteller?: StorytellerVisit;
 	/**
 	 * A character in play lets the Storyteller break the game rules (its `breaksRules`: the
 	 * Atheist, https://wiki.bloodontheclocktower.com/Atheist): any information may be given.
@@ -277,6 +283,14 @@ export function reliability(
 		out.mustBeFalse = true;
 		out.vortox = falseBy.seatId;
 		out.falseBy = falseBy.characterId;
+	}
+	const visit = storytellerVisit(game, seatId, characters);
+	if (visit) {
+		out.storyteller = visit;
+		if (visit.lies && !out.mustBeFalse) {
+			out.mustBeFalse = true;
+			out.falseBy = visit.by;
+		}
 	}
 	const anyBy = anyInfoSource(game, characters);
 	if (anyBy) out.anyBy = anyBy.characterId;

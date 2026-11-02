@@ -15,7 +15,7 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 
 	interface Props {
-		/** Back to town is offered: a live room, and the game not over. */
+		/** Back to town is offered: always, until the game is over (Trevor, 2026-11-02). */
 		callTown: boolean;
 		/** The players' screen, from the same source as the board's Script (BoardPlayerSource). */
 		view: BoardPlayerSource;

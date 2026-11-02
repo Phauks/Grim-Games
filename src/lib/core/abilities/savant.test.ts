@@ -16,8 +16,14 @@ import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import type { Script } from '#lib/core/data/index.ts';
-import { partnerTruth, savantSituation, savantStatements } from '#lib/core/rules/savant.ts';
-import { engineGap, scenario } from '#lib/core/testing/scenario.ts';
+import {
+	pairFits,
+	partnerTruth,
+	savantSituation,
+	savantStatements,
+	typedStatement
+} from '#lib/core/rules/savant.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 
 /** A script with the characters these examples seat. */
 const script: Script = {
@@ -57,16 +63,43 @@ describe('Savant', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Savant#Examples)', () => {
-		it.fails('Example 1: Savant: players in glasses good; Minion on couch', () => {
+		it('Example 1: Savant: players in glasses good; Minion on couch', () => {
 			// Wiki: "The Savant learns that "All players wearing glasses are good" and that "One player
 			// sitting on the black couch is a Minion.""
-			// One true and one false, about the players in the room, which the grimoire can't know.
+			// One true and one false, about the players in the room, which the grimoire can't know:
+			// the Storyteller types both and marks which is which.
 			const s = scenario(['savant', 'chef', 'empath', 'mutant', 'poisoner', 'imp'], { script });
 			expect(savantSituation(s.game, s.seat('savant'), s.characters).mode).toBe('one-each');
-			engineGap(
-				'unplanned',
-				'a Savant statement about the players in the room (what they wear, where they sit) that the Storyteller marks true or false'
-			);
+			const glasses = typedStatement(s.game, s.characters, {
+				words: 'All players wearing glasses are good.'
+			});
+			// Unmarked, the app can't say whether the pair fits.
+			expect(glasses.truth).toBe('unknown');
+			const couch = typedStatement(s.game, s.characters, {
+				words: 'One player sitting on the black couch is a Minion.',
+				about: { type: 'minion' },
+				marked: false
+			});
+			expect(pairFits(glasses, couch, 'one-each')).toBeUndefined();
+			const marked = typedStatement(s.game, s.characters, {
+				words: 'All players wearing glasses are good.',
+				marked: true
+			});
+			expect(partnerTruth(marked, 'one-each')).toBe(false);
+			expect(pairFits(marked, couch, 'one-each')).toBe(true);
+			// Both marked true would break the rule on a normal day.
+			expect(pairFits(marked, { ...couch, truth: 'true' }, 'one-each')).toBe(false);
+			// Linked to the Minions, the reason names who they are.
+			expect(couch.why).toEqual([
+				[
+					{ type: 'minion' },
+					{ text: ': ' },
+					{ seat: s.seat('poisoner') },
+					{ text: ' (' },
+					{ character: 'poisoner' },
+					{ text: ')' }
+				]
+			]);
 		});
 
 		it('Example 2: Savant: Snake Charmer exists; last night accurate', () => {
@@ -93,16 +126,24 @@ describe('Savant', () => {
 			expect(partnerTruth(charmer, 'one-each')).toBe(false);
 		});
 
-		it.fails('Example 3: Savant: Demon is female; a player is evil', () => {
+		it('Example 3: Savant: Demon is female; a player is evil', () => {
 			// Wiki: "The Savant learns that "The Demon is a woman" and "Benjamin is evil.""
 			// Ben is the Poisoner, so the statement about the Demon's player is the false one.
 			const s = scenario(['savant', 'poisoner', 'chef', 'empath', 'mutant', 'imp'], { script });
 			const all = savantStatements(s.game, s.seat('savant'), s.characters);
-			expect(all.find((x) => x.key === `alignment:${s.seat('poisoner')}|evil`)?.truth).toBe('true');
-			engineGap(
-				'unplanned',
-				"a Savant statement about the Demon's player as a person, which the Storyteller marks true or false"
-			);
+			const benEvil = all.find((x) => x.key === `alignment:${s.seat('poisoner')}|evil`)!;
+			expect(benEvil.truth).toBe('true');
+			const woman = typedStatement(s.game, s.characters, {
+				words: 'The Demon is a woman.',
+				about: { type: 'demon' },
+				marked: false
+			});
+			expect(woman.truth).toBe('false');
+			// The reason names the Demon's player, so the Storyteller can judge it.
+			expect(woman.why[0]).toContainEqual({ seat: s.seat('imp') });
+			expect(partnerTruth(woman, 'one-each')).toBe(true);
+			expect(pairFits(woman, benEvil, 'one-each')).toBe(true);
+			expect(pairFits(benEvil, woman, 'one-each')).toBe(true);
 		});
 
 		it('Example 4: Savant: two players align; one Outsider', () => {

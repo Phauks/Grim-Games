@@ -27,6 +27,7 @@ import {
 } from '#lib/core/data/day-reminder-rules.ts';
 import { rulesIn, rulesOf } from '#lib/core/data/rules/index.ts';
 import { wikiUrl } from '#lib/core/data/wiki.ts';
+import { grantedWishSeats } from './wishes.ts';
 
 export { DAY_GROUPS };
 export type { DayCondition, DayGroup, DayInteraction, DayReminderSpec, DeathCauseMatch };
@@ -85,6 +86,8 @@ export interface DayState {
 	prepValues?: Readonly<Record<string, string>>;
 	/** Characters whose optional rule this game turned on (`Game.optionalRules`). */
 	optionalRules?: readonly CharacterId[];
+	/** Seats whose player has had a wish granted (`wishes.ts`), for `when.noWish`. */
+	grantedWishes?: readonly SeatId[];
 }
 
 /** A badge for a character, with the seat and player name when there is one. */
@@ -252,6 +255,7 @@ export function dayStateFromGame(
 		),
 		...(game.prepValues ? { prepValues: game.prepValues } : {}),
 		...(game.optionalRules ? { optionalRules: game.optionalRules } : {}),
+		grantedWishes: grantedWishSeats(game),
 		...(overrides ? { overrides } : {}),
 		...(characters ? { ability: (seatId: SeatId) => abilityState(game, seatId, characters) } : {})
 	};
@@ -430,6 +434,7 @@ function curated(
 		const holds = conditionHolds(when, seat, state, alive);
 		if (holds === false) return;
 		if (when.noReminder && placed(state, entry.id, when.noReminder)) return;
+		if (when.noWish && seat && state.grantedWishes?.includes(seat.seatId)) return;
 		const base = {
 			characterId: entry.id,
 			group: spec.group,

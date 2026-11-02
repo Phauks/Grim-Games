@@ -23,6 +23,7 @@ import { BLUFFS_BAG_DECIDERS } from './decide/bluffs-bag.ts';
 import { DAY_DECIDERS } from './decide/day.ts';
 import { VOTES_DECIDERS } from './decide/votes.ts';
 import { LATE_PLAYER_DECIDERS } from './decide/late-player.ts';
+import { STORYTELLERS_WISHES_DECIDERS } from './decide/storytellers-wishes.ts';
 import {
 	MAX_PLAYERS,
 	MAX_SEATS,
@@ -75,7 +76,10 @@ export type ErrorCode =
 	| 'invalid-prep-value'
 	| 'invalid-day-mark'
 	| 'invalid-symbol'
-	| 'invalid-colour';
+	| 'invalid-colour'
+	| 'invalid-day-tally'
+	| 'invalid-effect'
+	| 'invalid-wish';
 
 export type WarningCode =
 	| 'unusual-player-count'
@@ -131,6 +135,13 @@ export type WarningCode =
 	| 'no-cause'
 	| 'not-a-believer'
 	| 'late-player-in-play'
+	| 'no-day-tally'
+	| 'beyond-tally'
+	| 'effect-not-listed'
+	| 'no-wish-rule'
+	| 'already-wished'
+	| 'no-two-storytellers'
+	| 'already-switched'
 	| 'no-ghost-vote'
 	| 'only-votes-with'
 	| 'must-vote'
@@ -225,7 +236,8 @@ const DECIDERS: Deciders<CommandType> = {
 	...BLUFFS_BAG_DECIDERS,
 	...DAY_DECIDERS,
 	...VOTES_DECIDERS,
-	...LATE_PLAYER_DECIDERS
+	...LATE_PLAYER_DECIDERS,
+	...STORYTELLERS_WISHES_DECIDERS
 };
 
 /**

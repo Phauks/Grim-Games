@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
-	import type { Game, SeatId } from '#lib/core/model/index.ts';
+	import type { SeatId } from '#lib/core/model/index.ts';
 	import {
 		blockThreshold,
 		dayMarkOf,
@@ -51,6 +51,8 @@
 	import MadnessDeathDialog from './MadnessDeathDialog.svelte';
 	import PrepValueDialog from './PrepValueDialog.svelte';
 	import DayUseDialog from './DayUseDialog.svelte';
+	import RuleDayControl, { hasRuleDayControl } from './RuleDayControl.svelte';
+	import { atDayStart } from './day-start.ts';
 	import AnyoneUseButton from './AnyoneUseButton.svelte';
 
 	interface Props {
@@ -218,27 +220,7 @@
 		});
 	}
 
-	// ── Pre-day reminders ──
-	/**
-	 * The reminders as the day started: tokens placed by today's ability uses are left out,
-	 * so "has an unused shot" stays put (with Used pressed) instead of vanishing mid-day.
-	 */
-	function atDayStart(game: Game): Game {
-		const placed = new Set(
-			game.today.entries.flatMap((e) =>
-				e.kind === 'ability' && e.reminderId ? [e.reminderId] : []
-			)
-		);
-		if (placed.size === 0) return game;
-		const seats = Object.fromEntries(
-			Object.entries(game.seats).map(([id, seat]) => [
-				id,
-				{ ...seat, reminders: seat.reminders.filter((r) => !placed.has(r.reminderId)) }
-			])
-		);
-		return { ...game, seats };
-	}
-
+	// ── Pre-day reminders (atDayStart) ──
 	const reminders = $derived(
 		dayReminders(
 			dayStateFromGame(atDayStart(g), (id) => game.characters.get(id), undefined, game.characters)
@@ -301,7 +283,8 @@
 	};
 	const hasDayButton = (characterId: CharacterId | undefined) =>
 		characterId !== undefined &&
-		(usedButton(characterId) ||
+		(hasRuleDayControl(characterId, game.characters) ||
+			usedButton(characterId) ||
 			noteClaim(characterId) !== undefined ||
 			savantButton(characterId) ||
 			markButton(characterId) !== undefined);
@@ -407,7 +390,9 @@
 		seat: game.seatName(seatId)
 	})}
 	<!-- eslint-enable grim/names-as-badges -->
-	{#if characterId && usedButton(characterId)}
+	{#if characterId && hasRuleDayControl(characterId, game.characters)}
+		<RuleDayControl {game} {characterId} {seatId} {who} />
+	{:else if characterId && usedButton(characterId)}
 		{@const isUsed = used(seatId, characterId)}
 		<Chip
 			pressed={isUsed}
