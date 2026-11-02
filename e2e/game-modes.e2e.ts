@@ -1117,9 +1117,14 @@ test('a mode file someone wrote can be added, inspected and deleted', async ({ p
 	const sections = guide.getByRole('navigation', { name: 'Sections' });
 	if (!(await sections.isVisible()))
 		await guide.getByRole('button', { name: 'Sections', exact: true }).tap();
-	await expect(sections.getByRole('button')).toHaveCount(18);
+	// Every part of the one format for game modes and special rules (2026-11-01).
+	await expect(sections.getByRole('button')).toHaveCount(27);
 	await sections.getByRole('button', { name: 'Character pool', exact: true }).tap();
 	await expect(guide.locator('section[data-part="pool"]')).toBeVisible();
+	if (!(await sections.isVisible()))
+		await guide.getByRole('button', { name: 'Sections', exact: true }).tap();
+	await sections.getByRole('button', { name: 'Deaths', exact: true }).tap();
+	await expect(guide.locator('section[data-part="deaths"]')).toBeVisible();
 	await noSidewaysScroll(page);
 	// The whole guide downloads as Markdown or plain text.
 	await guide.getByRole('button', { name: 'Download the guide' }).tap();
@@ -2393,7 +2398,8 @@ test('a custom game mode can be shared; a built-in one cannot', async ({ page })
 			id: 'tiny-mode',
 			name: 'Tiny Mode',
 			sources: [{ title: 'Our group', url: 'https://example.com/tiny' }],
-			parts: { restricted: { banned: ['pithag'] } }
+			// Dealt from the bag: a whole-game part, so the file is a game mode (2026-11-01).
+			parts: { assignment: { kind: 'bag' }, restricted: { banned: ['pithag'] } }
 		})
 	);
 	await add.getByRole('button', { name: 'Confirm' }).tap();

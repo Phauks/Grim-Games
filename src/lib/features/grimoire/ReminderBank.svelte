@@ -1,5 +1,4 @@
 <script lang="ts">
-	import type { Snippet } from 'svelte';
 	import type { CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
 	import type { GenericLook, Reminder, ReminderId, SeatId } from '#lib/core/model/index.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
@@ -61,8 +60,6 @@
 		 */
 		/** A spectator's board (Trevor, 2026-10-19): every token shown, none taken. */
 		disabled?: boolean;
-		/** Drawn in the tokens' row, the run button kept: Seating's bar (SeatingBar). */
-		instead?: Snippet;
 		/**
 		 * A reminder on the board is being dragged, and whether it is over "+ New token", which
 		 * glows to say it takes it (Trevor, 2026-10-27).
@@ -95,7 +92,6 @@
 		onHints,
 		run: runButton,
 		disabled = false,
-		instead,
 		dropping = false,
 		dropOver = false
 	}: Props = $props();
@@ -108,7 +104,6 @@
 
 	const items = $derived(
 		bankItems(game, characters, {
-			dismissed: grimoire.trayDismissed,
 			focus,
 			focusMode,
 			stack: preferences.current.assistance.stackReminders,
@@ -319,7 +314,6 @@
 		hand.putDown();
 		return true;
 	}}
-	{instead}
 >
 	{#snippet run()}{#if runButton}<BankRunButton run={runButton} />{/if}{/snippet}
 	<ReminderHandPill

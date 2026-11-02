@@ -1,16 +1,16 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import {
-		buildKindOf,
 		buildParts,
-		emptyFile,
+		closestPath,
+		fileKind,
 		GAME_MODES,
-		parseGameMode,
-		parseSpecialRule,
+		parseModeOrRule,
 		setAt,
+		splitIssue,
 		SPECIAL_RULES,
 		topFields,
-		type BuildKind,
+		wholeGamePartsOf,
 		type GameMode,
 		type SpecialRule
 	} from '#lib/core/modes/index.ts';
@@ -30,21 +30,23 @@
 	import OpenSavedDialog from '#lib/ui/builder/OpenSavedDialog.svelte';
 	import { fileNameFor } from '#lib/ui/download.ts';
 	import Page from '#lib/ui/layout/Page.svelte';
-	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
-	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
-	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
-	import Select from '#lib/ui/primitives/Select.svelte';
+	import Tabs from '#lib/ui/primitives/Tabs.svelte';
+	import ModeFormatGuide from '#lib/features/modes/ModeFormatGuide.svelte';
 	import BuilderField from './BuilderField.svelte';
+	import BuilderOutput from './BuilderOutput.svelte';
 	import BuilderPart from './BuilderPart.svelte';
+	import BuilderTable from './BuilderTable.svelte';
+	import type { GuideAt } from './guide-at.ts';
 	import { isEmptyDraft, modeDraft } from './draft.svelte.ts';
 
 	/**
 	 * Make a game mode or special rule without writing JSON (Trevor, 2026-10-31: "an interactive
 	 * mode creator that automatically builds and updates depending upon the actual framework of
-	 * the modes"). The whole form is drawn from the format guide (core/modes/builder.ts), so a
+	 * the modes"). Both are one format, and the file's parts say which it is (Trevor, 2026-11-01:
+	 * "One format, auto-labelled"), so there is nothing to pick. The whole form is drawn from the format guide (core/modes/builder.ts), so a
 	 * part or field added to the format shows here by itself. The file is checked as it is
 	 * edited, with the checker Add mode uses; Save keeps it with the modes and rules added on
 	 * this device, where New game and Special rules list it, and Share sends it as a link.
@@ -60,16 +62,15 @@
 
 	const draft = $derived(modeDraft.current);
 	const file = $derived(draft.file);
-	const kind = $derived(buildKindOf(file));
-	const parts = $derived(buildParts(kind));
+	const kind = $derived(fileKind(file));
+	const groups = buildParts();
+	const parts = [...groups.any, ...groups.wholeGame];
 	const partsValue = $derived(
 		typeof file.parts === 'object' && file.parts !== null
 			? (file.parts as Record<string, unknown>)
 			: {}
 	);
-	const parsed = $derived(
-		kind === 'game-mode' ? parseGameMode(file, known) : parseSpecialRule(file, known)
-	);
+	const parsed = $derived(parseModeOrRule(file, known));
 	const built = $derived<GameMode | SpecialRule | undefined>(
 		parsed.ok ? ('mode' in parsed ? parsed.mode : parsed.rule) : undefined
 	);
@@ -88,29 +89,62 @@
 	let openOpen = $state(false);
 	let clearOpen = $state(false);
 	let deleteOpen = $state(false);
-	let problemsOpen = $state(false);
 	let inspectOpen = $state(false);
 	let shareOpen = $state(false);
 	let replacing = $state.raw<GameMode | SpecialRule>();
 	let replaceOpen = $state(false);
 	let saveIssues = $state<string[]>([]);
 
-	function set(path: readonly (string | number)[], value: unknown) {
-		modeDraft.setFile(setAt(file, path, value) as Record<string, unknown>);
+	/** Save's own problems first, then the checker's. */
+	const shownIssues = $derived([...saveIssues, ...issues.filter((i) => !saveIssues.includes(i))]);
+	function problemsIn(part: string) {
+		const at = `parts.${part}`;
+		return shownIssues.filter((i) => {
+			const { path } = splitIssue(i);
+			return path === at || path.startsWith(`${at}.`) || path.startsWith(`${at}[`);
+		}).length;
 	}
 
-	function changeKind(next: BuildKind) {
-		if (next === kind) return;
-		// The details and parts carry over; any a rule can't set are named by the checker.
-		const rest = { ...file };
-		delete rest.kind;
-		delete rest.format;
-		const fresh = emptyFile(next);
-		modeDraft.setFile({
-			...(fresh.kind ? { kind: fresh.kind } : {}),
-			format: fresh.format,
-			...rest
+	let tab = $state<'settings' | 'output'>('settings');
+	let settingsEl = $state<HTMLElement>();
+	let flashTimer: ReturnType<typeof setTimeout> | undefined;
+	/**
+	 * From the output to the setting it is about (Trevor, 2026-11-01: "Allow clicking the items
+	 * in the right area to move to those settings fast in the left side"): the nearest row or
+	 * table holding that path, scrolled to, outlined for a moment and focused.
+	 */
+	async function jump(path: string) {
+		tab = 'settings';
+		await tick();
+		const root = settingsEl;
+		if (!root) return;
+		const places = [...root.querySelectorAll<HTMLElement>('[data-path]')];
+		const target =
+			closestPath(
+				path || 'id',
+				places.map((el) => el.dataset.path ?? '')
+			) ?? 'id';
+		const el = places.find((p) => p.dataset.path === target);
+		if (!el) return;
+		el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+		el.querySelector<HTMLElement>('input, textarea, button, [role="combobox"]')?.focus({
+			preventScroll: true
 		});
+		root.querySelectorAll('[data-flash]').forEach((f) => f.removeAttribute('data-flash'));
+		el.setAttribute('data-flash', '');
+		clearTimeout(flashTimer);
+		flashTimer = setTimeout(() => el.removeAttribute('data-flash'), 1500);
+	}
+
+	let guideOpen = $state(false);
+	let guideAt = $state<GuideAt>();
+	function guide(at: GuideAt) {
+		guideAt = at;
+		guideOpen = true;
+	}
+
+	function set(path: readonly (string | number)[], value: unknown) {
+		modeDraft.setFile(setAt(file, path, value) as Record<string, unknown>);
 	}
 
 	function save(asNew = false) {
@@ -128,12 +162,15 @@
 				: customModes.add(JSON.stringify(value), known);
 		if (!result.ok) {
 			saveIssues = result.issues;
-			problemsOpen = true;
+			tab = 'output';
 			return;
 		}
 		saveIssues = [];
-		// The old copy goes when the id was changed on the builder.
-		if (draft.editing && draft.editing !== value.id) removeSaved(draft.editing);
+		// The old copy goes when the id was changed on the builder, or when it changed kind, so
+		// it moves between this device's modes and rules.
+		if (draft.editing === value.id)
+			(value.kind === 'special-rule' ? customModes : customRules).remove(value.id);
+		else if (draft.editing) removeSaved(draft.editing);
 		modeDraft.replace({ file: { ...value } as Record<string, unknown>, editing: value.id });
 	}
 
@@ -224,66 +261,87 @@
 		</BuilderTools>
 	{/snippet}
 
-	{#snippet side()}
-		<div class="side">
-			<Button variant="field" icon="warning" onclick={() => (problemsOpen = true)}>
-				{t('modes.builder.problems')}
-				<CountBadge count={issues.length} />
-			</Button>
-			<Button variant="field" icon="info" disabled={!built} onclick={() => (inspectOpen = true)}>
-				{t('modes.builder.inspect')}
-			</Button>
-			<Button variant="field" icon="report" onclick={requestFeature}>
-				{t('modes.builder.request')}
-			</Button>
-		</div>
-	{/snippet}
-
 	<ErrorBoundary area="modes">
-		<div class="builder" data-testid="mode-builder">
-			<PageSection title={t('modes.builder.details')}>
-				<Select
-					label={t('modes.builder.makes')}
-					value={kind}
-					options={(['game-mode', 'special-rule'] as const).map((k) => ({
-						value: k,
-						label: t(`modes.builder.makes.${k}`)
-					}))}
-					onChange={changeKind}
-				/>
-				{#each topFields(kind) as field (field.name)}
-					<BuilderField
-						{field}
-						parent="file"
-						value={file[field.name]}
-						onChange={(v) => set([field.name], v)}
-					/>
-				{/each}
-			</PageSection>
-			<PageSection title={t('modes.builder.parts')}>
-				<div class="parts">
-					{#each parts as part (part.part)}
-						<BuilderPart
-							{part}
-							value={partsValue[part.part]}
-							onChange={(v) => set(['parts', part.part], v)}
-						/>
+		<!-- Settings on the left, output on the right (Trevor picked layout B, 2026-11-01); on a
+		     phone, Settings and Output tabs. All in the coding font, with no small caps. -->
+		<div class="builder code-font" data-testid="mode-builder" data-tab={tab}>
+			<div class="tabs">
+				<Tabs
+					bind:value={tab}
+					label={t('modes.builder.heading')}
+					tabs={[
+						{ value: 'settings', label: t('modes.builder.settings') },
+						{
+							value: 'output',
+							label: shownIssues.length
+								? t('modes.builder.outputProblems', { count: shownIssues.length })
+								: t('modes.builder.output')
+						}
+					]}
+				>
+					{#snippet panel()}{/snippet}
+				</Tabs>
+			</div>
+			<div class="cols">
+				<div class="settings" bind:this={settingsEl}>
+					<BuilderTable path="details">
+						{#snippet head()}{t('modes.builder.details')}{/snippet}
+						{#each topFields() as field (field.name)}
+							<BuilderField
+								{field}
+								parent="file"
+								path={field.name}
+								value={file[field.name]}
+								onChange={(v) => set([field.name], v)}
+								onGuide={() => guide({ section: 'top', field: field.name })}
+							/>
+						{/each}
+					</BuilderTable>
+					{#each [{ key: 'any', list: groups.any }, { key: 'wholeGame', list: groups.wholeGame }] as const as group (group.key)}
+						<h2 class="group" data-testid="mode-builder-group-{group.key}">
+							{t(`modes.builder.parts.${group.key}`)}
+						</h2>
+						{#each group.list as part (part.part)}
+							<BuilderPart
+								{part}
+								value={partsValue[part.part]}
+								problems={problemsIn(part.part)}
+								onChange={(v) => set(['parts', part.part], v)}
+								onGuide={guide}
+							/>
+						{/each}
 					{/each}
 				</div>
-			</PageSection>
+				<aside class="output" aria-label={t('modes.builder.output')}>
+					<BuilderOutput
+						{kind}
+						because={wholeGamePartsOf(file)}
+						{file}
+						{parts}
+						issues={shownIssues}
+						onJump={jump}
+					>
+						{#snippet actions()}
+							<Button
+								variant="field"
+								icon="info"
+								disabled={!built}
+								onclick={() => (inspectOpen = true)}
+							>
+								{t('modes.builder.inspect')}
+							</Button>
+							<Button variant="field" icon="report" onclick={requestFeature}>
+								{t('modes.builder.request')}
+							</Button>
+						{/snippet}
+					</BuilderOutput>
+				</aside>
+			</div>
 		</div>
 	</ErrorBoundary>
 </Page>
 
-<Dialog bind:open={problemsOpen} title={t('modes.builder.problems')}>
-	<ul class="problems" data-testid="mode-builder-problems">
-		{#each [...saveIssues, ...issues.filter((i) => !saveIssues.includes(i))] as issue (issue)}
-			<li>{issue}</li>
-		{:else}
-			<li class="muted">{t('common.none')}</li>
-		{/each}
-	</ul>
-</Dialog>
+<ModeFormatGuide bind:open={guideOpen} at={guideAt} />
 
 {#if built}
 	<ModeInspectDialog bind:open={inspectOpen} mode={built} />
@@ -327,7 +385,7 @@
 	bind:open={clearOpen}
 	title={t('modes.builder.clearTitle')}
 	danger
-	onConfirm={() => modeDraft.clear(kind)}
+	onConfirm={() => modeDraft.clear()}
 />
 
 <ConfirmDialog
@@ -342,27 +400,59 @@
 
 <style>
 	.builder {
+		container: builder-page / inline-size;
+		font-size: 0.9rem;
+	}
+	.cols {
 		display: grid;
+		grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
 		gap: var(--space-4);
+		align-items: start;
 	}
-	.parts {
+	.settings {
+		container: builder / inline-size;
 		display: grid;
+		gap: var(--space-3);
+		min-width: 0;
 	}
-	/* Side by side, so they take one row above the form on a phone; one that wraps takes the
-	   whole next row, so its label stays on one line. */
-	.side {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-2);
+	/* The output stays in view while the settings scroll. */
+	.output {
+		position: sticky;
+		top: var(--space-3);
+		max-height: calc(100dvh - var(--space-6));
+		overflow-y: auto;
+		min-width: 0;
 	}
-	.side > :global(*) {
-		flex: 1 1 calc(var(--u) * 10);
+	.tabs {
+		display: none;
 	}
-	.problems {
-		display: grid;
-		gap: var(--space-1);
-		margin: 0;
-		padding-inline-start: var(--space-4);
+	/* Narrow: one column at a time, chosen by the tabs. */
+	@container builder-page (max-width: 48rem) {
+		.tabs {
+			display: block;
+			margin-bottom: var(--space-2);
+		}
+		.cols {
+			grid-template-columns: minmax(0, 1fr);
+		}
+		.output {
+			position: static;
+			max-height: none;
+		}
+		[data-tab='settings'] .output,
+		[data-tab='output'] .settings {
+			display: none;
+		}
+	}
+	/* Outlined for a moment where the output jumped to. */
+	.settings :global([data-flash]),
+	.settings :global(tr[data-flash] > *) {
+		outline: 2px solid var(--accent); /* px-ok: focus ring */
+		outline-offset: -2px; /* px-ok: focus ring */
+	}
+	.group {
+		margin: var(--space-2) 0 0;
+		font-size: 1rem;
 	}
 	.open-row {
 		display: grid;

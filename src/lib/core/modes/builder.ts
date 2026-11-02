@@ -9,12 +9,13 @@
  */
 import { CITE, GAME_MODE_REVISION, IDS, INSTRUCTIONS, TYPES } from './guide-fields.ts';
 import type { GuideField, GuidePart } from './guide-fields.ts';
-import { GUIDE_PARTS, GUIDE_TOP } from './mode-guide.ts';
-import { RULE_GUIDE_PARTS, RULE_GUIDE_TOP } from './rule-guide.ts';
-import { GAME_MODE_FORMAT, SPECIAL_RULE_FORMAT, STACKING_PARTS } from './types.ts';
+import { GUIDE_TOP } from './mode-guide.ts';
+import { FILE_GUIDE_PARTS } from './rule-guide.ts';
+import { GAME_MODE_FORMAT, WHOLE_GAME_PARTS } from './types.ts';
+import type { FileKind } from './file-kind.ts';
 
-/** What the builder makes: a game mode, or a special rule that stacks on one. */
-export type BuildKind = 'game-mode' | 'special-rule';
+/** What the builder makes: a game mode, or a special rule that stacks on one (`fileKind`). */
+export type BuildKind = FileKind;
 
 /** How a field is edited, read from the guide's description of its type. */
 export type FieldControl =
@@ -69,19 +70,24 @@ export function knownType(type: string): boolean {
 	return type in CONTROLS || JSON_TYPES.has(type);
 }
 
-/** Top-level fields the builder fills in itself: the kind, format, revision and parts. */
+/** Top-level fields the builder fills in itself: the format, revision and parts. */
 const AUTOMATIC = new Set(['kind', 'format', 'revision', 'parts']);
 
 /** The file's own fields (id, name, sources and the rest), as the guide lists them. */
-export function topFields(kind: BuildKind): GuideField[] {
-	return (kind === 'game-mode' ? GUIDE_TOP : RULE_GUIDE_TOP).filter((f) => !AUTOMATIC.has(f.name));
+export function topFields(): GuideField[] {
+	return GUIDE_TOP.filter((f) => !AUTOMATIC.has(f.name));
 }
 
-/** The parts a file of this kind may set: a rule's own, then the mode parts it may stack. */
-export function buildParts(kind: BuildKind): GuidePart[] {
-	if (kind === 'game-mode') return GUIDE_PARTS;
-	const stacking: readonly string[] = STACKING_PARTS;
-	return [...RULE_GUIDE_PARTS, ...GUIDE_PARTS.filter((p) => stacking.includes(p.part))];
+/**
+ * Every part a file can set, in two groups (Trevor, 2026-11-01: one format, auto-labelled):
+ * the parts any file can set, then those that make it a game mode (`WHOLE_GAME_PARTS`).
+ */
+export function buildParts(): { any: GuidePart[]; wholeGame: GuidePart[] } {
+	const whole: readonly string[] = WHOLE_GAME_PARTS;
+	return {
+		any: FILE_GUIDE_PARTS.filter((p) => !whole.includes(p.part)),
+		wholeGame: FILE_GUIDE_PARTS.filter((p) => whole.includes(p.part))
+	};
 }
 
 /** A part whose items are plain lines (a rule's `text`): no fields and no kinds. */
@@ -95,22 +101,16 @@ export function partFields(part: GuidePart, kind: string | undefined): GuideFiel
 	return [...part.fields, ...own, CITE, INSTRUCTIONS];
 }
 
-/** A new, empty file of this kind: nothing but what every file needs. */
-export function emptyFile(kind: BuildKind): Record<string, unknown> {
+/** A new, empty file: nothing but what every file needs. Its parts make it a mode or a rule. */
+export function emptyFile(): Record<string, unknown> {
 	return {
-		...(kind === 'special-rule' ? { kind } : {}),
-		format: kind === 'game-mode' ? GAME_MODE_FORMAT : SPECIAL_RULE_FORMAT,
+		format: GAME_MODE_FORMAT,
 		revision: GAME_MODE_REVISION,
 		id: '',
 		name: '',
 		sources: [],
 		parts: {}
 	};
-}
-
-/** What a file is, from its own `kind`. */
-export function buildKindOf(file: Record<string, unknown>): BuildKind {
-	return file.kind === 'special-rule' ? 'special-rule' : 'game-mode';
 }
 
 /** A new part or list item: its first kind, or no fields at all. */
@@ -171,4 +171,88 @@ export function issuesAt(issues: readonly string[], path: Path): string[] {
 			? [at === here ? message : `${at.slice(here.length).replace(/^\./, '')}: ${message}`]
 			: [];
 	});
+}
+
+/**
+ * A part's Source and Storyteller instructions: on every part, but set on few, so the builder
+ * adds them per part from its header rather than as a row on each (Trevor, 2026-11-01: "find a
+ * better way to make it so it can be added per rule change").
+ */
+export const PART_NOTES: readonly GuideField[] = [CITE, INSTRUCTIONS];
+const NOTE_NAMES: ReadonlySet<string> = new Set(PART_NOTES.map((f) => f.name));
+
+/** The fields of one part, or one list item, less its Source and Storyteller instructions. */
+export function ownPartFields(part: GuidePart, kind: string | undefined): GuideField[] {
+	return partFields(part, kind).filter((f) => !NOTE_NAMES.has(f.name));
+}
+
+/**
+ * The part with one setting changed. A part the file leaves out is added first, so changing
+ * any of its settings turns it on (Trevor, 2026-11-01: "while something is disabled, you
+ * should still be able to open the menus").
+ */
+export function setPartAt(part: GuidePart, current: unknown, path: Path, value: unknown): unknown {
+	return setAt(current === undefined ? newPartValue(part) : current, path, value);
+}
+
+/**
+ * Of the places on the form (`paths`, as problems write them), the one a problem at `path` is
+ * shown at: the same path, else the nearest one holding it, else the file's details.
+ */
+export function closestPath(path: string, paths: readonly string[]): string | undefined {
+	let best: string | undefined;
+	for (const p of paths) {
+		const holds = path === p || path.startsWith(`${p}.`) || path.startsWith(`${p}[`);
+		if (holds && (best === undefined || p.length > best.length)) best = p;
+	}
+	return best;
+}
+
+/** One run of a file's JSON: the lines of one part (`part`), or of what is around them. */
+export interface JsonChunk {
+	text: string;
+	part?: string;
+}
+
+/**
+ * The file as it is downloaded (two-space JSON), split so each part's lines are one chunk:
+ * the builder's output makes a part's lines a link to its settings. The chunks joined are
+ * the file's JSON exactly, whatever order its keys are in.
+ */
+export function jsonChunks(file: Record<string, unknown>): JsonChunk[] {
+	const lines = JSON.stringify(file, null, 2).split('\n');
+	const chunks: JsonChunk[] = [];
+	let around: string[] = [];
+	let part: { name: string; lines: string[] } | undefined;
+	let inParts = false;
+	const flushAround = () => {
+		if (around.length) chunks.push({ text: around.join('\n') });
+		around = [];
+	};
+	const flushPart = () => {
+		if (part) chunks.push({ text: part.lines.join('\n'), part: part.name });
+		part = undefined;
+	};
+	for (const line of lines) {
+		if (!inParts) {
+			around.push(line);
+			if (line === '  "parts": {') inParts = true;
+			continue;
+		}
+		const start = /^ {4}"((?:[^"\\]|\\.)*)": /.exec(line);
+		if (start) {
+			flushAround();
+			flushPart();
+			part = { name: JSON.parse(`"${start[1]}"`) as string, lines: [line] };
+		} else if (/^ {2}\}/.test(line)) {
+			flushPart();
+			inParts = false;
+			around.push(line);
+		} else if (part) part.lines.push(line);
+		else around.push(line);
+	}
+	flushPart();
+	flushAround();
+	// Each chunk after the first starts on a new line.
+	return chunks.map((c, i) => (i === 0 ? c : { ...c, text: `\n${c.text}` }));
 }

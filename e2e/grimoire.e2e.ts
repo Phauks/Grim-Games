@@ -527,6 +527,10 @@ test('history, add seat and remove', async ({ page }) => {
 	// History lists the change; going back to before it asks first.
 	await menu(page, 'History');
 	const history = page.getByRole('dialog', { name: 'History' });
+	// Each line has its number, the oldest 1 (Trevor, 2026-11-01).
+	const numbers = history.getByTestId('history-number');
+	await expect(numbers.last()).toHaveText('1');
+	await expect(numbers.first()).toHaveText(String(await numbers.count()));
 	const added = history.getByRole('listitem').filter({ hasText: 'Added Seat 3' });
 	await added.getByRole('button', { name: 'Restore' }).tap();
 	const back = page.getByRole('alertdialog', { name: 'Restore?' });
@@ -696,7 +700,7 @@ test('the board leads to setup and the day; setup ends on the setup reminders', 
 	await page.goto(`${board}#setup-reminders`);
 	await expect(page).toHaveURL(board);
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	await expect(page.getByRole('dialog', { name: 'Day' })).toBeVisible();
+	await expect(page.getByRole('dialog', { name: /^(Setup|Day( \d+)?)$/ })).toBeVisible();
 	await expect(page).toHaveURL(board);
 });
 
@@ -762,7 +766,7 @@ test('reminders: put on from the bank, then moved and removed from the seat shee
 	await expect(sheet.getByText('None', { exact: true }).last()).toBeVisible();
 });
 
-test('seats can be arranged: dragged anywhere, kept through a rotation, spread evenly', async ({
+test('seats can be arranged: dragged anywhere, kept through a rotation, distributed', async ({
 	page
 }) => {
 	await startGame(page);
@@ -812,16 +816,16 @@ test('seats can be arranged: dragged anywhere, kept through a rotation, spread e
 	await openSeat(page, 1);
 	await closeSheet(page);
 
-	// Spread evenly puts everyone back round the table.
+	// Distribute (Trevor, 2026-11-01: was Spread evenly) puts everyone back round the table.
 	await menu(page, 'Seating');
-	await toolbar.getByRole('button', { name: 'Spread evenly' }).tap();
-	await expect(toolbar.getByRole('button', { name: 'Spread evenly' })).toBeDisabled();
+	await toolbar.getByRole('button', { name: 'Distribute' }).tap();
+	await expect(toolbar.getByRole('button', { name: 'Distribute' })).toBeDisabled();
 	const spread = await centre(1);
 	expect(Math.abs(spread.x - from.x)).toBeLessThan(4);
 	expect(Math.abs(spread.y - from.y)).toBeLessThan(4);
 
 	// A seat dragged past its neighbours stays there: seats renumber to match (Trevor,
-	// 2026-10-16), then spread evenly. Seat 2 goes just past seat 4, towards seat 5.
+	// 2026-10-16), then Distribute. Seat 2 goes just past seat 4, towards seat 5.
 	const at = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => centre(n));
 	const [c2, c4, c5] = [await at[1], await at[3], await at[4]];
 	// Inside the circle, clear of the seats, so it is a placement, not a drop on a seat.
@@ -833,7 +837,7 @@ test('seats can be arranged: dragged anywhere, kept through a rotation, spread e
 	await page.mouse.move((c2.x + past.x) / 2, (c2.y + past.y) / 2, { steps: 4 });
 	await page.mouse.move(past.x, past.y, { steps: 4 });
 	await page.mouse.up();
-	await toolbar.getByRole('button', { name: 'Spread evenly' }).tap();
+	await toolbar.getByRole('button', { name: 'Distribute' }).tap();
 	// Seats 3 and 4 move up one place; the dragged seat is now Seat 4, where seat 4 was.
 	const four = await centre(4);
 	expect(Math.abs(four.x - c4.x)).toBeLessThan(4);
@@ -966,8 +970,10 @@ test('a reminder on the board drags to another seat (the Sailor picks again)', a
 	expect(
 		await page.evaluate(() => (window as unknown as { clicksInDialog: number }).clicksInDialog)
 	).toBe(0);
-	// Whose it is, then that character as the Script tab shows it (Trevor, 2026-10-30).
-	await expect(reminder).toContainText(/From\s*Sailor/);
+	// That character as the Script tab shows it (Trevor, 2026-10-30), with no "From" line
+	// above it, as the row already names it (Trevor, 2026-11-01).
+	await expect(reminder).not.toContainText(/From\s*Sailor/);
+	await expect(reminder.locator('.ring-row')).toContainText('Sailor');
 	await expect(reminder.locator('.ring-row')).toContainText(/choose an alive player/i);
 	await expect(page.locator('[data-scope="drawer"][data-part="content"]')).toBeHidden();
 	await reminder.getByRole('button', { name: 'Close' }).tap();
@@ -1814,7 +1820,8 @@ test('the reminder bank holds setup reminders, placed by hand, then every remind
 	const sheet = await openSeat(page, 2);
 	await sheet.getByRole('button', { name: 'Actions for Townsfolk' }).tap();
 	const actions = page.getByRole('dialog', { name: 'Townsfolk' });
-	await expect(actions).toContainText(/From\s*Washerwoman\s*Seat 1\s*on\s*\S+\s*Seat 2/);
+	await expect(actions.locator('.ring-row')).toContainText('Washerwoman');
+	await expect(actions).not.toContainText(/From\s*Washerwoman/);
 	// In the seat sheet a reminder is just its token, tapped for these actions, delete among
 	// them (Trevor, 2026-10-19): no tick box, no owner, no ⋯.
 	await expect(actions.getByRole('button', { name: 'Remove reminder' })).toBeVisible();
@@ -2413,7 +2420,7 @@ test('the Storyteller writes the Amnesiac’s ability and picks what it works li
 	);
 
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	const day = page.getByRole('dialog', { name: 'Day' });
+	const day = page.getByRole('dialog', { name: /^(Setup|Day( \d+)?)$/ });
 	const value = day.getByTestId('prep-value');
 	await expect(value).toHaveText('(ABILITY)');
 	await value.tap();
@@ -2986,8 +2993,14 @@ test('End game keeps the Storyteller on the board, says it is over, and can be r
 	await closeSheet(page);
 	await expect(seatLabelled(page, 'Seat 1: Ana')).toHaveCount(1);
 
-	// Reopening from the board puts it back in Continue game.
-	await page.getByTestId('game-over').tap();
+	// The Game over pill only says so; Reopen game is in ⋯ (Trevor, 2026-11-01).
+	await expect(page.getByRole('button', { name: /^Game over/ })).toHaveCount(0);
+	// Reopening from ⋯ puts it back in Continue game.
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Reopen game' })
+		.tap();
 	await page
 		.getByRole('alertdialog', { name: 'Reopen game?' })
 		.getByRole('button', { name: 'Confirm', exact: true })
@@ -3108,8 +3121,33 @@ test('a finished game exports as a recap file and a grimoire image', async ({ pa
 	const png = readFileSync(image.path);
 	const box = await page.locator('.grimoire').boundingBox();
 	expect(box).not.toBeNull();
+	// Only the board and its game info (Trevor, 2026-11-01): the board with its margin all round,
+	// without the toolbar's row above or History's strip below.
+	const shown = await page.locator('.grimoire > .board').evaluate((el) => ({
+		height: el.getBoundingClientRect().height,
+		margin: parseFloat(getComputedStyle(el).marginTop)
+	}));
+	expect(shown.height + 2 * shown.margin).toBeLessThan(box!.height - 50);
 	const ratio = png.readUInt32BE(16) / png.readUInt32BE(20);
-	expect(ratio).toBeCloseTo(box!.width / box!.height, 1);
+	expect(ratio).toBeCloseTo(box!.width / (shown.height + 2 * shown.margin), 1);
+	// Drawn on the page's own colour, never see-through (the browser decodes the PNG).
+	const opaque = await page.evaluate(async (b64) => {
+		const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+		const bitmap = await createImageBitmap(new Blob([bytes], { type: 'image/png' }));
+		const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+		const ctx = canvas.getContext('2d')!;
+		ctx.drawImage(bitmap, 0, 0);
+		return ctx.getImageData(1, 1, 1, 1).data[3];
+	}, png.toString('base64'));
+	expect(opaque).toBe(255);
+	// The controls are left out: History's strip, the soundboard and the timer.
+	await expect(page.getByTestId('history-strip')).toHaveAttribute('data-screenshot', 'skip');
+	await expect(page.locator('.board-timer .timer-slot')).toHaveAttribute('data-screenshot', 'skip');
+	// By its label: the open Export dialog hides the board from getByRole.
+	await expect(page.locator('.board-timer [aria-label="Soundboard"]')).toHaveAttribute(
+		'data-screenshot',
+		'skip'
+	);
 	await page.keyboard.press('Escape');
 
 	// The same from History, which opens the board first so the picture is the board
@@ -3305,7 +3343,7 @@ test("the day's Announcements explain a kill that didn't happen", async ({ page 
 		await closeSheet(page);
 	}
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	const day = page.getByRole('dialog', { name: 'Day' });
+	const day = page.getByRole('dialog', { name: /^(Setup|Day( \d+)?)$/ });
 	// Nothing to explain yet: the button is there but off, so nothing moves (Trevor).
 	await expect(day.getByTestId('prevented-button')).toBeDisabled();
 	await day.getByRole('button', { name: 'Close' }).tap();
@@ -4066,11 +4104,12 @@ test('a Fabled or Loric holds reminders, asking first for one not its own', asyn
 	).toHaveCount(2);
 	await angelSheet.getByRole('button', { name: 'Close' }).tap();
 
-	// Tapped, one is in hand; its own dialog says whose it is, and it can be removed.
+	// Tapped, one is in hand; its own dialog says where it lies, and it can be removed.
 	await held.getByRole('button', { name: 'Poisoned reminder' }).tap();
 	await inHand(page).getByRole('button', { name: 'About this reminder' }).tap();
 	const reminder = page.getByRole('dialog', { name: 'Poisoned' });
-	await expect(reminder).toContainText(/From\s*Poisoner\s*on\s*Angel/);
+	await expect(reminder).toContainText(/on\s*Angel/);
+	await expect(reminder).not.toContainText(/From\s*Poisoner/);
 	await reminder.getByRole('button', { name: 'Remove reminder' }).tap();
 	await expect(held.getByRole('button')).toHaveCount(1);
 	await expect(all.getByRole('button', { name: 'Poisoned reminder' })).toBeVisible();
@@ -4441,7 +4480,7 @@ test('the Storm Catcher named character is picked before the day and kept at its
 	test.slow();
 	await stormCatcherGame(page);
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	const day = page.getByRole('dialog', { name: 'Day' });
+	const day = page.getByRole('dialog', { name: /^(Setup|Day( \d+)?)$/ });
 	const value = day.getByTestId('prep-value').first();
 	await expect(value).toHaveText('(CHARACTER)');
 	await value.tap();
@@ -4459,6 +4498,15 @@ test('the Storm Catcher named character is picked before the day and kept at its
 	const learns = step.getByTestId('night-evil-learns');
 	await expect(learns).toContainText('Washerwoman');
 	await expect(learns.getByRole('button', { name: 'Show to player' })).toBeEnabled();
+	// The step's own "not in play" card shows that character, never the Demon's bluffs
+	// (Trevor, 2026-11-01).
+	await step
+		.getByTestId('step-info-tokens')
+		.getByRole('button', { name: 'These characters are not in play (Washerwoman)', exact: true })
+		.tap();
+	const shown = page.locator('[data-testid="show-to-player"][open]');
+	await expect(shown.getByRole('img', { name: /Washerwoman token/ })).toBeVisible();
+	await expect(shown.getByRole('img', { name: /token/ })).toHaveCount(1);
 });
 
 test('Minion info and Demon info list every card they can show, with who it points at', async ({
@@ -5347,7 +5395,7 @@ test('a tapped bank token is held until a seat is tapped, or put down', async ({
 	await page.touchscreen.tap(board.x + board.width / 2, board.y + board.height * 0.45);
 	await expect(inHand(page)).toBeHidden();
 	await expect(page.getByRole('dialog')).toHaveCount(0);
-	// A right-click holds it with its ⋯ open; About says whose it is.
+	// A right-click holds it with its ⋯ open; About shows the ability it comes from.
 	await poisoned.click({ button: 'right' });
 	await expect(page.getByRole('menuitem', { name: 'Duplicate reminder' })).toBeVisible();
 	await page.screenshot({ path: testInfo.outputPath('held-token-menu.png') });
@@ -5355,7 +5403,7 @@ test('a tapped bank token is held until a seat is tapped, or put down', async ({
 	await page.keyboard.press('Escape');
 	await inHand(page).getByRole('button', { name: 'About this reminder' }).tap();
 	const about = page.getByRole('dialog', { name: 'Poisoned' });
-	await expect(about).toContainText('From');
+	await expect(about).not.toContainText('From');
 	// Its character as the Script tab shows it: the ring row, whose ring opens the character's
 	// page (Trevor, 2026-10-30); no line left under it.
 	await expect(about.locator('.ring-row')).toContainText('they are poisoned');
@@ -6814,6 +6862,47 @@ test('with Council of the Dead, night 4 starts with the dead waking together', a
 	await page.getByTestId('night-strip').getByRole('button', { name: 'Next step' }).tap();
 	await expect(page.getByTestId('night-strip').locator('.step .name strong')).toHaveText(
 		'Council of the Dead'
+	);
+});
+
+// One format for game modes and special rules (Trevor, 2026-11-01): a game mode may set a
+// rule's parts, and the night plays its step as it plays Council of the Dead's.
+test('a game mode that sets a night step adds it to the night, headed by the mode', async ({
+	page
+}) => {
+	const mode = {
+		format: 1,
+		id: 'dead-wake',
+		name: 'Dead Wake',
+		sources: [],
+		parts: {
+			assignment: { kind: 'bag' },
+			nightSteps: [{ kind: 'wake', when: 'one-night', night: 1, dead: true }]
+		}
+	};
+	await page.goto('/new');
+	await page.evaluate((m) => {
+		localStorage.setItem('grim-games:custom-modes:v1', JSON.stringify([m]));
+	}, mode);
+	await page.reload();
+	await pickScript(page, 'Trouble Brewing');
+	const modes = page.getByRole('main').getByRole('combobox', { name: 'Game mode' });
+	await modes.tap();
+	await page.getByRole('option', { name: 'Dead Wake', exact: true }).tap();
+	await expect(modes).toContainText('Dead Wake');
+	await page.getByRole('button', { name: 'Create game' }).tap();
+	await toBoard(page);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Imp', exact: true })
+		.tap();
+	await closeSheet(page);
+	await walkTo(page, 'Dusk');
+	await page.getByTestId('night-strip').getByRole('button', { name: 'Next step' }).tap();
+	await expect(page.getByTestId('night-strip').locator('.step .name strong')).toHaveText(
+		'Dead Wake'
 	);
 });
 

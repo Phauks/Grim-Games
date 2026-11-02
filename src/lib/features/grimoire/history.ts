@@ -30,6 +30,11 @@ export type HistoryPart =
 export interface HistoryItem {
 	/** How many log entries are applied once this one is (the cursor just after it). */
 	cursor: number;
+	/**
+	 * Its place in History, 1 for the oldest line (Trevor, 2026-11-01: "give each entry a
+	 * number"). Kept when History is filtered and when the entry is undone.
+	 */
+	number: number;
 	at: number;
 	parts: HistoryPart[];
 	/** Undone: after the cursor, kept until a new change replaces it. */
@@ -480,6 +485,7 @@ export function historyItems(
 			return;
 		items.push({
 			cursor: i + 1,
+			number: items.length + 1,
 			at: entry.at,
 			parts: describeEntry(entry, before, game, characters),
 			undone: i + 1 > cursor

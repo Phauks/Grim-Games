@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
 	buildParts,
+	closestPath,
+	jsonChunks,
+	ownPartFields,
+	PART_NOTES,
+	setPartAt,
 	emptyFile,
 	fieldControl,
 	issuesAt,
@@ -9,21 +14,17 @@ import {
 	partFields,
 	pathText,
 	setAt,
-	topFields,
-	type BuildKind
+	topFields
 } from './builder.ts';
+import { fileKind } from './file-kind.ts';
 import { GUIDE_PARTS, GUIDE_TOP } from './mode-guide.ts';
-import { RULE_GUIDE_PARTS, RULE_GUIDE_TOP } from './rule-guide.ts';
-import { parseGameMode, parseSpecialRule } from './validate.ts';
-import { STACKING_PARTS } from './types.ts';
+import { FILE_GUIDE_PARTS } from './rule-guide.ts';
+import { parseModeOrRule } from './validate.ts';
+import { FILE_PARTS, WHOLE_GAME_PARTS } from './types.ts';
 
 const allFields = () => [
 	...GUIDE_TOP,
-	...RULE_GUIDE_TOP,
-	...[...GUIDE_PARTS, ...RULE_GUIDE_PARTS].flatMap((p) => [
-		...p.fields,
-		...p.kinds.flatMap((k) => k.fields)
-	])
+	...FILE_GUIDE_PARTS.flatMap((p) => [...p.fields, ...p.kinds.flatMap((k) => k.fields)])
 ];
 
 describe('the Mode builder form, drawn from the format guide', () => {
@@ -32,15 +33,14 @@ describe('the Mode builder form, drawn from the format guide', () => {
 		expect(unknown).toEqual([]);
 	});
 
-	it('offers every part of the guide: a mode all of them, a rule its own and the stacking ones', () => {
-		expect(buildParts('game-mode').map((p) => p.part)).toEqual(GUIDE_PARTS.map((p) => p.part));
-		const rule = buildParts('special-rule').map((p) => p.part);
-		for (const p of RULE_GUIDE_PARTS) expect(rule).toContain(p.part);
-		for (const p of STACKING_PARTS) expect(rule).toContain(p);
+	it('offers every part of the format, those that make a game mode apart', () => {
+		const { any, wholeGame } = buildParts();
+		expect(wholeGame.map((p) => p.part)).toEqual([...WHOLE_GAME_PARTS]);
+		expect([...any, ...wholeGame].map((p) => p.part).sort()).toEqual([...FILE_PARTS].sort());
 	});
 
 	it('leaves the kind, format, revision and parts to the builder', () => {
-		const names = topFields('special-rule').map((f) => f.name);
+		const names = topFields().map((f) => f.name);
 		expect(names).toContain('id');
 		expect(names).not.toContain('format');
 		expect(names).not.toContain('parts');
@@ -65,20 +65,21 @@ describe('the Mode builder form, drawn from the format guide', () => {
 			'cite',
 			'instructions'
 		]);
-		for (const kind of ['game-mode', 'special-rule'] as BuildKind[]) {
-			const file = { ...emptyFile(kind), id: 'mine', name: 'Mine' };
-			const parse = kind === 'game-mode' ? parseGameMode : parseSpecialRule;
-			expect(parse(file).ok, kind).toBe(true);
-			for (const part of buildParts(kind)) {
-				const value = newPartValue(part);
-				const withPart = setAt(file, ['parts', part.part], part.list ? [value] : value);
-				// Problems may be listed (required fields), but always at the part.
-				const parsed = parse(withPart);
-				if (!parsed.ok)
-					for (const issue of parsed.issues)
-						expect(issue.startsWith(`parts.${part.part}`), `${kind} ${issue}`).toBe(true);
-			}
+		const file = { ...emptyFile(), id: 'mine', name: 'Mine' };
+		expect(parseModeOrRule(file).ok).toBe(true);
+		const { any, wholeGame } = buildParts();
+		for (const part of [...any, ...wholeGame]) {
+			const value = newPartValue(part);
+			const withPart = setAt(file, ['parts', part.part], part.list ? [value] : value);
+			// Problems may be listed (required fields), but always at the part.
+			const parsed = parseModeOrRule(withPart);
+			if (!parsed.ok)
+				for (const issue of parsed.issues)
+					expect(issue.startsWith(`parts.${part.part}`), issue).toBe(true);
 		}
+		// The empty file is a special rule; a whole-game part makes it a game mode.
+		expect(fileKind(file)).toBe('special-rule');
+		expect(fileKind(setAt(file, ['parts', 'counts'], { kind: 'standard' }))).toBe('game-mode');
 	});
 });
 
@@ -105,5 +106,50 @@ describe('editing the file', () => {
 		expect(issuesAt(issues, ['parts', 'nightSteps', 0, 'when'])).toEqual(['must be one of x']);
 		expect(issuesAt(issues, ['sources'])).toEqual(['[1].url: must be an https link']);
 		expect(issuesAt(issues, ['name'])).toEqual([]);
+	});
+});
+
+describe('the redesigned builder (Trevor, 2026-11-01)', () => {
+	const pool = GUIDE_PARTS.find((p) => p.part === 'pool')!;
+
+	it('adds Source and Storyteller instructions per part, not as a row on every part', () => {
+		const own = ownPartFields(pool, pool.kinds[0].kind).map((f) => f.name);
+		expect(own).not.toContain('cite');
+		expect(own).not.toContain('instructions');
+		expect(PART_NOTES.map((f) => f.name)).toEqual(['cite', 'instructions']);
+	});
+
+	it('turns a part on when one of its settings is changed while it is off', () => {
+		expect(setPartAt(pool, undefined, ['count'], 2)).toEqual({
+			kind: pool.kinds[0].kind,
+			count: 2
+		});
+		expect(setPartAt(pool, { kind: 'script' }, ['count'], 2)).toEqual({ kind: 'script', count: 2 });
+	});
+
+	it('jumps from a problem to the nearest setting that holds it', () => {
+		const paths = ['id', 'parts.pool', 'parts.pool.count', 'parts.nightSteps[0]'];
+		expect(closestPath('parts.pool.count', paths)).toBe('parts.pool.count');
+		expect(closestPath('parts.pool.kind', paths)).toBe('parts.pool');
+		expect(closestPath('parts.nightSteps[0].when', paths)).toBe('parts.nightSteps[0]');
+		expect(closestPath('parts.poolish', paths)).toBeUndefined();
+	});
+
+	it('splits the JSON by part, joining back to the file exactly, in any key order', () => {
+		const file = {
+			id: 'x',
+			parts: { pool: { kind: 'script', note: '"parts": {' }, deaths: { kind: 'none' } },
+			name: 'After parts'
+		};
+		const chunks = jsonChunks(file);
+		expect(chunks.map((c) => c.text).join('')).toBe(JSON.stringify(file, null, 2));
+		expect(chunks.filter((c) => c.part).map((c) => c.part)).toEqual(['pool', 'deaths']);
+		expect(chunks.find((c) => c.part === 'pool')?.text).toContain('"kind": "script"');
+		const empty = { id: 'y', parts: {} };
+		expect(
+			jsonChunks(empty)
+				.map((c) => c.text)
+				.join('')
+		).toBe(JSON.stringify(empty, null, 2));
 	});
 });

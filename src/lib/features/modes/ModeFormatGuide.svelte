@@ -6,9 +6,11 @@
 		GUIDE_PARTS,
 		GUIDE_TOP,
 		MINIMAL_EXAMPLE,
+		RULE_GUIDE_PARTS,
 		gameModeById,
 		type GuideField
 	} from '#lib/core/modes/index.ts';
+	import { tick } from 'svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import ContentsLayout, { type ContentsItem } from '#lib/ui/layout/ContentsLayout.svelte';
 	import { downloadFile } from '#lib/ui/download.ts';
@@ -27,21 +29,46 @@
 	 */
 	interface Props {
 		open?: boolean;
+		/**
+		 * Where it opens: a section (`top`, `part:<name>`) and, in it, the field to
+		 * scroll to (Trevor, 2026-11-01: each Mode builder setting links "to the specific part
+		 * of the mode creation guide").
+		 */
+		at?: { section: string; field?: string };
 	}
 
-	let { open = $bindable(false) }: Props = $props();
+	let { open = $bindable(false), at }: Props = $props();
 
 	const full = JSON.stringify(gameModeById('whale-buffet'), null, 2);
 
 	const items: ContentsItem[] = [
 		{ id: 'overview', label: t('modes.guide.overview') },
 		{ id: 'top', label: t('modes.guide.top') },
-		...GUIDE_PARTS.map((p) => ({ id: `part:${p.part}`, label: modeLabel('part', p.part) })),
+		// One format for game modes and special rules (Trevor, 2026-11-01): every part, in order.
+		...[...GUIDE_PARTS, ...RULE_GUIDE_PARTS].map((p) => ({
+			id: `part:${p.part}`,
+			label: modeLabel('part', p.part)
+		})),
 		{ id: 'full', label: t('modes.guide.full') }
 	];
 	// Opens on the overview; on a phone, Back shows the list of sections.
 	let current = $state<string | undefined>('overview');
-	const part = $derived(GUIDE_PARTS.find((p) => `part:${p.part}` === current));
+	const part = $derived(
+		[...GUIDE_PARTS, ...RULE_GUIDE_PARTS].find((p) => `part:${p.part}` === current)
+	);
+
+	let body = $state<HTMLElement>();
+	/** Opened at a setting: that section, scrolled to the field's row, which is outlined. */
+	$effect(() => {
+		if (!open || !at) return;
+		const { section, field } = at;
+		current = section;
+		if (!field) return;
+		void tick().then(() => {
+			const row = body?.querySelector<HTMLElement>(`[data-guide-field="${CSS.escape(field)}"]`);
+			row?.scrollIntoView({ block: 'center' });
+		});
+	});
 
 	let choosing = $state(false);
 	let downloadAnchor = $state<HTMLElement>();
@@ -62,7 +89,7 @@
 		<table class="fields">
 			<tbody>
 				{#each list as f (f.name)}
-					<tr>
+					<tr data-guide-field={f.name} data-target={at?.field === f.name ? '' : undefined}>
 						<th scope="row">
 							<code>{f.name}</code>
 							<span class="muted">
@@ -109,7 +136,7 @@
 		backLabel={t('modes.guide.sections')}
 		onBack={() => (current = undefined)}
 	>
-		<div class="guide" data-testid="mode-guide">
+		<div class="guide" data-testid="mode-guide" bind:this={body}>
 			{#if current === 'overview'}
 				<h3>{t('modes.guide.overview')}</h3>
 				<p data-testid="mode-guide-version">
@@ -202,6 +229,9 @@
 		text-align: start;
 		vertical-align: top;
 		overflow-wrap: anywhere;
+	}
+	.fields tr[data-target] > * {
+		background: var(--accent-wash);
 	}
 	.fields th {
 		width: 35%;

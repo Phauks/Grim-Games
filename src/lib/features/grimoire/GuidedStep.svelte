@@ -456,6 +456,7 @@
 					text={step.reminder}
 					character={step.character}
 					{characters}
+					prepValues={game.prepValues}
 					onchoose={chooseCard}
 				/>
 			{/if}
