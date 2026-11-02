@@ -73,7 +73,8 @@ export type GameEvent =
 	| { type: 'SeatReincarnated'; seatId: SeatId }
 	| { type: 'OptionalRuleSet'; characterId: CharacterId; on: boolean }
 	/** `cause` only with `dead: true`; `dead: false` clears any cause. */
-	| { type: 'DeathSet'; seatId: SeatId; dead: boolean; cause?: DeathCause }
+	/** `impaired`: their ability was not working as they died (drunk or poisoned). */
+	| { type: 'DeathSet'; seatId: SeatId; dead: boolean; cause?: DeathCause; impaired?: true }
 	/** No `cause` clears it. */
 	| { type: 'DeathCauseSet'; seatId: SeatId; cause?: DeathCause }
 	| { type: 'GhostVoteSpent'; seatId: SeatId }

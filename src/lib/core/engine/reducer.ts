@@ -304,10 +304,14 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 			});
 		case 'DeathSet':
 			return updateSeat(game, event.seatId, (seat) => {
-				const next = omit(seat, 'deathCause');
-				return event.dead && event.cause !== undefined
-					? { ...next, dead: true, deathCause: event.cause }
-					: { ...next, dead: event.dead };
+				const next = omit(seat, 'deathCause', 'impairedAtDeath');
+				if (!event.dead) return { ...next, dead: false };
+				return {
+					...next,
+					dead: true,
+					...(event.cause !== undefined ? { deathCause: event.cause } : {}),
+					...(event.impaired ? { impairedAtDeath: true as const } : {})
+				};
 			});
 		case 'DeathCauseSet':
 			return updateSeat(game, event.seatId, (seat) =>

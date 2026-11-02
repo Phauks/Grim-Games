@@ -70,7 +70,7 @@ describe('Bishop: only the Storyteller nominates', () => {
 	});
 
 	it('does not warn once the Bishop is dead or poisoned', () => {
-		const s = scenario(['bishop', 'chef', 'empath', 'imp']);
+		const s = scenario(['bishop', 'chef', 'empath', 'imp', 'poisoner']);
 		expect(nominating(s.dies('bishop', 'execution'), 'chef', 'imp')).toEqual([]);
 		expect(nominating(s.poisoned('bishop'), 'chef', 'imp')).toEqual([]);
 		expect(storytellerNominates(s.poisoned('bishop').game, s.characters)).toEqual([]);
@@ -131,7 +131,7 @@ describe('Golem: may only nominate once per game', () => {
 
 describe('Gnome: may kill whoever nominates its amigo', () => {
 	const amigo = () =>
-		scenario(['gnome', 'chef', 'empath', 'imp']).reminder('chef', 'gnome', 'Amigo');
+		scenario(['gnome', 'chef', 'empath', 'imp', 'poisoner']).reminder('chef', 'gnome', 'Amigo');
 	const prompts = (s: Scenario, by: SeatRef, nominee: SeatRef) =>
 		characterNominationPrompts(
 			s.game,
