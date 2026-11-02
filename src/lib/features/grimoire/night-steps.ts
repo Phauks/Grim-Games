@@ -23,7 +23,9 @@ import {
 	nightOrder,
 	onDeathApplies,
 	onDeathTrigger,
+	diedSinceNewDay,
 	revivedAfterStep,
+	revivedSinceNewDay,
 	TRAVELLER_ALIGNMENT_STEP,
 	wakeConditionMet,
 	withCharacterChangeSteps,
@@ -32,6 +34,7 @@ import {
 	type Night,
 	type NightStep
 } from '#lib/core/rules/index.ts';
+import type { GameLog } from '#lib/core/engine/index.ts';
 import { seatHasAbility, type AbilitiesRule, type SpecialRule } from '#lib/core/modes/index.ts';
 import type { IconSlot } from '#lib/ui/icons/catalogue.ts';
 
@@ -210,6 +213,27 @@ export function stepWakes(
 				)
 		)
 	);
+}
+
+/**
+ * What `stepWakes` needs from the log for tonight: who died and who was revived since the
+ * New day, and, when anyone was revived, tonight's step ids (`order`).
+ */
+export function tonightFromLog(
+	log: GameLog,
+	game: Game,
+	characters: CharacterLookup,
+	data: GameData | undefined,
+	today: Parameters<typeof boardNightSteps>[4],
+	rules: readonly SpecialRule[]
+): { diedTonight: Set<SeatId>; revived: Set<SeatId>; order?: string[] } {
+	const events = log.entries.slice(0, log.cursor).flatMap((e) => e.events);
+	const revived = revivedSinceNewDay(events);
+	const order =
+		data && revived.size > 0
+			? boardNightSteps(game, characters, tonight(game), data, today, rules).map((s) => s.id)
+			: undefined;
+	return { diedTonight: diedSinceNewDay(events), revived, ...(order ? { order } : {}) };
 }
 
 /** Whether `seatId`'s death, by its recorded cause, sets off `characterId`'s ability. */
