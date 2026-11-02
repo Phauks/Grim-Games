@@ -2,6 +2,7 @@
 	import AidMenu from '#lib/features/settings/AidMenu.svelte';
 	import { untrack } from 'svelte';
 	import type { SeatId } from '#lib/core/model/index.ts';
+	import type { CharacterType } from '#lib/core/data/index.ts';
 	import { dawnGames } from '#lib/core/engine/index.ts';
 	import {
 		holdsAsGiven,
@@ -10,6 +11,8 @@
 		savantPair,
 		savantSituation,
 		savantStatements,
+		typedStatement,
+		type SavantAbout,
 		type SavantMode,
 		type SavantPart,
 		type SavantStatement
@@ -34,7 +37,8 @@
 	 * Savant information (L2, Trevor 2026-10-22): one true and one false statement worked out
 	 * from the grimoire (`core/rules/savant.ts`), each cycled on its own; a suggestion, never
 	 * the final word. Each says whether it is true and why (L49), the Storyteller can write
-	 * their own instead (L47), and the eye shows them to the player like info tokens, without
+	 * their own instead (L47), about the players in the room too (M17g: what they wear, where
+	 * they sit), linked to a seat or a character type and marked True or False, and the eye shows them to the player like info tokens, without
 	 * either (L50). "Use these" saves them as the Savant's note for today. Two panes (Trevor,
 	 * 2026-10-24): what the Savant was given on earlier days, then today's to edit.
 	 */
@@ -65,8 +69,26 @@
 	let assumed = $state([true, true]);
 	/** A line the Storyteller writes: its words, or undefined for a worked-out line. */
 	let own = $state<(string | undefined)[]>([undefined, undefined]);
-	/** Whether a written line is true. */
-	let ownTrue = $state([true, false]);
+	/** Whether a written line is true, as the Storyteller marked it; undefined until marked. */
+	let marked = $state<(boolean | undefined)[]>([true, false]);
+	/** A written line's link to a seat or a character type. */
+	let about = $state<(SavantAbout | undefined)[]>([undefined, undefined]);
+	/** Each written line as a statement the rules can pair (`typedStatement`). */
+	const typed = $derived(
+		[0, 1].map((i) =>
+			own[i] === undefined
+				? undefined
+				: typedStatement(game, characters, {
+						words: own[i]!,
+						...(about[i] ? { about: about[i] } : {}),
+						...(marked[i] === undefined ? {} : { marked: marked[i] })
+					})
+		)
+	);
+	/** A written line with words but not yet marked True or False: Use these waits on it. */
+	const unmarked = $derived(
+		[0, 1].some((i) => own[i] !== undefined && own[i]!.trim() !== '' && marked[i] === undefined)
+	);
 	let showOpen = $state(false);
 
 	function fill(slotIndex: number, want: boolean, avoid: SavantStatement[]) {
@@ -98,21 +120,22 @@
 	/** Another worked-out line in a slot, in place of whatever was there. */
 	function another(slotIndex: number) {
 		own[slotIndex] = undefined;
+		about[slotIndex] = undefined;
 		cycle(slotIndex);
 	}
 
 	/** Whether a slot holds, as given. */
 	function holds(slotIndex: number): boolean | undefined {
-		if (own[slotIndex] !== undefined) return ownTrue[slotIndex];
+		if (own[slotIndex] !== undefined) return marked[slotIndex];
 		const line = lines[slotIndex];
 		return line ? holdsAsGiven(line, assumed[slotIndex]) : undefined;
 	}
 
 	function cycle(slotIndex: number) {
 		const otherIndex = slotIndex === 0 ? 1 : 0;
-		if (own[otherIndex] !== undefined) {
-			const want =
-				mode === 'both-true' ? true : mode === 'both-false' ? false : !ownTrue[otherIndex];
+		const written = typed[otherIndex];
+		if (written) {
+			const want = partnerTruth(written, mode);
 			const current = lines[slotIndex];
 			fill(slotIndex, want, current ? [current] : []);
 			return;
@@ -169,11 +192,13 @@
 			const saved = todayNote ? savedStatements(todayNote.text, prefixes).statements : [];
 			if (saved.length > 0) {
 				own = [saved[0]?.words ?? '', saved[1]?.words ?? ''];
-				ownTrue = [saved[0]?.truth ?? true, saved[1]?.truth ?? false];
+				marked = [saved[0]?.truth ?? true, saved[1]?.truth ?? false];
+				about = [undefined, undefined];
 				return;
 			}
 			own = [undefined, undefined];
-			ownTrue = [true, false];
+			marked = [true, false];
+			about = [undefined, undefined];
 			refresh();
 		});
 	});
@@ -193,7 +218,9 @@
 	/** Writes a slot's line, starting from the worked-out words. */
 	function write(slotIndex: number) {
 		const line = lines[slotIndex];
-		ownTrue[slotIndex] = holds(slotIndex) ?? slotIndex === 0;
+		// A blank line starts unmarked: the Storyteller marks it True or False.
+		marked[slotIndex] = holds(slotIndex);
+		about[slotIndex] = undefined;
 		own[slotIndex] = line ? statementText(line, game, characters) : '';
 	}
 
@@ -204,6 +231,39 @@
 			return words.trim() === '' ? [] : [{ title: words }];
 		})
 	);
+
+	/** Mark a written line True or False; the other line follows, as for a checked one. */
+	function mark(slotIndex: number, value: boolean) {
+		marked[slotIndex] = value;
+		const other = slotIndex === 0 ? 1 : 0;
+		if (own[other] === undefined) cycle(other);
+	}
+
+	/** The drop-down's value for a link: nothing, a character type or a seat. */
+	const NONE = 'none';
+	const aboutValue = (a: SavantAbout | undefined) =>
+		!a ? NONE : 'seat' in a ? `seat:${a.seat}` : `type:${a.type}`;
+	function setAbout(slotIndex: number, value: string) {
+		about[slotIndex] = value.startsWith('seat:')
+			? { seat: value.slice(5) }
+			: value.startsWith('type:')
+				? { type: value.slice(5) as CharacterType }
+				: undefined;
+	}
+	const ABOUT_TYPES: readonly CharacterType[] = ['demon', 'minion', 'outsider', 'townsfolk'];
+	const aboutOptions = $derived([
+		{ value: NONE, label: t('savant.aboutNone') },
+		...ABOUT_TYPES.map((type) => ({
+			value: `type:${type}`,
+			label: TYPE_NAMES[type],
+			group: t('savant.aboutType')
+		})),
+		...game.seating.map((s) => ({
+			value: `seat:${s}`,
+			label: seatName(game, s),
+			group: t('savant.aboutSeat')
+		}))
+	]);
 
 	const modeOptions = $derived([
 		{ value: 'one-each' as const, label: t('savant.modeOneEach') },
@@ -366,12 +426,22 @@
 					{/if}
 					<p class="truth">
 						{#if written}
-							<Chip
-								pressed={ownTrue[i]}
-								data-truth={ownTrue[i] ? 'true' : 'false'}
-								onclick={() => (ownTrue[i] = !ownTrue[i])}
-								>{ownTrue[i] ? t('savant.true') : t('savant.false')}</Chip
+							<Chip pressed={marked[i] === true} data-truth="true" onclick={() => mark(i, true)}
+								>{t('savant.true')}</Chip
 							>
+							<Chip pressed={marked[i] === false} data-truth="false" onclick={() => mark(i, false)}
+								>{t('savant.false')}</Chip
+							>
+							<Select
+								label={t('savant.about', { number: i + 1 })}
+								hideLabel
+								value={aboutValue(about[i])}
+								options={aboutOptions}
+								onChange={(v: string) => setAbout(i, v)}
+							/>
+							{#each typed[i]?.why ?? [] as reason, j (j)}
+								<span class="why-part" data-testid="savant-why-part">{@render parts(reason)}</span>
+							{/each}
 						{:else if line?.truth === 'check'}
 							<Chip pressed={assumed[i]} onclick={() => setAssumed(i, !assumed[i])}
 								>{assumed[i] ? t('savant.checkTrue') : t('savant.checkFalse')}</Chip
@@ -407,7 +477,7 @@
 			onCancel={() => (open = false)}
 			onConfirm={save}
 			confirmLabel={t('savant.use')}
-			disabled={shown.length === 0}
+			disabled={shown.length === 0 || unmarked}
 		/>
 	{/snippet}
 	<ShowToPlayer bind:open={showOpen} cards={shown} />

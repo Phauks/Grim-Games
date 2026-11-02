@@ -42,7 +42,8 @@ export const SAVANT_GROUPS = [
 	'types',
 	'demon',
 	'today',
-	'manual'
+	'manual',
+	'room'
 ] as const;
 export type SavantGroup = (typeof SAVANT_GROUPS)[number];
 
@@ -56,9 +57,13 @@ export type SavantPart =
 
 /**
  * `check`: the app cannot know (what players chose at night, private chats), so the
- * Storyteller says whether it holds.
+ * Storyteller says whether it holds. `unknown`: a statement the Storyteller typed and has not
+ * marked true or false yet (`typedStatement`).
  */
-export type SavantTruth = 'true' | 'false' | 'either' | 'check';
+export type SavantTruth = 'true' | 'false' | 'either' | 'check' | 'unknown';
+
+/** Who a typed statement is about: one seat, or whoever holds a character type. */
+export type SavantAbout = { seat: SeatId } | { type: CharacterType };
 
 export interface SavantStatement {
 	/** Template and blanks: two statements with the same key say the same thing. */
@@ -77,6 +82,8 @@ export interface SavantStatement {
 	 * names is. Empty for a statement only the Storyteller can check.
 	 */
 	why: SavantPart[][];
+	/** A typed statement's link to a seat or a character type, if the Storyteller gave one. */
+	about?: SavantAbout;
 }
 
 /** One true and one false, or two of a kind (a drunk or poisoned Savant, the Vortox). */
@@ -188,14 +195,17 @@ const sameButNumbers = (a: readonly SavantPart[], b: readonly SavantPart[]) =>
 		'number' in p ? 'number' in b[i] : JSON.stringify(p) === JSON.stringify(b[i])
 	);
 
+/** What a reason needs from the facts: the game and its characters. */
+type Grim = Pick<Facts, 'game' | 'characters'>;
+
 /** "Seat 4 (Butler)", for a reason. */
-const seatFact = (f: Facts, seat: SeatId): SavantPart[] => {
+const seatFact = (f: Grim, seat: SeatId): SavantPart[] => {
 	const id = trueCharacter(f.game, seat, f.characters);
 	return id ? [{ seat }, text(' ('), { character: id }, text(')')] : [{ seat }];
 };
 
 /** A list of seats for a reason, or "none". */
-function seatsFact(f: Facts, head: SavantPart[], seats: readonly SeatId[]): SavantPart[] {
+function seatsFact(f: Grim, head: SavantPart[], seats: readonly SeatId[]): SavantPart[] {
 	if (seats.length === 0) return [...head, text(': none')];
 	return [
 		...head,
@@ -308,7 +318,7 @@ function wantedTruths(mode: SavantMode, random: () => number = Math.random): [bo
  * `check` as the Storyteller set it (`assumed`, true until set).
  */
 export function holdsAsGiven(s: SavantStatement, assumed = true): boolean {
-	if (s.truth === 'check') return assumed;
+	if (s.truth === 'check' || s.truth === 'unknown') return assumed;
 	if (s.truth === 'either') return s.byDefault;
 	return s.truth === 'true';
 }
@@ -321,6 +331,68 @@ export function partnerTruth(kept: SavantStatement, mode: SavantMode, assumed = 
 	if (mode === 'both-true') return true;
 	if (mode === 'both-false') return false;
 	return !holdsAsGiven(kept, assumed);
+}
+
+/**
+ * Whether two statements make a pair the mode allows (one true and one false, or two of a
+ * kind), as given; undefined while a typed one is still unmarked.
+ */
+export function pairFits(
+	a: SavantStatement,
+	b: SavantStatement,
+	mode: SavantMode
+): boolean | undefined {
+	if (a.truth === 'unknown' || b.truth === 'unknown') return undefined;
+	const [x, y] = [holdsAsGiven(a), holdsAsGiven(b)];
+	if (mode === 'one-each') return x !== y;
+	return x === y && x === (mode === 'both-true');
+}
+
+// ── Typed by the Storyteller ────────────────────────────────────────────────
+
+/** A statement the Storyteller types: its words, what it is about, and how they marked it. */
+export interface TypedStatementInput {
+	words: string;
+	about?: SavantAbout;
+	/** True or false as the Storyteller marks it; left out until they do. */
+	marked?: boolean;
+}
+
+/**
+ * A statement the grimoire cannot know, typed by the Storyteller: about the players as people
+ * in the room (what they wear, where they sit, the Demon's player being a woman). It holds
+ * as the Storyteller marks it (`unknown` until then), so it pairs with a worked-out statement
+ * through `partnerTruth` and `pairFits` like any other. Linked to a seat or a character type,
+ * its reasons say who that is, to help the Storyteller judge it.
+ */
+export function typedStatement(
+	game: Game,
+	characters: CharacterLookup,
+	input: TypedStatementInput
+): SavantStatement {
+	const words = input.words.trim();
+	const about = input.about;
+	const f: Grim = { game, characters };
+	const why: SavantPart[][] = [];
+	if (about && 'seat' in about && getSeat(game, about.seat)) why.push(seatFact(f, about.seat));
+	if (about && 'type' in about) {
+		const holders = game.seating.filter(
+			(s) => characters.get(trueCharacter(game, s, characters) ?? '')?.type === about.type
+		);
+		why.push(seatsFact(f, [{ type: about.type }], holders));
+	}
+	const aboutKey = !about ? '' : 'seat' in about ? `seat:${about.seat}` : `type:${about.type}`;
+	return {
+		key: `typed:${aboutKey}|${words}`,
+		template: 'typed',
+		group: 'room',
+		parts: [text(words)],
+		truth: input.marked === undefined ? 'unknown' : input.marked ? 'true' : 'false',
+		byDefault: input.marked ?? true,
+		dependsOn: [],
+		why,
+		...(about ? { about } : {})
+	};
 }
 
 /** A fresh pair for a mode, or fewer statements when the game cannot fill one. */
