@@ -258,6 +258,7 @@ export function characterChanger(
 	const changer = game.seating.find(
 		(id) =>
 			(!game.seats[id].dead || rules?.actsWhenDead === true) &&
+			(!rule.afterDeath || game.seats[id].dead === true) &&
 			trueCharacter(game, id, characters) === characterId &&
 			(rule.token === undefined || carries(id, rule.token)) &&
 			(rule.spent === undefined || !carries(id, rule.spent))
