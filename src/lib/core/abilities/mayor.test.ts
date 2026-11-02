@@ -8,7 +8,9 @@
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
  * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
- * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
+ * happened, then what the rules say. Quote the example word for word in a `// Wiki: "..."`
+ * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
+ * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
 import { gameEnds } from '#lib/core/rules/game-end.ts';
@@ -48,7 +50,8 @@ describe('Mayor', () => {
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Mayor#Examples)', () => {
 		it("Example 1: Imp's attack on Mayor bounces to Ravenkeeper", () => {
-			// The Mayor survives the Imp's attack, which the Storyteller may move onto another player.
+			// Wiki: "The Imp attacks the Mayor. The Storyteller chooses that the Ravenkeeper dies
+			// instead."
 			const s = scenario(['mayor', 'ravenkeeper', 'imp', 'chef', 'poisoner']).reminder(
 				'mayor',
 				'imp',
@@ -62,6 +65,8 @@ describe('Mayor', () => {
 			]);
 		});
 		it('Example 2: Three alive and no execution: good wins', () => {
+			// Wiki: "There are three players alive. There are no nominations for execution today. Good
+			// wins."
 			const s = scenario(['mayor', 'chef', 'empath', 'baron', 'imp'])
 				.newDay()
 				.dies('chef', 'demon')
@@ -71,6 +76,9 @@ describe('Mayor', () => {
 			]);
 		});
 		it('Example 3: Tied vote spares everyone; good wins', () => {
+			// Wiki: "There are five players alive, including two Travellers. Both Travellers are exiled,
+			// and the vote is tied between the remaining players. Because a tied vote means neither player
+			// is executed, good wins."
 			// Five alive, two of them Travellers: both are exiled, and the tied vote executes nobody.
 			// Exile is not execution, so with three alive and no execution good wins.
 			const s = scenario(['mayor', 'chef', 'imp', 'beggar', 'gunslinger'])

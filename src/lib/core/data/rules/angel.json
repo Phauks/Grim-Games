@@ -62,5 +62,9 @@
 				]
 			}
 		]
+	},
+	"pickedEffect": {
+		"token": "Something Bad",
+		"effects": ["no-kill"]
 	}
 }

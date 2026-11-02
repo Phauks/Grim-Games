@@ -9,6 +9,11 @@ export const characters = {
 	'characters.marks.otherNumber': 'number {number} on other nights',
 	'characters.reminder': 'reminder',
 	'characters.reminderPlaced': 'already placed',
+	/** What a reminder whose effect the Storyteller picks does (`pickedEffect`: the Angel's Something Bad, M17f). */
+	'characters.effectLabel': 'What happens',
+	'characters.effectNone': 'Storyteller’s choice',
+	'characters.effect.no-kill': 'Kills no one next night',
+	'characters.effectNote': 'Note',
 	'characters.wikiPage': 'Wiki page',
 	'characters.moreFromWiki': 'More from the wiki',
 	'characters.wikiLoading': 'Loading the wiki page…',

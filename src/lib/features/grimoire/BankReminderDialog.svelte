@@ -3,7 +3,8 @@
 	board), opened by tapping the token in hand's pill, a seat sheet's reminder or a Fabled's:
 	where it lies, what a setup suggestion is for, and the ability it comes from. A placed one
 	also has its ⋯ (Duplicate) and red trash, and an ∞ one its note, as does one whose rules
-	carry the Storyteller's words (the Zenomancer's Goal), with Show to player.
+	carry the Storyteller's words (the Zenomancer's Goal), with Show to player, and one whose
+	effect the Storyteller picks (the Angel's Something Bad) its effect.
 -->
 <script lang="ts">
 	import {
@@ -13,7 +14,7 @@
 		type ReminderInstance
 	} from '#lib/core/model/index.ts';
 	import { characterNames } from '#lib/core/rules/character-names.ts';
-	import { prepTextSegments, takesNote } from '#lib/core/rules/index.ts';
+	import { pickedEffectOf, prepTextSegments, takesNote } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
@@ -25,6 +26,7 @@
 	import ReminderMoreButton from './ReminderMoreButton.svelte';
 	import NotedReminderFields from './NotedReminderFields.svelte';
 	import ReminderNoteField from './ReminderNoteField.svelte';
+	import ReminderEffectFields from './ReminderEffectFields.svelte';
 	import { isGeneric, placedLook } from './reminders.ts';
 
 	interface Props {
@@ -106,6 +108,9 @@
 			{grimoire}
 			reminder={placed}
 		/>{:else if placed && takesNote(placed, characters)}<NotedReminderFields
+			{grimoire}
+			reminder={placed}
+		/>{:else if placed && pickedEffectOf(placed, characters)}<ReminderEffectFields
 			{grimoire}
 			reminder={placed}
 		/>{/if}

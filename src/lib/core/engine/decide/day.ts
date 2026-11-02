@@ -20,6 +20,9 @@ import {
 	marksInPlay,
 	executionSavers,
 	protection,
+	dayTallyOf,
+	tallyCount,
+	tallyKills,
 	type DayMark
 } from '#lib/core/rules/index.ts';
 import type { EngineContext } from '../context.ts';
@@ -60,6 +63,7 @@ export const DAY_DECIDERS: Deciders<
 	| 'EditNomination'
 	| 'ChooseForNomination'
 	| 'SetDayMark'
+	| 'SetDayTally'
 	| 'SetPrepValue'
 	| 'Execute'
 	| 'Exile'
@@ -130,6 +134,25 @@ export const DAY_DECIDERS: Deciders<
 			return [];
 		}
 		return markEvents(game, command.mark, command.value, ctx);
+	},
+
+	SetDayTally(game, command, ctx, warn) {
+		const { characterId, count } = command;
+		if (!Number.isInteger(count) || count < 0) {
+			refuse('invalid-day-tally', 'a count is a whole number, 0 or more');
+		}
+		if (!dayTallyOf(characterId, ctx.characters)) {
+			warn('no-day-tally', 'this character keeps no count by day');
+		}
+		if (count === tallyCount(game.today, characterId)) {
+			warn('no-change', 'the count is unchanged');
+			return [];
+		}
+		const died = tallyKills(game, characterId, ctx.characters)?.died.length ?? 0;
+		if (died > count) {
+			warn('beyond-tally', 'more players died from this ability today than this count');
+		}
+		return [{ type: 'DayTallySet', characterId, count }];
 	},
 
 	SetPrepValue(game, command, ctx, warn) {

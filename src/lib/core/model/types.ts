@@ -16,6 +16,7 @@ import type {
 	PlayerName
 } from '#lib/core/data/index.ts';
 import type { DayMark } from '#lib/core/data/day-mark-rules.ts';
+import type { ReminderEffectKind } from '#lib/core/data/parts/picked-effect.ts';
 // Type-only: the Storyteller's night-order and day-reminder overrides are defined next to
 // the rules that apply them, and stored on the game.
 import type { DayReminderOverride } from '#lib/core/rules/day-reminders.ts';
@@ -74,6 +75,20 @@ export interface ReminderInstance extends Reminder {
 	 * the seats that reminder fits suggested.
 	 */
 	like?: Reminder;
+	/**
+	 * The effect the Storyteller picked for a reminder whose rules let them (`pickedEffect`: the
+	 * Angel's Something Bad, Trevor 2026-11-02). None until picked; their own words go in `note`.
+	 */
+	effect?: ReminderEffect;
+}
+
+/**
+ * A picked reminder effect (`REMINDER_EFFECTS`): `no-kill` stops its player killing on `night`
+ * only (the night numbered as the day view numbers them, `rules/game-phase.ts`).
+ */
+export interface ReminderEffect {
+	kind: ReminderEffectKind;
+	night: number;
 }
 
 /**
@@ -261,6 +276,9 @@ export interface CharacterGuess {
  *   question, what the Savant was told), with structured `guesses` for the Juggler.
  * - `info`: what a waking character was shown, with the reminder tokens it placed, and
  *   whether it worked abnormally (for the Mathematician).
+ * - `wish`: a wish a character's player made (its `wish` rule: the Wizard's,
+ *   https://wiki.bloodontheclocktower.com/Wizard), granted or declined, with the price and the
+ *   clue the Storyteller set, and a standard `effect` the app knows, when they chose one.
  */
 export type DayEntry =
 	| {
@@ -317,7 +335,38 @@ export type DayEntry =
 			reminderIds: ReminderId[];
 			/** Set when the info or ability worked abnormally because of another character. */
 			abnormal?: AbnormalCause[];
+	  }
+	| {
+			kind: 'wish';
+			entryId: DayEntryId;
+			seatId: SeatId;
+			characterId: CharacterId;
+			text: string;
+			granted: boolean;
+			price?: string;
+			clue?: string;
+			effect?: WishEffect;
 	  };
+
+/**
+ * A granted wish's effect the app knows and acts on, the Storyteller's pick (they decide what
+ * a wish does: https://wiki.bloodontheclocktower.com/Wizard):
+ * - `good-drunk`: every good player is drunk for the rest of the game.
+ */
+export const WISH_EFFECTS = ['good-drunk'] as const;
+export type WishEffect = (typeof WISH_EFFECTS)[number];
+
+/**
+ * The two Storytellers of a rule character's `twoStorytellers` rule (the Knaves,
+ * https://wiki.bloodontheclocktower.com/Knaves): their names, which one lies (0 or 1, absent
+ * until decided), and whether they have switched.
+ */
+export interface StorytellerPair {
+	/** Empty names mean "Storyteller 1" and "Storyteller 2". */
+	names?: [string, string];
+	liar?: 0 | 1;
+	switched?: true;
+}
 
 export type DayEntryKind = DayEntry['kind'];
 
@@ -347,6 +396,15 @@ export interface AbnormalCause {
 	seatId?: SeatId;
 }
 
+/**
+ * One character's count today (`dayTally`), and the players its ability killed since this day
+ * began, by day or the night after it, in the order they died.
+ */
+export interface DayTallyLog {
+	count: number;
+	deaths?: SeatId[];
+}
+
 /** The day log: everything logged since the last "New day". */
 export interface DayLog {
 	entries: DayEntry[];
@@ -356,6 +414,16 @@ export interface DayLog {
 	 * missing until marked. Votes themselves are not tracked.
 	 */
 	marks?: Partial<Record<DayMark, boolean>>;
+	/**
+	 * Today's counts the Storyteller keeps (`dayTally`: how often the Yaggababble said its
+	 * phrase), by character. Absent while none.
+	 */
+	tallies?: Record<CharacterId, DayTallyLog>;
+	/**
+	 * Which of two Storytellers (`Game.storytellerPair`) each player went to for their
+	 * information today, by seat. Absent while none.
+	 */
+	visits?: Record<SeatId, 0 | 1>;
 	/** When "New day" closed this log (milliseconds since the epoch); only on past days. */
 	closedAt?: number;
 }
@@ -464,4 +532,6 @@ export interface Game {
 	 * Storyteller gave none, and in games saved before version 10.
 	 */
 	storytellerName?: string;
+	/** The two Storytellers, while a `twoStorytellers` rule character is set up. Absent until set. */
+	storytellerPair?: StorytellerPair;
 }

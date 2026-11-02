@@ -18,6 +18,7 @@ import {
 	registrationWorlds,
 	registrations
 } from '../ability.ts';
+import { type StorytellerVisit, storytellerVisit } from '../storytellers.ts';
 
 const W = 'https://wiki.bloodontheclocktower.com/';
 
@@ -35,6 +36,11 @@ export interface Reliability {
 	vortox?: SeatId;
 	/** That character, when `mustBeFalse`. */
 	falseBy?: CharacterId;
+	/**
+	 * Which of two Storytellers the player went to today (`storytellers.ts`, the Knaves): the
+	 * lying one makes `mustBeFalse`, with that rule character in `falseBy` and no `vortox`.
+	 */
+	storyteller?: StorytellerVisit;
 	/**
 	 * Players who might register falsely (Spy, Recluse, the Faux Paw player) where that could
 	 * change this information.
@@ -161,6 +167,14 @@ export function reliability(
 		out.mustBeFalse = true;
 		out.vortox = falseBy.seatId;
 		out.falseBy = falseBy.characterId;
+	}
+	const visit = storytellerVisit(game, seatId, characters);
+	if (visit) {
+		out.storyteller = visit;
+		if (visit.lies && !out.mustBeFalse) {
+			out.mustBeFalse = true;
+			out.falseBy = visit.by;
+		}
 	}
 	out.registrations = otherRegistrations(game, seatId, characters);
 	out.misregister = out.registrations.map((r) => r.seatId);
