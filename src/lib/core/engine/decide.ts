@@ -86,6 +86,7 @@ export type WarningCode =
 	| 'already-in-play'
 	| 'kept-alignment'
 	| 'extra-evil-limit'
+	| 'jinxed-ability'
 	| 'alignment-differs-from-true-character'
 	| 'seat-has-character'
 	| 'draw-cancelled'

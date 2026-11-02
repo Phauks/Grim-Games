@@ -35,6 +35,7 @@ export { impairs } from './impairs.ts';
 export { infoCard } from './info-card.ts';
 export { infoKind } from './info-kind.ts';
 export { infoTokenCharacters } from './info-token-characters.ts';
+export { jinxes } from './jinxes.ts';
 export { jinxesOnly } from './jinxes-only.ts';
 export { keepsAbility } from './keeps-ability.ts';
 export { kills } from './kills.ts';
