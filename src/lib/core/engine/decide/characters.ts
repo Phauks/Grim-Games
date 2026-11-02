@@ -1,7 +1,14 @@
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
-import { OVERRIDE_FIELDS, isOnScript, registersAsDead, replacedBy } from '#lib/core/model/index.ts';
+import {
+	OVERRIDE_FIELDS,
+	isOnScript,
+	registersAsDead,
+	replacedBy,
+	scriptCharacterIds
+} from '#lib/core/model/index.ts';
 import { extraEvilPlayers } from '#lib/core/rules/extra-evil.ts';
+import { barredAbilities } from '#lib/core/rules/jinxes.ts';
 import type { GameEvent } from '../events.ts';
 import {
 	allowsDuplicates,
@@ -133,8 +140,19 @@ export const CHARACTERS_DECIDERS: Deciders<
 
 	SetHeldAbility(game, command, ctx, warn) {
 		const seat = seatOf(game, command.seatId);
-		characterOf(ctx, command.via);
-		if (command.characterId !== undefined) seatableCharacter(ctx, command.characterId);
+		const via = characterOf(ctx, command.via);
+		if (command.characterId !== undefined) {
+			const given = seatableCharacter(ctx, command.characterId);
+			// A jinx may bar the ability (the Boffin's Demon cannot have the Drunk ability,
+			// https://wiki.bloodontheclocktower.com/Boffin#Related_Jinxes): warn, never lock.
+			const script = scriptCharacterIds(game.script);
+			if (barredAbilities(via.id, script, ctx.characters).includes(given.id))
+				warn(
+					'jinxed-ability',
+					`${via.name} and ${given.name} are jinxed: the ${via.name} cannot give that ability`,
+					[via.id, given.id]
+				);
+		}
 		const held = seat.abilities?.find((a) => a.via === command.via)?.characterId;
 		if (held === command.characterId) {
 			warn('no-change', command.characterId ? 'already has that ability' : 'has no such ability');

@@ -21,7 +21,7 @@ import { DAY_GROUP_TITLES, type DayGroup } from '#lib/core/data/day-reminder-rul
 import { dayRulesOf, detectDayReminders } from './day-reminders.ts';
 import { describeImpairable, describeWhen } from './describe.ts';
 import { MAX_DEALT_PLAYERS } from './distribution.ts';
-import { isExclusiveJinx } from './jinxes.ts';
+import { jinxIsExclusive } from './jinxes.ts';
 import { nightOrder, type Night, type NightOrder } from './night-order.ts';
 import { nightTextOverride, type NightTextOverride } from './night-text.ts';
 import { setupModifierFor, type SetupModifier } from './setup-modifiers.ts';
@@ -288,7 +288,7 @@ export function characterReference(data: GameData): ReferenceEntry[] {
 		const jinxes = jinxesFor(data.jinxes, character.id).map((j) => ({
 			with: j.characters[0] === character.id ? j.characters[1] : j.characters[0],
 			reason: j.reason,
-			exclusive: isExclusiveJinx(j.reason)
+			exclusive: jinxIsExclusive(j)
 		}));
 		const tokens = referenceTokens(character);
 		for (const spec of setupSpecs(character)) {
