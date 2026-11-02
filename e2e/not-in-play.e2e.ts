@@ -77,7 +77,13 @@ async function thiefArrives(page: Page) {
 	const arrival = page.getByRole('button', { name: /^Seat 9:/ });
 	await expect(arrival).toHaveAccessibleName(/not in play/);
 	await arrival.tap();
-	await seatSheet(page).getByRole('button', { name: 'Choose' }).first().tap();
+	// Its empty token asks "Add as a Traveller?" (Trevor, 2026-11-02); Not a Traveller goes on
+	// to the seat's own character list, which has the Travellers too.
+	await seatSheet(page).getByRole('button', { name: 'Add as a Traveller?' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Add as a Traveller?' })
+		.getByRole('button', { name: 'Not a Traveller' })
+		.tap();
 	await page
 		.getByRole('dialog', { name: 'Character for Seat 9' })
 		.getByRole('button', { name: 'Thief, Recommended', exact: true })
