@@ -63,11 +63,13 @@
 		 * chosen and executed by `cause`. Without it, they are executed here.
 		 */
 		onExecute?: (seatId: SeatId, cause: CharacterId) => void;
+		/** Back to town on the timer (the grimoire's, Trevor 2026-11-01); none in the spike. */
+		town?: { can: boolean; called: boolean };
 	}
 
 	// No Undo or History here (Trevor, 2026-10-16): each day action is one entry in the
 	// game's History, in the grimoire's menu.
-	let { game, assistance, onOpenNight, onSavant, onExecute }: Props = $props();
+	let { game, assistance, onOpenNight, onSavant, onExecute, town }: Props = $props();
 	// Every badge on the day screen names the script's own characters, homebrew included.
 	provideCharacters(() => game.characters);
 
@@ -259,7 +261,7 @@
 	}
 
 	/** Votes for the first nominee, from who is alive now (core `blockThreshold`). */
-	const block = $derived(blockThreshold(g));
+	const block = $derived(blockThreshold(g, game.characters));
 	/** Section headers stick just under the toolbar (Trevor, 2026-10-17). */
 	let toolbarSize = $state<ResizeObserverSize[]>();
 	// The exact (fractional) height: a rounded one leaves a sliver between toolbar and header.
@@ -437,7 +439,7 @@
 <div class="panel" style:--toolbar-height={`${toolbarHeight}px`}>
 	<!-- Stays in view while the day scrolls (Trevor, 2026-10-17). -->
 	<div class="toolbar" data-testid="day-toolbar" bind:borderBoxSize={toolbarSize}>
-		<DayTimer alive={block.alive} />
+		<DayTimer alive={block.alive} {town} />
 		{#if onOpenNight}
 			<Button icon="night" onclick={onOpenNight}>{t('day.nightOrder')}</Button>
 		{/if}

@@ -85,7 +85,7 @@ describe('Boomdandy', () => {
 
 		it('does not explode when its ability does not work', () => {
 			// A poisoned Boomdandy is executed like anyone else.
-			const s = scenario(['boomdandy', 'po', 'chef', 'empath', 'monk']).poisoned('boomdandy');
+			const s = scenario(['boomdandy', 'po', 'chef', 'empath', 'poisoner']).poisoned('boomdandy');
 			expect(explosionOf(s.game, s.seat('boomdandy'), s.characters)).toBeUndefined();
 			expect(explosionOf(s.game, s.seat('chef'), s.characters)).toBeUndefined();
 		});
