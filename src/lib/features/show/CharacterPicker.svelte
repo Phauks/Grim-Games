@@ -220,12 +220,21 @@
 		position: sticky;
 		/* The sheet body's top padding, so nothing shows above it while scrolling. */
 		top: calc(-1 * var(--space-1));
-		z-index: 2;
+		/* Over the chosen places and every type's header scrolling up under it. */
+		z-index: 3;
 		display: flex;
 		align-items: center;
 		gap: var(--space-2);
 		padding-block: var(--space-1);
 		background: var(--sheet-background);
+	}
+	/* A type's band reaches into the sheet's gutter (Collapsible), so what is pinned above
+	   the list covers the gutter too, or a band scrolling under it shows at its ends (Trevor,
+	   2026-11-02). */
+	.top,
+	.pinned {
+		margin-inline: calc(-1 * var(--space-2));
+		padding-inline: var(--space-2);
 	}
 	.search {
 		flex: 1;
@@ -242,7 +251,9 @@
 	.pinned {
 		position: sticky;
 		top: calc(var(--top-height) - var(--space-1));
-		z-index: 1;
+		/* Over each type's header scrolling up past it, which pins just below (Trevor,
+		   2026-11-02: the Outsiders header slid over an empty place). */
+		z-index: 2;
 		display: grid;
 		gap: var(--space-2);
 		padding-block: var(--space-1);
@@ -313,6 +324,11 @@
 		/* Beside the list: the type headers pin straight under the search line. */
 		.columns {
 			--pinned-stack: 0px; /* px-ok: a zero length in calc() needs a unit */
+		}
+		/* Its own column, beside the list's bands rather than over them. */
+		.pinned {
+			margin-inline: 0;
+			padding-inline: 0;
 		}
 		/* Rows down the left: the band and the start of the ability. */
 		.slots {

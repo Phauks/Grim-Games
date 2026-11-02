@@ -465,8 +465,20 @@
 		gap: var(--space-3);
 		min-height: 0;
 		margin-top: var(--space-3);
+		/* Each pane scrolls, and a scroll box clips sideways too, so the panes and each pane
+		   reach out into the dialog's side padding and give that room back inside: a character
+		   type's band, which reaches into the gutter (Collapsible), is drawn whole (Trevor,
+		   2026-11-01: Add late player's Townsfolk band cut off). */
+		margin-inline: calc(-1 * var(--space-2));
+		padding-inline: var(--space-2);
 		overflow-y: auto;
 		overscroll-behavior: contain;
+	}
+	.aside,
+	.pane {
+		min-width: 0;
+		margin-inline: calc(-1 * var(--space-2));
+		padding-inline: var(--space-2);
 	}
 	.panes[data-pin] {
 		overflow: hidden;
