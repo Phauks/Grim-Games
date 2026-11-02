@@ -1,14 +1,13 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import NoteCards from '#lib/ui/notes/NoteCards.svelte';
-	import NoteDraftEditor from '#lib/ui/notes/NoteDraftEditor.svelte';
+	import NoteList from '#lib/ui/notes/NoteList.svelte';
 	import type { TitledNote } from '#lib/ui/notes/note.ts';
 
 	/**
-	 * A player's own notes on a seat, in that seat's sheet on their grim: each note its own
-	 * card with its title and first line, a hidden one saying so, and a tap opens it (Trevor,
-	 * 2026-10-31: two notes "populate together with a , between them ... neither show title,
-	 * and don't properly hide text"). The same cards as every other list of notes.
+	 * A player's own notes on a seat, in that seat's sheet on their grim: each note its own row
+	 * with its title, a hidden one saying so (Trevor, 2026-10-31: two notes "populate together
+	 * with a , between them ... neither show title, and don't properly hide text"), written
+	 * where it sits (Trevor, 2026-11-02). The same list as every other list of notes.
 	 */
 	interface Props {
 		notes: readonly TitledNote[];
@@ -17,15 +16,12 @@
 	}
 
 	let { notes, onSave, onDelete }: Props = $props();
-	let editor = $state<ReturnType<typeof NoteDraftEditor>>();
 </script>
 
 <div class="row" data-testid="seat-note">
 	<span class="label">{t('player.notes')}</span>
-	<NoteCards {notes} onOpen={(noteId) => editor?.edit(noteId)} onAdd={() => editor?.edit()} />
+	<NoteList {notes} {onSave} {onDelete} />
 </div>
-
-<NoteDraftEditor bind:this={editor} {notes} {onSave} {onDelete} />
 
 <style>
 	/* A labelled row with a line under it, as the sheet's other rows. */

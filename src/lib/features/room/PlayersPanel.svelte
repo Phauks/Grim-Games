@@ -7,8 +7,7 @@
 	import type { Command } from '#lib/core/engine/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
-	import NoteCards from '#lib/ui/notes/NoteCards.svelte';
-	import NoteDraftEditor from '#lib/ui/notes/NoteDraftEditor.svelte';
+	import NoteList from '#lib/ui/notes/NoteList.svelte';
 	import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 	import { seatName } from '#lib/features/game/seat-label.ts';
 	import SeatAvatarButton from '#lib/features/player/SeatAvatarButton.svelte';
@@ -147,13 +146,6 @@
 	const seatNotes = (seatId: SeatId | undefined) =>
 		(seatId && game.game.seats[seatId]?.notes) || [];
 	const gameNotes = $derived(game.game.notes ?? []);
-	let editor = $state<ReturnType<typeof NoteDraftEditor>>();
-	/** Whose note the editor has open; undefined for a game note. */
-	let noteSeat = $state<SeatId>();
-	function openNote(seatId: SeatId | undefined, noteId?: string) {
-		noteSeat = seatId;
-		editor?.edit(noteId);
-	}
 	type Written = { noteId?: string; title: string; text: string; hidden: boolean };
 	function saveNote(seatId: SeatId | undefined, note: Written) {
 		if (viewOnly) return;
@@ -195,10 +187,11 @@
 	<!-- The whole game's notes, their own section above the players (Trevor, 2026-10-31). -->
 	<section aria-labelledby="game-notes-label" data-testid="game-notes">
 		<h2 id="game-notes-label">{t('room.players.gameNotes')}</h2>
-		<NoteCards
+		<NoteList
 			notes={gameNotes}
-			onOpen={(noteId) => openNote(undefined, noteId)}
-			onAdd={viewOnly ? undefined : () => openNote(undefined)}
+			readonly={viewOnly}
+			onSave={(note) => saveNote(undefined, note)}
+			onDelete={(noteId) => deleteNote(undefined, noteId)}
 		/>
 	</section>
 	<section aria-labelledby="players-label">
@@ -291,10 +284,11 @@
 			{@const seatId = entry.seatId}
 			<section class="notes" aria-labelledby="player-notes-{seatId}">
 				<h4 id="player-notes-{seatId}">{t('room.players.notesHeading')}</h4>
-				<NoteCards
+				<NoteList
 					notes={seatNotes(seatId)}
-					onOpen={(noteId) => openNote(seatId, noteId)}
-					onAdd={viewOnly ? undefined : () => openNote(seatId)}
+					readonly={viewOnly}
+					onSave={(note) => saveNote(seatId, note)}
+					onDelete={(noteId) => deleteNote(seatId, noteId)}
 				/>
 			</section>
 		{/if}
@@ -311,15 +305,6 @@
 	{#if removing}<PlayerBadge name={removing.name} />{/if}
 	<p>{t('room.players.removeBody')}</p>
 </ConfirmDialog>
-
-<!-- One editor for every note here, the game's or a player's. Never shown to players. -->
-<NoteDraftEditor
-	bind:this={editor}
-	notes={noteSeat ? seatNotes(noteSeat) : gameNotes}
-	readonly={viewOnly}
-	onSave={(note) => saveNote(noteSeat, note)}
-	onDelete={(noteId) => deleteNote(noteSeat, noteId)}
-/>
 
 <style>
 	.players {

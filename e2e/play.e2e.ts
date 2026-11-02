@@ -1,4 +1,14 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import {
+	addNote,
+	expectNotes,
+	leaveNote,
+	newNoteRow,
+	noteRows,
+	noteText,
+	noteTitle,
+	rewriteNote
+} from './notes.ts';
 import { openPlayerSettings, openProfile, setPlayerName } from './player-name.ts';
 import { expectMatchingIconRow } from './icon-row.ts';
 import { expectTitleBesideOrUnder } from './title-row.ts';
@@ -60,13 +70,6 @@ async function openTab(page: Page, name: string) {
 		await page.getByRole('dialog', { name: 'More tabs' }).getByRole('button', { name }).tap();
 	}
 	await tab.tap();
-}
-
-/** Lets a sheet's opening animation end, so its size and place are final. */
-async function settled(locator: Locator) {
-	await locator.evaluate((el) =>
-		Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished))
-	);
 }
 
 test.beforeEach(async ({ page }) => {
@@ -308,7 +311,7 @@ test('notes written on a seat by an older version are kept as titled notes', asy
 	await page.reload();
 	await page.getByRole('tab', { name: 'Notes' }).tap();
 	await expect(page.locator('[data-note]')).toHaveCount(2);
-	await expect(page.getByRole('button', { name: /Seat 2 · Sam\s*Claimed Chef/ })).toBeVisible();
+	await expectNotes(page, ['Mine: Chef 0', 'Seat 2 · Sam: Claimed Chef']);
 });
 
 test('the script tab lists characters by type with their abilities', async ({ page }) => {
@@ -486,57 +489,46 @@ test("the night order shows who wakes, with TPI's night text", async ({ page }) 
 
 test('titled notes are kept after a reload, and deleting asks first', async ({ page }) => {
 	await page.getByRole('tab', { name: 'Notes' }).tap();
-	// A new note closed with nothing in it is not kept.
+	// A new note left with nothing in it is not kept.
 	await page.getByRole('button', { name: 'New note' }).tap();
-	await expect(page.getByRole('dialog', { name: 'Note' })).toBeVisible();
-	await page.keyboard.press('Escape');
-	await expect(page.getByRole('dialog', { name: 'Note' })).toBeHidden();
-	await expect(page.locator('[data-note]')).toHaveCount(0);
-	await page.getByRole('button', { name: 'New note' }).tap();
-	let sheet = page.getByRole('dialog', { name: 'Note' });
-	// Opening a note doesn't focus a field, so the phone keyboard stays closed (Trevor).
-	await expect(sheet.getByRole('textbox', { name: 'Title' })).toBeVisible();
-	await expect(sheet.getByRole('textbox', { name: 'Title' })).not.toBeFocused();
-	await expect(sheet.getByRole('textbox', { name: 'Text' })).not.toBeFocused();
-	await sheet.getByRole('textbox', { name: 'Title' }).fill('What I really know');
-	await sheet.getByRole('textbox', { name: 'Text' }).fill('Sam is the Imp');
-	await page.keyboard.press('Escape');
+	const fresh = newNoteRow(page);
+	// Tapping "+ New note" focuses nothing, so the phone keyboard stays closed (Trevor).
+	await expect(noteTitle(fresh)).toBeVisible();
+	await expect(noteTitle(fresh)).not.toBeFocused();
+	await expect(noteText(fresh)).not.toBeFocused();
+	await noteTitle(fresh).tap();
+	await leaveNote(page);
+	await expect(fresh).toHaveCount(0);
+	await expect(noteRows(page)).toHaveCount(0);
+	// Written where it sits (Trevor, 2026-11-02), and kept as it is left.
+	await addNote(page, page, { title: 'What I really know', text: 'Sam is the Imp' });
 
-	// New ones start from a dashed card at the end of each list, not a header button (Trevor,
-	// 2026-10-24).
-	await expect(
-		page.locator('[data-note]').last().locator('xpath=../following-sibling::li')
-	).toHaveCount(1);
+	// New ones start from a dashed "+ New note" at the end of each list, not a header button
+	// (Trevor, 2026-10-24).
+	await expect(noteRows(page).last().locator('xpath=following-sibling::li')).toHaveCount(1);
 	await expect(page.getByTestId('new-note')).toHaveCSS('border-style', 'dashed');
 	await expect(page.getByTestId('new-pad')).toHaveCSS('border-style', 'dashed');
 	await expect(page.getByRole('button', { name: 'New note' })).toHaveCount(1);
 	await expect(page.getByRole('button', { name: 'New pad' })).toHaveCount(1);
-	await page.getByRole('button', { name: 'New note' }).tap();
-	sheet = page.getByRole('dialog', { name: 'Note' });
-	await sheet.getByRole('textbox', { name: 'Title' }).fill('My bluff');
-	await sheet.getByRole('textbox', { name: 'Text' }).fill('Chef: 0');
-	await page.keyboard.press('Escape');
-	await expect(page.locator('[data-note]')).toHaveCount(2);
+	await addNote(page, page, { title: 'My bluff', text: 'Chef: 0' });
+	await expect(noteRows(page)).toHaveCount(2);
 
 	await expect
 		.poll(async () => (await storedNotes(page)).map((n) => n.title))
 		.toEqual(['What I really know', 'My bluff']);
 	await page.reload();
 	await page.getByRole('tab', { name: 'Notes' }).tap();
-	await expect(
-		page.getByRole('button', { name: /What I really know\s*Sam is the Imp/ })
-	).toBeVisible();
+	await expectNotes(page, ['What I really know: Sam is the Imp', 'My bluff: Chef: 0']);
 
-	await page.getByRole('button', { name: /^My bluff/ }).tap();
-	sheet = page.getByRole('dialog', { name: 'Note' });
-	// Every delete is the red trash can alone, no text (Trevor, 2026-10-17).
-	const del = sheet.getByRole('button', { name: 'Delete note' });
+	// An edit in place is kept too.
+	await rewriteNote(page, noteRows(page).last(), 'Chef: 1');
+	await expectNotes(page, ['What I really know: Sam is the Imp', 'My bluff: Chef: 1']);
+
+	// Every delete is the red trash can alone, no text (Trevor, 2026-10-17), at the end of the
+	// note's title line.
+	const del = noteRows(page).last().getByRole('button', { name: 'Delete note' });
 	await expect(del).toHaveText('');
 	await expect(del.locator('[data-icon]')).toBeVisible();
-	// In the header, beside its X (Trevor, 2026-10-17).
-	await expect(sheet.locator('.head').getByRole('button', { name: 'Delete note' })).toBeVisible();
-	// The panel grows in: measured mid-animation the button is a hair under 44.
-	await settled(sheet);
 	const box = (await del.boundingBox())!;
 	expect(box.width).toBeGreaterThanOrEqual(44);
 	expect(box.height).toBeGreaterThanOrEqual(44);
@@ -552,17 +544,37 @@ test('titled notes are kept after a reload, and deleting asks first', async ({ p
 	await del.tap();
 	const confirm = page.getByRole('alertdialog', { name: 'Delete this note?' });
 	await confirm.getByRole('button', { name: 'Confirm' }).tap();
-	await expect(page.locator('[data-note]')).toHaveCount(1);
+	await expect(noteRows(page)).toHaveCount(1);
+});
+
+test('a note is written in its row, its formatting tools over its buttons', async ({ page }) => {
+	// Trevor (2026-11-02): notes edited in-line instead of opened; the row keeps its height,
+	// the tools taking the place of the eye and trash while the text is written.
+	await page.getByRole('tab', { name: 'Notes' }).tap();
+	await addNote(page, page, { title: 'Night 1', text: 'Chef: 0' });
+	const row = noteRows(page).first();
+	const hide = row.getByRole('button', { name: 'Hide contents' });
+	const bold = row.getByRole('button', { name: 'Bold' });
+	await expect(hide).toBeVisible();
+	await expect(bold).toBeHidden();
+	const before = (await row.boundingBox())!;
+	await noteText(row).tap();
+	await expect(bold).toBeVisible();
+	await expect(hide).toBeHidden();
+	const tools = (await row.getByRole('toolbar').boundingBox())!;
+	const title = (await noteTitle(row).boundingBox())!;
+	// On the title's line, and the row no taller.
+	expect(Math.abs(tools.y + tools.height / 2 - (title.y + title.height / 2))).toBeLessThan(4);
+	expect((await row.boundingBox())!.height).toBeCloseTo(before.height, 0);
+	await page.screenshot({ path: `test-results/note-inline-${test.info().project.name}.png` });
+	await leaveNote(page);
+	await expect(hide).toBeVisible();
+	await expect(bold).toBeHidden();
 });
 
 test('each script keeps its own notebook', async ({ page }) => {
 	await page.getByRole('tab', { name: 'Notes' }).tap();
-	await page.getByRole('button', { name: 'New note' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Note' })
-		.getByRole('textbox', { name: 'Title' })
-		.fill('TB');
-	await page.keyboard.press('Escape');
+	await addNote(page, page, { title: 'TB' });
 	await expect.poll(async () => (await storedNotes(page)).map((n) => n.title)).toEqual(['TB']);
 
 	// Players have no Change script button (Trevor): the script comes from /scripts or a link.
@@ -571,10 +583,10 @@ test('each script keeps its own notebook', async ({ page }) => {
 	await expect(page.getByRole('heading', { name: 'Bad Moon Rising', level: 1 })).toBeVisible();
 	// A new script starts its own notebook, with no notes; Trouble Brewing's is kept.
 	await expect(page.getByRole('button', { name: 'New note' })).toBeVisible();
-	await expect(page.locator('[data-note]')).toHaveCount(0);
+	await expect(noteRows(page)).toHaveCount(0);
 	await page.goto('/play#e=tb');
 	await page.getByRole('tab', { name: 'Notes' }).tap();
-	await expect(page.getByRole('button', { name: /^TB/ })).toBeVisible();
+	await expectNotes(page, ['TB']);
 });
 
 test('a homebrew character from a loaded script shows as a badge with its ability', async ({
@@ -709,37 +721,30 @@ test('a shared link with problems opens the Script check first', async ({ page }
 	await expect(page.locator('[data-character]')).toHaveCount(2);
 });
 
-test('each note can hide its contents until it is opened', async ({ page }) => {
+test('each note can hide its contents', async ({ page }) => {
 	await page.getByRole('tab', { name: 'Notes' }).tap();
-	await page.getByRole('button', { name: 'New note' }).tap();
-	const sheet = page.getByRole('dialog', { name: 'Note' });
-	await sheet.getByRole('textbox', { name: 'Title' }).fill('Evil team');
-	await sheet.getByRole('textbox', { name: 'Text' }).fill('Sam is the Imp');
-	await page.keyboard.press('Escape');
-	const row = page.locator('[data-note]');
-	await expect(row).toContainText('Sam is the Imp');
+	await addNote(page, page, { title: 'Evil team', text: 'Sam is the Imp' });
+	const row = noteRows(page);
+	await expectNotes(page, ['Evil team: Sam is the Imp']);
 
 	// Each note has its own switch (Trevor, 2026-10-17), not a setting, and it is the same
 	// one as a scratch pad's, beside the title (Trevor, 2026-10-18).
-	await row.tap();
-	const hide = sheet.getByRole('button', { name: 'Hide contents' });
+	const hide = row.getByRole('button', { name: 'Hide contents' });
 	await expect(hide).toHaveAttribute('aria-pressed', 'false');
 	await hide.tap();
 	await expect(hide).toHaveAttribute('aria-pressed', 'true');
-	await page.keyboard.press('Escape');
 
 	// The title stays so notes can be found; the text is hidden (Trevor, 2026-10-16).
-	await expect(row).toHaveText(/^\s*Evil team\s*Hidden\s*$/);
+	await expectNotes(page, ['Evil team: Hidden']);
 	await expect(row).not.toContainText('Sam is the Imp');
-	// Opening the note shows it.
-	await row.tap();
-	await expect(sheet.getByRole('textbox', { name: 'Text' })).toHaveText('Sam is the Imp');
-	await page.keyboard.press('Escape');
 	// Kept after a reload.
 	await expect.poll(() => storedNotes(page)).toEqual([{ title: 'Evil team', hidden: true }]);
 	await page.reload();
 	await page.getByRole('tab', { name: 'Notes' }).tap();
-	await expect(page.locator('[data-note]')).toHaveText(/^\s*Evil team\s*Hidden\s*$/);
+	await expectNotes(page, ['Evil team: Hidden']);
+	// The eye shows it again.
+	await hide.tap();
+	await expectNotes(page, ['Evil team: Sam is the Imp']);
 	// The old Settings switch is gone.
 	await openSettings(page);
 	const settings = page.getByRole('dialog', { name: 'Settings' });
@@ -753,13 +758,15 @@ test('each note can hide its contents until it is opened', async ({ page }) => {
 test('Enter in a note title closes the keyboard', async ({ page }) => {
 	await page.getByRole('tab', { name: 'Notes' }).tap();
 	await page.getByRole('button', { name: 'New note' }).tap();
-	const sheet = page.getByRole('dialog', { name: 'Note' });
-	const title = sheet.getByRole('textbox', { name: 'Title' });
+	const title = noteTitle(newNoteRow(page));
 	await title.fill('Bluff');
 	await title.press('Enter');
-	await expect(title).not.toBeFocused();
+	// Kept, and nothing in the note has focus any more.
+	await expectNotes(page, ['Bluff']);
+	await expect(noteTitle(noteRows(page).first())).not.toBeFocused();
+	expect(await page.evaluate(() => document.activeElement?.closest('[data-note]'))).toBeNull();
 	// Note text is multi-line: Enter is a new line there.
-	const text = sheet.getByRole('textbox', { name: 'Text' });
+	const text = noteText(noteRows(page).first());
 	await text.fill('one');
 	await text.press('Enter');
 	await text.pressSequentially('two');

@@ -10,7 +10,6 @@ import {
 	addNote,
 	deleteNote,
 	emptyNotebook,
-	isBlankNote,
 	migrateNotebook,
 	updateNote,
 	type PlayerNotebook
@@ -128,10 +127,5 @@ export class NotebookState {
 	}
 	deleteNote(noteId: string) {
 		this.#change(deleteNote(this.book, noteId));
-	}
-	/** Drops the note if it was closed with nothing in it, as a new note left empty. */
-	dropIfBlank(noteId: string) {
-		const note = this.book.notes.find((n) => n.noteId === noteId);
-		if (note && isBlankNote(note)) this.deleteNote(noteId);
 	}
 }

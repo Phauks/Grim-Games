@@ -34,6 +34,14 @@
 		/** The words in the heading font, as a card shows them. */
 		display?: boolean;
 		disabled?: boolean;
+		/**
+		 * A note's words written in its row (Trevor, 2026-11-02): no box, the label for screen
+		 * readers only, and the tools only while the words are being written, laid over the end
+		 * of the row's first line (the row is their positioned parent), so nothing moves.
+		 */
+		inline?: boolean;
+		/** True while the words have focus or the colours are open; a row hides its own buttons. */
+		active?: boolean;
 		/** Enter in a one-line box: Enter commits (Trevor's rule). */
 		onsubmit?: () => void;
 		oninput?: (value: string) => void;
@@ -48,6 +56,8 @@
 		rows = 1,
 		display = false,
 		disabled = false,
+		inline = false,
+		active = $bindable(false),
 		onsubmit,
 		oninput
 	}: Props = $props();
@@ -64,6 +74,11 @@
 	let inkButton = $state<HTMLButtonElement>();
 	/** The selection when the colours opened: the popover takes focus, this brings it back. */
 	let savedRange: Range | undefined;
+	/** Focus is inside the box or its tools. */
+	let focused = $state(false);
+	$effect(() => {
+		active = focused || choosingInk;
+	});
 	/** The value this field last wrote, so its own edits never re-render it under the caret. */
 	let written: string | undefined;
 
@@ -367,7 +382,17 @@
 
 <!-- The label and the tools share a row above the words, outside their box, so the words get
      its whole width (Trevor, 2026-10-31). -->
-<div class="rich" class:display>
+<div
+	class="rich"
+	class:display
+	class:inline
+	class:active
+	onfocusin={() => (focused = true)}
+	onfocusout={(e) => {
+		const next = e.relatedTarget;
+		if (!(next instanceof Node && e.currentTarget.contains(next))) focused = false;
+	}}
+>
 	<div class="head">
 		<span class="label" id={labelId}>{label}</span>
 		<div class="tools" role="toolbar" aria-label={t('info-tokens.formatting')}>
@@ -581,6 +606,39 @@
 	}
 	.field[aria-disabled='true'] {
 		opacity: 0.5;
+	}
+	/* A note's words in its row: plain text on the row, the tools over the row's first line
+	   end while the words are written, and hidden (keeping no room) otherwise. */
+	.inline .label {
+		position: absolute;
+		width: 1px; /* px-ok: screen-reader-only label */
+		height: 1px; /* px-ok: screen-reader-only label */
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
+	}
+	.inline .head {
+		position: absolute;
+		inset-block-start: 0;
+		inset-inline-end: 0;
+		height: var(--tap-target);
+		visibility: hidden;
+	}
+	.inline.active .head {
+		visibility: visible;
+	}
+	.inline .field {
+		min-height: 1lh;
+		padding: 0;
+		border: 0;
+		border-radius: 0;
+		background: none;
+	}
+	.inline .field:focus-visible {
+		outline: none;
+	}
+	.inline .field[aria-disabled='true'] {
+		opacity: 1;
 	}
 	/* Bold is weight, never colour (Trevor, 2026-10-16); browsers write b or strong. */
 	.field :global(strong),
