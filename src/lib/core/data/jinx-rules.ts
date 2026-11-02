@@ -53,7 +53,14 @@
  *   in play, the player with the partner's `token` dies by execution, so `winner` wins (the
  *   Grandmother's Grandchild); `day-without-execution`, this character's player and the
  *   partner's are alive when day `day` ends with no execution that day, so `winner` wins in
- *   place of this character's own end that day (the Mayor);
+ *   place of this character's own end that day (the Mayor); `partner-stops`, the partner's
+ *   player chooses to stop this character's ability (their day use, recorded with `stops`),
+ *   so `winner` wins if exactly `alive` players of this character are alive, otherwise the
+ *   other team (the Mayor stopping the riot);
+ * - `storytellerVote`: while this character's nominees nominate straight away
+ *   (`nomineesNominate`), a nominated Storyteller is voted on instead: the Storyteller judges
+ *   whether they are about to die, and executes them (the partner's `storyteller-executed`
+ *   end) or the nominator nominates again (the Riot with the Atheist);
  * - `deadAtLeast`: while the partner is in play, this character's `wakesWhen` dead count is
  *   met once this many players are dead (the King with the Leviathan or Riot,
  *   https://wiki.bloodontheclocktower.com/King#Related_Jinxes);
@@ -72,7 +79,8 @@
  *   play, https://wiki.bloodontheclocktower.com/Alchemist#Related_Jinxes).
  *
  * Either character's file may hold the block. `registersTo`, `impairsPartner`, `noKill`,
- * `noGrimoire`, `grimoireHides`, `endsGame`, `deadAtLeast`, `notCreatedAfterDay`, `nightChoice` and `withPartnerAbility` say what
+ * `noGrimoire`, `grimoireHides`, `endsGame`, `storytellerVote`, `deadAtLeast`,
+ * `notCreatedAfterDay`, `nightChoice` and `withPartnerAbility` say what
  * this character does, or how it is treated, with the partner, so they are read from this
  * character's side only (`ownJinxRules`); the others are read from both sides
  * (`rules/jinxes.ts`). By convention a block goes in the file of the
@@ -115,7 +123,8 @@ const GRIMOIRE_HIDDEN: readonly GrimoireHidden[] = ['partner', ...CHARACTER_TYPE
 export const JINX_END_KINDS = [
 	'nominated-marked-executed',
 	'marked-executed',
-	'day-without-execution'
+	'day-without-execution',
+	'partner-stops'
 ] as const;
 export type JinxEndKind = (typeof JINX_END_KINDS)[number];
 
@@ -127,6 +136,8 @@ export interface JinxEnd {
 	token?: ReminderLabel;
 	/** The day whose end it is checked at (`day-without-execution`). */
 	day?: number;
+	/** How many of this character's players alive give `winner` the game (`partner-stops`). */
+	alive?: number;
 }
 
 export const NIGHT_CHOICE_WHO = ['good', 'any'] as const;
@@ -153,6 +164,7 @@ export interface JinxRules {
 	noGrimoire?: true;
 	grimoireHides?: readonly GrimoireHidden[];
 	endsGame?: JinxEnd;
+	storytellerVote?: true;
 	deadAtLeast?: number;
 	notCreatedAfterDay?: number;
 	nightChoice?: NightChoice;
@@ -183,6 +195,7 @@ export const JINX_RULE_KEYS = [
 	'noGrimoire',
 	'grimoireHides',
 	'endsGame',
+	'storytellerVote',
 	'deadAtLeast',
 	'notCreatedAfterDay',
 	'nightChoice',
@@ -238,7 +251,8 @@ function readJinxEnd(raw: unknown, path: string, issues: Issues): JinxEnd | unde
 	const keys = {
 		'nominated-marked-executed': ['token'],
 		'marked-executed': ['token'],
-		'day-without-execution': ['day']
+		'day-without-execution': ['day'],
+		'partner-stops': ['alive']
 	}[kind];
 	checkKeys(raw, ['kind', 'winner', ...keys], path, issues);
 	const winner = readEnum(raw, 'winner', ALIGNMENTS, path, issues, true);
@@ -251,6 +265,11 @@ function readJinxEnd(raw: unknown, path: string, issues: Issues): JinxEnd | unde
 		const day = readPositive(raw, 'day', path, issues);
 		if (day === undefined) return undefined;
 		out.day = day;
+	}
+	if (kind === 'partner-stops') {
+		const alive = readPositive(raw, 'alive', path, issues);
+		if (alive === undefined) return undefined;
+		out.alive = alive;
 	}
 	return out;
 }
@@ -335,6 +354,7 @@ export function readJinxRules(
 			const ends = readJinxEnd(entry.endsGame, `${at}.endsGame`, issues);
 			if (ends) rules.endsGame = ends;
 		}
+		if (readBoolean(entry, 'storytellerVote', at, issues)) rules.storytellerVote = true;
 		for (const key of ['deadAtLeast', 'notCreatedAfterDay'] as const) {
 			if (entry[key] === undefined) continue;
 			const n = readPositive(entry, key, at, issues);

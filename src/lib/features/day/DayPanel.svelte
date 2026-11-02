@@ -54,6 +54,7 @@
 	import RuleDayControl, { hasRuleDayControl } from './RuleDayControl.svelte';
 	import { atDayStart } from './day-start.ts';
 	import AnyoneUseButton from './AnyoneUseButton.svelte';
+	import JinxStopChips, { jinxStopRows } from './JinxStopChips.svelte';
 
 	interface Props {
 		game: DayPort;
@@ -226,6 +227,8 @@
 			dayStateFromGame(atDayStart(g), (id) => game.characters.get(id), undefined, game.characters)
 		)
 	);
+	/** Stopped by a jinx's partner, on the stopped character's first row (the riot, L112). */
+	const stopRows = $derived(jinxStopRows(reminders, g, game.characters));
 
 	function used(seatId: SeatId, characterId: CharacterId): boolean {
 		return (
@@ -499,7 +502,13 @@
 													mad
 												)}{:else if anyoneOf(reminder)}{@render anyoneEnd(
 													anyoneOf(reminder)!
-												)}{/if}</span
+												)}{:else if stopRows[reminder.key]}<span class="day-end"
+													><JinxStopChips
+														{game}
+														owner={character.id}
+														stoppers={stopRows[reminder.key]}
+													/></span
+												>{/if}</span
 										>
 									</CharacterRow>
 								{:else}

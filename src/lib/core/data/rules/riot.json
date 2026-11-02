@@ -85,6 +85,16 @@
 		}
 	},
 	"jinxes": {
+		"atheist": {
+			"storytellerVote": true
+		},
+		"mayor": {
+			"endsGame": {
+				"kind": "partner-stops",
+				"alive": 1,
+				"winner": "good"
+			}
+		},
 		"exorcist": {
 			"endsGame": {
 				"kind": "nominated-marked-executed",

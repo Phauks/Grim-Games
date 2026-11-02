@@ -357,9 +357,17 @@ export type Command =
 	 * token gets it placed on the seat; otherwise only the use is logged. `on` is the player
 	 * the use was about, when its rules ask (`dayUse`: the Slayer's choice, the Virgin's
 	 * nominator). `passed` says whether the vote it called passed (`dayUse.vote`: the Cult
-	 * Leader's cult vote).
+	 * Leader's cult vote). `stops` is the character whose ability the use stopped, by a jinx
+	 * with it (`partner-stops`: the Mayor stopping the riot).
 	 */
-	| { type: 'UseAbility'; seatId: SeatId; characterId: CharacterId; on?: SeatId; passed?: boolean }
+	| {
+			type: 'UseAbility';
+			seatId: SeatId;
+			characterId: CharacterId;
+			on?: SeatId;
+			passed?: boolean;
+			stops?: CharacterId;
+	  }
 	/**
 	 * A free-text note about a character (any length; may be empty with `guesses`). `holds`
 	 * marks a statement true or false (L58); `answer` answers a guess at the player's own

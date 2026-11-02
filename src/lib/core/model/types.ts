@@ -370,6 +370,11 @@ export type DayEntry =
 			 * player joined the Cult Leader's cult). Absent for any other use.
 			 */
 			passed?: boolean;
+			/**
+			 * The character whose ability this use stopped, by a jinx with it (`partner-stops`:
+			 * the Mayor stopping the riot). Absent for any other use.
+			 */
+			stops?: CharacterId;
 	  }
 	| {
 			kind: 'note';

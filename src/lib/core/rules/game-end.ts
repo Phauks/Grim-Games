@@ -84,9 +84,11 @@ export { livesWhileDead } from './game-end-helpers.ts';
  * - `storyteller-executed`: the Storyteller was executed: `winner` from a character in play
  *   (`seats`: its players, dead or alive), otherwise evil with no `characterId`;
  * - `demon-executed`: a special rule says good wins when a Demon dies by execution (Binary
- *   Supernovae), and one has (`seats`: the executed Demons; `ruleName`: the rule).
+ *   Supernovae), and one has (`seats`: the executed Demons; `ruleName`: the rule);
+ * - `partner-stops`: a jinx's partner stopped its ability (`jinxEnds`, the Mayor stopping
+ *   the riot; `seats`: the partner's player, then the living players of its character).
  */
-export type GameEndRule = 'demon-dead' | 'two-alive' | 'demon-executed' | EndKind;
+export type GameEndRule = 'demon-dead' | 'two-alive' | 'demon-executed' | 'partner-stops' | EndKind;
 
 /**
  * Why the game may go on: a character's `gameEnd.holds` kind, `extra-day` (the Demon died by
