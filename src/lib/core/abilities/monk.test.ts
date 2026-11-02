@@ -8,7 +8,9 @@
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
  * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
- * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
+ * happened, then what the rules say. Quote the example word for word in a `// Wiki: "..."`
+ * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
+ * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
@@ -49,6 +51,8 @@ describe('Monk', () => {
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Monk#Examples)', () => {
 		it("Example 1: Monk shields Fortune Teller from Imp's attack", () => {
+			// Wiki: "The Monk protects the Fortune Teller. The Imp attacks the Fortune Teller. No deaths
+			// occur tonight."
 			const s = scenario(['monk', 'fortuneteller', 'imp', 'chef', 'poisoner'])
 				.reminder('fortuneteller', 'monk', 'Safe')
 				.reminder('fortuneteller', 'imp', 'Dead');
@@ -61,6 +65,9 @@ describe('Monk', () => {
 			]);
 		});
 		it('Example 2: Imp targets protected Mayor; no deaths', () => {
+			// Wiki: "The Monk protects the Mayor, and the Imp attacks the Mayor. The Mayor's "another
+			// player dies" ability does not trigger, because the Mayor is safe from the Imp. Nobody dies
+			// tonight."
 			// The Mayor is safe from the Imp, so the Mayor's "another player dies" never comes up.
 			const s = scenario(['monk', 'mayor', 'imp', 'chef', 'poisoner'])
 				.reminder('mayor', 'monk', 'Safe')
@@ -69,6 +76,8 @@ describe('Monk', () => {
 			expect(survivor.because.map((b) => b.kind)).toEqual(['protected']);
 		});
 		it('Example 3: Imp self-kills under protection, staying alive', () => {
+			// Wiki: "The Monk protects the Imp . The Imp chooses to kill themself tonight, but nothing
+			// happens. The Imp stays alive and a new Imp is not created."
 			// The protected Imp doesn't die, so no Minion becomes the Imp.
 			const s = scenario(['monk', 'chef', 'imp', 'empath', 'poisoner'])
 				.reminder('imp', 'monk', 'Safe')

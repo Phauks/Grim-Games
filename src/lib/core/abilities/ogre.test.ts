@@ -8,7 +8,9 @@
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
  * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
- * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
+ * happened, then what the rules say. Quote the example word for word in a `// Wiki: "..."`
+ * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
+ * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
@@ -16,7 +18,7 @@ import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import type { Command } from '#lib/core/engine/index.ts';
 import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
-import { followedAlignmentOffer } from '#lib/core/rules/becomes.ts';
+import { becomesOffer, followedAlignmentOffer } from '#lib/core/rules/becomes.ts';
 
 describe('Ogre', () => {
 	const character = committedCharacter('ogre');
@@ -48,10 +50,40 @@ describe('Ogre', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Ogre#Examples)', () => {
-		it.todo('Example 1: Ogre picks an evil player and turns evil');
+		it('Example 1: Ogre picks an evil player and turns evil', () => {
+			// Wiki: "On the first night, the Ogre chooses the Summoner. The Ogre becomes evil, and stays
+			// evil for the rest of the game."
+			const s = scenario(['ogre', 'summoner', 'chef', 'empath', 'monk']).reminder(
+				'summoner',
+				'ogre',
+				'Friend'
+			);
+			expect(
+				becomesOffer(
+					s.game,
+					s.seat('summoner'),
+					{ characterId: 'ogre', label: 'Friend' },
+					s.characters
+				)
+			).toEqual({
+				into: 'alignment',
+				seatId: s.seat('ogre'),
+				characterId: 'ogre',
+				alignment: 'evil'
+			});
+			// Once evil, the Ogre stays evil even if the Summoner's player turns good.
+			const turned = s
+				.do((at) => ({ type: 'SetAlignment', seatId: at.seat('ogre'), alignment: 'evil' }))
+				.do((at) => ({ type: 'SetAlignment', seatId: at.seat('summoner'), alignment: 'good' }));
+			expect(
+				followedAlignmentOffer(turned.game, turned.seat('summoner'), turned.characters)
+			).toBeUndefined();
+		});
 		// The Ogre's friend is good, so the Ogre is good; the friend later turns evil, and the
 		// Ogre stays good (without the optional rule).
 		it('Example 2: Friend turns evil, but Ogre stays good', () => {
+			// Wiki: "On the first night, the Ogre chooses the Banshee. The Ogre stays good. On the third
+			// night, the Mezepheles turns the Banshee evil. The Ogre remains good."
 			const s = scenario(['ogre', 'chef', 'empath', 'monk', 'poisoner', 'imp'])
 				.reminder('chef', 'ogre', 'Friend')
 				.do((s) => ({ type: 'SetAlignment', seatId: s.seat('chef'), alignment: 'evil' }));

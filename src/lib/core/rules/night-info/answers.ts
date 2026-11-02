@@ -456,6 +456,34 @@ function abnormalAbilities(
 	);
 }
 
+/**
+ * General: which team the Storyteller believes is winning, good, evil or neither
+ * (https://wiki.bloodontheclocktower.com/General). Only the Storyteller can judge it, so there
+ * is no answer to work out: all three are offered (`choices`).
+ */
+function winningAlignment(
+	game: Game,
+	seatId: SeatId,
+	characterId: CharacterId,
+	characters: CharacterLookup
+): NightAnswer {
+	return answer(
+		game,
+		seatId,
+		characterId,
+		characters,
+		{ kind: 'none', reason: 'Your call: which team is winning' },
+		[],
+		{
+			relevant: [],
+			choices: (['good', 'evil', 'neither'] as const).map((value) => ({
+				kind: 'alignment',
+				value
+			}))
+		}
+	);
+}
+
 type AnswerFn = (
 	game: Game,
 	seatId: SeatId,
@@ -476,7 +504,9 @@ const QUESTIONS: Readonly<Record<Answers['question'], AnswerFn>> = {
 	'abnormal-abilities': abnormalAbilities,
 	'statement-true': statementTrue,
 	'outsiders-in-play': (game, seatId, characterId, characters) =>
-		outsidersInPlay(game, seatId, characterId, characters)
+		outsidersInPlay(game, seatId, characterId, characters),
+	'winning-alignment': (game, seatId, characterId, characters) =>
+		winningAlignment(game, seatId, characterId, characters)
 };
 
 /**
@@ -519,8 +549,11 @@ export function answerCauses(a: Reliability & { because?: SeatId[] }): AbnormalC
 
 /** One answer the Storyteller may give, for listing every valid one. */
 export interface AnswerOption {
-	/** `invalid`: the true answer under the Vortox, which must not be given. */
-	reason: ValidReason | 'invalid';
+	/**
+	 * `invalid`: the true answer under the Vortox, which must not be given. `judgement`: one of
+	 * the answers the Storyteller judges between (the General's).
+	 */
+	reason: ValidReason | 'invalid' | 'judgement';
 	value: AnswerValue;
 	/** Any other character (`value` is the true one): the script's, to pick from. */
 	otherCharacters?: CharacterId[];
@@ -533,19 +566,23 @@ export interface AnswerOption {
  * (drunk, poisoned, no ability: any information,
  * https://wiki.bloodontheclocktower.com/Poisoner) or must be false (the Vortox,
  * https://wiki.bloodontheclocktower.com/Vortox): the true answers first, then each false
- * one. Empty when only the truth may be given, or there is nothing to give.
+ * one. Empty when only the truth may be given, or there is nothing to give. An answer that is
+ * the Storyteller's judgement (`choices`, the General's) lists each choice.
  */
 export function answerOptions(
 	game: Game,
 	a: NightAnswer,
 	characters: CharacterLookup
 ): AnswerOption[] {
+	if (a.choices) return a.choices.map((value) => ({ reason: 'judgement', value }));
 	if (a.kind === 'none') return [];
 	const loose: ValidReason | undefined = a.unreliable
 		? 'unreliable'
-		: a.mustBeFalse
-			? 'vortox'
-			: undefined;
+		: a.anyBy
+			? 'any'
+			: a.mustBeFalse
+				? 'vortox'
+				: undefined;
 	if (!loose) return [];
 	const truthful: AnswerValue[] = a.possible ?? [answerValue(a)];
 	const key = (v: AnswerValue) => JSON.stringify(v);
@@ -560,6 +597,9 @@ export function answerOptions(
 	switch (a.kind) {
 		case 'yes-no':
 			add({ kind: 'yes-no', value: !a.value });
+			break;
+		case 'alignment':
+			for (const value of ['good', 'evil', 'neither'] as const) add({ kind: 'alignment', value });
 			break;
 		case 'number':
 			for (let n = 0; n <= highestAnswer(game, a.characterId, characters); n++) {
@@ -588,6 +628,8 @@ function answerValue(a: NightAnswer): AnswerValue {
 	switch (a.kind) {
 		case 'yes-no':
 			return { kind: 'yes-no', value: a.value };
+		case 'alignment':
+			return { kind: 'alignment', value: a.value };
 		case 'character':
 			return { kind: 'character', value: a.value };
 		case 'number':

@@ -99,10 +99,25 @@ export function filledInfoToken(
 /**
  * `filled` once the player the Storyteller tapped is known: their true character in the
  * `chosen` place, and the alignment the rest are picked from (the other one to theirs, by
- * character type: a good token and an evil one for the Dreamer).
+ * character type: a good token and an evil one for the Dreamer). With `mustBeFalse` (the
+ * Vortox makes the waking Townsfolk's information false,
+ * https://wiki.bloodontheclocktower.com/Vortox) the true character is not filled in and the
+ * Storyteller picks every character.
  */
-export function withChosen(filled: FilledInfoToken, chosen: Character): FilledInfoToken {
+export function withChosen(
+	filled: FilledInfoToken,
+	chosen: Character,
+	mustBeFalse = false
+): FilledInfoToken {
 	if (filled.chosenAt === undefined) return filled;
+	if (mustBeFalse) {
+		return {
+			characterIds: filled.characterIds,
+			upTo: filled.upTo,
+			...(filled.shuffle ? { shuffle: true as const } : {}),
+			...(filled.goodFirst ? { goodFirst: true as const } : {})
+		};
+	}
 	const ids = [...filled.characterIds];
 	ids.splice(filled.chosenAt, 0, chosen.id);
 	const alignment = defaultAlignment(chosen.type);

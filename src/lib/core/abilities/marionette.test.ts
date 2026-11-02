@@ -8,11 +8,18 @@
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
  * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
- * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
+ * happened, then what the rules say. Quote the example word for word in a `// Wiki: "..."`
+ * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
+ * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
+import { abilityState } from '#lib/core/rules/ability.ts';
+import { gameEnds, suggestedWinner } from '#lib/core/rules/game-end.ts';
+import { answerOptions, infoPicker, nightAnswer, reliability } from '#lib/core/rules/night-info.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Marionette', () => {
 	const character = committedCharacter('marionette');
@@ -47,8 +54,52 @@ describe('Marionette', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Marionette#Examples)', () => {
-		it.todo('Example 1: Marionette thinks they are the Undertaker');
-		it.todo('Example 2: Demon bluffs that another player is Marionette');
-		it.todo('Example 3: Claim rejected; good wins');
+		it('Example 1: Marionette thinks they are the Undertaker', () => {
+			// Wiki: "Marianna is the Marionette, but thinks she is the Undertaker. She wakes each night to
+			// learn who was executed that day, but her information is often wrong. Halfway through the
+			// game, the Demon tells her that she is the Marionette."
+			// She sits beside the Demon, shown the Undertaker, with the Marionette's reminder.
+			const s = scenario(['undertaker', 'imp', 'chef', 'empath', 'monk', 'poisoner'])
+				.reminder('undertaker', 'marionette', 'Is The Marionette')
+				.execute('chef');
+			expect(trueCharacter(s.game, s.seat('undertaker'), s.characters)).toBe('marionette');
+			expect(typeOf(s.game, s.seat('undertaker'), s.characters)).toBe('minion');
+			// She has no Undertaker ability, so her information need not be true.
+			const r = reliability(s.game, s.seat('undertaker'), 'undertaker', s.characters);
+			expect(r).toMatchObject({
+				unreliable: 'no-ability',
+				impairments: [{ reason: 'no-ability', source: { characterId: 'marionette' } }]
+			});
+			// So any answer may be given, not only the Chef.
+			const a = nightAnswer(s.game, s.seat('undertaker'), 'undertaker', s.characters)!;
+			expect(answerOptions(s.game, a, s.characters)[0]).toMatchObject({
+				reason: 'true',
+				value: { kind: 'character', value: 'chef' }
+			});
+			expect(answerOptions(s.game, a, s.characters).length).toBeGreaterThan(1);
+		});
+		it('Example 2: Demon bluffs that another player is Marionette', () => {
+			// Wiki: "Lachlan is the Demon. He tells Sarah that she is the Marionette. Lachlan is lying.
+			// There is no Marionette."
+			// Sarah is the real Chef: nothing marks her, and her information is true.
+			const s = scenario(['chef', 'imp', 'empath', 'monk', 'poisoner']);
+			expect(trueCharacter(s.game, s.seat('chef'), s.characters)).toBe('chef');
+			expect(abilityState(s.game, s.seat('chef'), s.characters).works).toBe(true);
+			const picker = infoPicker(s.game, s.seat('chef'), 'chef', s.characters)!;
+			expect(picker.anyAllowed).toBe(false);
+		});
+		it('Example 3: Claim rejected; good wins', () => {
+			// Wiki: "The Demon tells Ben that he is the Marionette. Ben thinks he is the Fortune Teller, but
+			// he isn’t. Ben doesn’t believe the Demon, and executes them. Good wins."
+			// Ben is the Marionette, shown the Fortune Teller; executing the Demon ends the game.
+			const s = scenario(['fortuneteller', 'imp', 'chef', 'empath', 'monk', 'mayor'])
+				.reminder('fortuneteller', 'marionette', 'Is The Marionette')
+				.newDay()
+				.execute('imp');
+			expect(trueCharacter(s.game, s.seat('fortuneteller'), s.characters)).toBe('marionette');
+			const ends = gameEnds(s.game, s.characters);
+			expect(ends).toMatchObject([{ rule: 'demon-dead', winner: 'good' }]);
+			expect(suggestedWinner(ends)).toBe('good');
+		});
 	});
 });

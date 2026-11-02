@@ -5,7 +5,7 @@
 	import type { AnswerValue, Why } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
-	import { seatName } from './night-steps.ts';
+	import { answerValueText, seatName } from './night-steps.ts';
 	import CharacterSet from './CharacterSet.svelte';
 
 	/**
@@ -54,7 +54,7 @@
 			: 'No'}{:else if v.kind === 'number'}{v.value}{:else if v.kind === 'characters'}<CharacterSet
 			value={v}
 			{characters}
-		/>{:else}{v.reason}{/if}{/snippet}
+		/>{:else}{answerValueText(v)}{/if}{/snippet}
 
 <div class="why-block" data-testid="why">
 	{#if why.facts.length > 0}

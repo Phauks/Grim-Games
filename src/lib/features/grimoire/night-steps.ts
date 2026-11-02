@@ -240,7 +240,14 @@ export function answerValueText(v: AnswerValue): string {
 			return v.value.join(', ');
 		case 'number':
 			return String(v.value);
+		case 'alignment':
+			return alignmentText(v.value);
 		case 'none':
 			return v.reason;
 	}
+}
+
+/** A General's answer in words: Good, Evil or Neither. */
+export function alignmentText(value: 'good' | 'evil' | 'neither'): string {
+	return value === 'good' ? 'Good' : value === 'evil' ? 'Evil' : 'Neither';
 }

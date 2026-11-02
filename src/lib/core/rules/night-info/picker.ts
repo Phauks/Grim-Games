@@ -99,7 +99,10 @@ export interface InfoPicker extends Reliability {
 	options: InfoOption[];
 	/** For `number`: the true number and the range registration allows. */
 	range?: NumberRange;
-	/** Every option is allowed, because the waking player's ability does not work. */
+	/**
+	 * Every option is allowed, because the waking player's ability does not work, or the
+	 * Storyteller may break the rules (`anyBy`: the Atheist).
+	 */
 	anyAllowed: boolean;
 	why: Why;
 	/**
@@ -125,11 +128,16 @@ interface PickerSpec extends Learns {
 	answer?: PickerAnswer;
 	/** For `woke-tonight`: the players who woke tonight by their own ability. */
 	woke?: ReadonlySet<SeatId>;
+	/**
+	 * The answer is the Storyteller's judgement, with no truth the grimoire holds (the High
+	 * Priestess): every option is valid, and the Vortox has nothing to make false.
+	 */
+	judgement?: true;
 }
 
 /** The picker each `learns` measure shows: its kind and how many players are tapped. */
 const MEASURE_PICKERS: Readonly<
-	Record<Learns['measure'], Pick<PickerSpec, 'kind' | 'seatCount' | 'answer'>>
+	Record<Learns['measure'], Pick<PickerSpec, 'kind' | 'seatCount' | 'answer' | 'judgement'>>
 > = {
 	'pair-of-type': { kind: 'pair-character', seatCount: 2 },
 	'evil-pairs': { kind: 'number', seatCount: 0 },
@@ -147,7 +155,8 @@ const MEASURE_PICKERS: Readonly<
 	'closest-evil-direction': { kind: 'yes-no', seatCount: 0, answer: 'direction' },
 	'chosen-alignment': { kind: 'yes-no', seatCount: 1, answer: 'alignment' },
 	'type-differs-from-token': { kind: 'players', seatCount: 1 },
-	'woke-tonight': { kind: 'number', seatCount: 2 }
+	'woke-tonight': { kind: 'number', seatCount: 2 },
+	'storyteller-pick': { kind: 'players', seatCount: 1, judgement: true }
 };
 
 /**
@@ -316,6 +325,10 @@ function optionsIn(
 				others.filter((s) => !game.seats[s].dead),
 				2
 			).map((pair) => ({ seats: pair, number: pair.filter((s) => spec.woke?.has(s)).length }));
+		case 'storyteller-pick':
+			// https://wiki.bloodontheclocktower.com/High_Priestess: the player the Storyteller
+			// believes they should talk to most, their judgement, so any other player.
+			return others.map((s) => ({ seats: [s], pivot: s }));
 		case 'type-differs-from-token': {
 			// https://wiki.bloodontheclocktower.com/Balloonist: a player of a different character
 			// type than the one shown last time (any player the first time). Alive or dead.
@@ -451,6 +464,7 @@ function pickerFacts(
 		case 'chosen-alignment':
 		case 'good-player':
 		case 'character-of':
+		case 'storyteller-pick':
 			return [];
 	}
 }
@@ -480,6 +494,11 @@ export function infoPicker(
 	const result = (w: RegistrationWorld) => JSON.stringify(optionsOf(w).map(optionKey).sort());
 	const relevant = relevantSeats(game, all.registrations, worlds, result);
 	const r = onlyRelevant(all, relevant);
+	if (spec.judgement) {
+		delete r.mustBeFalse;
+		delete r.vortox;
+		delete r.falseBy;
+	}
 	// A number is one value; other pickers have many options, so no single alternative.
 	const numberIn = (w: RegistrationWorld): AnswerValue | undefined => {
 		const n = optionsOf(w)[0]?.number;
@@ -504,7 +523,7 @@ export function infoPicker(
 		...(spec.answer ? { answer: spec.answer } : {}),
 		options,
 		...(range ? { range } : {}),
-		anyAllowed: r.unreliable !== undefined,
+		anyAllowed: r.unreliable !== undefined || r.anyBy !== undefined,
 		why: {
 			facts: pickerFacts(game, seatId, characterId, spec, characters, worlds[0]),
 			alternatives: alternatives(game, all.registrations, relevant, worlds, numberIn, result)
@@ -612,113 +631,7 @@ export function truthfulFirst(
 	return { seats, characters: ids };
 }
 
-/** Why a piece of information is valid to show. */
-export type ValidReason =
-	/** True as the grimoire stands. */
-	| 'true'
-	/** True if the `registered` players register as something else (Spy, Recluse). */
-	| 'registers'
-	/** Any information is allowed: the waking player is drunk, poisoned or has no ability. */
-	| 'unreliable'
-	/** The Vortox: only false information is allowed. */
-	| 'vortox';
-
-/**
- * One piece of information the Storyteller may show. Every valid one is listed; the app
- * never picks one for them (Trevor, 2026-10-18: "don't give a single suggestion, just show
- * all valid information").
- */
-export interface ValidInfo {
-	reason: ValidReason;
-	/** For `registers`: the players who would have to register otherwise. */
-	registered?: SeatId[];
-	/** A number (Chef, Empath, Clockmaker; the Librarian's 0). */
-	number?: number;
-	yes?: boolean;
-	none?: boolean;
-	/** For a pair: the character, or any of these characters, that may be shown. */
-	characterIds?: CharacterId[];
-	/** For a pair: the player who is that character. */
-	target?: SeatId;
-	/**
-	 * The players: for a pair, every player who may be shown beside `target`; otherwise the
-	 * players the information is about (Fortune Teller's pair, Steward's or Noble's choice).
-	 */
-	seats: SeatId[];
-	/** Any other choice is valid too, for `unreliable` or `vortox` (too many to list). */
-	anyOther?: boolean;
-}
-
-/** The highest number a number picker could show, for listing every valid one. */
-function highestNumber(game: Game, measure: Learns['measure']): number {
-	const n = game.seating.length;
-	if (measure === 'evil-alive-neighbours' || measure === 'woke-tonight') return 2;
-	if (measure === 'demon-minion-steps') return Math.max(1, Math.floor(n / 2));
-	return n;
-}
-
-/**
- * Every valid piece of information for a picker, grouped for display: the true ones first,
- * then those true only by registration, then what droisoning or the Vortox allows. Pairs
- * are grouped by the shown character and its player, listing every possible second player.
- */
-export function validInformation(game: Game, picker: InfoPicker): ValidInfo[] {
-	const reasonOf = (o: InfoOption): Pick<ValidInfo, 'reason' | 'registered'> =>
-		o.registered ? { reason: 'registers', registered: o.registered } : { reason: 'true' };
-	// Under the Vortox the truthful options are exactly the ones not allowed.
-	const truthful: ValidInfo[] = picker.mustBeFalse && !picker.unreliable ? [] : groupOptions();
-	const extra: ValidInfo[] = [];
-	const loose: ValidReason | undefined = picker.unreliable
-		? 'unreliable'
-		: picker.mustBeFalse
-			? 'vortox'
-			: undefined;
-	if (loose) {
-		if (picker.kind === 'number') {
-			const taken = new Set(truthful.map((v) => v.number));
-			const notTrue = new Set(picker.options.map((o) => o.number));
-			for (
-				let n = picker.measure === 'demon-minion-steps' ? 1 : 0;
-				n <= highestNumber(game, picker.measure);
-				n++
-			) {
-				if (taken.has(n)) continue;
-				if (loose === 'vortox' && notTrue.has(n)) continue;
-				extra.push({ reason: loose, number: n, seats: [] });
-			}
-		} else {
-			extra.push({ reason: loose, seats: [], anyOther: true });
-		}
-	}
-	return [...truthful, ...extra];
-
-	function groupOptions(): ValidInfo[] {
-		if (picker.kind !== 'pair-character') {
-			return picker.options.map((o) => ({
-				...reasonOf(o),
-				seats: [...o.seats],
-				...(o.number !== undefined ? { number: o.number } : {}),
-				...(o.yes !== undefined ? { yes: o.yes } : {}),
-				...(o.none ? { none: true } : {})
-			}));
-		}
-		const groups = new Map<string, ValidInfo>();
-		for (const o of picker.options) {
-			if (o.none) {
-				groups.set('none', { ...reasonOf(o), none: true, number: 0, seats: [] });
-				continue;
-			}
-			const [target, other] = o.seats;
-			const ids = o.characterId ? [o.characterId] : (o.characterIds ?? []);
-			const key = JSON.stringify([target, ids, o.registered ?? []]);
-			const group =
-				groups.get(key) ??
-				groups.set(key, { ...reasonOf(o), characterIds: ids, target, seats: [] }).get(key)!;
-			if (other && !group.seats.includes(other)) group.seats.push(other);
-		}
-		return [...groups.values()];
-	}
-}
+export { type ValidInfo, type ValidReason, validInformation } from './valid-info.ts';
 
 /** The `RecordNightInfo` fields for a choice: text in our words, tokens to place, and causes. */
 export function infoRecord(

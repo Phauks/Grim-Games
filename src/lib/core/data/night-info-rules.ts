@@ -37,7 +37,9 @@ import { checkKeys, describe, isObject, readBoolean, readEnum, type Issues } fro
  * - `type-differs-from-token`: one player whose character type differs from that of the
  *   player carrying `token`, the last one shown (Balloonist);
  * - `woke-tonight`: how many of two chosen alive players woke tonight by their own ability, a
- *   player woken to be asked counting even if they decline (Chambermaid).
+ *   player woken to be asked counting even if they decline (Chambermaid);
+ * - `storyteller-pick`: one other player, whoever the Storyteller judges best: any player is
+ *   valid, so nothing is checked (High Priestess).
  * `reminders` are the tokens to place: `target` on the shown character's player, `other` on the
  * second player, `each` on every player tapped.
  */
@@ -58,7 +60,8 @@ const LEARNS_MEASURES = [
 	'closest-evil-direction',
 	'chosen-alignment',
 	'type-differs-from-token',
-	'woke-tonight'
+	'woke-tonight',
+	'storyteller-pick'
 ] as const;
 export interface Learns {
 	measure: (typeof LEARNS_MEASURES)[number];
@@ -80,7 +83,9 @@ export interface Learns {
  * `minion-nominated` (Town Crier), `demon-voted` (Flowergirl), `executed-character`
  * (Undertaker), `outsider-died` (Godfather), `correct-guesses` (Juggler), `evil-dead`
  * (Oracle), `abnormal-abilities` (Mathematician), `statement-true` (Gossip, from the
- * statement logged by day, L58), `outsiders-in-play` (the Outsider characters in play).
+ * statement logged by day, L58), `outsiders-in-play` (the Outsider characters in play),
+ * `winning-alignment` (General: which team the Storyteller believes is winning, good, evil or
+ * neither, their judgement, so all three are offered).
  * `token` is the character's reminder that marks the answer on the board ("Died Today",
  * "Abnormal"). `firstNight` is the question asked on the first night instead, for a
  * character that learns something else then (the Godfather starts knowing which Outsiders
@@ -95,7 +100,8 @@ const ANSWER_QUESTIONS = [
 	'evil-dead',
 	'abnormal-abilities',
 	'statement-true',
-	'outsiders-in-play'
+	'outsiders-in-play',
+	'winning-alignment'
 ] as const;
 export interface Answers {
 	question: (typeof ANSWER_QUESTIONS)[number];
