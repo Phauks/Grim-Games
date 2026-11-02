@@ -8,7 +8,9 @@
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
  * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
- * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
+ * happened, then what the rules say. Quote the example word for word in a `// Wiki: "..."`
+ * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
+ * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
@@ -47,7 +49,9 @@ describe('Ravenkeeper', () => {
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Ravenkeeper#Examples)', () => {
 		it('Example 1: Imp kills Ravenkeeper, who learns the Empath', () => {
-			// The dead Ravenkeeper chooses the Empath's player and is shown the Empath.
+			// Wiki: "The Ravenkeeper is killed by the Imp, and then wakes to choose a player. After some
+			// deliberation, they choose Benjamin. Benjamin is the Empath, and the Ravenkeeper learns
+			// this."
 			const s = scenario(['ravenkeeper', 'empath', 'imp', 'monk', 'poisoner']).dies('ravenkeeper');
 			const picker = infoPicker(s.game, s.seat('ravenkeeper'), 'ravenkeeper', s.characters)!;
 			expect(isTruthful(picker, { seats: [s.seat('empath')], characterId: 'empath' })).toBe(true);
@@ -55,7 +59,10 @@ describe('Ravenkeeper', () => {
 		});
 
 		it('Example 2: Mayor bounce kills Ravenkeeper; Recluse shows Scarlet Woman', () => {
-			// A dead Recluse chosen by the Ravenkeeper may register as a Minion and be shown as one.
+			// Wiki: "The Imp attacks the Mayor. The Mayor doesn't die, but the Ravenkeeper dies instead,
+			// due to the Mayor's ability. The Ravenkeeper is woken and chooses Douglas, who is a dead
+			// Recluse. The Ravenkeeper learns that Douglas is the Scarlet Woman, since the Recluse
+			// registered as a Minion."
 			const s = scenario(['ravenkeeper', 'recluse', 'imp', 'mayor', 'scarletwoman'])
 				.dies('ravenkeeper')
 				.dies('recluse');

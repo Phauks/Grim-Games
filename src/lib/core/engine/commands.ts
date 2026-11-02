@@ -18,11 +18,13 @@ import type {
 	GenericLook,
 	OverrideField,
 	Reminder,
+	ReminderEffect,
 	ReminderId,
 	SeatId,
 	SeatOverride,
 	SymbolColour,
-	TileId
+	TileId,
+	WishEffect
 } from '#lib/core/model/index.ts';
 
 /** A tile to put in the bag (see `Tile`). */
@@ -154,6 +156,11 @@ export type Command =
 	| { type: 'SetReminderSymbolColour'; reminderId: ReminderId; colour?: SymbolColour }
 	/** The generic reminder's icon symbol filled or as an outline. */
 	| { type: 'SetReminderSymbolFill'; reminderId: ReminderId; fill: boolean }
+	/**
+	 * The effect the Storyteller picked for a reminder whose rules let them pick one
+	 * (`pickedEffect`: the Angel's Something Bad); none clears it.
+	 */
+	| { type: 'SetReminderEffect'; reminderId: ReminderId; effect?: ReminderEffect }
 	/** A new reusable ∞ token at the end of the bank's ones (plan B9). */
 	| { type: 'AddGenericToken'; look?: GenericLook }
 	/** Replaces a bank ∞ token's look; the copies already placed keep theirs. */
@@ -257,6 +264,8 @@ export type Command =
 	 * swaps the tokens of each character in play that shows it (`dayMark`); undefined clears it.
 	 */
 	| { type: 'SetDayMark'; mark: DayMark; value?: boolean }
+	/** Today's count for a character's `dayTally` (the Yaggababble's phrase); 0 clears it. */
+	| { type: 'SetDayTally'; characterId: CharacterId; count: number }
 	/**
 	 * Stores a value the Storyteller chose during prep (the Yaggababble's secret phrase) as
 	 * `Game.prepValues[key]`, `key` from `prepValueKey`; no `value` or an empty one clears it.
@@ -320,6 +329,31 @@ export type Command =
 			/** The info or ability worked abnormally because of these (see `abnormalCauses`). */
 			abnormal?: AbnormalCause[];
 	  }
+	/**
+	 * Logs a wish a character's player made (its `wish` rule: the Wizard's), granted or
+	 * declined, with the Storyteller's price and clue and a standard `effect`. With `entryId`,
+	 * replaces that wish in today's log.
+	 */
+	| {
+			type: 'RecordWish';
+			entryId?: DayEntryId;
+			seatId: SeatId;
+			characterId: CharacterId;
+			text: string;
+			granted: boolean;
+			price?: string;
+			clue?: string;
+			effect?: WishEffect;
+	  }
+	/**
+	 * Names the two Storytellers of a `twoStorytellers` rule character (the Knaves) and says
+	 * which one lies; an empty name means "Storyteller 1" or "2", no `liar` means undecided.
+	 */
+	| { type: 'SetStorytellers'; names?: [string, string]; liar?: 0 | 1 }
+	/** The two Storytellers switch: the liar tells the truth, the other lies. */
+	| { type: 'SwitchStorytellers' }
+	/** Which Storyteller a player went to for today's information; none clears it. */
+	| { type: 'SetStorytellerVisit'; seatId: SeatId; storyteller?: 0 | 1 }
 	/**
 	 * Removes a day-log entry and undoes what it did to the grimoire: an execution's death
 	 * (if still dead by execution) and the reminder tokens an ability use or night info placed

@@ -13,9 +13,11 @@
 		dayClaim,
 		dayStateFromGame,
 		dayUseOf,
+		dayTallyOf,
 		isOnceOnlyDayAbility,
 		daySentence,
 		madnessOffer,
+		makesWish,
 		prepValueCharacter,
 		type DayReminder,
 		type MadnessOffer
@@ -46,6 +48,8 @@
 	import MadnessDeathDialog from './MadnessDeathDialog.svelte';
 	import PrepValueDialog from './PrepValueDialog.svelte';
 	import DayUseDialog from './DayUseDialog.svelte';
+	import DayTallyField from './DayTallyField.svelte';
+	import WishDialog from './WishDialog.svelte';
 
 	interface Props {
 		game: DayPort;
@@ -107,6 +111,8 @@
 	}
 
 	let dayUse = $state<DayUseDialog>();
+	/** A wish (the Wizard's), granted or declined, with its price and clue. */
+	let wishDialog = $state<WishDialog>();
 	function askUsed(seatId: SeatId, characterId: CharacterId) {
 		// Who it was used on, when its rules ask (Trevor, 2026-10-30).
 		const rule = dayUseOf(characterId, game.characters);
@@ -275,7 +281,9 @@
 	};
 	const hasDayButton = (characterId: CharacterId | undefined) =>
 		characterId !== undefined &&
-		(usedButton(characterId) ||
+		(makesWish(characterId, game.characters) ||
+			usedButton(characterId) ||
+			dayTallyOf(characterId, game.characters) !== undefined ||
 			noteClaim(characterId) !== undefined ||
 			savantButton(characterId) ||
 			markButton(characterId) !== undefined);
@@ -374,7 +382,14 @@
 		seat: game.seatName(seatId)
 	})}
 	<!-- eslint-enable grim/names-as-badges -->
-	{#if characterId && usedButton(characterId)}
+	{#if characterId && makesWish(characterId, game.characters)}
+		<Chip
+			marked={g.today.entries.some((e) => e.kind === 'wish' && e.seatId === seatId)}
+			data-testid="wish"
+			aria-label={t('day.wishLabel', { who })}
+			onclick={() => wishDialog?.ask(seatId, characterId)}>{t('day.wish')}</Chip
+		>
+	{:else if characterId && usedButton(characterId)}
 		{@const isUsed = used(seatId, characterId)}
 		<Chip
 			pressed={isUsed}
@@ -383,6 +398,9 @@
 		>
 			<span class="tick" data-on={isUsed || undefined}><Icon name="check" /></span>{t('day.used')}
 		</Chip>
+	{:else if characterId && dayTallyOf(characterId, game.characters)}
+		<!-- Today's count beside the phrase (the Yaggababble's, M17c). -->
+		<DayTallyField {game} {characterId} />
 	{:else if characterId && noteClaim(characterId)}
 		{@const claim = noteClaim(characterId)}
 		<Chip
@@ -571,6 +589,7 @@
 	valueKey={valueFor?.key}
 />
 <DayUseDialog bind:this={dayUse} {game} />
+<WishDialog bind:this={wishDialog} {game} />
 
 <!-- A character as a badge; false inside a button, so it does not open the character. -->
 {#snippet badge(id: CharacterId | undefined, interactive = true)}{#if id}<CharacterBadge

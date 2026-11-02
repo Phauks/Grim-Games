@@ -6,7 +6,7 @@ import {
 	type Reminder,
 	type ReminderInstance
 } from '#lib/core/model/index.ts';
-import { fixedReminderMove } from '#lib/core/rules/index.ts';
+import { REMINDER_EFFECTS, fixedReminderMove, pickedEffectOf } from '#lib/core/rules/index.ts';
 import type { GameEvent } from '../events.ts';
 import {
 	MAX_REMINDER_SYMBOL,
@@ -31,6 +31,7 @@ export const REMINDERS_DECIDERS: Deciders<
 	| 'AddRuleReminder'
 	| 'MoveReminderToRuleCharacter'
 	| 'SetReminderNote'
+	| 'SetReminderEffect'
 	| 'SetReminderSymbol'
 	| 'SetReminderSymbolColour'
 	| 'SetReminderSymbolFill'
@@ -152,6 +153,29 @@ export const REMINDERS_DECIDERS: Deciders<
 		}
 		const event: GameEvent = { type: 'ReminderNoteSet', reminderId: command.reminderId };
 		if (note !== undefined) event.note = note;
+		return [event];
+	},
+
+	SetReminderEffect(game, command, ctx, warn) {
+		const from = reminderHolder(game, command.reminderId);
+		if (!from) refuse('unknown-reminder', `no reminder ${command.reminderId}`);
+		const reminder: ReminderInstance = heldReminder(game, from, command.reminderId);
+		const { effect } = command;
+		if (effect !== undefined) {
+			if (!REMINDER_EFFECTS.includes(effect.kind))
+				refuse('invalid-effect', `no reminder effect ${String(effect.kind)}`);
+			if (!Number.isInteger(effect.night) || effect.night < 1)
+				refuse('invalid-effect', 'an effect acts on a night numbered 1 or more');
+			if (!pickedEffectOf(reminder, ctx.characters)?.effects.includes(effect.kind))
+				warn('effect-not-listed', 'this reminder’s rules do not list that effect');
+		}
+		const same = effect?.kind === reminder.effect?.kind && effect?.night === reminder.effect?.night;
+		if (same) {
+			warn('no-change', 'the effect is unchanged');
+			return [];
+		}
+		const event: GameEvent = { type: 'ReminderEffectSet', reminderId: command.reminderId };
+		if (effect !== undefined) event.effect = { kind: effect.kind, night: effect.night };
 		return [event];
 	},
 

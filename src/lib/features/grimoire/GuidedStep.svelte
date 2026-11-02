@@ -6,7 +6,9 @@
 	import ChangeCharacterStep from './ChangeCharacterStep.svelte';
 	import StorytellerAbilityStep from './StorytellerAbilityStep.svelte';
 	import CountdownStep from './CountdownStep.svelte';
+	import ChosenKillStep from './ChosenKillStep.svelte';
 	import NightSuggested from './NightSuggested.svelte';
+	import StorytellerVisit from './StorytellerVisit.svelte';
 	import NightShownTo from './NightShownTo.svelte';
 	import NightYesNo from './NightYesNo.svelte';
 	import TravellerAlignment from './TravellerAlignment.svelte';
@@ -317,6 +319,19 @@
 					}}
 				/>
 			{/if}
+			<!-- Two Storytellers (the Knaves): whom each waking player went to for their info. -->
+			{#if step.info?.kind === 'answer' || step.info?.kind === 'picker'}
+				{#each holders as seatId (seatId)}
+					<StorytellerVisit
+						{game}
+						{characters}
+						{seatId}
+						seatLabel={// eslint-disable-next-line grim/names-as-badges -- the group's accessible name only
+						seatName(game, seatId)}
+						run={(command) => grimoire.run(command)}
+					/>
+				{/each}
+			{/if}
 			<NightSuggested
 				{grimoire}
 				{step}
@@ -385,6 +400,8 @@
 				<StorytellerAbilityStep {grimoire} {step} />
 				<!-- The Courtier's Drunk 3, 2, 1: counted down on other nights, as its text says. -->
 				{#if night === 'other'}<CountdownStep {grimoire} {step} />{/if}
+				<!-- The Ojo's named character, the Al-Hadikhia's live or die. -->
+				<ChosenKillStep {grimoire} {step} />
 			{/if}
 			{#if numberStep}
 				<h3>Info token</h3>

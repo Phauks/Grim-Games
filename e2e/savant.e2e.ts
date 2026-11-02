@@ -77,12 +77,10 @@ test('the Savant seat offers one true and one false statement, each cycled or wr
 	await savant.getByRole('button', { name: 'Write statement 1 yourself' }).tap();
 	const field = savant.getByRole('textbox', { name: 'Statement 1, your words' });
 	await field.fill('Seat 4 has a secret.');
-	const verdict = lines.nth(0).getByRole('button', { name: 'False' });
-	await verdict.tap();
-	await expect(lines.nth(0).getByRole('button', { name: 'True' })).toHaveAttribute(
-		'aria-pressed',
-		'true'
-	);
+	// Not marked, True or False (M17g): a drop-down, as it has three states.
+	await lines.nth(0).getByRole('combobox', { name: 'Statement 1 is', exact: true }).tap();
+	await page.getByRole('option', { name: 'True', exact: true }).tap();
+	await expect(lines.nth(0).locator('[data-truth]')).toHaveAttribute('data-truth', 'true');
 
 	// Shown like info tokens, with no True or False (L50).
 	await savant.getByRole('button', { name: 'Show to player' }).tap();

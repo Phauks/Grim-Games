@@ -121,6 +121,8 @@ export const day = {
 	'day.timerVibrate': 'Vibrate',
 	'day.timerPerPlayer': 'Seconds per living player',
 	'day.timerPerPlayerSeconds': { one: '{count} second', other: '{count} seconds' },
+	/** A day tally's count (`dayTally`: the Yaggababble's phrase said today, M17c). */
+	'day.tallyTimes': { one: '{count} time', other: '{count} times' },
 	'day.timerVibrateUnavailable': 'This device can’t vibrate.',
 	'day.timerKeepAwake': 'Keep screen on',
 	'day.timerKeepAwakeUnavailable': 'This browser can’t keep the screen on.',
@@ -208,5 +210,24 @@ export const day = {
 	'day.logNote': '{who}: {text}',
 	'day.logAnswer': '{line} · {answer}',
 	'day.logGuesses': { one: '{line} · {count} guess', other: '{line} · {count} guesses' },
-	'day.logInfo': '{character} ({seat}): {text}'
+	'day.logInfo': '{character} ({seat}): {text}',
+	'day.logWishGranted': '{character} ({seat}) wished: {text} · granted',
+	'day.logWishDeclined': '{character} ({seat}) wished: {text} · declined',
+	'day.wishUnwritten': 'not written down',
+	/** The day button and dialog for a character that makes a wish (the Wizard's). */
+	'day.wish': 'Wish',
+	'day.wishLabel': 'Record the wish of {who}',
+	'day.wishTitle': 'Wish of {who}',
+	'day.wishText': 'What they wished for',
+	'day.wishGranted': 'Granted',
+	'day.wishPrice': 'Price',
+	'day.wishPriceHint': 'Optional, what the wish costs',
+	'day.wishClue': 'Clue',
+	'day.wishClueHint': 'Optional, what you tell the group',
+	'day.wishEffect': 'Effect the app tracks',
+	'day.wishEffect.none': 'None',
+	'day.wishEffect.good-drunk': 'Every good player is drunk',
+	'day.wishSave': 'Save',
+	'day.wishDeclinedNote': 'A declined wish lets them wish again.',
+	'day.wishAgain': 'A wish of theirs was already granted.'
 } as const;

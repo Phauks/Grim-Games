@@ -42,6 +42,8 @@ import {
 } from '#lib/core/model/selectors.ts';
 import type { Game, ReminderId, SeatId } from '#lib/core/model/types.ts';
 import { keepsAbilityWhenDead } from './dead-characters.ts';
+import { effectImpairment } from './reminder-effects.ts';
+import { wishWithEffect } from './wishes.ts';
 
 const W = 'https://wiki.bloodontheclocktower.com/';
 
@@ -148,6 +150,17 @@ function impairmentsOf(
 	const characterId = trueCharacter(game, seatId, characters);
 
 	for (const r of seat.reminders) {
+		// An effect the Storyteller picked for the token (the Angel's Something Bad: poisoned, or
+		// no ability for a day, https://wiki.bloodontheclocktower.com/Angel).
+		const picked = effectImpairment(r.effect, game);
+		if (picked) {
+			out.push({
+				reason: picked,
+				source: { characterId: r.characterId, reminderId: r.reminderId },
+				wiki: wikiOf(r.characterId, characters)
+			});
+			continue;
+		}
 		const rule = tokenImpairment(r, characters);
 		if (rule?.on === 'others') continue;
 		if (rule) {
@@ -249,6 +262,18 @@ function impairmentsOf(
 			});
 			break others;
 		}
+	}
+
+	// A granted wish that makes every good player drunk for the rest of the game (the Wizard's
+	// example: https://wiki.bloodontheclocktower.com/Wizard). It lasts whatever happens to the
+	// wisher, until the Storyteller removes the wish.
+	const drunkWish = wishWithEffect(game, 'good-drunk');
+	if (drunkWish && alignmentOf(game, seatId) === 'good') {
+		out.push({
+			reason: 'drunk',
+			source: { characterId: drunkWish.characterId, seatId: drunkWish.seatId },
+			wiki: wikiOf(drunkWish.characterId, characters)
+		});
 	}
 
 	// A token that makes its carrier sober and healthy while its character's ability works
