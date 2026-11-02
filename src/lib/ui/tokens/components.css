@@ -31,6 +31,19 @@
 	--button-font: var(--font-control-weight) 0.95rem / 1.1 var(--font-control);
 	--button-radius: var(--radius-md);
 
+	/*
+	 * A seat's name in its character's badge: a pale tint of the team colour, the name in a
+	 * deep shade of it (CharacterBadge's capsule, Trevor 2026-11-02).
+	 */
+	--good-pale: color-mix(in oklab, var(--good) 25%, white);
+	--good-deep: color-mix(in oklab, var(--good) 75%, black);
+	--evil-pale: color-mix(in oklab, var(--evil) 25%, white);
+	--evil-deep: color-mix(in oklab, var(--evil) 75%, black);
+	--fabled-pale: color-mix(in oklab, var(--fabled) 25%, white);
+	--fabled-deep: color-mix(in oklab, var(--fabled) 75%, black);
+	--loric-pale: color-mix(in oklab, var(--loric) 25%, white);
+	--loric-deep: color-mix(in oklab, var(--loric) 75%, black);
+
 	--card-background: var(--surface-raised);
 	--card-border: 1px solid var(--border);
 	--card-radius: var(--radius-md);
