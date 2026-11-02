@@ -9,6 +9,7 @@ export const friends = {
 	'friends.list': 'Friends',
 	'friends.sent': 'Sent',
 	'friends.recent': 'Recent players',
+	'friends.suggestions': 'Suggestions',
 	'friends.invites': 'Game invites',
 	'friends.invites.from': 'From {name}',
 	'friends.invites.join': 'Join',
