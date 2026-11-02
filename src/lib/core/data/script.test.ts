@@ -143,6 +143,29 @@ describe('TPI script shapes', () => {
 	});
 });
 
+describe('a homebrew character naming its own edition', () => {
+	// Elven Court (GrayPockets) writes "edition": "elvencourt" on its homebrew characters; the
+	// app reads `edition` as an official character, so it asked for icons that don't exist.
+	const named = {
+		...homebrew,
+		edition: 'elvencourt',
+		image: ['https://example.invalid/storm_g.png', 'https://example.invalid/storm_e.png']
+	};
+	it('loads it without an edition, so its own images are used', () => {
+		const result = loadScript([named, 'imp'], data);
+		const character = result.script?.characters[0];
+		expect(character?.edition).toBeUndefined();
+		expect(character?.image).toEqual(named.image);
+	});
+	it('drops the edition from a saved game’s homebrew character too', () => {
+		const loaded = loadScript([homebrew, 'imp'], data).script!;
+		const saved = toScript(loaded);
+		const entry = saved.entries[0];
+		if (entry.kind === 'custom') entry.character = { ...entry.character, edition: 'elvencourt' };
+		expect(fromScript(saved, data).script.characters[0].edition).toBeUndefined();
+	});
+});
+
 describe('ids in the wild', () => {
 	it('normalises underscores, spaces, capitals and apostrophes (PG 127)', () => {
 		const result = loadScript(

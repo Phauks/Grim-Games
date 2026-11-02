@@ -126,7 +126,7 @@ export interface Character {
 	id: CharacterId;
 	name: CharacterName;
 	type: CharacterType;
-	/** Edition id, e.g. `tb`, `bmr`, `snv`, `carousel`, `fabled`, `loric`. Optional in custom scripts. */
+	/** Edition id, e.g. `tb`, `bmr`, `snv`, `carousel`, `fabled`, `loric`. Never set on a script's own (homebrew) character, so it marks an official one. */
 	edition?: string;
 	ability: string;
 	flavor?: string;
