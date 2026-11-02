@@ -487,6 +487,15 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['M26a', 'M26b']
 	},
 	{
+		// The coordinator's ask of 2026-11-02 (Trevor: no release until the How to Run gaps are
+		// closed): a once-per-game character stops waking once marked No Ability, the Zombuul
+		// sleeps while anyone is marked Died Today, the Bounty Hunter wakes when its Know player
+		// dies, the Juggler only after the first day, a Wraith without its ability sleeps.
+		title: 'Characters stop waking once their ability is used or no longer works',
+		area: 'engine',
+		parts: ['M28']
+	},
+	{
 		// Trevor, 2026-10-30: on the roadmap, after a spike and research. L99 research, L100 the
 		// format with the Heretic and Boffin, L107 every jinx shown where it matters, L108 jinxes
 		// that reuse existing rules, L109 the Plague Doctor's and other built characters', L112

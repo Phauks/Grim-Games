@@ -115,6 +115,18 @@ export function becomesOffer(
 		!owners.some((id) => abilityState(game, id, characters).works)
 	)
 		return undefined;
+	// Not once its own token says the ability was used (a Mezepheles marked No Ability).
+	const { spent } = rule;
+	if (
+		spent !== undefined &&
+		owners.length > 0 &&
+		owners.every((id) =>
+			game.seats[id].reminders.some(
+				(r) => r.characterId === reminder.characterId && r.label === spent
+			)
+		)
+	)
+		return undefined;
 	const isDemon = typeOf(game, seatId, characters) === 'demon';
 
 	if (rule.into === 'evil') {
