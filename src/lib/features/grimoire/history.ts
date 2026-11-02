@@ -365,6 +365,12 @@ function describeEvent(
 			return [text('Started the day')];
 		case 'PrepValueSet':
 			return [text('Changed the setup notes')];
+		case 'StorytellerPairSet':
+			return [text('Changed the Storytellers')];
+		case 'StorytellerVisitSet':
+			return event.storyteller === undefined
+				? [text('Cleared which Storyteller '), seatName(before, event.seatId), text(' went to')]
+				: [seatName(before, event.seatId), text(` went to Storyteller ${event.storyteller + 1}`)];
 		case 'DayEntryAdded':
 		case 'DayEntryReplaced': {
 			// Seats and characters go in as slots and come back out as badges.

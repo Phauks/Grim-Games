@@ -15,8 +15,10 @@
  *
  * Who decides: a suggestion, never the final word. A drunk or poisoned Savant may hear two
  * true or two false statements; while a working Vortox is in play a sober Savant hears two
- * false ones (https://wiki.bloodontheclocktower.com/Vortox). `savantSituation` says which
- * applies; the Storyteller still picks the mode.
+ * false ones (https://wiki.bloodontheclocktower.com/Vortox). With two Storytellers (the Knaves)
+ * a Savant who goes to the lying one hears two false statements, and one who goes to the
+ * truthful one two true ones (https://wiki.bloodontheclocktower.com/Knaves). `savantSituation`
+ * says which applies; the Storyteller still picks the mode.
  */
 import type { CharacterId, CharacterType } from '#lib/core/data/types.ts';
 import { scriptCharacterIds, type CharacterLookup } from '#lib/core/model/characters.ts';
@@ -94,8 +96,16 @@ export interface SavantSituation {
 	impaired?: 'drunk' | 'poisoned' | 'no-ability';
 	/** A working Vortox is in play and the Savant is sober: both must be false. */
 	vortox?: SeatId;
-	/** That character (the Vortox, or any whose `falseInfo` covers Townsfolk). */
+	/**
+	 * That character (the Vortox, or any whose `falseInfo` covers Townsfolk, or the rule
+	 * character of two Storytellers when the Savant went to the lying one).
+	 */
 	falseBy?: CharacterId;
+	/**
+	 * Two Storytellers (the Knaves, https://wiki.bloodontheclocktower.com/Knaves): the Savant
+	 * went to the one who lies now (both false) or tells the truth (both may be true).
+	 */
+	storyteller?: { by: CharacterId; lies: boolean };
 	/** The mode the rules point to. */
 	mode: SavantMode;
 }
@@ -110,6 +120,13 @@ export function savantSituation(
 	if (r.unreliable) return { impaired: r.unreliable, mode: 'one-each' };
 	if (r.mustBeFalse && r.vortox !== undefined)
 		return { vortox: r.vortox, ...(r.falseBy ? { falseBy: r.falseBy } : {}), mode: 'both-false' };
+	const st = r.storyteller;
+	if (st?.lies !== undefined) {
+		const storyteller = { by: st.by, lies: st.lies };
+		return st.lies
+			? { storyteller, falseBy: st.by, mode: 'both-false' }
+			: { storyteller, mode: 'both-true' };
+	}
 	return { mode: 'one-each' };
 }
 

@@ -8,6 +8,7 @@
 	import CountdownStep from './CountdownStep.svelte';
 	import ChosenKillStep from './ChosenKillStep.svelte';
 	import NightSuggested from './NightSuggested.svelte';
+	import StorytellerVisit from './StorytellerVisit.svelte';
 	import NightShownTo from './NightShownTo.svelte';
 	import NightYesNo from './NightYesNo.svelte';
 	import TravellerAlignment from './TravellerAlignment.svelte';
@@ -317,6 +318,19 @@
 						onDraw(seatId);
 					}}
 				/>
+			{/if}
+			<!-- Two Storytellers (the Knaves): whom each waking player went to for their info. -->
+			{#if step.info?.kind === 'answer' || step.info?.kind === 'picker'}
+				{#each holders as seatId (seatId)}
+					<StorytellerVisit
+						{game}
+						{characters}
+						{seatId}
+						seatLabel={// eslint-disable-next-line grim/names-as-badges -- the group's accessible name only
+						seatName(game, seatId)}
+						run={(command) => grimoire.run(command)}
+					/>
+				{/each}
 			{/if}
 			<NightSuggested
 				{grimoire}

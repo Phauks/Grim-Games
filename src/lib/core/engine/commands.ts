@@ -23,7 +23,8 @@ import type {
 	SeatId,
 	SeatOverride,
 	SymbolColour,
-	TileId
+	TileId,
+	WishEffect
 } from '#lib/core/model/index.ts';
 
 /** A tile to put in the bag (see `Tile`). */
@@ -328,6 +329,31 @@ export type Command =
 			/** The info or ability worked abnormally because of these (see `abnormalCauses`). */
 			abnormal?: AbnormalCause[];
 	  }
+	/**
+	 * Logs a wish a character's player made (its `wish` rule: the Wizard's), granted or
+	 * declined, with the Storyteller's price and clue and a standard `effect`. With `entryId`,
+	 * replaces that wish in today's log.
+	 */
+	| {
+			type: 'RecordWish';
+			entryId?: DayEntryId;
+			seatId: SeatId;
+			characterId: CharacterId;
+			text: string;
+			granted: boolean;
+			price?: string;
+			clue?: string;
+			effect?: WishEffect;
+	  }
+	/**
+	 * Names the two Storytellers of a `twoStorytellers` rule character (the Knaves) and says
+	 * which one lies; an empty name means "Storyteller 1" or "2", no `liar` means undecided.
+	 */
+	| { type: 'SetStorytellers'; names?: [string, string]; liar?: 0 | 1 }
+	/** The two Storytellers switch: the liar tells the truth, the other lies. */
+	| { type: 'SwitchStorytellers' }
+	/** Which Storyteller a player went to for today's information; none clears it. */
+	| { type: 'SetStorytellerVisit'; seatId: SeatId; storyteller?: 0 | 1 }
 	/**
 	 * Removes a day-log entry and undoes what it did to the grimoire: an execution's death
 	 * (if still dead by execution) and the reminder tokens an ability use or night info placed

@@ -21,6 +21,7 @@ import { REMINDERS_DECIDERS } from './decide/reminders.ts';
 import { BLUFFS_BAG_DECIDERS } from './decide/bluffs-bag.ts';
 import { DAY_DECIDERS } from './decide/day.ts';
 import { LATE_PLAYER_DECIDERS } from './decide/late-player.ts';
+import { STORYTELLERS_WISHES_DECIDERS } from './decide/storytellers-wishes.ts';
 import {
 	MAX_PLAYERS,
 	MAX_SEATS,
@@ -75,7 +76,8 @@ export type ErrorCode =
 	| 'invalid-symbol'
 	| 'invalid-colour'
 	| 'invalid-day-tally'
-	| 'invalid-effect';
+	| 'invalid-effect'
+	| 'invalid-wish';
 
 export type WarningCode =
 	| 'unusual-player-count'
@@ -122,7 +124,11 @@ export type WarningCode =
 	| 'late-player-in-play'
 	| 'no-day-tally'
 	| 'beyond-tally'
-	| 'effect-not-listed';
+	| 'effect-not-listed'
+	| 'no-wish-rule'
+	| 'already-wished'
+	| 'no-two-storytellers'
+	| 'already-switched';
 
 export interface Issue<C extends string> {
 	code: C;
@@ -209,7 +215,8 @@ const DECIDERS: Deciders<CommandType> = {
 	...REMINDERS_DECIDERS,
 	...BLUFFS_BAG_DECIDERS,
 	...DAY_DECIDERS,
-	...LATE_PLAYER_DECIDERS
+	...LATE_PLAYER_DECIDERS,
+	...STORYTELLERS_WISHES_DECIDERS
 };
 
 function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn): GameEvent[] {

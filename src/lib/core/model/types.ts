@@ -276,6 +276,9 @@ export interface CharacterGuess {
  *   question, what the Savant was told), with structured `guesses` for the Juggler.
  * - `info`: what a waking character was shown, with the reminder tokens it placed, and
  *   whether it worked abnormally (for the Mathematician).
+ * - `wish`: a wish a character's player made (its `wish` rule: the Wizard's,
+ *   https://wiki.bloodontheclocktower.com/Wizard), granted or declined, with the price and the
+ *   clue the Storyteller set, and a standard `effect` the app knows, when they chose one.
  */
 export type DayEntry =
 	| {
@@ -332,7 +335,38 @@ export type DayEntry =
 			reminderIds: ReminderId[];
 			/** Set when the info or ability worked abnormally because of another character. */
 			abnormal?: AbnormalCause[];
+	  }
+	| {
+			kind: 'wish';
+			entryId: DayEntryId;
+			seatId: SeatId;
+			characterId: CharacterId;
+			text: string;
+			granted: boolean;
+			price?: string;
+			clue?: string;
+			effect?: WishEffect;
 	  };
+
+/**
+ * A granted wish's effect the app knows and acts on, the Storyteller's pick (they decide what
+ * a wish does: https://wiki.bloodontheclocktower.com/Wizard):
+ * - `good-drunk`: every good player is drunk for the rest of the game.
+ */
+export const WISH_EFFECTS = ['good-drunk'] as const;
+export type WishEffect = (typeof WISH_EFFECTS)[number];
+
+/**
+ * The two Storytellers of a rule character's `twoStorytellers` rule (the Knaves,
+ * https://wiki.bloodontheclocktower.com/Knaves): their names, which one lies (0 or 1, absent
+ * until decided), and whether they have switched.
+ */
+export interface StorytellerPair {
+	/** Empty names mean "Storyteller 1" and "Storyteller 2". */
+	names?: [string, string];
+	liar?: 0 | 1;
+	switched?: true;
+}
 
 export type DayEntryKind = DayEntry['kind'];
 
@@ -385,6 +419,11 @@ export interface DayLog {
 	 * phrase), by character. Absent while none.
 	 */
 	tallies?: Record<CharacterId, DayTallyLog>;
+	/**
+	 * Which of two Storytellers (`Game.storytellerPair`) each player went to for their
+	 * information today, by seat. Absent while none.
+	 */
+	visits?: Record<SeatId, 0 | 1>;
 	/** When "New day" closed this log (milliseconds since the epoch); only on past days. */
 	closedAt?: number;
 }
@@ -493,4 +532,6 @@ export interface Game {
 	 * Storyteller gave none, and in games saved before version 10.
 	 */
 	storytellerName?: string;
+	/** The two Storytellers, while a `twoStorytellers` rule character is set up. Absent until set. */
+	storytellerPair?: StorytellerPair;
 }
