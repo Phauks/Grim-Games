@@ -42,5 +42,8 @@
 				]
 			}
 		]
+	},
+	"wakesWhen": {
+		"untilToken": "No Ability"
 	}
 }

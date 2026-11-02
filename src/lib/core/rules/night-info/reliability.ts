@@ -25,6 +25,7 @@ import {
 	registrations,
 	truthfulBy
 } from '../ability.ts';
+import { ownJinxRules } from '../jinxes.ts';
 import { type StorytellerVisit, storytellerVisit } from '../storytellers.ts';
 
 const W = 'https://wiki.bloodontheclocktower.com/';
@@ -156,18 +157,23 @@ export type NightAnswer = AnswerValue &
 /**
  * The first player whose working ability makes the information of a `type` ability false (its
  * `falseInfo` rule: the Vortox's Townsfolk, https://wiki.bloodontheclocktower.com/Vortox),
- * with their character. Any type when `type` is not given.
+ * with their character. Any type when `type` is not given. With `about`, the character whose
+ * information it is, not one whose jinx with it keeps that information true (`trueInfo`: the
+ * Vortox's Banshee, https://wiki.bloodontheclocktower.com/Vortox#Related_Jinxes).
  */
 export function falseInfoSource(
 	game: Game,
 	characters: CharacterLookup,
-	type?: CharacterType
+	type?: CharacterType,
+	about?: CharacterId
 ): { seatId: SeatId; characterId: CharacterId } | undefined {
 	for (const seatId of game.seating) {
 		const characterId = trueCharacter(game, seatId, characters);
 		const rule = characterId ? rulesOf(characterId, characters)?.falseInfo : undefined;
 		const types = rule && !rule.may ? rule.types : undefined;
 		if (!characterId || !types || (type !== undefined && !types.includes(type))) continue;
+		if (about !== undefined && ownJinxRules(game, characterId, about, characters)?.trueInfo)
+			continue;
 		if (abilityState(game, seatId, characters).works) return { seatId, characterId };
 	}
 	return undefined;
@@ -283,7 +289,9 @@ export function reliability(
 	// never told false information, whatever says it must or may be false.
 	const truthful = truthfulBy(game, seatId, characters) !== undefined;
 	const falseBy =
-		type === undefined || truthful ? undefined : falseInfoSource(game, characters, type);
+		type === undefined || truthful
+			? undefined
+			: falseInfoSource(game, characters, type, characterId);
 	if (falseBy) {
 		out.mustBeFalse = true;
 		out.vortox = falseBy.seatId;

@@ -26,6 +26,13 @@
  *   without dying or dies and gains it (`outcome`), shown at the partner's step and the
  *   chooser's (`nightChoice`: the Leviathan's and Riot's Sage, Farmer, Ravenkeeper and
  *   Banshee, https://wiki.bloodontheclocktower.com/Leviathan#Related_Jinxes);
+ * - `learns-gained`: a jinx has the waking player learn something the night after gaining
+ *   another character's ability (`learnsGained`, `learns`: the Cannibal learns it has the
+ *   Butler or Zealot ability, or the executed Juggler's number,
+ *   https://wiki.bloodontheclocktower.com/Cannibal#Related_Jinxes);
+ * - `true-info`: a jinx says a character's false information doesn't apply to the waking
+ *   player's, so it is given truly (`trueInfo`: the Vortox's Banshee is announced,
+ *   https://wiki.bloodontheclocktower.com/Vortox#Related_Jinxes);
  * - `may-skip-attack` / `must-skip-attack` / `final-night`: a rule in play lets the Demon
  *   choose not to attack, it still has to once (its reminder is on the Demon), or it is still
  *   marked on a night its attack could end the game, so it doesn't wake and no kill alerts
@@ -34,6 +41,10 @@
  * - `seating`: a character whose neighbours are turned evil at setup (`turnsPlayersInto`
  *   `neighbours`) is not inside one line of every evil player
  *   (https://wiki.bloodontheclocktower.com/Lord_of_Typhon);
+ * - `wakes-with` / `keeps-protection`: a jinxed partner's player wakes at this step too and
+ *   learns the choice, or learns this step took their ability while their protection holds
+ *   (`jinx-partner-alerts.ts`: the Vizier with the Fearmonger, the Courtier and the Preacher,
+ *   https://wiki.bloodontheclocktower.com/Vizier#Related_Jinxes);
  * and, when the step can kill (`NIGHT_KILLERS`), for each player it might kill:
  * - `protected`: they cannot die tonight (the Storyteller's override, the Sailor, the
  *   Soldier or Monk against the Demon, the Tea Lady, the Innkeeper);
@@ -65,7 +76,10 @@ import { stopsKillingTonight } from './reminder-effects.ts';
 import { noAttackState } from './demon-attack.ts';
 import { ownJinxes, ownJinxRules } from './jinxes.ts';
 import { jinxChosenTonight } from './jinx-choices.ts';
-import type { NightChoice } from '#lib/core/data/jinx-rules.ts';
+import { jinxPartnerAlerts } from './jinx-partner-alerts.ts';
+import type { LearnsGained, NightChoice } from '#lib/core/data/jinx-rules.ts';
+import { gainedAbilities } from './gained-abilities.ts';
+import { falseInfoSource } from './night-info/reliability.ts';
 import {
 	abilityState,
 	firstDeathSaver,
@@ -163,7 +177,11 @@ export type NightAlertKind =
 	| 'no-grimoire'
 	| 'grimoire-hides'
 	| 'jinx-chosen'
+	| 'learns-gained'
+	| 'true-info'
 	| 'seating'
+	| 'wakes-with'
+	| 'keeps-protection'
 	| 'protected'
 	| 'may-bounce'
 	| 'survives-first-death'
@@ -182,6 +200,8 @@ export interface NightAlert {
 	wiki?: string;
 	/** For `jinx-chosen`: whether the chosen partner acts without dying, or dies. */
 	outcome?: NightChoice['partner'];
+	/** For `learns-gained`: what the player learns, the ability or its answer. */
+	learns?: LearnsGained;
 }
 
 /**
@@ -256,6 +276,7 @@ export function nightStepAlerts(
 					works: true,
 					impairments: []
 				});
+	out.push(...jinxPartnerAlerts(game, characterId, characters));
 	for (const seatId of actors) {
 		const twice = actsTwiceSource(game, seatId, characters);
 		if (!twice) continue;
@@ -313,6 +334,8 @@ export function nightStepAlerts(
 
 	out.push(...grimoireAlerts(game, characterId, actors, characters));
 	out.push(...jinxChoiceAlerts(game, characterId, actors, characters));
+	out.push(...learnsGainedAlerts(game, characterId, actors, characters));
+	out.push(...trueInfoAlerts(game, characterId, actors, characters));
 
 	const killer = nightKiller(characterId, characters);
 	if (killer?.by === 'demon') {
@@ -472,6 +495,45 @@ function jinxChoiceAlerts(
 			if (wiki) alert.wiki = wiki;
 			return alert;
 		});
+}
+
+/**
+ * What a jinx has the waking player learn tonight about an ability they gained today
+ * (`learnsGainedTonight`), at the step of the character they gained it by. Its source is the
+ * gained character on their own seat, so a drunk or poisoned holder says so.
+ */
+function learnsGainedAlerts(
+	game: Game,
+	characterId: CharacterId,
+	actors: readonly SeatId[],
+	characters: CharacterLookup
+): NightAlert[] {
+	return gainedAbilities(game, characters)
+		.filter((g) => g.learns && g.via === characterId && actors.includes(g.seatId))
+		.map((g) => {
+			const source: AbilitySource = { characterId: g.characterId, seatId: g.seatId };
+			const alert = sourceAlert(game, 'learns-gained', g.seatId, source, characters, undefined);
+			const wiki = wikiOf({ characterId }, characters);
+			return { ...alert, ...(wiki ? { wiki } : {}), learns: g.learns };
+		});
+}
+
+/**
+ * A character whose false information would cover the waking character's, but whose jinx with
+ * it keeps it true (`trueInfo`): the Vortox and the Banshee's announcement.
+ */
+function trueInfoAlerts(
+	game: Game,
+	characterId: CharacterId,
+	actors: readonly SeatId[],
+	characters: CharacterLookup
+): NightAlert[] {
+	const type = characters.get(characterId)?.type;
+	const by = type === undefined ? undefined : falseInfoSource(game, characters, type);
+	if (!by || !ownJinxRules(game, by.characterId, characterId, characters)?.trueInfo) return [];
+	return actors.map((seatId) =>
+		sourceAlert(game, 'true-info', seatId, by, characters, wikiOf(by, characters))
+	);
 }
 
 function sourceAlert(

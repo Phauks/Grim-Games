@@ -44,5 +44,8 @@
 		"this-player-is": {
 			"characters": ["self"]
 		}
+	},
+	"wakesWhen": {
+		"untilToken": "No Ability"
 	}
 }
