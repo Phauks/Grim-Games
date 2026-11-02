@@ -435,15 +435,16 @@ export type Command =
 	 * Closes the day log and starts an empty one; the old one is kept as history. The
 	 * Storyteller does this by hand ("New day"); opening the night order never does. It is
 	 * Dawn, so the reminders whose rules say they last until dawn come off (`reminderEnds`, the
-	 * Monk's Safe).
+	 * Monk's Safe) and the Flowergirl's and Town Crier's tokens swap. `keepReminders` (the
+	 * Storyteller setting "Take reminders off on time" off) leaves every reminder as it is.
 	 */
-	| { type: 'NewDay' }
+	| { type: 'NewDay'; keepReminders?: boolean }
 	/**
 	 * Dusk: the day is over and the night begins. Takes off the reminders whose rules say they
 	 * last until dusk (`reminderEnds`, the Poisoner's Poisoned); ticking the night's Dusk step
-	 * sends it.
+	 * sends it. `keepReminders` leaves them, as for New day.
 	 */
-	| { type: 'Dusk' };
+	| { type: 'Dusk'; keepReminders?: boolean };
 
 export type CommandType = Command['type'];
 export type CommandOf<T extends CommandType> = Extract<Command, { type: T }>;
