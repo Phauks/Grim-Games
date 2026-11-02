@@ -1,12 +1,13 @@
 /**
  * What the Library holds, like files in a file manager (Trevor, 2026-10-18: "designate files
- * as scripts, characters, or character collections"). Every item has a kind and a key; its
+ * as scripts, characters, or character collections"), and game modes and special rules
+ * (Trevor, 2026-11-01). Every item has a kind and a key; its
  * folder and tags live in the labels (library-labels.ts) under that key, whatever its kind.
  */
 import { foldForSearch } from '#lib/core/text/fold.ts';
 import { folderAndDescendants, labelsFor, type LibraryLabels } from './library-labels.ts';
 
-export const ITEM_KINDS = ['script', 'character', 'collection'] as const;
+export const ITEM_KINDS = ['script', 'character', 'collection', 'mode', 'rule'] as const;
 export type ItemKind = (typeof ITEM_KINDS)[number];
 /** The sidebar's kind choice: every kind, or one. */
 export type KindFilter = 'all' | ItemKind;
@@ -15,6 +16,10 @@ export type KindFilter = 'all' | ItemKind;
 export const characterKey = (savedId: string) => `character:${savedId}`;
 /** A character collection, by its id. */
 export const collectionKey = (id: string) => `collection:${id}`;
+/** A game mode added on this device (Trevor, 2026-11-01: mode files in the Library), by id. */
+export const modeKey = (id: string) => `mode:${id}`;
+/** A special rule added on this device, by its id. */
+export const ruleKey = (id: string) => `rule:${id}`;
 
 export interface LibraryItem {
 	key: string;

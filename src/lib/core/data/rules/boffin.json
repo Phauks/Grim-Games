@@ -28,5 +28,19 @@
 			"characters": ["self"],
 			"upTo": 2
 		}
+	},
+	"jinxes": {
+		"drunk": {
+			"notGiven": true
+		},
+		"heretic": {
+			"notGiven": true
+		},
+		"ogre": {
+			"notGiven": true
+		},
+		"politician": {
+			"notGiven": true
+		}
 	}
 }

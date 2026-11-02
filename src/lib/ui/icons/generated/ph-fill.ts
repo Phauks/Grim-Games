@@ -146,6 +146,7 @@ import ph_lock_simple_fill from '~icons/ph/lock-simple-fill';
 import ph_magnifying_glass_fill from '~icons/ph/magnifying-glass-fill';
 import ph_mask_sad_fill from '~icons/ph/mask-sad-fill';
 import ph_megaphone_fill from '~icons/ph/megaphone-fill';
+import ph_megaphone_simple_fill from '~icons/ph/megaphone-simple-fill';
 import ph_minus_fill from '~icons/ph/minus-fill';
 import ph_minus_circle_fill from '~icons/ph/minus-circle-fill';
 import ph_monitor_fill from '~icons/ph/monitor-fill';
@@ -178,6 +179,7 @@ import ph_question_fill from '~icons/ph/question-fill';
 import ph_scales_fill from '~icons/ph/scales-fill';
 import ph_scan_fill from '~icons/ph/scan-fill';
 import ph_scroll_fill from '~icons/ph/scroll-fill';
+import ph_seal_check_fill from '~icons/ph/seal-check-fill';
 import ph_selection_fill from '~icons/ph/selection-fill';
 import ph_shapes_fill from '~icons/ph/shapes-fill';
 import ph_share_network_fill from '~icons/ph/share-network-fill';
@@ -202,6 +204,7 @@ import ph_speaker_high_fill from '~icons/ph/speaker-high-fill';
 import ph_spinner_fill from '~icons/ph/spinner-fill';
 import ph_square_fill from '~icons/ph/square-fill';
 import ph_square_split_horizontal_fill from '~icons/ph/square-split-horizontal-fill';
+import ph_stamp_fill from '~icons/ph/stamp-fill';
 import ph_star_fill from '~icons/ph/star-fill';
 import ph_star_half_fill from '~icons/ph/star-half-fill';
 import ph_sun_fill from '~icons/ph/sun-fill';
@@ -385,6 +388,7 @@ const icons: IconMap = {
 	'ph:magnifying-glass-fill': ph_magnifying_glass_fill,
 	'ph:mask-sad-fill': ph_mask_sad_fill,
 	'ph:megaphone-fill': ph_megaphone_fill,
+	'ph:megaphone-simple-fill': ph_megaphone_simple_fill,
 	'ph:minus-fill': ph_minus_fill,
 	'ph:minus-circle-fill': ph_minus_circle_fill,
 	'ph:monitor-fill': ph_monitor_fill,
@@ -417,6 +421,7 @@ const icons: IconMap = {
 	'ph:scales-fill': ph_scales_fill,
 	'ph:scan-fill': ph_scan_fill,
 	'ph:scroll-fill': ph_scroll_fill,
+	'ph:seal-check-fill': ph_seal_check_fill,
 	'ph:selection-fill': ph_selection_fill,
 	'ph:shapes-fill': ph_shapes_fill,
 	'ph:share-network-fill': ph_share_network_fill,
@@ -441,6 +446,7 @@ const icons: IconMap = {
 	'ph:spinner-fill': ph_spinner_fill,
 	'ph:square-fill': ph_square_fill,
 	'ph:square-split-horizontal-fill': ph_square_split_horizontal_fill,
+	'ph:stamp-fill': ph_stamp_fill,
 	'ph:star-fill': ph_star_fill,
 	'ph:star-half-fill': ph_star_half_fill,
 	'ph:sun-fill': ph_sun_fill,

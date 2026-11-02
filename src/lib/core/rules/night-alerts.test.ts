@@ -11,6 +11,7 @@ import {
 import { parseCharacter } from '#lib/core/data/parse.ts';
 import { Issues } from '#lib/core/data/validate.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 import {
 	NIGHT_KILLERS,
 	ON_DEATH,
@@ -93,6 +94,18 @@ describe('Demon kill', () => {
 	it('warns the Mayor’s death may bounce (https://wiki.bloodontheclocktower.com/Mayor)', () => {
 		const { game: g, seats } = castGame(['imp', 'mayor', 'chef', 'empath', 'monk']);
 		expect(short(nightStepAlerts(g, 'imp', characters), seats)).toEqual(['may-bounce mayor→1']);
+	});
+
+	it('Monk Example 2: no bounce for a Mayor the Monk protects (https://wiki.bloodontheclocktower.com/Monk, /Mayor)', () => {
+		// The Monk protects the Mayor and the Imp attacks: the Mayor is safe, nobody dies.
+		const s = scenario(['imp', 'mayor', 'chef', 'empath', 'monk']).reminder(
+			'mayor',
+			'monk',
+			'Safe'
+		);
+		expect(short(nightStepAlerts(s.game, 'imp', s.characters), [...s.seats])).toEqual([
+			'protected monk→1'
+		]);
 	});
 
 	it('reminds of the Ravenkeeper and the Sage (https://wiki.bloodontheclocktower.com/Ravenkeeper, /Sage)', () => {

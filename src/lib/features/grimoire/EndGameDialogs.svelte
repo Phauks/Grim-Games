@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { EndReason } from '#lib/core/rules/index.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
+	import AlignmentPill from './AlignmentPill.svelte';
 	import { endedGames, type EndedGame } from './device-notes.ts';
 	import EndGameFields from './EndGameFields.svelte';
 	import GameEndPrompt from './GameEndPrompt.svelte';
@@ -9,6 +10,8 @@
 	/**
 	 * Ending and reopening the game (Trevor, 2026-10-16): End game moves it to History, Reopen
 	 * puts it back in Continue game, and the rules checked at dusk can offer End game themselves.
+	 * The confirms say what the board shows, where the game is up to and Game over, not where
+	 * the save is filed (Trevor, 2026-11-01: the room stays open after End game).
 	 */
 	interface Props {
 		grimoire: Grimoire;
@@ -16,6 +19,8 @@
 		ended: EndedGame | undefined;
 		/** Who won, as the board's game over line says it. */
 		endedText: string;
+		/** Where the game is up to, as the corner says it ("Day 3"). */
+		phase: string;
 		endOpen: boolean;
 		reopenOpen: boolean;
 		/** The game was ended or reopened, so its ending is read again. */
@@ -26,6 +31,7 @@
 		grimoire,
 		ended,
 		endedText,
+		phase,
 		endOpen = $bindable(),
 		reopenOpen = $bindable(),
 		onChange
@@ -63,18 +69,23 @@
 <ConfirmDialog bind:open={reopenOpen} title="Reopen game?" onConfirm={reopenGame}>
 	<dl class="change">
 		<dt>Now</dt>
-		<dd>Ended, in History: {endedText}</dd>
+		<dd><AlignmentPill alignment={ended?.winner} text={`Game over: ${endedText}`} /></dd>
 		<dt>Becomes</dt>
-		<dd>In Continue game</dd>
+		<dd>{phase}</dd>
 	</dl>
 </ConfirmDialog>
 
 <ConfirmDialog bind:open={endOpen} title="End game?" danger onConfirm={endGame}>
 	<dl class="change">
 		<dt>Now</dt>
-		<dd>In Continue game</dd>
+		<dd>{phase}</dd>
 		<dt>Becomes</dt>
-		<dd>Ended, in History</dd>
+		<dd>
+			<AlignmentPill
+				alignment={winner}
+				text={`Game over: ${winner === 'good' ? 'Good won' : winner === 'evil' ? 'Evil won' : 'Winner not recorded'}`}
+			/>
+		</dd>
 	</dl>
 	<div class="winner">
 		<EndGameFields {grimoire} bind:winner bind:reason={endReason} />

@@ -387,6 +387,10 @@ test('people from a finished game are on Recent players, with Add friend', async
 	await expect(ann.page.getByTestId('friend-incoming')).toContainText(bob.username);
 	await expect(ann.page.getByTestId('friend-recent')).toContainText(bob.username);
 	await expect(ann.page.getByTestId('friend-recent').getByTestId('player-badge')).toHaveText('Bob');
+
+	// The game counts on both profiles, which anyone can open (plan F11).
+	await ann.page.goto(`/u/${bob.username}`);
+	await expect(ann.page.getByTestId('profile-games')).toHaveText('Games played: 1');
 });
 
 test('the Storyteller invites a friend, who joins from Friends', async ({ browser }) => {
@@ -521,6 +525,13 @@ test('a group by join code shows the games its Storytellers put in it', async ({
 	await expect(game).toContainText(`Storyteller: ${ann.username}`);
 	await game.getByRole('link', { name: 'Join' }).tap();
 	await expect(bob.page).toHaveURL(new RegExp(`/join#${room}$`));
+
+	// Join game lists it under the code too, with the group's name.
+	await bob.page.goto('/join');
+	const listed = bob.page.getByTestId('join-group-games').getByRole('listitem');
+	await expect(listed).toContainText('Board Game Cafe');
+	await listed.getByRole('button', { name: 'Join' }).tap();
+	await expect(bob.page).toHaveURL(new RegExp(`/join/${room}$`));
 
 	// Ann sees the members and removes Bob, whose list then has no group.
 	await ann.page.goto('/friends');
