@@ -44,17 +44,29 @@ test("players' phones show where the game is up to, with the day timer as a sun 
 		'aria-label',
 		`0 of ${seatCount} seats with a player here. 1 more unassigned`
 	);
-	// The Storyteller can show the town at dusk instead, from the timer's own controls.
+	// The Storyteller can show the town at dusk instead, from Game settings; not from the
+	// timer's controls (Trevor, 2026-11-02: "does not belong in timer").
 	await page.getByRole('button', { name: /^Day timer, .*; open its controls$/ }).tap();
 	const timerSheet = page.getByTestId('timer-sheet');
-	await timerSheet.getByRole('combobox', { name: 'Setup on players’ phones' }).tap();
-	await page.getByRole('option', { name: 'Town at dusk', exact: true }).tap();
-	await expect(setupSky).toHaveAttribute('data-look', 'town');
-	await timerSheet.getByRole('combobox', { name: 'Setup on players’ phones' }).tap();
-	await page.getByRole('option', { name: 'Candles for the seats', exact: true }).tap();
-	await expect(setupSky).toHaveAttribute('data-look', 'candles');
+	await expect(timerSheet.getByRole('combobox', { name: 'Setup on players’ phones' })).toHaveCount(
+		0
+	);
 	await page.keyboard.press('Escape');
 	await expect(timerSheet).toBeHidden();
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Game settings' })
+		.tap();
+	const gameSettings = page.getByRole('dialog', { name: 'Game settings' });
+	await gameSettings.getByRole('combobox', { name: 'Setup on players’ phones' }).tap();
+	await page.getByRole('option', { name: 'Town at dusk', exact: true }).tap();
+	await expect(setupSky).toHaveAttribute('data-look', 'town');
+	await gameSettings.getByRole('combobox', { name: 'Setup on players’ phones' }).tap();
+	await page.getByRole('option', { name: 'Candles for the seats', exact: true }).tap();
+	await expect(setupSky).toHaveAttribute('data-look', 'candles');
+	await gameSettings.getByRole('button', { name: 'Close' }).tap();
+	await expect(gameSettings).toBeHidden();
 	// Alone on its row, across the whole of it (Trevor, 2026-10-27: "the game status bar should
 	// then take up the entire horizontal of that line area").
 	const across = (await phone.getByRole('tablist').boundingBox())!.width;
@@ -149,12 +161,13 @@ test("players' phones show where the game is up to, with the day timer as a sun 
 
 	// Back to town, confirmed: the rest of the day is Town, still saying which day; the day
 	// timer stops and the players' sun has set (Trevor, 2026-10-27).
-	await page.getByRole('button', { name: 'More', exact: true }).tap();
-	const menu = page.getByRole('dialog', { name: 'Grimoire' });
-	await menu.getByRole('button', { name: 'Back to town' }).tap();
-	await expect(menu).toBeHidden();
+	// On the day timer, on the board as in the day (Trevor, 2026-11-01).
+	const boardTimer = page.locator('.board-timer').getByTestId('day-timer');
+	await boardTimer.getByRole('button', { name: 'Back to town' }).tap();
 	const confirm = page.getByRole('alertdialog', { name: 'Back to town?' });
 	await confirm.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	// The Storyteller's clock says Town too, as the players' phones do.
+	await expect(boardTimer.getByRole('timer')).toHaveText('Town');
 	await expect(page.getByRole('button', { name: 'Start timer' }).first()).toBeVisible();
 	await expect(status).toHaveAttribute('data-phase', 'town');
 	await expect(shown.getByRole('img')).toHaveAttribute(

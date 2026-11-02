@@ -8,7 +8,9 @@
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
  * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
- * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
+ * happened, then what the rules say. Quote the example word for word in a `// Wiki: "..."`
+ * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
+ * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
@@ -47,7 +49,10 @@ describe('Choirboy', () => {
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Choirboy#Examples)', () => {
 		it('Example 1: Unprotected King dies; Choirboy learns the Imp', () => {
-			// The Demon killed the King: the Choirboy is shown the Demon's player.
+			// Wiki: "The Imp attacks the Empath. The Empath dies. The next night, the Imp attacks the
+			// King, who is protected by the Monk. The King lives. The next night, the Imp attacks the
+			// King, who is no longer protected by the Monk. The King dies. The Choirboy is woken by the
+			// Storyteller and learns which player is the Imp."
 			const s = scenario(['choirboy', 'king', 'imp', 'monk', 'poisoner']).dies('king');
 			const picker = infoPicker(s.game, s.seat('choirboy'), 'choirboy', s.characters)!;
 			expect(isTruthful(picker, { seats: [s.seat('imp')] })).toBe(true);
@@ -55,6 +60,8 @@ describe('Choirboy', () => {
 		});
 
 		it('Example 2: Drunk Choirboy wrongly names the General', () => {
+			// Wiki: "The Shabaloth kills the King. The drunk Choirboy wakes and wrongly learns that the
+			// General is the Demon."
 			// A Drunk who thinks they are the Choirboy may be shown anyone as the Demon.
 			const s = scenario(['choirboy', 'king', 'shabaloth', 'general', 'poisoner'])
 				.drunk('choirboy')

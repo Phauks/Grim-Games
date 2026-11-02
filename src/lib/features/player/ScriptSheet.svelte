@@ -36,6 +36,11 @@
 		inPlay?: readonly string[];
 		/** Travellers the town knows are in play: each shows who plays it (Trevor, 2026-10-19). */
 		travellers?: readonly TravellerInPlay[];
+		/**
+		 * The script's recommended Travellers: each Traveller row says on its band whether it is
+		 * one (Trevor, 2026-11-02, as Not in play and Bluff are marked).
+		 */
+		recommended?: ReadonlySet<string>;
 		/** False leaves the Jinxes section out (a printed sheet without them). */
 		showJinxes?: boolean;
 		/** The game mode and special rules, in their own section under Jinxes; none, none shown. */
@@ -55,6 +60,7 @@
 		flat = false,
 		inPlay,
 		travellers,
+		recommended,
 		showJinxes = true,
 		rules = [],
 		ruleCharacters = [],
@@ -74,7 +80,12 @@
 		!!playing && !jinxes.some((j) => j.characters.every((id) => playing.has(id)))
 	);
 	const density = $derived(fixed ?? 'normal');
-	const groups = $derived(groupByType(characters));
+	// In a game the Travellers section stays, with None, until one comes into play.
+	const groups = $derived(groupByType(characters, playing ? 'traveller' : undefined));
+	const travellerNote = (c: Character) =>
+		c.type === 'traveller' && recommended
+			? t(recommended.has(c.id) ? 'player.recommended' : 'player.notRecommended')
+			: undefined;
 	const names = $derived(characters.map((c) => c.name));
 	const byId = $derived(new Map(characters.map((c) => [c.id, c])));
 	// Each character's jinxes, for the small icons beside its name (Trevor approved, 2026-10-16).
@@ -93,7 +104,7 @@
 	{@const own = jinxesOf[c.id]}
 	{@const who = playersOf(c.id)}
 	<li class="character" data-character={c.id}>
-		<CharacterRow character={c} info>
+		<CharacterRow character={c} info note={travellerNote(c)}>
 			{#snippet afterName()}
 				{#if own}<JinxMark characterId={c.id} jinxes={own} characters={byId} />{/if}
 				{#if who.length}<span class="in-play" data-testid="traveller-in-play"
@@ -131,12 +142,16 @@
 {#snippet sections()}
 	{#each groups as group (group.type)}
 		{#snippet list()}
-			<ul>
-				{#each group.characters as c (c.id)}{@render ringRow(c)}{/each}
-			</ul>
+			{#if group.characters.length}
+				<ul>
+					{#each group.characters as c (c.id)}{@render ringRow(c)}{/each}
+				</ul>
+			{:else}
+				<p class="none" data-testid="no-travellers">{t('common.none')}</p>
+			{/if}
 		{/snippet}
 		{@render section(
-			group.type === 'traveller' ? t('player.recommendedTravellers') : TYPE_PLURALS[group.type],
+			TYPE_PLURALS[group.type],
 			`play:${group.type}`,
 			list,
 			typeTone(group.type),

@@ -159,7 +159,7 @@ export const ROADMAP: readonly RoadmapItem[] = [
 			'R13',
 			'R14',
 			'L18b',
-			...range('W', 1, 16),
+			...range('W', 1, 17),
 			...range('E', 1, 4)
 		]
 	},
@@ -190,9 +190,9 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	},
 	{
 		title:
-			"Special rules and game modes: +1, Binary Supernovae, Trained Killer, Phantom Detectives, Council of the Dead, The Warrens, The Djinn's Bargain, sharing your own mode files, the Mode builder, requesting missing mode features, one format for modes and rules",
+			"Special rules and game modes: +1, Binary Supernovae, Trained Killer, Phantom Detectives, Council of the Dead, The Warrens, The Djinn's Bargain, sharing your own mode files, the Mode builder, requesting missing mode features, one format for modes and rules, mode files in the Library",
 		area: 'storyteller',
-		parts: ['L1', 'L35', 'L36', 'L103', 'L104', 'L105', 'L110', 'L111'],
+		parts: ['L1', 'L35', 'L36', 'L103', 'L104', 'L105', 'L106', 'L110', 'L111'],
 		prs: [322, 328]
 	},
 	{
@@ -271,9 +271,9 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	},
 	{
 		title:
-			'Travellers choose their own Traveller on their phones: the Storyteller sends the ones allowed, a tap holds one so no one else can take it, Confirm sends it; a Traveller who arrives mid-game sits at the table not in play until the night',
+			'Travellers choose their own Traveller on their phones: the Storyteller sends the ones allowed, a tap holds one so no one else can take it, Confirm sends it; a Traveller who arrives mid-game sits at the table not in play until the night offers to bring them in',
 		area: 'storyteller',
-		parts: ['L102', 'L102a']
+		parts: ['L102', 'L102a', 'L102b']
 	},
 	{
 		title:
@@ -357,6 +357,13 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['M10a', 'M10b', 'M10c', 'M10d', 'M10e', 'M10f', 'M10g']
 	},
 	{
+		// Trevor, 2026-11-02: the Correct reminder goes on whoever was guessed right (the Juggler
+		// too, one player more than once, or nobody); the Juggler learns how many are placed.
+		title: "The Juggler's number from the Correct reminders on the board",
+		area: 'engine',
+		parts: ['M19']
+	},
+	{
 		// Gap 8: the Bigwig's chosen speaker; gap 12: one-offs with no behaviour yet: M12a the
 		// Scapegoat, M12b the Boomdandy, M12c the Courtier's countdown.
 		title: "The Bigwig's speaker, the Scapegoat, the Boomdandy and the Courtier's three nights",
@@ -364,11 +371,15 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['M11', 'M12a', 'M12b', 'M12c']
 	},
 	{
-		// Gap 1, last and separate (Trevor, 2026-10-28).
+		// Gap 1, last and separate (Trevor, 2026-10-28). M9a the vote record and vote weights
+		// (Thief, Bureaucrat, God of Ug, Butler, Zealot, Beggar), M9b voting across the table
+		// (Voudon, Organ Grinder, Ferryman), M9c who may nominate (Bishop, Golem, Gnome), M9d
+		// forced and failed executions (Legion, Judge, Vizier, Cult Leader), M9e vote notes for the
+		// Storyteller's count (Trevor, 2026-11-01: votes are run outside the app, never recorded).
 		title:
 			'Voting and nominations: vote weight, who may vote or nominate, forced and blocked executions (Butler, Thief, Bureaucrat, Bishop, Legion and 12 more)',
 		area: 'engine',
-		parts: ['M9']
+		parts: ['M9a', 'M9b', 'M9c', 'M9d', 'M9e']
 	},
 	{
 		// The wiki examples each character's test file lists as still to do, a batch per edition
@@ -380,10 +391,12 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	{
 		// Trevor, 2026-10-30: on the roadmap, after a spike and research. L99 research, L100 the
 		// format with the Heretic and Boffin, L107 every jinx shown where it matters, L108 jinxes
-		// that reuse existing rules, L109 the Plague Doctor's and other built characters'.
+		// that reuse existing rules, L109 the Plague Doctor's and other built characters', L112
+		// the Leviathan's and Riot's game ends, King and late Demon, L113 the setup jinx gaps
+		// (the Damsel's Poisoned, the Alchemist's Summoner and Marionette).
 		title: 'Jinxes the app applies, not only shows',
 		area: 'engine',
-		parts: ['L99', 'L100', 'L107', 'L108', 'L109']
+		parts: ['L99', 'L100', 'L107', 'L108', 'L109', 'L112', 'L113']
 	},
 	{
 		title: 'Co-Storytelling: two Storytellers on one game',

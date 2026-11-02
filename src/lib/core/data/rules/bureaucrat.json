@@ -1,4 +1,5 @@
 {
+	"voteWeight": { "reminder": "3 Votes", "weight": 3 },
 	"reminderTargets": {
 		"3 Votes": {
 			"seat": "other",

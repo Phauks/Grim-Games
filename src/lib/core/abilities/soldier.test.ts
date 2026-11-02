@@ -8,7 +8,9 @@
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
  * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
- * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
+ * happened, then what the rules say. Quote the example word for word in a `// Wiki: "..."`
+ * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
+ * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
@@ -48,6 +50,7 @@ describe('Soldier', () => {
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Soldier#Examples)', () => {
 		it('Example 1: Imp targets Soldier, so nobody dies', () => {
+			// Wiki: "The Imp attacks the Soldier. The Soldier does not die, so nobody dies that night."
 			const s = scenario(['soldier', 'chef', 'imp', 'monk', 'poisoner']).reminder(
 				'soldier',
 				'imp',
@@ -64,12 +67,13 @@ describe('Soldier', () => {
 			]);
 		});
 		it("Example 2: Poisoned Soldier dies to Imp's attack", () => {
-			// A poisoned Soldier has no ability, so nothing protects them.
+			// Wiki: "The Poisoner poisons the Soldier, then the Imp attacks the Soldier. The Soldier dies,
+			// since they have no ability."
 			const s = scenario(['soldier', 'chef', 'imp', 'monk', 'poisoner']).poisoned('soldier');
 			expect(protection(s.game, s.seat('soldier'), s.characters, 'demon')).toBeUndefined();
 		});
 		it("Example 3: Drunk Soldier dies from Imp's attack", () => {
-			// A Drunk who thinks they are the Soldier is not the Soldier.
+			// Wiki: "The Imp attacks the Soldier. The Soldier dies, because they are actually the Drunk."
 			const s = scenario(['soldier', 'chef', 'imp', 'monk', 'poisoner']).drunk('soldier');
 			expect(protection(s.game, s.seat('soldier'), s.characters, 'demon')).toBeUndefined();
 		});

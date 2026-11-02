@@ -10,8 +10,16 @@
  * of the two may be in play). Paraphrase, never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
-import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
+import { findJinx, jinxesAmong, type Script } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { castWith, run } from '#lib/core/model/fixtures.test-support.ts';
+import { infoPicker } from '#lib/core/rules/night-info.ts';
+import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
+
+const scriptOf = (ids: string[]): Script => ({
+	meta: { name: 'Jinxed' },
+	entries: ids.map((id) => ({ kind: 'official' as const, id }))
+});
 
 describe('Recluse + Sage jinx', () => {
 	const data = committedGameData();
@@ -30,5 +38,37 @@ describe('Recluse + Sage jinx', () => {
 		expect(jinxesAmong(data.jinxes, ['sage'])).not.toContain(jinx);
 	});
 
-	it.todo('enforces the rule the jinx imposes');
+	// Both pages' Related Jinxes: the Recluse might register as the Demon to the Sage. The
+	// Recluse's own ability already says it might register as a Demon, so the Sage's options
+	// include it with no jinx data; a drunk or poisoned Recluse has no ability and registers
+	// truly.
+	describe('the Recluse might register as the Demon to the Sage', () => {
+		const cast = castWith({
+			script: scriptOf(['sage', 'recluse', 'imp', 'chef', 'empath', 'poisoner'])
+		});
+
+		it('needs no jinx data: the Recluse ability covers it', () => {
+			expect(jinxRulesBetween('recluse', 'sage')).toBeUndefined();
+		});
+
+		it("offers the Recluse as the Demon in the Sage's pair, as a registration", () => {
+			const { game, ctx, seats } = cast(['sage', 'recluse', 'imp', 'chef', 'empath']);
+			const picker = infoPicker(game, seats[0], 'sage', ctx.characters)!;
+			const recluse = picker.options.filter((o) => o.seats[0] === seats[1]);
+			expect(recluse.length).toBeGreaterThan(0);
+			expect(recluse.every((o) => o.registered?.includes(seats[1]))).toBe(true);
+			expect(picker.options.some((o) => o.seats[0] === seats[2] && !o.registered)).toBe(true);
+		});
+
+		it('does not when the Recluse is poisoned', () => {
+			const { session, ctx, seats } = cast(['sage', 'recluse', 'imp', 'chef', 'poisoner']);
+			const { game } = run(session, ctx, {
+				type: 'AddReminder',
+				seatId: seats[1],
+				reminder: { characterId: 'poisoner', label: 'Poisoned' }
+			});
+			const picker = infoPicker(game, seats[0], 'sage', ctx.characters)!;
+			expect(picker.options.some((o) => o.seats[0] === seats[1])).toBe(false);
+		});
+	});
 });

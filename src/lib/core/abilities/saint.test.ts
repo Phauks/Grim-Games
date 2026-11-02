@@ -8,7 +8,9 @@
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
  * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
- * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
+ * happened, then what the rules say. Quote the example word for word in a `// Wiki: "..."`
+ * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
+ * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
 import { gameEnds } from '#lib/core/rules/game-end.ts';
@@ -49,12 +51,17 @@ describe('Saint', () => {
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Saint#Examples)', () => {
 		it('Example 1: Saint executed, so evil wins', () => {
+			// Wiki: "There are seven players alive and nominations are in progress. The Saint gets four
+			// votes and is about to die. Then, the Baron is nominated but only gets three votes. No more
+			// nominations occur today. The Saint is executed, and evil wins."
 			const s = scenario(['saint', 'chef', 'empath', 'baron', 'imp']).execute('saint');
 			expect(gameEnds(s.game, s.characters)).toMatchObject([
 				{ rule: 'executed-loses', winner: 'evil' }
 			]);
 		});
 		it('Example 2: Gunslinger kills Saint; game continues', () => {
+			// Wiki: "The Imp is nominated, and the players vote. The Gunslinger kills the Saint. The Saint
+			// dies, and the game continues."
 			const s = scenario(['saint', 'chef', 'empath', 'baron', 'imp', 'gunslinger']).dies(
 				'saint',
 				'gunslinger'
@@ -62,8 +69,8 @@ describe('Saint', () => {
 			expect(gameEnds(s.game, s.characters)).toEqual([]);
 		});
 		it("Example 3: Scapegoat dies in Saint's place; game continues", () => {
-			// A good Scapegoat may be executed instead of the Saint; the Saint didn't die, so evil
-			// doesn't win.
+			// Wiki: "The Saint is executed. However, the Scapegoat's ability is triggered, so the
+			// Scapegoat dies instead. The game continues, because the Saint did not die."
 			const s = scenario(['saint', 'scapegoat', 'imp', 'chef', 'poisoner']).becomes(
 				'scapegoat',
 				'scapegoat',
