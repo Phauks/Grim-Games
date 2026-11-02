@@ -170,6 +170,61 @@ test('Deal gives every seat a character, and a seated phone holds to see its own
 	await phoneContext.close();
 });
 
+// The Gardener (M16, Trevor 2026-11-02: "just let them set what character they are, but not
+// location for now"): no bag, the Storyteller sets each character on the board, and after Show
+// characters each player with no phone gets a tile with their name for the usual reveal.
+// Wiki: https://wiki.bloodontheclocktower.com/Gardener
+test('characters set on the board give players with no phone a name tile to see theirs', async ({
+	page
+}) => {
+	await page.goto('/new');
+	await pickScript(page, 'Trouble Brewing');
+	await page.getByRole('button', { name: 'Create game' }).tap();
+	await pickNumber(page, 'Players', 5);
+	await toBoard(page);
+	const board = new URL(page.url()).pathname;
+	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
+	for (const [number, character] of [
+		[1, 'Empath'],
+		[2, 'Imp']
+	] as const) {
+		await page.getByRole('button', { name: new RegExp(`^Seat ${number}:`) }).tap();
+		await sheet.getByRole('button', { name: 'Choose character' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name: character, exact: true })
+			.tap();
+		await page.keyboard.press('Escape');
+		await expect(sheet).toBeHidden();
+	}
+
+	await page.goto(`${board}/room`);
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
+	await page.goto(`${board}/players`);
+	await page.getByTestId('roles-show').tap();
+	await page
+		.getByRole('alertdialog', { name: 'Not every player will see a character' })
+		.getByRole('button', { name: 'Confirm' })
+		.tap();
+
+	// No bag, yet the draw has a tile for each, held, with the player's name on it.
+	await expect(page).toHaveURL(`${board}/draw`);
+	await expect(page.getByTestId('no-bag')).toBeHidden();
+	const named = page.getByRole('button', { name: /^Tile Seat \d, held by/ });
+	await expect(named).toHaveCount(2);
+	await page.getByRole('button', { name: /^Tile Seat 1, held by/ }).tap();
+	const reveal = page.getByTestId('reveal');
+	await expect(reveal.getByTestId('reveal-name')).toHaveText(/^\s*Empath\b/);
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(reveal).toBeHidden();
+	await expect(named).toHaveCount(1);
+	await page.getByRole('button', { name: /^Tile Seat 2, held by/ }).tap();
+	await expect(reveal.getByTestId('reveal-name')).toHaveText(/^\s*Imp\b/);
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(named).toHaveCount(0);
+	await expect(page.getByTestId('no-bag')).toBeVisible();
+});
+
 // Playtest (Trevor, 2026-10-26: "I joined a game as Phone ... I did not get notified, and my
 // name was not placed in the grim"): Deal gives a phone that sits nowhere the first unnamed
 // seat, so it gets its character without the Storyteller typing its name.
