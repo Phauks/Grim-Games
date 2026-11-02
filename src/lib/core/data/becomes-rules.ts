@@ -106,6 +106,9 @@ export function readBecomes(
  *   offered;
  * - `extraMinions`: with `upTo`, that many Minions more than usual (the Lord of Typhon's
  *   "+1 Minion", https://wiki.bloodontheclocktower.com/Lord_of_Typhon);
+ * - `minMinions`: with `upTo`, only when the player count usually has at least this many
+ *   Minions (the Marionette's "if there are three Minions", one more is made on the first
+ *   night, https://wiki.bloodontheclocktower.com/Marionette);
  * - `outward`: only the nearest player on each side of its own player who is not yet of
  *   `types`, so the new Minions spread out from it in a line (the Lord of Typhon's
  *   neighbours).
@@ -124,6 +127,7 @@ export interface ChangesCharacter {
 	firstNight?: true;
 	upTo?: 'minions';
 	extraMinions?: number;
+	minMinions?: number;
 	outward?: true;
 }
 
@@ -154,6 +158,7 @@ export function readChangesCharacter(
 			'firstNight',
 			'upTo',
 			'extraMinions',
+			'minMinions',
 			'outward'
 		],
 		path,
@@ -180,6 +185,9 @@ export function readChangesCharacter(
 	const extraMinions = readNumber(raw, 'extraMinions', path, issues);
 	if (extraMinions !== undefined && (!upTo || !Number.isInteger(extraMinions) || extraMinions < 1))
 		issues.add(`${path}.extraMinions`, 'expected a whole number of at least 1, with upTo');
+	const minMinions = readNumber(raw, 'minMinions', path, issues);
+	if (minMinions !== undefined && (!upTo || !Number.isInteger(minMinions) || minMinions < 1))
+		issues.add(`${path}.minMinions`, 'expected a whole number of at least 1, with upTo');
 	const outward = readBoolean(raw, 'outward', path, issues);
 	if (types.length === 0) return undefined;
 	return {
@@ -196,6 +204,9 @@ export function readChangesCharacter(
 		...(firstNight ? { firstNight: true as const } : {}),
 		...(upTo ? { upTo } : {}),
 		...(upTo && extraMinions !== undefined && extraMinions >= 1 ? { extraMinions } : {}),
+		...(upTo && minMinions !== undefined && Number.isInteger(minMinions) && minMinions >= 1
+			? { minMinions }
+			: {}),
 		...(outward ? { outward: true as const } : {})
 	};
 }
