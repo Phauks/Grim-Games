@@ -8,11 +8,19 @@
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
  * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
- * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
+ * happened, then what the rules say. Quote the example word for word in a `// Wiki: "..."`
+ * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
+ * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import {
+	committedCharacter,
+	committedGameData,
+	nightSheetPresence
+} from '#lib/core/testing/committed-data.ts';
+import { nightOrder } from '#lib/core/rules/night-order.ts';
+import { engineGap, scenario } from '#lib/core/testing/scenario.ts';
 import type { Command } from '#lib/core/engine/index.ts';
 import type { Game } from '#lib/core/model/types.ts';
 import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
@@ -58,7 +66,29 @@ describe('Wraith', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Wraith#Examples)', () => {
-		it.todo('Example 1: Wraith signals to kill suspected Fortune Teller');
+		it.fails('Example 1: Wraith signals to kill suspected Fortune Teller', () => {
+			// Wiki: "During the first night the Wraith peeks at other players, and notices which good
+			// players wake and which do not. During the second night, the Wraith opens their eyes more
+			// fully and notices that Doug was woken and pointed to two players tonight. During the 3rd
+			// night, when both the Wraith and the Demon wake together, the Wraith uses body language
+			// and points to the character sheet to communicate to the Demon to kill Doug, whom the
+			// Wraith believes is the Fortune Teller."
+			const s = scenario(['wraith', 'fortuneteller', 'chef', 'empath', 'imp']).newDay().newDay();
+			const steps = nightOrder({
+				night: 'other',
+				sheet: committedGameData().nightSheet,
+				players: s.game.seating.length,
+				inPlay: ['wraith', 'fortuneteller', 'chef', 'empath', 'imp'].map((id) =>
+					s.characters.get(id)!
+				)
+			}).steps.map((step) => step.id);
+			expect(steps).toContain('wraith');
+			expect(steps).toContain('imp');
+			engineGap(
+				'M15k',
+				'the night order wakes the Wraith with each other evil player who wakes, such as the Demon'
+			);
+		});
 	});
 });
 

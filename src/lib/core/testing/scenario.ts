@@ -16,7 +16,7 @@
  * into a before and an after. A refused command throws, naming it.
  *
  *   it('Example 2: Drunk Choirboy wrongly names the General', () => {
- *     // A Drunk who thinks they are the Choirboy may be shown anyone as the Demon.
+ *     // Wiki: "..." (the example, word for word)
  *     const s = scenario(['choirboy', 'king', 'shabaloth', 'general']).drunk('choirboy').dies('king');
  *     const picker = infoPicker(s.game, s.seat('choirboy'), 'choirboy', s.characters)!;
  *     expect(isAllowed(picker, { seats: [s.seat('general')] })).toBe(true);
@@ -24,8 +24,10 @@
  *
  * An example the engine can't pass yet is still written, as `it.fails` (Trevor, 2026-11-01:
  * "We can let these tests fail while we are building the rest of the components"), with a
- * comment naming the gap. When the rule it needs doesn't exist yet, the test sets up the
- * scenario, says what it should find, and ends with `engineGap('M9', ...)`.
+ * note naming the plan ID that owns the gap: `// Waits on the engine (M15k): ...`. Use `bug`
+ * for an engine bug and `unplanned` when no plan owns it yet. When the rule it needs doesn't
+ * exist yet, the test sets up the scenario, says what it should find, and ends with
+ * `engineGap('M9', ...)`. `npm run check:rules-coverage -- --gaps` lists them all by plan ID.
  *
  * The scaffold (`npm run scaffold:rules-tests`) writes new test files with this import.
  */

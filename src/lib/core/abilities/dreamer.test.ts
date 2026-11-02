@@ -8,11 +8,17 @@
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
  * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
- * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
+ * happened, then what the rules say. Quote the example word for word in a `// Wiki: "..."`
+ * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
+ * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
+import { trueCharacter } from '#lib/core/model/selectors.ts';
+import { filledInfoToken, shownOrder, withChosen } from '#lib/core/rules/info-token-characters.ts';
+import { reliability } from '#lib/core/rules/night-info.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { scenario, type Scenario, type SeatRef } from '#lib/core/testing/scenario.ts';
 
 describe('Dreamer', () => {
 	const character = committedCharacter('dreamer');
@@ -44,9 +50,67 @@ describe('Dreamer', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Dreamer#Examples)', () => {
-		it.todo('Example 1: Dreamer checks Mutant, sees Mutant or Cerenovus');
-		it.todo('Example 2: Checked ex-Philosopher gets Philosopher or Vigormortis');
-		it.todo('Example 3: Storyteller shows Evil Twin paired with Artist');
-		it.todo('Example 4: Vortox target misreads as Oracle or No Dashii');
+		/** The Dreamer's "This player is" card once the Dreamer has chosen `chosen`. */
+		const card = (s: Scenario, chosen: SeatRef) => {
+			const filled = filledInfoToken(s.characters.get('dreamer')!, 'this-player-is', 2)!;
+			const id = trueCharacter(s.game, s.seat(chosen), s.characters)!;
+			return withChosen(filled, s.characters.get(id)!);
+		};
+		const typeOf = (s: Scenario) => (id: string) => s.characters.get(id)?.type;
+
+		it('Example 1: Dreamer checks Mutant, sees Mutant or Cerenovus', () => {
+			// Wiki: "The Dreamer chooses a player who is the Mutant. The Dreamer learns that this player
+			// is either the Mutant or the Cerenovus."
+			const s = scenario(['dreamer', 'mutant', 'cerenovus', 'chef', 'nodashii']);
+			expect(card(s, 'mutant')).toMatchObject({
+				characterIds: ['mutant'],
+				othersAlignment: 'evil'
+			});
+			expect(s.characters.get('cerenovus')?.type).toBe('minion');
+		});
+
+		it('Example 2: Checked ex-Philosopher gets Philosopher or Vigormortis', () => {
+			// Wiki: "The Dreamer chooses a player who was the Philosopher but gained the Flowergirl
+			// ability earlier that night. The Dreamer learns that this player is either the
+			// Philosopher or the Vigormortis."
+			// The Philosopher's token is swapped for the Flowergirl, marked Is The Philosopher.
+			const s = scenario(['dreamer', 'philosopher', 'chef', 'witch', 'vigormortis'])
+				.becomes('philosopher', 'flowergirl')
+				.reminder('philosopher', 'philosopher', 'Is The Philosopher');
+			expect(card(s, 'philosopher')).toMatchObject({
+				characterIds: ['philosopher'],
+				othersAlignment: 'evil'
+			});
+		});
+
+		it('Example 3: Storyteller shows Evil Twin paired with Artist', () => {
+			// Wiki: "Today, both the Evil Twin and the Artist claimed to be the Artist. That night, the
+			// Dreamer chooses the player who is the Evil Twin. If the Storyteller wanted to help the good
+			// team, they could show the Evil Twin and the Sweetheart. But the Storyteller decides to help
+			// evil, so they show the Evil Twin and the Artist to the Dreamer."
+			const s = scenario(['dreamer', 'artist', 'eviltwin', 'sweetheart', 'nodashii']).reminder(
+				'artist',
+				'eviltwin',
+				'Twin'
+			);
+			const shown = card(s, 'eviltwin');
+			// Either good character may be the other one: the Storyteller picks.
+			expect(shown).toMatchObject({ characterIds: ['eviltwin'], othersAlignment: 'good' });
+			expect(shownOrder(shown, ['eviltwin', 'artist'], typeOf(s))).toEqual(['artist', 'eviltwin']);
+		});
+
+		it.fails('Example 4: Vortox target misreads as Oracle or No Dashii', () => {
+			// Wiki: "The Dreamer chooses a player who is the Vortox. The Dreamer's information must be
+			// false because the Vortox is in play, so the Dreamer learns that this player is either the
+			// Oracle or the No Dashii."
+			// Waits on the engine (M15n): the Dreamer's card fills in the chosen player's true character even
+			// when the Vortox makes the Dreamer's information false.
+			const s = scenario(['dreamer', 'oracle', 'chef', 'witch', 'vortox']);
+			expect(reliability(s.game, s.seat('dreamer'), 'dreamer', s.characters)).toMatchObject({
+				mustBeFalse: true,
+				falseBy: 'vortox'
+			});
+			expect(card(s, 'vortox').characterIds).not.toContain('vortox');
+		});
 	});
 });

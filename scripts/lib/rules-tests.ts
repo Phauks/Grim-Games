@@ -58,6 +58,92 @@ export function countFails(source: string): number {
 	return source.match(/\b(?:it|test)\.fails\s*\(/g)?.length ?? 0;
 }
 
+/** The group for an `it.fails` whose note names no plan ID. */
+const NO_PLAN = 'no plan ID yet';
+
+/** One `it.fails` test: an example waiting on the engine, and the plan ID that owns its gap. */
+export interface EngineGap {
+	/** The test's title, such as "Example 2: Exiled protected neighbour still lives". */
+	title: string;
+	/** The owning plan ID (`M9`, `M15a`), `unplanned`, or undefined when the test names none. */
+	gap: string | undefined;
+	/** What the engine is missing, from the note or the `engineGap` call. */
+	needs: string;
+}
+
+/** Where each `it.fails` body ends: the next test, `describe` or the end of the file. */
+const NEXT_BLOCK = /\b(?:it|test)(?:\.fails|\.todo|\.skip)?\s*\(|\bdescribe\s*\(/g;
+
+/**
+ * Every `it.fails` in a test file, with the plan ID its gap belongs to, so the gap list is
+ * read from the tests and never kept by hand. A test names its owner in its note,
+ * `// Waits on the engine (M15a): ...`, or in `engineGap('M15a', '...')` when no rule exists yet.
+ */
+export function engineGaps(source: string): EngineGap[] {
+	const gaps: EngineGap[] = [];
+	const starts = [...source.matchAll(/\b(?:it|test)\.fails\s*\(\s*(['"`])((?:\\.|(?!\1).)*)\1/g)];
+	for (const start of starts) {
+		const from = start.index + start[0].length;
+		NEXT_BLOCK.lastIndex = from;
+		const end = NEXT_BLOCK.exec(source)?.index ?? source.length;
+		const body = source.slice(from, end);
+		const call = /engineGap\(\s*(['"`])([^'"`]+)\1\s*,\s*(?:(['"`])((?:\\.|(?!\3).)*)\3)?/s.exec(
+			body
+		);
+		const note =
+			/Waits on the engine(?:\s*\(([^)]*)\))?[:,]?[ \t]*([^\n]*(?:\n[ \t]*\/\/(?! Wiki)[^\n]*)*)/.exec(
+				body
+			);
+		gaps.push({
+			title: start[2],
+			gap: call?.[2] ?? note?.[1]?.trim() ?? undefined,
+			needs: (note?.[2]?.replace(/\s*\n\s*\/\/\s*/g, ' ') ?? call?.[4] ?? '').trim()
+		});
+	}
+	return gaps;
+}
+
+/** `M9 36, M15k 13, ..., no plan ID yet 5`: how many `it.fails` each plan ID owns. */
+export function gapCounts(sources: Iterable<string>): string {
+	const counts = new Map<string, number>();
+	for (const source of sources) {
+		for (const { gap } of engineGaps(source)) {
+			const key = gap ?? NO_PLAN;
+			counts.set(key, (counts.get(key) ?? 0) + 1);
+		}
+	}
+	return (
+		sortGapIds([...counts.keys()])
+			.map((k) => `${k} ${counts.get(k)}`)
+			.join(', ') || 'none'
+	);
+}
+
+/** Plan IDs in roadmap order (M9 before M15a), then `bug`, `unplanned` and untagged last. */
+function sortGapIds(keys: string[]): string[] {
+	const rank = (k: string) => (k === NO_PLAN ? 3 : k === 'unplanned' ? 2 : k === 'bug' ? 1 : 0);
+	return keys.sort((a, b) => rank(a) - rank(b) || a.localeCompare(b, 'en', { numeric: true }));
+}
+
+/**
+ * The engine gap list as Markdown, one section per plan ID (untagged tests last), each line
+ * `file Example N: needs`. `npm run check:rules-coverage -- --gaps` prints it.
+ */
+export function renderGapList(files: ReadonlyMap<string, string>): string {
+	const byGap = new Map<string, string[]>();
+	for (const [file, source] of files) {
+		for (const { title, gap, needs } of engineGaps(source)) {
+			const key = gap ?? NO_PLAN;
+			const lines = byGap.get(key) ?? [];
+			lines.push(`- ${file.replace(/\.test\.ts$/, '')}: ${title}${needs ? `. ${needs}` : ''}`);
+			byGap.set(key, lines);
+		}
+	}
+	return sortGapIds([...byGap.keys()])
+		.map((k) => `## ${k} (${byGap.get(k)!.length})\n${byGap.get(k)!.join('\n')}`)
+		.join('\n\n');
+}
+
 // ---------------------------------------------------------------------------------------
 // Generated files
 // ---------------------------------------------------------------------------------------
@@ -111,8 +197,9 @@ export function renderCharacterTest(
  *
  * Wiki examples: each \`it.todo\` is one example in the page's Examples section. Replace it with
  * a test written with \`scenario\` (src/lib/core/testing/scenario.ts): the seats, what has
- * happened, then what the rules say. Paraphrase the example; never copy wiki prose. When the
- * engine can't pass it yet, write it anyway as \`it.fails\` and say which gap it waits on.
+ * happened, then what the rules say. Quote the example word for word in a \`// Wiki: "..."\`
+ * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
+ * write it anyway as \`it.fails\` with \`// Waits on the engine (<plan ID>): ...\`.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
