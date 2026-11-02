@@ -3654,6 +3654,10 @@ test("a night step lists every copy of a character's reminder (the Mathematician
 	// The whole ability sits at the top, beside the icon and name.
 	await expect(guide.getByTestId('step-ability')).toContainText('abnormally');
 	await expect(guide.getByTestId('step-ability')).toBeInViewport();
+	// The standard character row (Trevor, 2026-11-02): its ring opens the character page.
+	await expect(guide.getByRole('button', { name: 'About the Mathematician' })).toBeVisible();
+	// Nobody is drunk or poisoned, so no Afflictions section (Trevor, 2026-11-02).
+	await expect(guide.getByRole('heading', { name: 'Afflictions' })).toHaveCount(0);
 	await page.screenshot({ path: `test-results/step-ability-${test.info().project.name}.png` });
 	// https://wiki.bloodontheclocktower.com/Mathematician : five "Abnormal" tokens in TPI's data.
 	const place = guide.getByRole('button', { name: 'Place' });
@@ -4923,11 +4927,11 @@ test('a number step offers the "Your number is" info token; a step icon opens it
 	await number.getByRole('button', { name: 'Show to player' }).tap();
 	await expect(shown.locator('.detail')).toHaveText('2');
 	await closeShown();
-	// The step's token opens the Chef's details, as a badge does.
+	// The step's row opens the Chef's details from its ring, as every character row does.
 	const details = page
 		.getByRole('dialog', { name: 'Chef', exact: true })
 		.filter({ has: page.getByRole('link', { name: 'Open wiki' }) });
-	await chef.getByRole('button', { name: 'About Chef' }).tap();
+	await chef.getByRole('button', { name: 'About the Chef' }).tap();
 	await expect(details).toBeVisible();
 	await details.getByRole('button', { name: 'Close' }).tap();
 	await expect(details).toHaveCount(0);
