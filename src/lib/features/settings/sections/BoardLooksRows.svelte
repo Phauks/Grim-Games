@@ -8,13 +8,32 @@
 	import SettingSlider from '#lib/ui/settings/SettingSlider.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import ReminderLinesSetting from '#lib/features/grimoire/ReminderLinesSetting.svelte';
+	import { MediaQuery } from 'svelte/reactivity';
+	import { sceneOf } from '#lib/features/grimoire/backgrounds.ts';
+	import { boardBackground } from '#lib/features/grimoire/board-background.svelte.ts';
+	import { defaultBackground } from '#lib/features/grimoire/default-background.svelte.ts';
 
 	/**
 	 * The board's device looks (Trevor, 2026-10-17: settings appear where they act and in
 	 * Settings), the same store as the board's Background dialog, so both change one value.
 	 */
+
+	// Moving backgrounds (plan L113) acts only on a moving background, and never while the
+	// device asks for less motion: disabled then, as the preview beside it can't change.
+	const reduceMotion = new MediaQuery('(prefers-reduced-motion: reduce)');
+	const background = $derived(boardBackground.context?.current ?? defaultBackground.current);
+	const moves = $derived(
+		background?.kind === 'preset' && sceneOf(background.id) !== undefined && !reduceMotion.current
+	);
 </script>
 
+<SettingToggle
+	label={t('settings.movingBackgrounds')}
+	description={t('settings.movingBackgroundsHelp')}
+	checked={boardLooks.current.movingBackgrounds}
+	disabled={!moves}
+	onChange={(movingBackgrounds) => boardLooks.update({ movingBackgrounds })}
+/>
 <SettingToggle
 	label={t('settings.vignette')}
 	checked={boardLooks.current.vignette}
