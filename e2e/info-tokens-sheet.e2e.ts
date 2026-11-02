@@ -356,3 +356,40 @@ test('the cards to show stay on top of the pinned section headers', async ({ pag
 		}
 	}
 });
+
+test('type headers scroll under the search and the chosen place, never over them', async ({
+	page
+}) => {
+	// Trevor, 2026-11-02: a closed Outsiders header slid over the "You are" search and its
+	// empty place, and the band's ends showed beside the search.
+	await openSheet(page);
+	await page.getByRole('button', { name: 'You are', exact: true }).tap();
+	await page.getByRole('button', { name: 'Outsiders' }).tap();
+	const head = page.locator('.collapsible > .head', { hasText: 'Outsiders' });
+	const slot = page.getByRole('list', { name: 'Chosen' }).locator('li').first();
+	const search = page.getByRole('searchbox', { name: 'Search characters' });
+	for (const target of [slot, search]) {
+		const box = (await target.boundingBox())!;
+		// Tablets: the chosen place has its own column beside the list.
+		const headBox = (await head.boundingBox())!;
+		if (box.x + box.width < headBox.x + headBox.width / 2) continue;
+		// Scroll the closed header to the middle of what is pinned above the list.
+		await head.evaluate(
+			(el, y) => {
+				let s = el.parentElement;
+				while (s && getComputedStyle(s).overflowY !== 'auto') s = s.parentElement;
+				if (s) s.scrollTop += el.getBoundingClientRect().top - y;
+			},
+			box.y + box.height / 2
+		);
+		const hits = await head.evaluate((el, b) => {
+			const points = [
+				[b.x + b.width / 2, b.y + b.height / 2],
+				// The band reaches into the gutter, past the pinned box's own edge.
+				[el.getBoundingClientRect().left + 2, b.y + b.height / 2]
+			];
+			return points.map(([x, y]) => el.contains(document.elementFromPoint(x, y)));
+		}, box);
+		expect(hits).toEqual([false, false]);
+	}
+});

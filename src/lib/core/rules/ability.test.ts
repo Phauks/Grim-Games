@@ -21,6 +21,7 @@ import { parseCharacter } from '#lib/core/data/parse.ts';
 import { Issues } from '#lib/core/data/validate.ts';
 import { OFFICIAL_RULES, rulesOf } from '#lib/core/data/rules/index.ts';
 import { isSeatable } from '#lib/core/data/index.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 import {
 	abilityState,
 	executionSavers,
@@ -559,7 +560,49 @@ describe('impairing tokens end with their character unless they last', () => {
 			const typed = rule?.type === undefined || rule.type === 'townsfolk';
 			expect(abilityState(g, seats[1], characters).works).toBe(!(typed && lasts));
 		});
+		it(`${id} "${label}": ${lasts ? 'still impairs' : 'ends'} once nobody is ${id}`, () => {
+			const s = scenario([id, 'empath', 'imp']).reminder('empath', id, label).becomes(id, 'chef');
+			const typed = rule?.type === undefined || rule.type === 'townsfolk';
+			expect(abilityState(s.game, s.seat('empath'), s.characters).works).toBe(!(typed && lasts));
+		});
 	}
+
+	// https://wiki.bloodontheclocktower.com/Poisoner, Example 5: the Poisoner poisons the Mayor,
+	// then becomes the Imp; with no Poisoner left in play, the Mayor is healthy again.
+	it('Poisoner Example 5: the Mayor is no longer poisoned once the Poisoner is the Imp', () => {
+		const poisoned = scenario(['poisoner', 'mayor', 'imp', 'chef', 'empath']).poisoned('mayor');
+		expect(abilityState(poisoned.game, poisoned.seat('mayor'), characters).works).toBe(false);
+		const s = poisoned.dies('imp').becomes('poisoner', 'imp');
+		expect(abilityState(s.game, s.seat('mayor'), s.characters)).toMatchObject({
+			works: true,
+			impairments: []
+		});
+	});
+
+	// https://wiki.bloodontheclocktower.com/Philosopher: a Philosopher who chose a character not
+	// in play has its ability, swapping tokens; their Drunk token works with no Sailor in play
+	// (https://wiki.bloodontheclocktower.com/Sailor).
+	it('keeps a token whose ability a Philosopher gained', () => {
+		const s = scenario(['philosopher', 'chef', 'imp', 'empath', 'monk'])
+			.becomes('philosopher', 'sailor')
+			.reminder('philosopher', 'philosopher', 'Is The Philosopher')
+			.reminder('chef', 'sailor', 'Drunk');
+		expect(abilityState(s.game, s.seat('chef'), s.characters).works).toBe(false);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Boffin: the Demon has a good ability not in play, so
+	// that ability's Drunk token works with no Sailor in play.
+	it('keeps a token whose ability the Boffin gave the Demon', () => {
+		const s = scenario(['boffin', 'chef', 'imp', 'empath', 'monk'])
+			.do((at) => ({
+				type: 'SetHeldAbility',
+				seatId: at.seat('imp'),
+				via: 'boffin',
+				characterId: 'sailor'
+			}))
+			.reminder('chef', 'sailor', 'Drunk');
+		expect(abilityState(s.game, s.seat('chef'), s.characters).works).toBe(false);
+	});
 });
 
 describe('Barista and Xaan', () => {

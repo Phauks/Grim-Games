@@ -522,6 +522,13 @@ test('a group by join code shows the games its Storytellers put in it', async ({
 	await game.getByRole('link', { name: 'Join' }).tap();
 	await expect(bob.page).toHaveURL(new RegExp(`/join#${room}$`));
 
+	// Join game lists it under the code too, with the group's name.
+	await bob.page.goto('/join');
+	const listed = bob.page.getByTestId('join-group-games').getByRole('listitem');
+	await expect(listed).toContainText('Board Game Cafe');
+	await listed.getByRole('button', { name: 'Join' }).tap();
+	await expect(bob.page).toHaveURL(new RegExp(`/join/${room}$`));
+
 	// Ann sees the members and removes Bob, whose list then has no group.
 	await ann.page.goto('/friends');
 	await ann.page.getByTestId('friend-groups').getByRole('button', { name: 'Open' }).tap();
