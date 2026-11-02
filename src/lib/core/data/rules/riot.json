@@ -54,6 +54,7 @@
 	"deathCause": {
 		"kind": "kills"
 	},
+	"nomineesNominate": "Day 3",
 	"reminderMovement": {
 		"why": "A counter the Storyteller advances."
 	},
