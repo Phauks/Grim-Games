@@ -19,7 +19,7 @@ async function startGame(page: Page) {
 	await expect(page.getByTestId('seat')).toHaveCount(8);
 }
 
-const daySheet = (page: Page) => page.getByRole('dialog', { name: /^Day( \d+)?$/ });
+const daySheet = (page: Page) => page.getByRole('dialog', { name: /^(Setup|Day( \d+)?)$/ });
 const seatSheet = (page: Page) => page.locator('[data-scope="drawer"][data-part="content"]');
 const endNight = (page: Page) =>
 	page

@@ -53,7 +53,7 @@ export const room = {
 	'room.seating.lock': 'Lock seating',
 	'room.players.letBackIn': 'Let back in',
 	'room.seating.title': 'Seating',
-	'room.seating.phones': 'Players move seats',
+	'room.seating.phones': 'Open seating',
 	'room.countOff.title': 'Count off',
 	'room.travellers.title': 'Travellers choose',
 	'room.travellers.choose': 'Choose your Traveller',
@@ -128,7 +128,6 @@ export const room = {
 	'room.shareGrim.body':
 		'Every player in the room sees the whole finished grimoire: every seat’s character and reminders.',
 	'room.shareGrim.failed': 'The grimoire could not be shared. Check the room is connected.',
-	'room.shareGrim.atEnd': 'Share the final grimoire with players',
 	// Room transfer (Trevor, 2026-10-28).
 	'room.transfer.button': 'Room transfer',
 	'room.transfer.title': 'Room transfer',
@@ -257,12 +256,12 @@ export const room = {
 	'room.feedback.accoladeCount': '{accolade} × {count}',
 	'room.feedback.entries': 'From players',
 	// Players' own characters on their phones (Trevor, 2026-10-26)
-	'room.roles.heading': 'Characters on phones',
 	'room.roles.toggle': 'Players can see their character',
-	'room.roles.show': 'Show players their characters',
-	'room.roles.hide': 'Hide their characters',
+	'room.roles.show': 'Show characters',
+	'room.roles.hideLeft': 'Hide characters, {time} left',
+	'room.roles.hideTime': 'Hide · {time}',
+	'room.roles.noPhoneTitle': 'Players with no phone',
 	'room.roles.gapsTitle': 'Not every player will see a character',
-	'room.roles.timeLeft': 'Players can see theirs for {time} more',
 	'room.roles.seen': 'Seen',
 	'room.roles.notSeen': 'Not seen',
 	'room.roles.hidden': 'Hidden',

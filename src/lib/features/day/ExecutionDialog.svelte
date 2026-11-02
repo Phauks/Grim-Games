@@ -36,6 +36,11 @@
 		/** Chosen to start with when nothing is logged yet (a seat's status chose Executed). */
 		chosen?: SeatId;
 		/**
+		 * Start game not yet tapped (Trevor, 2026-11-01): a warning says so, and Confirm still
+		 * works (warn, never lock).
+		 */
+		notStarted?: boolean;
+		/**
 		 * The player executed, or undefined for no execution; the Storyteller's Saved by: a
 		 * character, `dies` for None, or undefined to leave it to the grimoire; and today's
 		 * facts still unmarked, as confirmed here; and whether to keep the day going instead of
@@ -49,7 +54,14 @@
 		) => void;
 	}
 
-	let { open = $bindable(), game, characters, chosen, onConfirm }: Props = $props();
+	let {
+		open = $bindable(),
+		game,
+		characters,
+		chosen,
+		notStarted = false,
+		onConfirm
+	}: Props = $props();
 
 	const NONE = 'none';
 	let choice = $state<string | undefined>();
@@ -220,6 +232,11 @@
 				)}
 >
 	<div class="execution" data-testid="execution">
+		{#if notStarted}
+			<p class="not-started" role="alert" data-testid="execution-not-started">
+				<Icon name="warning" />{t('day.executionNotStarted')}
+			</p>
+		{/if}
 		<Select
 			label={t('day.execution')}
 			placeholder={t('day.executionChoose')}
@@ -323,6 +340,13 @@
 		align-items: center;
 		gap: var(--space-1);
 		color: var(--on-surface-muted);
+	}
+	.not-started {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		margin: 0;
+		color: var(--evil-text);
 	}
 	.execution {
 		display: grid;

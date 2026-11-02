@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
+	import { clock, timeLeft } from './time-left.svelte.ts';
 
 	/**
 	 * The time left on the script vote (Trevor, 2026-10-23: "storyteller can create
@@ -21,19 +22,9 @@
 
 	let { endsAt, onEnded, text, endedText, testid = 'script-vote-time' }: Props = $props();
 
-	let now = $state(Date.now());
-	$effect(() => {
-		if (endsAt === undefined) return;
-		now = Date.now();
-		const timer = setInterval(() => (now = Date.now()), 1000);
-		return () => clearInterval(timer);
-	});
-	const left = $derived(endsAt === undefined ? undefined : Math.max(0, endsAt - now));
+	const countdown = timeLeft(() => endsAt);
+	const left = $derived(countdown.ms);
 	$effect(() => onEnded?.(left === 0));
-	const clock = (ms: number) => {
-		const seconds = Math.ceil(ms / 1000);
-		return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
-	};
 </script>
 
 {#if left !== undefined}
