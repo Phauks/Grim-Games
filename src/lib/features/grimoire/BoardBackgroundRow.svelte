@@ -13,14 +13,6 @@
 		type PresetId
 	} from './backgrounds.ts';
 	import type { BoardBackgroundContext } from './board-background.svelte.ts';
-	// SPIKE (animated backgrounds, not for merge)
-	import CssScene from './spike-scenes/CssScene.svelte';
-	import { spike } from './spike-scenes/spike-state.svelte.ts';
-	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
-	const SCENES = [
-		{ id: 'hellfire', label: 'Hellfire' },
-		{ id: 'beach', label: 'Tropical beach' }
-	] as const;
 
 	/**
 	 * The open board's background in Board and tokens (Trevor, 2026-10-16 and 2026-10-18): an
@@ -122,19 +114,6 @@
 					<span>{preset.label}</span>
 				</button>
 			{/each}
-			{#each SCENES as scene (scene.id)}
-				<button
-					type="button"
-					class="preset"
-					aria-pressed={spike.scene === scene.id}
-					onclick={() => (spike.scene = scene.id)}
-				>
-					<span class="swatch moving"
-						><CssScene scene={scene.id} still={spike.still} contained /></span
-					>
-					<span>{scene.label}</span>
-				</button>
-			{/each}
 		</div>
 		<div class="choices">
 			<Button icon="add" onclick={() => input?.click()}>{t('settings.backgroundImage')}</Button>
@@ -161,11 +140,6 @@
 		/>
 	{/snippet}
 </SettingRow>
-<SettingToggle
-	label="Moving backgrounds"
-	checked={!spike.still}
-	onChange={(on) => (spike.still = !on)}
-/>
 
 <style>
 	.change {
@@ -208,11 +182,6 @@
 		aspect-ratio: 3 / 2;
 		border-radius: var(--radius-md);
 		box-shadow: inset 0 0 0 0.06rem var(--border);
-	}
-	.swatch.moving {
-		position: relative;
-		overflow: hidden;
-		isolation: isolate;
 	}
 	.swatch.none {
 		background: var(--surface);

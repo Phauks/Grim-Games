@@ -1,5 +1,9 @@
 <script lang="ts">
-	import { PRESETS, type PresetId } from './backgrounds.ts';
+	import { MediaQuery } from 'svelte/reactivity';
+	import { PRESETS, sceneOf, type PresetId } from './backgrounds.ts';
+	import type { CssSceneId } from './scenes/css-scenes.ts';
+	import SceneLayer from './scenes/SceneLayer.svelte';
+	import type { ShaderSceneId } from './scenes/shaders.ts';
 
 	/**
 	 * The board's background and vignette, on the board behind everything and in the Board
@@ -14,39 +18,18 @@
 		vignette?: number;
 		/** Fills its positioned parent (the preview) instead of the whole screen. */
 		contained?: boolean;
+		/** A moving background moves (the Moving backgrounds switch, plan L113). */
+		moving?: boolean;
 	}
 
-	let { url, preset, vignette, contained = false }: Props = $props();
-
-	// SPIKE (animated backgrounds, not for merge): ?scene=hellfire|beach&engine=css|shader|video
-	import CssScene from './spike-scenes/CssScene.svelte';
-	import CssMore from './spike-scenes/CssMore.svelte';
-	import ShaderScene from './spike-scenes/ShaderScene.svelte';
-	import VideoScene from './spike-scenes/VideoScene.svelte';
-	import { spike } from './spike-scenes/spike-state.svelte.ts';
-	const spikeScene = $derived(spike.scene as never);
-	const spikeEngine = $derived(spike.engine);
-	const spikeStill = $derived(spike.still);
+	let { url, preset, vignette, contained = false, moving = true }: Props = $props();
+	const scene = $derived(preset && sceneOf(preset));
+	// The operating system's Reduce motion wins, whatever the switch.
+	const reduceMotion = new MediaQuery('(prefers-reduced-motion: reduce)');
 </script>
 
-{#if spikeScene}
-	{#key `${spikeScene}${spikeEngine}${spikeStill}`}
-		{#if spikeEngine === 'shader'}
-			<ShaderScene scene={spikeScene} still={spikeStill} {contained} />
-		{:else if spikeEngine === 'video'}
-			<VideoScene src={`/spike-video/${spikeScene}.mp4`} still={spikeStill} {contained} />
-		{:else if spikeScene === 'hellfire' || spikeScene === 'beach'}
-			<CssScene scene={spikeScene} still={spikeStill} {contained} />
-		{:else}
-			<CssMore scene={spikeScene} still={spikeStill} {contained} />
-		{/if}
-	{/key}
-{/if}
-
 <!-- The whole screen, under the toolbar and the safe areas too (Trevor, 2026-10-18). -->
-{#if spikeScene}
-	<!-- spike scene above -->
-{:else if url}
+{#if url}
 	<div
 		class="backdrop"
 		class:contained
@@ -59,8 +42,18 @@
 		class:contained
 		data-testid={contained ? 'preview-background' : 'board-background'}
 		data-preset={preset}
+		data-scene={scene}
 		style:background={PRESETS[preset].css}
 	></div>
+	<!-- A moving background moves over its still frame (plan L113). -->
+	{#if scene}
+		<SceneLayer
+			id={preset as CssSceneId | ShaderSceneId}
+			kind={scene}
+			still={!moving || reduceMotion.current}
+			{contained}
+		/>
+	{/if}
 {/if}
 <!-- The vignette darkens the background towards the screen's edges, on every background
      (Trevor, 2026-10-17: its own switch and strength; 2026-10-18: noticeable, and over the
@@ -91,6 +84,10 @@
 	/* Light parchment would wash out the seat names: dimmed like an image. */
 	.backdrop.preset[data-preset='parchment'] {
 		filter: brightness(0.5);
+	}
+	/* A moving background's still frame, dimmed like its moving layer (scenes/SceneLayer). */
+	.backdrop.preset[data-scene] {
+		filter: brightness(0.6) saturate(0.95);
 	}
 	/* The vignette (Trevor, 2026-10-17: its own switch and strength), on every background. */
 	.vignette {
