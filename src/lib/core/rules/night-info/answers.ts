@@ -16,7 +16,6 @@ import type {
 } from '#lib/core/model/types.ts';
 import type { RegistrationWorld } from '../ability.ts';
 import type { Night } from '../night-order.ts';
-import { distinctGuesses } from '../day-claims.ts';
 import { causesOf } from '../night-deaths.ts';
 import type { ValidReason } from './picker.ts';
 import {
@@ -280,40 +279,58 @@ function marked(
  * Juggler: how many of today's guesses are correct
  * (https://wiki.bloodontheclocktower.com/Juggler). Guesses come from the Juggler's day notes
  * and are checked against each player's true character. Each guess is one player and one
- * character, so a player guessed as two characters is two guesses; the same pair twice
- * counts once.
+ * character, so a player guessed as two characters is two guesses, and the same player and
+ * character guessed twice is two guesses too (Trevor, 2026-11-02).
+ *
+ * The wiki's How to Run marks each correct guess with a Correct reminder and has the Juggler
+ * learn how many there are. Once the Storyteller has placed any (rules `answers.token`), the
+ * answer is how many tokens are on the board, their call: each token counts, wherever it
+ * sits, so one player may carry several and the Juggler may carry their own (Trevor,
+ * 2026-11-02). Until then it is counted from the logged guesses.
  */
 function correctGuesses(
 	game: Game,
 	seatId: SeatId,
 	characterId: CharacterId,
-	characters: CharacterLookup
+	characters: CharacterLookup,
+	rule: Answers
 ): NightAnswer {
-	const guesses = distinctGuesses(
-		entriesOf(game, 'note')
-			.filter(
-				(n) => n.characterId === characterId && (n.seatId === undefined || n.seatId === seatId)
-			)
-			.flatMap((n) => n.guesses ?? [])
-	);
+	const guesses = entriesOf(game, 'note')
+		.filter((n) => n.characterId === characterId && (n.seatId === undefined || n.seatId === seatId))
+		.flatMap((n) => n.guesses ?? []);
 	const right = (g: CharacterGuess) => trueCharacter(game, g.seatId, characters) === g.characterId;
 	const correct = guesses.filter(right);
 	const once = (seats: SeatId[]) => seats.filter((s, i) => seats.indexOf(s) === i);
+	// Each token counts: one seat may carry several, and the Juggler may carry their own.
+	const tokens = rule.token
+		? game.seating.flatMap((s) =>
+				game.seats[s].reminders
+					.filter((r) => r.characterId === characterId && r.label === rule.token)
+					.map(() => s)
+			)
+		: [];
+	const value: AnswerValue | undefined =
+		tokens.length > 0
+			? { kind: 'number', value: tokens.length }
+			: guesses.length > 0
+				? { kind: 'number', value: correct.length }
+				: undefined;
 	return answer(
 		game,
 		seatId,
 		characterId,
 		characters,
-		guesses.length === 0
-			? { kind: 'none', reason: 'No guesses logged today' }
-			: { kind: 'number', value: correct.length },
-		once(correct.map((g) => g.seatId)),
+		value ?? { kind: 'none', reason: 'No guesses logged today' },
+		once(tokens.length > 0 ? tokens : correct.map((g) => g.seatId)),
 		{
 			relevant: once(guesses.map((g) => g.seatId)),
-			facts: guesses.map((g) => ({
-				...fact(game, g.seatId, characters),
-				guess: { characterId: g.characterId, correct: right(g) }
-			}))
+			facts:
+				guesses.length > 0
+					? guesses.map((g) => ({
+							...fact(game, g.seatId, characters),
+							guess: { characterId: g.characterId, correct: right(g) }
+						}))
+					: once(tokens).map((s) => fact(game, s, characters))
 		}
 	);
 }

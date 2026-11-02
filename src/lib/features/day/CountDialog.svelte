@@ -33,9 +33,12 @@
 
 	let { open = $bindable(), game, characters, count, title }: Props = $props();
 
-	const block = $derived(blockThreshold(game));
+	const block = $derived(blockThreshold(game, characters));
 	/** Players to exile a Traveller, only while a living one is in play. */
 	const exile = $derived(count === 'votes' ? exileThreshold(game, characters) : undefined);
+	const blockLine = $derived(
+		block.mostVotes ? t('day.count.mostVotes') : t('day.blockLine', { alive: block.alive })
+	);
 	const seats = $derived(count && count !== 'votes' ? seatsBehind(game, count) : []);
 	const total = $derived(
 		count && count !== 'votes'
@@ -62,10 +65,9 @@
 		<ul class="votes" data-testid="count-votes">
 			<li>
 				<span class="badge"
-					><CountBadge kind="votes" label={t('day.blockLine', { alive: block.alive })}
-						><Icon name="vote" />{block.needed}</CountBadge
+					><CountBadge kind="votes" label={blockLine}><Icon name="vote" />{block.needed}</CountBadge
 					></span
-				><span>{t('day.blockLine', { alive: block.alive })}</span>
+				><span>{blockLine}</span>
 			</li>
 			{#if exile !== undefined}
 				<li>
