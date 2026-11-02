@@ -13,6 +13,7 @@
 		dayClaim,
 		dayStateFromGame,
 		dayUseOf,
+		dayTallyOf,
 		isOnceOnlyDayAbility,
 		daySentence,
 		madnessOffer,
@@ -46,6 +47,7 @@
 	import MadnessDeathDialog from './MadnessDeathDialog.svelte';
 	import PrepValueDialog from './PrepValueDialog.svelte';
 	import DayUseDialog from './DayUseDialog.svelte';
+	import DayTallyField from './DayTallyField.svelte';
 
 	interface Props {
 		game: DayPort;
@@ -276,6 +278,7 @@
 	const hasDayButton = (characterId: CharacterId | undefined) =>
 		characterId !== undefined &&
 		(usedButton(characterId) ||
+			dayTallyOf(characterId, game.characters) !== undefined ||
 			noteClaim(characterId) !== undefined ||
 			savantButton(characterId) ||
 			markButton(characterId) !== undefined);
@@ -383,6 +386,9 @@
 		>
 			<span class="tick" data-on={isUsed || undefined}><Icon name="check" /></span>{t('day.used')}
 		</Chip>
+	{:else if characterId && dayTallyOf(characterId, game.characters)}
+		<!-- Today's count beside the phrase (the Yaggababble's, M17c). -->
+		<DayTallyField {game} {characterId} />
 	{:else if characterId && noteClaim(characterId)}
 		{@const claim = noteClaim(characterId)}
 		<Chip

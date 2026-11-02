@@ -18,6 +18,7 @@ import type {
 	GenericLook,
 	OverrideField,
 	Reminder,
+	ReminderEffect,
 	ReminderId,
 	SeatId,
 	SeatOverride,
@@ -154,6 +155,11 @@ export type Command =
 	| { type: 'SetReminderSymbolColour'; reminderId: ReminderId; colour?: SymbolColour }
 	/** The generic reminder's icon symbol filled or as an outline. */
 	| { type: 'SetReminderSymbolFill'; reminderId: ReminderId; fill: boolean }
+	/**
+	 * The effect the Storyteller picked for a reminder whose rules let them pick one
+	 * (`pickedEffect`: the Angel's Something Bad); none clears it.
+	 */
+	| { type: 'SetReminderEffect'; reminderId: ReminderId; effect?: ReminderEffect }
 	/** A new reusable ∞ token at the end of the bank's ones (plan B9). */
 	| { type: 'AddGenericToken'; look?: GenericLook }
 	/** Replaces a bank ∞ token's look; the copies already placed keep theirs. */
@@ -257,6 +263,8 @@ export type Command =
 	 * swaps the tokens of each character in play that shows it (`dayMark`); undefined clears it.
 	 */
 	| { type: 'SetDayMark'; mark: DayMark; value?: boolean }
+	/** Today's count for a character's `dayTally` (the Yaggababble's phrase); 0 clears it. */
+	| { type: 'SetDayTally'; characterId: CharacterId; count: number }
 	/**
 	 * Stores a value the Storyteller chose during prep (the Yaggababble's secret phrase) as
 	 * `Game.prepValues[key]`, `key` from `prepValueKey`; no `value` or an empty one clears it.

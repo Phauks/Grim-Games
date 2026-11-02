@@ -312,6 +312,15 @@ function describeEvent(
 				: text('a reminder');
 			return event.note ? [text('Wrote on '), what] : [text('Cleared the text on '), what];
 		}
+		case 'ReminderEffectSet': {
+			const r = reminderOn(before, event.reminderId) ?? ruleReminderOn(before, event.reminderId);
+			const what: HistoryPart = r
+				? { kind: 'reminder', label: r.label, characterId: r.characterId }
+				: text('a reminder');
+			return event.effect
+				? [text('Picked what happens for '), what]
+				: [text('Cleared what happens for '), what];
+		}
 		case 'ReminderLoosened': {
 			const r = reminderOn(before, event.reminderId) ?? ruleReminderOn(before, event.reminderId);
 			if (!r) return [text('Took a reminder off its holder')];
@@ -388,6 +397,12 @@ function describeEvent(
 			return [text(dayMarkLine('demon-voted', event.voted))];
 		case 'DayMarkSet':
 			return [text(dayMarkLine(event.mark, event.value))];
+		case 'DayTallySet':
+			return [
+				text('Set today’s count for '),
+				{ kind: 'character', characterId: event.characterId },
+				text(` to ${event.count}`)
+			];
 		default:
 			return [text('Changed the day log')];
 	}

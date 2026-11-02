@@ -8,7 +8,8 @@
  *   Exorcist's Chosen on the Demon, https://wiki.bloodontheclocktower.com/Exorcist);
  * - `no-kill`: another ability's token stops them killing tonight, so no kill alerts follow
  *   (`stopsKilling`: the Princess's Doesn't Kill on the Demon,
- *   https://wiki.bloodontheclocktower.com/Princess);
+ *   https://wiki.bloodontheclocktower.com/Princess; or a `no-kill` effect the Storyteller
+ *   picked for this night, `pickedEffect`: the Angel's Something Bad);
  * - `seating`: a character whose neighbours are turned evil at setup (`turnsPlayersInto`
  *   `neighbours`) is not inside one line of every evil player
  *   (https://wiki.bloodontheclocktower.com/Lord_of_Typhon);
@@ -36,6 +37,7 @@ import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { alignmentOf, getSeat, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
 import type { DeathCause, Game, SeatId } from '#lib/core/model/types.ts';
 import { isExecution } from './death-causes.ts';
+import { stopsKillingTonight } from './reminder-effects.ts';
 import {
 	abilityState,
 	firstDeathSaver,
@@ -209,8 +211,10 @@ export function nightStepAlerts(
 			const rules = rulesOf(r.characterId, characters);
 			const waking = rules?.stopsWaking?.token === r.label;
 			const stops = waking ? rules?.stopsWaking : rules?.stopsKilling;
-			if (stops?.token !== r.label) continue;
-			if (stops.type && typeOf(game, seatId, characters) !== stops.type) continue;
+			// Or the effect the Storyteller picked for it, on its own night (`pickedEffect`).
+			const picked = !waking && stopsKillingTonight(r.effect, game);
+			if (!picked && stops?.token !== r.label) continue;
+			if (!picked && stops?.type && typeOf(game, seatId, characters) !== stops.type) continue;
 			if (!waking) noKill = true;
 			const source = game.seating.find(
 				(s) => s !== seatId && trueCharacter(game, s, characters) === r.characterId

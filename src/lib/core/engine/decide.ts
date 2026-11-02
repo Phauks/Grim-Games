@@ -73,7 +73,9 @@ export type ErrorCode =
 	| 'invalid-prep-value'
 	| 'invalid-day-mark'
 	| 'invalid-symbol'
-	| 'invalid-colour';
+	| 'invalid-colour'
+	| 'invalid-day-tally'
+	| 'invalid-effect';
 
 export type WarningCode =
 	| 'unusual-player-count'
@@ -117,7 +119,10 @@ export type WarningCode =
 	| 'reminder-followed'
 	| 'no-cause'
 	| 'not-a-believer'
-	| 'late-player-in-play';
+	| 'late-player-in-play'
+	| 'no-day-tally'
+	| 'beyond-tally'
+	| 'effect-not-listed';
 
 export interface Issue<C extends string> {
 	code: C;
