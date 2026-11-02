@@ -21,6 +21,7 @@ import type { Bag, Game, Reminder, SeatId, TileId } from '#lib/core/model/types.
 import { SEATED_TYPES, type SeatedType } from './distribution.ts';
 import { analyseSetup, type SetupAnalysis, type SetupWarning } from './setup.ts';
 import { jinxSetupWarnings, type ScriptJinx } from './jinxes.ts';
+import { abilityJinxSetup } from './jinx-setup.ts';
 import {
 	canDuplicate,
 	isBagDisabled,
@@ -218,6 +219,11 @@ export interface SelectionAnalysisInput {
 	findByName?: (name: string) => CharacterId | undefined;
 	/** A game rule lets characters have more than one copy (Duplicate Characters). */
 	duplicatesAllowed?: AnyDuplicates;
+	/**
+	 * Leave out setup changes that only may apply (a jinx through an ability chosen after the
+	 * draw, `abilityJinxSetup`), so a random bag keeps the usual counts.
+	 */
+	usualCountsOnly?: boolean;
 }
 
 /**
@@ -238,14 +244,25 @@ export function analyseSelection(input: SelectionAnalysisInput): SetupAnalysis {
 	const players = input.travellersInBag
 		? input.players
 		: input.players + travellers - Math.max(0, input.players - 15);
-	return analyseSetup({
+	// A jinx may change setup through a chosen character's gained ability (the
+	// Alchemist-Summoner's [No Demon]), which is only chosen after the draw.
+	const jinxed = abilityJinxSetup(
+		characters.map((c) => c.id),
+		input.scriptOrder,
+		input.lookup
+	);
+	const analysis = analyseSetup({
 		players,
 		travellers,
 		inPlay: characters,
 		findByName: input.findByName,
 		findById: input.lookup,
-		duplicatesAllowed: input.duplicatesAllowed
+		duplicatesAllowed: input.duplicatesAllowed,
+		mayApply: input.usualCountsOnly ? [] : jinxed.mayApply
 	});
+	return jinxed.notes.length > 0
+		? { ...analysis, notes: [...analysis.notes, ...jinxed.notes] }
+		: analysis;
 }
 
 /**
@@ -344,7 +361,7 @@ export function randomSelection(input: RandomSelectionInput): Record<CharacterId
 	}
 	const order: SeatedType[] = ['demon', 'minion', 'outsider', 'townsfolk'];
 	for (const type of order) {
-		const analysis = analyseSelection({ ...input, selection });
+		const analysis = analyseSelection({ ...input, selection, usualCountsOnly: true });
 		const have = analysis.chosen[type];
 		let target: number;
 		if (type === 'townsfolk') {
@@ -359,7 +376,7 @@ export function randomSelection(input: RandomSelectionInput): Record<CharacterId
 		}
 		take(type, target - have);
 	}
-	const analysis = analyseSelection({ ...input, selection });
+	const analysis = analyseSelection({ ...input, selection, usualCountsOnly: true });
 	const needed = () =>
 		input.travellersLater ? 0 : Math.max(0, input.players - analysis.dealt - travellersSelected());
 	take('traveller', needed());

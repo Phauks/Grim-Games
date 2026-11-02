@@ -84,9 +84,16 @@ export type Command =
 	 * Puts a character token on a seat. Without `alignment`, an empty seat takes the
 	 * default for the character type and a seat that had a character keeps its alignment
 	 * (a character change does not change alignment). A Traveller needs `alignment`
-	 * unless the seat already has one.
+	 * unless the seat already has one. `by`: the character whose ability makes the change (the
+	 * Pit-Hag's), kept on the seat for the jinxes that hang on it (`Seat.changedBy`).
 	 */
-	| { type: 'AssignCharacter'; seatId: SeatId; characterId: CharacterId; alignment?: Alignment }
+	| {
+			type: 'AssignCharacter';
+			seatId: SeatId;
+			characterId: CharacterId;
+			alignment?: Alignment;
+			by?: CharacterId;
+	  }
 	| { type: 'ClearCharacter'; seatId: SeatId }
 	/**
 	 * Two players swap characters and alignments (the Snake Charmer choosing the Demon,

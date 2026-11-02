@@ -16,7 +16,7 @@ import { scriptEdition } from '#lib/core/data/script.ts';
 import type { GameId } from '#lib/core/model/index.ts';
 import type { GameLog, GameSession } from './log.ts';
 
-export const SAVED_GAME_VERSION = 26;
+export const SAVED_GAME_VERSION = 27;
 
 export interface SavedGame {
 	schemaVersion: typeof SAVED_GAME_VERSION;
@@ -270,6 +270,14 @@ const migrateV24toV25: Migration = (doc) => ({ ...doc, schemaVersion: 25 });
  */
 const migrateV25toV26: Migration = (doc) => ({ ...doc, schemaVersion: 26 });
 
+/**
+ * Version 27 (2026-11-01) added the character whose ability changed a player's character
+ * (`AssignCharacter.by`, `CharacterAssigned.by`, `Seat.changedBy`: the Pit-Hag's, for its
+ * jinxes). The log needs no change: an older change has none. The bump makes older builds
+ * refuse a version 27 save.
+ */
+const migrateV26toV27: Migration = (doc) => ({ ...doc, schemaVersion: 27 });
+
 /** `MIGRATIONS[n]` migrates version `n` to `n + 1`. Version 1 is the first saved shape. */
 export const MIGRATIONS: Readonly<Record<number, Migration>> = {
 	1: migrateV1toV2,
@@ -296,7 +304,8 @@ export const MIGRATIONS: Readonly<Record<number, Migration>> = {
 	22: migrateV22toV23,
 	23: migrateV23toV24,
 	24: migrateV24toV25,
-	25: migrateV25toV26
+	25: migrateV25toV26,
+	26: migrateV26toV27
 };
 
 /**

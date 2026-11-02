@@ -10,6 +10,10 @@
  * of the two may be in play). Paraphrase, never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
+import type { Script } from '#lib/core/data/index.ts';
+import { castWith, codes, run } from '#lib/core/model/fixtures.test-support.ts';
+import { scriptCharacterIds } from '#lib/core/model/characters.ts';
+import { givenInstead, jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 
@@ -30,5 +34,45 @@ describe('Evil Twin + Plague Doctor jinx', () => {
 		expect(jinxesAmong(data.jinxes, ['plaguedoctor'])).not.toContain(jinx);
 	});
 
-	it.todo('enforces the rule the jinx imposes');
+	// Both pages' Related Jinxes: instead of the Storyteller gaining the Evil Twin ability, a
+	// player becomes the Evil Twin.
+	describe('a player becomes the Evil Twin instead of the Storyteller gaining it', () => {
+		const script: Script = {
+			meta: { name: 'Jinxed' },
+			entries: ['plaguedoctor', 'imp', 'eviltwin', 'chef', 'empath', 'monk', 'saint'].map((id) => ({
+				kind: 'official' as const,
+				id
+			}))
+		};
+		const ids = scriptCharacterIds(script);
+		const cast = castWith({ script });
+
+		it("is data in the Plague Doctor's rules", () => {
+			expect(jinxRulesBetween('plaguedoctor', 'eviltwin')).toEqual({
+				givenInstead: 'a-player-becomes'
+			});
+			expect(givenInstead('plaguedoctor', 'eviltwin', ids)).toBe('a-player-becomes');
+		});
+
+		it('warns when the Storyteller takes it, and a player can become it', () => {
+			const { session, ctx, seats } = cast(['plaguedoctor', 'imp', 'chef', 'empath', 'monk']);
+			const taken = run(session, ctx, {
+				type: 'SetStorytellerAbility',
+				via: 'plaguedoctor',
+				characterId: 'eviltwin'
+			});
+			expect(codes(taken)).toEqual(['jinxed-ability']);
+			const became = run(
+				session,
+				ctx,
+				{ type: 'AssignCharacter', seatId: seats[3], characterId: 'eviltwin', by: 'plaguedoctor' },
+				{ type: 'SetAlignment', seatId: seats[3], alignment: 'evil' }
+			);
+			expect(became.game.seats[seats[3]]).toMatchObject({
+				characterId: 'eviltwin',
+				alignment: 'evil',
+				changedBy: { via: 'plaguedoctor', alignment: 'good' }
+			});
+		});
+	});
 });

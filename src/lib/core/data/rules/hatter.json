@@ -44,5 +44,10 @@
 			"sameType": true,
 			"anyType": true
 		}
+	},
+	"jinxes": {
+		"leviathan": {
+			"notCreatedAfterDay": 5
+		}
 	}
 }

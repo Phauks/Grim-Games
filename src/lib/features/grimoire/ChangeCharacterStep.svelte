@@ -2,10 +2,18 @@
 	import { seatName } from '#lib/features/game/seat-label.ts';
 	import type { Alignment, CharacterId } from '#lib/core/data/index.ts';
 	import { rulesIn } from '#lib/core/data/rules/index.ts';
-	import { alignmentOf, trueCharacter, typeOf, type SeatId } from '#lib/core/model/index.ts';
+	import {
+		alignmentOf,
+		scriptCharacterIds,
+		trueCharacter,
+		typeOf,
+		type SeatId
+	} from '#lib/core/model/index.ts';
 	import {
 		changeableSeats,
 		characterChanger,
+		createdTooLate,
+		jinxedPartners,
 		neighbourAlignments,
 		swappableSeats,
 		type NightStep
@@ -56,9 +64,31 @@
 	const offered = $derived(
 		step.character ? new Set(changeableSeats(game, step.character.id, characters)) : new Set()
 	);
-	// Characters someone plays are left out when only not-in-play ones may be picked.
+	const script = $derived(scriptCharacterIds(game.script));
+	// Characters someone plays are left out when only not-in-play ones may be picked, except
+	// one a jinx lets it create again with a spare token (the Pit-Hag's Village Idiot,
+	// https://wiki.bloodontheclocktower.com/Pit-Hag#Related_Jinxes).
+	const spare = $derived(
+		step.character ? jinxedPartners(step.character.id, 'spareToken', script, characters) : []
+	);
 	const inPlay = $derived(
-		rule?.notInPlay ? game.seating.flatMap((id) => trueCharacter(game, id, characters) ?? []) : []
+		rule?.notInPlay
+			? game.seating
+					.flatMap((id) => trueCharacter(game, id, characters) ?? [])
+					.filter((id) => !spare.includes(id))
+			: []
+	);
+	// Characters a jinx bars once a day is over (the Pit-Hag's and Hatter's Leviathan after
+	// day 5, https://wiki.bloodontheclocktower.com/Leviathan#Related_Jinxes).
+	const tooLate = $derived(
+		step.character ? createdTooLate(game, step.character.id, characters) : []
+	);
+	// Characters whose player the Storyteller picks when this one creates them (the Pit-Hag's
+	// Damsel): said on the step, as the Storyteller picks the player here anyway.
+	const storytellerPicks = $derived(
+		step.character && rule
+			? jinxedPartners(step.character.id, 'storytellerPicksPlayer', script, characters)
+			: []
 	);
 
 	const swaps = $derived(
@@ -129,7 +159,9 @@
 			type: 'AssignCharacter' as const,
 			seatId,
 			characterId,
-			...(rule?.alignment ? { alignment: rule.alignment } : {})
+			...(rule?.alignment ? { alignment: rule.alignment } : {}),
+			// Kept on the seat for the jinxes that hang on who made the change (`Seat.changedBy`).
+			...(step.character ? { by: step.character.id } : {})
 		};
 		if (grimoire.run(command))
 			made = [...made.filter((m) => m.seatId !== seatId), { seatId, characterId }];
@@ -141,7 +173,11 @@
 		rule?.sameType && !rule.anyType && chosenType ? [chosenType] : (rule?.types ?? [])
 	);
 	const chosenOwn = $derived(chosen ? trueCharacter(game, chosen, characters) : undefined);
-	const left = $derived(rule?.sameType && chosenOwn ? [...inPlay, chosenOwn] : inPlay);
+	const left = $derived([
+		...inPlay,
+		...tooLate,
+		...(rule?.sameType && chosenOwn ? [chosenOwn] : [])
+	]);
 	const playerName = (seatId: SeatId) => seatName(game, seatId);
 </script>
 
@@ -216,6 +252,12 @@
 			<Button variant="quiet" onclick={() => (seatOpen = true)}>Choose</Button>
 		{/if}
 	</div>
+	{#each storytellerPicks as id (id)}
+		<p class="note" role="note" data-testid="storyteller-picks-player">
+			<CharacterBadge characterId={id} character={characters.get(id)} interactive={false} />: the
+			Storyteller chooses which player becomes it.
+		</p>
+	{/each}
 	<SeatChooser
 		bind:open={seatOpen}
 		title={onlyDemons ? 'Becomes the Demon' : 'Changes character'}
@@ -249,6 +291,10 @@
 	}
 	.none {
 		flex: 1;
+		color: var(--on-surface-muted);
+	}
+	.note {
+		margin: 0 0 var(--space-2);
 		color: var(--on-surface-muted);
 	}
 </style>

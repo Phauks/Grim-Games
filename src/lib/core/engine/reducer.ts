@@ -267,13 +267,23 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 				(game.notes ?? []).filter((n) => n.noteId !== event.noteId)
 			);
 		case 'CharacterAssigned':
-			return updateSeat(game, event.seatId, (seat) =>
-				event.alignment === undefined
-					? { ...omit(seat, 'alignment'), characterId: event.characterId }
-					: { ...seat, characterId: event.characterId, alignment: event.alignment }
-			);
+			return updateSeat(game, event.seatId, (seat) => {
+				const rest = omit(seat, 'changedBy');
+				const next: Seat =
+					event.alignment === undefined
+						? { ...omit(rest, 'alignment'), characterId: event.characterId }
+						: { ...rest, characterId: event.characterId, alignment: event.alignment };
+				if (event.by === undefined) return next;
+				const changedBy = {
+					via: event.by,
+					...(next.alignment !== undefined ? { alignment: next.alignment } : {})
+				};
+				return { ...next, changedBy };
+			});
 		case 'CharacterCleared':
-			return updateSeat(game, event.seatId, (seat) => omit(seat, 'characterId', 'alignment'));
+			return updateSeat(game, event.seatId, (seat) =>
+				omit(seat, 'characterId', 'alignment', 'changedBy')
+			);
 		case 'AlignmentSet':
 			return updateSeat(game, event.seatId, (seat) => ({ ...seat, alignment: event.alignment }));
 		case 'StorytellerAbilitySet': {

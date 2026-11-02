@@ -8,8 +8,75 @@ import { rulesIn } from '#lib/core/data/rules/index.ts';
 import { baseCounts } from './distribution.ts';
 import type { Alignment, CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
-import { aliveNeighbours, alignmentOf, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
+import { scriptCharacterIds } from '#lib/core/model/characters.ts';
+import { jinxedPartners } from './jinxes.ts';
+import {
+	aliveNeighbours,
+	alignmentOf,
+	registersAsDead,
+	replacedBy,
+	trueCharacter,
+	typeOf
+} from '#lib/core/model/selectors.ts';
 import type { Game, Reminder, SeatId } from '#lib/core/model/types.ts';
+import { registrations } from './ability.ts';
+
+/**
+ * Why `seatId` can't turn good by an ability, by a jinx on the script that says `noTurnGood`:
+ * the ability they hold from a giver (the Boffin's Demon with the Goon ability,
+ * https://wiki.bloodontheclocktower.com/Boffin#Related_Jinxes), or their own character, which
+ * a changer gave them while they were evil (an evil player the Pit-Hag turns into the Cult
+ * Leader, https://wiki.bloodontheclocktower.com/Pit-Hag#Related_Jinxes). `characterId` is
+ * the ability that can't turn them good, `via` the jinxed giver or changer. Undefined when
+ * nothing stops them.
+ */
+export function cantTurnGood(
+	game: Game,
+	seatId: SeatId,
+	characters: CharacterLookup
+): { characterId: CharacterId; via: CharacterId } | undefined {
+	const seat = game.seats[seatId];
+	if (!seat) return undefined;
+	const script = scriptCharacterIds(game.script);
+	const jinxed = (via: CharacterId, id: CharacterId) =>
+		jinxedPartners(via, 'noTurnGood', script, characters).includes(id);
+	for (const held of seat.abilities ?? []) {
+		if (jinxed(held.via, held.characterId)) return { ...held };
+	}
+	const own = trueCharacter(game, seatId, characters);
+	const by = seat.changedBy;
+	if (own !== undefined && by?.alignment === 'evil' && jinxed(by.via, own))
+		return { characterId: own, via: by.via };
+	return undefined;
+}
+
+/**
+ * The good players who neighbour a Demon: each Demon's nearest living good player each way,
+ * skipping dead and evil players, as the Marionette's own neighbour is counted
+ * (https://wiki.bloodontheclocktower.com/Marionette). For a jinx that makes one of them a
+ * character (`givenInstead: 'demon-neighbour-becomes'`, the Plague Doctor's Marionette).
+ */
+export function demonGoodNeighbours(game: Game, characters: CharacterLookup): SeatId[] {
+	const demons = game.seating.filter((id) => typeOf(game, id, characters) === 'demon');
+	const skip = (id: SeatId) => registersAsDead(game, id) || alignmentOf(game, id) !== 'good';
+	return [...new Set(demons.flatMap((id) => aliveNeighbours(game, id, skip)))];
+}
+
+/**
+ * The reminder of `characterId` that says its carrier truly is that character, under the
+ * token they were shown (`replacedBy`: the Marionette's Is The Marionette), so a player can
+ * become it without being told. Undefined for a character with none.
+ */
+export function replacingReminder(
+	characterId: CharacterId,
+	characters: CharacterLookup
+): Reminder | undefined {
+	const character = characters.get(characterId);
+	if (!character) return undefined;
+	return [...character.reminders, ...character.remindersGlobal]
+		.map((label) => ({ characterId, label }))
+		.find((reminder) => replacedBy(reminder, characters)?.id === characterId);
+}
 
 /**
  * The change to offer:
@@ -45,13 +112,25 @@ export function becomesOffer(
 		return { into: 'evil', seatId, characterId };
 	}
 	if (rule.into === 'carrier-alignment') {
-		// The token's character's own player takes the carrier's alignment.
-		const alignment = alignmentOf(game, seatId);
+		// The token's character's own player takes the carrier's alignment: the one the carrier
+		// registers as to that character, which may differ from their true one (the Recluse
+		// might register as evil to the Ogre, the Spy always registers as evil to it:
+		// https://wiki.bloodontheclocktower.com/Ogre#Related_Jinxes). The first that would
+		// change the owner is offered; the Storyteller confirms it or leaves them as they are.
+		const truly = alignmentOf(game, seatId);
 		const owner = game.seating.find(
 			(id) => id !== seatId && trueCharacter(game, id, characters) === reminder.characterId
 		);
-		if (owner === undefined || alignment === undefined) return undefined;
-		if (alignmentOf(game, owner) === alignment) return undefined;
+		if (owner === undefined || truly === undefined) return undefined;
+		const registered = registrations(game, characters, reminder.characterId).find(
+			(r) => r.seatId === seatId
+		);
+		// A jinx may keep the owner from turning good by this ability.
+		const blocked = (a: Alignment) => a === 'good' && cantTurnGood(game, owner, characters);
+		const alignment = (registered?.alignments ?? [truly]).find(
+			(a) => a !== alignmentOf(game, owner) && !blocked(a)
+		);
+		if (alignment === undefined) return undefined;
 		return { into: 'alignment', seatId: owner, characterId: reminder.characterId, alignment };
 	}
 	if (rule.into === 'swap') {
@@ -196,8 +275,12 @@ export function neighbourAlignments(
 		(id) => !game.seats[id].dead && trueCharacter(game, id, characters) === characterId
 	);
 	if (seatId === undefined) return undefined;
+	// A jinx may keep them from turning good by this ability (`cantTurnGood`).
+	const noGood = cantTurnGood(game, seatId, characters) !== undefined;
 	const alignments = [
 		...new Set(aliveNeighbours(game, seatId).flatMap((id) => alignmentOf(game, id) ?? []))
-	].sort();
+	]
+		.filter((a) => !noGood || a !== 'good')
+		.sort();
 	return alignments.length ? { seatId, alignments } : undefined;
 }

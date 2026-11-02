@@ -10,6 +10,7 @@
  * of the two may be in play). Paraphrase, never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
+import { jinxedPartners, jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 
@@ -30,5 +31,13 @@ describe('Damsel + Pit-Hag jinx', () => {
 		expect(jinxesAmong(data.jinxes, ['pithag'])).not.toContain(jinx);
 	});
 
-	it.todo('enforces the rule the jinx imposes');
+	// Both pages' Related Jinxes: when the Pit-Hag makes a Damsel, the Storyteller picks the
+	// player. The Pit-Hag's step says so; the Storyteller already picks the player there.
+	it('says on the Pit-Hag step that the Storyteller picks the Damsel', () => {
+		expect(jinxRulesBetween('pithag', 'damsel')).toEqual({ storytellerPicksPlayer: true });
+		expect(jinxedPartners('pithag', 'storytellerPicksPlayer', ['pithag', 'damsel', 'imp'])).toEqual(
+			['damsel']
+		);
+		expect(jinxedPartners('pithag', 'storytellerPicksPlayer', ['pithag', 'imp'])).toEqual([]);
+	});
 });

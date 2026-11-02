@@ -10,8 +10,17 @@
  * of the two may be in play). Paraphrase, never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
-import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
+import { findJinx, jinxesAmong, type Script } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import type { Command } from '#lib/core/engine/index.ts';
+import { castWith } from '#lib/core/model/fixtures.test-support.ts';
+import { gameEnds } from '#lib/core/rules/game-end.ts';
+import { ownJinxRules } from '#lib/core/rules/jinxes.ts';
+
+const scriptOf = (ids: string[]): Script => ({
+	meta: { name: 'Jinxed' },
+	entries: ids.map((id) => ({ kind: 'official' as const, id }))
+});
 
 describe('Exorcist + Leviathan jinx', () => {
 	const data = committedGameData();
@@ -30,5 +39,62 @@ describe('Exorcist + Leviathan jinx', () => {
 		expect(jinxesAmong(data.jinxes, ['leviathan'])).not.toContain(jinx);
 	});
 
-	it.todo('enforces the rule the jinx imposes');
+	// Both pages' Related Jinxes: if the Leviathan nominates the player the Exorcist chose and
+	// they are executed, good wins. Read from the day's log and the Exorcist's Chosen token. A
+	// drunk or poisoned Exorcist may not have protected them, so that is a hold, the Storyteller's
+	// call.
+	describe('good wins when the Leviathan executes the player the Exorcist chose', () => {
+		const ids = ['leviathan', 'exorcist', 'chef', 'empath', 'poisoner', 'washerwoman', 'butler'];
+		const cast = castWith({ script: scriptOf(ids) });
+		const mark =
+			(i: number) =>
+			(s: string[]): Command => ({
+				type: 'AddReminder',
+				seatId: s[i],
+				reminder: { characterId: 'exorcist', label: 'Chosen' }
+			});
+		const nominate =
+			(by: number, who: number) =>
+			(s: string[]): Command => ({
+				type: 'Nominate',
+				nominator: s[by],
+				nominee: s[who]
+			});
+		const execute =
+			(i: number) =>
+			(s: string[]): Command => ({ type: 'Execute', seatId: s[i] });
+		const newDay: Command = { type: 'NewDay' };
+
+		it("is data in the Leviathan's rules", () => {
+			expect(ownJinxRules({ script: scriptOf(ids) }, 'leviathan', 'exorcist')).toEqual({
+				endsGame: { kind: 'nominated-marked-executed', winner: 'good', token: 'Chosen' }
+			});
+		});
+
+		it('ends the game for good', () => {
+			const { game, ctx, seats } = cast(ids, mark(2), newDay, nominate(0, 2), execute(2));
+			expect(
+				gameEnds(game, ctx.characters).map((e) => [e.rule, e.winner, e.jinxedWith, e.seats])
+			).toEqual([['nominated-marked-executed', 'good', 'exorcist', [seats[2], seats[0]]]]);
+		});
+
+		it('does not when someone else nominated them, or they were not protected', () => {
+			const other = cast(ids, mark(2), newDay, nominate(3, 2), execute(2));
+			expect(gameEnds(other.game, other.ctx.characters)).toEqual([]);
+			const unmarked = cast(ids, newDay, nominate(0, 5), execute(5));
+			expect(gameEnds(unmarked.game, unmarked.ctx.characters)).toEqual([]);
+		});
+
+		it('is held while the Exorcist is poisoned', () => {
+			const poisoned = (s: string[]): Command => ({
+				type: 'AddReminder',
+				seatId: s[1],
+				reminder: { characterId: 'poisoner', label: 'Poisoned' }
+			});
+			const { game, ctx, seats } = cast(ids, poisoned, mark(2), newDay, nominate(0, 2), execute(2));
+			expect(gameEnds(game, ctx.characters).map((e) => e.holds)).toEqual([
+				[{ rule: 'impaired', characterId: 'exorcist', seats: [seats[1]], wiki: expect.any(String) }]
+			]);
+		});
+	});
 });

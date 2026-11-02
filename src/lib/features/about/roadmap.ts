@@ -380,10 +380,12 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	{
 		// Trevor, 2026-10-30: on the roadmap, after a spike and research. L99 research, L100 the
 		// format with the Heretic and Boffin, L107 every jinx shown where it matters, L108 jinxes
-		// that reuse existing rules, L109 the Plague Doctor's and other built characters'.
+		// that reuse existing rules, L109 the Plague Doctor's and other built characters', L112
+		// the Leviathan's and Riot's game ends, King and late Demon, L113 the setup jinx gaps
+		// (the Damsel's Poisoned, the Alchemist's Summoner and Marionette).
 		title: 'Jinxes the app applies, not only shows',
 		area: 'engine',
-		parts: ['L99', 'L100', 'L107', 'L108', 'L109']
+		parts: ['L99', 'L100', 'L107', 'L108', 'L109', 'L112', 'L113']
 	},
 	{
 		title: 'Co-Storytelling: two Storytellers on one game',

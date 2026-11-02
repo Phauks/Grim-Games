@@ -30,5 +30,7 @@ describe('Atheist + Riot jinx', () => {
 		expect(jinxesAmong(data.jinxes, ['riot'])).not.toContain(jinx);
 	});
 
+	// Waits for voting (M9): during the riot a nominated Storyteller is voted on, and the vote
+	// ends the game or the players nominate again.
 	it.todo('enforces the rule the jinx imposes');
 });

@@ -129,5 +129,48 @@
 				"either": true
 			}
 		]
+	},
+	"jinxes": {
+		"exorcist": {
+			"endsGame": {
+				"kind": "nominated-marked-executed",
+				"winner": "good",
+				"token": "Chosen"
+			}
+		},
+		"innkeeper": {
+			"endsGame": {
+				"kind": "nominated-marked-executed",
+				"winner": "good",
+				"token": "Safe"
+			}
+		},
+		"monk": {
+			"endsGame": {
+				"kind": "nominated-marked-executed",
+				"winner": "good",
+				"token": "Safe"
+			}
+		},
+		"soldier": {
+			"endsGame": {
+				"kind": "nominated-marked-executed",
+				"winner": "good"
+			}
+		},
+		"grandmother": {
+			"endsGame": {
+				"kind": "marked-executed",
+				"token": "Grandchild",
+				"winner": "evil"
+			}
+		},
+		"mayor": {
+			"endsGame": {
+				"kind": "day-without-execution",
+				"day": 5,
+				"winner": "good"
+			}
+		}
 	}
 }

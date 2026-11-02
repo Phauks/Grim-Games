@@ -10,8 +10,16 @@
  * of the two may be in play). Paraphrase, never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
-import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
+import { findJinx, jinxesAmong, type Script } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import type { Command } from '#lib/core/engine/index.ts';
+import { castWith } from '#lib/core/model/fixtures.test-support.ts';
+import { createdTooLate, ownJinxRules } from '#lib/core/rules/jinxes.ts';
+
+const scriptOf = (ids: string[]): Script => ({
+	meta: { name: 'Jinxed' },
+	entries: ids.map((id) => ({ kind: 'official' as const, id }))
+});
 
 describe('Leviathan + Pit-Hag jinx', () => {
 	const data = committedGameData();
@@ -30,5 +38,31 @@ describe('Leviathan + Pit-Hag jinx', () => {
 		expect(jinxesAmong(data.jinxes, ['pithag'])).not.toContain(jinx);
 	});
 
-	it.todo('enforces the rule the jinx imposes');
+	// Both pages' Related Jinxes: the Leviathan can't enter play after day 5, so once day 5
+	// is over a Pit-Hag can't make anyone the Leviathan. The Pit-Hag's character picker leaves it out.
+	describe('the Leviathan is not offered after day 5', () => {
+		const ids = ['pithag', 'leviathan', 'imp', 'chef', 'empath', 'poisoner'];
+		const cast = castWith({ script: scriptOf(ids) });
+		const players = ['pithag', 'imp', 'chef', 'empath', 'poisoner', 'washerwoman', 'butler'];
+		const newDay: Command = { type: 'NewDay' };
+
+		it("is data in the Pit-Hag's rules", () => {
+			expect(ownJinxRules({ script: scriptOf(ids) }, 'pithag', 'leviathan')).toEqual({
+				notCreatedAfterDay: 5
+			});
+		});
+
+		it('is offered up to the night after day 4, and not after day 5', () => {
+			const four = cast(players, newDay, newDay, newDay, newDay);
+			expect(createdTooLate(four.game, 'pithag', four.ctx.characters)).toEqual([]);
+			const five = cast(players, newDay, newDay, newDay, newDay, newDay);
+			expect(createdTooLate(five.game, 'pithag', five.ctx.characters)).toEqual(['leviathan']);
+		});
+
+		it('applies only while both are on the script', () => {
+			const script = scriptOf(['pithag', 'imp', 'chef', 'empath', 'poisoner']);
+			const five = castWith({ script })(players, newDay, newDay, newDay, newDay, newDay);
+			expect(createdTooLate(five.game, 'pithag', five.ctx.characters)).toEqual([]);
+		});
+	});
 });
