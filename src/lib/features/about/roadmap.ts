@@ -277,9 +277,9 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	},
 	{
 		title:
-			'Crowded boards: reminders on spokes with a tether, duplicate from the bank, mark where a reminder came from',
+			'Crowded boards: reminders on spokes with a tether, duplicate from the bank, mark where a reminder came from, reminders that stay put marked by a filled word band',
 		area: 'storyteller',
-		parts: ['D2', 'B2', 'B3', 'B5', 'B1', 'B11', 'B12', 'B13']
+		parts: ['D2', 'B2', 'B3', 'B5', 'B1', 'B11', 'B12', 'B13', 'B14']
 	},
 	{
 		title:

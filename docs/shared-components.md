@@ -196,7 +196,7 @@ and one line in the index, never an edit to `character-rules.ts`.
 - Executed instead (the Scapegoat): `execution.insteadOf` in a rules block (`data/execution-rules.ts`), `rules/executed-instead.ts`, the switch in `features/day/ExecutionDialog.svelte`, new
 - Exploding when executed (the Boomdandy): `execution.explodes` in a rules block (`data/execution-rules.ts`), `rules/explosion.ts`, asked on the board by `features/grimoire/ExplosionAsk.svelte` (who lives, then who was pointed at most), new
 - Breaking madness (`madness.ts`: who a mad player is and whether breaking it executes or kills, the day view's Broke madness): `madness`, new; `madness.chosenBy: nominee` with `dayReminders` `when.nomineeChose` for a player a nominee chose (the Big Wig's speaker, `ChooseForNomination`, asked by `NominationAsk`)
-- Reminder movement (`reminder-movement.ts`: tokens that stay put, characters that relocate them, and `followsNeighbours` tokens that move to the new neighbours when players change seats): `reminderMovement`, moved
+- Reminder movement (`reminder-movement.ts`: tokens that stay put (asked before a move, and drawn on the board with their word band filled in the team colour by `BoardReminderChip.svelte`), characters that relocate them, and `followsNeighbours` tokens that move to the new neighbours when players change seats): `reminderMovement`, moved
 - Reminder placeholders (`night-text.ts`: what each `:reminder:` in the night text means): `reminderPlaceholders`, moved
 - Night text overrides (`night-text.ts`: Trevor's reviewed edits and the parked fuller text): `nightText`, moved
 - Info token characters (`info-token-characters.ts`: the character a night step's card always shows): `infoTokenCharacters`, new
