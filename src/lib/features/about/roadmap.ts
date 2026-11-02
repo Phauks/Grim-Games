@@ -277,15 +277,9 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	},
 	{
 		title:
-			'Crowded boards: reminders on spokes with a tether, duplicate from the bank, mark where a reminder came from',
+			'Crowded boards: reminders on spokes with a tether, duplicate from the bank, mark where a reminder came from, reminders that stay put marked by a filled word band',
 		area: 'storyteller',
-		parts: ['D2', 'B2', 'B3', 'B5', 'B1', 'B11', 'B12', 'B13']
-	},
-	{
-		title:
-			'Moving backgrounds behind the board: twelve scenes such as Hellfire, Tropical beach and Aurora, with a switch to keep them still',
-		area: 'storyteller',
-		parts: ['L113']
+		parts: ['D2', 'B2', 'B3', 'B5', 'B1', 'B11', 'B12', 'B13', 'B14']
 	},
 	{
 		title: 'Seats that keep their names when players rotate, and random name colours',
@@ -370,11 +364,53 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['M19']
 	},
 	{
+		// Trevor, 2026-11-02: when the Imp kills itself with several Minions alive, the Scarlet
+		// Woman stands out as the new Imp while her ability applies; any Minion can still be chosen.
+		title: 'The Scarlet Woman stands out when choosing the new Demon',
+		area: 'engine',
+		parts: ['M23']
+	},
+	{
 		// Gap 8: the Bigwig's chosen speaker; gap 12: one-offs with no behaviour yet: M12a the
 		// Scapegoat, M12b the Boomdandy, M12c the Courtier's countdown.
 		title: "The Bigwig's speaker, the Scapegoat, the Boomdandy and the Courtier's three nights",
 		area: 'engine',
 		parts: ['M11', 'M12a', 'M12b', 'M12c']
+	},
+	{
+		// Gaps 5 and 12: one-off abilities and game rules nothing read yet (thread "Automate
+		// one-off characters and unread rules", 2026-11-01). M15a Toymaker, M15b Buddhist, M15c
+		// Barista, M15d Doomsayer, M15e Fibbin, M15f Duchess, M15g Vigormortis, M15h Lleech, M15i
+		// Amnesiac, M15j Summoner.
+		title:
+			"The Toymaker's skipped attack, the Buddhist's quiet veterans, the Barista's doubled ability, and more one-off characters",
+		area: 'engine',
+		parts: [
+			'M15a',
+			'M15b',
+			'M15c',
+			'M15d',
+			'M15e',
+			'M15f',
+			'M15g',
+			'M15h',
+			'M15i',
+			'M15j',
+			// Gaps the wiki examples found: M15k night wakes, M15l game ends, M15m protection and
+			// exile, M15n night information, M15o character changes and held abilities.
+			'M15k',
+			'M15l',
+			'M15m',
+			'M15n',
+			'M15o'
+		]
+	},
+	{
+		// Trevor, 2026-11-02: "just let them set what character they are, but not location for now".
+		title:
+			'The Gardener: the Storyteller sets each character on the board, and players with no phone still see theirs',
+		area: 'engine',
+		parts: ['M16']
 	},
 	{
 		// Gap 1, last and separate (Trevor, 2026-10-28). M9a the vote record and vote weights
@@ -395,11 +431,25 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['M13a', 'M13b', 'M13']
 	},
 	{
+		// Setup rules audit (Trevor, 2026-11-02): every bracketed setup change covered, starting
+		// with the Bounty Hunter's evil Townsfolk, picked, checked at Start game and told.
+		title: 'Every setup change covered: the Bounty Hunter makes a Townsfolk evil, and more',
+		area: 'engine',
+		parts: ['M22']
+	},
+	{
 		// Trevor, 2026-11-01: every "You are" and character token a night step shows is filled in
 		// with the right character (the Snake Charmer's, the Evil Twin's, the Cerenovus's).
 		title: 'Night steps fill in every info token with the right character',
 		area: 'engine',
 		parts: ['M18']
+	},
+	{
+		// Trevor, 2026-11-02: the Snake Charmer's night step does the whole swap with the Demon it
+		// chooses, a Philosopher with its ability swaps too, and the No Dashii's poison follows.
+		title: "The Snake Charmer's swap with the Demon, done in its night step",
+		area: 'engine',
+		parts: ['M20']
 	},
 	{
 		// Trevor, 2026-10-30: on the roadmap, after a spike and research. L99 research, L100 the

@@ -2,7 +2,7 @@ import type { CharacterRules, DayClaim, DayUse, DayUseWho } from '../data/charac
 import type { CharacterId } from '../data/index.ts';
 import { rulesOf } from '../data/rules/index.ts';
 import type { CharacterGuess, CharacterLookup, Game, SeatId } from '../model/index.ts';
-import { trueCharacter, typeOf } from '../model/selectors.ts';
+import { alignmentOf, trueCharacter, typeOf } from '../model/selectors.ts';
 import { abilityState } from './ability.ts';
 import { validDeathCauses } from './death-causes.ts';
 
@@ -37,6 +37,63 @@ export function dayUseWho(
 /** A character's whole `dayUse` rule: who, whether they die, and the token that marks it. */
 export function dayUseOf(characterId: CharacterId, characters?: RulesLookup): DayUse | undefined {
 	return rulesOf(characterId, characters)?.dayUse;
+}
+
+/**
+ * The characters no player holds whose day ability any living player may use, once each per
+ * game (`dayUse.anyone`: the Doomsayer, https://wiki.bloodontheclocktower.com/Doomsayer).
+ */
+export function anyoneDayUses(game: Game, characters?: RulesLookup): CharacterId[] {
+	return game.ruleCharacters.filter((id) => rulesOf(id, characters)?.dayUse?.anyone);
+}
+
+/** The players who have used `characterId`'s day ability this game, today included. */
+export function dayUseUsers(game: Game, characterId: CharacterId): SeatId[] {
+	const out: SeatId[] = [];
+	for (const day of [...game.pastDays, game.today])
+		for (const e of day.entries)
+			if (e.kind === 'ability' && e.characterId === characterId && !out.includes(e.seatId))
+				out.push(e.seatId);
+	return out;
+}
+
+/**
+ * Whether enough players live for `characterId`'s day ability (`dayUse.minAlive`: the
+ * Doomsayer needs 4, https://wiki.bloodontheclocktower.com/Doomsayer). True without a limit.
+ */
+export function dayUseOpen(
+	game: Game,
+	characterId: CharacterId,
+	characters?: RulesLookup
+): boolean {
+	const min = rulesOf(characterId, characters)?.dayUse?.minAlive;
+	return min === undefined || game.seating.filter((s) => !game.seats[s].dead).length >= min;
+}
+
+/**
+ * Who may use an `anyone` day ability now: each living player who hasn't used it this game,
+ * while enough players live (`dayUseOpen`). Empty for any other ability.
+ */
+export function dayUseCandidates(
+	game: Game,
+	characterId: CharacterId,
+	characters?: RulesLookup
+): SeatId[] {
+	if (!rulesOf(characterId, characters)?.dayUse?.anyone) return [];
+	if (!dayUseOpen(game, characterId, characters)) return [];
+	const used = dayUseUsers(game, characterId);
+	return game.seating.filter((s) => !game.seats[s].dead && !used.includes(s));
+}
+
+/**
+ * Whether `target` fits an `ally` day use by `seatId`: alive and of the same alignment (the
+ * Doomsayer: "a player of their own alignment"). Unknown alignments fit.
+ */
+export function isDayUseAlly(game: Game, seatId: SeatId, target: SeatId): boolean {
+	if (game.seats[target]?.dead) return false;
+	const mine = alignmentOf(game, seatId);
+	const theirs = alignmentOf(game, target);
+	return mine === undefined || theirs === undefined || mine === theirs;
 }
 
 /**

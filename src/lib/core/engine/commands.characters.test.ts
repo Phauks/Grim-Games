@@ -80,6 +80,32 @@ describe('AssignCharacter and alignment', () => {
 		expect(traveller.game.seats[seats[0]].alignment).toBe('evil');
 	});
 
+	// https://wiki.bloodontheclocktower.com/Cacklejack: a Drunk whose character changes is
+	// sober, really the new character.
+	it('takes off an "Is The Drunk" style reminder when the seat changes character', () => {
+		const { session, ctx, seats } = newGame(names);
+		const s = run(
+			session,
+			ctx,
+			{ type: 'AssignCharacter', seatId: seats[0], characterId: 'chef' },
+			{
+				type: 'AddReminder',
+				seatId: seats[0],
+				reminder: { characterId: 'drunk', label: 'Is The Drunk' }
+			}
+		);
+		const same = run(s, ctx, { type: 'AssignCharacter', seatId: seats[0], characterId: 'chef' });
+		expect(same.game.seats[seats[0]].reminders).toHaveLength(1);
+		const changed = dispatch(
+			s,
+			{ type: 'AssignCharacter', seatId: seats[0], characterId: 'empath' },
+			ctx
+		);
+		if (!changed.ok) throw new Error();
+		expect(changed.session.game.seats[seats[0]].reminders).toEqual([]);
+		expect(codes(changed)).toEqual(['no-longer-hidden']);
+	});
+
 	it('warns about characters off the script or already on another seat', () => {
 		const { session, ctx, seats } = newGame(names);
 		const s = run(session, ctx, { type: 'AssignCharacter', seatId: seats[0], characterId: 'chef' });
@@ -169,6 +195,24 @@ describe('the Spirit of Ivory', () => {
 		const second = run(s, ctx, { type: 'SetAlignment', seatId: seats[1], alignment: 'evil' });
 		expect(second.warnings.map((w) => w.code)).toEqual(['extra-evil-limit']);
 		expect(second.game.seats[seats[1]].alignment).toBe('evil');
+	});
+	// https://wiki.bloodontheclocktower.com/Spirit_of_Ivory: an Outsider turned into an evil
+	// Demon is an extra evil player too.
+	it('counts evil players beyond the usual number', () => {
+		const { session, ctx, seats } = newGame(names);
+		const s = run(
+			session,
+			ctx,
+			{ type: 'AssignCharacter', seatId: seats[0], characterId: 'chef' },
+			{ type: 'AssignCharacter', seatId: seats[1], characterId: 'saint' },
+			{ type: 'AssignCharacter', seatId: seats[2], characterId: 'imp' },
+			{ type: 'AssignCharacter', seatId: seats[3], characterId: 'empath' },
+			{ type: 'AssignCharacter', seatId: seats[4], characterId: 'poisoner' },
+			{ type: 'AddRuleCharacter', characterId: 'spiritofivory' },
+			{ type: 'AssignCharacter', seatId: seats[1], characterId: 'imp', alignment: 'evil' }
+		);
+		const second = run(s, ctx, { type: 'SetAlignment', seatId: seats[0], alignment: 'evil' });
+		expect(second.warnings.map((w) => w.code)).toEqual(['extra-evil-limit']);
 	});
 });
 

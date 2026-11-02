@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { seatName } from '#lib/features/game/seat-label.ts';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
 	import BoardReminder from './BoardReminder.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
@@ -54,10 +54,14 @@
 	onCancel={() => (grimoire.firstDeathAsk = undefined)}
 >
 	{#if ask && character}
-		<p class="ability">
-			<CharacterBadge characterId={ask.characterId} {character} />
-			<GlossaryText text={character.ability} names={[character.name]} />
-		</p>
+		<div class="ability">
+			<CharacterRow {character} info>
+				{#snippet ability()}<GlossaryText
+						text={character.ability}
+						names={[character.name]}
+					/>{/snippet}
+			</CharacterRow>
+		</div>
 		<dl class="change">
 			<dt>Player</dt>
 			<dd><PlayerBadge name={seatName(grimoire.game, ask.seatId)} /></dd>
@@ -69,7 +73,7 @@
 
 <style>
 	.ability {
-		margin: 0 0 var(--space-2);
+		margin: 0 0 var(--space-3);
 	}
 	.change {
 		display: grid;

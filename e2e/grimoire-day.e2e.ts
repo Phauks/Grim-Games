@@ -347,6 +347,19 @@ test('the votes dialog notes a Thief’s negative vote (M9e)', async ({ page }) 
 	await expect(notes.locator('tbody tr')).toHaveText(/Seat 2.*Vote counts as -1/);
 });
 
+// The Master shows as a player badge, never a raw seat id (Trevor, 2026-11-02).
+test('the votes dialog names the Butler’s Master as a player badge (M9e)', async ({ page }) => {
+	await startGame(page);
+	await chooseCharacter(page, 3, 'Butler');
+	await putReminder(page, 'Master', 1);
+	await openDay(page);
+	await page.getByTestId('votes-needed').tap();
+	const row = page.getByTestId('vote-notes').locator('tbody tr');
+	await expect(row).toHaveCount(1);
+	await expect(row).toHaveText(/Seat 3.*Votes only if\s*Seat 1\s*votes/);
+	await expect(row).not.toContainText('-');
+});
+
 test('a Traveller is exiled, and a death offers only valid causes', async ({ page }) => {
 	const board = await startGame(page);
 	await addThief(page);
@@ -1296,6 +1309,43 @@ test('the Puzzlemaster’s guess asks who was guessed and says what to tell them
 	).toHaveAttribute('aria-label', /1 reminder/);
 });
 
+// M15b, https://wiki.bloodontheclocktower.com/Buddhist: for the first two minutes of each day
+// the veterans may not talk. With the Buddhist in play the day timer counts that down on its
+// top edge, in place of its mode's name, so nothing moves.
+test('with the Buddhist in play the day timer counts down the veterans’ quiet', async ({
+	page
+}) => {
+	await page.clock.install();
+	await startGame(page);
+	await page.getByRole('button', { name: 'More' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Add Fabled or Loric', exact: true })
+		.tap();
+	await page
+		.getByRole('dialog', { name: 'Add Fabled or Loric' })
+		.getByRole('button', { name: 'Buddhist', exact: true })
+		.tap();
+	await expect(
+		page.getByRole('list', { name: 'Fabled and Loric' }).getByRole('button', { name: 'Buddhist' })
+	).toBeVisible();
+	await openDay(page);
+	const timer = page.getByTestId('day-toolbar').getByTestId('day-timer');
+	const quiet = timer.getByTestId('timer-quiet');
+	await expect(quiet).toHaveText('Veterans quiet 2:00');
+	await expect(timer.getByTestId('timer-mode')).toHaveCount(0);
+	const height = (await timer.boundingBox())!.height;
+	await timer.getByRole('button', { name: 'Start timer' }).tap();
+	await page.clock.runFor(30_000);
+	await expect(quiet).toHaveText('Veterans quiet 1:30');
+	await expect(timer).toHaveAttribute('aria-label', /Veterans may not talk for 1:30 more/);
+	await page.clock.runFor(91_000);
+	// Over: the mode's name is back, in the same place.
+	await expect(quiet).toHaveCount(0);
+	await expect(timer.getByTestId('timer-mode')).toHaveText('Timer');
+	expect((await timer.boundingBox())!.height).toBe(height);
+});
+
 /** Gives seat `number` a character from off the script, answering its alignment if asked. */
 async function chooseOffScript(page: Page, number: number, name: string) {
 	const sheet = await openSeat(page, number);
@@ -1337,6 +1387,42 @@ test('Execution asks whether only evil voted while the Legion works; yes fails i
 	await expect(day).toBeVisible();
 	await expect(page.getByTestId('night-strip')).toHaveCount(0);
 	await expect(boardSeat(page, 'Seat 1')).not.toHaveAccessibleName(/dead/);
+});
+
+test('a player nominates the Storyteller, who is executed, and good wins with the Atheist (M15l)', async ({
+	page
+}) => {
+	// https://wiki.bloodontheclocktower.com/Atheist: any living player may nominate the
+	// Storyteller; executed, good wins if the Atheist is in play.
+	await startGame(page);
+	await chooseCharacter(page, 1, 'Chef');
+	await chooseOffScript(page, 2, 'Atheist');
+	await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();
+	await page.getByRole('dialog').getByRole('button', { name: 'Settings' }).tap();
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	await settings
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Storyteller' })
+		.tap();
+	await settings.getByText('Track nominations', { exact: true }).tap();
+	await settings.getByRole('button', { name: 'Close' }).first().tap();
+	await expect(settings).toBeHidden();
+	await page.getByTestId('seat').nth(0).getByTestId('nomination-marks').tap();
+	await page
+		.getByRole('dialog', { name: 'Who did Seat 1 nominate?' })
+		.getByTestId('choose-storyteller')
+		.tap();
+	const day = await openDay(page);
+	await day.getByRole('button', { name: 'Execution', exact: true }).tap();
+	const ask = page.getByRole('alertdialog', { name: 'End the day?' });
+	await ask.getByRole('combobox', { name: 'Execution' }).tap();
+	await page.getByRole('option', { name: 'Storyteller', exact: true }).tap();
+	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	const prompt = page.getByRole('alertdialog', { name: 'End game?' });
+	const end = prompt.locator('[data-rule="storyteller-executed"]');
+	await expect(end).toContainText('The Storyteller was executed, and the');
+	await expect(end.locator('[data-character-id="atheist"]')).toBeVisible();
+	await expect(prompt.getByTestId('game-end-prompt')).toContainText('Good wins');
 });
 
 test("Execution records the Judge's forced pass and marks the ruling used (M9d)", async ({

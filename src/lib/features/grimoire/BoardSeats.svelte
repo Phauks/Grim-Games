@@ -22,6 +22,7 @@
 	import type { SeatArranging } from './seat-arranging.svelte.ts';
 	import type { SeatHints } from './seat-hints.svelte.ts';
 	import SeatToken from './SeatToken.svelte';
+	import { isFixedReminder } from '#lib/core/rules/index.ts';
 	import { remindersBeside, trueCharacterMarks } from './true-character-marks.ts';
 
 	type SeatPart = 'note' | 'nominate' | 'avatar';
@@ -202,6 +203,7 @@
 				dragging={dragged}
 				extra={hints.extras.has(reminder.reminderId)}
 				now={nw.isStepReminder(reminder)}
+				fixed={isFixedReminder(reminder, characters)}
 				onTap={() => onReminder(seat.seatId, reminder.reminderId)}
 				onDrag={(x, y, end) => remDrag.move(reminder.reminderId, seat.seatId, x, y, end)}
 				onCancel={() => remDrag.cancel()}

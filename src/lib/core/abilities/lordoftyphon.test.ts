@@ -17,6 +17,7 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import { castGame } from '#lib/core/model/fixtures.test-support.ts';
 import { evilInOneLine, nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
+import { changeableSeats, characterChanger } from '#lib/core/rules/becomes.ts';
 import {
 	committedCharacter,
 	committedGameData,
@@ -77,9 +78,41 @@ describe('Lord of Typhon', () => {
 			).toEqual([2]);
 		});
 
+		it('does not warn while its first night still makes the Minions', () => {
+			expect(seating(['lordoftyphon', 'chef', 'empath', 'monk', 'saint'])).toEqual([]);
+		});
+
 		it('counts the line round the table', () => {
-			const { game, seats } = castGame(['lordoftyphon', 'spy', 'empath', 'monk', 'poisoner']);
-			expect(evilInOneLine(game, seats[0])).toBe(true);
+			const { game, seats, ctx } = castGame(['lordoftyphon', 'spy', 'empath', 'monk', 'poisoner']);
+			expect(evilInOneLine(game, seats[0], ctx.characters)).toBe(true);
+		});
+
+		// Evil Townsfolk may be part of the line but need not be (M22): the Bounty Hunter's
+		// evil Townsfolk sitting apart is no warning.
+		it('does not need an evil Townsfolk in the line', () => {
+			const s = scenario(['poisoner', 'lordoftyphon', 'spy', 'empath', 'bountyhunter', 'chef']).do(
+				(at) => ({ type: 'SetAlignment', seatId: at.seat('chef'), alignment: 'evil' })
+			);
+			expect(evilInOneLine(s.game, s.seat('lordoftyphon'), s.characters)).toBe(true);
+		});
+	});
+
+	// How to Run: on the first night the players either side become Minions, the usual
+	// number plus one, spreading out from the Lord of Typhon (M22).
+	describe('first night Minions', () => {
+		it('offers only the nearest non-Minion on each side, until there is one Minion extra', () => {
+			let s = scenario(['lordoftyphon', 'chef', 'empath', 'monk', 'saint', 'butler', 'mayor']);
+			expect(changeableSeats(s.game, 'lordoftyphon', s.characters).sort()).toEqual(
+				[s.seat('chef'), s.seat('mayor')].sort()
+			);
+			expect(characterChanger(s.game, 'lordoftyphon', s.characters)).toBe(s.seat('lordoftyphon'));
+			// Seven players usually have one Minion: two become Minions here.
+			s = s.becomes('chef', 'poisoner', 'evil');
+			expect(changeableSeats(s.game, 'lordoftyphon', s.characters).sort()).toEqual(
+				[s.seat('empath'), s.seat('mayor')].sort()
+			);
+			s = s.becomes('mayor', 'spy', 'evil');
+			expect(characterChanger(s.game, 'lordoftyphon', s.characters)).toBeUndefined();
 		});
 	});
 
@@ -97,7 +130,8 @@ describe('Lord of Typhon', () => {
 			const cast = ['vizier', 'harpy', 'lordoftyphon', 'goblin', 'chef', 'empath', 'monk', 'mayor'];
 			expect(seating([...cast, 'saint', 'butler'])).toEqual([]);
 			const result = analyseSetup({ players: 10, inPlay: get(...cast, 'saint', 'butler') });
-			expect(result.expected.minion).toEqual([3]);
+			// No Minions dealt, or the usual two plus one already seated (M22).
+			expect(result.expected.minion).toEqual([0, 3]);
 			expect(result.expected.outsider).toContain(2);
 			expect(result.chosen).toEqual({ townsfolk: 4, outsider: 2, minion: 3, demon: 1 });
 			expect(result.warnings).toEqual([]);
@@ -128,7 +162,7 @@ describe('Lord of Typhon', () => {
 				'mastermind'
 			);
 			const result = analyseSetup({ players: 15, inPlay });
-			expect(result.expected.minion).toEqual([4]);
+			expect(result.expected.minion).toEqual([0, 4]);
 			expect(result.expected.outsider).toContain(0);
 			expect(result.chosen).toEqual({ townsfolk: 10, outsider: 0, minion: 4, demon: 1 });
 			expect(result.warnings).toEqual([]);

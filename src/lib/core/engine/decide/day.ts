@@ -20,7 +20,11 @@ import {
 	dayMarkValue,
 	markTokenSwap,
 	marksInPlay,
+	dayUseOpen,
+	dayUseUsers,
 	executionSavers,
+	isDayUseAlly,
+	mayBeFalseSource,
 	outcomeHolder,
 	outcomeProblem,
 	protection,
@@ -34,6 +38,7 @@ import {
 	characterOf,
 	checkGuessLimit,
 	checkNomination,
+	STORYTELLER,
 	checkReminder,
 	entryOf,
 	entryOfKind,
@@ -61,6 +66,29 @@ function answerNote(
 		note.customAnswer = command.customAnswer.trim();
 }
 
+/** Whether today already has an execution: a player's or the Storyteller's. */
+function executedToday(game: Game): boolean {
+	return game.today.entries.some(
+		(e) => e.kind === 'execution' || e.kind === 'storyteller-execution'
+	);
+}
+
+/**
+ * A Minion's recorded nomination marks it for the Town Crier, tokens and all (Trevor,
+ * 2026-10-24: use the nominations recorded; https://wiki.bloodontheclocktower.com/Town_Crier).
+ */
+function minionNominated(game: Game, nominator: SeatId, ctx: EngineContext): GameEvent[] {
+	const mark = 'minion-nominated';
+	if (
+		dayMarkValue(game, mark) !== true &&
+		dayMarkSeats(game, ctx.characters, mark).length > 0 &&
+		typeOf(game, nominator, ctx.characters) === 'minion'
+	) {
+		return markEvents(game, mark, true, ctx);
+	}
+	return [];
+}
+
 /** The day log: nominations, executions, exiles, abilities, notes and night information. */
 export const DAY_DECIDERS: Deciders<
 	| 'Nominate'
@@ -69,6 +97,8 @@ export const DAY_DECIDERS: Deciders<
 	| 'SetDayMark'
 	| 'SetPrepValue'
 	| 'Execute'
+	| 'NominateStoryteller'
+	| 'ExecuteStoryteller'
 	| 'Exile'
 	| 'UseAbility'
 	| 'DayNote'
@@ -81,23 +111,25 @@ export const DAY_DECIDERS: Deciders<
 		const nominator = seatOf(game, command.nominator).seatId;
 		const nominee = seatOf(game, command.nominee).seatId;
 		checkNomination(game, ctx.characters, nominator, nominee, warn);
-		const events: GameEvent[] = [
+		return [
 			{
 				type: 'DayEntryAdded',
 				entry: { kind: 'nomination', entryId: ctx.newId(), nominator, nominee }
-			}
+			},
+			...minionNominated(game, nominator, ctx)
 		];
-		// A Minion's recorded nomination marks it for the Town Crier, tokens and all (Trevor,
-		// 2026-10-24: use the nominations recorded; https://wiki.bloodontheclocktower.com/Town_Crier).
-		const mark = 'minion-nominated';
-		if (
-			dayMarkValue(game, mark) !== true &&
-			dayMarkSeats(game, ctx.characters, mark).length > 0 &&
-			typeOf(game, nominator, ctx.characters) === 'minion'
-		) {
-			events.push(...markEvents(game, mark, true, ctx));
-		}
-		return events;
+	},
+
+	NominateStoryteller(game, command, ctx, warn) {
+		const nominator = seatOf(game, command.nominator).seatId;
+		checkNomination(game, ctx.characters, nominator, STORYTELLER, warn);
+		return [
+			{
+				type: 'DayEntryAdded',
+				entry: { kind: 'storyteller-nomination', entryId: ctx.newId(), nominator }
+			},
+			...minionNominated(game, nominator, ctx)
+		];
 	},
 
 	EditNomination(game, command, ctx, warn) {
@@ -168,9 +200,7 @@ export const DAY_DECIDERS: Deciders<
 		}
 		const forced = outcome?.kind === 'forced' && used ? { forcedBy: used.by } : {};
 		const before = used?.events ?? [];
-		if (game.today.entries.some((e) => e.kind === 'execution')) {
-			warn('already-executed', 'there is usually one execution a day');
-		}
+		if (executedToday(game)) warn('already-executed', 'there is usually one execution a day');
 		if (isTraveller(game, seat.seatId, ctx.characters)) {
 			warn('traveller-executed', 'Travellers are exiled, not executed');
 		}
@@ -217,6 +247,13 @@ export const DAY_DECIDERS: Deciders<
 		];
 	},
 
+	ExecuteStoryteller(game, command, ctx, warn) {
+		if (executedToday(game)) warn('already-executed', 'there is usually one execution a day');
+		return [
+			{ type: 'DayEntryAdded', entry: { kind: 'storyteller-execution', entryId: ctx.newId() } }
+		];
+	},
+
 	Exile(game, command, ctx, warn) {
 		const seat = seatOf(game, command.seatId);
 		if (!isTraveller(game, seat.seatId, ctx.characters)) {
@@ -242,6 +279,10 @@ export const DAY_DECIDERS: Deciders<
 		const seat = seatOf(game, command.seatId);
 		const character = characterOf(ctx, command.characterId);
 		const truly = trueCharacter(game, seat.seatId, ctx.characters);
+		const rule = rulesOf(character.id, ctx.characters)?.dayUse;
+		if (rule?.anyone && game.ruleCharacters.includes(character.id)) {
+			return anyoneUse(game, command, character, ctx, warn);
+		}
 		if (seat.characterId !== character.id && truly !== character.id) {
 			warn('not-seat-character', `this seat is not the ${character.name}`);
 		}
@@ -350,8 +391,10 @@ export const DAY_DECIDERS: Deciders<
 			warn('no-change', 'nothing to record');
 			return [];
 		}
+		const spent = spendFalseInfo(game, seat.seatId, characterId, abnormal, ctx);
 		return [
 			...placements.map((p): GameEvent => ({ type: 'ReminderAdded', ...p })),
+			...spent.events,
 			{
 				type: 'DayEntryAdded',
 				entry: {
@@ -360,7 +403,7 @@ export const DAY_DECIDERS: Deciders<
 					seatId: seat.seatId,
 					characterId,
 					text,
-					reminderIds: placements.map((p) => p.reminder.reminderId),
+					reminderIds: [...placements.map((p) => p.reminder.reminderId), ...spent.ids],
 					...(abnormal.length > 0 ? { abnormal } : {})
 				}
 			}
@@ -466,4 +509,74 @@ function tokenEvents(
 			reminder: { reminderId: ctx.newId(), characterId: p.characterId, label: p.label }
 		}))
 	];
+}
+
+/**
+ * False information given by a character whose `falseInfo` may make it false once (the
+ * Fibbin, https://wiki.bloodontheclocktower.com/Fibbin: "loses their ability"): its
+ * `spentToken` goes on its token, beside a rule character or on the seat that holds it. The
+ * info entry lists the token, so removing the entry takes it back.
+ */
+function spendFalseInfo(
+	game: Game,
+	seatId: string,
+	characterId: string,
+	abnormal: readonly AbnormalCause[],
+	ctx: EngineContext
+): { events: GameEvent[]; ids: string[] } {
+	const type = ctx.characters.get(characterId)?.type;
+	const by = mayBeFalseSource(game, seatId, type, ctx.characters);
+	const label = by ? rulesOf(by, ctx.characters)?.falseInfo?.spentToken : undefined;
+	if (!by || !label || !abnormal.some((c) => c.characterId === by)) return { events: [], ids: [] };
+	const reminder = { reminderId: ctx.newId(), characterId: by, label };
+	if (game.ruleCharacters.includes(by)) {
+		return {
+			events: [{ type: 'RuleReminderAdded', characterId: by, reminder }],
+			ids: [reminder.reminderId]
+		};
+	}
+	const holder = game.seating.find((s) => trueCharacter(game, s, ctx.characters) === by);
+	if (!holder) return { events: [], ids: [] };
+	return {
+		events: [{ type: 'ReminderAdded', seatId: holder, reminder }],
+		ids: [reminder.reminderId]
+	};
+}
+
+/**
+ * A day ability any living player may use once per game, of a character no player holds
+ * (`dayUse.anyone`: the Doomsayer, https://wiki.bloodontheclocktower.com/Doomsayer). Only the
+ * use is logged; its kill is the Storyteller's `SetDead` with the character as cause. Warns,
+ * never refuses: when its player is dead or already used it this game, when too few players
+ * live (`dayUse.minAlive`), or when `on` is not a living player of its player's alignment.
+ */
+function anyoneUse(
+	game: Game,
+	command: { seatId: string; on?: string },
+	character: { id: string; name: string },
+	ctx: EngineContext,
+	warn: Warn
+): GameEvent[] {
+	const seat = seatOf(game, command.seatId);
+	if (seat.dead) warn('already-dead', `only living players may use the ${character.name}`);
+	if (dayUseUsers(game, character.id).includes(seat.seatId)) {
+		warn('already-used', `this player already used the ${character.name} this game`);
+	}
+	if (!dayUseOpen(game, character.id, ctx.characters)) {
+		warn('too-few-alive', `too few players live to use the ${character.name}`);
+	}
+	const entry: Extract<DayEntry, { kind: 'ability' }> = {
+		kind: 'ability',
+		entryId: ctx.newId(),
+		seatId: seat.seatId,
+		characterId: character.id
+	};
+	if (command.on !== undefined) {
+		entry.on = seatOf(game, command.on).seatId;
+		const rule = rulesOf(character.id, ctx.characters)?.dayUse;
+		if (rule?.who === 'ally' && !isDayUseAlly(game, seat.seatId, entry.on)) {
+			warn('not-ally', `the ${character.name} kills a living player of its user's alignment`);
+		}
+	}
+	return [{ type: 'DayEntryAdded', entry }];
 }
