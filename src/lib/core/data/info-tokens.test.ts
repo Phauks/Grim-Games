@@ -24,6 +24,7 @@ describe('info tokens', () => {
 			'Select a character',
 			'Please choose again',
 			'Are you sure?',
+			'Sleep with the Harlot?',
 			'You are mad as'
 		]);
 		const firstExtra = STANDARD_INFO_TOKENS.findIndex((t) => t.extra);
