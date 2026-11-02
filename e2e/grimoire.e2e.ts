@@ -2115,8 +2115,41 @@ test('copies of a reminder are in the bank one by one, or stacked with a count',
 		.tap();
 	await expect(seatLabelled(page, 'Seat 1: no name, Shabaloth, 1 reminder')).toBeAttached();
 	// One left, so no count.
+	await openBin(page);
 	await expect(dead).toHaveCount(1);
 	await expect(bin.getByLabel('2 copies')).toHaveCount(0);
+});
+
+test('dragging a token out of the pulled-up bank leaves the rest, back in its row', async ({
+	page
+}) => {
+	// Trevor, 2026-11-02: dragging out of the open bin made every other token vanish; it goes
+	// back to its closed state instead.
+	await startGame(page);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Poisoner', exact: true })
+		.tap();
+	await closeSheet(page);
+	const row = page.getByRole('list', { name: 'Reminder bank' });
+	const token = await binToken(page, 'Poisoned');
+	const from = (await token.boundingBox())!;
+	const to = (await boardSeat(page, 2).boundingBox())!;
+	await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+	await page.mouse.down();
+	await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2 + 20, { steps: 6 });
+	// While dragged, the bank shows its row with the other tokens still in it.
+	await expect(row).toBeVisible();
+	await expect(row.getByRole('button', { name: 'Generic reminder', exact: true })).toBeVisible();
+	await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 4 });
+	await page.mouse.up();
+	await expect(boardSeat(page, 2)).toHaveAttribute('aria-label', /1 reminder/);
+	// Let go, it stays closed: the row, every other token still there.
+	await expect(page.getByTestId('reminder-bin')).toBeHidden();
+	await expect(row).toBeVisible();
+	await expect(row.getByRole('button', { name: 'Generic reminder', exact: true })).toBeVisible();
 });
 
 test('the board background can be an image from the device, kept after a reload', async ({
@@ -7375,7 +7408,8 @@ test('the reminder bank pulls up by its handle bar to show every token, and toke
 	await expect(bin.getByText('∞', { exact: true })).toBeVisible();
 	await page.screenshot({ path: testInfo.outputPath('bin-open.png') });
 
-	// Dragged out: the bank drops back to its row, then comes back up once it is put down.
+	// Dragged out: the bank drops back to its row, tokens and all, and stays down once it is
+	// put down (Trevor, 2026-11-02: back to its closed state).
 	const token = bin.getByRole('button', { name: 'Generic reminder' });
 	const from = (await token.boundingBox())!;
 	const to = (await seatLabelled(page, 'Seat 1:').boundingBox())!;
@@ -7383,11 +7417,14 @@ test('the reminder bank pulls up by its handle bar to show every token, and toke
 	await page.mouse.down();
 	await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2 + 20, { steps: 6 });
 	await expect(bank).toHaveClass(/lowered/);
+	await expect(page.getByRole('list', { name: 'Reminder bank' })).toBeVisible();
 	await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 4 });
 	await page.mouse.up();
 	await expect(seatLabelled(page, 'Seat 1: no name, no character, 1 reminder')).toBeAttached();
 	await expect(bank).not.toHaveClass(/lowered/);
-	await expect(bin).toBeVisible();
+	await expect(bin).toBeHidden();
+	await expect(handle).toHaveAttribute('aria-expanded', 'false');
+	await openBin(page);
 
 	// A tap holds it, as in the row, and lowers the bank to its row, tokens and all, while a
 	// seat is tapped (Trevor, 2026-10-30: not an empty pulled-up bank).
