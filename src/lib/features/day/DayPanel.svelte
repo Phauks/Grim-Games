@@ -69,8 +69,7 @@
 		town?: { can: boolean; called: boolean };
 	}
 
-	// No Undo or History here (Trevor, 2026-10-16): each day action is one entry in the
-	// game's History, in the grimoire's menu.
+	// No Undo or History here (Trevor, 2026-10-16): each day action is one History entry.
 	let { game, assistance, onOpenNight, onSavant, onExecute, town }: Props = $props();
 	// Every badge on the day screen names the script's own characters, homebrew included.
 	provideCharacters(() => game.characters);
@@ -280,14 +279,12 @@
 		noteTarget = target;
 		noteOpen = true;
 	}
-
 	/** Votes for the first nominee, from who is alive now (core `blockThreshold`). */
 	const block = $derived(blockThreshold(g, game.characters));
 	/** Section headers stick just under the toolbar (Trevor, 2026-10-17). */
 	let toolbarSize = $state<ResizeObserverSize[]>();
 	// The exact (fractional) height: a rounded one leaves a sliver between toolbar and header.
 	const toolbarHeight = $derived(toolbarSize?.[0]?.blockSize ?? 0);
-
 	// ── A player's day button, on their ability row ──
 	/** The claim a character's player makes in town, from its rules block (L56). */
 	const claimOf = (characterId: CharacterId | undefined) =>
