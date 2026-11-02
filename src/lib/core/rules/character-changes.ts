@@ -14,9 +14,15 @@
  */
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
+import type { InfoTokenCharacterRules } from '#lib/core/data/info-token-rules.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import type { SeatId } from '#lib/core/model/types.ts';
 import type { NightStep } from './night-order.ts';
+
+/** "You are" with the step's own character: the player's new one. */
+export const SHOWN_OWN_CHARACTER: InfoTokenCharacterRules = {
+	'you-are': { characters: ['self'] }
+};
 
 /** The id prefix of a wake step: `changed@<seat>`. */
 const CHANGED_STEP = 'changed';
@@ -40,7 +46,9 @@ export function withCharacterChangeSteps<T extends NightStep>(
 				afterDawn: false,
 				placement: 'marker',
 				notes: late ? [`${character.name}: ${late}`] : [],
-				changed: { seatId, characterId }
+				changed: { seatId, characterId },
+				// The card shows the new character, whatever that character's own rules fill in.
+				infoTokenCharacters: SHOWN_OWN_CHARACTER
 			}
 		];
 	});
