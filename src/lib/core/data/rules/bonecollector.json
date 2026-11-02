@@ -42,5 +42,8 @@
 				]
 			}
 		]
+	},
+	"reminderEnds": {
+		"Has Ability": "dusk"
 	}
 }

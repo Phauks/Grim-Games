@@ -28,6 +28,7 @@ import {
 	type Reminder,
 	type ReminderInstance,
 	type Seat,
+	type SeatId,
 	type Tile
 } from '#lib/core/model/index.ts';
 import {
@@ -36,6 +37,7 @@ import {
 	extraNominationOpen,
 	nominationsLeftThisGame,
 	nominationsPerDay,
+	remindersEndingOnDeath,
 	storytellerNominates,
 	type DayReminderOverride,
 	type Night,
@@ -539,4 +541,15 @@ export function seatNumberNames(game: Game): GameEvent[] {
 			? [{ type: 'SeatRenamed', seatId, playerName: `Seat ${i + 1}` }]
 			: []
 	);
+}
+
+/**
+ * Takes off the reminders that last until a player of their character dies (`reminderEnds`
+ * `owner-dies`, the Philosopher's Drunk), now that `seatId` has died.
+ */
+export function endingOnDeath(game: Game, seatId: SeatId, ctx: EngineContext): GameEvent[] {
+	return remindersEndingOnDeath(game, seatId, ctx.characters).map((reminderId): GameEvent => ({
+		type: 'ReminderRemoved',
+		reminderId
+	}));
 }

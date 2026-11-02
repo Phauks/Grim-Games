@@ -173,11 +173,9 @@ describe('Goon', () => {
 			expect(reminderTargetMisses(s.game, drunk, s.seat('imp'), s.characters)).not.toEqual([]);
 		});
 
-		it.fails('takes the Goon’s Drunk off at the next dusk', () => {
+		it('takes the Goon’s Drunk off at the next dusk', () => {
 			// Wiki: "The next dusk, the player that the Goon made drunk becomes sober—remove the Goon’s
 			// DRUNK reminder."
-			// Waits on the engine (unplanned): the Goon's rules have no reminderEnds for Drunk, so Dusk
-			// leaves it on.
 			const s = scenario(cast).newDay().reminder('courtier', 'goon', 'Drunk').newDay().dusk();
 			expect(s.game.seats[s.seat('courtier')].reminders).toEqual([]);
 			expect(abilityState(s.game, s.seat('courtier'), s.characters).works).toBe(true);

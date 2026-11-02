@@ -89,6 +89,28 @@ describe('reminderEnds', () => {
 		expect(labelsOf(s.newDay().dusk(), 'monk')).toEqual([]);
 	});
 
+	it('keeps a dusk-tomorrow token through the dusk of the day it was placed', () => {
+		// https://wiki.bloodontheclocktower.com/Minstrel: the drunkenness lasts until dusk the day
+		// after the execution, not the dusk that ends the execution's day.
+		const s = scenario(['minstrel', 'chef', 'imp', 'empath', 'poisoner'])
+			.newDay()
+			.reminder('chef', 'minstrel', 'Everyone Is Drunk');
+		expect(labelsOf(s.dusk(), 'minstrel')).toEqual(['Everyone Is Drunk']);
+		expect(labelsOf(s.dusk().newDay(), 'minstrel')).toEqual(['Everyone Is Drunk']);
+		expect(labelsOf(s.dusk().newDay().dusk(), 'minstrel')).toEqual([]);
+	});
+
+	it('takes an owner-dies token off when its owner dies, by any death, and not before', () => {
+		// https://wiki.bloodontheclocktower.com/Philosopher: the Philosopher's death sobers the
+		// player they made drunk.
+		const s = scenario(['philosopher', 'chef', 'imp', 'empath', 'poisoner'])
+			.reminder('chef', 'philosopher', 'Drunk')
+			.newDay();
+		expect(labelsOf(s.dusk().newDay(), 'philosopher')).toEqual(['Drunk']);
+		expect(labelsOf(s.dies('empath', 'imp'), 'philosopher')).toEqual(['Drunk']);
+		expect(labelsOf(s.execute('philosopher'), 'philosopher')).toEqual([]);
+	});
+
 	it('follows a custom character’s own reminderEnds', () => {
 		const brew: Character = {
 			...(data.byId.get('monk') as Character),

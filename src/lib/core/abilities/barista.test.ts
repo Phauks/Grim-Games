@@ -182,11 +182,9 @@ describe('Barista', () => {
 			).toEqual(['not-with-label']);
 		});
 
-		it.fails("takes the previous night's reminder off before the next night", () => {
+		it("takes the previous night's reminder off before the next night", () => {
 			// Wiki: "Each night, remove previous reminders then put the Barista’s SOBER AND HEALTHY
 			// reminder or their ACTS TWICE reminder by any character token."
-			// Waits on the engine (unplanned): the Barista's reminders have no reminderEnds, so last
-			// night's Sober & Healthy stays on its player into the next night.
 			const s = scenario(['barista', 'sage', 'imp', 'poisoner', 'chef'])
 				.reminder('sage', 'barista', 'Sober & Healthy')
 				.newDay()

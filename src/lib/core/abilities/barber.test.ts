@@ -165,10 +165,8 @@ describe('Barber', () => {
 			expect(first).not.toContain(s.seat('nodashii'));
 		});
 
-		it.fails('takes Haircuts Tonight off once the night is over', () => {
+		it('takes Haircuts Tonight off once the night is over', () => {
 			// Wiki: "Put the Demon to sleep. Remove the HAIRCUTS TONIGHT reminder."
-			// Waits on the engine (unplanned): the Barber's rules give Haircuts Tonight no reminderEnds,
-			// so it stays on the Barber after the night.
 			const s = scenario(['barber', 'clockmaker', 'juggler', 'imp', 'poisoner'])
 				.execute('barber')
 				.reminder('barber', 'barber', 'Haircuts Tonight')

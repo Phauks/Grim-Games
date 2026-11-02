@@ -487,6 +487,15 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['M26a', 'M26b']
 	},
 	{
+		// Trevor, 2026-11-02: every How to Run gap closed before beta goes to production. Reminders
+		// that never came off now do: at dawn, at dusk, at dusk tomorrow (the Minstrel) or when
+		// their player dies (the Philosopher), and the Po's and Shabaloth's night text says which
+		// token comes off.
+		title: 'Reminders come off on time: the Innkeeper, Witch, Minstrel, Philosopher and more',
+		area: 'engine',
+		parts: ['M27']
+	},
+	{
 		// Trevor, 2026-10-30: on the roadmap, after a spike and research. L99 research, L100 the
 		// format with the Heretic and Boffin, L107 every jinx shown where it matters, L108 jinxes
 		// that reuse existing rules, L109 the Plague Doctor's and other built characters', L112

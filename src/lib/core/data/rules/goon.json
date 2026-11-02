@@ -21,5 +21,8 @@
 	"becomes": {
 		"token": "Drunk",
 		"into": "carrier-alignment"
+	},
+	"reminderEnds": {
+		"Drunk": "dusk"
 	}
 }

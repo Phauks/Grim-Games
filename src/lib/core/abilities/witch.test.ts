@@ -199,14 +199,13 @@ describe('Witch', () => {
 			expect(curseKills(s, 'dreamer', 'imp')).toEqual([]);
 		});
 
-		it.fails("last night's curse no longer kills on a later day", () => {
+		it("last night's curse no longer kills on a later day", () => {
 			// Wiki: "The next day, if the player marked CURSED makes a nomination, immediately declare that
 			// they die."
-			// Waits on the engine (unplanned): Cursed has no reminderEnds, so a curse left from an earlier
-			// night still prompts a death on every later day.
 			const s = scenario(['witch', 'sage', 'dreamer', 'imp', 'chef', 'monk'])
 				.reminder('sage', 'witch', 'Cursed')
 				.newDay()
+				.dusk()
 				.newDay();
 			expect(curseKills(s, 'sage', 'imp')).toEqual([]);
 		});

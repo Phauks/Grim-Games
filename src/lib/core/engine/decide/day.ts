@@ -36,8 +36,8 @@ import {
 	tallyCount,
 	tallyKills,
 	type DayMark,
-	type ExecutionOutcome,
-	type ReminderEnd
+	type DayTurn,
+	type ExecutionOutcome
 } from '#lib/core/rules/index.ts';
 import type { EngineContext } from '../context.ts';
 import type { GameEvent } from '../events.ts';
@@ -48,6 +48,7 @@ import {
 	checkNomination,
 	STORYTELLER,
 	checkReminder,
+	endingOnDeath,
 	entryOf,
 	entryOfKind,
 	guessesOf,
@@ -275,7 +276,8 @@ export const DAY_DECIDERS: Deciders<
 		return [
 			...before,
 			{ type: 'DayEntryAdded', entry },
-			{ type: 'DeathSet', seatId: seat.seatId, dead: true, cause: command.cause ?? 'execution' }
+			{ type: 'DeathSet', seatId: seat.seatId, dead: true, cause: command.cause ?? 'execution' },
+			...endingOnDeath(game, seat.seatId, ctx)
 		];
 	},
 
@@ -328,7 +330,8 @@ export const DAY_DECIDERS: Deciders<
 		}
 		return [
 			{ type: 'DayEntryAdded', entry },
-			{ type: 'DeathSet', seatId: seat.seatId, dead: true, cause: 'exile' }
+			{ type: 'DeathSet', seatId: seat.seatId, dead: true, cause: 'exile' },
+			...endingOnDeath(game, seat.seatId, ctx)
 		];
 	},
 
@@ -521,7 +524,7 @@ export const DAY_DECIDERS: Deciders<
 };
 
 /** Takes off the reminders that last only until `end` (`reminderEnds`). */
-function endingAt(game: Game, end: ReminderEnd, ctx: EngineContext): GameEvent[] {
+function endingAt(game: Game, end: DayTurn, ctx: EngineContext): GameEvent[] {
 	return remindersEndingAt(game, end, ctx.characters).map((reminderId): GameEvent => ({
 		type: 'ReminderRemoved',
 		reminderId

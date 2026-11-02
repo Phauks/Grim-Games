@@ -396,7 +396,7 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 		case 'ReminderAdded':
 			return updateSeat(game, event.seatId, (seat) => ({
 				...seat,
-				reminders: [...seat.reminders, { ...event.reminder }]
+				reminders: [...seat.reminders, { ...event.reminder, placedDays: game.pastDays.length }]
 			}));
 		case 'ReminderMoved': {
 			const loose = looseReminder(game, event.reminderId);

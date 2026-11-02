@@ -80,6 +80,12 @@ export interface ReminderInstance extends Reminder {
 	 * Angel's Something Bad, Trevor 2026-11-02). None until picked; their own words go in `note`.
 	 */
 	effect?: ReminderEffect;
+	/**
+	 * The days begun when it was placed (`game.pastDays.length`, so 0 is before the first
+	 * dawn). Says whether a dawn has passed since, for a reminder that comes off at dusk
+	 * tomorrow (`reminderEnds`). None on tokens saved before it was recorded.
+	 */
+	placedDays?: number;
 }
 
 /**

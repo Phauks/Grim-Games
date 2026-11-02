@@ -128,9 +128,8 @@ describe('Organ Grinder', () => {
 			expect(reminderTargetMisses(s.game, about, s.seat('empath'), s.characters)).not.toEqual([]);
 		});
 
-		it.fails('takes Drunk off the Organ Grinder at each dusk', () => {
+		it('takes Drunk off the Organ Grinder at each dusk', () => {
 			// Wiki: "Each dusk, remove the DRUNK reminder."
-			// Waits on the engine (unplanned): the Organ Grinder's Drunk has no reminderEnds at dusk.
 			const s = scenario(cast).reminder('organgrinder', 'organgrinder', 'Drunk');
 			const drunkId = s.game.seats[s.seat('organgrinder')].reminders[0]!.reminderId;
 			expect(remindersEndingAt(s.game, 'dusk', s.characters)).toContain(drunkId);

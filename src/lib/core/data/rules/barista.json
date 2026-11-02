@@ -70,5 +70,9 @@
 		"selected-you": {
 			"characters": ["self"]
 		}
+	},
+	"reminderEnds": {
+		"Sober & Healthy": "dusk",
+		"Acts Twice": "dusk"
 	}
 }

@@ -38,6 +38,10 @@
 					{
 						"label": "Alive",
 						"action": "place"
+					},
+					{
+						"label": "Dead",
+						"action": "remove"
 					}
 				]
 			},
