@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 
-// Moving backgrounds (L113): twelve built-in scenes that move behind the board, drawn in CSS
+// Moving backgrounds (L114): twelve built-in scenes that move behind the board, drawn in CSS
 // or by a WebGL shader, each with a still frame for the swatch and for the Moving
 // backgrounds switch turned off.
 

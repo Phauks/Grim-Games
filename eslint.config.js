@@ -407,7 +407,6 @@ export default defineConfig(
 			// 2026-10-31).
 			'src/lib/features/room/RoleCard.svelte',
 			'src/lib/features/setup/RevealDialog.svelte',
-			'src/lib/features/show/ShownCard.svelte',
 			// Icon addresses to keep offline, not drawn.
 			'src/lib/features/offline/keep-offline.ts',
 			...CHARACTER_DISPLAY_TODO
