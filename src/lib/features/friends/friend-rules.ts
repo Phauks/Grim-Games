@@ -6,32 +6,20 @@ import {
 	MAX_FRIENDS,
 	MAX_PENDING,
 	REQUESTS_PER_DAY,
-	type FriendsResponse,
 	type RecentPlayer,
 	type RequestRefusal
 } from './friends-protocol.ts';
 
-/** Games played together before someone on Recent players is suggested (plan F13). */
-const SUGGEST_AFTER_GAMES = 2;
-
 /**
- * Suggestions on Friends (plan F13): people on Recent players this account played at least
- * two games with, who can be found by username, and who are not yet a friend, asked either
- * way or blocked. Recent players already leaves out anyone who can't be found; its `state`
- * is `add` only for someone neither a friend nor asked, and a request from them waits in
- * `incoming`. Someone in `shown` (suggested earlier on this visit) stays once asked, showing
- * Requested, so their row doesn't leave under the finger.
+ * Recent players in the order Friends lists them (Trevor, 2026-11-02: "Why not just sort by
+ * most to least games together?"): most games together first, and among equals the order the
+ * Worker gave, which is most recently played first.
  */
-export function suggestedPlayers(
-	data: Pick<FriendsResponse, 'incoming' | 'blocked' | 'recent'>,
-	shown: (id: string) => boolean = () => false
-): RecentPlayer[] {
-	const taken = new Set([...data.incoming, ...data.blocked].map((other) => other.id));
-	return (data.recent ?? []).filter((other) => {
-		if (taken.has(other.id)) return false;
-		if (other.state === 'requested') return shown(other.id);
-		return other.state === 'add' && other.games >= SUGGEST_AFTER_GAMES;
-	});
+export function byGamesTogether(recent: readonly RecentPlayer[] | undefined): RecentPlayer[] {
+	return (recent ?? [])
+		.map((other, index) => ({ other, index }))
+		.sort((a, b) => b.other.games - a.other.games || a.index - b.index)
+		.map(({ other }) => other);
 }
 
 /** What one account holds about another. */

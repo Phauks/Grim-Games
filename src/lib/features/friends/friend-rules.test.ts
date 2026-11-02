@@ -10,7 +10,7 @@ import {
 import {
 	gamePlayers,
 	sinceUnit,
-	suggestedPlayers,
+	byGamesTogether,
 	NO_RELATION,
 	planReceive,
 	planSend,
@@ -133,45 +133,27 @@ describe('how long ago a friend was last seen', () => {
 	});
 });
 
-describe('suggestions from recent players', () => {
-	const account = (id: string): FriendAccount => ({ id, username: id, icon: null, at: 1 });
-	const recent = (id: string, games: number, state: SeatFriendState = 'add'): RecentPlayer => ({
-		...account(id),
+describe('recent players order', () => {
+	const recent = (id: string, games: number): RecentPlayer => ({
+		id,
+		username: id,
+		icon: null,
+		at: 1,
 		games,
-		state
-	});
-	const none = { incoming: [], blocked: [] };
-
-	it('suggests someone after two games together, not one', () => {
-		const data = { ...none, recent: [recent('ann', 2), recent('bob', 1), recent('cat', 5)] };
-		expect(suggestedPlayers(data).map((other) => other.id)).toEqual(['ann', 'cat']);
+		state: 'add' as SeatFriendState
 	});
 
-	it('leaves out friends and people already asked', () => {
-		const data = { ...none, recent: [recent('ann', 3, 'friends'), recent('bob', 3, 'requested')] };
-		expect(suggestedPlayers(data)).toEqual([]);
+	it('lists the most games together first', () => {
+		const list = [recent('ann', 1), recent('bob', 5), recent('cat', 2)];
+		expect(byGamesTogether(list).map((other) => other.id)).toEqual(['bob', 'cat', 'ann']);
 	});
 
-	it('leaves out someone whose request is waiting, and someone blocked', () => {
-		const data = {
-			incoming: [account('ann')],
-			blocked: [account('bob')],
-			recent: [recent('ann', 2), recent('bob', 2), recent('cat', 2)]
-		};
-		expect(suggestedPlayers(data).map((other) => other.id)).toEqual(['cat']);
+	it('keeps the most recently played first among equal counts', () => {
+		const list = [recent('ann', 2), recent('bob', 3), recent('cat', 2)];
+		expect(byGamesTogether(list).map((other) => other.id)).toEqual(['bob', 'ann', 'cat']);
 	});
 
-	it('keeps someone asked from the suggestions on this visit, not on the next', () => {
-		const data = { ...none, recent: [recent('ann', 2, 'requested')] };
-		expect(suggestedPlayers(data, (id) => id === 'ann').map((other) => other.id)).toEqual(['ann']);
-		expect(suggestedPlayers(data)).toEqual([]);
-	});
-
-	it('leaves out anyone who cannot be added, such as a hidden account', () => {
-		expect(suggestedPlayers({ ...none, recent: [recent('ann', 4, 'unavailable')] })).toEqual([]);
-	});
-
-	it('suggests nobody from a Worker with no Recent players', () => {
-		expect(suggestedPlayers(none)).toEqual([]);
+	it('lists nobody from a Worker with no Recent players', () => {
+		expect(byGamesTogether(undefined)).toEqual([]);
 	});
 });
