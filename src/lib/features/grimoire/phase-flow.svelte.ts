@@ -105,7 +105,7 @@ export class PhaseFlow {
 	 * that execution is already logged, so the rules checked at dusk see it.
 	 */
 	executeAndEndDay(
-		seatId: SeatId | undefined,
+		seatId: SeatId | 'storyteller' | undefined,
 		save: CharacterId | 'dies' | undefined,
 		marks: Partial<Record<DayMark, boolean>>,
 		keepGoing: boolean,
@@ -114,6 +114,12 @@ export class PhaseFlow {
 		const { grimoire, game } = this.#context();
 		for (const [mark, value] of Object.entries(marks) as [DayMark, boolean][])
 			grimoire.run({ type: 'SetDayMark', mark, value });
+		// The Storyteller executed ends the game, so the day stays for End game (`gameEnds`).
+		if (seatId === 'storyteller') {
+			if (!game.today.entries.some((e) => e.kind === 'storyteller-execution'))
+				grimoire.run({ type: 'ExecuteStoryteller' });
+			return;
+		}
 		const logged = game.today.entries.some((e) => e.kind === 'execution' && e.seatId === seatId);
 		const cause = seatId === this.executeChosen ? this.executeCause : undefined;
 		if (seatId && !logged)

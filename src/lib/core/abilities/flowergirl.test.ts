@@ -81,19 +81,23 @@ describe('Flowergirl', () => {
 			});
 		});
 
-		it.fails("Example 3: Traveller exiled; Demon's hand stays down", () => {
+		it("Example 3: Traveller exiled; Demon's hand stays down", () => {
 			// Wiki: "There were no nominations today. A Traveller was exiled, and all players raised their
 			// hand to support the exile. That night, the Flowergirl learns that the Demon did not vote
 			// today. (Exiles are never affected by abilities.)"
-			// Waits on the engine (M9): votes aren't tracked, so a day with an exile and no nomination
-			// doesn't yet answer no on its own; the answer stays unknown until marked.
+			// The exile's hands don't count, so the exile sets no answer. With no nominations recorded
+			// the app can't tell a quiet day from an unrecorded one (Trevor, 2026-10-23), so the
+			// Storyteller's "Demon voted" mark gives the answer.
 			const s = scenario([...CAST, 'beggar'])
 				.do((at) => ({ type: 'SetAlignment', seatId: at.seat('beggar'), alignment: 'good' }))
 				.do((at) => ({ type: 'Exile', seatId: at.seat('beggar') }));
 			expect(nightAnswer(s.game, s.seat('flowergirl'), 'flowergirl', s.characters)).toMatchObject({
-				kind: 'yes-no',
-				value: false
+				kind: 'none'
 			});
+			const marked = s.do(() => ({ type: 'SetDayMark', mark: 'demon-voted', value: false }));
+			expect(
+				nightAnswer(marked.game, marked.seat('flowergirl'), 'flowergirl', marked.characters)
+			).toMatchObject({ kind: 'yes-no', value: false });
 		});
 	});
 });
