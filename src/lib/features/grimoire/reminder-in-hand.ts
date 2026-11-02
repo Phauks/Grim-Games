@@ -105,19 +105,37 @@ export function dropOnTap(
 		event.stopPropagation();
 		const moved = Math.hypot(event.clientX - down.x, event.clientY - down.y);
 		down = undefined;
-		if (moved < SLOP) onTap(event.clientX, event.clientY);
-	};
-	// The click after it would open what is under the finger.
-	const click = (event: MouseEvent) => {
-		if (!ours(event)) event.stopPropagation();
+		if (moved >= SLOP) return;
+		swallowNextClick();
+		onTap(event.clientX, event.clientY);
 	};
 	board.addEventListener('pointerdown', pointerdown, true);
 	board.addEventListener('pointerup', pointerup, true);
-	board.addEventListener('click', click, true);
 	return () => {
 		board.removeEventListener('pointerdown', pointerdown, true);
 		board.removeEventListener('pointerup', pointerup, true);
-		// The last tap's click is still to come.
-		setTimeout(() => board.removeEventListener('click', click, true));
 	};
+}
+
+/**
+ * The click that follows a tap would open what is under the finger, and a placing can open a
+ * question right there (the Imp's "Dead" asks "Mark dead?"): its click landed on the
+ * question's Cancel and closed it at once on phones (M21, Trevor 2026-11-02). So the next
+ * click is swallowed wherever it lands, unless another press starts first.
+ */
+function swallowNextClick(): void {
+	const swallow = (event: MouseEvent) => {
+		event.stopPropagation();
+		event.preventDefault();
+		done();
+	};
+	const done = () => {
+		window.removeEventListener('click', swallow, true);
+		window.removeEventListener('pointerdown', done, true);
+		clearTimeout(timer);
+	};
+	// A click comes straight after its pointerup; one that never comes stops waiting.
+	const timer = setTimeout(done, 1000);
+	window.addEventListener('click', swallow, true);
+	window.addEventListener('pointerdown', done, true);
 }

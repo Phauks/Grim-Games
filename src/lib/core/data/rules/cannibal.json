@@ -43,5 +43,10 @@
 	},
 	"gainedFrom": {
 		"token": "Lunch"
+	},
+	"jinxes": {
+		"princess": {
+			"noKill": "executed-partner"
+		}
 	}
 }

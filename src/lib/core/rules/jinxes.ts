@@ -10,14 +10,107 @@
  * (`data/jinx-rules.ts`), in effect while both are on the script. A jinx with no such block
  * (a homebrew one) is text, except that its wording may still say only one can be in play.
  */
-import type { JinxRules } from '#lib/core/data/jinx-rules.ts';
+import type { GivenInstead, JinxRules, RegistersTo } from '#lib/core/data/jinx-rules.ts';
 import type { JinxIndex } from '#lib/core/data/jinxes.ts';
 import { pairKey } from '#lib/core/data/parse.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterRules } from '#lib/core/data/character-rules.ts';
-import type { CharacterId, Jinx } from '#lib/core/data/types.ts';
+import type { Alignment, CharacterId, CharacterType, Jinx } from '#lib/core/data/types.ts';
+import { isOnScript, scriptCharacterIds } from '#lib/core/model/characters.ts';
+import type { Game } from '#lib/core/model/types.ts';
 
 type RulesLookup = ReadonlyMap<CharacterId, { rules?: CharacterRules }>;
+
+/**
+ * `owner`'s own jinx rules for `partner` (`owner`'s side of the pair only), while the game's
+ * script holds both: the rules that say what `owner` does, or how it is treated, with the
+ * partner (`registersTo`, `impairsPartner`, `noKill`, `noGrimoire`, `grimoireHides`).
+ */
+export function ownJinxRules(
+	game: Pick<Game, 'script'>,
+	owner: CharacterId,
+	partner: CharacterId,
+	characters?: RulesLookup
+): JinxRules | undefined {
+	if (owner === partner) return undefined;
+	const rule = rulesOf(owner, characters)?.jinxes?.[partner];
+	if (!rule) return undefined;
+	return isOnScript(game.script, owner) && isOnScript(game.script, partner) ? rule : undefined;
+}
+
+/**
+ * Every character on the script whose own jinx rules for `partner` pass `test`, with them:
+ * those whose jinx changes something about `partner` (the Spy and the Widow poison the
+ * Damsel, https://wiki.bloodontheclocktower.com/Damsel#Related_Jinxes).
+ */
+export function jinxedWith(
+	game: Pick<Game, 'script'>,
+	partner: CharacterId,
+	test: (rule: JinxRules) => boolean,
+	characters?: RulesLookup
+): { characterId: CharacterId; rule: JinxRules }[] {
+	return scriptCharacterIds(game.script).flatMap((characterId) => {
+		const rule = ownJinxRules(game, characterId, partner, characters);
+		return rule && test(rule) ? [{ characterId, rule }] : [];
+	});
+}
+
+/**
+ * `owner`'s own jinx rules in effect on the game's script, by partner, those passing `test`
+ * (the Spy's with the Poppy Grower and the Magician change what the Spy sees,
+ * https://wiki.bloodontheclocktower.com/Spy#Related_Jinxes).
+ */
+export function ownJinxes(
+	game: Pick<Game, 'script'>,
+	owner: CharacterId,
+	test: (rule: JinxRules) => boolean,
+	characters?: RulesLookup
+): { partner: CharacterId; rule: JinxRules }[] {
+	return Object.keys(rulesOf(owner, characters)?.jinxes ?? {}).flatMap((partner) => {
+		const rule = ownJinxRules(game, owner, partner, characters);
+		return rule && test(rule) ? [{ partner, rule }] : [];
+	});
+}
+
+/**
+ * How a player registers to a jinxed partner (`registersTo`), from how they register to
+ * everyone else (their true alignment and type first): the jinx's alignments and types are
+ * added, or with `always` replace the usual ones (the Spy always registers as evil to the
+ * Ogre, https://wiki.bloodontheclocktower.com/Ogre#Related_Jinxes).
+ */
+export function registeredTo(
+	base: { alignments: readonly Alignment[]; types: readonly CharacterType[] },
+	rule: RegistersTo
+): { alignments: Alignment[]; types: CharacterType[] } {
+	const merge = <T>(usual: readonly T[], jinx: readonly T[] | undefined): T[] => {
+		const all = !jinx ? usual : rule.always ? jinx : [...usual, ...jinx];
+		return all.filter((v, i) => all.indexOf(v) === i);
+	};
+	return {
+		alignments: merge(base.alignments, rule.alignments),
+		types: merge(base.types, rule.types)
+	};
+}
+
+/**
+ * The partners `changer`'s `changesCharacter` may no longer create, now that the day a jinx
+ * names is over (`notCreatedAfterDay`: the Pit-Hag's and the Hatter's Leviathan, after day 5,
+ * https://wiki.bloodontheclocktower.com/Leviathan#Related_Jinxes). A change is made at night,
+ * after the latest day, so day `n` is over once the game has reached it.
+ */
+export function createdTooLate(
+	game: Pick<Game, 'script' | 'pastDays'>,
+	changer: CharacterId,
+	characters?: RulesLookup
+): CharacterId[] {
+	const day = game.pastDays.length;
+	return ownJinxes(
+		game,
+		changer,
+		(r) => r.notCreatedAfterDay !== undefined && day >= r.notCreatedAfterDay,
+		characters
+	).map((j) => j.partner);
+}
 
 export interface ScriptJinx extends Jinx {
 	/** `official` from TPI's jinxes.json; `script` from a homebrew character's `jinxes`. */
@@ -66,6 +159,41 @@ export function barredAbilities(
 ): CharacterId[] {
 	return script.filter(
 		(id) => id !== giver && jinxRulesBetween(giver, id, characters)?.notGiven === true
+	);
+}
+
+/**
+ * What happens instead when `giver`'s `givesAbility` would give the Storyteller `ability`, by
+ * their jinx on this script (`givenInstead`: the Plague Doctor's Spy goes to a Minion, its
+ * Boomdandy makes a player the Boomdandy,
+ * https://wiki.bloodontheclocktower.com/Plague_Doctor#Related_Jinxes). Undefined when the
+ * Storyteller gains it as usual.
+ */
+export function givenInstead(
+	giver: CharacterId,
+	ability: CharacterId,
+	script: readonly CharacterId[],
+	characters?: RulesLookup
+): GivenInstead | undefined {
+	if (giver === ability || !script.includes(giver) || !script.includes(ability)) return undefined;
+	return jinxRulesBetween(giver, ability, characters)?.givenInstead;
+}
+
+/**
+ * The characters on the script whose jinx with `id` says `key`: those `id` may give or
+ * create while in play (`spareToken`: the Boffin's and Pit-Hag's Village Idiot), or whose
+ * player the Storyteller picks when `id` creates them (`storytellerPicksPlayer`: the
+ * Pit-Hag's Damsel).
+ */
+export function jinxedPartners(
+	id: CharacterId,
+	key: 'spareToken' | 'storytellerPicksPlayer' | 'noTurnGood',
+	script: readonly CharacterId[],
+	characters?: RulesLookup
+): CharacterId[] {
+	if (!script.includes(id)) return [];
+	return script.filter(
+		(other) => other !== id && jinxRulesBetween(id, other, characters)?.[key] === true
 	);
 }
 

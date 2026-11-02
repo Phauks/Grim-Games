@@ -22,11 +22,11 @@ export interface TypeGroup {
 }
 
 /** The script's characters by type, in the game's type order, script order within a type. */
-export function groupByType(characters: readonly Character[]): TypeGroup[] {
+export function groupByType(characters: readonly Character[], keep?: CharacterType): TypeGroup[] {
 	return CHARACTER_TYPES.map((type) => ({
 		type,
 		characters: characters.filter((c) => c.type === type)
-	})).filter((g) => g.characters.length > 0);
+	})).filter((g) => g.characters.length > 0 || g.type === keep);
 }
 
 /**
