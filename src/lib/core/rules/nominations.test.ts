@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { dispatch, type Command } from '#lib/core/engine/index.ts';
 import { castGame } from '#lib/core/model/fixtures.test-support.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 import {
 	characterNominationPrompts,
 	nomineeChooses,
@@ -71,6 +72,24 @@ describe('mayNominate', () => {
 		expect(mayNominate(byDemon.session.game, byDemon.seats[0], byDemon.ctx.characters)).toBe(true);
 		const byImp = castGame(['banshee', 'chef', 'imp'], die(0, 'imp'));
 		expect(mayNominate(byImp.session.game, byImp.seats[0], byImp.ctx.characters)).toBe(true);
+	});
+
+	// Banshee: poisoned when the Demon kills them, they gain nothing, even once the poison ends.
+	it('does not let a Banshee poisoned as the Demon killed them nominate', () => {
+		const s = scenario(['banshee', 'poisoner', 'imp', 'chef', 'empath'])
+			.poisoned('banshee')
+			.dies('banshee', 'imp');
+		expect(mayNominate(s.game, s.seat('banshee'), s.characters)).toBe(false);
+		const cured = s.do((at) => ({
+			type: 'RemoveReminder',
+			reminderId: at.game.seats[at.seat('banshee')].reminders[0].reminderId
+		}));
+		expect(mayNominate(cured.game, cured.seat('banshee'), cured.characters)).toBe(false);
+		// Brought back to life and killed again while well, the power is gained.
+		const again = cured
+			.do((at) => ({ type: 'SetDead', seatId: at.seat('banshee'), dead: false }))
+			.dies('banshee', 'imp');
+		expect(mayNominate(again.game, again.seat('banshee'), again.characters)).toBe(true);
 	});
 
 	it('does not let an executed Banshee nominate', () => {
