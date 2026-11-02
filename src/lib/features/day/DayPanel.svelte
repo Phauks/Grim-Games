@@ -142,8 +142,7 @@
 		});
 	}
 
-	// ── A day ability any living player may use once (`dayUse.anyone`: the Doomsayer) ──
-	/** The rule character a reminder row is about, when any living player may use its ability. */
+	/** A rule character's row whose day ability any living player may use (the Doomsayer). */
 	function anyoneOf(reminder: DayReminder): CharacterId | undefined {
 		const id = reminder.characterId;
 		const head = reminder.segments[0];
