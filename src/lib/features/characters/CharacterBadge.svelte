@@ -94,7 +94,7 @@
 				{@attach iconFallback(fallback)}
 			/>{/if}</span
 	>
-	<span class="name">{label}</span>
+	<span class="name"><span class="text">{label}</span></span>
 	{#if playerName}<span class="player"><PlayerBadge name={playerName} /></span>{/if}
 {/snippet}
 
@@ -219,10 +219,25 @@
 	 */
 	.name,
 	.player {
+		display: inline-flex;
+		align-items: center;
+		min-width: 0;
+	}
+	/*
+	 * Centred on the letters, not the font's line box (Trevor, 2026-11-02: "better center
+	 * names"): trimmed to cap height and baseline, which every font in Settings shares, with
+	 * the same room added back above and below so the box stays centred and descenders are
+	 * not clipped. A browser without text-box keeps the line box, as before.
+	 */
+	.text {
+		display: block;
 		min-width: 0;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
+		text-box: trim-both cap alphabetic;
+		padding-block: 0.3em;
+		margin-block: -0.3em;
 	}
 	.name {
 		font-family: var(--font-character);
@@ -243,17 +258,12 @@
 		align-self: center;
 	}
 	.paired .name {
-		display: inline-flex;
-		align-items: center;
 		padding: 0 0.4em 0 0.25em;
 	}
 	.player {
-		display: inline-flex;
 		margin: 0.12em 0;
 	}
 	.player :global(.player-badge) {
-		display: inline-flex;
-		align-items: center;
 		height: auto;
 		border-radius: 0.2em var(--radius-full) var(--radius-full) 0.2em;
 		box-shadow: none;

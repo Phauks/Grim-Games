@@ -16,17 +16,17 @@
 </script>
 
 <!-- eslint-disable-next-line grim/names-as-badges -- this is the badge -->
-<span class="player-badge" data-testid="player-badge">{name}</span>
+<span class="player-badge" data-testid="player-badge"><span class="text">{name}</span></span>
 
 <style>
 	.player-badge {
-		display: inline-block;
+		display: inline-flex;
+		align-items: center;
 		max-width: 100%;
 		min-width: 0;
 		height: calc(1.3em * var(--inline-name-badge, 1));
 		padding: 0 calc(0.5em * var(--inline-name-badge, 1));
 		box-sizing: border-box;
-		overflow: hidden;
 		border-radius: var(--radius-full);
 		/* The seat pill's colours and edge (PlayerNameMark's rect). */
 		background: var(--surface-raised);
@@ -35,10 +35,23 @@
 		font-family: var(--font-player);
 		font-size: 0.92em;
 		font-weight: 600;
-		line-height: calc(1.3em * var(--inline-name-badge, 1));
-		text-overflow: ellipsis;
-		white-space: nowrap;
+		line-height: 1;
 		/* Centred on the text's x-height, like CharacterBadge (grim-games-ui-rules). */
 		vertical-align: middle;
+	}
+	/*
+	 * Centred on the letters, not the font's line box (Trevor, 2026-11-02), as CharacterBadge
+	 * does: trimmed to cap height and baseline, with the same room added back above and below
+	 * so descenders are not clipped. A long name ends in "…" inside the pill.
+	 */
+	.text {
+		display: block;
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		text-box: trim-both cap alphabetic;
+		padding-block: 0.3em;
+		margin-block: -0.3em;
 	}
 </style>
