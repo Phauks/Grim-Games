@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { addNote, leaveNote, newNoteRow, noteSummaries, noteTitle } from './notes.ts';
 import { nameStoryteller, toBoard } from './new-game.ts';
 
 // Trevor's playtest notes (2026-10-26): "Hide grim guesses, eyeball feature like we use in
@@ -56,10 +57,7 @@ test('a player hides their guesses and notes on the Grim tab, and has no cover',
 	await seats.nth(1).tap();
 	const sheet = phone.getByRole('dialog', { name: 'Seat 2 · Seat 2' });
 	await sheet.getByRole('button', { name: 'Empath', exact: true }).tap();
-	await sheet.getByTestId('seat-note').getByRole('button', { name: 'New note' }).tap();
-	const editor = phone.getByRole('dialog', { name: 'Note', exact: true });
-	await editor.getByRole('textbox', { name: 'Text' }).fill('Claims Empath');
-	await editor.getByRole('button', { name: 'Close' }).tap();
+	await addNote(phone, sheet.getByTestId('seat-note'), { text: 'Claims Empath' });
 	await phone.keyboard.press('Escape');
 	await expect(sheet).toBeHidden();
 	await expect(seats.nth(1)).toHaveAttribute(
@@ -134,16 +132,15 @@ test('the Storyteller covers the screen from the board, beside ☰, and from the
 	// A player's note, kept apart from the Storyteller's and gone when the view closes.
 	await view.getByRole('tab', { name: 'Notes' }).tap();
 	await view.getByTestId('new-note').first().tap();
-	const note = page.getByRole('dialog', { name: 'Note' });
-	await note.getByRole('textbox', { name: 'Title' }).fill('Sam is lying');
-	await note.getByRole('button', { name: 'Close' }).tap();
-	await expect(view.locator('[data-note]', { hasText: 'Sam is lying' })).toHaveCount(1);
+	await noteTitle(newNoteRow(view)).fill('Sam is lying');
+	await leaveNote(page);
+	await expect.poll(noteSummaries(view)).toContain('Sam is lying');
 	await viewDialog.getByRole('button', { name: 'Close' }).tap();
 	await expect(view).toBeHidden();
 	await cover.getByRole('button', { name: 'Player view' }).tap();
 	await view.getByRole('tab', { name: 'Notes' }).tap();
 	await expect(view.getByTestId('new-note').first()).toBeVisible();
-	await expect(view.locator('[data-note]', { hasText: 'Sam is lying' })).toHaveCount(0);
+	await expect.poll(noteSummaries(view)).not.toContain('Sam is lying');
 	await viewDialog.getByRole('button', { name: 'Close' }).tap();
 	await expect(view).toBeHidden();
 	await expect(cover).toBeVisible();

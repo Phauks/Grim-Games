@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { addNote, expectNotes, noteRows, rewriteNote } from './notes.ts';
 import { openProfile, setPlayerName } from './player-name.ts';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { renderSVG } from 'uqr';
@@ -784,11 +785,8 @@ test("a new game in the same room starts the phone's notes and guesses afresh", 
 	const myNotes = phone
 		.locator('section.collapsible')
 		.filter({ has: phone.getByRole('heading', { name: 'My notes' }) });
-	await myNotes.getByRole('button', { name: 'New note' }).tap();
-	const editor = phone.getByRole('dialog', { name: 'Note', exact: true });
-	await editor.getByRole('textbox', { name: 'Title' }).fill('Game one');
-	await phone.keyboard.press('Escape');
-	await expect(phone.locator('[data-note]').filter({ hasText: 'Game one' })).toHaveCount(1);
+	await addNote(phone, myNotes, { title: 'Game one' });
+	await expectNotes(myNotes, ['Game one']);
 	await phone.getByRole('tab', { name: 'Grim' }).tap();
 	await phone.getByTestId('grim-seat').nth(1).tap();
 	await phone
@@ -2394,33 +2392,20 @@ test('a player writes notes on a seat from the Grim tab, and the Notes tab lists
 	await seats.nth(2).tap();
 	const sheet = phone.getByRole('dialog', { name: 'Seat 3 · Seat 3' });
 	// Several titled notes per player, as the game's notes (Trevor, 2026-10-26), each its own
-	// card on the seat's sheet (Trevor, 2026-10-31).
+	// row on the seat's sheet (Trevor, 2026-10-31), written where it sits (Trevor, 2026-11-02).
 	const notes = sheet.getByTestId('seat-note');
-	const cards = notes.locator('[data-note]');
-	const editor = phone.getByRole('dialog', { name: 'Note', exact: true });
+	const cards = noteRows(notes);
 	await expect(cards).toHaveCount(0);
-	await notes.getByTestId('new-note').tap();
-	await editor.getByRole('textbox', { name: 'Title' }).fill('Claim');
-	await editor.getByRole('textbox', { name: 'Text' }).fill('Claims Chef: 1');
-	// Kept as it closes, with no Save.
-	await editor.getByRole('button', { name: 'Close' }).tap();
-	await expect(cards).toHaveText(/^\s*Claim\s*Claims Chef: 1\s*$/);
-	await notes.getByTestId('new-note').tap();
-	await editor.getByRole('textbox', { name: 'Text' }).fill('Quiet all day');
-	await editor.getByRole('button', { name: 'Close' }).tap();
-	await expect(cards).toHaveText([
-		/^\s*Claim\s*Claims Chef: 1\s*$/,
-		/^\s*Untitled\s*Quiet all day\s*$/
-	]);
+	// Kept as focus leaves it, with no Save.
+	await addNote(phone, notes, { title: 'Claim', text: 'Claims Chef: 1' });
+	await expectNotes(notes, ['Claim: Claims Chef: 1']);
+	await addNote(phone, notes, { text: 'Quiet all day' });
+	await expectNotes(notes, ['Claim: Claims Chef: 1', 'Untitled: Quiet all day']);
 	// A hidden note keeps its title and hides its text, as everywhere else.
-	await cards.first().tap();
-	await editor.getByRole('button', { name: 'Hide contents' }).tap();
-	await phone.keyboard.press('Escape');
-	await expect(cards.first()).toHaveText(/^\s*Claim\s*Hidden\s*$/);
-	await cards.first().tap();
-	await editor.getByRole('button', { name: 'Hide contents' }).tap();
-	await phone.keyboard.press('Escape');
-	await expect(cards.first()).toHaveText(/^\s*Claim\s*Claims Chef: 1\s*$/);
+	await cards.first().getByRole('button', { name: 'Hide contents' }).tap();
+	await expectNotes(notes, ['Claim: Hidden', 'Untitled: Quiet all day']);
+	await cards.first().getByRole('button', { name: 'Hide contents' }).tap();
+	await expectNotes(notes, ['Claim: Claims Chef: 1', 'Untitled: Quiet all day']);
 	// Guessed as two characters, both listed after the name on the Notes tab.
 	await sheet.getByRole('button', { name: 'Empath', exact: true }).tap();
 	await sheet.getByRole('button', { name: 'Spy', exact: true }).tap();
@@ -2434,35 +2419,31 @@ test('a player writes notes on a seat from the Grim tab, and the Notes tab lists
 	// 2026-10-25: the same icon and the same behaviour).
 	await seats.nth(2).getByTestId('note-mark').tap();
 	const notesDialog = phone.getByRole('dialog', { name: 'Notes: Seat 3' });
-	await expect(notesDialog.locator('[data-note]')).toHaveText([/Claim/, /Quiet all day/]);
+	await expectNotes(notesDialog, ['Claim: Claims Chef: 1', 'Untitled: Quiet all day']);
 	await expect(sheet).toHaveCount(0);
 	await notesDialog.getByRole('button', { name: 'Close' }).tap();
 
-	// The Notes tab lists every seat with its notes, and opens the same editor.
+	// The Notes tab lists every seat with its notes, written the same way.
 	await phone.getByRole('tab', { name: 'Notes' }).tap();
 	await expect(phone.getByRole('heading', { name: 'Players' })).toBeVisible();
 	const row = phone.locator('[data-seat-note]').nth(2);
-	await expect(row.locator('[data-note]')).toHaveText([/Claim/, /Quiet all day/]);
+	await expectNotes(row, ['Claim: Claims Chef: 1', 'Untitled: Quiet all day']);
 	// The player's name leads, as the one thing about a seat that never changes, then every
 	// character the seat is guessed as, all alike (Trevor, 2026-10-27).
 	await expect(row.getByTestId('player-badge')).toHaveText('Seat 3');
 	await expect(row.getByTestId('note-guesses').locator('.badge')).toHaveText(['Spy', 'Empath']);
 	await expect(phone.locator('[data-seat-note]').first().locator('[data-note]')).toHaveCount(0);
-	await row.locator('[data-note]').first().tap();
-	await editor.getByRole('textbox', { name: 'Text' }).fill('Claims Chef: 0');
-	await editor.getByRole('button', { name: 'Close' }).tap();
-	await expect(row.locator('[data-note]').first()).toContainText('Claims Chef: 0');
-	await row.getByTestId('new-note').tap();
-	await editor.getByRole('textbox', { name: 'Text' }).fill('Voted for Ana');
-	await editor.getByRole('button', { name: 'Close' }).tap();
-	await expect(row.locator('[data-note]')).toHaveCount(3);
+	await rewriteNote(phone, noteRows(row).first(), 'Claims Chef: 0');
+	await expectNotes(row, ['Claim: Claims Chef: 0', 'Untitled: Quiet all day']);
+	await addNote(phone, row, { text: 'Voted for Ana' });
+	await expect(noteRows(row)).toHaveCount(3);
 	// On this phone only, and kept after a reload.
 	await phone.reload();
 	await phone.getByRole('tab', { name: 'Notes' }).tap();
-	await expect(phone.locator('[data-seat-note]').nth(2).locator('[data-note]')).toHaveText([
-		/Claims Chef: 0/,
-		/Quiet all day/,
-		/Voted for Ana/
+	await expectNotes(phone.locator('[data-seat-note]').nth(2), [
+		'Claim: Claims Chef: 0',
+		'Untitled: Quiet all day',
+		'Untitled: Voted for Ana'
 	]);
 	// Closed, the header counts the notes written on players, not the seats (Trevor, 2026-10-27).
 	const players = phone.getByRole('button', { name: 'Players' });
