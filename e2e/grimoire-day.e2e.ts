@@ -1300,7 +1300,7 @@ async function chooseOffScript(page: Page, number: number, name: string) {
 	await closeSeat(page);
 }
 
-test('Execution asks whether only evil voted while the Legion works; yes fails it (M9d)', async ({
+test('Execution asks whether only evil voted while the Legion works; yes fails it and the day goes on (M9d)', async ({
 	page
 }) => {
 	// https://wiki.bloodontheclocktower.com/Legion: an execution fails when only evil players
@@ -1323,8 +1323,10 @@ test('Execution asks whether only evil voted while the Legion works; yes fails i
 	await ask.getByTestId('outcome-fails').locator('[data-part="control"]').tap();
 	await expect(onlyEvil).toBeChecked();
 	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
-	await expect(page.getByTestId('night-strip')).toBeVisible();
-	// The execution failed: Seat 1 lives.
+	// The execution failed: Seat 1 lives, and the day stays open for another nomination.
+	await expect(ask).toBeHidden();
+	await expect(day).toBeVisible();
+	await expect(page.getByTestId('night-strip')).toHaveCount(0);
 	await expect(boardSeat(page, 'Seat 1')).not.toHaveAccessibleName(/dead/);
 });
 
