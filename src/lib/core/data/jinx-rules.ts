@@ -78,7 +78,14 @@
  *   ability (`gainsAbilityOf`): `partner-setup`, the partner's own setup change applies as if
  *   it were in play (the Alchemist-Summoner, [No Demon]); `partner-in-play`, the real partner
  *   is in play as well (the Alchemist-Marionette has no ability and the Marionette is in
- *   play, https://wiki.bloodontheclocktower.com/Alchemist#Related_Jinxes).
+ *   play, https://wiki.bloodontheclocktower.com/Alchemist#Related_Jinxes);
+ * - `learnsGained`: the night after this character's `gainedFrom` gives its player the
+ *   partner's ability (the partner's player died by execution today), they learn something
+ *   they otherwise wouldn't: `ability`, that they have the partner's ability (the Cannibal's
+ *   Butler and Zealot); `answer`, what the partner's own player would have learned tonight
+ *   (the Cannibal's Juggler, https://wiki.bloodontheclocktower.com/Cannibal#Related_Jinxes);
+ * - `trueInfo`: this character's `falseInfo` doesn't make the partner's information false
+ *   (the Vortox's Banshee, https://wiki.bloodontheclocktower.com/Vortox#Related_Jinxes);
  * - `notDeclared`: the Storyteller doesn't declare that this character is in play, so its
  *   after-Dawn step, its line in the day's Announcements and its `announcement` day
  *   reminders are left out (the Vizier with the Alsaahir and the Investigator,
@@ -96,8 +103,8 @@
  *
  * Either character's file may hold the block. `registersTo`, `impairsPartner`, `noKill`,
  * `noGrimoire`, `grimoireHides`, `endsGame`, `storytellerVote`, `deadAtLeast`,
- * `notCreatedAfterDay`, `nightChoice`, `withPartnerAbility`, `notDeclared`,
- * `keepsProtection`, `wakesWithPartner` and `noExecuteNow` say what
+ * `notCreatedAfterDay`, `nightChoice`, `withPartnerAbility`, `learnsGained`, `trueInfo`,
+ * `notDeclared`, `keepsProtection`, `wakesWithPartner` and `noExecuteNow` say what
  * this character does, or how it is treated, with the partner, so they are read from this
  * character's side only (`ownJinxRules`); the others are read from both sides
  * (`rules/jinxes.ts`). By convention a block goes in the file of the
@@ -201,7 +208,12 @@ export interface JinxRules {
 	keepsProtection?: true;
 	wakesWithPartner?: true;
 	noExecuteNow?: NoExecuteNow;
+	learnsGained?: LearnsGained;
+	trueInfo?: true;
 }
+
+export const LEARNS_GAINED = ['ability', 'answer'] as const;
+export type LearnsGained = (typeof LEARNS_GAINED)[number];
 
 export const WITH_PARTNER_ABILITY = ['partner-setup', 'partner-in-play'] as const;
 export type WithPartnerAbility = (typeof WITH_PARTNER_ABILITY)[number];
@@ -235,7 +247,9 @@ export const JINX_RULE_KEYS = [
 	'notDeclared',
 	'keepsProtection',
 	'wakesWithPartner',
-	'noExecuteNow'
+	'noExecuteNow',
+	'learnsGained',
+	'trueInfo'
 ] as const;
 
 /** A non-empty list of known values, or undefined (with an issue) when it is not one. */
@@ -420,6 +434,9 @@ export function readJinxRules(
 			const no = readNoExecuteNow(entry.noExecuteNow, `${at}.noExecuteNow`, issues);
 			if (no) rules.noExecuteNow = no;
 		}
+		const learns = readEnum(entry, 'learnsGained', LEARNS_GAINED, at, issues, false);
+		if (learns) rules.learnsGained = learns;
+		if (readBoolean(entry, 'trueInfo', at, issues)) rules.trueInfo = true;
 		if (Object.keys(rules).length === 0) {
 			issues.add(at, 'a jinx entry needs at least one rule');
 			continue;
