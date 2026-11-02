@@ -20,6 +20,7 @@ import {
 	nightAnswer,
 	reliability
 } from '#lib/core/rules/night-info.ts';
+import { reminderTargets } from '#lib/core/rules/reminder-targets.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
@@ -165,6 +166,45 @@ describe('Mathematician', () => {
 			const options = answerOptions(s.game, count, s.characters);
 			expect(options).toContainEqual({ reason: 'invalid', value: { kind: 'number', value: 6 } });
 			expect(options).toContainEqual({ reason: 'vortox', value: { kind: 'number', value: 4 } });
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Mathematician#How_to_Run)', () => {
+		const cast = ['mathematician', 'oracle', 'chef', 'empath', 'witch', 'nodashii'];
+
+		it('Abnormal may go on any player whose ability misfired', () => {
+			// Wiki: "Each time a character's ability works abnormally due to another character's ability,
+			// mark them with an ABNORMAL reminder."
+			const s = scenario(cast).dies('chef');
+			const abnormal = { characterId: 'mathematician', label: 'Abnormal' };
+			expect(reminderTargets(s.game, abnormal, s.characters).flatMap((t) => t.misses)).toEqual([]);
+		});
+
+		it('learns the number of Abnormal reminders, on the first night too', () => {
+			// Wiki: "Each night, wake the Mathematician. Show fingers (0, 1, 2, etc.) equaling the number
+			// of characters with ABNORMAL reminders."
+			const s = scenario(cast)
+				.reminder('oracle', 'mathematician', 'Abnormal')
+				.reminder('empath', 'mathematician', 'Abnormal');
+			for (const night of ['first', 'other'] as const)
+				expect(
+					nightAnswer(
+						s.game,
+						s.seat('mathematician'),
+						'mathematician',
+						s.characters,
+						undefined,
+						night
+					)
+				).toMatchObject({ kind: 'number', value: 2 });
+		});
+
+		it.fails('takes every Abnormal reminder off after the Mathematician learns', () => {
+			// Wiki: "Put the Mathematician to sleep. Remove all ABNORMAL reminders."
+			// Waits on the engine (unplanned): Abnormal has no reminderEnds, so the night's Abnormal
+			// reminders stay on the board into the next day.
+			const s = scenario(cast).reminder('oracle', 'mathematician', 'Abnormal').newDay();
+			expect(s.game.seats[s.seat('oracle')].reminders).toEqual([]);
 		});
 	});
 });

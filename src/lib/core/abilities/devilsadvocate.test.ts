@@ -17,6 +17,8 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import { gameEnds, livesWhileDead } from '#lib/core/rules/game-end.ts';
 import { scenario, type Scenario, type SeatRef } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { nightTextPlain, nightTextSegments, placeholdersFor } from '#lib/core/rules/night-text.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 
 describe("Devil's Advocate", () => {
 	const character = committedCharacter('devilsadvocate');
@@ -116,6 +118,41 @@ describe("Devil's Advocate", () => {
 			expect(executions(moonchild)).toMatchObject([
 				{ seatId: moonchild.seat('moonchild'), died: false }
 			]);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Devil%27s_Advocate#How_to_Run)', () => {
+		const cast = ['devilsadvocate', 'chef', 'empath', 'monk', 'imp'];
+
+		it('marks the chosen player Survives Execution on the first night and every other night', () => {
+			// Wiki: "Each night, wake the Devil’s Advocate. They point at any player. Put the Devil’s
+			// Advocate to sleep. Mark the chosen player with the SURVIVES EXECUTION reminder."
+			const s = scenario(cast);
+			const mark = { characterId: 'devilsadvocate', label: 'Survives Execution' };
+			for (const seat of ['devilsadvocate', 'chef', 'imp'] as const)
+				expect(reminderTargetMisses(s.game, mark, s.seat(seat), s.characters), seat).toEqual([]);
+			for (const night of ['first', 'other'] as const) {
+				const source =
+					night === 'first' ? character.firstNightReminder : character.otherNightReminder;
+				const placeholders = placeholdersFor(character, night);
+				const text = nightTextPlain(
+					nightTextSegments(source!, character, { ...(placeholders ? { placeholders } : {}) })
+				);
+				expect(text, night).toContain('[+Survives Execution]');
+			}
+		});
+
+		it('keeps an executed marked player alive, and only the marked player', () => {
+			// Wiki: "If a player marked SURVIVES EXECUTION is executed, declare that the player was
+			// executed but remains alive. (Do not say why.)"
+			const s = scenario(cast).reminder('chef', 'devilsadvocate', 'Survives Execution').newDay();
+			const marked = s.execute('chef');
+			expect(marked.game.seats[marked.seat('chef')].dead).toBe(false);
+			expect(marked.game.today.entries.filter((e) => e.kind === 'execution')).toMatchObject([
+				{ seatId: marked.seat('chef'), died: false, savedBy: { characterId: 'devilsadvocate' } }
+			]);
+			const other = s.execute('empath');
+			expect(other.game.seats[other.seat('empath')].dead).toBe(true);
 		});
 	});
 });

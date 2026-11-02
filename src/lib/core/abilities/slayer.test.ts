@@ -79,8 +79,9 @@ describe('Slayer', () => {
 
 	describe('How to Run (https://wiki.bloodontheclocktower.com/Slayer#How_to_Run)', () => {
 		it('kills only an alive Demon', () => {
-			// How to Run: the chosen player dies only if they are the Demon and alive; otherwise
-			// nothing happens.
+			// Wiki: "If the chosen player is an alive Demon, declare that the chosen player dies—put a
+			// shroud on their character token in the Grimoire. If the chosen player is not an alive
+			// Demon, say "Nothing happens.""
 			const s = scenario(['slayer', 'imp', 'poisoner', 'chef', 'monk']);
 			expect(dayUseDeath(s.game, 'slayer', s.seat('imp'), s.characters)).toBe('dies');
 			expect(dayUseDeath(s.game, 'slayer', s.seat('chef'), s.characters)).toBe('no');
@@ -89,7 +90,8 @@ describe('Slayer', () => {
 		});
 
 		it('offers the Slayer as the cause of death only for a player who may be the Demon', () => {
-			// How to Run: the Demon the Slayer shot dies, and gets a shroud.
+			// Wiki: "If the chosen player is an alive Demon, declare that the chosen player dies—put a
+			// shroud on their character token in the Grimoire."
 			const s = scenario(['slayer', 'imp', 'poisoner', 'chef', 'monk']);
 			const causes = (seat: 'imp' | 'chef') =>
 				validDeathCauses(s.game, s.seat(seat), s.characters).map((c) => c.cause);
@@ -98,7 +100,8 @@ describe('Slayer', () => {
 		});
 
 		it('places No Ability on the Slayer whether or not the shot kills', () => {
-			// How to Run: hit or miss, the Slayer's ability is spent and they get No Ability.
+			// Wiki: "Either way, the Slayer loses their ability—put the Slayer's NO ABILITY reminder
+			// token by the Slayer token."
 			const s = scenario(['slayer', 'imp', 'poisoner', 'chef', 'monk']).do((at) => ({
 				type: 'UseAbility',
 				seatId: at.seat('slayer'),
@@ -119,7 +122,10 @@ describe('Slayer', () => {
 		});
 
 		it('logs a bluffed shot with a warning, and it kills nobody', () => {
-			// How to Run: treat a player bluffing as the Slayer as if they were, then nothing happens.
+			// Wiki: "If a player is bluffing as the Slayer and declares they wish to use their ability,
+			// act as if they were indeed the Slayer—allow time for discussion, let them make the
+			// decision, and act like you're fiddling with tokens in your Grimoire, then say "Nothing
+			// happens.""
 			const s = scenario(['imp', 'scarletwoman', 'chef', 'monk', 'empath']);
 			expect(
 				warned(s.session, s.ctx, {

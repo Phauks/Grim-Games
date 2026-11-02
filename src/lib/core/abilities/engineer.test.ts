@@ -16,6 +16,9 @@ import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { alignmentOf, typeOf } from '#lib/core/model/selectors.ts';
 import { changeableSeats, characterChanger } from '#lib/core/rules/becomes.ts';
+import { stepInfoCards } from '#lib/core/rules/info-token-characters.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { wakeConditionMet } from '#lib/core/rules/wakes-when.ts';
 import { type Scenario, scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
@@ -121,6 +124,47 @@ describe('Engineer', () => {
 			expect(after.game.seats[after.seat('spy')].characterId).toBe('spy');
 			expect(after.game.seats[after.seat('assassin')].characterId).toBe('assassin');
 			expect(alignmentOf(after.game, after.seat('witch'))).toBe('evil');
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Engineer#How_to_Run)', () => {
+		const cast = ['engineer', 'chef', 'imp', 'poisoner', 'monk'];
+
+		it('keeps its ability after a night it shook its head', () => {
+			// Wiki: "If they shake their head no, nothing happens. Put the Engineer to sleep."
+			const s = scenario(cast).newDay().newDay();
+			expect(characterChanger(s.game, 'engineer', s.characters)).toBe(s.seat('engineer'));
+		});
+
+		it('shows each changed player You Are with their new character', () => {
+			// Wiki: "Wake each evil player that changed character, show the YOU ARE info token, then
+			// their new character token, then put them to sleep."
+			const s = scenario(cast);
+			const engineer = s.characters.get('engineer')!;
+			const cards = stepInfoCards(engineer, engineer.otherNightReminder, { changed: ['lleech'] });
+			expect(cards.find((c) => c.token.id === 'you-are')?.filled?.characterIds).toEqual(['lleech']);
+		});
+
+		it('the No Ability reminder goes on the Engineer only', () => {
+			// Wiki: "The Engineer loses their ability—mark them with the NO ABILITY reminder and remove
+			// their night token from the night sheet."
+			const s = scenario(cast);
+			const spent = { characterId: 'engineer', label: 'No Ability' };
+			expect(reminderTargetMisses(s.game, spent, s.seat('engineer'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, spent, s.seat('chef'), s.characters)).toEqual([
+				'not-self'
+			]);
+		});
+
+		it.fails('stops waking once marked No Ability', () => {
+			// Wiki: "The Engineer loses their ability—mark them with the NO ABILITY reminder and remove
+			// their night token from the night sheet."
+			// Waits on the engine (unplanned): the Engineer has no wake condition, so its night step
+			// still shows after its ability is spent.
+			const s = scenario(cast).reminder('engineer', 'engineer', 'No Ability').newDay();
+			expect(
+				wakeConditionMet(s.game, 'engineer', s.seat('engineer'), s.characters, new Set())
+			).toBe(false);
 		});
 	});
 });

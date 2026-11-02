@@ -18,6 +18,7 @@ import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night-info.ts
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { wakeConditionMet } from '#lib/core/rules/wakes-when.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { filledInfoToken } from '#lib/core/rules/info-token-characters.ts';
 
 describe('King', () => {
 	const character = committedCharacter('king');
@@ -79,6 +80,41 @@ describe('King', () => {
 			const picker = infoPicker(real.game, real.seat('choirboy'), 'choirboy', real.characters)!;
 			expect(isTruthful(picker, { seats: [real.seat('imp')] })).toBe(true);
 			expect(isTruthful(picker, { seats: [real.seat('chef')] })).toBe(false);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/King#How_to_Run)', () => {
+		const cast = ['king', 'snitch', 'witch', 'monk', 'chef', 'imp'];
+
+		it.fails('shows the Demon the King token on This player is on the first night', () => {
+			// Wiki: "During the first night, wake the Demon. Show them the THIS PLAYER IS info token,
+			// then the King token, then point at the King player. Put the Demon to sleep."
+			// Waits on the engine (unplanned): the King's rules fill no info token, so This player is does not show the King token.
+			expect(filledInfoToken(character, 'this-player-is', 1)).toMatchObject({
+				characterIds: ['king']
+			});
+		});
+
+		it('wakes the King only once the dead equal or outnumber the living', () => {
+			// Wiki: "When the number of dead players equals or exceeds the number of alive players, add
+			// a night token to the King’s entry on the night sheet."
+			const two = scenario(cast).dies('monk').dies('chef');
+			expect(wakeConditionMet(two.game, 'king', two.seat('king'), two.characters, new Set())).toBe(
+				false
+			);
+			const three = two.dies('witch');
+			expect(
+				wakeConditionMet(three.game, 'king', three.seat('king'), three.characters, new Set())
+			).toBe(true);
+		});
+
+		it('shows the King one alive character token', () => {
+			// Wiki: "Each night, if the King has a night token on the night sheet, wake the King. Show
+			// one alive character token. Put the King to sleep."
+			const s = scenario(cast).dies('monk').dies('chef').dies('witch');
+			const picker = infoPicker(s.game, s.seat('king'), 'king', s.characters)!;
+			expect(isTruthful(picker, { seats: [s.seat('imp')], characterId: 'imp' })).toBe(true);
+			expect(isAllowed(picker, { seats: [s.seat('witch')], characterId: 'witch' })).toBe(false);
 		});
 	});
 });

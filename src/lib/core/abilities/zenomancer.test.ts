@@ -22,6 +22,8 @@ import {
 	nightSheetPresence
 } from '#lib/core/testing/committed-data.ts';
 import { abilityState } from '#lib/core/rules/ability.ts';
+import { dayReminders, dayStateFromGame, renderReminder } from '#lib/core/rules/day-reminders.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 const characters = committedGameData().byId;
@@ -131,6 +133,36 @@ describe('Zenomancer', () => {
 			const s = goal(goal(scenario(cast).rule('zenomancer'), 'chef', text), 'empath', text);
 			expect([goalOf(s, 'chef'), goalOf(s, 'empath')]).toEqual([text, text]);
 			expect(s.characters.get(s.game.seats[s.seat('fanggu')].characterId!)?.type).toBe('demon');
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Zenomancer#How_to_Run)', () => {
+		it('lets Goal go on any player at any time, alive or dead', () => {
+			// Wiki: "At any time, communicate to a player that they have a goal."
+			// Wiki: "Mark this player with the Zenomancer’s GOAL reminder."
+			const s = scenario(['chef', 'empath', 'monk', 'poisoner', 'imp'])
+				.rule('zenomancer')
+				.newDay()
+				.dies('chef');
+			const token = { characterId: 'zenomancer', label: 'Goal' };
+			for (const seat of s.seats)
+				expect(reminderTargetMisses(s.game, token, seat, s.characters)).toEqual([]);
+		});
+
+		it('names each player with a goal on the day panel', () => {
+			// Wiki: "Mark this player with the Zenomancer’s GOAL reminder."
+			const lines = (s: ReturnType<typeof scenario>) =>
+				dayReminders(
+					dayStateFromGame(s.game, (id) => s.characters.get(id), undefined, s.characters)
+				).groups.flatMap((g) =>
+					g.reminders
+						.filter((r) => r.characterId === 'zenomancer')
+						.map((r) => renderReminder(r.segments))
+				);
+			const s = scenario(['chef', 'empath', 'monk', 'poisoner', 'imp']).rule('zenomancer');
+			expect(lines(s)).toEqual([]);
+			const goal = s.reminder('chef', 'zenomancer', 'Goal');
+			expect(lines(goal)).toEqual(['[zenomancer] has set a goal for [chef · Ana]']);
 		});
 	});
 });

@@ -25,6 +25,7 @@ import {
 	validInformation
 } from '#lib/core/rules/night-info.ts';
 import { analyseSetup } from '#lib/core/rules/setup.ts';
+import { warned } from '#lib/core/model/fixtures.test-support.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Atheist', () => {
@@ -147,6 +148,34 @@ describe('Atheist', () => {
 			const picker = infoPicker(s.game, s.seat('chef'), 'chef', s.characters)!;
 			expect(picker.anyAllowed).toBe(false);
 			expect(picker.anyBy).toBeUndefined();
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Atheist#How_to_Run)', () => {
+		it('flags a bag that still holds an evil character with the Atheist', () => {
+			// Wiki: "During setup, before giving the bag to the players, remove all evil character tokens
+			// and add Townsfolk or Outsider character tokens to match the player count."
+			const s = scenario(['atheist', 'chef', 'empath', 'monk', 'imp']);
+			const inPlay = ['atheist', 'chef', 'empath', 'monk', 'imp'].map((id) =>
+				s.characters.get(id)!
+			);
+			const analysis = analyseSetup({ players: 5, inPlay });
+			expect(analysis.expected).toMatchObject({ minion: [0], demon: [0] });
+			expect(analysis.warnings.map((w) => w.code)).toContain('count-mismatch');
+		});
+
+		it.fails("takes an evil character's reminder without a warning", () => {
+			// Wiki: "Break any game rules, as you see fit. Use evil reminder tokens if you need them."
+			// Waits on the engine (unplanned): a reminder of an evil character not in play is warned
+			// about as not in play, even while the Atheist is.
+			const s = scenario(['atheist', 'chef', 'empath', 'monk', 'soldier']);
+			expect(
+				warned(s.session, s.ctx, {
+					type: 'AddReminder',
+					seatId: s.seat('chef'),
+					reminder: { characterId: 'poisoner', label: 'Poisoned' }
+				})
+			).toEqual([]);
 		});
 	});
 });

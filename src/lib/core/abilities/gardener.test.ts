@@ -17,6 +17,7 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { analyseSetup } from '#lib/core/rules/setup.ts';
 import { setupModifierFor } from '#lib/core/rules/setup-modifiers.ts';
+import { nextDrawSeat } from '#lib/core/rules/bag-plan.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Gardener', () => {
@@ -82,6 +83,29 @@ describe('Gardener', () => {
 			]);
 			const inPlay = [...cast.map((id) => s.characters.get(id)!), gardener];
 			expect(analyseSetup({ players: 9, inPlay }).warnings).toEqual([]);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Gardener#How_to_Run)', () => {
+		it('reads its setup change as the Storyteller placing the characters, with no bag', () => {
+			// Wiki: "During setup, instead of putting the character tokens in the bag, put them
+			// face-down on the Town Square, or a firm object like a book, in a circle or shape that
+			// matches the physical seating arrangement."
+			const s = scenario(['chef', 'empath', 'monk', 'poisoner', 'imp']).rule('gardener');
+			expect(setupModifierFor(s.characters.get('gardener')!)).toMatchObject({
+				summary: 'Storyteller assigns characters',
+				ops: []
+			});
+		});
+
+		it('fills the seats one at a time, in seating order', () => {
+			// Wiki: "One at a time, in clockwise order, prompt the players to take the token that
+			// corresponds with their physical seating position."
+			const s = scenario(['chef', 'empath', 'monk', 'poisoner', 'imp']).rule('gardener');
+			const empty = s.do(...s.seats.map((seatId) => ({ type: 'ClearCharacter' as const, seatId })));
+			expect(nextDrawSeat(empty.game)).toBe(s.seat(0));
+			const first = empty.becomes(0, 'chef');
+			expect(nextDrawSeat(first.game)).toBe(s.seat(1));
 		});
 	});
 });

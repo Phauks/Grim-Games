@@ -18,6 +18,8 @@ import { committedCharacter, nightSheetPresence } from '#lib/core/testing/commit
 import { dayUseDeath } from '#lib/core/rules/day-claims.ts';
 import { setupModifierFor } from '#lib/core/rules/setup-modifiers.ts';
 import { evilTeamInfoRemovedBy } from '#lib/core/rules/teensyville.ts';
+import { stepInfoCards } from '#lib/core/rules/info-token-characters.ts';
+import { seatRoles } from '#lib/core/sync/seat-roles.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Tor', () => {
@@ -77,6 +79,35 @@ describe('Tor', () => {
 			expect(dayUseDeath(day.game, 'slayer', day.seat('imp'), day.characters)).toBe('dies');
 			const shot = day.dies('imp', 'slayer');
 			expect(shot.game.seats[shot.seat('imp')].deathCause).toBe('slayer');
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Tor#How_to_Run)', () => {
+		it('shows living players no character, since no one draws from the bag', () => {
+			// Wiki: "During setup, do not pass the bag to the players. Instead, draw the character
+			// tokens from the bag and place them in order in the Grimoire."
+			const s = scenario(['chef', 'empath', 'monk', 'poisoner', 'imp']);
+			expect(Object.keys(seatRoles(s.game, s.characters))).toHaveLength(5);
+			const hidden = s.rule('tor');
+			expect(seatRoles(hidden.game, hidden.characters)).toEqual({});
+		});
+
+		it('tells a player who dies what character they are', () => {
+			// Wiki: "If a player dies during the day, privately tell them what character and
+			// alignment they are."
+			const s = scenario(['chef', 'empath', 'monk', 'poisoner', 'imp']).rule('tor').execute('monk');
+			expect(seatRoles(s.game, s.characters)).toEqual({
+				[s.seat('monk')]: { characterId: 'monk' }
+			});
+		});
+
+		it('wakes on other nights to show a player who died their character with You are', () => {
+			// Wiki: "If a player dies at night, wake them, show them the YOU ARE info token, their
+			// character token, the YOU ARE info token, and either a thumbs up or a thumbs down."
+			expect(nightSheetPresence('tor').otherNight).toBe(true);
+			expect(stepInfoCards(character, character.otherNightReminder)).toMatchObject([
+				{ token: { id: 'you-are' }, filled: { upTo: 1 } }
+			]);
 		});
 	});
 });

@@ -17,6 +17,7 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { executionSavers, protection } from '#lib/core/rules/ability.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
+import { warned } from '#lib/core/model/fixtures.test-support.ts';
 
 describe('Pacifist', () => {
 	const character = committedCharacter('pacifist');
@@ -115,6 +116,36 @@ describe('Pacifist', () => {
 			s = s.newDay();
 			expect(pacifistFor(s, 'pacifist')?.problem).toBeUndefined();
 			expect(dead(savedByPacifist(s, 'pacifist'), 'pacifist')).toBe(false);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Pacifist#How_to_Run)', () => {
+		const cast = ['pacifist', 'chef', 'empath', 'poisoner', 'imp'];
+
+		it('offers the Pacifist to save an executed good player, not an evil one', () => {
+			// Wiki: "If a good character is executed, declare either that they die or they remain
+			// alive. (Do not say why.)"
+			const s = scenario(cast).newDay();
+			const pacifist = (ref: string) =>
+				executionSavers(s.game, s.seat(ref), s.characters).find(
+					(x) => x.source.characterId === 'pacifist'
+				);
+			expect(pacifist('chef')?.problem).toBeUndefined();
+			expect(pacifist('poisoner')?.problem).toBe('not-this-player');
+			const dies = s.execute('chef');
+			expect(dies.game.seats[dies.seat('chef')].dead).toBe(true);
+		});
+
+		it('counts a saved execution as the one execution for the day', () => {
+			// Wiki: "Then, begin the night phase. (Whether the player lived or died, this was the one
+			// execution for the day.)"
+			const s = scenario(cast)
+				.newDay()
+				.do((at) => ({ type: 'Execute', seatId: at.seat('chef'), savedBy: 'pacifist' }));
+			expect(s.game.seats[s.seat('chef')].dead).toBe(false);
+			expect(warned(s.session, s.ctx, { type: 'Execute', seatId: s.seat('empath') })).toContain(
+				'already-executed'
+			);
 		});
 	});
 });

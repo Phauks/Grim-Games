@@ -15,7 +15,8 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { warned } from '#lib/core/model/fixtures.test-support.ts';
-import { extraNominationOpen } from '#lib/core/rules/nominations.ts';
+import { dayReminders, dayStateFromGame } from '#lib/core/rules/day-reminders.ts';
+import { extraNominationOpen, nominatorsAfterExecution } from '#lib/core/rules/nominations.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
@@ -109,6 +110,56 @@ describe('Butcher', () => {
 			const second = { type: 'Execute', seatId: s.seat('towncrier') } as const;
 			expect(nominated.do(second).game.seats[s.seat('towncrier')].dead).toBe(true);
 			expect(warned(nominated.session, nominated.ctx, second)).not.toContain('already-executed');
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Butcher#How_to_Run)', () => {
+		const table = () =>
+			scenario(['butcher', 'chef', 'witch', 'sage', 'empath', 'fanggu']).do((at) => ({
+				type: 'SetAlignment',
+				seatId: at.seat('butcher'),
+				alignment: 'good'
+			}));
+
+		it('may nominate again only once a player has been executed today', () => {
+			// Wiki: "Each day, immediately after a player is executed, the Butcher may nominate a player
+			// for execution."
+			const s = table().nominate('butcher', 'witch');
+			expect(extraNominationOpen(s.game, s.seat('butcher'), s.characters)).toBe(false);
+			expect(
+				nominatorsAfterExecution(s.game, { seatId: s.seat('witch'), dies: true }, s.characters)
+			).toEqual([s.seat('butcher')]);
+			const executed = s.execute('witch');
+			expect(
+				extraNominationOpen(executed.game, executed.seat('butcher'), executed.characters)
+			).toBe(true);
+		});
+
+		it('reminds the Storyteller that the Butcher may nominate again', () => {
+			// Wiki: "(Remind them if needed.)"
+			const s = table().newDay();
+			const reminders = dayReminders(
+				dayStateFromGame(s.game, (id) => s.characters.get(id), undefined, s.characters)
+			).groups.flatMap((g) => g.reminders);
+			expect(reminders.some((r) => r.characterId === 'butcher')).toBe(true);
+		});
+
+		it('a second execution does not let the Butcher nominate a third player', () => {
+			// Wiki: "If this second execution succeeds, it does not allow the Butcher to nominate a third
+			// player."
+			const s = table()
+				.nominate('chef', 'witch')
+				.execute('witch')
+				.nominate('butcher', 'sage')
+				.execute('sage');
+			expect(extraNominationOpen(s.game, s.seat('butcher'), s.characters)).toBe(false);
+			expect(
+				warned(s.session, s.ctx, {
+					type: 'Nominate',
+					nominator: s.seat('butcher'),
+					nominee: s.seat('empath')
+				})
+			).toContain('already-nominated');
 		});
 	});
 });

@@ -17,6 +17,10 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import { madnessOffer } from '#lib/core/rules/madness.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
+import { filledInfoToken } from '#lib/core/rules/info-token-characters.ts';
+import { nightTextPlain, nightTextSegments, placeholdersFor } from '#lib/core/rules/night-text.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 
 describe('Harpy', () => {
 	const character = committedCharacter('harpy');
@@ -101,6 +105,55 @@ describe('Harpy', () => {
 				dies: [s.seat('farmer'), s.seat('chef')]
 			});
 			expect(s.game.seating.filter((id) => s.game.seats[id].dead)).toEqual([]);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Harpy#How_to_Run)', () => {
+		const cast = ['harpy', 'monk', 'engineer', 'imp', 'chef'];
+
+		it('places Mad on the first player and 2nd on the second at its night step', () => {
+			// Wiki: "Each night, wake the Harpy. The Harpy points to one player, then another player.
+			// Mark the first player with the MAD reminder and the second player with the 2ND reminder."
+			for (const night of ['first', 'other'] as const) {
+				const placeholders = placeholdersFor(character, night);
+				const reminder =
+					night === 'first' ? character.firstNightReminder! : character.otherNightReminder!;
+				const text = nightTextPlain(
+					nightTextSegments(reminder, character, { ...(placeholders ? { placeholders } : {}) })
+				);
+				expect(text).toMatch(/\[\+Mad\][^]*\[\+2nd\]/);
+			}
+		});
+
+		it('lets 2nd go on any player, dead or the Harpy', () => {
+			// Wiki: "The Harpy points to one player, then another player."
+			const s = scenario(cast).dies('chef');
+			const second = { characterId: 'harpy', label: '2nd' };
+			for (const seat of ['chef', 'harpy', 'engineer'] as const) {
+				expect(reminderTargetMisses(s.game, second, s.seat(seat), s.characters)).toEqual([]);
+			}
+		});
+
+		it('shows the Mad player the Harpy token on This character selected you', () => {
+			// Wiki: "Wake the player marked MAD. Show the THIS CHARACTER SELECTED YOU info token then
+			// the Harpy token, then point to the player marked 2ND."
+			expect(filledInfoToken(character, 'selected-you', 1)).toMatchObject({
+				characterIds: ['harpy']
+			});
+		});
+
+		it('offers the Harpy as the cause of death for the Mad and 2nd players by day', () => {
+			// Wiki: "Tomorrow, if the player marked MAD is not mad that the player marked 2ND is evil,
+			// you may kill one or both players."
+			const s = scenario(cast)
+				.reminder('monk', 'harpy', 'Mad')
+				.reminder('engineer', 'harpy', '2nd')
+				.newDay();
+			for (const seat of ['monk', 'engineer'] as const) {
+				expect(
+					validDeathCauses(s.game, s.seat(seat), s.characters, { day: true }).map((c) => c.cause)
+				).toContain('harpy');
+			}
 		});
 	});
 });

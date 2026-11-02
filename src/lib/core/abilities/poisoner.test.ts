@@ -129,22 +129,24 @@ describe('Poisoner', () => {
 
 	describe('How to Run (https://wiki.bloodontheclocktower.com/Poisoner#How_to_Run)', () => {
 		it('places the Poisoned reminder at the Poisoner step every night', () => {
-			// How to Run: each night the Poisoner picks a player, who gets the Poisoned reminder.
+			// Wiki: "Each night, wake the Poisoner. They point at any player. The chosen player becomes
+			// poisoned—put the POISONED reminder token by the chosen player's character token."
 			const place = [{ tokens: [{ label: 'Poisoned', action: 'place' }] }];
 			expect(placeholdersFor(character, 'first')).toEqual(place);
 			expect(placeholdersFor(character, 'other')).toEqual(place);
 		});
 
 		it('lets the Poisoned reminder go on any player, the Poisoner and the dead included', () => {
-			// How to Run: the Poisoner may point at any player.
+			// Wiki: "They point at any player."
 			const s = scenario(['poisoner', 'chef', 'imp', 'monk', 'empath']).dies('chef', 'imp');
 			const poisoned = { characterId: 'poisoner', label: 'Poisoned' };
 			expect(reminderTargets(s.game, poisoned, s.characters).flatMap((t) => t.misses)).toEqual([]);
 		});
 
 		it('still wakes the poisoned player, flagged as having no ability', () => {
-			// How to Run: the poisoned player wakes and acts as usual, with no ability, and may be
-			// given false information.
+			// Wiki: "(This poisoned player wakes and acts normally. They have no ability, but they think
+			// they do. If their ability would give them information, you can give false information to
+			// them if you wish. See “Drunkenness and Poisoning” in the rulebook.)"
 			const s = scenario(['washerwoman', 'chef', 'imp', 'monk', 'poisoner']).poisoned(
 				'washerwoman'
 			);
@@ -166,7 +168,7 @@ describe('Poisoner', () => {
 		});
 
 		it('makes the poisoned player healthy again at dusk', () => {
-			// How to Run: at each dusk the poisoned player recovers and the Poisoned reminder comes off.
+			// Wiki: "Each dusk, the poisoned player becomes healthy—remove their POISONED reminder."
 			const s = scenario(['empath', 'chef', 'imp', 'monk', 'poisoner']).poisoned('empath').newDay();
 			expect(abilityState(s.game, s.seat('empath'), s.characters).works).toBe(false);
 			const dusk = s.dusk();

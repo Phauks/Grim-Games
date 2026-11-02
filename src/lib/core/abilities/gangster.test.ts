@@ -17,7 +17,8 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import { dayUseDeath } from '#lib/core/rules/day-claims.ts';
 import { survivesFirstDeath } from '#lib/core/rules/first-death.ts';
 import { gameEnds } from '#lib/core/rules/game-end.ts';
-import { scenario } from '#lib/core/testing/scenario.ts';
+import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
+import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 import { warned } from '#lib/core/model/fixtures.test-support.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
@@ -105,6 +106,40 @@ describe('Gangster', () => {
 					on: used.seat('sage')
 				})
 			).toEqual(['already-used']);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Gangster#How_to_Run)', () => {
+		const kill = (at: Scenario, victim: string) =>
+			({
+				type: 'UseAbility',
+				seatId: at.seat('gangster'),
+				characterId: 'gangster',
+				on: at.seat(victim)
+			}) as const;
+
+		it('may use its ability again on a later day', () => {
+			// Wiki: "Once per day, the Gangster can declare that they wish to use their ability."
+			const s = scenario(['gangster', 'saint', 'imp', 'chef', 'baron']).newDay();
+			const used = s.do((at) => kill(at, 'saint'));
+			expect(warned(used.session, used.ctx, kill(used, 'baron'))).toEqual(['already-used']);
+			const tomorrow = used.newDay();
+			expect(warned(tomorrow.session, tomorrow.ctx, kill(tomorrow, 'baron'))).toEqual([]);
+		});
+
+		it('offers the Gangster as a cause of death for its alive neighbours only', () => {
+			// Wiki: "If so, ask if an alive neighbor agrees. If an alive neighbor agrees, the other alive
+			// neighbor dies. If both alive neighbors agree, the Gangster chooses which alive neighbor
+			// dies."
+			const s = scenario(['gangster', 'chambermaid', 'engineer', 'chef', 'monk', 'po'])
+				.newDay()
+				.dies('chambermaid', 'po');
+			const causes = (seat: string) =>
+				validDeathCauses(s.game, s.seat(seat), s.characters, { day: true }).map((c) => c.cause);
+			expect(causes('engineer')).toContain('gangster');
+			expect(causes('po')).toContain('gangster');
+			expect(causes('chef')).not.toContain('gangster');
+			expect(causes('gangster')).not.toContain('gangster');
 		});
 	});
 });

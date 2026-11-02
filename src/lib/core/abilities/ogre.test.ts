@@ -19,6 +19,8 @@ import { committedCharacter, nightSheetPresence } from '#lib/core/testing/commit
 import type { Command } from '#lib/core/engine/index.ts';
 import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
 import { becomesOffer, followedAlignmentOffer } from '#lib/core/rules/becomes.ts';
+import { nightTextPlain, nightTextSegments, placeholdersFor } from '#lib/core/rules/night-text.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 
 describe('Ogre', () => {
 	const character = committedCharacter('ogre');
@@ -88,6 +90,37 @@ describe('Ogre', () => {
 				.reminder('chef', 'ogre', 'Friend')
 				.do((s) => ({ type: 'SetAlignment', seatId: s.seat('chef'), alignment: 'evil' }));
 			expect(followedAlignmentOffer(s.game, s.seat('chef'), s.characters)).toBeUndefined();
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Ogre#How_to_Run)', () => {
+		const cast = ['ogre', 'summoner', 'chef', 'empath', 'monk'];
+		const friend = { characterId: 'ogre', label: 'Friend' };
+
+		it('marks the player the Ogre points to on the first night', () => {
+			// Wiki: "During the first night, wake the Ogre. The Ogre points to a player. Put the Ogre to
+			// sleep."
+			const placeholders = placeholdersFor(character, 'first');
+			const text = nightTextPlain(
+				nightTextSegments(character.firstNightReminder!, character, {
+					...(placeholders ? { placeholders } : {})
+				})
+			);
+			expect(text).toContain('[+Friend]');
+			const s = scenario(cast);
+			expect(reminderTargetMisses(s.game, friend, s.seat('chef'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, friend, s.seat('ogre'), s.characters)).toEqual(['self']);
+		});
+
+		it('turns the Ogre evil only when they pointed to an evil player', () => {
+			// Wiki: "If the Ogre pointed to an evil player, flip the Ogre's character token upside down
+			// to represent that the Ogre is evil."
+			const good = scenario(cast).reminder('chef', 'ogre', 'Friend');
+			expect(becomesOffer(good.game, good.seat('chef'), friend, good.characters)).toBeUndefined();
+			const evil = scenario(cast).reminder('summoner', 'ogre', 'Friend');
+			expect(becomesOffer(evil.game, evil.seat('summoner'), friend, evil.characters)).toMatchObject(
+				{ into: 'alignment', seatId: evil.seat('ogre'), alignment: 'evil' }
+			);
 		});
 	});
 });

@@ -15,6 +15,7 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { warned } from '#lib/core/model/fixtures.test-support.ts';
+import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
 import { madnessOffer } from '#lib/core/rules/madness.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
@@ -95,6 +96,32 @@ describe('Mutant', () => {
 			// "By the way, I am definitely not the Mutant" while giving a subtle wink. The Storyteller
 			// chooses to execute the Mutant immediately."
 			executedForMadness(scenario(['mutant', 'oracle', 'chef', 'witch', 'vortox']));
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Mutant#How_to_Run)', () => {
+		it('may be executed for madness at night too', () => {
+			// Wiki: "At any time (even at night), if you believe that the Mutant is mad about being an
+			// Outsider, then you can decide to execute the Mutant."
+			const s = scenario(['mutant', 'chef', 'empath', 'witch', 'vortox']).newDay().dusk();
+			expect(madnessOffer(s.game, 'mutant', s.seat('mutant'), s.characters)).toMatchObject({
+				breaking: 'execution'
+			});
+			const command = { type: 'Execute', seatId: s.seat('mutant'), cause: 'mutant' } as const;
+			expect(warned(s.session, s.ctx, command)).toEqual([]);
+			expect(s.do(command).game.seats[s.seat('mutant')]).toMatchObject({
+				dead: true,
+				deathCause: 'mutant'
+			});
+		});
+
+		it("offers the Mutant's madness as a cause of the Mutant's death only", () => {
+			// Wiki: "Declare this to the group. They die - mark them with a shroud."
+			const s = scenario(['mutant', 'chef', 'empath', 'witch', 'vortox']).newDay();
+			const causes = (seat: 'mutant' | 'chef') =>
+				validDeathCauses(s.game, s.seat(seat), s.characters, { day: true }).map((c) => c.cause);
+			expect(causes('mutant')).toContain('mutant');
+			expect(causes('chef')).not.toContain('mutant');
 		});
 	});
 });

@@ -17,6 +17,7 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { gameEnds } from '#lib/core/rules/game-end.ts';
 import { swappableSeats } from '#lib/core/rules/becomes.ts';
+import { filledInfoToken, stepInfoCards } from '#lib/core/rules/info-token-characters.ts';
 import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
@@ -128,6 +129,83 @@ describe('Barber', () => {
 			expect(swappable(s)).toEqual(
 				expect.arrayContaining([s.seat('vigormortis'), s.seat('sweetheart')])
 			);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Barber#How_to_Run)', () => {
+		const haircuts = { characterId: 'barber', label: 'Haircuts Tonight' };
+
+		it('Haircuts Tonight goes on the Barber only once they have died', () => {
+			// Wiki: "If the Barber dies, mark them with the HAIRCUTS TONIGHT reminder."
+			const s = scenario(['barber', 'clockmaker', 'juggler', 'imp', 'poisoner']);
+			expect(reminderTargetMisses(s.game, haircuts, s.seat('barber'), s.characters)).toContain(
+				'life'
+			);
+			const executed = s.execute('barber');
+			expect(
+				reminderTargetMisses(executed.game, haircuts, executed.seat('barber'), executed.characters)
+			).toEqual([]);
+		});
+
+		it('the Demon is shown that the Barber selected them', () => {
+			// Wiki: "During that night, wake the Demon. Show them the THIS CHARACTER SELECTED YOU info
+			// token, then the Barber token."
+			expect(filledInfoToken(character, 'selected-you', 1)?.characterIds).toEqual(['barber']);
+		});
+
+		it('the Demon may pick two players to swap, but not another Demon', () => {
+			// Wiki: "The Demon either shakes their head no or points to two players."
+			const s = scenario(['barber', 'chef', 'empath', 'imp', 'poisoner', 'nodashii']).dies(
+				'barber'
+			);
+			const first = swappableSeats(s.game, 'barber', s.characters, s.seat('imp'));
+			expect(first).toEqual(
+				expect.arrayContaining([s.seat('barber'), s.seat('chef'), s.seat('poisoner')])
+			);
+			expect(first).not.toContain(s.seat('nodashii'));
+		});
+
+		it.fails('takes Haircuts Tonight off once the night is over', () => {
+			// Wiki: "Put the Demon to sleep. Remove the HAIRCUTS TONIGHT reminder."
+			// Waits on the engine (unplanned): the Barber's rules give Haircuts Tonight no reminderEnds,
+			// so it stays on the Barber after the night.
+			const s = scenario(['barber', 'clockmaker', 'juggler', 'imp', 'poisoner'])
+				.execute('barber')
+				.reminder('barber', 'barber', 'Haircuts Tonight')
+				.newDay();
+			expect(s.game.seats[s.seat('barber')].reminders).toEqual([]);
+		});
+
+		it('each swapped player is shown You are with their new character', () => {
+			// Wiki: "One at a time, wake each swapped player, show them the YOU ARE info token and their
+			// new character token, then put them to sleep."
+			const cards = stepInfoCards(character, character.otherNightReminder, {
+				changed: ['juggler']
+			});
+			expect(cards.find((c) => c.token.id === 'you-are')?.filled?.characterIds).toEqual([
+				'juggler'
+			]);
+		});
+
+		it('swapped players keep their alignments', () => {
+			// Wiki: "If a player’s alignment does not match the color of their character token, turn it
+			// upside-down."
+			const s = scenario(['barber', 'chef', 'empath', 'imp', 'poisoner'])
+				.dies('barber')
+				.do((at) => ({
+					type: 'SwapCharacters',
+					seatId: at.seat('chef'),
+					withSeatId: at.seat('poisoner'),
+					keepAlignments: true
+				}));
+			expect(s.game.seats[s.seat('chef')]).toMatchObject({
+				characterId: 'poisoner',
+				alignment: 'good'
+			});
+			expect(s.game.seats[s.seat('poisoner')]).toMatchObject({
+				characterId: 'chef',
+				alignment: 'evil'
+			});
 		});
 	});
 });

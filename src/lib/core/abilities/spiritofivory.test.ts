@@ -15,7 +15,9 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { dispatch } from '#lib/core/engine/index.ts';
+import { decide, dispatch } from '#lib/core/engine/index.ts';
+import { extraEvilPlayers } from '#lib/core/rules/extra-evil.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Spirit of Ivory', () => {
@@ -66,6 +68,52 @@ describe('Spirit of Ivory', () => {
 				s.ctx
 			);
 			expect(result.ok && result.warnings.map((w) => w.code)).toEqual(['extra-evil-limit']);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Spirit_of_Ivory#How_to_Run)', () => {
+		const cast = ['chef', 'saint', 'empath', 'monk', 'poisoner', 'imp'];
+		const turnEvil = (s: ReturnType<typeof scenario>, seat: string) =>
+			decide(s.game, { type: 'SetAlignment', seatId: s.seat(seat), alignment: 'evil' }, s.ctx);
+
+		it('puts No More Evil beside the Spirit of Ivory, not on a seat', () => {
+			// Wiki: "At all times, if there is an extra evil character in play, mark the Spirit of
+			// Ivory with the NO MORE EVIL reminder."
+			const s = scenario(cast).rule('spiritofivory');
+			const token = { characterId: 'spiritofivory', label: 'No More Evil' };
+			expect(reminderTargetMisses(s.game, token, s.seat('chef'), s.characters)).toEqual(['global']);
+		});
+
+		it('counts an evil Townsfolk as the extra evil character', () => {
+			// Wiki: "At all times, if there is an extra evil character in play, mark the Spirit of
+			// Ivory with the NO MORE EVIL reminder."
+			const s = scenario(cast).rule('spiritofivory');
+			expect(extraEvilPlayers(s.game, s.characters)).toBe(0);
+			const evil = s.do({ type: 'SetAlignment', seatId: s.seat('chef'), alignment: 'evil' });
+			expect(extraEvilPlayers(evil.game, evil.characters)).toBe(1);
+		});
+
+		it('warns when a second player would become evil', () => {
+			// Wiki: "If a player would become evil and the Spirit of Ivory is marked NO MORE EVIL,
+			// that player stays good."
+			const s = scenario(cast)
+				.rule('spiritofivory')
+				.do((at) => ({ type: 'SetAlignment', seatId: at.seat('chef'), alignment: 'evil' }));
+			const result = turnEvil(s, 'saint');
+			expect(result.ok && result.warnings.map((w) => w.code)).toEqual(['extra-evil-limit']);
+		});
+
+		it('lets another player become evil once the extra evil player turns good', () => {
+			// Wiki: "(If any character becomes good, remove the reminder.)"
+			const s = scenario(cast)
+				.rule('spiritofivory')
+				.do(
+					(at) => ({ type: 'SetAlignment', seatId: at.seat('chef'), alignment: 'evil' }),
+					(at) => ({ type: 'SetAlignment', seatId: at.seat('chef'), alignment: 'good' })
+				);
+			expect(extraEvilPlayers(s.game, s.characters)).toBe(0);
+			const result = turnEvil(s, 'saint');
+			expect(result.ok && result.warnings).toEqual([]);
 		});
 	});
 });

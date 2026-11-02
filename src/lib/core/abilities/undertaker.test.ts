@@ -106,7 +106,8 @@ describe('Undertaker', () => {
 		const diedToday = { characterId: 'undertaker', label: 'Died Today' };
 
 		it('puts Died Today only on a dead player', () => {
-			// How to Run: when an execution kills someone, their character token gets Died Today.
+			// Wiki: "If a player dies by execution, put the Undertaker's DIED TODAY reminder token by
+			// the dead player's character token."
 			const s = scenario(cast).execute('mayor');
 			expect(reminderTargetMisses(s.game, diedToday, s.seat('mayor'), s.characters)).toEqual([]);
 			expect(reminderTargetMisses(s.game, diedToday, s.seat('monk'), s.characters)).toEqual([
@@ -115,14 +116,15 @@ describe('Undertaker', () => {
 		});
 
 		it('asks to mark the player dead when Died Today goes on a living seat', () => {
-			// How to Run: Died Today marks a death, so placing it means that player has died.
+			// Wiki: "If a player dies by execution, put the Undertaker's DIED TODAY reminder token by
+			// the dead player's character token."
 			const prompt = reminderPrompt('Died Today', 'undertaker', scenario(cast).characters);
 			expect(prompt).toBe('markDead');
 			expect(promptApplies(prompt!, false)).toBe(true);
 		});
 
 		it('shows the character marked Died Today when the day log has no execution', () => {
-			// How to Run: at night the Undertaker is shown the character token carrying Died Today.
+			// Wiki: "Show the character token marked DIED TODAY to the Undertaker."
 			const s = scenario(cast).dies('mayor').reminder('mayor', 'undertaker', 'Died Today');
 			expect(nightAnswer(s.game, s.seat('undertaker'), 'undertaker', s.characters)).toMatchObject({
 				kind: 'character',
@@ -131,8 +133,9 @@ describe('Undertaker', () => {
 		});
 
 		it('does not count a Died Today left on the board from an earlier day', () => {
-			// How to Run: the Undertaker only wakes for an execution death today; yesterday's reminder
-			// may still be on the board because it comes off when convenient.
+			// Wiki: "Each night except the first, if any player died by execution today, wake the
+			// Undertaker."
+			// Wiki: "Remove the Undertaker's reminder token when convenient."
 			const s = scenario(cast).dies('mayor').reminder('mayor', 'undertaker', 'Died Today').newDay();
 			expect(nightAnswer(s.game, s.seat('undertaker'), 'undertaker', s.characters)?.kind).toBe(
 				'none'
@@ -140,8 +143,9 @@ describe('Undertaker', () => {
 		});
 
 		it('learns nothing when the executed player does not die', () => {
-			// How to Run: outside Trouble Brewing an execution may not kill, and then the Undertaker
-			// learns nothing.
+			// Wiki: "In other editions, there may be more than one execution per day (in which case the
+			// Storyteller chooses which character to show the Undertaker) or the execution does not
+			// cause a death (in which case the Undertaker learns nothing)."
 			const s = scenario([...cast, 'pacifist']).do((at) => ({
 				type: 'Execute',
 				seatId: at.seat('mayor'),
@@ -154,8 +158,9 @@ describe('Undertaker', () => {
 		});
 
 		it('offers either executee when two players were executed today', () => {
-			// How to Run: outside Trouble Brewing there may be two executions in a day, and the
-			// Storyteller picks which character the Undertaker sees.
+			// Wiki: "In other editions, there may be more than one execution per day (in which case the
+			// Storyteller chooses which character to show the Undertaker) or the execution does not
+			// cause a death (in which case the Undertaker learns nothing)."
 			const s = scenario(cast).execute('mayor').execute('monk');
 			const answer = nightAnswer(s.game, s.seat('undertaker'), 'undertaker', s.characters)!;
 			expect(answer).toMatchObject({ kind: 'character', value: 'monk' });

@@ -17,8 +17,15 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { abilityState } from '#lib/core/rules/ability.ts';
 import { dayReminders, dayStateFromGame } from '#lib/core/rules/day-reminders.ts';
+import { nightKill } from '#lib/core/rules/night-kill.ts';
+import { placeholdersFor } from '#lib/core/rules/night-text.ts';
 import { characterNominationPrompts } from '#lib/core/rules/nominations.ts';
-import { neighbourSeats, reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import {
+	neighbourSeats,
+	reminderTargetMisses,
+	reminderTargets
+} from '#lib/core/rules/reminder-targets.ts';
+import { setupModifierFor } from '#lib/core/rules/setup-modifiers.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
 /** The players a character's day reminders name, such as the Witch's cursed player. */
@@ -131,6 +138,51 @@ describe('Vigormortis', () => {
 			expect(abilityState(oracle.game, oracle.seat('savant'), oracle.characters).works).toBe(false);
 			const vortox = oracle.becomes('vigormortis', 'vortox');
 			expect(abilityState(vortox.game, vortox.seat('pithag'), vortox.characters).works).toBe(false);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Vigormortis#How_to_Run)', () => {
+		it('setup takes out one Outsider for a Townsfolk, and nothing without Outsiders', () => {
+			// Wiki: "While setting up the game, before putting the character tokens in the bag, remove one
+			// Outsider character token and add one Townsfolk character token. (If there are no Outsider
+			// tokens to remove, do not add a Townsfolk token.)"
+			expect(setupModifierFor(character)).toMatchObject({
+				summary: '−1 Outsider',
+				ops: [{ kind: 'delta', type: 'outsider', values: [-1] }],
+				notes: ['With no Outsiders to remove, nothing changes.']
+			});
+		});
+
+		it('kills one player each night after the first, marked Dead', () => {
+			// Wiki: "Each night except the first, wake the Vigormortis. They point at any player. Put the
+			// Vigormortis to sleep. If the chosen player isn’t a Minion, that player dies - mark them with
+			// a DEAD reminder."
+			expect(placeholdersFor(character, 'first')).toBeUndefined();
+			const s = scenario(['vigormortis', 'witch', 'chef', 'empath', 'monk']).newDay();
+			expect(nightKill(s.game, s.seat('vigormortis'), 'vigormortis', s.characters)?.max).toBe(1);
+			const dead = { characterId: 'vigormortis', label: 'Dead' };
+			expect(reminderTargets(s.game, dead, s.characters).flatMap((t) => t.misses)).toEqual([]);
+		});
+
+		it('Has Ability goes only on a Minion it killed', () => {
+			// Wiki: "If the chosen player is a Minion, that player dies - mark them with a DEAD reminder
+			// and a HAS ABILITY reminder."
+			const has = { characterId: 'vigormortis', label: 'Has Ability' };
+			const s = scenario(['vigormortis', 'witch', 'chef', 'empath', 'monk']).newDay();
+			expect(reminderTargetMisses(s.game, has, s.seat('witch'), s.characters)).toEqual([
+				'with-label'
+			]);
+			const killed = s
+				.dies('witch', 'vigormortis')
+				.reminder('witch', 'vigormortis', 'Dead')
+				.dies('chef', 'vigormortis')
+				.reminder('chef', 'vigormortis', 'Dead');
+			expect(
+				reminderTargetMisses(killed.game, has, killed.seat('witch'), killed.characters)
+			).toEqual([]);
+			expect(
+				reminderTargetMisses(killed.game, has, killed.seat('chef'), killed.characters)
+			).toContain('type');
 		});
 	});
 });

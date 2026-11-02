@@ -20,6 +20,9 @@ import { nightStepInfo } from '#lib/core/rules/night-info/steps.ts';
 import { deathCheck } from '#lib/core/rules/night-deaths.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { setupPrep } from '#lib/core/rules/setup-reminders.ts';
 
 describe('Grandmother', () => {
 	const character = committedCharacter('grandmother');
@@ -132,6 +135,62 @@ describe('Grandmother', () => {
 				because: 'impaired',
 				impairments: [{ reason: 'drunk', source: { characterId: 'sailor' } }]
 			});
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Grandmother#How_to_Run)', () => {
+		const cast = ['grandmother', 'professor', 'butler', 'monk', 'poisoner', 'imp'];
+
+		it('prepares a Grandchild before the first night, on a good player other than the Grandmother', () => {
+			// Wiki: "When preparing the first night, choose a Grandchild by marking any good character
+			// with the GRANDCHILD reminder."
+			const s = scenario(cast);
+			expect(setupPrep('grandmother', character.name, s.characters)).toMatchObject([
+				{ tokens: ['Grandchild'] }
+			]);
+			const grandchild = { characterId: 'grandmother', label: 'Grandchild' };
+			const misses = (seat: 'grandmother' | 'professor' | 'butler' | 'poisoner') =>
+				reminderTargetMisses(s.game, grandchild, s.seat(seat), s.characters);
+			expect(misses('professor')).toEqual([]);
+			expect(misses('butler')).toEqual([]);
+			expect(misses('poisoner')).toEqual(['alignment']);
+			expect(misses('grandmother')).not.toEqual([]);
+		});
+
+		it('points at the Grandchild and shows their character on the first night', () => {
+			// Wiki: "During the first night, wake the Grandmother and show them the character token
+			// marked GRANDCHILD, then point at the Grandchild player, then put the Grandmother to sleep."
+			const s = scenario(cast).reminder('butler', 'grandmother', 'Grandchild');
+			const picker = infoPicker(
+				s.game,
+				s.seat('grandmother'),
+				'grandmother',
+				s.characters,
+				'first'
+			)!;
+			expect(picker.seatCount).toBe(1);
+			expect(isTruthful(picker, { seats: [s.seat('butler')], characterId: 'butler' })).toBe(true);
+			expect(isTruthful(picker, { seats: [s.seat('butler')], characterId: 'professor' })).toBe(
+				false
+			);
+		});
+
+		it('marks the Grandmother Dead when the Demon kills the Grandchild', () => {
+			// Wiki: "If the Demon kills the Grandchild, the Grandmother dies - mark them with the DEAD
+			// reminder."
+			const s = scenario(cast).reminder('butler', 'grandmother', 'Grandchild').newDay();
+			const dead = { characterId: 'grandmother', label: 'Dead' };
+			expect(reminderTargetMisses(s.game, dead, s.seat('grandmother'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, dead, s.seat('butler'), s.characters)).not.toEqual([]);
+			const causes = (seat: 'grandmother' | 'butler') =>
+				validDeathCauses(s.game, s.seat(seat), s.characters).map((c) => c.cause);
+			expect(causes('grandmother')).toContain('grandmother');
+			expect(causes('butler')).not.toContain('grandmother');
+			const killed = s.dies('butler', 'imp');
+			expect(
+				deathCheck(killed.game, killed.seat('grandmother'), 'grandmother', killed.characters)
+					?.verdict
+			).toMatchObject({ kind: 'dies', seatIds: [killed.seat('grandmother')] });
 		});
 	});
 });

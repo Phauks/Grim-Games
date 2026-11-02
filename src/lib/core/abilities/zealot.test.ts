@@ -16,6 +16,8 @@ import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { dayReminders, dayStateFromGame, renderReminder } from '#lib/core/rules/day-reminders.ts';
+import { voteNotes } from '#lib/core/rules/vote-weights.ts';
+import { total, voteWarnings, votes } from '#lib/core/testing/votes.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
 /** The Zealot's day reminders, as plain text. */
@@ -107,6 +109,33 @@ describe('Zealot', () => {
 				.do((at) => ({ type: 'SpendGhostVote', seatId: at.seat('zealot') }));
 			expect(late.game.seating.filter((id) => !late.game.seats[id].dead)).toHaveLength(3);
 			expect(late.game.seats[late.seat('zealot')].ghostVoteUsed).toBe(true);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Zealot#How_to_Run)', () => {
+		const cast = ['zealot', 'chef', 'empath', 'monk', 'poisoner', 'imp'];
+		const mustVote = (s: Scenario) =>
+			voteNotes(s.game, s.characters).some(
+				(hint) => hint.seatId === s.seat('zealot') && hint.mustVote?.characterId === 'zealot'
+			);
+
+		it('has the Zealot vote on every nomination while 5 or more players are alive', () => {
+			// Wiki: "During each nomination, if there are 5 or more players alive, the Zealot must raise
+			// their hand to vote."
+			const five = scenario(cast).dies('monk');
+			expect(mustVote(five)).toBe(true);
+			const nominated = five.nominate('chef', 'imp');
+			expect(voteWarnings(nominated, 'chef', 'empath')).toContain('must-vote');
+			expect(voteWarnings(nominated, 'chef', 'empath', 'zealot')).not.toContain('must-vote');
+			const four = five.dies('empath');
+			expect(mustVote(four)).toBe(false);
+			expect(voteWarnings(four.nominate('chef', 'imp'), 'chef')).not.toContain('must-vote');
+		});
+
+		it('leaves a forgotten Zealot vote out of the tally, with only a warning', () => {
+			// Wiki: "If the Zealot accidentally forgets to vote, do not tally the Zealot's vote."
+			const s = votes(scenario(cast).nominate('chef', 'imp'), 'chef', 'empath');
+			expect(total(s)).toBe(2);
 		});
 	});
 });

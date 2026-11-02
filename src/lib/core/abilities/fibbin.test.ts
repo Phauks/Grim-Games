@@ -18,6 +18,7 @@ import { committedCharacter, nightSheetPresence } from '#lib/core/testing/commit
 import { protection } from '#lib/core/rules/ability.ts';
 import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night-info.ts';
 import { characterNominationPrompts } from '#lib/core/rules/nominations.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Fibbin', () => {
@@ -91,6 +92,43 @@ describe('Fibbin', () => {
 				dead.characters
 			)!;
 			expect(isAllowed(picker, { seats: [dead.seat('chef')], characterId: 'monk' })).toBe(true);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Fibbin#How_to_Run)', () => {
+		it('never lets an evil player be given false information', () => {
+			// Wiki: "Once per game, when a good player gains information from an ability, you can give
+			// them incorrect information."
+			const s = scenario(['chef', 'empath', 'monk', 'imp', 'poisoner'])
+				.rule('fibbin')
+				.do((at) => ({ type: 'SetAlignment', seatId: at.seat('empath'), alignment: 'evil' }));
+			const picker = infoPicker(s.game, s.seat('empath'), 'empath', s.characters)!;
+			expect(isTruthful(picker, { seats: [], number: 0 })).toBe(true);
+			expect(isAllowed(picker, { seats: [], number: 1 })).toBe(false);
+		});
+
+		it('puts its No Ability reminder beside the Fibbin, not on a seat', () => {
+			// Wiki: "The Fibbin loses their ability—put their NO ABILITY reminder token by their token."
+			const s = scenario(['chef', 'empath', 'monk', 'imp', 'poisoner']).rule('fibbin');
+			const token = { characterId: 'fibbin', label: 'No Ability' };
+			expect(reminderTargetMisses(s.game, token, s.seat('empath'), s.characters)).toEqual([
+				'global'
+			]);
+		});
+
+		it('gives good players true information again once No Ability is beside it', () => {
+			// Wiki: "Once per game, when a good player gains information from an ability, you can give
+			// them incorrect information. The Fibbin loses their ability"
+			const s = scenario(['chef', 'empath', 'monk', 'imp', 'poisoner'])
+				.rule('fibbin')
+				.do({
+					type: 'AddRuleReminder',
+					characterId: 'fibbin',
+					reminder: { characterId: 'fibbin', label: 'No Ability' }
+				});
+			const picker = infoPicker(s.game, s.seat('empath'), 'empath', s.characters)!;
+			expect(isTruthful(picker, { seats: [], number: 0 })).toBe(true);
+			expect(isAllowed(picker, { seats: [], number: 1 })).toBe(false);
 		});
 	});
 });

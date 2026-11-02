@@ -23,6 +23,9 @@ import {
 	nightAnswer,
 	reliability
 } from '#lib/core/rules/night-info.ts';
+import { nightKill } from '#lib/core/rules/night-kill.ts';
+import { placeholdersFor } from '#lib/core/rules/night-text.ts';
+import { reminderTargets } from '#lib/core/rules/reminder-targets.ts';
 import { savantSituation } from '#lib/core/rules/savant.ts';
 import { gameEnds } from '#lib/core/rules/game-end.ts';
 import { defaultAlignment } from '#lib/core/data/index.ts';
@@ -182,6 +185,41 @@ describe('Vortox', () => {
 				falseBy: 'fogbank'
 			});
 			expect(reliability(g, seats[0], 'chef', all).mustBeFalse).toBeUndefined();
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Vortox#How_to_Run)', () => {
+		it('a dead Vortox no longer makes Townsfolk information false', () => {
+			// Wiki: "While the Vortox is alive, you must give false information whenever a Townsfolk
+			// ability prompts you to give information."
+			const s = scenario(['chef', 'empath', 'vortox', 'witch', 'monk']);
+			expect(reliability(s.game, s.seat('empath'), 'empath', s.characters).mustBeFalse).toBe(true);
+			const dead = s.execute('vortox');
+			expect(
+				reliability(dead.game, dead.seat('empath'), 'empath', dead.characters).mustBeFalse
+			).toBeUndefined();
+		});
+
+		it('kills one player each night after the first, marked Dead', () => {
+			// Wiki: "Each night except the first, wake the Vortox. They point at any player. That player
+			// dies - mark them with the DEAD reminder."
+			expect(placeholdersFor(character, 'first')).toBeUndefined();
+			expect(placeholdersFor(character, 'other')).toEqual([
+				{ tokens: [{ label: 'Dead', action: 'place' }] }
+			]);
+			const s = scenario(['chef', 'empath', 'vortox', 'witch', 'monk']).newDay();
+			expect(nightKill(s.game, s.seat('vortox'), 'vortox', s.characters)?.max).toBe(1);
+			const dead = { characterId: 'vortox', label: 'Dead' };
+			expect(reminderTargets(s.game, dead, s.characters).flatMap((t) => t.misses)).toEqual([]);
+		});
+
+		it('a day with an execution does not end the game at dusk', () => {
+			// Wiki: "Each dusk, if no player was executed today, the game ends and the evil team wins."
+			const s = scenario(['chef', 'empath', 'monk', 'soldier', 'witch', 'vortox'])
+				.newDay()
+				.nominate('chef', 'monk')
+				.execute('monk');
+			expect(gameEnds(s.game, s.characters, { dayEnded: true })).toEqual([]);
 		});
 	});
 });

@@ -21,6 +21,7 @@ import {
 } from '#lib/core/model/fixtures.test-support.ts';
 import { withNightInfo } from '#lib/core/rules/night-info.ts';
 import { nightOrder } from '#lib/core/rules/night-order.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import {
 	committedCharacter,
@@ -67,17 +68,6 @@ describe('Plague Doctor', () => {
 
 		it('has no special app hooks', () => {
 			expect(character.special).toEqual([]);
-		});
-	});
-
-	// Summary: when it dies, the Storyteller gains a Minion ability of their choice for the rest
-	// of the game. How to Run: a Minion token marked Storyteller Ability, with a night step
-	// where the Storyteller makes that Minion's choices.
-	it('gives the Storyteller a Minion ability', () => {
-		expect(rulesOf('plaguedoctor', characters)?.givesAbility).toEqual({
-			to: 'storyteller',
-			types: ['minion'],
-			token: 'Storyteller Ability'
 		});
 	});
 
@@ -128,6 +118,51 @@ describe('Plague Doctor', () => {
 			expect(s.game.storytellerAbilities).toEqual([
 				{ characterId: 'organgrinder', via: 'plaguedoctor' }
 			]);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Plague_Doctor#How_to_Run)', () => {
+		const gains = (cast: string[], characterId: string) =>
+			scenario(cast)
+				.dies('plaguedoctor', 'execution')
+				.do({ type: 'SetStorytellerAbility', via: 'plaguedoctor', characterId });
+
+		it('gives the Storyteller a Minion ability, marked Storyteller Ability', () => {
+			// Wiki: "When the Plague Doctor dies, place a Minion character token in the center of the
+			// left side of the Grimoire and mark this with the Plague Doctor’s STORYTELLER ABILITY
+			// reminder."
+			expect(rulesOf('plaguedoctor', characters)?.givesAbility).toEqual({
+				to: 'storyteller',
+				types: ['minion'],
+				token: 'Storyteller Ability'
+			});
+		});
+
+		it('allows Storyteller Ability on an in-play Minion, never on a good player', () => {
+			// Wiki: "Or, mark an in-play Minion with the STORYTELLER ABILITY reminder."
+			const s = scenario(['plaguedoctor', 'imp', 'poisoner', 'empath', 'chef']);
+			const token = { characterId: 'plaguedoctor', label: 'Storyteller Ability' };
+			expect(reminderTargetMisses(s.game, token, s.seat('poisoner'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, token, s.seat('empath'), s.characters)).not.toEqual([]);
+		});
+
+		it('adds a night step only for a Minion ability that acts at night', () => {
+			// Wiki: "If applicable, add a night token to the night sheet."
+			const night = gains(['plaguedoctor', 'imp', 'monk', 'empath', 'chef'], 'poisoner');
+			expect(otherNight(night.game).filter((step) => step.storytellerAbility)).toHaveLength(1);
+			const day = gains(['plaguedoctor', 'imp', 'monk', 'empath', 'chef'], 'vizier');
+			expect(otherNight(day.game).filter((step) => step.storytellerAbility)).toEqual([]);
+		});
+
+		it("puts the Storyteller's step where that Minion would act", () => {
+			// Wiki: "When this Minion would normally act, the relevant choices are made by the
+			// Storyteller."
+			const s = gains(['plaguedoctor', 'imp', 'monk', 'empath', 'chef'], 'poisoner');
+			const ids = otherNight(s.game).map((step) => step.id);
+			const storyteller = ids.indexOf('storyteller:plaguedoctor:poisoner');
+			expect(storyteller).toBeGreaterThanOrEqual(0);
+			expect(storyteller).toBeLessThan(ids.indexOf('monk'));
+			expect(storyteller).toBeLessThan(ids.indexOf('imp'));
 		});
 	});
 });

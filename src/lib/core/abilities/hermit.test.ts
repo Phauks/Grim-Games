@@ -33,6 +33,8 @@ import {
 	committedGameData,
 	nightSheetPresence
 } from '#lib/core/testing/committed-data.ts';
+import { reminderTargetMisses, reminderTargets } from '#lib/core/rules/reminder-targets.ts';
+import { analyseSetup } from '#lib/core/rules/setup.ts';
 
 // A script whose Outsiders are the Hermit, Klutz, Butler and Recluse (the wiki's first example).
 const IDS: CharacterId[] = [
@@ -93,8 +95,9 @@ describe('Hermit', () => {
 	});
 
 	// Summary: the Hermit has every other Outsider ability on the script at once; after death it
-	// keeps only one that goes on after death. How to Run: treat it as each of those Outsiders,
-	// waking it at night too.
+	// keeps only one that goes on after death.
+	// Wiki (How to Run): "Whenever appropriate, treat the Hermit as if they are the other
+	// Outsiders, including waking them at night, and using other Outsiders’ reminder tokens."
 	describe("the script's Outsider abilities", () => {
 		it('holds every other Outsider on the script, with nothing to pick', () => {
 			expect(rulesOf('hermit', characters)?.givesAbility).toEqual({
@@ -221,6 +224,44 @@ describe('Hermit', () => {
 			});
 			const after = s.execute('hermit').reminder('alchemist', 'sweetheart', 'Drunk');
 			expect(abilityState(after.game, after.seat('alchemist'), characters).works).toBe(false);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Hermit#How_to_Run)', () => {
+		it('lets setup have one Outsider fewer and one Townsfolk more', () => {
+			// Wiki: "During setup, you may remove an Outsider token and add a Townsfolk token."
+			// Eight players usually have one Outsider.
+			const inPlay = ['hermit', 'washerwoman', 'empath', 'monk', 'ravenkeeper', 'klutz', 'imp'];
+			const result = analyseSetup({ players: 8, inPlay: inPlay.map((id) => characters.get(id)!) });
+			expect(result.expected.outsider).toEqual([0, 1]);
+			expect(result.expected.townsfolk).toEqual([5, 6]);
+		});
+
+		it.fails("uses the Butler's own Master reminder for the Hermit's master", () => {
+			// Wiki: "Whenever appropriate, treat the Hermit as if they are the other Outsiders,
+			// including waking them at night, and using other Outsiders’ reminder tokens."
+			// Waits on the engine (unplanned): reminderTargetMisses does not count the Hermit as the owner of an Outsider reminder it uses, so Master on the Hermit is not flagged as self.
+			const s = scenario(PLAYERS, { script, characters });
+			const master = { characterId: 'butler', label: 'Master' };
+			expect(reminderTargetMisses(s.game, master, s.seat('empath'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, master, s.seat('hermit'), s.characters)).toEqual([
+				'self'
+			]);
+		});
+
+		it('still has an Outsider ability that is in play, and its 1, 2 and 3 reminders go anywhere', () => {
+			// Wiki: "If the Hermit duplicates an in-play Outsider, use the Hermit’s 1, 2 and 3
+			// reminders instead."
+			const s = scenario(['hermit', 'butler', 'imp', 'empath', 'monk'], { script, characters });
+			expect(
+				heldAbilitiesOf(s.game, s.seat('hermit'), characters).map((h) => h.characterId)
+			).toEqual(['klutz', 'butler', 'recluse']);
+			for (const label of ['1', '2', '3']) {
+				const reminder = { characterId: 'hermit', label };
+				expect(
+					reminderTargets(s.game, reminder, s.characters).every((t) => t.misses.length === 0)
+				).toBe(true);
+			}
 		});
 	});
 });

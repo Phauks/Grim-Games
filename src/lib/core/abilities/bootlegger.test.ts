@@ -19,6 +19,8 @@ import { parseCharacter } from '#lib/core/data/parse.ts';
 import { Issues } from '#lib/core/data/validate.ts';
 import type { Script } from '#lib/core/data/index.ts';
 import { startingRuleCharacters, withScriptRules } from '#lib/core/rules/script-rules.ts';
+import { dayReminders, dayStateFromGame, renderReminder } from '#lib/core/rules/day-reminders.ts';
+import { setupModifierFor } from '#lib/core/rules/setup-modifiers.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
@@ -98,6 +100,42 @@ describe('Bootlegger', () => {
 				data.byId.get('bootlegger')
 			);
 			expect(sheet.at(-1)).toMatchObject({ id: 'bootlegger', ability: rule });
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Bootlegger#How_to_Run)', () => {
+		const data = committedGameData();
+		const official = ['chef', 'empath', 'monk', 'saint', 'poisoner', 'imp'];
+
+		it('starts without the Bootlegger when the script has no homebrew rules or Bootlegger', () => {
+			// Wiki: "At the start of the game, if there are homebrew characters on the character
+			// sheet or you are running homebrew rules, declare that the Bootlegger is in play"
+			const script: Script = {
+				meta: { name: 'Official' },
+				entries: official.map((id) => ({ kind: 'official' as const, id }))
+			};
+			expect(startingRuleCharacters(script, data.byId)).toEqual([]);
+		});
+
+		it('shows the Bootlegger as in play on the day panel', () => {
+			// Wiki: "declare that the Bootlegger is in play"
+			const s = scenario(['chef', 'empath', 'monk', 'poisoner', 'imp']).rule('bootlegger');
+			const lines = dayReminders(
+				dayStateFromGame(s.game, (id) => s.characters.get(id), undefined, s.characters)
+			).groups.flatMap((g) =>
+				g.reminders
+					.filter((r) => r.characterId === 'bootlegger')
+					.map((r) => ({ group: g.group, text: renderReminder(r.segments) }))
+			);
+			expect(lines).toEqual([{ group: 'announcement', text: '[bootlegger] is in play' }]);
+		});
+
+		it('reminds the Storyteller at setup to explain the homebrew characters and rules', () => {
+			// Wiki: "inform the group of all the homebrew characters and/or rules you are using in this
+			// game."
+			expect(setupModifierFor(data.byId.get('bootlegger')!)?.notes).toEqual([
+				'Explain the homebrew characters and rules before the game.'
+			]);
 		});
 	});
 });

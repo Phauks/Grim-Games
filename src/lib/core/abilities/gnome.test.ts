@@ -15,6 +15,9 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { dayUseDeath } from '#lib/core/rules/day-claims.ts';
+import { characterNominationPrompts } from '#lib/core/rules/nominations.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { setupPrep } from '#lib/core/rules/setup-reminders.ts';
 import { dayReminders, dayStateFromGame, renderReminder } from '#lib/core/rules/day-reminders.ts';
 import { type Scenario, scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
@@ -98,6 +101,46 @@ describe('Gnome', () => {
 			expect(linesOf(day4)).toEqual(['[gnome · Ana] protects [imp · Ben]']);
 			const dead = day4.game.seating.filter((id) => day4.game.seats[id].dead);
 			expect(dead).toEqual([day4.seat('boffin'), day4.seat('zealot')]);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Gnome#How_to_Run)', () => {
+		const cast = ['gnome', 'chef', 'empath', 'imp', 'poisoner'];
+		const good = (s: Scenario) =>
+			s.do((at) => ({ type: 'SetAlignment', seatId: at.seat('gnome'), alignment: 'good' }));
+
+		it('lists the Amigo reminder to place once the Gnome is in play', () => {
+			// Wiki: "During the day, as soon as the Gnome has entered play, mark a player of the same
+			// alignment with the AMIGO reminder."
+			const s = scenario(cast);
+			expect(setupPrep('gnome', character.name, s.characters)).toMatchObject([
+				{ tokens: ['Amigo'] }
+			]);
+		});
+
+		it('puts Amigo only on another player of the Gnome alignment', () => {
+			// Wiki: "During the day, as soon as the Gnome has entered play, mark a player of the same
+			// alignment with the AMIGO reminder. Declare that this player is the same alignment as the
+			// Gnome."
+			const s = good(scenario(cast));
+			const amigo = { characterId: 'gnome', label: 'Amigo' };
+			expect(reminderTargetMisses(s.game, amigo, s.seat('chef'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, amigo, s.seat('imp'), s.characters)).toEqual([
+				'alignment'
+			]);
+			expect(reminderTargetMisses(s.game, amigo, s.seat('gnome'), s.characters)).toEqual(['self']);
+		});
+
+		it('asks whether the Gnome kills the nominator when the amigo is nominated', () => {
+			// Wiki: "If this player is nominated, but before you have started the voting process, if
+			// the Gnome player declares that they wish to use their ability, the nominator dies."
+			const s = good(scenario(cast)).reminder('chef', 'gnome', 'Amigo').newDay();
+			const nomination = { nominator: s.seat('empath'), nominee: s.seat('chef') };
+			expect(characterNominationPrompts(s.game, nomination, s.characters)).toEqual([
+				{ kind: 'may-kill-nominator', characterId: 'gnome', ...nomination }
+			]);
+			const other = { nominator: s.seat('empath'), nominee: s.seat('imp') };
+			expect(characterNominationPrompts(s.game, other, s.characters)).toEqual([]);
 		});
 	});
 });

@@ -88,8 +88,9 @@ describe('Washerwoman', () => {
 			s.reminder('chef', 'washerwoman', 'Townsfolk').reminder('imp', 'washerwoman', 'Wrong');
 
 		it('lists the Townsfolk and Wrong reminders to place before the first night', () => {
-			// How to Run: before night one, the Storyteller marks one Townsfolk with Townsfolk and a
-			// second player with Wrong.
+			// Wiki: "While preparing the first night, put the Washerwoman's TOWNSFOLK reminder token by
+			// any Townsfolk character token, and put the Washerwoman's WRONG reminder token by any other
+			// character token."
 			const s = scenario(cast);
 			expect(setupPrep('washerwoman', character.name, s.characters).map((p) => p.tokens)).toEqual([
 				['Townsfolk'],
@@ -98,7 +99,9 @@ describe('Washerwoman', () => {
 		});
 
 		it('puts the Townsfolk reminder only on a Townsfolk', () => {
-			// How to Run: the Townsfolk reminder goes beside a Townsfolk's character token.
+			// Wiki: "While preparing the first night, put the Washerwoman's TOWNSFOLK reminder token by
+			// any Townsfolk character token, and put the Washerwoman's WRONG reminder token by any other
+			// character token."
 			const s = scenario(cast);
 			const reminder = { characterId: 'washerwoman', label: 'Townsfolk' };
 			expect(reminderTargetMisses(s.game, reminder, s.seat('chef'), s.characters)).toEqual([]);
@@ -106,7 +109,9 @@ describe('Washerwoman', () => {
 		});
 
 		it('puts the Wrong reminder on any other seat, never the one marked Townsfolk', () => {
-			// How to Run: the Wrong reminder goes beside a different character token.
+			// Wiki: "While preparing the first night, put the Washerwoman's TOWNSFOLK reminder token by
+			// any Townsfolk character token, and put the Washerwoman's WRONG reminder token by any other
+			// character token."
 			const s = scenario(cast).reminder('chef', 'washerwoman', 'Townsfolk');
 			const reminder = { characterId: 'washerwoman', label: 'Wrong' };
 			expect(reminderTargetMisses(s.game, reminder, s.seat('imp'), s.characters)).toEqual([]);
@@ -116,8 +121,8 @@ describe('Washerwoman', () => {
 		});
 
 		it('on the first night, shows the two marked players and the marked character', () => {
-			// How to Run: on night one, point at the seats marked Townsfolk and Wrong, and show the
-			// character marked Townsfolk.
+			// Wiki: "During the first night, wake the Washerwoman and point to the players marked
+			// TOWNSFOLK and WRONG. Show the character token marked TOWNSFOLK to the Washerwoman."
 			const s = marked(scenario(cast));
 			const picker = infoPicker(
 				s.game,
@@ -136,7 +141,7 @@ describe('Washerwoman', () => {
 		});
 
 		it('lets the Storyteller remove both reminders once they are shown', () => {
-			// How to Run: the reminders come off whenever it suits the Storyteller.
+			// Wiki: "Remove the Washerwoman's reminder tokens when convenient."
 			const s = marked(scenario(cast)).newDay();
 			const ids = s.game.seating.flatMap((id) =>
 				s.game.seats[id].reminders

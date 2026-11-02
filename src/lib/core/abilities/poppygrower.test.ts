@@ -14,11 +14,18 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import {
+	committedCharacter,
+	committedGameData,
+	nightSheetPresence
+} from '#lib/core/testing/committed-data.ts';
 import type { Command } from '#lib/core/engine/index.ts';
 import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
 import { demonInfo } from '#lib/core/rules/evil-info.ts';
-import { scenario } from '#lib/core/testing/scenario.ts';
+import { withNightInfo } from '#lib/core/rules/night-info.ts';
+import { nightOrder, type Night } from '#lib/core/rules/night-order.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Poppy Grower', () => {
 	const character = committedCharacter('poppygrower');
@@ -78,6 +85,64 @@ describe('Poppy Grower', () => {
 			expect(demonInfo(s.game, s.characters).hiddenBy).toBeUndefined();
 			const later = s.newDay().newDay().newDay().dies('poppygrower', 'imp');
 			expect(demonInfo(later.game, later.characters).hiddenBy).toBeUndefined();
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Poppy_Grower#How_to_Run)', () => {
+		const cast = ['poppygrower', 'chef', 'imp', 'poisoner', 'witch', 'empath', 'monk'];
+		const steps = (s: Scenario, night: Night) => {
+			const data = committedGameData();
+			const inPlay = s.game.seating.map((id) => data.byId.get(s.game.seats[id].characterId!)!);
+			const sheet = night === 'first' ? data.nightSheet.firstNight : data.nightSheet.otherNight;
+			return withNightInfo(
+				nightOrder({ night, sheet: data.nightSheet, inPlay, players: inPlay.length }).steps,
+				s.game,
+				s.characters,
+				night,
+				{ died: [] },
+				sheet
+			);
+		};
+
+		it('notes at the Minion info and Demon info steps that evil does not learn each other', () => {
+			// Wiki: "During the first night, wake the Demon. Show the THESE CHARACTERS ARE NOT IN PLAY
+			// info token, then any three good character tokens that are not in play. Then, put the
+			// Demon to sleep. Do not do the Minion Info and Demon Info steps."
+			const s = scenario(cast);
+			for (const marker of ['minioninfo', 'demoninfo']) {
+				const step = steps(s, 'first').find((step) => step.id === marker);
+				expect(step?.notes.some((note) => note.startsWith('Poppy Grower:'))).toBe(true);
+			}
+		});
+
+		it('allows Evil Wakes only on the Poppy Grower once they have died', () => {
+			// Wiki: "If the Poppy Grower dies, mark them with the EVIL WAKES reminder."
+			const s = scenario(cast);
+			const token = { characterId: 'poppygrower', label: 'Evil Wakes' };
+			expect(reminderTargetMisses(s.game, token, s.seat('poppygrower'), s.characters)).not.toEqual(
+				[]
+			);
+			const dead = s.execute('poppygrower');
+			expect(
+				reminderTargetMisses(dead.game, token, dead.seat('poppygrower'), dead.characters)
+			).toEqual([]);
+			expect(reminderTargetMisses(dead.game, token, dead.seat('chef'), dead.characters)).toContain(
+				'not-self'
+			);
+		});
+
+		it.fails('adds the Minion info and Demon info steps the night the Poppy Grower died', () => {
+			// Wiki: "That night, wake the Minions and let them make eye contact. Show the THIS IS THE
+			// DEMON info token, then point to the Demon. Put the Minions to sleep. Wake the Demon. Show
+			// the THESE ARE YOUR MINIONS info token, then point to the Minions. Put the Demon to sleep."
+			// Waits on the engine (unplanned): no evil info steps on a later night once the Poppy
+			// Grower has died.
+			const s = scenario(cast)
+				.execute('poppygrower')
+				.reminder('poppygrower', 'poppygrower', 'Evil Wakes');
+			const ids = steps(s, 'other').map((step) => step.id);
+			expect(ids).toContain('minioninfo');
+			expect(ids).toContain('demoninfo');
 		});
 	});
 });

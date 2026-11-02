@@ -99,7 +99,9 @@ describe('Baron', () => {
 
 	describe('How to Run (https://wiki.bloodontheclocktower.com/Baron#How_to_Run)', () => {
 		it('flags a bag that still holds the Townsfolk the Baron swaps for two Outsiders', () => {
-			// How to Run: at setup, take out two Townsfolk tokens and put in two Outsider tokens.
+			// Wiki: "While setting up the game, remove any two Townsfolk character tokens and add any
+			// two Outsider character tokens."
+			// Wiki: "These Outsider tokens go into the bag instead of the Townsfolk tokens."
 			const data = committedGameData();
 			const ids = ['chef', 'empath', 'monk', 'slayer', 'soldier', 'baron', 'imp'];
 			const result = analyseSetup({ players: 7, inPlay: ids.map((id) => data.byId.get(id)!) });
@@ -109,7 +111,7 @@ describe('Baron', () => {
 		});
 
 		it("adds the Drunk's own setup step when one of the Outsiders is the Drunk", () => {
-			// How to Run: an added Drunk brings its own setup instructions with it.
+			// Wiki: "(If you add the Drunk, remember to follow its setup instructions as well.)"
 			const s = scenario(['chef', 'empath', 'monk', 'drunk', 'butler', 'baron', 'imp']);
 			expect(setupReminders(s.game, s.characters)[0]).toMatchObject({
 				characterId: 'drunk',

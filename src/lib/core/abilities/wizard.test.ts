@@ -20,6 +20,7 @@ import { gameEnds } from '#lib/core/rules/game-end.ts';
 import { abilityState } from '#lib/core/rules/ability.ts';
 import { infoPicker } from '#lib/core/rules/night-info.ts';
 import { wishes } from '#lib/core/rules/wishes.ts';
+import { warned } from '#lib/core/model/fixtures.test-support.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
 /** The Wizard's day reminders, as plain text. */
@@ -141,6 +142,45 @@ describe('Wizard', () => {
 			expect(wishes(s.game)).toMatchObject([{ granted: false }]);
 			// Declined: they may still make a wish.
 			expect(wizardLines(s).join(' ')).toMatch(/wish/);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Wizard#How_to_Run)', () => {
+		const wish = (s: Scenario, granted: boolean, extra: { price?: string; clue?: string } = {}) =>
+			({
+				type: 'RecordWish',
+				seatId: s.seat('wizard'),
+				characterId: 'wizard',
+				text: 'To learn who the Demon is',
+				granted,
+				...extra
+			}) as const;
+
+		it('lets the Wizard wish again after a declined wish, but warns at a second granted one', () => {
+			// Wiki: "When the Wizard makes a wish, either verbally or via text, decide whether to accept
+			// or decline the wish. If the wish is declined, prompt the Wizard to wish again, or tell
+			// them that they have no more wishes."
+			const s = scenario(['wizard', 'chef', 'empath', 'poisoner', 'imp']);
+			const declined = s.do(wish(s, false));
+			expect(warned(declined.session, declined.ctx, wish(declined, true))).toEqual([]);
+			const granted = declined.do(wish(declined, true));
+			expect(warned(granted.session, granted.ctx, wish(granted, true))).toContain('already-wished');
+		});
+
+		it('records a price and a clue for a granted wish, then or later', () => {
+			// Wiki: "Now or later, you may make a price: make whatever mechanical adjustments to the game
+			// you feel are necessary for the wish to be balanced. Now or later, you may declare publicly
+			// that the Wizard has made a wish, then give the good team a clue about what was wished."
+			const s = scenario(['wizard', 'chef', 'empath', 'poisoner', 'imp']);
+			const granted = s.do(wish(s, true));
+			const entryId = wishes(granted.game)[0]!.entryId;
+			const later = granted.do({
+				...wish(granted, true, { price: 'The Chef is drunk', clue: 'Someone knows too much' }),
+				entryId
+			});
+			expect(wishes(later.game)).toMatchObject([
+				{ granted: true, price: 'The Chef is drunk', clue: 'Someone knows too much' }
+			]);
 		});
 	});
 });

@@ -16,6 +16,7 @@ import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { explosionOf, survivorsLackDemon } from '#lib/core/rules/explosion.ts';
 import { gameEnds } from '#lib/core/rules/game-end.ts';
+import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
@@ -88,6 +89,43 @@ describe('Boomdandy', () => {
 			const s = scenario(['boomdandy', 'po', 'chef', 'empath', 'poisoner']).poisoned('boomdandy');
 			expect(explosionOf(s.game, s.seat('boomdandy'), s.characters)).toBeUndefined();
 			expect(explosionOf(s.game, s.seat('chef'), s.characters)).toBeUndefined();
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Boomdandy#How_to_Run)', () => {
+		const cast = ['boomdandy', 'po', 'chef', 'empath', 'monk', 'soldier'];
+
+		it('offers the explosion as a cause of death for every player but the Boomdandy', () => {
+			// Wiki: "When your hand reaches a living player, say “You live” or say “You die” as that
+			// player dies."
+			const s = scenario(cast).execute('boomdandy');
+			const causes = (seat: string) =>
+				validDeathCauses(s.game, s.seat(seat), s.characters).map((c) => c.cause);
+			expect(causes('chef')).toContain('boomdandy');
+			expect(causes('boomdandy')).not.toContain('boomdandy');
+		});
+
+		it('flags three survivors that leave out the Demon', () => {
+			// Wiki: "When you have completed the circle, three players will be alive, including the
+			// Demon."
+			const s = scenario(cast);
+			const withPo = [s.seat('po'), s.seat('chef'), s.seat('empath')];
+			const withoutPo = [s.seat('chef'), s.seat('empath'), s.seat('monk')];
+			expect(survivorsLackDemon(s.game, withPo, s.characters)).toBe(false);
+			expect(survivorsLackDemon(s.game, withoutPo, s.characters)).toBe(true);
+		});
+
+		it('good wins when the pointing kills the Demon', () => {
+			// Wiki: "The player with the most fingers pointed at them, dies. This will end the game, since
+			// just two players are alive, so declare which team has won."
+			const exploded = (['monk', 'soldier'] as const).reduce(
+				(s, id) => s.dies(id, 'boomdandy'),
+				scenario(cast).execute('boomdandy')
+			);
+			const pointed = exploded.dies('po', 'boomdandy');
+			expect(gameEnds(pointed.game, pointed.characters)).toMatchObject([
+				{ rule: 'demon-dead', winner: 'good' }
+			]);
 		});
 	});
 });

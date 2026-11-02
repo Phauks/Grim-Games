@@ -16,6 +16,9 @@ import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { total, votes } from '#lib/core/testing/votes.ts';
+import { placeholdersFor } from '#lib/core/rules/night-text.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { voteHints } from '#lib/core/rules/vote-weights.ts';
 import { scenario, type SeatRef } from '#lib/core/testing/scenario.ts';
 
 describe('Bureaucrat', () => {
@@ -120,6 +123,37 @@ describe('Bureaucrat', () => {
 			const voted = votes(s, 'soldier');
 			expect(total(voted)).toBe(3);
 			expect(voted.game.seats[s.seat('soldier')].ghostVoteUsed).toBe(true);
+		});
+	});
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Bureaucrat#How_to_Run)', () => {
+		const cast = ['bureaucrat', 'chef', 'empath', 'monk', 'imp', 'poisoner'];
+
+		it("the Bureaucrat's step each night places 3 Votes on the chosen player", () => {
+			// Wiki: "Each night, wake the Bureaucrat. They point at any player. Mark the chosen player
+			// with the Bureaucrat’s 3 VOTES reminder. Put the Bureaucrat to sleep."
+			const place = [{ tokens: [{ label: '3 Votes', action: 'place' }] }];
+			expect(placeholdersFor(character, 'first')).toEqual(place);
+			expect(placeholdersFor(character, 'other')).toEqual(place);
+		});
+
+		it('allows 3 Votes on any other player, dead players included', () => {
+			// Wiki: "They point at any player."
+			// The ability says "a player (not yourself)", so the Bureaucrat is the one seat left out.
+			const s = scenario(cast).dies('monk', 'imp');
+			const reminder = { characterId: 'bureaucrat', label: '3 Votes' };
+			expect(reminderTargetMisses(s.game, reminder, s.seat('chef'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, reminder, s.seat('monk'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, reminder, s.seat('bureaucrat'), s.characters)).toEqual([
+				'self'
+			]);
+		});
+
+		it('shows the vote of the player marked 3 Votes as worth 3 when counting', () => {
+			// Wiki: "Each time you tally the vote of a player marked 3 VOTES, count it as three votes
+			// instead of one. (Count this out loud, as normal.)"
+			const s = scenario(cast).reminder('empath', 'bureaucrat', '3 Votes');
+			const hint = voteHints(s.game, s.characters).find((h) => h.seatId === s.seat('empath'))!;
+			expect(hint).toMatchObject({ worth: 3, worthFrom: ['bureaucrat'] });
 		});
 	});
 });

@@ -28,6 +28,8 @@ import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
 import { survivesFirstDeath } from '#lib/core/rules/first-death.ts';
 import { reliability } from '#lib/core/rules/night-info.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
+import { nightKill } from '#lib/core/rules/night-kill.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 
 describe('Pukka', () => {
 	const character = committedCharacter('pukka');
@@ -133,6 +135,40 @@ describe('Pukka', () => {
 					flags: [expect.objectContaining({ code: 'impaired' })]
 				})
 			);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Pukka#How_to_Run)', () => {
+		const cast = ['pukka', 'chambermaid', 'chef', 'empath', 'poisoner'];
+
+		it('marks the chosen player Poisoned, any player, on the first night and every other night', () => {
+			// Wiki: "Each night, wake the Pukka. They point at any player. Put the Pukka to sleep. The
+			// chosen player is poisoned—mark them with a POISONED reminder."
+			const s = scenario(cast);
+			const poisoned = { characterId: 'pukka', label: 'Poisoned' };
+			for (const seat of ['pukka', 'chef', 'poisoner'] as const)
+				expect(reminderTargetMisses(s.game, poisoned, s.seat(seat), s.characters), seat).toEqual(
+					[]
+				);
+			for (const night of ['first', 'other'] as const)
+				expect(placeholdersFor(character, night)?.[0], night).toEqual({
+					tokens: [{ label: 'Poisoned', action: 'place' }]
+				});
+		});
+
+		it("kills last night's Poisoned player each night but the first, marking them Dead", () => {
+			// Wiki: "Each night except the first, the other player marked POISONED dies—mark them with
+			// a DEAD reminder, then remove their POISONED reminder."
+			const s = scenario(cast).reminder('chef', 'pukka', 'Poisoned').newDay();
+			expect(nightKill(s.game, s.seat('pukka'), 'pukka', s.characters)).toEqual({
+				max: 1,
+				delayed: [s.seat('chef')]
+			});
+			const dead = { characterId: 'pukka', label: 'Dead' };
+			expect(reminderTargetMisses(s.game, dead, s.seat('chef'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, dead, s.seat('empath'), s.characters)).toEqual([
+				'with-label'
+			]);
 		});
 	});
 

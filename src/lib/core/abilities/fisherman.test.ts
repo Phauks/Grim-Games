@@ -22,6 +22,8 @@ import {
 	renderReminder
 } from '#lib/core/rules/day-reminders.ts';
 import { infoPicker } from '#lib/core/rules/night-info.ts';
+import { warned } from '#lib/core/model/fixtures.test-support.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 import { type Scenario, scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
@@ -99,6 +101,35 @@ describe('Fisherman', () => {
 			expect(abilityState(s.game, s.seat('fisherman'), s.characters).works).toBe(false);
 			// The day line warns that the advice is unreliable: the Fisherman is really the Drunk.
 			expect(linesOf(s)).toEqual(['[fisherman · Ana] is really the [drunk · Ana]']);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Fisherman#How_to_Run)', () => {
+		const ask = (at: Scenario) =>
+			({ type: 'UseAbility', seatId: at.seat('fisherman'), characterId: 'fisherman' }) as const;
+
+		it('places No Ability on the Fisherman once they have had their advice', () => {
+			// Wiki: "Once per game, the Fisherman will ask to use their ability. In private, give them
+			// once piece of advice to help them win. Then, put the No Ability reminder by the Fisherman
+			// token."
+			const s = scenario(['fisherman', 'chef', 'imp', 'poisoner', 'monk']).newDay();
+			const used = s.do(ask);
+			expect(used.game.seats[used.seat('fisherman')].reminders).toContainEqual(
+				expect.objectContaining({ characterId: 'fisherman', label: 'No Ability' })
+			);
+			const spent = { characterId: 'fisherman', label: 'No Ability' };
+			expect(reminderTargetMisses(s.game, spent, s.seat('chef'), s.characters)).toEqual([
+				'not-self'
+			]);
+		});
+
+		it('warns of a second request on a later day', () => {
+			// Wiki: "Once per game, the Fisherman will ask to use their ability."
+			const s = scenario(['fisherman', 'chef', 'imp', 'poisoner', 'monk'])
+				.newDay()
+				.do(ask)
+				.newDay();
+			expect(warned(s.session, s.ctx, ask(s))).toContain('already-used');
 		});
 	});
 });

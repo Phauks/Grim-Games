@@ -19,6 +19,9 @@ import { gameEnds, livesWhileDead } from '#lib/core/rules/game-end.ts';
 import { diedSinceNewDay } from '#lib/core/rules/night-numbers.ts';
 import { wakeConditionMet } from '#lib/core/rules/wakes-when.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
+import { nightKill } from '#lib/core/rules/night-kill.ts';
+import { reminderPrompt } from '#lib/core/rules/reminder-prompts.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 
 describe('Zombuul', () => {
 	const character = committedCharacter('zombuul');
@@ -93,6 +96,56 @@ describe('Zombuul', () => {
 					died
 				)
 			).toBe(false);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Zombuul#How_to_Run)', () => {
+		const cast = ['zombuul', 'chef', 'empath', 'monk', 'assassin'];
+
+		it('lives on, registering as dead, the first time it would die', () => {
+			// Wiki: "The first time the Zombuul would die, they remain alive. Declare that they died,
+			// but do not add a shroud to the Zombuul. (Flip the life token on the Town Square, as
+			// normal.) From now on, the Zombuul registers as dead."
+			const s = scenario(cast).newDay().dies('zombuul', 'assassin');
+			expect(s.game.seats[s.seat('zombuul')].dead).toBe(true);
+			expect(livesWhileDead(s.game, s.seat('zombuul'), s.characters)).toBe(true);
+			expect(gameEnds(s.game, s.characters)).toEqual([]);
+		});
+
+		it('takes Died Today on any player who died today, the Zombuul included', () => {
+			// Wiki: "Each day, if a player dies, mark them with the DIED TODAY reminder. (If the Zombuul
+			// “dies” by execution, they register as dead, so mark the Zombuul with the DIED TODAY
+			// reminder.)"
+			const s = scenario(cast).newDay().execute('zombuul');
+			const diedToday = { characterId: 'zombuul', label: 'Died Today' };
+			expect(reminderTargetMisses(s.game, diedToday, s.seat('zombuul'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, diedToday, s.seat('chef'), s.characters)).toEqual([]);
+			expect(reminderPrompt('Died Today', 'zombuul')).toBe('markDead');
+		});
+
+		it.fails('does not wake while any player is marked Died Today', () => {
+			// Wiki: "Each night except the first, if any player is marked DIED TODAY, do not wake the
+			// Zombuul."
+			// Waits on the engine (unplanned): the Zombuul's wake condition reads the deaths logged
+			// since the New day, not its Died Today reminder.
+			const s = scenario(cast).newDay().reminder('chef', 'zombuul', 'Died Today');
+			expect(wakeConditionMet(s.game, 'zombuul', s.seat('zombuul'), s.characters, new Set())).toBe(
+				false
+			);
+		});
+
+		it('wakes on a night after nobody died, to choose one player who dies', () => {
+			// Wiki: "Each night except the first, if no player is marked DIED TODAY, wake the Zombuul.
+			// They point at any player. Put the Zombuul to sleep. The chosen player dies—mark them with
+			// the DEAD reminder."
+			const s = scenario(cast).newDay();
+			expect(wakeConditionMet(s.game, 'zombuul', s.seat('zombuul'), s.characters, new Set())).toBe(
+				true
+			);
+			expect(nightKill(s.game, s.seat('zombuul'), 'zombuul', s.characters)?.max).toBe(1);
+			const dead = { characterId: 'zombuul', label: 'Dead' };
+			for (const seat of ['chef', 'assassin'] as const)
+				expect(reminderTargetMisses(s.game, dead, s.seat(seat), s.characters), seat).toEqual([]);
 		});
 	});
 });

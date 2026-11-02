@@ -18,6 +18,9 @@ import { committedCharacter, nightSheetPresence } from '#lib/core/testing/commit
 import { dayUseDeath } from '#lib/core/rules/day-claims.ts';
 import { todaysNominations } from '#lib/core/rules/nominations.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
+import { dayReminders, dayStateFromGame } from '#lib/core/rules/day-reminders.ts';
+import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
+import { latest, votes } from '#lib/core/testing/votes.ts';
 
 describe('Gunslinger', () => {
 	const character = committedCharacter('gunslinger');
@@ -78,6 +81,50 @@ describe('Gunslinger', () => {
 				.do((at) => ({ type: 'Exile', seatId: at.seat('thief') }))
 				.nominate('chef', 'butler');
 			expect(todaysNominations(s.game).map((n) => n.nominee)).toEqual([s.seat('butler')]);
+		});
+	});
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Gunslinger#How_to_Run)', () => {
+		const cast = ['gunslinger', 'chef', 'imp', 'monk', 'poisoner', 'empath'];
+		const table = () =>
+			scenario(cast).do((at) => ({
+				type: 'SetAlignment',
+				seatId: at.seat('gunslinger'),
+				alignment: 'good'
+			}));
+
+		it('reminds the Storyteller by day that the Gunslinger may shoot a voter', () => {
+			// Wiki: "If the Gunslinger is a new player, you may wish to remind them that they can use
+			// their ability."
+			const s = table().newDay();
+			const lines = dayReminders(
+				dayStateFromGame(s.game, (id) => s.characters.get(id), undefined, s.characters)
+			).groups.flatMap((g) => g.reminders);
+			expect(lines.some((r) => r.characterId === 'gunslinger')).toBe(true);
+		});
+
+		it('kills the chosen voter by day, but not a voter who is already dead', () => {
+			// Wiki: "If so, the Gunslinger points at any player who voted for this execution. The
+			// chosen player dies."
+			const s = table().dies('empath', 'imp').nominate('chef', 'imp');
+			const voted = votes(s, 'monk', 'empath');
+			const causes = validDeathCauses(voted.game, voted.seat('monk'), voted.characters, {
+				day: true
+			});
+			expect(causes).toContainEqual(expect.objectContaining({ cause: 'gunslinger', flags: [] }));
+			expect(dayUseDeath(voted.game, 'gunslinger', voted.seat('monk'), voted.characters)).toBe(
+				'dies'
+			);
+			expect(dayUseDeath(voted.game, 'gunslinger', voted.seat('empath'), voted.characters)).toBe(
+				'no'
+			);
+		});
+
+		it('keeps who voted on the nomination, so the Storyteller can check the choice', () => {
+			// Wiki: "When the Gunslinger wants to use their ability, you may need to ask all players who
+			// voted to raise their hand again, so the Gunslinger doesn’t accidentally choose a player
+			// that didn’t vote."
+			const s = votes(table().nominate('chef', 'imp'), 'monk', 'poisoner');
+			expect(latest(s).votes?.voters).toEqual([s.seat('monk'), s.seat('poisoner')]);
 		});
 	});
 });

@@ -15,6 +15,7 @@
 import { describe, expect, it } from 'vitest';
 import { gameEnds } from '#lib/core/rules/game-end.ts';
 import { defaultAlignment } from '#lib/core/data/index.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
@@ -99,6 +100,29 @@ describe('Fearmonger', () => {
 			expect(gameEnds(s.game, s.characters)).toMatchObject([
 				{ rule: 'nominated-marked-executed', winner: 'good' }
 			]);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Fearmonger#How_to_Run)', () => {
+		it('the Fear reminder may go on any player', () => {
+			// Wiki: "Each night, wake the Fearmonger. They point at any player. Put the Fearmonger to
+			// sleep. Mark the chosen player with the FEAR reminder."
+			const s = scenario(['butler', 'chef', 'empath', 'fearmonger', 'imp']).dies('chef', 'imp');
+			const fear = { characterId: 'fearmonger', label: 'Fear' };
+			for (const seatId of s.game.seating)
+				expect(reminderTargetMisses(s.game, fear, seatId, s.characters)).toEqual([]);
+		});
+
+		it('ends nothing when its nomination of the Fear player does not execute them', () => {
+			// Wiki: "If the Fearmonger nominates the player marked FEAR, and that nomination results in
+			// their execution, declare that the game is over and which team has won."
+			const s = scenario(['butler', 'chef', 'empath', 'fearmonger', 'imp'])
+				.reminder('butler', 'fearmonger', 'Fear')
+				.newDay()
+				.nominate('fearmonger', 'butler')
+				.nominate('chef', 'empath')
+				.execute('empath');
+			expect(gameEnds(s.game, s.characters)).toEqual([]);
 		});
 	});
 });

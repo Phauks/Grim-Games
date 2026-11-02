@@ -13,7 +13,9 @@
  * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
-import { gameEnds } from '#lib/core/rules/game-end.ts';
+import { gameEnds, promptable } from '#lib/core/rules/game-end.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { setupPrep } from '#lib/core/rules/setup-reminders.ts';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
@@ -118,6 +120,44 @@ describe('Evil Twin', () => {
 				.reminder('pithag', 'eviltwin', 'Twin')
 				.execute('chef');
 			expect(gameEnds(s.game, s.characters)).toMatchObject([{ winner: 'evil' }]);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Evil_Twin#How_to_Run)', () => {
+		const twin = { characterId: 'eviltwin', label: 'Twin' };
+
+		it('setup asks for a good player to mark Twin', () => {
+			// Wiki: "While setting up the game, choose a Good Twin by marking any good character with the
+			// TWIN reminder."
+			expect(setupPrep('eviltwin', 'Evil Twin')).toMatchObject([{ tokens: ['Twin'] }]);
+			const s = scenario(['oracle', 'chef', 'empath', 'eviltwin', 'nodashii']);
+			expect(reminderTargetMisses(s.game, twin, s.seat('oracle'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, twin, s.seat('nodashii'), s.characters)).toContain(
+				'alignment'
+			);
+			expect(reminderTargetMisses(s.game, twin, s.seat('eviltwin'), s.characters)).toContain(
+				'self'
+			);
+		});
+
+		it('once the good twin is dead, executing the Demon wins for good', () => {
+			// Wiki: "While both Twins are alive, the good team cannot win."
+			const s = scenario(['artist', 'chef', 'empath', 'eviltwin', 'imp'])
+				.reminder('artist', 'eviltwin', 'Twin')
+				.dies('artist', 'imp')
+				.newDay()
+				.execute('imp');
+			expect(promptable(gameEnds(s.game, s.characters))).toMatchObject([
+				{ rule: 'demon-dead', winner: 'good' }
+			]);
+		});
+
+		it('the good twin dying at night does not end the game', () => {
+			// Wiki: "If a good-aligned Twin is executed, the evil team wins."
+			const s = scenario(['artist', 'chef', 'empath', 'eviltwin', 'imp'])
+				.reminder('artist', 'eviltwin', 'Twin')
+				.dies('artist', 'imp');
+			expect(gameEnds(s.game, s.characters)).toEqual([]);
 		});
 	});
 });

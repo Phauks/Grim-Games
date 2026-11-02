@@ -145,4 +145,40 @@ describe('Dreamer', () => {
 			});
 		});
 	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Dreamer#How_to_Run)', () => {
+		const card = (s: Scenario, chosen: SeatRef) =>
+			withChosen(
+				filledInfoToken(s.characters.get('dreamer')!, 'this-player-is', 2)!,
+				s.characters.get(trueCharacter(s.game, s.seat(chosen), s.characters)!)!
+			);
+
+		it('chooses a player on the first night and every other night', () => {
+			// Wiki: "Each night, wake the Dreamer. They point at any player."
+			const s = scenario(['dreamer', 'mutant', 'cerenovus', 'chef', 'nodashii']);
+			for (const night of ['first', 'other'] as const) {
+				const picker = infoPicker(s.game, s.seat('dreamer'), 'dreamer', s.characters, night)!;
+				expect(picker.seatCount).toBe(1);
+			}
+		});
+
+		it('for a Townsfolk, shows their character and an evil one', () => {
+			// Wiki: "If the chosen player’s character is a Townsfolk or Outsider, show their character
+			// token and any Minion or Demon token to the Dreamer."
+			const s = scenario(['dreamer', 'mutant', 'cerenovus', 'chef', 'nodashii']);
+			expect(card(s, 'chef')).toMatchObject({ characterIds: ['chef'], othersAlignment: 'evil' });
+			const picker = infoPicker(s.game, s.seat('dreamer'), 'dreamer', s.characters)!;
+			expect(isAllowed(picker, { seats: [s.seat('chef')], characterId: 'chef' })).toBe(true);
+		});
+
+		it('for the Demon, shows their character and a good one', () => {
+			// Wiki: "If the chosen player’s character is a Minion or Demon, show their character token and
+			// any Townsfolk or Outsider token to the Dreamer."
+			const s = scenario(['dreamer', 'mutant', 'cerenovus', 'chef', 'nodashii']);
+			expect(card(s, 'nodashii')).toMatchObject({
+				characterIds: ['nodashii'],
+				othersAlignment: 'good'
+			});
+		});
+	});
 });

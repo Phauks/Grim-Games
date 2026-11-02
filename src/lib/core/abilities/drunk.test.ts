@@ -113,8 +113,10 @@ describe('Drunk', () => {
 
 	describe('How to Run (https://wiki.bloodontheclocktower.com/Drunk#How_to_Run)', () => {
 		it('keeps the Drunk token out of the bag and holds back its Is The Drunk reminder', () => {
-			// How to Run: at setup the Drunk token never goes in the bag; a Townsfolk token goes in
-			// instead, and the Is The Drunk reminder waits in the Grimoire.
+			// Wiki: "While setting up the game, before putting character tokens in the bag, remove the
+			// Drunk token and add a Townsfolk character token. Add the Drunk's IS THE DRUNK reminder
+			// token to the Grimoire. Put the swapped Townsfolk character token in the bag, not the Drunk
+			// character token."
 			const data = committedGameData();
 			const ids = ['chef', 'empath', 'monk', 'drunk', 'poisoner', 'imp'];
 			const result = planBag({
@@ -127,8 +129,8 @@ describe('Drunk', () => {
 		});
 
 		it('puts Is The Drunk on the Drunk first, beside a Townsfolk token only', () => {
-			// How to Run: before the first night, the Is The Drunk reminder goes by a Townsfolk
-			// token, and that player is really the Drunk.
+			// Wiki: "While preparing the first night, put the Drunk's IS THE DRUNK reminder token by any
+			// Townsfolk character token, changing that player's character to the Drunk."
 			const s = scenario(['washerwoman', 'chef', 'drunk', 'imp', 'saint']);
 			expect(setupReminders(s.game, s.characters)[0]).toMatchObject({
 				label: 'Is The Drunk',
@@ -141,8 +143,8 @@ describe('Drunk', () => {
 		});
 
 		it('makes that player an Outsider without the Townsfolk ability they were shown', () => {
-			// How to Run: the marked player is the Drunk, an Outsider, and has no Townsfolk ability
-			// though they believe they do.
+			// Wiki: "They are now an Outsider, and do not have the ability of this Townsfolk character.
+			// (But they think they do.)"
 			const s = scenario(['chef', 'empath', 'imp', 'monk', 'poisoner']).drunk('chef');
 			expect(trueCharacter(s.game, s.seat('chef'), s.characters)).toBe('drunk');
 			expect(typeOf(s.game, s.seat('chef'), s.characters)).toBe('outsider');
@@ -152,8 +154,10 @@ describe('Drunk', () => {
 		});
 
 		it("wakes the Drunk at the shown Townsfolk's night step, flagged as drunk", () => {
-			// How to Run: run the Drunk as the Townsfolk they think they are, waking them when that
-			// character would wake; their information may be false.
+			// Wiki: "During the game, act as if the Drunk is actually this Townsfolk character. (If that
+			// character would wake to act at night, the Drunk wakes to act. If their ability would give
+			// them information, you can give false information to them if you wish. See "Drunkenness and
+			// Poisoning" in the rulebook.)"
 			const s = scenario(['washerwoman', 'empath', 'imp', 'monk', 'poisoner']).drunk('washerwoman');
 			const data = committedGameData();
 			const inPlay = s.game.seating.map((id) => s.characters.get(s.game.seats[id].characterId!)!);

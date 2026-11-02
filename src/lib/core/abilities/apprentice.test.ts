@@ -29,6 +29,10 @@ import { deathVerdict } from '#lib/core/rules/night-deaths.ts';
 import { infoPicker } from '#lib/core/rules/night-info/picker.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { rulesOf } from '#lib/core/data/rules/index.ts';
+import { hasAbilityOf } from '#lib/core/rules/gained-abilities.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { stepInfoTokens } from '#lib/core/rules/info-token-characters.ts';
 
 describe('Apprentice', () => {
 	const character = committedCharacter('apprentice');
@@ -97,6 +101,41 @@ describe('Apprentice', () => {
 			// Not the Chambermaid either: the player is the Apprentice.
 			expect(guess('chambermaid')).toMatchObject({ kind: 'dies', seatIds: [s.seat('gambler')] });
 			expect(guess('apprentice')).toMatchObject({ kind: 'no-death', because: 'right-guess' });
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Apprentice#How_to_Run)', () => {
+		it('shows the You Are info token, then a Townsfolk if good or a Minion if evil', () => {
+			// Wiki: "During the first night after the Apprentice enters play, wake the Apprentice. Show
+			// them the YOU ARE info token, then a Townsfolk or Minion token."
+			const tokens = stepInfoTokens(character, character.firstNightReminder);
+			expect(tokens.map((t) => t.id)).toContain('you-are');
+			expect(rulesOf('apprentice')?.swapsForAbility).toEqual({
+				token: 'Is The Apprentice',
+				good: ['townsfolk'],
+				evil: ['minion']
+			});
+		});
+
+		it('puts Is The Apprentice only on the seat whose token was swapped', () => {
+			// Wiki: "In the Grimoire, replace the Apprentice token with that character token, and mark
+			// them with the IS THE APPRENTICE reminder."
+			const s = scenario(['apprentice', 'chef', 'empath', 'monk', 'imp']);
+			const mark = { characterId: 'apprentice', label: 'Is The Apprentice' };
+			expect(reminderTargetMisses(s.game, mark, s.seat('apprentice'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, mark, s.seat('chef'), s.characters)).not.toEqual([]);
+		});
+
+		it.fails("gains the swapped token's ability while staying the Apprentice", () => {
+			// Wiki: "That player remains the Apprentice but gains the ability of their character
+			// token."
+			// Waits on the engine (unplanned): hasAbilityOf doesn't count the ability of the token an
+			// Apprentice's seat was swapped for (swapsForAbility), only gainsAbilityOf and held ones.
+			const s = scenario(['apprentice', 'chef', 'empath', 'monk', 'imp'])
+				.becomes('apprentice', 'innkeeper', 'good')
+				.reminder('apprentice', 'apprentice', 'Is The Apprentice');
+			expect(trueCharacter(s.game, s.seat('apprentice'), s.characters)).toBe('apprentice');
+			expect(hasAbilityOf(s.game, s.seat('apprentice'), 'innkeeper', s.characters)).toBe(true);
 		});
 	});
 

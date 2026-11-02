@@ -18,6 +18,10 @@ import { abilityState } from '#lib/core/rules/ability.ts';
 import { nightAnswer } from '#lib/core/rules/night-info.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { dayClaim } from '#lib/core/rules/day-claims.ts';
+import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { wokeTonight } from '#lib/core/rules/woke-tonight.ts';
 
 describe('Gossip', () => {
 	const character = committedCharacter('gossip');
@@ -112,6 +116,46 @@ describe('Gossip', () => {
 				works: false,
 				dead: true
 			});
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Gossip#How_to_Run)', () => {
+		const cast = ['gossip', 'chef', 'empath', 'monk', 'imp'];
+		const says = (s: Scenario, holds: boolean) =>
+			s.do((at) => ({
+				type: 'DayNote',
+				characterId: 'gossip',
+				seatId: at.seat('gossip'),
+				text: 'The Chef is good.',
+				holds
+			}));
+		const answer = (s: Scenario) =>
+			nightAnswer(s.game, s.seat('gossip'), 'gossip', s.characters, undefined, 'other');
+
+		it("keeps the Gossip's statement in the day log, marked true or false", () => {
+			// Wiki: "Each day, if the Gossip makes a definite, true public statement, put the Gossip’s
+			// DEAD reminder in the center of the left side of the Grimoire as a reminder to yourself to
+			// place it tonight."
+			expect(dayClaim('gossip')).toBe('statement');
+			const s = says(scenario(cast).newDay(), true);
+			expect(s.game.today.entries).toContainEqual(
+				expect.objectContaining({ characterId: 'gossip', seatId: s.seat('gossip'), holds: true })
+			);
+		});
+
+		it('kills only after a true statement made today, and the Storyteller picks who, any player', () => {
+			// Wiki: "Each night except the first, if the Gossip made a definite, true public statement
+			// today, you choose any player. The chosen player dies—mark them with the DEAD reminder."
+			const s = says(scenario(cast).newDay(), true);
+			expect(answer(s)).toMatchObject({ kind: 'yes-no', value: true });
+			expect(answer(s.newDay())).toMatchObject({ kind: 'none' });
+			expect(wokeTonight(s.game, s.seat('gossip'), s.characters, 'other')).toBe(false);
+			const dead = { characterId: 'gossip', label: 'Dead' };
+			for (const seat of ['gossip', 'chef', 'imp'] as const) {
+				expect(reminderTargetMisses(s.game, dead, s.seat(seat), s.characters), seat).toEqual([]);
+				const causes = validDeathCauses(s.game, s.seat(seat), s.characters).map((c) => c.cause);
+				expect(causes, seat).toContain('gossip');
+			}
 		});
 	});
 });

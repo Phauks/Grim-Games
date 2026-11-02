@@ -15,6 +15,9 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night-info.ts';
+import { placeholdersFor } from '#lib/core/rules/night-text.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { wokeTonight } from '#lib/core/rules/woke-tonight.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
@@ -84,6 +87,46 @@ describe('Seamstress', () => {
 			const pair = [s.seat('mathematician'), s.seat('towncrier')];
 			expect(isTruthful(picker, { seats: pair, yes: true })).toBe(true);
 			expect(isAllowed(picker, { seats: pair, yes: false })).toBe(false);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Seamstress#How_to_Run)', () => {
+		it('chooses two players other than themself, on the first night and other nights', () => {
+			// Wiki: "Each night, wake the Seamstress. They either shake their head no or point at any two
+			// players except themself."
+			const s = scenario(['seamstress', 'chef', 'monk', 'imp', 'poisoner']);
+			for (const night of ['first', 'other'] as const) {
+				const picker = infoPicker(s.game, s.seat('seamstress'), 'seamstress', s.characters, night)!;
+				expect(picker.seatCount).toBe(2);
+				expect(
+					isAllowed(picker, { seats: [s.seat('seamstress'), s.seat('chef')], yes: true })
+				).toBe(false);
+			}
+		});
+
+		it('places No Ability on the Seamstress once they have asked', () => {
+			// Wiki: "The Seamstress loses their ability - mark them with the NO ABILITY reminder and remove
+			// their night token from the night sheet."
+			const place = [{ tokens: [{ label: 'No Ability', action: 'place' }] }];
+			expect(placeholdersFor(character, 'first')).toEqual(place);
+			expect(placeholdersFor(character, 'other')).toEqual(place);
+			const s = scenario(['seamstress', 'chef', 'monk', 'imp', 'poisoner']);
+			const spent = { characterId: 'seamstress', label: 'No Ability' };
+			expect(reminderTargetMisses(s.game, spent, s.seat('seamstress'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, spent, s.seat('chef'), s.characters)).toEqual([
+				'not-self'
+			]);
+		});
+
+		it('no longer wakes once marked No Ability', () => {
+			// Wiki: "The Seamstress loses their ability - mark them with the NO ABILITY reminder and remove
+			// their night token from the night sheet."
+			const s = scenario(['seamstress', 'chef', 'monk', 'imp', 'poisoner']).newDay();
+			expect(wokeTonight(s.game, s.seat('seamstress'), s.characters, 'other')).toBe(true);
+			const spent = s.reminder('seamstress', 'seamstress', 'No Ability');
+			expect(wokeTonight(spent.game, spent.seat('seamstress'), spent.characters, 'other')).toBe(
+				false
+			);
 		});
 	});
 });

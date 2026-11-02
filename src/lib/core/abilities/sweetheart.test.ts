@@ -17,7 +17,9 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { abilityState } from '#lib/core/rules/ability.ts';
 import { madnessOffer } from '#lib/core/rules/madness.ts';
-import { nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
+import { nightStepAlerts, onDeathApplies, onDeathTrigger } from '#lib/core/rules/night-alerts.ts';
+import { placeholdersFor } from '#lib/core/rules/night-text.ts';
+import { reminderTargets } from '#lib/core/rules/reminder-targets.ts';
 import { reliability } from '#lib/core/rules/night-info.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
@@ -86,6 +88,48 @@ describe('Sweetheart', () => {
 					impairments: [expect.objectContaining({ reason: 'drunk' })]
 				})
 			);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Sweetheart#How_to_Run)', () => {
+		it('any death of the Sweetheart, an execution too, makes a player drunk', () => {
+			// Wiki: "If the Sweetheart dies, you choose any one player to become drunk - mark this player
+			// with the DRUNK reminder."
+			const s = scenario(['sweetheart', 'mathematician', 'chef', 'vortox', 'witch']).execute(
+				'sweetheart'
+			);
+			const trigger = onDeathTrigger('sweetheart', s.characters)!;
+			expect(
+				onDeathApplies(trigger, s.game.seats[s.seat('sweetheart')].deathCause, s.characters)
+			).toBe(true);
+			expect(onDeathApplies(trigger, 'vortox', s.characters)).toBe(true);
+		});
+
+		it('Drunk may go on any one player', () => {
+			// Wiki: "If the Sweetheart dies, you choose any one player to become drunk - mark this player
+			// with the DRUNK reminder."
+			expect(placeholdersFor(character, 'other')).toEqual([
+				{ tokens: [{ label: 'Drunk', action: 'place' }] }
+			]);
+			const s = scenario(['sweetheart', 'mathematician', 'chef', 'vortox', 'witch']).dies(
+				'sweetheart'
+			);
+			const drunk = { characterId: 'sweetheart', label: 'Drunk' };
+			expect(reminderTargets(s.game, drunk, s.characters).flatMap((t) => t.misses)).toEqual([]);
+		});
+
+		it('the player stays drunk on later days, though the Sweetheart is dead', () => {
+			// Wiki: "The Sweetheart does not lose this ability when dead."
+			const s = scenario(['sweetheart', 'mathematician', 'chef', 'vortox', 'witch'])
+				.dies('sweetheart')
+				.reminder('chef', 'sweetheart', 'Drunk')
+				.newDay()
+				.dusk()
+				.newDay();
+			expect(abilityState(s.game, s.seat('chef'), s.characters)).toMatchObject({
+				works: false,
+				impairments: [{ reason: 'drunk', source: { characterId: 'sweetheart' } }]
+			});
 		});
 	});
 });

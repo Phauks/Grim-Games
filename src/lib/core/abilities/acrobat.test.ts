@@ -16,6 +16,8 @@ import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { deathVerdict } from '#lib/core/rules/night-deaths.ts';
+import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Acrobat', () => {
@@ -100,6 +102,46 @@ describe('Acrobat', () => {
 				kind: 'dies',
 				seatIds: [later.seat('acrobat')]
 			});
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Acrobat#How_to_Run)', () => {
+		it('the Chosen reminder may go on any player, and Dead only on the Acrobat', () => {
+			// Wiki: "Each night except the first, wake the Acrobat. They point to a player. Put the
+			// Acrobat to sleep."
+			const s = scenario(['acrobat', 'chef', 'imp', 'poisoner', 'monk']).dies('monk', 'imp');
+			const chosen = { characterId: 'acrobat', label: 'Chosen' };
+			for (const seatId of s.game.seating)
+				expect(reminderTargetMisses(s.game, chosen, seatId, s.characters)).toEqual([]);
+			const dead = { characterId: 'acrobat', label: 'Dead' };
+			expect(reminderTargetMisses(s.game, dead, s.seat('acrobat'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, dead, s.seat('chef'), s.characters)).toEqual([
+				'not-self'
+			]);
+		});
+
+		it('dies when the chosen player is the Drunk', () => {
+			// Wiki: "If the player the Acrobat pointed to is drunk or poisoned, or becomes drunk or
+			// poisoned at any time tonight, the Acrobat dies."
+			const s = scenario(['acrobat', 'chef', 'imp', 'poisoner', 'monk']).drunk('chef');
+			const verdict = deathVerdict(
+				s.game,
+				s.seat('acrobat'),
+				'acrobat',
+				{ seatId: s.seat('chef') },
+				s.characters
+			);
+			expect(verdict).toMatchObject({ kind: 'dies', seatIds: [s.seat('acrobat')] });
+		});
+
+		it("offers the Acrobat's own ability as a cause of death for the Acrobat only", () => {
+			// Wiki: "If the player the Acrobat pointed to is drunk or poisoned, or becomes drunk or
+			// poisoned at any time tonight, the Acrobat dies."
+			const s = scenario(['acrobat', 'chef', 'imp', 'poisoner', 'monk']);
+			const causes = (seat: 'acrobat' | 'chef') =>
+				validDeathCauses(s.game, s.seat(seat), s.characters).map((c) => c.cause);
+			expect(causes('acrobat')).toContain('acrobat');
+			expect(causes('chef')).not.toContain('acrobat');
 		});
 	});
 });

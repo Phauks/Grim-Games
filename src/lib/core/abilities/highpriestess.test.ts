@@ -14,9 +14,14 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import {
+	committedCharacter,
+	committedGameData,
+	nightSheetPresence
+} from '#lib/core/testing/committed-data.ts';
 import { infoPicker, isAllowed } from '#lib/core/rules/night-info.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
+import { nightOrder } from '#lib/core/rules/night-order.ts';
 
 describe('High Priestess', () => {
 	const character = committedCharacter('highpriestess');
@@ -93,6 +98,29 @@ describe('High Priestess', () => {
 			const picker = infoPicker(s.game, s.seat('highpriestess'), 'highpriestess', s.characters)!;
 			expect(picker.mustBeFalse).toBeUndefined();
 			expect(isAllowed(picker, { seats: [s.seat('vortox')] })).toBe(true);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/High_Priestess#How_to_Run)', () => {
+		const cast = ['highpriestess', 'saint', 'imp', 'chef', 'monk', 'poisoner'];
+
+		it('wakes the High Priestess on the first night and every other night', () => {
+			// Wiki: "Each night, wake the High Priestess."
+			const data = committedGameData();
+			const inPlay = cast.map((id) => data.byId.get(id)!);
+			for (const night of ['first', 'other'] as const) {
+				const { steps } = nightOrder({ night, sheet: data.nightSheet, inPlay, players: 6 });
+				expect(steps.map((step) => step.id)).toContain('highpriestess');
+			}
+		});
+
+		it('asks for one player to point to, night after night', () => {
+			// Wiki: "Point to a player. Put the High Priestess to sleep."
+			const s = scenario(cast).newDay().dusk().newDay().dusk();
+			const picker = infoPicker(s.game, s.seat('highpriestess'), 'highpriestess', s.characters)!;
+			expect(picker).toMatchObject({ kind: 'players', seatCount: 1 });
+			expect(isAllowed(picker, { seats: [s.seat('imp')] })).toBe(true);
+			expect(isAllowed(picker, { seats: [s.seat('saint'), s.seat('chef')] })).toBe(false);
 		});
 	});
 });

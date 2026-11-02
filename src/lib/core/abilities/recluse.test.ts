@@ -113,8 +113,8 @@ describe('Recluse', () => {
 
 	describe('How to Run (https://wiki.bloodontheclocktower.com/Recluse#How_to_Run)', () => {
 		it('lets the Storyteller choose an evil alignment and a Minion or Demon for the Recluse', () => {
-			// How to Run: when an ability looks for evil, the Storyteller decides whether the Recluse
-			// shows up as evil, and as which Minion or Demon.
+			// Wiki: "Each time the Recluse is targeted by an ability that detects or affects evil
+			// characters, choose which character and alignment the Recluse registers as."
 			const s = scenario(['recluse', 'chef', 'imp', 'monk', 'poisoner']);
 			expect(
 				registrations(s.game, s.characters).find((r) => r.seatId === s.seat('recluse'))
@@ -122,8 +122,9 @@ describe('Recluse', () => {
 		});
 
 		it("lets an ability aimed at Minions treat the Recluse as one, such as the Investigator's", () => {
-			// How to Run: show the Recluse as evil when that suits, so an ability that only works on
-			// Minions or Demons can work on them.
+			// Wiki: "(Do whatever is appropriate, such as showing an evil character token, nodding,
+			// giving finger signals, or allowing an ability to work that would normally only affect
+			// evil, Minion, or Demon players.)"
 			const s = scenario(['investigator', 'recluse', 'chef', 'imp', 'poisoner']);
 			const minion = { characterId: 'investigator', label: 'Minion' };
 			expect(reminderTargetMisses(s.game, minion, s.seat('recluse'), s.characters)).toEqual([]);

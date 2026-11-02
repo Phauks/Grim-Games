@@ -16,7 +16,11 @@ import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { abilityState } from '#lib/core/rules/ability.ts';
-import { setupReminders } from '#lib/core/rules/setup-reminders.ts';
+import { setupPrep, setupReminders } from '#lib/core/rules/setup-reminders.ts';
+import { setupModifierFor } from '#lib/core/rules/setup-modifiers.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { remindersEndingAt } from '#lib/core/rules/reminder-ends.ts';
+import { nightTextFor } from '#lib/core/rules/night-text.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
 /** Whether a seat's ability works now. */
@@ -120,6 +124,63 @@ describe('Xaan', () => {
 			expect(xaanSetup(s)).not.toContain('X');
 			const night1 = s.reminder('xaan', 'xaan', 'Night 1');
 			expect([0, 1, 2, 3, 4].filter((i) => !works(night1, i))).toEqual([]);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Xaan#How_to_Run)', () => {
+		const cast = ['chef', 'empath', 'monk', 'saint', 'xaan', 'imp'];
+
+		it('lets the Storyteller deal any number of Outsiders, zero included', () => {
+			// Wiki: "While setting up the game, before putting character tokens in the bag, add or remove
+			// any number of Outsider tokens, including zero."
+			expect(setupModifierFor(character)).toMatchObject({
+				ops: [{ kind: 'any', type: 'outsider' }]
+			});
+		});
+
+		it('counts the nights with Night 1, Night 2 and Night 3 on the Xaan', () => {
+			// Wiki: "On the 1st night, add the NIGHT 1 Xaan reminder to the Grimoire. On the 2nd night,
+			// add the NIGHT 2 Xaan reminder to the Grimoire. On the 3rd night, add the NIGHT 3 Xaan
+			// reminder to the Grimoire."
+			expect(setupPrep('xaan', 'Xaan')[0]).toMatchObject({
+				tokens: ['Night 1'],
+				target: 'the Xaan'
+			});
+			const s = scenario(cast);
+			for (const label of ['Night 1', 'Night 2', 'Night 3', 'X']) {
+				const token = { characterId: 'xaan', label };
+				expect(reminderTargetMisses(s.game, token, s.seat('xaan'), s.characters)).toEqual([]);
+				expect(reminderTargetMisses(s.game, token, s.seat('chef'), s.characters)).toContain(
+					'not-self'
+				);
+			}
+		});
+
+		it.fails('takes X off at the dusk after night X', () => {
+			// Wiki: "On the night that equals the number of Outsiders in play when the game began, add the
+			// X reminder to the Grimoire, and remove it the following dusk."
+			// Waits on the engine (unplanned): the Xaan's X has no reminderEnds at dusk.
+			const s = scenario(cast).reminder('xaan', 'xaan', 'X');
+			const x = s.game.seats[s.seat('xaan')].reminders.find((r) => r.label === 'X')!;
+			expect(remindersEndingAt(s.game, 'dusk', s.characters)).toContain(x.reminderId);
+		});
+
+		it('poisons every Townsfolk while X is out, and no one else', () => {
+			// Wiki: "When the X reminder is in the Grimoire, all Townsfolk players are poisoned."
+			const s = scenario(cast).reminder('xaan', 'xaan', 'X');
+			expect([0, 1, 2].filter((i) => works(s, i))).toEqual([]);
+			expect(works(s, 3)).toBe(true);
+			expect(works(s, 5)).toBe(true);
+		});
+
+		it.fails('says in its fuller night text that X poisons the Townsfolk', () => {
+			// Wiki: "When the X reminder is in the Grimoire, all Townsfolk players are poisoned."
+			// Waits on the engine (bug): the Xaan's fuller night text (nightText.full in its rules)
+			// says all Outsiders are poisoned.
+			for (const night of ['first', 'other'] as const) {
+				const text = nightTextFor(character, night, { full: true })?.text;
+				expect(text).toMatch(/all Townsfolk are poisoned/);
+			}
 		});
 	});
 });

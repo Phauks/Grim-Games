@@ -16,6 +16,9 @@ import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { killChoice, namedCharacterKill } from '#lib/core/rules/chosen-kills.ts';
+import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
+import { nightTextPlain, nightTextSegments, placeholdersFor } from '#lib/core/rules/night-text.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Ojo', () => {
@@ -75,6 +78,46 @@ describe('Ojo', () => {
 			expect(empath.seats).toContain(third.seat('shugenja'));
 			const after = third.dies('shugenja', 'ojo');
 			expect(after.game.seats[after.seat('shugenja')].dead).toBe(true);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Ojo#How_to_Run)', () => {
+		it('marks a death with Dead on its step each night after the first', () => {
+			// Wiki: "Each night except the first, wake the Ojo. The Ojo player points to a character icon
+			// on their character sheet."
+			const placeholders = placeholdersFor(character, 'other');
+			const text = nightTextPlain(
+				nightTextSegments(character.otherNightReminder!, character, {
+					...(placeholders ? { placeholders } : {})
+				})
+			);
+			expect(text).toContain('[+Dead]');
+			expect(killChoice('ojo', scenario(['ojo', 'chef']).characters)).toBe('character');
+		});
+
+		it("kills the named character's player as a Demon kill", () => {
+			// Wiki: "If that character is in play, that player dies—mark them with the “Dead” reminder."
+			const s = scenario(['ojo', 'chef', 'empath', 'monk', 'poisoner']);
+			expect(namedCharacterKill(s.game, 'empath', s.characters)).toEqual({
+				storytellerChooses: false,
+				seats: [s.seat('empath')]
+			});
+			const dead = { characterId: 'ojo', label: 'Dead' };
+			expect(reminderTargetMisses(s.game, dead, s.seat('empath'), s.characters)).toEqual([]);
+			const causes = validDeathCauses(s.game, s.seat('empath'), s.characters).map((c) => c.cause);
+			expect(causes).toContain('demon');
+		});
+
+		it('lets the Storyteller pick any player when the named character is not in play', () => {
+			// Wiki: "If that character is not in play, choose any player. That player dies—mark them
+			// with the “Dead” reminder."
+			const s = scenario(['ojo', 'chef', 'empath', 'monk', 'poisoner']);
+			const kill = namedCharacterKill(s.game, 'washerwoman', s.characters);
+			expect(kill.storytellerChooses).toBe(true);
+			expect(kill.seats).toEqual([...s.seats]);
+			const dead = { characterId: 'ojo', label: 'Dead' };
+			for (const seat of s.seats)
+				expect(reminderTargetMisses(s.game, dead, seat, s.characters)).toEqual([]);
 		});
 	});
 });

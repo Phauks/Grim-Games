@@ -20,7 +20,8 @@ import {
 	nightSheetPresence
 } from '#lib/core/testing/committed-data.ts';
 import { nightOrder } from '#lib/core/rules/night-order.ts';
-import { scenario } from '#lib/core/testing/scenario.ts';
+import { withNightInfo } from '#lib/core/rules/night-info.ts';
+import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 import type { Command } from '#lib/core/engine/index.ts';
 import type { Game } from '#lib/core/model/types.ts';
 import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
@@ -89,6 +90,47 @@ describe('Wraith', () => {
 			expect(steps.find((step) => step.id === 'fortuneteller')?.notes.join(' ')).not.toMatch(
 				/Wraith/
 			);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Wraith#How_to_Run)', () => {
+		const cast = ['wraith', 'poisoner', 'chef', 'empath', 'monk', 'imp'];
+		const tonight = (s: Scenario) => {
+			const data = committedGameData();
+			return withNightInfo(
+				nightOrder({
+					night: 'other',
+					sheet: data.nightSheet,
+					players: s.game.seating.length,
+					inPlay: cast.map((id) => s.characters.get(id)!)
+				}).steps,
+				s.game,
+				s.characters,
+				'other',
+				{ died: [] },
+				data.nightSheet.otherNight
+			);
+		};
+
+		it("wakes the Wraith at every evil player's step, and at no good player's", () => {
+			// Wiki: "Each time you wake an evil player at night, first wake the Wraith. When you put that
+			// evil player to sleep, put the Wraith to sleep."
+			const steps = tonight(scenario(cast));
+			const notes = (id: string) => steps.find((step) => step.id === id)?.notes ?? [];
+			expect(notes('poisoner')).toContain('Wraith wakes too.');
+			expect(notes('imp')).toContain('Wraith wakes too.');
+			expect(notes('monk')).not.toContain('Wraith wakes too.');
+		});
+
+		it.fails('stops waking the Wraith with evil once it loses its ability while alive', () => {
+			// Wiki: "If the Wraith loses their ability while alive, privately tell the Wraith that they
+			// may not choose to open their eyes tonight, and do not wake them when other evil players
+			// wake."
+			// Waits on the engine (unplanned): the Wraith wakes too note stays while the Wraith is
+			// poisoned.
+			const s = scenario(cast).poisoned('wraith');
+			const steps = tonight(s);
+			expect(steps.find((step) => step.id === 'imp')?.notes).not.toContain('Wraith wakes too.');
 		});
 	});
 });

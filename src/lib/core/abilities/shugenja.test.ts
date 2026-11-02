@@ -78,4 +78,26 @@ describe('Shugenja', () => {
 			expect(isTruthful(picker, { seats: [], yes: false })).toBe(true);
 		});
 	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Shugenja#How_to_Run)', () => {
+		it('points anti-clockwise when the closest evil player is that way', () => {
+			// Wiki: "If the closest evil player is in an anti-clockwise direction, point your finger
+			// horizontally in that direction."
+			// Clockwise is yes; the Poisoner sits 1 step anti-clockwise, the Imp 3 steps clockwise.
+			const s = scenario(['shugenja', 'chef', 'empath', 'imp', 'monk', 'poisoner']);
+			const picker = infoPicker(s.game, s.seat('shugenja'), 'shugenja', s.characters)!;
+			expect(isTruthful(picker, { seats: [], yes: false })).toBe(true);
+			expect(isAllowed(picker, { seats: [], yes: true })).toBe(false);
+		});
+
+		it('allows either direction when the two closest evil players are equally far', () => {
+			// Wiki: "If the two closest evil players are equidistant, point your finger horizontally in
+			// either direction."
+			// The Imp is 2 steps clockwise and the Poisoner 2 steps anti-clockwise.
+			const s = scenario(['shugenja', 'chef', 'imp', 'empath', 'poisoner', 'monk']);
+			const picker = infoPicker(s.game, s.seat('shugenja'), 'shugenja', s.characters)!;
+			expect(isTruthful(picker, { seats: [], yes: true })).toBe(true);
+			expect(isTruthful(picker, { seats: [], yes: false })).toBe(true);
+		});
+	});
 });
