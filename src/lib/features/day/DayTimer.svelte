@@ -15,6 +15,7 @@
 	import VibrateToggle from '#lib/features/sound/VibrateToggle.svelte';
 	import { canKeepAwake } from './timer-wake-lock.ts';
 	import TimerPerPlayerRow from './TimerPerPlayerRow.svelte';
+	import CallTownConfirm from '#lib/features/room/CallTownConfirm.svelte';
 
 	/**
 	 * The day timer (Trevor, 2026-10-17): 30 seconds per living player (a setting since
@@ -24,6 +25,11 @@
 	 * clock with Start/Pause, for the board. Tapping its clock opens the full timer and its
 	 * settings over the board, without the day view (Trevor, 2026-10-17). Holding the clock
 	 * resets it to the time per living player (Trevor, 2026-10-19).
+	 *
+	 * With `town`, Back to town is part of the timer (Trevor, 2026-11-01): the compact timer's
+	 * front and the full timer's end, in place of its sound button (the sound is in the Timer
+	 * sheet, which tapping the clock opens, as on the board). It lights when the time is up and
+	 * the clock reads Town once it is called.
 	 */
 	interface Props {
 		/** Living players, for the starting length and Reset. */
@@ -38,9 +44,22 @@
 		readOnly?: boolean;
 		/** Shown instead of this device's timer: the Storyteller's, on a spectator's board. */
 		shown?: WatchedTimer;
+		/**
+		 * Back to town on the timer (plan U2). `can`: a live room and the game not over; it is
+		 * drawn, disabled, without one, so nothing moves when a room opens. `called`: the rest
+		 * of today is Town, which the clock then shows, as players' phones do.
+		 */
+		town?: { can: boolean; called: boolean };
 	}
 
-	let { alive, variant = 'full', soundButton = true, readOnly = false, shown }: Props = $props();
+	let {
+		alive,
+		variant = 'full',
+		soundButton = true,
+		readOnly = false,
+		shown,
+		town
+	}: Props = $props();
 
 	/** This device's timer, which every button works; `shown` only shows. */
 	const live = liveDayTimer;
@@ -49,6 +68,10 @@
 
 	let soundOpen = $state(false);
 	let controlsOpen = $state(false);
+	let townOpen = $state(false);
+	/** The clock opens the Timer sheet: always on the board, and in the day with Back to town. */
+	const opens = $derived(variant === 'compact' || !!town);
+	const clock = $derived(town?.called ? t('day.town') : timer.clock);
 	const soundLabel = (sound: TimerSound) => t(`day.timerSound.${sound}`);
 	// Not played here: the board is the Storyteller's device (Trevor, 2026-10-30).
 	function chooseSound(sound: TimerSound) {
@@ -66,6 +89,21 @@
 		disabled={!canKeepAwake()}
 		onChange={(on) => live.setKeepAwake(on)}
 	/>
+{/snippet}
+
+{#snippet townButton()}
+	{#if town}
+		<!-- Lit once the day's time is up; it never calls by itself (Trevor, 2026-10-27). -->
+		<IconButton
+			icon="callTown"
+			label={t('room.callTown')}
+			data-call-town=""
+			data-testid="timer-call-town"
+			data-lit={town.can && timer.done ? '' : undefined}
+			disabled={readOnly || !town.can}
+			onclick={() => (townOpen = true)}
+		/>
+	{/if}
 {/snippet}
 
 {#snippet forPlayers()}
@@ -88,6 +126,7 @@
 	data-running={timer.running ? '' : undefined}
 	data-done={timer.done ? '' : undefined}
 >
+	{#if variant === 'compact'}{@render townButton()}{/if}
 	{#if variant === 'full'}
 		<IconButton icon="minus" label={t('day.timerLess')} onclick={() => live.adjust(-1)} />
 	{/if}
@@ -99,29 +138,32 @@
 		<button
 			type="button"
 			class="mode"
-			aria-label={timer.mode === 'down' ? t('day.timerSwitchToUp') : t('day.timerSwitchToDown')}
-			onclick={() => preferences.update({ timerMode: timer.mode === 'down' ? 'up' : 'down' })}
+			aria-label={opens
+				? t('day.timerOpen', { clock })
+				: timer.mode === 'down'
+					? t('day.timerSwitchToUp')
+					: t('day.timerSwitchToDown')}
+			onclick={() =>
+				opens
+					? (controlsOpen = true)
+					: preferences.update({ timerMode: timer.mode === 'down' ? 'up' : 'down' })}
 			{@attach hold(() => live.reset(alive))}
 		>
 			<span class="caption" data-testid="timer-mode" aria-hidden="true"
 				>{timer.mode === 'down' ? t('day.timerModeDown') : t('day.timerModeUp')}</span
 			>
-			<span class="clock" role="timer" aria-live={timer.done ? 'assertive' : 'off'}
-				>{timer.clock}</span
-			>
+			<span class="clock" role="timer" aria-live={timer.done ? 'assertive' : 'off'}>{clock}</span>
 		</button>
 	{:else}
 		<button
 			type="button"
 			class="open"
-			aria-label={t('day.timerOpen', { clock: timer.clock })}
+			aria-label={t('day.timerOpen', { clock })}
 			disabled={readOnly}
 			onclick={() => (controlsOpen = true)}
 			{@attach hold(() => !readOnly && live.reset(alive))}
 		>
-			<span class="clock" role="timer" aria-live={timer.done ? 'assertive' : 'off'}
-				>{timer.clock}</span
-			>
+			<span class="clock" role="timer" aria-live={timer.done ? 'assertive' : 'off'}>{clock}</span>
 		</button>
 	{/if}
 	{#if variant === 'full'}
@@ -140,7 +182,9 @@
 			disabled={timer.fresh}
 			onclick={() => live.reset(alive)}
 		/>
-		{#if soundButton}
+		{#if town}
+			{@render townButton()}
+		{:else if soundButton}
 			<IconButton
 				icon="sound"
 				label={t('day.timerSoundButton', { sound: soundLabel(preferences.current.timerSound) })}
@@ -150,7 +194,9 @@
 	{/if}
 </div>
 
-{#if variant === 'full'}
+{#if town}<CallTownConfirm bind:open={townOpen} />{/if}
+
+{#if variant === 'full' && !opens}
 	<BottomSheet bind:open={soundOpen} title={t('day.timerSoundTitle')}>
 		<div class="controls">
 			<!-- A drop-down; each choice plays, cutting off the one before (Trevor, 2026-10-17). -->
@@ -243,6 +289,18 @@
 	/* On the board the clock comes first, so it keeps clear of the rounded edge (Trevor). */
 	.timer[data-variant='compact'] .clock {
 		padding-inline-start: var(--space-3);
+	}
+	/* Back to town opens the board's timer, set off from the clock by a line, so the clock
+	   keeps its usual inset beside it. */
+	.timer[data-variant='compact'] :global([data-call-town]) {
+		border-inline-end: 1px solid var(--button-edge);
+		border-start-end-radius: 0;
+		border-end-end-radius: 0;
+	}
+	/* Time's up: Back to town is the next step, in the accent colour (Trevor, 2026-11-01). */
+	.timer :global([data-call-town][data-lit]) {
+		background: var(--accent);
+		color: var(--on-accent);
 	}
 	.timer[data-variant='full'] {
 		container-type: inline-size;

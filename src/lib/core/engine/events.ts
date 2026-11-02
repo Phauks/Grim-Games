@@ -61,8 +61,17 @@ export type GameEvent =
 	/** Adds or replaces the game note with `note.noteId`. */
 	| { type: 'GameNoteSet'; note: GameNote }
 	| { type: 'GameNoteDeleted'; noteId: string }
-	/** No `alignment`: not chosen yet (a Traveller's), so the seat has none. */
-	| { type: 'CharacterAssigned'; seatId: SeatId; characterId: CharacterId; alignment?: Alignment }
+	/**
+	 * No `alignment`: not chosen yet (a Traveller's), so the seat has none. `by`: the character
+	 * whose ability made the change (`Seat.changedBy`).
+	 */
+	| {
+			type: 'CharacterAssigned';
+			seatId: SeatId;
+			characterId: CharacterId;
+			alignment?: Alignment;
+			by?: CharacterId;
+	  }
 	| { type: 'CharacterCleared'; seatId: SeatId }
 	| { type: 'AlignmentSet'; seatId: SeatId; alignment: Alignment }
 	/** Sets (or, without `characterId`, takes away) the ability `via` gives this player. */
@@ -78,6 +87,8 @@ export type GameEvent =
 	| { type: 'DeathCauseSet'; seatId: SeatId; cause?: DeathCause }
 	| { type: 'GhostVoteSpent'; seatId: SeatId }
 	| { type: 'GhostVoteRestored'; seatId: SeatId }
+	/** The vote tokens a player holds (`Seat.voteTokens`); 0 clears it. */
+	| { type: 'VoteTokensSet'; seatId: SeatId; count: number }
 	| { type: 'ReminderAdded'; seatId: SeatId; reminder: ReminderInstance }
 	| { type: 'ReminderMoved'; reminderId: ReminderId; toSeatId: SeatId }
 	| { type: 'ReminderRemoved'; reminderId: ReminderId }

@@ -31,7 +31,7 @@ import type {
 } from '#lib/core/data/character-rules.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import { wikiUrl } from '#lib/core/data/wiki.ts';
-import type { CharacterLookup } from '#lib/core/model/characters.ts';
+import { isOnScript, type CharacterLookup } from '#lib/core/model/characters.ts';
 import {
 	alignmentOf,
 	aliveNeighbours,
@@ -42,6 +42,7 @@ import {
 } from '#lib/core/model/selectors.ts';
 import type { Game, ReminderId, SeatId } from '#lib/core/model/types.ts';
 import { keepsAbilityWhenDead } from './dead-characters.ts';
+import { jinxedWith, ownJinxRules, registeredTo } from './jinxes.ts';
 
 const W = 'https://wiki.bloodontheclocktower.com/';
 
@@ -136,6 +137,36 @@ function sourceWorks(
 	);
 }
 
+/**
+ * Whether anyone has `characterId`'s ability now: a player who is that character, living or
+ * dead (their true character or their token, as the Philosopher's or Alchemist's swapped
+ * token), a player who holds it without a token (`Seat.abilities`, the Boffin's; or their own
+ * `givesAbility` from the script, the Hermit's), the Storyteller (the Plague Doctor's), or it
+ * is a Fabled or Loric in play. Once nobody has it, its "Poisoned" and "Drunk" tokens do
+ * nothing: a Poisoner who becomes the Imp no longer poisons anyone
+ * (https://wiki.bloodontheclocktower.com/Poisoner, Example 5).
+ */
+function abilityInPlay(game: Game, characterId: CharacterId, characters: CharacterLookup): boolean {
+	if (game.ruleCharacters.includes(characterId)) return true;
+	if (game.storytellerAbilities?.some((a) => a.characterId === characterId)) return true;
+	const type = characters.get(characterId)?.type ?? '';
+	return game.seating.some((s) => {
+		const seat = game.seats[s];
+		if (seat.characterId === characterId) return true;
+		if (trueCharacter(game, s, characters) === characterId) return true;
+		if (seat.abilities?.some((a) => a.characterId === characterId)) return true;
+		const gives = seat.characterId
+			? rulesOf(seat.characterId, characters)?.givesAbility
+			: undefined;
+		return (
+			gives?.to === 'self' &&
+			gives.onScript === true &&
+			(gives.types as readonly string[]).includes(type) &&
+			isOnScript(game.script, characterId)
+		);
+	});
+}
+
 function impairmentsOf(
 	game: Game,
 	seatId: SeatId,
@@ -182,12 +213,15 @@ function impairmentsOf(
 		if (!reason) continue;
 		// Another character's "Poisoned" or "Drunk" lasts only while that character's ability
 		// works: once its player dies, is drunk or poisoned, the effect ends at once
-		// (https://wiki.bloodontheclocktower.com/Abilities, the dead Poisoner's Slayer). Tokens
-		// that last regardless say so with an `impairs.tokens` entry (the Sweetheart's). With no
-		// player of that character in play, the token is kept: it may come from a gained ability.
+		// (https://wiki.bloodontheclocktower.com/Abilities, the dead Poisoner's Slayer), and so
+		// it does once nobody has that ability, as when the Poisoner becomes the Imp
+		// (https://wiki.bloodontheclocktower.com/Poisoner, Example 5). Tokens that last
+		// regardless say so with an `impairs.tokens` entry (the Sweetheart's). A token whose
+		// ability someone holds without being that character (a gained ability) is kept.
 		if (
 			r.characterId !== characterId &&
-			!sourceWorks(game, seatId, r.characterId, characters, visiting)
+			(!abilityInPlay(game, r.characterId, characters) ||
+				!sourceWorks(game, seatId, r.characterId, characters, visiting))
 		)
 			continue;
 		const sourceSeat =
@@ -220,6 +254,24 @@ function impairmentsOf(
 				reason: self.reason,
 				source: { characterId, seatId },
 				wiki: wikiOf(characterId, characters)
+			});
+		}
+	}
+
+	// A jinxed character in play, alive or dead, impairs this one whatever its own ability's
+	// state (`impairsPartner`: the Spy or the Widow poisons the Damsel,
+	// https://wiki.bloodontheclocktower.com/Damsel#Related_Jinxes). The jinx also covers one
+	// that has been in play; the game keeps no record of a character that left play, so only
+	// one in play now counts.
+	if (characterId) {
+		const jinxed = jinxedWith(game, characterId, (r) => r.impairsPartner !== undefined, characters);
+		for (const { characterId: by, rule } of jinxed) {
+			const source = seatOfCharacter(game, by, characters, seatId);
+			if (!source || !rule.impairsPartner) continue;
+			out.push({
+				reason: rule.impairsPartner,
+				source: { characterId: by, seatId: source },
+				wiki: wikiOf(by, characters)
 			});
 		}
 	}
@@ -330,58 +382,95 @@ export interface Registration {
  *   Falsely?" is still in play: once it has been used, it comes off
  *   (https://wiki.bloodontheclocktower.com/Revolutionary).
  * A drunk or poisoned Recluse or Spy registers truly: they have no ability.
+ *
+ * With `viewer`, the character whose ability is asking, a jinx with it may change how a
+ * player registers (`registersTo`, whatever that player's own ability's state): the
+ * Politician might register as evil to Legion
+ * (https://wiki.bloodontheclocktower.com/Politician#Related_Jinxes), the Summoner registers as
+ * the Demon to the Clockmaker (https://wiki.bloodontheclocktower.com/Summoner#Related_Jinxes).
  */
-export function registrations(game: Game, characters: CharacterLookup): Registration[] {
+export function registrations(
+	game: Game,
+	characters: CharacterLookup,
+	viewer?: CharacterId
+): Registration[] {
 	const out: Registration[] = [];
 	for (const seatId of game.seating) {
+		const own = ownRegistration(game, seatId, characters);
 		const id = trueCharacter(game, seatId, characters);
+		const rule = viewer && id ? ownJinxRules(game, id, viewer, characters)?.registersTo : undefined;
 		const alignment = alignmentOf(game, seatId);
 		const type = typeOf(game, seatId, characters);
-		if (!alignment || !type) continue;
-		const self = id ? rulesOf(id, characters)?.registersAs?.self : undefined;
-		if (id && self && abilityState(game, seatId, characters).works) {
-			out.push({
-				seatId,
-				alignments: [alignment, ...(self.alignments ?? [])].filter(
-					(a, i, all): a is Alignment => all.indexOf(a) === i
-				),
-				types: [type, ...(self.types ?? [])].filter(
-					(t, i, all): t is CharacterType => all.indexOf(t) === i
-				),
-				source: { characterId: id, seatId },
-				wiki: wikiOf(id, characters)
-			});
+		if (!rule || !id || !alignment || !type) {
+			if (own) out.push(own);
 			continue;
 		}
-		for (const token of game.seats[seatId].reminders) {
-			const rule = rulesOf(token.characterId, characters)?.registersAs?.tokens?.[token.label];
-			if (!rule || (rule.carrierAlignment && rule.carrierAlignment !== alignment)) continue;
-			if (rule.whileToken && !inPlayToken(game, token.characterId, rule.whileToken)) continue;
-			const source = game.seating.find(
-				(s) =>
-					trueCharacter(game, s, characters) === token.characterId &&
-					abilityState(game, s, characters).works
-			);
-			// A Fabled has no seat: its tokens work while it is in play.
-			if (!source && !game.ruleCharacters.includes(token.characterId)) continue;
-			const fixed = rule.asAnything
-				? { alignments: [alignment, ...ALIGNMENTS], types: [type, ...SEATED_TYPES] }
-				: { alignments: rule.alignments ?? [alignment], types: rule.types ?? [type] };
-			out.push({
-				seatId,
-				alignments: fixed.alignments.filter((a, i, all): a is Alignment => all.indexOf(a) === i),
-				types: fixed.types.filter((t, i, all): t is CharacterType => all.indexOf(t) === i),
-				source: {
-					characterId: token.characterId,
-					...(source ? { seatId: source } : {}),
-					reminderId: token.reminderId
-				},
-				wiki: wikiOf(token.characterId, characters)
-			});
-			break;
-		}
+		const to = registeredTo(own ?? { alignments: [alignment], types: [type] }, rule);
+		// Registering only as they truly are is no registration at all.
+		const truly = (list: readonly string[], value: string) =>
+			list.length === 1 && list[0] === value;
+		if (truly(to.alignments, alignment) && truly(to.types, type)) continue;
+		out.push({
+			seatId,
+			...to,
+			source: own?.source ?? { characterId: id, seatId },
+			wiki: own?.wiki ?? wikiOf(id, characters)
+		});
 	}
 	return out;
+}
+
+/** How one player may register to everyone, by their own or another character's ability. */
+function ownRegistration(
+	game: Game,
+	seatId: SeatId,
+	characters: CharacterLookup
+): Registration | undefined {
+	const id = trueCharacter(game, seatId, characters);
+	const alignment = alignmentOf(game, seatId);
+	const type = typeOf(game, seatId, characters);
+	if (!alignment || !type) return undefined;
+	const self = id ? rulesOf(id, characters)?.registersAs?.self : undefined;
+	if (id && self && abilityState(game, seatId, characters).works) {
+		return {
+			seatId,
+			alignments: [alignment, ...(self.alignments ?? [])].filter(
+				(a, i, all): a is Alignment => all.indexOf(a) === i
+			),
+			types: [type, ...(self.types ?? [])].filter(
+				(t, i, all): t is CharacterType => all.indexOf(t) === i
+			),
+			source: { characterId: id, seatId },
+			wiki: wikiOf(id, characters)
+		};
+	}
+	for (const token of game.seats[seatId].reminders) {
+		const rule = rulesOf(token.characterId, characters)?.registersAs?.tokens?.[token.label];
+		if (!rule || (rule.carrierAlignment && rule.carrierAlignment !== alignment)) continue;
+		if (rule.whileToken && !inPlayToken(game, token.characterId, rule.whileToken)) continue;
+		const source = game.seating.find(
+			(s) =>
+				trueCharacter(game, s, characters) === token.characterId &&
+				abilityState(game, s, characters).works
+		);
+		// A Fabled has no seat: its tokens work while it is in play.
+		if (!source && !game.ruleCharacters.includes(token.characterId)) continue;
+		const fixed = rule.asAnything
+			? { alignments: [alignment, ...ALIGNMENTS], types: [type, ...SEATED_TYPES] }
+			: { alignments: rule.alignments ?? [alignment], types: rule.types ?? [type] };
+		return {
+			seatId,
+			alignments: fixed.alignments.filter((a, i, all): a is Alignment => all.indexOf(a) === i),
+			types: fixed.types.filter((t, i, all): t is CharacterType => all.indexOf(t) === i),
+			source: {
+				characterId: token.characterId,
+				...(source ? { seatId: source } : {}),
+				reminderId: token.reminderId
+			},
+			wiki: wikiOf(token.characterId, characters)
+		};
+	}
+	return undefined;
 }
 
 /** Whether `characterId`'s reminder `label` is on any seat. */

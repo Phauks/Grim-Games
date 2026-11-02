@@ -6,8 +6,33 @@ import {
 	MAX_FRIENDS,
 	MAX_PENDING,
 	REQUESTS_PER_DAY,
+	type FriendsResponse,
+	type RecentPlayer,
 	type RequestRefusal
 } from './friends-protocol.ts';
+
+/** Games played together before someone on Recent players is suggested (plan F13). */
+const SUGGEST_AFTER_GAMES = 2;
+
+/**
+ * Suggestions on Friends (plan F13): people on Recent players this account played at least
+ * two games with, who can be found by username, and who are not yet a friend, asked either
+ * way or blocked. Recent players already leaves out anyone who can't be found; its `state`
+ * is `add` only for someone neither a friend nor asked, and a request from them waits in
+ * `incoming`. Someone in `shown` (suggested earlier on this visit) stays once asked, showing
+ * Requested, so their row doesn't leave under the finger.
+ */
+export function suggestedPlayers(
+	data: Pick<FriendsResponse, 'incoming' | 'blocked' | 'recent'>,
+	shown: (id: string) => boolean = () => false
+): RecentPlayer[] {
+	const taken = new Set([...data.incoming, ...data.blocked].map((other) => other.id));
+	return (data.recent ?? []).filter((other) => {
+		if (taken.has(other.id)) return false;
+		if (other.state === 'requested') return shown(other.id);
+		return other.state === 'add' && other.games >= SUGGEST_AFTER_GAMES;
+	});
+}
 
 /** What one account holds about another. */
 export interface Relation {

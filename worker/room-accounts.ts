@@ -25,7 +25,7 @@ export function accountTags(accountId: string | undefined): string[] {
 }
 
 /** The account on a socket, if its person was signed in when it opened. */
-function socketAccount(ctx: DurableObjectState, ws: WebSocket): string | undefined {
+export function socketAccount(ctx: DurableObjectState, ws: WebSocket): string | undefined {
 	const tag = ctx.getTags(ws).find((t) => t.startsWith(TAG_PREFIX));
 	return tag?.slice(TAG_PREFIX.length);
 }
@@ -54,6 +54,26 @@ export async function notePresence(
 		);
 	});
 	if (!still) await book.leftRoom(code);
+}
+
+/** A player's phone still connected, as `role` says on its socket. */
+function openPlayer(socket: WebSocket): boolean {
+	const role = (socket.deserializeAttachment() as { role?: string } | null)?.role;
+	return socket.readyState === WebSocket.OPEN && role === 'player';
+}
+
+/** The phones in the room now, as players, signed in to `accountId` (plan F14). */
+export function accountPhones(ctx: DurableObjectState, accountId: string): WebSocket[] {
+	return ctx.getWebSockets(`${TAG_PREFIX}${accountId}`).filter(openPlayer);
+}
+
+/** The accounts with a player's phone in the room now, not just once (plan F14). */
+export function presentAccounts(ctx: DurableObjectState): string[] {
+	const accounts = ctx
+		.getWebSockets()
+		.filter(openPlayer)
+		.map((socket) => socketAccount(ctx, socket));
+	return [...new Set(accounts.filter((id) => id !== undefined))];
 }
 
 /** Remembers the socket's account (if any) for the Storyteller, or a player by member id. */

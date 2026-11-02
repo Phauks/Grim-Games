@@ -37,20 +37,26 @@
 		ended: boolean;
 		onHistory: () => void;
 		onBluffs: () => void;
-		/** Back to town (plan U2): only while players' phones can be in a room. */
-		onCallTown?: () => void;
+		/**
+		 * The Soundboard (plan U6), a full row in the game's items (Trevor, 2026-11-01: "a full
+		 * button"); not on a spectator's board. Back to town is on the day timer.
+		 */
+		onSoundboard?: () => void;
 		onGameInfo: () => void;
 		/** Back to Character selection; only until Start game (Trevor, 2026-10-24). */
 		onCharacterSelection?: () => void;
-		onAddSeat: () => void;
 		onAddRule: () => void;
 		onArrange: () => void;
 		onExport: () => void;
 		/** Players' feedback on the ended game; not for a spectator's board. */
 		onFeedback?: () => void;
 		onReopen: () => void;
-		/** New game, which asks to end this one first; not on a spectator's board. */
-		onNewGame?: () => void;
+		/**
+		 * The board's New game sheet, not on a spectator's board: New game, which asks to end
+		 * this one first, and the room's vote on the next game once this one has ended, without
+		 * leaving the board (Trevor, 2026-11-01).
+		 */
+		newGame?: { begin(): void; vote(): void };
 		/**
 		 * Close room, once the game has ended and while its room is open (Trevor, 2026-10-26):
 		 * deletes the room and sends every phone out. Asks first.
@@ -72,16 +78,15 @@
 		ended,
 		onHistory,
 		onBluffs,
-		onCallTown,
+		onSoundboard,
 		onGameInfo,
 		onCharacterSelection,
-		onAddSeat,
 		onAddRule,
 		onArrange,
 		onExport,
 		onFeedback,
 		onReopen,
-		onNewGame,
+		newGame,
 		onCloseRoom,
 		onShareGrim,
 		onEnd
@@ -143,15 +148,9 @@
 				<Button disabled={watching} variant="quiet" icon="demon" onclick={() => fromMenu(onBluffs)}
 					>Demon bluffs</Button
 				>
-				{#if onCallTown}
-					<!-- Every phone in the room sounds and vibrates (plan U2, Trevor 2026-10-26). -->
-					<Button
-						disabled={watching}
-						variant="quiet"
-						icon="sound"
-						onclick={() => fromMenu(onCallTown)}
-					>
-						{t('room.callTown')}
+				{#if onSoundboard}
+					<Button variant="quiet" icon="soundboard" onclick={() => fromMenu(onSoundboard)}>
+						{t('settings.soundboard')}
 					</Button>
 				{/if}
 				{#if gameInfo}
@@ -232,17 +231,29 @@
 						{t('room.transfer.button')}
 					</Button>
 				{/if}
+				<!-- The room votes on the next game from here (Trevor, 2026-11-01: it "should not
+				     require leaving the game screen"); Play opens New game with the winner. -->
+				{#if ended && newGame}
+					<Button
+						variant="quiet"
+						icon="vote"
+						data-testid="menu-room-vote"
+						onclick={() => fromMenu(() => newGame.vote())}
+					>
+						{t('room.scriptVote.button')}
+					</Button>
+				{/if}
 				<!-- New game takes End game's place once the game has ended (Trevor, 2026-10-26). -->
 				{#if !ended}
 					<Button disabled={watching} variant="danger" icon="close" onclick={() => fromMenu(onEnd)}
 						>End game</Button
 					>
-				{:else if onNewGame}
+				{:else if newGame}
 					<Button
 						disabled={watching}
 						variant="quiet"
 						icon="add"
-						onclick={() => fromMenu(onNewGame)}
+						onclick={() => fromMenu(() => newGame.begin())}
 					>
 						{t('setup.newGame')}
 					</Button>
@@ -262,9 +273,7 @@
 		<div class="column">
 			<section class="group" aria-labelledby="board-menu-seats">
 				<h3 id="board-menu-seats" class="group-title">Seats</h3>
-				<Button disabled={watching} variant="quiet" icon="add" onclick={() => fromMenu(onAddSeat)}
-					>Add seat</Button
-				>
+				<!-- Add seat is in Seating's bar only (Trevor, 2026-11-01). -->
 				<Button
 					disabled={watching}
 					variant="quiet"
