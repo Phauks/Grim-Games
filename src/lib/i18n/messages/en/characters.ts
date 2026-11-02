@@ -33,6 +33,7 @@ export const characters = {
 	'characters.summary': 'Summary',
 	'characters.jinxes': 'Jinxes',
 	'characters.homebrew': 'Homebrew',
+	'characters.custom': 'Custom',
 	'characters.seatLine': 'Seat {number} · {alignment}',
 	'characters.good': 'Good',
 	'characters.evil': 'Evil',
