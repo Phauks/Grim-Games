@@ -112,11 +112,9 @@ describe('Revolutionary', () => {
 			]);
 		});
 
-		it.fails('flags a second Revolutionary of the other alignment', () => {
+		it('flags a second Revolutionary of the other alignment', () => {
 			// Wiki: "Look at their token, choose a token of the same alignment from the bag, and give
 			// it to the other Revolutionary."
-			// Waits on the engine (unplanned): the Aligned token's target rule checks neighbours, not
-			// that the two share an alignment.
 			const s = scenario(['chef', 'empath', 'monk', 'poisoner', 'imp'])
 				.rule('revolutionary')
 				.reminder('chef', 'revolutionary', 'Aligned');

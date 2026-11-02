@@ -14,6 +14,9 @@
  * - `shown`: the type of the character token the target was dealt, which may not be their
  *   true character (the Drunk is dealt a Townsfolk);
  * - `alignment`: `good`/`evil`, or `same`/`opposite` to the character's player;
+ * - `sameAlignmentAs`: shares an alignment with a seat already carrying another copy of the
+ *   character's token with this label (the Revolutionary's second Aligned goes on a player of
+ *   the first one's alignment);
  * - `alignmentCounts`: at most this many copies of the token on players of each alignment
  *   (the Noble's three: two good, one evil);
  * - `life`: whether the target is alive or dead when the token goes down;
@@ -84,6 +87,7 @@ export interface TargetRule {
 	shown?: readonly CharacterType[];
 	characters?: readonly CharacterId[];
 	alignment?: Alignment | 'same' | 'opposite';
+	sameAlignmentAs?: string;
 	alignmentCounts?: Readonly<Partial<Record<Alignment, number>>>;
 	life?: 'alive' | 'dead';
 	neighbour?: NeighbourRule;
@@ -107,6 +111,7 @@ const TARGET_KEYS = [
 	'shown',
 	'characters',
 	'alignment',
+	'sameAlignmentAs',
 	'alignmentCounts',
 	'life',
 	'neighbour',
@@ -194,7 +199,13 @@ function readTarget(raw: unknown, path: string, issues: Issues): TargetRule | un
 		const neighbour = readNeighbour(raw.neighbour, `${path}.neighbour`, issues);
 		if (neighbour) out.neighbour = neighbour;
 	}
-	for (const key of ['withLabel', 'notWithLabel', 'note', 'ambiguous'] as const) {
+	for (const key of [
+		'withLabel',
+		'notWithLabel',
+		'sameAlignmentAs',
+		'note',
+		'ambiguous'
+	] as const) {
 		const value = readString(raw, key, path, issues, false);
 		if (value !== undefined) out[key] = value;
 	}

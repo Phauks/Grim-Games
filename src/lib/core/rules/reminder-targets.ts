@@ -26,6 +26,7 @@ import {
 } from '#lib/core/model/selectors.ts';
 import type { Game, Reminder, ReminderInstance, SeatId } from '#lib/core/model/types.ts';
 import { abilityState, registrations } from './ability.ts';
+import { heldAbilitiesOf } from './gained-abilities.ts';
 
 export type { NeighbourRule, TargetRule };
 
@@ -103,6 +104,20 @@ export function ownerSeats(
 		(id) =>
 			game.seats[id].characterId === characterId ||
 			trueCharacter(game, id, characters) === characterId
+	);
+}
+
+/**
+ * The seats whose player uses the character's own tokens: its owners, or while no seat is
+ * that character, the players who hold its ability without its token (the Hermit uses the
+ * other Outsiders' reminder tokens, and its own 1, 2 and 3 only when it duplicates an
+ * in-play Outsider: https://wiki.bloodontheclocktower.com/Hermit).
+ */
+function tokenUsers(game: Game, characterId: CharacterId, characters: CharacterLookup): SeatId[] {
+	const owners = ownerSeats(game, characterId, characters);
+	if (owners.length > 0) return owners;
+	return game.seating.filter((id) =>
+		heldAbilitiesOf(game, id, characters).some((h) => h.characterId === characterId)
 	);
 }
 
@@ -202,8 +217,12 @@ export function reminderTargetMisses(
 	if (rule.info && owners.some((id) => mayBeFalse(game, id, reminder.characterId, characters)))
 		return [];
 	const misses: TargetMiss[] = [];
-	const isOwner = owners.includes(seatId);
-	if (rule.seat === 'self' && owners.length > 0 && !isOwner) misses.push('not-self');
+	const users =
+		rule.seat === 'self' || rule.seat === 'other'
+			? tokenUsers(game, reminder.characterId, characters)
+			: owners;
+	const isOwner = users.includes(seatId);
+	if (rule.seat === 'self' && users.length > 0 && !isOwner) misses.push('not-self');
 	if (rule.seat === 'other' && isOwner) misses.push('self');
 
 	// An ability that detects or affects a type or alignment also sees what the player may
@@ -244,6 +263,22 @@ export function reminderTargetMisses(
 				if (ownerAlignments.length > 0 && !fitsOne) misses.push('alignment');
 			}
 		}
+	}
+	if (rule.sameAlignmentAs) {
+		const alignment = alignmentOf(game, seatId);
+		const self = 'reminderId' in reminder ? (reminder as ReminderInstance).reminderId : undefined;
+		const others = game.seating
+			.filter((id) =>
+				game.seats[id].reminders.some(
+					(r) =>
+						r.characterId === reminder.characterId &&
+						r.label === rule.sameAlignmentAs &&
+						r.reminderId !== self
+				)
+			)
+			.map((id) => alignmentOf(game, id))
+			.filter((a) => a !== undefined);
+		if (alignment !== undefined && others.some((a) => a !== alignment)) misses.push('alignment');
 	}
 	if (rule.alignmentCounts) {
 		const alignment = alignmentOf(game, seatId);

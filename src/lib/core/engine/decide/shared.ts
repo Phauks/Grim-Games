@@ -41,6 +41,7 @@ import {
 	type Night,
 	type NightStepOverride
 } from '#lib/core/rules/index.ts';
+import { pretendTeamSource } from '#lib/core/rules/pretend.ts';
 import { readInfoTokenCharacters } from '#lib/core/data/info-token-rules.ts';
 import { Issues } from '#lib/core/data/validate.ts';
 import type { CommandOf, CommandType } from '../commands.ts';
@@ -231,8 +232,16 @@ export function checkReminder(
 		return;
 	}
 	const global = character.remindersGlobal.includes(reminder.label);
+	// While a character that allows a pretend evil team is in play (the Atheist), the
+	// Storyteller may use evil characters' reminder tokens
+	// (https://wiki.bloodontheclocktower.com/Atheist).
+	const pretendEvil =
+		(character.type === 'minion' || character.type === 'demon') &&
+		pretendTeamSource(game, ctx.characters) !== undefined;
 	const available =
-		inPlay(game, ctx).has(character.id) || (global && isOnScript(game.script, character.id));
+		inPlay(game, ctx).has(character.id) ||
+		(global && isOnScript(game.script, character.id)) ||
+		pretendEvil;
 	if (!available) {
 		warn('reminder-character-not-in-play', `${character.name} is not in play`);
 	}

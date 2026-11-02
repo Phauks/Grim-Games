@@ -126,11 +126,9 @@ describe('Pope', () => {
 			expect(duplicates(['pope'])).toEqual([]);
 		});
 
-		it.fails('lets the Demon be given duplicated in-play good characters as bluffs', () => {
+		it('lets the Demon be given duplicated in-play good characters as bluffs', () => {
 			// Wiki: "During the DEMON INFO step, you may give the Demon one, two, or three of these
 			// duplicate character tokens as bluffs."
-			// Waits on the engine (unplanned): Set bluffs warns that a bluff is in play even when the
-			// Pope makes it a duplicate the Demon may be given.
 			const s = scenario(['empath', 'empath', 'chef', 'saint', 'poisoner', 'imp']).rule('pope');
 			const result = decide(
 				s.game,
