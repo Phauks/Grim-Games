@@ -190,6 +190,14 @@ export interface Seat {
 	 * https://wiki.bloodontheclocktower.com/Boffin). At most one per giver. Absent while none.
 	 */
 	abilities?: HeldAbility[];
+	/**
+	 * The character whose ability gave this player their current character (the Pit-Hag's
+	 * change, `AssignCharacter.by`), with the alignment they had then. A jinx may hang on it:
+	 * an evil player the Pit-Hag turns into the Goon can't turn good by the Goon's ability
+	 * (https://wiki.bloodontheclocktower.com/Pit-Hag#Related_Jinxes). Absent once their
+	 * character changes any other way, and for a character given by hand.
+	 */
+	changedBy?: { via: CharacterId; alignment?: Alignment };
 }
 
 /** An ability a player holds without its token: whose it is, and which character gave it. */

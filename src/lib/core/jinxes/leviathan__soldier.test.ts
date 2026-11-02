@@ -10,8 +10,17 @@
  * of the two may be in play). Paraphrase, never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
-import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
+import { findJinx, jinxesAmong, type Script } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import type { Command } from '#lib/core/engine/index.ts';
+import { castWith } from '#lib/core/model/fixtures.test-support.ts';
+import { gameEnds } from '#lib/core/rules/game-end.ts';
+import { ownJinxRules } from '#lib/core/rules/jinxes.ts';
+
+const scriptOf = (ids: string[]): Script => ({
+	meta: { name: 'Jinxed' },
+	entries: ids.map((id) => ({ kind: 'official' as const, id }))
+});
 
 describe('Leviathan + Soldier jinx', () => {
 	const data = committedGameData();
@@ -30,5 +39,39 @@ describe('Leviathan + Soldier jinx', () => {
 		expect(jinxesAmong(data.jinxes, ['soldier'])).not.toContain(jinx);
 	});
 
-	it.todo('enforces the rule the jinx imposes');
+	// Both pages' Related Jinxes: if the Leviathan nominates the Soldier and they are executed,
+	// good wins. Read from the day's log.
+	describe('good wins when the Leviathan executes the Soldier', () => {
+		const ids = ['leviathan', 'soldier', 'chef', 'empath', 'poisoner', 'washerwoman', 'butler'];
+		const cast = castWith({ script: scriptOf(ids) });
+		const nominate =
+			(by: number, who: number) =>
+			(s: string[]): Command => ({
+				type: 'Nominate',
+				nominator: s[by],
+				nominee: s[who]
+			});
+		const execute =
+			(i: number) =>
+			(s: string[]): Command => ({ type: 'Execute', seatId: s[i] });
+		const newDay: Command = { type: 'NewDay' };
+
+		it("is data in the Leviathan's rules", () => {
+			expect(ownJinxRules({ script: scriptOf(ids) }, 'leviathan', 'soldier')).toEqual({
+				endsGame: { kind: 'nominated-marked-executed', winner: 'good' }
+			});
+		});
+
+		it('ends the game for good', () => {
+			const { game, ctx, seats } = cast(ids, newDay, nominate(0, 1), execute(1));
+			expect(
+				gameEnds(game, ctx.characters).map((e) => [e.rule, e.winner, e.jinxedWith, e.seats])
+			).toEqual([['nominated-marked-executed', 'good', 'soldier', [seats[1], seats[0]]]]);
+		});
+
+		it('does not when someone else nominated them', () => {
+			const other = cast(ids, newDay, nominate(3, 1), execute(1));
+			expect(gameEnds(other.game, other.ctx.characters)).toEqual([]);
+		});
+	});
 });

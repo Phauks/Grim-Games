@@ -10,6 +10,11 @@
  * of the two may be in play). Paraphrase, never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
+import type { Script } from '#lib/core/data/index.ts';
+import { castWith, codes, run } from '#lib/core/model/fixtures.test-support.ts';
+import { cantTurnGood } from '#lib/core/rules/becomes.ts';
+import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
+import { scriptCharacterIds } from '#lib/core/model/characters.ts';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 
@@ -30,5 +35,61 @@ describe('Boffin + Cult Leader jinx', () => {
 		expect(jinxesAmong(data.jinxes, ['cultleader'])).not.toContain(jinx);
 	});
 
-	it.todo('enforces the rule the jinx imposes');
+	// Both pages' Related Jinxes: a Demon the Boffin gives the Cult Leader ability to can't turn
+	// good because of that ability.
+	describe("the Demon with the Cult Leader ability can't turn good by it", () => {
+		const script: Script = {
+			meta: { name: 'Jinxed' },
+			entries: ['boffin', 'imp', 'cultleader', 'chef', 'empath', 'monk', 'saint'].map((id) => ({
+				kind: 'official' as const,
+				id
+			}))
+		};
+		const ids = scriptCharacterIds(script);
+		const cast = castWith({ script });
+
+		const hold = (characterId: string) => (seats: string[]) => ({
+			type: 'SetHeldAbility' as const,
+			seatId: seats[1],
+			via: 'boffin',
+			characterId
+		});
+
+		it("is data in the Boffin's rules", () => {
+			expect(jinxRulesBetween('boffin', 'cultleader')).toEqual({ noTurnGood: true });
+			expect(ids).toContain('cultleader');
+		});
+
+		it('warns, but still lets the Storyteller turn them good', () => {
+			const { game, session, ctx, seats } = cast(
+				['boffin', 'imp', 'chef', 'empath', 'saint'],
+				hold('cultleader')
+			);
+			expect(cantTurnGood(game, seats[1], ctx.characters)).toEqual({
+				characterId: 'cultleader',
+				via: 'boffin'
+			});
+			const turned = run(session, ctx, {
+				type: 'SetAlignment',
+				seatId: seats[1],
+				alignment: 'good'
+			});
+			expect(codes(turned)).toEqual(['jinxed-alignment']);
+			expect(turned.game.seats[seats[1]].alignment).toBe('good');
+		});
+
+		it('says nothing for another ability', () => {
+			const { game, session, ctx, seats } = cast(
+				['boffin', 'imp', 'chef', 'empath', 'saint'],
+				hold('monk')
+			);
+			expect(cantTurnGood(game, seats[1], ctx.characters)).toBeUndefined();
+			const turned = run(session, ctx, {
+				type: 'SetAlignment',
+				seatId: seats[1],
+				alignment: 'good'
+			});
+			expect(codes(turned)).toEqual([]);
+		});
+	});
 });

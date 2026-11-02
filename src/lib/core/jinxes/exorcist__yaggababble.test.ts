@@ -10,8 +10,16 @@
  * of the two may be in play). Paraphrase, never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
-import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
+import { findJinx, jinxesAmong, type Script } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { castWith, run } from '#lib/core/model/fixtures.test-support.ts';
+import { nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
+import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
+
+const scriptOf = (ids: string[]): Script => ({
+	meta: { name: 'Jinxed' },
+	entries: ids.map((id) => ({ kind: 'official' as const, id }))
+});
 
 describe('Exorcist + Yaggababble jinx', () => {
 	const data = committedGameData();
@@ -30,5 +38,37 @@ describe('Exorcist + Yaggababble jinx', () => {
 		expect(jinxesAmong(data.jinxes, ['yaggababble'])).not.toContain(jinx);
 	});
 
-	it.todo('enforces the rule the jinx imposes');
+	// Both pages' Related Jinxes: when the Exorcist chooses the Yaggababble, it does not kill
+	// tonight. The Exorcist's Chosen on it shows no kill, where on another Demon it only stops
+	// them waking.
+	describe('the Yaggababble chosen by the Exorcist does not kill tonight', () => {
+		const cast = castWith({
+			script: scriptOf(['yaggababble', 'imp', 'exorcist', 'chef', 'empath', 'ravenkeeper'])
+		});
+		const chosen = (seatId: string) => ({
+			type: 'AddReminder' as const,
+			seatId,
+			reminder: { characterId: 'exorcist', label: 'Chosen' }
+		});
+
+		it("is data in the Yaggababble's rules", () => {
+			expect(jinxRulesBetween('yaggababble', 'exorcist')).toEqual({ noKill: 'token' });
+		});
+
+		it("shows no kill while the Exorcist's Chosen is on it", () => {
+			const { session, ctx, seats } = cast(['yaggababble', 'exorcist', 'chef', 'ravenkeeper']);
+			const { game } = run(session, ctx, chosen(seats[0]));
+			const alerts = nightStepAlerts(game, 'yaggababble', ctx.characters);
+			expect(alerts.map((a) => a.kind)).toEqual(['no-kill']);
+			expect(alerts[0].source).toMatchObject({ characterId: 'exorcist', seatId: seats[1] });
+		});
+
+		it('leaves another Demon chosen by the Exorcist as before', () => {
+			const { session, ctx, seats } = cast(['imp', 'exorcist', 'chef', 'ravenkeeper']);
+			const { game } = run(session, ctx, chosen(seats[0]));
+			const kinds = nightStepAlerts(game, 'imp', ctx.characters).map((a) => a.kind);
+			expect(kinds).toContain('blocked');
+			expect(kinds).not.toContain('no-kill');
+		});
+	});
 });

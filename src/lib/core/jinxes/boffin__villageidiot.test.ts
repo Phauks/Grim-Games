@@ -10,6 +10,7 @@
  * of the two may be in play). Paraphrase, never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
+import { jinxedPartners, jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 
@@ -30,5 +31,13 @@ describe('Boffin + Village Idiot jinx', () => {
 		expect(jinxesAmong(data.jinxes, ['villageidiot'])).not.toContain(jinx);
 	});
 
-	it.todo('enforces the rule the jinx imposes');
+	// Both pages' Related Jinxes: given a spare token, the Boffin may give the Demon the Village Idiot ability, though one
+	// is in play. Its picker keeps the in-play Village Idiot.
+	it("lets the Boffin's picker offer the Village Idiot while one is in play", () => {
+		expect(jinxRulesBetween('boffin', 'villageidiot')).toEqual({ spareToken: true });
+		expect(jinxedPartners('boffin', 'spareToken', ['boffin', 'villageidiot', 'chef'])).toEqual([
+			'villageidiot'
+		]);
+		expect(jinxedPartners('boffin', 'spareToken', ['boffin', 'chef'])).toEqual([]);
+	});
 });

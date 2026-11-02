@@ -12,5 +12,13 @@
 	},
 	"wakesWhen": {
 		"deadAtLeastLiving": true
+	},
+	"jinxes": {
+		"leviathan": {
+			"deadAtLeast": 1
+		},
+		"riot": {
+			"deadAtLeast": 1
+		}
 	}
 }
