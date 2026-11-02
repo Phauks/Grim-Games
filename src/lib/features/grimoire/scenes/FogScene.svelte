@@ -3,7 +3,7 @@
 	import Twinklers from './Twinklers.svelte';
 
 	/**
-	 * Graveyard fog (moving backgrounds, plan L113): a moonlit hill of headstones with banks of
+	 * Graveyard fog (moving backgrounds, plan L114): a moonlit hill of headstones with banks of
 	 * mist drifting between the rows. Drawn in CSS; each mist bank is a 300% wide repeating
 	 * layer that slides one tile, a seamless loop.
 	 */
