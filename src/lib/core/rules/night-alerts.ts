@@ -17,6 +17,11 @@
  * - `grimoire-hides`: a jinx says this player's token comes off the Grimoire while the waking
  *   player sees it (`grimoireHides`: the Demon's and the Magician's, for the Spy and the
  *   Widow, https://wiki.bloodontheclocktower.com/Magician#Related_Jinxes);
+ * - `may-skip-attack` / `must-skip-attack` / `final-night`: a rule in play lets the Demon
+ *   choose not to attack, it still has to once (its reminder is on the Demon), or it is still
+ *   marked on a night its attack could end the game, so it doesn't wake and no kill alerts
+ *   follow (`demonAttack`, `demon-attack.ts`: the Toymaker,
+ *   https://wiki.bloodontheclocktower.com/Toymaker);
  * - `seating`: a character whose neighbours are turned evil at setup (`turnsPlayersInto`
  *   `neighbours`) is not inside one line of every evil player
  *   (https://wiki.bloodontheclocktower.com/Lord_of_Typhon);
@@ -45,6 +50,7 @@ import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { alignmentOf, getSeat, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
 import type { DeathCause, Game, SeatId } from '#lib/core/model/types.ts';
 import { isExecution } from './death-causes.ts';
+import { noAttackState } from './demon-attack.ts';
 import { ownJinxes, ownJinxRules } from './jinxes.ts';
 import {
 	abilityState,
@@ -136,6 +142,9 @@ export type NightAlertKind =
 	| 'impaired'
 	| 'blocked'
 	| 'no-kill'
+	| 'may-skip-attack'
+	| 'must-skip-attack'
+	| 'final-night'
 	| 'no-grimoire'
 	| 'grimoire-hides'
 	| 'seating'
@@ -262,6 +271,31 @@ export function nightStepAlerts(
 				);
 		if (stopped.length > 0) noKill = true;
 	}
+	if (killer?.by === 'demon' && !noKill)
+		for (const seatId of actors) {
+			const state = noAttackState(game, seatId, characters);
+			if (!state) continue;
+			if (state.finalNight) noKill = true;
+			const kind = state.finalNight
+				? 'final-night'
+				: state.pending
+					? 'must-skip-attack'
+					: 'may-skip-attack';
+			const character = characters.get(state.rule.characterId);
+			out.push(
+				sourceAlert(
+					game,
+					kind,
+					seatId,
+					{
+						characterId: state.rule.characterId,
+						...(state.pending ? { reminderId: state.pending } : {})
+					},
+					characters,
+					character && wikiUrl(character)
+				)
+			);
+		}
 	if (!killer || noKill) return out;
 	const subjects = (killer.targets === 'self' ? actors : game.seating).filter(
 		(s) => getSeat(game, s)?.dead === false

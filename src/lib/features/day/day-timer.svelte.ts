@@ -1,4 +1,5 @@
-import { dayTimers } from '#lib/core/rules/index.ts';
+import { dayTimers, livingByTeam, quietStartRule } from '#lib/core/rules/index.ts';
+import type { CharacterLookup, Game } from '#lib/core/model/index.ts';
 import { preferences } from '#lib/ui/preferences.svelte.ts';
 import { gameSettings } from '#lib/features/game-settings/game-settings.svelte.ts';
 import { unlockSound, vibrate } from '#lib/features/sound/sound.ts';
@@ -151,3 +152,11 @@ class LiveDayTimer {
 }
 
 export const liveDayTimer = new LiveDayTimer();
+
+/**
+ * What a board's day timer needs from the game: the living players, for its length, and a quiet
+ * start to each day in play (M15b, `quietStart`: the Buddhist's veterans).
+ */
+export function timerFacts(game: Game, characters: CharacterLookup) {
+	return { alive: livingByTeam(game).alive, quiet: quietStartRule(game, characters) };
+}
