@@ -102,12 +102,12 @@ describe('Vigormortis', () => {
 			expect(abilityState(after.game, after.seat('eviltwin'), after.characters).works).toBe(true);
 		});
 
-		it.fails("Example 3: Pit-Hag's chain of changes ends with Vortox", () => {
+		it("Example 3: Pit-Hag's chain of changes ends with Vortox", () => {
 			// Wiki: "The Vigormortis kills the Pit-Hag. The Pit-Hag changes a Savant into a Witch. The
 			// Vigormortis kills the Witch, who curses and kills a player. The Pit-Hag turns the dead Witch
 			// into the Oracle, who now has no ability. The Pit-Hag turns the Vigormortis into a Vortox. The
 			// Pit-Hag now has no ability."
-			// Waits on the engine: a Has Ability token keeps working once no Vigormortis is in play.
+			// A Has Ability token stops working once no Vigormortis is in play (M15g).
 			const s = scenario([
 				'vigormortis',
 				'pithag',

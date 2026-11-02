@@ -74,9 +74,9 @@ describe('Hatter', () => {
 			expect(typeOf(after.game, after.seat('ojo'), after.characters)).toBe('demon');
 			expect(typeOf(after.game, after.seat('devilsadvocate'), after.characters)).toBe('minion');
 		});
-		// Waits on the engine: a dead Minion keeps the Vigormortis's Has Ability even after the
-		// Vigormortis becomes another Demon (keepsAbilityWhenDead never checks its source).
-		it.fails('Example 2: Both evils refuse changes to keep Vigormortis', () => {
+		// A dead Minion loses the Vigormortis's Has Ability once the Vigormortis becomes another
+		// Demon (M15g).
+		it('Example 2: Both evils refuse changes to keep Vigormortis', () => {
 			// Wiki: "The Vigormortis has killed their Pit-Hag, then later kills the Hatter. Both players
 			// choose to stay the same characters, so that they don't lose the effects of the
 			// Vigormortis."
