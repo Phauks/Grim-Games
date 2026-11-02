@@ -41,6 +41,7 @@ import { abilityState, type AbilitySource } from './ability.ts';
 import { carriesDemonToken, isExecution } from './death-causes.ts';
 import { jinxEnds } from './jinx-ends.ts';
 import { rebirthOf } from './reincarnation.ts';
+import { storytellerExecuted } from './storyteller-end.ts';
 
 const W = 'https://wiki.bloodontheclocktower.com/';
 
@@ -61,6 +62,8 @@ const W = 'https://wiki.bloodontheclocktower.com/';
  * - `extra-day`: on the extra day, a player was executed (their team loses) or nobody was
  *   (good wins);
  * - `cult-joined`: its player's vote passed today (`seats`: them);
+ * - `storyteller-executed`: the Storyteller was executed: `winner` from a character in play
+ *   (`seats`: its players, dead or alive), otherwise evil with no `characterId`;
  * - `demon-executed`: a special rule says good wins when a Demon dies by execution (Binary
  *   Supernovae), and one has (`seats`: the executed Demons; `ruleName`: the rule).
  */
@@ -238,7 +241,7 @@ function demonSeats(game: Game, characters: CharacterLookup): SeatId[] {
 }
 
 /** Players alive for the "just 2 alive" rule: Travellers don't count. */
-function aliveNonTravellers(game: Game, characters: CharacterLookup): SeatId[] {
+export function aliveNonTravellers(game: Game, characters: CharacterLookup): SeatId[] {
 	return game.seating.filter(
 		(id) => aliveForEnd(game, id, characters) && !isTraveller(game, id, characters)
 	);
@@ -692,9 +695,12 @@ export function gameEnds(
 	const game = inPlay(full);
 	if (game.seating.every((id) => game.seats[id].characterId === undefined)) return [];
 
-	const out: GameEnd[] = options.demonExecutedBy
-		? demonExecuted(game, characters, options.demonExecutedBy)
-		: [];
+	const out: GameEnd[] = [
+		...storytellerExecuted(days(game), endsOf(game, characters, 'storyteller-executed'), (id) =>
+			wikiOf(id, characters)
+		),
+		...(options.demonExecutedBy ? demonExecuted(game, characters, options.demonExecutedBy) : [])
+	];
 	const demon = demonDead(game, characters);
 	for (const end of demon) {
 		const mind = extraDay(game, characters, options, end);
@@ -755,16 +761,34 @@ export function suggestedWinner(ends: readonly GameEnd[]): Alignment | undefined
  * https://wiki.bloodontheclocktower.com/Imp; the Fang Gu's Outsiders, once,
  * https://wiki.bloodontheclocktower.com/Fang_Gu): that Demon, the players who may become it,
  * and the player whose ability makes it theirs (the Scarlet Woman:
- * https://wiki.bloodontheclocktower.com/Scarlet_Woman). Undefined once a Demon lives.
+ * https://wiki.bloodontheclocktower.com/Scarlet_Woman), with the character whose rule
+ * (`gameEnd.holds` `becomes-demon`) says so. A drunk or poisoned player's ability doesn't work
+ * (https://wiki.bloodontheclocktower.com/Glossary), so they aren't preferred. Undefined once a
+ * Demon lives.
  */
 export function starPass(
 	game: Game,
 	characters: CharacterLookup
-): { characterId: CharacterId; heirs: SeatId[]; preferred?: SeatId } | undefined {
+):
+	| { characterId: CharacterId; heirs: SeatId[]; preferred?: SeatId; preferredBy?: CharacterId }
+	| undefined {
 	const holds = demonDead(game, characters).flatMap((end) => end.holds);
 	const pass = holds.find((h) => h.rule === 'death-passes');
 	if (!pass) return undefined;
-	const heir = holds.find((h) => h.rule === 'becomes-demon')?.seats[0];
-	const preferred = heir && pass.seats.includes(heir) ? heir : undefined;
-	return { characterId: pass.characterId, heirs: pass.seats, ...(preferred ? { preferred } : {}) };
+	const rule = holds.find(
+		(h) =>
+			h.rule === 'becomes-demon' &&
+			pass.seats.includes(h.seats[0]) &&
+			!holds.some(
+				(i) => i.rule === 'impaired' && i.characterId === h.characterId && i.seats[0] === h.seats[0]
+			)
+	);
+	const heirs = rule
+		? [rule.seats[0], ...pass.seats.filter((id) => id !== rule.seats[0])]
+		: pass.seats;
+	return {
+		characterId: pass.characterId,
+		heirs,
+		...(rule ? { preferred: rule.seats[0], preferredBy: rule.characterId } : {})
+	};
 }
