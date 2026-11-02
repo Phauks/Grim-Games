@@ -33,8 +33,10 @@
  *   to the Ogre, the Spy always as evil to the Ogre, the Summoner always as the Demon to the
  *   Clockmaker (each page's Related Jinxes);
  * - `impairsPartner`: while this character is in play (alive or dead), the partner's player
- *   is `poisoned` (or `drunk`), whatever this character's ability's state: the Spy and the
- *   Widow poison the Damsel (https://wiki.bloodontheclocktower.com/Damsel#Related_Jinxes);
+ *   is `poisoned` (or `drunk`, or has `no-ability`), whatever this character's ability's
+ *   state: the Spy and the Widow poison the Damsel
+ *   (https://wiki.bloodontheclocktower.com/Damsel#Related_Jinxes), the Vizier leaves the
+ *   Magician with no ability (https://wiki.bloodontheclocktower.com/Magician#Related_Jinxes);
  * - `noKill`: with `token`, no kill from this character tonight while the partner's own
  *   `stopsWaking` or `stopsKilling` token is on its player (the Exorcist's Chosen on the
  *   Yaggababble, the Princess's Doesn't Kill on the Al-Hadikhia); with `executed-partner`,
@@ -77,10 +79,25 @@
  *   it were in play (the Alchemist-Summoner, [No Demon]); `partner-in-play`, the real partner
  *   is in play as well (the Alchemist-Marionette has no ability and the Marionette is in
  *   play, https://wiki.bloodontheclocktower.com/Alchemist#Related_Jinxes).
+ * - `notDeclared`: the Storyteller doesn't declare that this character is in play, so its
+ *   after-Dawn step, its line in the day's Announcements and its `announcement` day
+ *   reminders are left out (the Vizier with the Alsaahir and the Investigator,
+ *   https://wiki.bloodontheclocktower.com/Vizier#Related_Jinxes);
+ * - `keepsProtection`: when the partner's ability takes this character's ability away, its
+ *   own `protects` still holds, and its player learns this (a `keeps-protection` night alert
+ *   at the partner's step): the Vizier with the Courtier and the Preacher still can't die by
+ *   day;
+ * - `wakesWithPartner`: this character's player wakes at the partner's step and learns whom
+ *   the partner chooses (a `wakes-with` night alert): the Vizier with the Fearmonger;
+ * - `noExecuteNow`: this character's `executionOutcome.executeNow` doesn't apply to this
+ *   player (an `OutcomeProblem` `jinxed`, warned, never locked): `who: "partner"`, the
+ *   partner's own player (the Magician is immune to the Vizier); `who: "marked"` with
+ *   `token`, the player with that partner's token (the Fearmonger's Fear).
  *
  * Either character's file may hold the block. `registersTo`, `impairsPartner`, `noKill`,
  * `noGrimoire`, `grimoireHides`, `endsGame`, `storytellerVote`, `deadAtLeast`,
- * `notCreatedAfterDay`, `nightChoice` and `withPartnerAbility` say what
+ * `notCreatedAfterDay`, `nightChoice`, `withPartnerAbility`, `notDeclared`,
+ * `keepsProtection`, `wakesWithPartner` and `noExecuteNow` say what
  * this character does, or how it is treated, with the partner, so they are read from this
  * character's side only (`ownJinxRules`); the others are read from both sides
  * (`rules/jinxes.ts`). By convention a block goes in the file of the
@@ -151,6 +168,17 @@ export interface NightChoice {
 	partner: (typeof NIGHT_CHOICE_PARTNER)[number];
 }
 
+export const NO_EXECUTE_NOW_WHO = ['partner', 'marked'] as const;
+
+/** A `noExecuteNow` entry: the player this character's execute-now doesn't reach. */
+export interface NoExecuteNow {
+	/** `partner`: the partner's own player; `marked`: the player with the partner's `token`. */
+	who: (typeof NO_EXECUTE_NOW_WHO)[number];
+	token?: ReminderLabel;
+}
+
+export const IMPAIRS_PARTNER = ['poisoned', 'drunk', 'no-ability'] as const;
+
 export interface JinxRules {
 	exclusive?: true;
 	notGiven?: true;
@@ -159,7 +187,7 @@ export interface JinxRules {
 	spareToken?: true;
 	storytellerPicksPlayer?: true;
 	registersTo?: RegistersTo;
-	impairsPartner?: 'poisoned' | 'drunk';
+	impairsPartner?: (typeof IMPAIRS_PARTNER)[number];
 	noKill?: NoKillTrigger;
 	noGrimoire?: true;
 	grimoireHides?: readonly GrimoireHidden[];
@@ -169,6 +197,10 @@ export interface JinxRules {
 	notCreatedAfterDay?: number;
 	nightChoice?: NightChoice;
 	withPartnerAbility?: WithPartnerAbility;
+	notDeclared?: true;
+	keepsProtection?: true;
+	wakesWithPartner?: true;
+	noExecuteNow?: NoExecuteNow;
 }
 
 export const WITH_PARTNER_ABILITY = ['partner-setup', 'partner-in-play'] as const;
@@ -199,7 +231,11 @@ export const JINX_RULE_KEYS = [
 	'deadAtLeast',
 	'notCreatedAfterDay',
 	'nightChoice',
-	'withPartnerAbility'
+	'withPartnerAbility',
+	'notDeclared',
+	'keepsProtection',
+	'wakesWithPartner',
+	'noExecuteNow'
 ] as const;
 
 /** A non-empty list of known values, or undefined (with an issue) when it is not one. */
@@ -285,6 +321,18 @@ function readNightChoice(raw: unknown, path: string, issues: Issues): NightChoic
 	return who && partner ? { who, partner } : undefined;
 }
 
+function readNoExecuteNow(raw: unknown, path: string, issues: Issues): NoExecuteNow | undefined {
+	if (!isObject(raw)) {
+		issues.add(path, `expected object, got ${describe(raw)}`);
+		return undefined;
+	}
+	checkKeys(raw, ['who', 'token'], path, issues);
+	const who = readEnum(raw, 'who', NO_EXECUTE_NOW_WHO, path, issues, true);
+	const token = readString(raw, 'token', path, issues, who === 'marked');
+	if (!who || (who === 'marked' && token === undefined)) return undefined;
+	return who === 'marked' ? { who, token } : { who };
+}
+
 /** A whole number of 1 or more, with an issue when it is given but isn't one. */
 function readPositive(
 	raw: Record<string, unknown>,
@@ -336,14 +384,7 @@ export function readJinxRules(
 			const registersTo = readRegistersTo(entry.registersTo, `${at}.registersTo`, issues);
 			if (registersTo) rules.registersTo = registersTo;
 		}
-		const impairs = readEnum(
-			entry,
-			'impairsPartner',
-			['poisoned', 'drunk'] as const,
-			at,
-			issues,
-			false
-		);
+		const impairs = readEnum(entry, 'impairsPartner', IMPAIRS_PARTNER, at, issues, false);
 		if (impairs) rules.impairsPartner = impairs;
 		const noKill = readEnum(entry, 'noKill', NO_KILL_TRIGGERS, at, issues, false);
 		if (noKill) rules.noKill = noKill;
@@ -373,6 +414,12 @@ export function readJinxRules(
 			false
 		);
 		if (withAbility) rules.withPartnerAbility = withAbility;
+		for (const key of ['notDeclared', 'keepsProtection', 'wakesWithPartner'] as const)
+			if (readBoolean(entry, key, at, issues)) rules[key] = true;
+		if (entry.noExecuteNow !== undefined) {
+			const no = readNoExecuteNow(entry.noExecuteNow, `${at}.noExecuteNow`, issues);
+			if (no) rules.noExecuteNow = no;
+		}
 		if (Object.keys(rules).length === 0) {
 			issues.add(at, 'a jinx entry needs at least one rule');
 			continue;

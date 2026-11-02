@@ -358,3 +358,84 @@ test('during the riot a player who nominated the Storyteller nominates again, wi
 	const prompt = page.getByRole('alertdialog', { name: 'End game?' });
 	await expect(prompt.locator('[data-rule="storyteller-executed"]')).toContainText('Evil wins');
 });
+
+// The Vizier's jinxes (L115): with the Investigator on the script the Vizier isn't declared, and
+// the Magician is immune to the Vizier's execute now, warned beside it, never locked
+// (https://wiki.bloodontheclocktower.com/Vizier#Related_Jinxes).
+test("the Vizier isn't declared with the Investigator, and the Magician is out of their execute now", async ({
+	page
+}) => {
+	test.slow();
+	await startGame(page, 'Vizier Magician', [
+		'vizier',
+		'investigator',
+		'magician',
+		'imp',
+		'chef',
+		'empath',
+		'monk'
+	]);
+	await choose(page, 1, 'Vizier');
+	await choose(page, 2, 'Magician');
+	await choose(page, 3, 'Imp');
+	await choose(page, 4, 'Chef');
+	const first = await walkTo(page, 'Dusk');
+	await first.getByRole('button', { name: 'Next step' }).tap();
+	await bankNight(page, 'End night').tap();
+	await page
+		.getByRole('alertdialog', { name: 'End the night?' })
+		.getByRole('button', { name: 'Confirm', exact: true })
+		.tap();
+	const day = page.getByRole('dialog', { name: 'Day 1' });
+	await expect(day.getByTestId('announcements')).toBeVisible();
+	await expect(day.getByTestId('announcements').locator('[data-character="vizier"]')).toHaveCount(
+		0
+	);
+
+	await day.getByRole('button', { name: 'Execution', exact: true }).tap();
+	const ask = page.getByRole('alertdialog', { name: 'End the day?' });
+	const now = ask.getByTestId('outcome-execute-now');
+	await expect(now).toBeVisible();
+	await ask.getByRole('combobox', { name: 'Execution' }).tap();
+	await page.getByRole('option', { name: /^Seat 2\b/ }).tap();
+	await expect(now).toContainText('A jinx keeps it from this player');
+	await ask.getByRole('combobox', { name: 'Execution' }).tap();
+	await page.getByRole('option', { name: /^Seat 4\b/ }).tap();
+	await expect(now).not.toContainText('A jinx keeps it from this player');
+});
+
+// The Vizier wakes with the Fearmonger, and a Vizier the Courtier makes drunk learns it and
+// still can't die by day: both said at the partner's night step (L115,
+// https://wiki.bloodontheclocktower.com/Vizier#Related_Jinxes).
+test("the Vizier's jinxes with the Fearmonger and the Courtier show at their night steps", async ({
+	page
+}) => {
+	test.slow();
+	await startGame(page, 'Vizier Fear', [
+		'vizier',
+		'fearmonger',
+		'courtier',
+		'chef',
+		'empath',
+		'monk',
+		'imp'
+	]);
+	await choose(page, 1, 'Vizier');
+	await choose(page, 2, 'Fearmonger');
+	await choose(page, 3, 'Courtier');
+	await choose(page, 4, 'Chef');
+	await putReminder(page, 'Drunk 3', 1);
+	await closeBin(page);
+
+	const courtier = await openStep(page, 'Courtier');
+	await expect(courtier.getByTestId('night-alerts')).toContainText(
+		/Vizier\s*,\s*learns\s+they\s+lost\s+their\s+ability,\s+which\s+still\s+protects\s+them/
+	);
+	await page.keyboard.press('Escape');
+	await expect(courtier).toBeHidden();
+
+	const fear = await openStep(page, 'Fearmonger');
+	await expect(fear.getByTestId('night-alerts')).toContainText(
+		/Vizier\s*,\s*wakes\s+too\s+and\s+learns\s+the\s+choice/
+	);
+});

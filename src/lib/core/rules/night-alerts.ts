@@ -34,6 +34,10 @@
  * - `seating`: a character whose neighbours are turned evil at setup (`turnsPlayersInto`
  *   `neighbours`) is not inside one line of every evil player
  *   (https://wiki.bloodontheclocktower.com/Lord_of_Typhon);
+ * - `wakes-with` / `keeps-protection`: a jinxed partner's player wakes at this step too and
+ *   learns the choice, or learns this step took their ability while their protection holds
+ *   (`jinx-partner-alerts.ts`: the Vizier with the Fearmonger, the Courtier and the Preacher,
+ *   https://wiki.bloodontheclocktower.com/Vizier#Related_Jinxes);
  * and, when the step can kill (`NIGHT_KILLERS`), for each player it might kill:
  * - `protected`: they cannot die tonight (the Storyteller's override, the Sailor, the
  *   Soldier or Monk against the Demon, the Tea Lady, the Innkeeper);
@@ -65,6 +69,7 @@ import { stopsKillingTonight } from './reminder-effects.ts';
 import { noAttackState } from './demon-attack.ts';
 import { ownJinxes, ownJinxRules } from './jinxes.ts';
 import { jinxChosenTonight } from './jinx-choices.ts';
+import { jinxPartnerAlerts } from './jinx-partner-alerts.ts';
 import type { NightChoice } from '#lib/core/data/jinx-rules.ts';
 import {
 	abilityState,
@@ -164,6 +169,8 @@ export type NightAlertKind =
 	| 'grimoire-hides'
 	| 'jinx-chosen'
 	| 'seating'
+	| 'wakes-with'
+	| 'keeps-protection'
 	| 'protected'
 	| 'may-bounce'
 	| 'survives-first-death'
@@ -256,6 +263,7 @@ export function nightStepAlerts(
 					works: true,
 					impairments: []
 				});
+	out.push(...jinxPartnerAlerts(game, characterId, characters));
 	for (const seatId of actors) {
 		const twice = actsTwiceSource(game, seatId, characters);
 		if (!twice) continue;

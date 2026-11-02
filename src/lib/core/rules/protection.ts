@@ -10,6 +10,23 @@ import { type CharacterLookup } from '#lib/core/model/characters.ts';
 import { alignmentOf, aliveNeighbours, getSeat, trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 import { abilityState, seatOfCharacter, type AbilitySource } from './ability.ts';
+import { ownJinxRules } from './jinxes.ts';
+
+/**
+ * Whether the protection of the ability at `seatId` works: its ability works, or (alive) it
+ * was taken away only by jinxed partners whose jinx keeps this protection
+ * (`keepsProtection`: a Vizier the Courtier makes drunk or the Preacher takes the ability from
+ * still can't die by day, https://wiki.bloodontheclocktower.com/Vizier#Related_Jinxes).
+ */
+export function protectionWorks(game: Game, seatId: SeatId, characters: CharacterLookup): boolean {
+	const state = abilityState(game, seatId, characters);
+	if (state.works) return true;
+	const owner = state.characterId;
+	if (state.dead || owner === undefined || state.impairments.length === 0) return false;
+	return state.impairments.every(
+		(i) => ownJinxRules(game, owner, i.source.characterId, characters)?.keepsProtection === true
+	);
+}
 
 /** One ability that protects a player from a kill, and the reminder that says so if any. */
 export interface Protector {
@@ -195,7 +212,7 @@ function savers(
 			? 'not-in-play'
 			: !source
 				? 'not-this-player'
-				: owner && !abilityState(game, owner, characters).works
+				: owner && !protectionWorks(game, owner, characters)
 					? 'impaired'
 					: undefined;
 		out.push({
@@ -222,7 +239,7 @@ export function protection(
 	if (!seat) return undefined;
 	const override = seat.overrides.find((o) => o.field === 'canDie');
 	if (override) return override.value ? undefined : 'override';
-	const works = (s: SeatId) => abilityState(game, s, characters).works;
+	const works = (s: SeatId) => protectionWorks(game, s, characters);
 	return protectors(game, seatId, characters, by).find(
 		(p) => !p.source.seatId || works(p.source.seatId)
 	)?.source;

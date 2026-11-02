@@ -61,6 +61,12 @@ export interface NightOrderInput {
 	 * leave a step out (Tor's missing evil info).
 	 */
 	wholeSheet?: true;
+	/**
+	 * Characters in play whose players all have no ability (the Magician while the Vizier is
+	 * in play, https://wiki.bloodontheclocktower.com/Magician#Related_Jinxes): their notes on
+	 * the evil info steps are left out.
+	 */
+	noAbility?: readonly CharacterId[];
 }
 
 /**
@@ -402,7 +408,10 @@ export function nightOrder(input: NightOrderInput): NightOrder {
 				placement: custom && customIds.has(marker) ? 'custom-order' : 'marker',
 				notes: [
 					...candidate.notes,
-					...markerNotes(marker, input.inPlay),
+					...markerNotes(
+						marker,
+						input.inPlay.filter((c) => !input.noAbility?.includes(c.id))
+					),
 					...(marker === 'demoninfo' ? wakesWithNotes(undefined, input.inPlay) : [])
 				]
 			};

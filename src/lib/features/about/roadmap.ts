@@ -491,10 +491,11 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		// format with the Heretic and Boffin, L107 every jinx shown where it matters, L108 jinxes
 		// that reuse existing rules, L109 the Plague Doctor's and other built characters', L112
 		// the Leviathan's and Riot's game ends, King, late Demon and night choices, L113 the
-		// setup jinx gaps (the Damsel's Poisoned, the Alchemist's Summoner and Marionette).
+		// setup jinx gaps (the Damsel's Poisoned, the Alchemist's Summoner and Marionette), L115
+		// the Vizier's six (not declared, kept protection, woken with the Fearmonger, the Magician).
 		title: 'Jinxes the app applies, not only shows',
 		area: 'engine',
-		parts: ['L99', 'L100', 'L107', 'L108', 'L109', 'L112', 'L113']
+		parts: ['L99', 'L100', 'L107', 'L108', 'L109', 'L112', 'L113', 'L115']
 	},
 	{
 		title: 'Co-Storytelling: two Storytellers on one game',
