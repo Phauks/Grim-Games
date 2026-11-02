@@ -603,9 +603,10 @@ function alignmentAlive(game: Game, characters: CharacterLookup): GameEnd[] {
 	);
 	if (found === undefined) return [];
 	const { seatId, characterId, rule } = found;
-	const left = aliveNonTravellers(game, characters).filter(
-		(id) => alignmentOf(game, id) === rule.alignment
-	);
+	const alive = aliveNonTravellers(game, characters);
+	// A living seat with no alignment yet (no character) is unknown, so this can't be judged.
+	if (alive.some((id) => alignmentOf(game, id) === undefined)) return [];
+	const left = alive.filter((id) => alignmentOf(game, id) === rule.alignment);
 	if (left.length > rule.alive!) return [];
 	return [
 		{

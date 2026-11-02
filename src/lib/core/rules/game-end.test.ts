@@ -591,6 +591,10 @@ describe('Legion (https://wiki.bloodontheclocktower.com/Legion)', () => {
 	it('a good Traveller does not count as a good player left', () => {
 		expect(ends([...cast, 'beggar'], [dead(3)]).ends).toMatchObject([{ rule: 'alignment-alive' }]);
 	});
+
+	it('a living seat with no character yet: unknown, so nothing yet', () => {
+		expect(ends(cast, [dead(3), { type: 'AddSeat' }]).ends).toEqual([]);
+	});
 });
 
 describe('Alsaahir (https://wiki.bloodontheclocktower.com/Alsaahir)', () => {
