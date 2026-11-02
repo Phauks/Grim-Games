@@ -412,6 +412,18 @@ function describeEntry(
 			seatPart(before, swap.seatB)
 		];
 	if (entry.command === 'CountOff') return [text('Counted off the seats')]; // Plan J40.
+	// Two players swapping characters (the Barber's, the Snake Charmer's) is one line, with the
+	// characters they had.
+	if (entry.command === 'SwapCharacters') {
+		const [a, b] = entry.events.filter((e) => e.type === 'CharacterAssigned');
+		if (a?.type === 'CharacterAssigned' && b?.type === 'CharacterAssigned')
+			return [
+				text('Swapped the characters of '),
+				seatPart(before, a.seatId),
+				text(' and '),
+				seatPart(before, b.seatId)
+			];
+	}
 	if (entry.command === 'AddLatePlayer') {
 		const added = entry.events.flatMap((e) => (e.type === 'SeatAdded' ? [e.seatId] : []));
 		const changed = entry.events.filter((e) => e.type === 'CharacterAssigned').length;

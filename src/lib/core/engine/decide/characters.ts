@@ -1,12 +1,22 @@
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
-import { OVERRIDE_FIELDS, isOnScript, registersAsDead, typeOf } from '#lib/core/model/index.ts';
+import {
+	OVERRIDE_FIELDS,
+	isOnScript,
+	registersAsDead,
+	replacedBy,
+	typeOf
+} from '#lib/core/model/index.ts';
+import { neighbourFollows } from '#lib/core/rules/reminder-movement.ts';
+import type { Game } from '#lib/core/model/index.ts';
 import type { GameEvent } from '../events.ts';
 import {
 	allowsDuplicates,
 	characterOf,
+	checkReminder,
 	deathCause,
 	refuse,
+	reminderFrom,
 	seatOf,
 	seatableCharacter,
 	trulyInPlay,
@@ -94,7 +104,57 @@ export const CHARACTERS_DECIDERS: Deciders<
 				...(alignment !== undefined ? { alignment } : {})
 			};
 		};
-		return [to(a, b), to(b, a)];
+		const events: GameEvent[] = [to(a, b), to(b, a)];
+		const after: Game = {
+			...game,
+			seats: {
+				...game.seats,
+				[a.seatId]: {
+					...a,
+					characterId: b.characterId,
+					alignment: keep ? a.alignment : b.alignment
+				},
+				[b.seatId]: {
+					...b,
+					characterId: a.characterId,
+					alignment: keep ? b.alignment : a.alignment
+				}
+			}
+		};
+		// With alignments, a whole player swap: a token's "Is The …" reminder (the Philosopher's)
+		// goes with the token, so a Philosopher with the Snake Charmer's ability makes the Demon a
+		// poisoned Philosopher (https://wiki.bloodontheclocktower.com/Snake_Charmer).
+		if (!keep) {
+			for (const [from, toSeat] of [
+				[a, b],
+				[b, a]
+			] as const) {
+				for (const r of from.reminders) {
+					if (!replacedBy(r, ctx.characters)) continue;
+					events.push({ type: 'ReminderMoved', reminderId: r.reminderId, toSeatId: toSeat.seatId });
+				}
+			}
+		}
+		// Tokens that mark a character's neighbours (the No Dashii's Poisoned) go to its new
+		// neighbours (https://wiki.bloodontheclocktower.com/No_Dashii).
+		for (const f of neighbourFollows(game, after, ctx.characters)) {
+			const name = ctx.characters.get(f.reminder.characterId)?.name ?? f.reminder.characterId;
+			warn(
+				'reminder-followed',
+				`${name}’s ${f.reminder.label} moved to the new neighbour of the ${name}.`
+			);
+			events.push({ type: 'ReminderMoved', reminderId: f.reminderId, toSeatId: f.toSeatId });
+		}
+		if (command.mark) {
+			const reminder = reminderFrom(game, command.mark);
+			checkReminder(game, reminder, ctx, warn);
+			events.push({
+				type: 'ReminderAdded',
+				seatId: a.seatId,
+				reminder: { reminderId: ctx.newId(), ...reminder }
+			});
+		}
+		return events;
 	},
 
 	SetAlignment(game, command, ctx, warn) {

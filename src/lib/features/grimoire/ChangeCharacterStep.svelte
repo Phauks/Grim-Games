@@ -7,6 +7,8 @@
 		changeableSeats,
 		characterChanger,
 		neighbourAlignments,
+		swapChoice,
+		swapPartner,
 		swappableSeats,
 		type NightStep
 	} from '#lib/core/rules/index.ts';
@@ -34,6 +36,12 @@
 	 * alignment and offers each living neighbour's that differs. On the first night the Kazali
 	 * (`upTo: 'minions'`, https://wiki.bloodontheclocktower.com/Kazali) makes evil Minions, one
 	 * player after another, until the usual number are in play.
+	 *
+	 * A step whose character swaps with the Demon it chooses (`becomes.into: 'swap'`: the
+	 * Snake Charmer, https://wiki.bloodontheclocktower.com/Snake_Charmer) picks the player it
+	 * pointed at; the Demon swaps characters and alignments with it and the old Demon gets its
+	 * token (Poisoned), in one change. Anyone else: nothing happens. Each swapped player can be
+	 * shown their new character.
 	 */
 	interface Props {
 		grimoire: Grimoire;
@@ -109,6 +117,27 @@
 		}
 	}
 
+	// The Snake Charmer's choice: its player (or a Philosopher who took its token), and the two
+	// seats it swapped tonight.
+	const charms = $derived(
+		step.character ? rulesIn(game, step.character.id, characters)?.becomes?.into === 'swap' : false
+	);
+	const charmer = $derived(
+		charms && step.character ? swapPartner(game, step.character.id, characters) : undefined
+	);
+	let charmOpen = $state(false);
+	let charmed = $state<readonly SeatId[]>();
+	function charm(seatId: SeatId) {
+		charmOpen = false;
+		if (!step.character) return;
+		const choice = swapChoice(game, step.character.id, seatId, characters);
+		if (!choice) return;
+		if (grimoire.run({ type: 'SwapCharacters', ...choice })) {
+			charmed = [choice.withSeatId, choice.seatId];
+			onChanges?.(charmed.flatMap((s) => game.seats[s]?.characterId ?? []));
+		}
+	}
+
 	let seatOpen = $state(false);
 	let characterOpen = $state(false);
 	let chosen = $state<SeatId>();
@@ -119,6 +148,7 @@
 		void step.id;
 		made = [];
 		swapped = undefined;
+		charmed = undefined;
 	});
 
 	function chooseSeat(seatId: SeatId) {
@@ -209,6 +239,28 @@
 		offer={(id) => !!game.seats[id].characterId}
 		misfits={swapMisfits}
 		onChoose={chooseSecond}
+	/>
+{/if}
+
+{#if charms && (charmer !== undefined || charmed)}
+	<h3>Swapped characters</h3>
+	<div class="row" data-testid="charm-swap">
+		{#if charmed}
+			{#each charmed as seatId (seatId)}
+				{@render newCharacter(seatId, game.seats[seatId]?.characterId)}
+			{/each}
+		{:else}
+			<span class="none">None</span>
+			<Button variant="quiet" onclick={() => (charmOpen = true)}>Choose</Button>
+		{/if}
+	</div>
+	<SeatChooser
+		bind:open={charmOpen}
+		title="Chooses a player"
+		{game}
+		{characters}
+		offer={(id) => !game.seats[id].dead}
+		onChoose={charm}
 	/>
 {/if}
 

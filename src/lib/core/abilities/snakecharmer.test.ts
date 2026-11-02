@@ -14,7 +14,8 @@ import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { abilityState } from '#lib/core/rules/ability.ts';
-import { becomesOffer } from '#lib/core/rules/becomes.ts';
+import { becomesOffer, swapChoice } from '#lib/core/rules/becomes.ts';
+import { trueCharacter } from '#lib/core/model/selectors.ts';
 import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 import { scenario, type Scenario, type SeatRef } from '#lib/core/testing/scenario.ts';
 
@@ -99,6 +100,82 @@ describe('Snake Charmer', () => {
 		it('keeps poisoning for good: the ability says the old Demon is then poisoned', () => {
 			const s = charms(scenario(['snakecharmer', 'chef', 'imp']), 'imp').dies('snakecharmer');
 			expect(poisonedBy(s, 'imp')).toBe(true);
+		});
+	});
+
+	describe('the night step: choose a player (https://wiki.bloodontheclocktower.com/Snake_Charmer#How_to_Run)', () => {
+		/** The step's choice, run as the step runs it: one swap that places the token too. */
+		const choose = (s: Scenario, chosen: SeatRef) => {
+			const choice = swapChoice(s.game, 'snakecharmer', s.seat(chosen), s.characters);
+			return choice ? s.do({ type: 'SwapCharacters', ...choice }) : s;
+		};
+
+		it('swaps with the Demon chosen and poisons the old Demon, as one change', () => {
+			const s = scenario(['snakecharmer', 'chef', 'imp']);
+			expect(swapChoice(s.game, 'snakecharmer', s.seat('imp'), s.characters)).toEqual({
+				seatId: s.seat('imp'),
+				withSeatId: s.seat('snakecharmer'),
+				mark: charmed
+			});
+			const after = choose(s, 'imp');
+			expect(after.session.log.entries.length).toBe(s.session.log.entries.length + 1);
+			expect(after.game.seats[after.seat('imp')]).toMatchObject({
+				characterId: 'snakecharmer',
+				alignment: 'good'
+			});
+			expect(after.game.seats[after.seat('imp')].reminders.map((r) => r.label)).toEqual([
+				'Poisoned'
+			]);
+			expect(poisonedBy(after, 'imp')).toBe(true);
+			expect(after.game.seats[after.seat('snakecharmer')]).toMatchObject({
+				characterId: 'imp',
+				alignment: 'evil'
+			});
+		});
+
+		it('does nothing when the player chosen is not the Demon', () => {
+			const s = scenario(['snakecharmer', 'chef', 'imp']);
+			expect(swapChoice(s.game, 'snakecharmer', s.seat('chef'), s.characters)).toBeUndefined();
+			expect(
+				swapChoice(s.game, 'snakecharmer', s.seat('snakecharmer'), s.characters)
+			).toBeUndefined();
+		});
+
+		it('a Philosopher with the ability swaps too, and the Demon becomes a poisoned Philosopher', () => {
+			// The ability's Philosopher case: the Philosopher's token is now the Snake Charmer.
+			const s = scenario(['philosopher', 'chef', 'imp'])
+				.becomes('philosopher', 'snakecharmer')
+				.reminder('philosopher', 'philosopher', 'Is The Philosopher');
+			const after = choose(s, 'imp');
+			const was = after.seat('imp');
+			expect(after.game.seats[was]).toMatchObject({
+				characterId: 'snakecharmer',
+				alignment: 'good'
+			});
+			expect(trueCharacter(after.game, was, after.characters)).toBe('philosopher');
+			expect(poisonedBy(after, 'imp')).toBe(true);
+			const now = after.seat('philosopher');
+			expect(after.game.seats[now]).toMatchObject({ characterId: 'imp', alignment: 'evil' });
+			expect(trueCharacter(after.game, now, after.characters)).toBe('imp');
+		});
+
+		it('a Drunk who thinks they are the Snake Charmer swaps with no one', () => {
+			const s = scenario(['snakecharmer', 'chef', 'imp']).drunk('snakecharmer');
+			expect(swapChoice(s.game, 'snakecharmer', s.seat('imp'), s.characters)).toBeUndefined();
+		});
+
+		it("moves the No Dashii's poisoned neighbours to the new No Dashii's neighbours", () => {
+			// https://wiki.bloodontheclocktower.com/No_Dashii: its two nearest Townsfolk are poisoned.
+			const s = scenario(['snakecharmer', 'chef', 'nodashii', 'monk', 'empath', 'mayor'])
+				.reminder('chef', 'nodashii', 'Poisoned')
+				.reminder('monk', 'nodashii', 'Poisoned');
+			const after = choose(s, 'nodashii');
+			const poisoned = after.game.seating.filter((id) =>
+				after.game.seats[id].reminders.some(
+					(r) => r.characterId === 'nodashii' && r.label === 'Poisoned'
+				)
+			);
+			expect(poisoned.sort()).toEqual([after.seat('chef'), after.seat('mayor')].sort());
 		});
 	});
 

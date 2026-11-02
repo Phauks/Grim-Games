@@ -384,6 +384,13 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['M18']
 	},
 	{
+		// Trevor, 2026-11-02: the Snake Charmer's night step does the whole swap with the Demon it
+		// chooses, a Philosopher with its ability swaps too, and the No Dashii's poison follows.
+		title: "The Snake Charmer's swap with the Demon, done in its night step",
+		area: 'engine',
+		parts: ['M20']
+	},
+	{
 		// Trevor, 2026-10-30: on the roadmap, after a spike and research.
 		title: 'Jinxes the app applies, not only shows',
 		area: 'engine',
