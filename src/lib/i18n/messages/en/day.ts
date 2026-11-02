@@ -123,6 +123,9 @@ export const day = {
 	'day.timerPerPlayerSeconds': { one: '{count} second', other: '{count} seconds' },
 	/** A day tally's count (`dayTally`: the Yaggababble's phrase said today, M17c). */
 	'day.tallyTimes': { one: '{count} time', other: '{count} times' },
+	/** On the tally character's night step: the day's count and how many may still die. */
+	'day.tallyKills': '{label}: {count}, may kill {left}',
+	'day.tallyKillsNone': '{label}: None',
 	'day.timerVibrateUnavailable': 'This device can’t vibrate.',
 	'day.timerKeepAwake': 'Keep screen on',
 	'day.timerKeepAwakeUnavailable': 'This browser can’t keep the screen on.',
