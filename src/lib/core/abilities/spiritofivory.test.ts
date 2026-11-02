@@ -52,7 +52,7 @@ describe('Spirit of Ivory', () => {
 			// Wiki: "The Fang Gu attacks an Outsider and creates an evil player. The Devil's
 			// Advocate chooses the Goon at night. Normally, the Goon would turn evil, but the Goon
 			// remains good because there is already 1 more evil character than normal in play."
-			// Waits on the engine: the extra evil count only counts evil Townsfolk and Outsiders, so
+			// Waits on the engine (M15o): the extra evil count only counts evil Townsfolk and Outsiders, so
 			// the Outsider the Fang Gu turned into an evil Demon is not counted, and turning the
 			// Goon evil gives no warning.
 			const cast = ['fanggu', 'butler', 'devilsadvocate', 'goon', 'chef', 'empath', 'monk'];

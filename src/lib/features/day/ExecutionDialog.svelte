@@ -225,6 +225,12 @@
 		if (!open || insteadFor.length === 0) instead = false;
 	});
 	const insteadOf = $derived(instead ? insteadFor[0] : undefined);
+	/**
+	 * A failed execution (the Legion's, the Judge's) is no execution, so the day stays open for
+	 * another nomination (https://wiki.bloodontheclocktower.com/Legion: someone else is
+	 * executed instead).
+	 */
+	const failed = $derived(outcome?.kind === 'failed' && !insteadOf);
 
 	const options = $derived.by(() => {
 		const nominees: SeatId[] = [];
@@ -298,7 +304,7 @@
 						? undefined
 						: (save as CharacterId | 'dies'),
 					{ ...marks },
-					keepAvailable && keepGoing,
+					failed || (keepAvailable && keepGoing),
 					...(outcome && !insteadOf ? [outcome] : [])
 				)}
 >
