@@ -72,7 +72,7 @@
 		}
 	},
 	"reminderEnds": {
-		"Sober & Healthy": "dusk",
-		"Acts Twice": "dusk"
+		"Sober & Healthy": "dusk-after-dawn",
+		"Acts Twice": "dusk-after-dawn"
 	}
 }

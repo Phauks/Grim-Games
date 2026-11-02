@@ -5,7 +5,9 @@
  * The Monk's Safe comes off at dawn (https://wiki.bloodontheclocktower.com/Monk), the
  * Poisoner's Poisoned player is healthy again at dusk the next day
  * (https://wiki.bloodontheclocktower.com/Poisoner), the Minstrel's Everyone Is Drunk comes off
- * at dusk tomorrow (https://wiki.bloodontheclocktower.com/Minstrel), and the Philosopher's
+ * at dusk tomorrow (https://wiki.bloodontheclocktower.com/Minstrel), the Barista's tokens at
+ * the next day's dusk even when placed before tonight's Dusk step was ticked
+ * (https://wiki.bloodontheclocktower.com/Barista), and the Philosopher's
  * Drunk when the Philosopher dies (https://wiki.bloodontheclocktower.com/Philosopher).
  *
  * A token a jinx in play still needs by day stays until dusk instead: the Leviathan or Riot
@@ -74,8 +76,9 @@ function endOf(r: ReminderInstance, characters: CharacterLookup): ReminderEnd | 
 
 /**
  * Whether a token that ends at `end`, placed with `placed` days begun, comes off at `turn`
- * with `days` days begun. A `dusk-tomorrow` token stays through the dusk of the day it was
- * placed and comes off at the first dusk after a dawn; one without a placing day (saved
+ * with `days` days begun. A `dusk-after-dawn` token stays through the dusk of the day it was
+ * placed (or tonight's Dusk step, ticked after the Storyteller placed it) and comes off at the
+ * first dusk after a dawn; one without a placing day (saved
  * before it was recorded) comes off at the next dusk.
  */
 function endsAt(
@@ -85,7 +88,7 @@ function endsAt(
 	turn: DayTurn
 ): boolean {
 	if (end === 'dawn' || end === 'dusk') return end === turn;
-	if (end === 'dusk-tomorrow') return turn === 'dusk' && (placed === undefined || placed < days);
+	if (end === 'dusk-after-dawn') return turn === 'dusk' && (placed === undefined || placed < days);
 	return false;
 }
 

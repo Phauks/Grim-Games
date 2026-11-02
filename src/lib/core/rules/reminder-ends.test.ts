@@ -89,7 +89,7 @@ describe('reminderEnds', () => {
 		expect(labelsOf(s.newDay().dusk(), 'monk')).toEqual([]);
 	});
 
-	it('keeps a dusk-tomorrow token through the dusk of the day it was placed', () => {
+	it('keeps a dusk-after-dawn token through the dusk of the day it was placed', () => {
 		// https://wiki.bloodontheclocktower.com/Minstrel: the drunkenness lasts until dusk the day
 		// after the execution, not the dusk that ends the execution's day.
 		const s = scenario(['minstrel', 'chef', 'imp', 'empath', 'poisoner'])
@@ -98,6 +98,18 @@ describe('reminderEnds', () => {
 		expect(labelsOf(s.dusk(), 'minstrel')).toEqual(['Everyone Is Drunk']);
 		expect(labelsOf(s.dusk().newDay(), 'minstrel')).toEqual(['Everyone Is Drunk']);
 		expect(labelsOf(s.dusk().newDay().dusk(), 'minstrel')).toEqual([]);
+	});
+
+	it('keeps a Barista token placed before the night through its Dusk step', () => {
+		// https://wiki.bloodontheclocktower.com/Barista: the effect lasts until dusk, so a token put
+		// out before the night's Dusk step is ticked still holds tonight and the next day.
+		const s = scenario(['barista', 'chef', 'imp', 'empath', 'poisoner']).reminder(
+			'chef',
+			'barista',
+			'Acts Twice'
+		);
+		expect(labelsOf(s.dusk(), 'barista')).toEqual(['Acts Twice']);
+		expect(labelsOf(s.dusk().newDay().dusk(), 'barista')).toEqual([]);
 	});
 
 	it('takes an owner-dies token off when its owner dies, by any death, and not before', () => {

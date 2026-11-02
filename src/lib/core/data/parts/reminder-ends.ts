@@ -5,10 +5,11 @@ import { objectPart } from './part.ts';
 
 /**
  * When a reminder comes off by itself: at the next Dawn, at the next Dusk, at the dusk after
- * the next Dawn (`dusk-tomorrow`, for a token placed by day whose effect lasts all of the next
- * day), or when a player of its character dies (`owner-dies`).
+ * the next Dawn (`dusk-after-dawn`: a token placed by day lasts all of the next day, and one
+ * placed before the night's Dusk step is ticked still lasts until the next day's dusk), or when
+ * a player of its character dies (`owner-dies`).
  */
-export const REMINDER_ENDS = ['dawn', 'dusk', 'dusk-tomorrow', 'owner-dies'] as const;
+export const REMINDER_ENDS = ['dawn', 'dusk', 'dusk-after-dawn', 'owner-dies'] as const;
 export type ReminderEnd = (typeof REMINDER_ENDS)[number];
 
 /**
