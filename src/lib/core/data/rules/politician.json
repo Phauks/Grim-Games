@@ -24,5 +24,17 @@
 	"makesExtraEvil": true,
 	"gameEnd": {
 		"decidedByStoryteller": true
+	},
+	"jinxes": {
+		"legion": {
+			"registersTo": {
+				"alignments": ["evil"]
+			}
+		},
+		"vizier": {
+			"registersTo": {
+				"alignments": ["evil"]
+			}
+		}
 	}
 }

@@ -3,6 +3,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { wikiUrl, type Alignment, type Character } from '#lib/core/data/index.ts';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
+	import { explainBlock } from '#lib/features/glossary/glossary.svelte.ts';
 	import { clearTermHandler } from '#lib/features/glossary/term-handler.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { jinxesFor } from '#lib/core/data/jinxes.ts';
@@ -122,6 +123,19 @@
 	const current = $derived(
 		selected === undefined ? 'summary' : selected === 'jinxes' ? 'jinxes' : String(selected)
 	);
+	/**
+	 * A section's text with each rules term underlined at its first use in the whole section,
+	 * not again in every paragraph or bullet (Trevor, 2026-11-02; Wikipedia's "link once",
+	 * MOS:DUPLINK). One list of pieces per block, and per item of a list.
+	 */
+	function marked(section: WikiSection) {
+		const texts = section.blocks.map((b) =>
+			b.kind === 'list' ? b.items : b.kind === 'p' || b.kind === 'example' ? [b.text] : []
+		);
+		const all = explainBlock(texts.flat(), [character.name]);
+		let at = 0;
+		return texts.map((t) => all.slice(at, (at += t.length)));
+	}
 	function go(id: string) {
 		selected = id === 'summary' ? undefined : id === 'jinxes' ? 'jinxes' : Number(id);
 	}
@@ -131,30 +145,31 @@
 	{@const examples = section.blocks.filter((b) => b.kind === 'example')}
 	{@const tip = tipLabel(section)}
 	{@const tips = tip ? section.blocks.flatMap((b) => (b.kind === 'list' ? b.items : [])) : []}
+	{@const parts = marked(section)}
 	{#each section.blocks as block, j (j)}
 		{#if block.kind === 'p'}
-			<p><GlossaryText text={block.text} names={[character.name]} /></p>
+			<p><GlossaryText segments={parts[j][0] ?? []} /></p>
 		{:else if block.kind === 'quote'}
 			<p class="quote">{block.text}</p>
 		{:else if block.kind === 'artist'}
 			<p class="artist">{t('characters.artist', { name: block.name })}</p>
 		{:else if block.kind === 'example' && !isExamples(section)}
 			<!-- The wiki marks worked steps in How to Run the same way; only Examples are boxed. -->
-			<p><GlossaryText text={block.text} names={[character.name]} /></p>
+			<p><GlossaryText segments={parts[j][0] ?? []} /></p>
 		{:else if block.kind === 'example'}
 			<WikiBox label={t('characters.example', { number: examples.indexOf(block) + 1 })}>
-				<p><GlossaryText text={block.text} names={[character.name]} /></p>
+				<p><GlossaryText segments={parts[j][0] ?? []} /></p>
 			</WikiBox>
 		{:else if tip}
 			{#each block.items as item, k (k)}
 				<WikiBox label={t(tip, { number: tips.indexOf(item) + 1 })}>
-					<p><GlossaryText text={item} names={[character.name]} /></p>
+					<p><GlossaryText segments={parts[j][k] ?? []} /></p>
 				</WikiBox>
 			{/each}
 		{:else}
 			<ul>
-				{#each block.items as item, k (k)}
-					<li><GlossaryText text={item} names={[character.name]} /></li>
+				{#each parts[j] as segments, k (k)}
+					<li><GlossaryText {segments} /></li>
 				{/each}
 			</ul>
 		{/if}

@@ -5,7 +5,8 @@ import {
 	homebrewImage,
 	ICONS_PATH,
 	type Alignment,
-	type Character
+	type Character,
+	type CharacterIcons
 } from '#lib/core/data/index.ts';
 
 /**
@@ -43,17 +44,19 @@ export function reminderIconUrl(
 }
 
 /**
- * What to show instead when a homebrew character's own image fails to load (a dead link, or
- * offline): TPI's generic icon for its type, as when it has no image (Trevor, 2026-10-19).
- * Undefined for official characters, whose icons ship with the app.
+ * What to show instead when a character's icon fails to load (a dead link, a host that refuses
+ * us, or offline): TPI's generic icon for its type, as when a homebrew character has no image
+ * (Trevor, 2026-10-19). Official characters get it too, so a token never shows a broken image.
  */
 export function fallbackIconUrl(character: Character, alignment?: Alignment): string | undefined {
-	if (character.edition) return undefined;
-	return tpiIcon(character, alignment ?? defaultAlignment(character.type));
+	return iconFile(genericIcons(character.type), alignment ?? defaultAlignment(character.type));
 }
 
 function tpiIcon(character: Character, team: Alignment | undefined): string | undefined {
-	const icons = characterIcons(character) ?? genericIcons(character.type);
+	return iconFile(characterIcons(character) ?? genericIcons(character.type), team);
+}
+
+function iconFile(icons: CharacterIcons, team: Alignment | undefined): string | undefined {
 	const file =
 		(team === 'evil' ? icons.evil : team === 'good' ? icons.good : undefined) ??
 		icons.unaligned ??
