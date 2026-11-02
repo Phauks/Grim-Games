@@ -143,10 +143,9 @@ describe('Mezepheles', () => {
 			]);
 		});
 
-		it.fails('turns no one else evil once the Mezepheles is marked No Ability', () => {
+		it('turns no one else evil once the Mezepheles is marked No Ability', () => {
 			// Wiki: "The Mezepheles loses their ability—mark them with the NO ABILITY reminder and
 			// remove their night token from the night sheet."
-			// Waits on the engine (unplanned): becomesOffer still offers Turns Evil after the Mezepheles is marked No Ability.
 			const s = scenario(cast)
 				.reminder('mezepheles', 'mezepheles', 'No Ability')
 				.reminder('chef', 'mezepheles', 'Turns Evil');

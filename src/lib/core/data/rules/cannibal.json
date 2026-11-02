@@ -46,8 +46,17 @@
 		"wakes": true
 	},
 	"jinxes": {
+		"butler": {
+			"learnsGained": "ability"
+		},
+		"juggler": {
+			"learnsGained": "answer"
+		},
 		"princess": {
 			"noKill": "executed-partner"
+		},
+		"zealot": {
+			"learnsGained": "ability"
 		}
 	}
 }

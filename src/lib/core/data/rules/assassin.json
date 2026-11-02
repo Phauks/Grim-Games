@@ -55,5 +55,8 @@
 			}
 		}
 	},
-	"marksChoice": ["Dead"]
+	"marksChoice": ["Dead"],
+	"wakesWhen": {
+		"untilToken": "No Ability"
+	}
 }

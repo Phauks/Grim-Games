@@ -307,10 +307,12 @@ function correctGuesses(
 	seatId: SeatId,
 	characterId: CharacterId,
 	characters: CharacterLookup,
-	rule: Answers
+	rule: Answers,
+	_today?: NightToday,
+	basis: SeatId = seatId
 ): NightAnswer {
 	const guesses = entriesOf(game, 'note')
-		.filter((n) => n.characterId === characterId && (n.seatId === undefined || n.seatId === seatId))
+		.filter((n) => n.characterId === characterId && (n.seatId === undefined || n.seatId === basis))
 		.flatMap((n) => n.guesses ?? []);
 	const right = (g: CharacterGuess) => trueCharacter(game, g.seatId, characters) === g.characterId;
 	const correct = guesses.filter(right);
@@ -572,7 +574,9 @@ type AnswerFn = (
 	characterId: CharacterId,
 	characters: CharacterLookup,
 	rule: Answers,
-	today?: NightToday
+	today?: NightToday,
+	/** Whose own day the answer reads, when not the waking player's (`nightAnswer`). */
+	basis?: SeatId
 ) => NightAnswer;
 
 /** How each `answers` question is worked out. */
@@ -595,7 +599,10 @@ const QUESTIONS: Readonly<Record<Answers['question'], AnswerFn>> = {
 /**
  * The night answer for a waking player whose character `answers` a question (its rules
  * block: our `data/rules/<id>.json`, or a custom character's `rules`), or undefined. On the
- * first night, the rule's `firstNight` question when it has one.
+ * first night, the rule's `firstNight` question when it has one. `basis` is the player whose
+ * own day the answer reads when it isn't the waking player's: the executed Juggler's guesses,
+ * learned by the Cannibal who gained the ability (`learnsGained` `answer`,
+ * https://wiki.bloodontheclocktower.com/Cannibal#Related_Jinxes).
  */
 export function nightAnswer(
 	game: Game,
@@ -603,12 +610,13 @@ export function nightAnswer(
 	characterId: CharacterId,
 	characters: CharacterLookup,
 	today?: NightToday,
-	night?: Night
+	night?: Night,
+	basis?: SeatId
 ): NightAnswer | undefined {
 	const rule = rulesOf(characterId, characters)?.answers;
 	if (!rule) return undefined;
 	const question = (night === 'first' && rule.firstNight) || rule.question;
-	return QUESTIONS[question](game, seatId, characterId, characters, rule, today);
+	return QUESTIONS[question](game, seatId, characterId, characters, rule, today, basis);
 }
 
 /**

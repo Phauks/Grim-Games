@@ -50,5 +50,8 @@
 		"you-are": {
 			"characters": ["changed"]
 		}
+	},
+	"wakesWhen": {
+		"untilToken": "No Ability"
 	}
 }

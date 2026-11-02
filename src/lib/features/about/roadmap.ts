@@ -487,6 +487,15 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['M26a', 'M26b']
 	},
 	{
+		// The coordinator's ask of 2026-11-02 (Trevor: no release until the How to Run gaps are
+		// closed): a once-per-game character stops waking once marked No Ability, the Zombuul
+		// sleeps while anyone is marked Died Today, the Bounty Hunter wakes when its Know player
+		// dies, the Juggler only after the first day, a Wraith without its ability sleeps.
+		title: 'Characters stop waking once their ability is used or no longer works',
+		area: 'engine',
+		parts: ['M28']
+	},
+	{
 		// Trevor, 2026-11-02: beta goes to production only once the How to Run gaps are closed.
 		// M29a and M29b the warnings still missing (a second Alsaahir guess, a fourth Matron swap,
 		// the Goon's Drunk, the Pope's duplicate bluffs and more), M30a and M30b the info tokens
@@ -501,10 +510,13 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		// format with the Heretic and Boffin, L107 every jinx shown where it matters, L108 jinxes
 		// that reuse existing rules, L109 the Plague Doctor's and other built characters', L112
 		// the Leviathan's and Riot's game ends, King, late Demon and night choices, L113 the
-		// setup jinx gaps (the Damsel's Poisoned, the Alchemist's Summoner and Marionette).
+		// setup jinx gaps (the Damsel's Poisoned, the Alchemist's Summoner and Marionette), L114
+		// the jinxes where a player learns something (the Cannibal's Butler, Zealot and Juggler,
+		// the Vortox's Banshee), L115 the Vizier's six (not declared, kept protection, woken with
+		// the Fearmonger, the Magician).
 		title: 'Jinxes the app applies, not only shows',
 		area: 'engine',
-		parts: ['L99', 'L100', 'L107', 'L108', 'L109', 'L112', 'L113']
+		parts: ['L99', 'L100', 'L107', 'L108', 'L109', 'L112', 'L113', 'L114', 'L115']
 	},
 	{
 		title: 'Co-Storytelling: two Storytellers on one game',

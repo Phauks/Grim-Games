@@ -85,5 +85,8 @@
 	},
 	"countdown": {
 		"tokens": ["Drunk 3", "Drunk 2", "Drunk 1"]
+	},
+	"wakesWhen": {
+		"untilToken": "No Ability"
 	}
 }
