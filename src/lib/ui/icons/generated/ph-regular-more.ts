@@ -35,6 +35,7 @@ import ph_crown from '~icons/ph/crown';
 import ph_diamond from '~icons/ph/diamond';
 import ph_dice_five from '~icons/ph/dice-five';
 import ph_door_open from '~icons/ph/door-open';
+import ph_dots_three_circle from '~icons/ph/dots-three-circle';
 import ph_dots_three_vertical from '~icons/ph/dots-three-vertical';
 import ph_drop from '~icons/ph/drop';
 import ph_envelope_simple from '~icons/ph/envelope-simple';
@@ -55,6 +56,7 @@ import ph_hand_coins from '~icons/ph/hand-coins';
 import ph_hand_fist from '~icons/ph/hand-fist';
 import ph_hand_grabbing from '~icons/ph/hand-grabbing';
 import ph_hand_heart from '~icons/ph/hand-heart';
+import ph_hand_tap from '~icons/ph/hand-tap';
 import ph_hard_drives from '~icons/ph/hard-drives';
 import ph_heart from '~icons/ph/heart';
 import ph_hexagon from '~icons/ph/hexagon';
@@ -147,6 +149,7 @@ const icons: IconMap = {
 	'ph:diamond': ph_diamond,
 	'ph:dice-five': ph_dice_five,
 	'ph:door-open': ph_door_open,
+	'ph:dots-three-circle': ph_dots_three_circle,
 	'ph:dots-three-vertical': ph_dots_three_vertical,
 	'ph:drop': ph_drop,
 	'ph:envelope-simple': ph_envelope_simple,
@@ -167,6 +170,7 @@ const icons: IconMap = {
 	'ph:hand-fist': ph_hand_fist,
 	'ph:hand-grabbing': ph_hand_grabbing,
 	'ph:hand-heart': ph_hand_heart,
+	'ph:hand-tap': ph_hand_tap,
 	'ph:hard-drives': ph_hard_drives,
 	'ph:heart': ph_heart,
 	'ph:hexagon': ph_hexagon,
