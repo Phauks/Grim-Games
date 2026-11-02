@@ -700,7 +700,7 @@ test('the board leads to setup and the day; setup ends on the setup reminders', 
 	await page.goto(`${board}#setup-reminders`);
 	await expect(page).toHaveURL(board);
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	await expect(page.getByRole('dialog', { name: 'Day' })).toBeVisible();
+	await expect(page.getByRole('dialog', { name: /^(Setup|Day( \d+)?)$/ })).toBeVisible();
 	await expect(page).toHaveURL(board);
 });
 
@@ -2483,7 +2483,7 @@ test('the Storyteller writes the Amnesiac’s ability and picks what it works li
 	);
 
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	const day = page.getByRole('dialog', { name: 'Day' });
+	const day = page.getByRole('dialog', { name: /^(Setup|Day( \d+)?)$/ });
 	const value = day.getByTestId('prep-value');
 	await expect(value).toHaveText('(ABILITY)');
 	await value.tap();
@@ -3406,7 +3406,7 @@ test("the day's Announcements explain a kill that didn't happen", async ({ page 
 		await closeSheet(page);
 	}
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	const day = page.getByRole('dialog', { name: 'Day' });
+	const day = page.getByRole('dialog', { name: /^(Setup|Day( \d+)?)$/ });
 	// Nothing to explain yet: the button is there but off, so nothing moves (Trevor).
 	await expect(day.getByTestId('prevented-button')).toBeDisabled();
 	await day.getByRole('button', { name: 'Close' }).tap();
@@ -4543,7 +4543,7 @@ test('the Storm Catcher named character is picked before the day and kept at its
 	test.slow();
 	await stormCatcherGame(page);
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	const day = page.getByRole('dialog', { name: 'Day' });
+	const day = page.getByRole('dialog', { name: /^(Setup|Day( \d+)?)$/ });
 	const value = day.getByTestId('prep-value').first();
 	await expect(value).toHaveText('(CHARACTER)');
 	await value.tap();
