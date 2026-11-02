@@ -24,6 +24,7 @@ import {
 	onDeathApplies,
 	onDeathTrigger,
 	TRAVELLER_ALIGNMENT_STEP,
+	TRAVELLER_JOINS_STEP,
 	wakeConditionMet,
 	withActsTwiceSteps,
 	withCharacterChangeSteps,
@@ -154,7 +155,8 @@ export const MARKER_ICONS: Record<string, IconSlot> = {
 	dawn: 'day',
 	minioninfo: 'players',
 	demoninfo: 'demon',
-	[TRAVELLER_ALIGNMENT_STEP]: 'traveller'
+	[TRAVELLER_ALIGNMENT_STEP]: 'traveller',
+	[TRAVELLER_JOINS_STEP]: 'alive'
 };
 
 /**

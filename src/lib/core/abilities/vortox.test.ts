@@ -97,7 +97,7 @@ describe('Vortox', () => {
 			});
 			expect(infoPicker(s.game, s.seat('dreamer'), 'dreamer', s.characters)).toBeDefined();
 			engineGap(
-				'unplanned',
+				'M15n',
 				"the Dreamer's information: one good and one evil character, both wrong under the Vortox"
 			);
 		});
