@@ -173,10 +173,8 @@ describe('Xaan', () => {
 			expect(works(s, 5)).toBe(true);
 		});
 
-		it.fails('says in its fuller night text that X poisons the Townsfolk', () => {
+		it('says in its fuller night text that X poisons the Townsfolk', () => {
 			// Wiki: "When the X reminder is in the Grimoire, all Townsfolk players are poisoned."
-			// Waits on the engine (bug): the Xaan's fuller night text (nightText.full in its rules)
-			// says all Outsiders are poisoned.
 			for (const night of ['first', 'other'] as const) {
 				const text = nightTextFor(character, night, { full: true })?.text;
 				expect(text).toMatch(/all Townsfolk are poisoned/);
