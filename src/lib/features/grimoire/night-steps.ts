@@ -55,6 +55,7 @@ export function boardNightSteps(
 	today: {
 		changes?: readonly { seatId: SeatId; characterId: CharacterId }[];
 		died?: readonly SeatId[];
+		revived?: readonly SeatId[];
 	} = {},
 	/** The game's special rules, for the steps they add to a night (Council of the Dead). */
 	rules: readonly SpecialRule[] = []
@@ -94,7 +95,7 @@ export function boardNightSteps(
 				game,
 				characters,
 				night,
-				{ died: today.died ?? [] },
+				{ died: today.died ?? [], revived: today.revived ?? [] },
 				data.nightSheet[night === 'first' ? 'firstNight' : 'otherNight']
 			),
 			game,
@@ -234,6 +235,11 @@ export function stepWakes(
 				)
 		)
 	);
+}
+
+/** Seats revived since the New day, from the log: a first-night-only one wakes again tonight. */
+export function revivedToday(log: GameLog): SeatId[] {
+	return [...revivedSinceNewDay(log.entries.slice(0, log.cursor).flatMap((e) => e.events))];
 }
 
 /**

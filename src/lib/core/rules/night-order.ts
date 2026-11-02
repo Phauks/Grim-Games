@@ -178,12 +178,12 @@ export const MARKER_TEXT: Record<NightMarker, { name: string; first: string; oth
 	minioninfo: {
 		name: 'Minion info',
 		first: 'Wake the Minions together: show them the Demon, and let them see each other.',
-		other: ''
+		other: 'Wake the Minions together: show them the Demon, and let them see each other.'
 	},
 	demoninfo: {
 		name: 'Demon info',
 		first: 'Wake the Demon: show them their Minions, then 3 good characters not in play as bluffs.',
-		other: ''
+		other: 'Wake the Demon: show them their Minions.'
 	},
 	dawn: {
 		name: 'Dawn',

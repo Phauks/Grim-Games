@@ -10,6 +10,8 @@ import { withSetupAlignmentStep } from '../setup-alignment.ts';
 import { withTravellerAlignmentStep, withTravellerJoinsStep } from '../traveller-alignment.ts';
 import { withGainedSteps, withStorytellerSteps } from '../gained-abilities.ts';
 import { withJinxChoiceSteps } from '../jinx-choices.ts';
+import { withLateEvilInfoSteps } from '../late-evil-info.ts';
+import { withRevivedFirstNightSteps } from '../revived-first-night.ts';
 import { type DeathCheck, deathCheck } from '../night-deaths.ts';
 import { nightKill } from '../night-kill.ts';
 import type { Night, NightStep } from '../night-order.ts';
@@ -102,7 +104,18 @@ export function withNightInfo<T extends NightStep>(
 			night
 				? withJinxChoiceSteps(
 						withStorytellerSteps(
-							withGainedSteps(steps, game, characters, night, order),
+							withRevivedFirstNightSteps(
+								withLateEvilInfoSteps(
+									withGainedSteps(steps, game, characters, night, order),
+									game,
+									characters,
+									night
+								),
+								game,
+								characters,
+								night,
+								today?.revived
+							),
 							game,
 							characters,
 							night,
