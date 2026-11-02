@@ -16,7 +16,7 @@ import { scriptEdition } from '#lib/core/data/script.ts';
 import type { GameId } from '#lib/core/model/index.ts';
 import type { GameLog, GameSession } from './log.ts';
 
-export const SAVED_GAME_VERSION = 27;
+export const SAVED_GAME_VERSION = 28;
 
 export interface SavedGame {
 	schemaVersion: typeof SAVED_GAME_VERSION;
@@ -278,6 +278,13 @@ const migrateV25toV26: Migration = (doc) => ({ ...doc, schemaVersion: 26 });
  */
 const migrateV26toV27: Migration = (doc) => ({ ...doc, schemaVersion: 27 });
 
+/**
+ * Version 28 (2026-11-02) added the Storyteller's pretend evil team (`Game.pretend`, the
+ * `PretendSet` event, M26). The log needs no change: an older game has none. The bump makes
+ * older builds refuse a version 28 save.
+ */
+const migrateV27toV28: Migration = (doc) => ({ ...doc, schemaVersion: 28 });
+
 /** `MIGRATIONS[n]` migrates version `n` to `n + 1`. Version 1 is the first saved shape. */
 export const MIGRATIONS: Readonly<Record<number, Migration>> = {
 	1: migrateV1toV2,
@@ -305,7 +312,8 @@ export const MIGRATIONS: Readonly<Record<number, Migration>> = {
 	23: migrateV23toV24,
 	24: migrateV24toV25,
 	25: migrateV25toV26,
-	26: migrateV26toV27
+	26: migrateV26toV27,
+	27: migrateV27toV28
 };
 
 /**

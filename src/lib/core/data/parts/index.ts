@@ -61,6 +61,7 @@ export { onNominating } from './on-nominating.ts';
 export { orHiddenAs } from './or-hidden-as.ts';
 export { passesOn } from './passes-on.ts';
 export { pickedEffect } from './picked-effect.ts';
+export { pretendTeam } from './pretend-team.ts';
 export { protects } from './protects.ts';
 export { quietStart } from './quiet-start.ts';
 export { redirectsKill } from './redirects-kill.ts';

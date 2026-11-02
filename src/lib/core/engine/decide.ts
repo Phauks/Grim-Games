@@ -138,6 +138,8 @@ export type WarningCode =
 	| 'no-day-tally'
 	| 'beyond-tally'
 	| 'effect-not-listed'
+	| 'no-pretend-team'
+	| 'not-pretend-type'
 	| 'no-wish-rule'
 	| 'already-wished'
 	| 'no-two-storytellers'

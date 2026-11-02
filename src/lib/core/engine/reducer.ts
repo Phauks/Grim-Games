@@ -703,6 +703,12 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 			else prepValues[event.key] = event.value;
 			return { ...game, prepValues };
 		}
+		case 'PretendSet': {
+			const pretend = { ...game.pretend };
+			if (event.characterId === undefined) delete pretend[event.seatId];
+			else pretend[event.seatId] = event.characterId;
+			return Object.keys(pretend).length > 0 ? { ...game, pretend } : omit(game, 'pretend');
+		}
 		case 'StorytellerPairSet':
 			return event.pair
 				? { ...game, storytellerPair: structuredClone(event.pair) }
