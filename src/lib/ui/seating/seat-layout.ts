@@ -410,7 +410,7 @@ export function followSeating(
 
 /**
  * The seating order read from where seats are drawn (Trevor, 2026-10-16): clockwise around
- * `centre`, so Spread evenly keeps a seat dragged to a new place there instead of putting it
+ * `centre`, so Distribute keeps a seat dragged to a new place there instead of putting it
  * back. Of the ways round the circle, the one that moves seats least onto `slots` (where seat
  * 1, 2, … will be drawn once spread) wins. Points are in pixels (y down), one per seat.
  */

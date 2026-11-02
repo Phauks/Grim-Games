@@ -18,6 +18,7 @@ import { causesOf } from '../night-deaths.ts';
 import type { Night } from '../night-order.ts';
 import { wokeTonight } from '../woke-tonight.ts';
 import { carries, lastShown } from './token-carriers.ts';
+import { neighbourPairs, perPairOptions } from './neighbour-pairs.ts';
 import {
 	type AnswerValue,
 	type Reliability,
@@ -206,17 +207,12 @@ function optionsIn(
 			}
 			return options;
 		}
-		case 'evil-pairs': {
+		case 'evil-pairs':
 			// https://wiki.bloodontheclocktower.com/Chef: pairs of evil players sitting next to
 			// each other, around the whole circle.
-			const n = game.seating.length;
-			let pairs = 0;
-			for (let i = 0; i < n && n > 1; i++) {
-				if (n === 2 && i === 1) break;
-				if (evil(game.seating[i]) && evil(game.seating[(i + 1) % n])) pairs++;
-			}
-			return [{ seats: [], number: pairs }];
-		}
+			return [
+				{ seats: [], number: neighbourPairs(game).filter(([a, b]) => evil(a) && evil(b)).length }
+			];
 		case 'evil-alive-neighbours': {
 			// https://wiki.bloodontheclocktower.com/Empath: evil among the alive neighbours.
 			const neighbours = aliveNeighbours(game, seatId);
@@ -382,15 +378,30 @@ function truthfulOptions(
 	characters: CharacterLookup,
 	regs: readonly Registration[]
 ): InfoOption[] {
-	const [base, ...rest] = registrationWorlds(game, characters, regs);
+	const worlds = registrationWorlds(game, characters, regs);
+	const [base, ...rest] = worlds;
 	const out = optionsIn(game, seatId, characterId, spec, characters, base);
 	const seen = new Set(out.map(optionKey));
+	const add = (option: InfoOption, registered: SeatId[]) => {
+		const key = optionKey(option);
+		if (seen.has(key)) return;
+		seen.add(key);
+		out.push({ ...option, registered });
+	};
 	for (const world of rest) {
 		for (const option of optionsIn(game, seatId, characterId, spec, characters, world)) {
-			const key = optionKey(option);
-			if (seen.has(key)) continue;
-			seen.add(key);
-			out.push({ ...option, registered: world.misregistered });
+			add(option, world.misregistered);
+		}
+	}
+	// Then what is only true when a player registers differently for each pair they are in.
+	const registering = new Set(regs.map((r) => r.seatId));
+	// Worlds differing only in how those players register give the same counts here.
+	const usual = (w: RegistrationWorld) =>
+		regs.every((r) => w.alignment(r.seatId) === r.alignments[0] && w.type(r.seatId) === r.types[0]);
+	for (const world of worlds.filter(usual)) {
+		const others = world.misregistered.filter((s) => !registering.has(s));
+		for (const { option, registered } of perPairOptions(game, spec.measure, regs, world)) {
+			add(option, [...new Set([...others, ...registered])]);
 		}
 	}
 	return out;
