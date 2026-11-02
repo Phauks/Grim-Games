@@ -30,6 +30,10 @@
 	"infoTokenCharacters": {
 		"this-player-is": {
 			"characters": ["self"]
+		},
+		"you-are": {
+			"characters": [],
+			"omit": true
 		}
 	},
 	"evilInfo": {

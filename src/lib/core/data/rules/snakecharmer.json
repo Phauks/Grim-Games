@@ -69,5 +69,15 @@
 		"token": "Poisoned",
 		"into": "swap"
 	},
-	"choosesUnmarked": true
+	"choosesUnmarked": true,
+	"infoTokenCharacters": {
+		"you-are": [
+			{
+				"characters": ["demon"]
+			},
+			{
+				"characters": ["self"]
+			}
+		]
+	}
 }

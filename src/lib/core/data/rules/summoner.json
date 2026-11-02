@@ -84,5 +84,10 @@
 		"types": ["demon"],
 		"alignment": "evil",
 		"token": "Night 3"
+	},
+	"infoTokenCharacters": {
+		"you-are": {
+			"characters": ["changed"]
+		}
 	}
 }

@@ -378,6 +378,13 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['M13a', 'M13b', 'M13']
 	},
 	{
+		// Trevor, 2026-11-01: every "You are" and character token a night step shows is filled in
+		// with the right character (the Snake Charmer's, the Evil Twin's, the Cerenovus's).
+		title: 'Night steps fill in every info token with the right character',
+		area: 'engine',
+		parts: ['M18']
+	},
+	{
 		// Trevor, 2026-10-30: on the roadmap, after a spike and research.
 		title: 'Jinxes the app applies, not only shows',
 		area: 'engine',
