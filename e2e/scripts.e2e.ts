@@ -257,6 +257,21 @@ test('a script file is saved straight away when nothing needs checking', async (
 	await expect(page.getByRole('status').filter({ hasText: 'Saved Storm Front' })).toHaveCount(0);
 });
 
+test("a script's own character is tagged Custom beside its name, official ones aren't", async ({
+	page
+}) => {
+	await page.goto('/library');
+	await page.getByLabel('Script file').setInputFiles({
+		name: 'storm-front.json',
+		mimeType: 'application/json',
+		buffer: Buffer.from(JSON.stringify(homebrew))
+	});
+	const row = (id: string) => page.locator(`[data-character="${id}"]`).first();
+	await expect(row('stormwarden').getByTestId('custom-tag')).toHaveText('Custom');
+	await expect(row('washerwoman')).toBeVisible();
+	await expect(row('washerwoman').getByTestId('custom-tag')).toHaveCount(0);
+});
+
 test('a BotC Scripts number is saved through our Worker', async ({ page }) => {
 	await page.route('**/api/botcscripts/script/42', (route) =>
 		route.fulfill({
