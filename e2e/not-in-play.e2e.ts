@@ -133,6 +133,8 @@ test('a Traveller added mid-game is not in play until the night brings them in',
 test('only a Traveller is offered Not in play', async ({ page }) => {
 	await startGame(page);
 	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
+	// The sheet has finished opening (a layer opening closes any list open under it).
+	await expect(seatSheet(page).getByRole('button', { name: 'Edit player name' })).toBeVisible();
 	await seatSheet(page).getByRole('combobox', { name: 'Status: Alive' }).tap();
 	const status = page.getByRole('listbox');
 	await expect(status.getByRole('option', { name: 'Alive', exact: true })).toBeVisible();
