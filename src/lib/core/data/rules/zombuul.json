@@ -61,6 +61,10 @@
 		]
 	},
 	"wakesWhen": {
-		"nobodyDiedToday": true
+		"nobodyDiedToday": true,
+		"noneMarked": "Died Today"
+	},
+	"reminderEnds": {
+		"Died Today": "dawn"
 	}
 }

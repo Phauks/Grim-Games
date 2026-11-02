@@ -28,7 +28,8 @@
 					}
 				],
 				"when": {
-					"noReminder": "Correct"
+					"noReminder": "Correct",
+					"day": 1
 				}
 			}
 		]
@@ -42,5 +43,8 @@
 	},
 	"infoKind": {
 		"number": true
+	},
+	"wakesWhen": {
+		"nightAfterDay": 1
 	}
 }

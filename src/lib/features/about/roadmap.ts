@@ -487,6 +487,15 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['M26a', 'M26b']
 	},
 	{
+		// The coordinator's ask of 2026-11-02 (Trevor: no release until the How to Run gaps are
+		// closed): a once-per-game character stops waking once marked No Ability, the Zombuul
+		// sleeps while anyone is marked Died Today, the Bounty Hunter wakes when its Know player
+		// dies, the Juggler only after the first day, a Wraith without its ability sleeps.
+		title: 'Characters stop waking once their ability is used or no longer works',
+		area: 'engine',
+		parts: ['M28']
+	},
+	{
 		// Trevor, 2026-11-02: every How to Run gap closed before beta goes to production. M32a the
 		// Hell's Librarian's picked Something Bad, the Pit-Hag's deaths once it makes a Demon, the
 		// Apprentice's gained ability and the Hatter's tea party after the Hatter dies; M32b the

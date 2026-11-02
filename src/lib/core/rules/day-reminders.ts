@@ -463,6 +463,7 @@ function conditionHolds(
 	if (self === 'alive' && dead && !seat?.keepsAbility) return false;
 	if (self === 'dead' && !dead) return false;
 	if (when.minAlive !== undefined && alive < when.minAlive) return false;
+	if (when.day !== undefined && state.days !== undefined && state.days !== when.day) return false;
 	if (when.cause && seat) return causeMatches(seat.deathCause, when.cause, state);
 	return true;
 }
