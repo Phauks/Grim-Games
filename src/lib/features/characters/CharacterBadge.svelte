@@ -8,7 +8,7 @@
 		type CharacterName,
 		type PlayerName
 	} from '#lib/core/data/index.ts';
-	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
+	import PlayerHalf from './PlayerHalf.svelte';
 	import { fallbackIconUrl, iconUrl } from './icon-url.ts';
 	import { iconFallback } from '#lib/ui/token/icon-fallback.ts';
 	import CharacterDialog from './CharacterDialog.svelte';
@@ -101,7 +101,7 @@
 			/>{/if}</span
 	>
 	<span class="name"><span class="trim">{label}</span></span>
-	{#if playerName}<span class="player"><PlayerBadge name={playerName} /></span>{/if}
+	{#if playerName}<PlayerHalf name={playerName} {team} />{/if}
 {/snippet}
 
 {#if interactive}<button
@@ -263,8 +263,7 @@
 	 * than the name (History's Characters table on a phone) it ends in "…" inside the pill
 	 * rather than running past it.
 	 */
-	.name,
-	.player {
+	.name {
 		display: inline-flex;
 		align-items: center;
 		min-width: 0;
@@ -295,27 +294,6 @@
 	 * the token, like a pill"), the character in its colour, then the name on a pale tint of
 	 * that colour in a dark shade of it; both halves full height.
 	 */
-	.badge {
-		--pale: var(--surface-raised);
-		--deep: var(--on-surface);
-	}
-	.badge[data-team='good'] {
-		--pale: var(--good-pale);
-		--deep: var(--good-deep);
-	}
-	.badge[data-team='evil'],
-	.badge[data-team='traveller'] {
-		--pale: var(--evil-pale);
-		--deep: var(--evil-deep);
-	}
-	.badge[data-team='fabled'] {
-		--pale: var(--fabled-pale);
-		--deep: var(--fabled-deep);
-	}
-	.badge[data-team='loric'] {
-		--pale: var(--loric-pale);
-		--deep: var(--loric-deep);
-	}
 	.badge.paired {
 		gap: 0;
 		padding-right: 0;
@@ -323,18 +301,5 @@
 	.paired .name {
 		align-self: stretch;
 		padding: 0 0.45em 0 0.25em;
-	}
-	.player {
-		align-self: stretch;
-		align-items: stretch;
-	}
-	.player :global(.player-badge) {
-		height: auto;
-		padding: 0 0.6em 0 0.45em;
-		border-radius: 0 var(--radius-full) var(--radius-full) 0;
-		box-shadow: none;
-		background: var(--pale);
-		color: var(--deep);
-		font-size: 0.95em;
 	}
 </style>

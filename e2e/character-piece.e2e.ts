@@ -61,6 +61,17 @@ test('the row carries its player, tags, controls, text and a count beside it', a
 	expect(aside.x).toBeGreaterThanOrEqual(band.x + band.width - 1);
 	expect(Math.abs(aside.y - band.y)).toBeLessThan(band.height);
 	await shot(page, 'row-everything');
+	// The row's player is the badge's own half (Trevor, 2026-11-02: "should use the same part").
+	const half = row.locator('.band').getByTestId('player-badge');
+	const inLine = page.locator('.in-line .badge').first().getByTestId('player-badge');
+	const look = (el: Element) => {
+		const s = getComputedStyle(el);
+		return [s.backgroundColor, s.color, s.fontFamily];
+	};
+	expect(await half.evaluate(look)).toEqual(await inLine.evaluate(look));
+	// It ends the band, flush with its round end.
+	const halfBox = (await half.boundingBox())!;
+	expect(Math.abs(halfBox.x + halfBox.width - (band.x + band.width))).toBeLessThanOrEqual(1);
 });
 
 test('a row need not run the full width', async ({ page }) => {
