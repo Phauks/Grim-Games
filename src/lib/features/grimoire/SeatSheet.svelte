@@ -211,6 +211,9 @@
 	});
 	let claimOpen = $state(false);
 	// A seat still choosing its Traveller on a phone: its empty token shows that choice.
+	// A seat added mid-game, not in play with no character yet (Trevor, 2026-11-02): its empty
+	// token asks "Add as a Traveller?", picked here or sent to the phone seated there.
+	const arriving = $derived(!!seat?.notInPlay && !seat.characterId);
 	const choosing = $derived(
 		seatId !== undefined && !!roomHost().travellerPick?.seats.some((s) => s.seatId === seatId)
 	);
@@ -227,9 +230,17 @@
 		{#if !character}<button
 				type="button"
 				class="lead-token"
-				aria-label={choosing ? t('room.travellers.title') : 'Choose character'}
-				onclick={() => (choosing ? playersDialog.showTravellers() : flow?.choose())}
-				><span class="no-token">{number}</span></button
+				aria-label={choosing
+					? t('room.travellers.title')
+					: arriving
+						? t('room.travellers.addAs')
+						: 'Choose character'}
+				onclick={() =>
+					choosing
+						? playersDialog.showTravellers()
+						: arriving
+							? playersDialog.showTravellers(seatId, () => flow?.choose())
+							: flow?.choose()}><span class="no-token">{number}</span></button
 			>{/if}
 	{/snippet}
 	{#snippet heading()}

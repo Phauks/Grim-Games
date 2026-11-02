@@ -84,7 +84,6 @@
 	import SavantSheet from '#lib/features/savant/SavantSheet.svelte';
 	import AidMenu from '#lib/features/settings/AidMenu.svelte';
 	import { playersDialog } from '#lib/features/room/players-dialog.svelte.ts';
-	import { travellersForNewSeat } from '#lib/features/room/add-seat-travellers.ts';
 	import { DAY_HASH } from '#lib/features/day/day-hash.ts';
 	import SeatSheet from './SeatSheet.svelte';
 	import SeatProfileDialog from './SeatProfileDialog.svelte';
@@ -405,8 +404,9 @@
 		pending: readonly { position: number; name: string }[] = []
 	) {
 		placing = add;
+		// No hint over the board: it covers where the Storyteller is about to tap (Trevor,
+		// 2026-11-02); the spots between neighbours show where a seat can go.
 		pendingSeats = pending;
-		toast('Add a seat', 'Tap between two players to put the new seat there.');
 	}
 	/** One spot between each pair of neighbours; the one after the last seat wraps round. */
 	const placeSpots = $derived(
@@ -425,7 +425,9 @@
 			: []
 	);
 	/** The seat just appears (Trevor, 2026-10-16); with a room open, Travellers choose follows. */
-	const onAddSeat = () => startPlacing((p) => travellersForNewSeat(grimoire.addSeat(p), watching));
+	// The seat just appears; a mid-game one is not in play, and its empty token asks whether it
+	// is a Traveller once someone sits there (Trevor, 2026-11-02).
+	const onAddSeat = () => startPlacing((p) => void grimoire.addSeat(p));
 	function placeAt(position: number) {
 		const add = placing;
 		placing = undefined;

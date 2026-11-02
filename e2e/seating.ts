@@ -1,5 +1,4 @@
 import type { Page } from '@playwright/test';
-import { notATraveller } from './add-seat.ts';
 
 /**
  * Seating mode on the board (seating-mode.svelte.ts): ⋯ > Seating, unless it is open already.
@@ -21,9 +20,8 @@ export async function leaveSeating(page: Page): Promise<void> {
 }
 
 /**
- * Adds a seat from Seating, placed at the spot named `place` ("Place between ..."), answers
- * "Add as a Traveller?" with Not a Traveller and leaves Seating, unless `stay` (the test goes
- * on with that pop-up open over Seating).
+ * Adds a seat from Seating, placed at the spot named `place` ("Place between ..."), then leaves
+ * Seating unless `stay`.
  */
 export async function addSeat(
 	page: Page,
@@ -36,7 +34,5 @@ export async function addSeat(
 		.getByRole('button', { name: 'Add seat' })
 		.tap();
 	await page.getByRole('button', { name: place }).tap();
-	if (stay) return;
-	await notATraveller(page);
-	await leaveSeating(page);
+	if (!stay) await leaveSeating(page);
 }
