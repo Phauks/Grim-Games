@@ -645,3 +645,39 @@ describe('Barista and Xaan', () => {
 		expect(abilityState(after, seats[0], characters).works).toBe(true);
 	});
 });
+
+describe('safe from the Demon', () => {
+	// How to Run: the Monk's and Soldier's protection covers every harmful effect of the Demon's
+	// ability, its poisoning too (https://wiki.bloodontheclocktower.com/Monk, /Soldier).
+	it("keeps the Demon's poison off only while the protection works", () => {
+		const safe = scenario(['monk', 'chef', 'pukka', 'empath', 'poisoner'])
+			.reminder('chef', 'monk', 'Safe')
+			.reminder('chef', 'pukka', 'Poisoned');
+		expect(abilityState(safe.game, safe.seat('chef'), safe.characters).works).toBe(true);
+		const monkPoisoned = safe.poisoned('monk');
+		expect(
+			abilityState(monkPoisoned.game, monkPoisoned.seat('chef'), monkPoisoned.characters)
+				.impairments
+		).toMatchObject([{ reason: 'poisoned', source: { characterId: 'pukka' } }]);
+	});
+
+	it('leaves a Soldier impaired by anything else impaired by the Demon too', () => {
+		const s = scenario(['soldier', 'chef', 'pukka', 'empath', 'poisoner'])
+			.reminder('soldier', 'pukka', 'Poisoned')
+			.poisoned('soldier');
+		expect(
+			abilityState(s.game, s.seat('soldier'), s.characters).impairments.map(
+				(i) => i.source.characterId
+			)
+		).toEqual(['pukka', 'poisoner']);
+	});
+
+	it("does not keep off the Demon's poison for a protection from death in general", () => {
+		// https://wiki.bloodontheclocktower.com/Innkeeper: its players can't die tonight, but
+		// nothing makes them safe from the Demon's other effects.
+		const s = scenario(['innkeeper', 'chef', 'pukka', 'empath', 'poisoner'])
+			.reminder('chef', 'innkeeper', 'Safe')
+			.reminder('chef', 'pukka', 'Poisoned');
+		expect(abilityState(s.game, s.seat('chef'), s.characters).works).toBe(false);
+	});
+});

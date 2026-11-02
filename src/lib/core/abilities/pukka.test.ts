@@ -215,7 +215,9 @@ describe('Pukka', () => {
 		});
 
 		it('the attack: the marked player’s protection and death triggers are flagged', () => {
-			const g = castGame(cast, marked, add(MARKED, 'monk', 'Safe'));
+			// The Innkeeper's Safe, not the Monk's: a player safe from the Demon is safe from its
+			// poison too (https://wiki.bloodontheclocktower.com/Monk, How to Run).
+			const g = castGame(cast, marked, add(MARKED, 'innkeeper', 'Safe'));
 			expect(alerts(g)).toContainEqual(
 				expect.objectContaining({ kind: 'protected', seatId: g.seats[MARKED] })
 			);

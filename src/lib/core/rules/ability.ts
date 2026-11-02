@@ -39,6 +39,7 @@ import type { Game, ReminderId, SeatId } from '#lib/core/model/types.ts';
 import { keepsAbilityWhenDead } from './dead-characters.ts';
 import { heldAbilitiesOf } from './gained-abilities.ts';
 import { jinxedWith, ownJinxRules, registeredTo } from './jinxes.ts';
+import { protectors } from './protection.ts';
 import { effectImpairment } from './reminder-effects.ts';
 import { drunkByWish } from './wishes.ts';
 
@@ -306,6 +307,15 @@ function impairmentsOf(
 	const wish = drunkByWish(game, seatId);
 	if (wish) out.push(sourced('drunk', wish, characters));
 
+	// A player safe from the Demon (`protects.from: demon`: the Monk's Safe, the Soldier) is
+	// safe from every harmful effect of the Demon's ability, its poisoning too, not only its kill
+	// (How to Run: https://wiki.bloodontheclocktower.com/Monk, /Soldier).
+	const fromDemon = (i: Impairment) =>
+		i.source.reminderId !== undefined && characters.get(i.source.characterId)?.type === 'demon';
+	const unharmed = out.some(fromDemon) ? out.filter((i) => !fromDemon(i)) : out;
+	const safe =
+		unharmed !== out && safeFromDemon(game, seatId, characters, visiting, unharmed.length === 0);
+
 	// A token that makes its carrier sober and healthy while its character's ability works
 	// (the Barista's "Sober & Healthy": https://wiki.bloodontheclocktower.com/Barista). An
 	// ability that is removed outright (`no-ability`) stays removed.
@@ -314,8 +324,29 @@ function impairmentsOf(
 			rulesOf(r.characterId, characters)?.impairs?.clears?.includes(r.label) &&
 			sourceWorks(game, seatId, r.characterId, characters, visiting)
 	);
-	const kept = sober ? out.filter((i) => i.reason === 'no-ability') : out;
+	const left = safe ? unharmed : out;
+	const kept = sober ? left.filter((i) => i.reason === 'no-ability') : left;
 	return kept.sort((a, b) => ORDER[a.reason] - ORDER[b.reason]);
+}
+
+/**
+ * Whether a working protection from the Demon alone (`protects.from: demon`) covers `seatId`:
+ * its own, while nothing but the Demon impairs it (`selfWorks`), or another player's whose
+ * ability works.
+ */
+function safeFromDemon(
+	game: Game,
+	seatId: SeatId,
+	characters: CharacterLookup,
+	visiting: Set<SeatId>,
+	selfWorks: boolean
+): boolean {
+	return protectors(game, seatId, characters, 'demon').some(({ source, from }) => {
+		if (from !== 'demon') return false;
+		if (source.seatId === undefined) return true;
+		if (source.seatId === seatId) return selfWorks;
+		return !visiting.has(source.seatId) && abilityWorks(game, source.seatId, characters, visiting);
+	});
 }
 
 function abilityWorks(

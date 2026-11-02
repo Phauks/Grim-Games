@@ -470,6 +470,15 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['M24']
 	},
 	{
+		// The coordinator's ask of 2026-11-02: the How to Run tests that waited on timing rules.
+		// The Monk's Safe comes off at dawn and the Poisoner's Poisoned at dusk, a player safe from
+		// the Demon is safe from its poison too, the Undertaker counts only today's executions,
+		// and only the first nomination of the Virgin sets it off.
+		title: 'Monk, Soldier, Poisoner, Undertaker and Virgin follow their full timing rules',
+		area: 'engine',
+		parts: ['M25']
+	},
+	{
 		// Trevor, 2026-10-30: on the roadmap, after a spike and research. L99 research, L100 the
 		// format with the Heretic and Boffin, L107 every jinx shown where it matters, L108 jinxes
 		// that reuse existing rules, L109 the Plague Doctor's and other built characters', L112
