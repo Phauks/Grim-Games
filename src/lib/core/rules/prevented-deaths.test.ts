@@ -4,6 +4,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Command } from '#lib/core/engine/index.ts';
 import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 import { preventedDeaths, type PreventedDeath } from './prevented-deaths.ts';
 
 const add =
@@ -75,6 +76,38 @@ describe('preventedDeaths', () => {
 	it('the Imp chose the Mayor', () => {
 		const { game: g, seats } = castGame(['imp', 'mayor', 'chef'], add(1, 'imp', 'Dead'), dies(2));
 		expect(short(preventedDeaths(g, characters), seats)).toEqual(['imp→1: mayor']);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Monk, Example 2 (and /Mayor): the Imp attacks the
+	// Mayor the Monk protects. The Mayor is safe, so the kill has nowhere to bounce: nobody dies.
+	it('Monk Example 2: a protected Mayor is safe, with no bounce to offer', () => {
+		const s = scenario(['imp', 'mayor', 'monk', 'chef'])
+			.reminder('mayor', 'monk', 'Safe')
+			.reminder('mayor', 'imp', 'Dead');
+		expect(short(preventedDeaths(s.game, s.characters), [...s.seats])).toEqual([
+			'imp→1: protected by monk'
+		]);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Fool (Example 3): the Monk protects the Fool from the
+	// Demon, so the Fool doesn't die and its first-death ability stays unused.
+	it('Fool Example 3: a protected Fool is safe and keeps its ability', () => {
+		const s = scenario(['imp', 'fool', 'monk', 'chef'])
+			.reminder('fool', 'monk', 'Safe')
+			.reminder('fool', 'imp', 'Dead');
+		expect(short(preventedDeaths(s.game, s.characters), [...s.seats])).toEqual([
+			'imp→1: protected by monk'
+		]);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Monk: a poisoned Monk protects nobody, so the Mayor's
+	// bounce (https://wiki.bloodontheclocktower.com/Mayor) is still the Storyteller's to make.
+	it('a poisoned Monk leaves the Mayor’s bounce open', () => {
+		const s = scenario(['imp', 'mayor', 'monk', 'poisoner'])
+			.poisoned('monk')
+			.reminder('mayor', 'monk', 'Safe')
+			.reminder('mayor', 'imp', 'Dead');
+		expect(short(preventedDeaths(s.game, s.characters), [...s.seats])).toEqual(['imp→1: mayor']);
 	});
 
 	it('lists nobody whose kill landed, and skips other tokens', () => {

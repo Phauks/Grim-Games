@@ -146,6 +146,7 @@ import ph_lock_simple_duotone from '~icons/ph/lock-simple-duotone';
 import ph_magnifying_glass_duotone from '~icons/ph/magnifying-glass-duotone';
 import ph_mask_sad_duotone from '~icons/ph/mask-sad-duotone';
 import ph_megaphone_duotone from '~icons/ph/megaphone-duotone';
+import ph_megaphone_simple_duotone from '~icons/ph/megaphone-simple-duotone';
 import ph_minus_duotone from '~icons/ph/minus-duotone';
 import ph_minus_circle_duotone from '~icons/ph/minus-circle-duotone';
 import ph_monitor_duotone from '~icons/ph/monitor-duotone';
@@ -178,6 +179,7 @@ import ph_question_duotone from '~icons/ph/question-duotone';
 import ph_scales_duotone from '~icons/ph/scales-duotone';
 import ph_scan_duotone from '~icons/ph/scan-duotone';
 import ph_scroll_duotone from '~icons/ph/scroll-duotone';
+import ph_seal_check_duotone from '~icons/ph/seal-check-duotone';
 import ph_selection_duotone from '~icons/ph/selection-duotone';
 import ph_shapes_duotone from '~icons/ph/shapes-duotone';
 import ph_share_network_duotone from '~icons/ph/share-network-duotone';
@@ -202,6 +204,7 @@ import ph_speaker_high_duotone from '~icons/ph/speaker-high-duotone';
 import ph_spinner_duotone from '~icons/ph/spinner-duotone';
 import ph_square_duotone from '~icons/ph/square-duotone';
 import ph_square_split_horizontal_duotone from '~icons/ph/square-split-horizontal-duotone';
+import ph_stamp_duotone from '~icons/ph/stamp-duotone';
 import ph_star_duotone from '~icons/ph/star-duotone';
 import ph_star_half_duotone from '~icons/ph/star-half-duotone';
 import ph_sun_duotone from '~icons/ph/sun-duotone';
@@ -385,6 +388,7 @@ const icons: IconMap = {
 	'ph:magnifying-glass-duotone': ph_magnifying_glass_duotone,
 	'ph:mask-sad-duotone': ph_mask_sad_duotone,
 	'ph:megaphone-duotone': ph_megaphone_duotone,
+	'ph:megaphone-simple-duotone': ph_megaphone_simple_duotone,
 	'ph:minus-duotone': ph_minus_duotone,
 	'ph:minus-circle-duotone': ph_minus_circle_duotone,
 	'ph:monitor-duotone': ph_monitor_duotone,
@@ -417,6 +421,7 @@ const icons: IconMap = {
 	'ph:scales-duotone': ph_scales_duotone,
 	'ph:scan-duotone': ph_scan_duotone,
 	'ph:scroll-duotone': ph_scroll_duotone,
+	'ph:seal-check-duotone': ph_seal_check_duotone,
 	'ph:selection-duotone': ph_selection_duotone,
 	'ph:shapes-duotone': ph_shapes_duotone,
 	'ph:share-network-duotone': ph_share_network_duotone,
@@ -441,6 +446,7 @@ const icons: IconMap = {
 	'ph:spinner-duotone': ph_spinner_duotone,
 	'ph:square-duotone': ph_square_duotone,
 	'ph:square-split-horizontal-duotone': ph_square_split_horizontal_duotone,
+	'ph:stamp-duotone': ph_stamp_duotone,
 	'ph:star-duotone': ph_star_duotone,
 	'ph:star-half-duotone': ph_star_half_duotone,
 	'ph:sun-duotone': ph_sun_duotone,
