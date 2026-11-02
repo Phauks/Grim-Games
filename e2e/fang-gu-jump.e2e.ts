@@ -106,7 +106,11 @@ test('a Fang Gu jumping into an Outsider is no game end, and its Dead still asks
 	await expect(page.getByTestId('game-over')).toBeVisible();
 	await page.keyboard.press('Escape');
 	await closeSheet(page);
-	await page.getByTestId('game-over').tap();
+	await page.getByRole('toolbar', { name: 'Grimoire' }).getByRole('button', { name: 'More' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Reopen game' })
+		.tap();
 	await page
 		.getByRole('alertdialog', { name: 'Reopen game?' })
 		.getByRole('button', { name: 'Confirm', exact: true })

@@ -13,8 +13,8 @@ test('builds a special rule without JSON, saves it on this device, and shares it
 	const save = page.getByRole('button', { name: 'Save', exact: true });
 	await expect(save).toBeDisabled();
 
-	await builder.getByRole('combobox', { name: 'Makes' }).tap();
-	await page.getByRole('option', { name: /^Special rule/ }).tap();
+	// Nothing to pick: the parts say what the file is (Trevor, 2026-11-01).
+	await expect(builder.getByRole('combobox', { name: 'Makes' })).toHaveCount(0);
 	await builder.getByRole('textbox', { name: /^Id/ }).fill('quiet-nights');
 	await builder.getByRole('textbox', { name: /^Name/ }).fill('Quiet Nights');
 
@@ -52,6 +52,7 @@ test('builds a special rule without JSON, saves it on this device, and shares it
 	await expect(problems).toHaveText('None');
 	// The output's JSON holds the part, and its lines go to its settings.
 	await expect(page.getByTestId('mode-builder-json')).toContainText('"instructions": "Announce');
+	await expect(page.getByTestId('mode-builder-kind')).toHaveText('Special rule');
 	await expect(save).toBeEnabled();
 	await save.tap();
 	await expect(page.getByRole('button', { name: 'Saved', exact: true })).toBeDisabled();
@@ -63,6 +64,40 @@ test('builds a special rule without JSON, saves it on this device, and shares it
 	await expect(
 		page.getByRole('dialog', { name: 'Share Quiet Nights' }).getByTestId('share-url')
 	).toHaveValue(/\/new#m=1\./);
+});
+
+// One format, auto-labelled (Trevor, 2026-11-01): a part that sets up the whole game makes the
+// file a game mode, and Save files it with the game modes, which New game lists.
+test('a file that deals the game is labelled a game mode and saved as one', async ({ page }) => {
+	await page.goto('/build-mode');
+	const builder = page.getByTestId('mode-builder');
+	await builder.getByRole('textbox', { name: /^Id/ }).fill('dead-wake');
+	await builder.getByRole('textbox', { name: /^Name/ }).fill('Dead Wake');
+	const kind = page.getByTestId('mode-builder-kind');
+	const output = page.getByRole('tab', { name: /^Output/ });
+	const settings = page.getByRole('tab', { name: 'Settings' });
+	if (await output.isVisible()) await output.tap();
+	await expect(kind).toHaveText('Special rule');
+	if (await settings.isVisible()) await settings.tap();
+	await expect(builder.getByTestId('mode-builder-group-wholeGame')).toBeVisible();
+	const assignment = builder.locator('[data-part="assignment"]');
+	await assignment.getByRole('checkbox', { includeHidden: true }).check({ force: true });
+	// A rule part on a game mode: the dead wake on the first night.
+	const text = builder.locator('[data-part="text"]');
+	await text.getByRole('button', { name: 'Add a line' }).tap();
+	await text.getByRole('textbox', { name: 'Line 1' }).fill('The dead wake.');
+	if (await output.isVisible()) await output.tap();
+	await expect(kind).toHaveText(/^Game mode, because it sets /);
+	await expect(page.getByTestId('mode-builder-problems')).toHaveText('None');
+	await page.getByRole('button', { name: 'Save', exact: true }).tap();
+	await expect(page.getByRole('button', { name: 'Saved', exact: true })).toBeDisabled();
+	expect(await page.evaluate(() => localStorage.getItem('grim-games:custom-modes:v1'))).toContain(
+		'dead-wake'
+	);
+	await page.goto('/new');
+	const modes = page.getByRole('main').getByRole('combobox', { name: 'Game mode' });
+	await modes.tap();
+	await expect(page.getByRole('option', { name: 'Dead Wake', exact: true })).toBeVisible();
 });
 
 test('a problem keeps Save off and is listed with where it is', async ({ page }) => {

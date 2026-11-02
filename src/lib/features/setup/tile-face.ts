@@ -11,6 +11,8 @@ import { TILE_SYMBOL_ICONS } from '#lib/ui/icons/catalogue.ts';
  */
 export type TileMark =
 	| { kind: 'text'; text: string; name: string }
+	/** A player's name, for a tile that is theirs (players with no phone, Trevor 2026-11-01). */
+	| { kind: 'player'; name: string }
 	| { kind: 'symbol'; icon: string; name: string; repeat?: number }
 	| { kind: 'emoji'; emoji: string; name: string; repeat?: number }
 	| { kind: 'colour'; colour: string; ink: 'black' | 'white'; name: string; repeat?: number };

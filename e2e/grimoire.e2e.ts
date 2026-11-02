@@ -2993,8 +2993,14 @@ test('End game keeps the Storyteller on the board, says it is over, and can be r
 	await closeSheet(page);
 	await expect(seatLabelled(page, 'Seat 1: Ana')).toHaveCount(1);
 
-	// Reopening from the board puts it back in Continue game.
-	await page.getByTestId('game-over').tap();
+	// The Game over pill only says so; Reopen game is in ⋯ (Trevor, 2026-11-01).
+	await expect(page.getByRole('button', { name: /^Game over/ })).toHaveCount(0);
+	// Reopening from ⋯ puts it back in Continue game.
+	await page.getByRole('button', { name: 'More', exact: true }).tap();
+	await page
+		.getByRole('dialog', { name: 'Grimoire' })
+		.getByRole('button', { name: 'Reopen game' })
+		.tap();
 	await page
 		.getByRole('alertdialog', { name: 'Reopen game?' })
 		.getByRole('button', { name: 'Confirm', exact: true })
@@ -3115,8 +3121,33 @@ test('a finished game exports as a recap file and a grimoire image', async ({ pa
 	const png = readFileSync(image.path);
 	const box = await page.locator('.grimoire').boundingBox();
 	expect(box).not.toBeNull();
+	// Only the board and its game info (Trevor, 2026-11-01): the board with its margin all round,
+	// without the toolbar's row above or History's strip below.
+	const shown = await page.locator('.grimoire > .board').evaluate((el) => ({
+		height: el.getBoundingClientRect().height,
+		margin: parseFloat(getComputedStyle(el).marginTop)
+	}));
+	expect(shown.height + 2 * shown.margin).toBeLessThan(box!.height - 50);
 	const ratio = png.readUInt32BE(16) / png.readUInt32BE(20);
-	expect(ratio).toBeCloseTo(box!.width / box!.height, 1);
+	expect(ratio).toBeCloseTo(box!.width / (shown.height + 2 * shown.margin), 1);
+	// Drawn on the page's own colour, never see-through (the browser decodes the PNG).
+	const opaque = await page.evaluate(async (b64) => {
+		const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+		const bitmap = await createImageBitmap(new Blob([bytes], { type: 'image/png' }));
+		const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+		const ctx = canvas.getContext('2d')!;
+		ctx.drawImage(bitmap, 0, 0);
+		return ctx.getImageData(1, 1, 1, 1).data[3];
+	}, png.toString('base64'));
+	expect(opaque).toBe(255);
+	// The controls are left out: History's strip, the soundboard and the timer.
+	await expect(page.getByTestId('history-strip')).toHaveAttribute('data-screenshot', 'skip');
+	await expect(page.locator('.board-timer .timer-slot')).toHaveAttribute('data-screenshot', 'skip');
+	// By its label: the open Export dialog hides the board from getByRole.
+	await expect(page.locator('.board-timer [aria-label="Soundboard"]')).toHaveAttribute(
+		'data-screenshot',
+		'skip'
+	);
 	await page.keyboard.press('Escape');
 
 	// The same from History, which opens the board first so the picture is the board
@@ -4467,6 +4498,15 @@ test('the Storm Catcher named character is picked before the day and kept at its
 	const learns = step.getByTestId('night-evil-learns');
 	await expect(learns).toContainText('Washerwoman');
 	await expect(learns.getByRole('button', { name: 'Show to player' })).toBeEnabled();
+	// The step's own "not in play" card shows that character, never the Demon's bluffs
+	// (Trevor, 2026-11-01).
+	await step
+		.getByTestId('step-info-tokens')
+		.getByRole('button', { name: 'These characters are not in play (Washerwoman)', exact: true })
+		.tap();
+	const shown = page.locator('[data-testid="show-to-player"][open]');
+	await expect(shown.getByRole('img', { name: /Washerwoman token/ })).toBeVisible();
+	await expect(shown.getByRole('img', { name: /token/ })).toHaveCount(1);
 });
 
 test('Minion info and Demon info list every card they can show, with who it points at', async ({
@@ -6822,6 +6862,47 @@ test('with Council of the Dead, night 4 starts with the dead waking together', a
 	await page.getByTestId('night-strip').getByRole('button', { name: 'Next step' }).tap();
 	await expect(page.getByTestId('night-strip').locator('.step .name strong')).toHaveText(
 		'Council of the Dead'
+	);
+});
+
+// One format for game modes and special rules (Trevor, 2026-11-01): a game mode may set a
+// rule's parts, and the night plays its step as it plays Council of the Dead's.
+test('a game mode that sets a night step adds it to the night, headed by the mode', async ({
+	page
+}) => {
+	const mode = {
+		format: 1,
+		id: 'dead-wake',
+		name: 'Dead Wake',
+		sources: [],
+		parts: {
+			assignment: { kind: 'bag' },
+			nightSteps: [{ kind: 'wake', when: 'one-night', night: 1, dead: true }]
+		}
+	};
+	await page.goto('/new');
+	await page.evaluate((m) => {
+		localStorage.setItem('grim-games:custom-modes:v1', JSON.stringify([m]));
+	}, mode);
+	await page.reload();
+	await pickScript(page, 'Trouble Brewing');
+	const modes = page.getByRole('main').getByRole('combobox', { name: 'Game mode' });
+	await modes.tap();
+	await page.getByRole('option', { name: 'Dead Wake', exact: true }).tap();
+	await expect(modes).toContainText('Dead Wake');
+	await page.getByRole('button', { name: 'Create game' }).tap();
+	await toBoard(page);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Imp', exact: true })
+		.tap();
+	await closeSheet(page);
+	await walkTo(page, 'Dusk');
+	await page.getByTestId('night-strip').getByRole('button', { name: 'Next step' }).tap();
+	await expect(page.getByTestId('night-strip').locator('.step .name strong')).toHaveText(
+		'Dead Wake'
 	);
 });
 
