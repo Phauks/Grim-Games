@@ -75,6 +75,7 @@ import ph_list_checks from '~icons/ph/list-checks';
 import ph_lock_simple from '~icons/ph/lock-simple';
 import ph_magnifying_glass from '~icons/ph/magnifying-glass';
 import ph_mask_sad from '~icons/ph/mask-sad';
+import ph_megaphone from '~icons/ph/megaphone';
 import ph_minus from '~icons/ph/minus';
 import ph_minus_circle from '~icons/ph/minus-circle';
 import ph_moon from '~icons/ph/moon';
@@ -106,6 +107,7 @@ import ph_skull from '~icons/ph/skull';
 import ph_sliders_horizontal from '~icons/ph/sliders-horizontal';
 import ph_sparkle from '~icons/ph/sparkle';
 import ph_speaker_high from '~icons/ph/speaker-high';
+import ph_stamp from '~icons/ph/stamp';
 import ph_star_half from '~icons/ph/star-half';
 import ph_sun from '~icons/ph/sun';
 import ph_swap from '~icons/ph/swap';
@@ -202,6 +204,7 @@ const icons: IconMap = {
 	'ph:lock-simple': ph_lock_simple,
 	'ph:magnifying-glass': ph_magnifying_glass,
 	'ph:mask-sad': ph_mask_sad,
+	'ph:megaphone': ph_megaphone,
 	'ph:minus': ph_minus,
 	'ph:minus-circle': ph_minus_circle,
 	'ph:moon': ph_moon,
@@ -233,6 +236,7 @@ const icons: IconMap = {
 	'ph:sliders-horizontal': ph_sliders_horizontal,
 	'ph:sparkle': ph_sparkle,
 	'ph:speaker-high': ph_speaker_high,
+	'ph:stamp': ph_stamp,
 	'ph:star-half': ph_star_half,
 	'ph:sun': ph_sun,
 	'ph:swap': ph_swap,

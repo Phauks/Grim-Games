@@ -27,9 +27,23 @@
 		 * are the characters the step's rules fill in (Trevor, 2026-10-24: the Harpy's own token).
 		 */
 		onchoose: (token: InfoToken, filled?: FilledInfoToken) => void;
+		/**
+		 * One row of one-line cards with no heading: the night strip under the board, so a card
+		 * is one tap from the board without opening the step (Trevor, 2026-11-02).
+		 */
+		compact?: boolean;
 	}
 
-	let { text, character, characters, game, changed, own, onchoose }: Props = $props();
+	let {
+		text,
+		character,
+		characters,
+		game,
+		changed,
+		own,
+		onchoose,
+		compact = false
+	}: Props = $props();
 
 	const tokens = $derived(
 		stepInfoCards(
@@ -53,13 +67,19 @@
 	for a step that names none.
 -->
 {#if tokens.length > 0}
-	<h3>{t('info-tokens.title')}</h3>
-	<ul class="cards" data-testid="step-info-tokens">
+	{#if !compact}<h3>{t('info-tokens.title')}</h3>{/if}
+	<ul
+		class="cards"
+		class:compact
+		aria-label={compact ? t('info-tokens.title') : undefined}
+		data-testid={compact ? 'strip-info-tokens' : 'step-info-tokens'}
+	>
 		{#each tokens as { key, token, filled, owners } (key)}
 			<InfoTokenTile
 				text={token.text}
 				asks={token.asks}
 				{owners}
+				{compact}
 				onchoose={() => onchoose(token, filled)}
 			/>
 		{/each}
@@ -74,5 +94,17 @@
 		margin: 0;
 		padding: 0;
 		list-style: none;
+	}
+	/*
+	 * Side by side, each as wide as its words. When the row is short of room, a grid shares
+	 * it out evenly, so a short card ("You are") stays whole and a long one is cut.
+	 */
+	.cards.compact {
+		grid-auto-flow: column;
+		grid-auto-columns: minmax(0, max-content);
+		grid-template-columns: none;
+		justify-content: start;
+		gap: var(--space-1);
+		min-width: 0;
 	}
 </style>

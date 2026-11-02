@@ -46,6 +46,14 @@
 		"good": ["minion"],
 		"evil": ["minion"]
 	},
+	"jinxes": {
+		"marionette": {
+			"withPartnerAbility": "partner-in-play"
+		},
+		"summoner": {
+			"withPartnerAbility": "partner-setup"
+		}
+	},
 	"infoTokenCharacters": {
 		"you-are": {
 			"characters": ["marked"],

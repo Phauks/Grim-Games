@@ -10,6 +10,10 @@
  * of the two may be in play). Paraphrase, never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
+import type { Script } from '#lib/core/data/index.ts';
+import { castWith, codes, run } from '#lib/core/model/fixtures.test-support.ts';
+import { scriptCharacterIds } from '#lib/core/model/characters.ts';
+import { barredAbilities, jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 
@@ -30,5 +34,45 @@ describe('Boffin + Heretic jinx', () => {
 		expect(jinxesAmong(data.jinxes, ['heretic'])).not.toContain(jinx);
 	});
 
-	it.todo('enforces the rule the jinx imposes');
+	// Both pages' Related Jinxes: the Boffin cannot give the Demon the Heretic ability.
+	describe('the Boffin cannot give the Demon the Heretic ability', () => {
+		const script: Script = {
+			meta: { name: 'Jinxed' },
+			entries: ['boffin', 'imp', 'heretic', 'chef', 'empath', 'monk', 'saint'].map((id) => ({
+				kind: 'official' as const,
+				id
+			}))
+		};
+		const cast = castWith({ script });
+
+		it("is data in the Boffin's rules", () => {
+			expect(jinxRulesBetween('boffin', 'heretic')).toEqual({ notGiven: true });
+		});
+
+		it('leaves the Heretic out of the abilities the Boffin may give', () => {
+			expect(barredAbilities('boffin', scriptCharacterIds(script))).toEqual(['heretic']);
+			expect(barredAbilities('boffin', ['boffin', 'chef'])).toEqual([]);
+		});
+
+		it('warns, but still lets the Storyteller give it', () => {
+			const { session, ctx, seats } = cast(['boffin', 'imp', 'monk', 'empath', 'saint']);
+			const given = run(session, ctx, {
+				type: 'SetHeldAbility',
+				seatId: seats[1],
+				via: 'boffin',
+				characterId: 'heretic'
+			});
+			expect(codes(given)).toEqual(['jinxed-ability']);
+			expect(given.game.seats[seats[1]].abilities).toEqual([
+				{ characterId: 'heretic', via: 'boffin' }
+			]);
+			const chef = run(session, ctx, {
+				type: 'SetHeldAbility',
+				seatId: seats[1],
+				via: 'boffin',
+				characterId: 'chef'
+			});
+			expect(codes(chef)).toEqual([]);
+		});
+	});
 });

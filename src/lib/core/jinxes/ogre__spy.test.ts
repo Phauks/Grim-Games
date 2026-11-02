@@ -10,8 +10,17 @@
  * of the two may be in play). Paraphrase, never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
-import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
+import { findJinx, jinxesAmong, type Script } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { castWith } from '#lib/core/model/fixtures.test-support.ts';
+import { registrations } from '#lib/core/rules/ability.ts';
+import { becomesOffer } from '#lib/core/rules/becomes.ts';
+import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
+
+const scriptOf = (ids: string[]): Script => ({
+	meta: { name: 'Jinxed' },
+	entries: ids.map((id) => ({ kind: 'official' as const, id }))
+});
 
 describe('Ogre + Spy jinx', () => {
 	const data = committedGameData();
@@ -30,5 +39,30 @@ describe('Ogre + Spy jinx', () => {
 		expect(jinxesAmong(data.jinxes, ['spy'])).not.toContain(jinx);
 	});
 
-	it.todo('enforces the rule the jinx imposes');
+	// Both pages' Related Jinxes: the Spy registers as evil to the Ogre, never as good, so an
+	// Ogre who chooses the Spy becomes evil.
+	describe('the Spy registers as evil to the Ogre', () => {
+		const cast = castWith({ script: scriptOf(['ogre', 'spy', 'imp', 'chef', 'empath']) });
+
+		it("is data in the Spy's rules", () => {
+			expect(jinxRulesBetween('spy', 'ogre')).toEqual({
+				registersTo: { alignments: ['evil'], always: true }
+			});
+		});
+
+		it('registers only as evil to the Ogre, as good or evil to anyone else', () => {
+			const { game, ctx, seats } = cast(['ogre', 'spy', 'imp', 'chef', 'empath']);
+			const as = (viewer?: string) =>
+				registrations(game, ctx.characters, viewer).find((r) => r.seatId === seats[1]);
+			expect(as('ogre')?.alignments).toEqual(['evil']);
+			expect(as()?.alignments).toEqual(['evil', 'good']);
+		});
+
+		it('offers to make the Ogre evil when its Friend is the Spy (the Storyteller confirms)', () => {
+			const { game, ctx, seats } = cast(['ogre', 'spy', 'imp', 'chef', 'empath']);
+			expect(
+				becomesOffer(game, seats[1], { characterId: 'ogre', label: 'Friend' }, ctx.characters)
+			).toEqual({ into: 'alignment', seatId: seats[0], characterId: 'ogre', alignment: 'evil' });
+		});
+	});
 });

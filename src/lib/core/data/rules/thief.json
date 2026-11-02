@@ -1,4 +1,5 @@
 {
+	"voteWeight": { "reminder": "Negative Vote", "weight": -1 },
 	"reminderTargets": {
 		"Negative Vote": {
 			"seat": "other",

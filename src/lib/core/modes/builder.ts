@@ -12,7 +12,7 @@ import type { GuideField, GuidePart } from './guide-fields.ts';
 import { GUIDE_TOP } from './mode-guide.ts';
 import { FILE_GUIDE_PARTS } from './rule-guide.ts';
 import { GAME_MODE_FORMAT, WHOLE_GAME_PARTS } from './types.ts';
-import type { FileKind } from './file-kind.ts';
+import { fileKind, type FileKind } from './file-kind.ts';
 
 /** What the builder makes: a game mode, or a special rule that stacks on one (`fileKind`). */
 export type BuildKind = FileKind;
@@ -111,6 +111,22 @@ export function emptyFile(): Record<string, unknown> {
 		sources: [],
 		parts: {}
 	};
+}
+
+/**
+ * Whether loaded JSON is a mode file, and which kind (the Library's Add takes them beside
+ * scripts): an object with a numeric `format` and a `parts` object, labelled by its parts
+ * (`fileKind`). A script is a list, and a single character has no `parts`, so neither reads
+ * as one.
+ */
+export function modeFileKind(json: unknown): BuildKind | undefined {
+	if (typeof json !== 'object' || json === null || Array.isArray(json)) return undefined;
+	const file = json as Record<string, unknown>;
+	const parts = file.parts;
+	if (typeof file.format !== 'number' || typeof parts !== 'object' || parts === null) {
+		return undefined;
+	}
+	return Array.isArray(parts) ? undefined : fileKind(file);
 }
 
 /** A new part or list item: its first kind, or no fields at all. */

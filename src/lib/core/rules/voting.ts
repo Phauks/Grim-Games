@@ -3,24 +3,37 @@
  * a later nominee also needs more votes than the player already on the block (a tie means
  * nobody is on it). Paraphrased from https://wiki.bloodontheclocktower.com/Rules_Explanation
  * and the Glossary ("Execution"). Dead players' ghost votes count towards the total, but the
- * threshold uses only the living. The app does not track votes; this is the number to read
- * out.
+ * threshold uses only the living. Rules that change this for the whole table (the Voudon) are
+ * in `voting-table.ts`.
  */
+import type { CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { alignmentOf, inPlay, registersAsDead } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 import { afterDeath } from './nominations.ts';
+import { deadVoteFree, mostVotesWins, type TownVoting } from './voting-table.ts';
 
 export interface BlockThreshold {
 	/** Living players (Travellers included). */
 	alive: number;
 	/** Votes needed to put a nominee on the block, with nobody on it yet. */
 	needed: number;
+	/**
+	 * The character whose ability needs no majority today (the Voudon): one vote is enough
+	 * and the most votes wins (`voting-table.ts`). Set only when `characters` were given.
+	 */
+	mostVotes?: CharacterId;
 }
 
-export function blockThreshold(full: Game): BlockThreshold {
+/**
+ * The living count and the votes needed. With `characters`, a working `noMajority` rule (the
+ * Voudon, https://wiki.bloodontheclocktower.com/Voudon) makes it one vote.
+ */
+export function blockThreshold(full: Game, characters?: CharacterLookup): BlockThreshold {
 	const game = inPlay(full);
 	const alive = game.seating.filter((s) => !game.seats[s].dead).length;
+	const mostVotes = characters && mostVotesWins(full, characters);
+	if (mostVotes) return { alive, needed: 1, mostVotes };
 	return { alive, needed: neededToBlock(alive) };
 }
 
@@ -72,19 +85,21 @@ export interface TownCounts extends BlockThreshold {
  * (`blockThreshold`, `ghostVotesLeft`), worked out the same way from what the town sees
  * (Trevor, 2026-10-27: "should calculate the same way as the information the storyteller
  * would already have access to"). The town's view is all a phone has, so a player who only
- * seems dead counts as dead here.
+ * seems dead counts as dead here. `table` is the table's voting rules the town knows of
+ * (`townVoting`): with the Voudon's, one vote is needed and every dead player has a vote.
  */
-export function townCounts(all: readonly TownSeat[]): TownCounts {
+export function townCounts(all: readonly TownSeat[], table: TownVoting = {}): TownCounts {
 	const seats = all.filter((s) => !s.notInPlay);
 	const alive = seats.filter((s) => !s.dead).length;
+	const free = table.deadNeedNoToken ? 1 : undefined;
 	const ghostVotes = seats.reduce(
-		(sum, s) => sum + (s.dead ? (s.votes ?? (s.ghostVote === 'used' ? 0 : 1)) : 0),
+		(sum, s) => sum + (s.dead ? (s.votes ?? free ?? (s.ghostVote === 'used' ? 0 : 1)) : 0),
 		0
 	);
 	const counts: TownCounts = {
 		alive,
 		total: seats.length,
-		needed: neededToBlock(alive),
+		needed: table.noMajority ? 1 : neededToBlock(alive),
 		ghostVotes
 	};
 	if (seats.some((s) => s.traveller && !s.dead)) counts.exile = neededToExile(seats.length);
@@ -139,22 +154,26 @@ export function ghostVotesLeft(game: Game, characters: CharacterLookup): number 
 
 /**
  * A dead player's votes on each nomination that need no vote token (`afterDeath`, the Banshee
- * killed by the Demon votes twice: https://wiki.bloodontheclocktower.com/Banshee), or
- * undefined when they vote with their one ghost vote, as the dead do.
+ * killed by the Demon votes twice: https://wiki.bloodontheclocktower.com/Banshee; else 1 while
+ * a `deadNeedNoToken` rule works, the Voudon: https://wiki.bloodontheclocktower.com/Voudon),
+ * or undefined when they vote with their one ghost vote, as the dead do.
  */
 export function votesWithoutToken(
 	game: Game,
 	seatId: SeatId,
 	characters: CharacterLookup
 ): number | undefined {
-	return afterDeath(game, seatId, characters)?.votes;
+	const own = afterDeath(game, seatId, characters)?.votes;
+	if (own !== undefined) return own;
+	return registersAsDead(game, seatId) && deadVoteFree(game, characters) ? 1 : undefined;
 }
 
 /**
  * `votesWithoutToken` as the town knows it: the Banshee's death to the Demon is announced to
  * everyone (https://wiki.bloodontheclocktower.com/Banshee), so the players' grim shows it, but
  * only once the cause is recorded. A death with no recorded cause still shows a ghost vote, so
- * a dead player's character is never told to the town by guesswork.
+ * a dead player's character is never told to the town by guesswork. A table rule (the
+ * Voudon's) is left to the phone (`townVoting`), so a seat never shows whether it works.
  */
 export function publicVotesWithoutToken(
 	game: Game,
@@ -162,7 +181,7 @@ export function publicVotesWithoutToken(
 	characters: CharacterLookup
 ): number | undefined {
 	if (game.seats[seatId]?.deathCause === undefined) return undefined;
-	return votesWithoutToken(game, seatId, characters);
+	return afterDeath(game, seatId, characters)?.votes;
 }
 
 /** A day count the Storyteller can open to see how it was worked out (Trevor, 2026-10-19). */

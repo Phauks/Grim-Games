@@ -12,6 +12,7 @@
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { jinxRulesBetween, jinxSetupWarnings, scriptJinxes } from '#lib/core/rules/jinxes.ts';
 
 describe('Godfather + Heretic jinx', () => {
 	const data = committedGameData();
@@ -30,5 +31,16 @@ describe('Godfather + Heretic jinx', () => {
 		expect(jinxesAmong(data.jinxes, ['heretic'])).not.toContain(jinx);
 	});
 
-	it.todo('enforces the rule the jinx imposes');
+	// The Heretic's Related Jinxes: only one of the Heretic and the Godfather may be in play.
+	it('is data in the Heretic rules: only one of the two may be in play', () => {
+		expect(jinxRulesBetween('heretic', 'godfather')).toEqual({ exclusive: true });
+		expect(jinxRulesBetween('godfather', 'heretic')).toEqual({ exclusive: true });
+	});
+
+	it('warns at setup when both are chosen, and not when one is', () => {
+		const jinxes = scriptJinxes(data.jinxes, ['heretic', 'godfather', 'chef']);
+		expect(jinxes.map((j) => j.exclusive)).toEqual([true]);
+		expect(jinxSetupWarnings(jinxes, ['heretic', 'godfather'])).toHaveLength(1);
+		expect(jinxSetupWarnings(jinxes, ['heretic', 'chef'])).toEqual([]);
+	});
 });

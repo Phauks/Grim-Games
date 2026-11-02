@@ -1,6 +1,14 @@
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
-import { OVERRIDE_FIELDS, isOnScript, registersAsDead, typeOf } from '#lib/core/model/index.ts';
+import {
+	OVERRIDE_FIELDS,
+	isOnScript,
+	registersAsDead,
+	scriptCharacterIds,
+	typeOf
+} from '#lib/core/model/index.ts';
+import { cantTurnGood } from '#lib/core/rules/becomes.ts';
+import { barredAbilities, givenInstead } from '#lib/core/rules/jinxes.ts';
 import type { GameEvent } from '../events.ts';
 import {
 	allowsDuplicates,
@@ -61,6 +69,7 @@ export const CHARACTERS_DECIDERS: Deciders<
 			characterId: character.id
 		};
 		if (alignment !== undefined) assigned.alignment = alignment;
+		if (command.by !== undefined) assigned.by = characterOf(ctx, command.by).id;
 		return [assigned];
 	},
 
@@ -103,6 +112,20 @@ export const CHARACTERS_DECIDERS: Deciders<
 			warn('no-change', `already ${command.alignment}`);
 			return [];
 		}
+		// A jinx may say they can't turn good by an ability they have (the Boffin's Demon with the
+		// Goon ability, an evil player the Pit-Hag turned into the Cult Leader): warn, never lock,
+		// as something else may turn them good.
+		const stays =
+			command.alignment === 'good' ? cantTurnGood(game, seat.seatId, ctx.characters) : undefined;
+		if (stays) {
+			const ability = ctx.characters.get(stays.characterId)?.name ?? stays.characterId;
+			const via = ctx.characters.get(stays.via)?.name ?? stays.via;
+			warn(
+				'jinxed-alignment',
+				`${via} and ${ability} are jinxed: this player can't turn good by the ${ability} ability`,
+				[stays.via, stays.characterId]
+			);
+		}
 		if (command.alignment === 'evil') {
 			const limiter = [...trulyInPlay(game, ctx)].find(
 				(id) => rulesOf(id, ctx.characters)?.limitsExtraEvil
@@ -123,8 +146,33 @@ export const CHARACTERS_DECIDERS: Deciders<
 
 	SetHeldAbility(game, command, ctx, warn) {
 		const seat = seatOf(game, command.seatId);
-		characterOf(ctx, command.via);
-		if (command.characterId !== undefined) seatableCharacter(ctx, command.characterId);
+		const via = characterOf(ctx, command.via);
+		if (command.characterId !== undefined) {
+			const given = seatableCharacter(ctx, command.characterId);
+			// A jinx may bar the ability (the Boffin's Demon cannot have the Drunk ability,
+			// https://wiki.bloodontheclocktower.com/Boffin#Related_Jinxes): warn, never lock.
+			const script = scriptCharacterIds(game.script);
+			if (barredAbilities(via.id, script, ctx.characters).includes(given.id))
+				warn(
+					'jinxed-ability',
+					`${via.name} and ${given.name} are jinxed: the ${via.name} cannot give that ability`,
+					[via.id, given.id]
+				);
+			// An ability meant for the Storyteller goes to a player only by a jinx that sends it
+			// to a Minion (the Plague Doctor's Spy).
+			const rule = rulesOf(via.id, ctx.characters)?.givesAbility;
+			const toMinion = givenInstead(via.id, given.id, script, ctx.characters) === 'a-minion';
+			if (rule?.to === 'storyteller' && !toMinion)
+				warn('not-given-to-player', `the ${via.name} gives this ability to the Storyteller`, [
+					via.id,
+					given.id
+				]);
+			if (toMinion && typeOf(game, seat.seatId, ctx.characters) !== 'minion')
+				warn('not-minion', `${via.name} and ${given.name} are jinxed: a Minion gains it`, [
+					via.id,
+					given.id
+				]);
+		}
 		const held = seat.abilities?.find((a) => a.via === command.via)?.characterId;
 		if (held === command.characterId) {
 			warn('no-change', command.characterId ? 'already has that ability' : 'has no such ability');
@@ -141,8 +189,19 @@ export const CHARACTERS_DECIDERS: Deciders<
 	},
 
 	SetStorytellerAbility(game, command, ctx, warn) {
-		characterOf(ctx, command.via);
-		if (command.characterId !== undefined) seatableCharacter(ctx, command.characterId);
+		const via = characterOf(ctx, command.via);
+		if (command.characterId !== undefined) {
+			const given = seatableCharacter(ctx, command.characterId);
+			// A jinx may send the ability elsewhere (the Plague Doctor's Spy goes to a Minion,
+			// https://wiki.bloodontheclocktower.com/Plague_Doctor#Related_Jinxes): warn, never lock.
+			const script = scriptCharacterIds(game.script);
+			if (givenInstead(via.id, given.id, script, ctx.characters))
+				warn(
+					'jinxed-ability',
+					`${via.name} and ${given.name} are jinxed: the Storyteller does not gain that ability`,
+					[via.id, given.id]
+				);
+		}
 		const held = game.storytellerAbilities?.find((a) => a.via === command.via)?.characterId;
 		if (held === command.characterId) {
 			warn('no-change', command.characterId ? 'already has that ability' : 'has no such ability');

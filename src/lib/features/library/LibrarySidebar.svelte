@@ -79,7 +79,9 @@
 		{ value: 'all', label: t('library.kind.all'), icon: 'library' },
 		{ value: 'script', label: t('library.kind.scripts'), icon: 'script' },
 		{ value: 'character', label: t('library.kind.characters'), icon: 'buildCharacter' },
-		{ value: 'collection', label: t('library.kind.collections'), icon: 'players' }
+		{ value: 'collection', label: t('library.kind.collections'), icon: 'players' },
+		{ value: 'mode', label: t('library.kind.modes'), icon: 'buildMode' },
+		{ value: 'rule', label: t('library.kind.rules'), icon: 'specialRule' }
 	]);
 
 	function openFolder(id: string | undefined) {
