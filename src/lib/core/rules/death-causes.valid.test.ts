@@ -75,7 +75,8 @@ describe('validDeathCauses', () => {
 			{
 				code: 'registers',
 				source: { characterId: 'recluse', seatId: seats[0] },
-				wiki: 'https://wiki.bloodontheclocktower.com/Recluse'
+				wiki: 'https://wiki.bloodontheclocktower.com/Recluse',
+				as: 'demon'
 			}
 		]);
 	});
