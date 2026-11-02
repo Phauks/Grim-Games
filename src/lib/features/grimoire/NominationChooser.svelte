@@ -5,6 +5,8 @@
 		mayNominate,
 		nominationsPerDay,
 		seatNominations,
+		storytellerNominators,
+		storytellerNominee,
 		todaysNominations
 	} from '#lib/core/rules/index.ts';
 	import { seatLabel, seatName } from '#lib/features/game/seat-label.ts';
@@ -36,22 +38,43 @@
 	const today = $derived.by(() => {
 		const all = todaysNominations(game);
 		return {
-			made: new Set(all.map((n) => n.nominator)),
+			made: new Set([...all.map((n) => n.nominator), ...storytellerNominators(game)]),
 			received: new Set(all.map((n) => n.nominee))
 		};
 	});
+	/** Who a seat nominated may be the Storyteller (the Atheist on the script). */
+	const storyteller = $derived(asking?.side === 'made' && storytellerNominee(game, characters));
+
+	/**
+	 * The seat nominated the Storyteller: a new nomination, or in place of its latest one when
+	 * it may not nominate again today.
+	 */
+	function chooseStoryteller() {
+		const ask = asking;
+		asking = undefined;
+		if (!ask) return;
+		const latest = seatNominations(game, ask.seatId).made;
+		if (latest && !mayNominateAgain(ask.seatId))
+			grimoire.run({ type: 'RemoveDayEntry', entryId: latest.entryId });
+		grimoire.run({ type: 'NominateStoryteller', nominator: ask.seatId });
+	}
+
+	/**
+	 * The seat has nominations left today (the Banshee killed by the Demon, or the Butcher after
+	 * the day's first execution), so a choice is a new nomination, not a change.
+	 */
+	function mayNominateAgain(seatId: SeatId): boolean {
+		return (
+			extraNominationOpen(game, seatId, characters) ||
+			seatNominations(game, seatId).allMade.length < nominationsPerDay(game, seatId, characters)
+		);
+	}
 
 	function choose(other: SeatId | undefined) {
 		const ask = asking;
 		asking = undefined;
 		if (!ask) return;
-		// A new nomination, not a change: the seat has nominations left today (the Banshee killed
-		// by the Demon, or the Butcher after the day's first execution).
-		const another =
-			ask.side === 'made' &&
-			(extraNominationOpen(game, ask.seatId, characters) ||
-				seatNominations(game, ask.seatId).allMade.length <
-					nominationsPerDay(game, ask.seatId, characters));
+		const another = ask.side === 'made' && mayNominateAgain(ask.seatId);
 		const pair = recordNomination(grimoire, ask.seatId, ask.side, other, another);
 		if (pair) onNominated?.(pair);
 	}
@@ -78,6 +101,7 @@
 		? (seatId) => today.made.has(seatId) || mayNominate(game, seatId, characters)
 		: undefined}
 	onNone={() => choose(undefined)}
+	onStoryteller={storyteller ? chooseStoryteller : undefined}
 	onChoose={(other) => choose(other)}
 >
 	{#snippet heading()}{#if asking}{@const who = seatName(

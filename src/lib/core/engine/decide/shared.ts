@@ -473,6 +473,9 @@ export function hasPlacedReminder(game: Game, reminderId: string): boolean {
 	);
 }
 
+/** The Storyteller as a nominee (`NominateStoryteller`). */
+export const STORYTELLER = 'storyteller';
+
 /**
  * Checks a nomination. Each player may nominate once per day and be nominated once per
  * day, and dead players may not nominate (https://wiki.bloodontheclocktower.com/Glossary,
@@ -485,16 +488,17 @@ export function checkNomination(
 	game: Game,
 	characters: CharacterLookup,
 	nominator: string,
-	nominee: string,
+	nominee: string | typeof STORYTELLER,
 	warn: Warn,
 	ignore?: string
 ): void {
 	const others = game.today.entries.filter(
-		(e): e is Extract<DayEntry, { kind: 'nomination' }> =>
-			e.kind === 'nomination' && e.entryId !== ignore
+		(e): e is Extract<DayEntry, { kind: 'nomination' | 'storyteller-nomination' }> =>
+			(e.kind === 'nomination' || e.kind === 'storyteller-nomination') && e.entryId !== ignore
 	);
 	if (game.seats[nominator]?.notInPlay) warn('not-in-play', 'the nominator is not in play yet');
-	if (game.seats[nominee]?.notInPlay) warn('not-in-play', 'the nominee is not in play yet');
+	if (nominee !== STORYTELLER && game.seats[nominee]?.notInPlay)
+		warn('not-in-play', 'the nominee is not in play yet');
 	const allowed = nominationsPerDay(game, nominator, characters);
 	if (allowed === 0) warn('dead-nominator', 'dead players may not nominate');
 	// The Bishop: only the Storyteller nominates; their nomination is logged as usual.
@@ -514,7 +518,8 @@ export function checkNomination(
 	if (others.filter((e) => e.nominator === nominator).length >= Math.max(allowed, 1)) {
 		warn('already-nominated', 'this player has already nominated today');
 	}
-	if (others.some((e) => e.nominee === nominee)) {
+	const nominees = others.map((e) => (e.kind === 'nomination' ? e.nominee : STORYTELLER));
+	if (nominees.includes(nominee)) {
 		warn('already-nominee', 'this player has already been nominated today');
 	}
 }

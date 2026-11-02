@@ -16,6 +16,7 @@ import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { endCharacters } from '#lib/core/rules/end-reason.ts';
+import { gameEnds } from '#lib/core/rules/game-end.ts';
 import { infoPicker, isAllowed } from '#lib/core/rules/night-info.ts';
 import { analyseSetup } from '#lib/core/rules/setup.ts';
 import { engineGap, scenario } from '#lib/core/testing/scenario.ts';
@@ -77,7 +78,7 @@ describe('Atheist', () => {
 			);
 		});
 
-		it.fails('Example 2: Extra Outsider appears; executing Storyteller wins', () => {
+		it('Example 2: Extra Outsider appears; executing Storyteller wins', () => {
 			// Wiki: "There are three Outsiders in play, when there should be two. The players execute the
 			// Storyteller. Good wins."
 			// Nine players with the Atheist: no Minion or Demon, and any number of Outsiders.
@@ -100,10 +101,16 @@ describe('Atheist', () => {
 			expect(analysis.expected.outsider).toContain(3);
 			expect(analysis.warnings.map((w) => w.code)).not.toContain('count-mismatch');
 			expect(endCharacters(s.game, s.characters)).toContain('atheist');
-			engineGap(
-				'M15l',
-				'executing the Storyteller while the Atheist is in play ends the game, and good wins'
+			const after = s.do(
+				{ type: 'NominateStoryteller', nominator: s.seat('gossip') },
+				{ type: 'ExecuteStoryteller' }
 			);
+			const [end] = gameEnds(after.game, after.characters);
+			expect(end).toMatchObject({
+				rule: 'storyteller-executed',
+				winner: 'good',
+				characterId: 'atheist'
+			});
 		});
 	});
 });

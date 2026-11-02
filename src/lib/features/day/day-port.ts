@@ -62,6 +62,10 @@ export function describeEntry(
 				name: seatName(entry.seatId),
 				character: characterName(entry.by.characterId)
 			});
+		case 'storyteller-nomination':
+			return t('day.logStorytellerNominated', { nominator: seatName(entry.nominator) });
+		case 'storyteller-execution':
+			return t('day.logStorytellerExecuted');
 		case 'exile':
 			return t(entry.died ? 'day.logExiled' : 'day.logExiledDead', {
 				name: seatName(entry.seatId)

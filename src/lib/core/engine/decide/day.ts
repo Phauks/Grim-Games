@@ -34,6 +34,7 @@ import {
 	characterOf,
 	checkGuessLimit,
 	checkNomination,
+	STORYTELLER,
 	checkReminder,
 	entryOf,
 	entryOfKind,
@@ -61,6 +62,29 @@ function answerNote(
 		note.customAnswer = command.customAnswer.trim();
 }
 
+/** Whether today already has an execution: a player's or the Storyteller's. */
+function executedToday(game: Game): boolean {
+	return game.today.entries.some(
+		(e) => e.kind === 'execution' || e.kind === 'storyteller-execution'
+	);
+}
+
+/**
+ * A Minion's recorded nomination marks it for the Town Crier, tokens and all (Trevor,
+ * 2026-10-24: use the nominations recorded; https://wiki.bloodontheclocktower.com/Town_Crier).
+ */
+function minionNominated(game: Game, nominator: SeatId, ctx: EngineContext): GameEvent[] {
+	const mark = 'minion-nominated';
+	if (
+		dayMarkValue(game, mark) !== true &&
+		dayMarkSeats(game, ctx.characters, mark).length > 0 &&
+		typeOf(game, nominator, ctx.characters) === 'minion'
+	) {
+		return markEvents(game, mark, true, ctx);
+	}
+	return [];
+}
+
 /** The day log: nominations, executions, exiles, abilities, notes and night information. */
 export const DAY_DECIDERS: Deciders<
 	| 'Nominate'
@@ -69,6 +93,8 @@ export const DAY_DECIDERS: Deciders<
 	| 'SetDayMark'
 	| 'SetPrepValue'
 	| 'Execute'
+	| 'NominateStoryteller'
+	| 'ExecuteStoryteller'
 	| 'Exile'
 	| 'UseAbility'
 	| 'DayNote'
@@ -81,23 +107,25 @@ export const DAY_DECIDERS: Deciders<
 		const nominator = seatOf(game, command.nominator).seatId;
 		const nominee = seatOf(game, command.nominee).seatId;
 		checkNomination(game, ctx.characters, nominator, nominee, warn);
-		const events: GameEvent[] = [
+		return [
 			{
 				type: 'DayEntryAdded',
 				entry: { kind: 'nomination', entryId: ctx.newId(), nominator, nominee }
-			}
+			},
+			...minionNominated(game, nominator, ctx)
 		];
-		// A Minion's recorded nomination marks it for the Town Crier, tokens and all (Trevor,
-		// 2026-10-24: use the nominations recorded; https://wiki.bloodontheclocktower.com/Town_Crier).
-		const mark = 'minion-nominated';
-		if (
-			dayMarkValue(game, mark) !== true &&
-			dayMarkSeats(game, ctx.characters, mark).length > 0 &&
-			typeOf(game, nominator, ctx.characters) === 'minion'
-		) {
-			events.push(...markEvents(game, mark, true, ctx));
-		}
-		return events;
+	},
+
+	NominateStoryteller(game, command, ctx, warn) {
+		const nominator = seatOf(game, command.nominator).seatId;
+		checkNomination(game, ctx.characters, nominator, STORYTELLER, warn);
+		return [
+			{
+				type: 'DayEntryAdded',
+				entry: { kind: 'storyteller-nomination', entryId: ctx.newId(), nominator }
+			},
+			...minionNominated(game, nominator, ctx)
+		];
 	},
 
 	EditNomination(game, command, ctx, warn) {
@@ -168,9 +196,7 @@ export const DAY_DECIDERS: Deciders<
 		}
 		const forced = outcome?.kind === 'forced' && used ? { forcedBy: used.by } : {};
 		const before = used?.events ?? [];
-		if (game.today.entries.some((e) => e.kind === 'execution')) {
-			warn('already-executed', 'there is usually one execution a day');
-		}
+		if (executedToday(game)) warn('already-executed', 'there is usually one execution a day');
 		if (isTraveller(game, seat.seatId, ctx.characters)) {
 			warn('traveller-executed', 'Travellers are exiled, not executed');
 		}
@@ -214,6 +240,13 @@ export const DAY_DECIDERS: Deciders<
 			...before,
 			{ type: 'DayEntryAdded', entry },
 			{ type: 'DeathSet', seatId: seat.seatId, dead: true, cause: command.cause ?? 'execution' }
+		];
+	},
+
+	ExecuteStoryteller(game, command, ctx, warn) {
+		if (executedToday(game)) warn('already-executed', 'there is usually one execution a day');
+		return [
+			{ type: 'DayEntryAdded', entry: { kind: 'storyteller-execution', entryId: ctx.newId() } }
 		];
 	},
 

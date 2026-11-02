@@ -2,6 +2,12 @@
 	"actsWhenDead": true,
 	"orHiddenAs": "drunk",
 	"gameEnd": {
+		"ends": [
+			{
+				"kind": "storyteller-executed",
+				"winner": "good"
+			}
+		],
 		"decidedByStoryteller": true
 	},
 	"setupModifier": {

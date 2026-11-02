@@ -1339,6 +1339,42 @@ test('Execution asks whether only evil voted while the Legion works; yes fails i
 	await expect(boardSeat(page, 'Seat 1')).not.toHaveAccessibleName(/dead/);
 });
 
+test('a player nominates the Storyteller, who is executed, and good wins with the Atheist (M15l)', async ({
+	page
+}) => {
+	// https://wiki.bloodontheclocktower.com/Atheist: any living player may nominate the
+	// Storyteller; executed, good wins if the Atheist is in play.
+	await startGame(page);
+	await chooseCharacter(page, 1, 'Chef');
+	await chooseOffScript(page, 2, 'Atheist');
+	await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();
+	await page.getByRole('dialog').getByRole('button', { name: 'Settings' }).tap();
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	await settings
+		.getByRole('navigation', { name: 'Settings sections' })
+		.getByRole('button', { name: 'Storyteller' })
+		.tap();
+	await settings.getByText('Track nominations', { exact: true }).tap();
+	await settings.getByRole('button', { name: 'Close' }).first().tap();
+	await expect(settings).toBeHidden();
+	await page.getByTestId('seat').nth(0).getByTestId('nomination-marks').tap();
+	await page
+		.getByRole('dialog', { name: 'Who did Seat 1 nominate?' })
+		.getByTestId('choose-storyteller')
+		.tap();
+	const day = await openDay(page);
+	await day.getByRole('button', { name: 'Execution', exact: true }).tap();
+	const ask = page.getByRole('alertdialog', { name: 'End the day?' });
+	await ask.getByRole('combobox', { name: 'Execution' }).tap();
+	await page.getByRole('option', { name: 'Storyteller', exact: true }).tap();
+	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	const prompt = page.getByRole('alertdialog', { name: 'End game?' });
+	const end = prompt.locator('[data-rule="storyteller-executed"]');
+	await expect(end).toContainText('The Storyteller was executed, and the');
+	await expect(end.locator('[data-character-id="atheist"]')).toBeVisible();
+	await expect(prompt.getByTestId('game-end-prompt')).toContainText('Good wins');
+});
+
 test("Execution records the Judge's forced pass and marks the ruling used (M9d)", async ({
 	page
 }) => {

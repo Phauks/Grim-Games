@@ -10,6 +10,7 @@
 		nominatorsAfterExecution,
 		outcomeHolders,
 		protection,
+		storytellerNominee,
 		suggestedMark,
 		unsetMarks,
 		type DayMark,
@@ -53,7 +54,7 @@
 		 * closes first.
 		 */
 		onConfirm: (
-			seatId: SeatId | undefined,
+			seatId: SeatId | typeof STORYTELLER | undefined,
 			save: CharacterId | 'dies' | undefined,
 			marks: Partial<Record<DayMark, boolean>>,
 			keepGoing: boolean,
@@ -71,11 +72,22 @@
 	}: Props = $props();
 
 	const NONE = 'none';
+	/** The Storyteller, executed (the Atheist on the script, `storytellerNominee`). */
+	const STORYTELLER = 'storyteller';
 	let choice = $state<string | undefined>();
 
-	const executed = $derived(
-		game.today.entries.findLast((e) => e.kind === 'execution')?.seatId as SeatId | undefined
-	);
+	const executed = $derived.by(() => {
+		const entry = game.today.entries.findLast(
+			(e) => e.kind === 'execution' || e.kind === 'storyteller-execution'
+		);
+		return entry?.kind === 'execution'
+			? entry.seatId
+			: entry?.kind === 'storyteller-execution'
+				? STORYTELLER
+				: undefined;
+	});
+	/** A player, not No execution or the Storyteller. */
+	const player = $derived(choice !== undefined && choice !== NONE && choice !== STORYTELLER);
 	/**
 	 * Today's yes-or-no facts nobody marked (Trevor, 2026-10-24: "On day end, it should confirm
 	 * demon did not vote"): each is asked here, off unless what was recorded says yes (a Minion's
@@ -99,7 +111,7 @@
 	 * 2026-10-23), worked out as the Execute command will: shown before Confirm.
 	 */
 	const saved = $derived.by(() => {
-		if (!choice || choice === NONE) return undefined;
+		if (!player) return undefined;
 		const seat = game.seats[choice as SeatId];
 		if (!seat || seat.dead) return undefined;
 		return protection(game, seat.seatId, characters, 'execution');
@@ -112,17 +124,11 @@
 	 * apply, or None, with the reason shown beside it (warn, never lock).
 	 */
 	const savers = $derived(
-		executionSavers(
-			game,
-			(choice && choice !== NONE ? choice : game.seating[0]) as SeatId,
-			characters
-		)
+		executionSavers(game, (player ? choice : game.seating[0]) as SeatId, characters)
 	);
 	let save = $derived<string>(saved === 'override' ? OVERRIDE : (saved?.characterId ?? DIES));
 	/** No save for no execution, a dead player, or an execution already logged. */
-	const saveOff = $derived(
-		!choice || choice === NONE || choice === executed || !!game.seats[choice as SeatId]?.dead
-	);
+	const saveOff = $derived(!player || choice === executed || !!game.seats[choice as SeatId]?.dead);
 	/**
 	 * What an ability does to the execution (`executionOutcome`, M9d), one row per character
 	 * whose ability works, there for the whole time the dialog is open (no reflow) and
@@ -207,7 +213,7 @@
 	 */
 	const extraShown = $derived(extraNominators(game, characters).length > 0);
 	const keepAvailable = $derived.by(() => {
-		if (!extraShown || !choice || choice === NONE) return false;
+		if (!extraShown || !player) return false;
 		const seatId = choice as SeatId;
 		const dies = !game.seats[seatId]?.dead && savedByNow === undefined;
 		return nominatorsAfterExecution(game, { seatId, dies }, characters).length > 0;
@@ -248,7 +254,10 @@
 				value: s,
 				label: seatLabel(game, s),
 				group: nominees.length > 0 ? t('day.otherPlayers') : undefined
-			}))
+			})),
+			...(storytellerNominee(game, characters)
+				? [{ value: STORYTELLER, label: t('day.storyteller') }]
+				: [])
 		];
 	});
 </script>
@@ -298,15 +307,17 @@
 	onConfirm={() =>
 		choice === NONE || choice === undefined
 			? onConfirm(undefined, undefined, { ...marks }, false)
-			: onConfirm(
-					insteadOf?.seatId ?? (choice as SeatId),
-					saveOff || insteadOf || save === OVERRIDE || outcome?.kind === 'failed'
-						? undefined
-						: (save as CharacterId | 'dies'),
-					{ ...marks },
-					failed || (keepAvailable && keepGoing),
-					...(outcome && !insteadOf ? [outcome] : [])
-				)}
+			: choice === STORYTELLER
+				? onConfirm(STORYTELLER, undefined, { ...marks }, true)
+				: onConfirm(
+						insteadOf?.seatId ?? (choice as SeatId),
+						saveOff || insteadOf || save === OVERRIDE || outcome?.kind === 'failed'
+							? undefined
+							: (save as CharacterId | 'dies'),
+						{ ...marks },
+						failed || (keepAvailable && keepGoing),
+						...(outcome && !insteadOf ? [outcome] : [])
+					)}
 >
 	<div class="execution" data-testid="execution">
 		{#if notStarted}

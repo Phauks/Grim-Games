@@ -187,7 +187,12 @@
 		{#each shown as end (end.key)}
 			<li data-rule={end.rule}>
 				<span class="text">
-					{#if !OWN_WORDING}
+					{#if end.rule === 'storyteller-executed'}
+						<!-- Trevor's approved wording (2026-11-02): the Storyteller is not a player. -->
+						{#if end.characterId}The Storyteller was executed, and the {@render character(
+								end.characterId
+							)} is in play.{:else}The Storyteller was executed.{/if}
+					{:else if !OWN_WORDING}
 						{#each end.seats as id (id)}{@render seat(id)}{/each}
 						{#if end.characterId && end.jinxedWith}{@render jinx(end.characterId, end.jinxedWith)}
 						{:else if end.characterId}{@render ability(end.characterId)}{/if}
