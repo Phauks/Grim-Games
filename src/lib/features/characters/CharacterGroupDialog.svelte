@@ -11,7 +11,7 @@
 	import { EDITION_LABELS, TYPE_LABELS, TYPE_PLURALS } from '#lib/features/reference/labels.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
-	import CharacterEntry from './CharacterEntry.svelte';
+	import CharacterRow from './CharacterRow.svelte';
 	import { clearShownCharacter } from './character-context.ts';
 	import { officialData } from './game-data.svelte.ts';
 
@@ -65,15 +65,21 @@
 			onChange={(value) => (type = value)}
 		/>
 	</div>
-	<section aria-label={title} data-testid="character-group">
+	<!-- Each as every list draws a character (Trevor, 2026-11-02). -->
+	<ul class="group" aria-label={title} data-testid="character-group">
 		{#each characters as character (character.id)}
-			<CharacterEntry characterId={character.id}>
-				<p class="ability"><GlossaryText text={character.ability} names={[character.name]} /></p>
-			</CharacterEntry>
+			<li>
+				<CharacterRow {character} info>
+					{#snippet ability()}<GlossaryText
+							text={character.ability}
+							names={[character.name]}
+						/>{/snippet}
+				</CharacterRow>
+			</li>
 		{:else}
-			<p class="none">{t('common.none')}</p>
+			<li class="none">{t('common.none')}</li>
 		{/each}
-	</section>
+	</ul>
 </Dialog>
 
 <style>
@@ -84,10 +90,13 @@
 		padding: var(--space-2) 0 var(--space-3);
 		border-bottom: var(--card-border);
 	}
-	.ability {
-		margin: 0;
-		font-family: var(--font-ability);
-		line-height: 1.5;
+	.group {
+		display: grid;
+		align-content: start;
+		gap: var(--space-3);
+		margin: var(--space-3) 0 0;
+		padding: 0;
+		list-style: none;
 	}
 	.none {
 		color: var(--on-surface-muted);

@@ -5,7 +5,8 @@
 	import type { Game, SeatId } from '#lib/core/model/index.ts';
 	import type { DayStep, GameMode } from '#lib/core/modes/index.ts';
 	import type { VoteTally } from '#lib/core/sync/room.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
+	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import CharacterPicker from '#lib/features/characters/CharacterPicker.svelte';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
@@ -138,13 +139,19 @@
 					)}
 			/>
 			{#if ability.kind === 'character'}
-				<div class="character">
-					<CharacterBadge characterId={ability.characterId} />
-					<Button icon="edit" disabled={!data} onclick={() => (picking = true)}>
+				{#snippet pick()}<Button icon="edit" disabled={!data} onclick={() => (picking = true)}>
 						{t('modes.specters.pickCharacter')}
-					</Button>
+					</Button>{/snippet}
+				<!-- The character as every list draws it (Trevor, 2026-11-02). -->
+				<div class="character" data-testid="specters-ability">
+					{#if character}<CharacterRow {character} info>
+							{#snippet ability()}<GlossaryText
+									text={character.ability}
+									names={[character.name]}
+								/>{/snippet}
+							{#snippet end()}{@render pick()}{/snippet}
+						</CharacterRow>{:else}{@render pick()}{/if}
 				</div>
-				<p data-testid="specters-ability">{character?.ability ?? ''}</p>
 			{:else}
 				<TextField
 					label={t('modes.specters.abilityText')}
@@ -226,10 +233,7 @@
 		margin: 0;
 	}
 	.character {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: var(--space-2);
+		margin-bottom: var(--space-2);
 	}
 	.facts {
 		display: grid;

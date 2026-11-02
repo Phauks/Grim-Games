@@ -5,7 +5,7 @@
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
 	import CharacterDialog from '#lib/features/characters/CharacterDialog.svelte';
-	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
+	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import BoardReminder from './BoardReminder.svelte';
 	import ReminderTokenRow from './ReminderTokenRow.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -126,17 +126,6 @@
 	{/if}
 {/snippet}
 
-{#snippet ruleToken(character: Character)}
-	<button
-		type="button"
-		class="rule-token"
-		aria-label={`About the ${character.name}`}
-		onclick={() => details(character)}
-	>
-		<CharacterToken {character} size={64} />
-	</button>
-{/snippet}
-
 <CharacterPicker
 	bind:open={ruleOpen}
 	title="Add Fabled or Loric"
@@ -153,11 +142,11 @@
 <!-- eslint-disable-next-line grim/names-as-badges -- the rule character's own details, under its token -->
 <Dialog bind:open={ruleShownOpen} title={ruleShownCharacter?.name ?? ''}>
 	{#if ruleShownCharacter}
-		<div class="rule-detail">
-			{@render ruleToken(ruleShownCharacter)}
-			<p>{ruleShownCharacter.ability}</p>
-		</div>
-		{@render heldList(ruleShownCharacter.id)}
+		{@const shown = ruleShownCharacter}
+		<CharacterRow character={shown} info={details}>
+			{#snippet ability()}<GlossaryText text={shown.ability} names={[shown.name]} />{/snippet}
+			{@render heldList(shown.id)}
+		</CharacterRow>
 	{/if}
 	{#snippet headActions()}
 		<!-- Beside the close X (Trevor, 2026-10-17); a red trash icon, named for screen readers. -->
@@ -200,13 +189,10 @@
 
 <Dialog bind:open={abilityOpen} title="Storyteller's ability">
 	{#if abilityCharacter}
-		<div class="rule-detail">
-			{@render ruleToken(abilityCharacter)}
-			<div>
-				<CharacterBadge characterId={abilityCharacter.id} character={abilityCharacter} />
-				<p>{abilityCharacter.ability}</p>
-			</div>
-		</div>
+		{@const held = abilityCharacter}
+		<CharacterRow character={held} info={details}>
+			{#snippet ability()}<GlossaryText text={held.ability} names={[held.name]} />{/snippet}
+		</CharacterRow>
 		<div class="actions">
 			<Button variant="quiet" disabled={watching} onclick={() => (abilityPickOpen = true)}
 				>Change</Button
@@ -297,27 +283,6 @@
 	}
 	.held-list {
 		margin-top: var(--space-2);
-	}
-	.rule-detail {
-		display: flex;
-		gap: var(--space-3);
-		align-items: flex-start;
-	}
-	.rule-token {
-		flex: none;
-		padding: 0;
-		border: 0;
-		border-radius: 50%;
-		background: none;
-		cursor: pointer;
-	}
-	.rule-detail p {
-		margin: 0;
-		font-family: var(--font-ability);
-	}
-	.rule-detail > div {
-		flex: 1;
-		min-width: 0;
 	}
 	.actions {
 		display: flex;
