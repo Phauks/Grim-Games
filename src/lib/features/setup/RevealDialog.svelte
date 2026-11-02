@@ -313,12 +313,14 @@
 		height: calc(9 * var(--u));
 	}
 	/*
-	 * The row's height is reserved while the token is locked: the ring is as tall as the name
-	 * and two lines of ability (CharacterRow's --character-ring).
+	 * The row's place is a fixed height, the ring plus a line of room, kept while the token is
+	 * locked or not held, so the token never moves when the row fills in (Trevor, 2026-11-02);
+	 * a longer ability runs on below it.
 	 */
 	.row {
 		width: min(100%, 28rem);
-		min-height: 4.4em;
+		height: 6em;
+		overflow: visible;
 		font-size: 1.1rem;
 		text-align: start;
 	}

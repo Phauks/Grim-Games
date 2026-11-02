@@ -15,7 +15,7 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { gameEnds, suggestedWinner } from '#lib/core/rules/game-end.ts';
+import { gameEnds, starPass, suggestedWinner } from '#lib/core/rules/game-end.ts';
 import { infoPicker, isTruthful } from '#lib/core/rules/night-info.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
@@ -95,6 +95,55 @@ describe('Scarlet Woman', () => {
 				after.characters
 			)!;
 			expect(isTruthful(picker, { seats: chose, yes: true })).toBe(true);
+		});
+	});
+
+	describe('the new Imp after a star pass (https://wiki.bloodontheclocktower.com/Scarlet_Woman#How_to_Run)', () => {
+		// Wiki: "If the Demon dies and there were five or more alive players immediately before the
+		// Demon died, replace the Scarlet Woman token with a spare Imp token, changing that player's
+		// character from the Scarlet Woman into the Imp."
+		// Wiki (https://wiki.bloodontheclocktower.com/Imp#How_to_Run): "If the Imp killed themself at
+		// night, choose an alive Minion and replace their character token with a spare Imp token,
+		// changing their character to the Imp."
+		it('with several living Minions, the Scarlet Woman is the one who becomes the Imp', () => {
+			const s = scenario(['imp', 'poisoner', 'baron', 'scarletwoman', 'chef', 'monk', 'empath'])
+				.newDay()
+				.dies('imp', 'imp');
+			expect(starPass(s.game, s.characters)).toEqual({
+				characterId: 'imp',
+				heirs: [s.seat('scarletwoman'), s.seat('poisoner'), s.seat('baron')],
+				preferred: s.seat('scarletwoman'),
+				preferredBy: 'scarletwoman'
+			});
+		});
+
+		it('five alive just before the Imp died is enough', () => {
+			const s = scenario(['imp', 'scarletwoman', 'baron', 'chef', 'monk'])
+				.newDay()
+				.dies('imp', 'imp');
+			expect(starPass(s.game, s.characters)).toMatchObject({
+				preferred: s.seat('scarletwoman'),
+				preferredBy: 'scarletwoman'
+			});
+		});
+
+		it('four alive just before: any alive Minion, nobody preferred', () => {
+			const s = scenario(['imp', 'scarletwoman', 'baron', 'chef']).newDay().dies('imp', 'imp');
+			expect(starPass(s.game, s.characters)).toEqual({
+				characterId: 'imp',
+				heirs: [s.seat('scarletwoman'), s.seat('baron')]
+			});
+		});
+
+		it('a poisoned Scarlet Woman has no ability, so nobody is preferred', () => {
+			// https://wiki.bloodontheclocktower.com/Glossary: a poisoned player's ability doesn't work.
+			const s = scenario(['imp', 'poisoner', 'scarletwoman', 'chef', 'monk', 'empath'])
+				.poisoned('scarletwoman')
+				.newDay()
+				.dies('imp', 'imp');
+			const pass = starPass(s.game, s.characters);
+			expect(pass?.preferred).toBeUndefined();
+			expect(pass?.heirs).toEqual([s.seat('poisoner'), s.seat('scarletwoman')]);
 		});
 	});
 });

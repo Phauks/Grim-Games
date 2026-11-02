@@ -1724,6 +1724,8 @@ test('Hold to see character, a Bag draw setting, shows the token only while held
 	// The icon is fetched and decoded while the token is still hidden, so the first hold shows
 	// it at once rather than a blank token for a moment (Trevor, 2026-11-01).
 	await expect(hold).toHaveAttribute('data-preloaded', '');
+	// The token keeps its place when the character's row fills in under it (Trevor, 2026-11-02).
+	const before = (await hold.boundingBox())!;
 	const drawnAtOnce = await hold.evaluate(async (el) => {
 		el.dispatchEvent(
 			new PointerEvent('pointerdown', { pointerId: 1, isPrimary: true, bubbles: true })
@@ -1734,6 +1736,8 @@ test('Hold to see character, a Bag draw setting, shows the token only while held
 	});
 	expect(drawnAtOnce).toBe(true);
 	await expect(reveal.getByTestId('reveal-name')).not.toBeEmpty();
+	const held = (await hold.boundingBox())!;
+	expect(Math.abs(held.y + held.height / 2 - (before.y + before.height / 2))).toBeLessThan(1);
 	await hold.dispatchEvent('pointerup', { pointerId: 1, isPrimary: true });
 	await expect(reveal.getByTestId('reveal-name')).toBeEmpty();
 	await expect(reveal.getByRole('button', { name: 'Confirm' })).toBeEnabled();
