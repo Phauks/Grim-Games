@@ -1,5 +1,8 @@
-/** How to write a special rule file, part by part (format-guide.ts). */
-import { RULE_PARTS, SPECIAL_RULE_FORMAT, STACKING_PARTS } from './types.ts';
+/**
+ * The parts that began as a special rule's own, part by part (format-guide.ts). Since
+ * 2026-11-01 any file may set them, a game mode too (Trevor: one format for both).
+ */
+import { SPECIAL_RULE_FORMAT } from './types.ts';
 import {
 	GAME_MODE_REVISION,
 	IDS,
@@ -7,58 +10,7 @@ import {
 	type GuideField,
 	type GuidePart
 } from './guide-fields.ts';
-import { GUIDE_TOP } from './mode-guide.ts';
-
-/**
- * How to write a special rule file (Trevor, 2026-10-18: game modes and special rules are
- * delineated, and both can be added). Same header as a mode, plus `kind`; the parts that add
- * to a game are written as in a mode, and these are the rule's own. Not shown yet: New game's
- * guide shows the game mode guide only.
- * @public
- */
-export const RULE_GUIDE_INTRO = [
-	'A special rule is one JSON object with "kind": "special-rule". A game has one game mode and any number of special rules, so a rule only adds to a game: it can’t change the pool to something other than the script, how characters are dealt, towns, or what happens between games.',
-	`Besides its own parts below, a rule may set these game mode parts, written as in a mode: ${STACKING_PARTS.join(', ')}. A rule’s pool can only be script-plus-hidden.`,
-	'When two chosen rules, or a rule and the mode, set the same one-answer part differently, New game warns and the Storyteller decides. Lists are joined and count changes add up.'
-];
-
-/** The fields of the rule object itself, where they differ from a mode's. */
-export const RULE_GUIDE_TOP: GuideField[] = [
-	{
-		name: 'kind',
-		type: 'text',
-		required: true,
-		about: 'Always special-rule. A file without it is read as a game mode.',
-		values: ['special-rule']
-	},
-	{
-		name: 'format',
-		type: 'number',
-		required: true,
-		about: `Always ${SPECIAL_RULE_FORMAT}. It changes only when old files can no longer be read as they are.`
-	},
-	...GUIDE_TOP.filter((f) => !['format', 'unconfirmed', 'parts'].includes(f.name)),
-	{
-		name: 'unconfirmed',
-		type: 'list of part names',
-		required: false,
-		about: 'Parts no source confirms. Inspect marks them.',
-		values: RULE_PARTS
-	},
-	{
-		name: 'conflictsWith',
-		type: 'object',
-		required: false,
-		about:
-			'{ "modes": [ids], "rules": [ids] }: modes and rules this one can’t sensibly be played with. Choosing both warns on New game.'
-	},
-	{
-		name: 'parts',
-		type: 'object',
-		required: true,
-		about: 'What the rule adds, by part (below and the game mode parts it may set).'
-	}
-];
+import { GUIDE_PARTS } from './mode-guide.ts';
 
 const COUNT_OP: GuideField[] = [
 	{
@@ -281,9 +233,11 @@ export const RULE_GUIDE_PARTS: GuidePart[] = [
 	}
 ];
 
+/** Every part any file can set, in the guide's order. */
+export const FILE_GUIDE_PARTS: GuidePart[] = [...GUIDE_PARTS, ...RULE_GUIDE_PARTS];
+
 /** The least a special rule needs: one line of text. */
 export const RULE_MINIMAL_EXAMPLE = {
-	kind: 'special-rule',
 	format: SPECIAL_RULE_FORMAT,
 	revision: GAME_MODE_REVISION,
 	id: 'house-rule',

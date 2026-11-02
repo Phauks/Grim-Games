@@ -90,6 +90,7 @@ export const friends = {
 	'friends.groups.members': 'Members: {count}',
 	'friends.groups.gamesNow': 'Games now: {count}',
 	'friends.groups.games': 'Games now',
+	'friends.groups.gamesOn': 'Games in your groups',
 	'friends.groups.membersTitle': 'Members',
 	'friends.groups.share': 'Join my group',
 	'friends.groups.qr': 'Group join code',

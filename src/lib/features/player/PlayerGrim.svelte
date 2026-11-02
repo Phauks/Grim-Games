@@ -72,6 +72,8 @@
 	import GenericGuessGrid from './GenericGuessGrid.svelte';
 	import SeatPictureMenu from './SeatPictureMenu.svelte';
 	import SeatAvatarButton from './SeatAvatarButton.svelte';
+	import type { ProfileWords } from '#lib/core/profile/index.ts';
+	import { wordsOf } from '#lib/core/sync/room-look.ts';
 	import FullScreenStage from '#lib/ui/layout/FullScreenStage.svelte';
 	import { fitInDialog } from '#lib/ui/fit-in-dialog.ts';
 
@@ -163,6 +165,15 @@
 		const room = town ? town.roomCode : code;
 		if (hash && room) return roomImagePath(room, hash);
 		return town && !town.roomCode && !display ? roomHost().pictureOf(seat.seatId) : undefined;
+	}
+
+	/** A seat's player's tag-line and details, from wherever its picture comes (2026-11-01). */
+	function wordsOfSeat(seat: PublicSeat): ProfileWords | undefined {
+		const words = (town ? town.profiles : player?.view?.profiles)?.[seat.seatId];
+		if (words) return words;
+		if (!town || town.roomCode || display) return undefined;
+		const member = roomHost().members.find((m) => m.seatId === seat.seatId);
+		return member ? wordsOf(member) : undefined;
 	}
 
 	// The board's own layout, read like a saved one, so a bad one never stops the drawing.
@@ -552,6 +563,7 @@
 		name={nameOf(chosen!)}
 		picture={pictureOf(chosen!)}
 		frame={chosen!.frame}
+		words={wordsOfSeat(chosen!)}
 		friend={friendRoom ? { code: friendRoom, seatId: chosen!.seatId } : undefined}
 	/>{/snippet}
 <BottomSheet

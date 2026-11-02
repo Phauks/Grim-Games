@@ -255,10 +255,10 @@ test('a player in a live game is added from their profile', async ({ browser }) 
 	const profile = ann.page.getByRole('dialog', { name: 'Bob', exact: true });
 	const add = profile.getByTestId('seat-friend');
 	await expect(add).toHaveAttribute('data-state', 'add');
-	await expect(add).toHaveText('Add friend');
+	await expect(add).toHaveAccessibleName('Add friend');
 	await add.tap();
 	await expect(add).toHaveAttribute('data-state', 'requested');
-	await expect(add).toHaveText('Requested');
+	await expect(add).toHaveAccessibleName('Requested');
 	await expect(add).toBeDisabled();
 
 	// Bob's own seat says it is him, and the request waits on his Friends page.
@@ -267,7 +267,7 @@ test('a player in a live game is added from their profile', async ({ browser }) 
 	await bob.page.getByRole('dialog', { name: 'Seat 3 · Bob' }).getByTestId('sheet-avatar').tap();
 	const own = bob.page.getByRole('dialog', { name: 'Bob', exact: true }).getByTestId('seat-friend');
 	await expect(own).toHaveAttribute('data-state', 'self');
-	await expect(own).toHaveText('You');
+	await expect(own).toHaveAccessibleName('You');
 	await bob.page.goto('/friends');
 	await expect(bob.page.getByTestId('friend-incoming')).toContainText(ann.username);
 });
@@ -300,7 +300,7 @@ test('a player adds the Storyteller from Game info', async ({ browser }) => {
 	const profile = bob.page.getByRole('dialog', { name: 'Ann the Storyteller', exact: true });
 	// Her laurel, as a player's profile shows theirs.
 	await expect(profile.locator('svg[data-frame="ring-gold~pulse"]')).toBeAttached();
-	await expect(profile.getByTestId('player-profile-laurel')).not.toContainText('None');
+	await expect(profile).not.toContainText('None');
 	const add = profile.getByTestId('seat-friend');
 	await expect(add).toHaveAttribute('data-state', 'add');
 	await add.tap();
@@ -598,6 +598,13 @@ test('a group by join code shows the games its Storytellers put in it', async ({
 	await expect(game).toContainText(`Storyteller: ${ann.username}`);
 	await game.getByRole('link', { name: 'Join' }).tap();
 	await expect(bob.page).toHaveURL(new RegExp(`/join#${room}$`));
+
+	// Join game lists it under the code too, with the group's name.
+	await bob.page.goto('/join');
+	const listed = bob.page.getByTestId('join-group-games').getByRole('listitem');
+	await expect(listed).toContainText('Board Game Cafe');
+	await listed.getByRole('button', { name: 'Join' }).tap();
+	await expect(bob.page).toHaveURL(new RegExp(`/join/${room}$`));
 
 	// Ann sees the members and removes Bob, whose list then has no group.
 	await ann.page.goto('/friends');

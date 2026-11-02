@@ -100,7 +100,7 @@ export class SeatArranging {
 	}
 
 	/**
-	 * Spread evenly keeps hand moves (Trevor, 2026-10-16): the seating order is first read from
+	 * Distribute keeps hand moves (Trevor, 2026-10-16): the seating order is first read from
 	 * where seats sit around the circle, so seats renumber to match (each move is in History),
 	 * then they are spaced evenly in that order.
 	 */
