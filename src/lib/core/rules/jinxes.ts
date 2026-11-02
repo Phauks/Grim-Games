@@ -10,7 +10,7 @@
  * (`data/jinx-rules.ts`), in effect while both are on the script. A jinx with no such block
  * (a homebrew one) is text, except that its wording may still say only one can be in play.
  */
-import type { JinxRules, RegistersTo } from '#lib/core/data/jinx-rules.ts';
+import type { GivenInstead, JinxRules, RegistersTo } from '#lib/core/data/jinx-rules.ts';
 import type { JinxIndex } from '#lib/core/data/jinxes.ts';
 import { pairKey } from '#lib/core/data/parse.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
@@ -92,6 +92,26 @@ export function registeredTo(
 	};
 }
 
+/**
+ * The partners `changer`'s `changesCharacter` may no longer create, now that the day a jinx
+ * names is over (`notCreatedAfterDay`: the Pit-Hag's and the Hatter's Leviathan, after day 5,
+ * https://wiki.bloodontheclocktower.com/Leviathan#Related_Jinxes). A change is made at night,
+ * after the latest day, so day `n` is over once the game has reached it.
+ */
+export function createdTooLate(
+	game: Pick<Game, 'script' | 'pastDays'>,
+	changer: CharacterId,
+	characters?: RulesLookup
+): CharacterId[] {
+	const day = game.pastDays.length;
+	return ownJinxes(
+		game,
+		changer,
+		(r) => r.notCreatedAfterDay !== undefined && day >= r.notCreatedAfterDay,
+		characters
+	).map((j) => j.partner);
+}
+
 export interface ScriptJinx extends Jinx {
 	/** `official` from TPI's jinxes.json; `script` from a homebrew character's `jinxes`. */
 	source: 'official' | 'script';
@@ -139,6 +159,41 @@ export function barredAbilities(
 ): CharacterId[] {
 	return script.filter(
 		(id) => id !== giver && jinxRulesBetween(giver, id, characters)?.notGiven === true
+	);
+}
+
+/**
+ * What happens instead when `giver`'s `givesAbility` would give the Storyteller `ability`, by
+ * their jinx on this script (`givenInstead`: the Plague Doctor's Spy goes to a Minion, its
+ * Boomdandy makes a player the Boomdandy,
+ * https://wiki.bloodontheclocktower.com/Plague_Doctor#Related_Jinxes). Undefined when the
+ * Storyteller gains it as usual.
+ */
+export function givenInstead(
+	giver: CharacterId,
+	ability: CharacterId,
+	script: readonly CharacterId[],
+	characters?: RulesLookup
+): GivenInstead | undefined {
+	if (giver === ability || !script.includes(giver) || !script.includes(ability)) return undefined;
+	return jinxRulesBetween(giver, ability, characters)?.givenInstead;
+}
+
+/**
+ * The characters on the script whose jinx with `id` says `key`: those `id` may give or
+ * create while in play (`spareToken`: the Boffin's and Pit-Hag's Village Idiot), or whose
+ * player the Storyteller picks when `id` creates them (`storytellerPicksPlayer`: the
+ * Pit-Hag's Damsel).
+ */
+export function jinxedPartners(
+	id: CharacterId,
+	key: 'spareToken' | 'storytellerPicksPlayer' | 'noTurnGood',
+	script: readonly CharacterId[],
+	characters?: RulesLookup
+): CharacterId[] {
+	if (!script.includes(id)) return [];
+	return script.filter(
+		(other) => other !== id && jinxRulesBetween(id, other, characters)?.[key] === true
 	);
 }
 

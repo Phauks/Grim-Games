@@ -34,7 +34,9 @@ import {
 	DAY_GROUPS,
 	guessLimit,
 	extraNominationOpen,
+	nominationsLeftThisGame,
 	nominationsPerDay,
+	storytellerNominates,
 	type DayReminderOverride,
 	type Night,
 	type NightStepOverride
@@ -487,6 +489,18 @@ export function checkNomination(
 	if (game.seats[nominee]?.notInPlay) warn('not-in-play', 'the nominee is not in play yet');
 	const allowed = nominationsPerDay(game, nominator, characters);
 	if (allowed === 0) warn('dead-nominator', 'dead players may not nominate');
+	// The Bishop: only the Storyteller nominates; their nomination is logged as usual.
+	const onlyStoryteller = storytellerNominates(game, characters);
+	if (onlyStoryteller.length > 0) {
+		warn('storyteller-nominates', 'only the Storyteller nominates now', onlyStoryteller);
+	}
+	// The Golem: once per game.
+	const perGame = nominationsLeftThisGame(game, nominator, characters, ignore);
+	if (perGame?.left === 0) {
+		warn('nominated-this-game', 'this player may not nominate again this game', [
+			perGame.characterId
+		]);
+	}
 	// The Butcher's extra nomination after the day's first execution: no once-a-day limits.
 	if (extraNominationOpen(game, nominator, characters, ignore)) return;
 	if (others.filter((e) => e.nominator === nominator).length >= Math.max(allowed, 1)) {
