@@ -236,6 +236,8 @@ export const day = {
 	'day.logStorytellerExecuted': 'The Storyteller was executed',
 	'day.logExiled': '{name} exiled',
 	'day.logExiledDead': '{name} exiled (already dead)',
+	'day.logExiledSurvived': '{name} exiled and does not die',
+	'day.logExiledSavedBy': '{name} exiled and does not die ({character})',
 	'day.logAbility': '{character} ({seat}) used their ability',
 	'day.logAbilityOn.chosen': '{character} ({seat}) used their ability on {on}',
 	'day.logAbilityOn.nominator': '{character} ({seat}) used their ability, nominated by {on}',

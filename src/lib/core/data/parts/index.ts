@@ -4,10 +4,12 @@
  */
 export { actsWhenDead } from './acts-when-dead.ts';
 export { afterDeath } from './after-death.ts';
+export { afterExecution } from './after-execution.ts';
 export { answers } from './answers.ts';
 export { becomes } from './becomes.ts';
 export { believesOtherCharacter } from './believes-other-character.ts';
 export { believesType } from './believes-type.ts';
+export { breaksRules } from './breaks-rules.ts';
 export { carrierIsDemon } from './carrier-is-demon.ts';
 export { changesCharacter } from './changes-character.ts';
 export { choosesLikeDemon } from './chooses-like-demon.ts';
@@ -55,6 +57,7 @@ export { onDeath } from './on-death.ts';
 export { onNominated } from './on-nominated.ts';
 export { onNominating } from './on-nominating.ts';
 export { orHiddenAs } from './or-hidden-as.ts';
+export { passesOn } from './passes-on.ts';
 export { protects } from './protects.ts';
 export { quietStart } from './quiet-start.ts';
 export { redirectsKill } from './redirects-kill.ts';

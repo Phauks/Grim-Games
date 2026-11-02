@@ -2,7 +2,7 @@
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
-	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { seatName } from '#lib/features/game/seat-label.ts';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import ChoiceGroup from '#lib/ui/primitives/ChoiceGroup.svelte';
@@ -62,19 +62,23 @@
 
 <ConfirmDialog bind:open {title} onConfirm={confirm}>
 	{#if demon}<div class="ability">
-			<CharacterRow character={demon} info>
-				{#snippet ability()}<GlossaryText text={demon.ability} names={[demon.name]} />{/snippet}
-			</CharacterRow>
+			<CharacterPiece template="row" character={demon} info>
+				{#snippet abilityText()}<GlossaryText text={demon.ability} names={[demon.name]} />{/snippet}
+			</CharacterPiece>
 		</div>{/if}
 	{#if reason && reasonSeat}<div class="ability reason">
-			<CharacterRow
+			<CharacterPiece
+				template="row"
 				character={reason}
 				alignment={reasonSeat.alignment}
 				playerName={seatName(game, preferred!)}
 				info
 			>
-				{#snippet ability()}<GlossaryText text={reason.ability} names={[reason.name]} />{/snippet}
-			</CharacterRow>
+				{#snippet abilityText()}<GlossaryText
+						text={reason.ability}
+						names={[reason.name]}
+					/>{/snippet}
+			</CharacterPiece>
 		</div>{/if}
 	<ChoiceGroup
 		label={choiceLabel}

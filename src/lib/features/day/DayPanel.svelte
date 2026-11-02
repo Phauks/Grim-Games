@@ -68,11 +68,12 @@
 		/** Back to town on the timer (the grimoire's, Trevor 2026-11-01); none in the spike. */
 		town?: { can: boolean; called: boolean };
 	}
-	// No Undo or History here (Trevor, 2026-10-16): each day action is one entry in the
-	// game's History, in the grimoire's menu.
+
+	// No Undo or History here (Trevor, 2026-10-16): each day action is one History entry.
 	let { game, assistance, onOpenNight, onSavant, onExecute, town }: Props = $props();
 	// Every badge on the day screen names the script's own characters, homebrew included.
 	provideCharacters(() => game.characters);
+
 	const g = $derived(game.game);
 	const seats = $derived(g.seating.map((id) => g.seats[id]));
 	/**
@@ -91,6 +92,7 @@
 	 */
 	const inPlayJinxes = $derived(gameJinxes(g, officialData.current));
 	const jinxesOf = (id: CharacterId) => jinxesOnStep(inPlayJinxes.jinxes, id, inPlayJinxes.inPlay);
+
 	// ── Confirming a change: what it is now, and what it will be ──
 	// TPI's reminder token text (game data, not interface text).
 	const NO_ABILITY = 'No Ability';
@@ -277,14 +279,12 @@
 		noteTarget = target;
 		noteOpen = true;
 	}
-
 	/** Votes for the first nominee, from who is alive now (core `blockThreshold`). */
 	const block = $derived(blockThreshold(g, game.characters));
 	/** Section headers stick just under the toolbar (Trevor, 2026-10-17). */
 	let toolbarSize = $state<ResizeObserverSize[]>();
 	// The exact (fractional) height: a rounded one leaves a sliver between toolbar and header.
 	const toolbarHeight = $derived(toolbarSize?.[0]?.blockSize ?? 0);
-
 	// ── A player's day button, on their ability row ──
 	/** The claim a character's player makes in town, from its rules block (L56). */
 	const claimOf = (characterId: CharacterId | undefined) =>
