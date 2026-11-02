@@ -68,7 +68,7 @@ describe('Toymaker', () => {
 			expect(skipped.game.seats[skipped.seat('imp')].reminders).toEqual([]);
 			// The Imp's reminder is off, so it may attack tonight with four alive (M15a).
 			const night3 = skipped.dies('mayor', 'execution');
-			expect(noAttackState(night3.game, night3.seat('imp'), night3.characters).finalNight).toBe(
+			expect(noAttackState(night3.game, night3.seat('imp'), night3.characters)?.finalNight).toBe(
 				false
 			);
 		});
@@ -83,7 +83,7 @@ describe('Toymaker', () => {
 				.dies('soldier', 'execution');
 			expect(s.game.seating.filter((id) => !s.game.seats[id].dead)).toHaveLength(3);
 			// The reminder is still on the Imp with three alive: the final night, no attack (M15a).
-			expect(noAttackState(s.game, s.seat('imp'), s.characters).finalNight).toBe(true);
+			expect(noAttackState(s.game, s.seat('imp'), s.characters)?.finalNight).toBe(true);
 		});
 	});
 
