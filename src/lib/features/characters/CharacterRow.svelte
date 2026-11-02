@@ -6,7 +6,7 @@
 		type Character,
 		type PlayerName
 	} from '#lib/core/data/index.ts';
-	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
+	import PlayerHalf from './PlayerHalf.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import CharacterDialog from './CharacterDialog.svelte';
@@ -39,7 +39,7 @@
 		info?: boolean | ((character: Character) => void);
 		/** On the band, at its end; never adds a line. */
 		note?: string;
-		/** The seat's player, a PlayerBadge after the name as character badges show it. */
+		/** The seat's player, the half that ends the band, as the badge's (PlayerHalf). */
 		playerName?: PlayerName;
 		/** Keep the note's place even when there is none, so rows line up. */
 		withNote?: boolean;
@@ -143,7 +143,6 @@
 		{#if !character.edition}<span class="custom" data-testid="custom-tag"
 				>{t('characters.custom')}</span
 			>{/if}
-		{#if playerName}<span class="player"><PlayerBadge name={playerName} /></span>{/if}
 		{#if afterName}{@render afterName()}{/if}
 		{#if withNote || note}<span class="note">{note ?? ''}</span>{/if}
 		{#if marks || withCheck}<span class="marks" aria-hidden="true"
@@ -151,6 +150,7 @@
 						>{#if checked}<Icon name="check" />{/if}</span
 					>{/if}</span
 			>{/if}
+		{#if playerName}<PlayerHalf name={playerName} {team} />{/if}
 	</span>
 	{#if showAbility}<span class="ring-ability">
 			{#if ability}{@render ability()}{:else}{character.ability}{/if}
@@ -209,11 +209,6 @@
 	/>{/if}
 
 <style>
-	/* The player's badge, as in CharacterBadge; a long name ends in "…" inside it. */
-	.player {
-		display: inline-flex;
-		min-width: 0;
-	}
 	/*
 	 * A script's own (homebrew) character, tagged after its name (Trevor, 2026-11-02): an
 	 * outlined pill in the band's own text colour, so it suits every team's band.
@@ -374,6 +369,18 @@
 	.band .marks {
 		height: auto;
 		margin-left: auto;
+	}
+	/*
+	 * The seat's player ends the band, the same half as the badge's, full height and flush
+	 * with its round end (Trevor, 2026-11-02: one part for both).
+	 */
+	.band > :global(.player-half) {
+		margin: 0 calc(-1 * var(--space-3)) 0 auto;
+		font-size: 1em;
+	}
+	.band .note ~ :global(.player-half),
+	.band .marks ~ :global(.player-half) {
+		margin-left: 0;
 	}
 	/* After a note the marks follow it at the band's end. */
 	.band .note + .marks {
