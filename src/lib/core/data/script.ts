@@ -467,7 +467,12 @@ function loadHomebrew(
 		fixed.ability = '';
 	} else fixed.ability = ability;
 
-	for (const key of ['edition', 'flavor', 'firstNightReminder', 'otherNightReminder'] as const) {
+	// A script's own character is never in an official edition. Scripts in the wild name their
+	// homebrew set here ("edition": "elvencourt"), but the app reads `edition` as "an official
+	// character whose icons ship with the app", so keeping it would ask for icons that don't
+	// exist instead of the character's own images.
+	delete fixed.edition;
+	for (const key of ['flavor', 'firstNightReminder', 'otherNightReminder'] as const) {
 		if (raw[key] === undefined || raw[key] === null) {
 			delete fixed[key];
 			continue;
@@ -728,7 +733,10 @@ export function fromScript(
 	const missing: CharacterId[] = [];
 	for (const entry of script.entries) {
 		if (entry.kind === 'custom') {
-			characters.push(entry.character);
+			// Games saved before homebrew dropped `edition` (see loadHomebrew) still carry it.
+			const character = { ...entry.character };
+			delete character.edition;
+			characters.push(character);
 			homebrew.push(entry.character.id);
 			continue;
 		}

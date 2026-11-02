@@ -257,6 +257,49 @@ test('a script file is saved straight away when nothing needs checking', async (
 	await expect(page.getByRole('status').filter({ hasText: 'Saved Storm Front' })).toHaveCount(0);
 });
 
+test("a homebrew character shows its own image, and the generic token when that won't load", async ({
+	page
+}) => {
+	// Elven Court (GrayPockets) names its homebrew set as each character's "edition", which
+	// once made the app look for icons it doesn't ship and show nothing at all.
+	const own = 'https://art.example/brownie_g.png';
+	const dead = 'https://art.example/missing.png';
+	const pixel = Buffer.from(
+		'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+		'base64'
+	);
+	await page.route(own, (route) => route.fulfill({ contentType: 'image/png', body: pixel }));
+	await page.route(dead, (route) => route.fulfill({ status: 404 }));
+	const court = [
+		{ id: '_meta', name: 'Elf Hall' },
+		{ ...(homebrew[3] as object), edition: 'elfhall', image: [dead] },
+		{
+			id: 'brownie',
+			name: 'Brownie',
+			team: 'townsfolk',
+			edition: 'elfhall',
+			ability: 'You start knowing a player.',
+			image: [own]
+		},
+		'imp'
+	];
+	await page.goto('/library');
+	await page.getByLabel('Script file').setInputFiles({
+		name: 'elf-hall.json',
+		mimeType: 'application/json',
+		buffer: Buffer.from(JSON.stringify(court))
+	});
+	const icon = (id: string) => page.locator(`[data-character="${id}"] .ring img`).first();
+	await expect(icon('brownie')).toHaveAttribute('src', own);
+	await expect(icon('stormwarden')).toHaveAttribute(
+		'src',
+		/\/data\/icons\/generic\/townsfolk_g\.webp$/
+	);
+	await expect
+		.poll(() => icon('stormwarden').evaluate((img: HTMLImageElement) => img.naturalWidth))
+		.toBeGreaterThan(0);
+});
+
 test('a BotC Scripts number is saved through our Worker', async ({ page }) => {
 	await page.route('**/api/botcscripts/script/42', (route) =>
 		route.fulfill({
