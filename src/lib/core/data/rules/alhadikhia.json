@@ -56,5 +56,10 @@
 				]
 			}
 		]
+	},
+	"jinxes": {
+		"princess": {
+			"noKill": "token"
+		}
 	}
 }

@@ -135,6 +135,13 @@ export class FriendBook extends DurableObject {
 			-- Groups this account is in (plan F6), by join code, and when it started each of its own.
 			CREATE TABLE IF NOT EXISTS grouped (code TEXT PRIMARY KEY, joined_at INTEGER NOT NULL);
 			CREATE TABLE IF NOT EXISTS group_started (at INTEGER NOT NULL);
+			-- Games this account finished in a live room (plan F11), and the last one's id, so a
+			-- game counts once.
+			CREATE TABLE IF NOT EXISTS stats (
+				id INTEGER PRIMARY KEY CHECK (id = 1),
+				games INTEGER NOT NULL,
+				last_game TEXT NOT NULL
+			);
 		`);
 	}
 
@@ -405,6 +412,13 @@ export class FriendBook extends DurableObject {
 	 * counts once per person. Someone this account blocked isn't kept; the newest are.
 	 */
 	async played(game: string, others: GamePlayer[], now: number): Promise<void> {
+		this.sql.exec(
+			`INSERT INTO stats (id, games, last_game) VALUES (1, 1, ?)
+			ON CONFLICT (id) DO UPDATE SET
+				games = games + (CASE WHEN last_game = excluded.last_game THEN 0 ELSE 1 END),
+				last_game = excluded.last_game`,
+			game
+		);
 		for (const other of others) {
 			if (this.relation(other.id).blocked) continue;
 			this.sql.exec(
@@ -422,6 +436,14 @@ export class FriendBook extends DurableObject {
 			'DELETE FROM recent WHERE id NOT IN (SELECT id FROM recent ORDER BY last_at DESC LIMIT ?)',
 			MAX_RECENT
 		);
+	}
+
+	/** How many games this account finished in a live room (plan F11). */
+	async gamesPlayed(): Promise<number> {
+		const row = this.sql
+			.exec<{ games: number }>('SELECT games FROM stats WHERE id = 1')
+			.toArray()[0];
+		return row?.games ?? 0;
 	}
 
 	/** People this account finished a game with, the latest first. */

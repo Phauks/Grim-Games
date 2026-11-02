@@ -10,8 +10,17 @@
  * of the two may be in play). Paraphrase, never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
-import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
+import { findJinx, jinxesAmong, type Script } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import type { Command } from '#lib/core/engine/index.ts';
+import { castWith } from '#lib/core/model/fixtures.test-support.ts';
+import { gameEnds } from '#lib/core/rules/game-end.ts';
+import { ownJinxRules } from '#lib/core/rules/jinxes.ts';
+
+const scriptOf = (ids: string[]): Script => ({
+	meta: { name: 'Jinxed' },
+	entries: ids.map((id) => ({ kind: 'official' as const, id }))
+});
 
 describe('Grandmother + Riot jinx', () => {
 	const data = committedGameData();
@@ -30,5 +39,42 @@ describe('Grandmother + Riot jinx', () => {
 		expect(jinxesAmong(data.jinxes, ['riot'])).not.toContain(jinx);
 	});
 
-	it.todo('enforces the rule the jinx imposes');
+	// Both pages' Related Jinxes: while Riot is in play, the Grandchild dying by execution
+	// wins it for evil. Read from the Grandmother's Grandchild token and how they died.
+	describe('evil wins when the Grandchild is executed', () => {
+		const ids = ['riot', 'grandmother', 'chef', 'empath', 'poisoner', 'washerwoman', 'imp'];
+		const cast = castWith({ script: scriptOf(ids) });
+		const grandchild = (s: string[]): Command => ({
+			type: 'AddReminder',
+			seatId: s[2],
+			reminder: { characterId: 'grandmother', label: 'Grandchild' }
+		});
+		const execute = (s: string[]): Command => ({ type: 'Execute', seatId: s[2] });
+		const players = ['riot', 'grandmother', 'chef', 'empath', 'poisoner', 'washerwoman', 'butler'];
+
+		it("is data in the Riot's rules", () => {
+			expect(ownJinxRules({ script: scriptOf(ids) }, 'riot', 'grandmother')).toEqual({
+				endsGame: { kind: 'marked-executed', token: 'Grandchild', winner: 'evil' }
+			});
+		});
+
+		it('ends the game for evil', () => {
+			const { game, ctx, seats } = cast(players, grandchild, { type: 'NewDay' }, execute);
+			expect(
+				gameEnds(game, ctx.characters).map((e) => [e.rule, e.winner, e.jinxedWith, e.seats])
+			).toEqual([['marked-executed', 'evil', 'grandmother', [seats[2]]]]);
+		});
+
+		it('does not when the Grandchild died another way, or Riot is not in play', () => {
+			const killed = cast(players, grandchild, (s: string[]): Command => ({
+				type: 'SetDead',
+				seatId: s[2],
+				dead: true,
+				cause: 'riot'
+			}));
+			expect(gameEnds(killed.game, killed.ctx.characters)).toEqual([]);
+			const other = cast(['imp', ...players.slice(1)], grandchild, { type: 'NewDay' }, execute);
+			expect(gameEnds(other.game, other.ctx.characters)).toEqual([]);
+		});
+	});
 });
