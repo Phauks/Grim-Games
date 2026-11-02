@@ -62,7 +62,7 @@ describe('Zombuul', () => {
 			);
 			const later = executed.newDay().dies('chef').newDay().dies('empath');
 			expect(gameEnds(later.game, later.characters)).toEqual([]);
-			// The Zombuul died today, so it does not wake tonight.
+			// Waits on the engine (M15k): the Zombuul's step has no "only if nobody died today" condition.
 			expect(
 				wakeConditionMet(
 					executed.game,

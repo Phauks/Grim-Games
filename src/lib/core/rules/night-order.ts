@@ -119,8 +119,8 @@ export interface NightStep {
 	/** Set on a step for an ability the Storyteller holds, by `withStorytellerSteps`. */
 	storytellerAbility?: HeldAbility;
 	/**
-	 * On the first step, before Dusk, when Travellers have no alignment yet: their seats
-	 * (`withTravellerAlignmentStep`).
+	 * On the step for Travellers with no alignment yet (`withTravellerAlignmentStep`) or not
+	 * in play (`withTravellerJoinsStep`): their seats.
 	 */
 	travellers?: string[];
 	/**

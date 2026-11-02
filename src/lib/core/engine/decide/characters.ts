@@ -70,6 +70,10 @@ export const CHARACTERS_DECIDERS: Deciders<
 		};
 		if (alignment !== undefined) assigned.alignment = alignment;
 		if (command.by !== undefined) assigned.by = characterOf(ctx, command.by).id;
+		// Only a Traveller sits out (Trevor, 2026-11-02): any other character comes into play.
+		if (seat.notInPlay && character.type !== 'traveller') {
+			return [assigned, { type: 'SeatInPlaySet', seatId: seat.seatId, inPlay: true }];
+		}
 		return [assigned];
 	},
 

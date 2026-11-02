@@ -90,7 +90,8 @@ describe('Philosopher', () => {
 		it('Example 2: Philosopher becomes Clockmaker on night three', () => {
 			// Wiki: "During the third night, the Philosopher chooses to gain the Clockmaker's ability.
 			// That night, they learn the distance from the Demon to their nearest Minion."
-			// A first-night-only character gained later gets a step with its first-night text.
+			// Waits on the engine (M15k): a Philosopher swapped on a later night for a first-night-only
+			// character gets no step that night, so isn't woken for its information.
 			const s = swapped(
 				scenario(['philosopher', 'nodashii', 'chef', 'witch', 'empath']).newDay().newDay(),
 				'clockmaker'
