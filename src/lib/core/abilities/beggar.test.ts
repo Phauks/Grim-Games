@@ -15,7 +15,9 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { engineGap, scenario } from '#lib/core/testing/scenario.ts';
+import { voteHints } from '#lib/core/rules/vote-weights.ts';
+import { giveVoteToken, latest, voteWarnings, votes } from '#lib/core/testing/votes.ts';
+import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Beggar', () => {
 	const character = committedCharacter('beggar');
@@ -47,32 +49,42 @@ describe('Beggar', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Beggar#Examples)', () => {
+		const BEGGAR_CAST = ['beggar', 'monk', 'recluse', 'chef', 'empath', 'imp', 'poisoner'];
+		const beggarHint = (s: Scenario) =>
+			voteHints(s.game, s.characters).find((h) => h.seatId === s.seat('beggar'))!;
+
 		// Vote tokens (the Beggar votes only with tokens given to them) wait on voting in the engine.
-		it.fails('Example 1: Evil Beggar falsely calls Monk evil', () => {
+		it('Example 1: Evil Beggar falsely calls Monk evil', () => {
 			// Wiki: "The Beggar cannot vote. On the fourth day, the Monk gives her vote token to the
 			// Beggar. The Beggar may now vote (once), and learns that the player is good. The Beggar is
 			// evil and tells the group that the Monk player is evil."
-			scenario(['beggar', 'monk', 'imp', 'chef', 'poisoner']).do((at) => ({
-				type: 'SetAlignment',
-				seatId: at.seat('beggar'),
-				alignment: 'evil'
-			}));
-			engineGap(
-				'M9',
-				'the Beggar may vote only with a vote token a player gave them, and learns the giver is good'
-			);
+			const s = scenario(BEGGAR_CAST).dies('monk', 'imp').nominate('chef', 'imp');
+			expect(voteWarnings(s, 'beggar')).toEqual(['no-vote-token']);
+			const given = s.do(giveVoteToken('monk', 'beggar'));
+			expect(given.game.seats[s.seat('monk')].ghostVoteUsed).toBe(true);
+			expect(beggarHint(given).needsToken?.tokens).toBe(1);
+			const voted = votes(given, 'beggar');
+			expect(beggarHint(voted).needsToken?.tokens).toBe(0);
+			// Once used, the token is gone: on the next nomination the Beggar has none.
+			const next = voted.nominate('empath', 'poisoner');
+			expect(voteWarnings(next, 'beggar')).toEqual(['no-vote-token']);
 		});
-		it.fails('Example 2: Beggar dies, losing all but one vote token', () => {
+		it('Example 2: Beggar dies, losing all but one vote token', () => {
 			// Wiki: "The good Beggar has three vote tokens. The Recluse gives the Beggar their vote token,
 			// and the Beggar learns that they are evil. That day, the Beggar dies, and loses all their
 			// vote tokens except for one."
-			scenario(['beggar', 'recluse', 'imp', 'chef', 'poisoner'])
-				.do((at) => ({ type: 'SetAlignment', seatId: at.seat('beggar'), alignment: 'good' }))
-				.dies('beggar');
-			engineGap(
-				'M9',
-				"a dead Beggar keeps one of the vote tokens given to them; a Recluse's gift may show as evil"
-			);
+			let s = scenario(BEGGAR_CAST);
+			for (const dead of ['monk', 'chef', 'empath', 'recluse']) s = s.dies(dead, 'imp');
+			for (const dead of ['monk', 'chef', 'empath', 'recluse'])
+				s = s.do(giveVoteToken(dead, 'beggar'));
+			expect(beggarHint(s).needsToken?.tokens).toBe(4);
+			const beggarDead = s.dies('beggar', 'imp');
+			expect(beggarHint(beggarDead).needsToken).toBeUndefined();
+			expect(beggarHint(beggarDead).ghostVote).toBe('unused');
+			// Their one vote spends their ghost vote, not a given token.
+			const voted = votes(beggarDead.nominate('imp', 'poisoner'), 'beggar');
+			expect(voted.game.seats[s.seat('beggar')].ghostVoteUsed).toBe(true);
+			expect(latest(voted).votes?.tokens).toBeUndefined();
 		});
 	});
 });

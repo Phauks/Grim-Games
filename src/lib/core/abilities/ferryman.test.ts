@@ -14,9 +14,10 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { ghostVotesLeft } from '#lib/core/rules/voting.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { blockThreshold } from '#lib/core/rules/voting.ts';
+import { ghostVotesRestored } from '#lib/core/rules/voting-table.ts';
 
 describe('Ferryman', () => {
 	const character = committedCharacter('ferryman');
@@ -48,54 +49,64 @@ describe('Ferryman', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Ferryman#Examples)', () => {
-		it.fails('Example 1: Forgetful dead players get votes back', () => {
+		it('Example 1: Forgetful dead players get votes back', () => {
 			// Wiki: "Most of the group is new. Two players, Amy and Doug, forgot they were dead in the
 			// excitement of voting. The Storyteller puts the Ferryman in play. Later in the game, when
 			// there are three players left alive, the Storyteller declares that it is the final day. Amy
 			// and Doug regain their vote tokens."
-			// Waits on the engine (M9): the Ferryman in play on the final day doesn't give back spent ghost
-			// votes.
-			const spent = scenario(['chef', 'empath', 'monk', 'soldier', 'imp', 'poisoner'])
-				.dies('chef')
-				.dies('soldier')
-				.do(
-					(at) => ({ type: 'SpendGhostVote', seatId: at.seat('chef') }),
-					(at) => ({ type: 'SpendGhostVote', seatId: at.seat('soldier') })
-				)
-				.rule('ferryman')
-				.dies('empath', 'imp');
-			expect(spent.game.seating.filter((id) => !spent.game.seats[id].dead)).toHaveLength(3);
-			expect(ghostVotesLeft(spent.game, spent.characters)).toBe(3);
+			let s = scenario(['chef', 'empath', 'monk', 'soldier', 'mayor', 'imp']);
+			for (const dead of ['chef', 'empath', 'monk'] as const)
+				s = s.dies(dead, 'imp').do((at) => ({ type: 'SpendGhostVote', seatId: at.seat(dead) }));
+			s = s.do((at) => ({ type: 'RestoreGhostVote', seatId: at.seat('monk') }));
+			// Amy (the Chef) and Doug (the Empath) forgot they were dead and voted.
+			const ferried = s.rule('ferryman');
+			expect(blockThreshold(ferried.game).alive).toBe(3);
+			expect(ghostVotesRestored(ferried.game, ferried.characters, true)).toEqual([
+				s.seat('chef'),
+				s.seat('empath')
+			]);
 		});
-		it.fails('Example 2: Ten used ghost votes restored for the finale', () => {
+		it('Example 2: Ten used ghost votes restored for the finale', () => {
 			// Wiki: "It is the start of the final day. 17 players are dead and three players are alive. 10
 			// dead players have used their vote tokens. In order to create a more fun and engaging final
 			// day, the Storyteller adds the Ferryman and those dead players regain their vote tokens.
 			// After a riotously entertaining final day, the Storyteller is celebrated for maximizing the
 			// players’ enjoyment."
-			// Waits on the engine (M9): as in Example 1. Twelve seats at most here: nine dead, six of them
-			// with their vote spent, and three alive.
 			const cast = [
-				'washerwoman',
-				'librarian',
-				'investigator',
 				'chef',
 				'empath',
-				'fortuneteller',
-				'undertaker',
 				'monk',
-				'ravenkeeper',
 				'soldier',
+				'mayor',
+				'slayer',
+				'virgin',
+				'ravenkeeper',
+				'undertaker',
+				'fortuneteller',
+				'investigator',
+				'librarian',
+				'washerwoman',
+				'butler',
+				'recluse',
+				'saint',
+				'drunk',
 				'poisoner',
+				'spy',
 				'imp'
 			];
 			let s = scenario(cast);
-			for (const dead of cast.slice(0, 9)) s = s.dies(dead);
-			for (const spent of cast.slice(0, 6))
-				s = s.do((at) => ({ type: 'SpendGhostVote', seatId: at.seat(spent) }));
-			expect(ghostVotesLeft(s.game, s.characters)).toBe(3);
-			const finale = s.rule('ferryman');
-			expect(ghostVotesLeft(finale.game, finale.characters)).toBe(9);
+			cast.slice(0, 17).forEach((dead, i) => {
+				s = s.dies(dead, 'imp');
+				if (i < 10) s = s.do((at) => ({ type: 'SpendGhostVote', seatId: at.seat(dead) }));
+			});
+			const ferried = s.rule('ferryman');
+			const back = ghostVotesRestored(ferried.game, ferried.characters, true);
+			expect(back).toEqual(cast.slice(0, 10).map((id) => s.seat(id)));
+			const after = back.reduce(
+				(at, seatId) => at.do({ type: 'RestoreGhostVote', seatId }),
+				ferried
+			);
+			expect(ghostVotesRestored(after.game, after.characters, true)).toEqual([]);
 		});
 	});
 });
