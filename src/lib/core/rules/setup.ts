@@ -183,6 +183,7 @@ export function analyseSetup(input: SetupInput): SetupAnalysis {
 	const also: Partial<Record<SeatedType, number[]>> = {};
 	const applyOp = (op: CountOp) => {
 		if (op.kind === 'delta') {
+			if (op.minUsual !== undefined && split.counts[op.type] < op.minUsual) return;
 			deltas[op.type].push([...op.values]);
 			if (op.also) (also[op.type] ??= []).push(...op.also);
 		} else if (op.kind === 'any') free.add(op.type);
