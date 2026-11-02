@@ -65,5 +65,16 @@
 			}
 		}
 	},
-	"marksChoice": ["Poisoned"]
+	"marksChoice": ["Poisoned"],
+	"jinxes": {
+		"damsel": {
+			"impairsPartner": "poisoned"
+		},
+		"magician": {
+			"grimoireHides": ["partner", "demon"]
+		},
+		"poppygrower": {
+			"noGrimoire": true
+		}
+	}
 }

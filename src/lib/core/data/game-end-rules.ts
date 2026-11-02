@@ -38,7 +38,10 @@ import {
  * - `dead-without-demon`: there is no Demon and every player of it is dead, so `winner` wins
  *   (the Summoner, who can no longer summon one);
  * - `extra-day`: the Demon's execution would end the game, so play one more day; then whoever
- *   is executed loses for their team, and nobody executed means good wins (the Mastermind).
+ *   is executed loses for their team, and nobody executed means good wins (the Mastermind);
+ * - `cult-joined`: its player's vote passed today (`dayUse.vote`, marked when its use is), so
+ *   its player's team wins (the Cult Leader's cult,
+ *   https://wiki.bloodontheclocktower.com/Cult_Leader).
  */
 const END_KINDS = [
 	'executed-loses',
@@ -49,7 +52,8 @@ const END_KINDS = [
 	'survives-day',
 	'nominated-marked-executed',
 	'dead-without-demon',
-	'extra-day'
+	'extra-day',
+	'cult-joined'
 ] as const;
 export type EndKind = (typeof END_KINDS)[number];
 export interface EndsGame {
@@ -111,7 +115,8 @@ const END_NEEDS: Readonly<Record<EndKind, readonly (keyof EndsGame)[]>> = {
 	'survives-day': ['day', 'winner'],
 	'nominated-marked-executed': ['token'],
 	'dead-without-demon': ['winner'],
-	'extra-day': []
+	'extra-day': [],
+	'cult-joined': []
 };
 const HOLD_NEEDS: Readonly<Record<HoldKind, readonly (keyof HoldsGame)[]>> = {
 	'marked-alive': ['token'],

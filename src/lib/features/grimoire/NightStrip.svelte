@@ -13,6 +13,9 @@
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { seatName, stepHolders, stepName } from './night-steps.ts';
 	import { setTermsPlain } from '#lib/features/glossary/term-handler.ts';
+	import StepInfoTokens from '#lib/features/info-tokens/StepInfoTokens.svelte';
+	import type { InfoToken } from '#lib/core/data/info-tokens.ts';
+	import type { FilledInfoToken } from '#lib/core/rules/info-token-characters.ts';
 
 	/**
 	 * Walking through the night (Trevor, 2026-10-16): the current step under the board, with
@@ -38,6 +41,11 @@
 		emptySeatBy?: string;
 		/** The player a special rule says the Demon attacks tonight (Trained Killer), and the rule. */
 		attack?: { seat: string; by: string };
+		/**
+		 * One of the step's info tokens was tapped in the strip's row: show it, filled in as the
+		 * step view would, without opening the step (Trevor, 2026-11-02).
+		 */
+		onCard?: (token: InfoToken, filled?: FilledInfoToken) => void;
 	}
 
 	// The step is one button that opens it; its words are explained in the step it opens.
@@ -53,7 +61,8 @@
 		onPastEnd,
 		asleepBy,
 		emptySeatBy,
-		attack
+		attack,
+		onCard
 	}: Props = $props();
 
 	const game = $derived(grimoire.game);
@@ -95,43 +104,60 @@
 		<span class="icon">
 			<StepIcon {step} size={44} details />
 		</span>
-		<button type="button" class="step" class:ticked onclick={() => onOpen(step)}>
-			<span class="body">
-				<!-- The character on the first line, its player on the second, and the count at the
+		<div class="middle">
+			<button type="button" class="step" class:ticked onclick={() => onOpen(step)}>
+				<span class="body">
+					<!-- The character on the first line, its player on the second, and the count at the
 				     right of the top row, before ⋯ and X (Trevor, 2026-10-20). -->
-				<span class="name">
-					<strong>{stepName(step)}</strong>
-					<span class="count"><CountBadge count={index + 1} total={steps.length} /></span>
-				</span>
-				{#if holders.length > 0}<span class="who"
-						>{#each holders as seatId, i (seatId)}{i > 0 ? ', ' : ''}<PlayerBadge
-								name={seatName(game, seatId)}
-							/>{/each}</span
-					>{/if}
-				<!-- Inside the strip's fixed height, which scrolls, so nothing outside moves. -->
-				{#if asleepBy}<span class="asleep" data-testid="step-asleep"
-						>Poisoned: doesn’t wake ({asleepBy})</span
-					>{/if}
-				{#if emptySeatBy}<span class="empty-seat" data-testid="step-empty-seat"
-						>No player: make its choices ({emptySeatBy})</span
-					>{/if}
-				{#if attack}<span class="attack" data-testid="step-attack"
-						>Attacks {attack.seat} ({attack.by})</span
-					>{/if}
-				<!-- What to do comes before any information (Trevor, 2026-10-20). -->
-				<span class="text">
-					{#if step.reminder}
-						{#if step.character}
-							<NightText text={step.reminder} character={step.character} {night} />
-						{:else}
-							{step.reminder}
+					<span class="name">
+						<strong>{stepName(step)}</strong>
+						<span class="count"><CountBadge count={index + 1} total={steps.length} /></span>
+					</span>
+					{#if holders.length > 0}<span class="who"
+							>{#each holders as seatId, i (seatId)}{i > 0 ? ', ' : ''}<PlayerBadge
+									name={seatName(game, seatId)}
+								/>{/each}</span
+						>{/if}
+					<!-- Inside the strip's fixed height, which scrolls, so nothing outside moves. -->
+					{#if asleepBy}<span class="asleep" data-testid="step-asleep"
+							>Poisoned: doesn’t wake ({asleepBy})</span
+						>{/if}
+					{#if emptySeatBy}<span class="empty-seat" data-testid="step-empty-seat"
+							>No player: make its choices ({emptySeatBy})</span
+						>{/if}
+					{#if attack}<span class="attack" data-testid="step-attack"
+							>Attacks {attack.seat} ({attack.by})</span
+						>{/if}
+					<!-- What to do comes before any information (Trevor, 2026-10-20). -->
+					<span class="text">
+						{#if step.reminder}
+							{#if step.character}
+								<NightText text={step.reminder} character={step.character} {night} />
+							{:else}
+								{step.reminder}
+							{/if}
 						{/if}
-					{/if}
+					</span>
+					<NightAlerts {grimoire} {step} compact />
+					<NightSuggested {grimoire} {step} compact />
 				</span>
-				<NightAlerts {grimoire} {step} compact />
-				<NightSuggested {grimoire} {step} compact />
-			</span>
-		</button>
+			</button>
+			<!-- The step's info tokens, one tap from the board; nothing for a step with none
+		     (Trevor, 2026-11-02: areas show only when they have something to show). Inside the
+		     strip's fixed height, so the board never moves. -->
+			{#if step.character && onCard}
+				<div class="cards" class:ticked>
+					<StepInfoTokens
+						compact
+						text={step.reminder}
+						character={step.character}
+						characters={grimoire.open.characters}
+						prepValues={game.prepValues}
+						onchoose={onCard}
+					/>
+				</div>
+			{/if}
+		</div>
 	{:else}
 		<span class="step none">None</span>
 	{/if}
@@ -190,6 +216,28 @@
 	/* Clear of the count and the buttons in the corner. */
 	.name {
 		padding-inline-end: calc(2 * var(--tap-target) + 4.5rem);
+	}
+	/* The step's words over its row of cards, between Previous and Next. */
+	.middle {
+		flex: 1;
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
+	}
+	.middle .step {
+		min-height: 0;
+	}
+	.cards {
+		flex: none;
+		min-width: 0;
+		padding: var(--space-1) var(--space-1) 0;
+		border-top: 1px solid var(--border);
+	}
+	.cards:empty {
+		display: none;
+	}
+	.cards.ticked {
+		opacity: 0.6;
 	}
 	.step {
 		flex: 1;

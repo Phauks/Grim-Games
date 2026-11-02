@@ -146,6 +146,7 @@ import ph_lock_simple_thin from '~icons/ph/lock-simple-thin';
 import ph_magnifying_glass_thin from '~icons/ph/magnifying-glass-thin';
 import ph_mask_sad_thin from '~icons/ph/mask-sad-thin';
 import ph_megaphone_thin from '~icons/ph/megaphone-thin';
+import ph_megaphone_simple_thin from '~icons/ph/megaphone-simple-thin';
 import ph_minus_thin from '~icons/ph/minus-thin';
 import ph_minus_circle_thin from '~icons/ph/minus-circle-thin';
 import ph_monitor_thin from '~icons/ph/monitor-thin';
@@ -387,6 +388,7 @@ const icons: IconMap = {
 	'ph:magnifying-glass-thin': ph_magnifying_glass_thin,
 	'ph:mask-sad-thin': ph_mask_sad_thin,
 	'ph:megaphone-thin': ph_megaphone_thin,
+	'ph:megaphone-simple-thin': ph_megaphone_simple_thin,
 	'ph:minus-thin': ph_minus_thin,
 	'ph:minus-circle-thin': ph_minus_circle_thin,
 	'ph:monitor-thin': ph_monitor_thin,

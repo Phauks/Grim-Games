@@ -37,12 +37,14 @@
 		ended: boolean;
 		onHistory: () => void;
 		onBluffs: () => void;
-		/** Back to town (plan U2): only while players' phones can be in a room. */
-		onCallTown?: () => void;
+		/**
+		 * The Soundboard (plan U6), a full row in the game's items (Trevor, 2026-11-01: "a full
+		 * button"); not on a spectator's board. Back to town is on the day timer.
+		 */
+		onSoundboard?: () => void;
 		onGameInfo: () => void;
 		/** Back to Character selection; only until Start game (Trevor, 2026-10-24). */
 		onCharacterSelection?: () => void;
-		onAddSeat: () => void;
 		onAddRule: () => void;
 		onArrange: () => void;
 		onExport: () => void;
@@ -76,10 +78,9 @@
 		ended,
 		onHistory,
 		onBluffs,
-		onCallTown,
+		onSoundboard,
 		onGameInfo,
 		onCharacterSelection,
-		onAddSeat,
 		onAddRule,
 		onArrange,
 		onExport,
@@ -147,15 +148,9 @@
 				<Button disabled={watching} variant="quiet" icon="demon" onclick={() => fromMenu(onBluffs)}
 					>Demon bluffs</Button
 				>
-				{#if onCallTown}
-					<!-- Every phone in the room sounds and vibrates (plan U2, Trevor 2026-10-26). -->
-					<Button
-						disabled={watching}
-						variant="quiet"
-						icon="sound"
-						onclick={() => fromMenu(onCallTown)}
-					>
-						{t('room.callTown')}
+				{#if onSoundboard}
+					<Button variant="quiet" icon="soundboard" onclick={() => fromMenu(onSoundboard)}>
+						{t('settings.soundboard')}
 					</Button>
 				{/if}
 				{#if gameInfo}
@@ -278,9 +273,7 @@
 		<div class="column">
 			<section class="group" aria-labelledby="board-menu-seats">
 				<h3 id="board-menu-seats" class="group-title">Seats</h3>
-				<Button disabled={watching} variant="quiet" icon="add" onclick={() => fromMenu(onAddSeat)}
-					>Add seat</Button
-				>
+				<!-- Add seat is in Seating's bar only (Trevor, 2026-11-01). -->
 				<Button
 					disabled={watching}
 					variant="quiet"

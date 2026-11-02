@@ -1,4 +1,5 @@
 {
+	"voter": { "onlyWith": "Master" },
 	"reminderTargets": {
 		"Master": {
 			"seat": "other",
