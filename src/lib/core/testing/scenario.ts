@@ -16,7 +16,7 @@
  * into a before and an after. A refused command throws, naming it.
  *
  *   it('Example 2: Drunk Choirboy wrongly names the General', () => {
- *     // A Drunk who thinks they are the Choirboy may be shown anyone as the Demon.
+ *     // Wiki: "..." (the example, word for word)
  *     const s = scenario(['choirboy', 'king', 'shabaloth', 'general']).drunk('choirboy').dies('king');
  *     const picker = infoPicker(s.game, s.seat('choirboy'), 'choirboy', s.characters)!;
  *     expect(isAllowed(picker, { seats: [s.seat('general')] })).toBe(true);
