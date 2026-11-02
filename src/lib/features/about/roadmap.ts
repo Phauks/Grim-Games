@@ -487,6 +487,15 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['M26a', 'M26b']
 	},
 	{
+		// The coordinator's ask of 2026-11-02 (Trevor: no release until the How to Run gaps are
+		// closed): a once-per-game character stops waking once marked No Ability, the Zombuul
+		// sleeps while anyone is marked Died Today, the Bounty Hunter wakes when its Know player
+		// dies, the Juggler only after the first day, a Wraith without its ability sleeps.
+		title: 'Characters stop waking once their ability is used or no longer works',
+		area: 'engine',
+		parts: ['M28']
+	},
+	{
 		// Trevor, 2026-11-02: every How to Run gap closed before beta goes to production. Reminders
 		// that never came off now do: at dawn, at dusk, at dusk tomorrow (the Minstrel) or when
 		// their player dies (the Philosopher), and the Po's and Shabaloth's night text says which

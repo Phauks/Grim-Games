@@ -183,10 +183,8 @@ describe('Bone Collector', () => {
 			]);
 		});
 
-		it.fails('a spent Bone Collector no longer wakes', () => {
+		it('a spent Bone Collector no longer wakes', () => {
 			// Wiki: "The Bone Collector loses their ability—mark them with their NO ABILITY reminder."
-			// Waits on the engine (unplanned): the Bone Collector has no wakesWhen rule, so it still
-			// wakes once marked No Ability.
 			const s = scenario(['bonecollector', 'flowergirl', 'imp', 'chef', 'poisoner'])
 				.newDay()
 				.reminder('bonecollector', 'bonecollector', 'No Ability');

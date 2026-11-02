@@ -122,12 +122,10 @@ describe('Wraith', () => {
 			expect(notes('monk')).not.toContain('Wraith wakes too.');
 		});
 
-		it.fails('stops waking the Wraith with evil once it loses its ability while alive', () => {
+		it('stops waking the Wraith with evil once it loses its ability while alive', () => {
 			// Wiki: "If the Wraith loses their ability while alive, privately tell the Wraith that they
 			// may not choose to open their eyes tonight, and do not wake them when other evil players
 			// wake."
-			// Waits on the engine (unplanned): the Wraith wakes too note stays while the Wraith is
-			// poisoned.
 			const s = scenario(cast).poisoned('wraith');
 			const steps = tonight(s);
 			expect(steps.find((step) => step.id === 'imp')?.notes).not.toContain('Wraith wakes too.');

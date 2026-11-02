@@ -45,5 +45,8 @@
 	},
 	"reminderEnds": {
 		"Has Ability": "dusk"
+	},
+	"wakesWhen": {
+		"untilToken": "No Ability"
 	}
 }

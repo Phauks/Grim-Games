@@ -112,12 +112,11 @@ describe('Nightwatchman', () => {
 			]);
 		});
 
-		it.fails('stops waking the Nightwatchman once they are marked No Ability', () => {
+		it('stops waking the Nightwatchman once they are marked No Ability', () => {
 			// Wiki: "Each night, wake the Nightwatchman. The Nightwatchman either shakes their head or
 			// points at any player. Put the Nightwatchman to sleep."
 			// Wiki: "The Nightwatchman loses their ability – mark them with a NO ABILITY reminder and
 			// remove their night token from the night sheet."
-			// Waits on the engine (unplanned): the Nightwatchman has no wakes-when rule, so its step still wakes it after No Ability.
 			const s = scenario(cast);
 			expect(
 				wakeConditionMet(s.game, 'nightwatchman', s.seat('nightwatchman'), s.characters, new Set())
