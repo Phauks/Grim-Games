@@ -70,11 +70,15 @@ export function canDuplicate(
 	if (setupModifierFor(character)?.copies?.some((n) => n > 0)) return true;
 	const good = character.type === 'townsfolk' || character.type === 'outsider';
 	const evil = character.type === 'minion' || character.type === 'demon';
-	return inPlay.some(
-		(c) =>
+	return inPlay.some((c) => {
+		// A rules block's own list wins over TPI's data (the Pope: good ones only).
+		const own = setupModifierFor(c)?.duplicates;
+		if (own) return (good && own.includes('good')) || (evil && own.includes('evil'));
+		return (
 			(good && hasSpecial(c, 'selection', 'good-duplicate')) ||
 			(evil && hasSpecial(c, 'selection', 'evil-duplicate'))
-	);
+		);
+	});
 }
 
 /**

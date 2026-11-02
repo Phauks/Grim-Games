@@ -17,6 +17,8 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
 import { abilityState } from '#lib/core/rules/ability.ts';
+import { changeableSeats, characterChanger } from '#lib/core/rules/becomes.ts';
+import { analyseSetup } from '#lib/core/rules/setup.ts';
 import { gameEnds, suggestedWinner } from '#lib/core/rules/game-end.ts';
 import { answerOptions, infoPicker, nightAnswer, reliability } from '#lib/core/rules/night-info.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
@@ -50,6 +52,54 @@ describe('Marionette', () => {
 				{ type: 'selection', name: 'bag-disabled' },
 				{ type: 'reveal', name: 'replace-character' }
 			]);
+		});
+	});
+
+	// How to Run: with three Minions, one more Minion token is swapped for a Townsfolk, and on
+	// the first night a good player becomes that Minion (M22).
+	describe('with three Minions', () => {
+		const good = ['chef', 'empath', 'monk', 'mayor', 'washerwoman', 'librarian', 'investigator'];
+		const thirteen = [
+			...good,
+			'fortuneteller',
+			'undertaker',
+			'ravenkeeper',
+			'imp',
+			'poisoner',
+			'soldier'
+		];
+
+		it('lets one Minion fewer be dealt only when there are usually three', () => {
+			const s = scenario(['chef', 'imp']);
+			const get = (ids: string[]) => ids.map((id) => s.characters.get(id)!);
+			const big = analyseSetup({ players: 13, inPlay: get([...thirteen.slice(1), 'marionette']) });
+			expect(big.expected.minion).toEqual([2, 3]);
+			const small = analyseSetup({
+				players: 7,
+				inPlay: get(['chef', 'empath', 'monk', 'mayor', 'saint', 'imp', 'marionette'])
+			});
+			expect(small.expected.minion).toEqual([1]);
+		});
+
+		it('makes the missing Minion from a good player on the first night', () => {
+			// Thirteen players usually have three Minions: the Marionette and the Poisoner are two.
+			const s = scenario(thirteen).reminder('chef', 'marionette', 'Is The Marionette');
+			expect(characterChanger(s.game, 'marionette', s.characters)).toBe(s.seat('chef'));
+			const offered = changeableSeats(s.game, 'marionette', s.characters);
+			expect(offered).not.toContain(s.seat('imp'));
+			expect(offered).not.toContain(s.seat('poisoner'));
+			expect(offered).not.toContain(s.seat('chef'));
+			const after = s.becomes('monk', 'spy', 'evil');
+			expect(characterChanger(after.game, 'marionette', after.characters)).toBeUndefined();
+		});
+
+		it('makes none with fewer Minions usual', () => {
+			const s = scenario(['chef', 'empath', 'monk', 'mayor', 'saint', 'imp', 'soldier']).reminder(
+				'chef',
+				'marionette',
+				'Is The Marionette'
+			);
+			expect(characterChanger(s.game, 'marionette', s.characters)).toBeUndefined();
 		});
 	});
 

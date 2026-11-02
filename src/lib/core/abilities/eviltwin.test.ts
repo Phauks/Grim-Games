@@ -107,7 +107,7 @@ describe('Evil Twin', () => {
 				{ rule: 'demon-dead', holds: [{ rule: 'marked-alive' }] }
 			]);
 		});
-		it.fails('Example 4: New good twin executed; evil wins', () => {
+		it('Example 4: New good twin executed; evil wins', () => {
 			// Wiki: "The Pit-Hag turns a good player into the Evil Twin, who remains good. The group
 			// executes the good-aligned Evil Twin. Evil wins."
 			// The new Evil Twin is good, so its twin (marked Twin) is an evil player.

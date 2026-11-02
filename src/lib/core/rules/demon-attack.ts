@@ -12,7 +12,7 @@ import type { CharacterId, ReminderLabel } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
 import type { Game, ReminderId, SeatId } from '#lib/core/model/types.ts';
-import { aliveNonTravellers } from './game-end.ts';
+import { aliveNonTravellers } from './game-end-helpers.ts';
 
 /** The rule in play: whose it is, and the reminder marking a Demon yet to skip, if any. */
 export interface DemonAttackRule {
