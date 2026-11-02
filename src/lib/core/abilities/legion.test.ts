@@ -53,6 +53,7 @@ describe('Legion', () => {
 		it.fails('Example 1: Two good players, one executed: evil wins', () => {
 			// Wiki: "The only good players are the Fortune Teller and the Slayer. 6 Legion and the Slayer
 			// vote to execute the Fortune Teller. They are executed, and evil wins."
+			// Waits on the engine (M15l): no game end for evil when only one good player is alive (the Storyteller may declare it).
 			const s = scenario([
 				'fortuneteller',
 				'legion',
