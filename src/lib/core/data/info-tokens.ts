@@ -109,7 +109,16 @@ export const STANDARD_INFO_TOKENS: readonly InfoToken[] = [
 	{ id: 'select-a-character', text: 'Select a character', source: 'standard', extra: true },
 	{ id: 'choose-again', text: 'Please choose again', source: 'standard', extra: true },
 	// Trevor's wording (2026-10-25).
-	{ id: 'are-you-sure', text: 'Are you sure?', source: 'standard', extra: true }
+	{ id: 'are-you-sure', text: 'Are you sure?', source: 'standard', extra: true },
+	// The character a player must be mad about, after "This character selected you" for the
+	// Cerenovus (Trevor's wording, 2026-11-01; https://wiki.bloodontheclocktower.com/Cerenovus).
+	{
+		id: 'mad-as',
+		text: 'You are mad as',
+		source: 'standard',
+		asks: { characters: 1 },
+		extra: true
+	}
 ];
 
 /** The standard list with the Storyteller's hidden ones removed and custom ones added. */

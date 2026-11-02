@@ -304,6 +304,11 @@
 				pass. Each account can send a limited number of invites a day.
 			</li>
 			<li>
+				If you turn on "Notify me of game invites" on Friends, your account keeps that device's push
+				address (up to 5 devices) to send it your invites, until you turn it off. Signing out on
+				that device stops its address working.
+			</li>
+			<li>
 				Your friends see when you were last on (to the hour) and whether you're in a live game.
 				While you're in one, the server notes the room for up to 12 hours, until you leave. If the
 				Storyteller lets friends join without an invite, your friends also get a Join button for it.

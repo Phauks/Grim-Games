@@ -104,7 +104,18 @@ export type Command =
 	 * https://wiki.bloodontheclocktower.com/Snake_Charmer), or only characters with
 	 * `keepAlignments` (the Barber's haircuts, https://wiki.bloodontheclocktower.com/Barber).
 	 */
-	| { type: 'SwapCharacters'; seatId: SeatId; withSeatId: SeatId; keepAlignments?: true }
+	/**
+	 * Two players swap characters, and alignments unless `keepAlignments` (the Barber's). With
+	 * `mark`, that reminder goes on `seatId` once swapped (the Snake Charmer's Poisoned on the
+	 * old Demon), as one change.
+	 */
+	| {
+			type: 'SwapCharacters';
+			seatId: SeatId;
+			withSeatId: SeatId;
+			keepAlignments?: true;
+			mark?: Reminder;
+	  }
 	| { type: 'SetAlignment'; seatId: SeatId; alignment: Alignment }
 	/**
 	 * Gives a player the ability of `characterId` by `via`'s `givesAbility` rule, replacing any
@@ -307,6 +318,16 @@ export type Command =
 			cause?: CharacterId;
 			outcome?: ExecutionOutcome;
 	  }
+	/**
+	 * Logs that a player nominated the Storyteller, which any living player may do
+	 * (https://wiki.bloodontheclocktower.com/Atheist). It counts as their nomination today.
+	 */
+	| { type: 'NominateStoryteller'; nominator: SeatId }
+	/**
+	 * Logs that the Storyteller was executed. It ends the game (`gameEnds`): good wins if a
+	 * character in play says so (`storyteller-executed`, the Atheist), otherwise evil.
+	 */
+	| { type: 'ExecuteStoryteller' }
 	/** Logs a Traveller's exile and marks them dead by exile, if alive. Not an execution. */
 	| { type: 'Exile'; seatId: SeatId }
 	/**

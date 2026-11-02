@@ -33,14 +33,14 @@
 	import NightReasonTag from './NightReasonTag.svelte';
 	import NightWhy from './NightWhy.svelte';
 	import CharacterSet from './CharacterSet.svelte';
+	import DayMarkAnswer from './DayMarkAnswer.svelte';
 	import { answerValueText, seatName } from './night-steps.ts';
 
 	/**
-	 * What the game says for a night step (Trevor, 2026-10-16), from core's `withNightInfo`:
-	 * the answer the grimoire gives (the Undertaker's executed character), the truthful
-	 * options for an info picker, or who dies. Suggestions only: nothing is applied, and an
-	 * answer the player's ability can't be trusted for is marked. Values and names only, no
-	 * new rules wording.
+	 * What the game says for a night step (Trevor, 2026-10-16), from core's `withNightInfo`: the
+	 * answer the grimoire gives (the Undertaker's executed character), the truthful options for an
+	 * info picker, or who dies. Suggestions only: nothing is applied, and an answer the player's
+	 * ability can't be trusted for is marked. Values and names only, no new rules wording.
 	 */
 	interface Props {
 		grimoire: Grimoire;
@@ -53,6 +53,8 @@
 		onShowCharacters?: (set: Extract<AnswerValue, { kind: 'characters' }>) => void;
 		/** Show the "Your number is" info token with a suggested number (a number step). */
 		onShowNumber?: (n: number) => void;
+		/** Show a yes or no answer as the Yes/No info token does (Trevor, 2026-11-02: Flowergirl). */
+		onShowAnswer?: (answer: string) => void;
 		/** A picker's row was shown to the player: record it (`record-shown.ts`). */
 		onRecord?: (picker: InfoPicker, choice: InfoChoice) => void;
 	}
@@ -64,6 +66,7 @@
 		onShow,
 		onShowCharacters,
 		onShowNumber,
+		onShowAnswer,
 		onRecord
 	}: Props = $props();
 	const headingId = $props.id();
@@ -73,11 +76,10 @@
 	const assistance = $derived(preferences.current.assistance);
 	const info = $derived(step.info);
 	const name = (seatId: SeatId) => seatName(game, seatId);
-
 	/**
-	 * Why an answer may not be the truth: the Vortox, registration. Allowed values are drawn
-	 * after the text, so their characters show as badges. Who made the player drunk or
-	 * poisoned is the step's Afflictions, not repeated here (Trevor, 2026-10-27).
+	 * Why an answer may not be the truth: the Vortox, registration. Allowed values are drawn after
+	 * the text, so their characters show as badges. Who made the player drunk or poisoned is the
+	 * step's Afflictions, not repeated here (Trevor, 2026-10-27).
 	 */
 	interface Flag {
 		text: string;
@@ -93,6 +95,9 @@
 		const out: Flag[] = [];
 		// A listed answer's rows already say which values the Vortox allows.
 		if (r.falseBy && !listed) out.push({ text: 'must be false', warn: true, character: r.falseBy });
+		// The rows say it when listed (NightReasonTag); a lone answer says it here (the Fibbin).
+		if (r.mayBeFalse && !r.unreliable && !listed)
+			out.push({ text: 'might be false', warn: true, character: r.mayBeFalse });
 		if (r.misregister.length > 0)
 			out.push({ text: 'Might register falsely:', seats: r.misregister });
 		if (r.possible && r.possible.length > 1 && !listed)
@@ -102,11 +107,10 @@
 
 	/**
 	 * Every answer that may be given while the player is drunk, poisoned or under the Vortox
-	 * (Trevor, 2026-10-27: "when poisoned, need to offer alternative information"), from
-	 * core's `answerOptions`; empty while only the truth may be given.
+	 * (Trevor, 2026-10-27: "when poisoned, need to offer alternative information"), from core's
+	 * `answerOptions`; empty while only the truth may be given.
 	 */
 	const options = (a: NightAnswer): AnswerOption[] => answerOptions(game, a, characters);
-
 	/**
 	 * Every valid piece of information, never one pick (Trevor, 2026-10-18: "show all valid
 	 * information"), from core's `validInformation`.
@@ -134,19 +138,17 @@
 			};
 		})
 	);
-
 	/**
 	 * The logic behind a suggestion (Trevor, 2026-10-17: "show the logic"): the players it is
-	 * worked out from and what it becomes if one registers otherwise. Beside the information
-	 * in the opened step, with no Why button to press (Trevor, 2026-10-22).
+	 * worked out from and what it becomes if one registers otherwise. Beside the information in the
+	 * opened step, with no Why button to press (Trevor, 2026-10-22).
 	 */
 	const hasWhy = (why: Why | undefined): why is Why =>
 		!!why && (why.facts.length > 0 || why.alternatives.length > 0);
-
 	/**
-	 * The roles a "learn a role" step could show (Trevor, 2026-10-25: the Investigator's
-	 * Minion), from core's `learnedRoles`: the row the board's reminders mark first, then true
-	 * ones, then each player who may register as the type, whose character is picked here.
+	 * The roles a "learn a role" step could show (Trevor, 2026-10-25: the Investigator's Minion),
+	 * from core's `learnedRoles`: the row the board's reminders mark first, then true ones, then
+	 * each player who may register as the type, whose character is picked here.
 	 */
 	const rolePickers = $derived(
 		info?.kind === 'picker'
@@ -159,10 +161,10 @@
 			: []
 	);
 	/**
-	 * Once the board's reminders mark a row, the other valid rows fold under a caret, one tap
-	 * away (Trevor, 2026-10-27: "When other valid info exists, but one has been marked, allow
-	 * carrot menu collapsing the other valid info"). `others` counts them, with "None" and "Any
-	 * other"; nothing marked leaves every row in the list.
+	 * Once the board's reminders mark a row, the other valid rows fold under a caret, one tap away
+	 * (Trevor, 2026-10-27: "When other valid info exists, but one has been marked, allow carrot
+	 * menu collapsing the other valid info"). `others` counts them, with "None" and "Any other";
+	 * nothing marked leaves every row in the list.
 	 */
 	function fold<R extends { marked?: true }>(rows: readonly R[], extras: number) {
 		const marked = rows.filter((r) => r.marked);
@@ -214,7 +216,6 @@
 		}
 		return out;
 	};
-
 	/**
 	 * The players a "learn players" step could show (Steward, Noble), from core's
 	 * `chosenPlayers`: the ones the board's Know reminders mark first (Trevor, 2026-10-26).
@@ -411,10 +412,13 @@
 					>({@render players(a.because)})</span
 				>{/if}
 		</span>
-		<NightReasonTag {grimoire} reason={o.reason} />
+		<NightReasonTag {grimoire} reason={o.reason} source={a} />
 		{#if o.value.kind === 'number' && onShowNumber}
 			{@const n = o.value.value}
 			<Button variant="quiet" onclick={() => onShowNumber(n)}>Show to player</Button>
+		{:else if o.value.kind === 'yes-no' && onShowAnswer}
+			{@const text = answerValueText(o.value)}
+			<Button variant="quiet" onclick={() => onShowAnswer(text)}>Show to player</Button>
 		{:else if o.value.kind === 'character' && onShow}
 			<Button variant="quiet" onclick={() => showOrPick(key, id)}>Show to player</Button>
 		{:else if o.value.kind === 'characters' && !o.anyOther && onShowCharacters}
@@ -448,6 +452,11 @@
 	{:else if a.kind === 'number' && onShowNumber}
 		{@const n = a.value}
 		<Button variant="quiet" onclick={() => onShowNumber(n)}>Show to player</Button>
+	{:else if a.kind === 'yes-no' && onShowAnswer}
+		{@const text = answerValueText(a)}
+		<Button variant="quiet" onclick={() => onShowAnswer(text)}>Show to player</Button>
+	{:else if a.kind === 'none'}
+		<DayMarkAnswer {grimoire} {step} />
 	{/if}
 {/snippet}
 
@@ -509,7 +518,12 @@
 											{#if v.seats.length > 0}<span class="with">and one of</span>{/if}{/if}
 										{@render players(v.seats)}
 									</span>
-									<NightReasonTag {grimoire} reason={v.reason} registered={v.registered} />
+									<NightReasonTag
+										{grimoire}
+										reason={v.reason}
+										registered={v.registered}
+										source={p}
+									/>
 									{#if v.number !== undefined && onShowNumber}
 										{@const n = v.number}
 										<Button
@@ -668,7 +682,7 @@
 			{/if}
 		</span>
 		{#if row.marked}<span class="tag marked"><Icon name="reminder" />Marked</span>{/if}
-		<NightReasonTag {grimoire} reason={row.reason} registered={row.registered} />
+		<NightReasonTag {grimoire} reason={row.reason} registered={row.registered} source={p} />
 		{#if onShow}
 			<Button variant="quiet" onclick={() => showRole(p, row, key, id)}>Show to player</Button>
 		{/if}

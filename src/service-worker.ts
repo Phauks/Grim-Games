@@ -42,6 +42,8 @@ import {
 	type PrecacheProgress
 } from '#lib/features/about/update-progress.ts';
 import type { PushMessage } from '#lib/core/sync/room-push.ts';
+import { INVITE_PUSH_PATH, inviteNotification } from '#lib/core/sync/invite-push.ts';
+import { friends } from '#lib/i18n/messages/en/friends.ts';
 import { room } from '#lib/i18n/messages/en/room.ts';
 import { errors } from '#lib/i18n/messages/en/errors.ts';
 
@@ -311,17 +313,36 @@ sw.addEventListener('message', (event) => {
 });
 
 /**
- * Back to town on a phone that is locked or has the app closed (plan U12): the room pushes it
- * only to phones not showing the app (worker/push.ts), and every push must show a notification
- * (Chrome and Safari stop pushes to a site that shows none). The service worker can't read the
- * app's language, so the title is the English toast's own words.
+ * Pushes (worker/push.ts), each shown as a notification, since Chrome and Safari stop pushes to
+ * a site that shows none. Back to town on a phone that is locked or has the app closed (plan
+ * U12): the room pushes it only to phones not showing the app. A friend's game invite (plan F8):
+ * pushed to the devices its account turned "Notify me of game invites" on for. The service
+ * worker can't read the app's language, so the words are the English messages' own.
  */
 sw.addEventListener('push', (event) => {
 	let message: PushMessage | undefined;
 	try {
 		message = event.data?.json() as PushMessage;
 	} catch {
-		// Unreadable: the call still shows, without its room.
+		// Unreadable: shown as a Back to town call, without its room.
+	}
+	if (message?.type === 'friend-invite') {
+		const { title, body } = inviteNotification(message, {
+			title: friends['friends.invitePush.title'],
+			body: friends['friends.invitePush.body'],
+			bodyWithScript: friends['friends.invitePush.bodyWithScript'],
+			someone: friends['friends.invitePush.someone']
+		});
+		event.waitUntil(
+			sw.registration.showNotification(title, {
+				body,
+				// One per sender and script: an invite sent again replaces the first.
+				tag: `friend-invite:${message.from ?? ''}:${message.title}`,
+				icon: '/icons/icon-192.png',
+				data: { open: INVITE_PUSH_PATH }
+			})
+		);
+		return;
 	}
 	const options: NotificationOptions & { renotify: boolean } = {
 		tag: 'call-town',
@@ -333,16 +354,26 @@ sw.addEventListener('push', (event) => {
 	event.waitUntil(sw.registration.showNotification(room['room.callTownHeard'], options));
 });
 
-/** Tapping the notification brings the app forward, or opens the player screen. */
+/**
+ * Tapping a notification brings the app forward: Back to town at the player screen, an invite
+ * at Friends (its invite has Join). An open tab is moved there; otherwise the app opens there.
+ */
 sw.addEventListener('notificationclick', (event) => {
 	event.notification.close();
+	const invite = (event.notification.data as { open?: unknown } | null)?.open === INVITE_PUSH_PATH;
+	const path = invite ? INVITE_PUSH_PATH : '/play';
 	event.waitUntil(
 		(async () => {
 			const open = await sw.clients.matchAll({ type: 'window', includeUncontrolled: true });
-			const tab =
-				open.find((client) => new URL(client.url).pathname.startsWith('/play')) ?? open[0];
-			if (tab) await tab.focus();
-			else await sw.clients.openWindow('/play');
+			const tab = open.find((client) => new URL(client.url).pathname.startsWith(path)) ?? open[0];
+			if (!tab) {
+				await sw.clients.openWindow(path);
+				return;
+			}
+			const focused = await tab.focus();
+			if (invite && !new URL(focused.url).pathname.startsWith(path)) {
+				await focused.navigate(path).catch(() => undefined);
+			}
 		})()
 	);
 });

@@ -30,5 +30,11 @@
 		"none": "changes alignment; win condition"
 	},
 	"makesExtraEvil": true,
-	"takesNeighbourAlignment": true
+	"takesNeighbourAlignment": true,
+	"infoTokenCharacters": {
+		"you-are": {
+			"characters": [],
+			"upTo": 0
+		}
+	}
 }

@@ -49,5 +49,10 @@
 		"leviathan": {
 			"notCreatedAfterDay": 5
 		}
+	},
+	"infoTokenCharacters": {
+		"you-are": {
+			"characters": ["changed"]
+		}
 	}
 }

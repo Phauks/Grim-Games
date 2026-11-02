@@ -4,18 +4,24 @@ import {
 	OVERRIDE_FIELDS,
 	isOnScript,
 	registersAsDead,
+	replacedBy,
 	scriptCharacterIds,
 	typeOf
 } from '#lib/core/model/index.ts';
+import { extraEvilPlayers } from '#lib/core/rules/extra-evil.ts';
 import { abilityState } from '#lib/core/rules/ability.ts';
 import { cantTurnGood } from '#lib/core/rules/becomes.ts';
 import { barredAbilities, givenInstead } from '#lib/core/rules/jinxes.ts';
+import { neighbourFollows } from '#lib/core/rules/reminder-movement.ts';
+import type { Game } from '#lib/core/model/index.ts';
 import type { GameEvent } from '../events.ts';
 import {
 	allowsDuplicates,
 	characterOf,
+	checkReminder,
 	deathCause,
 	refuse,
+	reminderFrom,
 	seatOf,
 	seatableCharacter,
 	trulyInPlay,
@@ -71,11 +77,26 @@ export const CHARACTERS_DECIDERS: Deciders<
 		};
 		if (alignment !== undefined) assigned.alignment = alignment;
 		if (command.by !== undefined) assigned.by = characterOf(ctx, command.by).id;
+		// A changed character is really that character: the seat's "Is The Drunk" style token,
+		// which said they were secretly someone else, comes off (a Drunk the Cacklejack changes
+		// is sober, https://wiki.bloodontheclocktower.com/Cacklejack).
+		const hidden =
+			seat.characterId === undefined || seat.characterId === character.id
+				? []
+				: seat.reminders.filter((r) => replacedBy(r, ctx.characters));
+		for (const r of hidden) {
+			const name = ctx.characters.get(r.characterId)?.name ?? r.characterId;
+			warn('no-longer-hidden', `No longer the ${name}: the “${r.label}” reminder came off.`);
+		}
+		const lifted = hidden.map((r): GameEvent => ({
+			type: 'ReminderRemoved',
+			reminderId: r.reminderId
+		}));
 		// Only a Traveller sits out (Trevor, 2026-11-02): any other character comes into play.
 		if (seat.notInPlay && character.type !== 'traveller') {
-			return [assigned, { type: 'SeatInPlaySet', seatId: seat.seatId, inPlay: true }];
+			lifted.push({ type: 'SeatInPlaySet', seatId: seat.seatId, inPlay: true });
 		}
-		return [assigned];
+		return [assigned, ...lifted];
 	},
 
 	ClearCharacter(game, command, ctx, warn) {
@@ -108,7 +129,57 @@ export const CHARACTERS_DECIDERS: Deciders<
 				...(alignment !== undefined ? { alignment } : {})
 			};
 		};
-		return [to(a, b), to(b, a)];
+		const events: GameEvent[] = [to(a, b), to(b, a)];
+		const after: Game = {
+			...game,
+			seats: {
+				...game.seats,
+				[a.seatId]: {
+					...a,
+					characterId: b.characterId,
+					alignment: keep ? a.alignment : b.alignment
+				},
+				[b.seatId]: {
+					...b,
+					characterId: a.characterId,
+					alignment: keep ? b.alignment : a.alignment
+				}
+			}
+		};
+		// With alignments, a whole player swap: a token's "Is The …" reminder (the Philosopher's)
+		// goes with the token, so a Philosopher with the Snake Charmer's ability makes the Demon a
+		// poisoned Philosopher (https://wiki.bloodontheclocktower.com/Snake_Charmer).
+		if (!keep) {
+			for (const [from, toSeat] of [
+				[a, b],
+				[b, a]
+			] as const) {
+				for (const r of from.reminders) {
+					if (!replacedBy(r, ctx.characters)) continue;
+					events.push({ type: 'ReminderMoved', reminderId: r.reminderId, toSeatId: toSeat.seatId });
+				}
+			}
+		}
+		// Tokens that mark a character's neighbours (the No Dashii's Poisoned) go to its new
+		// neighbours (https://wiki.bloodontheclocktower.com/No_Dashii).
+		for (const f of neighbourFollows(game, after, ctx.characters)) {
+			const name = ctx.characters.get(f.reminder.characterId)?.name ?? f.reminder.characterId;
+			warn(
+				'reminder-followed',
+				`${name}’s ${f.reminder.label} moved to the new neighbour of the ${name}.`
+			);
+			events.push({ type: 'ReminderMoved', reminderId: f.reminderId, toSeatId: f.toSeatId });
+		}
+		if (command.mark) {
+			const reminder = reminderFrom(game, command.mark);
+			checkReminder(game, reminder, ctx, warn);
+			events.push({
+				type: 'ReminderAdded',
+				seatId: a.seatId,
+				reminder: { reminderId: ctx.newId(), ...reminder }
+			});
+		}
+		return events;
 	},
 
 	SetAlignment(game, command, ctx, warn) {
@@ -135,13 +206,7 @@ export const CHARACTERS_DECIDERS: Deciders<
 			const limiter = [...trulyInPlay(game, ctx)].find(
 				(id) => rulesOf(id, ctx.characters)?.limitsExtraEvil
 			);
-			// Good-type players who are evil, counting this one: each is an extra evil player.
-			const extra = game.seating.filter((id) => {
-				const type = typeOf(game, id, ctx.characters);
-				const evil = id === seat.seatId || game.seats[id].alignment === 'evil';
-				return evil && (type === 'townsfolk' || type === 'outsider');
-			});
-			if (limiter && extra.length > 1) {
+			if (limiter && extraEvilPlayers(game, ctx.characters, seat.seatId) > 1) {
 				const name = ctx.characters.get(limiter)?.name ?? limiter;
 				warn('extra-evil-limit', `${name}: there can't be more than 1 extra evil player`);
 			}

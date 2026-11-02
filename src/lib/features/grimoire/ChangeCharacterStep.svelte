@@ -9,12 +9,15 @@
 		typeOf,
 		type SeatId
 	} from '#lib/core/model/index.ts';
+	import { isReplacedAfterDraw } from '#lib/core/rules/bag-characters.ts';
 	import {
 		changeableSeats,
 		characterChanger,
 		createdTooLate,
 		jinxedPartners,
 		neighbourAlignments,
+		swapChoice,
+		swapPartner,
 		swappableSeats,
 		type NightStep
 	} from '#lib/core/rules/index.ts';
@@ -42,15 +45,23 @@
 	 * alignment and offers each living neighbour's that differs. On the first night the Kazali
 	 * (`upTo: 'minions'`, https://wiki.bloodontheclocktower.com/Kazali) makes evil Minions, one
 	 * player after another, until the usual number are in play.
+	 *
+	 * A step whose character swaps with the Demon it chooses (`becomes.into: 'swap'`: the
+	 * Snake Charmer, https://wiki.bloodontheclocktower.com/Snake_Charmer) picks the player it
+	 * pointed at; the Demon swaps characters and alignments with it and the old Demon gets its
+	 * token (Poisoned), in one change. Anyone else: nothing happens. Each swapped player can be
+	 * shown their new character.
 	 */
 	interface Props {
 		grimoire: Grimoire;
 		step: NightStep;
 		/** Show the new character to its player. */
 		onShow: (characterId: CharacterId) => void;
+		/** The characters made tonight on this step, the latest last, for its "You are" card. */
+		onChanges?: (characterIds: readonly CharacterId[]) => void;
 	}
 
-	let { grimoire, step, onShow }: Props = $props();
+	let { grimoire, step, onShow, onChanges }: Props = $props();
 
 	const game = $derived(grimoire.game);
 	const characters = $derived(grimoire.open.characters);
@@ -71,13 +82,25 @@
 	const spare = $derived(
 		step.character ? jinxedPartners(step.character.id, 'spareToken', script, characters) : []
 	);
-	const inPlay = $derived(
-		rule?.notInPlay
+	// Making the night's Minions (the Kazali, the Lord of Typhon), a stand-in such as the
+	// Marionette is never made: it enters play as the Demon's good neighbour, by its own token,
+	// and is not told (https://wiki.bloodontheclocktower.com/Marionette#Related_Jinxes).
+	const standIns = $derived(
+		rule?.upTo
+			? script.filter((id) => {
+					const c = characters.get(id);
+					return c !== undefined && isReplacedAfterDraw(c);
+				})
+			: []
+	);
+	const inPlay = $derived([
+		...(rule?.notInPlay
 			? game.seating
 					.flatMap((id) => trueCharacter(game, id, characters) ?? [])
 					.filter((id) => !spare.includes(id))
-			: []
-	);
+			: []),
+		...standIns
+	]);
 	// Characters a jinx bars once a day is over (the Pit-Hag's and Hatter's Leviathan after
 	// day 5, https://wiki.bloodontheclocktower.com/Leviathan#Related_Jinxes).
 	const tooLate = $derived(
@@ -102,6 +125,14 @@
 	const swapMisfits = $derived(
 		new Set(game.seating.filter((id) => game.seats[id].characterId && !swappable.has(id)))
 	);
+	// Once a Demon is picked first, another Demon is left out of the second pick.
+	const secondMisfits = $derived.by(() => {
+		if (!step.character || first === undefined) return swapMisfits;
+		const ok = new Set(swappableSeats(game, step.character.id, characters, first));
+		return new Set(
+			game.seating.filter((id) => id !== first && game.seats[id].characterId && !ok.has(id))
+		);
+	});
 	// The Cult Leader's living neighbours' alignments, one of which it takes tonight.
 	const neighbours = $derived(
 		step.character ? neighbourAlignments(game, step.character.id, characters) : undefined
@@ -130,7 +161,32 @@
 			withSeatId: seatId,
 			keepAlignments: true as const
 		};
-		if (grimoire.run(command)) swapped = [seatA, seatId];
+		if (grimoire.run(command)) {
+			swapped = [seatA, seatId];
+			const ids = swapped.flatMap((s) => game.seats[s]?.characterId ?? []);
+			onChanges?.(ids);
+		}
+	}
+
+	// The Snake Charmer's choice: its player (or a Philosopher who took its token), and the two
+	// seats it swapped tonight.
+	const charms = $derived(
+		step.character ? rulesIn(game, step.character.id, characters)?.becomes?.into === 'swap' : false
+	);
+	const charmer = $derived(
+		charms && step.character ? swapPartner(game, step.character.id, characters) : undefined
+	);
+	let charmOpen = $state(false);
+	let charmed = $state<readonly SeatId[]>();
+	function charm(seatId: SeatId) {
+		charmOpen = false;
+		if (!step.character) return;
+		const choice = swapChoice(game, step.character.id, seatId, characters);
+		if (!choice) return;
+		if (grimoire.run({ type: 'SwapCharacters', ...choice })) {
+			charmed = [choice.withSeatId, choice.seatId];
+			onChanges?.(charmed.flatMap((s) => game.seats[s]?.characterId ?? []));
+		}
 	}
 
 	let seatOpen = $state(false);
@@ -143,6 +199,7 @@
 		void step.id;
 		made = [];
 		swapped = undefined;
+		charmed = undefined;
 	});
 
 	function chooseSeat(seatId: SeatId) {
@@ -163,8 +220,10 @@
 			// Kept on the seat for the jinxes that hang on who made the change (`Seat.changedBy`).
 			...(step.character ? { by: step.character.id } : {})
 		};
-		if (grimoire.run(command))
+		if (grimoire.run(command)) {
 			made = [...made.filter((m) => m.seatId !== seatId), { seatId, characterId }];
+			onChanges?.(made.map((m) => m.characterId));
+		}
 	}
 	// With `sameType`, the chosen player picks from their own type, not their own character;
 	// with `anyType` too (the Hatter's optional rule), from any of the rule's types.
@@ -235,8 +294,30 @@
 		{characters}
 		exclude={first}
 		offer={(id) => !!game.seats[id].characterId}
-		misfits={swapMisfits}
+		misfits={secondMisfits}
 		onChoose={chooseSecond}
+	/>
+{/if}
+
+{#if charms && (charmer !== undefined || charmed)}
+	<h3>Swapped characters</h3>
+	<div class="row" data-testid="charm-swap">
+		{#if charmed}
+			{#each charmed as seatId (seatId)}
+				{@render newCharacter(seatId, game.seats[seatId]?.characterId)}
+			{/each}
+		{:else}
+			<span class="none">None</span>
+			<Button variant="quiet" onclick={() => (charmOpen = true)}>Choose</Button>
+		{/if}
+	</div>
+	<SeatChooser
+		bind:open={charmOpen}
+		title="Chooses a player"
+		{game}
+		{characters}
+		offer={(id) => !game.seats[id].dead}
+		onChoose={charm}
 	/>
 {/if}
 

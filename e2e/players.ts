@@ -13,12 +13,15 @@ export async function openPlayers(page: Page) {
 }
 
 /**
- * Opens Players at one player: their caret section, with their notes, messages and reported
- * picture beneath them (Trevor, 2026-10-31).
+ * Opens Players at one player: their line tapped, so their messages, notes and reported
+ * picture show beside the list (below it on a phone) (Trevor, 2026-11-01).
  */
 export async function openPlayerSheet(page: Page, name: string) {
 	const players = await openPlayers(page);
-	const player = players.getByTestId('room-player').filter({ hasText: name });
-	await expect(player.getByTestId('room-player-sheet')).toBeVisible();
-	return player;
+	const row = players.getByTestId('room-player').filter({ hasText: name });
+	await row.getByRole('button').tap();
+	await expect(row.getByRole('button')).toHaveAttribute('aria-current', 'true');
+	const sheet = players.getByTestId('room-player-sheet');
+	await expect(sheet).toBeVisible();
+	return sheet;
 }

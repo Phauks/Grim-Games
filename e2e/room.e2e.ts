@@ -149,8 +149,10 @@ test('a phone joins with a name, and the Storyteller seats it', async ({
 	// The phone is a symbol, not words (Trevor, 2026-10-30).
 	await expect(alex.getByTestId('room-player-phone')).toHaveAttribute('data-phone', 'here');
 	await expect(alex.getByRole('img', { name: 'Phone: Here' })).toBeVisible();
-	// The avatar opens the player's profile, as on the board (Trevor, 2026-10-29).
-	await alex.getByTestId('sheet-avatar').tap();
+	// The avatar opens the player's profile, as on the board (Trevor, 2026-10-29), from their
+	// details beside the list (Trevor, 2026-11-01).
+	await alex.getByRole('button').tap();
+	await page.getByTestId('room-player-sheet').getByTestId('sheet-avatar').tap();
 	const profile = page.getByRole('dialog', { name: 'Alex', exact: true });
 	await expect(profile.getByTestId('player-profile')).toBeVisible();
 	await page.keyboard.press('Escape');
@@ -2170,8 +2172,7 @@ test('a player puts reminder tokens on seats in their own Grim', async ({
 		'aria-label',
 		'Seat 3: Seat 3, your reminders: Dead'
 	);
-	// Its handle lowers it again.
-	await phone.getByRole('button', { name: 'Every reminder' }).tap();
+	// Let go, it stays down in its row (Trevor, 2026-11-02: back to its closed state).
 	await expect(bin).toBeHidden();
 	// The seat's sheet lists them, with none to add there.
 	await seat.tap();
