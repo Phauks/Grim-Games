@@ -61,7 +61,7 @@ describe('Zombuul', () => {
 			);
 			const later = executed.newDay().dies('chef').newDay().dies('empath');
 			expect(gameEnds(later.game, later.characters)).toEqual([]);
-			// Waits on the engine: the Zombuul's step has no "only if nobody died today" condition.
+			// Waits on the engine (M15k): the Zombuul's step has no "only if nobody died today" condition.
 			expect(
 				wakeConditionMet(
 					executed.game,
@@ -81,7 +81,7 @@ describe('Zombuul', () => {
 				wakeConditionMet(quiet.game, 'zombuul', quiet.seat('zombuul'), quiet.characters, new Set())
 			).toBe(true);
 			const tinkerDied = quiet.dies('chef', 'zombuul').newDay().dies('tinker', 'tinker');
-			// Waits on the engine: the Zombuul's step has no "only if nobody died today" condition.
+			// Waits on the engine (M15k): the Zombuul's step has no "only if nobody died today" condition.
 			expect(
 				wakeConditionMet(
 					tinkerDied.game,

@@ -59,7 +59,8 @@ describe('Deviant', () => {
 			// Wiki: "The evil Deviant cracks a few jokes, and gets a few laughs, but the players
 			// nevertheless decide to exile them. Even though there are enough votes, the Storyteller
 			// decides to keep the Deviant alive."
-			// "Funny" is the Storyteller's call: the exile names the Deviant as what kept them alive.
+			// Waits on the engine (M15m): Exile always kills a living Traveller; it has no way to log the
+			// exile while the Deviant's ability keeps them alive.
 			const s = table('evil');
 			expect(exileThreshold(s.game, s.characters)).toBeDefined();
 			const after = s.do((at) => ({
@@ -81,7 +82,8 @@ describe('Deviant', () => {
 		it('Example 2: Spared after mild humour, exiled after a flop', () => {
 			// Wiki: "On the third day, the Deviant was slightly funny, and cannot be exiled. On the fourth
 			// day, the Deviant was not very funny, and is successfully exiled."
-			// The Storyteller judges each day: kept alive on day three, not on day four.
+			// Waits on the engine (M15m): Exile always kills a living Traveller; it has no way to log the
+			// exile while the Deviant's ability keeps them alive.
 			const dayThree = table('good')
 				.newDay()
 				.newDay()
