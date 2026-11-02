@@ -18,6 +18,7 @@ import { dayUseSuggestion, dayUseWho } from '#lib/core/rules/day-claims.ts';
 import { isExecution } from '#lib/core/rules/death-causes.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { executionOutcomes } from '#lib/core/rules/execution-outcome.ts';
 
 describe('Judge', () => {
 	const character = committedCharacter('judge');
@@ -108,6 +109,80 @@ describe('Judge', () => {
 			expect(isExecution(executed.game.seats[executed.seat('goon')].deathCause, s.characters)).toBe(
 				true
 			);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Judge#How_to_Run)', () => {
+		const cast = ['judge', 'chef', 'empath', 'monk', 'goon', 'imp'];
+
+		it('may rule on the latest nomination, until another player is nominated', () => {
+			// Wiki: "At any time during a nomination for execution—from the moment that the nomination
+			// is declared to the moment before a new player is nominated for execution—the Judge can
+			// declare that this execution succeeds or fails."
+			const s = scenario(cast).newDay().nominate('chef', 'goon');
+			expect(dayUseSuggestion(s.game, s.seat('judge'), 'nominee')).toBe(s.seat('goon'));
+			expect(executionOutcomes(s.game, s.seat('goon'), s.characters)).toEqual([
+				{ kind: 'force', characterId: 'judge', seatId: s.seat('judge'), works: true }
+			]);
+			const next = s.nominate('empath', 'monk');
+			expect(dayUseSuggestion(next.game, next.seat('judge'), 'nominee')).toBe(next.seat('monk'));
+		});
+
+		it('executes the nominee when the Judge says the execution succeeds', () => {
+			// Wiki: "If the Judge declares that it succeeds, the nominated player is executed and you
+			// may proceed to the night phase (as there may only be one execution per day)."
+			const s = scenario(cast)
+				.newDay()
+				.nominate('chef', 'goon')
+				.do((at) => ({
+					type: 'Execute',
+					seatId: at.seat('goon'),
+					outcome: { kind: 'forced', characterId: 'judge' }
+				}));
+			expect(s.game.seats[s.seat('goon')].dead).toBe(true);
+			expect(s.game.today.entries.at(-1)).toMatchObject({
+				kind: 'execution',
+				seatId: s.seat('goon'),
+				forcedBy: { characterId: 'judge' }
+			});
+		});
+
+		it('logs a failed execution as no execution, and nominations go on', () => {
+			// Wiki: "If the Judge declares that it fails, the nominated player is no longer about to
+			// die and they are treated as receiving zero votes for execution, and the nomination
+			// process continues."
+			const s = scenario(cast)
+				.newDay()
+				.nominate('chef', 'goon')
+				.do((at) => ({
+					type: 'Execute',
+					seatId: at.seat('goon'),
+					outcome: { kind: 'failed', characterId: 'judge' }
+				}))
+				.nominate('empath', 'monk')
+				.execute('monk');
+			expect(s.game.seats[s.seat('goon')].dead).toBe(false);
+			expect(s.game.seats[s.seat('monk')].dead).toBe(true);
+		});
+
+		it('marks the Judge No Ability, after which a ruling is flagged as used', () => {
+			// Wiki: "The Judge loses their ability—put the Judge’s NO ABILITY reminder token by the
+			// Judge token."
+			const s = scenario(cast)
+				.newDay()
+				.nominate('chef', 'goon')
+				.do((at) => ({
+					type: 'Execute',
+					seatId: at.seat('goon'),
+					outcome: { kind: 'forced', characterId: 'judge' }
+				}));
+			expect(s.game.seats[s.seat('judge')].reminders).toMatchObject([
+				{ characterId: 'judge', label: 'No Ability' }
+			]);
+			const later = s.newDay().nominate('empath', 'monk');
+			expect(executionOutcomes(later.game, later.seat('monk'), later.characters)).toMatchObject([
+				{ characterId: 'judge', problem: 'used' }
+			]);
 		});
 	});
 });

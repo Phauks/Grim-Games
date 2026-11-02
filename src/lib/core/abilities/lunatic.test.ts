@@ -18,7 +18,14 @@ import { believedDemon, believesDemon, chosenLikeDemon } from '#lib/core/rules/e
 import { nightKiller } from '#lib/core/rules/night-alerts.ts';
 import { preventedDeaths } from '#lib/core/rules/prevented-deaths.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
-import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import {
+	committedCharacter,
+	committedGameData,
+	nightSheetPresence
+} from '#lib/core/testing/committed-data.ts';
+import { stepInfoCards, stepInfoTokens } from '#lib/core/rules/info-token-characters.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { setupPrep } from '#lib/core/rules/setup-reminders.ts';
 
 describe('Lunatic', () => {
 	const character = committedCharacter('lunatic');
@@ -82,6 +89,53 @@ describe('Lunatic', () => {
 				dead: true,
 				deathCause: 'zombuul'
 			});
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Lunatic#How_to_Run)', () => {
+		it('asks the Storyteller at setup which Demon the Lunatic thinks they are', () => {
+			// Wiki: "While setting up the game, put the Lunatic and Demon tokens in the bag. Once all
+			// tokens have been returned to you, swap the positions of the Lunatic and Demon tokens in
+			// the Grimoire."
+			const s = scenario(['lunatic', 'chef', 'empath', 'poisoner', 'shabaloth']);
+			expect(setupPrep('lunatic', character.name, s.characters)).toHaveLength(1);
+			expect(believesDemon(s.game, s.seat('lunatic'), s.characters)).toBe(true);
+		});
+
+		it('wakes the Lunatic first to be shown Minions and three bluffs as the Demon would be', () => {
+			// Wiki: "During the first night, wake the Lunatic and act as if they are the Demon. Show
+			// them the THESE ARE YOUR MINIONS info token and point to a number of players equaling the
+			// number of Minions in play. (These can be any players, whether or not they are Minions.)
+			// Show any three good character tokens as bluffs. (These can even be characters that are
+			// in play.)"
+			const tokens = stepInfoTokens(character, character.firstNightReminder).map((t) => t.id);
+			expect(tokens).toContain('these-are-your-minions');
+			expect(tokens).toContain('not-in-play');
+		});
+
+		it('then shows the real Demon This Player Is, with the Lunatic token', () => {
+			// Wiki: "During the first night, wake the Demon. Show them the YOU ARE info token, then
+			// their Demon token. (This tells them they are the real Demon.) Show them the THIS PLAYER IS
+			// info token, then the Lunatic token, then point at the Lunatic player."
+			// The real Demon drew their own token, so no You Are card is offered (Trevor, 2026-11-02).
+			const cards = stepInfoCards(character, character.firstNightReminder).map((c) => c.token.id);
+			expect(cards).toContain('this-player-is');
+			expect(cards).not.toContain('you-are');
+		});
+
+		it("marks the Lunatic's choices Chosen, before the Demon's step each night", () => {
+			// Wiki: "Each night, before the Demon wakes to attack, wake the Lunatic to act as if they
+			// were that Demon. Put a CHOSEN reminder on each player they chose, then put them to
+			// sleep. Wake the real Demon, point at the Lunatic, show the Lunatic token to the real
+			// Demon, and point at the players that the Lunatic chose."
+			const s = scenario(['lunatic', 'chef', 'empath', 'poisoner', 'shabaloth']).newDay();
+			const chosen = { characterId: 'lunatic', label: 'Chosen' };
+			for (const seat of ['lunatic', 'chef', 'shabaloth'] as const)
+				expect(reminderTargetMisses(s.game, chosen, s.seat(seat), s.characters), seat).toEqual([]);
+			const order = committedGameData().nightSheet.otherNight;
+			for (const demon of ['zombuul', 'pukka', 'shabaloth', 'po'])
+				expect(order.indexOf('lunatic'), demon).toBeLessThan(order.indexOf(demon));
+			expect(character.otherNightReminder).toContain('Show the Lunatic token');
 		});
 	});
 });

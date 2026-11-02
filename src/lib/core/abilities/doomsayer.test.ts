@@ -16,7 +16,13 @@ import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { decide } from '#lib/core/engine/index.ts';
-import { dayUseUsers, isDayUseAlly } from '#lib/core/rules/day-claims.ts';
+import {
+	dayUseCandidates,
+	dayUseDeath,
+	dayUseOpen,
+	dayUseUsers,
+	isDayUseAlly
+} from '#lib/core/rules/day-claims.ts';
 import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
 import { dayReminders, dayStateFromGame, renderReminder } from '#lib/core/rules/day-reminders.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
@@ -121,6 +127,45 @@ describe('Doomsayer', () => {
 			]);
 			for (const dead of ['scarletwoman', 'gunslinger', 'spy'])
 				expect(end.game.seats[end.seat(dead)].deathCause).toBe('doomsayer');
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Doomsayer#How_to_Run)', () => {
+		it('can be added during the game, and the day panel then shows it', () => {
+			// Wiki: "At any time, declare that the Doomsayer is in play. Add the Doomsayer token to the
+			// Grimoire."
+			const s = scenario(['chef', 'empath', 'monk', 'poisoner', 'imp']).newDay();
+			expect(dayLines(s, 'doomsayer')).toEqual([]);
+			const added = s.rule('doomsayer');
+			expect(added.game.ruleCharacters).toContain('doomsayer');
+			expect(dayLines(added, 'doomsayer')).toEqual([
+				{ group: 'day-ability', text: '[doomsayer] is in play' }
+			]);
+		});
+
+		it('lets any living player use it while four or more players are alive', () => {
+			// Wiki: "At any time during the day, if four or more players are alive, a player can
+			// declare that they wish to use the Doomsayer ability."
+			const s = scenario(['chef', 'empath', 'monk', 'poisoner', 'imp']).rule('doomsayer');
+			const four = s.dies('chef');
+			expect(dayUseCandidates(four.game, 'doomsayer', four.characters)).toEqual(
+				four.seats.slice(1)
+			);
+			const three = four.dies('empath');
+			expect(dayUseOpen(three.game, 'doomsayer', three.characters)).toBe(false);
+			expect(dayUseCandidates(three.game, 'doomsayer', three.characters)).toEqual([]);
+			expect(dayLines(three, 'doomsayer')).toEqual([]);
+		});
+
+		it('chooses a living player of the same alignment, who dies', () => {
+			// Wiki: "When this happens, choose one player of the same alignment. The chosen player
+			// dies."
+			const s = scenario(['chef', 'empath', 'monk', 'poisoner', 'imp']).rule('doomsayer');
+			expect(isDayUseAlly(s.game, s.seat('poisoner'), s.seat('imp'))).toBe(true);
+			expect(isDayUseAlly(s.game, s.seat('poisoner'), s.seat('chef'))).toBe(false);
+			expect(dayUseDeath(s.game, 'doomsayer', s.seat('imp'), s.characters)).toBe('dies');
+			const dead = s.dies('empath');
+			expect(isDayUseAlly(dead.game, dead.seat('chef'), dead.seat('empath'))).toBe(false);
 		});
 	});
 });

@@ -16,6 +16,8 @@ import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { killChoice, liveOrDieChosen, resolveLiveOrDie } from '#lib/core/rules/chosen-kills.ts';
+import { dayReminders, dayStateFromGame } from '#lib/core/rules/day-reminders.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Al-Hadikhia', () => {
@@ -89,6 +91,76 @@ describe('Al-Hadikhia', () => {
 				[true, true, false],
 				[true, true, false]
 			]);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Al-Hadikhia#How_to_Run)', () => {
+		it('the 1, 2 and 3 reminders may go on any player, alive or dead', () => {
+			// Wiki: "Each night except the first, wake the Al-Hadikhia. They may point at three players.
+			// If they do, mark these players with the 1, 2 and 3 reminders, in the order the
+			// Al-Hadikhia chose."
+			const s = scenario(['alhadikhia', 'chef', 'empath', 'monk', 'poisoner']).dies(
+				'monk',
+				'alhadikhia'
+			);
+			for (const label of ['1', '2', '3'])
+				for (const seatId of s.game.seating)
+					expect(
+						reminderTargetMisses(s.game, { characterId: 'alhadikhia', label }, seatId, s.characters)
+					).toEqual([]);
+		});
+
+		it('asks the chosen players in the order of their reminders', () => {
+			// Wiki: "Wake the player marked 1 and say “The Al-Hadikhia has chosen” then the name of the
+			// player, then “Do you choose to live?” They either nod or shake their head. Put them to
+			// sleep."
+			// Wiki: "Repeat for players marked 2 then 3."
+			const s = scenario(['alhadikhia', 'chef', 'empath', 'monk', 'poisoner'])
+				.reminder('chef', 'alhadikhia', '3')
+				.reminder('empath', 'alhadikhia', '1')
+				.reminder('monk', 'alhadikhia', '2');
+			expect(liveOrDieChosen(s.game, 'alhadikhia', s.characters)).toEqual([
+				s.seat('empath'),
+				s.seat('monk'),
+				s.seat('chef')
+			]);
+		});
+
+		it('a dead player who chooses to live comes back, and a living one who chooses to die dies', () => {
+			// Wiki: "If they chose to live, remove their shroud (if any), and if they choose to die,
+			// add a shroud."
+			const s = scenario(['alhadikhia', 'chef', 'empath', 'monk', 'poisoner'])
+				.dies('monk', 'alhadikhia')
+				.reminder('chef', 'alhadikhia', '1')
+				.reminder('empath', 'alhadikhia', '2')
+				.reminder('monk', 'alhadikhia', '3');
+			const out = resolveLiveOrDie(s.game, [
+				{ seatId: s.seat('chef'), lives: false },
+				{ seatId: s.seat('empath'), lives: true },
+				{ seatId: s.seat('monk'), lives: true }
+			]);
+			expect(out.allDie).toBe(false);
+			expect(out.results.map((r) => [r.dead, r.died, r.revived])).toEqual([
+				[true, true, false],
+				[false, false, false],
+				[false, false, true]
+			]);
+		});
+
+		it.fails('reminds the Storyteller at dawn to say which marked players are alive', () => {
+			// Wiki: "Each dawn, declare which players marked 1, 2 and 3 are alive and which are dead. Do
+			// this even if a player’s alive or dead status did not change during the night."
+			// Waits on the engine (unplanned): no dawn announcement names the players the Al-Hadikhia
+			// marked; its day reminders are none.
+			const s = scenario(['alhadikhia', 'chef', 'empath', 'monk', 'poisoner'])
+				.reminder('chef', 'alhadikhia', '1')
+				.reminder('empath', 'alhadikhia', '2')
+				.reminder('monk', 'alhadikhia', '3')
+				.newDay();
+			const lines = dayReminders(
+				dayStateFromGame(s.game, (id) => s.characters.get(id), undefined, s.characters)
+			).groups.flatMap((g) => g.reminders.filter((r) => r.characterId === 'alhadikhia'));
+			expect(lines.length).toBeGreaterThan(0);
 		});
 	});
 });

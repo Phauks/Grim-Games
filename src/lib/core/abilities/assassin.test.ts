@@ -21,6 +21,9 @@ import { nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
 import { preventedDeaths } from '#lib/core/rules/prevented-deaths.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { nightTextPlain, nightTextSegments, placeholdersFor } from '#lib/core/rules/night-text.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { wokeTonight } from '#lib/core/rules/woke-tonight.ts';
 
 describe('Assassin', () => {
 	const character = committedCharacter('assassin');
@@ -126,6 +129,71 @@ describe('Assassin', () => {
 				characterId: 'goon',
 				alignment: 'evil'
 			});
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Assassin#How_to_Run)', () => {
+		const cast = ['assassin', 'chef', 'innkeeper', 'sailor', 'poisoner', 'imp'];
+		const otherNightText = () => {
+			const placeholders = placeholdersFor(character, 'other');
+			return nightTextPlain(
+				nightTextSegments(character.otherNightReminder!, character, {
+					...(placeholders ? { placeholders } : {})
+				})
+			);
+		};
+
+		it('may choose no one, or any player, themself included', () => {
+			// Wiki: "Each night except the first, wake the Assassin. They either shake their head no or
+			// point at any player."
+			const s = scenario(cast).newDay().dies('chef', 'demon');
+			const dead = { characterId: 'assassin', label: 'Dead' };
+			for (const seat of ['assassin', 'chef', 'imp'] as const)
+				expect(reminderTargetMisses(s.game, dead, s.seat(seat), s.characters), seat).toEqual([]);
+			expect(otherNightText()).toContain('might choose a player');
+		});
+
+		it('kills through the Innkeeper, but not while poisoned', () => {
+			// Wiki: "If the Assassin chose a player, that player dies— mark them with the DEAD reminder.
+			// This cannot be prevented in any way (except if the Assassin doesn’t have their ability,
+			// such as if they’re drunk or poisoned)."
+			const s = scenario(cast).newDay().reminder('chef', 'innkeeper', 'Safe');
+			const protectedSeats = (at: typeof s) =>
+				nightStepAlerts(at.game, 'assassin', at.characters)
+					.filter((a) => a.kind === 'protected')
+					.map((a) => a.seatId);
+			expect(protectedSeats(s)).toEqual([]);
+			const byDemon = nightStepAlerts(s.game, 'imp', s.characters).filter(
+				(a) => a.kind === 'protected'
+			);
+			expect(byDemon.map((a) => a.seatId)).toContain(s.seat('chef'));
+			expect(otherNightText()).toContain('[+Dead]');
+			const poisoned = s.poisoned('assassin').reminder('sailor', 'assassin', 'Dead');
+			const [survivor] = preventedDeaths(poisoned.game, poisoned.characters);
+			expect(survivor).toMatchObject({ killer: 'assassin', seatId: poisoned.seat('sailor') });
+			expect(survivor.because.map((b) => b.kind)).toContain('killer-impaired');
+		});
+
+		it('marks the Assassin No Ability once they have chosen', () => {
+			// Wiki: "The Assassin loses their ability—mark them with the NO ABILITY reminder"
+			const s = scenario(cast).newDay();
+			const spent = { characterId: 'assassin', label: 'No Ability' };
+			expect(reminderTargetMisses(s.game, spent, s.seat('assassin'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, spent, s.seat('chef'), s.characters)).not.toEqual([]);
+			expect(otherNightText()).toContain('[+No Ability]');
+		});
+
+		it.fails('stops waking the Assassin once they are marked No Ability', () => {
+			// Wiki: "and remove their night token from the night sheet. (The Assassin won’t wake
+			// again.)"
+			// Waits on the engine (unplanned): the Assassin's rules have no wakesWhen untilToken "No
+			// Ability", so a spent Assassin still counts as waking.
+			const s = scenario(cast).newDay();
+			expect(wokeTonight(s.game, s.seat('assassin'), s.characters, 'other')).toBe(true);
+			const spent = s.reminder('assassin', 'assassin', 'No Ability');
+			expect(wokeTonight(spent.game, spent.seat('assassin'), spent.characters, 'other')).toBe(
+				false
+			);
 		});
 	});
 });

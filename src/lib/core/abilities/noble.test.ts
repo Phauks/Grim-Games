@@ -15,8 +15,10 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night-info.ts';
+import { infoPicker, infoRecord, isAllowed, isTruthful } from '#lib/core/rules/night-info.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { setupPrep } from '#lib/core/rules/setup-reminders.ts';
 
 describe('Noble', () => {
 	const character = committedCharacter('noble');
@@ -80,6 +82,53 @@ describe('Noble', () => {
 			const trio = { seats: [s.seat('empath'), s.seat('spy'), s.seat('po')] };
 			expect(isAllowed(picker, trio)).toBe(true);
 			expect(isTruthful(picker, trio)).toBe(false);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Noble#How_to_Run)', () => {
+		const cast = ['noble', 'chef', 'poisoner', 'empath', 'monk', 'imp'];
+		const know = { characterId: 'noble', label: 'Know' };
+
+		it('lists three Know reminders to place before the first night', () => {
+			// Wiki: "While preparing the first night, mark two good players' character tokens with Noble
+			// KNOW reminders. Mark any evil player's character token with the third KNOW reminder."
+			const s = scenario(cast);
+			expect(setupPrep('noble', character.name, s.characters)).toMatchObject([
+				{ tokens: ['Know', 'Know', 'Know'] }
+			]);
+		});
+
+		it('puts Know on two good players and one evil player, no more', () => {
+			// Wiki: "While preparing the first night, mark two good players' character tokens with Noble
+			// KNOW reminders. Mark any evil player's character token with the third KNOW reminder."
+			const s = scenario(cast)
+				.reminder('chef', 'noble', 'Know')
+				.reminder('empath', 'noble', 'Know');
+			expect(reminderTargetMisses(s.game, know, s.seat('monk'), s.characters)).toEqual([
+				'alignment'
+			]);
+			expect(reminderTargetMisses(s.game, know, s.seat('poisoner'), s.characters)).toEqual([]);
+			const full = s.reminder('poisoner', 'noble', 'Know');
+			expect(reminderTargetMisses(full.game, know, full.seat('imp'), full.characters)).toEqual([
+				'alignment'
+			]);
+		});
+
+		it('points to the three players marked Know on the first night', () => {
+			// Wiki: "During the first night, wake the Noble. Point to all three players marked KNOW. Put
+			// the Noble to sleep."
+			const s = scenario(cast);
+			const picker = infoPicker(s.game, s.seat('noble'), 'noble', s.characters)!;
+			expect(picker).toMatchObject({ kind: 'players', seatCount: 3 });
+			const seats = [s.seat('chef'), s.seat('poisoner'), s.seat('empath')];
+			const record = infoRecord(
+				picker,
+				{ seats },
+				{ seat: (id) => id, character: (id) => id },
+				s.game,
+				s.characters
+			);
+			expect(record.reminders).toEqual(seats.map((seatId) => ({ seatId, reminder: know })));
 		});
 	});
 });

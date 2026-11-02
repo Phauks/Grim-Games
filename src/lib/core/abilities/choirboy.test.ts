@@ -15,7 +15,9 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night-info.ts';
-import { scenario } from '#lib/core/testing/scenario.ts';
+import { analyseSetup } from '#lib/core/rules/setup.ts';
+import { wakeConditionMet } from '#lib/core/rules/wakes-when.ts';
+import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
 describe('Choirboy', () => {
@@ -69,6 +71,39 @@ describe('Choirboy', () => {
 			const picker = infoPicker(s.game, s.seat('choirboy'), 'choirboy', s.characters)!;
 			expect(picker.anyAllowed).toBe(true);
 			expect(isAllowed(picker, { seats: [s.seat('general')] })).toBe(true);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Choirboy#How_to_Run)', () => {
+		it('flags a bag with the Choirboy but no King', () => {
+			// Wiki: "While setting up the game, before putting character tokens in the bag, if the King
+			// is not already in play, remove a Townsfolk character token and add the King character
+			// token."
+			const s = scenario(['choirboy']);
+			const check = (...ids: string[]) =>
+				analyseSetup({ players: 7, inPlay: ids.map((id) => s.characters.get(id)!) }).warnings;
+			expect(
+				check('choirboy', 'chef', 'empath', 'monk', 'soldier', 'poisoner', 'imp')
+			).toMatchObject([{ code: 'missing-required', characters: ['choirboy', 'king'] }]);
+			expect(check('choirboy', 'king', 'empath', 'monk', 'soldier', 'poisoner', 'imp')).toEqual([]);
+		});
+
+		it('wakes only on a night the Demon killed the King', () => {
+			// Wiki: "Each night except the first, if the Demon kills the King, put the Demon to sleep then
+			// wake the Choirboy. Point to the Demon player then put the Choirboy to sleep."
+			const s = scenario(['choirboy', 'king', 'empath', 'imp', 'poisoner']).newDay();
+			const wakes = (at: Scenario, died: string[]) =>
+				wakeConditionMet(
+					at.game,
+					'choirboy',
+					at.seat('choirboy'),
+					at.characters,
+					new Set(died.map((id) => at.seat(id)))
+				);
+			expect(wakes(s, [])).toBe(false);
+			expect(wakes(s.dies('king', 'imp'), ['king'])).toBe(true);
+			expect(wakes(s.execute('king'), ['king'])).toBe(false);
+			expect(wakes(s.dies('empath', 'imp'), ['empath'])).toBe(false);
 		});
 	});
 });

@@ -18,6 +18,10 @@ import { committedCharacter, nightSheetPresence } from '#lib/core/testing/commit
 import { dayReminders, dayStateFromGame, renderReminder } from '#lib/core/rules/day-reminders.ts';
 import { dayTallyOf, tallyKills } from '#lib/core/rules/day-tally.ts';
 import { decide } from '#lib/core/engine/index.ts';
+import { rulesOf } from '#lib/core/data/rules/index.ts';
+import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { setupPrep } from '#lib/core/rules/setup-reminders.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
 /** The Yaggababble's day reminders, as plain text. */
@@ -132,6 +136,47 @@ describe('Yaggababble', () => {
 				left: 0,
 				over: true
 			});
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Yaggababble#How_to_Run)', () => {
+		const cast = ['yaggababble', 'chef', 'empath', 'monk', 'witch'];
+
+		it('asks for the secret phrase while preparing the game', () => {
+			// Wiki: "During setup, write a phrase on a piece of paper, or on a phone."
+			expect(setupPrep('yaggababble', 'Yaggababble')).toContainEqual(
+				expect.objectContaining({ value: { key: 'phrase', label: 'Secret phrase' } })
+			);
+		});
+
+		it('shows the Demon the phrase on a card on the first night', () => {
+			// Wiki: "During the first night, wake the Demon. Show this phrase, then put them to sleep."
+			expect(rulesOf('yaggababble')?.infoCard).toBe('secret-phrase');
+		});
+
+		it('counts each time the Demon says the phrase as one death to mark tonight', () => {
+			// Wiki: "Each time Demon says the secret phrase, put a DEAD reminder in the center of the left
+			// side of the Grimoire, as a reminder to yourself to place it tonight."
+			const s = scenario(cast).newDay();
+			const said = s
+				.do({ type: 'SetDayTally', characterId: 'yaggababble', count: 1 })
+				.do({ type: 'SetDayTally', characterId: 'yaggababble', count: 2 });
+			expect(tallyKills(said.game, 'yaggababble', said.characters)).toMatchObject({
+				count: 2,
+				left: 2
+			});
+		});
+
+		it('lets the Storyteller mark any players Dead tonight, who die as a Demon kill', () => {
+			// Wiki: "Each night, you may mark players with these DEAD reminders, and add a shroud to each
+			// marked player. These players die."
+			const s = scenario(cast).newDay();
+			const dead = { characterId: 'yaggababble', label: 'Dead' };
+			for (const seat of s.seats)
+				expect(reminderTargetMisses(s.game, dead, seat, s.characters)).toEqual([]);
+			expect(validDeathCauses(s.game, s.seat('monk'), s.characters).map((c) => c.cause)).toContain(
+				'demon'
+			);
 		});
 	});
 });

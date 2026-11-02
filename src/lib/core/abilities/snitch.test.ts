@@ -21,6 +21,7 @@ import {
 } from '#lib/core/testing/committed-data.ts';
 import { withCharacterChangeSteps } from '#lib/core/rules/character-changes.ts';
 import { nightOrder, type Night } from '#lib/core/rules/night-order.ts';
+import { warned } from '#lib/core/model/fixtures.test-support.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
 /** The notes the night order gives at each step tonight, by step id. */
@@ -130,6 +131,33 @@ describe('Snitch', () => {
 			);
 			const notes = steps.map((step) => step.notes.join(' ')).join(' ');
 			expect(notes).toMatch(/Snitch/);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Snitch#How_to_Run)', () => {
+		const cast = ['snitch', 'chef', 'empath', 'cerenovus', 'pithag', 'monk', 'vigormortis'];
+
+		it("warns when a Minion's three characters include one in play", () => {
+			// Wiki: "During the first night, wake a Minion. Show the THESE CHARACTERS ARE NOT IN PLAY
+			// info token, then show three not-in-play character tokens."
+			const s = scenario(cast).do({
+				type: 'SetBluffs',
+				set: 0,
+				characterIds: ['sage', 'innkeeper', 'golem']
+			});
+			const minion = (characterIds: string[]) =>
+				warned(s.session, s.ctx, { type: 'SetBluffs', set: 1, characterIds });
+			expect(minion(['washerwoman', 'saint', 'mayor'])).toEqual([]);
+			expect(minion(['chef', 'saint', 'mayor'])).toContain('bluff-in-play');
+		});
+
+		it('reminds the Storyteller at Demon info that each Minion gets three too', () => {
+			// Wiki: "Put the Minion to sleep. Repeat this process until all Minions have learnt three
+			// not-in-play characters."
+			const demonInfo = notesTonight(scenario(cast), 'first').find(
+				(step) => step.id === 'demoninfo'
+			);
+			expect(demonInfo?.notes).toContain('Snitch: each Minion also gets 3 bluffs.');
 		});
 	});
 });

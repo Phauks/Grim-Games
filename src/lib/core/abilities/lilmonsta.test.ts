@@ -14,10 +14,18 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import {
+	committedCharacter,
+	committedGameData,
+	nightSheetPresence
+} from '#lib/core/testing/committed-data.ts';
 import { carriesDemonToken } from '#lib/core/rules/death-causes.ts';
 import { gameEnds } from '#lib/core/rules/game-end.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
+import { nightOrder } from '#lib/core/rules/night-order.ts';
+import { nightTextPlain, nightTextSegments, placeholdersFor } from '#lib/core/rules/night-text.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { analyseSetup } from '#lib/core/rules/setup.ts';
 
 describe("Lil' Monsta", () => {
 	const character = committedCharacter('lilmonsta');
@@ -75,6 +83,70 @@ describe("Lil' Monsta", () => {
 			const executed = next.execute('poisoner');
 			expect(gameEnds(executed.game, executed.characters)).toMatchObject([
 				{ rule: 'demon-dead', winner: 'good', seats: [executed.seat('poisoner')] }
+			]);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Lil%27_Monsta#How_to_Run)', () => {
+		const cast = ['poisoner', 'widow', 'chef', 'empath', 'monk', 'mayor', 'soldier'];
+		const data = committedGameData();
+		const textFor = (night: 'first' | 'other') => {
+			const placeholders = placeholdersFor(character, night);
+			const reminder =
+				night === 'first' ? character.firstNightReminder! : character.otherNightReminder!;
+			return nightTextPlain(
+				nightTextSegments(reminder, character, { ...(placeholders ? { placeholders } : {}) })
+			);
+		};
+
+		it('deals an extra Minion instead of the Demon', () => {
+			// Wiki: "During setup, remove Lil’ Monsta and add a Minion token."
+			const inPlay = [...cast, 'lilmonsta'].map((id) => data.byId.get(id)!);
+			const result = analyseSetup({ players: 7, inPlay });
+			expect(result.expected.demon).toEqual([0]);
+			expect(result.expected.minion).toEqual([2]);
+			expect(result.warnings).toEqual([]);
+		});
+
+		it.fails('skips the Minion Info and Demon Info steps on the first night', () => {
+			// Wiki: "On the first night, skip the MINION INFO and DEMON INFO steps."
+			// Waits on the engine (unplanned): the night order keeps Minion Info and Demon Info with Lil' Monsta in play, as its rules don't remove the evil team's info.
+			const inPlay = [...cast, 'lilmonsta'].map((id) => data.byId.get(id)!);
+			const { steps } = nightOrder({ night: 'first', sheet: data.nightSheet, inPlay, players: 7 });
+			expect(steps.map((step) => step.id)).not.toContain('minioninfo');
+			expect(steps.map((step) => step.id)).not.toContain('demoninfo');
+		});
+
+		it('puts Is The Demon on the living player the Minions choose', () => {
+			// Wiki: "Each night, wake all Minions. The majority will (eventually) point to one player.
+			// If they can’t decide, choose a player. (Give this player the Lil’ Monsta token and wait for
+			// them to hide it, if you want!) Mark them with the IS THE DEMON reminder token."
+			expect(textFor('first')).toContain('[+Is The Demon]');
+			expect(textFor('other')).toContain('[+Is The Demon]');
+			const s = scenario(cast).dies('soldier');
+			const token = { characterId: 'lilmonsta', label: 'Is The Demon' };
+			expect(reminderTargetMisses(s.game, token, s.seat('widow'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, token, s.seat('chef'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, token, s.seat('soldier'), s.characters)).toEqual([
+				'life'
+			]);
+		});
+
+		it('may kill a player on nights after the first only', () => {
+			// Wiki: "Then, if it is not the first night, a player might die – mark them with a DEAD
+			// reminder and a shroud."
+			expect(textFor('first')).not.toContain('[+Dead]');
+			expect(textFor('other')).toContain('[+Dead]');
+		});
+
+		it('gives good the win when the player marked Is The Demon dies at night', () => {
+			// Wiki: "The player marked IS THE DEMON registers as the Demon. If they die, declare that
+			// the game is over and good has won."
+			const s = scenario(cast)
+				.reminder('widow', 'lilmonsta', 'Is The Demon')
+				.dies('widow', 'lilmonsta');
+			expect(gameEnds(s.game, s.characters)).toMatchObject([
+				{ rule: 'demon-dead', winner: 'good', seats: [s.seat('widow')] }
 			]);
 		});
 	});

@@ -22,10 +22,12 @@ import {
 import type { EngineWarning } from '#lib/core/engine/index.ts';
 import { abilityState } from '#lib/core/rules/ability.ts';
 import { withActsTwiceSteps } from '#lib/core/rules/acts-twice.ts';
-import { withNightInfo } from '#lib/core/rules/night-info.ts';
+import { filledInfoToken } from '#lib/core/rules/info-token-characters.ts';
+import { infoPicker, reliability, withNightInfo } from '#lib/core/rules/night-info.ts';
 import { nightOrder } from '#lib/core/rules/night-order.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
-import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { reminderTargetMisses, reminderTargets } from '#lib/core/rules/reminder-targets.ts';
+import { placeholdersFor } from '#lib/core/rules/night-text.ts';
 
 const data = committedGameData();
 const warnings = (s: Scenario): string[] =>
@@ -150,6 +152,108 @@ describe('Barista', () => {
 			expect(witch.map((step) => step.again?.seatId)).toEqual([undefined, s.seat('witch')]);
 			const cursed = s.reminder('chef', 'witch', 'Cursed').reminder('empath', 'witch', 'Cursed');
 			expect(warnings(cursed)).toEqual([]);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Barista#How_to_Run)', () => {
+		const sober = { characterId: 'barista', label: 'Sober & Healthy' };
+		const twice = { characterId: 'barista', label: 'Acts Twice' };
+
+		it('each night places one of Sober & Healthy or Acts Twice, on any player', () => {
+			// Wiki: "Each night, remove previous reminders then put the Barista’s SOBER AND HEALTHY
+			// reminder or their ACTS TWICE reminder by any character token."
+			const either = [
+				{
+					tokens: [
+						{ label: 'Sober & Healthy', action: 'place' },
+						{ label: 'Acts Twice', action: 'place' }
+					],
+					either: true
+				}
+			];
+			expect(placeholdersFor(character, 'first')).toEqual(either);
+			expect(placeholdersFor(character, 'other')).toEqual(either);
+			const s = scenario(['barista', 'sage', 'imp', 'poisoner', 'chef']).dies('chef');
+			for (const token of [sober, twice])
+				expect(reminderTargets(s.game, token, s.characters).flatMap((t) => t.misses)).toEqual([]);
+			const marked = s.reminder('sage', 'barista', 'Sober & Healthy');
+			expect(
+				reminderTargetMisses(marked.game, twice, marked.seat('sage'), marked.characters)
+			).toEqual(['not-with-label']);
+		});
+
+		it.fails("takes the previous night's reminder off before the next night", () => {
+			// Wiki: "Each night, remove previous reminders then put the Barista’s SOBER AND HEALTHY
+			// reminder or their ACTS TWICE reminder by any character token."
+			// Waits on the engine (unplanned): the Barista's reminders have no reminderEnds, so last
+			// night's Sober & Healthy stays on its player into the next night.
+			const s = scenario(['barista', 'sage', 'imp', 'poisoner', 'chef'])
+				.reminder('sage', 'barista', 'Sober & Healthy')
+				.newDay()
+				.dusk();
+			expect(s.game.seats[s.seat('sage')].reminders).toEqual([]);
+		});
+
+		it('the chosen player is shown that the Barista selected them', () => {
+			// Wiki: "Wake that character’s player and show them the THIS CHARACTER SELECTED YOU info
+			// token, the Barista token, then one finger (to show they are sober and healthy) or two
+			// fingers (to show they act twice)."
+			expect(filledInfoToken(character, 'selected-you', 1)?.characterIds).toEqual(['barista']);
+		});
+
+		it('a drunk player marked Sober & Healthy is sober and gets true information', () => {
+			// Wiki: "A player marked SOBER AND HEALTHY is sober and healthy (even if they’re also marked
+			// DRUNK or POISONED) and always gets true information (even if an ability would make them
+			// drunk or poisoned)."
+			const s = scenario(['barista', 'empath', 'imp', 'sweetheart', 'chef'])
+				.dies('sweetheart')
+				.reminder('empath', 'sweetheart', 'Drunk');
+			expect(infoPicker(s.game, s.seat('empath'), 'empath', s.characters)?.unreliable).toBe(
+				'drunk'
+			);
+			const sobered = s.reminder('empath', 'barista', 'Sober & Healthy');
+			expect(abilityState(sobered.game, sobered.seat('empath'), sobered.characters).works).toBe(
+				true
+			);
+			const picker = infoPicker(
+				sobered.game,
+				sobered.seat('empath'),
+				'empath',
+				sobered.characters
+			)!;
+			expect(picker.unreliable).toBeUndefined();
+			expect(picker.range?.truth).toBe(1);
+		});
+
+		it.fails('a Townsfolk marked Sober & Healthy gets true information under the Vortox', () => {
+			// Wiki: "A player marked SOBER AND HEALTHY is sober and healthy (even if they’re also marked
+			// DRUNK or POISONED) and always gets true information (even if an ability would make them
+			// drunk or poisoned)."
+			// Waits on the engine (unplanned): reliability still says the Vortox makes a Sober & Healthy
+			// Townsfolk's information false.
+			const s = scenario(['barista', 'empath', 'vortox', 'witch', 'chef']).reminder(
+				'empath',
+				'barista',
+				'Sober & Healthy'
+			);
+			expect(
+				reliability(s.game, s.seat('empath'), 'empath', s.characters).mustBeFalse
+			).toBeUndefined();
+		});
+
+		it("the Barista's ? reminders go only on the player who acts twice", () => {
+			// Wiki: "Use the Barista’s ? reminders if needed, to substitute for the character’s own
+			// reminders."
+			const s = scenario(['barista', 'witch', 'imp', 'chef', 'empath']).reminder(
+				'witch',
+				'barista',
+				'Acts Twice'
+			);
+			const stand = { characterId: 'barista', label: '?' };
+			expect(reminderTargetMisses(s.game, stand, s.seat('witch'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, stand, s.seat('chef'), s.characters)).toEqual([
+				'with-label'
+			]);
 		});
 	});
 });

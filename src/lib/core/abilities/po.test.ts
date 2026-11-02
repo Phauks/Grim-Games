@@ -20,6 +20,7 @@ import { preventedDeaths } from '#lib/core/rules/prevented-deaths.ts';
 import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 import { nightKill } from '#lib/core/rules/night-kill.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
+import { nightTextPlain, nightTextSegments, placeholdersFor } from '#lib/core/rules/night-text.ts';
 
 describe('Po', () => {
 	const character = committedCharacter('po');
@@ -122,6 +123,46 @@ describe('Po', () => {
 						impairments: [expect.objectContaining({ reason: 'drunk' })]
 					})
 				);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Po#How_to_Run)', () => {
+		const cast = ['po', 'chef', 'empath', 'washerwoman', 'librarian', 'poisoner'];
+		const otherNightText = () => {
+			const placeholders = placeholdersFor(character, 'other');
+			return nightTextPlain(
+				nightTextSegments(character.otherNightReminder!, character, {
+					...(placeholders ? { placeholders } : {})
+				})
+			);
+		};
+
+		it('marks a chosen player Dead, or the Po 3 Attacks when they choose no one', () => {
+			// Wiki: "Each night except the first, wake the Po. They either shake their head no or point
+			// at any player. Put the Po to sleep. If they shook their head no, mark the Po with the 3
+			// ATTACKS reminder. If they chose a player, that player dies—mark them with a DEAD
+			// reminder."
+			const s = scenario(cast).newDay();
+			const dead = { characterId: 'po', label: 'Dead' };
+			for (const seat of ['po', 'chef', 'poisoner'] as const)
+				expect(reminderTargetMisses(s.game, dead, s.seat(seat), s.characters), seat).toEqual([]);
+			expect(otherNightText()).toContain('[+Dead] or [+3 Attacks]');
+			expect(nightKill(s.game, s.seat('po'), 'po', s.characters)?.max).toBe(1);
+		});
+
+		it('attacks three players, each marked Dead, while marked 3 Attacks', () => {
+			// Wiki: "If the Po wakes to act while marked 3 ATTACKS, they point at any three players, one
+			// at a time. In the order chosen, each chosen player dies—mark them with DEAD reminders."
+			const s = scenario(cast).newDay().reminder('po', 'po', '3 Attacks').newDay();
+			expect(nightKill(s.game, s.seat('po'), 'po', s.characters)?.max).toBe(3);
+			expect(otherNightText()).toContain('[+Dead] [+Dead] [+Dead]');
+		});
+
+		it.fails('takes the 3 Attacks reminder off after the three attacks', () => {
+			// Wiki: "Remove the 3 ATTACKS reminder."
+			// Waits on the engine (unplanned): the Po's night step places Dead three times but has no
+			// step that removes 3 Attacks.
+			expect(otherNightText()).toContain('[-3 Attacks]');
 		});
 	});
 });

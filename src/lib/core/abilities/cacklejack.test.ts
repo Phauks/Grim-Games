@@ -19,6 +19,9 @@ import { castGame, testCharacters as characters } from '#lib/core/model/fixtures
 import { alignmentOf } from '#lib/core/model/selectors.ts';
 import { abilityState } from '#lib/core/rules/ability.ts';
 import { changeableSeats, characterChanger } from '#lib/core/rules/becomes.ts';
+import { dayUseOf } from '#lib/core/rules/day-claims.ts';
+import { stepInfoCards } from '#lib/core/rules/info-token-characters.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
@@ -60,8 +63,8 @@ describe('Cacklejack', () => {
 		});
 	});
 
-	// How to Run: each night but the first, the Storyteller changes one player's character, any
-	// player but the one marked Not Me, into any other character.
+	// Wiki (How to Run): "Each night, except the first, replace any player’s character token with a
+	// different character token."
 	describe("tonight's character change", () => {
 		it('offers every player but the one marked Not Me', () => {
 			const cast = ['cacklejack', 'acrobat', 'chef', 'imp', 'poisoner'];
@@ -116,6 +119,29 @@ describe('Cacklejack', () => {
 			const s = marked.becomes('leviathan', 'shabaloth');
 			expect(s.game.seats[s.seat('leviathan')].characterId).toBe('shabaloth');
 			expect(alignmentOf(s.game, s.seat('leviathan'))).toBe('evil');
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Cacklejack#How_to_Run)', () => {
+		it('logs a day choice of any player, marked Not Me', () => {
+			// Wiki: "Each day, the Cacklejack chooses a player. Mark them with the NOT ME reminder."
+			expect(dayUseOf('cacklejack', characters)).toMatchObject({ who: 'chosen' });
+			const s = scenario(['cacklejack', 'acrobat', 'chef', 'imp', 'poisoner']).newDay();
+			const token = { characterId: 'cacklejack', label: 'Not Me' };
+			for (const seatId of s.game.seating)
+				expect(reminderTargetMisses(s.game, token, seatId, s.characters)).toEqual([]);
+		});
+
+		it('shows the changed player You Are with their new character', () => {
+			// Wiki: "Wake that player. Show the YOU ARE info token, and their new character token, then
+			// put them to sleep."
+			const cacklejack = characters.get('cacklejack')!;
+			const cards = stepInfoCards(cacklejack, cacklejack.otherNightReminder, {
+				changed: ['clockmaker']
+			});
+			expect(cards.find((c) => c.token.id === 'you-are')?.filled?.characterIds).toEqual([
+				'clockmaker'
+			]);
 		});
 	});
 });

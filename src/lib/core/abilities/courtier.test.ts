@@ -20,6 +20,9 @@ import { countdownMoves } from '#lib/core/rules/countdown.ts';
 import { gameEnds } from '#lib/core/rules/game-end.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { nightTextPlain, nightTextSegments, placeholdersFor } from '#lib/core/rules/night-text.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { wokeTonight } from '#lib/core/rules/woke-tonight.ts';
 
 /** One night's countdown, as the Courtier's step does it: each token swapped for the next. */
 function countDown(s: Scenario): Scenario {
@@ -116,6 +119,78 @@ describe('Courtier', () => {
 			expect(gameEnds(s.game, s.characters)).toMatchObject([
 				{ rule: 'demon-dead', winner: 'good' }
 			]);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Courtier#How_to_Run)', () => {
+		const cast = ['courtier', 'chef', 'shabaloth', 'monk', 'poisoner'];
+		const nightText = (night: 'first' | 'other') => {
+			const source =
+				night === 'first' ? character.firstNightReminder : character.otherNightReminder;
+			const placeholders = placeholdersFor(character, night);
+			return nightTextPlain(
+				nightTextSegments(source!, character, { ...(placeholders ? { placeholders } : {}) })
+			);
+		};
+
+		it('may choose a character, or no one, on the first night and every other night', () => {
+			// Wiki: "Each night, wake the Courtier. They either shake their head no or point at any
+			// character icon on their character sheet. Put the Courtier to sleep."
+			for (const night of ['first', 'other'] as const)
+				expect(nightText(night), night).toContain('might choose a character');
+		});
+
+		it("makes the chosen character's player drunk while any of the three tokens is on them", () => {
+			// Wiki: "If the Courtier chose a character icon and that character is in play, the player
+			// of the chosen character becomes drunk for three nights and three days. Tonight, mark them
+			// with the Courtier’s DRUNK 1 reminder."
+			for (const label of ['Drunk 1', 'Drunk 2', 'Drunk 3']) {
+				const s = scenario(cast).reminder('shabaloth', 'courtier', label);
+				expect(
+					reminderTargetMisses(
+						s.game,
+						{ characterId: 'courtier', label },
+						s.seat('shabaloth'),
+						s.characters
+					)
+				).toEqual([]);
+				expect(
+					abilityState(s.game, s.seat('shabaloth'), s.characters).impairments,
+					label
+				).toMatchObject([{ reason: 'drunk', source: { characterId: 'courtier' } }]);
+			}
+		});
+
+		it.fails('counts the drunk tokens up from Drunk 1 to Drunk 3, then takes Drunk 3 off', () => {
+			// Wiki: "The next night, replace the DRUNK 1 reminder with the DRUNK 2 reminder. The next
+			// night, replace the DRUNK 2 reminder with the DRUNK 3 reminder. At dusk on the next night,
+			// remove the DRUNK 3 reminder"
+			// Waits on the engine (unplanned): the countdown follows TPI's night text (Drunk 3, then 2,
+			// then 1, then off), the reverse of the order the wiki's How to Run gives.
+			const s = scenario(cast).reminder('shabaloth', 'courtier', 'Drunk 1');
+			expect(countdownMoves(s.game, 'courtier', s.characters)).toMatchObject([{ to: 'Drunk 2' }]);
+		});
+
+		it('marks the Courtier No Ability once the drunkenness is placed', () => {
+			// Wiki: "and the Courtier loses their ability—mark them with the NO ABILITY reminder"
+			const s = scenario(cast);
+			const spent = { characterId: 'courtier', label: 'No Ability' };
+			expect(reminderTargetMisses(s.game, spent, s.seat('courtier'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, spent, s.seat('chef'), s.characters)).not.toEqual([]);
+			expect(nightText('first')).toContain('[+No Ability]');
+		});
+
+		it.fails('stops waking the Courtier once they have chosen a character', () => {
+			// Wiki: "and remove their night token from the night sheet. After the Courtier chooses a
+			// character to make drunk, do not wake the Courtier for the rest of the game."
+			// Waits on the engine (unplanned): the Courtier's rules have no wakesWhen untilToken "No
+			// Ability", so a spent Courtier still counts as waking.
+			const s = scenario(cast).newDay();
+			expect(wokeTonight(s.game, s.seat('courtier'), s.characters, 'other')).toBe(true);
+			const spent = s.reminder('courtier', 'courtier', 'No Ability');
+			expect(wokeTonight(spent.game, spent.seat('courtier'), spent.characters, 'other')).toBe(
+				false
+			);
 		});
 	});
 });

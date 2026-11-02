@@ -22,7 +22,12 @@ import type { CharacterId } from '#lib/core/data/index.ts';
 import { abilityState } from '#lib/core/rules/ability.ts';
 import { gainedSetupAbilities } from '#lib/core/rules/gained-abilities.ts';
 import { analyseSetup } from '#lib/core/rules/setup.ts';
+import { nightOrder } from '#lib/core/rules/night-order.ts';
+import { stepInfoCards } from '#lib/core/rules/info-token-characters.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { setupPrep } from '#lib/core/rules/setup-reminders.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
+import { committedGameData } from '#lib/core/testing/committed-data.ts';
 
 /** Seat 0 is the good Alchemist, its token swapped for the Minion whose ability it has. */
 const alchemistAs = (minion: CharacterId, others: CharacterId[]) =>
@@ -59,8 +64,9 @@ describe('Alchemist', () => {
 		});
 	});
 
-	// How to Run: its token is swapped for the Minion whose ability it has, marked "Is The
-	// Alchemist"; the player is still the good Alchemist.
+	// Wiki (How to Run): "If the Alchemist has a not-in-play Minion ability, mark the Alchemist
+	// with the IS THE ALCHEMIST reminder and swap the Alchemist token with this Minion token and
+	// turn it upside down. (This shows they are still good.)"
 	describe('a swapped token marked "Is The Alchemist"', () => {
 		it('offers only Minions to swap to, whatever its alignment', () => {
 			expect(rulesOf('alchemist', characters)?.swapsForAbility).toEqual({
@@ -122,6 +128,53 @@ describe('Alchemist', () => {
 				{ reason: 'poisoned', source: { characterId: 'poisoner' } }
 			]);
 			expect(abilityState(s.game, s.seat('lordoftyphon'), s.characters).works).toBe(true);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Alchemist#How_to_Run)', () => {
+		it("shows the Minion whose ability it has on the first night's You Are token", () => {
+			// Wiki: "During the first night, wake the Alchemist. Show the YOU ARE info token then the
+			// character token of a Minion. Put the Alchemist to sleep."
+			const s = alchemistAs('poisoner', ['chef', 'empath', 'monk', 'imp']);
+			const alchemist = s.characters.get('alchemist')!;
+			const cards = stepInfoCards(alchemist, alchemist.firstNightReminder, {
+				game: s.game,
+				characters: s.characters
+			});
+			expect(cards.find((c) => c.token.id === 'you-are')?.filled?.characterIds).toEqual([
+				'poisoner'
+			]);
+		});
+
+		it('prepares the Is The Alchemist reminder for the Alchemist only', () => {
+			// Wiki: "If the Alchemist has a not-in-play Minion ability, mark the Alchemist with the IS
+			// THE ALCHEMIST reminder and swap the Alchemist token with this Minion token and turn it
+			// upside down."
+			expect(setupPrep('alchemist', 'Alchemist', characters)).toMatchObject([
+				{ tokens: ['Is The Alchemist'], target: 'the Alchemist' }
+			]);
+			const s = alchemistAs('poisoner', ['chef', 'empath', 'monk', 'imp']);
+			const token = { characterId: 'alchemist', label: 'Is The Alchemist' };
+			expect(reminderTargetMisses(s.game, token, s.seat(0), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, token, s.seat('chef'), s.characters)).toEqual([
+				'not-self'
+			]);
+		});
+
+		it('wakes at night when its Minion would', () => {
+			// Wiki: "The Alchemist has this Minion ability. They use it as if they were a Minion, and
+			// wake at night when that Minion would normally wake to use their ability."
+			const s = alchemistAs('poisoner', ['chef', 'empath', 'monk', 'imp']);
+			const data = committedGameData();
+			const inPlay = s.game.seating.map((id) => data.byId.get(s.game.seats[id].characterId!)!);
+			const steps = nightOrder({
+				night: 'other',
+				sheet: data.nightSheet,
+				inPlay,
+				players: 5
+			}).steps;
+			expect(steps.map((step) => step.id)).toContain('poisoner');
+			expect(abilityState(s.game, s.seat(0), s.characters).works).toBe(true);
 		});
 	});
 });

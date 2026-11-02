@@ -17,6 +17,9 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { blockThreshold } from '#lib/core/rules/voting.ts';
 import { total, votes } from '#lib/core/testing/votes.ts';
+import { placeholdersFor } from '#lib/core/rules/night-text.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { voteHints } from '#lib/core/rules/vote-weights.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Thief', () => {
@@ -111,6 +114,37 @@ describe('Thief', () => {
 			);
 			expect(total(s)).toBe(4);
 			expect(blockThreshold(s.game)).toEqual({ alive: 10, needed: 5 });
+		});
+	});
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Thief#How_to_Run)', () => {
+		const cast = ['thief', 'chef', 'empath', 'monk', 'imp', 'poisoner'];
+
+		it("the Thief's step each night places Negative Vote on the chosen player", () => {
+			// Wiki: "Each night, wake the Thief. They point at any player. Mark the chosen player with
+			// the Thief’s NEGATIVE VOTE reminder. Put the Thief to sleep."
+			const place = [{ tokens: [{ label: 'Negative Vote', action: 'place' }] }];
+			expect(placeholdersFor(character, 'first')).toEqual(place);
+			expect(placeholdersFor(character, 'other')).toEqual(place);
+		});
+
+		it('allows Negative Vote on any other player, dead players included', () => {
+			// Wiki: "They point at any player."
+			// The ability says "a player (not yourself)", so the Thief is the one seat left out.
+			const s = scenario(cast).dies('monk', 'imp');
+			const reminder = { characterId: 'thief', label: 'Negative Vote' };
+			expect(reminderTargetMisses(s.game, reminder, s.seat('chef'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, reminder, s.seat('monk'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, reminder, s.seat('thief'), s.characters)).toEqual([
+				'self'
+			]);
+		});
+
+		it('shows the vote of the player marked Negative Vote as worth -1 when counting', () => {
+			// Wiki: "Each time you tally the vote of a player marked NEGATIVE VOTE, count it as
+			// subtracting one vote instead of adding one vote. (Count this out loud, as normal.)"
+			const s = scenario(cast).reminder('empath', 'thief', 'Negative Vote');
+			const hint = voteHints(s.game, s.characters).find((h) => h.seatId === s.seat('empath'))!;
+			expect(hint).toMatchObject({ worth: -1, worthFrom: ['thief'] });
 		});
 	});
 });

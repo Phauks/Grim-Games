@@ -109,4 +109,31 @@ describe('Ferryman', () => {
 			expect(ghostVotesRestored(after.game, after.characters, true)).toEqual([]);
 		});
 	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Ferryman#How_to_Run)', () => {
+		const spent = (dead: string[]) =>
+			dead.reduce(
+				(at, id) => at.dies(id, 'imp').do((s) => ({ type: 'SpendGhostVote', seatId: s.seat(id) })),
+				scenario(['chef', 'empath', 'monk', 'soldier', 'mayor', 'imp']).newDay()
+			);
+
+		it('can be put in play partway through the game', () => {
+			// Wiki: "During the game, when you notice that it would be a good idea to add it, declare
+			// that the Ferryman is in play. Add the Ferryman token to the Grimoire."
+			const s = spent(['chef']).newDay().rule('ferryman');
+			expect(s.game.ruleCharacters).toContain('ferryman');
+			expect(ghostVotesRestored(s.game, s.characters, true)).toEqual([s.seat('chef')]);
+		});
+
+		it('gives vote tokens back only on the final day, and only to dead players without one', () => {
+			// Wiki: "At the start of the final day, ask the players to return vote tokens to any dead
+			// players that do not have one in the Town Square."
+			const s = spent(['chef', 'empath']).dies('monk', 'imp').rule('ferryman');
+			expect(ghostVotesRestored(s.game, s.characters, false)).toEqual([]);
+			expect(ghostVotesRestored(s.game, s.characters, true)).toEqual([
+				s.seat('chef'),
+				s.seat('empath')
+			]);
+		});
+	});
 });

@@ -99,4 +99,32 @@ describe('Politician', () => {
 			expect(joinsWinners(s.game, s.characters, 'evil')).toEqual([s.seat('politician')]);
 		});
 	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Politician#How_to_Run)', () => {
+		it('offers the Politician at the game end, alive or dead, for the Storyteller to judge', () => {
+			// Wiki: "When the game ends, if good lost and you feel that this was significantly due to
+			// the words and actions of the Politician player, declare that the Politician turns evil
+			// and wins too."
+			const s = scenario(['politician', 'chef', 'empath', 'imp', 'poisoner']);
+			expect(endCharacters(s.game, s.characters)).toContain('politician');
+			const dead = s.dies('politician', 'imp');
+			expect(endCharacters(dead.game, dead.characters)).toContain('politician');
+		});
+
+		it.fails('lets an evil Politician who lost the game for evil turn good and win', () => {
+			// Wiki: "In the rare instance that the Politician is evil, and plays a big part in losing
+			// the game for evil, declare that the Politician turns good and wins with the good team."
+			// Waits on the engine (M15l): the Storyteller's call that the Politician wins with the
+			// other team.
+			const s = scenario(['politician', 'chef', 'empath', 'imp', 'poisoner'])
+				.becomes('politician', 'politician', 'evil')
+				.execute('imp');
+			expect(suggestedWinner(gameEnds(s.game, s.characters))).toBe('good');
+			expect(endCharacters(s.game, s.characters)).toContain('politician');
+			engineGap(
+				'M15l',
+				'an evil Politician wins with good when the Storyteller judges them most responsible for evil losing'
+			);
+		});
+	});
 });

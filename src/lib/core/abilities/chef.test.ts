@@ -96,7 +96,8 @@ describe('Chef', () => {
 
 	describe('How to Run (https://wiki.bloodontheclocktower.com/Chef#How_to_Run)', () => {
 		it('on the first night, the Chef is shown a number and no players', () => {
-			// How to Run: on night one, the Storyteller shows the Chef a count on their fingers.
+			// Wiki: "During the first night, wake the Chef. Show the Chef fingers (0, 1, 2, etc.)
+			// equaling the number of pairs of neighboring evil players."
 			const s = scenario(['chef', 'imp', 'poisoner', 'monk', 'empath']);
 			const picker = infoPicker(s.game, s.seat('chef'), 'chef', s.characters, 'first')!;
 			expect(picker.kind).toBe('number');
@@ -105,15 +106,16 @@ describe('Chef', () => {
 		});
 
 		it('counts an evil pair that sits across the ends of the seating order', () => {
-			// How to Run: the number is how many pairs of evil players sit next to each other, all
-			// the way around the circle.
+			// Wiki: "Show the Chef fingers (0, 1, 2, etc.) equaling the number of pairs of neighboring
+			// evil players."
 			const s = scenario(['poisoner', 'chef', 'empath', 'monk', 'imp']);
 			const picker = infoPicker(s.game, s.seat('chef'), 'chef', s.characters, 'first')!;
 			expect(picker.range?.truth).toBe(1);
 		});
 
 		it('counts pairs, not players, so three evil players in a row make two', () => {
-			// How to Run: the count is of neighbouring evil pairs.
+			// Wiki: "Show the Chef fingers (0, 1, 2, etc.) equaling the number of pairs of neighboring
+			// evil players."
 			const s = scenario(['chef', 'imp', 'poisoner', 'baron', 'monk', 'empath', 'soldier']);
 			const picker = infoPicker(s.game, s.seat('chef'), 'chef', s.characters, 'first')!;
 			expect(picker.range?.truth).toBe(2);

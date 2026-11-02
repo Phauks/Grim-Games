@@ -20,6 +20,8 @@ import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
 import { nightStepAlerts, onDeathApplies, onDeathTrigger } from '#lib/core/rules/night-alerts.ts';
 import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
+import { nightTextPlain, nightTextSegments, placeholdersFor } from '#lib/core/rules/night-text.ts';
+import { wokeTonight } from '#lib/core/rules/woke-tonight.ts';
 
 describe('Moonchild', () => {
 	const character = committedCharacter('moonchild');
@@ -110,6 +112,62 @@ describe('Moonchild', () => {
 				.dies('moonchild', 'shabaloth');
 			expect(misses(again, 'gossip')).toEqual([]);
 			expect(validDeathCauses(again.game, again.seat('gossip'), again.characters)).toContainEqual(
+				expect.objectContaining({ cause: 'moonchild', flags: [] })
+			);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Moonchild#How_to_Run)', () => {
+		const cast = ['moonchild', 'chef', 'empath', 'poisoner', 'imp'];
+		const curse = { characterId: 'moonchild', label: 'Dead' };
+
+		it('prompts the Moonchild to choose when their death is declared, by night or by day', () => {
+			// Wiki: "When you declare that the Moonchild’s player has died, the Moonchild chooses any
+			// alive player."
+			for (const cause of ['imp', 'execution'] as const) {
+				const s = scenario(cast).newDay().dies('moonchild', cause);
+				const reminders = dayReminders(
+					dayStateFromGame(s.game, (id) => s.characters.get(id), undefined, s.characters)
+				)
+					.groups.flatMap((g) => g.reminders)
+					.filter((r) => r.characterId === 'moonchild');
+				expect(reminders, cause).not.toEqual([]);
+			}
+		});
+
+		it.fails('lets the Moonchild choose only an alive player', () => {
+			// Wiki: "the Moonchild chooses any alive player."
+			// Waits on the engine (unplanned): the Moonchild's Dead has no life rule, so a dead player
+			// is not flagged.
+			const s = scenario(cast).newDay().dies('empath', 'imp').dies('moonchild', 'imp');
+			expect(reminderTargetMisses(s.game, curse, s.seat('chef'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, curse, s.seat('empath'), s.characters)).toEqual(['life']);
+		});
+
+		it('marks the chosen player Dead only if they are good', () => {
+			// Wiki: "If the chosen player is good, mark their character token with the DEAD reminder."
+			const s = scenario(cast).newDay().dies('moonchild', 'imp');
+			expect(reminderTargetMisses(s.game, curse, s.seat('chef'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, curse, s.seat('poisoner'), s.characters)).toEqual([
+				'alignment'
+			]);
+		});
+
+		it('kills the marked player that night, with no one woken', () => {
+			// Wiki: "Tonight, the player marked with the Moonchild’s DEAD reminder dies."
+			const s = scenario(cast)
+				.newDay()
+				.dies('moonchild', 'execution')
+				.reminder('chef', 'moonchild', 'Dead');
+			const placeholders = placeholdersFor(character, 'other');
+			const text = nightTextPlain(
+				nightTextSegments(character.otherNightReminder!, character, {
+					...(placeholders ? { placeholders } : {})
+				})
+			);
+			expect(text).toContain('[+Dead]');
+			expect(wokeTonight(s.game, s.seat('moonchild'), s.characters, 'other')).toBe(false);
+			expect(validDeathCauses(s.game, s.seat('chef'), s.characters)).toContainEqual(
 				expect.objectContaining({ cause: 'moonchild', flags: [] })
 			);
 		});

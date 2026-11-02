@@ -99,7 +99,8 @@ describe('Fortune Teller', () => {
 		const cast = ['fortuneteller', 'monk', 'chef', 'imp', 'poisoner'];
 
 		it('lists the Red Herring reminder to place before the first night', () => {
-			// How to Run: before night one, the Storyteller marks one good player as the Red Herring.
+			// Wiki: "While preparing the first night, put the Fortune Teller's RED HERRING reminder
+			// token by any good character token, marking that player as the Red Herring."
 			const s = scenario(cast);
 			expect(setupPrep('fortuneteller', character.name, s.characters)).toMatchObject([
 				{ tokens: ['Red Herring'] }
@@ -107,7 +108,8 @@ describe('Fortune Teller', () => {
 		});
 
 		it('puts the Red Herring only on a good player', () => {
-			// How to Run: the Red Herring reminder goes beside a good character token.
+			// Wiki: "While preparing the first night, put the Fortune Teller's RED HERRING reminder
+			// token by any good character token, marking that player as the Red Herring."
 			const s = scenario(cast);
 			const reminder = { characterId: 'fortuneteller', label: 'Red Herring' };
 			expect(reminderTargetMisses(s.game, reminder, s.seat('monk'), s.characters)).toEqual([]);
@@ -117,8 +119,9 @@ describe('Fortune Teller', () => {
 		});
 
 		it('chooses two players and learns yes or no, on the first night and every other night', () => {
-			// How to Run: every night, the Fortune Teller points at two players and the Storyteller
-			// nods or shakes their head.
+			// Wiki: "Each night, wake the Fortune Teller. The Fortune Teller points at any two players.
+			// If either chosen player is a Demon or the Red Herring, nod your head yes. Otherwise, shake
+			// your head no."
 			const s = scenario(cast);
 			for (const night of ['first', 'other'] as const) {
 				const picker = infoPicker(
@@ -134,7 +137,8 @@ describe('Fortune Teller', () => {
 		});
 
 		it('may be their own Red Herring, so choosing themselves gives yes', () => {
-			// How to Run: in small games the Fortune Teller can be their own Red Herring.
+			// Wiki: "In smaller games, making the Fortune Teller their own Red Herring is sometimes
+			// advised, as the Fortune Teller gets more information that way."
 			const s = scenario(cast);
 			const reminder = { characterId: 'fortuneteller', label: 'Red Herring' };
 			expect(reminderTargetMisses(s.game, reminder, s.seat('fortuneteller'), s.characters)).toEqual(

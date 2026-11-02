@@ -86,4 +86,59 @@ describe('Sage', () => {
 			expect(onDeathApplies(trigger, 'nodashii', s.characters)).toBe(true);
 		});
 	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Sage#How_to_Run)', () => {
+		it('wakes when the Demon kills them, not when executed', () => {
+			// Wiki: "If the Sage was killed by the Demon, wake the Sage."
+			const killed = scenario(['sage', 'chef', 'imp', 'monk', 'poisoner']).dies('sage', 'imp');
+			const trigger = onDeathTrigger('sage', killed.characters)!;
+			expect(
+				onDeathApplies(
+					trigger,
+					killed.game.seats[killed.seat('sage')].deathCause,
+					killed.characters
+				)
+			).toBe(true);
+			const executed = scenario(['sage', 'chef', 'imp', 'monk', 'poisoner']).execute('sage');
+			expect(
+				onDeathApplies(
+					trigger,
+					executed.game.seats[executed.seat('sage')].deathCause,
+					executed.characters
+				)
+			).toBe(false);
+		});
+
+		it('is shown two players, and the Demon must be one of them', () => {
+			// Wiki: "Point at two players, one who is the Demon that killed the Sage."
+			const s = scenario(['sage', 'chef', 'imp', 'monk', 'poisoner']).dies('sage', 'imp');
+			const picker = infoPicker(s.game, s.seat('sage'), 'sage', s.characters)!;
+			expect(picker.seatCount).toBe(2);
+			expect(isTruthful(picker, { seats: [s.seat('chef'), s.seat('imp')] })).toBe(true);
+			expect(isAllowed(picker, { seats: [s.seat('chef'), s.seat('poisoner')] })).toBe(false);
+		});
+
+		it.fails('with two Demons, the one shown is the Demon that killed the Sage', () => {
+			// Wiki: "Point at two players, one who is the Demon that killed the Sage."
+			// Waits on the engine (unplanned): the Sage's picker accepts any Demon, not only the one
+			// whose kill woke the Sage.
+			const s = scenario(['sage', 'chef', 'nodashii', 'monk', 'pithag', 'empath'])
+				.becomes('chef', 'vortox', 'good')
+				.dies('sage', 'nodashii');
+			const picker = infoPicker(s.game, s.seat('sage'), 'sage', s.characters)!;
+			expect(isTruthful(picker, { seats: [s.seat('nodashii'), s.seat('monk')] })).toBe(true);
+			expect(isTruthful(picker, { seats: [s.seat('chef'), s.seat('monk')] })).toBe(false);
+		});
+
+		it('may be shown a dead player beside the Demon', () => {
+			// Wiki: "If the Sage dies on the final night, feel free to show one alive and one dead
+			// player."
+			const s = scenario(['sage', 'chef', 'imp', 'monk', 'poisoner'])
+				.dies('chef', 'imp')
+				.newDay()
+				.dies('sage', 'imp');
+			const picker = infoPicker(s.game, s.seat('sage'), 'sage', s.characters)!;
+			expect(isTruthful(picker, { seats: [s.seat('chef'), s.seat('imp')] })).toBe(true);
+		});
+	});
 });

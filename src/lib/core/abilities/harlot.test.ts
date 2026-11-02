@@ -15,7 +15,13 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
-import { filledInfoToken } from '#lib/core/rules/info-token-characters.ts';
+import {
+	filledInfoToken,
+	stepInfoCards,
+	withChosen
+} from '#lib/core/rules/info-token-characters.ts';
+import { placeholdersFor } from '#lib/core/rules/night-text.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { infoPicker, isAllowed } from '#lib/core/rules/night-info.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
@@ -107,6 +113,40 @@ describe('Harlot', () => {
 			const picker = infoPicker(s.game, s.seat('harlot'), 'harlot', s.characters)!;
 			const seats = picker.options.map((o) => o.seats[0]);
 			expect(seats).toEqual([s.seat('sage'), s.seat('witch'), s.seat('nodashii')]);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Harlot#How_to_Run)', () => {
+		const cards = () =>
+			stepInfoCards(character, character.otherNightReminder).map((c) => c.token.id);
+
+		it('the chosen player is shown the Harlot selected them, and asked to reveal', () => {
+			// Wiki: "Wake the chosen player, show them the THIS CHARACTER SELECTED YOU' info token, then
+			// the Harlot token. That player either nods their head yes or shakes their head no."
+			expect(cards()).toEqual(expect.arrayContaining(['selected-you', 'sleep-with-harlot']));
+			expect(filledInfoToken(character, 'selected-you', 1)?.characterIds).toEqual(['harlot']);
+		});
+
+		it("if they agree, the Harlot is shown the chosen player's character", () => {
+			// Wiki: "If they nodded their head yes, wake the Harlot and show them the chosen player’s
+			// character token."
+			expect(cards()).toContain('this-player-is');
+			const s = scenario(['harlot', 'sage', 'chef', 'witch', 'nodashii']);
+			const shown = withChosen(
+				filledInfoToken(character, 'this-player-is', 1)!,
+				s.characters.get('witch')!
+			);
+			expect(shown.characterIds).toEqual(['witch']);
+		});
+
+		it('may mark both players Dead', () => {
+			// Wiki: "You may decide that both players die—mark them with DEAD reminders."
+			const dead = { tokens: [{ label: 'Dead', action: 'place' }] };
+			expect(placeholdersFor(character, 'other')).toEqual([dead, dead]);
+			const s = scenario(['harlot', 'sage', 'chef', 'witch', 'nodashii']);
+			const token = { characterId: 'harlot', label: 'Dead' };
+			expect(reminderTargetMisses(s.game, token, s.seat('harlot'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, token, s.seat('sage'), s.characters)).toEqual([]);
 		});
 	});
 });

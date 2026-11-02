@@ -16,9 +16,16 @@ import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
 import { infoPicker, isAllowed, isTruthful, learnedRoles } from '#lib/core/rules/night-info.ts';
-import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import {
+	committedCharacter,
+	committedGameData,
+	nightSheetPresence
+} from '#lib/core/testing/committed-data.ts';
 import { protection } from '#lib/core/rules/ability.ts';
-import { gainedAbilities } from '#lib/core/rules/gained-abilities.ts';
+import { gainedAbilities, withGainedSteps } from '#lib/core/rules/gained-abilities.ts';
+import { nightOrder } from '#lib/core/rules/night-order.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { setupPrep } from '#lib/core/rules/setup-reminders.ts';
 import { deathVerdict } from '#lib/core/rules/night-deaths.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
@@ -51,8 +58,21 @@ describe('Pixie', () => {
 		});
 	});
 
-	describe('night info (https://wiki.bloodontheclocktower.com/Pixie#How_to_Run)', () => {
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Pixie#How_to_Run)', () => {
+		it('prepares Mad on an in-play Townsfolk other than the Pixie', () => {
+			// Wiki: "During the first night, mark a Townsfolk character token with the Pixie’s MAD
+			// reminder."
+			expect(setupPrep('pixie', 'Pixie').map((step) => step.tokens)).toEqual([['Mad']]);
+			const s = scenario(['pixie', 'washerwoman', 'butler', 'imp', 'monk']);
+			const mad = { characterId: 'pixie', label: 'Mad' };
+			expect(reminderTargetMisses(s.game, mad, s.seat('washerwoman'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, mad, s.seat('butler'), s.characters)).not.toEqual([]);
+			expect(reminderTargetMisses(s.game, mad, s.seat('imp'), s.characters)).not.toEqual([]);
+			expect(reminderTargetMisses(s.game, mad, s.seat('pixie'), s.characters)).toContain('self');
+		});
+
 		it('is shown an in-play Townsfolk, the one marked Mad', () => {
+			// Wiki: "Wake the Pixie. Show the Pixie this Townsfolk character token."
 			const { game: g, seats } = castGame(
 				['pixie', 'washerwoman', 'butler', 'imp', 'monk'],
 				(s) => ({
@@ -68,6 +88,42 @@ describe('Pixie', () => {
 			expect(learnedRoles(g, picker, characters)!.rows[0]).toMatchObject({
 				target: seats[1],
 				marked: true
+			});
+		});
+		it('swaps Mad for Has Ability only once that Townsfolk is dead', () => {
+			// Wiki: "If the Townsfolk marked MAD dies, and you feel that the Pixie player has been
+			// sufficiently mad that they were this character, replace the MAD reminder with the HAS
+			// ABILITY reminder."
+			const s = scenario(['pixie', 'monk', 'chef', 'imp', 'poisoner']).reminder(
+				'monk',
+				'pixie',
+				'Mad'
+			);
+			const has = { characterId: 'pixie', label: 'Has Ability' };
+			expect(reminderTargetMisses(s.game, has, s.seat('monk'), s.characters)).not.toEqual([]);
+			const dead = s.dies('monk', 'execution');
+			expect(reminderTargetMisses(dead.game, has, dead.seat('monk'), dead.characters)).toEqual([]);
+		});
+
+		it("wakes the Pixie right after that Townsfolk's own step once it has the ability", () => {
+			// Wiki: "The Pixie now has this Townsfolk’s ability, and will wake at night when this
+			// Townsfolk would normally wake."
+			const s = scenario(['pixie', 'monk', 'chef', 'imp', 'poisoner'])
+				.reminder('monk', 'pixie', 'Mad')
+				.dies('monk', 'execution')
+				.reminder('monk', 'pixie', 'Has Ability');
+			const data = committedGameData();
+			const inPlay = ['pixie', 'monk', 'chef', 'imp', 'poisoner'].map((id) => data.byId.get(id)!);
+			const steps = withGainedSteps(
+				nightOrder({ night: 'other', sheet: data.nightSheet, inPlay, players: 5 }).steps,
+				s.game,
+				s.characters,
+				'other'
+			);
+			const at = steps.findIndex((step) => step.id === 'monk');
+			expect(steps[at + 1]).toMatchObject({
+				character: { id: 'pixie' },
+				gained: { characterId: 'monk', status: 'has-ability' }
 			});
 		});
 	});

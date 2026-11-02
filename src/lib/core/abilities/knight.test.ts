@@ -14,9 +14,11 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night-info.ts';
+import { infoPicker, infoRecord, isAllowed, isTruthful } from '#lib/core/rules/night-info.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { setupPrep } from '#lib/core/rules/setup-reminders.ts';
 
 describe('Knight', () => {
 	const character = committedCharacter('knight');
@@ -68,6 +70,46 @@ describe('Knight', () => {
 			const picker = infoPicker(s.game, s.seat('knight'), 'knight', s.characters)!;
 			expect(isAllowed(picker, { seats: [s.seat('vortox'), s.seat('alchemist')] })).toBe(true);
 			expect(isAllowed(picker, { seats: [s.seat('alchemist'), s.seat('chef')] })).toBe(false);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Knight#How_to_Run)', () => {
+		const cast = ['knight', 'undertaker', 'imp', 'fortuneteller', 'poisoner'];
+		const know = { characterId: 'knight', label: 'Know' };
+
+		it('lists two Know reminders to place during setup', () => {
+			// Wiki: "During setup, mark two non-Demon players with the Knight’s KNOW reminders."
+			const s = scenario(cast);
+			expect(setupPrep('knight', character.name, s.characters)).toMatchObject([
+				{ tokens: ['Know', 'Know'] }
+			]);
+		});
+
+		it('puts Know only on players who are not the Demon', () => {
+			// Wiki: "During setup, mark two non-Demon players with the Knight’s KNOW reminders."
+			const s = scenario(cast);
+			expect(reminderTargetMisses(s.game, know, s.seat('undertaker'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, know, s.seat('poisoner'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, know, s.seat('imp'), s.characters)).toEqual(['type']);
+		});
+
+		it('points to the two players marked Know on the first night', () => {
+			// Wiki: "During the first night, wake the Knight. Point to the two players marked KNOW."
+			const s = scenario(cast);
+			const picker = infoPicker(s.game, s.seat('knight'), 'knight', s.characters)!;
+			expect(picker).toMatchObject({ kind: 'players', seatCount: 2 });
+			const choice = { seats: [s.seat('undertaker'), s.seat('fortuneteller')] };
+			const record = infoRecord(
+				picker,
+				choice,
+				{ seat: (id) => id, character: (id) => id },
+				s.game,
+				s.characters
+			);
+			expect(record.reminders).toEqual([
+				{ seatId: s.seat('undertaker'), reminder: know },
+				{ seatId: s.seat('fortuneteller'), reminder: know }
+			]);
 		});
 	});
 });

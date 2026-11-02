@@ -16,7 +16,13 @@ import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { nightAnswer } from '#lib/core/rules/night-info.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
-import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import {
+	committedCharacter,
+	committedGameData,
+	nightSheetPresence
+} from '#lib/core/testing/committed-data.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { analyseSetup } from '#lib/core/rules/setup.ts';
 
 describe('Godfather', () => {
 	const character = committedCharacter('godfather');
@@ -101,6 +107,47 @@ describe('Godfather', () => {
 					'other'
 				)
 			).toMatchObject({ kind: 'yes-no', value: true, because: [died.seat('tinker')] });
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Godfather#How_to_Run)', () => {
+		it('allows one Outsider fewer or one more than the setup sheet', () => {
+			// Wiki: "While setting up the game, before putting the character tokens in the bag, either
+			// remove one Townsfolk and add one Outsider or remove one Outsider and add one Townsfolk."
+			const data = committedGameData();
+			const ids = ['chef', 'empath', 'monk', 'slayer', 'soldier', 'butler', 'godfather', 'imp'];
+			const result = analyseSetup({ players: 8, inPlay: ids.map((id) => data.byId.get(id)!) });
+			expect(result.base.outsider).toBe(1);
+			expect(result.expected.outsider).toEqual([0, 2]);
+			expect(result.expected.townsfolk).toEqual([4, 6]);
+		});
+
+		it('is shown no Outsiders on the first night when none are in play', () => {
+			// Wiki: "During the first night, wake the Godfather. Show them the character tokens of all
+			// Outsiders in play. Put the Godfather to sleep."
+			const s = scenario(['godfather', 'chef', 'empath', 'monk', 'imp']);
+			expect(
+				nightAnswer(s.game, s.seat('godfather'), 'godfather', s.characters, undefined, 'first')
+			).toMatchObject({ kind: 'characters', value: [] });
+		});
+
+		it('puts Died Today only on a dead Outsider, and Dead on any player', () => {
+			// Wiki: "If an Outsider dies during the day, mark them with the DIED TODAY reminder. That
+			// night, wake the Godfather. They point at any player. Put the Godfather to sleep. The
+			// chosen player dies—mark them with the DEAD reminder."
+			const s = scenario(['godfather', 'tinker', 'goon', 'chef', 'imp'])
+				.newDay()
+				.execute('tinker')
+				.dies('chef', 'demon');
+			const diedToday = { characterId: 'godfather', label: 'Died Today' };
+			const misses = (seat: 'tinker' | 'goon' | 'chef') =>
+				reminderTargetMisses(s.game, diedToday, s.seat(seat), s.characters);
+			expect(misses('tinker')).toEqual([]);
+			expect(misses('goon')).toEqual(['life']);
+			expect(misses('chef')).toEqual(['type']);
+			const dead = { characterId: 'godfather', label: 'Dead' };
+			for (const seat of ['godfather', 'goon', 'imp'] as const)
+				expect(reminderTargetMisses(s.game, dead, s.seat(seat), s.characters), seat).toEqual([]);
 		});
 	});
 });

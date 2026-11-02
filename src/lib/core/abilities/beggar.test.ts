@@ -17,7 +17,9 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { voteHints } from '#lib/core/rules/vote-weights.ts';
 import { giveVoteToken, latest, voteWarnings, votes } from '#lib/core/testing/votes.ts';
-import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
+import { warned } from '#lib/core/model/fixtures.test-support.ts';
+import { dayReminders, dayStateFromGame } from '#lib/core/rules/day-reminders.ts';
+import { engineGap, scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Beggar', () => {
 	const character = committedCharacter('beggar');
@@ -85,6 +87,53 @@ describe('Beggar', () => {
 			const voted = votes(beggarDead.nominate('imp', 'poisoner'), 'beggar');
 			expect(voted.game.seats[s.seat('beggar')].ghostVoteUsed).toBe(true);
 			expect(latest(voted).votes?.tokens).toBeUndefined();
+		});
+	});
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Beggar#How_to_Run)', () => {
+		const cast = ['beggar', 'monk', 'chef', 'empath', 'imp', 'poisoner'];
+		const hint = (s: Scenario) =>
+			voteHints(s.game, s.characters).find((h) => h.seatId === s.seat('beggar'))!;
+
+		it('votes with a vote token without a warning, spending one token a vote', () => {
+			// Wiki: "The Beggar cannot vote unless they have a vote token. They lose one vote token each
+			// time they vote."
+			const s = scenario(cast)
+				.dies('monk', 'imp')
+				.dies('chef', 'imp')
+				.do(giveVoteToken('monk', 'beggar'), giveVoteToken('chef', 'beggar'))
+				.nominate('empath', 'imp');
+			expect(voteWarnings(s, 'beggar')).toEqual([]);
+			const voted = votes(s, 'beggar');
+			expect(latest(voted).votes?.tokens).toEqual([s.seat('beggar')]);
+			expect(hint(voted).needsToken?.tokens).toBe(1);
+		});
+
+		it('reminds the Storyteller by day that the Beggar needs a vote token to vote', () => {
+			// Wiki: "The Beggar cannot vote unless they have a vote token."
+			const s = scenario(cast).newDay();
+			const lines = dayReminders(
+				dayStateFromGame(s.game, (id) => s.characters.get(id), undefined, s.characters)
+			).groups.flatMap((g) => g.reminders);
+			expect(lines.some((r) => r.characterId === 'beggar')).toBe(true);
+		});
+
+		it('warns when a living player gives the Beggar a vote token', () => {
+			// Wiki: "During the day, a dead player can declare that they give their vote token to the
+			// Beggar."
+			const s = scenario(cast);
+			const command = giveVoteToken('monk', 'beggar')(s);
+			expect(warned(s.session, s.ctx, command)).toContain('giver-not-dead');
+			const dead = s.dies('monk', 'imp');
+			expect(warned(dead.session, dead.ctx, giveVoteToken('monk', 'beggar')(dead))).toEqual([]);
+		});
+
+		it.fails('shows the Storyteller the alignment to tell the Beggar privately', () => {
+			// Wiki: "Transfer the vote token to the Beggar and privately tell the Beggar the alignment
+			// of that player."
+			// Waits on the engine (unplanned): giving a vote token has no step that shows the giver's
+			// alignment for the Storyteller to tell the Beggar.
+			scenario(cast).dies('monk', 'imp').do(giveVoteToken('monk', 'beggar'));
+			engineGap('unplanned', "the giver's alignment the Beggar learns from a vote token");
 		});
 	});
 });

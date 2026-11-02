@@ -20,10 +20,13 @@ import { castGame, testCharacters as characters } from '#lib/core/model/fixtures
 import {
 	abilityGivers,
 	gainedAbilities,
+	gainedSetupAbilities,
 	heldAbilitiesOf,
 	withGainedSteps
 } from '#lib/core/rules/gained-abilities.ts';
 import { nightOrder } from '#lib/core/rules/night-order.ts';
+import { stepInfoCards } from '#lib/core/rules/info-token-characters.ts';
+import { analyseSetup } from '#lib/core/rules/setup.ts';
 import { characterNominationPrompts, nominationsPerDay } from '#lib/core/rules/nominations.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
@@ -80,8 +83,10 @@ describe('Boffin', () => {
 	});
 
 	// Summary: the Demon has one not-in-play Townsfolk or Outsider ability, even if the Demon is
-	// drunk or poisoned, but not while the Boffin is. How to Run: the good token sits by the
-	// Demon's, and the Demon wakes when that good character would.
+	// drunk or poisoned, but not while the Boffin is.
+	// Wiki (How to Run): "Place this second character token by the Demon character token."
+	// Wiki (How to Run): "Treat the Demon player as if they had this character ability, as well as
+	// their own Demon ability."
 	describe("the Demon's good ability", () => {
 		it('offers a not-in-play Townsfolk or Outsider, held by the Demon while the Boffin works', () => {
 			expect(rulesOf('boffin', characters)?.givesAbility).toEqual({
@@ -228,6 +233,54 @@ describe('Boffin', () => {
 				.becomes('scarletwoman', 'kazali')
 				.newDay();
 			expect(nominationsPerDay(s.game, s.seat('kazali'), s.characters)).toBe(2);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Boffin#How_to_Run)', () => {
+		const cast = ['boffin', 'imp', 'chef', 'empath', 'monk', 'soldier', 'butler'];
+
+		it.fails("makes the setup change in brackets on the Demon's good ability", () => {
+			// Wiki: "While setting up the game, before putting character tokens in the bag, make any
+			// changes that are indicated in brackets on the Demon's two character abilities."
+			// Waits on the engine (unplanned): the setup check leaves out a setup-changing ability the
+			// Boffin gives the Demon (here the Balloonist's extra Outsider).
+			const s = scenario(cast, { characters }).do(boffinGives('imp', 'balloonist'));
+			const abilities = gainedSetupAbilities(s.game, s.characters);
+			expect(abilities.map((c) => c.id)).toEqual(['balloonist']);
+			const inPlay = cast.map((id) => s.characters.get(id)!);
+			expect(analyseSetup({ players: 7, inPlay, abilities }).warnings).toEqual([]);
+		});
+
+		it("shows This Character Selected You with the Boffin's token on the first night", () => {
+			// Wiki: "During the 1st night, wake the Boffin and the Demon. Show the THIS CHARACTER SELECTED
+			// YOU info token, then the Boffin token, then the good character token."
+			const s = scenario(cast, { characters }).do(boffinGives('imp', 'chef'));
+			const boffin = s.characters.get('boffin')!;
+			const cards = stepInfoCards(boffin, boffin.firstNightReminder, {
+				game: s.game,
+				characters: s.characters
+			});
+			expect(cards.find((c) => c.token.id === 'selected-you')?.filled).toMatchObject({
+				characterIds: ['boffin'],
+				upTo: 2
+			});
+		});
+
+		it.fails('fills in the good character the Demon holds after the Boffin token', () => {
+			// Wiki: "Show the THIS CHARACTER SELECTED YOU info token, then the Boffin token, then the
+			// good character token."
+			// Waits on the engine (unplanned): the card fills in only the Boffin; the good ability the
+			// Demon holds is left for the Storyteller to pick.
+			const s = scenario(cast, { characters }).do(boffinGives('imp', 'chef'));
+			const boffin = s.characters.get('boffin')!;
+			const cards = stepInfoCards(boffin, boffin.firstNightReminder, {
+				game: s.game,
+				characters: s.characters
+			});
+			expect(cards.find((c) => c.token.id === 'selected-you')?.filled?.characterIds).toEqual([
+				'boffin',
+				'chef'
+			]);
 		});
 	});
 });

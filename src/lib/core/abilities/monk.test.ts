@@ -94,7 +94,8 @@ describe('Monk', () => {
 
 	describe('How to Run (https://wiki.bloodontheclocktower.com/Monk#How_to_Run)', () => {
 		it("the Monk's step on other nights places Safe on the chosen player", () => {
-			// How to Run: each night after the first, the Monk picks a player and that player gets Safe.
+			// Wiki: "Each night except the first, wake the Monk."
+			// Wiki: "Put the Monk's SAFE reminder token by the chosen player's character token."
 			const placeholders = placeholdersFor(character, 'other');
 			const text = nightTextPlain(
 				nightTextSegments(character.otherNightReminder!, character, {
@@ -105,7 +106,8 @@ describe('Monk', () => {
 		});
 
 		it('allows Safe on any player except the Monk', () => {
-			// How to Run: the Monk may not pick themselves; any other player is a valid pick.
+			// Wiki: "The Monk points at any player except themself. (If the Monk points at themself,
+			// shake your head no and prompt them to point at another player.)"
 			const s = scenario(['monk', 'chef', 'imp', 'empath', 'poisoner']).dies('empath');
 			const safe = { characterId: 'monk', label: 'Safe' };
 			expect(reminderTargetMisses(s.game, safe, s.seat('monk'), s.characters)).toEqual(['self']);
@@ -114,7 +116,8 @@ describe('Monk', () => {
 		});
 
 		it("flags the Safe player as protected on the Demon's night step", () => {
-			// How to Run: a Demon attack on the Safe player doesn't kill them, so no death is marked.
+			// Wiki: "If the Demon attacks the player marked SAFE, the player remains alive. (Do not mark
+			// them with the Demon's DEAD reminder token or add a shroud as you normally would.)"
 			const s = scenario(['monk', 'chef', 'imp', 'empath', 'poisoner']).reminder(
 				'chef',
 				'monk',
@@ -131,7 +134,7 @@ describe('Monk', () => {
 		});
 
 		it('takes Safe off at dawn', () => {
-			// How to Run: the Safe reminder comes off when the day starts.
+			// Wiki: "At dawn, remove the SAFE reminder token."
 			const s = scenario(['monk', 'chef', 'imp', 'empath', 'poisoner'])
 				.reminder('chef', 'monk', 'Safe')
 				.newDay();
@@ -141,8 +144,8 @@ describe('Monk', () => {
 		});
 
 		it("keeps the Safe player from the Demon's poisoning too", () => {
-			// How to Run: the protection covers every harmful effect of the Demon's ability, such as
-			// poisoning, not only death.
+			// Wiki: "The Monk's protection also prevents all other harmful effects of the Demon's
+			// ability, such as poisoning or turning the protected player evil."
 			const s = scenario(['monk', 'chef', 'pukka', 'empath', 'poisoner'])
 				.reminder('chef', 'monk', 'Safe')
 				.reminder('chef', 'pukka', 'Poisoned');

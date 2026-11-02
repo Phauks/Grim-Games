@@ -15,6 +15,10 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night-info.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { setupAlignmentTasks } from '#lib/core/rules/setup-alignment.ts';
+import { setupPrep } from '#lib/core/rules/setup-reminders.ts';
+import { wakeConditionMet } from '#lib/core/rules/wakes-when.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
@@ -87,6 +91,60 @@ describe('Bounty Hunter', () => {
 			const picker = infoPicker(s.game, s.seat('bountyhunter'), 'bountyhunter', s.characters)!;
 			expect(picker.anyAllowed).toBe(true);
 			expect(isAllowed(picker, { seats: [s.seat('chef')] })).toBe(true);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Bounty_Hunter#How_to_Run)', () => {
+		const cast = ['bountyhunter', 'harpy', 'imp', 'chef', 'monk'];
+
+		it('asks for one evil Townsfolk at setup', () => {
+			// Wiki: "During setup, turn one Townsfolk character token upside down, to represent that they
+			// are evil."
+			const s = scenario(cast);
+			expect(setupAlignmentTasks(s.game, s.characters)).toMatchObject([
+				{ characterId: 'bountyhunter', type: 'townsfolk', alignment: 'evil', count: 1, done: false }
+			]);
+			const turned = s.do((at) => ({
+				type: 'SetAlignment',
+				seatId: at.seat('chef'),
+				alignment: 'evil'
+			}));
+			expect(setupAlignmentTasks(turned.game, turned.characters)).toMatchObject([
+				{ seats: [turned.seat('chef')], done: true }
+			]);
+		});
+
+		it('prepares the Know reminder for an evil player only', () => {
+			// Wiki: "Mark one evil player with the KNOW reminder."
+			expect(setupPrep('bountyhunter', 'Bounty Hunter')[0]).toMatchObject({
+				tokens: ['Know'],
+				target: 'an evil player'
+			});
+			const s = scenario(cast);
+			const know = { characterId: 'bountyhunter', label: 'Know' };
+			expect(reminderTargetMisses(s.game, know, s.seat('harpy'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, know, s.seat('chef'), s.characters)).toEqual([
+				'alignment'
+			]);
+		});
+
+		it.fails('wakes on a later night only when the player marked Know has died', () => {
+			// Wiki: "Each time the player marked KNOW dies, mark a new evil player with the KNOW
+			// reminder. That night, wake the Bounty Hunter, point to the player marked KNOW, then put the
+			// Bounty Hunter to sleep."
+			// Waits on the engine (unplanned): the Bounty Hunter has no wake condition, so its step
+			// shows every night, whether or not the player marked Know died.
+			const s = scenario(cast).reminder('harpy', 'bountyhunter', 'Know').newDay();
+			const wakes = (at: typeof s) =>
+				wakeConditionMet(
+					at.game,
+					'bountyhunter',
+					at.seat('bountyhunter'),
+					at.characters,
+					new Set()
+				);
+			expect(wakes(s)).toBe(false);
+			expect(wakes(s.execute('harpy'))).toBe(true);
 		});
 	});
 });

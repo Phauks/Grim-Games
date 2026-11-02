@@ -14,10 +14,12 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { dayUseDeath, dayUseSuggestion } from '#lib/core/rules/day-claims.ts';
+import { dayUseDeath, dayUseOf, dayUseSuggestion } from '#lib/core/rules/day-claims.ts';
 import { nominationsLeftThisGame } from '#lib/core/rules/nominations.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
 
 describe('Golem', () => {
 	const character = committedCharacter('golem');
@@ -78,6 +80,38 @@ describe('Golem', () => {
 			expect(nominationsLeftThisGame(later.game, later.seat('golem'), later.characters)?.left).toBe(
 				0
 			);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Golem#How_to_Run)', () => {
+		const cast = ['golem', 'chef', 'imp', 'empath', 'poisoner'];
+
+		it('lets the Golem kill the non-Demon player they nominate', () => {
+			// Wiki: "If the Golem nominates a non-Demon, that player dies, then the vote continues as
+			// normal."
+			const s = scenario(cast).newDay().nominate('golem', 'chef');
+			expect(validDeathCauses(s.game, s.seat('chef'), s.characters, { day: true })).toContainEqual(
+				expect.objectContaining({ cause: 'golem', flags: [] })
+			);
+			expect(dayUseDeath(s.game, 'golem', s.seat('chef'), s.characters)).toBe('dies');
+		});
+
+		it('does not kill the Demon the Golem nominates', () => {
+			// Wiki: "If the Golem nominates the Demon, the vote continues as normal. (Do not say why.)"
+			const s = scenario(cast).newDay().nominate('golem', 'imp');
+			expect(dayUseDeath(s.game, 'golem', s.seat('imp'), s.characters)).toBe('no');
+			expect(s.game.seats[s.seat('imp')].dead).toBe(false);
+		});
+
+		it('marks the Golem May Not Nominate once they have nominated, either way', () => {
+			// Wiki: "Mark the Golem with the MAY NOT NOMINATE reminder."
+			const s = scenario(cast).newDay().nominate('golem', 'imp');
+			const spent = { characterId: 'golem', label: 'May Not Nominate' };
+			expect(dayUseOf('golem', s.characters)?.spentToken).toBe('May Not Nominate');
+			expect(reminderTargetMisses(s.game, spent, s.seat('golem'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, spent, s.seat('chef'), s.characters)).toEqual([
+				'not-self'
+			]);
 		});
 	});
 });

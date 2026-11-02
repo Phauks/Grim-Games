@@ -19,6 +19,7 @@ import { dispatch } from '#lib/core/engine/index.ts';
 import { activeJinxes, jinxSetupWarnings, scriptJinxes } from '#lib/core/rules/jinxes.ts';
 import { startingRuleCharacters } from '#lib/core/rules/script-rules.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
+import { dayReminders, dayStateFromGame, renderReminder } from '#lib/core/rules/day-reminders.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 
 describe('Djinn', () => {
@@ -87,6 +88,38 @@ describe('Djinn', () => {
 				entries: [...ids, 'djinn'].map((id) => ({ kind: 'official' as const, id }))
 			};
 			expect(startingRuleCharacters(script, data.byId)).toEqual([]);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Djinn#How_to_Run)', () => {
+		const data = committedGameData();
+
+		it('has jinxes to read out only when jinxed characters are on the character sheet', () => {
+			// Wiki: "At the start of the game, if there are jinxed characters on the character sheet,
+			// declare that the Djinn is in play and inform the group of all Djinn special rules for
+			// this game."
+			expect(scriptJinxes(data.jinxes, ['chef', 'empath', 'monk', 'poisoner', 'imp'])).toEqual([]);
+			expect(scriptJinxes(data.jinxes, ['spy', 'magician', 'chef', 'imp'])).toHaveLength(1);
+		});
+
+		it('shows the Djinn as in play on the day panel once declared', () => {
+			// Wiki: "declare that the Djinn is in play"
+			const s = scenario(['spy', 'magician', 'chef', 'empath', 'imp']).rule('djinn');
+			const lines = dayReminders(
+				dayStateFromGame(s.game, (id) => s.characters.get(id), undefined, s.characters)
+			).groups.flatMap((g) =>
+				g.reminders
+					.filter((r) => r.characterId === 'djinn')
+					.map((r) => ({ group: g.group, text: renderReminder(r.segments) }))
+			);
+			expect(lines).toEqual([{ group: 'announcement', text: '[djinn] is in play' }]);
+		});
+
+		it('applies a jinx whose two characters are both in play', () => {
+			// Wiki: "Follow the Djinn instructions as listed on the Script Tool printout."
+			const jinxes = scriptJinxes(data.jinxes, ['spy', 'magician', 'chef', 'imp']);
+			expect(activeJinxes(jinxes, ['spy', 'magician', 'chef', 'imp'])).toEqual(jinxes);
+			expect(activeJinxes(jinxes, ['spy', 'chef', 'imp'])).toEqual([]);
 		});
 	});
 });

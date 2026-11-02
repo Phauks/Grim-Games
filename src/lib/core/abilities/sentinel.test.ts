@@ -100,4 +100,41 @@ describe('Sentinel', () => {
 			expect(result.warnings).toEqual([]);
 		});
 	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Sentinel#How_to_Run)', () => {
+		const data = committedGameData();
+		const get = (...ids: string[]) => ids.map((id) => data.byId.get(id)!);
+
+		it('allows one Outsider more or fewer, with a Townsfolk the other way, or neither', () => {
+			// Wiki: "While setting up the game, before putting character tokens in the bag, add an
+			// Outsider token and remove a Townsfolk token, remove an Outsider token and add a
+			// Townsfolk token, or do neither."
+			const town = ['chef', 'empath', 'monk', 'soldier', 'mayor', 'slayer'];
+			const result = analyseSetup({
+				players: 8,
+				inPlay: get(...town, 'poisoner', 'imp', 'sentinel')
+			});
+			expect(result.expected).toMatchObject({ outsider: [0, 1, 2], townsfolk: [4, 5, 6] });
+			expect(result.warnings).toEqual([]);
+			expect(result.reasons.outsider).toEqual(['Sentinel: ±1 Outsider']);
+		});
+
+		it('flags a bag with two Outsiders more than usual', () => {
+			// Wiki: "add an Outsider token and remove a Townsfolk token, remove an Outsider token and
+			// add a Townsfolk token, or do neither."
+			const inPlay = get(
+				'chef',
+				'empath',
+				'monk',
+				'saint',
+				'butler',
+				'poisoner',
+				'imp',
+				'sentinel'
+			);
+			const result = analyseSetup({ players: 7, inPlay });
+			expect(result.expected.outsider).toEqual([0, 1]);
+			expect(result.warnings.map((w) => w.code)).toContain('count-mismatch');
+		});
+	});
 });

@@ -15,6 +15,8 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { madnessOffer } from '#lib/core/rules/madness.ts';
+import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
+import { dayReminders, dayStateFromGame, renderReminder } from '#lib/core/rules/day-reminders.ts';
 import { characterNominationPrompts } from '#lib/core/rules/nominations.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
@@ -94,6 +96,38 @@ describe('Big Wig', () => {
 				dead: true,
 				deathCause: 'bigwig'
 			});
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Big_Wig#How_to_Run)', () => {
+		it('asks each nominee to choose a player, every time someone is nominated', () => {
+			// Wiki: "Each time a player is nominated, ask them to choose a player."
+			const s = scenario(['chef', 'sailor', 'monk', 'imp'])
+				.rule('bigwig')
+				.nominate('chef', 'sailor')
+				.nomineeChose('monk');
+			const second = { nominator: s.seat('monk'), nominee: s.seat('imp') };
+			expect(characterNominationPrompts(s.game, second, s.characters)).toEqual([
+				{ kind: 'nominee-chooses', characterId: 'bigwig', ...second }
+			]);
+		});
+
+		it('names the chosen speaker and the nominee on the day panel, with the Big Wig as a cause of death', () => {
+			// Wiki: "Declare that this player is the only player allowed to speak until the vote
+			// begins. During this period, if this player is not mad that the nominee is good, they
+			// might die."
+			const s = scenario(['chef', 'sailor', 'monk', 'imp'])
+				.rule('bigwig')
+				.nominate('chef', 'sailor')
+				.nomineeChose('monk');
+			const lines = dayReminders(
+				dayStateFromGame(s.game, (id) => s.characters.get(id), undefined, s.characters)
+			).groups.flatMap((g) =>
+				g.reminders.filter((r) => r.characterId === 'bigwig').map((r) => renderReminder(r.segments))
+			);
+			expect(lines).toContain('[bigwig] [monk · Cat] is mad [sailor · Ben] is good');
+			const causes = validDeathCauses(s.game, s.seat('monk'), s.characters);
+			expect(causes.map((c) => c.cause)).toContain('bigwig');
 		});
 	});
 });

@@ -20,6 +20,7 @@ import { infoPicker, isAllowed } from '#lib/core/rules/night-info/picker.ts';
 import { preventedDeaths } from '#lib/core/rules/prevented-deaths.ts';
 import { scenario, type Scenario, type SeatRef } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 
 describe('Goon', () => {
 	const character = committedCharacter('goon');
@@ -147,6 +148,39 @@ describe('Goon', () => {
 				dead: true,
 				deathCause: 'execution'
 			});
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Goon#How_to_Run)', () => {
+		const cast = ['goon', 'courtier', 'chef', 'empath', 'imp'];
+		const drunk = { characterId: 'goon', label: 'Drunk' };
+
+		it('puts Drunk on the player who chose the Goon, never on the Goon', () => {
+			// Wiki: "At night, if a player chooses to use their ability on the Goon and nobody is
+			// marked with the Goon’s DRUNK reminder, this player immediately becomes drunk—mark them
+			// with the DRUNK reminder. Finish resolving this player’s ability and put them to sleep."
+			const s = scenario(cast).newDay();
+			for (const seat of ['courtier', 'imp'] as const)
+				expect(reminderTargetMisses(s.game, drunk, s.seat(seat), s.characters), seat).toEqual([]);
+			expect(reminderTargetMisses(s.game, drunk, s.seat('goon'), s.characters)).not.toEqual([]);
+		});
+
+		it.fails('flags a second Drunk while someone already carries the Goon’s Drunk', () => {
+			// Wiki: "and nobody is marked with the Goon’s DRUNK reminder"
+			// Waits on the engine (unplanned): the Goon's Drunk has no one-at-a-time target rule, so a
+			// second chooser can be marked too.
+			const s = scenario(cast).newDay().reminder('courtier', 'goon', 'Drunk');
+			expect(reminderTargetMisses(s.game, drunk, s.seat('imp'), s.characters)).not.toEqual([]);
+		});
+
+		it.fails('takes the Goon’s Drunk off at the next dusk', () => {
+			// Wiki: "The next dusk, the player that the Goon made drunk becomes sober—remove the Goon’s
+			// DRUNK reminder."
+			// Waits on the engine (unplanned): the Goon's rules have no reminderEnds for Drunk, so Dusk
+			// leaves it on.
+			const s = scenario(cast).newDay().reminder('courtier', 'goon', 'Drunk').newDay().dusk();
+			expect(s.game.seats[s.seat('courtier')].reminders).toEqual([]);
+			expect(abilityState(s.game, s.seat('courtier'), s.characters).works).toBe(true);
 		});
 	});
 });

@@ -14,9 +14,10 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
+import { unsetMarks } from '#lib/core/rules/day-marks.ts';
 import { nightAnswer } from '#lib/core/rules/night-info.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { scenario } from '#lib/core/testing/scenario.ts';
+import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Flowergirl', () => {
 	const character = committedCharacter('flowergirl');
@@ -98,6 +99,58 @@ describe('Flowergirl', () => {
 			expect(
 				nightAnswer(marked.game, marked.seat('flowergirl'), 'flowergirl', marked.characters)
 			).toMatchObject({ kind: 'yes-no', value: false });
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Flowergirl#How_to_Run)', () => {
+		const CAST = ['flowergirl', 'chef', 'empath', 'oracle', 'witch', 'nodashii'];
+		const labels = (s: Scenario) =>
+			s.game.seats[s.seat('flowergirl')].reminders
+				.filter((r) => r.characterId === 'flowergirl')
+				.map((r) => r.label);
+
+		it('each dawn the Flowergirl is marked Demon Not Voted, and Demon Voted comes off', () => {
+			// Wiki: "Each dawn, mark the Flowergirl with the DEMON NOT VOTED reminder, and remove the
+			// DEMON VOTED reminder, if any."
+			const s = scenario(CAST)
+				.do({ type: 'SetDayMark', mark: 'demon-voted', value: true })
+				.newDay();
+			expect(labels(s)).toEqual(['Demon Not Voted']);
+		});
+
+		it('when the Demon votes, Demon Voted replaces Demon Not Voted', () => {
+			// Wiki: "Each day, if the Demon votes for any execution, replace the DEMON NOT VOTED reminder
+			// with the DEMON VOTED reminder."
+			const s = scenario(CAST).do({ type: 'SetDayMark', mark: 'demon-voted', value: false });
+			expect(labels(s)).toEqual(['Demon Not Voted']);
+			const voted = s.do({ type: 'SetDayMark', mark: 'demon-voted', value: true });
+			expect(labels(voted)).toEqual(['Demon Voted']);
+		});
+
+		it('the token on the Flowergirl gives the answer at night', () => {
+			// Wiki: "Each night except the first, wake the Flowergirl. If the Flowergirl is marked DEMON
+			// NOT VOTED, shake your head no. If the Flowergirl is marked DEMON VOTED, nod your head yes."
+			const s = scenario(CAST).newDay();
+			const ask = (at: Scenario) =>
+				nightAnswer(at.game, at.seat('flowergirl'), 'flowergirl', at.characters);
+			expect(ask(s.do({ type: 'SetDayMark', mark: 'demon-voted', value: false }))).toMatchObject({
+				kind: 'yes-no',
+				value: false
+			});
+			expect(ask(s.do({ type: 'SetDayMark', mark: 'demon-voted', value: true }))).toMatchObject({
+				kind: 'yes-no',
+				value: true
+			});
+		});
+
+		it('asks the Storyteller whether the Demon voted when nobody marked it', () => {
+			// Wiki: "If you forget whether the Demon voted or not, wake the Demon at night and ask by
+			// showing them the DID YOU VOTE TODAY? info token."
+			const s = scenario(CAST).nominate('chef', 'witch');
+			expect(unsetMarks(s.game, s.characters)).toEqual(['demon-voted']);
+			expect(nightAnswer(s.game, s.seat('flowergirl'), 'flowergirl', s.characters)).toMatchObject({
+				kind: 'none'
+			});
 		});
 	});
 });

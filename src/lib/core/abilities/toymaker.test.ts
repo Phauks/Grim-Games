@@ -15,7 +15,14 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
-import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import {
+	committedCharacter,
+	committedGameData,
+	nightSheetPresence
+} from '#lib/core/testing/committed-data.ts';
+import { nightOrder } from '#lib/core/rules/night-order.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { setupReminders } from '#lib/core/rules/setup-reminders.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 import { noAttackState } from '#lib/core/rules/demon-attack.ts';
 
@@ -84,6 +91,37 @@ describe('Toymaker', () => {
 			expect(s.game.seating.filter((id) => !s.game.seats[id].dead)).toHaveLength(3);
 			// The reminder is still on the Imp with three alive: the final night, no attack (M15a).
 			expect(noAttackState(s.game, s.seat('imp'), s.characters)?.finalNight).toBe(true);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Toymaker#How_to_Run)', () => {
+		it('puts Final Night: No Attack on the Demon at setup, and only on a Demon', () => {
+			// Wiki: "At the start of the game, declare that the Toymaker is in play. Add the Toymaker
+			// token to the Grimoire, and mark the Demon with the Toymaker’s FINAL NIGHT: NO ATTACK
+			// reminder."
+			const s = scenario(['chef', 'empath', 'monk', 'poisoner', 'imp']).rule('toymaker');
+			const prep = setupReminders(s.game, s.characters).filter((r) => r.characterId === 'toymaker');
+			expect(prep).toMatchObject([
+				{ label: 'Final Night: No Attack', seatId: s.seat('imp'), candidates: [s.seat('imp')] }
+			]);
+			const token = { characterId: 'toymaker', label: 'Final Night: No Attack' };
+			expect(reminderTargetMisses(s.game, token, s.seat('chef'), s.characters)).toEqual(['type']);
+		});
+
+		it('keeps the Minion info and Demon info steps on the first night with five players', () => {
+			// Wiki: "On the first night, resolve the "Minion info" and "Demon info” steps on the night
+			// sheet even though there are fewer than seven players."
+			const data = committedGameData();
+			const s = scenario(['chef', 'empath', 'monk', 'poisoner', 'imp']);
+			const cast = s.game.seating.map((id) => s.characters.get(s.game.seats[id].characterId!)!);
+			const steps = (inPlay: typeof cast) =>
+				nightOrder({ night: 'first', sheet: data.nightSheet, inPlay, players: 5 }).steps.map(
+					(step) => step.id
+				);
+			expect(steps(cast)).not.toContain('minioninfo');
+			const withToymaker = steps([...cast, s.characters.get('toymaker')!]);
+			expect(withToymaker).toContain('minioninfo');
+			expect(withToymaker).toContain('demoninfo');
 		});
 	});
 

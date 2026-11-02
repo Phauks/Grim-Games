@@ -114,4 +114,44 @@ describe('Heretic', () => {
 			expect(suggestedWinner(ends)).toBe('evil');
 		});
 	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Heretic#How_to_Run)', () => {
+		it('turns an evil win into a good win', () => {
+			// Wiki: "If the game ends and the evil team would have won, declare that the good team wins
+			// and the evil team loses."
+			// The Goblin marked Claimed is executed: evil would have won.
+			const s = scenario(['heretic', 'goblin', 'chef', 'empath', 'monk', 'imp'])
+				.newDay()
+				.reminder('goblin', 'goblin', 'Claimed')
+				.execute('goblin');
+			const ends = gameEnds(s.game, s.characters);
+			expect(ends).toMatchObject([
+				{
+					characterId: 'goblin',
+					winner: 'good',
+					flippedBy: { characterId: 'heretic', seatId: s.seat('heretic') }
+				}
+			]);
+			expect(suggestedWinner(ends)).toBe('good');
+		});
+
+		it('turns a good win into an evil win', () => {
+			// Wiki: "If the game ends and the good team would have won, declare that the evil team wins
+			// and the good team loses."
+			// The player babysitting Lil' Monsta is executed: good would have won.
+			const s = scenario(['heretic', 'poisoner', 'chef', 'empath', 'monk', 'mayor'])
+				.reminder('poisoner', 'lilmonsta', 'Is The Demon')
+				.newDay()
+				.execute('poisoner');
+			const ends = gameEnds(s.game, s.characters);
+			expect(ends).toMatchObject([
+				{
+					rule: 'demon-dead',
+					winner: 'evil',
+					flippedBy: { characterId: 'heretic', seatId: s.seat('heretic') }
+				}
+			]);
+			expect(suggestedWinner(ends)).toBe('evil');
+		});
+	});
 });

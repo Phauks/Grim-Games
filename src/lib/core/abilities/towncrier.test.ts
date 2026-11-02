@@ -15,10 +15,10 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { suggestedMark } from '#lib/core/rules/day-marks.ts';
+import { suggestedMark, unsetMarks } from '#lib/core/rules/day-marks.ts';
 import { nightAnswer } from '#lib/core/rules/night-info.ts';
 import { todaysNominations } from '#lib/core/rules/nominations.ts';
-import { scenario } from '#lib/core/testing/scenario.ts';
+import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Town Crier', () => {
 	const character = committedCharacter('towncrier');
@@ -84,6 +84,54 @@ describe('Town Crier', () => {
 			expect(
 				nightAnswer(marked.game, marked.seat('towncrier'), 'towncrier', marked.characters)
 			).toMatchObject({ kind: 'yes-no', value: false });
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Town_Crier#How_to_Run)', () => {
+		const CAST = ['towncrier', 'witch', 'cerenovus', 'chef', 'empath', 'vortox'];
+		const labels = (s: Scenario) =>
+			s.game.seats[s.seat('towncrier')].reminders
+				.filter((r) => r.characterId === 'towncrier')
+				.map((r) => r.label);
+
+		it('each dawn the Town Crier is marked Minions Not Nominated, and Minion Nominated comes off', () => {
+			// Wiki: "Each dawn, mark the Town Crier with the MINIONS NOT NOMINATED reminder, and remove the
+			// MINION NOMINATED reminder, if any."
+			const s = scenario(CAST)
+				.do({ type: 'SetDayMark', mark: 'minion-nominated', value: true })
+				.newDay();
+			expect(labels(s)).toEqual(['Minions Not Nominated']);
+		});
+
+		it('a Minion nominating swaps in Minion Nominated', () => {
+			// Wiki: "Each day, if any Minion makes a nomination, replace the MINIONS NOT NOMINATED reminder
+			// with the MINION NOMINATED reminder."
+			const s = scenario(CAST).newDay();
+			expect(labels(s.nominate('chef', 'witch'))).toEqual(['Minions Not Nominated']);
+			expect(labels(s.nominate('cerenovus', 'chef'))).toEqual(['Minion Nominated']);
+		});
+
+		it('the token on the Town Crier gives the answer at night', () => {
+			// Wiki: "Each night except the first, wake the Town Crier. If the Town Crier is marked MINIONS
+			// NOT NOMINATED, shake your head no. If the Town Crier is marked MINION NOMINATED, nod your
+			// head yes."
+			const s = scenario(CAST).newDay();
+			const ask = (at: Scenario) =>
+				nightAnswer(at.game, at.seat('towncrier'), 'towncrier', at.characters);
+			expect(
+				ask(s.do({ type: 'SetDayMark', mark: 'minion-nominated', value: false }))
+			).toMatchObject({ kind: 'yes-no', value: false });
+			expect(
+				ask(s.do({ type: 'SetDayMark', mark: 'minion-nominated', value: true }))
+			).toMatchObject({ kind: 'yes-no', value: true });
+		});
+
+		it('asks the Storyteller whether a Minion nominated when nothing was recorded', () => {
+			// Wiki: "If you forget whether a Minion made a nomination or not, wake each Minion at night and
+			// ask by showing them the DID YOU NOMINATE TODAY? info token."
+			const s = scenario(CAST).newDay();
+			expect(unsetMarks(s.game, s.characters)).toEqual(['minion-nominated']);
+			expect(suggestedMark(s.game, 'minion-nominated', s.characters)).toBeUndefined();
 		});
 	});
 });

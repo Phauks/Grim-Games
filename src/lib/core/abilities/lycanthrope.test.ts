@@ -19,6 +19,9 @@ import { protection } from '#lib/core/rules/ability.ts';
 import { onDeathApplies, onDeathTrigger } from '#lib/core/rules/night-alerts.ts';
 import { deathVerdict } from '#lib/core/rules/night-deaths.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
+import { nightTextPlain, nightTextSegments, placeholdersFor } from '#lib/core/rules/night-text.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { setupPrep } from '#lib/core/rules/setup-reminders.ts';
 
 describe('Lycanthrope', () => {
 	const character = committedCharacter('lycanthrope');
@@ -116,6 +119,47 @@ describe('Lycanthrope', () => {
 			expect(attack('zealot')).toMatchObject({ kind: 'no-death', because: 'registers-evil' });
 			// Nothing protects the Lycanthrope from the Demon.
 			expect(protection(s.game, s.seat('lycanthrope'), s.characters, 'demon')).toBeUndefined();
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Lycanthrope#How_to_Run)', () => {
+		const cast = ['lycanthrope', 'general', 'amnesiac', 'chef', 'poisoner', 'imp'];
+
+		it('lists the Faux Paw reminder to place during setup', () => {
+			// Wiki: "During setup, mark one good player with the Lycanthrope’s FAUX PAW reminder."
+			const s = scenario(cast);
+			expect(setupPrep('lycanthrope', character.name, s.characters)).toMatchObject([
+				{ tokens: ['Faux Paw'] }
+			]);
+		});
+
+		it('puts Faux Paw only on a good player', () => {
+			// Wiki: "During setup, mark one good player with the Lycanthrope’s FAUX PAW reminder."
+			const s = scenario(cast);
+			const fauxPaw = { characterId: 'lycanthrope', label: 'Faux Paw' };
+			expect(reminderTargetMisses(s.game, fauxPaw, s.seat('chef'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, fauxPaw, s.seat('poisoner'), s.characters)).toEqual([
+				'alignment'
+			]);
+		});
+
+		it('marks a good chosen player Dead on nights after the first', () => {
+			// Wiki: "Each night except the first, wake the Lycanthrope. They point at any player. Put
+			// the Lycanthrope to sleep. If the chosen player is good, that player dies—mark them with the
+			// Lycanthrope’s DEAD reminder."
+			const placeholders = placeholdersFor(character, 'other');
+			const text = nightTextPlain(
+				nightTextSegments(character.otherNightReminder!, character, {
+					...(placeholders ? { placeholders } : {})
+				})
+			);
+			expect(text).toContain('[+Dead]');
+			const s = scenario(cast).newDay().dusk();
+			const dead = { characterId: 'lycanthrope', label: 'Dead' };
+			expect(reminderTargetMisses(s.game, dead, s.seat('general'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, dead, s.seat('imp'), s.characters)).toEqual([
+				'alignment'
+			]);
 		});
 	});
 });

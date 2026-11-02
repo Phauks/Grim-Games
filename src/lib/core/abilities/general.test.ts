@@ -111,4 +111,31 @@ describe('General', () => {
 			offers(s, 'neither');
 		});
 	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/General#How_to_Run)', () => {
+		it("offers the Storyteller's three answers on the first night and on later nights", () => {
+			// Wiki: "Each night, wake the General. If you believe that the good team is winning, give a
+			// thumbs up. If you believe that the evil team is winning, give a thumbs down. If you don’t
+			// know which team is winning, give a thumbs to the side. Put the General to sleep."
+			const s = scenario(['general', 'chef', 'empath', 'imp', 'poisoner']);
+			const judged = (['good', 'evil', 'neither'] as const).map((value) => ({
+				reason: 'judgement',
+				value: { kind: 'alignment', value }
+			}));
+			for (const [at, night] of [
+				[s, 'first'],
+				[s.newDay(), 'other']
+			] as const) {
+				const answer = nightAnswer(
+					at.game,
+					at.seat('general'),
+					'general',
+					at.characters,
+					undefined,
+					night
+				)!;
+				expect(answerOptions(at.game, answer, at.characters)).toEqual(judged);
+			}
+		});
+	});
 });

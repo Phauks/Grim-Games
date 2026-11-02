@@ -16,6 +16,9 @@ import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { infoPicker, isAllowed } from '#lib/core/rules/night-info.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { analyseSetup } from '#lib/core/rules/setup.ts';
+import { setupPrep } from '#lib/core/rules/setup-reminders.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
 /** Whether tonight the Balloonist may be shown the player in `shown`'s seat. */
@@ -99,6 +102,42 @@ describe('Balloonist', () => {
 			const night3 = s.reminder('sailor', 'balloonist', 'Know');
 			expect(mayShow(night3, 'puzzlemaster')).toBe(true);
 			expect(mayShow(night3, 'nightwatchman')).toBe(false);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Balloonist#How_to_Run)', () => {
+		const know = { characterId: 'balloonist', label: 'Know' };
+
+		it('allows one extra Outsider at setup, or none', () => {
+			// Wiki: "During setup, you may add an Outsider."
+			const ids = ['balloonist', 'chef', 'empath', 'monk', 'butler', 'poisoner', 'imp'];
+			const s = scenario(ids);
+			const analysis = analyseSetup({ players: 7, inPlay: ids.map((id) => s.characters.get(id)!) });
+			expect(analysis.expected.outsider).toEqual([0, 1]);
+			expect(analysis.warnings).toEqual([]);
+		});
+
+		it('prepares the Know reminder for any player before the first night', () => {
+			// Wiki: "When preparing the first night, mark any player with the KNOW reminder."
+			expect(setupPrep('balloonist', 'Balloonist')).toMatchObject([
+				{ tokens: ['Know'], target: 'any player' }
+			]);
+			const s = scenario(['balloonist', 'chef', 'imp', 'poisoner', 'butler']);
+			for (const seatId of s.game.seating)
+				expect(reminderTargetMisses(s.game, know, seatId, s.characters)).toEqual([]);
+		});
+
+		it('on later nights, moves the Know reminder to a different character type', () => {
+			// Wiki: "When preparing each night afterwards, mark a character of a different type than the
+			// current with the KNOW reminder."
+			const s = scenario(['balloonist', 'chef', 'empath', 'imp', 'poisoner', 'butler'])
+				.reminder('chef', 'balloonist', 'Know')
+				.newDay();
+			const misses = (seat: string) =>
+				reminderTargetMisses(s.game, know, s.seat(seat), s.characters, s.game);
+			expect(misses('empath')).toEqual(['last-night']);
+			expect(misses('poisoner')).toEqual([]);
+			expect(misses('butler')).toEqual([]);
 		});
 	});
 });

@@ -16,7 +16,11 @@ import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { afterDeath, nominationsPerDay } from '#lib/core/rules/nominations.ts';
-import { scenario } from '#lib/core/testing/scenario.ts';
+import { dayReminders, dayStateFromGame, renderReminder } from '#lib/core/rules/day-reminders.ts';
+import { onDeathApplies, onDeathTrigger } from '#lib/core/rules/night-alerts.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { voteWorth } from '#lib/core/rules/vote-weights.ts';
+import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Banshee', () => {
 	const character = committedCharacter('banshee');
@@ -86,6 +90,64 @@ describe('Banshee', () => {
 			);
 			expect(afterDeath(s.game, s.seat('banshee'), s.characters)).toBeUndefined();
 			expect(nominationsPerDay(s.game, s.seat('banshee'), s.characters)).toBe(0);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Banshee#How_to_Run)', () => {
+		const cast = ['banshee', 'chef', 'imp', 'monk', 'poisoner'];
+		const linesOf = (at: Scenario) =>
+			dayReminders(
+				dayStateFromGame(at.game, (id) => at.characters.get(id), undefined, at.characters)
+			).groups.flatMap((g) =>
+				g.reminders
+					.filter((r) => r.characterId === 'banshee')
+					.map((r) => renderReminder(r.segments))
+			);
+
+		it('is set off by a Demon kill, not by an execution', () => {
+			// Wiki: "If the Banshee is killed by the Demon, place the HAS ABILITY reminder token next to
+			// the Banshee and say “The Banshee has awoken” or something similarly dramatic."
+			const { characters } = scenario(cast);
+			const trigger = onDeathTrigger('banshee', characters)!;
+			expect(onDeathApplies(trigger, 'imp', characters)).toBe(true);
+			expect(onDeathApplies(trigger, 'execution', characters)).toBe(false);
+		});
+
+		it('the Has Ability reminder goes on the dead Banshee only', () => {
+			// Wiki: "If the Banshee is killed by the Demon, place the HAS ABILITY reminder token next to
+			// the Banshee and say “The Banshee has awoken” or something similarly dramatic."
+			const alive = scenario(cast);
+			const token = { characterId: 'banshee', label: 'Has Ability' };
+			expect(
+				reminderTargetMisses(alive.game, token, alive.seat('banshee'), alive.characters)
+			).toEqual(['life']);
+			const killed = alive.dies('banshee', 'imp');
+			expect(
+				reminderTargetMisses(killed.game, token, killed.seat('banshee'), killed.characters)
+			).toEqual([]);
+			expect(
+				reminderTargetMisses(killed.game, token, killed.seat('chef'), killed.characters)
+			).toContain('not-self');
+		});
+
+		it("counts the Demon-killed Banshee's vote twice", () => {
+			// Wiki: "The Banshee may nominate twice per day, but it is the player’s responsibility to
+			// remember how many times they have nominated. The Banshee may raise two hands when voting.
+			// When counting the votes, count each hand as a vote."
+			const s = scenario(cast).dies('banshee', 'imp').newDay();
+			expect(voteWorth(s.game, s.seat('banshee'), s.characters)).toBe(2);
+			expect(linesOf(s)).toEqual(['[banshee · Ana] may nominate and vote twice']);
+		});
+
+		it('an executed Banshee votes once, and nothing is announced', () => {
+			// Wiki: "If the Banshee is killed by the Demon but does not have their ability at that time
+			// or is killed by a non-Demon ability, then do not tell the group that the Banshee ability
+			// has been triggered. The Banshee may not nominate, and needs a vote token to vote, like a
+			// regular dead player."
+			const s = scenario(cast).dies('banshee', 'execution').newDay();
+			expect(voteWorth(s.game, s.seat('banshee'), s.characters)).toBe(1);
+			expect(nominationsPerDay(s.game, s.seat('banshee'), s.characters)).toBe(0);
+			expect(linesOf(s)).toEqual([]);
 		});
 	});
 });

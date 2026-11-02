@@ -83,6 +83,29 @@ describe('Buddhist', () => {
 		});
 	});
 
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Buddhist#How_to_Run)', () => {
+		it('starts the quiet start only once the Buddhist is in play', () => {
+			// Wiki: "At the start of the game, declare that the Buddhist is in play. Add the Buddhist
+			// token to the Grimoire. Declare which players are Buddhists, with their consent. Those
+			// players must stay silent for the first two minutes of each day."
+			const s = scenario(['chef', 'empath', 'monk', 'poisoner', 'imp']);
+			expect(quietStartRule(s.game, s.characters)).toBeUndefined();
+			expect(dayLines(s, 'buddhist')).toEqual([]);
+			const added = s.rule('buddhist');
+			expect(quietStartRule(added.game, added.characters)?.seconds).toBe(120);
+		});
+
+		it('ends the quiet start and its day reminder when the Buddhist is removed', () => {
+			// Wiki: "Remove the Buddhist at any time, declaring when you do so."
+			const s = scenario(['chef', 'empath', 'monk', 'poisoner', 'imp'])
+				.rule('buddhist')
+				.newDay()
+				.do({ type: 'RemoveRuleCharacter', characterId: 'buddhist' });
+			expect(quietStartRule(s.game, s.characters)).toBeUndefined();
+			expect(dayLines(s, 'buddhist')).toEqual([]);
+		});
+	});
+
 	/** M15b: the quiet start the day timer counts down (`quietStart`, `rules/quiet-start.ts`). */
 	describe('quiet start (M15b)', () => {
 		const s = scenario(['imp', 'washerwoman', 'empath', 'monk', 'soldier']).rule('buddhist');

@@ -18,7 +18,10 @@ import { committedCharacter, nightSheetPresence } from '#lib/core/testing/commit
 import { protection } from '#lib/core/rules/ability.ts';
 import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
 import { preventedDeaths } from '#lib/core/rules/prevented-deaths.ts';
+import { placeholdersFor } from '#lib/core/rules/night-text.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { wokeTonight } from '#lib/core/rules/woke-tonight.ts';
 
 describe('Tinker', () => {
 	const character = committedCharacter('tinker');
@@ -97,6 +100,39 @@ describe('Tinker', () => {
 				protection(after.game, after.seat('tinker'), after.characters, 'other')
 			).toBeUndefined();
 			expect(tinkerCause(after, 'tinker')).toMatchObject({ flags: [] });
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Tinker#How_to_Run)', () => {
+		const cast = ['tinker', 'chef', 'empath', 'poisoner', 'imp'];
+
+		it('may die by day, by the Tinker ability', () => {
+			// Wiki: "At any time, you may decide that the Tinker dies. If this is during the day,
+			// immediately declare that the Tinker has died."
+			const s = scenario(cast).newDay();
+			expect(
+				validDeathCauses(s.game, s.seat('tinker'), s.characters, { day: true }).find(
+					(c) => c.cause === 'tinker'
+				)
+			).toMatchObject({ flags: [] });
+			const dead = s.dies('tinker', 'tinker');
+			expect(dead.game.seats[dead.seat('tinker')]).toMatchObject({
+				dead: true,
+				deathCause: 'tinker'
+			});
+		});
+
+		it("may die by night, marked with the Tinker's Dead, with nobody woken", () => {
+			// Wiki: "If this is during the night, mark the Tinker with the DEAD reminder and wait until
+			// dawn to declare which players died during the night. (Do not say how.)"
+			const s = scenario(cast).newDay();
+			const dead = { characterId: 'tinker', label: 'Dead' };
+			expect(reminderTargetMisses(s.game, dead, s.seat('tinker'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, dead, s.seat('chef'), s.characters)).not.toEqual([]);
+			expect(placeholdersFor(character, 'other')).toEqual([
+				{ tokens: [{ label: 'Dead', action: 'place' }] }
+			]);
+			expect(wokeTonight(s.game, s.seat('tinker'), s.characters, 'other')).toBe(false);
 		});
 	});
 });

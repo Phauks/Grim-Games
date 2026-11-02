@@ -108,6 +108,65 @@ describe('Chambermaid', () => {
 			expect(learns(next, 'other', 'assassin', 'gossip')).toBe(1);
 		});
 	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Chambermaid#How_to_Run)', () => {
+		const cast = ['chambermaid', 'chef', 'empath', 'monk', 'poisoner', 'imp'];
+
+		it('chooses two players and is shown a number, on the first night and every other night', () => {
+			// Wiki: "Each night, wake the Chambermaid. They point at any two alive players except
+			// themself."
+			const s = scenario(cast);
+			for (const night of ['first', 'other'] as const) {
+				const picker = infoPicker(
+					s.game,
+					s.seat('chambermaid'),
+					'chambermaid',
+					s.characters,
+					night
+				)!;
+				expect(picker.kind, night).toBe('number');
+				expect(picker.seatCount, night).toBe(2);
+			}
+		});
+
+		it('counts how many of the two woke tonight, from zero to two', () => {
+			// Wiki: "Show the Chambermaid fingers (0, 1, or 2) equaling the number of chosen characters
+			// who woke tonight."
+			const s = scenario(cast);
+			const learns = (night: Night, a: SeatRef, b: SeatRef) => {
+				const picker = infoPicker(
+					s.game,
+					s.seat('chambermaid'),
+					'chambermaid',
+					s.characters,
+					night
+				)!;
+				return picker.options.find(
+					(o) => o.seats.length === 2 && o.seats.includes(s.seat(a)) && o.seats.includes(s.seat(b))
+				)?.number;
+			};
+			expect(learns('first', 'chef', 'poisoner')).toBe(2);
+			expect(learns('first', 'chef', 'monk')).toBe(1);
+			expect(learns('first', 'monk', 'imp')).toBe(0);
+			expect(learns('other', 'monk', 'imp')).toBe(2);
+		});
+
+		it('is not woken while fewer than two other players are alive', () => {
+			// Wiki: "Do not wake the Chambermaid if there are not two players alive to be chosen (due
+			// to the Mastermind, Zombuul, etc.)."
+			const s = scenario(['chambermaid', 'chef', 'mastermind', 'imp'])
+				.dies('chef', 'demon')
+				.dies('mastermind', 'demon');
+			const picker = infoPicker(
+				s.game,
+				s.seat('chambermaid'),
+				'chambermaid',
+				s.characters,
+				'other'
+			);
+			expect(picker?.options ?? []).toEqual([]);
+		});
+	});
 });
 
 // https://wiki.bloodontheclocktower.com/Chambermaid: two alive players (not the Chambermaid);

@@ -107,4 +107,40 @@ describe('Mastermind', () => {
 			]);
 		});
 	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Mastermind#How_to_Run)', () => {
+		const cast = ['chef', 'empath', 'monk', 'slayer', 'poisoner', 'mastermind', 'imp'];
+
+		it('holds the game when the Demon dies by execution, but not by another death', () => {
+			// Wiki: "If the Demon is executed and dies, and the game would end, continue playing the
+			// game. (Add a shroud as normal. Do not say that the Demon has died.)"
+			const executed = scenario(cast).newDay().execute('imp');
+			expect(executed.game.seats[executed.seat('imp')].dead).toBe(true);
+			expect(gameEnds(executed.game, executed.characters)).toMatchObject([
+				{ rule: 'demon-dead', holds: [{ rule: 'extra-day', characterId: 'mastermind' }] }
+			]);
+			const shot = scenario(cast).newDay().dies('imp', 'slayer');
+			expect(gameEnds(shot.game, shot.characters)).toMatchObject([
+				{ rule: 'demon-dead', winner: 'good', holds: [] }
+			]);
+		});
+
+		it('ends the game tomorrow: good wins with no execution or an evil player executed', () => {
+			// Wiki: "Tomorrow, if a good player is executed, declare that the game ends and evil wins,
+			// but if an evil player or no player is executed, declare that the game ends and good
+			// wins."
+			const extra = scenario(cast).newDay().execute('imp').newDay();
+			expect(gameEnds(extra.game, extra.characters, { dayEnded: true })).toMatchObject([
+				{ rule: 'extra-day', winner: 'good' }
+			]);
+			const evil = extra.execute('poisoner');
+			expect(gameEnds(evil.game, evil.characters)).toMatchObject([
+				{ rule: 'extra-day', winner: 'good', seats: [evil.seat('poisoner')] }
+			]);
+			const good = extra.execute('chef');
+			expect(gameEnds(good.game, good.characters)).toMatchObject([
+				{ rule: 'extra-day', winner: 'evil', seats: [good.seat('chef')] }
+			]);
+		});
+	});
 });

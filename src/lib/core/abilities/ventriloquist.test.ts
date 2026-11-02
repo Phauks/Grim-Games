@@ -16,6 +16,8 @@ import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { executionSavers } from '#lib/core/rules/ability.ts';
+import { dayReminders, dayStateFromGame, renderReminder } from '#lib/core/rules/day-reminders.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Ventriloquist', () => {
@@ -96,6 +98,52 @@ describe('Ventriloquist', () => {
 			expect(after.game.seats[after.seat('hermit')]).toMatchObject({
 				dead: true,
 				deathCause: 'execution'
+			});
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Ventriloquist#How_to_Run)', () => {
+		it('puts Mad only on a living nominee, and names them on the day panel', () => {
+			// Wiki: "When a player is nominated, before the vote is completed, if they are mad as a
+			// character that is different from a character they have been mad as previously, even if
+			// either character is their true character, and that player becomes about to die, mark
+			// them with the MAD reminder."
+			const s = scenario(['gambler', 'chef', 'empath', 'poisoner', 'imp'])
+				.rule('ventriloquist')
+				.dies('chef');
+			const mad = { characterId: 'ventriloquist', label: 'Mad' };
+			expect(reminderTargetMisses(s.game, mad, s.seat('gambler'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, mad, s.seat('chef'), s.characters)).toEqual(['life']);
+			const marked = s.nominate('empath', 'gambler').reminder('gambler', 'ventriloquist', 'Mad');
+			const lines = dayReminders(
+				dayStateFromGame(
+					marked.game,
+					(id) => marked.characters.get(id),
+					undefined,
+					marked.characters
+				)
+			).groups.flatMap((g) =>
+				g.reminders
+					.filter((r) => r.characterId === 'ventriloquist')
+					.map((r) => ({ group: g.group, text: renderReminder(r.segments) }))
+			);
+			expect(lines).toEqual([
+				{ group: 'madness', text: '[ventriloquist] has made mad [gambler · Ana]' }
+			]);
+		});
+
+		it('logs the execution of a Mad player who does not die', () => {
+			// Wiki: "If an execution occurs, and the executee is marked MAD due to the Ventriloquist,
+			// declare that they are executed and you may declare that they do not die."
+			const s = scenario(['gambler', 'chef', 'empath', 'poisoner', 'imp'])
+				.rule('ventriloquist')
+				.reminder('gambler', 'ventriloquist', 'Mad')
+				.do((at) => ({ type: 'Execute', seatId: at.seat('gambler'), savedBy: 'ventriloquist' }));
+			expect(s.game.today.entries.at(-1)).toMatchObject({
+				kind: 'execution',
+				seatId: s.seat('gambler'),
+				died: false,
+				savedBy: { characterId: 'ventriloquist' }
 			});
 		});
 	});

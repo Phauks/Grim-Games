@@ -17,6 +17,7 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { protection } from '#lib/core/rules/ability.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 
 describe('Tea Lady', () => {
 	const character = committedCharacter('tealady');
@@ -85,6 +86,51 @@ describe('Tea Lady', () => {
 			// Waits on the engine (M15m): Exile kills a living Traveller without checking protection.
 			const exiled = s.do((at) => ({ type: 'Exile', seatId: at.seat('matron') }));
 			expect(exiled.game.seats[exiled.seat('matron')].dead).toBe(false);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Tea_Lady#How_to_Run)', () => {
+		// Seated in a ring: the Tea Lady's neighbours are the Chef and the Monk.
+		const cast = ['tealady', 'chef', 'empath', 'imp', 'poisoner', 'monk'];
+		const cannotDie = { characterId: 'tealady', label: 'Cannot Die' };
+
+		it('puts Cannot Die on both alive neighbours only while both are good', () => {
+			// Wiki: "If both alive neighbours of the Tea Lady are good, mark those neighbours’ character
+			// tokens with the Tea Lady’s CANNOT DIE reminders. If either alive neighbour of the Tea Lady
+			// is evil, remove these reminders. Update these reminders immediately based on this
+			// condition throughout the entire game (such as if a player’s alignment changes)."
+			const s = scenario(cast);
+			const misses = (at: typeof s, seat: 'chef' | 'monk' | 'empath' | 'poisoner') =>
+				reminderTargetMisses(at.game, cannotDie, at.seat(seat), at.characters);
+			expect(misses(s, 'chef')).toEqual([]);
+			expect(misses(s, 'monk')).toEqual([]);
+			expect(misses(s, 'empath')).toContain('neighbour');
+			const monkDead = s.dies('monk', 'imp');
+			expect(misses(monkDead, 'poisoner')).toContain('alignment');
+			expect(misses(monkDead, 'chef')).not.toEqual([]);
+			const evilChef = s.do((at) => ({
+				type: 'SetAlignment',
+				seatId: at.seat('chef'),
+				alignment: 'evil'
+			}));
+			expect(misses(evilChef, 'monk')).not.toEqual([]);
+		});
+
+		it('keeps a marked player alive, and alive when executed', () => {
+			// Wiki: "If a player marked CANNOT DIE would die, they remain alive. If a player marked
+			// CANNOT DIE is executed, declare that the marked player is executed but remains alive. (Do
+			// not say why.)"
+			const s = scenario(cast)
+				.reminder('chef', 'tealady', 'Cannot Die')
+				.reminder('monk', 'tealady', 'Cannot Die');
+			expect(protection(s.game, s.seat('chef'), s.characters, 'other')).toMatchObject({
+				characterId: 'tealady'
+			});
+			const executed = s.newDay().execute('chef');
+			expect(executed.game.seats[executed.seat('chef')].dead).toBe(false);
+			expect(executed.game.today.entries.filter((e) => e.kind === 'execution')).toMatchObject([
+				{ died: false, savedBy: { characterId: 'tealady' } }
+			]);
 		});
 	});
 });

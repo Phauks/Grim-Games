@@ -111,13 +111,13 @@ describe('Spy', () => {
 
 	describe('How to Run (https://wiki.bloodontheclocktower.com/Spy#How_to_Run)', () => {
 		it('wakes the Spy every night to look at the Grimoire', () => {
-			// How to Run: each night the Spy wakes and sees the Grimoire for as long as they like.
+			// Wiki: "Each night, wake the Spy and show them the Grimoire for as long as they need."
 			expect(seesGrimoire(character)).toBe(true);
 		});
 
 		it('lets the Storyteller choose a good alignment and a Townsfolk or Outsider for the Spy', () => {
-			// How to Run: whenever an ability detects or affects good, the Storyteller picks which
-			// character and alignment the Spy registers as.
+			// Wiki: "Each time the Spy is targeted by an ability that detects or affects good
+			// characters, choose what character and alignment the Spy registers as."
 			const s = scenario(['spy', 'chef', 'imp', 'monk', 'empath']);
 			expect(
 				registrations(s.game, s.characters).find((r) => r.seatId === s.seat('spy'))
@@ -125,8 +125,9 @@ describe('Spy', () => {
 		});
 
 		it("lets an ability aimed at Townsfolk treat the Spy as one, such as the Washerwoman's", () => {
-			// How to Run: show the Spy as good when that suits, so an ability that only works on
-			// good players, Townsfolk or Outsiders can work on them.
+			// Wiki: "(Do whatever is appropriate, such as showing a good character token, nodding,
+			// giving finger signals, or allowing an ability to work that would normally only affect
+			// good, Townsfolk, or Outsider players.)"
 			const s = scenario(['washerwoman', 'spy', 'chef', 'imp', 'monk']);
 			const townsfolk = { characterId: 'washerwoman', label: 'Townsfolk' };
 			expect(reminderTargetMisses(s.game, townsfolk, s.seat('spy'), s.characters)).toEqual([]);

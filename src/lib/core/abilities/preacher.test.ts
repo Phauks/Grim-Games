@@ -16,6 +16,8 @@ import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { abilityState } from '#lib/core/rules/ability.ts';
+import { filledInfoToken } from '#lib/core/rules/info-token-characters.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Preacher', () => {
@@ -85,6 +87,37 @@ describe('Preacher', () => {
 			expect(abilityState(s.game, s.seat('pithag'), s.characters).works).toBe(false);
 			const next = s.newDay().poisoned('preacher');
 			expect(abilityState(next.game, next.seat('pithag'), next.characters).works).toBe(true);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Preacher#How_to_Run)', () => {
+		const cast = ['preacher', 'chef', 'cerenovus', 'empath', 'imp'];
+
+		it('allows No Ability on any Minion, alive or dead, and on nobody else', () => {
+			// Wiki: "If the Preacher choose a Minion, mark that Minion with a NO ABILITY reminder"
+			const s = scenario(cast);
+			const token = { characterId: 'preacher', label: 'No Ability' };
+			expect(reminderTargetMisses(s.game, token, s.seat('cerenovus'), s.characters)).toEqual([]);
+			const dead = s.dies('cerenovus', 'execution');
+			expect(
+				reminderTargetMisses(dead.game, token, dead.seat('cerenovus'), dead.characters)
+			).toEqual([]);
+			expect(reminderTargetMisses(s.game, token, s.seat('chef'), s.characters)).not.toEqual([]);
+			expect(reminderTargetMisses(s.game, token, s.seat('imp'), s.characters)).not.toEqual([]);
+		});
+
+		it('shows the chosen Minion that the Preacher selected them', () => {
+			// Wiki: "wake the Minion and show them the THIS CHARACTER SELECTED YOU info token then the
+			// Preacher token, then put them to sleep."
+			expect(filledInfoToken(character, 'selected-you', 1)?.characterIds).toEqual(['preacher']);
+		});
+
+		it('gives a marked Minion back its ability once the Preacher dies', () => {
+			// Wiki: "All Minions marked NO ABILITY have no ability while the Preacher is alive."
+			const s = scenario(cast).reminder('cerenovus', 'preacher', 'No Ability');
+			expect(abilityState(s.game, s.seat('cerenovus'), s.characters).works).toBe(false);
+			const dead = s.dies('preacher', 'imp');
+			expect(abilityState(dead.game, dead.seat('cerenovus'), dead.characters).works).toBe(true);
 		});
 	});
 });

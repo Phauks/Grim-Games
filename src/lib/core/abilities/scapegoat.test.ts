@@ -16,6 +16,8 @@ import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { executedInstead } from '#lib/core/rules/executed-instead.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
+import { dayReminders, dayStateFromGame } from '#lib/core/rules/day-reminders.ts';
+import { gameEnds } from '#lib/core/rules/game-end.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
 describe('Scapegoat', () => {
@@ -88,6 +90,34 @@ describe('Scapegoat', () => {
 			const s = table('good');
 			expect(executedInstead(s.game, s.seat('spy'), s.characters)).toHaveLength(1);
 			expect(executedInstead(s.game, s.seat('imp'), s.characters)).toEqual([]);
+		});
+	});
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Scapegoat#How_to_Run)', () => {
+		const cast = ['fortuneteller', 'undertaker', 'poisoner', 'chef', 'imp', 'scapegoat'];
+		const table = (alignment: 'good' | 'evil') =>
+			scenario(cast).becomes('scapegoat', 'scapegoat', alignment);
+		const remindsBy = (s: ReturnType<typeof table>) =>
+			dayReminders(dayStateFromGame(s.game, (id) => s.characters.get(id), undefined, s.characters))
+				.groups.flatMap((g) => g.reminders)
+				.some((r) => r.characterId === 'scapegoat');
+
+		it('reminds the Storyteller by day while the Scapegoat is alive', () => {
+			// Wiki: "If a player of the same alignment as the Scapegoat would be executed, you may
+			// choose that the Scapegoat is executed instead."
+			const s = table('good').newDay();
+			expect(remindsBy(s)).toBe(true);
+			expect(remindsBy(s.dies('scapegoat', 'imp'))).toBe(false);
+		});
+
+		it('lets an evil Scapegoat die in place of the Demon, so evil does not lose', () => {
+			// Wiki: "You should always use an evil Scapegoat’s ability to prevent evil from losing the
+			// game."
+			const s = table('evil');
+			expect(executedInstead(s.game, s.seat('imp'), s.characters)).toEqual([
+				{ seatId: s.seat('scapegoat'), characterId: 'scapegoat' }
+			]);
+			expect(gameEnds(s.execute('scapegoat').game, s.characters)).toEqual([]);
+			expect(gameEnds(s.execute('imp').game, s.characters)).not.toEqual([]);
 		});
 	});
 });

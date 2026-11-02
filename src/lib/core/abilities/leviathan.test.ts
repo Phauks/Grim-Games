@@ -16,7 +16,15 @@ import { describe, expect, it } from 'vitest';
 import { gameEnds } from '#lib/core/rules/game-end.ts';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
-import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import {
+	committedCharacter,
+	committedGameData,
+	nightSheetPresence
+} from '#lib/core/testing/committed-data.ts';
+import { nightOrder } from '#lib/core/rules/night-order.ts';
+import { nightTextPlain, nightTextSegments, placeholdersFor } from '#lib/core/rules/night-text.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { setupPrep } from '#lib/core/rules/setup-reminders.ts';
 
 describe('Leviathan', () => {
 	const character = committedCharacter('leviathan');
@@ -93,6 +101,63 @@ describe('Leviathan', () => {
 			expect(gameEnds(s.game, s.characters, { dayEnded: true })).toMatchObject([
 				{ rule: 'survives-day', day: 5, winner: 'evil' }
 			]);
+		});
+	});
+
+	describe('How to Run (https://wiki.bloodontheclocktower.com/Leviathan#How_to_Run)', () => {
+		const cast = ['leviathan', 'baron', 'chef', 'empath', 'monk', 'mayor', 'soldier'];
+
+		it('announces the Leviathan and places Day 1 just after the first dawn', () => {
+			// Wiki: "Immediately after dawn on the first day, declare that the Leviathan is in play.
+			// Mark the Leviathan with the DAY 1 reminder."
+			const s = scenario(cast);
+			expect(setupPrep('leviathan', character.name, s.characters)).toMatchObject([
+				{ tokens: ['Day 1'], target: 'the Leviathan' }
+			]);
+			const data = committedGameData();
+			const inPlay = cast.map((id) => data.byId.get(id)!);
+			const { steps } = nightOrder({ night: 'first', sheet: data.nightSheet, inPlay, players: 7 });
+			expect(steps.find((step) => step.id === 'leviathan')?.afterDawn).toBe(true);
+		});
+
+		it('moves the Leviathan to the next day token at the start of each day', () => {
+			// Wiki: "At the beginning of each following day, mark the Leviathan with DAY 2, then DAY 3,
+			// then DAY 4, then DAY 5 reminders."
+			const placeholders = placeholdersFor(character, 'other');
+			const text = nightTextPlain(
+				nightTextSegments(character.otherNightReminder!, character, {
+					...(placeholders ? { placeholders } : {})
+				})
+			);
+			for (const day of ['Day 2', 'Day 3', 'Day 4', 'Day 5']) expect(text).toContain(day);
+			const s = scenario(cast);
+			const day2 = { characterId: 'leviathan', label: 'Day 2' };
+			expect(reminderTargetMisses(s.game, day2, s.seat('leviathan'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, day2, s.seat('chef'), s.characters)).toEqual([
+				'not-self'
+			]);
+		});
+
+		it('gives evil the win when day 5 ends, not before', () => {
+			// Wiki: "If a day ends and the Leviathan is marked with the DAY 5 reminder, declare that evil
+			// wins."
+			const day4 = scenario(cast).newDay().newDay().newDay().newDay();
+			expect(gameEnds(day4.game, day4.characters, { dayEnded: true })).toEqual([]);
+			const day5 = day4.newDay();
+			expect(gameEnds(day5.game, day5.characters, { dayEnded: true })).toMatchObject([
+				{ rule: 'survives-day', day: 5, winner: 'evil' }
+			]);
+		});
+
+		it('puts Good Player Executed only on a good player', () => {
+			// Wiki: "If a good player is executed, mark them with the GOOD PLAYER EXECUTED reminder."
+			const s = scenario(cast).newDay().execute('chef');
+			const marked = { characterId: 'leviathan', label: 'Good Player Executed' };
+			expect(reminderTargetMisses(s.game, marked, s.seat('chef'), s.characters)).toEqual([]);
+			expect(reminderTargetMisses(s.game, marked, s.seat('baron'), s.characters)).toEqual([
+				'alignment'
+			]);
+			expect(gameEnds(s.game, s.characters)).toEqual([]);
 		});
 	});
 });
