@@ -1,11 +1,6 @@
 <script lang="ts">
-	import { tick } from 'svelte';
 	import type { EndReason } from '#lib/core/rules/index.ts';
-	import { roomHost } from '#lib/features/room/host.svelte.ts';
-	import { t } from '#lib/i18n/locale.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
-	import Toggle from '#lib/ui/primitives/Toggle.svelte';
-	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { endedGames, type EndedGame } from './device-notes.ts';
 	import EndGameFields from './EndGameFields.svelte';
 	import GameEndPrompt from './GameEndPrompt.svelte';
@@ -39,20 +34,14 @@
 	let winner = $state<'good' | 'evil' | undefined>();
 	let endReason = $state<EndReason | undefined>();
 	/**
-	 * End game can send the finished grimoire to the room's phones too (Trevor, 2026-10-24),
-	 * as Share grim does (plan R5); only while this device has a room.
+	 * Share grim is not asked here (Trevor, 2026-11-01: "allow it to be done after the fact"):
+	 * once the game is over, ⋯ > Session offers it while the room is connected.
 	 */
-	let shareFinal = $state(false);
-	const inRoom = $derived(!!roomHost().code);
-	async function endGame() {
+	function endGame() {
 		endOpen = false;
 		endedGames.end(grimoire.game.gameId, winner, endReason);
 		grimoire.open.setViewOnly(true);
 		onChange();
-		if (!shareFinal || !inRoom) return;
-		// After the room is told the game is over (the board's effect), which a share needs.
-		await tick();
-		if (!roomHost().reveal(grimoire.open)) toast(t('room.shareGrim.failed'));
 	}
 	function reopenGame() {
 		endedGames.reopen(grimoire.game.gameId);
@@ -90,15 +79,6 @@
 	<div class="winner">
 		<EndGameFields {grimoire} bind:winner bind:reason={endReason} />
 	</div>
-	{#if inRoom}
-		<div class="share">
-			<Toggle
-				label={t('room.shareGrim.atEnd')}
-				checked={shareFinal}
-				onChange={(on) => (shareFinal = on)}
-			/>
-		</div>
-	{/if}
 </ConfirmDialog>
 
 <style>
@@ -115,8 +95,7 @@
 	.change dd {
 		margin: 0;
 	}
-	.winner,
-	.share {
+	.winner {
 		margin-top: var(--space-3);
 	}
 </style>

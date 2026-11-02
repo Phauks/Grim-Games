@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
-	import type { GameMode, SpecialRule } from '#lib/core/modes/index.ts';
+	import { fileKind, type GameMode, type SpecialRule } from '#lib/core/modes/index.ts';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -15,8 +15,8 @@
 	/**
 	 * Adds a mode file someone wrote, pasted or uploaded. Every problem is listed with its
 	 * path (parseGameMode), so a file can be fixed in one go. Copy a built-in mode's file from
-	 * Inspect to start from it. A file with "kind": "special-rule" is a special rule, filed with
-	 * the rules (Trevor, 2026-10-18: custom game modes and custom rules both).
+	 * Inspect to start from it. A file that sets no whole-game part (`fileKind`) is a special
+	 * rule, filed with the rules (Trevor, 2026-10-18: custom game modes and custom rules both).
 	 */
 	interface Props {
 		open?: boolean;
@@ -48,12 +48,8 @@
 		} catch {
 			value = undefined;
 		}
-		if (
-			typeof value === 'object' &&
-			value !== null &&
-			'kind' in value &&
-			value.kind === 'special-rule'
-		) {
+		// The file's parts say what it is (Trevor, 2026-11-01: one format, auto-labelled).
+		if (typeof value === 'object' && value !== null && fileKind(value) === 'special-rule') {
 			const result = customRules.add(value, known);
 			if (!result.ok) {
 				issues = result.issues;

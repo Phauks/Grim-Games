@@ -1,18 +1,16 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
 	import {
-		buildKindOf,
 		buildParts,
 		closestPath,
-		emptyFile,
+		fileKind,
 		GAME_MODES,
-		parseGameMode,
-		parseSpecialRule,
+		parseModeOrRule,
 		setAt,
 		splitIssue,
 		SPECIAL_RULES,
 		topFields,
-		type BuildKind,
+		wholeGamePartsOf,
 		type GameMode,
 		type SpecialRule
 	} from '#lib/core/modes/index.ts';
@@ -35,13 +33,11 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
-	import Select from '#lib/ui/primitives/Select.svelte';
 	import Tabs from '#lib/ui/primitives/Tabs.svelte';
 	import ModeFormatGuide from '#lib/features/modes/ModeFormatGuide.svelte';
 	import BuilderField from './BuilderField.svelte';
 	import BuilderOutput from './BuilderOutput.svelte';
 	import BuilderPart from './BuilderPart.svelte';
-	import BuilderRow from './BuilderRow.svelte';
 	import BuilderTable from './BuilderTable.svelte';
 	import type { GuideAt } from './guide-at.ts';
 	import { isEmptyDraft, modeDraft } from './draft.svelte.ts';
@@ -49,7 +45,8 @@
 	/**
 	 * Make a game mode or special rule without writing JSON (Trevor, 2026-10-31: "an interactive
 	 * mode creator that automatically builds and updates depending upon the actual framework of
-	 * the modes"). The whole form is drawn from the format guide (core/modes/builder.ts), so a
+	 * the modes"). Both are one format, and the file's parts say which it is (Trevor, 2026-11-01:
+	 * "One format, auto-labelled"), so there is nothing to pick. The whole form is drawn from the format guide (core/modes/builder.ts), so a
 	 * part or field added to the format shows here by itself. The file is checked as it is
 	 * edited, with the checker Add mode uses; Save keeps it with the modes and rules added on
 	 * this device, where New game and Special rules list it, and Share sends it as a link.
@@ -65,16 +62,15 @@
 
 	const draft = $derived(modeDraft.current);
 	const file = $derived(draft.file);
-	const kind = $derived(buildKindOf(file));
-	const parts = $derived(buildParts(kind));
+	const kind = $derived(fileKind(file));
+	const groups = buildParts();
+	const parts = [...groups.any, ...groups.wholeGame];
 	const partsValue = $derived(
 		typeof file.parts === 'object' && file.parts !== null
 			? (file.parts as Record<string, unknown>)
 			: {}
 	);
-	const parsed = $derived(
-		kind === 'game-mode' ? parseGameMode(file, known) : parseSpecialRule(file, known)
-	);
+	const parsed = $derived(parseModeOrRule(file, known));
 	const built = $derived<GameMode | SpecialRule | undefined>(
 		parsed.ok ? ('mode' in parsed ? parsed.mode : parsed.rule) : undefined
 	);
@@ -151,20 +147,6 @@
 		modeDraft.setFile(setAt(file, path, value) as Record<string, unknown>);
 	}
 
-	function changeKind(next: BuildKind) {
-		if (next === kind) return;
-		// The details and parts carry over; any a rule can't set are named by the checker.
-		const rest = { ...file };
-		delete rest.kind;
-		delete rest.format;
-		const fresh = emptyFile(next);
-		modeDraft.setFile({
-			...(fresh.kind ? { kind: fresh.kind } : {}),
-			format: fresh.format,
-			...rest
-		});
-	}
-
 	function save(asNew = false) {
 		if (!built) return;
 		let value: GameMode | SpecialRule = built;
@@ -184,8 +166,11 @@
 			return;
 		}
 		saveIssues = [];
-		// The old copy goes when the id was changed on the builder.
-		if (draft.editing && draft.editing !== value.id) removeSaved(draft.editing);
+		// The old copy goes when the id was changed on the builder, or when it changed kind, so
+		// it moves between this device's modes and rules.
+		if (draft.editing === value.id)
+			(value.kind === 'special-rule' ? customModes : customRules).remove(value.id);
+		else if (draft.editing) removeSaved(draft.editing);
 		modeDraft.replace({ file: { ...value } as Record<string, unknown>, editing: value.id });
 	}
 
@@ -301,52 +286,41 @@
 				<div class="settings" bind:this={settingsEl}>
 					<BuilderTable path="details">
 						{#snippet head()}{t('modes.builder.details')}{/snippet}
-						<BuilderRow
-							label={t('modes.builder.makes')}
-							name="kind"
-							path="kind"
-							field="kind"
-							onGuide={() => guide({ section: 'rule-top', field: 'kind' })}
-						>
-							<Select
-								label={t('modes.builder.makes')}
-								hideLabel
-								value={kind}
-								options={(['game-mode', 'special-rule'] as const).map((k) => ({
-									value: k,
-									label: t(`modes.builder.makes.${k}`),
-									description: t(`modes.builder.makesAbout.${k}`)
-								}))}
-								onChange={changeKind}
-							/>
-						</BuilderRow>
-						{#each topFields(kind) as field (field.name)}
+						{#each topFields() as field (field.name)}
 							<BuilderField
 								{field}
 								parent="file"
 								path={field.name}
 								value={file[field.name]}
 								onChange={(v) => set([field.name], v)}
-								onGuide={() =>
-									guide({
-										section: kind === 'special-rule' ? 'rule-top' : 'top',
-										field: field.name
-									})}
+								onGuide={() => guide({ section: 'top', field: field.name })}
 							/>
 						{/each}
 					</BuilderTable>
-					{#each parts as part (part.part)}
-						<BuilderPart
-							{part}
-							value={partsValue[part.part]}
-							problems={problemsIn(part.part)}
-							onChange={(v) => set(['parts', part.part], v)}
-							onGuide={guide}
-						/>
+					{#each [{ key: 'any', list: groups.any }, { key: 'wholeGame', list: groups.wholeGame }] as const as group (group.key)}
+						<h2 class="group" data-testid="mode-builder-group-{group.key}">
+							{t(`modes.builder.parts.${group.key}`)}
+						</h2>
+						{#each group.list as part (part.part)}
+							<BuilderPart
+								{part}
+								value={partsValue[part.part]}
+								problems={problemsIn(part.part)}
+								onChange={(v) => set(['parts', part.part], v)}
+								onGuide={guide}
+							/>
+						{/each}
 					{/each}
 				</div>
 				<aside class="output" aria-label={t('modes.builder.output')}>
-					<BuilderOutput {kind} {file} {parts} issues={shownIssues} onJump={jump}>
+					<BuilderOutput
+						{kind}
+						because={wholeGamePartsOf(file)}
+						{file}
+						{parts}
+						issues={shownIssues}
+						onJump={jump}
+					>
 						{#snippet actions()}
 							<Button
 								variant="field"
@@ -411,7 +385,7 @@
 	bind:open={clearOpen}
 	title={t('modes.builder.clearTitle')}
 	danger
-	onConfirm={() => modeDraft.clear(kind)}
+	onConfirm={() => modeDraft.clear()}
 />
 
 <ConfirmDialog
@@ -475,6 +449,10 @@
 	.settings :global(tr[data-flash] > *) {
 		outline: 2px solid var(--accent); /* px-ok: focus ring */
 		outline-offset: -2px; /* px-ok: focus ring */
+	}
+	.group {
+		margin: var(--space-2) 0 0;
+		font-size: 1rem;
 	}
 	.open-row {
 		display: grid;
