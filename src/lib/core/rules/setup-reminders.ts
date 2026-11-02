@@ -169,6 +169,7 @@ function fits(
 		case 'townsfolk':
 		case 'outsider':
 		case 'minion':
+		case 'demon':
 			return f.type === filter;
 		case 'not-demon':
 			return f.type !== 'demon';
