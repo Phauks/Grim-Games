@@ -19,6 +19,7 @@
  * only those that work even if dead (https://wiki.bloodontheclocktower.com/Hermit).
  */
 import type { GainedFrom } from '#lib/core/data/gained-from-rules.ts';
+import type { LearnsGained } from '#lib/core/data/jinx-rules.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { Character, CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
@@ -26,7 +27,7 @@ import { scriptCharacterIds } from '#lib/core/model/characters.ts';
 import { trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
 import type { Game, HeldAbility, SeatId } from '#lib/core/model/types.ts';
 import { abilityState, worksWhenDead } from './ability.ts';
-import { givenInstead } from './jinxes.ts';
+import { givenInstead, ownJinxRules } from './jinxes.ts';
 import type { Night, NightStep } from './night-order.ts';
 
 export interface GainedAbility {
@@ -46,6 +47,30 @@ export interface GainedAbility {
 	 * night it is gained (the Pixie's Washerwoman example on the wiki).
 	 */
 	firstNightText?: boolean;
+	/**
+	 * What the player learns tonight by a jinx, the night after gaining the ability
+	 * (`learnsGainedTonight`: the Cannibal's Butler, Zealot and Juggler).
+	 */
+	learns?: LearnsGained;
+}
+
+/**
+ * What the holder of `gained` learns tonight by the gaining character's jinx with the character
+ * whose ability they gained (`learnsGained`): only on the night after that player died by
+ * execution today, the night the ability is gained (the Cannibal's Butler, Zealot and Juggler,
+ * https://wiki.bloodontheclocktower.com/Cannibal#Related_Jinxes). Read from today's log.
+ */
+export function learnsGainedTonight(
+	game: Game,
+	gained: Pick<GainedAbility, 'via' | 'characterId' | 'fromSeat'>,
+	characters: CharacterLookup
+): LearnsGained | undefined {
+	const learns = ownJinxRules(game, gained.via, gained.characterId, characters)?.learnsGained;
+	if (!learns || gained.fromSeat === undefined) return undefined;
+	const executed = game.today.entries.some(
+		(e) => e.kind === 'execution' && e.seatId === gained.fromSeat && e.died
+	);
+	return executed ? learns : undefined;
 }
 
 /**
@@ -148,7 +173,11 @@ export function gainedAbilities(game: Game, characters: CharacterLookup): Gained
 		if (via === undefined || !rule?.wakes) continue;
 		const gained = gainedBy(game, seatId, via, rule, characters);
 		if (!gained) continue;
-		out.push({ seatId, via, ...gained });
+		const learns =
+			gained.status === 'has-ability'
+				? learnsGainedTonight(game, { via, ...gained }, characters)
+				: undefined;
+		out.push({ seatId, via, ...gained, ...(learns ? { learns } : {}) });
 	}
 	for (const seatId of game.seating) {
 		const seat = game.seats[seatId];
@@ -190,7 +219,14 @@ export function withGainedSteps<T extends NightStep>(
 		const as: Character | undefined = characters.get(gained.characterId);
 		if (!via || !as) continue;
 		const own = night === 'first' ? as.firstNightReminder : as.otherNightReminder;
-		const reminder = own ?? (night === 'other' ? as.firstNightReminder : undefined);
+		const first = night === 'other' ? as.firstNightReminder : undefined;
+		// A jinx may wake them to learn the ability though it has no night text (the Cannibal's
+		// Zealot): the step says so in our words.
+		const learnsOnly =
+			gained.learns === 'ability' && own === undefined && first === undefined
+				? `Wake the ${via.name}: they learn they have the ${as.name} ability.`
+				: undefined;
+		const reminder = own ?? first ?? learnsOnly;
 		if (reminder === undefined) continue;
 		// A swapped token wakes at its own step when it has one tonight (the Philosopher as the
 		// Dreamer); only a "you start knowing" ability gained later needs a step of its own.
@@ -203,7 +239,8 @@ export function withGainedSteps<T extends NightStep>(
 			afterDawn: false,
 			placement: 'night-sheet',
 			notes: [],
-			gained: own === undefined ? { ...gained, firstNightText: true } : gained
+			gained:
+				own === undefined && first !== undefined ? { ...gained, firstNightText: true } : gained
 		};
 		const anchor = out.findIndex((s) => s.id === gained.characterId);
 		const placed = anchor >= 0 ? anchor + 1 : bySheet(gained.characterId);

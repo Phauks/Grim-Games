@@ -29,6 +29,7 @@ export type NightStepInfo =
  * answer is marked unreliable), or for `seats` when given (a Pixie with that ability).
  * `night` picks a first-night answer where the character has one (the Godfather's), and on
  * the first night skips death checks, so a character learns instead (the Grandmother).
+ * `basis` is whose own day an answer reads, when not the waking player's (`nightAnswer`).
  * Undefined when nothing is worked out for the character.
  */
 export function nightStepInfo(
@@ -37,12 +38,13 @@ export function nightStepInfo(
 	characters: CharacterLookup,
 	seats: readonly SeatId[] = characterStepSeats(game, character.id, characters),
 	today?: NightToday,
-	night?: Night
+	night?: Night,
+	basis?: SeatId
 ): NightStepInfo | undefined {
 	if (seats.length === 0) return undefined;
 	if (rulesOf(character.id, characters)?.answers) {
 		const answers = seats.flatMap(
-			(s) => nightAnswer(game, s, character.id, characters, today, night) ?? []
+			(s) => nightAnswer(game, s, character.id, characters, today, night, basis) ?? []
 		);
 		return { kind: 'answer', answers };
 	}
@@ -133,7 +135,10 @@ export function withNightInfo<T extends NightStep>(
 			? [gained.seatId]
 			: characterStepSeats(game, step.character.id, characters);
 		const as = gained ? (characters.get(gained.characterId) ?? step.character) : step.character;
-		const info = nightStepInfo(game, as, characters, seats, today, night);
+		// A jinx may have them learn what that ability's own player would have (the
+		// Cannibal's Juggler): the answer reads that player's day.
+		const basis = gained?.learns === 'answer' ? gained.fromSeat : undefined;
+		const info = nightStepInfo(game, as, characters, seats, today, night, basis);
 		// The players a rule character marks wake for its ability, not their own.
 		const impaired = (gained || !wakesMarked(step.character.id, characters) ? seats : [])
 			.map((s): AbilityState => abilityState(game, s, characters))

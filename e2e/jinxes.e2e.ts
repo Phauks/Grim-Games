@@ -358,3 +358,79 @@ test('during the riot a player who nominated the Storyteller nominates again, wi
 	const prompt = page.getByRole('alertdialog', { name: 'End game?' });
 	await expect(prompt.locator('[data-rule="storyteller-executed"]')).toContainText('Evil wins');
 });
+
+// The Cannibal's jinx with the Zealot (L114): the night after the Cannibal eats the executed
+// Zealot, a step of its own wakes the Cannibal to learn the ability, which has no night text
+// (https://wiki.bloodontheclocktower.com/Cannibal#Related_Jinxes).
+test('the Cannibal who eats the Zealot is woken to learn the Zealot ability', async ({ page }) => {
+	test.slow();
+	await startGame(page, 'Cannibal Zealot', [
+		'cannibal',
+		'zealot',
+		'imp',
+		'chef',
+		'empath',
+		'poisoner'
+	]);
+	await choose(page, 1, 'Cannibal');
+	await choose(page, 2, 'Zealot');
+	await choose(page, 3, 'Imp');
+	await toSecondNight(page, 2);
+	await putReminder(page, 'Lunch', 2);
+	await closeBin(page);
+
+	const step = await openStep(page, 'Cannibal');
+	await expect(step).toContainText('they learn they have the Zealot ability');
+	await expect(step.getByTestId('night-alerts')).toContainText(
+		/learns they have the\s*Zealot\s*ability/
+	);
+});
+
+// The Vortox's jinx with the Banshee (L114): the Banshee's announcement is given truly
+// (https://wiki.bloodontheclocktower.com/Vortox#Related_Jinxes).
+test("the Banshee's step says the Vortox doesn't make its announcement false", async ({ page }) => {
+	test.slow();
+	await startGame(page, 'Vortox Banshee', [
+		'vortox',
+		'banshee',
+		'chef',
+		'empath',
+		'poisoner',
+		'monk'
+	]);
+	await choose(page, 1, 'Vortox');
+	await choose(page, 2, 'Banshee');
+	await choose(page, 3, 'Chef');
+	await toSecondNight(page, 3);
+
+	const step = await openStep(page, 'Banshee');
+	await expect(step.getByTestId('night-alerts')).toContainText(
+		/given truly,\s*Vortox\s*doesn't make\s+it false/
+	);
+});
+
+// The Cannibal's jinx with the Juggler (L114): the night after the Cannibal eats the executed
+// Juggler, the Cannibal's Juggler step says they learn the Juggler's number
+// (https://wiki.bloodontheclocktower.com/Cannibal#Related_Jinxes).
+test("the Cannibal who eats the Juggler learns the Juggler's number", async ({ page }) => {
+	test.slow();
+	await startGame(page, 'Cannibal Juggler', [
+		'cannibal',
+		'juggler',
+		'imp',
+		'chef',
+		'empath',
+		'poisoner'
+	]);
+	await choose(page, 1, 'Cannibal');
+	await choose(page, 2, 'Juggler');
+	await choose(page, 3, 'Imp');
+	await toSecondNight(page, 2);
+	await putReminder(page, 'Lunch', 2);
+	await closeBin(page);
+
+	const step = await openStep(page, 'Cannibal');
+	await expect(step.getByTestId('night-alerts')).toContainText(
+		/learns what the\s*Juggler\s*would learn tonight/
+	);
+});
