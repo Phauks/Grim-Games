@@ -4,9 +4,10 @@ import {
 	OVERRIDE_FIELDS,
 	isOnScript,
 	registersAsDead,
-	scriptCharacterIds,
-	typeOf
+	replacedBy,
+	scriptCharacterIds
 } from '#lib/core/model/index.ts';
+import { extraEvilPlayers } from '#lib/core/rules/extra-evil.ts';
 import { barredAbilities } from '#lib/core/rules/jinxes.ts';
 import type { GameEvent } from '../events.ts';
 import {
@@ -68,7 +69,22 @@ export const CHARACTERS_DECIDERS: Deciders<
 			characterId: character.id
 		};
 		if (alignment !== undefined) assigned.alignment = alignment;
-		return [assigned];
+		// A changed character is really that character: the seat's "Is The Drunk" style token,
+		// which said they were secretly someone else, comes off (a Drunk the Cacklejack changes
+		// is sober, https://wiki.bloodontheclocktower.com/Cacklejack).
+		const hidden =
+			seat.characterId === undefined || seat.characterId === character.id
+				? []
+				: seat.reminders.filter((r) => replacedBy(r, ctx.characters));
+		for (const r of hidden) {
+			const name = ctx.characters.get(r.characterId)?.name ?? r.characterId;
+			warn('no-longer-hidden', `No longer the ${name}: the “${r.label}” reminder came off.`);
+		}
+		const lifted = hidden.map((r): GameEvent => ({
+			type: 'ReminderRemoved',
+			reminderId: r.reminderId
+		}));
+		return [assigned, ...lifted];
 	},
 
 	ClearCharacter(game, command, ctx, warn) {
@@ -114,13 +130,7 @@ export const CHARACTERS_DECIDERS: Deciders<
 			const limiter = [...trulyInPlay(game, ctx)].find(
 				(id) => rulesOf(id, ctx.characters)?.limitsExtraEvil
 			);
-			// Good-type players who are evil, counting this one: each is an extra evil player.
-			const extra = game.seating.filter((id) => {
-				const type = typeOf(game, id, ctx.characters);
-				const evil = id === seat.seatId || game.seats[id].alignment === 'evil';
-				return evil && (type === 'townsfolk' || type === 'outsider');
-			});
-			if (limiter && extra.length > 1) {
+			if (limiter && extraEvilPlayers(game, ctx.characters, seat.seatId) > 1) {
 				const name = ctx.characters.get(limiter)?.name ?? limiter;
 				warn('extra-evil-limit', `${name}: there can't be more than 1 extra evil player`);
 			}

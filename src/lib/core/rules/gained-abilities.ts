@@ -270,3 +270,39 @@ export function withStorytellerSteps<T extends NightStep>(
 	}
 	return out;
 }
+
+/**
+ * Whether `seatId` has `characterId`'s ability working now: as their own character, or held
+ * (the Hermit's Mutant, https://wiki.bloodontheclocktower.com/Hermit).
+ */
+export function hasAbilityOf(
+	game: Game,
+	seatId: SeatId,
+	characterId: CharacterId,
+	characters: CharacterLookup
+): boolean {
+	if (trueCharacter(game, seatId, characters) === characterId)
+		return abilityState(game, seatId, characters).works;
+	return heldAbilitiesOf(game, seatId, characters).some(
+		(h) => h.characterId === characterId && h.works
+	);
+}
+
+/**
+ * The characters whose ability a player has by their own `gainsAbilityOf` (the Alchemist's
+ * Minion, https://wiki.bloodontheclocktower.com/Alchemist): the token their seat shows, of that
+ * type, while they are really another character. Their setup changes apply (`analyseSetup`'s
+ * `abilities`). Only `seatIds`' players, all by default.
+ */
+export function gainedSetupAbilities(
+	game: Game,
+	characters: CharacterLookup,
+	seatIds: readonly SeatId[] = game.seating
+): Character[] {
+	return seatIds.flatMap((seatId) => {
+		const shown = characters.get(game.seats[seatId]?.characterId ?? '');
+		const own = trueCharacter(game, seatId, characters);
+		const type = own === undefined ? undefined : rulesOf(own, characters)?.gainsAbilityOf;
+		return shown && own !== shown.id && type === shown.type ? [shown] : [];
+	});
+}

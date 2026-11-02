@@ -26,6 +26,12 @@ export interface SetupInput {
 	 * A character listed twice is two copies (Village Idiot, Legion).
 	 */
 	inPlay: readonly Character[];
+	/**
+	 * Characters not in play whose ability a player has (the Alchemist's Minion,
+	 * https://wiki.bloodontheclocktower.com/Alchemist): their setup change applies too, but they
+	 * are not counted.
+	 */
+	abilities?: readonly Character[];
 	/** Looks up a character by name, so homebrew "+the King" text can be resolved. */
 	findByName?: (name: string) => CharacterId | undefined;
 	/** Looks up a character by id, for requirements such as Huntsman → Damsel. */
@@ -131,7 +137,7 @@ export function analyseSetup(input: SetupInput): SetupAnalysis {
 	const modifiers: AppliedModifier[] = [];
 	const seenIds = new Set<CharacterId>();
 	const inPlayIds = new Set(input.inPlay.map((c) => c.id));
-	for (const character of input.inPlay) {
+	for (const character of [...input.inPlay, ...(input.abilities ?? [])]) {
 		if (seenIds.has(character.id)) continue;
 		seenIds.add(character.id);
 		const modifier = setupModifierFor(character, input.findByName);

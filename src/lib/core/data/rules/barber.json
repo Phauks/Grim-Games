@@ -41,6 +41,7 @@
 		}
 	},
 	"swapsCharacters": {
-		"notTypes": ["demon"]
+		"notTypes": ["demon"],
+		"chooser": "demon"
 	}
 }

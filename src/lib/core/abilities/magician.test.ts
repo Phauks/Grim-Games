@@ -8,11 +8,15 @@
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
  * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
- * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
+ * happened, then what the rules say. Quote the example word for word in a `// Wiki: "..."`
+ * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
+ * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { demonInfo } from '#lib/core/rules/evil-info.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Magician', () => {
 	const character = committedCharacter('magician');
@@ -44,6 +48,23 @@ describe('Magician', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Magician#Examples)', () => {
-		it.todo('Example 1: Minions unsure whether Leviathan or Magician is the Demon');
+		it('Example 1: Minions unsure whether Leviathan or Magician is the Demon', () => {
+			// Wiki: "The Minions wake to learn that either the Leviathan player or the Magician player is
+			// the Demon. The Leviathan player learns that the Fearmonger player, the Assassin player, and
+			// the Magician player are the Minions."
+			const s = scenario([
+				'magician',
+				'fearmonger',
+				'assassin',
+				'leviathan',
+				'chef',
+				'empath',
+				'monk'
+			]);
+			expect(demonInfo(s.game, s.characters)).toEqual({
+				shownAsMinions: [s.seat('magician')],
+				shownAsDemon: [s.seat('magician')]
+			});
+		});
 	});
 });

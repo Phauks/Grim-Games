@@ -8,7 +8,9 @@
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
  * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
- * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
+ * happened, then what the rules say. Quote the example word for word in a `// Wiki: "..."`
+ * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
+ * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
@@ -51,6 +53,8 @@ describe('Poisoner', () => {
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Poisoner#Examples)', () => {
 		it("Example 1: Poisoned Slayer's shot at Imp fails", () => {
+			// Wiki: "During the night, the Poisoner poisons the Slayer. The next day, the Slayer tries to
+			// slay the Imp. Nothing happens. The Slayer now has no ability."
 			// A poisoned Slayer's shot does nothing, even at the Imp: the app flags the Imp's death
 			// to the Slayer as relying on an impaired ability, for the Storyteller (warn, never lock).
 			const s = scenario(['slayer', 'imp', 'poisoner', 'chef', 'monk']).poisoned('slayer');
@@ -62,7 +66,8 @@ describe('Poisoner', () => {
 			expect(cause?.flags).toEqual([{ code: 'impaired', seatIds: [s.seat('slayer')] }]);
 		});
 		it('Example 2: Poisoned Empath gets wrong count, then correct', () => {
-			// Between two evil players, a poisoned Empath may be told 0; unpoisoned, only 2 is true.
+			// Wiki: "The poisoned Empath, who neighbours two evil players, learns a "0.” The next night,
+			// the Empath, no longer poisoned, learns the correct information: a "2.”"
 			const s = scenario(['empath', 'imp', 'chef', 'monk', 'poisoner']);
 			const poisoned = s.poisoned('empath');
 			const picker = infoPicker(
@@ -78,7 +83,8 @@ describe('Poisoner', () => {
 			expect(isAllowed(healthy, { seats: [], number: 2 })).toBe(true);
 		});
 		it('Example 3: Poisoned Investigator gets misleading Baron info', () => {
-			// Poisoned, the Investigator may be shown a Baron who isn't there, among non-Minions.
+			// Wiki: "The Investigator is poisoned. They learn that one of two players is the Baron, even
+			// though neither is a Minion. (Or even the right players, but the wrong Minion type.)"
 			const s = scenario(['investigator', 'chef', 'monk', 'imp', 'poisoner']).poisoned(
 				'investigator'
 			);
@@ -88,8 +94,8 @@ describe('Poisoner', () => {
 			).toBe(true);
 		});
 		it('Example 4: Poisoned Undertaker names the wrong dead character', () => {
-			// The poisoned Undertaker may be told the Virgin though the Imp was executed. Later a
-			// poisoned Saint is executed and the game goes on.
+			// Wiki: "The Undertaker is poisoned. Even though the Imp died today, they learn that the
+			// Virgin died. A few days later, a poisoned Saint dies, and the game continues."
 			const s = scenario(['undertaker', 'virgin', 'imp', 'saint', 'poisoner', 'chef']).poisoned(
 				'undertaker'
 			);
@@ -104,6 +110,8 @@ describe('Poisoner', () => {
 			expect(promptable(gameEnds(saint.game, saint.characters))).toEqual([]);
 		});
 		it('Example 5: Mayor is cured once Poisoner becomes Imp', () => {
+			// Wiki: "The Poisoner poisons the Mayor, then becomes the Imp. The Mayor is no longer poisoned
+			// because there is no Poisoner in play."
 			// With no Poisoner left in play, the poison ends.
 			const s = scenario(['mayor', 'poisoner', 'imp', 'chef', 'monk']).poisoned('mayor');
 			expect(abilityState(s.game, s.seat('mayor'), s.characters).works).toBe(false);

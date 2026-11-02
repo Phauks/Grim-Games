@@ -8,9 +8,9 @@ import type { CharacterId } from '#lib/core/data/types.ts';
 import type { MadnessBreaking } from '#lib/core/data/madness-rules.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
-import { getSeat, trueCharacter } from '#lib/core/model/selectors.ts';
+import { getSeat } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
-import { abilityState } from './ability.ts';
+import { hasAbilityOf } from './gained-abilities.ts';
 import { todaysNominations } from './nominations.ts';
 
 export interface MadnessOffer {
@@ -27,7 +27,8 @@ export interface MadnessOffer {
  * What breaking `characterId`'s madness does to the player in `seatId`, or undefined when
  * that player is not mad by it: they carry its token; with `chosenBy: 'nominee'`, a nominee
  * chose them today (the Big Wig's speaker); or, for a rule with neither, they are that
- * character and their ability works (a drunk Mutant is not mad).
+ * character, or hold its ability, and it works (a drunk Mutant is not mad; a Hermit with the
+ * Mutant's is).
  */
 export function madnessOffer(
 	game: Game,
@@ -46,8 +47,7 @@ export function madnessOffer(
 		? carrying(rule.token).includes(seatId)
 		: rule.chosenBy === 'nominee'
 			? todaysNominations(game).some((n) => n.chosen === seatId)
-			: trueCharacter(game, seatId, characters) === characterId &&
-				abilityState(game, seatId, characters).works;
+			: hasAbilityOf(game, seatId, characterId, characters);
 	if (!mad) return undefined;
 	if (rule.breaking === 'execution')
 		return { characterId, seatId, breaking: 'execution', dies: [] };

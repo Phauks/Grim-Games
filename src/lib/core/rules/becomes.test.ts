@@ -355,9 +355,16 @@ describe('a character whose step swaps two players (swapsCharacters)', () => {
 		expect(swappers).toEqual(['barber']);
 	});
 
-	it('offers every player but a Demon', () => {
-		const { session, seats } = castGame(['barber', 'chef', 'empath', 'imp']);
-		expect(swappableSeats(session.game, 'barber', characters)).toEqual(seats.slice(0, 3));
+	it('offers every player, a Demon only to swap itself, not another Demon', () => {
+		const { session, seats } = castGame(['barber', 'chef', 'empath', 'imp', 'pukka']);
+		expect(swappableSeats(session.game, 'barber', characters)).toEqual(seats);
+		expect(swappableSeats(session.game, 'barber', characters, seats[3])).toEqual(seats.slice(0, 3));
+		expect(swappableSeats(session.game, 'barber', characters, seats[1])).toEqual([
+			seats[0],
+			seats[2],
+			seats[3],
+			seats[4]
+		]);
 		expect(swappableSeats(session.game, 'chef', characters)).toEqual([]);
 	});
 
@@ -391,6 +398,30 @@ describe("becomesOffer: the Goon and the Ogre take the carrier's alignment", () 
 			into: 'alignment',
 			seatId: seats[0],
 			alignment: 'good'
+		});
+	});
+
+	it('offers nothing while the Goon is drunk, but the Ogre changes even if drunk', () => {
+		const goon = castGame(['goon', 'chef', 'imp', 'poisoner']);
+		const poisoned = run(goon.session, goon.ctx, {
+			type: 'AddReminder',
+			seatId: goon.seats[0],
+			reminder: { characterId: 'poisoner', label: 'Poisoned' }
+		});
+		const drunk = { characterId: 'goon', label: 'Drunk' };
+		expect(becomesOffer(poisoned.game, goon.seats[2], drunk, characters)).toBeUndefined();
+
+		const ogre = castGame(['ogre', 'chef', 'imp', 'poisoner']);
+		const poisonedOgre = run(ogre.session, ogre.ctx, {
+			type: 'AddReminder',
+			seatId: ogre.seats[0],
+			reminder: { characterId: 'poisoner', label: 'Poisoned' }
+		});
+		const friend = { characterId: 'ogre', label: 'Friend' };
+		expect(becomesOffer(poisonedOgre.game, ogre.seats[2], friend, characters)).toMatchObject({
+			into: 'alignment',
+			seatId: ogre.seats[0],
+			alignment: 'evil'
 		});
 	});
 });

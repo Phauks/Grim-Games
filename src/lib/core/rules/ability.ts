@@ -42,6 +42,7 @@ import {
 } from '#lib/core/model/selectors.ts';
 import type { Game, ReminderId, SeatId } from '#lib/core/model/types.ts';
 import { keepsAbilityWhenDead } from './dead-characters.ts';
+import { heldAbilitiesOf } from './gained-abilities.ts';
 
 const W = 'https://wiki.bloodontheclocktower.com/';
 
@@ -362,7 +363,9 @@ export interface Registration {
  * - the Revolutionary's two "Aligned" players might register as anything while "Register
  *   Falsely?" is still in play: once it has been used, it comes off
  *   (https://wiki.bloodontheclocktower.com/Revolutionary).
- * A drunk or poisoned Recluse or Spy registers truly: they have no ability.
+ * A drunk or poisoned Recluse or Spy registers truly: they have no ability. A player holding
+ * such an ability registers by it too (the Hermit with the Recluse's,
+ * https://wiki.bloodontheclocktower.com/Hermit).
  */
 export function registrations(game: Game, characters: CharacterLookup): Registration[] {
 	const out: Registration[] = [];
@@ -371,8 +374,16 @@ export function registrations(game: Game, characters: CharacterLookup): Registra
 		const alignment = alignmentOf(game, seatId);
 		const type = typeOf(game, seatId, characters);
 		if (!alignment || !type) continue;
-		const self = id ? rulesOf(id, characters)?.registersAs?.self : undefined;
-		if (id && self && abilityState(game, seatId, characters).works) {
+		// Their own character's, else an ability they hold (the Hermit's Recluse).
+		const own = id ? rulesOf(id, characters)?.registersAs?.self : undefined;
+		const by =
+			id && own && abilityState(game, seatId, characters).works
+				? id
+				: heldAbilitiesOf(game, seatId, characters).find(
+						(h) => h.works && rulesOf(h.characterId, characters)?.registersAs?.self
+					)?.characterId;
+		const self = by ? rulesOf(by, characters)?.registersAs?.self : undefined;
+		if (by && self) {
 			out.push({
 				seatId,
 				alignments: [alignment, ...(self.alignments ?? [])].filter(
@@ -381,8 +392,8 @@ export function registrations(game: Game, characters: CharacterLookup): Registra
 				types: [type, ...(self.types ?? [])].filter(
 					(t, i, all): t is CharacterType => all.indexOf(t) === i
 				),
-				source: { characterId: id, seatId },
-				wiki: wikiOf(id, characters)
+				source: { characterId: by, seatId },
+				wiki: wikiOf(by, characters)
 			});
 			continue;
 		}
