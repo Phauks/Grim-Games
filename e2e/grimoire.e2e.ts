@@ -3145,14 +3145,12 @@ test('a finished game exports as a recap file and a grimoire image', async ({ pa
 		return ctx.getImageData(1, 1, 1, 1).data[3];
 	}, png.toString('base64'));
 	expect(opaque).toBe(255);
-	// The controls are left out: History's strip, the soundboard and the timer.
+	// The controls are left out: History's strip and the timer, with Back to town on it (the
+	// Soundboard is in ⋯ since 2026-11-01).
 	await expect(page.getByTestId('history-strip')).toHaveAttribute('data-screenshot', 'skip');
 	await expect(page.locator('.board-timer .timer-slot')).toHaveAttribute('data-screenshot', 'skip');
 	// By its label: the open Export dialog hides the board from getByRole.
-	await expect(page.locator('.board-timer [aria-label="Soundboard"]')).toHaveAttribute(
-		'data-screenshot',
-		'skip'
-	);
+	await expect(page.locator('.board-timer .timer-slot [aria-label="Back to town"]')).toBeAttached();
 	await page.keyboard.press('Escape');
 
 	// The same from History, which opens the board first so the picture is the board
@@ -4953,7 +4951,7 @@ test('the board menu names its groups, in two columns beside a phone', async ({ 
 				els.filter((e) => e.checkVisibility()).map((e) => (e.textContent ?? '').trim())
 			);
 	expect((await names('Game')).join(' ')).toMatch(
-		/^Players History Demon bluffs( Game info)? Game settings$/
+		/^Players History Demon bluffs Soundboard( Game info)? Game settings$/
 	);
 	expect((await names('Session')).join(' ')).toMatch(/^(Character selection )?End game$/);
 	const session = (await group('Session').boundingBox())!;
