@@ -8,7 +8,9 @@
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
  * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
- * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
+ * happened, then what the rules say. Quote the example word for word in a `// Wiki: "..."`
+ * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
+ * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
@@ -48,8 +50,10 @@ describe('Baron', () => {
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Baron#Examples)', () => {
 		it('Example 1: Seven players: Baron adds two Outsiders', () => {
-			// Five Townsfolk, one Minion and one Demon for seven players become three Townsfolk and
-			// two Outsiders (here the Saint and the Butler) with the Baron.
+			// Wiki: "The game is being set up for seven players, with five Townsfolk, one Minion, and one
+			// Demon. Because the Minion is the Baron, the Storyteller removes two Townsfolk tokens and
+			// adds a Saint and a Butler token. In total, three Townsfolk, two Outsider, one Minion, and
+			// one Demon tokens go in the bag for the players to draw from."
 			const s = scenario(['chef', 'empath', 'monk', 'saint', 'butler', 'baron', 'imp']);
 			const inPlay = s.game.seating.map((seat) =>
 				s.characters.get(s.game.seats[seat].characterId!)!
@@ -59,6 +63,12 @@ describe('Baron', () => {
 			expect(result.warnings).toEqual([]);
 		});
 		it('Example 2: Hidden Drunk is actually an Outsider', () => {
+			// Wiki: "The game is being set up for fifteen players, with nine Townsfolk, two Outsiders,
+			// three Minions, and one Demon. Because the Baron is in play, the Storyteller must add a Drunk
+			// and a Recluse. So, they remove the Monk token and add a Recluse token. Then, instead of
+			// adding the Drunk character token, they add the Drunk's “Is the Drunk” reminder token to the
+			// Grimoire... because this game, one player isn’t a Townsfolk—they are an Outsider: the Drunk.
+			// All these character tokens go into the bag for the players to draw from."
 			// Fifteen players: with the Baron, the Recluse replaces the Monk, and the Drunk goes in
 			// as a Townsfolk token (here the Slayer) with the Drunk's reminder: the Drunk is one of
 			// the four Outsiders, and the bag holds eight Townsfolk tokens.

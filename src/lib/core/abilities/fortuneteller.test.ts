@@ -8,7 +8,9 @@
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
  * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
- * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
+ * happened, then what the rules say. Quote the example word for word in a `// Wiki: "..."`
+ * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
+ * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
@@ -47,6 +49,7 @@ describe('Fortune Teller', () => {
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Fortune_Teller#Examples)', () => {
 		it('Example 1: Monk and Undertaker, learns no', () => {
+			// Wiki: "The Fortune Teller chooses the Monk and the Undertaker and learns a 'no'."
 			const s = scenario(['fortuneteller', 'monk', 'undertaker', 'imp', 'poisoner']);
 			const picker = infoPicker(s.game, s.seat('fortuneteller'), 'fortuneteller', s.characters)!;
 			expect(
@@ -58,6 +61,7 @@ describe('Fortune Teller', () => {
 		});
 
 		it('Example 2: Imp and Empath, learns yes', () => {
+			// Wiki: "The Fortune Teller chooses the Imp and the Empath, and learns a 'yes'."
 			const s = scenario(['fortuneteller', 'imp', 'empath', 'monk', 'poisoner']);
 			const picker = infoPicker(s.game, s.seat('fortuneteller'), 'fortuneteller', s.characters)!;
 			expect(isTruthful(picker, { seats: [s.seat('imp'), s.seat('empath')], yes: true })).toBe(
@@ -66,6 +70,7 @@ describe('Fortune Teller', () => {
 		});
 
 		it('Example 3: alive Butler and dead Imp, learns yes', () => {
+			// Wiki: "The Fortune Teller chooses an alive Butler and a dead Imp, and learns a 'yes'."
 			// A dead Demon still counts.
 			const s = scenario(['fortuneteller', 'butler', 'imp', 'monk', 'poisoner']).dies('imp');
 			const picker = infoPicker(s.game, s.seat('fortuneteller'), 'fortuneteller', s.characters)!;
@@ -75,6 +80,8 @@ describe('Fortune Teller', () => {
 		});
 
 		it('Example 4: themselves and the Saint who is the Red Herring, learns yes', () => {
+			// Wiki: "The Fortune Teller chooses themselves and a Saint. The Saint is the Red Herring. The
+			// Fortune Teller learns a 'yes'."
 			const s = scenario(['fortuneteller', 'saint', 'imp', 'monk', 'poisoner']).reminder(
 				'saint',
 				'fortuneteller',

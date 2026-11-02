@@ -8,7 +8,9 @@
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
  * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
- * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
+ * happened, then what the rules say. Quote the example word for word in a `// Wiki: "..."`
+ * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
+ * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
@@ -47,6 +49,8 @@ describe('Seamstress', () => {
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Seamstress#Examples)', () => {
 		it('Example 1: Two good players checked night one: yes', () => {
+			// Wiki: "During the first night, the Seamstress chooses two players, who are the Barber and the
+			// Clockmaker. Because they are both good, the Seamstress learns a "yes.”"
 			// The Seamstress picks two good players on the first night: the true answer is yes.
 			const s = scenario(['seamstress', 'chef', 'monk', 'imp', 'poisoner']);
 			const picker = infoPicker(s.game, s.seat('seamstress'), 'seamstress', s.characters)!;
@@ -56,6 +60,9 @@ describe('Seamstress', () => {
 		});
 
 		it('Example 2: Mixed pair on night four reads no', () => {
+			// Wiki: "During the first three nights, the Seamstress chooses not to use their ability. During
+			// the fourth night, they choose two players, who are the Fang Gu and the Sweetheart. The
+			// Seamstress learns a "no.”"
 			// A good player and an evil player differ, whichever night the Seamstress asks.
 			const s = scenario(['seamstress', 'chef', 'monk', 'imp', 'poisoner']);
 			const picker = infoPicker(s.game, s.seat('seamstress'), 'seamstress', s.characters)!;
@@ -63,6 +70,20 @@ describe('Seamstress', () => {
 			expect(isTruthful(picker, { seats: pair, yes: false })).toBe(true);
 			expect(isAllowed(picker, { seats: pair, yes: true })).toBe(false);
 		});
-		it.todo("Example 3: Pit-Hag's changed Witch still reads same alignment");
+
+		it("Example 3: Pit-Hag's changed Witch still reads same alignment", () => {
+			// Wiki: "The Pit-Hag turns the Mathematician into the Witch, who remains good. Later that night,
+			// the Seamstress chooses the two players, the Witch and the Town Crier. The Seamstress learns a
+			// "yes" because they are both good."
+			const s = scenario(['seamstress', 'mathematician', 'towncrier', 'pithag', 'imp']).becomes(
+				'mathematician',
+				'witch'
+			);
+			expect(s.game.seats[s.seat('mathematician')].alignment).toBe('good');
+			const picker = infoPicker(s.game, s.seat('seamstress'), 'seamstress', s.characters)!;
+			const pair = [s.seat('mathematician'), s.seat('towncrier')];
+			expect(isTruthful(picker, { seats: pair, yes: true })).toBe(true);
+			expect(isAllowed(picker, { seats: pair, yes: false })).toBe(false);
+		});
 	});
 });

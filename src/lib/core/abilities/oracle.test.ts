@@ -8,11 +8,15 @@
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
  * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
- * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
+ * happened, then what the rules say. Quote the example word for word in a `// Wiki: "..."`
+ * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
+ * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
+import { nightAnswer } from '#lib/core/rules/night-info.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Oracle', () => {
 	const character = committedCharacter('oracle');
@@ -44,7 +48,49 @@ describe('Oracle', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Oracle#Examples)', () => {
-		it.todo('Example 1: Every dead player is good, so zero');
-		it.todo('Example 2: Evil dead reach four after a Minion dies');
+		it('Example 1: Every dead player is good, so zero', () => {
+			// Wiki: "During the first day, the Flowergirl is executed. That night, the Demon kills the
+			// Juggler. The Oracle wakes and learns a "0,” because all dead players are good."
+			const s = scenario(['oracle', 'flowergirl', 'juggler', 'chef', 'witch', 'fanggu'])
+				.execute('flowergirl')
+				.newDay()
+				.dies('juggler', 'fanggu');
+			expect(nightAnswer(s.game, s.seat('oracle'), 'oracle', s.characters)).toMatchObject({
+				kind: 'number',
+				value: 0,
+				because: []
+			});
+		});
+
+		it('Example 2: Evil dead reach four after a Minion dies', () => {
+			// Wiki: "Halfway through the game, seven players are dead. Five of them are good and two of
+			// them are evil. During the day, an evil Traveller is Exiled. That night, the Demon kills one
+			// of it's Minions. The Oracle wakes and learns a "4,” because four dead players are evil."
+			const dead = [
+				'witch',
+				'cerenovus',
+				'chef',
+				'empath',
+				'clockmaker',
+				'sage',
+				'mutant'
+			] as const;
+			const s = dead
+				.reduce(
+					(at, seat) => at.dies(seat),
+					scenario(['oracle', ...dead, 'pithag', 'scapegoat', 'fanggu']).do((at) => ({
+						type: 'SetAlignment',
+						seatId: at.seat('scapegoat'),
+						alignment: 'evil'
+					}))
+				)
+				.do((at) => ({ type: 'Exile', seatId: at.seat('scapegoat') }))
+				.newDay()
+				.dies('pithag', 'fanggu');
+			expect(nightAnswer(s.game, s.seat('oracle'), 'oracle', s.characters)).toMatchObject({
+				kind: 'number',
+				value: 4
+			});
+		});
 	});
 });

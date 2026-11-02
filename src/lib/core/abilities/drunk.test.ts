@@ -8,7 +8,9 @@
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
  * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
- * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
+ * happened, then what the rules say. Quote the example word for word in a `// Wiki: "..."`
+ * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
+ * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
@@ -51,10 +53,13 @@ describe('Drunk', () => {
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Drunk#Examples)', () => {
 		it("Example 1: Drunk who thinks they're Soldier dies to Imp", () => {
+			// Wiki: "The Drunk, who thinks they are the Soldier, is attacked by the Imp. The Drunk dies."
 			const s = scenario(['soldier', 'chef', 'imp', 'monk', 'poisoner']).drunk('soldier');
 			expect(protection(s.game, s.seat('soldier'), s.characters, 'demon')).toBeUndefined();
 		});
 		it('Example 2: Drunk Empath gets false numbers two nights', () => {
+			// Wiki: "The Drunk, who thinks they are the Empath, wakes and learns a "0,” even though they
+			// are sitting next to one evil player. The next night, they learn a "1."."
 			// Beside one evil player, the Drunk "Empath" may be told 0, and 1 the next night: any
 			// number is allowed, the true one is still worked out.
 			const s = scenario(['empath', 'imp', 'chef', 'monk', 'saint']).drunk('empath');
@@ -66,6 +71,8 @@ describe('Drunk', () => {
 			expect(isAllowed(later, { seats: [], number: 1 })).toBe(true);
 		});
 		it('Example 3: Drunk Ravenkeeper picks Saint, is shown Poisoner', () => {
+			// Wiki: "The Drunk, who thinks they are the Ravenkeeper, is killed at night. They choose the
+			// Saint, but learn that this player is the Poisoner."
 			const s = scenario(['ravenkeeper', 'saint', 'imp', 'poisoner', 'chef'])
 				.drunk('ravenkeeper')
 				.dies('ravenkeeper', 'imp');
@@ -75,6 +82,8 @@ describe('Drunk', () => {
 			expect(isTruthful(picker, shown)).toBe(false);
 		});
 		it('Example 4: Drunk Undertaker learns the Drunk was executed', () => {
+			// Wiki: "The Fortune Teller is executed. That night, the Drunk, who thinks they are
+			// Undertaker, learns that the Drunk died today."
 			// The Fortune Teller was executed; the Drunk "Undertaker" may be told anything.
 			const s = scenario(['undertaker', 'fortuneteller', 'imp', 'monk', 'poisoner'])
 				.drunk('undertaker')

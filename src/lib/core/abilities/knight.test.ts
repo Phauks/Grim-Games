@@ -8,7 +8,9 @@
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
  * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
- * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
+ * happened, then what the rules say. Quote the example word for word in a `// Wiki: "..."`
+ * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
+ * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
@@ -47,6 +49,8 @@ describe('Knight', () => {
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Knight#Examples)', () => {
 		it('Example 1: Knight learns Undertaker and Fortune Teller players', () => {
+			// Wiki: "Lewis is the Undertaker, Doug is the Imp and Ben is the Fortune Teller. The Knight
+			// learns Lewis and Ben."
 			// Two players who are not the Demon; a pair with the Demon is not allowed.
 			const s = scenario(['knight', 'undertaker', 'imp', 'fortuneteller', 'poisoner']);
 			const picker = infoPicker(s.game, s.seat('knight'), 'knight', s.characters)!;
@@ -57,7 +61,9 @@ describe('Knight', () => {
 		});
 
 		it("Example 2: Vortox forces the Knight's info to include the Demon", () => {
-			// With the Vortox in play the Knight's info must be false, so it includes the Demon.
+			// Wiki: "Marianna is the Vortox and Abdallah is the Alchemist. The Knight learns Marianna and
+			// Abdallah. The Knight must learn Marianna and Abdallah because the Knight's information must
+			// be false due to the Vortox ability and therefore include the Demon."
 			const s = scenario(['knight', 'alchemist', 'vortox', 'chef', 'witch']);
 			const picker = infoPicker(s.game, s.seat('knight'), 'knight', s.characters)!;
 			expect(isAllowed(picker, { seats: [s.seat('vortox'), s.seat('alchemist')] })).toBe(true);

@@ -1706,8 +1706,6 @@ test('Hold to see character, a Bag draw setting, shows the token only while held
 	await page.getByTestId('bag-settings').getByText('Hold to see character', { exact: true }).tap();
 	await page.keyboard.press('Escape');
 
-	// Only the reveal's own icon requests count below.
-	await page.evaluate(() => performance.clearResourceTimings());
 	await page.getByRole('button', { name: /^Tile 1/ }).tap();
 	const reveal = page.getByRole('dialog', { name: /^Tile/ });
 	const hold = reveal.getByTestId('reveal-hold');
@@ -1723,15 +1721,9 @@ test('Hold to see character, a Bag draw setting, shows the token only while held
 	await page.keyboard.press('Escape');
 	await page.getByRole('button', { name: 'Tile 1, held by Seat 1' }).tap();
 	await expect(reveal.getByRole('button', { name: 'Confirm' })).toBeDisabled();
-	// The icon is fetched while the token is still hidden, so the first hold shows it at once
-	// rather than a blank token for a moment (Trevor, 2026-11-01).
-	await expect
-		.poll(() =>
-			page.evaluate(() =>
-				performance.getEntriesByType('resource').some((e) => e.name.includes('/data/icons/'))
-			)
-		)
-		.toBe(true);
+	// The icon is fetched and decoded while the token is still hidden, so the first hold shows
+	// it at once rather than a blank token for a moment (Trevor, 2026-11-01).
+	await expect(hold).toHaveAttribute('data-preloaded', '');
 	const drawnAtOnce = await hold.evaluate(async (el) => {
 		el.dispatchEvent(
 			new PointerEvent('pointerdown', { pointerId: 1, isPrimary: true, bubbles: true })

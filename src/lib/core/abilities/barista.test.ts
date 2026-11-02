@@ -8,11 +8,16 @@
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
  * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
- * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
+ * happened, then what the rules say. Quote the example word for word in a `// Wiki: "..."`
+ * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
+ * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import { abilityState } from '#lib/core/rules/ability.ts';
+import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
+import { engineGap, scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Barista', () => {
 	const character = committedCharacter('barista');
@@ -44,7 +49,34 @@ describe('Barista', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Barista#Examples)', () => {
-		it.todo('Example 1: Barista makes Sage sober and healthy');
-		it.todo('Example 2: Klutz acts twice, then Witch curses twice');
+		it('Example 1: Barista makes Sage sober and healthy', () => {
+			// Wiki: "The Barista makes the Sage sober and healthy."
+			const s = scenario(['barista', 'sage', 'imp', 'poisoner', 'chef']).poisoned('sage');
+			expect(abilityState(s.game, s.seat('sage'), s.characters).works).toBe(false);
+			const sober = s.reminder('sage', 'barista', 'Sober & Healthy');
+			expect(abilityState(sober.game, sober.seat('sage'), sober.characters).works).toBe(true);
+		});
+
+		it.fails('Example 2: Klutz acts twice, then Witch curses twice', () => {
+			// Wiki: "The Klutz acts twice. They die and must choose two players. If either is evil, evil
+			// wins. The next night, the Barista makes the Witch act twice. Two players are cursed."
+			const s = scenario(['barista', 'klutz', 'witch', 'imp', 'chef', 'empath']).reminder(
+				'klutz',
+				'barista',
+				'Acts Twice'
+			);
+			expect(
+				reminderTargetMisses(
+					s.game,
+					{ characterId: 'barista', label: '?' },
+					s.seat('klutz'),
+					s.characters
+				)
+			).toEqual([]);
+			engineGap(
+				'unplanned',
+				'a player acting twice uses their ability twice: the Klutz chooses two players, the Witch curses two'
+			);
+		});
 	});
 });

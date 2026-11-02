@@ -8,7 +8,9 @@
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
  * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
- * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
+ * happened, then what the rules say. Quote the example word for word in a `// Wiki: "..."`
+ * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
+ * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
@@ -47,8 +49,13 @@ describe('Empath', () => {
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Empath#Examples)', () => {
 		it('Example 1: neighbours change as players die', () => {
-			// Two good neighbours give 0. With both dead, the next living neighbours are a Librarian
-			// and an evil Traveller: 1. With only the Empath, Imp and Baron alive: 2.
+			// Wiki: "The Empath neighbours two good players—a Soldier and a Monk . The Empath learns a
+			// '0'.
+			// The next day, the Soldier is executed. That night, the Monk is killed by the Imp. The Empath
+			// now detects the players sitting next to the Soldier and the Monk, which are a Librarian and
+			// an evil Gunslinger. The Empath now learns a '1'.
+			// There are only three players left alive: the Empath, the Imp, and the Baron. No matter who
+			// is seated where, the Empath learns a '2'."
 			const cast = ['empath', 'soldier', 'librarian', 'imp', 'baron', 'gunslinger', 'monk'];
 			const s = scenario(cast).do((at) => ({
 				type: 'SetAlignment',

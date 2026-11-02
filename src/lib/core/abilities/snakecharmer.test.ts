@@ -8,7 +8,9 @@
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
  * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
- * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
+ * happened, then what the rules say. Quote the example word for word in a `// Wiki: "..."`
+ * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
+ * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
@@ -104,6 +106,9 @@ describe('Snake Charmer', () => {
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Snake_Charmer#Examples)', () => {
 		it('Example 1: Snake Charmer picks Pit-Hag, nothing changes', () => {
+			// Wiki: "The Snake Charmer chooses a player who is the Pit-Hag, so nothing happens. The Snake
+			// Charmer simply goes to sleep. The next night, the Snake Charmer chooses themself, so nothing
+			// happens."
 			// Choosing a Minion, then themself, swaps nothing and poisons no one.
 			const start = scenario(['snakecharmer', 'pithag', 'vigormortis', 'chef']);
 			const s = charms(start, 'pithag');
@@ -119,6 +124,9 @@ describe('Snake Charmer', () => {
 		});
 
 		it('Example 2: Snake Charmer targets Vigormortis, and roles swap', () => {
+			// Wiki: "The Snake Charmer chooses a player who is the Vigormortis. The Snake Charmer immediately
+			// becomes the evil Vigormortis, and the Vigormortis becomes the good Snake Charmer and gets
+			// poisoned."
 			const s = charms(scenario(['snakecharmer', 'pithag', 'vigormortis', 'chef']), 'vigormortis');
 			expect(s.game.seats[s.seat('snakecharmer')]).toMatchObject({
 				characterId: 'vigormortis',
@@ -132,6 +140,9 @@ describe('Snake Charmer', () => {
 		});
 
 		it('Example 3: Fang Gu swaps with Snake Charmer, both evil', () => {
+			// Wiki: "The Pit-Hag turns themself into the Snake Charmer. Then, the Snake Charmer chooses a
+			// player who is the Fang Gu. The Snake Charmer becomes the Fang Gu, while the Fang Gu becomes the
+			// Snake Charmer and gets poisoned. Both remain evil."
 			// The Pit-Hag made a player the Snake Charmer (an evil one), who then charms the
 			// Fang Gu: they swap characters, and both stay evil.
 			const start = scenario(['pithag', 'chef', 'fanggu', 'monk']).becomes(
