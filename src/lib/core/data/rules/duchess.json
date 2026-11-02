@@ -41,5 +41,10 @@
 		"selected-you": {
 			"characters": ["self"]
 		}
+	},
+	"answers": {
+		"question": "evil-marked",
+		"wakes": "marked",
+		"falseToken": "False Info"
 	}
 }
