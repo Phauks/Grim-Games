@@ -12,7 +12,12 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import {
+	committedCharacter,
+	committedGameData,
+	nightSheetPresence
+} from '#lib/core/testing/committed-data.ts';
+import { analyseSetup } from '#lib/core/rules/setup.ts';
 
 describe('Village Idiot', () => {
 	const character = committedCharacter('villageidiot');
@@ -40,6 +45,25 @@ describe('Village Idiot', () => {
 
 		it('has its special app hooks', () => {
 			expect(character.special).toEqual([{ type: 'selection', name: 'bag-duplicate' }]);
+		});
+	});
+
+	// Summary: up to 2 extra Village Idiots, so 3 at most (M22).
+	describe('setup copies', () => {
+		const data = committedGameData();
+		const cast = (idiots: number) => [
+			...Array.from({ length: idiots }, () => data.byId.get('villageidiot')!),
+			...['chef', 'empath', 'monk', 'saint', 'imp', 'poisoner'].map((id) => data.byId.get(id)!)
+		];
+		const duplicate = (idiots: number) =>
+			analyseSetup({ players: 6 + idiots, inPlay: cast(idiots) }).warnings.filter(
+				(w) => w.code === 'duplicate'
+			);
+		it('allows three Village Idiots', () => {
+			expect(duplicate(3)).toEqual([]);
+		});
+		it('warns at four', () => {
+			expect(duplicate(4)).toHaveLength(1);
 		});
 	});
 

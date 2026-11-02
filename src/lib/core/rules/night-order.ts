@@ -18,6 +18,7 @@
  *   `firstNight` / `otherNight` only says that they wake: TPI publishes no numbers for
  *   official characters to match it against.
  */
+import type { SetupAlignmentTask } from './setup-alignment.ts';
 import {
 	NIGHT_MARKERS,
 	type Character,
@@ -123,6 +124,12 @@ export interface NightStep {
 	 * (`withTravellerAlignmentStep`).
 	 */
 	travellers?: string[];
+	/**
+	 * On the first night's step right after Dusk, when a setup change makes players start with
+	 * the other alignment (the Bounty Hunter's evil Townsfolk): who fits and who is still to
+	 * pick (`withSetupAlignmentStep`).
+	 */
+	setupAlignments?: SetupAlignmentTask[];
 	/**
 	 * On a step that wakes a player whose character changed since dawn: the seat and its new
 	 * character (`withCharacterChangeSteps`).

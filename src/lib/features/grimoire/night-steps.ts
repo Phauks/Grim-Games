@@ -23,6 +23,7 @@ import {
 	nightOrder,
 	onDeathApplies,
 	onDeathTrigger,
+	SETUP_ALIGNMENT_STEP,
 	TRAVELLER_ALIGNMENT_STEP,
 	wakeConditionMet,
 	withCharacterChangeSteps,
@@ -146,7 +147,8 @@ export const MARKER_ICONS: Record<string, IconSlot> = {
 	dawn: 'day',
 	minioninfo: 'players',
 	demoninfo: 'demon',
-	[TRAVELLER_ALIGNMENT_STEP]: 'traveller'
+	[TRAVELLER_ALIGNMENT_STEP]: 'traveller',
+	[SETUP_ALIGNMENT_STEP]: 'alignment'
 };
 
 /**
@@ -163,6 +165,8 @@ export function stepHolders(game: Game, step: NightStep, characters: CharacterLo
 		});
 	}
 	if (step.changed) return [step.changed.seatId];
+	// Starting alignment: the players who start with the other alignment (the evil Townsfolk).
+	if (step.setupAlignments) return step.setupAlignments.flatMap((t) => t.seats);
 	const id = step.character?.id;
 	return id ? game.seating.filter((s) => game.seats[s].characterId === id) : [];
 }

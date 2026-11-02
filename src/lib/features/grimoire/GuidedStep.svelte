@@ -10,6 +10,7 @@
 	import NightShownTo from './NightShownTo.svelte';
 	import NightYesNo from './NightYesNo.svelte';
 	import TravellerAlignment from './TravellerAlignment.svelte';
+	import SetupAlignmentStep from './SetupAlignmentStep.svelte';
 	import { STANDARD_INFO_TOKENS, type CharacterId } from '#lib/core/data/index.ts';
 	import { believesDemon, TRAVELLER_ALIGNMENT_STEP } from '#lib/core/rules/index.ts';
 	import { seesGrimoire } from '#lib/core/rules/sees-grimoire.ts';
@@ -314,6 +315,17 @@
 					onDraw={(seatId) => {
 						open = false;
 						onDraw(seatId);
+					}}
+				/>
+			{/if}
+			{#if step.setupAlignments}
+				<!-- Over the open step, as with a suggestion's Show to player. -->
+				<SetupAlignmentStep
+					{grimoire}
+					onShow={(card) => {
+						shownId = undefined;
+						shownCard = card;
+						showOpen = true;
 					}}
 				/>
 			{/if}

@@ -32,6 +32,7 @@ export * from './glossary.ts';
 export * from './reference-table.ts';
 export * from './bag-plan.ts';
 export * from './traveller-alignment.ts';
+export * from './setup-alignment.ts';
 export * from './voting.ts';
 export * as dayTimers from './day-timer.ts';
 export * as gameClock from './game-clock.ts';
