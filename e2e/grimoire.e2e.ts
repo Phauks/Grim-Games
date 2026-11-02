@@ -1133,6 +1133,41 @@ test('a night step offers the info tokens its text names', async ({ page }) => {
 	expect(await gaps()).toEqual([]);
 });
 
+for (const on of [true, false]) {
+	test(`Take reminders off on time ${on ? 'on' : 'off'}: the Monk's Safe at dawn`, async ({
+		page
+	}) => {
+		// https://wiki.bloodontheclocktower.com/Monk : the Safe reminder comes off at dawn. One
+		// Storyteller setting turns every timed reminder change off (Trevor, 2026-11-02).
+		await startGame(page);
+		if (!on) {
+			await boardSettings(page, 'Storyteller');
+			const settings = page.getByRole('dialog', { name: 'Settings' });
+			await settings.getByText('Take reminders off on time', { exact: true }).tap();
+			await settings.getByRole('button', { name: 'Close' }).tap();
+			await expect(settings).toBeHidden();
+		}
+		const sheet = await openSeat(page, 1);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: 'Character for Seat 1' })
+			.getByRole('button', { name: 'Monk', exact: true })
+			.tap();
+		await closeSheet(page);
+		await putReminder(page, 'Safe', 2);
+		const seat2 = seatLabelled(page, 'Seat 2:');
+		await expect(seat2).toHaveAttribute('aria-label', /1 reminder/);
+		await walkTo(page, 'Dusk');
+		await endNight(page);
+		const day = page.getByRole('dialog', { name: 'Day 1' });
+		await expect(day).toBeVisible();
+		await page.keyboard.press('Escape');
+		await expect(day).toBeHidden();
+		// Seat 2 holds the Safe until dawn takes it off, back to the bank.
+		await expect(seat2).toHaveAttribute('aria-label', on ? /character$/ : /1 reminder/);
+	});
+}
+
 test("the Demon's step says when the Exorcist's choice stops it waking", async ({ page }) => {
 	// https://wiki.bloodontheclocktower.com/Exorcist : a chosen Demon doesn't wake tonight
 	// (Trevor's Pukka flowchart, 2026-10-24).

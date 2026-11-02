@@ -20,6 +20,7 @@ import {
 	type DeathCauseFlag,
 	type TargetMiss
 } from '#lib/core/rules/index.ts';
+import type { RegistersAs } from '#lib/core/data/death-cause-rules.ts';
 import {
 	GENERAL_DEATH_CAUSES,
 	isOnScript,
@@ -146,6 +147,14 @@ export function causeLabel(
 	}
 }
 
+/** The note for a `registers` death cause, by what the rule needs the player to register as. */
+const REGISTERS_TEXT: Record<RegistersAs, [when: string, what: string]> = {
+	demon: ['Only if', 'Demon'],
+	'not-demon': ['Unless', 'Demon'],
+	good: ['Only if', 'good'],
+	townsfolk: ['Only if', 'Townsfolk']
+};
+
 /**
  * Why a death cause is offered with a caution, for the overlay behind its marker. Uses
  * player names (or "Seat N"), and the character (`by`) to show as a badge after the text;
@@ -161,9 +170,11 @@ export function causeFlagText(
 		game.seats[seatId]?.playerName ?? `Seat ${game.seating.indexOf(seatId) + 1}`;
 	switch (flag.code) {
 		case 'registers': {
-			// "Only if Ana registered falsely ([Recluse])": the character shows as a badge.
-			const when = flag.unless ? 'Unless' : 'Only if';
-			return { text: `${when} ${victim} registered falsely`, by: flag.source.characterId };
+			// "Only if Ana registers as Demon ([Recluse])": the character shows as a badge
+			// (Trevor, 2026-11-02). Whether the player truly is what the rule needs (`unless`)
+			// doesn't change the condition: the death stands only if they register as it.
+			const [when, what] = REGISTERS_TEXT[flag.as];
+			return { text: `${when} ${victim} registers as ${what}`, by: flag.source.characterId };
 		}
 		case 'impaired':
 			return {

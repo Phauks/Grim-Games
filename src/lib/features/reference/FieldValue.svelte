@@ -20,7 +20,6 @@
 	import { reportDialog } from '#lib/features/reports/report-dialog.svelte.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterDialog from '#lib/features/characters/CharacterDialog.svelte';
-	import { iconUrl } from '#lib/features/characters/icon-url.ts';
 	import { prefetchWikiPage } from '#lib/features/characters/wiki-page.svelte.ts';
 	import CharacterEntry from '#lib/features/characters/CharacterEntry.svelte';
 	import { slot } from '#lib/features/characters/slots.ts';
@@ -192,11 +191,7 @@
 					: undefined}
 			/>
 		</button>
-		{#if detailsUsed}<CharacterDialog
-				bind:open={detailsOpen}
-				{character}
-				icon={iconUrl(character)}
-			/>{/if}
+		{#if detailsUsed}<CharacterDialog bind:open={detailsOpen} {character} />{/if}
 	{:else if field === 'name'}
 		<!-- eslint-disable-next-line grim/names-as-badges -- Reference table cells are plain information (Trevor, 2026-10-16) -->
 		<span class="block">{character.name}</span>{@render links()}

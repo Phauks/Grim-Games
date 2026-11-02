@@ -597,6 +597,12 @@ export interface Game {
 	 */
 	prepValues?: Record<string, string>;
 	/**
+	 * Seats the Storyteller pretends are Minions or a Demon while a character whose rules allow
+	 * it is in play (`pretendTeam`, the Atheist), by the character pretended (`SetPretend`, M26).
+	 * Private: never in the public projection. Absent until one is set.
+	 */
+	pretend?: Record<SeatId, CharacterId>;
+	/**
 	 * The Storyteller's titled notes on the game as a whole (Trevor, 2026-10-19; several since
 	 * 2026-10-23, like a player's notebook), beside each seat's own notes, oldest first.
 	 * Private: never in the public projection. Absent until one is written.

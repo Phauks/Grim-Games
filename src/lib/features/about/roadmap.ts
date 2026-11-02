@@ -479,6 +479,14 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['M25']
 	},
 	{
+		// Trevor, 2026-11-02: in an Atheist game the Storyteller still gets guidance. M26a a pretend
+		// evil team in the engine, with information that fits it; M26b its seat sheet row, night
+		// steps and board mark.
+		title: 'Atheist games: a pretend evil team, with night steps and information that fit it',
+		area: 'engine',
+		parts: ['M26a', 'M26b']
+	},
+	{
 		// Trevor, 2026-10-30: on the roadmap, after a spike and research. L99 research, L100 the
 		// format with the Heretic and Boffin, L107 every jinx shown where it matters, L108 jinxes
 		// that reuse existing rules, L109 the Plague Doctor's and other built characters', L112

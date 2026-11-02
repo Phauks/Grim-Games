@@ -202,11 +202,7 @@
 	{#if end}<span class="end" bind:offsetWidth={endWidth}>{@render end()}</span>{/if}
 	{#if aside}<span class="aside">{@render aside()}</span>{/if}
 </div>
-{#if infoUsed}<CharacterDialog
-		bind:open={infoOpen}
-		{character}
-		icon={iconUrl(character, tokenAlignment)}
-	/>{/if}
+{#if infoUsed}<CharacterDialog bind:open={infoOpen} {character} alignment={tokenAlignment} />{/if}
 
 <style>
 	/*

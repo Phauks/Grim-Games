@@ -49,12 +49,14 @@ export type DeathKind = (typeof DEATH_KINDS)[number];
 
 const VICTIMS = ['self', 'not-self', 'alive-neighbour', 'registers'] as const;
 const REGISTERS_AS = ['demon', 'not-demon', 'good', 'townsfolk'] as const;
+/** What a `registers` victim rule needs the player to register as. */
+export type RegistersAs = (typeof REGISTERS_AS)[number];
 
 export type VictimRule =
 	| { who: 'self' }
 	| { who: 'not-self' }
 	| { who: 'alive-neighbour' }
-	| { who: 'registers'; as: (typeof REGISTERS_AS)[number]; notSelf?: true };
+	| { who: 'registers'; as: RegistersAs; notSelf?: true };
 
 export type DeathCauseRule =
 	{ kind: DeathKind; onlyWith?: readonly CharacterId[]; victim?: VictimRule } | { none: string };

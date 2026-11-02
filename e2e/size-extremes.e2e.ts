@@ -74,7 +74,7 @@ for (const size of SIZES) {
 		await page.locator('button.badge', { hasText: 'Witch' }).first().tap();
 		const dialog = page.getByRole('dialog', { name: 'Witch' });
 		await expect(dialog.getByTestId('wiki-page')).toContainText('Sample summary.');
-		await expect(dialog.locator('.character .icon img')).toBeInViewport();
+		await expect(dialog.locator('.character .ring img')).toBeInViewport();
 		await expectFits(dialog);
 		await dialog.getByRole('button', { name: 'Jinxes' }).tap();
 		await expect(dialog.getByTestId('jinx-section')).toBeVisible();
