@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 import { pickNumber } from './number-select.ts';
 import { putReminder } from './reminder-bank.ts';
+import { addSeat } from './seating.ts';
 
 // The day sheet over the board of a saved game: executions, exiles and deaths, all
 // by hand, each with a cause from the valid ones. Nominations happen off the grimoire.
@@ -19,12 +20,7 @@ async function startGame(page: Page, players = 8, script = 'Trouble Brewing') {
 
 async function addThief(page: Page) {
 	// A Traveller joins as a new seat: Add seat (the board asks where), then choose them.
-	await page.getByRole('button', { name: 'More' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Add seat' })
-		.tap();
-	await page.getByRole('button', { name: 'Place between Seat 8 and Seat 1' }).tap();
+	await addSeat(page, 'Place between Seat 8 and Seat 1');
 	await page.getByRole('button', { name: /^Seat 9:/ }).tap();
 	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
 	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
