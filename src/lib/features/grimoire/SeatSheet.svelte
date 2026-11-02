@@ -46,7 +46,8 @@
 	import SavantSheet from '#lib/features/savant/SavantSheet.svelte';
 	import NoteSheet from '#lib/features/day/NoteSheet.svelte';
 	import { LiveDay } from '#lib/features/day/live-day.svelte.ts';
-	import { dayClaim } from '#lib/core/rules/index.ts';
+	import { dayClaim, pretendChoices, pretendTeamSource } from '#lib/core/rules/index.ts';
+	import Select from '#lib/ui/primitives/Select.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import { gameSettings } from '#lib/features/game-settings/game-settings.svelte.ts';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
@@ -216,6 +217,20 @@
 		seatId !== undefined && !!roomHost().travellerPick?.seats.some((s) => s.seatId === seatId)
 	);
 	const day = $derived(new LiveDay(grimoire.open));
+	// ── The fake evil team (M26), while a character that allows it is in play (the Atheist) ──
+	const FAKE_NONE = 'none';
+	const fakes = $derived(
+		pretendTeamSource(game, characters)
+			? [
+					{ value: FAKE_NONE, label: 'None' },
+					...pretendChoices(game, characters).map((id) => ({
+						value: id,
+						// eslint-disable-next-line grim/names-as-badges -- the option's accessible name and typeahead text; it shows as the badge (the fakeOption snippet)
+						label: characters.get(id)?.name ?? id
+					}))
+				]
+			: undefined
+	);
 </script>
 
 <BottomSheet bind:open {title} description={t('common.seat', { number })}>
@@ -350,6 +365,31 @@
 				</button>
 			</div>
 
+			<!-- Who the Storyteller fakes this player as, any time in the game (Trevor, 2026-11-02),
+			     on every seat while the game has the Atheist's fake evil team (M26). -->
+			{#if fakes}
+				<div class="row">
+					<span class="label" id={`fake-${seat.seatId}`}>Fake</span>
+					<span class="fake" data-testid="sheet-fake"
+						><Select
+							label="Fake"
+							labelledBy={`fake-${seat.seatId}`}
+							value={game.pretend?.[seat.seatId] ?? FAKE_NONE}
+							options={fakes}
+							onChange={(value) =>
+								grimoire.run({
+									type: 'SetPretend',
+									seatId: seat.seatId,
+									...(value === FAKE_NONE ? {} : { characterId: value })
+								})}
+						>
+							{#snippet item(option)}{@render fakeOption(option)}{/snippet}
+							{#snippet selected(option)}{@render fakeOption(option)}{/snippet}
+						</Select></span
+					>
+				</div>
+			{/if}
+
 			<!-- Nomination tracking (Trevor, 2026-10-22: "if enabled, just add beneath dead vote the
 			     same area there to track it"). Both rows always show while the setting is on. -->
 			{#if gameSettings.current.trackNominations}
@@ -482,6 +522,14 @@
 	</p>
 </ConfirmDialog>
 
+{#snippet fakeOption(option: { value: string; label: string })}
+	{#if option.value === FAKE_NONE}None{:else}<CharacterBadge
+			characterId={option.value}
+			character={characters.get(option.value)}
+			interactive={false}
+		/>{/if}
+{/snippet}
+
 <style>
 	.ink {
 		display: contents;
@@ -577,6 +625,10 @@
 		font: var(--button-font);
 		font-size: 0.8rem;
 		cursor: pointer;
+	}
+	/* The Fake drop-down, as wide as the toggles beside it. */
+	.fake {
+		min-width: calc(9 * var(--u));
 	}
 	.value:disabled {
 		opacity: 0.45;

@@ -26,6 +26,8 @@ import {
 	notDeclared,
 	onDeathApplies,
 	onDeathTrigger,
+	pretendSeatsOf,
+	pretendTeam,
 	SETUP_ALIGNMENT_STEP,
 	diedSinceNewDay,
 	revivedAfterStep,
@@ -89,16 +91,35 @@ export function boardNightSteps(
 		const c = id ? characters.get(id) : undefined;
 		if (c) inPlay.push(c);
 	}
-	const { steps: sheet } = nightOrder({
-		night,
-		sheet: data.nightSheet,
-		official: data.byId,
-		inPlay,
-		players: inPlay.filter((c) => isSeatable(c.type) && c.type !== 'traveller').length,
-		customOrder: night === 'first' ? game.script.meta?.firstNight : game.script.meta?.otherNight,
-		overrides: game.nightOrderOverrides,
-		noAbility: withoutAbility(game, characters)
-	});
+	const order = (pretending: readonly Character[]) =>
+		nightOrder({
+			night,
+			sheet: data.nightSheet,
+			official: data.byId,
+			inPlay: [...inPlay, ...pretending],
+			players: inPlay.filter((c) => isSeatable(c.type) && c.type !== 'traveller').length,
+			customOrder: night === 'first' ? game.script.meta?.firstNight : game.script.meta?.otherNight,
+			overrides: game.nightOrderOverrides,
+			noAbility: withoutAbility(game, characters)
+		}).steps;
+	// The Storyteller's pretend evil team (M26) wakes too, so the table hears it: a step for each
+	// pretend character no one really is. Only its own steps: the night's markers (Minion info,
+	// Demon info) stay as the real players make them.
+	const real = order([]);
+	const pretending = pretendTeam(game, characters)
+		.map((p) => characters.get(p.characterId))
+		.filter((c): c is Character => !!c && !inPlay.some((d) => d.id === c.id));
+	const realIds = new Set(real.map((s) => s.id));
+	const sheet =
+		pretending.length === 0
+			? real
+			: order(pretending).flatMap((s): NightStep[] =>
+					realIds.has(s.id)
+						? [s]
+						: s.kind === 'character' && pretending.some((c) => c.id === s.id)
+							? [{ ...s, pretend: true }]
+							: []
+				);
 	// A jinx may say the Storyteller doesn't declare a character after Dawn (the Vizier with
 	// the Alsaahir or the Investigator, L115): its announcement step is left out.
 	const steps = sheet.filter(
@@ -179,8 +200,10 @@ export function stepName(step: NightStep): string {
 	if (step.kind === 'marker') return MARKER_TEXT[step.id as NightMarker].name;
 	// A second wake for a player who acts twice (`withActsTwiceSteps`) says "again".
 	const again = step.again ? ' again' : '';
+	// A step the pretend evil team acts out says so (Trevor, 2026-11-02: "Fake").
+	const fake = step.pretend ? 'Fake ' : '';
 	// eslint-disable-next-line grim/names-as-badges -- a caption beside the step's own icon (StepIcon)
-	return `${step.title ?? step.character?.name ?? step.id}${again}`;
+	return `${fake}${step.title ?? step.character?.name ?? step.id}${again}`;
 }
 
 /** Steps with no character get an icon of their own. */
@@ -209,6 +232,7 @@ export function stepHolders(game: Game, step: NightStep, characters: CharacterLo
 	}
 	if (step.changed) return [step.changed.seatId];
 	if (step.again) return [step.again.seatId];
+	if (step.pretend && step.character) return pretendSeatsOf(game, step.character.id, characters);
 	// Starting alignment: the players who start with the other alignment (the evil Townsfolk).
 	if (step.setupAlignments) return step.setupAlignments.flatMap((t) => t.seats);
 	const id = step.character?.id;

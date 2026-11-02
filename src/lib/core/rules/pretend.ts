@@ -8,7 +8,7 @@
  */
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
-import type { CharacterLookup } from '#lib/core/model/characters.ts';
+import { scriptCharacterIds, type CharacterLookup } from '#lib/core/model/characters.ts';
 import { trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 
@@ -53,4 +53,28 @@ export function pretendGame(game: Game, characters: CharacterLookup): Game | und
 		seats[seatId] = { ...seats[seatId], characterId, alignment: 'evil' };
 	}
 	return { ...game, seats };
+}
+
+/**
+ * The characters a seat may pretend to be: the script's Minions and Demons, Minions first, in
+ * script order. A character that allows the pretend team has no evil players to fake them for.
+ */
+export function pretendChoices(game: Game, characters: CharacterLookup): CharacterId[] {
+	const ids = scriptCharacterIds(game.script).filter((id) => {
+		const type = characters.get(id)?.type;
+		return type !== undefined && (PRETEND_TYPES as readonly string[]).includes(type);
+	});
+	const rank = (id: CharacterId) => (characters.get(id)?.type === 'minion' ? 0 : 1);
+	return ids.sort((a, b) => rank(a) - rank(b));
+}
+
+/** The seats pretending to be `characterId`, while the pretend team counts. */
+export function pretendSeatsOf(
+	game: Game,
+	characterId: CharacterId,
+	characters: CharacterLookup
+): SeatId[] {
+	return pretendTeam(game, characters)
+		.filter((p) => p.characterId === characterId)
+		.map((p) => p.seatId);
 }
