@@ -37,6 +37,8 @@
 	import { trackKeyboardInset } from '#lib/ui/keyboard-inset.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import Toaster from '#lib/ui/primitives/Toaster.svelte';
+	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import Sentence from '#lib/features/characters/Sentence.svelte';
 	import { applyAppearance } from '#lib/ui/themes/apply.ts';
 	import { screenTheme } from '#lib/ui/themes/screen-theme.svelte.ts';
 	import type { LayoutProps } from './$types';
@@ -166,7 +168,10 @@
 <SettingsModal />
 <NavDrawer />
 <GlossaryPopover />
-<Toaster />
+<!-- A toast's character slots (slots.ts) draw as badges: names always show as badges. -->
+{#snippet characterBadge(id: string)}<CharacterBadge characterId={id} />{/snippet}
+{#snippet toastText(text: string)}<Sentence {text} fill={characterBadge} />{/snippet}
+<Toaster describe={toastText} />
 <UpdateBanner />
 
 <style>

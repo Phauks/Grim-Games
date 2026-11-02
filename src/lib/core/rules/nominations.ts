@@ -7,7 +7,7 @@
 import type { CharacterId } from '#lib/core/data/types.ts';
 import type { AfterDeath } from '#lib/core/data/after-death-rules.ts';
 import type { NominatedEffect } from '#lib/core/data/character-rules.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
+import { rulesIn, rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { registersAsDead, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
 import type { DayEntry, Game, SeatId } from '#lib/core/model/types.ts';
@@ -201,25 +201,95 @@ export function nomineeChooses(game: Game, characters: CharacterLookup): Charact
 	return [...new Set([...game.ruleCharacters.filter(chooses), ...seated])];
 }
 
-/** The nominee's own ability a nomination sets off (`onNominated`). */
+/**
+ * The abilities a nomination sets off (`onNominated`): the nominee's own (the Virgin), and any
+ * player's whose `carrier` reminder the nominee has (the Gnome's Amigo,
+ * https://wiki.bloodontheclocktower.com/Gnome: the Gnome may kill whoever nominates them, any
+ * number of times). Each only while its ability works and isn't spent (a "No Ability" reminder
+ * of its own), and when the nominator is, or might register as, its `by` type, if it has one.
+ */
 function nomineeAbilityPrompts(
 	game: Game,
 	nomination: { nominator: SeatId; nominee: SeatId },
 	characters: CharacterLookup
 ): CharacterNominationPrompt[] {
 	const { nominator, nominee } = nomination;
-	const characterId = trueCharacter(game, nominee, characters);
-	if (characterId === undefined || nominator === nominee) return [];
-	const rule = rulesOf(characterId, characters)?.onNominated;
-	if (!rule || !abilityState(game, nominee, characters).works) return [];
-	const spent = game.seats[nominee]?.reminders.some(
-		(r) => r.characterId === characterId && r.label === 'No Ability'
-	);
-	if (spent) return [];
-	const registersAs =
-		typeOf(game, nominator, characters) === rule.by ||
-		registrations(game, characters).some(
-			(r) => r.seatId === nominator && r.types.includes(rule.by)
+	if (nominator === nominee) return [];
+	const carried = game.seats[nominee]?.reminders ?? [];
+	return game.seating.flatMap((seatId): CharacterNominationPrompt[] => {
+		const characterId = trueCharacter(game, seatId, characters);
+		const rule =
+			characterId === undefined ? undefined : rulesIn(game, characterId, characters)?.onNominated;
+		if (characterId === undefined || !rule) return [];
+		const setOff = rule.carrier
+			? carried.some(
+					(r) =>
+						r.characterId === characterId &&
+						r.label === rule.carrier &&
+						(r.ownerSeatId === undefined || r.ownerSeatId === seatId)
+				)
+			: seatId === nominee;
+		if (!setOff || !abilityState(game, seatId, characters).works) return [];
+		const spent = game.seats[seatId]?.reminders.some(
+			(r) => r.characterId === characterId && r.label === 'No Ability'
 		);
-	return registersAs ? [{ kind: rule.effect, characterId, nominator, nominee }] : [];
+		if (spent) return [];
+		const by = rule.by;
+		const registersAs =
+			by === undefined ||
+			typeOf(game, nominator, characters) === by ||
+			registrations(game, characters).some((r) => r.seatId === nominator && r.types.includes(by));
+		return registersAs ? [{ kind: rule.effect, characterId, nominator, nominee }] : [];
+	});
+}
+
+/**
+ * Characters whose ability works now and means only the Storyteller nominates
+ * (`nominating.by`, the Bishop, https://wiki.bloodontheclocktower.com/Bishop): a player's
+ * character, or a Fabled or Loric in play. A nomination recorded meanwhile is still logged,
+ * with the nominator the Storyteller picks.
+ */
+export function storytellerNominates(game: Game, characters: CharacterLookup): CharacterId[] {
+	const only = (id: CharacterId) => {
+		const rule = rulesIn(game, id, characters)?.nominating;
+		return !!rule && 'by' in rule && rule.by === 'storyteller';
+	};
+	const seated = game.seating.flatMap((seatId) => {
+		const id = trueCharacter(game, seatId, characters);
+		return id !== undefined && only(id) && abilityState(game, seatId, characters).works ? [id] : [];
+	});
+	return [...new Set([...game.ruleCharacters.filter(only), ...seated])];
+}
+
+/**
+ * How many more nominations a player's character lets them make this game
+ * (`nominating.perGame`, the Golem, https://wiki.bloodontheclocktower.com/Golem: once per
+ * game), while its ability works; undefined when no such limit applies. Counts the
+ * nominations the day logs hold for the seat, and at least one once the character's spent
+ * reminder (`dayUse.spentToken`, else "No Ability") is on it. `ignore` leaves out a nomination
+ * being changed.
+ */
+export function nominationsLeftThisGame(
+	game: Game,
+	seatId: SeatId,
+	characters: CharacterLookup,
+	ignore?: string
+): { characterId: CharacterId; left: number } | undefined {
+	const characterId = trueCharacter(game, seatId, characters);
+	const rules = characterId === undefined ? undefined : rulesIn(game, characterId, characters);
+	const rule = rules?.nominating;
+	if (characterId === undefined || !rule || !('perGame' in rule)) return undefined;
+	if (!abilityState(game, seatId, characters).works) return undefined;
+	const all = [...game.pastDays, game.today]
+		.flatMap((day) => day.entries)
+		.filter((e) => e.kind === 'nomination' && e.nominator === seatId);
+	const made = all.filter((e) => e.entryId !== ignore);
+	// Changing the nomination that spent it doesn't count the spent reminder again.
+	const editing = made.length < all.length;
+	const spentLabel = rules?.dayUse?.spentToken ?? 'No Ability';
+	const spent = game.seats[seatId]?.reminders.some(
+		(r) => r.characterId === characterId && r.label === spentLabel
+	);
+	const used = Math.max(made.length, spent && !editing ? 1 : 0);
+	return { characterId, left: Math.max(rule.perGame - used, 0) };
 }

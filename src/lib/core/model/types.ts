@@ -170,6 +170,11 @@ export interface Seat {
 	impairedAtDeath?: true;
 	/** True once a dead player has used their vote. */
 	ghostVoteUsed: boolean;
+	/**
+	 * Vote tokens dead players gave this player, not yet used (`GiveVoteToken`, for a character
+	 * that needs one to vote: the Beggar). Absent while none.
+	 */
+	voteTokens?: number;
 	/** At most one override per field. */
 	overrides: SeatOverride[];
 	/**
@@ -254,9 +259,9 @@ export interface CharacterGuess {
 /**
  * One thing the Storyteller logged since the last "New day" (Trevor, 2026-10-15: the log is
  * cleared by hand, never by the night order, because the app does not track day or night):
- * - `nomination`: who nominated whom. Votes are not tracked; a player-facing vote tracker
- *   comes later. `chosen`: the player the nominee chose because a character in play says so
- *   (the Big Wig's speaker, https://wiki.bloodontheclocktower.com/Big_Wig).
+ * - `nomination`: who nominated whom, and who voted once recorded (`votes`). `chosen`: the
+ *   player the nominee chose because a character in play says so (the Big Wig's speaker,
+ *   https://wiki.bloodontheclocktower.com/Big_Wig).
  * - `execution`: the player was executed (and marked dead by execution if they were alive).
  * - `exile`: a Traveller was exiled (and marked dead by exile if alive). Exile is not an
  *   execution: abilities about executions ignore it
@@ -275,6 +280,8 @@ export type DayEntry =
 			nominator: SeatId;
 			nominee: SeatId;
 			chosen?: SeatId;
+			/** Who voted, when the Storyteller recorded it (`RecordVotes`, M9a). */
+			votes?: NominationVotes;
 	  }
 	| {
 			kind: 'execution';
@@ -287,6 +294,23 @@ export type DayEntry =
 			 * were already dead.
 			 */
 			savedBy?: { characterId?: CharacterId; seatId?: SeatId };
+			/**
+			 * Executed whatever the vote, by an ability (`executionOutcome`: the Judge's forced
+			 * pass, the Vizier's execute now), and the seat whose ability it was, when known.
+			 */
+			forcedBy?: { characterId: CharacterId; seatId?: SeatId };
+	  }
+	/**
+	 * An execution that failed (`executionOutcome`): the player was about to be executed and
+	 * was not, nor did they die (only evil voted while the Legion's ability worked; the
+	 * Judge's forced fail). `by` is the character whose ability failed it, and its seat when
+	 * known. Not an execution: the day may still have one.
+	 */
+	| {
+			kind: 'execution-failed';
+			entryId: DayEntryId;
+			seatId: SeatId;
+			by: { characterId: CharacterId; seatId?: SeatId };
 	  }
 	| { kind: 'exile'; entryId: DayEntryId; seatId: SeatId; died: boolean }
 	| {
@@ -296,6 +320,11 @@ export type DayEntry =
 			characterId: CharacterId;
 			reminderId?: ReminderId;
 			on?: SeatId;
+			/**
+			 * Whether the vote the ability called passed (`dayUse.vote`: every living good
+			 * player joined the Cult Leader's cult). Absent for any other use.
+			 */
+			passed?: boolean;
 	  }
 	| {
 			kind: 'note';
@@ -326,6 +355,18 @@ export type DayEntry =
 	  };
 
 export type DayEntryKind = DayEntry['kind'];
+
+/**
+ * A nomination's recorded votes (`RecordVotes`): `voters` raised their hand, in seat order.
+ * `ghostVotes`: dead voters whose one ghost vote this record spent; `tokens`: voters who used
+ * a vote token they were given (the Beggar's). Both are given back when the record changes
+ * or is removed. What the votes add up to is `tallyOf` (`rules/vote-weights.ts`).
+ */
+export interface NominationVotes {
+	voters: SeatId[];
+	ghostVotes?: SeatId[];
+	tokens?: SeatId[];
+}
 
 /**
  * Why an ability worked abnormally, for the Mathematician
@@ -359,7 +400,7 @@ export interface DayLog {
 	/**
 	 * Today's yes-or-no facts as the Storyteller marked them (whether the Demon voted, whether
 	 * a Minion nominated: `DAY_MARKS`), for the characters that learn them at night. A fact is
-	 * missing until marked. Votes themselves are not tracked.
+	 * missing until marked. Recorded votes are on each nomination (`votes`).
 	 */
 	marks?: Partial<Record<DayMark, boolean>>;
 	/** When "New day" closed this log (milliseconds since the epoch); only on past days. */

@@ -7,7 +7,7 @@ import { goto } from '$app/navigation';
 import { resolve } from '$app/paths';
 import type { CharacterId } from '#lib/core/data/index.ts';
 import type { CharacterLookup, Game, SeatId } from '#lib/core/model/index.ts';
-import type { DayMark } from '#lib/core/rules/index.ts';
+import type { DayMark, ExecutionOutcome } from '#lib/core/rules/index.ts';
 import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 import { currentSetupStep } from '#lib/features/setup/setup-steps.ts';
 import { t } from '#lib/i18n/locale.svelte.ts';
@@ -106,7 +106,8 @@ export class PhaseFlow {
 		seatId: SeatId | undefined,
 		save: CharacterId | 'dies' | undefined,
 		marks: Partial<Record<DayMark, boolean>>,
-		keepGoing: boolean
+		keepGoing: boolean,
+		outcome?: ExecutionOutcome
 	): void {
 		const { grimoire, game } = this.#context();
 		for (const [mark, value] of Object.entries(marks) as [DayMark, boolean][])
@@ -118,7 +119,8 @@ export class PhaseFlow {
 				type: 'Execute',
 				seatId,
 				...(save === 'dies' ? { dies: true } : save ? { savedBy: save } : {}),
-				...(cause ? { cause } : {})
+				...(cause ? { cause } : {}),
+				...(outcome ? { outcome } : {})
 			});
 		// Keep the day going (Trevor, 2026-10-26): a player may still nominate after it. An
 		// explosion (the Boomdandy's) keeps it too, for who lives and the pointing.
