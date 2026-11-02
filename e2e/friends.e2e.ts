@@ -195,6 +195,49 @@ test('a friend code, scanned or opened, fills in Add friend', async ({ browser }
 	await expect(ann.page.getByText('Finding you by username is off.')).toBeVisible();
 });
 
+test('a friend code opened with no account signs in on Friends, then fills in Add friend', async ({
+	browser
+}) => {
+	const ann = await signedIn(browser, 'ann');
+	const context = await browser.newContext(test.info().project.use);
+	const page = await context.newPage();
+	const part = () => Math.floor(Math.random() * 254) + 1;
+	await page.setExtraHTTPHeaders({ 'CF-Connecting-IP': `10.${part()}.${part()}.${part()}` });
+
+	// Signed out, the link shows sign-in on Friends itself, not Add friend.
+	await page.goto(`/friends#friend=${ann.username}`);
+	await expect(page.getByText('Sign in to add friends.')).toBeVisible();
+	await expect(page.getByLabel('Email address')).toBeVisible();
+	await expect(page).toHaveURL(/\/friends$/);
+	await expect(page.getByRole('dialog', { name: 'Add friend' })).toHaveCount(0);
+
+	// The name waits on the device, so a reload keeps it.
+	await page.reload();
+	const email = `${unique('cat')}@example.com`;
+	await page.getByLabel('Email address').fill(email);
+	await page.getByRole('button', { name: 'Email me a code' }).tap();
+	const code = (await page.getByTestId('preview-code').locator('strong').textContent()) ?? '';
+	await page.getByLabel(`Code sent to ${email}`).fill(code);
+	await page.getByRole('button', { name: 'Sign in' }).tap();
+	const privacy = page.getByRole('alertdialog', { name: 'Privacy policy' });
+	await privacy.getByText('I accept the Privacy policy', { exact: true }).tap();
+	await privacy.getByRole('button', { name: 'Confirm' }).tap();
+
+	// A new account picks its username first, then Add friend opens with Ann's name in.
+	const naming = page.getByRole('dialog', { name: 'Change username' });
+	await naming.getByLabel('Username').fill(unique('cat'));
+	await naming.getByRole('button', { name: 'Confirm' }).tap();
+	const dialog = page.getByRole('dialog', { name: 'Add friend' });
+	await expect(dialog.getByLabel('Username', { exact: true })).toHaveValue(ann.username);
+	await dialog.getByRole('button', { name: 'Send request' }).tap();
+	await expect(page.getByTestId('friend-outgoing')).toContainText(ann.username);
+
+	// Sent, it no longer waits: Friends opens plainly next time.
+	await page.reload();
+	await expect(page.getByTestId('friend-outgoing')).toContainText(ann.username);
+	await expect(page.getByRole('dialog', { name: 'Add friend' })).toHaveCount(0);
+});
+
 /** Starts a Trouble Brewing game and opens its room; returns the board's path and the code. */
 async function liveRoom(
 	page: Page,
