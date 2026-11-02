@@ -4,7 +4,8 @@
 	import type { Alignment } from '#lib/core/data/index.ts';
 	import type { Command } from '#lib/core/engine/index.ts';
 	import type { SeatId, TileId } from '#lib/core/model/index.ts';
-	import { bagSlots, dealPairs, nextDrawSeat } from '#lib/core/rules/index.ts';
+	import { bagSlots, dealPairs, nextDrawSeat, type BagSlot } from '#lib/core/rules/index.ts';
+	import { seatRoles } from '#lib/core/sync/seat-roles.ts';
 	import { seatsToName } from '#lib/core/sync/room-seating.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
@@ -51,13 +52,29 @@
 	// Players with no phone, after Show characters (Trevor, 2026-11-01): each one's dealt tile
 	// is held again, with their name on it, for the usual reveal and Confirm on this device.
 	const noPhone = $derived(new Set(noPhoneDraw.waiting(game?.gameId)));
-	const slots = $derived(
-		drawSlots.map((s) =>
+	// A character set on the board, with no tile (the Gardener, or tokens handed out on the
+	// board): a tile of its own after the bag's, held, with the player's name on it.
+	const roles = $derived(game && lookup ? seatRoles(game, lookup) : {});
+	const seatTiles = $derived.by(() => {
+		const tiled = new Set(drawSlots.map((s) => s.seatId));
+		const seats = (game?.seating ?? []).filter(
+			(id) => noPhone.has(id) && !tiled.has(id) && roles[id]?.characterId
+		);
+		return new Map(seats.map((seatId) => [`seat:${seatId}` as TileId, seatId]));
+	});
+	const slots = $derived<BagSlot[]>([
+		...drawSlots.map((s) =>
 			s.state === 'drawn' && s.seatId && noPhone.has(s.seatId)
 				? { ...s, state: 'held' as const }
 				: s
-		)
-	);
+		),
+		...[...seatTiles].map(([tileId, seatId], i) => ({
+			tileId,
+			number: drawSlots.length + i + 1,
+			state: 'held' as const,
+			seatId
+		}))
+	]);
 	const next = $derived(game ? nextDrawSeat(game) : undefined);
 	// A stray tap mid-draw must not leave the draw (Trevor, 2026-10-16).
 	const inBag = $derived(drawSlots.filter((s) => s.state !== 'drawn').length);
@@ -83,7 +100,17 @@
 	const markName = (number: number) => marks[number - 1]?.name ?? String(number);
 	let revealing = $state<TileId | undefined>(undefined);
 	let revealOpen = $state(false);
-	const tile = $derived(revealing && bag ? bag.tiles[revealing] : undefined);
+	/** What the tile being revealed shows, whether from the bag or set on the board. */
+	const tile = $derived.by(() => {
+		if (!revealing) return undefined;
+		const seatId = seatTiles.get(revealing);
+		const shows = seatId && roles[seatId]?.characterId;
+		if (seatId && shows) return { tileId: revealing, shows, drawnBySeat: seatId, confirmed: true };
+		const bagTile = bag?.tiles[revealing];
+		return (
+			bagTile && { ...bagTile, traveller: lookup?.get(bagTile.grimoire)?.type === 'traveller' }
+		);
+	});
 	const slot = $derived(slots.find((s) => s.tileId === revealing));
 
 	// ── The locked pass-the-phone draw (Trevor, 2026-10-19) ──
@@ -305,7 +332,7 @@
 	{/snippet}
 
 	<ErrorBoundary area="setup">
-		{#if !game || !bag}
+		{#if !game || (!bag && !slots.length)}
 			<p class="empty" data-testid="no-bag">{t('setup.draw.noBag')}</p>
 		{:else}
 			<!--
@@ -348,7 +375,7 @@
 			bind:open={revealOpen}
 			number={markName(slot.number)}
 			{shows}
-			needsAlignment={!tile.confirmed && lookup.get(tile.grimoire)?.type === 'traveller'}
+			needsAlignment={!tile.confirmed && 'traveller' in tile && tile.traveller}
 			seatLabel={label(tile.drawnBySeat)}
 			playerName={(tile.drawnBySeat && game?.seats[tile.drawnBySeat]?.playerName) || ''}
 			taken={takenNames(tile.drawnBySeat)}

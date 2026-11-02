@@ -1,7 +1,7 @@
 import type { SceneIdOf } from './scene-presets.ts';
 
 /**
- * The shader scenes' WebGL fragment shaders (moving backgrounds, plan L113), written for this
+ * The shader scenes' WebGL fragment shaders (moving backgrounds, plan L114), written for this
  * app: no Shadertoy or other third-party shader code. Each gets `res` (the drawing size in
  * pixels) and `t` (seconds). ShaderScene.svelte draws them; a scene's label and still frame
  * are its preset (scene-presets.ts).

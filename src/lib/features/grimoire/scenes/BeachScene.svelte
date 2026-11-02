@@ -2,7 +2,7 @@
 	import { rand, range } from './scene-shapes.ts';
 
 	/**
-	 * Tropical beach (moving backgrounds, plan L113): sun on the sea, glints on the water, foam
+	 * Tropical beach (moving backgrounds, plan L114): sun on the sea, glints on the water, foam
 	 * washing up the sand and palms swaying. Drawn in CSS: every moving piece animates
 	 * `transform` or `opacity`, which the compositor does, so nothing is painted again.
 	 */
