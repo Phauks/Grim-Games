@@ -147,6 +147,7 @@ export function analyseSetup(input: SetupInput): SetupAnalysis {
 			modifier.source === 'ability-text' &&
 			modifier.ops.length === 0 &&
 			!modifier.requires &&
+			!modifier.alignments &&
 			!modifier.copies
 		) {
 			warnings.push({

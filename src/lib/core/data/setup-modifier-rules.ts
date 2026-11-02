@@ -5,7 +5,13 @@
  *
  * `summary` and `notes` are our own words, never wiki prose.
  */
-import { SEATED_TYPES, type CharacterId, type SeatedType } from './types.ts';
+import {
+	ALIGNMENTS,
+	SEATED_TYPES,
+	type Alignment,
+	type CharacterId,
+	type SeatedType
+} from './types.ts';
 import {
 	checkKeys,
 	describe,
@@ -29,6 +35,18 @@ export type CountOp =
 
 const COUNT_OP_KINDS = ['delta', 'set', 'any'] as const;
 
+/**
+ * Players of a type who start with the other alignment ("[1 Townsfolk is evil]", the Bounty
+ * Hunter's, https://wiki.bloodontheclocktower.com/Bounty_Hunter): the Storyteller picks them
+ * after the draw, and each is told on the first night (players know their own alignment,
+ * https://wiki.bloodontheclocktower.com/Glossary). Counts are unchanged.
+ */
+export interface AlignmentOp {
+	type: SeatedType;
+	alignment: Alignment;
+	count: number;
+}
+
 export interface SetupModifierRules {
 	/** Short summary in our words: "+2 Outsiders". Shown as "Baron: +2 Outsiders". */
 	summary: string;
@@ -38,6 +56,13 @@ export interface SetupModifierRules {
 	 * already in play it replaces a Townsfolk, so the setup analysis allows one more of its type.
 	 */
 	requires?: CharacterId;
+	/** Players who start with the other alignment ("[1 Townsfolk is evil]"). */
+	alignments?: readonly AlignmentOp[];
+	/**
+	 * Extra copies of this same character that may be dealt ("+0 to +2 Village Idiots" is
+	 * `[0, 1, 2]`): more than the largest warns.
+	 */
+	copies?: readonly number[];
 	/** Extra Storyteller notes for setup (bag contents, seating). */
 	notes?: readonly string[];
 	/**
@@ -66,6 +91,23 @@ function readOp(raw: unknown, path: string, issues: Issues): CountOp | undefined
 	return { kind, type, values: values as number[] };
 }
 
+function readAlignmentOp(raw: unknown, path: string, issues: Issues): AlignmentOp | undefined {
+	if (!isObject(raw)) {
+		issues.add(path, `expected object, got ${describe(raw)}`);
+		return undefined;
+	}
+	checkKeys(raw, ['type', 'alignment', 'count'], path, issues);
+	const type = readEnum(raw, 'type', SEATED_TYPES, path, issues, true);
+	const alignment = readEnum(raw, 'alignment', ALIGNMENTS, path, issues, true);
+	const count = raw.count;
+	if (!Number.isInteger(count) || (count as number) < 1) {
+		issues.add(`${path}.count`, 'expected a whole number of at least 1');
+		return undefined;
+	}
+	if (!type || !alignment) return undefined;
+	return { type, alignment, count: count as number };
+}
+
 /** Reads a `setupModifier` block. */
 export function readSetupModifier(
 	raw: unknown,
@@ -76,7 +118,12 @@ export function readSetupModifier(
 		issues.add(path, `expected object, got ${describe(raw)}`);
 		return undefined;
 	}
-	checkKeys(raw, ['summary', 'ops', 'requires', 'notes', 'readsBrackets'], path, issues);
+	checkKeys(
+		raw,
+		['summary', 'ops', 'requires', 'alignments', 'copies', 'notes', 'readsBrackets'],
+		path,
+		issues
+	);
 	const summary = readString(raw, 'summary', path, issues, true);
 	const ops: CountOp[] = [];
 	if (raw.ops !== undefined) {
@@ -90,6 +137,24 @@ export function readSetupModifier(
 		}
 	}
 	const requires = readString(raw, 'requires', path, issues, false);
+	const alignments: AlignmentOp[] = [];
+	if (raw.alignments !== undefined) {
+		if (!Array.isArray(raw.alignments)) {
+			issues.add(`${path}.alignments`, `expected array, got ${describe(raw.alignments)}`);
+		} else {
+			raw.alignments.forEach((op, i) => {
+				const read = readAlignmentOp(op, `${path}.alignments[${i}]`, issues);
+				if (read) alignments.push(read);
+			});
+		}
+	}
+	let copies: number[] | undefined;
+	if (raw.copies !== undefined) {
+		const v = raw.copies;
+		if (!Array.isArray(v) || v.length === 0 || !v.every((n) => Number.isInteger(n) && n >= 0))
+			issues.add(`${path}.copies`, 'expected a list of whole numbers of at least 0');
+		else copies = v as number[];
+	}
 	const notes = readStringArray(raw, 'notes', path, issues);
 	if (raw.readsBrackets !== undefined && raw.readsBrackets !== true) {
 		issues.add(`${path}.readsBrackets`, 'expected true');
@@ -99,6 +164,8 @@ export function readSetupModifier(
 		summary,
 		ops,
 		...(requires ? { requires } : {}),
+		...(alignments.length > 0 ? { alignments } : {}),
+		...(copies ? { copies } : {}),
 		...(notes ? { notes } : {}),
 		...(raw.readsBrackets === true ? { readsBrackets: true as const } : {})
 	};

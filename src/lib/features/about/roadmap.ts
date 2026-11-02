@@ -378,6 +378,13 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['M13a', 'M13b', 'M13']
 	},
 	{
+		// Setup rules audit (Trevor, 2026-11-02): every bracketed setup change covered, starting
+		// with the Bounty Hunter's evil Townsfolk, picked, checked at Start game and told.
+		title: 'Every setup change covered: the Bounty Hunter makes a Townsfolk evil, and more',
+		area: 'engine',
+		parts: ['M22']
+	},
+	{
 		// Trevor, 2026-10-30: on the roadmap, after a spike and research.
 		title: 'Jinxes the app applies, not only shows',
 		area: 'engine',

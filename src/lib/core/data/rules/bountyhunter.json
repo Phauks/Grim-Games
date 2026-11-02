@@ -34,6 +34,13 @@
 	"setupModifier": {
 		"summary": "1 Townsfolk is evil",
 		"ops": [],
+		"alignments": [
+			{
+				"type": "townsfolk",
+				"alignment": "evil",
+				"count": 1
+			}
+		],
 		"notes": ["Turn one Townsfolk evil during setup."]
 	},
 	"dayReminders": {

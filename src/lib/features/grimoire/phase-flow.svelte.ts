@@ -7,7 +7,11 @@ import { goto } from '$app/navigation';
 import { resolve } from '$app/paths';
 import type { CharacterId } from '#lib/core/data/index.ts';
 import type { CharacterLookup, Game, SeatId } from '#lib/core/model/index.ts';
-import type { DayMark } from '#lib/core/rules/index.ts';
+import {
+	pendingSetupAlignments,
+	type DayMark,
+	type SetupAlignmentTask
+} from '#lib/core/rules/index.ts';
 import { liveDayTimer } from '#lib/features/day/day-timer.svelte.ts';
 import { currentSetupStep } from '#lib/features/setup/setup-steps.ts';
 import { t } from '#lib/i18n/locale.svelte.ts';
@@ -46,6 +50,8 @@ export class PhaseFlow {
 	/** Start game asked with setup reminders still in the bank: those reminders. */
 	startAskOpen = $state(false);
 	setupLeft = $state<TrayItem[]>([]);
+	/** Setup alignment changes not yet made (the Bounty Hunter's evil Townsfolk, M22). */
+	alignmentsLeft = $state<SetupAlignmentTask[]>([]);
 	/** A seat's status chose Executed: during the day, the day's Execution asks with them chosen. */
 	executeChosen = $state<SeatId>();
 	/** A mad player broke madness: the character whose madness executes them (L84). */
@@ -127,13 +133,16 @@ export class PhaseFlow {
 
 	/**
 	 * Start game with setup reminders still in the bank's Setup stretch asks first (Trevor,
-	 * 2026-10-20), listing them; Confirm starts anyway (warn, never lock).
+	 * 2026-10-20), listing them; Confirm starts anyway (warn, never lock). So does a setup
+	 * alignment change not yet made, such as no evil Townsfolk with the Bounty Hunter (M22).
 	 */
 	startGame(): void {
 		const { game, characters } = this.#context();
 		const left = pendingSetup(game, characters);
-		if (left.length > 0) {
+		const alignments = pendingSetupAlignments(game, characters);
+		if (left.length > 0 || alignments.length > 0) {
 			this.setupLeft = left;
+			this.alignmentsLeft = alignments;
 			this.startAskOpen = true;
 			return;
 		}

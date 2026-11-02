@@ -11,6 +11,7 @@
  */
 import { defaultAlignment, type Alignment, type CharacterId } from '#lib/core/data/index.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
+import { trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 import { standInKind } from '#lib/core/rules/bag-plan.ts';
 
@@ -51,7 +52,12 @@ export function seatRoles(game: Game, characters: CharacterLookup): Record<SeatI
 		const shows = shownBy.get(seatId);
 		if (shows === undefined && standInKind(truth)) continue;
 		const role: SeatRole = { characterId: shows ?? truth.id };
-		if (seat.alignment && seat.alignment !== defaultAlignment(truth.type))
+		// Measured against who they really are: a Marionette sits on a good token but is evil
+		// by their own type, and must think they are good, so nothing is said
+		// (https://wiki.bloodontheclocktower.com/Marionette). The Bounty Hunter's evil
+		// Townsfolk is told (https://wiki.bloodontheclocktower.com/Bounty_Hunter).
+		const real = characters.get(trueCharacter(game, seatId, characters) ?? '') ?? truth;
+		if (seat.alignment && seat.alignment !== defaultAlignment(real.type))
 			role.alignment = seat.alignment;
 		roles[seatId] = role;
 	}

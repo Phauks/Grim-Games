@@ -5,6 +5,7 @@ import {
 	testCharacters,
 	testContext
 } from '#lib/core/model/fixtures.test-support.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 import { parseSeatRole, roleGaps, roleKey, seatRoles } from './seat-roles.ts';
 
 describe('the character each phone shows its player', () => {
@@ -35,6 +36,15 @@ describe('the character each phone shows its player', () => {
 			// https://wiki.bloodontheclocktower.com/Travellers: the town knows who a Traveller is.
 			[seats[1]]: { alignment: 'good' }
 		});
+	});
+
+	// https://wiki.bloodontheclocktower.com/Marionette: they think they are good, so their
+	// phone must not say they are evil (M22).
+	it('never tells the Marionette they are evil', () => {
+		const s = scenario(['chef', 'imp', 'empath'])
+			.reminder('chef', 'marionette', 'Is The Marionette')
+			.do((at) => ({ type: 'SetAlignment', seatId: at.seat('chef'), alignment: 'evil' }));
+		expect(seatRoles(s.game, s.characters)[s.seat('chef')]).toEqual({ characterId: 'chef' });
 	});
 
 	// https://wiki.bloodontheclocktower.com/Lunatic: the Lunatic is shown a Demon token.

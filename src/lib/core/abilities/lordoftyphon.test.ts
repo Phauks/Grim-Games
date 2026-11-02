@@ -68,8 +68,17 @@ describe('Lord of Typhon', () => {
 		});
 
 		it('counts the line round the table', () => {
-			const { game, seats } = castGame(['lordoftyphon', 'spy', 'empath', 'monk', 'poisoner']);
-			expect(evilInOneLine(game, seats[0])).toBe(true);
+			const { game, seats, ctx } = castGame(['lordoftyphon', 'spy', 'empath', 'monk', 'poisoner']);
+			expect(evilInOneLine(game, seats[0], ctx.characters)).toBe(true);
+		});
+
+		// Evil Townsfolk may be part of the line but need not be (M22): the Bounty Hunter's
+		// evil Townsfolk sitting apart is no warning.
+		it('does not need an evil Townsfolk in the line', () => {
+			const s = scenario(['poisoner', 'lordoftyphon', 'spy', 'empath', 'bountyhunter', 'chef']).do(
+				(at) => ({ type: 'SetAlignment', seatId: at.seat('chef'), alignment: 'evil' })
+			);
+			expect(evilInOneLine(s.game, s.seat('lordoftyphon'), s.characters)).toBe(true);
 		});
 	});
 

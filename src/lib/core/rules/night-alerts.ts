@@ -145,21 +145,29 @@ export interface NightAlert {
 }
 
 /**
- * Whether every evil player sits in one unbroken line round the table with `seatId` inside
- * it, an evil player on each side (the Lord of Typhon's setup). Warns only.
+ * Whether every evil Minion and Demon sits in one unbroken line of evil players round the
+ * table with `seatId` inside it, an evil player on each side (the Lord of Typhon's setup).
+ * Evil Townsfolk and evil Travellers may be part of the line but need not be
+ * (https://wiki.bloodontheclocktower.com/Lord_of_Typhon), so the Bounty Hunter's evil
+ * Townsfolk sitting apart is no warning. Warns only.
  */
-export function evilInOneLine(game: Game, seatId: SeatId): boolean {
+export function evilInOneLine(game: Game, seatId: SeatId, characters: CharacterLookup): boolean {
 	const seating = game.seating;
 	const n = seating.length;
 	const at = seating.indexOf(seatId);
 	if (at < 0 || n < 3) return true;
-	const evil = (i: number) => alignmentOf(game, seating[((i % n) + n) % n]) === 'evil';
+	const seatAt = (i: number) => seating[((i % n) + n) % n];
+	const evil = (i: number) => alignmentOf(game, seatAt(i)) === 'evil';
 	if (!evil(at - 1) || !evil(at + 1)) return false;
-	let left = 0;
-	while (left < n - 1 && evil(at - left - 1)) left += 1;
-	let right = 0;
-	while (left + right < n - 1 && evil(at + right + 1)) right += 1;
-	return seating.filter((_, i) => evil(i)).length === Math.min(n, 1 + left + right);
+	const line = new Set<SeatId>([seatId]);
+	for (let i = 1; i < n && evil(at - i); i++) line.add(seatAt(at - i));
+	for (let i = 1; i < n && evil(at + i); i++) line.add(seatAt(at + i));
+	return seating.every((s) => {
+		if (line.has(s) || alignmentOf(game, s) !== 'evil') return true;
+		const id = trueCharacter(game, s, characters);
+		const type = id === undefined ? undefined : characters.get(id)?.type;
+		return type !== 'minion' && type !== 'demon';
+	});
 }
 
 /** Seats whose true character, or token, is `characterId`. */
@@ -195,7 +203,7 @@ export function nightStepAlerts(
 	}
 	if (rulesOf(characterId, characters)?.turnsPlayersInto?.players === 'neighbours')
 		for (const seatId of actors)
-			if (!evilInOneLine(game, seatId))
+			if (!evilInOneLine(game, seatId, characters))
 				out.push({
 					kind: 'seating',
 					seatId,
