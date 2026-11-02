@@ -371,6 +371,13 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['M11', 'M12a', 'M12b', 'M12c']
 	},
 	{
+		// Trevor, 2026-11-02: "just let them set what character they are, but not location for now".
+		title:
+			'The Gardener: the Storyteller sets each character on the board, and players with no phone still see theirs',
+		area: 'engine',
+		parts: ['M16']
+	},
+	{
 		// Gap 1, last and separate (Trevor, 2026-10-28). M9a the vote record and vote weights
 		// (Thief, Bureaucrat, God of Ug, Butler, Zealot, Beggar), M9b voting across the table
 		// (Voudon, Organ Grinder, Ferryman), M9c who may nominate (Bishop, Golem, Gnome), M9d
