@@ -1,3 +1,4 @@
+import type { ProfileWords } from '#lib/core/profile/index.ts';
 import type { GameOver, SharedGrimoire } from '#lib/core/sync/room.ts';
 import type { RoomPlayer } from '#lib/features/room/player.svelte.ts';
 import type {
@@ -30,6 +31,8 @@ export interface PlayerGrimTown {
 	roomCode?: string;
 	/** Each seat's player's picture (2026-10-27); else, on the board, this device's room's. */
 	pictures?: Partial<Record<string, string>>;
+	/** Each seat's player's tag-line and details (2026-11-01); else, on the board, its room's. */
+	profiles?: Partial<Record<string, ProfileWords>>;
 	/**
 	 * The finished grimoire the Storyteller shared (Share grim, R5), as the room sent it to
 	 * phones, how the game ended and the room holding its background; a phone reads its room's.

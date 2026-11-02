@@ -1,5 +1,6 @@
 import { parseAvatarId, type AvatarId } from '#lib/core/avatars/index.ts';
 import { parseFrameId, type FrameId } from '#lib/core/frames/index.ts';
+import { parseDetails, parseTagline, type ProfileDetail } from '#lib/core/profile/index.ts';
 import { SHEET_BACKGROUNDS, type SheetBackground } from '#lib/ui/themes/sheet-backgrounds.ts';
 import {
 	DEFAULT_REMINDER_LINES,
@@ -28,9 +29,16 @@ export interface PlayerSettings {
 	frame?: FrameId;
 	/**
 	 * A line of the player's own about themselves (Trevor, 2026-10-28: "I don't really know how
-	 * we're going to use it yet, but I wanted it there"). Kept and edited in the Profile only.
+	 * we're going to use it yet, but I wanted it there"). Shown as "Tag-line" (Trevor,
+	 * 2026-11-01) and sent with the avatar, on the player's profile. One line.
 	 */
 	flavour?: string;
+	/**
+	 * Details the player adds to their profile, such as "Favorite script" (Trevor, 2026-11-01:
+	 * "give people the opportunity to spruce up their profile, but also don't require it"), in
+	 * the order they show. Absent until one is added.
+	 */
+	details?: ProfileDetail[];
 	/**
 	 * What this player puts on their seat token (plan R6), sent with their frame: always their
 	 * initials (Trevor, 2026-10-25: "always on", no setting).
@@ -225,14 +233,6 @@ const DEFAULTS: PlayerSettings = {
 	reminderLines: DEFAULT_REMINDER_LINES
 };
 
-/** The longest flavour text kept. */
-export const MAX_FLAVOUR = 200;
-
-function parseFlavour(raw: unknown): string | undefined {
-	const text = typeof raw === 'string' ? raw.trim().slice(0, MAX_FLAVOUR) : '';
-	return text || undefined;
-}
-
 function read(): PlayerSettings {
 	try {
 		const raw = JSON.parse(localStorage.getItem(KEY) ?? '{}') as Record<string, unknown>;
@@ -240,7 +240,8 @@ function read(): PlayerSettings {
 			hideNoteContents: raw.hideNoteContents === true,
 			print: readPrint(raw.print),
 			frame: parseFrameId(raw.frame),
-			flavour: parseFlavour(raw.flavour),
+			flavour: parseTagline(raw.flavour),
+			details: parseDetails(raw.details),
 			// Initials are always on (Trevor, 2026-10-25): an older build's "none" reads as them.
 			avatar: parseAvatarId(raw.avatar) ?? DEFAULTS.avatar,
 			hideGuesses: raw.hideGuesses === true,
