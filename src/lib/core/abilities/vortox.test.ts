@@ -8,16 +8,25 @@
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
  * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
- * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
+ * happened, then what the rules say. Quote the example word for word in a `// Wiki: "..."`
+ * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
+ * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
 import { parseCharacter } from '#lib/core/data/parse.ts';
 import { Issues } from '#lib/core/data/validate.ts';
 import { castGame, castWith, testCharacters } from '#lib/core/model/fixtures.test-support.ts';
-import { reliability } from '#lib/core/rules/night-info.ts';
+import {
+	answerOptions,
+	infoPicker,
+	isAllowed,
+	nightAnswer,
+	reliability
+} from '#lib/core/rules/night-info.ts';
+import { savantSituation } from '#lib/core/rules/savant.ts';
 import { gameEnds } from '#lib/core/rules/game-end.ts';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { scenario } from '#lib/core/testing/scenario.ts';
+import { engineGap, scenario } from '#lib/core/testing/scenario.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
 describe('Vortox', () => {
@@ -50,11 +59,67 @@ describe('Vortox', () => {
 	});
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Vortox#Examples)', () => {
-		it.todo('Example 1: Vortox kills Sage; Sage sees non-Demons');
-		it.todo("Example 2: Mutant's execution: two Townsfolk say yes");
-		it.todo('Example 3: Dreamer narrows Savant to two characters');
-		it.todo("Example 4: Pit-Hag's change gives Juggler true info");
+		it('Example 1: Vortox kills Sage; Sage sees non-Demons', () => {
+			// Wiki: "The Vortox kills the Sage. The Sage learns two players, both of which are not Demons."
+			const s = scenario(['sage', 'chef', 'vortox', 'witch', 'empath']).dies('sage', 'vortox');
+			const picker = infoPicker(s.game, s.seat('sage'), 'sage', s.characters)!;
+			expect(picker.mustBeFalse).toBe(true);
+			expect(isAllowed(picker, { seats: [s.seat('chef'), s.seat('empath')] })).toBe(true);
+			expect(isAllowed(picker, { seats: [s.seat('vortox'), s.seat('chef')] })).toBe(false);
+		});
+
+		it("Example 2: Mutant's execution: two Townsfolk say yes", () => {
+			// Wiki: "Nobody voted or nominated today, but the Mutant is executed. That night, both the
+			// Flowergirl and the Town Crier learn a "yes.”"
+			// The Storyteller marks that the Demon didn't vote and no Minion nominated.
+			const s = scenario(['flowergirl', 'towncrier', 'mutant', 'vortox', 'witch', 'chef'])
+				.execute('mutant')
+				.do({ type: 'SetDayMark', mark: 'demon-voted', value: false })
+				.do({ type: 'SetDayMark', mark: 'minion-nominated', value: false });
+			for (const id of ['flowergirl', 'towncrier']) {
+				const a = nightAnswer(s.game, s.seat(id), id, s.characters)!;
+				expect(a).toMatchObject({ kind: 'yes-no', value: false, mustBeFalse: true });
+				expect(answerOptions(s.game, a, s.characters)).toEqual([
+					{ reason: 'invalid', value: { kind: 'yes-no', value: false } },
+					{ reason: 'vortox', value: { kind: 'yes-no', value: true } }
+				]);
+			}
+		});
+
+		it.fails('Example 3: Dreamer narrows Savant to two characters', () => {
+			// Wiki: "The Savant is in play, and learns two pieces of information each day. Both are false.
+			// That night, the Dreamer chooses a player who is the Savant, and learns that player is either the
+			// Philosopher or the No Dashii."
+			const s = scenario(['savant', 'dreamer', 'chef', 'vortox', 'witch']);
+			expect(savantSituation(s.game, s.seat('savant'), s.characters)).toMatchObject({
+				mode: 'both-false',
+				vortox: s.seat('vortox')
+			});
+			expect(infoPicker(s.game, s.seat('dreamer'), 'dreamer', s.characters)).toBeDefined();
+			engineGap(
+				'M15n',
+				"the Dreamer's information: one good and one evil character, both wrong under the Vortox"
+			);
+		});
+
+		it("Example 4: Pit-Hag's change gives Juggler true info", () => {
+			// Wiki: "The Pit-Hag turns the Juggler into the Witch. The Juggler learns that they are now the
+			// good Witch, because this information comes from the Pit-Hag's ability, not a Townsfolk's
+			// ability."
+			const s = scenario(['juggler', 'pithag', 'vortox', 'chef', 'empath']);
+			expect(reliability(s.game, s.seat('juggler'), 'juggler', s.characters).mustBeFalse).toBe(
+				true
+			);
+			const after = s.becomes('juggler', 'witch');
+			expect(after.game.seats[after.seat('juggler')].alignment).toBe('good');
+			// What the Pit-Hag's ability tells them, a Minion's, need not be false.
+			expect(
+				reliability(after.game, after.seat('juggler'), 'pithag', after.characters).mustBeFalse
+			).toBeUndefined();
+		});
 		it('Example 5: Nobody executed, so evil wins', () => {
+			// Wiki: "Today, a player died from the Witch, two Travellers were exiled, 5 nominations happened,
+			// but nobody was executed. Evil wins."
 			const s = scenario(['chef', 'empath', 'monk', 'witch', 'vortox']).newDay();
 			expect(gameEnds(s.game, s.characters, { dayEnded: true })).toMatchObject([
 				{ rule: 'day-without-execution', winner: 'evil' }

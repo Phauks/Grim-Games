@@ -8,7 +8,9 @@
  *
  * Wiki examples: each `it.todo` is one example in the page's Examples section. Replace it with
  * a test written with `scenario` (src/lib/core/testing/scenario.ts): the seats, what has
- * happened, then what the rules say. Paraphrase the example; never copy wiki prose.
+ * happened, then what the rules say. Quote the example word for word in a `// Wiki: "..."`
+ * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
+ * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
@@ -68,6 +70,9 @@ describe('Courtier', () => {
 
 	describe('wiki examples (https://wiki.bloodontheclocktower.com/Courtier#Examples)', () => {
 		it('Example 1: Courtier drunks Shabaloth, which then cannot kill', () => {
+			// Wiki: "For four nights, the Courtier wakes but does not use their ability. During the fifth
+			// night, they make the Shabaloth drunk. For the next three nights, the Shabaloth acts but
+			// cannot kill anybody."
 			// The Courtier names the Shabaloth: its player is drunk for three nights and days, the
 			// token counting down 3, 2, 1, then coming off, and the Shabaloth works again.
 			let s = scenario(['courtier', 'chef', 'shabaloth', 'monk', 'poisoner']).reminder(
@@ -86,6 +91,8 @@ describe('Courtier', () => {
 			expect(abilityState(s.game, s.seat('shabaloth'), s.characters).works).toBe(true);
 		});
 		it("Example 2: Drunk Courtier's ability does nothing", () => {
+			// Wiki: "The Courtier uses their ability while drunk. Nothing happens, but they are not woken
+			// again."
 			// The Courtier's player is drunk when they choose, so nobody becomes drunk: the step
 			// says their ability doesn't work. A Courtier poisoned after choosing sobers the player.
 			const drunk = scenario(['courtier', 'chef', 'shabaloth', 'monk', 'poisoner']).drunk(
@@ -100,6 +107,8 @@ describe('Courtier', () => {
 			).toBe(true);
 		});
 		it('Example 3: Drunk Mastermind fails, so good wins', () => {
+			// Wiki: "The Courtier makes the Mastermind drunk. The Po is executed while the Mastermind
+			// still lives. The game ends and good wins."
 			// With the Mastermind drunk, executing the Demon ends the game at once: good wins.
 			const s = scenario(['courtier', 'chef', 'empath', 'mastermind', 'po'])
 				.reminder('mastermind', 'courtier', 'Drunk 2')

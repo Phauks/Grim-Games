@@ -28,8 +28,12 @@
 
 	let { held = $bindable(false), label, children, onhold, testid, preload = [] }: Props = $props();
 
+	/** Every preload image is decoded (or failed); marked on the button for tests. */
+	let preloaded = $state(false);
 	// Kept referenced until the content goes, so the browser keeps the decoded images in memory.
 	$effect(() => {
+		let live = true;
+		preloaded = false;
 		const warmed = preload
 			.filter((src): src is string => !!src)
 			.map((src) => {
@@ -37,10 +41,15 @@
 				// As the token's own <img>, so homebrew hosts that block hotlinking still answer.
 				img.referrerPolicy = 'no-referrer';
 				img.src = src;
-				img.decode().catch(() => undefined);
 				return img;
 			});
-		return () => void warmed.splice(0);
+		void Promise.all(warmed.map((img) => img.decode().catch(() => undefined))).then(() => {
+			if (live && warmed.length > 0) preloaded = true;
+		});
+		return () => {
+			live = false;
+			warmed.splice(0);
+		};
 	});
 
 	function hold(on: boolean) {
@@ -62,6 +71,7 @@
 	data-testid={testid}
 	aria-pressed={held}
 	aria-label={label}
+	data-preloaded={preloaded ? '' : undefined}
 	onpointerdown={(e) => {
 		e.currentTarget.setPointerCapture?.(e.pointerId);
 		hold(true);
