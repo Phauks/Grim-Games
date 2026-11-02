@@ -1,7 +1,7 @@
 /**
  * The Storyteller's own look in the room (Trevor, 2026-10-30: "should send avatar and laurels
  * as well. we should have parity or use same feature when sharing storyteller and player
- * information"): the Profile's avatar, laurel and picture, as a player's phone sends its own
+ * information"): the Profile's avatar, laurel, picture, tag-line and details, as a player's phone sends its own
  * (player.svelte.ts `sendLook`), so phones open the Storyteller's profile as they open a
  * player's. The picture goes up as one of the room's pictures, once per room.
  */
@@ -30,7 +30,7 @@ function upload(url: string, code: string): void {
 
 /** The Storyteller's look for the room `code`, starting the picture's upload if it isn't up. */
 export function storytellerLook(code: string | undefined): PublicStoryteller | undefined {
-	const { avatar, frame } = playerSettings.current;
+	const { avatar, frame, flavour: tagline, details } = playerSettings.current;
 	const url = avatarPicture.url;
 	let picture: string | undefined;
 	if (url && code) {
@@ -40,7 +40,9 @@ export function storytellerLook(code: string | undefined): PublicStoryteller | u
 	const look: PublicStoryteller = {
 		...(avatar ? { avatar } : {}),
 		...(frame ? { frame } : {}),
-		...(picture ? { picture } : {})
+		...(picture ? { picture } : {}),
+		...(tagline ? { tagline } : {}),
+		...(details?.length ? { details } : {})
 	};
 	return Object.keys(look).length ? look : undefined;
 }

@@ -12,6 +12,7 @@
 	import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 	import { seatName } from '#lib/features/game/seat-label.ts';
 	import SeatAvatarButton from '#lib/features/player/SeatAvatarButton.svelte';
+	import { wordsOf } from '#lib/core/sync/room-look.ts';
 	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
@@ -20,7 +21,6 @@
 	import PlayerInbox from './PlayerInbox.svelte';
 	import { playersDialog } from './players-dialog.svelte.ts';
 	import RemovedPlayers from './RemovedPlayers.svelte';
-	import RolesPanel from './RolesPanel.svelte';
 	import { seatRoles } from '#lib/core/sync/seat-roles.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
@@ -184,6 +184,7 @@
 			avatar={entry.member.avatar ?? 'initials'}
 			picture={pictureOf(entry.member)}
 			frame={entry.member.frame}
+			words={wordsOf(entry.member)}
 			friend={host.code && entry.seatId ? { code: host.code, seatId: entry.seatId } : undefined}
 		/>{:else}<span class="no-phone" aria-hidden="true"
 			><span>{seatIndex(entry.seatId) || ''}</span></span
@@ -274,7 +275,6 @@
 			</ul>
 		{/if}
 	</section>
-	<RolesPanel {game} />
 	{#if host.code}<RemovedPlayers />{/if}
 </div>
 
