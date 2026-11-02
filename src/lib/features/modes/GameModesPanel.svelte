@@ -301,7 +301,7 @@
 		const scripts = campaignScript
 			? [campaignScript]
 			: previewBases.map((loaded) =>
-					rulesScript(played, rules, toScript(loaded), loaded.characters, data, restrictions)
+					rulesScript(played, toScript(loaded), loaded.characters, data, restrictions)
 				);
 		return scripts.map((s) => fromScript(s, data).script);
 	});

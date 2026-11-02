@@ -700,7 +700,7 @@ test('the board leads to setup and the day; setup ends on the setup reminders', 
 	await page.goto(`${board}#setup-reminders`);
 	await expect(page).toHaveURL(board);
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	await expect(page.getByRole('dialog', { name: 'Day' })).toBeVisible();
+	await expect(page.getByRole('dialog', { name: /^(Setup|Day( \d+)?)$/ })).toBeVisible();
 	await expect(page).toHaveURL(board);
 });
 
@@ -766,7 +766,7 @@ test('reminders: put on from the bank, then moved and removed from the seat shee
 	await expect(sheet.getByText('None', { exact: true }).last()).toBeVisible();
 });
 
-test('seats can be arranged: dragged anywhere, kept through a rotation, spread evenly', async ({
+test('seats can be arranged: dragged anywhere, kept through a rotation, distributed', async ({
 	page
 }) => {
 	await startGame(page);
@@ -816,16 +816,16 @@ test('seats can be arranged: dragged anywhere, kept through a rotation, spread e
 	await openSeat(page, 1);
 	await closeSheet(page);
 
-	// Spread evenly puts everyone back round the table.
+	// Distribute (Trevor, 2026-11-01: was Spread evenly) puts everyone back round the table.
 	await menu(page, 'Seating');
-	await toolbar.getByRole('button', { name: 'Spread evenly' }).tap();
-	await expect(toolbar.getByRole('button', { name: 'Spread evenly' })).toBeDisabled();
+	await toolbar.getByRole('button', { name: 'Distribute' }).tap();
+	await expect(toolbar.getByRole('button', { name: 'Distribute' })).toBeDisabled();
 	const spread = await centre(1);
 	expect(Math.abs(spread.x - from.x)).toBeLessThan(4);
 	expect(Math.abs(spread.y - from.y)).toBeLessThan(4);
 
 	// A seat dragged past its neighbours stays there: seats renumber to match (Trevor,
-	// 2026-10-16), then spread evenly. Seat 2 goes just past seat 4, towards seat 5.
+	// 2026-10-16), then Distribute. Seat 2 goes just past seat 4, towards seat 5.
 	const at = [1, 2, 3, 4, 5, 6, 7, 8].map((n) => centre(n));
 	const [c2, c4, c5] = [await at[1], await at[3], await at[4]];
 	// Inside the circle, clear of the seats, so it is a placement, not a drop on a seat.
@@ -837,7 +837,7 @@ test('seats can be arranged: dragged anywhere, kept through a rotation, spread e
 	await page.mouse.move((c2.x + past.x) / 2, (c2.y + past.y) / 2, { steps: 4 });
 	await page.mouse.move(past.x, past.y, { steps: 4 });
 	await page.mouse.up();
-	await toolbar.getByRole('button', { name: 'Spread evenly' }).tap();
+	await toolbar.getByRole('button', { name: 'Distribute' }).tap();
 	// Seats 3 and 4 move up one place; the dragged seat is now Seat 4, where seat 4 was.
 	const four = await centre(4);
 	expect(Math.abs(four.x - c4.x)).toBeLessThan(4);
@@ -2420,7 +2420,7 @@ test('the Storyteller writes the Amnesiac’s ability and picks what it works li
 	);
 
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	const day = page.getByRole('dialog', { name: 'Day' });
+	const day = page.getByRole('dialog', { name: /^(Setup|Day( \d+)?)$/ });
 	const value = day.getByTestId('prep-value');
 	await expect(value).toHaveText('(ABILITY)');
 	await value.tap();
@@ -3343,7 +3343,7 @@ test("the day's Announcements explain a kill that didn't happen", async ({ page 
 		await closeSheet(page);
 	}
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	const day = page.getByRole('dialog', { name: 'Day' });
+	const day = page.getByRole('dialog', { name: /^(Setup|Day( \d+)?)$/ });
 	// Nothing to explain yet: the button is there but off, so nothing moves (Trevor).
 	await expect(day.getByTestId('prevented-button')).toBeDisabled();
 	await day.getByRole('button', { name: 'Close' }).tap();
@@ -4480,7 +4480,7 @@ test('the Storm Catcher named character is picked before the day and kept at its
 	test.slow();
 	await stormCatcherGame(page);
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	const day = page.getByRole('dialog', { name: 'Day' });
+	const day = page.getByRole('dialog', { name: /^(Setup|Day( \d+)?)$/ });
 	const value = day.getByTestId('prep-value').first();
 	await expect(value).toHaveText('(CHARACTER)');
 	await value.tap();
@@ -6862,6 +6862,47 @@ test('with Council of the Dead, night 4 starts with the dead waking together', a
 	await page.getByTestId('night-strip').getByRole('button', { name: 'Next step' }).tap();
 	await expect(page.getByTestId('night-strip').locator('.step .name strong')).toHaveText(
 		'Council of the Dead'
+	);
+});
+
+// One format for game modes and special rules (Trevor, 2026-11-01): a game mode may set a
+// rule's parts, and the night plays its step as it plays Council of the Dead's.
+test('a game mode that sets a night step adds it to the night, headed by the mode', async ({
+	page
+}) => {
+	const mode = {
+		format: 1,
+		id: 'dead-wake',
+		name: 'Dead Wake',
+		sources: [],
+		parts: {
+			assignment: { kind: 'bag' },
+			nightSteps: [{ kind: 'wake', when: 'one-night', night: 1, dead: true }]
+		}
+	};
+	await page.goto('/new');
+	await page.evaluate((m) => {
+		localStorage.setItem('grim-games:custom-modes:v1', JSON.stringify([m]));
+	}, mode);
+	await page.reload();
+	await pickScript(page, 'Trouble Brewing');
+	const modes = page.getByRole('main').getByRole('combobox', { name: 'Game mode' });
+	await modes.tap();
+	await page.getByRole('option', { name: 'Dead Wake', exact: true }).tap();
+	await expect(modes).toContainText('Dead Wake');
+	await page.getByRole('button', { name: 'Create game' }).tap();
+	await toBoard(page);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Imp', exact: true })
+		.tap();
+	await closeSheet(page);
+	await walkTo(page, 'Dusk');
+	await page.getByTestId('night-strip').getByRole('button', { name: 'Next step' }).tap();
+	await expect(page.getByTestId('night-strip').locator('.step .name strong')).toHaveText(
+		'Dead Wake'
 	);
 });
 

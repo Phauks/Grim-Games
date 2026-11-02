@@ -37,7 +37,7 @@ const boardSeat = (page: Page, start: string) =>
 
 async function openDay(page: Page) {
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	const day = page.getByRole('dialog', { name: /^Day( \d+)?$/ });
+	const day = page.getByRole('dialog', { name: /^(Setup|Day( \d+)?)$/ });
 	await expect(day).toBeVisible();
 	return day;
 }

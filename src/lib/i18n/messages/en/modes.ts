@@ -44,8 +44,8 @@ export const modes = {
 	'modes.guide.title': 'Writing a mode file',
 	'modes.guide.version':
 		'Format {format}, revision {revision}. The revision goes up with every change while the format is developed; a numbered version replaces it at launch.',
-	'modes.guide.example': 'The smallest mode',
-	'modes.guide.top': 'The mode',
+	'modes.guide.example': 'The smallest file',
+	'modes.guide.top': 'The file',
 	'modes.guide.parts': 'Parts',
 	'modes.guide.cite':
 		'Every part may also have "cite": a link to the page it comes from, when that isn’t the mode’s first source. A part the app doesn’t run (Inspect shows it as run by the Storyteller) must have "instructions": what the Storyteller does for it, so the file alone says what the game needs. Rule text and setup count changes need none.',
@@ -55,7 +55,6 @@ export const modes = {
 	'modes.guide.optional': 'optional',
 	'modes.guide.values': 'One of:',
 	'modes.guide.full': 'A whole mode: Whale Buffet',
-	'modes.guide.ruleTop': 'A special rule file',
 	'modes.guide.colField': 'Field',
 	'modes.guide.colType': 'Type',
 	'modes.guide.colRequired': 'Required',
@@ -240,13 +239,12 @@ export const modes = {
 	// The Mode builder (Trevor, 2026-10-31): a form drawn from the format guide.
 	'modes.builder.pageTitle': 'Mode builder',
 	'modes.builder.heading': 'Mode builder',
-	'modes.builder.makes': 'Makes',
 	'modes.builder.makes.game-mode': 'Game mode',
 	'modes.builder.makes.special-rule': 'Special rule',
-	'modes.builder.makesAbout.game-mode':
-		'One per game, picked on New game. Sets how the whole game is set up and dealt.',
-	'modes.builder.makesAbout.special-rule':
-		'Any number per game, picked in Special rules. Adds to the game mode, never replaces it.',
+	// Trevor, 2026-11-01: one format, labelled by the app from the parts a file sets.
+	'modes.builder.labelMode': 'Game mode, because it sets {parts}',
+	'modes.builder.parts.any': 'Parts any file can set',
+	'modes.builder.parts.wholeGame': 'Parts that make it a game mode',
 	'modes.builder.settings': 'Settings',
 	'modes.builder.output': 'Output',
 	'modes.builder.outputProblems': {
