@@ -108,7 +108,7 @@ describe('Atheist', () => {
 			expect(analysis.warnings.map((w) => w.code)).not.toContain('count-mismatch');
 			expect(endCharacters(s.game, s.characters)).toContain('atheist');
 			engineGap(
-				'unplanned',
+				'M15l',
 				'executing the Storyteller while the Atheist is in play ends the game, and good wins'
 			);
 		});

@@ -125,13 +125,6 @@ export class Grimoire {
 		});
 		if (startDay && ticking && step.id === 'dawn' && this.nightDay === this.game.pastDays.length)
 			this.run({ type: 'NewDay' });
-		if (ticking && step.id === 'dusk') this.#bringIntoPlay();
-	}
-
-	/** Seats waiting to come into play join when the night starts (`Seat.notInPlay`). */
-	#bringIntoPlay(): void {
-		const waiting = this.game.seating.filter((id) => this.game.seats[id].notInPlay);
-		if (waiting.length > 0) this.run({ type: 'SetInPlay', seatIds: waiting, inPlay: true });
 	}
 
 	/**
@@ -417,8 +410,10 @@ export class Grimoire {
 
 	/**
 	 * Adds a seat at `position` in the seating order (the end when left out); returns its id.
-	 * Once the game has started the seat is not in play until the next night (Trevor,
-	 * 2026-10-31: a Traveller who arrives mid-game sits down before the night they join at).
+	 * Once the game has started the seat is not in play (Trevor, 2026-10-31: a Traveller who
+	 * arrives mid-game sits down before the night they join at) until the night's "Travellers
+	 * not in play" step or the Status list brings them in; any other character given to the
+	 * seat puts it in play (Trevor, 2026-11-02).
 	 */
 	addSeat(position?: number): SeatId | undefined {
 		const before = this.game.seating;

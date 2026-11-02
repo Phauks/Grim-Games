@@ -55,7 +55,7 @@ describe('Goblin', () => {
 			// Wiki: "Abdallah is the Goblin. Alex nominates Abdallah, and Abdallah claims to be the
 			// Goblin. Votes are counted, and Abdallah is about to die. Other nominations occur later
 			// today, but Abdallah has the most votes and is executed. Evil wins."
-			// Waits on the engine: gameEnds has no end for executing the Goblin who claimed today.
+			// Waits on the engine (M15l): gameEnds has no end for executing the Goblin who claimed today.
 			const s = scenario(cast)
 				.newDay()
 				.nominate('chef', 'goblin')
