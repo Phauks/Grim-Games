@@ -164,7 +164,7 @@
 					{#if ask.kind === 'execute-nominator'}
 						{@render player(ask.nominator)} is executed, and the {source}’s ability is used.
 					{:else if ask.kind === 'may-kill-nominator'}
-						{@render player(ask.nominator)} dies. The vote goes ahead.
+						{@render player(ask.nominator)} dies. Continue voting.
 					{:else if ask.kind === 'evil-swap'}
 						They swap character tokens and learn their new characters tonight.
 					{:else}

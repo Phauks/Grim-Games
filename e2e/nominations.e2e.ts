@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { pickScript, toBoard } from './new-game.ts';
+import { putReminder } from './reminder-bank.ts';
 
 // Track nominations (Settings > Storyteller): the marks on each seat and the "Who did X
 // nominate?" chooser. Nominations follow https://wiki.bloodontheclocktower.com/Glossary
@@ -266,4 +267,28 @@ test('while the Bishop’s ability works, a nomination is recorded with a warnin
 	const nominator = await openSeat(page, 2);
 	await expect(nominator.getByTestId('sheet-nominated')).toHaveText('Seat 3');
 	await closeSheet(page);
+});
+
+test('a nomination by a spent Golem warns, naming the Golem as a badge', async ({ page }) => {
+	// https://wiki.bloodontheclocktower.com/Golem: the Golem may nominate once per game. The app
+	// warns and still records it (warn, never lock); the toast shows the Golem as a badge
+	// (Trevor, 2026-11-02).
+	await startGame(page);
+	await trackNominations(page);
+	const seat = await openSeat(page, 1);
+	await seat.getByRole('button', { name: 'Choose' }).first().tap();
+	const picker = page.getByRole('dialog', { name: 'Character for Seat 1' });
+	await picker.getByText('Include characters not on the script').tap();
+	await picker.getByRole('button', { name: /^Golem(,|$)/ }).tap();
+	await closeSheet(page);
+	// May Not Nominate marks the Golem's nomination spent.
+	await putReminder(page, 'May Not Nominate', 1);
+	// The off-script notes clear first, as only a few toasts show at once.
+	await expect(page.locator('[data-scope="toast"][data-part="root"]')).toHaveCount(0);
+	await nominate(page, 1, 3);
+	const note = page
+		.locator('[data-scope="toast"][data-part="description"]')
+		.filter({ hasText: 'may not nominate again this game' });
+	await expect(note).toHaveText(/That player \(\s*Golem\s*\) may not nominate again this game\./);
+	await expect(note.getByText('Golem')).toBeVisible();
 });

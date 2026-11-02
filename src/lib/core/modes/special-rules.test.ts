@@ -12,6 +12,7 @@ import { SPECIAL_RULES, upgradeModeChoice } from './rules/index.ts';
 import { SCRIPT_RULE_ID, scriptSpecialRule } from './script-rule.ts';
 import { SPECIAL_RULE_FORMAT, type SpecialRule } from './types.ts';
 import { parseGameMode, parseModeOrRule, parseSpecialRule } from './validate.ts';
+import { fileKind, wholeGamePartsOf } from './file-kind.ts';
 
 const known = new Set(committedGameData().characters.map((c) => c.id));
 
@@ -91,11 +92,11 @@ describe('reading a special rule file', () => {
 			}
 		});
 		expect(parsed.ok ? [] : parsed.issues).toEqual([
-			'parts.assignment: only a game mode changes how characters are dealt',
-			'parts.towns: only a game mode adds towns',
-			'parts.counts: a special rule changes counts with countChanges',
-			'parts.betweenGames: only a game mode links games',
-			'parts.pool.kind: a special rule can only add hidden characters to the script'
+			'parts.assignment: deals the whole game, so the file is a game mode',
+			'parts.towns: adds towns, so the file is a game mode',
+			'parts.counts: sets up the whole game, so the file is a game mode (a rule changes counts with countChanges)',
+			'parts.betweenGames: links games, so the file is a game mode',
+			'parts.pool.kind: replaces the script, so the file is a game mode'
 		]);
 	});
 
@@ -129,17 +130,42 @@ describe('reading a special rule file', () => {
 		]);
 	});
 
-	it('reads a file without a kind as a game mode, and a rule file by its kind', () => {
-		const mode = { ...STANDARD };
-		expect(parseModeOrRule(mode)).toEqual({ ok: true, mode });
+	// Trevor, 2026-11-01: one format, labelled by the app from the parts a file sets.
+	it('labels a file by its parts, never by the kind written in it', () => {
+		for (const m of GAME_MODES.filter((m) => m.id !== STANDARD.id))
+			expect(fileKind(m), m.id).toBe('game-mode');
+		for (const r of SPECIAL_RULES) expect(fileKind(r), r.id).toBe('special-rule');
+		const sushi = gameModeById('sushi-buffet')!;
+		expect(parseModeOrRule(sushi)).toEqual({ ok: true, mode: sushi });
 		expect(parseModeOrRule(SPECIAL_RULES[0])).toEqual({ ok: true, rule: SPECIAL_RULES[0] });
-		expect(parseGameMode({ ...STANDARD, kind: 'special-rule' }).ok).toBe(false);
-		// A game mode can't use a rule's own parts.
+		// A rule file with no kind is still a rule, and gets the label.
+		const bare: Partial<SpecialRule> = { ...SPECIAL_RULES[0] };
+		delete bare.kind;
+		expect(parseModeOrRule(bare)).toEqual({ ok: true, rule: SPECIAL_RULES[0] });
+		// An older rule file that deals the game is a game mode; its kind is dropped.
+		const dealt = { ...SPECIAL_RULES[0], parts: { assignment: { kind: 'bag' } } };
+		const read = parseModeOrRule(dealt);
+		expect(read.ok && 'mode' in read && read.mode.kind).toBe(undefined);
+		expect(read.ok && 'mode' in read).toBe(true);
+		expect(wholeGamePartsOf(dealt)).toEqual(['assignment']);
+		expect(wholeGamePartsOf({ parts: { pool: { kind: 'all-characters' } } })).toEqual(['pool']);
+		expect(wholeGamePartsOf({ parts: { pool: { kind: 'script-plus-hidden' } } })).toEqual([]);
+	});
+
+	it('lets a game mode set the rule parts too', () => {
 		const seats = parseGameMode({
 			...STANDARD,
-			parts: { seats: { kind: 'storyteller-seat', count: 1, speaks: 'never' } }
+			parts: {
+				assignment: { kind: 'bag' },
+				seats: { kind: 'storyteller-seat', count: 1, speaks: 'never' }
+			}
 		});
-		expect(seats.ok ? [] : seats.issues).toEqual(['parts.seats: unknown part']);
+		expect(seats.ok).toBe(true);
+		const bad = parseGameMode({
+			...STANDARD,
+			parts: { travellers: { inBag: -1, announced: true } }
+		});
+		expect(bad.ok ? [] : bad.issues).toEqual(['parts.travellers.inBag: must be a whole number']);
 	});
 
 	it('keeps rule ids apart from mode ids and the script rule', () => {

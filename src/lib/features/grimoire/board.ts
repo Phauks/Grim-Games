@@ -11,6 +11,7 @@ import {
 	type Script
 } from '#lib/core/data/index.ts';
 import type { EngineWarning } from '#lib/core/engine/index.ts';
+import { slot } from '#lib/features/characters/slots.ts';
 import {
 	analyseSetup,
 	reminderTargetMisses,
@@ -202,8 +203,13 @@ export function warningText(warning: EngineWarning): string | undefined {
 		// https://wiki.bloodontheclocktower.com/Bishop and /Golem (`nominating`).
 		case 'storyteller-nominates':
 			return 'Only the Storyteller may nominate now.';
-		case 'nominated-this-game':
-			return 'That player may not nominate again this game.';
+		case 'nominated-this-game': {
+			// The character as a badge (Trevor, 2026-11-02: "that player {Golem}").
+			const id = warning.characters?.[0];
+			return id
+				? `That player (${slot(id)}) may not nominate again this game.`
+				: 'That player may not nominate again this game.';
+		}
 		case 'dead-nominator':
 			return 'Dead players may not nominate.';
 		case 'not-in-play':
