@@ -175,8 +175,9 @@ async function walkTo(page: Page, title: string) {
 /** Opens a night step to be filled in, from the walk-through. */
 async function openStep(page: Page, title: string) {
 	const strip = await walkTo(page, title);
-	// Tap the step's title: its middle can hold a character badge, which opens that character.
-	await strip.locator('button.step .name strong').tap();
+	// Tap the top of the step's title: a character badge in the line below has a tap area
+	// that reaches up over the title's middle, and would open that character instead.
+	await strip.locator('button.step .name strong').tap({ position: { x: 4, y: 4 } });
 	const dialog = page.getByRole('dialog', { name: title });
 	await expect(dialog).toBeVisible();
 	return dialog;
