@@ -34,6 +34,8 @@ test('"You are" asks for a character, then shows its token and ability', async (
 	await expect(shown.getByRole('heading')).toHaveText('You are');
 	await expect(shown.getByRole('img', { name: /Empath token/ })).toBeVisible();
 	await expect(shown).toContainText('Each night, you learn how many of your 2 alive neighbors');
+	// The name and ability are the Script tab's row, under the token (Trevor, 2026-11-02).
+	await expect(shown.getByTestId('shown-character').locator('.ring-row')).toHaveCount(1);
 });
 
 test('a shown token fits the screen at any token size', async ({ page }) => {

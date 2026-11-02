@@ -3,7 +3,7 @@ import { SHADERS } from './shaders.ts';
 import { shaderRenderer } from './webgl.ts';
 
 // In a real browser, so every scene's shader is built by a real GPU driver (moving
-// backgrounds, L113). Runs in the browser project for its WebGL.
+// backgrounds, L114). Runs in the browser project for its WebGL.
 describe('shader scenes', () => {
 	for (const [id, source] of Object.entries(SHADERS)) {
 		it(`builds and draws ${id}`, () => {
