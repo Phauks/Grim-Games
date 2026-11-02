@@ -154,3 +154,55 @@ test("the day view marks a jinxed character's row, and the mark opens the jinx",
 	// Opened in a dialog: the row never moved.
 	expect(await row.boundingBox()).toEqual(before);
 });
+
+// A jinx that says only one can be in play shows the other as impossible when changing a seat's
+// character (L100; Trevor: "show it as impossible if they try to click it in the selector"): the
+// Pit-Hag cannot create a Heretic (https://wiki.bloodontheclocktower.com/Djinn). The Storyteller
+// may still go ahead after a confirm (warn, never lock).
+test('the character picker fades a character a jinx forbids, and asks before using it', async ({
+	page
+}) => {
+	const reason = tpiJinx('heretic', 'pithag');
+	await startGame(
+		page,
+		'Jinx Pick',
+		['chef', 'empath', 'heretic', 'pithag', 'imp'],
+		['Pit-Hag', 'Chef']
+	);
+	const open = async () => {
+		await page.getByRole('button', { name: /^Seat 2:/ }).tap();
+		await seatSheet(page).getByRole('button', { name: 'Seat actions' }).tap();
+		await page.getByRole('button', { name: 'Change character' }).tap();
+		const picker = page.getByRole('dialog', { name: 'Character for Seat 2' });
+		await expect(picker).toBeVisible();
+		return picker;
+	};
+	let picker = await open();
+	const heretic = picker.getByRole('button', { name: 'Heretic, Jinxed', exact: true });
+	await expect(heretic).toBeEnabled();
+	await expect(picker.locator('.ring-row[data-type="outsider"][data-disabled]')).toHaveCount(1);
+	await expect(picker.getByRole('button', { name: 'Empath', exact: true })).toBeVisible();
+	await page.screenshot({ path: `test-results/jinx-pick-${test.info().project.name}.png` });
+
+	// Tapped: the jinx, word for word, and Cancel keeps the Chef.
+	await heretic.tap();
+	const ask = page.getByRole('alertdialog', { name: 'Jinxed' });
+	await expect(ask.getByTestId('jinx-note').locator('.jinx-text')).toHaveText(reason);
+	await page.screenshot({ path: `test-results/jinx-pick-ask-${test.info().project.name}.png` });
+	await ask.getByRole('button', { name: 'Cancel' }).tap();
+	await expect(ask).toBeHidden();
+	await page.keyboard.press('Escape');
+	await expect(seatSheet(page)).toBeHidden();
+	await expect(page.getByRole('button', { name: /^Seat 2:.*Chef/ })).toBeVisible();
+
+	// Confirmed: the change goes ahead as usual.
+	picker = await open();
+	await picker.getByRole('button', { name: 'Heretic, Jinxed', exact: true }).tap();
+	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	const change = page.getByRole('alertdialog', { name: 'Change character?' });
+	await change.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(change).toBeHidden();
+	await page.keyboard.press('Escape');
+	await expect(seatSheet(page)).toBeHidden();
+	await expect(page.getByRole('button', { name: /^Seat 2:.*Heretic/ })).toBeVisible();
+});

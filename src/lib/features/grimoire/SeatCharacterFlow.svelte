@@ -18,6 +18,7 @@
 	import BoardReminder from '#lib/features/grimoire/BoardReminder.svelte';
 	import AlignmentPill from '#lib/features/grimoire/AlignmentPill.svelte';
 	import CharacterPicker from '#lib/features/grimoire/CharacterPicker.svelte';
+	import JinxedPick from '#lib/features/grimoire/JinxedPick.svelte';
 	import SeatBadge from '#lib/features/grimoire/SeatBadge.svelte';
 	import TableCheck from '#lib/features/grimoire/TableCheck.svelte';
 	import {
@@ -79,9 +80,15 @@
 		alignmentOpen = true;
 	}
 
+	let jinxed = $state<JinxedPick>();
 	function pick(id: CharacterId) {
 		pickerOpen = false;
 		if (!seatId || id === seat?.characterId) return;
+		// A jinx may say it can't be in play with a character in play: ask first.
+		if (jinxed) jinxed.pick(seatId, id, () => picked(id));
+		else picked(id);
+	}
+	function picked(id: CharacterId) {
 		if (seat?.characterId) {
 			changeTo = id;
 			changeOpen = true;
@@ -231,6 +238,7 @@
 	script={game.script}
 	types={SEAT_TYPES}
 	recommended={recommendedTravellers(game.script, characters)}
+	faded={(c) => jinxed?.note(seatId, c)}
 	current={seat?.characterId}
 	onPick={pick}
 	onNone={seat?.characterId
@@ -240,6 +248,8 @@
 			}
 		: undefined}
 />
+
+<JinxedPick bind:this={jinxed} {game} {characters} />
 
 <!-- Every change of state says what it is now and what it becomes (Trevor, 2026-10-16). -->
 <ConfirmDialog bind:open={changeOpen} title="Change character?" onConfirm={confirmChange}>

@@ -90,6 +90,7 @@ export type WarningCode =
 	| 'no-longer-hidden'
 	| 'extra-evil-limit'
 	| 'jinxed-ability'
+	| 'jinxed-character'
 	| 'jinxed-alignment'
 	| 'not-given-to-player'
 	| 'not-minion'

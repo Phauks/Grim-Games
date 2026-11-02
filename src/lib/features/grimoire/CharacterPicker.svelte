@@ -1,5 +1,11 @@
 <script lang="ts">
-	import type { Alignment, CharacterId, CharacterType, Script } from '#lib/core/data/index.ts';
+	import type {
+		Alignment,
+		Character,
+		CharacterId,
+		CharacterType,
+		Script
+	} from '#lib/core/data/index.ts';
 	import type { CharacterLookup } from '#lib/core/model/index.ts';
 	import SharedPicker from '#lib/features/characters/CharacterPicker.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -25,6 +31,8 @@
 		exclude?: readonly CharacterId[];
 		/** Listed first and marked "Recommended" (the script's Travellers). */
 		recommended?: readonly CharacterId[];
+		/** Listed but drawn as if not choosable, with this note; a tap still picks it. */
+		faded?: (character: Character) => string | undefined;
 		onPick: (id: CharacterId) => void;
 		/** Offers "None" first, to take the character away (Trevor, 2026-10-17). */
 		onNone?: () => void;
@@ -42,6 +50,7 @@
 		alwaysAll = false,
 		exclude = [],
 		recommended = [],
+		faded,
 		onPick,
 		onNone,
 		alignment
@@ -80,6 +89,7 @@
 			marker={recommended.length > 0
 				? (c) => (recommended.includes(c.id) ? 'Recommended' : undefined)
 				: undefined}
+			{faded}
 			onSelect={onPick}
 			{onNone}
 			{alignment}
