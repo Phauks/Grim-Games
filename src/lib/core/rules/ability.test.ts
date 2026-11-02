@@ -371,9 +371,16 @@ describe('executionSavers', () => {
 	it('offers the Psychopath and Lleech for themselves only; the Vizier applies unasked', () => {
 		// https://wiki.bloodontheclocktower.com/Psychopath (roshambo), /Lleech (lives while the
 		// host does), /Vizier (cannot die during the day).
-		const g = castGame(['psychopath', 'lleech', 'vizier', 'chef']);
+		const g = castGame(['psychopath', 'lleech', 'vizier', 'chef'], add(3, 'lleech', 'Poisoned'));
 		expect(ids(g, 0)).toContainEqual(['psychopath', 'ok']);
 		expect(ids(g, 1)).toContainEqual(['lleech', 'ok']);
+		// The Lleech's own protection applies unasked while its host lives (M15h), and not
+		// before it has a host.
+		expect(protection(g.game, g.seats[1], characters, 'execution')).toMatchObject({
+			characterId: 'lleech'
+		});
+		const hostless = castGame(['psychopath', 'lleech', 'vizier', 'chef']);
+		expect(ids(hostless, 1)).toContainEqual(['lleech', 'not-this-player']);
 		expect(ids(g, 3)).toEqual(
 			expect.arrayContaining([
 				['psychopath', 'not-this-player'],
@@ -534,10 +541,14 @@ describe('impairing tokens end with their character unless they last', () => {
 	const tokens = [...OFFICIAL_RULES.keys()].flatMap((id) => {
 		const character = characters.get(id);
 		if (!character || !isSeatable(character.type) || character.type === 'traveller') return [];
-		return [...new Set(character.reminders)]
-			.filter((label) => impairmentOfLabel(label))
-			.map((label) => ({ id, label, rule: rulesOf(id)?.impairs?.tokens?.[label] }))
-			.filter(({ rule }) => rule === undefined || rule.on === 'carrier');
+		return (
+			[...new Set(character.reminders)]
+				.filter((label) => impairmentOfLabel(label))
+				.map((label) => ({ id, label, rule: rulesOf(id)?.impairs?.tokens?.[label] }))
+				// A token that also needs a kept ability (`whileKept`, the Vigormortis's Poisoned)
+				// has its own tests in kept-ability.test.ts.
+				.filter(({ rule }) => (rule === undefined || rule.on === 'carrier') && !rule?.whileKept)
+		);
 	});
 	const dead =
 		(i: number) =>
