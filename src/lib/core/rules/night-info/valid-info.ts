@@ -22,7 +22,12 @@ export type ValidReason =
 	/** Any information is allowed: the Storyteller may break the rules (the Atheist). */
 	| 'any'
 	/** The Vortox: only false information is allowed. */
-	| 'vortox';
+	| 'vortox'
+	/**
+	 * Fits the Storyteller's pretend evil team (`InfoPicker.pretend`, M26): true as if those
+	 * players were their pretend characters. Listed first.
+	 */
+	| 'pretend';
 
 /**
  * One piece of information the Storyteller may show. Every valid one is listed; the app
@@ -67,7 +72,12 @@ export function validInformation(game: Game, picker: InfoPicker): ValidInfo[] {
 	const reasonOf = (o: InfoOption): Pick<ValidInfo, 'reason' | 'registered'> =>
 		o.registered ? { reason: 'registers', registered: o.registered } : { reason: 'true' };
 	// Under the Vortox the truthful options are exactly the ones not allowed.
-	const truthful: ValidInfo[] = picker.mustBeFalse && !anyInfo(picker) ? [] : groupOptions();
+	const real: ValidInfo[] =
+		picker.mustBeFalse && !anyInfo(picker) ? [] : groupOptions(picker.options, reasonOf);
+	// What fits the pretend team comes first, and is not listed again as true or as allowed.
+	const fits = picker.pretend ? groupOptions(picker.pretend, () => ({ reason: 'pretend' })) : [];
+	const fitKeys = new Set(fits.map(sameInfo));
+	const truthful = [...fits, ...real.filter((v) => !fitKeys.has(sameInfo(v)))];
 	const extra: ValidInfo[] = [];
 	const loose: ValidReason | undefined = anyInfo(picker)
 		? 'unreliable'
@@ -95,9 +105,12 @@ export function validInformation(game: Game, picker: InfoPicker): ValidInfo[] {
 	}
 	return [...truthful, ...extra];
 
-	function groupOptions(): ValidInfo[] {
+	function groupOptions(
+		options: readonly InfoOption[],
+		reasonOf: (o: InfoOption) => Pick<ValidInfo, 'reason' | 'registered'>
+	): ValidInfo[] {
 		if (picker.kind !== 'pair-character') {
-			return picker.options.map((o) => ({
+			return options.map((o) => ({
 				...reasonOf(o),
 				seats: [...o.seats],
 				...(o.number !== undefined ? { number: o.number } : {}),
@@ -106,7 +119,7 @@ export function validInformation(game: Game, picker: InfoPicker): ValidInfo[] {
 			}));
 		}
 		const groups = new Map<string, ValidInfo>();
-		for (const o of picker.options) {
+		for (const o of options) {
 			if (o.none) {
 				groups.set('none', { ...reasonOf(o), none: true, number: 0, seats: [] });
 				continue;
@@ -121,4 +134,9 @@ export function validInformation(game: Game, picker: InfoPicker): ValidInfo[] {
 		}
 		return [...groups.values()];
 	}
+}
+
+/** The same piece of information, whatever makes it valid. */
+function sameInfo(v: ValidInfo): string {
+	return JSON.stringify([v.number, v.yes, v.none, v.characterIds, v.target, [...v.seats].sort()]);
 }

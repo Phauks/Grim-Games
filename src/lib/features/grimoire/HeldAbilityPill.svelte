@@ -20,9 +20,15 @@
 		truths?: { character: Character; reminderId?: string }[];
 		/** The seat has notes: their pen goes in the pill too, and opens them. */
 		notes?: boolean;
+		/**
+		 * Who the Storyteller pretends the player is (`Game.pretend`, M26: the fake evil team), a
+		 * token marked ≈ ("seems like") with a dashed edge, as it is not really in play (Trevor,
+		 * 2026-11-02, Option A).
+		 */
+		pretends?: Character;
 	}
 
-	let { abilities, truths = [], notes = false }: Props = $props();
+	let { abilities, truths = [], notes = false, pretends }: Props = $props();
 </script>
 
 <RimPill side="right" edge="bottom" testid="held-pill"
@@ -38,7 +44,12 @@
 			data-reminder={reminderId}
 			title={`Is really the ${truly.name}`}
 			><img src={iconUrl(truly)} alt="" /><span class="kind is" aria-hidden="true">=</span></span
-		>{/each}{#if notes}<span class="note-slot" data-testid="note-mark" title="Note"
+		>{/each}{#if pretends}<span
+			class="held pretend"
+			data-testid="pretend-character"
+			title={`Fake ${pretends.name}`}
+			><img src={iconUrl(pretends)} alt="" /><span class="kind is" aria-hidden="true">≈</span></span
+		>{/if}{#if notes}<span class="note-slot" data-testid="note-mark" title="Note"
 			><Icon name="notes" /></span
 		>{/if}</RimPill
 >
@@ -57,6 +68,11 @@
 	}
 	.held {
 		background: var(--reminder-face);
+	}
+	/* Pretend: a dashed edge, as it is not really in play. */
+	.held.pretend {
+		outline: calc(0.1 * var(--u)) dashed var(--evil);
+		outline-offset: calc(0.05 * var(--u));
 	}
 	/* Which kind: a blue + for an ability also held, a red = for who they really are, on the
 	   token's lower right, so the two never rest on colour alone. Team colours are fixed. */
