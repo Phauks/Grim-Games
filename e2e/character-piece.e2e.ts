@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
 /*
- * The one character piece (Character.svelte) on its preview page, through each template
+ * The one character piece (CharacterPiece.svelte) on its preview page, through each template
  * and its switches (Trevor, 2026-11-02: one component, parts turned on or off). With SHOTS
  * set, each look is also saved as a picture under test-results for review.
  */
