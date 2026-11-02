@@ -1,6 +1,8 @@
 <script lang="ts" generics="T extends string">
 	import { foldForSearch } from '#lib/core/text/fold.ts';
 	import { Combobox, createListCollection } from '@ark-ui/svelte/combobox';
+	import { Portal } from '@ark-ui/svelte/portal';
+	import { usePortalTarget } from './portal-target.ts';
 	import { tick, type Snippet } from 'svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import ClearableField from './ClearableField.svelte';
@@ -62,6 +64,12 @@
 		testid,
 		free = false
 	}: Props = $props();
+	/**
+	 * The list goes to the body (or a full-screen view, portal-target.ts), so no stacking
+	 * context round the control, such as a pinned header, can draw over it (Trevor,
+	 * 2026-11-02: Add late player's Players list under the counts and Townsfolk).
+	 */
+	const portalTarget = usePortalTarget();
 
 	const current = $derived(options.find((o) => o.value === value));
 	// The field shows the chosen option, and again whenever the choice changes.
@@ -172,21 +180,23 @@
 		<Combobox.Trigger aria-label={label}><Icon name="forward" /></Combobox.Trigger>
 	</Combobox.Control>
 	<!-- A free field with nothing to fill in shows no list: the typed text is the answer. -->
-	{#if !free || matching.length > 0}<Combobox.Positioner>
-			<Combobox.Content>
-				{#each groups as group, i (group.title ?? i)}
-					{#if group.title}
-						<Combobox.ItemGroup>
-							<Combobox.ItemGroupLabel>{group.title}</Combobox.ItemGroupLabel>
+	{#if !free || matching.length > 0}<Portal container={portalTarget()}
+			><Combobox.Positioner>
+				<Combobox.Content>
+					{#each groups as group, i (group.title ?? i)}
+						{#if group.title}
+							<Combobox.ItemGroup>
+								<Combobox.ItemGroupLabel>{group.title}</Combobox.ItemGroupLabel>
+								{#each group.options as option (option.value)}{@render optionItem(option)}{/each}
+							</Combobox.ItemGroup>
+						{:else}
 							{#each group.options as option (option.value)}{@render optionItem(option)}{/each}
-						</Combobox.ItemGroup>
-					{:else}
-						{#each group.options as option (option.value)}{@render optionItem(option)}{/each}
-					{/if}
-				{/each}
-				{#if matching.length === 0}<p class="empty">{empty}</p>{/if}
-			</Combobox.Content>
-		</Combobox.Positioner>{/if}
+						{/if}
+					{/each}
+					{#if matching.length === 0}<p class="empty">{empty}</p>{/if}
+				</Combobox.Content>
+			</Combobox.Positioner></Portal
+		>{/if}
 </Combobox.Root>
 
 <style>

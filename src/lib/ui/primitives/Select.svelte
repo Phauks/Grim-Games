@@ -1,5 +1,7 @@
 <script lang="ts" generics="T extends string">
 	import { createListCollection, Select } from '@ark-ui/svelte/select';
+	import { Portal } from '@ark-ui/svelte/portal';
+	import { usePortalTarget } from './portal-target.ts';
 	import type { Snippet } from 'svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import type { IconSlot } from '#lib/ui/icons/catalogue.ts';
@@ -95,6 +97,12 @@
 		testid,
 		onClear
 	}: Props = $props();
+	/**
+	 * The list goes to the body (or a full-screen view, portal-target.ts), so no stacking
+	 * context round the control, such as a pinned header, can draw over it (Trevor,
+	 * 2026-11-02: Add late player's Players list under the counts and Townsfolk).
+	 */
+	const portalTarget = usePortalTarget();
 
 	/** The value of the "None" option; never a real option's. */
 	const NONE = '\u0000none' as T;
@@ -223,20 +231,22 @@
 			</Select.Trigger>
 		{/if}
 	</Select.Control>
-	<Select.Positioner>
-		<Select.Content>
-			{#each groups as group, i (group.title ?? i)}
-				{#if group.title}
-					<Select.ItemGroup>
-						<Select.ItemGroupLabel>{group.title}</Select.ItemGroupLabel>
+	<Portal container={portalTarget()}
+		><Select.Positioner>
+			<Select.Content>
+				{#each groups as group, i (group.title ?? i)}
+					{#if group.title}
+						<Select.ItemGroup>
+							<Select.ItemGroupLabel>{group.title}</Select.ItemGroupLabel>
+							{#each group.options as option (option.value)}{@render optionItem(option)}{/each}
+						</Select.ItemGroup>
+					{:else}
 						{#each group.options as option (option.value)}{@render optionItem(option)}{/each}
-					</Select.ItemGroup>
-				{:else}
-					{#each group.options as option (option.value)}{@render optionItem(option)}{/each}
-				{/if}
-			{/each}
-		</Select.Content>
-	</Select.Positioner>
+					{/if}
+				{/each}
+			</Select.Content>
+		</Select.Positioner></Portal
+	>
 </Select.Root>
 
 <style>

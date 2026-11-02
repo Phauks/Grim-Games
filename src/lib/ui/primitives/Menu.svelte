@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { Menu } from '@ark-ui/svelte/menu';
+	import { Portal } from '@ark-ui/svelte/portal';
+	import { usePortalTarget } from './portal-target.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import type { IconSlot } from '#lib/ui/icons/catalogue.ts';
 	import { onLayerOpen } from './layers.ts';
@@ -35,6 +37,12 @@
 		open = $bindable(false),
 		placement = 'bottom-end'
 	}: Props = $props();
+	/**
+	 * The list goes to the body (or a full-screen view, portal-target.ts), so no stacking
+	 * context round the control, such as a pinned header, can draw over it (Trevor,
+	 * 2026-11-02: Add late player's Players list under the counts and Townsfolk).
+	 */
+	const portalTarget = usePortalTarget();
 
 	// A dialog or sheet opening over the page closes the menu, as Select's list does.
 	$effect(() => {
@@ -51,13 +59,15 @@
 	unmountOnExit
 >
 	<Menu.Trigger aria-label={label} title={label}><Icon name={icon} /></Menu.Trigger>
-	<Menu.Positioner>
-		<Menu.Content>
-			{#each items as item (item.value)}
-				<Menu.Item value={item.value} disabled={item.disabled}>{item.label}</Menu.Item>
-			{/each}
-		</Menu.Content>
-	</Menu.Positioner>
+	<Portal container={portalTarget()}
+		><Menu.Positioner>
+			<Menu.Content>
+				{#each items as item (item.value)}
+					<Menu.Item value={item.value} disabled={item.disabled}>{item.label}</Menu.Item>
+				{/each}
+			</Menu.Content>
+		</Menu.Positioner></Portal
+	>
 </Menu.Root>
 
 <style>
