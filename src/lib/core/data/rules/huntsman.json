@@ -56,5 +56,10 @@
 		"notInPlay": true,
 		"spent": "No Ability",
 		"onlyFrom": ["damsel"]
+	},
+	"infoTokenCharacters": {
+		"you-are": {
+			"characters": ["changed"]
+		}
 	}
 }

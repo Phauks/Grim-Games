@@ -56,5 +56,10 @@
 	"turnsPlayersInto": {
 		"type": "minion",
 		"players": "neighbours"
+	},
+	"infoTokenCharacters": {
+		"you-are": {
+			"characters": ["chosen"]
+		}
 	}
 }
