@@ -5,7 +5,8 @@
  * Translations may move a slot anywhere in their sentence.
  */
 const MARK = '';
-const SLOT = new RegExp(`${MARK}(\\w+)${MARK}`);
+/** A slot name: a character id, or a seat id (a UUID, with hyphens). */
+const SLOT = new RegExp(`${MARK}([\\w-]+)${MARK}`);
 
 /** A placeholder value for `t()` that `Sentence` (or `splitSlots`) swaps for a badge. */
 export function slot(name: string): string {
