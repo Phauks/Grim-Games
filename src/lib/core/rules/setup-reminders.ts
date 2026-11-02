@@ -40,6 +40,7 @@ import {
 	type SeatId
 } from '#lib/core/model/types.ts';
 import { NO_CHARACTER_NAMES, type CharacterNames } from './character-names.ts';
+import { carriesDemonToken } from './death-causes.ts';
 import { jinxedWith } from './jinxes.ts';
 
 export type {
@@ -370,8 +371,11 @@ function unseatedReminders(
 			f.seat.reminders.some((p) => p.characterId === r.characterId && p.label === r.label)
 		).length;
 	const n = seats.length;
+	// The Demon is its type, or a player a token makes the Demon (Lil' Monsta's babysitter).
+	const isDemon = (f: SeatFacts) =>
+		f.type === 'demon' || carriesDemonToken(game, f.seat.seatId, lookup);
 	const nextToDemon = (i: number) =>
-		n > 1 && [seats[(i + n - 1) % n], seats[(i + 1) % n]].some((f) => f.type === 'demon');
+		n > 1 && [seats[(i + n - 1) % n], seats[(i + 1) % n]].some(isDemon);
 	const marked = new Set(
 		unseated.flatMap((r) =>
 			seats
@@ -389,6 +393,10 @@ function unseatedReminders(
 		if (copy <= placed(r)) continue;
 		const target = rulesOf(r.characterId, lookup)?.reminderTargets?.[r.label];
 		const byDemon = target?.neighbour?.ofType === 'demon';
+		// No Demon yet (the Summoner's game, or Lil' Monsta before a babysitter): the Marionette
+		// enters play once there is one, as their neighbour (each Marionette jinx,
+		// https://wiki.bloodontheclocktower.com/Marionette#Related_Jinxes). Nothing to place yet.
+		if (byDemon && !seats.some(isDemon)) continue;
 		const shown: readonly CharacterType[] =
 			target?.shown ?? (target?.alignment === 'good' ? ['townsfolk', 'outsider'] : ['townsfolk']);
 		const candidates = seats

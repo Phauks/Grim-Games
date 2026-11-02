@@ -9,6 +9,7 @@
 		typeOf,
 		type SeatId
 	} from '#lib/core/model/index.ts';
+	import { isReplacedAfterDraw } from '#lib/core/rules/bag-characters.ts';
 	import {
 		changeableSeats,
 		characterChanger,
@@ -73,13 +74,25 @@
 	const spare = $derived(
 		step.character ? jinxedPartners(step.character.id, 'spareToken', script, characters) : []
 	);
-	const inPlay = $derived(
-		rule?.notInPlay
+	// Making the night's Minions (the Kazali, the Lord of Typhon), a stand-in such as the
+	// Marionette is never made: it enters play as the Demon's good neighbour, by its own token,
+	// and is not told (https://wiki.bloodontheclocktower.com/Marionette#Related_Jinxes).
+	const standIns = $derived(
+		rule?.upTo
+			? script.filter((id) => {
+					const c = characters.get(id);
+					return c !== undefined && isReplacedAfterDraw(c);
+				})
+			: []
+	);
+	const inPlay = $derived([
+		...(rule?.notInPlay
 			? game.seating
 					.flatMap((id) => trueCharacter(game, id, characters) ?? [])
 					.filter((id) => !spare.includes(id))
-			: []
-	);
+			: []),
+		...standIns
+	]);
 	// Characters a jinx bars once a day is over (the Pit-Hag's and Hatter's Leviathan after
 	// day 5, https://wiki.bloodontheclocktower.com/Leviathan#Related_Jinxes).
 	const tooLate = $derived(

@@ -12,6 +12,8 @@
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { setupReminders } from '#lib/core/rules/setup-reminders.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Marionette + Summoner jinx', () => {
 	const data = committedGameData();
@@ -30,5 +32,23 @@ describe('Marionette + Summoner jinx', () => {
 		expect(jinxesAmong(data.jinxes, ['summoner'])).not.toContain(jinx);
 	});
 
-	it.todo('enforces the rule the jinx imposes');
+	// The draw left the Marionette's token to place: it had no tile in the bag.
+	const withBag = (s: ReturnType<typeof scenario>) =>
+		s.do({
+			type: 'BuildBag',
+			tiles: [],
+			includeTravellers: false,
+			unseated: [{ characterId: 'marionette', label: 'Is The Marionette' }]
+		});
+	const marionetteAsk = (s: ReturnType<typeof scenario>) =>
+		setupReminders(s.game, s.characters).find((r) => r.characterId === 'marionette');
+	// The Marionette enters play once the Summoner has made a Demon, as their neighbour (M22).
+	it('asks for no Marionette until there is a Demon, then a good neighbour of theirs', () => {
+		const s = withBag(scenario(['summoner', 'chef', 'empath', 'monk', 'saint']));
+		expect(marionetteAsk(s)).toBeUndefined();
+		const later = s.becomes('monk', 'imp', 'evil');
+		expect(marionetteAsk(later)?.candidates.sort()).toEqual(
+			[later.seat('empath'), later.seat('saint')].sort()
+		);
+	});
 });

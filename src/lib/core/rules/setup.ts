@@ -235,9 +235,19 @@ export function analyseSetup(input: SetupInput): SetupAnalysis {
 	// (Trevor, 2026-10-16; https://wiki.bloodontheclocktower.com/Drunk,
 	// https://wiki.bloodontheclocktower.com/Marionette). The Drunk's extra is a Townsfolk; the
 	// Marionette's a Townsfolk or an Outsider.
+	// A stand-in whose type no one is dealt (a Marionette with the Kazali, who makes the
+	// Minions on the first night): it enters play after the Demon, as its neighbour, so it is
+	// neither counted nor given a token of its own (the Marionette's Kazali jinx,
+	// https://wiki.bloodontheclocktower.com/Marionette#Related_Jinxes).
+	const entersLater = (character: Character) =>
+		isDealt(character.type) &&
+		isReplacedAfterDraw(character) &&
+		sets[character.type]?.size === 1 &&
+		sets[character.type]?.has(0) === true;
 	const extraFor: Character[] = [];
 	for (const character of input.inPlay) {
-		if (isDealt(character.type) && isReplacedAfterDraw(character)) extraFor.push(character);
+		if (isDealt(character.type) && isReplacedAfterDraw(character) && !entersLater(character))
+			extraFor.push(character);
 	}
 	for (const character of extraFor) {
 		if (character.type !== 'outsider') {
@@ -280,7 +290,7 @@ export function analyseSetup(input: SetupInput): SetupAnalysis {
 		if (!isDealt(character.type)) continue;
 		// Chosen but never dealt to a player, with no stand-in token: nobody is the Lil' Monsta,
 		// a Minion babysits it (https://wiki.bloodontheclocktower.com/Lil%27_Monsta).
-		if (isNotDealt(character)) {
+		if (isNotDealt(character) || entersLater(character)) {
 			if (!notDealt.includes(character.id)) notDealt.push(character.id);
 			continue;
 		}
