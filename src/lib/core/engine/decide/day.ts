@@ -351,6 +351,7 @@ export const DAY_DECIDERS: Deciders<
 		};
 		if (command.on !== undefined) entry.on = seatOf(game, command.on).seatId;
 		if (typeof command.passed === 'boolean') entry.passed = command.passed;
+		if (command.stops !== undefined) entry.stops = characterOf(ctx, command.stops).id;
 		const usesToday = game.today.entries.filter(
 			(e): e is Extract<DayEntry, { kind: 'ability' }> =>
 				e.kind === 'ability' && e.seatId === seat.seatId && e.characterId === character.id
