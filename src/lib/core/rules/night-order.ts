@@ -136,6 +136,11 @@ export interface NightStep {
 	 * player woken to learn a new character is shown that character with "You are".
 	 */
 	infoTokenCharacters?: InfoTokenCharacterRules;
+	/**
+	 * On a second wake for a player whose ability works twice tonight: the seat and the
+	 * character whose token makes it so (`withActsTwiceSteps` in `acts-twice.ts`).
+	 */
+	again?: { seatId: string; characterId: CharacterId };
 }
 
 export interface OmittedStep {
