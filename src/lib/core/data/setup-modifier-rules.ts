@@ -65,6 +65,13 @@ export interface SetupModifierRules {
 	 * `[0, 1, 2]`): more than the largest warns.
 	 */
 	copies?: readonly number[];
+	/**
+	 * Which characters may repeat while this one is in play, in place of TPI's
+	 * `good-duplicate`/`evil-duplicate` data: `good` (Townsfolk and Outsiders), `evil` (Minions
+	 * and Demons) or both. The Pope's says only good ones (https://wiki.bloodontheclocktower.com/Pope),
+	 * though TPI's data gives it both.
+	 */
+	duplicates?: readonly Alignment[];
 	/** Extra Storyteller notes for setup (bag contents, seating). */
 	notes?: readonly string[];
 	/**
@@ -143,7 +150,7 @@ export function readSetupModifier(
 	}
 	checkKeys(
 		raw,
-		['summary', 'ops', 'requires', 'alignments', 'copies', 'notes', 'readsBrackets'],
+		['summary', 'ops', 'requires', 'alignments', 'copies', 'duplicates', 'notes', 'readsBrackets'],
 		path,
 		issues
 	);
@@ -178,6 +185,13 @@ export function readSetupModifier(
 			issues.add(`${path}.copies`, 'expected a list of whole numbers of at least 0');
 		else copies = v as number[];
 	}
+	let duplicates: Alignment[] | undefined;
+	if (raw.duplicates !== undefined) {
+		const v = raw.duplicates;
+		if (!Array.isArray(v) || !v.every((a) => (ALIGNMENTS as readonly unknown[]).includes(a)))
+			issues.add(`${path}.duplicates`, 'expected a list of alignments: good, evil');
+		else duplicates = v as Alignment[];
+	}
 	const notes = readStringArray(raw, 'notes', path, issues);
 	if (raw.readsBrackets !== undefined && raw.readsBrackets !== true) {
 		issues.add(`${path}.readsBrackets`, 'expected true');
@@ -189,6 +203,7 @@ export function readSetupModifier(
 		...(requires ? { requires } : {}),
 		...(alignments.length > 0 ? { alignments } : {}),
 		...(copies ? { copies } : {}),
+		...(duplicates ? { duplicates } : {}),
 		...(notes ? { notes } : {}),
 		...(raw.readsBrackets === true ? { readsBrackets: true as const } : {})
 	};

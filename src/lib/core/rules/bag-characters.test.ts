@@ -31,13 +31,13 @@ describe('canDuplicate', () => {
 		}
 	});
 
-	// https://wiki.bloodontheclocktower.com/Pope: duplicate good characters are in play. TPI's
-	// data also marks the Pope evil-duplicate, so evil characters may repeat too.
-	it('with the Pope, characters can repeat, as TPI marks it', () => {
+	// https://wiki.bloodontheclocktower.com/Pope: duplicate good characters. TPI's data also
+	// marks evil ones; the Pope's rules block keeps them out (M22).
+	it('with the Pope, good characters can repeat but evil ones cannot', () => {
 		const pope = [get('pope')];
 		expect(canDuplicate(get('chef'), pope)).toBe(true);
 		expect(canDuplicate(get('saint'), pope)).toBe(true);
-		expect(canDuplicate(get('imp'), pope)).toBe(true);
+		expect(canDuplicate(get('imp'), pope)).toBe(false);
 	});
 
 	// https://wiki.bloodontheclocktower.com/Atheist: the Storyteller can break the rules.
