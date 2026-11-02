@@ -164,10 +164,8 @@ describe('Atheist', () => {
 			expect(analysis.warnings.map((w) => w.code)).toContain('count-mismatch');
 		});
 
-		it.fails("takes an evil character's reminder without a warning", () => {
+		it("takes an evil character's reminder without a warning", () => {
 			// Wiki: "Break any game rules, as you see fit. Use evil reminder tokens if you need them."
-			// Waits on the engine (unplanned): a reminder of an evil character not in play is warned
-			// about as not in play, even while the Atheist is.
 			const s = scenario(['atheist', 'chef', 'empath', 'monk', 'soldier']);
 			expect(
 				warned(s.session, s.ctx, {

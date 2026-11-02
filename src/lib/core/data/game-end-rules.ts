@@ -121,7 +121,11 @@ export interface HoldsGame {
  * - `joinsWinner`: its player may win with whichever team wins, whatever their alignment and
  *   even if dead, when the Storyteller judges their ability met (the Politician, most
  *   responsible for their own team losing). End game offers it as a reason, and
- *   `joinsWinners` lists who may win too; nothing checks it.
+ *   `joinsWinners` lists who may win too; nothing checks it;
+ * - `contest`: the game can end in a contest between a player of `chooser`'s type and a player
+ *   of the other alignment they choose; the player with the most votes wins for their team, and
+ *   `tie` wins a tie (the Fiddler's: the Demon chooses, evil wins a tie,
+ *   https://wiki.bloodontheclocktower.com/Fiddler). Worked out in `rules/contest.ts`.
  */
 export interface GameEndRules {
 	ends?: readonly EndsGame[];
@@ -130,6 +134,7 @@ export interface GameEndRules {
 	invertWinner?: boolean;
 	decidedByStoryteller?: boolean;
 	joinsWinner?: boolean;
+	contest?: { chooser: CharacterType; tie: Alignment };
 }
 
 /** The parameters each kind needs. */
@@ -223,7 +228,15 @@ export function readGameEnd(
 	}
 	checkKeys(
 		raw,
-		['ends', 'holds', 'aliveWhileDead', 'invertWinner', 'decidedByStoryteller', 'joinsWinner'],
+		[
+			'ends',
+			'holds',
+			'aliveWhileDead',
+			'invertWinner',
+			'decidedByStoryteller',
+			'joinsWinner',
+			'contest'
+		],
 		path,
 		issues
 	);
@@ -275,6 +288,17 @@ export function readGameEnd(
 				...(untilToken ? { untilToken } : {}),
 				...(whileCarrierAlive ? { whileCarrierAlive } : {})
 			};
+		}
+	}
+	if (raw.contest !== undefined) {
+		const at = `${path}.contest`;
+		if (!isObject(raw.contest)) {
+			issues.add(at, `expected object, got ${describe(raw.contest)}`);
+		} else {
+			checkKeys(raw.contest, ['chooser', 'tie'], at, issues);
+			const chooser = readEnum(raw.contest, 'chooser', CHARACTER_TYPES, at, issues, true);
+			const tie = readEnum(raw.contest, 'tie', ALIGNMENTS, at, issues, true);
+			if (chooser && tie) out.contest = { chooser, tie };
 		}
 	}
 	for (const key of ['invertWinner', 'decidedByStoryteller', 'joinsWinner'] as const) {

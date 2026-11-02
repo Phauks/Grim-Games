@@ -143,10 +143,9 @@ describe('Hatter', () => {
 			]);
 		});
 
-		it.fails('holds a tea party only once the Hatter has died', () => {
+		it('holds a tea party only once the Hatter has died', () => {
 			// Wiki: "If the Hatter dies, mark them with the TEA PARTY TONIGHT reminder. During that
 			// night, wake the Minions and Demon."
-			// Waits on the engine (unplanned): characterChanger offers the Hatter's change while the Hatter is alive, as nothing ties it to their death or the Tea Party Tonight reminder.
 			const s = scenario(cast);
 			expect(characterChanger(s.game, 'hatter', s.characters)).toBeUndefined();
 			const party = s.dies('hatter', 'imp').reminder('hatter', 'hatter', 'Tea Party Tonight');

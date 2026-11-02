@@ -2752,8 +2752,8 @@ test('the Hermit holds every other Outsider ability on the script', async ({ pag
 });
 
 // https://wiki.bloodontheclocktower.com/Courtier: the chosen player is drunk for 3 nights and 3
-// days; its step counts the token down each other night, Drunk 3 to 2 to 1, then off (M12).
-test("the Courtier's step counts its Drunk token down each night", async ({ page }) => {
+// days; its step moves the token on each other night, Drunk 1 to 2 to 3, then off (M12).
+test("the Courtier's step moves its Drunk token on each night", async ({ page }) => {
 	test.slow();
 	await startGame(page);
 	for (const [number, name] of [
@@ -2770,7 +2770,7 @@ test("the Courtier's step counts its Drunk token down each night", async ({ page
 	// The first night, the Courtier names the Imp.
 	const first = await walkTo(page, 'Dusk');
 	await first.getByRole('button', { name: 'Next step' }).tap();
-	await putReminder(page, 'Drunk 3', 2);
+	await putReminder(page, 'Drunk 1', 2);
 	await endNight(page);
 	const day = page.getByRole('dialog', { name: 'Day 1' });
 	await day.getByRole('button', { name: 'Close' }).tap();
@@ -2783,7 +2783,7 @@ test("the Courtier's step counts its Drunk token down each night", async ({ page
 	await expect(rows).toHaveText('None');
 	await expect(step.getByRole('button', { name: 'Count down', exact: true })).toBeDisabled();
 	await page.keyboard.press('Escape');
-	// Drunk 2 on the board in place of Drunk 3.
+	// Drunk 2 on the board in place of Drunk 1.
 	await expect(page.getByRole('button', { name: 'Drunk 2 reminder' })).toHaveCount(1);
 });
 

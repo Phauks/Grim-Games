@@ -8,6 +8,7 @@ import {
 	type SeatId,
 	type Tile
 } from '#lib/core/model/index.ts';
+import { duplicatedByInPlay } from '#lib/core/rules/bag-characters.ts';
 import type { GameEvent } from '../events.ts';
 import {
 	BLUFFS_PER_SET,
@@ -52,11 +53,15 @@ export const BLUFFS_BAG_DECIDERS: Deciders<
 		const playing = trulyInPlay(game, ctx);
 		const lunaticSet =
 			set === 1 && [...playing].some((id) => rulesOf(id, ctx.characters)?.believesType === 'demon');
+		// A character in play that lets good characters repeat (the Pope) lets the Demon be
+		// given duplicates of in-play ones as bluffs (https://wiki.bloodontheclocktower.com/Pope).
+		const playingCharacters = [...playing].flatMap((id) => ctx.characters.get(id) ?? []);
 		const seen = new Set<CharacterId>();
 		for (const character of characters) {
 			if (seen.has(character.id)) warn('bluff-duplicate', `${character.name} is listed twice`);
 			seen.add(character.id);
-			if (!lunaticSet && playing.has(character.id)) {
+			const duplicate = duplicatedByInPlay(character, playingCharacters);
+			if (!lunaticSet && !duplicate && playing.has(character.id)) {
 				warn('bluff-in-play', `${character.name} is in play`);
 			}
 			if (defaultAlignment(character.type) !== 'good' || character.type === 'traveller') {

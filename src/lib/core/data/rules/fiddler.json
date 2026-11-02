@@ -1,6 +1,10 @@
 {
 	"gameEnd": {
-		"decidedByStoryteller": true
+		"decidedByStoryteller": true,
+		"contest": {
+			"chooser": "demon",
+			"tie": "evil"
+		}
 	},
 	"dayReminders": {
 		"reminders": [
