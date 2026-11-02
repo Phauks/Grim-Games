@@ -7,7 +7,14 @@
  */
 import type { ReminderLabel } from '../types.ts';
 import { readToken } from '../reminder-fields.ts';
-import { readBoolean, readEnum, readString, type Issues, type Json } from '../validate.ts';
+import {
+	readBoolean,
+	readEnum,
+	readNumber,
+	readString,
+	type Issues,
+	type Json
+} from '../validate.ts';
 
 /** The character's own reminder labels, when known: a part about any other label is an error. */
 export type Reminders = readonly ReminderLabel[] | undefined;
@@ -75,6 +82,21 @@ export function enumPart<T extends string>(
 		label,
 		description,
 		read: (block, key, path, issues) => readEnum(block, key, values, path, issues, false)
+	};
+}
+
+/** A whole number above 0: a count, such as how many times a day. */
+export function countPart(label: string, description: string): Part<number> {
+	return {
+		label,
+		description,
+		read: (block, key, path, issues) => {
+			const n = readNumber(block, key, path, issues);
+			if (n === undefined) return undefined;
+			if (Number.isInteger(n) && n > 0) return n;
+			issues.add(`${path}.${key}`, `expected a whole number above 0, got ${n}`);
+			return undefined;
+		}
 	};
 }
 

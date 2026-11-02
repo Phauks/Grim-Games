@@ -345,6 +345,7 @@ const MISS_WORDS: Record<TargetMiss, string> = {
 	neighbour: 'this player is not a neighbour it can go on',
 	'with-label': 'it needs another reminder on the same player',
 	'not-with-label': 'another reminder on this player rules it out',
+	'max-placed': 'it is already on as many players as it can be at once',
 	'last-night': 'the ability says different to last night'
 };
 
