@@ -1,21 +1,24 @@
 <script lang="ts">
-	import type { AvatarId } from '#lib/core/avatars/index.ts';
+	import { avatarCharacter, type AvatarId } from '#lib/core/avatars/index.ts';
 	import type { PlayerName } from '#lib/core/data/index.ts';
 	import { seatFrame, type FrameId } from '#lib/core/frames/index.ts';
+	import type { ProfileWords } from '#lib/core/profile/index.ts';
+	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import { loadOfficialData, officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import SeatFriendButton from '#lib/features/friends/SeatFriendButton.svelte';
 	import type { SeatFriendTarget } from '#lib/features/friends/friends-protocol.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import SeatDisc from '#lib/ui/seating/SeatDisc.svelte';
-	import { seatProfileRows } from './seat-profile.ts';
 
 	/**
-	 * A player's profile, opened from their avatar on a grim (Trevor, 2026-10-28): their avatar
-	 * large in their laurel, then a row for each thing about the PLAYER, never their character.
-	 * Game stats join the rows later. The board's Storyteller and the town's phones open the same.
-	 * In a live room, `friend` names the seat (or the Storyteller), and a row offers Add friend
-	 * (plan F2).
+	 * A player's profile, opened from their avatar on a grim (Trevor, 2026-10-28): about the
+	 * PLAYER, never their character. Their avatar in their laurel beside their tag-line, then a
+	 * row for each thing they have, and nothing for what they don't (Trevor, 2026-11-01: "I
+	 * don't see any benefit to showing Laurel None"; the laurel shows itself). The board's
+	 * Storyteller and the town's phones open the same. In a live room, `friend` names the seat
+	 * (or the Storyteller), and Add friend sits beside Close as an icon (plan F2).
 	 */
 	interface Props {
 		open?: boolean;
@@ -23,15 +26,22 @@
 		avatar: AvatarId;
 		picture?: string;
 		frame?: FrameId;
+		/** Their tag-line and details, as their phone shared them. */
+		words?: ProfileWords;
 		friend?: SeatFriendTarget;
 	}
 
-	let { open = $bindable(false), name, avatar, picture, frame, friend }: Props = $props();
+	let { open = $bindable(false), name, avatar, picture, frame, words, friend }: Props = $props();
 
-	const rows = $derived(seatProfileRows(frame));
+	const token = $derived(avatarCharacter(avatar));
+	const character = $derived(token ? officialData.current?.byId.get(token) : undefined);
+	$effect(() => {
+		if (open && token) void loadOfficialData();
+	});
+
 	let roomWidth = $state(0);
 	let screenHeight = $state(0);
-	const bigSize = $derived(Math.max(0, Math.min(roomWidth * 0.6, screenHeight * 0.4)));
+	const discSize = $derived(Math.max(0, Math.min(roomWidth * 0.4, screenHeight * 0.25)));
 </script>
 
 <svelte:window bind:innerHeight={screenHeight} />
@@ -39,42 +49,60 @@
 <!-- eslint-disable-next-line grim/names-as-badges -- the dialog's plain-text name; shown as a badge (heading) -->
 <Dialog bind:open title={name}>
 	{#snippet heading()}<PlayerBadge {name} />{/snippet}
+	{#snippet headActions()}
+		{#if friend}<SeatFriendButton {open} target={friend} iconOnly />{/if}
+	{/snippet}
 	<div class="profile" data-testid="player-profile">
-		<div class="big" bind:clientWidth={roomWidth}>
-			{#if bigSize}<SeatDisc
-					size={bigSize}
-					{name}
-					number={1}
-					{avatar}
-					{picture}
-					frame={seatFrame(frame)}
-				/>{/if}
+		<div class="card" bind:clientWidth={roomWidth}>
+			<!-- Room for the laurel, drawn past the token's edge. -->
+			<div class="disc">
+				{#if discSize}<SeatDisc
+						size={discSize}
+						{name}
+						number={1}
+						{avatar}
+						{picture}
+						frame={seatFrame(frame)}
+					/>{/if}
+			</div>
+			{#if words?.tagline}<p class="tagline" data-testid="player-profile-tagline">
+					{words.tagline}
+				</p>{/if}
 		</div>
 		<dl class="rows">
-			{#each rows as row (row.id)}
-				<div class="row" data-testid="player-profile-{row.id}">
-					<dt>{row.label}</dt>
-					<dd>
-						{#if row.swatch}<span class="swatch" style:background={row.swatch}
-							></span>{/if}{row.value}
-					</dd>
-				</div>
-			{/each}
-			{#if friend}
-				<div class="row" data-testid="player-profile-friend">
-					<dt>{t('player.seatProfile.friend')}</dt>
-					<dd><SeatFriendButton {open} target={friend} /></dd>
+			{#if token && character}
+				<div class="row" data-testid="player-profile-token">
+					<dt>{t('player.characterIcon')}</dt>
+					<dd><CharacterBadge characterId={token} {character} /></dd>
 				</div>
 			{/if}
+			{#each words?.details ?? [] as detail, index (index)}
+				<div class="row" data-testid="player-profile-detail">
+					<dt>{detail.label}</dt>
+					<dd>{detail.text}</dd>
+				</div>
+			{/each}
 		</dl>
 	</div>
 </Dialog>
 
 <style>
-	.big {
-		display: grid;
-		justify-items: center;
-		padding-block: var(--space-3);
+	.card {
+		display: flex;
+		align-items: center;
+		gap: var(--space-4);
+		padding-block: var(--space-4);
+	}
+	.disc {
+		flex: none;
+		padding: var(--space-3);
+	}
+	.tagline {
+		min-width: 0;
+		margin: 0;
+		color: var(--on-surface-muted);
+		font-style: italic;
+		overflow-wrap: anywhere;
 	}
 	.rows {
 		margin: 0;
@@ -89,18 +117,14 @@
 		border-top: 1px solid var(--border);
 	}
 	dt {
+		flex: none;
+		max-width: 50%;
 		color: var(--on-surface-muted);
 	}
 	dd {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--space-2);
+		min-width: 0;
 		margin: 0;
-	}
-	.swatch {
-		width: 1.25em;
-		height: 1.25em;
-		border-radius: 50%;
-		box-shadow: var(--button-ring);
+		text-align: end;
+		overflow-wrap: anywhere;
 	}
 </style>
