@@ -10,8 +10,18 @@
  * of the two may be in play). Paraphrase, never copy wiki prose.
  */
 import { describe, expect, it } from 'vitest';
-import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
+import { findJinx, jinxesAmong, type Script } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { castWith, run } from '#lib/core/model/fixtures.test-support.ts';
+import type { CharacterLookup } from '#lib/core/model/characters.ts';
+import type { Game } from '#lib/core/model/types.ts';
+import { nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
+import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
+
+const scriptOf = (ids: string[]): Script => ({
+	meta: { name: 'Jinxed' },
+	entries: ids.map((id) => ({ kind: 'official' as const, id }))
+});
 
 describe('Poppy Grower + Widow jinx', () => {
 	const data = committedGameData();
@@ -30,5 +40,36 @@ describe('Poppy Grower + Widow jinx', () => {
 		expect(jinxesAmong(data.jinxes, ['widow'])).not.toContain(jinx);
 	});
 
-	it.todo('enforces the rule the jinx imposes');
+	// Both pages' Related Jinxes: while the Poppy Grower has its ability, the Widow does
+	// not see the Grimoire. Its step says so (the Storyteller can still show it).
+	describe("the Widow doesn't see the Grimoire while the Poppy Grower has its ability", () => {
+		const cast = castWith({
+			script: scriptOf(['widow', 'poppygrower', 'imp', 'chef', 'empath', 'poisoner'])
+		});
+		const grimoire = (game: Game, ctx: { characters: CharacterLookup }) =>
+			nightStepAlerts(game, 'widow', ctx.characters).filter((a) => a.kind === 'no-grimoire');
+
+		it("is data in the Widow's rules", () => {
+			expect(jinxRulesBetween('widow', 'poppygrower')).toEqual({ noGrimoire: true });
+		});
+
+		it('says so at its step while the Poppy Grower lives', () => {
+			const { session, ctx, seats } = cast(['widow', 'poppygrower', 'imp', 'chef', 'empath']);
+			expect(grimoire(session.game, ctx).map((a) => [a.seatId, a.source, a.works])).toEqual([
+				[seats[0], { characterId: 'poppygrower', seatId: seats[1] }, true]
+			]);
+			const dead = run(session, ctx, { type: 'SetDead', seatId: seats[1], dead: true });
+			expect(grimoire(dead.game, ctx)).toEqual([]);
+		});
+
+		it('marks it not working while the Poppy Grower is poisoned', () => {
+			const { session, ctx, seats } = cast(['widow', 'poppygrower', 'imp', 'chef', 'poisoner']);
+			const { game } = run(session, ctx, {
+				type: 'AddReminder',
+				seatId: seats[1],
+				reminder: { characterId: 'poisoner', label: 'Poisoned' }
+			});
+			expect(grimoire(game, ctx).map((a) => a.works)).toEqual([false]);
+		});
+	});
 });

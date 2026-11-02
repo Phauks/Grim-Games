@@ -84,5 +84,13 @@
 		"types": ["demon"],
 		"alignment": "evil",
 		"token": "Night 3"
+	},
+	"jinxes": {
+		"clockmaker": {
+			"registersTo": {
+				"types": ["demon"],
+				"always": true
+			}
+		}
 	}
 }
