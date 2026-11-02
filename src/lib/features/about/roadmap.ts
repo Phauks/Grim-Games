@@ -46,6 +46,8 @@ export interface RoadmapItem {
 
 /** Parts whose PR titles didn't name them: the PR that finished each. */
 export const PART_PRS: Readonly<Record<string, number>> = {
+	// Moving backgrounds merged as "(L113)", an ID the setup jinx gaps also took.
+	L114: 1159,
 	L7: 323,
 	L19: 323,
 	L20: 323,
@@ -285,7 +287,7 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		title:
 			'Moving backgrounds behind the board: twelve scenes such as Hellfire, Tropical beach and Aurora, with a switch to keep them still',
 		area: 'storyteller',
-		parts: ['L113']
+		parts: ['L114']
 	},
 	{
 		title: 'Seats that keep their names when players rotate, and random name colours',
