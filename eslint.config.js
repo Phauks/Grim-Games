@@ -36,7 +36,6 @@ const CHARACTER_DISPLAY_TODO = [
 	'src/lib/features/errors/ErrorPage.svelte',
 	'src/lib/features/grimoire/FirstDeathAsk.svelte',
 	'src/lib/features/grimoire/GameEndPrompt.svelte',
-	'src/lib/features/grimoire/GuidedStep.svelte',
 	'src/lib/features/grimoire/RuleCharacters.svelte',
 	'src/lib/features/grimoire/StarPassPrompt.svelte',
 	'src/lib/features/modes/SpectersSheet.svelte',
