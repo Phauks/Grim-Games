@@ -3,13 +3,17 @@
  * block, `data/wakes-when-rules.ts`): the King once the dead equal or outnumber the living,
  * the Choirboy when the Demon killed the King tonight, the Zombuul when nobody died today, the
  * Seamstress until its once-per-game ability is used. `diedTonight` is every seat that died
- * since the most recent New day (`diedSinceNewDay`). Every condition given must hold; a character without one always may wake.
+ * since the most recent New day (`diedSinceNewDay`). Every condition given must hold; a
+ * character without one always may wake. A jinx may lower the King's dead count while its
+ * partner is in play (`deadAtLeast`: one dead player is enough with the Leviathan or Riot,
+ * https://wiki.bloodontheclocktower.com/King#Related_Jinxes).
  */
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
+import { ownJinxes } from './jinxes.ts';
 
 export function wakeConditionMet(
 	game: Game,
@@ -22,7 +26,12 @@ export function wakeConditionMet(
 	if (!when) return true;
 	if (when.deadAtLeastLiving) {
 		const dead = game.seating.filter((s) => game.seats[s].dead).length;
-		if (dead < game.seating.length - dead) return false;
+		const jinxed = ownJinxes(game, characterId, (r) => r.deadAtLeast !== undefined, characters)
+			.filter(({ partner }) =>
+				game.seating.some((s) => trueCharacter(game, s, characters) === partner)
+			)
+			.some(({ rule }) => dead >= rule.deadAtLeast!);
+		if (dead < game.seating.length - dead && !jinxed) return false;
 	}
 	if (when.diedTonight) {
 		const { characters: ids, by } = when.diedTonight;

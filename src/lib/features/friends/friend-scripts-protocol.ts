@@ -56,6 +56,11 @@ export interface ProfileResponse {
 	username: string;
 	icon: string | null;
 	scripts: PublishedScript[];
+	/**
+	 * Games they finished in a live room with someone else signed in (plan F11; Trevor,
+	 * 2026-10-30: visible to anyone who taps in). Missing from older Workers.
+	 */
+	games?: number;
 }
 
 export const FRIEND_SCRIPTS_API = '/api/friends/scripts';

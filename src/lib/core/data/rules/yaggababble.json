@@ -60,5 +60,10 @@
 		]
 	},
 	"infoCard": "secret-phrase",
-	"staysAsleep": "other"
+	"staysAsleep": "other",
+	"jinxes": {
+		"exorcist": {
+			"noKill": "token"
+		}
+	}
 }

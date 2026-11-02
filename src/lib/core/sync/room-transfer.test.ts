@@ -11,6 +11,8 @@ import {
 	join,
 	makeTransferCode,
 	newRoom,
+	offeredTransfer,
+	offerTransfer,
 	openTransfer,
 	publish,
 	seat,
@@ -170,5 +172,39 @@ describe('room transfer', () => {
 		expect(after.viewerKeyHash).toBeUndefined();
 		expect(after.viewerPassword).toBeUndefined();
 		expect(after.messages).toBeUndefined();
+	});
+
+	// Plan F14: the Storyteller hands the room to a friend in it, so no code is typed.
+	it('hands a live transfer to one friend’s account, and only that account may take it', () => {
+		const opened = openTransfer(room(), CODE_HASH, false, 0);
+		const offered = offerTransfer(opened, 'acct-bob', 10);
+		expect(offered.transfer?.offeredTo).toBe('acct-bob');
+		expect(hostView(offered).transfer?.offered).toBe('acct-bob');
+		expect(offeredTransfer(offered, 'acct-bob', 10)).toBe(true);
+		expect(offeredTransfer(offered, 'acct-eve', 10)).toBe(false);
+		// A device signed out is never the friend.
+		expect(offeredTransfer(offered, undefined, 10)).toBe(false);
+		// A later offer replaces the earlier one.
+		const other = offerTransfer(offered, 'acct-cat', 20);
+		expect(offeredTransfer(other, 'acct-bob', 20)).toBe(false);
+		expect(offeredTransfer(other, 'acct-cat', 20)).toBe(true);
+	});
+
+	it('keeps the offer through a switch change, and drops it with a new code or the end', () => {
+		const offered = offerTransfer(openTransfer(room(), CODE_HASH, false, 0), 'acct-bob', 10);
+		expect(openTransfer(offered, CODE_HASH, true, 20).transfer?.offeredTo).toBe('acct-bob');
+		expect(openTransfer(offered, OTHER_HASH, true, 20).transfer?.offeredTo).toBeUndefined();
+		expect(offeredTransfer(closeTransfer(offered), 'acct-bob', 20)).toBe(false);
+		// It runs out with the transfer, as the code does.
+		expect(offeredTransfer(offered, 'acct-bob', TRANSFER_MS)).toBe(false);
+	});
+
+	it('offers nothing without a live transfer or an account', () => {
+		const r = room();
+		expect(offerTransfer(r, 'acct-bob', 0)).toBe(r);
+		const opened = openTransfer(r, CODE_HASH, false, 0);
+		expect(offerTransfer(opened, '', 0)).toBe(opened);
+		expect(offerTransfer(opened, 42, 0)).toBe(opened);
+		expect(offerTransfer(opened, 'acct-bob', TRANSFER_MS)).toBe(opened);
 	});
 });
