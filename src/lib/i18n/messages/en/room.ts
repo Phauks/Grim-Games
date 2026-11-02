@@ -53,7 +53,7 @@ export const room = {
 	'room.seating.lock': 'Lock seating',
 	'room.players.letBackIn': 'Let back in',
 	'room.seating.title': 'Seating',
-	'room.seating.phones': 'Players move seats',
+	'room.seating.phones': 'Open seating',
 	'room.countOff.title': 'Count off',
 	'room.travellers.title': 'Travellers choose',
 	'room.travellers.choose': 'Choose your Traveller',
