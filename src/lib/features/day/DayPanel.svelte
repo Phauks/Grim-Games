@@ -51,6 +51,7 @@
 	import MadnessDeathDialog from './MadnessDeathDialog.svelte';
 	import PrepValueDialog from './PrepValueDialog.svelte';
 	import DayUseDialog from './DayUseDialog.svelte';
+	import AnyoneUseButton from './AnyoneUseButton.svelte';
 
 	interface Props {
 		game: DayPort;
@@ -68,8 +69,7 @@
 		town?: { can: boolean; called: boolean };
 	}
 
-	// No Undo or History here (Trevor, 2026-10-16): each day action is one entry in the
-	// game's History, in the grimoire's menu.
+	// No Undo or History here (Trevor, 2026-10-16): each day action is one History entry.
 	let { game, assistance, onOpenNight, onSavant, onExecute, town }: Props = $props();
 	// Every badge on the day screen names the script's own characters, homebrew included.
 	provideCharacters(() => game.characters);
@@ -142,6 +142,19 @@
 			seatId,
 			run: () => game.run({ type: 'UseAbility', seatId, characterId })
 		});
+	}
+
+	/** A rule character's row whose day ability any living player may use (the Doomsayer). */
+	function anyoneOf(reminder: DayReminder): CharacterId | undefined {
+		const id = reminder.characterId;
+		const head = reminder.segments[0];
+		if (!id || head?.kind !== 'character' || head.ref.seatId) return undefined;
+		return dayUseOf(id, game.characters)?.anyone && g.ruleCharacters.includes(id) ? id : undefined;
+	}
+	/** Its player chosen (AnyoneUseButton): DayUseDialog asks who dies. */
+	function anyoneChose(characterId: CharacterId, seatId: SeatId) {
+		const rule = dayUseOf(characterId, game.characters);
+		if (rule) dayUse?.ask({ seatId, characterId, rule });
 	}
 
 	/**
@@ -266,14 +279,12 @@
 		noteTarget = target;
 		noteOpen = true;
 	}
-
 	/** Votes for the first nominee, from who is alive now (core `blockThreshold`). */
 	const block = $derived(blockThreshold(g, game.characters));
 	/** Section headers stick just under the toolbar (Trevor, 2026-10-17). */
 	let toolbarSize = $state<ResizeObserverSize[]>();
 	// The exact (fractional) height: a rounded one leaves a sliver between toolbar and header.
 	const toolbarHeight = $derived(toolbarSize?.[0]?.blockSize ?? 0);
-
 	// ── A player's day button, on their ability row ──
 	/** The claim a character's player makes in town, from its rules block (L56). */
 	const claimOf = (characterId: CharacterId | undefined) =>
@@ -369,6 +380,13 @@
 	{#if hasDayButton(characterId)}
 		<span class="day-end">{@render dayButton(characterId, seatId)}</span>
 	{/if}
+{/snippet}
+
+<!-- Use on a rule character's row that any living player may use (the Doomsayer). -->
+{#snippet anyoneEnd(characterId: CharacterId)}
+	<span class="day-end"
+		><AnyoneUseButton {game} {characterId} onChoose={(s) => anyoneChose(characterId, s)} /></span
+	>
 {/snippet}
 
 <!-- Broke madness on a madness row, where no day button is (L84). -->
@@ -492,7 +510,11 @@
 											>{@render sentence()}{#if buttonRows[reminder.key]}{@render dayEnd(
 													reminder.characterId,
 													buttonRows[reminder.key]
-												)}{:else if mad}{@render madnessEnd(mad)}{/if}</span
+												)}{:else if mad}{@render madnessEnd(
+													mad
+												)}{:else if anyoneOf(reminder)}{@render anyoneEnd(
+													anyoneOf(reminder)!
+												)}{/if}</span
 										>
 									</CharacterRow>
 								{:else}

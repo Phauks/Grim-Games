@@ -1,7 +1,13 @@
 <script lang="ts">
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import { trueCharacter, type SeatId } from '#lib/core/model/index.ts';
-	import { falseInfoSource, type AnswerOption, type LearnedRole } from '#lib/core/rules/index.ts';
+	import {
+		anyInfoSource,
+		falseInfoSource,
+		type AnswerOption,
+		type LearnedRole,
+		type Reliability
+	} from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
@@ -17,14 +23,23 @@
 		reason: LearnedRole['reason'] | AnswerOption['reason'];
 		/** For `registers`: the players who would register as something else. */
 		registered?: readonly SeatId[];
+		/**
+		 * The waking player's reliability, when known: names the character behind false info
+		 * (the Duchess's False Info) and any that only may make it false (the Fibbin).
+		 */
+		source?: Pick<Reliability, 'unreliable' | 'mayBeFalse' | 'falseBy'>;
 	}
 
-	let { grimoire, reason, registered = [] }: Props = $props();
+	let { grimoire, reason, registered = [], source }: Props = $props();
 
 	const game = $derived(grimoire.game);
 	const characters = $derived(grimoire.open.characters);
-	/** The character that makes the information false (the Vortox). */
-	const falseBy = $derived(falseInfoSource(game, characters)?.characterId);
+	/** The character that makes the information false (the Vortox, the Duchess). */
+	const falseBy = $derived(source?.falseBy ?? falseInfoSource(game, characters)?.characterId);
+	/** A character that may make it false, when nothing else makes it unreliable (the Fibbin). */
+	const mayBy = $derived(source && !source.unreliable ? source.mayBeFalse : undefined);
+	/** The character that lets the Storyteller break the rules (the Atheist). */
+	const anyBy = $derived(anyInfoSource(game, characters)?.characterId);
 </script>
 
 {#if reason === 'registers'}<span class="tag"
@@ -39,6 +54,8 @@
 							character={characters.get(id)}
 						/>{/if}</span
 				>{/each}{/if}</span
+	>{:else if reason === 'unreliable' && mayBy}<span class="tag warn"
+		><CharacterBadge characterId={mayBy} character={characters.get(mayBy)} />Might be false</span
 	>{:else if reason === 'unreliable'}<span class="tag warn"
 		><Icon name="warning" />Not reliable</span
 	>{:else if reason === 'vortox'}<span class="tag warn"
@@ -46,6 +63,9 @@
 				characterId={falseBy}
 				character={characters.get(falseBy)}
 			/>{/if}</span
+	>{:else if reason === 'any'}<span class="tag"
+		>{#if anyBy}<CharacterBadge characterId={anyBy} character={characters.get(anyBy)} />{/if}Any
+		allowed</span
 	>{:else if reason === 'invalid'}<span class="tag warn"><Icon name="warning" />Not valid</span
 	>{/if}
 

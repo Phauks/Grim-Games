@@ -9,6 +9,7 @@
 		typeOf,
 		type SeatId
 	} from '#lib/core/model/index.ts';
+	import { isReplacedAfterDraw } from '#lib/core/rules/bag-characters.ts';
 	import {
 		changeableSeats,
 		characterChanger,
@@ -81,13 +82,25 @@
 	const spare = $derived(
 		step.character ? jinxedPartners(step.character.id, 'spareToken', script, characters) : []
 	);
-	const inPlay = $derived(
-		rule?.notInPlay
+	// Making the night's Minions (the Kazali, the Lord of Typhon), a stand-in such as the
+	// Marionette is never made: it enters play as the Demon's good neighbour, by its own token,
+	// and is not told (https://wiki.bloodontheclocktower.com/Marionette#Related_Jinxes).
+	const standIns = $derived(
+		rule?.upTo
+			? script.filter((id) => {
+					const c = characters.get(id);
+					return c !== undefined && isReplacedAfterDraw(c);
+				})
+			: []
+	);
+	const inPlay = $derived([
+		...(rule?.notInPlay
 			? game.seating
 					.flatMap((id) => trueCharacter(game, id, characters) ?? [])
 					.filter((id) => !spare.includes(id))
-			: []
-	);
+			: []),
+		...standIns
+	]);
 	// Characters a jinx bars once a day is over (the Pit-Hag's and Hatter's Leviathan after
 	// day 5, https://wiki.bloodontheclocktower.com/Leviathan#Related_Jinxes).
 	const tooLate = $derived(
@@ -112,6 +125,14 @@
 	const swapMisfits = $derived(
 		new Set(game.seating.filter((id) => game.seats[id].characterId && !swappable.has(id)))
 	);
+	// Once a Demon is picked first, another Demon is left out of the second pick.
+	const secondMisfits = $derived.by(() => {
+		if (!step.character || first === undefined) return swapMisfits;
+		const ok = new Set(swappableSeats(game, step.character.id, characters, first));
+		return new Set(
+			game.seating.filter((id) => id !== first && game.seats[id].characterId && !ok.has(id))
+		);
+	});
 	// The Cult Leader's living neighbours' alignments, one of which it takes tonight.
 	const neighbours = $derived(
 		step.character ? neighbourAlignments(game, step.character.id, characters) : undefined
@@ -273,7 +294,7 @@
 		{characters}
 		exclude={first}
 		offer={(id) => !!game.seats[id].characterId}
-		misfits={swapMisfits}
+		misfits={secondMisfits}
 		onChoose={chooseSecond}
 	/>
 {/if}

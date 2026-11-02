@@ -11,10 +11,12 @@
 	import NightShownTo from './NightShownTo.svelte';
 	import NightYesNo from './NightYesNo.svelte';
 	import TravellerAlignment from './TravellerAlignment.svelte';
+	import SetupAlignmentStep from './SetupAlignmentStep.svelte';
 	import TravellerJoins from './TravellerJoins.svelte';
 	import { STANDARD_INFO_TOKENS, type CharacterId } from '#lib/core/data/index.ts';
 	import {
 		believesDemon,
+		falseInfoSource,
 		TRAVELLER_ALIGNMENT_STEP,
 		TRAVELLER_JOINS_STEP
 	} from '#lib/core/rules/index.ts';
@@ -184,7 +186,13 @@
 		const id = trueCharacter(game, seatId, characters);
 		const character = id ? characters.get(id) : undefined;
 		if (!ask) return;
-		onInfoTokens(ask.token, character ? withChosen(ask.filled, character) : ask.filled);
+		// Under the Vortox the waking Townsfolk's card must not show the true character.
+		const type = step?.character?.type;
+		const mustBeFalse = type !== undefined && falseInfoSource(game, characters, type) !== undefined;
+		onInfoTokens(
+			ask.token,
+			character ? withChosen(ask.filled, character, mustBeFalse) : ask.filled
+		);
 	}
 	/**
 	 * The seats the token being put doesn't fit, faded in the list (Trevor, 2026-10-27: only
@@ -383,6 +391,17 @@
 					onDraw={(seatId) => {
 						open = false;
 						onDraw(seatId);
+					}}
+				/>
+			{/if}
+			{#if step.setupAlignments}
+				<!-- Over the open step, as with a suggestion's Show to player. -->
+				<SetupAlignmentStep
+					{grimoire}
+					onShow={(card) => {
+						shownId = undefined;
+						shownCard = card;
+						showOpen = true;
 					}}
 				/>
 			{/if}

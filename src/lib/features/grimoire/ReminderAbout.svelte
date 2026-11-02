@@ -6,7 +6,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import type { Character } from '#lib/core/data/index.ts';
-	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 
@@ -43,10 +43,10 @@
 	{/snippet}
 	{@render children?.()}
 	<!-- The ability it comes from, as the Script tab shows the character (Trevor, 2026-10-30). -->
-	{#if owner}<CharacterRow character={owner} info
-			>{#snippet ability()}<GlossaryText
+	{#if owner}<CharacterPiece template="row" character={owner} info
+			>{#snippet abilityText()}<GlossaryText
 					text={owner.ability}
 					names={[...scriptNames]}
-				/>{/snippet}</CharacterRow
+				/>{/snippet}</CharacterPiece
 		>{/if}
 </Dialog>

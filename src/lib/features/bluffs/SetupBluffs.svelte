@@ -2,7 +2,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import type { CharacterLookup, Game } from '#lib/core/model/index.ts';
-	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import BluffTag from './BluffTag.svelte';
 	import BluffsSheet, { type BluffDispatch } from './BluffsSheet.svelte';
@@ -62,9 +62,14 @@
 				{@const playing = inPlay?.includes(character.id) ?? false}
 				<!-- Also chosen to be in play: a warning in its kept place, never a lock (Trevor, 2026-10-23). -->
 				<li data-in-play={playing ? '' : undefined}>
-					<CharacterRow {character} withNote note={playing ? t('bluffs.alsoInPlay') : undefined}>
+					<CharacterPiece
+						template="row"
+						{character}
+						withNote
+						note={playing ? t('bluffs.alsoInPlay') : undefined}
+					>
 						{#snippet marks()}<BluffTag warn={playing} />{/snippet}
-					</CharacterRow>
+					</CharacterPiece>
 				</li>
 			{:else}
 				<li class="none">{t('common.none')}</li>
