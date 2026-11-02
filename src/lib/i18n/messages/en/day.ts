@@ -25,9 +25,10 @@ export const day = {
 	'day.outcomeProblem.used': 'Already used',
 	'day.execution': 'Execution',
 	'day.executionChoose': 'Choose',
+	/** Start game with seats still empty (Trevor, 2026-11-01): a warning, never a lock. */
+	'day.startNoCharacter': 'Players without a character:',
 	/** The day's Execution before Start game (Trevor, 2026-11-01): a warning, never a lock. */
-	'day.executionNotStarted':
-		'The game has not started yet, so there is no day to end. Start game begins Night 1.',
+	'day.executionNotStarted': 'The game has not started yet.',
 	'day.noExecution': 'No execution',
 	'day.savedBy': 'Saved by',
 	'day.savedByNone': 'None',

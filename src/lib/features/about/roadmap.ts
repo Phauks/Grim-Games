@@ -357,6 +357,13 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['M10a', 'M10b', 'M10c', 'M10d', 'M10e', 'M10f', 'M10g']
 	},
 	{
+		// Trevor, 2026-11-02: the Correct reminder goes on whoever was guessed right (the Juggler
+		// too, one player more than once, or nobody); the Juggler learns how many are placed.
+		title: "The Juggler's number from the Correct reminders on the board",
+		area: 'engine',
+		parts: ['M19']
+	},
+	{
 		// Gap 8: the Bigwig's chosen speaker; gap 12: one-offs with no behaviour yet: M12a the
 		// Scapegoat, M12b the Boomdandy, M12c the Courtier's countdown.
 		title: "The Bigwig's speaker, the Scapegoat, the Boomdandy and the Courtier's three nights",
