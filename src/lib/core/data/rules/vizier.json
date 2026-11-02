@@ -3,6 +3,9 @@
 		"who": "self",
 		"from": "day"
 	},
+	"executionOutcome": {
+		"executeNow": "good-voted"
+	},
 	"dayReminders": {
 		"impairable": true,
 		"reminders": [
