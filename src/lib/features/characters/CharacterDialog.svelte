@@ -7,7 +7,7 @@
 	import { clearTermHandler } from '#lib/features/glossary/term-handler.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { jinxesFor } from '#lib/core/data/jinxes.ts';
-	import CharacterEntry from './CharacterEntry.svelte';
+	import CharacterPiece from './CharacterPiece.svelte';
 	import { officialData } from './game-data.svelte.ts';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import ContentsLayout, { type ContentsItem } from '#lib/ui/layout/ContentsLayout.svelte';
@@ -207,11 +207,12 @@
 				{#each jinxes as jinx (jinx.characters.join())}
 					<!-- The other character as a text-size badge across the section, the jinx indented
 					     under it, as on the Reference card (Trevor, 2026-10-16). -->
-					<CharacterEntry
+					<CharacterPiece
+						template="entry"
 						characterId={jinx.characters.find((id) => id !== character.id) ?? jinx.characters[1]}
 					>
 						<p class="jinx-text"><GlossaryText text={jinx.reason} /></p>
-					</CharacterEntry>
+					</CharacterPiece>
 				{:else}
 					<p>{t('common.none')}</p>
 				{/each}

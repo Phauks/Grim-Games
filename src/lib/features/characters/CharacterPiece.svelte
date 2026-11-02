@@ -9,7 +9,7 @@
 	} from '#lib/core/data/index.ts';
 	import CharacterRow from './CharacterRow.svelte';
 	import CharacterBadge from './CharacterBadge.svelte';
-	import CharacterEntry from './CharacterEntry.svelte';
+	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import { loadOfficialData, officialData } from './game-data.svelte.ts';
 	import { contextCharacters } from './character-context.ts';
 	import { resolveTemplate, type CharacterTemplateName } from './character-templates.ts';
@@ -139,10 +139,30 @@
 			{children}
 			{onclick}
 		/>{/if}
-{:else if id && look.entry}
-	<CharacterEntry characterId={id} {alignment} {playerName} end={controls} {footer}
-		>{#if children}{@render children()}{/if}</CharacterEntry
-	>
+{:else if look.entry}
+	<!--
+		An entry: the badge with its player as a bar across its space, the text indented under
+		it, laid out like a jinx (Trevor, 2026-10-16/17); with a footer it is a card with a
+		joined lower strip (Trevor, 2026-10-23). Trevor (2026-11-02) folded the old entry into
+		the badge with player: the same badge, only wider. Without a character the bar is the
+		player alone, or `label`.
+	-->
+	<div class="entry" data-card={footer ? '' : undefined}>
+		<span class="bar"
+			>{#if id}<CharacterBadge
+					characterId={id}
+					character={given}
+					{alignment}
+					{playerName}
+				/>{:else if playerName}<PlayerBadge name={playerName} />{:else}<span class="plain"
+					>{label}</span
+				>{/if}{#if controls}{@render controls()}{/if}</span
+		>
+		<div class="body">
+			{#if children}{@render children()}{/if}
+		</div>
+		{#if footer}<div class="footer">{@render footer()}</div>{/if}
+	</div>
 {:else if id && !tags && !marks && !look.fullWidth}
 	<CharacterBadge
 		characterId={id}
@@ -182,5 +202,60 @@
 	.pill[data-full] > :global(.badge) {
 		flex: 1 1 auto;
 		min-width: 0;
+	}
+
+	.entry {
+		padding: var(--space-2) 0;
+		border-bottom: var(--card-border);
+	}
+	/* The controls wrap under the badge only when the line is too narrow (largest text). */
+	.bar {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+		align-items: center;
+		margin-bottom: var(--space-1);
+	}
+	.bar :global(.badge) {
+		display: flex;
+		flex: 1 1 auto;
+		min-width: 0;
+	}
+	.bar > :global(:not(.badge)) {
+		flex: none;
+	}
+	.plain {
+		display: block;
+		padding: 0 var(--space-2);
+		border: var(--card-border);
+		border-radius: var(--radius-full);
+		font-family: var(--font-player);
+	}
+	.body {
+		padding-inline-start: var(--space-3);
+	}
+	/*
+	 * A card: the footer a raised strip joined to its bottom. Its list draws the box and the
+	 * dividers (Trevor, 2026-10-23: L44, rows with dividers, not boxes with gaps).
+	 */
+	.entry[data-card] {
+		padding: var(--space-2) var(--space-2) 0;
+		border-bottom: 0;
+	}
+	.entry[data-card] .body {
+		padding-inline: var(--space-2);
+		padding-bottom: var(--space-2);
+	}
+	/* Its end (the day's button) runs the strip's full height to its right edge (Trevor, 2026-10-24). */
+	.footer {
+		display: flex;
+		align-items: stretch;
+		gap: var(--space-2);
+		min-height: var(--tap-target);
+		margin-inline: calc(-1 * var(--space-2));
+		padding: 0 0 0 var(--space-3);
+		border-top: var(--card-border);
+		/* A see-through tint of the text (the hover tint), so the list's edge still shows. */
+		background: var(--surface-hover);
 	}
 </style>

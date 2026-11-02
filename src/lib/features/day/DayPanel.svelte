@@ -23,7 +23,7 @@
 	} from '#lib/core/rules/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
-	import CharacterEntry from '#lib/features/characters/CharacterEntry.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
 	import JinxMark from '#lib/features/characters/JinxMark.svelte';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
@@ -512,14 +512,14 @@
 										>
 									</CharacterRow>
 								{:else}
-									<CharacterEntry characterId={head?.ref.characterId}>
-										{#snippet end()}{@const seatId =
+									<CharacterPiece template="entry" characterId={head?.ref.characterId}>
+										{#snippet controls()}{@const seatId =
 												buttonRows[reminder.key]}{#if seatId}{@render dayButton(
 													reminder.characterId,
 													seatId
 												)}{:else if mad}{@render madnessEnd(mad)}{/if}{/snippet}
 										{@render sentence()}
-									</CharacterEntry>
+									</CharacterPiece>
 								{/if}
 								{#snippet sentence()}
 									<span class="sentence" data-testid="day-state">
