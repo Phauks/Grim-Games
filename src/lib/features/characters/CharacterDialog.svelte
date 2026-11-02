@@ -20,7 +20,8 @@
 	interface Props {
 		open?: boolean;
 		character: Character;
-		icon?: string;
+		/** Its alignment when it isn't the type's own (an evil Townsfolk's icon). */
+		alignment?: Alignment;
 		/**
 		 * The page of a character with no BotC wiki page (a homebrew one): where it came from,
 		 * such as its Homebrew Wiki page (Script builder, Trevor 2026-10-18). Opened by the
@@ -31,7 +32,7 @@
 		seat?: { number: number; alignment?: Alignment };
 	}
 
-	let { open = $bindable(false), character, icon: given, sourcePage, seat }: Props = $props();
+	let { open = $bindable(false), character, alignment, sourcePage, seat }: Props = $props();
 	// Terms here open their popover, even when these details were opened from the Glossary.
 	clearTermHandler();
 	// Its own badge in the text draws the eye back to the summary at the top (Trevor, 2026-10-20).
@@ -188,7 +189,7 @@
 			if (event.target === event.currentTarget) pulse = false;
 		}}
 	>
-		<CharacterSummary {character} icon={given} {seat} />
+		<CharacterSummary {character} {alignment} {seat} />
 	</div>
 	<ContentsLayout
 		label={t('characters.moreFromWiki')}
