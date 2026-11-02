@@ -171,6 +171,9 @@ export const settings = {
 	'settings.backgroundFile': 'Background image file',
 	'settings.backgroundSaveError': 'The background could not be saved on this device.',
 	'settings.backgroundImageError': 'That file could not be read as an image.',
+	'settings.movingBackgrounds': 'Moving backgrounds',
+	'settings.movingBackgroundsHelp':
+		'Off, or while your device asks for less motion, a moving background stays still.',
 	'settings.vignette': 'Vignette',
 	'settings.vignetteStrength': 'Vignette strength',
 	'settings.scriptLogo': 'Script logo',

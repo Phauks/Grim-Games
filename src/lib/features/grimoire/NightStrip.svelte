@@ -152,7 +152,8 @@
 						text={step.reminder}
 						character={step.character}
 						characters={grimoire.open.characters}
-						prepValues={game.prepValues}
+						{game}
+						own={step.infoTokenCharacters}
 						onchoose={onCard}
 					/>
 				</div>

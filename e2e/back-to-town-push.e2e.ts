@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { toBoard } from './new-game.ts';
+import { ENDPOINT, fakePush } from './push.ts';
 import { openSettingsDialog } from './shell.ts';
 
 // Back to town on a locked phone (plan U12, Trevor 2026-10-28: "back to town only works while
@@ -7,30 +8,6 @@ import { openSettingsDialog } from './shell.ts';
 // address, and the room pushes the call to phones not showing the app. A test browser has no
 // push service, so the browser's subscription is faked and the test checks what the phone
 // tells the room.
-
-const ENDPOINT = 'https://fcm.googleapis.com/fcm/send/e2e-phone';
-
-/** Stands in for the browser's push service: permission granted, and one subscription. */
-async function fakePush(page: Page) {
-	await page.addInitScript((endpoint) => {
-		const key = btoa(String.fromCharCode(4, ...Array.from({ length: 64 }, (_, i) => i)))
-			.replaceAll('+', '-')
-			.replaceAll('/', '_')
-			.replace(/=+$/, '');
-		const auth = 'AAECAwQFBgcICQoLDA0ODw';
-		let permission: NotificationPermission = 'default';
-		Object.defineProperty(Notification, 'permission', { get: () => permission });
-		Notification.requestPermission = async () => (permission = 'granted');
-		let subscription: PushSubscription | null = null;
-		PushManager.prototype.getSubscription = async () => subscription;
-		PushManager.prototype.subscribe = async () =>
-			(subscription = {
-				endpoint,
-				toJSON: () => ({ endpoint, keys: { p256dh: key, auth } }),
-				unsubscribe: async () => ((subscription = null), true)
-			} as unknown as PushSubscription);
-	}, ENDPOINT);
-}
 
 /** What the phone sent the room about push and being on screen, in order. */
 function sentToRoom(page: Page): unknown[] {

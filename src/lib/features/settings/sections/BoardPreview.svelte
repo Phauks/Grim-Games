@@ -198,6 +198,7 @@
 		{url}
 		preset={choice.kind === 'preset' ? choice.id : undefined}
 		vignette={boardLooks.current.vignette ? boardLooks.current.vignetteStrength : undefined}
+		moving={boardLooks.current.movingBackgrounds}
 	/>
 	{#if boardLooks.current.logo}
 		<BoardLogo src={logo} name={scriptName} opacity={boardLooks.current.logoOpacity} />

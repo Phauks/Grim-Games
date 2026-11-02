@@ -46,6 +46,8 @@ export function afterDeath(
 	characters: CharacterLookup
 ): AfterDeath | undefined {
 	if (!registersAsDead(game, seatId)) return undefined;
+	// Drunk or poisoned as they died: no power gained (https://wiki.bloodontheclocktower.com/Banshee).
+	if (game.seats[seatId]?.impairedAtDeath) return undefined;
 	const characterId = trueCharacter(game, seatId, characters);
 	const rule = characterId === undefined ? undefined : rulesOf(characterId, characters)?.afterDeath;
 	if (!rule) return undefined;

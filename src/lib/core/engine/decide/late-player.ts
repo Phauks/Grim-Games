@@ -1,5 +1,6 @@
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { isKnownReminder, type Tile, type TileId } from '#lib/core/model/index.ts';
+import { SHOWN_OWN_CHARACTER } from '#lib/core/rules/character-changes.ts';
 import type { TileSpec } from '../commands.ts';
 import type { GameEvent } from '../events.ts';
 import {
@@ -93,7 +94,8 @@ export const LATE_PLAYER_DECIDERS: Deciders<'AddLatePlayer'> = {
 					id: `late-seat-${seat.seatId}`,
 					title: 'Late seat',
 					characterId: character.id,
-					text: `Wake ${who}. Show the "You are" token and ${character.name}.`,
+					text: `Wake ${who}. Show the *YOU ARE* info token, then the ${character.name} token.`,
+					infoTokenCharacters: SHOWN_OWN_CHARACTER,
 					after: 'dusk',
 					night: 'first'
 				}

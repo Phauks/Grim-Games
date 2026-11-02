@@ -17,6 +17,12 @@ import {
 } from '../../src/lib/features/friends/friend-scripts-protocol.ts';
 import { GROUPS_PER_DAY, MAX_GROUPS } from '../../src/lib/features/friends/groups-protocol.ts';
 import {
+	addPushDevice,
+	dropPushDevices,
+	type PushDevice
+} from '../../src/lib/core/sync/invite-push.ts';
+import type { PushAddress } from '../../src/lib/core/sync/web-push.ts';
+import {
 	planReceive,
 	planSend,
 	type BookCounts,
@@ -141,6 +147,15 @@ export class FriendBook extends DurableObject {
 				id INTEGER PRIMARY KEY CHECK (id = 1),
 				games INTEGER NOT NULL,
 				last_game TEXT NOT NULL
+			);
+			-- Devices this account gets game invite notifications on (plan F8), by push address,
+			-- and when an invite was last pushed to each.
+			CREATE TABLE IF NOT EXISTS push_device (
+				endpoint TEXT PRIMARY KEY,
+				p256dh TEXT NOT NULL,
+				auth TEXT NOT NULL,
+				added_at INTEGER NOT NULL,
+				pushed_at INTEGER
 			);
 		`);
 	}
@@ -405,6 +420,64 @@ export class FriendBook extends DurableObject {
 
 	async dismissInvite(id: number): Promise<void> {
 		this.sql.exec('DELETE FROM invite WHERE id = ?', id);
+	}
+
+	private pushRows(): (PushDevice & { pushedAt: number | null })[] {
+		return this.sql
+			.exec<{ endpoint: string; p256dh: string; auth: string; at: number; pushed: number | null }>(
+				'SELECT endpoint, p256dh, auth, added_at AS at, pushed_at AS pushed FROM push_device ORDER BY added_at DESC'
+			)
+			.toArray()
+			.map(({ endpoint, p256dh, auth, at, pushed }) => ({
+				endpoint,
+				keys: { p256dh, auth },
+				at,
+				pushedAt: pushed
+			}));
+	}
+
+	/** Keeps exactly `devices`; one already kept keeps when it was last pushed to. */
+	private keepPushDevices(devices: PushDevice[]): void {
+		const kept = new Set(devices.map((device) => device.endpoint));
+		for (const row of this.pushRows()) {
+			if (!kept.has(row.endpoint)) {
+				this.sql.exec('DELETE FROM push_device WHERE endpoint = ?', row.endpoint);
+			}
+		}
+		for (const { endpoint, keys, at } of devices) {
+			this.sql.exec(
+				`INSERT INTO push_device (endpoint, p256dh, auth, added_at) VALUES (?, ?, ?, ?)
+				ON CONFLICT (endpoint) DO UPDATE SET
+					p256dh = excluded.p256dh, auth = excluded.auth, added_at = excluded.added_at`,
+				endpoint,
+				keys.p256dh,
+				keys.auth,
+				at
+			);
+		}
+	}
+
+	/** Game invites are pushed to this device too (plan F8); the oldest past the cap goes. */
+	async addPushDevice(address: PushAddress, now: number): Promise<void> {
+		this.keepPushDevices(addPushDevice(this.pushRows(), address, now));
+	}
+
+	/** These devices stop getting invite notifications: turned off, or gone. */
+	async dropPushDevices(endpoints: string[]): Promise<void> {
+		this.keepPushDevices(dropPushDevices(this.pushRows(), endpoints));
+	}
+
+	/** Whether the device at `endpoint` gets invite notifications, and when one was last pushed. */
+	async pushDevice(endpoint: string): Promise<{ on: boolean; pushedAt?: number }> {
+		const row = this.pushRows().find((device) => device.endpoint === endpoint);
+		if (!row) return { on: false };
+		return row.pushedAt === null ? { on: true } : { on: true, pushedAt: row.pushedAt };
+	}
+
+	/** The devices a new invite is pushed to, noting that it was. */
+	async invitePushTargets(now: number): Promise<PushAddress[]> {
+		this.sql.exec('UPDATE push_device SET pushed_at = ?', now);
+		return this.pushRows().map(({ endpoint, keys }) => ({ endpoint, keys }));
 	}
 
 	/**

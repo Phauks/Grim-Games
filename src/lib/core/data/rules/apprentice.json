@@ -43,5 +43,11 @@
 		"token": "Is The Apprentice",
 		"good": ["townsfolk"],
 		"evil": ["minion"]
+	},
+	"infoTokenCharacters": {
+		"you-are": {
+			"characters": ["marked"],
+			"token": "Is The Apprentice"
+		}
 	}
 }

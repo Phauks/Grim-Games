@@ -33,6 +33,7 @@
 	import NightReasonTag from './NightReasonTag.svelte';
 	import NightWhy from './NightWhy.svelte';
 	import CharacterSet from './CharacterSet.svelte';
+	import DayMarkAnswer from './DayMarkAnswer.svelte';
 	import { answerValueText, seatName } from './night-steps.ts';
 
 	/**
@@ -53,6 +54,8 @@
 		onShowCharacters?: (set: Extract<AnswerValue, { kind: 'characters' }>) => void;
 		/** Show the "Your number is" info token with a suggested number (a number step). */
 		onShowNumber?: (n: number) => void;
+		/** Show a yes or no answer as the Yes/No info token does (Trevor, 2026-11-02: Flowergirl). */
+		onShowAnswer?: (answer: string) => void;
 		/** A picker's row was shown to the player: record it (`record-shown.ts`). */
 		onRecord?: (picker: InfoPicker, choice: InfoChoice) => void;
 	}
@@ -64,6 +67,7 @@
 		onShow,
 		onShowCharacters,
 		onShowNumber,
+		onShowAnswer,
 		onRecord
 	}: Props = $props();
 	const headingId = $props.id();
@@ -415,6 +419,9 @@
 		{#if o.value.kind === 'number' && onShowNumber}
 			{@const n = o.value.value}
 			<Button variant="quiet" onclick={() => onShowNumber(n)}>Show to player</Button>
+		{:else if o.value.kind === 'yes-no' && onShowAnswer}
+			{@const text = answerValueText(o.value)}
+			<Button variant="quiet" onclick={() => onShowAnswer(text)}>Show to player</Button>
 		{:else if o.value.kind === 'character' && onShow}
 			<Button variant="quiet" onclick={() => showOrPick(key, id)}>Show to player</Button>
 		{:else if o.value.kind === 'characters' && !o.anyOther && onShowCharacters}
@@ -448,6 +455,11 @@
 	{:else if a.kind === 'number' && onShowNumber}
 		{@const n = a.value}
 		<Button variant="quiet" onclick={() => onShowNumber(n)}>Show to player</Button>
+	{:else if a.kind === 'yes-no' && onShowAnswer}
+		{@const text = answerValueText(a)}
+		<Button variant="quiet" onclick={() => onShowAnswer(text)}>Show to player</Button>
+	{:else if a.kind === 'none'}
+		<DayMarkAnswer {grimoire} {step} />
 	{/if}
 {/snippet}
 

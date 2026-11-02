@@ -100,11 +100,13 @@
 				: undefined}
 		preset={shared.preset}
 		vignette={shared.vignette}
+		moving={boardLooks.current.movingBackgrounds}
 	/>
 {:else}
 	<BoardBackdrop
 		url={backgroundUrl}
 		preset={background.kind === 'preset' ? background.id : undefined}
 		vignette={boardLooks.current.vignette ? boardLooks.current.vignetteStrength : undefined}
+		moving={boardLooks.current.movingBackgrounds}
 	/>
 {/if}
