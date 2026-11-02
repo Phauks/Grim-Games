@@ -41,6 +41,15 @@
 		},
 		"politician": {
 			"notGiven": true
+		},
+		"cultleader": {
+			"noTurnGood": true
+		},
+		"goon": {
+			"noTurnGood": true
+		},
+		"villageidiot": {
+			"spareToken": true
 		}
 	}
 }

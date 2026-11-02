@@ -43,6 +43,8 @@
 		 * "Approve day view E"). Without it there is no Soundboard button.
 		 */
 		onSoundboard?: () => void;
+		/** Back to town on the day's timer (Trevor, 2026-11-01), as on the board's. */
+		town?: { can: boolean; called: boolean };
 		/**
 		 * Where the game is up to, as the board's corner says it: before Start game the sheet is
 		 * named Setup, not Day (Trevor, 2026-11-01).
@@ -60,6 +62,7 @@
 		coverTimer,
 		coverActions,
 		onSoundboard,
+		town,
 		phase
 	}: Props = $props();
 
@@ -96,7 +99,7 @@
 				onclick={onSoundboard}
 			/>{/if}{/snippet}
 	<div class="body">
-		<DayPanel game={day} {assistance} {onSavant} {onExecute} />
+		<DayPanel game={day} {assistance} {onSavant} {onExecute} {town} />
 	</div>
 	{#snippet actions()}
 		<span class="day-name" data-testid="day-name" aria-hidden="true">{title}</span>

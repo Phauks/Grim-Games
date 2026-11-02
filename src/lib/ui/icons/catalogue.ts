@@ -66,6 +66,11 @@ export const ICON_SLOTS = {
 	timer: { label: 'Timer', choices: ['ph:timer', 'ph:hourglass'] },
 	loading: { label: 'Loading', choices: ['ph:circle-notch', 'ph:spinner'] },
 	sound: { label: 'Sound', choices: ['ph:speaker-high', 'ph:bell'] },
+	/**
+	 * Back to town (plan U2): the Storyteller calls the players back, on the day timer (Trevor,
+	 * 2026-11-01). Its own icon, not the timer's sound.
+	 */
+	callTown: { label: 'Back to town', choices: ['ph:megaphone', 'ph:megaphone-simple'] },
 	/** The Storyteller's soundboard (plan U6): bells at a tap. */
 	soundboard: { label: 'Soundboard', choices: ['ph:bell-simple-ringing', 'ph:bell'] },
 	/** Holds the soundboard and day and night sound where they are (Trevor, 2026-10-27). */

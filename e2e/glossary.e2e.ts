@@ -326,3 +326,25 @@ test('the Glossary links the current script’s almanac when it has one', async 
 		'https://example.com/almanac-test'
 	);
 });
+
+test('a rules term is underlined once per wiki section, not in every bullet', async ({ page }) => {
+	// A made-up page, so no wiki text is in the repo. "Link once" (Trevor, 2026-11-02; Wikipedia
+	// MOS:DUPLINK): the first use in the section is marked, later ones stay plain.
+	await page.route('https://wiki.bloodontheclocktower.com/api.php?**', (route) =>
+		route.fulfill({
+			json: {
+				parse: {
+					text:
+						'<div class="mw-parser-output"><h2>Summary</h2><p>Sample poisoned line.</p>' +
+						'<ul><li>Sample poisoned bullet.</li><li>Another poisoned bullet.</li></ul></div>'
+				}
+			}
+		})
+	);
+	await page.goto('/spikes/badges');
+	await page.locator('button.badge', { hasText: 'Witch' }).first().tap();
+	const wiki = page.getByRole('dialog', { name: 'Witch' }).getByTestId('wiki-page');
+	await expect(wiki.getByRole('listitem')).toHaveCount(2);
+	await expect(wiki.locator('.glossary-term', { hasText: 'poisoned' })).toHaveCount(1);
+	await expect(wiki.locator('p .glossary-term', { hasText: 'poisoned' })).toHaveCount(1);
+});

@@ -8,14 +8,23 @@
  *   Exorcist's Chosen on the Demon, https://wiki.bloodontheclocktower.com/Exorcist);
  * - `no-kill`: another ability's token stops them killing tonight, so no kill alerts follow
  *   (`stopsKilling`: the Princess's Doesn't Kill on the Demon,
- *   https://wiki.bloodontheclocktower.com/Princess);
+ *   https://wiki.bloodontheclocktower.com/Princess), or a jinx does (`noKill` in the `jinxes`
+ *   block: the Exorcist's Chosen on the Yaggababble, the Cannibal who nominated and executed
+ *   the Princess today, https://wiki.bloodontheclocktower.com/Princess#Related_Jinxes);
+ * - `no-grimoire`: a jinx says the waking player does not see the Grimoire while another
+ *   character's ability works (`noGrimoire`: the Spy and the Widow while the Poppy Grower has
+ *   its ability, https://wiki.bloodontheclocktower.com/Poppy_Grower#Related_Jinxes);
+ * - `grimoire-hides`: a jinx says this player's token comes off the Grimoire while the waking
+ *   player sees it (`grimoireHides`: the Demon's and the Magician's, for the Spy and the
+ *   Widow, https://wiki.bloodontheclocktower.com/Magician#Related_Jinxes);
  * - `seating`: a character whose neighbours are turned evil at setup (`turnsPlayersInto`
  *   `neighbours`) is not inside one line of every evil player
  *   (https://wiki.bloodontheclocktower.com/Lord_of_Typhon);
  * and, when the step can kill (`NIGHT_KILLERS`), for each player it might kill:
  * - `protected`: they cannot die tonight (the Storyteller's override, the Sailor, the
  *   Soldier or Monk against the Demon, the Tea Lady, the Innkeeper);
- * - `may-bounce`: an ability that may move the kill elsewhere (the Mayor, against the Demon);
+ * - `may-bounce`: an ability that may move the kill elsewhere (the Mayor, against the Demon),
+ *   unless a working protection already keeps them safe;
  * - `survives-first-death`: an ability that stops its player's first death (the Fool), until
  *   its spent token is placed;
  * - `on-death`: dying sets off an ability (the Ravenkeeper wakes, the Farmer passes on,
@@ -36,10 +45,12 @@ import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { alignmentOf, getSeat, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
 import type { DeathCause, Game, SeatId } from '#lib/core/model/types.ts';
 import { isExecution } from './death-causes.ts';
+import { ownJinxes, ownJinxRules } from './jinxes.ts';
 import {
 	abilityState,
 	firstDeathSaver,
 	killRedirect,
+	protection,
 	protectors,
 	type AbilitySource,
 	type Impairment
@@ -125,6 +136,8 @@ export type NightAlertKind =
 	| 'impaired'
 	| 'blocked'
 	| 'no-kill'
+	| 'no-grimoire'
+	| 'grimoire-hides'
 	| 'seating'
 	| 'protected'
 	| 'may-bounce'
@@ -207,10 +220,14 @@ export function nightStepAlerts(
 	for (const seatId of actors) {
 		for (const r of game.seats[seatId].reminders) {
 			const rules = rulesOf(r.characterId, characters);
-			const waking = rules?.stopsWaking?.token === r.label;
+			let waking = rules?.stopsWaking?.token === r.label;
 			const stops = waking ? rules?.stopsWaking : rules?.stopsKilling;
 			if (stops?.token !== r.label) continue;
 			if (stops.type && typeOf(game, seatId, characters) !== stops.type) continue;
+			// A jinx may make a token that stops waking stop the kill too (the Exorcist's Chosen
+			// on the Yaggababble, https://wiki.bloodontheclocktower.com/Yaggababble#Related_Jinxes).
+			if (ownJinxRules(game, characterId, r.characterId, characters)?.noKill === 'token')
+				waking = false;
 			if (!waking) noKill = true;
 			const source = game.seating.find(
 				(s) => s !== seatId && trueCharacter(game, s, characters) === r.characterId
@@ -233,12 +250,108 @@ export function nightStepAlerts(
 		}
 	}
 
+	out.push(...grimoireAlerts(game, characterId, actors, characters));
+
 	const killer = nightKiller(characterId, characters);
+	if (killer?.by === 'demon') {
+		const stopped = executedPartnerStops(game, characters);
+		for (const seatId of actors)
+			for (const source of stopped)
+				out.push(
+					sourceAlert(game, 'no-kill', seatId, source, characters, wikiOf(source, characters))
+				);
+		if (stopped.length > 0) noKill = true;
+	}
 	if (!killer || noKill) return out;
 	const subjects = (killer.targets === 'self' ? actors : game.seating).filter(
 		(s) => getSeat(game, s)?.dead === false
 	);
 	for (const seatId of subjects) out.push(...deathAlerts(game, seatId, killer, characters));
+	return out;
+}
+
+/** The character's wiki page, when it has one. */
+function wikiOf(source: AbilitySource, characters: CharacterLookup): string | undefined {
+	const character = characters.get(source.characterId);
+	return character && wikiUrl(character);
+}
+
+/**
+ * The players whose jinx stops the Demon killing tonight because they nominated a jinxed
+ * partner today who died by execution (`noKill: 'executed-partner'`: the Cannibal and the
+ * Princess, https://wiki.bloodontheclocktower.com/Cannibal#Related_Jinxes), from today's log.
+ */
+function executedPartnerStops(game: Game, characters: CharacterLookup): AbilitySource[] {
+	const entries = game.today.entries;
+	return game.seating.flatMap((nominator) => {
+		const own = trueCharacter(game, nominator, characters);
+		if (!own) return [];
+		const partners = ownJinxes(game, own, (r) => r.noKill === 'executed-partner', characters);
+		const hit = entries.some(
+			(e) =>
+				e.kind === 'nomination' &&
+				e.nominator === nominator &&
+				partners.some((p) => trueCharacter(game, e.nominee, characters) === p.partner) &&
+				entries.some((x) => x.kind === 'execution' && x.seatId === e.nominee && x.died)
+		);
+		return hit ? [{ characterId: own, seatId: nominator }] : [];
+	});
+}
+
+/**
+ * What a jinx changes about the Grimoire the waking character's player sees (`noGrimoire`,
+ * `grimoireHides`): not seen while the partner has its ability (a dead partner has none), or
+ * these players' tokens come off it first.
+ */
+function grimoireAlerts(
+	game: Game,
+	characterId: CharacterId,
+	actors: readonly SeatId[],
+	characters: CharacterLookup
+): NightAlert[] {
+	const out: NightAlert[] = [];
+	const holders = (id: CharacterId) =>
+		game.seating.filter((s) => trueCharacter(game, s, characters) === id);
+	for (const { partner, rule } of ownJinxes(
+		game,
+		characterId,
+		(r) => r.noGrimoire === true || r.grimoireHides !== undefined,
+		characters
+	)) {
+		if (rule.noGrimoire) {
+			for (const at of holders(partner)) {
+				if (abilityState(game, at, characters).dead) continue;
+				const source = { characterId: partner, seatId: at };
+				for (const seatId of actors)
+					out.push(
+						sourceAlert(game, 'no-grimoire', seatId, source, characters, wikiOf(source, characters))
+					);
+			}
+		}
+		const hides = rule.grimoireHides ?? [];
+		if (hides.length === 0 || actors.length === 0) continue;
+		// Only while the partner is in play: with no Magician, the Demon's token stays.
+		const from = holders(partner)[0];
+		if (from === undefined) continue;
+		const source: AbilitySource = { characterId: partner, seatId: from };
+		for (const seatId of game.seating) {
+			const hidden =
+				(hides.includes('partner') && trueCharacter(game, seatId, characters) === partner) ||
+				hides.some((h) => h !== 'partner' && typeOf(game, seatId, characters) === h);
+			if (!hidden) continue;
+			// The jinx itself takes the token off, whatever the partner's ability's state.
+			const alert: NightAlert = {
+				kind: 'grimoire-hides',
+				seatId,
+				source,
+				works: true,
+				impairments: []
+			};
+			const wiki = wikiOf(source, characters);
+			if (wiki) alert.wiki = wiki;
+			out.push(alert);
+		}
+	}
 	return out;
 }
 
@@ -284,9 +397,13 @@ function deathAlerts(
 		for (const { source } of protectors(game, seatId, characters, killer.by)) {
 			alert('protected', source, wikiOf(source));
 		}
-		const redirect = killRedirect(game, seatId, characters, killer.by);
+		// A player a working protection keeps safe doesn't die: no kill to move elsewhere (the
+		// Monk's Mayor example: https://wiki.bloodontheclocktower.com/Monk) and no first death
+		// spent (https://wiki.bloodontheclocktower.com/Fool, Example 3).
+		const safe = protection(game, seatId, characters, killer.by);
+		const redirect = safe ? undefined : killRedirect(game, seatId, characters, killer.by);
 		if (redirect) alert('may-bounce', redirect, wikiOf(redirect));
-		const saver = firstDeathSaver(game, seatId, characters);
+		const saver = safe ? undefined : firstDeathSaver(game, seatId, characters);
 		if (saver) alert('survives-first-death', saver.source, wikiOf(saver.source));
 	}
 

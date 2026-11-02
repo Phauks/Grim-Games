@@ -27,6 +27,11 @@
 		asks?: InfoTokenAsks;
 		/** The quick card: used once, never saved, so it looks apart (Trevor, 2026-10-18). */
 		quick?: boolean;
+		/**
+		 * One tap target tall, its words on one line and its characters beside them: the night
+		 * strip's row of the step's cards (Trevor, 2026-11-02).
+		 */
+		compact?: boolean;
 	}
 
 	let {
@@ -37,14 +42,20 @@
 		onadd,
 		actions,
 		asks,
-		quick = false
+		quick = false,
+		compact = false
 	}: Props = $props();
 
 	const name = $derived(label ?? plainText(text));
-	const badges = $derived([
-		...(quick ? [{ icon: 'quickCard' as const, label: t('info-tokens.quickAbout') }] : []),
-		...askBadges(asks)
-	]);
+	// The compact row has no room for the corner icons, so it draws none.
+	const badges = $derived(
+		compact
+			? []
+			: [
+					...(quick ? [{ icon: 'quickCard' as const, label: t('info-tokens.quickAbout') }] : []),
+					...askBadges(asks)
+				]
+	);
 	// Read as the card's words, then its characters, though the characters show first.
 	const spoken = $derived(
 		owners.length
@@ -59,7 +70,7 @@
 	One card tile, the same for standard, custom and character cards (Trevor, 2026-10-16):
 	only the extras differ, and they sit beside the shared card.
 -->
-<li class="tile" class:quick>
+<li class="tile" class:quick class:compact>
 	<button
 		type="button"
 		class="card"
@@ -227,5 +238,34 @@
 	}
 	.more {
 		font-family: var(--font-body);
+	}
+	/* The night strip's row: one line, the characters beside the words, no corner icons. */
+	.tile.compact {
+		height: var(--tap-target);
+		min-width: 0;
+		border-color: var(--heading);
+	}
+	.compact .card,
+	.compact .card.owned {
+		flex-direction: row;
+		align-items: center;
+		justify-content: flex-start;
+		padding: 0 var(--space-2);
+		font-size: 0.85rem;
+	}
+	/* The words first, so a narrow row cuts the characters before the words. */
+	.compact .owners {
+		order: 1;
+		flex: 0 100 auto;
+		flex-wrap: nowrap;
+		min-width: 0;
+		overflow: hidden;
+	}
+	.compact .text,
+	.compact .card.owned .text {
+		flex: 0 1 auto;
+		min-width: 0;
+		-webkit-line-clamp: 1;
+		line-clamp: 1;
 	}
 </style>
