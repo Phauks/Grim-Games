@@ -411,6 +411,13 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['M18']
 	},
 	{
+		// Trevor, 2026-11-02: the Snake Charmer's night step does the whole swap with the Demon it
+		// chooses, a Philosopher with its ability swaps too, and the No Dashii's poison follows.
+		title: "The Snake Charmer's swap with the Demon, done in its night step",
+		area: 'engine',
+		parts: ['M20']
+	},
+	{
 		// The nomination rules the wiki examples still waited on (Witch, Vigormortis, Golem, Riot,
 		// Bishop, Boffin, Butcher, Judge examples): a cursed nominator dies, nominees who die on the
 		// Riot's day 3 nominate, the Golem nominates once a game, the Butcher's extra execution,
