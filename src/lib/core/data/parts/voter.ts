@@ -10,13 +10,16 @@ import { objectPart } from './part.ts';
  * - `must`: they must vote on every nomination, while at least `minAlive` players live (the
  *   Zealot, https://wiki.bloodontheclocktower.com/Zealot);
  * - `needsToken`: they vote only by using a vote token, which dead players may give them
- *   (the Beggar, https://wiki.bloodontheclocktower.com/Beggar).
+ *   (the Beggar, https://wiki.bloodontheclocktower.com/Beggar); with `learnsGiver`, the
+ *   Storyteller privately tells them the alignment of each player who gives them one
+ *   (`tokenGiverInfo` in `rules/vote-weights.ts`).
  */
 export interface Voter {
 	onlyWith?: ReminderLabel;
 	must?: true;
 	minAlive?: number;
 	needsToken?: true;
+	learnsGiver?: true;
 }
 
 export const voter = objectPart(
@@ -27,7 +30,7 @@ export const voter = objectPart(
 			issues.add(path, `expected object, got ${describe(raw)}`);
 			return undefined;
 		}
-		checkKeys(raw, ['onlyWith', 'must', 'minAlive', 'needsToken'], path, issues);
+		checkKeys(raw, ['onlyWith', 'must', 'minAlive', 'needsToken', 'learnsGiver'], path, issues);
 		const out: Voter = {};
 		let ok = true;
 		const onlyWith = readString(raw, 'onlyWith', path, issues, false);
@@ -38,13 +41,17 @@ export const voter = objectPart(
 				ok = false;
 			}
 		}
-		for (const key of ['must', 'needsToken'] as const) {
+		for (const key of ['must', 'needsToken', 'learnsGiver'] as const) {
 			const value = readBoolean(raw, key, path, issues);
 			if (value === true) out[key] = true;
 			else if (value === false) {
 				issues.add(`${path}.${key}`, 'expected true');
 				ok = false;
 			}
+		}
+		if (out.learnsGiver && !out.needsToken) {
+			issues.add(`${path}.learnsGiver`, 'only with needsToken');
+			ok = false;
 		}
 		const minAlive = readNumber(raw, 'minAlive', path, issues);
 		if (minAlive !== undefined) {

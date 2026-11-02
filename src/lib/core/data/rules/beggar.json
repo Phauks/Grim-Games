@@ -1,5 +1,5 @@
 {
-	"voter": { "needsToken": true },
+	"voter": { "needsToken": true, "learnsGiver": true },
 	"dayReminders": {
 		"reminders": [
 			{

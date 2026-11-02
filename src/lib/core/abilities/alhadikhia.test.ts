@@ -147,11 +147,9 @@ describe('Al-Hadikhia', () => {
 			]);
 		});
 
-		it.fails('reminds the Storyteller at dawn to say which marked players are alive', () => {
+		it('reminds the Storyteller at dawn to say which marked players are alive', () => {
 			// Wiki: "Each dawn, declare which players marked 1, 2 and 3 are alive and which are dead. Do
 			// this even if a player’s alive or dead status did not change during the night."
-			// Waits on the engine (unplanned): no dawn announcement names the players the Al-Hadikhia
-			// marked; its day reminders are none.
 			const s = scenario(['alhadikhia', 'chef', 'empath', 'monk', 'poisoner'])
 				.reminder('chef', 'alhadikhia', '1')
 				.reminder('empath', 'alhadikhia', '2')

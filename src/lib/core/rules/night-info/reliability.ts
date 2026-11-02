@@ -22,7 +22,8 @@ import {
 	type RegistrationWorld,
 	abilityState,
 	registrationWorlds,
-	registrations
+	registrations,
+	truthfulBy
 } from '../ability.ts';
 import { type StorytellerVisit, storytellerVisit } from '../storytellers.ts';
 
@@ -278,7 +279,11 @@ export function reliability(
 	if (believed) out.impairments = [...out.impairments, believed];
 	if (out.impairments.length > 0) out.unreliable = out.impairments[0].reason;
 	const type = characters.get(characterId)?.type;
-	const falseBy = type === undefined ? undefined : falseInfoSource(game, characters, type);
+	// A player who always gets true information (the Barista's "Sober & Healthy") is
+	// never told false information, whatever says it must or may be false.
+	const truthful = truthfulBy(game, seatId, characters) !== undefined;
+	const falseBy =
+		type === undefined || truthful ? undefined : falseInfoSource(game, characters, type);
 	if (falseBy) {
 		out.mustBeFalse = true;
 		out.vortox = falseBy.seatId;
@@ -287,14 +292,14 @@ export function reliability(
 	const visit = storytellerVisit(game, seatId, characters);
 	if (visit) {
 		out.storyteller = visit;
-		if (visit.lies && !out.mustBeFalse) {
+		if (visit.lies && !out.mustBeFalse && !truthful) {
 			out.mustBeFalse = true;
 			out.falseBy = visit.by;
 		}
 	}
 	const anyBy = anyInfoSource(game, characters);
 	if (anyBy) out.anyBy = anyBy.characterId;
-	const mayBeFalse = mayBeFalseSource(game, seatId, type, characters);
+	const mayBeFalse = truthful ? undefined : mayBeFalseSource(game, seatId, type, characters);
 	if (mayBeFalse) out.mayBeFalse = mayBeFalse;
 	out.registrations = otherRegistrations(game, seatId, characters, characterId);
 	out.misregister = out.registrations.map((r) => r.seatId);
