@@ -35,6 +35,7 @@
 	import { phaseText } from './phase-text.ts';
 	import { gamePhase } from '#lib/core/rules/index.ts';
 	import { gameModeName } from './game-mode-name.ts';
+	import AlignmentPill from './AlignmentPill.svelte';
 
 	// ── Saved games ──
 	let all = $state<SavedGameSummary[]>([]);
@@ -95,13 +96,6 @@
 		await refresh();
 	}
 
-	const winnerText = (id: GameId) =>
-		ended[id]?.winner === 'good'
-			? 'Good won'
-			: ended[id]?.winner === 'evil'
-				? 'Evil won'
-				: 'Winner not recorded';
-
 	/** Where a game is up to, for the list: the board's phase (gamePhase), so they agree. */
 	const stageText = (game: SavedGameSummary) => {
 		const phase = gamePhase(game.days, {
@@ -113,6 +107,13 @@
 </script>
 
 <!-- The mode in its own colour after the script's name, as in the board's corner title. -->
+<!-- Who won, in their team's colour (Trevor, 2026-11-01). -->
+{#snippet winnerText(gameId: GameId)}{@const winner =
+		ended[gameId]?.winner}{#if winner}<AlignmentPill
+			alignment={winner}
+			text={winner === 'good' ? 'Good won' : 'Evil won'}
+		/>{:else}Winner not recorded{/if}{/snippet}
+
 {#snippet modeName(gameId: GameId)}{#if gameModeName(gameId)}<span
 			class="mode"
 			data-testid="game-mode">{` · ${gameModeName(gameId)}`}</span
@@ -173,7 +174,7 @@
 					<!-- Opens read-only, to look around; Reopen is on the board (Trevor, 2026-10-17). -->
 					<a class="open" href={resolve('/grimoire/[gameId]', { gameId: game.gameId })}>
 						<ScriptName name={game.scriptName} logo={game.scriptLogo}
-							>{@render modeName(game.gameId)}{#snippet sub()}{winnerText(game.gameId)} · {stageText(
+							>{@render modeName(game.gameId)}{#snippet sub()}{@render winnerText(game.gameId)} · {stageText(
 									game
 								)} · {when.format(ended[game.gameId].endedAt)}{/snippet}</ScriptName
 						>

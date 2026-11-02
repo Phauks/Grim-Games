@@ -102,6 +102,11 @@
 		color: var(--on-accent);
 		box-shadow: inset 0 0 0 1px var(--accent-edge);
 	}
+	/* A switch (aria-pressed), when on: as the icon button's (IconButton.svelte). */
+	.button[aria-pressed='true'] {
+		background: var(--surface-selected);
+		box-shadow: inset 0 0 0 2px var(--accent);
+	}
 	.button[data-variant='quiet']:hover {
 		filter: none;
 		/* A wash of the button's own text colour, so the label reads on any surface and in any

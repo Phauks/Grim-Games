@@ -84,7 +84,7 @@ test('☰ and the grim cover are in the same spot on the board and in the day', 
 	};
 	const onBoard = await where(board);
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
-	const day = page.getByRole('dialog', { name: /^Day/ });
+	const day = page.getByRole('dialog', { name: /^(Setup|Day)/ });
 	await expect(day).toBeVisible();
 	// Once the sheet has faded in.
 	await expect.poll(() => where(day)).toEqual(onBoard);

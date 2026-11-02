@@ -183,6 +183,50 @@ describe('the live room', () => {
 		});
 	});
 
+	it("shares each seated player's tag-line and details, cleaned, with every grim (2026-11-01)", () => {
+		let room = roomWith('alex', 'sam');
+		room = setLook(room, 'alex', {
+			avatar: 'initials',
+			tagline: '  Always   the Empath ',
+			details: [
+				{ label: 'Favorite script', text: 'Trouble Brewing' },
+				{ label: 'No text', text: ' ' },
+				'nonsense'
+			]
+		});
+		expect(room.members[0]).toEqual({
+			memberId: 'alex',
+			avatar: 'initials',
+			tagline: 'Always the Empath',
+			details: [{ label: 'Favorite script', text: 'Trouble Brewing' }]
+		});
+		// The same words again change nothing; new ones replace the old.
+		expect(
+			setLook(room, 'alex', {
+				avatar: 'initials',
+				tagline: 'Always the Empath',
+				details: [{ label: 'Favorite script', text: 'Trouble Brewing' }]
+			})
+		).toBe(room);
+		expect(setLook(room, 'alex', { avatar: 'initials' }).members[0]).toEqual({
+			memberId: 'alex',
+			avatar: 'initials'
+		});
+
+		// Only seated players' words go out, by seat; a player with none sends nothing.
+		expect(playerView(room, 'sam').profiles).toBeUndefined();
+		room = seated(room, 'alex', 'Alex', 'a');
+		room = seated(room, 'sam', 'Sam', 'b');
+		const words = {
+			tagline: 'Always the Empath',
+			details: [{ label: 'Favorite script', text: 'Trouble Brewing' }]
+		};
+		expect(playerView(room, 'sam').profiles).toEqual({ a: words });
+		expect(townView(room).profiles).toEqual({ a: words });
+		// A seat change keeps them, as it keeps the avatar.
+		expect(seat(room, 'alex', 'c').members[0]).toMatchObject(words);
+	});
+
 	it('turns phones away once the room is full', () => {
 		let room = newRoom('hash');
 		for (let i = 0; i < MAX_MEMBERS; i++) room = join(room, `m${i}`)!;
