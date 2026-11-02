@@ -305,8 +305,11 @@ export function withStorytellerSteps<T extends NightStep>(
 }
 
 /**
- * Whether `seatId` has `characterId`'s ability working now: as their own character, or held
- * (the Hermit's Mutant, https://wiki.bloodontheclocktower.com/Hermit).
+ * Whether `seatId` has `characterId`'s ability working now: as their own character, as the
+ * token their own character's `swapsForAbility` swapped in (the Apprentice stays the Apprentice
+ * but "gains the ability of their character token",
+ * https://wiki.bloodontheclocktower.com/Apprentice), or held (the Hermit's Mutant,
+ * https://wiki.bloodontheclocktower.com/Hermit).
  */
 export function hasAbilityOf(
 	game: Game,
@@ -314,11 +317,39 @@ export function hasAbilityOf(
 	characterId: CharacterId,
 	characters: CharacterLookup
 ): boolean {
-	if (trueCharacter(game, seatId, characters) === characterId)
+	const own = trueCharacter(game, seatId, characters);
+	if (own === characterId) return abilityState(game, seatId, characters).works;
+	if (swappedIn(game, seatId, own, characters) === characterId)
 		return abilityState(game, seatId, characters).works;
 	return heldAbilitiesOf(game, seatId, characters).some(
 		(h) => h.characterId === characterId && h.works
 	);
+}
+
+/**
+ * The token a `swapsForAbility` character's player was swapped to, of a type its rule allows
+ * for their alignment: the ability they gained (the Apprentice's Townsfolk or Minion).
+ */
+function swappedIn(
+	game: Game,
+	seatId: SeatId,
+	own: CharacterId | undefined,
+	characters: CharacterLookup
+): CharacterId | undefined {
+	const rule = own === undefined ? undefined : rulesOf(own, characters)?.swapsForAbility;
+	const seat = game.seats[seatId];
+	const token = seat?.characterId;
+	if (!rule || token === undefined || token === own) return undefined;
+	if (!seat.reminders.some((r) => r.characterId === own && r.label === rule.token))
+		return undefined;
+	const type = characters.get(token)?.type;
+	const types: readonly string[] =
+		seat.alignment === 'evil'
+			? rule.evil
+			: seat.alignment === 'good'
+				? rule.good
+				: [...rule.good, ...rule.evil];
+	return type !== undefined && types.includes(type) ? token : undefined;
 }
 
 /**

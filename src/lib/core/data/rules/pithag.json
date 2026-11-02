@@ -3,7 +3,8 @@
 		"none": "night action"
 	},
 	"deathCause": {
-		"none": "changes characters"
+		"kind": "kills",
+		"afterChanging": "demon"
 	},
 	"reminderMovement": {
 		"relocates": "changes a player’s character"

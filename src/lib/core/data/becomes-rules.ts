@@ -106,6 +106,8 @@ export function readBecomes(
  * - `anyType`: with `sameType`, the player may pick a character of any of `types`, not only
  *   their own (the Hatter's optional rule: the Demon may become a Minion and a Minion the
  *   Demon);
+ * - `afterDeath`: only once its own player has died (the Hatter's tea party, "If the Hatter
+ *   dies"); the night step's own wake rule (`onDeath`) keeps it to the night they died;
  * - `firstNight`: only on the first night (the Kazali,
  *   https://wiki.bloodontheclocktower.com/Kazali);
  * - `upTo: 'minions'`: one player after another until there are as many Minions as the
@@ -131,6 +133,7 @@ export interface ChangesCharacter {
 	notMarked?: ReminderLabel;
 	sameType?: true;
 	anyType?: true;
+	afterDeath?: true;
 	firstNight?: true;
 	upTo?: 'minions';
 	extraMinions?: number;
@@ -162,6 +165,7 @@ export function readChangesCharacter(
 			'notMarked',
 			'sameType',
 			'anyType',
+			'afterDeath',
 			'firstNight',
 			'upTo',
 			'extraMinions',
@@ -187,6 +191,7 @@ export function readChangesCharacter(
 	const sameType = readBoolean(raw, 'sameType', path, issues);
 	const anyType = readBoolean(raw, 'anyType', path, issues);
 	if (anyType && !sameType) issues.add(`${path}.anyType`, 'only with sameType');
+	const afterDeath = readBoolean(raw, 'afterDeath', path, issues);
 	const firstNight = readBoolean(raw, 'firstNight', path, issues);
 	const upTo = readEnum(raw, 'upTo', ['minions'] as const, path, issues, false);
 	const extraMinions = readNumber(raw, 'extraMinions', path, issues);
@@ -208,6 +213,7 @@ export function readChangesCharacter(
 		...(notMarked ? { notMarked } : {}),
 		...(sameType ? { sameType: true as const } : {}),
 		...(anyType && sameType ? { anyType: true as const } : {}),
+		...(afterDeath ? { afterDeath: true as const } : {}),
 		...(firstNight ? { firstNight: true as const } : {}),
 		...(upTo ? { upTo } : {}),
 		...(upTo && extraMinions !== undefined && extraMinions >= 1 ? { extraMinions } : {}),
