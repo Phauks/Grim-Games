@@ -517,6 +517,14 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['M32a', 'M32b', 'M32c', 'M32d']
 	},
 	{
+		// The coordinator's ask of 2026-11-03: the Storyteller gives a player an ability without
+		// changing their character. M34 the engine: an ability recorded by hand, or the one the
+		// player's own character chose (the Philosopher's), is held and wakes at its step.
+		title: 'Give ability engine support',
+		area: 'engine',
+		parts: ['M34']
+	},
+	{
 		// Trevor, 2026-11-02: beta goes to production only once the How to Run gaps are closed.
 		// M29a and M29b the warnings still missing (a second Alsaahir guess, a fourth Matron swap,
 		// the Goon's Drunk, the Pope's duplicate bluffs and more), M30a and M30b the info tokens

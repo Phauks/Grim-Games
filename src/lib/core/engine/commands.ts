@@ -20,6 +20,7 @@ import type {
 	DeathCause,
 	FakeEvilInfo,
 	GenericLook,
+	GivenAbility,
 	OverrideField,
 	Reminder,
 	ReminderEffect,
@@ -125,6 +126,14 @@ export type Command =
 	 * it takes that ability away.
 	 */
 	| { type: 'SetHeldAbility'; seatId: SeatId; via: CharacterId; characterId?: CharacterId }
+	/**
+	 * The Storyteller gives a player an ability without changing their character (M34): a
+	 * character's, by hand (no `via`) or recorded for the character that gave it (one per
+	 * `via`, replacing any it gave before), or free text, shown only. `RemoveAbility` takes
+	 * one away.
+	 */
+	| { type: 'GiveAbility'; seatId: SeatId; ability: GivenAbility }
+	| { type: 'RemoveAbility'; seatId: SeatId; ability: GivenAbility }
 	/**
 	 * Gives the Storyteller the ability of `characterId` by `via`'s `givesAbility` rule (the
 	 * Plague Doctor's Minion), replacing any `via` gave before; without it, takes it away.

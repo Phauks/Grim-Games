@@ -43,7 +43,8 @@ export function cantTurnGood(
 	const jinxed = (via: CharacterId, id: CharacterId) =>
 		jinxedPartners(via, 'noTurnGood', script, characters).includes(id);
 	for (const held of seat.abilities ?? []) {
-		if (jinxed(held.via, held.characterId)) return { ...held };
+		if (held.via !== undefined && jinxed(held.via, held.characterId))
+			return { characterId: held.characterId, via: held.via };
 	}
 	const own = trueCharacter(game, seatId, characters);
 	const by = seat.changedBy;
