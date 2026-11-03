@@ -6,7 +6,7 @@
 	 * (Trevor, 2026-10-23: "Initials for now"). Sized to the token, so it reads on a small
 	 * corner mark and a full seat alike. `picture` (a link) is the player's own picture
 	 * (Trevor, 2026-10-27), shown in place of the initials while it loads. A character the
-	 * player picked goes on top of their laurel instead (CharacterEmblem), never on the face.
+	 * player picked stays in their Profile, never on a seat (Trevor, 2026-11-03).
 	 */
 	interface Props {
 		avatar: AvatarId;

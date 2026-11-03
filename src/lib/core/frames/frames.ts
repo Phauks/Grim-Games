@@ -221,6 +221,15 @@ export const FRAME_FORMS: readonly FrameForm[] = [
 	}))
 ];
 
+/**
+ * How far the widest frame reaches past the token's edge, as a share of the token's size:
+ * the face fills the token, so a smaller face radius draws the frame further out. A screen
+ * that shows one seat by itself keeps this much room round it, whatever frame is picked.
+ */
+export const FRAME_REACH =
+	(50 / Math.min(FACE_RADIUS, ...FRAME_FORMS.map((form) => form.faceRadius ?? FACE_RADIUS)) - 1) /
+	2;
+
 export type FrameId = string;
 
 /** The frame a seat shows until its player picks another: none, as before frames. */

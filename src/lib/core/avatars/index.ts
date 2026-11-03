@@ -9,8 +9,8 @@ export const AVATAR_IDS = ['initials'] as const;
 /**
  * An avatar: initials, or initials plus the character that represents the player, as
  * `character:<id>` (Trevor, 2026-10-28: "representative character token"). That character
- * sits on top of their laurel, engraved on seats so it never reads as their character; the
- * face keeps their initials (or their own picture).
+ * is shown in their Profile only, never on a seat (Trevor, 2026-11-03); the face keeps their
+ * initials (or their own picture).
  */
 export type AvatarId = (typeof AVATAR_IDS)[number] | `character:${string}`;
 

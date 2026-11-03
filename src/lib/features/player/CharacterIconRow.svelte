@@ -11,8 +11,8 @@
 
 	/**
 	 * The character that represents the player (Trevor, 2026-10-28: "representative character
-	 * token"), picked from the official characters, or None. It sits on top of their laurel,
-	 * full colour here and engraved on seats; the face keeps their initials or picture.
+	 * token"), picked from the official characters, or None. It is about the player, in their
+	 * Profile only: laurels and avatars are enough on the board (Trevor, 2026-11-03).
 	 */
 	let open = $state(false);
 	let query = $state('');
