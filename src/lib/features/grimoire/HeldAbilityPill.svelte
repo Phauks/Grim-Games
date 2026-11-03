@@ -11,8 +11,10 @@
 	 * board's seats (SeatToken) and the Board settings preview. Placed in SeatDisc's `marks`.
 	 *
 	 * The pill also shows who the player really is, from an "Is The …" reminder (Trevor,
-	 * 2026-10-31, small token Option A). The two never look alike: a held ability has a blue +
-	 * ("also holds"), the true character a red = ("is really").
+	 * 2026-10-31, small token Option A), or, when the big token shows that, what they believe
+	 * they are (2026-11-03), and whom they are mad as (M36). They never look alike: a held ability
+	 * has a blue + ("also holds"), the true character a red = ("is really"), the believed one an
+	 * accent ? ("believes"), the mad one a !.
 	 */
 	interface Props {
 		abilities: { character: Character; works: boolean }[];
@@ -20,6 +22,16 @@
 		custom?: readonly string[];
 		/** Who the player really is, each from its reminder (tapping it opens the reminder). */
 		truths?: { character: Character; reminderId?: string }[];
+		/**
+		 * What the player believes they are, when the big token shows who they really are
+		 * (Trevor, 2026-11-03): a token marked ?, opening its "Is The …" reminder.
+		 */
+		believes?: { character: Character; reminderId?: string };
+		/**
+		 * Who the player is mad as (`madAs`: the Cerenovus's Mad, the Pixie's shown Townsfolk;
+		 * M36), each a token marked !, opening the reminder it is found by.
+		 */
+		madAs?: { character: Character; reminderId?: string }[];
 		/** The seat has notes: their pen goes in the pill too, and opens them. */
 		notes?: boolean;
 		/**
@@ -30,7 +42,15 @@
 		pretends?: Character;
 	}
 
-	let { abilities, custom = [], truths = [], notes = false, pretends }: Props = $props();
+	let {
+		abilities,
+		custom = [],
+		truths = [],
+		believes,
+		madAs = [],
+		notes = false,
+		pretends
+	}: Props = $props();
 </script>
 
 <RimPill side="right" edge="bottom" testid="held-pill"
@@ -51,6 +71,21 @@
 			data-reminder={reminderId}
 			title={`Is really the ${truly.name}`}
 			><img src={iconUrl(truly)} alt="" /><span class="kind is" aria-hidden="true">=</span></span
+		>{/each}{#if believes}<span
+			class="held"
+			data-testid="believed-character"
+			data-reminder={believes.reminderId}
+			title={`Believes they are the ${believes.character.name}`}
+			><img src={iconUrl(believes.character)} alt="" /><span
+				class="kind believes"
+				aria-hidden="true">?</span
+			></span
+		>{/if}{#each madAs as { character: mad, reminderId }, k (reminderId ?? k)}<span
+			class="held"
+			data-testid="mad-as-character"
+			data-reminder={reminderId}
+			title={`Mad as the ${mad.name}`}
+			><img src={iconUrl(mad)} alt="" /><span class="kind mad" aria-hidden="true">!</span></span
 		>{/each}{#if pretends}<span
 			class="held pretend"
 			data-testid="pretend-character"
@@ -104,6 +139,16 @@
 	.kind.is {
 		background: var(--evil);
 		color: var(--on-evil);
+	}
+	/* Believes they are: not a team, so the accent rather than a team colour. */
+	.kind.believes {
+		background: var(--accent);
+		color: var(--on-accent);
+	}
+	/* Mad as: not a team either, so the Fabled's colour, apart from believes. */
+	.kind.mad {
+		background: var(--fabled);
+		color: var(--on-fabled);
 	}
 	/* A tap target bigger than the mark, as the lone notes mark has. */
 	.note-slot::after {

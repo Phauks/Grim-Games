@@ -85,5 +85,10 @@
 		"goblin": {
 			"madAsPartner": true
 		}
+	},
+	"madAs": {
+		"token": "Mad",
+		"mad": "carrier",
+		"choose": ["townsfolk", "outsider"]
 	}
 }

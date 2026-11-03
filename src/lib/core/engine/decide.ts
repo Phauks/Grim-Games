@@ -144,6 +144,7 @@ export type WarningCode =
 	| 'no-day-tally'
 	| 'beyond-tally'
 	| 'effect-not-listed'
+	| 'not-mad-as'
 	| 'no-pretend-team'
 	| 'not-pretend-type'
 	| 'no-wish-rule'

@@ -207,6 +207,11 @@ export type Command =
 	 * (`pickedEffect`: the Angel's Something Bad); none clears it.
 	 */
 	| { type: 'SetReminderEffect'; reminderId: ReminderId; effect?: ReminderEffect }
+	/**
+	 * The character the player carrying a reminder is mad as (`madAs`: the Cerenovus's Mad,
+	 * M36); none clears it.
+	 */
+	| { type: 'SetReminderMadAs'; reminderId: ReminderId; characterId?: CharacterId }
 	/** A new reusable ∞ token at the end of the bank's ones (plan B9). */
 	| { type: 'AddGenericToken'; look?: GenericLook }
 	/** Replaces a bank ∞ token's look; the copies already placed keep theirs. */

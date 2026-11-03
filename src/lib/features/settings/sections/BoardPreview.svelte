@@ -58,7 +58,11 @@
 	// The reminder's own label, as `replacedBy` matches it; not shown as a name.
 	// eslint-disable-next-line grim/names-as-badges -- a reminder label to match, not shown
 	const trulyLabel = $derived(truly?.remindersGlobal.find((r) => r === `Is The ${truly.name}`));
-	const truthsInPill = $derived(boardLooks.current.truthLook === 'grimbinder');
+	const bigToken = $derived(boardLooks.current.bigToken);
+	const truthsInPill = $derived(bigToken !== 'reminders');
+	/** The dead player's big token: the Drunk with 'truth', else the Washerwoman they were told. */
+	const faceOf = (id: CharacterId, i: number) =>
+		i === 1 && bigToken === 'truth' && truly ? truly : character(id);
 
 	const choice: BackgroundChoice = $derived(
 		boardBackground.context?.current ?? defaultBackground.current ?? { kind: 'none' }
@@ -206,7 +210,7 @@
 
 	<div class="seats">
 		{#each SEATS as seat, i (seat.id)}
-			{@const token = character(seat.id)}
+			{@const token = faceOf(seat.id, i)}
 			<div class="seat">
 				<SeatDisc
 					{size}
@@ -219,9 +223,12 @@
 					{#snippet face()}{#if token}<CharacterToken character={token} {size} />{/if}{/snippet}
 					{#snippet marks()}{#if i === 0 && held && !vanilla}<HeldAbilityPill
 								abilities={[{ character: held, works: true }]}
-							/>{:else if i === 1 && truly && truthsInPill}<HeldAbilityPill
+							/>{:else if i === 1 && truly && bigToken === 'believed'}<HeldAbilityPill
 								abilities={[]}
 								truths={[{ character: truly }]}
+							/>{:else if i === 1 && truly && bigToken === 'truth' && character(seat.id)}<HeldAbilityPill
+								abilities={[]}
+								believes={{ character: character(seat.id)! }}
 							/>{/if}{/snippet}
 				</SeatDisc>
 				<!-- The Demon's held ability, Vanilla: its token beside the seat, clear of the

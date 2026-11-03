@@ -16,7 +16,7 @@ import { scriptEdition } from '#lib/core/data/script.ts';
 import type { GameId } from '#lib/core/model/index.ts';
 import type { GameLog, GameSession } from './log.ts';
 
-export const SAVED_GAME_VERSION = 28;
+export const SAVED_GAME_VERSION = 29;
 
 export interface SavedGame {
 	schemaVersion: typeof SAVED_GAME_VERSION;
@@ -285,6 +285,14 @@ const migrateV26toV27: Migration = (doc) => ({ ...doc, schemaVersion: 27 });
  */
 const migrateV27toV28: Migration = (doc) => ({ ...doc, schemaVersion: 28 });
 
+/**
+ * Version 29 (2026-11-03) added the character a player is mad as, recorded on its reminder
+ * (`ReminderInstance.madAs`, the `ReminderMadAsSet` event: the Cerenovus's Mad, M36). The log
+ * needs no change: an older reminder has none. The bump makes older builds refuse a version 29
+ * save.
+ */
+const migrateV28toV29: Migration = (doc) => ({ ...doc, schemaVersion: 29 });
+
 /** `MIGRATIONS[n]` migrates version `n` to `n + 1`. Version 1 is the first saved shape. */
 export const MIGRATIONS: Readonly<Record<number, Migration>> = {
 	1: migrateV1toV2,
@@ -313,7 +321,8 @@ export const MIGRATIONS: Readonly<Record<number, Migration>> = {
 	24: migrateV24toV25,
 	25: migrateV25toV26,
 	26: migrateV26toV27,
-	27: migrateV27toV28
+	27: migrateV27toV28,
+	28: migrateV28toV29
 };
 
 /**

@@ -16,6 +16,7 @@ import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { warned } from '#lib/core/model/fixtures.test-support.ts';
 import { stepInfoCards } from '#lib/core/rules/info-token-characters.ts';
+import { madAsChoice, madAsOf } from '#lib/core/rules/mad-as.ts';
 import { madnessOffer } from '#lib/core/rules/madness.ts';
 import { placeholdersFor } from '#lib/core/rules/night-text.ts';
 import { reminderTargets } from '#lib/core/rules/reminder-targets.ts';
@@ -126,6 +127,40 @@ describe('Cerenovus', () => {
 			const s = scenario(['cerenovus', 'barber', 'savant', 'chef', 'nodashii']).dies('chef');
 			const mad = { characterId: 'cerenovus', label: 'Mad' };
 			expect(reminderTargets(s.game, mad, s.characters).flatMap((t) => t.misses)).toEqual([]);
+		});
+
+		it('records the chosen character on Mad, so the board shows whom the player is mad as', () => {
+			// Wiki: "Each night, wake the Cerenovus. They point at any player and at any Townsfolk or
+			// Outsider icon on their character sheet. Put the Cerenovus to sleep. Mark the chosen player
+			// with the MAD reminder."
+			const s = scenario(['cerenovus', 'barber', 'savant', 'chef', 'nodashii']);
+			expect(madAsChoice(s.game, 'cerenovus', s.characters)).toEqual({
+				types: ['townsfolk', 'outsider'],
+				partners: []
+			});
+			const marked = s.reminder('barber', 'cerenovus', 'Mad');
+			const reminderId = marked.game.seats[marked.seat('barber')].reminders[0].reminderId;
+			expect(madAsChoice(marked.game, 'cerenovus', marked.characters)?.token).toEqual({
+				reminderId,
+				seatId: marked.seat('barber')
+			});
+			expect(madAsOf(marked.game, marked.seat('barber'), marked.characters)).toEqual([]);
+			const mad = marked.do({ type: 'SetReminderMadAs', reminderId, characterId: 'savant' });
+			expect(madAsOf(mad.game, mad.seat('barber'), mad.characters)).toEqual([
+				{ characterId: 'savant', by: 'cerenovus', reminderId }
+			]);
+			expect(madAsChoice(mad.game, 'cerenovus', mad.characters)?.token?.madAs).toBe('savant');
+			const cleared = mad.do({ type: 'SetReminderMadAs', reminderId });
+			expect(madAsOf(cleared.game, cleared.seat('barber'), cleared.characters)).toEqual([]);
+		});
+
+		it('warns when a reminder that records no character is given one', () => {
+			// Wiki: "Mark the chosen player with the MAD reminder."
+			const s = scenario(['cerenovus', 'barber', 'savant', 'chef', 'nodashii']).poisoned('chef');
+			const reminderId = s.game.seats[s.seat('chef')].reminders[0].reminderId;
+			expect(
+				warned(s.session, s.ctx, { type: 'SetReminderMadAs', reminderId, characterId: 'savant' })
+			).toContain('not-mad-as');
 		});
 
 		it('the mad player is shown This character selected you, the Cerenovus, then the character', () => {

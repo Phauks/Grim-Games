@@ -5,6 +5,7 @@ import {
 	type ReminderInstance,
 	type Seat
 } from '#lib/core/model/index.ts';
+import type { BigToken } from './board-looks.svelte.ts';
 
 /** An "Is The …" reminder on a seat, with the character it says the player really is. */
 export interface TrueCharacterMark {
@@ -26,14 +27,17 @@ export function trueCharacterMarks(seat: Seat, characters: CharacterLookup): Tru
 }
 
 /**
- * The reminders drawn beside the seat: all of them, or, when the "Is The …" ones are in the
- * pill, the rest.
+ * The reminders drawn beside the seat, by what the big token shows (`BigToken`): all of them
+ * with Reminders only; otherwise the "Is The …" ones leave while the pill can open them, by
+ * their = mark or by the ? mark of the token the player was given. A seat with no token keeps
+ * its "Is The …" reminder beside it while the big token shows who they really are.
  */
 export function remindersBeside(
 	seat: Seat,
 	characters: CharacterLookup,
-	truthsInPill: boolean
+	bigToken: BigToken
 ): ReminderInstance[] {
-	if (!truthsInPill) return seat.reminders;
+	if (bigToken === 'reminders' || (bigToken === 'truth' && seat.characterId === undefined))
+		return seat.reminders;
 	return seat.reminders.filter((reminder) => !replacedBy(reminder, characters));
 }

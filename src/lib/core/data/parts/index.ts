@@ -48,6 +48,7 @@ export { keepsAbility } from './keeps-ability.ts';
 export { kills } from './kills.ts';
 export { learns } from './learns.ts';
 export { limitsExtraEvil } from './limits-extra-evil.ts';
+export { madAs } from './mad-as.ts';
 export { madness } from './madness.ts';
 export { makesExtraEvil } from './makes-extra-evil.ts';
 export { marksChoice } from './marks-choice.ts';

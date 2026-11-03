@@ -1,4 +1,5 @@
 import { defaultAlignment } from '#lib/core/data/index.ts';
+import { rulesOf } from '#lib/core/data/rules/index.ts';
 import {
 	SYMBOL_COLOURS,
 	reminderHolder,
@@ -32,6 +33,7 @@ export const REMINDERS_DECIDERS: Deciders<
 	| 'MoveReminderToRuleCharacter'
 	| 'SetReminderNote'
 	| 'SetReminderEffect'
+	| 'SetReminderMadAs'
 	| 'SetReminderSymbol'
 	| 'SetReminderSymbolColour'
 	| 'SetReminderSymbolFill'
@@ -177,6 +179,25 @@ export const REMINDERS_DECIDERS: Deciders<
 		}
 		const event: GameEvent = { type: 'ReminderEffectSet', reminderId: command.reminderId };
 		if (effect !== undefined) event.effect = { kind: effect.kind, night: effect.night };
+		return [event];
+	},
+
+	SetReminderMadAs(game, command, ctx, warn) {
+		const from = reminderHolder(game, command.reminderId);
+		if (!from) refuse('unknown-reminder', `no reminder ${command.reminderId}`);
+		const reminder: ReminderInstance = heldReminder(game, from, command.reminderId);
+		const { characterId } = command;
+		if (characterId !== undefined && !ctx.characters.get(characterId))
+			refuse('unknown-character', `no character ${characterId}`);
+		const rule = rulesOf(reminder.characterId, ctx.characters)?.madAs;
+		if (characterId !== undefined && (rule?.mad !== 'carrier' || rule.token !== reminder.label))
+			warn('not-mad-as', 'this reminder’s rules do not record a mad-as character');
+		if (characterId === reminder.madAs) {
+			warn('no-change', 'the character is unchanged');
+			return [];
+		}
+		const event: GameEvent = { type: 'ReminderMadAsSet', reminderId: command.reminderId };
+		if (characterId !== undefined) event.characterId = characterId;
 		return [event];
 	},
 

@@ -562,6 +562,10 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 			return withReminder(game, event.reminderId, (r) =>
 				event.effect === undefined ? omit(r, 'effect') : { ...r, effect: { ...event.effect } }
 			);
+		case 'ReminderMadAsSet':
+			return withReminder(game, event.reminderId, (r) =>
+				event.characterId === undefined ? omit(r, 'madAs') : { ...r, madAs: event.characterId }
+			);
 		case 'ReminderNoteSet':
 			return withReminder(game, event.reminderId, (r) =>
 				event.note === undefined ? omit(r, 'note') : { ...r, note: event.note }

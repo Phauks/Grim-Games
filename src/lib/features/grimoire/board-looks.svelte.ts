@@ -48,13 +48,19 @@ export interface BoardLooks {
 	 */
 	abilityLook: 'grimbinder' | 'vanilla';
 	/**
-	 * Who a player really is when they were told otherwise (an "Is The Drunk" reminder; Trevor,
-	 * 2026-10-31, small token Option A): 'grimbinder' shows that character as a small token,
-	 * marked =, in the same pill; 'vanilla' keeps the reminder beside the seat, as the wiki
-	 * runs it.
+	 * What the big token shows when a player was told they are someone else (an "Is The Drunk"
+	 * reminder; Trevor, 2026-11-03: "allow storytellers to choose which way"): 'truth' who they
+	 * really are, with what they believe as a small token marked ? in the seat's pill (the
+	 * default, Trevor 2026-11-03); 'believed' what they believe, with who they really are marked
+	 * = in the pill (2026-10-31, small token Option A); 'reminders' the token they were given,
+	 * with the reminder beside the seat, as the wiki runs it.
 	 */
-	truthLook: 'grimbinder' | 'vanilla';
+	bigToken: BigToken;
 }
+
+/** What the big token shows (`BoardLooks.bigToken`). */
+export const BIG_TOKENS = ['truth', 'believed', 'reminders'] as const;
+export type BigToken = (typeof BIG_TOKENS)[number];
 
 /** The player name badge's size range (Trevor, 2026-10-17: "should be an option"). */
 export const NAME_SIZE = { min: 0.6, max: 1.6, step: 0.1 } as const;
@@ -74,10 +80,20 @@ export const DEFAULT_BOARD_LOOKS: BoardLooks = {
 	usedGhostVote: 'hollow',
 	reminderLines: DEFAULT_REMINDER_LINES,
 	abilityLook: 'grimbinder',
-	// The mockup's promise (2026-10-31): nothing changes until a Storyteller picks it.
-	truthLook: 'vanilla'
+	bigToken: 'truth'
 };
 const KEY = 'grim.boardLooks';
+
+/**
+ * The saved `bigToken`. Earlier builds saved `truthLook`: its small-token look ('grimbinder')
+ * is 'believed' now; its old default ('vanilla') takes the new default, who they really are
+ * (Trevor, 2026-11-03).
+ */
+function parseBigToken(value: Record<string, unknown>): BigToken {
+	const saved = value.bigToken;
+	if (saved === 'truth' || saved === 'believed' || saved === 'reminders') return saved;
+	return value.truthLook === 'grimbinder' ? 'believed' : DEFAULT_BOARD_LOOKS.bigToken;
+}
 
 /** Reads saved looks, keeping only valid values. */
 export function parseBoardLooks(raw: unknown): BoardLooks {
@@ -104,7 +120,7 @@ export function parseBoardLooks(raw: unknown): BoardLooks {
 		usedGhostVote: value.usedGhostVote === 'struck' ? 'struck' : 'hollow',
 		reminderLines: parseReminderLines(value.reminderLines),
 		abilityLook: value.abilityLook === 'vanilla' ? 'vanilla' : 'grimbinder',
-		truthLook: value.truthLook === 'grimbinder' ? 'grimbinder' : 'vanilla'
+		bigToken: parseBigToken(value)
 		// Earlier builds' `reminders: 'free'` ("Stay where dropped") is dropped: reminders are
 		// always held by their seat (Trevor, 2026-10-31).
 		// Earlier builds' `reminderStacks` switch is dropped: every reminder is always on the
