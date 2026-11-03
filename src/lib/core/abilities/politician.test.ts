@@ -15,7 +15,7 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { endCharacters, joinsWinners } from '#lib/core/rules/end-reason.ts';
+import { alwaysWinners, endCharacters, joinsWinners } from '#lib/core/rules/end-reason.ts';
 import { gameEnds, suggestedWinner } from '#lib/core/rules/game-end.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
@@ -119,9 +119,11 @@ describe('Politician', () => {
 				.execute('imp');
 			expect(suggestedWinner(gameEnds(s.game, s.characters))).toBe('good');
 			expect(endCharacters(s.game, s.characters)).toContain('politician');
-			// The Storyteller's call: the evil Politician may win with good.
-			expect(joinsWinners(s.game, s.characters, 'good')).toEqual([s.seat('politician')]);
-			expect(joinsWinners(s.game, s.characters, 'evil')).toEqual([]);
+			// The Politician always wins with good (Trevor, 2026-11-03), so there is no call to make,
+			// and their alignment does not change.
+			expect(alwaysWinners(s.game, s.characters, 'good')).toEqual([s.seat('politician')]);
+			expect(joinsWinners(s.game, s.characters, 'good')).toEqual([]);
+			expect(s.game.seats[s.seat('politician')].alignment).toBe('evil');
 		});
 	});
 });
