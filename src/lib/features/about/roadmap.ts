@@ -545,10 +545,12 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	{
 		// The coordinator's ask of 2026-11-03 (ability-parts/jinx-format-audit.md): a jinx format a
 		// custom script can write. M39 general verbs with shared `when` conditions and `who`, so a
-		// rule may sit in either character's file; M40 and M41 the later stages.
+		// rule may sit in either character's file; M40 rules on a script's own jinxes, which
+		// replace TPI's for the pair (`rulesForJinx`), with load warnings for rules the app
+		// can't use; M41 the later stage.
 		title: 'Jinx format for custom scripts',
 		area: 'engine',
-		parts: ['M39']
+		parts: ['M39', 'M40']
 	},
 	{
 		// Trevor, 2026-11-02: beta goes to production only once the How to Run gaps are closed.

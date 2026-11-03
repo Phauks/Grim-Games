@@ -106,6 +106,7 @@ export function proposeLateSeat(input: LateSeatProposalInput): LateSeatProposal 
 			selection,
 			ruleCharacters: input.ruleCharacters,
 			scriptOrder,
+			homebrewJinxes: game.script.jinxes,
 			lookup
 		});
 	const before = countByType(inPlay.map(typeOf));

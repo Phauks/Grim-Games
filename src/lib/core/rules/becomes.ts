@@ -9,7 +9,6 @@ import { abilityState } from './ability.ts';
 import { baseCounts } from './distribution.ts';
 import type { Alignment, CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
-import { scriptCharacterIds } from '#lib/core/model/characters.ts';
 import { abilityHolders } from './gained-abilities.ts';
 import { earlierTokens, jinxedPartners } from './jinxes.ts';
 import {
@@ -39,9 +38,8 @@ export function cantTurnGood(
 ): { characterId: CharacterId; via: CharacterId } | undefined {
 	const seat = game.seats[seatId];
 	if (!seat) return undefined;
-	const script = scriptCharacterIds(game.script);
 	const jinxed = (via: CharacterId, id: CharacterId) =>
-		jinxedPartners(via, 'noTurnGood', script, characters).includes(id);
+		jinxedPartners(via, 'noTurnGood', game.script, characters).includes(id);
 	for (const held of seat.abilities ?? []) {
 		if (held.via !== undefined && jinxed(held.via, held.characterId))
 			return { characterId: held.characterId, via: held.via };

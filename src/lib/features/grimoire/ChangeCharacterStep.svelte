@@ -99,7 +99,7 @@
 	// one a jinx lets it create again with a spare token (the Pit-Hag's Village Idiot,
 	// https://wiki.bloodontheclocktower.com/Pit-Hag#Related_Jinxes).
 	const spare = $derived(
-		abilityId ? jinxedPartners(abilityId, 'spareToken', script, characters) : []
+		abilityId ? jinxedPartners(abilityId, 'spareToken', game.script, characters) : []
 	);
 	// Making the night's Minions (the Kazali, the Lord of Typhon), a stand-in such as the
 	// Marionette is never made: it enters play as the Demon's good neighbour, by its own token,
@@ -126,7 +126,9 @@
 	// Characters whose player the Storyteller picks when this one creates them (the Pit-Hag's
 	// Damsel): said on the step, as the Storyteller picks the player here anyway.
 	const storytellerPicks = $derived(
-		abilityId && rule ? jinxedPartners(abilityId, 'storytellerPicksPlayer', script, characters) : []
+		abilityId && rule
+			? jinxedPartners(abilityId, 'storytellerPicksPlayer', game.script, characters)
+			: []
 	);
 
 	// Characters that make every evil player them when this one creates them (Legion).

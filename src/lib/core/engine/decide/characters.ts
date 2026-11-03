@@ -5,7 +5,6 @@ import {
 	isOnScript,
 	registersAsDead,
 	replacedBy,
-	scriptCharacterIds,
 	typeOf
 } from '#lib/core/model/index.ts';
 import { extraEvilPlayers } from '#lib/core/rules/extra-evil.ts';
@@ -258,8 +257,7 @@ export const CHARACTERS_DECIDERS: Deciders<
 			const given = seatableCharacter(ctx, command.characterId);
 			// A jinx may bar the ability (the Boffin's Demon cannot have the Drunk ability,
 			// https://wiki.bloodontheclocktower.com/Boffin#Related_Jinxes): warn, never lock.
-			const script = scriptCharacterIds(game.script);
-			if (barredAbilities(via.id, script, ctx.characters).includes(given.id))
+			if (barredAbilities(via.id, game.script, ctx.characters).includes(given.id))
 				warn(
 					'jinxed-ability',
 					`${via.name} and ${given.name} are jinxed: the ${via.name} cannot give that ability`,
@@ -268,7 +266,7 @@ export const CHARACTERS_DECIDERS: Deciders<
 			// An ability meant for the Storyteller goes to a player only by a jinx that sends it
 			// to a Minion (the Plague Doctor's Spy).
 			const rule = rulesOf(via.id, ctx.characters)?.givesAbility;
-			const toMinion = givenInstead(via.id, given.id, script, ctx.characters) === 'a-minion';
+			const toMinion = givenInstead(via.id, given.id, game.script, ctx.characters) === 'a-minion';
 			if (rule?.to === 'storyteller' && !toMinion)
 				warn('not-given-to-player', `the ${via.name} gives this ability to the Storyteller`, [
 					via.id,
@@ -301,8 +299,7 @@ export const CHARACTERS_DECIDERS: Deciders<
 			const given = seatableCharacter(ctx, command.characterId);
 			// A jinx may send the ability elsewhere (the Plague Doctor's Spy goes to a Minion,
 			// https://wiki.bloodontheclocktower.com/Plague_Doctor#Related_Jinxes): warn, never lock.
-			const script = scriptCharacterIds(game.script);
-			if (givenInstead(via.id, given.id, script, ctx.characters))
+			if (givenInstead(via.id, given.id, game.script, ctx.characters))
 				warn(
 					'jinxed-ability',
 					`${via.name} and ${given.name} are jinxed: the Storyteller does not gain that ability`,

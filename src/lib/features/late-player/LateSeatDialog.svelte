@@ -161,6 +161,7 @@
 			selection: selectionOf([...seatedAfter, ...bag, ...drawn.unseated]),
 			ruleCharacters,
 			scriptOrder,
+			homebrewJinxes: game.script.jinxes,
 			lookup
 		})
 	);

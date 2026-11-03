@@ -18,6 +18,13 @@
  * A jinx is read the same from either file (`rules/jinxes.ts`, `jinxRulesBetween`); both
  * files setting the same effect for the same character is an error (`jinxPartnerIssues`).
  *
+ * **Custom scripts** (M40, `script-jinx-rules.ts`): a script's jinx entry may carry `rules` in
+ * this format, `{"id": "<partner>", "reason": "…", "rules": {<verbs>}}`, `self` being the entry
+ * that holds it (a custom character, or an official one's `{"id", "jinxes"}`). A script's jinx
+ * replaces TPI's for its pair: only its `rules`, and a custom character's own `rules.jinxes`,
+ * count, never these files, and with none it is text only (`rulesForJinx`). Rules the app
+ * can't use are dropped with a script load warning, and the script still loads.
+ *
  * Conditions (`when`), each about the game now:
  * - `self-alive`, `partner-alive`: a player of that character is alive (with a player in
  *   question, that player);

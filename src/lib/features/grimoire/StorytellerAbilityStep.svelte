@@ -2,13 +2,7 @@
 	import type { CharacterId, SeatedType } from '#lib/core/data/index.ts';
 	import type { GivenInstead } from '#lib/core/data/jinx-rules.ts';
 	import { rulesOf } from '#lib/core/data/rules/index.ts';
-	import {
-		alignmentOf,
-		scriptCharacterIds,
-		trueCharacter,
-		typeOf,
-		type SeatId
-	} from '#lib/core/model/index.ts';
+	import { alignmentOf, trueCharacter, typeOf, type SeatId } from '#lib/core/model/index.ts';
 	import {
 		abilityState,
 		demonGoodNeighbours,
@@ -51,7 +45,6 @@
 	const via = $derived(step.character?.id);
 	const rule = $derived(via ? rulesOf(via, characters)?.givesAbility : undefined);
 	const held = $derived(game.storytellerAbilities?.find((a) => a.via === via)?.characterId);
-	const script = $derived(scriptCharacterIds(game.script));
 	// The giver's players: whether any died with a working ability.
 	const givers = $derived(
 		via ? game.seating.filter((s) => trueCharacter(game, s, characters) === via) : []
@@ -114,7 +107,7 @@
 	function pick(characterId: CharacterId | undefined) {
 		pickerOpen = false;
 		if (!via) return;
-		const kind = characterId ? givenInstead(via, characterId, script, characters) : undefined;
+		const kind = characterId ? givenInstead(via, characterId, game.script, characters) : undefined;
 		if (characterId !== undefined && characterId === instead?.characterId) {
 			seatOpen = more;
 			return;

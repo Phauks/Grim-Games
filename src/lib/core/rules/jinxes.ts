@@ -7,11 +7,10 @@
  * warnings when both are chosen.
  *
  * What a jinx changes in the app is data: the `jinxes` block of either character's rules
- * (`data/jinx-rules.ts`), in effect while both are on the script. Each effect says whose
- * behaviour it changes (`who`), so the pair is read the same from either file: `owner`'s rules
- * for a partner are the effects on `owner` from both files (`jinxRulesBetween`). A jinx with no
- * such block (a homebrew one) is text, except that its wording may still say only one can be
- * in play. Each reader checks an effect's `when` (`jinx-when.ts`).
+ * (`data/jinx-rules.ts`), or the `rules` of a script's own jinx, in effect while both are on
+ * the script. Every reader asks `rulesForJinx` (`jinx-pairs.ts`): a script's own jinx replaces
+ * TPI's for the pair, rules and all, and one with no rules is text, except that its wording may
+ * still say only one can be in play. Each reader checks an effect's `when` (`jinx-when.ts`).
  */
 import type {
 	GivenInstead,
@@ -21,17 +20,16 @@ import type {
 	JinxRules,
 	RegistersTo
 } from '#lib/core/data/jinx-rules.ts';
-import { flipCondition, subjectOf } from '#lib/core/data/jinx-needs.ts';
 import type { JinxIndex } from '#lib/core/data/jinxes.ts';
 import { pairKey } from '#lib/core/data/parse.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
-import type { CharacterRules } from '#lib/core/data/character-rules.ts';
 import type {
 	Alignment,
 	CharacterId,
 	CharacterType,
 	Jinx,
-	ReminderLabel
+	ReminderLabel,
+	Script
 } from '#lib/core/data/types.ts';
 import {
 	isOnScript,
@@ -40,14 +38,31 @@ import {
 } from '#lib/core/model/characters.ts';
 import { alignmentOf, aliveNeighbours, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
+import {
+	isExclusiveJinx,
+	rulesForJinx,
+	scriptJinxPartners,
+	type RulesLookup
+} from './jinx-pairs.ts';
 import { aboutHolder, jinxApplies } from './jinx-when.ts';
 
-type RulesLookup = ReadonlyMap<CharacterId, { rules?: CharacterRules }>;
+export { isExclusiveJinx, jinxRulesBetween, rulesForJinx } from './jinx-pairs.ts';
+
+/**
+ * A script as the readers that know no board take it: the game's `Script`, whose own jinxes
+ * replace TPI's (`rulesForJinx`), or only its ids, for TPI's jinxes and our rules files.
+ */
+export type JinxScript = Script | readonly CharacterId[];
+
+const idsOf = (script: JinxScript): readonly CharacterId[] =>
+	Array.isArray(script) ? script : scriptCharacterIds(script as Script);
+const scopeOf = (script: JinxScript): Script | undefined =>
+	Array.isArray(script) ? undefined : (script as Script);
 
 /**
  * `owner`'s jinx rules for `partner` while the game's script holds both: the effects on what
- * `owner` does, or how it is treated, with the partner, from either file
- * (`jinxRulesBetween`). Their `when` is left for the reader to check.
+ * `owner` does, or how it is treated, with the partner, from the script's own jinx or either
+ * file (`rulesForJinx`). Their `when` is left for the reader to check.
  */
 export function ownJinxRules(
 	game: Pick<Game, 'script'>,
@@ -56,7 +71,7 @@ export function ownJinxRules(
 	characters?: RulesLookup
 ): JinxRules | undefined {
 	if (owner === partner) return undefined;
-	const rule = jinxRulesBetween(owner, partner, characters);
+	const rule = rulesForJinx(game.script, owner, partner, characters);
 	if (!rule) return undefined;
 	return isOnScript(game.script, owner) && isOnScript(game.script, partner) ? rule : undefined;
 }
@@ -92,7 +107,8 @@ export function ownJinxes(
 	const named = (id: CharacterId) => rulesOf(id, characters)?.jinxes?.[owner] !== undefined;
 	const partners = new Set([
 		...Object.keys(rulesOf(owner, characters)?.jinxes ?? {}),
-		...scriptCharacterIds(game.script).filter(named)
+		...scriptCharacterIds(game.script).filter(named),
+		...scriptJinxPartners(game.script, owner)
 	]);
 	return [...partners].flatMap((partner) => {
 		const rule = ownJinxRules(game, owner, partner, characters);
@@ -281,66 +297,25 @@ export function carrierJinx(
 }
 
 export interface ScriptJinx extends Jinx {
-	/** `official` from TPI's jinxes.json; `script` from a homebrew character's `jinxes`. */
+	/** `official` from TPI's jinxes.json; `script` from a script entry's `jinxes`. */
 	source: 'official' | 'script';
 	/** The jinx forbids both characters being in play at once. */
 	exclusive: boolean;
 }
 
-/** Jinx text meaning "only one of these can be in play". */
-const EXCLUSIVE = /only (?:1|one) (?:jinxed )?character can be in play|cannot both be in play/i;
-
-export function isExclusiveJinx(reason: string): boolean {
-	return EXCLUSIVE.test(reason);
-}
-
 /**
- * What the jinx between `a` and `b` changes for `a`, from both characters' `jinxes` blocks:
- * `a`'s own effects (`who: "self"`) and `b`'s effects on its partner (`who: "partner"`), with
- * `b`'s conditions read from `a`'s side; an `exclusive` jinx either way, and `who: "both"`
- * from either. `who` is left out but for `both`. Undefined when nothing is about `a` (the jinx
- * may be text only). Were both files to set one effect, `a`'s own would win; loading reports
- * that as an error (`jinxPartnerIssues`).
+ * Whether a jinx forbids both being in play: its rules say so, else its wording does. A
+ * script's own jinx (`scope`) reads only its own rules (`rulesForJinx`).
  */
-export function jinxRulesBetween(
-	a: CharacterId,
-	b: CharacterId,
-	characters?: RulesLookup
-): JinxRules | undefined {
-	return pairView(rulesOf(a, characters)?.jinxes?.[b], rulesOf(b, characters)?.jinxes?.[a]);
-}
-
-/** The effects on a pair's character from its own file's entry (`own`) and the partner's. */
-export function pairView(
-	own: JinxRules | undefined,
-	theirs: JinxRules | undefined
-): JinxRules | undefined {
-	const out: Record<string, unknown> = {};
-	const add = (rules: JinxRules | undefined, from: 'self' | 'partner') => {
-		for (const [key, effect] of Object.entries(rules ?? {}) as [string, JinxEffect | true][]) {
-			if (key in out) continue;
-			if (effect === true) out[key] = true;
-			else if (subjectOf(effect) !== (from === 'self' ? 'partner' : 'self'))
-				out[key] = viewed(effect, from === 'partner');
-		}
-	};
-	add(own, 'self');
-	add(theirs, 'partner');
-	return Object.keys(out).length > 0 ? (out as JinxRules) : undefined;
-}
-
-/** An effect without its `who` (but `both`), its conditions flipped when from the partner. */
-function viewed(effect: JinxEffect, flip: boolean): JinxEffect {
-	const { who, ...rest } = effect;
-	const out: JinxEffect = who === 'both' ? { ...rest, who } : rest;
-	return flip && out.when ? { ...out, when: out.when.map(flipCondition) } : out;
-}
-
-/** Whether a jinx forbids both being in play: its rules say so, else its wording does. */
-export function jinxIsExclusive(jinx: Jinx, characters?: RulesLookup): boolean {
+export function jinxIsExclusive(
+	jinx: Jinx,
+	characters?: RulesLookup,
+	scope?: { jinxes?: readonly Jinx[] }
+): boolean {
 	const [a, b] = jinx.characters;
-	const rules = jinxRulesBetween(a, b, characters) ?? jinxRulesBetween(b, a, characters);
-	return rules ? rules.exclusive === true : isExclusiveJinx(jinx.reason);
+	const rules = rulesForJinx(scope, a, b, characters) ?? rulesForJinx(scope, b, a, characters);
+	// A script's own jinx with no rules is read from its wording by `rulesForJinx` already.
+	return rules || scope ? rules?.exclusive === true : isExclusiveJinx(jinx.reason);
 }
 
 /**
@@ -350,11 +325,11 @@ export function jinxIsExclusive(jinx: Jinx, characters?: RulesLookup): boolean {
  */
 export function barredAbilities(
 	giver: CharacterId,
-	script: readonly CharacterId[],
+	script: JinxScript,
 	characters?: RulesLookup
 ): CharacterId[] {
-	return script.filter((id) => {
-		const effect = id === giver ? undefined : jinxRulesBetween(giver, id, characters)?.cannotCreate;
+	return idsOf(script).filter((id) => {
+		const effect = rulesForJinx(scopeOf(script), giver, id, characters)?.cannotCreate;
 		return effect?.via === 'givesAbility' && jinxApplies(undefined, giver, id, effect);
 	});
 }
@@ -369,11 +344,12 @@ export function barredAbilities(
 export function givenInstead(
 	giver: CharacterId,
 	ability: CharacterId,
-	script: readonly CharacterId[],
+	script: JinxScript,
 	characters?: RulesLookup
 ): GivenInstead | undefined {
-	if (giver === ability || !script.includes(giver) || !script.includes(ability)) return undefined;
-	const effect = jinxRulesBetween(giver, ability, characters)?.givenInstead;
+	const ids = idsOf(script);
+	if (giver === ability || !ids.includes(giver) || !ids.includes(ability)) return undefined;
+	const effect = rulesForJinx(scopeOf(script), giver, ability, characters)?.givenInstead;
 	return jinxApplies(undefined, giver, ability, effect) ? effect?.instead : undefined;
 }
 
@@ -387,12 +363,13 @@ export function givenInstead(
 export function jinxedPartners(
 	id: CharacterId,
 	question: 'spareToken' | 'storytellerPicksPlayer' | 'noTurnGood',
-	script: readonly CharacterId[],
+	script: JinxScript,
 	characters?: RulesLookup
 ): CharacterId[] {
-	if (!script.includes(id)) return [];
-	return script.filter((other) => {
-		const rules = other === id ? undefined : jinxRulesBetween(id, other, characters);
+	const ids = idsOf(script);
+	if (!ids.includes(id)) return [];
+	return ids.filter((other) => {
+		const rules = rulesForJinx(scopeOf(script), id, other, characters);
 		const effect =
 			question === 'storytellerPicksPlayer'
 				? rules?.storytellerChooses?.creating === 'partner'
@@ -404,9 +381,9 @@ export function jinxedPartners(
 }
 
 /**
- * Every jinx between characters on the script: TPI's, plus any declared by homebrew
- * characters. A homebrew jinx replaces TPI's for the same pair, since the script author
- * chose it. Order: TPI's data order, then the script's.
+ * Every jinx between characters on the script: TPI's, plus the script's own (`jinxes` on a
+ * script entry). A script's jinx replaces TPI's for the same pair, wording and rules, since the
+ * script author chose it (`rulesForJinx`). Order: TPI's data order, then the script's.
  */
 export function scriptJinxes(
 	index: JinxIndex,
@@ -426,9 +403,10 @@ export function scriptJinxes(
 		if (!ids.has(a) || !ids.has(b) || own.has(pairKey(a, b))) continue;
 		out.push({ ...jinx, source: 'official', exclusive: jinxIsExclusive(jinx, characters) });
 	}
+	const scope = { jinxes: [...own.values()] };
 	for (const jinx of own.values()) {
-		// The script's own wording replaces TPI's jinx, so it is read as written.
-		out.push({ ...jinx, source: 'script', exclusive: isExclusiveJinx(jinx.reason) });
+		// The script's own jinx replaces TPI's: its own rules, else its wording.
+		out.push({ ...jinx, source: 'script', exclusive: jinxIsExclusive(jinx, characters, scope) });
 	}
 	return out;
 }
@@ -508,7 +486,9 @@ export function jinxForbidsBecoming(
 		if (truly !== undefined) inPlay.add(truly);
 	}
 	return [...inPlay].find(
-		(other) => other !== characterId && jinxRulesBetween(characterId, other, characters)?.exclusive
+		(other) =>
+			other !== characterId &&
+			rulesForJinx(game.script, characterId, other, characters)?.exclusive === true
 	);
 }
 
