@@ -15,8 +15,12 @@ import { analyseSelection, randomSelection, type BagSelection } from '#lib/core/
 import { gameEnds } from '#lib/core/rules/game-end.ts';
 import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
 import { gainedEnd } from '#lib/core/rules/jinx-effects.ts';
-import { engineGap } from '#lib/core/testing/scenario.ts';
-import { alchemistAs } from './alchemist.test-support.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
+import { changeableSeats, characterChanger } from '#lib/core/rules/becomes.ts';
+import { abilityHolders } from '#lib/core/rules/gained-abilities.ts';
+import { evilInfoNotesLeftOut, picksCharacterOnlyBy } from '#lib/core/rules/holder-jinxes.ts';
+import { nightOrder } from '#lib/core/rules/night-order.ts';
+import { alchemistAs, scriptOf } from './alchemist.test-support.ts';
 
 const pick = (...ids: string[]): BagSelection => Object.fromEntries(ids.map((id) => [id, 1]));
 
@@ -61,7 +65,9 @@ describe('Alchemist + Summoner jinx', () => {
 			// Wiki: "The Alchemist-Summoner does not get bluffs, and chooses which Demon but not which player. If they die before this happens, evil wins. [No Demon]"
 			expect(jinxRulesBetween('alchemist', 'summoner')).toEqual({
 				withPartnerAbility: 'partner-setup',
-				gainedEndWinner: 'evil'
+				gainedEndWinner: 'evil',
+				picksCharacterOnly: true,
+				noBluffs: true
 			});
 		});
 
@@ -110,8 +116,9 @@ describe('Alchemist + Summoner jinx', () => {
 		});
 	});
 
-	// The Summoner part (L119): the Alchemist-Summoner who dies before a Demon is made loses the
-	// game for good, not evil; and the Storyteller, not they, picks the summoned player.
+	// The Summoner part (L119, L121): the Alchemist-Summoner who dies before a Demon is made loses
+	// the game for good, not evil; their gained Summoner ability runs at its step on Night 3
+	// (`abilityHolders`), they pick the Demon, the Storyteller the player, and they get no bluffs.
 	describe('the Alchemist-Summoner who dies first, and who picks the player', () => {
 		const base = alchemistAs('summoner', ['chef', 'empath', 'monk', 'poisoner']);
 		const ends = (s: typeof base) =>
@@ -138,18 +145,79 @@ describe('Alchemist + Summoner jinx', () => {
 			expect(ends(base.becomes('chef', 'imp', 'evil').dies(0))).toEqual([]);
 		});
 
-		// Waits on the engine (L119): the night step changes a player only for the Summoner's own
-		// player (`characterChanger` reads true characters), so a gained Summoner ability is not
-		// run, and its bluffs note reads the token.
-		it.fails(
-			'lets the Alchemist-Summoner choose the Demon, the Storyteller the player, with no bluffs',
-			() => {
-				// Wiki: "The Alchemist-Summoner does not get bluffs, and chooses which Demon but not which player."
-				engineGap(
-					'L119',
-					'run a gained Summoner ability at its step, the Storyteller picking the player'
-				);
-			}
-		);
+		const night3 = (s: typeof base) => s.reminder(0, 'summoner', 'Night 3');
+
+		it('runs the gained Summoner ability at its step on Night 3, as the Summoner would', () => {
+			// Wiki: "The Alchemist-Summoner does not get bluffs, and chooses which Demon but not which player."
+			expect(characterChanger(base.game, 'summoner', base.characters)).toBe(undefined);
+			expect(
+				characterChanger(base.reminder(0, 'summoner', 'Night 2').game, 'summoner', base.characters)
+			).toBe(undefined);
+			const s = night3(base);
+			expect(abilityHolders(s.game, 'summoner', s.characters)).toEqual([s.seat(0)]);
+			expect(characterChanger(s.game, 'summoner', s.characters)).toBe(s.seat(0));
+			expect(changeableSeats(s.game, 'summoner', s.characters)).toContain(s.seat('chef'));
+		});
+
+		it('lets the Alchemist-Summoner choose the Demon, the Storyteller the player', () => {
+			// Wiki: "chooses which Demon but not which player"
+			const s = night3(base);
+			expect(picksCharacterOnlyBy(s.game, 'summoner', s.characters)).toBe('alchemist');
+			// The player the Storyteller picks becomes the evil Demon chosen.
+			const made = s.do((at) => ({
+				type: 'AssignCharacter',
+				seatId: at.seat('chef'),
+				characterId: 'imp',
+				alignment: 'evil',
+				by: 'summoner'
+			}));
+			expect(made.game.seats[made.seat('chef')]).toMatchObject({
+				characterId: 'imp',
+				alignment: 'evil'
+			});
+			expect(ends(made.dies(0))).toEqual([]);
+		});
+
+		it('leaves the choice of player to the real Summoner, off the jinx', () => {
+			// Wiki: "The Alchemist-Summoner"
+			const real = scenario(['summoner', 'chef', 'empath', 'monk', 'poisoner'], {
+				script: scriptOf(['alchemist', 'summoner', 'chef', 'empath', 'monk', 'poisoner'])
+			}).reminder('summoner', 'summoner', 'Night 3');
+			expect(characterChanger(real.game, 'summoner', real.characters)).toBe(real.seat('summoner'));
+			expect(picksCharacterOnlyBy(real.game, 'summoner', real.characters)).toBe(undefined);
+		});
+
+		describe('no bluffs', () => {
+			const data = committedGameData();
+			const demonInfoNotes = (s: typeof base) => {
+				const inPlay = s.game.seating.flatMap((id) => {
+					const c = s.characters.get(s.game.seats[id].characterId ?? '');
+					return c ? [c] : [];
+				});
+				const order = nightOrder({
+					night: 'first',
+					sheet: data.nightSheet,
+					inPlay,
+					players: 7,
+					noAbility: evilInfoNotesLeftOut(s.game, s.characters)
+				});
+				return order.steps.find((step) => step.id === 'demoninfo')?.notes ?? [];
+			};
+
+			it("leaves the Summoner's bluffs note out of Demon info for the Alchemist-Summoner", () => {
+				// Wiki: "The Alchemist-Summoner does not get bluffs"
+				expect(evilInfoNotesLeftOut(base.game, base.characters)).toContain('summoner');
+				expect(demonInfoNotes(base).some((n) => n.startsWith('Summoner:'))).toBe(false);
+			});
+
+			it('keeps it for the real Summoner', () => {
+				// Wiki: "The Alchemist-Summoner does not get bluffs"
+				const real = scenario(['summoner', 'chef', 'empath', 'monk', 'poisoner'], {
+					script: scriptOf(['alchemist', 'summoner', 'chef', 'empath', 'monk', 'poisoner'])
+				});
+				expect(evilInfoNotesLeftOut(real.game, real.characters)).not.toContain('summoner');
+				expect(demonInfoNotes(real).some((n) => n.startsWith('Summoner:'))).toBe(true);
+			});
+		});
 	});
 });
