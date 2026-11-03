@@ -31,7 +31,7 @@
 	import { jinxesOnStep } from '#lib/core/rules/jinxes.ts';
 	import { provideCharacters } from '#lib/features/characters/character-context.ts';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
-	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
+	import SeatBadge from '#lib/features/grimoire/SeatBadge.svelte';
 	import Sentence from '#lib/features/characters/Sentence.svelte';
 	import { slot } from '#lib/features/characters/slots.ts';
 	import { explainBlock } from '#lib/features/glossary/glossary.svelte.ts';
@@ -132,7 +132,7 @@
 			dayUse?.ask({ seatId, characterId, rule });
 			return;
 		}
-		const who = t('day.who', { character: slot('character'), seat: slot('seat') });
+		const who = slot('who');
 		const token = game.characters.get(characterId)?.reminders.includes(NO_ABILITY);
 		ask({
 			action: t('day.markUsed'),
@@ -167,7 +167,7 @@
 	 * "require confirmation on the undoing").
 	 */
 	function askUnmarkUsed(seatId: SeatId, characterId: CharacterId) {
-		const who = t('day.who', { character: slot('character'), seat: slot('seat') });
+		const who = slot('who');
 		const label = spentOf(characterId);
 		const token = g.seats[seatId].reminders.find(
 			(r) => r.characterId === characterId && r.label === label
@@ -206,7 +206,7 @@
 		const first = dayMarkSeats(g, game.characters, mark)[0];
 		if (!first) return;
 		const { seatId, characterId, rule } = first;
-		const who = t('day.who', { character: slot('character'), seat: slot('seat') });
+		const who = slot('who');
 		const now = markToken(rule, dayMarkValue(g, mark));
 		const after = markToken(rule, value);
 		ask({
@@ -617,8 +617,14 @@
 			character={game.characters.get(id)}
 			{interactive}
 		/>{/if}{/snippet}
-{#snippet pendingSlot(name: string)}{#if name === 'seat'}{#if pending}<PlayerBadge
-				name={game.seatName(pending.seatId)}
+{#snippet pendingSlot(name: string)}{#if name === 'who'}{#if pending}<SeatBadge
+				game={game.game}
+				seatId={pending.seatId}
+				characterId={pending.characterId}
+				interactive={false}
+			/>{/if}{:else if name === 'seat'}{#if pending}<SeatBadge
+				game={game.game}
+				seatId={pending.seatId}
 			/>{/if}{:else if name === 'reminder' || name === 'now' || name === 'after'}<ReminderToken
 			label={name === 'reminder'
 				? (pending?.tokens?.now ?? NO_ABILITY)

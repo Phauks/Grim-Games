@@ -1,5 +1,5 @@
 <script lang="ts">
-	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
+	import SeatBadge from './SeatBadge.svelte';
 	import type { Alignment } from '#lib/core/data/index.ts';
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
@@ -39,7 +39,7 @@
 					playerName={seatName(game, seatId)}
 				/>
 			{:else}
-				<PlayerBadge name={seatName(game, seatId)} />
+				<SeatBadge {game} {seatId} />
 			{/if}
 			<span class="spacer"></span>
 			<Button variant="quiet" onclick={() => set(seatId, 'good')}>Good</Button>

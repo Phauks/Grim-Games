@@ -1,5 +1,5 @@
 <script lang="ts">
-	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
+	import SeatBadge from '#lib/features/grimoire/SeatBadge.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import {
@@ -175,8 +175,9 @@
 <BottomSheet bind:open title={t('day.note')} height="85dvh">
 	{#snippet heading()}
 		<Sentence text={noteTitle}
-			>{#snippet fill(name)}{#if name === 'seat'}{#if target?.seatId}<PlayerBadge
-							name={game.seatName(target.seatId)}
+			>{#snippet fill(name)}{#if name === 'seat'}{#if target?.seatId}<SeatBadge
+							game={game.game}
+							seatId={target.seatId}
 						/>{/if}{:else if target}<CharacterBadge
 						characterId={target.characterId}
 						character={game.characters.get(target.characterId)}

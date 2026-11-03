@@ -12,6 +12,7 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
+	import SeatBadge from './SeatBadge.svelte';
 	import CharacterPicker from './CharacterPicker.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { seatName } from './night-steps.ts';
@@ -108,7 +109,7 @@
 			{:else}
 				{#each kill.seats as seatId (seatId)}
 					<li>
-						<PlayerBadge name={seatName(game, seatId)} />
+						<SeatBadge {game} {seatId} />
 						<Button
 							variant="quiet"
 							disabled={!!game.seats[seatId].dead}

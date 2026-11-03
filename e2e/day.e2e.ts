@@ -76,13 +76,13 @@ test('the Slayer is marked Used and unmarked after a confirm each, and the Washe
 	const before = await place(used);
 	await used.tap();
 	// It asks whom the Slayer chose first (Trevor, 2026-10-30), from every seat, Ben too.
-	const chooser = page.getByRole('dialog', { name: /^Who did Slayer \(\s?Ben\s?\) choose\?$/ });
+	const chooser = page.getByRole('dialog', { name: /^Who did\s+Slayer\s+Ben\s+choose\?$/ });
 	await expect(chooser.getByRole('button', { name: /Ben/ })).toBeVisible();
 	await chooser.getByRole('button', { name: /Hal/ }).tap();
-	const confirm = page.getByRole('alertdialog', { name: /^Mark Slayer \(\s?Ben\s?\) as used\?$/ });
-	await expect(confirm).toContainText('Slayer (Ben) has not used their ability.');
+	const confirm = page.getByRole('alertdialog', { name: /^Mark\s+Slayer\s+Ben\s+as used\?$/ });
+	await expect(confirm).toContainText(/Slayer\s+Ben has not used their ability\./);
 	const on = confirm.getByTestId('day-use-on');
-	await expect(on).toHaveText('Hal');
+	await expect(on).toHaveText(/\bHal$/);
 	// Hal is the Imp, so the shot kills: Dies starts on (https://wiki.bloodontheclocktower.com/Slayer).
 	const dies = (name: string) =>
 		confirm.getByRole('checkbox', { name: `${name} dies`, includeHidden: true });
@@ -90,10 +90,10 @@ test('the Slayer is marked Used and unmarked after a confirm each, and the Washe
 	// The player can be changed, or left as None, before Confirm.
 	await on.tap();
 	await chooser.getByRole('button', { name: 'None', exact: true }).tap();
-	await expect(on).toHaveText('None');
+	await expect(on).toHaveText(/\bNone$/);
 	await on.tap();
 	await chooser.getByRole('button', { name: /Gus/ }).tap();
-	await expect(on).toHaveText('Gus');
+	await expect(on).toHaveText(/\bGus$/);
 	// Gus is the Poisoner: the shot does nothing, so Dies starts off.
 	await expect(dies('Gus')).not.toBeChecked();
 	await confirm.screenshot({ path: `test-results/day-use-on-${test.info().project.name}.png` });
@@ -103,7 +103,7 @@ test('the Slayer is marked Used and unmarked after a confirm each, and the Washe
 	expect(await place(used)).toEqual(before);
 	// Tapping it again unmarks it, after its own confirm (Trevor, 2026-10-17).
 	await used.tap();
-	const undo = page.getByRole('alertdialog', { name: /^Mark Slayer \(\s?Ben\s?\) as not used\?$/ });
+	const undo = page.getByRole('alertdialog', { name: /^Mark\s+Slayer\s+Ben\s+as not used\?$/ });
 	await expect(undo).toContainText('has used their ability and has the No Ability reminder.');
 	await undo.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(used).toHaveAttribute('aria-pressed', 'false');

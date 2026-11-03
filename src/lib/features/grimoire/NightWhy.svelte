@@ -1,11 +1,11 @@
 <script lang="ts">
-	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
+	import SeatBadge from './SeatBadge.svelte';
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import { trueCharacter, type SeatId } from '#lib/core/model/index.ts';
 	import type { AnswerValue, Why } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
-	import { answerValueText, seatName } from './night-steps.ts';
+	import { answerValueText } from './night-steps.ts';
 	import CharacterSet from './CharacterSet.svelte';
 
 	/**
@@ -35,16 +35,12 @@
 	const ALIGNMENT: Record<string, string> = { good: 'Good', evil: 'Evil' };
 </script>
 
-<!-- A player as their name pill and their character's badge (Trevor, 2026-10-17). -->
+<!-- A player as the badge with its player: their true character and name (Trevor, 2026-10-17;
+     one piece, 2026-11-02). -->
 {#snippet player(
 	seatId: SeatId,
 	characterId: CharacterId | undefined = trueCharacter(game, seatId, characters)
-)}<span class="player"
-		><PlayerBadge name={seatName(game, seatId)} />{#if characterId}<CharacterBadge
-				{characterId}
-				character={characters.get(characterId)}
-			/>{/if}</span
-	>{/snippet}
+)}<span class="player"><SeatBadge {game} {characters} {seatId} {characterId} /></span>{/snippet}
 
 {#snippet value(v: AnswerValue)}{#if v.kind === 'character'}<CharacterBadge
 			characterId={v.value}

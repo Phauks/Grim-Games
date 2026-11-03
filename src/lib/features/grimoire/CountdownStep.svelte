@@ -1,12 +1,11 @@
 <script lang="ts">
 	import { rulesOf } from '#lib/core/data/rules/index.ts';
 	import { countdownMoves, type NightStep } from '#lib/core/rules/index.ts';
-	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
+	import SeatBadge from './SeatBadge.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import BoardReminder from './BoardReminder.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { placingAlignment } from './board.ts';
-	import { seatName } from './night-steps.ts';
 
 	/**
 	 * A step whose character's token counts down each night (`countdown`, the Courtier's Drunk
@@ -53,7 +52,7 @@
 			<li>
 				<BoardReminder label={m.from} {character} {alignment} />
 				<span class="where"
-					>On <PlayerBadge name={seatName(game, m.seatId)} />{#if m.to}, becomes{:else}, comes off{/if}</span
+					>On <SeatBadge {game} seatId={m.seatId} />{#if m.to}, becomes{:else}, comes off{/if}</span
 				>
 				{#if m.to}<BoardReminder label={m.to} {character} {alignment} />{/if}
 			</li>

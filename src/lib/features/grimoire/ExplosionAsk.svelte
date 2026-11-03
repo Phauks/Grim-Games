@@ -6,7 +6,7 @@
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
-	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
+	import SeatBadge from './SeatBadge.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import SeatChooser from './SeatChooser.svelte';
 
@@ -79,7 +79,7 @@
 		<ul class="rows" data-testid="explosion-lives">
 			{#each living as seatId (seatId)}
 				<li>
-					<PlayerBadge name={seatName(game, seatId)} />
+					<SeatBadge {game} {seatId} />
 					<!-- eslint-disable grim/names-as-badges -- hidden label (accessible name) only -->
 					<Toggle
 						hideLabel

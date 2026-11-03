@@ -18,7 +18,7 @@
 	import Chip from '#lib/ui/primitives/Chip.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
-	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
+	import SeatBadge from '#lib/features/grimoire/SeatBadge.svelte';
 	import type { DayPort } from './day-port.ts';
 
 	/**
@@ -118,7 +118,7 @@
 			game.run({ type: 'SetDead', seatId: on, dead: true, cause: characterId });
 	}
 
-	const who = t('day.who', { character: slot('character'), seat: slot('seat') });
+	const who = slot('who');
 	const answer = $derived(
 		use && on
 			? dayUseAnswer(game.game, use.seatId, use.characterId, on, game.characters)
@@ -129,8 +129,14 @@
 	);
 </script>
 
-{#snippet fill(name: string)}{#if !use}{:else if name === 'seat'}<PlayerBadge
-			name={game.seatName(use.seatId)}
+{#snippet fill(name: string)}{#if !use}{:else if name === 'who'}<SeatBadge
+			game={game.game}
+			seatId={use.seatId}
+			characterId={use.characterId}
+			interactive={false}
+		/>{:else if name === 'seat'}<SeatBadge
+			game={game.game}
+			seatId={use.seatId}
 		/>{:else if name === 'reminder'}<ReminderToken
 			label={spent}
 			character={game.characters.get(use.characterId)}
@@ -184,7 +190,9 @@
 							name: on ? game.seatName(on) : t('day.useOnNone')
 						})}
 						onclick={change}
-						>{#if on}<PlayerBadge name={game.seatName(on)} />{:else}{t('day.useOnNone')}{/if}</Chip
+						>{#if on}<SeatBadge game={game.game} seatId={on} interactive={false} />{:else}{t(
+								'day.useOnNone'
+							)}{/if}</Chip
 					>
 					<!-- eslint-enable grim/names-as-badges -->
 				</dd>
@@ -205,8 +213,9 @@
 				<dd data-testid="day-use-answer" data-kind={answer.kind}>
 					{#if answer.kind === 'right' || answer.kind === 'wrong'}
 						{t(answer.kind === 'right' ? 'day.useAnswerRight' : 'day.useAnswerWrong')}
-						{#each answer.demons as demon (demon)}<PlayerBadge
-								name={game.seatName(demon)}
+						{#each answer.demons as demon (demon)}<SeatBadge
+								game={game.game}
+								seatId={demon}
 							/>{:else}{t('day.useOnNone')}{/each}
 					{:else}
 						{t(answer.kind === 'any' ? 'day.useAnswerAny' : 'day.useAnswerDead')}
