@@ -2,7 +2,7 @@
 	import SeatBadge from './SeatBadge.svelte';
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import type { NightStep, NightAlert, Impairment } from '#lib/core/rules/index.ts';
-	import { nightStepAlerts } from '#lib/core/rules/index.ts';
+	import { IF_CHOSEN_KINDS, nightStepAlerts } from '#lib/core/rules/index.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
@@ -18,10 +18,9 @@
 	 * ability the Storyteller has while they have none (the Summoner's with the Courtier), a
 	 * guess that makes the Demon choose a jinxed partner, a gained ability not shown, a madness
 	 * a jinx allows, a Scarlet Woman who is herself again, or a setup change made on gaining an
-	 * ability (L119), and for a step
-	 * that can kill, who is protected, may bounce the death, survives it or sets something off
-	 * by dying. Short state lines with badges; the rules are core's
-	 * `nightStepAlerts`, worked out from the tokens on the board.
+	 * ability (L119). Short state lines with badges; the rules are core's `nightStepAlerts`,
+	 * worked out from the tokens on the board. What a killing step's choice would do to each
+	 * player (protected, bounced, sets something off) is `StepIfChosen`'s own section.
 	 */
 	interface Props {
 		grimoire: Grimoire;
@@ -37,7 +36,7 @@
 	const characters = $derived(grimoire.open.characters);
 	const alerts = $derived(
 		(step?.character ? nightStepAlerts(game, step.character.id, characters) : []).filter(
-			(a) => !withoutImpaired || a.kind !== 'impaired'
+			(a) => (!withoutImpaired || a.kind !== 'impaired') && !IF_CHOSEN_KINDS.has(a.kind)
 		)
 	);
 
@@ -69,11 +68,7 @@
 		'not-shown-given': 'info',
 		'may-mad-as': 'info',
 		reverts: 'warning',
-		'partner-setup': 'warning',
-		protected: 'protected',
-		'may-bounce': 'warning',
-		'survives-first-death': 'protected',
-		'on-death': 'dead'
+		'partner-setup': 'warning'
 	} as const;
 	const sourceId = (alert: NightAlert) =>
 		alert.source === 'override' ? undefined : alert.source.characterId;
@@ -118,7 +113,11 @@
 				class="alert"
 				class:off={!alert.works && alert.kind !== 'impaired'}
 			>
-				<Icon name={alert.impairments[0]?.reason === 'drunk' ? 'drunk' : ICON[alert.kind]} />
+				<Icon
+					name={alert.impairments[0]?.reason === 'drunk'
+						? 'drunk'
+						: ICON[alert.kind as keyof typeof ICON]}
+				/>
 				<span>
 					{#if alert.kind === 'impaired'}
 						{@render badge(sourceId(alert))} in {@render player(alert.seatId)} is {@render why(
@@ -202,15 +201,6 @@
 						{@render player(alert.seatId)}: {@render badge(sourceId(alert))} has the {@render badge(
 							alert.partner
 						)} ability, so its setup change may be made now
-					{:else if alert.kind === 'protected'}
-						{@render player(alert.seatId)} can't die{#if alert.source === 'override'}
-							(set by hand){:else}: {@render badge(sourceId(alert))}{/if}
-					{:else if alert.kind === 'may-bounce'}
-						{@render player(alert.seatId)}: {@render badge(sourceId(alert))} may bounce the death
-					{:else if alert.kind === 'survives-first-death'}
-						{@render player(alert.seatId)}: {@render badge(sourceId(alert))} survives the first death
-					{:else}
-						{@render player(alert.seatId)} dying sets off {@render badge(sourceId(alert))}
 					{/if}
 					{#if !alert.works && alert.kind !== 'impaired'}
 						<strong class="not">Not working:</strong> {@render why(alert.impairments)}
