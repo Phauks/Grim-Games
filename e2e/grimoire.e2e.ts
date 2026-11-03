@@ -2519,7 +2519,9 @@ test('moving a reminder that normally stays put asks first, saying why', async (
 	await putReminder(page, 'Is The Drunk', 1);
 	await moveOnBoard(page, 'Is The Drunk', 1, 3);
 	const confirm = page.getByRole('alertdialog', { name: 'Confirm change?' });
-	await expect(confirm).toContainText(/Drunk.*'s\s*Is The Drunk\s*reminder/);
+	// The round board token, then whose it is (Trevor, 2026-11-03).
+	await expect(confirm.getByRole('img', { name: 'Is The Drunk reminder' })).toBeVisible();
+	await expect(confirm).toContainText(/Drunk\s*'s reminder/);
 	await expect(confirm).toContainText('Marks which player is the Drunk.');
 	await expect(confirm).toContainText(
 		/Now\s*On\s+(\S+\s+)?Seat 1\s*Becomes\s*On\s+(\S+\s+)?Seat 3/
