@@ -191,11 +191,9 @@ describe('Bone Collector', () => {
 			expect(wokeTonight(s.game, s.seat('bonecollector'), s.characters, 'other')).toBe(false);
 		});
 
-		it.fails('the chosen player loses their ability again at the next dusk', () => {
+		it('the chosen player loses their ability again at the next dusk', () => {
 			// Wiki: "The next dusk, the chosen player loses their ability—remove the HAS ABILITY
 			// reminder."
-			// Waits on the engine (unplanned): Has Ability has no reminderEnds, so it stays on the dead
-			// player past dusk and they keep their ability.
 			const s = scenario(['bonecollector', 'flowergirl', 'imp', 'chef', 'poisoner'])
 				.dies('flowergirl')
 				.newDay()

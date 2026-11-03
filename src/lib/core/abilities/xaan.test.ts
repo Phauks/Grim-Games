@@ -156,10 +156,9 @@ describe('Xaan', () => {
 			}
 		});
 
-		it.fails('takes X off at the dusk after night X', () => {
+		it('takes X off at the dusk after night X', () => {
 			// Wiki: "On the night that equals the number of Outsiders in play when the game began, add the
 			// X reminder to the Grimoire, and remove it the following dusk."
-			// Waits on the engine (unplanned): the Xaan's X has no reminderEnds at dusk.
 			const s = scenario(cast).reminder('xaan', 'xaan', 'X');
 			const x = s.game.seats[s.seat('xaan')].reminders.find((r) => r.label === 'X')!;
 			expect(remindersEndingAt(s.game, 'dusk', s.characters)).toContain(x.reminderId);

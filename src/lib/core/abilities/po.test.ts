@@ -158,10 +158,8 @@ describe('Po', () => {
 			expect(otherNightText()).toContain('[+Dead] [+Dead] [+Dead]');
 		});
 
-		it.fails('takes the 3 Attacks reminder off after the three attacks', () => {
+		it('takes the 3 Attacks reminder off after the three attacks', () => {
 			// Wiki: "Remove the 3 ATTACKS reminder."
-			// Waits on the engine (unplanned): the Po's night step places Dead three times but has no
-			// step that removes 3 Attacks.
 			expect(otherNightText()).toContain('[-3 Attacks]');
 		});
 	});

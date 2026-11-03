@@ -21,7 +21,7 @@ describe('reminders', () => {
 		);
 		expect(s.warnings).toEqual([]);
 		expect(s.game.seats[seats[1]].reminders).toEqual([
-			{ reminderId: 'id-7', characterId: 'poisoner', label: 'Poisoned' }
+			{ reminderId: 'id-7', characterId: 'poisoner', label: 'Poisoned', placedDays: 0 }
 		]);
 	});
 
