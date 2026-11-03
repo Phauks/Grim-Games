@@ -148,6 +148,7 @@ export const ROADMAP: readonly RoadmapItem[] = [
 			'R8',
 			'R10',
 			'R11',
+			'R16',
 			'J10',
 			'J11',
 			'J12',
@@ -516,6 +517,14 @@ export const ROADMAP: readonly RoadmapItem[] = [
 			"Fiddler, Hatter, Pit-Hag, Apprentice, Politician and Hell's Librarian follow their full How to Run",
 		area: 'engine',
 		parts: ['M32a', 'M32b', 'M32c', 'M32d']
+	},
+	{
+		// The coordinator's ask of 2026-11-03: the Storyteller gives a player an ability without
+		// changing their character. M34 the engine: an ability recorded by hand, or the one the
+		// player's own character chose (the Philosopher's), is held and wakes at its step.
+		title: 'Give ability engine support',
+		area: 'engine',
+		parts: ['M34']
 	},
 	{
 		// Trevor, 2026-11-02: beta goes to production only once the How to Run gaps are closed.

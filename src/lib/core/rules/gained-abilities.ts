@@ -36,8 +36,8 @@ export interface GainedAbility {
 	seatId: SeatId;
 	/** The character whose ability they gain. */
 	characterId: CharacterId;
-	/** The character whose ability grants it. */
-	via: CharacterId;
+	/** The character whose ability grants it; unset when the Storyteller gave it by hand. */
+	via?: CharacterId;
 	/** The player whose character it was; unset for a swapped token. */
 	fromSeat?: SeatId;
 	/** `has-ability`: the Storyteller placed "Has Ability"; `if-mad`: still their call. */
@@ -66,6 +66,7 @@ export function learnsGainedTonight(
 	gained: Pick<GainedAbility, 'via' | 'characterId' | 'fromSeat'>,
 	characters: CharacterLookup
 ): LearnsGained | undefined {
+	if (gained.via === undefined) return undefined;
 	const learns = ownJinxRules(game, gained.via, gained.characterId, characters)?.learnsGained;
 	if (!learns || gained.fromSeat === undefined) return undefined;
 	const executed = game.today.entries.some(
@@ -102,9 +103,29 @@ export function gainedBy(
 }
 
 /**
+ * Whether `holder`'s own ability works for an ability it gives them: no drunkenness or
+ * poisoning, and alive, or dead holding an ability that works even if dead.
+ */
+function ownGiverWorks(
+	game: Game,
+	holder: SeatId,
+	characterId: CharacterId,
+	characters: CharacterLookup
+): boolean {
+	const seat = game.seats[holder];
+	if (!seat) return false;
+	const state = abilityState(game, holder, characters);
+	return state.impairments.length === 0 && (!seat.dead || worksWhenDead(characterId, characters));
+}
+
+/**
  * Whether `holder` has the ability held by `via`'s `givesAbility` rule now: they are still
  * who it goes to (the Demon), and, for `whileWorks`, a player of `via` has a working ability
- * (a drunk, poisoned or dead Boffin takes it away for as long as that lasts).
+ * (a drunk, poisoned or dead Boffin takes it away for as long as that lasts). An entry with
+ * no `via` is the Storyteller's own call and always counts. One whose `via` is the holder's
+ * own true character with a `gainedFrom` rule (the Storyteller recording the ability the
+ * Philosopher chose, https://wiki.bloodontheclocktower.com/Philosopher) counts while their
+ * own ability works.
  */
 export function holdsAbility(
 	game: Game,
@@ -112,16 +133,18 @@ export function holdsAbility(
 	held: HeldAbility,
 	characters: CharacterLookup
 ): boolean {
-	const rule = rulesOf(held.via, characters)?.givesAbility;
+	if (held.via === undefined) return true;
+	const rules = rulesOf(held.via, characters);
+	const rule = rules?.givesAbility;
 	if (rule?.to === 'self') {
 		// Their own ability gives it: while it works, and after death only an ability that
 		// works even if dead.
-		const seat = game.seats[holder];
-		if (seat?.characterId !== held.via) return false;
-		const state = abilityState(game, holder, characters);
-		return (
-			state.impairments.length === 0 && (!seat.dead || worksWhenDead(held.characterId, characters))
-		);
+		if (game.seats[holder]?.characterId !== held.via) return false;
+		return ownGiverWorks(game, holder, held.characterId, characters);
+	}
+	if (!rule && rules?.gainedFrom) {
+		if (trueCharacter(game, holder, characters) !== held.via) return false;
+		return ownGiverWorks(game, holder, held.characterId, characters);
 	}
 	if (rule?.to === 'storyteller') {
 		// A Minion holds it instead, by a jinx (the Plague Doctor's Spy,
@@ -185,7 +208,14 @@ export function gainedAbilities(game: Game, characters: CharacterLookup): Gained
 		if (seat.dead) continue;
 		for (const held of allHeld(game, seatId, characters)) {
 			if (!holdsAbility(game, seatId, held, characters)) continue;
-			out.push({ seatId, via: held.via, characterId: held.characterId, status: 'has-ability' });
+			// Already gained by their token (a Philosopher's swapped token, also recorded here).
+			if (out.some((g) => g.seatId === seatId && g.characterId === held.characterId)) continue;
+			out.push({
+				seatId,
+				...(held.via !== undefined ? { via: held.via } : {}),
+				characterId: held.characterId,
+				status: 'has-ability'
+			});
 		}
 	}
 	return out;
@@ -216,7 +246,8 @@ export function withGainedSteps<T extends NightStep>(
 	for (const gained of gainedAbilities(game, characters)) {
 		// The step is the holder's own token's: the Pixie's, or the Demon holding the Boffin's.
 		const token = game.seats[gained.seatId]?.characterId;
-		const via = characters.get(token ?? gained.via);
+		const by = token ?? gained.via;
+		const via = by === undefined ? undefined : characters.get(by);
 		const as: Character | undefined = characters.get(gained.characterId);
 		if (!via || !as) continue;
 		const own = night === 'first' ? as.firstNightReminder : as.otherNightReminder;
@@ -233,7 +264,8 @@ export function withGainedSteps<T extends NightStep>(
 		// Dreamer); only a "you start knowing" ability gained later needs a step of its own.
 		if (token === gained.characterId && own !== undefined) continue;
 		const step: NightStep = {
-			id: `${gained.via}@${gained.seatId}:${gained.characterId}`,
+			// Given by hand (no `via`): named for the Storyteller's call.
+			id: `${gained.via ?? 'given'}@${gained.seatId}:${gained.characterId}`,
 			kind: 'character',
 			character: via,
 			reminder,
@@ -394,7 +426,11 @@ export function abilitiesOfSeat(
 	}
 	for (const held of allHeld(game, seatId, characters))
 		if (holdsAbility(game, seatId, held, characters))
-			add({ characterId: held.characterId, how: 'held', via: held.via });
+			add({
+				characterId: held.characterId,
+				how: 'held',
+				...(held.via !== undefined ? { via: held.via } : {})
+			});
 	return out;
 }
 
@@ -491,7 +527,8 @@ export function gainedSetupAbilities(
 		const gained = shown && own !== shown.id && (type === shown.type || thinks) ? [shown] : [];
 		const held = (game.seats[seatId]?.abilities ?? []).flatMap((h) => {
 			const character = characters.get(h.characterId);
-			return character && rulesOf(h.via, characters)?.givesAbility?.setup ? [character] : [];
+			const setup = h.via !== undefined && rulesOf(h.via, characters)?.givesAbility?.setup;
+			return character && setup ? [character] : [];
 		});
 		return [...gained, ...held];
 	});

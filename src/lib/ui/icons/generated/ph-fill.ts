@@ -144,6 +144,7 @@ import ph_list_numbers_fill from '~icons/ph/list-numbers-fill';
 import ph_lock_fill from '~icons/ph/lock-fill';
 import ph_lock_simple_fill from '~icons/ph/lock-simple-fill';
 import ph_magnifying_glass_fill from '~icons/ph/magnifying-glass-fill';
+import ph_mask_happy_fill from '~icons/ph/mask-happy-fill';
 import ph_mask_sad_fill from '~icons/ph/mask-sad-fill';
 import ph_megaphone_fill from '~icons/ph/megaphone-fill';
 import ph_megaphone_simple_fill from '~icons/ph/megaphone-simple-fill';
@@ -386,6 +387,7 @@ const icons: IconMap = {
 	'ph:lock-fill': ph_lock_fill,
 	'ph:lock-simple-fill': ph_lock_simple_fill,
 	'ph:magnifying-glass-fill': ph_magnifying_glass_fill,
+	'ph:mask-happy-fill': ph_mask_happy_fill,
 	'ph:mask-sad-fill': ph_mask_sad_fill,
 	'ph:megaphone-fill': ph_megaphone_fill,
 	'ph:megaphone-simple-fill': ph_megaphone_simple_fill,

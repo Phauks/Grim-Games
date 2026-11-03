@@ -112,6 +112,8 @@
 	);
 
 	const name = $derived(seat.playerName ?? t('common.seat', { number }));
+	/** Abilities the Storyteller gave in their own words (Gain ability, M34), in the pill. */
+	const custom = $derived(seat.customAbilities ?? []);
 	/** The seated player's own picture in the room (2026-10-27), in place of their initials. */
 	const picture = $derived(seat.avatar ? roomHost().pictureOf(seat.seatId) : undefined);
 	// The seat's accessible name, plain text; the board shows the name as its pill.
@@ -139,6 +141,7 @@
 			...trueCharacters.map(({ character: truly }) => `is really the ${truly.name}`),
 			// eslint-disable-next-line grim/names-as-badges -- an accessible name, see above
 			pretends ? `fake ${pretends.name}` : '',
+			...custom.map((words) => `also has ${words}`),
 			seat.notes?.length ? 'has a note' : '',
 			seat.reminders.length
 				? `${seat.reminders.length} reminder${seat.reminders.length === 1 ? '' : 's'}`
@@ -262,8 +265,9 @@
 		>{/if}
 	<!-- Abilities held without a token, with the notes mark (HeldAbilityPill); the Storyteller's
 	     notes alone keep their own mark, lower right (never shown to players). -->
-	{#if heldAbilities.length || trueCharacters.length || pretends}<HeldAbilityPill
+	{#if heldAbilities.length || custom.length || trueCharacters.length || pretends}<HeldAbilityPill
 			abilities={heldAbilities}
+			{custom}
 			{pretends}
 			truths={trueCharacters.map(({ reminder, character: truly }) => ({
 				character: truly,

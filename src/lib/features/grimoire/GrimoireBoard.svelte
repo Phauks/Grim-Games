@@ -20,7 +20,7 @@
 	import { boardLooks } from './board-looks.svelte.ts';
 	import BoardLogo from '#lib/features/scripts/BoardLogo.svelte';
 	import { goto, replaceState } from '$app/navigation';
-	import { onMount, tick, untrack } from 'svelte';
+	import { onMount, tick, untrack, type Snippet } from 'svelte';
 	import { REMINDERS_HASH } from '#lib/features/setup/setup-steps.ts';
 	import LateSeatOnBoard from '#lib/features/late-player/LateSeatOnBoard.svelte';
 	import { resolve } from '$app/paths';
@@ -75,6 +75,7 @@
 	import { drawnLook } from './shared-look.ts';
 	import HistoryDialog from './HistoryDialog.svelte';
 	import DaySheet from '#lib/features/day/DaySheet.svelte';
+	import { endGameRequest } from './end-game-request.svelte.ts';
 	import BoardScriptDialog from './BoardScriptDialog.svelte';
 	import BoardSeats from './BoardSeats.svelte';
 	import BoardRules from './BoardRules.svelte';
@@ -145,9 +146,18 @@
 		 * the app's items live.
 		 */
 		watchedHistory?: boolean;
+		/** Beside ☰ on a spectator's board: Grim view's message to the Storyteller (2026-11-03). */
+		watchLead?: Snippet;
 	}
 
-	let { grimoire, watching = false, watchedTimer, over, watchedHistory = false }: Props = $props();
+	let {
+		grimoire,
+		watching = false,
+		watchedTimer,
+		over,
+		watchedHistory = false,
+		watchLead
+	}: Props = $props();
 	/** Spectators on this game's view-only link, as the room reports them; none for a viewer. */
 	const watcherCount = $derived(!watching && roomHost().code ? roomHost().watchers : 0);
 
@@ -487,6 +497,8 @@
 	let historyOpen = $state(false);
 	/** The day sheet; the old /day route lands here with `#day` to open it. */
 	let dayOpen = $state(false);
+	// End game asked for from the day sheet (the Fiddle contest) opens over the board.
+	$effect.pre(() => void (endGameRequest.pending && (dayOpen = false)));
 	/** The Savant sheet, from the day view's Savant info button (L5). */
 	let savantSeat = $state<SeatId | undefined>();
 	let savantOpen = $state(false);
@@ -803,7 +815,7 @@
 					outlined
 					board
 				/>
-			{/if}
+			{:else}{@render watchLead?.()}{/if}
 		{/snippet}
 	</BoardToolbar>
 
@@ -1089,11 +1101,12 @@
 </Dialog>
 
 {#snippet coverActions()}
-	<GrimCoverActions callTown={town.can} view={playerView} />
+	<GrimCoverActions view={playerView} />
 {/snippet}
 
 {#snippet coverTimer()}
-	{#if showTimer}<DayTimer {...timerFacts(game, characters)} variant="compact" />{/if}
+	<!-- The same timer as the board's, Back to town at its front (Trevor, 2026-11-03). -->
+	{#if showTimer}<DayTimer {...timerFacts(game, characters)} variant="compact" {town} />{/if}
 {/snippet}
 
 <DaySheet

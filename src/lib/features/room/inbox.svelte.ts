@@ -16,6 +16,8 @@ export class RoomInbox {
 	pictureReports = $state.raw<readonly PictureReportView[]>([]);
 	/** Players' messages this game, oldest first. */
 	messages = $state.raw<readonly PlayerMessage[]>([]);
+	/** Spectators and Grim view may not message (Trevor, 2026-11-03); they may until turned off. */
+	spectatorsMuted = $state(false);
 	#send: (message: ClientMessage) => boolean;
 
 	constructor(send: (message: ClientMessage) => boolean) {
@@ -25,6 +27,14 @@ export class RoomInbox {
 	receive(view: HostView): void {
 		this.pictureReports = view.pictureReports ?? [];
 		this.messages = view.messages ?? [];
+		this.spectatorsMuted = !!view.spectatorsMuted;
+	}
+
+	/** Lets spectators and Grim view message, or stops them. False when offline. */
+	allowSpectators(allow: boolean): boolean {
+		if (!this.#send({ type: 'spectator-messages', allow })) return false;
+		this.spectatorsMuted = !allow;
+		return true;
 	}
 
 	clear(): void {

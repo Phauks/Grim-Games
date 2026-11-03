@@ -30,6 +30,8 @@
 		onChangeCharacter: () => void;
 		onGain: () => void;
 		onHeld: () => void;
+		/** Gain ability: an ability besides their character's, for any player (M34). */
+		onGive: () => void;
 		onSavant: () => void;
 		onClaim: () => void;
 		onAlignment: () => void;
@@ -52,6 +54,7 @@
 		onChangeCharacter,
 		onGain,
 		onHeld,
+		onGive,
 		onSavant,
 		onClaim,
 		onAlignment,
@@ -89,6 +92,10 @@
 		{#if holdsAbility}
 			<Button variant="quiet" icon="swap" onclick={() => fromMenu(onHeld)}>Held ability…</Button>
 		{/if}
+		<!-- Any player, without changing their character (Trevor, 2026-11-03). -->
+		<Button variant="quiet" icon="add" disabled={!seat} onclick={() => fromMenu(onGive)}
+			>Gain ability…</Button
+		>
 		{#if savant}
 			<Button variant="quiet" icon="random" onclick={() => fromMenu(onSavant)}>
 				Savant information…

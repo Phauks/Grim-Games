@@ -2,6 +2,7 @@
 	import { rulesOf } from '#lib/core/data/rules/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import CharacterHistoryDialog from './CharacterHistoryDialog.svelte';
+	import GainAbilityDialog from './GainAbilityDialog.svelte';
 	import { allowedOffScriptIn } from '#lib/features/modes/game-mode.ts';
 	import NominationChooser from './NominationChooser.svelte';
 	import { seatCharacterLine } from '#lib/features/game/seat-label.ts';
@@ -44,7 +45,13 @@
 	import SavantSheet from '#lib/features/savant/SavantSheet.svelte';
 	import NoteSheet from '#lib/features/day/NoteSheet.svelte';
 	import { LiveDay } from '#lib/features/day/live-day.svelte.ts';
-	import { dayClaim, pretendChoices, pretendTeamSource } from '#lib/core/rules/index.ts';
+	import {
+		dayClaim,
+		pretendChoices,
+		pretendTeamSource,
+		takesVoteTokens
+	} from '#lib/core/rules/index.ts';
+	import VoteTokens from './VoteTokens.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import { gameSettings } from '#lib/features/game-settings/game-settings.svelte.ts';
@@ -150,6 +157,7 @@
 			: []
 	);
 	let changesOpen = $state(false);
+	let giveOpen = $state(false);
 
 	// A character that gains an ability by a swap (the Apprentice) does so from ⋯
 	// (SeatCharacterFlow), by its rules block's `swapsForAbility`.
@@ -368,6 +376,14 @@
 				</button>
 			</div>
 
+			<!-- The Beggar's vote tokens, and a dead player giving one (Trevor, 2026-11-03). -->
+			{#if takesVoteTokens(game, seat.seatId, characters)}
+				<div class="row">
+					<span class="label">Vote tokens</span>
+					<VoteTokens {grimoire} seatId={seat.seatId} />
+				</div>
+			{/if}
+
 			<!-- Who the Storyteller fakes this player as, any time in the game (Trevor, 2026-11-02),
 			     on every seat while the game has the Atheist's fake evil team (M26). -->
 			{#if fakes}
@@ -479,6 +495,8 @@
 
 <CharacterHistoryDialog bind:open={changesOpen} {grimoire} {seatId} />
 
+<GainAbilityDialog bind:open={giveOpen} {grimoire} {seatId} {title} />
+
 <!-- The seat's less frequent actions, in an overlay so the sheet stays short. -->
 <SeatMenu
 	bind:open={menuOpen}
@@ -494,6 +512,7 @@
 	onChangeCharacter={() => flow?.choose()}
 	onGain={() => flow?.chooseGain()}
 	onHeld={() => flow?.chooseHeld()}
+	onGive={() => (giveOpen = true)}
 	onSavant={() => (savantOpen = true)}
 	onClaim={() => (claimOpen = true)}
 	onAlignment={() => flow?.chooseAlignment()}

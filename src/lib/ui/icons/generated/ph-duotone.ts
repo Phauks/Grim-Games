@@ -144,6 +144,7 @@ import ph_list_numbers_duotone from '~icons/ph/list-numbers-duotone';
 import ph_lock_duotone from '~icons/ph/lock-duotone';
 import ph_lock_simple_duotone from '~icons/ph/lock-simple-duotone';
 import ph_magnifying_glass_duotone from '~icons/ph/magnifying-glass-duotone';
+import ph_mask_happy_duotone from '~icons/ph/mask-happy-duotone';
 import ph_mask_sad_duotone from '~icons/ph/mask-sad-duotone';
 import ph_megaphone_duotone from '~icons/ph/megaphone-duotone';
 import ph_megaphone_simple_duotone from '~icons/ph/megaphone-simple-duotone';
@@ -386,6 +387,7 @@ const icons: IconMap = {
 	'ph:lock-duotone': ph_lock_duotone,
 	'ph:lock-simple-duotone': ph_lock_simple_duotone,
 	'ph:magnifying-glass-duotone': ph_magnifying_glass_duotone,
+	'ph:mask-happy-duotone': ph_mask_happy_duotone,
 	'ph:mask-sad-duotone': ph_mask_sad_duotone,
 	'ph:megaphone-duotone': ph_megaphone_duotone,
 	'ph:megaphone-simple-duotone': ph_megaphone_simple_duotone,

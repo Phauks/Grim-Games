@@ -781,10 +781,13 @@ test('reminders: put on from the bank, then moved and removed from the seat shee
 		.getByRole('button', { name: 'Remove reminder' })
 		.tap();
 	// It normally stays put, so taking it off asks first.
-	await page
-		.getByRole('alertdialog', { name: 'Confirm change?' })
-		.getByRole('button', { name: 'Confirm', exact: true })
-		.tap();
+	const ask = page.getByRole('alertdialog', { name: 'Confirm change?' });
+	// The token is the round one the board draws, not the in-text chip (Trevor, 2026-11-03).
+	await expect(ask.getByTestId('board-reminder')).toHaveAttribute(
+		'aria-label',
+		'Is The Drunk reminder'
+	);
+	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(sheet.getByText('None', { exact: true }).last()).toBeVisible();
 });
 
@@ -2528,7 +2531,9 @@ test('moving a reminder that normally stays put asks first, saying why', async (
 	await putReminder(page, 'Is The Drunk', 1);
 	await moveOnBoard(page, 'Is The Drunk', 1, 3);
 	const confirm = page.getByRole('alertdialog', { name: 'Confirm change?' });
-	await expect(confirm).toContainText(/Drunk.*'s\s*Is The Drunk\s*reminder/);
+	// The round board token, then whose it is (Trevor, 2026-11-03).
+	await expect(confirm.getByRole('img', { name: 'Is The Drunk reminder' })).toBeVisible();
+	await expect(confirm).toContainText(/Drunk\s*'s reminder/);
 	await expect(confirm).toContainText('Marks which player is the Drunk.');
 	await expect(confirm).toContainText(
 		/Now\s*On\s+(\S+\s+)?Seat 1\s*Becomes\s*On\s+(\S+\s+)?Seat 3/
@@ -3460,15 +3465,11 @@ test("the Script button opens the players' copy of the script", async ({ page })
 	await expect(sheet.locator('[data-character="empath"]')).toContainText(
 		'Each night, you learn how many of your 2 alive neighbors'
 	);
-	// In a game, Travellers and Jinxes start closed while none of theirs is in play
-	// (Trevor, 2026-10-18); the header still opens them.
+	// In a game, Travellers start closed while none of theirs is in play (Trevor, 2026-10-18);
+	// the header still opens them. A script without jinxes has no Jinxes section (2026-11-03).
 	const travellers = sheet.getByRole('button', { name: 'Travellers', exact: true });
 	await expect(travellers).toHaveAttribute('aria-expanded', 'false');
-	await expect(sheet.getByRole('button', { name: 'Jinxes' })).toHaveAttribute(
-		'aria-expanded',
-		'false'
-	);
-	await expect(sheet.getByTestId('no-jinxes')).toBeHidden();
+	await expect(sheet.getByRole('button', { name: 'Jinxes' })).toHaveCount(0);
 	await travellers.tap();
 	await expect(sheet.getByTestId('no-travellers')).toHaveText('None');
 	// It scrolls to the end (Trevor, 2026-10-16: it couldn't be scrolled).
@@ -5186,15 +5187,18 @@ test('the board menu names its groups, in two columns beside a phone', async ({ 
 	expect(await names('Seats')).toEqual(['Add Fabled or Loric', 'Seating']);
 	await expect(group('Seats').getByRole('button', { name: 'Seating' })).toBeEnabled();
 	expect(await names('App')).toEqual(['Settings', 'Report an issue']);
-	// Beside a phone, the game on the left and the rest on the right.
+	// Beside a phone, the game and its seats on the left and the rest on the right.
 	const game = (await group('Game').boundingBox())!;
 	const seats = (await group('Seats').boundingBox())!;
 	const app = (await group('App').boundingBox())!;
 	if ((page.viewportSize()?.width ?? 0) >= 640) {
-		expect(seats.x).toBeGreaterThan(game.x + game.width - 1);
-		expect(Math.abs(seats.y - game.y)).toBeLessThan(2);
-		// Session is last, under App (Trevor, 2026-11-03: "games, seats, app, session").
-		expect(Math.abs(session.x - seats.x)).toBeLessThan(2);
+		// Seats under Game on the left (Trevor, 2026-11-03: "seats should go below game"); App
+		// then Session on the right ("games, seats, app, session").
+		expect(Math.abs(seats.x - game.x)).toBeLessThan(2);
+		expect(seats.y).toBeGreaterThan(game.y + game.height - 1);
+		expect(app.x).toBeGreaterThan(game.x + game.width - 1);
+		expect(Math.abs(app.y - game.y)).toBeLessThan(2);
+		expect(Math.abs(session.x - app.x)).toBeLessThan(2);
 		expect(session.y).toBeGreaterThan(app.y + app.height - 1);
 	} else {
 		expect(seats.y).toBeGreaterThan(game.y + game.height - 1);

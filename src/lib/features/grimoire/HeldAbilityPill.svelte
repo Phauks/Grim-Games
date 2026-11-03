@@ -16,6 +16,8 @@
 	 */
 	interface Props {
 		abilities: { character: Character; works: boolean }[];
+		/** Abilities given in the Storyteller's own words (Gain ability, M34): a text mark, +. */
+		custom?: readonly string[];
 		/** Who the player really is, each from its reminder (tapping it opens the reminder). */
 		truths?: { character: Character; reminderId?: string }[];
 		/** The seat has notes: their pen goes in the pill too, and opens them. */
@@ -28,7 +30,7 @@
 		pretends?: Character;
 	}
 
-	let { abilities, truths = [], notes = false, pretends }: Props = $props();
+	let { abilities, custom = [], truths = [], notes = false, pretends }: Props = $props();
 </script>
 
 <RimPill side="right" edge="bottom" testid="held-pill"
@@ -38,6 +40,11 @@
 			data-off={works ? undefined : ''}
 			title={works ? `Holds the ${as.name} ability` : `Holds the ${as.name} ability (not now)`}
 			><img src={iconUrl(as)} alt="" /><span class="kind holds" aria-hidden="true">+</span></span
+		>{/each}{#each custom as words (words)}<span
+			class="held"
+			data-testid="custom-ability"
+			title={`Has ${words}`}
+			><Icon name="asksText" /><span class="kind holds" aria-hidden="true">+</span></span
 		>{/each}{#each truths as { character: truly, reminderId }, k (reminderId ?? k)}<span
 			class="held"
 			data-testid="true-character"
@@ -68,6 +75,7 @@
 	}
 	.held {
 		background: var(--reminder-face);
+		color: var(--on-reminder);
 	}
 	/* Pretend: a dashed edge, as it is not really in play. */
 	.held.pretend {

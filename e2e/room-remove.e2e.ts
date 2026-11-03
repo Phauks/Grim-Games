@@ -59,7 +59,8 @@ test('a removed phone leaves the game, is turned away at the code, and Unblock s
 	await page.goto(board);
 	await nameSeat(page, 1, 'Ana');
 	await page.goto(`${board}/players`);
-	const players = page.getByRole('list', { name: 'Players in the room' }).getByRole('listitem');
+	// Players with a seat, then spectators (phones with no seat) in their own list.
+	const players = page.getByTestId('room-player');
 	const unseated = players.filter({ hasText: 'No seat' });
 	const removed = page.getByTestId('room-removed');
 	// Hidden until someone is blocked (Trevor, 2026-10-31).
@@ -110,7 +111,7 @@ test('a phone removed while on its player screen lands on the join screen, out o
 	const code = await openRoom(page);
 	await page.goto(page.url().replace(/\/room$/, '/players'));
 	const unseated = page
-		.getByRole('list', { name: 'Players in the room' })
+		.getByRole('list', { name: 'Spectators' })
 		.getByRole('listitem')
 		.filter({ hasText: 'No seat' });
 	const phone = await joinAs(browser, testInfo, code, 'Ana');

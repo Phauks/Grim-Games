@@ -144,6 +144,7 @@ import ph_list_numbers_light from '~icons/ph/list-numbers-light';
 import ph_lock_light from '~icons/ph/lock-light';
 import ph_lock_simple_light from '~icons/ph/lock-simple-light';
 import ph_magnifying_glass_light from '~icons/ph/magnifying-glass-light';
+import ph_mask_happy_light from '~icons/ph/mask-happy-light';
 import ph_mask_sad_light from '~icons/ph/mask-sad-light';
 import ph_megaphone_light from '~icons/ph/megaphone-light';
 import ph_megaphone_simple_light from '~icons/ph/megaphone-simple-light';
@@ -386,6 +387,7 @@ const icons: IconMap = {
 	'ph:lock-light': ph_lock_light,
 	'ph:lock-simple-light': ph_lock_simple_light,
 	'ph:magnifying-glass-light': ph_magnifying_glass_light,
+	'ph:mask-happy-light': ph_mask_happy_light,
 	'ph:mask-sad-light': ph_mask_sad_light,
 	'ph:megaphone-light': ph_megaphone_light,
 	'ph:megaphone-simple-light': ph_megaphone_simple_light,

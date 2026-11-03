@@ -186,7 +186,9 @@
 		const rule = id ? rulesOf(id, characters)?.givesAbility : undefined;
 		return id && rule ? { id, rule } : undefined;
 	});
-	const held = $derived(seat?.abilities?.find((a) => a.via === giver?.id)?.characterId);
+	const held = $derived(
+		seat?.abilities?.find((a) => giver !== undefined && a.via === giver.id)?.characterId
+	);
 	// Not in play (`notInPlay`), and none a jinx bars (the Boffin's Demon cannot have the
 	// Drunk ability, https://wiki.bloodontheclocktower.com/Boffin#Related_Jinxes).
 	const heldExclude = $derived.by(() => {

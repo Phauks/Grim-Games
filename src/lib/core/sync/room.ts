@@ -25,7 +25,7 @@ import {
 	withoutPictureVerdicts,
 	type RoomPictures
 } from './room-pictures.ts';
-import { withoutMessages, type PlayerMessage } from './room-messages.ts';
+import { mayMessage, withoutMessages, type PlayerMessage } from './room-messages.ts';
 import { numberedNames, withNumberedNames } from './room-names.ts';
 import { MAX_MEMBERS } from './room-presence.ts';
 import { seatPresence } from './seat-presence.ts';
@@ -127,6 +127,8 @@ export interface RoomState {
 	messages?: PlayerMessage[];
 	/** The Storyteller's app shows messages, so phones may send them. */
 	inbox?: true;
+	/** The Storyteller stopped spectators (members with no seat) messaging (room-messages.ts). */
+	spectatorsMuted?: true;
 	/** A room transfer the Storyteller has open (room-transfer.ts). */
 	transfer?: RoomTransfer;
 	/** Phones the Storyteller removed this game (room-removed.ts); a new game clears it. */
@@ -180,7 +182,15 @@ export * from './room-sound.ts';
 export * from './room-push.ts';
 export { setLook } from './room-look.ts';
 export { judgePicture, reportPicture } from './room-pictures.ts';
-export { readMessages, sendMessage, setInbox, type PlayerMessage } from './room-messages.ts';
+export {
+	readMessages,
+	sendMessage,
+	sendViewerMessage,
+	setInbox,
+	setSpectatorMessages,
+	viewersMayMessage,
+	type PlayerMessage
+} from './room-messages.ts';
 export {
 	castScriptBallot,
 	closeScriptVote,
@@ -243,6 +253,7 @@ export function hostView(room: RoomState, present?: ReadonlySet<string>): HostVi
 	const reports = pictureReports(room);
 	if (reports.length) view.pictureReports = reports;
 	if (room.messages?.length) view.messages = room.messages;
+	if (room.spectatorsMuted) view.spectatorsMuted = true;
 	if (room.removed?.length) view.removed = room.removed;
 	if (room.seatingOpen) view.seatingOpen = true;
 	if (room.countOff) view.countOff = countOffView(room, present);
@@ -357,7 +368,7 @@ export function playerView(
 	if (Object.keys(pictures).length) view.pictures = pictures;
 	const profiles = seatWords(room.members);
 	if (Object.keys(profiles).length) view.profiles = profiles;
-	if (room.inbox) view.inbox = true;
+	if (mayMessage(room, me)) view.inbox = true;
 	if (room.vote && isSpectator(me)) {
 		const choice = room.vote.votes[memberId];
 		view.vote = { voteId: room.vote.voteId, options: room.vote.options };

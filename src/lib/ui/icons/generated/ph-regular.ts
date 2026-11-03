@@ -74,6 +74,7 @@ import ph_list_bullets from '~icons/ph/list-bullets';
 import ph_list_checks from '~icons/ph/list-checks';
 import ph_lock_simple from '~icons/ph/lock-simple';
 import ph_magnifying_glass from '~icons/ph/magnifying-glass';
+import ph_mask_happy from '~icons/ph/mask-happy';
 import ph_mask_sad from '~icons/ph/mask-sad';
 import ph_megaphone from '~icons/ph/megaphone';
 import ph_minus from '~icons/ph/minus';
@@ -203,6 +204,7 @@ const icons: IconMap = {
 	'ph:list-checks': ph_list_checks,
 	'ph:lock-simple': ph_lock_simple,
 	'ph:magnifying-glass': ph_magnifying_glass,
+	'ph:mask-happy': ph_mask_happy,
 	'ph:mask-sad': ph_mask_sad,
 	'ph:megaphone': ph_megaphone,
 	'ph:minus': ph_minus,

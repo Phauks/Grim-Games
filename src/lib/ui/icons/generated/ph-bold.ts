@@ -144,6 +144,7 @@ import ph_list_numbers_bold from '~icons/ph/list-numbers-bold';
 import ph_lock_bold from '~icons/ph/lock-bold';
 import ph_lock_simple_bold from '~icons/ph/lock-simple-bold';
 import ph_magnifying_glass_bold from '~icons/ph/magnifying-glass-bold';
+import ph_mask_happy_bold from '~icons/ph/mask-happy-bold';
 import ph_mask_sad_bold from '~icons/ph/mask-sad-bold';
 import ph_megaphone_bold from '~icons/ph/megaphone-bold';
 import ph_megaphone_simple_bold from '~icons/ph/megaphone-simple-bold';
@@ -386,6 +387,7 @@ const icons: IconMap = {
 	'ph:lock-bold': ph_lock_bold,
 	'ph:lock-simple-bold': ph_lock_simple_bold,
 	'ph:magnifying-glass-bold': ph_magnifying_glass_bold,
+	'ph:mask-happy-bold': ph_mask_happy_bold,
 	'ph:mask-sad-bold': ph_mask_sad_bold,
 	'ph:megaphone-bold': ph_megaphone_bold,
 	'ph:megaphone-simple-bold': ph_megaphone_simple_bold,

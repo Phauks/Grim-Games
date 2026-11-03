@@ -5,7 +5,7 @@
  *
  * All live in localStorage with a version in the key, and anything unreadable is ignored.
  */
-import type { GameId } from '#lib/core/model/index.ts';
+import type { GameId, SeatId } from '#lib/core/model/index.ts';
 import { parseEndReason, type EndReason } from '#lib/core/rules/end-reason.ts';
 import {
 	DEFAULT_SEAT_LAYOUT,
@@ -331,6 +331,11 @@ export interface EndedGame {
 	endedAt: number;
 	winner?: 'good' | 'evil';
 	reason?: EndReason;
+	/**
+	 * Players on the other team who won too, the Storyteller's call (the Politician winning with
+	 * evil, Trevor, 2026-11-03).
+	 */
+	alsoWon?: SeatId[];
 }
 
 function readEnded(): Record<string, EndedGame> {
@@ -345,6 +350,10 @@ function readEnded(): Record<string, EndedGame> {
 			if (e.winner === 'good' || e.winner === 'evil') out[id].winner = e.winner;
 			const reason = out[id].winner ? parseEndReason(e.reason) : undefined;
 			if (reason) out[id].reason = reason;
+			const also = Array.isArray(e.alsoWon)
+				? e.alsoWon.filter((x): x is SeatId => typeof x === 'string')
+				: [];
+			if (out[id].winner && also.length > 0) out[id].alsoWon = also;
 		}
 		return out;
 	} catch {
@@ -366,13 +375,19 @@ function writeEnded(all: Record<string, EndedGame>): void {
  */
 export const endedGames = {
 	read: readEnded,
-	end(gameId: GameId, winner?: 'good' | 'evil', reason?: EndReason): void {
+	end(
+		gameId: GameId,
+		winner?: 'good' | 'evil',
+		reason?: EndReason,
+		alsoWon: readonly SeatId[] = []
+	): void {
 		writeEnded({
 			...readEnded(),
 			[gameId]: {
 				endedAt: Date.now(),
 				...(winner ? { winner } : {}),
-				...(winner && reason ? { reason } : {})
+				...(winner && reason ? { reason } : {}),
+				...(winner && alsoWon.length > 0 ? { alsoWon: [...alsoWon] } : {})
 			}
 		});
 	},

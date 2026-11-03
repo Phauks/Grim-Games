@@ -35,8 +35,13 @@
 		/** Living players, for the starting length and Reset. */
 		alive: number;
 		variant?: 'full' | 'compact';
-		/** False where the sound is chosen beside the timer (the board's timer sheet). */
-		soundButton?: boolean;
+		/**
+		 * The full timer inside its own Timer sheet, opened from the board's timer or the day's
+		 * clock: the same timer as the day's, Back to town included (Trevor, 2026-11-03), but
+		 * its clock switches the count mode, as the sheet is already open, and the sound is
+		 * chosen beside it.
+		 */
+		inSheet?: boolean;
 		/**
 		 * A spectator's board (Trevor, 2026-10-19): the clock is shown but nothing on it can
 		 * be pressed, held or opened.
@@ -61,7 +66,7 @@
 	let {
 		alive,
 		variant = 'full',
-		soundButton = true,
+		inSheet = false,
 		readOnly = false,
 		shown,
 		quiet,
@@ -86,7 +91,7 @@
 	let controlsOpen = $state(false);
 	let townOpen = $state(false);
 	/** The clock opens the Timer sheet: always on the board, and in the day with Back to town. */
-	const opens = $derived(variant === 'compact' || !!town);
+	const opens = $derived(!inSheet && (variant === 'compact' || !!town));
 	const clock = $derived(town?.called ? t('day.town') : timer.clock);
 	const soundLabel = (sound: TimerSound) => t(`day.timerSound.${sound}`);
 	// Not played here: the board is the Storyteller's device (Trevor, 2026-10-30).
@@ -200,7 +205,7 @@
 			disabled={timer.fresh}
 			onclick={() => live.reset(alive)}
 		/>
-		{#if soundButton && !town}
+		{#if !inSheet && !town}
 			<IconButton
 				icon="sound"
 				label={t('day.timerSoundButton', { sound: soundLabel(preferences.current.timerSound) })}
@@ -212,7 +217,8 @@
 
 {#if town}<CallTownConfirm bind:open={townOpen} />{/if}
 
-{#if variant === 'full' && !opens}
+<!-- The sheet's own timer opens no sheet of its own. -->
+{#if !inSheet && variant === 'full' && !opens}
 	<BottomSheet bind:open={soundOpen} title={t('day.timerSoundTitle')}>
 		<div class="controls">
 			<!-- A drop-down; each choice plays, cutting off the one before (Trevor, 2026-10-17). -->
@@ -229,11 +235,11 @@
 			<TimerPerPlayerRow game />
 		</div>
 	</BottomSheet>
-{:else}
+{:else if !inSheet}
 	<!-- The timer's own controls and settings, over the board; nothing leads to Settings. -->
 	<BottomSheet bind:open={controlsOpen} title={t('day.timer')}>
 		<div class="controls" data-testid="timer-sheet">
-			<DayTimer {alive} soundButton={false} {quiet} />
+			<DayTimer {alive} inSheet {quiet} {town} {readOnly} />
 			<Select
 				label={t('day.timerSoundTitle')}
 				value={preferences.current.timerSound}
