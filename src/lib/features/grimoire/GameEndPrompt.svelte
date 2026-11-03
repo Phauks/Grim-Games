@@ -15,6 +15,7 @@
 	} from '#lib/core/rules/index.ts';
 	import { impairmentOfLabel } from '#lib/core/rules/index.ts';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import BoardReminder from './BoardReminder.svelte';
 	import ReminderTokenRow from './ReminderTokenRow.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
@@ -109,16 +110,20 @@
 		onEnd(winner, winner ? reason : undefined);
 	}
 
+	/** The character a seat is shown as: its true character, else the one on its token. */
+	const shownAs = (id: SeatId): CharacterId | undefined =>
+		trueCharacter(game, id, characters) ?? game.seats[id]?.characterId;
+
 	const teamText = (team: Alignment) => (team === 'good' ? 'Good wins' : 'Evil wins');
 </script>
 
 {#snippet seat(id: SeatId, characterId?: CharacterId)}
 	{@const s = game.seats[id]}
-	{@const shownAs = characterId ?? trueCharacter(game, id, characters) ?? s?.characterId}
-	{#if s && shownAs}
+	{@const as = characterId ?? shownAs(id)}
+	{#if s && as}
 		<CharacterBadge
-			characterId={shownAs}
-			character={characters.get(shownAs)}
+			characterId={as}
+			character={characters.get(as)}
 			alignment={s.alignment}
 			playerName={seatName(game, id)}
 		/>
@@ -129,28 +134,45 @@
 	<CharacterBadge characterId={id} character={characters.get(id)} />
 {/snippet}
 
-{#snippet ability(id: CharacterId)}
-	{@const c = characters.get(id)}
-	{#if c}<span class="ability"><GlossaryText text={c.ability} names={[c.name]} /></span>{/if}
-{/snippet}
-
-<!-- An end a jinx gives (the Leviathan's with the Soldier): the jinx's own TPI text. -->
-{#snippet jinx(a: CharacterId, b: CharacterId)}
-	{@const found = officialData.current && findJinx(officialData.current.jinxes, a, b)}
-	{#if found}<span class="ability" data-testid="end-jinx"
-			><GlossaryText
-				text={found.reason}
-				names={[characters.get(a)?.name ?? a, characters.get(b)?.name ?? b]}
-			/></span
-		>{:else}{@render ability(a)}{/if}
+<!--
+	A character's own TPI text (or its jinx's, for an end a jinx gives: the Leviathan's with the
+	Soldier) under its badge, as an entry: with its player when the one seat is that character,
+	otherwise beside the seats it is about.
+-->
+{#snippet told(seats: readonly SeatId[], id: CharacterId, jinxedWith?: CharacterId)}
+	{@const found =
+		jinxedWith && officialData.current && findJinx(officialData.current.jinxes, id, jinxedWith)}
+	{@const own = seats.length === 1 && shownAs(seats[0]) === id ? seats[0] : undefined}
+	<CharacterPiece
+		template="entry"
+		ability={!found}
+		characterId={id}
+		character={characters.get(id)}
+		alignment={own ? game.seats[own]?.alignment : undefined}
+		playerName={own ? seatName(game, own) : undefined}
+	>
+		{#snippet abilityText()}{@const c = characters.get(id)}{#if c}<GlossaryText
+					text={c.ability}
+					names={[c.name]}
+				/>{/if}{/snippet}
+		{#snippet controls()}{#if own === undefined}{#each seats as s (s)}{@render seat(
+						s
+					)}{/each}{/if}{/snippet}
+		{#if found && jinxedWith}<p class="jinx" data-testid="end-jinx">
+				<GlossaryText
+					text={found.reason}
+					names={[characters.get(id)?.name ?? id, characters.get(jinxedWith)?.name ?? jinxedWith]}
+				/>
+			</p>{/if}
+	</CharacterPiece>
 {/snippet}
 
 {#snippet hold(h: GameHold)}
 	<li class="hold" data-rule={h.rule}>
-		<span class="text">
+		<div class="text">
 			{#if !OWN_WORDING}
-				{#each h.seats as id (id)}{@render seat(id)}{/each}
 				{#if h.rule === 'impaired'}
+					{#each h.seats as id (id)}{@render seat(id)}{/each}
 					{@const s = game.seats[h.seats[0]]}
 					<!-- The tokens themselves, as on the board (Trevor, 2026-10-30). -->
 					<ReminderTokenRow inline>
@@ -163,7 +185,7 @@
 						{/each}
 					</ReminderTokenRow>
 				{:else}
-					{@render ability(h.characterId)}
+					{@render told(h.seats, h.characterId)}
 				{/if}
 			{:else if h.rule === 'marked-alive'}
 				Good can't win while {@render seat(h.seats[0])} and {@render seat(h.seats[1])} live.
@@ -180,7 +202,7 @@
 			{:else}
 				{@render seat(h.seats[0])} is drunk, poisoned or has no ability.
 			{/if}
-		</span>
+		</div>
 	</li>
 {/snippet}
 
@@ -189,17 +211,15 @@
 	<ul class="ends" data-testid="game-end-prompt">
 		{#each shown as end (end.key)}
 			<li data-rule={end.rule}>
-				<span class="text">
+				<div class="text">
 					{#if end.rule === 'storyteller-executed'}
 						<!-- Trevor's approved wording (2026-11-02): the Storyteller is not a player. -->
 						{#if end.characterId}The Storyteller was executed, and the {@render character(
 								end.characterId
 							)} is in play.{:else}The Storyteller was executed.{/if}
 					{:else if !OWN_WORDING}
-						{#each end.seats as id (id)}{@render seat(id)}{/each}
-						{#if end.characterId && end.jinxedWith}{@render jinx(end.characterId, end.jinxedWith)}
-						{:else if end.characterId}{@render ability(end.characterId)}{/if}
-						{#if end.ruleName}<span class="rule">{end.ruleName}</span>{/if}
+						{#if end.characterId}{@render told(end.seats, end.characterId, end.jinxedWith)}
+						{:else}{#each end.seats as id (id)}{@render seat(id)}{/each}{/if}
 					{:else if end.rule === 'demon-dead'}
 						{#each end.seats as id (id)}{@render seat(id)}{/each} dead.
 					{:else if end.rule === 'two-alive'}
@@ -240,18 +260,18 @@
 					{:else if end.characterId}
 						{@render character(end.characterId)}: no execution on day {end.day}.
 					{/if}
-					<AlignmentPill alignment={end.winner} text={teamText(end.winner)} />
 					{#if end.flippedBy?.seatId && OWN_WORDING}
 						({@render seat(end.flippedBy.seatId)} flips it)
 					{/if}
-				</span>
+				</div>
+				{#if end.ruleName && !OWN_WORDING}<span class="rule">{end.ruleName}</span>{/if}
+				<AlignmentPill alignment={end.winner} text={teamText(end.winner)} />
 			</li>
 			{#if end.flippedBy?.seatId && !OWN_WORDING}
 				<li class="hold" data-rule="invert-winner">
-					<span class="text">
-						{@render seat(end.flippedBy.seatId)}
-						{@render ability(end.flippedBy.characterId)}
-					</span>
+					<div class="text">
+						{@render told([end.flippedBy.seatId], end.flippedBy.characterId)}
+					</div>
 				</li>
 			{/if}
 			{#each end.holds as h, i (i)}{@render hold(h)}{/each}
@@ -283,7 +303,8 @@
 		flex: 1;
 		min-width: 0;
 	}
-	.ability {
+	.jinx {
+		margin: 0;
 		font-family: var(--font-ability);
 	}
 	.rule {

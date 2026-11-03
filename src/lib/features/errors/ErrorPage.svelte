@@ -3,7 +3,7 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import type { Character } from '#lib/core/data/index.ts';
-	import { iconUrl } from '#lib/features/characters/icon-url.ts';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { reportDialog } from '#lib/features/reports/report-dialog.svelte.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
@@ -37,7 +37,7 @@
 				<!-- The icon's box is reserved while the character data loads. -->
 				<div class="icon">
 					{#if fool}
-						<img src={iconUrl(fool)} alt={fool.name} />
+						<CharacterPiece template="icon" character={fool} />
 					{/if}
 				</div>
 				<figcaption>{t('errors.notFoundJoke')}</figcaption>
@@ -91,12 +91,6 @@
 	.icon {
 		width: min(calc(var(--u) * 20), 30vw);
 		aspect-ratio: 1;
-	}
-
-	.icon img {
-		width: 100%;
-		height: 100%;
-		object-fit: contain;
 	}
 
 	figcaption {

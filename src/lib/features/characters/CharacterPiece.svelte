@@ -13,6 +13,8 @@
 	import { loadOfficialData, officialData } from './game-data.svelte.ts';
 	import { contextCharacters } from './character-context.ts';
 	import { resolveTemplate, type CharacterTemplateName } from './character-templates.ts';
+	import { fallbackIconUrl, iconUrl } from './icon-url.ts';
+	import { iconFallback } from '#lib/ui/token/icon-fallback.ts';
 
 	/**
 	 * A character, the one way the app draws one with its name (Trevor, 2026-11-02: one
@@ -29,7 +31,7 @@
 		alignment?: Alignment;
 		/** The seat's player, the second half of the character's piece. */
 		playerName?: PlayerName;
-		/** Overrides the template's ability (ring only). */
+		/** Overrides the template's ability (a ring, or an entry's body). */
 		ability?: boolean;
 		/** The ability as the host draws it (rules terms underlined). */
 		abilityText?: Snippet;
@@ -112,7 +114,18 @@
 	);
 </script>
 
-{#if look.shape === 'ring'}
+{#if look.shape === 'icon'}
+	<!-- The icon alone, named for the character; `label=""` when the host names it already. No
+	     data-character: it marks where a character itself is shown, and a partner icon is not that. -->
+	{#if character}{@const src = iconUrl(character, alignment)}{#if src}<img
+				class="icon"
+				{src}
+				alt={label ?? character.name}
+				referrerpolicy="no-referrer"
+				draggable="false"
+				{@attach iconFallback(fallbackIconUrl(character))}
+			/>{:else}<span class="icon dot"></span>{/if}{/if}
+{:else if look.shape === 'ring'}
 	{#if character}<CharacterRow
 			{character}
 			{alignment}
@@ -159,6 +172,9 @@
 				>{/if}{#if controls}{@render controls()}{/if}</span
 		>
 		<div class="body">
+			{#if look.ability && character}<p class="ability" data-testid="ability">
+					{#if abilityText}{@render abilityText()}{:else}{character.ability}{/if}
+				</p>{/if}
 			{#if children}{@render children()}{/if}
 		</div>
 		{#if footer}<div class="footer">{@render footer()}</div>{/if}
@@ -188,6 +204,17 @@
 {/if}
 
 <style>
+	/* Fills the box its host gives it (or --character-icon-size), round on the token's face. */
+	.icon {
+		display: block;
+		width: var(--character-icon-size, 100%);
+		height: var(--character-icon-size, 100%);
+		border-radius: 50%;
+		object-fit: contain;
+	}
+	.dot {
+		background: var(--token-face);
+	}
 	.pill {
 		display: inline-flex;
 		align-items: center;
@@ -233,6 +260,10 @@
 	}
 	.body {
 		padding-inline-start: var(--space-3);
+	}
+	.ability {
+		margin: 0;
+		font-family: var(--font-ability);
 	}
 	/*
 	 * A card: the footer a raised strip joined to its bottom. Its list draws the box and the

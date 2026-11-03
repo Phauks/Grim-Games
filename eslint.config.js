@@ -29,14 +29,7 @@ const SCRIPT_NAME_TODO = ['src/lib/features/grimoire/BoardCorner.svelte'];
  * another shared character component); only ever shrinks (Trevor, 2026-10-30: characters and
  * their abilities always show the way the Script tab does).
  */
-const CHARACTER_DISPLAY_TODO = [
-	'src/lib/features/character-builder/CharacterPreview.svelte',
-	'src/lib/features/day/PreventedSheet.svelte',
-	'src/lib/features/errors/ErrorPage.svelte',
-	'src/lib/features/grimoire/GameEndPrompt.svelte',
-	'src/lib/features/player/GuessMarks.svelte',
-	'src/lib/features/reference/FieldValue.svelte'
-];
+const CHARACTER_DISPLAY_TODO = [];
 
 /**
  * Files that still build "Seat 3" by hand instead of seatName or t('common.seat'); only ever
@@ -383,10 +376,12 @@ export default defineConfig(
 			'src/routes/spikes/**',
 			// The components that draw a character, and where its icon is worked out.
 			'src/lib/features/characters/icon-url.ts',
+			'src/lib/features/characters/CharacterPiece.svelte',
 			'src/lib/features/characters/CharacterRow.svelte',
+			// The Reference's own columns, one field a cell: it stays separate (Trevor, 2026-11-02).
+			'src/lib/features/reference/FieldValue.svelte',
 			'src/lib/features/characters/CharacterBadge.svelte',
 			'src/lib/features/characters/CharacterToken.svelte',
-			'src/lib/features/characters/JinxPartners.svelte',
 			'src/lib/features/characters/ReminderToken.svelte',
 			'src/lib/ui/seating/CharacterEmblem.svelte',
 			'src/lib/features/grimoire/BoardReminder.svelte',

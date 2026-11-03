@@ -99,4 +99,24 @@ test('the badge and entry templates draw the pill', async ({ page }) => {
 	await flip(page, 'Text under it');
 	await expect(stage.locator('.entry')).toContainText('Chose the Librarian tonight.');
 	await shot(page, 'entry');
+	// Its ability under the bar, the TPI text, when asked (the prevented deaths, the game's end).
+	await flip(page, 'Ability');
+	await expect(stage.locator('.entry').getByTestId('ability')).toContainText('Each night');
+	await shot(page, 'entry-ability');
+});
+
+test('the icon template is the icon alone, named for its character', async ({ page }) => {
+	await open(page);
+	await pick(page, 'Icon only');
+	const stage = page.getByTestId('character-stage');
+	// The piece itself, not the sentence of badges under it.
+	const piece = stage.locator(':scope > img.icon');
+	await expect(piece).toHaveAttribute('alt', 'Witch');
+	await expect(stage.locator(':scope > :is(.badge, .ring-row, .entry, .pill)')).toHaveCount(0);
+	await expect(
+		page
+			.getByRole('switch', { name: 'Player name' })
+			.or(page.getByRole('checkbox', { name: 'Player name' }))
+	).toBeDisabled();
+	await shot(page, 'icon');
 });
