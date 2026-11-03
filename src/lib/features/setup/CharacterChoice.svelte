@@ -1,9 +1,8 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import { defaultAlignment, type Character } from '#lib/core/data/index.ts';
+	import type { Character } from '#lib/core/data/index.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
-	import { fallbackIconUrl, iconUrl } from '#lib/features/characters/icon-url.ts';
-	import { iconFallback } from '#lib/ui/token/icon-fallback.ts';
+	import JinxPartners from '#lib/features/characters/JinxPartners.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import BluffTag from '#lib/features/bluffs/BluffTag.svelte';
 	import { isBagDisabled } from '#lib/core/rules/bag-characters.ts';
@@ -99,16 +98,7 @@
 				class="jinx"
 				data-testid="jinx-partners"
 				title={t('setup.jinxedWith', { names: jinxedWith.map((p) => p.name).join(', ') })}
-				>{#each jinxedWith as p (p.id)}{@const src = iconUrl(
-						p,
-						defaultAlignment(p.type)
-					)}{#if src}<img
-							{src}
-							alt=""
-							data-partner={p.id}
-							referrerpolicy="no-referrer"
-							{@attach iconFallback(fallbackIconUrl(p))}
-						/>{:else}<span class="dot" data-partner={p.id}></span>{/if}{/each}</span
+				><JinxPartners partners={jinxedWith} stacked /></span
 			>{/if}
 		{#if copies > 1}<span class="copies">×{copies}</span>{/if}
 		<!--
@@ -178,23 +168,6 @@
 	.out {
 		background: var(--surface);
 		color: var(--on-surface-muted);
-	}
-	/* A fixed slot: a second partner overlaps the first, so nothing beside it moves. */
-	.jinx {
-		display: flex;
-		justify-content: center;
-		width: 2em;
-	}
-	.jinx img,
-	.jinx .dot {
-		flex: none;
-		width: 1.4em;
-		height: 1.4em;
-		border-radius: 50%;
-		background: var(--token-face);
-	}
-	.jinx > * + * {
-		margin-inline-start: -0.8em;
 	}
 	.copies {
 		padding-inline: var(--space-1);

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
+	import SeatBadge from './SeatBadge.svelte';
 	import { trueCharacter, type SeatId } from '#lib/core/model/index.ts';
 	import {
 		anyInfoSource,
@@ -11,7 +11,6 @@
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
-	import { seatName } from './night-steps.ts';
 
 	/**
 	 * Why a valid row is valid when not simply true: who would have to register otherwise,
@@ -48,11 +47,7 @@
 					game,
 					seatId,
 					characters
-				)}<span class="player"
-					><PlayerBadge name={seatName(game, seatId)} />{#if id}<CharacterBadge
-							characterId={id}
-							character={characters.get(id)}
-						/>{/if}</span
+				)}<span class="player"><SeatBadge {game} {characters} {seatId} characterId={id} /></span
 				>{/each}{/if}</span
 	>{:else if reason === 'unreliable' && mayBy}<span class="tag warn"
 		><CharacterBadge characterId={mayBy} character={characters.get(mayBy)} />Might be false</span

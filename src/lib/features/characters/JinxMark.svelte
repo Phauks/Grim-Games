@@ -2,9 +2,8 @@
 	import type { Character, CharacterId, Jinx } from '#lib/core/data/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
-	import { iconFallback } from '#lib/ui/token/icon-fallback.ts';
 	import { officialData } from './game-data.svelte.ts';
-	import { fallbackIconUrl, iconUrl } from './icon-url.ts';
+	import JinxPartners from './JinxPartners.svelte';
 	import JinxNote from './JinxNote.svelte';
 
 	/**
@@ -45,15 +44,7 @@
 		open = true;
 	}}
 >
-	{#each partners as p (p.id)}
-		{@const src = iconUrl(p)}
-		{#if src}<img
-				{src}
-				alt=""
-				referrerpolicy="no-referrer"
-				{@attach iconFallback(fallbackIconUrl(p))}
-			/>{:else}<span class="dot"></span>{/if}
-	{/each}
+	<JinxPartners {partners} />
 </button>
 
 {#if used}
@@ -87,13 +78,6 @@
 		content: '';
 		position: absolute;
 		inset: calc((1.6em - var(--tap-target)) / 2) 0;
-	}
-	.jinx-mark img,
-	.jinx-mark .dot {
-		width: 1.3em;
-		height: 1.3em;
-		border-radius: 50%;
-		background: var(--token-face);
 	}
 	.jinx-list {
 		display: grid;

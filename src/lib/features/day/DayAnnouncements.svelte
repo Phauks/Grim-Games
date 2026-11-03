@@ -19,7 +19,7 @@
 	import { gameModeOf } from '#lib/features/modes/game-mode.ts';
 	import NightText from '#lib/features/reference/NightText.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
-	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
+	import SeatBadge from '#lib/features/grimoire/SeatBadge.svelte';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import type { DayPort } from './day-port.ts';
 	import PreventedSheet from './PreventedSheet.svelte';
@@ -208,7 +208,7 @@
 
 <!-- What to say aloud, the player's name as their badge. -->
 {#snippet spoken(text: string, seatId: SeatId)}<Sentence {text}
-		>{#snippet fill()}<PlayerBadge name={game.seatName(seatId)} />{/snippet}</Sentence
+		>{#snippet fill()}<SeatBadge game={game.game} {seatId} />{/snippet}</Sentence
 	>{/snippet}
 
 <!-- A character as a badge; false inside a button, so it does not open the character. -->

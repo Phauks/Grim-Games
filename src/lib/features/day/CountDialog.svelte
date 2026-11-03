@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { alignmentOf, type CharacterLookup, type Game } from '#lib/core/model/index.ts';
+	import type { CharacterLookup, Game } from '#lib/core/model/index.ts';
 	import {
 		blockThreshold,
 		counts,
@@ -12,11 +12,9 @@
 		type VoteHint
 	} from '#lib/core/rules/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import Sentence from '#lib/features/characters/Sentence.svelte';
 	import { slot } from '#lib/features/characters/slots.ts';
-	import { seatName } from '#lib/features/game/seat-label.ts';
-	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
+	import SeatBadge from '#lib/features/grimoire/SeatBadge.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import CountBadge from './CountBadge.svelte';
@@ -89,7 +87,7 @@
 	);
 </script>
 
-{#snippet seatBadge(seatId: string)}<PlayerBadge name={seatName(game, seatId)} />{/snippet}
+{#snippet seatBadge(seatId: string)}<SeatBadge {game} {seatId} />{/snippet}
 
 <Dialog bind:open {title}>
 	{#if count === 'votes'}
@@ -116,21 +114,15 @@
 				<thead>
 					<tr>
 						<th scope="col">{t('day.count.player')}</th>
-						<th scope="col">{t('day.count.character')}</th>
 						<th scope="col">{t('day.voteNotes.vote')}</th>
 					</tr>
 				</thead>
 				<tbody>
 					{#each notes as hint (hint.seatId)}
-						{@const seat = game.seats[hint.seatId]}
 						<tr data-seat={hint.seatId}>
-							<td><PlayerBadge name={seatName(game, hint.seatId)} /></td>
-							<td
-								>{#if seat.characterId}<CharacterBadge
-										characterId={seat.characterId}
-										alignment={alignmentOf(game, hint.seatId)}
-									/>{:else}{t('common.none')}{/if}</td
-							>
+							<!-- The badge with its player: the character and the player in one (Trevor,
+							     2026-11-02). -->
+							<td><SeatBadge {game} seatId={hint.seatId} /></td>
 							<td
 								>{#each noteLines(hint) as line (line)}<span class="note"
 										><Sentence text={line} fill={seatBadge} /></span
@@ -146,7 +138,6 @@
 			<thead>
 				<tr>
 					<th scope="col">{t('day.count.player')}</th>
-					<th scope="col">{t('day.count.character')}</th>
 					{#if status}<th scope="col"
 							>{t(count === 'alive' ? 'day.count.status' : 'day.count.ghostVote')}</th
 						>{/if}
@@ -154,19 +145,12 @@
 			</thead>
 			<tbody>
 				{#each seats as seatId (seatId)}
-					{@const seat = game.seats[seatId]}
 					<tr data-seat={seatId} data-counts={counts(game, count, seatId, characters) || undefined}>
-						<td><PlayerBadge name={seatName(game, seatId)} /></td>
-						<td
-							>{#if seat.characterId}<CharacterBadge
-									characterId={seat.characterId}
-									alignment={alignmentOf(game, seatId)}
-								/>{:else}{t('common.none')}{/if}</td
-						>
+						<td><SeatBadge {game} {seatId} /></td>
 						{#if status}<td>{status(seatId)}</td>{/if}
 					</tr>
 				{:else}
-					<tr><td colspan={status ? 3 : 2}>{t('common.none')}</td></tr>
+					<tr><td colspan={status ? 2 : 1}>{t('common.none')}</td></tr>
 				{/each}
 			</tbody>
 			<tfoot>

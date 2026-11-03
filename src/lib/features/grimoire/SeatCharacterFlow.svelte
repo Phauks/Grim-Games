@@ -28,8 +28,6 @@
 	} from '#lib/features/grimoire/board.ts';
 	import type { Grimoire } from '#lib/features/grimoire/grimoire.svelte.ts';
 	import { placedLook } from '#lib/features/grimoire/reminders.ts';
-	import { seatName } from '#lib/features/game/seat-label.ts';
-	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import ChangeList from '#lib/ui/primitives/ChangeList.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
@@ -257,7 +255,7 @@
 		<ChangeList>
 			<dt>Player</dt>
 			<dd>
-				{#if seatId}<PlayerBadge name={seatName(game, seatId)} />{/if}
+				{#if seatId}<SeatBadge {game} {seatId} />{/if}
 			</dd>
 			<dt>Current role</dt>
 			<dd>

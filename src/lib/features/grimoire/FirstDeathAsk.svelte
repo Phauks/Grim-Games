@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { seatName } from '#lib/features/game/seat-label.ts';
-	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
+	import SeatBadge from './SeatBadge.svelte';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import BoardReminder from './BoardReminder.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
@@ -64,7 +63,7 @@
 		</div>
 		<dl class="change">
 			<dt>Player</dt>
-			<dd><PlayerBadge name={seatName(grimoire.game, ask.seatId)} /></dd>
+			<dd><SeatBadge game={grimoire.game} seatId={ask.seatId} /></dd>
 			<dt>Places</dt>
 			<dd><BoardReminder label={ask.spentToken} {character} /></dd>
 		</dl>

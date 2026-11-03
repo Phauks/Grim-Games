@@ -397,10 +397,10 @@ test("the Vizier isn't declared with the Investigator, and the Magician is out o
 	const now = ask.getByTestId('outcome-execute-now');
 	await expect(now).toBeVisible();
 	await ask.getByRole('combobox', { name: 'Execution' }).tap();
-	await page.getByRole('option', { name: /^Seat 2\b/ }).tap();
+	await page.getByRole('option', { name: /\bSeat 2\b/ }).tap();
 	await expect(now).toContainText('A jinx keeps it from this player');
 	await ask.getByRole('combobox', { name: 'Execution' }).tap();
-	await page.getByRole('option', { name: /^Seat 4\b/ }).tap();
+	await page.getByRole('option', { name: /\bSeat 4\b/ }).tap();
 	await expect(now).not.toContainText('A jinx keeps it from this player');
 });
 
@@ -544,7 +544,7 @@ test('a Vizier babysitting Lil’ Monsta is no longer saved from execution', asy
 		await day.getByRole('button', { name: 'Execution', exact: true }).tap();
 		const ask = page.getByRole('alertdialog', { name: 'End the day?' });
 		await ask.getByRole('combobox', { name: 'Execution' }).tap();
-		await page.getByRole('option', { name: /^Seat 1\b/ }).tap();
+		await page.getByRole('option', { name: /\bSeat 1\b/ }).tap();
 		return ask;
 	};
 	let ask = await executeSeat1();

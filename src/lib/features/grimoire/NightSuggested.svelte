@@ -1,5 +1,5 @@
 <script lang="ts">
-	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
+	import SeatBadge from './SeatBadge.svelte';
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import { trueCharacter, type SeatId } from '#lib/core/model/index.ts';
 	import type {
@@ -34,7 +34,7 @@
 	import NightWhy from './NightWhy.svelte';
 	import CharacterSet from './CharacterSet.svelte';
 	import DayMarkAnswer from './DayMarkAnswer.svelte';
-	import { answerValueText, seatName } from './night-steps.ts';
+	import { answerValueText } from './night-steps.ts';
 
 	/**
 	 * What the game says for a night step (Trevor, 2026-10-16), from core's `withNightInfo`: the
@@ -75,7 +75,6 @@
 	const characters = $derived(grimoire.open.characters);
 	const assistance = $derived(preferences.current.assistance);
 	const info = $derived(step.info);
-	const name = (seatId: SeatId) => seatName(game, seatId);
 	/**
 	 * Why an answer may not be the truth: the Vortox, registration. Allowed values are drawn after
 	 * the text, so their characters show as badges. Who made the player drunk or poisoned is the
@@ -299,16 +298,12 @@
 	);
 </script>
 
-<!-- A player as their name pill and their character's badge (Trevor, 2026-10-17). -->
+<!-- A player as the badge with its player: their true character and their name (Trevor,
+     2026-10-17; one piece, 2026-11-02). -->
 {#snippet player(
 	seatId: SeatId,
 	characterId: CharacterId | undefined = trueCharacter(game, seatId, characters)
-)}<span class="player"
-		><PlayerBadge name={name(seatId)} />{#if characterId}<CharacterBadge
-				{characterId}
-				character={characters.get(characterId)}
-			/>{/if}</span
-	>{/snippet}
+)}<span class="player"><SeatBadge {game} {characters} {seatId} {characterId} /></span>{/snippet}
 
 {#snippet players(seats: readonly SeatId[])}{#each seats as seatId, n (seatId)}{n
 			? ', '
@@ -470,10 +465,14 @@
 					value={line.set}
 					{characters}
 					interactive={false}
-				/>{/if}{line.text}{#each line.seats ?? [] as seatId, n (seatId)}{n ? ', ' : ''}<PlayerBadge
-					name={name(seatId)}
-				/>{/each}{#each line.valid ?? [] as v, n (n)}{n ? ', ' : ''}{#if v.seatId}<PlayerBadge
-						name={name(v.seatId)}
+				/>{/if}{line.text}{#each line.seats ?? [] as seatId, n (seatId)}{n ? ', ' : ''}<SeatBadge
+					{game}
+					{characters}
+					{seatId}
+				/>{/each}{#each line.valid ?? [] as v, n (n)}{n ? ', ' : ''}{#if v.seatId}<SeatBadge
+						{game}
+						{characters}
+						seatId={v.seatId}
 					/>
 				{/if}{v.list}{/each}{#each line.roles ?? [] as { id, marked }, n (id)}{n ? ', ' : ''}<span
 					class="item"
@@ -486,7 +485,7 @@
 				>{/each}{#each line.players ?? [] as { seatId, marked }, n (seatId)}{n ? ', ' : ''}<span
 					class="item"
 					class:marked
-					>{#if marked}<Icon name="reminder" />{/if}<PlayerBadge name={name(seatId)} /></span
+					>{#if marked}<Icon name="reminder" />{/if}<SeatBadge {game} {characters} {seatId} /></span
 				>{/each}</span
 		>{/if}
 {:else if has && info}
@@ -514,7 +513,7 @@
 												characterId={id}
 												character={characters.get(id)}
 											/>{/each}
-										{#if v.target}<PlayerBadge name={name(v.target)} />
+										{#if v.target}<SeatBadge {game} {characters} seatId={v.target} />
 											{#if v.seats.length > 0}<span class="with">and one of</span>{/if}{/if}
 										{@render players(v.seats)}
 									</span>
@@ -673,10 +672,10 @@
 			{:else}
 				{@render shownAsSelect(key, id, row.characterIds)}
 			{/if}
-			<PlayerBadge name={name(row.target)} />
+			<SeatBadge {game} {characters} seatId={row.target} />
 			{#if p.seatCount > 1}
 				<span class="with">and</span>
-				{#if row.other}<PlayerBadge name={name(row.other)} />{:else}<span class="with"
+				{#if row.other}<SeatBadge {game} {characters} seatId={row.other} />{:else}<span class="with"
 						>any other player</span
 					>{/if}
 			{/if}
