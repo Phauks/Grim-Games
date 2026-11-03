@@ -2696,10 +2696,14 @@ test("the Boffin gives the Demon a not-in-play good character's ability", async 
 	).toBeVisible();
 });
 
-// Small token Option A (Trevor, 2026-10-31): Grimbinder shows who a player really is as a small
-// token marked = in the seat's pill, in place of the "Is The Drunk" reminder beside it; an ability
-// also held is marked +. https://wiki.bloodontheclocktower.com/Drunk
-test('Grimbinder shows who a player really is in the seat pill, marked =', async ({ page }) => {
+// Big token shows (Trevor, 2026-11-03: "allow storytellers to choose which way"): by default the
+// big token is who a player really is, with what they believe as a small token marked ? in the
+// seat's pill; "What they believe" swaps the two, marked = (small token Option A, 2026-10-31);
+// "Reminders only" keeps the "Is The Drunk" reminder beside the seat, as the wiki runs it.
+// https://wiki.bloodontheclocktower.com/Drunk
+test('Big token shows who a player really is, or what they believe, or the reminder', async ({
+	page
+}) => {
 	await startGame(page);
 	const sheet = await openSeat(page, 1);
 	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
@@ -2709,19 +2713,28 @@ test('Grimbinder shows who a player really is in the seat pill, marked =', async
 		.tap();
 	await closeSheet(page);
 	await putReminder(page, 'Is The Drunk', 1);
-	// Vanilla by default: the reminder beside the seat, as the wiki runs it.
 	const reminder = page.locator('.chip-slot[data-seat="1"]').getByRole('button', {
 		name: 'Is The Drunk reminder'
 	});
-	await expect(reminder).toBeVisible();
 	const seat = page.getByTestId('seat').first();
-	await expect(seat.getByTestId('true-character')).toHaveCount(0);
-
-	await boardSettings(page, 'Board');
-	const settings = page.getByRole('dialog', { name: 'Settings' });
-	await settings.getByText('Vanilla “Is The …” reminders', { exact: true }).tap();
-	await settings.getByRole('button', { name: 'Close' }).tap();
+	// Who they really are, by default: the Drunk, believing they are the Chef.
 	await expect(reminder).toHaveCount(0);
+	const believes = seat.getByTestId('held-pill').getByTestId('believed-character');
+	await expect(believes).toHaveAttribute('title', 'Believes they are the Chef');
+	await expect(believes).toContainText('?');
+	await expect(
+		seatLabelled(page, 'Seat 1: no name, Drunk, believes they are the Chef, 1 reminder')
+	).toBeAttached();
+
+	const pick = async (look: string) => {
+		await boardSettings(page, 'Board');
+		const settings = page.getByRole('dialog', { name: 'Settings' });
+		await settings.getByRole('combobox', { name: 'Big token shows' }).tap();
+		await page.getByRole('option', { name: look, exact: true }).tap();
+		await settings.getByRole('button', { name: 'Close' }).tap();
+	};
+	await pick('What they believe');
+	await expect(believes).toHaveCount(0);
 	const truly = seat.getByTestId('held-pill').getByTestId('true-character');
 	await expect(truly).toHaveAttribute('title', 'Is really the Drunk');
 	await expect(truly).toContainText('=');
@@ -2738,6 +2751,12 @@ test('Grimbinder shows who a player really is in the seat pill, marked =', async
 		.tap();
 	await expect(seat.getByTestId('true-character')).toHaveCount(0);
 	await expect(page.getByTestId('seat').nth(2).getByTestId('true-character')).toBeVisible();
+
+	await pick('Reminders only');
+	await expect(page.getByTestId('seat').nth(2).getByTestId('true-character')).toHaveCount(0);
+	await expect(
+		page.locator('.chip-slot[data-seat="3"]').getByRole('button', { name: 'Is The Drunk reminder' })
+	).toBeVisible();
 });
 
 // https://wiki.bloodontheclocktower.com/Hermit: the Hermit has every other Outsider ability on

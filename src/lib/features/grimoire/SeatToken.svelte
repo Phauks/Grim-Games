@@ -76,6 +76,12 @@
 		 * look, Trevor 2026-10-31): each a small token marked =. A tap on one opens its reminder.
 		 */
 		trueCharacters?: TrueCharacterMark[];
+		/**
+		 * What the player believes they are, when the big token shows who they really are
+		 * (Settings › Board, Big token shows; Trevor, 2026-11-03): a small token marked ?. A tap
+		 * opens the "Is The …" reminder it comes from.
+		 */
+		believes?: { character: Character; reminderId: ReminderId };
 		/** Who the Storyteller pretends the player is (`Game.pretend`, M26). */
 		pretends?: Character;
 		onReminder?: (reminderId: ReminderId) => void;
@@ -99,6 +105,7 @@
 		tokenFreeVotes,
 		heldAbilities = [],
 		trueCharacters = [],
+		believes,
 		pretends,
 		onReminder
 	}: Props = $props();
@@ -139,6 +146,8 @@
 			orphan ? 'not on the script' : '',
 			// eslint-disable-next-line grim/names-as-badges -- an accessible name, see above
 			...trueCharacters.map(({ character: truly }) => `is really the ${truly.name}`),
+			// eslint-disable-next-line grim/names-as-badges -- an accessible name, see above
+			believes ? `believes they are the ${believes.character.name}` : '',
 			// eslint-disable-next-line grim/names-as-badges -- an accessible name, see above
 			pretends ? `fake ${pretends.name}` : '',
 			...custom.map((words) => `also has ${words}`),
@@ -265,9 +274,10 @@
 		>{/if}
 	<!-- Abilities held without a token, with the notes mark (HeldAbilityPill); the Storyteller's
 	     notes alone keep their own mark, lower right (never shown to players). -->
-	{#if heldAbilities.length || custom.length || trueCharacters.length || pretends}<HeldAbilityPill
+	{#if heldAbilities.length || custom.length || trueCharacters.length || believes || pretends}<HeldAbilityPill
 			abilities={heldAbilities}
 			{custom}
+			{believes}
 			{pretends}
 			truths={trueCharacters.map(({ reminder, character: truly }) => ({
 				character: truly,

@@ -1,10 +1,12 @@
 <script lang="ts">
 	import {
 		boardLooks,
+		BIG_TOKENS,
 		DEFAULT_BOARD_LOOKS,
 		LOGO_OPACITY
 	} from '#lib/features/grimoire/board-looks.svelte.ts';
 	import { intl, t } from '#lib/i18n/locale.svelte.ts';
+	import SettingSelect from '#lib/ui/settings/SettingSelect.svelte';
 	import SettingSlider from '#lib/ui/settings/SettingSlider.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import ReminderLinesSetting from '#lib/features/grimoire/ReminderLinesSetting.svelte';
@@ -64,11 +66,14 @@
 	checked={boardLooks.current.abilityLook === 'vanilla'}
 	onChange={(vanilla) => boardLooks.update({ abilityLook: vanilla ? 'vanilla' : 'grimbinder' })}
 />
-<!-- Who a player really is (an "Is The Drunk" reminder): Grimbinder's small token marked = in
-     the seat's pill, or Vanilla, the reminder beside the seat (Trevor, 2026-10-31, small token
-     Option A; the preview's dead player is the Drunk). -->
-<SettingToggle
-	label={t('settings.vanillaTruths')}
-	checked={boardLooks.current.truthLook === 'vanilla'}
-	onChange={(vanilla) => boardLooks.update({ truthLook: vanilla ? 'vanilla' : 'grimbinder' })}
+<!-- What the big token shows when a player was told they are someone else (an "Is The Drunk"
+     reminder; Trevor, 2026-11-03: "allow storytellers to choose which way", default who they
+     really are), with a key to the small tokens' marks (the preview's dead player is the Drunk). -->
+<SettingSelect
+	label={t('settings.bigToken')}
+	description={t('settings.bigToken.key')}
+	value={boardLooks.current.bigToken}
+	defaultValue={DEFAULT_BOARD_LOOKS.bigToken}
+	options={BIG_TOKENS.map((value) => ({ value, label: t(`settings.bigToken.${value}`) }))}
+	onChange={(bigToken) => boardLooks.update({ bigToken })}
 />

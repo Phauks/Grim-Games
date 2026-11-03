@@ -44,7 +44,8 @@ describe('board looks', () => {
 			usedGhostVote: 'struck',
 			reminderLines: 'away',
 			abilityLook: 'vanilla',
-			truthLook: 'grimbinder'
+			// The small-token look of earlier builds (2026-10-31) is "What they believe" now.
+			bigToken: 'believed'
 		});
 		expect(
 			parseBoardLooks({
@@ -67,5 +68,13 @@ describe('board looks', () => {
 			})
 		).toEqual(DEFAULT_BOARD_LOOKS);
 		expect(parseBoardLooks({ rulesAt: 'corner' })).toEqual(DEFAULT_BOARD_LOOKS);
+	});
+
+	it('defaults the big token to who a player really is (Trevor, 2026-11-03)', () => {
+		expect(DEFAULT_BOARD_LOOKS.bigToken).toBe('truth');
+		// The old default, Vanilla "Is The …" reminders, takes the new default.
+		expect(parseBoardLooks({ truthLook: 'vanilla' }).bigToken).toBe('truth');
+		expect(parseBoardLooks({ bigToken: 'reminders' }).bigToken).toBe('reminders');
+		expect(parseBoardLooks({ bigToken: 'x' }).bigToken).toBe('truth');
 	});
 });

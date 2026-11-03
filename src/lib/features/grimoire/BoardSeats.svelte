@@ -1,5 +1,6 @@
 <script lang="ts">
-	import type { CharacterId } from '#lib/core/data/index.ts';
+	import type { Character, CharacterId } from '#lib/core/data/index.ts';
+	import type { Seat } from '#lib/core/model/index.ts';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import {
 		looseReminders,
@@ -107,11 +108,14 @@
 		)
 	);
 	/**
-	 * Grimbinder: each seat's "Is The …" reminders as small tokens marked = in its pill (Trevor,
-	 * 2026-10-31, small token Option A); the rest of its reminders stay beside it. Vanilla: all
-	 * beside it.
+	 * Each seat's "Is The …" reminders sit in its pill, not beside it, unless the big token shows
+	 * reminders only (Settings › Board, Big token shows). With 'truth' the big token is who the
+	 * player really is and the pill shows what they believe, marked ?; with 'believed' the big
+	 * token is the one they were given and the pill shows who they really are, marked = (Trevor,
+	 * 2026-11-03; 2026-10-31, small token Option A).
 	 */
-	const truthsInPill = $derived(boardLooks.current.truthLook === 'grimbinder');
+	const bigToken = $derived(boardLooks.current.bigToken);
+	const truthsInPill = $derived(bigToken !== 'reminders');
 	const beside = $derived(seats.map((seat) => remindersBeside(seat, characters, truthsInPill)));
 	/** Who each seat of the Storyteller's fake evil team pretends to be (M26), in the pill. */
 	const pretends = $derived(
@@ -120,6 +124,18 @@
 	const truths = $derived(
 		seats.map((seat) => (truthsInPill ? trueCharacterMarks(seat, characters) : []))
 	);
+	/** The big token: who the player really is, with 'truth', else the token they were given. */
+	function bigTokenOf(seat: Seat, i: number): Character | undefined {
+		const truly = bigToken === 'truth' ? truths[i][0] : undefined;
+		if (truly) return truly.character;
+		return seat.characterId ? characters.get(seat.characterId) : undefined;
+	}
+	/** With 'truth': what the player believes they are (their token), marked ? in the pill. */
+	function believesOf(seat: Seat, i: number) {
+		const truly = bigToken === 'truth' ? truths[i][0] : undefined;
+		const token = seat.characterId ? characters.get(seat.characterId) : undefined;
+		return truly && token ? { character: token, reminderId: truly.reminder.reminderId } : undefined;
+	}
 </script>
 
 <!-- Each seat's line to its reminders, by the Storyteller's "Reminder lines" choice (Trevor,
@@ -154,7 +170,8 @@
 		<SeatToken
 			{seat}
 			number={i + 1}
-			character={seat.characterId ? characters.get(seat.characterId) : undefined}
+			character={bigTokenOf(seat, i)}
+			believes={believesOf(seat, i)}
 			{size}
 			nightNumbers={nightNumbers && seat.characterId
 				? {
@@ -166,7 +183,7 @@
 			nominations={nominations(seat.seatId)}
 			tokenFreeVotes={votesWithoutToken(game, seat.seatId, characters)}
 			heldAbilities={vanilla ? [] : held[i]}
-			trueCharacters={truths[i]}
+			trueCharacters={bigToken === 'believed' ? truths[i] : []}
 			pretends={pretends.get(seat.seatId)}
 			onReminder={(reminderId) =>
 				!seatArr.arranging && !watching && onReminder(seat.seatId, reminderId)}

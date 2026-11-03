@@ -190,7 +190,12 @@ export const settings = {
 	'settings.nameOffset': 'Player name distance',
 	'settings.strikeUsedGhostVote': 'Strike through used ghost votes',
 	'settings.vanillaAbilities': 'Vanilla held abilities',
-	'settings.vanillaTruths': 'Vanilla “Is The …” reminders',
+	'settings.bigToken': 'Big token shows',
+	'settings.bigToken.truth': 'Who they really are',
+	'settings.bigToken.believed': 'What they believe',
+	'settings.bigToken.reminders': 'Reminders only',
+	'settings.bigToken.key':
+		'Small tokens by a seat: + also has that ability, ? believes they are that character, = is really that character.',
 	'settings.reminderLines': 'Reminder lines',
 	'settings.reminderLines.always': 'Always',
 	'settings.reminderLines.away': 'When away from the seat',
