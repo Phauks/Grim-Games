@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { seatName } from '#lib/features/game/seat-label.ts';
-	import type { Alignment, CharacterId } from '#lib/core/data/index.ts';
+	import type { Alignment, CharacterId, CharacterType } from '#lib/core/data/index.ts';
 	import { rulesIn } from '#lib/core/data/rules/index.ts';
 	import {
 		alignmentOf,
@@ -11,6 +11,7 @@
 	} from '#lib/core/model/index.ts';
 	import { isReplacedAfterDraw } from '#lib/core/rules/bag-characters.ts';
 	import {
+		alsoBecomes,
 		allEvilBecoming,
 		changeableSeats,
 		characterChanger,
@@ -218,15 +219,47 @@
 		characterOpen = true;
 	}
 	let jinxed = $state<JinxedPick>();
+	// A character a jinx says is never dealt here: its chooser also picks one of this type and
+	// becomes that (the Hatter's Lil' Monsta, a Minion; L116).
+	let alsoType = $state<CharacterType>();
+	let alsoSeat = $state<SeatId>();
+	let alsoOpen = $state(false);
 	function chooseCharacter(characterId: CharacterId) {
 		characterOpen = false;
 		const seatId = chosen;
 		chosen = undefined;
 		if (!seatId) return;
+		const also = step.character
+			? alsoBecomes(game, step.character.id, characterId, characters)
+			: undefined;
+		if (also) {
+			alsoType = also;
+			alsoSeat = seatId;
+			alsoOpen = true;
+			return;
+		}
+		pickFor(seatId, characterId);
+	}
+	function chooseAlso(characterId: CharacterId) {
+		alsoOpen = false;
+		const seatId = alsoSeat;
+		alsoSeat = undefined;
+		if (seatId) pickFor(seatId, characterId);
+	}
+	function pickFor(seatId: SeatId, characterId: CharacterId) {
 		// A jinx may say it can't be in play with a character in play: ask first.
 		if (jinxed) jinxed.pick(seatId, characterId, () => change(seatId, characterId));
 		else change(seatId, characterId);
 	}
+	// The jinxed characters this step can make that say so, for the step's note.
+	const alsoNotes = $derived(
+		step.character && rule
+			? script.flatMap((id) => {
+					const type = alsoBecomes(game, step.character!.id, id, characters);
+					return type ? [{ id, type }] : [];
+				})
+			: []
+	);
 	function change(seatId: SeatId, characterId: CharacterId) {
 		const command = {
 			type: 'AssignCharacter' as const,
@@ -260,6 +293,15 @@
 		...(rule?.sameType && chosenOwn ? [chosenOwn] : [])
 	]);
 	const playerName = (seatId: SeatId) => seatName(game, seatId);
+	const TYPE_ARTICLE: Record<CharacterType, string> = {
+		townsfolk: 'a Townsfolk',
+		outsider: 'an Outsider',
+		minion: 'a Minion',
+		demon: 'a Demon',
+		traveller: 'a Traveller',
+		fabled: 'a Fabled',
+		loric: 'a Loric'
+	};
 </script>
 
 {#snippet newCharacter(seatId: SeatId, characterId: CharacterId | undefined)}
@@ -355,6 +397,15 @@
 			<Button variant="quiet" onclick={() => (seatOpen = true)}>Choose</Button>
 		{/if}
 	</div>
+	{#each alsoNotes as note (note.id)}
+		<p class="note" role="note" data-testid="also-becomes">
+			<CharacterBadge
+				characterId={note.id}
+				character={characters.get(note.id)}
+				interactive={false}
+			/>: whoever chooses it also chooses {TYPE_ARTICLE[note.type]} to become.
+		</p>
+	{/each}
 	{#each allEvil as id (id)}
 		<p class="note" role="note" data-testid="all-evil-become">
 			<CharacterBadge characterId={id} character={characters.get(id)} interactive={false} />: if
@@ -384,6 +435,16 @@
 		exclude={left}
 		faded={(c) => jinxed?.note(chosen, c)}
 		onPick={chooseCharacter}
+	/>
+	<CharacterPicker
+		bind:open={alsoOpen}
+		title={alsoType ? `Also choose ${TYPE_ARTICLE[alsoType]}` : 'Also choose a character'}
+		{characters}
+		script={game.script}
+		types={alsoType ? [alsoType] : []}
+		exclude={left}
+		faded={(c) => jinxed?.note(alsoSeat, c)}
+		onPick={chooseAlso}
 	/>
 	<JinxedPick bind:this={jinxed} {game} {characters} />
 {/if}

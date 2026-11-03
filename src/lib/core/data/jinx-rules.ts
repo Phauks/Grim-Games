@@ -26,6 +26,20 @@
  *   Idiot);
  * - `storytellerPicksPlayer`: when this character creates the partner, the Storyteller picks
  *   which player it is, and its step says so (the Pit-Hag's Damsel);
+ * - `alsoBecomes`: when this character's `changesCharacter` would make a player the partner,
+ *   who is never dealt, they also choose a character of this type and become that (the
+ *   Hatter's Demon who chooses Lil' Monsta also chooses a Minion,
+ *   https://wiki.bloodontheclocktower.com/Hatter#Related_Jinxes);
+ * - `carrierType`: while the partner's player is alive, only a player of this type carries
+ *   this character's `carrierIsDemon` token, so it fits no one else (the Magician's and the
+ *   Poppy Grower's Lil' Monsta goes to a Minion,
+ *   https://wiki.bloodontheclocktower.com/Lil%27_Monsta#Related_Jinxes);
+ * - `keptByPartner`: once the partner's `becomes` token marks its player, that player carries
+ *   this character's `carrierIsDemon` token for the rest of the game, so it fits no one else
+ *   (the Scarlet Woman babysits Lil' Monsta);
+ * - `diesWhenExecuted`: while this character's player carries the partner's token named here,
+ *   its own `protects` doesn't save them from execution (the Psychopath and the Vizier
+ *   babysitting Lil' Monsta);
  * - `registersTo`: this character's player may also register as these `alignments` and
  *   `types` to the partner's ability, or with `always` registers only as them (each listed
  *   part replaces the usual ones), whatever its own ability's state: the Politician and the
@@ -117,8 +131,9 @@
  * Either character's file may hold the block. `registersTo`, `impairsPartner`, `noKill`,
  * `noGrimoire`, `grimoireHides`, `endsGame`, `storytellerVote`, `deadAtLeast`,
  * `notCreatedAfterDay`, `nightChoice`, `withPartnerAbility`, `learnsGained`, `trueInfo`,
- * `notDeclared`, `keepsProtection`, `wakesWithPartner`, `noExecuteNow`, `allEvilBecome`,
- * `learnsNoAbility`, `partnerKeepsAbility` and `demonLearnsGood` say what
+ * `notDeclared`, `keepsProtection`, `wakesWithPartner`, `noExecuteNow`, `alsoBecomes`,
+ * `carrierType`, `keptByPartner`, `diesWhenExecuted`, `allEvilBecome`, `learnsNoAbility`,
+ * `partnerKeepsAbility` and `demonLearnsGood` say what
  * this character does, or how it is treated, with the partner, so they are read from this
  * character's side only (`ownJinxRules`); the others are read from both sides
  * (`rules/jinxes.ts`). By convention a block goes in the file of the
@@ -207,6 +222,10 @@ export interface JinxRules {
 	noTurnGood?: true;
 	spareToken?: true;
 	storytellerPicksPlayer?: true;
+	alsoBecomes?: CharacterType;
+	carrierType?: CharacterType;
+	keptByPartner?: true;
+	diesWhenExecuted?: ReminderLabel;
 	registersTo?: RegistersTo;
 	impairsPartner?: (typeof IMPAIRS_PARTNER)[number];
 	noKill?: NoKillTrigger;
@@ -251,6 +270,10 @@ export const JINX_RULE_KEYS = [
 	'noTurnGood',
 	'spareToken',
 	'storytellerPicksPlayer',
+	'alsoBecomes',
+	'carrierType',
+	'keptByPartner',
+	'diesWhenExecuted',
 	'registersTo',
 	'impairsPartner',
 	'noKill',
@@ -416,6 +439,13 @@ export function readJinxRules(
 		if (readBoolean(entry, 'spareToken', at, issues)) rules.spareToken = true;
 		if (readBoolean(entry, 'storytellerPicksPlayer', at, issues))
 			rules.storytellerPicksPlayer = true;
+		for (const key of ['alsoBecomes', 'carrierType'] as const) {
+			const type = readEnum(entry, key, CHARACTER_TYPES, at, issues, false);
+			if (type) rules[key] = type;
+		}
+		if (readBoolean(entry, 'keptByPartner', at, issues)) rules.keptByPartner = true;
+		const dies = readString(entry, 'diesWhenExecuted', at, issues, false);
+		if (dies !== undefined) rules.diesWhenExecuted = dies;
 		if (entry.registersTo !== undefined) {
 			const registersTo = readRegistersTo(entry.registersTo, `${at}.registersTo`, issues);
 			if (registersTo) rules.registersTo = registersTo;

@@ -38,5 +38,10 @@
 	},
 	"deathCause": {
 		"kind": "kills"
+	},
+	"jinxes": {
+		"lilmonsta": {
+			"diesWhenExecuted": "Is The Demon"
+		}
 	}
 }

@@ -346,11 +346,12 @@ const MISS_WORDS: Record<TargetMiss, string> = {
 	'with-label': 'it needs another reminder on the same player',
 	'not-with-label': 'another reminder on this player rules it out',
 	'max-placed': 'it is already on as many players as it can be at once',
-	'last-night': 'the ability says different to last night'
+	'last-night': 'the ability says different to last night',
+	jinx: 'a jinx says who carries it'
 };
 
 /** Checks that need to know who the player is. */
-const NEEDS_CHARACTER: readonly TargetMiss[] = ['type', 'alignment', 'character'];
+const NEEDS_CHARACTER: readonly TargetMiss[] = ['type', 'alignment', 'character', 'jinx'];
 
 /**
  * Why a seat doesn't fit a reminder. A seat with no character yet is not judged on its

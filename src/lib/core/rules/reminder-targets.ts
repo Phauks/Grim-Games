@@ -27,6 +27,7 @@ import {
 import type { Game, Reminder, ReminderInstance, SeatId } from '#lib/core/model/types.ts';
 import { abilityState, registrations } from './ability.ts';
 import { heldAbilitiesOf } from './gained-abilities.ts';
+import { carrierJinx } from './jinxes.ts';
 
 export type { NeighbourRule, TargetRule };
 
@@ -52,7 +53,10 @@ export const REMINDER_TARGETS: Readonly<Record<CharacterId, CharacterTargets>> =
  * - `with-label` / `not-with-label`: missing, or already carrying, the owner's other token;
  * - `max-placed`: as many copies of the token as may be out at once are on other players;
  * - `last-night`: the ability says "different to last night", and this player carried the
- *   token at the latest dawn (or, for `type`, has that player's character type).
+ *   token at the latest dawn (or, for `type`, has that player's character type);
+ * - `jinx`: a jinx on the script says who carries this `carrierIsDemon` token, and it is not
+ *   this player (`carrierJinx`: a Minion while the Magician lives, the Scarlet Woman once she
+ *   babysits Lil' Monsta).
  */
 export type TargetMiss =
 	| 'global'
@@ -66,7 +70,8 @@ export type TargetMiss =
 	| 'with-label'
 	| 'not-with-label'
 	| 'max-placed'
-	| 'last-night';
+	| 'last-night'
+	| 'jinx';
 
 export interface TargetFit {
 	seatId: SeatId;
@@ -345,6 +350,11 @@ export function reminderTargetMisses(
 				: type !== undefined && before.some((id) => typeOf(atDawn, id, characters) === type);
 		if (repeat) misses.push('last-night');
 	}
+	if (
+		rulesOf(reminder.characterId, characters)?.carrierIsDemon === reminder.label &&
+		carrierJinx(game, reminder.characterId, seatId, characters)
+	)
+		misses.push('jinx');
 	return misses;
 }
 

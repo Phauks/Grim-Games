@@ -36,6 +36,7 @@ export const day = {
 	'day.savedByOverride': 'Storyteller override',
 	'day.saveProblem.not-in-play': 'Not in play',
 	'day.saveProblem.not-this-player': 'Does not cover this player',
+	'day.saveProblem.jinxed': 'A jinx says they die when executed',
 	'day.saveProblem.impaired': 'Drunk, poisoned or no ability',
 	'day.nominatedToday': 'Nominated today',
 	'day.otherPlayers': 'Other players',

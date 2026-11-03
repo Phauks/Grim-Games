@@ -65,6 +65,9 @@
 		},
 		"preacher": {
 			"keepsProtection": true
+		},
+		"lilmonsta": {
+			"diesWhenExecuted": "Is The Demon"
 		}
 	}
 }
