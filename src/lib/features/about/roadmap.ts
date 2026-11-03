@@ -549,6 +549,9 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		// Goblin; the Butler with eyes closed; the Philosopher's Bounty Hunter).
 		// L120 the Mathematician's four (the Drunk's and Marionette's false info and the Lunatic
 		// attacking another player count as abnormal; the Chambermaid detects its waking).
+		// L121 the Alchemist-Summoner makes the Demon on night 3, choosing only which Demon, with
+		// no bluffs; a borrowed ability (the Alchemist's, the Boffin's, the Pixie's) runs where
+		// the character's own does (`abilityHolders`).
 		title: 'Jinxes the app applies, not only shows',
 		area: 'engine',
 		parts: [
@@ -565,7 +568,8 @@ export const ROADMAP: readonly RoadmapItem[] = [
 			'L117',
 			'L118',
 			'L119',
-			'L120'
+			'L120',
+			'L121'
 		]
 	},
 	{
