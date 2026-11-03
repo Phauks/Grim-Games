@@ -122,6 +122,9 @@ export interface HoldsGame {
  *   even if dead, when the Storyteller judges their ability met (the Politician, most
  *   responsible for their own team losing). End game offers it as a reason, and
  *   `joinsWinners` lists who may win too; nothing checks it;
+ * - `alwaysWinsWith`: its player wins whenever this team wins, whatever their alignment and
+ *   even if dead, with no call to make (`alwaysWinners`). Their alignment never changes (Trevor,
+ *   2026-11-03: "politician always wins with good ... their alignment does not shift");
  * - `contest`: the game can end in a contest between a player of `chooser`'s type and a player
  *   of the other alignment they choose; the player with the most votes wins for their team, and
  *   `tie` wins a tie (the Fiddler's: the Demon chooses, evil wins a tie,
@@ -134,6 +137,7 @@ export interface GameEndRules {
 	invertWinner?: boolean;
 	decidedByStoryteller?: boolean;
 	joinsWinner?: boolean;
+	alwaysWinsWith?: Alignment;
 	contest?: { chooser: CharacterType; tie: Alignment };
 }
 
@@ -235,6 +239,7 @@ export function readGameEnd(
 			'invertWinner',
 			'decidedByStoryteller',
 			'joinsWinner',
+			'alwaysWinsWith',
 			'contest'
 		],
 		path,
@@ -301,6 +306,8 @@ export function readGameEnd(
 			if (chooser && tie) out.contest = { chooser, tie };
 		}
 	}
+	const always = readEnum(raw, 'alwaysWinsWith', ALIGNMENTS, path, issues, false);
+	if (always) out.alwaysWinsWith = always;
 	for (const key of ['invertWinner', 'decidedByStoryteller', 'joinsWinner'] as const) {
 		const value = readBoolean(raw, key, path, issues);
 		if (value !== undefined) out[key] = value;
