@@ -14,11 +14,11 @@ import type { JinxEffect } from '#lib/core/data/jinx-rules.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import { wikiUrl } from '#lib/core/data/wiki.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
-import type { CharacterLookup } from '#lib/core/model/characters.ts';
-import { trueCharacter } from '#lib/core/model/selectors.ts';
+import { scriptCharacterIds, type CharacterLookup } from '#lib/core/model/characters.ts';
+import { alignmentOf, trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 import { abilityState } from './ability.ts';
-import { ownJinxEffects, ownJinxRules } from './jinxes.ts';
+import { jinxEffect, ownJinxEffects, ownJinxRules } from './jinxes.ts';
 import { jinxApplies } from './jinx-when.ts';
 import {
 	gainedApplies,
@@ -71,6 +71,10 @@ export function jinxPartnerAlerts(
  * (https://wiki.bloodontheclocktower.com/Legion#Related_Jinxes), in seating order:
  * - `learns-no-ability` (`learns: "no-ability"`, while its `when` holds): the waking player
  *   learns the partner took their ability (with `{"night": 1}`, the Engineer with Legion);
+ * - `learns-alignment` (`learns: "alignment"`, while its `when` holds for that player): the
+ *   waking player learns which alignment they are (`alignment`: the Ogre whose Friend is the
+ *   Recluse, registering as evil, learns they are evil,
+ *   https://wiki.bloodontheclocktower.com/Ogre#Related_Jinxes);
  * - `might-learn` (`partnerKeepsAbility`): one of this player's `impairs` tokens would reach
  *   a partner's player, who keeps their ability, so this player might learn the partner is in
  *   play; at this player's step and at the partner's (the Minstrel and the Preacher with
@@ -114,6 +118,10 @@ export function jinxLearnAlerts(
 			for (const { partner } of learns)
 				if (impairs.some((i) => i.source.characterId === partner))
 					out.push(alert('learns-no-ability', seatId, owner, partner));
+			const alignment = alignmentOf(game, seatId);
+			for (const partner of learnsAlignmentFrom(game, owner, seatId, characters))
+				if (alignment)
+					out.push({ ...alert('learns-alignment', seatId, owner, partner), alignment });
 		}
 		const spared = ownJinxEffects(game, owner, 'partnerKeepsAbility', characters);
 		for (const { partner } of spared) {
@@ -123,6 +131,71 @@ export function jinxLearnAlerts(
 		}
 	}
 	return out;
+}
+
+/** The partners whose jinx has `seatId`, an `owner` player, learn their alignment now. */
+function learnsAlignmentFrom(
+	game: Game,
+	owner: CharacterId,
+	seatId: SeatId,
+	characters: CharacterLookup
+): CharacterId[] {
+	return scriptCharacterIds(game.script).flatMap((partner) => {
+		const effect = jinxEffect(game, owner, partner, 'learns', characters, { seatId });
+		return effect?.what === 'alignment' ? [partner] : [];
+	});
+}
+
+/**
+ * The alerts at `characterId`'s step about who carries its `carrierIsDemon` token, one per
+ * jinx whose `when` holds, about the partner's (first living) player:
+ * - `storyteller-chooses` (`storytellerChooses` with `what: "carrier"`): the Storyteller, not
+ *   the players who wake, chooses who carries it (the Magician's Lil' Monsta,
+ *   https://wiki.bloodontheclocktower.com/Magician#Related_Jinxes);
+ * - `wakes-one-by-one` (`wakesOneByOne`): the players who wake for it wake one at a time,
+ *   until one chooses to take it (the Poppy Grower's Lil' Monsta,
+ *   https://wiki.bloodontheclocktower.com/Poppy_Grower#Related_Jinxes).
+ * Each says the character type that may carry it when a `carriedBy` jinx with that partner
+ * names one now (`type`: a Minion).
+ */
+export function carrierChoiceAlerts(
+	game: Game,
+	characterId: CharacterId,
+	characters: CharacterLookup
+): NightAlert[] {
+	if (rulesOf(characterId, characters)?.carrierIsDemon === undefined) return [];
+	const found = [
+		...ownJinxEffects(
+			game,
+			characterId,
+			'storytellerChooses',
+			characters,
+			(e) => e.what === 'carrier'
+		).map((j) => ({ kind: 'storyteller-chooses' as const, partner: j.partner })),
+		...ownJinxEffects(game, characterId, 'wakesOneByOne', characters).map((j) => ({
+			kind: 'wakes-one-by-one' as const,
+			partner: j.partner
+		}))
+	];
+	return found.flatMap(({ kind, partner }) => {
+		const seats = game.seating.filter((s) => trueCharacter(game, s, characters) === partner);
+		const seatId = seats.find((s) => !game.seats[s].dead) ?? seats[0];
+		if (seatId === undefined) return [];
+		const type = jinxEffect(game, characterId, partner, 'carriedBy', characters)?.type;
+		const character = characters.get(partner);
+		return [
+			{
+				kind,
+				seatId,
+				source: { characterId },
+				works: true,
+				impairments: [],
+				partner,
+				...(type ? { type } : {}),
+				...(character ? { wiki: `${wikiUrl(character)}#Related_Jinxes` } : {})
+			}
+		];
+	});
 }
 
 /** Whether one of `owner`'s `impairs` tokens on the board would reach a `partner` player. */

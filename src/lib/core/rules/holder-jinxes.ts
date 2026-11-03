@@ -70,7 +70,7 @@ export function picksCharacterOnlyBy(
 	if (changer === undefined) return undefined;
 	const jinx = holderJinx(game, changer, characterId, characters);
 	const effect = jinx?.rule.storytellerChooses;
-	if (!aboutHolder(effect)) return undefined;
+	if (effect?.what !== 'player' || !aboutHolder(effect)) return undefined;
 	return holderApplies(game, changer, jinx, effect, characters) ? jinx?.via : undefined;
 }
 

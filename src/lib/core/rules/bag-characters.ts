@@ -3,8 +3,11 @@
  * characters are covered too. Imports neither the setup check nor the bag plan, so both can
  * use it (https://wiki.bloodontheclocktower.com/Setup).
  */
+import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { Character, CharacterId, CharacterType, Script } from '#lib/core/data/types.ts';
-import type { Reminder } from '#lib/core/model/types.ts';
+import { scriptCharacterIds, type CharacterLookup } from '#lib/core/model/characters.ts';
+import { trueCharacter } from '#lib/core/model/selectors.ts';
+import type { Game, Reminder } from '#lib/core/model/types.ts';
 import { setupModifierFor } from './setup-modifiers.ts';
 
 function hasSpecial(character: Character, type: string, name: string): boolean {
@@ -40,6 +43,37 @@ export function isReplacedAfterDraw(character: Character): boolean {
  */
 export function isNotDealt(character: Character): boolean {
 	return isBagDisabled(character) && !replacementReminder(character);
+}
+
+/**
+ * The never-dealt characters on the script that are in play on this board, though no seat
+ * holds them (Lil' Monsta, https://wiki.bloodontheclocktower.com/Lil%27_Monsta), so the night
+ * walk-through has their steps: one whose `carrierIsDemon` token is on a player, or, once
+ * players have characters, one of a type no seated player is, when no seated character's own
+ * setup change sets that type's count (the Summoner's or the Atheist's game has no Demon
+ * either). A guess from the board: the Storyteller can still skip the step.
+ */
+export function notDealtInPlay(game: Game, characters: CharacterLookup): CharacterId[] {
+	const seated = game.seating.flatMap((s) => {
+		const id = trueCharacter(game, s, characters);
+		const character = id === undefined ? undefined : characters.get(id);
+		return character ? [character] : [];
+	});
+	return scriptCharacterIds(game.script).filter((id) => {
+		const character = characters.get(id);
+		if (!character || !isNotDealt(character) || seated.some((c) => c.id === id)) return false;
+		const carrier = rulesOf(id, characters)?.carrierIsDemon;
+		const carried =
+			carrier !== undefined &&
+			game.seating.some((s) =>
+				game.seats[s].reminders.some((r) => r.characterId === id && r.label === carrier)
+			);
+		if (carried) return true;
+		if (seated.length === 0 || seated.some((c) => c.type === character.type)) return false;
+		return !seated.some((c) =>
+			setupModifierFor(c)?.ops.some((op) => op.kind === 'set' && op.type === character.type)
+		);
+	});
 }
 
 /**

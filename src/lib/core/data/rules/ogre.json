@@ -43,5 +43,13 @@
 			"follows": true,
 			"evenIfImpaired": true
 		}
+	},
+	"jinxes": {
+		"recluse": {
+			"learns": {
+				"what": "alignment",
+				"when": [{ "partnerMarked": "Friend" }, { "alignment": "evil" }]
+			}
+		}
 	}
 }

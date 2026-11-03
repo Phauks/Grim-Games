@@ -583,6 +583,59 @@ test('with the Magician alive, Lil’ Monsta’s Is The Demon on a non-Minion wa
 	await expect(await openSeat(page, 3)).toContainText('Is The Demon');
 });
 
+// Lil' Monsta is never dealt, yet its step is in the walk-through (M41). With the Magician
+// alive it says the Storyteller picks the babysitter
+// (https://wiki.bloodontheclocktower.com/Magician#Related_Jinxes); with the Poppy Grower alive,
+// that the Minions wake one at a time
+// (https://wiki.bloodontheclocktower.com/Poppy_Grower#Related_Jinxes).
+for (const { partner, name, says } of [
+	{
+		partner: 'magician',
+		name: 'Magician',
+		says: /Storyteller\s+chooses which Minion takes the\s*Lil. Monsta\s*token/
+	},
+	{
+		partner: 'poppygrower',
+		name: 'Poppy Grower',
+		says: /Minions wake one at a time, until one chooses to take the\s*Lil. Monsta\s*token/
+	}
+])
+	test(`Lil’ Monsta’s step says how its babysitter is chosen with the ${name}`, async ({
+		page
+	}) => {
+		test.slow();
+		await startGame(page, `Babysitting ${name}`, [
+			'lilmonsta',
+			partner,
+			'poisoner',
+			'chef',
+			'empath',
+			'monk'
+		]);
+		await choose(page, 1, name);
+		await choose(page, 2, 'Poisoner');
+		await choose(page, 3, 'Chef');
+		const step = await openStep(page, "Lil' Monsta");
+		await expect(step.getByTestId('night-alerts')).toContainText(says);
+	});
+
+// The Ogre whose Friend is the Recluse, registering as evil, learns they are evil (M41,
+// https://wiki.bloodontheclocktower.com/Ogre#Related_Jinxes).
+test('the Ogre made evil by the Recluse learns they are evil', async ({ page }) => {
+	test.slow();
+	await startGame(page, 'Ogre Recluse', ['ogre', 'recluse', 'imp', 'chef', 'empath', 'monk']);
+	await choose(page, 1, 'Ogre');
+	await choose(page, 2, 'Recluse');
+	await choose(page, 3, 'Imp');
+	await putReminder(page, 'Friend', 2);
+	const ask = page.getByRole('alertdialog', { name: 'Make this player evil?' });
+	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(ask).toBeHidden();
+	await closeBin(page);
+	const step = await openStep(page, 'Ogre');
+	await expect(step.getByTestId('night-alerts')).toContainText(/learns they are evil/);
+});
+
 // At the tea party a Demon who chooses Lil' Monsta also chooses a Minion, and becomes that
 // (L116, https://wiki.bloodontheclocktower.com/Hatter#Related_Jinxes).
 test('the Hatter’s Demon who chooses Lil’ Monsta also chooses a Minion to become', async ({

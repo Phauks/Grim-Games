@@ -195,6 +195,53 @@ describe('jinx rules data', () => {
 		expect(fine.list).toEqual([]);
 	});
 
+	it('reads who chooses a carrier, waking one by one, and an alignment learned (M41)', () => {
+		const issues = new Issues();
+		const self = { carrierIsDemon: 'Is The Demon', changesCharacter: {} };
+		expect(
+			readJinxRules(
+				{
+					a: { storytellerChooses: 'carrier', wakesOneByOne: { when: ['partner-alive'] } },
+					b: {
+						learns: {
+							what: 'alignment',
+							when: [{ partnerMarked: 'Friend' }, { alignment: 'evil' }]
+						}
+					}
+				},
+				'jinxes',
+				issues,
+				self
+			)
+		).toEqual({
+			a: { storytellerChooses: { what: 'carrier' }, wakesOneByOne: { when: ['partner-alive'] } },
+			b: {
+				learns: { what: 'alignment', when: [{ partnerMarked: 'Friend' }, { alignment: 'evil' }] }
+			}
+		});
+		expect(issues.list).toEqual([]);
+		// A carrier needs a `carrierIsDemon` token; `creating` is only for a changed player.
+		const bad = new Issues();
+		readJinxRules(
+			{
+				a: { storytellerChooses: 'carrier', wakesOneByOne: true },
+				b: { storytellerChooses: { what: 'carrier', creating: 'partner' } },
+				c: { trueInfo: { when: [{ alignment: 'grey' }] } }
+			},
+			'jinxes',
+			bad,
+			{}
+		);
+		expect(bad.list.map((i) => i.split(': ')[0])).toEqual([
+			'jinxes.a.storytellerChooses',
+			'jinxes.a.wakesOneByOne',
+			'jinxes.b.storytellerChooses.creating',
+			'jinxes.b',
+			'jinxes.c.trueInfo.when[0].alignment',
+			'jinxes.c'
+		]);
+	});
+
 	it('reports a prerequisite missing from the partner, and an effect both files set', () => {
 		const rules = new Map<string, Json>([
 			['a', { jinxes: { b: { impairs: { who: 'partner', kind: 'poisoned' } } } }],

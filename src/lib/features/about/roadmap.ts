@@ -560,10 +560,13 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		// custom script can write. M39 general verbs with shared `when` conditions and `who`, so a
 		// rule may sit in either character's file; M40 rules on a script's own jinxes, which
 		// replace TPI's for the pair (`rulesForJinx`), with load warnings for rules the app
-		// can't use; M41 the later stage.
+		// can't use; M41 the three official jinxes the format couldn't say: the Storyteller picks
+		// Lil' Monsta's babysitter with the Magician, the Minions wake one at a time with the Poppy
+		// Grower (`storytellerChooses` a carrier, `wakesOneByOne`, on Lil' Monsta's own step), and
+		// the Ogre learns it is evil from the Recluse (`learns` with an alignment condition).
 		title: 'Jinx format for custom scripts',
 		area: 'engine',
-		parts: ['M39', 'M40']
+		parts: ['M39', 'M40', 'M41']
 	},
 	{
 		// Trevor, 2026-11-02: beta goes to production only once the How to Run gaps are closed.
