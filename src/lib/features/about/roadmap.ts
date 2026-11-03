@@ -282,6 +282,11 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['D2', 'B2', 'B3', 'B5', 'B1', 'B11', 'B12', 'B13', 'B14']
 	},
 	{
+		title: 'A number token in the reminder bank, for counts and numbers on the board',
+		area: 'storyteller',
+		parts: ['M35']
+	},
+	{
 		title: 'Seats that keep their names when players rotate, and random name colours',
 		area: 'storyteller',
 		parts: ['L22', 'L27']

@@ -890,8 +890,8 @@
 				ruleAt={remDrag.ruleAt}
 				dropping={remDrag.drag !== undefined}
 				dropOver={!!remDrag.drag?.overNew}
-				onRule={(reminder, characterId, tokenId) =>
-					moveConfirm?.requestRule(reminder, characterId, tokenId)}
+				onRule={(reminder, characterId, tokenId, look) =>
+					moveConfirm?.requestRule(reminder, characterId, tokenId, look)}
 				onHints={(h) => (hints.tray = h)}
 				run={flow.run}
 				disabled={watching}
