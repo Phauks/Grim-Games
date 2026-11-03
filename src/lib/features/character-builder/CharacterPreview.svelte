@@ -6,7 +6,7 @@
 		type CharacterFields,
 		type CharacterProblem
 	} from '#lib/core/rules/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import BoardReminder from '#lib/features/grimoire/BoardReminder.svelte';
 	import ReminderTokenRow from '#lib/features/grimoire/ReminderTokenRow.svelte';
@@ -29,8 +29,10 @@
 
 <section class="preview" aria-label={t('character-builder.preview')} data-testid="preview">
 	<div class="token"><CharacterToken character={preview} /></div>
-	<CharacterBadge characterId={preview.id} character={preview} />
-	<p class="ability">{preview.ability || t('common.none')}</p>
+	<!-- As it will read on a script: the standard row (Trevor, 2026-11-02). -->
+	<CharacterPiece template="row" character={preview}
+		>{#snippet abilityText()}{preview.ability || t('common.none')}{/snippet}</CharacterPiece
+	>
 	<!-- Always there, a token high, so typing a reminder never moves the preview; the tokens
 	     themselves, as on the board (Trevor, 2026-10-30). -->
 	<p class="reminders">
@@ -63,7 +65,6 @@
 	.token {
 		justify-self: center;
 	}
-	.ability,
 	.reminders {
 		margin: 0;
 		overflow-wrap: anywhere;

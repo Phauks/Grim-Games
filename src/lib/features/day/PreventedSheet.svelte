@@ -4,7 +4,6 @@
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import type { PreventedBecause, PreventedDeath } from '#lib/core/rules/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import type { DayPort } from './day-port.ts';
@@ -35,16 +34,9 @@
 	}
 </script>
 
-{#snippet ability(characterId: string | undefined)}
-	<!-- TPI's ability text, so the Storyteller sees what the reminder is about. -->
-	{@const text = characterId ? game.characters.get(characterId)?.ability : undefined}
-	{#if text}<p class="ability" data-testid="ability">{text}</p>{/if}
-{/snippet}
-
 <BottomSheet bind:open title={t('day.prevented')}>
 	<ul class="prevented" data-testid="prevented">
 		{#each prevented as p (p.reminderId)}
-			{@const target = g.seats[p.seatId]}
 			<li>
 				<!-- Laid out like a jinx, as every row of the day (Trevor, 2026-10-18). -->
 				<CharacterPiece
@@ -55,15 +47,7 @@
 				>
 					<span class="sentence">
 						<span>{t('day.preventedChose')}</span>
-						{#if target.characterId}
-							<CharacterBadge
-								characterId={target.characterId}
-								alignment={target.alignment}
-								playerName={game.seatName(p.seatId)}
-							/>
-						{:else}
-							<SeatBadge game={game.game} seatId={p.seatId} />
-						{/if}
+						<SeatBadge game={game.game} seatId={p.seatId} />
 					</span>
 					<ul class="because">
 						{#each p.because as because, i (i)}
@@ -72,14 +56,14 @@
 							{/if}
 							{#each blockers(because) as b (b.characterId)}
 								<li data-character={b.characterId}>
+									<!-- TPI's ability text, so the Storyteller sees what the reminder is about. -->
 									<CharacterPiece
 										template="entry"
+										ability
 										characterId={b.characterId}
 										alignment={b.seatId ? g.seats[b.seatId].alignment : undefined}
 										playerName={b.seatId ? game.seatName(b.seatId) : undefined}
-									>
-										{@render ability(b.characterId)}
-									</CharacterPiece>
+									/>
 								</li>
 							{/each}
 						{:else}
@@ -99,10 +83,6 @@
 		flex-wrap: wrap;
 		align-items: center;
 		gap: var(--space-1) var(--space-2);
-	}
-	.ability {
-		flex-basis: 100%;
-		margin: 0;
 	}
 	.prevented,
 	.because {

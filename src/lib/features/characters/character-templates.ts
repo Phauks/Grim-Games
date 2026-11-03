@@ -5,12 +5,15 @@
  * part. Adding a look is a new entry here, not a new component.
  */
 
-/** How the character is drawn: its icon in a ring beside a band, or a pill inside a line. */
-export type CharacterShape = 'ring' | 'pill';
+/**
+ * How the character is drawn: its icon in a ring beside a band, a pill inside a line, or
+ * the icon alone where a name has no room (a mark on a rim, a jinx partner on a band).
+ */
+export type CharacterShape = 'ring' | 'pill' | 'icon';
 
 export interface CharacterTemplate {
 	shape: CharacterShape;
-	/** The ability under the band (ring only). */
+	/** The ability: under the band on a ring, under the bar on an entry. */
 	ability: boolean;
 	/** Runs the width it is given; otherwise only as wide as it needs. */
 	fullWidth: boolean;
@@ -26,7 +29,9 @@ export const CHARACTER_TEMPLATES = {
 	/** A character named in a line of text, in general or with its player. */
 	badge: { shape: 'pill', ability: false, fullWidth: false, entry: false },
 	/** The badge across its space with text under it (announcements, notes, a rule). */
-	entry: { shape: 'pill', ability: false, fullWidth: true, entry: true }
+	entry: { shape: 'pill', ability: false, fullWidth: true, entry: true },
+	/** The icon alone, sized by its host: a mark, a jinx partner, an illustration. */
+	icon: { shape: 'icon', ability: false, fullWidth: false, entry: false }
 } as const satisfies Record<string, CharacterTemplate>;
 
 export type CharacterTemplateName = keyof typeof CHARACTER_TEMPLATES;
@@ -41,8 +46,8 @@ export function resolveTemplate(
 	const base: CharacterTemplate = CHARACTER_TEMPLATES[name];
 	return {
 		...base,
-		// A pill has no room for an ability: it is a row's part.
-		ability: base.shape === 'ring' ? (overrides.ability ?? base.ability) : false,
+		// A pill in a line of text has no room for an ability; a ring or an entry does.
+		ability: base.shape === 'ring' || base.entry ? (overrides.ability ?? base.ability) : false,
 		fullWidth: overrides.fullWidth ?? base.fullWidth
 	};
 }

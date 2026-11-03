@@ -1,7 +1,6 @@
 <script lang="ts">
-	import { defaultAlignment, type Character } from '#lib/core/data/index.ts';
-	import { iconFallback } from '#lib/ui/token/icon-fallback.ts';
-	import { fallbackIconUrl, iconUrl } from './icon-url.ts';
+	import type { Character } from '#lib/core/data/index.ts';
+	import CharacterPiece from './CharacterPiece.svelte';
 
 	/**
 	 * The icons of the characters a character is jinxed with, small on its name band: one
@@ -18,13 +17,9 @@
 </script>
 
 <span class="partners" data-stacked={stacked ? '' : undefined}
-	>{#each partners as p (p.id)}{@const src = iconUrl(p, defaultAlignment(p.type))}{#if src}<img
-				{src}
-				alt=""
-				data-partner={p.id}
-				referrerpolicy="no-referrer"
-				{@attach iconFallback(fallbackIconUrl(p))}
-			/>{:else}<span class="dot" data-partner={p.id}></span>{/if}{/each}</span
+	>{#each partners as p (p.id)}<span class="partner" data-partner={p.id}
+			><CharacterPiece template="icon" character={p} label="" /></span
+		>{/each}</span
 >
 
 <style>
@@ -34,8 +29,7 @@
 		gap: calc(0.125 * var(--u));
 		min-width: 0;
 	}
-	.partners img,
-	.partners .dot {
+	.partner {
 		flex: none;
 		width: 1.3em;
 		height: 1.3em;
@@ -49,8 +43,7 @@
 		gap: 0;
 		width: 2em;
 	}
-	.partners[data-stacked] img,
-	.partners[data-stacked] .dot {
+	.partners[data-stacked] .partner {
 		width: 1.4em;
 		height: 1.4em;
 	}

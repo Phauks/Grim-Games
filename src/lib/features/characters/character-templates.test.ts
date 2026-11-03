@@ -20,7 +20,19 @@ describe('character templates', () => {
 		expect(resolveTemplate('name', { ability: true }).ability).toBe(true);
 	});
 
-	it('a pill never takes an ability', () => {
+	it('a pill in a line of text never takes an ability', () => {
 		expect(resolveTemplate('badge', { ability: true }).ability).toBe(false);
+	});
+
+	it('the icon template is the icon alone', () => {
+		expect(resolveTemplate('icon', { ability: true, fullWidth: true })).toMatchObject({
+			shape: 'icon',
+			ability: false
+		});
+	});
+
+	it('an entry takes its ability under the bar when asked', () => {
+		expect(resolveTemplate('entry', {}).ability).toBe(false);
+		expect(resolveTemplate('entry', { ability: true }).ability).toBe(true);
 	});
 });

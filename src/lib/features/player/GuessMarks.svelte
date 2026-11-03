@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { iconUrl } from '#lib/features/characters/icon-url.ts';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import AvatarFace from '#lib/ui/seating/AvatarFace.svelte';
 	import RimPill from '#lib/ui/seating/RimPill.svelte';
@@ -27,12 +27,10 @@
 	let { others, side = 'right' }: Props = $props();
 </script>
 
-{#snippet mark(other: GuessMark)}{#if 'character' in other}<img
+{#snippet mark(other: GuessMark)}{#if 'character' in other}<span
 			class="slot"
-			src={iconUrl(other.character)}
-			alt={other.character.name}
-			data-testid="guess-mark"
-		/>{:else if 'avatar' in other}<span
+			data-testid="guess-mark"><CharacterPiece template="icon" character={other.character} /></span
+		>{:else if 'avatar' in other}<span
 			class="slot"
 			data-testid="guess-mark"
 			role="img"

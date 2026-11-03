@@ -28,7 +28,8 @@
 		row: 'Row',
 		name: 'Name only',
 		badge: 'Badge',
-		entry: 'Entry'
+		entry: 'Entry',
+		icon: 'Icon only'
 	};
 
 	let characterId = $state<CharacterId>('witch' as CharacterId);
@@ -44,6 +45,9 @@
 	let chosen = $state(false);
 
 	const ring = $derived(CHARACTER_TEMPLATES[template].shape === 'ring');
+	const icon = $derived(template === 'icon');
+	// A ring takes its ability under the band, an entry under its bar.
+	const takesAbility = $derived(ring || template === 'entry');
 	const playerName = $derived(player ? ('Sam' as PlayerName) : undefined);
 	const jinxes = $derived<Jinx[]>([
 		{ characters: [characterId, 'alchemist' as CharacterId], reason: 'A sample jinx.' },
@@ -84,24 +88,39 @@
 			/>
 			<Toggle
 				label="Ability"
-				checked={ring && ability}
-				disabled={!ring}
+				checked={takesAbility && ability}
+				disabled={!takesAbility}
 				onChange={(v) => (ability = v)}
 			/>
-			<Toggle label="Player name" checked={player} onChange={(v) => (player = v)} />
-			<Toggle label="Full width" checked={fullWidth} onChange={(v) => (fullWidth = v)} />
+			<Toggle
+				label="Player name"
+				checked={player && !icon}
+				disabled={icon}
+				onChange={(v) => (player = v)}
+			/>
+			<Toggle
+				label="Full width"
+				checked={fullWidth && !icon}
+				disabled={icon}
+				onChange={(v) => (fullWidth = v)}
+			/>
 			<Toggle
 				label="Text under it"
 				checked={text}
 				disabled={!ring && template !== 'entry'}
 				onChange={(v) => (text = v)}
 			/>
-			<Toggle label="Jinx marks" checked={marks} onChange={(v) => (marks = v)} />
-			<Toggle label="Tag" checked={tag} onChange={(v) => (tag = v)} />
+			<Toggle
+				label="Jinx marks"
+				checked={marks && !icon}
+				disabled={icon}
+				onChange={(v) => (marks = v)}
+			/>
+			<Toggle label="Tag" checked={tag && !icon} disabled={icon} onChange={(v) => (tag = v)} />
 			<Toggle
 				label="Controls"
 				checked={controls}
-				disabled={template === 'badge' || template === 'name'}
+				disabled={template === 'badge' || template === 'name' || icon}
 				onChange={(v) => (controls = v)}
 			/>
 			<Toggle
@@ -179,6 +198,8 @@
 		/* Each look at its own width; Full width is the piece's own switch. */
 		justify-items: start;
 		min-width: 0;
+		/* The icon template's size here; in the app its host sets it. */
+		--character-icon-size: calc(var(--u) * 8);
 	}
 	.in-line {
 		line-height: 2;
