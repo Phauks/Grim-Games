@@ -69,7 +69,9 @@ export const PART_PRS: Readonly<Record<string, number>> = {
 	S6: 317,
 	S1: 320,
 	S7: 351,
-	R4: 330
+	R4: 330,
+	// The Hatter's same-type change (PR 891) was folded into the Engineer's PR, whose title names only L78.
+	L77: 892
 };
 
 const range = (prefix: string, from: number, to: number) =>
