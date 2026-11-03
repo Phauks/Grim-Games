@@ -51,7 +51,7 @@ import {
 /**
  * Dawn's and dusk's automatic reminder changes, behind one Storyteller setting, Remove
  * reminders that run out (Trevor, 2026-11-03): Off keeps them all, Ask at dawn to remove keeps
- * them until the dawn's Refresh Reminders dialog, Automatically remove takes them off on time.
+ * them until the dawn's Reset Reminders dialog, Automatically remove takes them off on time.
  */
 function keepReminders(): { keepReminders?: true } {
 	return preferences.current.reminderRemoval === 'auto' ? {} : { keepReminders: true };
@@ -147,19 +147,19 @@ export class Grimoire {
 	}
 
 	/**
-	 * The reminders that ran out by this dawn, waiting on the Refresh Reminders dialog
+	 * The reminders that ran out by this dawn, waiting on the Reset Reminders dialog
 	 * (Settings, Remove reminders that run out: Ask at dawn to remove). Empty when nothing asks.
 	 */
 	dawnAsk = $state.raw<readonly ReminderId[]>([]);
 	#afterDawnAsk: (() => void) | undefined;
 
-	/** Runs `next` once the Refresh Reminders dialog is answered, or now when it isn't open. */
+	/** Runs `next` once the Reset Reminders dialog is answered, or now when it isn't open. */
 	afterDawnAsk(next: () => void): void {
 		if (this.dawnAsk.length === 0) next();
 		else this.#afterDawnAsk = next;
 	}
 
-	/** The Refresh Reminders dialog is answered (Confirm, Cancel or closed). */
+	/** The Reset Reminders dialog is answered (Confirm, Cancel or closed). */
 	dawnAnswered(): void {
 		this.dawnAsk = [];
 		const next = this.#afterDawnAsk;

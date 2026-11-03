@@ -62,7 +62,7 @@
 	}
 </script>
 
-<ConfirmDialog bind:open title="Refresh Reminders" onConfirm={removeChosen}>
+<ConfirmDialog bind:open title="Reset Reminders" onConfirm={removeChosen}>
 	<ul class="rows">
 		{#each rows as { seatId, reminder } (reminder.reminderId)}
 			<li>
