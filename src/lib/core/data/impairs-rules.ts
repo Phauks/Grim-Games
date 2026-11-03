@@ -49,11 +49,15 @@ export interface TokenImpairment {
  * says "Poisoned" or "Drunk", only while this character's ability works
  * (https://wiki.bloodontheclocktower.com/Abilities). `clears`: its reminders that make their
  * carrier sober and healthy while its ability works (the Barista's "Sober & Healthy").
+ * `truthful`: its reminders whose carrier always gets true information while its ability
+ * works, even when another ability says it must or may be false (the Barista's "Sober &
+ * Healthy" under the Vortox).
  */
 export interface Impairs {
 	self?: { reason: ImpairmentReason; aliveAtMost?: number };
 	tokens?: Readonly<Record<ReminderLabel, TokenImpairment>>;
 	clears?: readonly ReminderLabel[];
+	truthful?: readonly ReminderLabel[];
 }
 
 function readWhileKept(
@@ -87,19 +91,20 @@ export function readImpairs(
 		issues.add(path, `expected object, got ${describe(raw)}`);
 		return undefined;
 	}
-	checkKeys(raw, ['self', 'tokens', 'clears'], path, issues);
+	checkKeys(raw, ['self', 'tokens', 'clears', 'truthful'], path, issues);
 	const out: Impairs = {};
-	if (raw.clears !== undefined) {
-		const clears = readStringArray(raw, 'clears', path, issues);
-		const own = clears?.filter((label) => {
+	for (const key of ['clears', 'truthful'] as const) {
+		if (raw[key] === undefined) continue;
+		const labels = readStringArray(raw, key, path, issues);
+		const own = labels?.filter((label) => {
 			if (ownReminder(label, reminders)) return true;
 			issues.add(
-				`${path}.clears`,
+				`${path}.${key}`,
 				`${JSON.stringify(label)} is not one of this character’s reminders`
 			);
 			return false;
 		});
-		if (own && own.length === clears?.length) out.clears = own;
+		if (own && own.length === labels?.length) out[key] = own;
 	}
 	if (raw.self !== undefined) {
 		const at = `${path}.self`;

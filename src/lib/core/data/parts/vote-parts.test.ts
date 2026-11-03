@@ -78,7 +78,7 @@ describe('voter', () => {
 	it('is in the Butler’s, Zealot’s and Beggar’s rules', () => {
 		expect(rulesOf('butler')?.voter).toEqual({ onlyWith: 'Master' });
 		expect(rulesOf('zealot')?.voter).toEqual({ must: true, minAlive: 5 });
-		expect(rulesOf('beggar')?.voter).toEqual({ needsToken: true });
+		expect(rulesOf('beggar')?.voter).toEqual({ needsToken: true, learnsGiver: true });
 	});
 });
 

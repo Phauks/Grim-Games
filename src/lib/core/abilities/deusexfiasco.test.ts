@@ -209,11 +209,9 @@ describe('Deus ex Fiasco', () => {
 			reminder: { characterId: 'deusexfiasco', label: 'Whoopsie' }
 		} as const;
 
-		it.fails('reminds the Storyteller to declare it in play at the start', () => {
+		it('reminds the Storyteller to declare it in play at the start', () => {
 			// Wiki: "At the start of the game, declare that the Deus ex Fiasco is in play. Ignore any
 			// groans and complaints from players."
-			// Waits on the engine (unplanned): its setup prep is empty, so nothing prompts the
-			// declaration before the game starts.
 			const s = scenario(['chef', 'imp', 'monk', 'empath', 'poisoner']).rule('deusexfiasco');
 			expect(setupPrep('deusexfiasco', 'Deus ex Fiasco', s.characters)).not.toEqual([]);
 		});
