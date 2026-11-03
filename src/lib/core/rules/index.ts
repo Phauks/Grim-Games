@@ -78,3 +78,4 @@ export * from './late-seat-proposal.ts';
 export * from './optional-rules.ts';
 export * from './day-tally.ts';
 export * from './reminder-effects.ts';
+export * from './chosen-ability.ts';

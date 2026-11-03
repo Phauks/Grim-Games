@@ -17,6 +17,7 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import { trueCharacter } from '#lib/core/model/selectors.ts';
 import { abilityState } from '#lib/core/rules/ability.ts';
+import { abilityChoice, chosenAbility } from '#lib/core/rules/chosen-ability.ts';
 import { gainedBy } from '#lib/core/rules/gained-abilities.ts';
 import { infoPicker, withNightInfo } from '#lib/core/rules/night-info.ts';
 import { nightOrder, type Night } from '#lib/core/rules/night-order.ts';
@@ -185,6 +186,74 @@ describe('Philosopher', () => {
 				.reminder('artist', 'philosopher', 'Drunk')
 				.dies('philosopher', 'nodashii');
 			expect(s.game.seats[s.seat('artist')].reminders).toEqual([]);
+		});
+	});
+
+	describe('choosing on the step (Trevor, 2026-11-03: the Philosopher keeps their token)', () => {
+		const seat = (s: Scenario, id: string) => s.seat(id);
+
+		it('a character not in play is held by the Philosopher, whose token stays', () => {
+			// Wiki: "During the first night, the Philosopher chooses to gain the Dreamer's ability. They
+			// gain the Dreamer's ability from now on and act when the Dreamer normally acts."
+			const s = scenario(['philosopher', 'chef', 'empath', 'witch', 'nodashii']);
+			const plan = abilityChoice(
+				s.game,
+				seat(s, 'philosopher'),
+				'philosopher',
+				'dreamer',
+				s.characters
+			);
+			expect(plan).toEqual({ dropReminders: [], hold: 'dreamer' });
+			const chose = s.do({
+				type: 'GiveAbility',
+				seatId: seat(s, 'philosopher'),
+				ability: { characterId: 'dreamer', via: 'philosopher' }
+			});
+			expect(chose.game.seats[chose.seat('philosopher')].characterId).toBe('philosopher');
+			expect(
+				chosenAbility(chose.game, chose.seat('philosopher'), 'philosopher', chose.characters)
+			).toEqual({ characterId: 'dreamer' });
+		});
+
+		it('a character in play puts Drunk on its player', () => {
+			// Wiki: "If they pointed to an icon of a character in play, the player of the chosen character
+			// becomes drunk - mark them with the DRUNK reminder."
+			const s = scenario(['philosopher', 'artist', 'chef', 'witch', 'nodashii']);
+			expect(
+				abilityChoice(s.game, seat(s, 'philosopher'), 'philosopher', 'artist', s.characters)
+			).toEqual({ dropReminders: [], tokenOn: s.seat('artist') });
+			const chose = s.reminder('artist', 'philosopher', 'Drunk');
+			expect(
+				chosenAbility(chose.game, chose.seat('philosopher'), 'philosopher', chose.characters)
+			).toEqual({ characterId: 'artist', fromSeat: chose.seat('artist') });
+		});
+
+		it('choosing again takes back the earlier choice', () => {
+			// Wiki: "If the Philosopher dies, the player made drunk by the Philosopher becomes sober -
+			// remove the DRUNK reminder."
+			const s = scenario(['philosopher', 'artist', 'chef', 'witch', 'nodashii']).reminder(
+				'artist',
+				'philosopher',
+				'Drunk'
+			);
+			const drunk = s.game.seats[s.seat('artist')].reminders[0].reminderId;
+			expect(
+				abilityChoice(s.game, seat(s, 'philosopher'), 'philosopher', 'dreamer', s.characters)
+			).toEqual({ dropReminders: [drunk], hold: 'dreamer' });
+			const held = s.do({
+				type: 'GiveAbility',
+				seatId: s.seat('philosopher'),
+				ability: { characterId: 'dreamer', via: 'philosopher' }
+			});
+			expect(
+				abilityChoice(
+					held.game,
+					held.seat('philosopher'),
+					'philosopher',
+					undefined,
+					held.characters
+				)
+			).toEqual({ dropHeld: 'dreamer', dropReminders: [drunk] });
 		});
 	});
 });

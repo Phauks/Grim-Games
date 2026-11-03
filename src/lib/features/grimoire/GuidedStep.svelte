@@ -5,6 +5,7 @@
 	import StepAfflictions from './StepAfflictions.svelte';
 	import ChangeCharacterStep from './ChangeCharacterStep.svelte';
 	import StorytellerAbilityStep from './StorytellerAbilityStep.svelte';
+	import GainedAbilityStep from './GainedAbilityStep.svelte';
 	import JinxChoiceStep from './JinxChoiceStep.svelte';
 	import CountdownStep from './CountdownStep.svelte';
 	import ChosenKillStep from './ChosenKillStep.svelte';
@@ -497,6 +498,8 @@
 						showOpen = true;
 					}}
 				/>
+				<!-- The Philosopher's chosen good character (gainedFrom.choose). -->
+				<GainedAbilityStep {grimoire} {step} />
 				<!-- The Courtier's Drunk 1, 2, 3: moved on each other night, as its text says. -->
 				{#if night === 'other'}<CountdownStep {grimoire} {step} />{/if}
 				<!-- The Ojo's named character, the Al-Hadikhia's live or die. -->

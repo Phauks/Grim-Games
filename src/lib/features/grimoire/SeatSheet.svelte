@@ -2,6 +2,7 @@
 	import { rulesOf } from '#lib/core/data/rules/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import CharacterHistoryDialog from './CharacterHistoryDialog.svelte';
+	import GainAbilityDialog from './GainAbilityDialog.svelte';
 	import { allowedOffScriptIn } from '#lib/features/modes/game-mode.ts';
 	import NominationChooser from './NominationChooser.svelte';
 	import { seatCharacterLine } from '#lib/features/game/seat-label.ts';
@@ -150,6 +151,7 @@
 			: []
 	);
 	let changesOpen = $state(false);
+	let giveOpen = $state(false);
 
 	// A character that gains an ability by a swap (the Apprentice) does so from ⋯
 	// (SeatCharacterFlow), by its rules block's `swapsForAbility`.
@@ -479,6 +481,8 @@
 
 <CharacterHistoryDialog bind:open={changesOpen} {grimoire} {seatId} />
 
+<GainAbilityDialog bind:open={giveOpen} {grimoire} {seatId} {title} />
+
 <!-- The seat's less frequent actions, in an overlay so the sheet stays short. -->
 <SeatMenu
 	bind:open={menuOpen}
@@ -494,6 +498,7 @@
 	onChangeCharacter={() => flow?.choose()}
 	onGain={() => flow?.chooseGain()}
 	onHeld={() => flow?.chooseHeld()}
+	onGive={() => (giveOpen = true)}
 	onSavant={() => (savantOpen = true)}
 	onClaim={() => (claimOpen = true)}
 	onAlignment={() => flow?.chooseAlignment()}
