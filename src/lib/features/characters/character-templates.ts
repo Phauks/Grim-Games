@@ -1,3 +1,5 @@
+import type { Snippet } from 'svelte';
+
 /**
  * The looks a character takes (Trevor, 2026-11-02: "at each call location, allow them to
  * denote a certain generic type, which can be set in the component"). Each template is a
@@ -50,4 +52,19 @@ export function resolveTemplate(
 		ability: base.shape === 'ring' || base.entry ? (overrides.ability ?? base.ability) : false,
 		fullWidth: overrides.fullWidth ?? base.fullWidth
 	};
+}
+
+/**
+ * A night step that isn't a character's (Dusk, Dawn, Minion info, Demon info) drawn as a
+ * character's row: its picture in the ring, its name on the band (Trevor, 2026-11-03: "a
+ * variant of the character info").
+ */
+export interface RowMarker {
+	name: string;
+	/** The ring and band's colour: `evil` for the evil team's steps, otherwise `neutral`. */
+	team: 'evil' | 'neutral';
+	picture: Snippet;
+	/** The ring opens what the step is (the Glossary), named by `infoLabel`. */
+	info?: () => void;
+	infoLabel?: string;
 }
