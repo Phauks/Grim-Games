@@ -90,8 +90,12 @@
 
 	const mode = $derived(vote?.subject === 'mode');
 	const rules = $derived(vote?.subject === 'rules');
-	/** Only a script has details to read; a game mode or special rule has none. */
-	const script = $derived(!mode && !rules);
+	const game = $derived(vote?.subject === 'game');
+	/**
+	 * Only a script has details to read; a game mode or special rule has none. A choice for the
+	 * next game (plan M33) has them when it has a script.
+	 */
+	const hasDetails = (option: ScriptVoteOption) => (game ? !!option.characters : !mode && !rules);
 	/** The ballot's line, by what the vote is on and how players vote. */
 	const LEADS = {
 		script: {
@@ -108,6 +112,11 @@
 			single: 'room.scriptVote.rulesBallotSingle',
 			multiple: 'room.scriptVote.rulesBallotMultiple',
 			ranked: 'room.scriptVote.rulesBallotRanked'
+		},
+		game: {
+			single: 'room.scriptVote.gameBallotSingle',
+			multiple: 'room.scriptVote.gameBallotMultiple',
+			ranked: 'room.scriptVote.gameBallotRanked'
 		}
 	} as const;
 	const lead = $derived(t(LEADS[vote?.subject ?? 'script'][vote?.kind ?? 'ranked']));
@@ -123,7 +132,9 @@
 				? 'room.scriptVote.modeTitle'
 				: rules
 					? 'room.scriptVote.rulesTitle'
-					: 'room.scriptVote.title'
+					: game
+						? 'room.scriptVote.gameTitle'
+						: 'room.scriptVote.title'
 		)}
 	</h2>
 	<p class="lead">{lead}</p>
@@ -154,7 +165,7 @@
 						onclick={() => move(option.id, 1)}
 					/>
 				{/if}
-				{#if script}
+				{#if hasDetails(option)}
 					<IconButton
 						icon="info"
 						label={t('room.scriptVote.details', { name: option.name })}

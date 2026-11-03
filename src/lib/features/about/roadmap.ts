@@ -105,7 +105,7 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	},
 	{
 		title:
-			'Live rooms: one join code, a script, mode and special rules vote, the next game in the same room',
+			'Live rooms: one join code, a vote mixing scripts, modes and special rules, the next game in the same room',
 		area: 'player',
 		parts: [
 			'D1',
@@ -135,7 +135,8 @@ export const ROADMAP: readonly RoadmapItem[] = [
 			'J40',
 			'J41',
 			'J42',
-			'J43'
+			'J43',
+			'M33'
 		]
 	},
 	{

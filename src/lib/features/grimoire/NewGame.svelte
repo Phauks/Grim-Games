@@ -42,10 +42,20 @@
 	let { compact = false, onRoomVote }: Props = $props();
 
 	/** What the Storyteller played from the room vote, over what New game showed. */
+	/** Whether the vote played a script, which New game keeps over its draft. */
+	function votedScript(voted: VotePick | undefined): boolean {
+		return voted?.subject === 'script' || (voted?.subject === 'choice' && !!voted.script);
+	}
+
 	export function applyVote(voted: VotePick | undefined): void {
 		if (voted?.subject === 'mode') modeId = voted.id;
 		if (voted?.subject === 'rules') ruleIds = voted.ids;
 		if (voted?.subject === 'script') edition = voted.id;
+		if (voted?.subject === 'choice') {
+			if (voted.script) edition = voted.script as ScriptChoice;
+			if (voted.mode) modeId = voted.mode;
+			if (voted.rules.length) ruleIds = voted.rules;
+		}
 	}
 
 	/**
@@ -62,7 +72,7 @@
 		applyVote(voted);
 		if (carried) players = carried;
 		// A script the vote played, even over a carried game (seat count only), is kept.
-		else if (voted?.subject !== 'script') {
+		else if (!votedScript(voted)) {
 			if (quickPlayScript.takeRequest()) edition = `recent:${QUICK_PLAY_ID}`;
 			// Back from the start flow puts New game back as it was (Trevor, 2026-10-23).
 			else if (openedByBack()) {

@@ -100,6 +100,12 @@ export interface Preferences {
 	/** The day timer counts down to 0:00 or up past its target (Trevor, 2026-10-17). */
 	timerMode: TimerMode;
 	/**
+	 * What happens to reminders that run out at dawn or dusk (`reminderEnds`) and the
+	 * Flowergirl's and Town Crier's dawn swap (Trevor, 2026-11-03: a Storyteller setting, off by
+	 * default): left for the Storyteller, or taken off automatically.
+	 */
+	reminderRemoval: ReminderRemoval;
+	/**
 	 * The device vibrates with its alerts: the day timer running out (Trevor, 2026-10-18) and
 	 * a Back to town call (plan U2).
 	 */
@@ -180,6 +186,9 @@ export type QrFinders = (typeof QR_FINDERS)[number];
 const TIMER_MODES = ['down', 'up'] as const;
 export type TimerMode = (typeof TIMER_MODES)[number];
 
+export const REMINDER_REMOVALS = ['off', 'auto'] as const;
+export type ReminderRemoval = (typeof REMINDER_REMOVALS)[number];
+
 /** The day timer's finishing sounds, made on the device (no audio files); or none. */
 export const TIMER_SOUNDS = ['bell', 'chime', 'clocktower', 'buzzer', 'none'] as const;
 export type TimerSound = (typeof TIMER_SOUNDS)[number];
@@ -258,6 +267,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
 	soundVolume: 1,
 	timerSound: 'bell',
 	timerMode: 'down',
+	reminderRemoval: 'off',
 	timerVibrate: true,
 	callSound: 'clocktower',
 	ambienceOn: false,
@@ -377,6 +387,9 @@ export function parsePreferences(raw: unknown): Preferences {
 		timerMode: (TIMER_MODES as readonly unknown[]).includes(input.timerMode)
 			? (input.timerMode as TimerMode)
 			: DEFAULT_PREFERENCES.timerMode,
+		reminderRemoval: (REMINDER_REMOVALS as readonly unknown[]).includes(input.reminderRemoval)
+			? (input.reminderRemoval as ReminderRemoval)
+			: DEFAULT_PREFERENCES.reminderRemoval,
 		timerVibrate:
 			typeof input.timerVibrate === 'boolean'
 				? input.timerVibrate

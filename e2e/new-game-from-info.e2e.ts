@@ -84,7 +84,7 @@ test('New game in the board menu, once the game ends, starts the next game with 
 	// Its Room vote opens over the board, not /vote (Trevor, 2026-11-01, plan J43).
 	await newGame.getByRole('button', { name: 'Room vote' }).tap();
 	const vote = page.getByRole('dialog', { name: 'Room vote' });
-	await expect(vote.getByRole('heading', { name: 'Vote on the next script' })).toBeVisible();
+	await expect(vote.getByRole('heading', { name: 'Vote on the next game' })).toBeVisible();
 	expect(page.url()).toBe(board);
 	await vote.getByRole('button', { name: 'Close' }).tap();
 	await expect(vote).toHaveCount(0);
