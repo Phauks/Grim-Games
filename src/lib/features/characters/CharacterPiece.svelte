@@ -115,16 +115,16 @@
 </script>
 
 {#if look.shape === 'icon'}
-	<!-- The icon alone, named for the character; `label=""` when the host names it already. -->
+	<!-- The icon alone, named for the character; `label=""` when the host names it already. No
+	     data-character: it marks where a character itself is shown, and a partner icon is not that. -->
 	{#if character}{@const src = iconUrl(character, alignment)}{#if src}<img
 				class="icon"
 				{src}
 				alt={label ?? character.name}
-				data-character={character.id}
 				referrerpolicy="no-referrer"
 				draggable="false"
 				{@attach iconFallback(fallbackIconUrl(character))}
-			/>{:else}<span class="icon dot" data-character={character.id}></span>{/if}{/if}
+			/>{:else}<span class="icon dot"></span>{/if}{/if}
 {:else if look.shape === 'ring'}
 	{#if character}<CharacterRow
 			{character}
