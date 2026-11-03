@@ -11,7 +11,7 @@
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
-	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
+	import SeatBadge from '#lib/features/grimoire/SeatBadge.svelte';
 	import type { DayPort } from './day-port.ts';
 
 	/**
@@ -73,15 +73,18 @@
 		open = false;
 	}
 
-	const who = $derived(t('day.who', { character: slot('character'), seat: slot('seat') }));
+	const who = slot('who');
 	const otherGranted = $derived(earlier !== undefined && earlier.entryId !== today?.entryId);
 </script>
 
 {#snippet fill(
 	name: string
-)}{#if seatId === undefined || characterId === undefined}{:else if name === 'seat'}<PlayerBadge
-			name={game.seatName(seatId)}
-		/>{:else}<CharacterBadge
+)}{#if seatId === undefined || characterId === undefined}{:else if name === 'who'}<SeatBadge
+			game={game.game}
+			{seatId}
+			{characterId}
+			interactive={false}
+		/>{:else if name === 'seat'}<SeatBadge game={game.game} {seatId} />{:else}<CharacterBadge
 			{characterId}
 			character={game.characters.get(characterId)}
 			interactive={false}

@@ -58,12 +58,12 @@ test('any living player uses the Doomsayer once, and their ally dies by it', asy
 	await user.getByRole('button', { name: /Seat 1/ }).tap();
 	// Who dies: the Storyteller picks, from every seat, the user's own included.
 	const victim = page.getByRole('dialog', {
-		name: /^Who dies by Doomsayer \(\s?Seat 1\s?\)\s?\?$/
+		name: /^Who dies by\s+Doomsayer\s+Seat 1\s*\?$/
 	});
 	await expect(victim.getByRole('button', { name: /Seat 1/ })).toBeVisible();
 	await victim.getByRole('button', { name: /Seat 2/ }).tap();
 	const confirm = page.getByRole('alertdialog', { name: /^Mark Doomsayer/ });
-	await expect(confirm.getByTestId('day-use-on')).toHaveText('Seat 2');
+	await expect(confirm.getByTestId('day-use-on')).toHaveText(/\bSeat 2$/);
 	await expect(
 		confirm.getByRole('checkbox', { name: 'Seat 2 dies', includeHidden: true })
 	).toBeChecked();

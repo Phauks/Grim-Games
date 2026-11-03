@@ -504,9 +504,9 @@ test('tapping the seat token shows the character; changing it goes through the �
 		.tap();
 	const confirm = page.getByRole('alertdialog', { name: 'Change character?' });
 	// The seat by number and name, both roles, and the reminders the change takes off.
-	await expect(confirm).toContainText(/Player\s*Seat 1\s*Current role/);
+	await expect(confirm).toContainText(/Player\s*Imp\s*Seat 1\s*Current role/);
 	await expect(confirm).toContainText('New role');
-	await expect(confirm.locator('[data-character-id="imp"]')).toBeVisible();
+	await expect(confirm.locator('[data-character-id="imp"]').first()).toBeVisible();
 	await expect(confirm.locator('[data-character-id="baron"]')).toBeVisible();
 	await expect(confirm).toContainText('Reminders from the previous character will be removed.');
 	await expect(confirm).toContainText(/Removed\s*None/);
@@ -514,7 +514,7 @@ test('tapping the seat token shows the character; changing it goes through the �
 	await expect(sheet).toContainText(/Minion · Evil · Seat 1[\s\S]*Baron/);
 	// The seat keeps its changes, in a window of their own from the ⋯ menu (Trevor, 2026-10-18).
 	await seatMenu(page, sheet, 'Character history');
-	const changes = page.getByRole('dialog', { name: 'Character history for Seat 1' });
+	const changes = page.getByRole('dialog', { name: /^Character history for .*Seat 1$/ });
 	await expect(changes.getByTestId('seat-changes')).toContainText(/Imp\s*→\s*Baron/);
 	await changes.getByRole('button', { name: 'Close' }).tap();
 
@@ -1206,7 +1206,7 @@ test("the Demon's step says when the Exorcist's choice stops it waking", async (
 		.getByRole('dialog', { name: 'Put Chosen on' })
 		.getByRole('button', { name: /Pukka Seat 1/ })
 		.tap();
-	await expect(exorcist).toContainText('On Seat 1');
+	await expect(exorcist).toContainText(/On\s+(\S+\s+)?Seat 1\b/);
 	await exorcist.getByRole('button', { name: 'Close' }).tap();
 
 	await (
@@ -2389,7 +2389,7 @@ test("a night step's seat list greys out seats its token doesn't fit, still choo
 	// Every seat is still listed and can be chosen: the Storyteller overrides.
 	await expect(put.getByRole('listitem')).toHaveCount(8);
 	await own.tap();
-	await expect(guide).toContainText('On Seat 1');
+	await expect(guide).toContainText(/On\s+(\S+\s+)?Seat 1\b/);
 });
 
 test('a night step is filled in with help, and the night can be walked through', async ({
@@ -2422,7 +2422,7 @@ test('a night step is filled in with help, and the night can be walked through',
 	await expect(row).toHaveText(/^2\s*Empath\s*Seat 2$/);
 	await expect(row.locator('img')).toHaveCount(1);
 	await row.tap();
-	await expect(guide).toContainText('On Seat 2');
+	await expect(guide).toContainText(/On\s+(\S+\s+)?Seat 2\b/);
 	// It can go back to the reminder bank from here (Trevor, 2026-10-17), then be placed again.
 	await guide.getByRole('button', { name: 'Return Poisoned to the reminder bank' }).tap();
 	await expect(guide).toContainText('Not placed');
@@ -2434,7 +2434,7 @@ test('a night step is filled in with help, and the night can be walked through',
 		.getByRole('dialog', { name: 'Put Poisoned on' })
 		.getByRole('button', { name: /Empath Seat 2/ })
 		.tap();
-	await expect(guide).toContainText('On Seat 2');
+	await expect(guide).toContainText(/On\s+(\S+\s+)?Seat 2\b/);
 
 	// Info tokens and Show to player (an eye) sit beside the X, with no Done (Trevor,
 	// 2026-10-20), and open over the step, which stays open under them.
@@ -2518,7 +2518,9 @@ test('moving a reminder that normally stays put asks first, saying why', async (
 	const confirm = page.getByRole('alertdialog', { name: 'Confirm change?' });
 	await expect(confirm).toContainText(/Drunk.*'s\s*Is The Drunk\s*reminder/);
 	await expect(confirm).toContainText('Marks which player is the Drunk.');
-	await expect(confirm).toContainText(/Now\s*On Seat 1\s*Becomes\s*On Seat 3/);
+	await expect(confirm).toContainText(
+		/Now\s*On\s+(\S+\s+)?Seat 1\s*Becomes\s*On\s+(\S+\s+)?Seat 3/
+	);
 	await confirm.getByRole('button', { name: 'Cancel' }).tap();
 	await expect(seatLabelled(page, 'Seat 1: no name, no character, 1 reminder')).toBeAttached();
 
@@ -3038,7 +3040,7 @@ test("the Undertaker's step suggests the executed player's character", async ({ 
 	await expect(suggested.getByRole('button', { name: 'Why' })).toHaveCount(0);
 	const why = suggested.getByTestId('why-facts');
 	await expect(why).toContainText('Seat 2');
-	await expect(why.locator('[data-character-id="imp"]')).toBeVisible();
+	await expect(why.locator('[data-character-id="imp"]').first()).toBeVisible();
 	await suggested.getByRole('button', { name: 'Show to player' }).tap();
 	await expect(page.locator('[data-testid="show-to-player"][open]')).toContainText('Imp');
 });
@@ -3874,8 +3876,8 @@ test("a night step lists every copy of a character's reminder (the Mathematician
 			.tap();
 	}
 	await expect(place).toHaveCount(3);
-	await expect(guide).toContainText('On Seat 2');
-	await expect(guide).toContainText('On Seat 3');
+	await expect(guide).toContainText(/On\s+(\S+\s+)?Seat 2\b/);
+	await expect(guide).toContainText(/On\s+(\S+\s+)?Seat 3\b/);
 	// The X stays in reach however long the step is.
 	await guide.getByRole('button', { name: 'Close' }).tap();
 	await expect(guide).toBeHidden();
@@ -4658,7 +4660,7 @@ test('the Storm Catcher step shows the evil players who is stormcaught', async (
 	const step = await openStep(page, 'Storm Catcher');
 	const learns = step.getByTestId('night-evil-learns');
 	await expect(learns).toContainText(
-		/Seat 1,\s*Seat 2\s*is shown\s*This player is\s*Chef\s*Seat 3/
+		/Imp\s+Seat 1,\s*Poisoner\s+Seat 2\s*is shown\s*This player is\s*Chef\s*Chef\s+Seat 3/
 	);
 	await learns.getByRole('button', { name: 'Show to player' }).tap();
 	const shown = page.locator('[data-testid="show-to-player"][open]');
@@ -7259,7 +7261,7 @@ test('tapping the nomination marks records a nomination, and the Virgin executes
 		.getByRole('dialog', { name: 'Who did Seat 2 nominate?' })
 		.getByText('Seat 1', { exact: true })
 		.tap();
-	const ask = page.getByRole('alertdialog', { name: /^Virgin: execute Seat 2\s?\?$/ });
+	const ask = page.getByRole('alertdialog', { name: /^Virgin: execute .*Seat 2\s?\?$/ });
 	await ask.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(ask).toBeHidden();
 	await expect(seatLabelled(page, 'Seat 2: no name, Chef, dead')).toBeAttached();
@@ -7484,7 +7486,7 @@ test("with The Djinn's Bargain, a nomination asks whether the nominator chose to
 	await trackNominations(page);
 	await nominate(page, 1, 2);
 	const ask = page.getByRole('alertdialog', {
-		name: /^The Djinn’s Bargain: did Seat 1\s?choose to die\?$/
+		name: /^The Djinn’s Bargain: did .*Seat 1\s?choose to die\?$/
 	});
 	await ask.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(ask).toBeHidden();

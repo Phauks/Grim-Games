@@ -1,5 +1,5 @@
 <script lang="ts">
-	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
+	import SeatBadge from '#lib/features/grimoire/SeatBadge.svelte';
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import type { PreventedBecause, PreventedDeath } from '#lib/core/rules/index.ts';
@@ -62,7 +62,7 @@
 								playerName={game.seatName(p.seatId)}
 							/>
 						{:else}
-							<PlayerBadge name={game.seatName(p.seatId)} />
+							<SeatBadge game={game.game} seatId={p.seatId} />
 						{/if}
 					</span>
 					<ul class="because">

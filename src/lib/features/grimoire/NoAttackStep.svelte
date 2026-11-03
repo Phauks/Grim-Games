@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { nightKiller, noAttackState, type NightStep } from '#lib/core/rules/index.ts';
-	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
+	import SeatBadge from './SeatBadge.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import BoardReminder from './BoardReminder.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { placingAlignment } from './board.ts';
-	import { seatName, stepHolders } from './night-steps.ts';
+	import { stepHolders } from './night-steps.ts';
 
 	/**
 	 * M15a: the Demon's step while a rule lets it choose not to attack (`demonAttack`, the
@@ -54,7 +54,7 @@
 						character={source}
 						{alignment}
 					/>{/if}
-				<span class="where">On <PlayerBadge name={seatName(game, seatId)} />, comes off</span>
+				<span class="where">On <SeatBadge {game} {seatId} />, comes off</span>
 			</li>
 		{:else}
 			<li class="none">None</li>

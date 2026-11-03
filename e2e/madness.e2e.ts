@@ -74,7 +74,7 @@ test("the Harpy's mad player who breaks madness asks who of the two dies", async
 	await day.locator('li[data-character="harpy"]').getByTestId('broke-madness').tap();
 	const ask = page.getByRole('alertdialog', { name: 'Who dies for breaking madness?' });
 	const deaths = ask.getByTestId('madness-deaths');
-	await expect(deaths).toContainText(/Seat 2\s*Seat 3/);
+	await expect(deaths).toContainText(/Seat 2[\s\S]*Seat 3/);
 	// Nobody is chosen to start with; the Storyteller may kill one or both.
 	await expect(ask.getByRole('button', { name: 'Confirm', exact: true })).toBeDisabled();
 	await deaths
@@ -129,7 +129,7 @@ test('the Big Wig asks whom a nominee chose, who might die for breaking madness 
 	const chooser = page.getByRole('dialog', { name: 'Who did Seat 1 nominate?' });
 	await chooser.getByText('Seat 2', { exact: true }).tap();
 	await expect(chooser).toBeHidden();
-	const speaker = page.getByRole('dialog', { name: 'Big Wig: who did Seat 2 choose?' });
+	const speaker = page.getByRole('dialog', { name: /^Big Wig: who did .*Seat 2\s?choose\?$/ });
 	await speaker.getByText('Seat 3', { exact: true }).tap();
 	await expect(speaker).toBeHidden();
 	const day = await openDay(page);

@@ -10,9 +10,8 @@
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
-	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
+	import SeatBadge from './SeatBadge.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
-	import { seatName } from './night-steps.ts';
 
 	/**
 	 * Who this step wakes to show its character's token (`shownTo` in its rules block): the
@@ -75,9 +74,9 @@
 	<section aria-labelledby={headingId} data-testid="night-shown-to">
 		<h3 id={headingId}>{t('show.shownTo.heading')}</h3>
 		<p class="row">
-			{#each seats as seatId, n (seatId)}{n ? ', ' : ''}<PlayerBadge
-					name={seatName(game, seatId)}
-				/>{:else}{t('common.none')}{/each}
+			{#each seats as seatId, n (seatId)}{n ? ', ' : ''}<SeatBadge {game} {seatId} />{:else}{t(
+					'common.none'
+				)}{/each}
 			<span class="see">{t('show.shownTo.sees')}</span>
 			<CharacterBadge
 				characterId={step.character.id}
@@ -95,8 +94,9 @@
 	<section aria-labelledby="{headingId}-evil" data-testid="night-evil-learns">
 		<h3 id="{headingId}-evil">{t('show.shownTo.heading')}</h3>
 		<p class="row">
-			{#each learns.evil as seatId, n (seatId)}{n ? ', ' : ''}<PlayerBadge
-					name={seatName(game, seatId)}
+			{#each learns.evil as seatId, n (seatId)}{n ? ', ' : ''}<SeatBadge
+					{game}
+					{seatId}
 				/>{:else}{t('common.none')}{/each}
 			<span class="see">{t('show.shownTo.sees')}</span>
 			{#if learns.marked}
@@ -106,7 +106,7 @@
 						character={characters.get(learns.marked.characterId)}
 						interactive={false}
 					/>{/if}
-				<PlayerBadge name={seatName(game, learns.marked.seatId)} />
+				<SeatBadge {game} seatId={learns.marked.seatId} />
 			{:else}
 				{text('not-in-play')}
 				<Select

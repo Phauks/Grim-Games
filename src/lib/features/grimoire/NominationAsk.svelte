@@ -2,8 +2,8 @@
 	import type { NominationPrompt } from '#lib/core/modes/index.ts';
 	import type { CharacterNominationPrompt } from '#lib/core/rules/index.ts';
 	import type { SeatId } from '#lib/core/model/index.ts';
-	import { seatLabel, seatName } from '#lib/features/game/seat-label.ts';
-	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
+	import { seatLabel } from '#lib/features/game/seat-label.ts';
+	import SeatBadge from './SeatBadge.svelte';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import RuleHeader from '#lib/features/modes/RuleHeader.svelte';
 	import { spawnedBy } from '#lib/features/modes/spawned-by.ts';
@@ -180,7 +180,7 @@
 	</ConfirmDialog>
 {/if}
 
-{#snippet player(seatId: SeatId)}<PlayerBadge name={seatName(game, seatId)} />{/snippet}
+{#snippet player(seatId: SeatId)}<SeatBadge {game} {seatId} />{/snippet}
 
 <style>
 	.change {

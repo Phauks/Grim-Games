@@ -11,9 +11,8 @@
 	import AidMenu from '#lib/features/settings/AidMenu.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
-	import { seatName } from '#lib/features/game/seat-label.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
+	import SeatBadge from './SeatBadge.svelte';
 
 	interface Props {
 		flow: PhaseFlow;
@@ -36,7 +35,7 @@
 		<!-- Each seat as its name badge (Trevor: player names are badges). -->
 		<ul class="no-character" data-testid="no-character">
 			{#each flow.noCharacter as seatId (seatId)}
-				<li><PlayerBadge name={seatName(game, seatId)} /></li>
+				<li><SeatBadge {game} {seatId} /></li>
 			{/each}
 		</ul>
 	{/if}

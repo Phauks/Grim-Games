@@ -113,7 +113,7 @@ async function endTheDay(page: Page, choice = 'No execution') {
 	const ask = page.getByRole('alertdialog', { name: 'End the day?' });
 	await ask.getByRole('combobox', { name: 'Execution' }).tap();
 	// A player's option goes on to their character and alive or dead (Trevor, 2026-10-23).
-	await page.getByRole('option', { name: new RegExp(`^${choice}(\\s|$)`) }).tap();
+	await page.getByRole('option', { name: new RegExp(`\\b${choice}(\\s|$)`) }).tap();
 	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 }
 
@@ -826,10 +826,10 @@ test('Execution names the player executed, who dies before tonight', async ({ pa
 	// (Trevor, 2026-10-23).
 	const ask = page.getByRole('alertdialog', { name: 'End the day?' });
 	await ask.getByRole('combobox', { name: 'Execution' }).tap();
-	const slayer = page.getByRole('option', { name: /^Seat 3\b/ });
+	const slayer = page.getByRole('option', { name: /\bSeat 3\b/ });
 	await expect(slayer).toContainText('Slayer');
 	await expect(slayer).toContainText('Alive');
-	await expect(page.getByRole('option', { name: /^Seat 4\b/ })).toContainText('Dead');
+	await expect(page.getByRole('option', { name: /\bSeat 4\b/ })).toContainText('Dead');
 	await slayer.tap();
 	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(page.getByTestId('night-strip')).toBeVisible();
@@ -862,7 +862,7 @@ test('Execution offers to keep the day going while the Butcher may still nominat
 	await expect(keep).toBeDisabled();
 	const choose = async (choice: string) => {
 		await ask.getByRole('combobox', { name: 'Execution' }).tap();
-		await page.getByRole('option', { name: new RegExp(`^${choice}(\\s|$)`) }).tap();
+		await page.getByRole('option', { name: new RegExp(`\\b${choice}(\\s|$)`) }).tap();
 	};
 	// The Butcher executed dies, so has no nomination left.
 	await choose('Seat 1');
@@ -941,7 +941,7 @@ test("Execution's Saved by applies the Pacifist the Storyteller picks", async ({
 	const savedBy = ask.getByRole('combobox', { name: 'Saved by' });
 	await expect(savedBy).toBeDisabled();
 	await ask.getByRole('combobox', { name: 'Execution' }).tap();
-	await page.getByRole('option', { name: /^Seat 3\b/ }).tap();
+	await page.getByRole('option', { name: /\bSeat 3\b/ }).tap();
 	// The grimoire never applies the Pacifist unasked: None until the Storyteller picks it.
 	await expect(savedBy).toContainText('None');
 	await expect(ask.getByTestId('execution-saved')).not.toContainText('does not die');
@@ -977,10 +977,10 @@ test("Execution can execute a good Scapegoat in a good player's place (M12a)", a
 	const instead = ask.getByRole('checkbox', { name: 'Scapegoat is executed instead' });
 	await expect(instead).toBeDisabled();
 	await ask.getByRole('combobox', { name: 'Execution' }).tap();
-	await page.getByRole('option', { name: /^Seat 2\b/ }).tap();
+	await page.getByRole('option', { name: /\bSeat 2\b/ }).tap();
 	await expect(instead).toBeDisabled();
 	await ask.getByRole('combobox', { name: 'Execution' }).tap();
-	await page.getByRole('option', { name: /^Seat 1\b/ }).tap();
+	await page.getByRole('option', { name: /\bSeat 1\b/ }).tap();
 	await expect(instead).toBeEnabled();
 	await ask.getByTestId('executed-instead').locator('[data-part="control"]').tap();
 	await expect(instead).toBeChecked();
@@ -1155,7 +1155,7 @@ test('ending the game at an Execution closes the walk-through and moves nothing'
 		.tap();
 	const ask = page.getByRole('alertdialog', { name: 'End the day?' });
 	await ask.getByRole('combobox', { name: 'Execution' }).tap();
-	await page.getByRole('option', { name: /^Seat 3\b/ }).tap();
+	await page.getByRole('option', { name: /\bSeat 3\b/ }).tap();
 	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	const end = page.getByRole('alertdialog', { name: 'End game?' });
 	await end.getByRole('combobox', { name: 'Winner' }).tap();
@@ -1333,12 +1333,12 @@ test('the Puzzlemaster’s guess asks who was guessed and says what to tell them
 	const confirm = page.getByRole('alertdialog', { name: /^Mark Puzzlemaster .* as used\?$/ });
 	const answer = confirm.getByTestId('day-use-answer');
 	await expect(answer).toHaveAttribute('data-kind', 'right');
-	await expect(answer).toContainText(/Right, so the Demon:\s*Seat 3/);
+	await expect(answer).toContainText(/Right, so the Demon:\s*Imp\s+Seat 3/);
 	// A player without the Puzzlemaster's Drunk is a wrong guess.
 	await confirm.getByTestId('day-use-on').tap();
 	await chooser.getByRole('button', { name: /Seat 4$/ }).tap();
 	await expect(answer).toHaveAttribute('data-kind', 'wrong');
-	await expect(answer).toContainText(/Wrong, so anyone but the Demon:\s*Seat 3/);
+	await expect(answer).toContainText(/Wrong, so anyone but the Demon:\s*Imp\s+Seat 3/);
 	await confirm.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await closeDay(page);
 	await expect(
@@ -1414,7 +1414,7 @@ test('Execution asks whether only evil voted while the Legion works; yes fails i
 	// There while the Legion works, disabled until a living player is chosen (no reflow).
 	await expect(onlyEvil).toBeDisabled();
 	await ask.getByRole('combobox', { name: 'Execution' }).tap();
-	await page.getByRole('option', { name: /^Seat 1\b/ }).tap();
+	await page.getByRole('option', { name: /\bSeat 1\b/ }).tap();
 	await expect(onlyEvil).toBeEnabled();
 	await ask.getByTestId('outcome-fails').locator('[data-part="control"]').tap();
 	await expect(onlyEvil).toBeChecked();
@@ -1492,7 +1492,7 @@ test("Execution records the Judge's forced pass and marks the ruling used (M9d)"
 	const ruling = ask.getByRole('combobox', { name: 'Ruling by the Judge' });
 	await expect(ruling).toBeDisabled();
 	await ask.getByRole('combobox', { name: 'Execution' }).tap();
-	await page.getByRole('option', { name: /^Seat 2\b/ }).tap();
+	await page.getByRole('option', { name: /\bSeat 2\b/ }).tap();
 	await expect(ruling).toBeEnabled();
 	await ruling.tap();
 	await page.getByRole('option', { name: 'Forced to pass' }).tap();
