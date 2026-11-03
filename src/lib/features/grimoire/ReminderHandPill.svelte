@@ -7,7 +7,7 @@
 -->
 <script lang="ts">
 	import type { Reminder, ReminderId, SeatId } from '#lib/core/model/index.ts';
-	import type { BankItem } from './bank-items.ts';
+	import { bankLook, type BankItem } from './bank-items.ts';
 	import BoardReminder from './BoardReminder.svelte';
 	import { placingAlignment } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
@@ -15,7 +15,7 @@
 	import type { ReminderHand } from './reminder-hand.svelte.ts';
 	import ReminderInHand from './ReminderInHand.svelte';
 	import { dropOnTap, heldTokenActions, placedTokenActions } from './reminder-in-hand.ts';
-	import { isGeneric, onBoard, placedLook } from './reminders.ts';
+	import { onBoard, placedLook } from './reminders.ts';
 
 	interface Props {
 		grimoire: Grimoire;
@@ -86,13 +86,8 @@
 	>
 		{#snippet token()}
 			{#if held.kind === 'bank'}<BoardReminder
-					label={held.item.label}
-					character={characters.get(held.item.characterId)}
+					{...bankLook(held.item, characters)}
 					alignment={placingAlignment(game, held.item, characters)}
-					infinite={isGeneric(held.item)}
-					symbol={held.item.token?.symbol}
-					symbolColour={held.item.token?.symbolColour}
-					symbolFill={held.item.token?.symbolFill}
 				/>{:else if placed}<BoardReminder
 					{...placedLook(placed, characters)}
 					alignment={placingAlignment(game, placed, characters)}

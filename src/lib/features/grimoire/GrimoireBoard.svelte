@@ -1124,7 +1124,7 @@
 <GuidedStep
 	bind:open={nw.guideOpen}
 	{grimoire}
-	step={nw.guided?.step}
+	step={nw.guidedStep}
 	night={nw.guided?.night ?? 'first'}
 	steps={nw.guidedSteps}
 	onStep={(step) => {

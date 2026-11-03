@@ -91,6 +91,15 @@ export class NightWalk {
 		return this.#steps(guided.night).filter((s) => s.id === guided.step.id || wakes(s));
 	});
 
+	/**
+	 * The open step as the game stands now: `guided` keeps the step from when it opened, so an
+	 * answer marked inside it (the Flowergirl's Yes or No) shows at once (Trevor, 2026-11-03).
+	 */
+	guidedStep = $derived.by(() => {
+		const id = this.guided?.step.id;
+		return this.guidedSteps.find((s) => s.id === id) ?? this.guided?.step;
+	});
+
 	/** The walk-through's step now. */
 	step = $derived(this.walk ? this.steps[this.walk.index] : undefined);
 

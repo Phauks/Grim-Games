@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
-	import type { GenericLook, Reminder, ReminderId, SeatId } from '#lib/core/model/index.ts';
+	import type { Reminder, ReminderId, SeatId } from '#lib/core/model/index.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import type { SeatPoint } from '#lib/ui/seating/seat-layout.ts';
 	import BoardReminder from './BoardReminder.svelte';
@@ -10,14 +10,20 @@
 	import { placingAlignment } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import type { StepFocus } from './step-focus.svelte.ts';
-	import { copiedLook, isGeneric, type StepReminders } from './reminders.ts';
+	import { copiedLook, type StepReminders } from './reminders.ts';
 	import GenericTokenDialog from './GenericTokenDialog.svelte';
 	import type { ReminderHand } from './reminder-hand.svelte.ts';
 	import type { ReminderDragging } from './reminder-drag.svelte.ts';
 	import ReminderHandPill from './ReminderHandPill.svelte';
 	import ReminderTray from './ReminderTray.svelte';
 	import { traySeats } from './setup-tray.ts';
-	import { BANK_CAPTIONS, bankItems, type BankGroup, type BankItem } from './bank-items.ts';
+	import {
+		BANK_CAPTIONS,
+		bankItems,
+		bankLook,
+		type BankGroup,
+		type BankItem
+	} from './bank-items.ts';
 	import { overNewToken } from './reminder-drag.svelte.ts';
 
 	/**
@@ -98,9 +104,6 @@
 
 	const game = $derived(grimoire.game);
 	const characters = $derived(grimoire.open.characters);
-	/** The character whose art a generic copy shows (Trevor, 2026-10-27), if any. */
-	const artOf = (look: GenericLook | undefined) =>
-		look?.like ? characters.get(look.like.characterId) : undefined;
 
 	const items = $derived(
 		bankItems(game, characters, {
@@ -253,14 +256,8 @@
 <!-- A token that only shows, while dragged. -->
 {#snippet still(item: BankItem)}
 	<BoardReminder
-		label={item.label}
-		character={characters.get(item.characterId)}
+		{...bankLook(item, characters)}
 		alignment={placingAlignment(game, item, characters)}
-		infinite={isGeneric(item)}
-		symbol={item.token?.symbol}
-		symbolColour={item.token?.symbolColour}
-		symbolFill={item.token?.symbolFill}
-		art={artOf(item.token)}
 		{size}
 	/>
 {/snippet}
@@ -271,14 +268,8 @@
 	{:else}
 		{#if item.count > 1}<ReminderCount count={item.count} />{/if}
 		<BoardReminder
-			label={item.label}
-			character={characters.get(item.characterId)}
+			{...bankLook(item, characters)}
 			alignment={placingAlignment(game, item, characters)}
-			infinite={isGeneric(item)}
-			symbol={item.token?.symbol}
-			symbolColour={item.token?.symbolColour}
-			symbolFill={item.token?.symbolFill}
-			art={artOf(item.token)}
 			{size}
 			{disabled}
 			onTap={() => tap(item)}

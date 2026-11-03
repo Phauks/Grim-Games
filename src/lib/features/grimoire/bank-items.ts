@@ -3,7 +3,7 @@
  * place, every other reminder still off the board, the generic ∞ and the game's own ∞
  * tokens with "+ New token", then the reminders of characters whose players are all dead.
  */
-import type { CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
+import type { Character, CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
 import {
 	GENERIC_REMINDER_ID,
 	scriptCharacterIds,
@@ -14,7 +14,7 @@ import {
 	type SeatId
 } from '#lib/core/model/index.ts';
 import { deadCharacters } from '#lib/core/rules/index.ts';
-import { bankOwners, bankReminders, byLabel, type StepReminders } from './reminders.ts';
+import { bankOwners, bankReminders, byLabel, isGeneric, type StepReminders } from './reminders.ts';
 import { pendingSetup, type TrayItem } from './setup-tray.ts';
 import type { StepFocus } from './step-focus.svelte.ts';
 
@@ -187,4 +187,22 @@ export function bankItems(
 	// "Only this character": the step's reminders, while a step is walked through, then the
 	// ∞ tokens, which any step can use (Trevor, 2026-10-23).
 	return focus && focusMode === 'only' ? all.filter((i) => i.now || i.group === 'generic') : all;
+}
+
+/**
+ * A bank token's look, for every `BoardReminder` that draws it (the bank, the token in hand,
+ * its dialog), as `placedLook` is for a placed one: its words and, for a generic ∞ token, its
+ * symbol or the art it copies (Trevor, 2026-11-03: a held copy of the Vortox's Dead lost its art).
+ */
+export function bankLook(item: BankItem, characters: ReadonlyMap<CharacterId, Character>) {
+	const like = item.token?.like;
+	return {
+		label: item.label,
+		character: characters.get(item.characterId),
+		infinite: isGeneric(item),
+		symbol: item.token?.symbol,
+		symbolColour: item.token?.symbolColour,
+		symbolFill: item.token?.symbolFill,
+		art: like ? characters.get(like.characterId) : undefined
+	};
 }
