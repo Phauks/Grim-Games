@@ -18,6 +18,7 @@ import type {
 	GameId,
 	GameNote,
 	GenericToken,
+	GivenAbility,
 	OverrideField,
 	Reminder,
 	ReminderEffect,
@@ -78,6 +79,9 @@ export type GameEvent =
 	| { type: 'AlignmentSet'; seatId: SeatId; alignment: Alignment }
 	/** Sets (or, without `characterId`, takes away) the ability `via` gives this player. */
 	| { type: 'HeldAbilitySet'; seatId: SeatId; via: CharacterId; characterId?: CharacterId }
+	/** The Storyteller gave this player an ability, or took it away (`GiveAbility`). */
+	| { type: 'AbilityGiven'; seatId: SeatId; ability: GivenAbility }
+	| { type: 'AbilityRemoved'; seatId: SeatId; ability: GivenAbility }
 	/** Sets (or, without `characterId`, takes away) the ability `via` gives the Storyteller. */
 	| { type: 'StorytellerAbilitySet'; via: CharacterId; characterId?: CharacterId }
 	/** Joins `Game.reincarnated`; the character and life come from the events before it. */

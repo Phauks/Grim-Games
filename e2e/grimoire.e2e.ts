@@ -33,6 +33,16 @@ import { addSeat } from './seating.ts';
 
 // The Storyteller's grimoire board: saved games, seats and the seat sheet (ROADMAP Phase 2).
 
+/** Settings › Storyteller › Remove reminders that run out: Automatically remove. */
+async function removeRemindersAutomatically(page: Page) {
+	await boardSettings(page, 'Storyteller');
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	await settings.getByRole('combobox', { name: 'Remove reminders that run out' }).tap();
+	await page.getByRole('option', { name: 'Automatically remove', exact: true }).tap();
+	await settings.getByRole('button', { name: 'Close' }).tap();
+	await expect(settings).toBeHidden();
+}
+
 async function startGame(page: Page, script = 'Trouble Brewing') {
 	await page.goto('/new');
 	await pickScript(page, script);
@@ -1137,16 +1147,18 @@ test('a night step offers the info tokens its text names', async ({ page }) => {
 });
 
 for (const on of [true, false]) {
-	test(`Take reminders off on time ${on ? 'on' : 'off'}: the Monk's Safe at dawn`, async ({
+	test(`Remove reminders that run out ${on ? 'automatically' : 'off'}: the Monk's Safe at dawn`, async ({
 		page
 	}) => {
 		// https://wiki.bloodontheclocktower.com/Monk : the Safe reminder comes off at dawn. One
-		// Storyteller setting turns every timed reminder change off (Trevor, 2026-11-02).
+		// Storyteller setting, off by default, decides every timed reminder change (Trevor,
+		// 2026-11-03).
 		await startGame(page);
-		if (!on) {
+		if (on) {
 			await boardSettings(page, 'Storyteller');
 			const settings = page.getByRole('dialog', { name: 'Settings' });
-			await settings.getByText('Take reminders off on time', { exact: true }).tap();
+			await settings.getByRole('combobox', { name: 'Remove reminders that run out' }).tap();
+			await page.getByRole('option', { name: 'Automatically remove', exact: true }).tap();
 			await settings.getByRole('button', { name: 'Close' }).tap();
 			await expect(settings).toBeHidden();
 		}
@@ -3448,15 +3460,11 @@ test("the Script button opens the players' copy of the script", async ({ page })
 	await expect(sheet.locator('[data-character="empath"]')).toContainText(
 		'Each night, you learn how many of your 2 alive neighbors'
 	);
-	// In a game, Travellers and Jinxes start closed while none of theirs is in play
-	// (Trevor, 2026-10-18); the header still opens them.
+	// In a game, Travellers start closed while none of theirs is in play (Trevor, 2026-10-18);
+	// the header still opens them. A script without jinxes has no Jinxes section (2026-11-03).
 	const travellers = sheet.getByRole('button', { name: 'Travellers', exact: true });
 	await expect(travellers).toHaveAttribute('aria-expanded', 'false');
-	await expect(sheet.getByRole('button', { name: 'Jinxes' })).toHaveAttribute(
-		'aria-expanded',
-		'false'
-	);
-	await expect(sheet.getByTestId('no-jinxes')).toBeHidden();
+	await expect(sheet.getByRole('button', { name: 'Jinxes' })).toHaveCount(0);
 	await travellers.tap();
 	await expect(sheet.getByTestId('no-travellers')).toHaveText('None');
 	// It scrolls to the end (Trevor, 2026-10-16: it couldn't be scrolled).
@@ -5176,15 +5184,18 @@ test('the board menu names its groups, in two columns beside a phone', async ({ 
 	expect(await names('Seats')).toEqual(['Add Fabled or Loric', 'Seating']);
 	await expect(group('Seats').getByRole('button', { name: 'Seating' })).toBeEnabled();
 	expect(await names('App')).toEqual(['Settings', 'Report an issue']);
-	// Beside a phone, the game on the left and the rest on the right.
+	// Beside a phone, the game and its seats on the left and the rest on the right.
 	const game = (await group('Game').boundingBox())!;
 	const seats = (await group('Seats').boundingBox())!;
 	const app = (await group('App').boundingBox())!;
 	if ((page.viewportSize()?.width ?? 0) >= 640) {
-		expect(seats.x).toBeGreaterThan(game.x + game.width - 1);
-		expect(Math.abs(seats.y - game.y)).toBeLessThan(2);
-		// Session is last, under App (Trevor, 2026-11-03: "games, seats, app, session").
-		expect(Math.abs(session.x - seats.x)).toBeLessThan(2);
+		// Seats under Game on the left (Trevor, 2026-11-03: "seats should go below game"); App
+		// then Session on the right ("games, seats, app, session").
+		expect(Math.abs(seats.x - game.x)).toBeLessThan(2);
+		expect(seats.y).toBeGreaterThan(game.y + game.height - 1);
+		expect(app.x).toBeGreaterThan(game.x + game.width - 1);
+		expect(Math.abs(app.y - game.y)).toBeLessThan(2);
+		expect(Math.abs(session.x - app.x)).toBeLessThan(2);
 		expect(session.y).toBeGreaterThan(app.y + app.height - 1);
 	} else {
 		expect(seats.y).toBeGreaterThan(game.y + game.height - 1);
@@ -7298,6 +7309,8 @@ test('tapping the nomination marks records a nomination, and the Virgin executes
 // Minion nominated and swaps his tokens (Trevor, 2026-10-24).
 test("the Town Crier's step reads today's recorded nominations", async ({ page }) => {
 	await startGame(page, 'Sects & Violets');
+	// Dawn's token changes follow the Storyteller setting, off by default (Trevor, 2026-11-03).
+	await removeRemindersAutomatically(page);
 	for (const [number, name] of [
 		[1, 'Town Crier'],
 		[2, 'Witch'],

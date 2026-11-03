@@ -607,8 +607,8 @@
 	.field[aria-disabled='true'] {
 		opacity: 0.5;
 	}
-	/* A note's words in its row: plain text on the row, the tools over the row's first line
-	   end while the words are written, and hidden (keeping no room) otherwise. */
+	/* A note's words in its row: the tools over the row's first line end while the words are
+	   written, and hidden (keeping no room) otherwise. */
 	.inline .label {
 		position: absolute;
 		width: 1px; /* px-ok: screen-reader-only label */
@@ -627,18 +627,21 @@
 	.inline.active .head {
 		visibility: visible;
 	}
+	/* A lighter well with no edge, two lines tall when empty, so a note's text reads as a place
+	   to write (Trevor, 2026-11-03, option D); the focus ring while it is written. */
 	.inline .field {
-		min-height: 1lh;
-		padding: 0;
+		min-height: calc(2lh + 2 * var(--space-2));
 		border: 0;
-		border-radius: 0;
-		background: none;
+		background: var(--surface-selected);
 	}
-	.inline .field:focus-visible {
+	.inline .field:focus {
 		outline: none;
+		box-shadow: inset 0 0 0 2px var(--focus); /* px-ok: the focus ring's width, as .field's outline */
 	}
+	/* A game opened to view only: plain words on the row, nothing to write in. */
 	.inline .field[aria-disabled='true'] {
 		opacity: 1;
+		background: none;
 	}
 	/* Bold is weight, never colour (Trevor, 2026-10-16); browsers write b or strong. */
 	.field :global(strong),

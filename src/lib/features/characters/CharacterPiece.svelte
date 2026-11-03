@@ -12,7 +12,11 @@
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import { loadOfficialData, officialData } from './game-data.svelte.ts';
 	import { contextCharacters } from './character-context.ts';
-	import { resolveTemplate, type CharacterTemplateName } from './character-templates.ts';
+	import {
+		resolveTemplate,
+		type CharacterTemplateName,
+		type RowMarker
+	} from './character-templates.ts';
 	import { fallbackIconUrl, iconUrl } from './icon-url.ts';
 	import { iconFallback } from '#lib/ui/token/icon-fallback.ts';
 
@@ -27,6 +31,8 @@
 		/** The character itself; otherwise looked up from `characterId`. */
 		character?: Character;
 		characterId?: CharacterId;
+		/** A night step that isn't a character's, drawn as its row (ring templates only). */
+		marker?: RowMarker;
 		/** Its alignment when it isn't the type's own (a seat's evil Townsfolk). */
 		alignment?: Alignment;
 		/** The seat's player, the second half of the character's piece. */
@@ -77,6 +83,7 @@
 		template = 'row',
 		character: given,
 		characterId,
+		marker,
 		alignment,
 		playerName,
 		ability,
@@ -129,8 +136,9 @@
 				{@attach iconFallback(fallbackIconUrl(character))}
 			/>{:else}<span class="icon dot"></span>{/if}{/if}
 {:else if look.shape === 'ring'}
-	{#if character}<CharacterRow
+	{#if character || marker}<CharacterRow
 			{character}
+			{marker}
 			{alignment}
 			{playerName}
 			ability={abilityText}

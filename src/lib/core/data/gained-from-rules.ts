@@ -12,16 +12,28 @@
  *   character's ability (the Philosopher's Is The Philosopher).
  * - `wakes`: the player then wakes when the gained character would, with its night text
  *   (the Pixie's How to Run).
+ * - `choose`: the player chooses a character of these types whose ability they gain (the
+ *   Philosopher's good character). Its night step offers the pick: a character in play puts
+ *   `token` on its player; any other is held by the player (`Seat.abilities`, via this
+ *   character), whose token stays as it is (Trevor, 2026-11-03).
  */
 import { readToken } from './reminder-fields.ts';
-import type { ReminderLabel } from './types.ts';
-import { checkKeys, describe, isObject, readBoolean, type Issues } from './validate.ts';
+import { SEATED_TYPES, type ReminderLabel, type SeatedType } from './types.ts';
+import {
+	checkKeys,
+	describe,
+	isObject,
+	readBoolean,
+	readStringArray,
+	type Issues
+} from './validate.ts';
 
 export interface GainedFrom {
 	token: ReminderLabel;
 	pending?: ReminderLabel;
 	swapped?: true;
 	wakes?: true;
+	choose?: readonly SeatedType[];
 }
 
 /** Reads a `gainedFrom` block; its tokens must be the character's own `reminders`. */
@@ -35,17 +47,23 @@ export function readGainedFrom(
 		issues.add(path, `expected object, got ${describe(raw)}`);
 		return undefined;
 	}
-	checkKeys(raw, ['token', 'pending', 'swapped', 'wakes'], path, issues);
+	checkKeys(raw, ['token', 'pending', 'swapped', 'wakes', 'choose'], path, issues);
 	if (raw.token === undefined) issues.add(`${path}.token`, 'required');
 	const token = readToken(raw, 'token', path, issues, reminders);
 	const pending = readToken(raw, 'pending', path, issues, reminders);
 	const swapped = readBoolean(raw, 'swapped', path, issues);
 	const wakes = readBoolean(raw, 'wakes', path, issues);
+	const choose = readStringArray(raw, 'choose', path, issues);
+	const bad = (choose ?? []).filter((t) => !(SEATED_TYPES as readonly string[]).includes(t));
+	if (bad.length > 0) issues.add(`${path}.choose`, `expected types, got ${bad.join(', ')}`);
 	if (token === undefined) return undefined;
 	return {
 		token,
 		...(pending ? { pending } : {}),
 		...(swapped ? { swapped: true as const } : {}),
-		...(wakes ? { wakes: true as const } : {})
+		...(wakes ? { wakes: true as const } : {}),
+		...(choose && choose.length > 0 && bad.length === 0
+			? { choose: choose as readonly SeatedType[] }
+			: {})
 	};
 }

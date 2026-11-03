@@ -112,8 +112,9 @@
 </script>
 
 <!-- Named groups, in two columns on a tablet or computer (Trevor, 2026-10-27: "the delineation
-     is nice"): the game on the left; seats, the app's items, then the session's start and end on
-     the right. On a phone, one column: Game, Seats, App, Session (Trevor, 2026-11-03). -->
+     is nice"): the game with its seats under it on the left ("seats should go below game"), the
+     app's items then the session's start and end on the right. On a phone, one column: Game,
+     Seats, App, Session (Trevor, 2026-11-03). -->
 <Dialog bind:open title="Grimoire" size="wide">
 	<!-- An icon beside X, not a menu item (Trevor, 2026-10-31: "instead of full screen being its
 	     own button in the menu, put it as an icon next to the x button"). The symbol says on or
@@ -181,8 +182,6 @@
 					</Button>
 				{/if}
 			</section>
-		</div>
-		<div class="column">
 			<section class="group" aria-labelledby="board-menu-seats">
 				<h3 id="board-menu-seats" class="group-title">Seats</h3>
 				<!-- Add seat is in Seating's bar only (Trevor, 2026-11-01). -->
@@ -206,6 +205,8 @@
 					{t('room.seating.title')}
 				</Button>
 			</section>
+		</div>
+		<div class="column">
 			<section class="group" aria-labelledby="board-menu-app">
 				<h3 id="board-menu-app" class="group-title">App</h3>
 				<!-- All of Settings, not only the board's sections (Trevor, 2026-10-27: "why not just

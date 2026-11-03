@@ -56,8 +56,12 @@ test('Deal gives every seat a character, and a seated phone holds to see its own
 	await nameSeat(page, board, 2, 'Alex');
 	await expect(phone.getByTestId('you-row')).toHaveAttribute('data-seat', '2');
 	await expect(phone.getByRole('button', { name: 'Settings: Alex' })).toBeVisible();
-	// Nothing to see before the deal: the button keeps its row, disabled (Trevor, 2026-10-28).
-	await expect(phone.getByTestId('your-character')).toBeDisabled();
+	// Nothing to see before the deal: the status line shows the game, not Your character
+	// (Trevor, 2026-11-03: no button of its own).
+	await expect(phone.getByTestId('your-character')).toHaveCount(0);
+	await expect(phone.getByTestId('players-status')).toBeVisible();
+	const statusRow = phone.getByTestId('player-status-row');
+	const rowBefore = await statusRow.boundingBox();
 
 	// Deal, with the players' switch left on.
 	await page.goto(`${board}/draw`);
@@ -71,6 +75,11 @@ test('Deal gives every seat a character, and a seated phone holds to see its own
 	await expect(page.getByRole('button', { name: /^Tile \d, drawn$/ })).toHaveCount(5);
 	await expect(page.getByRole('button', { name: 'Deal' })).toBeDisabled();
 
+	// Your character covers the game's status in the same box, so nothing moves (the board
+	// open, as before the deal, so the status says where the game is up to).
+	await page.goto(board);
+	await expect(phone.getByTestId('your-character')).toBeVisible();
+	await expect(async () => expect(await statusRow.boundingBox()).toEqual(rowBefore)).toPass();
 	// The phone holds to see its character; the name shows only while held.
 	await phone.getByTestId('your-character').tap();
 	const card = phone.getByRole('dialog', { name: 'Your character' });
@@ -128,7 +137,7 @@ test('Deal gives every seat a character, and a seated phone holds to see its own
 	await expect(toggle).toHaveAccessibleName('Show characters');
 	await expect(timeLeft).toBeHidden();
 	await expect(card).toBeHidden();
-	await expect(phone.getByTestId('your-character')).toBeDisabled();
+	await expect(phone.getByTestId('your-character')).toHaveCount(0);
 
 	// Shown again, and hidden by hand. Every seat has a character but only seat 2 has a phone,
 	// so it first says who won't see theirs (Trevor, 2026-10-31); Cancel shows nothing.
@@ -143,7 +152,7 @@ test('Deal gives every seat a character, and a seated phone holds to see its own
 	await expect(toggle).toHaveAccessibleName('Show characters');
 	await toggle.tap();
 	await warning.getByRole('button', { name: 'Confirm' }).tap();
-	await expect(phone.getByTestId('your-character')).toBeEnabled();
+	await expect(phone.getByTestId('your-character')).toBeVisible();
 	// Then the draw, where each player with no phone has their tile held again with their name
 	// on it, for the usual reveal and Confirm on this device, in any order (Trevor, 2026-11-01:
 	// "it should use the normal draw area").
@@ -165,11 +174,12 @@ test('Deal gives every seat a character, and a seated phone holds to see its own
 	await expect(toggle).toHaveAccessibleName(/^Hide characters/);
 	await toggle.tap();
 	await expect(toggle).toHaveAccessibleName('Show characters');
-	await expect(phone.getByTestId('your-character')).toBeDisabled();
+	await expect(phone.getByTestId('your-character')).toHaveCount(0);
 	// Off for the Storyteller's player view too.
 	await page.goto(board);
 	await page.getByRole('button', { name: 'Script', exact: true }).tap();
-	await expect(view.getByTestId('your-character')).toBeDisabled();
+	await expect(view.getByTestId('players-status')).toBeVisible();
+	await expect(view.getByTestId('your-character')).toHaveCount(0);
 	await phoneContext.close();
 });
 

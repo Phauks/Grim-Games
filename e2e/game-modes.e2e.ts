@@ -2299,12 +2299,13 @@ test('the Script sheet’s background choice sits beside Print and Share, and co
 		'rgb(218, 218, 218)'
 	);
 	// A character type's band marks where it starts, with no line above it (Trevor,
-	// 2026-10-31); other sections still start under a line (SectionStack draws it).
+	// 2026-10-31), nor above the section after a band: with no Jinxes on this script
+	// (2026-11-03), Players comes straight after the Travellers' band.
 	await sheet.getByRole('tab', { name: 'Script' }).tap();
 	const sections = sheet.getByTestId('script-copy').locator('.section-stack > section');
 	await expect(sections.nth(1)).toHaveCSS('border-top-width', '0px');
 	await expect(sections.first()).toHaveCSS('border-top-width', '0px');
-	await expect(sections.last()).not.toHaveCSS('border-top-width', '0px');
+	await expect(sections.last()).toHaveCSS('border-top-width', '0px');
 });
 
 test('the Script sheet has the players’ settings cog, opening the one Settings', async ({

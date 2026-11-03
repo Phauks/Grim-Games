@@ -120,3 +120,20 @@ test('the icon template is the icon alone, named for its character', async ({ pa
 	).toBeDisabled();
 	await shot(page, 'icon');
 });
+
+test('a night step that is not a character is drawn as the row, its picture in the ring', async ({
+	page
+}) => {
+	await open(page);
+	await flip(page, 'Ability');
+	await flip(page, 'Player name');
+	await flip(page, 'Night step');
+	const row = page.getByTestId('character-stage').locator('.ring-row').first();
+	// Trevor, 2026-11-03: Dusk, Dawn and the info steps as "a varient of the character info".
+	await expect(row.locator('.band')).toContainText('Minion info');
+	await expect(row.locator('.band')).toContainText('Sam');
+	await expect(row.locator('.ring [data-marker="minioninfo"]')).toBeVisible();
+	await expect(row).toHaveAttribute('data-team', 'evil');
+	await expect(row.locator('.ring-ability')).toHaveCount(0);
+	await shot(page, 'night-step');
+});

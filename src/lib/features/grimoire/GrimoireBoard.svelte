@@ -1089,11 +1089,12 @@
 </Dialog>
 
 {#snippet coverActions()}
-	<GrimCoverActions callTown={town.can} view={playerView} />
+	<GrimCoverActions view={playerView} />
 {/snippet}
 
 {#snippet coverTimer()}
-	{#if showTimer}<DayTimer {...timerFacts(game, characters)} variant="compact" />{/if}
+	<!-- The same timer as the board's, Back to town at its front (Trevor, 2026-11-03). -->
+	{#if showTimer}<DayTimer {...timerFacts(game, characters)} variant="compact" {town} />{/if}
 {/snippet}
 
 <DaySheet

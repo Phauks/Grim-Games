@@ -88,6 +88,7 @@ describe('parsePreferences', () => {
 			soundVolume: 0.35,
 			timerSound: 'buzzer',
 			timerMode: 'up',
+			reminderRemoval: 'auto',
 			timerVibrate: false,
 			callSound: 'buzzer',
 			ambienceOn: true,
@@ -144,6 +145,13 @@ describe('parsePreferences', () => {
 		expect(parsePreferences({ timerKeepAwake: 'yes' }).timerKeepAwake).toBe(true);
 		expect(parsePreferences({ timerKeepAwake: false }).timerKeepAwake).toBe(false);
 		expect(parsePreferences({ timerMode: 'sideways' }).timerMode).toBe('down');
+	});
+
+	// Trevor, 2026-11-03: removing reminders that run out is a Storyteller setting, off by default.
+	it('reads reminder removal, off when unknown', () => {
+		expect(parsePreferences({}).reminderRemoval).toBe('off');
+		expect(parsePreferences({ reminderRemoval: 'auto' }).reminderRemoval).toBe('auto');
+		expect(parsePreferences({ reminderRemoval: 'sometimes' }).reminderRemoval).toBe('off');
 	});
 
 	// Plan U1: one volume for every sound, silent to full, saved by older builds as nothing.

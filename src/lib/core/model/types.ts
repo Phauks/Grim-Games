@@ -252,6 +252,12 @@ export interface Seat {
 	 */
 	abilities?: HeldAbility[];
 	/**
+	 * Abilities the Storyteller gave this player as free text, with no character (M34). Shown
+	 * only: they never wake, never count as anyone's ability and have no rules effect. Absent
+	 * while none.
+	 */
+	customAbilities?: string[];
+	/**
 	 * The character whose ability gave this player their current character (the Pit-Hag's
 	 * change, `AssignCharacter.by`), with the alignment they had then. A jinx may hang on it:
 	 * an evil player the Pit-Hag turns into the Goon can't turn good by the Goon's ability
@@ -261,10 +267,19 @@ export interface Seat {
 	changedBy?: { via: CharacterId; alignment?: Alignment };
 }
 
-/** An ability a player holds without its token: whose it is, and which character gave it. */
+/**
+ * An ability the Storyteller gives a player without changing their character (`GiveAbility`):
+ * a character's, held as `Seat.abilities`, or free text, kept in `Seat.customAbilities`.
+ */
+export type GivenAbility = HeldAbility | { text: string };
+
+/**
+ * An ability a player holds without its token: whose it is, and which character gave it. With
+ * no `via` it is the Storyteller's own call (given by hand), and always counts.
+ */
 export interface HeldAbility {
 	characterId: CharacterId;
-	via: CharacterId;
+	via?: CharacterId;
 }
 
 /**
@@ -588,7 +603,7 @@ export interface Game {
 	 * the board with the Fabled and Loric (Trevor, 2026-10-30). At most one per giver.
 	 * Absent while none.
 	 */
-	storytellerAbilities?: HeldAbility[];
+	storytellerAbilities?: Required<HeldAbility>[];
 	/**
 	 * The players reborn as Travellers after dying, in the order they died (the Hindu's first
 	 * four, https://wiki.bloodontheclocktower.com/Hindu). Absent while none.

@@ -237,7 +237,7 @@
 				startClosed={closedTypes.includes(group.type)}
 			>
 				{#snippet aside()}{@render groupAside?.(group.type)}{/snippet}
-				{#if group.characters.length > 0}{@render rows(group)}{:else}<p class="none">
+				{#if group.characters.length > 0}{@render rows(group)}{:else}<p class="none empty-slot">
 						{t('common.none')}
 					</p>{/if}
 			</Collapsible>
@@ -347,6 +347,17 @@
 	}
 	.none {
 		margin: 0;
+	}
+	/* An empty type's None is a dashed slot a character row tall, where its characters would
+	   be (Trevor, 2026-11-03, picked "C: Dashed empty slot" for setup's Fabled and Loric). */
+	.empty-slot {
+		display: grid;
+		place-items: center;
+		min-height: calc(2 * var(--tap-target));
+		margin-block: var(--space-1) var(--space-2);
+		border: 2px dashed var(--border); /* px-ok: hairline dash, as the "+ New" card's */
+		border-radius: var(--radius-md);
+		color: var(--on-surface-muted);
 	}
 	.none-row {
 		align-items: center;

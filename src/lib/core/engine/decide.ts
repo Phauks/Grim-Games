@@ -24,6 +24,7 @@ import { DAY_DECIDERS } from './decide/day.ts';
 import { VOTES_DECIDERS } from './decide/votes.ts';
 import { LATE_PLAYER_DECIDERS } from './decide/late-player.ts';
 import { STORYTELLERS_WISHES_DECIDERS } from './decide/storytellers-wishes.ts';
+import { GIVEN_ABILITY_DECIDERS } from './decide/given-abilities.ts';
 import {
 	MAX_PLAYERS,
 	MAX_SEATS,
@@ -80,7 +81,8 @@ export type ErrorCode =
 	| 'invalid-look'
 	| 'invalid-day-tally'
 	| 'invalid-effect'
-	| 'invalid-wish';
+	| 'invalid-wish'
+	| 'invalid-ability';
 
 export type WarningCode =
 	| 'unusual-player-count'
@@ -243,7 +245,8 @@ const DECIDERS: Deciders<CommandType> = {
 	...DAY_DECIDERS,
 	...VOTES_DECIDERS,
 	...LATE_PLAYER_DECIDERS,
-	...STORYTELLERS_WISHES_DECIDERS
+	...STORYTELLERS_WISHES_DECIDERS,
+	...GIVEN_ABILITY_DECIDERS
 };
 
 /**
