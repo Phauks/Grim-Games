@@ -182,7 +182,7 @@ export class PhaseFlow {
 		const { grimoire, nw, setDayOpen, offerSavant } = this.#context();
 		if (!grimoire.endNight()) return;
 		nw.walk = undefined;
-		// Dawn's Refresh Reminders first, when it asks; then the day.
+		// Dawn's Reset Reminders first, when it asks; then the day.
 		grimoire.afterDawnAsk(() => {
 			// Into the day, or stay on the grimoire (Trevor, 2026-10-18: a Storyteller setting).
 			if (preferences.current.assistance.dayAfterNight) setDayOpen(true);

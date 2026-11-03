@@ -29,6 +29,7 @@
 		bluffSetLabel,
 		charactersReallyInPlay,
 		DEMON_SET,
+		believerAmong,
 		LUNATIC_SET,
 		lunaticInPlay
 	} from './bluffs.ts';
@@ -52,9 +53,21 @@
 		 * otherwise each seat's true character.
 		 */
 		inPlay?: readonly CharacterId[];
+		/**
+		 * Opens straight on this set's picker, and closes when it is saved or cancelled: the
+		 * Characters screen's area for the Lunatic's bluffs (M38).
+		 */
+		start?: number;
 	}
 
-	let { open = $bindable(false), game, characters, dispatch, inPlay: given }: Props = $props();
+	let {
+		open = $bindable(false),
+		game,
+		characters,
+		dispatch,
+		inPlay: given,
+		start
+	}: Props = $props();
 
 	let editing = $state<number>();
 	let deleteOpen = $state(false);
@@ -71,7 +84,10 @@
 	 */
 	let wasOpen = false;
 	$effect.pre(() => {
-		if (open && !wasOpen) editing = undefined;
+		if (open && !wasOpen) {
+			editing = undefined;
+			if (start !== undefined) edit(start);
+		}
 		wasOpen = open;
 	});
 
@@ -83,7 +99,9 @@
 		})
 	);
 	const inPlay = $derived(given ? new Set(given) : charactersReallyInPlay(game, characters));
-	const lunatic = $derived(lunaticInPlay(game, characters));
+	const lunatic = $derived(
+		given ? believerAmong(given, characters) : lunaticInPlay(game, characters)
+	);
 	// The Demon's set always, then any others the Storyteller added (Trevor, 2026-10-16).
 	const sets = $derived(Array.from({ length: Math.max(1, game.bluffs.length) }, (_, i) => i));
 	const label = (set: number) => bluffSetLabel(set, lunatic, game.bluffNames?.[set]);
@@ -157,7 +175,13 @@
 		// The set exists now, so a new set's name can be given to it.
 		if (index !== DEMON_SET && pickedName.trim() !== (game.bluffNames?.[index] ?? ''))
 			run({ type: 'RenameBluffSet', set: index, name: pickedName });
+		done();
+	}
+
+	/** Back to the sets, or closed when opened on one set. */
+	function done() {
 		editing = undefined;
+		if (start !== undefined) open = false;
 	}
 
 	/** Shown to the player over the sheet, which stays open under it (Trevor, 2026-10-17). */
@@ -291,7 +315,7 @@
 						</form>
 					{/if}{/snippet}
 			</CharacterPicker>
-			<ModalActions onCancel={() => (editing = undefined)} onConfirm={() => save()} />
+			<ModalActions onCancel={done} onConfirm={() => save()} />
 		{/if}
 	</ErrorBoundary>
 	<!--

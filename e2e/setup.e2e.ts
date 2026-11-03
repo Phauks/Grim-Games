@@ -1179,6 +1179,55 @@ test('the Demon bluffs are chosen on the Characters screen, not the Draw', async
 	await expect(page.getByTestId('setup-bluffs')).toHaveCount(0);
 });
 
+test("the Lunatic's bluffs sit below the Demon's while a Lunatic is chosen (M38)", async ({
+	page
+}) => {
+	// Trevor, 2026-11-03 (option A). The Lunatic is shown "any three good character tokens as
+	// bluffs (These can even be characters that are in play.)" (wiki: Lunatic).
+	await selectionFor(page, 8, 'Bad Moon Rising');
+	const demon = page.getByTestId('setup-bluffs');
+	const lunatic = page.getByTestId('setup-bluffs-2');
+	await expect(demon).toBeVisible();
+	await expect(lunatic).toHaveCount(0);
+	await select(page, 'Sailor', 'Lunatic');
+	await expect(lunatic.getByRole('heading', { name: 'Lunatic bluffs' })).toBeVisible();
+	await expect(lunatic).toContainText('None');
+	// Below the Demon's, so nothing above it moved.
+	expect((await lunatic.boundingBox())!.y).toBeGreaterThan((await demon.boundingBox())!.y);
+	// Choose opens straight on the Lunatic's picker, where characters in play are offered.
+	await lunatic.getByRole('button', { name: 'Choose' }).tap();
+	const choices = page.getByRole('group', { name: 'Bluff characters' });
+	for (const name of ['Sailor', 'Professor', 'Goon'])
+		await choices.getByRole('button', { name: new RegExp(`^${name}`) }).tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	// Saved with no question, and the sheet closes back to the screen.
+	await expect(
+		page.getByRole('alertdialog', { name: 'Save bluffs that are in play?' })
+	).toHaveCount(0);
+	await expect(choices).toBeHidden();
+	for (const name of ['Sailor', 'Professor', 'Goon']) await expect(lunatic).toContainText(name);
+	// Sailor is in play: no warning on the Lunatic's set, and the Demon's stays empty.
+	await expect(lunatic.locator('li[data-in-play]')).toHaveCount(0);
+	await expect(lunatic.getByRole('button', { name: 'Change' })).toBeEnabled();
+	await expect(demon).toContainText('None');
+	await noSidewaysScroll(page);
+	// Taking the Lunatic out takes the area away.
+	await choice(page, 'Lunatic').tap();
+	await expect(lunatic).toHaveCount(0);
+});
+
+test("Random selection picks the Lunatic's bluffs too (M38)", async ({ page }) => {
+	await selectionFor(page, 8, 'Bad Moon Rising');
+	await select(page, 'Lunatic');
+	await page.getByRole('button', { name: 'Lock Lunatic' }).tap();
+	await page.getByRole('button', { name: 'Random selection' }).tap();
+	const lunatic = page.getByTestId('setup-bluffs-2');
+	await expect(lunatic.getByTestId('bluff-tag')).toHaveCount(3);
+	await expect(page.getByTestId('setup-bluffs').getByTestId('bluff-tag')).toHaveCount(3);
+	// Never the Lunatic's own token.
+	await expect(lunatic.locator('[data-character-id="lunatic"]')).toHaveCount(0);
+});
+
 test('each good character row sets or clears a Demon bluff, up to three', async ({ page }) => {
 	// Trevor (2026-10-22): a bluff from the character's own row, beside its lock.
 	await selectionFor(page, 8);
