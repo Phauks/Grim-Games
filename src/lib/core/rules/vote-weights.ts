@@ -12,11 +12,11 @@
  */
 import type { CharacterRules } from '#lib/core/data/character-rules.ts';
 import { rulesIn } from '#lib/core/data/rules/index.ts';
-import type { CharacterId, ReminderLabel } from '#lib/core/data/types.ts';
+import type { Alignment, CharacterId, ReminderLabel } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
-import { registersAsDead, trueCharacter } from '#lib/core/model/selectors.ts';
+import { alignmentOf, registersAsDead, trueCharacter } from '#lib/core/model/selectors.ts';
 import type { DayEntry, Game, ReminderId, SeatId } from '#lib/core/model/types.ts';
-import { abilityState } from './ability.ts';
+import { abilityState, registrations } from './ability.ts';
 import { blockThreshold, votesWithoutToken } from './voting.ts';
 import { mayVote } from './voting-table.ts';
 
@@ -216,4 +216,43 @@ export function voteNotes(game: Game, characters: CharacterLookup): VoteHint[] {
 			hint.needsToken ||
 			hint.ghostVote === 'free'
 	);
+}
+
+/** What the Storyteller privately tells a player given a vote token about its giver. */
+export interface TokenGiverInfo {
+	/** The receiver's character whose `voter.learnsGiver` asks for it (the Beggar). */
+	characterId: CharacterId;
+	giver: SeatId;
+	/**
+	 * The giver's alignments as they may register to the receiver's character, the true one
+	 * first unless registration is fixed (a Recluse may register as evil,
+	 * https://wiki.bloodontheclocktower.com/Beggar, Example 2).
+	 */
+	alignments: Alignment[];
+	/** The receiver's ability does not work (drunk, poisoned or no ability): any alignment. */
+	unreliable?: true;
+}
+
+/**
+ * When `to` learns the alignment of a player who gives them a vote token (`voter.learnsGiver`:
+ * the Beggar), what to tell them about `from`. Undefined for any other receiver.
+ */
+export function tokenGiverInfo(
+	game: Game,
+	from: SeatId,
+	to: SeatId,
+	characters: CharacterLookup
+): TokenGiverInfo | undefined {
+	const characterId = trueCharacter(game, to, characters);
+	if (characterId === undefined) return undefined;
+	if (!rulesIn(game, characterId, characters)?.voter?.learnsGiver) return undefined;
+	const alignment = alignmentOf(game, from);
+	if (alignment === undefined) return undefined;
+	const registered = registrations(game, characters, characterId).find((r) => r.seatId === from);
+	return {
+		characterId,
+		giver: from,
+		alignments: registered?.alignments ?? [alignment],
+		...(abilityState(game, to, characters).works ? {} : { unreliable: true as const })
+	};
 }

@@ -4,7 +4,7 @@
  * - https://wiki.bloodontheclocktower.com/Witch (Cursed)
  * - https://wiki.bloodontheclocktower.com/Innkeeper (Safe, Safe, Drunk)
  * - https://wiki.bloodontheclocktower.com/Pukka (Poisoned, then the previous target dies)
- * - https://wiki.bloodontheclocktower.com/Courtier (Drunk 3, No Ability)
+ * - https://wiki.bloodontheclocktower.com/Courtier (Drunk 1, No Ability)
  * - https://wiki.bloodontheclocktower.com/Professor (Alive, No Ability)
  * - https://wiki.bloodontheclocktower.com/Investigator (Minion, Wrong)
  * - https://wiki.bloodontheclocktower.com/Exorcist (info token)
@@ -91,7 +91,7 @@ describe('nightTextSegments', () => {
 	it('maps each placeholder in turn when there are several', () => {
 		expect(plain('innkeeper')).toBe('The {Innkeeper} chooses 2 players. [+Safe] [+Safe] [+Drunk]');
 		expect(plain('courtier')).toBe(
-			'The {Courtier} might choose a character. [+Drunk 3] [+No Ability]'
+			'The {Courtier} might choose a character. [+Drunk 1] [+No Ability]'
 		);
 		expect(plain('professor')).toBe(
 			'The {Professor} might choose a dead player. [+Alive] [+No Ability]'

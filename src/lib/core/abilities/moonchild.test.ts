@@ -135,10 +135,8 @@ describe('Moonchild', () => {
 			}
 		});
 
-		it.fails('lets the Moonchild choose only an alive player', () => {
+		it('lets the Moonchild choose only an alive player', () => {
 			// Wiki: "the Moonchild chooses any alive player."
-			// Waits on the engine (unplanned): the Moonchild's Dead has no life rule, so a dead player
-			// is not flagged.
 			const s = scenario(cast).newDay().dies('empath', 'imp').dies('moonchild', 'imp');
 			expect(reminderTargetMisses(s.game, curse, s.seat('chef'), s.characters)).toEqual([]);
 			expect(reminderTargetMisses(s.game, curse, s.seat('empath'), s.characters)).toEqual(['life']);

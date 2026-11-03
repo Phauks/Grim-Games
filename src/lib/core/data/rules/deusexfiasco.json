@@ -6,7 +6,11 @@
 		}
 	},
 	"setupPrep": {
-		"none": "its tokens are only used after the first night or when something happens"
+		"notes": [
+			{
+				"text": "Before the game starts, announce that the Deus ex Fiasco is in play"
+			}
+		]
 	},
 	"setupModifier": {
 		"summary": "No setup change",

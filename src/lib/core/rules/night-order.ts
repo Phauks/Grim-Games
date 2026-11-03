@@ -160,6 +160,11 @@ export interface NightStep {
 	 * character whose token makes it so (`withActsTwiceSteps` in `acts-twice.ts`).
 	 */
 	again?: { seatId: string; characterId: CharacterId };
+	/**
+	 * On a step for a character no one really is, which a seat of the Storyteller's pretend evil
+	 * team pretends to be (`Game.pretend`, M26): the Storyteller acts it out for the table.
+	 */
+	pretend?: true;
 }
 
 export interface OmittedStep {

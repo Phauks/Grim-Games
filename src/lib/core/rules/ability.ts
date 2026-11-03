@@ -456,6 +456,24 @@ export function abilityState(
 	};
 }
 
+/**
+ * The character whose working reminder on `seatId` means its player always gets true
+ * information (`impairs.truthful`: the Barista's "Sober & Healthy", even under the Vortox,
+ * https://wiki.bloodontheclocktower.com/Barista). Undefined when there is none.
+ */
+export function truthfulBy(
+	game: Game,
+	seatId: SeatId,
+	characters: CharacterLookup
+): CharacterId | undefined {
+	const seat = getSeat(game, seatId);
+	return seat?.reminders.find(
+		(r) =>
+			rulesOf(r.characterId, characters)?.impairs?.truthful?.includes(r.label) &&
+			sourceWorks(game, seatId, r.characterId, characters, new Set([seatId]))
+	)?.characterId;
+}
+
 // ── Registration ────────────────────────────────────────────────────────────
 
 /**

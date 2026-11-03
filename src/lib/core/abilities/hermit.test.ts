@@ -237,10 +237,9 @@ describe('Hermit', () => {
 			expect(result.expected.townsfolk).toEqual([5, 6]);
 		});
 
-		it.fails("uses the Butler's own Master reminder for the Hermit's master", () => {
+		it("uses the Butler's own Master reminder for the Hermit's master", () => {
 			// Wiki: "Whenever appropriate, treat the Hermit as if they are the other Outsiders,
 			// including waking them at night, and using other Outsiders’ reminder tokens."
-			// Waits on the engine (unplanned): reminderTargetMisses does not count the Hermit as the owner of an Outsider reminder it uses, so Master on the Hermit is not flagged as self.
 			const s = scenario(PLAYERS, { script, characters });
 			const master = { characterId: 'butler', label: 'Master' };
 			expect(reminderTargetMisses(s.game, master, s.seat('empath'), s.characters)).toEqual([]);

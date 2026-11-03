@@ -7,7 +7,7 @@
 		type ReminderInstance,
 		type SeatId
 	} from '#lib/core/model/index.ts';
-	import { heldAbilitiesOf, votesWithoutToken } from '#lib/core/rules/index.ts';
+	import { heldAbilitiesOf, pretendTeam, votesWithoutToken } from '#lib/core/rules/index.ts';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import type { SeatPoint } from '#lib/ui/seating/seat-layout.ts';
@@ -114,6 +114,10 @@
 	 */
 	const truthsInPill = $derived(boardLooks.current.truthLook === 'grimbinder');
 	const beside = $derived(seats.map((seat) => remindersBeside(seat, characters, truthsInPill)));
+	/** Who each seat of the Storyteller's fake evil team pretends to be (M26), in the pill. */
+	const pretends = $derived(
+		new Map(pretendTeam(game, characters).map((p) => [p.seatId, characters.get(p.characterId)]))
+	);
 	const truths = $derived(
 		seats.map((seat) => (truthsInPill ? trueCharacterMarks(seat, characters) : []))
 	);
@@ -164,6 +168,7 @@
 			tokenFreeVotes={votesWithoutToken(game, seat.seatId, characters)}
 			heldAbilities={vanilla ? [] : held[i]}
 			trueCharacters={truths[i]}
+			pretends={pretends.get(seat.seatId)}
 			onReminder={(reminderId) =>
 				!seatArr.arranging && !watching && onReminder(seat.seatId, reminderId)}
 			dropTarget={seatArr.reorderTarget === seat.seatId ||

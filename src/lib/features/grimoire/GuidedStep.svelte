@@ -496,7 +496,7 @@
 						showOpen = true;
 					}}
 				/>
-				<!-- The Courtier's Drunk 3, 2, 1: counted down on other nights, as its text says. -->
+				<!-- The Courtier's Drunk 1, 2, 3: moved on each other night, as its text says. -->
 				{#if night === 'other'}<CountdownStep {grimoire} {step} />{/if}
 				<!-- The Ojo's named character, the Al-Hadikhia's live or die. -->
 				<ChosenKillStep {grimoire} {step} />

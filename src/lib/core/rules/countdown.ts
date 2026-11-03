@@ -1,8 +1,8 @@
 /**
  * Counting down a character's reminder token each night (`countdown` in its rules,
- * `data/countdown-rules.ts`): the Courtier's Drunk 3 becomes Drunk 2, then Drunk 1, then comes
- * off, so the drunkenness lasts 3 nights and 3 days
- * (https://wiki.bloodontheclocktower.com/Courtier). The night step offers it; the Storyteller
+ * `data/countdown-rules.ts`): the Courtier's Drunk 1 becomes Drunk 2, then Drunk 3, then comes
+ * off, so the drunkenness lasts 3 nights and 3 days, in the wiki's order
+ * (https://wiki.bloodontheclocktower.com/Courtier#How_to_Run, Trevor 2026-11-02). The night step offers it; the Storyteller
  * decides, so nothing here happens on its own.
  */
 import type { CharacterId, ReminderLabel } from '#lib/core/data/types.ts';
