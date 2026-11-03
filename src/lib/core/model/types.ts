@@ -123,6 +123,33 @@ export interface GenericToken extends GenericLook {
 	tokenId: string;
 }
 
+/**
+ * A number as a generic reminder's symbol (plan M35, Trevor 2026-11-03: "a new generic token
+ * that is only used for numbers"): `#` and the number, so a number token is an ∞ token in all
+ * else (its copies, its colour, its text, dragging it onto "+ New token").
+ */
+const NUMBER_SYMBOL = /^#(\d{1,2})$/;
+/** The numbers a number token can show (a drop-down, as every number in the app is picked). */
+export const REMINDER_NUMBER_MIN = 0;
+export const REMINDER_NUMBER_MAX = 20;
+
+/** The symbol that shows `n`. */
+export const numberSymbol = (n: number): string => `#${n}`;
+
+/** The number a symbol shows; undefined for any other symbol, or a number out of range. */
+export function symbolNumber(symbol: string | undefined): number | undefined {
+	const match = symbol === undefined ? null : NUMBER_SYMBOL.exec(symbol);
+	if (!match) return undefined;
+	const n = Number(match[1]);
+	return n >= REMINDER_NUMBER_MIN && n <= REMINDER_NUMBER_MAX ? n : undefined;
+}
+
+/** Whether a symbol is meant as a number (`#` first), in range or not. */
+export const isNumberSymbol = (symbol: string | undefined): boolean => !!symbol?.startsWith('#');
+
+/** The look of the bank's # token (plan M35): a copy lands showing 1. */
+export const NUMBER_TOKEN_LOOK: Readonly<GenericLook> = { symbol: numberSymbol(1) };
+
 /** Colours a generic reminder's symbol can take, each one of the theme's own colours. */
 export const SYMBOL_COLOURS = ['blue', 'red', 'purple', 'gold', 'green'] as const;
 export type SymbolColour = (typeof SYMBOL_COLOURS)[number];

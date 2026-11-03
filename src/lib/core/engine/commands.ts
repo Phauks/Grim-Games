@@ -161,22 +161,37 @@ export type Command =
 	| { type: 'SetDeathCause'; seatId: SeatId; cause?: DeathCause }
 	| { type: 'SpendGhostVote'; seatId: SeatId }
 	| { type: 'RestoreGhostVote'; seatId: SeatId }
-	/** `tokenId`: copied from one of the bank's ∞ tokens, so it starts with that token's look. */
-	| { type: 'AddReminder'; seatId: SeatId; reminder: Reminder; tokenId?: string }
+	/**
+	 * `tokenId`: copied from one of the bank's ∞ tokens, so it starts with that token's look.
+	 * Without one, a generic reminder may start with a `look` of its own (the bank's # token).
+	 */
+	| {
+			type: 'AddReminder';
+			seatId: SeatId;
+			reminder: Reminder;
+			tokenId?: string;
+			look?: GenericLook;
+	  }
 	| { type: 'MoveReminder'; reminderId: ReminderId; toSeatId: SeatId }
 	| { type: 'RemoveReminder'; reminderId: ReminderId }
 	/**
 	 * A reminder on a Fabled or Loric in play (Trevor, 2026-10-17). Any reminder may go there;
 	 * one that is not a Fabled's or Loric's own is allowed with a warning.
 	 */
-	| { type: 'AddRuleReminder'; characterId: CharacterId; reminder: Reminder; tokenId?: string }
+	| {
+			type: 'AddRuleReminder';
+			characterId: CharacterId;
+			reminder: Reminder;
+			tokenId?: string;
+			look?: GenericLook;
+	  }
 	/** Moves a reminder from a seat or a rule character onto a Fabled or Loric in play. */
 	| { type: 'MoveReminderToRuleCharacter'; reminderId: ReminderId; characterId: CharacterId }
 	/**
 	 * A reminder on the board that belongs to no seat (Trevor, 2026-10-17). `MoveReminder`
 	 * and `MoveReminderToRuleCharacter` give it a holder again; `RemoveReminder` takes it away.
 	 */
-	| { type: 'PlaceLooseReminder'; reminder: Reminder; tokenId?: string }
+	| { type: 'PlaceLooseReminder'; reminder: Reminder; tokenId?: string; look?: GenericLook }
 	/** Takes a reminder off its seat or Fabled or Loric and leaves it loose on the board. */
 	| { type: 'LoosenReminder'; reminderId: ReminderId }
 	/** The Storyteller's text on a reminder; empty clears it. */
@@ -459,7 +474,16 @@ export type Command =
 	 * Monk's Safe) and the Flowergirl's and Town Crier's tokens swap. `keepReminders` (the
 	 * Storyteller setting "Take reminders off on time" off) leaves every reminder as it is.
 	 */
-	| { type: 'NewDay'; keepReminders?: boolean }
+	| {
+			type: 'NewDay';
+			keepReminders?: boolean;
+			/**
+			 * The Storyteller is asked which run-out reminders come off (Settings, Remove reminders
+			 * that run out: Ask at dawn to remove): the Flowergirl's and Town Crier's tokens still
+			 * swap, but no timed reminder comes off by itself.
+			 */
+			askReminders?: boolean;
+	  }
 	/**
 	 * Dusk: the day is over and the night begins. Takes off the reminders whose rules say they
 	 * last until dusk (`reminderEnds`, the Poisoner's Poisoned); ticking the night's Dusk step

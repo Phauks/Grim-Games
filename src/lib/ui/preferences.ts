@@ -102,7 +102,8 @@ export interface Preferences {
 	/**
 	 * What happens to reminders that run out at dawn or dusk (`reminderEnds`) and the
 	 * Flowergirl's and Town Crier's dawn swap (Trevor, 2026-11-03: a Storyteller setting, off by
-	 * default): left for the Storyteller, or taken off automatically.
+	 * default): left for the Storyteller, listed at dawn for them to pick which come off, or
+	 * taken off automatically.
 	 */
 	reminderRemoval: ReminderRemoval;
 	/**
@@ -186,7 +187,7 @@ export type QrFinders = (typeof QR_FINDERS)[number];
 const TIMER_MODES = ['down', 'up'] as const;
 export type TimerMode = (typeof TIMER_MODES)[number];
 
-export const REMINDER_REMOVALS = ['off', 'auto'] as const;
+export const REMINDER_REMOVALS = ['off', 'ask', 'auto'] as const;
 export type ReminderRemoval = (typeof REMINDER_REMOVALS)[number];
 
 /** The day timer's finishing sounds, made on the device (no audio files); or none. */

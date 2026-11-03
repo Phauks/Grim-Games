@@ -10,15 +10,15 @@ import {
 import { REMINDER_EFFECTS, fixedReminderMove, pickedEffectOf } from '#lib/core/rules/index.ts';
 import type { GameEvent } from '../events.ts';
 import {
-	MAX_REMINDER_SYMBOL,
 	checkReminder,
+	checkSymbol,
 	genericLook,
 	heldReminder,
 	refuse,
 	reminderFrom,
 	ruleHolderOf,
 	seatOf,
-	tokenLook,
+	startLook,
 	warnIfNotRuleReminder,
 	type Deciders
 } from './shared.ts';
@@ -46,7 +46,7 @@ export const REMINDERS_DECIDERS: Deciders<
 	AddReminder(game, command, ctx, warn) {
 		const seat = seatOf(game, command.seatId);
 		const reminder: Reminder = reminderFrom(game, command.reminder);
-		const look = tokenLook(game, command.tokenId);
+		const look = startLook(game, reminder, command.tokenId, command.look);
 		checkReminder(game, reminder, ctx, warn);
 		const replaces = replacedBy(reminder, ctx.characters);
 		if (replaces && seat.alignment !== undefined) {
@@ -113,7 +113,7 @@ export const REMINDERS_DECIDERS: Deciders<
 	AddRuleReminder(game, command, ctx, warn) {
 		const holder = ruleHolderOf(game, ctx, command.characterId);
 		const reminder: Reminder = reminderFrom(game, command.reminder);
-		const look = tokenLook(game, command.tokenId);
+		const look = startLook(game, reminder, command.tokenId, command.look);
 		checkReminder(game, reminder, ctx, warn);
 		warnIfNotRuleReminder(reminder, ctx, warn);
 		return [
@@ -206,8 +206,7 @@ export const REMINDERS_DECIDERS: Deciders<
 		if (!from) refuse('unknown-reminder', `no reminder ${command.reminderId}`);
 		const reminder: ReminderInstance = heldReminder(game, from, command.reminderId);
 		const symbol = command.symbol?.trim() || undefined;
-		if (symbol !== undefined && symbol.length > MAX_REMINDER_SYMBOL)
-			refuse('invalid-symbol', `a symbol is at most ${MAX_REMINDER_SYMBOL} characters`);
+		if (symbol !== undefined) checkSymbol(symbol);
 		if (symbol === reminder.symbol) {
 			warn('no-change', 'the symbol is unchanged');
 			return [];
@@ -248,7 +247,7 @@ export const REMINDERS_DECIDERS: Deciders<
 
 	PlaceLooseReminder(game, command, ctx, warn) {
 		const reminder: Reminder = reminderFrom(game, command.reminder);
-		const look = tokenLook(game, command.tokenId);
+		const look = startLook(game, reminder, command.tokenId, command.look);
 		checkReminder(game, reminder, ctx, warn);
 		return [
 			{ type: 'LooseReminderPlaced', reminder: { reminderId: ctx.newId(), ...reminder, ...look } }

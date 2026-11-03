@@ -1,14 +1,16 @@
 /**
  * The reminder bank's tokens, left to right (ReminderBank): the setup suggestions still to
- * place, every other reminder still off the board, the generic ∞ and the game's own ∞
- * tokens with "+ New token", then the reminders of characters whose players are all dead.
+ * place, every other reminder still off the board, the generic ∞, the # number token and the
+ * game's own ∞ tokens with "+ New token", then the reminders of characters whose players are all dead.
  */
 import type { CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
 import {
 	GENERIC_REMINDER_ID,
+	NUMBER_TOKEN_LOOK,
 	scriptCharacterIds,
 	type CharacterLookup,
 	type Game,
+	type GenericLook,
 	type GenericToken,
 	type ReminderId,
 	type SeatId
@@ -52,7 +54,23 @@ export interface BankItem {
 	token?: GenericToken;
 	/** The "+ New token" cell at the end of the ∞ tokens (plan B9). */
 	makesToken?: boolean;
+	/** The # token beside the ∞ (plan M35): its copies show a number, starting at 1. */
+	number?: boolean;
 }
+
+/** How a bank token is drawn: an ∞ token's symbol, or the # token's #. */
+export function bankFace(item: Pick<BankItem, 'token' | 'number'>): GenericLook {
+	if (item.number) return { symbol: '#' };
+	const { symbol, symbolColour, symbolFill } = item.token ?? {};
+	return { symbol, symbolColour, symbolFill };
+}
+
+/**
+ * The look a copy of a bank token starts with when no ∞ token gives it one (`tokenId`): the
+ * # token's, showing 1 (plan M35).
+ */
+export const bankLook = (item: Pick<BankItem, 'number'>): GenericLook | undefined =>
+	item.number ? NUMBER_TOKEN_LOOK : undefined;
 
 export interface BankOptions {
 	/** The character whose night step is being walked through. */
@@ -159,6 +177,15 @@ export function bankItems(
 		count: 1,
 		group: 'generic'
 	};
+	// The # token, only for numbers (plan M35, Trevor 2026-11-03), never used up either.
+	const number: BankItem = {
+		key: 'number',
+		characterId: GENERIC_REMINDER_ID,
+		label: 'Number' as ReminderLabel,
+		count: 1,
+		group: 'generic',
+		number: true
+	};
 	// The game's own ∞ tokens, then "+ New token" (plan B9, Trevor 2026-10-23: "Tokens only").
 	const tokens: BankItem[] = (game.genericTokens ?? []).map((token) => ({
 		key: `token:${token.tokenId}`,
@@ -180,6 +207,7 @@ export function bankItems(
 		...setup,
 		...rest.filter((i) => i.group === 'reminders'),
 		generic,
+		number,
 		...tokens,
 		makes,
 		...rest.filter((i) => i.group === 'dead')

@@ -1,10 +1,20 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
-	import { SYMBOL_COLOURS, type GenericLook, type SymbolColour } from '#lib/core/model/index.ts';
+	import {
+		REMINDER_NUMBER_MAX,
+		REMINDER_NUMBER_MIN,
+		SYMBOL_COLOURS,
+		isNumberSymbol,
+		numberSymbol,
+		symbolNumber,
+		type GenericLook,
+		type SymbolColour
+	} from '#lib/core/model/index.ts';
 	import { SYMBOL_COLOUR_LOOKS } from './symbol-colour.ts';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
+	import NumberSelect from '#lib/ui/primitives/NumberSelect.svelte';
 	import { named, TILE_EMOJI, TILE_SYMBOLS } from '#lib/features/setup/tile-face.ts';
 	import TileMarkFace from '#lib/features/setup/TileMarkFace.svelte';
 
@@ -14,7 +24,8 @@
 	 * (Trevor, 2026-10-19: chosen per token) is nothing, one of the bag tiles' symbols, or one
 	 * of their emoji. The text (Trevor, 2026-10-18: "if you touch it, you can add more
 	 * information"): Enter saves it, and so does closing; emptied, the token goes back to a
-	 * plain ∞.
+	 * plain ∞. A number token (plan M35, Trevor 2026-11-03) has its Number first instead of a
+	 * symbol, then its colour and text.
 	 */
 	interface Props {
 		look: GenericLook;
@@ -59,36 +70,51 @@
 		...SYMBOL_COLOURS.map((c) => ({ value: c, label: SYMBOL_COLOUR_LOOKS[c].label }))
 	];
 	const iconSymbol = $derived(!!look.symbol?.startsWith('ph:'));
+	const number = $derived(isNumberSymbol(look.symbol) ? symbolNumber(look.symbol) : undefined);
 </script>
 
-<Select
-	label="Symbol"
-	value={look.symbol || NONE}
-	options={symbols}
-	onChange={(v) => onSymbol(v === NONE ? '' : v)}
->
-	{#snippet item(option)}{@render choice(option)}{/snippet}
-	{#snippet selected(option)}{@render choice(option)}{/snippet}
-</Select>
+{#if number !== undefined}
+	<NumberSelect
+		label="Number"
+		value={number}
+		min={REMINDER_NUMBER_MIN}
+		max={REMINDER_NUMBER_MAX}
+		onchange={(n) => onSymbol(numberSymbol(n))}
+		testid="reminder-number"
+	/>
+{:else}
+	<Select
+		label="Symbol"
+		value={look.symbol || NONE}
+		options={symbols}
+		onChange={(v) => onSymbol(v === NONE ? '' : v)}
+	>
+		{#snippet item(option)}{@render choice(option)}{/snippet}
+		{#snippet selected(option)}{@render choice(option)}{/snippet}
+	</Select>
+{/if}
 
 <Select
-	label="Symbol colour"
+	label={number !== undefined ? 'Colour' : 'Symbol colour'}
 	value={look.symbolColour ?? DEFAULT}
 	options={colours}
 	onChange={(v) => onColour(v === DEFAULT ? undefined : (v as SymbolColour))}
-	disabled={!iconSymbol}
+	disabled={!iconSymbol && number === undefined}
 >
 	{#snippet item(option)}{@render swatch(option)}{/snippet}
 	{#snippet selected(option)}{@render swatch(option)}{/snippet}
 </Select>
 
-<!-- Per token (Trevor, 2026-10-23); like the colour, usable once the symbol is an icon. -->
-<Toggle
-	label="Filled symbol"
-	checked={!!look.symbolFill}
-	onChange={onFill}
-	disabled={!iconSymbol}
-/>
+<!-- Per token (Trevor, 2026-10-23); like the colour, usable once the symbol is an icon. A
+	 number is never drawn filled. -->
+{#if number === undefined}
+	<Toggle
+		label="Filled symbol"
+		checked={!!look.symbolFill}
+		onChange={onFill}
+		disabled={!iconSymbol}
+	/>
+{/if}
 
 {#snippet swatch(option: { value: string; label: string })}
 	<span class="choice"

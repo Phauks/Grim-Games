@@ -78,6 +78,7 @@ export type ErrorCode =
 	| 'invalid-day-mark'
 	| 'invalid-symbol'
 	| 'invalid-colour'
+	| 'invalid-look'
 	| 'invalid-day-tally'
 	| 'invalid-effect'
 	| 'invalid-wish'

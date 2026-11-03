@@ -50,17 +50,32 @@ export function heldTokenActions(
 }
 
 /**
- * A held token from the board's ⋯ rows: Duplicate and Remove. Moving it is a
- * tap on a seat, and back to the bank a tap on the bank (Trevor, 2026-10-30: no Move or Return
- * rows).
+ * A held token from the board's ⋯ rows: Duplicate and Remove, and for an ∞ or # token first
+ * Edit token, its own dialog with its number, symbol and text (Trevor, 2026-11-03: they
+ * could not find where to give it custom information; tapping the token in the pill also
+ * opens it). Moving it is a tap on a seat, and back to the bank a tap on the bank (Trevor,
+ * 2026-10-30: no Move or Return rows).
  */
 export function placedTokenActions(
 	grimoire: Grimoire,
 	reminder: Pick<ReminderInstance, 'reminderId' | 'characterId' | 'label'>,
-	on: { remove: (reminderId: ReminderId) => void; putDown: () => void }
+	on: { remove: (reminderId: ReminderId) => void; putDown: () => void; edit: () => void }
 ): Row[] {
+	const edit: Row[] = isGeneric(reminder)
+		? [
+				{
+					value: 'edit',
+					label: 'Edit token',
+					onSelect: () => {
+						on.putDown();
+						on.edit();
+					}
+				}
+			]
+		: [];
 	// A placed ∞ token is duplicated too: copied as it looks, never unusual.
 	return [
+		...edit,
 		{
 			value: 'duplicate',
 			label: 'Duplicate reminder',

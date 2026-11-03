@@ -6,11 +6,18 @@ import {
 	reincarnatedBy,
 	survivesFirstDeath,
 	explosionOf,
+	remindersRunOutByDawn,
 	type Explosion,
 	type Night
 } from '#lib/core/rules/index.ts';
 import { doneKey } from './night-steps.ts';
-import { alignmentOf, replacedBy, scriptCharacterIds, type SeatId } from '#lib/core/model/index.ts';
+import {
+	alignmentOf,
+	reminderHolder,
+	replacedBy,
+	scriptCharacterIds,
+	type SeatId
+} from '#lib/core/model/index.ts';
 import type { Alignment, CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
 import { keepIconsOffline } from '#lib/features/offline/keep-offline.ts';
 import type { OpenGame } from '#lib/features/game/session.svelte.ts';
@@ -42,8 +49,9 @@ import {
  * layout.
  */
 /**
- * Dawn's and dusk's automatic reminder changes, all behind one Storyteller setting, "Take
- * reminders off on time" (Trevor, 2026-11-02).
+ * Dawn's and dusk's automatic reminder changes, behind one Storyteller setting, Remove
+ * reminders that run out (Trevor, 2026-11-03): Off keeps them all, Ask at dawn to remove keeps
+ * them until the dawn's Refresh Reminders dialog, Automatically remove takes them off on time.
  */
 function keepReminders(): { keepReminders?: true } {
 	return preferences.current.reminderRemoval === 'auto' ? {} : { keepReminders: true };
@@ -135,7 +143,40 @@ export class Grimoire {
 		const tonight = ticking && this.nightDay === this.game.pastDays.length;
 		// Dusk takes off the reminders that last until dusk (the Poisoner's Poisoned).
 		if (tonight && step.id === 'dusk') this.run({ type: 'Dusk', ...keepReminders() });
-		if (startDay && tonight && step.id === 'dawn') this.run({ type: 'NewDay', ...keepReminders() });
+		if (startDay && tonight && step.id === 'dawn') this.beginDay();
+	}
+
+	/**
+	 * The reminders that ran out by this dawn, waiting on the Refresh Reminders dialog
+	 * (Settings, Remove reminders that run out: Ask at dawn to remove). Empty when nothing asks.
+	 */
+	dawnAsk = $state.raw<readonly ReminderId[]>([]);
+	#afterDawnAsk: (() => void) | undefined;
+
+	/** Runs `next` once the Refresh Reminders dialog is answered, or now when it isn't open. */
+	afterDawnAsk(next: () => void): void {
+		if (this.dawnAsk.length === 0) next();
+		else this.#afterDawnAsk = next;
+	}
+
+	/** The Refresh Reminders dialog is answered (Confirm, Cancel or closed). */
+	dawnAnswered(): void {
+		this.dawnAsk = [];
+		const next = this.#afterDawnAsk;
+		this.#afterDawnAsk = undefined;
+		next?.();
+	}
+
+	/** Starts a new day, taking reminders that ran out off as the Storyteller's setting says. */
+	private beginDay(): boolean {
+		if (preferences.current.reminderRemoval !== 'ask') {
+			return this.run({ type: 'NewDay', ...keepReminders() });
+		}
+		const ranOut = remindersRunOutByDawn(this.game, this.open.characters);
+		if (!this.run({ type: 'NewDay', askReminders: true })) return false;
+		// Those the dawn itself took off (the Flowergirl's swap) are not asked about.
+		this.dawnAsk = ranOut.filter((id) => reminderHolder(this.game, id) !== undefined);
+		return true;
 	}
 
 	/**
@@ -168,7 +209,7 @@ export class Grimoire {
 			return false;
 		}
 		if (this.nightDay !== this.game.pastDays.length) return false;
-		return this.run({ type: 'NewDay', ...keepReminders() });
+		return this.beginDay();
 	}
 
 	/** Where reminders were dropped, for reminders that stay where they are dropped. */
