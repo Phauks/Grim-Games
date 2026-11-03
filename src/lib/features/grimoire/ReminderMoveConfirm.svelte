@@ -3,6 +3,7 @@
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import {
 		reminderHolder,
+		type GenericLook,
 		type Reminder,
 		type ReminderInstance,
 		type ReminderId,
@@ -100,7 +101,9 @@
 		what: ReminderId | Reminder,
 		characterId: CharacterId,
 		/** A copy of one of the bank's ∞ tokens (plan B9). */
-		tokenId?: string
+		tokenId?: string,
+		/** A generic reminder's own starting look (the bank's # token, plan M35). */
+		look?: GenericLook
 	): void {
 		const found: { reminder: ReminderInstance | Reminder; from: Place } | undefined =
 			typeof what === 'string' ? find(what) : { reminder: what, from: { bank: true } };
@@ -108,7 +111,7 @@
 		const run = () =>
 			typeof what === 'string'
 				? grimoire.run({ type: 'MoveReminderToRuleCharacter', reminderId: what, characterId })
-				: grimoire.run({ type: 'AddRuleReminder', characterId, reminder: what, tokenId });
+				: grimoire.run({ type: 'AddRuleReminder', characterId, reminder: what, tokenId, look });
 		const type = characters.get(found.reminder.characterId)?.type;
 		const seatWhy =
 			'seatId' in found.from ? fixedReminderReason(found.reminder, characters) : undefined;

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { SymbolColour } from '#lib/core/model/index.ts';
+	import { symbolNumber, type SymbolColour } from '#lib/core/model/index.ts';
 	import { SYMBOL_COLOUR_LOOKS } from './symbol-colour.ts';
 	import { isFixedLabel } from '#lib/core/rules/reminder-movement.ts';
 	import type { Alignment, Character, ReminderLabel } from '#lib/core/data/index.ts';
@@ -103,6 +103,8 @@
 	// The owner's icon, always in the owner's alignment (Trevor, 2026-10-23).
 	const src = $derived(character ? reminderIconUrl(character, alignment) : undefined);
 	const artSrc = $derived(art && !symbol ? reminderIconUrl(art, undefined) : undefined);
+	// A number token's number (plan M35), or the bank's # token's #.
+	const shownNumber = $derived(symbol === '#' ? '#' : symbolNumber(symbol));
 	// Wrapped words as wide as their longest line (Trevor, 2026-10-23), measured again when
 	// anything that lays them out changes.
 	const fitWords = $derived(
@@ -251,9 +253,13 @@
 	aria-label={ariaLabel ??
 		(more
 			? `${more} more reminders`
-			: infinite
-				? `Generic reminder${label ? `: ${label}` : ''}`
-				: `${label} reminder`)}
+			: shownNumber === '#'
+				? 'Number token'
+				: infinite && shownNumber !== undefined
+					? `Number ${shownNumber}${label ? `: ${label}` : ''}`
+					: infinite
+						? `Generic reminder${label ? `: ${label}` : ''}`
+						: `${label} reminder`)}
 	disabled={onTap ? disabled : undefined}
 	onpointerdown={onTap && pointerdown}
 	onpointermove={onTap && pointermove}
@@ -270,7 +276,12 @@
 	{#if more}
 		<span class="more">+{more}</span>
 	{:else}
-		{#if infinite}{#if symbol.startsWith('ph:')}<span
+		{#if infinite}{#if shownNumber !== undefined}<span
+					class="symbol number"
+					data-symbol={symbol}
+					style:color={symbolColour && SYMBOL_COLOUR_LOOKS[symbolColour].colour}
+					aria-hidden="true">{shownNumber}</span
+				>{:else if symbol.startsWith('ph:')}<span
 					class="symbol"
 					data-symbol={symbol}
 					style:color={symbolColour && SYMBOL_COLOUR_LOOKS[symbolColour].colour}
@@ -397,6 +408,15 @@
 	}
 	.emoji {
 		font-size: calc(var(--d) * 0.36);
+	}
+	/* A number token's number (plan M35): big, in the reminder tokens font, as the symbol sits. */
+	.number {
+		width: auto;
+		margin-top: -14%;
+		font-family: var(--font-reminder);
+		font-size: calc(var(--d) * 0.5);
+		font-weight: 700;
+		font-variant-numeric: tabular-nums;
 	}
 	/* Character icon size (Settings > Tokens). */
 	img {

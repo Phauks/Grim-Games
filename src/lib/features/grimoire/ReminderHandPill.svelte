@@ -7,7 +7,7 @@
 -->
 <script lang="ts">
 	import type { Reminder, ReminderId, SeatId } from '#lib/core/model/index.ts';
-	import { bankLook, type BankItem } from './bank-items.ts';
+	import { bankView, type BankItem } from './bank-items.ts';
 	import BoardReminder from './BoardReminder.svelte';
 	import { placingAlignment } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
@@ -57,7 +57,9 @@
 		const putDown = () => hand.putDown();
 		if (held?.kind === 'bank')
 			return heldTokenActions(grimoire, held.item, { edit: editToken, putDown });
-		return placed ? placedTokenActions(grimoire, placed, { remove: onRemove, putDown }) : [];
+		if (!placed || !held) return [];
+		const edit = () => hand.showAbout(held);
+		return placedTokenActions(grimoire, placed, { remove: onRemove, putDown, edit });
 	});
 
 	$effect(() => {
@@ -86,7 +88,7 @@
 	>
 		{#snippet token()}
 			{#if held.kind === 'bank'}<BoardReminder
-					{...bankLook(held.item, characters)}
+					{...bankView(held.item, characters)}
 					alignment={placingAlignment(game, held.item, characters)}
 				/>{:else if placed}<BoardReminder
 					{...placedLook(placed, characters)}

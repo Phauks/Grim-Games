@@ -114,6 +114,7 @@
 	import EndGameDialogs from './EndGameDialogs.svelte';
 	import StarPassPrompt from './StarPassPrompt.svelte';
 	import FirstDeathAsk from './FirstDeathAsk.svelte';
+	import RefreshReminders from './RefreshReminders.svelte';
 	import ExplosionAsk from './ExplosionAsk.svelte';
 	import ReincarnateAsk from './ReincarnateAsk.svelte';
 	import ReminderAsk from './ReminderAsk.svelte';
@@ -902,8 +903,8 @@
 				ruleAt={remDrag.ruleAt}
 				dropping={remDrag.drag !== undefined}
 				dropOver={!!remDrag.drag?.overNew}
-				onRule={(reminder, characterId, tokenId) =>
-					moveConfirm?.requestRule(reminder, characterId, tokenId)}
+				onRule={(reminder, characterId, tokenId, look) =>
+					moveConfirm?.requestRule(reminder, characterId, tokenId, look)}
 				onHints={(h) => (hints.tray = h)}
 				run={flow.run}
 				disabled={watching}
@@ -1030,6 +1031,7 @@
 <AlignmentAsk {grimoire} />
 <StarPassPrompt {grimoire} active={!ended && !grimoire.open.viewOnly} />
 <FirstDeathAsk {grimoire} />
+<RefreshReminders {grimoire} />
 <ExplosionAsk {grimoire} />
 <ReincarnateAsk {grimoire} />
 <NominationAsk {grimoire} bind:asks={nominationAsks} />

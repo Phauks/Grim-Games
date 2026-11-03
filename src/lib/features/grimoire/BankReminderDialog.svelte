@@ -27,7 +27,7 @@
 	import NotedReminderFields from './NotedReminderFields.svelte';
 	import ReminderNoteField from './ReminderNoteField.svelte';
 	import ReminderEffectFields from './ReminderEffectFields.svelte';
-	import { bankLook } from './bank-items.ts';
+	import { bankView } from './bank-items.ts';
 	import { isGeneric, placedLook } from './reminders.ts';
 
 	interface Props {
@@ -77,7 +77,7 @@
 				{...placedLook(placed, characters)}
 				alignment={placingAlignment(game, placed, characters)}
 			/>{:else if item}<BoardReminder
-				{...bankLook(item, characters)}
+				{...bankView(item, characters)}
 				alignment={placingAlignment(game, item, characters)}
 			/>{:else}About this reminder{/if}
 	{/snippet}
