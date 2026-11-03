@@ -5,7 +5,7 @@
 	import NightStrip from './NightStrip.svelte';
 	import HistoryStrip from './HistoryStrip.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import { boardNightSteps, stepWakes, tonightFromLog } from './night-steps.ts';
+	import { boardNightSteps, revivedToday, stepWakes, tonightFromLog } from './night-steps.ts';
 	import { changedCharacters, diedToday } from '#lib/core/engine/index.ts';
 	import { liveDayTimer, timerFacts } from '#lib/features/day/day-timer.svelte.ts';
 	import AlignmentDraw from './AlignmentDraw.svelte';
@@ -251,10 +251,11 @@
 	 * A dead player's character drops out and the rest renumber (Trevor, 2026-10-17), except
 	 * an ability set off by dying on the night of the death (the Ravenkeeper's).
 	 */
-	/** Since dawn: players whose character changed (woken tonight) and who died (Godfather). */
+	/** Since dawn: changed characters (woken tonight), who died (Godfather) and who was revived. */
 	const today = $derived({
 		changes: changedCharacters(grimoire.open.session.log, game),
-		died: diedToday(grimoire.open.session.log, game)
+		died: diedToday(grimoire.open.session.log, game),
+		revived: revivedToday(grimoire.open.session.log)
 	});
 
 	/** The game's special rules, with its mode's own rule parts first (playedRules). */

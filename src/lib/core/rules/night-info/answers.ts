@@ -180,6 +180,8 @@ function executedCharacter(
  */
 export interface NightToday {
 	died: readonly SeatId[];
+	/** Revived since the New day: a first-night-only character wakes again (the Professor's). */
+	revived?: readonly SeatId[];
 }
 
 /**

@@ -479,6 +479,15 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['M25']
 	},
 	{
+		// Trevor, 2026-11-02: every How to Run gap closed before beta goes to production. Reminders
+		// that never came off now do: at dawn, at dusk, at dusk tomorrow (the Minstrel) or when
+		// their player dies (the Philosopher), and the Po's and Shabaloth's night text says which
+		// token comes off.
+		title: 'Reminders come off on time: the Innkeeper, Witch, Minstrel, Philosopher and more',
+		area: 'engine',
+		parts: ['M27']
+	},
+	{
 		// Trevor, 2026-11-02: in an Atheist game the Storyteller still gets guidance. M26a a pretend
 		// evil team in the engine, with information that fits it; M26b its seat sheet row, night
 		// steps and board mark.
@@ -508,13 +517,14 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['M32a', 'M32b', 'M32c', 'M32d']
 	},
 	{
-		// Trevor, 2026-11-02: every How to Run gap closed before beta goes to production. Reminders
-		// that never came off now do: at dawn, at dusk, at dusk tomorrow (the Minstrel) or when
-		// their player dies (the Philosopher), and the Po's and Shabaloth's night text says which
-		// token comes off.
-		title: 'Reminders come off on time: the Innkeeper, Witch, Minstrel, Philosopher and more',
+		// Trevor, 2026-11-02: beta goes to production only once the How to Run gaps are closed.
+		// M29a and M29b the warnings still missing (a second Alsaahir guess, a fourth Matron swap,
+		// the Goon's Drunk, the Pope's duplicate bluffs and more), M30a and M30b the info tokens
+		// and prompts (the Hatter's and King's tokens, the Beggar's alignment, the Sage's Demon),
+		// M31 the night order (Lil' Monsta's, the Poppy Grower's evil info, the Professor's revival).
+		title: 'Every How to Run step covered: missing warnings, info tokens and night steps',
 		area: 'engine',
-		parts: ['M27']
+		parts: ['M29a', 'M29b', 'M30a', 'M30b', 'M31']
 	},
 	{
 		// Trevor, 2026-10-30: on the roadmap, after a spike and research. L99 research, L100 the
