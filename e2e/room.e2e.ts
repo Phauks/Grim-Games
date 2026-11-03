@@ -141,10 +141,8 @@ test('a phone joins with a name, and the Storyteller seats it', async ({
 	// 2026-10-26): naming a seat on the board with the phone's name seats it.
 	// Players, not Share, lists who is in the room (Trevor, 2026-10-29).
 	await page.goto(`${board}/players`);
-	const alex = page
-		.getByRole('list', { name: 'Players in the room' })
-		.getByRole('listitem')
-		.filter({ hasText: 'Alex' });
+	// A spectator until seated, then a player (Trevor, 2026-11-03): either list.
+	const alex = page.getByTestId('room-player').filter({ hasText: 'Alex' });
 	await expect(alex).toContainText(/Alex\s*No seat/);
 	// The phone is a symbol, not words (Trevor, 2026-10-30).
 	await expect(alex.getByTestId('room-player-phone')).toHaveAttribute('data-phone', 'here');

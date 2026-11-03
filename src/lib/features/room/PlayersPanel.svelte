@@ -13,6 +13,8 @@
 	import SeatAvatarButton from '#lib/features/player/SeatAvatarButton.svelte';
 	import { wordsOf } from '#lib/core/sync/room-look.ts';
 	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
+	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
+	import { GRIM_VIEW_PREFIX } from '#lib/core/sync/room-messages.ts';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import { roomHost } from './host.svelte.ts';
@@ -54,21 +56,41 @@
 		seatId?: SeatId;
 		name: PlayerName;
 		member?: RoomMember;
+		/** Whose messages are theirs: the phone's member id, or a Grim view device's. */
+		inboxId?: string;
+		/** Watching on Grim view, with no phone in the room. */
+		grimView?: true;
 	}
 	// Every seat is a player, phone or not (Trevor, 2026-10-29: "every player has a seat. and it
 	// would still be player management for the non-phone users"), in seat order; then the phones
 	// with no seat from this game, which stay listed while they sleep (earlier games' are left out).
-	const entries = $derived<Entry[]>([
-		...seats.map((seat) => ({
-			key: seat.seatId,
-			seatId: seat.seatId,
-			name: seatName(game.game, seat.seatId),
-			member: host.members.find((m) => m.seatId === seat.seatId)
-		})),
+	const players = $derived<Entry[]>(
+		seats.map((seat) => {
+			const member = host.members.find((m) => m.seatId === seat.seatId);
+			const name = seatName(game.game, seat.seatId);
+			return { key: seat.seatId, seatId: seat.seatId, name, member, inboxId: member?.memberId };
+		})
+	);
+	// Spectators, in their own section (Trevor, 2026-11-03): the phones with no seat, who see the
+	// Grim as players do, then whoever has messaged from Grim view.
+	const spectators = $derived<Entry[]>([
 		...host.unseatedInGame.flatMap((m) =>
-			m.name ? [{ key: m.memberId, name: m.name, member: m }] : []
-		)
+			m.name ? [{ key: m.memberId, name: m.name, member: m, inboxId: m.memberId }] : []
+		),
+		...[
+			...new Map(
+				host.inbox.messages
+					.filter((m) => m.memberId.startsWith(GRIM_VIEW_PREFIX))
+					.map((m) => [m.memberId, m.name] as const)
+			)
+		].map(([id, name]) => ({
+			key: id,
+			name: (name ?? t('room.spectators.unnamed')) as PlayerName,
+			inboxId: id,
+			grimView: true as const
+		}))
 	]);
+	const entries = $derived([...players, ...spectators]);
 
 	const phoneOf = (entry: Entry): Phone =>
 		!entry.member ? 'none' : host.isHere(entry.member.memberId) ? 'here' : 'away';
@@ -79,6 +101,7 @@
 	} as const;
 
 	function where(entry: Entry): string {
+		if (entry.grimView) return t('room.spectators.grimView');
 		const n = seatIndex(entry.seatId);
 		const seat = n ? t('common.seat', { number: n }) : t('room.noSeat');
 		return t('room.players.where', { seat, state: t(PHONE_TEXT[phoneOf(entry)]) });
@@ -164,6 +187,39 @@
 	/>
 {/snippet}
 
+{#snippet line(entry: Entry)}
+	{@const wait = entry.inboxId ? waiting(entry.inboxId) : { count: 0, urgent: false }}
+	{@const notes = seatNotes(entry.seatId).length}
+	<li data-testid="room-player" data-seat={entry.seatId}>
+		<button
+			type="button"
+			class="line"
+			aria-current={chosen?.key === entry.key ? 'true' : undefined}
+			onclick={() => (chosenKey = entry.key)}
+		>
+			{@render disc(entry)}
+			<span class="who">
+				{@render nameAndCharacter(entry)}
+				{#if entry.grimView}<span class="muted">{t('room.spectators.grimView')}</span>
+				{:else if !entry.seatId}<span class="muted">{t('room.noSeat')}</span>{/if}
+			</span>
+			<!-- Two fixed slots, so rows line up and never shift as notes and messages come and go. -->
+			<span class="slot notes" data-testid="room-player-notes"
+				>{#if notes}<Icon name="notes" label={t('room.players.notes', { count: notes })} /><small
+						aria-hidden="true">{notes}</small
+					>{/if}</span
+			>
+			<span class="slot waiting">
+				{#if wait.count}<CountBadge
+						count={wait.count}
+						warn={wait.urgent}
+						testid="room-player-waiting"
+					/>{/if}
+			</span>
+		</button>
+	</li>
+{/snippet}
+
 <div class="players">
 	<div class="list-side">
 		<!-- A caret section whose count, while closed, is how many players there are (Trevor,
@@ -172,49 +228,39 @@
 			title={t('room.playersInRoom')}
 			storageKey="players-list"
 			pinned={false}
-			count={entries.length}
+			count={players.length}
 		>
-			{#if entries.length === 0}
+			{#if players.length === 0}
 				<p class="none">{t('common.none')}</p>
 			{:else}
 				<ul class="list" aria-label={t('room.playersInRoom')} bind:this={list}>
-					{#each entries as entry (entry.key)}
-						{@const wait = entry.member
-							? waiting(entry.member.memberId)
-							: { count: 0, urgent: false }}
-						{@const notes = seatNotes(entry.seatId).length}
-						<li data-testid="room-player" data-seat={entry.seatId}>
-							<button
-								type="button"
-								class="line"
-								aria-current={chosen?.key === entry.key ? 'true' : undefined}
-								onclick={() => (chosenKey = entry.key)}
-							>
-								{@render disc(entry)}
-								<span class="who">
-									{@render nameAndCharacter(entry)}
-									{#if !entry.seatId}<span class="muted">{t('room.noSeat')}</span>{/if}
-								</span>
-								<!-- Two fixed slots, so rows line up and never shift as notes and
-							     messages come and go. -->
-								<span class="slot notes" data-testid="room-player-notes"
-									>{#if notes}<Icon
-											name="notes"
-											label={t('room.players.notes', { count: notes })}
-										/><small aria-hidden="true">{notes}</small>{/if}</span
-								>
-								<span class="slot waiting">
-									{#if wait.count}<CountBadge
-											count={wait.count}
-											warn={wait.urgent}
-											testid="room-player-waiting"
-										/>{/if}
-								</span>
-							</button>
-						</li>
-					{/each}
+					{#each players as entry (entry.key)}{@render line(entry)}{/each}
 				</ul>
 			{/if}
+		</Collapsible>
+		<!-- Spectators (Trevor, 2026-11-03): phones with no seat, and whoever wrote from Grim view;
+		     the switch says whether they may message the Storyteller. -->
+		<Collapsible
+			title={t('room.spectators')}
+			storageKey="players-spectators"
+			pinned={false}
+			count={spectators.length}
+		>
+			<div data-testid="room-spectators">
+				<SettingToggle
+					label={t('room.spectators.mayMessage')}
+					checked={!host.inbox.spectatorsMuted}
+					disabled={!host.code || viewOnly}
+					onChange={(on) => host.inbox.allowSpectators(on)}
+				/>
+				{#if spectators.length === 0}
+					<p class="none">{t('common.none')}</p>
+				{:else}
+					<ul class="list" aria-label={t('room.spectators')}>
+						{#each spectators as entry (entry.key)}{@render line(entry)}{/each}
+					</ul>
+				{/if}
+			</div>
 		</Collapsible>
 		{#if host.code}<RemovedPlayers />{/if}
 	</div>
@@ -256,8 +302,8 @@
 					/>
 				{/if}
 			</header>
-			{#if entry.member}
-				{@const count = inboxCount(entry.member.memberId)}
+			{#if entry.inboxId}
+				{@const count = inboxCount(entry.inboxId)}
 				<Collapsible
 					title={t('room.inbox.title')}
 					level={3}
@@ -266,7 +312,7 @@
 					{count}
 					countOpen
 				>
-					<PlayerInbox memberId={entry.member.memberId} name={entry.name} />
+					<PlayerInbox memberId={entry.inboxId} name={entry.name} />
 				</Collapsible>
 			{/if}
 			{#if entry.seatId}

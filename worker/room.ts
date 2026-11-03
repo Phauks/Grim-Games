@@ -22,8 +22,11 @@ import {
 	reportPicture,
 	readMessages,
 	sendMessage,
+	sendViewerMessage,
 	setInbox,
+	viewersMayMessage,
 	setSeatingOpen,
+	setSpectatorMessages,
 	takeCount,
 	countOffMessage,
 	travellerPickMessage,
@@ -291,6 +294,7 @@ export class Room extends DurableObject<RoomEnv> {
 				ws.serializeAttachment({ role: 'viewer' } satisfies Attachment);
 				const grimoire = await this.ctx.storage.get<GrimoireView>('grimoire');
 				if (grimoire) send(ws, grimoire);
+				send(ws, { type: 'viewer-inbox', on: viewersMayMessage(room) });
 				this.tellWatchers();
 				return;
 			}
@@ -335,6 +339,11 @@ export class Room extends DurableObject<RoomEnv> {
 		if (who?.role === 'claim') {
 			await claimMessage(this.transferRoom(), ws, who.keyHash, message, room);
 			return;
+		}
+		if (who?.role === 'viewer' && message.type === 'message') {
+			const next = sendViewerMessage(room, message, Date.now(), crypto.randomUUID());
+			if (next !== room) await this.save(next);
+			return send(ws, { type: 'message-delivered', delivered: next !== room });
 		}
 		if (!who || who.role === 'viewer' || who.role === 'town') return;
 
@@ -491,6 +500,9 @@ export class Room extends DurableObject<RoomEnv> {
 				break;
 			case 'seating':
 				room = setSeatingOpen(room, message.open);
+				break;
+			case 'spectator-messages':
+				room = setSpectatorMessages(room, message.allow);
 				break;
 			case 'count-off':
 			case 'end-count-off':
@@ -701,8 +713,10 @@ export class Room extends DurableObject<RoomEnv> {
 		const present = this.present();
 		const host = JSON.stringify(hostView(room, present));
 		const town = JSON.stringify(townView(room));
+		const viewers = JSON.stringify({ type: 'viewer-inbox', on: viewersMayMessage(room) });
 		for (const socket of this.ctx.getWebSockets()) {
 			const who = socket.deserializeAttachment() as Attachment | null;
+			if (who?.role === 'viewer') sendText(socket, viewers);
 			if (!who || who.role === 'viewer' || who.role === 'claim') continue;
 			sendText(
 				socket,

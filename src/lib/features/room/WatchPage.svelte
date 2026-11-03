@@ -10,6 +10,7 @@
 	import FairPlayNotice from '#lib/features/show/FairPlayNotice.svelte';
 	import { RoomViewer, viewerKeyFrom } from './viewer.svelte.ts';
 	import SharedBoard from './SharedBoard.svelte';
+	import MessageButton from './MessageButton.svelte';
 
 	/**
 	 * The view-only grimoire link (Specters, Trevor 2026-10-18): the Storyteller's whole
@@ -66,7 +67,10 @@
 		room={room ?? undefined}
 		onReady={(r) => (ready = r)}
 		onProblem={(p) => (problem = p)}
-	/>{/if}
+	>
+		<!-- Watching may message the Storyteller too, while it lets spectators (Trevor, 2026-11-03). -->
+		{#snippet lead()}{#if viewer}<MessageButton {viewer} />{/if}{/snippet}
+	</SharedBoard>{/if}
 {#if !(showBoard && ready)}
 	<main class="message" data-testid="watch-status">
 		<h1>{t('room.watch.title')}</h1>

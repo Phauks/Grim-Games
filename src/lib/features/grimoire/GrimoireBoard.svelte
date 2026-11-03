@@ -20,7 +20,7 @@
 	import { boardLooks } from './board-looks.svelte.ts';
 	import BoardLogo from '#lib/features/scripts/BoardLogo.svelte';
 	import { goto, replaceState } from '$app/navigation';
-	import { onMount, tick, untrack } from 'svelte';
+	import { onMount, tick, untrack, type Snippet } from 'svelte';
 	import { REMINDERS_HASH } from '#lib/features/setup/setup-steps.ts';
 	import LateSeatOnBoard from '#lib/features/late-player/LateSeatOnBoard.svelte';
 	import { resolve } from '$app/paths';
@@ -145,9 +145,18 @@
 		 * the app's items live.
 		 */
 		watchedHistory?: boolean;
+		/** Beside ☰ on a spectator's board: Grim view's message to the Storyteller (2026-11-03). */
+		watchLead?: Snippet;
 	}
 
-	let { grimoire, watching = false, watchedTimer, over, watchedHistory = false }: Props = $props();
+	let {
+		grimoire,
+		watching = false,
+		watchedTimer,
+		over,
+		watchedHistory = false,
+		watchLead
+	}: Props = $props();
 	/** Spectators on this game's view-only link, as the room reports them; none for a viewer. */
 	const watcherCount = $derived(!watching && roomHost().code ? roomHost().watchers : 0);
 
@@ -803,7 +812,7 @@
 					outlined
 					board
 				/>
-			{/if}
+			{:else}{@render watchLead?.()}{/if}
 		{/snippet}
 	</BoardToolbar>
 
