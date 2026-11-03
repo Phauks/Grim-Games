@@ -36,7 +36,7 @@ export function notDeclaredTests(partner: CharacterId) {
 
 	describe("the Storyteller doesn't declare the Vizier", () => {
 		it("is data in the Vizier's rules", () => {
-			expect(jinxRulesBetween('vizier', partner)).toEqual({ notDeclared: true });
+			expect(jinxRulesBetween('vizier', partner)).toEqual({ notDeclared: {} });
 		});
 
 		it('holds while both are on the script, even with the partner not in play', () => {
@@ -71,7 +71,7 @@ export function keepsProtectionTests(
 
 	describe('a Vizier who lost their ability to the partner learns this and still cannot die by day', () => {
 		it("is data in the Vizier's rules", () => {
-			expect(jinxRulesBetween('vizier', partner)).toEqual({ keepsProtection: true });
+			expect(jinxRulesBetween('vizier', partner)).toEqual({ keepsProtection: {} });
 		});
 
 		it("survives the town's execution with no ability", () => {

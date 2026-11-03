@@ -15,10 +15,14 @@
 	},
 	"jinxes": {
 		"legion": {
-			"demonLearnsGood": true
+			"demonLearnsGood": {
+				"when": ["partner-in-play"]
+			}
 		},
 		"wraith": {
-			"guessesPartner": true
+			"guessesPartner": {
+				"when": ["self-alive", "after-execution"]
+			}
 		},
 		"marionette": {
 			"hidesPartnerSeat": true

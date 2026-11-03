@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { editionScript } from '#lib/core/data/script.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
+import { OFFICIAL_RULES, rulesOf } from '#lib/core/data/rules/index.ts';
 import {
 	activeJinxes,
 	barredAbilities,
@@ -22,7 +22,8 @@ import {
 	scriptJinxes
 } from './jinxes.ts';
 import { readJinxRules } from '#lib/core/data/jinx-rules.ts';
-import { Issues } from '#lib/core/data/validate.ts';
+import { jinxPartnerIssues } from '#lib/core/data/jinx-needs.ts';
+import { Issues, type Json } from '#lib/core/data/validate.ts';
 import type { Script } from '#lib/core/data/index.ts';
 
 const data = committedGameData();
@@ -110,9 +111,125 @@ describe('jinx rules data', () => {
 	});
 
 	it('reads either side of the pair, and nothing for a jinx that is text only', () => {
-		expect(jinxRulesBetween('boffin', 'drunk')).toEqual({ notGiven: true });
-		expect(jinxRulesBetween('drunk', 'boffin')).toEqual({ notGiven: true });
+		expect(jinxRulesBetween('boffin', 'drunk')).toEqual({ cannotCreate: { via: 'givesAbility' } });
+		// The Boffin's rule is about the Boffin only, so the Drunk's side has none.
+		expect(jinxRulesBetween('drunk', 'boffin')).toBeUndefined();
+		// The Spy's file says what happens to the Damsel (`who: "partner"`), read from her side,
+		// with the condition turned round to hers.
+		expect(jinxRulesBetween('damsel', 'spy')).toEqual({
+			impairs: { kind: 'poisoned', when: ['partner-in-play'] }
+		});
+		expect(jinxRulesBetween('spy', 'damsel')).toBeUndefined();
 		expect(jinxRulesBetween('chambermaid', 'mathematician')).toBeUndefined();
+	});
+
+	it('reads a bare main value, true, or an object with who and when', () => {
+		const issues = new Issues();
+		expect(
+			readJinxRules(
+				{
+					a: { deadAtLeast: 1, impairs: 'drunk', notDeclared: true },
+					b: {
+						impairs: { who: 'both', kind: 'drunk', unlessImpaired: true },
+						grimoire: { hides: ['partner', 'demon'], when: ['partner-in-play'] }
+					},
+					c: {
+						cannotCreate: { via: 'changesCharacter', when: [{ afterDay: 5 }] },
+						carriedBy: { marked: 'Is The Demon', who: 'partner' },
+						learns: { what: 'no-ability', when: [{ night: 1 }, 'self-alive'] }
+					}
+				},
+				'jinxes',
+				issues
+			)
+		).toEqual({
+			a: { deadAtLeast: { dead: 1 }, impairs: { kind: 'drunk' }, notDeclared: {} },
+			b: {
+				impairs: { who: 'both', kind: 'drunk', unlessImpaired: true },
+				grimoire: { hides: ['partner', 'demon'], when: ['partner-in-play'] }
+			},
+			c: {
+				cannotCreate: { via: 'changesCharacter', when: [{ afterDay: 5 }] },
+				carriedBy: { marked: 'Is The Demon', who: 'partner' },
+				learns: { what: 'no-ability', when: [{ night: 1 }, 'self-alive'] }
+			}
+		});
+		expect(issues.list).toEqual([]);
+		const bad = new Issues();
+		readJinxRules(
+			{
+				a: { notDeclared: { who: 'both' } },
+				b: { trueInfo: { when: ['sometimes'] } },
+				c: { trueInfo: { when: [{ day: 0 }] } },
+				d: { trueInfo: { when: [] } },
+				e: { trueInfo: { when: [{ day: 1, night: 1 }] } },
+				f: { trueInfo: { when: [{ hour: 1 }] } }
+			},
+			'jinxes',
+			bad
+		);
+		expect(bad.list.map((i) => i.split(': ')[0])).toEqual([
+			'jinxes.a.notDeclared.who',
+			'jinxes.a',
+			'jinxes.b.trueInfo.when[0]',
+			'jinxes.b',
+			'jinxes.c.trueInfo.when[0].day',
+			'jinxes.c',
+			'jinxes.d.trueInfo.when',
+			'jinxes.d',
+			'jinxes.e.trueInfo.when[0]',
+			'jinxes.e',
+			'jinxes.f.trueInfo.when[0].hour',
+			'jinxes.f'
+		]);
+	});
+
+	it('reports an effect whose prerequisite is missing from its own rules block', () => {
+		const issues = new Issues();
+		readJinxRules({ a: { carriedBy: { type: 'minion' } } }, 'jinxes', issues, {});
+		expect(issues.list.map((i) => i.split(': ')[0])).toEqual(['jinxes.a.carriedBy']);
+		const fine = new Issues();
+		readJinxRules({ a: { carriedBy: { type: 'minion' } } }, 'jinxes', fine, {
+			carrierIsDemon: {}
+		});
+		expect(fine.list).toEqual([]);
+	});
+
+	it('reports a prerequisite missing from the partner, and an effect both files set', () => {
+		const rules = new Map<string, Json>([
+			['a', { jinxes: { b: { impairs: { who: 'partner', kind: 'poisoned' } } } }],
+			['b', { jinxes: { a: { impairs: { who: 'self', kind: 'drunk' } } } }]
+		]);
+		const read = (id: string) => {
+			const raw = rules.get(id)!;
+			return { jinxes: readJinxRules(raw.jinxes, 'jinxes', new Issues()) };
+		};
+		const issues = new Issues();
+		jinxPartnerIssues('a', read('a').jinxes!, read, 'rules/a.json.jinxes', issues);
+		expect(issues.list.map((i) => i.split(': ')[0])).toEqual(['rules/a.json.jinxes.b.impairs']);
+
+		const needs = new Issues();
+		jinxPartnerIssues(
+			'a',
+			readJinxRules({ b: { noKill: 'token' } }, 'jinxes', new Issues())!,
+			() => ({}),
+			'rules/a.json.jinxes',
+			needs
+		);
+		expect(needs.list.map((i) => i.split(': ')[0])).toEqual(['rules/a.json.jinxes.b.noKill']);
+	});
+
+	it('reads the official rules with no partner prerequisite missing and no effect set twice', () => {
+		const issues = new Issues();
+		for (const [id, rules] of OFFICIAL_RULES)
+			jinxPartnerIssues(
+				id,
+				rules.jinxes ?? {},
+				(p) => OFFICIAL_RULES.get(p),
+				`rules/${id}.json.jinxes`,
+				issues
+			);
+		expect(issues.list).toEqual([]);
 	});
 
 	it('reads the jinx rules that reuse other rules, and rejects bad ones', () => {
@@ -121,30 +238,39 @@ describe('jinx rules data', () => {
 			readJinxRules(
 				{
 					a: { registersTo: { alignments: ['evil'], always: true } },
-					b: { impairsPartner: 'poisoned', noKill: 'token' },
-					c: { noGrimoire: true, grimoireHides: ['partner', 'demon'] }
+					b: { impairs: { who: 'partner', kind: 'poisoned' }, noKill: 'token' },
+					c: { grimoire: { hides: 'all' } }
 				},
 				'jinxes',
 				issues
 			)
 		).toEqual({
 			a: { registersTo: { alignments: ['evil'], always: true } },
-			b: { impairsPartner: 'poisoned', noKill: 'token' },
-			c: { noGrimoire: true, grimoireHides: ['partner', 'demon'] }
+			b: { impairs: { who: 'partner', kind: 'poisoned' }, noKill: { on: 'token' } },
+			c: { grimoire: { hides: 'all' } }
 		});
 		expect(issues.list).toEqual([]);
 		const bad = new Issues();
 		readJinxRules(
 			{
 				a: { registersTo: { always: true } },
-				b: { impairsPartner: 'sober' },
+				b: { impairs: 'sober' },
 				c: { noKill: 'sometimes' },
-				d: { grimoireHides: ['minion', 'everyone'] }
+				d: { grimoire: ['minion', 'everyone'] }
 			},
 			'jinxes',
 			bad
 		);
-		expect(bad.list).toHaveLength(8);
+		expect(bad.list.map((i) => i.split(': ')[0])).toEqual([
+			'jinxes.a.registersTo',
+			'jinxes.a',
+			'jinxes.b.impairs.kind',
+			'jinxes.b',
+			'jinxes.c.noKill.on',
+			'jinxes.c',
+			'jinxes.d.grimoire',
+			'jinxes.d'
+		]);
 	});
 
 	it('reads the Leviathan and Riot jinx rules, and rejects bad ones', () => {
@@ -154,7 +280,10 @@ describe('jinx rules data', () => {
 			b: { endsGame: { kind: 'nominated-marked-executed', winner: 'good' } },
 			c: { endsGame: { kind: 'marked-executed', token: 'Grandchild', winner: 'evil' } },
 			d: { endsGame: { kind: 'day-without-execution', day: 5, winner: 'good' } },
-			e: { deadAtLeast: 1, notCreatedAfterDay: 5 }
+			e: {
+				deadAtLeast: { dead: 1, when: ['partner-in-play'] },
+				cannotCreate: { via: 'changesCharacter', when: [{ afterDay: 5 }] }
+			}
 		};
 		expect(readJinxRules(good, 'jinxes', issues)).toEqual(good);
 		expect(issues.list).toEqual([]);
@@ -165,7 +294,10 @@ describe('jinx rules data', () => {
 				b: { endsGame: { kind: 'day-without-execution', winner: 'good' } },
 				c: { endsGame: { kind: 'nominated-marked-executed', winner: 'good', day: 5 } },
 				d: { endsGame: { kind: 'sometimes', winner: 'good' } },
-				e: { deadAtLeast: 0, notCreatedAfterDay: 2.5 }
+				e: {
+					deadAtLeast: 0,
+					cannotCreate: { via: 'changesCharacter', when: [{ afterDay: 2.5 }] }
+				}
 			},
 			'jinxes',
 			bad
@@ -176,10 +308,11 @@ describe('jinx rules data', () => {
 			'jinxes.b.endsGame.day',
 			'jinxes.b',
 			'jinxes.c.endsGame.day',
+			'jinxes.c',
 			'jinxes.d.endsGame.kind',
 			'jinxes.d',
-			'jinxes.e.deadAtLeast',
-			'jinxes.e.notCreatedAfterDay',
+			'jinxes.e.cannotCreate.when[0].afterDay',
+			'jinxes.e.deadAtLeast.dead',
 			'jinxes.e'
 		]);
 	});
@@ -187,17 +320,20 @@ describe('jinx rules data', () => {
 	it('reads the Vizier jinx rules, and rejects bad ones', () => {
 		const issues = new Issues();
 		const good = {
-			a: { notDeclared: true, keepsProtection: true, wakesWithPartner: true },
-			b: { impairsPartner: 'no-ability', noExecuteNow: { who: 'partner' } },
-			c: { noExecuteNow: { who: 'marked', token: 'Fear' } }
+			a: { notDeclared: {}, keepsProtection: {}, learns: { what: 'partner-choice' } },
+			b: {
+				impairs: { who: 'partner', kind: 'no-ability', when: ['self-in-play'] },
+				noExecuteNow: { player: 'partner' }
+			},
+			c: { noExecuteNow: { player: 'marked', token: 'Fear' } }
 		};
 		expect(readJinxRules(good, 'jinxes', issues)).toEqual(good);
 		expect(issues.list).toEqual([]);
 		const bad = new Issues();
 		readJinxRules(
 			{
-				a: { noExecuteNow: { who: 'marked' } },
-				b: { noExecuteNow: { who: 'everyone' } },
+				a: { noExecuteNow: 'marked' },
+				b: { noExecuteNow: 'everyone' },
 				c: { notDeclared: 'yes' }
 			},
 			'jinxes',
@@ -206,7 +342,7 @@ describe('jinx rules data', () => {
 		expect(bad.list.map((i) => i.split(': ')[0])).toEqual([
 			'jinxes.a.noExecuteNow.token',
 			'jinxes.a',
-			'jinxes.b.noExecuteNow.who',
+			'jinxes.b.noExecuteNow.player',
 			'jinxes.b',
 			'jinxes.c.notDeclared',
 			'jinxes.c'
@@ -216,10 +352,10 @@ describe('jinx rules data', () => {
 	it("reads Lil' Monsta's babysitting jinx rules, and rejects bad ones", () => {
 		const issues = new Issues();
 		const good = {
-			a: { alsoBecomes: 'minion' },
-			b: { carrierType: 'minion' },
-			c: { keptByPartner: true },
-			d: { diesWhenExecuted: 'Is The Demon' }
+			a: { alsoBecomes: { type: 'minion' } },
+			b: { carriedBy: { type: 'minion', when: ['partner-alive'] } },
+			c: { carriedBy: { marked: 'Is The Demon' } },
+			d: { diesWhenExecuted: { when: [{ marked: 'Is The Demon' }] } }
 		};
 		expect(readJinxRules(good, 'jinxes', issues)).toEqual(good);
 		expect(issues.list).toEqual([]);
@@ -227,16 +363,16 @@ describe('jinx rules data', () => {
 		readJinxRules(
 			{
 				a: { alsoBecomes: 'goblin' },
-				b: { keptByPartner: 'yes' },
+				b: { carriedBy: { type: 'minion', marked: 'Is The Demon' } },
 				c: { diesWhenExecuted: 3 }
 			},
 			'jinxes',
 			bad
 		);
 		expect(bad.list.map((i) => i.split(': ')[0])).toEqual([
-			'jinxes.a.alsoBecomes',
+			'jinxes.a.alsoBecomes.type',
 			'jinxes.a',
-			'jinxes.b.keptByPartner',
+			'jinxes.b.carriedBy',
 			'jinxes.b',
 			'jinxes.c.diesWhenExecuted',
 			'jinxes.c'
@@ -246,27 +382,28 @@ describe('jinx rules data', () => {
 	it('reads the night choice jinx rules, and rejects bad ones', () => {
 		const issues = new Issues();
 		const good = {
-			a: { nightChoice: { who: 'good', partner: 'acts' } },
-			b: { nightChoice: { who: 'any', partner: 'dies' } }
+			a: { nightChoice: { chooses: 'good', partner: 'acts' } },
+			b: { nightChoice: { chooses: 'any', partner: 'dies' } }
 		};
 		expect(readJinxRules(good, 'jinxes', issues)).toEqual(good);
 		expect(issues.list).toEqual([]);
 		const bad = new Issues();
 		readJinxRules(
 			{
-				a: { nightChoice: { who: 'evil', partner: 'acts' } },
-				b: { nightChoice: { who: 'good' } },
-				c: { nightChoice: { who: 'good', partner: 'acts', night: 2 } }
+				a: { nightChoice: { chooses: 'evil', partner: 'acts' } },
+				b: { nightChoice: { chooses: 'good' } },
+				c: { nightChoice: { chooses: 'good', partner: 'acts', night: 2 } }
 			},
 			'jinxes',
 			bad
 		);
 		expect(bad.list.map((i) => i.split(': ')[0])).toEqual([
-			'jinxes.a.nightChoice.who',
+			'jinxes.a.nightChoice.chooses',
 			'jinxes.a',
 			'jinxes.b.nightChoice.partner',
 			'jinxes.b',
-			'jinxes.c.nightChoice.night'
+			'jinxes.c.nightChoice.night',
+			'jinxes.c'
 		]);
 	});
 
@@ -322,7 +459,7 @@ describe('jinx rules data', () => {
 
 	it("reads a custom character's own jinx rules", () => {
 		const custom = new Map([
-			['giver', { rules: { jinxes: { chef: { notGiven: true as const } } } }]
+			['giver', { rules: { jinxes: { chef: { cannotCreate: { via: 'givesAbility' as const } } } } }]
 		]);
 		expect(barredAbilities('giver', ['giver', 'chef', 'empath'], custom)).toEqual(['chef']);
 	});
@@ -334,8 +471,8 @@ describe('jinx rules data', () => {
 				{
 					rules: {
 						jinxes: {
-							spy: { givenInstead: 'a-minion' as const },
-							chef: { spareToken: true as const, noTurnGood: true as const }
+							spy: { givenInstead: { instead: 'a-minion' as const } },
+							chef: { spareToken: {}, noTurnGood: {} }
 						}
 					}
 				}
@@ -348,6 +485,22 @@ describe('jinx rules data', () => {
 		expect(jinxedPartners('giver', 'spareToken', script, custom)).toEqual(['chef']);
 		expect(jinxedPartners('giver', 'noTurnGood', script, custom)).toEqual(['chef']);
 		expect(jinxedPartners('giver', 'storytellerPicksPlayer', script, custom)).toEqual([]);
+	});
+
+	it("reads a custom character's rule written in its partner's block", () => {
+		// The rule lives with the giver, and is about the official partner (`who: "partner"`).
+		const custom = new Map([
+			[
+				'giver',
+				{
+					rules: {
+						jinxes: { chef: { impairs: { who: 'partner' as const, kind: 'drunk' as const } } }
+					}
+				}
+			]
+		]);
+		expect(jinxRulesBetween('chef', 'giver', custom)).toEqual({ impairs: { kind: 'drunk' } });
+		expect(jinxRulesBetween('giver', 'chef', custom)).toBeUndefined();
 	});
 });
 

@@ -48,34 +48,71 @@
 	},
 	"jinxes": {
 		"marionette": {
-			"withPartnerAbility": "partner-in-play"
+			"partnerInPlay": true,
+			"impairs": {
+				"kind": "no-ability",
+				"when": ["has-partner-ability"]
+			}
 		},
 		"summoner": {
-			"withPartnerAbility": "partner-setup",
-			"gainedEndWinner": "evil",
-			"picksCharacterOnly": true,
+			"partnerSetup": true,
+			"endsGame": {
+				"kind": "partner-end",
+				"winner": "evil"
+			},
+			"storytellerChooses": {
+				"what": "player",
+				"when": ["has-partner-ability"]
+			},
 			"noBluffs": true
 		},
 		"boffin": {
 			"notShownGiven": true
 		},
 		"mastermind": {
-			"withPartnerAbility": "no-ability"
+			"impairs": {
+				"kind": "no-ability",
+				"when": ["has-partner-ability"]
+			}
 		},
 		"organgrinder": {
-			"withPartnerAbility": "both-drunk"
+			"partnerInPlay": true,
+			"impairs": {
+				"who": "both",
+				"kind": "drunk",
+				"unlessImpaired": true,
+				"when": ["has-partner-ability"]
+			}
 		},
 		"spy": {
-			"withPartnerAbility": "partner-in-play",
-			"guessesPartner": true
+			"partnerInPlay": true,
+			"impairs": {
+				"kind": "no-ability",
+				"when": ["has-partner-ability"]
+			},
+			"guessesPartner": {
+				"when": ["has-partner-ability", "self-alive", "after-execution"]
+			}
 		},
 		"widow": {
-			"withPartnerAbility": "partner-in-play",
-			"guessesPartner": true
+			"partnerInPlay": true,
+			"impairs": {
+				"kind": "no-ability",
+				"when": ["has-partner-ability"]
+			},
+			"guessesPartner": {
+				"when": ["has-partner-ability", "self-alive", "after-execution"]
+			}
 		},
 		"wraith": {
-			"withPartnerAbility": "partner-in-play",
-			"guessesPartner": true
+			"partnerInPlay": true,
+			"impairs": {
+				"kind": "no-ability",
+				"when": ["has-partner-ability"]
+			},
+			"guessesPartner": {
+				"when": ["has-partner-ability", "self-alive", "after-execution"]
+			}
 		}
 	},
 	"infoTokenCharacters": {

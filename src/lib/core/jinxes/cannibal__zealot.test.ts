@@ -49,7 +49,7 @@ describe('Cannibal + Zealot jinx', () => {
 			.reminder('zealot', 'cannibal', 'Lunch');
 
 		it("is data in the Cannibal's rules", () => {
-			expect(jinxRulesBetween('cannibal', 'zealot')).toEqual({ learnsGained: 'ability' });
+			expect(jinxRulesBetween('cannibal', 'zealot')).toEqual({ learns: { what: 'ability' } });
 		});
 
 		it('the Zealot has no night text, so a step of its own wakes the Cannibal to learn it', () => {

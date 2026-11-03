@@ -51,7 +51,9 @@ describe('Goblin + Plague Doctor jinx', () => {
 		const cast = castWith({ script });
 
 		it("is data in the Plague Doctor's rules", () => {
-			expect(jinxRulesBetween('plaguedoctor', 'goblin')).toEqual({ givenInstead: 'a-minion' });
+			expect(jinxRulesBetween('plaguedoctor', 'goblin')).toEqual({
+				givenInstead: { instead: 'a-minion' }
+			});
 			expect(givenInstead('plaguedoctor', 'goblin', ids)).toBe('a-minion');
 			expect(givenInstead('plaguedoctor', 'goblin', ['plaguedoctor', 'imp'])).toBeUndefined();
 			expect(givenInstead('plaguedoctor', 'poisoner', ids)).toBeUndefined();

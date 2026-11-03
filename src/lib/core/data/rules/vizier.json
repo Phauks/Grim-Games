@@ -48,9 +48,9 @@
 			"keepsProtection": true
 		},
 		"fearmonger": {
-			"wakesWithPartner": true,
+			"learns": "partner-choice",
 			"noExecuteNow": {
-				"who": "marked",
+				"player": "marked",
 				"token": "Fear"
 			}
 		},
@@ -58,16 +58,24 @@
 			"notDeclared": true
 		},
 		"magician": {
-			"impairsPartner": "no-ability",
-			"noExecuteNow": {
-				"who": "partner"
-			}
+			"impairs": {
+				"who": "partner",
+				"kind": "no-ability",
+				"when": ["self-in-play"]
+			},
+			"noExecuteNow": "partner"
 		},
 		"preacher": {
 			"keepsProtection": true
 		},
 		"lilmonsta": {
-			"diesWhenExecuted": "Is The Demon"
+			"diesWhenExecuted": {
+				"when": [
+					{
+						"marked": "Is The Demon"
+					}
+				]
+			}
 		}
 	}
 }

@@ -56,7 +56,7 @@ describe('Boffin + Goon jinx', () => {
 		});
 
 		it("is data in the Boffin's rules", () => {
-			expect(jinxRulesBetween('boffin', 'goon')).toEqual({ noTurnGood: true });
+			expect(jinxRulesBetween('boffin', 'goon')).toEqual({ noTurnGood: {} });
 			expect(ids).toContain('goon');
 		});
 

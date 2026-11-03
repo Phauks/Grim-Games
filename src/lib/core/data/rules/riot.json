@@ -131,25 +131,25 @@
 		},
 		"banshee": {
 			"nightChoice": {
-				"who": "good",
+				"chooses": "good",
 				"partner": "dies"
 			}
 		},
 		"farmer": {
 			"nightChoice": {
-				"who": "good",
+				"chooses": "good",
 				"partner": "acts"
 			}
 		},
 		"ravenkeeper": {
 			"nightChoice": {
-				"who": "good",
+				"chooses": "good",
 				"partner": "acts"
 			}
 		},
 		"sage": {
 			"nightChoice": {
-				"who": "good",
+				"chooses": "good",
 				"partner": "acts"
 			}
 		}

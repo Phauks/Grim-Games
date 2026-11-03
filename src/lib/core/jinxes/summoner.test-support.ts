@@ -2,7 +2,7 @@
  * Shared tests for the Summoner's jinxes that several partners share (each page's Related
  * Jinxes on the wiki, https://wiki.bloodontheclocktower.com/Summoner#Related_Jinxes):
  * - with the Courtier and the Preacher, the Storyteller has the Summoner ability while its
- *   living player has none (`storytellerHas: 'no-ability'`);
+ *   living player has none (`storytellerHas: { once: 'no-ability' }`);
  * - with the Hatter, the Kazali and the Pit-Hag, a second living Demon made by the Summoner
  *   makes deaths tonight arbitrary (`arbitraryDeaths`).
  */
@@ -37,7 +37,7 @@ export function storytellerHasTests(partner: CharacterId, marks: (s: Scenario) =
 		it("is data in the Summoner's rules", () => {
 			// Wiki: "If the living Summoner has no ability, the Storyteller has the Summoner ability."
 			expect(ownJinxRules(base.game, 'summoner', partner, base.characters)).toEqual({
-				storytellerHas: 'no-ability'
+				storytellerHas: { once: 'no-ability' }
 			});
 		});
 
@@ -83,7 +83,7 @@ export function arbitraryDeathsTests(partner: CharacterId) {
 		it("is data in the Summoner's rules", () => {
 			// Wiki: "If the Summoner creates a second living Demon, deaths tonight are arbitrary."
 			expect(ownJinxRules(base.game, 'summoner', partner, base.characters)).toEqual({
-				arbitraryDeaths: true
+				arbitraryDeaths: {}
 			});
 			expect(arbitraryDeathPartners(base.game, 'summoner', base.characters)).toEqual([partner]);
 		});

@@ -33,5 +33,5 @@ describe('Farmer + Leviathan jinx', () => {
 
 	// Both pages' Related Jinxes: each night after the first the Demon picks an alive player not
 	// picked before, and the partner, if picked, acts as if the Demon killed it.
-	nightChoiceTests('leviathan', 'farmer', { who: 'good', partner: 'acts' });
+	nightChoiceTests('leviathan', 'farmer', { chooses: 'good', partner: 'acts' });
 });

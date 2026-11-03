@@ -38,7 +38,8 @@ import {
 import type { Game, ReminderId, SeatId } from '#lib/core/model/types.ts';
 import { keepsAbilityWhenDead } from './dead-characters.ts';
 import { heldAbilitiesOf } from './gained-abilities.ts';
-import { jinxedWith, ownJinxRules, registeredTo } from './jinxes.ts';
+import { jinxImpairs, ownJinxRules, registeredTo } from './jinxes.ts';
+import { jinxApplies } from './jinx-when.ts';
 import { bothDrunkPair, gainedAbilityTaken, survivesCarrierBy } from './jinx-effects.ts';
 import { protectors } from './protection.ts';
 import { effectImpairment } from './reminder-effects.ts';
@@ -183,10 +184,9 @@ export function sparedByJinx(
 	characterId: CharacterId | undefined,
 	characters: CharacterLookup
 ): boolean {
-	return (
-		characterId !== undefined &&
-		ownJinxRules(game, by, characterId, characters)?.partnerKeepsAbility === true
-	);
+	if (characterId === undefined) return false;
+	const effect = ownJinxRules(game, by, characterId, characters)?.partnerKeepsAbility;
+	return effect !== undefined && jinxApplies(game, by, characterId, effect, characters);
 }
 
 function impairmentsOf(
@@ -284,26 +284,26 @@ function impairmentsOf(
 		}
 	}
 
-	// A jinxed character in play, alive or dead, impairs this one whatever its own ability's
-	// state (`impairsPartner`: the Spy or the Widow poisons the Damsel,
-	// https://wiki.bloodontheclocktower.com/Damsel#Related_Jinxes). The jinx also covers one
-	// that has been in play; the game keeps no record of a character that left play, so only
-	// one in play now counts.
+	// A jinx impairs this one whatever its own ability's state, while its `when` holds
+	// (`impairs`: with `partner-in-play`, the Spy or the Widow, alive or dead, poisons the
+	// Damsel, https://wiki.bloodontheclocktower.com/Damsel#Related_Jinxes). The jinx also covers
+	// one that has been in play; the game keeps no record of a character that left play, so
+	// only one in play now counts. One about the ability they have from their token is below.
 	if (characterId) {
-		const jinxed = jinxedWith(game, characterId, (r) => r.impairsPartner !== undefined, characters);
-		for (const { characterId: by, rule } of jinxed) {
-			const source = seatOfCharacter(game, by, characters, seatId);
-			if (!source || !rule.impairsPartner) continue;
-			out.push(sourced(rule.impairsPartner, { characterId: by, seatId: source }, characters));
+		for (const { partner, effect } of jinxImpairs(game, characterId, characters)) {
+			const source = seatOfCharacter(game, partner, characters, seatId);
+			const at = source ? { characterId: partner, seatId: source } : { characterId: partner };
+			out.push(sourced(effect.kind, at, characters));
 		}
 	}
 
-	// A jinx takes away the ability they have from their token (`withPartnerAbility`: the
-	// Alchemist-Spy has no Spy ability, https://wiki.bloodontheclocktower.com/Alchemist#Related_Jinxes),
-	// or leaves them alive with none once their host was executed (`survivesCarrierExecuted`:
-	// the Lleech with the Mastermind, https://wiki.bloodontheclocktower.com/Lleech#Related_Jinxes).
+	// A jinx takes away the ability they have from their token (`impairs` with
+	// `has-partner-ability`: the Alchemist-Spy has no Spy ability,
+	// https://wiki.bloodontheclocktower.com/Alchemist#Related_Jinxes), or leaves them alive with
+	// none once their host was executed (`survivesCarrierExecuted`: the Lleech with the
+	// Mastermind, https://wiki.bloodontheclocktower.com/Lleech#Related_Jinxes).
 	const taken = gainedAbilityTaken(game, seatId, characters);
-	if (taken) out.push(sourced('no-ability', { characterId: taken }, characters));
+	if (taken) out.push(sourced(taken.kind, { characterId: taken.partner }, characters));
 	const survivedBy = survivesCarrierBy(game, seatId, characters);
 	if (survivedBy) out.push(sourced('no-ability', { characterId: survivedBy }, characters));
 
@@ -355,14 +355,14 @@ function impairmentsOf(
 	);
 	const left = safe ? unharmed : out;
 	const kept = sober ? left.filter((i) => i.reason === 'no-ability') : left;
-	// Both drunk while both are sober (`withPartnerAbility: 'both-drunk'`: the Alchemist with
-	// the Organ Grinder ability and the Organ Grinder,
+	// Both drunk while both are sober (`impairs` with `who: "both"` and `unlessImpaired`: the
+	// Alchemist with the Organ Grinder ability and the Organ Grinder,
 	// https://wiki.bloodontheclocktower.com/Alchemist#Related_Jinxes).
 	const pair = kept.length === 0 ? bothDrunkPair(game, seatId, characters) : undefined;
 	if (pair && !visiting.has(pair.other)) {
 		const next = new Set(visiting).add(seatId);
 		if (impairmentsOf(game, pair.other, characters, next).length === 0)
-			kept.push(sourced('drunk', { characterId: pair.partner }, characters));
+			kept.push(sourced(pair.kind, { characterId: pair.partner }, characters));
 	}
 	return kept.sort((a, b) => ORDER[a.reason] - ORDER[b.reason]);
 }

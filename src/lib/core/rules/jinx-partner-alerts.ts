@@ -1,8 +1,8 @@
 /**
- * Night alerts a jinx adds at its partner's step, for this character's player (owner's side
- * of the `jinxes` block, `data/jinx-rules.ts`):
- * - `wakes-with` (`wakesWithPartner`): the player wakes with the partner and learns whom it
- *   chooses (the Vizier with the Fearmonger,
+ * Night alerts a jinx adds at its partner's step, for this character's player (its effects
+ * from either file of the pair, `data/jinx-rules.ts`):
+ * - `wakes-with` (`learns: "partner-choice"`): the player wakes with the partner and learns
+ *   whom it chooses (the Vizier with the Fearmonger,
  *   https://wiki.bloodontheclocktower.com/Vizier#Related_Jinxes);
  * - `keeps-protection` (`keepsProtection`): the partner's ability has taken this player's
  *   ability away, so they learn this, and their protection still holds (the Vizier with the
@@ -10,6 +10,7 @@
  * The jinx itself applies each one, so they work whatever the owner's ability's state. Data
  * only, no wording: `NightAlerts.svelte` says them.
  */
+import type { JinxEffect } from '#lib/core/data/jinx-rules.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import { wikiUrl } from '#lib/core/data/wiki.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
@@ -17,8 +18,10 @@ import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 import { abilityState } from './ability.ts';
-import { ownJinxes, ownJinxRules } from './jinxes.ts';
+import { ownJinxEffects, ownJinxRules } from './jinxes.ts';
+import { jinxApplies } from './jinx-when.ts';
 import {
+	gainedApplies,
 	gainedPartnerJinx,
 	jinxGuessers,
 	madAsPartners,
@@ -41,8 +44,13 @@ export function jinxPartnerAlerts(
 		if (!rule) continue;
 		const state = abilityState(game, seatId, characters);
 		const kinds: NightAlert['kind'][] = [];
-		if (rule.wakesWithPartner) kinds.push('wakes-with');
-		if (rule.keepsProtection && state.impairments.some((i) => i.source.characterId === partner))
+		const applies = (effect: JinxEffect | undefined) =>
+			effect !== undefined && jinxApplies(game, owner, partner, effect, characters, { seatId });
+		if (rule.learns?.what === 'partner-choice' && applies(rule.learns)) kinds.push('wakes-with');
+		if (
+			applies(rule.keepsProtection) &&
+			state.impairments.some((i) => i.source.characterId === partner)
+		)
 			kinds.push('keeps-protection');
 		const character = characters.get(owner);
 		for (const kind of kinds)
@@ -61,8 +69,8 @@ export function jinxPartnerAlerts(
 /**
  * The alerts at `characterId`'s step that a jinx lets a player learn about a partner
  * (https://wiki.bloodontheclocktower.com/Legion#Related_Jinxes), in seating order:
- * - `learns-no-ability` (`learnsNoAbility`): on the first night, the waking player learns the
- *   partner took their ability (the Engineer with Legion);
+ * - `learns-no-ability` (`learns: "no-ability"`, while its `when` holds): the waking player
+ *   learns the partner took their ability (with `{"night": 1}`, the Engineer with Legion);
  * - `might-learn` (`partnerKeepsAbility`): one of this player's `impairs` tokens would reach
  *   a partner's player, who keeps their ability, so this player might learn the partner is in
  *   play; at this player's step and at the partner's (the Minstrel and the Preacher with
@@ -94,14 +102,20 @@ export function jinxLearnAlerts(
 	for (const seatId of game.seating) {
 		const owner = trueCharacter(game, seatId, characters);
 		if (owner === undefined) continue;
-		if (owner === characterId && game.pastDays.length === 0 && !game.seats[seatId].dead) {
+		if (owner === characterId && !game.seats[seatId].dead) {
 			const impairs = abilityState(game, seatId, characters).impairments;
-			const learns = ownJinxes(game, owner, (r) => r.learnsNoAbility === true, characters);
+			const learns = ownJinxEffects(
+				game,
+				owner,
+				'learns',
+				characters,
+				(e) => e.what === 'no-ability'
+			);
 			for (const { partner } of learns)
 				if (impairs.some((i) => i.source.characterId === partner))
 					out.push(alert('learns-no-ability', seatId, owner, partner));
 		}
-		const spared = ownJinxes(game, owner, (r) => r.partnerKeepsAbility === true, characters);
+		const spared = ownJinxEffects(game, owner, 'partnerKeepsAbility', characters);
 		for (const { partner } of spared) {
 			if (characterId !== owner && characterId !== partner) continue;
 			if (wouldImpair(game, owner, partner, characters))
@@ -130,7 +144,7 @@ function wouldImpair(
 }
 
 /**
- * The `storyteller-has` alert at `characterId`'s step (`storytellerHas: 'no-ability'`): its
+ * The `storyteller-has` alert at `characterId`'s step (`storytellerHas` once `no-ability`): its
  * living player has no ability (drunk, poisoned or without one), so the Storyteller has its
  * ability and makes its choices (the Summoner with the Courtier or the Preacher,
  * https://wiki.bloodontheclocktower.com/Summoner#Related_Jinxes). `partner` is the jinxed
@@ -141,11 +155,12 @@ export function storytellerHasAlerts(
 	characterId: CharacterId,
 	characters: CharacterLookup
 ): NightAlert[] {
-	const partners = ownJinxes(
+	const partners = ownJinxEffects(
 		game,
 		characterId,
-		(r) => r.storytellerHas === 'no-ability',
-		characters
+		'storytellerHas',
+		characters,
+		(e) => e.once === 'no-ability'
 	).map((j) => j.partner);
 	if (partners.length === 0) return [];
 	const character = characters.get(characterId);
@@ -184,7 +199,7 @@ export function storytellerHasAlerts(
  * - `reverts` (`notSecondDemon`), at the partner's step: this player carries their own
  *   `becomes` token while a living player is the partner, so they are their own character again
  *   (the Scarlet Woman with the Fang Gu or the Al-Hadikhia);
- * - `partner-setup` (`withPartnerAbility: 'partner-setup'`), at the partner's step: a player
+ * - `partner-setup` (`partnerSetup`), at the partner's step: a player
  *   who gained the partner's ability in play (`gainedFrom`) may make its setup change now (the
  *   Philosopher with the Bounty Hunter's: a Townsfolk might turn evil,
  *   https://wiki.bloodontheclocktower.com/Philosopher#Related_Jinxes).
@@ -228,8 +243,8 @@ export function jinxStepAlerts(
 		if (r.partner === characterId) out.push(alert('reverts', r.seatId, r.owner, r.partner));
 	for (const seatId of game.seating) {
 		const gained = gainedPartnerJinx(game, seatId, characters);
-		if (gained?.partner !== characterId || gained.rule.withPartnerAbility !== 'partner-setup')
-			continue;
+		if (gained?.partner !== characterId) continue;
+		if (!gainedApplies(game, seatId, gained, gained.rule.partnerSetup, characters)) continue;
 		if (rulesOf(gained.owner, characters)?.gainedFrom === undefined) continue;
 		if (rulesOf(characterId, characters)?.setupModifier === undefined) continue;
 		out.push(alert('partner-setup', seatId, gained.owner, characterId));

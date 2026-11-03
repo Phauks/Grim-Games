@@ -40,7 +40,7 @@ describe('Alchemist + Mastermind jinx', () => {
 		it("is data in the Alchemist's rules", () => {
 			// Wiki: "An Alchemist-Mastermind has no Mastermind ability & the Mastermind is not-in-play."
 			expect(jinxRulesBetween('alchemist', 'mastermind')).toEqual({
-				withPartnerAbility: 'no-ability'
+				impairs: { kind: 'no-ability', when: ['has-partner-ability'] }
 			});
 		});
 

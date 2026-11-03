@@ -10,7 +10,7 @@ import { type CharacterLookup } from '#lib/core/model/characters.ts';
 import { alignmentOf, aliveNeighbours, getSeat, trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 import { abilityState, seatOfCharacter, type AbilitySource } from './ability.ts';
-import { diesWhenExecutedBy, ownJinxRules } from './jinxes.ts';
+import { diesWhenExecutedBy, jinxEffect } from './jinxes.ts';
 
 /**
  * Whether the protection of the ability at `seatId` works: its ability works, or (alive) it
@@ -24,7 +24,8 @@ export function protectionWorks(game: Game, seatId: SeatId, characters: Characte
 	const owner = state.characterId;
 	if (state.dead || owner === undefined || state.impairments.length === 0) return false;
 	return state.impairments.every(
-		(i) => ownJinxRules(game, owner, i.source.characterId, characters)?.keepsProtection === true
+		(i) =>
+			jinxEffect(game, owner, i.source.characterId, 'keepsProtection', characters) !== undefined
 	);
 }
 

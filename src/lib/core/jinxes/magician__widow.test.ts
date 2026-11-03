@@ -45,7 +45,7 @@ describe('Magician + Widow jinx', () => {
 
 		it("is data in the Widow's rules", () => {
 			expect(jinxRulesBetween('widow', 'magician')).toEqual({
-				grimoireHides: ['partner', 'demon']
+				grimoire: { hides: ['partner', 'demon'], when: ['partner-in-play'] }
 			});
 		});
 

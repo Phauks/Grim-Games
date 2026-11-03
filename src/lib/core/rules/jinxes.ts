@@ -7,10 +7,21 @@
  * warnings when both are chosen.
  *
  * What a jinx changes in the app is data: the `jinxes` block of either character's rules
- * (`data/jinx-rules.ts`), in effect while both are on the script. A jinx with no such block
- * (a homebrew one) is text, except that its wording may still say only one can be in play.
+ * (`data/jinx-rules.ts`), in effect while both are on the script. Each effect says whose
+ * behaviour it changes (`who`), so the pair is read the same from either file: `owner`'s rules
+ * for a partner are the effects on `owner` from both files (`jinxRulesBetween`). A jinx with no
+ * such block (a homebrew one) is text, except that its wording may still say only one can be
+ * in play. Each reader checks an effect's `when` (`jinx-when.ts`).
  */
-import type { GivenInstead, JinxRules, RegistersTo } from '#lib/core/data/jinx-rules.ts';
+import type {
+	GivenInstead,
+	Impairs,
+	JinxEffect,
+	JinxRuleKey,
+	JinxRules,
+	RegistersTo
+} from '#lib/core/data/jinx-rules.ts';
+import { flipCondition, subjectOf } from '#lib/core/data/jinx-needs.ts';
 import type { JinxIndex } from '#lib/core/data/jinxes.ts';
 import { pairKey } from '#lib/core/data/parse.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
@@ -29,13 +40,14 @@ import {
 } from '#lib/core/model/characters.ts';
 import { alignmentOf, aliveNeighbours, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
+import { aboutHolder, jinxApplies } from './jinx-when.ts';
 
 type RulesLookup = ReadonlyMap<CharacterId, { rules?: CharacterRules }>;
 
 /**
- * `owner`'s own jinx rules for `partner` (`owner`'s side of the pair only), while the game's
- * script holds both: the rules that say what `owner` does, or how it is treated, with the
- * partner (`registersTo`, `impairsPartner`, `noKill`, `noGrimoire`, `grimoireHides`).
+ * `owner`'s jinx rules for `partner` while the game's script holds both: the effects on what
+ * `owner` does, or how it is treated, with the partner, from either file
+ * (`jinxRulesBetween`). Their `when` is left for the reader to check.
  */
 export function ownJinxRules(
 	game: Pick<Game, 'script'>,
@@ -44,7 +56,7 @@ export function ownJinxRules(
 	characters?: RulesLookup
 ): JinxRules | undefined {
 	if (owner === partner) return undefined;
-	const rule = rulesOf(owner, characters)?.jinxes?.[partner];
+	const rule = jinxRulesBetween(owner, partner, characters);
 	if (!rule) return undefined;
 	return isOnScript(game.script, owner) && isOnScript(game.script, partner) ? rule : undefined;
 }
@@ -77,9 +89,77 @@ export function ownJinxes(
 	test: (rule: JinxRules) => boolean,
 	characters?: RulesLookup
 ): { partner: CharacterId; rule: JinxRules }[] {
-	return Object.keys(rulesOf(owner, characters)?.jinxes ?? {}).flatMap((partner) => {
+	const named = (id: CharacterId) => rulesOf(id, characters)?.jinxes?.[owner] !== undefined;
+	const partners = new Set([
+		...Object.keys(rulesOf(owner, characters)?.jinxes ?? {}),
+		...scriptCharacterIds(game.script).filter(named)
+	]);
+	return [...partners].flatMap((partner) => {
 		const rule = ownJinxRules(game, owner, partner, characters);
 		return rule && test(rule) ? [{ partner, rule }] : [];
+	});
+}
+
+/**
+ * `owner`'s effect `key` with `partner` in effect now: on the script, its `when` holding on
+ * `game` (about `at`'s player when given), and not about a player with the partner's ability
+ * (`has-partner-ability`). Undefined otherwise.
+ */
+export function jinxEffect<K extends Exclude<JinxRuleKey, 'exclusive'>>(
+	game: Pick<Game, 'script'> & Partial<Game>,
+	owner: CharacterId,
+	partner: CharacterId,
+	key: K,
+	characters?: RulesLookup,
+	at?: { seatId?: SeatId }
+): NonNullable<JinxRules[K]> | undefined {
+	const effect = ownJinxRules(game, owner, partner, characters)?.[key] as JinxEffect | undefined;
+	if (!effect || aboutHolder(effect)) return undefined;
+	const lookup = characters as CharacterLookup | undefined;
+	return jinxApplies(game, owner, partner, effect, lookup, at)
+		? (effect as NonNullable<JinxRules[K]>)
+		: undefined;
+}
+
+/**
+ * `owner`'s effects `key` in effect now, by partner: those on the script whose `when` holds on
+ * `game` (`jinxApplies`). Not those about a player with the partner's ability
+ * (`has-partner-ability`), which only the readers of that player apply.
+ */
+export function ownJinxEffects<K extends Exclude<JinxRuleKey, 'exclusive'>>(
+	game: Pick<Game, 'script'> & Partial<Game>,
+	owner: CharacterId,
+	key: K,
+	characters?: RulesLookup,
+	test: (effect: NonNullable<JinxRules[K]>) => boolean = () => true
+): { partner: CharacterId; effect: NonNullable<JinxRules[K]> }[] {
+	const lookup = characters as CharacterLookup | undefined;
+	return ownJinxes(game, owner, (r) => r[key] !== undefined, characters).flatMap(
+		({ partner, rule }) => {
+			const effect = rule[key] as NonNullable<JinxRules[K]>;
+			const on = effect as JinxEffect;
+			if (aboutHolder(on) || !test(effect)) return [];
+			return jinxApplies(game, owner, partner, on, lookup) ? [{ partner, effect }] : [];
+		}
+	);
+}
+
+/**
+ * The jinxes that impair `characterId`'s players now, by partner, in script order (`impairs`
+ * whose `when` holds: the Spy or the Widow in play poisons the Damsel,
+ * https://wiki.bloodontheclocktower.com/Damsel#Related_Jinxes). Not those about the ability a
+ * player has from their token (`has-partner-ability`) nor about both players (`who: "both"`),
+ * which `jinx-effects.ts` reads for that player.
+ */
+export function jinxImpairs(
+	game: Game,
+	characterId: CharacterId,
+	characters: CharacterLookup
+): { partner: CharacterId; effect: Impairs }[] {
+	return scriptCharacterIds(game.script).flatMap((partner) => {
+		const effect = ownJinxRules(game, characterId, partner, characters)?.impairs;
+		if (!effect || effect.who === 'both' || aboutHolder(effect)) return [];
+		return jinxApplies(game, characterId, partner, effect, characters) ? [{ partner, effect }] : [];
 	});
 }
 
@@ -115,12 +195,12 @@ export function notDeclared(
 	characterId: CharacterId,
 	characters?: RulesLookup
 ): boolean {
-	return ownJinxes(game, characterId, (r) => r.notDeclared === true, characters).length > 0;
+	return ownJinxEffects(game, characterId, 'notDeclared', characters).length > 0;
 }
 
 /**
- * The partners `changer`'s `changesCharacter` may no longer create, now that the day a jinx
- * names is over (`notCreatedAfterDay`: the Pit-Hag's and the Hatter's Leviathan, after day 5,
+ * The partners `changer`'s `changesCharacter` may not create now (`cannotCreate` with `via:
+ * "changesCharacter"`: with `{"afterDay": 5}`, the Pit-Hag's and the Hatter's Leviathan,
  * https://wiki.bloodontheclocktower.com/Leviathan#Related_Jinxes). A change is made at night,
  * after the latest day, so day `n` is over once the game has reached it.
  */
@@ -129,12 +209,12 @@ export function createdTooLate(
 	changer: CharacterId,
 	characters?: RulesLookup
 ): CharacterId[] {
-	const day = game.pastDays.length;
-	return ownJinxes(
+	return ownJinxEffects(
 		game,
 		changer,
-		(r) => r.notCreatedAfterDay !== undefined && day >= r.notCreatedAfterDay,
-		characters
+		'cannotCreate',
+		characters,
+		(e) => e.via === 'changesCharacter'
 	).map((j) => j.partner);
 }
 
@@ -150,13 +230,14 @@ export function alsoBecomes(
 	characterId: CharacterId,
 	characters?: RulesLookup
 ): CharacterType | undefined {
-	return ownJinxRules(game, changer, characterId, characters)?.alsoBecomes;
+	const effect = ownJinxRules(game, changer, characterId, characters)?.alsoBecomes;
+	return jinxApplies(game, changer, characterId, effect) ? effect?.type : undefined;
 }
 
 /**
  * The partner whose jinx with `owner` lets `seatId` die when executed despite `owner`'s own
- * protection: the seat carries the partner's token that `diesWhenExecuted` names (the
- * Psychopath and the Vizier babysitting Lil' Monsta,
+ * protection (`diesWhenExecuted`, whose `when` is about this seat: with `{"marked": "Is The
+ * Demon"}`, the Psychopath and the Vizier babysitting Lil' Monsta,
  * https://wiki.bloodontheclocktower.com/Lil%27_Monsta#Related_Jinxes). Undefined otherwise.
  */
 export function diesWhenExecutedBy(
@@ -165,19 +246,19 @@ export function diesWhenExecutedBy(
 	owner: CharacterId,
 	characters?: RulesLookup
 ): CharacterId | undefined {
-	const reminders = game.seats[seatId]?.reminders ?? [];
+	const lookup = characters as CharacterLookup | undefined;
 	return ownJinxes(game, owner, (r) => r.diesWhenExecuted !== undefined, characters).find(
 		({ partner, rule }) =>
-			reminders.some((r) => r.characterId === partner && r.label === rule.diesWhenExecuted)
+			jinxApplies(game, owner, partner, rule.diesWhenExecuted, lookup, { seatId })
 	)?.partner;
 }
 
 /**
- * The partner whose jinx says `seatId` doesn't carry `carrier`'s `carrierIsDemon` token:
- * `carrierType`, while the partner's player lives only a player of that type does (the
- * Magician's and the Poppy Grower's Lil' Monsta goes to a Minion); `keptByPartner`, once the
- * partner's `becomes` token marks a player only they do (the Scarlet Woman babysits Lil'
- * Monsta for the rest of the game,
+ * The partner whose jinx says `seatId` doesn't carry `carrier`'s `carrierIsDemon` token
+ * (`carriedBy`, while its `when` holds): with `type`, only a player of that type does (the
+ * Magician's and the Poppy Grower's Lil' Monsta goes to a Minion while they live); with
+ * `marked`, once a player carries that partner's reminder only they do (the Scarlet Woman
+ * babysits Lil' Monsta for the rest of the game,
  * https://wiki.bloodontheclocktower.com/Lil%27_Monsta#Related_Jinxes). A seat whose type is
  * not known yet is not judged. Undefined when nothing rules it out.
  */
@@ -187,23 +268,15 @@ export function carrierJinx(
 	seatId: SeatId,
 	characters: CharacterLookup
 ): CharacterId | undefined {
-	const test = (r: JinxRules) => r.carrierType !== undefined || r.keptByPartner === true;
-	return ownJinxes(game, carrier, test, characters).find(({ partner, rule }) => {
-		if (rule.carrierType) {
-			const alive = game.seating.some(
-				(s) => !game.seats[s].dead && trueCharacter(game, s, characters) === partner
-			);
+	return ownJinxEffects(game, carrier, 'carriedBy', characters).find(({ partner, effect }) => {
+		if (effect.type) {
 			const type = typeOf(game, seatId, characters);
-			if (alive && type !== undefined && type !== rule.carrierType) return true;
+			return type !== undefined && type !== effect.type;
 		}
-		if (rule.keptByPartner) {
-			const token = rulesOf(partner, characters)?.becomes?.token;
-			const keepers = game.seating.filter((s) =>
-				game.seats[s].reminders.some((r) => r.characterId === partner && r.label === token)
-			);
-			if (token !== undefined && keepers.length > 0 && !keepers.includes(seatId)) return true;
-		}
-		return false;
+		const keepers = game.seating.filter((s) =>
+			game.seats[s].reminders.some((r) => r.characterId === partner && r.label === effect.marked)
+		);
+		return keepers.length > 0 && !keepers.includes(seatId);
 	})?.partner;
 }
 
@@ -222,29 +295,57 @@ export function isExclusiveJinx(reason: string): boolean {
 }
 
 /**
- * What the jinx between `a` and `b` changes, from both characters' `jinxes` blocks, or
- * undefined when neither says anything (the jinx is text only).
+ * What the jinx between `a` and `b` changes for `a`, from both characters' `jinxes` blocks:
+ * `a`'s own effects (`who: "self"`) and `b`'s effects on its partner (`who: "partner"`), with
+ * `b`'s conditions read from `a`'s side; an `exclusive` jinx either way, and `who: "both"`
+ * from either. `who` is left out but for `both`. Undefined when nothing is about `a` (the jinx
+ * may be text only). Were both files to set one effect, `a`'s own would win; loading reports
+ * that as an error (`jinxPartnerIssues`).
  */
 export function jinxRulesBetween(
 	a: CharacterId,
 	b: CharacterId,
 	characters?: RulesLookup
 ): JinxRules | undefined {
-	const fromA = rulesOf(a, characters)?.jinxes?.[b];
-	const fromB = rulesOf(b, characters)?.jinxes?.[a];
-	return fromA || fromB ? { ...fromB, ...fromA } : undefined;
+	return pairView(rulesOf(a, characters)?.jinxes?.[b], rulesOf(b, characters)?.jinxes?.[a]);
+}
+
+/** The effects on a pair's character from its own file's entry (`own`) and the partner's. */
+export function pairView(
+	own: JinxRules | undefined,
+	theirs: JinxRules | undefined
+): JinxRules | undefined {
+	const out: Record<string, unknown> = {};
+	const add = (rules: JinxRules | undefined, from: 'self' | 'partner') => {
+		for (const [key, effect] of Object.entries(rules ?? {}) as [string, JinxEffect | true][]) {
+			if (key in out) continue;
+			if (effect === true) out[key] = true;
+			else if (subjectOf(effect) !== (from === 'self' ? 'partner' : 'self'))
+				out[key] = viewed(effect, from === 'partner');
+		}
+	};
+	add(own, 'self');
+	add(theirs, 'partner');
+	return Object.keys(out).length > 0 ? (out as JinxRules) : undefined;
+}
+
+/** An effect without its `who` (but `both`), its conditions flipped when from the partner. */
+function viewed(effect: JinxEffect, flip: boolean): JinxEffect {
+	const { who, ...rest } = effect;
+	const out: JinxEffect = who === 'both' ? { ...rest, who } : rest;
+	return flip && out.when ? { ...out, when: out.when.map(flipCondition) } : out;
 }
 
 /** Whether a jinx forbids both being in play: its rules say so, else its wording does. */
 export function jinxIsExclusive(jinx: Jinx, characters?: RulesLookup): boolean {
 	const [a, b] = jinx.characters;
-	const rules = jinxRulesBetween(a, b, characters);
+	const rules = jinxRulesBetween(a, b, characters) ?? jinxRulesBetween(b, a, characters);
 	return rules ? rules.exclusive === true : isExclusiveJinx(jinx.reason);
 }
 
 /**
  * The abilities `giver`'s `givesAbility` may not give on this script: each jinxed partner
- * on it whose jinx says `notGiven` (the Boffin's Demon cannot have the Drunk ability,
+ * on it whose jinx says `cannotCreate` with `via: "givesAbility"` (the Boffin's Demon cannot have the Drunk ability,
  * https://wiki.bloodontheclocktower.com/Boffin#Related_Jinxes).
  */
 export function barredAbilities(
@@ -252,9 +353,10 @@ export function barredAbilities(
 	script: readonly CharacterId[],
 	characters?: RulesLookup
 ): CharacterId[] {
-	return script.filter(
-		(id) => id !== giver && jinxRulesBetween(giver, id, characters)?.notGiven === true
-	);
+	return script.filter((id) => {
+		const effect = id === giver ? undefined : jinxRulesBetween(giver, id, characters)?.cannotCreate;
+		return effect?.via === 'givesAbility' && jinxApplies(undefined, giver, id, effect);
+	});
 }
 
 /**
@@ -271,25 +373,34 @@ export function givenInstead(
 	characters?: RulesLookup
 ): GivenInstead | undefined {
 	if (giver === ability || !script.includes(giver) || !script.includes(ability)) return undefined;
-	return jinxRulesBetween(giver, ability, characters)?.givenInstead;
+	const effect = jinxRulesBetween(giver, ability, characters)?.givenInstead;
+	return jinxApplies(undefined, giver, ability, effect) ? effect?.instead : undefined;
 }
 
 /**
- * The characters on the script whose jinx with `id` says `key`: those `id` may give or
- * create while in play (`spareToken`: the Boffin's and Pit-Hag's Village Idiot), or whose
- * player the Storyteller picks when `id` creates them (`storytellerPicksPlayer`: the
+ * The characters on the script whose jinx with `id` answers `question`: those `id` may give
+ * or create while in play (`spareToken`: the Boffin's and Pit-Hag's Village Idiot), those it
+ * can't turn good (`noTurnGood`), or those whose player the Storyteller picks when `id`
+ * creates them (`storytellerPicksPlayer`, `storytellerChooses` with `creating: "partner"`: the
  * Pit-Hag's Damsel).
  */
 export function jinxedPartners(
 	id: CharacterId,
-	key: 'spareToken' | 'storytellerPicksPlayer' | 'noTurnGood',
+	question: 'spareToken' | 'storytellerPicksPlayer' | 'noTurnGood',
 	script: readonly CharacterId[],
 	characters?: RulesLookup
 ): CharacterId[] {
 	if (!script.includes(id)) return [];
-	return script.filter(
-		(other) => other !== id && jinxRulesBetween(id, other, characters)?.[key] === true
-	);
+	return script.filter((other) => {
+		const rules = other === id ? undefined : jinxRulesBetween(id, other, characters);
+		const effect =
+			question === 'storytellerPicksPlayer'
+				? rules?.storytellerChooses?.creating === 'partner'
+					? rules.storytellerChooses
+					: undefined
+				: rules?.[question];
+		return effect !== undefined && jinxApplies(undefined, id, other, effect);
+	});
 }
 
 /**
@@ -413,7 +524,8 @@ export function allEvilBecoming(
 	created: CharacterId,
 	characters: CharacterLookup
 ): SeatId[] {
-	if (!ownJinxRules(game, changer, created, characters)?.allEvilBecome) return [];
+	const effect = ownJinxRules(game, changer, created, characters)?.allEvilBecome;
+	if (!effect || !jinxApplies(game, changer, created, effect, characters)) return [];
 	return game.seating.filter(
 		(id) => alignmentOf(game, id) === 'evil' && trueCharacter(game, id, characters) !== created
 	);
@@ -435,7 +547,10 @@ export function storytellerGains(
 	if (game.seats[seatId]?.dead) return undefined;
 	const own = trueCharacter(game, seatId, characters);
 	if (own === undefined) return undefined;
-	return ownJinxRules(game, own, by, characters)?.storytellerHas === 'removed' ? own : undefined;
+	const effect = ownJinxRules(game, own, by, characters)?.storytellerHas;
+	return effect?.once === 'removed' && jinxApplies(game, own, by, effect, characters)
+		? own
+		: undefined;
 }
 
 /**
@@ -449,9 +564,7 @@ export function arbitraryDeathPartners(
 	changer: CharacterId,
 	characters?: RulesLookup
 ): CharacterId[] {
-	return ownJinxes(game, changer, (r) => r.arbitraryDeaths === true, characters).map(
-		(j) => j.partner
-	);
+	return ownJinxEffects(game, changer, 'arbitraryDeaths', characters).map((j) => j.partner);
 }
 
 /**
@@ -494,8 +607,9 @@ export function neighbourBecoming(
 	seatId: SeatId,
 	characters: CharacterLookup
 ): NeighbourBecoming | undefined {
-	const type = ownJinxRules(game, changer, created, characters)?.neighbourBecomes;
-	if (!type) return undefined;
+	const effect = ownJinxRules(game, changer, created, characters)?.neighbourBecomes;
+	if (!effect || !jinxApplies(game, changer, created, effect, characters)) return undefined;
+	const type = effect.type;
 	const near = aliveNeighbours(game, seatId).filter((id) => id !== seatId);
 	const of = near.filter((id) => typeOf(game, id, characters) === type);
 	const fits = of.length > 0;
@@ -504,23 +618,23 @@ export function neighbourBecoming(
 }
 
 /**
- * The partners whose living player means the Storyteller, not `changer`'s player, chooses
- * which player its `changesCharacter` changes tonight (`storytellerPicksWhileAlive`: with the
- * Poppy Grower alive on the 3rd night the Summoner chooses which Demon but not which player,
- * https://wiki.bloodontheclocktower.com/Summoner#Related_Jinxes).
+ * The partners whose jinx means the Storyteller, not `changer`'s player, chooses which player
+ * its `changesCharacter` changes tonight (`storytellerChooses`, whatever it makes, while its
+ * `when` holds: with `partner-alive`, the Summoner chooses which Demon but not which player
+ * while the Poppy Grower lives, https://wiki.bloodontheclocktower.com/Summoner#Related_Jinxes).
  */
 export function storytellerPicksNow(
 	game: Game,
 	changer: CharacterId,
 	characters: CharacterLookup
 ): CharacterId[] {
-	return ownJinxes(game, changer, (r) => r.storytellerPicksWhileAlive === true, characters)
-		.map((j) => j.partner)
-		.filter((partner) =>
-			game.seating.some(
-				(id) => !game.seats[id].dead && trueCharacter(game, id, characters) === partner
-			)
-		);
+	return ownJinxEffects(
+		game,
+		changer,
+		'storytellerChooses',
+		characters,
+		(e) => e.creating === undefined
+	).map((j) => j.partner);
 }
 
 /**
@@ -533,7 +647,8 @@ export function earlierTokens(
 	changer: CharacterId,
 	characters?: RulesLookup
 ): { partner: CharacterId; token: ReminderLabel }[] {
-	return ownJinxes(game, changer, (r) => r.earlierToken !== undefined, characters).flatMap(
-		({ partner, rule }) => (rule.earlierToken ? [{ partner, token: rule.earlierToken }] : [])
-	);
+	return ownJinxEffects(game, changer, 'earlierToken', characters).map(({ partner, effect }) => ({
+		partner,
+		token: effect.token
+	}));
 }

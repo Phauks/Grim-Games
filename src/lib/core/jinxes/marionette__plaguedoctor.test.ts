@@ -53,7 +53,7 @@ describe('Marionette + Plague Doctor jinx', () => {
 
 		it("is data in the Plague Doctor's rules", () => {
 			expect(jinxRulesBetween('plaguedoctor', 'marionette')).toEqual({
-				givenInstead: 'demon-neighbour-becomes'
+				givenInstead: { instead: 'demon-neighbour-becomes' }
 			});
 			expect(givenInstead('plaguedoctor', 'marionette', ids)).toBe('demon-neighbour-becomes');
 		});

@@ -39,7 +39,7 @@ describe('Huntsman + Marionette jinx', () => {
 		it("is data in the Marionette's rules", () => {
 			// Wiki: "If the Marionette thinks that they are the Huntsman, the Damsel was added during setup."
 			expect(ownJinxRules(base.game, 'marionette', 'huntsman', base.characters)).toEqual({
-				thinksPartnerSetup: true
+				thinksPartnerSetup: {}
 			});
 		});
 

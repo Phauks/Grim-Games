@@ -46,7 +46,7 @@ describe('Balloonist + Marionette jinx', () => {
 		it("is data in the Marionette's rules", () => {
 			// Wiki: "If the Marionette thinks that they are the Balloonist, an Outsider might have been added during setup."
 			expect(ownJinxRules(base.game, 'marionette', 'balloonist', base.characters)).toEqual({
-				thinksPartnerSetup: true
+				thinksPartnerSetup: {}
 			});
 			expect(thinksPartnerSetup(base.game, base.seat(0), base.characters)).toBe('balloonist');
 		});

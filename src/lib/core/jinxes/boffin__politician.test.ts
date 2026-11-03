@@ -46,7 +46,9 @@ describe('Boffin + Politician jinx', () => {
 		const cast = castWith({ script });
 
 		it("is data in the Boffin's rules", () => {
-			expect(jinxRulesBetween('boffin', 'politician')).toEqual({ notGiven: true });
+			expect(jinxRulesBetween('boffin', 'politician')).toEqual({
+				cannotCreate: { via: 'givesAbility' }
+			});
 		});
 
 		it('leaves the Politician out of the abilities the Boffin may give', () => {

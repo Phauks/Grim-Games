@@ -63,7 +63,7 @@ describe('Cannibal + Juggler jinx', () => {
 		const eaten = guessed.execute('juggler').reminder('juggler', 'cannibal', 'Lunch');
 
 		it("is data in the Cannibal's rules", () => {
-			expect(jinxRulesBetween('cannibal', 'juggler')).toEqual({ learnsGained: 'answer' });
+			expect(jinxRulesBetween('cannibal', 'juggler')).toEqual({ learns: { what: 'answer' } });
 		});
 
 		it("tonight the Cannibal's Juggler step answers with the Juggler's own guesses", () => {

@@ -30,7 +30,7 @@ export function allEvilBecomeTests(changer: CharacterId) {
 	describe('every evil player becomes Legion when it is created', () => {
 		it(`is data in the ${changer}'s rules`, () => {
 			expect(ownJinxRules(base.game, changer, 'legion', base.characters)).toMatchObject({
-				allEvilBecome: true
+				allEvilBecome: {}
 			});
 		});
 
@@ -71,7 +71,7 @@ export function keepsAbilityTests(partner: CharacterId, marks: (s: Scenario) => 
 	describe('Legion keeps their ability, and the partner might learn they are Legion', () => {
 		it(`is data in the ${partner}'s rules`, () => {
 			expect(ownJinxRules(base.game, partner, 'legion', base.characters)).toEqual({
-				partnerKeepsAbility: true
+				partnerKeepsAbility: {}
 			});
 		});
 

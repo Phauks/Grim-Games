@@ -26,7 +26,10 @@
 			"noTurnGood": true
 		},
 		"damsel": {
-			"storytellerPicksPlayer": true
+			"storytellerChooses": {
+				"what": "player",
+				"creating": "partner"
+			}
 		},
 		"goon": {
 			"noTurnGood": true
@@ -41,7 +44,14 @@
 			"spareToken": true
 		},
 		"leviathan": {
-			"notCreatedAfterDay": 5
+			"cannotCreate": {
+				"via": "changesCharacter",
+				"when": [
+					{
+						"afterDay": 5
+					}
+				]
+			}
 		}
 	},
 	"infoTokenCharacters": {

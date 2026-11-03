@@ -33,5 +33,5 @@ describe('Banshee + Riot jinx', () => {
 
 	// Both pages' Related Jinxes: each night after the first the Demon picks an alive player not
 	// picked before, and the partner, if picked, acts as if the Demon killed it (the Banshee really dies).
-	nightChoiceTests('riot', 'banshee', { who: 'good', partner: 'dies' });
+	nightChoiceTests('riot', 'banshee', { chooses: 'good', partner: 'dies' });
 });

@@ -60,7 +60,7 @@ describe('Cult Leader + Pit-Hag jinx', () => {
 		});
 
 		it("is data in the Pit-Hag's rules", () => {
-			expect(jinxRulesBetween('pithag', 'cultleader')).toEqual({ noTurnGood: true });
+			expect(jinxRulesBetween('pithag', 'cultleader')).toEqual({ noTurnGood: {} });
 			expect(ids).toContain('cultleader');
 		});
 

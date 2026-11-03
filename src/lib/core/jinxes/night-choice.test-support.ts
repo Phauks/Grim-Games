@@ -145,11 +145,13 @@ export function nightChoiceTests(demon: CharacterId, partner: CharacterId, choic
 		});
 
 		it(
-			choice.who === 'good' ? 'fades the evil: only a good player' : 'may choose an evil player',
+			choice.chooses === 'good'
+				? 'fades the evil: only a good player'
+				: 'may choose an evil player',
 			() => {
 				const { game, ctx, seats } = cast(players);
 				const chooser = nightChoosers(game, ctx.characters)[0];
-				expect(jinxChoiceMisfits(game, chooser).has(seats[4])).toBe(choice.who === 'good');
+				expect(jinxChoiceMisfits(game, chooser).has(seats[4])).toBe(choice.chooses === 'good');
 			}
 		);
 	});

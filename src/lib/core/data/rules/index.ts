@@ -6,6 +6,7 @@
 import type { CharacterId } from '../types.ts';
 import { parseCharacterRules, type CharacterRules } from '../character-rules.ts';
 import { Issues } from '../validate.ts';
+import { jinxPartnerIssues } from '../jinx-needs.ts';
 import acrobat from './acrobat.json' with { type: 'json' };
 import alchemist from './alchemist.json' with { type: 'json' };
 import alhadikhia from './alhadikhia.json' with { type: 'json' };
@@ -379,6 +380,10 @@ function load(): ReadonlyMap<CharacterId, CharacterRules> {
 		const rules = parseCharacterRules(raw, `rules/${id}.json`, issues);
 		if (rules) out.set(id, rules);
 	}
+	// A jinx's prerequisites on the partner's side, and an effect both files set.
+	for (const [id, rules] of out)
+		if (rules.jinxes)
+			jinxPartnerIssues(id, rules.jinxes, (p) => out.get(p), `rules/${id}.json.jinxes`, issues);
 	issues.throwIfAny('character rules');
 	return out;
 }

@@ -33,7 +33,7 @@ describe('Legion + Summoner jinx', () => {
 
 	it("is data in the Summoner's rules", () => {
 		// Wiki: "If Legion is summoned, all evil players become Legion."
-		expect(jinxRulesBetween('legion', 'summoner')).toEqual({ allEvilBecome: true });
+		expect(jinxRulesBetween('summoner', 'legion')).toEqual({ allEvilBecome: {} });
 	});
 
 	allEvilBecomeTests('summoner');

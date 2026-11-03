@@ -52,7 +52,7 @@ describe('Al-Hadikhia + Scarlet Woman jinx', () => {
 		it("is data in the Scarlet Woman's rules", () => {
 			// Wiki: "If there would be two Demons, one of which was the Scarlet Woman, the Scarlet Woman becomes the Scarlet Woman again."
 			expect(ownJinxRules(became.game, 'scarletwoman', 'alhadikhia', became.characters)).toEqual({
-				notSecondDemon: true
+				notSecondDemon: {}
 			});
 		});
 

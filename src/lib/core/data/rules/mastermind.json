@@ -30,7 +30,9 @@
 			"keepsAfterPartner": true
 		},
 		"alhadikhia": {
-			"partnerChoosesEnd": true
+			"endsGame": {
+				"kind": "partner-chooses"
+			}
 		}
 	}
 }

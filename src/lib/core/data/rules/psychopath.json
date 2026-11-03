@@ -41,7 +41,13 @@
 	},
 	"jinxes": {
 		"lilmonsta": {
-			"diesWhenExecuted": "Is The Demon"
+			"diesWhenExecuted": {
+				"when": [
+					{
+						"marked": "Is The Demon"
+					}
+				]
+			}
 		}
 	}
 }

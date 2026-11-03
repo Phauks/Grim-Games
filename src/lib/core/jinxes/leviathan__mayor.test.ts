@@ -58,7 +58,7 @@ describe('Leviathan + Mayor jinx', () => {
 
 		it("is data in the Leviathan's rules", () => {
 			expect(ownJinxRules({ script: scriptOf(ids) }, 'leviathan', 'mayor')).toEqual({
-				endsGame: { kind: 'day-without-execution', day: 5, winner: 'good' }
+				endsGame: { kind: 'day-without-execution', winner: 'good', day: 5 }
 			});
 		});
 

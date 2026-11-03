@@ -88,13 +88,21 @@
 	"carrierIsDemon": "Is The Demon",
 	"jinxes": {
 		"magician": {
-			"carrierType": "minion"
+			"carriedBy": {
+				"type": "minion",
+				"when": ["partner-alive"]
+			}
 		},
 		"poppygrower": {
-			"carrierType": "minion"
+			"carriedBy": {
+				"type": "minion",
+				"when": ["partner-alive"]
+			}
 		},
 		"scarletwoman": {
-			"keptByPartner": true
+			"carriedBy": {
+				"marked": "Is The Demon"
+			}
 		}
 	}
 }

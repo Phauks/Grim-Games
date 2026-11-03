@@ -41,7 +41,13 @@ describe('Alchemist + Organ Grinder jinx', () => {
 		it("is data in the Alchemist's rules", () => {
 			// Wiki: "If the Alchemist has the Organ Grinder ability, the Organ Grinder is in play. If both are sober, both are drunk."
 			expect(jinxRulesBetween('alchemist', 'organgrinder')).toEqual({
-				withPartnerAbility: 'both-drunk'
+				impairs: {
+					kind: 'drunk',
+					unlessImpaired: true,
+					when: ['has-partner-ability'],
+					who: 'both'
+				},
+				partnerInPlay: {}
 			});
 		});
 

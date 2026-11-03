@@ -27,10 +27,17 @@
 	},
 	"jinxes": {
 		"damsel": {
-			"impairsPartner": "poisoned"
+			"impairs": {
+				"who": "partner",
+				"kind": "poisoned",
+				"when": ["self-in-play"]
+			}
 		},
 		"magician": {
-			"grimoireHides": ["partner", "demon"]
+			"grimoire": {
+				"hides": ["partner", "demon"],
+				"when": ["partner-in-play"]
+			}
 		},
 		"ogre": {
 			"registersTo": {
@@ -39,7 +46,9 @@
 			}
 		},
 		"poppygrower": {
-			"noGrimoire": true
+			"grimoire": {
+				"hides": "all"
+			}
 		}
 	}
 }

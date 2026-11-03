@@ -47,16 +47,16 @@
 	},
 	"jinxes": {
 		"butler": {
-			"learnsGained": "ability"
+			"learns": "ability"
 		},
 		"juggler": {
-			"learnsGained": "answer"
+			"learns": "answer"
 		},
 		"princess": {
 			"noKill": "executed-partner"
 		},
 		"zealot": {
-			"learnsGained": "ability"
+			"learns": "ability"
 		}
 	}
 }

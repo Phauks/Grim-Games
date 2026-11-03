@@ -34,7 +34,7 @@ import { abilityState, type AbilitySource } from './ability.ts';
 import { isExecution } from './death-causes.ts';
 import { jinxEnds } from './jinx-ends.ts';
 import { deadWithoutDemon } from './dead-without-demon.ts';
-import { ownJinxRules } from './jinxes.ts';
+import { jinxEffect } from './jinxes.ts';
 import { rebirthOf } from './reincarnation.ts';
 import {
 	W,
@@ -239,7 +239,7 @@ function demonDead(game: Game, characters: CharacterLookup): GameEnd[] {
 	const kept = holds.filter(
 		(h) =>
 			(h.rule !== 'becomes-demon' && h.rule !== 'impaired') ||
-			!passes.some((p) => ownJinxRules(game, h.characterId, p, characters)?.notSecondDemon)
+			!passes.some((p) => jinxEffect(game, h.characterId, p, 'notSecondDemon', characters))
 	);
 	return [
 		{
@@ -286,12 +286,14 @@ function extraDay(
 	if (mind === undefined) return undefined;
 	const { characterId } = mind;
 	const wiki = wikiOf(characterId, characters);
-	// A jinx makes the extra day a night whose choice ends the game (`partnerChoosesEnd`: the
+	// A jinx makes the extra day a night whose choice ends the game (`partner-chooses`: the
 	// Al-Hadikhia, https://wiki.bloodontheclocktower.com/Mastermind#Related_Jinxes).
 	const chooser = end.seats
 		.map((id) => trueCharacter(game, id, characters))
 		.find(
-			(id) => id !== undefined && ownJinxRules(game, characterId, id, characters)?.partnerChoosesEnd
+			(id) =>
+				id !== undefined &&
+				jinxEffect(game, characterId, id, 'endsGame', characters)?.kind === 'partner-chooses'
 		);
 	if (chooser !== undefined)
 		return { rule: 'jinx-night', characterId: chooser, seats: [mind.seatId], wiki };

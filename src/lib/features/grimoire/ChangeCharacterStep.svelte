@@ -22,7 +22,7 @@
 		jinxedPartners,
 		neighbourAlignments,
 		neighbourBecoming,
-		ownJinxRules,
+		jinxEffect,
 		picksCharacterOnlyBy,
 		storytellerGains,
 		storytellerPicksNow,
@@ -133,7 +133,7 @@
 	const allEvil = $derived.by(() => {
 		const by = abilityId;
 		if (!by || !rule) return [];
-		return script.filter((id) => ownJinxRules(game, by, id, characters)?.allEvilBecome === true);
+		return script.filter((id) => jinxEffect(game, by, id, 'allEvilBecome', characters));
 	});
 
 	// The Summoner's jinxes (L118, https://wiki.bloodontheclocktower.com/Summoner#Related_Jinxes):
@@ -142,7 +142,7 @@
 		const by = abilityId;
 		if (!by || !rule) return [];
 		return script.flatMap((id) => {
-			const type = ownJinxRules(game, by, id, characters)?.neighbourBecomes;
+			const type = jinxEffect(game, by, id, 'neighbourBecomes', characters)?.type;
 			return type ? [{ id, type }] : [];
 		});
 	});
@@ -173,7 +173,7 @@
 		const by = abilityId;
 		if (!by || !rule) return [];
 		return script.filter(
-			(id) => ownJinxRules(game, id, by, characters)?.storytellerHas === 'removed'
+			(id) => jinxEffect(game, id, by, 'storytellerHas', characters)?.once === 'removed'
 		);
 	});
 

@@ -1,5 +1,8 @@
 {
-	"voter": { "must": true, "minAlive": 5 },
+	"voter": {
+		"must": true,
+		"minAlive": 5
+	},
 	"dayReminders": {
 		"impairable": true,
 		"reminders": [

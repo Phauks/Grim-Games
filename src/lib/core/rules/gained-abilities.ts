@@ -27,7 +27,7 @@ import { scriptCharacterIds } from '#lib/core/model/characters.ts';
 import { trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
 import type { Game, HeldAbility, SeatId } from '#lib/core/model/types.ts';
 import { abilityState, worksWhenDead } from './ability.ts';
-import { givenInstead, ownJinxRules } from './jinxes.ts';
+import { givenInstead, jinxEffect } from './jinxes.ts';
 import { thinksPartnerSetup } from './jinx-effects.ts';
 import type { Night, NightStep } from './night-order.ts';
 
@@ -57,7 +57,7 @@ export interface GainedAbility {
 
 /**
  * What the holder of `gained` learns tonight by the gaining character's jinx with the character
- * whose ability they gained (`learnsGained`): only on the night after that player died by
+ * whose ability they gained (`learns` `ability` or `answer`): only on the night after that player died by
  * execution today, the night the ability is gained (the Cannibal's Butler, Zealot and Juggler,
  * https://wiki.bloodontheclocktower.com/Cannibal#Related_Jinxes). Read from today's log.
  */
@@ -67,7 +67,8 @@ export function learnsGainedTonight(
 	characters: CharacterLookup
 ): LearnsGained | undefined {
 	if (gained.via === undefined) return undefined;
-	const learns = ownJinxRules(game, gained.via, gained.characterId, characters)?.learnsGained;
+	const what = jinxEffect(game, gained.via, gained.characterId, 'learns', characters)?.what;
+	const learns = what === 'ability' || what === 'answer' ? what : undefined;
 	if (!learns || gained.fromSeat === undefined) return undefined;
 	const executed = game.today.entries.some(
 		(e) => e.kind === 'execution' && e.seatId === gained.fromSeat && e.died

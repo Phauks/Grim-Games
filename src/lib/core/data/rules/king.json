@@ -20,10 +20,16 @@
 	},
 	"jinxes": {
 		"leviathan": {
-			"deadAtLeast": 1
+			"deadAtLeast": {
+				"dead": 1,
+				"when": ["partner-in-play"]
+			}
 		},
 		"riot": {
-			"deadAtLeast": 1
+			"deadAtLeast": {
+				"dead": 1,
+				"when": ["partner-in-play"]
+			}
 		}
 	}
 }

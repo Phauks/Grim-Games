@@ -39,7 +39,7 @@ describe('Magician + Marionette jinx', () => {
 		it("is data in the Magician's rules", () => {
 			// Wiki: "If the Magician is alive, the Demon doesn't know which neighbor is the Marionette."
 			expect(ownJinxRules(base.game, 'magician', 'marionette', base.characters)).toMatchObject({
-				hidesPartnerSeat: true
+				hidesPartnerSeat: {}
 			});
 		});
 

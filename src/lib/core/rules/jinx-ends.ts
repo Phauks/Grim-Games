@@ -8,7 +8,7 @@ import { trueCharacter } from '#lib/core/model/selectors.ts';
 import type { DayLog, Game, SeatId } from '#lib/core/model/types.ts';
 import { isExecution } from './death-causes.ts';
 import type { GameEnd, GameHold } from './game-end.ts';
-import { ownJinxes } from './jinxes.ts';
+import { ownJinxEffects } from './jinxes.ts';
 import { nomineesNominateNow } from './nominations.ts';
 
 /** How `rules/game-end.ts` reads the board, so a jinx end counts as its own ends do. */
@@ -51,6 +51,8 @@ function playing(game: Game, characterId: CharacterId, characters: CharacterLook
  *   `winner` wins if exactly `alive` of its players are alive, otherwise the other team. A
  *   drunk or poisoned partner may not have stopped it: a hold (`seats`: the partner's player,
  *   then its living players).
+ * An end's `when` must hold too. The `partner-end` and `partner-chooses` kinds are read where
+ * those ends are (`dead-without-demon.ts`, the extra day in `game-end.ts`).
  */
 export function jinxEnds(
 	game: Game,
@@ -63,8 +65,8 @@ export function jinxEnds(
 	const logs = at.logs;
 	for (const owner of owners) {
 		const seats = playing(game, owner, characters);
-		for (const { partner, rule } of ownJinxes(game, owner, (r) => !!r.endsGame, characters)) {
-			const end = rule.endsGame!;
+		for (const { partner, effect: end } of ownJinxEffects(game, owner, 'endsGame', characters)) {
+			if (end.winner === undefined) continue;
 			const partners = playing(game, partner, characters);
 			const base = {
 				winner: end.winner,
@@ -117,7 +119,7 @@ export function jinxEnds(
 						holds: at.impaired(entry.seatId, partner)
 					});
 				}
-			} else {
+			} else if (end.kind === 'day-without-execution') {
 				const day = end.day!;
 				if (!at.ended.includes(day)) continue;
 				if (at.executedOn(logs[day]).length > 0) continue;
@@ -159,7 +161,13 @@ export function jinxStoppers(
 	characters: CharacterLookup
 ): JinxStopper[] {
 	const on = nomineesNominateNow(game, characters).includes(owner);
-	const stops = ownJinxes(game, owner, (r) => r.endsGame?.kind === 'partner-stops', characters);
+	const stops = ownJinxEffects(
+		game,
+		owner,
+		'endsGame',
+		characters,
+		(e) => e.kind === 'partner-stops'
+	);
 	return stops.flatMap(({ partner }) =>
 		playing(game, partner, characters).flatMap((seatId): JinxStopper[] => {
 			const stopped = game.today.entries.some(
