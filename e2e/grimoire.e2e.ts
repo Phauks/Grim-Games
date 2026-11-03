@@ -4401,13 +4401,15 @@ test("the walk-through points out the step's reminders: ringed, alone or first",
 	await expect(strip).toContainText('Poisoner');
 
 	// Only this character covers the setup reminders too (Trevor, 2026-10-17), and still lists
-	// the ∞ tokens after them: the plain ∞, the game's own and "+ New token" (Trevor, 2026-10-23).
+	// the ∞ tokens after them: the plain ∞, the # token (plan M35), the game's own and
+	// "+ New token" (Trevor, 2026-10-23).
 	const bank = page.getByRole('list', { name: 'Reminder bank' });
 	const listed = bank.locator('> li:not(.divider)');
 	await focusMode(page, 'Only this character');
 	const now = await bank.locator('> li.now').count();
-	await expect(listed).toHaveCount(now + 3);
-	await expect(listed.nth(-3).getByRole('button')).toHaveAccessibleName('Generic reminder');
+	await expect(listed).toHaveCount(now + 4);
+	await expect(listed.nth(-4).getByRole('button')).toHaveAccessibleName('Generic reminder');
+	await expect(listed.nth(-3).getByRole('button')).toHaveAccessibleName('Number token');
 	await expect(listed.nth(-2).getByRole('button')).toHaveAccessibleName(
 		'Generic reminder: Red herring'
 	);
@@ -4420,7 +4422,7 @@ test("the walk-through points out the step's reminders: ringed, alone or first",
 
 	// One choice, as a drop-down (Trevor, 2026-10-17): always on, only how.
 	await focusMode(page, 'Only this character');
-	await expect(listed).toHaveCount(4);
+	await expect(listed).toHaveCount(5);
 	await expect(tokens.first()).toContainText('Poisoned');
 	await focusMode(page, 'Highlight');
 	await expect(page.locator('li.dim').first()).toBeAttached();
@@ -4523,8 +4525,8 @@ test("the step focus works for a script's own character too (Fall of Rome's Merc
 	await expect(tokens.first()).toHaveClass(/\bnow\b/);
 	await expect(tokens.first()).toContainText('Paid');
 	await focusMode(page, 'Only this character');
-	// Paid, then the plain ∞ and "+ New token".
-	await expect(tokens.and(page.locator(':not(.divider)'))).toHaveCount(3);
+	// Paid, then the plain ∞, the # token (plan M35) and "+ New token".
+	await expect(tokens.and(page.locator(':not(.divider)'))).toHaveCount(4);
 	await expect(tokens.first()).toContainText('Paid');
 });
 
@@ -5871,7 +5873,7 @@ test('the generic ∞ reminder is always in the bank and can carry a few words',
 	const bank = page.getByRole('list', { name: 'Reminder bank' });
 	// Last in the bank, whatever is in play (Trevor, 2026-10-18), before "+ New token" (plan B9).
 	await expect(bank.locator('> li').last().getByRole('button')).toHaveAccessibleName('New token');
-	await expect(bank.locator('> li').nth(-2).getByTestId('board-reminder')).toHaveAttribute(
+	await expect(bank.locator('> li').nth(-3).getByTestId('board-reminder')).toHaveAttribute(
 		'aria-label',
 		'Generic reminder'
 	);

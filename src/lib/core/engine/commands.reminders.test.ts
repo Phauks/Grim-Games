@@ -1,7 +1,12 @@
 /** Commands: reminders, generic tokens and loose reminders (decide/reminders.ts). */
 import { describe, expect, it } from 'vitest';
 import { newGame, refused, run, warned } from '#lib/core/model/fixtures.test-support.ts';
-import { GENERIC_REMINDER_ID, type SymbolColour } from '#lib/core/model/index.ts';
+import {
+	GENERIC_REMINDER_ID,
+	NUMBER_TOKEN_LOOK,
+	symbolNumber,
+	type SymbolColour
+} from '#lib/core/model/index.ts';
 import { undo } from './log.ts';
 
 const names = ['Ana', 'Ben', 'Cat', 'Dev', 'Eve'];
@@ -284,6 +289,40 @@ describe('the generic reminder', () => {
 		expect(
 			refused(s, ctx, { type: 'SetReminderSymbol', reminderId: id, symbol: 'x'.repeat(40) })
 		).toBe('invalid-symbol');
+	});
+
+	it('places a number token showing 1, and changes its number (plan M35)', () => {
+		// Trevor (2026-11-03): "a new generic token that is only used for numbers".
+		const { session, ctx, seats } = newGame(names);
+		const generic = { characterId: GENERIC_REMINDER_ID, label: '' };
+		const s = run(session, ctx, {
+			type: 'AddReminder',
+			seatId: seats[0],
+			reminder: generic,
+			look: NUMBER_TOKEN_LOOK
+		});
+		const placed = s.game.seats[seats[0]].reminders[0];
+		expect(symbolNumber(placed.symbol)).toBe(1);
+		const three = run(s, ctx, {
+			type: 'SetReminderSymbol',
+			reminderId: placed.reminderId,
+			symbol: '#3'
+		});
+		expect(symbolNumber(three.game.seats[seats[0]].reminders[0].symbol)).toBe(3);
+		// Only the numbers the drop-down offers, 0 to 20.
+		for (const symbol of ['#21', '#-1', '#'])
+			expect(
+				refused(s, ctx, { type: 'SetReminderSymbol', reminderId: placed.reminderId, symbol })
+			).toBe('invalid-symbol');
+		// A character's reminder has no look of its own.
+		expect(
+			refused(session, ctx, {
+				type: 'AddReminder',
+				seatId: seats[0],
+				reminder: { characterId: 'poisoner', label: 'Poisoned' },
+				look: NUMBER_TOKEN_LOOK
+			})
+		).toBe('invalid-look');
 	});
 
 	it("colours the generic reminder's symbol, or clears its colour", () => {

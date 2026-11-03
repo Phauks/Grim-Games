@@ -28,6 +28,7 @@
 	import ReminderNoteField from './ReminderNoteField.svelte';
 	import ReminderEffectFields from './ReminderEffectFields.svelte';
 	import { isGeneric, placedLook } from './reminders.ts';
+	import { bankFace } from './bank-items.ts';
 
 	interface Props {
 		grimoire: Grimoire;
@@ -80,9 +81,7 @@
 				character={characters.get(item.characterId)}
 				alignment={placingAlignment(game, item, characters)}
 				infinite={isGeneric(item)}
-				symbol={item.token?.symbol}
-				symbolColour={item.token?.symbolColour}
-				symbolFill={item.token?.symbolFill}
+				{...bankFace(item)}
 			/>{:else}About this reminder{/if}
 	{/snippet}
 	<!-- No "From [Character]": the ability row below names it (Trevor, 2026-11-01). -->

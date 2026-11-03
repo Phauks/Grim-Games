@@ -10,7 +10,11 @@ import {
 import {
 	GENERAL_DEATH_CAUSES,
 	GENERIC_REMINDER_ID,
+	REMINDER_NUMBER_MAX,
+	REMINDER_NUMBER_MIN,
 	SYMBOL_COLOURS,
+	isNumberSymbol,
+	symbolNumber,
 	getSeat,
 	isKnownReminder,
 	isOnScript,
@@ -189,8 +193,7 @@ export function genericLook(look: GenericLook | undefined): GenericLook {
 	const symbol = look?.symbol?.trim();
 	if (note) out.note = note;
 	if (symbol) {
-		if (symbol.length > MAX_REMINDER_SYMBOL)
-			refuse('invalid-symbol', `a symbol is at most ${MAX_REMINDER_SYMBOL} characters`);
+		checkSymbol(symbol);
 		out.symbol = symbol;
 	}
 	if (look?.symbolColour !== undefined) {
@@ -204,6 +207,34 @@ export function genericLook(look: GenericLook | undefined): GenericLook {
 	if (like && like.characterId !== GENERIC_REMINDER_ID)
 		out.like = { characterId: like.characterId, label: like.label };
 	return out;
+}
+
+/**
+ * Refuses a generic reminder symbol that is too long, or a number (`#`) a number token cannot
+ * show (`symbolNumber`).
+ */
+export function checkSymbol(symbol: string): void {
+	if (symbol.length > MAX_REMINDER_SYMBOL)
+		refuse('invalid-symbol', `a symbol is at most ${MAX_REMINDER_SYMBOL} characters`);
+	if (isNumberSymbol(symbol) && symbolNumber(symbol) === undefined)
+		refuse('invalid-symbol', `a number is ${REMINDER_NUMBER_MIN} to ${REMINDER_NUMBER_MAX}`);
+}
+
+/**
+ * The look a newly placed reminder starts with: a bank ∞ token's (`tokenId`, plan B9), else
+ * the one given (the bank's # token, plan M35), which only a generic reminder can take.
+ */
+export function startLook(
+	game: Game,
+	reminder: Reminder,
+	tokenId: string | undefined,
+	look: GenericLook | undefined
+): GenericLook {
+	if (tokenId !== undefined) return tokenLook(game, tokenId);
+	if (look === undefined) return {};
+	if (reminder.characterId !== GENERIC_REMINDER_ID)
+		refuse('invalid-look', 'only a generic reminder has a look of its own');
+	return genericLook(look);
 }
 
 /** The look a copy of a bank ∞ token starts with (plan B9); none without a token. */

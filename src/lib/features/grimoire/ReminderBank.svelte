@@ -17,7 +17,14 @@
 	import ReminderHandPill from './ReminderHandPill.svelte';
 	import ReminderTray from './ReminderTray.svelte';
 	import { traySeats } from './setup-tray.ts';
-	import { BANK_CAPTIONS, bankItems, type BankGroup, type BankItem } from './bank-items.ts';
+	import {
+		BANK_CAPTIONS,
+		bankFace,
+		bankItems,
+		bankLook,
+		type BankGroup,
+		type BankItem
+	} from './bank-items.ts';
 	import { overNewToken } from './reminder-drag.svelte.ts';
 
 	/**
@@ -50,7 +57,12 @@
 		 * Gives a Fabled or Loric a new reminder (asking first when it isn't theirs); `tokenId`
 		 * when it is a copy of one of the bank's ∞ tokens.
 		 */
-		onRule: (reminder: Reminder, characterId: CharacterId, tokenId?: string) => void;
+		onRule: (
+			reminder: Reminder,
+			characterId: CharacterId,
+			tokenId?: string,
+			look?: GenericLook
+		) => void;
 		/** Seats to mark: suggested ones, the one under a dragged token, and the token itself. */
 		onHints: (hints: { seats: SeatId[]; target?: SeatId; reminder?: Reminder }) => void;
 		/**
@@ -145,17 +157,18 @@
 	});
 
 	function place(
-		item: Pick<BankItem, 'characterId' | 'label' | 'ownerSeatId' | 'token'>,
+		item: Pick<BankItem, 'characterId' | 'label' | 'ownerSeatId' | 'token' | 'number'>,
 		seatId: SeatId
 	) {
 		const { characterId, ownerSeatId, token } = item;
-		// A copy of an ∞ token takes its words from the token's look, not as a label.
-		const label = token ? ('' as ReminderLabel) : item.label;
+		// A copy of an ∞ or # token takes its words from its look, not as a label.
+		const label = token || item.number ? ('' as ReminderLabel) : item.label;
 		return grimoire.run({
 			type: 'AddReminder',
 			seatId,
 			reminder: { characterId, label, ownerSeatId },
-			tokenId: token?.tokenId
+			tokenId: token?.tokenId,
+			look: bankLook(item)
 		});
 	}
 
@@ -184,19 +197,21 @@
 		const tokenId = item.token?.tokenId;
 		const reminder = {
 			characterId: item.characterId,
-			label: tokenId ? ('' as ReminderLabel) : item.label,
+			label: tokenId || item.number ? ('' as ReminderLabel) : item.label,
 			ownerSeatId: item.ownerSeatId
 		};
 		// On a Fabled or Loric: it holds the reminder (Trevor, 2026-10-17).
 		const rule = ruleAt(x, y, reminder);
-		if (rule) return onRule(reminder, rule, tokenId);
+		if (rule) return onRule(reminder, rule, tokenId, bankLook(item));
 		if (!target) return;
 		// Any seat will do: the Storyteller can override the suggestion.
 		place(item, target);
 	}
-	function newTokenLike({ characterId, label, token }: BankItem) {
+	function newTokenLike(item: BankItem) {
+		const { characterId, label, token } = item;
 		hand.putDown();
-		grimoire.run({ type: 'AddGenericToken', look: copiedLook({ characterId, label, ...token }) });
+		const look = token ?? bankLook(item);
+		grimoire.run({ type: 'AddGenericToken', look: copiedLook({ characterId, label, ...look }) });
 	}
 	function cancelDrag() {
 		drag = undefined;
@@ -257,9 +272,7 @@
 		character={characters.get(item.characterId)}
 		alignment={placingAlignment(game, item, characters)}
 		infinite={isGeneric(item)}
-		symbol={item.token?.symbol}
-		symbolColour={item.token?.symbolColour}
-		symbolFill={item.token?.symbolFill}
+		{...bankFace(item)}
 		art={artOf(item.token)}
 		{size}
 	/>
@@ -275,9 +288,7 @@
 			character={characters.get(item.characterId)}
 			alignment={placingAlignment(game, item, characters)}
 			infinite={isGeneric(item)}
-			symbol={item.token?.symbol}
-			symbolColour={item.token?.symbolColour}
-			symbolFill={item.token?.symbolFill}
+			{...bankFace(item)}
 			art={artOf(item.token)}
 			{size}
 			{disabled}

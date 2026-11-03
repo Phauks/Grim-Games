@@ -3,7 +3,7 @@ import { editionScript, toScript } from '#lib/core/data/index.ts';
 import { createGame, dispatch, type EngineContext } from '#lib/core/engine/index.ts';
 import { characterLookup, GENERIC_REMINDER_ID } from '#lib/core/model/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import { bankItems, type BankOptions } from './bank-items.ts';
+import { bankFace, bankItems, bankLook, type BankOptions } from './bank-items.ts';
 
 const data = committedGameData();
 const script = toScript(editionScript('tb', data)!);
@@ -34,12 +34,17 @@ const options: BankOptions = {
 };
 
 describe('bankItems', () => {
-	it('lists the reminders, then the generic ∞ and + New token', () => {
+	it('lists the reminders, then the generic ∞, the # token and + New token', () => {
 		const items = bankItems(game(), characters, options);
 		const groups = [...new Set(items.map((i) => i.group))];
 		expect(groups).toEqual(['reminders', 'generic']);
 		expect(items.filter((i) => i.characterId === 'poisoner').length).toBeGreaterThan(0);
-		expect(items.at(-2)).toMatchObject({ characterId: GENERIC_REMINDER_ID, key: 'generic' });
+		expect(items.at(-3)).toMatchObject({ characterId: GENERIC_REMINDER_ID, key: 'generic' });
+		// The # token, only for numbers (plan M35): a copy lands showing 1.
+		const number = items.at(-2)!;
+		expect(number).toMatchObject({ characterId: GENERIC_REMINDER_ID, number: true });
+		expect(bankFace(number)).toEqual({ symbol: '#' });
+		expect(bankLook(number)).toEqual({ symbol: '#1' });
 		expect(items.at(-1)).toMatchObject({ key: 'new-token', makesToken: true });
 	});
 
