@@ -40,10 +40,41 @@ export function charactersReallyInPlay(game: Game, characters: CharacterLookup):
 	return ids;
 }
 
+/** A character whose player believes they are the Demon (`believesType`: the Lunatic). */
+export function believesDemon(id: CharacterId, characters: CharacterLookup): boolean {
+	return rulesOf(id, characters)?.believesType === 'demon';
+}
+
+/**
+ * One of `ids` believes they are the Demon, so their bluff set is shown too: on the Characters
+ * screen, `ids` are the characters chosen, as there are no seats yet.
+ */
+export function believerAmong(ids: Iterable<CharacterId>, characters: CharacterLookup): boolean {
+	for (const id of ids) if (believesDemon(id, characters)) return true;
+	return false;
+}
+
 /** A player who believes they are the Demon (`believesType`: the Lunatic) is in play. */
 export function lunaticInPlay(game: Game, characters: CharacterLookup): boolean {
-	return [...charactersReallyInPlay(game, characters)].some(
-		(id) => rulesOf(id, characters)?.believesType === 'demon'
+	return believerAmong(charactersReallyInPlay(game, characters), characters);
+}
+
+/**
+ * The Lunatic's bluffs, picked at random: "any three good character tokens", which "can even
+ * be characters that are in play" (https://wiki.bloodontheclocktower.com/Lunatic). Never a
+ * character who believes they are the Demon, whose own token would give them away.
+ */
+export function randomBelieverBluffs(
+	choices: readonly CharacterId[],
+	characters: CharacterLookup,
+	count: number,
+	random: () => number
+): CharacterId[] {
+	return randomBluffs(
+		choices.filter((id) => !believesDemon(id, characters)),
+		new Set(),
+		count,
+		random
 	);
 }
 

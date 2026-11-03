@@ -6,7 +6,7 @@
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import BluffTag from './BluffTag.svelte';
 	import BluffsSheet, { type BluffDispatch } from './BluffsSheet.svelte';
-	import { DEMON_SET } from './bluffs.ts';
+	import { bluffSetLabel, DEMON_SET } from './bluffs.ts';
 
 	/**
 	 * The Demon's bluffs, chosen while setting up (Trevor, 2026-10-18): after the draw, when
@@ -26,9 +26,22 @@
 		 * so it never appears later and moves things.
 		 */
 		always?: boolean;
+		/**
+		 * Which set: the Demon's, or another shown beside it (the Lunatic's, M38), whose
+		 * characters may be in play and whose button opens straight on its picker.
+		 */
+		set?: number;
 	}
 
-	let { game, characters, dispatch, waiting, inPlay, always = false }: Props = $props();
+	let {
+		game,
+		characters,
+		dispatch,
+		waiting,
+		inPlay,
+		always = false,
+		set = DEMON_SET
+	}: Props = $props();
 
 	let open = $state(false);
 	const hasDemon = $derived(
@@ -37,18 +50,29 @@
 		)
 	);
 	const bluffs = $derived(
-		(game.bluffs[DEMON_SET] ?? []).flatMap((id) => {
+		(game.bluffs[set] ?? []).flatMap((id) => {
 			const character = characters.get(id);
 			return character ? [character] : [];
 		})
 	);
+	const demon = $derived(set === DEMON_SET);
+	const title = $derived(
+		demon
+			? t('bluffs.title')
+			: t('bluffs.setTitle', { set: bluffSetLabel(set, true, game.bluffNames?.[set]) })
+	);
+	const titleId = $derived(demon ? 'setup-bluffs-title' : `setup-bluffs-${set + 1}-title`);
 </script>
 
 {#if hasDemon || always}
-	<section class="bluffs" aria-labelledby="setup-bluffs-title" data-testid="setup-bluffs">
+	<section
+		class="bluffs"
+		aria-labelledby={titleId}
+		data-testid={demon ? 'setup-bluffs' : `setup-bluffs-${set + 1}`}
+	>
 		<!-- The button on the heading's line (Trevor, 2026-10-19). -->
 		<div class="head">
-			<h2 id="setup-bluffs-title">{t('bluffs.title')}</h2>
+			<h2 id={titleId}>{title}</h2>
 			<Button
 				variant={bluffs.length ? 'quiet' : 'accent'}
 				icon="demon"
@@ -59,7 +83,7 @@
 		<!-- Each bluff like a character in the list above: token, name and ability. -->
 		<ul class="rows">
 			{#each bluffs as character (character.id)}
-				{@const playing = inPlay?.includes(character.id) ?? false}
+				{@const playing = (demon && inPlay?.includes(character.id)) ?? false}
 				<!-- Also chosen to be in play: a warning in its kept place, never a lock (Trevor, 2026-10-23). -->
 				<li data-in-play={playing ? '' : undefined}>
 					<CharacterPiece
@@ -76,7 +100,7 @@
 			{/each}
 		</ul>
 	</section>
-	<BluffsSheet bind:open {game} {characters} {dispatch} {inPlay} />
+	<BluffsSheet bind:open {game} {characters} {dispatch} {inPlay} start={demon ? undefined : set} />
 {/if}
 
 <style>
