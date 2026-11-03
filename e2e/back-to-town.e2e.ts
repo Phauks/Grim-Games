@@ -163,6 +163,17 @@ test('the timer opened from the grim screen is the day view’s timer, Back to t
 	await page.keyboard.press('Escape');
 	await expect(sheet).toBeHidden();
 
+	// The grim cover's timer is the board's timer, Back to town at its front (Trevor,
+	// 2026-11-03), with no Back to town of its own beside it.
+	const boardButtons = await buttons(page.locator('.board-timer').getByTestId('day-timer'));
+	expect(boardButtons[0]).toBe('Back to town');
+	await page.getByTestId('cover-button').tap();
+	const cover = page.getByRole('dialog', { name: 'Screen covered' });
+	expect(await buttons(cover.getByTestId('day-timer'))).toEqual(boardButtons);
+	await expect(cover.getByRole('button', { name: 'Back to town' })).toHaveCount(1);
+	await cover.getByRole('button', { name: 'Close' }).tap();
+	await expect(cover).toBeHidden();
+
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
 	const dayTimer = page.getByTestId('day-toolbar').getByTestId('day-timer');
 	expect(await buttons(dayTimer)).toEqual(fromGrim);
