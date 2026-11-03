@@ -135,7 +135,9 @@
 			{@render body()}
 		</section>
 	{:else}
-		<Collapsible {title} storageKey={key} {tone} {empty} {count}>{@render body()}</Collapsible>
+		<Collapsible {title} storageKey={key} {tone} outlined={!tone} {empty} {count}
+			>{@render body()}</Collapsible
+		>
 	{/if}
 {/snippet}
 

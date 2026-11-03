@@ -2299,8 +2299,8 @@ test('the Script sheet’s background choice sits beside Print and Share, and co
 		'rgb(218, 218, 218)'
 	);
 	// A character type's band marks where it starts, with no line above it (Trevor,
-	// 2026-10-31), nor above the section after a band: with no Jinxes on this script
-	// (2026-11-03), Players comes straight after the Travellers' band.
+	// 2026-10-31), nor above the section after a band. Players has its own gold outline
+	// band now (2026-11-03, picked "B"), so no line above it either.
 	await sheet.getByRole('tab', { name: 'Script' }).tap();
 	const sections = sheet.getByTestId('script-copy').locator('.section-stack > section');
 	await expect(sections.nth(1)).toHaveCSS('border-top-width', '0px');
