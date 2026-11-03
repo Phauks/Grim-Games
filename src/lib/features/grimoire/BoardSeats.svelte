@@ -27,6 +27,8 @@
 	import type { ReminderDragging } from './reminder-drag.svelte.ts';
 	import type { SeatArranging } from './seat-arranging.svelte.ts';
 	import type { SeatHints } from './seat-hints.svelte.ts';
+	import { t } from '#lib/i18n/locale.svelte.ts';
+	import SeatMarksSheet from './SeatMarksSheet.svelte';
 	import SeatToken from './SeatToken.svelte';
 	import { remindersBeside, trueCharacterMarks } from './true-character-marks.ts';
 
@@ -120,6 +122,13 @@
 	 * 2026-11-03; 2026-10-31, small token Option A).
 	 */
 	const bigToken = $derived(boardLooks.current.bigToken);
+	/** The seat whose small tokens are said in words (SeatMarksSheet), by seating index. */
+	let marksOf = $state<number | undefined>();
+	/** The sheet's title, as the seat sheet's: the player's name, or "Seat N". */
+	const marksSeat = $derived(marksOf === undefined ? undefined : seats[marksOf]);
+	const marksTitle = $derived(
+		marksSeat ? (marksSeat.playerName ?? t('common.seat', { number: (marksOf ?? 0) + 1 })) : ''
+	);
 	const truthsInPill = $derived(bigToken !== 'reminders');
 	const beside = $derived(seats.map((seat) => remindersBeside(seat, characters, bigToken)));
 	/** Who each seat of the Storyteller's fake evil team pretends to be (M26), in the pill. */
@@ -207,8 +216,6 @@
 			heldAbilities={vanilla ? [] : held[i]}
 			trueCharacters={bigToken === 'believed' ? truths[i] : []}
 			pretends={pretends.get(seat.seatId)}
-			onReminder={(reminderId) =>
-				!seatArr.arranging && !watching && onReminder(seat.seatId, reminderId)}
 			dropTarget={seatArr.reorderTarget === seat.seatId ||
 				(remDrag.drag !== undefined &&
 					remDrag.drag.target === seat.seatId &&
@@ -217,7 +224,8 @@
 			dragFrom={remDrag.drag !== undefined && remDrag.drag.from === seat.seatId}
 			misfit={hints.misfits.has(seat.seatId)}
 			role={hints.role(seat.seatId)}
-			onTap={(part) => !seatArr.arranging && onSeat(seat.seatId, part)}
+			onTap={(part) =>
+				!seatArr.arranging && (part === 'marks' ? (marksOf = i) : onSeat(seat.seatId, part))}
 			onHold={seatArr.arranging || watching ? undefined : (on) => on && seatArr.held(seat.seatId)}
 			onGhostVote={() =>
 				!seatArr.arranging &&
@@ -331,6 +339,25 @@
 		>
 	{/if}
 {/each}
+
+<!-- A seat's small tokens in words, opened by tapping its pill (Trevor, 2026-11-03). -->
+{#if marksOf !== undefined && seats[marksOf]}
+	{@const seat = seats[marksOf]}
+	{@const k = marksOf}
+	<SeatMarksSheet
+		bind:open={() => marksOf !== undefined, (open) => !open && (marksOf = undefined)}
+		title={marksTitle}
+		abilities={vanilla ? [] : held[k]}
+		custom={seat.customAbilities ?? []}
+		truths={bigToken === 'believed'
+			? truths[k].map(({ reminder, character }) => ({ character, reminderId: reminder.reminderId }))
+			: []}
+		believes={believesOf(seat, k)}
+		madAs={madAs[k]}
+		pretends={pretends.get(seat.seatId)}
+		onReminder={watching ? undefined : (reminderId) => onReminder(seat.seatId, reminderId)}
+	/>
+{/if}
 
 <style>
 	.slot {

@@ -42,9 +42,10 @@
 		/**
 		 * `note` when the tap landed on the pen mark (it opens the Notes sheet at this seat),
 		 * `nominate` on the nomination marks (it asks who this player nominated), `avatar` on the
-		 * player's avatar mark (it opens their profile, Trevor 2026-10-28).
+		 * player's avatar mark (it opens their profile, Trevor 2026-10-28), `marks` on a small
+		 * token in the bottom-right pill (it says them in words, Trevor 2026-11-03).
 		 */
-		onTap: (part?: 'note' | 'nominate' | 'avatar') => void;
+		onTap: (part?: 'note' | 'nominate' | 'avatar' | 'marks') => void;
 		/** A tap on a dead player's badge: marks their ghost vote used, or gives it back. */
 		onGhostVote?: () => void;
 		/**
@@ -73,20 +74,19 @@
 		heldAbilities?: { character: Character; works: boolean }[];
 		/**
 		 * Who the player really is, from "Is The …" reminders shown in the pill (Grimbinder's
-		 * look, Trevor 2026-10-31): each a small token marked =. A tap on one opens its reminder.
+		 * look, Trevor 2026-10-31): each a small token marked =. A tap says it in words, with its reminder.
 		 */
 		trueCharacters?: TrueCharacterMark[];
 		/**
 		 * What the player believes they are, when the big token shows who they really are
 		 * (Settings › Board, Big token shows; Trevor, 2026-11-03): a small token marked ?. A tap
-		 * opens the "Is The …" reminder it comes from.
+		 * says it in words, with the "Is The …" reminder it comes from.
 		 */
 		believes?: { character: Character; reminderId: ReminderId };
-		/** Who the player is mad as (`madAs`, M36): small tokens marked !, each opening its reminder. */
+		/** Who the player is mad as (`madAs`, M36): small tokens marked !. */
 		madAs?: { character: Character; reminderId?: ReminderId }[];
 		/** Who the Storyteller pretends the player is (`Game.pretend`, M26). */
 		pretends?: Character;
-		onReminder?: (reminderId: ReminderId) => void;
 	}
 
 	let {
@@ -109,8 +109,7 @@
 		trueCharacters = [],
 		believes,
 		madAs = [],
-		pretends,
-		onReminder
+		pretends
 	}: Props = $props();
 
 	// The player's alignment is not the one their character type starts with (a good Minion,
@@ -218,8 +217,9 @@
 				tokenFreeVotes === undefined
 			)
 				onGhostVote();
-			else if (target?.closest('[data-reminder]') && onReminder)
-				onReminder(target.closest('[data-reminder]')!.getAttribute('data-reminder') as ReminderId);
+			// A small token in the pill says itself in words first; its sheet opens its reminder.
+			else if (target?.closest('[data-testid="held-pill"]') && !target.closest('.note-slot'))
+				onTap('marks');
 			else
 				onTap(
 					target?.closest('.mark.note, .note-slot')

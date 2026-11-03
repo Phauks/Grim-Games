@@ -196,7 +196,7 @@ export const settings = {
 	'settings.bigToken.believed': 'What they believe',
 	'settings.bigToken.reminders': 'Reminders only',
 	'settings.bigToken.key':
-		'Small tokens by a seat: + also has that ability, ? believes they are that character, ! is mad as that character, = is really that character.',
+		'Small tokens by a seat: + also has that ability, ? believes they are that character, ! is mad as that character, = is really that character. Tap one to read it in words.',
 	'settings.reminderLines': 'Reminder lines',
 	'settings.reminderLines.always': 'Always',
 	'settings.reminderLines.away': 'When away from the seat',
