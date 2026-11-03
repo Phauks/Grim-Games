@@ -158,8 +158,10 @@ describe('stepWakes for every character set off by its death', () => {
 	const die =
 		(cause: DeathCause) =>
 		(seats: string[]): Command => ({ type: 'SetDead', seatId: seats[0], dead: true, cause });
+	// After the first night: on the first night a step such as the Poppy Grower's is its own.
+	const day = (): Command => ({ type: 'NewDay' });
 	const wakesAfter = (id: string, cause: DeathCause) => {
-		const g = game([id, 'imp', 'poisoner'], die(cause));
+		const g = game([id, 'imp', 'poisoner'], day, die(cause));
 		const step = boardNightSteps(g, characters, 'other', data).find((s) => s.id === id)!;
 		return stepWakes(g, step, characters, { diedTonight: new Set([g.seating[0]]) });
 	};
@@ -181,16 +183,30 @@ describe('stepWakes for every character set off by its death', () => {
 			expect(wakesAfter(id, 'poisoner')).toBe(trigger.by !== 'demon');
 		});
 		it(`${id}: stays asleep while its player lives`, () => {
-			const g = game([id, 'imp', 'poisoner']);
+			const g = game([id, 'imp', 'poisoner'], day);
 			const step = boardNightSteps(g, characters, 'other', data).find((s) => s.id === id)!;
 			expect(stepWakes(g, step, characters, { diedTonight: new Set() })).toBe(false);
 		});
 		it(`${id}: wakes when the cause was not recorded`, () => {
-			const g = game([id, 'imp'], (seats) => ({ type: 'SetDead', seatId: seats[0], dead: true }));
+			const g = game([id, 'imp'], day, (seats) => ({
+				type: 'SetDead',
+				seatId: seats[0],
+				dead: true
+			}));
 			const step = boardNightSteps(g, characters, 'other', data).find((s) => s.id === id)!;
 			expect(stepWakes(g, step, characters, { diedTonight: new Set([g.seating[0]]) })).toBe(true);
 		});
 	}
+});
+
+// https://wiki.bloodontheclocktower.com/Leviathan#Related_Jinxes : with a jinx partner in play
+// the character's step may come while its player lives, so it stays (warn, never lock).
+describe('stepWakes for a character set off by its death, with a jinx partner in play', () => {
+	it('keeps the living Sage’s step with the Leviathan in play', () => {
+		const g = game(['sage', 'leviathan', 'poisoner'], () => ({ type: 'NewDay' }));
+		const step = boardNightSteps(g, characters, 'other', data).find((s) => s.id === 'sage')!;
+		expect(stepWakes(g, step, characters, { diedTonight: new Set() })).toBe(true);
+	});
 });
 
 describe('stepWakes for players who live while marked dead', () => {
