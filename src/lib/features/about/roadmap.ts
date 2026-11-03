@@ -506,9 +506,17 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		// Trevor, 2026-11-02: in an Atheist game the Storyteller still gets guidance. M26a a pretend
 		// evil team in the engine, with information that fits it; M26b its seat sheet row, night
 		// steps and board mark.
-		title: 'Atheist games: a pretend evil team, with night steps and information that fit it',
+		title: 'Atheist games: a fake evil team, with night steps and information that fit it',
 		area: 'engine',
 		parts: ['M26a', 'M26b']
+	},
+	{
+		// Trevor, 2026-11-03: "Whole-game run-throughs". A Trouble Brewing, Bad Moon Rising and
+		// Sects and Violets game played night by night through the engine as tests, to find what
+		// goes wrong between characters over a game.
+		title: 'Whole games of each base script checked night by night',
+		area: 'engine',
+		parts: ['M42']
 	},
 	{
 		// The coordinator's ask of 2026-11-02 (Trevor: no release until the How to Run gaps are

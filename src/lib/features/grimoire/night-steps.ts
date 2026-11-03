@@ -29,6 +29,7 @@ import {
 	pretendTeam,
 	SETUP_ALIGNMENT_STEP,
 	diedSinceNewDay,
+	jinxRulesBetween,
 	evilInfoNotesLeftOut,
 	revivedAfterStep,
 	revivedSinceNewDay,
@@ -249,16 +250,24 @@ export function stepWakes(
 	// A step that wakes the players its character marks (the Duchess's visitors) wakes only
 	// when someone is marked: no visitors, no visits tonight.
 	if (id !== undefined && !step.gained && wakesMarked(id, characters)) return holders.length > 0;
+	// An ability set off by its player's death (the Ravenkeeper, the Sage) wakes after the first
+	// night only on the night of that death, never while its player lives. A jinx with a partner
+	// in play may change that (the Leviathan's chosen Sage acts), so its step stays (warn, never
+	// lock).
+	const onDeath =
+		id !== undefined &&
+		game.pastDays.length > 0 &&
+		onDeathTrigger(id, characters) !== undefined &&
+		!jinxedInPlay(game, id, characters);
 	return (
 		holders.length === 0 ||
 		holders.some(
 			(s) =>
-				(seatHasAbility(tonight.abilitiesRule, game, s, characters) ||
-					keepsAbilityWhenDead(game, s, characters) ||
-					livesWhileDead(game, s, characters) ||
-					(id !== undefined &&
-						tonight.diedTonight.has(s) &&
-						setOffByDeath(game, s, id, characters))) &&
+				(onDeath && id !== undefined
+					? tonight.diedTonight.has(s) && setOffByDeath(game, s, id, characters)
+					: seatHasAbility(tonight.abilitiesRule, game, s, characters) ||
+						keepsAbilityWhenDead(game, s, characters) ||
+						livesWhileDead(game, s, characters)) &&
 				(id === undefined || wakeConditionMet(game, id, s, characters, tonight.diedTonight)) &&
 				!(
 					tonight.revived &&
@@ -267,6 +276,19 @@ export function stepWakes(
 				)
 		)
 	);
+}
+
+/** Whether a jinx between `characterId` and a character in play holds, on either of them. */
+function jinxedInPlay(game: Game, characterId: CharacterId, characters: CharacterLookup): boolean {
+	return game.seating.some((s) => {
+		const other = trueCharacter(game, s, characters);
+		return (
+			other !== undefined &&
+			other !== characterId &&
+			(jinxRulesBetween(characterId, other, characters) !== undefined ||
+				jinxRulesBetween(other, characterId, characters) !== undefined)
+		);
+	});
 }
 
 /** Seats revived since the New day, from the log: a first-night-only one wakes again tonight. */
