@@ -10,7 +10,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import { STANDARD_INFO_TOKENS, type InfoToken } from '#lib/core/data/info-tokens.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
@@ -395,7 +395,8 @@
 <Dialog bind:open={fillOpen} title={fillTitle}>
 	<!-- The character above the card's words, no brackets (Trevor, 2026-10-18). -->
 	{#snippet heading()}{#if filling}<span class="fill-heading"
-				><CharacterBadge
+				><CharacterPiece
+					template="badge"
 					characterId={filling.character.id}
 					character={filling.character}
 					interactive={false}

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { avatarCharacter, characterAvatar } from '#lib/core/avatars/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import CharacterPicker from '#lib/features/characters/CharacterPicker.svelte';
 	import { loadOfficialData, officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
@@ -39,9 +39,11 @@
 	{#snippet control(labelId)}
 		<span class="value">
 			<span class="current" data-testid="character-icon">
-				{#if chosen && character}<CharacterBadge characterId={chosen} {character} />{:else}{t(
-						'common.none'
-					)}{/if}
+				{#if chosen && character}<CharacterPiece
+						template="badge"
+						characterId={chosen}
+						{character}
+					/>{:else}{t('common.none')}{/if}
 			</span>
 			<IconButton
 				icon="edit"

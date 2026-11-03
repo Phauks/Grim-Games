@@ -4,7 +4,7 @@
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import { seatLabel } from '#lib/features/game/seat-label.ts';
 	import SeatBadge from './SeatBadge.svelte';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import RuleHeader from '#lib/features/modes/RuleHeader.svelte';
 	import { spawnedBy } from '#lib/features/modes/spawned-by.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
@@ -157,7 +157,11 @@
 					<dt>{what}</dt>
 					<dd>
 						{@render player(seatId)}
-						{#if id && character}<CharacterBadge characterId={id} {character} />{/if}
+						{#if id && character}<CharacterPiece
+								template="badge"
+								characterId={id}
+								{character}
+							/>{/if}
 					</dd>
 				{/each}
 				<dt>Then</dt>

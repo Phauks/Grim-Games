@@ -2,7 +2,7 @@
 	import SeatBadge from './SeatBadge.svelte';
 	import type { Alignment } from '#lib/core/data/index.ts';
 	import type { SeatId } from '#lib/core/model/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { seatName } from './night-steps.ts';
@@ -33,7 +33,8 @@
 		{@const id = game.seats[seatId]?.characterId}
 		<li>
 			{#if id}
-				<CharacterBadge
+				<CharacterPiece
+					template="badge"
 					characterId={id}
 					character={characters.get(id)}
 					playerName={seatName(game, seatId)}

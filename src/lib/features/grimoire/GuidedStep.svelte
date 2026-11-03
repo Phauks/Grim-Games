@@ -27,8 +27,7 @@
 	import { seesGrimoire } from '#lib/core/rules/sees-grimoire.ts';
 	import { alignmentOf, type SeatId } from '#lib/core/model/index.ts';
 	import type { InfoChoice, InfoPicker, Night, NightStep } from '#lib/core/rules/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
-	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import BoardReminder from './BoardReminder.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import { TYPE_PLURALS } from '#lib/features/reference/labels.ts';
@@ -321,13 +320,14 @@
 			{#if step.character}
 				{@const one = !step.storytellerAbility && holders.length === 1 ? holders[0] : undefined}
 				<div class="row-head">
-					<CharacterRow
+					<CharacterPiece
+						template="row"
 						character={step.character}
 						info
 						alignment={one ? alignmentOf(game, one) : undefined}
 						playerName={one ? seatName(game, one) : undefined}
 					>
-						{#snippet afterName()}
+						{#snippet tags()}
 							<!-- An ability the Storyteller holds wakes nobody: the Storyteller acts. -->
 							{#if step.storytellerAbility}<span class="who" data-testid="step-who"
 									>Storyteller</span
@@ -335,13 +335,13 @@
 									>{#each holders as s (s)}<SeatBadge {game} seatId={s} />{/each}</span
 								>{/if}
 						{/snippet}
-						{#snippet ability()}<span data-testid="step-ability"
+						{#snippet abilityText()}<span data-testid="step-ability"
 								><GlossaryText
 									text={step.character!.ability}
 									names={[step.character!.name]}
 								/></span
 							>{/snippet}
-					</CharacterRow>
+					</CharacterPiece>
 				</div>
 			{:else}
 				<div class="head">
@@ -633,7 +633,8 @@
 
 <SeatChooser bind:open={askOpen} title={askTitle} {game} {characters} onChoose={chosen}>
 	{#snippet heading()}
-		{#if step?.character}<CharacterBadge
+		{#if step?.character}<CharacterPiece
+				template="badge"
 				characterId={step.character.id}
 				character={step.character}
 				interactive={false}

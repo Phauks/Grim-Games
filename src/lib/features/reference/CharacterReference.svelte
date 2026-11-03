@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Character } from '#lib/core/data/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import Sentence from '#lib/features/characters/Sentence.svelte';
 	import { matchesReference, type ReferenceEntry } from '#lib/core/rules/reference.ts';
 	import { tableRows } from '#lib/core/rules/reference-table.ts';
@@ -42,7 +42,8 @@
 <Dialog bind:open={detailsOpen} title={details?.title ?? ''}>
 	{#snippet heading()}
 		<Sentence text={details?.title ?? ''}
-			>{#snippet fill()}{#if details?.character}<CharacterBadge
+			>{#snippet fill()}{#if details?.character}<CharacterPiece
+						template="badge"
 						characterId={details.character.id}
 						character={details.character}
 					/>{/if}{/snippet}</Sentence

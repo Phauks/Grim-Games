@@ -1,6 +1,5 @@
 <script lang="ts">
 	import type { Alignment, CharacterId, PlayerName } from '#lib/core/data/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import NoteList from '#lib/ui/notes/NoteList.svelte';
 	import type { TitledNote } from '#lib/ui/notes/note.ts';
@@ -46,7 +45,7 @@
 
 <CharacterPiece template="entry" {characterId} {alignment} {playerName} {label}>
 	{#snippet controls()}{#if guesses.length}<span class="guesses" data-testid="note-guesses"
-				>{#each guesses as id (id)}<CharacterBadge characterId={id} />{/each}</span
+				>{#each guesses as id (id)}<CharacterPiece template="badge" characterId={id} />{/each}</span
 			>{/if}{/snippet}
 	<div role="group" aria-label={`Notes for ${label}`}>
 		<NoteList {notes} {readonly} {onSave} {onDelete} />

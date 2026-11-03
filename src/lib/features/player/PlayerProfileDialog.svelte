@@ -3,7 +3,7 @@
 	import type { PlayerName } from '#lib/core/data/index.ts';
 	import { seatFrame, type FrameId } from '#lib/core/frames/index.ts';
 	import type { ProfileWords } from '#lib/core/profile/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { loadOfficialData, officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import SeatFriendButton from '#lib/features/friends/SeatFriendButton.svelte';
 	import type { SeatFriendTarget } from '#lib/features/friends/friends-protocol.ts';
@@ -73,7 +73,7 @@
 			{#if token && character}
 				<div class="row" data-testid="player-profile-token">
 					<dt>{t('player.characterIcon')}</dt>
-					<dd><CharacterBadge characterId={token} {character} /></dd>
+					<dd><CharacterPiece template="badge" characterId={token} {character} /></dd>
 				</div>
 			{/if}
 			{#each words?.details ?? [] as detail, index (index)}

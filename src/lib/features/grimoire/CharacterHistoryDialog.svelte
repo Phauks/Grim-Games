@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { SeatId } from '#lib/core/model/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { seatLabel as seatLabelFor } from '#lib/features/game/seat-label.ts';
 	import SeatBadge from './SeatBadge.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -37,9 +37,17 @@
 		{#each changes as change, i (i)}
 			<li>
 				{#if change.kind === 'character'}
-					<CharacterBadge characterId={change.from} character={characters.get(change.from)} />
+					<CharacterPiece
+						template="badge"
+						characterId={change.from}
+						character={characters.get(change.from)}
+					/>
 					→
-					<CharacterBadge characterId={change.to} character={characters.get(change.to)} />
+					<CharacterPiece
+						template="badge"
+						characterId={change.to}
+						character={characters.get(change.to)}
+					/>
 				{:else}
 					<AlignmentPill alignment={change.from} /> → <AlignmentPill alignment={change.to} />
 				{/if}

@@ -2,7 +2,7 @@
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import type { CharacterLookup, Game, SeatId } from '#lib/core/model/index.ts';
 	import { jinxForbidsBecoming } from '#lib/core/rules/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import JinxNote from '#lib/features/characters/JinxNote.svelte';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { jinxBetween } from '#lib/features/game/game-jinxes.ts';
@@ -54,8 +54,16 @@
 	{#if asked}
 		<p class="lead">
 			<SeatBadge {game} {characters} seatId={asked.seatId} /> can't become
-			<CharacterBadge characterId={asked.id} character={characters.get(asked.id)} /> while
-			<CharacterBadge characterId={asked.partner} character={characters.get(asked.partner)} /> is in play.
+			<CharacterPiece
+				template="badge"
+				characterId={asked.id}
+				character={characters.get(asked.id)}
+			/> while
+			<CharacterPiece
+				template="badge"
+				characterId={asked.partner}
+				character={characters.get(asked.partner)}
+			/> is in play.
 		</p>
 		{#if jinx}<div data-testid="jinxed-pick"><JinxNote {jinx} {characters} /></div>{/if}
 	{/if}

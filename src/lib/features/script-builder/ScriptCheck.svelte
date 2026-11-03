@@ -6,7 +6,7 @@
 <script lang="ts">
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import type { ScriptFacts } from '#lib/core/rules/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { savedCharacters } from '#lib/features/character-builder/stores.svelte.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
@@ -48,12 +48,14 @@
 			<ul>
 				{#each facts.jinxes as jinx (jinx.characters.join('+'))}
 					<li>
-						<CharacterBadge
+						<CharacterPiece
+							template="badge"
 							characterId={jinx.characters[0]}
 							character={onScript.get(jinx.characters[0])}
 						/>
 						{t('script-builder.and')}
-						<CharacterBadge
+						<CharacterPiece
+							template="badge"
 							characterId={jinx.characters[1]}
 							character={onScript.get(jinx.characters[1])}
 						/>: {jinx.reason}
@@ -73,7 +75,11 @@
 			<ul>
 				{#each facts.modifiers as modifier (modifier.id)}
 					<li>
-						<CharacterBadge characterId={modifier.id} character={onScript.get(modifier.id)} />
+						<CharacterPiece
+							template="badge"
+							characterId={modifier.id}
+							character={onScript.get(modifier.id)}
+						/>
 						{modifier.summary}
 					</li>
 				{/each}
@@ -91,9 +97,13 @@
 			<ul>
 				{#each needs as need (need.id)}
 					<li>
-						<CharacterBadge characterId={need.id} character={onScript.get(need.id)} />
+						<CharacterPiece
+							template="badge"
+							characterId={need.id}
+							character={onScript.get(need.id)}
+						/>
 						{t('script-builder.needsChar')}
-						<CharacterBadge characterId={need.requires} />
+						<CharacterPiece template="badge" characterId={need.requires} />
 						<Button variant="quiet" onclick={() => draft.toggle(need.requires)}
 							>{t('script-builder.add')}</Button
 						>
@@ -115,7 +125,7 @@
 					{@const credit = credits[character.id]}
 					{@const saved = savedFor(character.id)}
 					<li>
-						<CharacterBadge characterId={character.id} {character} />
+						<CharacterPiece template="badge" characterId={character.id} {character} />
 						<span class="creator">{credit?.creator || t('common.none')}</span>
 						{#if saved}
 							<IconButton

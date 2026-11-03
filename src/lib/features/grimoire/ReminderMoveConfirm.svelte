@@ -8,7 +8,7 @@
 		type SeatId
 	} from '#lib/core/model/index.ts';
 	import { fixedReminderMove, fixedReminderReason } from '#lib/core/rules/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import { placingAlignment } from './board.ts';
@@ -130,7 +130,8 @@
 
 {#snippet place(at: Place, back = false)}
 	{#if 'seatId' in at}On <SeatBadge {game} seatId={at.seatId} />
-	{:else if 'characterId' in at}On <CharacterBadge
+	{:else if 'characterId' in at}On <CharacterPiece
+			template="badge"
 			characterId={at.characterId}
 			character={characters.get(at.characterId)}
 		/>
@@ -148,7 +149,11 @@
 		{@const owner = characters.get(pending.reminder.characterId)}
 		<!-- Which token, from which character, and both places (Trevor, 2026-10-16). -->
 		<p class="what">
-			<CharacterBadge characterId={pending.reminder.characterId} character={owner} />'s
+			<CharacterPiece
+				template="badge"
+				characterId={pending.reminder.characterId}
+				character={owner}
+			/>'s
 			<ReminderToken
 				label={tokenLabel(pending.reminder)}
 				character={owner}
@@ -164,7 +169,8 @@
 		{#if pending.why}<p class="why">{pending.why}</p>{/if}
 		{#each pending.relocators as relocator (relocator.characterId)}
 			<p class="note">
-				<CharacterBadge
+				<CharacterPiece
+					template="badge"
 					characterId={relocator.characterId}
 					character={characters.get(relocator.characterId)}
 				/> is in play: {relocator.does}

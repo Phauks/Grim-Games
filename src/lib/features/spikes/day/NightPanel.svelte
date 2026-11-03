@@ -15,7 +15,7 @@
 		type NightStep,
 		type Reliability
 	} from '#lib/core/rules/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import NightText from '#lib/features/reference/NightText.svelte';
 	import type { Assistance } from '#lib/ui/assistance.ts';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
@@ -189,7 +189,7 @@
 {#snippet stepBody(step: NightStep)}
 	<div class="step-head">
 		{#if step.character}
-			<CharacterBadge characterId={step.character.id} />
+			<CharacterPiece template="badge" characterId={step.character.id} />
 			<span class="players"
 				>{seatsHolding(step)
 					.map((s) => game.seatName(s))

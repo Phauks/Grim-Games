@@ -11,7 +11,6 @@
 		type EngineWarning
 	} from '#lib/core/engine/index.ts';
 	import { scriptCharacterIds, type CharacterLookup, type Game } from '#lib/core/model/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import BluffTag from './BluffTag.svelte';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import Sentence from '#lib/features/characters/Sentence.svelte';
@@ -320,7 +319,8 @@
 					{ type: 'unit', style: 'narrow' }
 				)
 			})}
-			>{#snippet fill(name)}{@const c = playing[Number(name.slice(1))]}<CharacterBadge
+			>{#snippet fill(name)}{@const c = playing[Number(name.slice(1))]}<CharacterPiece
+					template="badge"
 					characterId={c.id}
 					character={c}
 				/>{/snippet}</Sentence
@@ -349,7 +349,8 @@
 						{ type: 'unit', style: 'narrow' }
 					) || t('common.none')
 			})}
-			>{#snippet fill(name)}{@const c = doomed[Number(name.slice(1))]}<CharacterBadge
+			>{#snippet fill(name)}{@const c = doomed[Number(name.slice(1))]}<CharacterPiece
+					template="badge"
 					characterId={c.id}
 					character={c}
 				/>{/snippet}</Sentence

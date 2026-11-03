@@ -37,7 +37,7 @@
 	} from '#lib/core/rules/index.ts';
 	import { SEATED_TYPES, splitPlayers, type SeatedType } from '#lib/core/rules/distribution.ts';
 	import SharedPicker from '#lib/features/characters/CharacterPicker.svelte';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { TYPE_LABELS, TYPE_PLURALS } from '#lib/features/reference/labels.ts';
 	import BagTiles from '#lib/features/setup/BagTiles.svelte';
 	import type { SetupGamePort } from '#lib/features/setup/game-port.ts';
@@ -519,12 +519,16 @@
 			<p class="prompt" data-testid="turned-by">
 				{t('modes.deal.turned', {
 					type: TYPE_LABELS[progress.state.onlyType]
-				})}{#if by}<CharacterBadge characterId={by.id} character={by} />{/if}
+				})}{#if by}<CharacterPiece template="badge" characterId={by.id} character={by} />{/if}
 			</p>
 		{:else if forcedBy}
 			{@const by = byId.get(forcedBy)}
 			<p class="prompt" data-testid="forced-by">
-				{t('modes.deal.forced')}{#if by}<CharacterBadge characterId={by.id} character={by} />{/if}
+				{t('modes.deal.forced')}{#if by}<CharacterPiece
+						template="badge"
+						characterId={by.id}
+						character={by}
+					/>{/if}
 			</p>
 		{:else}
 			<p class="prompt">
@@ -594,7 +598,8 @@
 		onRedraft={redraftNow}
 	>
 		<p class="prompt">
-			{t('modes.deal.hiddenChoice')}{#if really}<CharacterBadge
+			{t('modes.deal.hiddenChoice')}{#if really}<CharacterPiece
+					template="badge"
 					characterId={really.id}
 					character={really}
 				/>{/if}
@@ -622,7 +627,7 @@
 				{#if option}
 					<li>
 						<Button onclick={() => answerGained(id)}>{t('modes.deal.abilityTake')}</Button>
-						<CharacterBadge characterId={option.id} character={option} />
+						<CharacterPiece template="badge" characterId={option.id} character={option} />
 					</li>
 				{/if}
 			{/each}
@@ -649,7 +654,11 @@
 	<Dialog bind:open={hiding} title={t('modes.deal.hiddenTitle')}>
 		<div class="ask" data-testid="draft-hidden">
 			<p class="prompt">
-				{t('modes.deal.hiddenPrompt')}<CharacterBadge characterId={hidden.id} character={hidden} />
+				{t('modes.deal.hiddenPrompt')}<CharacterPiece
+					template="badge"
+					characterId={hidden.id}
+					character={hidden}
+				/>
 			</p>
 			<DraftSeatList
 				seats={townsfolkSeats}
@@ -670,7 +679,11 @@
 			<p class="prompt">
 				{t('modes.deal.reservedPrompt', {
 					type: TYPE_LABELS[reserve.nextTo]
-				})}<CharacterBadge characterId={reservedCharacter.id} character={reservedCharacter} />
+				})}<CharacterPiece
+					template="badge"
+					characterId={reservedCharacter.id}
+					character={reservedCharacter}
+				/>
 			</p>
 			<DraftSeatList
 				seats={reserveSeats}

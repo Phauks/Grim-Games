@@ -5,7 +5,7 @@
 <script lang="ts">
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import { MAX_ASKED_CHARACTERS } from '#lib/core/data/info-tokens.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import SharedPicker from '#lib/features/characters/CharacterPicker.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -214,7 +214,8 @@
 				<div class="belongs">
 					<span class="belongs-label">{t('info-tokens.belongsTo')}</span>
 					<span class="belongs-owners">
-						{#each editOwners as owner (owner.id)}<CharacterBadge
+						{#each editOwners as owner (owner.id)}<CharacterPiece
+								template="badge"
 								characterId={owner.id}
 								character={owner}
 								interactive={false}

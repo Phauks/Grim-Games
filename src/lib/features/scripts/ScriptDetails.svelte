@@ -11,7 +11,7 @@
 	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import type { Snippet } from 'svelte';
 	import type { GameData } from '#lib/core/data/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { TYPE_PLURALS } from '#lib/features/reference/labels.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { BotcScriptsEntry } from './botcscripts-api.ts';
@@ -100,7 +100,7 @@
 					<p class="badges">
 						{#each group.characters as c (c.id)}
 							{#if c.official}
-								<CharacterBadge characterId={c.official.id} />
+								<CharacterPiece template="badge" characterId={c.official.id} />
 							{:else}
 								<span class="homebrew">{c.name}</span>
 							{/if}

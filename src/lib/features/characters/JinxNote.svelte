@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Character, CharacterId, Jinx } from '#lib/core/data/index.ts';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
-	import CharacterBadge from './CharacterBadge.svelte';
+	import CharacterPiece from './CharacterPiece.svelte';
 	import { officialData } from './game-data.svelte.ts';
 
 	/**
@@ -26,8 +26,18 @@
 <div class="jinx-note" data-testid="jinx-note" data-pair={`${a}+${b}`}>
 	<span class="pair">
 		<span class="joined">
-			<CharacterBadge characterId={a} character={characters?.get(a)} joined="start" />
-			<CharacterBadge characterId={b} character={characters?.get(b)} joined="end" />
+			<CharacterPiece
+				template="badge"
+				characterId={a}
+				character={characters?.get(a)}
+				joined="start"
+			/>
+			<CharacterPiece
+				template="badge"
+				characterId={b}
+				character={characters?.get(b)}
+				joined="end"
+			/>
 		</span>
 	</span>
 	<p class="jinx-text">

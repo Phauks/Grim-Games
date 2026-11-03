@@ -59,10 +59,10 @@ export const characterDisplay = {
 		},
 		messages: {
 			ability:
-				"Show a character's ability with <CharacterRow> (#lib/features/characters/CharacterRow.svelte; pass GlossaryText in its `ability` snippet), the Script tab's look.",
-			icon: "Draw a character's icon with <CharacterRow>, <CharacterBadge> or <CharacterToken>, not by hand.",
+				'Show a character\'s ability with <CharacterPiece template="row"> (#lib/features/characters/CharacterPiece.svelte; pass GlossaryText in its `abilityText` snippet), the Script tab\'s look.',
+			icon: "Draw a character's icon with <CharacterPiece> (the icon template for the icon alone) or <CharacterToken>, not by hand.",
 			summary:
-				"CharacterSummary is the top of the character's own page (CharacterDialog); elsewhere show the character with <CharacterRow info>."
+				'CharacterSummary is the top of the character\'s own page (CharacterDialog); elsewhere show the character with <CharacterPiece template="row" info>.'
 		},
 		schema: []
 	},

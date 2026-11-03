@@ -2,7 +2,7 @@
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import type { AvatarId } from '#lib/core/avatars/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import AlignmentPill from '#lib/features/grimoire/AlignmentPill.svelte';
 	import AvatarFace from '#lib/ui/seating/AvatarFace.svelte';
 	import type { GenericGuess } from './grim-guesses.ts';
@@ -42,7 +42,8 @@
 					>{:else if g.generic}<AlignmentPill
 						alignment={g.generic.team}
 						text={g.label ?? ''}
-					/>{:else}<CharacterBadge
+					/>{:else}<CharacterPiece
+						template="badge"
 						characterId={g.id}
 						character={g.character}
 						interactive={false}

@@ -23,7 +23,7 @@
 		learnedRoles,
 		validInformation
 	} from '#lib/core/rules/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
@@ -300,6 +300,13 @@
 
 <!-- A player as the badge with its player: their true character and their name (Trevor,
      2026-10-17; one piece, 2026-11-02). -->
+{#snippet badge(id: CharacterId, interactive = true)}<CharacterPiece
+		template="badge"
+		characterId={id}
+		character={characters.get(id)}
+		{interactive}
+	/>{/snippet}
+
 {#snippet player(
 	seatId: SeatId,
 	characterId: CharacterId | undefined = trueCharacter(game, seatId, characters)
@@ -309,18 +316,14 @@
 			? ', '
 			: ''}{@render player(seatId)}{/each}{/snippet}
 
-{#snippet value(v: AnswerValue)}{#if v.kind === 'character'}<CharacterBadge
-			characterId={v.value}
-			character={characters.get(v.value)}
-		/>{:else if v.kind === 'characters'}<CharacterSet
+{#snippet value(v: AnswerValue)}{#if v.kind === 'character'}{@render badge(
+			v.value
+		)}{:else if v.kind === 'characters'}<CharacterSet
 			value={v}
 			{characters}
 		/>{:else}{answerValueText(v)}{/if}{/snippet}
 
-{#snippet flagBody(flag: Flag)}{#if flag.character}<CharacterBadge
-			characterId={flag.character}
-			character={characters.get(flag.character)}
-		/>
+{#snippet flagBody(flag: Flag)}{#if flag.character}{@render badge(flag.character)}
 	{/if}{flag.text}{#each flag.seats ?? [] as seatId, n (seatId)}{n ? ', ' : ' '}{@render player(
 			seatId
 		)}{/each}{#each flag.allowed ?? [] as v, n (n)}{n ? ' / ' : ' '}{@render value(
@@ -368,16 +371,8 @@
 		onChange={(c) => (shownAs = { ...shownAs, [key]: c })}
 		onClear={() => (shownAs = withoutKey(shownAs, key))}
 	>
-		{#snippet item(option)}<CharacterBadge
-				characterId={option.value}
-				character={characters.get(option.value)}
-				interactive={false}
-			/>{/snippet}
-		{#snippet selected(option)}<CharacterBadge
-				characterId={option.value}
-				character={characters.get(option.value)}
-				interactive={false}
-			/>{/snippet}
+		{#snippet item(option)}{@render badge(option.value, false)}{/snippet}
+		{#snippet selected(option)}{@render badge(option.value, false)}{/snippet}
 	</Select>
 {/snippet}
 
@@ -397,7 +392,7 @@
 			{:else if o.anyOther}
 				<strong>Any other</strong>
 			{:else if o.value.kind === 'character'}
-				<CharacterBadge characterId={o.value.value} character={characters.get(o.value.value)} />
+				{@render badge(o.value.value)}
 			{:else if o.value.kind === 'characters'}
 				<CharacterSet value={o.value} {characters} />
 			{:else}
@@ -429,7 +424,7 @@
 				>{@render player(a.seatId)}:</span
 			>{/if}
 		{#if a.kind === 'character'}
-			<CharacterBadge characterId={a.value} character={characters.get(a.value)} />
+			{@render badge(a.value)}
 		{:else if a.kind === 'characters'}
 			<CharacterSet value={a} {characters} />
 		{:else}
@@ -457,11 +452,10 @@
 
 {#if compact}
 	{#if has}<span class="compact" data-testid="night-suggested"
-			>Valid Information: {#if line.characterId}<CharacterBadge
-					characterId={line.characterId}
-					character={characters.get(line.characterId)}
-					interactive={false}
-				/>{/if}{#if line.set}<CharacterSet
+			>Valid Information: {#if line.characterId}{@render badge(
+					line.characterId,
+					false
+				)}{/if}{#if line.set}<CharacterSet
 					value={line.set}
 					{characters}
 					interactive={false}
@@ -477,11 +471,7 @@
 				{/if}{v.list}{/each}{#each line.roles ?? [] as { id, marked }, n (id)}{n ? ', ' : ''}<span
 					class="item"
 					class:marked
-					>{#if marked}<Icon name="reminder" />{/if}<CharacterBadge
-						characterId={id}
-						character={characters.get(id)}
-						interactive={false}
-					/></span
+					>{#if marked}<Icon name="reminder" />{/if}{@render badge(id, false)}</span
 				>{/each}{#each line.players ?? [] as { seatId, marked }, n (seatId)}{n ? ', ' : ''}<span
 					class="item"
 					class:marked
@@ -509,10 +499,9 @@
 										{#if v.none}<strong>None</strong>{:else if v.yes !== undefined}<strong
 												>{v.yes ? 'Yes' : 'No'}</strong
 											>{/if}
-										{#each v.characterIds ?? [] as id, n (id)}{n ? ' / ' : ''}<CharacterBadge
-												characterId={id}
-												character={characters.get(id)}
-											/>{/each}
+										{#each v.characterIds ?? [] as id, n (id)}{n ? ' / ' : ''}{@render badge(
+												id
+											)}{/each}
 										{#if v.target}<SeatBadge {game} {characters} seatId={v.target} />
 											{#if v.seats.length > 0}<span class="with">and one of</span>{/if}{/if}
 										{@render players(v.seats)}
@@ -665,10 +654,7 @@
 	<li data-reason={row.reason} data-marked={row.marked ? '' : undefined}>
 		<span class="main option">
 			{#if row.characterIds.length === 1}
-				<CharacterBadge
-					characterId={row.characterIds[0]}
-					character={characters.get(row.characterIds[0])}
-				/>
+				{@render badge(row.characterIds[0])}
 			{:else}
 				{@render shownAsSelect(key, id, row.characterIds)}
 			{/if}

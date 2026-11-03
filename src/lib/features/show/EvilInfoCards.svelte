@@ -23,7 +23,7 @@
 		LUNATIC_SET,
 		showableBluffSets
 	} from '#lib/features/bluffs/bluffs.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { seatName } from '#lib/features/grimoire/night-steps.ts';
 	import SeatChooser from '#lib/features/grimoire/SeatChooser.svelte';
 	import NightText from '#lib/features/reference/NightText.svelte';
@@ -289,7 +289,8 @@
 <!-- A player as their name pill and their character's badge, as in the night suggestions. -->
 {#snippet player(seatId: SeatId)}{@const id = trueCharacter(game, seatId, characters)}<span
 		class="player"
-		><PlayerBadge name={seatName(game, seatId)} />{#if id}<CharacterBadge
+		><PlayerBadge name={seatName(game, seatId)} />{#if id}<CharacterPiece
+				template="badge"
 				characterId={id}
 				character={characters.get(id)}
 			/>{/if}</span
@@ -302,7 +303,12 @@
 	{#if step === 'believer' && believedText && believed}
 		<h3 class="as">
 			{t('show.evil.as')}
-			<CharacterBadge characterId={believed.id} character={believed} interactive={false} />
+			<CharacterPiece
+				template="badge"
+				characterId={believed.id}
+				character={believed}
+				interactive={false}
+			/>
 		</h3>
 		<p class="text" data-testid="believed-demon-text">
 			<NightText text={believedText} character={believed} night="other" />
@@ -332,7 +338,8 @@
 					{#if row.characterIds}
 						<span class="badges">
 							{#each row.characterIds as id (id)}
-								<CharacterBadge
+								<CharacterPiece
+									template="badge"
 									characterId={id}
 									character={characters.get(id)}
 									interactive={false}
@@ -358,7 +365,8 @@
 					{/if}
 					{#if row.flag}
 						<span class="flag"
-							><Icon name="warning" /><CharacterBadge
+							><Icon name="warning" /><CharacterPiece
+								template="badge"
 								characterId={row.flag}
 								character={characters.get(row.flag)}
 								interactive={false}

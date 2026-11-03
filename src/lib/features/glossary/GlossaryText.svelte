@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { GlossarySegment } from '#lib/core/rules/glossary.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { mentionSegments } from '#lib/features/characters/mentions.ts';
 	import { explainBlock } from './glossary.svelte.ts';
@@ -34,7 +34,8 @@
 {#each parts as part, i (i)}{#if part.kind === 'term'}<GlossaryTerm
 			term={part.term}
 			text={part.text}
-		/>{:else}{#each mentions(part.text) as m, j (j)}{#if m.kind === 'character'}<CharacterBadge
+		/>{:else}{#each mentions(part.text) as m, j (j)}{#if m.kind === 'character'}<CharacterPiece
+					template="badge"
 					characterId={m.characterId}
 					text={m.text}
 				/>{:else}{m.text}{/if}{/each}{/if}{/each}

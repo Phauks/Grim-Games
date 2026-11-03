@@ -8,7 +8,7 @@
 		resolveLiveOrDie,
 		type NightStep
 	} from '#lib/core/rules/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
@@ -93,7 +93,7 @@
 	<h3>Named character</h3>
 	<div class="row" data-testid="named-kill">
 		{#if named}
-			<CharacterBadge characterId={named} character={characters.get(named)} />
+			<CharacterPiece template="badge" characterId={named} character={characters.get(named)} />
 		{:else}
 			<span class="none">None</span>
 		{/if}

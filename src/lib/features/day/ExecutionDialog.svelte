@@ -18,7 +18,7 @@
 		type OutcomeHolder,
 		type OutcomeKind
 	} from '#lib/core/rules/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { seatLabel } from '#lib/features/game/seat-label.ts';
 	import Sentence from '#lib/features/characters/Sentence.svelte';
 	import { slot } from '#lib/features/characters/slots.ts';
@@ -284,7 +284,8 @@
 	{@const character = characters.get(option.value)}
 	{#if character}
 		<span class="candidate"
-			><CharacterBadge
+			><CharacterPiece
+				template="badge"
 				characterId={character.id}
 				{character}
 				interactive={false}
@@ -350,7 +351,8 @@
 				<Sentence text={t('day.logExecutedSurvived', { name: slot('player') })}
 					>{#snippet fill()}<SeatBadge {game} seatId={choice as SeatId} />{/snippet}</Sentence
 				>{#if savedByNow !== OVERRIDE}{@const by =
-						characters.get(savedByNow)}{#if by}<CharacterBadge
+						characters.get(savedByNow)}{#if by}<CharacterPiece
+							template="badge"
 							characterId={by.id}
 							character={by}
 							interactive={false}
@@ -363,7 +365,8 @@
 			{@const character = characters.get(by.characterId)}
 			<div class="instead" data-testid="executed-instead">
 				<span class="candidate"
-					>{#if character}<CharacterBadge
+					>{#if character}<CharacterPiece
+							template="badge"
 							characterId={character.id}
 							{character}
 							interactive={false}
@@ -385,7 +388,8 @@
 			{@const problem = problemOf(holder)}
 			<div class="instead" data-testid={`outcome-${holder.kind}`}>
 				<span class="candidate"
-					>{#if character}<CharacterBadge
+					>{#if character}<CharacterPiece
+							template="badge"
 							characterId={character.id}
 							{character}
 							interactive={false}

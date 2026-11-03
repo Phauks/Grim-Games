@@ -3,7 +3,7 @@
 	import { seatName } from '#lib/features/game/seat-label.ts';
 	import type { Snippet } from 'svelte';
 	import type { CharacterLookup, Game, SeatId } from '#lib/core/model/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 
@@ -78,7 +78,8 @@
 					>
 						<span class="number">{number}</span>
 						<span class="role"
-							>{#if character}<CharacterBadge
+							>{#if character}<CharacterPiece
+									template="badge"
 									characterId={character.id}
 									{character}
 									alignment={seat.alignment}

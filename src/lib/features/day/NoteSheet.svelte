@@ -10,7 +10,7 @@
 		type SeatId
 	} from '#lib/core/model/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import Sentence from '#lib/features/characters/Sentence.svelte';
 	import { slot } from '#lib/features/characters/slots.ts';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
@@ -178,7 +178,8 @@
 			>{#snippet fill(name)}{#if name === 'seat'}{#if target?.seatId}<SeatBadge
 							game={game.game}
 							seatId={target.seatId}
-						/>{/if}{:else if target}<CharacterBadge
+						/>{/if}{:else if target}<CharacterPiece
+						template="badge"
 						characterId={target.characterId}
 						character={game.characters.get(target.characterId)}
 					/>{/if}{/snippet}</Sentence

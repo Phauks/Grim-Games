@@ -3,7 +3,7 @@
 	import { WISH_EFFECTS, type SeatId, type WishEffect } from '#lib/core/model/index.ts';
 	import { grantedWish } from '#lib/core/rules/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import Sentence from '#lib/features/characters/Sentence.svelte';
 	import { slot } from '#lib/features/characters/slots.ts';
 	import Select from '#lib/ui/primitives/Select.svelte';
@@ -84,7 +84,8 @@
 			{seatId}
 			{characterId}
 			interactive={false}
-		/>{:else if name === 'seat'}<SeatBadge game={game.game} {seatId} />{:else}<CharacterBadge
+		/>{:else if name === 'seat'}<SeatBadge game={game.game} {seatId} />{:else}<CharacterPiece
+			template="badge"
 			{characterId}
 			character={game.characters.get(characterId)}
 			interactive={false}

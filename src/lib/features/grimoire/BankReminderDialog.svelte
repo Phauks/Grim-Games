@@ -15,7 +15,7 @@
 	} from '#lib/core/model/index.ts';
 	import { characterNames } from '#lib/core/rules/character-names.ts';
 	import { pickedEffectOf, prepTextSegments, takesNote } from '#lib/core/rules/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import BoardReminder from './BoardReminder.svelte';
@@ -87,7 +87,8 @@
 	{/snippet}
 	<!-- No "From [Character]": the ability row below names it (Trevor, 2026-11-01). -->
 	{#snippet subtitle()}
-		{#if holder && 'characterId' in holder}on <CharacterBadge
+		{#if holder && 'characterId' in holder}on <CharacterPiece
+				template="badge"
 				characterId={holder.characterId}
 				character={characters.get(holder.characterId)}
 			/>{:else if holder && 'loose' in holder}loose on the board{/if}
@@ -98,7 +99,8 @@
 			{#each prepTextSegments(s.text, names) as part, j (j)}{#if part.kind === 'reminder'}<ReminderToken
 						label={part.label}
 						character={owner}
-					/>{:else if part.kind === 'character'}<CharacterBadge
+					/>{:else if part.kind === 'character'}<CharacterPiece
+						template="badge"
 						characterId={part.id}
 						character={characters.get(part.id)}
 					/>{:else}{part.text}{/if}{/each}

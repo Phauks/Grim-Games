@@ -13,7 +13,7 @@
 	} from '#lib/core/modes/index.ts';
 	import type { SeatedType } from '#lib/core/rules/distribution.ts';
 	import { setupComplete } from '#lib/core/rules/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import CharacterPicker from '#lib/features/characters/CharacterPicker.svelte';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
@@ -204,7 +204,7 @@
 				<span class="muted">{TYPE_LABELS[type]}</span>
 				<span class="pick">
 					{#if extra}
-						<CharacterBadge characterId={extra.id} character={extra} />
+						<CharacterPiece template="badge" characterId={extra.id} character={extra} />
 					{:else}
 						<span class="muted">{t('common.none')}</span>
 					{/if}

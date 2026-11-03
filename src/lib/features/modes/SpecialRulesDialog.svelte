@@ -7,7 +7,6 @@
 		type SpecialRule
 	} from '#lib/core/modes/index.ts';
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { optionalRuleText, prefetchWikiPage } from '#lib/features/characters/wiki-page.svelte.ts';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
@@ -191,7 +190,7 @@
 									/>{/snippet}</CharacterPiece
 							>
 						{:else}
-							<CharacterBadge characterId={rule.characterId} />
+							<CharacterPiece template="badge" characterId={rule.characterId} />
 						{/if}
 						<div class="row own">
 							<p class="rule">

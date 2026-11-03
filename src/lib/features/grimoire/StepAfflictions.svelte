@@ -2,7 +2,7 @@
 	import type { NightStep, Impairment } from '#lib/core/rules/index.ts';
 	import { nightStepAlerts } from '#lib/core/rules/index.ts';
 	import { alignmentOf, type SeatId } from '#lib/core/model/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 
@@ -38,7 +38,8 @@
 </script>
 
 {#snippet seatBadge(seatId: SeatId, characterId: string | undefined)}
-	{#if characterId}<CharacterBadge
+	{#if characterId}<CharacterPiece
+			template="badge"
 			{characterId}
 			character={characters.get(characterId)}
 			alignment={alignmentOf(game, seatId)}
@@ -62,7 +63,8 @@
 						by {#if impairment.source.seatId}{@render seatBadge(
 								impairment.source.seatId,
 								impairment.source.characterId
-							)}{:else}<CharacterBadge
+							)}{:else}<CharacterPiece
+								template="badge"
 								characterId={impairment.source.characterId}
 								character={characters.get(impairment.source.characterId)}
 							/>{/if}

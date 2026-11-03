@@ -19,7 +19,7 @@
 	import { TYPE_PLURALS } from '#lib/features/reference/labels.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import CharacterSearchBox from './CharacterSearchBox.svelte';
-	import CharacterRow from './CharacterRow.svelte';
+	import CharacterPiece from './CharacterPiece.svelte';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import { PICKER_TYPES, searchGroups, type CharacterGroup } from './character-search.ts';
 
@@ -173,7 +173,8 @@
 				{#if item}
 					{@render item(character, state)}
 				{:else}
-					<CharacterRow
+					<CharacterPiece
+						template="row"
 						{character}
 						{alignment}
 						info={onInfo}

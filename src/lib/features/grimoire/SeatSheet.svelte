@@ -17,10 +17,9 @@
 		votesWithoutToken,
 		type ImpairmentReason
 	} from '#lib/core/rules/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import CharacterDialog from '#lib/features/characters/CharacterDialog.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
-	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
@@ -302,11 +301,15 @@
 				{#if character}
 					<!-- The character as the Script tab shows it; its ring opens the character's
 					     page with this seat's number and alignment (Trevor, 2026-10-31). -->
-					<CharacterRow {character} alignment={seat.alignment} info={() => (detailsOpen = true)}
-						>{#snippet ability()}<GlossaryText
+					<CharacterPiece
+						template="row"
+						{character}
+						alignment={seat.alignment}
+						info={() => (detailsOpen = true)}
+						>{#snippet abilityText()}<GlossaryText
 								text={character.ability}
 								names={[character.name]}
-							/>{/snippet}</CharacterRow
+							/>{/snippet}</CharacterPiece
 					>
 				{:else}
 					<p class="none">No character</p>
@@ -316,7 +319,8 @@
 					{#if isOrphan(seat, game.script, characters, offScriptOk)}<Icon name="warning" />{/if}
 					{#each abilityLine as part, i (i)}{#if i > 0}
 							·
-						{/if}{part.text}{#if part.characterId}<CharacterBadge
+						{/if}{part.text}{#if part.characterId}<CharacterPiece
+								template="badge"
 								characterId={part.characterId}
 								character={characters.get(part.characterId)}
 							/>{/if}{part.after ?? ''}{/each}
@@ -526,7 +530,8 @@
 </ConfirmDialog>
 
 {#snippet fakeOption(option: { value: string; label: string })}
-	{#if option.value === FAKE_NONE}None{:else}<CharacterBadge
+	{#if option.value === FAKE_NONE}None{:else}<CharacterPiece
+			template="badge"
 			characterId={option.value}
 			character={characters.get(option.value)}
 			interactive={false}

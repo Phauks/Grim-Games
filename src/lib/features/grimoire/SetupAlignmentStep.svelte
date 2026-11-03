@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import { setupAlignmentTasks, type SetupAlignmentTask } from '#lib/core/rules/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import type { ShownInfoCard } from '#lib/features/show/shown.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
@@ -56,14 +56,15 @@
 		{@const source = characters.get(task.characterId)}
 		<li>
 			<p class="head">
-				<CharacterBadge characterId={task.characterId} character={source} />: {task.summary}
+				<CharacterPiece template="badge" characterId={task.characterId} character={source} />: {task.summary}
 			</p>
 			<ul class="seats">
 				{#each task.seats as seatId (seatId)}
 					{@const id = game.seats[seatId]?.characterId}
 					<li>
 						{#if id}
-							<CharacterBadge
+							<CharacterPiece
+								template="badge"
 								characterId={id}
 								character={characters.get(id)}
 								alignment={task.alignment}

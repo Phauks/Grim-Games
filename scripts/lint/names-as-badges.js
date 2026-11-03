@@ -56,7 +56,7 @@ const MARKS = {
 	PlayerNameMark: 'player name'
 };
 const FIX = {
-	'character name': 'a <CharacterBadge>',
+	'character name': 'a <CharacterPiece template="badge">',
 	'reminder name': 'a <ReminderToken>',
 	'player name': 'a <PlayerBadge>'
 };

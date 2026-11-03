@@ -2,7 +2,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { defaultAlignment, type Character, type PlayerName } from '#lib/core/data/index.ts';
 	import type { SeatRole } from '#lib/core/sync/seat-roles.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import { iconUrl } from '#lib/features/characters/icon-url.ts';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
@@ -83,7 +83,8 @@
 		<!-- The name, ability and alignment are laid out while hidden, so seeing them moves
 		     nothing (Trevor, 2026-10-28: "there is reflow when revealing character"). -->
 		<p class="name" class:secret={!held} aria-hidden={!held} data-testid="role-name">
-			{#if character}<CharacterBadge
+			{#if character}<CharacterPiece
+					template="badge"
 					characterId={character.id}
 					{character}
 					{alignment}

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import AlignmentPill from './AlignmentPill.svelte';
 	import SeatBadge from './SeatBadge.svelte';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
@@ -92,7 +92,8 @@
 			</dd>
 			<dt>Character</dt>
 			<dd>
-				<CharacterBadge
+				<CharacterPiece
+					template="badge"
 					characterId={ask.characterId}
 					character={grimoire.open.characters.get(ask.characterId)}
 				/>
@@ -119,14 +120,16 @@
 			<dd><SeatBadge game={grimoire.game} seatId={demon.seatId} /></dd>
 			<dt>Current character</dt>
 			<dd>
-				{#if demonSeat.characterId}<CharacterBadge
+				{#if demonSeat.characterId}<CharacterPiece
+						template="badge"
 						characterId={demonSeat.characterId}
 						character={grimoire.open.characters.get(demonSeat.characterId)}
 					/>{:else}None{/if}
 			</dd>
 			<dt>New character</dt>
 			<dd>
-				<CharacterBadge
+				<CharacterPiece
+					template="badge"
 					characterId={demon.characterId}
 					character={grimoire.open.characters.get(demon.characterId)}
 				/>
@@ -144,7 +147,8 @@
 	<dd><SeatBadge game={grimoire.game} {seatId} /></dd>
 	<dt>New character</dt>
 	<dd>
-		{#if next?.characterId}<CharacterBadge
+		{#if next?.characterId}<CharacterPiece
+				template="badge"
 				characterId={next.characterId}
 				character={grimoire.open.characters.get(next.characterId)}
 			/>{/if}

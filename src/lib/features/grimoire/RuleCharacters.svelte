@@ -2,7 +2,6 @@
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import { rulesOf } from '#lib/core/data/rules/index.ts';
 	import { ruleReminders, type ReminderId } from '#lib/core/model/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import CharacterDialog from '#lib/features/characters/CharacterDialog.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
@@ -228,7 +227,8 @@
 		<dl class="change">
 			<dt>Now</dt>
 			<dd>
-				The Storyteller has <CharacterBadge
+				The Storyteller has <CharacterPiece
+					template="badge"
 					characterId={abilityHeld}
 					character={abilityCharacter}
 				/>
@@ -252,7 +252,8 @@
 		<dl class="change">
 			<dt>Now</dt>
 			<dd>
-				<CharacterBadge characterId={ruleShown} character={ruleShownCharacter} /> in play
+				<CharacterPiece template="badge" characterId={ruleShown} character={ruleShownCharacter} /> in
+				play
 			</dd>
 			<dt>Becomes</dt>
 			<dd>Not in play</dd>

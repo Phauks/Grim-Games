@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { CharacterLookup, DeathCause } from '#lib/core/model/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { causeCharacter, causeLabel } from './board.ts';
 
 	interface Props {
@@ -16,7 +16,8 @@
 </script>
 
 <!-- A death cause: its words, or the character whose ability killed, as a badge. -->
-{#if characterId}<CharacterBadge
+{#if characterId}<CharacterPiece
+		template="badge"
 		{characterId}
 		character={characters.get(characterId)}
 		{interactive}

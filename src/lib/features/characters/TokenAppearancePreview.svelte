@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { TOKEN_SCALE, type TokenAppearance } from '#lib/ui/token/token-appearance.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import CharacterBadge from './CharacterBadge.svelte';
+	import CharacterPiece from './CharacterPiece.svelte';
 	import ReminderToken from './ReminderToken.svelte';
 	import PlayerNameMark from '#lib/ui/token/PlayerNameMark.svelte';
 	import CharacterToken from './CharacterToken.svelte';
@@ -110,7 +110,12 @@
 	     everywhere, in lists too (Trevor, 2026-10-20). -->
 	<div class="preview in-text">
 		<p class="line">
-			{#if sample}<CharacterBadge characterId={sample.id} character={sample} interactive={false} />
+			{#if sample}<CharacterPiece
+					template="badge"
+					characterId={sample.id}
+					character={sample}
+					interactive={false}
+				/>
 				{t('characters.inTextPlaces')}
 				<ReminderToken
 					label={sample.reminders[0] ?? t('characters.previewReminder')}

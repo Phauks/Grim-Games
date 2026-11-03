@@ -1,7 +1,7 @@
 <script lang="ts">
 	import PageMenuButton from '#lib/features/shell/PageMenuButton.svelte';
 	import { APP_NAME } from '#lib/core/app-name.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 </script>
 
 <svelte:head>
@@ -15,16 +15,17 @@
 	<p class="note">Sample sentences only; the real list comes from the rules engine. Tap a badge.</p>
 	<ul>
 		<li>
-			<CharacterBadge characterId="witch" playerName="Sam" /> has chosen <CharacterBadge
+			<CharacterPiece template="badge" characterId="witch" playerName="Sam" /> has chosen <CharacterPiece
+				template="badge"
 				characterId="librarian"
 				playerName="Alex"
 			/>
 		</li>
-		<li><CharacterBadge characterId="saint" /> is alive</li>
-		<li><CharacterBadge characterId="slayer" playerName="Jo" /> is poisoned</li>
-		<li><CharacterBadge characterId="virgin" /> has not been nominated</li>
-		<li><CharacterBadge characterId="gossip" /> may make a public statement</li>
-		<li><CharacterBadge characterId="beggar" alignment="evil" /> is evil</li>
+		<li><CharacterPiece template="badge" characterId="saint" /> is alive</li>
+		<li><CharacterPiece template="badge" characterId="slayer" playerName="Jo" /> is poisoned</li>
+		<li><CharacterPiece template="badge" characterId="virgin" /> has not been nominated</li>
+		<li><CharacterPiece template="badge" characterId="gossip" /> may make a public statement</li>
+		<li><CharacterPiece template="badge" characterId="beggar" alignment="evil" /> is evil</li>
 	</ul>
 </main>
 

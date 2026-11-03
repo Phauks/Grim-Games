@@ -32,6 +32,16 @@ const SCRIPT_NAME_TODO = ['src/lib/features/grimoire/BoardCorner.svelte'];
 const CHARACTER_DISPLAY_TODO = [];
 
 /**
+ * A character is drawn with CharacterPiece and a template (Trevor, 2026-11-02: one component,
+ * parts turned on or off); CharacterRow and CharacterBadge are its parts, imported only by it.
+ */
+const OLD_CHARACTER_PIECES = {
+	group: ['**/characters/CharacterRow.svelte', '**/characters/CharacterBadge.svelte'],
+	message:
+		'Draw a character with <CharacterPiece> and a template (row, name, badge, entry or icon) (#lib/features/characters/CharacterPiece.svelte).'
+};
+
+/**
  * Files that still build "Seat 3" by hand instead of seatName or t('common.seat'); only ever
  * shrinks. Most show the result as plain text, so moving them onto seatName means showing a
  * PlayerBadge there too (grim/names-as-badges).
@@ -152,7 +162,8 @@ export default defineConfig(
 						{
 							group: ['svelte/transition', 'animejs', 'animejs/*'],
 							message: 'Use rise and duration from #lib/ui/motion.ts so motion shares the tokens.'
-						}
+						},
+						OLD_CHARACTER_PIECES
 					]
 				}
 			]
@@ -175,6 +186,7 @@ export default defineConfig(
 							group: ['svelte/transition', 'animejs', 'animejs/*'],
 							message: 'Use rise and duration from #lib/ui/motion.ts so motion shares the tokens.'
 						},
+						OLD_CHARACTER_PIECES,
 						{
 							group: [
 								'#lib/features/game/*',
@@ -183,6 +195,27 @@ export default defineConfig(
 								'**/core/engine/**'
 							],
 							message: 'Player mode must not import Storyteller game state.'
+						}
+					]
+				}
+			]
+		}
+	},
+	{
+		// CharacterPiece draws with its parts; repeats the features rule without them.
+		files: ['src/lib/features/characters/CharacterPiece.svelte'],
+		rules: {
+			'no-restricted-imports': [
+				'error',
+				{
+					patterns: [
+						{
+							group: ['@ark-ui/*'],
+							message: 'Use the wrappers in #lib/ui/primitives instead of Ark UI directly.'
+						},
+						{
+							group: ['svelte/transition', 'animejs', 'animejs/*'],
+							message: 'Use rise and duration from #lib/ui/motion.ts so motion shares the tokens.'
 						}
 					]
 				}

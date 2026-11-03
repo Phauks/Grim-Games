@@ -18,7 +18,6 @@
 	import { sheetNumbersFor } from '#lib/features/characters/sheet-night-numbers.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import { reportDialog } from '#lib/features/reports/report-dialog.svelte.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterDialog from '#lib/features/characters/CharacterDialog.svelte';
 	import { prefetchWikiPage } from '#lib/features/characters/wiki-page.svelte.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
@@ -210,7 +209,7 @@
 	{:else if field === 'alignment'}
 		{entry.alignmentNote}
 	{:else if field === 'setup'}
-		{#if entry.setup}<CharacterBadge characterId={character.id} {character} />: <GlossaryText
+		{#if entry.setup}<CharacterPiece template="badge" characterId={character.id} {character} />: <GlossaryText
 				text={entry.setup.summary}
 			/>{#if entry.setup.notes.length}<span class="small block"
 					><GlossaryText text={entry.setup.notes.join(' ')} /></span
@@ -265,7 +264,8 @@
 				{#each prep as step, i (i)}
 					<li>
 						<span
-							>{#each step as s, j (j)}{#if s.kind === 'character'}<CharacterBadge
+							>{#each step as s, j (j)}{#if s.kind === 'character'}<CharacterPiece
+										template="badge"
 										characterId={s.id}
 									/>{:else if s.kind === 'reminder'}<ReminderToken
 										label={s.label}

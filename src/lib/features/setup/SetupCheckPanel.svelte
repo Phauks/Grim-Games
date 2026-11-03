@@ -3,7 +3,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import type { BagPlan, ScriptJinx, SetupAnalysis } from '#lib/core/rules/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -67,7 +67,8 @@
 							<li data-testid="custom-reminders">
 								{t('setup.check.customReminders')}
 								<span class="badges">
-									{#each uncurated as id (id)}<CharacterBadge
+									{#each uncurated as id (id)}<CharacterPiece
+											template="badge"
 											characterId={id}
 											character={lookup(id)}
 										/>{/each}
@@ -92,7 +93,7 @@
 					<ul class="stand-ins">
 						{#each plan.standIns as standIn (standIn.characterId)}
 							<li data-testid="stand-in-{standIn.characterId}">
-								<CharacterBadge characterId={standIn.characterId} />
+								<CharacterPiece template="badge" characterId={standIn.characterId} />
 								<span>{t('setup.check.isShown')}</span>
 								{#if standIn.options.length}
 									<Button
@@ -136,9 +137,9 @@
 					<ul>
 						{#each jinxes as jinx (jinx.characters.join('+'))}
 							<li>
-								<CharacterBadge characterId={jinx.characters[0]} />
+								<CharacterPiece template="badge" characterId={jinx.characters[0]} />
 								{t('setup.check.and')}
-								<CharacterBadge characterId={jinx.characters[1]} />: {jinx.reason}
+								<CharacterPiece template="badge" characterId={jinx.characters[1]} />: {jinx.reason}
 							</li>
 						{/each}
 					</ul>

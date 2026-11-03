@@ -1,5 +1,5 @@
 <script lang="ts">
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Self from './ModeValue.svelte';
 	import { CHARACTER_FIELDS, SEQUENCE_FIELDS, fieldLabel, modeLabel } from './labels.ts';
@@ -44,7 +44,7 @@
 	{t('common.none')}
 {:else if CHARACTER_FIELDS.has(field) && Array.isArray(value)}
 	<span class="badges">
-		{#each value as id (id)}<CharacterBadge characterId={String(id)} />{/each}
+		{#each value as id (id)}<CharacterPiece template="badge" characterId={String(id)} />{/each}
 	</span>
 {:else if Array.isArray(value) && value.every((v) => typeof v === 'number')}
 	{value.join(SEQUENCE_FIELDS.has(field) ? ' → ' : ', ')}
@@ -59,7 +59,7 @@
 	</ol>
 {:else if isRecord(value)}
 	{#if field === 'onlyFor' || ('characterId' in value && 'type' in value)}
-		<CharacterBadge characterId={String(value.characterId)} />
+		<CharacterPiece template="badge" characterId={String(value.characterId)} />
 		{modeLabel('value', String(value.type))}
 	{:else}
 		<!-- One row per field, so a label and its value read together, as a table (Trevor,

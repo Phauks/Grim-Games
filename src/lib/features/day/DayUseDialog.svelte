@@ -9,7 +9,7 @@
 		isDayUseAlly
 	} from '#lib/core/rules/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import Sentence from '#lib/features/characters/Sentence.svelte';
 	import { slot } from '#lib/features/characters/slots.ts';
@@ -140,7 +140,8 @@
 		/>{:else if name === 'reminder'}<ReminderToken
 			label={spent}
 			character={game.characters.get(use.characterId)}
-		/>{:else}<CharacterBadge
+		/>{:else}<CharacterPiece
+			template="badge"
 			characterId={use.characterId}
 			character={game.characters.get(use.characterId)}
 			interactive={false}

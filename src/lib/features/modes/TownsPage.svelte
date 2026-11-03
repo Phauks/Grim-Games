@@ -18,7 +18,7 @@
 	} from '#lib/core/modes/index.ts';
 	import { setupComplete } from '#lib/core/rules/bag-plan.ts';
 	import { dayNumber } from '#lib/core/rules/night-order.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import { OpenGame } from '#lib/features/game/session.svelte.ts';
@@ -253,7 +253,8 @@
 						}}
 					>
 						<PlayerBadge name={seatName(open.game, m.seatId)} />
-						<CharacterBadge
+						<CharacterPiece
+							template="badge"
 							characterId={seat.characterId as CharacterId}
 							alignment={seat.alignment}
 							interactive={false}

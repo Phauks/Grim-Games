@@ -28,7 +28,7 @@
 
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import Sentence from '#lib/features/characters/Sentence.svelte';
 	import { slot } from '#lib/features/characters/slots.ts';
 	import SeatBadge from '#lib/features/grimoire/SeatBadge.svelte';
@@ -98,7 +98,8 @@
 		><span class="tick" data-on={stopper.stopped || undefined}><Icon name="check" /></span>{t(
 			'day.stoppedBy'
 		)}
-		<CharacterBadge
+		<CharacterPiece
+			template="badge"
 			characterId={stopper.partner}
 			character={game.characters.get(stopper.partner)}
 			interactive={false}
@@ -114,7 +115,8 @@
 			/>{/if}{:else if name === 'seat'}{#if asking}<SeatBadge
 				game={game.game}
 				seatId={asking.seatId}
-			/>{/if}{:else}{@const id = name === 'other' ? owner : asking?.partner}{#if id}<CharacterBadge
+			/>{/if}{:else}{@const id = name === 'other' ? owner : asking?.partner}{#if id}<CharacterPiece
+				template="badge"
 				characterId={id}
 				character={game.characters.get(id)}
 			/>{/if}{/if}{/snippet}

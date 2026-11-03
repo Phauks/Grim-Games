@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import CharacterPicker from '#lib/features/characters/CharacterPicker.svelte';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
@@ -43,7 +43,7 @@
 	</Button>
 	<p class="badges">
 		{#each ids as id (id)}
-			<CharacterBadge characterId={id} />
+			<CharacterPiece template="badge" characterId={id} />
 		{:else}
 			<span class="muted">{t('common.none')}</span>
 		{/each}

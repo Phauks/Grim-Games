@@ -2,7 +2,7 @@
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Alignment, Character, PlayerName } from '#lib/core/data/index.ts';
-	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -200,7 +200,7 @@
 					<!-- The character as Character selection shows it: the shared row (Trevor,
 					     2026-10-31); its place stays reserved while the token is locked. -->
 					<div class="row" data-testid="reveal-name">
-						{#if visible}<CharacterRow character={face.character} info />{/if}
+						{#if visible}<CharacterPiece template="row" character={face.character} info />{/if}
 					</div>
 				</div>
 			{/each}
