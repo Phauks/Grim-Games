@@ -23,6 +23,7 @@
 		neighbourAlignments,
 		neighbourBecoming,
 		ownJinxRules,
+		picksCharacterOnlyBy,
 		storytellerGains,
 		storytellerPicksNow,
 		swapChoice,
@@ -73,17 +74,22 @@
 
 	let { grimoire, step, onShow, onChanges }: Props = $props();
 
+	// The ability this step uses: a gained or held one's own character (the Demon with the
+	// Boffin's Huntsman), else the step's. A player who has it some other way (the
+	// Alchemist-Summoner, by token) wakes at that character's own step (`abilityHolders`).
+	const abilityId = $derived(
+		step.gained?.status === 'has-ability' ? step.gained.characterId : step.character?.id
+	);
+
 	const game = $derived(grimoire.game);
 	const characters = $derived(grimoire.open.characters);
 	const rule = $derived(
-		step.character ? rulesIn(game, step.character.id, characters)?.changesCharacter : undefined
+		abilityId ? rulesIn(game, abilityId, characters)?.changesCharacter : undefined
 	);
-	const changer = $derived(
-		step.character ? characterChanger(game, step.character.id, characters) : undefined
-	);
+	const changer = $derived(abilityId ? characterChanger(game, abilityId, characters) : undefined);
 	const onlyDemons = $derived(rule?.types.length === 1 && rule.types[0] === 'demon');
 	const offered = $derived(
-		step.character ? new Set(changeableSeats(game, step.character.id, characters)) : new Set()
+		abilityId ? new Set(changeableSeats(game, abilityId, characters)) : new Set()
 	);
 	// An ability the Storyteller holds is used by the Storyteller, whoever has its token (the
 	// Summoner's, once the Engineer removes its living player from play; L118).
@@ -93,7 +99,7 @@
 	// one a jinx lets it create again with a spare token (the Pit-Hag's Village Idiot,
 	// https://wiki.bloodontheclocktower.com/Pit-Hag#Related_Jinxes).
 	const spare = $derived(
-		step.character ? jinxedPartners(step.character.id, 'spareToken', script, characters) : []
+		abilityId ? jinxedPartners(abilityId, 'spareToken', script, characters) : []
 	);
 	// Making the night's Minions (the Kazali, the Lord of Typhon), a stand-in such as the
 	// Marionette is never made: it enters play as the Demon's good neighbour, by its own token,
@@ -116,20 +122,16 @@
 	]);
 	// Characters a jinx bars once a day is over (the Pit-Hag's and Hatter's Leviathan after
 	// day 5, https://wiki.bloodontheclocktower.com/Leviathan#Related_Jinxes).
-	const tooLate = $derived(
-		step.character ? createdTooLate(game, step.character.id, characters) : []
-	);
+	const tooLate = $derived(abilityId ? createdTooLate(game, abilityId, characters) : []);
 	// Characters whose player the Storyteller picks when this one creates them (the Pit-Hag's
 	// Damsel): said on the step, as the Storyteller picks the player here anyway.
 	const storytellerPicks = $derived(
-		step.character && rule
-			? jinxedPartners(step.character.id, 'storytellerPicksPlayer', script, characters)
-			: []
+		abilityId && rule ? jinxedPartners(abilityId, 'storytellerPicksPlayer', script, characters) : []
 	);
 
 	// Characters that make every evil player them when this one creates them (Legion).
 	const allEvil = $derived.by(() => {
-		const by = step.character?.id;
+		const by = abilityId;
 		if (!by || !rule) return [];
 		return script.filter((id) => ownJinxRules(game, by, id, characters)?.allEvilBecome === true);
 	});
@@ -137,7 +139,7 @@
 	// The Summoner's jinxes (L118, https://wiki.bloodontheclocktower.com/Summoner#Related_Jinxes):
 	// characters whose neighbours a jinx sets when this one creates them (the Lord of Typhon).
 	const neighbourNotes = $derived.by(() => {
-		const by = step.character?.id;
+		const by = abilityId;
 		if (!by || !rule) return [];
 		return script.flatMap((id) => {
 			const type = ownJinxRules(game, by, id, characters)?.neighbourBecomes;
@@ -146,26 +148,29 @@
 	});
 	// A second living Demon made here makes deaths tonight arbitrary (the Hatter, Kazali, Pit-Hag).
 	const arbitrary = $derived(
-		step.character && rule ? arbitraryDeathPartners(game, step.character.id, characters) : []
+		abilityId && rule ? arbitraryDeathPartners(game, abilityId, characters) : []
 	);
 	const arbitraryNow = $derived.by(() => {
-		const by = step.character?.id;
+		const by = abilityId;
 		return (
 			by !== undefined && made.some((m) => arbitraryDeathsTonight(game, by, m.seatId, characters))
 		);
 	});
 	// Living characters that leave the choice of player to the Storyteller (the Poppy Grower).
 	const picksNow = $derived(
-		step.character && rule ? storytellerPicksNow(game, step.character.id, characters) : []
+		abilityId && rule ? storytellerPicksNow(game, abilityId, characters) : []
+	);
+	// A giver whose jinx leaves the choice of player to the Storyteller for the player with this
+	// ability (the Alchemist-Summoner chooses which Demon but not which player, L121).
+	const characterOnly = $derived(
+		abilityId && rule ? picksCharacterOnlyBy(game, abilityId, characters) : undefined
 	);
 	// The only characters it may make tonight, on a jinx's earlier token (the Pukka on Night 2).
-	const early = $derived(
-		step.character && rule ? earlyOnly(game, step.character.id, characters) : undefined
-	);
+	const early = $derived(abilityId && rule ? earlyOnly(game, abilityId, characters) : undefined);
 	// Characters whose ability the Storyteller gains when this step changes their living player
 	// (the Summoner, changed by the Engineer).
 	const handsOver = $derived.by(() => {
-		const by = step.character?.id;
+		const by = abilityId;
 		if (!by || !rule) return [];
 		return script.filter(
 			(id) => ownJinxRules(game, id, by, characters)?.storytellerHas === 'removed'
@@ -173,27 +178,27 @@
 	});
 
 	const swaps = $derived(
-		step.character ? rulesIn(game, step.character.id, characters)?.swapsCharacters : undefined
+		abilityId ? rulesIn(game, abilityId, characters)?.swapsCharacters : undefined
 	);
 	// Any player with a character may be picked; the rule's left-out types are faded, as the
 	// Storyteller may still override.
 	const swappable = $derived(
-		step.character ? new Set(swappableSeats(game, step.character.id, characters)) : new Set()
+		abilityId ? new Set(swappableSeats(game, abilityId, characters)) : new Set()
 	);
 	const swapMisfits = $derived(
 		new Set(game.seating.filter((id) => game.seats[id].characterId && !swappable.has(id)))
 	);
 	// Once a Demon is picked first, another Demon is left out of the second pick.
 	const secondMisfits = $derived.by(() => {
-		if (!step.character || first === undefined) return swapMisfits;
-		const ok = new Set(swappableSeats(game, step.character.id, characters, first));
+		if (abilityId === undefined || first === undefined) return swapMisfits;
+		const ok = new Set(swappableSeats(game, abilityId, characters, first));
 		return new Set(
 			game.seating.filter((id) => id !== first && game.seats[id].characterId && !ok.has(id))
 		);
 	});
 	// The Cult Leader's living neighbours' alignments, one of which it takes tonight.
 	const neighbours = $derived(
-		step.character ? neighbourAlignments(game, step.character.id, characters) : undefined
+		abilityId ? neighbourAlignments(game, abilityId, characters) : undefined
 	);
 	const takeAlignment = (seatId: SeatId, alignment: Alignment) =>
 		grimoire.run({ type: 'SetAlignment', seatId, alignment });
@@ -229,17 +234,17 @@
 	// The Snake Charmer's choice: its player (or a Philosopher who took its token), and the two
 	// seats it swapped tonight.
 	const charms = $derived(
-		step.character ? rulesIn(game, step.character.id, characters)?.becomes?.into === 'swap' : false
+		abilityId ? rulesIn(game, abilityId, characters)?.becomes?.into === 'swap' : false
 	);
 	const charmer = $derived(
-		charms && step.character ? swapPartner(game, step.character.id, characters) : undefined
+		charms && abilityId ? swapPartner(game, abilityId, characters) : undefined
 	);
 	let charmOpen = $state(false);
 	let charmed = $state<readonly SeatId[]>();
 	function charm(seatId: SeatId) {
 		charmOpen = false;
-		if (!step.character) return;
-		const choice = swapChoice(game, step.character.id, seatId, characters);
+		if (abilityId === undefined) return;
+		const choice = swapChoice(game, abilityId, seatId, characters);
 		if (!choice) return;
 		if (grimoire.run({ type: 'SwapCharacters', ...choice })) {
 			charmed = [choice.withSeatId, choice.seatId];
@@ -276,9 +281,7 @@
 		const seatId = chosen;
 		chosen = undefined;
 		if (!seatId) return;
-		const also = step.character
-			? alsoBecomes(game, step.character.id, characterId, characters)
-			: undefined;
+		const also = abilityId ? alsoBecomes(game, abilityId, characterId, characters) : undefined;
 		if (also) {
 			alsoType = also;
 			alsoSeat = seatId;
@@ -300,15 +303,15 @@
 	}
 	// The jinxed characters this step can make that say so, for the step's note.
 	const alsoNotes = $derived(
-		step.character && rule
+		abilityId && rule
 			? script.flatMap((id) => {
-					const type = alsoBecomes(game, step.character!.id, id, characters);
+					const type = alsoBecomes(game, abilityId, id, characters);
 					return type ? [{ id, type }] : [];
 				})
 			: []
 	);
 	function change(seatId: SeatId, characterId: CharacterId) {
-		const by = step.character?.id;
+		const by = abilityId;
 		const gains = by ? storytellerGains(game, seatId, by, characters) : undefined;
 		const command = {
 			type: 'AssignCharacter' as const,
@@ -316,7 +319,7 @@
 			characterId,
 			...(rule?.alignment ? { alignment: rule.alignment } : {}),
 			// Kept on the seat for the jinxes that hang on who made the change (`Seat.changedBy`).
-			...(step.character ? { by: step.character.id } : {})
+			...(abilityId ? { by: abilityId } : {})
 		};
 		if (grimoire.run(command)) {
 			made = [...made.filter((m) => m.seatId !== seatId), { seatId, characterId }];
@@ -352,7 +355,7 @@
 			seatId,
 			characterId,
 			alignment: 'evil' as const,
-			...(step.character ? { by: step.character.id } : {})
+			...(abilityId ? { by: abilityId } : {})
 		};
 		if (grimoire.run(command)) {
 			made = [...made.filter((m) => m.seatId !== seatId), { seatId, characterId }];
@@ -361,7 +364,7 @@
 	}
 	// A character a jinx says must neighbour a type, faded for a player who neighbours none.
 	function neighbourMisfit(seatId: SeatId | undefined, characterId: CharacterId) {
-		const by = step.character?.id;
+		const by = abilityId;
 		if (!by || seatId === undefined) return undefined;
 		const near = neighbourBecoming(game, by, characterId, seatId, characters);
 		return near && !near.fits ? `Must neighbour ${TYPE_ARTICLE[near.type]}` : undefined;
@@ -544,6 +547,16 @@
 			/> is alive: the Storyteller chooses which player, only the character is chosen here.
 		</p>
 	{/each}
+	{#if characterOnly}
+		<p class="note" role="note" data-testid="picks-character-only">
+			<CharacterPiece
+				template="badge"
+				characterId={characterOnly}
+				character={characters.get(characterOnly)}
+				interactive={false}
+			/> has this ability: they choose only the character, the Storyteller chooses which player.
+		</p>
+	{/if}
 	{#if early}
 		<p class="note" role="note" data-testid="early-only">
 			Tonight only
