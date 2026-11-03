@@ -46,7 +46,7 @@ import {
  * reminders off on time" (Trevor, 2026-11-02).
  */
 function keepReminders(): { keepReminders?: true } {
-	return preferences.current.assistance.timedReminders ? {} : { keepReminders: true };
+	return preferences.current.reminderRemoval === 'auto' ? {} : { keepReminders: true };
 }
 
 export class Grimoire {
