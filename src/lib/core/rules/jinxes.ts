@@ -372,7 +372,8 @@ export function jinxedPartners(
 		const rules = rulesForJinx(scopeOf(script), id, other, characters);
 		const effect =
 			question === 'storytellerPicksPlayer'
-				? rules?.storytellerChooses?.creating === 'partner'
+				? rules?.storytellerChooses?.what === 'player' &&
+					rules.storytellerChooses.creating === 'partner'
 					? rules.storytellerChooses
 					: undefined
 				: rules?.[question];
@@ -613,7 +614,7 @@ export function storytellerPicksNow(
 		changer,
 		'storytellerChooses',
 		characters,
-		(e) => e.creating === undefined
+		(e) => e.what === 'player' && e.creating === undefined
 	).map((j) => j.partner);
 }
 

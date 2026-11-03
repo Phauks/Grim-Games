@@ -12,6 +12,7 @@ import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
+import { nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
 import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { babysitter, scriptOf, withLilMonsta } from './lilmonsta.test-support.ts';
@@ -45,7 +46,8 @@ describe("Lil' Monsta + Poppy Grower jinx", () => {
 
 		it("is data in Lil' Monsta's rules", () => {
 			expect(jinxRulesBetween('lilmonsta', 'poppygrower')).toEqual({
-				carriedBy: { type: 'minion', when: ['partner-alive'] }
+				carriedBy: { type: 'minion', when: ['partner-alive'] },
+				wakesOneByOne: { when: ['partner-alive'] }
 			});
 		});
 
@@ -69,6 +71,44 @@ describe("Lil' Monsta + Poppy Grower jinx", () => {
 			const others = ['poisoner', 'widow', 'chef', 'empath', 'monk'];
 			const plain = scenario(others, { script: scriptOf([...others, 'lilmonsta']) });
 			expect(misses(plain, 'chef')).toEqual([]);
+		});
+	});
+
+	// Both pages' Related Jinxes: with the Poppy Grower alive the Minions can't wake together, as
+	// that would show them each other, so they wake singly until one takes Lil' Monsta. Lil'
+	// Monsta's step says so, about the Poppy Grower's player.
+	describe('while the Poppy Grower lives, the Minions wake one at a time', () => {
+		const cast = ['poppygrower', 'poisoner', 'widow', 'chef', 'empath', 'monk'];
+		const base = withLilMonsta(cast);
+		const oneByOne = (s: typeof base) =>
+			nightStepAlerts(s.game, 'lilmonsta', s.characters).filter(
+				(a) => a.kind === 'wakes-one-by-one'
+			);
+
+		it("is a wakes-one-by-one alert at Lil' Monsta's step", () => {
+			// Wiki: "If Lil' Monsta & the Poppy Grower are alive, Minions wake one by one, until one of
+			// them chooses to take the Lil' Monsta token."
+			expect(oneByOne(base)).toEqual([
+				expect.objectContaining({
+					seatId: base.seat('poppygrower'),
+					source: { characterId: 'lilmonsta' },
+					partner: 'poppygrower',
+					type: 'minion',
+					wiki: 'https://wiki.bloodontheclocktower.com/Poppy_Grower#Related_Jinxes'
+				})
+			]);
+		});
+
+		it('is gone once the Poppy Grower is dead, so the Minions wake together', () => {
+			// Wiki: "If Lil' Monsta & the Poppy Grower are alive, Minions wake one by one, until one of
+			// them chooses to take the Lil' Monsta token."
+			expect(oneByOne(base.dies('poppygrower'))).toEqual([]);
+		});
+
+		it('does not apply with no Poppy Grower on the script', () => {
+			const others = ['poisoner', 'widow', 'chef', 'empath', 'monk'];
+			const plain = scenario(others, { script: scriptOf([...others, 'lilmonsta']) });
+			expect(oneByOne(plain)).toEqual([]);
 		});
 	});
 });

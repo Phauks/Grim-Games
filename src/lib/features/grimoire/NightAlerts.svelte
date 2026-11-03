@@ -4,6 +4,7 @@
 	import type { NightStep, NightAlert, Impairment } from '#lib/core/rules/index.ts';
 	import { IF_CHOSEN_KINDS, nightStepAlerts } from '#lib/core/rules/index.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
+	import { TYPE_LABELS, TYPE_PLURALS } from '#lib/features/reference/labels.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 
@@ -18,7 +19,9 @@
 	 * ability the Storyteller has while they have none (the Summoner's with the Courtier), a
 	 * guess that makes the Demon choose a jinxed partner, a gained ability not shown, a madness
 	 * a jinx allows, a Scarlet Woman who is herself again, or a setup change made on gaining an
-	 * ability (L119). Short state lines with badges; the rules are core's `nightStepAlerts`,
+	 * ability (L119), who chooses or how the players wake for a token that makes its carrier the
+	 * Demon (Lil' Monsta's with the Magician or the Poppy Grower), or an alignment a jinx has a
+	 * player learn (the Ogre's with the Recluse, M41). Short state lines with badges; the rules are core's `nightStepAlerts`,
 	 * worked out from the tokens on the board. What a killing step's choice would do to each
 	 * player (protected, bounced, sets something off) is `StepIfChosen`'s own section.
 	 */
@@ -68,7 +71,10 @@
 		'not-shown-given': 'info',
 		'may-mad-as': 'info',
 		reverts: 'warning',
-		'partner-setup': 'warning'
+		'partner-setup': 'warning',
+		'storyteller-chooses': 'warning',
+		'wakes-one-by-one': 'night',
+		'learns-alignment': 'info'
 	} as const;
 	const sourceId = (alert: NightAlert) =>
 		alert.source === 'override' ? undefined : alert.source.characterId;
@@ -201,6 +207,20 @@
 						{@render player(alert.seatId)}: {@render badge(sourceId(alert))} has the {@render badge(
 							alert.partner
 						)} ability, so its setup change may be made now
+					{:else if alert.kind === 'storyteller-chooses'}
+						{@render player(alert.seatId)}: {@render badge(alert.partner)} is alive, so the Storyteller
+						chooses which {alert.type ? TYPE_LABELS[alert.type] : 'player'} takes the {@render badge(
+							sourceId(alert)
+						)} token
+					{:else if alert.kind === 'wakes-one-by-one'}
+						{@render player(alert.seatId)}: {@render badge(alert.partner)} is alive, so the {alert.type
+							? TYPE_PLURALS[alert.type]
+							: 'players'} wake one at a time, until one chooses to take the {@render badge(
+							sourceId(alert)
+						)} token
+					{:else if alert.kind === 'learns-alignment'}
+						{@render player(alert.seatId)}: {@render badge(sourceId(alert))}, learns they are {alert.alignment}
+						({@render badge(alert.partner)})
 					{/if}
 					{#if !alert.works && alert.kind !== 'impaired'}
 						<strong class="not">Not working:</strong> {@render why(alert.impairments)}

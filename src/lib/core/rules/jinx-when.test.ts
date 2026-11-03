@@ -54,6 +54,16 @@ describe('jinxApplies', () => {
 		expect(holds([{ partnerMarked: 'Dead' }], s.reminder('imp', 'chef', 'Dead').game)).toBe(true);
 	});
 
+	it('reads the alignment of the self player, or of a partner player', () => {
+		const evil = (on: string) =>
+			({ type: 'SetAlignment', seatId: s.seat(on), alignment: 'evil' }) as const;
+		expect(holds([{ alignment: 'good' }])).toBe(true);
+		expect(holds([{ alignment: 'evil' }])).toBe(false);
+		expect(holds([{ alignment: 'evil' }], s.do(evil('chef')).game)).toBe(true);
+		expect(holds([{ partnerAlignment: 'evil' }])).toBe(true);
+		expect(holds([{ partnerAlignment: 'good' }])).toBe(false);
+	});
+
 	it('reads the final day as 3 or fewer living players', () => {
 		expect(holds(['final-day'])).toBe(false);
 		expect(holds(['final-day'], s.dies('monk').game)).toBe(true);

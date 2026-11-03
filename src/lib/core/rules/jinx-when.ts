@@ -7,7 +7,7 @@
 import type { JinxCondition, JinxEffect } from '#lib/core/data/jinx-rules.ts';
 import type { CharacterId, ReminderLabel } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
-import { trueCharacter } from '#lib/core/model/selectors.ts';
+import { alignmentOf, trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 
 /** What the caller knows of the game: the script, and the board when it has one. */
@@ -72,7 +72,10 @@ function holds(
 		);
 	if (typeof c === 'object') {
 		if ('marked' in c) return carries(selfSeats, partner, c.marked);
-		return carries(playing(partner), self, c.partnerMarked);
+		if ('partnerMarked' in c) return carries(playing(partner), self, c.partnerMarked);
+		const [seats, alignment] =
+			'alignment' in c ? [selfSeats, c.alignment] : [playing(partner), c.partnerAlignment];
+		return seats.some((s) => alignmentOf(board, s) === alignment);
 	}
 	switch (c) {
 		case 'self-alive':

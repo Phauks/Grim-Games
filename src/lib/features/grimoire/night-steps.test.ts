@@ -290,3 +290,21 @@ describe('the fake evil team at night', () => {
 		expect(ids).not.toContain('imp');
 	});
 });
+
+// https://wiki.bloodontheclocktower.com/Lil%27_Monsta: no seat holds Lil' Monsta, yet each night
+// the Minions wake to choose its babysitter (M41).
+describe('a never-dealt character in play', () => {
+	const cast = ['poisoner', 'widow', 'chef', 'empath', 'monk', 'soldier', 'mayor'];
+	const ids = [...cast, 'lilmonsta'];
+	const s = scenario(cast, {
+		script: { meta: { name: 'Babysitting' }, entries: ids.map((id) => ({ kind: 'official', id })) }
+	});
+	const steps = (night: 'first' | 'other') =>
+		boardNightSteps(s.game, s.characters, night, data).map((step) => step.id);
+
+	it('has its step each night, and leaves out the first night’s evil info', () => {
+		expect(steps('first')).toContain('lilmonsta');
+		expect(steps('first')).not.toContain('minioninfo');
+		expect(steps('other')).toContain('lilmonsta');
+	});
+});

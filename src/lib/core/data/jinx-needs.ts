@@ -13,6 +13,7 @@ import type {
 	JinxRules,
 	Learns,
 	NoKill,
+	StorytellerChooses,
 	StorytellerHas
 } from './jinx-rules.ts';
 import type { CharacterId } from './types.ts';
@@ -41,9 +42,11 @@ export const JINX_NEEDS: Partial<Record<JinxRuleKey, (e: JinxEffect) => JinxNeed
 	givenInstead: () => [{ on: 'subject', parts: ['givesAbility'] }],
 	noTurnGood: () => [{ on: 'subject', parts: ['givesAbility', 'changesCharacter'] }],
 	spareToken: () => [{ on: 'subject', parts: ['givesAbility', 'changesCharacter'] }],
-	storytellerChooses: (e) => [
-		{ on: ABOUT_HOLDER(e) ? 'other' : 'subject', parts: ['changesCharacter'] }
-	],
+	storytellerChooses: (e) =>
+		(e as StorytellerChooses).what === 'carrier'
+			? [{ on: 'subject', parts: ['carrierIsDemon'] }]
+			: [{ on: ABOUT_HOLDER(e) ? 'other' : 'subject', parts: ['changesCharacter'] }],
+	wakesOneByOne: () => [{ on: 'subject', parts: ['carrierIsDemon'] }],
 	alsoBecomes: () => [{ on: 'subject', parts: ['changesCharacter'] }],
 	carriedBy: () => [{ on: 'subject', parts: ['carrierIsDemon'] }],
 	diesWhenExecuted: () => [{ on: 'subject', parts: ['protects'] }],
@@ -153,5 +156,7 @@ export function flipCondition(c: JinxCondition): JinxCondition {
 	if (typeof c === 'string') return FLIP[c] ?? c;
 	if ('marked' in c) return { partnerMarked: c.marked };
 	if ('partnerMarked' in c) return { marked: c.partnerMarked };
+	if ('alignment' in c) return { partnerAlignment: c.alignment };
+	if ('partnerAlignment' in c) return { alignment: c.partnerAlignment };
 	return c;
 }

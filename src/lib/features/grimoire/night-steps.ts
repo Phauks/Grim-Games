@@ -43,6 +43,7 @@ import {
 	type Night,
 	type NightStep
 } from '#lib/core/rules/index.ts';
+import { notDealtInPlay } from '#lib/core/rules/bag-characters.ts';
 import type { GameLog } from '#lib/core/engine/index.ts';
 import { seatHasAbility, type AbilitiesRule, type SpecialRule } from '#lib/core/modes/index.ts';
 import type { IconSlot } from '#lib/ui/icons/catalogue.ts';
@@ -71,6 +72,11 @@ export function boardNightSteps(
 		...game.ruleCharacters
 	]) {
 		const c = id ? characters.get(id) : undefined;
+		if (c) inPlay.push(c);
+	}
+	// A never-dealt character in play wakes too, though no seat holds it (Lil' Monsta, M41).
+	for (const id of notDealtInPlay(game, characters)) {
+		const c = characters.get(id);
 		if (c) inPlay.push(c);
 	}
 	const order = (pretending: readonly Character[]) =>

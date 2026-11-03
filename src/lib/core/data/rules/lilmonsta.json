@@ -91,11 +91,18 @@
 			"carriedBy": {
 				"type": "minion",
 				"when": ["partner-alive"]
+			},
+			"storytellerChooses": {
+				"what": "carrier",
+				"when": ["partner-alive"]
 			}
 		},
 		"poppygrower": {
 			"carriedBy": {
 				"type": "minion",
+				"when": ["partner-alive"]
+			},
+			"wakesOneByOne": {
 				"when": ["partner-alive"]
 			}
 		},

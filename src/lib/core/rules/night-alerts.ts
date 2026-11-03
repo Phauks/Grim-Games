@@ -52,6 +52,12 @@
  * - `storyteller-has`: the waking player has no ability, so a jinx gives the Storyteller their
  *   ability and the Storyteller makes the choice (`jinx-partner-alerts.ts`: the Summoner with
  *   the Courtier or the Preacher, https://wiki.bloodontheclocktower.com/Summoner#Related_Jinxes);
+ * - `storyteller-chooses` / `wakes-one-by-one`: a jinx says the Storyteller chooses who carries
+ *   this character's `carrierIsDemon` token, or that the players who choose it wake one at a
+ *   time (`jinx-partner-alerts.ts`: Lil' Monsta with the Magician or the Poppy Grower,
+ *   https://wiki.bloodontheclocktower.com/Lil%27_Monsta#Related_Jinxes);
+ * - `learns-alignment`: a jinx has the waking player learn their alignment (the Ogre whose
+ *   Friend is the Recluse, registering as evil, https://wiki.bloodontheclocktower.com/Ogre);
  * and, when the step can kill (`NIGHT_KILLERS`), for each player it might kill:
  * - `protected`: they cannot die tonight (the Storyteller's override, the Sailor, the
  *   Soldier or Monk against the Demon, the Tea Lady, the Innkeeper);
@@ -71,7 +77,7 @@
  * Day-only effects (the Pacifist, the Devil's Advocate) are not night alerts.
  */
 import { OFFICIAL_RULES, rulesOf } from '#lib/core/data/rules/index.ts';
-import type { CharacterId } from '#lib/core/data/types.ts';
+import type { Alignment, CharacterId, CharacterType } from '#lib/core/data/types.ts';
 import { wikiUrl } from '#lib/core/data/wiki.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { alignmentOf, getSeat, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
@@ -84,6 +90,7 @@ import { noAttackState } from './demon-attack.ts';
 import { jinxEffect, ownJinxEffects } from './jinxes.ts';
 import { jinxChosenTonight } from './jinx-choices.ts';
 import {
+	carrierChoiceAlerts,
 	jinxLearnAlerts,
 	jinxPartnerAlerts,
 	jinxStepAlerts,
@@ -202,6 +209,9 @@ export type NightAlertKind =
 	| 'may-mad-as'
 	| 'reverts'
 	| 'partner-setup'
+	| 'storyteller-chooses'
+	| 'wakes-one-by-one'
+	| 'learns-alignment'
 	| 'protected'
 	| 'may-bounce'
 	| 'survives-first-death'
@@ -241,6 +251,10 @@ export interface NightAlert {
 	 * partner the alert is about.
 	 */
 	partner?: CharacterId;
+	/** For `storyteller-chooses` and `wakes-one-by-one`: the character type that carries it. */
+	type?: CharacterType;
+	/** For `learns-alignment`: the alignment the player learns. */
+	alignment?: Alignment;
 }
 
 /**
@@ -320,6 +334,7 @@ export function nightStepAlerts(
 	out.push(...jinxPartnerAlerts(game, characterId, characters));
 	out.push(...jinxLearnAlerts(game, characterId, characters));
 	out.push(...storytellerHasAlerts(game, characterId, characters));
+	out.push(...carrierChoiceAlerts(game, characterId, characters));
 	for (const seatId of actors) {
 		const twice = actsTwiceSource(game, seatId, characters);
 		if (!twice) continue;

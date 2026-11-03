@@ -38,7 +38,9 @@
  * - `{"day": n}`: today is day n (until the next dawn); `{"night": n}`: tonight is night n;
  *   `{"afterDay": n}`: day n is over (a change at night counts from the night after day n);
  * - `{"marked": label}`: the self player carries the partner's reminder `label`;
- *   `{"partnerMarked": label}`, the partner's player carries this character's.
+ *   `{"partnerMarked": label}`, the partner's player carries this character's;
+ * - `{"alignment": a}`: the self player is alignment `a` now (`good` or `evil`);
+ *   `{"partnerAlignment": a}`, a partner's player is.
  * Where a reader knows only the script (a picker, the bag), a condition about the board isn't
  * checked and the effect may apply.
  *
@@ -62,11 +64,20 @@
  *   Leader and Goon);
  * - `spareToken`: with a spare token, the subject may give or create the partner even while
  *   it is in play, so its picker offers it (the Boffin's and the Pit-Hag's Village Idiot);
- * - `storytellerChooses`: when the subject's `changesCharacter` (its own, or the partner's
- *   with `has-partner-ability`) changes a player, the Storyteller chooses which `what:
- *   "player"`, and the subject's player only the character; with `creating: "partner"`, only
- *   when it makes the partner (the Pit-Hag's Damsel; with `partner-alive`, the Summoner while
- *   the Poppy Grower lives; with `has-partner-ability`, the Alchemist-Summoner);
+ * - `storytellerChooses`: the Storyteller makes a choice the subject's players would make.
+ *   `what: "player"`: when the subject's `changesCharacter` (its own, or the partner's with
+ *   `has-partner-ability`) changes a player, the Storyteller chooses which, and the subject's
+ *   player only the character; with `creating: "partner"`, only when it makes the partner (the
+ *   Pit-Hag's Damsel; with `partner-alive`, the Summoner while the Poppy Grower lives; with
+ *   `has-partner-ability`, the Alchemist-Summoner). `what: "carrier"`: the Storyteller, not
+ *   the players who wake for the subject, chooses who carries its `carrierIsDemon` token, a
+ *   `storyteller-chooses` night alert at its step (with `partner-alive`, the Magician's Lil'
+ *   Monsta, https://wiki.bloodontheclocktower.com/Magician#Related_Jinxes);
+ * - `wakesOneByOne`: the players who wake for the subject to choose who carries its
+ *   `carrierIsDemon` token wake one at a time, so they don't learn each other, until one
+ *   chooses to take it, a `wakes-one-by-one` night alert at its step (with `partner-alive`, the
+ *   Poppy Grower's Lil' Monsta,
+ *   https://wiki.bloodontheclocktower.com/Poppy_Grower#Related_Jinxes);
  * - `alsoBecomes`: when the subject's `changesCharacter` would make a player the partner, who
  *   is never dealt, they also choose a character of `type` and become that (the Hatter's Lil'
  *   Monsta, https://wiki.bloodontheclocktower.com/Hatter#Related_Jinxes);
@@ -132,7 +143,10 @@
  *   its `gainedFrom` gives it (the Cannibal's Butler, Zealot and Juggler); `no-ability`, at its
  *   step, that the partner took their ability (with `{"night": 1}`, the Engineer with Legion);
  *   `partner-choice`, at the partner's step, whom the partner chooses (the Vizier with the
- *   Fearmonger, a `wakes-with` night alert);
+ *   Fearmonger, a `wakes-with` night alert); `alignment`, at its own step, which alignment they
+ *   are, a `learns-alignment` night alert (with `{"partnerMarked": "Friend"}` and
+ *   `{"alignment": "evil"}`, the Ogre whose Friend is the Recluse, registering as evil,
+ *   https://wiki.bloodontheclocktower.com/Ogre#Related_Jinxes);
  * - `trueInfo`: the subject's `falseInfo` doesn't make the partner's information false (the
  *   Vortox's Banshee, https://wiki.bloodontheclocktower.com/Vortox#Related_Jinxes);
  * - `notDeclared`: the Storyteller doesn't declare the subject is in play: its after-Dawn step,
@@ -226,40 +240,18 @@ import {
 	isObject,
 	readBoolean,
 	readEnum,
-	readNumber,
 	readString,
 	readStringArray,
 	type Issues,
 	type Json
 } from './validate.ts';
 import { jinxNeedsOn } from './jinx-needs.ts';
+import { readCondition, readPositive, type JinxCondition } from './jinx-conditions.ts';
+
+export { JINX_FLAGS, type JinxCondition, type JinxFlag } from './jinx-conditions.ts';
 
 export const JINX_WHO = ['self', 'partner'] as const;
 export type JinxWho = (typeof JINX_WHO)[number];
-
-export const JINX_FLAGS = [
-	'self-alive',
-	'partner-alive',
-	'self-in-play',
-	'partner-in-play',
-	'has-partner-ability',
-	'partner-has-this-ability',
-	'after-execution',
-	'final-day'
-] as const;
-export type JinxFlag = (typeof JINX_FLAGS)[number];
-
-/** A `when` condition: a flag, or one keyed number or reminder label. */
-export type JinxCondition =
-	| JinxFlag
-	| { afterDay: number }
-	| { day: number }
-	| { night: number }
-	| { marked: ReminderLabel }
-	| { partnerMarked: ReminderLabel };
-
-const NUMBER_CONDITIONS = ['afterDay', 'day', 'night'] as const;
-const LABEL_CONDITIONS = ['marked', 'partnerMarked'] as const;
 
 /** What every effect may say beside its parameters. */
 export interface JinxEffect {
@@ -284,8 +276,12 @@ export interface GivenInsteadRule extends JinxEffect {
 	instead: GivenInstead;
 }
 
+export const STORYTELLER_CHOOSES = ['player', 'carrier'] as const;
+
 export interface StorytellerChooses extends JinxEffect {
-	what: 'player';
+	/** `player`: whom `changesCharacter` changes; `carrier`: who carries `carrierIsDemon`. */
+	what: (typeof STORYTELLER_CHOOSES)[number];
+	/** With `player` only. */
 	creating?: 'partner';
 }
 
@@ -367,7 +363,7 @@ export interface NightChoice extends JinxEffect {
 	partner: (typeof NIGHT_CHOICE_PARTNER)[number];
 }
 
-export const LEARNS = ['ability', 'answer', 'no-ability', 'partner-choice'] as const;
+export const LEARNS = ['ability', 'answer', 'no-ability', 'partner-choice', 'alignment'] as const;
 export type LearnsWhat = (typeof LEARNS)[number];
 /** What a player learns the night `gainedFrom` gives them the partner's ability. */
 export type LearnsGained = Extract<LearnsWhat, 'ability' | 'answer'>;
@@ -412,6 +408,7 @@ export interface JinxRules {
 	noTurnGood?: JinxEffect;
 	spareToken?: JinxEffect;
 	storytellerChooses?: StorytellerChooses;
+	wakesOneByOne?: JinxEffect;
 	alsoBecomes?: TypeEffect;
 	carriedBy?: CarriedBy;
 	diesWhenExecuted?: JinxEffect;
@@ -502,21 +499,6 @@ function readEnumList<T extends string>(
 	return list as T[];
 }
 
-/** A whole number of 1 or more, with an issue when it is missing or isn't one. */
-function readPositive(raw: Json, key: string, path: string, issues: Issues): number | undefined {
-	const value = readNumber(raw, key, path, issues);
-	if (raw[key] === undefined) {
-		issues.add(`${path}.${key}`, 'missing');
-		return undefined;
-	}
-	if (value === undefined) return undefined;
-	if (!Number.isInteger(value) || value < 1) {
-		issues.add(`${path}.${key}`, 'expected a whole number of 1 or more');
-		return undefined;
-	}
-	return value;
-}
-
 function readEnd(raw: Json, path: string, issues: Issues): Json | undefined {
 	const kind = readEnum(raw, 'kind', JINX_END_KINDS, path, issues, true);
 	if (!kind) return undefined;
@@ -561,11 +543,16 @@ const VERBS: Record<Exclude<JinxRuleKey, 'exclusive'>, Verb> = {
 		fields: ['what', 'creating'],
 		main: 'what',
 		read: (raw, path, issues) => {
-			const what = readEnum(raw, 'what', ['player'], path, issues, true);
+			const what = readEnum(raw, 'what', STORYTELLER_CHOOSES, path, issues, true);
 			const creating = readEnum(raw, 'creating', ['partner'], path, issues, false);
+			if (creating && what === 'carrier') {
+				issues.add(`${path}.creating`, 'only with `what: "player"`');
+				return undefined;
+			}
 			return what ? { what, ...(creating ? { creating } : {}) } : undefined;
 		}
 	},
+	wakesOneByOne: plain,
 	alsoBecomes: enumVerb('type', CHARACTER_TYPES),
 	carriedBy: {
 		fields: ['type', 'marked'],
@@ -677,30 +664,6 @@ export const JINX_RULE_KEYS: readonly JinxRuleKey[] = [
 	'exclusive',
 	...(Object.keys(VERBS) as Exclude<JinxRuleKey, 'exclusive'>[])
 ];
-
-function readCondition(raw: unknown, path: string, issues: Issues): JinxCondition | undefined {
-	if (typeof raw === 'string') {
-		if ((JINX_FLAGS as readonly string[]).includes(raw)) return raw as JinxFlag;
-		issues.add(path, `unknown condition ${JSON.stringify(raw)}`);
-		return undefined;
-	}
-	const keys = isObject(raw) ? Object.keys(raw) : [];
-	if (!isObject(raw) || keys.length !== 1) {
-		issues.add(path, `expected a condition, got ${describe(raw)}`);
-		return undefined;
-	}
-	const [key] = keys;
-	if ((NUMBER_CONDITIONS as readonly string[]).includes(key)) {
-		const n = readPositive(raw, key, path, issues);
-		return n === undefined ? undefined : ({ [key]: n } as JinxCondition);
-	}
-	if ((LABEL_CONDITIONS as readonly string[]).includes(key)) {
-		const label = readString(raw, key, path, issues, true);
-		return label === undefined ? undefined : ({ [key]: label } as JinxCondition);
-	}
-	issues.add(`${path}.${key}`, 'unknown condition');
-	return undefined;
-}
 
 /** One effect, from `true`, a bare main value or an object; undefined (with an issue) if bad. */
 function readEffect(
