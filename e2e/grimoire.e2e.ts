@@ -4496,8 +4496,8 @@ test("the step focus works for a script's own character too (Fall of Rome's Merc
 	await expect(tokens.first()).toHaveClass(/\bnow\b/);
 	await expect(tokens.first()).toContainText('Paid');
 	await focusMode(page, 'Only this character');
-	// Paid, then the plain ∞ and "+ New token".
-	await expect(tokens.and(page.locator(':not(.divider)'))).toHaveCount(3);
+	// Paid, then the plain ∞, the # token (plan M35) and "+ New token".
+	await expect(tokens.and(page.locator(':not(.divider)'))).toHaveCount(4);
 	await expect(tokens.first()).toContainText('Paid');
 });
 
