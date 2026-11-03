@@ -37,6 +37,9 @@ export const show = {
 	'show.evil.good': 'These players are good',
 	'show.evil.groups':
 		'in play: wake the Demon players in separate groups, and leave this player out',
+	// A jinx keeps a Minion beside the Demon from it (the Magician with the Marionette, L119).
+	'show.evil.neighbourHidden':
+		'alive: the Demon doesn’t learn which neighbour is this Minion, so leave them out',
 	// Fair-play warnings (FairPlayNotice), in Trevor's own words (2026-10-27).
 	'show.fairPlay.secret':
 		'This is for your eyes only. Please do not screenshot, photograph, or otherwise share this screen in any way that could compromise the integrity of this game.',

@@ -54,7 +54,12 @@
 		return [
 			hint.worth !== 1 ? t('day.voteNotes.worth', { count: hint.worth }) : undefined,
 			hint.onlyWith
-				? t('day.voteNotes.onlyWith', { players: players(hint.onlyWith.seats) })
+				? t(
+						hint.onlyWith.uncounted ? 'day.voteNotes.onlyWithUncounted' : 'day.voteNotes.onlyWith',
+						{
+							players: players(hint.onlyWith.seats)
+						}
+					)
 				: undefined,
 			hint.mustVote ? t('day.voteNotes.mustVote') : undefined,
 			hint.needsToken

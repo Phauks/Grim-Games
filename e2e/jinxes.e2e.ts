@@ -933,3 +933,88 @@ test('the Engineer who removes the Summoner gives the Storyteller its ability', 
 	const summoner = page.getByRole('dialog', { name: 'Summoner' });
 	await expect(summoner.getByTestId('step-who')).toHaveText('Storyteller');
 });
+
+// The Alchemist's and the remaining one-off jinxes (L119). The Cerenovus may make a player mad
+// that they are the Goblin (https://wiki.bloodontheclocktower.com/Cerenovus#Related_Jinxes).
+test('the Cerenovus step says a player may be made mad as the Goblin', async ({ page }) => {
+	test.slow();
+	await startGame(page, 'Cerenovus Goblin', [
+		'cerenovus',
+		'goblin',
+		'chef',
+		'empath',
+		'monk',
+		'soldier',
+		'imp'
+	]);
+	await choose(page, 1, 'Cerenovus');
+	await choose(page, 2, 'Chef');
+	await choose(page, 3, 'Imp');
+
+	const step = await openStep(page, 'Cerenovus');
+	await expect(step.getByTestId('night-alerts')).toContainText(
+		/Cerenovus\s*,\s*may\s+make\s+a\s+player\s+mad\s+that\s+they\s+are\s+Goblin/
+	);
+});
+
+// After an execution the living Magician may guess the Wraith; if right, the Demon must choose
+// the Wraith tonight (https://wiki.bloodontheclocktower.com/Magician#Related_Jinxes).
+test('after an execution the Demon step says a right Wraith guess makes the Demon choose', async ({
+	page
+}) => {
+	test.slow();
+	await startGame(page, 'Magician Wraith', [
+		'magician',
+		'wraith',
+		'chef',
+		'empath',
+		'monk',
+		'soldier',
+		'imp'
+	]);
+	await choose(page, 1, 'Magician');
+	await choose(page, 2, 'Wraith');
+	await choose(page, 3, 'Imp');
+	await choose(page, 4, 'Chef');
+	await toSecondNight(page, 4);
+
+	const step = await openStep(page, 'Imp');
+	await expect(step.getByTestId('night-alerts')).toContainText(
+		/Magician\s+may\s+have\s+guessed\s+a\s+living\s+player\s+as\s+Wraith\s+after\s+today's\s+execution;\s+if\s+right,\s+the\s+Demon\s+must\s+choose\s+that\s+player\s+tonight/
+	);
+});
+
+// While the Magician is alive, the Demon doesn't know which neighbour is the Marionette
+// (https://wiki.bloodontheclocktower.com/Magician#Related_Jinxes).
+test('Demon info with the Magician alive leaves the Marionette out of the Minions', async ({
+	page
+}) => {
+	test.slow();
+	await startGame(page, 'Magician Marionette', [
+		'magician',
+		'marionette',
+		'chef',
+		'empath',
+		'monk',
+		'soldier',
+		'washerwoman',
+		'imp'
+	]);
+	// Seven players, so the first night has Demon info.
+	await choose(page, 1, 'Imp');
+	await choose(page, 2, 'Chef');
+	await choose(page, 3, 'Magician');
+	await choose(page, 4, 'Empath');
+	await choose(page, 5, 'Monk');
+	await choose(page, 6, 'Soldier');
+	await choose(page, 7, 'Washerwoman');
+	await putReminder(page, 'Is The Marionette', 2);
+	const ask = page.getByRole('alertdialog');
+	if (await ask.isVisible()) await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await closeBin(page);
+
+	const info = await openStep(page, 'Demon info');
+	const minions = info.locator('[data-testid="evil-info-card"][data-row="minions"]');
+	await expect(minions).not.toContainText('Seat 2');
+	await expect(minions).toContainText(/the\s+Demon\s+doesn’t\s+learn\s+which\s+neighbour/);
+});

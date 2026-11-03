@@ -78,5 +78,10 @@
 	},
 	"reminderEnds": {
 		"Drunk": "owner-dies"
+	},
+	"jinxes": {
+		"bountyhunter": {
+			"withPartnerAbility": "partner-setup"
+		}
 	}
 }

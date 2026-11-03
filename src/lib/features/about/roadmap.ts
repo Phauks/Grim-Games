@@ -541,6 +541,12 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		// the Magician's Demon info). L118 the Summoner's (the Storyteller has its ability with
 		// the Courtier, Engineer and Preacher, arbitrary deaths with the Hatter, Kazali and
 		// Pit-Hag, the Lord of Typhon's neighbours, the Poppy Grower, the Pukka a night early).
+		// L119 the Alchemist's and the remaining one-off jinxes (the Alchemist-Spy, -Widow,
+		// -Wraith and -Mastermind with no ability, the guess that makes the Demon choose, the
+		// Organ Grinder both drunk, the Boffin, the Alchemist-Summoner dying first; the Scarlet
+		// Woman with no second Demon; the Mastermind's Vigormortis, Lleech and Al-Hadikhia; the
+		// Slayer's Lleech host; the Marionette's Balloonist, Huntsman and Magician; the Cerenovus's
+		// Goblin; the Butler with eyes closed; the Philosopher's Bounty Hunter).
 		title: 'Jinxes the app applies, not only shows',
 		area: 'engine',
 		parts: [
@@ -555,7 +561,8 @@ export const ROADMAP: readonly RoadmapItem[] = [
 			'L115',
 			'L116',
 			'L117',
-			'L118'
+			'L118',
+			'L119'
 		]
 	},
 	{

@@ -33,7 +33,8 @@ import type { Game, SeatId } from '#lib/core/model/types.ts';
 import { abilityState, type AbilitySource } from './ability.ts';
 import { isExecution } from './death-causes.ts';
 import { jinxEnds } from './jinx-ends.ts';
-import { dayNumber } from './night-order.ts';
+import { deadWithoutDemon } from './dead-without-demon.ts';
+import { ownJinxRules } from './jinxes.ts';
 import { rebirthOf } from './reincarnation.ts';
 import {
 	W,
@@ -96,9 +97,12 @@ export type GameEndRule = 'demon-dead' | 'two-alive' | 'demon-executed' | 'partn
  * poisoned or has no ability, so it may not apply: the Storyteller's call). `seats`:
  * - `marked-alive`: its player, then the living player with its token;
  * - `becomes-demon`: its player;
- * - `death-passes`: the living players who may become the Demon.
+ * - `death-passes`: the living players who may become the Demon;
+ * - `jinx-night`: a jinx makes the extra day a night (`partnerChoosesEnd`: the executed
+ *   Al-Hadikhia chooses 3 good players with the Mastermind alive), so the Storyteller ends the
+ *   game by that night's choice; `characterId` is the Demon's, `seats` the Mastermind's player.
  */
-export type GameHoldRule = HoldKind | 'extra-day' | 'impaired';
+export type GameHoldRule = HoldKind | 'extra-day' | 'jinx-night' | 'impaired';
 
 export interface GameHold {
 	rule: GameHoldRule;
@@ -228,6 +232,15 @@ function demonDead(game: Game, characters: CharacterLookup): GameEnd[] {
 		});
 	}
 
+	// A Demon passing on by its own death makes no second Demon of a player whose jinx with it
+	// says so (`notSecondDemon`: when the Fang Gu jumps, the Scarlet Woman remains the Scarlet
+	// Woman, https://wiki.bloodontheclocktower.com/Scarlet_Woman#Related_Jinxes).
+	const passes = holds.filter((h) => h.rule === 'death-passes').map((h) => h.characterId);
+	const kept = holds.filter(
+		(h) =>
+			(h.rule !== 'becomes-demon' && h.rule !== 'impaired') ||
+			!passes.some((p) => ownJinxRules(game, h.characterId, p, characters)?.notSecondDemon)
+	);
 	return [
 		{
 			key: `demon-dead:${demons.join(',')}`,
@@ -236,7 +249,7 @@ function demonDead(game: Game, characters: CharacterLookup): GameEnd[] {
 			...(rebirth ? { characterId: rebirth } : {}),
 			seats: demons,
 			wiki: rebirth ? wikiOf(rebirth, characters) : `${W}Glossary`,
-			holds
+			holds: kept
 		}
 	];
 }
@@ -273,6 +286,15 @@ function extraDay(
 	if (mind === undefined) return undefined;
 	const { characterId } = mind;
 	const wiki = wikiOf(characterId, characters);
+	// A jinx makes the extra day a night whose choice ends the game (`partnerChoosesEnd`: the
+	// Al-Hadikhia, https://wiki.bloodontheclocktower.com/Mastermind#Related_Jinxes).
+	const chooser = end.seats
+		.map((id) => trueCharacter(game, id, characters))
+		.find(
+			(id) => id !== undefined && ownJinxRules(game, characterId, id, characters)?.partnerChoosesEnd
+		);
+	if (chooser !== undefined)
+		return { rule: 'jinx-night', characterId: chooser, seats: [mind.seatId], wiki };
 	const hold: GameHold = { rule: 'extra-day', characterId, seats: [mind.seatId], wiki };
 	if (extra === undefined) return hold;
 	const base = {
@@ -513,37 +535,6 @@ function cultJoined(game: Game, characters: CharacterLookup): GameEnd[] {
 			}
 		];
 	});
-}
-
-/**
- * There is no Demon and its players are dead (the Summoner, who can no longer summon one:
- * https://wiki.bloodontheclocktower.com/Summoner), or its rule's `night` is over and still no
- * Demon was made (a Summoner drunk or poisoned on its 3rd night, M15j). Before that night ends,
- * no Demon is no end.
- */
-function deadWithoutDemon(game: Game, characters: CharacterLookup): GameEnd[] {
-	if (demonSeats(game, characters).length > 0) return [];
-	const found = endsOf(game, characters, 'dead-without-demon');
-	const over = ({ seatId, rule }: (typeof found)[number]) =>
-		!aliveForEnd(game, seatId, characters) ||
-		(rule.night !== undefined && dayNumber(game) >= rule.night);
-	if (found.length === 0 || !found.every(over)) return [];
-	const seats = found.map((f) => f.seatId);
-	const { characterId, rule } = found[0];
-	// A living player of it: its night passed with no Demon made (`day` names that night).
-	const alive = seats.some((id) => aliveForEnd(game, id, characters));
-	return [
-		{
-			key: `dead-without-demon:${seats.join(',')}${alive ? ':night' : ''}`,
-			rule: 'dead-without-demon',
-			winner: rule.winner!,
-			characterId,
-			seats,
-			...(alive && rule.night !== undefined ? { day: rule.night } : {}),
-			wiki: wikiOf(characterId, characters),
-			holds: []
-		}
-	];
 }
 
 /**

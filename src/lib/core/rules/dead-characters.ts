@@ -4,6 +4,7 @@ import { rulesOf } from '../data/rules/index.ts';
 import type { CharacterLookup } from '../model/characters.ts';
 import type { Game, SeatId } from '../model/index.ts';
 import { trueCharacter, typeOf } from '../model/selectors.ts';
+import { keptAfterPartner } from './jinx-effects.ts';
 
 type RulesLookup = ReadonlyMap<CharacterId, { rules?: CharacterRules }>;
 
@@ -48,7 +49,10 @@ export function keepsAbilityWhenDead(
 					r.characterId
 		);
 		const works = sourceWorks ?? ((s: SeatId) => !game.seats[s].dead);
-		return sources.some(works);
+		// A jinx keeps it once that player dies (`keepsAfterPartner`: the Mastermind with the
+		// Vigormortis, https://wiki.bloodontheclocktower.com/Mastermind#Related_Jinxes).
+		const after = keptAfterPartner(game, seatId, r.characterId, characters);
+		return sources.some((s) => works(s) || (after && game.seats[s].dead === true));
 	});
 }
 

@@ -18,6 +18,13 @@ import { trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 import { abilityState } from './ability.ts';
 import { ownJinxes, ownJinxRules } from './jinxes.ts';
+import {
+	gainedPartnerJinx,
+	jinxGuessers,
+	madAsPartners,
+	notShownGiven,
+	secondDemonReverts
+} from './jinx-effects.ts';
 import type { NightAlert } from './night-alerts.ts';
 
 /** The `wakes-with` and `keeps-protection` alerts at the step of `partner`, in seating order. */
@@ -161,4 +168,71 @@ export function storytellerHasAlerts(
 			}
 		];
 	});
+}
+
+/**
+ * More alerts a jinx adds at `characterId`'s step (L119), in seating order:
+ * - `guessed` (`guessesPartner`), at a Demon's killing step: a living player may have publicly
+ *   guessed a living player as the partner after today's execution; if right, the Demon must
+ *   choose that player tonight (the Alchemist-Spy, -Widow and -Wraith, the Magician with the
+ *   Wraith, https://wiki.bloodontheclocktower.com/Alchemist#Related_Jinxes);
+ * - `not-shown-given` (`notShownGiven`), at the partner's step: this player has the partner's
+ *   ability but isn't shown the ability it gave (the Alchemist-Boffin);
+ * - `may-mad-as` (`madAsPartner`), at this character's step: its madness may be about the
+ *   partner (the Cerenovus with the Goblin,
+ *   https://wiki.bloodontheclocktower.com/Cerenovus#Related_Jinxes);
+ * - `reverts` (`notSecondDemon`), at the partner's step: this player carries their own
+ *   `becomes` token while a living player is the partner, so they are their own character again
+ *   (the Scarlet Woman with the Fang Gu or the Al-Hadikhia);
+ * - `partner-setup` (`withPartnerAbility: 'partner-setup'`), at the partner's step: a player
+ *   who gained the partner's ability in play (`gainedFrom`) may make its setup change now (the
+ *   Philosopher with the Bounty Hunter's: a Townsfolk might turn evil,
+ *   https://wiki.bloodontheclocktower.com/Philosopher#Related_Jinxes).
+ * `demonKills` says whether this step is a Demon's kill. The jinx itself applies each one.
+ */
+export function jinxStepAlerts(
+	game: Game,
+	characterId: CharacterId,
+	actors: readonly SeatId[],
+	demonKills: boolean,
+	characters: CharacterLookup
+): NightAlert[] {
+	const alert = (
+		kind: NightAlert['kind'],
+		seatId: SeatId,
+		owner: CharacterId,
+		partner: CharacterId,
+		wikiOf: CharacterId = owner
+	): NightAlert => {
+		const character = characters.get(wikiOf);
+		return {
+			kind,
+			seatId,
+			source: { characterId: owner, seatId },
+			works: true,
+			impairments: [],
+			partner,
+			...(character ? { wiki: `${wikiUrl(character)}#Related_Jinxes` } : {})
+		};
+	};
+	const out: NightAlert[] = [];
+	if (demonKills && actors.length > 0)
+		for (const g of jinxGuessers(game, characters))
+			out.push(alert('guessed', g.seatId, g.owner, g.partner));
+	for (const n of notShownGiven(game, characters))
+		if (n.partner === characterId) out.push(alert('not-shown-given', n.seatId, n.owner, n.partner));
+	const mad = madAsPartners(game, characterId, characters);
+	for (const seatId of actors)
+		for (const partner of mad) out.push(alert('may-mad-as', seatId, characterId, partner));
+	for (const r of secondDemonReverts(game, characters))
+		if (r.partner === characterId) out.push(alert('reverts', r.seatId, r.owner, r.partner));
+	for (const seatId of game.seating) {
+		const gained = gainedPartnerJinx(game, seatId, characters);
+		if (gained?.partner !== characterId || gained.rule.withPartnerAbility !== 'partner-setup')
+			continue;
+		if (rulesOf(gained.owner, characters)?.gainedFrom === undefined) continue;
+		if (rulesOf(characterId, characters)?.setupModifier === undefined) continue;
+		out.push(alert('partner-setup', seatId, gained.owner, characterId));
+	}
+	return out;
 }

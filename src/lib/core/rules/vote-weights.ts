@@ -18,7 +18,8 @@ import { alignmentOf, registersAsDead, trueCharacter } from '#lib/core/model/sel
 import type { DayEntry, Game, ReminderId, SeatId } from '#lib/core/model/types.ts';
 import { abilityState, registrations } from './ability.ts';
 import { blockThreshold, votesWithoutToken } from './voting.ts';
-import { mayVote } from './voting-table.ts';
+import { uncountedVoteBy } from './jinx-effects.ts';
+import { mayVote, tableRule } from './voting-table.ts';
 
 type Nomination = Extract<DayEntry, { kind: 'nomination' }>;
 type VoterRule = NonNullable<CharacterRules['voter']>;
@@ -128,6 +129,26 @@ export function voterRule(
 	return { characterId, rule };
 }
 
+/**
+ * The character whose eyes-closed voting lets `voter`'s player raise their hand without their
+ * `voter.onlyWith` player, the vote counting only if that player voted too (`uncountedVote`:
+ * the Butler with the Organ Grinder,
+ * https://wiki.bloodontheclocktower.com/Butler#Related_Jinxes). Undefined while votes are
+ * open, or with no such jinx.
+ */
+export function uncountedVote(
+	game: Game,
+	voter: CharacterId,
+	characters: CharacterLookup
+): CharacterId | undefined {
+	return uncountedVoteBy(
+		game,
+		voter,
+		tableRule(game, characters, 'secret')?.characterId,
+		characters
+	);
+}
+
 /** Seats carrying `characterId`'s `label` reminder (the Butler's Master), in seat order. */
 export function carriersOf(game: Game, characterId: CharacterId, label: ReminderLabel): SeatId[] {
 	return game.seating.filter((s) =>
@@ -158,8 +179,12 @@ export interface VoteHint {
 	 * `mayVote`). The rules below that need them to vote are left out while this is set.
 	 */
 	mayNotVote?: { characterId: CharacterId };
-	/** They may vote only if one of `seats` votes too (the Butler's Master). */
-	onlyWith?: { characterId: CharacterId; seats: SeatId[] };
+	/**
+	 * They may vote only if one of `seats` votes too (the Butler's Master). With `uncounted`,
+	 * a jinx with that character's eyes-closed voting lets them raise their hand anyway, the
+	 * vote counting only if one of `seats` voted (the Butler with the Organ Grinder).
+	 */
+	onlyWith?: { characterId: CharacterId; seats: SeatId[]; uncounted?: CharacterId };
 	/** They must vote on every nomination today (the Zealot, with enough players alive). */
 	mustVote?: { characterId: CharacterId };
 	/** They vote only by using one of the `tokens` they hold (the Beggar). */
@@ -191,7 +216,12 @@ export function voteHints(game: Game, characters: CharacterLookup): VoteHint[] {
 			const voter = voterRule(game, seatId, characters);
 			if (voter?.rule.onlyWith) {
 				const seats = carriersOf(game, voter.characterId, voter.rule.onlyWith);
-				hint.onlyWith = { characterId: voter.characterId, seats };
+				const uncounted = uncountedVote(game, voter.characterId, characters);
+				hint.onlyWith = {
+					characterId: voter.characterId,
+					seats,
+					...(uncounted ? { uncounted } : {})
+				};
 			}
 			if (voter && mustVoteNow(game, voter.rule))
 				hint.mustVote = { characterId: voter.characterId };

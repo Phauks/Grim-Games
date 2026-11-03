@@ -80,5 +80,10 @@
 	"madness": {
 		"token": "Mad",
 		"breaking": "execution"
+	},
+	"jinxes": {
+		"goblin": {
+			"madAsPartner": true
+		}
 	}
 }

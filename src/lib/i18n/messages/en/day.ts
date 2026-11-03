@@ -213,6 +213,9 @@ export const day = {
 	'day.voteNotes.worth': 'Vote counts as {count}',
 	'day.voteNotes.mayNotVote': 'May not vote today',
 	'day.voteNotes.onlyWith': 'Votes only if {players} votes',
+	// With eyes closed, a jinx lets them raise their hand anyway (the Butler with the Organ
+	// Grinder, L119).
+	'day.voteNotes.onlyWithUncounted': 'May raise their hand, but it counts only if {players} votes',
 	'day.voteNotes.mustVote': 'Must vote on every nomination',
 	'day.voteNotes.needsToken': 'Votes only with a vote token, {count} held',
 	'day.voteNotes.free': 'Votes without a ghost vote',
