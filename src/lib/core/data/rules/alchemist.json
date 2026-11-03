@@ -52,7 +52,9 @@
 		},
 		"summoner": {
 			"withPartnerAbility": "partner-setup",
-			"gainedEndWinner": "evil"
+			"gainedEndWinner": "evil",
+			"picksCharacterOnly": true,
+			"noBluffs": true
 		},
 		"boffin": {
 			"notShownGiven": true
