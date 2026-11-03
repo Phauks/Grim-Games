@@ -121,3 +121,44 @@ function wouldImpair(
 		})
 	);
 }
+
+/**
+ * The `storyteller-has` alert at `characterId`'s step (`storytellerHas: 'no-ability'`): its
+ * living player has no ability (drunk, poisoned or without one), so the Storyteller has its
+ * ability and makes its choices (the Summoner with the Courtier or the Preacher,
+ * https://wiki.bloodontheclocktower.com/Summoner#Related_Jinxes). `partner` is the jinxed
+ * character that took the ability, else the first on the script.
+ */
+export function storytellerHasAlerts(
+	game: Game,
+	characterId: CharacterId,
+	characters: CharacterLookup
+): NightAlert[] {
+	const partners = ownJinxes(
+		game,
+		characterId,
+		(r) => r.storytellerHas === 'no-ability',
+		characters
+	).map((j) => j.partner);
+	if (partners.length === 0) return [];
+	const character = characters.get(characterId);
+	return game.seating.flatMap((seatId) => {
+		if (game.seats[seatId].dead || trueCharacter(game, seatId, characters) !== characterId)
+			return [];
+		const impairments = abilityState(game, seatId, characters).impairments;
+		if (impairments.length === 0) return [];
+		const partner =
+			partners.find((p) => impairments.some((i) => i.source.characterId === p)) ?? partners[0];
+		return [
+			{
+				kind: 'storyteller-has' as const,
+				seatId,
+				source: { characterId, seatId },
+				works: true,
+				impairments: [],
+				partner,
+				...(character ? { wiki: `${wikiUrl(character)}#Related_Jinxes` } : {})
+			}
+		];
+	});
+}

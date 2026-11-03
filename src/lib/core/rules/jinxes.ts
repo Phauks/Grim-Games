@@ -15,13 +15,19 @@ import type { JinxIndex } from '#lib/core/data/jinxes.ts';
 import { pairKey } from '#lib/core/data/parse.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterRules } from '#lib/core/data/character-rules.ts';
-import type { Alignment, CharacterId, CharacterType, Jinx } from '#lib/core/data/types.ts';
+import type {
+	Alignment,
+	CharacterId,
+	CharacterType,
+	Jinx,
+	ReminderLabel
+} from '#lib/core/data/types.ts';
 import {
 	isOnScript,
 	scriptCharacterIds,
 	type CharacterLookup
 } from '#lib/core/model/characters.ts';
-import { alignmentOf, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
+import { alignmentOf, aliveNeighbours, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 
 type RulesLookup = ReadonlyMap<CharacterId, { rules?: CharacterRules }>;
@@ -410,5 +416,124 @@ export function allEvilBecoming(
 	if (!ownJinxRules(game, changer, created, characters)?.allEvilBecome) return [];
 	return game.seating.filter(
 		(id) => alignmentOf(game, id) === 'evil' && trueCharacter(game, id, characters) !== created
+	);
+}
+
+/**
+ * The character whose ability the Storyteller gains now that `by`'s `changesCharacter` changes
+ * `seatId` (`storytellerHas: 'removed'`: when the Engineer removes the living Summoner from
+ * play, the Storyteller has the Summoner ability,
+ * https://wiki.bloodontheclocktower.com/Summoner#Related_Jinxes): the living player's true
+ * character, asked before the change. Undefined when no jinx says so.
+ */
+export function storytellerGains(
+	game: Game,
+	seatId: SeatId,
+	by: CharacterId,
+	characters: CharacterLookup
+): CharacterId | undefined {
+	if (game.seats[seatId]?.dead) return undefined;
+	const own = trueCharacter(game, seatId, characters);
+	if (own === undefined) return undefined;
+	return ownJinxRules(game, own, by, characters)?.storytellerHas === 'removed' ? own : undefined;
+}
+
+/**
+ * The partners whose jinx with `changer` makes deaths tonight arbitrary should its
+ * `changesCharacter` make a second living Demon (`arbitraryDeaths`: the Summoner with the
+ * Hatter, the Kazali and the Pit-Hag,
+ * https://wiki.bloodontheclocktower.com/Summoner#Related_Jinxes).
+ */
+export function arbitraryDeathPartners(
+	game: Pick<Game, 'script'>,
+	changer: CharacterId,
+	characters?: RulesLookup
+): CharacterId[] {
+	return ownJinxes(game, changer, (r) => r.arbitraryDeaths === true, characters).map(
+		(j) => j.partner
+	);
+}
+
+/**
+ * Whether deaths tonight are arbitrary now that `changer`'s `changesCharacter` made `seatId` a
+ * Demon (`arbitraryDeaths`): they are alive, and so is another player who is a Demon.
+ */
+export function arbitraryDeathsTonight(
+	game: Game,
+	changer: CharacterId,
+	seatId: SeatId,
+	characters: CharacterLookup
+): boolean {
+	if (arbitraryDeathPartners(game, changer, characters).length === 0) return false;
+	const livingDemon = (id: SeatId) =>
+		!game.seats[id]?.dead && typeOf(game, id, characters) === 'demon';
+	return livingDemon(seatId) && game.seating.some((id) => id !== seatId && livingDemon(id));
+}
+
+/** What a `neighbourBecomes` jinx asks of the player just made the partner. */
+export interface NeighbourBecoming {
+	/** The type a neighbour must be, and the other neighbour becomes. */
+	type: CharacterType;
+	/** Whether a neighbour already is of `type`. */
+	fits: boolean;
+	/** The other neighbour, who becomes an evil one of `type`; none when both already are. */
+	becomes?: SeatId;
+}
+
+/**
+ * What a jinx asks of `seatId`'s neighbours when `changer`'s `changesCharacter` makes them
+ * `created` (`neighbourBecomes`: a summoned Lord of Typhon must neighbour a Minion, and their
+ * other neighbour becomes an evil Minion,
+ * https://wiki.bloodontheclocktower.com/Summoner#Related_Jinxes). Neighbours are the nearest
+ * living players. Undefined when no jinx says so.
+ */
+export function neighbourBecoming(
+	game: Game,
+	changer: CharacterId,
+	created: CharacterId,
+	seatId: SeatId,
+	characters: CharacterLookup
+): NeighbourBecoming | undefined {
+	const type = ownJinxRules(game, changer, created, characters)?.neighbourBecomes;
+	if (!type) return undefined;
+	const near = aliveNeighbours(game, seatId).filter((id) => id !== seatId);
+	const of = near.filter((id) => typeOf(game, id, characters) === type);
+	const fits = of.length > 0;
+	const becomes = fits ? near.find((id) => !of.includes(id)) : undefined;
+	return { type, fits, ...(becomes !== undefined ? { becomes } : {}) };
+}
+
+/**
+ * The partners whose living player means the Storyteller, not `changer`'s player, chooses
+ * which player its `changesCharacter` changes tonight (`storytellerPicksWhileAlive`: with the
+ * Poppy Grower alive on the 3rd night the Summoner chooses which Demon but not which player,
+ * https://wiki.bloodontheclocktower.com/Summoner#Related_Jinxes).
+ */
+export function storytellerPicksNow(
+	game: Game,
+	changer: CharacterId,
+	characters: CharacterLookup
+): CharacterId[] {
+	return ownJinxes(game, changer, (r) => r.storytellerPicksWhileAlive === true, characters)
+		.map((j) => j.partner)
+		.filter((partner) =>
+			game.seating.some(
+				(id) => !game.seats[id].dead && trueCharacter(game, id, characters) === partner
+			)
+		);
+}
+
+/**
+ * The tokens on which `changer`'s `changesCharacter` may create a jinxed partner early, each
+ * with that partner (`earlierToken`: the Summoner may summon a Pukka on its Night 2,
+ * https://wiki.bloodontheclocktower.com/Summoner#Related_Jinxes).
+ */
+export function earlierTokens(
+	game: Pick<Game, 'script'>,
+	changer: CharacterId,
+	characters?: RulesLookup
+): { partner: CharacterId; token: ReminderLabel }[] {
+	return ownJinxes(game, changer, (r) => r.earlierToken !== undefined, characters).flatMap(
+		({ partner, rule }) => (rule.earlierToken ? [{ partner, token: rule.earlierToken }] : [])
 	);
 }
