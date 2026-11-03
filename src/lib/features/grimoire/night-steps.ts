@@ -278,14 +278,15 @@ export function stepWakes(
 	);
 }
 
-/** Whether a jinx between `characterId` and a character in play holds. */
+/** Whether a jinx between `characterId` and a character in play holds, on either of them. */
 function jinxedInPlay(game: Game, characterId: CharacterId, characters: CharacterLookup): boolean {
 	return game.seating.some((s) => {
 		const other = trueCharacter(game, s, characters);
 		return (
 			other !== undefined &&
 			other !== characterId &&
-			jinxRulesBetween(characterId, other, characters) !== undefined
+			(jinxRulesBetween(characterId, other, characters) !== undefined ||
+				jinxRulesBetween(other, characterId, characters) !== undefined)
 		);
 	});
 }
