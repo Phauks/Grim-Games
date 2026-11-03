@@ -18,9 +18,9 @@ import type { RegistrationWorld } from '../ability.ts';
 import type { Night } from '../night-order.ts';
 import { causesOf } from '../night-deaths.ts';
 import type { ValidReason } from './picker.ts';
+import { abnormalSinceDawn, demonChoiceUses } from './abnormal-uses.ts';
 import {
 	mayBeFalseCause,
-	type AbnormalUse,
 	type AnswerValue,
 	type NightAnswer,
 	type Reliability,
@@ -476,53 +476,26 @@ function evilMarked(
 }
 
 /**
- * Every ability that worked abnormally since dawn because of another character, from the
- * night info the Storyteller recorded (its `abnormal` causes), one per player and
- * character. The Mathematician's own ability does not count, nor does a cause that is the
- * ability itself (https://wiki.bloodontheclocktower.com/Mathematician). The day log runs
- * from the last "New day", which the Storyteller presses at dawn.
- */
-export function abnormalSinceDawn(game: Game, characters?: CharacterLookup): AbnormalUse[] {
-	const out: AbnormalUse[] = [];
-	const key = (c: AbnormalCause) => `${c.reason}:${c.characterId ?? ''}:${c.seatId ?? ''}`;
-	for (const e of entriesOf(game, 'info')) {
-		// The counting ability's own information does not count (the Mathematician's).
-		if (rulesOf(e.characterId, characters)?.answers?.question === 'abnormal-abilities') continue;
-		const causes = (e.abnormal ?? []).filter(
-			(c) => !(c.characterId === e.characterId && c.seatId === e.seatId)
-		);
-		if (causes.length === 0) continue;
-		const use = out.find((u) => u.seatId === e.seatId && u.characterId === e.characterId);
-		if (!use) {
-			out.push({
-				seatId: e.seatId,
-				characterId: e.characterId,
-				causes: [...causes],
-				entryIds: [e.entryId]
-			});
-			continue;
-		}
-		use.entryIds.push(e.entryId);
-		for (const c of causes) if (!use.causes.some((d) => key(d) === key(c))) use.causes.push(c);
-	}
-	return out;
-}
-
-/**
  * Mathematician: how many players' abilities worked abnormally since dawn because of
  * another character (https://wiki.bloodontheclocktower.com/Mathematician). Once the
  * Storyteller has put the Mathematician's "Abnormal" reminders on players, the answer is
  * how many players carry one (their call); until then it is counted from the info they
  * recorded as abnormal. `abnormal` lists the recorded uses either way, so they can check.
+ * Its jinxes count some abilities its own rule leaves out (`abnormalCounts`: the Drunk's and
+ * the Marionette's false info, the Lunatic attacking another player than the Demon did).
  */
 function abnormalAbilities(
 	game: Game,
 	seatId: SeatId,
 	characterId: CharacterId,
 	characters: CharacterLookup,
-	rule: Answers
+	rule: Answers,
+	today?: NightToday
 ): NightAnswer {
-	const abnormal = abnormalSinceDawn(game, characters);
+	const abnormal = [
+		...abnormalSinceDawn(game, characters, characterId),
+		...demonChoiceUses(game, characterId, characters, today?.died ?? [])
+	];
 	const marked = game.seating.filter((s) =>
 		game.seats[s].reminders.some((r) => r.characterId === characterId && r.label === rule.token)
 	);

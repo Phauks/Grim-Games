@@ -191,6 +191,12 @@
  *   player is alive, its `extra-day` is a night instead: the partner's player chooses 3 good
  *   players tonight, and if all 3 choose to live evil wins, otherwise good wins (the Mastermind
  *   with the Al-Hadikhia). The game end is a `jinx-night` hold; the Storyteller ends the game.
+ * - `abnormalCounts`: this character's `abnormal-abilities` count also counts the partner's
+ *   player when the partner's own ability made it work abnormally, which otherwise is no other
+ *   character's doing (https://wiki.bloodontheclocktower.com/Mathematician#Related_Jinxes):
+ *   `own-ability`, info recorded as abnormal because of the partner's own ability (the Drunk's
+ *   false info, the Marionette's); `demon-choice`, the partner's `choosesLikeDemon` reminder is
+ *   on none of the players the Demon killed tonight (the Lunatic attacking someone else).
  *
  * Either character's file may hold the block. `registersTo`, `impairsPartner`, `noKill`,
  * `noGrimoire`, `grimoireHides`, `endsGame`, `storytellerVote`, `deadAtLeast`,
@@ -201,7 +207,7 @@
  * `neighbourBecomes`, `storytellerPicksWhileAlive`, `earlierToken`, `guessesPartner`,
  * `notShownGiven`, `notSecondDemon`, `keepsAfterPartner`, `survivesCarrierExecuted`,
  * `killsMarked`, `madAsPartner`, `hidesPartnerSeat`, `thinksPartnerSetup`, `uncountedVote`,
- * `gainedEndWinner` and `partnerChoosesEnd` say what
+ * `gainedEndWinner`, `partnerChoosesEnd` and `abnormalCounts` say what
  * this character does, or how it is treated, with the partner, so they are read from this
  * character's side only (`ownJinxRules`); the others are read from both sides
  * (`rules/jinxes.ts`). By convention a block goes in the file of the
@@ -332,7 +338,11 @@ export interface JinxRules {
 	uncountedVote?: true;
 	gainedEndWinner?: Alignment;
 	partnerChoosesEnd?: true;
+	abnormalCounts?: AbnormalCounts;
 }
+
+export const ABNORMAL_COUNTS = ['own-ability', 'demon-choice'] as const;
+export type AbnormalCounts = (typeof ABNORMAL_COUNTS)[number];
 
 export const STORYTELLER_HAS = ['no-ability', 'removed'] as const;
 export type StorytellerHas = (typeof STORYTELLER_HAS)[number];
@@ -404,7 +414,8 @@ export const JINX_RULE_KEYS = [
 	'thinksPartnerSetup',
 	'uncountedVote',
 	'gainedEndWinner',
-	'partnerChoosesEnd'
+	'partnerChoosesEnd',
+	'abnormalCounts'
 ] as const;
 
 /** A non-empty list of known values, or undefined (with an issue) when it is not one. */
@@ -626,6 +637,8 @@ export function readJinxRules(
 		if (marked !== undefined) rules.killsMarked = marked;
 		const winner = readEnum(entry, 'gainedEndWinner', ALIGNMENTS, at, issues, false);
 		if (winner) rules.gainedEndWinner = winner;
+		const counts = readEnum(entry, 'abnormalCounts', ABNORMAL_COUNTS, at, issues, false);
+		if (counts) rules.abnormalCounts = counts;
 		if (Object.keys(rules).length === 0) {
 			issues.add(at, 'a jinx entry needs at least one rule');
 			continue;
