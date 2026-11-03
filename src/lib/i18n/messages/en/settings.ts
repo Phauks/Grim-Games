@@ -152,8 +152,9 @@ export const settings = {
 		'Changes the size of interface icons: header, settings, menus, buttons, and status markers such as dead or poisoned. Character icons, text and tokens stay the same.',
 	'settings.reminderRemoval': 'Remove reminders that run out',
 	'settings.reminderRemovalHelp':
-		"At dawn and dusk, reminders that have run out, such as the Monk's Safe and the Poisoner's Poisoned, and the Flowergirl's and Town Crier's tokens. Off leaves every reminder for you to move.",
+		"At dawn and dusk, reminders that have run out, such as the Monk's Safe and the Poisoner's Poisoned, and the Flowergirl's and Town Crier's tokens. Off leaves every reminder for you to move. Ask at dawn lists the ones that ran out, to pick which come off.",
 	'settings.reminderRemoval.off': 'Off',
+	'settings.reminderRemoval.ask': 'Ask at dawn to remove',
 	'settings.reminderRemoval.auto': 'Automatically remove',
 	'settings.tileLabels': 'Bag tile labels',
 	'settings.tileLabels.numbers': 'Numbers',

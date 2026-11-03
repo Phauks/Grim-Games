@@ -33,12 +33,15 @@ import { addSeat } from './seating.ts';
 
 // The Storyteller's grimoire board: saved games, seats and the seat sheet (ROADMAP Phase 2).
 
-/** Settings › Storyteller › Remove reminders that run out: Automatically remove. */
-async function removeRemindersAutomatically(page: Page) {
+/** Settings › Storyteller › Remove reminders that run out. */
+async function removeReminders(
+	page: Page,
+	choice: 'Automatically remove' | 'Ask at dawn to remove' = 'Automatically remove'
+) {
 	await boardSettings(page, 'Storyteller');
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await settings.getByRole('combobox', { name: 'Remove reminders that run out' }).tap();
-	await page.getByRole('option', { name: 'Automatically remove', exact: true }).tap();
+	await page.getByRole('option', { name: choice, exact: true }).tap();
 	await settings.getByRole('button', { name: 'Close' }).tap();
 	await expect(settings).toBeHidden();
 }
@@ -1149,22 +1152,14 @@ test('a night step offers the info tokens its text names', async ({ page }) => {
 	expect(await gaps()).toEqual([]);
 });
 
-for (const on of [true, false]) {
-	test(`Remove reminders that run out ${on ? 'automatically' : 'off'}: the Monk's Safe at dawn`, async ({
-		page
-	}) => {
+for (const mode of ['Off', 'Automatically remove', 'Ask at dawn to remove', 'Ask, kept'] as const) {
+	test(`Remove reminders that run out, ${mode}: the Monk's Safe at dawn`, async ({ page }) => {
 		// https://wiki.bloodontheclocktower.com/Monk : the Safe reminder comes off at dawn. One
-		// Storyteller setting, off by default, decides every timed reminder change (Trevor,
-		// 2026-11-03).
+		// Storyteller setting, off by default, decides every timed reminder change; Ask at dawn
+		// lists the tokens that ran out, each with a switch (Trevor, 2026-11-03).
 		await startGame(page);
-		if (on) {
-			await boardSettings(page, 'Storyteller');
-			const settings = page.getByRole('dialog', { name: 'Settings' });
-			await settings.getByRole('combobox', { name: 'Remove reminders that run out' }).tap();
-			await page.getByRole('option', { name: 'Automatically remove', exact: true }).tap();
-			await settings.getByRole('button', { name: 'Close' }).tap();
-			await expect(settings).toBeHidden();
-		}
+		const ask = mode === 'Ask at dawn to remove' || mode === 'Ask, kept';
+		if (mode !== 'Off') await removeReminders(page, ask ? 'Ask at dawn to remove' : mode);
 		const sheet = await openSeat(page, 1);
 		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
 		await page
@@ -1177,12 +1172,33 @@ for (const on of [true, false]) {
 		await expect(seat2).toHaveAttribute('aria-label', /1 reminder/);
 		await walkTo(page, 'Dusk');
 		await endNight(page);
+		if (ask) {
+			const refresh = page.getByRole('alertdialog', { name: 'Refresh Reminders' });
+			// One row: the Safe, by Seat 2, its switch on.
+			await expect(refresh.getByRole('listitem')).toHaveCount(1);
+			await expect(refresh.getByRole('listitem')).toContainText('Seat 2');
+			await expect(refresh.getByTestId('board-reminder')).toHaveAttribute(
+				'aria-label',
+				'Safe reminder'
+			);
+			const remove = refresh.getByRole('checkbox', { includeHidden: true });
+			await expect(remove).toBeChecked();
+			// Still on the board while the Storyteller decides.
+			await expect(seat2).toHaveAttribute('aria-label', /1 reminder/);
+			if (mode === 'Ask, kept') {
+				await refresh.locator('[data-scope="switch"][data-part="control"]').tap();
+				await expect(remove).not.toBeChecked();
+			}
+			await refresh.getByRole('button', { name: 'Confirm' }).tap();
+			await expect(refresh).toBeHidden();
+		}
 		const day = page.getByRole('dialog', { name: 'Day 1' });
 		await expect(day).toBeVisible();
 		await page.keyboard.press('Escape');
 		await expect(day).toBeHidden();
 		// Seat 2 holds the Safe until dawn takes it off, back to the bank.
-		await expect(seat2).toHaveAttribute('aria-label', on ? /character$/ : /1 reminder/);
+		const removed = mode === 'Automatically remove' || mode === 'Ask at dawn to remove';
+		await expect(seat2).toHaveAttribute('aria-label', removed ? /character$/ : /1 reminder/);
 	});
 }
 
@@ -7313,7 +7329,7 @@ test('tapping the nomination marks records a nomination, and the Virgin executes
 test("the Town Crier's step reads today's recorded nominations", async ({ page }) => {
 	await startGame(page, 'Sects & Violets');
 	// Dawn's token changes follow the Storyteller setting, off by default (Trevor, 2026-11-03).
-	await removeRemindersAutomatically(page);
+	await removeReminders(page);
 	for (const [number, name] of [
 		[1, 'Town Crier'],
 		[2, 'Witch'],
