@@ -163,11 +163,9 @@ describe('Minstrel', () => {
 			expect(tokens(s)).toEqual([]);
 		});
 
-		it.fails('takes Everyone Is Drunk off at dusk the next day', () => {
+		it('takes Everyone Is Drunk off at dusk the next day', () => {
 			// Wiki: "At dusk tomorrow, all players made drunk by the Minstrel become sober—remove the
 			// EVERYONE IS DRUNK reminder."
-			// Waits on the engine (unplanned): the Minstrel's rules have no reminderEnds for Everyone
-			// Is Drunk (it would need "dusk tomorrow", not tonight's dusk), so Dusk leaves it on.
 			const tonight = scenario(cast).newDay().execute('godfather').dusk();
 			expect(tokens(tonight)).toHaveLength(1);
 			const tomorrow = tonight.newDay().dusk();

@@ -479,6 +479,15 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['M25']
 	},
 	{
+		// Trevor, 2026-11-02: every How to Run gap closed before beta goes to production. Reminders
+		// that never came off now do: at dawn, at dusk, at dusk tomorrow (the Minstrel) or when
+		// their player dies (the Philosopher), and the Po's and Shabaloth's night text says which
+		// token comes off.
+		title: 'Reminders come off on time: the Innkeeper, Witch, Minstrel, Philosopher and more',
+		area: 'engine',
+		parts: ['M27']
+	},
+	{
 		// Trevor, 2026-11-02: in an Atheist game the Storyteller still gets guidance. M26a a pretend
 		// evil team in the engine, with information that fits it; M26b its seat sheet row, night
 		// steps and board mark.

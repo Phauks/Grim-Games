@@ -23,5 +23,8 @@
 	},
 	"infoKind": {
 		"number": true
+	},
+	"reminderEnds": {
+		"Abnormal": "dawn"
 	}
 }
