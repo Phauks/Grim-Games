@@ -5,6 +5,8 @@
 	import { dayTimers, parsePlayersPhase, parseSetupLook } from '#lib/core/rules/index.ts';
 	import { seatCandles, seatConnections, type SeatPresence } from '#lib/core/sync/seat-presence.ts';
 	import PlayersDayStatus from '#lib/features/day/PlayersDayStatus.svelte';
+	import { t } from '#lib/i18n/locale.svelte.ts';
+	import Icon from '#lib/ui/icons/Icon.svelte';
 
 	/**
 	 * The row over the player screen's tabs: everything the table's public state shows there,
@@ -34,6 +36,11 @@
 		winner?: 'good' | 'evil';
 		/** This phone's seat number, for tests to read; the screen doesn't say it. */
 		seatNumber?: number;
+		/**
+		 * Opens Your character (Trevor, 2026-11-03): while players may see theirs, the game's
+		 * status gives its place to it, the same box, so nothing moves.
+		 */
+		character?: () => void;
 		after?: Snippet;
 	}
 
@@ -46,6 +53,7 @@
 		status,
 		winner,
 		seatNumber,
+		character,
 		after
 	}: Props = $props();
 
@@ -60,7 +68,7 @@
 	);
 </script>
 
-{#if status !== undefined || after || phase}
+{#if status !== undefined || after || phase || character}
 	<div class="status-row" data-testid="player-status-row">
 		{#if status !== undefined}
 			<!-- With nothing to say the box takes no room, so the game's status starts the row
@@ -77,17 +85,29 @@
 		{/if}
 		<!-- Where the game is up to, with the day's timer; it shares the row's height, so
 		     nothing below moves. -->
-		{#if phase}<PlayersDayStatus
-				{phase}
-				{timer}
-				seats={table?.seats ?? []}
-				wide
-				{setupLook}
-				{candles}
-				unseated={presence?.unseated ?? 0}
-				{connections}
-				{unseatedNames}
-			/>{/if}
+		<!-- While players may see theirs, Your character covers the game's status, the same box,
+		     so nothing moves (Trevor, 2026-11-03). -->
+		{#if phase || character}<div class="game" data-covered={character ? '' : undefined}>
+				{#if phase}<PlayersDayStatus
+						{phase}
+						{timer}
+						seats={table?.seats ?? []}
+						wide
+						{setupLook}
+						{candles}
+						unseated={presence?.unseated ?? 0}
+						{connections}
+						{unseatedNames}
+					/>{/if}
+				{#if character}<button
+						type="button"
+						class="character"
+						class:over={!!phase}
+						aria-haspopup="dialog"
+						data-testid="your-character"
+						onclick={character}><Icon name="yourCharacter" />{t('room.role.open')}</button
+					>{/if}
+			</div>{/if}
 		{@render after?.()}
 	</div>
 {/if}
@@ -106,8 +126,42 @@
 	}
 	/* The game's status takes the rest of the row (Trevor, 2026-10-27: "the game status bar
 	   should then take up the entire horizontal of that line area"). */
-	.status-row > :global([data-testid='players-status']) {
+	.game {
+		position: relative;
+		display: flex;
 		flex: 1;
+		min-width: 0;
+	}
+	.game > :global([data-testid='players-status']) {
+		flex: 1;
+	}
+	.game[data-covered] > :global([data-testid='players-status']) {
+		visibility: hidden;
+	}
+	/* Your character in the game status's place, drawn as that box is (PlayersDayStatus). */
+	.character {
+		display: inline-flex;
+		flex: 1;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-2);
+		box-sizing: border-box;
+		min-height: var(--tap-target);
+		padding: var(--space-1) var(--space-3);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-md);
+		background: var(--surface-raised);
+		color: var(--on-surface);
+		font-family: var(--font-heading);
+		font-size: 1.1rem;
+		cursor: pointer;
+	}
+	.character.over {
+		position: absolute;
+		inset: 0;
+	}
+	.character :global(svg) {
+		font-size: 1.5em;
 	}
 	/* What the room says of the game, in the row over the tabs. */
 	.you {

@@ -118,6 +118,7 @@
 	});
 
 	const view = $derived(player?.view);
+	let yourCharacter = $state<ReturnType<typeof YourCharacter>>();
 	const status = $derived(player?.status);
 	/** In a room (not the code form): the script, your seat and the table show. */
 	const inRoom = $derived(!!valid && status !== 'refused' && status !== 'closed');
@@ -506,6 +507,7 @@
 		status={summary}
 		winner={view && !view.choosing ? view.ended?.winner : undefined}
 		seatNumber={mySeat}
+		character={view?.role ? () => yourCharacter?.show() : undefined}
 	>
 		{#snippet after()}
 			<!-- Only once the game is over (Trevor 2026-10-25); it shares the row's height, so nothing below moves. -->
@@ -516,8 +518,8 @@
 			{/if}
 		{/snippet}
 	</PlayerStatusRow>
-	<!-- Its own row under the status line (Trevor, 2026-10-28). -->
 	{#if player}<YourCharacter
+			bind:this={yourCharacter}
 			role={view?.role}
 			characters={roomScript(player.code)?.characters}
 			onSeen={() => player?.roleSeen()}
