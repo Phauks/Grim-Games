@@ -160,4 +160,13 @@ test('the Cerenovus step records whom the player is mad as, marked ! by their se
 		'Mad as the Savant'
 	);
 	await expect(seat(page, 2)).toHaveAttribute('aria-label', /mad as the Savant/);
+	// Tapping the small token says it in words (Trevor, 2026-11-03); its reminder can be held
+	// from there, as a tap on the token itself would.
+	await seat(page, 2).getByTestId('mad-as-character').tap();
+	const words = page.getByRole('dialog', { name: 'Seat 2' });
+	await expect(words.getByTestId('seat-marks')).toContainText('Is mad as this character');
+	await expect(words.getByTestId('seat-marks')).toContainText('Savant');
+	await words.getByRole('button', { name: 'Hold reminder' }).tap();
+	await expect(words).toBeHidden();
+	await expect(page.getByTestId('reminder-in-hand')).toBeVisible();
 });

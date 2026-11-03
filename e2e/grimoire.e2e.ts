@@ -2769,8 +2769,12 @@ test('Big token shows who a player really is, or what they believe, or the remin
 	await expect(
 		seatLabelled(page, 'Seat 1: no name, Chef, is really the Drunk, 1 reminder')
 	).toBeAttached();
-	// Tapping it picks the reminder up, as tapping the reminder beside the seat does.
+	// Tapping it says it in words (Trevor, 2026-11-03), and picks the reminder up from there, as
+	// tapping the reminder beside the seat does.
 	await truly.tap();
+	const words = page.getByRole('dialog', { name: 'Seat 1' });
+	await expect(words.getByTestId('seat-marks')).toContainText('Is really this character');
+	await words.getByRole('button', { name: 'Hold reminder' }).tap();
 	await expect(inHand(page)).toBeVisible();
 	await boardSeat(page, 3).tap();
 	await page
