@@ -12,6 +12,7 @@
  * the JSON format itself is TPI's `script-schema.json` (botc-release).
  */
 import type { GameData } from './game-data.ts';
+import { findJinx } from './jinxes.ts';
 import { normaliseCharacterId, parseCharacter, parseSpecial } from './parse.ts';
 import {
 	CHARACTER_TYPES,
@@ -25,6 +26,7 @@ import {
 	type Special
 } from './types.ts';
 import { describe, Issues, isObject, type Json } from './validate.ts';
+import { checkScriptJinxRules, withReadableJinxes, type PendingJinx } from './script-jinx-rules.ts';
 
 export type ScriptProblemSeverity = 'error' | 'warning' | 'info';
 
@@ -54,7 +56,10 @@ export interface LoadedScript {
 	characters: Character[];
 	/** Ids of characters defined by the script itself (homebrew, or official ids overridden). */
 	homebrew: CharacterId[];
-	/** Jinxes declared by homebrew characters (`jinxes` on a script character). */
+	/**
+	 * The script's own jinxes (`jinxes` on a script entry, a custom character's or an official
+	 * one's), each with its `rules` when it has any the app can use (`script-jinx-rules.ts`).
+	 */
 	homebrewJinxes: Jinx[];
 	/** Ids the loader rewrote, original → id used ("fortune_teller" → "fortuneteller"). */
 	renamedIds: Record<string, CharacterId>;
@@ -284,7 +289,7 @@ export function loadScript(json: unknown, data: GameData): ScriptLoadResult {
 
 	const characters: Character[] = [];
 	const homebrew: CharacterId[] = [];
-	const homebrewJinxes: Jinx[] = [];
+	const pendingJinxes: PendingJinx[] = [];
 	const renamedIds: Record<string, CharacterId> = {};
 	const seen = new Map<CharacterId, string>();
 	let customCount = 0;
@@ -354,7 +359,10 @@ export function loadScript(json: unknown, data: GameData): ScriptLoadResult {
 				return;
 			}
 			const character = official(ref, where);
-			if (character) add(character, where, false);
+			if (!character) return;
+			add(character, where, false);
+			// An official character's entry may hold the script's own jinxes for it.
+			pendingJinxes.push(...readHomebrewJinxes(raw, character.id, where, problems));
 			return;
 		}
 		const character = loadHomebrew(raw, index, where, problems, () => ++customCount);
@@ -366,8 +374,16 @@ export function loadScript(json: unknown, data: GameData): ScriptLoadResult {
 			);
 		}
 		add(character, where, true);
-		homebrewJinxes.push(...readHomebrewJinxes(raw, character.id, where, problems));
+		pendingJinxes.push(...readHomebrewJinxes(raw, character.id, where, problems));
 	});
+	const homebrewJinxes = checkScriptJinxRules(
+		pendingJinxes,
+		characters,
+		homebrew,
+		seen,
+		(a, b) => findJinx(data.jinxes, a, b)?.reason,
+		(where, message) => problems.push(warn(where, message))
+	);
 
 	const meta = loadMeta(metaRaw, seen, problems);
 
@@ -562,6 +578,12 @@ function loadHomebrew(
 		fixed.special = specials.map((s) => ({ ...s }));
 	}
 
+	// A jinx rule the app can't read is left out, never the whole character.
+	if (raw.rules !== undefined)
+		fixed.rules = withReadableJinxes(raw.rules, where, (at, message) =>
+			problems.push(warn(at, message))
+		);
+
 	const issues = new Issues();
 	const character = parseCharacter(fixed, `[${index}]`, issues, {
 		strict: false,
@@ -587,13 +609,13 @@ function readHomebrewJinxes(
 	id: CharacterId,
 	where: string,
 	problems: ScriptProblem[]
-): Jinx[] {
+): PendingJinx[] {
 	if (raw.jinxes === undefined) return [];
 	if (!Array.isArray(raw.jinxes)) {
 		problems.push(warn(where, 'Ignored jinxes: expected a list.'));
 		return [];
 	}
-	const out: Jinx[] = [];
+	const out: PendingJinx[] = [];
 	for (const item of raw.jinxes) {
 		const other = isObject(item) ? coerceString(item.id) : undefined;
 		const reason = isObject(item) ? coerceString(item.reason) : undefined;
@@ -602,7 +624,12 @@ function readHomebrewJinxes(
 			problems.push(warn(where, 'Ignored a jinx without both an id and a reason.'));
 			continue;
 		}
-		out.push({ characters: [id, otherId], reason });
+		const jinx: Jinx = { characters: [id, otherId], reason };
+		out.push({
+			jinx,
+			where,
+			...(isObject(item) && item.rules !== undefined ? { rules: item.rules } : {})
+		});
 	}
 	return out;
 }
@@ -669,17 +696,19 @@ function loadMeta(
 export function scriptToJson(script: LoadedScript): unknown[] {
 	const meta: Json = { id: '_meta', ...script.meta, name: script.meta.name || script.name };
 	const homebrew = new Set(script.homebrew);
-	const jinxes = new Map<CharacterId, { id: CharacterId; reason: string }[]>();
+	const jinxes = new Map<CharacterId, Json[]>();
 	for (const {
 		characters: [a, b],
-		reason
+		reason,
+		rules
 	} of script.homebrewJinxes) {
-		jinxes.set(a, [...(jinxes.get(a) ?? []), { id: b, reason }]);
+		jinxes.set(a, [...(jinxes.get(a) ?? []), { id: b, reason, ...(rules ? { rules } : {}) }]);
 	}
 	return [
 		meta,
 		...script.characters.map((c) => {
-			if (!homebrew.has(c.id)) return c.id;
+			if (!homebrew.has(c.id))
+				return jinxes.has(c.id) ? { id: c.id, jinxes: jinxes.get(c.id) } : c.id;
 			const { type, special, ...rest } = c;
 			const out: Json = { ...rest, team: type };
 			if (special.length > 0) out.special = special;

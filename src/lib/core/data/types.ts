@@ -6,6 +6,7 @@
  * alignment (good/evil) is the team (04-architecture.md §3).
  */
 import type { CharacterRules } from './character-rules.ts';
+import type { JinxRules } from './jinx-rules.ts';
 
 /** Character types, in TPI's order (`script-schema.json` → `team.enum`). */
 export const CHARACTER_TYPES = [
@@ -157,6 +158,12 @@ export interface Character {
 export interface Jinx {
 	characters: readonly [CharacterId, CharacterId];
 	reason: string;
+	/**
+	 * What a script's own jinx changes in the app (`data/script-jinx-rules.ts`), in the format
+	 * of one entry of a rules block's `jinxes`, `self` being the first character (the entry
+	 * that holds it). Only on a script's jinx; TPI's take their rules from our rules files.
+	 */
+	rules?: JinxRules;
 }
 
 /** Night sheet steps that are not characters (`nightsheet.json`). */

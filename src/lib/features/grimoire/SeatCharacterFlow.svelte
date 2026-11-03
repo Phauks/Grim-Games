@@ -6,12 +6,7 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Alignment, CharacterId } from '#lib/core/data/index.ts';
-	import {
-		charactersInPlay,
-		scriptCharacterIds,
-		trueCharacter,
-		type SeatId
-	} from '#lib/core/model/index.ts';
+	import { charactersInPlay, trueCharacter, type SeatId } from '#lib/core/model/index.ts';
 	import { rulesOf } from '#lib/core/data/rules/index.ts';
 	import { abilityGivers, barredAbilities, jinxedPartners } from '#lib/core/rules/index.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
@@ -193,11 +188,10 @@
 	// Drunk ability, https://wiki.bloodontheclocktower.com/Boffin#Related_Jinxes).
 	const heldExclude = $derived.by(() => {
 		if (!giver) return [];
-		const script = scriptCharacterIds(game.script);
-		const barred = barredAbilities(giver.id, script, characters);
+		const barred = barredAbilities(giver.id, game.script, characters);
 		if (!giver.rule.notInPlay) return barred.filter((id) => id !== held);
 		// A jinx may allow one in play, with a spare token (the Boffin's Village Idiot).
-		const spare = jinxedPartners(giver.id, 'spareToken', script, characters);
+		const spare = jinxedPartners(giver.id, 'spareToken', game.script, characters);
 		const tokens = charactersInPlay(game);
 		const truly = game.seating.flatMap((s) => trueCharacter(game, s, characters) ?? []);
 		const inPlay = [...tokens, ...truly].filter((id) => !spare.includes(id));

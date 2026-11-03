@@ -254,6 +254,7 @@
 			selection: s.selection,
 			ruleCharacters: game?.ruleCharacters,
 			scriptOrder,
+			homebrewJinxes: script?.homebrewJinxes,
 			lookup,
 			findByName,
 			travellersInBag,

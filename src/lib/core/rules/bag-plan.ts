@@ -19,7 +19,7 @@
  * - Fabled and Loric are rule characters and never go in the bag.
  */
 import { rulesOf } from '#lib/core/data/rules/index.ts';
-import type { Character, CharacterId, CharacterType } from '#lib/core/data/types.ts';
+import type { Character, CharacterId, CharacterType, Jinx } from '#lib/core/data/types.ts';
 import type { Bag, Game, Reminder, SeatId, TileId } from '#lib/core/model/types.ts';
 import { SEATED_TYPES, type SeatedType } from './distribution.ts';
 import { analyseSetup, type SetupAnalysis, type SetupWarning } from './setup.ts';
@@ -238,6 +238,8 @@ export interface SelectionAnalysisInput {
 	/** Fabled and Loric in play, which can change setup (the Sentinel). */
 	ruleCharacters?: readonly CharacterId[];
 	scriptOrder: readonly CharacterId[];
+	/** The script's own jinxes, which replace TPI's with their own rules (`rulesForJinx`). */
+	homebrewJinxes?: readonly Jinx[];
 	lookup: (id: CharacterId) => Character | undefined;
 	findByName?: (name: string) => CharacterId | undefined;
 	/** A game rule lets characters have more than one copy (Duplicate Characters). */
@@ -272,7 +274,8 @@ export function analyseSelection(input: SelectionAnalysisInput): SetupAnalysis {
 	const jinxed = abilityJinxSetup(
 		characters.map((c) => c.id),
 		input.scriptOrder,
-		input.lookup
+		input.lookup,
+		input.homebrewJinxes
 	);
 	const analysis = analyseSetup({
 		players,

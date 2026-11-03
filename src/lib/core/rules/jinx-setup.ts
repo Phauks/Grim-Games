@@ -11,10 +11,10 @@
  * its counts are allowed as well as the usual ones (`analyseSetup`'s `mayApply`), with a note
  * saying why, and nothing is required.
  */
-import type { Character, CharacterId } from '#lib/core/data/types.ts';
+import type { Character, CharacterId, Jinx } from '#lib/core/data/types.ts';
 import type { JinxRules } from '#lib/core/data/jinx-rules.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
-import { pairView } from './jinxes.ts';
+import { rulesForJinx, scriptJinxPartners } from './jinx-pairs.ts';
 import { aboutHolder } from './jinx-when.ts';
 
 export interface AbilityJinxSetup {
@@ -35,26 +35,34 @@ const IS = { poisoned: 'is poisoned', drunk: 'is drunk', 'no-ability': 'has no a
 
 /**
  * The jinxes in effect for the characters `chosen` for play while their player has a
- * partner's ability, read for each chosen character from either file, with each partner on
- * the script (`scriptIds`).
+ * partner's ability, read for each chosen character (`rulesForJinx`: the script's own jinx,
+ * `homebrewJinxes`, else either file), with each partner on the script (`scriptIds`).
  */
 export function abilityJinxSetup(
 	chosen: readonly CharacterId[],
 	scriptIds: readonly CharacterId[],
-	lookup: (id: CharacterId) => Character | undefined
+	lookup: (id: CharacterId) => Character | undefined,
+	homebrewJinxes: readonly Jinx[] = []
 ): AbilityJinxSetup {
 	const jinxesOf = (c: Character | undefined, id: CharacterId) => (c?.rules ?? rulesOf(id))?.jinxes;
+	const scope = { jinxes: homebrewJinxes };
+	const custom = new Map(
+		[...new Set([...chosen, ...scriptIds])].flatMap((id) => {
+			const c = lookup(id);
+			return c?.rules ? [[id, c] as const] : [];
+		})
+	);
 	const found: Found[] = [];
 	for (const id of new Set(chosen)) {
 		const owner = lookup(id);
 		if (!owner) continue;
 		const own = Object.keys(jinxesOf(owner, id) ?? {});
 		const named = scriptIds.filter((p) => jinxesOf(lookup(p), p)?.[id] !== undefined);
-		for (const partnerId of new Set([...own, ...named])) {
+		for (const partnerId of new Set([...own, ...named, ...scriptJinxPartners(scope, id)])) {
 			if (!scriptIds.includes(partnerId)) continue;
 			const partner = partnerId === id ? undefined : lookup(partnerId);
 			if (!partner) continue;
-			const rule = pairView(jinxesOf(owner, id)?.[partnerId], jinxesOf(partner, partnerId)?.[id]);
+			const rule = rulesForJinx(scope, id, partnerId, custom);
 			const held = rule?.impairs && aboutHolder(rule.impairs);
 			if (rule && (rule.partnerSetup || rule.partnerInPlay || held))
 				found.push({ owner, partner, rule });
