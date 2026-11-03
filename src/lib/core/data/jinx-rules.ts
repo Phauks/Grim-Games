@@ -126,14 +126,33 @@
  *   Minstrel's and the Preacher's Legion;
  * - `demonLearnsGood`: while the partner is in play, at Demon info its players wake in
  *   separate groups and each learns which players are good, never this character's player,
- *   who is not shown as a Minion either (the Magician with Legion).
+ *   who is not shown as a Minion either (the Magician with Legion);
+ * - `storytellerHas`: the Storyteller has this character's ability: `no-ability`, while its
+ *   living player has no ability (drunk, poisoned or without one), a `storyteller-has` night
+ *   alert at its step (the Summoner with the Courtier and the Preacher); `removed`, once the
+ *   partner's `changesCharacter` changes its living player into another character, the
+ *   Storyteller gains it (`storytellerAbilities`, the Summoner with the Engineer,
+ *   https://wiki.bloodontheclocktower.com/Summoner#Related_Jinxes);
+ * - `arbitraryDeaths`: when this character's `changesCharacter` makes a player a Demon while
+ *   another living player is a Demon, deaths tonight are arbitrary, and its step says so (the
+ *   Summoner with the Hatter, the Kazali and the Pit-Hag);
+ * - `neighbourBecomes`: when this character's `changesCharacter` makes a player the partner,
+ *   that player must neighbour a player of this type, and their other neighbour becomes an
+ *   evil one of it (the Summoner's Lord of Typhon, a Minion);
+ * - `storytellerPicksWhileAlive`: while the partner's player is alive, this character's player
+ *   chooses only which character its `changesCharacter` makes, and the Storyteller chooses the
+ *   player (the Summoner with the Poppy Grower alive on the 3rd night);
+ * - `earlierToken`: this character's `changesCharacter` may also create the partner, and only
+ *   the partner, while its player carries this token instead of its usual `token` (the
+ *   Summoner's Pukka on the 2nd night).
  *
  * Either character's file may hold the block. `registersTo`, `impairsPartner`, `noKill`,
  * `noGrimoire`, `grimoireHides`, `endsGame`, `storytellerVote`, `deadAtLeast`,
  * `notCreatedAfterDay`, `nightChoice`, `withPartnerAbility`, `learnsGained`, `trueInfo`,
  * `notDeclared`, `keepsProtection`, `wakesWithPartner`, `noExecuteNow`, `alsoBecomes`,
  * `carrierType`, `keptByPartner`, `diesWhenExecuted`, `allEvilBecome`, `learnsNoAbility`,
- * `partnerKeepsAbility` and `demonLearnsGood` say what
+ * `partnerKeepsAbility`, `demonLearnsGood`, `storytellerHas`, `arbitraryDeaths`,
+ * `neighbourBecomes`, `storytellerPicksWhileAlive` and `earlierToken` say what
  * this character does, or how it is treated, with the partner, so they are read from this
  * character's side only (`ownJinxRules`); the others are read from both sides
  * (`rules/jinxes.ts`). By convention a block goes in the file of the
@@ -247,7 +266,15 @@ export interface JinxRules {
 	learnsNoAbility?: true;
 	partnerKeepsAbility?: true;
 	demonLearnsGood?: true;
+	storytellerHas?: StorytellerHas;
+	arbitraryDeaths?: true;
+	neighbourBecomes?: CharacterType;
+	storytellerPicksWhileAlive?: true;
+	earlierToken?: ReminderLabel;
 }
+
+export const STORYTELLER_HAS = ['no-ability', 'removed'] as const;
+export type StorytellerHas = (typeof STORYTELLER_HAS)[number];
 
 export const LEARNS_GAINED = ['ability', 'answer'] as const;
 export type LearnsGained = (typeof LEARNS_GAINED)[number];
@@ -294,7 +321,12 @@ export const JINX_RULE_KEYS = [
 	'allEvilBecome',
 	'learnsNoAbility',
 	'partnerKeepsAbility',
-	'demonLearnsGood'
+	'demonLearnsGood',
+	'storytellerHas',
+	'arbitraryDeaths',
+	'neighbourBecomes',
+	'storytellerPicksWhileAlive',
+	'earlierToken'
 ] as const;
 
 /** A non-empty list of known values, or undefined (with an issue) when it is not one. */
@@ -439,7 +471,7 @@ export function readJinxRules(
 		if (readBoolean(entry, 'spareToken', at, issues)) rules.spareToken = true;
 		if (readBoolean(entry, 'storytellerPicksPlayer', at, issues))
 			rules.storytellerPicksPlayer = true;
-		for (const key of ['alsoBecomes', 'carrierType'] as const) {
+		for (const key of ['alsoBecomes', 'carrierType', 'neighbourBecomes'] as const) {
 			const type = readEnum(entry, key, CHARACTER_TYPES, at, issues, false);
 			if (type) rules[key] = type;
 		}
@@ -493,9 +525,15 @@ export function readJinxRules(
 			'allEvilBecome',
 			'learnsNoAbility',
 			'partnerKeepsAbility',
-			'demonLearnsGood'
+			'demonLearnsGood',
+			'arbitraryDeaths',
+			'storytellerPicksWhileAlive'
 		] as const)
 			if (readBoolean(entry, key, at, issues)) rules[key] = true;
+		const has = readEnum(entry, 'storytellerHas', STORYTELLER_HAS, at, issues, false);
+		if (has) rules.storytellerHas = has;
+		const earlier = readString(entry, 'earlierToken', at, issues, false);
+		if (earlier !== undefined) rules.earlierToken = earlier;
 		if (Object.keys(rules).length === 0) {
 			issues.add(at, 'a jinx entry needs at least one rule');
 			continue;

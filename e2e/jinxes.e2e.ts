@@ -743,3 +743,193 @@ test('Demon info with Legion and the Magician shows the good players, not the Ma
 	const minions = info.locator('[data-testid="evil-info-card"][data-row="minions"]');
 	await expect(minions).not.toContainText('Seat 5');
 });
+
+// The Summoner's jinxes (L118, https://wiki.bloodontheclocktower.com/Summoner#Related_Jinxes):
+// with the Courtier, the drunk Summoner's step says the Storyteller has its ability.
+test('the drunk Summoner with the Courtier leaves its ability to the Storyteller', async ({
+	page
+}) => {
+	test.slow();
+	await startGame(page, 'Summoner Courtier', [
+		'summoner',
+		'courtier',
+		'chef',
+		'empath',
+		'monk',
+		'soldier',
+		'imp'
+	]);
+	await choose(page, 1, 'Summoner');
+	await choose(page, 2, 'Courtier');
+	await choose(page, 3, 'Chef');
+	await putReminder(page, 'Drunk 1', 1);
+	await closeBin(page);
+
+	const step = await openStep(page, 'Summoner');
+	await expect(step.getByTestId('night-alerts')).toContainText(
+		/Summoner\s+has\s+no\s+ability,\s+so\s+the\s+Storyteller\s+has\s+it\s+and\s+makes\s+the\s+choice\s*\(\s*Courtier\s*\)/
+	);
+});
+
+// A summoned Lord of Typhon beside a Minion: their other neighbour becomes an evil Minion.
+test('a summoned Lord of Typhon makes their other neighbour an evil Minion', async ({ page }) => {
+	test.slow();
+	await startGame(page, 'Summoner Typhon', [
+		'summoner',
+		'lordoftyphon',
+		'poisoner',
+		'spy',
+		'chef',
+		'empath',
+		'monk'
+	]);
+	await choose(page, 1, 'Summoner');
+	await choose(page, 2, 'Poisoner');
+	await choose(page, 3, 'Chef');
+	await choose(page, 4, 'Empath');
+	await putReminder(page, 'Night 3', 1);
+	await closeBin(page);
+
+	const step = await openStep(page, 'Summoner');
+	await expect(step.getByTestId('neighbour-becomes')).toContainText(
+		/Lord of Typhon\s*:\s+if\s+created,\s+they\s+must\s+neighbour\s+a\s+Minion,\s+and\s+their\s+other\s+neighbour\s+becomes\s+an\s+evil\s+one\./
+	);
+	await step.getByTestId('change-character').getByRole('button', { name: 'Choose' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Becomes the Demon' })
+		.getByRole('button', { name: /Chef/ })
+		.tap();
+	await page
+		.getByRole('dialog', { name: 'Choose a Demon' })
+		.getByRole('button', { name: 'Lord of Typhon', exact: true })
+		.tap();
+	const minions = page.getByRole('dialog', { name: 'Neighbour becomes a Minion' });
+	await expect(minions.getByRole('button', { name: 'Poisoner', exact: true })).toHaveCount(0);
+	await minions.getByRole('button', { name: 'Spy', exact: true }).tap();
+	await expect(step.getByTestId('change-character')).toContainText('Spy');
+	await page.keyboard.press('Escape');
+	await expect(step).toBeHidden();
+	await expect(await openSeat(page, 4)).toContainText(/Minion · Evil · Seat 4[\s\S]*Spy/);
+});
+
+// A second living Demon summoned with the Pit-Hag on the script: deaths tonight are arbitrary.
+test('the Summoner who makes a second living Demon is told deaths are arbitrary', async ({
+	page
+}) => {
+	test.slow();
+	await startGame(page, 'Summoner Pit-Hag', [
+		'summoner',
+		'pithag',
+		'imp',
+		'fanggu',
+		'chef',
+		'empath',
+		'monk'
+	]);
+	await choose(page, 1, 'Summoner');
+	await choose(page, 2, 'Imp');
+	await choose(page, 3, 'Chef');
+	await putReminder(page, 'Night 3', 1);
+	await closeBin(page);
+
+	const step = await openStep(page, 'Summoner');
+	const line = step.getByTestId('arbitrary-deaths');
+	await expect(line).toHaveText(
+		/If\s+this\s+makes\s+a\s+second\s+living\s+Demon,\s+deaths\s+tonight\s+are\s+arbitrary\./
+	);
+	await step.getByTestId('change-character').getByRole('button', { name: 'Choose' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Becomes the Demon' })
+		.getByRole('button', { name: /Chef/ })
+		.tap();
+	await page
+		.getByRole('dialog', { name: 'Choose a Demon' })
+		.getByRole('button', { name: 'Fang Gu', exact: true })
+		.tap();
+	await expect(line).toHaveText(
+		/A\s+second\s+living\s+Demon:\s+deaths\s+tonight\s+are\s+arbitrary\./
+	);
+	await expect(line).toHaveAttribute('role', 'alert');
+});
+
+// On its Night 2 the Summoner may make only a Pukka; with the Poppy Grower alive the
+// Storyteller chooses the player.
+test('the Summoner may summon only a Pukka a night early', async ({ page }) => {
+	test.slow();
+	await startGame(page, 'Summoner Pukka', [
+		'summoner',
+		'pukka',
+		'imp',
+		'poppygrower',
+		'chef',
+		'empath',
+		'monk'
+	]);
+	await choose(page, 1, 'Summoner');
+	await choose(page, 2, 'Poppy Grower');
+	await choose(page, 3, 'Chef');
+	await putReminder(page, 'Night 2', 1);
+	await closeBin(page);
+
+	const step = await openStep(page, 'Summoner');
+	await expect(step.getByTestId('early-only')).toContainText(
+		/Tonight\s+only\s*Pukka\s*may\s+be\s+made,\s+a\s+night\s+early\./
+	);
+	await expect(step.getByTestId('storyteller-picks-now')).toContainText(
+		/Poppy Grower\s+is\s+alive:\s+the\s+Storyteller\s+chooses\s+which\s+player,\s+only\s+the\s+character\s+is\s+chosen\s+here\./
+	);
+	await step.getByTestId('change-character').getByRole('button', { name: 'Choose' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Becomes the Demon' })
+		.getByRole('button', { name: /Chef/ })
+		.tap();
+	const demons = page.getByRole('dialog', { name: 'Choose a Demon' });
+	await expect(demons.getByRole('button', { name: 'Imp', exact: true })).toHaveCount(0);
+	await demons.getByRole('button', { name: 'Pukka', exact: true }).tap();
+	await expect(step.getByTestId('change-character')).toContainText('Pukka');
+});
+
+// The Engineer who changes the living Summoner gives the Storyteller the Summoner ability.
+test('the Engineer who removes the Summoner gives the Storyteller its ability', async ({
+	page
+}) => {
+	test.slow();
+	await startGame(page, 'Summoner Engineer', [
+		'summoner',
+		'engineer',
+		'poisoner',
+		'imp',
+		'chef',
+		'empath',
+		'monk'
+	]);
+	await choose(page, 1, 'Summoner');
+	await choose(page, 2, 'Engineer');
+	await choose(page, 3, 'Chef');
+
+	const step = await openStep(page, 'Engineer');
+	await expect(step.getByTestId('storyteller-gains')).toContainText(
+		/Summoner\s*:\s+if\s+its\s+living\s+player\s+changes\s+character,\s+the\s+Storyteller\s+has\s+its\s+ability\./
+	);
+	await step.getByTestId('change-character').getByRole('button', { name: 'Choose' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Changes character' })
+		.getByRole('button', { name: /Summoner/ })
+		.tap();
+	await page
+		.getByRole('dialog', { name: 'Choose a character' })
+		.getByRole('button', { name: 'Poisoner', exact: true })
+		.tap();
+	await expect(step.getByTestId('change-character')).toContainText('Poisoner');
+	await page.keyboard.press('Escape');
+	await expect(step).toBeHidden();
+	// The Summoner's step, now the Storyteller's: before the Engineer's on the first night.
+	const strip = page.getByTestId('night-strip');
+	const name = strip.locator('.step .name strong');
+	const back = strip.getByRole('button', { name: 'Previous step' });
+	for (let i = 0; i < 10 && (await name.textContent()) !== 'Summoner'; i++) await back.tap();
+	await expect(name).toHaveText('Summoner');
+	await strip.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong').tap();
+	const summoner = page.getByRole('dialog', { name: 'Summoner' });
+	await expect(summoner.getByTestId('step-who')).toHaveText('Storyteller');
+});
