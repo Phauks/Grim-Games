@@ -22,8 +22,6 @@ export const SCRIPT_VOTE_KINDS: readonly ScriptVoteKind[] = ['single', 'multiple
  */
 export type VoteSubject = 'script' | 'mode' | 'rules' | 'game';
 
-export const VOTE_SUBJECTS: readonly VoteSubject[] = ['script', 'mode', 'rules', 'game'];
-
 /** A vote's subject as the room keeps it: absent for a script, as from apps before the others. */
 export type StoredVoteSubject = Exclude<VoteSubject, 'script'>;
 
