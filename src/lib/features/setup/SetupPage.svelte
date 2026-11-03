@@ -45,7 +45,14 @@
 	import { dealStep } from '#lib/features/modes/deal-title.ts';
 	import SetupOffScript from './SetupOffScript.svelte';
 	import GameOptions from './GameOptions.svelte';
-	import { DEMON_SET, randomBluffs, toggleDemonBluff } from '#lib/features/bluffs/bluffs.ts';
+	import {
+		believerAmong,
+		DEMON_SET,
+		LUNATIC_SET,
+		randomBelieverBluffs,
+		randomBluffs,
+		toggleDemonBluff
+	} from '#lib/features/bluffs/bluffs.ts';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import PlayerCountSheet from './PlayerCountSheet.svelte';
 	import SetupBar from './SetupBar.svelte';
@@ -505,6 +512,18 @@
 					Math.random
 				)
 			});
+			// And the Lunatic's, any good characters, in play or not (M38; wiki: Lunatic).
+			if (port.lookup && believerAmong(chosen, port.lookup))
+				send({
+					type: 'SetBluffs',
+					set: LUNATIC_SET,
+					characterIds: randomBelieverBluffs(
+						choices.filter(canBluff).map((c) => c.id),
+						port.lookup,
+						BLUFFS_PER_SET,
+						Math.random
+					)
+				});
 		} else
 			toast(
 				t(s.locked.length > 0 ? 'setup.randomNoneLocked' : 'setup.randomNone'),
@@ -650,6 +669,21 @@
 					inPlay={ids}
 					always
 				/>
+				<!--
+				The Lunatic's bluffs beside the Demon's while a Lunatic is chosen (M38, Trevor
+				2026-11-03, option A): last on the page, so nothing above moves when it appears.
+			-->
+				{#if believerAmong(ids, port.lookup)}
+					<SetupBluffs
+						{game}
+						characters={port.lookup}
+						dispatch={port.dispatch}
+						waiting={!ready}
+						inPlay={ids}
+						set={LUNATIC_SET}
+						always
+					/>
+				{/if}
 			{/if}
 		</div>
 	</ErrorBoundary>

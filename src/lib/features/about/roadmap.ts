@@ -263,9 +263,10 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	},
 	{
 		title:
-			'Character selection and bag draw: slot-machine draw, bluff warnings, lock and hover, dealing to phones',
+			"Character selection and bag draw: slot-machine draw, bluff warnings, the Lunatic's bluffs beside the Demon's, lock and hover, dealing to phones",
 		area: 'storyteller',
-		parts: ['B6', 'L38', 'L39', 'L40', 'L15', 'L24', 'H1', 'H2']
+		// M38 (Trevor, 2026-11-03): the Lunatic's bluffs on Character selection.
+		parts: ['B6', 'L38', 'L39', 'L40', 'L15', 'L24', 'H1', 'H2', 'M38']
 	},
 	{
 		title:

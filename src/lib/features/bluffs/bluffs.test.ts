@@ -4,9 +4,11 @@ import { createGame, dispatch, type Command, type EngineContext } from '#lib/cor
 import { characterLookup, type CharacterLookup, type Game } from '#lib/core/model/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import {
+	believerAmong,
 	charactersReallyInPlay,
 	demonBluffsInPlay,
 	lunaticInPlay,
+	randomBelieverBluffs,
 	randomBluffs,
 	showableBluffSets,
 	toggleDemonBluff
@@ -130,5 +132,32 @@ describe('toggleDemonBluff', () => {
 		expect(toggleDemonBluff(['soldier', 'monk', 'chef'], 'mayor')).toBeUndefined();
 		// Taking one out of a full set still works.
 		expect(toggleDemonBluff(['soldier', 'monk', 'chef'], 'chef')).toEqual(['soldier', 'monk']);
+	});
+});
+
+describe("the Lunatic's bluffs on the Characters screen (https://wiki.bloodontheclocktower.com/Lunatic)", () => {
+	const { characters } = game('bmr', ['sailor', 'lunatic', 'zombuul']);
+
+	it('shows their set while a Lunatic is chosen, and not without one', () => {
+		// Wiki: "Show any three good character tokens as bluffs."
+		expect(believerAmong(['sailor', 'lunatic', 'zombuul'], characters)).toBe(true);
+		expect(believerAmong(['sailor', 'goon', 'zombuul'], characters)).toBe(false);
+	});
+
+	it('picks three good characters at random, which may be in play', () => {
+		// Wiki: "(These can even be characters that are in play.)"
+		const picked = randomBelieverBluffs(['sailor', 'chambermaid'], characters, 3, () => 0);
+		expect(picked).toEqual(['sailor', 'chambermaid']);
+	});
+
+	it("never picks the Lunatic's own token", () => {
+		// Wiki: "The Lunatic thinks that they are the Demon."
+		const picked = randomBelieverBluffs(
+			['lunatic', 'sailor', 'goon', 'fool'],
+			characters,
+			3,
+			() => 0
+		);
+		expect(picked).toEqual(['sailor', 'goon', 'fool']);
 	});
 });
