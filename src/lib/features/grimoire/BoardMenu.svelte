@@ -112,8 +112,8 @@
 </script>
 
 <!-- Named groups, in two columns on a tablet or computer (Trevor, 2026-10-27: "the delineation
-     is nice"): the game on the left, with its start and end under it ("end game/new game should
-     be under game"); seats and the app's items on the right. -->
+     is nice"): the game on the left; seats, the app's items, then the session's start and end on
+     the right. On a phone, one column: Game, Seats, App, Session (Trevor, 2026-11-03). -->
 <Dialog bind:open title="Grimoire" size="wide">
 	<!-- An icon beside X, not a menu item (Trevor, 2026-10-31: "instead of full screen being its
 	     own button in the menu, put it as an icon next to the x button"). The symbol says on or
@@ -181,10 +181,63 @@
 					</Button>
 				{/if}
 			</section>
+		</div>
+		<div class="column">
+			<section class="group" aria-labelledby="board-menu-seats">
+				<h3 id="board-menu-seats" class="group-title">Seats</h3>
+				<!-- Add seat is in Seating's bar only (Trevor, 2026-11-01). -->
+				<Button
+					disabled={watching}
+					variant="quiet"
+					icon="fabled"
+					onclick={() => fromMenu(onAddRule)}
+				>
+					Add Fabled or Loric
+				</Button>
+				<!-- Seating (Trevor, 2026-10-31): arranging seats, letting phones move theirs (plan J38)
+				     and Count off (J40) are one mode, with the room's parts along its bar. -->
+				<Button
+					disabled={watching}
+					variant="quiet"
+					icon="arrange"
+					data-testid="menu-seating"
+					onclick={() => fromMenu(onArrange)}
+				>
+					{t('room.seating.title')}
+				</Button>
+			</section>
+			<section class="group" aria-labelledby="board-menu-app">
+				<h3 id="board-menu-app" class="group-title">App</h3>
+				<!-- All of Settings, not only the board's sections (Trevor, 2026-10-27: "why not just
+				     open to all settings, and stop limiting to what they can access?"), at its root,
+				     as from the navigation (Trevor, 2026-10-27: "should just go to the root"). -->
+				<Button
+					disabled={watching}
+					variant="quiet"
+					icon="settings"
+					onclick={() => fromMenu(() => settingsDialog.show())}
+				>
+					{t('settings.title')}
+				</Button>
+				<!-- Leaving is through the app's navigation, which asks first (Trevor, 2026-10-16). -->
+				<span class="menu-nav">
+					<Button variant="quiet" icon="menu" onclick={() => fromMenu(() => navDrawer.show())}>
+						Navigation
+					</Button>
+				</span>
+				<!-- The one Report form, straight from the game (Trevor, 2026-10-20). -->
+				<Button
+					variant="quiet"
+					icon="report"
+					onclick={() => fromMenu(() => void reportWithDiagnostics())}
+				>
+					{t('shell.reportIssue')}
+				</Button>
+			</section>
 			<!-- Before and after the game, apart from its other items (Trevor, 2026-10-30: they "feel
 			     somewhat different from the other items in game"; "these all seem related to pre and
 			     post game"): Character selection until Start game, then End game, then what an ended
-			     game offers. -->
+			     game offers. Last, below App (Trevor, 2026-11-03: "games, seats, app, session"). -->
 			<section class="group" aria-labelledby="board-menu-session">
 				<h3 id="board-menu-session" class="group-title">Session</h3>
 				{#if onCharacterSelection}
@@ -280,59 +333,6 @@
 						{t('room.closeRoom')}
 					</Button>
 				{/if}
-			</section>
-		</div>
-		<div class="column">
-			<section class="group" aria-labelledby="board-menu-seats">
-				<h3 id="board-menu-seats" class="group-title">Seats</h3>
-				<!-- Add seat is in Seating's bar only (Trevor, 2026-11-01). -->
-				<Button
-					disabled={watching}
-					variant="quiet"
-					icon="fabled"
-					onclick={() => fromMenu(onAddRule)}
-				>
-					Add Fabled or Loric
-				</Button>
-				<!-- Seating (Trevor, 2026-10-31): arranging seats, letting phones move theirs (plan J38)
-				     and Count off (J40) are one mode, with the room's parts along its bar. -->
-				<Button
-					disabled={watching}
-					variant="quiet"
-					icon="arrange"
-					data-testid="menu-seating"
-					onclick={() => fromMenu(onArrange)}
-				>
-					{t('room.seating.title')}
-				</Button>
-			</section>
-			<section class="group" aria-labelledby="board-menu-app">
-				<h3 id="board-menu-app" class="group-title">App</h3>
-				<!-- All of Settings, not only the board's sections (Trevor, 2026-10-27: "why not just
-				     open to all settings, and stop limiting to what they can access?"), at its root,
-				     as from the navigation (Trevor, 2026-10-27: "should just go to the root"). -->
-				<Button
-					disabled={watching}
-					variant="quiet"
-					icon="settings"
-					onclick={() => fromMenu(() => settingsDialog.show())}
-				>
-					{t('settings.title')}
-				</Button>
-				<!-- Leaving is through the app's navigation, which asks first (Trevor, 2026-10-16). -->
-				<span class="menu-nav">
-					<Button variant="quiet" icon="menu" onclick={() => fromMenu(() => navDrawer.show())}>
-						Navigation
-					</Button>
-				</span>
-				<!-- The one Report form, straight from the game (Trevor, 2026-10-20). -->
-				<Button
-					variant="quiet"
-					icon="report"
-					onclick={() => fromMenu(() => void reportWithDiagnostics())}
-				>
-					{t('shell.reportIssue')}
-				</Button>
 			</section>
 		</div>
 	</div>
