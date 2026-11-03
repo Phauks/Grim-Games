@@ -1176,24 +1176,24 @@ for (const mode of ['Off', 'Automatically remove', 'Ask at dawn to remove', 'Ask
 		await walkTo(page, 'Dusk');
 		await endNight(page);
 		if (ask) {
-			const refresh = page.getByRole('alertdialog', { name: 'Refresh Reminders' });
+			const reset = page.getByRole('alertdialog', { name: 'Reset Reminders' });
 			// One row: the Safe, by Seat 2, its switch on.
-			await expect(refresh.getByRole('listitem')).toHaveCount(1);
-			await expect(refresh.getByRole('listitem')).toContainText('Seat 2');
-			await expect(refresh.getByTestId('board-reminder')).toHaveAttribute(
+			await expect(reset.getByRole('listitem')).toHaveCount(1);
+			await expect(reset.getByRole('listitem')).toContainText('Seat 2');
+			await expect(reset.getByTestId('board-reminder')).toHaveAttribute(
 				'aria-label',
 				'Safe reminder'
 			);
-			const remove = refresh.getByRole('checkbox', { includeHidden: true });
+			const remove = reset.getByRole('checkbox', { includeHidden: true });
 			await expect(remove).toBeChecked();
 			// Still on the board while the Storyteller decides.
 			await expect(seat2).toHaveAttribute('aria-label', /1 reminder/);
 			if (mode === 'Ask, kept') {
-				await refresh.locator('[data-scope="switch"][data-part="control"]').tap();
+				await reset.locator('[data-scope="switch"][data-part="control"]').tap();
 				await expect(remove).not.toBeChecked();
 			}
-			await refresh.getByRole('button', { name: 'Confirm' }).tap();
-			await expect(refresh).toBeHidden();
+			await reset.getByRole('button', { name: 'Confirm' }).tap();
+			await expect(reset).toBeHidden();
 		}
 		const day = page.getByRole('dialog', { name: 'Day 1' });
 		await expect(day).toBeVisible();
