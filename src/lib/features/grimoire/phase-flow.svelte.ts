@@ -9,7 +9,6 @@ import type { CharacterId } from '#lib/core/data/index.ts';
 import type { CharacterLookup, Game, SeatId } from '#lib/core/model/index.ts';
 import {
 	pendingSetupAlignments,
-	type DayMark,
 	type ExecutionOutcome,
 	type SetupAlignmentTask
 } from '#lib/core/rules/index.ts';
@@ -114,13 +113,10 @@ export class PhaseFlow {
 	executeAndEndDay(
 		seatId: SeatId | 'storyteller' | undefined,
 		save: CharacterId | 'dies' | undefined,
-		marks: Partial<Record<DayMark, boolean>>,
 		keepGoing: boolean,
 		outcome?: ExecutionOutcome
 	): void {
 		const { grimoire, game } = this.#context();
-		for (const [mark, value] of Object.entries(marks) as [DayMark, boolean][])
-			grimoire.run({ type: 'SetDayMark', mark, value });
 		// The Storyteller executed ends the game, so the day stays for End game (`gameEnds`).
 		if (seatId === 'storyteller') {
 			if (!game.today.entries.some((e) => e.kind === 'storyteller-execution'))

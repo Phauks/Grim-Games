@@ -91,6 +91,22 @@ export class NightWalk {
 		return this.#steps(guided.night).filter((s) => s.id === guided.step.id || wakes(s));
 	});
 
+	/**
+	 * The open step, its worked-out answers as the game stands now: `guided` keeps the step from
+	 * when it opened, so an answer marked inside it (the Flowergirl's Yes or No) shows at once
+	 * (Trevor, 2026-11-03). Only the answers of the same waking players are refreshed: the rest
+	 * stays as opened, so a step whose players change inside it (the Snake Charmer's swap) keeps
+	 * showing what happened.
+	 */
+	guidedStep = $derived.by(() => {
+		const opened = this.guided?.step;
+		const live = this.guidedSteps.find((s) => s.id === opened?.id);
+		if (opened?.info?.kind !== 'answer' || live?.info?.kind !== 'answer') return opened;
+		const seats = (info: { answers: { seatId: string }[] }) =>
+			info.answers.map((a) => a.seatId).join(' ');
+		return seats(live.info) === seats(opened.info) ? { ...opened, info: live.info } : opened;
+	});
+
 	/** The walk-through's step now. */
 	step = $derived(this.walk ? this.steps[this.walk.index] : undefined);
 

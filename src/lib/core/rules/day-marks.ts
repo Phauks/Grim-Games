@@ -9,7 +9,7 @@ import { DAY_MARKS, type DayMark, type DayMarkRule } from '#lib/core/data/day-ma
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterId, ReminderLabel } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
-import { typeOf } from '#lib/core/model/selectors.ts';
+import { actsWhenDead, keepsAbilityWhenDead } from '#lib/core/rules/dead-characters.ts';
 import type { Game, ReminderId, SeatId } from '#lib/core/model/types.ts';
 
 export { DAY_MARKS, type DayMark, type DayMarkRule };
@@ -32,7 +32,12 @@ export interface DayMarkSeat {
 	rule: DayMarkRule;
 }
 
-/** The seats, in seating order, whose character shows `mark` (every mark when none is given). */
+/**
+ * The seats, in seating order, whose character shows `mark` (every mark when none is given).
+ * A dead player has no ability, so their fact is never asked or swapped (Trevor, 2026-11-03:
+ * a dead Town Crier was still asked about), unless their ability acts while dead or another
+ * character's token keeps it.
+ */
 export function dayMarkSeats(
 	game: Game,
 	characters?: CharacterLookup,
@@ -42,6 +47,12 @@ export function dayMarkSeats(
 		const characterId = game.seats[seatId]?.characterId;
 		const rule = dayMarkOf(characterId, characters);
 		if (!characterId || !rule || (mark && rule.mark !== mark)) return [];
+		if (
+			game.seats[seatId].dead &&
+			!actsWhenDead(characterId, characters) &&
+			!keepsAbilityWhenDead(game, seatId, characters)
+		)
+			return [];
 		return [{ seatId, characterId, rule }];
 	});
 }
@@ -50,11 +61,6 @@ export function dayMarkSeats(
 export function marksInPlay(game: Game, characters?: CharacterLookup): DayMark[] {
 	const marks = new Set(dayMarkSeats(game, characters).map((s) => s.rule.mark));
 	return DAY_MARKS.filter((m) => marks.has(m));
-}
-
-/** The marks in play not marked yet today: End day asks for these. */
-export function unsetMarks(game: Game, characters?: CharacterLookup): DayMark[] {
-	return marksInPlay(game, characters).filter((m) => game.today.marks?.[m] === undefined);
 }
 
 /** Today's mark, or undefined until the Storyteller marks it. */
@@ -91,22 +97,4 @@ export function markTokenSwap(
 		if (label && !own.some((r) => r.label === label)) add.push({ seatId, characterId, label });
 	}
 	return { remove, add };
-}
-
-/**
- * What End day suggests for an unset mark, from what the app recorded: a Minion nominated
- * when a recorded nominator's true character is a Minion. Votes are not tracked, so the Demon
- * voted mark has no suggestion; nor does a day with no nominations recorded.
- */
-export function suggestedMark(
-	game: Game,
-	mark: DayMark,
-	characters: CharacterLookup
-): boolean | undefined {
-	if (mark !== 'minion-nominated') return undefined;
-	const nominators = game.today.entries.flatMap((e) =>
-		e.kind === 'nomination' ? [e.nominator] : []
-	);
-	if (nominators.length === 0) return undefined;
-	return nominators.some((s) => typeOf(game, s, characters) === 'minion');
 }

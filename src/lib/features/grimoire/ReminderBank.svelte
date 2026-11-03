@@ -10,7 +10,7 @@
 	import { placingAlignment } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import type { StepFocus } from './step-focus.svelte.ts';
-	import { copiedLook, isGeneric, type StepReminders } from './reminders.ts';
+	import { copiedLook, type StepReminders } from './reminders.ts';
 	import GenericTokenDialog from './GenericTokenDialog.svelte';
 	import type { ReminderHand } from './reminder-hand.svelte.ts';
 	import type { ReminderDragging } from './reminder-drag.svelte.ts';
@@ -19,9 +19,9 @@
 	import { traySeats } from './setup-tray.ts';
 	import {
 		BANK_CAPTIONS,
-		bankFace,
 		bankItems,
 		bankLook,
+		bankView,
 		type BankGroup,
 		type BankItem
 	} from './bank-items.ts';
@@ -110,9 +110,6 @@
 
 	const game = $derived(grimoire.game);
 	const characters = $derived(grimoire.open.characters);
-	/** The character whose art a generic copy shows (Trevor, 2026-10-27), if any. */
-	const artOf = (look: GenericLook | undefined) =>
-		look?.like ? characters.get(look.like.characterId) : undefined;
 
 	const items = $derived(
 		bankItems(game, characters, {
@@ -268,12 +265,8 @@
 <!-- A token that only shows, while dragged. -->
 {#snippet still(item: BankItem)}
 	<BoardReminder
-		label={item.label}
-		character={characters.get(item.characterId)}
+		{...bankView(item, characters)}
 		alignment={placingAlignment(game, item, characters)}
-		infinite={isGeneric(item)}
-		{...bankFace(item)}
-		art={artOf(item.token)}
 		{size}
 	/>
 {/snippet}
@@ -284,12 +277,8 @@
 	{:else}
 		{#if item.count > 1}<ReminderCount count={item.count} />{/if}
 		<BoardReminder
-			label={item.label}
-			character={characters.get(item.characterId)}
+			{...bankView(item, characters)}
 			alignment={placingAlignment(game, item, characters)}
-			infinite={isGeneric(item)}
-			{...bankFace(item)}
-			art={artOf(item.token)}
 			{size}
 			{disabled}
 			onTap={() => tap(item)}

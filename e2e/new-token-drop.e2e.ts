@@ -1,6 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
-import { tapToSeat } from './reminder-bank.ts';
+import { inHand, tapToSeat } from './reminder-bank.ts';
 
 // Dragging a reminder onto the bank's "+ New token" makes a new ∞ token like it (Trevor,
 // 2026-10-27), and the + glows while a reminder is dragged.
@@ -59,6 +59,14 @@ test('a reminder dropped on "+ New token" becomes a new ∞ token with its words
 	// It shows the Poisoner's art, and while carried marks the seats as Poisoned does: the
 	// Poisoner's seat as its source (Trevor, 2026-10-27).
 	await expect(copy.locator('img')).toHaveAttribute('src', /.+/);
+	// Held (tapped), it keeps that art (Trevor, 2026-11-03: it showed as a blank ∞).
+	await copy.tap();
+	await expect(inHand(page).locator('.reminder img')).toHaveAttribute(
+		'src',
+		(await copy.locator('img').getAttribute('src'))!
+	);
+	await inHand(page).getByRole('button', { name: 'Put down' }).tap();
+	await expect(inHand(page)).toBeHidden();
 	const seat1 = page.locator('[data-testid="seat"][aria-label^="Seat 1:"]');
 	await lift(page, copy, page.getByRole('button', { name: /^Seat 5:/ }));
 	await expect(seat1).toHaveAttribute('data-role', /source|both/);

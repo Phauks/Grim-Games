@@ -15,7 +15,7 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { suggestedMark, unsetMarks } from '#lib/core/rules/day-marks.ts';
+import { dayMarkValue, marksInPlay } from '#lib/core/rules/day-marks.ts';
 import { nightAnswer } from '#lib/core/rules/night-info.ts';
 import { todaysNominations } from '#lib/core/rules/nominations.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
@@ -58,7 +58,6 @@ describe('Town Crier', () => {
 				.nominate('chef', 'witch')
 				.nominate('cerenovus', 'empath')
 				.nominate('empath', 'vortox');
-			expect(suggestedMark(s.game, 'minion-nominated', s.characters)).toBe(true);
 			expect(nightAnswer(s.game, s.seat('towncrier'), 'towncrier', s.characters)).toMatchObject({
 				kind: 'yes-no',
 				value: true,
@@ -74,7 +73,6 @@ describe('Town Crier', () => {
 				.do((at) => ({ type: 'Exile', seatId: at.seat('thief') }));
 			// The exile is not a nomination, so nothing says yes.
 			expect(todaysNominations(s.game)).toEqual([]);
-			expect(suggestedMark(s.game, 'minion-nominated', s.characters)).toBeUndefined();
 			expect(nightAnswer(s.game, s.seat('towncrier'), 'towncrier', s.characters)).not.toMatchObject(
 				{
 					value: true
@@ -130,8 +128,14 @@ describe('Town Crier', () => {
 			// Wiki: "If you forget whether a Minion made a nomination or not, wake each Minion at night and
 			// ask by showing them the DID YOU NOMINATE TODAY? info token."
 			const s = scenario(CAST).newDay();
-			expect(unsetMarks(s.game, s.characters)).toEqual(['minion-nominated']);
-			expect(suggestedMark(s.game, 'minion-nominated', s.characters)).toBeUndefined();
+			expect(dayMarkValue(s.game, 'minion-nominated')).toBeUndefined();
+		});
+
+		it('stops asking once the Town Crier is dead (https://wiki.bloodontheclocktower.com/Glossary)', () => {
+			// Wiki: "When a player dies, their life token flips over, they gain a shroud in the Grimoire, they immediately lose their ability, and any persistent effects of their ability immediately end."
+			const s = scenario(CAST);
+			expect(marksInPlay(s.game, s.characters)).toEqual(['minion-nominated']);
+			expect(marksInPlay(s.dies('towncrier').game, s.characters)).toEqual([]);
 		});
 	});
 });

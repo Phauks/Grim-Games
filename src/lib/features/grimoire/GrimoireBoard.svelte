@@ -447,10 +447,8 @@
 		add?.(position);
 	}
 
-	// ── Setup reminders: a tray of suggested tokens in the middle of the board ──
-	// ── The reminder bank under the board (Trevor, 2026-10-16): setup suggestions until
-	// they are all placed or dismissed (or the first day starts), then every reminder left.
-	// The Storyteller can switch at any time.
+	// ── The reminder bank under the board (Trevor, 2026-10-16): setup suggestions until they
+	// are all placed (or the first day starts), then every reminder left; the seats it marks. ──
 	const hints = new SeatHints(() => ({
 		grimoire,
 		game,
@@ -1139,7 +1137,7 @@
 <GuidedStep
 	bind:open={nw.guideOpen}
 	{grimoire}
-	step={nw.guided?.step}
+	step={nw.guidedStep}
 	night={nw.guided?.night ?? 'first'}
 	steps={nw.guidedSteps}
 	onStep={(step) => {

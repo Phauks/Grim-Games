@@ -11,9 +11,6 @@
 		outcomeHolders,
 		protection,
 		storytellerNominee,
-		suggestedMark,
-		unsetMarks,
-		type DayMark,
 		type ExecutionOutcome,
 		type OutcomeHolder,
 		type OutcomeKind
@@ -48,15 +45,14 @@
 		notStarted?: boolean;
 		/**
 		 * The player executed, or undefined for no execution; the Storyteller's Saved by: a
-		 * character, `dies` for None, or undefined to leave it to the grimoire; and today's
-		 * facts still unmarked, as confirmed here; whether to keep the day going instead of
+		 * character, `dies` for None, or undefined to leave it to the grimoire; whether to keep
+		 * the day going instead of
 		 * ending it; and the ability that failed or forced the execution, if any. The dialog
 		 * closes first.
 		 */
 		onConfirm: (
 			seatId: SeatId | typeof STORYTELLER | undefined,
 			save: CharacterId | 'dies' | undefined,
-			marks: Partial<Record<DayMark, boolean>>,
 			keepGoing: boolean,
 			outcome?: ExecutionOutcome
 		) => void;
@@ -88,20 +84,11 @@
 	});
 	/** A player, not No execution or the Storyteller. */
 	const player = $derived(choice !== undefined && choice !== NONE && choice !== STORYTELLER);
-	/**
-	 * Today's yes-or-no facts nobody marked (Trevor, 2026-10-24: "On day end, it should confirm
-	 * demon did not vote"): each is asked here, off unless what was recorded says yes (a Minion's
-	 * recorded nomination), and Confirm marks it either way.
-	 */
-	let marks = $state<Partial<Record<DayMark, boolean>>>({});
 	let keepGoing = $state(false);
 	$effect(() => {
 		if (!open) return;
 		choice = executed ?? chosen;
 		keepGoing = false;
-		marks = Object.fromEntries(
-			unsetMarks(game, characters).map((m) => [m, suggestedMark(game, m, characters) ?? false])
-		);
 	});
 
 	const DIES = 'dies';
@@ -302,15 +289,14 @@
 	disabled={choice === undefined}
 	onConfirm={() =>
 		choice === NONE || choice === undefined
-			? onConfirm(undefined, undefined, { ...marks }, false)
+			? onConfirm(undefined, undefined, false)
 			: choice === STORYTELLER
-				? onConfirm(STORYTELLER, undefined, { ...marks }, true)
+				? onConfirm(STORYTELLER, undefined, true)
 				: onConfirm(
 						insteadOf?.seatId ?? (choice as SeatId),
 						saveOff || insteadOf || save === OVERRIDE || outcome?.kind === 'failed'
 							? undefined
 							: (save as CharacterId | 'dies'),
-						{ ...marks },
 						failed || (keepAvailable && keepGoing),
 						...(outcome && !insteadOf ? [outcome] : [])
 					)}
@@ -424,13 +410,6 @@
 				{/if}
 				<!-- eslint-enable grim/names-as-badges -->
 			</div>
-		{/each}
-		{#each Object.keys(marks) as DayMark[] as mark (mark)}
-			<Toggle
-				label={t(`day.mark.${mark}`)}
-				checked={marks[mark] === true}
-				onChange={(checked) => (marks[mark] = checked)}
-			/>
 		{/each}
 		{#if extraShown}
 			<Toggle
