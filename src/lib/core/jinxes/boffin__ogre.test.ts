@@ -46,7 +46,7 @@ describe('Boffin + Ogre jinx', () => {
 		const cast = castWith({ script });
 
 		it("is data in the Boffin's rules", () => {
-			expect(jinxRulesBetween('boffin', 'ogre')).toEqual({ notGiven: true });
+			expect(jinxRulesBetween('boffin', 'ogre')).toEqual({ cannotCreate: { via: 'givesAbility' } });
 		});
 
 		it('leaves the Ogre out of the abilities the Boffin may give', () => {

@@ -38,8 +38,9 @@ describe('Alchemist + Spy jinx', () => {
 	it("is data in the Alchemist's rules", () => {
 		// Wiki: "An Alchemist-Spy has no Spy ability & a Spy is in play. After each execution, a living Alchemist-Spy may publicly guess a living player as the Spy. If correct, the Demon must choose the Spy tonight."
 		expect(jinxRulesBetween('alchemist', 'spy')).toEqual({
-			withPartnerAbility: 'partner-in-play',
-			guessesPartner: true
+			impairs: { kind: 'no-ability', when: ['has-partner-ability'] },
+			partnerInPlay: {},
+			guessesPartner: { when: ['has-partner-ability', 'self-alive', 'after-execution'] }
 		});
 	});
 

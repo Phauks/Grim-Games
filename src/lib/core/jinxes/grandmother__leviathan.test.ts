@@ -62,7 +62,7 @@ describe('Grandmother + Leviathan jinx', () => {
 
 		it("is data in the Leviathan's rules", () => {
 			expect(ownJinxRules({ script: scriptOf(ids) }, 'leviathan', 'grandmother')).toEqual({
-				endsGame: { kind: 'marked-executed', token: 'Grandchild', winner: 'evil' }
+				endsGame: { kind: 'marked-executed', winner: 'evil', token: 'Grandchild' }
 			});
 		});
 

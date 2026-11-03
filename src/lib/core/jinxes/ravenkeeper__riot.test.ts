@@ -33,5 +33,5 @@ describe('Ravenkeeper + Riot jinx', () => {
 
 	// Both pages' Related Jinxes: each night after the first the Demon picks an alive player not
 	// picked before, and the partner, if picked, acts as if the Demon killed it.
-	nightChoiceTests('riot', 'ravenkeeper', { who: 'good', partner: 'acts' });
+	nightChoiceTests('riot', 'ravenkeeper', { chooses: 'good', partner: 'acts' });
 });

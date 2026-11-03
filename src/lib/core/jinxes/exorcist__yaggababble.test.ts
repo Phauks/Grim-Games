@@ -52,7 +52,7 @@ describe('Exorcist + Yaggababble jinx', () => {
 		});
 
 		it("is data in the Yaggababble's rules", () => {
-			expect(jinxRulesBetween('yaggababble', 'exorcist')).toEqual({ noKill: 'token' });
+			expect(jinxRulesBetween('yaggababble', 'exorcist')).toEqual({ noKill: { on: 'token' } });
 		});
 
 		it("shows no kill while the Exorcist's Chosen is on it", () => {

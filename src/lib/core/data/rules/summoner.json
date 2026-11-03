@@ -118,7 +118,10 @@
 			"neighbourBecomes": "minion"
 		},
 		"poppygrower": {
-			"storytellerPicksWhileAlive": true
+			"storytellerChooses": {
+				"what": "player",
+				"when": ["partner-alive"]
+			}
 		},
 		"pukka": {
 			"earlierToken": "Night 2"

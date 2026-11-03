@@ -42,7 +42,7 @@ describe("Hatter + Lil' Monsta jinx", () => {
 		const base = withLilMonsta(cast).dies('hatter');
 
 		it("is data in the Hatter's rules", () => {
-			expect(jinxRulesBetween('hatter', 'lilmonsta')).toEqual({ alsoBecomes: 'minion' });
+			expect(jinxRulesBetween('hatter', 'lilmonsta')).toEqual({ alsoBecomes: { type: 'minion' } });
 		});
 
 		it('asks for a Minion when the Demon chooses Lil’ Monsta, and for nothing else', () => {

@@ -33,5 +33,5 @@ describe('Riot + Sage jinx', () => {
 
 	// Both pages' Related Jinxes: each night after the first the Demon picks an alive player not
 	// picked before, and the partner, if picked, acts as if the Demon killed it.
-	nightChoiceTests('riot', 'sage', { who: 'good', partner: 'acts' });
+	nightChoiceTests('riot', 'sage', { chooses: 'good', partner: 'acts' });
 });

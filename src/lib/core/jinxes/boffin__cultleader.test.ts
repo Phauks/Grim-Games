@@ -56,7 +56,7 @@ describe('Boffin + Cult Leader jinx', () => {
 		});
 
 		it("is data in the Boffin's rules", () => {
-			expect(jinxRulesBetween('boffin', 'cultleader')).toEqual({ noTurnGood: true });
+			expect(jinxRulesBetween('boffin', 'cultleader')).toEqual({ noTurnGood: {} });
 			expect(ids).toContain('cultleader');
 		});
 

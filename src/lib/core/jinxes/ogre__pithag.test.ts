@@ -60,7 +60,7 @@ describe('Ogre + Pit-Hag jinx', () => {
 		});
 
 		it("is data in the Pit-Hag's rules", () => {
-			expect(jinxRulesBetween('pithag', 'ogre')).toEqual({ noTurnGood: true });
+			expect(jinxRulesBetween('pithag', 'ogre')).toEqual({ noTurnGood: {} });
 			expect(ids).toContain('ogre');
 		});
 

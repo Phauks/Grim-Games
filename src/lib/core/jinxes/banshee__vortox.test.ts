@@ -48,7 +48,7 @@ describe('Banshee + Vortox jinx', () => {
 		}).dies('banshee', 'vortox');
 
 		it("is data in the Vortox's rules", () => {
-			expect(jinxRulesBetween('vortox', 'banshee')).toEqual({ trueInfo: true });
+			expect(jinxRulesBetween('vortox', 'banshee')).toEqual({ trueInfo: {} });
 		});
 
 		it("the Vortox doesn't make the Banshee's announcement false, only other Townsfolk's", () => {

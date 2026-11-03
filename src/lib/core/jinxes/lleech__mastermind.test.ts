@@ -50,7 +50,7 @@ describe('Lleech + Mastermind jinx', () => {
 		it("is data in the Lleech's rules", () => {
 			// Wiki: "If the Mastermind is alive and the Lleech host dies by execution, the Lleech lives but loses their ability."
 			expect(ownJinxRules(base.game, 'lleech', 'mastermind', base.characters)).toEqual({
-				survivesCarrierExecuted: true
+				survivesCarrierExecuted: { when: ['partner-alive'] }
 			});
 		});
 

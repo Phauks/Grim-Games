@@ -56,7 +56,7 @@ describe('King + Leviathan jinx', () => {
 
 		it("is data in the King's rules", () => {
 			expect(ownJinxRules({ script: scriptOf(ids) }, 'king', 'leviathan')).toEqual({
-				deadAtLeast: 1
+				deadAtLeast: { dead: 1, when: ['partner-in-play'] }
 			});
 		});
 

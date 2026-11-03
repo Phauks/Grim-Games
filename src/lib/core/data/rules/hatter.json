@@ -49,10 +49,21 @@
 	},
 	"jinxes": {
 		"legion": {
-			"allEvilBecome": true
+			"allEvilBecome": true,
+			"impairs": {
+				"kind": "no-ability",
+				"when": ["partner-in-play"]
+			}
 		},
 		"leviathan": {
-			"notCreatedAfterDay": 5
+			"cannotCreate": {
+				"via": "changesCharacter",
+				"when": [
+					{
+						"afterDay": 5
+					}
+				]
+			}
 		},
 		"lilmonsta": {
 			"alsoBecomes": "minion"

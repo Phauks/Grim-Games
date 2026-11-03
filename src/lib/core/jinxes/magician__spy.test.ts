@@ -45,7 +45,7 @@ describe('Magician + Spy jinx', () => {
 
 		it("is data in the Spy's rules", () => {
 			expect(jinxRulesBetween('spy', 'magician')).toEqual({
-				grimoireHides: ['partner', 'demon']
+				grimoire: { hides: ['partner', 'demon'], when: ['partner-in-play'] }
 			});
 		});
 

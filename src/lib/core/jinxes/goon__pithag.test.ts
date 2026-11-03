@@ -60,7 +60,7 @@ describe('Goon + Pit-Hag jinx', () => {
 		});
 
 		it("is data in the Pit-Hag's rules", () => {
-			expect(jinxRulesBetween('pithag', 'goon')).toEqual({ noTurnGood: true });
+			expect(jinxRulesBetween('pithag', 'goon')).toEqual({ noTurnGood: {} });
 			expect(ids).toContain('goon');
 		});
 

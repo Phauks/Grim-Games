@@ -46,7 +46,9 @@ describe('Boffin + Heretic jinx', () => {
 		const cast = castWith({ script });
 
 		it("is data in the Boffin's rules", () => {
-			expect(jinxRulesBetween('boffin', 'heretic')).toEqual({ notGiven: true });
+			expect(jinxRulesBetween('boffin', 'heretic')).toEqual({
+				cannotCreate: { via: 'givesAbility' }
+			});
 		});
 
 		it('leaves the Heretic out of the abilities the Boffin may give', () => {

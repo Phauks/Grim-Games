@@ -223,6 +223,11 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['S2', 'S7', 'S10', 'S16', 'S28']
 	},
 	{
+		title: 'Character Lab: quick games to test a character against every jinx and opponent',
+		area: 'app',
+		parts: ['M37']
+	},
+	{
 		title: 'Admins see every account, and sign one out, free its username or delete it',
 		area: 'app',
 		parts: ['S27']
@@ -549,6 +554,14 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		title: '"Mad as" on the board',
 		area: 'storyteller',
 		parts: ['M36']
+	},
+	{
+		// The coordinator's ask of 2026-11-03 (ability-parts/jinx-format-audit.md): a jinx format a
+		// custom script can write. M39 general verbs with shared `when` conditions and `who`, so a
+		// rule may sit in either character's file; M40 and M41 the later stages.
+		title: 'Jinx format for custom scripts',
+		area: 'engine',
+		parts: ['M39']
 	},
 	{
 		// Trevor, 2026-11-02: beta goes to production only once the How to Run gaps are closed.

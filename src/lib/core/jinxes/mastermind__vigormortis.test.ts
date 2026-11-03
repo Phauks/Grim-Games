@@ -48,7 +48,7 @@ describe('Mastermind + Vigormortis jinx', () => {
 		it("is data in the Mastermind's rules", () => {
 			// Wiki: "A Mastermind that has their ability keeps it if the Vigormortis dies."
 			expect(ownJinxRules(killed.game, 'mastermind', 'vigormortis', killed.characters)).toEqual({
-				keepsAfterPartner: true
+				keepsAfterPartner: {}
 			});
 		});
 

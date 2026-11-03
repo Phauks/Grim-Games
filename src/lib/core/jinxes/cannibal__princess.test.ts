@@ -49,7 +49,9 @@ describe('Cannibal + Princess jinx', () => {
 			alerts.filter((a) => a.kind === 'no-kill');
 
 		it("is data in the Cannibal's rules", () => {
-			expect(jinxRulesBetween('cannibal', 'princess')).toEqual({ noKill: 'executed-partner' });
+			expect(jinxRulesBetween('cannibal', 'princess')).toEqual({
+				noKill: { on: 'executed-partner' }
+			});
 		});
 
 		it('shows no kill at the Demon step when the Cannibal nominated her and she died', () => {

@@ -49,7 +49,7 @@ describe('Hatter + Leviathan jinx', () => {
 
 		it("is data in the Hatter's rules", () => {
 			expect(ownJinxRules({ script: scriptOf(ids) }, 'hatter', 'leviathan')).toEqual({
-				notCreatedAfterDay: 5
+				cannotCreate: { via: 'changesCharacter', when: [{ afterDay: 5 }] }
 			});
 		});
 

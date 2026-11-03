@@ -54,7 +54,7 @@ describe('Grandmother + Riot jinx', () => {
 
 		it("is data in the Riot's rules", () => {
 			expect(ownJinxRules({ script: scriptOf(ids) }, 'riot', 'grandmother')).toEqual({
-				endsGame: { kind: 'marked-executed', token: 'Grandchild', winner: 'evil' }
+				endsGame: { kind: 'marked-executed', winner: 'evil', token: 'Grandchild' }
 			});
 		});
 

@@ -9,7 +9,7 @@ import type { CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { trueCharacter } from '#lib/core/model/selectors.ts';
 import type { AbnormalCause, DayEntry, Game, SeatId } from '#lib/core/model/types.ts';
-import { ownJinxes } from '../jinxes.ts';
+import { ownJinxEffects } from '../jinxes.ts';
 import type { AbnormalUse } from './reliability.ts';
 
 /** The partners whose jinx with `counter` says how they count (`abnormalCounts`). */
@@ -20,7 +20,7 @@ function countedPartners(
 	characters?: CharacterLookup
 ): CharacterId[] {
 	if (counter === undefined) return [];
-	return ownJinxes(game, counter, (r) => r.abnormalCounts === how, characters).map(
+	return ownJinxEffects(game, counter, 'abnormalCounts', characters, (e) => e.because === how).map(
 		(j) => j.partner
 	);
 }

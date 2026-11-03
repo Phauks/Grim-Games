@@ -44,7 +44,7 @@ describe('Lord of Typhon + Summoner jinx', () => {
 		it("is data in the Summoner's rules", () => {
 			// Wiki: "If a Lord of Typhon is summoned, they must neighbor a Minion & their other neighbor becomes an evil Minion."
 			expect(ownJinxRules(base.game, 'summoner', 'lordoftyphon', base.characters)).toEqual({
-				neighbourBecomes: 'minion'
+				neighbourBecomes: { type: 'minion' }
 			});
 		});
 

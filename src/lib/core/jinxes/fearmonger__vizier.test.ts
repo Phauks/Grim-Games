@@ -45,8 +45,8 @@ describe('Fearmonger + Vizier jinx', () => {
 
 		it("is data in the Vizier's rules", () => {
 			expect(jinxRulesBetween('vizier', 'fearmonger')).toEqual({
-				wakesWithPartner: true,
-				noExecuteNow: { who: 'marked', token: 'Fear' }
+				learns: { what: 'partner-choice' },
+				noExecuteNow: { player: 'marked', token: 'Fear' }
 			});
 		});
 

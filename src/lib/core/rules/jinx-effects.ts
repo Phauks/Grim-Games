@@ -1,19 +1,21 @@
 /**
  * What the Alchemist's and the other one-off jinxes do to players (L119), split from
- * `jinxes.ts`; each is read from the owner's side of the `jinxes` block (`data/jinx-rules.ts`):
+ * `jinxes.ts`; each is read for the character whose behaviour it changes, from either file of
+ * the pair (`jinxRulesBetween`, `data/jinx-rules.ts`):
  * an ability a player has from their token taken away or made drunk, a guess that makes the
  * Demon choose, an ability not shown, a second Demon not made, an ability kept, a kill that
  * reaches a marked player, a madness allowed, a setup change made, a vote not counted, a Minion
  * hidden at Demon info, and a gained ability's end.
  */
-import type { JinxRules } from '#lib/core/data/jinx-rules.ts';
+import type { ImpairKind, Impairs, JinxRules } from '#lib/core/data/jinx-rules.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterRules } from '#lib/core/data/character-rules.ts';
 import type { Alignment, CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
-import { ownJinxes, ownJinxRules } from './jinxes.ts';
+import { ownJinxEffects, ownJinxes, ownJinxRules } from './jinxes.ts';
+import { aboutHolder, jinxApplies } from './jinx-when.ts';
 
 type RulesLookup = ReadonlyMap<CharacterId, { rules?: CharacterRules }>;
 
@@ -52,47 +54,83 @@ export function gainedPartnerJinx(
 }
 
 /**
- * The partner whose jinx takes `seatId`'s ability away while they have it from their token
- * (`withPartnerAbility` `partner-in-play` or `no-ability`: the Alchemist-Marionette, -Spy,
- * -Widow, -Wraith and -Mastermind have no ability,
- * https://wiki.bloodontheclocktower.com/Alchemist#Related_Jinxes). Undefined otherwise.
+ * Whether `effect` of a `gainedPartnerJinx` applies to `seatId`, who has the partner's ability:
+ * its `when` holds, `has-partner-ability` included.
+ */
+export function gainedApplies(
+	game: Game,
+	seatId: SeatId,
+	gained: GainedPartnerJinx,
+	effect: JinxRules[keyof JinxRules] | undefined,
+	characters: CharacterLookup
+): boolean {
+	if (effect === undefined || effect === true) return effect === true;
+	const at = { seatId, hasPartnerAbility: true };
+	return jinxApplies(game, gained.owner, gained.partner, effect, characters, at);
+}
+
+/**
+ * The partner whose jinx impairs `seatId` while they have its ability from their token
+ * (`impairs` with `has-partner-ability`, not `both`: the Alchemist-Marionette, -Spy, -Widow,
+ * -Wraith and -Mastermind have no ability,
+ * https://wiki.bloodontheclocktower.com/Alchemist#Related_Jinxes), with how. Undefined
+ * otherwise.
  */
 export function gainedAbilityTaken(
 	game: Game,
 	seatId: SeatId,
 	characters: CharacterLookup
-): CharacterId | undefined {
+): { partner: CharacterId; kind: ImpairKind } | undefined {
 	const gained = gainedPartnerJinx(game, seatId, characters);
-	const need = gained?.rule.withPartnerAbility;
-	return need === 'partner-in-play' || need === 'no-ability' ? gained?.partner : undefined;
+	const effect = gained?.rule.impairs;
+	if (!gained || !effect || effect.who === 'both' || !aboutHolder(effect)) return undefined;
+	return gainedApplies(game, seatId, gained, effect, characters)
+		? { partner: gained.partner, kind: effect.kind }
+		: undefined;
+}
+
+/** The `impairs` of `gained` that is about both players (`who: "both"`), if it applies. */
+function bothImpairs(
+	game: Game,
+	seatId: SeatId,
+	gained: GainedPartnerJinx | undefined,
+	characters: CharacterLookup
+): Impairs | undefined {
+	const effect = gained?.rule.impairs;
+	if (!gained || effect?.who !== 'both' || !effect.unlessImpaired) return undefined;
+	return gainedApplies(game, seatId, gained, effect, characters) ? effect : undefined;
 }
 
 /**
- * The other player in a `both-drunk` jinx with `seatId` (the Alchemist with the Organ Grinder
- * ability and the real Organ Grinder: "If both are sober, both are drunk",
- * https://wiki.bloodontheclocktower.com/Alchemist#Related_Jinxes), with the partner's
- * character. Each is drunk while neither is otherwise drunk or poisoned (`abilityState`).
+ * The other player in an `impairs` jinx about both (`who: "both"` with `unlessImpaired`) with
+ * `seatId`: the player with the partner's ability and the partner's own player (the Alchemist
+ * with the Organ Grinder ability and the real Organ Grinder: "If both are sober, both are
+ * drunk", https://wiki.bloodontheclocktower.com/Alchemist#Related_Jinxes), with the partner's
+ * character and how. Each is impaired while neither is otherwise drunk or poisoned
+ * (`abilityState`).
  */
 export function bothDrunkPair(
 	game: Game,
 	seatId: SeatId,
 	characters: CharacterLookup
-): { other: SeatId; partner: CharacterId } | undefined {
+): { other: SeatId; partner: CharacterId; kind: ImpairKind } | undefined {
 	const own = gainedPartnerJinx(game, seatId, characters);
-	if (own?.rule.withPartnerAbility === 'both-drunk') {
+	const mine = bothImpairs(game, seatId, own, characters);
+	if (own && mine) {
 		const other = game.seating.find(
 			(s) => s !== seatId && trueCharacter(game, s, characters) === own.partner
 		);
-		return other === undefined ? undefined : { other, partner: own.partner };
+		return other === undefined ? undefined : { other, partner: own.partner, kind: mine.kind };
 	}
 	const self = trueCharacter(game, seatId, characters);
 	if (self === undefined) return undefined;
-	const other = game.seating.find((s) => {
-		if (s === seatId) return false;
+	for (const s of game.seating) {
+		if (s === seatId) continue;
 		const gained = gainedPartnerJinx(game, s, characters);
-		return gained?.partner === self && gained.rule.withPartnerAbility === 'both-drunk';
-	});
-	return other === undefined ? undefined : { other, partner: self };
+		const theirs = gained?.partner === self ? bothImpairs(game, s, gained, characters) : undefined;
+		if (theirs) return { other: s, partner: self, kind: theirs.kind };
+	}
+	return undefined;
 }
 
 /** A player who may publicly guess a jinxed partner after today's execution (`jinxGuessers`). */
@@ -107,23 +145,24 @@ export interface JinxGuesser {
 }
 
 /**
- * The players who may publicly guess a living player as a jinxed partner now, after today's
- * execution (`guessesPartner`): a living player of the jinx's owner, who with
- * `withPartnerAbility` must have the partner's ability from their token (the Alchemist-Spy,
- * -Widow and -Wraith, the Magician with the Wraith,
+ * The players who may publicly guess a living player as a jinxed partner now
+ * (`guessesPartner`, while its `when` holds for that player: with `self-alive` and
+ * `after-execution`, a living player once someone was executed today; with
+ * `has-partner-ability`, only one with the partner's ability from their token: the
+ * Alchemist-Spy, -Widow and -Wraith, the Magician with the Wraith,
  * https://wiki.bloodontheclocktower.com/Alchemist#Related_Jinxes). If they name one of
- * `partnerSeats`, the Demon must choose that player tonight. None until someone has been
- * executed today, or while no living player is the partner.
+ * `partnerSeats`, the Demon must choose that player tonight. None while no living player is
+ * the partner.
  */
 export function jinxGuessers(game: Game, characters: CharacterLookup): JinxGuesser[] {
-	if (!game.today.entries.some((e) => e.kind === 'execution')) return [];
 	return game.seating.flatMap((seatId) => {
 		const owner = trueCharacter(game, seatId, characters);
-		if (owner === undefined || game.seats[seatId].dead) return [];
+		if (owner === undefined) return [];
 		const gained = gainedPartnerJinx(game, seatId, characters);
-		return ownJinxes(game, owner, (r) => r.guessesPartner === true, characters).flatMap(
+		return ownJinxes(game, owner, (r) => r.guessesPartner !== undefined, characters).flatMap(
 			({ partner, rule }) => {
-				if (rule.withPartnerAbility !== undefined && gained?.partner !== partner) return [];
+				const at = { seatId, hasPartnerAbility: gained?.partner === partner };
+				if (!jinxApplies(game, owner, partner, rule.guessesPartner, characters, at)) return [];
 				const partnerSeats = game.seating.filter(
 					(s) =>
 						s !== seatId && !game.seats[s].dead && trueCharacter(game, s, characters) === partner
@@ -146,7 +185,7 @@ export function notShownGiven(
 ): { seatId: SeatId; owner: CharacterId; partner: CharacterId }[] {
 	return game.seating.flatMap((seatId) => {
 		const gained = gainedPartnerJinx(game, seatId, characters);
-		return gained?.rule.notShownGiven
+		return gained && gainedApplies(game, seatId, gained, gained.rule.notShownGiven, characters)
 			? [{ seatId, owner: gained.owner, partner: gained.partner }]
 			: [];
 	});
@@ -164,7 +203,7 @@ export function secondDemonPartner(
 	seatId: SeatId,
 	characters: CharacterLookup
 ): CharacterId | undefined {
-	return ownJinxes(game, owner, (r) => r.notSecondDemon === true, characters).find(({ partner }) =>
+	return ownJinxEffects(game, owner, 'notSecondDemon', characters).find(({ partner }) =>
 		game.seating.some(
 			(s) => s !== seatId && !game.seats[s].dead && trueCharacter(game, s, characters) === partner
 		)
@@ -207,7 +246,8 @@ export function keptAfterPartner(
 		? trueCharacter(game, seatId, characters)
 		: game.seats[seatId]?.characterId;
 	if (own === undefined) return false;
-	return ownJinxRules(game, own, tokenOwner, characters)?.keepsAfterPartner === true;
+	const effect = ownJinxRules(game, own, tokenOwner, characters)?.keepsAfterPartner;
+	return effect !== undefined && jinxApplies(game, own, tokenOwner, effect, characters);
 }
 
 /**
@@ -238,12 +278,7 @@ export function survivesCarrierBy(
 		log.entries.some((e) => e.kind === 'execution' && carriers.includes(e.seatId) && e.died)
 	);
 	if (!executed) return undefined;
-	return ownJinxes(game, owner, (r) => r.survivesCarrierExecuted === true, characters).find(
-		({ partner }) =>
-			game.seating.some(
-				(s) => !game.seats[s].dead && trueCharacter(game, s, characters) === partner
-			)
-	)?.partner;
+	return ownJinxEffects(game, owner, 'survivesCarrierExecuted', characters)[0]?.partner;
 }
 
 /**
@@ -258,9 +293,8 @@ export function killsMarkedBy(
 	characters?: RulesLookup
 ): CharacterId | undefined {
 	const reminders = game.seats[seatId]?.reminders ?? [];
-	return ownJinxes(game, killer, (r) => r.killsMarked !== undefined, characters).find(
-		({ partner, rule }) =>
-			reminders.some((r) => r.characterId === partner && r.label === rule.killsMarked)
+	return ownJinxEffects(game, killer, 'killsMarked', characters).find(({ partner, effect }) =>
+		reminders.some((r) => r.characterId === partner && r.label === effect.token)
 	)?.partner;
 }
 
@@ -274,7 +308,7 @@ export function madAsPartners(
 	owner: CharacterId,
 	characters?: RulesLookup
 ): CharacterId[] {
-	return ownJinxes(game, owner, (r) => r.madAsPartner === true, characters).map((j) => j.partner);
+	return ownJinxEffects(game, owner, 'madAsPartner', characters).map((j) => j.partner);
 }
 
 /**
@@ -291,7 +325,10 @@ export function thinksPartnerSetup(
 	const shown = game.seats[seatId]?.characterId;
 	const owner = trueCharacter(game, seatId, characters);
 	if (owner === undefined || shown === undefined || owner === shown) return undefined;
-	return ownJinxRules(game, owner, shown, characters)?.thinksPartnerSetup ? shown : undefined;
+	const effect = ownJinxRules(game, owner, shown, characters)?.thinksPartnerSetup;
+	return effect && jinxApplies(game, owner, shown, effect, characters, { seatId })
+		? shown
+		: undefined;
 }
 
 /**
@@ -308,7 +345,8 @@ export function uncountedVoteBy(
 	characters?: RulesLookup
 ): CharacterId | undefined {
 	if (secretBy === undefined) return undefined;
-	return ownJinxRules(game, voter, secretBy, characters)?.uncountedVote ? secretBy : undefined;
+	const effect = ownJinxRules(game, voter, secretBy, characters)?.uncountedVote;
+	return effect && jinxApplies(game, voter, secretBy, effect) ? secretBy : undefined;
 }
 
 /**
@@ -321,16 +359,14 @@ export function hiddenPartnersOf(
 	owner: CharacterId,
 	characters?: RulesLookup
 ): CharacterId[] {
-	return ownJinxes(game, owner, (r) => r.hidesPartnerSeat === true, characters).map(
-		(j) => j.partner
-	);
+	return ownJinxEffects(game, owner, 'hidesPartnerSeat', characters).map((j) => j.partner);
 }
 
 /**
  * The winner a jinx gives the partner's `dead-without-demon` end for `seatId`, who has the
- * partner's ability from their token (`gainedEndWinner`: an Alchemist-Summoner who dies
- * before summoning, evil wins, https://wiki.bloodontheclocktower.com/Alchemist#Related_Jinxes),
- * with that partner.
+ * partner's ability from their token (`endsGame` of kind `partner-end`: an Alchemist-Summoner
+ * who dies before summoning, evil wins,
+ * https://wiki.bloodontheclocktower.com/Alchemist#Related_Jinxes), with that partner.
  */
 export function gainedEnd(
 	game: Game,
@@ -338,6 +374,9 @@ export function gainedEnd(
 	characters: CharacterLookup
 ): { partner: CharacterId; winner: Alignment } | undefined {
 	const gained = gainedPartnerJinx(game, seatId, characters);
-	const winner = gained?.rule.gainedEndWinner;
-	return gained && winner ? { partner: gained.partner, winner } : undefined;
+	const end = gained?.rule.endsGame;
+	if (!gained || end?.kind !== 'partner-end' || !end.winner) return undefined;
+	return gainedApplies(game, seatId, gained, end, characters)
+		? { partner: gained.partner, winner: end.winner }
+		: undefined;
 }

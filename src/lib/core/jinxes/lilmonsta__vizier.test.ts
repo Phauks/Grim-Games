@@ -42,7 +42,7 @@ describe("Lil' Monsta + Vizier jinx", () => {
 
 		it("is data in the Vizier's rules", () => {
 			expect(jinxRulesBetween('vizier', 'lilmonsta')).toEqual({
-				diesWhenExecuted: 'Is The Demon'
+				diesWhenExecuted: { when: [{ marked: 'Is The Demon' }] }
 			});
 		});
 

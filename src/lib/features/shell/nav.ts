@@ -24,6 +24,7 @@ export interface NavItem {
 		| '/reports'
 		| '/live-games'
 		| '/test-room'
+		| '/character-lab'
 		| '/accounts'
 		| '/about'
 		| '/credits'
@@ -156,6 +157,17 @@ export const TEST_ROOM_ITEM: NavItem = {
 	path: '/test-room',
 	label: 'shell.navTestRoom',
 	icon: 'phoneHere'
+};
+
+/**
+ * Quick games to test characters against each other and every jinx (plan M37, Trevor
+ * 2026-11-03); in the Admin group, for admins only.
+ */
+export const CHARACTER_LAB_ITEM: NavItem = {
+	id: 'character-lab',
+	path: '/character-lab',
+	label: 'shell.navCharacterLab',
+	icon: 'data'
 };
 
 /** Find one account and act on it (plan S27); in the Admin group, for admins only. */

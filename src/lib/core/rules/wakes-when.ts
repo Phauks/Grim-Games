@@ -18,7 +18,7 @@ import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { alignmentOf, trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 import { actsTwice } from './acts-twice.ts';
-import { ownJinxes } from './jinxes.ts';
+import { ownJinxEffects } from './jinxes.ts';
 import { dayNumber } from './night-order.ts';
 
 export function wakeConditionMet(
@@ -32,11 +32,9 @@ export function wakeConditionMet(
 	if (!when) return true;
 	if (when.deadAtLeastLiving) {
 		const dead = game.seating.filter((s) => game.seats[s].dead).length;
-		const jinxed = ownJinxes(game, characterId, (r) => r.deadAtLeast !== undefined, characters)
-			.filter(({ partner }) =>
-				game.seating.some((s) => trueCharacter(game, s, characters) === partner)
-			)
-			.some(({ rule }) => dead >= rule.deadAtLeast!);
+		const jinxed = ownJinxEffects(game, characterId, 'deadAtLeast', characters).some(
+			({ effect }) => dead >= effect.dead
+		);
 		if (dead < game.seating.length - dead && !jinxed) return false;
 	}
 	if (when.diedTonight) {

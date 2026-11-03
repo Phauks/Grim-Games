@@ -53,7 +53,7 @@ describe('Butler + Cannibal jinx', () => {
 			.reminder('butler', 'cannibal', 'Lunch');
 
 		it("is data in the Cannibal's rules", () => {
-			expect(jinxRulesBetween('cannibal', 'butler')).toEqual({ learnsGained: 'ability' });
+			expect(jinxRulesBetween('cannibal', 'butler')).toEqual({ learns: { what: 'ability' } });
 		});
 
 		it('the night after the Butler is executed, the Cannibal step says they learn it', () => {

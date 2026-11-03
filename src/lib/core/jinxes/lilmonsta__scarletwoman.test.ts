@@ -45,7 +45,9 @@ describe("Lil' Monsta + Scarlet Woman jinx", () => {
 		const swToken = { characterId: 'scarletwoman', label: 'Is The Demon' };
 
 		it("is data in Lil' Monsta's rules", () => {
-			expect(jinxRulesBetween('lilmonsta', 'scarletwoman')).toEqual({ keptByPartner: true });
+			expect(jinxRulesBetween('lilmonsta', 'scarletwoman')).toEqual({
+				carriedBy: { marked: 'Is The Demon' }
+			});
 		});
 
 		it('holds the game when the babysitter dies with 5 or more alive', () => {

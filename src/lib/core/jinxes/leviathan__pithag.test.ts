@@ -48,7 +48,7 @@ describe('Leviathan + Pit-Hag jinx', () => {
 
 		it("is data in the Pit-Hag's rules", () => {
 			expect(ownJinxRules({ script: scriptOf(ids) }, 'pithag', 'leviathan')).toEqual({
-				notCreatedAfterDay: 5
+				cannotCreate: { via: 'changesCharacter', when: [{ afterDay: 5 }] }
 			});
 		});
 

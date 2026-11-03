@@ -47,7 +47,7 @@ describe("Lil' Monsta + Psychopath jinx", () => {
 
 		it("is data in the Psychopath's rules", () => {
 			expect(jinxRulesBetween('psychopath', 'lilmonsta')).toEqual({
-				diesWhenExecuted: 'Is The Demon'
+				diesWhenExecuted: { when: [{ marked: 'Is The Demon' }] }
 			});
 		});
 
