@@ -90,7 +90,7 @@ import {
 	storytellerHasAlerts
 } from './jinx-partner-alerts.ts';
 import type { LearnsGained, NightChoice } from '#lib/core/data/jinx-rules.ts';
-import { gainedAbilities } from './gained-abilities.ts';
+import { abilityHolders, gainedAbilities } from './gained-abilities.ts';
 import { falseInfoSource } from './night-info/reliability.ts';
 import {
 	abilityState,
@@ -257,12 +257,14 @@ export function evilInOneLine(game: Game, seatId: SeatId, characters: CharacterL
 	});
 }
 
-/** Seats whose true character, or token, is `characterId`. */
+/**
+ * Seats that wake for `characterId`: those with its ability (`abilityHolders`, gained or held
+ * too), or its token (a Drunk who thinks they are it).
+ */
 function actorSeats(game: Game, characterId: CharacterId, characters: CharacterLookup): SeatId[] {
+	const holders = abilityHolders(game, characterId, characters);
 	return game.seating.filter(
-		(s) =>
-			trueCharacter(game, s, characters) === characterId ||
-			game.seats[s]?.characterId === characterId
+		(s) => holders.includes(s) || game.seats[s]?.characterId === characterId
 	);
 }
 
