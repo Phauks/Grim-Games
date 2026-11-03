@@ -14,7 +14,6 @@ export interface VoteChoice {
 /** The parts' display names, as the ballot lists them. */
 export interface VoteChoiceNames {
 	script?: string;
-	/** Absent for Standard: a choice on the usual game names no mode. */
 	mode?: string;
 	rules: string[];
 }
@@ -41,15 +40,34 @@ export function isRulesOnly(choice: VoteChoice): boolean {
 
 /**
  * The option id the room keeps for a choice: the same parts give the same id, whatever order
- * the rules were switched on in, so one choice can't be on the ballot twice.
+ * the rules were switched on in, so one choice can't be on the ballot twice. It holds the
+ * parts themselves, so Play still knows them after the vote screen was left and reopened.
  */
 export function choiceId(choice: VoteChoice): string {
 	const rules = [...new Set(choice.rules)].sort();
 	return [
-		choice.script ? `s=${choice.script}` : '',
-		choice.mode ? `m=${choice.mode}` : '',
-		rules.length ? `r=${rules.join(',')}` : ''
+		choice.script ? `s=${encodeURIComponent(choice.script)}` : '',
+		choice.mode ? `m=${encodeURIComponent(choice.mode)}` : '',
+		rules.length ? `r=${rules.map(encodeURIComponent).join(',')}` : ''
 	]
 		.filter(Boolean)
 		.join(';');
+}
+
+/** A choice back from its option id; `undefined` for an id from a vote before mixed choices. */
+export function parseChoiceId(id: string): VoteChoice | undefined {
+	const choice: VoteChoice = { rules: [] };
+	try {
+		for (const part of id.split(';')) {
+			const [key, value = ''] = [part.slice(0, 2), part.slice(2)];
+			if (!value) return undefined;
+			if (key === 's=') choice.script = decodeURIComponent(value);
+			else if (key === 'm=') choice.mode = decodeURIComponent(value);
+			else if (key === 'r=') choice.rules = value.split(',').map(decodeURIComponent);
+			else return undefined;
+		}
+	} catch {
+		return undefined;
+	}
+	return isEmptyChoice(choice) ? undefined : choice;
 }
