@@ -14,6 +14,7 @@ import type {
 	Seat,
 	SeatId
 } from '#lib/core/model/index.ts';
+import { withGiven } from '#lib/core/model/given-abilities.ts';
 import type { GameEvent } from './events.ts';
 
 function newSeat(seatId: SeatId, playerName?: PlayerName, notInPlay?: true): Seat {
@@ -319,6 +320,11 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 						: [...others, { characterId: event.characterId, via: event.via }];
 				return abilities.length > 0 ? { ...seat, abilities } : omit(seat, 'abilities');
 			});
+		case 'AbilityGiven':
+		case 'AbilityRemoved':
+			return updateSeat(game, event.seatId, (seat) =>
+				withGiven(seat, event.ability, event.type === 'AbilityGiven')
+			);
 		case 'DeathSet':
 			return updateSeat(game, event.seatId, (seat) => {
 				const next = omit(seat, 'deathCause', 'impairedAtDeath');
