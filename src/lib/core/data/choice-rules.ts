@@ -34,13 +34,17 @@ type EvilInfoStep = (typeof EVIL_INFO_STEPS)[number];
  * its player as a Minion and the Minions as the Demon (the Magician,
  * https://wiki.bloodontheclocktower.com/Magician). `none` leaves both steps out at any player
  * count (Tor: the Demon and Minions do not know each other,
- * https://wiki.bloodontheclocktower.com/Tor). `lateNote`: what to do on the night it comes
+ * https://wiki.bloodontheclocktower.com/Tor; Lil' Monsta, whose own step wakes the Minions
+ * instead, https://wiki.bloodontheclocktower.com/Lil%27_Monsta). `lateNote`: what to do on the night it comes
  * into play after the first night, on the step that wakes its new player (a Snitch the
  * Pit-Hag makes: each Minion learns 3 bluffs that night, https://wiki.bloodontheclocktower.com/Snitch).
+ * `wakeToken`: one of its reminders; on a night after the first while it is on a player, the
+ * Minion info and Demon info steps come back (`late-evil-info.ts`; the Poppy Grower's Evil Wakes).
  */
 export interface EvilInfo {
 	notes?: Partial<Record<EvilInfoStep, string>>;
 	lateNote?: string;
+	wakeToken?: string;
 	hidesDemon?: true;
 	anyPlayerCount?: true;
 	hidesMinions?: true;
@@ -118,11 +122,13 @@ export function readEvilInfo(raw: unknown, path: string, issues: Issues): EvilIn
 		'whileWorking',
 		'none'
 	] as const;
-	checkKeys(raw, ['notes', 'lateNote', ...flags], path, issues);
+	checkKeys(raw, ['notes', 'lateNote', 'wakeToken', ...flags], path, issues);
 	const out: EvilInfo = {};
 	for (const flag of flags) if (readBoolean(raw, flag, path, issues)) out[flag] = true;
 	const late = readString(raw, 'lateNote', path, issues, false);
 	if (late !== undefined) out.lateNote = late;
+	const wake = readString(raw, 'wakeToken', path, issues, false);
+	if (wake !== undefined) out.wakeToken = wake;
 	if (raw.notes !== undefined) {
 		const at = `${path}.notes`;
 		if (!isObject(raw.notes)) issues.add(at, `expected object, got ${describe(raw.notes)}`);

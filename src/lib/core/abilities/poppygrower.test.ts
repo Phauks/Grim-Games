@@ -131,12 +131,10 @@ describe('Poppy Grower', () => {
 			);
 		});
 
-		it.fails('adds the Minion info and Demon info steps the night the Poppy Grower died', () => {
+		it('adds the Minion info and Demon info steps the night the Poppy Grower died', () => {
 			// Wiki: "That night, wake the Minions and let them make eye contact. Show the THIS IS THE
 			// DEMON info token, then point to the Demon. Put the Minions to sleep. Wake the Demon. Show
 			// the THESE ARE YOUR MINIONS info token, then point to the Minions. Put the Demon to sleep."
-			// Waits on the engine (unplanned): no evil info steps on a later night once the Poppy
-			// Grower has died.
 			const s = scenario(cast)
 				.execute('poppygrower')
 				.reminder('poppygrower', 'poppygrower', 'Evil Wakes');

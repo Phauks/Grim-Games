@@ -108,9 +108,8 @@ describe("Lil' Monsta", () => {
 			expect(result.warnings).toEqual([]);
 		});
 
-		it.fails('skips the Minion Info and Demon Info steps on the first night', () => {
+		it('skips the Minion Info and Demon Info steps on the first night', () => {
 			// Wiki: "On the first night, skip the MINION INFO and DEMON INFO steps."
-			// Waits on the engine (unplanned): the night order keeps Minion Info and Demon Info with Lil' Monsta in play, as its rules don't remove the evil team's info.
 			const inPlay = [...cast, 'lilmonsta'].map((id) => data.byId.get(id)!);
 			const { steps } = nightOrder({ night: 'first', sheet: data.nightSheet, inPlay, players: 7 });
 			expect(steps.map((step) => step.id)).not.toContain('minioninfo');

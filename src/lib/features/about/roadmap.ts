@@ -508,6 +508,16 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['M32a', 'M32b', 'M32c', 'M32d']
 	},
 	{
+		// Trevor, 2026-11-02: beta goes to production only once the How to Run gaps are closed.
+		// M29a and M29b the warnings still missing (a second Alsaahir guess, a fourth Matron swap,
+		// the Goon's Drunk, the Pope's duplicate bluffs and more), M30a and M30b the info tokens
+		// and prompts (the Hatter's and King's tokens, the Beggar's alignment, the Sage's Demon),
+		// M31 the night order (Lil' Monsta's, the Poppy Grower's evil info, the Professor's revival).
+		title: 'Every How to Run step covered: missing warnings, info tokens and night steps',
+		area: 'engine',
+		parts: ['M29a', 'M29b', 'M30a', 'M30b', 'M31']
+	},
+	{
 		// Trevor, 2026-10-30: on the roadmap, after a spike and research. L99 research, L100 the
 		// format with the Heretic and Boffin, L107 every jinx shown where it matters, L108 jinxes
 		// that reuse existing rules, L109 the Plague Doctor's and other built characters', L112

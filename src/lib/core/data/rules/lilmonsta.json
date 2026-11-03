@@ -82,7 +82,8 @@
 		"players": "drafter"
 	},
 	"evilInfo": {
-		"hidesDemon": true
+		"hidesDemon": true,
+		"none": true
 	},
 	"carrierIsDemon": "Is The Demon"
 }
