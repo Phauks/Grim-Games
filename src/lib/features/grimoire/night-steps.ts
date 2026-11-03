@@ -249,16 +249,18 @@ export function stepWakes(
 	// A step that wakes the players its character marks (the Duchess's visitors) wakes only
 	// when someone is marked: no visitors, no visits tonight.
 	if (id !== undefined && !step.gained && wakesMarked(id, characters)) return holders.length > 0;
+	// An ability set off by its player's death (the Ravenkeeper, the Sage) wakes only on the
+	// night of that death, never while its player lives.
+	const onDeath = id !== undefined && onDeathTrigger(id, characters) !== undefined;
 	return (
 		holders.length === 0 ||
 		holders.some(
 			(s) =>
-				(seatHasAbility(tonight.abilitiesRule, game, s, characters) ||
-					keepsAbilityWhenDead(game, s, characters) ||
-					livesWhileDead(game, s, characters) ||
-					(id !== undefined &&
-						tonight.diedTonight.has(s) &&
-						setOffByDeath(game, s, id, characters))) &&
+				(onDeath && id !== undefined
+					? tonight.diedTonight.has(s) && setOffByDeath(game, s, id, characters)
+					: seatHasAbility(tonight.abilitiesRule, game, s, characters) ||
+						keepsAbilityWhenDead(game, s, characters) ||
+						livesWhileDead(game, s, characters)) &&
 				(id === undefined || wakeConditionMet(game, id, s, characters, tonight.diedTonight)) &&
 				!(
 					tonight.revived &&

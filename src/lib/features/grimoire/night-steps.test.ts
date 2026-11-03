@@ -180,6 +180,11 @@ describe('stepWakes for every character set off by its death', () => {
 		it(`${id}: ${trigger.by === 'demon' ? 'stays asleep' : 'wakes'} after another kill`, () => {
 			expect(wakesAfter(id, 'poisoner')).toBe(trigger.by !== 'demon');
 		});
+		it(`${id}: stays asleep while its player lives`, () => {
+			const g = game([id, 'imp', 'poisoner']);
+			const step = boardNightSteps(g, characters, 'other', data).find((s) => s.id === id)!;
+			expect(stepWakes(g, step, characters, { diedTonight: new Set() })).toBe(false);
+		});
 		it(`${id}: wakes when the cause was not recorded`, () => {
 			const g = game([id, 'imp'], (seats) => ({ type: 'SetDead', seatId: seats[0], dead: true }));
 			const step = boardNightSteps(g, characters, 'other', data).find((s) => s.id === id)!;

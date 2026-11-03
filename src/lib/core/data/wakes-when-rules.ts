@@ -6,6 +6,10 @@
  * - `diedTonight`: a player who is one of `characters` died tonight, killed `by` the Demon
  *   when given (the Choirboy wakes when the Demon kills the King,
  *   https://wiki.bloodontheclocktower.com/Choirboy);
+ * - `diedToday`: on the first night, and on a later night only when a player whose character
+ *   type is one of `types` died since the most recent New day, or a player carries the
+ *   character's own `token` (the Godfather wakes the night after an Outsider died today,
+ *   https://wiki.bloodontheclocktower.com/Godfather);
  * - `nobodyDiedToday`: nobody died since the most recent New day (the Zombuul,
  *   https://wiki.bloodontheclocktower.com/Zombuul);
  * - `untilToken`: until its own reminder is on its player (the Seamstress's No Ability once
@@ -19,7 +23,12 @@
  *   night (the Juggler learns on the night after the first day,
  *   https://wiki.bloodontheclocktower.com/Juggler).
  */
-import type { CharacterId, ReminderLabel } from './types.ts';
+import {
+	CHARACTER_TYPES,
+	type CharacterId,
+	type CharacterType,
+	type ReminderLabel
+} from './types.ts';
 import {
 	checkKeys,
 	describe,
@@ -35,6 +44,7 @@ import { readToken } from './reminder-fields.ts';
 export interface WakesWhen {
 	deadAtLeastLiving?: true;
 	diedTonight?: { characters: CharacterId[]; by?: 'demon' };
+	diedToday?: { types: CharacterType[]; token?: ReminderLabel };
 	nobodyDiedToday?: true;
 	untilToken?: ReminderLabel;
 	noneMarked?: ReminderLabel;
@@ -58,6 +68,7 @@ export function readWakesWhen(
 		[
 			'deadAtLeastLiving',
 			'diedTonight',
+			'diedToday',
 			'nobodyDiedToday',
 			'untilToken',
 			'noneMarked',
@@ -91,6 +102,21 @@ export function readWakesWhen(
 			const by = readEnum(raw.diedTonight, 'by', ['demon'] as const, at, issues, false);
 			if (!characters?.length) issues.add(`${at}.characters`, 'missing');
 			else out.diedTonight = { characters, ...(by ? { by } : {}) };
+		}
+	}
+	if (raw.diedToday !== undefined) {
+		const at = `${path}.diedToday`;
+		if (!isObject(raw.diedToday)) {
+			issues.add(at, `expected object, got ${describe(raw.diedToday)}`);
+		} else {
+			checkKeys(raw.diedToday, ['types', 'token'], at, issues);
+			const types = readStringArray(raw.diedToday, 'types', at, issues);
+			const bad = types?.filter((t) => !(CHARACTER_TYPES as readonly string[]).includes(t));
+			if (bad?.length) issues.add(`${at}.types`, `unknown type ${bad.join(', ')}`);
+			const token = readToken(raw.diedToday, 'token', at, issues, reminders);
+			if (!types?.length) issues.add(`${at}.types`, 'missing');
+			else if (!bad?.length)
+				out.diedToday = { types: types as CharacterType[], ...(token ? { token } : {}) };
 		}
 	}
 	if (Object.keys(out).length === 0) issues.add(path, 'no condition');

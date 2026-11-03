@@ -1,7 +1,8 @@
 /**
  * Whether a character's own condition for waking holds tonight (`wakesWhen` in its rules
  * block, `data/wakes-when-rules.ts`): the King once the dead equal or outnumber the living,
- * the Choirboy when the Demon killed the King tonight, the Zombuul when nobody died today, the
+ * the Choirboy when the Demon killed the King tonight, the Godfather on a later night only when
+ * an Outsider died today, the Zombuul when nobody died today, the
  * Seamstress until its once-per-game ability is used (unless its player acts twice,
  * `acts-twice.ts`: a spent once-per-game ability may be used again), the Zombuul while no
  * player is marked Died Today, the Bounty Hunter on a later night once the player marked Know
@@ -50,6 +51,22 @@ export function wakeConditionMet(
 			);
 		});
 		if (!set) return false;
+	}
+	if (when.diedToday && dayNumber(game) > 0) {
+		// An Outsider died today: its token marks them, or, if the token was not placed, a death
+		// since the day began still counts, so the step shows (warn, never lock).
+		const { types, token } = when.diedToday;
+		const marked =
+			token !== undefined &&
+			game.seating.some((s) =>
+				game.seats[s]?.reminders.some((r) => r.characterId === characterId && r.label === token)
+			);
+		const died = [...diedTonight].some((s) => {
+			const id = trueCharacter(game, s, characters);
+			const type = id === undefined ? undefined : characters.get(id)?.type;
+			return type !== undefined && types.includes(type);
+		});
+		if (!marked && !died) return false;
 	}
 	if (when.nobodyDiedToday) {
 		// Today's deaths: the log's, and any execution or exile today that killed.

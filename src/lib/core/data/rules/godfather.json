@@ -68,5 +68,14 @@
 			}
 		]
 	},
-	"marksChoice": ["Dead"]
+	"marksChoice": ["Dead"],
+	"wakesWhen": {
+		"diedToday": {
+			"types": ["outsider"],
+			"token": "Died Today"
+		}
+	},
+	"reminderEnds": {
+		"Died Today": "dawn"
+	}
 }
