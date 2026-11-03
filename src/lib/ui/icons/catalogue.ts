@@ -195,6 +195,8 @@ export const ICON_SLOTS = {
 	phoneAway: { label: 'Phone away', choices: ['ph:moon', 'ph:clock'] },
 	noPhone: { label: 'No phone', choices: ['ph:minus-circle', 'ph:minus'] },
 	roleSeen: { label: 'Has seen their character', choices: ['ph:eye', 'ph:check'] },
+	/** Opens Your character from the status line while players may see theirs (Trevor, 2026-11-03). */
+	yourCharacter: { label: 'Your character', choices: ['ph:mask-happy', 'ph:user-circle'] },
 	/** Seating on the grim (plan J38): phones may move their own seat, until it is locked. */
 	/** Count off (plan J40): players count round the clock from number 1. */
 	countOff: { label: 'Count off', choices: ['ph:clock-clockwise', 'ph:list-numbers'] },
