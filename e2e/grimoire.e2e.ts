@@ -771,10 +771,13 @@ test('reminders: put on from the bank, then moved and removed from the seat shee
 		.getByRole('button', { name: 'Remove reminder' })
 		.tap();
 	// It normally stays put, so taking it off asks first.
-	await page
-		.getByRole('alertdialog', { name: 'Confirm change?' })
-		.getByRole('button', { name: 'Confirm', exact: true })
-		.tap();
+	const ask = page.getByRole('alertdialog', { name: 'Confirm change?' });
+	// The token is the round one the board draws, not the in-text chip (Trevor, 2026-11-03).
+	await expect(ask.getByTestId('board-reminder')).toHaveAttribute(
+		'aria-label',
+		'Is The Drunk reminder'
+	);
+	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(sheet.getByText('None', { exact: true }).last()).toBeVisible();
 });
 
