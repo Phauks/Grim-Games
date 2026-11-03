@@ -2,7 +2,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { CharacterType } from '#lib/core/data/index.ts';
 	import type { ReferenceSegment } from '#lib/core/rules/reference.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import { explainBlock } from '#lib/features/glossary/glossary.svelte.ts';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
@@ -21,7 +21,7 @@
 <span class="sentence">
 	{#each segments as segment, i (i)}
 		{#if segment.kind === 'character'}
-			<CharacterBadge characterId={segment.characterId} />
+			<CharacterPiece template="badge" characterId={segment.characterId} />
 		{:else if segment.kind === 'target'}
 			<span class="target"
 				>{t('reference.playerWith')} <ReminderToken label={segment.token} {type} /></span

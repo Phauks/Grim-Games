@@ -16,7 +16,7 @@
 		replacingReminder,
 		type NightStep
 	} from '#lib/core/rules/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { seatName } from '#lib/features/game/seat-label.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import CharacterPicker from './CharacterPicker.svelte';
@@ -180,7 +180,8 @@
 	});
 </script>
 
-{#snippet badge(characterId: CharacterId)}<CharacterBadge
+{#snippet badge(characterId: CharacterId)}<CharacterPiece
+		template="badge"
 		{characterId}
 		character={characters.get(characterId)}
 		interactive={false}
@@ -190,9 +191,10 @@
 	<h3>Storyteller's ability</h3>
 	<div class="row" data-testid="storyteller-ability">
 		{#if held}
-			<CharacterBadge characterId={held} character={characters.get(held)} />
+			<CharacterPiece template="badge" characterId={held} character={characters.get(held)} />
 		{:else if instead}
-			<CharacterBadge
+			<CharacterPiece
+				template="badge"
 				characterId={instead.characterId}
 				character={characters.get(instead.characterId)}
 			/>
@@ -218,7 +220,8 @@
 		</p>
 		<div class="row" data-testid="given-instead">
 			{#each shown as change (change.seatId)}
-				<CharacterBadge
+				<CharacterPiece
+					template="badge"
 					characterId={change.characterId}
 					character={characters.get(change.characterId)}
 					alignment={alignmentOf(game, change.seatId)}

@@ -7,7 +7,7 @@
 	import { charactersReallyInPlay } from '#lib/features/bluffs/bluffs.ts';
 	import type { ShownInfoCard } from '#lib/features/show/shown.ts';
 	import Select from '#lib/ui/primitives/Select.svelte';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import SeatBadge from './SeatBadge.svelte';
@@ -78,7 +78,8 @@
 					'common.none'
 				)}{/each}
 			<span class="see">{t('show.shownTo.sees')}</span>
-			<CharacterBadge
+			<CharacterPiece
+				template="badge"
 				characterId={step.character.id}
 				character={step.character}
 				interactive={false}
@@ -101,7 +102,8 @@
 			<span class="see">{t('show.shownTo.sees')}</span>
 			{#if learns.marked}
 				{text('this-player-is')}
-				{#if learns.marked.characterId}<CharacterBadge
+				{#if learns.marked.characterId}<CharacterPiece
+						template="badge"
 						characterId={learns.marked.characterId}
 						character={characters.get(learns.marked.characterId)}
 						interactive={false}
@@ -123,12 +125,14 @@
 					onChange={(id) => setNamed(id)}
 					onClear={() => setNamed(undefined)}
 				>
-					{#snippet item(option)}<CharacterBadge
+					{#snippet item(option)}<CharacterPiece
+							template="badge"
 							characterId={option.value}
 							character={characters.get(option.value)}
 							interactive={false}
 						/>{/snippet}
-					{#snippet selected(option)}<CharacterBadge
+					{#snippet selected(option)}<CharacterPiece
+							template="badge"
 							characterId={option.value}
 							character={characters.get(option.value)}
 							interactive={false}

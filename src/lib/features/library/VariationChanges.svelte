@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { loadScript, type Character, type GameData } from '#lib/core/data/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { scriptChanges } from './script-changes.ts';
 
@@ -34,7 +34,7 @@
 	{#each ids as id (id)}
 		{@const character = from.get(sameId(id))}
 		{#if character}
-			<CharacterBadge characterId={character.id} {character} />
+			<CharacterPiece template="badge" characterId={character.id} {character} />
 		{:else}
 			<span>{id}</span>
 		{/if}

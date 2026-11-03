@@ -12,7 +12,7 @@
 		previewCharacter,
 		type CharacterFields
 	} from '#lib/core/rules/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
@@ -165,7 +165,7 @@
 >
 	{#snippet row(saved)}
 		{@const character = savedPreview(saved)}
-		<CharacterBadge characterId={character.id} {character} interactive={false} />
+		<CharacterPiece template="badge" characterId={character.id} {character} interactive={false} />
 	{/snippet}
 </OpenSavedDialog>
 

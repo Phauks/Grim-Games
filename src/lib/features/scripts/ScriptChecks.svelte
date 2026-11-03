@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { type GameData, type LoadedScript } from '#lib/core/data/index.ts';
 	import { scriptFacts } from '#lib/core/rules/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import TypeCounts from '#lib/features/setup/TypeCounts.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
@@ -41,7 +41,11 @@
 			<ul>
 				{#each facts.modifiers as modifier (modifier.id)}
 					<li>
-						<CharacterBadge characterId={modifier.id} character={byId.get(modifier.id)} />
+						<CharacterPiece
+							template="badge"
+							characterId={modifier.id}
+							character={byId.get(modifier.id)}
+						/>
 						<span>{modifier.summary}</span>
 					</li>
 				{/each}
@@ -57,9 +61,13 @@
 				{#each missing as requirement (requirement.id)}
 					<li>
 						<Icon name="warning" />
-						<CharacterBadge characterId={requirement.id} character={byId.get(requirement.id)} />
+						<CharacterPiece
+							template="badge"
+							characterId={requirement.id}
+							character={byId.get(requirement.id)}
+						/>
 						<span>{t('scripts.checks.needs')}</span>
-						<CharacterBadge characterId={requirement.requires} />
+						<CharacterPiece template="badge" characterId={requirement.requires} />
 						<span>{t('scripts.checks.notOnScript')}</span>
 					</li>
 				{/each}

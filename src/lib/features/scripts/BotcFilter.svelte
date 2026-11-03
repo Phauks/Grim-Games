@@ -1,7 +1,7 @@
 <script lang="ts">
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import type { CharacterId } from '#lib/core/data/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
@@ -92,7 +92,7 @@
 				</div>
 				<p class="badges" data-testid="filter-{list}">
 					{#each filters[list] as id (id)}
-						<CharacterBadge characterId={id as CharacterId} />
+						<CharacterPiece template="badge" characterId={id as CharacterId} />
 					{:else}
 						<span class="muted">{t('common.none')}</span>
 					{/each}

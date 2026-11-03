@@ -18,7 +18,7 @@
 	import { SEATED_TYPES, type SeatedType } from '#lib/core/rules/distribution.ts';
 	import { dayNumber } from '#lib/core/rules/night-order.ts';
 	import { deriveGameRecord } from '#lib/core/stats/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import { gameStore, OpenGame } from '#lib/features/game/session.svelte.ts';
@@ -341,7 +341,7 @@
 			<ul class="badges" data-testid="campaign-eliminated">
 				{#each eliminated as id (id)}
 					{@const c = nameOf(id)}
-					<li><CharacterBadge characterId={id} character={c} /></li>
+					<li><CharacterPiece template="badge" characterId={id} character={c} /></li>
 				{:else}
 					<li class="muted">{t('common.none')}</li>
 				{/each}
@@ -359,7 +359,7 @@
 			{#each listed as id (id)}
 				{@const c = nameOf(id)}
 				<li class="row">
-					<CharacterBadge characterId={id} character={c} />
+					<CharacterPiece template="badge" characterId={id} character={c} />
 					<Toggle
 						label={id === flow?.id ? t('modes.campaign.flow') : t('modes.campaign.eliminate')}
 						checked={chosen.includes(id)}
@@ -376,10 +376,10 @@
 			{#each replacements as r, i (r.out.id)}
 				<li class="row">
 					<span class="swap">
-						<CharacterBadge characterId={r.out.id} character={r.out} />
+						<CharacterPiece template="badge" characterId={r.out.id} character={r.out} />
 						<span class="muted">{t('modes.campaign.replacedBy')}</span>
 						{#if r.in}
-							<CharacterBadge characterId={r.in.id} character={r.in} />
+							<CharacterPiece template="badge" characterId={r.in.id} character={r.in} />
 						{:else}
 							<span class="muted">{t('common.none')}</span>
 						{/if}
@@ -396,7 +396,7 @@
 				<li class="row">
 					<span class="swap">
 						<span class="muted">{t('modes.campaign.added')}</span>
-						<CharacterBadge characterId={added.id} character={added} />
+						<CharacterPiece template="badge" characterId={added.id} character={added} />
 					</span>
 					<IconButton
 						icon="random"

@@ -11,7 +11,7 @@
 	import { EDITION_LABELS, TYPE_LABELS, TYPE_PLURALS } from '#lib/features/reference/labels.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
-	import CharacterRow from './CharacterRow.svelte';
+	import CharacterPiece from './CharacterPiece.svelte';
 	import { clearShownCharacter } from './character-context.ts';
 	import { officialData } from './game-data.svelte.ts';
 
@@ -69,12 +69,12 @@
 	<ul class="group" aria-label={title} data-testid="character-group">
 		{#each characters as character (character.id)}
 			<li>
-				<CharacterRow {character} info>
-					{#snippet ability()}<GlossaryText
+				<CharacterPiece template="row" {character} info>
+					{#snippet abilityText()}<GlossaryText
 							text={character.ability}
 							names={[character.name]}
 						/>{/snippet}
-				</CharacterRow>
+				</CharacterPiece>
 			</li>
 		{:else}
 			<li class="none">{t('common.none')}</li>

@@ -7,7 +7,7 @@
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import SettingRow from '#lib/ui/settings/SettingRow.svelte';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import type { SetupGamePort } from './game-port.ts';
 
 	/**
@@ -57,7 +57,12 @@
 			{@const labelId = `bag-role-${character.id}`}
 			<div class="row">
 				<span id={labelId}
-					><CharacterBadge characterId={character.id} {character} interactive={false} /></span
+					><CharacterPiece
+						template="badge"
+						characterId={character.id}
+						{character}
+						interactive={false}
+					/></span
 				>
 				<Select
 					label={t('setup.scriptCharacters')}

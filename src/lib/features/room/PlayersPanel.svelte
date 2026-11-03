@@ -5,7 +5,7 @@
 	import { roomImagePath } from '#lib/core/sync/room-images.ts';
 	import type { PlayerName } from '#lib/core/data/index.ts';
 	import type { Command } from '#lib/core/engine/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import NoteList from '#lib/ui/notes/NoteList.svelte';
 	import type { OpenGame } from '#lib/features/game/session.svelte.ts';
@@ -144,7 +144,8 @@
 
 {#snippet nameAndCharacter(entry: Entry)}
 	{@const seat = entry.seatId && game.game.seats[entry.seatId]}
-	{#if seat && seat.characterId}<CharacterBadge
+	{#if seat && seat.characterId}<CharacterPiece
+			template="badge"
 			characterId={seat.characterId}
 			character={game.characters.get(seat.characterId)}
 			alignment={seat.alignment}

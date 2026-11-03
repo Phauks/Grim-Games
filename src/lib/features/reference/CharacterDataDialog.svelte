@@ -6,7 +6,7 @@
 		type CharacterDataPart
 	} from '#lib/core/rules/character-data.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import Sentence from '#lib/features/characters/Sentence.svelte';
 	import { slot } from '#lib/features/characters/slots.ts';
@@ -59,7 +59,8 @@
 <Dialog bind:open {title} size="full">
 	{#snippet heading()}
 		<Sentence text={title}
-			>{#snippet fill()}<CharacterBadge
+			>{#snippet fill()}<CharacterPiece
+					template="badge"
 					characterId={character.id}
 					{character}
 				/>{/snippet}</Sentence

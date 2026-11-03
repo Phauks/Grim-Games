@@ -1,7 +1,6 @@
 <script lang="ts">
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import type { SeatId } from '#lib/core/model/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { seatName } from '#lib/features/game/seat-label.ts';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
@@ -89,7 +88,8 @@
 	>
 		{#snippet item(option)}
 			{@const s = game.seats[option.value]}
-			{#if s?.characterId}<CharacterBadge
+			{#if s?.characterId}<CharacterPiece
+					template="badge"
 					characterId={s.characterId}
 					character={characters.get(s.characterId)}
 					alignment={s.alignment}

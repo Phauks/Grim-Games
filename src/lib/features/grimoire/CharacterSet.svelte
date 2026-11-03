@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { AnswerValue } from '#lib/core/rules/index.ts';
 	import type { CharacterLookup } from '#lib/core/model/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { TYPE_LABELS } from '#lib/features/reference/labels.ts';
 	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 
@@ -18,7 +18,8 @@
 	let { value, characters, interactive = true }: Props = $props();
 </script>
 
-{#each value.value as id, n (id)}{n ? ', ' : ''}<CharacterBadge
+{#each value.value as id, n (id)}{n ? ', ' : ''}<CharacterPiece
+		template="badge"
 		characterId={id}
 		character={characters.get(id)}
 		{interactive}

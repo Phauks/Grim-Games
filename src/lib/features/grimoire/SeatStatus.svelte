@@ -8,7 +8,7 @@
 		validDeathCauses,
 		type ValidDeathCause
 	} from '#lib/core/rules/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -216,7 +216,8 @@
 				<span>{option.label}</span>
 				<!-- The gained ability that kills, as on the day sheet: "Cannibal (Slayer)". -->
 				{#if found?.gained}<span class="gained"
-						>(<CharacterBadge
+						>(<CharacterPiece
+							template="badge"
 							characterId={found.gained}
 							character={characters.get(found.gained)}
 							interactive={false}
@@ -269,7 +270,8 @@
 	{#snippet heading()}Does <PlayerBadge name={title} /> survive the exile?{/snippet}
 	{#if exileSaver}
 		<p data-exile-saver>
-			<CharacterBadge
+			<CharacterPiece
+				template="badge"
 				characterId={exileSaver.source.characterId}
 				character={characters.get(exileSaver.source.characterId)}
 				interactive={false}
@@ -294,7 +296,11 @@
 				{@const why = causeFlagText(flag, game, characters, title)}
 				<li>
 					{why.text}{#if why.by}
-						(<CharacterBadge characterId={why.by} character={characters.get(why.by)} />).{/if}
+						(<CharacterPiece
+							template="badge"
+							characterId={why.by}
+							character={characters.get(why.by)}
+						/>).{/if}
 				</li>
 			{/each}
 		</ul>

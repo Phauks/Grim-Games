@@ -22,7 +22,7 @@
 		type LateSeatProposal,
 		type SeatedType
 	} from '#lib/core/rules/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { seatName } from '#lib/features/game/seat-label.ts';
 	import { roomHost } from '#lib/features/room/host.svelte.ts';
 	import ChangeList from '#lib/ui/primitives/ChangeList.svelte';
@@ -450,39 +450,47 @@
 			{#each changes as c (c.seatId)}
 				<dt><PlayerBadge name={seatName(game, c.seatId)} /></dt>
 				<dd>
-					<CharacterBadge characterId={c.from} /><span aria-hidden="true">→</span><CharacterBadge
-						characterId={c.to}
-					/>
+					<CharacterPiece template="badge" characterId={c.from} /><span aria-hidden="true">→</span
+					><CharacterPiece template="badge" characterId={c.to} />
 				</dd>
 			{/each}
 			{#if rulesOn.length}
 				<dt>{t('late-player.invoked')}</dt>
 				<dd>
-					{#each rulesOn as id (id)}<CharacterBadge characterId={id} />{/each}
+					{#each rulesOn as id (id)}<CharacterPiece template="badge" characterId={id} />{/each}
 				</dd>
 			{/if}
 			{#if rulesOff.length}
 				<dt>{t('late-player.takenOut')}</dt>
 				<dd>
-					{#each rulesOff as id (id)}<CharacterBadge characterId={id} />{/each}
+					{#each rulesOff as id (id)}<CharacterPiece template="badge" characterId={id} />{/each}
 				</dd>
 			{/if}
 			{#if bagIn.length}
 				<dt>{t('late-player.in')}</dt>
 				<dd data-testid="late-bag-in">
-					{#each bagIn as id, i (`${id}-${i}`)}<CharacterBadge characterId={id} />{/each}
+					{#each bagIn as id, i (`${id}-${i}`)}<CharacterPiece
+							template="badge"
+							characterId={id}
+						/>{/each}
 				</dd>
 			{/if}
 			{#if bagOut.length}
 				<dt>{t('late-player.out')}</dt>
 				<dd data-testid="late-bag-out">
-					{#each bagOut as id, i (`${id}-${i}`)}<CharacterBadge characterId={id} />{/each}
+					{#each bagOut as id, i (`${id}-${i}`)}<CharacterPiece
+							template="badge"
+							characterId={id}
+						/>{/each}
 				</dd>
 			{/if}
 			{#if outOfPlay.length}
 				<dt>{t('late-player.outOfPlay')}</dt>
 				<dd data-testid="late-out-of-play">
-					{#each outOfPlay as id, i (`${id}-${i}`)}<CharacterBadge characterId={id} />{/each}
+					{#each outOfPlay as id, i (`${id}-${i}`)}<CharacterPiece
+							template="badge"
+							characterId={id}
+						/>{/each}
 				</dd>
 			{/if}
 		</ChangeList>
@@ -504,7 +512,7 @@
 			<p class="badges">
 				<PlayerBadge name={seatName(game, seatId)} /><span class="muted"
 					>{t('late-player.was')}</span
-				><CharacterBadge characterId={fromOf(seatId) ?? ''} />
+				><CharacterPiece template="badge" characterId={fromOf(seatId) ?? ''} />
 			</p>
 			<CharacterPicker
 				characters={optionsFor(seatId)}

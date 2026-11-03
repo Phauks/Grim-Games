@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import type { ReminderPrompt } from '#lib/core/rules/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import AidMenu from '#lib/features/settings/AidMenu.svelte';
 	import type { AssistKey } from '#lib/ui/assistance.ts';
@@ -123,7 +123,8 @@
 	>
 		{#snippet heading()}
 			{ui.verb}
-			{#if askedId}<CharacterBadge
+			{#if askedId}<CharacterPiece
+					template="badge"
 					characterId={askedId}
 					character={characters.get(askedId)}
 					alignment={asked.alignment}
@@ -152,7 +153,8 @@
 			/>?
 		{/snippet}
 		<p class="dead-owner">
-			<CharacterBadge
+			<CharacterPiece
+				template="badge"
 				characterId={reminder.characterId}
 				character={characters.get(reminder.characterId)}
 				alignment={owner?.alignment}

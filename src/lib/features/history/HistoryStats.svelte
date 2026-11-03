@@ -14,7 +14,7 @@
 		type ScriptStats,
 		type StorytellerStats
 	} from '#lib/core/stats/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import { TYPE_PLURALS } from '#lib/features/reference/labels.ts';
 	import { intl, t } from '#lib/i18n/locale.svelte.ts';
@@ -443,7 +443,7 @@
 	>
 		{#snippet cell(c, column)}
 			{#if column.id === 'character'}
-				<CharacterBadge characterId={c.characterId} text={c.name} />
+				<CharacterPiece template="badge" characterId={c.characterId} text={c.name} />
 			{:else if column.id === 'type'}
 				{TYPE_PLURALS[c.type]}
 			{:else if column.id === 'rate'}

@@ -4,7 +4,7 @@
 	import CharacterBuilderDialog from '#lib/features/character-builder/CharacterBuilderDialog.svelte';
 	import type { SavedCharacter } from '#lib/features/character-builder/saved-characters.ts';
 	import { savedCharacters } from '#lib/features/character-builder/stores.svelte.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import CharacterSummary from '#lib/features/characters/CharacterSummary.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
@@ -43,7 +43,7 @@
 
 <ItemPane bind:open title={fields.name || t('common.none')} {inline}>
 	{#snippet heading()}
-		<CharacterBadge characterId={character.id} {character} interactive={false} />
+		<CharacterPiece template="badge" characterId={character.id} {character} interactive={false} />
 	{/snippet}
 	{#snippet headActions()}
 		<IconButton icon="edit" label={t('library.editCharacter')} onclick={() => (editing = true)} />
@@ -71,7 +71,9 @@
 	danger
 	onConfirm={remove}
 >
-	<p><CharacterBadge characterId={character.id} {character} interactive={false} /></p>
+	<p>
+		<CharacterPiece template="badge" characterId={character.id} {character} interactive={false} />
+	</p>
 	<p>{t('library.deleteCharacterBody')}</p>
 </ConfirmDialog>
 

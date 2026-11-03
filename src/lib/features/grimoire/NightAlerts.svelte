@@ -3,7 +3,7 @@
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import type { NightStep, NightAlert, Impairment } from '#lib/core/rules/index.ts';
 	import { nightStepAlerts } from '#lib/core/rules/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 
@@ -89,7 +89,8 @@
 	/>{/snippet}
 
 {#snippet badge(id: string | undefined)}
-	{#if id}<CharacterBadge
+	{#if id}<CharacterPiece
+			template="badge"
 			characterId={id}
 			character={characters.get(id)}
 			interactive={!compact}

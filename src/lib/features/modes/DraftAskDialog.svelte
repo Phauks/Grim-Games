@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import type { Character } from '#lib/core/data/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -25,7 +25,8 @@
 </script>
 
 <Dialog bind:open title={t('modes.deal.askTitle')} closeButton={false} beforeClose={() => false}>
-	{#snippet subtitle()}{#if character}<CharacterBadge
+	{#snippet subtitle()}{#if character}<CharacterPiece
+				template="badge"
 				characterId={character.id}
 				{character}
 			/>{/if}{/snippet}

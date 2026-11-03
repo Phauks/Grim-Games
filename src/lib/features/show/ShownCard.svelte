@@ -2,8 +2,7 @@
 	import { defaultAlignment } from '#lib/core/data/index.ts';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import InfoTokenText from '#lib/features/info-tokens/InfoTokenText.svelte';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
-	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import type { ShownCharacter } from './shown.ts';
 
@@ -108,7 +107,13 @@
 		<div class="area rows-area">
 			<ul class="rows" data-testid="shown-rows">
 				{#each characters as shown (shown.character.id)}
-					<li><CharacterRow character={shown.character} alignment={shown.alignment} /></li>
+					<li>
+						<CharacterPiece
+							template="row"
+							character={shown.character}
+							alignment={shown.alignment}
+						/>
+					</li>
 				{/each}
 			</ul>
 		</div>
@@ -124,7 +129,7 @@
 				<!-- The name and ability as the Script tab shows them, under the token, as the bag
 				     draw's reveal does (Trevor, 2026-11-02: "the standard way we show characters"). -->
 				<div class="caption" bind:clientHeight={captionHeight}>
-					<CharacterRow character={single} alignment={characters[0].alignment} />
+					<CharacterPiece template="row" character={single} alignment={characters[0].alignment} />
 				</div>
 			</div>
 		</div>
@@ -145,7 +150,8 @@
 							size={many.size}
 						/>
 						<span class="name" bind:clientHeight={nameHeight} bind:clientWidth={nameWidths[i]}
-							><CharacterBadge
+							><CharacterPiece
+								template="badge"
 								characterId={shown.character.id}
 								character={shown.character}
 								alignment={shown.alignment ?? defaultAlignment(shown.character.type)}

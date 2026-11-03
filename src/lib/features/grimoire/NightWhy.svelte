@@ -3,7 +3,7 @@
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import { trueCharacter, type SeatId } from '#lib/core/model/index.ts';
 	import type { AnswerValue, Why } from '#lib/core/rules/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { answerValueText } from './night-steps.ts';
 	import CharacterSet from './CharacterSet.svelte';
@@ -42,7 +42,8 @@
 	characterId: CharacterId | undefined = trueCharacter(game, seatId, characters)
 )}<span class="player"><SeatBadge {game} {characters} {seatId} {characterId} /></span>{/snippet}
 
-{#snippet value(v: AnswerValue)}{#if v.kind === 'character'}<CharacterBadge
+{#snippet value(v: AnswerValue)}{#if v.kind === 'character'}<CharacterPiece
+			template="badge"
 			characterId={v.value}
 			character={characters.get(v.value)}
 		/>{:else if v.kind === 'yes-no'}{v.value
@@ -65,7 +66,8 @@
 					{#if f.dead}<span class="fact">Dead</span>{/if}
 					{#if f.redHerring}<span class="fact">Red herring</span>{/if}
 					{#if f.guess}<span class="fact"
-							>Guess: <CharacterBadge
+							>Guess: <CharacterPiece
+								template="badge"
 								characterId={f.guess.characterId}
 								character={characters.get(f.guess.characterId)}
 							/>

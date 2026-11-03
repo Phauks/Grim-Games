@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Character } from '#lib/core/data/index.ts';
 	import type { Seat } from '#lib/core/model/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { seatCharacterLine } from '#lib/features/game/seat-label.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { CLAIM_KEYS, type NoteClaim } from '#lib/features/day/day-port.ts';
@@ -71,7 +71,12 @@
 <Dialog bind:open {title} description={seatCharacterLine(character?.type, seat?.alignment, number)}>
 	{#snippet lead()}
 		{#if seat?.characterId}
-			<CharacterBadge characterId={seat.characterId} {character} alignment={seat.alignment} />
+			<CharacterPiece
+				template="badge"
+				characterId={seat.characterId}
+				{character}
+				alignment={seat.alignment}
+			/>
 		{/if}
 	{/snippet}
 	<div class="menu">

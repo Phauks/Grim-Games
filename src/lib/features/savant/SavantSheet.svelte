@@ -18,7 +18,7 @@
 		type SavantStatement
 	} from '#lib/core/rules/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import Sentence from '#lib/features/characters/Sentence.svelte';
 	import { slot } from '#lib/features/characters/slots.ts';
 	import { seatLabel, seatName } from '#lib/features/game/seat-label.ts';
@@ -419,7 +419,8 @@
 		<!-- Kept for the reason line, so the statements never move (Trevor's no-reflow rule). -->
 		<p class="why" data-testid="savant-why">
 			{#if why}<Sentence text={why.text}
-					>{#snippet fill()}<CharacterBadge
+					>{#snippet fill()}<CharacterPiece
+							template="badge"
 							characterId={why.characterId}
 							character={characters.get(why.characterId)}
 						/>{/snippet}</Sentence
@@ -526,7 +527,8 @@
 	list: readonly SavantPart[]
 )}{#each list as part, j (j)}{#if 'text' in part}{part.text}{:else if 'seat' in part}<PlayerBadge
 				name={seatName(game, part.seat)}
-			/>{:else if 'character' in part}<CharacterBadge
+			/>{:else if 'character' in part}<CharacterPiece
+				template="badge"
 				characterId={part.character}
 				character={characters.get(part.character)}
 			/>{:else if 'type' in part}{TYPE_NAMES[part.type]}{:else}{part.number}{/if}{/each}{/snippet}

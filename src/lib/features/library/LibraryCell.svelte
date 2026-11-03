@@ -18,7 +18,7 @@
 
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import type { IconSlot } from '#lib/ui/icons/catalogue.ts';
 	import { dragToFolder, type DragSource } from './drag-to-folder.ts';
@@ -73,7 +73,8 @@
 		<span class="text-block">
 			<span class="title">
 				{#if row.character}
-					<CharacterBadge
+					<CharacterPiece
+						template="badge"
 						characterId={row.character.id}
 						character={row.character}
 						interactive={false}

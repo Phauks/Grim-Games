@@ -6,7 +6,7 @@
 	import type { InfoTokenAsks } from '#lib/core/data/info-tokens.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { askBadges } from './asks.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import { plainText } from '#lib/core/text/rich.ts';
 	import InfoTokenText from './InfoTokenText.svelte';
@@ -72,7 +72,8 @@
 		<!-- The character first, then the card's words (Trevor, 2026-10-18). -->
 		{#if owners.length > 0}
 			<span class="owners">
-				{#each owners.slice(0, 2) as owner (owner.id)}<CharacterBadge
+				{#each owners.slice(0, 2) as owner (owner.id)}<CharacterPiece
+						template="badge"
 						characterId={owner.id}
 						character={owner}
 						interactive={false}

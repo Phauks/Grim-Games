@@ -10,7 +10,7 @@
 	import type { PhaseFlow } from '#lib/features/grimoire/phase-flow.svelte.ts';
 	import AidMenu from '#lib/features/settings/AidMenu.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import SeatBadge from './SeatBadge.svelte';
 
@@ -60,7 +60,8 @@
 		<ul class="alignments-left" data-testid="alignments-left">
 			{#each flow.alignmentsLeft as task (`${task.characterId}:${task.type}:${task.alignment}`)}
 				<li>
-					<CharacterBadge
+					<CharacterPiece
+						template="badge"
 						characterId={task.characterId}
 						character={characters.get(task.characterId)}
 					/>: {task.summary}

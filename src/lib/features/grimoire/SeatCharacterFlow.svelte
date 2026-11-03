@@ -14,7 +14,7 @@
 	} from '#lib/core/model/index.ts';
 	import { rulesOf } from '#lib/core/data/rules/index.ts';
 	import { abilityGivers, barredAbilities, jinxedPartners } from '#lib/core/rules/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import BoardReminder from '#lib/features/grimoire/BoardReminder.svelte';
 	import AlignmentPill from '#lib/features/grimoire/AlignmentPill.svelte';
 	import CharacterPicker from '#lib/features/grimoire/CharacterPicker.svelte';
@@ -259,11 +259,20 @@
 			</dd>
 			<dt>Current role</dt>
 			<dd>
-				<CharacterBadge characterId={seat.characterId} {character} alignment={seat.alignment} />
+				<CharacterPiece
+					template="badge"
+					characterId={seat.characterId}
+					{character}
+					alignment={seat.alignment}
+				/>
 			</dd>
 			<dt>New role</dt>
 			<dd>
-				<CharacterBadge characterId={changeTo} character={characters.get(changeTo)} />
+				<CharacterPiece
+					template="badge"
+					characterId={changeTo}
+					character={characters.get(changeTo)}
+				/>
 			</dd>
 		</ChangeList>
 		<p class="note">

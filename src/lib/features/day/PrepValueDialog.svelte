@@ -2,7 +2,7 @@
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import { scriptCharacterIds } from '#lib/core/model/index.ts';
 	import { prepValueCharacter, prepValueKey, prepValueLabel } from '#lib/core/rules/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -70,12 +70,14 @@
 				onChange={(id) => (text = id)}
 				onClear={() => (text = '')}
 			>
-				{#snippet item(option)}<CharacterBadge
+				{#snippet item(option)}<CharacterPiece
+						template="badge"
 						characterId={option.value}
 						character={game.characters.get(option.value)}
 						interactive={false}
 					/>{/snippet}
-				{#snippet selected(option)}<CharacterBadge
+				{#snippet selected(option)}<CharacterPiece
+						template="badge"
 						characterId={option.value}
 						character={game.characters.get(option.value)}
 						interactive={false}

@@ -6,7 +6,7 @@
 		nightChoosers,
 		type NightStep
 	} from '#lib/core/rules/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { seatName } from '#lib/features/game/seat-label.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import SeatBadge from './SeatBadge.svelte';
@@ -69,7 +69,8 @@
 		{#if tonight}
 			{@const id = trueCharacter(game, tonight.seatId, characters)}
 			{#if id}
-				<CharacterBadge
+				<CharacterPiece
+					template="badge"
 					characterId={id}
 					character={characters.get(id)}
 					alignment={alignmentOf(game, tonight.seatId)}
@@ -95,7 +96,8 @@
 		onNone={tonight ? none : undefined}
 	>
 		{#snippet heading()}
-			{#if step.character}<CharacterBadge
+			{#if step.character}<CharacterPiece
+					template="badge"
 					characterId={step.character.id}
 					character={step.character}
 					interactive={false}

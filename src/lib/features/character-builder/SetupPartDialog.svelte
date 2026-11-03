@@ -8,7 +8,7 @@
 		type SetupPart,
 		type SetupPartKind
 	} from '#lib/core/rules/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import CharacterPicker from '#lib/features/characters/CharacterPicker.svelte';
 	import { TYPE_LABELS } from '#lib/features/reference/labels.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -151,7 +151,11 @@
 				>{t('character-builder.chooseLinked')}</Button
 			>
 			{#if linkedCharacter}
-				<CharacterBadge characterId={linkedCharacter.id} character={linkedCharacter} />
+				<CharacterPiece
+					template="badge"
+					characterId={linkedCharacter.id}
+					character={linkedCharacter}
+				/>
 			{:else}
 				<span class="muted">{t('common.none')}</span>
 			{/if}

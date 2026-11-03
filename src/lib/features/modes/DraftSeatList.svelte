@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Character } from '#lib/core/data/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 
 	/**
@@ -29,7 +29,11 @@
 		{@const drafted = kept(i)}
 		<li>
 			<Button onclick={() => onPick(i)}>{seatLabel(i)}</Button>
-			{#if drafted}<CharacterBadge characterId={drafted.id} character={drafted} />{/if}
+			{#if drafted}<CharacterPiece
+					template="badge"
+					characterId={drafted.id}
+					character={drafted}
+				/>{/if}
 		</li>
 	{/each}
 	<li><Button onclick={onLast}>{last}</Button></li>

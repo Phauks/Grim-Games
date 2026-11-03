@@ -22,9 +22,7 @@
 		type MadnessOffer
 	} from '#lib/core/rules/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
-	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
 	import JinxMark from '#lib/features/characters/JinxMark.svelte';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { gameJinxes } from '#lib/features/game/game-jinxes.ts';
@@ -486,14 +484,15 @@
 								{#if character}
 									<!-- As the script draws it (Trevor, 2026-10-28): the ring and band, the
 									     ability, then what is known and the button under it. -->
-									<CharacterRow
+									<CharacterPiece
+										template="row"
 										{character}
 										info
 										alignment={head?.ref.seatId ? g.seats[head.ref.seatId]?.alignment : undefined}
 										playerName={head?.ref.seatId ? game.seatName(head.ref.seatId) : undefined}
 									>
-										{#snippet afterName()}{@render jinxMark(character.id)}{/snippet}
-										{#snippet ability()}<GlossaryText text={character.ability} />{/snippet}
+										{#snippet tags()}{@render jinxMark(character.id)}{/snippet}
+										{#snippet abilityText()}<GlossaryText text={character.ability} />{/snippet}
 										<span class="state-line"
 											>{@render sentence()}{#if buttonRows[reminder.key]}{@render dayEnd(
 													reminder.characterId,
@@ -510,7 +509,7 @@
 													/></span
 												>{/if}</span
 										>
-									</CharacterRow>
+									</CharacterPiece>
 								{:else}
 									<CharacterPiece template="entry" characterId={head?.ref.characterId}>
 										{#snippet controls()}{@const seatId =
@@ -526,15 +525,13 @@
 										{#each line.segments as segment, i (i)}
 											{@const stop = line.stop && i === line.segments.length - 1}
 											{#if segment.kind === 'character'}
+												{@const at = segment.ref.seatId}
 												<span class="glued"
-													><CharacterBadge
+													><CharacterPiece
+														template="badge"
 														characterId={segment.ref.characterId}
-														alignment={segment.ref.seatId
-															? g.seats[segment.ref.seatId]?.alignment
-															: undefined}
-														playerName={segment.ref.seatId
-															? game.seatName(segment.ref.seatId)
-															: undefined}
+														alignment={at ? g.seats[at]?.alignment : undefined}
+														playerName={at ? game.seatName(at) : undefined}
 													/>{#if stop}.{/if}</span
 												>
 											{:else if segment.kind === 'value'}
@@ -545,10 +542,10 @@
 														class="prep-value"
 														data-testid="prep-value"
 														onclick={() => editValue(segment.characterId, segment.key)}
-														>{#if segment.value && prepValueCharacter(segment.characterId, segment.key, game.characters)}<CharacterBadge
-																characterId={segment.value}
-																interactive={false}
-															/>{:else}({segment.value ?? segment.placeholder}){/if}</button
+														>{#if segment.value && prepValueCharacter(segment.characterId, segment.key, game.characters)}{@render badge(
+																segment.value,
+																false
+															)}{:else}({segment.value ?? segment.placeholder}){/if}</button
 													>{#if stop}.{/if}</span
 												>
 											{:else}
@@ -574,18 +571,19 @@
 						<li data-character={seat.characterId}>
 							{#if character}
 								<!-- As the reminders above: ring, band, ability, then the button. -->
-								<CharacterRow
+								<CharacterPiece
+									template="row"
 									{character}
 									info
 									alignment={seat.alignment}
 									playerName={game.seatName(seat.seatId)}
 								>
-									{#snippet afterName()}{@render jinxMark(character.id)}{/snippet}
-									{#snippet ability()}<GlossaryText text={character.ability} />{/snippet}
+									{#snippet tags()}{@render jinxMark(character.id)}{/snippet}
+									{#snippet abilityText()}<GlossaryText text={character.ability} />{/snippet}
 									{#if hasDayButton(seat.characterId)}<span class="state-line"
 											>{@render dayEnd(seat.characterId, seat.seatId)}</span
 										>{/if}
-								</CharacterRow>
+								</CharacterPiece>
 							{/if}
 						</li>
 					{/each}
@@ -612,7 +610,8 @@
 {/snippet}
 
 <!-- A character as a badge; false inside a button, so it does not open the character. -->
-{#snippet badge(id: CharacterId | undefined, interactive = true)}{#if id}<CharacterBadge
+{#snippet badge(id: CharacterId | undefined, interactive = true)}{#if id}<CharacterPiece
+			template="badge"
 			characterId={id}
 			character={game.characters.get(id)}
 			{interactive}

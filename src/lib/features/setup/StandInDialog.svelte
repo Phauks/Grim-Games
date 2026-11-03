@@ -2,7 +2,7 @@
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import type { StandIn } from '#lib/core/rules/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import CharacterPicker from '#lib/features/characters/CharacterPicker.svelte';
 	import Sentence from '#lib/features/characters/Sentence.svelte';
 	import { slot } from '#lib/features/characters/slots.ts';
@@ -34,7 +34,8 @@
 	Which Demon token goes in the bag for the Lunatic, opened from the setup check. The
 	Demon in play is the default (https://wiki.bloodontheclocktower.com/Lunatic).
 -->
-{#snippet fill()}{#if character}<CharacterBadge
+{#snippet fill()}{#if character}<CharacterPiece
+			template="badge"
 			characterId={character.id}
 			{character}
 		/>{/if}{/snippet}

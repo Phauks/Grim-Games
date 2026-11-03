@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
@@ -48,7 +48,12 @@
 							{#if card.characterIds.length > 0}
 								<span class="badges">
 									{#each known(card.characterIds) as character (character.id)}
-										<CharacterBadge characterId={character.id} {character} interactive={false} />
+										<CharacterPiece
+											template="badge"
+											characterId={character.id}
+											{character}
+											interactive={false}
+										/>
 									{/each}
 								</span>
 							{/if}

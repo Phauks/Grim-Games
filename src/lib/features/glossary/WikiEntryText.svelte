@@ -1,5 +1,5 @@
 <script lang="ts">
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { linkTarget, type WikiEntry } from './wiki-glossary.ts';
 	import { wikiGlossary } from './wiki-glossary.svelte.ts';
@@ -49,7 +49,8 @@
 					type="button"
 					class="see"
 					onclick={(event) => onTerm(target.key, event.currentTarget)}>{part.text}</button
-				>{:else if target.kind === 'character'}<CharacterBadge
+				>{:else if target.kind === 'character'}<CharacterPiece
+					template="badge"
 					characterId={idOf(target.name)}
 					text={part.text}
 				/>{:else}<a class="see" href={target.url} target="_blank" rel="noopener">{part.text}</a

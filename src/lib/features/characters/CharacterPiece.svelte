@@ -64,6 +64,8 @@
 		pressed?: boolean;
 		current?: boolean;
 		disabled?: boolean;
+		/** Drawn faint: a choosable row that is greyed but still tappable (the picker). */
+		faded?: boolean;
 		dashed?: boolean;
 		label?: string;
 		describedby?: string;
@@ -97,6 +99,7 @@
 		pressed,
 		current,
 		disabled,
+		faded,
 		dashed,
 		label,
 		describedby,
@@ -141,6 +144,7 @@
 			{pressed}
 			{current}
 			{disabled}
+			{faded}
 			{dashed}
 			{label}
 			{describedby}

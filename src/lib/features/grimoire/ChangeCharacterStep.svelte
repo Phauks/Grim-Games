@@ -30,7 +30,7 @@
 		swappableSeats,
 		type NightStep
 	} from '#lib/core/rules/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import AlignmentPill from './AlignmentPill.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import CharacterPicker from './CharacterPicker.svelte';
@@ -396,7 +396,8 @@
 
 {#snippet newCharacter(seatId: SeatId, characterId: CharacterId | undefined)}
 	{#if characterId}
-		<CharacterBadge
+		<CharacterPiece
+			template="badge"
 			{characterId}
 			character={characters.get(characterId)}
 			alignment={alignmentOf(game, seatId)}
@@ -489,7 +490,8 @@
 	</div>
 	{#each alsoNotes as note (note.id)}
 		<p class="note" role="note" data-testid="also-becomes">
-			<CharacterBadge
+			<CharacterPiece
+				template="badge"
 				characterId={note.id}
 				character={characters.get(note.id)}
 				interactive={false}
@@ -498,13 +500,18 @@
 	{/each}
 	{#each allEvil as id (id)}
 		<p class="note" role="note" data-testid="all-evil-become">
-			<CharacterBadge characterId={id} character={characters.get(id)} interactive={false} />: if
-			created, every evil player becomes it.
+			<CharacterPiece
+				template="badge"
+				characterId={id}
+				character={characters.get(id)}
+				interactive={false}
+			/>: if created, every evil player becomes it.
 		</p>
 	{/each}
 	{#each neighbourNotes as note (note.id)}
 		<p class="note" role="note" data-testid="neighbour-becomes">
-			<CharacterBadge
+			<CharacterPiece
+				template="badge"
 				characterId={note.id}
 				character={characters.get(note.id)}
 				interactive={false}
@@ -529,14 +536,19 @@
 	{/if}
 	{#each picksNow as id (id)}
 		<p class="note" role="note" data-testid="storyteller-picks-now">
-			<CharacterBadge characterId={id} character={characters.get(id)} interactive={false} /> is alive:
-			the Storyteller chooses which player, only the character is chosen here.
+			<CharacterPiece
+				template="badge"
+				characterId={id}
+				character={characters.get(id)}
+				interactive={false}
+			/> is alive: the Storyteller chooses which player, only the character is chosen here.
 		</p>
 	{/each}
 	{#if early}
 		<p class="note" role="note" data-testid="early-only">
 			Tonight only
-			{#each early as id, i (id)}{i > 0 ? ', ' : ''}<CharacterBadge
+			{#each early as id, i (id)}{i > 0 ? ', ' : ''}<CharacterPiece
+					template="badge"
 					characterId={id}
 					character={characters.get(id)}
 					interactive={false}
@@ -546,14 +558,22 @@
 	{/if}
 	{#each handsOver as id (id)}
 		<p class="note" role="note" data-testid="storyteller-gains">
-			<CharacterBadge characterId={id} character={characters.get(id)} interactive={false} />: if its
-			living player changes character, the Storyteller has its ability.
+			<CharacterPiece
+				template="badge"
+				characterId={id}
+				character={characters.get(id)}
+				interactive={false}
+			/>: if its living player changes character, the Storyteller has its ability.
 		</p>
 	{/each}
 	{#each storytellerPicks as id (id)}
 		<p class="note" role="note" data-testid="storyteller-picks-player">
-			<CharacterBadge characterId={id} character={characters.get(id)} interactive={false} />: the
-			Storyteller chooses which player becomes it.
+			<CharacterPiece
+				template="badge"
+				characterId={id}
+				character={characters.get(id)}
+				interactive={false}
+			/>: the Storyteller chooses which player becomes it.
 		</p>
 	{/each}
 	<SeatChooser

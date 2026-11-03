@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { SeatId } from '#lib/core/model/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { seatName } from './night-steps.ts';
@@ -27,7 +27,8 @@
 		{@const alive = !game.seats[seatId]?.notInPlay}
 		<li>
 			{#if id}
-				<CharacterBadge
+				<CharacterPiece
+					template="badge"
 					characterId={id}
 					character={characters.get(id)}
 					playerName={seatName(game, seatId)}

@@ -2,7 +2,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Character } from '#lib/core/data/index.ts';
 	import { nightTextFor, nightTextSegments } from '#lib/core/rules/night-text.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import { explainBlock } from '#lib/features/glossary/glossary.svelte.ts';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
@@ -43,7 +43,8 @@
 				label={s.label}
 				variant="info"
 				title={t('reference.infoToken')}
-			/>{:else if s.kind === 'character'}<CharacterBadge
+			/>{:else if s.kind === 'character'}<CharacterPiece
+				template="badge"
 				characterId={s.id}
 			/>{:else if s.kind === 'dead'}<ReminderToken
 				label={t('reference.dead')}

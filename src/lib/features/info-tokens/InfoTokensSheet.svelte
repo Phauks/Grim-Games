@@ -5,7 +5,7 @@
 	import type { InfoToken } from '#lib/core/data/info-tokens.ts';
 	import { shownOrder, type FilledInfoToken } from '#lib/core/rules/info-token-characters.ts';
 	import type { ShowableBluffSet } from '#lib/features/bluffs/bluffs.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import CharacterPicker from '#lib/features/show/CharacterPicker.svelte';
 	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
@@ -272,7 +272,12 @@
 							<span class="set-label">{set.label}</span>
 							<span class="badges">
 								{#each known(set.characterIds) as character (character.id)}
-									<CharacterBadge characterId={character.id} {character} interactive={false} />
+									<CharacterPiece
+										template="badge"
+										characterId={character.id}
+										{character}
+										interactive={false}
+									/>
 								{/each}
 							</span>
 						</button>

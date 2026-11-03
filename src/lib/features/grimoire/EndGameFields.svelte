@@ -6,7 +6,7 @@
 		endReasonCharacter,
 		type EndReason
 	} from '#lib/core/rules/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import AlignmentPill from './AlignmentPill.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import { endReasonLabel } from './end-reason-label.ts';
@@ -63,7 +63,7 @@
 {#snippet reasonLabel(option: { value: EndReason; label: string })}
 	{@const id = endReasonCharacter(option.value)}
 	{#if id}
-		<CharacterBadge characterId={id} character={characters.get(id)} />
+		<CharacterPiece template="badge" characterId={id} character={characters.get(id)} />
 	{:else}
 		{option.label}
 	{/if}

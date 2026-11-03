@@ -2,7 +2,7 @@
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import { turnOffer, type Conversion } from '#lib/core/modes/index.ts';
 	import SharedPicker from '#lib/features/characters/CharacterPicker.svelte';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { TYPE_LABELS } from '#lib/features/reference/labels.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -89,7 +89,11 @@
 </script>
 
 <Dialog bind:open title={t('modes.deal.askTitle')} size="full">
-	{#snippet subtitle()}{#if by}<CharacterBadge characterId={by.id} character={by} />{/if}{/snippet}
+	{#snippet subtitle()}{#if by}<CharacterPiece
+				template="badge"
+				characterId={by.id}
+				character={by}
+			/>{/if}{/snippet}
 	{#if at === undefined}
 		<div class="ask" data-testid="draft-convert">
 			<p class="prompt">{t('modes.deal.convertSeat', { type })}</p>
@@ -109,7 +113,8 @@
 			{#if own}
 				<p class="seat">{seatLabel(at)}</p>
 				<p class="prompt">
-					{t('modes.deal.turned', { type })}{#if by}<CharacterBadge
+					{t('modes.deal.turned', { type })}{#if by}<CharacterPiece
+							template="badge"
 							characterId={by.id}
 							character={by}
 						/>{/if}

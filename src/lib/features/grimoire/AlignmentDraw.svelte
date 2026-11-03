@@ -3,7 +3,7 @@
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
 	import type { Alignment } from '#lib/core/data/index.ts';
 	import type { SeatId } from '#lib/core/model/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -102,7 +102,8 @@
 	{#if seat && seatId}
 		{#if phase === 'setup'}
 			<p class="who">
-				{#if seat.characterId}<CharacterBadge
+				{#if seat.characterId}<CharacterPiece
+						template="badge"
 						characterId={seat.characterId}
 						character={characters.get(seat.characterId)}
 						playerName={seatName(game, seatId)}

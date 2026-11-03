@@ -3,7 +3,7 @@
 	import { resolve } from '$app/paths';
 	import type { Character, CharacterType } from '#lib/core/data/index.ts';
 	import { SEATED_TYPES } from '#lib/core/rules/distribution.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
 	import { OpenGame } from '#lib/features/game/session.svelte.ts';
@@ -98,7 +98,7 @@
 							<span class="muted">{TYPE_LABELS[g.type]}</span>
 							<ul class="characters">
 								{#each g.characters as c, j (c.id + j)}
-									<li><CharacterBadge characterId={c.id} character={c} /></li>
+									<li><CharacterPiece template="badge" characterId={c.id} character={c} /></li>
 								{/each}
 							</ul>
 						</div>

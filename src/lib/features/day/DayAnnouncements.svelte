@@ -11,7 +11,6 @@
 		type Night
 	} from '#lib/core/rules/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import Sentence from '#lib/features/characters/Sentence.svelte';
@@ -149,7 +148,8 @@
 				{/if}
 				<em class="private" data-testid="storyteller-only"
 					><Sentence text={privateDeath(death.cause)}
-						>{#snippet fill(name)}{#if name === 'character'}{#if seat.characterId}<CharacterBadge
+						>{#snippet fill(name)}{#if name === 'character'}{#if seat.characterId}<CharacterPiece
+										template="badge"
 										characterId={seat.characterId}
 										alignment={seat.alignment}
 									/>{:else}{t('day.announce.noCharacter')}{/if}{:else}{@render badge(
@@ -173,7 +173,8 @@
 							character: slot('character'),
 							how: t('day.announce.backToLife')
 						})}
-						>{#snippet fill()}{#if seat.characterId}<CharacterBadge
+						>{#snippet fill()}{#if seat.characterId}<CharacterPiece
+									template="badge"
 									characterId={seat.characterId}
 									alignment={seat.alignment}
 								/>{:else}{t('day.announce.noCharacter')}{/if}{/snippet}</Sentence
@@ -212,7 +213,8 @@
 	>{/snippet}
 
 <!-- A character as a badge; false inside a button, so it does not open the character. -->
-{#snippet badge(id: CharacterId | undefined, interactive = true)}{#if id}<CharacterBadge
+{#snippet badge(id: CharacterId | undefined, interactive = true)}{#if id}<CharacterPiece
+			template="badge"
 			characterId={id}
 			character={game.characters.get(id)}
 			{interactive}

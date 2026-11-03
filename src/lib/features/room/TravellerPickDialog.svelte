@@ -7,8 +7,7 @@
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import { moreTravellers, recommendedTravellers } from '#lib/core/rules/index.ts';
 	import CharacterPicker from '#lib/features/characters/CharacterPicker.svelte';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
-	import CharacterRow from '#lib/features/characters/CharacterRow.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { loadOfficialData, officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import type { OpenGame } from '#lib/features/game/session.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -177,7 +176,9 @@
 			{#if !toPhones}
 				<ul class="rows" data-testid="traveller-pick-here">
 					{#each here as character (character.id)}
-						<li><CharacterRow {character} info onclick={() => pickHere(character)} /></li>
+						<li>
+							<CharacterPiece template="row" {character} info onclick={() => pickHere(character)} />
+						</li>
 					{:else}
 						<li class="row">{t('common.none')}</li>
 					{/each}
@@ -186,7 +187,7 @@
 				<!-- Recommended shows those; Custom the whole list to pick from (Trevor, 2026-11-01). -->
 				<ul class="rows" data-testid="traveller-pick-recommended">
 					{#each recommended as character (character.id)}
-						<li><CharacterRow {character} info /></li>
+						<li><CharacterPiece template="row" {character} info /></li>
 					{:else}
 						<li class="row">{t('common.none')}</li>
 					{/each}
@@ -228,7 +229,11 @@
 				<li class="row status">
 					<PlayerBadge name={seatName(seat.seatId) as PlayerName} />
 					<span class="state">
-						{#if character}<CharacterBadge characterId={character.id} {character} />
+						{#if character}<CharacterPiece
+								template="badge"
+								characterId={character.id}
+								{character}
+							/>
 							{t(seat.confirmed ? 'room.travellers.confirmed' : 'room.travellers.holding')}
 						{:else}{t('room.travellers.choosing')}{/if}
 					</span>
@@ -280,7 +285,7 @@
 >
 	<ul class="rows">
 		{#each pickable as character (character.id)}
-			<li><CharacterRow {character} info onclick={() => pickFor(character)} /></li>
+			<li><CharacterPiece template="row" {character} info onclick={() => pickFor(character)} /></li>
 		{/each}
 	</ul>
 </Dialog>

@@ -14,7 +14,6 @@
 		type GameHold
 	} from '#lib/core/rules/index.ts';
 	import { impairmentOfLabel } from '#lib/core/rules/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import BoardReminder from './BoardReminder.svelte';
 	import ReminderTokenRow from './ReminderTokenRow.svelte';
@@ -121,7 +120,8 @@
 	{@const s = game.seats[id]}
 	{@const as = characterId ?? shownAs(id)}
 	{#if s && as}
-		<CharacterBadge
+		<CharacterPiece
+			template="badge"
 			characterId={as}
 			character={characters.get(as)}
 			alignment={s.alignment}
@@ -131,7 +131,7 @@
 {/snippet}
 
 {#snippet character(id: CharacterId)}
-	<CharacterBadge characterId={id} character={characters.get(id)} />
+	<CharacterPiece template="badge" characterId={id} character={characters.get(id)} />
 {/snippet}
 
 <!--

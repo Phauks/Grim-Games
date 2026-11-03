@@ -3,7 +3,7 @@
 	import type { Character, CharacterId, GameData } from '#lib/core/data/index.ts';
 	import { fieldsFromEntry, previewCharacter } from '#lib/core/rules/index.ts';
 	import { savedCharacters } from '#lib/features/character-builder/stores.svelte.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
+	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import CharacterPicker from '#lib/features/characters/CharacterPicker.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
@@ -86,7 +86,8 @@
 		<ul class="members" aria-label={t('library.characters')}>
 			{#each members as m (m.ref)}
 				<li>
-					<CharacterBadge
+					<CharacterPiece
+						template="badge"
 						characterId={m.character.id}
 						character={savedIdOf(m.ref) ? m.character : undefined}
 					/>
