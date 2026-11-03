@@ -15,6 +15,7 @@
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import NumberSelect from '#lib/ui/primitives/NumberSelect.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
+	import DeviceFrame from './DeviceFrame.svelte';
 	import { botName, frameName, TestRoom, ZOOMS, type Zoom } from './bench.svelte.ts';
 	import { DEVICES, deviceById, STORYTELLER_SCREENS } from './devices.ts';
 
@@ -228,35 +229,34 @@
 
 	<!-- Full screen (Trevor, 2026-10-31): the screens alone, without the controls round them. -->
 	<FullScreenStage testid="test-room-stage">
-		<div
-			class="frames"
-			style:--zoom={bench.zoom}
-			style:--room={framesWidth || undefined}
-			bind:clientWidth={framesWidth}
-		>
-			<figure style:--w={screen.width} style:--h={screen.height} data-testid="storyteller-frame">
-				<figcaption>{t('room.testRoom.storyteller')}</figcaption>
-				<div class="screen">
-					<iframe
-						title={t('room.testRoom.storyteller')}
-						name="grimbinder-storyteller"
-						bind:this={storytellerFrame}
-						src={resolve('/')}
-					></iframe>
-				</div>
-			</figure>
+		<div class="frames" bind:clientWidth={framesWidth}>
+			<DeviceFrame
+				device={screen}
+				caption={t('room.testRoom.storyteller')}
+				title={t('room.testRoom.storyteller')}
+				name="grimbinder-storyteller"
+				src={resolve('/')}
+				zoom={bench.zoom}
+				room={framesWidth}
+				testid="storyteller-frame"
+				bind:iframe={storytellerFrame}
+			/>
 			{#each bench.players as player, i (player.key)}
 				{#if player.shown}
 					{@const device = deviceById(player.device)!}
-					<figure style:--w={device.width} style:--h={device.height} data-testid="phone-frame">
-						<figcaption>{botName(i)} · {sized(device)}</figcaption>
-						<div class="screen">
-							<!-- Keyed by device, so a new size reloads it as that phone. -->
-							{#key player.device}
-								<iframe title={botName(i)} name={frameName(i)} src={joinPath}></iframe>
-							{/key}
-						</div>
-					</figure>
+					<!-- Keyed by device, so a new size reloads it as that phone. -->
+					{#key player.device}
+						<DeviceFrame
+							{device}
+							caption="{botName(i)} · {sized(device)}"
+							title={botName(i)}
+							name={frameName(i)}
+							src={joinPath}
+							zoom={bench.zoom}
+							room={framesWidth}
+							testid="phone-frame"
+						/>
+					{/key}
 				{/if}
 			{/each}
 		</div>
@@ -349,34 +349,6 @@
 		overflow: auto;
 		padding: var(--space-3);
 		padding-inline-end: calc(var(--tap-target) + var(--space-4));
-	}
-	/* The zoom picked, or less where the screen would be wider than the area (Trevor's Pixel,
-	   2026-10-31: a tablet screen at 50% ran off the side of the phone): the area's width less
-	   its padding and a frame's border, in CSS pixels. */
-	figure {
-		--fit: min(var(--zoom), (var(--room, 100000) - 80) / var(--w));
-		margin: 0;
-		display: grid;
-		gap: var(--space-1);
-	}
-	figcaption {
-		font-size: 0.85rem;
-	}
-	/* The device's own CSS pixels, scaled by the zoom: the frame lays out exactly as that device. */
-	.screen {
-		width: calc(var(--w) * var(--fit) * 1px); /* px-ok: a device's CSS viewport */
-		height: calc(var(--h) * var(--fit) * 1px); /* px-ok: a device's CSS viewport */
-		overflow: hidden;
-		border: 0.15rem solid var(--border);
-		border-radius: 1rem;
-		background: var(--surface);
-	}
-	iframe {
-		width: calc(var(--w) * 1px); /* px-ok: a device's CSS viewport */
-		height: calc(var(--h) * 1px); /* px-ok: a device's CSS viewport */
-		border: 0;
-		transform: scale(var(--fit));
-		transform-origin: 0 0;
 	}
 	.log {
 		margin: 0;
