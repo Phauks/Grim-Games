@@ -52,9 +52,12 @@ describe("Storyteller's player view parity", () => {
 		for (const host of [joinPanel, boardView]) expect(host).toContain('gameOverText(');
 	});
 
-	it("has the phone's Your character row, which asks the Storyteller for a seat", () => {
-		// Trevor, 2026-10-30: the character draw never reached the Storyteller's player view.
-		for (const host of [joinPanel, boardView]) expect(host).toContain('<YourCharacter');
+	it('opens Your character from the status line on both sides, never a row of its own', () => {
+		// Trevor, 2026-10-30: the draw reached phones only; 2026-11-03: no button of its own.
+		for (const host of [joinPanel, boardView]) {
+			expect(host).toContain('<YourCharacter');
+			expect(host).toMatch(/<PlayerStatusRow[^]*?\bcharacter=/);
+		}
 		expect(boardView).toMatch(/<YourCharacter[^>]*\bseats=/);
 	});
 

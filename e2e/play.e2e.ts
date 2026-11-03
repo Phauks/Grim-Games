@@ -332,21 +332,20 @@ test('the script tab lists characters by type with their abilities', async ({ pa
 	await page.keyboard.press('Escape');
 	// Wait for the dialog to go: its wiki section list has a Jinxes button too.
 	await expect(page.getByRole('dialog', { name: 'Empath' })).toBeHidden();
-	await expect(page.getByTestId('no-jinxes')).toHaveText('None');
+	// No jinxes on the script, no Jinxes section, as with Fabled and Loric (Trevor, 2026-11-03).
+	const panel = page.getByRole('tabpanel', { name: 'Script' });
+	await expect(panel.getByRole('button', { name: 'Jinxes' })).toHaveCount(0);
 
 	// Sections close from their header and stay closed after a reload (Trevor, 2026-10-16).
-	const panel = page.getByRole('tabpanel', { name: 'Script' });
-	const jinxes = panel.getByRole('button', { name: 'Jinxes' });
-	await expect(jinxes).toHaveAttribute('aria-expanded', 'true');
-	await jinxes.tap();
-	await expect(page.getByTestId('no-jinxes')).toBeHidden();
 	// No "* Not the first night" footnote (Trevor, 2026-10-18).
 	await expect(page.getByText('Not the first night')).toHaveCount(0);
 	await panel.getByRole('button', { name: 'Townsfolk', exact: true }).tap();
 	await expect(empath).toBeHidden();
 	await page.reload();
 	await expect(
-		page.getByRole('tabpanel', { name: 'Script' }).getByRole('button', { name: 'Jinxes' })
+		page
+			.getByRole('tabpanel', { name: 'Script' })
+			.getByRole('button', { name: 'Townsfolk', exact: true })
 	).toHaveAttribute('aria-expanded', 'false');
 	await expect(empath).toBeHidden();
 	await page.getByRole('button', { name: 'Townsfolk', exact: true }).tap();

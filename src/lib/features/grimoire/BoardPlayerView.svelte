@@ -72,6 +72,7 @@
 	});
 	// Your character as each seat's phone has it, while players may see theirs (Trevor,
 	// 2026-10-30): the Storyteller picks a seat, then sees that seat's card.
+	let yourCharacter = $state<ReturnType<typeof YourCharacter>>();
 	const roleSeats = $derived.by(() => {
 		const shown = roomHost().rolesShown.gameId === game.gameId;
 		const roles = shown ? seatRoles(game, characters) : {};
@@ -92,9 +93,10 @@
 	winner={ended?.winner}
 	{presence}
 	unseatedNames={roomHost().unseatedInGame.flatMap((m) => (m.name ? [m.name] : []))}
+	character={roleSeats.some((s) => s.role) ? () => yourCharacter?.show() : undefined}
 />
-<!-- Its own row under the status line, as on /play. -->
-<YourCharacter characters={script.characters} seats={roleSeats} />
+<!-- Opened from the status line, as on /play. -->
+<YourCharacter bind:this={yourCharacter} characters={script.characters} seats={roleSeats} />
 <PlayerScreen
 	{script}
 	players={dealtSeats(town.seats).dealt}

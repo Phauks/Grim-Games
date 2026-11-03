@@ -27,8 +27,8 @@
 		/** The day timer, as the screen that opened the cover shows it. */
 		timer?: Snippet;
 		/**
-		 * The Storyteller's controls that show nothing secret (Trevor, 2026-10-27: "calling back
-		 * to town, seeing player view"), under the timer.
+		 * The Storyteller's controls that show nothing secret (Trevor, 2026-10-27: "seeing player
+		 * view"), under the timer, whose front is Back to town (2026-11-03).
 		 */
 		actions?: Snippet;
 	}

@@ -41,7 +41,7 @@
 		 * one (Trevor, 2026-11-02, as Not in play and Bluff are marked).
 		 */
 		recommended?: ReadonlySet<string>;
-		/** False leaves the Jinxes section out (a printed sheet without them). */
+		/** False leaves the Jinxes section out (a printed sheet without them); none on the script leaves it out too. */
 		showJinxes?: boolean;
 		/** The game mode and special rules, in their own section under Jinxes; none, none shown. */
 		rules?: readonly PublicRule[];
@@ -161,15 +161,12 @@
 	{/each}
 
 	{#snippet jinxList()}
-		{#if jinxes.length}
-			<ul>
-				{#each jinxes as jinx (jinx.characters.join('+'))}{@render jinxItem(jinx)}{/each}
-			</ul>
-		{:else}
-			<p class="none" data-testid="no-jinxes">{t('common.none')}</p>
-		{/if}
+		<ul>
+			{#each jinxes as jinx (jinx.characters.join('+'))}{@render jinxItem(jinx)}{/each}
+		</ul>
 	{/snippet}
-	{#if showJinxes}{@render section(
+	<!-- No jinxes, no section, as with Fabled and Loric (Trevor, 2026-11-03). -->
+	{#if showJinxes && jinxes.length}{@render section(
 			t('player.jinxes'),
 			'play:jinxes',
 			jinxList,
