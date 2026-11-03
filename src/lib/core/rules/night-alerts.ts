@@ -207,6 +207,18 @@ export type NightAlertKind =
 	| 'survives-first-death'
 	| 'on-death';
 
+/**
+ * The alerts about what happens to a player if a killing step chooses them: protected, may
+ * bounce the death, survives a first death, or dying sets off an ability. The night step shows
+ * them in their own "If chosen" section, one row per player (Trevor, 2026-11-03).
+ */
+export const IF_CHOSEN_KINDS: ReadonlySet<NightAlertKind> = new Set([
+	'protected',
+	'may-bounce',
+	'survives-first-death',
+	'on-death'
+]);
+
 export interface NightAlert {
 	kind: NightAlertKind;
 	/** The player the alert is about: the waking player, or one who might die. */

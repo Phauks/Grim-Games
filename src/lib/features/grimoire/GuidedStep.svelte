@@ -3,6 +3,7 @@
 	import StepIcon from './StepIcon.svelte';
 	import NightAlerts from './NightAlerts.svelte';
 	import StepAfflictions from './StepAfflictions.svelte';
+	import StepIfChosen from './StepIfChosen.svelte';
 	import ChangeCharacterStep from './ChangeCharacterStep.svelte';
 	import StorytellerAbilityStep from './StorytellerAbilityStep.svelte';
 	import JinxChoiceStep from './JinxChoiceStep.svelte';
@@ -380,6 +381,7 @@
 			{/if}
 			<JinxChoiceStep {grimoire} {step} />
 			<NightAlerts {grimoire} {step} withoutImpaired />
+			<StepIfChosen {grimoire} {step} />
 			{#if stepJinxes.length > 0}
 				<h3>{t('characters.jinxes')}</h3>
 				<ul class="jinxes" data-testid="step-jinxes">

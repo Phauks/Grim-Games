@@ -3,6 +3,7 @@
 	import { rise } from '#lib/ui/motion.ts';
 	import StepIcon from './StepIcon.svelte';
 	import NightAlerts from './NightAlerts.svelte';
+	import StepIfChosen from './StepIfChosen.svelte';
 	import NightSuggested from './NightSuggested.svelte';
 	import type { Night, NightStep } from '#lib/core/rules/index.ts';
 	import NightText from '#lib/features/reference/NightText.svelte';
@@ -167,6 +168,7 @@
 					{/if}
 				</span>
 				<NightAlerts {grimoire} {step} compact />
+				<StepIfChosen {grimoire} {step} compact />
 				<NightSuggested {grimoire} {step} compact />
 			</span>
 		</button>
