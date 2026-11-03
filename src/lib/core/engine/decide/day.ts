@@ -531,7 +531,9 @@ export const DAY_DECIDERS: Deciders<
 		const tokens = marksInPlay(game, ctx.characters).flatMap((mark) =>
 			tokenEvents(game, mark, false, ctx)
 		);
-		return [{ type: 'DayStarted', at: ctx.now() }, ...tokens, ...endingAt(game, 'dawn', ctx)];
+		// Asking: the Storyteller picks which run-out reminders come off (`remindersRunOutByDawn`).
+		const ended = command.askReminders ? [] : endingAt(game, 'dawn', ctx);
+		return [{ type: 'DayStarted', at: ctx.now() }, ...tokens, ...ended];
 	},
 
 	Dusk(game, command, ctx, warn) {

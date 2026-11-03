@@ -445,7 +445,16 @@ export type Command =
 	 * Monk's Safe) and the Flowergirl's and Town Crier's tokens swap. `keepReminders` (the
 	 * Storyteller setting "Take reminders off on time" off) leaves every reminder as it is.
 	 */
-	| { type: 'NewDay'; keepReminders?: boolean }
+	| {
+			type: 'NewDay';
+			keepReminders?: boolean;
+			/**
+			 * The Storyteller is asked which run-out reminders come off (Settings, Remove reminders
+			 * that run out: Ask at dawn to remove): the Flowergirl's and Town Crier's tokens still
+			 * swap, but no timed reminder comes off by itself.
+			 */
+			askReminders?: boolean;
+	  }
 	/**
 	 * Dusk: the day is over and the night begins. Takes off the reminders whose rules say they
 	 * last until dusk (`reminderEnds`, the Poisoner's Poisoned); ticking the night's Dusk step

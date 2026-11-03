@@ -4,7 +4,7 @@ import { parseCharacterRules } from '#lib/core/data/character-rules.ts';
 import { Issues } from '#lib/core/data/validate.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
-import { remindersEndingAt } from './reminder-ends.ts';
+import { remindersEndingAt, remindersRunOutByDawn } from './reminder-ends.ts';
 
 const data = committedGameData();
 
@@ -74,6 +74,32 @@ describe('reminderEnds', () => {
 		expect(labelsOf(s.newDay(), 'flowergirl')).not.toEqual(labelsOf(s, 'flowergirl'));
 		const night = day.do({ type: 'Dusk', keepReminders: true });
 		expect(labelsOf(night, 'poisoner')).toEqual(['Poisoned']);
+	});
+
+	it('asks at dawn about the tokens that ran out, and leaves them on the board', () => {
+		// Settings › Remove reminders that run out, Ask at dawn to remove (Trevor, 2026-11-03).
+		// https://wiki.bloodontheclocktower.com/Monk
+		// Wiki: "At dawn, remove the SAFE reminder token."
+		// https://wiki.bloodontheclocktower.com/Poisoner
+		// Wiki: "Each dusk, the poisoned player becomes healthy—remove their POISONED reminder."
+		const s = scenario(['monk', 'chef', 'imp', 'empath', 'poisoner'])
+			.reminder('chef', 'monk', 'Safe')
+			.poisoned('empath');
+		const reminderOf = (at: Scenario, characterId: string) =>
+			at.game.seating
+				.flatMap((id) => at.game.seats[id].reminders)
+				.find((r) => r.characterId === characterId)!.reminderId;
+		// Tonight's Poisoned was placed after the last dawn: its dusk has not passed yet.
+		expect(remindersRunOutByDawn(s.game, s.characters)).toEqual([reminderOf(s, 'monk')]);
+		const day = s.do({ type: 'NewDay', askReminders: true });
+		expect(labelsOf(day, 'monk')).toEqual(['Safe']);
+		// Dusk kept the Poisoned (the setting keeps it for the Storyteller): the next dawn asks.
+		const night = day.do({ type: 'Dusk', keepReminders: true });
+		expect(labelsOf(night, 'poisoner')).toEqual(['Poisoned']);
+		expect(remindersRunOutByDawn(night.game, night.characters)).toEqual([
+			reminderOf(night, 'monk'),
+			reminderOf(night, 'poisoner')
+		]);
 	});
 
 	it('keeps a dawn token a jinx in play reads by day until dusk', () => {

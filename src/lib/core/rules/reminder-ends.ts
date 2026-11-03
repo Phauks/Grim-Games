@@ -96,6 +96,26 @@ export function remindersEndingAt(
 }
 
 /**
+ * The reminders that have run out by this dawn (before the New day starts it): those that
+ * come off at dawn, and those whose dusk has passed since they were placed, which stayed on
+ * because the Storyteller takes them off themselves (Settings, Remove reminders that run out:
+ * Ask at dawn to remove, Trevor 2026-11-03). A dusk token counts once a dawn came between its
+ * placing and this one; one with no placing day counts at once.
+ */
+export function remindersRunOutByDawn(game: Game, characters: CharacterLookup): ReminderId[] {
+	const days = game.pastDays.length;
+	const dawn = new Set(remindersEndingAt(game, 'dawn', characters));
+	return game.seating.flatMap((seatId) =>
+		game.seats[seatId].reminders.flatMap((r) => {
+			if (dawn.has(r.reminderId)) return [r.reminderId];
+			const end = reminderEndOf(r, characters);
+			const duskPassed = r.placedDays === undefined || r.placedDays < days;
+			return (end === 'dusk' || end === 'dusk-after-dawn') && duskPassed ? [r.reminderId] : [];
+		})
+	);
+}
+
+/**
  * The reminders on the board that come off now that `seatId` has died: those that last until
  * a player of their character dies (`owner-dies`), when that seat is the token's owner.
  */
