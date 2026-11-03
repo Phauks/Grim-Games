@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import Icon from '#lib/ui/icons/Icon.svelte';
+	import AddRow from '#lib/ui/primitives/AddRow.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import NoteRow from './NoteRow.svelte';
 	import type { TitledNote } from './note.ts';
@@ -62,9 +62,11 @@
 		{#if !readonly}
 			<li class="add-row">
 				<!-- "+ New note" (Trevor, 2026-10-23): a dashed edge and no fill. -->
-				<button type="button" class="add" data-testid="new-note" onclick={() => (adding = true)}>
-					<Icon name="add" />{t('player.newNote')}
-				</button>
+				<AddRow
+					label={t('player.newNote')}
+					data-testid="new-note"
+					onclick={() => (adding = true)}
+				/>
 			</li>
 		{/if}
 	</ul>
@@ -96,23 +98,6 @@
 	.add-row {
 		display: grid;
 		padding-block-start: var(--space-2);
-	}
-	.add {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--space-1);
-		width: 100%;
-		min-height: var(--tap-target);
-		padding: 0 var(--space-3);
-		border: 1px dashed var(--border);
-		border-radius: var(--radius-md);
-		background: transparent;
-		color: var(--on-surface-muted);
-		font: inherit;
-		font-family: var(--font-control);
-		font-weight: 600;
-		cursor: pointer;
-		touch-action: manipulation;
 	}
 	.none {
 		margin: 0;

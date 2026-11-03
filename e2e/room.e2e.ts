@@ -14,6 +14,47 @@ import { pickNumber } from './number-select.ts';
 // approval step (Trevor, 2026-10-26: "we don't approve anymore").
 
 /** Types a room code into Join game's code boxes. */
+/**
+ * Adds a choice to the room vote (plan M33): "+ New choice", its parts, then Confirm. With no
+ * parts it is Trouble Brewing alone; `script: null` switches the script off.
+ */
+async function addChoice(
+	page: Page,
+	parts: { script?: string | null; mode?: string; rules?: string[] } = {}
+) {
+	await page.getByTestId('vote-new-choice').tap();
+	const dialog = page.getByRole('dialog', { name: /^Choice \d+$/ });
+	await setChoice(page, dialog, parts);
+	await dialog.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(dialog).toHaveCount(0);
+}
+
+/** Changes the parts in an open choice dialog. */
+async function setChoice(
+	page: Page,
+	dialog: ReturnType<Page['getByRole']>,
+	parts: { script?: string | null; mode?: string; rules?: string[] }
+) {
+	const flip = (name: string) =>
+		dialog
+			.locator('[data-scope="switch"][data-part="root"]')
+			.filter({ has: page.getByText(name, { exact: true }) })
+			.locator('[data-part="control"]')
+			.tap();
+	if (parts.script === null) await flip('Script');
+	else if (parts.script) {
+		await dialog
+			.getByRole('radiogroup', { name: 'Script' })
+			.getByText(parts.script, { exact: true })
+			.tap();
+	}
+	if (parts.mode) {
+		await dialog.getByRole('combobox', { name: 'Game mode' }).tap();
+		await page.getByRole('option', { name: parts.mode, exact: true }).tap();
+	}
+	for (const rule of parts.rules ?? []) await flip(rule);
+}
+
 async function typeCode(phone: Page, code: string) {
 	const field = phone.getByRole('textbox', { name: 'Room code from the Storyteller' });
 	await field.tap();
@@ -631,38 +672,32 @@ test('after a game the room votes on the next script, and the next game opens in
 	await page.getByRole('link', { name: 'Room vote' }).tap();
 	await expect(page).toHaveURL(/\/vote$/);
 	const sheet = page.getByRole('main');
-	await expect(sheet.getByRole('heading', { name: 'Vote on the next script' })).toBeVisible();
-	// Scripts are found with New game's own controls (Trevor, 2026-10-23) and added in turn.
-	const scripts = sheet.getByRole('radiogroup', { name: 'Add a script' });
-	const add = sheet.getByRole('button', { name: 'Add to vote' });
+	await expect(sheet.getByRole('heading', { name: 'Vote on the next game' })).toBeVisible();
+	// Each choice is made in a dialog (plan M33), its script found with New game's own
+	// controls (Trevor, 2026-10-23); any number of them (2026-10-23: "should not be limited
+	// to 2 or 3"). Open vote waits for two.
 	const slots = sheet.getByTestId('script-vote-slots').getByRole('listitem');
-	// Rows for what is picked and one more, never fewer than two (Trevor, 2026-10-23: "should
-	// not be limited to 2 or 3").
-	await expect(slots).toHaveText([/^Script 1\s*None\s*$/, /^Script 2\s*None\s*$/]);
+	await expect(slots).toHaveCount(0);
 	// The room's code from before the vote opens, so players can join first; on a tablet it
 	// is in a column of its own beside the scripts (Trevor, 2026-10-23).
 	const joinCode = sheet.getByTestId('share-code');
 	await expect(joinCode).toHaveText(`${code.slice(0, 3)} ${code.slice(3)}`);
 	if (testInfo.project.name === 'tablet') {
-		const slotsBox = (await sheet.getByTestId('script-vote-slots').boundingBox())!;
+		const slotsBox = (await sheet.getByTestId('vote-new-choice').boundingBox())!;
 		const codeBox = (await joinCode.boundingBox())!;
 		expect(codeBox.x).toBeGreaterThan(slotsBox.x + slotsBox.width);
 	}
-	await add.tap();
-	await expect(add).toBeDisabled();
-	await scripts.getByText('Bad Moon Rising', { exact: true }).tap();
-	await add.tap();
-	await scripts.getByText('Sects & Violets', { exact: true }).tap();
-	await add.tap();
+	await addChoice(page);
+	await expect(sheet.getByRole('button', { name: 'Open vote' })).toBeDisabled();
+	await addChoice(page, { script: 'Bad Moon Rising' });
+	await addChoice(page, { script: 'Sects & Violets' });
 	await expect(slots).toHaveText([
-		/^Script 1\s*Trouble Brewing\s*$/,
-		/^Script 2\s*Bad Moon Rising\s*$/,
-		/^Script 3\s*Sects & Violets\s*$/,
-		/^Script 4\s*None\s*$/
+		/^1\s*Trouble Brewing\s*$/,
+		/^2\s*Bad Moon Rising\s*$/,
+		/^3\s*Sects & Violets\s*$/
 	]);
 	await sheet.getByRole('button', { name: 'Remove Sects & Violets' }).tap();
-	await expect(slots).toHaveCount(3);
-	await expect(slots.nth(2)).toHaveText(/^Script 3\s*None\s*$/);
+	await expect(slots).toHaveCount(2);
 	await sheet.getByRole('combobox', { name: 'How players vote' }).tap();
 	await page.getByRole('option', { name: 'Ranked' }).tap();
 	// A time limit (Trevor, 2026-10-23); the room stops taking ballots when it runs out.
@@ -794,18 +829,15 @@ test('after a game the room vote runs over the board, without leaving the game s
 	await more.tap();
 	await menu.getByTestId('menu-room-vote').tap();
 	const sheet = page.getByRole('dialog', { name: 'Room vote' });
-	await expect(sheet.getByRole('heading', { name: 'Vote on the next script' })).toBeVisible();
+	await expect(sheet.getByRole('heading', { name: 'Vote on the next game' })).toBeVisible();
 	// Still the game screen, with the room's code for the table and no Back (X closes it).
 	await expect(page).toHaveURL(new RegExp(`${board}$`));
 	await expect(sheet.getByTestId('share-code')).toHaveText(`${code.slice(0, 3)} ${code.slice(3)}`);
 	await expect(sheet.getByRole('button', { name: 'Back', exact: true })).toHaveCount(0);
 	await expect(status).toHaveText('The Storyteller is choosing a script.');
 
-	const scripts = sheet.getByRole('radiogroup', { name: 'Add a script' });
-	const add = sheet.getByRole('button', { name: 'Add to vote' });
-	await add.tap();
-	await scripts.getByText('Bad Moon Rising', { exact: true }).tap();
-	await add.tap();
+	await addChoice(page);
+	await addChoice(page, { script: 'Bad Moon Rising' });
 	await sheet.getByRole('button', { name: 'Open vote' }).tap();
 
 	// Closing the sheet keeps the vote running; Room vote opens it again with the count.
@@ -901,7 +933,7 @@ test('New game opens a room for the vote before any game or script', async ({
 	await page.getByRole('link', { name: 'Room vote' }).tap();
 	await expect(page).toHaveURL(/\/vote$/);
 	const sheet = page.getByRole('main');
-	await expect(sheet.getByRole('heading', { name: 'Vote on the next script' })).toBeVisible();
+	await expect(sheet.getByRole('heading', { name: 'Vote on the next game' })).toBeVisible();
 	const joinCode = sheet.getByTestId('share-code');
 	await expect(joinCode).toHaveText(/^\d{3} \d{3}$/);
 	const code = (await joinCode.textContent())!.replace(/\s/g, '');
@@ -912,12 +944,8 @@ test('New game opens a room for the vote before any game or script', async ({
 		'The Storyteller is choosing a script.'
 	);
 
-	await sheet.getByRole('button', { name: 'Add to vote' }).tap();
-	await sheet
-		.getByRole('radiogroup', { name: 'Add a script' })
-		.getByText('Bad Moon Rising', { exact: true })
-		.tap();
-	await sheet.getByRole('button', { name: 'Add to vote' }).tap();
+	await addChoice(page);
+	await addChoice(page, { script: 'Bad Moon Rising' });
 	await sheet.getByRole('button', { name: 'Open vote' }).tap();
 	const ballot = phone.getByTestId('ballot-screen');
 	await ballot.locator('[aria-pressed]').filter({ hasText: 'Bad Moon Rising' }).tap();
@@ -933,12 +961,8 @@ test('New game opens a room for the vote before any game or script', async ({
 	await sheet.getByRole('button', { name: 'Back', exact: true }).tap();
 	await expect(page).toHaveURL(/\/new$/);
 	await page.getByRole('link', { name: 'Room vote' }).tap();
-	await sheet.getByRole('button', { name: 'Add to vote' }).tap();
-	await sheet
-		.getByRole('radiogroup', { name: 'Add a script' })
-		.getByText('Bad Moon Rising', { exact: true })
-		.tap();
-	await sheet.getByRole('button', { name: 'Add to vote' }).tap();
+	await addChoice(page);
+	await addChoice(page, { script: 'Bad Moon Rising' });
 	await sheet.getByRole('button', { name: 'Open vote' }).tap();
 	await expect(ballot).toBeVisible();
 	await sheet.getByRole('button', { name: 'Cancel vote' }).tap();
@@ -946,47 +970,46 @@ test('New game opens a room for the vote before any game or script', async ({
 	await expect(ballot).toHaveCount(0);
 	await page.getByRole('link', { name: 'Room vote' }).tap();
 
-	// A vote on the game mode the same way (Trevor, 2026-10-23), five of them: not capped at
-	// two or three. Its winner becomes New game's mode.
-	await sheet.getByRole('combobox', { name: 'Vote on' }).tap();
-	await page.getByRole('option', { name: 'Game mode' }).tap();
-	const modeSheet = page.getByRole('main');
-	await expect(modeSheet.getByRole('heading', { name: 'Vote on the game mode' })).toBeVisible();
-	const add = modeSheet.getByRole('button', { name: 'Add to vote' });
-	const modes = modeSheet.getByRole('combobox', { name: 'Add a game mode' });
-	await add.tap();
-	for (const name of ['Sushi Buffet', 'Whale Buffet', 'Two games at once', 'Flesh and Bone']) {
-		await modes.tap();
-		await page.getByRole('option', { name, exact: true }).tap();
-		await add.tap();
-	}
-	await expect(modeSheet.getByTestId('script-vote-slots').getByRole('listitem')).toHaveText([
-		/^Mode 1\s*Standard\s*$/,
-		/^Mode 2\s*Sushi Buffet\s*$/,
-		/^Mode 3\s*Whale Buffet\s*$/,
-		/^Mode 4\s*Two games at once\s*$/,
-		/^Mode 5\s*Flesh and Bone\s*$/,
-		/^Mode 6\s*None\s*$/
-	]);
-	await modeSheet.getByRole('button', { name: 'Open vote' }).tap();
-	const modeBallot = phone.getByTestId('ballot-screen');
-	await expect(modeBallot.getByRole('heading', { name: 'Vote on the game mode' })).toBeVisible();
-	await expect(modeBallot.getByText('Pick the game mode you want to play next.')).toBeVisible();
-	await expect(modeBallot.getByTestId('script-ballot').getByRole('listitem')).toHaveCount(5);
-	await modeBallot.locator('[aria-pressed]').filter({ hasText: 'Sushi Buffet' }).tap();
-	await modeBallot.getByRole('button', { name: 'Vote', exact: true }).tap();
-	// A game mode has no script details.
-	await expect(modeBallot.getByRole('button', { name: /^Details of/ })).toHaveCount(0);
-	const results = modeSheet.getByTestId('script-vote-results').getByRole('listitem');
+	// One vote mixes a script with a special rule, a custom script and a game mode (Trevor,
+	// 2026-11-03, plan M33: "you may ask if they want tb +1 vs a custom vs sushi buffet").
+	const slots = sheet.getByTestId('script-vote-slots').getByRole('listitem');
+	await addChoice(page, { rules: ['+1'] });
+	await addChoice(page, { script: 'Bad Moon Rising' });
+	await expect(slots).toHaveText([/^1\s*Trouble Brewing · \+1\s*$/, /^2\s*Bad Moon Rising\s*$/]);
+	// The same choice can't go on twice.
+	await sheet.getByTestId('vote-new-choice').tap();
+	const choice3 = page.getByRole('dialog', { name: 'Choice 3' });
+	await setChoice(page, choice3, { rules: ['+1'] });
+	await expect(choice3.getByTestId('vote-choice-label')).toHaveText(/Trouble Brewing · \+1/);
+	await expect(choice3.getByRole('button', { name: 'Confirm', exact: true })).toBeDisabled();
+	await choice3.getByRole('button', { name: 'Cancel' }).tap();
+	// Its pencil reopens a choice to change it: here to a game mode alone.
+	await sheet.getByRole('button', { name: 'Change Bad Moon Rising' }).tap();
+	const choice2 = page.getByRole('dialog', { name: 'Choice 2' });
+	await setChoice(page, choice2, { script: null, mode: 'Sushi Buffet' });
+	await expect(choice2.getByTestId('vote-choice-label')).toHaveText(/Sushi Buffet/);
+	await choice2.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(slots).toHaveText([/^1\s*Trouble Brewing · \+1\s*$/, /^2\s*Sushi Buffet\s*$/]);
+	await sheet.getByRole('button', { name: 'Open vote' }).tap();
+	const mixedBallot = phone.getByTestId('ballot-screen');
+	await expect(mixedBallot.getByRole('heading', { name: 'Vote on the next game' })).toBeVisible();
+	await expect(mixedBallot.getByText('Pick the game you want to play next.')).toBeVisible();
+	await expect(mixedBallot.getByTestId('script-ballot').getByRole('listitem')).toHaveCount(2);
+	// Only a choice with a script has details.
+	await expect(mixedBallot.getByRole('button', { name: /^Details of/ })).toHaveCount(1);
+	await expect(
+		mixedBallot.getByRole('button', { name: 'Details of Trouble Brewing · +1' })
+	).toBeVisible();
+	await mixedBallot.locator('[aria-pressed]').filter({ hasText: 'Sushi Buffet' }).tap();
+	await mixedBallot.getByRole('button', { name: 'Vote', exact: true }).tap();
+	const results = sheet.getByTestId('script-vote-results').getByRole('listitem');
 	await expect(results.filter({ hasText: 'Sushi Buffet' })).toContainText('Votes: 1');
-	// Play comes once the vote has ended, after its final call.
+	// Play comes once the vote has ended.
 	await expect(results.getByRole('button', { name: 'Play' })).toHaveCount(0);
-	await modeSheet.getByRole('button', { name: 'End vote' }).tap();
-	await expect(modeSheet.getByRole('button', { name: 'New vote' })).toBeVisible({
-		timeout: 20_000
-	});
+	await sheet.getByRole('button', { name: 'End vote' }).tap();
+	await expect(sheet.getByRole('button', { name: 'New vote' })).toBeVisible({ timeout: 20_000 });
 	await results.filter({ hasText: 'Sushi Buffet' }).getByRole('button', { name: 'Play' }).tap();
-	await expect(modeBallot).toHaveCount(0);
+	await expect(mixedBallot).toHaveCount(0);
 	await expect(page.getByRole('combobox', { name: 'Game mode' })).toHaveText(/Sushi Buffet/);
 
 	// A vote on the special rules (Trevor, 2026-10-26: "Voting should allow selecting game
@@ -995,22 +1018,17 @@ test('New game opens a room for the vote before any game or script', async ({
 	await page.getByRole('combobox', { name: 'Game mode' }).tap();
 	await page.getByRole('option', { name: 'Standard', exact: true }).tap();
 	await page.getByRole('link', { name: 'Room vote' }).tap();
-	await sheet.getByRole('combobox', { name: 'Vote on' }).tap();
-	await page.getByRole('option', { name: 'Special rules' }).tap();
-	await expect(sheet.getByRole('heading', { name: 'Vote on special rules' })).toBeVisible();
-	const addRule = sheet.getByRole('button', { name: 'Add to vote' });
-	await addRule.tap();
-	await sheet.getByRole('combobox', { name: 'Add a special rule' }).tap();
-	await page.getByRole('option', { name: 'The Warrens', exact: true }).tap();
-	await addRule.tap();
+	await addChoice(page, { script: null, rules: ['+1'] });
+	await addChoice(page, { script: null, rules: ['The Warrens'] });
 	await expect(sheet.getByTestId('script-vote-slots').getByRole('listitem')).toHaveText([
-		/^Rule 1\s*\+1\s*$/,
-		/^Rule 2\s*The Warrens\s*$/,
-		/^Rule 3\s*None\s*$/
+		/^1\s*\+1\s*$/,
+		/^2\s*The Warrens\s*$/
 	]);
 	await sheet.getByRole('combobox', { name: 'How players vote' }).tap();
 	await page.getByRole('option', { name: 'Multiple choice' }).tap();
 	await sheet.getByRole('button', { name: 'Open vote' }).tap();
+	// Only special rules: a vote on them, as before.
+	await expect(sheet.getByRole('heading', { name: 'Vote on special rules' })).toBeVisible();
 	const ruleBallot = phone.getByTestId('ballot-screen');
 	await expect(ruleBallot.getByRole('heading', { name: 'Vote on special rules' })).toBeVisible();
 	await expect(

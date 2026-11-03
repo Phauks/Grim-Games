@@ -19,7 +19,6 @@ export const ASSIST_KEYS = [
 	'playerClaims',
 	'trackNominations',
 	'dayAfterNight',
-	'timedReminders',
 	'stackReminders',
 	'characterTokens',
 	'explainTerms'
@@ -95,11 +94,6 @@ export const ASSIST_LABELS: Record<AssistKey, { label: string; description: stri
 	dayAfterNight: {
 		label: 'Open the day after End night',
 		description: 'Open Day View'
-	},
-	timedReminders: {
-		label: 'Take reminders off on time',
-		description:
-			"At dawn and dusk, take off reminders that have run out, such as the Monk's Safe and the Poisoner's Poisoned, and swap the Flowergirl's and Town Crier's tokens. Off leaves every reminder for you to move."
 	},
 	stackReminders: {
 		label: 'Stack duplicate reminders',

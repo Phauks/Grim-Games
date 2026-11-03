@@ -1643,6 +1643,10 @@ for (const width of [undefined, 1400]) {
 		expect(b!.y).toBeGreaterThanOrEqual(0);
 		expect(h!.y).toBeGreaterThanOrEqual(b!.y + b!.height - 2);
 		expect(h!.y).toBeLessThan(b!.y + b!.height + 20);
+		// The band is at least as wide as the type bands passing under it, so their ends never
+		// show beside it (Trevor, 2026-11-03).
+		expect(b!.x).toBeLessThanOrEqual(h!.x + 0.5);
+		expect(b!.x + b!.width).toBeGreaterThanOrEqual(h!.x + h!.width - 0.5);
 		// Search and its tools sit over the characters, not in the side column.
 		const search = await page.getByRole('searchbox').boundingBox();
 		const list = await page.locator('.main[data-character-id="imp"]').boundingBox();
