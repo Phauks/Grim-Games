@@ -152,9 +152,8 @@ describe('Hatter', () => {
 			expect(characterChanger(party.game, 'hatter', party.characters)).toBe(party.seat('hatter'));
 		});
 
-		it.fails('shows the Minions and Demon the Hatter token on This character selected you', () => {
+		it('shows the Minions and Demon the Hatter token on This character selected you', () => {
 			// Wiki: "Show them the THIS CHARACTER SELECTED YOU info token, then the Hatter token."
-			// Waits on the engine (unplanned): the Hatter's rules fill only the You are token, not This character selected you.
 			expect(filledInfoToken(character, 'selected-you', 1)).toMatchObject({
 				characterIds: ['hatter']
 			});
@@ -173,10 +172,9 @@ describe('Hatter', () => {
 			expect(typeOf(after.game, after.seat('imp'), after.characters)).toBe('demon');
 		});
 
-		it.fails('takes Tea Party Tonight off by the next day', () => {
+		it('takes Tea Party Tonight off by the next day', () => {
 			// Wiki: "Put them to sleep. Remove the TEA PARTY TONIGHT reminder. Change each player to the
 			// character they chose."
-			// Waits on the engine (unplanned): Tea Party Tonight has no reminder end, so nothing takes it off after the night.
 			const s = scenario(cast)
 				.dies('hatter', 'imp')
 				.reminder('hatter', 'hatter', 'Tea Party Tonight');

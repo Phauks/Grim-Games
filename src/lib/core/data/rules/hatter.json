@@ -55,7 +55,14 @@
 			"notCreatedAfterDay": 5
 		}
 	},
+	"reminderEnds": {
+		"Tea Party Tonight": "dawn"
+	},
 	"infoTokenCharacters": {
+		"selected-you": {
+			"characters": ["self"],
+			"offer": true
+		},
 		"you-are": {
 			"characters": ["changed"]
 		}

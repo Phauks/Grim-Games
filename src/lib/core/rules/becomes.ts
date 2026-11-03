@@ -235,7 +235,8 @@ export function followedAlignmentOffer(
 
 /**
  * The player whose `characterId` changes a chosen player's character tonight
- * (`changesCharacter`): its own living player (or dead, when it acts when dead: the Hatter),
+ * (`changesCharacter`): its own living player (or dead, when it acts when dead; only once
+ * dead, when its ability is set off by its player's death, `onDeath`: the Hatter's tea party),
  * with its `token` on them when the rule names one (the Summoner's Night 3) and without its
  * `spent` token (the Huntsman's No Ability), and someone to change when only some characters
  * change (the Huntsman's Damsel, the Hatter's Minions and Demon).

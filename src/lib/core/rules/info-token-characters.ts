@@ -2,7 +2,8 @@
  * The characters an info token on a night step is shown with, ready filled in (Trevor,
  * 2026-10-24): the character's `infoTokenCharacters` rule, with `self` read as the
  * character itself and `chosen` as the true character of the player the Storyteller taps
- * (the Dreamer's). The Storyteller can still change them.
+ * (the Dreamer's), and `given` as the ability it gave a player (the Boffin's good
+ * character). The Storyteller can still change them.
  */
 import {
 	defaultAlignment,
@@ -172,6 +173,13 @@ function markedBy(game: Game, characterId: CharacterId, token: string): Characte
 	return seat ? game.seats[seat]?.characterId : undefined;
 }
 
+/** The character whose ability `characterId` gave a player (`givesAbility`), first in seating. */
+function givenBy(game: Game, characterId: CharacterId): CharacterId | undefined {
+	return game.seating
+		.flatMap((s) => game.seats[s]?.abilities ?? [])
+		.find((held) => held.via === characterId)?.characterId;
+}
+
 /** One card's places filled in from `context`; a place nothing fills yet is left out. */
 export function fillCard(
 	character: Pick<Character, 'id'>,
@@ -196,6 +204,8 @@ export function fillCard(
 					return one(game && rule.token && markedBy(game, character.id, rule.token));
 				case 'changed':
 					return one(changed?.at(-1));
+				case 'given':
+					return one(game && givenBy(game, character.id));
 				default:
 					return [c];
 			}

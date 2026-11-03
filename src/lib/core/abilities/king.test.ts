@@ -86,10 +86,9 @@ describe('King', () => {
 	describe('How to Run (https://wiki.bloodontheclocktower.com/King#How_to_Run)', () => {
 		const cast = ['king', 'snitch', 'witch', 'monk', 'chef', 'imp'];
 
-		it.fails('shows the Demon the King token on This player is on the first night', () => {
+		it('shows the Demon the King token on This player is on the first night', () => {
 			// Wiki: "During the first night, wake the Demon. Show them the THIS PLAYER IS info token,
 			// then the King token, then point at the King player. Put the Demon to sleep."
-			// Waits on the engine (unplanned): the King's rules fill no info token, so This player is does not show the King token.
 			expect(filledInfoToken(character, 'this-player-is', 1)).toMatchObject({
 				characterIds: ['king']
 			});
