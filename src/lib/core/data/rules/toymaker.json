@@ -31,7 +31,7 @@
 	},
 	"reminderMovement": {
 		"fixed": ["Final Night: No Attack"],
-		"why": "Marks this character’s own state, so it stays on its seat."
+		"why": "Put on the Demon once at the start, and only ever removed."
 	},
 	"evilInfo": {
 		"notes": {

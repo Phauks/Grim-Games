@@ -34,8 +34,7 @@
 		"none": "info"
 	},
 	"reminderMovement": {
-		"fixed": ["Minions Not Nominated", "Minion Nominated"],
-		"why": "Marks this character’s own state, so it stays on its seat."
+		"why": "Swapped every day: reset at dawn, replaced when a Minion nominates."
 	},
 	"dayMark": {
 		"mark": "minion-nominated",
