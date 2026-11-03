@@ -35,9 +35,9 @@ test('a name two players share is numbered by join order until one changes it', 
 	const code = await openRoom(page);
 	// Players, not Share, lists who is in the room (Trevor, 2026-10-29).
 	await page.goto(page.url().replace(/\/room$/, '/players'));
-	// Every seat is listed too; the phones with no seat come after them.
+	// The phones with no seat are spectators, in their own list (Trevor, 2026-11-03).
 	const players = page
-		.getByRole('list', { name: 'Players in the room' })
+		.getByRole('list', { name: 'Spectators' })
 		.getByRole('listitem')
 		.filter({ hasText: 'No seat' });
 	const first = await joinAs(browser, testInfo, code, 'John');

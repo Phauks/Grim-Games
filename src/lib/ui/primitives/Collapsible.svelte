@@ -35,6 +35,11 @@
 		/** A character type's colour family (`typeTone`). */
 		tone?: TypeTone;
 		/**
+		 * A band with no type colour, only a gold edge, for a section among type bands that isn't
+		 * a character type (the Script sheet's Jinxes and Players; Trevor, 2026-11-03, picked "B").
+		 */
+		outlined?: boolean;
+		/**
 		 * Shown open regardless of the remembered choice, e.g. while a search is typed so every
 		 * match is visible. The header can't close it meanwhile; the remembered choice is kept.
 		 */
@@ -93,6 +98,7 @@
 		storageKey,
 		level = 2,
 		tone,
+		outlined = false,
 		forceOpen = false,
 		empty = false,
 		startClosed = false,
@@ -148,7 +154,11 @@
 	data-open={shown ? '' : undefined}
 	data-pinned={pinned ? '' : undefined}
 >
-	<div class="head" data-type-band={tone} data-aside-by-title={asideByTitle ? '' : undefined}>
+	<div
+		class="head"
+		data-type-band={tone ?? (outlined ? 'outline' : undefined)}
+		data-aside-by-title={asideByTitle ? '' : undefined}
+	>
 		{#if lead}<div class="lead">{@render lead()}</div>{/if}
 		<svelte:element this={`h${level}`} class="title">
 			<button
@@ -253,7 +263,7 @@
 		z-index: -1;
 		border-radius: var(--radius-full);
 		background: var(--type-band);
-		box-shadow: var(--button-ring);
+		box-shadow: var(--type-band-ring, var(--button-ring));
 	}
 	.head[data-type-band] .toggle {
 		color: var(--on-type-band);

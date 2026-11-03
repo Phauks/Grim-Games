@@ -9,12 +9,23 @@
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { Alignment, CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
-import { alignmentOf } from '#lib/core/model/selectors.ts';
+import { alignmentOf, typeOf } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 
 /** The contest rule of `characterId`, if its ability holds one. */
-function contestRule(characterId: CharacterId, characters?: CharacterLookup) {
+export function contestRule(characterId: CharacterId, characters?: CharacterLookup) {
 	return rulesOf(characterId, characters)?.gameEnd?.contest;
+}
+
+/** The players who choose the contest's other player (the Demon), in seating order. */
+export function contestChoosers(
+	game: Game,
+	characterId: CharacterId,
+	characters: CharacterLookup
+): SeatId[] {
+	const rule = contestRule(characterId, characters);
+	if (!rule) return [];
+	return game.seating.filter((id) => typeOf(game, id, characters) === rule.chooser);
 }
 
 /**
@@ -52,4 +63,17 @@ export function contestWinner(
 	if (!rule) return undefined;
 	if (a.votes === b.votes) return rule.tie;
 	return alignmentOf(game, a.votes > b.votes ? a.seatId : b.seatId);
+}
+
+/**
+ * What the day's row of a rule character no player holds offers: a use by any living player
+ * (`dayUse.anyone`: the Doomsayer) or a contest (the Fiddler's).
+ */
+export function ruleCharacterUse(
+	characterId: CharacterId,
+	characters?: CharacterLookup
+): 'anyone' | 'contest' | undefined {
+	const rules = rulesOf(characterId, characters);
+	if (rules?.dayUse?.anyone) return 'anyone';
+	return rules?.gameEnd?.contest ? 'contest' : undefined;
 }

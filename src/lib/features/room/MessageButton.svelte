@@ -8,6 +8,7 @@
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import type { RoomPlayer } from './player.svelte.ts';
+	import type { RoomViewer } from './viewer.svelte.ts';
 	import { releaseRoom, useRoom } from './room-connection.ts';
 
 	/**
@@ -25,9 +26,11 @@
 		 * player of the room behind it, so nothing can be sent.
 		 */
 		preview?: boolean;
+		/** Grim view, writing as someone watching (Trevor, 2026-11-03), in place of a room's phone. */
+		viewer?: RoomViewer;
 	}
 
-	let { room, preview = false }: Props = $props();
+	let { room, preview = false, viewer }: Props = $props();
 
 	let player = $state.raw<RoomPlayer>();
 	$effect(() => {
@@ -46,11 +49,11 @@
 	/** Asks the Storyteller for a word in private (Trevor, 2026-10-27: "add a checkmark to request a storyteller consult"); it can go with no text. */
 	let consult = $state(false);
 	const ready = $derived(!!text.trim() || consult);
-	const canSend = $derived(!!player?.view?.inbox);
+	const canSend = $derived(viewer ? viewer.inbox : !!player?.view?.inbox);
 
 	function send() {
 		if (!ready) return;
-		if (!player?.sendMessage(text, consult)) {
+		if (!(viewer ?? player)?.sendMessage(text, consult)) {
 			failed = true;
 			return;
 		}
@@ -61,7 +64,7 @@
 	}
 </script>
 
-{#if room}
+{#if room || viewer}
 	<IconButton
 		icon="messages"
 		aria-haspopup="dialog"

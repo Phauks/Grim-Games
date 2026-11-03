@@ -4,16 +4,17 @@
 	import {
 		reminderHolder,
 		type Reminder,
+		type ReminderInstance,
 		type ReminderId,
 		type SeatId
 	} from '#lib/core/model/index.ts';
 	import { fixedReminderMove, fixedReminderReason } from '#lib/core/rules/index.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
-	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
+	import BoardReminder from './BoardReminder.svelte';
 	import { placingAlignment } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
-	import { onBoard, tokenLabel } from './reminders.ts';
+	import { onBoard, placedLook } from './reminders.ts';
 
 	/**
 	 * Moving a reminder that normally stays where it was put (an "Is The Drunk", a Poisoned
@@ -36,7 +37,7 @@
 	/** Where a reminder is, or goes. */
 	type Place = { seatId: SeatId } | { characterId: CharacterId } | { loose: true } | { bank: true };
 	interface Pending {
-		reminder: Reminder;
+		reminder: ReminderInstance | Reminder;
 		from: Place;
 		to: Place;
 		why?: string;
@@ -46,7 +47,9 @@
 	let pending = $state<Pending>();
 
 	/** The reminder and where it is now; undefined when it is not on the board. */
-	function find(reminderId: ReminderId): { reminder: Reminder; from: Place } | undefined {
+	function find(
+		reminderId: ReminderId
+	): { reminder: ReminderInstance | Reminder; from: Place } | undefined {
 		const from = reminderHolder(game, reminderId);
 		if (!from) return undefined;
 		const reminder = onBoard(game).find((r) => r.reminderId === reminderId);
@@ -99,7 +102,7 @@
 		/** A copy of one of the bank's ∞ tokens (plan B9). */
 		tokenId?: string
 	): void {
-		const found: { reminder: Reminder; from: Place } | undefined =
+		const found: { reminder: ReminderInstance | Reminder; from: Place } | undefined =
 			typeof what === 'string' ? find(what) : { reminder: what, from: { bank: true } };
 		if (!found) return;
 		const run = () =>
@@ -147,19 +150,25 @@
 >
 	{#if pending}
 		{@const owner = characters.get(pending.reminder.characterId)}
-		<!-- Which token, from which character, and both places (Trevor, 2026-10-16). -->
-		<p class="what">
-			<CharacterPiece
-				template="badge"
-				characterId={pending.reminder.characterId}
-				character={owner}
-			/>'s
-			<ReminderToken
-				label={tokenLabel(pending.reminder)}
-				character={owner}
+		<!--
+			Which token, from which character, and both places (Trevor, 2026-10-16). The token is
+			the round one the board draws, not the in-text chip (Trevor, 2026-11-03).
+		-->
+		<div class="what">
+			<BoardReminder
+				{...'reminderId' in pending.reminder
+					? placedLook(pending.reminder, characters)
+					: { label: pending.reminder.label, character: owner }}
 				alignment={placingAlignment(game, pending.reminder, characters)}
-			/> reminder
-		</p>
+			/>
+			<span
+				><CharacterPiece
+					template="badge"
+					characterId={pending.reminder.characterId}
+					character={owner}
+				/>'s reminder</span
+			>
+		</div>
 		<dl class="change">
 			<dt>Now</dt>
 			<dd>{@render place(pending.from)}</dd>
@@ -195,6 +204,9 @@
 		margin: 0;
 	}
 	.what {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
 		margin: 0 0 var(--space-2);
 	}
 	.why {

@@ -14,6 +14,7 @@
 		dayClaim,
 		dayStateFromGame,
 		dayUseOf,
+		ruleCharacterUse,
 		isOnceOnlyDayAbility,
 		daySentence,
 		madnessOffer,
@@ -51,7 +52,7 @@
 	import DayUseDialog from './DayUseDialog.svelte';
 	import RuleDayControl, { hasRuleDayControl } from './RuleDayControl.svelte';
 	import { atDayStart } from './day-start.ts';
-	import AnyoneUseButton from './AnyoneUseButton.svelte';
+	import RuleCharacterUse from './RuleCharacterUse.svelte';
 	import JinxStopChips, { jinxStopRows } from './JinxStopChips.svelte';
 
 	interface Props {
@@ -145,12 +146,12 @@
 		});
 	}
 
-	/** A rule character's row whose day ability any living player may use (the Doomsayer). */
+	/** A rule character's row any living player may use (the Doomsayer), or a contest's. */
 	function anyoneOf(reminder: DayReminder): CharacterId | undefined {
 		const id = reminder.characterId;
 		const head = reminder.segments[0];
 		if (!id || head?.kind !== 'character' || head.ref.seatId) return undefined;
-		return dayUseOf(id, game.characters)?.anyone && g.ruleCharacters.includes(id) ? id : undefined;
+		return ruleCharacterUse(id, game.characters) && g.ruleCharacters.includes(id) ? id : undefined;
 	}
 	/** Its player chosen (AnyoneUseButton): DayUseDialog asks who dies. */
 	function anyoneChose(characterId: CharacterId, seatId: SeatId) {
@@ -366,10 +367,10 @@
 	{/if}
 {/snippet}
 
-<!-- Use on a rule character's row that any living player may use (the Doomsayer). -->
+<!-- Use on a rule character's row that any living player may use, or its contest. -->
 {#snippet anyoneEnd(characterId: CharacterId)}
 	<span class="day-end"
-		><AnyoneUseButton {game} {characterId} onChoose={(s) => anyoneChose(characterId, s)} /></span
+		><RuleCharacterUse {game} {characterId} onChoose={(s) => anyoneChose(characterId, s)} /></span
 	>
 {/snippet}
 
