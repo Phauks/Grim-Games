@@ -65,6 +65,10 @@
 					{
 						"label": "Dead",
 						"action": "place"
+					},
+					{
+						"label": "3 Attacks",
+						"action": "remove"
 					}
 				]
 			}

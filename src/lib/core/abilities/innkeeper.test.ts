@@ -144,18 +144,14 @@ describe('Innkeeper', () => {
 			expect(protection(s.game, s.seat('empath'), s.characters, 'demon')).toBeUndefined();
 		});
 
-		it.fails('takes the Safe reminders off at dawn', () => {
+		it('takes the Safe reminders off at dawn', () => {
 			// Wiki: "At dawn, remove the SAFE reminders."
-			// Waits on the engine (unplanned): the Innkeeper's rules have no reminderEnds for Safe, so
-			// New day leaves them on.
 			const s = scenario(cast).newDay().reminder('chef', 'innkeeper', 'Safe').newDay();
 			expect(s.game.seats[s.seat('chef')].reminders).toEqual([]);
 		});
 
-		it.fails('takes the Drunk reminder off at dusk', () => {
+		it('takes the Drunk reminder off at dusk', () => {
 			// Wiki: "At dusk, remove the DRUNK reminder."
-			// Waits on the engine (unplanned): the Innkeeper's rules have no reminderEnds for Drunk, so
-			// Dusk leaves it on.
 			const s = scenario(cast).newDay().reminder('chef', 'innkeeper', 'Drunk').newDay().dusk();
 			expect(s.game.seats[s.seat('chef')].reminders).toEqual([]);
 		});

@@ -65,5 +65,9 @@
 			}
 		}
 	},
-	"marksChoice": ["Safe"]
+	"marksChoice": ["Safe"],
+	"reminderEnds": {
+		"Safe": "dawn",
+		"Drunk": "dusk"
+	}
 }

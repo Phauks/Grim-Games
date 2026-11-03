@@ -178,11 +178,9 @@ describe('Philosopher', () => {
 			);
 		});
 
-		it.fails('takes the Drunk reminder off when the Philosopher dies', () => {
+		it('takes the Drunk reminder off when the Philosopher dies', () => {
 			// Wiki: "If the Philosopher dies, the player made drunk by the Philosopher becomes sober -
 			// remove the DRUNK reminder."
-			// Waits on the engine (unplanned): the Philosopher's death sobers the player but leaves the
-			// Drunk reminder on them.
 			const s = scenario(['philosopher', 'artist', 'chef', 'witch', 'nodashii'])
 				.reminder('artist', 'philosopher', 'Drunk')
 				.dies('philosopher', 'nodashii');

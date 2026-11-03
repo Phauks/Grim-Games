@@ -142,5 +142,8 @@
 				"reason": "Says which night token goes on and what X does."
 			}
 		}
+	},
+	"reminderEnds": {
+		"X": "dusk"
 	}
 }

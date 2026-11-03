@@ -77,5 +77,8 @@
 	"onNominating": {
 		"carrier": "Cursed",
 		"effect": "kills-nominator"
+	},
+	"reminderEnds": {
+		"Cursed": "dusk"
 	}
 }

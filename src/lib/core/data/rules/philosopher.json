@@ -75,5 +75,8 @@
 		"token": "Drunk",
 		"swapped": true,
 		"wakes": true
+	},
+	"reminderEnds": {
+		"Drunk": "owner-dies"
 	}
 }
