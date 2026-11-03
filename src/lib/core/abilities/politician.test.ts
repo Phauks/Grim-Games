@@ -17,7 +17,7 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { endCharacters, joinsWinners } from '#lib/core/rules/end-reason.ts';
 import { gameEnds, suggestedWinner } from '#lib/core/rules/game-end.ts';
-import { engineGap, scenario } from '#lib/core/testing/scenario.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Politician', () => {
 	const character = committedCharacter('politician');
@@ -111,20 +111,17 @@ describe('Politician', () => {
 			expect(endCharacters(dead.game, dead.characters)).toContain('politician');
 		});
 
-		it.fails('lets an evil Politician who lost the game for evil turn good and win', () => {
+		it('lets an evil Politician who lost the game for evil turn good and win', () => {
 			// Wiki: "In the rare instance that the Politician is evil, and plays a big part in losing
 			// the game for evil, declare that the Politician turns good and wins with the good team."
-			// Waits on the engine (M15l): the Storyteller's call that the Politician wins with the
-			// other team.
 			const s = scenario(['politician', 'chef', 'empath', 'imp', 'poisoner'])
 				.becomes('politician', 'politician', 'evil')
 				.execute('imp');
 			expect(suggestedWinner(gameEnds(s.game, s.characters))).toBe('good');
 			expect(endCharacters(s.game, s.characters)).toContain('politician');
-			engineGap(
-				'M15l',
-				'an evil Politician wins with good when the Storyteller judges them most responsible for evil losing'
-			);
+			// The Storyteller's call: the evil Politician may win with good.
+			expect(joinsWinners(s.game, s.characters, 'good')).toEqual([s.seat('politician')]);
+			expect(joinsWinners(s.game, s.characters, 'evil')).toEqual([]);
 		});
 	});
 });

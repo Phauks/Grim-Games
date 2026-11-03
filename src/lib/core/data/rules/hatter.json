@@ -36,21 +36,36 @@
 	},
 	"changesCharacter": {
 		"types": ["minion", "demon"],
-		"sameType": true
+		"sameType": true,
+		"afterDeath": true
 	},
 	"optionalRule": {
 		"changesCharacter": {
 			"types": ["minion", "demon"],
 			"sameType": true,
-			"anyType": true
+			"anyType": true,
+			"afterDeath": true
 		}
 	},
 	"jinxes": {
+		"legion": {
+			"allEvilBecome": true
+		},
 		"leviathan": {
 			"notCreatedAfterDay": 5
+		},
+		"lilmonsta": {
+			"alsoBecomes": "minion"
 		}
 	},
+	"reminderEnds": {
+		"Tea Party Tonight": "dawn"
+	},
 	"infoTokenCharacters": {
+		"selected-you": {
+			"characters": ["self"],
+			"offer": true
+		},
 		"you-are": {
 			"characters": ["changed"]
 		}

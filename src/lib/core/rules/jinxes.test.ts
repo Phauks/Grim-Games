@@ -137,7 +137,7 @@ describe('jinx rules data', () => {
 		readJinxRules(
 			{
 				a: { registersTo: { always: true } },
-				b: { impairsPartner: 'no-ability' },
+				b: { impairsPartner: 'sober' },
 				c: { noKill: 'sometimes' },
 				d: { grimoireHides: ['minion', 'everyone'] }
 			},
@@ -181,6 +181,65 @@ describe('jinx rules data', () => {
 			'jinxes.e.deadAtLeast',
 			'jinxes.e.notCreatedAfterDay',
 			'jinxes.e'
+		]);
+	});
+
+	it('reads the Vizier jinx rules, and rejects bad ones', () => {
+		const issues = new Issues();
+		const good = {
+			a: { notDeclared: true, keepsProtection: true, wakesWithPartner: true },
+			b: { impairsPartner: 'no-ability', noExecuteNow: { who: 'partner' } },
+			c: { noExecuteNow: { who: 'marked', token: 'Fear' } }
+		};
+		expect(readJinxRules(good, 'jinxes', issues)).toEqual(good);
+		expect(issues.list).toEqual([]);
+		const bad = new Issues();
+		readJinxRules(
+			{
+				a: { noExecuteNow: { who: 'marked' } },
+				b: { noExecuteNow: { who: 'everyone' } },
+				c: { notDeclared: 'yes' }
+			},
+			'jinxes',
+			bad
+		);
+		expect(bad.list.map((i) => i.split(': ')[0])).toEqual([
+			'jinxes.a.noExecuteNow.token',
+			'jinxes.a',
+			'jinxes.b.noExecuteNow.who',
+			'jinxes.b',
+			'jinxes.c.notDeclared',
+			'jinxes.c'
+		]);
+	});
+
+	it("reads Lil' Monsta's babysitting jinx rules, and rejects bad ones", () => {
+		const issues = new Issues();
+		const good = {
+			a: { alsoBecomes: 'minion' },
+			b: { carrierType: 'minion' },
+			c: { keptByPartner: true },
+			d: { diesWhenExecuted: 'Is The Demon' }
+		};
+		expect(readJinxRules(good, 'jinxes', issues)).toEqual(good);
+		expect(issues.list).toEqual([]);
+		const bad = new Issues();
+		readJinxRules(
+			{
+				a: { alsoBecomes: 'goblin' },
+				b: { keptByPartner: 'yes' },
+				c: { diesWhenExecuted: 3 }
+			},
+			'jinxes',
+			bad
+		);
+		expect(bad.list.map((i) => i.split(': ')[0])).toEqual([
+			'jinxes.a.alsoBecomes',
+			'jinxes.a',
+			'jinxes.b.keptByPartner',
+			'jinxes.b',
+			'jinxes.c.diesWhenExecuted',
+			'jinxes.c'
 		]);
 	});
 

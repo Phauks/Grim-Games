@@ -33,9 +33,15 @@
 	},
 	"dayUse": {
 		"who": "chosen",
-		"kills": true
+		"kills": true,
+		"beforeNominations": true
 	},
 	"deathCause": {
 		"kind": "kills"
+	},
+	"jinxes": {
+		"lilmonsta": {
+			"diesWhenExecuted": "Is The Demon"
+		}
 	}
 }

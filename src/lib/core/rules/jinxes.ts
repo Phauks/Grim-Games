@@ -21,7 +21,7 @@ import {
 	scriptCharacterIds,
 	type CharacterLookup
 } from '#lib/core/model/characters.ts';
-import { trueCharacter } from '#lib/core/model/selectors.ts';
+import { alignmentOf, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 
 type RulesLookup = ReadonlyMap<CharacterId, { rules?: CharacterRules }>;
@@ -98,6 +98,21 @@ export function registeredTo(
 }
 
 /**
+ * Whether a jinx on the game's script says the Storyteller doesn't declare `characterId` is
+ * in play (`notDeclared`: the Vizier with the Alsaahir or the Investigator,
+ * https://wiki.bloodontheclocktower.com/Vizier#Related_Jinxes). A jinx is in effect while
+ * both are on the script, so the partner need not be in play: declaring only when it isn't
+ * would tell everyone it isn't.
+ */
+export function notDeclared(
+	game: Pick<Game, 'script'>,
+	characterId: CharacterId,
+	characters?: RulesLookup
+): boolean {
+	return ownJinxes(game, characterId, (r) => r.notDeclared === true, characters).length > 0;
+}
+
+/**
  * The partners `changer`'s `changesCharacter` may no longer create, now that the day a jinx
  * names is over (`notCreatedAfterDay`: the Pit-Hag's and the Hatter's Leviathan, after day 5,
  * https://wiki.bloodontheclocktower.com/Leviathan#Related_Jinxes). A change is made at night,
@@ -115,6 +130,75 @@ export function createdTooLate(
 		(r) => r.notCreatedAfterDay !== undefined && day >= r.notCreatedAfterDay,
 		characters
 	).map((j) => j.partner);
+}
+
+/**
+ * The character type a player `changer`'s `changesCharacter` makes into `characterId` also
+ * chooses and becomes, as that partner is never dealt (`alsoBecomes`: the Hatter's Demon who
+ * chooses Lil' Monsta also chooses a Minion,
+ * https://wiki.bloodontheclocktower.com/Hatter#Related_Jinxes). Undefined when no jinx says so.
+ */
+export function alsoBecomes(
+	game: Pick<Game, 'script'>,
+	changer: CharacterId,
+	characterId: CharacterId,
+	characters?: RulesLookup
+): CharacterType | undefined {
+	return ownJinxRules(game, changer, characterId, characters)?.alsoBecomes;
+}
+
+/**
+ * The partner whose jinx with `owner` lets `seatId` die when executed despite `owner`'s own
+ * protection: the seat carries the partner's token that `diesWhenExecuted` names (the
+ * Psychopath and the Vizier babysitting Lil' Monsta,
+ * https://wiki.bloodontheclocktower.com/Lil%27_Monsta#Related_Jinxes). Undefined otherwise.
+ */
+export function diesWhenExecutedBy(
+	game: Game,
+	seatId: SeatId,
+	owner: CharacterId,
+	characters?: RulesLookup
+): CharacterId | undefined {
+	const reminders = game.seats[seatId]?.reminders ?? [];
+	return ownJinxes(game, owner, (r) => r.diesWhenExecuted !== undefined, characters).find(
+		({ partner, rule }) =>
+			reminders.some((r) => r.characterId === partner && r.label === rule.diesWhenExecuted)
+	)?.partner;
+}
+
+/**
+ * The partner whose jinx says `seatId` doesn't carry `carrier`'s `carrierIsDemon` token:
+ * `carrierType`, while the partner's player lives only a player of that type does (the
+ * Magician's and the Poppy Grower's Lil' Monsta goes to a Minion); `keptByPartner`, once the
+ * partner's `becomes` token marks a player only they do (the Scarlet Woman babysits Lil'
+ * Monsta for the rest of the game,
+ * https://wiki.bloodontheclocktower.com/Lil%27_Monsta#Related_Jinxes). A seat whose type is
+ * not known yet is not judged. Undefined when nothing rules it out.
+ */
+export function carrierJinx(
+	game: Game,
+	carrier: CharacterId,
+	seatId: SeatId,
+	characters: CharacterLookup
+): CharacterId | undefined {
+	const test = (r: JinxRules) => r.carrierType !== undefined || r.keptByPartner === true;
+	return ownJinxes(game, carrier, test, characters).find(({ partner, rule }) => {
+		if (rule.carrierType) {
+			const alive = game.seating.some(
+				(s) => !game.seats[s].dead && trueCharacter(game, s, characters) === partner
+			);
+			const type = typeOf(game, seatId, characters);
+			if (alive && type !== undefined && type !== rule.carrierType) return true;
+		}
+		if (rule.keptByPartner) {
+			const token = rulesOf(partner, characters)?.becomes?.token;
+			const keepers = game.seating.filter((s) =>
+				game.seats[s].reminders.some((r) => r.characterId === partner && r.label === token)
+			);
+			if (token !== undefined && keepers.length > 0 && !keepers.includes(seatId)) return true;
+		}
+		return false;
+	})?.partner;
 }
 
 export interface ScriptJinx extends Jinx {
@@ -308,5 +392,23 @@ export function jinxForbidsBecoming(
 	}
 	return [...inPlay].find(
 		(other) => other !== characterId && jinxRulesBetween(characterId, other, characters)?.exclusive
+	);
+}
+
+/**
+ * The other players who become `created` too, now that `changer`'s `changesCharacter` made
+ * one player it (`allEvilBecome`: when the Engineer, the Hatter or the Summoner creates Legion,
+ * every evil player becomes Legion, https://wiki.bloodontheclocktower.com/Legion#Related_Jinxes):
+ * every evil player, alive or dead, who isn't it yet. Empty when no jinx says so.
+ */
+export function allEvilBecoming(
+	game: Game,
+	changer: CharacterId,
+	created: CharacterId,
+	characters: CharacterLookup
+): SeatId[] {
+	if (!ownJinxRules(game, changer, created, characters)?.allEvilBecome) return [];
+	return game.seating.filter(
+		(id) => alignmentOf(game, id) === 'evil' && trueCharacter(game, id, characters) !== created
 	);
 }

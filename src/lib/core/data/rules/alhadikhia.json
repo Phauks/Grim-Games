@@ -21,7 +21,71 @@
 		"none": "its tokens are only used after the first night or when something happens"
 	},
 	"dayReminders": {
-		"none": "night kills"
+		"reminders": [
+			{
+				"group": "announcement",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "marked"
+					},
+					{
+						"target": true
+					},
+					{
+						"text": "as 1: say at dawn whether they are alive or dead"
+					}
+				],
+				"when": {
+					"self": "any",
+					"reminder": "1"
+				}
+			},
+			{
+				"group": "announcement",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "marked"
+					},
+					{
+						"target": true
+					},
+					{
+						"text": "as 2: say at dawn whether they are alive or dead"
+					}
+				],
+				"when": {
+					"self": "any",
+					"reminder": "2"
+				}
+			},
+			{
+				"group": "announcement",
+				"template": [
+					{
+						"self": true
+					},
+					{
+						"text": "marked"
+					},
+					{
+						"target": true
+					},
+					{
+						"text": "as 3: say at dawn whether they are alive or dead"
+					}
+				],
+				"when": {
+					"self": "any",
+					"reminder": "3"
+				}
+			}
+		]
 	},
 	"deathCause": {
 		"kind": "kills"

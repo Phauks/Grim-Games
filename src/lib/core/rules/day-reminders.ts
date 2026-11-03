@@ -30,6 +30,7 @@ import { rulesIn, rulesOf } from '#lib/core/data/rules/index.ts';
 import { wikiUrl } from '#lib/core/data/wiki.ts';
 import { effectDayLines, type DayLineEffect } from './reminder-effects.ts';
 import { grantedWishSeats } from './wishes.ts';
+import { notDeclared } from './jinxes.ts';
 
 export { DAY_GROUPS };
 export type { DayCondition, DayGroup, DayInteraction, DayReminderSpec, DeathCauseMatch };
@@ -98,6 +99,11 @@ export interface DayState {
 	grantedWishes?: readonly SeatId[];
 	/** The days begun (`game.pastDays.length`), for effects that last a day. */
 	days?: number;
+	/**
+	 * Characters a jinx says the Storyteller doesn't declare in play (`notDeclared`: the Vizier
+	 * with the Alsaahir or the Investigator), whose `announcement` lines are left out.
+	 */
+	notDeclared?: readonly CharacterId[];
 }
 
 /** A badge for a character, with the seat and player name when there is one. */
@@ -273,6 +279,9 @@ export function dayStateFromGame(
 		...(game.optionalRules ? { optionalRules: game.optionalRules } : {}),
 		grantedWishes: grantedWishSeats(game),
 		days: game.pastDays.length,
+		notDeclared: [...new Set(game.seating.flatMap((s) => game.seats[s]?.characterId ?? []))].filter(
+			(id) => notDeclared(game, id, characters)
+		),
 		...(overrides ? { overrides } : {}),
 		...(characters ? { ability: (seatId: SeatId) => abilityState(game, seatId, characters) } : {})
 	};
@@ -463,6 +472,7 @@ function conditionHolds(
 	if (self === 'alive' && dead && !seat?.keepsAbility) return false;
 	if (self === 'dead' && !dead) return false;
 	if (when.minAlive !== undefined && alive < when.minAlive) return false;
+	if (when.day !== undefined && state.days !== undefined && state.days !== when.day) return false;
 	if (when.cause && seat) return causeMatches(seat.deathCause, when.cause, state);
 	return true;
 }
@@ -699,7 +709,15 @@ export function dayReminders(state: DayState): DayReminders {
 	for (const id of state.ruleCharacters ?? []) visit(id, undefined);
 	all.push(...interactions(state));
 	all.push(...effectLines(state));
-	const { shown, hidden } = applyDayOverrides(all, state.overrides ?? [], state);
+	const undeclared = (r: DayReminder) =>
+		r.group === 'announcement' &&
+		r.characterId !== undefined &&
+		(state.notDeclared ?? []).includes(r.characterId);
+	const { shown, hidden } = applyDayOverrides(
+		all.filter((r) => !undeclared(r)),
+		state.overrides ?? [],
+		state
+	);
 	const groups = DAY_GROUPS.map((group) => ({
 		group,
 		title: DAY_GROUP_TITLES[group],

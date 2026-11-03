@@ -22,7 +22,10 @@ import {
 import { abilityState } from '#lib/core/rules/ability.ts';
 import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 import { wakeConditionMet } from '#lib/core/rules/wakes-when.ts';
-import { engineGap, scenario, type Scenario } from '#lib/core/testing/scenario.ts';
+import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
+import { nightOrder } from '#lib/core/rules/night-order.ts';
+import { withNightInfo } from '#lib/core/rules/night-info.ts';
+import { revivedSinceNewDay } from '#lib/core/rules/night-numbers.ts';
 import { nightTextPlain, nightTextSegments, placeholdersFor } from '#lib/core/rules/night-text.ts';
 import { promptApplies, reminderPrompt } from '#lib/core/rules/reminder-prompts.ts';
 import { revivedAfterStep } from '#lib/core/rules/revived-tonight.ts';
@@ -159,17 +162,24 @@ describe('Professor', () => {
 			expect(skips('empath')).toBe(false);
 		});
 
-		it.fails('wakes a revived first-night-only Townsfolk straight away', () => {
+		it('wakes a revived first-night-only Townsfolk straight away', () => {
 			// Wiki: "If they wake on the first night only, they wake now to use their ability."
-			// Waits on the engine (unplanned): nothing adds a first-night step tonight for a player the
-			// Professor revives.
 			const s = scenario(cast)
 				.newDay()
 				.dies('chef', 'imp')
 				.reminder('chef', 'professor', 'Alive')
 				.do((at) => ({ type: 'SetDead', seatId: at.seat('chef'), dead: false }));
 			expect(s.game.seats[s.seat('chef')].dead).toBe(false);
-			engineGap('unplanned', "tonight's night order adds the revived Chef's first-night step");
+			const data = committedGameData();
+			const inPlay = s.game.seating.map((id) => data.byId.get(s.game.seats[id].characterId!)!);
+			const order = nightOrder({ night: 'other', sheet: data.nightSheet, inPlay, players: 7 });
+			const revived = [...revivedSinceNewDay(s.session.log.entries.flatMap((e) => e.events))];
+			const ids = withNightInfo(order.steps, s.game, s.characters, 'other', {
+				died: [],
+				revived
+			}).map((step) => step.id);
+			expect(ids).toContain('chef');
+			expect(ids.indexOf('chef')).toBe(ids.indexOf('professor') + 1);
 		});
 
 		it('marks the Professor No Ability once they have chosen', () => {

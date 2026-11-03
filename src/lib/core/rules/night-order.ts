@@ -61,6 +61,12 @@ export interface NightOrderInput {
 	 * leave a step out (Tor's missing evil info).
 	 */
 	wholeSheet?: true;
+	/**
+	 * Characters in play whose players all have no ability (the Magician while the Vizier is
+	 * in play, https://wiki.bloodontheclocktower.com/Magician#Related_Jinxes): their notes on
+	 * the evil info steps are left out.
+	 */
+	noAbility?: readonly CharacterId[];
 }
 
 /**
@@ -154,6 +160,11 @@ export interface NightStep {
 	 * character whose token makes it so (`withActsTwiceSteps` in `acts-twice.ts`).
 	 */
 	again?: { seatId: string; characterId: CharacterId };
+	/**
+	 * On a step for a character no one really is, which a seat of the Storyteller's pretend evil
+	 * team pretends to be (`Game.pretend`, M26): the Storyteller acts it out for the table.
+	 */
+	pretend?: true;
 }
 
 export interface OmittedStep {
@@ -178,12 +189,12 @@ export const MARKER_TEXT: Record<NightMarker, { name: string; first: string; oth
 	minioninfo: {
 		name: 'Minion info',
 		first: 'Wake the Minions together: show them the Demon, and let them see each other.',
-		other: ''
+		other: 'Wake the Minions together: show them the Demon, and let them see each other.'
 	},
 	demoninfo: {
 		name: 'Demon info',
 		first: 'Wake the Demon: show them their Minions, then 3 good characters not in play as bluffs.',
-		other: ''
+		other: 'Wake the Demon: show them their Minions.'
 	},
 	dawn: {
 		name: 'Dawn',
@@ -402,7 +413,10 @@ export function nightOrder(input: NightOrderInput): NightOrder {
 				placement: custom && customIds.has(marker) ? 'custom-order' : 'marker',
 				notes: [
 					...candidate.notes,
-					...markerNotes(marker, input.inPlay),
+					...markerNotes(
+						marker,
+						input.inPlay.filter((c) => !input.noAbility?.includes(c.id))
+					),
 					...(marker === 'demoninfo' ? wakesWithNotes(undefined, input.inPlay) : [])
 				]
 			};
@@ -521,11 +535,12 @@ function wakesWithNotes(character: Character | undefined, inPlay: readonly Chara
 	if (character && character.type !== 'minion' && character.type !== 'demon') return [];
 	const characters = new Map(inPlay.map((c) => [c.id, c]));
 	return [...characters.values()].flatMap((c) =>
-		c.id !== character?.id && rulesOf(c.id, characters)?.wakesWithEvil
-			? [`${c.name} wakes too.`]
-			: []
+		c.id !== character?.id && rulesOf(c.id, characters)?.wakesWithEvil ? [wakesTooNote(c.name)] : []
 	);
 }
+
+/** The note on an evil player's step that a character waking with evil wakes too. */
+export const wakesTooNote = (name: string): string => `${name} wakes too.`;
 
 /**
  * The steps TPI's night sheet places after Dawn: announcements made as the day begins (the

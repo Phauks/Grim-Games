@@ -26,6 +26,20 @@
  *   Idiot);
  * - `storytellerPicksPlayer`: when this character creates the partner, the Storyteller picks
  *   which player it is, and its step says so (the Pit-Hag's Damsel);
+ * - `alsoBecomes`: when this character's `changesCharacter` would make a player the partner,
+ *   who is never dealt, they also choose a character of this type and become that (the
+ *   Hatter's Demon who chooses Lil' Monsta also chooses a Minion,
+ *   https://wiki.bloodontheclocktower.com/Hatter#Related_Jinxes);
+ * - `carrierType`: while the partner's player is alive, only a player of this type carries
+ *   this character's `carrierIsDemon` token, so it fits no one else (the Magician's and the
+ *   Poppy Grower's Lil' Monsta goes to a Minion,
+ *   https://wiki.bloodontheclocktower.com/Lil%27_Monsta#Related_Jinxes);
+ * - `keptByPartner`: once the partner's `becomes` token marks its player, that player carries
+ *   this character's `carrierIsDemon` token for the rest of the game, so it fits no one else
+ *   (the Scarlet Woman babysits Lil' Monsta);
+ * - `diesWhenExecuted`: while this character's player carries the partner's token named here,
+ *   its own `protects` doesn't save them from execution (the Psychopath and the Vizier
+ *   babysitting Lil' Monsta);
  * - `registersTo`: this character's player may also register as these `alignments` and
  *   `types` to the partner's ability, or with `always` registers only as them (each listed
  *   part replaces the usual ones), whatever its own ability's state: the Politician and the
@@ -33,8 +47,10 @@
  *   to the Ogre, the Spy always as evil to the Ogre, the Summoner always as the Demon to the
  *   Clockmaker (each page's Related Jinxes);
  * - `impairsPartner`: while this character is in play (alive or dead), the partner's player
- *   is `poisoned` (or `drunk`), whatever this character's ability's state: the Spy and the
- *   Widow poison the Damsel (https://wiki.bloodontheclocktower.com/Damsel#Related_Jinxes);
+ *   is `poisoned` (or `drunk`, or has `no-ability`), whatever this character's ability's
+ *   state: the Spy and the Widow poison the Damsel
+ *   (https://wiki.bloodontheclocktower.com/Damsel#Related_Jinxes), the Vizier leaves the
+ *   Magician with no ability (https://wiki.bloodontheclocktower.com/Magician#Related_Jinxes);
  * - `noKill`: with `token`, no kill from this character tonight while the partner's own
  *   `stopsWaking` or `stopsKilling` token is on its player (the Exorcist's Chosen on the
  *   Yaggababble, the Princess's Doesn't Kill on the Al-Hadikhia); with `executed-partner`,
@@ -76,11 +92,48 @@
  *   ability (`gainsAbilityOf`): `partner-setup`, the partner's own setup change applies as if
  *   it were in play (the Alchemist-Summoner, [No Demon]); `partner-in-play`, the real partner
  *   is in play as well (the Alchemist-Marionette has no ability and the Marionette is in
- *   play, https://wiki.bloodontheclocktower.com/Alchemist#Related_Jinxes).
+ *   play, https://wiki.bloodontheclocktower.com/Alchemist#Related_Jinxes);
+ * - `learnsGained`: the night after this character's `gainedFrom` gives its player the
+ *   partner's ability (the partner's player died by execution today), they learn something
+ *   they otherwise wouldn't: `ability`, that they have the partner's ability (the Cannibal's
+ *   Butler and Zealot); `answer`, what the partner's own player would have learned tonight
+ *   (the Cannibal's Juggler, https://wiki.bloodontheclocktower.com/Cannibal#Related_Jinxes);
+ * - `trueInfo`: this character's `falseInfo` doesn't make the partner's information false
+ *   (the Vortox's Banshee, https://wiki.bloodontheclocktower.com/Vortox#Related_Jinxes);
+ * - `notDeclared`: the Storyteller doesn't declare that this character is in play, so its
+ *   after-Dawn step, its line in the day's Announcements and its `announcement` day
+ *   reminders are left out (the Vizier with the Alsaahir and the Investigator,
+ *   https://wiki.bloodontheclocktower.com/Vizier#Related_Jinxes);
+ * - `keepsProtection`: when the partner's ability takes this character's ability away, its
+ *   own `protects` still holds, and its player learns this (a `keeps-protection` night alert
+ *   at the partner's step): the Vizier with the Courtier and the Preacher still can't die by
+ *   day;
+ * - `wakesWithPartner`: this character's player wakes at the partner's step and learns whom
+ *   the partner chooses (a `wakes-with` night alert): the Vizier with the Fearmonger;
+ * - `noExecuteNow`: this character's `executionOutcome.executeNow` doesn't apply to this
+ *   player (an `OutcomeProblem` `jinxed`, warned, never locked): `who: "partner"`, the
+ *   partner's own player (the Magician is immune to the Vizier); `who: "marked"` with
+ *   `token`, the player with that partner's token (the Fearmonger's Fear).
+ * - `allEvilBecome`: when this character's `changesCharacter` creates the partner, every other
+ *   evil player becomes it too (the Engineer's, the Hatter's and the Summoner's Legion,
+ *   https://wiki.bloodontheclocktower.com/Legion#Related_Jinxes);
+ * - `learnsNoAbility`: on the first night, this character's player learns that the partner
+ *   took their ability (`impairsPartner` on the partner's side), a `learns-no-ability` night
+ *   alert at this character's own step (the Engineer with Legion);
+ * - `partnerKeepsAbility`: this character's `impairs` tokens never reach the partner's
+ *   players, and while one would have, this character's player might learn the partner is in
+ *   play (a `might-learn` night alert at this character's step and the partner's): the
+ *   Minstrel's and the Preacher's Legion;
+ * - `demonLearnsGood`: while the partner is in play, at Demon info its players wake in
+ *   separate groups and each learns which players are good, never this character's player,
+ *   who is not shown as a Minion either (the Magician with Legion).
  *
  * Either character's file may hold the block. `registersTo`, `impairsPartner`, `noKill`,
  * `noGrimoire`, `grimoireHides`, `endsGame`, `storytellerVote`, `deadAtLeast`,
- * `notCreatedAfterDay`, `nightChoice` and `withPartnerAbility` say what
+ * `notCreatedAfterDay`, `nightChoice`, `withPartnerAbility`, `learnsGained`, `trueInfo`,
+ * `notDeclared`, `keepsProtection`, `wakesWithPartner`, `noExecuteNow`, `alsoBecomes`,
+ * `carrierType`, `keptByPartner`, `diesWhenExecuted`, `allEvilBecome`, `learnsNoAbility`,
+ * `partnerKeepsAbility` and `demonLearnsGood` say what
  * this character does, or how it is treated, with the partner, so they are read from this
  * character's side only (`ownJinxRules`); the others are read from both sides
  * (`rules/jinxes.ts`). By convention a block goes in the file of the
@@ -151,6 +204,17 @@ export interface NightChoice {
 	partner: (typeof NIGHT_CHOICE_PARTNER)[number];
 }
 
+export const NO_EXECUTE_NOW_WHO = ['partner', 'marked'] as const;
+
+/** A `noExecuteNow` entry: the player this character's execute-now doesn't reach. */
+export interface NoExecuteNow {
+	/** `partner`: the partner's own player; `marked`: the player with the partner's `token`. */
+	who: (typeof NO_EXECUTE_NOW_WHO)[number];
+	token?: ReminderLabel;
+}
+
+export const IMPAIRS_PARTNER = ['poisoned', 'drunk', 'no-ability'] as const;
+
 export interface JinxRules {
 	exclusive?: true;
 	notGiven?: true;
@@ -158,8 +222,12 @@ export interface JinxRules {
 	noTurnGood?: true;
 	spareToken?: true;
 	storytellerPicksPlayer?: true;
+	alsoBecomes?: CharacterType;
+	carrierType?: CharacterType;
+	keptByPartner?: true;
+	diesWhenExecuted?: ReminderLabel;
 	registersTo?: RegistersTo;
-	impairsPartner?: 'poisoned' | 'drunk';
+	impairsPartner?: (typeof IMPAIRS_PARTNER)[number];
 	noKill?: NoKillTrigger;
 	noGrimoire?: true;
 	grimoireHides?: readonly GrimoireHidden[];
@@ -169,7 +237,20 @@ export interface JinxRules {
 	notCreatedAfterDay?: number;
 	nightChoice?: NightChoice;
 	withPartnerAbility?: WithPartnerAbility;
+	notDeclared?: true;
+	keepsProtection?: true;
+	wakesWithPartner?: true;
+	noExecuteNow?: NoExecuteNow;
+	learnsGained?: LearnsGained;
+	trueInfo?: true;
+	allEvilBecome?: true;
+	learnsNoAbility?: true;
+	partnerKeepsAbility?: true;
+	demonLearnsGood?: true;
 }
+
+export const LEARNS_GAINED = ['ability', 'answer'] as const;
+export type LearnsGained = (typeof LEARNS_GAINED)[number];
 
 export const WITH_PARTNER_ABILITY = ['partner-setup', 'partner-in-play'] as const;
 export type WithPartnerAbility = (typeof WITH_PARTNER_ABILITY)[number];
@@ -189,6 +270,10 @@ export const JINX_RULE_KEYS = [
 	'noTurnGood',
 	'spareToken',
 	'storytellerPicksPlayer',
+	'alsoBecomes',
+	'carrierType',
+	'keptByPartner',
+	'diesWhenExecuted',
 	'registersTo',
 	'impairsPartner',
 	'noKill',
@@ -199,7 +284,17 @@ export const JINX_RULE_KEYS = [
 	'deadAtLeast',
 	'notCreatedAfterDay',
 	'nightChoice',
-	'withPartnerAbility'
+	'withPartnerAbility',
+	'notDeclared',
+	'keepsProtection',
+	'wakesWithPartner',
+	'noExecuteNow',
+	'learnsGained',
+	'trueInfo',
+	'allEvilBecome',
+	'learnsNoAbility',
+	'partnerKeepsAbility',
+	'demonLearnsGood'
 ] as const;
 
 /** A non-empty list of known values, or undefined (with an issue) when it is not one. */
@@ -285,6 +380,18 @@ function readNightChoice(raw: unknown, path: string, issues: Issues): NightChoic
 	return who && partner ? { who, partner } : undefined;
 }
 
+function readNoExecuteNow(raw: unknown, path: string, issues: Issues): NoExecuteNow | undefined {
+	if (!isObject(raw)) {
+		issues.add(path, `expected object, got ${describe(raw)}`);
+		return undefined;
+	}
+	checkKeys(raw, ['who', 'token'], path, issues);
+	const who = readEnum(raw, 'who', NO_EXECUTE_NOW_WHO, path, issues, true);
+	const token = readString(raw, 'token', path, issues, who === 'marked');
+	if (!who || (who === 'marked' && token === undefined)) return undefined;
+	return who === 'marked' ? { who, token } : { who };
+}
+
 /** A whole number of 1 or more, with an issue when it is given but isn't one. */
 function readPositive(
 	raw: Record<string, unknown>,
@@ -332,18 +439,18 @@ export function readJinxRules(
 		if (readBoolean(entry, 'spareToken', at, issues)) rules.spareToken = true;
 		if (readBoolean(entry, 'storytellerPicksPlayer', at, issues))
 			rules.storytellerPicksPlayer = true;
+		for (const key of ['alsoBecomes', 'carrierType'] as const) {
+			const type = readEnum(entry, key, CHARACTER_TYPES, at, issues, false);
+			if (type) rules[key] = type;
+		}
+		if (readBoolean(entry, 'keptByPartner', at, issues)) rules.keptByPartner = true;
+		const dies = readString(entry, 'diesWhenExecuted', at, issues, false);
+		if (dies !== undefined) rules.diesWhenExecuted = dies;
 		if (entry.registersTo !== undefined) {
 			const registersTo = readRegistersTo(entry.registersTo, `${at}.registersTo`, issues);
 			if (registersTo) rules.registersTo = registersTo;
 		}
-		const impairs = readEnum(
-			entry,
-			'impairsPartner',
-			['poisoned', 'drunk'] as const,
-			at,
-			issues,
-			false
-		);
+		const impairs = readEnum(entry, 'impairsPartner', IMPAIRS_PARTNER, at, issues, false);
 		if (impairs) rules.impairsPartner = impairs;
 		const noKill = readEnum(entry, 'noKill', NO_KILL_TRIGGERS, at, issues, false);
 		if (noKill) rules.noKill = noKill;
@@ -373,6 +480,22 @@ export function readJinxRules(
 			false
 		);
 		if (withAbility) rules.withPartnerAbility = withAbility;
+		for (const key of ['notDeclared', 'keepsProtection', 'wakesWithPartner'] as const)
+			if (readBoolean(entry, key, at, issues)) rules[key] = true;
+		if (entry.noExecuteNow !== undefined) {
+			const no = readNoExecuteNow(entry.noExecuteNow, `${at}.noExecuteNow`, issues);
+			if (no) rules.noExecuteNow = no;
+		}
+		const learns = readEnum(entry, 'learnsGained', LEARNS_GAINED, at, issues, false);
+		if (learns) rules.learnsGained = learns;
+		if (readBoolean(entry, 'trueInfo', at, issues)) rules.trueInfo = true;
+		for (const key of [
+			'allEvilBecome',
+			'learnsNoAbility',
+			'partnerKeepsAbility',
+			'demonLearnsGood'
+		] as const)
+			if (readBoolean(entry, key, at, issues)) rules[key] = true;
 		if (Object.keys(rules).length === 0) {
 			issues.add(at, 'a jinx entry needs at least one rule');
 			continue;

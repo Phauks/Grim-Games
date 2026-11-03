@@ -23,6 +23,7 @@ export const day = {
 	'day.outcomeProblem.not-nominated': 'Not nominated today',
 	'day.outcomeProblem.own-nomination': 'Only their own nomination',
 	'day.outcomeProblem.used': 'Already used',
+	'day.outcomeProblem.jinxed': 'A jinx keeps it from this player',
 	'day.execution': 'Execution',
 	'day.executionChoose': 'Choose',
 	/** Start game with seats still empty (Trevor, 2026-11-01): a warning, never a lock. */
@@ -35,6 +36,7 @@ export const day = {
 	'day.savedByOverride': 'Storyteller override',
 	'day.saveProblem.not-in-play': 'Not in play',
 	'day.saveProblem.not-this-player': 'Does not cover this player',
+	'day.saveProblem.jinxed': 'A jinx says they die when executed',
 	'day.saveProblem.impaired': 'Drunk, poisoned or no ability',
 	'day.nominatedToday': 'Nominated today',
 	'day.otherPlayers': 'Other players',

@@ -26,6 +26,8 @@ import {
 } from '#lib/core/model/selectors.ts';
 import type { Game, Reminder, ReminderInstance, SeatId } from '#lib/core/model/types.ts';
 import { abilityState, registrations } from './ability.ts';
+import { heldAbilitiesOf } from './gained-abilities.ts';
+import { carrierJinx } from './jinxes.ts';
 
 export type { NeighbourRule, TargetRule };
 
@@ -49,8 +51,12 @@ export const REMINDER_TARGETS: Readonly<Record<CharacterId, CharacterTargets>> =
  *   wrong;
  * - `neighbour`: not a neighbour as the rule counts them;
  * - `with-label` / `not-with-label`: missing, or already carrying, the owner's other token;
+ * - `max-placed`: as many copies of the token as may be out at once are on other players;
  * - `last-night`: the ability says "different to last night", and this player carried the
- *   token at the latest dawn (or, for `type`, has that player's character type).
+ *   token at the latest dawn (or, for `type`, has that player's character type);
+ * - `jinx`: a jinx on the script says who carries this `carrierIsDemon` token, and it is not
+ *   this player (`carrierJinx`: a Minion while the Magician lives, the Scarlet Woman once she
+ *   babysits Lil' Monsta).
  */
 export type TargetMiss =
 	| 'global'
@@ -63,7 +69,9 @@ export type TargetMiss =
 	| 'neighbour'
 	| 'with-label'
 	| 'not-with-label'
-	| 'last-night';
+	| 'max-placed'
+	| 'last-night'
+	| 'jinx';
 
 export interface TargetFit {
 	seatId: SeatId;
@@ -103,6 +111,20 @@ export function ownerSeats(
 		(id) =>
 			game.seats[id].characterId === characterId ||
 			trueCharacter(game, id, characters) === characterId
+	);
+}
+
+/**
+ * The seats whose player uses the character's own tokens: its owners, or while no seat is
+ * that character, the players who hold its ability without its token (the Hermit uses the
+ * other Outsiders' reminder tokens, and its own 1, 2 and 3 only when it duplicates an
+ * in-play Outsider: https://wiki.bloodontheclocktower.com/Hermit).
+ */
+function tokenUsers(game: Game, characterId: CharacterId, characters: CharacterLookup): SeatId[] {
+	const owners = ownerSeats(game, characterId, characters);
+	if (owners.length > 0) return owners;
+	return game.seating.filter((id) =>
+		heldAbilitiesOf(game, id, characters).some((h) => h.characterId === characterId)
 	);
 }
 
@@ -202,8 +224,12 @@ export function reminderTargetMisses(
 	if (rule.info && owners.some((id) => mayBeFalse(game, id, reminder.characterId, characters)))
 		return [];
 	const misses: TargetMiss[] = [];
-	const isOwner = owners.includes(seatId);
-	if (rule.seat === 'self' && owners.length > 0 && !isOwner) misses.push('not-self');
+	const users =
+		rule.seat === 'self' || rule.seat === 'other'
+			? tokenUsers(game, reminder.characterId, characters)
+			: owners;
+	const isOwner = users.includes(seatId);
+	if (rule.seat === 'self' && users.length > 0 && !isOwner) misses.push('not-self');
 	if (rule.seat === 'other' && isOwner) misses.push('self');
 
 	// An ability that detects or affects a type or alignment also sees what the player may
@@ -245,6 +271,22 @@ export function reminderTargetMisses(
 			}
 		}
 	}
+	if (rule.sameAlignmentAs) {
+		const alignment = alignmentOf(game, seatId);
+		const self = 'reminderId' in reminder ? (reminder as ReminderInstance).reminderId : undefined;
+		const others = game.seating
+			.filter((id) =>
+				game.seats[id].reminders.some(
+					(r) =>
+						r.characterId === reminder.characterId &&
+						r.label === rule.sameAlignmentAs &&
+						r.reminderId !== self
+				)
+			)
+			.map((id) => alignmentOf(game, id))
+			.filter((a) => a !== undefined);
+		if (alignment !== undefined && others.some((a) => a !== alignment)) misses.push('alignment');
+	}
 	if (rule.alignmentCounts) {
 		const alignment = alignmentOf(game, seatId);
 		const max = alignment ? rule.alignmentCounts[alignment] : undefined;
@@ -261,6 +303,18 @@ export function reminderTargetMisses(
 				).length;
 			if (placed >= max) misses.push('alignment');
 		}
+	}
+	if (rule.maxPlaced !== undefined) {
+		const self = 'reminderId' in reminder ? (reminder as ReminderInstance).reminderId : undefined;
+		const placed = game.seating
+			.flatMap((id) => game.seats[id].reminders)
+			.filter(
+				(r) =>
+					r.characterId === reminder.characterId &&
+					r.label === reminder.label &&
+					r.reminderId !== self
+			).length;
+		if (placed >= rule.maxPlaced) misses.push('max-placed');
 	}
 	if (rule.life) {
 		const dead = game.seats[seatId].dead;
@@ -296,6 +350,11 @@ export function reminderTargetMisses(
 				: type !== undefined && before.some((id) => typeOf(atDawn, id, characters) === type);
 		if (repeat) misses.push('last-night');
 	}
+	if (
+		rulesOf(reminder.characterId, characters)?.carrierIsDemon === reminder.label &&
+		carrierJinx(game, reminder.characterId, seatId, characters)
+	)
+		misses.push('jinx');
 	return misses;
 }
 

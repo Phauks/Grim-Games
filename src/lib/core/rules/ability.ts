@@ -171,6 +171,23 @@ function abilityInPlay(game: Game, characterId: CharacterId, characters: Charact
 	});
 }
 
+/**
+ * Whether a jinx keeps `by`'s `impairs` tokens off `characterId`'s player
+ * (`partnerKeepsAbility`: the Minstrel's and the Preacher's Legion keeps their ability,
+ * https://wiki.bloodontheclocktower.com/Legion#Related_Jinxes).
+ */
+export function sparedByJinx(
+	game: Game,
+	by: CharacterId,
+	characterId: CharacterId | undefined,
+	characters: CharacterLookup
+): boolean {
+	return (
+		characterId !== undefined &&
+		ownJinxRules(game, by, characterId, characters)?.partnerKeepsAbility === true
+	);
+}
+
 function impairmentsOf(
 	game: Game,
 	seatId: SeatId,
@@ -194,6 +211,7 @@ function impairmentsOf(
 		}
 		const rule = tokenImpairment(r, characters);
 		if (rule?.on === 'others') continue;
+		if (rule && sparedByJinx(game, r.characterId, characterId, characters)) continue;
 		if (rule) {
 			// A token that impairs its carrier only while its character's ability works (the
 			// Preacher's: https://wiki.bloodontheclocktower.com/Preacher; the Pukka's, whose
@@ -289,6 +307,7 @@ function impairmentsOf(
 		for (const token of game.seats[other].reminders) {
 			const rule = tokenImpairment(token, characters);
 			if (rule?.on !== 'others') continue;
+			if (sparedByJinx(game, token.characterId, characterId, characters)) continue;
 			if (rule.type && typeOf(game, seatId, characters) !== rule.type) continue;
 			const source = seatOfCharacter(game, token.characterId, characters) ?? other;
 			if (source === seatId) continue;
@@ -435,6 +454,24 @@ export function abilityState(
 		dead,
 		impairments
 	};
+}
+
+/**
+ * The character whose working reminder on `seatId` means its player always gets true
+ * information (`impairs.truthful`: the Barista's "Sober & Healthy", even under the Vortox,
+ * https://wiki.bloodontheclocktower.com/Barista). Undefined when there is none.
+ */
+export function truthfulBy(
+	game: Game,
+	seatId: SeatId,
+	characters: CharacterLookup
+): CharacterId | undefined {
+	const seat = getSeat(game, seatId);
+	return seat?.reminders.find(
+		(r) =>
+			rulesOf(r.characterId, characters)?.impairs?.truthful?.includes(r.label) &&
+			sourceWorks(game, seatId, r.characterId, characters, new Set([seatId]))
+	)?.characterId;
 }
 
 // ── Registration ────────────────────────────────────────────────────────────

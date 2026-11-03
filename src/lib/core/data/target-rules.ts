@@ -14,8 +14,13 @@
  * - `shown`: the type of the character token the target was dealt, which may not be their
  *   true character (the Drunk is dealt a Townsfolk);
  * - `alignment`: `good`/`evil`, or `same`/`opposite` to the character's player;
+ * - `sameAlignmentAs`: shares an alignment with a seat already carrying another copy of the
+ *   character's token with this label (the Revolutionary's second Aligned goes on a player of
+ *   the first one's alignment);
  * - `alignmentCounts`: at most this many copies of the token on players of each alignment
  *   (the Noble's three: two good, one evil);
+ * - `maxPlaced`: at most this many copies of the token on players at once (the Goon's Drunk,
+ *   which goes on a chooser only while nobody carries it);
  * - `life`: whether the target is alive or dead when the token goes down;
  * - `neighbour`: the nearest seat each way from the character's own seat (`of: 'self'`)
  *   or from the seat carrying another of its tokens (`of: <label>`), or from a seat whose
@@ -84,7 +89,9 @@ export interface TargetRule {
 	shown?: readonly CharacterType[];
 	characters?: readonly CharacterId[];
 	alignment?: Alignment | 'same' | 'opposite';
+	sameAlignmentAs?: string;
 	alignmentCounts?: Readonly<Partial<Record<Alignment, number>>>;
+	maxPlaced?: number;
 	life?: 'alive' | 'dead';
 	neighbour?: NeighbourRule;
 	withLabel?: string;
@@ -107,7 +114,9 @@ const TARGET_KEYS = [
 	'shown',
 	'characters',
 	'alignment',
+	'sameAlignmentAs',
 	'alignmentCounts',
+	'maxPlaced',
 	'life',
 	'neighbour',
 	'withLabel',
@@ -194,13 +203,24 @@ function readTarget(raw: unknown, path: string, issues: Issues): TargetRule | un
 		const neighbour = readNeighbour(raw.neighbour, `${path}.neighbour`, issues);
 		if (neighbour) out.neighbour = neighbour;
 	}
-	for (const key of ['withLabel', 'notWithLabel', 'note', 'ambiguous'] as const) {
+	for (const key of [
+		'withLabel',
+		'notWithLabel',
+		'sameAlignmentAs',
+		'note',
+		'ambiguous'
+	] as const) {
 		const value = readString(raw, key, path, issues, false);
 		if (value !== undefined) out[key] = value;
 	}
 	for (const key of ['global', 'info'] as const) {
 		const value = readBoolean(raw, key, path, issues);
 		if (value !== undefined) out[key] = value;
+	}
+	const maxPlaced = readNumber(raw, 'maxPlaced', path, issues);
+	if (maxPlaced !== undefined) {
+		if (Number.isInteger(maxPlaced) && maxPlaced >= 1) out.maxPlaced = maxPlaced;
+		else issues.add(`${path}.maxPlaced`, 'expected a whole number of at least 1');
 	}
 	const minOwners = readNumber(raw, 'minOwners', path, issues);
 	if (minOwners !== undefined) out.minOwners = minOwners;

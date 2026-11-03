@@ -128,12 +128,10 @@ describe('Bounty Hunter', () => {
 			]);
 		});
 
-		it.fails('wakes on a later night only when the player marked Know has died', () => {
+		it('wakes on a later night only when the player marked Know has died', () => {
 			// Wiki: "Each time the player marked KNOW dies, mark a new evil player with the KNOW
 			// reminder. That night, wake the Bounty Hunter, point to the player marked KNOW, then put the
 			// Bounty Hunter to sleep."
-			// Waits on the engine (unplanned): the Bounty Hunter has no wake condition, so its step
-			// shows every night, whether or not the player marked Know died.
 			const s = scenario(cast).reminder('harpy', 'bountyhunter', 'Know').newDay();
 			const wakes = (at: typeof s) =>
 				wakeConditionMet(

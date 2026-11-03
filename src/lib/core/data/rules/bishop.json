@@ -38,5 +38,13 @@
 	},
 	"nominating": {
 		"by": "storyteller"
+	},
+	"reminderEnds": {
+		"Nominate Evil": {
+			"nominated": "evil"
+		},
+		"Nominate Good": {
+			"nominated": "good"
+		}
 	}
 }

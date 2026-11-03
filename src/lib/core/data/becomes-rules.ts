@@ -19,7 +19,9 @@
  *
  * The change happens only while this character's player has a working ability (a drunk
  * Mezepheles turns nobody evil, https://wiki.bloodontheclocktower.com/Mezepheles), unless
- * `evenIfImpaired` (the Ogre becomes its friend's alignment even if drunk or poisoned).
+ * `evenIfImpaired` (the Ogre becomes its friend's alignment even if drunk or poisoned). `spent`:
+ * not once this own token is on this character's player (a Mezepheles marked No Ability turns
+ * no one else evil).
  */
 import {
 	ALIGNMENTS,
@@ -50,6 +52,7 @@ export interface Becomes {
 	when?: 'removed';
 	follows?: true;
 	evenIfImpaired?: true;
+	spent?: ReminderLabel;
 }
 
 /** Reads a `becomes` block; `token` must be one of the character's `reminders`. */
@@ -63,13 +66,14 @@ export function readBecomes(
 		issues.add(path, `expected object, got ${describe(raw)}`);
 		return undefined;
 	}
-	checkKeys(raw, ['token', 'into', 'when', 'follows', 'evenIfImpaired'], path, issues);
+	checkKeys(raw, ['token', 'into', 'when', 'follows', 'evenIfImpaired', 'spent'], path, issues);
 	if (raw.token === undefined) issues.add(`${path}.token`, 'missing');
 	const token = readToken(raw, 'token', path, issues, reminders);
 	const into = readEnum(raw, 'into', BECOMES_INTO, path, issues, true);
 	const when = readEnum(raw, 'when', BECOMES_WHEN, path, issues, false);
 	const follows = readBoolean(raw, 'follows', path, issues);
 	const evenIfImpaired = readBoolean(raw, 'evenIfImpaired', path, issues);
+	const spent = readToken(raw, 'spent', path, issues, reminders);
 	if (follows && into !== 'carrier-alignment')
 		issues.add(`${path}.follows`, 'only with into "carrier-alignment"');
 	if (token === undefined || into === undefined) return undefined;
@@ -78,7 +82,8 @@ export function readBecomes(
 		into,
 		...(when === 'removed' ? { when } : {}),
 		...(follows && into === 'carrier-alignment' ? { follows: true as const } : {}),
-		...(evenIfImpaired ? { evenIfImpaired: true as const } : {})
+		...(evenIfImpaired ? { evenIfImpaired: true as const } : {}),
+		...(spent ? { spent } : {})
 	};
 }
 
@@ -106,6 +111,8 @@ export function readBecomes(
  * - `anyType`: with `sameType`, the player may pick a character of any of `types`, not only
  *   their own (the Hatter's optional rule: the Demon may become a Minion and a Minion the
  *   Demon);
+ * - `afterDeath`: only once its own player has died (the Hatter's tea party, "If the Hatter
+ *   dies"); the night step's own wake rule (`onDeath`) keeps it to the night they died;
  * - `firstNight`: only on the first night (the Kazali,
  *   https://wiki.bloodontheclocktower.com/Kazali);
  * - `upTo: 'minions'`: one player after another until there are as many Minions as the
@@ -131,6 +138,7 @@ export interface ChangesCharacter {
 	notMarked?: ReminderLabel;
 	sameType?: true;
 	anyType?: true;
+	afterDeath?: true;
 	firstNight?: true;
 	upTo?: 'minions';
 	extraMinions?: number;
@@ -162,6 +170,7 @@ export function readChangesCharacter(
 			'notMarked',
 			'sameType',
 			'anyType',
+			'afterDeath',
 			'firstNight',
 			'upTo',
 			'extraMinions',
@@ -187,6 +196,7 @@ export function readChangesCharacter(
 	const sameType = readBoolean(raw, 'sameType', path, issues);
 	const anyType = readBoolean(raw, 'anyType', path, issues);
 	if (anyType && !sameType) issues.add(`${path}.anyType`, 'only with sameType');
+	const afterDeath = readBoolean(raw, 'afterDeath', path, issues);
 	const firstNight = readBoolean(raw, 'firstNight', path, issues);
 	const upTo = readEnum(raw, 'upTo', ['minions'] as const, path, issues, false);
 	const extraMinions = readNumber(raw, 'extraMinions', path, issues);
@@ -208,6 +218,7 @@ export function readChangesCharacter(
 		...(notMarked ? { notMarked } : {}),
 		...(sameType ? { sameType: true as const } : {}),
 		...(anyType && sameType ? { anyType: true as const } : {}),
+		...(afterDeath ? { afterDeath: true as const } : {}),
 		...(firstNight ? { firstNight: true as const } : {}),
 		...(upTo ? { upTo } : {}),
 		...(upTo && extraMinions !== undefined && extraMinions >= 1 ? { extraMinions } : {}),

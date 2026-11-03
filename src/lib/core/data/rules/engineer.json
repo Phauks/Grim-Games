@@ -50,5 +50,14 @@
 		"you-are": {
 			"characters": ["changed"]
 		}
+	},
+	"wakesWhen": {
+		"untilToken": "No Ability"
+	},
+	"jinxes": {
+		"legion": {
+			"allEvilBecome": true,
+			"learnsNoAbility": true
+		}
 	}
 }

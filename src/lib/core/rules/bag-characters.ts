@@ -68,6 +68,15 @@ export function canDuplicate(
 	if (anyCharacter && !anyCharacter.notTypes?.includes(character.type)) return true;
 	if (hasSpecial(character, 'selection', 'bag-duplicate')) return true;
 	if (setupModifierFor(character)?.copies?.some((n) => n > 0)) return true;
+	return duplicatedByInPlay(character, inPlay);
+}
+
+/**
+ * Whether a character in play lets `character`'s alignment repeat (`good-duplicate` /
+ * `evil-duplicate`, or a rules block's own `duplicates`). Such a duplicate may also be one of
+ * the Demon's bluffs (https://wiki.bloodontheclocktower.com/Pope).
+ */
+export function duplicatedByInPlay(character: Character, inPlay: readonly Character[]): boolean {
 	const good = character.type === 'townsfolk' || character.type === 'outsider';
 	const evil = character.type === 'minion' || character.type === 'demon';
 	return inPlay.some((c) => {

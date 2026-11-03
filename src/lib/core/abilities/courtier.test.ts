@@ -77,11 +77,12 @@ describe('Courtier', () => {
 			// night, they make the Shabaloth drunk. For the next three nights, the Shabaloth acts but
 			// cannot kill anybody."
 			// The Courtier names the Shabaloth: its player is drunk for three nights and days, the
-			// token counting down 3, 2, 1, then coming off, and the Shabaloth works again.
+			// token going Drunk 1, 2, 3 (the wiki's How to Run), then coming off, and the Shabaloth
+			// works again.
 			let s = scenario(['courtier', 'chef', 'shabaloth', 'monk', 'poisoner']).reminder(
 				'shabaloth',
 				'courtier',
-				'Drunk 3'
+				'Drunk 1'
 			);
 			const labels: string[] = [];
 			for (let night = 0; night < 3; night++) {
@@ -89,7 +90,7 @@ describe('Courtier', () => {
 				labels.push(s.game.seats[s.seat('shabaloth')].reminders.map((r) => r.label).join());
 				s = countDown(s);
 			}
-			expect(labels).toEqual(['Drunk 3', 'Drunk 2', 'Drunk 1']);
+			expect(labels).toEqual(['Drunk 1', 'Drunk 2', 'Drunk 3']);
 			expect(s.game.seats[s.seat('shabaloth')].reminders).toEqual([]);
 			expect(abilityState(s.game, s.seat('shabaloth'), s.characters).works).toBe(true);
 		});
@@ -103,7 +104,7 @@ describe('Courtier', () => {
 			);
 			expect(abilityState(drunk.game, drunk.seat('courtier'), drunk.characters).works).toBe(false);
 			const poisoned = scenario(['courtier', 'chef', 'shabaloth', 'monk', 'poisoner'])
-				.reminder('shabaloth', 'courtier', 'Drunk 3')
+				.reminder('shabaloth', 'courtier', 'Drunk 1')
 				.poisoned('courtier');
 			expect(
 				abilityState(poisoned.game, poisoned.seat('shabaloth'), poisoned.characters).works
@@ -161,14 +162,19 @@ describe('Courtier', () => {
 			}
 		});
 
-		it.fails('counts the drunk tokens up from Drunk 1 to Drunk 3, then takes Drunk 3 off', () => {
+		it('counts the drunk tokens up from Drunk 1 to Drunk 3, then takes Drunk 3 off', () => {
 			// Wiki: "The next night, replace the DRUNK 1 reminder with the DRUNK 2 reminder. The next
 			// night, replace the DRUNK 2 reminder with the DRUNK 3 reminder. At dusk on the next night,
 			// remove the DRUNK 3 reminder"
-			// Waits on the engine (unplanned): the countdown follows TPI's night text (Drunk 3, then 2,
-			// then 1, then off), the reverse of the order the wiki's How to Run gives.
+			// Trevor (2026-11-02): "use the official wiki as only source for order".
 			const s = scenario(cast).reminder('shabaloth', 'courtier', 'Drunk 1');
 			expect(countdownMoves(s.game, 'courtier', s.characters)).toMatchObject([{ to: 'Drunk 2' }]);
+			const two = scenario(cast).reminder('shabaloth', 'courtier', 'Drunk 2');
+			expect(countdownMoves(two.game, 'courtier', two.characters)).toMatchObject([
+				{ to: 'Drunk 3' }
+			]);
+			const three = scenario(cast).reminder('shabaloth', 'courtier', 'Drunk 3');
+			expect(countdownMoves(three.game, 'courtier', three.characters)[0]).not.toHaveProperty('to');
 		});
 
 		it('marks the Courtier No Ability once the drunkenness is placed', () => {
@@ -180,11 +186,9 @@ describe('Courtier', () => {
 			expect(nightText('first')).toContain('[+No Ability]');
 		});
 
-		it.fails('stops waking the Courtier once they have chosen a character', () => {
+		it('stops waking the Courtier once they have chosen a character', () => {
 			// Wiki: "and remove their night token from the night sheet. After the Courtier chooses a
 			// character to make drunk, do not wake the Courtier for the rest of the game."
-			// Waits on the engine (unplanned): the Courtier's rules have no wakesWhen untilToken "No
-			// Ability", so a spent Courtier still counts as waking.
 			const s = scenario(cast).newDay();
 			expect(wokeTonight(s.game, s.seat('courtier'), s.characters, 'other')).toBe(true);
 			const spent = s.reminder('courtier', 'courtier', 'No Ability');

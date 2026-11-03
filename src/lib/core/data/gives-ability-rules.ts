@@ -17,7 +17,9 @@
  * - `token`: its reminder that marks the held ability on the board (the Plague Doctor's
  *   Storyteller Ability);
  * - `whileWorks`: the holder has it only while this character's ability works, so not while
- *   its player is dead, drunk or poisoned (the Boffin's Summary on the wiki).
+ *   its player is dead, drunk or poisoned (the Boffin's Summary on the wiki);
+ * - `setup`: the setup change in brackets on the given ability is made, as if its character
+ *   were in play (the Boffin's How to Run: the Demon's two abilities change setup).
  */
 import { readToken } from './reminder-fields.ts';
 import { SEATED_TYPES, type ReminderLabel, type SeatedType } from './types.ts';
@@ -41,6 +43,7 @@ export interface GivesAbility {
 	onScript?: true;
 	token?: ReminderLabel;
 	whileWorks?: true;
+	setup?: true;
 }
 
 /** Reads a `givesAbility` block. */
@@ -54,7 +57,12 @@ export function readGivesAbility(
 		issues.add(path, `expected object, got ${describe(raw)}`);
 		return undefined;
 	}
-	checkKeys(raw, ['to', 'types', 'notInPlay', 'onScript', 'token', 'whileWorks'], path, issues);
+	checkKeys(
+		raw,
+		['to', 'types', 'notInPlay', 'onScript', 'token', 'whileWorks', 'setup'],
+		path,
+		issues
+	);
 	const to = readEnum(raw, 'to', GIVES_ABILITY_TO, path, issues, true);
 	const types = (readStringArray(raw, 'types', path, issues) ?? []).filter((t, i) => {
 		const ok = (SEATED_TYPES as readonly string[]).includes(t);
@@ -66,6 +74,7 @@ export function readGivesAbility(
 	const onScript = readBoolean(raw, 'onScript', path, issues);
 	if (onScript && to !== 'self') issues.add(`${path}.onScript`, 'only with "to": "self"');
 	const whileWorks = readBoolean(raw, 'whileWorks', path, issues);
+	const setup = readBoolean(raw, 'setup', path, issues);
 	const token = readToken(raw, 'token', path, issues, reminders);
 	if (!to || types.length === 0) return undefined;
 	return {
@@ -74,6 +83,7 @@ export function readGivesAbility(
 		...(notInPlay ? { notInPlay: true as const } : {}),
 		...(onScript ? { onScript: true as const } : {}),
 		...(token ? { token } : {}),
-		...(whileWorks ? { whileWorks: true as const } : {})
+		...(whileWorks ? { whileWorks: true as const } : {}),
+		...(setup ? { setup: true as const } : {})
 	};
 }

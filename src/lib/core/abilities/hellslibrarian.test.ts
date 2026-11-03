@@ -103,11 +103,10 @@ describe("Hell's Librarian", () => {
 				expect(reminderTargetMisses(s.game, token, seat, s.characters)).toEqual([]);
 		});
 
-		it.fails('lets the Storyteller pick what Something Bad does, as for the Angel', () => {
+		it('lets the Storyteller pick what Something Bad does, as for the Angel', () => {
 			// Wiki: "to remind you that they are now poisoned, or mad, or can’t vote today, or simply
 			// as a reminder to decide on what to do later."
-			// Waits on the engine (unplanned): the Hell's Librarian's rules have no picked effect, so
-			// its Something Bad can't be marked poisoned, mad or no vote today.
+			// Deciding later is the picked effect's "Something else", which every picked effect offers.
 			const s = scenario(['chef', 'empath', 'monk', 'poisoner', 'imp'])
 				.rule('hellslibrarian')
 				.reminder('chef', 'hellslibrarian', 'Something Bad');

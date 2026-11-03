@@ -56,7 +56,8 @@ export type DayUseVote = (typeof DAY_USE_VOTES)[number];
  * used when that is not "No Ability" (the Golem's May Not Nominate); `answer`, what its player
  * learns about that player (`DAY_USE_ANSWERS`); `anyone`, for a character no player holds (a
  * Fabled): every living player may use it once per game (the Doomsayer); `minAlive`, only while
- * at least that many players live.
+ * at least that many players live; `beforeNominations`, only before the day's first nomination
+ * (the Psychopath, https://wiki.bloodontheclocktower.com/Psychopath).
  */
 export interface DayUse {
 	who?: DayUseWho;
@@ -66,6 +67,7 @@ export interface DayUse {
 	answer?: DayUseAnswer;
 	anyone?: true;
 	minAlive?: number;
+	beforeNominations?: true;
 }
 
 /** Who marking its day ability used asks for (Trevor, 2026-10-30). */
@@ -79,7 +81,7 @@ export const dayUse = objectPart(
 		}
 		checkKeys(
 			raw,
-			['who', 'vote', 'kills', 'spentToken', 'answer', 'anyone', 'minAlive'],
+			['who', 'vote', 'kills', 'spentToken', 'answer', 'anyone', 'minAlive', 'beforeNominations'],
 			path,
 			issues
 		);
@@ -97,6 +99,8 @@ export const dayUse = objectPart(
 		const minAlive = readNumber(raw, 'minAlive', path, issues);
 		if (minAlive !== undefined && (!Number.isInteger(minAlive) || minAlive < 1))
 			issues.add(`${path}.minAlive`, 'expected a whole number of at least 1');
+		const before = readBoolean(raw, 'beforeNominations', path, issues);
+		if (before === false) issues.add(`${path}.beforeNominations`, 'expected true');
 		if ((!who && !vote) || !tokenOk) return undefined;
 		return {
 			...(who ? { who } : {}),
@@ -105,7 +109,10 @@ export const dayUse = objectPart(
 			...(token !== undefined ? { spentToken: token } : {}),
 			...(answer ? { answer } : {}),
 			...(anyone ? { anyone: true as const } : {}),
-			...(minAlive !== undefined && Number.isInteger(minAlive) && minAlive >= 1 ? { minAlive } : {})
+			...(minAlive !== undefined && Number.isInteger(minAlive) && minAlive >= 1
+				? { minAlive }
+				: {}),
+			...(before ? { beforeNominations: true as const } : {})
 		};
 	}
 );

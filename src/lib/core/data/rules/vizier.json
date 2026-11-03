@@ -39,5 +39,35 @@
 			"who": "not-self"
 		}
 	},
-	"staysAsleep": "first"
+	"staysAsleep": "first",
+	"jinxes": {
+		"alsaahir": {
+			"notDeclared": true
+		},
+		"courtier": {
+			"keepsProtection": true
+		},
+		"fearmonger": {
+			"wakesWithPartner": true,
+			"noExecuteNow": {
+				"who": "marked",
+				"token": "Fear"
+			}
+		},
+		"investigator": {
+			"notDeclared": true
+		},
+		"magician": {
+			"impairsPartner": "no-ability",
+			"noExecuteNow": {
+				"who": "partner"
+			}
+		},
+		"preacher": {
+			"keepsProtection": true
+		},
+		"lilmonsta": {
+			"diesWhenExecuted": "Is The Demon"
+		}
+	}
 }

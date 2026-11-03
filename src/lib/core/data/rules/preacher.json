@@ -70,5 +70,10 @@
 		"selected-you": {
 			"characters": ["self"]
 		}
+	},
+	"jinxes": {
+		"legion": {
+			"partnerKeepsAbility": true
+		}
 	}
 }

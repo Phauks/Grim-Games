@@ -29,7 +29,11 @@
 			"demoninfo": "while it lives, Minions and Demon do not learn each other."
 		},
 		"hidesDemon": true,
-		"hidesMinions": true
+		"hidesMinions": true,
+		"wakeToken": "Evil Wakes"
+	},
+	"reminderEnds": {
+		"Evil Wakes": "dawn"
 	},
 	"optionalRule": {
 		"evilInfo": {

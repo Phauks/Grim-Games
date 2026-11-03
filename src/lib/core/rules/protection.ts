@@ -10,6 +10,23 @@ import { type CharacterLookup } from '#lib/core/model/characters.ts';
 import { alignmentOf, aliveNeighbours, getSeat, trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 import { abilityState, seatOfCharacter, type AbilitySource } from './ability.ts';
+import { diesWhenExecutedBy, ownJinxRules } from './jinxes.ts';
+
+/**
+ * Whether the protection of the ability at `seatId` works: its ability works, or (alive) it
+ * was taken away only by jinxed partners whose jinx keeps this protection
+ * (`keepsProtection`: a Vizier the Courtier makes drunk or the Preacher takes the ability from
+ * still can't die by day, https://wiki.bloodontheclocktower.com/Vizier#Related_Jinxes).
+ */
+export function protectionWorks(game: Game, seatId: SeatId, characters: CharacterLookup): boolean {
+	const state = abilityState(game, seatId, characters);
+	if (state.works) return true;
+	const owner = state.characterId;
+	if (state.dead || owner === undefined || state.impairments.length === 0) return false;
+	return state.impairments.every(
+		(i) => ownJinxRules(game, owner, i.source.characterId, characters)?.keepsProtection === true
+	);
+}
 
 /** One ability that protects a player from a kill, and the reminder that says so if any. */
 export interface Protector {
@@ -114,6 +131,8 @@ export function protectors(
 		const rule = rulesOf(characterId, characters)?.protects;
 		if (!rule || rule.storytellerDecides || !stops(rule, by)) return;
 		if (out.some((p) => p.source.characterId === characterId)) return;
+		// A jinx may let this player die when executed (the Vizier babysitting Lil' Monsta).
+		if (by === 'execution' && diesWhenExecutedBy(game, seatId, characterId, characters)) return;
 		const source = protectionFor(game, seatId, characterId, rule, characters);
 		if (source) out.push({ source, from: rule.from });
 	};
@@ -132,10 +151,12 @@ export interface ExecutionSaver {
 	source: AbilitySource;
 	/**
 	 * Why it may not save this player: its character is not in play, its rule does not cover
-	 * them (the Pacifist's good players, the Devil's Advocate's marked one), or it is drunk,
-	 * poisoned or spent. The Storyteller may apply it anyway (warn, never lock).
+	 * them (the Pacifist's good players, the Devil's Advocate's marked one), a jinx lets this
+	 * player die when executed (`diesWhenExecuted`: the Psychopath and the Vizier babysitting
+	 * Lil' Monsta), or it is drunk, poisoned or spent. The Storyteller may apply it anyway
+	 * (warn, never lock).
 	 */
-	problem?: 'not-in-play' | 'not-this-player' | 'impaired';
+	problem?: 'not-in-play' | 'not-this-player' | 'jinxed' | 'impaired';
 }
 
 /**
@@ -195,9 +216,11 @@ function savers(
 			? 'not-in-play'
 			: !source
 				? 'not-this-player'
-				: owner && !abilityState(game, owner, characters).works
-					? 'impaired'
-					: undefined;
+				: by === 'execution' && diesWhenExecutedBy(game, seatId, characterId, characters)
+					? 'jinxed'
+					: owner && !protectionWorks(game, owner, characters)
+						? 'impaired'
+						: undefined;
 		out.push({
 			source: source ?? { characterId, ...(from ? { seatId: from } : {}) },
 			...(problem ? { problem } : {})
@@ -222,7 +245,7 @@ export function protection(
 	if (!seat) return undefined;
 	const override = seat.overrides.find((o) => o.field === 'canDie');
 	if (override) return override.value ? undefined : 'override';
-	const works = (s: SeatId) => abilityState(game, s, characters).works;
+	const works = (s: SeatId) => protectionWorks(game, s, characters);
 	return protectors(game, seatId, characters, by).find(
 		(p) => !p.source.seatId || works(p.source.seatId)
 	)?.source;

@@ -3,7 +3,9 @@
  * block, `data/wakes-when-rules.ts`): the King once the dead equal or outnumber the living,
  * the Choirboy when the Demon killed the King tonight, the Zombuul when nobody died today, the
  * Seamstress until its once-per-game ability is used (unless its player acts twice,
- * `acts-twice.ts`: a spent once-per-game ability may be used again). `diedTonight` is every seat
+ * `acts-twice.ts`: a spent once-per-game ability may be used again), the Zombuul while no
+ * player is marked Died Today, the Bounty Hunter on a later night once the player marked Know
+ * died, the Juggler only on the night after the first day. `diedTonight` is every seat
  * that died since the most recent New day (`diedSinceNewDay`). Every condition given must hold;
  * a character without one always may wake. A jinx may lower the King's dead count while its
  * partner is in play (`deadAtLeast`: one dead player is enough with the Leviathan or Riot,
@@ -12,10 +14,11 @@
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
-import { trueCharacter } from '#lib/core/model/selectors.ts';
+import { alignmentOf, trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 import { actsTwice } from './acts-twice.ts';
 import { ownJinxes } from './jinxes.ts';
+import { dayNumber } from './night-order.ts';
 
 export function wakeConditionMet(
 	game: Game,
@@ -61,5 +64,19 @@ export function wakeConditionMet(
 		);
 		if (spent && !actsTwice(game, holder, characters)) return false;
 	}
+	const marked = (label: string) =>
+		game.seating.filter((s) =>
+			game.seats[s]?.reminders.some((r) => r.characterId === characterId && r.label === label)
+		);
+	if (when.noneMarked && marked(when.noneMarked).length > 0) return false;
+	if (when.markedDied && dayNumber(game) > 0) {
+		// The marked player died, or an evil player died since the day began: the Storyteller may
+		// have moved the token on to the next evil player already, and the step stays.
+		const died =
+			marked(when.markedDied).some((s) => game.seats[s].dead) ||
+			[...diedTonight].some((s) => alignmentOf(game, s) === 'evil');
+		if (!died) return false;
+	}
+	if (when.nightAfterDay !== undefined && dayNumber(game) !== when.nightAfterDay) return false;
 	return true;
 }

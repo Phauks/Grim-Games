@@ -358,3 +358,388 @@ test('during the riot a player who nominated the Storyteller nominates again, wi
 	const prompt = page.getByRole('alertdialog', { name: 'End game?' });
 	await expect(prompt.locator('[data-rule="storyteller-executed"]')).toContainText('Evil wins');
 });
+
+// The Vizier's jinxes (L115): with the Investigator on the script the Vizier isn't declared, and
+// the Magician is immune to the Vizier's execute now, warned beside it, never locked
+// (https://wiki.bloodontheclocktower.com/Vizier#Related_Jinxes).
+test("the Vizier isn't declared with the Investigator, and the Magician is out of their execute now", async ({
+	page
+}) => {
+	test.slow();
+	await startGame(page, 'Vizier Magician', [
+		'vizier',
+		'investigator',
+		'magician',
+		'imp',
+		'chef',
+		'empath',
+		'monk'
+	]);
+	await choose(page, 1, 'Vizier');
+	await choose(page, 2, 'Magician');
+	await choose(page, 3, 'Imp');
+	await choose(page, 4, 'Chef');
+	const first = await walkTo(page, 'Dusk');
+	await first.getByRole('button', { name: 'Next step' }).tap();
+	await bankNight(page, 'End night').tap();
+	await page
+		.getByRole('alertdialog', { name: 'End the night?' })
+		.getByRole('button', { name: 'Confirm', exact: true })
+		.tap();
+	const day = page.getByRole('dialog', { name: 'Day 1' });
+	await expect(day.getByTestId('announcements')).toBeVisible();
+	await expect(day.getByTestId('announcements').locator('[data-character="vizier"]')).toHaveCount(
+		0
+	);
+
+	await day.getByRole('button', { name: 'Execution', exact: true }).tap();
+	const ask = page.getByRole('alertdialog', { name: 'End the day?' });
+	const now = ask.getByTestId('outcome-execute-now');
+	await expect(now).toBeVisible();
+	await ask.getByRole('combobox', { name: 'Execution' }).tap();
+	await page.getByRole('option', { name: /^Seat 2\b/ }).tap();
+	await expect(now).toContainText('A jinx keeps it from this player');
+	await ask.getByRole('combobox', { name: 'Execution' }).tap();
+	await page.getByRole('option', { name: /^Seat 4\b/ }).tap();
+	await expect(now).not.toContainText('A jinx keeps it from this player');
+});
+
+// The Vizier wakes with the Fearmonger, and a Vizier the Courtier makes drunk learns it and
+// still can't die by day: both said at the partner's night step (L115,
+// https://wiki.bloodontheclocktower.com/Vizier#Related_Jinxes).
+test("the Vizier's jinxes with the Fearmonger and the Courtier show at their night steps", async ({
+	page
+}) => {
+	test.slow();
+	await startGame(page, 'Vizier Fear', [
+		'vizier',
+		'fearmonger',
+		'courtier',
+		'chef',
+		'empath',
+		'monk',
+		'imp'
+	]);
+	await choose(page, 1, 'Vizier');
+	await choose(page, 2, 'Fearmonger');
+	await choose(page, 3, 'Courtier');
+	await choose(page, 4, 'Chef');
+	await putReminder(page, 'Drunk 3', 1);
+	await closeBin(page);
+
+	const courtier = await openStep(page, 'Courtier');
+	await expect(courtier.getByTestId('night-alerts')).toContainText(
+		/Vizier\s*,\s*learns\s+they\s+lost\s+their\s+ability,\s+which\s+still\s+protects\s+them/
+	);
+	await page.keyboard.press('Escape');
+	await expect(courtier).toBeHidden();
+
+	const fear = await openStep(page, 'Fearmonger');
+	await expect(fear.getByTestId('night-alerts')).toContainText(
+		/Vizier\s*,\s*wakes\s+too\s+and\s+learns\s+the\s+choice/
+	);
+});
+
+// The Cannibal's jinx with the Zealot (L114): the night after the Cannibal eats the executed
+// Zealot, a step of its own wakes the Cannibal to learn the ability, which has no night text
+// (https://wiki.bloodontheclocktower.com/Cannibal#Related_Jinxes).
+test('the Cannibal who eats the Zealot is woken to learn the Zealot ability', async ({ page }) => {
+	test.slow();
+	await startGame(page, 'Cannibal Zealot', [
+		'cannibal',
+		'zealot',
+		'imp',
+		'chef',
+		'empath',
+		'poisoner'
+	]);
+	await choose(page, 1, 'Cannibal');
+	await choose(page, 2, 'Zealot');
+	await choose(page, 3, 'Imp');
+	await toSecondNight(page, 2);
+	await putReminder(page, 'Lunch', 2);
+	await closeBin(page);
+
+	const step = await openStep(page, 'Cannibal');
+	await expect(step).toContainText('they learn they have the Zealot ability');
+	await expect(step.getByTestId('night-alerts')).toContainText(
+		/learns they have the\s*Zealot\s*ability/
+	);
+});
+
+// The Vortox's jinx with the Banshee (L114): the Banshee's announcement is given truly
+// (https://wiki.bloodontheclocktower.com/Vortox#Related_Jinxes).
+test("the Banshee's step says the Vortox doesn't make its announcement false", async ({ page }) => {
+	test.slow();
+	await startGame(page, 'Vortox Banshee', [
+		'vortox',
+		'banshee',
+		'chef',
+		'empath',
+		'poisoner',
+		'monk'
+	]);
+	await choose(page, 1, 'Vortox');
+	await choose(page, 2, 'Banshee');
+	await choose(page, 3, 'Chef');
+	await toSecondNight(page, 3);
+
+	const step = await openStep(page, 'Banshee');
+	await expect(step.getByTestId('night-alerts')).toContainText(
+		/given truly,\s*Vortox\s*doesn't make\s+it false/
+	);
+});
+
+// The Cannibal's jinx with the Juggler (L114): the night after the Cannibal eats the executed
+// Juggler, the Cannibal's Juggler step says they learn the Juggler's number
+// (https://wiki.bloodontheclocktower.com/Cannibal#Related_Jinxes).
+test("the Cannibal who eats the Juggler learns the Juggler's number", async ({ page }) => {
+	test.slow();
+	await startGame(page, 'Cannibal Juggler', [
+		'cannibal',
+		'juggler',
+		'imp',
+		'chef',
+		'empath',
+		'poisoner'
+	]);
+	await choose(page, 1, 'Cannibal');
+	await choose(page, 2, 'Juggler');
+	await choose(page, 3, 'Imp');
+	await toSecondNight(page, 2);
+	await putReminder(page, 'Lunch', 2);
+	await closeBin(page);
+
+	const step = await openStep(page, 'Cannibal');
+	await expect(step.getByTestId('night-alerts')).toContainText(
+		/learns what the\s*Juggler\s*would learn tonight/
+	);
+});
+
+// Lil' Monsta's babysitting jinxes (L116, https://wiki.bloodontheclocktower.com/Lil%27_Monsta#Related_Jinxes):
+// a Vizier babysitting Lil' Monsta dies when executed, so the Execution sheet no longer says
+// they survive.
+test('a Vizier babysitting Lil’ Monsta is no longer saved from execution', async ({ page }) => {
+	test.slow();
+	await startGame(page, 'Babysitting Vizier', [
+		'lilmonsta',
+		'vizier',
+		'poisoner',
+		'chef',
+		'empath',
+		'monk'
+	]);
+	await choose(page, 1, 'Vizier');
+	await choose(page, 2, 'Poisoner');
+	await choose(page, 3, 'Chef');
+	const first = await walkTo(page, 'Dusk');
+	await first.getByRole('button', { name: 'Next step' }).tap();
+	await bankNight(page, 'End night').tap();
+	await page
+		.getByRole('alertdialog', { name: 'End the night?' })
+		.getByRole('button', { name: 'Confirm', exact: true })
+		.tap();
+	const day = page.getByRole('dialog', { name: 'Day 1' });
+	const executeSeat1 = async () => {
+		await day.getByRole('button', { name: 'Execution', exact: true }).tap();
+		const ask = page.getByRole('alertdialog', { name: 'End the day?' });
+		await ask.getByRole('combobox', { name: 'Execution' }).tap();
+		await page.getByRole('option', { name: /^Seat 1\b/ }).tap();
+		return ask;
+	};
+	let ask = await executeSeat1();
+	await expect(ask.getByTestId('execution-saved')).toContainText('does not die');
+	await ask.getByRole('button', { name: 'Cancel' }).tap();
+	await expect(ask).toBeHidden();
+	await day.getByRole('button', { name: 'Close' }).tap();
+	await expect(day).toBeHidden();
+
+	await putReminder(page, 'Is The Demon', 1);
+	await closeBin(page);
+	await openDay(page);
+	ask = await executeSeat1();
+	await expect(ask.getByTestId('execution-saved')).not.toContainText('does not die');
+});
+
+// With the Magician alive, the Storyteller picks a Minion to babysit Lil' Monsta: Is The
+// Demon on anyone else is still placed, with a toast that a jinx says who carries it (L116).
+test('with the Magician alive, Lil’ Monsta’s Is The Demon on a non-Minion warns', async ({
+	page
+}) => {
+	test.slow();
+	await startGame(page, 'Babysitting Magician', [
+		'lilmonsta',
+		'magician',
+		'poisoner',
+		'chef',
+		'empath',
+		'monk'
+	]);
+	await choose(page, 1, 'Magician');
+	await choose(page, 2, 'Poisoner');
+	await choose(page, 3, 'Chef');
+	await putReminder(page, 'Is The Demon', 3);
+	await expect(page.getByText(/a jinx says who carries it/)).toBeVisible();
+	await expect(await openSeat(page, 3)).toContainText('Is The Demon');
+});
+
+// At the tea party a Demon who chooses Lil' Monsta also chooses a Minion, and becomes that
+// (L116, https://wiki.bloodontheclocktower.com/Hatter#Related_Jinxes).
+test('the Hatter’s Demon who chooses Lil’ Monsta also chooses a Minion to become', async ({
+	page
+}) => {
+	test.slow();
+	await startGame(page, 'Babysitting Hatter', [
+		'hatter',
+		'lilmonsta',
+		'imp',
+		'poisoner',
+		'spy',
+		'chef',
+		'empath'
+	]);
+	await choose(page, 1, 'Hatter');
+	await choose(page, 2, 'Chef');
+	await choose(page, 3, 'Poisoner');
+	await choose(page, 4, 'Imp');
+	await toSecondNight(page, 1);
+
+	const step = await openStep(page, 'Hatter');
+	await expect(step.getByTestId('also-becomes')).toContainText('also chooses a Minion to become');
+	const change = step.getByTestId('change-character');
+	await change.getByRole('button', { name: 'Choose' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Changes character' })
+		.getByRole('button', { name: /Seat 4/ })
+		.tap();
+	await page
+		.getByRole('dialog', { name: 'Choose a character' })
+		.getByRole('button', { name: "Lil' Monsta", exact: true })
+		.tap();
+	const minions = page.getByRole('dialog', { name: 'Also choose a Minion' });
+	await expect(minions.getByRole('button', { name: 'Imp', exact: true })).toHaveCount(0);
+	await minions.getByRole('button', { name: 'Spy', exact: true }).tap();
+	await expect(change).toContainText('Spy');
+	await step.getByRole('button', { name: 'Close' }).first().tap();
+	await expect(await openSeat(page, 4)).toContainText(/Minion · Evil · Seat 4[\s\S]*Spy/);
+});
+
+// Legion's jinxes (L117, https://wiki.bloodontheclocktower.com/Legion#Related_Jinxes): the
+// Engineer with Legion in play learns on the first night they have no ability.
+test('the Engineer with Legion in play learns they have no ability', async ({ page }) => {
+	test.slow();
+	await startGame(page, 'Legion Engineer', [
+		'legion',
+		'engineer',
+		'chef',
+		'empath',
+		'monk',
+		'soldier',
+		'imp'
+	]);
+	await choose(page, 1, 'Legion');
+	await choose(page, 2, 'Legion');
+	await choose(page, 3, 'Engineer');
+	await choose(page, 4, 'Chef');
+
+	const step = await openStep(page, 'Engineer');
+	await expect(step.getByTestId('night-alerts')).toContainText(
+		/Engineer\s*,\s*learns they have no\s+ability\s*\(\s*Legion\s*\)/
+	);
+});
+
+// The Engineer who makes Legion makes every evil player Legion, said on the step first.
+test('the Engineer who creates Legion makes every evil player Legion', async ({ page }) => {
+	test.slow();
+	await startGame(page, 'Engineer Legion', [
+		'engineer',
+		'legion',
+		'imp',
+		'poisoner',
+		'chef',
+		'empath',
+		'monk'
+	]);
+	await choose(page, 1, 'Engineer');
+	await choose(page, 2, 'Imp');
+	await choose(page, 3, 'Poisoner');
+	await choose(page, 4, 'Chef');
+
+	const step = await openStep(page, 'Engineer');
+	await expect(step.getByTestId('all-evil-become')).toContainText(
+		/Legion\s*:\s+if\s+created,\s+every\s+evil\s+player\s+becomes\s+it\./
+	);
+	await step.getByTestId('change-character').getByRole('button', { name: 'Choose' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Changes character' })
+		.getByRole('button', { name: /Imp/ })
+		.tap();
+	await page
+		.getByRole('dialog', { name: 'Choose a character' })
+		.getByRole('button', { name: 'Legion', exact: true })
+		.tap();
+	const made = step.getByTestId('change-character');
+	await expect(made.getByRole('button', { name: 'Show to player' })).toHaveCount(2);
+	await page.keyboard.press('Escape');
+	await expect(step).toBeHidden();
+	await expect(await openSeat(page, 3)).toContainText(/Demon · Evil · Seat 3[\s\S]*Legion/);
+});
+
+// The Preacher who chooses Legion: Legion keeps their ability, and the Preacher's step says
+// the Preacher might learn they are Legion.
+test('the Preacher who chooses Legion might learn they are Legion', async ({ page }) => {
+	test.slow();
+	await startGame(page, 'Legion Preacher', [
+		'legion',
+		'preacher',
+		'chef',
+		'empath',
+		'monk',
+		'soldier',
+		'imp'
+	]);
+	await choose(page, 1, 'Legion');
+	await choose(page, 2, 'Legion');
+	await choose(page, 3, 'Preacher');
+	await choose(page, 4, 'Chef');
+	await putReminder(page, 'No Ability', 1);
+	await closeBin(page);
+
+	const step = await openStep(page, 'Preacher');
+	await expect(step.getByTestId('night-alerts')).toContainText(
+		/Preacher\s*,\s*might learn a player\s+is\s*Legion\s*,\s*who keeps their ability/
+	);
+});
+
+// With the Magician in play, Demon info shows Legion the good players but not the Magician.
+test('Demon info with Legion and the Magician shows the good players, not the Magician', async ({
+	page
+}) => {
+	test.slow();
+	await startGame(page, 'Legion Magician', [
+		'legion',
+		'magician',
+		'chef',
+		'empath',
+		'monk',
+		'soldier',
+		'imp'
+	]);
+	await choose(page, 1, 'Legion');
+	await choose(page, 2, 'Legion');
+	await choose(page, 3, 'Legion');
+	await choose(page, 4, 'Legion');
+	await choose(page, 5, 'Magician');
+	await choose(page, 6, 'Chef');
+	await choose(page, 7, 'Empath');
+
+	const info = await openStep(page, 'Demon info');
+	const good = info.locator('[data-testid="evil-info-card"][data-row="good"]');
+	await expect(good).toContainText('These players are good');
+	await expect(good).toContainText('Seat 6');
+	await expect(good).toContainText('Seat 7');
+	await expect(good).not.toContainText('Seat 5');
+	await expect(good).toContainText(/wake the Demon players in separate groups/);
+	const minions = info.locator('[data-testid="evil-info-card"][data-row="minions"]');
+	await expect(minions).not.toContainText('Seat 5');
+});

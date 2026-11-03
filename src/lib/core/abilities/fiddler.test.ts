@@ -18,7 +18,8 @@ import { committedCharacter, nightSheetPresence } from '#lib/core/testing/commit
 import { endCharacters } from '#lib/core/rules/end-reason.ts';
 import { gameEnds } from '#lib/core/rules/game-end.ts';
 import { dayReminders, dayStateFromGame, renderReminder } from '#lib/core/rules/day-reminders.ts';
-import { engineGap, scenario } from '#lib/core/testing/scenario.ts';
+import { contestOpponents, contestWinner } from '#lib/core/rules/contest.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Fiddler', () => {
 	const character = committedCharacter('fiddler');
@@ -96,24 +97,37 @@ describe('Fiddler', () => {
 			]);
 		});
 
-		it.fails('has the Demon choose a player of the other alignment for the fiddle contest', () => {
+		it('has the Demon choose a player of the other alignment for the fiddle contest', () => {
 			// Wiki: "Wake the Demon. They point at any good player. (If the Demon is good, they must
 			// choose an evil player instead.)"
-			// Waits on the engine (unplanned): no rule records the fiddle contest or checks the
-			// player the Demon chose against the Demon's alignment.
 			const s = scenario(['chef', 'empath', 'monk', 'soldier', 'poisoner', 'imp']).rule('fiddler');
 			expect(endCharacters(s.game, s.characters)).toContain('fiddler');
-			engineGap('unplanned', "the Demon's fiddle contest opponent, of the other alignment");
+			const good = (['chef', 'empath', 'monk', 'soldier'] as const).map((id) => s.seat(id));
+			expect(contestOpponents(s.game, 'fiddler', s.seat('imp'), s.characters)).toEqual(good);
+			// A good Demon chooses an evil player instead.
+			const turned = s.do((at) => ({
+				type: 'SetAlignment',
+				seatId: at.seat('imp'),
+				alignment: 'good'
+			}));
+			expect(
+				contestOpponents(turned.game, 'fiddler', turned.seat('imp'), turned.characters)
+			).toEqual([turned.seat('poisoner')]);
 		});
 
-		it.fails('gives the win to the evil team when the fiddle contest vote ties', () => {
+		it('gives the win to the evil team when the fiddle contest vote ties', () => {
 			// Wiki: "The player with the most votes wins, their team wins, and the game ends. On a tie,
 			// the evil team wins."
-			// Waits on the engine (unplanned): the fiddle contest's votes are not recorded, so no game
-			// end names its winner.
 			const s = scenario(['chef', 'empath', 'monk', 'soldier', 'poisoner', 'imp']).rule('fiddler');
-			expect(gameEnds(s.game, s.characters)).toEqual([]);
-			engineGap('unplanned', 'a fiddle contest result that ends the game, evil winning a tie');
+			const demon = { seatId: s.seat('imp'), votes: 3 };
+			const chef = { seatId: s.seat('chef'), votes: 3 };
+			expect(contestWinner(s.game, 'fiddler', demon, chef, s.characters)).toBe('evil');
+			expect(contestWinner(s.game, 'fiddler', demon, { ...chef, votes: 4 }, s.characters)).toBe(
+				'good'
+			);
+			expect(contestWinner(s.game, 'fiddler', { ...demon, votes: 4 }, chef, s.characters)).toBe(
+				'evil'
+			);
 		});
 	});
 });

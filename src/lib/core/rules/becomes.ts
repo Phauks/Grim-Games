@@ -115,6 +115,18 @@ export function becomesOffer(
 		!owners.some((id) => abilityState(game, id, characters).works)
 	)
 		return undefined;
+	// Not once its own token says the ability was used (a Mezepheles marked No Ability).
+	const { spent } = rule;
+	if (
+		spent !== undefined &&
+		owners.length > 0 &&
+		owners.every((id) =>
+			game.seats[id].reminders.some(
+				(r) => r.characterId === reminder.characterId && r.label === spent
+			)
+		)
+	)
+		return undefined;
 	const isDemon = typeOf(game, seatId, characters) === 'demon';
 
 	if (rule.into === 'evil') {
@@ -223,7 +235,8 @@ export function followedAlignmentOffer(
 
 /**
  * The player whose `characterId` changes a chosen player's character tonight
- * (`changesCharacter`): its own living player (or dead, when it acts when dead: the Hatter),
+ * (`changesCharacter`): its own living player (or dead, when it acts when dead; only once
+ * dead, when its ability is set off by its player's death, `onDeath`: the Hatter's tea party),
  * with its `token` on them when the rule names one (the Summoner's Night 3) and without its
  * `spent` token (the Huntsman's No Ability), and someone to change when only some characters
  * change (the Huntsman's Damsel, the Hatter's Minions and Demon).
@@ -246,6 +259,7 @@ export function characterChanger(
 	const changer = game.seating.find(
 		(id) =>
 			(!game.seats[id].dead || rules?.actsWhenDead === true) &&
+			(!rule.afterDeath || game.seats[id].dead === true) &&
 			trueCharacter(game, id, characters) === characterId &&
 			(rule.token === undefined || carries(id, rule.token)) &&
 			(rule.spent === undefined || !carries(id, rule.spent))

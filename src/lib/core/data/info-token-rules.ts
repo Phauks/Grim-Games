@@ -13,8 +13,9 @@
  *   Storyteller entered as the prep value named by `value` (the Storm Catcher's named
  *   character, shown as not in play), `demon` the true character of the Demon in play (a
  *   living one first), `marked` the character token of the player carrying this character's
- *   own reminder `token` (the Apprentice's Is The Apprentice), and `changed` the character the
- *   step last changed a player into (the Pit-Hag's new character);
+ *   own reminder `token` (the Apprentice's Is The Apprentice), `changed` the character the
+ *   step last changed a player into (the Pit-Hag's new character), and `given` the character
+ *   whose ability this character's `givesAbility` gave a player (the Boffin's good character);
  * - `value`: with a `value` character, the key of that prep value (`setupPrep` note `value`);
  * - `token`: with a `marked` character, the reminder that marks the player;
  * - `after`: another card of this step shown just before this one, together (the Cerenovus's
@@ -48,10 +49,11 @@ import {
 /**
  * `self`: the character whose step it is; `chosen`: the player the Storyteller taps; `value`:
  * the character entered as a prep value; `demon`: the Demon in play; `marked`: the player
- * carrying the character's `token`; `changed`: the character the step last made.
+ * carrying the character's `token`; `changed`: the character the step last made; `given`: the
+ * ability the character gave a player.
  */
 export type FilledCharacter =
-	'self' | 'chosen' | 'value' | 'demon' | 'marked' | 'changed' | CharacterId;
+	'self' | 'chosen' | 'value' | 'demon' | 'marked' | 'changed' | 'given' | CharacterId;
 
 const INFO_TOKEN_OTHERS = ['opposite-alignment'] as const;
 

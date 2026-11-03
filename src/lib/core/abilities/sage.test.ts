@@ -118,10 +118,8 @@ describe('Sage', () => {
 			expect(isAllowed(picker, { seats: [s.seat('chef'), s.seat('poisoner')] })).toBe(false);
 		});
 
-		it.fails('with two Demons, the one shown is the Demon that killed the Sage', () => {
+		it('with two Demons, the one shown is the Demon that killed the Sage', () => {
 			// Wiki: "Point at two players, one who is the Demon that killed the Sage."
-			// Waits on the engine (unplanned): the Sage's picker accepts any Demon, not only the one
-			// whose kill woke the Sage.
 			const s = scenario(['sage', 'chef', 'nodashii', 'monk', 'pithag', 'empath'])
 				.becomes('chef', 'vortox', 'good')
 				.dies('sage', 'nodashii');

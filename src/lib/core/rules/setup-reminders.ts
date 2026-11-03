@@ -42,6 +42,7 @@ import {
 import { NO_CHARACTER_NAMES, type CharacterNames } from './character-names.ts';
 import { carriesDemonToken } from './death-causes.ts';
 import { jinxedWith } from './jinxes.ts';
+import type { JinxRules } from '#lib/core/data/jinx-rules.ts';
 
 export type {
 	SeatFilter,
@@ -433,6 +434,16 @@ function unseatedReminders(
  * token of its own (the Spy), and the Widow's own Poisoned is for her first-night choice, so
  * the token is the generic one. Skipped once the seat carries a reminder with that word.
  */
+/** The generic token for each `impairsPartner`, and what it says of the partner. */
+const JINX_IMPAIRED: Record<
+	NonNullable<JinxRules['impairsPartner']>,
+	{ label: ReminderLabel; is: string }
+> = {
+	poisoned: { label: 'Poisoned' as ReminderLabel, is: 'is poisoned' },
+	drunk: { label: 'Drunk' as ReminderLabel, is: 'is drunk' },
+	'no-ability': { label: 'No Ability' as ReminderLabel, is: 'has no ability' }
+};
+
 function jinxReminders(
 	game: Game,
 	seats: readonly SeatFacts[],
@@ -446,10 +457,9 @@ function jinxReminders(
 		const jinxed = jinxedWith(game, partner, (r) => r.impairsPartner !== undefined, lookup);
 		for (const { characterId: by, rule } of jinxed) {
 			if (!rule.impairsPartner || !inPlay(by)) continue;
-			const label = (rule.impairsPartner[0].toUpperCase() +
-				rule.impairsPartner.slice(1)) as ReminderLabel;
+			const { label, is } = JINX_IMPAIRED[rule.impairsPartner];
 			const said = (r: ReminderInstance) =>
-				[r.label, r.note].some((w) => w?.toLowerCase() === rule.impairsPartner);
+				[r.label, r.note].some((w) => w?.toLowerCase() === label.toLowerCase());
 			if (f.seat.reminders.some(said)) continue;
 			if (out.some((r) => r.seatId === f.seat.seatId && r.label === label)) continue;
 			const character = lookup.get(partner);
@@ -461,7 +471,7 @@ function jinxReminders(
 				label,
 				text: `Put [${label}] on the ${name}`,
 				seatId: f.seat.seatId,
-				reason: `Jinxed with the ${byName}: the ${name} is ${rule.impairsPartner} while the ${byName} is or has been in play`,
+				reason: `Jinxed with the ${byName}: the ${name} ${is} while the ${byName} is or has been in play`,
 				candidates: [],
 				timing: 'setup',
 				wiki: page ? `${page}#Related_Jinxes` : `${W}Djinn`
