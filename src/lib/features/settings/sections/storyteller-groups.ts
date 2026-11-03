@@ -6,7 +6,6 @@ export const STORYTELLER_GROUPS = {
 	night: ['nightWalkthrough', 'nightAnswers', 'infoSuggestions', 'characterTokens'],
 	day: [
 		'dayAfterNight',
-		'timedReminders',
 		'preDayReminders',
 		'deathCause',
 		'deathReminderAsk',

@@ -33,6 +33,16 @@ import { addSeat } from './seating.ts';
 
 // The Storyteller's grimoire board: saved games, seats and the seat sheet (ROADMAP Phase 2).
 
+/** Settings › Storyteller › Remove reminders that run out: Automatically remove. */
+async function removeRemindersAutomatically(page: Page) {
+	await boardSettings(page, 'Storyteller');
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	await settings.getByRole('combobox', { name: 'Remove reminders that run out' }).tap();
+	await page.getByRole('option', { name: 'Automatically remove', exact: true }).tap();
+	await settings.getByRole('button', { name: 'Close' }).tap();
+	await expect(settings).toBeHidden();
+}
+
 async function startGame(page: Page, script = 'Trouble Brewing') {
 	await page.goto('/new');
 	await pickScript(page, script);
@@ -1137,16 +1147,18 @@ test('a night step offers the info tokens its text names', async ({ page }) => {
 });
 
 for (const on of [true, false]) {
-	test(`Take reminders off on time ${on ? 'on' : 'off'}: the Monk's Safe at dawn`, async ({
+	test(`Remove reminders that run out ${on ? 'automatically' : 'off'}: the Monk's Safe at dawn`, async ({
 		page
 	}) => {
 		// https://wiki.bloodontheclocktower.com/Monk : the Safe reminder comes off at dawn. One
-		// Storyteller setting turns every timed reminder change off (Trevor, 2026-11-02).
+		// Storyteller setting, off by default, decides every timed reminder change (Trevor,
+		// 2026-11-03).
 		await startGame(page);
-		if (!on) {
+		if (on) {
 			await boardSettings(page, 'Storyteller');
 			const settings = page.getByRole('dialog', { name: 'Settings' });
-			await settings.getByText('Take reminders off on time', { exact: true }).tap();
+			await settings.getByRole('combobox', { name: 'Remove reminders that run out' }).tap();
+			await page.getByRole('option', { name: 'Automatically remove', exact: true }).tap();
 			await settings.getByRole('button', { name: 'Close' }).tap();
 			await expect(settings).toBeHidden();
 		}
@@ -7292,6 +7304,8 @@ test('tapping the nomination marks records a nomination, and the Virgin executes
 // Minion nominated and swaps his tokens (Trevor, 2026-10-24).
 test("the Town Crier's step reads today's recorded nominations", async ({ page }) => {
 	await startGame(page, 'Sects & Violets');
+	// Dawn's token changes follow the Storyteller setting, off by default (Trevor, 2026-11-03).
+	await removeRemindersAutomatically(page);
 	for (const [number, name] of [
 		[1, 'Town Crier'],
 		[2, 'Witch'],

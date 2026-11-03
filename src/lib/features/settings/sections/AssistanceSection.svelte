@@ -6,6 +6,7 @@
 	import { canKeepAwake } from '#lib/features/day/timer-wake-lock.ts';
 	import TimerPerPlayerRow from '#lib/features/day/TimerPerPlayerRow.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
+	import { REMINDER_REMOVALS } from '#lib/ui/preferences.ts';
 	import { gameSettings } from '#lib/features/game-settings/game-settings.svelte.ts';
 	import BagDrawRows from '#lib/features/game-settings/BagDrawRows.svelte';
 	import { SETUP_LOOKS } from '#lib/core/rules/index.ts';
@@ -77,7 +78,23 @@
 />
 
 <SettingHeading title={t('settings.groupDay')} />
-{#each STORYTELLER_GROUPS.day as key (key)}{@render toggle(key)}{/each}
+{#each STORYTELLER_GROUPS.day as key (key)}
+	{@render toggle(key)}
+	{#if key === 'dayAfterNight'}
+		<!-- Reminders that run out at dawn or dusk (Trevor, 2026-11-03: off by default). -->
+		<SettingSelect
+			label={t('settings.reminderRemoval')}
+			description={t('settings.reminderRemovalHelp')}
+			value={preferences.current.reminderRemoval}
+			options={REMINDER_REMOVALS.map((value) => ({
+				value,
+				label: t(`settings.reminderRemoval.${value}`)
+			}))}
+			defaultValue="off"
+			onChange={(reminderRemoval) => preferences.update({ reminderRemoval })}
+		/>
+	{/if}
+{/each}
 <!-- The day timer's own choices, the same values as on the timer (Trevor, 2026-10-17); its
      sound and vibration are in Settings > Sound (plan U1). -->
 <SettingToggle

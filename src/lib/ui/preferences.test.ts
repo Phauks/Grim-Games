@@ -146,6 +146,13 @@ describe('parsePreferences', () => {
 		expect(parsePreferences({ timerMode: 'sideways' }).timerMode).toBe('down');
 	});
 
+	// Trevor, 2026-11-03: removing reminders that run out is a Storyteller setting, off by default.
+	it('reads reminder removal, off when unknown', () => {
+		expect(parsePreferences({}).reminderRemoval).toBe('off');
+		expect(parsePreferences({ reminderRemoval: 'auto' }).reminderRemoval).toBe('auto');
+		expect(parsePreferences({ reminderRemoval: 'sometimes' }).reminderRemoval).toBe('off');
+	});
+
 	// Plan U1: one volume for every sound, silent to full, saved by older builds as nothing.
 	it('reads the sound volume inside its range, full when unknown', () => {
 		expect(parsePreferences({}).soundVolume).toBe(1);
