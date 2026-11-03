@@ -197,12 +197,10 @@ export class BoardSizing {
 		const seats = game.seating.map((id) => game.seats[id]);
 		// Vanilla: a held ability's token lines up after the seat's reminders (BoardSeats).
 		const vanilla = boardLooks.current.abilityLook === 'vanilla';
-		// "Is The …" reminders sit in the seat's pill, not beside it, unless the big token shows
-		// reminders only.
-		const truthsInPill = boardLooks.current.bigToken !== 'reminders';
+		// "Is The …" reminders sit in the seat's pill, not beside it, by what the big token shows.
 		const counts = seats.map(
 			(s) =>
-				remindersBeside(s, characters, truthsInPill).length +
+				remindersBeside(s, characters, boardLooks.current.bigToken).length +
 				(vanilla ? heldAbilitiesOf(game, s.seatId, characters).length : 0)
 		);
 		const { width, height } = this;

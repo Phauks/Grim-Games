@@ -121,7 +121,7 @@
 	 */
 	const bigToken = $derived(boardLooks.current.bigToken);
 	const truthsInPill = $derived(bigToken !== 'reminders');
-	const beside = $derived(seats.map((seat) => remindersBeside(seat, characters, truthsInPill)));
+	const beside = $derived(seats.map((seat) => remindersBeside(seat, characters, bigToken)));
 	/** Who each seat of the Storyteller's fake evil team pretends to be (M26), in the pill. */
 	const pretends = $derived(
 		new Map(pretendTeam(game, characters).map((p) => [p.seatId, characters.get(p.characterId)]))
