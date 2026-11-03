@@ -5186,15 +5186,18 @@ test('the board menu names its groups, in two columns beside a phone', async ({ 
 	expect(await names('Seats')).toEqual(['Add Fabled or Loric', 'Seating']);
 	await expect(group('Seats').getByRole('button', { name: 'Seating' })).toBeEnabled();
 	expect(await names('App')).toEqual(['Settings', 'Report an issue']);
-	// Beside a phone, the game on the left and the rest on the right.
+	// Beside a phone, the game and its seats on the left and the rest on the right.
 	const game = (await group('Game').boundingBox())!;
 	const seats = (await group('Seats').boundingBox())!;
 	const app = (await group('App').boundingBox())!;
 	if ((page.viewportSize()?.width ?? 0) >= 640) {
-		expect(seats.x).toBeGreaterThan(game.x + game.width - 1);
-		expect(Math.abs(seats.y - game.y)).toBeLessThan(2);
-		// Session is last, under App (Trevor, 2026-11-03: "games, seats, app, session").
-		expect(Math.abs(session.x - seats.x)).toBeLessThan(2);
+		// Seats under Game on the left (Trevor, 2026-11-03: "seats should go below game"); App
+		// then Session on the right ("games, seats, app, session").
+		expect(Math.abs(seats.x - game.x)).toBeLessThan(2);
+		expect(seats.y).toBeGreaterThan(game.y + game.height - 1);
+		expect(app.x).toBeGreaterThan(game.x + game.width - 1);
+		expect(Math.abs(app.y - game.y)).toBeLessThan(2);
+		expect(Math.abs(session.x - app.x)).toBeLessThan(2);
 		expect(session.y).toBeGreaterThan(app.y + app.height - 1);
 	} else {
 		expect(seats.y).toBeGreaterThan(game.y + game.height - 1);
