@@ -40,7 +40,11 @@
 		grimoire: Grimoire;
 		/** False once the game has ended. */
 		active: boolean;
-		onEnd: (winner: Alignment | undefined, reason: EndReason | undefined) => void;
+		onEnd: (
+			winner: Alignment | undefined,
+			reason: EndReason | undefined,
+			alsoWon: SeatId[]
+		) => void;
 	}
 
 	let { grimoire, active, onEnd }: Props = $props();
@@ -79,6 +83,7 @@
 	let open = $state(false);
 	let winner = $state<Alignment | undefined>();
 	let reason = $state<EndReason | undefined>();
+	let alsoWon = $state<SeatId[]>([]);
 
 	// A condition that stops holding can prompt again if it comes back.
 	$effect(() => {
@@ -102,11 +107,12 @@
 		if (grimoire.reincarnateAsk) return;
 		shown = ends;
 		winner = suggestedWinner(ends);
+		alsoWon = [];
 		open = true;
 	});
 
 	function confirm() {
-		onEnd(winner, winner ? reason : undefined);
+		onEnd(winner, winner ? reason : undefined, winner ? alsoWon : []);
 	}
 
 	/** The character a seat is shown as: its true character, else the one on its token. */
@@ -278,7 +284,7 @@
 		{/each}
 	</ul>
 	<div class="winner">
-		<EndGameFields {grimoire} bind:winner bind:reason {dayEnded} />
+		<EndGameFields {grimoire} bind:winner bind:reason bind:alsoWon {dayEnded} />
 	</div>
 </ConfirmDialog>
 
