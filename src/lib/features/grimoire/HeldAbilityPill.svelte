@@ -12,8 +12,9 @@
 	 *
 	 * The pill also shows who the player really is, from an "Is The …" reminder (Trevor,
 	 * 2026-10-31, small token Option A), or, when the big token shows that, what they believe
-	 * they are (2026-11-03). They never look alike: a held ability has a blue + ("also holds"),
-	 * the true character a red = ("is really"), the believed one an accent ? ("believes").
+	 * they are (2026-11-03), and whom they are mad as (M36). They never look alike: a held ability
+	 * has a blue + ("also holds"), the true character a red = ("is really"), the believed one an
+	 * accent ? ("believes"), the mad one a !.
 	 */
 	interface Props {
 		abilities: { character: Character; works: boolean }[];
@@ -26,6 +27,11 @@
 		 * (Trevor, 2026-11-03): a token marked ?, opening its "Is The …" reminder.
 		 */
 		believes?: { character: Character; reminderId?: string };
+		/**
+		 * Who the player is mad as (`madAs`: the Cerenovus's Mad, the Pixie's shown Townsfolk;
+		 * M36), each a token marked !, opening the reminder it is found by.
+		 */
+		madAs?: { character: Character; reminderId?: string }[];
 		/** The seat has notes: their pen goes in the pill too, and opens them. */
 		notes?: boolean;
 		/**
@@ -36,7 +42,15 @@
 		pretends?: Character;
 	}
 
-	let { abilities, custom = [], truths = [], believes, notes = false, pretends }: Props = $props();
+	let {
+		abilities,
+		custom = [],
+		truths = [],
+		believes,
+		madAs = [],
+		notes = false,
+		pretends
+	}: Props = $props();
 </script>
 
 <RimPill side="right" edge="bottom" testid="held-pill"
@@ -66,7 +80,13 @@
 				class="kind believes"
 				aria-hidden="true">?</span
 			></span
-		>{/if}{#if pretends}<span
+		>{/if}{#each madAs as { character: mad, reminderId }, k (reminderId ?? k)}<span
+			class="held"
+			data-testid="mad-as-character"
+			data-reminder={reminderId}
+			title={`Mad as the ${mad.name}`}
+			><img src={iconUrl(mad)} alt="" /><span class="kind mad" aria-hidden="true">!</span></span
+		>{/each}{#if pretends}<span
 			class="held pretend"
 			data-testid="pretend-character"
 			title={`Fake ${pretends.name}`}
@@ -124,6 +144,11 @@
 	.kind.believes {
 		background: var(--accent);
 		color: var(--on-accent);
+	}
+	/* Mad as: not a team either, so the Fabled's colour, apart from believes. */
+	.kind.mad {
+		background: var(--fabled);
+		color: var(--on-fabled);
 	}
 	/* A tap target bigger than the mark, as the lone notes mark has. */
 	.note-slot::after {

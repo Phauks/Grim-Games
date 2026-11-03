@@ -80,5 +80,9 @@
 		"token": "Has Ability",
 		"pending": "Mad",
 		"wakes": true
+	},
+	"madAs": {
+		"token": "Mad",
+		"mad": "self"
 	}
 }

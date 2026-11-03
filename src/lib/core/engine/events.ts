@@ -106,6 +106,8 @@ export type GameEvent =
 	| { type: 'ReminderNoteSet'; reminderId: ReminderId; note?: string }
 	/** No `effect` clears it. */
 	| { type: 'ReminderEffectSet'; reminderId: ReminderId; effect?: ReminderEffect }
+	/** No `characterId` clears it. */
+	| { type: 'ReminderMadAsSet'; reminderId: ReminderId; characterId?: CharacterId }
 	| { type: 'ReminderSymbolSet'; reminderId: ReminderId; symbol?: string }
 	| { type: 'ReminderSymbolColourSet'; reminderId: ReminderId; colour?: SymbolColour }
 	/** Without `fill`, the symbol goes back to an outline. */

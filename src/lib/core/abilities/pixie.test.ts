@@ -23,6 +23,7 @@ import {
 } from '#lib/core/testing/committed-data.ts';
 import { protection } from '#lib/core/rules/ability.ts';
 import { gainedAbilities, withGainedSteps } from '#lib/core/rules/gained-abilities.ts';
+import { madAsOf } from '#lib/core/rules/mad-as.ts';
 import { nightOrder } from '#lib/core/rules/night-order.ts';
 import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 import { setupPrep } from '#lib/core/rules/setup-reminders.ts';
@@ -90,6 +91,18 @@ describe('Pixie', () => {
 				marked: true
 			});
 		});
+		it('is mad as the Townsfolk marked Mad, shown by the Pixie on the board', () => {
+			// Wiki: "Wake the Pixie. Show the Pixie this Townsfolk character token."
+			const s = scenario(['pixie', 'washerwoman', 'butler', 'imp', 'monk']);
+			expect(madAsOf(s.game, s.seat('pixie'), s.characters)).toEqual([]);
+			const marked = s.reminder('washerwoman', 'pixie', 'Mad');
+			const reminderId = marked.game.seats[marked.seat('washerwoman')].reminders[0].reminderId;
+			expect(madAsOf(marked.game, marked.seat('pixie'), marked.characters)).toEqual([
+				{ characterId: 'washerwoman', by: 'pixie', reminderId }
+			]);
+			expect(madAsOf(marked.game, marked.seat('washerwoman'), marked.characters)).toEqual([]);
+		});
+
 		it('swaps Mad for Has Ability only once that Townsfolk is dead', () => {
 			// Wiki: "If the Townsfolk marked MAD dies, and you feel that the Pixie player has been
 			// sufficiently mad that they were this character, replace the MAD reminder with the HAS

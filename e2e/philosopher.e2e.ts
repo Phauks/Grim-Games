@@ -5,7 +5,9 @@ import { pickScript, toBoard } from './new-game.ts';
  * The Philosopher's choice on its night step (https://wiki.bloodontheclocktower.com/Philosopher;
  * Trevor, 2026-11-03): a good character not in play is held by the Philosopher, who keeps their
  * token; one in play makes its player drunk. And Gain ability, from any seat's ⋯, gives a
- * player a character's ability or the Storyteller's own words (M34).
+ * player a character's ability or the Storyteller's own words (M34). The Cerenovus's step records
+ * whom its player is mad as, marked ! by the seat (https://wiki.bloodontheclocktower.com/Cerenovus,
+ * M36).
  */
 
 const sheetOf = (page: Page) => page.locator('[data-scope="drawer"][data-part="content"]');
@@ -22,19 +24,19 @@ async function choose(page: Page, number: number, name: string) {
 	await expect(sheet).toBeHidden();
 }
 
-async function setUp(page: Page) {
+async function setUp(page: Page, first = 'Philosopher') {
 	await page.goto('/new');
 	await pickScript(page, 'Sects & Violets');
 	await page.getByRole('button', { name: 'Create game' }).tap();
 	await toBoard(page);
-	await choose(page, 1, 'Philosopher');
+	await choose(page, 1, first);
 	await choose(page, 2, 'Seamstress');
 	await choose(page, 3, 'Witch');
 	await choose(page, 4, 'No Dashii');
 }
 
-/** Starts the night and opens the Philosopher's step. */
-async function philosopherStep(page: Page) {
+/** Starts the night and opens `character`'s step. */
+async function openStep(page: Page, character: string) {
 	const strip = page.getByTestId('night-strip');
 	await page
 		.getByRole('list', { name: 'Reminder bank' })
@@ -46,10 +48,15 @@ async function philosopherStep(page: Page) {
 	if (await ask.isVisible()) await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	const name = strip.locator('.step .name strong');
 	const next = strip.getByRole('button', { name: 'Next step' });
-	for (let i = 0; i < 30 && (await name.textContent()) !== 'Philosopher'; i++) await next.tap();
-	await expect(name).toHaveText('Philosopher');
+	for (let i = 0; i < 30 && (await name.textContent()) !== character; i++) await next.tap();
+	await expect(name).toHaveText(character);
 	// The character's band opens the step (its ring opens the character instead).
 	await strip.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong').tap();
+}
+
+/** Starts the night and opens the Philosopher's step. */
+async function philosopherStep(page: Page) {
+	await openStep(page, 'Philosopher');
 	const row = page.getByTestId('gained-ability');
 	await expect(row).toBeVisible();
 	return row;
@@ -124,4 +131,33 @@ test('Gain ability gives any player an ability in words, and takes it away', asy
 		'title',
 		'Has Is immune to the Witch'
 	);
+});
+
+test('the Cerenovus step records whom the player is mad as, marked ! by their seat', async ({
+	page
+}) => {
+	await setUp(page, 'Cerenovus');
+	await openStep(page, 'Cerenovus');
+	const row = page.getByTestId('mad-as');
+	// Nothing to record it on until Mad is placed: the row stays, its Choose disabled.
+	await expect(row).toContainText('None');
+	await expect(row.getByRole('button', { name: 'Choose' })).toBeDisabled();
+	await page.getByRole('dialog').getByRole('button', { name: 'Place' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Put Mad on' })
+		.getByRole('button', { name: /Seamstress Seat 2/ })
+		.tap();
+	await row.getByRole('button', { name: 'Choose' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Mad as' })
+		.getByRole('button', { name: 'Savant', exact: true })
+		.tap();
+	await expect(row).toContainText('Savant');
+	await expect(row.getByRole('button', { name: 'Change' })).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(seat(page, 2).getByTestId('mad-as-character')).toHaveAttribute(
+		'title',
+		'Mad as the Savant'
+	);
+	await expect(seat(page, 2)).toHaveAttribute('aria-label', /mad as the Savant/);
 });

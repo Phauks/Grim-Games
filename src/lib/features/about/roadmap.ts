@@ -526,6 +526,14 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['M34']
 	},
 	{
+		// Trevor, 2026-11-03: the board shows what a player is mad as beside their seat, marked !,
+		// as it shows what they believe (?). M36: the Cerenovus's night step records the chosen
+		// character on its Mad token, and the Pixie is mad as the Townsfolk marked Mad.
+		title: '"Mad as" on the board',
+		area: 'storyteller',
+		parts: ['M36']
+	},
+	{
 		// Trevor, 2026-11-02: beta goes to production only once the How to Run gaps are closed.
 		// M29a and M29b the warnings still missing (a second Alsaahir guess, a fourth Matron swap,
 		// the Goon's Drunk, the Pope's duplicate bluffs and more), M30a and M30b the info tokens

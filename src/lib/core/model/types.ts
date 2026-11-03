@@ -81,6 +81,12 @@ export interface ReminderInstance extends Reminder {
 	 */
 	effect?: ReminderEffect;
 	/**
+	 * The character the player carrying it is mad as, recorded on the night step of a reminder
+	 * whose rules say so (`madAs` with `mad: "carrier"`: the Cerenovus's Mad, M36). None until
+	 * chosen.
+	 */
+	madAs?: CharacterId;
+	/**
 	 * The days begun when it was placed (`game.pastDays.length`, so 0 is before the first
 	 * dawn). Says whether a dawn has passed since, for a reminder that comes off at dusk
 	 * tomorrow (`reminderEnds`). None on tokens saved before it was recorded.

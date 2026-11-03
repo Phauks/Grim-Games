@@ -82,6 +82,8 @@
 		 * opens the "Is The …" reminder it comes from.
 		 */
 		believes?: { character: Character; reminderId: ReminderId };
+		/** Who the player is mad as (`madAs`, M36): small tokens marked !, each opening its reminder. */
+		madAs?: { character: Character; reminderId?: ReminderId }[];
 		/** Who the Storyteller pretends the player is (`Game.pretend`, M26). */
 		pretends?: Character;
 		onReminder?: (reminderId: ReminderId) => void;
@@ -106,6 +108,7 @@
 		heldAbilities = [],
 		trueCharacters = [],
 		believes,
+		madAs = [],
 		pretends,
 		onReminder
 	}: Props = $props();
@@ -148,6 +151,8 @@
 			...trueCharacters.map(({ character: truly }) => `is really the ${truly.name}`),
 			// eslint-disable-next-line grim/names-as-badges -- an accessible name, see above
 			believes ? `believes they are the ${believes.character.name}` : '',
+			// eslint-disable-next-line grim/names-as-badges -- an accessible name, see above
+			...madAs.map(({ character: mad }) => `mad as the ${mad.name}`),
 			// eslint-disable-next-line grim/names-as-badges -- an accessible name, see above
 			pretends ? `fake ${pretends.name}` : '',
 			...custom.map((words) => `also has ${words}`),
@@ -274,10 +279,11 @@
 		>{/if}
 	<!-- Abilities held without a token, with the notes mark (HeldAbilityPill); the Storyteller's
 	     notes alone keep their own mark, lower right (never shown to players). -->
-	{#if heldAbilities.length || custom.length || trueCharacters.length || believes || pretends}<HeldAbilityPill
+	{#if heldAbilities.length || custom.length || trueCharacters.length || believes || madAs.length || pretends}<HeldAbilityPill
 			abilities={heldAbilities}
 			{custom}
 			{believes}
+			{madAs}
 			{pretends}
 			truths={trueCharacters.map(({ reminder, character: truly }) => ({
 				character: truly,

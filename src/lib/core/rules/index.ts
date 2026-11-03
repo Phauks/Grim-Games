@@ -54,6 +54,7 @@ export * from './revived-tonight.ts';
 export * from './night-kill.ts';
 export * from './game-end.ts';
 export * from './becomes.ts';
+export * from './mad-as.ts';
 export * from './madness.ts';
 export * from './countdown.ts';
 export * from './storytellers.ts';

@@ -8,7 +8,12 @@
 		type ReminderInstance,
 		type SeatId
 	} from '#lib/core/model/index.ts';
-	import { heldAbilitiesOf, pretendTeam, votesWithoutToken } from '#lib/core/rules/index.ts';
+	import {
+		heldAbilitiesOf,
+		madAsOf,
+		pretendTeam,
+		votesWithoutToken
+	} from '#lib/core/rules/index.ts';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import type { SeatPoint } from '#lib/ui/seating/seat-layout.ts';
@@ -124,6 +129,22 @@
 	const truths = $derived(
 		seats.map((seat) => (truthsInPill ? trueCharacterMarks(seat, characters) : []))
 	);
+	/**
+	 * Whom each player is mad as (`madAs`, M36), marked ! in the pill while it shows truths (not
+	 * with Reminders only, where the tokens say it).
+	 */
+	const madAs = $derived(
+		seats.map((seat) =>
+			truthsInPill
+				? madAsOf(game, seat.seatId, characters).flatMap((m) => {
+						const character = characters.get(m.characterId);
+						// A tap opens the token when it is on this seat (not the Pixie's, on the Townsfolk).
+						const own = seat.reminders.some((r) => r.reminderId === m.reminderId);
+						return character ? [{ character, ...(own ? { reminderId: m.reminderId } : {}) }] : [];
+					})
+				: []
+		)
+	);
 	/** The big token: who the player really is, with 'truth', else the token they were given. */
 	function bigTokenOf(seat: Seat, i: number): Character | undefined {
 		const truly = bigToken === 'truth' ? truths[i][0] : undefined;
@@ -172,6 +193,7 @@
 			number={i + 1}
 			character={bigTokenOf(seat, i)}
 			believes={believesOf(seat, i)}
+			madAs={madAs[i]}
 			{size}
 			nightNumbers={nightNumbers && seat.characterId
 				? {
