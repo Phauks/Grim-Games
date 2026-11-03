@@ -88,6 +88,7 @@ describe('parsePreferences', () => {
 			soundVolume: 0.35,
 			timerSound: 'buzzer',
 			timerMode: 'up',
+			reminderRemoval: 'auto',
 			timerVibrate: false,
 			callSound: 'buzzer',
 			ambienceOn: true,
