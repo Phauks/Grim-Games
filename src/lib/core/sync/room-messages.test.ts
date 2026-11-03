@@ -3,7 +3,9 @@ import type { SeatId } from '#lib/core/model/index.ts';
 import type { PublicGameState } from './public-projection.ts';
 import {
 	cleanMessage,
+	GRIM_VIEW_PREFIX,
 	MAX_MESSAGE_LENGTH,
+	MAX_VIEWER_NAME_LENGTH,
 	MAX_MESSAGES_PER_MEMBER,
 	MAX_ROOM_MESSAGE_CHARS,
 	MESSAGE_GAP_MS
@@ -15,8 +17,13 @@ import {
 	playerView,
 	publish,
 	readMessages,
+	seat,
 	sendMessage,
+	setName,
 	setInbox,
+	sendViewerMessage,
+	setSpectatorMessages,
+	viewersMayMessage,
 	type RoomState
 } from './room.ts';
 
@@ -131,5 +138,113 @@ describe('player messages', () => {
 		expect(publish(r, 'g1', table()).messages).toHaveLength(1);
 		expect(publish(r, 'g2', table()).messages).toBeUndefined();
 		expect(publish(r, 'g2', table()).inbox).toBe(true);
+	});
+});
+
+// Trevor (2026-11-03): "allow storyteller to enable or disable spectators from messaging the
+// storyteller". A spectator is a phone in the room with no seat.
+describe('spectators’ messages', () => {
+	/** Sam sits in seat a; Alex has no seat, so watches. */
+	const seated = () => seat(setName(room(), 'sam', { name: 'Sam' }), 'sam', 'a');
+
+	it('reach the Storyteller until the Storyteller turns them off', () => {
+		const r = sendMessage(seated(), 'alex', 'Hello', 1000, 'm1');
+		expect(r.messages?.map((m) => m.memberId)).toEqual(['alex']);
+		expect(playerView(seated(), 'alex').inbox).toBe(true);
+		expect(hostView(seated()).spectatorsMuted).toBeUndefined();
+	});
+
+	it('are dropped while off, and a spectator’s phone is not offered Send', () => {
+		const off = setSpectatorMessages(seated(), false);
+		expect(hostView(off).spectatorsMuted).toBe(true);
+		expect(sendMessage(off, 'alex', 'Hello', 1000, 'm1')).toBe(off);
+		expect(playerView(off, 'alex').inbox).toBeUndefined();
+		// A player with a seat still may.
+		expect(playerView(off, 'sam').inbox).toBe(true);
+		expect(sendMessage(off, 'sam', 'Hi', 1000, 'm2').messages).toHaveLength(1);
+	});
+
+	it('come back on, and ignore anything but on or off', () => {
+		const off = setSpectatorMessages(seated(), false);
+		expect(setSpectatorMessages(off, 'yes')).toBe(off);
+		expect(setSpectatorMessages(off, false)).toBe(off);
+		const on = setSpectatorMessages(off, true);
+		expect(on.spectatorsMuted).toBeUndefined();
+		expect(setSpectatorMessages(on, true)).toBe(on);
+	});
+
+	it('stay off from one game to the next in the room', () => {
+		const off = setSpectatorMessages(seated(), false);
+		expect(publish(off, 'g2', table()).spectatorsMuted).toBe(true);
+	});
+});
+
+// Trevor (2026-11-03): "those with grim view could also message storyteller".
+describe('messages from Grim view', () => {
+	const watched = (r: RoomState): RoomState => ({ ...r, viewerKeyHash: 'k' });
+
+	it('reach the Storyteller with the device’s name, while the link is on', () => {
+		const r = sendViewerMessage(
+			watched(room()),
+			{ from: 'device-1234', name: '  Pat  ', text: 'Hi' },
+			1000,
+			'm1'
+		);
+		expect(r.messages).toEqual([
+			expect.objectContaining({
+				id: 'm1',
+				memberId: `${GRIM_VIEW_PREFIX}device-1234`,
+				name: 'Pat',
+				text: 'Hi'
+			})
+		]);
+		expect(viewersMayMessage(watched(room()))).toBe(true);
+		// The link off: nobody is watching, so nothing comes.
+		expect(viewersMayMessage(room())).toBe(false);
+		expect(
+			sendViewerMessage(room(), { from: 'device-1234', name: 'Pat', text: 'Hi' }, 1000, 'm1')
+		).toEqual(room());
+	});
+
+	it('follow the spectators’ switch', () => {
+		const off = setSpectatorMessages(watched(room()), false);
+		expect(viewersMayMessage(off)).toBe(false);
+		expect(
+			sendViewerMessage(off, { from: 'device-1234', name: 'Pat', text: 'Hi' }, 1000, 'm1')
+		).toBe(off);
+	});
+
+	it('need a device id, and keep a name only if there is one', () => {
+		const r = watched(room());
+		expect(sendViewerMessage(r, { from: 'x', name: 'Pat', text: 'Hi' }, 1000, 'm1')).toBe(r);
+		expect(
+			sendViewerMessage(r, { from: 'bad id with spaces', name: 'Pat', text: 'Hi' }, 1000, 'm1')
+		).toBe(r);
+		const nameless = sendViewerMessage(
+			r,
+			{ from: 'device-1234', name: '   ', text: 'Hi' },
+			1000,
+			'm1'
+		);
+		expect(nameless.messages?.[0].name).toBeUndefined();
+		const long = sendViewerMessage(
+			r,
+			{ from: 'device-1234', name: 'P'.repeat(99), text: 'Hi' },
+			1000,
+			'm1'
+		);
+		expect(long.messages?.[0].name).toHaveLength(MAX_VIEWER_NAME_LENGTH);
+	});
+
+	it('are limited per device as a phone is', () => {
+		let r = watched(room());
+		r = sendViewerMessage(r, { from: 'device-1234', name: 'Pat', text: 'One' }, 1000, 'm1');
+		expect(
+			sendViewerMessage(r, { from: 'device-1234', name: 'Pat', text: 'Two' }, 1000 + 1, 'm2')
+		).toBe(r);
+		expect(
+			sendViewerMessage(r, { from: 'device-5678', name: 'Lee', text: 'Two' }, 1000 + 1, 'm2')
+				.messages
+		).toHaveLength(2);
 	});
 });

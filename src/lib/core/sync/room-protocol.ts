@@ -64,7 +64,8 @@ export type ClientMessage =
 	  }
 	/** Reports the picture on another player's seat to the Storyteller (2026-10-27). */
 	| { type: 'report-picture'; seatId: SeatId }
-	| { type: 'message'; text: string; consult?: boolean } // To the Storyteller (2026-10-27).
+	/** To the Storyteller (2026-10-27); from Grim view, with its device's id and name (2026-11-03). */
+	| { type: 'message'; text: string; consult?: boolean; from?: string; name?: string }
 	/** A spectator's choice in the open vote; a new choice replaces the last. */
 	| { type: 'vote'; voteId: string; choice: SeatId }
 	/** Feedback on the ended game `gameId`; a new one replaces the member's last. */
@@ -179,6 +180,8 @@ export type ClientMessage =
 	/** Lets a reported picture stand, or takes that player's picture away for this game. */
 	| { type: 'judge-picture'; hash: string; allow: boolean }
 	| { type: 'read-messages'; ids: string[] } // The Storyteller opened these messages.
+	/** Lets spectators message the Storyteller, or stops them (Trevor, 2026-11-03). */
+	| { type: 'spectator-messages'; allow: boolean }
 	/** Opens a room transfer with this code's hash, or changes whether it brings the game. */
 	| { type: 'open-transfer'; codeHash: string; bringGame: boolean }
 	| { type: 'close-transfer' }
@@ -232,6 +235,7 @@ export interface HostView {
 	rolesSeen?: SeatId[]; // Seats whose player has seen the character they have now.
 	pictureReports?: PictureReportView[]; // Pictures other phones reported, for a verdict.
 	messages?: PlayerMessage[]; // Players' messages this game, oldest first.
+	spectatorsMuted?: true; // Spectators may not message the Storyteller (room-messages.ts).
 	transfer?: TransferStatus; // The room transfer this device has open.
 	removed?: RemovedMember[]; // Phones removed from the room this game (plan J37).
 	seatingOpen?: true; // Phones may move their own seat (plan J38).
@@ -382,6 +386,8 @@ export type ServerMessage =
 	 * 2026-10-28). Says nothing of what was sent; older apps ignore it.
 	 */
 	| { type: 'message-delivered'; delivered: boolean }
+	/** To Grim view: whether it may message the Storyteller (`viewersMayMessage`). */
+	| { type: 'viewer-inbox'; on: boolean }
 	/** To the Storyteller's device: where a phone asks to sit (plan J38); never kept. */
 	| SitWish
 	| { type: 'refused'; reason: RefusedReason }

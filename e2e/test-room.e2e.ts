@@ -46,9 +46,10 @@ test('fake players join a room, each on its own device, and can be shown', async
 
 	// The Storyteller sees both fake players in the room.
 	await storyteller.goto(storyteller.url().replace(/\/room$/, '/players'));
-	const inRoom = storyteller.getByRole('list', { name: 'Players in the room' });
-	await expect(inRoom).toContainText('Bot 1');
-	await expect(inRoom).toContainText('Bot 2');
+	// Seated or not (spectators have their own list, Trevor 2026-11-03).
+	const inRoom = storyteller.getByTestId('room-player');
+	await expect(inRoom.filter({ hasText: 'Bot 1' })).toHaveCount(1);
+	await expect(inRoom.filter({ hasText: 'Bot 2' })).toHaveCount(1);
 
 	// Bot 2 on a Pixel 8, shown as that phone's real screen.
 	await page.getByRole('combobox', { name: 'Bot 2’s device' }).tap();
