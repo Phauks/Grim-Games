@@ -9,7 +9,8 @@ import { scenario } from '#lib/core/testing/scenario.ts';
 import { publicProjection } from '#lib/core/sync/public-projection.ts';
 import { infoPicker } from './night-info.ts';
 import { gameEnds } from './game-end.ts';
-import { pretendGame, pretendTeam } from './pretend.ts';
+import { pretendChoices, pretendGame, pretendTeam } from './pretend.ts';
+import { validInformation } from './night-info/valid-info.ts';
 
 // Seats in a circle: the Atheist, the Empath, the Chef, the Monk.
 const cast = ['atheist', 'empath', 'chef', 'monk'];
@@ -86,5 +87,32 @@ describe('secrecy and the game’s end', () => {
 			.do((at) => ({ type: 'SetPretend', seatId: at.seat('chef'), characterId: 'imp' }))
 			.dies('chef');
 		expect(gameEnds(s.game, s.characters)).toEqual([]);
+	});
+});
+
+describe('fake team choices and information', () => {
+	it('offers the script’s Minions, then its Demons', () => {
+		const s = scenario(cast);
+		const types = pretendChoices(s.game, s.characters).map((id) => s.characters.get(id)?.type);
+		expect(types.length).toBeGreaterThan(0);
+		expect(types).toEqual(
+			[...types].sort((a, b) => (a === 'minion' ? -1 : b === 'minion' ? 1 : 0))
+		);
+		expect(new Set(types)).toEqual(new Set(['minion', 'demon']));
+	});
+
+	it('lists the information that fits the fake team first, once', () => {
+		const s = scenario(cast).do((at) => ({
+			type: 'SetPretend',
+			seatId: at.seat('chef'),
+			characterId: 'imp'
+		}));
+		const valid = validInformation(
+			s.game,
+			infoPicker(s.game, s.seat('empath'), 'empath', s.characters)!
+		);
+		expect(valid[0]).toMatchObject({ reason: 'pretend', number: 1 });
+		expect(valid.filter((v) => v.number === 1)).toHaveLength(1);
+		expect(valid.find((v) => v.number === 0)?.reason).toBe('true');
 	});
 });

@@ -10,8 +10,10 @@ import {
 	givesNumber,
 	ruleNightSteps,
 	stepHolders,
+	stepName,
 	stepWakes
 } from './night-steps.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 
 const data = committedGameData();
 const script = toScript(editionScript('tb', data)!);
@@ -235,5 +237,56 @@ describe('stepWakes for a player revived tonight', () => {
 		const revived = new Set([g.seating[0]]);
 		expect(stepWakes(g, monk, characters, { diedTonight: new Set(), revived, order })).toBe(false);
 		expect(stepWakes(g, monk, characters, { diedTonight: new Set(), order })).toBe(true);
+	});
+});
+
+// The Atheist's fake evil team (M26, https://wiki.bloodontheclocktower.com/Atheist): the
+// Storyteller acts out the fake characters at night, and their seats are the ones woken.
+describe('the fake evil team at night', () => {
+	const atheist = scenario([
+		'atheist',
+		'chef',
+		'empath',
+		'monk',
+		'washerwoman',
+		'librarian',
+		'undertaker'
+	])
+		.do((at) => ({ type: 'SetPretend', seatId: at.seat('chef'), characterId: 'imp' }))
+		.do((at) => ({ type: 'SetPretend', seatId: at.seat('monk'), characterId: 'poisoner' }));
+
+	it('wakes each fake character, woken on its fake seat, named Fake', () => {
+		const steps = boardNightSteps(atheist.game, atheist.characters, 'other', data);
+		const imp = steps.find((s) => s.id === 'imp')!;
+		expect(imp.pretend).toBe(true);
+		expect(stepName(imp)).toBe('Fake Imp');
+		expect(stepHolders(atheist.game, imp, atheist.characters)).toEqual([atheist.seat('chef')]);
+		const poisoner = steps.find((s) => s.id === 'poisoner')!;
+		expect(stepHolders(atheist.game, poisoner, atheist.characters)).toEqual([atheist.seat('monk')]);
+		// In the night order: the Poisoner before the Monk, the Monk before the Imp.
+		const ids = steps.map((s) => s.id);
+		expect(ids.indexOf('poisoner')).toBeLessThan(ids.indexOf('monk'));
+		expect(ids.indexOf('monk')).toBeLessThan(ids.indexOf('imp'));
+	});
+
+	it('leaves the first night’s markers as the real players make them', () => {
+		const markers = (g: Game) =>
+			boardNightSteps(g, atheist.characters, 'first', data)
+				.filter((s) => s.kind === 'marker')
+				.map((s) => s.id);
+		const ids = boardNightSteps(atheist.game, atheist.characters, 'first', data).map((s) => s.id);
+		expect(ids).toContain('poisoner');
+		const real = { ...atheist.game, pretend: undefined };
+		expect(markers(atheist.game)).toEqual(markers(real));
+	});
+
+	it('wakes no fake character once the Atheist is not in play', () => {
+		const s = atheist.do((at) => ({
+			type: 'AssignCharacter',
+			seatId: at.seat('atheist'),
+			characterId: 'mayor'
+		}));
+		const ids = boardNightSteps(s.game, s.characters, 'other', data).map((s) => s.id);
+		expect(ids).not.toContain('imp');
 	});
 });

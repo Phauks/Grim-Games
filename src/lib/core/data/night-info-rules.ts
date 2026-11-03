@@ -25,7 +25,8 @@ import { checkKeys, describe, isObject, readBoolean, readEnum, type Issues } fro
  * - `good-player`: one good player (Steward);
  * - `one-evil-of-three`: three players, exactly one evil (Noble);
  * - `same-alignment`: yes if two chosen players are the same alignment (Seamstress);
- * - `demon-in-pair`: two players, one of them the Demon (Sage);
+ * - `demon-in-pair`: two players, one of them the Demon; with more than one Demon, the one
+ *   whose kill this player's death is recorded as (Sage);
  * - `character-of`: one player's character (Ravenkeeper, King, Pixie, Grandmother), from the
  *   other players unless `self`, only `alive` ones, of `types` and `alignment` when given;
  * - `not-demon-pair`: two players, neither the Demon (Knight);

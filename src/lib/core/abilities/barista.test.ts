@@ -223,12 +223,10 @@ describe('Barista', () => {
 			expect(picker.range?.truth).toBe(1);
 		});
 
-		it.fails('a Townsfolk marked Sober & Healthy gets true information under the Vortox', () => {
+		it('a Townsfolk marked Sober & Healthy gets true information under the Vortox', () => {
 			// Wiki: "A player marked SOBER AND HEALTHY is sober and healthy (even if they’re also marked
 			// DRUNK or POISONED) and always gets true information (even if an ability would make them
 			// drunk or poisoned)."
-			// Waits on the engine (unplanned): reliability still says the Vortox makes a Sober & Healthy
-			// Townsfolk's information false.
 			const s = scenario(['barista', 'empath', 'vortox', 'witch', 'chef']).reminder(
 				'empath',
 				'barista',

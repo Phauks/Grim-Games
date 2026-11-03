@@ -59,5 +59,10 @@
 	},
 	"reminderEnds": {
 		"Everyone Is Drunk": "dusk-after-dawn"
+	},
+	"jinxes": {
+		"legion": {
+			"partnerKeepsAbility": true
+		}
 	}
 }

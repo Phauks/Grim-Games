@@ -1,6 +1,7 @@
 {
 	"impairs": {
-		"clears": ["Sober & Healthy"]
+		"clears": ["Sober & Healthy"],
+		"truthful": ["Sober & Healthy"]
 	},
 	"actsTwice": {
 		"token": "Acts Twice"

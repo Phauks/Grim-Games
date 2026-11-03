@@ -181,6 +181,26 @@ function pickerSpec(characterId: CharacterId, characters: CharacterLookup): Pick
 	return learns && { ...learns, ...MEASURE_PICKERS[learns.measure] };
 }
 
+/**
+ * The players among `others` who register as the Demon. When the waking player's recorded
+ * death cause is a character one of them truly is, only those: the Demon that killed them,
+ * when more than one Demon is in play (https://wiki.bloodontheclocktower.com/Sage). An
+ * unrecorded or general cause keeps every Demon.
+ */
+function killerDemons(
+	game: Game,
+	seatId: SeatId,
+	others: readonly SeatId[],
+	world: RegistrationWorld,
+	characters: CharacterLookup
+): SeatId[] {
+	const demons = others.filter((s) => world.type(s) === 'demon');
+	const cause = game.seats[seatId]?.deathCause;
+	if (cause === undefined) return demons;
+	const killers = demons.filter((s) => trueCharacter(game, s, characters) === cause);
+	return killers.length > 0 ? killers : demons;
+}
+
 /** Every unordered selection of `k` items. */
 function choose<T>(items: readonly T[], k: number): T[][] {
 	if (k === 0) return [[]];
@@ -278,13 +298,11 @@ function optionsIn(
 		case 'demon-in-pair':
 			// https://wiki.bloodontheclocktower.com/Sage: two players, one of them the Demon; the
 			// other is anyone else.
-			return others
-				.filter((s) => world.type(s) === 'demon')
-				.flatMap((demon) =>
-					others
-						.filter((s) => s !== demon)
-						.map((other): InfoOption => ({ seats: [demon, other], pivot: demon }))
-				);
+			return killerDemons(game, seatId, others, world, characters).flatMap((demon) =>
+				others
+					.filter((s) => s !== demon)
+					.map((other): InfoOption => ({ seats: [demon, other], pivot: demon }))
+			);
 		case 'character-of':
 			// https://wiki.bloodontheclocktower.com/Ravenkeeper (any player's character),
 			// /King (an alive character), /Pixie (an in-play Townsfolk), /Grandmother (a good
@@ -464,6 +482,7 @@ function pickerFacts(
 		case 'same-alignment':
 			return others.filter(evil).map(f);
 		case 'demon-in-pair':
+			return killerDemons(game, seatId, others, world, characters).map(f);
 		case 'not-demon-pair':
 		case 'demon-player':
 			return others.filter((s) => world.type(s) === 'demon').map(f);

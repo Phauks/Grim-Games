@@ -45,6 +45,10 @@
  *   learns the choice, or learns this step took their ability while their protection holds
  *   (`jinx-partner-alerts.ts`: the Vizier with the Fearmonger, the Courtier and the Preacher,
  *   https://wiki.bloodontheclocktower.com/Vizier#Related_Jinxes);
+ * - `learns-no-ability` / `might-learn`: a jinx has the waking player learn on the first night
+ *   that the partner took their ability, or lets a player whose ability spared the partner
+ *   learn the partner is in play (`jinx-partner-alerts.ts`: the Engineer, the Minstrel and the
+ *   Preacher with Legion, https://wiki.bloodontheclocktower.com/Legion#Related_Jinxes);
  * and, when the step can kill (`NIGHT_KILLERS`), for each player it might kill:
  * - `protected`: they cannot die tonight (the Storyteller's override, the Sailor, the
  *   Soldier or Monk against the Demon, the Tea Lady, the Innkeeper);
@@ -76,7 +80,7 @@ import { stopsKillingTonight } from './reminder-effects.ts';
 import { noAttackState } from './demon-attack.ts';
 import { ownJinxes, ownJinxRules } from './jinxes.ts';
 import { jinxChosenTonight } from './jinx-choices.ts';
-import { jinxPartnerAlerts } from './jinx-partner-alerts.ts';
+import { jinxLearnAlerts, jinxPartnerAlerts } from './jinx-partner-alerts.ts';
 import type { LearnsGained, NightChoice } from '#lib/core/data/jinx-rules.ts';
 import { gainedAbilities } from './gained-abilities.ts';
 import { falseInfoSource } from './night-info/reliability.ts';
@@ -182,6 +186,8 @@ export type NightAlertKind =
 	| 'seating'
 	| 'wakes-with'
 	| 'keeps-protection'
+	| 'learns-no-ability'
+	| 'might-learn'
 	| 'protected'
 	| 'may-bounce'
 	| 'survives-first-death'
@@ -202,6 +208,8 @@ export interface NightAlert {
 	outcome?: NightChoice['partner'];
 	/** For `learns-gained`: what the player learns, the ability or its answer. */
 	learns?: LearnsGained;
+	/** For `learns-no-ability` and `might-learn`: the jinxed partner they learn about. */
+	partner?: CharacterId;
 }
 
 /**
@@ -277,6 +285,7 @@ export function nightStepAlerts(
 					impairments: []
 				});
 	out.push(...jinxPartnerAlerts(game, characterId, characters));
+	out.push(...jinxLearnAlerts(game, characterId, characters));
 	for (const seatId of actors) {
 		const twice = actsTwiceSource(game, seatId, characters);
 		if (!twice) continue;

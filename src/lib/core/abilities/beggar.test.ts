@@ -15,11 +15,11 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { voteHints } from '#lib/core/rules/vote-weights.ts';
+import { tokenGiverInfo, voteHints } from '#lib/core/rules/vote-weights.ts';
 import { giveVoteToken, latest, voteWarnings, votes } from '#lib/core/testing/votes.ts';
 import { warned } from '#lib/core/model/fixtures.test-support.ts';
 import { dayReminders, dayStateFromGame } from '#lib/core/rules/day-reminders.ts';
-import { engineGap, scenario, type Scenario } from '#lib/core/testing/scenario.ts';
+import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Beggar', () => {
 	const character = committedCharacter('beggar');
@@ -80,6 +80,10 @@ describe('Beggar', () => {
 			for (const dead of ['monk', 'chef', 'empath', 'recluse'])
 				s = s.do(giveVoteToken(dead, 'beggar'));
 			expect(beggarHint(s).needsToken?.tokens).toBe(4);
+			// The Recluse may register as evil, so the Beggar may learn evil.
+			expect(
+				tokenGiverInfo(s.game, s.seat('recluse'), s.seat('beggar'), s.characters)?.alignments
+			).toEqual(['good', 'evil']);
 			const beggarDead = s.dies('beggar', 'imp');
 			expect(beggarHint(beggarDead).needsToken).toBeUndefined();
 			expect(beggarHint(beggarDead).ghostVote).toBe('unused');
@@ -127,13 +131,17 @@ describe('Beggar', () => {
 			expect(warned(dead.session, dead.ctx, giveVoteToken('monk', 'beggar')(dead))).toEqual([]);
 		});
 
-		it.fails('shows the Storyteller the alignment to tell the Beggar privately', () => {
+		it('shows the Storyteller the alignment to tell the Beggar privately', () => {
 			// Wiki: "Transfer the vote token to the Beggar and privately tell the Beggar the alignment
 			// of that player."
-			// Waits on the engine (unplanned): giving a vote token has no step that shows the giver's
-			// alignment for the Storyteller to tell the Beggar.
-			scenario(cast).dies('monk', 'imp').do(giveVoteToken('monk', 'beggar'));
-			engineGap('unplanned', "the giver's alignment the Beggar learns from a vote token");
+			const s = scenario(cast).dies('monk', 'imp').do(giveVoteToken('monk', 'beggar'));
+			expect(tokenGiverInfo(s.game, s.seat('monk'), s.seat('beggar'), s.characters)).toEqual({
+				characterId: 'beggar',
+				giver: s.seat('monk'),
+				alignments: ['good']
+			});
+			// Only a player who learns it is told: a vote token given to anyone else tells nothing.
+			expect(tokenGiverInfo(s.game, s.seat('monk'), s.seat('chef'), s.characters)).toBeUndefined();
 		});
 	});
 });
