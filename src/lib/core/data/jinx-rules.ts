@@ -100,11 +100,25 @@
  *   player (an `OutcomeProblem` `jinxed`, warned, never locked): `who: "partner"`, the
  *   partner's own player (the Magician is immune to the Vizier); `who: "marked"` with
  *   `token`, the player with that partner's token (the Fearmonger's Fear).
+ * - `allEvilBecome`: when this character's `changesCharacter` creates the partner, every other
+ *   evil player becomes it too (the Engineer's, the Hatter's and the Summoner's Legion,
+ *   https://wiki.bloodontheclocktower.com/Legion#Related_Jinxes);
+ * - `learnsNoAbility`: on the first night, this character's player learns that the partner
+ *   took their ability (`impairsPartner` on the partner's side), a `learns-no-ability` night
+ *   alert at this character's own step (the Engineer with Legion);
+ * - `partnerKeepsAbility`: this character's `impairs` tokens never reach the partner's
+ *   players, and while one would have, this character's player might learn the partner is in
+ *   play (a `might-learn` night alert at this character's step and the partner's): the
+ *   Minstrel's and the Preacher's Legion;
+ * - `demonLearnsGood`: while the partner is in play, at Demon info its players wake in
+ *   separate groups and each learns which players are good, never this character's player,
+ *   who is not shown as a Minion either (the Magician with Legion).
  *
  * Either character's file may hold the block. `registersTo`, `impairsPartner`, `noKill`,
  * `noGrimoire`, `grimoireHides`, `endsGame`, `storytellerVote`, `deadAtLeast`,
  * `notCreatedAfterDay`, `nightChoice`, `withPartnerAbility`, `learnsGained`, `trueInfo`,
- * `notDeclared`, `keepsProtection`, `wakesWithPartner` and `noExecuteNow` say what
+ * `notDeclared`, `keepsProtection`, `wakesWithPartner`, `noExecuteNow`, `allEvilBecome`,
+ * `learnsNoAbility`, `partnerKeepsAbility` and `demonLearnsGood` say what
  * this character does, or how it is treated, with the partner, so they are read from this
  * character's side only (`ownJinxRules`); the others are read from both sides
  * (`rules/jinxes.ts`). By convention a block goes in the file of the
@@ -210,6 +224,10 @@ export interface JinxRules {
 	noExecuteNow?: NoExecuteNow;
 	learnsGained?: LearnsGained;
 	trueInfo?: true;
+	allEvilBecome?: true;
+	learnsNoAbility?: true;
+	partnerKeepsAbility?: true;
+	demonLearnsGood?: true;
 }
 
 export const LEARNS_GAINED = ['ability', 'answer'] as const;
@@ -249,7 +267,11 @@ export const JINX_RULE_KEYS = [
 	'wakesWithPartner',
 	'noExecuteNow',
 	'learnsGained',
-	'trueInfo'
+	'trueInfo',
+	'allEvilBecome',
+	'learnsNoAbility',
+	'partnerKeepsAbility',
+	'demonLearnsGood'
 ] as const;
 
 /** A non-empty list of known values, or undefined (with an issue) when it is not one. */
@@ -437,6 +459,13 @@ export function readJinxRules(
 		const learns = readEnum(entry, 'learnsGained', LEARNS_GAINED, at, issues, false);
 		if (learns) rules.learnsGained = learns;
 		if (readBoolean(entry, 'trueInfo', at, issues)) rules.trueInfo = true;
+		for (const key of [
+			'allEvilBecome',
+			'learnsNoAbility',
+			'partnerKeepsAbility',
+			'demonLearnsGood'
+		] as const)
+			if (readBoolean(entry, key, at, issues)) rules[key] = true;
 		if (Object.keys(rules).length === 0) {
 			issues.add(at, 'a jinx entry needs at least one rule');
 			continue;

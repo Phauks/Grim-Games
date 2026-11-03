@@ -105,6 +105,8 @@
 		blocked?: boolean;
 		/** A character in play that keeps this from being learnt. */
 		flag?: CharacterId;
+		/** What `flag` changes, when not the usual hiding of the evil team. */
+		flagText?: string;
 		/** Players to add with one tap (the Magician as a fake Minion). */
 		adds?: readonly SeatId[];
 		/** Choose or Edit what the row shows. */
@@ -187,6 +189,16 @@
 				seats: minions,
 				flag: hiddenFlag
 			});
+			// A jinx has the Demon's players wake in groups and learn who is good (the Magician
+			// with Legion, https://wiki.bloodontheclocktower.com/Legion#Related_Jinxes).
+			if (info.goodShown)
+				out.push({
+					key: 'good',
+					title: t('show.evil.good'),
+					seats: info.goodShown.seats,
+					flag: info.goodShown.hiddenBy,
+					flagText: t('show.evil.groups')
+				});
 			for (const set of bluffSets)
 				out.push({
 					key: `bluffs-${set.set}`,
@@ -338,7 +350,7 @@
 								characterId={row.flag}
 								character={characters.get(row.flag)}
 								interactive={false}
-							/>{t('show.evil.hidden')}</span
+							/>{row.flagText ?? t('show.evil.hidden')}</span
 						>
 					{/if}
 				</div>

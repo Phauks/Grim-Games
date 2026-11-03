@@ -87,5 +87,13 @@
 		"self": {
 			"types": ["minion"]
 		}
+	},
+	"jinxes": {
+		"engineer": {
+			"impairsPartner": "no-ability"
+		},
+		"hatter": {
+			"impairsPartner": "no-ability"
+		}
 	}
 }

@@ -56,5 +56,10 @@
 	},
 	"reminderMovement": {
 		"why": "Marks a day-long effect."
+	},
+	"jinxes": {
+		"legion": {
+			"partnerKeepsAbility": true
+		}
 	}
 }

@@ -11,11 +11,13 @@
 	} from '#lib/core/model/index.ts';
 	import { isReplacedAfterDraw } from '#lib/core/rules/bag-characters.ts';
 	import {
+		allEvilBecoming,
 		changeableSeats,
 		characterChanger,
 		createdTooLate,
 		jinxedPartners,
 		neighbourAlignments,
+		ownJinxRules,
 		swapChoice,
 		swapPartner,
 		swappableSeats,
@@ -114,6 +116,13 @@
 			? jinxedPartners(step.character.id, 'storytellerPicksPlayer', script, characters)
 			: []
 	);
+
+	// Characters that make every evil player them when this one creates them (Legion).
+	const allEvil = $derived.by(() => {
+		const by = step.character?.id;
+		if (!by || !rule) return [];
+		return script.filter((id) => ownJinxRules(game, by, id, characters)?.allEvilBecome === true);
+	});
 
 	const swaps = $derived(
 		step.character ? rulesIn(game, step.character.id, characters)?.swapsCharacters : undefined
@@ -229,6 +238,12 @@
 		};
 		if (grimoire.run(command)) {
 			made = [...made.filter((m) => m.seatId !== seatId), { seatId, characterId }];
+			// A jinx may make every other evil player it too (the Engineer's, Hatter's and
+			// Summoner's Legion, https://wiki.bloodontheclocktower.com/Legion#Related_Jinxes).
+			const by = step.character?.id;
+			for (const other of by ? allEvilBecoming(grimoire.game, by, characterId, characters) : [])
+				if (grimoire.run({ ...command, seatId: other }))
+					made = [...made.filter((m) => m.seatId !== other), { seatId: other, characterId }];
 			onChanges?.(made.map((m) => m.characterId));
 		}
 	}
@@ -340,6 +355,12 @@
 			<Button variant="quiet" onclick={() => (seatOpen = true)}>Choose</Button>
 		{/if}
 	</div>
+	{#each allEvil as id (id)}
+		<p class="note" role="note" data-testid="all-evil-become">
+			<CharacterBadge characterId={id} character={characters.get(id)} interactive={false} />: if
+			created, every evil player becomes it.
+		</p>
+	{/each}
 	{#each storytellerPicks as id (id)}
 		<p class="note" role="note" data-testid="storyteller-picks-player">
 			<CharacterBadge characterId={id} character={characters.get(id)} interactive={false} />: the
