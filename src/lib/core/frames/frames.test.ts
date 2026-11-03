@@ -1,8 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { LAUREL_COLOURS, type LaurelColour } from '#lib/core/achievements/laurel.ts';
+import {
+	LAUREL_COLOURS,
+	LAUREL_FACE_RADIUS,
+	type LaurelColour
+} from '#lib/core/achievements/laurel.ts';
 import {
 	DEFAULT_FRAME,
 	FACE_RADIUS,
+	FRAME_REACH,
 	FRAME_FORMS,
 	FRAME_MOTIONS,
 	frameById,
@@ -127,6 +132,10 @@ describe('frames', () => {
 		const olive = frameById('laurel-olive-green');
 		expect(frameById('laurel-olive-green')).toBe(olive);
 		expect(olive?.faceRadius).toBeLessThan(FACE_RADIUS);
+	});
+
+	it('knows how far the widest frame reaches past the token, the laurels', () => {
+		expect(FRAME_REACH).toBeCloseTo((50 / LAUREL_FACE_RADIUS - 1) / 2);
 	});
 
 	it('makes a mask of the outline in one paint, with no page colours in it', () => {

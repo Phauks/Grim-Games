@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { DEFAULT_FRAME, seatFrame } from '#lib/core/frames/index.ts';
+	import { DEFAULT_FRAME, FRAME_REACH, seatFrame } from '#lib/core/frames/index.ts';
 	import PlayerNameRow from '#lib/features/room/PlayerNameRow.svelte';
 	import { joinedRoom } from '#lib/features/room/joined-room.svelte.ts';
 	import { savedPlayerName } from '#lib/features/room/player.svelte.ts';
@@ -27,7 +27,23 @@
 	let enlarged = $state(false);
 	let roomWidth = $state(0);
 	let screenHeight = $state(0);
-	const bigSize = $derived(Math.max(0, Math.min(roomWidth * 0.85, screenHeight * 0.6)));
+
+	/**
+	 * The room a seat shown by itself needs round it, as a share of its size, so the widest
+	 * laurel at the height of a pulse and the name never run into the text below (Trevor,
+	 * 2026-11-03). The same for every frame, so picking one moves nothing.
+	 */
+	const PULSE = 1.05; // FrameDrawing's largest motion scale
+	const ROOM = (0.5 + FRAME_REACH) * PULSE - 0.5;
+	const room = (size: number) => `${ROOM * size}px`;
+
+	const PREVIEW = 112;
+	const bigSize = $derived(
+		Math.max(
+			0,
+			Math.min((roomWidth * 0.95) / (1 + 2 * ROOM), (screenHeight * 0.6) / (1 + 2 * ROOM))
+		)
+	);
 </script>
 
 <svelte:window bind:innerHeight={screenHeight} />
@@ -40,7 +56,6 @@
 		avatar={playerSettings.current.avatar}
 		picture={avatarPicture.url}
 		{frame}
-		fullColour
 	/>
 {/snippet}
 
@@ -50,7 +65,8 @@
 		class="enlarge"
 		aria-label={t('player.bigPreview')}
 		data-testid="profile-preview"
-		onclick={() => (enlarged = true)}>{@render seat(112)}</button
+		style:padding={room(PREVIEW)}
+		onclick={() => (enlarged = true)}>{@render seat(PREVIEW)}</button
 	>
 	<!-- Everyone at the table sees this look, so it mustn't hint at a character (Trevor,
 	     2026-10-29: a warning, not a lock). -->
@@ -59,7 +75,7 @@
 
 <Dialog bind:open={enlarged} title={t('player.bigPreview')} size="wide">
 	<div class="big" bind:clientWidth={roomWidth} data-testid="profile-big-preview">
-		{#if bigSize}{@render seat(bigSize)}{/if}
+		{#if bigSize}<span style:padding={room(bigSize)}>{@render seat(bigSize)}</span>{/if}
 	</div>
 </Dialog>
 
@@ -70,7 +86,8 @@
 <!-- A line about themselves, their tag-line on their profile (Trevor, 2026-10-28, 2026-11-01). -->
 <FlavourTextRow />
 
-<!-- The character that represents them, on top of their laurel (Trevor, 2026-10-28). -->
+<!-- The character that represents them, in their Profile only (Trevor, 2026-10-28; off
+     the board, 2026-11-03). -->
 <CharacterIconRow />
 
 <!-- The player's own picture on their seat (2026-10-27). -->

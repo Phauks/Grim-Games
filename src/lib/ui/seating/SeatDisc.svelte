@@ -3,7 +3,6 @@
 	import { FACE_RADIUS, type Frame } from '#lib/core/frames/index.ts';
 	import DeadBadge from './DeadBadge.svelte';
 	import FrameDrawing from './FrameDrawing.svelte';
-	import CharacterEmblem from './CharacterEmblem.svelte';
 	import AvatarFace from './AvatarFace.svelte';
 	import type { AvatarId } from '#lib/core/avatars/index.ts';
 	import PlayerNameMark from '#lib/ui/token/PlayerNameMark.svelte';
@@ -41,8 +40,6 @@
 		avatar?: AvatarId;
 		/** The player's own picture (a link), in place of their initials (2026-10-27). */
 		picture?: string;
-		/** The player's representative character in full colour: their own Profile only. */
-		fullColour?: boolean;
 		/**
 		 * At the table but not in play yet (Trevor, 2026-10-31): the token is greyed and this
 		 * label sits across it in a pill, over the token so nothing moves.
@@ -62,7 +59,6 @@
 		frame,
 		avatar,
 		picture,
-		fullColour = false,
 		notInPlay
 	}: Props = $props();
 
@@ -101,15 +97,14 @@
 					{picture}
 				/>{:else}<span class="empty">{number}</span>{/if}</span
 		>
-		<!-- The frame's own box, round the face; the emblem sits on its top. -->
+		<!-- The frame's own box, round the face. Laurels and avatars are enough on a seat: no
+		     character token over them (Trevor, 2026-11-03). -->
 		<span class="frame-box"
 			>{#if frame && framed}<span
 					class="frame-layer"
 					data-growing={growing || undefined}
 					onanimationend={() => (growing = false)}><FrameDrawing {frame} /></span
-				>{/if}
-			<!-- Outside the frame layer, so it stays put while the laurel moves (Trevor, 2026-10-28). -->
-			<CharacterEmblem {avatar} {fullColour} /></span
+				>{/if}</span
 		>
 		<!-- Over the face, not in it, so the face's own size never moves the name. -->
 		<!-- One name badge for every seat, named or empty (Trevor, 2026-10-19). -->
@@ -160,10 +155,6 @@
 		inset: calc((1 - var(--frame-scale)) * 50%);
 		pointer-events: none;
 	}
-	/* The emblem keeps the size it has on a token with no frame. */
-	.frame-box :global(.emblem) {
-		width: calc(30% / var(--frame-scale));
-	}
 	.frame-layer {
 		position: absolute;
 		inset: 0;
@@ -195,13 +186,11 @@
 		}
 	}
 	/* Dead (Trevor, 2026-10-16): the token dimmed, colour kept, plus a skull badge. */
-	.seat-disc[data-dead] :global(.emblem),
 	.seat-disc[data-dead] .frame-layer,
 	.seat-disc[data-dead] .face {
 		filter: brightness(0.55);
 	}
 	/* Not in play yet (Trevor, 2026-10-31): greyed, with a pill across the token. */
-	.seat-disc[data-not-in-play] :global(.emblem),
 	.seat-disc[data-not-in-play] .frame-layer,
 	.seat-disc[data-not-in-play] .face {
 		filter: grayscale(1) brightness(0.6);

@@ -3,14 +3,13 @@
 	import { joinedRoom } from '#lib/features/room/joined-room.svelte.ts';
 	import { savedPlayerName } from '#lib/features/room/player.svelte.ts';
 	import AvatarFace from '#lib/ui/seating/AvatarFace.svelte';
-	import CharacterEmblem from '#lib/ui/seating/CharacterEmblem.svelte';
 	import FrameDrawing from '#lib/ui/seating/FrameDrawing.svelte';
 	import { avatarPicture } from './avatar-picture.svelte.ts';
 	import { playerSettings } from './player-settings.svelte.ts';
 
 	/**
-	 * The player's own avatar from their Profile, in their laurel with the character icon in
-	 * full colour (Trevor, 2026-10-28). It fills the box its parent gives it: Settings' Profile
+	 * The player's own avatar from their Profile, in their laurel (Trevor, 2026-10-28; no
+	 * character token over it, 2026-11-03). It fills the box its parent gives it: Settings' Profile
 	 * button, and the middle of the friend code on Friends (2026-10-30).
 	 */
 	const frame = $derived(seatFrame(playerSettings.current.frame));
@@ -21,10 +20,7 @@
 	><span class="face" style:inset="{50 - (frame.faceRadius ?? FACE_RADIUS)}%"
 		><AvatarFace avatar={playerSettings.current.avatar} {name} picture={avatarPicture.url} /></span
 	>
-	{#if frame.drawing.length}<span class="drawn"><FrameDrawing {frame} /></span>{/if}<CharacterEmblem
-		avatar={playerSettings.current.avatar}
-		fullColour
-	/></span
+	{#if frame.drawing.length}<span class="drawn"><FrameDrawing {frame} /></span>{/if}</span
 >
 
 <style>
