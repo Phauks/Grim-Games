@@ -781,10 +781,13 @@ test('reminders: put on from the bank, then moved and removed from the seat shee
 		.getByRole('button', { name: 'Remove reminder' })
 		.tap();
 	// It normally stays put, so taking it off asks first.
-	await page
-		.getByRole('alertdialog', { name: 'Confirm change?' })
-		.getByRole('button', { name: 'Confirm', exact: true })
-		.tap();
+	const ask = page.getByRole('alertdialog', { name: 'Confirm change?' });
+	// The token is the round one the board draws, not the in-text chip (Trevor, 2026-11-03).
+	await expect(ask.getByTestId('board-reminder')).toHaveAttribute(
+		'aria-label',
+		'Is The Drunk reminder'
+	);
+	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(sheet.getByText('None', { exact: true }).last()).toBeVisible();
 });
 
@@ -2528,7 +2531,9 @@ test('moving a reminder that normally stays put asks first, saying why', async (
 	await putReminder(page, 'Is The Drunk', 1);
 	await moveOnBoard(page, 'Is The Drunk', 1, 3);
 	const confirm = page.getByRole('alertdialog', { name: 'Confirm change?' });
-	await expect(confirm).toContainText(/Drunk.*'s\s*Is The Drunk\s*reminder/);
+	// The round board token, then whose it is (Trevor, 2026-11-03).
+	await expect(confirm.getByRole('img', { name: 'Is The Drunk reminder' })).toBeVisible();
+	await expect(confirm).toContainText(/Drunk\s*'s reminder/);
 	await expect(confirm).toContainText('Marks which player is the Drunk.');
 	await expect(confirm).toContainText(
 		/Now\s*On\s+(\S+\s+)?Seat 1\s*Becomes\s*On\s+(\S+\s+)?Seat 3/
