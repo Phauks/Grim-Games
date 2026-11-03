@@ -1,3 +1,5 @@
+import type { VoteChoice } from '#lib/core/sync/vote-choice.ts';
+
 /**
  * What the Storyteller played from the room vote's screen, for New game to choose when it
  * opens next (Trevor, 2026-10-26: the vote is its own screen). Kept in memory only: it is
@@ -5,7 +7,10 @@
  * on them plays every rule the Storyteller keeps.
  */
 export type VotePick =
-	{ subject: 'script' | 'mode'; id: string } | { subject: 'rules'; ids: string[] };
+	| { subject: 'script' | 'mode'; id: string }
+	| { subject: 'rules'; ids: string[] }
+	/** A mixed choice (plan M33): each part it names; a part left out keeps New game's own. */
+	| ({ subject: 'choice' } & VoteChoice);
 
 let pending: VotePick | undefined;
 
