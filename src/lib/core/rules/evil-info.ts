@@ -10,6 +10,7 @@ import type { CharacterId } from '#lib/core/data/index.ts';
 import { rulesIn, rulesOf } from '#lib/core/data/rules/index.ts';
 import { abilityState } from './ability.ts';
 import { ownJinxes } from './jinxes.ts';
+import { hiddenPartnersOf } from './jinx-effects.ts';
 import {
 	alignmentOf,
 	trueCharacter,
@@ -64,6 +65,12 @@ export interface DemonInfo {
 	 * (`demonLearnsGood`: the Magician with Legion): those players, never `hiddenBy`'s.
 	 */
 	goodShown?: { seats: SeatId[]; hiddenBy: CharacterId };
+	/**
+	 * A jinx keeps the Demon from learning which neighbour is a Minion (`hidesPartnerSeat`:
+	 * while the Magician is alive, the Marionette): those players, left out of the Minions
+	 * shown, the character they are, and the living character that hides them.
+	 */
+	neighbourHidden?: { seats: SeatId[]; partner: CharacterId; hiddenBy: CharacterId };
 }
 
 /** How the evil team's first-night info differs from the plain truth in this game. */
@@ -86,6 +93,19 @@ export function demonInfo(game: Game, characters: CharacterLookup): DemonInfo {
 		) {
 			out.shownAsMinions.push(seatId);
 			out.shownAsDemon.push(seatId);
+		}
+	}
+	// While the Magician is alive, the Demon doesn't know which neighbour is the Marionette
+	// (https://wiki.bloodontheclocktower.com/Magician#Related_Jinxes).
+	for (const seatId of game.seating) {
+		const id = trueCharacter(game, seatId, characters);
+		if (id === undefined || game.seats[seatId].dead || out.neighbourHidden) continue;
+		for (const partner of hiddenPartnersOf(game, id, characters)) {
+			const seats = game.seating.filter((s) => trueCharacter(game, s, characters) === partner);
+			if (seats.length > 0) {
+				out.neighbourHidden = { seats, partner, hiddenBy: id };
+				break;
+			}
 		}
 	}
 	const good = demonLearnsGood(game, characters);

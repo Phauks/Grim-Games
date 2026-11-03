@@ -90,9 +90,14 @@
  *   and Sage, https://wiki.bloodontheclocktower.com/Leviathan#Related_Jinxes);
  * - `withPartnerAbility`: what setup needs when this character's player has the partner's
  *   ability (`gainsAbilityOf`): `partner-setup`, the partner's own setup change applies as if
- *   it were in play (the Alchemist-Summoner, [No Demon]); `partner-in-play`, the real partner
- *   is in play as well (the Alchemist-Marionette has no ability and the Marionette is in
- *   play, https://wiki.bloodontheclocktower.com/Alchemist#Related_Jinxes);
+ *   it were in play (the Alchemist-Summoner, [No Demon]; the Philosopher who gains the Bounty
+ *   Hunter's, a Townsfolk might turn evil, a `partner-setup` night alert at its step);
+ *   `partner-in-play`, the real partner is in play as well, and this player has no ability
+ *   (the Alchemist-Marionette, -Spy, -Widow and -Wraith,
+ *   https://wiki.bloodontheclocktower.com/Alchemist#Related_Jinxes); `no-ability`, this player
+ *   has no ability (the Alchemist-Mastermind); `both-drunk`, the real partner is in play as
+ *   well, and while neither player is otherwise drunk or poisoned, both are drunk (the
+ *   Alchemist-Organ Grinder). The player's ability is taken in `abilityState`;
  * - `learnsGained`: the night after this character's `gainedFrom` gives its player the
  *   partner's ability (the partner's player died by execution today), they learn something
  *   they otherwise wouldn't: `ability`, that they have the partner's ability (the Cannibal's
@@ -144,7 +149,48 @@
  *   player (the Summoner with the Poppy Grower alive on the 3rd night);
  * - `earlierToken`: this character's `changesCharacter` may also create the partner, and only
  *   the partner, while its player carries this token instead of its usual `token` (the
- *   Summoner's Pukka on the 2nd night).
+ *   Summoner's Pukka on the 2nd night);
+ * - `guessesPartner`: after each execution, this character's living player (with
+ *   `withPartnerAbility`, only while they have the partner's ability) may publicly guess a
+ *   living player as the partner; if right, the Demon must choose the partner's player
+ *   tonight, a `guessed` night alert at each Demon's step (the Alchemist-Spy, -Widow and
+ *   -Wraith, the Magician with the Wraith);
+ * - `notShownGiven`: with the partner's ability, this character's player isn't shown the
+ *   ability the partner's `givesAbility` gave (the Alchemist-Boffin doesn't learn the Demon's
+ *   good ability): a `not-shown-given` night alert at the partner's step;
+ * - `notSecondDemon`: this character's `becomes` never makes a second Demon while the
+ *   partner's player lives: the partner's Demon passing on by its own death (`death-passes`)
+ *   doesn't let this player become the Demon too, and its `becomes` token fits no player
+ *   while a living player is the partner, so a player carrying it becomes this character
+ *   again (the Scarlet Woman with the Fang Gu and the Al-Hadikhia);
+ * - `keepsAfterPartner`: once the partner's `keepsAbility` token keeps this character's dead
+ *   player's ability, they keep it after the partner's player dies (the Mastermind with the
+ *   Vigormortis);
+ * - `survivesCarrierExecuted`: while the partner's player is alive, the carrier of this
+ *   character's `gameEnd.aliveWhileDead.whileCarrierAlive` token dying by execution doesn't
+ *   kill this character's player: they live on with no ability (the Lleech with the
+ *   Mastermind);
+ * - `killsMarked`: this character's kill (`deathCause.victim`) also kills the player carrying
+ *   the partner's reminder named here (the Slayer shooting the Lleech's host, "Poisoned");
+ * - `madAsPartner`: this character's `madness` may be about the partner, though the partner
+ *   is not good: a `may-mad-as` night alert at its step (the Cerenovus with the Goblin);
+ * - `hidesPartnerSeat`: while this character's player is alive, at Demon info the Demon is
+ *   not told which of its neighbours is the partner's player (`DemonInfo.neighbourHidden`:
+ *   the Magician with the Marionette);
+ * - `thinksPartnerSetup`: while this character's player thinks they are the partner (their
+ *   seat shows the partner's token), the partner's own setup change applies as if it were in
+ *   play (the Marionette who thinks they are the Balloonist or the Huntsman);
+ * - `uncountedVote`: while the partner's working `voting.secret` has votes cast with eyes
+ *   closed, this character's player may raise their hand without their `voter.onlyWith`
+ *   player, but the vote counts only if that player voted too (the Butler with the Organ
+ *   Grinder): no warning, and the vote hint says so;
+ * - `gainedEndWinner`: with the partner's ability, the partner's `gameEnd` `dead-without-demon`
+ *   end applies to this character's player as soon as they die, with this winner (the
+ *   Alchemist-Summoner who dies before summoning: evil wins);
+ * - `partnerChoosesEnd`: when the partner's Demon dies by execution while this character's
+ *   player is alive, its `extra-day` is a night instead: the partner's player chooses 3 good
+ *   players tonight, and if all 3 choose to live evil wins, otherwise good wins (the Mastermind
+ *   with the Al-Hadikhia). The game end is a `jinx-night` hold; the Storyteller ends the game.
  *
  * Either character's file may hold the block. `registersTo`, `impairsPartner`, `noKill`,
  * `noGrimoire`, `grimoireHides`, `endsGame`, `storytellerVote`, `deadAtLeast`,
@@ -152,7 +198,10 @@
  * `notDeclared`, `keepsProtection`, `wakesWithPartner`, `noExecuteNow`, `alsoBecomes`,
  * `carrierType`, `keptByPartner`, `diesWhenExecuted`, `allEvilBecome`, `learnsNoAbility`,
  * `partnerKeepsAbility`, `demonLearnsGood`, `storytellerHas`, `arbitraryDeaths`,
- * `neighbourBecomes`, `storytellerPicksWhileAlive` and `earlierToken` say what
+ * `neighbourBecomes`, `storytellerPicksWhileAlive`, `earlierToken`, `guessesPartner`,
+ * `notShownGiven`, `notSecondDemon`, `keepsAfterPartner`, `survivesCarrierExecuted`,
+ * `killsMarked`, `madAsPartner`, `hidesPartnerSeat`, `thinksPartnerSetup`, `uncountedVote`,
+ * `gainedEndWinner` and `partnerChoosesEnd` say what
  * this character does, or how it is treated, with the partner, so they are read from this
  * character's side only (`ownJinxRules`); the others are read from both sides
  * (`rules/jinxes.ts`). By convention a block goes in the file of the
@@ -271,6 +320,18 @@ export interface JinxRules {
 	neighbourBecomes?: CharacterType;
 	storytellerPicksWhileAlive?: true;
 	earlierToken?: ReminderLabel;
+	guessesPartner?: true;
+	notShownGiven?: true;
+	notSecondDemon?: true;
+	keepsAfterPartner?: true;
+	survivesCarrierExecuted?: true;
+	killsMarked?: ReminderLabel;
+	madAsPartner?: true;
+	hidesPartnerSeat?: true;
+	thinksPartnerSetup?: true;
+	uncountedVote?: true;
+	gainedEndWinner?: Alignment;
+	partnerChoosesEnd?: true;
 }
 
 export const STORYTELLER_HAS = ['no-ability', 'removed'] as const;
@@ -279,7 +340,12 @@ export type StorytellerHas = (typeof STORYTELLER_HAS)[number];
 export const LEARNS_GAINED = ['ability', 'answer'] as const;
 export type LearnsGained = (typeof LEARNS_GAINED)[number];
 
-export const WITH_PARTNER_ABILITY = ['partner-setup', 'partner-in-play'] as const;
+export const WITH_PARTNER_ABILITY = [
+	'partner-setup',
+	'partner-in-play',
+	'no-ability',
+	'both-drunk'
+] as const;
 export type WithPartnerAbility = (typeof WITH_PARTNER_ABILITY)[number];
 
 export const GIVEN_INSTEAD = [
@@ -326,7 +392,19 @@ export const JINX_RULE_KEYS = [
 	'arbitraryDeaths',
 	'neighbourBecomes',
 	'storytellerPicksWhileAlive',
-	'earlierToken'
+	'earlierToken',
+	'guessesPartner',
+	'notShownGiven',
+	'notSecondDemon',
+	'keepsAfterPartner',
+	'survivesCarrierExecuted',
+	'killsMarked',
+	'madAsPartner',
+	'hidesPartnerSeat',
+	'thinksPartnerSetup',
+	'uncountedVote',
+	'gainedEndWinner',
+	'partnerChoosesEnd'
 ] as const;
 
 /** A non-empty list of known values, or undefined (with an issue) when it is not one. */
@@ -527,13 +605,27 @@ export function readJinxRules(
 			'partnerKeepsAbility',
 			'demonLearnsGood',
 			'arbitraryDeaths',
-			'storytellerPicksWhileAlive'
+			'storytellerPicksWhileAlive',
+			'guessesPartner',
+			'notShownGiven',
+			'notSecondDemon',
+			'keepsAfterPartner',
+			'survivesCarrierExecuted',
+			'madAsPartner',
+			'hidesPartnerSeat',
+			'thinksPartnerSetup',
+			'uncountedVote',
+			'partnerChoosesEnd'
 		] as const)
 			if (readBoolean(entry, key, at, issues)) rules[key] = true;
 		const has = readEnum(entry, 'storytellerHas', STORYTELLER_HAS, at, issues, false);
 		if (has) rules.storytellerHas = has;
 		const earlier = readString(entry, 'earlierToken', at, issues, false);
 		if (earlier !== undefined) rules.earlierToken = earlier;
+		const marked = readString(entry, 'killsMarked', at, issues, false);
+		if (marked !== undefined) rules.killsMarked = marked;
+		const winner = readEnum(entry, 'gainedEndWinner', ALIGNMENTS, at, issues, false);
+		if (winner) rules.gainedEndWinner = winner;
 		if (Object.keys(rules).length === 0) {
 			issues.add(at, 'a jinx entry needs at least one rule');
 			continue;

@@ -83,7 +83,12 @@ import { stopsKillingTonight } from './reminder-effects.ts';
 import { noAttackState } from './demon-attack.ts';
 import { ownJinxes, ownJinxRules } from './jinxes.ts';
 import { jinxChosenTonight } from './jinx-choices.ts';
-import { jinxLearnAlerts, jinxPartnerAlerts, storytellerHasAlerts } from './jinx-partner-alerts.ts';
+import {
+	jinxLearnAlerts,
+	jinxPartnerAlerts,
+	jinxStepAlerts,
+	storytellerHasAlerts
+} from './jinx-partner-alerts.ts';
 import type { LearnsGained, NightChoice } from '#lib/core/data/jinx-rules.ts';
 import { gainedAbilities } from './gained-abilities.ts';
 import { falseInfoSource } from './night-info/reliability.ts';
@@ -192,6 +197,11 @@ export type NightAlertKind =
 	| 'learns-no-ability'
 	| 'might-learn'
 	| 'storyteller-has'
+	| 'guessed'
+	| 'not-shown-given'
+	| 'may-mad-as'
+	| 'reverts'
+	| 'partner-setup'
 	| 'protected'
 	| 'may-bounce'
 	| 'survives-first-death'
@@ -214,7 +224,9 @@ export interface NightAlert {
 	learns?: LearnsGained;
 	/**
 	 * For `learns-no-ability` and `might-learn`: the jinxed partner they learn about; for
-	 * `storyteller-has`, the jinxed partner that makes the Storyteller have the ability.
+	 * `storyteller-has`, the jinxed partner that makes the Storyteller have the ability; for
+	 * `guessed`, `not-shown-given`, `may-mad-as`, `reverts` and `partner-setup`, the jinxed
+	 * partner the alert is about.
 	 */
 	partner?: CharacterId;
 }
@@ -355,6 +367,7 @@ export function nightStepAlerts(
 	out.push(...trueInfoAlerts(game, characterId, actors, characters));
 
 	const killer = nightKiller(characterId, characters);
+	out.push(...jinxStepAlerts(game, characterId, actors, killer?.by === 'demon', characters));
 	if (killer?.by === 'demon') {
 		const stopped = executedPartnerStops(game, characters);
 		for (const seatId of actors)

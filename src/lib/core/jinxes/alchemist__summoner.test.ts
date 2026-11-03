@@ -12,7 +12,11 @@ import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { analyseSelection, randomSelection, type BagSelection } from '#lib/core/rules/bag-plan.ts';
+import { gameEnds } from '#lib/core/rules/game-end.ts';
 import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
+import { gainedEnd } from '#lib/core/rules/jinx-effects.ts';
+import { engineGap } from '#lib/core/testing/scenario.ts';
+import { alchemistAs } from './alchemist.test-support.ts';
 
 const pick = (...ids: string[]): BagSelection => Object.fromEntries(ids.map((id) => [id, 1]));
 
@@ -56,7 +60,8 @@ describe('Alchemist + Summoner jinx', () => {
 		it("is data in the Alchemist's rules", () => {
 			// Wiki: "The Alchemist-Summoner does not get bluffs, and chooses which Demon but not which player. If they die before this happens, evil wins. [No Demon]"
 			expect(jinxRulesBetween('alchemist', 'summoner')).toEqual({
-				withPartnerAbility: 'partner-setup'
+				withPartnerAbility: 'partner-setup',
+				gainedEndWinner: 'evil'
 			});
 		});
 
@@ -103,5 +108,48 @@ describe('Alchemist + Summoner jinx', () => {
 				expect(selection.imp).toBe(1);
 			}
 		});
+	});
+
+	// The Summoner part (L119): the Alchemist-Summoner who dies before a Demon is made loses the
+	// game for good, not evil; and the Storyteller, not they, picks the summoned player.
+	describe('the Alchemist-Summoner who dies first, and who picks the player', () => {
+		const base = alchemistAs('summoner', ['chef', 'empath', 'monk', 'poisoner']);
+		const ends = (s: typeof base) =>
+			gameEnds(s.game, s.characters).filter((e) => e.rule === 'dead-without-demon');
+
+		it('gives the Alchemist-Summoner the Summoner end with evil as the winner', () => {
+			// Wiki: "If they die before this happens, evil wins."
+			expect(gainedEnd(base.game, base.seat(0), base.characters)).toEqual({
+				partner: 'summoner',
+				winner: 'evil'
+			});
+		});
+
+		it('ends the game for evil when they die before a Demon is made', () => {
+			// Wiki: "If they die before this happens, evil wins."
+			expect(ends(base)).toEqual([]);
+			expect(ends(base.dies(0))).toMatchObject([
+				{ rule: 'dead-without-demon', winner: 'evil', characterId: 'summoner' }
+			]);
+		});
+
+		it('ends nothing once a Demon is in play', () => {
+			// Wiki: "If they die before this happens"
+			expect(ends(base.becomes('chef', 'imp', 'evil').dies(0))).toEqual([]);
+		});
+
+		// Waits on the engine (L119): the night step changes a player only for the Summoner's own
+		// player (`characterChanger` reads true characters), so a gained Summoner ability is not
+		// run, and its bluffs note reads the token.
+		it.fails(
+			'lets the Alchemist-Summoner choose the Demon, the Storyteller the player, with no bluffs',
+			() => {
+				// Wiki: "The Alchemist-Summoner does not get bluffs, and chooses which Demon but not which player."
+				engineGap(
+					'L119',
+					'run a gained Summoner ability at its step, the Storyteller picking the player'
+				);
+			}
+		);
 	});
 });

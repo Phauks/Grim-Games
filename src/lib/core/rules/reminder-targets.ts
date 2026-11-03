@@ -28,6 +28,7 @@ import type { Game, Reminder, ReminderInstance, SeatId } from '#lib/core/model/t
 import { abilityState, registrations } from './ability.ts';
 import { heldAbilitiesOf } from './gained-abilities.ts';
 import { carrierJinx } from './jinxes.ts';
+import { secondDemonPartner } from './jinx-effects.ts';
 
 export type { NeighbourRule, TargetRule };
 
@@ -56,7 +57,9 @@ export const REMINDER_TARGETS: Readonly<Record<CharacterId, CharacterTargets>> =
  *   token at the latest dawn (or, for `type`, has that player's character type);
  * - `jinx`: a jinx on the script says who carries this `carrierIsDemon` token, and it is not
  *   this player (`carrierJinx`: a Minion while the Magician lives, the Scarlet Woman once she
- *   babysits Lil' Monsta).
+ *   babysits Lil' Monsta), or that this `becomes` token makes no second Demon while another
+ *   living player is the partner (`secondDemonPartner`: the Scarlet Woman with a living Fang
+ *   Gu or Al-Hadikhia).
  */
 export type TargetMiss =
 	| 'global'
@@ -353,6 +356,11 @@ export function reminderTargetMisses(
 	if (
 		rulesOf(reminder.characterId, characters)?.carrierIsDemon === reminder.label &&
 		carrierJinx(game, reminder.characterId, seatId, characters)
+	)
+		misses.push('jinx');
+	else if (
+		rulesOf(reminder.characterId, characters)?.becomes?.token === reminder.label &&
+		secondDemonPartner(game, reminder.characterId, seatId, characters)
 	)
 		misses.push('jinx');
 	return misses;

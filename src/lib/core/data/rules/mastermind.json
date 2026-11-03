@@ -24,5 +24,13 @@
 	},
 	"deathCause": {
 		"none": "one more day; executions are normal"
+	},
+	"jinxes": {
+		"vigormortis": {
+			"keepsAfterPartner": true
+		},
+		"alhadikhia": {
+			"partnerChoosesEnd": true
+		}
 	}
 }

@@ -15,8 +15,10 @@
 	 * a player learn about an ability gained today (the Cannibal's Butler) or keeps true (the
 	 * Vortox's Banshee), a jinxed player who wakes too or keeps their protection (the Vizier's),
 	 * learns they have no ability or might learn a player is a jinxed partner (Legion's), whose
-	 * ability the Storyteller has while they have none (the Summoner's with the Courtier),
-	 * and for a step
+	 * ability the Storyteller has while they have none (the Summoner's with the Courtier), a
+	 * guess that makes the Demon choose a jinxed partner, a gained ability not shown, a madness
+	 * a jinx allows, a Scarlet Woman who is herself again, or a setup change made on gaining an
+	 * ability (L119), and for a step
 	 * that can kill, who is protected, may bounce the death, survives it or sets something off
 	 * by dying. Short state lines with badges; the rules are core's
 	 * `nightStepAlerts`, worked out from the tokens on the board.
@@ -63,6 +65,11 @@
 		'learns-no-ability': 'info',
 		'might-learn': 'info',
 		'storyteller-has': 'warning',
+		guessed: 'warning',
+		'not-shown-given': 'info',
+		'may-mad-as': 'info',
+		reverts: 'warning',
+		'partner-setup': 'warning',
 		protected: 'protected',
 		'may-bounce': 'warning',
 		'survives-first-death': 'protected',
@@ -175,6 +182,25 @@
 					{:else if alert.kind === 'storyteller-has'}
 						{@render player(alert.seatId)}: {@render badge(sourceId(alert))} has no ability, so the Storyteller
 						has it and makes the choice ({@render badge(alert.partner)})
+					{:else if alert.kind === 'guessed'}
+						{@render player(alert.seatId)}: {@render badge(sourceId(alert))} may have guessed a living
+						player as {@render badge(alert.partner)} after today's execution; if right, the Demon must
+						choose that player tonight
+					{:else if alert.kind === 'not-shown-given'}
+						{@render player(alert.seatId)}: {@render badge(sourceId(alert))} with the {@render badge(
+							alert.partner
+						)} ability, isn't shown the ability it gave
+					{:else if alert.kind === 'may-mad-as'}
+						{@render player(alert.seatId)}: {@render badge(sourceId(alert))}, may make a player mad
+						that they are {@render badge(alert.partner)}
+					{:else if alert.kind === 'reverts'}
+						{@render player(alert.seatId)}: {@render badge(sourceId(alert))} again, as a living player
+						is
+						{@render badge(alert.partner)}
+					{:else if alert.kind === 'partner-setup'}
+						{@render player(alert.seatId)}: {@render badge(sourceId(alert))} has the {@render badge(
+							alert.partner
+						)} ability, so its setup change may be made now
 					{:else if alert.kind === 'protected'}
 						{@render player(alert.seatId)} can't die{#if alert.source === 'override'}
 							(set by hand){:else}: {@render badge(sourceId(alert))}{/if}

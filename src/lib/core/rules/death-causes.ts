@@ -31,6 +31,7 @@ import {
 	type RegistrationWorld
 } from './ability.ts';
 import { gainedBy, heldAbilitiesOf } from './gained-abilities.ts';
+import { killsMarkedBy } from './jinx-effects.ts';
 import {
 	type DeathCauseRule,
 	type DeathKind,
@@ -280,7 +281,11 @@ export function validDeathCauses(
 		const rule = acting.length > 0 ? ruleFor(acting[0]) : ruleFor(holders[0]);
 
 		const flags: DeathCauseFlag[] = [];
-		if (rule?.who === 'registers') {
+		// A jinx lets it kill the player carrying the partner's token whatever they register as
+		// (`killsMarked`: the Slayer shoots the Lleech's host,
+		// https://wiki.bloodontheclocktower.com/Lleech#Related_Jinxes).
+		const marked = killsMarkedBy(game, characterId, seatId, characters) !== undefined;
+		if (rule?.who === 'registers' && !marked) {
 			worlds ??= registrationWorlds(game, characters, regs);
 			const verdict = registersAs(game, seatId, rule.as, worlds, characters);
 			if (verdict === 'never') continue;

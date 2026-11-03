@@ -51,7 +51,29 @@
 			"withPartnerAbility": "partner-in-play"
 		},
 		"summoner": {
-			"withPartnerAbility": "partner-setup"
+			"withPartnerAbility": "partner-setup",
+			"gainedEndWinner": "evil"
+		},
+		"boffin": {
+			"notShownGiven": true
+		},
+		"mastermind": {
+			"withPartnerAbility": "no-ability"
+		},
+		"organgrinder": {
+			"withPartnerAbility": "both-drunk"
+		},
+		"spy": {
+			"withPartnerAbility": "partner-in-play",
+			"guessesPartner": true
+		},
+		"widow": {
+			"withPartnerAbility": "partner-in-play",
+			"guessesPartner": true
+		},
+		"wraith": {
+			"withPartnerAbility": "partner-in-play",
+			"guessesPartner": true
 		}
 	},
 	"infoTokenCharacters": {

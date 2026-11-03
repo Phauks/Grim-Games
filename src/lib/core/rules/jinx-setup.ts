@@ -1,8 +1,10 @@
 /**
  * What setup needs from a jinx on a character whose player gains another's ability
  * (`withPartnerAbility` in the character's own `jinxes` block, `data/jinx-rules.ts`): the
- * Alchemist-Summoner's [No Demon], and the Alchemist-Marionette with the real Marionette in
- * play (https://wiki.bloodontheclocktower.com/Alchemist#Related_Jinxes).
+ * Alchemist-Summoner's [No Demon], the Alchemist-Marionette (-Spy, -Widow, -Wraith) with the
+ * real Marionette in play, the Alchemist-Mastermind with no ability, and the Alchemist-Organ
+ * Grinder with the Organ Grinder in play, both drunk while both are sober
+ * (https://wiki.bloodontheclocktower.com/Alchemist#Related_Jinxes).
  *
  * Which ability the player has is only chosen once the tokens are out (the Alchemist's
  * `setupPrep`), after the bag is built. So at the bag the jinx's change is a possibility:
@@ -53,11 +55,21 @@ export function abilityJinxSetup(
 		mayApply: found
 			.filter((f) => f.need === 'partner-setup')
 			.map((f) => ({ character: f.partner, as: as(f) })),
-		notes: found
-			.filter((f) => f.need === 'partner-in-play')
-			.map(
-				(f) =>
-					`${as(f)}: the ${f.partner.name} is in play too, and the ${f.owner.name} has no ability.`
-			)
+		notes: found.flatMap((f) => {
+			switch (f.need) {
+				case 'partner-in-play':
+					return [
+						`${as(f)}: the ${f.partner.name} is in play too, and the ${f.owner.name} has no ability.`
+					];
+				case 'no-ability':
+					return [`${as(f)}: the ${f.owner.name} has no ability.`];
+				case 'both-drunk':
+					return [
+						`${as(f)}: the ${f.partner.name} is in play too, and while both are sober, both are drunk.`
+					];
+				default:
+					return [];
+			}
+		})
 	};
 }

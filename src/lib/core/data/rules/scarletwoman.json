@@ -50,5 +50,13 @@
 		"you-are": {
 			"characters": ["demon"]
 		}
+	},
+	"jinxes": {
+		"fanggu": {
+			"notSecondDemon": true
+		},
+		"alhadikhia": {
+			"notSecondDemon": true
+		}
 	}
 }

@@ -65,5 +65,13 @@
 	"evilInfo": {
 		"hidesDemon": true
 	},
-	"believesOtherCharacter": true
+	"believesOtherCharacter": true,
+	"jinxes": {
+		"balloonist": {
+			"thinksPartnerSetup": true
+		},
+		"huntsman": {
+			"thinksPartnerSetup": true
+		}
+	}
 }

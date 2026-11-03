@@ -76,6 +76,8 @@
 	const union = (a: readonly SeatId[], b: readonly SeatId[]) => [...new Set([...a, ...b])];
 	const info = $derived(demonInfo(game, characters));
 	const demons = $derived(union(seatsOf('demon'), info.shownAsDemon));
+	/** Minions the Demon is not told about by a jinx (the Magician's Marionette, L119). */
+	const hiddenMinions = $derived(info.neighbourHidden?.seats ?? []);
 	const minions = $derived(union(seatsOf('minion'), info.shownAsMinions));
 	const inPlay = $derived(charactersReallyInPlay(game, characters));
 	const bluffSets = $derived(showableBluffSets(game, characters));
@@ -183,11 +185,21 @@
 			for (const id of shownAtMinionInfo(game, characters))
 				out.push({ key: `shown-${id}`, title: '', characterIds: [id], showCharacters: [id] });
 		} else {
+			// A jinx keeps a neighbour's Minion from the Demon (the Magician with the Marionette,
+			// https://wiki.bloodontheclocktower.com/Magician#Related_Jinxes).
+			const neighbour = info.neighbourHidden;
 			out.push({
 				key: 'minions',
 				title: text('these-are-your-minions'),
-				seats: minions,
-				flag: hiddenFlag
+				seats: minions.filter((s) => !hiddenMinions.includes(s)),
+				...(hiddenFlag
+					? { flag: hiddenFlag }
+					: neighbour
+						? {
+								flag: neighbour.hiddenBy,
+								flagText: t('show.evil.neighbourHidden')
+							}
+						: {})
 			});
 			// A jinx has the Demon's players wake in groups and learn who is good (the Magician
 			// with Legion, https://wiki.bloodontheclocktower.com/Legion#Related_Jinxes).

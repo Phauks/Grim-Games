@@ -28,6 +28,7 @@ import { trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
 import type { Game, HeldAbility, SeatId } from '#lib/core/model/types.ts';
 import { abilityState, worksWhenDead } from './ability.ts';
 import { givenInstead, ownJinxRules } from './jinxes.ts';
+import { thinksPartnerSetup } from './jinx-effects.ts';
 import type { Night, NightStep } from './night-order.ts';
 
 export interface GainedAbility {
@@ -407,7 +408,10 @@ export function gainedSetupAbilities(
 		const shown = characters.get(game.seats[seatId]?.characterId ?? '');
 		const own = trueCharacter(game, seatId, characters);
 		const type = own === undefined ? undefined : rulesOf(own, characters)?.gainsAbilityOf;
-		const gained = shown && own !== shown.id && type === shown.type ? [shown] : [];
+		// Or the character they think they are, by a jinx (`thinksPartnerSetup`: the Marionette
+		// who thinks they are the Balloonist, https://wiki.bloodontheclocktower.com/Marionette#Related_Jinxes).
+		const thinks = thinksPartnerSetup(game, seatId, characters) !== undefined;
+		const gained = shown && own !== shown.id && (type === shown.type || thinks) ? [shown] : [];
 		const held = (game.seats[seatId]?.abilities ?? []).flatMap((h) => {
 			const character = characters.get(h.characterId);
 			return character && rulesOf(h.via, characters)?.givesAbility?.setup ? [character] : [];
