@@ -9,27 +9,33 @@
 		MIN_SCRIPT_VOTE_OPTIONS,
 		SCRIPT_VOTE_KINDS,
 		SCRIPT_VOTE_MINUTES,
-		VOTE_SUBJECTS,
 		type ScriptVoteCharacter,
 		type ScriptVoteKind,
 		type ScriptVoteOption,
-		type VoteSubject
+		type StoredVoteSubject
 	} from '#lib/core/sync/script-vote.ts';
+	import {
+		choiceId,
+		choiceLabel,
+		isRulesOnly,
+		parseChoiceId,
+		type VoteChoice
+	} from '#lib/core/sync/vote-choice.ts';
 	import { loadOfficialData, officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { readEntries } from '#lib/features/scripts/botcscripts-api.ts';
-	import ScriptPicker from '#lib/features/modes/ScriptPicker.svelte';
-	import type {
-		ScriptChoice,
-		ScriptChoiceOption
-	} from '#lib/features/modes/script-choices.svelte.ts';
+	import type { ScriptChoiceOption } from '#lib/features/modes/script-choices.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import AddRow from '#lib/ui/primitives/AddRow.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import SharePanel from '#lib/ui/share/SharePanel.svelte';
 	import { roomHost } from './host.svelte.ts';
 	import VoteStats from './VoteStats.svelte';
+	import VoteChoiceDialog from './VoteChoiceDialog.svelte';
 	import VoteTimeLeft from './VoteTimeLeft.svelte';
+	import type { VotePick } from './vote-pick.ts';
 
 	/**
 	 * The room's vote on the next script (Trevor, 2026-10-20, plan R1): the Storyteller offers
@@ -46,21 +52,20 @@
 	 * 2026-10-23), and the time left when the Storyteller set a limit. Trevor, 2026-10-26: the
 	 * Storyteller can let players see the count, before or during the vote, and end it early
 	 * with a final call on every phone; each script carries its characters, so players can
-	 * read its details; a ranking is counted as an instant runoff.
+	 * read its details; a ranking is counted as an instant runoff. Trevor, 2026-11-03 (plan
+	 * M33, mockup B): each thing on the ballot is a choice of a script, a game mode and special
+	 * rules, each optional, so "TB +1 vs a custom vs Sushi buffet" is one vote; "+ New choice"
+	 * opens a dialog for it and a row's pencil reopens it.
 	 */
 	interface Props {
 		/** The scripts New game offers, by its own ids. */
 		choices: ScriptChoiceOption[];
-		/** The Storyteller picked this script from the count. */
-		onPick: (id: string) => void;
 		/** The game modes New game offers, Standard first. */
 		modes: { value: string; label: string }[];
-		/** The Storyteller picked this game mode from the count. */
-		onPickMode: (id: string) => void;
 		/** The special rules New game offers, built-in first. */
 		rules: { value: string; label: string }[];
-		/** The Storyteller kept these special rules from the count, in the ballot's order. */
-		onPickRules: (ids: string[]) => void;
+		/** The Storyteller played this from the count. */
+		onPlay: (pick: VotePick) => void;
 		/** Back to New game without the vote. */
 		onBack: () => void;
 		/**
@@ -70,31 +75,13 @@
 		hideBack?: boolean;
 	}
 
-	let {
-		choices,
-		onPick,
-		modes,
-		onPickMode,
-		rules,
-		onPickRules,
-		onBack,
-		hideBack = false
-	}: Props = $props();
+	let { choices, modes, rules, onPlay, onBack, hideBack = false }: Props = $props();
 
 	const TITLES = {
 		script: 'room.scriptVote.title',
 		mode: 'room.scriptVote.modeTitle',
-		rules: 'room.scriptVote.rulesTitle'
-	} as const;
-	const LEGENDS = {
-		script: 'room.scriptVote.scripts',
-		mode: 'room.scriptVote.modes',
-		rules: 'room.scriptVote.rules'
-	} as const;
-	const SLOTS = {
-		script: 'room.scriptVote.slot',
-		mode: 'room.scriptVote.modeSlot',
-		rules: 'room.scriptVote.ruleSlot'
+		rules: 'room.scriptVote.rulesTitle',
+		game: 'room.scriptVote.gameTitle'
 	} as const;
 
 	const host = roomHost();
@@ -103,47 +90,42 @@
 		void loadOfficialData();
 	});
 	const tally = $derived(host.scriptVote);
-	let subject = $state<VoteSubject>('script');
-	/** A game mode or special rules vote: its options come from a drop-down, not a script picker. */
-	const onList = $derived(subject !== 'script');
-	const listed = $derived(subject === 'rules' ? rules : modes);
-	const subjects = VOTE_SUBJECTS.map((value) => ({
-		value,
-		label: t(`room.scriptVote.subject.${value}`)
-	}));
-	let picked = $state<string[]>([]);
+	let picked = $state<VoteChoice[]>([]);
 	let kind = $state<ScriptVoteKind>('single');
-	/** The script New game's controls show, added to the vote with Add to vote. */
-	let adding = $state<ScriptChoice>('tb');
-	/** The game mode or special rule the drop-down shows, for a vote on either. */
-	let addingItem = $state('');
-	const nextItem = $derived(listed.find((m) => !picked.includes(m.value))?.value ?? '');
-	const itemShown = $derived(
-		listed.some((m) => m.value === addingItem) && !picked.includes(addingItem)
-			? addingItem
-			: nextItem
-	);
-	const candidate = $derived(onList ? itemShown : adding);
-	const offered = $derived(onList ? listed : choices);
-	const addable = $derived(
-		picked.length < MAX_SCRIPT_VOTE_OPTIONS &&
-			!!candidate &&
-			!picked.includes(candidate) &&
-			offered.some((c) => c.value === candidate)
-	);
-	const nameOf = (id: string) => offered.find((c) => c.value === id)?.label ?? id;
-	/**
-	 * Rows for what is picked and one more while there is room, never fewer than a vote needs,
-	 * so the next Add fills a row that is already there.
-	 */
-	const rows = $derived(
-		Math.min(MAX_SCRIPT_VOTE_OPTIONS, Math.max(MIN_SCRIPT_VOTE_OPTIONS, picked.length + 1))
-	);
-	function setSubject(next: VoteSubject) {
-		if (next === subject) return;
-		subject = next;
-		picked = [];
+
+	/** A choice's name on the ballot, from its parts' names. */
+	function labelOf(choice: VoteChoice): string {
+		return choiceLabel({
+			script:
+				choice.script && (choices.find((c) => c.value === choice.script)?.label ?? choice.script),
+			mode: choice.mode && modes.find((m) => m.value === choice.mode)?.label,
+			rules: choice.rules.map((id) => rules.find((r) => r.value === id)?.label ?? id)
+		});
 	}
+
+	/** The choice dialog: open on a choice's place, or on the next one for "+ New choice". */
+	let editing = $state(false);
+	let editAt = $state(0);
+	function edit(at: number) {
+		editAt = at;
+		editing = true;
+	}
+	function save(choice: VoteChoice) {
+		picked = editAt < picked.length ? picked.with(editAt, choice) : [...picked, choice];
+	}
+	const taken = $derived(picked.filter((_, i) => i !== editAt).map(choiceId));
+
+	/**
+	 * What the room says the vote is on, for the phones' title: one kind when every choice is
+	 * only that (a rules-only vote keeps its keep switches), else the next game.
+	 */
+	function subjectOf(list: VoteChoice[]): StoredVoteSubject | undefined {
+		if (list.every(isRulesOnly)) return 'rules';
+		if (list.every((c) => c.script && !c.mode && !c.rules.length)) return undefined;
+		if (list.every((c) => c.mode && !c.script && !c.rules.length)) return 'mode';
+		return 'game';
+	}
+
 	/** Players see the count too; off keeps the ballot secret, as before. */
 	let showTally = $state(false);
 	let ended = $state(false);
@@ -164,32 +146,31 @@
 	const ready = $derived(
 		picked.length >= MIN_SCRIPT_VOTE_OPTIONS && picked.length <= MAX_SCRIPT_VOTE_OPTIONS
 	);
+	const full = $derived(picked.length >= MAX_SCRIPT_VOTE_OPTIONS);
 
 	function openVote() {
-		const options = picked.flatMap((id) => {
-			if (onList) {
-				const item = listed.find((m) => m.value === id);
-				return item ? [{ id, name: item.label }] : [];
-			}
-			const choice = choices.find((c) => c.value === id);
-			if (!choice) return [];
-			const logo = editionLogo(choice.value) ?? logoInScriptJson(choice.json);
-			const edition = editionOf(choice);
-			const author = choice.author ?? edition?.meta?.author;
-			const characters = choice.json
-				? readEntries(choice.json)
+		const options = picked.map((choice) => {
+			const id = choiceId(choice);
+			const name = labelOf(choice);
+			const script = choice.script && choices.find((c) => c.value === choice.script);
+			if (!script) return { id, name };
+			// The script's author, logo and characters, for its details on the ballot.
+			const logo = editionLogo(script.value) ?? logoInScriptJson(script.json);
+			const edition = editionOf(script);
+			const author = script.author ?? edition?.meta?.author;
+			const characters = script.json
+				? readEntries(script.json)
 				: (edition?.characters.map((c): ScriptVoteCharacter => ({ id: c.id })) ?? []);
-			return [
-				{
-					id,
-					name: choice.label,
-					...(author ? { author } : {}),
-					...(logo ? { logo } : {}),
-					...(characters.length ? { characters } : {})
-				}
-			];
+			return {
+				id,
+				name,
+				...(author ? { author } : {}),
+				...(logo ? { logo } : {}),
+				...(characters.length ? { characters } : {})
+			};
 		});
 		const limit = minutes === NO_LIMIT ? undefined : Number(minutes);
+		const subject = subjectOf(picked) ?? 'script';
 		if (host.openScriptVote(kind, options, limit, subject, showTally)) picked = [];
 	}
 
@@ -213,11 +194,22 @@
 		onBack();
 	}
 
+	/**
+	 * The choice an option stands for. A vote opened before mixed choices kept a bare script or
+	 * mode id, or a rule id.
+	 */
+	function choiceOf(id: string): VoteChoice {
+		const choice = parseChoiceId(id);
+		if (choice) return choice;
+		if (tally?.subject === 'mode') return { mode: id, rules: [] };
+		if (tally?.subject === 'rules') return { rules: [id] };
+		return { script: id, rules: [] };
+	}
+
 	function pick(id: string) {
-		const mode = tally?.subject === 'mode';
+		const choice = choiceOf(id);
 		host.closeScriptVote();
-		if (mode) onPickMode(id);
-		else onPick(id);
+		onPlay({ subject: 'choice', ...choice });
 	}
 
 	const onRules = $derived(tally?.subject === 'rules');
@@ -242,10 +234,11 @@
 			ids: tally.options.map((o) => o.id).filter((o) => ids.includes(o))
 		};
 	}
+	/** Every rule of each rules-only choice kept, each once, in the ballot's order. */
 	function playRules() {
-		const ids = keeping;
+		const ids = [...new Set(keeping.flatMap((id) => choiceOf(id).rules))];
 		host.closeScriptVote();
-		onPickRules(ids);
+		onPlay({ subject: 'rules', ids });
 	}
 </script>
 
@@ -267,7 +260,7 @@
      "As the one running the vote, it goes away really easily"). -->
 <div class="screen">
 	<h2>
-		{t(TITLES[tally ? (tally.subject ?? 'script') : subject])}
+		{t(TITLES[tally ? (tally.subject ?? 'script') : 'game'])}
 	</h2>
 	<!-- Two columns on a tablet or wider (Trevor, 2026-10-23): the scripts on the left; the
 	     room's code and QR, the time and the count on the right, from before the vote opens
@@ -294,49 +287,39 @@
 						/>
 					</div>
 				{:else}
-					<Select
-						label={t('room.scriptVote.subject')}
-						options={subjects}
-						value={subject}
-						onChange={setSubject}
-					/>
-					<!-- A row for each pick and an empty one for the next, so Add fills a row in place. -->
+					<!-- Each choice in a row, its pencil reopening the choice dialog, then a dashed
+					     "+ New choice" (Trevor, 2026-11-03, mockup B). -->
 					<fieldset class="slots">
-						<legend>{t(LEGENDS[subject])}</legend>
+						<legend>{t('room.scriptVote.choices')}</legend>
 						<ol data-testid="script-vote-slots">
-							{#each { length: rows }, i}
-								{@const id = picked[i]}
+							{#each picked as choice, i (choiceId(choice))}
+								{@const name = labelOf(choice)}
 								<li>
-									<span class="slot">{t(SLOTS[subject], { number: i + 1 })}</span>
-									<span class="name" class:none={!id}>{id ? nameOf(id) : t('common.none')}</span>
-									<DeleteButton
-										label={t('room.scriptVote.remove', { name: id ? nameOf(id) : '' })}
-										disabled={!id}
-										onclick={() => (picked = picked.filter((p) => p !== id))}
-									/>
+									<span class="slot">{i + 1}</span>
+									<span class="name">{name}</span>
+									<span class="tools">
+										<IconButton
+											icon="edit"
+											label={t('room.scriptVote.editChoice', { name })}
+											aria-haspopup="dialog"
+											onclick={() => edit(i)}
+										/>
+										<DeleteButton
+											label={t('room.scriptVote.remove', { name })}
+											onclick={() => (picked = picked.filter((_, j) => j !== i))}
+										/>
+									</span>
 								</li>
 							{/each}
 						</ol>
+						<AddRow
+							label={t('room.scriptVote.newChoice')}
+							data-testid="vote-new-choice"
+							aria-haspopup="dialog"
+							disabled={full}
+							onclick={() => edit(picked.length)}
+						/>
 					</fieldset>
-					{#if onList}
-						<!-- New game's own list of modes, Standard first, or of special rules. -->
-						<Select
-							label={t(subject === 'rules' ? 'room.scriptVote.addRule' : 'room.scriptVote.addMode')}
-							options={listed.filter((m) => !picked.includes(m.value))}
-							value={itemShown}
-							onChange={(v) => (addingItem = v)}
-						/>
-					{:else}
-						<!-- New game's own script controls: the base three, search, and the Library. -->
-						<ScriptPicker
-							label={t('room.scriptVote.addScript')}
-							value={adding}
-							onChange={(v) => (adding = v)}
-						/>
-					{/if}
-					<Button icon="add" disabled={!addable} onclick={() => (picked = [...picked, candidate])}
-						>{t('room.scriptVote.add')}</Button
-					>
 					<Select
 						label={t('room.scriptVote.how')}
 						options={kinds}
@@ -399,6 +382,17 @@
 	</div>
 </div>
 
+<VoteChoiceDialog
+	bind:open={editing}
+	number={editAt + 1}
+	choice={picked[editAt]}
+	scripts={choices}
+	{modes}
+	{rules}
+	{taken}
+	onSave={save}
+/>
+
 <style>
 	.screen {
 		display: grid;
@@ -438,6 +432,8 @@
 		}
 	}
 	.slots {
+		display: grid;
+		gap: var(--space-2);
 		margin: 0;
 		padding: 0;
 		border: 0;
@@ -469,7 +465,8 @@
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
-	.name.none {
-		color: var(--on-surface-muted);
+	.tools {
+		display: flex;
+		gap: var(--space-1);
 	}
 </style>
