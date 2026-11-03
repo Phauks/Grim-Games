@@ -15,7 +15,7 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { tokenGiverInfo, voteHints } from '#lib/core/rules/vote-weights.ts';
+import { takesVoteTokens, tokenGiverInfo, voteHints } from '#lib/core/rules/vote-weights.ts';
 import { giveVoteToken, latest, voteWarnings, votes } from '#lib/core/testing/votes.ts';
 import { warned } from '#lib/core/model/fixtures.test-support.ts';
 import { dayReminders, dayStateFromGame } from '#lib/core/rules/day-reminders.ts';
@@ -142,6 +142,20 @@ describe('Beggar', () => {
 			});
 			// Only a player who learns it is told: a vote token given to anyone else tells nothing.
 			expect(tokenGiverInfo(s.game, s.seat('monk'), s.seat('chef'), s.characters)).toBeUndefined();
+		});
+
+		it('offers vote tokens on the Beggar, a poisoned Beggar too, and on no one else', () => {
+			// Wiki: "During the day, a dead player can declare that they give their vote token to the
+			// Beggar."
+			// The Beggar's sheet adds a token given (Trevor, 2026-11-03); a poisoned Beggar's player
+			// is still handed the token, so the row stays.
+			const s = scenario(cast);
+			expect(takesVoteTokens(s.game, s.seat('beggar'), s.characters)).toBe(true);
+			expect(takesVoteTokens(s.game, s.seat('chef'), s.characters)).toBe(false);
+			const poisoned = s.poisoned('beggar');
+			expect(takesVoteTokens(poisoned.game, poisoned.seat('beggar'), poisoned.characters)).toBe(
+				true
+			);
 		});
 	});
 });

@@ -18,7 +18,12 @@ import { committedCharacter, nightSheetPresence } from '#lib/core/testing/commit
 import { endCharacters } from '#lib/core/rules/end-reason.ts';
 import { gameEnds } from '#lib/core/rules/game-end.ts';
 import { dayReminders, dayStateFromGame, renderReminder } from '#lib/core/rules/day-reminders.ts';
-import { contestOpponents, contestWinner } from '#lib/core/rules/contest.ts';
+import {
+	contestChoosers,
+	contestOpponents,
+	contestWinner,
+	ruleCharacterUse
+} from '#lib/core/rules/contest.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Fiddler', () => {
@@ -113,6 +118,17 @@ describe('Fiddler', () => {
 			expect(
 				contestOpponents(turned.game, 'fiddler', turned.seat('imp'), turned.characters)
 			).toEqual([turned.seat('poisoner')]);
+		});
+
+		it('offers the contest on its day panel row, with the Demon choosing', () => {
+			// Wiki: "Wake the Demon. They point at any good player. (If the Demon is good, they must
+			// choose an evil player instead.)"
+			// The fiddle contest is its own dialog from the Fiddler's row (Trevor, 2026-11-03).
+			const s = scenario(['chef', 'empath', 'monk', 'soldier', 'poisoner', 'imp']).rule('fiddler');
+			expect(ruleCharacterUse('fiddler', s.characters)).toBe('contest');
+			expect(ruleCharacterUse('doomsayer', s.characters)).toBe('anyone');
+			expect(ruleCharacterUse('djinn', s.characters)).toBeUndefined();
+			expect(contestChoosers(s.game, 'fiddler', s.characters)).toEqual([s.seat('imp')]);
 		});
 
 		it('gives the win to the evil team when the fiddle contest vote ties', () => {

@@ -130,6 +130,15 @@ export function voterRule(
 }
 
 /**
+ * Whether the seat's character votes only with given vote tokens (`voter.needsToken`: the
+ * Beggar), its ability working or not: a poisoned Beggar's player is still given tokens.
+ */
+export function takesVoteTokens(game: Game, seatId: SeatId, characters: CharacterLookup): boolean {
+	const characterId = trueCharacter(game, seatId, characters);
+	return characterId !== undefined && !!rulesIn(game, characterId, characters)?.voter?.needsToken;
+}
+
+/**
  * The character whose eyes-closed voting lets `voter`'s player raise their hand without their
  * `voter.onlyWith` player, the vote counting only if that player voted too (`uncountedVote`:
  * the Butler with the Organ Grinder,

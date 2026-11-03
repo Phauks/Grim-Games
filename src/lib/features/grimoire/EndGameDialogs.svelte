@@ -1,8 +1,11 @@
 <script lang="ts">
+	import type { SeatId } from '#lib/core/model/index.ts';
 	import type { EndReason } from '#lib/core/rules/index.ts';
+	import { tick } from 'svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import AlignmentPill from './AlignmentPill.svelte';
 	import { endedGames, type EndedGame } from './device-notes.ts';
+	import { endGameRequest } from './end-game-request.svelte.ts';
 	import EndGameFields from './EndGameFields.svelte';
 	import GameEndPrompt from './GameEndPrompt.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
@@ -39,16 +42,31 @@
 
 	let winner = $state<'good' | 'evil' | undefined>();
 	let endReason = $state<EndReason | undefined>();
+	let alsoWon = $state<SeatId[]>([]);
 	/**
 	 * Share grim is not asked here (Trevor, 2026-11-01: "allow it to be done after the fact"):
 	 * once the game is over, ⋯ > Session offers it while the room is connected.
 	 */
 	function endGame() {
 		endOpen = false;
-		endedGames.end(grimoire.game.gameId, winner, endReason);
+		endedGames.end(grimoire.game.gameId, winner, endReason, alsoWon);
 		grimoire.open.setViewOnly(true);
 		onChange();
 	}
+	/**
+	 * End game asked for from elsewhere (the Fiddle contest's result): opens with its winner,
+	 * then, once the fields have preselected how that winner won, its reason.
+	 */
+	$effect(() => {
+		const pending = endGameRequest.pending;
+		if (!pending) return;
+		endGameRequest.pending = undefined;
+		if (ended) return;
+		winner = pending.winner;
+		alsoWon = [];
+		endOpen = true;
+		void tick().then(() => (endReason = pending.reason));
+	});
 	function reopenGame() {
 		endedGames.reopen(grimoire.game.gameId);
 		grimoire.open.setViewOnly(false);
@@ -59,9 +77,10 @@
 <GameEndPrompt
 	{grimoire}
 	active={!ended && !grimoire.open.viewOnly}
-	onEnd={(team, reason) => {
+	onEnd={(team, reason, also) => {
 		winner = team;
 		endReason = reason;
+		alsoWon = also;
 		endGame();
 	}}
 />
@@ -88,7 +107,7 @@
 		</dd>
 	</dl>
 	<div class="winner">
-		<EndGameFields {grimoire} bind:winner bind:reason={endReason} />
+		<EndGameFields {grimoire} bind:winner bind:reason={endReason} bind:alsoWon />
 	</div>
 </ConfirmDialog>
 

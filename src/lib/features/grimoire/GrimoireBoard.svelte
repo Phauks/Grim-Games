@@ -75,6 +75,7 @@
 	import { drawnLook } from './shared-look.ts';
 	import HistoryDialog from './HistoryDialog.svelte';
 	import DaySheet from '#lib/features/day/DaySheet.svelte';
+	import { endGameRequest } from './end-game-request.svelte.ts';
 	import BoardScriptDialog from './BoardScriptDialog.svelte';
 	import BoardSeats from './BoardSeats.svelte';
 	import BoardRules from './BoardRules.svelte';
@@ -496,6 +497,8 @@
 	let historyOpen = $state(false);
 	/** The day sheet; the old /day route lands here with `#day` to open it. */
 	let dayOpen = $state(false);
+	// End game asked for from the day sheet (the Fiddle contest) opens over the board.
+	$effect.pre(() => void (endGameRequest.pending && (dayOpen = false)));
 	/** The Savant sheet, from the day view's Savant info button (L5). */
 	let savantSeat = $state<SeatId | undefined>();
 	let savantOpen = $state(false);
