@@ -1,6 +1,7 @@
 import { deriveGameRecord, type GameRecord } from '#lib/core/stats/index.ts';
 import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 import { gameStore } from '#lib/features/game/session.svelte.ts';
+import { labGameId } from '#lib/features/character-lab/lab-store.svelte.ts';
 import { endedGames } from '#lib/features/grimoire/device-notes.ts';
 
 /**
@@ -11,9 +12,11 @@ import { endedGames } from '#lib/features/grimoire/device-notes.ts';
 export async function loadGameRecords(): Promise<GameRecord[]> {
 	const [data, { games }] = await Promise.all([loadOfficialData(), gameStore().list()]);
 	const ended = endedGames.read();
+	// The Character Lab's own game never counts (plan M37).
+	const lab = labGameId();
 	const records = await Promise.all(
 		games
-			.filter((g) => ended[g.gameId])
+			.filter((g) => ended[g.gameId] && g.gameId !== lab)
 			.map(async (g) => {
 				const saved = await gameStore()
 					.load(g.gameId)
