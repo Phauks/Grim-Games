@@ -438,7 +438,10 @@ export const SAVANT_TEMPLATES: readonly Template[] = [
 		'abnormal-last-night',
 		'today',
 		// From the night info recorded as abnormal before the last "New day".
-		(f) => (f.yesterday ? abnormalSinceDawn({ ...f.game, today: f.yesterday }).length : undefined),
+		(f) =>
+			f.yesterday
+				? abnormalSinceDawn({ ...f.game, today: f.yesterday }, f.characters).length
+				: undefined,
 		(n) => [
 			{ number: n },
 			text(
