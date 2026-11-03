@@ -13,8 +13,9 @@ async function startWithStowedAway(page: Page) {
 	await page.goto('/new');
 	await pickScript(page, 'Trouble Brewing');
 	const preview = page.getByTestId('script-preview');
-	// Standard with no rules lists none, and has no section for them.
-	await expect(preview.getByRole('button', { name: 'Jinxes' })).toBeVisible();
+	// Standard with no rules lists none, and has no section for them; nor Jinxes with none
+	// (Trevor, 2026-11-03).
+	await expect(preview.getByRole('button', { name: 'Jinxes' })).toHaveCount(0);
 	await expect(section(preview)).toHaveCount(0);
 	await page.getByRole('button', { name: 'Create game' }).tap();
 	// Chosen on Character selection since 2026-10-29 (Trevor).
