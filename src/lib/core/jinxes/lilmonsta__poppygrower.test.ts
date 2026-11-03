@@ -44,7 +44,9 @@ describe("Lil' Monsta + Poppy Grower jinx", () => {
 			reminderTargetMisses(s.game, babysitter, s.seat(on), s.characters);
 
 		it("is data in Lil' Monsta's rules", () => {
-			expect(jinxRulesBetween('lilmonsta', 'poppygrower')).toEqual({ carrierType: 'minion' });
+			expect(jinxRulesBetween('lilmonsta', 'poppygrower')).toEqual({
+				carriedBy: { type: 'minion', when: ['partner-alive'] }
+			});
 		});
 
 		it('fits only the Minions while the Poppy Grower is alive', () => {

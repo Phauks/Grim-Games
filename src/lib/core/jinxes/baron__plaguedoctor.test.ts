@@ -50,7 +50,9 @@ describe('Baron + Plague Doctor jinx', () => {
 		const cast = castWith({ script });
 
 		it("is data in the Plague Doctor's rules", () => {
-			expect(jinxRulesBetween('plaguedoctor', 'baron')).toEqual({ givenInstead: 'outsiders' });
+			expect(jinxRulesBetween('plaguedoctor', 'baron')).toEqual({
+				givenInstead: { instead: 'outsiders' }
+			});
 			expect(givenInstead('plaguedoctor', 'baron', ids)).toBe('outsiders');
 		});
 

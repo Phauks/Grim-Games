@@ -36,9 +36,9 @@ describe('Engineer + Legion jinx', () => {
 
 	it('is data in both rules', () => {
 		expect(jinxRulesBetween('engineer', 'legion')).toEqual({
-			impairsPartner: 'no-ability',
-			allEvilBecome: true,
-			learnsNoAbility: true
+			impairs: { kind: 'no-ability', when: ['partner-in-play'] },
+			learns: { what: 'no-ability', when: [{ night: 1 }] },
+			allEvilBecome: {}
 		});
 	});
 

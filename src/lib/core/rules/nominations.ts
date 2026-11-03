@@ -13,7 +13,7 @@ import { registersAsDead, trueCharacter, typeOf } from '#lib/core/model/selector
 import type { DayEntry, Game, SeatId } from '#lib/core/model/types.ts';
 import { abilityState, registrations } from './ability.ts';
 import { heldAbilitiesOf } from './gained-abilities.ts';
-import { ownJinxes } from './jinxes.ts';
+import { ownJinxEffects } from './jinxes.ts';
 
 /**
  * The abilities `seatId` has now: its own character's, while it works, and each it holds
@@ -174,7 +174,7 @@ export function storytellerRenominations(
 	const made = storytellerNominators(game).filter((s) => s === seatId).length;
 	if (made === 0) return 0;
 	const voted = nomineesNominateNow(game, characters).some(
-		(id) => ownJinxes(game, id, (r) => r.storytellerVote === true, characters).length > 0
+		(id) => ownJinxEffects(game, id, 'storytellerVote', characters).length > 0
 	);
 	return voted ? made : 0;
 }

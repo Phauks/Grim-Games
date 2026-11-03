@@ -14,12 +14,12 @@
  * nights' are in the past days' logs. Every check here only warns (faded seats, an alert on
  * the partner's step); the Storyteller can choose anyone.
  */
-import type { JinxRules, NightChoice } from '#lib/core/data/jinx-rules.ts';
+import type { NightChoice } from '#lib/core/data/jinx-rules.ts';
 import type { Character, CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { alignmentOf, trueCharacter } from '#lib/core/model/selectors.ts';
 import type { DayEntry, DayEntryId, Game, SeatId } from '#lib/core/model/types.ts';
-import { ownJinxes } from './jinxes.ts';
+import { ownJinxEffects } from './jinxes.ts';
 import type { Night, NightStep } from './night-order.ts';
 
 /** A character in play whose jinxes give it a night choice, with each partner's rule. */
@@ -27,17 +27,15 @@ export interface NightChooser {
 	characterId: CharacterId;
 	partners: { partner: CharacterId; choice: NightChoice }[];
 	/** `good` when any partner's rule limits the choice to good players. */
-	who: NightChoice['who'];
+	who: NightChoice['chooses'];
 }
 
 /** What the step for a jinx's night choice carries (`withJinxChoiceSteps`). */
 export interface JinxChoiceStep {
 	characterId: CharacterId;
 	partners: CharacterId[];
-	who: NightChoice['who'];
+	who: NightChoice['chooses'];
 }
-
-const choiceOf = (rule: JinxRules) => rule.nightChoice !== undefined;
 
 /** The id of the night step for `characterId`'s jinx choice. */
 export const jinxChoiceStepId = (characterId: CharacterId): string => `jinx-choice:${characterId}`;
@@ -55,11 +53,11 @@ export function nightChoosers(game: Game, characters: CharacterLookup): NightCho
 		if (own) ids.add(own);
 	}
 	return [...ids].flatMap((characterId) => {
-		const partners = ownJinxes(game, characterId, choiceOf, characters).map(
-			({ partner, rule }) => ({ partner, choice: rule.nightChoice! })
+		const partners = ownJinxEffects(game, characterId, 'nightChoice', characters).map(
+			({ partner, effect }) => ({ partner, choice: effect })
 		);
 		if (partners.length === 0) return [];
-		const who = partners.some((p) => p.choice.who === 'good') ? 'good' : 'any';
+		const who = partners.some((p) => p.choice.chooses === 'good') ? 'good' : 'any';
 		return [{ characterId, partners, who }];
 	});
 }
@@ -105,7 +103,7 @@ export function withJinxChoiceSteps<T extends NightStep>(
 	return out;
 }
 
-function choiceText(character: Character, who: NightChoice['who']): string {
+function choiceText(character: Character, who: NightChoice['chooses']): string {
 	const player = who === 'good' ? 'an alive good player' : 'an alive player';
 	return `Wake the ${character.name}: they choose ${player} not chosen on an earlier night.`;
 }

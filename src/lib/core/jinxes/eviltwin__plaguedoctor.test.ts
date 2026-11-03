@@ -49,7 +49,7 @@ describe('Evil Twin + Plague Doctor jinx', () => {
 
 		it("is data in the Plague Doctor's rules", () => {
 			expect(jinxRulesBetween('plaguedoctor', 'eviltwin')).toEqual({
-				givenInstead: 'a-player-becomes'
+				givenInstead: { instead: 'a-player-becomes' }
 			});
 			expect(givenInstead('plaguedoctor', 'eviltwin', ids)).toBe('a-player-becomes');
 		});

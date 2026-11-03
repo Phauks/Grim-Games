@@ -38,8 +38,9 @@ describe('Alchemist + Widow jinx', () => {
 	it("is data in the Alchemist's rules", () => {
 		// Wiki: "An Alchemist-Widow has no Widow ability & a Widow is in play. After each execution, a living Alchemist-Widow may publicly guess a living player as the Widow. If correct, the Demon must choose the Widow tonight."
 		expect(jinxRulesBetween('alchemist', 'widow')).toEqual({
-			withPartnerAbility: 'partner-in-play',
-			guessesPartner: true
+			impairs: { kind: 'no-ability', when: ['has-partner-ability'] },
+			partnerInPlay: {},
+			guessesPartner: { when: ['has-partner-ability', 'self-alive', 'after-execution'] }
 		});
 	});
 

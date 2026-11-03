@@ -1,5 +1,5 @@
 /**
- * `withPartnerAbility` jinxes at setup (`jinx-setup.ts`) and the setup changes that may apply
+ * `partnerSetup` and `partnerInPlay` jinxes at setup (`jinx-setup.ts`) and the setup changes that may apply
  * through them (`analyseSetup`'s `mayApply`). The official cases are tested with their jinx,
  * in `jinxes/alchemist__summoner.test.ts` and `jinxes/alchemist__marionette.test.ts`.
  */
@@ -15,21 +15,18 @@ const data = committedGameData();
 const lookup = (id: string) => data.byId.get(id);
 const of = (...ids: string[]) => ids.map((id) => lookup(id)!);
 
-describe('withPartnerAbility in a jinxes block', () => {
-	it('reads partner-setup and partner-in-play, and nothing else', () => {
+describe('partnerSetup and partnerInPlay in a jinxes block', () => {
+	it('reads true or an object, and nothing else', () => {
 		const issues = new Issues();
-		const good = {
-			a: { withPartnerAbility: 'partner-setup' },
-			b: { withPartnerAbility: 'partner-in-play' }
-		};
-		expect(readJinxRules(good, 'jinxes', issues)).toEqual(good);
+		const good = { a: { partnerSetup: true }, b: { partnerInPlay: { when: ['partner-alive'] } } };
+		expect(readJinxRules(good, 'jinxes', issues)).toEqual({
+			a: { partnerSetup: {} },
+			b: { partnerInPlay: { when: ['partner-alive'] } }
+		});
 		expect(issues.list).toEqual([]);
 		const bad = new Issues();
-		readJinxRules({ a: { withPartnerAbility: 'sometimes' } }, 'jinxes', bad);
-		expect(bad.list.map((i) => i.split(': ')[0])).toEqual([
-			'jinxes.a.withPartnerAbility',
-			'jinxes.a'
-		]);
+		readJinxRules({ a: { partnerSetup: 'sometimes' } }, 'jinxes', bad);
+		expect(bad.list.map((i) => i.split(': ')[0])).toEqual(['jinxes.a.partnerSetup', 'jinxes.a']);
 	});
 });
 
@@ -40,7 +37,7 @@ describe('abilityJinxSetup', () => {
 		id: 'thief',
 		name: 'Thief',
 		edition: undefined,
-		rules: { jinxes: { baron: { withPartnerAbility: 'partner-setup' } } }
+		rules: { jinxes: { baron: { partnerSetup: {} } } }
 	};
 	const find = (id: string) => (id === 'thief' ? thief : lookup(id));
 

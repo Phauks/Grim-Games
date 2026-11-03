@@ -34,7 +34,7 @@ describe('Pit-Hag + Village Idiot jinx', () => {
 	// Both pages' Related Jinxes: given a spare token, the Pit-Hag may make another Village Idiot, though one
 	// is in play. Its picker keeps the in-play Village Idiot.
 	it("lets the Pit-Hag's picker offer the Village Idiot while one is in play", () => {
-		expect(jinxRulesBetween('pithag', 'villageidiot')).toEqual({ spareToken: true });
+		expect(jinxRulesBetween('pithag', 'villageidiot')).toEqual({ spareToken: {} });
 		expect(jinxedPartners('pithag', 'spareToken', ['pithag', 'villageidiot', 'chef'])).toEqual([
 			'villageidiot'
 		]);

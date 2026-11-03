@@ -25,7 +25,7 @@ import {
 	registrations,
 	truthfulBy
 } from '../ability.ts';
-import { ownJinxRules } from '../jinxes.ts';
+import { jinxEffect } from '../jinxes.ts';
 import { type StorytellerVisit, storytellerVisit } from '../storytellers.ts';
 
 const W = 'https://wiki.bloodontheclocktower.com/';
@@ -172,7 +172,7 @@ export function falseInfoSource(
 		const rule = characterId ? rulesOf(characterId, characters)?.falseInfo : undefined;
 		const types = rule && !rule.may ? rule.types : undefined;
 		if (!characterId || !types || (type !== undefined && !types.includes(type))) continue;
-		if (about !== undefined && ownJinxRules(game, characterId, about, characters)?.trueInfo)
+		if (about !== undefined && jinxEffect(game, characterId, about, 'trueInfo', characters))
 			continue;
 		if (abilityState(game, seatId, characters).works) return { seatId, characterId };
 	}

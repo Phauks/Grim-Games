@@ -55,7 +55,9 @@ describe('King + Riot jinx', () => {
 			wakeConditionMet(game, 'king', king, ctx.characters, new Set());
 
 		it("is data in the King's rules", () => {
-			expect(ownJinxRules({ script: scriptOf(ids) }, 'king', 'riot')).toEqual({ deadAtLeast: 1 });
+			expect(ownJinxRules({ script: scriptOf(ids) }, 'king', 'riot')).toEqual({
+				deadAtLeast: { dead: 1, when: ['partner-in-play'] }
+			});
 		});
 
 		it('wakes with one player dead while Riot is in play', () => {

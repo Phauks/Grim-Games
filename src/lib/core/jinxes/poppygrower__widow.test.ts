@@ -50,7 +50,7 @@ describe('Poppy Grower + Widow jinx', () => {
 			nightStepAlerts(game, 'widow', ctx.characters).filter((a) => a.kind === 'no-grimoire');
 
 		it("is data in the Widow's rules", () => {
-			expect(jinxRulesBetween('widow', 'poppygrower')).toEqual({ noGrimoire: true });
+			expect(jinxRulesBetween('widow', 'poppygrower')).toEqual({ grimoire: { hides: 'all' } });
 		});
 
 		it('says so at its step while the Poppy Grower lives', () => {

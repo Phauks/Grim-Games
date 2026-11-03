@@ -20,7 +20,7 @@ import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { alignmentOf, trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 import { abilityState } from './ability.ts';
-import { ownJinxes } from './jinxes.ts';
+import { ownJinxEffects } from './jinxes.ts';
 import { todaysNominations } from './nominations.ts';
 
 /** TPI's reminder for a spent once-per-game ability (game data). */
@@ -109,13 +109,12 @@ function outOfReach(
 	characters: CharacterLookup
 ): boolean {
 	const seat = game.seats[nominee];
-	return ownJinxes(game, characterId, (r) => r.noExecuteNow !== undefined, characters).some(
-		({ partner, rule }) =>
-			rule.noExecuteNow?.who === 'partner'
+	return ownJinxEffects(game, characterId, 'noExecuteNow', characters).some(
+		({ partner, effect }) =>
+			effect.player === 'partner'
 				? trueCharacter(game, nominee, characters) === partner
-				: seat?.reminders.some(
-						(r) => r.characterId === partner && r.label === rule.noExecuteNow?.token
-					) === true
+				: seat?.reminders.some((r) => r.characterId === partner && r.label === effect.token) ===
+					true
 	);
 }
 

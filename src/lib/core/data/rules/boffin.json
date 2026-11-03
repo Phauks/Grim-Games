@@ -32,16 +32,16 @@
 	},
 	"jinxes": {
 		"drunk": {
-			"notGiven": true
+			"cannotCreate": "givesAbility"
 		},
 		"heretic": {
-			"notGiven": true
+			"cannotCreate": "givesAbility"
 		},
 		"ogre": {
-			"notGiven": true
+			"cannotCreate": "givesAbility"
 		},
 		"politician": {
-			"notGiven": true
+			"cannotCreate": "givesAbility"
 		},
 		"cultleader": {
 			"noTurnGood": true

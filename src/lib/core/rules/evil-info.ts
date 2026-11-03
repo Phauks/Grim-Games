@@ -9,7 +9,7 @@
 import type { CharacterId } from '#lib/core/data/index.ts';
 import { rulesIn, rulesOf } from '#lib/core/data/rules/index.ts';
 import { abilityState } from './ability.ts';
-import { ownJinxes } from './jinxes.ts';
+import { ownJinxEffects } from './jinxes.ts';
 import { hiddenPartnersOf } from './jinx-effects.ts';
 import {
 	alignmentOf,
@@ -128,14 +128,10 @@ function demonLearnsGood(
 	game: Game,
 	characters: CharacterLookup
 ): { seats: SeatId[]; hiddenBy: CharacterId } | undefined {
-	const playing = (id: CharacterId) =>
-		game.seating.filter((s) => trueCharacter(game, s, characters) === id);
 	for (const seatId of game.seating) {
 		const id = trueCharacter(game, seatId, characters);
 		if (id === undefined) continue;
-		const jinx = ownJinxes(game, id, (r) => r.demonLearnsGood === true, characters).find(
-			(j) => playing(j.partner).length > 0
-		);
+		const jinx = ownJinxEffects(game, id, 'demonLearnsGood', characters)[0];
 		if (!jinx) continue;
 		const seats = game.seating.filter(
 			(s) => alignmentOf(game, s) === 'good' && trueCharacter(game, s, characters) !== id

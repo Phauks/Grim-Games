@@ -44,7 +44,7 @@ describe('Magician + Wraith jinx', () => {
 		it("is data in the Magician's rules", () => {
 			// Wiki: "After each execution, the living Magician may publicly guess a living player as the Wraith. If correct, the Demon must choose the Wraith tonight."
 			expect(ownJinxRules(base.game, 'magician', 'wraith', base.characters)).toEqual({
-				guessesPartner: true
+				guessesPartner: { when: ['self-alive', 'after-execution'] }
 			});
 		});
 

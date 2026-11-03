@@ -38,8 +38,9 @@ describe('Alchemist + Wraith jinx', () => {
 	it("is data in the Alchemist's rules", () => {
 		// Wiki: "An Alchemist-Wraith has no Wraith ability & a Wraith is in play. After each execution, a living Alchemist-Wraith may publicly guess a living player as the Wraith. If correct, the Demon must choose the Wraith tonight."
 		expect(jinxRulesBetween('alchemist', 'wraith')).toEqual({
-			withPartnerAbility: 'partner-in-play',
-			guessesPartner: true
+			impairs: { kind: 'no-ability', when: ['has-partner-ability'] },
+			partnerInPlay: {},
+			guessesPartner: { when: ['has-partner-ability', 'self-alive', 'after-execution'] }
 		});
 	});
 

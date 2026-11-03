@@ -48,7 +48,7 @@ describe('Fang Gu + Scarlet Woman jinx', () => {
 		it("is data in the Scarlet Woman's rules", () => {
 			// Wiki: "If there would be two Demons, one of which was the Scarlet Woman, the Scarlet Woman remains the Scarlet Woman."
 			expect(ownJinxRules(base.game, 'scarletwoman', 'fanggu', base.characters)).toEqual({
-				notSecondDemon: true
+				notSecondDemon: {}
 			});
 		});
 

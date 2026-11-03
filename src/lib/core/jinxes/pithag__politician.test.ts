@@ -59,7 +59,7 @@ describe('Pit-Hag + Politician jinx', () => {
 		});
 
 		it("is data in the Pit-Hag's rules", () => {
-			expect(jinxRulesBetween('pithag', 'politician')).toEqual({ noTurnGood: true });
+			expect(jinxRulesBetween('pithag', 'politician')).toEqual({ noTurnGood: {} });
 			expect(ids).toContain('politician');
 		});
 

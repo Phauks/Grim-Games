@@ -48,7 +48,9 @@ describe('Damsel + Spy jinx', () => {
 		const cast = castWith({ script: scriptOf(['damsel', 'spy', 'imp', 'chef', 'empath']) });
 
 		it("is data in the Spy's rules", () => {
-			expect(jinxRulesBetween('spy', 'damsel')).toEqual({ impairsPartner: 'poisoned' });
+			expect(jinxRulesBetween('damsel', 'spy')).toEqual({
+				impairs: { kind: 'poisoned', when: ['partner-in-play'] }
+			});
 		});
 
 		it('poisons the Damsel, even once the Spy is dead', () => {

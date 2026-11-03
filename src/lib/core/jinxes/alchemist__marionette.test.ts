@@ -57,7 +57,8 @@ describe('Alchemist + Marionette jinx', () => {
 
 		it("is data in the Alchemist's rules", () => {
 			expect(jinxRulesBetween('alchemist', 'marionette')).toEqual({
-				withPartnerAbility: 'partner-in-play'
+				impairs: { kind: 'no-ability', when: ['has-partner-ability'] },
+				partnerInPlay: {}
 			});
 		});
 

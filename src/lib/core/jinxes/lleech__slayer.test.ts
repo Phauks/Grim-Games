@@ -42,7 +42,7 @@ describe('Lleech + Slayer jinx', () => {
 		it("is data in the Slayer's rules", () => {
 			// Wiki: "If the Slayer slays the Lleech host, the host dies."
 			expect(ownJinxRules(base.game, 'slayer', 'lleech', base.characters)).toEqual({
-				killsMarked: 'Poisoned'
+				killsMarked: { token: 'Poisoned' }
 			});
 		});
 

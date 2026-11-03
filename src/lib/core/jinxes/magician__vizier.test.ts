@@ -48,8 +48,7 @@ describe('Magician + Vizier jinx', () => {
 
 		it("is data in the Vizier's rules", () => {
 			expect(jinxRulesBetween('vizier', 'magician')).toEqual({
-				impairsPartner: 'no-ability',
-				noExecuteNow: { who: 'partner' }
+				noExecuteNow: { player: 'partner' }
 			});
 		});
 

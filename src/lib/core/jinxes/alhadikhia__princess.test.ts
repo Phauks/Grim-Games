@@ -47,7 +47,7 @@ describe('Al-Hadikhia + Princess jinx', () => {
 		});
 
 		it("is data in the Al-Hadikhia's rules", () => {
-			expect(jinxRulesBetween('alhadikhia', 'princess')).toEqual({ noKill: 'token' });
+			expect(jinxRulesBetween('alhadikhia', 'princess')).toEqual({ noKill: { on: 'token' } });
 		});
 
 		it("shows no kill tonight while the Princess's token is on it", () => {

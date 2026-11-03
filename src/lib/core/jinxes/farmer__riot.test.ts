@@ -33,5 +33,5 @@ describe('Farmer + Riot jinx', () => {
 
 	// Both pages' Related Jinxes: each night after the first the Demon picks an alive player not
 	// picked before, and the partner, if picked, acts as if the Demon killed it.
-	nightChoiceTests('riot', 'farmer', { who: 'good', partner: 'acts' });
+	nightChoiceTests('riot', 'farmer', { chooses: 'good', partner: 'acts' });
 });

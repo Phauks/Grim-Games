@@ -51,7 +51,7 @@ describe('Bounty Hunter + Philosopher jinx', () => {
 		it("is data in the Philosopher's rules", () => {
 			// Wiki: "If the Philosopher gains the Bounty Hunter ability, a Townsfolk might turn evil."
 			expect(ownJinxRules(gained.game, 'philosopher', 'bountyhunter', gained.characters)).toEqual({
-				withPartnerAbility: 'partner-setup'
+				partnerSetup: {}
 			});
 			expect(gainedPartnerJinx(gained.game, gained.seat(0), gained.characters)).toMatchObject({
 				owner: 'philosopher',

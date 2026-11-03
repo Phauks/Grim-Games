@@ -1,10 +1,11 @@
 /**
  * Jinxes on a player who has another character's ability (`abilitiesOfSeat`: gained or held,
- * not their own), read from the giver's side of the `jinxes` block (`data/jinx-rules.ts`): the
- * Alchemist-Summoner chooses only the Demon, not the player, and gets no bluffs
+ * not their own), read for the giver (`data/jinx-rules.ts`), with `has-partner-ability`
+ * holding for that player: the Alchemist-Summoner chooses only the Demon, not the player, and
+ * gets no bluffs
  * (https://wiki.bloodontheclocktower.com/Alchemist#Related_Jinxes).
  */
-import type { JinxRules } from '#lib/core/data/jinx-rules.ts';
+import type { JinxEffect, JinxRules } from '#lib/core/data/jinx-rules.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { trueCharacter } from '#lib/core/model/selectors.ts';
@@ -13,6 +14,7 @@ import { abilityState } from './ability.ts';
 import { characterChanger } from './becomes.ts';
 import { abilityHolders, abilityOf } from './gained-abilities.ts';
 import { ownJinxRules } from './jinxes.ts';
+import { aboutHolder, jinxApplies } from './jinx-when.ts';
 
 /** A jinx between the character that gives `seatId` `characterId`'s ability and that character. */
 export interface HolderJinx {
@@ -40,10 +42,24 @@ export function holderJinx(
 	return rule ? { characterId, via, rule } : undefined;
 }
 
+/** Whether `effect` of `jinx` applies to `seatId`, who has the partner's ability. */
+function holderApplies(
+	game: Game,
+	seatId: SeatId,
+	jinx: HolderJinx | undefined,
+	effect: JinxEffect | undefined,
+	characters: CharacterLookup
+): boolean {
+	if (!jinx || !effect) return false;
+	const at = { seatId, hasPartnerAbility: true };
+	return jinxApplies(game, jinx.via, jinx.characterId, effect, characters, at);
+}
+
 /**
  * The giver whose jinx says the player using `characterId`'s `changesCharacter` tonight chooses
- * only the character, and the Storyteller the player (`picksCharacterOnly`: the
- * Alchemist-Summoner chooses which Demon but not which player). Undefined otherwise.
+ * only the character, and the Storyteller the player (`storytellerChooses` with
+ * `has-partner-ability`: the Alchemist-Summoner chooses which Demon but not which player).
+ * Undefined otherwise.
  */
 export function picksCharacterOnlyBy(
 	game: Game,
@@ -53,7 +69,9 @@ export function picksCharacterOnlyBy(
 	const changer = characterChanger(game, characterId, characters);
 	if (changer === undefined) return undefined;
 	const jinx = holderJinx(game, changer, characterId, characters);
-	return jinx?.rule.picksCharacterOnly ? jinx.via : undefined;
+	const effect = jinx?.rule.storytellerChooses;
+	if (!aboutHolder(effect)) return undefined;
+	return holderApplies(game, changer, jinx, effect, characters) ? jinx?.via : undefined;
 }
 
 /**
@@ -77,9 +95,10 @@ export function evilInfoNotesLeftOut(game: Game, characters: CharacterLookup): C
 		const holders = abilityHolders(game, id, characters);
 		return (
 			holders.length > 0 &&
-			holders.every(
-				(s) => without(s, id) || holderJinx(game, s, id, characters)?.rule.noBluffs === true
-			)
+			holders.every((s) => {
+				const jinx = holderJinx(game, s, id, characters);
+				return without(s, id) || holderApplies(game, s, jinx, jinx?.rule.noBluffs, characters);
+			})
 		);
 	});
 }

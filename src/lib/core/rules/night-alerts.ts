@@ -81,7 +81,7 @@ import { characterChanger } from './becomes.ts';
 import { isExecution } from './death-causes.ts';
 import { stopsKillingTonight } from './reminder-effects.ts';
 import { noAttackState } from './demon-attack.ts';
-import { ownJinxes, ownJinxRules } from './jinxes.ts';
+import { jinxEffect, ownJinxEffects } from './jinxes.ts';
 import { jinxChosenTonight } from './jinx-choices.ts';
 import {
 	jinxLearnAlerts,
@@ -351,7 +351,10 @@ export function nightStepAlerts(
 			if (!picked && stops?.type && typeOf(game, seatId, characters) !== stops.type) continue;
 			// A jinx may make a token that stops waking stop the kill too (the Exorcist's Chosen
 			// on the Yaggababble, https://wiki.bloodontheclocktower.com/Yaggababble#Related_Jinxes).
-			if (waking && ownJinxRules(game, characterId, r.characterId, characters)?.noKill === 'token')
+			if (
+				waking &&
+				jinxEffect(game, characterId, r.characterId, 'noKill', characters)?.on === 'token'
+			)
 				waking = false;
 			if (!waking) noKill = true;
 			const source = game.seating.find(
@@ -440,7 +443,13 @@ function executedPartnerStops(game: Game, characters: CharacterLookup): AbilityS
 	return game.seating.flatMap((nominator) => {
 		const own = trueCharacter(game, nominator, characters);
 		if (!own) return [];
-		const partners = ownJinxes(game, own, (r) => r.noKill === 'executed-partner', characters);
+		const partners = ownJinxEffects(
+			game,
+			own,
+			'noKill',
+			characters,
+			(e) => e.on === 'executed-partner'
+		);
 		const hit = entries.some(
 			(e) =>
 				e.kind === 'nomination' &&
@@ -453,9 +462,9 @@ function executedPartnerStops(game: Game, characters: CharacterLookup): AbilityS
 }
 
 /**
- * What a jinx changes about the Grimoire the waking character's player sees (`noGrimoire`,
- * `grimoireHides`): not seen while the partner has its ability (a dead partner has none), or
- * these players' tokens come off it first.
+ * What a jinx changes about the Grimoire the waking character's player sees (`grimoire`,
+ * while its `when` holds): with `hides: "all"`, not seen while a partner's player has their
+ * ability (a dead partner has none); with a list, these players' tokens come off it first.
  */
 function grimoireAlerts(
 	game: Game,
@@ -466,13 +475,8 @@ function grimoireAlerts(
 	const out: NightAlert[] = [];
 	const holders = (id: CharacterId) =>
 		game.seating.filter((s) => trueCharacter(game, s, characters) === id);
-	for (const { partner, rule } of ownJinxes(
-		game,
-		characterId,
-		(r) => r.noGrimoire === true || r.grimoireHides !== undefined,
-		characters
-	)) {
-		if (rule.noGrimoire) {
+	for (const { partner, effect } of ownJinxEffects(game, characterId, 'grimoire', characters)) {
+		if (effect.hides === 'all') {
 			for (const at of holders(partner)) {
 				if (abilityState(game, at, characters).dead) continue;
 				const source = { characterId: partner, seatId: at };
@@ -482,12 +486,13 @@ function grimoireAlerts(
 					);
 			}
 		}
-		const hides = rule.grimoireHides ?? [];
+		const hides = effect.hides === 'all' ? [] : effect.hides;
 		if (hides.length === 0 || actors.length === 0) continue;
-		// Only while the partner is in play: with no Magician, the Demon's token stays.
+		// The partner's player is the source, when in play (`partner-in-play`: with no
+		// Magician, the Demon's token stays).
 		const from = holders(partner)[0];
-		if (from === undefined) continue;
-		const source: AbilitySource = { characterId: partner, seatId: from };
+		const source: AbilitySource =
+			from === undefined ? { characterId: partner } : { characterId: partner, seatId: from };
 		for (const seatId of game.seating) {
 			const hidden =
 				(hides.includes('partner') && trueCharacter(game, seatId, characters) === partner) ||
@@ -574,7 +579,7 @@ function trueInfoAlerts(
 ): NightAlert[] {
 	const type = characters.get(characterId)?.type;
 	const by = type === undefined ? undefined : falseInfoSource(game, characters, type);
-	if (!by || !ownJinxRules(game, by.characterId, characterId, characters)?.trueInfo) return [];
+	if (!by || !jinxEffect(game, by.characterId, characterId, 'trueInfo', characters)) return [];
 	return actors.map((seatId) =>
 		sourceAlert(game, 'true-info', seatId, by, characters, wikiOf(by, characters))
 	);

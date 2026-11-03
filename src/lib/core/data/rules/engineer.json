@@ -57,7 +57,18 @@
 	"jinxes": {
 		"legion": {
 			"allEvilBecome": true,
-			"learnsNoAbility": true
+			"learns": {
+				"what": "no-ability",
+				"when": [
+					{
+						"night": 1
+					}
+				]
+			},
+			"impairs": {
+				"kind": "no-ability",
+				"when": ["partner-in-play"]
+			}
 		}
 	}
 }

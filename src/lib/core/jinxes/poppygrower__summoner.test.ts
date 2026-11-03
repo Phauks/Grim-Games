@@ -41,7 +41,7 @@ describe('Poppy Grower + Summoner jinx', () => {
 		it("is data in the Summoner's rules", () => {
 			// Wiki: "If the Poppy Grower is alive on the 3rd night, the Summoner chooses which Demon but not which player."
 			expect(ownJinxRules(base.game, 'summoner', 'poppygrower', base.characters)).toEqual({
-				storytellerPicksWhileAlive: true
+				storytellerChooses: { what: 'player', when: ['partner-alive'] }
 			});
 		});
 

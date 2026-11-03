@@ -540,6 +540,14 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['M36']
 	},
 	{
+		// The coordinator's ask of 2026-11-03 (ability-parts/jinx-format-audit.md): a jinx format a
+		// custom script can write. M39 general verbs with shared `when` conditions and `who`, so a
+		// rule may sit in either character's file; M40 and M41 the later stages.
+		title: 'Jinx format for custom scripts',
+		area: 'engine',
+		parts: ['M39']
+	},
+	{
 		// Trevor, 2026-11-02: beta goes to production only once the How to Run gaps are closed.
 		// M29a and M29b the warnings still missing (a second Alsaahir guess, a fourth Matron swap,
 		// the Goon's Drunk, the Pope's duplicate bluffs and more), M30a and M30b the info tokens

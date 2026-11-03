@@ -41,7 +41,9 @@ describe('Legion + Magician jinx', () => {
 		});
 
 		it("is data in the Magician's rules", () => {
-			expect(jinxRulesBetween('legion', 'magician')).toEqual({ demonLearnsGood: true });
+			expect(jinxRulesBetween('magician', 'legion')).toEqual({
+				demonLearnsGood: { when: ['partner-in-play'] }
+			});
 		});
 
 		it('shows the good players at Demon info, never the Magician', () => {
