@@ -71,5 +71,9 @@
 		"selected-you": {
 			"characters": ["self"]
 		}
+	},
+	"reminderEnds": {
+		"Sober & Healthy": "dusk-after-dawn",
+		"Acts Twice": "dusk-after-dawn"
 	}
 }

@@ -74,5 +74,8 @@
 	},
 	"voting": {
 		"secret": true
+	},
+	"reminderEnds": {
+		"Drunk": "dusk"
 	}
 }

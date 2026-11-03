@@ -23,6 +23,7 @@ import {
 	characterOf,
 	checkReminder,
 	deathCause,
+	endingOnDeath,
 	refuse,
 	reminderFrom,
 	seatOf,
@@ -376,7 +377,11 @@ export const CHARACTERS_DECIDERS: Deciders<
 			death.impaired = true;
 		}
 		const events: GameEvent[] = [death];
-		if (command.dead) events.push(...tallyDeath(game, seat.seatId, cause, ctx, warn));
+		if (command.dead)
+			events.push(
+				...tallyDeath(game, seat.seatId, cause, ctx, warn),
+				...endingOnDeath(game, seat.seatId, ctx)
+			);
 		// A player who comes back to life has their vote again.
 		if (!command.dead && seat.ghostVoteUsed) {
 			events.push({ type: 'GhostVoteRestored', seatId: seat.seatId });

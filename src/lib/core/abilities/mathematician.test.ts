@@ -199,10 +199,8 @@ describe('Mathematician', () => {
 				).toMatchObject({ kind: 'number', value: 2 });
 		});
 
-		it.fails('takes every Abnormal reminder off after the Mathematician learns', () => {
+		it('takes every Abnormal reminder off after the Mathematician learns', () => {
 			// Wiki: "Put the Mathematician to sleep. Remove all ABNORMAL reminders."
-			// Waits on the engine (unplanned): Abnormal has no reminderEnds, so the night's Abnormal
-			// reminders stay on the board into the next day.
 			const s = scenario(cast).reminder('oracle', 'mathematician', 'Abnormal').newDay();
 			expect(s.game.seats[s.seat('oracle')].reminders).toEqual([]);
 		});

@@ -155,17 +155,16 @@ describe('Shabaloth', () => {
 		it("may bring back a player it killed, marked Alive, just before the Shabaloth's attack", () => {
 			// Wiki: "Each later night, just before waking the Shabaloth, you can choose one character
 			// marked with the Shabaloth’s DEAD reminder, and the chosen player becomes alive again"
-			expect(placeholdersFor(character, 'other')?.[0]).toMatchObject({
-				tokens: [{ label: 'Alive', action: 'place' }]
+			expect(placeholdersFor(character, 'other')?.[0]?.tokens[0]).toEqual({
+				label: 'Alive',
+				action: 'place'
 			});
 			expect(reminderPrompt('Alive', 'shabaloth')).toBe('revive');
 		});
 
-		it.fails("replaces the regurgitated player's Dead with Alive", () => {
+		it("replaces the regurgitated player's Dead with Alive", () => {
 			// Wiki: "replace the DEAD reminder with the Shabaloth’s ALIVE reminder, and remove their
 			// shroud."
-			// Waits on the engine (unplanned): the Shabaloth's step places Alive but has no step that
-			// takes that player's Dead off.
 			expect(placeholdersFor(character, 'other')?.[0]).toEqual({
 				tokens: [
 					{ label: 'Alive', action: 'place' },
