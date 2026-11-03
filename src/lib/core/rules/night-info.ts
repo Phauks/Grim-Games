@@ -51,12 +51,12 @@ export {
 } from './night-info/reliability.ts';
 export {
 	type NightToday,
-	abnormalSinceDawn,
 	nightAnswer,
 	answerCauses,
 	type AnswerOption,
 	answerOptions
 } from './night-info/answers.ts';
+export { abnormalSinceDawn } from './night-info/abnormal-uses.ts';
 export {
 	type PickerKind,
 	type PickerAnswer,

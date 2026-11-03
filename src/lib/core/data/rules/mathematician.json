@@ -26,5 +26,16 @@
 	},
 	"reminderEnds": {
 		"Abnormal": "dawn"
+	},
+	"jinxes": {
+		"drunk": {
+			"abnormalCounts": "own-ability"
+		},
+		"lunatic": {
+			"abnormalCounts": "demon-choice"
+		},
+		"marionette": {
+			"abnormalCounts": "own-ability"
+		}
 	}
 }

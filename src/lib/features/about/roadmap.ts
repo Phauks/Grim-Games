@@ -547,6 +547,8 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		// Woman with no second Demon; the Mastermind's Vigormortis, Lleech and Al-Hadikhia; the
 		// Slayer's Lleech host; the Marionette's Balloonist, Huntsman and Magician; the Cerenovus's
 		// Goblin; the Butler with eyes closed; the Philosopher's Bounty Hunter).
+		// L120 the Mathematician's four (the Drunk's and Marionette's false info and the Lunatic
+		// attacking another player count as abnormal; the Chambermaid detects its waking).
 		title: 'Jinxes the app applies, not only shows',
 		area: 'engine',
 		parts: [
@@ -562,7 +564,8 @@ export const ROADMAP: readonly RoadmapItem[] = [
 			'L116',
 			'L117',
 			'L118',
-			'L119'
+			'L119',
+			'L120'
 		]
 	},
 	{
