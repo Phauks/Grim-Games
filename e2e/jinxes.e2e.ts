@@ -852,6 +852,58 @@ test('the Summoner who makes a second living Demon is told deaths are arbitrary'
 	await expect(line).toHaveAttribute('role', 'alert');
 });
 
+// The Alchemist with the Summoner ability (L121,
+// https://wiki.bloodontheclocktower.com/Alchemist#Related_Jinxes): on Night 3 the gained ability
+// runs at the Summoner's step; they choose the Demon, the Storyteller the player.
+test('the Alchemist-Summoner chooses the Demon on Night 3, the Storyteller the player', async ({
+	page
+}) => {
+	test.slow();
+	await startGame(page, 'Alchemist Summoner', [
+		'alchemist',
+		'summoner',
+		'imp',
+		'poisoner',
+		'chef',
+		'empath',
+		'monk'
+	]);
+	await choose(page, 1, 'Alchemist');
+	await choose(page, 2, 'Poisoner');
+	await choose(page, 3, 'Chef');
+	await choose(page, 4, 'Empath');
+	// The Alchemist's Minion ability: its token swapped for the Summoner's, still good.
+	const alchemist = await openSeat(page, 1);
+	await alchemist.getByRole('button', { name: 'Seat actions' }).tap();
+	await page.getByRole('dialog').getByRole('button', { name: 'Gained ability…' }).last().tap();
+	await page
+		.getByRole('dialog', { name: 'Ability Seat 1 gains' })
+		.getByRole('button', { name: 'Summoner', exact: true })
+		.tap();
+	await expect(alchemist).toContainText(/Minion · Good · Seat 1[\s\S]*Summoner/);
+	await closeSheet(page);
+	await putReminder(page, 'Night 3', 1);
+	await closeBin(page);
+
+	const step = await openStep(page, 'Summoner');
+	await expect(step.getByTestId('picks-character-only')).toContainText(
+		/Alchemist\s+has\s+this\s+ability:\s+they\s+choose\s+only\s+the\s+character,\s+the\s+Storyteller\s+chooses\s+which\s+player\./
+	);
+	await step.getByTestId('change-character').getByRole('button', { name: 'Choose' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Becomes the Demon' })
+		.getByRole('button', { name: /Chef/ })
+		.tap();
+	await page
+		.getByRole('dialog', { name: 'Choose a Demon' })
+		.getByRole('button', { name: 'Imp', exact: true })
+		.tap();
+	await expect(step.getByTestId('change-character')).toContainText('Imp');
+	await page.keyboard.press('Escape');
+	await expect(step).toBeHidden();
+	await expect(await openSeat(page, 3)).toContainText(/Demon · Evil · Seat 3[\s\S]*Imp/);
+});
+
 // On its Night 2 the Summoner may make only a Pukka; with the Poppy Grower alive the
 // Storyteller chooses the player.
 test('the Summoner may summon only a Pukka a night early', async ({ page }) => {

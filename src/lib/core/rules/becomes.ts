@@ -10,6 +10,7 @@ import { baseCounts } from './distribution.ts';
 import type { Alignment, CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { scriptCharacterIds } from '#lib/core/model/characters.ts';
+import { abilityHolders } from './gained-abilities.ts';
 import { earlierTokens, jinxedPartners } from './jinxes.ts';
 import {
 	aliveNeighbours,
@@ -105,10 +106,9 @@ export function becomesOffer(
 	const rule = rulesIn(game, reminder.characterId, characters)?.becomes;
 	if (rule?.token !== reminder.label || (rule.when ?? 'placed') !== when) return undefined;
 	if (!game.seats[seatId]) return undefined;
-	// Its player's ability must work, unless the rule says even if drunk or poisoned.
-	const owners = game.seating.filter(
-		(id) => trueCharacter(game, id, characters) === reminder.characterId
-	);
+	// Its player's ability must work, unless the rule says even if drunk or poisoned: anyone
+	// with its ability, gained or held too.
+	const owners = abilityHolders(game, reminder.characterId, characters);
 	if (
 		!rule.evenIfImpaired &&
 		owners.length > 0 &&
@@ -141,9 +141,7 @@ export function becomesOffer(
 		// https://wiki.bloodontheclocktower.com/Ogre#Related_Jinxes). The first that would
 		// change the owner is offered; the Storyteller confirms it or leaves them as they are.
 		const truly = alignmentOf(game, seatId);
-		const owner = game.seating.find(
-			(id) => id !== seatId && trueCharacter(game, id, characters) === reminder.characterId
-		);
+		const owner = owners.find((id) => id !== seatId);
 		if (owner === undefined || truly === undefined) return undefined;
 		const registered = registrations(game, characters, reminder.characterId).find(
 			(r) => r.seatId === seatId
@@ -173,9 +171,9 @@ export function becomesOffer(
 
 /**
  * The player who swaps when `characterId`'s ability picks the Demon (`becomes.into: 'swap'`):
- * its own player, else a player who gained its ability (the Philosopher who chose the Snake
- * Charmer, https://wiki.bloodontheclocktower.com/Snake_Charmer). A Drunk who only thinks they
- * are it has no ability, so is never one.
+ * its own player, else a player who gained or holds its ability (`abilityHolders`: the
+ * Philosopher who chose the Snake Charmer, https://wiki.bloodontheclocktower.com/Snake_Charmer).
+ * A Drunk who only thinks they are it has no ability, so is never one.
  */
 export function swapPartner(
 	game: Game,
@@ -183,16 +181,8 @@ export function swapPartner(
 	characters: CharacterLookup,
 	except?: SeatId
 ): SeatId | undefined {
-	const own = game.seating.find(
-		(id) => id !== except && trueCharacter(game, id, characters) === characterId
-	);
-	if (own !== undefined) return own;
-	// A player who took its token for their own (`gainedFrom.swapped`: the Philosopher).
-	return game.seating.find((id) => {
-		if (id === except || game.seats[id].characterId !== characterId) return false;
-		const own = trueCharacter(game, id, characters);
-		return own !== undefined && rulesIn(game, own, characters)?.gainedFrom?.swapped === true;
-	});
+	const holders = abilityHolders(game, characterId, characters).filter((id) => id !== except);
+	return holders.find((id) => trueCharacter(game, id, characters) === characterId) ?? holders[0];
 }
 
 /**
@@ -235,7 +225,9 @@ export function followedAlignmentOffer(
 
 /**
  * The player whose `characterId` changes a chosen player's character tonight
- * (`changesCharacter`): its own living player (or dead, when it acts when dead; only once
+ * (`changesCharacter`): a living player with its ability (`abilityHolders`: its own, or one who
+ * gained or holds it, the Alchemist-Summoner or the Demon with the Boffin's Huntsman; or dead,
+ * when it acts when dead; only once
  * dead, when its ability is set off by its player's death, `onDeath`: the Hatter's tea party),
  * with its `token` on them when the rule names one (the Summoner's Night 3) and without its
  * `spent` token (the Huntsman's No Ability), and someone to change when only some characters
@@ -259,11 +251,10 @@ export function characterChanger(
 		return undefined;
 	// A jinx may let it create a partner early, on another token (the Summoner's Pukka).
 	const early = rule.token === undefined ? [] : earlierTokens(game, characterId, characters);
-	const changer = game.seating.find(
+	const changer = abilityHolders(game, characterId, characters).find(
 		(id) =>
 			(!game.seats[id].dead || rules?.actsWhenDead === true) &&
 			(!rule.afterDeath || game.seats[id].dead === true) &&
-			trueCharacter(game, id, characters) === characterId &&
 			(rule.token === undefined ||
 				carries(id, rule.token) ||
 				early.some((e) => carries(id, e.token))) &&
@@ -327,6 +318,7 @@ export function changeableSeats(
 	const nearest = rule?.outward
 		? outwardSeats(game, characterId, rule.types, characters)
 		: undefined;
+	const holders = rule?.upTo ? abilityHolders(game, characterId, characters) : [];
 	return game.seating.filter((id) => {
 		if (nearest && !nearest.includes(id)) return false;
 		const own = trueCharacter(game, id, characters);
@@ -336,7 +328,7 @@ export function changeableSeats(
 			// extra Minion comes from a good player).
 			const type = typeOf(game, id, characters);
 			if (
-				own === characterId ||
+				holders.includes(id) ||
 				type === 'demon' ||
 				(type && (rule.types as readonly string[]).includes(type))
 			)
@@ -368,7 +360,8 @@ function outwardSeats(
 ): SeatId[] {
 	const seating = game.seating;
 	const n = seating.length;
-	const at = seating.findIndex((id) => trueCharacter(game, id, characters) === characterId);
+	const from = abilityHolders(game, characterId, characters)[0];
+	const at = from === undefined ? -1 : seating.indexOf(from);
 	if (at < 0) return [];
 	const out: SeatId[] = [];
 	for (const step of [-1, 1]) {
@@ -419,9 +412,7 @@ export function neighbourAlignments(
 	characters: CharacterLookup
 ): { seatId: SeatId; alignments: Alignment[] } | undefined {
 	if (!rulesIn(game, characterId, characters)?.takesNeighbourAlignment) return undefined;
-	const seatId = game.seating.find(
-		(id) => !game.seats[id].dead && trueCharacter(game, id, characters) === characterId
-	);
+	const seatId = abilityHolders(game, characterId, characters).find((id) => !game.seats[id].dead);
 	if (seatId === undefined) return undefined;
 	// A jinx may keep them from turning good by this ability (`cantTurnGood`).
 	const noGood = cantTurnGood(game, seatId, characters) !== undefined;

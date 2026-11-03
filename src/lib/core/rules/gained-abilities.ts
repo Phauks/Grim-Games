@@ -342,12 +342,93 @@ export function withStorytellerSteps<T extends NightStep>(
 	return out;
 }
 
+/** One ability a player has (`abilitiesOfSeat`). */
+export interface SeatAbility {
+	characterId: CharacterId;
+	/**
+	 * How they have it: `own`, their true character; `token`, the token on their seat, by
+	 * their own `gainsAbilityOf` or `swapsForAbility` (the Alchemist's Minion, the Apprentice's);
+	 * `gained`, by their own `gainedFrom` once "Has Ability" (the Pixie, the Cannibal, the
+	 * Philosopher); `held`, without a token while `holdsAbility` (the Boffin's, the Hermit's).
+	 */
+	how: 'own' | 'token' | 'gained' | 'held';
+	/** The character that gives it to them, when it is not their own. */
+	via?: CharacterId;
+}
+
 /**
- * Whether `seatId` has `characterId`'s ability working now: as their own character, as the
- * token their own character's `swapsForAbility` swapped in (the Apprentice stays the Apprentice
- * but "gains the ability of their character token",
- * https://wiki.bloodontheclocktower.com/Apprentice), or held (the Hermit's Mutant,
- * https://wiki.bloodontheclocktower.com/Hermit).
+ * Every ability `seatId`'s player has, their own first, each once. A gained or held ability is
+ * the borrowed character's ability in full, used wherever that character's own is (Trevor,
+ * 2026-11-03: the Alchemist and the Boffin simply take on the borrowed character's abilities).
+ * A Drunk who thinks they are the Pixie gains nothing. Whether each works is `abilityState`'s
+ * call, except a held one, listed only while it is held.
+ */
+export function abilitiesOfSeat(
+	game: Game,
+	seatId: SeatId,
+	characters: CharacterLookup
+): SeatAbility[] {
+	const seat = game.seats[seatId];
+	if (!seat) return [];
+	const own = trueCharacter(game, seatId, characters);
+	const out: SeatAbility[] = own === undefined ? [] : [{ characterId: own, how: 'own' }];
+	const add = (a: SeatAbility) => {
+		if (!out.some((o) => o.characterId === a.characterId)) out.push(a);
+	};
+	const token = seat.characterId;
+	if (own !== undefined && token !== undefined && token !== own) {
+		const type = characters.get(token)?.type;
+		const gains = rulesOf(own, characters)?.gainsAbilityOf;
+		if (
+			(gains !== undefined && gains === type) ||
+			swappedIn(game, seatId, own, characters) === token
+		)
+			add({ characterId: token, how: 'token', via: own });
+	}
+	const via = gainingCharacter(game, seatId, characters);
+	const rule = via === undefined ? undefined : rulesOf(via, characters)?.gainedFrom;
+	if (via !== undefined && via === own && rule) {
+		const gained = gainedBy(game, seatId, via, rule, characters);
+		if (gained?.status === 'has-ability')
+			add({ characterId: gained.characterId, how: 'gained', via });
+	}
+	for (const held of allHeld(game, seatId, characters))
+		if (holdsAbility(game, seatId, held, characters))
+			add({ characterId: held.characterId, how: 'held', via: held.via });
+	return out;
+}
+
+/**
+ * Every player who has `characterId`'s ability (`abilitiesOfSeat`), living or dead, in seating
+ * order: its own players, and those who gained or hold it. A rule that asks who uses an
+ * ability reads this, not the true character or the token alone.
+ */
+export function abilityHolders(
+	game: Game,
+	characterId: CharacterId,
+	characters: CharacterLookup
+): SeatId[] {
+	return game.seating.filter((id) =>
+		abilitiesOfSeat(game, id, characters).some((a) => a.characterId === characterId)
+	);
+}
+
+/** How `seatId` has `characterId`'s ability (`abilitiesOfSeat`), if they do. */
+export function abilityOf(
+	game: Game,
+	seatId: SeatId,
+	characterId: CharacterId,
+	characters: CharacterLookup
+): SeatAbility | undefined {
+	return abilitiesOfSeat(game, seatId, characters).find((a) => a.characterId === characterId);
+}
+
+/**
+ * Whether `seatId` has `characterId`'s ability working now (`abilitiesOfSeat`): their own, by
+ * their token (the Apprentice stays the Apprentice but "gains the ability of their character
+ * token", https://wiki.bloodontheclocktower.com/Apprentice; the Alchemist's Minion) or gained
+ * (the Pixie's), while their own ability works; or held (the Hermit's Mutant,
+ * https://wiki.bloodontheclocktower.com/Hermit), while it is held.
  */
 export function hasAbilityOf(
 	game: Game,
@@ -355,13 +436,9 @@ export function hasAbilityOf(
 	characterId: CharacterId,
 	characters: CharacterLookup
 ): boolean {
-	const own = trueCharacter(game, seatId, characters);
-	if (own === characterId) return abilityState(game, seatId, characters).works;
-	if (swappedIn(game, seatId, own, characters) === characterId)
-		return abilityState(game, seatId, characters).works;
-	return heldAbilitiesOf(game, seatId, characters).some(
-		(h) => h.characterId === characterId && h.works
-	);
+	const ability = abilityOf(game, seatId, characterId, characters);
+	if (!ability) return false;
+	return ability.how === 'held' || abilityState(game, seatId, characters).works;
 }
 
 /**

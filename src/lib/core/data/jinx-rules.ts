@@ -187,6 +187,13 @@
  * - `gainedEndWinner`: with the partner's ability, the partner's `gameEnd` `dead-without-demon`
  *   end applies to this character's player as soon as they die, with this winner (the
  *   Alchemist-Summoner who dies before summoning: evil wins);
+ * - `picksCharacterOnly`: with the partner's ability (`abilityHolders`, not their own), this
+ *   character's player chooses only which character the partner's `changesCharacter` makes,
+ *   and the Storyteller chooses the player (the Alchemist-Summoner chooses which Demon but not
+ *   which player): a note on the step;
+ * - `noBluffs`: with the partner's ability (not their own), this character's player doesn't
+ *   get the bluffs the partner's `evilInfo` notes say it gets, so those notes are left out of
+ *   the evil info steps (the Alchemist-Summoner);
  * - `partnerChoosesEnd`: when the partner's Demon dies by execution while this character's
  *   player is alive, its `extra-day` is a night instead: the partner's player chooses 3 good
  *   players tonight, and if all 3 choose to live evil wins, otherwise good wins (the Mastermind
@@ -207,7 +214,8 @@
  * `neighbourBecomes`, `storytellerPicksWhileAlive`, `earlierToken`, `guessesPartner`,
  * `notShownGiven`, `notSecondDemon`, `keepsAfterPartner`, `survivesCarrierExecuted`,
  * `killsMarked`, `madAsPartner`, `hidesPartnerSeat`, `thinksPartnerSetup`, `uncountedVote`,
- * `gainedEndWinner`, `partnerChoosesEnd` and `abnormalCounts` say what
+ * `gainedEndWinner`, `picksCharacterOnly`, `noBluffs`, `partnerChoosesEnd` and
+ * `abnormalCounts` say what
  * this character does, or how it is treated, with the partner, so they are read from this
  * character's side only (`ownJinxRules`); the others are read from both sides
  * (`rules/jinxes.ts`). By convention a block goes in the file of the
@@ -337,6 +345,8 @@ export interface JinxRules {
 	thinksPartnerSetup?: true;
 	uncountedVote?: true;
 	gainedEndWinner?: Alignment;
+	picksCharacterOnly?: true;
+	noBluffs?: true;
 	partnerChoosesEnd?: true;
 	abnormalCounts?: AbnormalCounts;
 }
@@ -414,6 +424,8 @@ export const JINX_RULE_KEYS = [
 	'thinksPartnerSetup',
 	'uncountedVote',
 	'gainedEndWinner',
+	'picksCharacterOnly',
+	'noBluffs',
 	'partnerChoosesEnd',
 	'abnormalCounts'
 ] as const;
@@ -626,6 +638,8 @@ export function readJinxRules(
 			'hidesPartnerSeat',
 			'thinksPartnerSetup',
 			'uncountedVote',
+			'picksCharacterOnly',
+			'noBluffs',
 			'partnerChoosesEnd'
 		] as const)
 			if (readBoolean(entry, key, at, issues)) rules[key] = true;

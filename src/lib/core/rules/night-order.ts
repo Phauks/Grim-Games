@@ -62,9 +62,10 @@ export interface NightOrderInput {
 	 */
 	wholeSheet?: true;
 	/**
-	 * Characters in play whose players all have no ability (the Magician while the Vizier is
-	 * in play, https://wiki.bloodontheclocktower.com/Magician#Related_Jinxes): their notes on
-	 * the evil info steps are left out.
+	 * Characters in play whose notes on the evil info steps are left out
+	 * (`evilInfoNotesLeftOut`): their players all have no ability (the Magician while the Vizier
+	 * is in play, https://wiki.bloodontheclocktower.com/Magician#Related_Jinxes), or get no
+	 * bluffs by a jinx (the Alchemist-Summoner).
 	 */
 	noAbility?: readonly CharacterId[];
 }

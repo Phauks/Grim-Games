@@ -16,10 +16,11 @@ export type ScriptVoteKind = 'single' | 'multiple' | 'ranked';
 
 export const SCRIPT_VOTE_KINDS: readonly ScriptVoteKind[] = ['single', 'multiple', 'ranked'];
 
-/** What the vote chooses: the next script, the next game mode, or its special rules. */
-export type VoteSubject = 'script' | 'mode' | 'rules';
-
-export const VOTE_SUBJECTS: readonly VoteSubject[] = ['script', 'mode', 'rules'];
+/**
+ * What the vote chooses: the next script, the next game mode, its special rules, or the next
+ * game, whose choices mix the three (Trevor, 2026-11-03, plan M33).
+ */
+export type VoteSubject = 'script' | 'mode' | 'rules' | 'game';
 
 /** A vote's subject as the room keeps it: absent for a script, as from apps before the others. */
 export type StoredVoteSubject = Exclude<VoteSubject, 'script'>;
@@ -177,7 +178,7 @@ export function newScriptVote(
 	}
 	if (clean.length < MIN_SCRIPT_VOTE_OPTIONS || clean.length > MAX_SCRIPT_VOTE_OPTIONS) return;
 	const vote: ScriptVote = { voteId, kind: kind as ScriptVoteKind, options: clean, ballots: {} };
-	if (subject === 'mode' || subject === 'rules') vote.subject = subject;
+	if (subject === 'mode' || subject === 'rules' || subject === 'game') vote.subject = subject;
 	if (showTally === true) vote.showTally = true;
 	if (SCRIPT_VOTE_MINUTES.includes(minutes as (typeof SCRIPT_VOTE_MINUTES)[number])) {
 		vote.endsAt = now + (minutes as number) * 60_000;
