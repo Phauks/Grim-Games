@@ -128,3 +128,56 @@ test('Back to town can be called before the time is up, and stops the timer', as
 			.getByRole('button', { name: 'Back to town' })
 	).toBeEnabled();
 });
+
+// Trevor, 2026-11-03: "clicking into the timer on grim screen, i do not see the back to town
+// button ... making sure the component in day view and in this view are the same component".
+// The Timer sheet opened from the board's timer and the day view's timer are one DayTimer with
+// the same buttons, Back to town first; only the clock differs (it opens the sheet, or, inside
+// it, switches the count mode).
+test('the timer opened from the grim screen is the day view’s timer, Back to town included', async ({
+	page
+}) => {
+	await startGame(page);
+	const buttons = (timer: ReturnType<Page['getByTestId']>) =>
+		timer.evaluate((el) =>
+			[...el.querySelectorAll(':scope > button:not(.mode)')].map((b) =>
+				b.getAttribute('aria-label')
+			)
+		);
+
+	await page
+		.locator('.board-timer')
+		.getByRole('button', { name: /^Day timer, .*; open its controls$/ })
+		.tap();
+	const sheet = page.getByTestId('timer-sheet');
+	const sheetTimer = sheet.getByTestId('day-timer');
+	const fromGrim = await buttons(sheetTimer);
+	expect(fromGrim[0]).toBe('Back to town');
+	await expect(sheetTimer.getByRole('button', { name: 'Back to town' })).toBeEnabled();
+	// It works there too: Cancel/Confirm, as everywhere.
+	await sheetTimer.getByRole('button', { name: 'Back to town' }).tap();
+	const confirm = page.getByRole('alertdialog', { name: 'Back to town?' });
+	await expect(confirm).toBeVisible();
+	await confirm.getByRole('button', { name: 'Cancel' }).tap();
+	await expect(confirm).toBeHidden();
+	await page.keyboard.press('Escape');
+	await expect(sheet).toBeHidden();
+
+	// The grim cover's timer is the board's timer, Back to town at its front (Trevor,
+	// 2026-11-03), with no Back to town of its own beside it.
+	const boardButtons = await buttons(page.locator('.board-timer').getByTestId('day-timer'));
+	expect(boardButtons[0]).toBe('Back to town');
+	await page.getByTestId('cover-button').tap();
+	const cover = page.getByRole('dialog', { name: 'Screen covered' });
+	expect(await buttons(cover.getByTestId('day-timer'))).toEqual(boardButtons);
+	await expect(cover.getByRole('button', { name: 'Back to town' })).toHaveCount(1);
+	await cover.getByRole('button', { name: 'Close' }).tap();
+	await expect(cover).toBeHidden();
+
+	await page.getByRole('button', { name: 'Day', exact: true }).tap();
+	const dayTimer = page.getByTestId('day-toolbar').getByTestId('day-timer');
+	expect(await buttons(dayTimer)).toEqual(fromGrim);
+	// And the day's own Timer sheet holds the same timer again.
+	await dayTimer.getByRole('button', { name: /^Day timer, .*; open its controls$/ }).tap();
+	expect(await buttons(page.getByTestId('timer-sheet').getByTestId('day-timer'))).toEqual(fromGrim);
+});
