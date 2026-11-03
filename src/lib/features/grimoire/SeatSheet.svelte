@@ -4,8 +4,7 @@
 	import CharacterHistoryDialog from './CharacterHistoryDialog.svelte';
 	import { allowedOffScriptIn } from '#lib/features/modes/game-mode.ts';
 	import NominationChooser from './NominationChooser.svelte';
-	import { seatCharacterLine, seatName } from '#lib/features/game/seat-label.ts';
-	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
+	import { seatCharacterLine } from '#lib/features/game/seat-label.ts';
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import type { ReminderId, SeatId } from '#lib/core/model/index.ts';
 	import { trueCharacter } from '#lib/core/model/index.ts';
@@ -365,8 +364,10 @@
 					>
 						<Icon name="nominator" />
 						<span
-							>{#each nominations.allMade as n, i (i)}{i > 0 ? ', ' : ''}<PlayerBadge
-									name={seatName(game, n.nominee)}
+							>{#each nominations.allMade as n, i (i)}{i > 0 ? ', ' : ''}<SeatBadge
+									interactive={false}
+									{game}
+									seatId={n.nominee}
 								/>{:else}None{/each}</span
 						>
 					</button>
@@ -382,8 +383,10 @@
 					>
 						<Icon name="nominated" />
 						<span
-							>{#if nominations.received}<PlayerBadge
-									name={seatName(game, nominations.received.nominator)}
+							>{#if nominations.received}<SeatBadge
+									interactive={false}
+									{game}
+									seatId={nominations.received.nominator}
 								/>{:else}None{/if}</span
 						>
 					</button>

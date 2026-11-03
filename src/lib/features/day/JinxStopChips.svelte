@@ -31,7 +31,7 @@
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import Sentence from '#lib/features/characters/Sentence.svelte';
 	import { slot } from '#lib/features/characters/slots.ts';
-	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
+	import SeatBadge from '#lib/features/grimoire/SeatBadge.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Chip from '#lib/ui/primitives/Chip.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
@@ -55,7 +55,7 @@
 	let asking = $state<JinxStopper>();
 	let open = $state(false);
 
-	const who = t('day.who', { character: slot('character'), seat: slot('seat') });
+	const who = slot('who');
 	const other = slot('other');
 	const notYet = t('day.markStoppedNow', { who, other });
 	const done = t('day.markStoppedAfter', { who, other });
@@ -106,8 +106,14 @@
 	>
 {/each}
 
-{#snippet fill(name: string)}{#if name === 'seat'}{#if asking}<PlayerBadge
-				name={game.seatName(asking.seatId)}
+{#snippet fill(name: string)}{#if name === 'who'}{#if asking}<SeatBadge
+				game={game.game}
+				seatId={asking.seatId}
+				characterId={asking.partner}
+				interactive={false}
+			/>{/if}{:else if name === 'seat'}{#if asking}<SeatBadge
+				game={game.game}
+				seatId={asking.seatId}
 			/>{/if}{:else}{@const id = name === 'other' ? owner : asking?.partner}{#if id}<CharacterBadge
 				characterId={id}
 				character={game.characters.get(id)}

@@ -4,7 +4,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
-	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
+	import SeatBadge from '#lib/features/grimoire/SeatBadge.svelte';
 	import type { DayPort } from './day-port.ts';
 
 	/**
@@ -42,7 +42,7 @@
 	<ul class="rows" data-testid="madness-deaths">
 		{#each offer?.dies ?? [] as seatId (seatId)}
 			<li>
-				<PlayerBadge name={game.seatName(seatId)} />
+				<SeatBadge game={game.game} {seatId} />
 				<!-- eslint-disable grim/names-as-badges -- hidden label (accessible name) only -->
 				<Toggle
 					hideLabel

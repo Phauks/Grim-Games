@@ -1,16 +1,14 @@
 <script lang="ts">
-	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
+	import SeatBadge from './SeatBadge.svelte';
 	import { seatNumber, type SeatId } from '#lib/core/model/index.ts';
 	import type { InfoChoice, InfoPicker, NightStep } from '#lib/core/rules/index.ts';
 	import { answerText, yesNoAnswers, yesNoSeats } from '#lib/core/rules/index.ts';
-	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import { seatLabel } from '#lib/features/game/seat-label.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import NightReasonTag from './NightReasonTag.svelte';
-	import { seatName } from './night-steps.ts';
 
 	/**
 	 * The answer a "yes or no" step gives (Fortune Teller, Seamstress; Trevor, 2026-10-28:
@@ -33,7 +31,6 @@
 
 	const game = $derived(grimoire.game);
 	const characters = $derived(grimoire.open.characters);
-	const name = (seatId: SeatId) => seatName(game, seatId);
 	const pickers = $derived(
 		preferences.current.assistance.infoSuggestions && step.info?.kind === 'picker'
 			? step.info.pickers.filter((p) => p.kind === 'yes-no')
@@ -56,17 +53,15 @@
 </script>
 
 <!-- A seat in the list as the seat chooser gives it (Trevor, 2026-10-28: names were cut to
-     "Se…"): its number, its character, the player. -->
+     "Se…"): its number, then the badge with its player. -->
 {#snippet seatOption(seatId: SeatId)}
-	{@const seat = game.seats[seatId]}
-	{@const character = seat?.characterId ? characters.get(seat.characterId) : undefined}
 	<span class="seat"
-		><span class="number">{seatNumber(game, seatId)}</span>{#if character}<CharacterBadge
-				characterId={character.id}
-				{character}
-				alignment={seat?.alignment}
-				interactive={false}
-			/>{/if}<PlayerBadge name={name(seatId)} /></span
+		><span class="number">{seatNumber(game, seatId)}</span><SeatBadge
+			{game}
+			{characters}
+			interactive={false}
+			{seatId}
+		/></span
 	>
 {/snippet}
 
@@ -81,7 +76,8 @@
 					label: seatLabel(game, s)
 				}))}
 				<li>
-					{#if pickers.length > 1}<span class="whose"><PlayerBadge name={name(p.seatId)} />:</span
+					{#if pickers.length > 1}<span class="whose"
+							><SeatBadge {game} {characters} interactive={false} seatId={p.seatId} />:</span
 						>{/if}
 					<span class="chosen">
 						{#each Array.from({ length: p.seatCount }, (_, n) => n) as n (n)}
@@ -97,7 +93,12 @@
 								onClear={() => choose(p, n, undefined)}
 							>
 								{#snippet item(option)}{@render seatOption(option.value)}{/snippet}
-								{#snippet selected(option)}<PlayerBadge name={name(option.value)} />{/snippet}
+								{#snippet selected(option)}<SeatBadge
+										{game}
+										{characters}
+										interactive={false}
+										seatId={option.value}
+									/>{/snippet}
 							</Select>
 						{/each}
 					</span>

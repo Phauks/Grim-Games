@@ -31,13 +31,11 @@ const SCRIPT_NAME_TODO = ['src/lib/features/grimoire/BoardCorner.svelte'];
  */
 const CHARACTER_DISPLAY_TODO = [
 	'src/lib/features/character-builder/CharacterPreview.svelte',
-	'src/lib/features/characters/JinxMark.svelte',
 	'src/lib/features/day/PreventedSheet.svelte',
 	'src/lib/features/errors/ErrorPage.svelte',
 	'src/lib/features/grimoire/GameEndPrompt.svelte',
 	'src/lib/features/player/GuessMarks.svelte',
-	'src/lib/features/reference/FieldValue.svelte',
-	'src/lib/features/setup/CharacterChoice.svelte'
+	'src/lib/features/reference/FieldValue.svelte'
 ];
 
 /**
@@ -388,6 +386,7 @@ export default defineConfig(
 			'src/lib/features/characters/CharacterRow.svelte',
 			'src/lib/features/characters/CharacterBadge.svelte',
 			'src/lib/features/characters/CharacterToken.svelte',
+			'src/lib/features/characters/JinxPartners.svelte',
 			'src/lib/features/characters/ReminderToken.svelte',
 			'src/lib/ui/seating/CharacterEmblem.svelte',
 			'src/lib/features/grimoire/BoardReminder.svelte',

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
+	import SeatBadge from './SeatBadge.svelte';
 	import StepIcon from './StepIcon.svelte';
 	import NightAlerts from './NightAlerts.svelte';
 	import StepAfflictions from './StepAfflictions.svelte';
@@ -332,7 +332,7 @@
 							{#if step.storytellerAbility}<span class="who" data-testid="step-who"
 									>Storyteller</span
 								>{:else if holders.length > 1}<span class="who" data-testid="step-who"
-									>{#each holders as s (s)}<PlayerBadge name={seatName(game, s)} />{/each}</span
+									>{#each holders as s (s)}<SeatBadge {game} seatId={s} />{/each}</span
 								>{/if}
 						{/snippet}
 						{#snippet ability()}<span data-testid="step-ability"
@@ -349,8 +349,9 @@
 						<StepIcon {step} size={56} details />
 					</span>
 					<p class="who" data-testid="step-who">
-						{#each holders as s, i (s)}{i > 0 ? ', ' : ''}<PlayerBadge
-								name={seatName(game, s)}
+						{#each holders as s, i (s)}{i > 0 ? ', ' : ''}<SeatBadge
+								{game}
+								seatId={s}
 							/>{:else}None{/each}
 					</p>
 				</div>
@@ -579,7 +580,6 @@
 				<h3>Reminders</h3>
 				<ul class="reminders">
 					{#each rows as { label, at, key } (key)}
-						{@const held = at ? game.seats[at.seatId] : undefined}
 						<li>
 							<!-- The token itself, as on the board (Trevor, 2026-10-30). -->
 							<BoardReminder
@@ -589,14 +589,10 @@
 									? placingAlignment(game, step.character.id, characters)
 									: undefined}
 							/>
-							<!-- The seat and its character (Trevor, 2026-10-18), on one line. -->
+							<!-- The seat and its character (Trevor, 2026-10-18), on one line: the badge with
+							     its player. -->
 							<span class="where"
-								>{#if at}On <PlayerBadge name={seatName(game, at.seatId)} />{:else}Not placed{/if}{#if held?.characterId}
-									<CharacterBadge
-										characterId={held.characterId}
-										character={characters.get(held.characterId)}
-										alignment={held.alignment}
-									/>{/if}</span
+								>{#if at}On <SeatBadge {game} {characters} seatId={at.seatId} />{:else}Not placed{/if}</span
 							>
 							<Button variant="quiet" onclick={() => choose(label, at)}
 								>{at ? 'Move' : 'Place'}</Button

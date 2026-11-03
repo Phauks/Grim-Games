@@ -9,7 +9,7 @@
 	import CharacterBadge from '#lib/features/characters/CharacterBadge.svelte';
 	import { seatName } from '#lib/features/game/seat-label.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
-	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
+	import SeatBadge from './SeatBadge.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { stepHolders } from './night-steps.ts';
 	import SeatChooser from './SeatChooser.svelte';
@@ -76,7 +76,7 @@
 					playerName={seatName(game, tonight.seatId)}
 				/>
 			{:else}
-				<PlayerBadge name={seatName(game, tonight.seatId)} />
+				<SeatBadge {game} seatId={tonight.seatId} />
 			{/if}
 		{:else}
 			<span class="none">None</span>

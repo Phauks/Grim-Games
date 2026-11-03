@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { seatName } from '#lib/features/game/seat-label.ts';
-	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
+	import SeatBadge from './SeatBadge.svelte';
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import type { NightStep, NightAlert, Impairment } from '#lib/core/rules/index.ts';
 	import { nightStepAlerts } from '#lib/core/rules/index.ts';
@@ -63,7 +62,12 @@
 
 <!-- In the walk-through strip the lines sit inside its step button: badges that don't open. -->
 <!-- A seat as its player name badge, as on the board. -->
-{#snippet player(seatId: SeatId)}<PlayerBadge name={seatName(game, seatId)} />{/snippet}
+{#snippet player(seatId: SeatId)}<SeatBadge
+		{game}
+		{characters}
+		{seatId}
+		interactive={!compact}
+	/>{/snippet}
 
 {#snippet badge(id: string | undefined)}
 	{#if id}<CharacterBadge
