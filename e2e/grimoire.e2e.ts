@@ -7426,11 +7426,12 @@ test('the Flowergirl and Town Crier steps show their answer as the Yes/No card',
 	const day = page.getByRole('dialog', { name: 'Day 1' });
 	await day.getByRole('button', { name: 'Close' }).tap();
 	await expect(day).toBeHidden();
-	// Ending the day marks that the Demon didn't vote and no Minion nominated.
+	// Each step asks its day's fact (Trevor, 2026-11-03: not at Execution); No answers it.
 	const shown = page.locator('[data-testid="show-to-player"][open]');
 	for (const title of ['Flowergirl', 'Town Crier']) {
 		const step = await openStep(page, title);
 		const suggested = step.getByTestId('night-suggested');
+		await suggested.getByTestId('day-mark-answer').getByRole('button', { name: 'No' }).tap();
 		await expect(suggested).toContainText('No');
 		await suggested.getByRole('button', { name: 'Show to player' }).tap();
 		await expect(shown).toContainText('No');

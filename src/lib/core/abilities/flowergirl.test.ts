@@ -14,7 +14,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { unsetMarks } from '#lib/core/rules/day-marks.ts';
+import { dayMarkValue } from '#lib/core/rules/day-marks.ts';
 import { nightAnswer } from '#lib/core/rules/night-info.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
@@ -147,7 +147,7 @@ describe('Flowergirl', () => {
 			// Wiki: "If you forget whether the Demon voted or not, wake the Demon at night and ask by
 			// showing them the DID YOU VOTE TODAY? info token."
 			const s = scenario(CAST).nominate('chef', 'witch');
-			expect(unsetMarks(s.game, s.characters)).toEqual(['demon-voted']);
+			expect(dayMarkValue(s.game, 'demon-voted')).toBeUndefined();
 			expect(nightAnswer(s.game, s.seat('flowergirl'), 'flowergirl', s.characters)).toMatchObject({
 				kind: 'none'
 			});
