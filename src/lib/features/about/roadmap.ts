@@ -105,7 +105,7 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	},
 	{
 		title:
-			'Live rooms: one join code, a script, mode and special rules vote, the next game in the same room',
+			'Live rooms: one join code, a vote mixing scripts, modes and special rules, the next game in the same room',
 		area: 'player',
 		parts: [
 			'D1',
@@ -135,7 +135,8 @@ export const ROADMAP: readonly RoadmapItem[] = [
 			'J40',
 			'J41',
 			'J42',
-			'J43'
+			'J43',
+			'M33'
 		]
 	},
 	{
@@ -554,6 +555,9 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		// Goblin; the Butler with eyes closed; the Philosopher's Bounty Hunter).
 		// L120 the Mathematician's four (the Drunk's and Marionette's false info and the Lunatic
 		// attacking another player count as abnormal; the Chambermaid detects its waking).
+		// L121 the Alchemist-Summoner makes the Demon on night 3, choosing only which Demon, with
+		// no bluffs; a borrowed ability (the Alchemist's, the Boffin's, the Pixie's) runs where
+		// the character's own does (`abilityHolders`).
 		title: 'Jinxes the app applies, not only shows',
 		area: 'engine',
 		parts: [
@@ -570,7 +574,8 @@ export const ROADMAP: readonly RoadmapItem[] = [
 			'L117',
 			'L118',
 			'L119',
-			'L120'
+			'L120',
+			'L121'
 		]
 	},
 	{

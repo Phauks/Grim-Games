@@ -104,8 +104,9 @@
 		/* Edge to edge, so nothing shows beside it. */
 		margin-inline: calc(-1 * var(--page-gutter));
 		padding-inline: var(--page-gutter);
-		/* The page's own background, pinned to the window as the body's is, so it lines up. */
-		background: var(--page-background, var(--surface));
+		/* The backdrop as a pinned heading paints it (components.css): held still, and fading to
+		   --surface at the top as the body's does, so the band shows no edge where it stops. */
+		background: var(--pin-background);
 		background-attachment: fixed;
 	}
 	.band[data-surface='sheet'] {
@@ -131,11 +132,13 @@
 			background: var(--surface-selected);
 		}
 	}
-	/* A computer window: the band spans the characters' column, not the window. */
+	/* A computer window: the band spans the characters' column, not the window, reaching as far
+	   out as the type bands do (Collapsible's .head[data-type-band]) so their ends never show
+	   beside it when they pass under it (Trevor, 2026-11-03). */
 	@media (min-width: 75rem) {
 		.band[data-surface='page'] {
-			margin-inline: 0;
-			padding-inline: 0;
+			margin-inline: calc(-1 * var(--space-2));
+			padding-inline: var(--space-2);
 		}
 	}
 </style>

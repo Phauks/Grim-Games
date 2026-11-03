@@ -5155,7 +5155,7 @@ test('the board menu names its groups, in two columns beside a phone', async ({ 
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	const menu = page.getByRole('dialog', { name: 'Grimoire' });
 	// Trevor (2026-10-27): named groups ("the delineation is nice"), and all of Settings from
-	// one item. Character selection and End game sit under Session, below Game (2026-10-30). Players holds the notes (2026-10-29), so it is
+	// one item. Character selection and End game sit under Session (2026-10-30), last, below App (2026-11-03). Players holds the notes (2026-10-29), so it is
 	// there in every game, room or not.
 	const group = (name: string) => menu.getByRole('region', { name, exact: true });
 	const names = (name: string) =>
@@ -5179,13 +5179,17 @@ test('the board menu names its groups, in two columns beside a phone', async ({ 
 	// Beside a phone, the game on the left and the rest on the right.
 	const game = (await group('Game').boundingBox())!;
 	const seats = (await group('Seats').boundingBox())!;
+	const app = (await group('App').boundingBox())!;
 	if ((page.viewportSize()?.width ?? 0) >= 640) {
 		expect(seats.x).toBeGreaterThan(game.x + game.width - 1);
 		expect(Math.abs(seats.y - game.y)).toBeLessThan(2);
-		expect(Math.abs(session.x - game.x)).toBeLessThan(2);
-		expect(session.y).toBeGreaterThan(game.y + game.height - 1);
+		// Session is last, under App (Trevor, 2026-11-03: "games, seats, app, session").
+		expect(Math.abs(session.x - seats.x)).toBeLessThan(2);
+		expect(session.y).toBeGreaterThan(app.y + app.height - 1);
 	} else {
 		expect(seats.y).toBeGreaterThan(game.y + game.height - 1);
+		expect(app.y).toBeGreaterThan(seats.y + seats.height - 1);
+		expect(session.y).toBeGreaterThan(app.y + app.height - 1);
 	}
 	// Settings opens all of it, at its root.
 	await menu.getByRole('button', { name: 'Settings', exact: true }).tap();

@@ -52,13 +52,4 @@
 	const rules = $derived(allRules().map((r) => ({ value: r.id, label: r.name })));
 </script>
 
-<ScriptVotePanel
-	{choices}
-	{modes}
-	onPick={(id) => onPlay({ subject: 'script', id })}
-	onPickMode={(id) => onPlay({ subject: 'mode', id })}
-	{rules}
-	onPickRules={(ids) => onPlay({ subject: 'rules', ids })}
-	{onBack}
-	{hideBack}
-/>
+<ScriptVotePanel {choices} {modes} {rules} {onPlay} {onBack} {hideBack} />
