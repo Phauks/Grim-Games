@@ -22,6 +22,7 @@
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import { gameStore } from '#lib/features/game/session.svelte.ts';
 	import { forgetGame } from './forget-game.ts';
+	import { labGameId } from '#lib/features/character-lab/lab-store.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import ScriptName from '#lib/features/scripts/ScriptName.svelte';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
@@ -56,6 +57,9 @@
 	async function refresh() {
 		try {
 			({ games: all, unreadable } = await gameStore().list());
+			// The Character Lab's own game is not one being played (plan M37).
+			const lab = labGameId();
+			all = all.filter((g) => g.gameId !== lab);
 			ended = endedGames.read();
 		} catch (e) {
 			reportError(e, { area: 'grimoire' });

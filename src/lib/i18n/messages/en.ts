@@ -28,6 +28,7 @@ import { savant } from '#lib/i18n/messages/en/savant.ts';
 import { friends } from '#lib/i18n/messages/en/friends.ts';
 import { latePlayer } from '#lib/i18n/messages/en/late-player.ts';
 import { storytellers } from '#lib/i18n/messages/en/storytellers.ts';
+import { lab } from '#lib/i18n/messages/en/lab.ts';
 
 /**
  * The English catalog: the source of truth for message keys and their placeholders.
@@ -67,5 +68,6 @@ export const en = {
 	...characterBuilder,
 	...modes,
 	...savant,
-	...storytellers
+	...storytellers,
+	...lab
 } as const satisfies Catalog;
