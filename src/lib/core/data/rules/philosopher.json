@@ -60,21 +60,22 @@
 	"nightText": {
 		"first": {
 			"full": {
-				"text": "The Philosopher might choose a good character. If that character is in play, its player is drunk: mark them *DRUNK*. If not, swap the Philosopher’s token for that character and mark them *IS THE PHILOSOPHER*.",
-				"reason": "Says which of the two tokens applies."
+				"text": "The Philosopher might choose a good character: record it as their gained ability. If that character is in play, its player is drunk: mark them *DRUNK*.",
+				"reason": "The app records the chosen ability on the Philosopher, who keeps their token (Trevor, 2026-11-03)."
 			}
 		},
 		"other": {
 			"full": {
-				"text": "The Philosopher might choose a good character. If that character is in play, its player is drunk: mark them *DRUNK*. If not, swap the Philosopher’s token for that character and mark them *IS THE PHILOSOPHER*.",
-				"reason": "Says which of the two tokens applies."
+				"text": "The Philosopher might choose a good character: record it as their gained ability. If that character is in play, its player is drunk: mark them *DRUNK*.",
+				"reason": "The app records the chosen ability on the Philosopher, who keeps their token (Trevor, 2026-11-03)."
 			}
 		}
 	},
 	"gainedFrom": {
 		"token": "Drunk",
 		"swapped": true,
-		"wakes": true
+		"wakes": true,
+		"choose": ["townsfolk", "outsider"]
 	},
 	"reminderEnds": {
 		"Drunk": "owner-dies"
