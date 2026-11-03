@@ -12,7 +12,12 @@ import { OFFICIAL_RULES } from '#lib/core/data/rules/index.ts';
 import { parseCharacterRules } from '#lib/core/data/character-rules.ts';
 import type { Character } from '#lib/core/data/types.ts';
 import { Issues } from '#lib/core/data/validate.ts';
-import { fixedReminderMove, isFixedReminder, neighbourFollows } from './reminder-movement.ts';
+import {
+	fixedReminderMove,
+	isFixedLabel,
+	isFixedReminder,
+	neighbourFollows
+} from './reminder-movement.ts';
 
 const data = committedGameData();
 const movement = [...OFFICIAL_RULES].flatMap(([id, rules]) =>
@@ -74,6 +79,20 @@ describe('isFixedReminder', () => {
 		expect(isFixedReminder({ characterId: 'butler', label: 'Master' })).toBe(false);
 	});
 
+	it('lets the Town Crier’s daily tokens move (https://wiki.bloodontheclocktower.com/Town_Crier)', () => {
+		// Wiki: "Each dawn, mark the Town Crier with the MINIONS NOT NOMINATED reminder, and remove the MINION NOMINATED reminder, if any."
+		expect(isFixedReminder({ characterId: 'towncrier', label: 'Minions Not Nominated' })).toBe(
+			false
+		);
+		expect(isFixedReminder({ characterId: 'towncrier', label: 'Minion Nominated' })).toBe(false);
+	});
+
+	it('lets the Flowergirl’s daily tokens move (https://wiki.bloodontheclocktower.com/Flowergirl)', () => {
+		// Wiki: "Each dawn, mark the Flowergirl with the DEMON NOT VOTED reminder, and remove the DEMON VOTED reminder, if any."
+		expect(isFixedReminder({ characterId: 'flowergirl', label: 'Demon Not Voted' })).toBe(false);
+		expect(isFixedReminder({ characterId: 'flowergirl', label: 'Demon Voted' })).toBe(false);
+	});
+
 	it('lets a character’s other tokens move (https://wiki.bloodontheclocktower.com/Grandmother)', () => {
 		expect(isFixedReminder({ characterId: 'grandmother', label: 'Grandchild' })).toBe(true);
 		expect(isFixedReminder({ characterId: 'grandmother', label: 'Dead' })).toBe(false);
@@ -116,6 +135,19 @@ describe('isFixedReminder', () => {
 			'rules.reminderMovement.fixed[1]',
 			'rules.reminderMovement.why'
 		]);
+	});
+});
+
+describe('isFixedLabel', () => {
+	it('reads the same rule from the token’s own character (https://wiki.bloodontheclocktower.com/Fortune_Teller)', () => {
+		expect(isFixedLabel({ id: 'fortuneteller' }, 'Red Herring')).toBe(true);
+		expect(isFixedLabel({ id: 'monk' }, 'Safe')).toBe(false);
+	});
+
+	it('reads a custom character’s own rules block', () => {
+		const rules = { reminderMovement: { fixed: ['Mark'], why: 'Set once.' } };
+		expect(isFixedLabel({ id: 'custom-x', rules }, 'Mark')).toBe(true);
+		expect(isFixedLabel({ id: 'custom-x', rules }, 'Other')).toBe(false);
 	});
 });
 

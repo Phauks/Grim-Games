@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { SymbolColour } from '#lib/core/model/index.ts';
 	import { SYMBOL_COLOUR_LOOKS } from './symbol-colour.ts';
+	import { isFixedLabel } from '#lib/core/rules/reminder-movement.ts';
 	import type { Alignment, Character, ReminderLabel } from '#lib/core/data/index.ts';
 	import { fallbackIconUrl, reminderIconUrl } from '#lib/features/characters/icon-url.ts';
 	import { iconFallback } from '#lib/ui/token/icon-fallback.ts';
@@ -113,6 +114,10 @@
 			appearance.reminderScale
 		)
 	);
+	// A token that stays where it was first put (its character's `reminderMovement.fixed`) has
+	// its word band filled in its team colour (Trevor, 2026-11-02), wherever it is drawn: on the
+	// board, in the bank, held, in a dialog (Trevor, 2026-11-03: one framework).
+	const fixed = $derived(!infinite && !more && !!character && isFixedLabel(character, label));
 	const set = $derived(resolveIconSet(preferences.current, preferences.theme));
 	const weight = $derived(ICON_SETS.find((s) => s.id === set)?.weight ?? 'regular');
 
@@ -237,6 +242,7 @@
 	class="reminder"
 	data-type={character?.type}
 	data-testid="board-reminder"
+	data-fixed={fixed ? '' : undefined}
 	data-generic={infinite || undefined}
 	data-has-symbol={(infinite && (!!symbol || !!artSrc)) || undefined}
 	data-pan={panX ? 'x' : undefined}
@@ -431,6 +437,17 @@
 		text-overflow: ellipsis;
 		overflow-wrap: normal;
 		text-align: center;
+	}
+	/* A token that stays put (Trevor, 2026-11-02, mockup A): its word band filled in its rim's
+	   team colour, the words in the token's face colour. */
+	.reminder[data-fixed] > .label {
+		background: var(--rim);
+		color: var(--reminder-face);
+		box-shadow: none;
+	}
+	/* A Traveller's rim is half good, half evil, so its band is too. */
+	.reminder[data-fixed][data-type='traveller'] > .label {
+		background: linear-gradient(to right, var(--good) 50%, var(--evil) 50%);
 	}
 	.more {
 		font: 600 0.85rem / 1 var(--font-control);

@@ -3,7 +3,8 @@
  * and what to say when the Storyteller moves one anyway. Each character's
  * `reminderMovement` rule (`data/reminder-movement-rules.ts`) says which of its tokens stay.
  */
-import type { CharacterId } from '#lib/core/data/types.ts';
+import type { CharacterId, ReminderLabel } from '#lib/core/data/types.ts';
+import type { CharacterRules } from '#lib/core/data/character-rules.ts';
 import type { ReminderMovementRules } from '#lib/core/data/reminder-movement-rules.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
@@ -23,15 +24,31 @@ export function reminderMovementOf(
 
 /** Why this reminder should stay where it was first placed, or undefined if it may move. */
 export function fixedReminderReason(
-	reminder: Reminder,
+	reminder: Pick<Reminder, 'characterId' | 'label'>,
 	characters?: CharacterLookup
 ): string | undefined {
 	const rule = reminderMovementOf(reminder.characterId, characters);
 	return rule?.fixed?.includes(reminder.label) ? rule.why : undefined;
 }
 
-export function isFixedReminder(reminder: Reminder, characters?: CharacterLookup): boolean {
+export function isFixedReminder(
+	reminder: Pick<Reminder, 'characterId' | 'label'>,
+	characters?: CharacterLookup
+): boolean {
 	return fixedReminderReason(reminder, characters) !== undefined;
+}
+
+/**
+ * Whether a token with these words, from this character, stays where it is first put: what
+ * every reminder token drawn anywhere (`BoardReminder`) reads for its stay-put mark. The
+ * character carries its own rules block when it is a custom one.
+ */
+export function isFixedLabel(
+	character: { id: CharacterId; rules?: CharacterRules },
+	label: ReminderLabel
+): boolean {
+	const rule = (character.rules ?? rulesOf(character.id))?.reminderMovement;
+	return rule?.fixed?.includes(label) ?? false;
 }
 
 /** In-play characters whose abilities can legitimately carry a fixed token elsewhere. */
