@@ -1,7 +1,12 @@
 <script lang="ts">
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import { rise } from '#lib/ui/motion.ts';
-	import StepIcon from './StepIcon.svelte';
+	import Icon from '#lib/ui/icons/Icon.svelte';
+	import MarkerToken from '#lib/ui/token/MarkerToken.svelte';
+	import { NIGHT_MARKERS, type NightMarker } from '#lib/core/data/index.ts';
+	import { glossaryDialog } from '#lib/features/glossary/glossary-dialog.svelte.ts';
+	import { glossaryKey } from '#lib/features/glossary/wiki-glossary.ts';
+	import type { RowMarker } from '#lib/features/characters/character-templates.ts';
 	import NightAlerts from './NightAlerts.svelte';
 	import StepIfChosen from './StepIfChosen.svelte';
 	import NightSuggested from './NightSuggested.svelte';
@@ -12,7 +17,7 @@
 	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import StepFocusSetting from './StepFocusSetting.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
-	import { seatName, stepHolders, stepName } from './night-steps.ts';
+	import { MARKER_ICONS, seatName, stepHolders, stepName } from './night-steps.ts';
 	import { setTermsPlain } from '#lib/features/glossary/term-handler.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 
@@ -63,6 +68,23 @@
 	const holders = $derived(step ? stepHolders(game, step, grimoire.open.characters) : []);
 	const ticked = $derived(step ? grimoire.isNightStepDone(night, step) : false);
 
+	const isMarker = (id: string): id is NightMarker =>
+		(NIGHT_MARKERS as readonly string[]).includes(id);
+	/** The steps the Glossary has an entry for, by the step's own name (Trevor, 2026-10-18). */
+	const GLOSSARY_STEPS = new Set(['dusk', 'dawn', 'minioninfo', 'demoninfo']);
+	/** A step that isn't a character's, as a character's row (Trevor, 2026-11-03). */
+	const stepMarker = $derived.by((): RowMarker | undefined => {
+		if (!step || step.character) return undefined;
+		const name = stepName(step);
+		return {
+			name,
+			team: step.id === 'minioninfo' || step.id === 'demoninfo' ? 'evil' : 'neutral',
+			picture: markerPicture,
+			info: GLOSSARY_STEPS.has(step.id) ? () => glossaryDialog.show(glossaryKey(name)) : undefined,
+			infoLabel: `About ${name}`
+		};
+	});
+
 	// The step's reminders in the bank: ringed, alone or first (Trevor, 2026-10-17).
 	let focusOpen = $state(false);
 	let focusButton = $state<HTMLElement>();
@@ -75,6 +97,16 @@
 		else onPastEnd?.();
 	}
 </script>
+
+{#snippet markerPicture()}
+	{#if step && isMarker(step.id)}<MarkerToken
+			marker={step.id}
+			size={40}
+			label=""
+		/>{:else if step}<span class="marker-icon"
+			><Icon name={MARKER_ICONS[step.id] ?? 'night'} /></span
+		>{/if}
+{/snippet}
 
 <!-- Rises into place under the board rather than appearing at once (Trevor, 2026-10-19); it is
      positioned over the space below, so nothing moves. `global`: it plays when the board's
@@ -93,60 +125,35 @@
 		onclick={() => onIndex(index - 1)}
 	/>
 	{#if step}
-		{#if step.character}
-			<!-- The character as every list draws it, with its ability turned off (Trevor,
-			     2026-11-02): the ring opens its details, the band names it and its player, and
-			     the band opens the step. The count is the night's, so it sits beside the band,
-			     not on it. -->
-			<span class="row" class:ticked>
-				<CharacterPiece
-					template="name"
-					character={step.character}
-					info
-					playerName={holders.length === 1 ? seatName(game, holders[0]) : undefined}
-					onclick={() => onOpen(step)}
-				>
-					{#snippet tags()}{#if step.again}<span class="again">again</span>{/if}{/snippet}
-					{#snippet aside()}<span class="count"
-							><CountBadge count={index + 1} total={steps.length} /></span
-						>{/snippet}
-				</CharacterPiece>
-			</span>
-		{:else}
-			<!-- Above Previous, where the side is free (Trevor, 2026-10-18). -->
-			<span class="icon">
-				<StepIcon {step} size={44} details />
-			</span>
-		{/if}
-		<button
-			type="button"
-			class="step"
-			class:ticked
-			class:with-row={!!step.character}
-			onclick={() => onOpen(step)}
-		>
+		<!-- The character as every list draws it, with its ability turned off (Trevor,
+		     2026-11-02), and Dusk, Dawn and the info steps as the same row with their picture
+		     (Trevor, 2026-11-03): the ring opens its details, the band names it and its player,
+		     and the band opens the step. The count is the night's, so it sits beside the band,
+		     not on it. -->
+		<span class="row" class:ticked>
+			<CharacterPiece
+				template="name"
+				character={step.character}
+				marker={step.character ? undefined : stepMarker}
+				info
+				playerName={holders.length === 1 ? seatName(game, holders[0]) : undefined}
+				onclick={() => onOpen(step)}
+			>
+				{#snippet tags()}{#if step.again}<span class="again">again</span>{/if}{/snippet}
+				{#snippet aside()}<span class="count"
+						><CountBadge count={index + 1} total={steps.length} /></span
+					>{/snippet}
+			</CharacterPiece>
+		</span>
+		<button type="button" class="step" class:ticked onclick={() => onOpen(step)}>
 			<span class="body">
-				{#if step.character}
-					<!-- The step's name for the button's own label; the row above shows it. -->
-					<span class="name visually-hidden"><strong>{stepName(step)}</strong></span>
-					{#if holders.length > 1}<span class="who"
-							>{#each holders as seatId, i (seatId)}{i > 0 ? ', ' : ''}<PlayerBadge
-									name={seatName(game, seatId)}
-								/>{/each}</span
-						>{/if}
-				{:else}
-					<!-- The step on the first line, its players on the second, and the count at the
-					     right of the top row, before ⋯ and X (Trevor, 2026-10-20). -->
-					<span class="name">
-						<strong>{stepName(step)}</strong>
-						<span class="count"><CountBadge count={index + 1} total={steps.length} /></span>
-					</span>
-					{#if holders.length > 0}<span class="who"
-							>{#each holders as seatId, i (seatId)}{i > 0 ? ', ' : ''}<PlayerBadge
-									name={seatName(game, seatId)}
-								/>{/each}</span
-						>{/if}
-				{/if}
+				<!-- The step's name for the button's own label; the row above shows it. -->
+				<span class="name visually-hidden"><strong>{stepName(step)}</strong></span>
+				{#if holders.length > 1}<span class="who"
+						>{#each holders as seatId, i (seatId)}{i > 0 ? ', ' : ''}<PlayerBadge
+								name={seatName(game, seatId)}
+							/>{/each}</span
+					>{/if}
 				<!-- Inside the strip's fixed height, which scrolls, so nothing outside moves. -->
 				{#if asleepBy}<span class="asleep" data-testid="step-asleep"
 						>Poisoned: doesn’t wake ({asleepBy})</span
@@ -227,10 +234,6 @@
 		z-index: 1;
 		display: flex;
 	}
-	/* Clear of the count and the buttons in the corner. */
-	.name {
-		padding-inline-end: calc(2 * var(--tap-target) + 4.5rem);
-	}
 	.step {
 		flex: 1;
 		min-width: 0;
@@ -250,20 +253,14 @@
 		background: var(--surface-selected);
 	}
 	.step.ticked .body,
-	.row.ticked,
-	.strip:has(.step.ticked) .icon {
+	.row.ticked {
 		opacity: 0.6;
 	}
-	/* In the free space above Previous, as wide as it. */
-	.icon {
-		position: absolute;
-		top: var(--space-1);
-		left: var(--space-1);
+	/* A step's icon in the ring, as a character's icon fills it. */
+	.marker-icon {
 		display: grid;
 		place-items: center;
-		width: var(--tap-target);
-		height: var(--tap-target);
-		--icon-size: var(--tap-target);
+		--icon-size: 70%;
 		color: var(--heading);
 	}
 	.body {
@@ -277,14 +274,10 @@
 	.body::-webkit-scrollbar {
 		display: none;
 	}
-	.name,
 	.who {
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
-	}
-	.name {
-		font-family: var(--font-character);
 	}
 	.who {
 		font-family: var(--font-player);
@@ -293,16 +286,19 @@
 	.count {
 		color: var(--on-surface-muted);
 	}
-	/* Always at the right of the top row, never under the name. */
+	/* As "Seat 7" on a character's band (Trevor, 2026-11-02). */
 	.count {
-		position: absolute;
-		top: var(--space-1);
-		right: calc(2 * var(--tap-target));
 		display: grid;
 		align-items: center;
-		height: var(--tap-target);
-		font-size: 0.8rem;
+		font-size: 0.95rem;
 		white-space: nowrap;
+	}
+	/* As tall as a character's band, in the player names' font (Trevor, 2026-11-02). */
+	.count :global(.count-badge) {
+		height: 1.7rem;
+		font-family: var(--font-player);
+		font-weight: var(--font-player-weight, 700);
+		font-variant-numeric: lining-nums tabular-nums;
 	}
 	.asleep {
 		color: var(--evil-text);
@@ -333,23 +329,10 @@
 		z-index: 1;
 		--character-ring: var(--tap-target);
 	}
-	.row .count {
-		position: static;
-		height: auto;
-		/* As "Seat 7" on the band beside it (Trevor, 2026-11-02). */
-		font-size: 0.95rem;
-	}
-	/* As tall as the band, in the player names' font (Trevor, 2026-11-02). */
-	.row .count :global(.count-badge) {
-		height: 1.7rem;
-		font-family: var(--font-player);
-		font-weight: var(--font-player-weight, 700);
-		font-variant-numeric: lining-nums tabular-nums;
-	}
 	.again {
 		font-size: 0.75em;
 	}
-	.step.with-row .body {
+	.step .body {
 		padding-top: calc(var(--tap-target) - var(--space-1));
 	}
 	.none {

@@ -7,6 +7,7 @@
 		type PlayerName
 	} from '#lib/core/data/index.ts';
 	import PlayerHalf from './PlayerHalf.svelte';
+	import type { RowMarker } from './character-templates.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import CharacterDialog from './CharacterDialog.svelte';
@@ -27,7 +28,9 @@
 	 * the ability. A homebrew character (one without an edition) gets a Custom tag after its name.
 	 */
 	interface Props {
-		character: Character;
+		/** The character; or `marker` for a night step that isn't one. */
+		character?: Character;
+		marker?: RowMarker;
 		/** The ability as the host draws it (rules terms underlined); defaults to plain text. */
 		ability?: Snippet;
 		/** The ring's alignment when it isn't the type's own (a seat's evil Townsfolk). */
@@ -89,6 +92,7 @@
 
 	let {
 		character,
+		marker,
 		ability,
 		alignment,
 		info,
@@ -115,17 +119,24 @@
 		onclick
 	}: Props = $props();
 
-	const tokenAlignment = $derived(alignment ?? defaultAlignment(character.type));
+	const tokenAlignment = $derived(
+		character ? (alignment ?? defaultAlignment(character.type)) : undefined
+	);
 	const chosen = $derived(pressed === true || current === true);
 	// The ring and band's colour, as the character's badge has it.
-	const team = $derived(tokenAlignment ?? character.type);
-	const icon = $derived(iconUrl(character, tokenAlignment));
+	const team = $derived(
+		character ? (tokenAlignment ?? character.type) : (marker?.team ?? 'neutral')
+	);
+	const icon = $derived(character ? iconUrl(character, tokenAlignment) : undefined);
+	const name = $derived(character?.name ?? marker?.name ?? '');
+	const hasInfo = $derived(character ? !!info : !!marker?.info);
 	/** The end controls' width: the ability leaves them room under the band. */
 	let endWidth = $state(0);
 	// The character's page, made on first use.
 	let infoUsed = $state(false);
 	let infoOpen = $state(false);
 	function openInfo() {
+		if (!character) return marker?.info?.();
 		if (typeof info === 'function') return info(character);
 		infoUsed = true;
 		infoOpen = true;
@@ -133,7 +144,7 @@
 </script>
 
 {#snippet ringIcon()}
-	{#if icon}<img
+	{#if marker && !character}{@render marker.picture()}{:else if character && icon}<img
 			src={icon}
 			alt=""
 			referrerpolicy="no-referrer"
@@ -145,8 +156,8 @@
 	{#if hidden}{@render hidden()}{/if}
 	<span class="band">
 		<!-- eslint-disable-next-line grim/names-as-badges -- the band is the character's badge; its icon is in the ring -->
-		<span class="band-name">{character.name}</span>
-		{#if !character.edition}<span class="custom" data-testid="custom-tag"
+		<span class="band-name">{name}</span>
+		{#if character && !character.edition}<span class="custom" data-testid="custom-tag"
 				>{t('characters.custom')}</span
 			>{/if}
 		{#if afterName}{@render afterName()}{/if}
@@ -158,7 +169,7 @@
 			>{/if}
 		{#if playerName}<PlayerHalf name={playerName} {team} />{/if}
 	</span>
-	{#if showAbility}<span class="ring-ability">
+	{#if showAbility && character}<span class="ring-ability">
 			{#if ability}{@render ability()}{:else}{character.ability}{/if}
 		</span>{/if}
 	{#if children}<span class="ring-below">{@render children()}</span>{/if}
@@ -167,8 +178,8 @@
 <div
 	class="ring-row"
 	data-team={team}
-	data-type={character.type}
-	data-character-id={onclick ? undefined : character.id}
+	data-type={character?.type}
+	data-character-id={onclick ? undefined : character?.id}
 	data-chosen={chosen ? '' : undefined}
 	data-dashed={dashed ? '' : undefined}
 	data-disabled={disabled || faded ? '' : undefined}
@@ -178,13 +189,13 @@
 	data-aside={aside ? '' : undefined}
 	style:--ring-end={end ? `${endWidth}px` : undefined}
 >
-	{#if info}
+	{#if hasInfo}
 		<button
 			type="button"
 			class="ring info"
 			aria-haspopup="dialog"
-			aria-label={t('picker.characterInfo', { name: character.name })}
-			onpointerdown={() => prefetchWikiPage(character)}
+			aria-label={marker?.infoLabel ?? t('picker.characterInfo', { name })}
+			onpointerdown={() => character && prefetchWikiPage(character)}
 			onclick={openInfo}>{@render ringIcon()}</button
 		>
 	{:else}
@@ -194,8 +205,8 @@
 		<button
 			type="button"
 			class="main ring-main"
-			data-character-id={character.id}
-			aria-label={label ?? (note ? `${character.name}, ${note}` : character.name)}
+			data-character-id={character?.id}
+			aria-label={label ?? (note ? `${name}, ${note}` : name)}
 			aria-pressed={pressed}
 			aria-current={current ? 'true' : undefined}
 			aria-describedby={describedby}
@@ -208,7 +219,11 @@
 	{#if end}<span class="end" bind:offsetWidth={endWidth}>{@render end()}</span>{/if}
 	{#if aside}<span class="aside">{@render aside()}</span>{/if}
 </div>
-{#if infoUsed}<CharacterDialog bind:open={infoOpen} {character} alignment={tokenAlignment} />{/if}
+{#if infoUsed && character}<CharacterDialog
+		bind:open={infoOpen}
+		{character}
+		alignment={tokenAlignment}
+	/>{/if}
 
 <style>
 	/*
@@ -481,8 +496,9 @@
 		--team: var(--loric);
 		--on-team: var(--on-loric);
 	}
+	/* A step for no team (Dusk, Dawn): the muted text's colour, so it shows on any surface. */
 	.ring-row[data-team='neutral'] {
-		--team: var(--surface-raised);
-		--on-team: var(--on-surface);
+		--team: var(--on-surface-muted);
+		--on-team: var(--surface);
 	}
 </style>

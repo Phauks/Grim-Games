@@ -7,8 +7,10 @@
 	import {
 		CHARACTER_TEMPLATE_NAMES,
 		CHARACTER_TEMPLATES,
-		type CharacterTemplateName
+		type CharacterTemplateName,
+		type RowMarker
 	} from '#lib/features/characters/character-templates.ts';
+	import MarkerToken from '#lib/ui/token/MarkerToken.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -43,6 +45,14 @@
 	let controls = $state(false);
 	let aside = $state(false);
 	let chosen = $state(false);
+	let nightStep = $state(false);
+	// A night step that isn't a character's, as the night strip draws it (Trevor, 2026-11-03).
+	const MARKER: RowMarker = {
+		name: 'Minion info',
+		team: 'evil',
+		picture: markerPicture,
+		infoLabel: 'About Minion info'
+	};
 
 	const ring = $derived(CHARACTER_TEMPLATES[template].shape === 'ring');
 	const icon = $derived(template === 'icon');
@@ -130,12 +140,19 @@
 				onChange={(v) => (aside = v)}
 			/>
 			<Toggle label="Chosen" checked={chosen} disabled={!ring} onChange={(v) => (chosen = v)} />
+			<Toggle
+				label="Night step"
+				checked={nightStep && ring}
+				disabled={!ring}
+				onChange={(v) => (nightStep = v)}
+			/>
 		</div>
 		<div class="stage" data-testid="character-stage">
-			{#key `${template}-${characterId}`}
+			{#key `${template}-${characterId}-${nightStep}`}
 				<CharacterPiece
 					{template}
-					{characterId}
+					characterId={ring && nightStep ? undefined : characterId}
+					marker={ring && nightStep ? MARKER : undefined}
 					{playerName}
 					{ability}
 					{fullWidth}
@@ -161,6 +178,7 @@
 	</div>
 </main>
 
+{#snippet markerPicture()}<MarkerToken marker="minioninfo" size={40} label="" />{/snippet}
 {#snippet tagSnippet()}<span class="tag">Bluff</span>{/snippet}
 {#snippet marksSnippet()}<JinxMark {characterId} {jinxes} />{/snippet}
 {#snippet controlsSnippet()}<Button>Lock</Button>{/snippet}
