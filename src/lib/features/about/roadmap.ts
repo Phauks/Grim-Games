@@ -69,7 +69,9 @@ export const PART_PRS: Readonly<Record<string, number>> = {
 	S6: 317,
 	S1: 320,
 	S7: 351,
-	R4: 330
+	R4: 330,
+	// The Hatter's same-type change (PR 891) was folded into the Engineer's PR, whose title names only L78.
+	L77: 892
 };
 
 const range = (prefix: string, from: number, to: number) =>
@@ -261,9 +263,10 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	},
 	{
 		title:
-			'Character selection and bag draw: slot-machine draw, bluff warnings, lock and hover, dealing to phones',
+			"Character selection and bag draw: slot-machine draw, bluff warnings, the Lunatic's bluffs beside the Demon's, lock and hover, dealing to phones",
 		area: 'storyteller',
-		parts: ['B6', 'L38', 'L39', 'L40', 'L15', 'L24', 'H1', 'H2']
+		// M38 (Trevor, 2026-11-03): the Lunatic's bluffs on Character selection.
+		parts: ['B6', 'L38', 'L39', 'L40', 'L15', 'L24', 'H1', 'H2', 'M38']
 	},
 	{
 		title:
