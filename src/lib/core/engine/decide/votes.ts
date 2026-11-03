@@ -10,6 +10,7 @@ import {
 	carriersOf,
 	mayVote,
 	mustVoteNow,
+	uncountedVote,
 	voterRule,
 	votesWithoutToken
 } from '#lib/core/rules/index.ts';
@@ -72,7 +73,9 @@ export const VOTES_DECIDERS: Deciders<'RecordVotes' | 'GiveVoteToken'> = {
 				continue;
 			}
 			const voter = voterRule(game, seatId, characters);
-			if (voter?.rule.onlyWith) {
+			// With eyes closed, a jinx lets them raise their hand anyway; the vote counts only if
+			// their master voted (the Butler with the Organ Grinder).
+			if (voter?.rule.onlyWith && !uncountedVote(game, voter.characterId, characters)) {
 				const masters = carriersOf(game, voter.characterId, voter.rule.onlyWith);
 				if (!masters.some((m) => picked.has(m)))
 					warn('only-votes-with', 'a voter may only vote with another player', [voter.characterId]);

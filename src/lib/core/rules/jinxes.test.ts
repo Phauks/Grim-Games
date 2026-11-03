@@ -112,7 +112,7 @@ describe('jinx rules data', () => {
 	it('reads either side of the pair, and nothing for a jinx that is text only', () => {
 		expect(jinxRulesBetween('boffin', 'drunk')).toEqual({ notGiven: true });
 		expect(jinxRulesBetween('drunk', 'boffin')).toEqual({ notGiven: true });
-		expect(jinxRulesBetween('alchemist', 'boffin')).toBeUndefined();
+		expect(jinxRulesBetween('chambermaid', 'mathematician')).toBeUndefined();
 	});
 
 	it('reads the jinx rules that reuse other rules, and rejects bad ones', () => {

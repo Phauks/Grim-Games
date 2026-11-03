@@ -10,7 +10,7 @@ import { baseCounts } from './distribution.ts';
 import type { Alignment, CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { scriptCharacterIds } from '#lib/core/model/characters.ts';
-import { jinxedPartners } from './jinxes.ts';
+import { earlierTokens, jinxedPartners } from './jinxes.ts';
 import {
 	aliveNeighbours,
 	alignmentOf,
@@ -239,7 +239,8 @@ export function followedAlignmentOffer(
  * dead, when its ability is set off by its player's death, `onDeath`: the Hatter's tea party),
  * with its `token` on them when the rule names one (the Summoner's Night 3) and without its
  * `spent` token (the Huntsman's No Ability), and someone to change when only some characters
- * change (the Huntsman's Damsel, the Hatter's Minions and Demon).
+ * change (the Huntsman's Damsel, the Hatter's Minions and Demon). A jinx's `earlierToken` counts
+ * as its `token` for that partner alone (the Summoner's Pukka on Night 2, `earlyOnly`).
  */
 export function characterChanger(
 	game: Game,
@@ -256,16 +257,44 @@ export function characterChanger(
 		return undefined;
 	if (rule.minMinions !== undefined && usualMinions(game, characters) < rule.minMinions)
 		return undefined;
+	// A jinx may let it create a partner early, on another token (the Summoner's Pukka).
+	const early = rule.token === undefined ? [] : earlierTokens(game, characterId, characters);
 	const changer = game.seating.find(
 		(id) =>
 			(!game.seats[id].dead || rules?.actsWhenDead === true) &&
 			(!rule.afterDeath || game.seats[id].dead === true) &&
 			trueCharacter(game, id, characters) === characterId &&
-			(rule.token === undefined || carries(id, rule.token)) &&
+			(rule.token === undefined ||
+				carries(id, rule.token) ||
+				early.some((e) => carries(id, e.token))) &&
 			(rule.spent === undefined || !carries(id, rule.spent))
 	);
 	if (changer === undefined) return undefined;
 	return changeableSeats(game, characterId, characters).length > 0 ? changer : undefined;
+}
+
+/**
+ * The only characters `characterId`'s `changesCharacter` may make tonight, when its player
+ * carries a jinx's `earlierToken` but not the rule's own `token` (the Summoner may summon a
+ * Pukka on the 2nd night instead of the 3rd,
+ * https://wiki.bloodontheclocktower.com/Summoner#Related_Jinxes). Undefined when the usual
+ * choice holds.
+ */
+export function earlyOnly(
+	game: Game,
+	characterId: CharacterId,
+	characters: CharacterLookup
+): CharacterId[] | undefined {
+	const token = rulesIn(game, characterId, characters)?.changesCharacter?.token;
+	if (token === undefined) return undefined;
+	const changer = characterChanger(game, characterId, characters);
+	if (changer === undefined) return undefined;
+	const carries = (label: string) =>
+		game.seats[changer].reminders.some((r) => r.characterId === characterId && r.label === label);
+	if (carries(token)) return undefined;
+	return earlierTokens(game, characterId, characters)
+		.filter((e) => carries(e.token))
+		.map((e) => e.partner);
 }
 
 /**

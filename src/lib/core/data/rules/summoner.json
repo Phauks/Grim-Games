@@ -95,6 +95,33 @@
 		},
 		"legion": {
 			"allEvilBecome": true
+		},
+		"courtier": {
+			"storytellerHas": "no-ability"
+		},
+		"preacher": {
+			"storytellerHas": "no-ability"
+		},
+		"engineer": {
+			"storytellerHas": "removed"
+		},
+		"hatter": {
+			"arbitraryDeaths": true
+		},
+		"kazali": {
+			"arbitraryDeaths": true
+		},
+		"pithag": {
+			"arbitraryDeaths": true
+		},
+		"lordoftyphon": {
+			"neighbourBecomes": "minion"
+		},
+		"poppygrower": {
+			"storytellerPicksWhileAlive": true
+		},
+		"pukka": {
+			"earlierToken": "Night 2"
 		}
 	},
 	"infoTokenCharacters": {

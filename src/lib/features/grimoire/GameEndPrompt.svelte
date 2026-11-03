@@ -193,6 +193,9 @@
 				{@render seat(h.seats[0])} may become the Demon.
 			{:else if h.rule === 'extra-day'}
 				{@render seat(h.seats[0])}: play for 1 more day.
+			{:else if h.rule === 'jinx-night'}
+				{@render seat(h.seats[0])}: tonight {@render character(h.characterId)} chooses 3 good players.
+				If all 3 choose to live, evil wins; otherwise good wins.
 			{:else if h.rule === 'death-passes'}
 				{@render character(h.characterId)}: {#each h.seats as id (id)}{@render seat(id)}{/each} may become
 				the Demon.

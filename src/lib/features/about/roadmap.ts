@@ -538,10 +538,32 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		// L116 Lil' Monsta's babysitting jinxes (the Hatter, Magician, Poppy Grower, Psychopath,
 		// Scarlet Woman and Vizier). L117 Legion's (every evil player becomes Legion, the Engineer
 		// and Hatter with no ability, Legion keeps their ability from the Minstrel and Preacher,
-		// the Magician's Demon info).
+		// the Magician's Demon info). L118 the Summoner's (the Storyteller has its ability with
+		// the Courtier, Engineer and Preacher, arbitrary deaths with the Hatter, Kazali and
+		// Pit-Hag, the Lord of Typhon's neighbours, the Poppy Grower, the Pukka a night early).
+		// L119 the Alchemist's and the remaining one-off jinxes (the Alchemist-Spy, -Widow,
+		// -Wraith and -Mastermind with no ability, the guess that makes the Demon choose, the
+		// Organ Grinder both drunk, the Boffin, the Alchemist-Summoner dying first; the Scarlet
+		// Woman with no second Demon; the Mastermind's Vigormortis, Lleech and Al-Hadikhia; the
+		// Slayer's Lleech host; the Marionette's Balloonist, Huntsman and Magician; the Cerenovus's
+		// Goblin; the Butler with eyes closed; the Philosopher's Bounty Hunter).
 		title: 'Jinxes the app applies, not only shows',
 		area: 'engine',
-		parts: ['L99', 'L100', 'L107', 'L108', 'L109', 'L112', 'L113', 'L114', 'L115', 'L116', 'L117']
+		parts: [
+			'L99',
+			'L100',
+			'L107',
+			'L108',
+			'L109',
+			'L112',
+			'L113',
+			'L114',
+			'L115',
+			'L116',
+			'L117',
+			'L118',
+			'L119'
+		]
 	},
 	{
 		title: 'Co-Storytelling: two Storytellers on one game',

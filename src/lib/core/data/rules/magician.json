@@ -16,6 +16,12 @@
 	"jinxes": {
 		"legion": {
 			"demonLearnsGood": true
+		},
+		"wraith": {
+			"guessesPartner": true
+		},
+		"marionette": {
+			"hidesPartnerSeat": true
 		}
 	}
 }

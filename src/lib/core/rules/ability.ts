@@ -39,6 +39,7 @@ import type { Game, ReminderId, SeatId } from '#lib/core/model/types.ts';
 import { keepsAbilityWhenDead } from './dead-characters.ts';
 import { heldAbilitiesOf } from './gained-abilities.ts';
 import { jinxedWith, ownJinxRules, registeredTo } from './jinxes.ts';
+import { bothDrunkPair, gainedAbilityTaken, survivesCarrierBy } from './jinx-effects.ts';
 import { protectors } from './protection.ts';
 import { effectImpairment } from './reminder-effects.ts';
 import { drunkByWish } from './wishes.ts';
@@ -297,6 +298,15 @@ function impairmentsOf(
 		}
 	}
 
+	// A jinx takes away the ability they have from their token (`withPartnerAbility`: the
+	// Alchemist-Spy has no Spy ability, https://wiki.bloodontheclocktower.com/Alchemist#Related_Jinxes),
+	// or leaves them alive with none once their host was executed (`survivesCarrierExecuted`:
+	// the Lleech with the Mastermind, https://wiki.bloodontheclocktower.com/Lleech#Related_Jinxes).
+	const taken = gainedAbilityTaken(game, seatId, characters);
+	if (taken) out.push(sourced('no-ability', { characterId: taken }, characters));
+	const survivedBy = survivesCarrierBy(game, seatId, characters);
+	if (survivedBy) out.push(sourced('no-ability', { characterId: survivedBy }, characters));
+
 	// A token that impairs every other player but Travellers while it is on the board (the
 	// Minstrel's "Everyone Is Drunk": https://wiki.bloodontheclocktower.com/Minstrel), or only
 	// `type` players while its character's ability works (the Xaan's "X", every Townsfolk:
@@ -345,6 +355,15 @@ function impairmentsOf(
 	);
 	const left = safe ? unharmed : out;
 	const kept = sober ? left.filter((i) => i.reason === 'no-ability') : left;
+	// Both drunk while both are sober (`withPartnerAbility: 'both-drunk'`: the Alchemist with
+	// the Organ Grinder ability and the Organ Grinder,
+	// https://wiki.bloodontheclocktower.com/Alchemist#Related_Jinxes).
+	const pair = kept.length === 0 ? bothDrunkPair(game, seatId, characters) : undefined;
+	if (pair && !visiting.has(pair.other)) {
+		const next = new Set(visiting).add(seatId);
+		if (impairmentsOf(game, pair.other, characters, next).length === 0)
+			kept.push(sourced('drunk', { characterId: pair.partner }, characters));
+	}
 	return kept.sort((a, b) => ORDER[a.reason] - ORDER[b.reason]);
 }
 
