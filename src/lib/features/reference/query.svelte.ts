@@ -1,5 +1,5 @@
 import type { ColumnFilter } from '#lib/ui/table/column-filter.ts';
-import type { FieldId } from './fields.ts';
+import type { TableKey } from './fields.ts';
 
 /**
  * What the Reference page is showing: its search, the table's own column filters and how many
@@ -7,6 +7,6 @@ import type { FieldId } from './fields.ts';
  */
 export class ReferenceQuery {
 	search = $state('');
-	columnFilters = $state<Partial<Record<FieldId, ColumnFilter>>>({});
+	columnFilters = $state<Partial<Record<TableKey, ColumnFilter>>>({});
 	tableShown = $state(0);
 }

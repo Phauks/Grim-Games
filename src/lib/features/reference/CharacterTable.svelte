@@ -7,8 +7,10 @@
 		type TokensFilter,
 		type TableColumn
 	} from '#lib/core/rules/reference-table.ts';
+	import type { CharacterId } from '#lib/core/data/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import Chip from '#lib/ui/primitives/Chip.svelte';
 	import SearchField from '#lib/ui/primitives/SearchField.svelte';
 	import DataTable, { type DataColumn } from '#lib/ui/table/DataTable.svelte';
 	import FilterOptions from '#lib/ui/table/FilterOptions.svelte';
@@ -19,22 +21,32 @@
 		PRESENCE_LABELS,
 		REFERENCE_FIELDS,
 		type FieldId,
+		type TableKey as Key,
 		type ReferenceField
 	} from './fields.ts';
 	import { EDITION_LABELS, TYPE_PLURALS } from './labels.ts';
 	import { referenceTable } from './table-state.svelte.ts';
+
+	/** The Character Lab's Lock column (plan M45), set while the page holds the lab. */
+	export interface TableLab {
+		locked: readonly CharacterId[];
+		onLock: (id: CharacterId, lock: boolean) => void;
+	}
 
 	interface Props {
 		/** Already filtered and sorted (`tableRows`), so the page can show the count. */
 		rows: readonly ReferenceEntry[];
 		onExplain: (title: string, text: string, character?: Character) => void;
 		/** The shared table's own filters, for columns without a Reference one. */
-		columnFilters?: Partial<Record<FieldId, ColumnFilter>>;
+		columnFilters?: Partial<Record<Key, ColumnFilter>>;
 		/** Told how many rows are left after those filters. */
 		oncount?: (count: number) => void;
+		/** Told the rows left after those filters, in order. */
+		onrows?: (rows: readonly ReferenceEntry[]) => void;
+		lab?: TableLab;
 	}
 
-	let { rows, onExplain, columnFilters = $bindable({}), oncount }: Props = $props();
+	let { rows, onExplain, columnFilters = $bindable({}), oncount, onrows, lab }: Props = $props();
 
 	const table = $derived(referenceTable.current);
 
@@ -83,8 +95,24 @@
 		}
 	}
 
-	const columns = $derived(
-		REFERENCE_FIELDS.map((field): DataColumn<FieldId, ReferenceEntry> => {
+	/** Lock, before the character's own columns, while the page holds the lab. */
+	const labColumns = $derived.by((): DataColumn<Key, ReferenceEntry>[] => {
+		if (!lab) return [];
+		return [
+			{
+				id: 'lock',
+				label: t('lab.lock'),
+				width: 'calc(7 * var(--u))',
+				fixed: true,
+				stackHead: true,
+				// Locked rows already stay at the top.
+				noFilter: 'Locked characters stay at the top.'
+			}
+		];
+	});
+
+	const fieldColumns = $derived(
+		REFERENCE_FIELDS.map((field): DataColumn<Key, ReferenceEntry> => {
 			const base = {
 				id: field.id,
 				label: field.label,
@@ -99,16 +127,17 @@
 			return { ...base, value: (entry) => fieldFilterValue(entry, field.id) };
 		})
 	);
+	const columns = $derived([...labColumns, ...fieldColumns]);
 
 	const sort = $derived(
 		table.sort && { column: fieldOf(table.sort.column), direction: table.sort.direction }
 	);
 
-	function fieldOf(column: TableColumn): FieldId {
+	function fieldOf(column: TableColumn): Key {
 		return REFERENCE_FIELDS.find((f) => f.sort === column)!.id;
 	}
 
-	function onSort(id: FieldId) {
+	function onSort(id: Key) {
 		const column = REFERENCE_FIELDS.find((f) => f.id === id)?.sort;
 		if (column) referenceTable.sort = nextSort(table.sort, column);
 	}
@@ -137,7 +166,7 @@
 	});
 
 	const TYPE_OPTIONS = CHARACTER_TYPES.map((type) => ({ value: type, label: TYPE_PLURALS[type] }));
-	const field = (id: FieldId) => REFERENCE_FIELDS.find((f) => f.id === id)!;
+	const field = (id: Key) => REFERENCE_FIELDS.find((f) => f.id === id)!;
 </script>
 
 {#snippet choices(
@@ -149,7 +178,7 @@
 	<FilterOptions legend={name} hideLegend {name} {options} {value} onpick={onPick} />
 {/snippet}
 
-{#snippet filter(column: DataColumn<FieldId>, close: () => void)}
+{#snippet filter(column: DataColumn<Key>, close: () => void)}
 	{@const f = field(column.id)}
 	{#if f.filter === 'text'}
 		<div class="text">
@@ -217,12 +246,23 @@
 	{/if}
 {/snippet}
 
-{#snippet cell(entry: ReferenceEntry, column: DataColumn<FieldId>)}
-	{@const f = field(column.id)}
-	<!-- Shown in full: rows are as tall as their longest field (Trevor, 2026-10-16). -->
-	<div class="cell">
-		<FieldValue field={f.id} {entry} {onExplain} tokenSize={f.long ? undefined : 40} />
-	</div>
+{#snippet cell(entry: ReferenceEntry, column: DataColumn<Key>)}
+	{@const id = entry.character.id}
+	{#if column.id === 'lock' && lab}
+		{@const locked = lab.locked.includes(id)}
+		<!-- Locks the character into every lab game (plan M45). -->
+		<Chip
+			pressed={locked}
+			aria-label={t('lab.lockName', { character: entry.character.name })}
+			onclick={() => lab.onLock(id, !locked)}>{t('lab.lock')}</Chip
+		>
+	{:else}
+		{@const f = field(column.id)}
+		<!-- Shown in full: rows are as tall as their longest field (Trevor, 2026-10-16). -->
+		<div class="cell">
+			<FieldValue field={f.id} {entry} {onExplain} tokenSize={f.long ? undefined : 40} />
+		</div>
+	{/if}
 {/snippet}
 
 <!--
@@ -246,13 +286,15 @@
 		resizeKey="reference"
 		bind:columnFilters
 		{oncount}
+		{onrows}
 		lazy
 		rowEstimate="calc(10 * var(--u))"
 		rowAttrs={(entry) => ({
 			// A link to one character (#witch, from a bug report) scrolls to its row.
 			id: entry.character.id,
 			'data-character': entry.character.id,
-			'data-type': entry.character.type
+			'data-type': entry.character.type,
+			'data-locked': lab?.locked.includes(entry.character.id) ? '' : undefined
 		})}
 		empty={t('reference.noMatch')}
 	/>
@@ -269,6 +311,7 @@
 		display: flex;
 		justify-content: flex-end;
 	}
+
 	/* Stacked rows: the value sits beside its label when there is room, else under it. */
 	@container data-table (max-width: 40rem) {
 		.cell {

@@ -96,6 +96,8 @@
 		columnFilters?: Partial<Record<K, ColumnFilter>>;
 		/** Told how many rows are left after those filters, whenever it changes. */
 		oncount?: (count: number) => void;
+		/** Told the rows left after those filters, in order (the Characters page's opponents). */
+		onrows?: (rows: readonly T[]) => void;
 		/**
 		 * People can hide columns (Trevor, 2026-10-18); the choice is remembered on this device
 		 * under this name. Defaults to `resizeKey`; without either it lasts until reload.
@@ -174,6 +176,7 @@
 		onend,
 		columnFilters = $bindable({}),
 		oncount,
+		onrows,
 		hideKey
 	}: Props = $props();
 
@@ -206,6 +209,7 @@
 	);
 	$effect.pre(() => {
 		oncount?.(rows.length);
+		onrows?.(rows);
 	});
 
 	const widths = $derived(resizeKey ? new TableWidths(resizeKey) : undefined);

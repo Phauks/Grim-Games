@@ -39,6 +39,7 @@ const GAME = ['', '/deal', '/draw', '/extras', '/players', '/room', '/setup'];
 
 /** Pages that are not screens: each opens another and is gone. */
 const NOT_SCREENS: Record<string, string> = {
+	'/character-lab': 'opens the Characters page, where the Character Lab is now',
 	'/diagnostics': 'opens About with Advanced open',
 	'/settings': 'opens the Settings dialog over Home, which ✕ closes'
 };

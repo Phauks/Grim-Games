@@ -34,8 +34,8 @@ test('table columns resize by dragging their header edge, and remember it', asyn
 	// One finger drags the edge 100 pixels further out.
 	await handle.evaluate((el) => {
 		el.scrollIntoView({ inline: 'center', block: 'nearest' });
-		// Clear of the pinned icon and name, which sit above whatever scrolls under them.
-		el.closest('.scroll')!.scrollLeft -= 150;
+		// Clear of the pinned Lock, icon and name, which sit above whatever scrolls under them.
+		el.closest('.scroll')!.scrollLeft -= 250;
 	});
 	const box = (await handle.boundingBox())!;
 	const from = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
@@ -69,7 +69,9 @@ test('a mouse scrolls a wide table sideways without going to its last row', asyn
 }, testInfo) => {
 	test.skip(testInfo.project.name === 'phone', 'phones stack the rows and never scroll sideways');
 	test.slow();
-	await page.setViewportSize({ width: 1280, height: 800 });
+	// Under a computer window's width, where the Character Lab sits beside the table and leaves
+	// it half the page (plan M45): the whole width is the table's.
+	await page.setViewportSize({ width: 1100, height: 800 });
 	const table = await openTable(page);
 	// Widen a column so the table is surely wider than its box.
 	const handle = table.getByRole('separator', { name: 'Resize Ability' });

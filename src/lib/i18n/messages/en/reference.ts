@@ -2,8 +2,8 @@ import { APP_NAME } from '#lib/core/app-name.ts';
 
 /** The Character reference page (features/reference). */
 export const reference = {
-	'reference.pageTitle': `Character reference · ${APP_NAME}`,
-	'reference.title': 'Character reference',
+	'reference.pageTitle': `Characters · ${APP_NAME}`,
+	'reference.title': 'Characters',
 	'reference.aboutCharacter': 'About the {name}',
 	'reference.loadError': 'Could not load the character data: {error}',
 	'reference.loading': 'Loading characters…',

@@ -7,6 +7,10 @@
 	import type { GameData } from '#lib/core/data/index.ts';
 	import { characterReference } from '#lib/core/rules/reference.ts';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
+	import LabDock from '#lib/features/character-lab/LabDock.svelte';
+	import LabPanel from '#lib/features/character-lab/LabPanel.svelte';
+	import { LabSession } from '#lib/features/character-lab/lab-session.svelte.ts';
+	import { MediaQuery } from 'svelte/reactivity';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import CharacterReference from './CharacterReference.svelte';
 	import { ReferenceQuery } from './query.svelte.ts';
@@ -20,9 +24,21 @@
 	// Built at runtime from the same data and rules code the app uses.
 	const entries = $derived(data ? characterReference(data) : []);
 
+	// The Character Lab is part of this page, for everyone (plan M45, Trevor 2026-11-04: "The
+	// only difference between reference and lab is seeing everything at the same time"): lock
+	// characters in the table, and its rows as shown are what they are tested against.
+	const session = new LabSession();
+	/** A computer window: the lab and its game on the right of the table. */
+	const computer = new MediaQuery('min-width: 75rem', false);
+	const tableLab = $derived({
+		locked: session.locked,
+		onLock: (id: string, on: boolean) => session.setLocked(id, on)
+	});
+
 	onMount(async () => {
 		try {
 			data = await loadOfficialData();
+			session.data = data;
 		} catch (e) {
 			// Shown in place below, so no corner card as well.
 			error = describeThrown(e).message;
@@ -33,7 +49,8 @@
 		const id = decodeURIComponent(location.hash.slice(1));
 		if (id) {
 			await tick();
-			document.getElementById(id)?.scrollIntoView();
+			// After the frame that lays out the lab beside the table, so the row stays put.
+			requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView());
 		}
 	});
 </script>
@@ -53,12 +70,46 @@
 			<!-- Reserved space while the data loads, so nothing below jumps. -->
 			<div class="loading" aria-busy="true">{t('reference.loading')}</div>
 		{:else}
-			<CharacterReference {entries} {query} />
+			<div class="characters" class:with-lab={computer.current}>
+				<div class="table-area">
+					<CharacterReference
+						{entries}
+						{query}
+						lab={tableLab}
+						only={session.jinxFilterOn ? session.jinxed : undefined}
+						onrows={(rows) => (session.listed = rows.map((e) => e.character.id))}
+					/>
+				</div>
+				{#if computer.current}
+					<aside class="lab-side"><LabPanel {session} frame /></aside>
+				{/if}
+			</div>
+			{#if !computer.current}<LabDock {session} />{/if}
 		{/if}
 	</ErrorBoundary>
 </Page>
 
 <style>
+	.characters {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: var(--space-4);
+	}
+	/* The table on the left, the lab and its game on the right, in view while the table scrolls. */
+	.characters.with-lab {
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		align-items: start;
+	}
+	.table-area {
+		min-width: 0;
+	}
+	.lab-side {
+		position: sticky;
+		top: calc(var(--app-top) + var(--space-2));
+		max-height: calc(100dvh - var(--app-top) - var(--space-4));
+		overflow-y: auto;
+		min-width: 0;
+	}
 	.loading {
 		min-height: 100dvh;
 		color: var(--on-surface-muted);

@@ -24,7 +24,6 @@ export interface NavItem {
 		| '/reports'
 		| '/live-games'
 		| '/test-room'
-		| '/character-lab'
 		| '/accounts'
 		| '/about'
 		| '/credits'
@@ -66,6 +65,8 @@ export const NAV_SECTIONS: readonly NavSection[] = [
 			// Everything the user has saved or made (Trevor, 2026-10-16).
 			{ id: 'library', path: '/library', label: 'shell.navLibrary', icon: 'library' },
 			{ id: 'info-tokens', path: '/info-tokens', label: 'shell.navInfoTokens', icon: 'info' },
+			// The Character reference and the Character Lab in one page, for everyone (plan M45,
+			// Trevor 2026-11-04: "So not admin locked").
 			{ id: 'reference', path: '/reference', label: 'shell.navReference', icon: 'reference' }
 		]
 	},
@@ -157,17 +158,6 @@ export const TEST_ROOM_ITEM: NavItem = {
 	path: '/test-room',
 	label: 'shell.navTestRoom',
 	icon: 'phoneHere'
-};
-
-/**
- * Quick games to test characters against each other and every jinx (plan M37, Trevor
- * 2026-11-03); in the Admin group, for admins only.
- */
-export const CHARACTER_LAB_ITEM: NavItem = {
-	id: 'character-lab',
-	path: '/character-lab',
-	label: 'shell.navCharacterLab',
-	icon: 'data'
 };
 
 /** Find one account and act on it (plan S27); in the Admin group, for admins only. */

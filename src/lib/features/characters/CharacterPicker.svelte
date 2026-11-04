@@ -95,6 +95,8 @@
 		 * Travellers in the reborn player's alignment, Trevor 2026-10-31).
 		 */
 		alignment?: Alignment;
+		/** Each row counts its official jinxes (CharacterPiece's `jinxCount`; the Lab). */
+		jinxCounts?: boolean;
 	}
 
 	let {
@@ -121,7 +123,8 @@
 		onInfo,
 		pinTop,
 		counts = false,
-		alignment
+		alignment,
+		jinxCounts = false
 	}: Props = $props();
 
 	// A pinned header closed while pinned leaves its type's top above the window: keep the
@@ -177,6 +180,7 @@
 						template="row"
 						{character}
 						{alignment}
+						jinxCount={jinxCounts}
 						info={onInfo}
 						{note}
 						withNote={notes}

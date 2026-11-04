@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { BASE_DISTRIBUTION } from '#lib/core/rules/distribution.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
-import { labGame, labOpponents, pairingKey, stepCharacter, type LabSetup } from './lab-game.ts';
+import { labGame, labOpponents, stepCharacter, type LabSetup } from './lab-game.ts';
 
 // The Character Lab (M37): opponents come from the data, and a lab game seats the locked
 // characters first and fills the rest to the standard counts (src/lib/core/rules/distribution.ts).
@@ -45,26 +45,26 @@ describe('labOpponents', () => {
 		for (const id of one) expect(two).toContain(id);
 	});
 
-	it('lists a character type, or every character, without the locked ones', () => {
-		const demons = labOpponents(data, ['imp'], { kind: 'type', type: 'demon' });
-		expect(demons.length).toBe(data.characters.filter((c) => c.type === 'demon').length - 1);
-		expect(demons.every((o) => typeOf(o.id) === 'demon')).toBe(true);
-		const all = labOpponents(data, ['philosopher', 'tealady'], { kind: 'all' });
+	it('keeps a list in its order, leaving out the locked ones and unknown ids', () => {
+		const listed = labOpponents(data, ['philosopher'], {
+			kind: 'listed',
+			ids: ['bountyhunter', 'philosopher', 'nobody', 'chef']
+		});
+		expect(listed.map((o) => o.id)).toEqual(['bountyhunter', 'chef']);
+		expect(listed[0].jinxes).toHaveLength(1);
+	});
+
+	it('takes every character when the list is the whole table', () => {
+		const all = labOpponents(data, ['philosopher', 'tealady'], {
+			kind: 'listed',
+			ids: data.characters.map((c) => c.id)
+		});
 		expect(all).toHaveLength(data.characters.length - 2);
 	});
 
-	it('keeps hand-picked characters in the order picked, leaving out the locked ones', () => {
-		const picked = labOpponents(data, ['philosopher'], {
-			kind: 'picked',
-			ids: ['bountyhunter', 'philosopher', 'chef']
-		});
-		expect(picked.map((o) => o.id)).toEqual(['bountyhunter', 'chef']);
-		expect(picked[0].jinxes).toHaveLength(1);
-	});
-
 	it('gives a character with no jinx with the locked ones no jinxes', () => {
-		const chef = labOpponents(data, ['philosopher'], { kind: 'all' }).find((o) => o.id === 'chef');
-		expect(chef?.jinxes).toEqual([]);
+		const [chef] = labOpponents(data, ['philosopher'], { kind: 'listed', ids: ['chef'] });
+		expect(chef.jinxes).toEqual([]);
 	});
 });
 
@@ -260,14 +260,6 @@ describe('labGame follows the setup rules', () => {
 		expect(g.seats).toHaveLength(12);
 		expect(g.script).toHaveLength(12 + g.bluffs.length);
 		for (const id of g.bluffs) expect(g.seats).not.toContain(id);
-	});
-});
-
-describe('pairingKey', () => {
-	it('is the same whatever order the locked characters are in', () => {
-		expect(pairingKey(['tealady', 'philosopher'], 'chef')).toBe(
-			pairingKey(['philosopher', 'tealady'], 'chef')
-		);
 	});
 });
 

@@ -11,10 +11,12 @@ test('the menu opens the character reference', async ({ page }) => {
 	await menuButton(page).tap();
 	await page
 		.getByRole('dialog', { name: APP_NAME })
-		.getByRole('link', { name: 'Character reference' })
+		.getByRole('link', { name: 'Characters' })
 		.tap();
 	await expect(page).toHaveURL(/\/reference$/);
-	await expect(page.getByRole('heading', { name: 'Character reference' })).toBeVisible();
+	await expect(
+		page.getByRole('heading', { name: 'Characters', level: 1, exact: true })
+	).toBeVisible();
 });
 
 test('searching shows everything the app uses for the Witch', async ({ page }) => {
