@@ -144,7 +144,8 @@
 		const by = abilityId;
 		if (!by || !rule) return [];
 		return script.flatMap((id) => {
-			const type = jinxEffect(game, by, id, 'neighbourBecomes', characters)?.type;
+			const near = jinxEffect(game, by, id, 'alsoBecomes', characters);
+			const type = near?.player === 'neighbour' ? near.type : undefined;
 			return type ? [{ id, type }] : [];
 		});
 	});
@@ -175,7 +176,7 @@
 		const by = abilityId;
 		if (!by || !rule) return [];
 		return script.filter(
-			(id) => jinxEffect(game, id, by, 'storytellerHas', characters)?.once === 'removed'
+			(id) => jinxEffect(game, id, by, 'storytellerHas', characters)?.once === 'changed'
 		);
 	});
 

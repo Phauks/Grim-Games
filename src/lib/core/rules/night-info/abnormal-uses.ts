@@ -20,7 +20,7 @@ function countedPartners(
 	characters?: CharacterLookup
 ): CharacterId[] {
 	if (counter === undefined) return [];
-	return ownJinxEffects(game, counter, 'abnormalCounts', characters, (e) => e.because === how).map(
+	return ownJinxEffects(game, counter, 'abnormalCounts', characters, (e) => e.counts === how).map(
 		(j) => j.partner
 	);
 }
@@ -32,7 +32,7 @@ function countedPartners(
  * player's own ability: the info's character, or their true character on their own seat (the
  * Drunk's or the Marionette's false info is their own doing, not another character's,
  * https://wiki.bloodontheclocktower.com/Mathematician). `counter`, the counting character,
- * counts those its jinx names (`abnormalCounts` `own-ability`: the Mathematician's Drunk and
+ * counts those its jinx names (`abnormalCounts` `self-caused`: the Mathematician's Drunk and
  * Marionette). The day log runs from the last "New day", which the Storyteller presses at dawn.
  */
 export function abnormalSinceDawn(
@@ -41,7 +41,7 @@ export function abnormalSinceDawn(
 	counter?: CharacterId
 ): AbnormalUse[] {
 	const out: AbnormalUse[] = [];
-	const counted = countedPartners(game, counter, 'own-ability', characters);
+	const counted = countedPartners(game, counter, 'self-caused', characters);
 	const key = (c: AbnormalCause) => `${c.reason}:${c.characterId ?? ''}:${c.seatId ?? ''}`;
 	const own = (e: Extract<DayEntry, { kind: 'info' }>, c: AbnormalCause) =>
 		c.seatId === e.seatId &&
@@ -75,7 +75,7 @@ export function abnormalSinceDawn(
 }
 
 /**
- * The uses `counter`'s `demon-choice` jinxes add (the Mathematician learns if the Lunatic
+ * The uses `counter`'s `unlike-demon` jinxes add (the Mathematician learns if the Lunatic
  * attacked a different player than the real Demon,
  * https://wiki.bloodontheclocktower.com/Mathematician#Related_Jinxes): each partner's player
  * whose `choosesLikeDemon` reminder is on none of the players a Demon killed since dawn (`died`,
@@ -97,7 +97,7 @@ export function demonChoiceUses(
 		);
 	});
 	if (victims.length === 0) return [];
-	return countedPartners(game, counter, 'demon-choice', characters).flatMap((partner) => {
+	return countedPartners(game, counter, 'unlike-demon', characters).flatMap((partner) => {
 		const label = rulesOf(partner, characters)?.choosesLikeDemon;
 		if (!label) return [];
 		return game.seating.flatMap((seatId): AbnormalUse[] => {

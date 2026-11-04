@@ -201,7 +201,10 @@ describe('jinx rules data', () => {
 		expect(
 			readJinxRules(
 				{
-					a: { storytellerChooses: 'carrier', wakesOneByOne: { when: ['partner-alive'] } },
+					a: {
+						storytellerChooses: { what: 'player', via: 'carrierIsDemon' },
+						wakes: { how: 'one-by-one', when: ['partner-alive'] }
+					},
 					b: {
 						learns: {
 							what: 'alignment',
@@ -214,7 +217,10 @@ describe('jinx rules data', () => {
 				self
 			)
 		).toEqual({
-			a: { storytellerChooses: { what: 'carrier' }, wakesOneByOne: { when: ['partner-alive'] } },
+			a: {
+				storytellerChooses: { what: 'player', via: 'carrierIsDemon' },
+				wakes: { how: 'one-by-one', when: ['partner-alive'] }
+			},
 			b: {
 				learns: { what: 'alignment', when: [{ partnerMarked: 'Friend' }, { alignment: 'evil' }] }
 			}
@@ -224,8 +230,8 @@ describe('jinx rules data', () => {
 		const bad = new Issues();
 		readJinxRules(
 			{
-				a: { storytellerChooses: 'carrier', wakesOneByOne: true },
-				b: { storytellerChooses: { what: 'carrier', creating: 'partner' } },
+				a: { storytellerChooses: { what: 'player', via: 'carrierIsDemon' }, wakes: 'twice' },
+				b: { storytellerChooses: { what: 'player', via: 'carrierIsDemon', creating: 'partner' } },
 				c: { trueInfo: { when: [{ alignment: 'grey' }] } }
 			},
 			'jinxes',
@@ -233,8 +239,8 @@ describe('jinx rules data', () => {
 			{}
 		);
 		expect(bad.list.map((i) => i.split(': ')[0])).toEqual([
+			'jinxes.a.wakes.how',
 			'jinxes.a.storytellerChooses',
-			'jinxes.a.wakesOneByOne',
 			'jinxes.b.storytellerChooses.creating',
 			'jinxes.b',
 			'jinxes.c.trueInfo.when[0].alignment',
@@ -526,7 +532,7 @@ describe('jinx rules data', () => {
 			]
 		]);
 		const script = ['giver', 'chef', 'spy', 'empath'];
-		expect(givenInstead('giver', 'spy', script, custom)).toBe('a-minion');
+		expect(givenInstead('giver', 'spy', script, custom)).toEqual({ instead: 'a-minion' });
 		expect(givenInstead('giver', 'chef', script, custom)).toBeUndefined();
 		expect(givenInstead('giver', 'spy', ['giver'], custom)).toBeUndefined();
 		expect(jinxedPartners('giver', 'spareToken', script, custom)).toEqual(['chef']);

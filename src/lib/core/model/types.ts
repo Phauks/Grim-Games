@@ -431,7 +431,7 @@ export type DayEntry =
 			 */
 			passed?: boolean;
 			/**
-			 * The character whose ability this use stopped, by a jinx with it (`partner-stops`:
+			 * The character whose ability this use stopped, by a jinx with it (`ability-stopped`:
 			 * the Mayor stopping the riot). Absent for any other use.
 			 */
 			stops?: CharacterId;

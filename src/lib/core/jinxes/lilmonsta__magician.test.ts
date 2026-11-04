@@ -46,7 +46,7 @@ describe("Lil' Monsta + Magician jinx", () => {
 		it("is data in Lil' Monsta's rules", () => {
 			expect(jinxRulesBetween('lilmonsta', 'magician')).toEqual({
 				carriedBy: { type: 'minion', when: ['partner-alive'] },
-				storytellerChooses: { what: 'carrier', when: ['partner-alive'] }
+				storytellerChooses: { what: 'player', via: 'carrierIsDemon', when: ['partner-alive'] }
 			});
 		});
 

@@ -217,6 +217,9 @@
 						chooses which {alert.type ? TYPE_LABELS[alert.type] : 'player'} takes the {@render badge(
 							sourceId(alert)
 						)} token
+					{:else if alert.kind === 'wakes-one-by-one' && !alert.carrier}
+						{@render player(alert.seatId)}: by the jinx with {@render badge(alert.partner)}, the
+						players who wake for {@render badge(sourceId(alert))} wake one at a time
 					{:else if alert.kind === 'wakes-one-by-one'}
 						{@render player(alert.seatId)}: {@render badge(alert.partner)} is alive, so the {alert.type
 							? TYPE_PLURALS[alert.type]

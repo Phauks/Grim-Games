@@ -44,7 +44,7 @@ describe('Lunatic + Mathematician jinx', () => {
 		it("is data in the Mathematician's rules", () => {
 			// Wiki: "The Mathematician learns if the Lunatic attacks a different player than the real Demon attacked."
 			expect(ownJinxRules(base.game, 'mathematician', 'lunatic', base.characters)).toEqual({
-				abnormalCounts: { because: 'demon-choice' }
+				abnormalCounts: { counts: 'unlike-demon' }
 			});
 		});
 

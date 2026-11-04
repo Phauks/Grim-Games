@@ -563,15 +563,19 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		// replace TPI's for the pair (`rulesForJinx`), with load warnings for rules the app
 		// can't use; M41 the three official jinxes the format couldn't say: the Storyteller picks
 		// Lil' Monsta's babysitter with the Magician, the Minions wake one at a time with the Poppy
-		// Grower (`storytellerChooses` a carrier, `wakesOneByOne`, on Lil' Monsta's own step), and
+		// Grower (`storytellerChooses` a carrier, now `wakes`, on Lil' Monsta's own step), and
 		// the Ogre learns it is evil from the Recluse (`learns` with an alignment condition).
 		// M44 the gaps the blind re-run found: `not`, dead, executed and third-character
 		// conditions; `cannotChoose`, a choice that stops a kill, the Storyteller choosing another
 		// player, learning a true character; an `executed` game end checked at the execution, and
 		// the final day with no fixed day; load warnings for rules that can change nothing.
+		// M46 full parity: a jinx protection ("the Gloom cannot kill the Lamplighter"), and the
+		// values written for one official pair turned into general shapes a custom script can
+		// reuse for any pair, most of them the character part of the same name (saved game
+		// version 30 turns the old values in a saved script into the new ones).
 		title: 'Jinx format for custom scripts',
 		area: 'engine',
-		parts: ['M39', 'M40', 'M41', 'M44']
+		parts: ['M39', 'M40', 'M41', 'M44', 'M46']
 	},
 	{
 		// Trevor, 2026-11-02: beta goes to production only once the How to Run gaps are closed.

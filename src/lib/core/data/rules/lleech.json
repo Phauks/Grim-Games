@@ -87,7 +87,8 @@
 	},
 	"jinxes": {
 		"mastermind": {
-			"survivesCarrierExecuted": {
+			"survives": {
+				"on": "carrier-executed",
 				"when": ["partner-alive"]
 			}
 		}

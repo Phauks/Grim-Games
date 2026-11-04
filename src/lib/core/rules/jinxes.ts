@@ -12,13 +12,14 @@
  * TPI's for the pair, rules and all, and one with no rules is text, except that its wording may
  * still say only one can be in play. Each reader checks an effect's `when` (`jinx-when.ts`).
  */
-import type {
-	GivenInstead,
-	Impairs,
-	JinxEffect,
-	JinxRuleKey,
-	JinxRules,
-	RegistersTo
+import {
+	choosesChanged,
+	type GivenInstead,
+	type Impairs,
+	type JinxEffect,
+	type JinxRuleKey,
+	type JinxRules,
+	type RegistersTo
 } from '#lib/core/data/jinx-rules.ts';
 import type { JinxIndex } from '#lib/core/data/jinxes.ts';
 import { pairKey } from '#lib/core/data/parse.ts';
@@ -247,6 +248,7 @@ export function alsoBecomes(
 	characters?: RulesLookup
 ): CharacterType | undefined {
 	const effect = ownJinxRules(game, changer, characterId, characters)?.alsoBecomes;
+	if (effect?.player === 'neighbour') return undefined;
 	return jinxApplies(game, changer, characterId, effect) ? effect?.type : undefined;
 }
 
@@ -337,9 +339,9 @@ export function barredAbilities(
 /**
  * What happens instead when `giver`'s `givesAbility` would give the Storyteller `ability`, by
  * their jinx on this script (`givenInstead`: the Plague Doctor's Spy goes to a Minion, its
- * Boomdandy makes a player the Boomdandy,
- * https://wiki.bloodontheclocktower.com/Plague_Doctor#Related_Jinxes). Undefined when the
- * Storyteller gains it as usual.
+ * Boomdandy makes a player the Boomdandy, its Baron up to two players Outsiders,
+ * https://wiki.bloodontheclocktower.com/Plague_Doctor#Related_Jinxes), without its `who` and
+ * `when`. Undefined when the Storyteller gains it as usual.
  */
 export function givenInstead(
 	giver: CharacterId,
@@ -350,7 +352,14 @@ export function givenInstead(
 	const ids = idsOf(script);
 	if (giver === ability || !ids.includes(giver) || !ids.includes(ability)) return undefined;
 	const effect = rulesForJinx(scopeOf(script), giver, ability, characters)?.givenInstead;
-	return jinxApplies(undefined, giver, ability, effect) ? effect?.instead : undefined;
+	if (!effect || !jinxApplies(undefined, giver, ability, effect)) return undefined;
+	const { instead, type, upTo, where } = effect;
+	return {
+		instead,
+		...(type !== undefined ? { type } : {}),
+		...(upTo !== undefined ? { upTo } : {}),
+		...(where !== undefined ? { where } : {})
+	};
 }
 
 /**
@@ -372,8 +381,8 @@ export function jinxedPartners(
 		const rules = rulesForJinx(scopeOf(script), id, other, characters);
 		const effect =
 			question === 'storytellerPicksPlayer'
-				? rules?.storytellerChooses?.what === 'player' &&
-					rules.storytellerChooses.creating === 'partner'
+				? choosesChanged(rules?.storytellerChooses) &&
+					rules?.storytellerChooses?.creating === 'partner'
 					? rules.storytellerChooses
 					: undefined
 				: rules?.[question];
@@ -514,7 +523,7 @@ export function allEvilBecoming(
 
 /**
  * The character whose ability the Storyteller gains now that `by`'s `changesCharacter` changes
- * `seatId` (`storytellerHas: 'removed'`: when the Engineer removes the living Summoner from
+ * `seatId` (`storytellerHas: 'changed'`: when the Engineer removes the living Summoner from
  * play, the Storyteller has the Summoner ability,
  * https://wiki.bloodontheclocktower.com/Summoner#Related_Jinxes): the living player's true
  * character, asked before the change. Undefined when no jinx says so.
@@ -529,7 +538,7 @@ export function storytellerGains(
 	const own = trueCharacter(game, seatId, characters);
 	if (own === undefined) return undefined;
 	const effect = ownJinxRules(game, own, by, characters)?.storytellerHas;
-	return effect?.once === 'removed' && jinxApplies(game, own, by, effect, characters)
+	return effect?.once === 'changed' && jinxApplies(game, own, by, effect, characters)
 		? own
 		: undefined;
 }
@@ -564,7 +573,7 @@ export function arbitraryDeathsTonight(
 	return livingDemon(seatId) && game.seating.some((id) => id !== seatId && livingDemon(id));
 }
 
-/** What a `neighbourBecomes` jinx asks of the player just made the partner. */
+/** What an `alsoBecomes` jinx with `player: "neighbour"` asks of the player just made the partner. */
 export interface NeighbourBecoming {
 	/** The type a neighbour must be, and the other neighbour becomes. */
 	type: CharacterType;
@@ -576,7 +585,7 @@ export interface NeighbourBecoming {
 
 /**
  * What a jinx asks of `seatId`'s neighbours when `changer`'s `changesCharacter` makes them
- * `created` (`neighbourBecomes`: a summoned Lord of Typhon must neighbour a Minion, and their
+ * `created` (`alsoBecomes` with `player: "neighbour"`: a summoned Lord of Typhon must neighbour a Minion, and their
  * other neighbour becomes an evil Minion,
  * https://wiki.bloodontheclocktower.com/Summoner#Related_Jinxes). Neighbours are the nearest
  * living players. Undefined when no jinx says so.
@@ -588,8 +597,9 @@ export function neighbourBecoming(
 	seatId: SeatId,
 	characters: CharacterLookup
 ): NeighbourBecoming | undefined {
-	const effect = ownJinxRules(game, changer, created, characters)?.neighbourBecomes;
-	if (!effect || !jinxApplies(game, changer, created, effect, characters)) return undefined;
+	const effect = ownJinxRules(game, changer, created, characters)?.alsoBecomes;
+	if (effect?.player !== 'neighbour' || !jinxApplies(game, changer, created, effect, characters))
+		return undefined;
 	const type = effect.type;
 	const near = aliveNeighbours(game, seatId).filter((id) => id !== seatId);
 	const of = near.filter((id) => typeOf(game, id, characters) === type);
@@ -614,13 +624,13 @@ export function storytellerPicksNow(
 		changer,
 		'storytellerChooses',
 		characters,
-		(e) => e.what === 'player' && e.creating === undefined
+		(e) => choosesChanged(e) && e.creating === undefined
 	).map((j) => j.partner);
 }
 
 /**
  * The tokens on which `changer`'s `changesCharacter` may create a jinxed partner early, each
- * with that partner (`earlierToken`: the Summoner may summon a Pukka on its Night 2,
+ * with that partner (a jinx's `changesCharacter` `token`: the Summoner may summon a Pukka on its Night 2,
  * https://wiki.bloodontheclocktower.com/Summoner#Related_Jinxes).
  */
 export function earlierTokens(
@@ -628,8 +638,10 @@ export function earlierTokens(
 	changer: CharacterId,
 	characters?: RulesLookup
 ): { partner: CharacterId; token: ReminderLabel }[] {
-	return ownJinxEffects(game, changer, 'earlierToken', characters).map(({ partner, effect }) => ({
-		partner,
-		token: effect.token
-	}));
+	return ownJinxEffects(game, changer, 'changesCharacter', characters).map(
+		({ partner, effect }) => ({
+			partner,
+			token: effect.token
+		})
+	);
 }

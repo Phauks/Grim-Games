@@ -175,7 +175,7 @@ export function jinxGuessers(game: Game, characters: CharacterLookup): JinxGuess
 
 /**
  * The players not shown the ability a partner's `givesAbility` gave, though they have that
- * partner's ability from their token (`notShownGiven`: the Alchemist-Boffin doesn't learn what
+ * partner's ability from their token (`notShown` `given-ability`: the Alchemist-Boffin doesn't learn what
  * ability the Demon has, https://wiki.bloodontheclocktower.com/Alchemist#Related_Jinxes), each
  * with that partner.
  */
@@ -185,7 +185,10 @@ export function notShownGiven(
 ): { seatId: SeatId; owner: CharacterId; partner: CharacterId }[] {
 	return game.seating.flatMap((seatId) => {
 		const gained = gainedPartnerJinx(game, seatId, characters);
-		return gained && gainedApplies(game, seatId, gained, gained.rule.notShownGiven, characters)
+		const effect = gained?.rule.notShown;
+		return gained &&
+			effect?.what === 'given-ability' &&
+			gainedApplies(game, seatId, gained, effect, characters)
 			? [{ seatId, owner: gained.owner, partner: gained.partner }]
 			: [];
 	});
@@ -232,7 +235,7 @@ export function secondDemonReverts(
 
 /**
  * Whether a jinx keeps `seatId`'s ability after the player whose `keepsAbility` token kept it
- * has died (`keepsAfterPartner`: a Mastermind the Vigormortis killed keeps their ability if the
+ * has died (`keepsAbility` `afterDeath`: a Mastermind the Vigormortis killed keeps their ability if the
  * Vigormortis dies, https://wiki.bloodontheclocktower.com/Mastermind#Related_Jinxes): their
  * true character's jinx with the token's character.
  */
@@ -246,14 +249,14 @@ export function keptAfterPartner(
 		? trueCharacter(game, seatId, characters)
 		: game.seats[seatId]?.characterId;
 	if (own === undefined) return false;
-	const effect = ownJinxRules(game, own, tokenOwner, characters)?.keepsAfterPartner;
+	const effect = ownJinxRules(game, own, tokenOwner, characters)?.keepsAbility;
 	return effect !== undefined && jinxApplies(game, own, tokenOwner, effect, characters);
 }
 
 /**
  * The partner whose living player keeps `seatId` alive though the carrier of their own
  * `gameEnd.aliveWhileDead.whileCarrierAlive` token has died by execution
- * (`survivesCarrierExecuted`: with the Mastermind alive, the Lleech lives on with no ability
+ * (`survives` `carrier-executed`: with the Mastermind alive, the Lleech lives on with no ability
  * when its host is executed, https://wiki.bloodontheclocktower.com/Lleech#Related_Jinxes).
  * Every carrier is dead and one of them died by execution. Undefined otherwise.
  */
@@ -278,7 +281,8 @@ export function survivesCarrierBy(
 		log.entries.some((e) => e.kind === 'execution' && carriers.includes(e.seatId) && e.died)
 	);
 	if (!executed) return undefined;
-	return ownJinxEffects(game, owner, 'survivesCarrierExecuted', characters)[0]?.partner;
+	return ownJinxEffects(game, owner, 'survives', characters, (e) => e.on === 'carrier-executed')[0]
+		?.partner;
 }
 
 /**
@@ -333,7 +337,8 @@ export function thinksPartnerSetup(
 
 /**
  * The partner whose eyes-closed voting lets `voter`'s player raise their hand without their
- * `voter.onlyWith` player, the vote counting only if that player voted too (`uncountedVote`:
+ * `voter.onlyWith` player, the vote counting only if that player voted too (`voter`
+ * `countsOnlyWith`:
  * the Butler with the Organ Grinder,
  * https://wiki.bloodontheclocktower.com/Butler#Related_Jinxes). `secretBy` is the character
  * whose working `voting.secret` is in effect now, if any.
@@ -345,13 +350,13 @@ export function uncountedVoteBy(
 	characters?: RulesLookup
 ): CharacterId | undefined {
 	if (secretBy === undefined) return undefined;
-	const effect = ownJinxRules(game, voter, secretBy, characters)?.uncountedVote;
+	const effect = ownJinxRules(game, voter, secretBy, characters)?.voter;
 	return effect && jinxApplies(game, voter, secretBy, effect) ? secretBy : undefined;
 }
 
 /**
  * The partners whose player `owner`'s living player hides among the Demon's neighbours at
- * Demon info (`hidesPartnerSeat`: while the Magician is alive, the Demon doesn't know which
+ * Demon info (`notShown` `partner-seat`: while the Magician is alive, the Demon doesn't know which
  * neighbour is the Marionette, https://wiki.bloodontheclocktower.com/Magician#Related_Jinxes).
  */
 export function hiddenPartnersOf(
@@ -359,12 +364,15 @@ export function hiddenPartnersOf(
 	owner: CharacterId,
 	characters?: RulesLookup
 ): CharacterId[] {
-	return ownJinxEffects(game, owner, 'hidesPartnerSeat', characters).map((j) => j.partner);
+	return ownJinxEffects(game, owner, 'notShown', characters, (e) => e.what === 'partner-seat').map(
+		(j) => j.partner
+	);
 }
 
 /**
  * The winner a jinx gives the partner's `dead-without-demon` end for `seatId`, who has the
- * partner's ability from their token (`endsGame` of kind `partner-end`: an Alchemist-Summoner
+ * partner's ability from their token (`endsGame` of kind `gained-end`, `end:
+ * "dead-without-demon"`: an Alchemist-Summoner
  * who dies before summoning, evil wins,
  * https://wiki.bloodontheclocktower.com/Alchemist#Related_Jinxes), with that partner.
  */
@@ -375,7 +383,8 @@ export function gainedEnd(
 ): { partner: CharacterId; winner: Alignment } | undefined {
 	const gained = gainedPartnerJinx(game, seatId, characters);
 	const end = gained?.rule.endsGame;
-	if (!gained || end?.kind !== 'partner-end' || !end.winner) return undefined;
+	if (!gained || end?.kind !== 'gained-end' || end.end !== 'dead-without-demon' || !end.winner)
+		return undefined;
 	return gainedApplies(game, seatId, gained, end, characters)
 		? { partner: gained.partner, winner: end.winner }
 		: undefined;

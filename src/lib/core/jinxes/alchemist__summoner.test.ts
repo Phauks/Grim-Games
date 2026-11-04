@@ -65,9 +65,9 @@ describe('Alchemist + Summoner jinx', () => {
 			// Wiki: "The Alchemist-Summoner does not get bluffs, and chooses which Demon but not which player. If they die before this happens, evil wins. [No Demon]"
 			expect(jinxRulesBetween('alchemist', 'summoner')).toEqual({
 				storytellerChooses: { what: 'player', when: ['has-partner-ability'] },
-				endsGame: { kind: 'partner-end', winner: 'evil' },
+				endsGame: { kind: 'gained-end', end: 'dead-without-demon', winner: 'evil' },
 				partnerSetup: {},
-				noBluffs: {}
+				notShown: { what: 'bluffs' }
 			});
 		});
 

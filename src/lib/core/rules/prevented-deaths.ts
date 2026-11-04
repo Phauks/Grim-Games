@@ -31,6 +31,7 @@ import type { Game, ReminderId, SeatId } from '#lib/core/model/types.ts';
 import {
 	abilityState,
 	firstDeathSaver,
+	jinxSafeFrom,
 	killRedirect,
 	protection,
 	type AbilitySource,
@@ -84,8 +85,8 @@ export function preventedDeaths(game: Game, characters: CharacterLookup): Preven
 					because.push({ kind: 'killer-impaired', seatId: s, impairments: state.impairments });
 			}
 			const safe = killer.ignoresProtection
-				? undefined
-				: protection(game, seatId, characters, killer.by);
+				? jinxSafeFrom(game, seatId, characters, killer.by, reminder.characterId)
+				: protection(game, seatId, characters, killer.by, reminder.characterId);
 			if (safe) because.push({ kind: 'protected', source: safe });
 			if (abilityState(game, seatId, characters).works) {
 				// A protected player is safe from the kill: they don't die, so nothing is spent on

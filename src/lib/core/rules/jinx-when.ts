@@ -95,6 +95,12 @@ function check(
 		entries === undefined
 			? undefined
 			: entries.some((e) => e.kind === 'execution' && seats.includes(e.seatId));
+	const nominated = (by: SeatId[], of: SeatId[]) =>
+		entries === undefined
+			? undefined
+			: entries.some(
+					(e) => e.kind === 'nomination' && by.includes(e.nominator) && of.includes(e.nominee)
+				);
 	const carries = (seats: SeatId[], of: CharacterId, label: ReminderLabel) =>
 		seats.some((s) =>
 			board.seats[s]?.reminders.some((r) => r.characterId === of && r.label === label)
@@ -126,6 +132,10 @@ function check(
 			return executed(selfSeats);
 		case 'partner-executed':
 			return executed(playing(partner));
+		case 'nominated-partner':
+			return nominated(selfSeats, playing(partner));
+		case 'nominated-by-partner':
+			return nominated(playing(partner), selfSeats);
 		case 'final-day': {
 			const left = board.seating.filter((s) => {
 				const id = trueCharacter(board, s, lookup);

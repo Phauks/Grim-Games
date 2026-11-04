@@ -6,7 +6,11 @@
  */
 import {
 	ABNORMAL_COUNTS,
+	CHOOSES_VIA,
+	GAINED_ENDS,
 	GIVEN_INSTEAD,
+	GIVEN_WHERE,
+	NOT_SHOWN,
 	IMPAIR_KINDS,
 	JINX_END_KINDS,
 	JINX_WHO,
@@ -24,6 +28,7 @@ import {
 	type JinxRules
 } from './jinx-rules.ts';
 import { readCondition, readPositive } from './jinx-conditions.ts';
+import { PROTECTS_FROM } from './parts/protects.ts';
 import { jinxNeedsOn } from './jinx-needs.ts';
 import { ALIGNMENTS, CHARACTER_TYPES, type CharacterId } from './types.ts';
 import {
@@ -67,6 +72,39 @@ const labelVerb = (field: string): Verb => ({
 	}
 });
 
+/** A verb whose one parameter is `true` (a patch that switches on one field of a part). */
+const flagVerb = (field: string): Verb => ({
+	fields: [field],
+	read: (raw, path, issues) => {
+		if (readBoolean(raw, field, path, issues) === true) return { [field]: true };
+		issues.add(`${path}.${field}`, 'expected true');
+		return undefined;
+	}
+});
+
+function readGivenInstead(raw: Json, path: string, issues: Issues): Json | undefined {
+	const instead = readEnum(raw, 'instead', GIVEN_INSTEAD, path, issues, true);
+	if (!instead) return undefined;
+	const type = readEnum(raw, 'type', CHARACTER_TYPES, path, issues, false);
+	const where = readEnum(raw, 'where', GIVEN_WHERE, path, issues, false);
+	const upTo = raw.upTo === undefined ? undefined : readPositive(raw, 'upTo', path, issues);
+	if (raw.upTo !== undefined && upTo === undefined) return undefined;
+	if (instead === 'a-minion' && (type || where || upTo !== undefined)) {
+		issues.add(path, '`type`, `upTo` and `where` only with `instead: "becomes"`');
+		return undefined;
+	}
+	if (upTo !== undefined && !type) {
+		issues.add(`${path}.upTo`, 'only with `type`');
+		return undefined;
+	}
+	return {
+		instead,
+		...(type ? { type } : {}),
+		...(upTo !== undefined ? { upTo } : {}),
+		...(where ? { where } : {})
+	};
+}
+
 /** A non-empty list of known values, or undefined (with an issue) when it is not one. */
 function readEnumList<T extends string>(
 	raw: Json,
@@ -94,12 +132,12 @@ function readEnd(raw: Json, path: string, issues: Issues): Json | undefined {
 		'nominated-marked-executed': ['token'],
 		'marked-executed': ['token'],
 		'day-without-execution': ['day'],
-		'partner-stops': ['alive'],
-		'partner-end': [],
-		'partner-chooses': [],
+		'ability-stopped': ['alive'],
+		'gained-end': ['end'],
+		'night-instead': ['chooser'],
 		executed: ['player']
 	}[kind];
-	const winnerless = kind === 'partner-chooses';
+	const winnerless = kind === 'night-instead';
 	checkKeys(
 		raw,
 		['kind', ...(winnerless ? [] : ['winner']), ...extra, 'who', 'when'],
@@ -114,9 +152,15 @@ function readEnd(raw: Json, path: string, issues: Issues): Json | undefined {
 		if (token !== undefined) out.token = token;
 		if (kind === 'marked-executed' && token === undefined) return undefined;
 	}
-	if (extra.includes('player')) {
-		const player = readEnum(raw, 'player', JINX_WHO, path, issues, false);
-		if (player) out.player = player;
+	for (const key of ['player', 'chooser'] as const) {
+		if (!extra.includes(key)) continue;
+		const who = readEnum(raw, key, JINX_WHO, path, issues, false);
+		if (who) out[key] = who;
+	}
+	if (extra.includes('end')) {
+		const end = readEnum(raw, 'end', GAINED_ENDS, path, issues, true);
+		if (!end) return undefined;
+		out.end = end;
 	}
 	// On the final day (`when` has `final-day`), `day` may be left out: the latest day that ended.
 	const finalDay = Array.isArray(raw.when) && raw.when.includes('final-day');
@@ -132,24 +176,43 @@ function readEnd(raw: Json, path: string, issues: Issues): Json | undefined {
 const VERBS: Record<Exclude<JinxRuleKey, 'exclusive'>, Verb> = {
 	cannotCreate: enumVerb('via', ['givesAbility', 'changesCharacter']),
 	cannotChoose: plain,
-	givenInstead: enumVerb('instead', GIVEN_INSTEAD),
+	givenInstead: {
+		fields: ['instead', 'type', 'upTo', 'where'],
+		main: 'instead',
+		read: readGivenInstead
+	},
 	noTurnGood: plain,
 	spareToken: plain,
 	storytellerChooses: {
-		fields: ['what', 'creating'],
+		fields: ['what', 'via', 'creating'],
 		main: 'what',
 		read: (raw, path, issues) => {
 			const what = readEnum(raw, 'what', STORYTELLER_CHOOSES, path, issues, true);
+			const via = readEnum(raw, 'via', CHOOSES_VIA, path, issues, false);
 			const creating = readEnum(raw, 'creating', ['partner'], path, issues, false);
-			if (creating && what !== 'player') {
-				issues.add(`${path}.creating`, 'only with `what: "player"`');
+			if (via && what !== 'player') {
+				issues.add(`${path}.via`, 'only with `what: "player"`');
 				return undefined;
 			}
-			return what ? { what, ...(creating ? { creating } : {}) } : undefined;
+			if (creating && (what !== 'player' || (via ?? 'changesCharacter') !== 'changesCharacter')) {
+				issues.add(`${path}.creating`, 'only with `what: "player"` by `changesCharacter`');
+				return undefined;
+			}
+			return what
+				? { what, ...(via ? { via } : {}), ...(creating ? { creating } : {}) }
+				: undefined;
 		}
 	},
-	wakesOneByOne: plain,
-	alsoBecomes: enumVerb('type', CHARACTER_TYPES),
+	wakes: enumVerb('how', ['one-by-one']),
+	alsoBecomes: {
+		fields: ['type', 'player'],
+		main: 'type',
+		read: (raw, path, issues) => {
+			const type = readEnum(raw, 'type', CHARACTER_TYPES, path, issues, true);
+			const player = readEnum(raw, 'player', ['self', 'neighbour'], path, issues, false);
+			return type ? { type, ...(player ? { player } : {}) } : undefined;
+		}
+	},
 	carriedBy: {
 		fields: ['type', 'marked'],
 		read: (raw, path, issues) => {
@@ -190,16 +253,36 @@ const VERBS: Record<Exclude<JinxRuleKey, 'exclusive'>, Verb> = {
 		}
 	},
 	noKill: {
-		fields: ['on', 'token'],
+		fields: ['on', 'killer', 'token'],
 		main: 'on',
 		read: (raw, path, issues) => {
-			const on = readEnum(raw, 'on', NO_KILL_TRIGGERS, path, issues, true);
+			const killer = readEnum(raw, 'killer', ['demon'], path, issues, false);
+			const on = readEnum(raw, 'on', NO_KILL_TRIGGERS, path, issues, killer === undefined);
 			const token = readString(raw, 'token', path, issues, false);
+			if (killer && on) {
+				issues.add(path, 'needs `on` or `killer`, not both');
+				return undefined;
+			}
+			if (killer && !(Array.isArray(raw.when) && raw.when.length > 0)) {
+				issues.add(`${path}.when`, 'required with `killer`');
+				return undefined;
+			}
 			if (token !== undefined && on !== 'chosen') {
 				issues.add(`${path}.token`, 'only with `on: "chosen"`');
 				return undefined;
 			}
+			if (killer) return { killer };
 			return on ? { on, ...(token !== undefined ? { token } : {}) } : undefined;
+		}
+	},
+	protects: {
+		fields: ['from', 'night', 'by'],
+		main: 'from',
+		read: (raw, path, issues) => {
+			const from = readEnum(raw, 'from', PROTECTS_FROM, path, issues, false) ?? 'any';
+			const night = readBoolean(raw, 'night', path, issues);
+			const by = readEnum(raw, 'by', ['partner'], path, issues, false);
+			return { from, ...(night ? { night: true } : {}), ...(by ? { by } : {}) };
 		}
 	},
 	grimoire: {
@@ -213,7 +296,6 @@ const VERBS: Record<Exclude<JinxRuleKey, 'exclusive'>, Verb> = {
 		}
 	},
 	endsGame: { fields: [], read: readEnd },
-	storytellerVote: plain,
 	deadAtLeast: {
 		fields: ['dead'],
 		main: 'dead',
@@ -248,23 +330,19 @@ const VERBS: Record<Exclude<JinxRuleKey, 'exclusive'>, Verb> = {
 	},
 	allEvilBecome: plain,
 	partnerKeepsAbility: plain,
-	demonLearnsGood: plain,
 	storytellerHas: enumVerb('once', STORYTELLER_HAS),
 	arbitraryDeaths: plain,
-	neighbourBecomes: enumVerb('type', CHARACTER_TYPES),
-	earlierToken: labelVerb('token'),
+	changesCharacter: labelVerb('token'),
 	guessesPartner: plain,
-	notShownGiven: plain,
+	notShown: enumVerb('what', NOT_SHOWN),
 	notSecondDemon: plain,
-	keepsAfterPartner: plain,
-	survivesCarrierExecuted: plain,
+	keepsAbility: flagVerb('afterDeath'),
+	survives: enumVerb('on', ['carrier-executed']),
 	killsMarked: labelVerb('token'),
 	madAsPartner: plain,
-	hidesPartnerSeat: plain,
 	thinksPartnerSetup: plain,
-	uncountedVote: plain,
-	noBluffs: plain,
-	abnormalCounts: enumVerb('because', ABNORMAL_COUNTS)
+	voter: flagVerb('countsOnlyWith'),
+	abnormalCounts: enumVerb('counts', ABNORMAL_COUNTS)
 };
 
 /** Every key a jinx entry may have: `exclusive`, then each verb. */

@@ -300,7 +300,7 @@ function impairmentsOf(
 	// A jinx takes away the ability they have from their token (`impairs` with
 	// `has-partner-ability`: the Alchemist-Spy has no Spy ability,
 	// https://wiki.bloodontheclocktower.com/Alchemist#Related_Jinxes), or leaves them alive with
-	// none once their host was executed (`survivesCarrierExecuted`: the Lleech with the
+	// none once their host was executed (`survives` `carrier-executed`: the Lleech with the
 	// Mastermind, https://wiki.bloodontheclocktower.com/Lleech#Related_Jinxes).
 	const taken = gainedAbilityTaken(game, seatId, characters);
 	if (taken) out.push(sourced(taken.kind, { characterId: taken.partner }, characters));
@@ -717,6 +717,7 @@ export {
 	type FirstDeathSaver,
 	protection,
 	protectors,
+	jinxSafeFrom,
 	executionSavers,
 	exileSavers,
 	killRedirect,

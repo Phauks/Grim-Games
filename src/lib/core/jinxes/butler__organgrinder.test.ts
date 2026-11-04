@@ -45,7 +45,7 @@ describe('Butler + Organ Grinder jinx', () => {
 		it("is data in the Butler's rules", () => {
 			// Wiki: "If the Organ Grinder is causing eyes closed voting, the Butler may raise their hand to vote but their vote is only counted if their master voted too."
 			expect(ownJinxRules(base.game, 'butler', 'organgrinder', base.characters)).toEqual({
-				uncountedVote: {}
+				voter: { countsOnlyWith: true }
 			});
 		});
 

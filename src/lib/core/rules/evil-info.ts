@@ -62,11 +62,11 @@ export interface DemonInfo {
 	shownAsDemon: SeatId[];
 	/**
 	 * A jinx has the Demon's players wake in separate groups and learn which players are good
-	 * (`demonLearnsGood`: the Magician with Legion): those players, never `hiddenBy`'s.
+	 * (`learns` `good-players`: Legion with the Magician): those players, never `hiddenBy`'s.
 	 */
 	goodShown?: { seats: SeatId[]; hiddenBy: CharacterId };
 	/**
-	 * A jinx keeps the Demon from learning which neighbour is a Minion (`hidesPartnerSeat`:
+	 * A jinx keeps the Demon from learning which neighbour is a Minion (`notShown` `partner-seat`:
 	 * while the Magician is alive, the Marionette): those players, left out of the Minions
 	 * shown, the character they are, and the living character that hides them.
 	 */
@@ -119,7 +119,7 @@ export function demonInfo(game: Game, characters: CharacterLookup): DemonInfo {
 }
 
 /**
- * With a jinx that says so in play (`demonLearnsGood`), the good players the Demon's groups
+ * With a jinx that says so in play (`learns` `good-players`), the good players the Demon's groups
  * learn at Demon info, and the character never shown: "If the Magician is in play, during the
  * Demon info step, Legion wake in separate groups"
  * (https://wiki.bloodontheclocktower.com/Legion#Related_Jinxes).
@@ -131,12 +131,18 @@ function demonLearnsGood(
 	for (const seatId of game.seating) {
 		const id = trueCharacter(game, seatId, characters);
 		if (id === undefined) continue;
-		const jinx = ownJinxEffects(game, id, 'demonLearnsGood', characters)[0];
+		const jinx = ownJinxEffects(
+			game,
+			id,
+			'learns',
+			characters,
+			(e) => e.what === 'good-players'
+		)[0];
 		if (!jinx) continue;
 		const seats = game.seating.filter(
-			(s) => alignmentOf(game, s) === 'good' && trueCharacter(game, s, characters) !== id
+			(s) => alignmentOf(game, s) === 'good' && trueCharacter(game, s, characters) !== jinx.partner
 		);
-		return { seats, hiddenBy: id };
+		return { seats, hiddenBy: jinx.partner };
 	}
 	return undefined;
 }

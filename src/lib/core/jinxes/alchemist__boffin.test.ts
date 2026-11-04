@@ -41,7 +41,9 @@ describe('Alchemist + Boffin jinx', () => {
 
 		it("is data in the Alchemist's rules", () => {
 			// Wiki: "If the Alchemist has the Boffin ability, the Alchemist does not learn what ability the Demon has."
-			expect(jinxRulesBetween('alchemist', 'boffin')).toEqual({ notShownGiven: {} });
+			expect(jinxRulesBetween('alchemist', 'boffin')).toEqual({
+				notShown: { what: 'given-ability' }
+			});
 		});
 
 		it('says at the Boffin step that the Alchemist is not shown the ability', () => {

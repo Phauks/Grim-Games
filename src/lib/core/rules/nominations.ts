@@ -126,7 +126,7 @@ export function nominationsPerDay(game: Game, seatId: SeatId, characters: Charac
  * The characters whose nominees nominate straight away now (`nomineesNominate`, the Riot on
  * day 3, https://wiki.bloodontheclocktower.com/Riot): a player of that character whose ability
  * works, with that reminder of it in play, and nobody stopped it today (a jinx's
- * `partner-stops` end, recorded as the partner's day use with `stops`).
+ * `ability-stopped` end, recorded as the partner's day use with `stops`).
  */
 export function nomineesNominateNow(game: Game, characters: CharacterLookup): CharacterId[] {
 	const marked = (characterId: CharacterId, label: string) =>
@@ -160,7 +160,8 @@ function nomineeNominatesNow(game: Game, seatId: SeatId, characters: CharacterLo
 
 /**
  * How many times `seatId` nominated the Storyteller today while a character whose nominees
- * nominate straight away (`nomineesNominateNow`) has a `storytellerVote` jinx on the script.
+ * nominate straight away (`nomineesNominateNow`) has a `storytellerChooses` `own-execution`
+ * jinx on the script.
  * The Storyteller is voted on instead, and is executed (`ExecuteStoryteller`, the game ends)
  * when the Storyteller judges them about to die; otherwise the nominator nominates again, so
  * each such nomination gives them one more today (the Riot with the Atheist, each page's
@@ -174,7 +175,9 @@ export function storytellerRenominations(
 	const made = storytellerNominators(game).filter((s) => s === seatId).length;
 	if (made === 0) return 0;
 	const voted = nomineesNominateNow(game, characters).some(
-		(id) => ownJinxEffects(game, id, 'storytellerVote', characters).length > 0
+		(id) =>
+			ownJinxEffects(game, id, 'storytellerChooses', characters, (e) => e.what === 'own-execution')
+				.length > 0
 	);
 	return voted ? made : 0;
 }

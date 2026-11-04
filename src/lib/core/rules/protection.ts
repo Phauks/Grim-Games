@@ -10,7 +10,8 @@ import { type CharacterLookup } from '#lib/core/model/characters.ts';
 import { alignmentOf, aliveNeighbours, getSeat, trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 import { abilityState, seatOfCharacter, type AbilitySource } from './ability.ts';
-import { diesWhenExecutedBy, jinxEffect } from './jinxes.ts';
+import { diesWhenExecutedBy, jinxEffect, ownJinxes } from './jinxes.ts';
+import { aboutHolder, jinxApplies } from './jinx-when.ts';
 
 /**
  * Whether the protection of the ability at `seatId` works: its ability works, or (alive) it
@@ -37,6 +38,8 @@ export interface Protector {
 	 * death by day, or an exile only.
 	 */
 	from: (typeof PROTECTS_FROM)[number];
+	/** A jinx's `protects` with `by: "partner"`: only against this partner's kills (`jinxProtectors`). */
+	jinxBy?: CharacterId;
 }
 
 /**
@@ -117,13 +120,15 @@ function protectionFor(
  * execution is never stopped by a protection that lasts only the night (`night`), and a
  * player who only "might not die" (`storytellerDecides`) is never protected here: the
  * Storyteller applies that in the Execution sheet (`executionSavers`). Whether each ability
- * works is the caller's to check.
+ * works is the caller's to check. Last come a jinx's (`jinxProtectors`), against `killer`'s
+ * kills when the caller knows whose kill it is.
  */
 export function protectors(
 	game: Game,
 	seatId: SeatId,
 	characters: CharacterLookup,
-	by: DeathBy
+	by: DeathBy,
+	killer?: CharacterId
 ): Protector[] {
 	const seat = getSeat(game, seatId);
 	if (!seat) return [];
@@ -144,7 +149,35 @@ export function protectors(
 		const characterId = trueCharacter(game, other, characters);
 		if (characterId && rulesOf(characterId, characters)?.protects?.who === 'good') add(characterId);
 	}
-	return out;
+	return [...out, ...jinxProtectors(game, seatId, characters, by, killer)];
+}
+
+/**
+ * The protections a jinx gives `seatId`'s player against a death `by` this (`protects`, M46):
+ * the `protects` part's own coverage (`stops`) for the subject's own player, while its `when`
+ * holds for them, and with `by: "partner"` only when `killer` is the partner (a custom
+ * script's "The Gloom cannot kill the Lamplighter"). A jinx is a rule, not an ability, so it
+ * holds whatever any ability's state: its source has no seat. `killer` is the character whose
+ * kill it is, when the caller knows.
+ */
+function jinxProtectors(
+	game: Game,
+	seatId: SeatId,
+	characters: CharacterLookup,
+	by: DeathBy,
+	killer?: CharacterId
+): Protector[] {
+	const own = trueCharacter(game, seatId, characters);
+	if (own === undefined) return [];
+	return ownJinxes(game, own, (r) => r.protects !== undefined, characters).flatMap(
+		({ partner, rule }): Protector[] => {
+			const p = rule.protects!;
+			if (aboutHolder(p) || (p.by === 'partner' && killer !== partner)) return [];
+			if (!stops({ who: 'self', from: p.from, ...(p.night ? { night: true } : {}) }, by)) return [];
+			if (!jinxApplies(game, own, partner, p, characters, { seatId })) return [];
+			return [{ source: { characterId: own }, from: p.from, ...(p.by ? { jinxBy: partner } : {}) }];
+		}
+	);
 }
 
 /** One ability the Storyteller may say saves an executed player, and why it might not. */
@@ -240,16 +273,33 @@ export function protection(
 	game: Game,
 	seatId: SeatId,
 	characters: CharacterLookup,
-	by: DeathBy
+	by: DeathBy,
+	killer?: CharacterId
 ): AbilitySource | 'override' | undefined {
 	const seat = getSeat(game, seatId);
 	if (!seat) return undefined;
 	const override = seat.overrides.find((o) => o.field === 'canDie');
 	if (override) return override.value ? undefined : 'override';
 	const works = (s: SeatId) => protectionWorks(game, s, characters);
-	return protectors(game, seatId, characters, by).find(
+	return protectors(game, seatId, characters, by, killer).find(
 		(p) => !p.source.seatId || works(p.source.seatId)
 	)?.source;
+}
+
+/**
+ * The jinx that keeps `seatId` safe from `killer`'s kill even when that kill ignores
+ * protection (`protects` with `by: "partner"`: "X cannot kill Y" holds whatever X's ability
+ * says), as its source. Undefined when none does.
+ */
+export function jinxSafeFrom(
+	game: Game,
+	seatId: SeatId,
+	characters: CharacterLookup,
+	by: DeathBy,
+	killer: CharacterId
+): AbilitySource | undefined {
+	return jinxProtectors(game, seatId, characters, by, killer).find((p) => p.jinxBy === killer)
+		?.source;
 }
 
 /**

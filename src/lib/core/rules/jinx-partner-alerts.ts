@@ -193,14 +193,14 @@ export function jinxChoiceRuleAlerts(
 }
 
 /**
- * The alerts at `characterId`'s step about who carries its `carrierIsDemon` token, one per
- * jinx whose `when` holds, about the partner's (first living) player:
- * - `storyteller-chooses` (`storytellerChooses` with `what: "carrier"`): the Storyteller, not
- *   the players who wake, chooses who carries it (the Magician's Lil' Monsta,
- *   https://wiki.bloodontheclocktower.com/Magician#Related_Jinxes);
- * - `wakes-one-by-one` (`wakesOneByOne`): the players who wake for it wake one at a time,
- *   until one chooses to take it (the Poppy Grower's Lil' Monsta,
- *   https://wiki.bloodontheclocktower.com/Poppy_Grower#Related_Jinxes).
+ * The alerts at `characterId`'s step about who wakes for it and who carries its token, one
+ * per jinx whose `when` holds, about the partner's (first living) player:
+ * - `storyteller-chooses` (`storytellerChooses` `player` with `via: "carrierIsDemon"`): the
+ *   Storyteller, not the players who wake, chooses who carries its `carrierIsDemon` token (the
+ *   Magician's Lil' Monsta, https://wiki.bloodontheclocktower.com/Magician#Related_Jinxes);
+ * - `wakes-one-by-one` (`wakes` `one-by-one`): the players who wake for it wake one at a time,
+ *   for a `carrierIsDemon` token until one chooses to take it (`carrier`: the Poppy Grower's
+ *   Lil' Monsta, https://wiki.bloodontheclocktower.com/Poppy_Grower#Related_Jinxes).
  * Each says the character type that may carry it when a `carriedBy` jinx with that partner
  * names one now (`type`: a Minion).
  */
@@ -209,19 +209,24 @@ export function carrierChoiceAlerts(
 	characterId: CharacterId,
 	characters: CharacterLookup
 ): NightAlert[] {
-	if (rulesOf(characterId, characters)?.carrierIsDemon === undefined) return [];
+	const carrier = rulesOf(characterId, characters)?.carrierIsDemon !== undefined;
 	const found = [
-		...ownJinxEffects(
-			game,
-			characterId,
-			'storytellerChooses',
-			characters,
-			(e) => e.what === 'carrier'
+		...(carrier
+			? ownJinxEffects(
+					game,
+					characterId,
+					'storytellerChooses',
+					characters,
+					(e) => e.what === 'player' && e.via === 'carrierIsDemon'
+				)
+			: []
 		).map((j) => ({ kind: 'storyteller-chooses' as const, partner: j.partner })),
-		...ownJinxEffects(game, characterId, 'wakesOneByOne', characters).map((j) => ({
-			kind: 'wakes-one-by-one' as const,
-			partner: j.partner
-		}))
+		...ownJinxEffects(game, characterId, 'wakes', characters, (e) => e.how === 'one-by-one').map(
+			(j) => ({
+				kind: 'wakes-one-by-one' as const,
+				partner: j.partner
+			})
+		)
 	];
 	return found.flatMap(({ kind, partner }) => {
 		const seats = game.seating.filter((s) => trueCharacter(game, s, characters) === partner);
@@ -238,6 +243,7 @@ export function carrierChoiceAlerts(
 				impairments: [],
 				partner,
 				...(type ? { type } : {}),
+				...(carrier ? { carrier: true as const } : {}),
 				...(character ? { wiki: `${wikiUrl(character)}#Related_Jinxes` } : {})
 			}
 		];
@@ -310,7 +316,7 @@ export function storytellerHasAlerts(
  *   guessed a living player as the partner after today's execution; if right, the Demon must
  *   choose that player tonight (the Alchemist-Spy, -Widow and -Wraith, the Magician with the
  *   Wraith, https://wiki.bloodontheclocktower.com/Alchemist#Related_Jinxes);
- * - `not-shown-given` (`notShownGiven`), at the partner's step: this player has the partner's
+ * - `not-shown-given` (`notShown` `given-ability`), at the partner's step: this player has the partner's
  *   ability but isn't shown the ability it gave (the Alchemist-Boffin);
  * - `may-mad-as` (`madAsPartner`), at this character's step: its madness may be about the
  *   partner (the Cerenovus with the Goblin,

@@ -498,3 +498,62 @@ describe('a copy of a game under another id', () => {
 		expect(saved.gameId).not.toBe('copy');
 	});
 });
+
+describe('version 29 saves', () => {
+	// M46 gave the jinx values written for one official pair general shapes: a custom script's
+	// own jinxes, kept in the game's script, open with the new ones.
+	it("migrates a version 29 game's script jinxes to their new shapes", () => {
+		const { session, ctx, seats } = newGame(names);
+		const v29 = { ...JSON.parse(JSON.stringify(toSavedGame(session, 1))), schemaVersion: 29 };
+		const created = v29.log.entries[0].events.find(
+			(e: { type: string }) => e.type === 'GameCreated'
+		);
+		const gloom = {
+			id: 'gloom',
+			name: 'Gloom',
+			type: 'demon',
+			ability: 'Each night*, choose a player: they die.',
+			setup: false,
+			reminders: [],
+			rules: {
+				jinxes: { lamplighter: { noBluffs: true, wakesOneByOne: { when: ['partner-alive'] } } }
+			}
+		};
+		created.script = {
+			...created.script,
+			entries: [...created.script.entries, { kind: 'custom', character: gloom }],
+			jinxes: [
+				{ characters: ['riot', 'atheist'], reason: 'Voted on.', rules: { storytellerVote: true } },
+				{ characters: ['monk', 'chef'], reason: 'Drunk.', rules: { impairs: { kind: 'drunk' } } }
+			]
+		};
+		const loaded = migrateSavedGame(v29);
+		expect(loaded.schemaVersion).toBe(SAVED_GAME_VERSION);
+		const script = openSession(loaded.log).game.script;
+		expect(script.jinxes?.map((j) => j.rules)).toEqual([
+			{ storytellerChooses: { what: 'own-execution' } },
+			{ impairs: { kind: 'drunk' } }
+		]);
+		const custom = script.entries.find((e) => e.kind === 'custom');
+		expect(custom?.kind === 'custom' && custom.character.rules?.jinxes).toEqual({
+			lamplighter: {
+				notShown: { what: 'bluffs' },
+				wakes: { how: 'one-by-one', when: ['partner-alive'] }
+			}
+		});
+		// The rest of the log is as it was, and the game takes new commands.
+		expect(loaded.log.entries.slice(1)).toEqual(v29.log.entries.slice(1));
+		const next = run(openSession(loaded.log), ctx, {
+			type: 'SetDead',
+			seatId: seats[0],
+			dead: true
+		});
+		expect(next.game.seats[seats[0]].dead).toBe(true);
+	});
+
+	it('leaves a version 29 game with no old jinx values as it was', () => {
+		const { session } = newGame(names);
+		const v29 = { ...JSON.parse(JSON.stringify(toSavedGame(session, 1))), schemaVersion: 29 };
+		expect(migrateSavedGame(v29).log).toEqual(v29.log);
+	});
+});

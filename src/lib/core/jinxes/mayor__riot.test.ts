@@ -63,7 +63,7 @@ describe('Mayor + Riot jinx', () => {
 
 		it("is data in the Riot's rules", () => {
 			expect(ownJinxRules({ script: scriptOf(ids) }, 'riot', 'mayor')).toEqual({
-				endsGame: { kind: 'partner-stops', winner: 'good', alive: 1 }
+				endsGame: { kind: 'ability-stopped', winner: 'good', alive: 1 }
 			});
 		});
 

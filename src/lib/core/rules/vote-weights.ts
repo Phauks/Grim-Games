@@ -140,7 +140,7 @@ export function takesVoteTokens(game: Game, seatId: SeatId, characters: Characte
 
 /**
  * The character whose eyes-closed voting lets `voter`'s player raise their hand without their
- * `voter.onlyWith` player, the vote counting only if that player voted too (`uncountedVote`:
+ * `voter.onlyWith` player, the vote counting only if that player voted too (`voter` `countsOnlyWith`:
  * the Butler with the Organ Grinder,
  * https://wiki.bloodontheclocktower.com/Butler#Related_Jinxes). Undefined while votes are
  * open, or with no such jinx.

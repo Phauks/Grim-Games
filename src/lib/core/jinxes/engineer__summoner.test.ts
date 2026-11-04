@@ -53,7 +53,7 @@ describe('Engineer + Summoner jinx', () => {
 		it("is data in the Summoner's rules", () => {
 			// Wiki: "If the living Summoner is removed from play, the Storyteller has the Summoner ability."
 			expect(ownJinxRules(base.game, 'summoner', 'engineer', base.characters)).toEqual({
-				storytellerHas: { once: 'removed' }
+				storytellerHas: { once: 'changed' }
 			});
 		});
 

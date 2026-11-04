@@ -3,7 +3,7 @@
  * Related Jinxes on the wiki, https://wiki.bloodontheclocktower.com/Mathematician): the
  * partner's player thinks they are a Townsfolk and has no such ability, so false info they get
  * is their own character's doing. The Mathematician's own rule counts only abilities another
- * character made work abnormally; the jinx counts these too (`abnormalCounts: { because: 'own-ability' }`).
+ * character made work abnormally; the jinx counts these too (`abnormalCounts: { counts: 'self-caused' }`).
  */
 import { describe, expect, it } from 'vitest';
 import type { CharacterId } from '#lib/core/data/index.ts';
@@ -38,7 +38,7 @@ export function ownAbilityTests(partner: CharacterId, marks: (s: Scenario) => Sc
 		it("is data in the Mathematician's rules", () => {
 			// Wiki: "The Mathematician learns if the"
 			expect(ownJinxRules(base.game, 'mathematician', partner, base.characters)).toEqual({
-				abnormalCounts: { because: 'own-ability' }
+				abnormalCounts: { counts: 'self-caused' }
 			});
 		});
 

@@ -55,7 +55,7 @@ export function cantTurnGood(
  * The good players who neighbour a Demon: each Demon's nearest living good player each way,
  * skipping dead and evil players, as the Marionette's own neighbour is counted
  * (https://wiki.bloodontheclocktower.com/Marionette). For a jinx that makes one of them a
- * character (`givenInstead: 'demon-neighbour-becomes'`, the Plague Doctor's Marionette).
+ * character (`givenInstead` `becomes` with `where: "demon-good-neighbour"`, the Plague Doctor's Marionette).
  */
 export function demonGoodNeighbours(game: Game, characters: CharacterLookup): SeatId[] {
 	const demons = game.seating.filter((id) => typeOf(game, id, characters) === 'demon');
@@ -230,7 +230,7 @@ export function followedAlignmentOffer(
  * dead, when its ability is set off by its player's death, `onDeath`: the Hatter's tea party),
  * with its `token` on them when the rule names one (the Summoner's Night 3) and without its
  * `spent` token (the Huntsman's No Ability), and someone to change when only some characters
- * change (the Huntsman's Damsel, the Hatter's Minions and Demon). A jinx's `earlierToken` counts
+ * change (the Huntsman's Damsel, the Hatter's Minions and Demon). A jinx's `changesCharacter` `token` counts
  * as its `token` for that partner alone (the Summoner's Pukka on Night 2, `earlyOnly`).
  */
 export function characterChanger(
@@ -265,7 +265,7 @@ export function characterChanger(
 
 /**
  * The only characters `characterId`'s `changesCharacter` may make tonight, when its player
- * carries a jinx's `earlierToken` but not the rule's own `token` (the Summoner may summon a
+ * carries a jinx's `changesCharacter` `token` but not the rule's own (the Summoner may summon a
  * Pukka on the 2nd night instead of the 3rd,
  * https://wiki.bloodontheclocktower.com/Summoner#Related_Jinxes). Undefined when the usual
  * choice holds.

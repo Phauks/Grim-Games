@@ -2,6 +2,7 @@
  * Game ends a jinx adds (`jinxes.endsGame`, `data/jinx-rules.ts`), for `rules/game-end.ts`,
  * which hands over its own reading of the board (`EndHelpers`).
  */
+import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterId, ReminderLabel } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { trueCharacter } from '#lib/core/model/selectors.ts';
@@ -50,14 +51,14 @@ function playing(game: Game, characterId: CharacterId, characters: CharacterLook
  *   with no execution (the Leviathan and the Mayor on day 5, `seats`: both); with no `day`
  *   (its `when` has `final-day`), the latest day that ended. It replaces the character's own
  *   end that day (`replaced`), unless the partner's ability may not work;
- * - `partner-stops`: the partner's player stopped its ability, a day use logged with `stops`
+ * - `ability-stopped`: the partner's player stopped its ability, a day use logged with `stops`
  *   (the Mayor stopping the riot, https://wiki.bloodontheclocktower.com/Riot#Related_Jinxes):
  *   `winner` wins if exactly `alive` of its players are alive, otherwise the other team. A
  *   drunk or poisoned partner may not have stopped it: a hold (`seats`: the partner's player,
  *   then its living players).
  * An end's `when` must hold too, at the moment of its event (M44): an execution's day and
- * who was alive just before it (`JinxEvent`), the day that ended; `partner-stops` now. The
- * `partner-end` and `partner-chooses` kinds are read where those ends are
+ * who was alive just before it (`JinxEvent`), the day that ended; `ability-stopped` now. The
+ * `gained-end` and `night-instead` kinds are read where those ends are
  * (`dead-without-demon.ts`, the extra day in `game-end.ts`).
  */
 export function jinxEnds(
@@ -140,7 +141,7 @@ export function jinxEnds(
 						});
 					}
 				});
-			} else if (end.kind === 'partner-stops') {
+			} else if (end.kind === 'ability-stopped') {
 				if (!holds()) continue;
 				for (const entry of logs.flatMap((log) => log.entries)) {
 					if (entry.kind !== 'ability' || entry.stops !== owner) continue;
@@ -188,23 +189,28 @@ export interface JinxStopper {
 }
 
 /**
- * The players who may stop `owner`'s ability today by a jinx (`partner-stops`, the Mayor
+ * The players who may stop `owner`'s ability today by a jinx (`ability-stopped`, the Mayor
  * stopping the riot, https://wiki.bloodontheclocktower.com/Riot#Related_Jinxes): the
- * partner's players, while `owner`'s nominees nominate straight away (`nomineesNominateNow`,
- * the riot) or once one of them stopped it today. Their choice is a day use with `stops`.
+ * partner's players, while `owner`'s ability is active (with `nomineesNominate`, while its
+ * nominees nominate straight away, `nomineesNominateNow`, the riot; else while a living
+ * player is `owner`) or once one of them stopped it today. Their choice is a day use with
+ * `stops`.
  */
 export function jinxStoppers(
 	game: Game,
 	owner: CharacterId,
 	characters: CharacterLookup
 ): JinxStopper[] {
-	const on = nomineesNominateNow(game, characters).includes(owner);
+	const on =
+		rulesOf(owner, characters)?.nomineesNominate !== undefined
+			? nomineesNominateNow(game, characters).includes(owner)
+			: playing(game, owner, characters).some((s) => !game.seats[s].dead);
 	const stops = ownJinxEffects(
 		game,
 		owner,
 		'endsGame',
 		characters,
-		(e) => e.kind === 'partner-stops'
+		(e) => e.kind === 'ability-stopped'
 	);
 	return stops.flatMap(({ partner }) =>
 		playing(game, partner, characters).flatMap((seatId): JinxStopper[] => {
