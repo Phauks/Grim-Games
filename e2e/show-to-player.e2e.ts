@@ -290,7 +290,9 @@ test("in a Lunatic game the second set is the Lunatic's and may include characte
 	await choice(page, 'Gambler').tap();
 	await page.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByTestId('bluff-set')).toHaveCount(3);
-	await expect(page.locator('[data-testid="bluff-set"][data-set="Set 3"]')).toContainText('Gambler');
+	await expect(page.locator('[data-testid="bluff-set"][data-set="Set 3"]')).toContainText(
+		'Gambler'
+	);
 	// Clearing the Lunatic's asks first and keeps the set.
 	await lunatic.getByRole('button', { name: 'Clear the Lunatic bluffs' }).tap();
 	const confirm = page.getByRole('alertdialog', { name: 'Clear the Lunatic bluffs?' });
