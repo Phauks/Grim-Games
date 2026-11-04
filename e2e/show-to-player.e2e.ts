@@ -270,17 +270,33 @@ test("in a Lunatic game the second set is the Lunatic's and may include characte
 }) => {
 	await page.goto('/spikes/bluffs');
 	await page.getByRole('button', { name: 'Demon bluffs (Lunatic game)' }).tap();
-	await expect(page.getByTestId('bluff-set')).toHaveCount(1);
-	await page.getByRole('button', { name: 'Add a set' }).tap();
+	// The Lunatic's set is there from the start, empty (Trevor, 2026-11-04).
+	await expect(page.getByTestId('bluff-set')).toHaveCount(2);
+	const lunatic = page.locator('[data-testid="bluff-set"][data-set="Lunatic"]');
+	await expect(lunatic).toContainText('None');
+	// Cleared, never deleted, like the Demon's; nothing to clear yet.
+	await expect(lunatic.getByRole('button', { name: 'Clear the Lunatic bluffs' })).toBeDisabled();
+	await lunatic.getByRole('button', { name: 'Choose the Lunatic bluffs' }).tap();
 	// The Lunatic's set lists characters in play from the start.
 	await expect(page.getByRole('checkbox', { name: 'Not in play only' })).not.toBeChecked();
 	await expect(choice(page, 'Sailor')).toBeEnabled();
 	await expect(choice(page, 'Sailor')).toContainText('In play');
 	await choice(page, 'Sailor').tap();
 	await page.getByRole('button', { name: 'Confirm' }).tap();
-	const lunatic = page.locator('[data-testid="bluff-set"][data-set="Lunatic"]');
 	await expect(lunatic).toContainText('Sailor');
 	await expect(lunatic).not.toContainText('In play: replace');
+	// More sets can still be added after it.
+	await page.getByRole('button', { name: 'Add a set' }).tap();
+	await choice(page, 'Gambler').tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(page.getByTestId('bluff-set')).toHaveCount(3);
+	await expect(page.locator('[data-testid="bluff-set"][data-set="Set 3"]')).toContainText('Gambler');
+	// Clearing the Lunatic's asks first and keeps the set.
+	await lunatic.getByRole('button', { name: 'Clear the Lunatic bluffs' }).tap();
+	const confirm = page.getByRole('alertdialog', { name: 'Clear the Lunatic bluffs?' });
+	await confirm.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(lunatic).toContainText('None');
+	await expect(page.getByTestId('bluff-set')).toHaveCount(3);
 });
 
 test('the Storyteller adds more bluff sets and deletes one after confirming', async ({ page }) => {
