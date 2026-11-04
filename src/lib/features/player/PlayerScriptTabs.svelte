@@ -22,7 +22,7 @@
 		script: LoadedScript;
 		/** Seats at the table; highlights that column of the Players breakdown. */
 		players?: number;
-		/** Characters on seats, in a game: Travellers and Jinxes start closed when none plays. */
+		/** Characters on seats, in a game: Travellers start closed when none plays. */
 		inPlay?: readonly string[];
 		/** Travellers the town knows are in play, with their players. */
 		travellers?: readonly TravellerInPlay[];

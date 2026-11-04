@@ -30,8 +30,10 @@
 		/** Printing: every section shown with a plain heading, none can be closed. */
 		flat?: boolean;
 		/**
-		 * Characters on seats, in a game (the board). Travellers and Jinxes then start closed
-		 * while none of theirs is in play, and open when one comes into play (Trevor, 2026-10-18).
+		 * Characters on seats, in a game (the board). Travellers then start closed while none is
+		 * in play, and open when one comes into play (Trevor, 2026-10-18). Jinxes stay open
+		 * whatever is in play: every player learns every jinx on the script, even with no jinxed
+		 * character in play, so which ones are in play stays hidden (wiki, Djinn).
 		 */
 		inPlay?: readonly string[];
 		/** Travellers the town knows are in play: each shows who plays it (Trevor, 2026-10-19). */
@@ -76,9 +78,6 @@
 		(travellers ?? [])
 			.filter((p) => p.characterId === id)
 			.map((p) => p.playerName ?? t('common.seat', { number: p.seatNumber }));
-	const noJinxInPlay = $derived(
-		!!playing && !jinxes.some((j) => j.characters.every((id) => playing.has(id)))
-	);
 	const density = $derived(fixed ?? 'normal');
 	// In a game the Travellers section stays, with None, until one comes into play.
 	const groups = $derived(groupByType(characters, playing ? 'traveller' : undefined));
@@ -167,13 +166,14 @@
 			{#each jinxes as jinx (jinx.characters.join('+'))}{@render jinxItem(jinx)}{/each}
 		</ul>
 	{/snippet}
-	<!-- No jinxes, no section, as with Fabled and Loric (Trevor, 2026-11-03). -->
+	<!-- No jinxes, no section, as with Fabled and Loric (Trevor, 2026-11-03). Never closed for
+	     having no jinxed pair in play: that would tell players which characters are in play. -->
 	{#if showJinxes && jinxes.length}{@render section(
 			t('player.jinxes'),
 			'play:jinxes',
 			jinxList,
 			undefined,
-			noJinxInPlay,
+			false,
 			jinxes.length
 		)}{/if}
 
