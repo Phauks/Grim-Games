@@ -25,6 +25,7 @@ export const lab = {
 	'lab.place.script': 'On the script only',
 	'lab.place.bluff': 'A Demon bluff',
 	'lab.filler': 'Other seats from',
+	'lab.filler.all': 'Every character',
 	'lab.list': 'Pairings',
 	'lab.previous': 'Previous',
 	'lab.next': 'Next',

@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { BASE_DISTRIBUTION } from '#lib/core/rules/distribution.ts';
-import { labGame, labOpponents, pairingKey, stepCharacter } from './lab-game.ts';
+import { rulesOf } from '#lib/core/data/rules/index.ts';
+import { labGame, labOpponents, pairingKey, stepCharacter, type LabSetup } from './lab-game.ts';
 
 // The Character Lab (M37): opponents come from the data, and a lab game seats the locked
 // characters first and fills the rest to the standard counts (src/lib/core/rules/distribution.ts).
@@ -149,6 +150,90 @@ describe('labGame', () => {
 		const { traveller: travellers, ...rest } = countTypes(game.seats);
 		expect(travellers).toBe(1);
 		expect(rest).toEqual(BASE_DISTRIBUTION[8]);
+	});
+});
+
+describe('labGame follows the setup rules', () => {
+	const game = (setup: Partial<LabSetup> & { locked: string[] }, seed = 1) =>
+		labGame(data, { playerCount: 8, place: 'in-play', filler: 'all', ...setup }, seeded(seed));
+
+	// https://wiki.bloodontheclocktower.com/Lil%27_Monsta
+	it("Lil' Monsta is on the script but no seat, and one more Minion is dealt", () => {
+		// Wiki: "During setup, remove Lil’ Monsta and add a Minion token."
+		for (const seed of [1, 2, 3, 4, 5]) {
+			const g = game({ locked: ['lilmonsta'] }, seed);
+			expect(g.seats).not.toContain('lilmonsta');
+			expect(g.script).toContain('lilmonsta');
+			expect(countTypes(g.seats)).toEqual({ townsfolk: 5, outsider: 1, minion: 2, demon: 0 });
+		}
+	});
+
+	// https://wiki.bloodontheclocktower.com/Lil%27_Monsta
+	it("Lil' Monsta as the opponent in play is not seated either", () => {
+		// Wiki: "Lil’ Monsta isn’t a player, and is instead babysat by a Minion."
+		const g = game({ locked: ['poisoner'], opponent: 'lilmonsta' });
+		expect(g.seats).not.toContain('lilmonsta');
+		expect(countTypes(g.seats).demon).toBe(0);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Baron
+	it('the Baron adds two Outsiders', () => {
+		// Wiki: "remove any two Townsfolk character tokens and add any two Outsider character tokens"
+		const g = game({ playerCount: 7, locked: ['baron'] });
+		expect(countTypes(g.seats)).toEqual({ townsfolk: 3, outsider: 2, minion: 1, demon: 1 });
+	});
+
+	// https://wiki.bloodontheclocktower.com/Legion
+	it('Legion fills most seats with Legion and deals no Minion', () => {
+		// Wiki: "for a 10-player game, there are roughly seven Legion and three good players"
+		const g = game({ playerCount: 10, locked: ['legion'] });
+		const legion = g.seats.filter((id) => id === 'legion').length;
+		expect(legion).toBeGreaterThan(5);
+		expect(countTypes(g.seats).minion).toBe(0);
+		expect(countTypes(g.seats).demon).toBe(legion);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Choirboy
+	it('the Choirboy brings the King into play', () => {
+		// Wiki: "if the King is not already in play, remove a Townsfolk character token and add the King character token"
+		const g = game({ locked: ['choirboy'] });
+		expect(g.seats.slice(0, 2)).toEqual(['choirboy', 'king']);
+		expect(countTypes(g.seats)).toEqual(BASE_DISTRIBUTION[8]);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Marionette
+	it('the Marionette sits next to the Demon', () => {
+		// Wiki: "mark a good player neighboring the Demon with the IS THE MARIONETTE reminder"
+		for (const seed of [1, 2, 3, 4, 5]) {
+			const seats = game({ locked: ['marionette'] }, seed).seats;
+			const sides = [seats[1], seats.at(-1)!].map(typeOf);
+			expect(sides).toContain('demon');
+		}
+	});
+
+	// https://wiki.bloodontheclocktower.com/Heretic
+	it('fills no seat with a character jinxed out by one in play', () => {
+		// Wiki: "Only 1 jinxed character can be in play."
+		for (const seed of [1, 2, 3, 4, 5]) {
+			const seats = game({ playerCount: 15, locked: ['heretic'] }, seed).seats;
+			for (const id of ['baron', 'godfather', 'lleech', 'pithag', 'spy', 'widow'])
+				expect(seats).not.toContain(id);
+		}
+	});
+
+	it('fills with characters that change no setup, so only the chosen ones do', () => {
+		for (const seed of [1, 2, 3, 4, 5, 6, 7, 8]) {
+			const g = game({ playerCount: 12, locked: ['chef'] }, seed);
+			expect(countTypes(g.seats)).toEqual(BASE_DISTRIBUTION[12]);
+			for (const id of g.seats.slice(1)) expect(rulesOf(id)?.setupModifier?.ops ?? []).toEqual([]);
+		}
+	});
+
+	it('with every character, fills from any edition and keeps the script to the game', () => {
+		const g = game({ playerCount: 12, locked: ['chef'] }, 9);
+		expect(g.seats).toHaveLength(12);
+		expect(g.script).toHaveLength(12 + g.bluffs.length);
+		for (const id of g.bluffs) expect(g.seats).not.toContain(id);
 	});
 });
 

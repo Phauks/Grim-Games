@@ -17,7 +17,11 @@ import {
 	type Jinx,
 	type SeatedType
 } from '#lib/core/data/types.ts';
-import { baseCounts } from '#lib/core/rules/distribution.ts';
+import { canDuplicate, isNotDealt } from '#lib/core/rules/bag-characters.ts';
+import { jinxRulesBetween } from '#lib/core/rules/jinx-pairs.ts';
+import { reservedHidden } from '#lib/core/modes/draft-seats.ts';
+import { analyseSetup } from '#lib/core/rules/setup.ts';
+import { setupModifierFor } from '#lib/core/rules/setup-modifiers.ts';
 
 /** Where the opponents come from. */
 export type OpponentSource =
@@ -78,14 +82,17 @@ export function labOpponents(
 		.map((c) => withJinxes(c.id));
 }
 
+/** Where the other seats come from: one official edition, or every official character. */
+export type LabFiller = OfficialEditionId | 'all';
+
 export interface LabSetup {
 	playerCount: number;
 	/** Kept in every game, on the first seats in this order (Fabled and Loric: in play). */
 	locked: readonly CharacterId[];
 	opponent?: CharacterId;
 	place: OpponentPlace;
-	/** The edition whose characters fill the other seats and the rest of the script. */
-	filler: OfficialEditionId;
+	/** The characters that fill the other seats (and, for an edition, the rest of the script). */
+	filler: LabFiller;
 }
 
 export interface LabGame {
@@ -110,83 +117,160 @@ function shuffled<T>(list: readonly T[], random: () => number): T[] {
 }
 
 /**
- * A game for one test: the locked characters (and the opponent, when in play) on the first
- * seats, the other seats filled from the filler edition to the standard counts for that many
- * players, less the types already seated. A Traveller takes a seat outside the counts. When
- * the edition runs out of a type, any official character of that type fills in.
+ * The count to deal of one type, from the counts the setup check allows: the setup sheet's own
+ * when allowed, else the nearest to it (the larger on a tie, so "+1 Minion, or none" deals the
+ * extra Minion). Counts below what is already seated are passed over while a larger one exists.
+ */
+function pickCount(allowed: readonly number[], usual: number, seated: number): number {
+	const enough = allowed.filter((n) => n >= seated);
+	const from = enough.length ? enough : allowed;
+	if (from.includes(usual)) return usual;
+	return from.reduce((best, n) => {
+		const d = Math.abs(n - usual) - Math.abs(best - usual);
+		return d < 0 || (d === 0 && n > best) ? n : best;
+	});
+}
+
+/**
+ * A game for one test, set up as a Storyteller would (https://wiki.bloodontheclocktower.com/Setup):
+ * the locked characters (and the opponent, when in play) on the first seats, then any
+ * character one of them needs in play (the Choirboy's King), the other seats filled from the
+ * filler to the counts the setup check gives for the characters in play (their [bracketed]
+ * setup changes included), less the types already seated. A character that is never dealt
+ * (Lil' Monsta) is in play from the script, on no seat. A character that may repeat and sets
+ * its own type's count (Legion) fills that count with copies. One that must neighbour a type
+ * (the Marionette, the Demon) gets one beside it. A Traveller takes a seat outside the counts.
+ * Filler characters change nothing at setup and have no exclusive jinx with those in play, so
+ * only the chosen characters change the game. When the filler runs out of a type, any official
+ * character of that type fills in.
  */
 export function labGame(data: GameData, setup: LabSetup, random = Math.random): LabGame {
 	const character = (id: CharacterId): Character | undefined => data.byId.get(id);
+	const typeOf = (id: CharacterId) => character(id)?.type;
 	const wanted = [...setup.locked, ...(setup.opponent ? [setup.opponent] : [])];
 	const ruleCharacters = wanted.filter((id) => {
-		const type = character(id)?.type;
+		const type = typeOf(id);
 		return type !== undefined && RULE_TYPES.includes(type);
 	});
-	const lockedSeats = setup.locked.filter((id) => !ruleCharacters.includes(id));
-	const opponentSeated =
+	const notDealt = (id: CharacterId) => {
+		const c = character(id);
+		return c !== undefined && isNotDealt(c);
+	};
+	const opponentInPlay =
 		setup.opponent !== undefined &&
-		setup.place === 'in-play' &&
-		!ruleCharacters.includes(setup.opponent);
-	const fixed = [...lockedSeats, ...(opponentSeated ? [setup.opponent!] : [])].slice(
-		0,
-		setup.playerCount
-	);
-
-	const travellers = fixed.filter((id) => character(id)?.type === 'traveller').length;
-	const counts = baseCounts(Math.max(0, setup.playerCount - travellers));
-	for (const id of fixed) {
-		const type = character(id)?.type;
-		if (type && isSeated(type)) counts[type] = Math.max(0, counts[type] - 1);
+		(setup.place === 'in-play' || ruleCharacters.includes(setup.opponent));
+	const lockedSeats = setup.locked.filter((id) => !ruleCharacters.includes(id) && !notDealt(id));
+	const opponentSeated =
+		opponentInPlay && !ruleCharacters.includes(setup.opponent!) && !notDealt(setup.opponent!);
+	const unseatedInPlay = [
+		...setup.locked.filter(notDealt),
+		...(opponentInPlay && notDealt(setup.opponent!) ? [setup.opponent!] : [])
+	];
+	const chosen = [...lockedSeats, ...(opponentSeated ? [setup.opponent!] : [])];
+	// Characters the chosen ones need in play ("+the King"), on the next seats.
+	for (const id of [...chosen, ...ruleCharacters, ...unseatedInPlay]) {
+		const c = character(id);
+		const needs = c && setupModifierFor(c)?.requires;
+		if (needs && data.byId.has(needs) && !chosen.includes(needs)) chosen.push(needs);
 	}
+	const fixed = chosen.slice(0, setup.playerCount);
+
+	const travellers = fixed.filter((id) => typeOf(id) === 'traveller').length;
+	const inPlay = [...fixed, ...ruleCharacters, ...unseatedInPlay].flatMap((id) => {
+		const c = character(id);
+		return c ? [c] : [];
+	});
+	const analysis = analyseSetup({
+		players: setup.playerCount,
+		travellers,
+		inPlay,
+		findById: character
+	});
+	const seatedOf = (type: SeatedType) => fixed.filter((id) => typeOf(id) === type).length;
+	const counts = {} as Record<SeatedType, number>;
+	for (const type of ['outsider', 'minion', 'demon'] as const)
+		counts[type] = pickCount(analysis.expected[type], analysis.base[type], seatedOf(type));
+	counts.townsfolk = Math.max(0, analysis.dealt - counts.outsider - counts.minion - counts.demon);
+	for (const type of SEATED_TYPES) counts[type] = Math.max(0, counts[type] - seatedOf(type));
 
 	// Kept off the seats: everything already placed, and an opponent that isn't in play.
-	const used = new Set<CharacterId>([...wanted]);
-	const edition = data.characters.filter((c) => c.edition === setup.filler);
+	const used = new Set<CharacterId>([...wanted, ...fixed]);
 	const open = setup.playerCount - fixed.length;
 	const filled: CharacterId[] = [];
+	// A chosen character that may repeat and sets its own type's count fills it (Legion).
+	for (const c of inPlay) {
+		const type = c.type;
+		if (!isSeated(type) || !canDuplicate(c, inPlay)) continue;
+		const ownCount = setupModifierFor(c)?.ops.some((op) => op.kind === 'set' && op.type === type);
+		while (ownCount && counts[type] > 0 && filled.length < open) {
+			filled.push(c.id);
+			counts[type]--;
+		}
+	}
+	const changesNothing = (c: Character) => {
+		if (isNotDealt(c)) return false;
+		const modifier = setupModifierFor(c);
+		if (
+			modifier &&
+			(modifier.ops.length || modifier.requires || modifier.alignments || modifier.copies)
+		)
+			return false;
+		return !inPlay.some((other) => jinxRulesBetween(c.id, other.id, data.byId)?.exclusive);
+	};
+	const pool =
+		setup.filler === 'all'
+			? data.characters
+			: data.characters.filter((c) => c.edition === setup.filler);
 	for (const type of SEATED_TYPES) {
 		const take = (from: readonly Character[]) => {
 			for (const c of shuffled(from, random)) {
 				if (counts[type] === 0 || filled.length === open) return;
-				if (c.type !== type || used.has(c.id)) continue;
+				if (c.type !== type || used.has(c.id) || !changesNothing(c)) continue;
 				used.add(c.id);
 				filled.push(c.id);
 				counts[type]--;
 			}
 		};
-		take(edition);
-		// The edition is short of this type: any official one.
+		take(pool);
+		// The filler is short of this type: any official one.
 		take(data.characters);
 	}
 	// Seats over the counts (more locked than the counts allow): Townsfolk.
 	while (filled.length < open) {
-		const spare = data.characters.find((c) => c.type === 'townsfolk' && !used.has(c.id));
+		const spare = data.characters.find(
+			(c) => c.type === 'townsfolk' && !used.has(c.id) && changesNothing(c)
+		);
 		if (!spare) break;
 		used.add(spare.id);
 		filled.push(spare.id);
 	}
 	const seats = [...fixed, ...shuffled(filled, random)];
+	seatNeighbours(seats, fixed.length, inPlay, typeOf);
 
 	const onScript = new Set<CharacterId>([
-		...edition.filter((c) => isSeated(c.type)).map((c) => c.id),
+		...(setup.filler === 'all' ? [] : pool.filter((c) => isSeated(c.type)).map((c) => c.id)),
 		...wanted.filter((id) => !ruleCharacters.includes(id)),
 		...seats
 	]);
-	const inPlay = new Set(seats);
+	const seated = new Set(seats);
 	const goodOff = shuffled(
-		data.characters.filter(
+		(setup.filler === 'all'
+			? data.characters
+			: data.characters.filter((c) => onScript.has(c.id))
+		).filter(
 			(c) =>
-				onScript.has(c.id) &&
-				!inPlay.has(c.id) &&
-				c.id !== setup.opponent &&
-				GOOD_TYPES.includes(c.type)
+				!seated.has(c.id) &&
+				!wanted.includes(c.id) &&
+				GOOD_TYPES.includes(c.type) &&
+				changesNothing(c)
 		),
 		random
 	).map((c) => c.id);
 	const bluffs =
-		setup.place === 'bluff' && setup.opponent && !inPlay.has(setup.opponent)
+		setup.place === 'bluff' && setup.opponent && !seated.has(setup.opponent)
 			? [setup.opponent, ...goodOff].slice(0, BLUFFS)
 			: goodOff.slice(0, BLUFFS);
+	for (const id of bluffs) onScript.add(id);
 
 	return {
 		script: data.characters.filter((c) => onScript.has(c.id)).map((c) => c.id),
@@ -194,6 +278,32 @@ export function labGame(data: GameData, setup: LabSetup, random = Math.random): 
 		seats,
 		bluffs
 	};
+}
+
+/**
+ * Seats one of the type a chosen character must neighbour beside it (the Marionette sits next
+ * to the Demon, https://wiki.bloodontheclocktower.com/Marionette): swaps a filled seat of that
+ * type into a free seat either side, when neither neighbour is one already. The first `fixed`
+ * seats stay put.
+ */
+function seatNeighbours(
+	seats: CharacterId[],
+	fixed: number,
+	inPlay: readonly Character[],
+	typeOf: (id: CharacterId) => CharacterType | undefined
+): void {
+	const n = seats.length;
+	if (n < 3) return;
+	for (const { id, nextTo } of reservedHidden(inPlay)) {
+		const at = seats.indexOf(id);
+		if (at < 0) continue;
+		const sides = [(at + 1) % n, (at + n - 1) % n];
+		if (sides.some((i) => typeOf(seats[i]) === nextTo)) continue;
+		const from = seats.findIndex((s, i) => i >= fixed && typeOf(s) === nextTo);
+		const to = sides.find((i) => i >= fixed);
+		if (from < 0 || to === undefined) continue;
+		[seats[from], seats[to]] = [seats[to], seats[from]];
+	}
 }
 
 /** The key a pairing's result is kept under: the locked characters, sorted, and the opponent. */

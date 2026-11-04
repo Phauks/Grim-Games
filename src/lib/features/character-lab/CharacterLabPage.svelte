@@ -15,6 +15,7 @@
 		OPPONENT_PLACES,
 		pairingKey,
 		stepCharacter,
+		type LabFiller,
 		type OpponentPlace,
 		type OpponentSource
 	} from '#lib/core/lab/lab-game.ts';
@@ -99,7 +100,10 @@
 		value: place,
 		label: t(`lab.place.${place}`)
 	}));
-	const fillerOptions = OFFICIAL_EDITIONS.map((e) => ({ value: e.id, label: e.name }));
+	const fillerOptions: { value: LabFiller; label: string }[] = [
+		{ value: 'all', label: t('lab.filler.all') },
+		...OFFICIAL_EDITIONS.map((e) => ({ value: e.id, label: e.name }))
+	];
 
 	const markOf = (id: CharacterId): Mark | undefined => setup.marks[pairingKey(setup.locked, id)];
 	const tally = $derived.by(() => {
@@ -299,7 +303,7 @@
 				label={t('lab.filler')}
 				value={setup.filler}
 				options={fillerOptions}
-				onChange={(filler: (typeof OFFICIAL_EDITIONS)[number]['id']) => lab.update({ filler })}
+				onChange={(filler: LabFiller) => lab.update({ filler })}
 			/>
 
 			<h2>{t('lab.list')}</h2>
