@@ -73,3 +73,45 @@ describe('readJinxRules (M44)', () => {
 		expect(read({ endsGame: noDay }).issues).toContain('jinxes.chef.endsGame.day: missing');
 	});
 });
+
+describe('readJinxRules (M46)', () => {
+	it('reads a protection, its coverage defaulting to any', () => {
+		expect(read({ protects: { who: 'partner', by: 'partner' } }).rules).toEqual({
+			protects: { who: 'partner', from: 'any', by: 'partner' }
+		});
+		expect(read({ protects: { from: 'demon', night: true } }).rules).toEqual({
+			protects: { from: 'demon', night: true }
+		});
+		expect(read({ protects: { from: 'everything' } }).rules).toBeUndefined();
+	});
+
+	it('reads the general shapes, and refuses their parts out of place', () => {
+		const fine: Record<string, unknown>[] = [
+			{ notShown: { what: 'partner-seat' } },
+			{ wakes: { how: 'one-by-one' } },
+			{ survives: { on: 'carrier-executed' } },
+			{ keepsAbility: { afterDeath: true } },
+			{ voter: { countsOnlyWith: true } },
+			{ changesCharacter: { token: 'Night 2' } },
+			{ alsoBecomes: { type: 'minion', player: 'neighbour' } },
+			{ givenInstead: { instead: 'becomes', type: 'outsider', upTo: 2 } },
+			{ storytellerChooses: { what: 'player', via: 'carrierIsDemon' } },
+			{ noKill: { killer: 'demon', when: ['nominated-partner', 'partner-dead'] } },
+			{ endsGame: { kind: 'night-instead', chooser: 'self' } },
+			{ endsGame: { kind: 'gained-end', end: 'dead-without-demon', winner: 'evil' } }
+		];
+		for (const entry of fine)
+			expect(read(entry), JSON.stringify(entry)).toMatchObject({ issues: [] });
+		const refused: Record<string, unknown>[] = [
+			{ givenInstead: { instead: 'a-minion', type: 'outsider' } },
+			{ givenInstead: { instead: 'becomes', upTo: 2 } },
+			{ noKill: { killer: 'demon' } },
+			{ noKill: { killer: 'demon', on: 'chosen', when: ['partner-dead'] } },
+			{ endsGame: { kind: 'night-instead', winner: 'good' } },
+			{ endsGame: { kind: 'gained-end', winner: 'evil' } },
+			{ keepsAbility: { afterDeath: false } }
+		];
+		for (const entry of refused)
+			expect(read(entry).issues.length, JSON.stringify(entry)).toBeGreaterThan(0);
+	});
+});

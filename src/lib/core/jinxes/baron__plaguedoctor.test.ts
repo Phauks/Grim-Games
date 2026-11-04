@@ -51,9 +51,13 @@ describe('Baron + Plague Doctor jinx', () => {
 
 		it("is data in the Plague Doctor's rules", () => {
 			expect(jinxRulesBetween('plaguedoctor', 'baron')).toEqual({
-				givenInstead: { instead: 'outsiders' }
+				givenInstead: { instead: 'becomes', type: 'outsider', upTo: 2 }
 			});
-			expect(givenInstead('plaguedoctor', 'baron', ids)).toBe('outsiders');
+			expect(givenInstead('plaguedoctor', 'baron', ids)).toEqual({
+				instead: 'becomes',
+				type: 'outsider',
+				upTo: 2
+			});
 		});
 
 		it('warns when the Storyteller takes it; players become Outsiders, keeping alignment', () => {

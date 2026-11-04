@@ -13,6 +13,8 @@
  * - `self-in-play`, `partner-in-play`: a player is that character, alive or dead;
  * - `self-executed`, `partner-executed` (M44): a player of that character was executed today
  *   (logged, whether or not they died; at night, the day just gone);
+ * - `nominated-partner`, `nominated-by-partner` (M46): a self player nominated a partner's
+ *   player today, or a partner's player nominated a self player (at night, the day just gone);
  * - `has-partner-ability`: the effect is about a self player who has the partner's ability
  *   from their token (`gainsAbilityOf`, `gainedFrom`) or holds it, not their own; it applies to
  *   that player only. Its mirror, read from the partner's file, is `partner-has-this-ability`;
@@ -59,6 +61,8 @@ export const JINX_FLAGS = [
 	'partner-in-play',
 	'self-executed',
 	'partner-executed',
+	'nominated-partner',
+	'nominated-by-partner',
 	'has-partner-ability',
 	'partner-has-this-ability',
 	'after-execution',

@@ -49,9 +49,9 @@ describe('Evil Twin + Plague Doctor jinx', () => {
 
 		it("is data in the Plague Doctor's rules", () => {
 			expect(jinxRulesBetween('plaguedoctor', 'eviltwin')).toEqual({
-				givenInstead: { instead: 'a-player-becomes' }
+				givenInstead: { instead: 'becomes' }
 			});
-			expect(givenInstead('plaguedoctor', 'eviltwin', ids)).toBe('a-player-becomes');
+			expect(givenInstead('plaguedoctor', 'eviltwin', ids)).toEqual({ instead: 'becomes' });
 		});
 
 		it('warns when the Storyteller takes it, and a player can become it', () => {

@@ -53,9 +53,12 @@ describe('Marionette + Plague Doctor jinx', () => {
 
 		it("is data in the Plague Doctor's rules", () => {
 			expect(jinxRulesBetween('plaguedoctor', 'marionette')).toEqual({
-				givenInstead: { instead: 'demon-neighbour-becomes' }
+				givenInstead: { instead: 'becomes', where: 'demon-good-neighbour' }
 			});
-			expect(givenInstead('plaguedoctor', 'marionette', ids)).toBe('demon-neighbour-becomes');
+			expect(givenInstead('plaguedoctor', 'marionette', ids)).toEqual({
+				instead: 'becomes',
+				where: 'demon-good-neighbour'
+			});
 		});
 
 		it("offers the Demon's nearest living good neighbours, skipping the dead and evil", () => {

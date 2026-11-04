@@ -152,7 +152,7 @@ export function holdsAbility(
 		// https://wiki.bloodontheclocktower.com/Plague_Doctor#Related_Jinxes).
 		return (
 			typeOf(game, holder, characters) === 'minion' &&
-			givenInstead(held.via, held.characterId, game.script, characters) === 'a-minion'
+			givenInstead(held.via, held.characterId, game.script, characters)?.instead === 'a-minion'
 		);
 	}
 	if (rule?.to !== 'demon' || typeOf(game, holder, characters) !== 'demon') return false;

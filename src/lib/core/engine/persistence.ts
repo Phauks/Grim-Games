@@ -13,10 +13,11 @@
 import { APP_NAME } from '#lib/core/app-name.ts';
 import { scriptLogo } from '#lib/core/data/script-logo.ts';
 import { scriptEdition } from '#lib/core/data/script.ts';
+import { upgradeScriptJinxes } from '#lib/core/data/jinx-renames.ts';
 import type { GameId } from '#lib/core/model/index.ts';
 import type { GameLog, GameSession } from './log.ts';
 
-export const SAVED_GAME_VERSION = 29;
+export const SAVED_GAME_VERSION = 30;
 
 export interface SavedGame {
 	schemaVersion: typeof SAVED_GAME_VERSION;
@@ -293,6 +294,29 @@ const migrateV27toV28: Migration = (doc) => ({ ...doc, schemaVersion: 28 });
  */
 const migrateV28toV29: Migration = (doc) => ({ ...doc, schemaVersion: 29 });
 
+/**
+ * Version 30 (2026-11-04) gave the jinx values written for one official pair general shapes
+ * (M46, `data/jinx-rules.ts`). A custom script's jinx rules are kept in the game's script
+ * (`GameCreated`, `ScriptChanged`), so each old value there becomes its new shape
+ * (`upgradeScriptJinxes`); anything else is left as it was.
+ */
+const migrateV29toV30: Migration = (doc) => {
+	const log = doc.log;
+	if (!isRecord(log) || !Array.isArray(log.entries)) return { ...doc, schemaVersion: 30 };
+	const entries = log.entries.map((entry: unknown) => {
+		if (!isRecord(entry) || !Array.isArray(entry.events)) return entry;
+		const events = entry.events.map((event: unknown) =>
+			isRecord(event) &&
+			(event.type === 'GameCreated' || event.type === 'ScriptChanged') &&
+			event.script !== undefined
+				? { ...event, script: upgradeScriptJinxes(event.script) }
+				: event
+		);
+		return { ...entry, events };
+	});
+	return { ...doc, schemaVersion: 30, log: { ...log, entries } };
+};
+
 /** `MIGRATIONS[n]` migrates version `n` to `n + 1`. Version 1 is the first saved shape. */
 export const MIGRATIONS: Readonly<Record<number, Migration>> = {
 	1: migrateV1toV2,
@@ -322,7 +346,8 @@ export const MIGRATIONS: Readonly<Record<number, Migration>> = {
 	25: migrateV25toV26,
 	26: migrateV26toV27,
 	27: migrateV27toV28,
-	28: migrateV28toV29
+	28: migrateV28toV29,
+	29: migrateV29toV30
 };
 
 /**

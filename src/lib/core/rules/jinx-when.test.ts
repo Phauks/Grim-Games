@@ -116,6 +116,17 @@ describe('jinxApplies: negation, deaths, executions and third characters (M44)',
 		expect(at(['self-executed'], day.execute('chef').game)).toBe(true);
 	});
 
+	it("reads a nomination today between the two characters' players, either way (M46)", () => {
+		const day = t.newDay();
+		expect(at(['nominated-partner'], day.game)).toBe(false);
+		expect(at(['nominated-partner'], day.nominate('chef', 'imp').game)).toBe(true);
+		expect(at(['nominated-by-partner'], day.nominate('chef', 'imp').game)).toBe(false);
+		expect(at(['nominated-by-partner'], day.nominate('imp', 'chef').game)).toBe(true);
+		// Someone else's nomination, or yesterday's, is not one.
+		expect(at(['nominated-partner'], day.nominate('monk', 'imp').game)).toBe(false);
+		expect(at(['nominated-partner'], day.nominate('chef', 'imp').newDay().game)).toBe(false);
+	});
+
 	it('reads a third character on the script, alive or in play, from either side', () => {
 		expect(at([{ alive: 'saint' }])).toBe(true);
 		expect(at([{ alive: 'saint' }], t.dies('saint').game)).toBe(false);
@@ -141,6 +152,8 @@ describe('flipCondition', () => {
 	it("swaps self and partner, inside a not too, and keeps a third character's", () => {
 		expect(flipCondition('self-dead')).toBe('partner-dead');
 		expect(flipCondition('partner-executed')).toBe('self-executed');
+		expect(flipCondition('nominated-partner')).toBe('nominated-by-partner');
+		expect(flipCondition('nominated-by-partner')).toBe('nominated-partner');
 		expect(flipCondition({ not: 'self-alive' })).toEqual({ not: 'partner-alive' });
 		expect(flipCondition({ alive: 'saint' })).toEqual({ alive: 'saint' });
 		expect(flipCondition({ not: { inPlay: 'saint' } })).toEqual({ not: { inPlay: 'saint' } });

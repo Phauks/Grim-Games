@@ -27,11 +27,14 @@
 	},
 	"jinxes": {
 		"vigormortis": {
-			"keepsAfterPartner": true
+			"keepsAbility": {
+				"afterDeath": true
+			}
 		},
 		"alhadikhia": {
 			"endsGame": {
-				"kind": "partner-chooses"
+				"kind": "night-instead",
+				"chooser": "partner"
 			}
 		}
 	}

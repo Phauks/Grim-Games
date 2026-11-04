@@ -289,17 +289,16 @@ function extraDay(
 	if (mind === undefined) return undefined;
 	const { characterId } = mind;
 	const wiki = wikiOf(characterId, characters);
-	// A jinx makes the extra day a night whose choice ends the game (`partner-chooses`: the
-	// Al-Hadikhia, https://wiki.bloodontheclocktower.com/Mastermind#Related_Jinxes).
-	const chooser = end.seats
-		.map((id) => trueCharacter(game, id, characters))
-		.find(
-			(id) =>
-				id !== undefined &&
-				jinxEffect(game, characterId, id, 'endsGame', characters)?.kind === 'partner-chooses'
-		);
-	if (chooser !== undefined)
+	// A jinx makes the extra day a night whose choice ends the game (`night-instead`, its
+	// `chooser` the partner's player or this one's: the Al-Hadikhia,
+	// https://wiki.bloodontheclocktower.com/Mastermind#Related_Jinxes).
+	for (const id of end.seats.map((s) => trueCharacter(game, s, characters))) {
+		if (id === undefined) continue;
+		const night = jinxEffect(game, characterId, id, 'endsGame', characters);
+		if (night?.kind !== 'night-instead') continue;
+		const chooser = night.chooser === 'self' ? characterId : id;
 		return { rule: 'jinx-night', characterId: chooser, seats: [mind.seatId], wiki };
+	}
 	const hold: GameHold = { rule: 'extra-day', characterId, seats: [mind.seatId], wiki };
 	if (extra === undefined) return hold;
 	const base = {

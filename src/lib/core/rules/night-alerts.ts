@@ -53,7 +53,7 @@
  *   ability and the Storyteller makes the choice (`jinx-partner-alerts.ts`: the Summoner with
  *   the Courtier or the Preacher, https://wiki.bloodontheclocktower.com/Summoner#Related_Jinxes);
  * - `storyteller-chooses` / `wakes-one-by-one`: a jinx says the Storyteller chooses who carries
- *   this character's `carrierIsDemon` token, or that the players who choose it wake one at a
+ *   this character's `carrierIsDemon` token, or that the players who wake for it wake one at a
  *   time (`jinx-partner-alerts.ts`: Lil' Monsta with the Magician or the Poppy Grower,
  *   https://wiki.bloodontheclocktower.com/Lil%27_Monsta#Related_Jinxes);
  * - `learns-alignment`: a jinx has the waking player learn their alignment (the Ogre whose
@@ -92,7 +92,8 @@ import { characterChanger } from './becomes.ts';
 import { isExecution } from './death-causes.ts';
 import { stopsKillingTonight } from './reminder-effects.ts';
 import { noAttackState } from './demon-attack.ts';
-import { jinxEffect, ownJinxEffects } from './jinxes.ts';
+import { jinxEffect, ownJinxEffects, ownJinxes } from './jinxes.ts';
+import { aboutHolder, jinxApplies } from './jinx-when.ts';
 import { jinxChosenTonight } from './jinx-choices.ts';
 import { chosenStopsKill } from './jinx-targets.ts';
 import {
@@ -109,6 +110,7 @@ import { falseInfoSource } from './night-info/reliability.ts';
 import {
 	abilityState,
 	firstDeathSaver,
+	jinxSafeFrom,
 	killRedirect,
 	protection,
 	protectors,
@@ -263,6 +265,8 @@ export interface NightAlert {
 	partner?: CharacterId;
 	/** For `storyteller-chooses` and `wakes-one-by-one`: the character type that carries it. */
 	type?: CharacterType;
+	/** For `wakes-one-by-one`: the players wake to choose who carries its `carrierIsDemon` token. */
+	carrier?: true;
 	/** For `learns-alignment`: the alignment the player learns. */
 	alignment?: Alignment;
 	/** For `learns-character`: the partner's player whose true character they learn. */
@@ -429,7 +433,7 @@ export function nightStepAlerts(
 	const killer = nightKiller(characterId, characters);
 	out.push(...jinxStepAlerts(game, characterId, actors, killer?.by === 'demon', characters));
 	if (killer?.by === 'demon') {
-		const stopped = executedPartnerStops(game, characters);
+		const stopped = demonKillStops(game, characters);
 		for (const seatId of actors)
 			for (const source of stopped)
 				out.push(
@@ -466,7 +470,8 @@ export function nightStepAlerts(
 	const subjects = (killer.targets === 'self' ? actors : game.seating).filter(
 		(s) => getSeat(game, s)?.dead === false
 	);
-	for (const seatId of subjects) out.push(...deathAlerts(game, seatId, killer, characters));
+	for (const seatId of subjects)
+		out.push(...deathAlerts(game, seatId, characterId, killer, characters));
 	return out;
 }
 
@@ -477,30 +482,21 @@ function wikiOf(source: AbilitySource, characters: CharacterLookup): string | un
 }
 
 /**
- * The players whose jinx stops the Demon killing tonight because they nominated a jinxed
- * partner today who died by execution (`noKill: 'executed-partner'`: the Cannibal and the
- * Princess, https://wiki.bloodontheclocktower.com/Cannibal#Related_Jinxes), from today's log.
+ * The players whose jinx stops every Demon killing tonight (`noKill` with `killer: "demon"`,
+ * while its `when` holds for that player: with `nominated-partner`, `partner-executed` and
+ * `partner-dead`, the Cannibal who nominated and executed the Princess today,
+ * https://wiki.bloodontheclocktower.com/Cannibal#Related_Jinxes).
  */
-function executedPartnerStops(game: Game, characters: CharacterLookup): AbilitySource[] {
-	const entries = game.today.entries;
-	return game.seating.flatMap((nominator) => {
-		const own = trueCharacter(game, nominator, characters);
+function demonKillStops(game: Game, characters: CharacterLookup): AbilitySource[] {
+	return game.seating.flatMap((seatId) => {
+		const own = trueCharacter(game, seatId, characters);
 		if (!own) return [];
-		const partners = ownJinxEffects(
-			game,
-			own,
-			'noKill',
-			characters,
-			(e) => e.on === 'executed-partner'
+		const hit = ownJinxes(game, own, (r) => r.noKill?.killer === 'demon', characters).some(
+			({ partner, rule }) =>
+				!aboutHolder(rule.noKill) &&
+				jinxApplies(game, own, partner, rule.noKill, characters, { seatId })
 		);
-		const hit = entries.some(
-			(e) =>
-				e.kind === 'nomination' &&
-				e.nominator === nominator &&
-				partners.some((p) => trueCharacter(game, e.nominee, characters) === p.partner) &&
-				entries.some((x) => x.kind === 'execution' && x.seatId === e.nominee && x.died)
-		);
-		return hit ? [{ characterId: own, seatId: nominator }] : [];
+		return hit ? [{ characterId: own, seatId }] : [];
 	});
 }
 
@@ -647,6 +643,7 @@ function sourceAlert(
 function deathAlerts(
 	game: Game,
 	seatId: SeatId,
+	killerId: CharacterId,
 	killer: NightKiller,
 	characters: CharacterLookup
 ): NightAlert[] {
@@ -667,17 +664,21 @@ function deathAlerts(
 		if (override && !override.value) {
 			out.push({ kind: 'protected', seatId, source: 'override', works: true, impairments: [] });
 		}
-		for (const { source } of protectors(game, seatId, characters, killer.by)) {
+		for (const { source } of protectors(game, seatId, characters, killer.by, killerId)) {
 			alert('protected', source, wikiOf(source));
 		}
 		// A player a working protection keeps safe doesn't die: no kill to move elsewhere (the
 		// Monk's Mayor example: https://wiki.bloodontheclocktower.com/Monk) and no first death
 		// spent (https://wiki.bloodontheclocktower.com/Fool, Example 3).
-		const safe = protection(game, seatId, characters, killer.by);
+		const safe = protection(game, seatId, characters, killer.by, killerId);
 		const redirect = safe ? undefined : killRedirect(game, seatId, characters, killer.by);
 		if (redirect) alert('may-bounce', redirect, wikiOf(redirect));
 		const saver = safe ? undefined : firstDeathSaver(game, seatId, characters);
 		if (saver) alert('survives-first-death', saver.source, wikiOf(saver.source));
+	} else {
+		// A jinx's "cannot kill" holds even against a kill that ignores protection.
+		const safe = jinxSafeFrom(game, seatId, characters, killer.by, killerId);
+		if (safe) alert('protected', safe, wikiOf(safe));
 	}
 
 	const trigger = own ? onDeathTrigger(own, characters) : undefined;

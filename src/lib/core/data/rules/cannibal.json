@@ -53,7 +53,10 @@
 			"learns": "answer"
 		},
 		"princess": {
-			"noKill": "executed-partner"
+			"noKill": {
+				"killer": "demon",
+				"when": ["nominated-partner", "partner-executed", "partner-dead"]
+			}
 		},
 		"zealot": {
 			"learns": "ability"

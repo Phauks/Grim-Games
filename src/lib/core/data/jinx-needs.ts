@@ -13,6 +13,7 @@ import type {
 	JinxRules,
 	Learns,
 	NoKill,
+	NotShown,
 	StorytellerChooses,
 	StorytellerHas
 } from './jinx-rules.ts';
@@ -42,20 +43,20 @@ export const JINX_NEEDS: Partial<Record<JinxRuleKey, (e: JinxEffect) => JinxNeed
 	givenInstead: () => [{ on: 'subject', parts: ['givesAbility'] }],
 	noTurnGood: () => [{ on: 'subject', parts: ['givesAbility', 'changesCharacter'] }],
 	spareToken: () => [{ on: 'subject', parts: ['givesAbility', 'changesCharacter'] }],
-	storytellerChooses: (e) =>
-		(e as StorytellerChooses).what === 'carrier'
-			? [{ on: 'subject', parts: ['carrierIsDemon'] }]
-			: (e as StorytellerChooses).what === 'another-player'
-				? []
-				: [{ on: ABOUT_HOLDER(e) ? 'other' : 'subject', parts: ['changesCharacter'] }],
-	wakesOneByOne: () => [{ on: 'subject', parts: ['carrierIsDemon'] }],
+	storytellerChooses: (e) => {
+		const { what, via } = e as StorytellerChooses;
+		if (what === 'another-player') return [];
+		if (what === 'own-execution') return [{ on: 'subject', parts: ['nomineesNominate'] }];
+		if (via === 'carrierIsDemon') return [{ on: 'subject', parts: ['carrierIsDemon'] }];
+		return [{ on: ABOUT_HOLDER(e) ? 'other' : 'subject', parts: ['changesCharacter'] }];
+	},
 	alsoBecomes: () => [{ on: 'subject', parts: ['changesCharacter'] }],
 	carriedBy: () => [{ on: 'subject', parts: ['carrierIsDemon'] }],
 	diesWhenExecuted: () => [{ on: 'subject', parts: ['protects'] }],
 	impairs: (e) => (ABOUT_HOLDER(e) ? [{ on: 'subject', parts: GAINS }] : []),
 	noKill: (e) =>
 		(e as NoKill).on === 'token' ? [{ on: 'other', parts: ['stopsWaking', 'stopsKilling'] }] : [],
-	storytellerVote: () => [{ on: 'subject', parts: ['nomineesNominate'] }],
+
 	deadAtLeast: () => [{ on: 'subject', parts: ['wakesWhen'] }],
 	partnerSetup: () => [
 		{ on: 'subject', parts: GAINS },
@@ -72,22 +73,22 @@ export const JINX_NEEDS: Partial<Record<JinxRuleKey, (e: JinxEffect) => JinxNeed
 	allEvilBecome: () => [{ on: 'subject', parts: ['changesCharacter'] }],
 	partnerKeepsAbility: () => [{ on: 'subject', parts: ['impairs'] }],
 	storytellerHas: (e) =>
-		(e as StorytellerHas).once === 'removed' ? [{ on: 'other', parts: ['changesCharacter'] }] : [],
+		(e as StorytellerHas).once === 'changed' ? [{ on: 'other', parts: ['changesCharacter'] }] : [],
 	arbitraryDeaths: () => [{ on: 'subject', parts: ['changesCharacter'] }],
-	neighbourBecomes: () => [{ on: 'subject', parts: ['changesCharacter'] }],
-	earlierToken: () => [{ on: 'subject', parts: ['changesCharacter'] }],
-	notShownGiven: () => [{ on: 'other', parts: ['givesAbility'] }],
+	changesCharacter: () => [{ on: 'subject', parts: ['changesCharacter'] }],
+	notShown: (e) =>
+		(e as NotShown).what === 'given-ability' ? [{ on: 'other', parts: ['givesAbility'] }] : [],
 	notSecondDemon: () => [{ on: 'subject', parts: ['becomes'] }],
-	keepsAfterPartner: () => [{ on: 'other', parts: ['keepsAbility'] }],
-	survivesCarrierExecuted: () => [{ on: 'subject', parts: ['gameEnd'] }],
+	keepsAbility: () => [{ on: 'other', parts: ['keepsAbility'] }],
+	survives: () => [{ on: 'subject', parts: ['gameEnd'] }],
 	madAsPartner: () => [{ on: 'subject', parts: ['madness'] }],
 	thinksPartnerSetup: () => [{ on: 'other', parts: ['setupModifier'] }],
-	uncountedVote: () => [
+	voter: () => [
 		{ on: 'subject', parts: ['voter'] },
 		{ on: 'other', parts: ['voting'] }
 	],
 	abnormalCounts: (e) =>
-		(e as AbnormalCountsRule).because === 'demon-choice'
+		(e as AbnormalCountsRule).counts === 'unlike-demon'
 			? [{ on: 'other', parts: ['choosesLikeDemon'] }]
 			: []
 };
@@ -151,6 +152,8 @@ const FLIP: Partial<Record<JinxFlag, JinxFlag>> = {
 	'partner-dead': 'self-dead',
 	'self-executed': 'partner-executed',
 	'partner-executed': 'self-executed',
+	'nominated-partner': 'nominated-by-partner',
+	'nominated-by-partner': 'nominated-partner',
 	'self-in-play': 'partner-in-play',
 	'partner-in-play': 'self-in-play',
 	'has-partner-ability': 'partner-has-this-ability',

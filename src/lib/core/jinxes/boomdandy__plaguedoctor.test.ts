@@ -51,9 +51,9 @@ describe('Boomdandy + Plague Doctor jinx', () => {
 
 		it("is data in the Plague Doctor's rules", () => {
 			expect(jinxRulesBetween('plaguedoctor', 'boomdandy')).toEqual({
-				givenInstead: { instead: 'a-player-becomes' }
+				givenInstead: { instead: 'becomes' }
 			});
-			expect(givenInstead('plaguedoctor', 'boomdandy', ids)).toBe('a-player-becomes');
+			expect(givenInstead('plaguedoctor', 'boomdandy', ids)).toEqual({ instead: 'becomes' });
 		});
 
 		it('warns when the Storyteller takes it, and a player can become it', () => {

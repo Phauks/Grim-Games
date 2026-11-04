@@ -57,17 +57,18 @@
 		"summoner": {
 			"partnerSetup": true,
 			"endsGame": {
-				"kind": "partner-end",
+				"kind": "gained-end",
+				"end": "dead-without-demon",
 				"winner": "evil"
 			},
 			"storytellerChooses": {
 				"what": "player",
 				"when": ["has-partner-ability"]
 			},
-			"noBluffs": true
+			"notShown": "bluffs"
 		},
 		"boffin": {
-			"notShownGiven": true
+			"notShown": "given-ability"
 		},
 		"mastermind": {
 			"impairs": {

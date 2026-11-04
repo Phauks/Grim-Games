@@ -266,7 +266,8 @@ export const CHARACTERS_DECIDERS: Deciders<
 			// An ability meant for the Storyteller goes to a player only by a jinx that sends it
 			// to a Minion (the Plague Doctor's Spy).
 			const rule = rulesOf(via.id, ctx.characters)?.givesAbility;
-			const toMinion = givenInstead(via.id, given.id, game.script, ctx.characters) === 'a-minion';
+			const toMinion =
+				givenInstead(via.id, given.id, game.script, ctx.characters)?.instead === 'a-minion';
 			if (rule?.to === 'storyteller' && !toMinion)
 				warn('not-given-to-player', `the ${via.name} gives this ability to the Storyteller`, [
 					via.id,

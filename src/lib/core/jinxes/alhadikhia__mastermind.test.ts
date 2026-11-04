@@ -42,7 +42,7 @@ describe('Al-Hadikhia + Mastermind jinx', () => {
 		it("is data in the Mastermind's rules", () => {
 			// Wiki: "If the Al-Hadikhia dies by execution, and the Mastermind is alive, the Al-Hadikhia chooses 3 good players tonight: if all 3 choose to live, evil wins. Otherwise, good wins."
 			expect(ownJinxRules(base.game, 'mastermind', 'alhadikhia', base.characters)).toEqual({
-				endsGame: { kind: 'partner-chooses' }
+				endsGame: { kind: 'night-instead', chooser: 'partner' }
 			});
 		});
 

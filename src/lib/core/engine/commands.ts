@@ -387,7 +387,7 @@ export type Command =
 	 * the use was about, when its rules ask (`dayUse`: the Slayer's choice, the Virgin's
 	 * nominator). `passed` says whether the vote it called passed (`dayUse.vote`: the Cult
 	 * Leader's cult vote). `stops` is the character whose ability the use stopped, by a jinx
-	 * with it (`partner-stops`: the Mayor stopping the riot).
+	 * with it (`ability-stopped`: the Mayor stopping the riot).
 	 */
 	| {
 			type: 'UseAbility';

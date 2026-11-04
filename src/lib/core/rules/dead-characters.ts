@@ -49,7 +49,7 @@ export function keepsAbilityWhenDead(
 					r.characterId
 		);
 		const works = sourceWorks ?? ((s: SeatId) => !game.seats[s].dead);
-		// A jinx keeps it once that player dies (`keepsAfterPartner`: the Mastermind with the
+		// A jinx keeps it once that player dies (`keepsAbility` `afterDeath`: the Mastermind with the
 		// Vigormortis, https://wiki.bloodontheclocktower.com/Mastermind#Related_Jinxes).
 		const after = keptAfterPartner(game, seatId, r.characterId, characters);
 		return sources.some((s) => works(s) || (after && game.seats[s].dead === true));

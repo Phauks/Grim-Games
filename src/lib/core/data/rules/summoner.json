@@ -103,7 +103,7 @@
 			"storytellerHas": "no-ability"
 		},
 		"engineer": {
-			"storytellerHas": "removed"
+			"storytellerHas": "changed"
 		},
 		"hatter": {
 			"arbitraryDeaths": true
@@ -115,7 +115,10 @@
 			"arbitraryDeaths": true
 		},
 		"lordoftyphon": {
-			"neighbourBecomes": "minion"
+			"alsoBecomes": {
+				"type": "minion",
+				"player": "neighbour"
+			}
 		},
 		"poppygrower": {
 			"storytellerChooses": {
@@ -124,7 +127,9 @@
 			}
 		},
 		"pukka": {
-			"earlierToken": "Night 2"
+			"changesCharacter": {
+				"token": "Night 2"
+			}
 		}
 	},
 	"infoTokenCharacters": {

@@ -44,7 +44,7 @@ describe('Pukka + Summoner jinx', () => {
 		it("is data in the Summoner's rules", () => {
 			// Wiki: "The Summoner may summon a Pukka on the 2nd night instead of the 3rd."
 			expect(ownJinxRules(base.game, 'summoner', 'pukka', base.characters)).toEqual({
-				earlierToken: { token: 'Night 2' }
+				changesCharacter: { token: 'Night 2' }
 			});
 		});
 

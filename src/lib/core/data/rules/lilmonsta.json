@@ -93,7 +93,8 @@
 				"when": ["partner-alive"]
 			},
 			"storytellerChooses": {
-				"what": "carrier",
+				"what": "player",
+				"via": "carrierIsDemon",
 				"when": ["partner-alive"]
 			}
 		},
@@ -102,7 +103,8 @@
 				"type": "minion",
 				"when": ["partner-alive"]
 			},
-			"wakesOneByOne": {
+			"wakes": {
+				"how": "one-by-one",
 				"when": ["partner-alive"]
 			}
 		},

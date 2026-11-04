@@ -29,13 +29,13 @@
 	},
 	"jinxes": {
 		"drunk": {
-			"abnormalCounts": "own-ability"
+			"abnormalCounts": "self-caused"
 		},
 		"lunatic": {
-			"abnormalCounts": "demon-choice"
+			"abnormalCounts": "unlike-demon"
 		},
 		"marionette": {
-			"abnormalCounts": "own-ability"
+			"abnormalCounts": "self-caused"
 		}
 	}
 }

@@ -50,7 +50,10 @@ describe('Cannibal + Princess jinx', () => {
 
 		it("is data in the Cannibal's rules", () => {
 			expect(jinxRulesBetween('cannibal', 'princess')).toEqual({
-				noKill: { on: 'executed-partner' }
+				noKill: {
+					killer: 'demon',
+					when: ['nominated-partner', 'partner-executed', 'partner-dead']
+				}
 			});
 		});
 

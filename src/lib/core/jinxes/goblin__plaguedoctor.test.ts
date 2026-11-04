@@ -54,7 +54,7 @@ describe('Goblin + Plague Doctor jinx', () => {
 			expect(jinxRulesBetween('plaguedoctor', 'goblin')).toEqual({
 				givenInstead: { instead: 'a-minion' }
 			});
-			expect(givenInstead('plaguedoctor', 'goblin', ids)).toBe('a-minion');
+			expect(givenInstead('plaguedoctor', 'goblin', ids)).toEqual({ instead: 'a-minion' });
 			expect(givenInstead('plaguedoctor', 'goblin', ['plaguedoctor', 'imp'])).toBeUndefined();
 			expect(givenInstead('plaguedoctor', 'poisoner', ids)).toBeUndefined();
 		});

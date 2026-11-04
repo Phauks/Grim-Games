@@ -56,13 +56,17 @@
 	"staysAsleep": "other",
 	"jinxes": {
 		"baron": {
-			"givenInstead": "outsiders"
+			"givenInstead": {
+				"instead": "becomes",
+				"type": "outsider",
+				"upTo": 2
+			}
 		},
 		"boomdandy": {
-			"givenInstead": "a-player-becomes"
+			"givenInstead": "becomes"
 		},
 		"eviltwin": {
-			"givenInstead": "a-player-becomes"
+			"givenInstead": "becomes"
 		},
 		"fearmonger": {
 			"givenInstead": "a-minion"
@@ -71,7 +75,10 @@
 			"givenInstead": "a-minion"
 		},
 		"marionette": {
-			"givenInstead": "demon-neighbour-becomes"
+			"givenInstead": {
+				"instead": "becomes",
+				"where": "demon-good-neighbour"
+			}
 		},
 		"scarletwoman": {
 			"givenInstead": "a-minion"

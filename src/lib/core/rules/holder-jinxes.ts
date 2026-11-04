@@ -5,7 +5,7 @@
  * gets no bluffs
  * (https://wiki.bloodontheclocktower.com/Alchemist#Related_Jinxes).
  */
-import type { JinxEffect, JinxRules } from '#lib/core/data/jinx-rules.ts';
+import { choosesChanged, type JinxEffect, type JinxRules } from '#lib/core/data/jinx-rules.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { trueCharacter } from '#lib/core/model/selectors.ts';
@@ -70,14 +70,15 @@ export function picksCharacterOnlyBy(
 	if (changer === undefined) return undefined;
 	const jinx = holderJinx(game, changer, characterId, characters);
 	const effect = jinx?.rule.storytellerChooses;
-	if (effect?.what !== 'player' || !aboutHolder(effect)) return undefined;
+	if (!choosesChanged(effect) || !aboutHolder(effect)) return undefined;
 	return holderApplies(game, changer, jinx, effect, characters) ? jinx?.via : undefined;
 }
 
 /**
  * The characters in play (by token or true character) whose `evilInfo` notes are left out of
  * the evil info steps: every player with the ability has none (a Magician while the Vizier is
- * in play, L115), or has it from a giver whose jinx says they get no bluffs (`noBluffs`: the
+ * in play, L115), or has it from a giver whose jinx says they get no bluffs (`notShown`
+ * `bluffs`: the
  * Alchemist-Summoner). A held ability is only listed while held, so it is never without.
  */
 export function evilInfoNotesLeftOut(game: Game, characters: CharacterLookup): CharacterId[] {
@@ -97,7 +98,9 @@ export function evilInfoNotesLeftOut(game: Game, characters: CharacterLookup): C
 			holders.length > 0 &&
 			holders.every((s) => {
 				const jinx = holderJinx(game, s, id, characters);
-				return without(s, id) || holderApplies(game, s, jinx, jinx?.rule.noBluffs, characters);
+				const hidden = jinx?.rule.notShown;
+				const bluffs = hidden?.what === 'bluffs' ? hidden : undefined;
+				return without(s, id) || holderApplies(game, s, jinx, bluffs, characters);
 			})
 		);
 	});

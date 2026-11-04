@@ -47,7 +47,7 @@ describe("Lil' Monsta + Poppy Grower jinx", () => {
 		it("is data in Lil' Monsta's rules", () => {
 			expect(jinxRulesBetween('lilmonsta', 'poppygrower')).toEqual({
 				carriedBy: { type: 'minion', when: ['partner-alive'] },
-				wakesOneByOne: { when: ['partner-alive'] }
+				wakes: { how: 'one-by-one', when: ['partner-alive'] }
 			});
 		});
 

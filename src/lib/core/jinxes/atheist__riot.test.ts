@@ -53,7 +53,7 @@ describe('Atheist + Riot jinx', () => {
 
 		it("is data in the Riot's rules", () => {
 			expect(ownJinxRules({ script: scriptOf(ids) }, 'riot', 'atheist')).toEqual({
-				storytellerVote: {}
+				storytellerChooses: { what: 'own-execution' }
 			});
 		});
 

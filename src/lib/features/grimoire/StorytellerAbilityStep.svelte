@@ -11,6 +11,7 @@
 		type NightStep
 	} from '#lib/core/rules/index.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
+	import { TYPE_LABELS, TYPE_PLURALS } from '#lib/features/reference/labels.ts';
 	import { seatName } from '#lib/features/game/seat-label.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import CharacterPicker from './CharacterPicker.svelte';
@@ -26,10 +27,11 @@
 	 *
 	 * A jinx may send the picked ability elsewhere (`givenInstead`, the Plague Doctor's Related
 	 * Jinxes): a Minion holds it and is shown it (`a-minion`, as a held ability via the Plague
-	 * Doctor), a player becomes it (`a-player-becomes`, then asked whether they turn evil), one
-	 * of the Demon's good neighbours becomes it under the token they were shown
-	 * (`demon-neighbour-becomes`, its Is The reminder, which asks the same), or up to two
-	 * players become Outsiders (`outsiders`). The step then offers that instead.
+	 * Doctor), a player becomes it (`becomes`, then asked whether they turn evil), one of the
+	 * Demon's good neighbours becomes it under the token they were shown (`becomes` with
+	 * `where`, its Is The reminder, which asks the same), or up to `upTo` players become a
+	 * character of a type (`becomes` with `type`: the Baron's two Outsiders). The step then
+	 * offers that instead.
 	 */
 	interface Props {
 		grimoire: Grimoire;
@@ -57,7 +59,7 @@
 
 	// ── A jinx's follow-up ──
 	// The ability picked whose jinx sends it elsewhere, and what happens instead.
-	let picked = $state<{ characterId: CharacterId; kind: GivenInstead }>();
+	let picked = $state<{ characterId: CharacterId; rule: GivenInstead }>();
 	// The changes made for it on this step (a player who became the character, or an Outsider).
 	let made = $state<{ seatId: SeatId; characterId: CharacterId }[]>([]);
 	$effect.pre(() => {
@@ -66,7 +68,7 @@
 		made = [];
 	});
 	let seatOpen = $state(false);
-	let outsiderOpen = $state(false);
+	let typeOpen = $state(false);
 	let chosen = $state<SeatId>();
 
 	// The Minions who hold an ability this giver sent them (`a-minion`).
@@ -80,41 +82,52 @@
 			: []
 	);
 	// What was picked on this step, else the ability a Minion already holds from this giver.
-	const instead = $derived.by((): { characterId: CharacterId; kind: GivenInstead } | undefined => {
+	const instead = $derived.by((): { characterId: CharacterId; rule: GivenInstead } | undefined => {
 		if (picked) return picked;
 		const first = minionHolders[0];
-		return first ? { characterId: first.characterId, kind: 'a-minion' } : undefined;
+		return first ? { characterId: first.characterId, rule: { instead: 'a-minion' } } : undefined;
 	});
+	// What happens instead: a Minion holds it, players become a type, or a player becomes it.
+	const kind = $derived(
+		instead?.rule.instead === 'a-minion' ? 'a-minion' : instead?.rule.type ? 'type' : 'partner'
+	);
+	const neighbourOnly = $derived(instead?.rule.where === 'demon-good-neighbour');
+	const upTo = $derived(instead?.rule.upTo ?? 1);
+	const madeType = $derived(instead?.rule.type);
+	const NUMBER_WORDS = ['no', 'one', 'two', 'three', 'four', 'five', 'six'];
+	const upToWords = $derived(NUMBER_WORDS[upTo] ?? String(upTo));
 	// Takes back what a Minion was given, when the Storyteller picks again.
 	function takeBack() {
 		if (!via) return;
 		for (const { seatId } of minionHolders) grimoire.run({ type: 'SetHeldAbility', seatId, via });
 	}
-	const shown = $derived(instead?.kind === 'a-minion' ? minionHolders : made);
+	const shown = $derived(kind === 'a-minion' ? minionHolders : made);
 	const neighbours = $derived(new Set(demonGoodNeighbours(game, characters)));
 	const offered = $derived.by((): ((seatId: SeatId) => boolean) => {
-		if (instead?.kind === 'a-minion')
+		if (kind === 'a-minion')
 			return (id) => typeOf(game, id, characters) === 'minion' && !game.seats[id].dead;
-		if (instead?.kind === 'demon-neighbour-becomes') return (id) => neighbours.has(id);
+		if (neighbourOnly) return (id) => neighbours.has(id);
 		return (id) => game.seats[id].characterId !== undefined;
 	});
 	const more = $derived(
-		instead?.kind === 'outsiders' ? made.length < 2 : shown.length === 0 && instead !== undefined
+		instead !== undefined && (kind === 'a-minion' ? shown.length === 0 : made.length < upTo)
 	);
-	const OUTSIDERS: readonly SeatedType[] = ['outsider'];
+	const madeTypes = $derived<readonly SeatedType[]>(
+		madeType && madeType !== 'traveller' ? [madeType as SeatedType] : []
+	);
 	const inPlay = $derived(game.seating.flatMap((id) => trueCharacter(game, id, characters) ?? []));
 
 	function pick(characterId: CharacterId | undefined) {
 		pickerOpen = false;
 		if (!via) return;
-		const kind = characterId ? givenInstead(via, characterId, game.script, characters) : undefined;
+		const rule = characterId ? givenInstead(via, characterId, game.script, characters) : undefined;
 		if (characterId !== undefined && characterId === instead?.characterId) {
 			seatOpen = more;
 			return;
 		}
 		takeBack();
-		if (characterId && kind) {
-			picked = { characterId, kind };
+		if (characterId && rule) {
+			picked = { characterId, rule };
 			made = [];
 			if (held) grimoire.run({ type: 'SetStorytellerAbility', via });
 			seatOpen = true;
@@ -129,18 +142,17 @@
 		seatOpen = false;
 		const now = instead;
 		if (!via || !now) return;
-		const { characterId, kind } = now;
+		const { characterId } = now;
 		if (kind === 'a-minion') {
 			grimoire.run({ type: 'SetHeldAbility', seatId, via, characterId });
 			return;
 		}
-		if (kind === 'outsiders') {
+		if (kind === 'type') {
 			chosen = seatId;
-			outsiderOpen = true;
+			typeOpen = true;
 			return;
 		}
-		const reminder =
-			kind === 'demon-neighbour-becomes' ? replacingReminder(characterId, characters) : undefined;
+		const reminder = neighbourOnly ? replacingReminder(characterId, characters) : undefined;
 		// Placing the reminder asks whether they turn evil, as at setup.
 		const ok = reminder
 			? grimoire.run({ type: 'AddReminder', seatId, reminder })
@@ -151,8 +163,8 @@
 			grimoire.alignmentAsk = { seatId, characterId, alignment: 'evil' };
 	}
 
-	function chooseOutsider(characterId: CharacterId) {
-		outsiderOpen = false;
+	function chooseOfType(characterId: CharacterId) {
+		typeOpen = false;
 		const seatId = chosen;
 		chosen = undefined;
 		if (!seatId || !via) return;
@@ -161,16 +173,15 @@
 	}
 
 	// The chooser's plain title; its heading shows the character as a badge.
-	const insteadTitle = $derived.by(() => {
-		switch (instead?.kind) {
-			case 'a-minion':
-				return 'Gains the ability';
-			case 'outsiders':
-				return 'Becomes an Outsider';
-			default:
-				return 'Becomes the character';
-		}
-	});
+	const typeName = $derived(madeType ? TYPE_LABELS[madeType] : '');
+	const article = $derived(/^[AEIOU]/.test(typeName) ? 'an' : 'a');
+	const insteadTitle = $derived(
+		kind === 'a-minion'
+			? 'Gains the ability'
+			: kind === 'type'
+				? `Becomes ${article} ${typeName}`
+				: 'Becomes the character'
+	);
 </script>
 
 {#snippet badge(characterId: CharacterId)}<CharacterPiece
@@ -205,11 +216,12 @@
 	{/if}
 	{#if instead}
 		<p class="warn" role="note" data-testid="given-instead-note">
-			{#if instead.kind === 'a-minion'}A Minion gains the {@render badge(instead.characterId)} ability
-				instead, and learns this.{:else if instead.kind === 'a-player-becomes'}A player becomes the
-				{@render badge(instead.characterId)} instead.{:else if instead.kind === 'demon-neighbour-becomes'}One
-				of the Demon's good neighbours becomes the {@render badge(instead.characterId)} instead.{:else}Up
-				to two players become Outsiders instead.{/if}
+			{#if kind === 'a-minion'}A Minion gains the {@render badge(instead.characterId)} ability instead,
+				and learns this.{:else if kind === 'type' && upTo > 1}Up to {upToWords} players become
+				{madeType ? TYPE_PLURALS[madeType] : ''} instead.{:else if kind === 'type'}A player becomes {article}
+				{typeName} instead.{:else if neighbourOnly}One of the Demon's good neighbours becomes the {@render badge(
+					instead.characterId
+				)} instead.{:else}A player becomes the {@render badge(instead.characterId)} instead.{/if}
 		</p>
 		<div class="row" data-testid="given-instead">
 			{#each shown as change (change.seatId)}
@@ -220,7 +232,7 @@
 					alignment={alignmentOf(game, change.seatId)}
 					playerName={seatName(game, change.seatId)}
 				/>
-				{#if onShow && instead.kind !== 'demon-neighbour-becomes'}
+				{#if onShow && !neighbourOnly}
 					<Button variant="quiet" onclick={() => onShow?.(change.characterId)}
 						>Show to player</Button
 					>
@@ -241,18 +253,18 @@
 			onChoose={chooseSeat}
 		>
 			{#snippet heading()}
-				{#if instead?.kind === 'a-minion'}Gains the {@render badge(instead.characterId)} ability{:else if instead?.kind === 'outsiders'}Becomes
-					an Outsider{:else if instead}Becomes the {@render badge(instead.characterId)}{/if}
+				{#if kind === 'a-minion' && instead}Gains the {@render badge(instead.characterId)} ability{:else if kind === 'type'}{insteadTitle}{:else if instead}Becomes
+					the {@render badge(instead.characterId)}{/if}
 			{/snippet}
 		</SeatChooser>
 		<CharacterPicker
-			bind:open={outsiderOpen}
-			title="Choose an Outsider"
+			bind:open={typeOpen}
+			title={`Choose ${article} ${typeName}`}
 			{characters}
 			script={game.script}
-			types={OUTSIDERS}
+			types={madeTypes}
 			exclude={inPlay}
-			onPick={chooseOutsider}
+			onPick={chooseOfType}
 		/>
 	{/if}
 	<CharacterPicker

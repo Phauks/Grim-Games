@@ -1162,3 +1162,74 @@ test('a custom jinx has the Widow step say the Storyteller chooses another playe
 		/Lamplighter\s*,\s*if\s*Widow\s*chooses them, the Storyteller chooses another player instead/
 	);
 });
+
+// M46's general givenInstead: a script's own jinx sends the Plague Doctor's ability for its
+// Hexer to up to two players, who each become a Townsfolk instead (the Baron's shape, reused).
+// The Hexer is invented for this test; the Djinn's rule for a pair is the script's own
+// (https://wiki.bloodontheclocktower.com/Djinn).
+test('a custom Plague Doctor jinx makes up to two players Townsfolk instead', async ({ page }) => {
+	test.slow();
+	const plagueDoctor = {
+		id: 'plaguedoctor',
+		jinxes: [
+			{
+				id: 'hexer',
+				reason:
+					'If the Storyteller would gain the Hexer ability, up to two players become Townsfolk instead.',
+				rules: { givenInstead: { instead: 'becomes', type: 'townsfolk', upTo: 2 } }
+			}
+		]
+	};
+	const hexer = {
+		id: 'hexer',
+		name: 'Hexer',
+		team: 'minion',
+		ability: 'Each night, choose a player: they feel uneasy.'
+	};
+	await startGame(page, 'Plague Hexer', [
+		plagueDoctor,
+		hexer,
+		'imp',
+		'poisoner',
+		'chef',
+		'empath',
+		'monk',
+		'saint',
+		'soldier'
+	]);
+	await choose(page, 1, 'Plague Doctor');
+	await choose(page, 2, 'Imp');
+	await choose(page, 3, 'Poisoner');
+	await choose(page, 4, 'Saint');
+	await toSecondNight(page, 1);
+
+	const step = await openStep(page, 'Plague Doctor');
+	const row = step.getByTestId('storyteller-ability');
+	await row.getByRole('button', { name: 'Choose' }).tap();
+	await page
+		.getByRole('dialog', { name: "Storyteller's ability" })
+		.getByRole('button', { name: 'Hexer', exact: true })
+		.tap();
+	// A player, then the Townsfolk they become, not in play.
+	const seats = page.getByRole('dialog', { name: 'Becomes a Townsfolk' });
+	await seats.getByRole('button', { name: /Saint/ }).tap();
+	const townsfolk = page.getByRole('dialog', { name: 'Choose a Townsfolk' });
+	await expect(townsfolk.getByRole('button', { name: 'Empath', exact: true })).toBeVisible();
+	await expect(townsfolk.getByRole('button', { name: 'Saint', exact: true })).toHaveCount(0);
+	await townsfolk.getByRole('button', { name: 'Monk', exact: true }).tap();
+	await expect(townsfolk).toBeHidden();
+	const given = step.getByTestId('given-instead');
+	await expect(given).toContainText('Monk');
+	await expect(given).toContainText('Seat 4');
+	await expect(step.getByTestId('given-instead-note')).toContainText(
+		/Up\s+to\s+two\s+players\s+become\s+Townsfolk\s+instead\./
+	);
+	// One more may become one.
+	await given.getByRole('button', { name: 'Choose' }).tap();
+	await seats.getByRole('button', { name: /Poisoner/ }).tap();
+	await townsfolk.getByRole('button', { name: 'Chef', exact: true }).tap();
+	await expect(given).toContainText('Chef');
+	await expect(given.getByRole('button', { name: 'Choose' })).toHaveCount(0);
+	// Nothing on the board for the Storyteller.
+	await expect(page.getByTestId('storyteller-ability-token')).toHaveCount(0);
+});

@@ -86,11 +86,11 @@
 	},
 	"jinxes": {
 		"atheist": {
-			"storytellerVote": true
+			"storytellerChooses": "own-execution"
 		},
 		"mayor": {
 			"endsGame": {
-				"kind": "partner-stops",
+				"kind": "ability-stopped",
 				"alive": 1,
 				"winner": "good"
 			}

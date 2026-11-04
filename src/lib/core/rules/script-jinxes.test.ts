@@ -17,19 +17,33 @@ import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import type { Game } from '#lib/core/model/types.ts';
 import type { Command } from '#lib/core/engine/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 import { abilityState, registrations } from './ability.ts';
+import { earlyOnly } from './becomes.ts';
+import { keepsAbilityWhenDead } from './dead-characters.ts';
+import { demonInfo } from './evil-info.ts';
 import { gameEnds } from './game-end.ts';
+import { evilInfoNotesLeftOut } from './holder-jinxes.ts';
+import { gainedEnd, notShownGiven, survivesCarrierBy } from './jinx-effects.ts';
+import { jinxStoppers } from './jinx-ends.ts';
+import { answerCauses, nightAnswer, reliability } from './night-info.ts';
+import { nominationsPerDay } from './nominations.ts';
+import { jinxSafeFrom, protection } from './protection.ts';
+import { uncountedVote } from './vote-weights.ts';
 import { nightStepAlerts, type NightAlert } from './night-alerts.ts';
 import { nightKill } from './night-kill.ts';
 import { reminderTargetMisses } from './reminder-targets.ts';
 import {
 	barredAbilities,
 	createdTooLate,
+	givenInstead,
 	isExclusiveJinx,
 	jinxForbidsBecoming,
+	neighbourBecoming,
 	ownJinxRules,
 	rulesForJinx,
-	scriptJinxes
+	scriptJinxes,
+	storytellerGains
 } from './jinxes.ts';
 
 const data = committedGameData();
@@ -836,10 +850,8 @@ describe('homebrew sentences, stage 4 (M44)', () => {
 		expect(works(cast(players, (s) => ({ type: 'SetDead', seatId: s[1], dead: true })))).toBe(true);
 	});
 
-	// N5, "The Gloom cannot kill the Lamplighter", is out of scope for M44: no jinx verb protects
-	// one player from one character's kill. `cannotChoose` with `who: "partner"` is the nearest
-	// (the Gloom must choose someone else), which is a different rule; a jinx protection belongs
-	// with the protection rules (`rules/protection.ts`), a later stage.
+	// N5, "The Gloom cannot kill the Lamplighter", needed a jinx protection: it is M46's
+	// `protects`, tested in stage 5 below.
 
 	it('warns at load when a condition names a character not on the script', () => {
 		// Wiki (Djinn): "If there are multiple pairs of jinxed characters on the character sheet, the players learn all the Djinn’s special rules."
@@ -856,5 +868,654 @@ describe('homebrew sentences, stage 4 (M44)', () => {
 		]);
 		expect(warnings.map((w) => w.message)).toEqual([expect.stringContaining('not on the script')]);
 		expect(script.jinxes?.[0].rules).toBeDefined();
+	});
+});
+
+/**
+ * Stage 5 (M46): the general shapes that replaced the jinx values written for one official
+ * pair, and the jinx protection (N5). Each test reuses a shape for another pair, as a script's
+ * own jinx, and checks it through what the app does with it. The Lamplighter, the Gloom and
+ * the other characters with no wiki page are invented for these tests.
+ */
+describe('homebrew sentences, stage 5 (M46)', () => {
+	const jinx = (id: string, reason: string, rules: Json) => ({ id, reason, rules });
+	const clean = (entries: unknown[]) => {
+		const loaded = load(entries);
+		expect(loaded.warnings).toEqual([]);
+		return loaded;
+	};
+	const play = (entries: unknown[], players: string[]) =>
+		scenario(players, { script: clean(entries).script });
+	const gloom = (extra: Json = {}) => ({
+		id: 'gloom',
+		name: 'Gloom',
+		team: 'demon',
+		ability: 'Each night*, choose a player: they die.',
+		rules: { kills: { by: 'demon' } },
+		...extra
+	});
+	const minion = (id: string, name: string, extra: Json = {}) => ({
+		id,
+		name,
+		team: 'minion',
+		ability: 'Each night, choose a player: they feel uneasy.',
+		...extra
+	});
+	const kinds = (alerts: NightAlert[], kind: NightAlert['kind']) =>
+		alerts.filter((a) => a.kind === kind);
+	/** Seat 0 is the good Alchemist, shown `minion`'s token. */
+	const alchemistAs = (entries: unknown[], players: string[]) =>
+		play(entries, players)
+			.do((at) => ({ type: 'SetAlignment', seatId: at.seat(0), alignment: 'good' }))
+			.reminder(0, 'alchemist', 'Is The Alchemist');
+
+	describe('N5: the Gloom cannot kill the Lamplighter (protects)', () => {
+		const entries = (when?: Json[]) => [
+			lamplighter(),
+			gloom({
+				jinxes: [
+					jinx('lamplighter', 'The Gloom cannot kill the Lamplighter.', {
+						protects: { who: 'partner', by: 'partner', ...(when ? { when } : {}) }
+					})
+				]
+			}),
+			'imp',
+			'empath',
+			'chef',
+			'poisoner',
+			'monk'
+		];
+		const players = ['lamplighter', 'gloom', 'empath', 'chef', 'poisoner'];
+		const safe = (s: Scenario, killer: string, on = 'lamplighter') =>
+			protection(s.game, s.seat(on), s.characters, 'demon', killer);
+
+		it("keeps the Gloom's kill off the Lamplighter, and only the Gloom's", () => {
+			// Wiki (Djinn): "There are many different Djinn special rules. Each is tailored to a specific pair of jinxed characters."
+			const s = play(entries(), players);
+			expect(safe(s, 'gloom')).toEqual({ characterId: 'lamplighter' });
+			expect(safe(s, 'imp')).toBeUndefined();
+			expect(safe(s, 'gloom', 'empath')).toBeUndefined();
+			expect(
+				kinds(nightStepAlerts(s.newDay().game, 'gloom', s.characters), 'protected').map((a) => [
+					a.seatId,
+					a.source
+				])
+			).toEqual([[s.seat('lamplighter'), { characterId: 'lamplighter' }]]);
+		});
+
+		it("holds whatever the Lamplighter's ability: a jinx is a rule", () => {
+			// Wiki (Djinn): "There are many different Djinn special rules. Each is tailored to a specific pair of jinxed characters."
+			const s = play(entries(), players).poisoned('lamplighter');
+			expect(safe(s, 'gloom')).toEqual({ characterId: 'lamplighter' });
+		});
+
+		it('holds even when the Gloom’s kill ignores protection', () => {
+			// Wiki (Djinn): "There are many different Djinn special rules. Each is tailored to a specific pair of jinxed characters."
+			const fierce = [
+				lamplighter(),
+				gloom({
+					rules: { kills: { by: 'demon', ignoresProtection: true } },
+					jinxes: [
+						jinx('lamplighter', 'The Gloom cannot kill the Lamplighter.', {
+							protects: { who: 'partner', by: 'partner' }
+						})
+					]
+				}),
+				'empath',
+				'chef',
+				'poisoner'
+			];
+			const s = play(fierce, players).newDay();
+			expect(
+				kinds(nightStepAlerts(s.game, 'gloom', s.characters), 'protected').map((a) => [
+					a.seatId,
+					a.source
+				])
+			).toEqual([[s.seat('lamplighter'), { characterId: 'lamplighter' }]]);
+			expect(jinxSafeFrom(s.game, s.seat('lamplighter'), s.characters, 'demon', 'gloom')).toEqual({
+				characterId: 'lamplighter'
+			});
+			expect(
+				jinxSafeFrom(s.game, s.seat('empath'), s.characters, 'demon', 'gloom')
+			).toBeUndefined();
+		});
+
+		it('holds only while its condition does', () => {
+			// Wiki (Djinn): "There are many different Djinn special rules. Each is tailored to a specific pair of jinxed characters."
+			const withChef = play(entries([{ inPlay: 'chef' }]), players);
+			expect(safe(withChef, 'gloom')).toEqual({ characterId: 'lamplighter' });
+			const without = play(entries([{ inPlay: 'chef' }]), [
+				'lamplighter',
+				'gloom',
+				'empath',
+				'monk',
+				'poisoner'
+			]);
+			expect(safe(without, 'gloom')).toBeUndefined();
+		});
+	});
+
+	it('abnormalCounts self-caused: the Abacus counts the Drunk’s own false info', () => {
+		// Wiki (Djinn): "There are many different Djinn special rules. Each is tailored to a specific pair of jinxed characters."
+		const abacus = (jinxes: Json[]) => ({
+			id: 'abacus',
+			name: 'Abacus',
+			team: 'townsfolk',
+			ability: 'Each night*, learn how many abilities misfired today.',
+			reminders: ['Abnormal'],
+			rules: {
+				answers: { question: 'abnormal-abilities', token: 'Abnormal' },
+				reminderTargets: { Abnormal: { seat: 'any', note: 'A player whose ability misfired.' } }
+			},
+			jinxes
+		});
+		const count = (jinxes: Json[]) => {
+			const s = play(
+				[abacus(jinxes), 'drunk', 'chef', 'imp', 'empath', 'monk'],
+				['abacus', 'chef', 'imp', 'empath', 'monk']
+			)
+				.drunk('chef')
+				.newDay()
+				.do((at) => ({
+					type: 'RecordNightInfo',
+					seatId: at.seat('chef'),
+					characterId: 'chef',
+					text: 'Shown 2',
+					abnormal: answerCauses(reliability(at.game, at.seat('chef'), 'chef', at.characters))
+				}));
+			return nightAnswer(s.game, s.seat('abacus'), 'abacus', s.characters);
+		};
+		const counts = jinx('drunk', 'The Abacus counts the Drunk.', {
+			abnormalCounts: { counts: 'self-caused' }
+		});
+		expect(count([counts])).toMatchObject({ kind: 'number', value: 1 });
+		expect(count([])).toMatchObject({ kind: 'number', value: 0 });
+	});
+
+	describe('endsGame night-instead: the executed Gloom’s night decides instead of an extra day', () => {
+		const entries = (rules?: Json) => [
+			official('mastermind', rules ? [jinx('gloom', 'The executed Gloom chooses.', rules)] : []),
+			gloom(),
+			'chef',
+			'empath',
+			'monk',
+			'soldier'
+		];
+		const players = ['gloom', 'mastermind', 'chef', 'empath', 'monk', 'soldier'];
+		const holds = (rules?: Json) => {
+			const s = play(entries(rules), players).execute('gloom');
+			return gameEnds(s.game, s.characters).find((e) => e.rule === 'demon-dead')?.holds;
+		};
+
+		it('is a night hold, its chooser the Gloom or the Mastermind', () => {
+			// Wiki (Djinn): "There are many different Djinn special rules. Each is tailored to a specific pair of jinxed characters."
+			const night = (chooser: string) => ({ endsGame: { kind: 'night-instead', chooser } });
+			expect(holds(night('partner'))).toMatchObject([{ rule: 'jinx-night', characterId: 'gloom' }]);
+			expect(holds(night('self'))).toMatchObject([
+				{ rule: 'jinx-night', characterId: 'mastermind' }
+			]);
+			expect(holds()).toMatchObject([{ rule: 'extra-day', characterId: 'mastermind' }]);
+		});
+	});
+
+	it('endsGame ability-stopped: the Lamplighter may stop the Gloom; one Gloom alive, good wins', () => {
+		// Wiki (Djinn): "There are many different Djinn special rules. Each is tailored to a specific pair of jinxed characters."
+		const entries = [
+			gloom({
+				jinxes: [
+					jinx('lamplighter', 'The Lamplighter may stop the Gloom.', {
+						endsGame: { kind: 'ability-stopped', winner: 'good', alive: 1 }
+					})
+				]
+			}),
+			lamplighter(),
+			'chef',
+			'empath',
+			'poisoner'
+		];
+		const s = play(entries, ['gloom', 'lamplighter', 'chef', 'empath', 'poisoner']).newDay();
+		expect(jinxStoppers(s.game, 'gloom', s.characters)).toEqual([
+			{ partner: 'lamplighter', seatId: s.seat('lamplighter'), stopped: false }
+		]);
+		const stopped = s.do((at) => ({
+			type: 'UseAbility',
+			seatId: at.seat('lamplighter'),
+			characterId: 'lamplighter',
+			stops: 'gloom'
+		}));
+		expect(
+			gameEnds(stopped.game, stopped.characters)
+				.filter((e) => e.jinxedWith === 'lamplighter')
+				.map((e) => [e.rule, e.winner])
+		).toEqual([['partner-stops', 'good']]);
+		// A dead Gloom has no ability left to stop.
+		expect(jinxStoppers(s.dies('gloom').game, 'gloom', s.characters)).toEqual([]);
+	});
+
+	describe('an Alchemist with a Minion ability other than the official pairs', () => {
+		const tinker = minion('tinker', 'Tinker', {
+			rules: { givesAbility: { to: 'demon', types: ['outsider'] } }
+		});
+		const entries = [
+			official('alchemist', [
+				jinx('poisoner', 'An Alchemist-Poisoner gets no bluffs; dying, evil wins.', {
+					endsGame: { kind: 'gained-end', end: 'dead-without-demon', winner: 'evil' },
+					notShown: { what: 'bluffs' }
+				}),
+				jinx('tinker', 'An Alchemist-Tinker does not learn the ability given.', {
+					notShown: { what: 'given-ability' }
+				})
+			]),
+			tinker,
+			'poisoner',
+			'chef',
+			'empath',
+			'monk',
+			'imp'
+		];
+		const others = ['chef', 'empath', 'monk', 'imp'];
+
+		it('endsGame gained-end: the Alchemist-Poisoner has the dead-without-demon end for evil', () => {
+			// Wiki (Djinn): "There are many different Djinn special rules. Each is tailored to a specific pair of jinxed characters."
+			const s = alchemistAs(entries, ['poisoner', ...others]);
+			expect(gainedEnd(s.game, s.seat(0), s.characters)).toEqual({
+				partner: 'poisoner',
+				winner: 'evil'
+			});
+			const real = play(entries, ['poisoner', ...others]);
+			expect(gainedEnd(real.game, real.seat(0), real.characters)).toBeUndefined();
+		});
+
+		it('notShown bluffs: the Alchemist-Poisoner is left out of the bluffs', () => {
+			// Wiki (Djinn): "There are many different Djinn special rules. Each is tailored to a specific pair of jinxed characters."
+			const s = alchemistAs(entries, ['poisoner', ...others]);
+			expect(evilInfoNotesLeftOut(s.game, s.characters)).toContain('poisoner');
+			const real = play(entries, ['poisoner', ...others]);
+			expect(evilInfoNotesLeftOut(real.game, real.characters)).not.toContain('poisoner');
+		});
+
+		it('notShown given-ability: the Alchemist-Tinker is not shown the ability given', () => {
+			// Wiki (Djinn): "There are many different Djinn special rules. Each is tailored to a specific pair of jinxed characters."
+			const s = alchemistAs(entries, ['tinker', ...others]);
+			expect(notShownGiven(s.game, s.characters)).toEqual([
+				{ seatId: s.seat(0), owner: 'alchemist', partner: 'tinker' }
+			]);
+			const real = play(entries, ['tinker', ...others]);
+			expect(notShownGiven(real.game, real.characters)).toEqual([]);
+		});
+	});
+
+	it('notShown partner-seat: while the Lamplighter lives, the Demon is not shown the Marionette', () => {
+		// Wiki (Djinn): "There are many different Djinn special rules. Each is tailored to a specific pair of jinxed characters."
+		const entries = [
+			lamplighter({
+				jinxes: [
+					jinx('marionette', 'The Demon does not learn which neighbour is the Marionette.', {
+						notShown: { what: 'partner-seat', when: ['self-alive'] }
+					})
+				]
+			}),
+			'marionette',
+			'chef',
+			'imp',
+			'empath',
+			'monk'
+		];
+		// Seat 0 the Marionette (as the Chef), seat 1 the Imp.
+		const s = play(entries, ['chef', 'imp', 'lamplighter', 'empath', 'monk'])
+			.do((at) => ({ type: 'SetAlignment', seatId: at.seat(0), alignment: 'evil' }))
+			.reminder(0, 'marionette', 'Is The Marionette');
+		expect(demonInfo(s.game, s.characters).neighbourHidden).toEqual({
+			seats: [s.seat(0)],
+			partner: 'marionette',
+			hiddenBy: 'lamplighter'
+		});
+		const dead = s.dies('lamplighter');
+		expect(demonInfo(dead.game, dead.characters).neighbourHidden).toBeUndefined();
+	});
+
+	describe('storytellerChooses own-execution: the riot with the Sceptic', () => {
+		const sceptic = {
+			id: 'sceptic',
+			name: 'Sceptic',
+			team: 'townsfolk',
+			ability: 'The Storyteller may bend any rule; putting them to death wins it for good.',
+			rules: {
+				gameEnd: { ends: [{ kind: 'storyteller-executed', winner: 'good' }] }
+			}
+		};
+		const entries = (jinxes: Json[]) => [
+			official('riot', jinxes),
+			sceptic,
+			'chef',
+			'empath',
+			'monk',
+			'soldier'
+		];
+		const nominated = (jinxes: Json[]) => {
+			const s = play(entries(jinxes), ['chef', 'riot', 'riot', 'empath', 'monk', 'soldier'])
+				.newDay()
+				.newDay()
+				.reminder(1, 'riot', 'Day 3')
+				.do((at) => ({ type: 'NominateStoryteller', nominator: at.seat('chef') }));
+			return nominationsPerDay(s.game, s.seat('chef'), s.characters);
+		};
+
+		it('lets the nominator nominate again when the Storyteller is not executed', () => {
+			// Wiki (Djinn): "There are many different Djinn special rules. Each is tailored to a specific pair of jinxed characters."
+			const vote = jinx('sceptic', 'During the riot, a nominated Storyteller is voted on.', {
+				storytellerChooses: { what: 'own-execution' }
+			});
+			expect(nominated([vote])).toBe(2);
+			expect(nominated([])).toBe(1);
+		});
+	});
+
+	it('storytellerHas changed: when the Tinkerer changes the living Poisoner, the Storyteller has it', () => {
+		// Wiki (Djinn): "There are many different Djinn special rules. Each is tailored to a specific pair of jinxed characters."
+		const tinkerer = {
+			id: 'tinkerer',
+			name: 'Tinkerer',
+			team: 'townsfolk',
+			ability: 'Once per game, at night, swap an evil player for another evil character.',
+			reminders: ['No Ability'],
+			rules: {
+				changesCharacter: { types: ['minion', 'demon'], sameType: true, spent: 'No Ability' }
+			},
+			jinxes: [
+				jinx('poisoner', 'The Storyteller has the Poisoner ability the Tinkerer removes.', {
+					storytellerHas: { who: 'partner', once: 'changed' }
+				})
+			]
+		};
+		const s = play(
+			[tinkerer, 'poisoner', 'chef', 'empath', 'imp'],
+			['tinkerer', 'poisoner', 'chef', 'empath', 'imp']
+		);
+		expect(storytellerGains(s.game, s.seat('poisoner'), 'tinkerer', s.characters)).toBe('poisoner');
+		expect(storytellerGains(s.game, s.seat('chef'), 'tinkerer', s.characters)).toBeUndefined();
+		const dead = s.dies('poisoner');
+		expect(
+			storytellerGains(dead.game, dead.seat('poisoner'), 'tinkerer', dead.characters)
+		).toBeUndefined();
+	});
+
+	it('storytellerChooses via carrierIsDemon: while the Lamplighter lives, the Storyteller picks the babysitter', () => {
+		// Wiki (Djinn): "There are many different Djinn special rules. Each is tailored to a specific pair of jinxed characters."
+		const entries = [
+			official('lilmonsta', [
+				jinx('lamplighter', 'While the Lamplighter lives, the Storyteller picks the babysitter.', {
+					storytellerChooses: { what: 'player', via: 'carrierIsDemon', when: ['partner-alive'] }
+				})
+			]),
+			lamplighter(),
+			'poisoner',
+			'widow',
+			'chef',
+			'empath'
+		];
+		const s = play(entries, ['lamplighter', 'poisoner', 'widow', 'chef', 'empath']);
+		const chooses = (at: Scenario) =>
+			kinds(nightStepAlerts(at.game, 'lilmonsta', at.characters), 'storyteller-chooses');
+		expect(chooses(s)).toEqual([
+			expect.objectContaining({
+				seatId: s.seat('lamplighter'),
+				partner: 'lamplighter',
+				carrier: true
+			})
+		]);
+		expect(chooses(s.dies('lamplighter'))).toEqual([]);
+	});
+
+	it('wakes one-by-one: while the Lamplighter lives, Legion wake one at a time', () => {
+		// Wiki (Djinn): "There are many different Djinn special rules. Each is tailored to a specific pair of jinxed characters."
+		const entries = [
+			official('legion', [
+				jinx('lamplighter', 'While the Lamplighter lives, Legion wake one at a time.', {
+					wakes: { how: 'one-by-one', when: ['partner-alive'] }
+				})
+			]),
+			lamplighter(),
+			'chef',
+			'empath'
+		];
+		const s = play(entries, ['legion', 'legion', 'legion', 'lamplighter', 'chef', 'empath']);
+		const oneByOne = (at: Scenario) =>
+			kinds(nightStepAlerts(at.game, 'legion', at.characters), 'wakes-one-by-one');
+		const [alert] = oneByOne(s);
+		expect(alert).toMatchObject({
+			seatId: s.seat('lamplighter'),
+			source: { characterId: 'legion' },
+			partner: 'lamplighter'
+		});
+		// No token to carry: the alert is not a babysitter's.
+		expect(alert.carrier).toBeUndefined();
+		expect(oneByOne(s.dies('lamplighter'))).toEqual([]);
+	});
+
+	it('changesCharacter token: the Summoner may summon the Gloom on Night 2', () => {
+		// Wiki (Djinn): "There are many different Djinn special rules. Each is tailored to a specific pair of jinxed characters."
+		const entries = [
+			official('summoner', [
+				jinx('gloom', 'The Summoner may summon the Gloom a night early.', {
+					changesCharacter: { token: 'Night 2' }
+				})
+			]),
+			gloom(),
+			'chef',
+			'empath',
+			'monk',
+			'poisoner'
+		];
+		const s = play(entries, ['summoner', 'chef', 'empath', 'monk', 'poisoner']);
+		const early = (at: Scenario) => earlyOnly(at.game, 'summoner', at.characters);
+		expect(early(s.reminder('summoner', 'summoner', 'Night 2'))).toEqual(['gloom']);
+		expect(early(s.reminder('summoner', 'summoner', 'Night 3'))).toBeUndefined();
+	});
+
+	it('givenInstead becomes: a type up to a count, or the Demon’s good neighbour', () => {
+		// Wiki (Djinn): "There are many different Djinn special rules. Each is tailored to a specific pair of jinxed characters."
+		const { script, characters } = clean([
+			official('plaguedoctor', [
+				jinx('hexer', 'Up to three players become Townsfolk instead.', {
+					givenInstead: { instead: 'becomes', type: 'townsfolk', upTo: 3 }
+				}),
+				jinx('witch', 'One of the Demon’s good neighbours becomes the Witch instead.', {
+					givenInstead: { instead: 'becomes', where: 'demon-good-neighbour' }
+				}),
+				jinx('poisoner', 'A Minion gains the Poisoner ability instead.', {
+					givenInstead: 'a-minion'
+				})
+			]),
+			minion('hexer', 'Hexer'),
+			'witch',
+			'poisoner',
+			'chef',
+			'imp'
+		]);
+		expect(givenInstead('plaguedoctor', 'hexer', script, characters)).toEqual({
+			instead: 'becomes',
+			type: 'townsfolk',
+			upTo: 3
+		});
+		expect(givenInstead('plaguedoctor', 'witch', script, characters)).toEqual({
+			instead: 'becomes',
+			where: 'demon-good-neighbour'
+		});
+		expect(givenInstead('plaguedoctor', 'poisoner', script, characters)).toEqual({
+			instead: 'a-minion'
+		});
+		expect(givenInstead('plaguedoctor', 'chef', script, characters)).toBeUndefined();
+	});
+
+	it('alsoBecomes neighbour: a summoned Gloom neighbours an Outsider, and the other neighbour becomes one', () => {
+		// Wiki (Djinn): "There are many different Djinn special rules. Each is tailored to a specific pair of jinxed characters."
+		const entries = [
+			official('summoner', [
+				jinx('gloom', 'A summoned Gloom sits by an Outsider; its other neighbour becomes one.', {
+					alsoBecomes: { type: 'outsider', player: 'neighbour' }
+				})
+			]),
+			gloom(),
+			'poisoner',
+			'chef',
+			'empath',
+			'saint',
+			'monk'
+		];
+		// Seated in a circle: the Summoner, Poisoner, Chef, Empath, Saint and Monk.
+		const s = play(entries, ['summoner', 'poisoner', 'chef', 'empath', 'saint', 'monk']);
+		const near = (seat: string) =>
+			neighbourBecoming(s.game, 'summoner', 'gloom', s.seat(seat), s.characters);
+		expect(near('empath')).toEqual({ type: 'outsider', fits: true, becomes: s.seat('chef') });
+		expect(near('poisoner')).toEqual({ type: 'outsider', fits: false });
+		expect(neighbourBecoming(s.game, 'summoner', 'imp', s.seat('empath'), s.characters)).toBe(
+			undefined
+		);
+	});
+
+	it('learns good-players: with the Lamplighter in play, the Gloom learns the good players but it', () => {
+		// Wiki (Djinn): "There are many different Djinn special rules. Each is tailored to a specific pair of jinxed characters."
+		const entries = [
+			gloom({
+				jinxes: [
+					jinx('lamplighter', 'The Gloom learns who is good, but not the Lamplighter.', {
+						learns: { what: 'good-players', when: ['partner-in-play'] }
+					})
+				]
+			}),
+			lamplighter(),
+			'chef',
+			'empath',
+			'poisoner',
+			'monk'
+		];
+		const s = play(entries, ['gloom', 'poisoner', 'lamplighter', 'chef', 'empath']);
+		expect(demonInfo(s.game, s.characters).goodShown).toEqual({
+			seats: [s.seat('chef'), s.seat('empath')],
+			hiddenBy: 'lamplighter'
+		});
+		const without = play(entries, ['gloom', 'poisoner', 'monk', 'chef', 'empath']);
+		expect(demonInfo(without.game, without.characters).goodShown).toBeUndefined();
+	});
+
+	it('noKill killer demon: after the Lamplighter nominates the executed Chef, the Demon does not kill', () => {
+		// Wiki (Djinn): "There are many different Djinn special rules. Each is tailored to a specific pair of jinxed characters."
+		const entries = [
+			lamplighter({
+				jinxes: [
+					jinx('chef', 'If the Lamplighter puts the Chef to death, the Demon rests tonight.', {
+						noKill: {
+							killer: 'demon',
+							when: ['nominated-partner', 'partner-executed', 'partner-dead']
+						}
+					})
+				]
+			}),
+			'chef',
+			'imp',
+			'empath',
+			'monk'
+		];
+		const s = play(entries, ['imp', 'lamplighter', 'chef', 'empath', 'monk']);
+		const noKill = (at: Scenario) =>
+			kinds(nightStepAlerts(at.game, 'imp', at.characters), 'no-kill').map((a) => [
+				a.seatId,
+				a.source
+			]);
+		const executed = s.nominate('lamplighter', 'chef').execute('chef');
+		expect(noKill(executed)).toEqual([
+			[s.seat('imp'), { characterId: 'lamplighter', seatId: s.seat('lamplighter') }]
+		]);
+		expect(noKill(s.nominate('empath', 'chef').execute('chef'))).toEqual([]);
+	});
+
+	it('voter countsOnlyWith: the Valet’s vote counts only with their master’s, in eyes-closed voting', () => {
+		// Wiki (Djinn): "There are many different Djinn special rules. Each is tailored to a specific pair of jinxed characters."
+		const valet = (jinxes: Json[]) => ({
+			id: 'valet',
+			name: 'Valet',
+			team: 'outsider',
+			ability: 'Each night, choose a player to serve: you vote only when they vote.',
+			reminders: ['Master'],
+			rules: {
+				voter: { onlyWith: 'Master' },
+				reminderTargets: { Master: { seat: 'other', note: 'The player the Valet serves.' } }
+			},
+			jinxes
+		});
+		const uncounted = (jinxes: Json[]) => {
+			const s = play(
+				[valet(jinxes), 'organgrinder', 'chef', 'empath', 'monk', 'imp'],
+				['valet', 'organgrinder', 'chef', 'empath', 'monk', 'imp']
+			)
+				.reminder('monk', 'valet', 'Master')
+				.nominate('chef', 'imp');
+			return uncountedVote(s.game, 'valet', s.characters);
+		};
+		const counts = jinx(
+			'organgrinder',
+			'In eyes-closed voting the Valet’s vote counts only with their master’s.',
+			{
+				voter: { countsOnlyWith: true }
+			}
+		);
+		expect(uncounted([counts])).toBe('organgrinder');
+		expect(uncounted([])).toBeUndefined();
+	});
+
+	it('survives carrier-executed: while the Lamplighter lives, the Lleech outlives its executed host', () => {
+		// Wiki (Djinn): "There are many different Djinn special rules. Each is tailored to a specific pair of jinxed characters."
+		const entries = [
+			official('lleech', [
+				jinx(
+					'lamplighter',
+					'With the Lamplighter alive, the Lleech lives on when its host is executed.',
+					{
+						survives: { on: 'carrier-executed', when: ['partner-alive'] }
+					}
+				)
+			]),
+			lamplighter(),
+			'chef',
+			'empath',
+			'monk'
+		];
+		const s = play(entries, ['lleech', 'lamplighter', 'chef', 'empath', 'monk']).reminder(
+			'chef',
+			'lleech',
+			'Poisoned'
+		);
+		const survives = (at: Scenario) => survivesCarrierBy(at.game, at.seat('lleech'), at.characters);
+		expect(survives(s.execute('chef'))).toBe('lamplighter');
+		expect(survives(s.dies('chef', 'lleech'))).toBeUndefined();
+		expect(survives(s.dies('lamplighter').execute('chef'))).toBeUndefined();
+	});
+
+	it('keepsAbility afterDeath: a Poisoner the Vigormortis killed keeps it after the Vigormortis dies', () => {
+		// Wiki (Djinn): "There are many different Djinn special rules. Each is tailored to a specific pair of jinxed characters."
+		const entries = (jinxes: Json[]) => [
+			official('vigormortis', jinxes),
+			'poisoner',
+			'chef',
+			'empath',
+			'monk'
+		];
+		const keeps = (jinxes: Json[]) => {
+			const s = play(entries(jinxes), ['vigormortis', 'poisoner', 'chef', 'empath', 'monk'])
+				.dies('poisoner', 'vigormortis')
+				.reminder('poisoner', 'vigormortis', 'Has Ability')
+				.execute('vigormortis');
+			return keepsAbilityWhenDead(s.game, s.seat('poisoner'), s.characters);
+		};
+		const kept = jinx(
+			'poisoner',
+			'A Poisoner with their ability keeps it if the Vigormortis dies.',
+			{
+				keepsAbility: { who: 'partner', afterDeath: true }
+			}
+		);
+		expect(keeps([kept])).toBe(true);
+		expect(keeps([])).toBe(false);
 	});
 });
