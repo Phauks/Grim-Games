@@ -102,8 +102,17 @@
 	const lunatic = $derived(
 		given ? believerAmong(given, characters) : lunaticInPlay(game, characters)
 	);
-	// The Demon's set always, then any others the Storyteller added (Trevor, 2026-10-16).
-	const sets = $derived(Array.from({ length: Math.max(1, game.bluffs.length) }, (_, i) => i));
+	/**
+	 * The sets always there: the Demon's, and the Lunatic's while a Lunatic is in play (Trevor,
+	 * 2026-11-04: made for them, and the Storyteller can still add more). These are cleared,
+	 * never deleted.
+	 */
+	const fixedSets = $derived(lunatic ? LUNATIC_SET + 1 : 1);
+	const fixed = (set: number) => set < fixedSets;
+	// The fixed sets, then any others the Storyteller added (Trevor, 2026-10-16).
+	const sets = $derived(
+		Array.from({ length: Math.max(fixedSets, game.bluffs.length) }, (_, i) => i)
+	);
 	const label = (set: number) => bluffSetLabel(set, lunatic, game.bluffNames?.[set]);
 	const defaultLabel = (set: number) => bluffSetLabel(set, lunatic);
 
@@ -150,9 +159,9 @@
 	}
 
 	function set(index: number, characterIds: CharacterId[]): boolean {
-		// Other sets come after the Demon's, so the Demon's must exist first.
-		if (index > game.bluffs.length && !run({ type: 'SetBluffs', set: DEMON_SET, characterIds: [] }))
-			return false;
+		// Each set comes after the ones before it, so any missing before it are made empty first.
+		for (let i = game.bluffs.length; i < index; i++)
+			if (!run({ type: 'SetBluffs', set: i, characterIds: [] })) return false;
 		return run({ type: 'SetBluffs', set: index, characterIds });
 	}
 
@@ -224,10 +233,10 @@
 							>
 							<!-- Clearing the Demon's set or deleting another asks first (Trevor, 2026-10-29). -->
 							<DeleteButton
-								label={t(index === DEMON_SET ? 'bluffs.clearNamed' : 'bluffs.deleteNamed', {
+								label={t(fixed(index) ? 'bluffs.clearNamed' : 'bluffs.deleteNamed', {
 									set: label(index)
 								})}
-								disabled={index === DEMON_SET && ids.length === 0}
+								disabled={fixed(index) && ids.length === 0}
 								onclick={() => {
 									deleting = index;
 									deleteOpen = true;
@@ -259,8 +268,10 @@
 				{/each}
 			</ul>
 			<div class="add">
-				<Button icon="add" variant="quiet" onclick={() => edit(Math.max(1, game.bluffs.length))}
-					>{t('bluffs.addSet')}</Button
+				<Button
+					icon="add"
+					variant="quiet"
+					onclick={() => edit(Math.max(fixedSets, game.bluffs.length))}>{t('bluffs.addSet')}</Button
 				>
 			</div>
 		{:else}
@@ -354,11 +365,15 @@
 
 <ConfirmDialog
 	bind:open={deleteOpen}
-	title={t(deleting === DEMON_SET ? 'bluffs.clearConfirm' : 'bluffs.deleteConfirm')}
+	title={deleting === DEMON_SET
+		? t('bluffs.clearConfirm')
+		: deleting !== undefined && fixed(deleting)
+			? t('bluffs.clearSetConfirm', { set: label(deleting) })
+			: t('bluffs.deleteConfirm')}
 	danger
 	onConfirm={() => {
-		// The Demon's set always stays, so it is emptied rather than removed.
-		if (deleting === DEMON_SET) set(DEMON_SET, []);
+		// The Demon's set and the Lunatic's always stay, so they are emptied rather than removed.
+		if (deleting !== undefined && fixed(deleting)) set(deleting, []);
 		else if (deleting !== undefined) run({ type: 'RemoveBluffSet', set: deleting });
 	}}
 >
