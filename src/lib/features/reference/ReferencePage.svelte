@@ -29,7 +29,7 @@
 	// characters in the table, and its rows as shown are what they are tested against.
 	const session = new LabSession();
 	/** A computer window: the lab and its game on the right of the table. */
-	const computer = new MediaQuery('min-width: 75rem', true);
+	const computer = new MediaQuery('min-width: 75rem', false);
 	const tableLab = $derived({
 		locked: session.locked,
 		onLock: (id: string, on: boolean) => session.setLocked(id, on)
@@ -49,7 +49,8 @@
 		const id = decodeURIComponent(location.hash.slice(1));
 		if (id) {
 			await tick();
-			document.getElementById(id)?.scrollIntoView();
+			// After the frame that lays out the lab beside the table, so the row stays put.
+			requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView());
 		}
 	});
 </script>

@@ -98,16 +98,15 @@
 	/** Lock, before the character's own columns, while the page holds the lab. */
 	const labColumns = $derived.by((): DataColumn<Key, ReferenceEntry>[] => {
 		if (!lab) return [];
-		const { locked } = lab;
 		return [
 			{
 				id: 'lock',
 				label: t('lab.lock'),
-				hideLabel: true,
-				width: 'calc(8 * var(--u))',
+				width: 'calc(7 * var(--u))',
 				fixed: true,
 				stackHead: true,
-				value: (entry) => (locked.includes(entry.character.id) ? t('lab.locked') : t('common.none'))
+				// Locked rows already stay at the top.
+				noFilter: 'Locked characters stay at the top.'
 			}
 		];
 	});
