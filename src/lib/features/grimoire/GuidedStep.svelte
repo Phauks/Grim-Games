@@ -50,7 +50,7 @@
 	import { placingAlignment, seatMisfits } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { givesNumber, seatName, stepHolders, stepName } from './night-steps.ts';
-	import { reminderCopies, reminderKey } from './reminders.ts';
+	import { reminderCopies, reminderKey, stepTokenCharacter } from './reminders.ts';
 	import SeatChooser from './SeatChooser.svelte';
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
 	import { shownCommands } from './record-shown.ts';
@@ -143,8 +143,10 @@
 	 * five "Abnormal", Trevor 2026-10-17), each placed or moved on its own.
 	 */
 	const total = $derived(reminderCopies(game, characters, grimoire.copies, grimoire.bankCopies));
+	/** Whose tokens the step places: a gained ability's, not its holder's (M50). */
+	const tokensOf = $derived(step ? stepTokenCharacter(step, characters) : undefined);
 	const rows = $derived.by(() => {
-		const character = step?.character;
+		const character = tokensOf;
 		// A jinx's night choice places none of its character's reminders (JinxChoiceStep).
 		if (!character || step?.jinxChoice) return [];
 		return [...new Set(character.reminders)].flatMap((label) => {
@@ -165,7 +167,7 @@
 	function placedAll(label: string) {
 		return game.seating.flatMap((seatId) =>
 			game.seats[seatId].reminders
-				.filter((x) => x.characterId === step?.character?.id && x.label === label)
+				.filter((x) => x.characterId === tokensOf?.id && x.label === label)
 				.map((r) => ({ seatId, reminderId: r.reminderId }))
 		);
 	}
@@ -206,7 +208,7 @@
 	 * valid picks, e.g. only Minions for the Preacher).
 	 */
 	const misfits = $derived.by(() => {
-		const id = step?.character?.id;
+		const id = tokensOf?.id;
 		if (!choosing || !id) return undefined;
 		return seatMisfits(
 			game,
@@ -223,7 +225,7 @@
 		chooserOpen = false;
 		const picked = choosing;
 		choosing = undefined;
-		const id = step?.character?.id;
+		const id = tokensOf?.id;
 		if (!picked || !id) return;
 		if (picked.at) moveConfirm?.request(picked.at.reminderId, seatId);
 		else
@@ -592,10 +594,8 @@
 							<!-- The token itself, as on the board (Trevor, 2026-10-30). -->
 							<BoardReminder
 								{label}
-								character={step.character}
-								alignment={step.character
-									? placingAlignment(game, step.character.id, characters)
-									: undefined}
+								character={tokensOf}
+								alignment={tokensOf ? placingAlignment(game, tokensOf.id, characters) : undefined}
 							/>
 							<!-- The seat and its character (Trevor, 2026-10-18), on one line: the badge with
 							     its player. -->

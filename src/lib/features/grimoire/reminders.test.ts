@@ -14,6 +14,8 @@ import {
 	extraReminders,
 	reminderCopies,
 	stepReminders,
+	stepFocusOf,
+	stepTokenCharacter,
 	parseReminderKey,
 	reminderCopiesLeft,
 	reminderGroups,
@@ -391,5 +393,19 @@ describe('copiedLook', () => {
 		expect(copiedLook(copy)).toMatchObject({ like: poisoned });
 		expect(handReminder(copy)).toEqual(poisoned);
 		expect(handReminder(poisoned)).toBe(poisoned);
+	});
+});
+
+describe('stepTokenCharacter (M50)', () => {
+	const data = committedGameData();
+	const characters = characterLookup(data, toScript(editionScript('tb', data)!));
+	it("places the borrowed character's tokens on a gained step, the holder's otherwise", () => {
+		const chef = characters.get('chef')!;
+		const step = { character: chef, gained: { characterId: 'monk' } } as Parameters<
+			typeof stepTokenCharacter
+		>[0];
+		expect(stepTokenCharacter(step, characters)?.id).toBe('monk');
+		expect(stepFocusOf(step, 'other', characters)?.characterId).toBe('monk');
+		expect(stepTokenCharacter({ character: chef }, characters)?.id).toBe('chef');
 	});
 });

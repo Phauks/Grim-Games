@@ -12,7 +12,7 @@ import { abilityState, type Night, type NightStep } from '#lib/core/rules/index.
 import { preferences } from '#lib/ui/preferences.svelte.ts';
 import type { Grimoire } from './grimoire.svelte.ts';
 import { boardNightSteps, seatName, stepHolders, tonight } from './night-steps.ts';
-import { stepReminders } from './reminders.ts';
+import { stepReminders, stepTokenCharacter } from './reminders.ts';
 
 /** What the walk-through reads from the board, fresh on each call. */
 export interface NightWalkContext {
@@ -214,11 +214,10 @@ export class NightWalk {
 	 */
 	#labels = $derived.by(() => {
 		const { walk, step } = this;
-		return walk && step?.character
-			? [
-					...stepReminders(step.character.id, walk.night, step.character).labels,
-					...step.character.reminders
-				]
+		// A gained ability's step rings that character's tokens (M50).
+		const of = step ? stepTokenCharacter(step, this.#context().characters) : undefined;
+		return walk && of
+			? [...stepReminders(of.id, walk.night, of).labels, ...of.reminders]
 			: undefined;
 	});
 
