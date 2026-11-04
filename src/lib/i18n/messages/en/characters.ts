@@ -32,6 +32,7 @@ export const characters = {
 	'characters.wikiIntroduction': 'Introduction',
 	'characters.summary': 'Summary',
 	'characters.jinxes': 'Jinxes',
+	'characters.jinxCount': { one: '{count} jinx', other: '{count} jinxes' },
 	'characters.homebrew': 'Homebrew',
 	'characters.custom': 'Custom',
 	'characters.seatLine': 'Seat {number} · {alignment}',

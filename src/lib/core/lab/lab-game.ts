@@ -23,13 +23,11 @@ import { reservedHidden } from '#lib/core/modes/draft-seats.ts';
 import { analyseSetup } from '#lib/core/rules/setup.ts';
 import { setupModifierFor } from '#lib/core/rules/setup-modifiers.ts';
 
-/** Where the opponents come from. */
-export type OpponentSource =
-	| { kind: 'jinxes' }
-	| { kind: 'type'; type: CharacterType }
-	| { kind: 'all' }
-	/** Hand-picked, in the order picked. */
-	| { kind: 'picked'; ids: readonly CharacterId[] };
+/**
+ * Where the opponents come from: every character jinxed with a locked one, or a list (the
+ * Characters page's table rows as shown, plan M45), in its order.
+ */
+export type OpponentSource = { kind: 'jinxes' } | { kind: 'listed'; ids: readonly CharacterId[] };
 
 /** Where the opponent goes in the game: on a seat, only on the script, or a Demon bluff. */
 export const OPPONENT_PLACES = ['in-play', 'script', 'bluff'] as const;
@@ -51,8 +49,8 @@ const isSeated = (type: CharacterType): type is SeatedType =>
 
 /**
  * The characters to test against `locked`, from `source`, without the locked ones. Jinxes:
- * every character jinxed with any locked one, in `jinxes.json` order. A type or every
- * character: in `roles.json` order. Hand-picked: in the order picked.
+ * every character jinxed with any locked one, in `jinxes.json` order. Listed: in the list's
+ * order, leaving out ids the data doesn't have.
  */
 export function labOpponents(
 	data: GameData,
@@ -75,11 +73,7 @@ export function labOpponents(
 		}
 		return ids.map(withJinxes);
 	}
-	if (source.kind === 'picked')
-		return source.ids.filter((id) => data.byId.has(id) && !lockedSet.has(id)).map(withJinxes);
-	return data.characters
-		.filter((c) => !lockedSet.has(c.id) && (source.kind === 'all' || c.type === source.type))
-		.map((c) => withJinxes(c.id));
+	return source.ids.filter((id) => data.byId.has(id) && !lockedSet.has(id)).map(withJinxes);
 }
 
 /** Where the other seats come from: one official edition, or every official character. */
@@ -304,11 +298,6 @@ function seatNeighbours(
 		if (from < 0 || to === undefined) continue;
 		[seats[from], seats[to]] = [seats[to], seats[from]];
 	}
-}
-
-/** The key a pairing's result is kept under: the locked characters, sorted, and the opponent. */
-export function pairingKey(locked: readonly CharacterId[], opponent: CharacterId): string {
-	return [...[...locked].sort(), opponent].join('+');
 }
 
 /**

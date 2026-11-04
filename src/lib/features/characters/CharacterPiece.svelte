@@ -10,6 +10,8 @@
 	import CharacterRow from './CharacterRow.svelte';
 	import CharacterBadge from './CharacterBadge.svelte';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
+	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { loadOfficialData, officialData } from './game-data.svelte.ts';
 	import { contextCharacters } from './character-context.ts';
 	import {
@@ -55,6 +57,12 @@
 		tags?: Snippet;
 		/** Marks at the band's end (jinx partners). */
 		marks?: Snippet;
+		/**
+		 * How many official jinxes it has, as a count at the band's end (ring only; the Lab's
+		 * Select character, Trevor 2026-11-04: "makes it easier to identify which jinxes may
+		 * need to be tested"). Nothing shows for none.
+		 */
+		jinxCount?: boolean;
 		/** Controls: under the band's end on a ring, after the pill on an entry. */
 		controls?: Snippet;
 		/** The host's data on the band's line, outside the band (a night step's count). */
@@ -95,6 +103,7 @@
 		joined,
 		tags,
 		marks,
+		jinxCount = false,
 		controls,
 		aside,
 		children,
@@ -122,7 +131,18 @@
 	const character = $derived(
 		given ?? (id ? (gameCharacters?.()?.get(id) ?? officialData.current?.byId.get(id)) : undefined)
 	);
+	const jinxes = $derived(
+		jinxCount && id ? (officialData.current?.jinxes.byCharacter.get(id)?.length ?? 0) : 0
+	);
 </script>
+
+{#snippet endMarks()}
+	{#if jinxes > 0}<span class="jinx-count" data-testid="jinx-count"
+			><CountBadge count={jinxes} /><span class="visually-hidden"
+				>{t('characters.jinxCount', { count: jinxes })}</span
+			></span
+		>{/if}{@render marks?.()}
+{/snippet}
 
 {#if look.shape === 'icon'}
 	<!-- The icon alone, named for the character; `label=""` when the host names it already. No
@@ -157,7 +177,7 @@
 			{label}
 			{describedby}
 			afterName={tags}
-			{marks}
+			marks={jinxCount ? endMarks : marks}
 			{hidden}
 			end={controls}
 			{aside}
@@ -216,6 +236,10 @@
 {/if}
 
 <style>
+	.jinx-count {
+		display: inline-flex;
+		align-items: center;
+	}
 	/* Fills the box its host gives it (or --character-icon-size), round on the token's face. */
 	.icon {
 		display: block;

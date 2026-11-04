@@ -24,9 +24,9 @@ test("a page whose build's files are gone loads afresh instead of failing", asyn
 		gone ? route.fulfill({ status: 404, body: '' }) : route.fallback()
 	);
 
-	await (await theMenu(page)).getByRole('link', { name: 'Character reference' }).tap();
+	await (await theMenu(page)).getByRole('link', { name: 'Characters' }).tap();
 	await expect(page).toHaveURL(/\/reference$/);
-	await expect(page.getByRole('heading', { name: 'Character reference', level: 1 })).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Characters', level: 1 })).toBeVisible();
 	expect(freshLoads).toBe(1);
 	await expect(page.getByTestId('error-notice')).toHaveCount(0);
 	await expect(page.getByRole('heading', { name: 'Something went wrong' })).toHaveCount(0);

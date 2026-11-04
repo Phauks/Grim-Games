@@ -27,7 +27,7 @@ test('on a phone, the header menu opens a drawer with every destination', async 
 		'Script builder',
 		'Character builder',
 		'Mode builder',
-		'Character reference',
+		'Characters',
 		'Info tokens',
 		'Account'
 	]) {
@@ -59,7 +59,7 @@ test('on a phone, the header menu opens a drawer with every destination', async 
 		'Search',
 		'Library',
 		'Info tokens',
-		'Character reference'
+		'Characters'
 	]);
 	await expect(drawer.getByRole('list', { name: 'Create' }).getByRole('link')).toHaveText([
 		'Script builder',
@@ -92,9 +92,9 @@ test.describe('on a computer', () => {
 		await expect(nav).toBeVisible();
 		await expect(menu).toHaveAttribute('aria-expanded', 'true');
 
-		await nav.getByRole('link', { name: 'Character reference' }).click();
+		await nav.getByRole('link', { name: 'Characters' }).click();
 		await expect(page).toHaveURL(/\/reference$/);
-		await expect(nav.getByRole('link', { name: 'Character reference' })).toHaveAttribute(
+		await expect(nav.getByRole('link', { name: 'Characters' })).toHaveAttribute(
 			'aria-current',
 			'page'
 		);
