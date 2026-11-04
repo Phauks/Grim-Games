@@ -17,7 +17,7 @@ import {
 	type Jinx,
 	type SeatedType
 } from '#lib/core/data/types.ts';
-import { canDuplicate, isNotDealt } from '#lib/core/rules/bag-characters.ts';
+import { canDuplicate, isNotDealt, isReplacedAfterDraw } from '#lib/core/rules/bag-characters.ts';
 import { jinxRulesBetween } from '#lib/core/rules/jinx-pairs.ts';
 import { reservedHidden } from '#lib/core/modes/draft-seats.ts';
 import { analyseSetup } from '#lib/core/rules/setup.ts';
@@ -93,6 +93,12 @@ export interface LabSetup {
 	place: OpponentPlace;
 	/** The characters that fill the other seats (and, for an edition, the rest of the script). */
 	filler: LabFiller;
+	/**
+	 * Sets the game up as after a draw (Trevor, 2026-11-04: "automatically apply setup tokens
+	 * (it is fine if it is random)"): stand-ins for the Drunk and the Marionette here, and the
+	 * setup reminders when the game loads. Default on; off seats every character as it is.
+	 */
+	setupTokens?: boolean;
 }
 
 export interface LabGame {
@@ -104,6 +110,12 @@ export interface LabGame {
 	seats: CharacterId[];
 	/** The Demon's bluffs: good characters on the script and not in play. */
 	bluffs: CharacterId[];
+	/**
+	 * Seats whose player thinks they are someone else, as after a real draw: the character on
+	 * the seat's token (`shows`), with the true one (`seats`) marked by its "Is The ..."
+	 * reminder (the Drunk thinks they are a Townsfolk, the Marionette a good character).
+	 */
+	standIns: { seat: number; shows: CharacterId }[];
 }
 
 /** `list` in a random order (Fisher-Yates), drawing from `random` (0 to 1, as Math.random). */
@@ -272,11 +284,32 @@ export function labGame(data: GameData, setup: LabSetup, random = Math.random): 
 			: goodOff.slice(0, BLUFFS);
 	for (const id of bluffs) onScript.add(id);
 
+	// A seat with no token of its own in the bag (the Drunk, the Marionette) holds a Townsfolk
+	// not in play, as the token its player drew (https://wiki.bloodontheclocktower.com/Drunk,
+	// https://wiki.bloodontheclocktower.com/Marionette).
+	const standIns: LabGame['standIns'] = [];
+	const shown = new Set<CharacterId>([...seated, ...bluffs, ...wanted]);
+	seats.forEach((id, seat) => {
+		const c = character(id);
+		if (setup.setupTokens === false || !c || !isReplacedAfterDraw(c)) return;
+		const fits = (from: readonly Character[]) =>
+			shuffled(from, random).find(
+				(o) =>
+					o.type === 'townsfolk' && !shown.has(o.id) && changesNothing(o) && !isReplacedAfterDraw(o)
+			);
+		const shows = fits(pool) ?? fits(data.characters);
+		if (!shows) return;
+		shown.add(shows.id);
+		onScript.add(shows.id);
+		standIns.push({ seat, shows: shows.id });
+	});
+
 	return {
 		script: data.characters.filter((c) => onScript.has(c.id)).map((c) => c.id),
 		ruleCharacters,
 		seats,
-		bluffs
+		bluffs,
+		standIns
 	};
 }
 
