@@ -5,14 +5,11 @@
  */
 import {
 	OPPONENT_PLACES,
+	type LabFiller,
 	type OpponentPlace,
 	type OpponentSource
 } from '#lib/core/lab/lab-game.ts';
-import {
-	CHARACTER_TYPES,
-	OFFICIAL_EDITIONS,
-	type OfficialEditionId
-} from '#lib/core/data/index.ts';
+import { CHARACTER_TYPES, OFFICIAL_EDITIONS } from '#lib/core/data/index.ts';
 import type { CharacterId, CharacterType } from '#lib/core/data/index.ts';
 import type { GameId } from '#lib/core/model/index.ts';
 import { readParsed, writeStored } from '#lib/ui/stored.ts';
@@ -27,7 +24,7 @@ export interface LabState {
 	locked: CharacterId[];
 	source: OpponentSource;
 	place: OpponentPlace;
-	filler: OfficialEditionId;
+	filler: LabFiller;
 	/** The opponent shown, as a place in the list of opponents. */
 	index: number;
 	/** The lab game last loaded, deleted when the next one loads. */
@@ -41,7 +38,7 @@ export const DEFAULT_LAB: LabState = {
 	locked: [],
 	source: { kind: 'jinxes' },
 	place: 'in-play',
-	filler: 'tb',
+	filler: 'all',
 	index: 0,
 	marks: {}
 };
@@ -75,9 +72,10 @@ export function parseLab(raw: unknown): LabState {
 		place: (OPPONENT_PLACES as readonly unknown[]).includes(raw.place)
 			? (raw.place as OpponentPlace)
 			: DEFAULT_LAB.place,
-		filler: OFFICIAL_EDITIONS.some((e) => e.id === raw.filler)
-			? (raw.filler as OfficialEditionId)
-			: DEFAULT_LAB.filler,
+		filler:
+			raw.filler === 'all' || OFFICIAL_EDITIONS.some((e) => e.id === raw.filler)
+				? (raw.filler as LabFiller)
+				: DEFAULT_LAB.filler,
 		index: Number.isInteger(raw.index) && (raw.index as number) >= 0 ? (raw.index as number) : 0,
 		...(typeof raw.gameId === 'string' ? { gameId: raw.gameId as GameId } : {}),
 		marks
