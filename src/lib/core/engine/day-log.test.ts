@@ -231,7 +231,14 @@ describe('Execute', () => {
 		const s = run(session, ctx, { type: 'Execute', seatId: seats[3] });
 		expect(s.game.seats[seats[3]]).toMatchObject({ dead: true, deathCause: 'execution' });
 		expect(s.game.today.entries).toEqual([
-			{ kind: 'execution', entryId: expect.any(String), seatId: seats[3], died: true }
+			{
+				kind: 'execution',
+				entryId: expect.any(String),
+				seatId: seats[3],
+				died: true,
+				// Who was alive just before it, for a rule checked at that moment (M44).
+				alive: session.game.seating
+			}
 		]);
 		// One command, so one undo brings the player back and empties the log.
 		const back = undo(s);

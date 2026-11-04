@@ -21,7 +21,7 @@ import {
 	registeredTo,
 	scriptJinxes
 } from './jinxes.ts';
-import { readJinxRules } from '#lib/core/data/jinx-rules.ts';
+import { readJinxRules } from '#lib/core/data/jinx-read.ts';
 import { jinxPartnerIssues } from '#lib/core/data/jinx-needs.ts';
 import { Issues, type Json } from '#lib/core/data/validate.ts';
 import type { Script } from '#lib/core/data/index.ts';

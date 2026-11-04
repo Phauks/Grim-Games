@@ -87,9 +87,12 @@ export { livesWhileDead } from './game-end-helpers.ts';
  * - `demon-executed`: a special rule says good wins when a Demon dies by execution (Binary
  *   Supernovae), and one has (`seats`: the executed Demons; `ruleName`: the rule);
  * - `partner-stops`: a jinx's partner stopped its ability (`jinxEnds`, the Mayor stopping
- *   the riot; `seats`: the partner's player, then the living players of its character).
+ *   the riot; `seats`: the partner's player, then the living players of its character);
+ * - `jinx-executed`: a jinx says this character's or its partner's player being executed ends
+ *   the game (`jinxEnds`, a custom script's jinx, M44; `seats`: the executed player).
  */
-export type GameEndRule = 'demon-dead' | 'two-alive' | 'demon-executed' | 'partner-stops' | EndKind;
+export type GameEndRule =
+	'demon-dead' | 'two-alive' | 'demon-executed' | 'partner-stops' | 'jinx-executed' | EndKind;
 
 /**
  * Why the game may go on: a character's `gameEnd.holds` kind, `extra-day` (the Demon died by

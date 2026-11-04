@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { findJinx } from '#lib/core/data/jinxes.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import { JINX_RULE_KEYS } from './jinx-rules.ts';
+import { JINX_RULE_KEYS } from './jinx-read.ts';
 import { OFFICIAL_RULES, rulesFileOf } from './rules/index.ts';
 
 const source = readFileSync(new URL('./jinx-rules.ts', import.meta.url), 'utf8');

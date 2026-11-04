@@ -8,7 +8,8 @@ import { trueCharacter } from '#lib/core/model/selectors.ts';
 import type { DayLog, Game, SeatId } from '#lib/core/model/types.ts';
 import { isExecution } from './death-causes.ts';
 import type { GameEnd, GameHold } from './game-end.ts';
-import { ownJinxEffects } from './jinxes.ts';
+import { ownJinxEffects, ownJinxes } from './jinxes.ts';
+import { aboutHolder, jinxApplies, type JinxEvent } from './jinx-when.ts';
 import { nomineesNominateNow } from './nominations.ts';
 
 /** How `rules/game-end.ts` reads the board, so a jinx end counts as its own ends do. */
@@ -43,16 +44,21 @@ function playing(game: Game, characterId: CharacterId, characters: CharacterLook
  *   Storyteller's call (`seats`: who was executed, then who nominated them);
  * - `marked-executed`: while it is in play, alive or dead, the player with the partner's
  *   token died by execution (the Grandchild, `seats`: them);
+ * - `executed` (M44, a custom script's jinx): its own player, or with `player: "partner"` the
+ *   partner's, was executed, so `winner` wins (`jinx-executed`, `seats`: them);
  * - `day-without-execution`: its player and the partner's were alive when day `day` ended
- *   with no execution (the Leviathan and the Mayor on day 5, `seats`: both). It replaces the
- *   character's own end that day (`replaced`), unless the partner's ability may not work;
+ *   with no execution (the Leviathan and the Mayor on day 5, `seats`: both); with no `day`
+ *   (its `when` has `final-day`), the latest day that ended. It replaces the character's own
+ *   end that day (`replaced`), unless the partner's ability may not work;
  * - `partner-stops`: the partner's player stopped its ability, a day use logged with `stops`
  *   (the Mayor stopping the riot, https://wiki.bloodontheclocktower.com/Riot#Related_Jinxes):
  *   `winner` wins if exactly `alive` of its players are alive, otherwise the other team. A
  *   drunk or poisoned partner may not have stopped it: a hold (`seats`: the partner's player,
  *   then its living players).
- * An end's `when` must hold too. The `partner-end` and `partner-chooses` kinds are read where
- * those ends are (`dead-without-demon.ts`, the extra day in `game-end.ts`).
+ * An end's `when` must hold too, at the moment of its event (M44): an execution's day and
+ * who was alive just before it (`JinxEvent`), the day that ended; `partner-stops` now. The
+ * `partner-end` and `partner-chooses` kinds are read where those ends are
+ * (`dead-without-demon.ts`, the extra day in `game-end.ts`).
  */
 export function jinxEnds(
 	game: Game,
@@ -63,10 +69,23 @@ export function jinxEnds(
 	const replaced = new Set<string>();
 	const owners = new Set(game.seating.flatMap((id) => trueCharacter(game, id, characters) ?? []));
 	const logs = at.logs;
+	/** The moment `seatId` was executed on day `day`, for the end's `when`. */
+	const execution = (day: number, seatId: SeatId): JinxEvent | undefined => {
+		const entries = logs[day]?.entries ?? [];
+		const i = entries.findIndex((e) => e.kind === 'execution' && e.seatId === seatId);
+		if (i < 0) return undefined;
+		const entry = entries[i];
+		const alive = entry.kind === 'execution' ? entry.alive : undefined;
+		return { day, entries: entries.slice(0, i + 1), ...(alive ? { alive } : {}) };
+	};
 	for (const owner of owners) {
 		const seats = playing(game, owner, characters);
-		for (const { partner, effect: end } of ownJinxEffects(game, owner, 'endsGame', characters)) {
-			if (end.winner === undefined) continue;
+		const found = ownJinxes(game, owner, (r) => r.endsGame !== undefined, characters);
+		for (const { partner, rule } of found) {
+			const end = rule.endsGame!;
+			if (end.winner === undefined || aboutHolder(end)) continue;
+			const holds = (event?: JinxEvent) =>
+				jinxApplies(game, owner, partner, end, characters, event ? { event } : {});
 			const partners = playing(game, partner, characters);
 			const base = {
 				winner: end.winner,
@@ -77,12 +96,13 @@ export function jinxEnds(
 			const partnerImpaired = () => partners.flatMap((id) => at.impaired(id, partner));
 			if (end.kind === 'nominated-marked-executed') {
 				const targets = end.token ? at.carrying(partner, end.token) : partners;
-				for (const log of logs) {
+				logs.forEach((log, day) => {
 					const executed = at.executedOn(log);
 					for (const entry of log.entries) {
 						if (entry.kind !== 'nomination' || !seats.includes(entry.nominator)) continue;
 						const target = entry.nominee;
 						if (!targets.includes(target) || !executed.includes(target)) continue;
+						if (!holds(execution(day, target))) continue;
 						ends.push({
 							...base,
 							key: `jinx:${owner}:${partner}:${target}`,
@@ -91,11 +111,13 @@ export function jinxEnds(
 							holds: end.token ? partnerImpaired() : []
 						});
 					}
-				}
+				});
 			} else if (end.kind === 'marked-executed') {
 				for (const target of at.carrying(partner, end.token!)) {
 					const seat = game.seats[target];
 					if (!seat.dead || !isExecution(seat.deathCause, characters)) continue;
+					const day = logs.findLastIndex((log) => at.executedOn(log).includes(target));
+					if (!holds(day < 0 ? undefined : execution(day, target))) continue;
 					ends.push({
 						...base,
 						key: `jinx:${owner}:${partner}:${target}`,
@@ -104,7 +126,22 @@ export function jinxEnds(
 						holds: []
 					});
 				}
+			} else if (end.kind === 'executed') {
+				const targets = end.player === 'partner' ? partners : seats;
+				logs.forEach((log, day) => {
+					for (const target of at.executedOn(log)) {
+						if (!targets.includes(target) || !holds(execution(day, target))) continue;
+						ends.push({
+							...base,
+							key: `jinx:${owner}:${partner}:${target}:${day}`,
+							rule: 'jinx-executed',
+							seats: [target],
+							holds: []
+						});
+					}
+				});
 			} else if (end.kind === 'partner-stops') {
+				if (!holds()) continue;
 				for (const entry of logs.flatMap((log) => log.entries)) {
 					if (entry.kind !== 'ability' || entry.stops !== owner) continue;
 					if (entry.characterId !== partner || !partners.includes(entry.seatId)) continue;
@@ -120,21 +157,22 @@ export function jinxEnds(
 					});
 				}
 			} else if (end.kind === 'day-without-execution') {
-				const day = end.day!;
+				const day = end.day ?? Math.max(0, ...at.ended);
 				if (!at.ended.includes(day)) continue;
 				if (at.executedOn(logs[day]).length > 0) continue;
+				if (!holds({ day, entries: logs[day].entries })) continue;
 				const alive = (ids: SeatId[]) => ids.filter(at.alive);
 				const [own, theirs] = [alive(seats), alive(partners)];
 				if (own.length === 0 || theirs.length === 0) continue;
-				const holds = partnerImpaired();
-				if (holds.length === 0) replaced.add(`${owner}:${day}`);
+				const holdsGame = partnerImpaired();
+				if (holdsGame.length === 0) replaced.add(`${owner}:${day}`);
 				ends.push({
 					...base,
 					key: `jinx:${owner}:${partner}:${day}`,
 					rule: 'day-without-execution',
 					seats: [...own, ...theirs],
 					day,
-					holds
+					holds: holdsGame
 				});
 			}
 		}

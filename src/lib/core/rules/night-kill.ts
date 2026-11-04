@@ -5,7 +5,9 @@
  *   `charged.count` while its `charged.token` is on its player (the Po, after choosing no one,
  *   attacks 3, https://wiki.bloodontheclocktower.com/Po), even after a night it did not wake;
  *   0 while another ability's token stops it waking or killing tonight (the Exorcist's Chosen,
- *   https://wiki.bloodontheclocktower.com/Exorcist; the Princess's Doesn't Kill).
+ *   https://wiki.bloodontheclocktower.com/Exorcist; the Princess's Doesn't Kill), or while a
+ *   jinx says a partner who chose its player tonight stops the kill (`noKill` `chosen`,
+ *   `chosenStopsKill`, M44).
  * - `delayed`: the players its earlier choice kills tonight, carrying its `delayed` token,
  *   who die even when it does not wake (the Pukka's Poisoned,
  *   https://wiki.bloodontheclocktower.com/Pukka); none while it is stopped from killing.
@@ -15,6 +17,7 @@ import type { CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { typeOf } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
+import { chosenStopsKill } from './jinx-targets.ts';
 import { stoppedWaking } from './woke-tonight.ts';
 
 export interface NightKill {
@@ -33,12 +36,13 @@ export function nightKill(
 	if (!kills) return undefined;
 	const seat = game.seats[holder];
 	if (!seat) return undefined;
-	const noKill = seat.reminders.some((r) => {
-		const stops = rulesOf(r.characterId, characters)?.stopsKilling;
-		return (
-			stops?.token === r.label && (!stops.type || typeOf(game, holder, characters) === stops.type)
-		);
-	});
+	const noKill =
+		seat.reminders.some((r) => {
+			const stops = rulesOf(r.characterId, characters)?.stopsKilling;
+			return (
+				stops?.token === r.label && (!stops.type || typeOf(game, holder, characters) === stops.type)
+			);
+		}) || chosenStopsKill(game, holder, characterId, characters) !== undefined;
 	const delayed =
 		kills.delayed === undefined || noKill
 			? []

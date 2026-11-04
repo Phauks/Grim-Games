@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import type { Character } from '#lib/core/data/types.ts';
-import { readJinxRules } from '#lib/core/data/jinx-rules.ts';
+import { readJinxRules } from '#lib/core/data/jinx-read.ts';
 import { Issues } from '#lib/core/data/validate.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { abilityJinxSetup } from './jinx-setup.ts';

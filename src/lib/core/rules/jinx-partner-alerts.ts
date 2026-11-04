@@ -10,7 +10,7 @@
  * The jinx itself applies each one, so they work whatever the owner's ability's state. Data
  * only, no wording: `NightAlerts.svelte` says them.
  */
-import type { JinxEffect } from '#lib/core/data/jinx-rules.ts';
+import type { JinxEffect, LearnsWhat } from '#lib/core/data/jinx-rules.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import { wikiUrl } from '#lib/core/data/wiki.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
@@ -28,6 +28,7 @@ import {
 	notShownGiven,
 	secondDemonReverts
 } from './jinx-effects.ts';
+import { unchoosablePartners } from './jinx-targets.ts';
 import type { NightAlert } from './night-alerts.ts';
 
 /** The `wakes-with` and `keeps-protection` alerts at the step of `partner`, in seating order. */
@@ -75,6 +76,10 @@ export function jinxPartnerAlerts(
  *   waking player learns which alignment they are (`alignment`: the Ogre whose Friend is the
  *   Recluse, registering as evil, learns they are evil,
  *   https://wiki.bloodontheclocktower.com/Ogre#Related_Jinxes);
+ * - `learns-character` (`learns: "character"`, while its `when` holds for that player, M44):
+ *   the waking player also learns a partner's player's true character, `about` that player:
+ *   one executed today when there is one (a custom script's "when the Lamplighter is executed,
+ *   the Undertaker learns their true character as well", with `partner-executed`), else each;
  * - `might-learn` (`partnerKeepsAbility`): one of this player's `impairs` tokens would reach
  *   a partner's player, who keeps their ability, so this player might learn the partner is in
  *   play; at this player's step and at the partner's (the Minstrel and the Preacher with
@@ -119,9 +124,12 @@ export function jinxLearnAlerts(
 				if (impairs.some((i) => i.source.characterId === partner))
 					out.push(alert('learns-no-ability', seatId, owner, partner));
 			const alignment = alignmentOf(game, seatId);
-			for (const partner of learnsAlignmentFrom(game, owner, seatId, characters))
+			for (const partner of learnsFrom(game, owner, seatId, 'alignment', characters))
 				if (alignment)
 					out.push({ ...alert('learns-alignment', seatId, owner, partner), alignment });
+			for (const partner of learnsFrom(game, owner, seatId, 'character', characters))
+				for (const about of learnedSeats(game, partner, characters))
+					out.push({ ...alert('learns-character', seatId, owner, partner), about });
 		}
 		const spared = ownJinxEffects(game, owner, 'partnerKeepsAbility', characters);
 		for (const { partner } of spared) {
@@ -133,17 +141,55 @@ export function jinxLearnAlerts(
 	return out;
 }
 
-/** The partners whose jinx has `seatId`, an `owner` player, learn their alignment now. */
-function learnsAlignmentFrom(
+/** The partners whose jinx has `seatId`, an `owner` player, learn `what` now. */
+function learnsFrom(
 	game: Game,
 	owner: CharacterId,
 	seatId: SeatId,
+	what: LearnsWhat,
 	characters: CharacterLookup
 ): CharacterId[] {
 	return scriptCharacterIds(game.script).flatMap((partner) => {
 		const effect = jinxEffect(game, owner, partner, 'learns', characters, { seatId });
-		return effect?.what === 'alignment' ? [partner] : [];
+		return effect?.what === what ? [partner] : [];
 	});
+}
+
+/** The `partner` players a `learns-character` alert is about: those executed today, else all. */
+function learnedSeats(game: Game, partner: CharacterId, characters: CharacterLookup): SeatId[] {
+	const seats = game.seating.filter((s) => trueCharacter(game, s, characters) === partner);
+	const executed = seats.filter((s) =>
+		game.today.entries.some((e) => e.kind === 'execution' && e.seatId === s)
+	);
+	return executed.length > 0 ? executed : seats;
+}
+
+/**
+ * The alerts at `characterId`'s step about whom it may choose (M44, `jinx-targets.ts`), one
+ * per partner's player, in seating order: `cannot-choose` (`cannotChoose`), the waking player
+ * can't choose them; `storyteller-redirects` (`storytellerChooses` `another-player`), if they
+ * choose them, the Storyteller chooses another player instead. The jinx itself applies each
+ * one, whatever any ability's state.
+ */
+export function jinxChoiceRuleAlerts(
+	game: Game,
+	characterId: CharacterId,
+	characters: CharacterLookup
+): NightAlert[] {
+	const character = characters.get(characterId);
+	return unchoosablePartners(game, characterId, characters).flatMap(({ partner, why }) =>
+		game.seating
+			.filter((s) => trueCharacter(game, s, characters) === partner)
+			.map((seatId): NightAlert => ({
+				kind: why === 'jinx-choice' ? 'cannot-choose' : 'storyteller-redirects',
+				seatId,
+				source: { characterId },
+				works: true,
+				impairments: [],
+				partner,
+				...(character ? { wiki: `${wikiUrl(character)}#Related_Jinxes` } : {})
+			}))
+	);
 }
 
 /**
