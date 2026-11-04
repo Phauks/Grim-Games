@@ -82,7 +82,8 @@ export class LabSession {
 					locked: this.locked,
 					opponent: list[i]?.id,
 					place: this.setup.place,
-					filler: this.setup.filler
+					filler: this.setup.filler,
+					setupTokens: this.setup.setupTokens
 				},
 				this.setup.gameId
 			);

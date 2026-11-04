@@ -150,13 +150,31 @@ test('on a computer window the game opens on the right of the table', async ({ p
 // Marionette's seat holds a Townsfolk with the Is The Marionette reminder, and the first night
 // is under way.
 test('loads a started game, the Marionette thinking they are a Townsfolk', async ({ page }) => {
-	await page.goto('/character-lab');
-	await lockCharacter(page, 'Marionette');
-	await page.getByRole('button', { name: 'Load game' }).tap();
+	await page.goto('/reference');
+	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Marionette');
+	const row = page.getByTestId('character-table').locator('tr[data-character="marionette"]');
+	await row.scrollIntoViewIfNeeded();
+	await row.getByRole('button', { name: 'Lock Marionette' }).tap();
+	await loadGame(page);
 	const seats = await labSeats(page);
 	await expect(seats.nth(0)).toHaveAttribute('aria-label', /Marionette, believes they are the /);
 	const frame = page.getByTestId('lab-frame');
 	const board = (await frame.isVisible()) ? frame.locator('iframe').contentFrame() : page;
 	await expect(board.getByRole('button', { name: 'End night', exact: true })).toBeVisible();
 	await expect(board.getByRole('button', { name: 'Start game', exact: true })).toHaveCount(0);
+});
+
+test('Apply setup tokens off seats the characters as they are', async ({ page }) => {
+	await page.goto('/reference');
+	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Marionette');
+	const row = page.getByTestId('character-table').locator('tr[data-character="marionette"]');
+	await row.scrollIntoViewIfNeeded();
+	await row.getByRole('button', { name: 'Lock Marionette' }).tap();
+	const lab = await labControls(page);
+	await lab.getByText('Apply setup tokens', { exact: true }).tap();
+	if (!(await onComputer(page))) await page.keyboard.press('Escape');
+	await loadGame(page);
+	const seats = await labSeats(page);
+	await expect(seats.nth(0)).toHaveAttribute('aria-label', /Marionette/);
+	await expect(seats.nth(0)).not.toHaveAttribute('aria-label', /believes they are/);
 });
