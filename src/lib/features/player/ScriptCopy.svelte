@@ -26,7 +26,7 @@
 		version?: string;
 		/** False where the page already shows the author and version (the /play header). */
 		byline?: boolean;
-		/** Characters on seats, in a game: Travellers and Jinxes start closed when none plays. */
+		/** Characters on seats, in a game: Travellers start closed when none plays. */
 		inPlay?: readonly string[];
 		/** Travellers the town knows are in play, with their players (Trevor, 2026-10-19). */
 		travellers?: readonly TravellerInPlay[];

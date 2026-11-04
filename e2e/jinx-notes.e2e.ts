@@ -206,3 +206,19 @@ test('the character picker fades a character a jinx forbids, and asks before usi
 	await expect(seatSheet(page)).toBeHidden();
 	await expect(page.getByRole('button', { name: /^Seat 2:.*Heretic/ })).toBeVisible();
 });
+
+// Players see every jinx on the script, whatever is in play: the Storyteller's player view
+// (the board's Script button, the same component as /play) keeps Jinxes open with no jinxed
+// character in play, so whether it opens says nothing about which characters are in play.
+// https://wiki.bloodontheclocktower.com/Djinn
+test("the players' script shows its jinxes open with no jinxed character in play", async ({
+	page
+}) => {
+	// Wiki: "If there are jinxed characters on the character sheet, even if there are no jinxed characters in play, the Storyteller tells all players what the Djinn's special rule is at the start of the game."
+	await startGame(page, 'Jinx Sheet', SPY_POPPY, ['Chef', 'Empath']);
+	await page.getByRole('button', { name: 'Script', exact: true }).tap();
+	const sheet = page.getByRole('dialog', { name: 'Jinx Sheet' });
+	const jinxes = sheet.getByRole('button', { name: 'Jinxes' });
+	await expect(jinxes).toHaveAttribute('aria-expanded', 'true');
+	await expect(sheet.locator('.jinx')).toContainText(tpiJinx('spy', 'poppygrower'));
+});
