@@ -10,6 +10,8 @@
 	import type { ReminderId, SeatId } from '#lib/core/model/index.ts';
 	import { trueCharacter } from '#lib/core/model/index.ts';
 	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
+	import { characterJinxes } from '#lib/features/game/game-jinxes.ts';
+	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import {
 		abilityGivers,
 		abilityState,
@@ -299,7 +301,16 @@
 	-->
 	<ShowToPlayer
 		bind:open={showOpen}
-		characters={character ? [{ character, alignment: seat?.alignment }] : []}
+		characters={character
+			? [
+					{
+						character,
+						alignment: seat?.alignment,
+						jinxes: showOpen ? characterJinxes(game, officialData.current, character.id) : [],
+						jinxCharacters: characters
+					}
+				]
+			: []}
 	/>
 	{#if seat && seatId}
 		<div class="sheet">
