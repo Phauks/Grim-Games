@@ -329,3 +329,18 @@ describe('a never-dealt character in play', () => {
 		expect(steps('other')).toContain('lilmonsta');
 	});
 });
+
+// Trevor (2026-11-04): "dawn should always be last". TPI's night sheet puts the Leviathan's
+// announcement after Dawn; on the board it comes just before, still unnumbered.
+describe('Dawn is the last night step', () => {
+	it('puts the Leviathan’s announcement before Dawn on every night', () => {
+		const g = game(['leviathan', 'poisoner', 'empath'], () => ({ type: 'NewDay' }));
+		for (const night of ['first', 'other'] as const) {
+			const steps = boardNightSteps(g, characters, night, data);
+			expect(steps.at(-1)?.id).toBe('dawn');
+			const leviathan = steps.findIndex((s) => s.id === 'leviathan');
+			expect(leviathan).toBeGreaterThan(-1);
+			expect(steps[leviathan].afterDawn).toBe(true);
+		}
+	});
+});

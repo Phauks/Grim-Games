@@ -95,8 +95,9 @@ async function openStep(page: Page, title: string) {
 		const button = strip.getByRole('button', { name: way });
 		for (let i = 0; i < 30 && (await name.textContent()) !== title; i++) {
 			if (await button.isDisabled()) break;
-			const [at, of] = ((await strip.locator('.count').textContent()) ?? '').split(' of ');
-			if (way === 'Next step' && at === of) break;
+			// The last step: the count leaves out Dusk and Dawn, so the strip says where it is.
+			const at = await strip.getAttribute('data-step');
+			if (way === 'Next step' && at === (await strip.getAttribute('data-steps'))) break;
 			await button.tap();
 		}
 	}

@@ -82,7 +82,9 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		title:
 			'Grimoire board with a guided night: night steps, reminders, frames, the character sheet',
 		area: 'storyteller',
-		parts: ['L8', 'L18a', 'L4', 'L26', 'L59', 'L60', 'L63', 'L66', 'L67', 'L82', 'L94']
+		// M51 (Trevor, 2026-11-04): the night walk-through counts its steps as the tokens' leaves
+		// number them, so Dusk, Dawn, Minion info and Demon info get no number.
+		parts: ['L8', 'L18a', 'L4', 'L26', 'L59', 'L60', 'L63', 'L66', 'L67', 'L82', 'L94', 'M51']
 	},
 	{
 		title:

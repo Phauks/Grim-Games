@@ -10,7 +10,7 @@
 	import NightAlerts from './NightAlerts.svelte';
 	import StepIfChosen from './StepIfChosen.svelte';
 	import NightSuggested from './NightSuggested.svelte';
-	import type { Night, NightStep } from '#lib/core/rules/index.ts';
+	import { stepNightNumbers, type Night, type NightStep } from '#lib/core/rules/index.ts';
 	import NightText from '#lib/features/reference/NightText.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Popover from '#lib/ui/primitives/Popover.svelte';
@@ -90,6 +90,18 @@
 	let focusButton = $state<HTMLElement>();
 
 	const last = $derived(index >= steps.length - 1);
+	/*
+	 * The count is the step's number on the token's leaf (Trevor, 2026-11-04: "so that dawn does
+	 * not count ... the number matches what would appear on a token"): counted among the
+	 * characters that wake tonight, the same filter as the board's leaves, so Dusk, Dawn, Minion
+	 * info and Demon info have none. A character that wakes again keeps its first number.
+	 */
+	const numbers = $derived(stepNightNumbers(steps));
+	const number = $derived(
+		step?.kind === 'character' && step.character && !step.afterDawn
+			? numbers.get(step.character.id)
+			: undefined
+	);
 	function next() {
 		if (step && !ticked) grimoire.toggleNightStep(night, step, { startDay: false });
 		if (!last) onIndex(index + 1);
@@ -115,6 +127,8 @@
 	class="strip"
 	aria-label="Night walk-through"
 	data-testid="night-strip"
+	data-step={index + 1}
+	data-steps={steps.length}
 	in:rise|global
 	out:rise|global={{ speed: 'fast' }}
 >
@@ -140,9 +154,9 @@
 				onclick={() => onOpen(step)}
 			>
 				{#snippet tags()}{#if step.again}<span class="again">again</span>{/if}{/snippet}
-				{#snippet aside()}<span class="count"
-						><CountBadge count={index + 1} total={steps.length} /></span
-					>{/snippet}
+				{#snippet aside()}{#if number !== undefined}<span class="count"
+							><CountBadge count={number} total={numbers.size} /></span
+						>{/if}{/snippet}
 			</CharacterPiece>
 		</span>
 		<button type="button" class="step" class:ticked onclick={() => onOpen(step)}>

@@ -166,9 +166,10 @@ export function ruleNightSteps(rules: readonly SpecialRule[], number: number): N
 }
 
 /**
- * Dusk is always the first step and Dawn the last (Trevor, 2026-10-16); everything else,
- * Traveller alignment included, falls between them. TPI's few "after Dawn" steps (said to
- * everyone once the night is over) stay after Dawn, as on TPI's night sheet.
+ * Dusk is always the first step and Dawn the last (Trevor, 2026-10-16; 2026-11-04: "dawn
+ * should always be last"); everything else, Traveller alignment included, falls between them.
+ * TPI's few "after Dawn" steps (the Leviathan's and Vizier's announcements to everyone) come
+ * just before Dawn, still marked to be said once the night is over and never numbered.
  */
 function duskToDawn<T extends NightStep>(steps: readonly T[]): T[] {
 	const dusk = steps.filter((s) => s.id === 'dusk');
@@ -177,8 +178,8 @@ function duskToDawn<T extends NightStep>(steps: readonly T[]): T[] {
 	return [
 		...dusk,
 		...rest.filter((s) => !s.afterDawn),
-		...dawn,
-		...rest.filter((s) => s.afterDawn)
+		...rest.filter((s) => s.afterDawn),
+		...dawn
 	];
 }
 
