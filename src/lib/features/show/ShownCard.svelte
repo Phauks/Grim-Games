@@ -3,6 +3,7 @@
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import InfoTokenText from '#lib/features/info-tokens/InfoTokenText.svelte';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
+	import JinxNote from '#lib/features/characters/JinxNote.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import type { ShownCharacter } from './shown.ts';
 
@@ -84,6 +85,17 @@
 	});
 </script>
 
+{#snippet jinxList(shown: ShownCharacter)}
+	{#if shown.jinxes?.length}
+		<!-- The character's jinxes in effect, under its ability (Trevor, 2026-11-04). -->
+		<ul class="jinxes" data-testid="shown-jinxes">
+			{#each shown.jinxes as jinx (jinx.characters.join('+'))}
+				<li><JinxNote {jinx} characters={shown.jinxCharacters} /></li>
+			{/each}
+		</ul>
+	{/if}
+{/snippet}
+
 <!-- One card as the player sees it: the card's text, then one big token or a list. -->
 <div
 	class="content"
@@ -113,6 +125,7 @@
 							character={shown.character}
 							alignment={shown.alignment}
 						/>
+						{@render jinxList(shown)}
 					</li>
 				{/each}
 			</ul>
@@ -130,6 +143,7 @@
 				     draw's reveal does (Trevor, 2026-11-02: "the standard way we show characters"). -->
 				<div class="caption" bind:clientHeight={captionHeight}>
 					<CharacterPiece template="row" character={single} alignment={characters[0].alignment} />
+					{@render jinxList(characters[0])}
 				</div>
 			</div>
 		</div>
@@ -261,6 +275,15 @@
 		width: min(100%, 32rem);
 		font-size: clamp(1.1rem, 4.5vw, 1.5rem);
 		text-align: start;
+	}
+	.jinxes {
+		display: grid;
+		gap: var(--space-2);
+		margin: var(--space-3) 0 0;
+		padding: var(--space-2) 0 0;
+		list-style: none;
+		border-top: 1px solid var(--border); /* px-ok: hairline */
+		font-size: 0.85em;
 	}
 	/* Rows scroll inside the card's space rather than push it (no reflow). */
 	.rows-area {

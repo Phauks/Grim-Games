@@ -222,3 +222,30 @@ test("the players' script shows its jinxes open with no jinxed character in play
 	await expect(jinxes).toHaveAttribute('aria-expanded', 'true');
 	await expect(sheet.locator('.jinx')).toContainText(tpiJinx('spy', 'poppygrower'));
 });
+
+// Show to player from a seat lists the character's jinxes in effect in this game, both
+// characters in play (Trevor, 2026-11-04), under its ability; none while only one is.
+// https://wiki.bloodontheclocktower.com/Djinn
+test('Show to player lists the jinx in effect on the character card', async ({ page }) => {
+	// Wiki: "The Djinn special rule allows Jinxed characters to both be on the same script, and even both in play at the same time."
+	await startGame(page, 'Jinx Card', SPY_POPPY, ['Spy']);
+	const showSeat = async (seat: number) => {
+		await page.getByRole('button', { name: new RegExp(`^Seat ${seat}:`) }).tap();
+		await seatSheet(page).getByRole('button', { name: 'Show to player' }).tap();
+		const shown = page.locator('[data-testid="show-to-player"][open]');
+		await expect(shown).toBeVisible();
+		return shown;
+	};
+	let shown = await showSeat(1);
+	await expect(shown.getByTestId('shown-character')).toBeVisible();
+	await expect(shown.getByTestId('shown-jinxes')).toHaveCount(0);
+	await page.keyboard.press('Escape');
+	await page.keyboard.press('Escape');
+	await expect(seatSheet(page)).toBeHidden();
+
+	await setCharacter(page, 2, 'Poppy Grower');
+	shown = await showSeat(1);
+	const jinxes = shown.getByTestId('shown-jinxes');
+	await expect(jinxes.getByTestId('jinx-note')).toHaveCount(1);
+	await expect(jinxes).toContainText(tpiJinx('spy', 'poppygrower'));
+});

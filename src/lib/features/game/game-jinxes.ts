@@ -32,6 +32,19 @@ export function gameJinxes(game: Game, data: GameData | undefined): GameJinxes {
 }
 
 /**
+ * The jinxes a character's card shows its player (Show to player): the ones in effect in this
+ * game, both characters in play (Trevor, 2026-11-04, chosen over every jinx of theirs on the
+ * script though it tells the player their partner is in play).
+ */
+export function characterJinxes(
+	game: Game,
+	data: GameData | undefined,
+	id: CharacterId
+): ScriptJinx[] {
+	return gameJinxes(game, data).jinxes.filter((j) => j.characters.includes(id));
+}
+
+/**
  * The jinx between `a` and `b` as the game shows it: the script's (its homebrew wording
  * first), else TPI's, so a character from off the script still shows its jinx.
  */
