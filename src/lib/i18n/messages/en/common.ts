@@ -13,6 +13,7 @@ export const common = {
 	'common.putDown': 'Put down',
 	'common.aboutReminder': 'About this reminder',
 	'common.moreReminderActions': 'More reminder actions',
+	'common.reminderNumber': 'Number',
 	'common.hideContents': 'Hide contents',
 	'common.showPassword': 'Show password',
 	'common.seat': 'Seat {number}',

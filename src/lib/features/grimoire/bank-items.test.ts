@@ -45,6 +45,8 @@ describe('bankItems', () => {
 		expect(number).toMatchObject({ characterId: GENERIC_REMINDER_ID, number: true });
 		expect(bankFace(number)).toEqual({ symbol: '#' });
 		expect(bankLook(number)).toEqual({ symbol: '#1' });
+		// Or the number picked in its pill while held (plan M48).
+		expect(bankLook(number, 4)).toEqual({ symbol: '#4' });
 		expect(items.at(-1)).toMatchObject({ key: 'new-token', makesToken: true });
 	});
 

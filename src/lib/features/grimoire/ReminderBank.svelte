@@ -155,7 +155,9 @@
 
 	function place(
 		item: Pick<BankItem, 'characterId' | 'label' | 'ownerSeatId' | 'token' | 'number'>,
-		seatId: SeatId
+		seatId: SeatId,
+		/** The number a held # token was given in its pill (plan M48); a dragged one shows 1. */
+		number?: number
 	) {
 		const { characterId, ownerSeatId, token } = item;
 		// A copy of an ∞ or # token takes its words from its look, not as a label.
@@ -165,7 +167,7 @@
 			seatId,
 			reminder: { characterId, label, ownerSeatId },
 			tokenId: token?.tokenId,
-			look: bankLook(item)
+			look: bankLook(item, number)
 		});
 	}
 
@@ -189,8 +191,9 @@
 		}
 		drag = undefined;
 		onHints({ seats: [] });
+		const number = tap ? hand.number : undefined;
 		// On "+ New token": a new ∞ token like it; the reminder stays in the bank.
-		if (overNew) return newTokenLike(item);
+		if (overNew) return newTokenLike(item, number);
 		const tokenId = item.token?.tokenId;
 		const reminder = {
 			characterId: item.characterId,
@@ -199,15 +202,15 @@
 		};
 		// On a Fabled or Loric: it holds the reminder (Trevor, 2026-10-17).
 		const rule = ruleAt(x, y, reminder);
-		if (rule) return onRule(reminder, rule, tokenId, bankLook(item));
+		if (rule) return onRule(reminder, rule, tokenId, bankLook(item, number));
 		if (!target) return;
 		// Any seat will do: the Storyteller can override the suggestion.
-		place(item, target);
+		place(item, target, number);
 	}
-	function newTokenLike(item: BankItem) {
+	function newTokenLike(item: BankItem, number?: number) {
 		const { characterId, label, token } = item;
 		hand.putDown();
-		const look = token ?? bankLook(item);
+		const look = token ?? bankLook(item, number);
 		grimoire.run({ type: 'AddGenericToken', look: copiedLook({ characterId, label, ...look }) });
 	}
 	function cancelDrag() {
@@ -223,7 +226,7 @@
 		binOpen = false;
 		if (!item.makesToken) hand.toggle({ kind: 'bank', item });
 		// Holding a reminder, "+ New token" takes it as a drop there does.
-		else if (held) newTokenLike(held);
+		else if (held) newTokenLike(held, hand.number);
 		else makeToken();
 	}
 	/** Marks the seats for the token in hand, as for one dragged; a board token's are the board's. */
