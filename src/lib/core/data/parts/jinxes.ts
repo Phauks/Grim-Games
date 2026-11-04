@@ -1,4 +1,5 @@
-import { readJinxRules, type JinxRules } from '../jinx-rules.ts';
+import type { JinxRules } from '../jinx-rules.ts';
+import { readJinxRules } from '../jinx-read.ts';
 import type { CharacterId } from '../types.ts';
 import type { Part } from './part.ts';
 

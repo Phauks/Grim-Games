@@ -8,7 +8,7 @@ import { closeBin, putReminder } from './reminder-bank.ts';
 // https://wiki.bloodontheclocktower.com/Plague_Doctor, https://wiki.bloodontheclocktower.com/Pit-Hag).
 
 /** A new game on a script added from pasted JSON, so both jinxed characters are on it. */
-async function startGame(page: Page, name: string, ids: string[]) {
+async function startGame(page: Page, name: string, ids: unknown[]) {
 	await page.goto('/library');
 	await page.getByRole('button', { name: 'Add script' }).tap();
 	const paste = page.getByRole('dialog', { name: 'Add script' });
@@ -1122,4 +1122,43 @@ test('Demon info with the Magician alive leaves the Marionette out of the Minion
 	const minions = info.locator('[data-testid="evil-info-card"][data-row="minions"]');
 	await expect(minions).not.toContainText('Seat 2');
 	await expect(minions).toContainText(/the\s+Demon\s+doesn’t\s+learn\s+which\s+neighbour/);
+});
+
+// A custom script's own jinx (M44): its custom Lamplighter's entry says that if the Widow would
+// poison the Lamplighter, the Storyteller chooses another player, so the Widow's first-night step
+// says so for the Lamplighter's player. The Lamplighter is invented for this test; the Djinn's
+// rule for a pair is the script's own (https://wiki.bloodontheclocktower.com/Djinn).
+test('a custom jinx has the Widow step say the Storyteller chooses another player', async ({
+	page
+}) => {
+	test.slow();
+	const lamplighter = {
+		id: 'lamplighter',
+		name: 'Lamplighter',
+		team: 'townsfolk',
+		ability: 'Each night, choose a player: you learn whether they woke tonight.',
+		jinxes: [
+			{
+				id: 'widow',
+				reason:
+					'If the Widow would poison the Lamplighter, the Storyteller chooses another player.',
+				rules: { storytellerChooses: { who: 'partner', what: 'another-player' } }
+			}
+		]
+	};
+	await startGame(page, 'Lamplighter Widow', [
+		lamplighter,
+		'widow',
+		'imp',
+		'chef',
+		'empath',
+		'monk'
+	]);
+	await choose(page, 1, 'Lamplighter');
+	await choose(page, 2, 'Widow');
+	await choose(page, 3, 'Imp');
+	const step = await openStep(page, 'Widow');
+	await expect(step.getByTestId('night-alerts')).toContainText(
+		/Lamplighter\s*,\s*if\s*Widow\s*chooses them, the Storyteller chooses another player instead/
+	);
 });

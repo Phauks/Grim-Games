@@ -21,7 +21,9 @@
 	 * a jinx allows, a Scarlet Woman who is herself again, or a setup change made on gaining an
 	 * ability (L119), who chooses or how the players wake for a token that makes its carrier the
 	 * Demon (Lil' Monsta's with the Magician or the Poppy Grower), or an alignment a jinx has a
-	 * player learn (the Ogre's with the Recluse, M41). Short state lines with badges; the rules are core's `nightStepAlerts`,
+	 * player learn (the Ogre's with the Recluse, M41), and, from a custom script's jinxes (M44),
+	 * a true character a player also learns, or a jinxed player the waking one can't choose or
+	 * whose choice the Storyteller moves elsewhere. Short state lines with badges; the rules are core's `nightStepAlerts`,
 	 * worked out from the tokens on the board. What a killing step's choice would do to each
 	 * player (protected, bounced, sets something off) is `StepIfChosen`'s own section.
 	 */
@@ -74,7 +76,10 @@
 		'partner-setup': 'warning',
 		'storyteller-chooses': 'warning',
 		'wakes-one-by-one': 'night',
-		'learns-alignment': 'info'
+		'learns-alignment': 'info',
+		'learns-character': 'info',
+		'cannot-choose': 'warning',
+		'storyteller-redirects': 'warning'
 	} as const;
 	const sourceId = (alert: NightAlert) =>
 		alert.source === 'override' ? undefined : alert.source.characterId;
@@ -221,6 +226,18 @@
 					{:else if alert.kind === 'learns-alignment'}
 						{@render player(alert.seatId)}: {@render badge(sourceId(alert))}, learns they are {alert.alignment}
 						({@render badge(alert.partner)})
+					{:else if alert.kind === 'learns-character' && alert.about !== undefined}
+						{@render player(alert.seatId)}: {@render badge(sourceId(alert))}, also learns {@render player(
+							alert.about
+						)} is {@render badge(alert.partner)}
+					{:else if alert.kind === 'cannot-choose'}
+						{@render player(alert.seatId)}: {@render badge(alert.partner)}, can't be chosen by {@render badge(
+							sourceId(alert)
+						)}
+					{:else if alert.kind === 'storyteller-redirects'}
+						{@render player(alert.seatId)}: {@render badge(alert.partner)}, if {@render badge(
+							sourceId(alert)
+						)} chooses them, the Storyteller chooses another player instead
 					{/if}
 					{#if !alert.works && alert.kind !== 'impaired'}
 						<strong class="not">Not working:</strong> {@render why(alert.impairments)}

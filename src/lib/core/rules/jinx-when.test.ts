@@ -4,6 +4,7 @@
  * `src/lib/core/jinxes/`.
  */
 import { describe, expect, it } from 'vitest';
+import { flipCondition } from '#lib/core/data/jinx-needs.ts';
 import type { JinxCondition } from '#lib/core/data/jinx-rules.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { aboutHolder, jinxApplies, type JinxBoard } from './jinx-when.ts';
@@ -78,5 +79,70 @@ describe('jinxApplies', () => {
 		expect(
 			holds(['partner-alive', { marked: 'Dead' }, 'final-day'], { script: s.game.script })
 		).toBe(true);
+	});
+});
+
+describe('jinxApplies: negation, deaths, executions and third characters (M44)', () => {
+	const t = scenario(['chef', 'empath', 'imp', 'monk', 'saint']);
+	const at = (when: JinxCondition[], game: JinxBoard = t.game, more = {}) =>
+		jinxApplies(game, 'chef', 'imp', { when }, t.characters, more);
+
+	it('reads a dead player of either character, which needs one in play', () => {
+		expect(at(['self-dead'])).toBe(false);
+		expect(at(['self-dead'], t.dies('chef').game)).toBe(true);
+		expect(at(['partner-dead'], t.dies('imp').game)).toBe(true);
+		// No Baron in play: not dead, though not alive either.
+		expect(jinxApplies(t.game, 'chef', 'baron', { when: ['partner-dead'] }, t.characters)).toBe(
+			false
+		);
+		expect(
+			jinxApplies(t.game, 'chef', 'baron', { when: [{ not: 'partner-alive' }] }, t.characters)
+		).toBe(true);
+	});
+
+	it('turns any condition round with not, unchecked when the board is unknown', () => {
+		expect(at([{ not: 'self-alive' }])).toBe(false);
+		expect(at([{ not: 'self-alive' }], t.dies('chef').game)).toBe(true);
+		expect(at([{ not: { night: 1 } }])).toBe(false);
+		expect(at([{ not: { not: 'self-in-play' } }])).toBe(true);
+		expect(at([{ not: 'partner-alive' }], { script: t.game.script })).toBe(true);
+	});
+
+	it("reads an execution of either character's player today", () => {
+		const day = t.newDay();
+		expect(at(['partner-executed'], day.game)).toBe(false);
+		expect(at(['partner-executed'], day.execute('imp').game)).toBe(true);
+		expect(at(['self-executed'], day.execute('imp').game)).toBe(false);
+		expect(at(['self-executed'], day.execute('chef').game)).toBe(true);
+	});
+
+	it('reads a third character on the script, alive or in play, from either side', () => {
+		expect(at([{ alive: 'saint' }])).toBe(true);
+		expect(at([{ alive: 'saint' }], t.dies('saint').game)).toBe(false);
+		expect(at([{ inPlay: 'saint' }], t.dies('saint').game)).toBe(true);
+		expect(at([{ inPlay: 'baron' }])).toBe(false);
+		expect(at([{ not: { inPlay: 'baron' } }])).toBe(true);
+		expect(jinxApplies(t.game, 'imp', 'chef', { when: [{ alive: 'saint' }] }, t.characters)).toBe(
+			true
+		);
+	});
+
+	it('reads alive, executions and the day at an event, not now', () => {
+		const later = t.dies('saint').newDay();
+		const event = { day: 0, entries: [], alive: [t.seat('saint'), t.seat('chef')] };
+		expect(at([{ alive: 'saint' }], later.game)).toBe(false);
+		expect(at([{ alive: 'saint' }, { night: 1 }], later.game, { event })).toBe(true);
+		expect(at(['after-execution'], later.game, { event })).toBe(false);
+		expect(at(['final-day'], later.game, { event })).toBe(true);
+	});
+});
+
+describe('flipCondition', () => {
+	it("swaps self and partner, inside a not too, and keeps a third character's", () => {
+		expect(flipCondition('self-dead')).toBe('partner-dead');
+		expect(flipCondition('partner-executed')).toBe('self-executed');
+		expect(flipCondition({ not: 'self-alive' })).toEqual({ not: 'partner-alive' });
+		expect(flipCondition({ alive: 'saint' })).toEqual({ alive: 'saint' });
+		expect(flipCondition({ not: { inPlay: 'saint' } })).toEqual({ not: { inPlay: 'saint' } });
 	});
 });

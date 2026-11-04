@@ -385,6 +385,12 @@ export type DayEntry =
 			 * pass, the Vizier's execute now), and the seat whose ability it was, when known.
 			 */
 			forcedBy?: { characterId: CharacterId; seatId?: SeatId };
+			/**
+			 * The players alive just before it, in seating order, so a rule checked at that
+			 * moment reads them (a jinx's `when` on a game end, M44). Absent on executions
+			 * logged before it was recorded: those rules read the board as it is.
+			 */
+			alive?: SeatId[];
 	  }
 	/**
 	 * An execution that failed (`executionOutcome`): the player was about to be executed and

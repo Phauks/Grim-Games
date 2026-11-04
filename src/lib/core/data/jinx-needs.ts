@@ -45,7 +45,9 @@ export const JINX_NEEDS: Partial<Record<JinxRuleKey, (e: JinxEffect) => JinxNeed
 	storytellerChooses: (e) =>
 		(e as StorytellerChooses).what === 'carrier'
 			? [{ on: 'subject', parts: ['carrierIsDemon'] }]
-			: [{ on: ABOUT_HOLDER(e) ? 'other' : 'subject', parts: ['changesCharacter'] }],
+			: (e as StorytellerChooses).what === 'another-player'
+				? []
+				: [{ on: ABOUT_HOLDER(e) ? 'other' : 'subject', parts: ['changesCharacter'] }],
 	wakesOneByOne: () => [{ on: 'subject', parts: ['carrierIsDemon'] }],
 	alsoBecomes: () => [{ on: 'subject', parts: ['changesCharacter'] }],
 	carriedBy: () => [{ on: 'subject', parts: ['carrierIsDemon'] }],
@@ -145,15 +147,23 @@ export function jinxPartnerIssues(
 const FLIP: Partial<Record<JinxFlag, JinxFlag>> = {
 	'self-alive': 'partner-alive',
 	'partner-alive': 'self-alive',
+	'self-dead': 'partner-dead',
+	'partner-dead': 'self-dead',
+	'self-executed': 'partner-executed',
+	'partner-executed': 'self-executed',
 	'self-in-play': 'partner-in-play',
 	'partner-in-play': 'self-in-play',
 	'has-partner-ability': 'partner-has-this-ability',
 	'partner-has-this-ability': 'has-partner-ability'
 };
 
-/** A condition as the partner's file would say it. */
+/**
+ * A condition as the partner's file would say it: `self` and `partner` swap, inside a `not`
+ * too; a third character's (`alive`, `inPlay`) and the game's own (a day, an execution) stay.
+ */
 export function flipCondition(c: JinxCondition): JinxCondition {
 	if (typeof c === 'string') return FLIP[c] ?? c;
+	if ('not' in c) return { not: flipCondition(c.not) };
 	if ('marked' in c) return { partnerMarked: c.marked };
 	if ('partnerMarked' in c) return { marked: c.partnerMarked };
 	if ('alignment' in c) return { partnerAlignment: c.alignment };

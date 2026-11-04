@@ -29,6 +29,7 @@ import { abilityState, registrations } from './ability.ts';
 import { heldAbilitiesOf } from './gained-abilities.ts';
 import { carrierJinx } from './jinxes.ts';
 import { secondDemonPartner } from './jinx-effects.ts';
+import { choiceJinx } from './jinx-targets.ts';
 
 export type { NeighbourRule, TargetRule };
 
@@ -59,7 +60,11 @@ export const REMINDER_TARGETS: Readonly<Record<CharacterId, CharacterTargets>> =
  *   this player (`carrierJinx`: a Minion while the Magician lives, the Scarlet Woman once she
  *   babysits Lil' Monsta), or that this `becomes` token makes no second Demon while another
  *   living player is the partner (`secondDemonPartner`: the Scarlet Woman with a living Fang
- *   Gu or Al-Hadikhia).
+ *   Gu or Al-Hadikhia);
+ * - `jinx-choice` / `jinx-redirect`: a jinx says the token's character can't choose this
+ *   player (`cannotChoose`), or that the Storyteller chooses another player instead
+ *   (`storytellerChooses` `another-player`), as its tokens mark its choices (`choiceJinx`,
+ *   M44). Judged for any token, with or without a target rule (a custom character's).
  */
 export type TargetMiss =
 	| 'global'
@@ -74,7 +79,9 @@ export type TargetMiss =
 	| 'not-with-label'
 	| 'max-placed'
 	| 'last-night'
-	| 'jinx';
+	| 'jinx'
+	| 'jinx-choice'
+	| 'jinx-redirect';
 
 export interface TargetFit {
 	seatId: SeatId;
@@ -219,14 +226,17 @@ export function reminderTargetMisses(
 	characters: CharacterLookup,
 	atDawn?: Game
 ): TargetMiss[] {
+	if (!Object.hasOwn(game.seats, seatId)) return [];
+	const chosen = choiceJinx(game, reminder, seatId, characters);
+	const jinxed: TargetMiss[] = chosen ? [chosen] : [];
 	const rule = targetRule(reminder, characters);
-	if (!rule || !Object.hasOwn(game.seats, seatId)) return [];
+	if (!rule) return jinxed;
 	if (rule.global) return ['global'];
 
 	const owners = ownerSeats(game, reminder.characterId, characters);
 	if (rule.info && owners.some((id) => mayBeFalse(game, id, reminder.characterId, characters)))
-		return [];
-	const misses: TargetMiss[] = [];
+		return jinxed;
+	const misses: TargetMiss[] = [...jinxed];
 	const users =
 		rule.seat === 'self' || rule.seat === 'other'
 			? tokenUsers(game, reminder.characterId, characters)

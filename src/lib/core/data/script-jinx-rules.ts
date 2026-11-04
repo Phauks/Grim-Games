@@ -20,11 +20,16 @@
  *
  * Rules the app can't use never block the script: each is dropped with a load warning, and the
  * jinx stays as text. That covers a bad shape, and a verb whose prerequisite is missing on
- * either character (`JINX_NEEDS`: `carriedBy` needs a `carrierIsDemon` token).
+ * either character (`JINX_NEEDS`: `carriedBy` needs a `carrierIsDemon` token). Rules that load
+ * but can never change anything are kept, with a warning that says why (`jinxNoOps`, M44).
+ *
+ * Two jinxes for the same pair on one script: the last one counts (`scriptJinxFor`).
  */
 import type { CharacterRules } from './character-rules.ts';
 import { jinxPartnerIssues } from './jinx-needs.ts';
-import { readJinxRules, type JinxRules } from './jinx-rules.ts';
+import { jinxNoOps, type NoOpContext } from './jinx-no-ops.ts';
+import type { JinxRules } from './jinx-rules.ts';
+import { readJinxRules } from './jinx-read.ts';
 import { rulesOf } from './rules/index.ts';
 import type { Character, CharacterId, Jinx } from './types.ts';
 import { Issues, isObject, type Json } from './validate.ts';
@@ -106,13 +111,34 @@ export function checkScriptJinxRules(
 	const name = (id: CharacterId) => characters.find((c) => c.id === id)?.name ?? id;
 	const same = (a: string, b: string | undefined) =>
 		b !== undefined && a.replace(/\s+/g, ' ').trim() === b.replace(/\s+/g, ' ').trim();
+	const ids = new Set(characters.map((c) => c.id));
+	const noOps: NoOpContext = {
+		typeOf: (id) => characters.find((c) => c.id === id)?.type,
+		rulesOf: (id) => rulesFor(id) as CharacterRules | undefined,
+		onScript: (id) => ids.has(id),
+		name
+	};
+	/** Warns, keeping the rules, about each one of them that can never change anything. */
+	const warnNoOps = (
+		where: string,
+		lead: string,
+		rules: JinxRules,
+		self: string,
+		partner: string
+	) =>
+		jinxNoOps(rules, self, partner, noOps).forEach((why) =>
+			warn(where, `${lead} ${name(partner)} load, but ${why}.`)
+		);
 	const out = pending.flatMap(({ jinx, rules, where }): Jinx[] => {
 		const text = without(jinx, 'rules');
 		if (rules === undefined)
 			return same(jinx.reason, officialReason(...jinx.characters)) ? [] : [text];
 		const [self, partner] = jinx.characters;
 		const checked = issuesOf(rules, self, partner, rulesFor);
-		if (checked.rules) return [{ ...text, rules: checked.rules }];
+		if (checked.rules) {
+			warnNoOps(where, 'The rules of the jinx with', checked.rules, self, partner);
+			return [{ ...text, rules: checked.rules }];
+		}
 		warn(
 			where,
 			`The rules of the jinx with ${name(partner)} can't be used, so it is text only: ${plain(checked.issues, `rules.${partner}`)}.`
@@ -128,8 +154,10 @@ export function checkScriptJinxRules(
 			const lookup = (id: CharacterId) =>
 				rulesFor(id) as { jinxes?: Record<CharacterId, JinxRules> } | undefined;
 			jinxPartnerIssues(c.id, { [partner]: rules }, lookup, 'rules', issues);
-			if (issues.list.length === 0) kept[partner] = rules;
-			else
+			if (issues.list.length === 0) {
+				kept[partner] = rules;
+				warnNoOps(whereOf.get(c.id) ?? c.name, 'Its rules for the jinx with', rules, c.id, partner);
+			} else
 				warn(
 					whereOf.get(c.id) ?? c.name,
 					`Its rules for the jinx with ${name(partner)} can't be used, so they were left out: ${plain(issues.list, `rules.${partner}`)}.`

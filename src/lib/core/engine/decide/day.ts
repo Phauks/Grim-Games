@@ -248,7 +248,9 @@ export const DAY_DECIDERS: Deciders<
 			entryId: ctx.newId(),
 			seatId: seat.seatId,
 			died: !seat.dead,
-			...forced
+			...forced,
+			// Who was alive just before, for a rule checked at this moment (a jinx's game end).
+			alive: game.seating.filter((s) => !game.seats[s].dead && !game.seats[s].notInPlay)
 		};
 		if (seat.dead) {
 			warn('already-dead', 'the player was already dead, so the execution is only logged');

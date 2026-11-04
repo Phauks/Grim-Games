@@ -58,6 +58,11 @@
  *   https://wiki.bloodontheclocktower.com/Lil%27_Monsta#Related_Jinxes);
  * - `learns-alignment`: a jinx has the waking player learn their alignment (the Ogre whose
  *   Friend is the Recluse, registering as evil, https://wiki.bloodontheclocktower.com/Ogre);
+ * - `learns-character`, `cannot-choose`, `storyteller-redirects` (M44, a custom script's
+ *   jinxes): the waking player also learns a partner's player's true character, can't choose
+ *   a partner's player, or would have their choice of one moved by the Storyteller to another
+ *   player (`jinx-partner-alerts.ts`); a partner who chose them tonight is a `no-kill`
+ *   (`noKill` `chosen`, `jinx-targets.ts`);
  * and, when the step can kill (`NIGHT_KILLERS`), for each player it might kill:
  * - `protected`: they cannot die tonight (the Storyteller's override, the Sailor, the
  *   Soldier or Monk against the Demon, the Tea Lady, the Innkeeper);
@@ -89,8 +94,10 @@ import { stopsKillingTonight } from './reminder-effects.ts';
 import { noAttackState } from './demon-attack.ts';
 import { jinxEffect, ownJinxEffects } from './jinxes.ts';
 import { jinxChosenTonight } from './jinx-choices.ts';
+import { chosenStopsKill } from './jinx-targets.ts';
 import {
 	carrierChoiceAlerts,
+	jinxChoiceRuleAlerts,
 	jinxLearnAlerts,
 	jinxPartnerAlerts,
 	jinxStepAlerts,
@@ -212,6 +219,9 @@ export type NightAlertKind =
 	| 'storyteller-chooses'
 	| 'wakes-one-by-one'
 	| 'learns-alignment'
+	| 'learns-character'
+	| 'cannot-choose'
+	| 'storyteller-redirects'
 	| 'protected'
 	| 'may-bounce'
 	| 'survives-first-death'
@@ -255,6 +265,8 @@ export interface NightAlert {
 	type?: CharacterType;
 	/** For `learns-alignment`: the alignment the player learns. */
 	alignment?: Alignment;
+	/** For `learns-character`: the partner's player whose true character they learn. */
+	about?: SeatId;
 }
 
 /**
@@ -335,6 +347,7 @@ export function nightStepAlerts(
 	out.push(...jinxLearnAlerts(game, characterId, characters));
 	out.push(...storytellerHasAlerts(game, characterId, characters));
 	out.push(...carrierChoiceAlerts(game, characterId, characters));
+	out.push(...jinxChoiceRuleAlerts(game, characterId, characters));
 	for (const seatId of actors) {
 		const twice = actsTwiceSource(game, seatId, characters);
 		if (!twice) continue;
@@ -391,6 +404,21 @@ export function nightStepAlerts(
 				)
 			);
 		}
+		// A jinx partner who chose this player tonight stops the kill (`noKill` `chosen`).
+		const chosen = chosenStopsKill(game, seatId, characterId, characters);
+		if (!chosen) continue;
+		noKill = true;
+		const shown = out.some(
+			(a) =>
+				a.kind === 'no-kill' &&
+				a.seatId === seatId &&
+				a.source !== 'override' &&
+				a.source.reminderId === chosen.reminderId
+		);
+		if (!shown)
+			out.push(
+				sourceAlert(game, 'no-kill', seatId, chosen, characters, wikiOf(chosen, characters))
+			);
 	}
 
 	out.push(...grimoireAlerts(game, characterId, actors, characters));

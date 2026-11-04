@@ -539,7 +539,10 @@ export function registrations(
 	for (const seatId of game.seating) {
 		const own = ownRegistration(game, seatId, characters);
 		const id = trueCharacter(game, seatId, characters);
-		const rule = viewer && id ? ownJinxRules(game, id, viewer, characters)?.registersTo : undefined;
+		const jinx = viewer && id ? ownJinxRules(game, id, viewer, characters)?.registersTo : undefined;
+		// Its `when` is about this player (a third character in play, M44).
+		const rule =
+			jinx && jinxApplies(game, id!, viewer!, jinx, characters, { seatId }) ? jinx : undefined;
 		const alignment = alignmentOf(game, seatId);
 		const type = typeOf(game, seatId, characters);
 		if (!rule || !id || !alignment || !type) {
