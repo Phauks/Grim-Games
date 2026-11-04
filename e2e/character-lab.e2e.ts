@@ -104,3 +104,19 @@ test('steps the character under test without the picker', async ({ page }) => {
 		await expect(testing).toContainText('Philosopher');
 	}
 });
+
+// Load game sets the game up as after a real draw and starts it (Trevor, 2026-11-04: "load game
+// and start game should be the same"; the Marionette "thinks they are a player"): the
+// Marionette's seat holds a Townsfolk with the Is The Marionette reminder, and the first night
+// is under way.
+test('loads a started game, the Marionette thinking they are a Townsfolk', async ({ page }) => {
+	await page.goto('/character-lab');
+	await lockCharacter(page, 'Marionette');
+	await page.getByRole('button', { name: 'Load game' }).tap();
+	const seats = await labSeats(page);
+	await expect(seats.nth(0)).toHaveAttribute('aria-label', /Marionette, believes they are the /);
+	const frame = page.getByTestId('lab-frame');
+	const board = (await frame.isVisible()) ? frame.locator('iframe').contentFrame() : page;
+	await expect(board.getByRole('button', { name: 'End night', exact: true })).toBeVisible();
+	await expect(board.getByRole('button', { name: 'Start game', exact: true })).toHaveCount(0);
+});

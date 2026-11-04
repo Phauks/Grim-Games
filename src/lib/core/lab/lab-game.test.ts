@@ -211,6 +211,32 @@ describe('labGame follows the setup rules', () => {
 		}
 	});
 
+	// https://wiki.bloodontheclocktower.com/Drunk
+	it('the Drunk thinks they are a Townsfolk not in play', () => {
+		// Wiki: "remove the Drunk token and add a Townsfolk character token"
+		const g = game({ locked: ['drunk'] });
+		expect(g.standIns).toHaveLength(1);
+		const { seat, shows } = g.standIns[0];
+		expect(g.seats[seat]).toBe('drunk');
+		expect(typeOf(shows)).toBe('townsfolk');
+		expect(g.seats).not.toContain(shows);
+		expect(g.script).toContain(shows);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Marionette
+	it('the Marionette thinks they are a Townsfolk not in play', () => {
+		// Wiki: "remove the Marionette token and add any Townsfolk token"
+		const g = game({ locked: ['marionette'] });
+		const { seat, shows } = g.standIns[0];
+		expect(g.seats[seat]).toBe('marionette');
+		expect(typeOf(shows)).toBe('townsfolk');
+		expect(g.seats).not.toContain(shows);
+	});
+
+	it('with setup tokens off, no one thinks they are someone else', () => {
+		expect(game({ locked: ['drunk'], setupTokens: false }).standIns).toEqual([]);
+	});
+
 	// https://wiki.bloodontheclocktower.com/Heretic
 	it('fills no seat with a character jinxed out by one in play', () => {
 		// Wiki: "Only 1 jinxed character can be in play."
