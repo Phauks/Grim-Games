@@ -268,7 +268,6 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		title:
 			"Print your own script sheet: Letter or A4, your margins, what goes on the front and back (the script's QR code too), or download it as a PDF",
 		area: 'prepare',
-		// M56 (Trevor, 2026-11-05): a QR code of the script on either side, which opens it.
 		parts: ['T1', 'T3', 'M56']
 	},
 	{ title: 'A background image on the printed sheet', area: 'prepare', parts: ['T2'], later: true },
