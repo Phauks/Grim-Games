@@ -191,9 +191,9 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	},
 	{
 		title:
-			'Finding scripts: search, the Library, adding JSON, editing custom scripts, Almanac links',
+			'Finding scripts: search, the Library, adding JSON, reading a photo of a printed script, editing custom scripts, Almanac links',
 		area: 'search',
-		parts: ['L23', 'L25', 'P1', 'L51', 'L52', 'L53', 'L55']
+		parts: ['L23', 'L25', 'P1', 'L51', 'L52', 'L53', 'L55', 'M54']
 	},
 	{
 		title:

@@ -105,6 +105,23 @@ export type SharedRef =
 const EDITION = /^[a-z]{1,16}$/;
 const BOTC = /^(\d{1,9})(?:\/([\w.-]{1,32}))?$/;
 
+/**
+ * The hash of a script link read from a QR code (a Share screen's code, an offline code, or one
+ * printed on a sheet), whichever site made it: a link to `/play` or `/scripts` whose hash names a
+ * shared script. Opened on this app's own /play, so an offline code needs no internet (Trevor,
+ * 2026-10-26). Undefined for anything else.
+ */
+export function scannedScriptHash(text: string): string | undefined {
+	let url: URL;
+	try {
+		url = new URL(text.trim());
+	} catch {
+		return undefined;
+	}
+	if (!/\/(play|scripts)\/?$/.test(url.pathname) || !sharedRefFromHash(url.hash)) return undefined;
+	return url.hash;
+}
+
 /** The shared script a location hash points at, if any. Malformed values are ignored. */
 export function sharedRefFromHash(hash: string): SharedRef | undefined {
 	const params = new URLSearchParams(hash.replace(/^#/, ''));

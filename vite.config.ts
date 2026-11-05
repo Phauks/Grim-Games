@@ -133,6 +133,55 @@ function precacheSizes(): Plugin {
 	};
 }
 
+/**
+ * The phone's own text reader for Take a photo (plan M54, Trevor 2026-11-05: "build it into
+ * the app for local analysis"): Tesseract.js's worker, its WebAssembly core (one per kind of
+ * device: plain, SIMD, relaxed SIMD) and its English data, served at `/ocr/`. Not precached:
+ * a device downloads them the first time it reads a photo, about 6 MB, and keeps them
+ * (src/lib/features/offline/cache-rules.ts).
+ */
+const OCR_FILES: Record<string, string> = {
+	'worker.min.js': 'node_modules/tesseract.js/dist/worker.min.js',
+	'tesseract-core-lstm.wasm.js': 'node_modules/tesseract.js-core/tesseract-core-lstm.wasm.js',
+	'tesseract-core-simd-lstm.wasm.js':
+		'node_modules/tesseract.js-core/tesseract-core-simd-lstm.wasm.js',
+	'tesseract-core-relaxedsimd-lstm.wasm.js':
+		'node_modules/tesseract.js-core/tesseract-core-relaxedsimd-lstm.wasm.js',
+	'eng.traineddata.gz': 'node_modules/@tesseract.js-data/eng/4.0.0_best_int/eng.traineddata.gz'
+};
+
+function ocrFiles(): Plugin {
+	let ssr = false;
+	let root = '';
+	return {
+		name: 'grim-games-ocr-files',
+		configResolved(config) {
+			ssr = !!config.build.ssr;
+			root = config.root;
+		},
+		configureServer(server) {
+			server.middlewares.use('/ocr/', (req, res, next) => {
+				const file = OCR_FILES[(req.url ?? '').replace(/^\//, '').split('?')[0]];
+				if (!file) return next();
+				res.setHeader(
+					'Content-Type',
+					file.endsWith('.js') ? 'text/javascript' : 'application/octet-stream'
+				);
+				fs.createReadStream(path.resolve(root, file)).pipe(res);
+			});
+		},
+		generateBundle() {
+			if (ssr) return;
+			for (const [name, file] of Object.entries(OCR_FILES))
+				this.emitFile({
+					type: 'asset',
+					fileName: `ocr/${name}`,
+					source: fs.readFileSync(path.resolve(root, file))
+				});
+		}
+	};
+}
+
 const rulesTests = ['src/lib/core/abilities/**/*.test.ts', 'src/lib/core/jinxes/**/*.test.ts'];
 
 export default defineConfig({
@@ -190,6 +239,7 @@ export default defineConfig({
 		// are bundled and work offline (src/lib/ui/icons, scripts/generate-icons.ts).
 		Icons({ compiler: 'svelte' }),
 		buildNotes(),
+		ocrFiles(),
 		precacheSizes(),
 		skipSuperseded()
 	],

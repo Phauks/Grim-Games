@@ -39,6 +39,7 @@ import ph_books_bold from '~icons/ph/books-bold';
 import ph_bug_bold from '~icons/ph/bug-bold';
 import ph_calculator_bold from '~icons/ph/calculator-bold';
 import ph_camera_bold from '~icons/ph/camera-bold';
+import ph_camera_plus_bold from '~icons/ph/camera-plus-bold';
 import ph_cards_bold from '~icons/ph/cards-bold';
 import ph_caret_circle_down_bold from '~icons/ph/caret-circle-down-bold';
 import ph_caret_down_bold from '~icons/ph/caret-down-bold';
@@ -126,6 +127,7 @@ import ph_hourglass_bold from '~icons/ph/hourglass-bold';
 import ph_house_bold from '~icons/ph/house-bold';
 import ph_house_simple_bold from '~icons/ph/house-simple-bold';
 import ph_identification_card_bold from '~icons/ph/identification-card-bold';
+import ph_image_bold from '~icons/ph/image-bold';
 import ph_info_bold from '~icons/ph/info-bold';
 import ph_key_bold from '~icons/ph/key-bold';
 import ph_leaf_bold from '~icons/ph/leaf-bold';
@@ -282,6 +284,7 @@ const icons: IconMap = {
 	'ph:bug-bold': ph_bug_bold,
 	'ph:calculator-bold': ph_calculator_bold,
 	'ph:camera-bold': ph_camera_bold,
+	'ph:camera-plus-bold': ph_camera_plus_bold,
 	'ph:cards-bold': ph_cards_bold,
 	'ph:caret-circle-down-bold': ph_caret_circle_down_bold,
 	'ph:caret-down-bold': ph_caret_down_bold,
@@ -369,6 +372,7 @@ const icons: IconMap = {
 	'ph:house-bold': ph_house_bold,
 	'ph:house-simple-bold': ph_house_simple_bold,
 	'ph:identification-card-bold': ph_identification_card_bold,
+	'ph:image-bold': ph_image_bold,
 	'ph:info-bold': ph_info_bold,
 	'ph:key-bold': ph_key_bold,
 	'ph:leaf-bold': ph_leaf_bold,
