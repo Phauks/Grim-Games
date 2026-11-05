@@ -34,7 +34,7 @@
 		/** The game mode and special rules the table plays by, for Print. */
 		rules?: readonly PublicRule[];
 		/**
-		 * Continue game's code form, before this phone is in a room, shows no cog: the app's
+		 * Join game's code form, before this phone is in a room, shows no cog: the app's
 		 * sidebar already opens Settings there (Trevor, 2026-10-29).
 		 */
 		cog?: boolean;
@@ -62,7 +62,7 @@
 <!-- One switch for the Script and Night tabs, beside Print and Share (Trevor, 2026-10-23). -->
 {#if script}
 	<SheetBackgroundSelect compact />
-	<PrintScriptButton {script} {version} {rules} />
+	<PrintScriptButton {script} {version} {rules} {share} />
 	<ShareControl
 		what="script"
 		title={script.name}

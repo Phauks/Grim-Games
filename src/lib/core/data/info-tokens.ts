@@ -1,6 +1,7 @@
 /**
  * Info tokens: the rectangular cards the Storyteller shows players at night ("This is the
- * Demon" and so on). They belong to the game, not to any character (Trevor, 2026-10-15).
+ * Demon" and so on). They belong to the game, not to any character (Trevor, 2026-10-15),
+ * except a character's own question listed with it (the Harlot's, Trevor 2026-11-05).
  *
  * Sources: the wiki Glossary names them "Info tokens" with "This is the Demon" as its
  * example (https://wiki.bloodontheclocktower.com/Glossary); the rulebook names "This is
@@ -49,6 +50,11 @@ export interface InfoToken {
 	answerOnly?: true;
 	/** Not one of the base game's cards: Trevor's own additions (2026-10-18), marked apart. */
 	extra?: true;
+	/**
+	 * The one character it belongs to: listed under Character-Specific with that character,
+	 * not with the standard or enhanced cards (Trevor, 2026-11-05: the Harlot's question).
+	 */
+	characterId?: string;
 }
 
 /** The most characters a card can ask for: the Demon's three bluffs, with room to spare. */
@@ -110,9 +116,6 @@ export const STANDARD_INFO_TOKENS: readonly InfoToken[] = [
 	{ id: 'choose-again', text: 'Please choose again', source: 'standard', extra: true },
 	// Trevor's wording (2026-10-25).
 	{ id: 'are-you-sure', text: 'Are you sure?', source: 'standard', extra: true },
-	// Asked of the player the Harlot chose; with a yes, the Harlot learns their character
-	// (Trevor's wording, 2026-11-02; https://wiki.bloodontheclocktower.com/Harlot).
-	{ id: 'sleep-with-harlot', text: 'Sleep with the Harlot?', source: 'standard', extra: true },
 	// The character a player must be mad about, after "This character selected you" for the
 	// Cerenovus (Trevor's wording, 2026-11-01; https://wiki.bloodontheclocktower.com/Cerenovus).
 	{
@@ -121,6 +124,15 @@ export const STANDARD_INFO_TOKENS: readonly InfoToken[] = [
 		source: 'standard',
 		asks: { characters: 1 },
 		extra: true
+	},
+	// Asked of the player the Harlot chose; with a yes, the Harlot learns their character
+	// (Trevor's wording, 2026-11-02; https://wiki.bloodontheclocktower.com/Harlot). The
+	// Harlot's own card, so Character-Specific, not Enhanced (Trevor, 2026-11-05).
+	{
+		id: 'sleep-with-harlot',
+		text: 'Sleep with the Harlot?',
+		source: 'standard',
+		characterId: 'harlot'
 	}
 ];
 

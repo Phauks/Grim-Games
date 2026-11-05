@@ -5,7 +5,7 @@ const byId = (id: string) => STANDARD_INFO_TOKENS.find((t) => t.id === id);
 
 describe('info tokens', () => {
 	it('has the eight base cards with unique ids, none tied to a character', () => {
-		const base = STANDARD_INFO_TOKENS.filter((t) => !t.extra);
+		const base = STANDARD_INFO_TOKENS.filter((t) => !t.extra && !t.characterId);
 		expect(base).toHaveLength(8);
 		expect(new Set(STANDARD_INFO_TOKENS.map((t) => t.id)).size).toBe(STANDARD_INFO_TOKENS.length);
 		// Wiki Glossary: "This is the Demon" is the named example of an info token.
@@ -24,11 +24,18 @@ describe('info tokens', () => {
 			'Select a character',
 			'Please choose again',
 			'Are you sure?',
-			'Sleep with the Harlot?',
 			'You are mad as'
 		]);
-		const firstExtra = STANDARD_INFO_TOKENS.findIndex((t) => t.extra);
-		expect(STANDARD_INFO_TOKENS.slice(firstExtra).every((t) => t.extra)).toBe(true);
+		const shared = STANDARD_INFO_TOKENS.filter((t) => !t.characterId);
+		const firstExtra = shared.findIndex((t) => t.extra);
+		expect(shared.slice(firstExtra).every((t) => t.extra)).toBe(true);
+	});
+
+	it("lists the Harlot's question as the Harlot's own card, not an enhanced one", () => {
+		// Trevor (2026-11-05): "sleep with the harlot is a character specific info token".
+		const harlot = STANDARD_INFO_TOKENS.find((t) => t.id === 'sleep-with-harlot');
+		expect(harlot).toMatchObject({ text: 'Sleep with the Harlot?', characterId: 'harlot' });
+		expect(harlot?.extra).toBeUndefined();
 	});
 
 	it('lets the Storyteller hide standard cards and add custom ones', () => {

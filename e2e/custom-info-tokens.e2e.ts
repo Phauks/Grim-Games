@@ -118,6 +118,19 @@ test('a card that belongs to a character sits under Character-Specific', async (
 	).toBeVisible();
 });
 
+// Trevor (2026-11-05): "sleep with the harlot is a character specific info token, not enhanced".
+test("the Harlot's question sits under Character-Specific, not Enhanced", async ({ page }) => {
+	await page.goto('/info-tokens');
+	const section = (name: string) =>
+		page.locator('section.collapsible').filter({ has: page.getByRole('heading', { name }) });
+	await expect(
+		section('Character-Specific').getByRole('button', { name: /^Sleep with the Harlot\?/ })
+	).toContainText('Harlot');
+	await expect(
+		section('Enhanced').getByRole('button', { name: /^Sleep with the Harlot\?/ })
+	).toHaveCount(0);
+});
+
 test('in a game, a character card is offered only while its character is in play', async ({
 	page
 }) => {

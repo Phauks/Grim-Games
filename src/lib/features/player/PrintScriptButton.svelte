@@ -12,6 +12,11 @@
 	import { scriptLogo, scriptToJson, type LoadedScript } from '#lib/core/data/index.ts';
 	import type { PublicRule } from '#lib/core/sync/public-projection.ts';
 	import { scriptToolLink } from '#lib/features/scripts/script-tool-link.ts';
+	import {
+		printLinkFor,
+		scriptShareable,
+		type Shareable
+	} from '#lib/features/scripts/share-codes.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -44,9 +49,11 @@
 		labelled?: boolean;
 		/** The game mode and special rules, when printing from a game. */
 		rules?: readonly PublicRule[];
+		/** What Share links to, which the sheet's QR code opens too (M56); else the script itself. */
+		share?: Shareable;
 	}
 
-	let { script, version, sourcePrints = [], labelled = false, rules = [] }: Props = $props();
+	let { script, version, sourcePrints = [], labelled = false, rules = [], share }: Props = $props();
 	let choosing = $state(false);
 	let toolLink = $state<string>();
 	let printing = $state(false);
@@ -61,9 +68,22 @@
 		return { destroy: () => node.remove() };
 	}
 
+	/** The QR code's link: undefined while it is made, null when the script has none. */
+	let qrLink = $state<string | null>();
+	const qr = $derived(qrLink ?? undefined);
+	let qrMade: Promise<void> | undefined;
+	async function makeQrLink(from: LoadedScript) {
+		qrLink = undefined;
+		const link = await printLinkFor(share ?? scriptShareable(from), location.origin).catch(
+			() => undefined
+		);
+		if (from === script) qrLink = link ?? null;
+	}
+
 	async function choose() {
 		if (!script) return;
 		choosing = true;
+		qrMade = makeQrLink(script);
 		toolLink = undefined;
 		const json = JSON.stringify(scriptToJson(script));
 		toolLink = await scriptToolLink(json).catch(() => undefined);
@@ -118,6 +138,8 @@
 	/** Draws the sheet off screen, icons loaded and each side fitted to its page. */
 	async function draw() {
 		printing = true;
+		// A long script's code comes from our Worker: print with it, not before it.
+		await qrMade;
 		await tick();
 		// Wait for the sheet's data and icons, so the page isn't printed half drawn.
 		for (let i = 0; i < 50 && !root?.querySelector('[data-testid="print-sheet"]'); i++)
@@ -253,7 +275,11 @@
 
 <Dialog bind:open={setting} title={t('player.printSettings')} size="max">
 	<div class="settings">
-		<PrintSettingsFields hasLogo={!!script && !!scriptLogo(script)} hasRules={rules.length > 0} />
+		<PrintSettingsFields
+			hasLogo={!!script && !!scriptLogo(script)}
+			hasRules={rules.length > 0}
+			hasQr={qrLink !== null}
+		/>
 		<section class="preview" aria-label={t('player.printPreview')} bind:clientWidth={previewWidth}>
 			{#if !laidOut}
 				<p class="laying-out"><Spinner testid="print-laying-out" />{t('player.printLayingOut')}</p>
@@ -272,6 +298,7 @@
 						{version}
 						{rules}
 						settings={printChoices}
+						{qr}
 						preview
 					/>
 				</div>
@@ -296,7 +323,7 @@
 
 {#if printing && script}
 	<div class="print-root" class:capturing bind:this={root} use:toBody>
-		<ScriptPrintSheet bind:this={sheet} {script} {version} {rules} settings={printChoices} />
+		<ScriptPrintSheet bind:this={sheet} {script} {version} {rules} {qr} settings={printChoices} />
 	</div>
 {/if}
 

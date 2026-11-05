@@ -95,9 +95,9 @@ test('lists nothing until a character is selected, then it and its jinx partners
 	await expect(seats.first()).toHaveAttribute('aria-label', /Philosopher/);
 	await expect(seats.nth(1)).toHaveAttribute('aria-label', /Bounty Hunter/);
 
-	// The lab's game is not one being played: Continue game doesn't list it.
+	// The lab's game is not one being played: Join game doesn't list it.
 	await page.goto('/join');
-	await expect(page.getByRole('heading', { name: 'Continue game', level: 1 })).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Join game', level: 1 })).toBeVisible();
 	await expect(page.getByRole('link', { name: /Character Lab/ })).toHaveCount(0);
 
 	// An old Lab link opens the Characters page, with the lock kept.

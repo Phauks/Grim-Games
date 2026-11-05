@@ -61,4 +61,11 @@ describe('print settings', () => {
 		expect(read.back.iconScale).toBe(0.6);
 		expect(read.pageSize).toBe('letter');
 	});
+
+	it('reads the QR code switches, off on both sides until chosen (M56)', () => {
+		expect(readPrint({})).toMatchObject({ front: { qr: false }, back: { qr: false } });
+		const read = readPrint({ front: { qr: true }, back: { qr: true } });
+		expect(read.front.qr).toBe(true);
+		expect(read.back.qr).toBe(true);
+	});
 });

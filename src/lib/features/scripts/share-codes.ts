@@ -22,6 +22,7 @@ import {
 	SharedLinkError,
 	encodeSharedScript,
 	offlineCode,
+	printedLink,
 	sharedRefHash,
 	type OfflineCode,
 	type SharePath,
@@ -224,5 +225,27 @@ export async function fetchSharedRef(ref: SharedRef): Promise<FetchedScript> {
 				if (!(e instanceof SharedLinkError)) throw e;
 				throw new ScriptFetchError(t(SHARED_LINK_ERRORS[e.reason]));
 			}
+	}
+}
+
+/**
+ * The link for a printed sheet's QR code (M56): `printedLink`'s, or for a script too long for
+ * that, its share code's link, which lasts while someone opens it every 30 days. Undefined when
+ * neither can be made (a long script with no internet).
+ */
+export async function printLinkFor(saved: Shareable, origin: string): Promise<string | undefined> {
+	const lasting = await printedLink(origin, {
+		edition: saved.edition,
+		botcscripts:
+			saved.source.kind === 'botcscripts'
+				? { scriptId: saved.source.scriptId, version: saved.source.version }
+				: undefined,
+		json: saved.json
+	});
+	if (lasting) return lasting;
+	try {
+		return `${origin}/play${sharedRefHash({ kind: 'code', code: await codeFor(saved) })}`;
+	} catch {
+		return undefined;
 	}
 }
