@@ -117,7 +117,7 @@
 		<dt>Now</dt>
 		<dd>In the grimoire for {game.script.meta?.name ?? 'this game'}</dd>
 		<dt>Becomes</dt>
-		<dd>The game stays saved and opens again from Continue game.</dd>
+		<dd>The game stays saved and opens again from Join game.</dd>
 	</dl>
 </ConfirmDialog>
 

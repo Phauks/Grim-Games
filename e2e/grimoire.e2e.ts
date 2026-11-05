@@ -282,7 +282,7 @@ async function keepPlaying(page: Page) {
 	await expect(prompt).toBeHidden();
 }
 
-test('New game and Continue game are screens of their own', async ({ page }) => {
+test('New game and Join game are screens of their own', async ({ page }) => {
 	// Home is blank for now (Trevor, 2026-10-16); the sidebar leads to each screen.
 	await page.goto('/new');
 	// The shared page frame: one title per page (Shared page structure).
@@ -295,10 +295,10 @@ test('New game and Continue game are screens of their own', async ({ page }) => 
 	await expect(page).toHaveURL(/\/$/);
 	await startGame(page);
 
-	// Continue game lists every saved game with where it is up to, under As Storyteller,
+	// Join game lists every saved game with where it is up to, under As Storyteller,
 	// below the rooms joined as a player (Trevor, 2026-10-28).
 	await page.goto('/join');
-	await expect(page.getByRole('heading', { name: 'Continue game', level: 1 })).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Join game', level: 1 })).toBeVisible();
 	await expect(page.getByRole('heading', { level: 2 })).toHaveText(['As player', 'As Storyteller']);
 	const saved = page.getByRole('link', { name: /Trouble Brewing.*Setting up · 8 seats/ });
 	await expect(saved).toBeVisible();
@@ -306,9 +306,7 @@ test('New game and Continue game are screens of their own', async ({ page }) => 
 	await expect(page.getByTestId('seat')).toHaveCount(8);
 });
 
-test('Continue game folds As player and As Storyteller, and boxes the room code', async ({
-	page
-}) => {
+test('Join game folds As player and As Storyteller, and boxes the room code', async ({ page }) => {
 	// Trevor, 2026-10-28: the two lists are collapsible, and the join area has a border and its
 	// own background.
 	await startGame(page);
@@ -348,9 +346,7 @@ test('a new game offers no "Is The Drunk" before anyone has a token', async ({ p
 	await expect(bin.getByText('Is The Drunk')).toHaveCount(0);
 });
 
-test('Continue game deletes every saved game at once, and leaves History alone', async ({
-	page
-}) => {
+test('Join game deletes every saved game at once, and leaves History alone', async ({ page }) => {
 	// One ended game, in History.
 	await startGame(page);
 	await menu(page, 'End game');
@@ -2215,7 +2211,7 @@ test('the game toolbar opens the app menu; leaving the game asks first and keeps
 	await expect(page).toHaveURL(board);
 
 	await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).tap();
-	await drawer.getByRole('link', { name: 'Continue game' }).tap();
+	await drawer.getByRole('link', { name: 'Join game' }).tap();
 	await leave.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(page).toHaveURL(/\/join$/);
 	await expect(page.getByRole('link', { name: /Trouble Brewing.*8 seats/ }).first()).toBeVisible();
@@ -3271,7 +3267,7 @@ test('End game keeps the Storyteller on the board, says it is over, and can be r
 	// Still on the board (Trevor, 2026-10-17), which says the game is over.
 	expect(page.url()).toBe(board);
 	await expect(page.getByTestId('game-over')).toHaveText('Game over: Evil won');
-	// Ended games are listed apart from Continue game (Trevor, 2026-10-16), and open to look
+	// Ended games are listed apart from Join game (Trevor, 2026-10-16), and open to look
 	// around in without being reopened (Trevor, 2026-10-17).
 	await page.goto('/history');
 	const listed = page
@@ -3318,7 +3314,7 @@ test('End game keeps the Storyteller on the board, says it is over, and can be r
 
 	// The Game over pill only says so; Reopen game is in ⋯ (Trevor, 2026-11-01).
 	await expect(page.getByRole('button', { name: /^Game over/ })).toHaveCount(0);
-	// Reopening from ⋯ puts it back in Continue game.
+	// Reopening from ⋯ puts it back in Join game.
 	await page.getByRole('button', { name: 'More', exact: true }).tap();
 	await page
 		.getByRole('dialog', { name: 'Grimoire' })
@@ -5673,7 +5669,7 @@ test("the Investigator's own seat fits its Wrong; its Minion is marked and warns
 	await expect(page.getByText(/the character type is not one it goes on/)).toBeVisible();
 });
 
-test('Continue game names a game’s alternative mode beside its script', async ({ page }) => {
+test('Join game names a game’s alternative mode beside its script', async ({ page }) => {
 	await startGame(page);
 	const plain = new URL(page.url()).pathname;
 	await startGame(page, 'Sects & Violets');
