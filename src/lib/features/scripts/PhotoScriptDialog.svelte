@@ -209,7 +209,6 @@
 		class="file"
 		type="file"
 		accept={PHOTO_ACCEPT}
-		capture="environment"
 		aria-label={t('scripts.photo.another')}
 		onchange={onFile}
 	/>

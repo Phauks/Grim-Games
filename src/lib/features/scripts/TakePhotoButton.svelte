@@ -62,7 +62,6 @@
 	class="file"
 	type="file"
 	accept={PHOTO_ACCEPT}
-	capture="environment"
 	aria-label={t('scripts.picker.photo')}
 	aria-hidden="true"
 	tabindex="-1"
