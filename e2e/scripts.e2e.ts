@@ -559,14 +559,21 @@ test('dropping a script file anywhere on the Library saves it; Search takes no d
 	await expect(detailsName(page)).toHaveText('None');
 
 	await page.goto('/library');
-	await drop('photo.png', 'image/png', 'not a script');
+	await drop('song.mp3', 'audio/mpeg', 'not a script');
 	// Said in a toast, so nothing on the page moves.
 	await expect(
 		page
 			.getByRole('status')
-			.filter({ hasText: 'photo.png is not a script. Scripts are .json files.' })
+			.filter({ hasText: 'song.mp3 is not a script. Scripts are .json files.' })
 	).toBeVisible();
 	await expect(page.getByRole('dialog', { name: 'Storm Front' })).toHaveCount(0);
+
+	// A photo (or PDF) of a printed sheet is read like Take a Photo's (plan M54).
+	await drop('photo.png', 'image/png', 'not a photo');
+	const photo = page.getByRole('dialog', { name: 'Script from a photo' });
+	await expect(photo).toBeVisible();
+	await photo.getByRole('button', { name: 'Cancel' }).tap();
+	await expect(photo).toHaveCount(0);
 
 	await drop('storm-front.json', 'application/json', JSON.stringify(homebrew));
 	await expect(detailsName(page)).toHaveText('Storm Front');
