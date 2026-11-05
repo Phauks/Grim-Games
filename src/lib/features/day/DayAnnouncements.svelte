@@ -84,6 +84,8 @@
 			.slice(0, game.log.cursor)
 			.some((e) => e.events.some((ev) => ev.type === 'DayStarted'))
 	);
+	/** "Nobody died in the night", from the second day on (see the list below). */
+	const nobodyDied = $derived(died.length === 0 && dawned && dayNumber(g) > 1);
 	/**
 	 * With "I See Dead People" on, deaths are never announced (World Cup thread, 2026-10-19):
 	 * the spoken line says so instead.
@@ -182,14 +184,19 @@
 				>
 			</li>
 		{/each}
-		{#if died.length === 0 && dawned}
+		<!-- Nobody dies before the first day as a rule, so "Nobody died" is only said from the
+		     second day on (Trevor, 2026-11-04); a death the Storyteller marked still shows. -->
+		{#if nobodyDied}
 			<li class="death"><span class="spoken">{t('day.announce.nobody')}</span></li>
 		{/if}
 		{#each announcers as a (a.character.id)}
 			<li data-character={a.character.id}>
+				<!-- The character as the night strip draws it, big icon and name with its ability
+				     off (Trevor, 2026-11-04), and what to announce in the row under the band. -->
 				<CharacterPiece
-					template="entry"
-					characterId={a.character.id}
+					template="name"
+					info
+					character={a.character}
 					alignment={g.seats[a.seatId].alignment}
 					playerName={game.seatName(a.seatId)}
 				>
@@ -199,7 +206,7 @@
 				</CharacterPiece>
 			</li>
 		{/each}
-		{#if died.length === 0 && !dawned && revived.length === 0 && announcers.length === 0}
+		{#if died.length === 0 && !nobodyDied && revived.length === 0 && announcers.length === 0}
 			<li>{t('common.none')}</li>
 		{/if}
 	</ul>

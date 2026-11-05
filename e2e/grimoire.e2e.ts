@@ -146,10 +146,9 @@ async function chooseExecution(page: Page, choice = 'No execution') {
  * The walk-through under the board, on this step: the night order left the board (Trevor,
  * 2026-10-18), so Run night starts it and Next (which ticks each step) or Previous finds it.
  */
-/** Whether the walk-through shows its last step ("9 of 9"). */
+/** Whether the walk-through is on its last step (the count leaves out Dusk and Dawn). */
 async function lastStep(strip: Locator) {
-	const [at, of] = ((await strip.locator('.count').textContent()) ?? '').split(' of ');
-	return at === of;
+	return (await strip.getAttribute('data-step')) === (await strip.getAttribute('data-steps'));
 }
 
 async function walkTo(page: Page, title: string) {
@@ -2545,17 +2544,16 @@ test('a night step is filled in with help, and the night can be walked through',
 
 	// Walk through: one step at a time under the board, with Previous and Next.
 	const strip = page.getByTestId('night-strip');
-	const count = strip.locator('.count');
 	await walkTo(page, 'Poisoner');
-	const at = await count.textContent();
+	const at = (await strip.getAttribute('data-step'))!;
 	await strip.getByRole('button', { name: 'Next step' }).tap();
-	await expect(count).not.toHaveText(at!);
-	const after = await count.textContent();
+	await expect(strip).not.toHaveAttribute('data-step', at);
+	const after = (await strip.getAttribute('data-step'))!;
 	// A reload (or an app update) keeps the walk-through where it was (Trevor, 2026-10-16).
 	await page.reload();
-	await expect(count).toHaveText(after!);
+	await expect(strip).toHaveAttribute('data-step', after);
 	await strip.getByRole('button', { name: 'Previous step' }).tap();
-	await expect(count).toHaveText(at!);
+	await expect(strip).toHaveAttribute('data-step', at);
 	// The step's reminder already on the board is ringed too (Trevor, 2026-10-18).
 	for (let i = 0; i < 10 && !(await strip.textContent())?.includes('Poisoner'); i++)
 		await strip.getByRole('button', { name: 'Next step' }).tap();
@@ -5568,9 +5566,7 @@ test('the bank button starts the game, ends each night and day, and resumes a st
 	await strip.getByRole('button', { name: 'Next step' }).tap();
 	await strip.getByRole('button', { name: 'Stop the walk-through' }).tap();
 	await run.tap();
-	await expect(strip.locator('.count')).toHaveText(/^2 of/);
-	// The count is a badge, not loose text (Trevor, 2026-10-20).
-	await expect(strip.locator('.count .count-badge')).toHaveText(/^2 of \d+$/);
+	await expect(strip).toHaveAttribute('data-step', '2');
 	await end.tap();
 	await page
 		.getByRole('alertdialog', { name: 'End the night?' })
@@ -5586,7 +5582,9 @@ test('the bank button starts the game, ends each night and day, and resumes a st
 	await expect(strip).toBeVisible();
 	// The night starts on Dusk, though End day has ticked it (Trevor, 2026-10-20).
 	await expect(strip.locator('.step .name strong')).toHaveText('Dusk');
-	await expect(strip.locator('.count')).toHaveText(/^1 of/);
+	await expect(strip).toHaveAttribute('data-step', '1');
+	// Dusk has no number: the count is the one on the tokens' leaves (Trevor, 2026-11-04).
+	await expect(strip.locator('.count')).toHaveCount(0);
 
 	// With "Open the day after End night" off, set in Settings from the confirm's ⋯, the
 	// Storyteller stays on the grimoire (Trevor, 2026-10-18; 2026-10-30).
@@ -6884,6 +6882,10 @@ test('the walk-through shows the character as its row, its player on the band, w
 	await expect(row.locator('.band')).toContainText('Samantha');
 	await expect(row.locator('.ring-ability')).toHaveCount(0);
 	await expect(row.locator('.band .count')).toHaveCount(0);
+	// The count is the token's leaf number, among the characters that wake (Trevor,
+	// 2026-11-04): Dusk, Minion info, Demon info and Dawn are tonight's steps too, but uncounted.
+	await expect(strip.locator('.count')).toHaveText('1 of 1');
+	expect(Number(await strip.getAttribute('data-steps'))).toBeGreaterThan(1);
 	// What to do comes before any information, such as suggestions (Trevor, 2026-10-20).
 	const order = await strip.locator('.body').evaluate((body) => {
 		const kids = [...body.children];
