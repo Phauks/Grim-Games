@@ -45,10 +45,9 @@ async function chooseExecution(page: Page, choice = 'No execution') {
  * The walk-through under the board, on this step: the night order left the board (Trevor,
  * 2026-10-18), so Run night starts it and Next (which ticks each step) or Previous finds it.
  */
-/** Whether the walk-through shows its last step ("9 of 9"). */
+/** Whether the walk-through is on its last step (the count leaves out Dusk and Dawn). */
 async function lastStep(strip: Locator) {
-	const [at, of] = ((await strip.locator('.count').textContent()) ?? '').split(' of ');
-	return at === of;
+	return (await strip.getAttribute('data-step')) === (await strip.getAttribute('data-steps'));
 }
 
 async function walkTo(page: Page, title: string) {
