@@ -45,7 +45,7 @@ export async function readPdfPages(file: Blob): Promise<PdfPage[]> {
 			const canvas = document.createElement('canvas');
 			canvas.width = Math.round(viewport.width);
 			canvas.height = Math.round(viewport.height);
-			await page.render({ canvas, viewport, background: '#ffffff' }).promise;
+			await page.render({ canvas, viewport }).promise;
 			const content = await page.getTextContent();
 			const items: PdfText[] = content.items.flatMap((item) =>
 				'str' in item
