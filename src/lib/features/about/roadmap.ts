@@ -557,6 +557,14 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['M36']
 	},
 	{
+		// Trevor, 2026-11-04: "if a character also has the ability of a character, we need to make
+		// sure we have the reminder tokens to facilitate that ability". M50: every borrowed ability
+		// (gained, held, given by hand, the Storyteller's) brings its character's reminders.
+		title: 'Borrowed abilities bring their reminder tokens',
+		area: 'storyteller',
+		parts: ['M50']
+	},
+	{
 		// The coordinator's ask of 2026-11-03 (ability-parts/jinx-format-audit.md): a jinx format a
 		// custom script can write. M39 general verbs with shared `when` conditions and `who`, so a
 		// rule may sit in either character's file; M40 rules on a script's own jinxes, which
