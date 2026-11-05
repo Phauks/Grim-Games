@@ -1,8 +1,8 @@
 /**
- * The Character Lab on the Characters page (plans M45, M47; Trevor 2026-11-04: "The only difference
- * between reference and lab is seeing everything at the same time"): the opponents are the
- * table's rows as shown, and this holds what the lab panel, the phone's bar and the table's
- * Lock column share: the opponent shown, its jinxes and loading a game.
+ * The Character Lab on the Characters page (plans M45, M47): one core character, picked on the
+ * left, tested against each character it has a jinx with, on the right (Trevor, 2026-11-05:
+ * "the whole lock system is weird ... Just allow setting what the core one is on the left
+ * side, start empty"). This holds what the page, the lab panel and the phone's bar share.
  */
 import { goto } from '$app/navigation';
 import { resolve } from '$app/paths';
@@ -16,40 +16,23 @@ import { loadLabGame } from './load-lab-game.ts';
 export class LabSession {
 	/** The official data, once loaded. */
 	data = $state<GameData>();
-	/** The table's rows as shown (search, filters, sort), in order. */
-	listed = $state<readonly CharacterId[]>([]);
 	loading = $state(false);
 	/** Bumped on each load, so a frame opens the new game even at the same address. */
 	loads = $state(0);
 
 	readonly setup = $derived(lab.current);
-	readonly locked = $derived(this.setup.locked);
-	/** The first locked character, which Previous and Next character swap. */
-	readonly testing = $derived(this.setup.locked[0]);
-	/** Nothing is listed until a character is locked (plan M47). */
+	/** The core character, which Previous and Next character swap; none until one is picked. */
+	readonly core: CharacterId | undefined = $derived(this.setup.core);
+	readonly #kept = $derived(this.core ? [this.core] : []);
+	/** Every character with a jinx with the core one, in jinx order. */
 	readonly opponents: LabOpponent[] = $derived(
-		this.data && this.locked.length
-			? labOpponents(this.data, this.locked, { kind: 'listed', ids: this.listed })
-			: []
+		this.data && this.core ? labOpponents(this.data, this.#kept, { kind: 'jinxes' }) : []
 	);
 	readonly at = $derived(Math.min(this.setup.index, Math.max(0, this.opponents.length - 1)));
 	readonly current: LabOpponent | undefined = $derived(this.opponents[this.at]);
 
-	/** Every character jinxed with a locked one: the table's "Jinxed with locked" filter. */
-	readonly jinxed: readonly CharacterId[] = $derived(
-		this.data ? labOpponents(this.data, this.locked, { kind: 'jinxes' }).map((o) => o.id) : []
-	);
-	/** The filter applies while a character is locked. */
-	readonly jinxFilterOn = $derived(this.setup.jinxedOnly && this.locked.length > 0);
-
-	/** The jinxes in the loaded game's pairing: the locked characters' own, and the opponent's. */
-	readonly pairJinxes: Jinx[] = $derived.by(() => {
-		if (!this.data) return [];
-		const ids = [...this.locked, ...(this.current ? [this.current.id] : [])];
-		return this.data.jinxes.all.filter(
-			({ characters: [a, b] }) => ids.includes(a) && ids.includes(b)
-		);
-	});
+	/** The jinx between the core character and the one shown. */
+	readonly pairJinxes: Jinx[] = $derived(this.current?.jinxes ?? []);
 
 	readonly gamePath = $derived(
 		this.setup.gameId ? resolve('/grimoire/[gameId]', { gameId: this.setup.gameId }) : undefined
@@ -57,9 +40,9 @@ export class LabSession {
 
 	byId = (id: CharacterId): Character | undefined => this.data?.byId.get(id);
 
-	setLocked(id: CharacterId, on: boolean): void {
-		const locked = this.locked.filter((l) => l !== id);
-		lab.update({ locked: on ? [...locked, id] : locked, index: 0 });
+	/** Makes `id` the core character, or clears it. */
+	setCore(id: CharacterId | undefined): void {
+		lab.update({ core: id, index: 0 });
 	}
 
 	/** Shows the opponent at `index` without loading its game. */
@@ -76,13 +59,14 @@ export class LabSession {
 		this.loading = true;
 		try {
 			const data = this.data ?? (await loadOfficialData());
-			const list = labOpponents(data, this.locked, { kind: 'listed', ids: this.listed });
+			const kept = this.core ? [this.core] : [];
+			const list = this.core ? labOpponents(data, kept, { kind: 'jinxes' }) : [];
 			const i = Math.min(Math.max(0, index), Math.max(0, list.length - 1));
 			const game = await loadLabGame(
 				data,
 				{
 					playerCount: this.setup.playerCount,
-					locked: this.locked,
+					locked: kept,
 					opponent: list[i]?.id,
 					// The opponent always plays (Trevor, 2026-11-04: "jinx partner is is a weird
 					// setting").
@@ -90,7 +74,8 @@ export class LabSession {
 					filler: this.setup.filler,
 					setupTokens: this.setup.setupTokens
 				},
-				this.setup.gameId
+				this.setup.gameId,
+				this.setup.startDay
 			);
 			lab.update({ index: i, gameId: game.game.gameId });
 			this.loads++;
@@ -103,23 +88,15 @@ export class LabSession {
 	}
 
 	/**
-	 * Swaps the character under test for the one before or after it in `roles.json` and loads
-	 * that game (Trevor, 2026-11-03: "so that you don't have to go into the character selector
-	 * each time"). With the jinx filter on, only characters with a jinx.
+	 * Swaps the core character for the one before or after it in `roles.json` with a jinx, and
+	 * loads that game (Trevor, 2026-11-03: "so that you don't have to go into the character
+	 * selector each time").
 	 */
-	async stepTesting(step: -1 | 1, open = false): Promise<void> {
-		if (!this.data || !this.testing) return;
-		const next = stepCharacter(
-			this.data,
-			this.testing,
-			step,
-			this.locked.slice(1),
-			this.setup.jinxedOnly
-		);
+	async stepCore(step: -1 | 1, open = false): Promise<void> {
+		if (!this.data || !this.core) return;
+		const next = stepCharacter(this.data, this.core, step, [], true);
 		if (!next) return;
-		lab.update({ locked: [next, ...this.locked.slice(1)], index: 0 });
-		// The table's rows follow the new lock before the game picks its opponent.
-		await Promise.resolve();
+		this.setCore(next);
 		await this.load(0, open);
 	}
 }
