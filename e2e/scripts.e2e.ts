@@ -1917,3 +1917,38 @@ test.describe('on a wide screen', () => {
 		expect(Math.abs(list!.y + list!.height - (details!.y + details!.height))).toBeLessThan(2);
 	});
 });
+
+test.describe('beside the list', () => {
+	test.use({ viewport: { width: 1500, height: 976 } });
+
+	// Trevor, 2026-11-05: the pinned Townsfolk heading covered the script's name while the
+	// details scrolled. It now stops under the pinned name and buttons.
+	test("a pinned type heading stops under the details' pinned name", async ({ page }) => {
+		const tb = ['washerwoman', 'librarian', 'investigator', 'chef', 'empath', 'fortuneteller'];
+		tb.push('undertaker', 'monk', 'ravenkeeper', 'virgin', 'slayer', 'soldier', 'mayor');
+		const json = [{ id: '_meta', name: 'Long Townsfolk', author: 'Someone' }, ...tb, 'imp'];
+		await page.route('**/api/curated', (route) =>
+			route.fulfill({
+				json: { scripts: [{ section: 'recommended', link: scriptToolLink(json), json }] }
+			})
+		);
+		await page.goto('/scripts');
+		await chooseSource(page, 'Official custom scripts');
+		await page.getByRole('button', { name: /^Long Townsfolk/ }).click();
+		const band = page
+			.getByTestId('script-sheet')
+			.getByRole('button', { name: 'Townsfolk', exact: true });
+		await expect(band).toBeVisible();
+		await page
+			.getByTestId('script-pane')
+			.locator('[data-own-scroll]')
+			.evaluate((scroller) => (scroller.scrollTop = 800));
+		const top = page.getByTestId('script-details-top');
+		await expect
+			.poll(async () => {
+				const head = (await top.boundingBox())!;
+				return (await band.boundingBox())!.y - (head.y + head.height);
+			})
+			.toBeGreaterThanOrEqual(-1);
+	});
+});

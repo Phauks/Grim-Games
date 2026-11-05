@@ -66,7 +66,7 @@
 					<IconButton icon="close" label={t('common.close')} onclick={() => (open = false)} />
 				</div>
 			</header>
-			<div class="body">{@render children()}</div>
+			<div class="body" data-own-scroll>{@render children()}</div>
 		{:else}
 			<p class="none">{t('library.paneEmpty')}</p>
 		{/if}
