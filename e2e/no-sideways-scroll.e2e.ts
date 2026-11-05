@@ -18,7 +18,7 @@ const STATIC_ROUTES = [
 	'/privacy',
 	'/support',
 	'/credits',
-	'/reference',
+	'/character-analyzer',
 	'/scripts',
 	'/settings',
 	'/play',
