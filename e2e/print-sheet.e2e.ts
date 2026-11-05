@@ -236,6 +236,39 @@ test('the jinxes, Fabled and Loric go on either side, or both', async ({ page })
 	).toBeDisabled();
 });
 
+// M56, Trevor 2026-11-05: "allow including a qr code of the script", on either side since
+// sheets aren't always printed double sided, its space kept whether it shows or not.
+test('a QR code of the script prints on either side without moving the sheet', async ({ page }) => {
+	const { screen, preview, fields } = await openSheet(page);
+	await expect(screen.getByTestId('print-laying-out')).toBeHidden();
+	const slots = preview.getByTestId('print-qr');
+	await expect(slots).toHaveCount(2);
+	await expect(preview.getByRole('img', { name: /^QR code for/ })).toHaveCount(0);
+	const front = slots.nth(0);
+	// Measured from its paper, since tapping a switch can scroll the screen.
+	const sheet = preview.locator('.front .character').last();
+	const paper = preview.locator('.paper').first();
+	const offset = async () => {
+		const [a, b] = [(await sheet.boundingBox())!, (await paper.boundingBox())!];
+		return { x: a.x - b.x, y: a.y - b.y, width: a.width, height: a.height };
+	};
+	const before = await offset();
+	const qrSwitch = fields.getByRole('checkbox', { name: 'QR code', includeHidden: true });
+	await expect(qrSwitch).toHaveCount(2);
+	await fields.getByText('QR code', { exact: true }).first().tap();
+	await expect(front.getByRole('img', { name: 'QR code for Trouble Brewing' })).toBeVisible();
+	await expect(slots.nth(1).getByRole('img')).toHaveCount(0);
+	await expect(screen.getByTestId('print-laying-out')).toBeHidden();
+	expect(await offset()).toEqual(before);
+	await fields.getByText('QR code', { exact: true }).nth(1).tap();
+	await expect(
+		slots.nth(1).getByRole('img', { name: 'QR code for Trouble Brewing' })
+	).toBeVisible();
+	// Without a back, its switch greys out.
+	await fields.getByText('Print a back', { exact: true }).tap();
+	await expect(qrSwitch.nth(1)).toBeDisabled();
+});
+
 // Trevor, 2026-10-30: "also add download button, so they don't have to change save as pdf".
 test('Download PDF saves both sides as a PDF named after the script', async ({ page }) => {
 	// Picturing two pages at print sharpness takes a while on a busy machine.
