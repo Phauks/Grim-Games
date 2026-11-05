@@ -1633,9 +1633,16 @@ test('tokens keep their size when the night walk-through opens', async ({ page }
 	await expect
 		.poll(async () => Math.abs((await token.boundingBox())!.width - before))
 		.toBeLessThan(1);
-	const logoAfter = (await logo.boundingBox())!;
-	expect(Math.abs(logoAfter.width - logoBefore.width)).toBeLessThan(1);
-	expect(Math.abs(logoAfter.height - logoBefore.height)).toBeLessThan(1);
+	// Polled like the token: the board's new height reaches the logo a frame after the strip.
+	await expect
+		.poll(async () => {
+			const after = (await logo.boundingBox())!;
+			return Math.max(
+				Math.abs(after.width - logoBefore.width),
+				Math.abs(after.height - logoBefore.height)
+			);
+		})
+		.toBeLessThan(1);
 });
 
 // Trevor (2026-10-23): "change board look to board preview", and its bank looks like the board's.
