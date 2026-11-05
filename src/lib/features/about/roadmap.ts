@@ -171,6 +171,13 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		]
 	},
 	{
+		// M55 (Trevor, 2026-11-05): players use the app when it isn't running the game, so with
+		// no Storyteller each phone keeps its own town (option A, local only).
+		title: 'Players-only game: your own town with no Storyteller',
+		area: 'player',
+		parts: ['M55']
+	},
+	{
 		title: 'One start flow: New game, then Game info during the game',
 		area: 'storyteller',
 		parts: [

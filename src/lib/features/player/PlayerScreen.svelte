@@ -47,6 +47,6 @@
 </script>
 
 <PlayerScriptTabs {script} {players} {inPlay} {travellers} {rules} {ruleCharacters} bind:tab>
-	{#snippet grim()}<PlayerGrim {script} {town} fullScreen />{/snippet}
+	{#snippet grim()}<PlayerGrim {script} {town} localKey={notesKey} fullScreen />{/snippet}
 	{#snippet notes()}<PlayerNotes {notesKey} town={notesTown} />{/snippet}
 </PlayerScriptTabs>
