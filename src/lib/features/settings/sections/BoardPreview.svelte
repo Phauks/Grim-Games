@@ -201,6 +201,7 @@
 		contained
 		{url}
 		preset={choice.kind === 'preset' ? choice.id : undefined}
+		moving={choice.kind === 'moving' ? choice : undefined}
 		vignette={boardLooks.current.vignette ? boardLooks.current.vignetteStrength : undefined}
 	/>
 	{#if boardLooks.current.logo}

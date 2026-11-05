@@ -9,9 +9,9 @@
 	import type { LabSession } from './lab-session.svelte.ts';
 
 	/**
-	 * The Character Lab's characters, on the left above their rows (plan M47, Trevor
-	 * 2026-11-04: "move left right toggle and character select to the left side"): the arrows
-	 * that swap the character under test, + to select characters, and the jinx filter.
+	 * The Character Lab's core character, on the left above its row (plan M47, Trevor
+	 * 2026-11-05: "Just allow setting what the core one is on the left side, start empty"): the
+	 * arrows that swap it, and + to select it.
 	 */
 	interface Props {
 		session: LabSession;
@@ -25,26 +25,25 @@
 	let adding = $state(false);
 </script>
 
-<section class="select" aria-label={t('lab.locked')} data-testid="lab-select">
+<section class="select" aria-label={t('lab.core')} data-testid="lab-select">
 	<div class="row">
-		<div class="nav" data-testid="lab-testing">
+		<div class="nav" data-testid="lab-core-nav">
 			<IconButton
 				icon="back"
 				label={t('lab.previousCharacter')}
-				disabled={session.loading || !session.testing}
-				onclick={() => void session.stepTesting(-1, open)}
+				disabled={session.loading || !session.core}
+				onclick={() => void session.stepCore(-1, open)}
 			/>
-			<span class="testing" data-testid="lab-locked">
-				{#if session.testing}<CharacterPiece
-						template="badge"
-						characterId={session.testing}
-					/>{:else}{t('common.none')}{/if}
+			<span class="testing" data-testid="lab-core">
+				{#if session.core}<CharacterPiece template="badge" characterId={session.core} />{:else}{t(
+						'common.none'
+					)}{/if}
 			</span>
 			<IconButton
 				icon="forward"
 				label={t('lab.nextCharacter')}
-				disabled={session.loading || !session.testing}
-				onclick={() => void session.stepTesting(1, open)}
+				disabled={session.loading || !session.core}
+				onclick={() => void session.stepCore(1, open)}
 			/>
 		</div>
 		<IconButton
@@ -54,13 +53,6 @@
 			onclick={() => (adding = true)}
 		/>
 	</div>
-	<!-- Usable once a character is locked; until then nothing is listed. -->
-	<Toggle
-		label={t('lab.jinxedOnly')}
-		checked={setup.jinxedOnly}
-		disabled={session.locked.length === 0}
-		onChange={(jinxedOnly) => lab.update({ jinxedOnly, index: 0 })}
-	/>
 </section>
 
 {#if session.data}
@@ -70,12 +62,15 @@
 		title={t('lab.addTitle')}
 		types={CHARACTER_TYPES}
 		characters={data.characters}
-		selected={session.locked}
+		selected={session.core ? [session.core] : []}
 		jinxCounts
 		filter={(c) =>
 			(!setup.pickJinxed || !!data.jinxes.byCharacter.get(c.id)?.length) &&
 			(!setup.pickSetup || !!c.setup)}
-		onToggle={(id) => session.setLocked(id, !session.locked.includes(id))}
+		onToggle={(id) => {
+			session.setCore(id === session.core ? undefined : id);
+			adding = false;
+		}}
 	>
 		<!-- Quick ways to the characters worth testing (Trevor, 2026-11-04). -->
 		<div class="filters">

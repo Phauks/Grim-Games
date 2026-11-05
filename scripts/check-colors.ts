@@ -21,7 +21,13 @@ import { fileURLToPath } from 'node:url';
 const root = fileURLToPath(new URL('..', import.meta.url));
 const scanned = ['src'];
 // app.html's theme-color meta must be a literal colour (it is read before any CSS loads).
-const allowed = ['src/lib/ui/themes/', 'src/lib/assets/', 'src/app.html'];
+// Moving backgrounds (M43) are pictures whose colours the Storyteller picks, not theme colours.
+const allowed = [
+	'src/lib/ui/themes/',
+	'src/lib/assets/',
+	'src/app.html',
+	'src/lib/core/backgrounds/'
+];
 // Token files define the shared mixes; board backgrounds, seat frames and laurels are pictures,
 // not theme colours.
 const mixesAllowed = [

@@ -209,6 +209,13 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		prs: [322, 328]
 	},
 	{
+		// M43 (Trevor, 2026-11-03): tried in the background playground first; the Storyteller's
+		// is shared with every phone, which can hold it still (2026-11-05).
+		title: 'Moving board backgrounds: Vortex, Fire, Rain, Stars and Yin-yang',
+		area: 'storyteller',
+		parts: ['M43']
+	},
+	{
 		title: 'Savant information: generated, typed or shown to the player',
 		area: 'storyteller',
 		parts: ['L2', 'L5', 'L41', ...range('L', 46, 50), 'L62']

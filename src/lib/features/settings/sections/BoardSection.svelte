@@ -14,6 +14,8 @@
 	import DefaultBackgroundRow from './DefaultBackgroundRow.svelte';
 	import BoardBackgroundRow from '#lib/features/grimoire/BoardBackgroundRow.svelte';
 	import { boardBackground } from '#lib/features/grimoire/board-background.svelte.ts';
+	import { defaultBackground } from '#lib/features/grimoire/default-background.svelte.ts';
+	import MovingMotionRows from '#lib/features/grimoire/moving/MovingMotionRows.svelte';
 	import { STORYTELLER_GROUPS } from './storyteller-groups.ts';
 	import CornerLineToggle from '#lib/features/modes/CornerLineToggle.svelte';
 	import { CORNER_LINES } from '#lib/ui/corner-lines.ts';
@@ -23,6 +25,8 @@
 	 * section); the board's ⋯ > Settings opens all of Settings at its root.
 	 */
 	const assistance = $derived(preferences.current.assistance);
+	/** The background the preview shows, as BoardPreview picks it. */
+	const shown = $derived(boardBackground.context?.current ?? defaultBackground.current);
 </script>
 
 <!-- A live preview beside the looks it shows (Trevor, 2026-10-20), as in Tokens. -->
@@ -32,6 +36,7 @@
 	{#if boardBackground.context}<BoardBackgroundRow
 			board={boardBackground.context}
 		/>{:else}<DefaultBackgroundRow />{/if}
+	<MovingMotionRows enabled={shown?.kind === 'moving'} />
 	<BoardLooksRows />
 	{#each STORYTELLER_GROUPS.board as key (key)}
 		<SettingToggle
