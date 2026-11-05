@@ -224,9 +224,9 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	},
 	{
 		title:
-			'Characters page: the character reference and the Character Lab in one, for everyone, with the game beside the table',
+			'Characters page: the Character Lab for everyone, the selected characters on the left and their game on the right',
 		area: 'app',
-		parts: ['M37', 'M45']
+		parts: ['M37', 'M45', 'M47']
 	},
 	{
 		title: 'Admins see every account, and sign one out, free its username or delete it',

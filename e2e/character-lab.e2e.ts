@@ -7,8 +7,11 @@ import { expect, test, type Page } from '@playwright/test';
 // selected. just put a + button to add characters"). The Philosopher's one jinx is with the
 // Bounty Hunter (static/data/jinxes.json).
 
-/** A computer window shows the lab beside the table, with the game under it. */
-const onComputer = (page: Page) => page.getByTestId('lab-panel').first().isVisible();
+/** A computer window shows the lab beside the table, with the game above it; else the bar. */
+const onComputer = async (page: Page) => {
+	await expect(page.getByRole('heading', { name: 'Characters', level: 1 })).toBeVisible();
+	return (await page.getByRole('navigation', { name: 'Character Lab' }).count()) === 0;
+};
 
 /** The lab's controls: the panel on a computer, else the dialog the bottom bar's Lab opens. */
 async function labControls(page: Page) {
@@ -75,10 +78,11 @@ test('lists nothing until a character is selected, then it and its jinx partners
 		page.getByTestId('character-table').getByRole('button', { name: /^Columns/ })
 	).toHaveCount(0);
 
+	const computer = await onComputer(page);
 	const lab = await labControls(page);
 	await expect(lab.getByTestId('lab-jinxes').getByTestId('jinx-note')).toHaveCount(1);
 	await expect(lab.getByText('Jinx partner is')).toHaveCount(0);
-	if (!(await onComputer(page))) await page.keyboard.press('Escape');
+	if (!computer) await page.keyboard.press('Escape');
 
 	// Turning the jinx filter off brings every character back as a partner.
 	await page.getByText('Jinxed with locked', { exact: true }).tap();
@@ -175,9 +179,10 @@ test('loads a started game, the Marionette thinking they are a Townsfolk', async
 test('Apply setup tokens off seats the characters as they are', async ({ page }) => {
 	await page.goto('/reference');
 	await lock(page, 'Marionette');
+	const computer = await onComputer(page);
 	const lab = await labControls(page);
 	await lab.getByText('Apply setup tokens', { exact: true }).tap();
-	if (!(await onComputer(page))) await page.keyboard.press('Escape');
+	if (!computer) await page.keyboard.press('Escape');
 	await loadGame(page);
 	const seats = await labSeats(page);
 	await expect(seats.nth(0)).toHaveAttribute('aria-label', /Marionette/);

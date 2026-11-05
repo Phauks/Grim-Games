@@ -144,5 +144,9 @@
 		.cell {
 			flex: 1 1 calc(8 * var(--u));
 		}
+		/* With no sort or filters, each stacked field is labelled on its row: no header row. */
+		.table-view :global(thead) {
+			display: none;
+		}
 	}
 </style>

@@ -2,9 +2,19 @@ import { expect, test, type Page } from '@playwright/test';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { menuButton } from './shell.ts';
 
-/** A character's row in the Reference table, the page's only view (Trevor, 2026-10-19). */
+/** A character's row in the Character Lab's table (plan M47). */
 const rowOf = (page: Page, id: string) =>
 	page.getByTestId('character-table').locator(`tr[data-character="${id}"]`);
+
+/**
+ * Selects a character through its link (#witch, from a bug report): nothing is listed until
+ * one is (Trevor, 2026-11-04: "do not list all on the left side when none are selected").
+ */
+async function select(page: Page, id: string) {
+	await page.goto('about:blank');
+	await page.goto(`/reference#${id}`);
+	await expect(rowOf(page, id)).toBeAttached();
+}
 
 test('the menu opens the character reference', async ({ page }) => {
 	await page.goto('/');
@@ -19,11 +29,8 @@ test('the menu opens the character reference', async ({ page }) => {
 	).toBeVisible();
 });
 
-test('searching shows everything the app uses for the Witch', async ({ page }) => {
-	await page.goto('/reference');
-	await expect(page.getByTestId('table-count')).toHaveText('181 of 181 · no filters');
-
-	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Witch');
+test('a selected Witch shows everything the app uses for it', async ({ page }) => {
+	await select(page, 'witch');
 	const card = rowOf(page, 'witch');
 	await expect(card).toBeVisible();
 	await expect(card).toContainText('Each night, choose a player');
@@ -72,69 +79,10 @@ test('searching shows everything the app uses for the Witch', async ({ page }) =
 	expect(overflow).toBeLessThanOrEqual(0);
 });
 
-test('the filter chips are gone; the table sorts and filters by column', async ({ page }) => {
-	// The full table (181 rows, every field) is rebuilt several times here.
-	test.slow();
-	await page.goto('/reference');
-	await expect(page.getByRole('group', { name: 'Character types' })).toHaveCount(0);
-	await expect(page.getByRole('button', { name: 'Demons', exact: true })).toHaveCount(0);
-
-	const table = page.getByTestId('character-table');
-	const rows = table.locator('tbody tr');
-	await expect(rows).toHaveCount(181);
-
-	// Sort by first night: positions ascend, characters that do not wake go last.
-	await table.getByRole('button', { name: 'First night', exact: true }).tap();
-	await expect(table.locator('th[data-col="firstNight"]')).toHaveAttribute(
-		'aria-sort',
-		'ascending'
-	);
-	const positions = (
-		await rows
-			.locator('td[data-col="firstNight"] [data-testid="night-first-position"]')
-			.evaluateAll((els) => els.map((el) => el.getAttribute('data-position')))
-	)
-		.filter((p) => p !== null)
-		.map(Number);
-	// Only rows near the screen have their cells built (near.ts), so check those. Phones
-	// stack each row into a tall block, so fewer rows are near there.
-	expect(positions.length).toBeGreaterThan(3);
-	expect(positions).toEqual([...positions].sort((x, y) => x - y));
-	await table.getByRole('button', { name: 'First night', exact: true }).tap();
-	await expect(table.locator('th[data-col="firstNight"]')).toHaveAttribute(
-		'aria-sort',
-		'descending'
-	);
-
-	// Filter the type column to Demons.
-	// Filters sit in the header row: the funnel beside a column's name opens its choices.
-	await table.getByRole('button', { name: 'Filter Type', exact: true }).tap();
-	const dialog = page.getByRole('dialog', { name: 'Filter Type' });
-	await dialog.getByLabel('Demons').check();
-	await dialog.getByRole('button', { name: 'Close' }).tap();
-	await expect(table.getByRole('button', { name: 'Filter Type (set)' })).toBeVisible();
-	await expect(page.getByTestId('table-count')).toContainText('1 filter');
-	const types = await rows.evaluateAll((trs) => trs.map((tr) => tr.getAttribute('data-type')));
-	expect(types.length).toBeGreaterThan(0);
-	expect(new Set(types)).toEqual(new Set(['demon']));
-
-	// The sort and filters are remembered on this device.
-	await page.reload();
-	await expect(page.getByTestId('table-count')).toContainText('1 filter');
-	await expect(
-		page.getByTestId('character-table').locator('th[data-col="firstNight"]')
-	).toHaveAttribute('aria-sort', 'descending');
-
-	await page.getByRole('button', { name: 'Clear filters' }).tap();
-	await expect(page.getByTestId('character-table').locator('tbody tr')).toHaveCount(181);
-	await expect(page.getByRole('button', { name: 'Clear filters' })).toBeDisabled();
-});
-
 test('the Witch row shows every field, with its icons and flavour text', async ({ page }) => {
 	// Trevor (2026-10-19): "remove card mode ... verify we include all relevant info in the
 	// table". One cell per field (fields.ts); coverage.test.ts maps the data to them.
-	await page.goto('/reference');
-	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Witch');
+	await select(page, 'witch');
 	const row = rowOf(page, 'witch');
 	await expect(row.locator('[data-field="ability"]')).toContainText('Each night, choose a player');
 	for (const field of [
@@ -168,7 +116,7 @@ test('the Witch row shows every field, with its icons and flavour text', async (
 });
 
 test('there is no card view', async ({ page }) => {
-	await page.goto('/reference');
+	await select(page, 'witch');
 	await expect(page.getByTestId('character-table')).toBeVisible();
 	await expect(page.getByRole('button', { name: 'Show as table' })).toHaveCount(0);
 	await expect(page.getByTestId('reference-card')).toHaveCount(0);
@@ -182,19 +130,16 @@ test('a link to one character scrolls to its row', async ({ page }) => {
 test('each :reminder: shows the token it means, and reviewed night text replaces TPI’s', async ({
 	page
 }) => {
-	await page.goto('/reference');
-	const search = page.getByRole('searchbox', { name: 'Search characters' });
-
 	// https://wiki.bloodontheclocktower.com/Pukka: the new target is poisoned; last night's
 	// target dies and their Poisoned token comes off.
-	await search.fill('Pukka');
+	await select(page, 'pukka');
 	const pukka = rowOf(page, 'pukka');
 	const tokens = pukka.getByTestId('night-other').getByTestId('reminder-token');
 	await expect(tokens).toHaveText(['Poisoned', 'Dead', 'Poisoned']);
 	await expect(tokens.nth(2)).toHaveAttribute('title', 'Remove this token');
 
 	// https://wiki.bloodontheclocktower.com/Grandmother: Trevor's reviewed edits.
-	await search.fill('Grandmother');
+	await select(page, 'grandmother');
 	const grandmother = rowOf(page, 'grandmother');
 	await expect(grandmother.getByTestId('night-first').getByTestId('reminder-token')).toHaveText(
 		'Grandchild'
@@ -207,62 +152,17 @@ test('each :reminder: shows the token it means, and reviewed night text replaces
 });
 
 test('Info cards lists the info cards a character brings, or None', async ({ page }) => {
-	await page.goto('/reference');
-	const search = page.getByRole('searchbox', { name: 'Search characters' });
-	await search.fill('Mezepheles');
+	await select(page, 'mezepheles');
 	const card = rowOf(page, 'mezepheles');
 	await expect(card.locator('[data-field="cards"]')).toContainText('Your Secret Word is');
-	await search.fill('Washerwoman');
+	await select(page, 'washerwoman');
 	const washerwoman = rowOf(page, 'washerwoman');
 	await expect(washerwoman.locator('[data-field="cards"]')).toContainText('None');
 });
 
-test('the night columns sort into night order', async ({ page }) => {
-	await page.goto('/reference');
-	const table = page.getByTestId('character-table');
-	await expect(table).toBeVisible();
-	await expect(table.locator('tbody tr')).toHaveCount(181);
-	const witch = table.locator('tr[data-character="witch"]');
-	await witch.scrollIntoViewIfNeeded();
-	await expect(witch).toContainText('Evil');
-	await expect(witch).toContainText('Cursed');
-
-	await page.reload();
-	await expect(page.getByTestId('character-table')).toBeVisible();
-
-	// No Night order tab (Trevor, 2026-10-18): the night columns sort into night order instead.
-	await expect(page.getByRole('tab')).toHaveCount(0);
-	const table2 = page.getByTestId('character-table');
-	for (const [night, label] of [
-		['firstNight', 'First night'],
-		['otherNight', 'Other nights']
-	]) {
-		await table2.getByRole('button', { name: label, exact: true }).tap();
-		await expect(table2.locator(`th[data-col="${night}"]`)).toHaveAttribute(
-			'aria-sort',
-			'ascending'
-		);
-		const positions = (
-			await table2
-				.locator(`td[data-col="${night}"] [data-position]`)
-				.evaluateAll((els) => els.map((el) => Number(el.getAttribute('data-position'))))
-		).filter((n) => n > 0);
-		// Only rows near the screen are built (lazy), so a phone sees fewer.
-		expect(positions.length).toBeGreaterThanOrEqual(5);
-		expect(positions).toEqual([...positions].sort((x, y) => x - y));
-	}
-
-	// Tables scroll inside their own box; the page never scrolls sideways.
-	const overflow = await page.evaluate(
-		() => document.documentElement.scrollWidth - document.documentElement.clientWidth
-	);
-	expect(overflow).toBeLessThanOrEqual(0);
-});
-
 test('token leaves are drawn inside the token, with no setup flower', async ({ page }) => {
 	// Trevor (2026-10-18): the setup change is shown inside the Reference, not as a flower.
-	await page.goto('/reference');
-	await page.getByRole('searchbox').fill('Village Idiot');
+	await select(page, 'villageidiot');
 	const token = page.locator('.token[role="img"]').first();
 	await expect(token).toBeVisible();
 	const face = await token.locator('circle.face').boundingBox();
@@ -282,13 +182,15 @@ test('token leaves are drawn inside the token, with no setup flower', async ({ p
 });
 
 test('the Reference has no token key (Trevor, 2026-10-18)', async ({ page }) => {
-	await page.goto('/reference');
-	await expect(page.getByRole('searchbox', { name: 'Search characters' })).toBeVisible();
+	await select(page, 'witch');
 	await expect(page.getByRole('button', { name: 'Token key' })).toHaveCount(0);
 });
 
 test('rows far below the screen are built only when scrolled near', async ({ page }) => {
-	await page.goto('/reference');
+	// Every character: one selected, with the jinx filter off.
+	await select(page, 'philosopher');
+	await page.getByText('Jinxed with locked', { exact: true }).tap();
+	await expect(page.getByTestId('character-table').locator('tbody tr')).toHaveCount(181);
 	const last = page.getByTestId('character-table').locator('tbody tr').last();
 	await expect(last).toBeAttached();
 	await expect(last.locator('td')).toHaveCount(0);
@@ -299,8 +201,7 @@ test('rows far below the screen are built only when scrolled near', async ({ pag
 test('characters in night text are game badges and reminders are smaller token chips', async ({
 	page
 }) => {
-	await page.goto('/reference');
-	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Witch');
+	await select(page, 'witch');
 	const card = rowOf(page, 'witch');
 	const night = card.getByTestId('night-other');
 	// "The Witch chooses a player." draws the Witch as a badge inside the sentence.
@@ -318,8 +219,7 @@ test('characters in night text are game badges and reminders are smaller token c
 });
 
 test('prep steps show tokens as reminder chips', async ({ page }) => {
-	await page.goto('/reference');
-	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Fortune Teller');
+	await select(page, 'fortuneteller');
 	const card = rowOf(page, 'fortuneteller');
 	const prep = card.locator('[data-field="prep"]');
 	await expect(prep).toContainText('Choose a good player as the');
@@ -331,7 +231,7 @@ test('on a phone the tables stack into labelled rows instead of scrolling sidewa
 	page
 }) => {
 	test.skip(test.info().project.name !== 'phone', 'phones stack; wider screens keep the table');
-	await page.goto('/reference');
+	await select(page, 'witch');
 	const table = page.getByTestId('character-table');
 	const witch = table.locator('tr[data-character="witch"]');
 	await witch.scrollIntoViewIfNeeded();
@@ -353,26 +253,10 @@ test('on a phone the tables stack into labelled rows instead of scrolling sidewa
 	expect(await sideways('.scroll')).toBe(false);
 });
 
-test('"/" jumps to the search field and Esc clears it', async ({ page }) => {
-	await page.goto('/reference');
-	const search = page.getByRole('searchbox', { name: 'Search characters' });
-	await expect(page.getByTestId('table-count')).toHaveText(/^\d+ of \d+/);
-	await page.locator('h1').click();
-	await page.keyboard.press('/');
-	await expect(search).toBeFocused();
-	await expect(search).toHaveValue('');
-	await page.keyboard.type('witch');
-	await expect(search).toHaveValue('witch');
-	await page.keyboard.press('Escape');
-	await expect(search).toHaveValue('');
-	await expect(search).toBeFocused();
-});
-
 test('jinxes start folded; Wiki and Report sit under the name', async ({ page }) => {
 	// Trevor (2026-10-16): "start jinxes collapsed"; "move report and wiki to under the name in
 	// table".
-	await page.goto('/reference');
-	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Alchemist');
+	await select(page, 'alchemist');
 	const row = rowOf(page, 'alchemist');
 	const toggle = row.locator('[data-field="jinxes"]').getByRole('button', { name: 'Jinxes' });
 	await expect(toggle).toHaveAttribute('aria-expanded', 'false');
@@ -386,13 +270,9 @@ test('jinxes start folded; Wiki and Report sit under the name', async ({ page })
 	await expect(name.getByRole('button', { name: 'Report a problem' })).toBeVisible();
 });
 
-test('reminder tokens show their copies and whether setup places them; the table filters by it', async ({
-	page
-}) => {
+test('reminder tokens show their copies and whether setup places them', async ({ page }) => {
 	// Trevor (2026-10-17): "Designate tokens as setup tokens or not setup on the reference".
-	await page.goto('/reference');
-	const search = page.getByRole('searchbox', { name: 'Search characters' });
-	await search.fill('No Dashii');
+	await select(page, 'nodashii');
 	const tokens = rowOf(page, 'nodashii')
 		.locator('[data-field="tokens"]')
 		.getByTestId('board-reminder');
@@ -411,67 +291,26 @@ test('reminder tokens show their copies and whether setup places them; the table
 	await expect(rowsOf('nodashii').first()).toHaveCSS('border-top-width', '0px');
 	await expect(rowsOf('nodashii').nth(1)).not.toHaveCSS('border-top-width', '0px');
 
-	await search.fill('Washerwoman');
+	await select(page, 'washerwoman');
 	await expect(rowsOf('washerwoman')).toHaveText([
 		'TownsfolkPlaced at setup · Goes on: Townsfolk',
 		'WrongPlaced at setup · Goes on: Players, not with Townsfolk'
 	]);
-
-	await search.fill('');
-	const table = page.getByTestId('character-table');
-	await table.getByRole('button', { name: 'Filter Tokens', exact: true }).tap();
-	const dialog = page.getByRole('dialog', { name: 'Filter Tokens' });
-	await dialog.getByLabel('No setup tokens').check();
-	await dialog.getByRole('button', { name: 'Close' }).tap();
-	await expect(table.locator('tr[data-character="imp"]')).toHaveCount(1);
-	await expect(table.locator('tr[data-character="nodashii"]')).toHaveCount(0);
-	await page.getByRole('button', { name: 'Clear filters' }).tap();
 });
 
-test('the table filters characters by edition', async ({ page }) => {
-	// Trevor (2026-10-18): "allow filtering by edition".
-	await page.goto('/reference');
-	const table = page.getByTestId('character-table');
-	await table.getByRole('button', { name: 'Filter Edition', exact: true }).tap();
-	const dialog = page.getByRole('dialog', { name: 'Filter Edition' });
-	await dialog.getByLabel('Trouble Brewing').check();
-	await dialog.getByLabel('Bad Moon Rising').check();
-	await dialog.getByRole('button', { name: 'Close' }).tap();
-	await expect(table.getByRole('button', { name: 'Filter Edition (set)' })).toBeVisible();
-	await expect(page.getByTestId('table-count')).toContainText('1 filter');
-	await expect(table.locator('tr[data-character="imp"]')).toHaveCount(1);
-	await expect(table.locator('tr[data-character="zombuul"]')).toHaveCount(1);
-	await expect(table.locator('tr[data-character="vortox"]')).toHaveCount(0);
-	await page.getByRole('button', { name: 'Clear filters' }).tap();
-	await expect(table.locator('tr[data-character="vortox"]')).toHaveCount(1);
-});
-
-test('the search and its controls sit in the page header', async ({ page }) => {
-	// Trevor (2026-10-18): "move the search bar and controls in character reference in-line
-	// with the header to save space".
+test('the title row has no search, count or Clear filters', async ({ page }) => {
+	// Trevor (2026-11-04): "remove all those useless table controls ... remove x at top right".
 	await page.goto('/reference');
 	const header = page.locator('main header');
-	const search = header.getByRole('searchbox', { name: 'Search characters' });
-	await expect(search).toBeVisible();
-	const title = (await header.getByRole('heading', { level: 1 }).boundingBox())!;
-	const field = (await search.boundingBox())!;
-	if ((page.viewportSize()?.width ?? 0) >= 640) {
-		// Wide enough: on the title's own row, after it (the count may wrap under the search).
-		expect(field.y).toBeLessThan(title.y + title.height);
-		expect(field.y + field.height).toBeGreaterThan(title.y);
-		expect(field.x).toBeGreaterThan(title.x + title.width);
-	} else {
-		// A phone: the row under the title, still inside the header.
-		expect(field.y).toBeGreaterThanOrEqual(title.y + title.height - 1);
-	}
-	// The table's count and Clear filters join the same header.
-	await expect(header.getByTestId('table-count')).toBeVisible();
-	await expect(header.getByRole('button', { name: 'Clear filters' })).toBeVisible();
+	await expect(header.getByRole('heading', { level: 1 })).toBeVisible();
+	await expect(header.getByRole('searchbox')).toHaveCount(0);
+	await expect(page.getByTestId('table-count')).toHaveCount(0);
+	await expect(page.getByRole('button', { name: 'Clear filters' })).toHaveCount(0);
 });
 
 test('Traveller reminders are split blue and red', async ({ page }) => {
 	// Trevor (2026-10-18): "Assign travellers with their proper red/blue color".
-	await page.goto('/reference');
+	await select(page, 'bureaucrat');
 	const token = (name: string) =>
 		page.evaluate(
 			(n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim(),
@@ -479,7 +318,6 @@ test('Traveller reminders are split blue and red', async ({ page }) => {
 		);
 	const rgb = (hex: string) =>
 		`rgb(${[1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(', ')})`;
-	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Bureaucrat');
 	const chip = rowOf(page, 'bureaucrat')
 		.locator('[data-field="tokens"]')
 		.getByTestId('board-reminder')
@@ -493,9 +331,7 @@ test('Traveller reminders are split blue and red', async ({ page }) => {
 test('tapping a token opens that character', async ({ page }) => {
 	// Trevor (2026-10-19): "in character reference, allow clicking token icon in order to open
 	// glossary".
-	await page.goto('/reference');
-	const search = page.getByRole('searchbox', { name: 'Search characters' });
-	await search.fill('Washerwoman');
+	await select(page, 'washerwoman');
 	await rowOf(page, 'washerwoman').getByRole('button', { name: 'About the Washerwoman' }).tap();
 	await expect(page.getByRole('dialog', { name: 'Washerwoman' })).toBeVisible();
 });
@@ -503,8 +339,7 @@ test('tapping a token opens that character', async ({ page }) => {
 test('All data shows everything the app reads about a character, by file', async ({ page }) => {
 	// Trevor (2026-10-28): "a button to show all information our app would use to use the
 	// character".
-	await page.goto('/reference');
-	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Washerwoman');
+	await select(page, 'washerwoman');
 	const row = rowOf(page, 'washerwoman');
 	await row.locator('[data-field="name"]').getByRole('button', { name: 'All data' }).tap();
 	const dialog = page.getByRole('dialog').filter({ hasText: ': all data' });
