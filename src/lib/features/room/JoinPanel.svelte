@@ -14,7 +14,7 @@
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import QrScanner from '#lib/ui/share/QrScanner.svelte';
 	import { QrFrameCollector } from '#lib/core/codes/qr-frames.ts';
-	import { offlineHash, offlineRoomFrom, sharedRefFromHash } from '#lib/features/scripts/share.ts';
+	import { offlineHash, offlineRoomFrom, scannedScriptHash } from '#lib/features/scripts/share.ts';
 	import { avatarPicture } from '#lib/features/player/avatar-picture.svelte.ts';
 	import { playerSettings } from '#lib/features/player/player-settings.svelte.ts';
 	import { viewerKeyFromPassword } from './viewer.svelte.ts';
@@ -348,17 +348,12 @@
 	 * on this app's own /play, whichever site made it, so an offline code needs no internet.
 	 */
 	function openScannedScript(text: string): boolean {
-		let url: URL;
-		try {
-			url = new URL(text.trim());
-		} catch {
-			return false;
-		}
-		if (!/\/(play|scripts)\/?$/.test(url.pathname) || !sharedRefFromHash(url.hash)) return false;
+		const hash = scannedScriptHash(text);
+		if (!hash) return false;
 		scanning = false;
 		// The script travels in the hash, which never reaches the server; the path is resolved.
 		// eslint-disable-next-line svelte/no-navigation-without-resolve
-		void goto(`${resolve('/play')}${url.hash}`);
+		void goto(`${resolve('/play')}${hash}`);
 		return true;
 	}
 </script>

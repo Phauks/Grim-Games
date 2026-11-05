@@ -39,6 +39,7 @@ import ph_books_thin from '~icons/ph/books-thin';
 import ph_bug_thin from '~icons/ph/bug-thin';
 import ph_calculator_thin from '~icons/ph/calculator-thin';
 import ph_camera_thin from '~icons/ph/camera-thin';
+import ph_camera_plus_thin from '~icons/ph/camera-plus-thin';
 import ph_cards_thin from '~icons/ph/cards-thin';
 import ph_caret_circle_down_thin from '~icons/ph/caret-circle-down-thin';
 import ph_caret_down_thin from '~icons/ph/caret-down-thin';
@@ -126,6 +127,7 @@ import ph_hourglass_thin from '~icons/ph/hourglass-thin';
 import ph_house_thin from '~icons/ph/house-thin';
 import ph_house_simple_thin from '~icons/ph/house-simple-thin';
 import ph_identification_card_thin from '~icons/ph/identification-card-thin';
+import ph_image_thin from '~icons/ph/image-thin';
 import ph_info_thin from '~icons/ph/info-thin';
 import ph_key_thin from '~icons/ph/key-thin';
 import ph_leaf_thin from '~icons/ph/leaf-thin';
@@ -282,6 +284,7 @@ const icons: IconMap = {
 	'ph:bug-thin': ph_bug_thin,
 	'ph:calculator-thin': ph_calculator_thin,
 	'ph:camera-thin': ph_camera_thin,
+	'ph:camera-plus-thin': ph_camera_plus_thin,
 	'ph:cards-thin': ph_cards_thin,
 	'ph:caret-circle-down-thin': ph_caret_circle_down_thin,
 	'ph:caret-down-thin': ph_caret_down_thin,
@@ -369,6 +372,7 @@ const icons: IconMap = {
 	'ph:house-thin': ph_house_thin,
 	'ph:house-simple-thin': ph_house_simple_thin,
 	'ph:identification-card-thin': ph_identification_card_thin,
+	'ph:image-thin': ph_image_thin,
 	'ph:info-thin': ph_info_thin,
 	'ph:key-thin': ph_key_thin,
 	'ph:leaf-thin': ph_leaf_thin,

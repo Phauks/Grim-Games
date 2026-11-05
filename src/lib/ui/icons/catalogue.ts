@@ -117,6 +117,8 @@ export const ICON_SLOTS = {
 	print: { label: 'Print', choices: ['ph:printer'] },
 	pasteJson: { label: 'Paste JSON', choices: ['ph:clipboard-text', 'ph:clipboard'] },
 	uploadFile: { label: 'Upload file', choices: ['ph:upload-simple', 'ph:file-arrow-up'] },
+	/** Reads a script from a photo of its printed sheet (plan M54). */
+	photo: { label: 'Take a photo', choices: ['ph:camera-plus', 'ph:image'] },
 	pasteLink: { label: 'Paste link', choices: ['ph:link', 'ph:link-simple'] },
 	changeKind: { label: 'Change kind', choices: ['ph:swap', 'ph:arrows-left-right'] },
 	unlink: { label: 'Unlink', choices: ['ph:link-break', 'ph:link-simple-break'] },

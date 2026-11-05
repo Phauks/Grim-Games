@@ -10,7 +10,8 @@
 	// Written by `npm run cf-typegen` when the Worker is checked.
 	"ignoreUnresolved": ["./worker-configuration.d.ts"],
 	// The Worker runtime's own modules (cloudflare:workers).
-	"ignoreDependencies": ["cloudflare"],
+	// The photo reader's English data is read by path from node_modules (vite.config.ts ocrFiles).
+	"ignoreDependencies": ["cloudflare", "@tesseract.js-data/eng"],
 	// An export the file itself uses (a list behind its type, say) is fine.
 	"ignoreExportsUsedInFile": true,
 	// Exported types document a module's shapes; only values are checked.

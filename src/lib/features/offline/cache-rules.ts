@@ -11,6 +11,8 @@
  *
  * - day and night sound recordings (about 2.7 MB, plan U3), which only a device with day and
  *   night sound turned on plays.
+ * - the photo text reader (`/ocr/`, about 6 MB, plan M54), which only reading a script from a
+ *   photo needs.
  *
  * Those are cached on first use instead (`RUNTIME_CACHE`), and the current script's icons
  * are fetched ahead of time (`keep-offline.ts`) so a game still works with no signal.
@@ -31,6 +33,8 @@ const ICONS = /^\/data\/icons\/(?!generic\/)[^/]+\//;
 const OTHER_SUBSETS = /-(cyrillic|cyrillic-ext|greek|greek-ext|vietnamese)-[^/]*\.woff2$/;
 /** Sound recordings, stored once a device turns on what plays them. */
 const SOUNDS = '/sounds/';
+/** The photo text reader (about 6 MB), stored the first time a photo is read (plan M54). */
+const OCR = '/ocr/';
 
 /** True for a build file the service worker should store at install time. */
 export function precached(path: string): boolean {
@@ -39,6 +43,7 @@ export function precached(path: string): boolean {
 	if (ICONS.test(path)) return false;
 	if (path.endsWith('.woff')) return false;
 	if (path.startsWith(SOUNDS)) return false;
+	if (path.startsWith(OCR)) return false;
 	return !OTHER_SUBSETS.test(path);
 }
 
@@ -49,7 +54,8 @@ export function cachedOnUse(path: string): boolean {
 	return (
 		path.startsWith('/data/icons/') ||
 		path.startsWith('/_app/immutable/') ||
-		path.startsWith(SOUNDS)
+		path.startsWith(SOUNDS) ||
+		path.startsWith(OCR)
 	);
 }
 

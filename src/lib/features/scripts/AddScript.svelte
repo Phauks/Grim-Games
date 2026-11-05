@@ -34,6 +34,7 @@
 	} from './fetch-script.ts';
 	import { relaxJson } from './relaxed-json.ts';
 	import type { ScriptSource } from './saved-scripts.ts';
+	import PhotoScriptDialog from './PhotoScriptDialog.svelte';
 	import ScriptCheckDialog from './ScriptCheckDialog.svelte';
 	import { resolveLink } from './script-links.ts';
 
@@ -72,6 +73,9 @@
 	let errorLink = $state<string | undefined>(undefined);
 	let checking = $state.raw<{ result: ScriptLoadResult; source: ScriptSource } | undefined>();
 	let fileInput: HTMLInputElement | undefined = $state();
+	let photoInput: HTMLInputElement | undefined = $state();
+	let photoOpen = $state(false);
+	let photoDialog: PhotoScriptDialog | undefined = $state();
 
 	const canReadClipboard =
 		typeof navigator !== 'undefined' && typeof navigator.clipboard?.readText === 'function';
@@ -233,6 +237,18 @@
 		if (file) void run(() => readScriptFile(file));
 	}
 
+	/** A photo of a printed script: read on the device, then checked like any other (plan M54). */
+	function onPhoto(event: Event) {
+		const input = event.currentTarget as HTMLInputElement;
+		const file = input.files?.[0];
+		input.value = '';
+		if (!file || !photoDialog) return;
+		addOpen = false;
+		photoDialog.reset();
+		photoOpen = true;
+		void photoDialog.addPhoto(file);
+	}
+
 	function openAdd() {
 		clearError();
 		addOpen = true;
@@ -318,6 +334,16 @@
 	aria-label={t('scripts.picker.fileLabel')}
 	onchange={onFile}
 />
+<input
+	bind:this={photoInput}
+	class="file"
+	type="file"
+	accept="image/*"
+	capture="environment"
+	aria-label={t('scripts.picker.photo')}
+	data-testid="photo-input"
+	onchange={onPhoto}
+/>
 
 {#snippet errorLine()}
 	<p class="error" role="status">{error}</p>
@@ -367,10 +393,15 @@
 		</div>
 	</div>
 	<div class="field">
-		<!-- Choosing a file adds it straight away, as it always has. -->
-		<Button icon="uploadFile" disabled={busy} onclick={() => fileInput?.click()}
-			>{t('scripts.picker.file')}</Button
-		>
+		<!-- Choosing a file adds it straight away, as it always has; a photo opens what it read. -->
+		<div class="row">
+			<Button icon="uploadFile" disabled={busy} onclick={() => fileInput?.click()}
+				>{t('scripts.picker.file')}</Button
+			>
+			<Button icon="photo" disabled={busy} onclick={() => photoInput?.click()}
+				>{t('scripts.picker.photo')}</Button
+			>
+		</div>
 	</div>
 	{@render errorLine()}
 	{#snippet actions()}
@@ -406,6 +437,13 @@
 		/>
 	{/snippet}
 </Dialog>
+
+<PhotoScriptDialog
+	bind:this={photoDialog}
+	bind:open={photoOpen}
+	onconfirm={(script) =>
+		void save(script, script.edition ? { kind: 'edition' } : { kind: 'photo' })}
+/>
 
 <ScriptCheckDialog
 	bind:open={checkOpen}

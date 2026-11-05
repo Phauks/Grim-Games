@@ -62,6 +62,7 @@ import ph_heart from '~icons/ph/heart';
 import ph_hexagon from '~icons/ph/hexagon';
 import ph_hourglass from '~icons/ph/hourglass';
 import ph_house_simple from '~icons/ph/house-simple';
+import ph_image from '~icons/ph/image';
 import ph_key from '~icons/ph/key';
 import ph_leaf from '~icons/ph/leaf';
 import ph_link_simple from '~icons/ph/link-simple';
@@ -177,6 +178,7 @@ const icons: IconMap = {
 	'ph:hexagon': ph_hexagon,
 	'ph:hourglass': ph_hourglass,
 	'ph:house-simple': ph_house_simple,
+	'ph:image': ph_image,
 	'ph:key': ph_key,
 	'ph:leaf': ph_leaf,
 	'ph:link-simple': ph_link_simple,

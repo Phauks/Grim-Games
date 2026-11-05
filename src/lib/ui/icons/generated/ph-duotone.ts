@@ -39,6 +39,7 @@ import ph_books_duotone from '~icons/ph/books-duotone';
 import ph_bug_duotone from '~icons/ph/bug-duotone';
 import ph_calculator_duotone from '~icons/ph/calculator-duotone';
 import ph_camera_duotone from '~icons/ph/camera-duotone';
+import ph_camera_plus_duotone from '~icons/ph/camera-plus-duotone';
 import ph_cards_duotone from '~icons/ph/cards-duotone';
 import ph_caret_circle_down_duotone from '~icons/ph/caret-circle-down-duotone';
 import ph_caret_down_duotone from '~icons/ph/caret-down-duotone';
@@ -126,6 +127,7 @@ import ph_hourglass_duotone from '~icons/ph/hourglass-duotone';
 import ph_house_duotone from '~icons/ph/house-duotone';
 import ph_house_simple_duotone from '~icons/ph/house-simple-duotone';
 import ph_identification_card_duotone from '~icons/ph/identification-card-duotone';
+import ph_image_duotone from '~icons/ph/image-duotone';
 import ph_info_duotone from '~icons/ph/info-duotone';
 import ph_key_duotone from '~icons/ph/key-duotone';
 import ph_leaf_duotone from '~icons/ph/leaf-duotone';
@@ -282,6 +284,7 @@ const icons: IconMap = {
 	'ph:bug-duotone': ph_bug_duotone,
 	'ph:calculator-duotone': ph_calculator_duotone,
 	'ph:camera-duotone': ph_camera_duotone,
+	'ph:camera-plus-duotone': ph_camera_plus_duotone,
 	'ph:cards-duotone': ph_cards_duotone,
 	'ph:caret-circle-down-duotone': ph_caret_circle_down_duotone,
 	'ph:caret-down-duotone': ph_caret_down_duotone,
@@ -369,6 +372,7 @@ const icons: IconMap = {
 	'ph:house-duotone': ph_house_duotone,
 	'ph:house-simple-duotone': ph_house_simple_duotone,
 	'ph:identification-card-duotone': ph_identification_card_duotone,
+	'ph:image-duotone': ph_image_duotone,
 	'ph:info-duotone': ph_info_duotone,
 	'ph:key-duotone': ph_key_duotone,
 	'ph:leaf-duotone': ph_leaf_duotone,
