@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 import { menuButton } from './shell.ts';
 
-// Trevor (2026-10-16): New game, Continue game, Scripts and the other destinations in a left
+// Trevor (2026-10-16): New game, Join game, Scripts and the other destinations in a left
 // sidebar reachable from every part of the app; a drawer on phones.
 
 test('on a phone, the header menu opens a drawer with every destination', async ({ page }) => {
@@ -20,7 +20,7 @@ test('on a phone, the header menu opens a drawer with every destination', async 
 	for (const name of [
 		'Home',
 		'New game',
-		'Continue game',
+		'Join game',
 		'History',
 		'Search',
 		'Library',
@@ -50,7 +50,7 @@ test('on a phone, the header menu opens a drawer with every destination', async 
 	await expect(drawer.getByRole('link').first()).toHaveText('Home');
 	await expect(
 		drawer.getByRole('list', { name: 'Play', exact: true }).getByRole('link')
-	).toHaveText(['New game', 'Continue game']);
+	).toHaveText(['New game', 'Join game']);
 	// History sits under You with Account and Friends (Trevor, 2026-10-29).
 	await expect(drawer.getByRole('list', { name: 'You', exact: true }).getByRole('link')).toHaveText(
 		['Account', 'Friends', 'History']
@@ -146,5 +146,27 @@ test.describe('on a computer', () => {
 		await expect(nav.getByTestId(/^nav-action-/)).toHaveText(['Settings', 'Report an issue']);
 		await nav.getByRole('button', { name: 'Report an issue' }).click();
 		await expect(page.getByRole('dialog', { name: 'Report' })).toBeVisible();
+	});
+});
+
+// Trevor, 2026-11-05: scrolled, the sidebar's pinned Play heading stopped below the sidebar's
+// top, so New game showed above it. It now pins at the very top, with nothing above it.
+test.describe('on a short computer screen', () => {
+	test.use({ viewport: { width: 1280, height: 420 }, isMobile: false, hasTouch: false });
+
+	test("the sidebar's section headings pin at its own top", async ({ page }) => {
+		test.skip(test.info().project.name !== 'tablet', 'one desktop run is enough');
+		await page.goto('/privacy');
+		const nav = page.getByRole('navigation', { name: 'Menu' });
+		const play = nav.getByRole('button', { name: 'Play', exact: true });
+		await expect(play).toBeVisible();
+		const scroller = nav.locator('[data-own-scroll]');
+		await scroller.evaluate((box) => (box.scrollTop = 180));
+		await expect
+			.poll(async () => {
+				const box = (await scroller.boundingBox())!;
+				return (await play.boundingBox())!.y - box.y;
+			})
+			.toBeLessThan(1);
 	});
 });

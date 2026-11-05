@@ -2,10 +2,10 @@ import { expect, test, type Page } from '@playwright/test';
 
 // The Character Lab (plan M37, Trevor 2026-11-03: "lock philosopher and tea lady on a script
 // and then just keep cycling through or manually changing like the different opposing
-// characters"), the Characters page for everyone since M45, with only the selected characters
-// listed since M47 (Trevor, 2026-11-04: "do not list all on the left side when none are
-// selected. just put a + button to add characters"). The Philosopher's one jinx is with the
-// Bounty Hunter (static/data/jinxes.json).
+// characters"), the Characters page for everyone since M45, with one core character since M47
+// (Trevor, 2026-11-05: "Just allow setting what the core one is on the left side, start
+// empty"), tested against its jinx partners on the right. The Philosopher's one jinx is with
+// the Bounty Hunter (static/data/jinxes.json).
 
 /** A computer window shows the lab beside the table, with the game above it; else the bar. */
 const onComputer = async (page: Page) => {
@@ -31,13 +31,12 @@ async function labSeats(page: Page) {
 	return page.getByTestId('seat');
 }
 
-/** Selects `name` with +, searching for it as when adding a character mid-game. */
+/** Makes `name` the core character with +, searching for it as when adding one mid-game. */
 async function lock(page: Page, name: string) {
 	await page.getByRole('button', { name: 'Select character' }).tap();
 	const picker = page.getByRole('dialog', { name: 'Select character' });
 	await picker.getByRole('searchbox').fill(name);
 	await picker.getByRole('button', { name: new RegExp(`^${name}`) }).tap();
-	await page.keyboard.press('Escape');
 	await expect(picker).toBeHidden();
 }
 
@@ -51,62 +50,67 @@ async function loadGame(page: Page) {
 			.tap();
 }
 
-test('lists nothing until a character is selected, then it and its jinx partners', async ({
+test('starts empty; the core character alone on the left, its jinx partners on the right', async ({
 	page
 }) => {
 	await page.goto('/reference');
 	await expect(
 		page.getByRole('heading', { name: 'Characters', level: 1, exact: true })
 	).toBeVisible();
-	// No search, filters or count in the title row.
+	// No search, filters or count in the title row, and nothing listed.
 	await expect(page.getByRole('searchbox', { name: 'Search characters' })).toHaveCount(0);
 	const rows = page.getByTestId('character-table').locator('tr[data-character]');
 	await expect(rows).toHaveCount(0);
-	await expect(page.getByTestId('lab-locked')).toHaveText('None');
+	await expect(page.getByTestId('lab-core')).toHaveText('None');
+	await expect(page.getByText('Jinxed with locked')).toHaveCount(0);
 
 	await lock(page, 'Philosopher');
-	// Locked stays at the top; Jinxed with locked leaves its one jinx partner under it.
-	await expect(rows).toHaveCount(2);
+	// Only the core character on the left, without its jinx partners under it.
+	await expect(rows).toHaveCount(1);
 	await expect(rows.nth(0)).toHaveAttribute('data-character', 'philosopher');
-	await expect(rows.nth(0)).toHaveAttribute('data-locked', '');
-	await expect(rows.nth(1)).toHaveAttribute('data-character', 'bountyhunter');
-	await expect(page.getByTestId('lab-locked')).toContainText('Philosopher');
+	await expect(page.getByTestId('lab-core')).toContainText('Philosopher');
 	await expect(page.getByTestId('lab-position').first()).toHaveText('1 of 1');
-
-	// The table has no sort, filter or column controls.
 	await expect(
 		page.getByTestId('character-table').getByRole('button', { name: /^Columns/ })
 	).toHaveCount(0);
 
+	// Its one partner on the right, with their jinx.
 	const computer = await onComputer(page);
 	const lab = await labControls(page);
+	await expect(lab.getByTestId('lab-partners').getByRole('button')).toHaveCount(1);
+	await expect(lab.getByTestId('lab-partners')).toContainText('Bounty Hunter');
 	await expect(lab.getByTestId('lab-jinxes').getByTestId('jinx-note')).toHaveCount(1);
 	await expect(lab.getByText('Jinx partner is')).toHaveCount(0);
 	if (!computer) await page.keyboard.press('Escape');
-
-	// Turning the jinx filter off brings every character back as a partner.
-	await page.getByText('Jinxed with locked', { exact: true }).tap();
-	await expect(page.getByTestId('lab-position').first()).toHaveText(/^1 of 1\d\d$/);
-	await page.getByText('Jinxed with locked', { exact: true }).tap();
-	await expect(page.getByTestId('lab-position').first()).toHaveText('1 of 1');
 
 	await loadGame(page);
 	const seats = await labSeats(page);
 	await expect(seats.first()).toHaveAttribute('aria-label', /Philosopher/);
 	await expect(seats.nth(1)).toHaveAttribute('aria-label', /Bounty Hunter/);
 
-	// The lab's game is not one being played: Continue game doesn't list it.
+	// The lab's game is not one being played: Join game doesn't list it.
 	await page.goto('/join');
-	await expect(page.getByRole('heading', { name: 'Continue game', level: 1 })).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Join game', level: 1 })).toBeVisible();
 	await expect(page.getByRole('link', { name: /Character Lab/ })).toHaveCount(0);
 
-	// An old Lab link opens the Characters page, with the lock kept.
+	// An old Lab link opens the Characters page, with the core character kept.
 	await page.goto('/character-lab');
 	await expect(page).toHaveURL(/\/reference$/);
 	await expect(rows.nth(0)).toHaveAttribute('data-character', 'philosopher');
 });
 
-test('Select character toggles locks, filtered to characters with jinxes', async ({ page }) => {
+test('a character with no jinx says None once', async ({ page }) => {
+	await page.goto('/reference');
+	await lock(page, 'Chef');
+	const computer = await onComputer(page);
+	const lab = await labControls(page);
+	await expect(lab.getByText('None', { exact: true })).toHaveCount(1);
+	if (!computer) await page.keyboard.press('Escape');
+});
+
+test('Select character picks the core one, filtered to characters with jinxes', async ({
+	page
+}) => {
 	await page.goto('/reference');
 	await page.getByRole('button', { name: 'Select character' }).tap();
 	const picker = page.getByRole('dialog', { name: 'Select character' });
@@ -116,12 +120,12 @@ test('Select character toggles locks, filtered to characters with jinxes', async
 	const philosopher = picker.getByRole('button', { name: /^Philosopher/ });
 	await expect(philosopher.getByTestId('jinx-count')).toHaveText('1 jinx');
 	await philosopher.tap();
-	await expect(philosopher).toHaveAttribute('aria-pressed', 'true');
-	// A second tap unlocks it again.
-	await philosopher.tap();
-	await expect(philosopher).toHaveAttribute('aria-pressed', 'false');
-	await page.keyboard.press('Escape');
-	await expect(page.getByTestId('lab-locked')).toHaveText('None');
+	await expect(picker).toBeHidden();
+	await expect(page.getByTestId('lab-core')).toContainText('Philosopher');
+	// Picking another replaces it.
+	await lock(page, 'Summoner');
+	await expect(page.getByTestId('lab-core')).toContainText('Summoner');
+	await expect(page.getByTestId('character-table').locator('tr[data-character]')).toHaveCount(1);
 });
 
 test('steps through jinx partners with the arrows, one fresh game each', async ({ page }) => {
@@ -151,10 +155,15 @@ test('on a computer window the game opens on the right of the table', async ({ p
 	await panel.getByRole('button', { name: 'Load game' }).tap();
 	const table = await page.getByTestId('character-table').boundingBox();
 	const frame = await page.getByTestId('lab-frame').boundingBox();
-	const controls = await panel.getByRole('button', { name: 'Load game' }).boundingBox();
-	// The game on the right, at the top, with the controls under it and no Open the game.
+	const settings = await panel.getByTestId('lab-settings').boundingBox();
+	const partners = await panel.getByTestId('lab-partners').boundingBox();
+	// The game on the right, at the top and as wide as the panel, with no caption; its
+	// settings under it, then the jinx partners, and no Open the game.
 	expect(frame!.x).toBeGreaterThan(table!.x + table!.width - 1);
-	expect(controls!.y).toBeGreaterThan(frame!.y + frame!.height - 1);
+	expect(frame!.width).toBeGreaterThan(settings!.width - 10);
+	expect(settings!.y).toBeGreaterThan(frame!.y + frame!.height - 1);
+	expect(partners!.y).toBeGreaterThan(settings!.y + settings!.height - 1);
+	await expect(page.getByTestId('lab-frame').locator('figcaption')).toHaveCount(0);
 	await expect(panel.getByText('Open the game')).toHaveCount(0);
 	const seats = page.getByTestId('lab-frame').locator('iframe').contentFrame().getByTestId('seat');
 	await expect(seats.first()).toHaveAttribute('aria-label', /Philosopher/);
@@ -187,4 +196,21 @@ test('Apply setup tokens off seats the characters as they are', async ({ page })
 	const seats = await labSeats(page);
 	await expect(seats.nth(0)).toHaveAttribute('aria-label', /Marionette/);
 	await expect(seats.nth(0)).not.toHaveAttribute('aria-label', /believes they are/);
+});
+
+// Trevor, 2026-11-05: "what day of the game to start on".
+test('Start on opens the game on a later day', async ({ page }) => {
+	await page.goto('/reference');
+	await lock(page, 'Philosopher');
+	const computer = await onComputer(page);
+	const lab = await labControls(page);
+	await lab.getByRole('combobox', { name: 'Start on' }).tap();
+	await page.getByRole('option', { name: 'Day 2', exact: true }).tap();
+	if (!computer) await page.keyboard.press('Escape');
+	await loadGame(page);
+	const frame = page.getByTestId('lab-frame');
+	const board = (await frame.isVisible()) ? frame.locator('iframe').contentFrame() : page;
+	await expect(board.getByRole('button', { name: 'Execution', exact: true })).toBeVisible();
+	await expect(board.getByText('Day 2', { exact: true }).first()).toBeVisible();
+	await expect(board.getByRole('button', { name: 'End night', exact: true })).toHaveCount(0);
 });

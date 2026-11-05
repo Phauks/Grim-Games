@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import { addNote, expectNotes, noteRows, rewriteNote } from './notes.ts';
 import { openProfile, setPlayerName } from './player-name.ts';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
@@ -56,9 +56,22 @@ async function setChoice(
 }
 
 async function typeCode(phone: Page, code: string) {
-	const field = phone.getByRole('textbox', { name: 'Room code from the Storyteller' });
+	const field = phone.getByRole('textbox', { name: 'Room Code' });
+	// It changes every game, so autofill and password managers leave it alone (Trevor, 2026-11-05).
+	await expect(field).toHaveAttribute('autocomplete', 'off');
+	await expect(field).toHaveAttribute('data-1p-ignore', /.*/);
 	await field.tap();
 	await field.pressSequentially(code);
+}
+
+/** A masked secret that password managers leave alone: dots, but never type="password". */
+async function expectSecret(field: Locator) {
+	await expect(field).toHaveAttribute('type', 'text');
+	await expect(field).toHaveAttribute('autocomplete', 'off');
+	await expect(field).toHaveAttribute('data-1p-ignore', /.*/);
+	await expect(field).toHaveAttribute('data-lpignore', 'true');
+	await expect(field).toHaveAttribute('data-bwignore', /.*/);
+	await expect(field).toHaveCSS('-webkit-text-security', 'disc');
 }
 
 /** Opens Grim view from Join game with the room code and a password, past the promise. */
@@ -1192,7 +1205,7 @@ test('a join screen shows nothing from the phone until the room sends its script
 	await expect(phone.getByRole('heading', { name: 'Bad Moon Rising', level: 1 })).toBeVisible();
 	// A code no room has: only the join form, none of the phone's own script.
 	await phone.goto('/join/000000');
-	await expect(phone.getByRole('heading', { name: 'Continue game', level: 1 })).toBeVisible();
+	await expect(phone.getByRole('heading', { name: 'Join game', level: 1 })).toBeVisible();
 	await expect(phone.getByRole('tab')).toHaveCount(0);
 	await expect(phone.getByText('Bad Moon Rising')).toHaveCount(0);
 
@@ -1266,7 +1279,7 @@ test('a phone can type a code, and wrong codes say so', async ({ page }) => {
 	await page.goto('/join');
 	const join = page.getByRole('button', { name: 'Join as player' });
 	await expect(join).toBeDisabled();
-	await page.getByRole('textbox', { name: 'Room code from the Storyteller' }).fill('000 001');
+	await page.getByRole('textbox', { name: 'Room Code' }).fill('000 001');
 	// No room has this code, so the page says so before anyone joins (Trevor, 2026-10-19).
 	await expect(page.getByTestId('room-preview')).toHaveText('No open game has this code.');
 	await expect(join).toBeDisabled();
@@ -1303,7 +1316,7 @@ test('a typed code shows the game it opens before the phone joins', async ({
 	const preview = phone.getByTestId('room-preview');
 	const join = phone.getByRole('button', { name: 'Join as player' });
 	const before = (await preview.boundingBox())!;
-	const field = phone.getByRole('textbox', { name: 'Room code from the Storyteller' });
+	const field = phone.getByRole('textbox', { name: 'Room Code' });
 	await field.tap();
 	await field.pressSequentially(code);
 	await expect(preview.getByText('Trouble Brewing', { exact: true })).toBeVisible();
@@ -1338,13 +1351,13 @@ test('Join game in the menu takes a typed code, with spaces, and says when no ga
 }) => {
 	await page.goto('/');
 	await menuButton(page).tap();
-	await page.getByRole('link', { name: 'Continue game' }).tap();
+	await page.getByRole('link', { name: 'Join game' }).tap();
 	await expect(page).toHaveURL(/\/join$/);
-	await expect(page.getByRole('heading', { name: 'Continue game', level: 1 })).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Join game', level: 1 })).toBeVisible();
 	// Nothing to print or share before a game is joined, so neither shows (Trevor, 2026-10-23).
 	for (const name of ['Print script', 'Share script'])
 		await expect(page.getByRole('button', { name })).toHaveCount(0);
-	const field = page.getByRole('textbox', { name: 'Room code from the Storyteller' });
+	const field = page.getByRole('textbox', { name: 'Room Code' });
 	await field.fill(' 482-913 ');
 	// No room has this code, so the screen says so in place and Enter doesn't leave it.
 	await expect(page.getByTestId('room-preview')).toHaveText('No open game has this code.');
@@ -1358,7 +1371,7 @@ test('the room code goes in one box per digit, and takes no more than the code h
 }) => {
 	// Trevor (2026-10-18): limit entry to the code's real length, with a box for each digit.
 	await page.goto('/join');
-	const field = page.getByRole('textbox', { name: 'Room code from the Storyteller' });
+	const field = page.getByRole('textbox', { name: 'Room Code' });
 	const boxes = page.locator('.code-field .box');
 	const join = page.getByRole('button', { name: 'Join as player' });
 	await expect(boxes).toHaveCount(6);
@@ -1509,9 +1522,10 @@ test('the room code and a Grim view password open the grimoire, a new password e
 	// Grim view is on Share's Grimoire tab (Trevor, 2026-10-31).
 	await page.getByRole('tab', { name: 'Grimoire' }).tap();
 	const watch = page.getByTestId('watch-link');
-	// A password field (Trevor, 2026-10-22): masked, with an eye button that shows it.
+	// Masked, with an eye button that shows it (Trevor, 2026-10-22), but not a password field,
+	// so password managers don't offer to save it (Trevor, 2026-11-05).
 	const password = watch.getByLabel('Grim view password', { exact: true });
-	await expect(password).toHaveAttribute('type', 'password');
+	await expectSecret(password);
 	// In the plain account font, not the capitals-only control font, so case reads exactly.
 	await expect(password).not.toHaveCSS('font-family', /Cinzel/);
 	// In its place, but off while Grim view is.
@@ -1548,10 +1562,10 @@ test('the room code and a Grim view password open the grimoire, a new password e
 	expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(made);
 	const eye = watch.getByRole('button', { name: 'Show password' });
 	await eye.tap();
-	await expect(password).toHaveAttribute('type', 'text');
+	await expect(password).not.toHaveCSS('-webkit-text-security', 'disc');
 	await expect(eye).toHaveAttribute('aria-pressed', 'true');
 	await eye.tap();
-	await expect(password).toHaveAttribute('type', 'password');
+	await expectSecret(password);
 
 	// A wrong password says so.
 	await phone.reload();
@@ -1561,7 +1575,7 @@ test('the room code and a Grim view password open the grimoire, a new password e
 	await grimView.tap();
 	const ask = phone.getByRole('dialog', { name: 'Grim view' });
 	const typed = ask.getByLabel('Grim view password', { exact: true });
-	await expect(typed).toHaveAttribute('type', 'password');
+	await expectSecret(typed);
 	await expect(typed).not.toHaveCSS('font-family', /Cinzel/);
 	await expect(ask.getByRole('button', { name: 'Show password' })).toBeVisible();
 	await typed.fill('candle');
@@ -2940,9 +2954,7 @@ test("Scan a code on Join game reads the Share screen's QR code into the code bo
 		timeout: 15_000
 	});
 	await expect(phone.getByRole('dialog', { name: 'Scan a code' })).toBeHidden();
-	await expect(phone.getByRole('textbox', { name: 'Room code from the Storyteller' })).toHaveValue(
-		code
-	);
+	await expect(phone.getByRole('textbox', { name: 'Room Code' })).toHaveValue(code);
 	await phone.getByRole('button', { name: 'Join as player' }).tap();
 	await expect(phone).toHaveURL(new RegExp(`/join/${code}$`));
 	await expect(phone.getByTestId('join-status')).toHaveText('');

@@ -111,7 +111,7 @@ test("Search shows a script's own logo beside its name, and in its details", asy
 	await expect(page.getByTestId('script-details-name').locator('img')).toHaveAttribute('src', LOGO);
 });
 
-test("Continue game shows each game's script logo beside its name", async ({ page }) => {
+test("Join game shows each game's script logo beside its name", async ({ page }) => {
 	// Trevor (2026-10-18): "resume game should include script logo".
 	await startGame(page);
 	await page.goto('/join');

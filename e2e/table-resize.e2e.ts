@@ -4,12 +4,10 @@ import { touchDrag } from './touch.ts';
 const width = (cell: Locator) => cell.evaluate((el) => el.getBoundingClientRect().width);
 
 async function openTable(page: Page) {
-	// Every character: one selected, with the jinx filter off (plan M47).
-	await page.goto('/reference#philosopher');
+	// The lab's core character, alone (plan M47).
+	await page.goto('/reference#witch');
 	const table = page.getByTestId('character-table');
-	await expect(table.locator('tbody tr')).toHaveCount(2);
-	await page.getByText('Jinxed with locked', { exact: true }).tap();
-	await expect(table.locator('tbody tr')).toHaveCount(181);
+	await expect(table.locator('tbody tr')).toHaveCount(1);
 	return table;
 }
 
@@ -52,7 +50,7 @@ test('table columns resize by dragging their header edge, and remember it', asyn
 	// Remembered on this device.
 	await page.reload();
 	const again = page.getByTestId('character-table');
-	await expect(again.locator('tbody tr')).toHaveCount(181);
+	await expect(again.locator('tbody tr')).toHaveCount(1);
 	const kept = again.locator('thead th[data-col="ability"]');
 	await expect.poll(() => width(kept)).toBeCloseTo(dragged, 0);
 

@@ -7,13 +7,16 @@
  * A script may name a background image (`_meta.background`, a link). It is only offered, and
  * only fetched once the Storyteller chooses it.
  */
+import { parseMoving, type MovingChoice } from '#lib/core/backgrounds/moving.ts';
 import { unpackPicture } from '#lib/ui/picked-picture.ts';
 
 export type BackgroundChoice =
 	| { kind: 'none' }
 	| { kind: 'image'; image: Blob }
 	| { kind: 'script' }
-	| { kind: 'preset'; id: PresetId };
+	| { kind: 'preset'; id: PresetId }
+	/** A moving background and its settings (M43, core/backgrounds/moving.ts). */
+	| ({ kind: 'moving' } & MovingChoice);
 
 /**
  * Built-in backgrounds (Trevor, 2026-10-16), drawn in CSS so there is nothing to license
@@ -96,6 +99,10 @@ function parse(raw: unknown): BackgroundChoice | undefined {
 	const value = raw as { kind?: unknown; image?: unknown; id?: unknown };
 	if (value.kind === 'none' || value.kind === 'script') return { kind: value.kind };
 	if (value.kind === 'preset' && isPreset(value.id)) return { kind: 'preset', id: value.id };
+	if (value.kind === 'moving') {
+		const moving = parseMoving(value);
+		return moving && { kind: 'moving', ...moving };
+	}
 	if (value.kind === 'image' && value.image instanceof Blob)
 		return { kind: 'image', image: value.image };
 	return undefined;

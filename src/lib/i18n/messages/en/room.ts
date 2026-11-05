@@ -104,11 +104,11 @@ export const room = {
 	'room.refreshText':
 		"Everyone's phone leaves the room and the old code stops working. The grimoire is not changed.",
 	// Players' join pages
-	'room.joinTitle': 'Continue game',
+	'room.joinTitle': 'Join game',
 	'room.pageTitle': 'Room',
 	'room.notACode': 'That is not a room code. Codes are six digits.',
 	'room.closedOrWrong': 'This room is closed, or the code is wrong.',
-	'room.codeLabel': 'Room code from the Storyteller',
+	'room.codeLabel': 'Room Code',
 	'room.join': 'Join as player',
 	'room.grimView': 'Grim view',
 	'room.moreWays': 'More ways to join',

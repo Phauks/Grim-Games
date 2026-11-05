@@ -61,7 +61,7 @@ async function openTransfer(page: Page, board: string, code: string): Promise<st
 /** On Join game, types the room code and opens ⋯ > Room transfer. */
 async function claim(other: Page, code: string) {
 	await other.goto('/join');
-	const field = other.getByRole('textbox', { name: 'Room code from the Storyteller' });
+	const field = other.getByRole('textbox', { name: 'Room Code' });
 	await field.tap();
 	await field.pressSequentially(code);
 	await expect(other.getByTestId('room-preview')).toContainText('Trouble Brewing');

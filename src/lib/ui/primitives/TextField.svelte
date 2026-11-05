@@ -21,7 +21,13 @@
 		multiline?: boolean;
 		/** Visible rows of a multi-line field. */
 		rows?: number;
-		type?: 'text' | 'url' | 'email' | 'search' | 'password';
+		/**
+		 * `password` only for an account password (sign-in, setting one). `secret` is any other
+		 * masked value, such as a room's Grim view password: it is masked and has the eye like a
+		 * password, but is a plain text input that password managers are told to leave alone
+		 * (Trevor, 2026-11-05: they kept offering to save room secrets that change all the time).
+		 */
+		type?: 'text' | 'url' | 'email' | 'search' | 'password' | 'secret';
 		inputmode?: HTMLInputAttributes['inputmode'];
 		/** Off by default in a single-line field; `email` or `one-time-code` where the browser can fill it in. */
 		autocomplete?: HTMLInputAttributes['autocomplete'];
@@ -95,7 +101,9 @@
 	 * field should have eyeball"), so a glance at the screen doesn't give it away.
 	 */
 	let revealed = $state(false);
-	const inputType = $derived(type === 'password' && revealed ? 'text' : type);
+	const secret = $derived(type === 'secret');
+	const masked = $derived(type === 'password' || secret);
+	const inputType = $derived(secret || (type === 'password' && revealed) ? 'text' : type);
 
 	let area = $state<HTMLTextAreaElement>();
 	$effect(() => {
@@ -186,7 +194,7 @@
 		<ClearableField
 			bind:value
 			{disabled}
-			end={type === 'password' && !end ? eye : end}
+			end={masked && !end ? eye : end}
 			onclear={() => oninput?.('')}
 		>
 			<input
@@ -198,6 +206,11 @@
 				{required}
 				{disabled}
 				autocomplete={autocomplete ?? 'off'}
+				class:hidden-text={secret && !revealed}
+				data-1p-ignore={secret || undefined}
+				data-lpignore={secret ? 'true' : undefined}
+				data-bwignore={secret || undefined}
+				data-form-type={secret ? 'other' : undefined}
 				{enterkeyhint}
 				{spellcheck}
 				aria-invalid={invalid || undefined}
@@ -264,6 +277,10 @@
 	.autogrow textarea {
 		max-height: 60dvh;
 		resize: none;
+	}
+	/* A secret's dots without type="password", which password managers would offer to save. */
+	.hidden-text {
+		-webkit-text-security: disc;
 	}
 	.plain,
 	.plain input {

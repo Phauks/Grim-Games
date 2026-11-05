@@ -362,18 +362,18 @@
 					/>
 				</div>
 
-				<!-- The count under the table; always there. -->
+				<!-- The count under the table; always there. A load error takes its place, so
+				     no space is held for one (Trevor, 2026-11-05: use the room under the list). -->
 				<div class="more" data-testid="picker-more">
-					<p class="status" role="status" data-testid="picker-status">{search.status}</p>
+					{#if error}
+						<p class="status error" role="status" data-testid="file-error" title={error}>
+							{error}
+						</p>
+					{:else}
+						<p class="status" role="status" data-testid="picker-status">{search.status}</p>
+					{/if}
 				</div>
 			</div>
-
-			<section>
-				<!-- Load errors outside a dialog; the line is always there, so no reflow. -->
-				<p class="error" role="status" data-testid="file-error">
-					{error}
-				</p>
-			</section>
 		</div>
 
 		<aside
@@ -382,7 +382,7 @@
 			aria-label={t('scripts.details.label')}
 			inert={narrow && !paneOpen}
 		>
-			<div class="pane-scroll">
+			<div class="pane-scroll" data-own-scroll>
 				<ScriptView
 					listing={baseListing}
 					data={search.data}
@@ -647,15 +647,7 @@
 		flex: 1;
 		min-width: 0;
 	}
-	section {
-		display: grid;
-		gap: var(--space-2);
-	}
-	/* Room for three lines is always reserved, so an error never moves the buttons. */
 	.error {
-		min-height: 3lh;
-		margin: 0;
 		color: var(--evil-text);
-		overflow-wrap: anywhere;
 	}
 </style>

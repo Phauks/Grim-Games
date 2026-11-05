@@ -1,8 +1,10 @@
 /**
- * The Character Lab's choices, kept on this device (plans M37, M45): the setup, where in the
- * list of opponents it is and the game it last loaded. Stored with a version, so a newer build
- * reads what an older one saved; M37's Works and Problem marks, and M45's place for the opponent, are dropped (Trevor,
- * 2026-11-04: "remove works and error, just make the report button there").
+ * The Character Lab's choices, kept on this device (plans M37, M45, M47): the core character,
+ * the setup, where in the list of opponents it is and the game it last loaded. Stored with a
+ * version, so a newer build reads what an older one saved. Dropped on read: M37's Works and
+ * Problem marks (Trevor, 2026-11-04: "remove works and error"), M45's place for the opponent
+ * and jinx filter, and every locked character after the first, which becomes the core one
+ * (Trevor, 2026-11-05: "the whole lock system is weird").
  */
 import type { LabFiller } from '#lib/core/lab/lab-game.ts';
 import { OFFICIAL_EDITIONS } from '#lib/core/data/index.ts';
@@ -14,18 +16,16 @@ const KEY = 'grim-games:character-lab:v1';
 
 export interface LabState {
 	playerCount: number;
-	locked: CharacterId[];
-	/**
-	 * The Characters table shows only characters jinxed with a locked one (plan M45), while
-	 * one is locked. The opponents are always the table's rows as shown.
-	 */
-	jinxedOnly: boolean;
+	/** The character under test; none until one is picked. */
+	core?: CharacterId;
 	/** Each game gets its setup reminders, chosen at random (Trevor, 2026-11-04). */
 	setupTokens: boolean;
 	/** Select character lists only characters with a jinx, or that change setup. */
 	pickJinxed: boolean;
 	pickSetup: boolean;
 	filler: LabFiller;
+	/** Where the game opens: 0 the first night, else that day (Trevor, 2026-11-05). */
+	startDay: number;
 	/** The opponent shown, as a place in the list of opponents. */
 	index: number;
 	/** The lab game last loaded, deleted when the next one loads. */
@@ -34,12 +34,11 @@ export interface LabState {
 
 export const DEFAULT_LAB: LabState = {
 	playerCount: 12,
-	locked: [],
-	jinxedOnly: true,
 	setupTokens: true,
 	pickJinxed: false,
 	pickSetup: false,
 	filler: 'all',
+	startDay: 0,
 	index: 0
 };
 
@@ -48,25 +47,14 @@ const isObject = (v: unknown): v is Record<string, unknown> =>
 const strings = (v: unknown): string[] =>
 	Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
 
-/**
- * Whether the table shows only jinxed characters. Saved by M45 as `jinxedOnly`; before it (M37)
- * the lab had an opponents drop-down, `source`, whose Jinxes choice is the same thing and whose
- * other choices (a type, every character, hand-picked) are now the table's own filters.
- */
-function parseJinxedOnly(raw: Record<string, unknown>): boolean {
-	if (typeof raw.jinxedOnly === 'boolean') return raw.jinxedOnly;
-	if (isObject(raw.source)) return raw.source.kind === 'jinxes';
-	return DEFAULT_LAB.jinxedOnly;
-}
-
 /** What was stored, or the defaults for anything missing or unreadable. */
 export function parseLab(raw: unknown): LabState {
 	if (!isObject(raw)) return { ...DEFAULT_LAB };
 	const count = Number(raw.playerCount);
+	// M45 and before kept a list of locked characters.
+	const core = typeof raw.core === 'string' ? raw.core : strings(raw.locked)[0];
 	return {
 		playerCount: Number.isInteger(count) && count >= 1 && count <= 20 ? count : 12,
-		locked: strings(raw.locked),
-		jinxedOnly: parseJinxedOnly(raw),
 		setupTokens: typeof raw.setupTokens === 'boolean' ? raw.setupTokens : DEFAULT_LAB.setupTokens,
 		pickJinxed: raw.pickJinxed === true,
 		pickSetup: raw.pickSetup === true,
@@ -74,7 +62,14 @@ export function parseLab(raw: unknown): LabState {
 			raw.filler === 'all' || OFFICIAL_EDITIONS.some((e) => e.id === raw.filler)
 				? (raw.filler as LabFiller)
 				: DEFAULT_LAB.filler,
+		startDay:
+			Number.isInteger(raw.startDay) &&
+			(raw.startDay as number) >= 0 &&
+			(raw.startDay as number) <= 3
+				? (raw.startDay as number)
+				: 0,
 		index: Number.isInteger(raw.index) && (raw.index as number) >= 0 ? (raw.index as number) : 0,
+		...(core ? { core } : {}),
 		...(typeof raw.gameId === 'string' ? { gameId: raw.gameId as GameId } : {})
 	};
 }
@@ -94,7 +89,7 @@ class LabChoices {
 
 export const lab = new LabChoices();
 
-/** The lab's own game on this device, kept out of Continue game and History. */
+/** The lab's own game on this device, kept out of Join game and History. */
 export function labGameId(): GameId | undefined {
 	return readParsed(KEY, parseLab).gameId;
 }
