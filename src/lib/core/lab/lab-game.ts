@@ -7,7 +7,8 @@
  * jinx or character shows up with no change here; no character is named.
  */
 import type { GameData } from '#lib/core/data/game-data.ts';
-import { jinxesAmong } from '#lib/core/data/jinxes.ts';
+import { indexJinxes, jinxesAmong } from '#lib/core/data/jinxes.ts';
+import { pairKey } from '#lib/core/data/parse.ts';
 import type { OfficialEditionId } from '#lib/core/data/script.ts';
 import {
 	SEATED_TYPES,
@@ -22,6 +23,15 @@ import { jinxRulesBetween } from '#lib/core/rules/jinx-pairs.ts';
 import { reservedHidden } from '#lib/core/modes/draft-seats.ts';
 import { analyseSetup } from '#lib/core/rules/setup.ts';
 import { setupModifierFor } from '#lib/core/rules/setup-modifiers.ts';
+
+/**
+ * The lab's characters: the official data, plus any custom characters made on this device
+ * (plan M63, Trevor 2026-11-05: "functionality available to test custom characters"), whose
+ * ids are in `custom`.
+ */
+export interface LabData extends GameData {
+	custom?: ReadonlySet<CharacterId>;
+}
 
 /**
  * Where the opponents come from: every character jinxed with a locked one, or a list (the
@@ -150,7 +160,11 @@ function pickCount(allowed: readonly number[], usual: number, seated: number): n
  * only the chosen characters change the game. When the filler runs out of a type, any official
  * character of that type fills in.
  */
-export function labGame(data: GameData, setup: LabSetup, random = Math.random): LabGame {
+export function labGame(data: LabData, setup: LabSetup, random = Math.random): LabGame {
+	// Only official characters fill the other seats; a custom one plays only when chosen.
+	const officials = data.custom
+		? data.characters.filter((c) => !data.custom!.has(c.id))
+		: data.characters;
 	const character = (id: CharacterId): Character | undefined => data.byId.get(id);
 	const typeOf = (id: CharacterId) => character(id)?.type;
 	const wanted = [...setup.locked, ...(setup.opponent ? [setup.opponent] : [])];
@@ -224,9 +238,7 @@ export function labGame(data: GameData, setup: LabSetup, random = Math.random): 
 		return !inPlay.some((other) => jinxRulesBetween(c.id, other.id, data.byId)?.exclusive);
 	};
 	const pool =
-		setup.filler === 'all'
-			? data.characters
-			: data.characters.filter((c) => c.edition === setup.filler);
+		setup.filler === 'all' ? officials : officials.filter((c) => c.edition === setup.filler);
 	for (const type of SEATED_TYPES) {
 		const take = (from: readonly Character[]) => {
 			for (const c of shuffled(from, random)) {
@@ -239,11 +251,11 @@ export function labGame(data: GameData, setup: LabSetup, random = Math.random): 
 		};
 		take(pool);
 		// The filler is short of this type: any official one.
-		take(data.characters);
+		take(officials);
 	}
 	// Seats over the counts (more locked than the counts allow): Townsfolk.
 	while (filled.length < open) {
-		const spare = data.characters.find(
+		const spare = officials.find(
 			(c) => c.type === 'townsfolk' && !used.has(c.id) && changesNothing(c)
 		);
 		if (!spare) break;
@@ -260,10 +272,7 @@ export function labGame(data: GameData, setup: LabSetup, random = Math.random): 
 	]);
 	const seated = new Set(seats);
 	const goodOff = shuffled(
-		(setup.filler === 'all'
-			? data.characters
-			: data.characters.filter((c) => onScript.has(c.id))
-		).filter(
+		(setup.filler === 'all' ? officials : data.characters.filter((c) => onScript.has(c.id))).filter(
 			(c) =>
 				!seated.has(c.id) &&
 				!wanted.includes(c.id) &&
@@ -291,7 +300,7 @@ export function labGame(data: GameData, setup: LabSetup, random = Math.random): 
 				(o) =>
 					o.type === 'townsfolk' && !shown.has(o.id) && changesNothing(o) && !isReplacedAfterDraw(o)
 			);
-		const shows = fits(pool) ?? fits(data.characters);
+		const shows = fits(pool) ?? fits(officials);
 		if (!shows) return;
 		shown.add(shows.id);
 		onScript.add(shows.id);
@@ -355,4 +364,31 @@ export function stepCharacter(
 		return c.id;
 	}
 	return undefined;
+}
+
+/**
+ * The lab's characters (plan M63): the official data with `custom` characters added, each
+ * replacing an official one of the same id, and their own `jinxes` beside the official ones
+ * (a custom jinx wins for the same pair).
+ */
+export function withCustomCharacters(
+	data: GameData,
+	custom: readonly Character[],
+	jinxes: readonly Jinx[]
+): LabData {
+	if (!custom.length) return data;
+	const ids = new Set(custom.map((c) => c.id));
+	const characters = [...data.characters.filter((c) => !ids.has(c.id)), ...custom];
+	const own = new Set(jinxes.map((j) => pairKey(...j.characters)));
+	const allJinxes = [
+		...data.jinxes.all.filter((j) => !own.has(pairKey(...j.characters))),
+		...jinxes
+	];
+	return {
+		...data,
+		characters,
+		byId: new Map(characters.map((c) => [c.id, c])),
+		jinxes: indexJinxes(allJinxes),
+		custom: ids
+	};
 }

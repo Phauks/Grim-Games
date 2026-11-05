@@ -1,10 +1,9 @@
 /**
- * How far along each roadmap item is, worked out from the merged changes' titles (split from
- * roadmap.ts, which holds the items themselves).
+ * How far along each roadmap item is (roadmap.ts), from the changes that have merged.
  */
-import type { BuildCommit } from './update-notes.ts';
 import type { Change } from './changelog.ts';
 import { PART_PRS, ROADMAP_AREAS, type RoadmapArea, type RoadmapItem } from './roadmap.ts';
+import type { BuildCommit } from './update-notes.ts';
 
 export interface RoadmapEntry extends RoadmapItem {
 	/** How many of its parts and PRs have merged. */

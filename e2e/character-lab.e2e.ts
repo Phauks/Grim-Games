@@ -9,7 +9,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 /** A computer window shows the lab beside the table, with the game above it; else the bar. */
 const onComputer = async (page: Page) => {
-	await expect(page.getByRole('heading', { name: 'Characters', level: 1 })).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Character Analyzer', level: 1 })).toBeVisible();
 	return (await page.getByRole('navigation', { name: 'Character Lab' }).count()) === 0;
 };
 
@@ -53,9 +53,9 @@ async function loadGame(page: Page) {
 test('starts empty; the core character alone on the left, its jinx partners on the right', async ({
 	page
 }) => {
-	await page.goto('/reference');
+	await page.goto('/character-analyzer');
 	await expect(
-		page.getByRole('heading', { name: 'Characters', level: 1, exact: true })
+		page.getByRole('heading', { name: 'Character Analyzer', level: 1, exact: true })
 	).toBeVisible();
 	// No search, filters or count in the title row, and nothing listed.
 	await expect(page.getByRole('searchbox', { name: 'Search characters' })).toHaveCount(0);
@@ -93,14 +93,14 @@ test('starts empty; the core character alone on the left, its jinx partners on t
 	await expect(page.getByRole('heading', { name: 'Join game', level: 1 })).toBeVisible();
 	await expect(page.getByRole('link', { name: /Character Lab/ })).toHaveCount(0);
 
-	// An old Lab link opens the Characters page, with the core character kept.
+	// An old Lab link opens the Character Analyzer, with the core character kept.
 	await page.goto('/character-lab');
-	await expect(page).toHaveURL(/\/reference$/);
+	await expect(page).toHaveURL(/\/character-analyzer$/);
 	await expect(rows.nth(0)).toHaveAttribute('data-character', 'philosopher');
 });
 
 test('a character with no jinx says None once', async ({ page }) => {
-	await page.goto('/reference');
+	await page.goto('/character-analyzer');
 	await lock(page, 'Chef');
 	const computer = await onComputer(page);
 	const lab = await labControls(page);
@@ -111,7 +111,7 @@ test('a character with no jinx says None once', async ({ page }) => {
 test('Select character picks the core one, filtered to characters with jinxes', async ({
 	page
 }) => {
-	await page.goto('/reference');
+	await page.goto('/character-analyzer');
 	await page.getByRole('button', { name: 'Select character' }).tap();
 	const picker = page.getByRole('dialog', { name: 'Select character' });
 	await picker.getByText('Has jinxes', { exact: true }).tap();
@@ -129,7 +129,7 @@ test('Select character picks the core one, filtered to characters with jinxes', 
 });
 
 test('steps through jinx partners with the arrows, one fresh game each', async ({ page }) => {
-	await page.goto('/reference');
+	await page.goto('/character-analyzer');
 	await lock(page, 'Summoner');
 	await expect(page.getByTestId('lab-position').first()).toHaveText(/^1 of ([2-9]|\d\d)$/);
 	const next = (await onComputer(page))
@@ -147,7 +147,7 @@ test('steps through jinx partners with the arrows, one fresh game each', async (
 test('on a computer window the game opens on the right of the table', async ({ page }) => {
 	test.skip(test.info().project.name !== 'tablet', 'one window size is enough');
 	await page.setViewportSize({ width: 1600, height: 1000 });
-	await page.goto('/reference');
+	await page.goto('/character-analyzer');
 	const panel = page.getByTestId('lab-panel');
 	await expect(panel).toBeVisible();
 	await expect(page.getByRole('navigation', { name: 'Character Lab' })).toHaveCount(0);
@@ -174,7 +174,7 @@ test('on a computer window the game opens on the right of the table', async ({ p
 // Marionette's seat holds a Townsfolk with the Is The Marionette reminder, and the first night
 // is under way.
 test('loads a started game, the Marionette thinking they are a Townsfolk', async ({ page }) => {
-	await page.goto('/reference');
+	await page.goto('/character-analyzer');
 	await lock(page, 'Marionette');
 	await loadGame(page);
 	const seats = await labSeats(page);
@@ -186,7 +186,7 @@ test('loads a started game, the Marionette thinking they are a Townsfolk', async
 });
 
 test('Apply setup tokens off seats the characters as they are', async ({ page }) => {
-	await page.goto('/reference');
+	await page.goto('/character-analyzer');
 	await lock(page, 'Marionette');
 	const computer = await onComputer(page);
 	const lab = await labControls(page);
@@ -200,7 +200,7 @@ test('Apply setup tokens off seats the characters as they are', async ({ page })
 
 // Trevor, 2026-11-05: "what day of the game to start on".
 test('Start on opens the game on a later day', async ({ page }) => {
-	await page.goto('/reference');
+	await page.goto('/character-analyzer');
 	await lock(page, 'Philosopher');
 	const computer = await onComputer(page);
 	const lab = await labControls(page);
@@ -213,4 +213,52 @@ test('Start on opens the game on a later day', async ({ page }) => {
 	await expect(board.getByRole('button', { name: 'Execution', exact: true })).toBeVisible();
 	await expect(board.getByText('Day 2', { exact: true }).first()).toBeVisible();
 	await expect(board.getByRole('button', { name: 'End night', exact: true })).toHaveCount(0);
+});
+
+// Plan M63 (Trevor, 2026-11-05: "functionality available to test custom characters"): a
+// character made in the Character builder is picked and seated like an official one.
+test('tests a character made in the Character builder', async ({ page }) => {
+	await page.addInitScript(() => {
+		localStorage.setItem(
+			'grim-games:characters',
+			JSON.stringify({
+				version: 1,
+				characters: [
+					{
+						savedId: 's1',
+						entry: {
+							id: 'lanternkeeper',
+							name: 'Lantern Keeper',
+							team: 'townsfolk',
+							ability: 'Each night, learn a number.'
+						},
+						updatedAt: 1
+					}
+				]
+			})
+		);
+	});
+	await page.goto('/character-analyzer');
+	await lock(page, 'Lantern Keeper');
+	await expect(page.getByTestId('lab-core')).toContainText('Lantern Keeper');
+	const rows = page.getByTestId('character-table').locator('tr[data-character]');
+	await expect(rows.nth(0)).toHaveAttribute('data-character', 'lanternkeeper');
+	await loadGame(page);
+	const seats = await labSeats(page);
+	await expect(seats.first()).toHaveAttribute('aria-label', /Lantern Keeper/);
+});
+
+// Trevor, 2026-11-05: "make sure that the name of the url matches the title of the page".
+test('the address matches the title, and an old Reference link still opens its character', async ({
+	page
+}) => {
+	await page.goto('/reference#witch');
+	await expect(page).toHaveURL(/\/character-analyzer#witch$/);
+	await expect(
+		page.getByRole('heading', { name: 'Character Analyzer', level: 1, exact: true })
+	).toBeVisible();
+	await expect(page).toHaveTitle(/^Character Analyzer/);
+	await expect(
+		page.getByTestId('character-table').locator('tr[data-character]').nth(0)
+	).toHaveAttribute('data-character', 'witch');
 });

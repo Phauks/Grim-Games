@@ -80,7 +80,8 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		title:
 			'Grimoire board with a guided night: night steps, reminders, frames, the character sheet',
 		area: 'storyteller',
-		// M51 (Trevor, 2026-11-04): step counts match the tokens' numbers; Dusk, Dawn, info get none.
+		// M51 (Trevor, 2026-11-04): the night walk-through counts its steps as the tokens' leaves
+		// number them, so Dusk, Dawn, Minion info and Demon info get no number.
 		parts: ['L8', 'L18a', 'L4', 'L26', 'L59', 'L60', 'L63', 'L66', 'L67', 'L82', 'L94', 'M51']
 	},
 	{
@@ -241,9 +242,9 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	},
 	{
 		title:
-			'Characters page: the Character Lab for everyone, the selected characters on the left and their game on the right',
+			'Character Analyzer: test any character, your own included, against its jinxes in a ready game',
 		area: 'app',
-		parts: ['M37', 'M45', 'M47']
+		parts: ['M37', 'M45', 'M47', 'M63']
 	},
 	{
 		title: 'Admins see every account, and sign one out, free its username or delete it',

@@ -11,7 +11,7 @@ import { toBoard } from './new-game.ts';
 const ROUTES = [
 	'/',
 	'/new',
-	'/reference#witch',
+	'/character-analyzer#witch',
 	'/scripts',
 	'/settings',
 	'/library',
@@ -129,7 +129,7 @@ test('no list of information runs together without a divider, a gap or a heading
 		await page.goto(route);
 		await page.locator('h1, h2').first().waitFor();
 		// Reference fills its table after the page draws.
-		if (route.startsWith('/reference'))
+		if (route.startsWith('/character-analyzer'))
 			await page.getByTestId('character-table').locator('[data-character]').first().waitFor();
 		seen.push(...(await undelineated(page, route)));
 	}
