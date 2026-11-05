@@ -1111,8 +1111,9 @@ test('holding the day timer or a new day resets it to the time per living player
 	day = page.getByRole('dialog', { name: 'Day 1' });
 	await expect(day.getByTestId('day-toolbar').getByRole('timer')).toHaveText('4:00');
 	await expect(day.getByRole('button', { name: 'Start timer' })).toBeEnabled();
-	// After a night with no deaths, that is the announcement (Trevor, 2026-10-19).
-	await expect(day.getByTestId('announcements')).toHaveText('Nobody died in the night.');
+	// Nobody dies on the first night as a rule, so Day 1 doesn't say "Nobody died" (Trevor,
+	// 2026-11-04); that announcement starts on Day 2 (the revival test).
+	await expect(day.getByTestId('announcements')).toHaveText('None');
 });
 
 test('a wide day view puts the toolbar beside the sections', async ({ page }) => {
