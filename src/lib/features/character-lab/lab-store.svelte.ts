@@ -94,7 +94,7 @@ class LabChoices {
 
 export const lab = new LabChoices();
 
-/** The lab's own game on this device, kept out of Continue game and History. */
+/** The lab's own game on this device, kept out of Join game and History. */
 export function labGameId(): GameId | undefined {
 	return readParsed(KEY, parseLab).gameId;
 }
