@@ -12,7 +12,7 @@ const rowOf = (page: Page, id: string) =>
  */
 async function select(page: Page, id: string) {
 	await page.goto('about:blank');
-	await page.goto(`/reference#${id}`);
+	await page.goto(`/character-analyzer#${id}`);
 	await expect(rowOf(page, id)).toBeAttached();
 }
 
@@ -21,11 +21,11 @@ test('the menu opens the character reference', async ({ page }) => {
 	await menuButton(page).tap();
 	await page
 		.getByRole('dialog', { name: APP_NAME })
-		.getByRole('link', { name: 'Characters' })
+		.getByRole('link', { name: 'Character Analyzer' })
 		.tap();
-	await expect(page).toHaveURL(/\/reference$/);
+	await expect(page).toHaveURL(/\/character-analyzer$/);
 	await expect(
-		page.getByRole('heading', { name: 'Characters', level: 1, exact: true })
+		page.getByRole('heading', { name: 'Character Analyzer', level: 1, exact: true })
 	).toBeVisible();
 });
 
@@ -123,7 +123,7 @@ test('there is no card view', async ({ page }) => {
 });
 
 test('a link to one character scrolls to its row', async ({ page }) => {
-	await page.goto('/reference#witch');
+	await page.goto('/character-analyzer#witch');
 	await expect(rowOf(page, 'witch')).toBeInViewport();
 });
 
@@ -288,7 +288,7 @@ test('reminder tokens show their copies and whether setup places them', async ({
 
 test('the title row has no search, count or Clear filters', async ({ page }) => {
 	// Trevor (2026-11-04): "remove all those useless table controls ... remove x at top right".
-	await page.goto('/reference');
+	await page.goto('/character-analyzer');
 	const header = page.locator('main header');
 	await expect(header.getByRole('heading', { level: 1 })).toBeVisible();
 	await expect(header.getByRole('searchbox')).toHaveCount(0);

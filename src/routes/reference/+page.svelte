@@ -1,10 +1,18 @@
 <script lang="ts">
-	import { t } from '#lib/i18n/locale.svelte.ts';
-	import ReferencePage from '#lib/features/reference/ReferencePage.svelte';
+	import { APP_NAME } from '#lib/core/app-name.ts';
+	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
+
+	// The Characters page is the Character Analyzer (plan M63); an old link, and its #character,
+	// opens it there.
+	onMount(() => {
+		const to = resolve('/character-analyzer');
+		// eslint-disable-next-line svelte/no-navigation-without-resolve -- resolved above, plus the hash
+		void goto(`${to}${location.hash}`, { replaceState: true });
+	});
 </script>
 
 <svelte:head>
-	<title>{t('reference.pageTitle')}</title>
+	<title>Character Analyzer · {APP_NAME}</title>
 </svelte:head>
-
-<ReferencePage />

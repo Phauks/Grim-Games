@@ -21,7 +21,7 @@ export const shell = {
 	'shell.navBuildScript': 'Script builder',
 	'shell.navBuildCharacter': 'Character builder',
 	'shell.navBuildMode': 'Mode builder',
-	'shell.navReference': 'Characters',
+	'shell.navReference': 'Character Analyzer',
 	'shell.navInfoTokens': 'Info tokens',
 	'shell.navAccount': 'Account',
 	'shell.navFriends': 'Friends',
