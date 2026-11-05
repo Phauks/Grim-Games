@@ -10,6 +10,10 @@
 	 * anything past `length` is cut off. Enter submits the form around it as usual, or calls
 	 * `onenter` when given (a form with two codes has no implicit submit). The X clears the
 	 * whole code, like every other text field.
+	 *
+	 * Room codes, transfer codes and the draw PIN change all the time, so password managers
+	 * and autofill are told to leave the field alone (Trevor, 2026-11-05). A sign-in code is a
+	 * TextField with `one-time-code`, not this.
 	 */
 	interface Props {
 		value?: string;
@@ -111,7 +115,11 @@
 		{id}
 		{value}
 		{inputmode}
-		autocomplete="one-time-code"
+		autocomplete="off"
+		data-1p-ignore
+		data-lpignore="true"
+		data-bwignore
+		data-form-type="other"
 		autocapitalize="characters"
 		spellcheck="false"
 		{enterkeyhint}
