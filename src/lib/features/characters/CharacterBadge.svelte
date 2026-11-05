@@ -170,7 +170,18 @@
 		/* Centred on the text's x-height, not sitting on the baseline (which lifts it). */
 		vertical-align: middle;
 		cursor: pointer;
-		background: var(--surface-raised);
+		--badge-fill: var(--surface-raised);
+		/*
+		 * The icon's face colour also fills the pill under the disc's outer half, so the pill's
+		 * rounded end is drawn by one edge, not two curves on top of each other: where two
+		 * anti-aliased curves meet, the fill behind shows through as a thin line (Trevor,
+		 * 2026-11-05; badge-seams.e2e.ts).
+		 */
+		background:
+			linear-gradient(var(--badge-face), var(--badge-face)) left / calc(var(--badge-h) / 2) 100%
+				no-repeat,
+			var(--badge-fill);
+		--badge-face: var(--token-face, var(--on-surface));
 		color: var(--on-surface);
 		/* The buttons' 1px edge, so a type colour never blends into the surface behind it
 		   (Trevor, 2026-10-22; button-edges.e2e.ts). */
@@ -186,40 +197,37 @@
 		cursor: inherit;
 	}
 	.badge[data-team='good'] {
-		background: var(--good);
+		--badge-fill: var(--good);
 		color: var(--on-good);
 	}
 	.badge[data-team='evil'] {
-		background: var(--evil);
+		--badge-fill: var(--evil);
 		color: var(--on-evil);
 	}
 	/* --on-good reads on both halves (badge-colours.test.ts). */
 	.badge[data-team='traveller'] {
-		background: linear-gradient(to right, var(--good) 50%, var(--evil) 50%);
+		--badge-fill: linear-gradient(to right, var(--good) 50%, var(--evil) 50%);
 		color: var(--on-good);
 	}
 	/* Fabled and Loric in their own colours, like the other types (Trevor, 2026-10-18). */
 	.badge[data-team='fabled'] {
-		background: var(--fabled);
+		--badge-fill: var(--fabled);
 		color: var(--on-fabled);
 	}
 	.badge[data-team='loric'] {
-		background: var(--loric);
+		--badge-fill: var(--loric);
 		color: var(--on-loric);
 	}
 	/*
-	 * A joined pair reads as one split badge (Trevor picked it for jinxes, 2026-11-02): the
-	 * pair's frame (JinxNote) draws the outer edge, each half squares its inner edge, and a
-	 * line in the text colour divides them. Each half still opens its own character.
+	 * A joined pair reads as one split badge (Trevor picked it for jinxes, 2026-11-02), drawn
+	 * like a single badge (Trevor, 2026-11-05: it looked different from one character on its
+	 * own): the same edge runs round each half, so the pair's outer edge is a single badge's
+	 * and the two edges meet as the line between the halves. Each half squares its inner
+	 * corners and still opens its own character.
 	 */
 	.badge[data-joined] {
-		box-shadow: none;
 		min-width: 0;
 		flex: 0 1 auto;
-	}
-	/* The pair's frame is the edge, not each half's own. */
-	.badge[data-joined]::after {
-		content: none;
 	}
 	.badge[data-joined='start'] {
 		border-radius: var(--radius-full) 0 0 var(--radius-full);
@@ -228,7 +236,9 @@
 		flex-direction: row-reverse;
 		border-radius: 0 var(--radius-full) var(--radius-full) 0;
 		padding: 0 0 0 calc(0.5em * var(--inline-name-badge, 1));
-		box-shadow: inset 0.12em 0 0 var(--on-surface);
+		background-position:
+			right,
+			0 0;
 	}
 	/*
 	 * The icon's disc fills the pill's rounded left end, as tall as the pill, so its curve is the

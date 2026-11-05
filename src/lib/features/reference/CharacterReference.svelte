@@ -4,19 +4,15 @@
 	import Sentence from '#lib/features/characters/Sentence.svelte';
 	import type { ReferenceEntry } from '#lib/core/rules/reference.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
-	import CharacterTable, { type TableLab } from './CharacterTable.svelte';
+	import CharacterTable from './CharacterTable.svelte';
 
 	interface Props {
 		entries: readonly ReferenceEntry[];
-		/** The Character Lab's Lock column (plan M45). */
-		lab: TableLab;
-		/** Only these characters, besides the locked ones (the lab's jinx filter). */
-		only?: readonly string[];
-		/** Told the rows as shown, in order. */
-		onrows?: (rows: readonly ReferenceEntry[]) => void;
+		/** The Character Lab's core character, shown alone (plan M47). */
+		core: string;
 	}
 
-	let { entries, lab, only, onrows }: Props = $props();
+	let { entries, core }: Props = $props();
 
 	// One shared details overlay, so extra detail never expands a row inline.
 	// `title` may hold the `character` slot (slots.ts), shown as `character`'s badge.
@@ -27,22 +23,12 @@
 		detailsOpen = true;
 	}
 
-	// The lab's rows only, with no search, sort or filters (plan M47, Trevor 2026-11-04: "remove
-	// all those useless table controls ... do not list all on the left side when none are
-	// selected"): the locked characters first, then the rest in `roles.json` order.
-	const rows = $derived(
-		lab.locked.length === 0
-			? []
-			: [
-					...lab.locked.flatMap((id) => entries.filter((e) => e.character.id === id)),
-					...entries.filter(
-						(e) => !lab.locked.includes(e.character.id) && (!only || only.includes(e.character.id))
-					)
-				]
-	);
+	// The core character only (Trevor, 2026-11-05: "don't list the jinxed counter characters
+	// beneath the character"); its jinx partners are on the right.
+	const rows = $derived(entries.filter((e) => e.character.id === core));
 </script>
 
-<CharacterTable {rows} onExplain={explain} {onrows} {lab} />
+<CharacterTable {rows} onExplain={explain} />
 
 <Dialog bind:open={detailsOpen} title={details?.title ?? ''}>
 	{#snippet heading()}

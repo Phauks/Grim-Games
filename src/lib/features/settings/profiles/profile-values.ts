@@ -6,6 +6,7 @@
  * background) is never in one. Profiles sync with a signed-in account; an uploaded background
  * picture stays on the device that added it (an account document is at most 1 MB).
  */
+import { parseMoving, type MovingChoice } from '#lib/core/backgrounds/moving.ts';
 import {
 	PRESETS,
 	type BackgroundChoice,
@@ -25,7 +26,12 @@ type DevicePreference = (typeof DEVICE_PREFERENCES)[number];
 
 /** The background for all games, as a profile keeps it; a picture is only marked, not kept. */
 export type BackgroundRef =
-	{ kind: 'none' } | { kind: 'script' } | { kind: 'preset'; id: PresetId } | { kind: 'image' };
+	| { kind: 'none' }
+	| { kind: 'script' }
+	| { kind: 'preset'; id: PresetId }
+	| { kind: 'image' }
+	/** A moving background travels whole: its settings are a few hundred bytes (M43). */
+	| ({ kind: 'moving' } & MovingChoice);
 
 export interface ProfileValues {
 	preferences: Omit<Preferences, DevicePreference>;
@@ -70,6 +76,7 @@ export function withoutDevicePreferences(prefs: Preferences): ProfileValues['pre
 export function backgroundRef(choice: BackgroundChoice | undefined): BackgroundRef {
 	if (!choice || choice.kind === 'none') return { kind: 'none' };
 	if (choice.kind === 'preset') return { kind: 'preset', id: choice.id };
+	if (choice.kind === 'moving') return { kind: 'moving', id: choice.id, params: choice.params };
 	return { kind: choice.kind };
 }
 
@@ -78,7 +85,8 @@ function parseBackgroundRef(raw: unknown): BackgroundRef {
 	if (value.kind === 'script' || value.kind === 'image') return { kind: value.kind };
 	if (value.kind === 'preset' && typeof value.id === 'string' && value.id in PRESETS)
 		return { kind: 'preset', id: value.id as PresetId };
-	return { kind: 'none' };
+	const moving = value.kind === 'moving' ? parseMoving(value) : undefined;
+	return moving ? { kind: 'moving', ...moving } : { kind: 'none' };
 }
 
 /** Builds valid values from anything; whatever is missing or damaged takes its default. */

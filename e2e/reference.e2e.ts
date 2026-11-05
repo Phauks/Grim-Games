@@ -186,18 +186,6 @@ test('the Reference has no token key (Trevor, 2026-10-18)', async ({ page }) => 
 	await expect(page.getByRole('button', { name: 'Token key' })).toHaveCount(0);
 });
 
-test('rows far below the screen are built only when scrolled near', async ({ page }) => {
-	// Every character: one selected, with the jinx filter off.
-	await select(page, 'philosopher');
-	await page.getByText('Jinxed with locked', { exact: true }).tap();
-	await expect(page.getByTestId('character-table').locator('tbody tr')).toHaveCount(181);
-	const last = page.getByTestId('character-table').locator('tbody tr').last();
-	await expect(last).toBeAttached();
-	await expect(last.locator('td')).toHaveCount(0);
-	await last.scrollIntoViewIfNeeded();
-	await expect(last.locator('td').first()).toBeVisible();
-});
-
 test('characters in night text are game badges and reminders are smaller token chips', async ({
 	page
 }) => {
