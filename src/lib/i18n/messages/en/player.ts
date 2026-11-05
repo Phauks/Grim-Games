@@ -136,6 +136,7 @@ export const player = {
 	'player.pictureZoom': 'Zoom',
 	'player.pictureError': 'That picture could not be read or kept.',
 	'player.hideGuesses': 'Hide guesses and notes on the Grim tab',
+	'player.holdMovingStill': 'Hold moving backgrounds still',
 	'player.matchShape': "Grim tab in the Storyteller's board shape",
 	'player.matchShapeDetail':
 		"Draws the town the shape of the Storyteller's board, with empty space at the edges. Off, it fills your screen. Seats keep the Storyteller's places round the table either way.",

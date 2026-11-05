@@ -9,10 +9,12 @@
 		saveBackground,
 		shrinkImage,
 		PRESETS,
-		type BackgroundChoice,
-		type PresetId
+		type BackgroundChoice
 	} from './backgrounds.ts';
+	import BackgroundTiles from './BackgroundTiles.svelte';
 	import type { BoardBackgroundContext } from './board-background.svelte.ts';
+	import MovingCustomise from './moving/MovingCustomise.svelte';
+	import { MOVING_BACKGROUNDS } from '#lib/core/backgrounds/moving.ts';
 
 	/**
 	 * The open board's background in Board and tokens (Trevor, 2026-10-16 and 2026-10-18): an
@@ -41,9 +43,11 @@
 			? 'Your image'
 			: current.kind === 'preset'
 				? PRESETS[current.id].label
-				: current.kind === 'script'
-					? "The script's background"
-					: 'None (plain board)'
+				: current.kind === 'moving'
+					? MOVING_BACKGROUNDS[current.id].label
+					: current.kind === 'script'
+						? "The script's background"
+						: 'None (plain board)'
 	);
 
 	async function choose(choice: BackgroundChoice) {
@@ -92,30 +96,11 @@
 			]}
 			onChange={(s) => (scope = s)}
 		/>
-		<div class="presets" role="group" aria-labelledby={labelId}>
-			<!-- None first in the list, not a separate button (Trevor, 2026-10-18). -->
-			<button
-				type="button"
-				class="preset"
-				aria-pressed={current.kind === 'none'}
-				onclick={() => choose({ kind: 'none' })}
-			>
-				<span class="swatch none"></span>
-				<span>{t('settings.backgroundNone')}</span>
-			</button>
-			{#each Object.entries(PRESETS) as [id, preset] (id)}
-				<button
-					type="button"
-					class="preset"
-					aria-pressed={current.kind === 'preset' && current.id === id}
-					onclick={() => choose({ kind: 'preset', id: id as PresetId })}
-				>
-					<span class="swatch" style:background={preset.css}></span>
-					<span>{preset.label}</span>
-				</button>
-			{/each}
+		<div class="tiles">
+			<BackgroundTiles {current} labelledBy={labelId} onChoose={choose} />
 		</div>
 		<div class="choices">
+			<MovingCustomise {current} onSave={choose} />
 			<Button icon="add" onclick={() => input?.click()}>{t('settings.backgroundImage')}</Button>
 			<Button
 				variant="quiet"
@@ -155,36 +140,8 @@
 	.change dd {
 		margin: 0;
 	}
-	.presets {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(calc(6 * var(--u)), 1fr));
-		gap: var(--space-2);
+	.tiles {
 		margin-top: var(--space-3);
-	}
-	.preset {
-		display: grid;
-		justify-items: center;
-		gap: var(--space-1);
-		min-height: var(--tap-target);
-		padding: var(--space-1);
-		border: 0.1rem solid transparent;
-		border-radius: var(--radius-md);
-		background: none;
-		color: inherit;
-		font: 600 0.8rem var(--font-control);
-		cursor: pointer;
-	}
-	.preset[aria-pressed='true'] {
-		border-color: var(--accent);
-	}
-	.swatch {
-		width: 100%;
-		aspect-ratio: 3 / 2;
-		border-radius: var(--radius-md);
-		box-shadow: inset 0 0 0 0.06rem var(--border);
-	}
-	.swatch.none {
-		background: var(--surface);
 	}
 	.choices {
 		display: grid;

@@ -358,6 +358,12 @@ test("every shared grim has the Storyteller's background, whatever the device's 
 		path
 	);
 	expect(refused).toBe(403);
+	// A moving background goes to the table by its id and settings (M43, Trevor 2026-11-05).
+	await settings
+		.getByRole('group', { name: 'Background', exact: true })
+		.getByRole('button', { name: 'Vortex' })
+		.tap();
+	await expect(town.getByTestId('preview-background')).toHaveAttribute('data-moving', 'vortex');
 	await tabletContext.close();
 });
 

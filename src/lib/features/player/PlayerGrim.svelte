@@ -421,6 +421,7 @@
 							? scriptImage
 							: undefined)}
 				preset={look.preset}
+				moving={look.moving}
 				vignette={look.vignette}
 			/>
 			{#if look.logo !== undefined}
