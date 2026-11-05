@@ -10,6 +10,7 @@ import { dropdownChoice } from './dropdown-choice.js';
 import { iconMeaning } from './icon-meaning.js';
 import { modalActions } from './modal-actions.js';
 import { namesAsBadges } from './names-as-badges.js';
+import { passwordField } from './password-field.js';
 import { scriptName } from './script-name.js';
 import { sharePanel } from './share-panel.js';
 import { textField } from './text-field.js';
@@ -24,6 +25,7 @@ export default {
 		'modal-actions': modalActions,
 		'dropdown-choice': dropdownChoice,
 		'text-field': textField,
+		'password-field': passwordField,
 		'icon-meaning': iconMeaning,
 		'share-panel': sharePanel,
 		'caret-section': caretSection,

@@ -42,7 +42,7 @@ async function nameSeat(page: Page, number: number, name: string) {
 /** Types a room code on Join game, which looks the game up as the code is typed. */
 async function typeCode(phone: Page, code: string) {
 	await phone.goto('/join');
-	const field = phone.getByRole('textbox', { name: 'Room code from the Storyteller' });
+	const field = phone.getByRole('textbox', { name: 'Room Code' });
 	await field.tap();
 	await field.pressSequentially(code);
 }
