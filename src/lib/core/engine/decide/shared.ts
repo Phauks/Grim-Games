@@ -7,6 +7,7 @@ import {
 	type CharacterId,
 	type Script
 } from '#lib/core/data/index.ts';
+import { COUNTER_TIMES, type CounterTime } from '#lib/core/data/counter-rules.ts';
 import {
 	GENERAL_DEATH_CAUSES,
 	GENERIC_REMINDER_ID,
@@ -203,6 +204,10 @@ export function genericLook(look: GenericLook | undefined): GenericLook {
 		out.symbolColour = look.symbolColour;
 	}
 	if (look?.symbolFill === true) out.symbolFill = true;
+	if (look?.countsUp !== undefined) {
+		checkCountsUp(look.countsUp, out.symbol);
+		out.countsUp = look.countsUp;
+	}
 	// Only a character's reminder: a copy of a generic one is its look alone.
 	const like = look?.like;
 	if (like && like.characterId !== GENERIC_REMINDER_ID)
@@ -249,7 +254,15 @@ export function tokenLook(game: Game, tokenId: string | undefined): GenericLook 
 	if (token.symbolColour !== undefined) look.symbolColour = token.symbolColour;
 	if (token.symbolFill) look.symbolFill = true;
 	if (token.like !== undefined) look.like = { ...token.like };
+	if (token.countsUp !== undefined) look.countsUp = token.countsUp;
 	return look;
+}
+
+/** Refuses a count-up time that isn't dawn or dusk, or one on a token that shows no number. */
+export function checkCountsUp(countsUp: CounterTime, symbol: string | undefined): void {
+	if (!COUNTER_TIMES.includes(countsUp)) refuse('invalid-counts-up', `no time ${countsUp}`);
+	if (symbolNumber(symbol) === undefined)
+		refuse('invalid-counts-up', 'only a number token counts up');
 }
 
 export function checkReminder(

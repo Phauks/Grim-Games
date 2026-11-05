@@ -10,6 +10,7 @@
 		type GenericLook,
 		type SymbolColour
 	} from '#lib/core/model/index.ts';
+	import type { CounterTime } from '#lib/core/data/counter-rules.ts';
 	import { SYMBOL_COLOUR_LOOKS } from './symbol-colour.ts';
 	import TextField from '#lib/ui/primitives/TextField.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
@@ -35,11 +36,24 @@
 		/** None is the reminder's own ink. */
 		onColour: (colour: SymbolColour | undefined) => void;
 		onFill: (fill: boolean) => void;
+		/**
+		 * A number token's Counts up (plan M53, Trevor 2026-11-04): up by one each night (at
+		 * dusk) or day (at dawn); none stays put. Left out, the row isn't offered.
+		 */
+		onCountsUp?: (countsUp: CounterTime | undefined) => void;
 		/** The text as typed, before it is saved (a live preview shows it). */
 		text?: string;
 	}
 
-	let { look, onNote, onSymbol, onColour, onFill, text = $bindable('') }: Props = $props();
+	let {
+		look,
+		onNote,
+		onSymbol,
+		onColour,
+		onFill,
+		onCountsUp,
+		text = $bindable('')
+	}: Props = $props();
 	// Only when the saved text changes: picking a symbol mid-typing keeps what was typed.
 	const saved = $derived(look.note ?? '');
 	$effect.pre(() => {
@@ -70,6 +84,12 @@
 		...SYMBOL_COLOURS.map((c) => ({ value: c, label: SYMBOL_COLOUR_LOOKS[c].label }))
 	];
 	const iconSymbol = $derived(!!look.symbol?.startsWith('ph:'));
+	const NEVER = 'never';
+	const countsUpOptions = [
+		{ value: NEVER, label: 'Never' },
+		{ value: 'dusk', label: 'Each night' },
+		{ value: 'dawn', label: 'Each day' }
+	];
 	const number = $derived(isNumberSymbol(look.symbol) ? symbolNumber(look.symbol) : undefined);
 </script>
 
@@ -82,6 +102,14 @@
 		onchange={(n) => onSymbol(numberSymbol(n))}
 		testid="reminder-number"
 	/>
+	{#if onCountsUp}
+		<Select
+			label="Counts up"
+			value={look.countsUp ?? NEVER}
+			options={countsUpOptions}
+			onChange={(v) => onCountsUp(v === NEVER ? undefined : (v as CounterTime))}
+		/>
+	{/if}
 {:else}
 	<Select
 		label="Symbol"

@@ -223,8 +223,8 @@ export function copiedLook(reminder: Reminder & GenericLook): GenericLook {
 		const { characterId, label } = reminder;
 		return { note: label, like: { characterId, label } };
 	}
-	const { note, symbol, symbolColour, symbolFill, like } = reminder;
-	return { note, symbol, symbolColour, symbolFill, like };
+	const { note, symbol, symbolColour, symbolFill, like, countsUp } = reminder;
+	return { note, symbol, symbolColour, symbolFill, like, countsUp };
 }
 
 /** The reminder a token stands for when marking seats: the one a generic copy copies. */

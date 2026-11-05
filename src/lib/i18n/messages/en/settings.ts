@@ -156,6 +156,12 @@ export const settings = {
 	'settings.reminderRemoval.off': 'Off',
 	'settings.reminderRemoval.ask': 'Ask at dawn to remove',
 	'settings.reminderRemoval.auto': 'Automatically remove',
+	'settings.countingReminders': 'Move counting reminders',
+	'settings.countingRemindersHelp':
+		"At each new day or night, the reminders that count the days or nights, such as the Leviathan's and the Riot's Day tokens and the Summoner's and Xaan's Night tokens, and number tokens set to count up. Off leaves the day and night tokens for you to move, and number tokens still count up. Ask shows what would move first.",
+	'settings.countingReminders.off': 'Off',
+	'settings.countingReminders.ask': 'Ask',
+	'settings.countingReminders.auto': 'Automatically move',
 	'settings.tileLabels': 'Bag tile labels',
 	'settings.tileLabels.numbers': 'Numbers',
 	'settings.tileLabels.letters': 'Letters',

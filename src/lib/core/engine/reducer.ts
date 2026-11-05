@@ -582,6 +582,10 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 			return withReminder(game, event.reminderId, (r) =>
 				event.fill ? { ...r, symbolFill: true } : omit(r, 'symbolFill')
 			);
+		case 'ReminderCountsUpSet':
+			return withReminder(game, event.reminderId, (r) =>
+				event.countsUp === undefined ? omit(r, 'countsUp') : { ...r, countsUp: event.countsUp }
+			);
 		case 'BluffsSet': {
 			const bluffs = game.bluffs.map((set) => [...set]);
 			if (event.set < 0 || event.set > bluffs.length) return game;

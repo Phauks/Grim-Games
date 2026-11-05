@@ -7,6 +7,7 @@ import {
 	survivesFirstDeath,
 	explosionOf,
 	remindersRunOutByDawn,
+	counterMoves,
 	type Explosion,
 	type Night
 } from '#lib/core/rules/index.ts';
@@ -21,6 +22,7 @@ import {
 import type { Alignment, CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
 import { keepIconsOffline } from '#lib/features/offline/keep-offline.ts';
 import type { OpenGame } from '#lib/features/game/session.svelte.ts';
+import type { CounterTime } from '#lib/core/data/counter-rules.ts';
 import { toast } from '#lib/ui/primitives/toaster.ts';
 import { preferences } from '#lib/ui/preferences.svelte.ts';
 import { reminderFitWarning, warningText } from './board.ts';
@@ -142,7 +144,8 @@ export class Grimoire {
 		});
 		const tonight = ticking && this.nightDay === this.game.pastDays.length;
 		// Dusk takes off the reminders that last until dusk (the Poisoner's Poisoned).
-		if (tonight && step.id === 'dusk') this.run({ type: 'Dusk', ...keepReminders() });
+		if (tonight && step.id === 'dusk' && this.run({ type: 'Dusk', ...keepReminders() }))
+			this.moveCounters('dusk');
 		if (startDay && tonight && step.id === 'dawn') this.beginDay();
 	}
 
@@ -153,29 +156,76 @@ export class Grimoire {
 	dawnAsk = $state.raw<readonly ReminderId[]>([]);
 	#afterDawnAsk: (() => void) | undefined;
 
-	/** Runs `next` once the Reset Reminders dialog is answered, or now when it isn't open. */
+	/**
+	 * The dawn or dusk whose counting reminders wait on the Move counting reminders dialog
+	 * (Settings, Move counting reminders: Ask, plan M53); none when nothing asks. At dawn it
+	 * follows the Reset Reminders dialog (`#countersAfterReset`).
+	 */
+	counterAsk = $state.raw<CounterTime | undefined>(undefined);
+	#countersAfterReset = false;
+
+	/** Runs `next` once dawn's dialogs are answered, or now when none is open. */
 	afterDawnAsk(next: () => void): void {
-		if (this.dawnAsk.length === 0) next();
+		if (this.dawnAsk.length === 0 && this.counterAsk === undefined) next();
 		else this.#afterDawnAsk = next;
 	}
 
 	/** The Reset Reminders dialog is answered (Confirm, Cancel or closed). */
 	dawnAnswered(): void {
 		this.dawnAsk = [];
+		if (this.#countersAfterReset) {
+			this.#countersAfterReset = false;
+			this.counterAsk = 'dawn';
+			return;
+		}
+		this.#dawnAsksDone();
+	}
+
+	/** The Move counting reminders dialog is answered: Confirm (`move`), or Cancel or closed. */
+	countersAnswered(move: boolean): void {
+		const at = this.counterAsk;
+		this.counterAsk = undefined;
+		if (move && at !== undefined) this.run({ type: 'AdvanceCounters', at });
+		if (at === 'dawn') this.#dawnAsksDone();
+	}
+
+	#dawnAsksDone(): void {
 		const next = this.#afterDawnAsk;
 		this.#afterDawnAsk = undefined;
 		next?.();
 	}
 
+	/**
+	 * Moves the counting reminders at a new day or night (plan M53, Trevor 2026-11-04) as the
+	 * Storyteller's setting says: Off leaves them, Ask opens the dialog, Automatically moves them.
+	 */
+	private moveCounters(at: CounterTime): void {
+		const mode = preferences.current.countingReminders;
+		const moves = counterMoves(this.game, this.open.characters, at);
+		// Off still counts up the number tokens the Storyteller set to count up, one by one.
+		if (mode === 'off') {
+			if (moves.some((m) => m.kind === 'number'))
+				this.run({ type: 'AdvanceCounters', at, numbersOnly: true });
+			return;
+		}
+		if (moves.length === 0) return;
+		if (mode === 'auto') this.run({ type: 'AdvanceCounters', at });
+		else if (at === 'dawn' && this.dawnAsk.length > 0) this.#countersAfterReset = true;
+		else this.counterAsk = at;
+	}
+
 	/** Starts a new day, taking reminders that ran out off as the Storyteller's setting says. */
 	private beginDay(): boolean {
 		if (preferences.current.reminderRemoval !== 'ask') {
-			return this.run({ type: 'NewDay', ...keepReminders() });
+			if (!this.run({ type: 'NewDay', ...keepReminders() })) return false;
+			this.moveCounters('dawn');
+			return true;
 		}
 		const ranOut = remindersRunOutByDawn(this.game, this.open.characters);
 		if (!this.run({ type: 'NewDay', askReminders: true })) return false;
 		// Those the dawn itself took off (the Flowergirl's swap) are not asked about.
 		this.dawnAsk = ranOut.filter((id) => reminderHolder(this.game, id) !== undefined);
+		this.moveCounters('dawn');
 		return true;
 	}
 

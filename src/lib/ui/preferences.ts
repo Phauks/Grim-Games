@@ -107,6 +107,14 @@ export interface Preferences {
 	 */
 	reminderRemoval: ReminderRemoval;
 	/**
+	 * Whether the counting reminders move at each new day or night (plan M53, Trevor
+	 * 2026-11-04): a character's run of day or night tokens (the Leviathan's, the Riot's, the
+	 * Summoner's, the Xaan's) and number tokens set to count up. Off (the default, as for
+	 * reminders that run out) leaves the runs but still counts up those number tokens; Ask shows
+	 * what would move; Automatically moves them.
+	 */
+	countingReminders: CountingReminders;
+	/**
 	 * The device vibrates with its alerts: the day timer running out (Trevor, 2026-10-18) and
 	 * a Back to town call (plan U2).
 	 */
@@ -189,6 +197,8 @@ export type TimerMode = (typeof TIMER_MODES)[number];
 
 export const REMINDER_REMOVALS = ['off', 'ask', 'auto'] as const;
 export type ReminderRemoval = (typeof REMINDER_REMOVALS)[number];
+export const COUNTING_REMINDERS = ['off', 'ask', 'auto'] as const;
+export type CountingReminders = (typeof COUNTING_REMINDERS)[number];
 
 /** The day timer's finishing sounds, made on the device (no audio files); or none. */
 export const TIMER_SOUNDS = ['bell', 'chime', 'clocktower', 'buzzer', 'none'] as const;
@@ -269,6 +279,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
 	timerSound: 'bell',
 	timerMode: 'down',
 	reminderRemoval: 'off',
+	countingReminders: 'off',
 	timerVibrate: true,
 	callSound: 'clocktower',
 	ambienceOn: false,
@@ -391,6 +402,9 @@ export function parsePreferences(raw: unknown): Preferences {
 		reminderRemoval: (REMINDER_REMOVALS as readonly unknown[]).includes(input.reminderRemoval)
 			? (input.reminderRemoval as ReminderRemoval)
 			: DEFAULT_PREFERENCES.reminderRemoval,
+		countingReminders: (COUNTING_REMINDERS as readonly unknown[]).includes(input.countingReminders)
+			? (input.countingReminders as CountingReminders)
+			: DEFAULT_PREFERENCES.countingReminders,
 		timerVibrate:
 			typeof input.timerVibrate === 'boolean'
 				? input.timerVibrate

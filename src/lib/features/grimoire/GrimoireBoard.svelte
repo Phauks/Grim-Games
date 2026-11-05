@@ -114,7 +114,7 @@
 	import EndGameDialogs from './EndGameDialogs.svelte';
 	import StarPassPrompt from './StarPassPrompt.svelte';
 	import FirstDeathAsk from './FirstDeathAsk.svelte';
-	import ResetReminders from './ResetReminders.svelte';
+	import DawnDuskAsks from './DawnDuskAsks.svelte';
 	import ExplosionAsk from './ExplosionAsk.svelte';
 	import ReincarnateAsk from './ReincarnateAsk.svelte';
 	import ReminderAsk from './ReminderAsk.svelte';
@@ -1027,7 +1027,7 @@
 <AlignmentAsk {grimoire} />
 <StarPassPrompt {grimoire} active={!ended && !grimoire.open.viewOnly} />
 <FirstDeathAsk {grimoire} />
-<ResetReminders {grimoire} />
+<DawnDuskAsks {grimoire} />
 <ExplosionAsk {grimoire} />
 <ReincarnateAsk {grimoire} />
 <NominationAsk {grimoire} bind:asks={nominationAsks} />

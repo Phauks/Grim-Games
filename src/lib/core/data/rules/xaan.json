@@ -145,5 +145,9 @@
 	},
 	"reminderEnds": {
 		"X": "dusk"
+	},
+	"counter": {
+		"tokens": ["Night 1", "Night 2", "Night 3"],
+		"at": "dusk"
 	}
 }

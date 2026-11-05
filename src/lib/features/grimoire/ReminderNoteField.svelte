@@ -31,4 +31,8 @@
 		if (held())
 			grimoire.run({ type: 'SetReminderSymbolFill', reminderId: reminder.reminderId, fill });
 	}}
+	onCountsUp={(countsUp) => {
+		if (held())
+			grimoire.run({ type: 'SetReminderCountsUp', reminderId: reminder.reminderId, countsUp });
+	}}
 />

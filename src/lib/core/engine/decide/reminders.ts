@@ -2,14 +2,22 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import {
 	SYMBOL_COLOURS,
+	numberSymbol,
 	reminderHolder,
 	replacedBy,
 	type Reminder,
 	type ReminderInstance
 } from '#lib/core/model/index.ts';
-import { REMINDER_EFFECTS, fixedReminderMove, pickedEffectOf } from '#lib/core/rules/index.ts';
+import { COUNTER_TIMES } from '#lib/core/data/counter-rules.ts';
+import {
+	REMINDER_EFFECTS,
+	counterMoves,
+	fixedReminderMove,
+	pickedEffectOf
+} from '#lib/core/rules/index.ts';
 import type { GameEvent } from '../events.ts';
 import {
+	checkCountsUp,
 	checkReminder,
 	checkSymbol,
 	genericLook,
@@ -37,6 +45,8 @@ export const REMINDERS_DECIDERS: Deciders<
 	| 'SetReminderSymbol'
 	| 'SetReminderSymbolColour'
 	| 'SetReminderSymbolFill'
+	| 'SetReminderCountsUp'
+	| 'AdvanceCounters'
 	| 'PlaceLooseReminder'
 	| 'AddGenericToken'
 	| 'SetGenericToken'
@@ -243,6 +253,46 @@ export const REMINDERS_DECIDERS: Deciders<
 		const event: GameEvent = { type: 'ReminderSymbolFillSet', reminderId: command.reminderId };
 		if (command.fill) event.fill = true;
 		return [event];
+	},
+
+	SetReminderCountsUp(game, command, ctx, warn) {
+		const from = reminderHolder(game, command.reminderId);
+		if (!from) refuse('unknown-reminder', `no reminder ${command.reminderId}`);
+		const reminder: ReminderInstance = heldReminder(game, from, command.reminderId);
+		const { countsUp } = command;
+		if (countsUp !== undefined) checkCountsUp(countsUp, reminder.symbol);
+		if (countsUp === reminder.countsUp) {
+			warn('no-change', 'the token already counts that way');
+			return [];
+		}
+		const event: GameEvent = { type: 'ReminderCountsUpSet', reminderId: command.reminderId };
+		if (countsUp !== undefined) event.countsUp = countsUp;
+		return [event];
+	},
+
+	AdvanceCounters(game, command, ctx, warn) {
+		if (!COUNTER_TIMES.includes(command.at)) refuse('invalid-counts-up', `no time ${command.at}`);
+		const moves = counterMoves(game, ctx.characters, command.at).filter(
+			(m) => !command.numbersOnly || m.kind === 'number'
+		);
+		if (moves.length === 0) {
+			warn('no-change', 'no counting reminders move');
+			return [];
+		}
+		return moves.flatMap((move): GameEvent[] => {
+			if (move.kind === 'number')
+				return [
+					{ type: 'ReminderSymbolSet', reminderId: move.reminderId, symbol: numberSymbol(move.to) }
+				];
+			const added: GameEvent = {
+				type: 'ReminderAdded',
+				seatId: move.seatId,
+				reminder: { reminderId: ctx.newId(), characterId: move.characterId, label: move.label }
+			};
+			return move.kind === 'replace'
+				? [{ type: 'ReminderRemoved', reminderId: move.reminderId }, added]
+				: [added];
+		});
 	},
 
 	PlaceLooseReminder(game, command, ctx, warn) {

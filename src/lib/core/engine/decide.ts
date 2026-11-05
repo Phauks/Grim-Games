@@ -79,6 +79,7 @@ export type ErrorCode =
 	| 'invalid-symbol'
 	| 'invalid-colour'
 	| 'invalid-look'
+	| 'invalid-counts-up'
 	| 'invalid-day-tally'
 	| 'invalid-effect'
 	| 'invalid-wish'

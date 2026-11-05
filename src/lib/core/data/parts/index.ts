@@ -17,6 +17,7 @@ export { choosesLikeDemon } from './chooses-like-demon.ts';
 export { choosesUnmarked } from './chooses-unmarked.ts';
 export { claimsPerDay } from './claims-per-day.ts';
 export { countdown } from './countdown.ts';
+export { counter } from './counter.ts';
 export { createsDemon } from './creates-demon.ts';
 export { curses } from './curses.ts';
 export { dayClaim } from './day-claim.ts';

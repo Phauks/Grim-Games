@@ -111,20 +111,21 @@
 	const game = $derived(grimoire.game);
 	const characters = $derived(grimoire.open.characters);
 
+	/**
+	 * The bank pulled up by its handle bar (Trevor, 2026-10-30: "a drag up with a handle bar",
+	 * one area, not a caret and a second sheet): every token at once (ReminderTray).
+	 */
+	let binOpen = $state(false);
 	const items = $derived(
 		bankItems(game, characters, {
 			focus,
 			focusMode,
 			stack: preferences.current.assistance.stackReminders,
 			copies: grimoire.copies,
-			bankCopies: grimoire.bankCopies
+			bankCopies: grimoire.bankCopies,
+			bundleCounters: !binOpen
 		})
 	);
-	/**
-	 * The bank pulled up by its handle bar (Trevor, 2026-10-30: "a drag up with a handle bar",
-	 * one area, not a caret and a second sheet): every token at once (ReminderTray).
-	 */
-	let binOpen = $state(false);
 	/** Every stretch, empty ones too, so each caption is measured before it first shows. */
 	const groups = $derived(
 		[

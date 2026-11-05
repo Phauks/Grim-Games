@@ -16,6 +16,7 @@ import {
 	type ReminderId,
 	type SeatId
 } from '#lib/core/model/index.ts';
+import { rulesOf } from '#lib/core/data/rules/index.ts';
 import { borrowedAbilities, deadCharacters } from '#lib/core/rules/index.ts';
 import { bankOwners, bankReminders, byLabel, isGeneric, type StepReminders } from './reminders.ts';
 import { pendingSetup, type TrayItem } from './setup-tray.ts';
@@ -90,12 +91,44 @@ export interface BankOptions {
 	/** Duplicate copies on the board and in the bank (Grimoire). */
 	copies: ReadonlySet<ReminderId>;
 	bankCopies: ReadonlyMap<string, number>;
+	/**
+	 * Each run of counting reminders (`counter` in a character's rules: the Leviathan's Day 1
+	 * to Day 5) as one token, the next still off the board (plan M53, Trevor 2026-11-04: "bundle
+	 * incrementing reminder tokens together in the bank"). Off in the pulled-up bank, which shows
+	 * every token.
+	 */
+	bundleCounters?: boolean;
+}
+
+/** `items` with each counting run cut to its first token still in the bank. */
+function bundledCounters(items: BankItem[], characters: CharacterLookup): BankItem[] {
+	const run = (item: BankItem) => {
+		const tokens = rulesOf(item.characterId, characters)?.counter?.tokens;
+		return tokens?.includes(item.label) ? tokens : undefined;
+	};
+	// The run's earliest token still in the bank, by character.
+	const next = new Map<CharacterId, number>();
+	for (const item of items) {
+		const tokens = run(item);
+		if (!tokens) continue;
+		const i = tokens.indexOf(item.label);
+		next.set(item.characterId, Math.min(i, next.get(item.characterId) ?? i));
+	}
+	const kept = new Set<CharacterId>();
+	return items.filter((item) => {
+		const tokens = run(item);
+		if (!tokens) return true;
+		if (tokens.indexOf(item.label) !== next.get(item.characterId)) return false;
+		if (kept.has(item.characterId)) return false;
+		kept.add(item.characterId);
+		return true;
+	});
 }
 
 export function bankItems(
 	game: Game,
 	characters: CharacterLookup,
-	{ focus, focusMode, stack, copies, bankCopies }: BankOptions
+	{ focus, focusMode, stack, copies, bankCopies, bundleCounters }: BankOptions
 ): BankItem[] {
 	// Script order, then reminder name (Trevor, 2026-10-16), like every reminder list; a
 	// setup token too important to miss (the Drunk's) first (Trevor, 2026-10-27).
@@ -146,7 +179,7 @@ export function bankItems(
 	const dead = new Set(
 		[...deadCharacters(game, characters)].filter((id) => borrowed.get(id) !== true)
 	);
-	const rest = bankReminders(
+	const listed = bankReminders(
 		game,
 		characters,
 		focus,
@@ -182,6 +215,7 @@ export function bankItems(
 		}
 		return list;
 	});
+	const rest = bundleCounters ? bundledCounters(listed, characters) : listed;
 	// The generic ∞ reminder, as many as needed (Trevor, 2026-10-18), after the reminders.
 	const generic: BankItem = {
 		key: 'generic',

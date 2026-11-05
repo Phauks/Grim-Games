@@ -17,7 +17,7 @@ import { upgradeScriptJinxes } from '#lib/core/data/jinx-renames.ts';
 import type { GameId } from '#lib/core/model/index.ts';
 import type { GameLog, GameSession } from './log.ts';
 
-export const SAVED_GAME_VERSION = 30;
+export const SAVED_GAME_VERSION = 31;
 
 export interface SavedGame {
 	schemaVersion: typeof SAVED_GAME_VERSION;
@@ -317,6 +317,14 @@ const migrateV29toV30: Migration = (doc) => {
 	return { ...doc, schemaVersion: 30, log: { ...log, entries } };
 };
 
+/**
+ * Version 31 (2026-11-05) added number tokens that count up each dawn or dusk
+ * (`ReminderInstance.countsUp`, the `ReminderCountsUpSet` event, plan M53) and the
+ * `AdvanceCounters` command. The log needs no change: an older reminder never counts up. The
+ * bump makes older builds refuse a version 31 save.
+ */
+const migrateV30toV31: Migration = (doc) => ({ ...doc, schemaVersion: 31 });
+
 /** `MIGRATIONS[n]` migrates version `n` to `n + 1`. Version 1 is the first saved shape. */
 export const MIGRATIONS: Readonly<Record<number, Migration>> = {
 	1: migrateV1toV2,
@@ -347,7 +355,8 @@ export const MIGRATIONS: Readonly<Record<number, Migration>> = {
 	26: migrateV26toV27,
 	27: migrateV27toV28,
 	28: migrateV28toV29,
-	29: migrateV29toV30
+	29: migrateV29toV30,
+	30: migrateV30toV31
 };
 
 /**
