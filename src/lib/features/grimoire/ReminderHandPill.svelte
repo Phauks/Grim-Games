@@ -6,7 +6,18 @@
 	"+ New token", the bank (a board token goes back), or an open spot in loose mode.
 -->
 <script lang="ts">
-	import type { Reminder, ReminderId, SeatId } from '#lib/core/model/index.ts';
+	import {
+		REMINDER_NUMBER_MAX,
+		REMINDER_NUMBER_MIN,
+		isNumberSymbol,
+		numberSymbol,
+		symbolNumber,
+		type Reminder,
+		type ReminderId,
+		type SeatId
+	} from '#lib/core/model/index.ts';
+	import { t } from '#lib/i18n/locale.svelte.ts';
+	import NumberSelect from '#lib/ui/primitives/NumberSelect.svelte';
 	import { bankView, type BankItem } from './bank-items.ts';
 	import BoardReminder from './BoardReminder.svelte';
 	import { placingAlignment } from './board.ts';
@@ -52,6 +63,24 @@
 		return () => onHints({ seats: [] });
 	});
 
+	/**
+	 * A # token's number, picked in the pill (plan M48, Trevor 2026-11-04: any number but 1 took
+	 * going into its settings): the bank's # places the one picked, a placed one changes to it.
+	 */
+	const bankNumber = $derived(hand.held?.kind === 'bank' && !!hand.held.item.number);
+	const placedNumber = $derived(
+		placed && isNumberSymbol(placed.symbol) ? symbolNumber(placed.symbol) : undefined
+	);
+	function pickNumber(n: number) {
+		if (bankNumber) hand.number = n;
+		else if (placed)
+			grimoire.run({
+				type: 'SetReminderSymbol',
+				reminderId: placed.reminderId,
+				symbol: numberSymbol(n)
+			});
+	}
+
 	const actions = $derived.by(() => {
 		const held = hand.held;
 		const putDown = () => hand.putDown();
@@ -89,10 +118,23 @@
 		{#snippet token()}
 			{#if held.kind === 'bank'}<BoardReminder
 					{...bankView(held.item, characters)}
+					{...bankNumber && { symbol: numberSymbol(hand.number) }}
 					alignment={placingAlignment(game, held.item, characters)}
 				/>{:else if placed}<BoardReminder
 					{...placedLook(placed, characters)}
 					alignment={placingAlignment(game, placed, characters)}
+				/>{/if}
+		{/snippet}
+		{#snippet extra()}
+			{@const n = bankNumber ? hand.number : placedNumber}
+			{#if n !== undefined}<NumberSelect
+					label={t('common.reminderNumber')}
+					hideLabel
+					value={n}
+					min={REMINDER_NUMBER_MIN}
+					max={REMINDER_NUMBER_MAX}
+					onchange={pickNumber}
+					testid="hand-number"
 				/>{/if}
 		{/snippet}
 	</ReminderInHand>

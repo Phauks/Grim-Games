@@ -3,6 +3,7 @@ import { editionScript, toScript } from '#lib/core/data/index.ts';
 import { createGame, dispatch, type EngineContext } from '#lib/core/engine/index.ts';
 import { characterLookup, GENERIC_REMINDER_ID } from '#lib/core/model/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { scenario } from '#lib/core/testing/scenario.ts';
 import { bankFace, bankItems, bankLook, type BankOptions } from './bank-items.ts';
 
 const data = committedGameData();
@@ -45,6 +46,8 @@ describe('bankItems', () => {
 		expect(number).toMatchObject({ characterId: GENERIC_REMINDER_ID, number: true });
 		expect(bankFace(number)).toEqual({ symbol: '#' });
 		expect(bankLook(number)).toEqual({ symbol: '#1' });
+		// Or the number picked in its pill while held (plan M48).
+		expect(bankLook(number, 4)).toEqual({ symbol: '#4' });
 		expect(items.at(-1)).toMatchObject({ key: 'new-token', makesToken: true });
 	});
 
@@ -56,5 +59,39 @@ describe('bankItems', () => {
 		});
 		expect(items.every((i) => i.now || i.group === 'generic')).toBe(true);
 		expect(items.some((i) => i.characterId === 'poisoner')).toBe(false);
+	});
+});
+
+describe('bankItems with borrowed abilities (M50)', () => {
+	it("offers a gained character's reminders, with the living while someone living has it", () => {
+		// Wiki (https://wiki.bloodontheclocktower.com/Philosopher): "During the first night, the
+		// Philosopher chooses to gain the Dreamer's ability. They gain the Dreamer's ability from
+		// now on and act when the Dreamer normally acts."
+		const s = scenario(['philosopher', 'monk', 'chef', 'witch', 'nodashii']);
+		const dead = s.dies('monk');
+		const monkGroup = (game: typeof s.game) =>
+			bankItems(game, s.characters, options).find((i) => i.characterId === 'monk')?.group;
+		expect(monkGroup(dead.game)).toBe('dead');
+		const gained = dead.do((x) => ({
+			type: 'GiveAbility',
+			seatId: x.seat('philosopher'),
+			ability: { characterId: 'monk', via: 'philosopher' }
+		}));
+		expect(monkGroup(gained.game)).toBe('reminders');
+	});
+
+	it('offers the reminders of a character no one is, once someone has its ability', () => {
+		const s = scenario(['chef', 'imp', 'empath', 'poisoner', 'saint']);
+		const has = (game: typeof s.game) =>
+			bankItems(game, s.characters, options).some(
+				(i) => i.characterId === 'monk' && i.label === 'Safe'
+			);
+		expect(has(s.game)).toBe(false);
+		const given = s.do((x) => ({
+			type: 'GiveAbility',
+			seatId: x.seat('chef'),
+			ability: { characterId: 'monk' }
+		}));
+		expect(has(given.game)).toBe(true);
 	});
 });

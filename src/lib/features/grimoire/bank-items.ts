@@ -7,6 +7,7 @@ import type { Character, CharacterId, ReminderLabel } from '#lib/core/data/index
 import {
 	GENERIC_REMINDER_ID,
 	NUMBER_TOKEN_LOOK,
+	numberSymbol,
 	scriptCharacterIds,
 	type CharacterLookup,
 	type Game,
@@ -15,7 +16,7 @@ import {
 	type ReminderId,
 	type SeatId
 } from '#lib/core/model/index.ts';
-import { deadCharacters } from '#lib/core/rules/index.ts';
+import { borrowedAbilities, deadCharacters } from '#lib/core/rules/index.ts';
 import { bankOwners, bankReminders, byLabel, isGeneric, type StepReminders } from './reminders.ts';
 import { pendingSetup, type TrayItem } from './setup-tray.ts';
 import type { StepFocus } from './step-focus.svelte.ts';
@@ -67,10 +68,17 @@ export function bankFace(item: Pick<BankItem, 'token' | 'number'>): GenericLook 
 
 /**
  * The look a copy of a bank token starts with when no ∞ token gives it one (`tokenId`): the
- * # token's, showing 1 (plan M35).
+ * # token's, showing 1 (plan M35) or the number picked in its pill while held (plan M48).
  */
-export const bankLook = (item: Pick<BankItem, 'number'>): GenericLook | undefined =>
-	item.number ? NUMBER_TOKEN_LOOK : undefined;
+export const bankLook = (
+	item: Pick<BankItem, 'number'>,
+	number?: number
+): GenericLook | undefined =>
+	item.number
+		? number === undefined
+			? NUMBER_TOKEN_LOOK
+			: { symbol: numberSymbol(number) }
+		: undefined;
 
 export interface BankOptions {
 	/** The character whose night step is being walked through. */
@@ -132,7 +140,12 @@ export function bankItems(
 		const k = `${item.suggestion.characterId}:${item.suggestion.label}`;
 		pending[k] = (pending[k] ?? 0) + 1;
 	}
-	const dead = deadCharacters(game, characters);
+	// A character whose players are dead stays with the living while a living player (or the
+	// Storyteller) has its ability (M50).
+	const borrowed = borrowedAbilities(game, characters);
+	const dead = new Set(
+		[...deadCharacters(game, characters)].filter((id) => borrowed.get(id) !== true)
+	);
 	const rest = bankReminders(
 		game,
 		characters,

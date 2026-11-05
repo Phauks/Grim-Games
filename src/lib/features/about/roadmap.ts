@@ -102,7 +102,8 @@ export const ROADMAP: readonly RoadmapItem[] = [
 			'L68',
 			'L69',
 			'L95',
-			'L98'
+			'L98',
+			'M49'
 		]
 	},
 	{
@@ -295,7 +296,7 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	{
 		title: 'A number token in the reminder bank, for counts and numbers on the board',
 		area: 'storyteller',
-		parts: ['M35']
+		parts: ['M35', 'M48']
 	},
 	{
 		title: 'Seats that keep their names when players rotate, and random name colours',
@@ -555,6 +556,14 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		title: '"Mad as" on the board',
 		area: 'storyteller',
 		parts: ['M36']
+	},
+	{
+		// Trevor, 2026-11-04: "if a character also has the ability of a character, we need to make
+		// sure we have the reminder tokens to facilitate that ability". M50: every borrowed ability
+		// (gained, held, given by hand, the Storyteller's) brings its character's reminders.
+		title: 'Borrowed abilities bring their reminder tokens',
+		area: 'storyteller',
+		parts: ['M50']
 	},
 	{
 		// The coordinator's ask of 2026-11-03 (ability-parts/jinx-format-audit.md): a jinx format a
