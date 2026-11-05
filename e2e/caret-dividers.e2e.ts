@@ -12,7 +12,7 @@ const ROUTES = [
 	'/',
 	'/new',
 	'/history',
-	'/reference',
+	'/character-analyzer',
 	'/scripts',
 	'/library',
 	'/info-tokens',

@@ -9,7 +9,7 @@ const pullDown = (page: Page) =>
 	page.evaluate(() => getComputedStyle(document.documentElement).overscrollBehaviorY);
 
 test('pulling down refreshes ordinary pages but not a game in progress', async ({ page }) => {
-	for (const path of ['/', '/scripts', '/reference', '/play']) {
+	for (const path of ['/', '/scripts', '/character-analyzer', '/play']) {
 		await page.goto(path);
 		expect(await pullDown(page), path).toBe('auto');
 	}
