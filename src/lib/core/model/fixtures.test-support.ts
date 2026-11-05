@@ -2,8 +2,7 @@
  * Shared test fixtures: the committed TPI data, a deterministic engine context, and a
  * helper to run commands. Node only (reads static/data), so excluded from the Worker build.
  */
-import { readFileSync } from 'node:fs';
-import { loadGameData, type CharacterId, type Script } from '#lib/core/data/index.ts';
+import type { CharacterId, Script } from '#lib/core/data/index.ts';
 import {
 	createGame,
 	dispatch,
@@ -12,17 +11,11 @@ import {
 	type EngineWarning,
 	type GameSession
 } from '#lib/core/engine/index.ts';
+import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { characterLookup, type CharacterLookup } from './characters.ts';
 
-const dataDir = new URL('../../../../static/data/', import.meta.url);
-const readJson = (file: string): unknown =>
-	JSON.parse(readFileSync(new URL(file, dataDir), 'utf8'));
-
-export const gameData = loadGameData({
-	roles: readJson('roles.json'),
-	jinxes: readJson('jinxes.json'),
-	nightsheet: readJson('nightsheet.json')
-});
+/** The committed TPI data (in the parity run, every official character as a custom one). */
+export const gameData = committedGameData();
 
 /** A test script: Trouble Brewing plus characters the model tests need. */
 const TEST_SCRIPT_IDS: CharacterId[] = [

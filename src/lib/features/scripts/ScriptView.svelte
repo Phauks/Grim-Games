@@ -37,7 +37,7 @@
 	import ScriptDetails, { type ScriptFact } from './ScriptDetails.svelte';
 	import { findSaved, type ScriptListing } from './script-providers.ts';
 	import ShareControl from './ShareControl.svelte';
-	import { shareTargetFor, type ShareTarget } from './share-codes.ts';
+	import { shareTargetFor, type Shareable, type ShareTarget } from './share-codes.ts';
 
 	/**
 	 * One script's details, the same wherever a script is looked at (Trevor, 2026-10-17: the
@@ -267,6 +267,13 @@
 				location.origin
 			);
 	});
+	/** What the printed sheet's QR code opens (M56): the same script Share links to. */
+	const printShare = $derived.by((): Shareable | undefined => {
+		const s = shownSaved;
+		if (isSaved && s && s.scriptId !== 'unsaved') return s;
+		if (!preview || !shownSource) return undefined;
+		return { edition: preview.edition, json: scriptToJson(preview), source: shownSource };
+	});
 </script>
 
 <!-- Every BotC Scripts version, newest first; "None" where the source publishes none. -->
@@ -343,7 +350,7 @@
 			disabled={!preview || !shownSource || busy}
 			onclick={() => void play()}
 		/>
-		<PrintScriptButton script={preview} version={shownVersion} {sourcePrints} />
+		<PrintScriptButton script={preview} version={shownVersion} {sourcePrints} share={printShare} />
 		<ShareControl
 			what="script"
 			title={shownListing?.row.name || t('scripts.current.defaultName')}
