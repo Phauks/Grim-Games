@@ -1,32 +1,21 @@
 <script lang="ts">
 	import type { Character } from '#lib/core/data/types.ts';
 	import type { ReferenceEntry } from '#lib/core/rules/reference.ts';
-	import type { CharacterId } from '#lib/core/data/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import Chip from '#lib/ui/primitives/Chip.svelte';
 	import DataTable, { type DataColumn } from '#lib/ui/table/DataTable.svelte';
 	import FieldValue from './FieldValue.svelte';
 	import { REFERENCE_FIELDS, type FieldId, type TableKey as Key } from './fields.ts';
 
-	/** The Character Lab's Lock column (plan M45), set while the page holds the lab. */
-	export interface TableLab {
-		locked: readonly CharacterId[];
-		onLock: (id: CharacterId, lock: boolean) => void;
-	}
-
 	/**
-	 * The Character Lab's rows, every field shown, with no sort, filters or column picker (plan
-	 * M47, Trevor 2026-11-04: "remove all those useless table controls").
+	 * The Character Lab's core character, every field shown, with no sort, filters or column
+	 * picker (plan M47, Trevor 2026-11-04: "remove all those useless table controls").
 	 */
 	interface Props {
 		rows: readonly ReferenceEntry[];
 		onExplain: (title: string, text: string, character?: Character) => void;
-		/** Told the rows as shown, in order. */
-		onrows?: (rows: readonly ReferenceEntry[]) => void;
-		lab?: TableLab;
 	}
 
-	let { rows, onExplain, onrows, lab }: Props = $props();
+	let { rows, onExplain }: Props = $props();
 
 	/** Fixed widths (in --u): layout never depends on which rows are drawn, so nothing reflows. */
 	const WIDTHS: Record<FieldId, number> = {
@@ -52,22 +41,7 @@
 		problems: 15
 	};
 
-	const NO_FILTER = 'The lab lists only the selected characters and their jinx partners.';
-
-	/** Lock, before the character's own columns, while the page holds the lab. */
-	const labColumns = $derived.by((): DataColumn<Key, ReferenceEntry>[] => {
-		if (!lab) return [];
-		return [
-			{
-				id: 'lock',
-				label: t('lab.lock'),
-				width: 'calc(7 * var(--u))',
-				fixed: true,
-				stackHead: true,
-				noFilter: NO_FILTER
-			}
-		];
-	});
+	const NO_FILTER = 'The lab shows only its core character.';
 
 	const fieldColumns = $derived(
 		REFERENCE_FIELDS.map((field): DataColumn<Key, ReferenceEntry> => ({
@@ -79,28 +53,17 @@
 			noFilter: NO_FILTER
 		}))
 	);
-	const columns = $derived([...labColumns, ...fieldColumns]);
+	const columns = $derived(fieldColumns);
 
 	const field = (id: Key) => REFERENCE_FIELDS.find((f) => f.id === id)!;
 </script>
 
 {#snippet cell(entry: ReferenceEntry, column: DataColumn<Key>)}
-	{@const id = entry.character.id}
-	{#if column.id === 'lock' && lab}
-		{@const locked = lab.locked.includes(id)}
-		<!-- Locks the character into every lab game (plan M45). -->
-		<Chip
-			pressed={locked}
-			aria-label={t('lab.lockName', { character: entry.character.name })}
-			onclick={() => lab.onLock(id, !locked)}>{t('lab.lock')}</Chip
-		>
-	{:else}
-		{@const f = field(column.id)}
-		<!-- Shown in full: rows are as tall as their longest field (Trevor, 2026-10-16). -->
-		<div class="cell">
-			<FieldValue field={f.id} {entry} {onExplain} tokenSize={f.long ? undefined : 40} />
-		</div>
-	{/if}
+	{@const f = field(column.id)}
+	<!-- Shown in full: rows are as tall as their longest field (Trevor, 2026-10-16). -->
+	<div class="cell">
+		<FieldValue field={f.id} {entry} {onExplain} tokenSize={f.long ? undefined : 40} />
+	</div>
 {/snippet}
 
 <!--
@@ -119,7 +82,6 @@
 		narrow="stack"
 		fit="content"
 		resizeKey="reference"
-		{onrows}
 		controls={false}
 		lazy
 		rowEstimate="calc(10 * var(--u))"
@@ -127,8 +89,7 @@
 			// A link to one character (#witch, from a bug report) scrolls to its row.
 			id: entry.character.id,
 			'data-character': entry.character.id,
-			'data-type': entry.character.type,
-			'data-locked': lab?.locked.includes(entry.character.id) ? '' : undefined
+			'data-type': entry.character.type
 		})}
 		empty={t('reference.noMatch')}
 	/>

@@ -21,17 +21,13 @@
 	// Built at runtime from the same data and rules code the app uses.
 	const entries = $derived(data ? characterReference(data) : []);
 
-	// The Character Lab is this page, for everyone (plans M45, M47): select characters with +,
-	// and their rows, with their jinx partners under them, are what they are tested against.
-	// Nothing is listed until one is selected (Trevor, 2026-11-04: "do not list all on the
-	// left side when none are selected").
+	// The Character Lab is this page, for everyone (plans M45, M47): pick the core character
+	// with + on the left, and test it against each of its jinx partners on the right. Empty
+	// until one is picked (Trevor, 2026-11-05: "Just allow setting what the core one is on the
+	// left side, start empty").
 	const session = new LabSession();
 	/** A computer window: the lab and its game on the right of the table. */
 	const computer = new MediaQuery('min-width: 75rem', false);
-	const tableLab = $derived({
-		locked: session.locked,
-		onLock: (id: string, on: boolean) => session.setLocked(id, on)
-	});
 
 	onMount(async () => {
 		try {
@@ -43,10 +39,10 @@
 			reportError(e, { area: 'reference', notify: false });
 			return;
 		}
-		// A link to one character (#witch, from a bug report) selects it and scrolls to its row.
+		// A link to one character (#witch, from a bug report) makes it the core one.
 		const id = decodeURIComponent(location.hash.slice(1));
 		if (id && data.byId.has(id)) {
-			if (!session.locked.includes(id)) session.setLocked(id, true);
+			if (session.core !== id) session.setCore(id);
 			await tick();
 			// After the frame that lays out the lab beside the table, so the row stays put.
 			requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView());
@@ -65,14 +61,7 @@
 			<div class="characters" class:with-lab={computer.current}>
 				<div class="table-area">
 					<LabSelect {session} open={!computer.current} />
-					{#if session.locked.length}
-						<CharacterReference
-							{entries}
-							lab={tableLab}
-							only={session.jinxFilterOn ? session.jinxed : undefined}
-							onrows={(rows) => (session.listed = rows.map((e) => e.character.id))}
-						/>
-					{/if}
+					{#if session.core}<CharacterReference {entries} core={session.core} />{/if}
 				</div>
 				{#if computer.current}
 					<aside class="lab-side"><LabPanel {session} frame /></aside>
