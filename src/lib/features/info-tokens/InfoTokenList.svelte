@@ -89,9 +89,11 @@
 		plainText(a).localeCompare(plainText(b), undefined, { sensitivity: 'base', numeric: true });
 	const alphabetical = <T extends { text: string }>(tokens: readonly T[]) =>
 		[...tokens].sort((a, b) => byWords(a.text, b.text));
-	const standard = alphabetical(STANDARD_INFO_TOKENS.filter((token) => !token.extra));
+	// A built-in card that belongs to one character sits under Character-Specific instead.
+	const shared = STANDARD_INFO_TOKENS.filter((token) => !token.characterId);
+	const standard = alphabetical(shared.filter((token) => !token.extra));
 	// Trevor's own additions, listed apart so they read as not the base game's (2026-10-18).
-	const extras = alphabetical(STANDARD_INFO_TOKENS.filter((token) => token.extra));
+	const extras = alphabetical(shared.filter((token) => token.extra));
 
 	/**
 	 * A card that asks for something to fill in (words, a number or one of its answers) asks
@@ -175,7 +177,16 @@
 				(!activeCharacters || token.characterIds.some((id) => activeCharacters.has(id)))
 		)
 	);
-	/** Character cards and the Storyteller's own for characters, in one A–Z list. */
+	/** Built-in cards of characters on this list (the Harlot's), with their character. */
+	const owned = $derived(
+		STANDARD_INFO_TOKENS.flatMap((token) => {
+			const owner = token.characterId ? byId.get(token.characterId) : undefined;
+			return owner && (!activeCharacters || activeCharacters.has(owner.id))
+				? [{ token, owner }]
+				: [];
+		})
+	);
+	/** Character cards, built-in ones and the Storyteller's own for characters, in one A–Z list. */
 	const characterSpecific = $derived(
 		[
 			...(characterCards ?? []).map((row) => ({
@@ -183,14 +194,24 @@
 				words: t(row.card.titleKey),
 				tieBreak: row.character.name,
 				row,
-				token: undefined
+				token: undefined,
+				builtIn: undefined
+			})),
+			...owned.map((builtIn) => ({
+				key: `standard:${builtIn.token.id}`,
+				words: builtIn.token.text,
+				tieBreak: builtIn.owner.name,
+				row: undefined,
+				token: undefined,
+				builtIn
 			})),
 			...tied.map((token) => ({
 				key: `custom:${token.id}`,
 				words: token.text,
 				tieBreak: '',
 				row: undefined,
-				token
+				token,
+				builtIn: undefined
 			}))
 		].sort((a, b) => byWords(a.words, b.words) || byWords(a.tieBreak, b.tieBreak))
 	);
@@ -375,6 +396,15 @@
 								owners={[row.character]}
 								onchoose={() => fill(row)}
 								onadd={onadd && (() => fill(row, true))}
+							/>
+						{:else if item.builtIn}
+							{@const builtIn = item.builtIn}
+							<InfoTokenTile
+								text={builtIn.token.text}
+								asks={builtIn.token.asks}
+								owners={[builtIn.owner]}
+								onchoose={() => ask(builtIn.token)}
+								onadd={onadd && (() => ask(builtIn.token, true))}
 							/>
 						{:else if item.token}
 							{@render customTile(item.token)}
