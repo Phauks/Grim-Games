@@ -170,10 +170,6 @@
 		font-size: max(1rem, 16px); /* px-ok: iOS zooms into fields under 16px */
 		text-overflow: ellipsis;
 	}
-	.title::placeholder {
-		color: var(--on-surface-muted);
-		opacity: 1;
-	}
 	.title:focus {
 		outline: none;
 	}
