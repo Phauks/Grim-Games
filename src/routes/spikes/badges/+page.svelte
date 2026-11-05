@@ -2,6 +2,14 @@
 	import PageMenuButton from '#lib/features/shell/PageMenuButton.svelte';
 	import { APP_NAME } from '#lib/core/app-name.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
+	import JinxNote from '#lib/features/characters/JinxNote.svelte';
+	import type { CharacterId, Jinx } from '#lib/core/data/index.ts';
+
+	// A sample jinx, so a joined pair sits beside the single badges above (badge-seams.e2e.ts).
+	const jinx: Jinx = {
+		characters: ['spy' as CharacterId, 'poppygrower' as CharacterId],
+		reason: 'Sample jinx text.'
+	};
 </script>
 
 <svelte:head>
@@ -27,6 +35,7 @@
 		<li><CharacterPiece template="badge" characterId="gossip" /> may make a public statement</li>
 		<li><CharacterPiece template="badge" characterId="beggar" alignment="evil" /> is evil</li>
 	</ul>
+	<div data-testid="sample-jinx"><JinxNote {jinx} /></div>
 </main>
 
 <style>
