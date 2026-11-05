@@ -47,6 +47,7 @@ jobs:
       - run: npm run check
       - run: npm run lint
       - run: npm run test:unit -- --run
+      - run: npm run check:parity
       - run: npm run build
 
   e2e:

@@ -266,9 +266,10 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	{ title: 'Search Settings for any setting by name', area: 'app', parts: ['S24'] },
 	{
 		title:
-			'Print your own script sheet: Letter or A4, your margins, and what goes on the front and back, or download it as a PDF',
+			"Print your own script sheet: Letter or A4, your margins, what goes on the front and back (the script's QR code too), or download it as a PDF",
 		area: 'prepare',
-		parts: ['T1', 'T3']
+		// M56 (Trevor, 2026-11-05): a QR code of the script on either side, which opens it.
+		parts: ['T1', 'T3', 'M56']
 	},
 	{ title: 'A background image on the printed sheet', area: 'prepare', parts: ['T2'], later: true },
 	{
@@ -563,6 +564,14 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		title: 'Give ability engine support',
 		area: 'engine',
 		parts: ['M34']
+	},
+	{
+		// Trevor, 2026-11-04: official characters run as custom ones (engine-audit/engine-parity-audit.md).
+		// M57 parity check, M58 quick fixes, M59 night position, M60 building blocks, M61 one vocabulary,
+		// M62 rules in the Character builder.
+		title: 'Custom characters can do everything official ones can',
+		area: 'engine',
+		parts: ['M57', 'M58', 'M59', 'M60', 'M61', 'M62']
 	},
 	{
 		// Trevor, 2026-11-03: the board shows what a player is mad as beside their seat, marked !,

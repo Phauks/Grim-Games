@@ -11,6 +11,7 @@
 	import ScriptByline from './ScriptByline.svelte';
 	import ScriptSheet from './ScriptSheet.svelte';
 	import { tick, type Snippet } from 'svelte';
+	import QrCode from '#lib/ui/primitives/QrCode.svelte';
 	import {
 		PAPER_MM,
 		PRINT_DEFAULTS,
@@ -38,9 +39,18 @@
 		 * number and side (Trevor, 2026-10-29: "better delineation between which page is page 1, 2").
 		 */
 		preview?: boolean;
+		/** The link a side's QR code holds (M56); none while it is made, or if it can't be. */
+		qr?: string;
 	}
 
-	let { script, version, settings = PRINT_DEFAULTS, rules = [], preview = false }: Props = $props();
+	let {
+		script,
+		version,
+		settings = PRINT_DEFAULTS,
+		rules = [],
+		preview = false,
+		qr
+	}: Props = $props();
 
 	$effect(() => {
 		if (!officialData.current) void loadOfficialData();
@@ -137,6 +147,14 @@
 	}
 </script>
 
+<!-- The code's corner is kept whether it is on or not (Trevor, 2026-11-05), so switching it on
+     never moves the sheet. -->
+{#snippet qrSlot(on: boolean)}
+	<div class="qr-slot" data-testid="print-qr">
+		{#if on && qr}<QrCode value={qr} label={t('player.printQrLabel', { name: script.name })} />{/if}
+	</div>
+{/snippet}
+
 {#snippet side(number: number, name: string, page: Snippet)}
 	{#if preview}
 		<figure class="paper-side" data-testid="print-page" data-page={number}>
@@ -177,6 +195,7 @@
 								<h1>{script.name}</h1>
 								<ScriptByline author={script.meta.author} {version} />
 							</div>
+							{@render qrSlot(front.qr)}
 						</header>
 						<ScriptSheet
 							characters={frontCharacters}
@@ -205,6 +224,7 @@
 									<SetupTable />
 								</div>
 							{/if}
+							{@render qrSlot(back.qr)}
 						</header>
 						{#if back.night}<PlayerNightOrder {nights} flat />{/if}
 						{#if backCharacters.length || backJinxes || backRules.length}
@@ -388,6 +408,19 @@
 		justify-content: space-between;
 		align-items: start;
 		gap: var(--space-3);
+	}
+	/* About 23 mm across at full size: a quarter of a millimetre a square at the longest link. */
+	.qr-slot {
+		flex: none;
+		width: 5.5rem;
+		aspect-ratio: 1;
+		margin-inline-start: auto;
+	}
+	/* Ink on the paper itself, with its quiet zone. */
+	.qr-slot :global(.qr[data-scope='qr-code']) {
+		padding: 0.4rem;
+		background: var(--print-paper);
+		color: var(--print-ink);
 	}
 	.counts h2 {
 		margin: 0;

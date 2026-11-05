@@ -62,7 +62,7 @@
 <!-- One switch for the Script and Night tabs, beside Print and Share (Trevor, 2026-10-23). -->
 {#if script}
 	<SheetBackgroundSelect compact />
-	<PrintScriptButton {script} {version} {rules} />
+	<PrintScriptButton {script} {version} {rules} {share} />
 	<ShareControl
 		what="script"
 		title={script.name}

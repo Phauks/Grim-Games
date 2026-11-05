@@ -168,6 +168,8 @@ export const player = {
 	'player.printFriendly': 'Printer-friendly',
 	'player.printUnderlines': 'Dotted underlines',
 	'player.printLogo': 'Script logo',
+	'player.printQr': 'QR code',
+	'player.printQrLabel': 'QR code for {name}',
 	'player.printNightStrips': 'Night order down the sides',
 	'player.printRuleCharacters': 'Fabled and Loric',
 	'player.printColumns': 'Columns',
