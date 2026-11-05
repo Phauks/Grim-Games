@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { APP_NAME } from '#lib/core/app-name.ts';
+	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -14,5 +14,5 @@
 </script>
 
 <svelte:head>
-	<title>Character Analyzer · {APP_NAME}</title>
+	<title>{t('reference.pageTitle')}</title>
 </svelte:head>
