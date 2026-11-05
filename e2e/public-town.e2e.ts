@@ -46,7 +46,7 @@ test("a table's tablet shows the players' grim live, with nothing to tap and no 
 	await expect(open).toBeDisabled();
 	await tablet.keyboard.press('Escape');
 	await expect(open).toHaveCount(0);
-	const field = tablet.getByRole('textbox', { name: 'Room code from the Storyteller' });
+	const field = tablet.getByRole('textbox', { name: 'Room Code' });
 	await field.tap();
 	await field.pressSequentially(code);
 	await expect(tablet.getByTestId('room-preview')).toContainText('Trouble Brewing');
