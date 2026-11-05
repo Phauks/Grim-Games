@@ -4,7 +4,13 @@
  * `reminders` and `remindersGlobal` while it is in play (`reminderGroups` has the exceptions).
  */
 import type { Character, CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
-import { gainedAbilities, reminderOffered, type Night } from '#lib/core/rules/index.ts';
+import {
+	borrowedAbilities,
+	gainedAbilities,
+	reminderOffered,
+	type Night,
+	type NightStep
+} from '#lib/core/rules/index.ts';
 import { isBagDisabled, isNotDealt } from '#lib/core/rules/bag-characters.ts';
 import { OFFICIAL_RULES } from '#lib/core/data/rules/index.ts';
 import { placeholderRulesOf } from '#lib/core/rules/night-text.ts';
@@ -50,7 +56,10 @@ export function reminderGroups(game: Game, characters: CharacterLookup): Reminde
 			...charactersInPlay(game),
 			...game.seating.flatMap((seatId) => trueCharacter(game, seatId, characters) ?? []),
 			...game.ruleCharacters,
-			...gainedAbilities(game, characters).map((gained) => gained.characterId)
+			...gainedAbilities(game, characters).map((gained) => gained.characterId),
+			// Anyone's borrowed ability brings its tokens (M50): Gain ability, the Boffin's, the
+			// Philosopher's, the Plague Doctor's Minion.
+			...borrowedAbilities(game, characters).keys()
 		])
 	];
 	const script = scriptCharacterIds(game.script);
@@ -316,6 +325,28 @@ export function stepReminders(
 		e.tokens.filter((t) => t.action === 'place').map((t) => t.label)
 	);
 	return { characterId, labels: [...new Set(labels)] };
+}
+
+/**
+ * The character whose tokens a night step places: a gained or held ability's step runs that
+ * character's ability, so its tokens, not its holder's (M50, Trevor 2026-11-04: "if a character
+ * also has the ability of a character, we need to make sure we have the reminder tokens").
+ */
+export function stepTokenCharacter(
+	step: Pick<NightStep, 'character' | 'gained'>,
+	characters: CharacterLookup
+): Character | undefined {
+	return step.gained ? (characters.get(step.gained.characterId) ?? step.character) : step.character;
+}
+
+/** The reminders a walked-through step puts first in the bank: its token character's. */
+export function stepFocusOf(
+	step: Pick<NightStep, 'character' | 'gained'>,
+	night: Night,
+	characters: CharacterLookup
+): StepReminders | undefined {
+	const of = stepTokenCharacter(step, characters);
+	return of ? stepReminders(of.id, night, of) : undefined;
 }
 
 /**

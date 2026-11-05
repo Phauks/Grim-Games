@@ -17,7 +17,7 @@ import {
 	type SeatId
 } from '#lib/core/model/index.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
-import { deadCharacters } from '#lib/core/rules/index.ts';
+import { borrowedAbilities, deadCharacters } from '#lib/core/rules/index.ts';
 import { bankOwners, bankReminders, byLabel, isGeneric, type StepReminders } from './reminders.ts';
 import { pendingSetup, type TrayItem } from './setup-tray.ts';
 import type { StepFocus } from './step-focus.svelte.ts';
@@ -173,7 +173,12 @@ export function bankItems(
 		const k = `${item.suggestion.characterId}:${item.suggestion.label}`;
 		pending[k] = (pending[k] ?? 0) + 1;
 	}
-	const dead = deadCharacters(game, characters);
+	// A character whose players are dead stays with the living while a living player (or the
+	// Storyteller) has its ability (M50).
+	const borrowed = borrowedAbilities(game, characters);
+	const dead = new Set(
+		[...deadCharacters(game, characters)].filter((id) => borrowed.get(id) !== true)
+	);
 	const listed = bankReminders(
 		game,
 		characters,
