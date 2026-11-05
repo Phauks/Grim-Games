@@ -12,6 +12,7 @@
  * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
  * write it anyway as `it.fails` and say which gap it waits on.
  */
+import { testCharacters } from '#lib/core/model/fixtures.test-support.ts';
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
@@ -67,7 +68,9 @@ describe('Moonchild', () => {
 			const s = scenario(['moonchild', 'exorcist', 'pukka', 'chef', 'poisoner'])
 				.dies('moonchild', 'pukka')
 				.reminder('exorcist', 'moonchild', 'Dead');
-			expect(onDeathApplies(onDeathTrigger('moonchild')!, 'pukka', s.characters)).toBe(true);
+			expect(
+				onDeathApplies(onDeathTrigger('moonchild', testCharacters)!, 'pukka', s.characters)
+			).toBe(true);
 			expect(misses(s, 'exorcist')).toEqual([]);
 			expect(validDeathCauses(s.game, s.seat('exorcist'), s.characters)).toContainEqual(
 				expect.objectContaining({ cause: 'moonchild', flags: [] })
@@ -99,9 +102,9 @@ describe('Moonchild', () => {
 				'moonchild',
 				'shabaloth'
 			);
-			expect(onDeathApplies(onDeathTrigger('moonchild')!, 'shabaloth', eaten.characters)).toBe(
-				true
-			);
+			expect(
+				onDeathApplies(onDeathTrigger('moonchild', testCharacters)!, 'shabaloth', eaten.characters)
+			).toBe(true);
 			expect(misses(eaten, 'assassin')).toEqual(['alignment']);
 			expect(
 				validDeathCauses(eaten.game, eaten.seat('assassin'), eaten.characters)

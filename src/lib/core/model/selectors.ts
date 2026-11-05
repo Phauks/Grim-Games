@@ -5,7 +5,7 @@
  * Storyteller overrides win over every rule in this file.
  */
 import type { Alignment, Character, CharacterId, CharacterType } from '#lib/core/data/index.ts';
-import { OFFICIAL_RULES } from '#lib/core/data/rules/index.ts';
+import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterLookup } from './characters.ts';
 import type {
 	Game,
@@ -19,16 +19,18 @@ import type {
 } from './types.ts';
 
 /**
- * Reminders that make a living player register as dead: the token an official character's
- * `gameEnd.aliveWhileDead.untilToken` names. The Zombuul's first death: "you live but register
- * as dead" (https://wiki.bloodontheclocktower.com/Zombuul).
+ * Whether this reminder makes its living player register as dead: the token its character's
+ * `gameEnd.aliveWhileDead.untilToken` names, read from the game's characters so a custom
+ * character's works too (M58). The Zombuul's first death: "you live but register as dead"
+ * (https://wiki.bloodontheclocktower.com/Zombuul).
  */
-export const REGISTERS_AS_DEAD_REMINDERS: readonly Reminder[] = [...OFFICIAL_RULES].flatMap(
-	([characterId, rules]) => {
-		const label = rules.gameEnd?.aliveWhileDead?.untilToken;
-		return label ? [{ characterId, label }] : [];
-	}
-);
+export function registersAsDeadToken(
+	reminder: Reminder,
+	characters: CharacterLookup | undefined
+): boolean {
+	const label = rulesOf(reminder.characterId, characters)?.gameEnd?.aliveWhileDead?.untilToken;
+	return label !== undefined && label === reminder.label;
+}
 
 /** The reminders a Fabled or Loric in play holds, in the order they were placed. */
 export function ruleReminders(game: Game, characterId: CharacterId): ReminderInstance[] {
@@ -85,12 +87,6 @@ export function overrideOf<F extends OverrideField>(
 export function seatNumber(game: Game, seatId: SeatId): number | undefined {
 	const index = game.seating.indexOf(seatId);
 	return index === -1 ? undefined : index + 1;
-}
-
-function hasReminder(seat: Seat, reminder: Reminder): boolean {
-	return seat.reminders.some(
-		(r) => r.characterId === reminder.characterId && r.label === reminder.label
-	);
 }
 
 /**
@@ -168,12 +164,12 @@ export function alignmentOf(game: Game, seatId: SeatId): Alignment | undefined {
  * Whether abilities treat the player as dead: they are dead, or they carry a reminder
  * that makes them register as dead (the Zombuul's "Dead"), unless overridden.
  */
-export function registersAsDead(game: Game, seatId: SeatId): boolean {
+export function registersAsDead(game: Game, seatId: SeatId, characters: CharacterLookup): boolean {
 	const seat = getSeat(game, seatId);
 	if (!seat) return false;
 	const override = overrideOf(seat, 'registersAsDead');
 	if (override) return override.value;
-	return seat.dead || REGISTERS_AS_DEAD_REMINDERS.some((r) => hasReminder(seat, r));
+	return seat.dead || seat.reminders.some((r) => registersAsDeadToken(r, characters));
 }
 
 /**
@@ -195,7 +191,8 @@ export function isAliveForWin(game: Game, seatId: SeatId): boolean {
 export function aliveNeighbours(
 	game: Game,
 	seatId: SeatId,
-	isDead: (seatId: SeatId) => boolean = (id) => registersAsDead(game, id)
+	characters: CharacterLookup,
+	isDead: (seatId: SeatId) => boolean = (id) => registersAsDead(game, id, characters)
 ): SeatId[] {
 	const { seating } = game;
 	const n = seating.length;

@@ -28,7 +28,7 @@ export { REMINDER_EFFECTS, type PickedEffect, type ReminderEffectKind };
 /** The effects this reminder may carry, when its character's rules let the Storyteller pick. */
 export function pickedEffectOf(
 	reminder: Reminder,
-	characters?: CharacterLookup
+	characters: CharacterLookup
 ): PickedEffect | undefined {
 	const rule = rulesOf(reminder.characterId, characters)?.pickedEffect;
 	return rule && rule.token.toLowerCase() === reminder.label.toLowerCase() ? rule : undefined;

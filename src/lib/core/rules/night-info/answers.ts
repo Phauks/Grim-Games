@@ -399,7 +399,7 @@ function evilDead(
 	characters: CharacterLookup
 ): NightAnswer {
 	const evilIn = (w: RegistrationWorld) =>
-		game.seating.filter((s) => registersAsDead(game, s) && w.alignment(s) === 'evil');
+		game.seating.filter((s) => registersAsDead(game, s, characters) && w.alignment(s) === 'evil');
 	const w = byWorld(game, seatId, characters, (world) => ({
 		kind: 'number',
 		value: evilIn(world).length
@@ -417,7 +417,7 @@ function evilDead(
 			possible: w.possible,
 			relevant: w.relevant,
 			facts: game.seating
-				.filter((s) => registersAsDead(game, s))
+				.filter((s) => registersAsDead(game, s, characters))
 				.map((s) => fact(game, s, characters, base)),
 			alternatives: w.alternatives
 		}
@@ -719,7 +719,7 @@ function answerValue(a: NightAnswer): AnswerValue {
 function highestAnswer(game: Game, characterId: CharacterId, characters: CharacterLookup) {
 	switch (rulesOf(characterId, characters)?.answers?.question) {
 		case 'evil-dead':
-			return game.seating.filter((s) => registersAsDead(game, s)).length;
+			return game.seating.filter((s) => registersAsDead(game, s, characters)).length;
 		case 'correct-guesses':
 			return 5;
 		case 'evil-marked':

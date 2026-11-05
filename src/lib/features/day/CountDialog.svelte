@@ -66,7 +66,7 @@
 			hint.ghostVote === 'free' ? t('day.voteNotes.free') : undefined
 		].filter((line): line is string => line !== undefined);
 	};
-	const seats = $derived(count && count !== 'votes' ? seatsBehind(game, count) : []);
+	const seats = $derived(count && count !== 'votes' ? seatsBehind(game, count, characters) : []);
 	const total = $derived(
 		count && count !== 'votes'
 			? seats.reduce((sum, s) => sum + counts(game, count, s, characters), 0)

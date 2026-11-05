@@ -24,7 +24,7 @@ import type {
 	ReminderPlaceholder,
 	ReminderPlaceholderRules
 } from '#lib/core/data/reminder-placeholder-rules.ts';
-import { OFFICIAL_RULES, rulesOf } from '#lib/core/data/rules/index.ts';
+import { OFFICIAL_RULES, rulesOfCharacter } from '#lib/core/data/rules/index.ts';
 
 /** A character's night: `<characterId>:<first|other>`. */
 export type PlaceholderKey = `${CharacterId}:${'first' | 'other'}`;
@@ -94,8 +94,7 @@ const placeholderKey = (id: CharacterId, night: NightName): PlaceholderKey => `$
 export function placeholderRulesOf(
 	character: Pick<Character, 'id' | 'edition' | 'rules'>
 ): ReminderPlaceholderRules | undefined {
-	if (character.edition === undefined) return character.rules?.reminderPlaceholders;
-	return rulesOf(character.id)?.reminderPlaceholders;
+	return rulesOfCharacter(character)?.reminderPlaceholders;
 }
 
 /** The mapping for each `:reminder:` in the character's own text for this night, in text order. */

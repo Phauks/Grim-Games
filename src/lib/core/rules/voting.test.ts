@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import type { Command } from '#lib/core/engine/index.ts';
-import { castGame, newGame, run } from '#lib/core/model/fixtures.test-support.ts';
+import { castGame, newGame, run, testCharacters } from '#lib/core/model/fixtures.test-support.ts';
 import { publicProjection } from '#lib/core/sync/public-projection.ts';
 import {
 	blockThreshold,
@@ -21,15 +21,18 @@ import {
 
 describe('blockThreshold', () => {
 	it('is half the living players, rounded up', () => {
-		expect(blockThreshold(newGame(8).session.game)).toEqual({ alive: 8, needed: 4 });
+		expect(blockThreshold(newGame(8).session.game, testCharacters)).toEqual({
+			alive: 8,
+			needed: 4
+		});
 		const { session: s7, ctx, seats: seats7 } = newGame(7);
-		expect(blockThreshold(s7.game)).toEqual({ alive: 7, needed: 4 });
+		expect(blockThreshold(s7.game, testCharacters)).toEqual({ alive: 7, needed: 4 });
 		const dead = run(
 			s7,
 			ctx,
 			...[0, 1].map((i): Command => ({ type: 'SetDead', seatId: seats7[i], dead: true }))
 		);
-		expect(blockThreshold(dead.game)).toEqual({ alive: 5, needed: 3 });
+		expect(blockThreshold(dead.game, testCharacters)).toEqual({ alive: 5, needed: 3 });
 	});
 });
 
@@ -104,7 +107,7 @@ describe('townCounts', () => {
 			publicProjection(g, undefined, undefined, undefined, ctx.characters).seats
 		);
 		expect(town).toEqual({
-			...blockThreshold(g),
+			...blockThreshold(g, testCharacters),
 			total: 7,
 			ghostVotes: ghostVotesLeft(g, ctx.characters)
 		});
@@ -177,12 +180,15 @@ describe('seatsBehind', () => {
 			{ type: 'SetDead', seatId: seats[2], dead: true },
 			{ type: 'SpendGhostVote', seatId: seats[2] }
 		).game;
-		expect(seatsBehind(g, 'alive')).toEqual(seats);
-		expect(seatsBehind(g, 'good')).toEqual([]);
-		expect(seatsBehind(g, 'evil')).toEqual([seats[0], seats[3]]);
-		expect(seatsBehind(g, 'ghostVotes')).toEqual([seats[1], seats[2]]);
+		expect(seatsBehind(g, 'alive', ctx.characters)).toEqual(seats);
+		expect(seatsBehind(g, 'good', ctx.characters)).toEqual([]);
+		expect(seatsBehind(g, 'evil', ctx.characters)).toEqual([seats[0], seats[3]]);
+		expect(seatsBehind(g, 'ghostVotes', ctx.characters)).toEqual([seats[1], seats[2]]);
 		const total = (count: DayCount) =>
-			seatsBehind(g, count).reduce((sum, s) => sum + counts(g, count, s, ctx.characters), 0);
+			seatsBehind(g, count, ctx.characters).reduce(
+				(sum, s) => sum + counts(g, count, s, ctx.characters),
+				0
+			);
 		const teams = livingByTeam(g);
 		expect(total('alive')).toBe(teams.alive);
 		expect(total('good')).toBe(teams.good);

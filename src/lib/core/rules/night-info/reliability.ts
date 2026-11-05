@@ -347,7 +347,7 @@ export function fact(
 		...(characterId ? { characterId } : {}),
 		...(alignment ? { alignment } : {}),
 		...(type ? { type } : {}),
-		...(registersAsDead(game, seatId) ? { dead: true } : {})
+		...(registersAsDead(game, seatId, characters) ? { dead: true } : {})
 	};
 }
 

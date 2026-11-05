@@ -13,7 +13,7 @@ import { alignmentOf, typeOf } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 
 /** The contest rule of `characterId`, if its ability holds one. */
-export function contestRule(characterId: CharacterId, characters?: CharacterLookup) {
+export function contestRule(characterId: CharacterId, characters: CharacterLookup) {
 	return rulesOf(characterId, characters)?.gameEnd?.contest;
 }
 
@@ -71,7 +71,7 @@ export function contestWinner(
  */
 export function ruleCharacterUse(
 	characterId: CharacterId,
-	characters?: CharacterLookup
+	characters: CharacterLookup
 ): 'anyone' | 'contest' | undefined {
 	const rules = rulesOf(characterId, characters);
 	if (rules?.dayUse?.anyone) return 'anyone';

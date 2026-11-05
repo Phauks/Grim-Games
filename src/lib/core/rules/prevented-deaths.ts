@@ -22,11 +22,11 @@
  * TPI ability text.
  *
  * The Zombuul's "Dead" is not a kill marker: it marks the Zombuul registering as dead
- * (`REGISTERS_AS_DEAD_REMINDERS`), so it is skipped.
+ * (`registersAsDeadToken`), so it is skipped.
  */
 import type { CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
-import { REGISTERS_AS_DEAD_REMINDERS, trueCharacter } from '#lib/core/model/selectors.ts';
+import { registersAsDeadToken, trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game, ReminderId, SeatId } from '#lib/core/model/types.ts';
 import {
 	abilityState,
@@ -70,12 +70,7 @@ export function preventedDeaths(game: Game, characters: CharacterLookup): Preven
 		for (const reminder of seat.reminders) {
 			const killer = nightKiller(reminder.characterId, characters);
 			if (!killer || reminder.label !== 'Dead') continue;
-			if (
-				REGISTERS_AS_DEAD_REMINDERS.some(
-					(r) => r.characterId === reminder.characterId && r.label === reminder.label
-				)
-			)
-				continue;
+			if (registersAsDeadToken(reminder, characters)) continue;
 
 			const killerSeats = seatsOf(game, reminder.characterId, characters);
 			const because: PreventedBecause[] = [];

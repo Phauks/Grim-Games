@@ -80,7 +80,7 @@ export const VOTES_DECIDERS: Deciders<'RecordVotes' | 'GiveVoteToken'> = {
 				if (!masters.some((m) => picked.has(m)))
 					warn('only-votes-with', 'a voter may only vote with another player', [voter.characterId]);
 			}
-			const dead = registersAsDead(game, seatId);
+			const dead = registersAsDead(game, seatId, ctx.characters);
 			if (dead) {
 				if (votesWithoutToken(game, seatId, characters) !== undefined) continue;
 				if (ghostVotes.includes(seatId)) continue;
@@ -104,7 +104,7 @@ export const VOTES_DECIDERS: Deciders<'RecordVotes' | 'GiveVoteToken'> = {
 			if (picked.has(seatId) || game.seats[seatId].notInPlay) continue;
 			if (!mayVote(game, seatId, characters).ok) continue;
 			const voter = voterRule(game, seatId, characters);
-			if (voter && mustVoteNow(game, voter.rule))
+			if (voter && mustVoteNow(game, voter.rule, ctx.characters))
 				warn('must-vote', 'a player who must vote did not', [voter.characterId]);
 		}
 
@@ -119,7 +119,7 @@ export const VOTES_DECIDERS: Deciders<'RecordVotes' | 'GiveVoteToken'> = {
 		const from = seatOf(game, command.from);
 		const to = seatOf(game, command.to);
 		if (from.seatId === to.seatId) refuse('same-seat', 'a player cannot give themself a token');
-		if (!registersAsDead(game, from.seatId)) {
+		if (!registersAsDead(game, from.seatId, ctx.characters)) {
 			warn('giver-not-dead', 'only a dead player gives their vote token');
 		}
 		if (!voterRule(game, to.seatId, ctx.characters)?.rule.needsToken) {

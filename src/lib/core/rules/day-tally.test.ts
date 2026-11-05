@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { parseCharacterRules } from '#lib/core/data/character-rules.ts';
 import { Issues } from '#lib/core/data/validate.ts';
 import { undo } from '#lib/core/engine/log.ts';
-import { refused, warned } from '#lib/core/model/fixtures.test-support.ts';
+import { refused, warned, testCharacters } from '#lib/core/model/fixtures.test-support.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { dayTallyOf, tallyCount, tallyKiller, tallyKills } from './day-tally.ts';
 
@@ -83,7 +83,7 @@ describe('dayTally', () => {
 		expect(tallyKills(day.game, 'chef', day.characters)).toBeUndefined();
 		expect(tallyKiller('yaggababble', day.characters)).toBe('yaggababble');
 		expect(tallyKiller('imp', day.characters)).toBeUndefined();
-		expect(dayTallyOf(undefined)).toBeUndefined();
+		expect(dayTallyOf(undefined, testCharacters)).toBeUndefined();
 	});
 
 	it('reads a label and an optional kills', () => {

@@ -38,7 +38,7 @@ export function grantedWishSeats(game: Game): SeatId[] {
 }
 
 /** Whether a character makes a wish (its `wish` rule). */
-export function makesWish(characterId: CharacterId | undefined, characters?: CharacterLookup) {
+export function makesWish(characterId: CharacterId | undefined, characters: CharacterLookup) {
 	return characterId !== undefined && rulesOf(characterId, characters)?.wish === true;
 }
 

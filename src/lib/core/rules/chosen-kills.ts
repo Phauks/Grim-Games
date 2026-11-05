@@ -21,7 +21,7 @@ import type { Game, SeatId } from '#lib/core/model/types.ts';
 /** What `characterId`'s night kill chooses instead of a player, if anything. */
 export function killChoice(
 	characterId: CharacterId,
-	characters?: CharacterLookup
+	characters: CharacterLookup
 ): 'character' | 'live-or-die' | undefined {
 	return rulesOf(characterId, characters)?.kills?.chooses;
 }

@@ -16,7 +16,8 @@ import type { Command } from '#lib/core/engine/index.ts';
 import {
 	castGame,
 	run,
-	testCharacters as characters
+	testCharacters as characters,
+	testCharacters
 } from '#lib/core/model/fixtures.test-support.ts';
 import { parseCharacter } from '#lib/core/data/parse.ts';
 import { Issues } from '#lib/core/data/validate.ts';
@@ -1042,7 +1043,7 @@ describe('Mathematician', () => {
 			text: 'Shown 3',
 			abnormal: [{ reason: 'poisoned', characterId: 'poisoner', seatId: s[2] }]
 		}));
-		expect(abnormalSinceDawn(g)).toEqual([]);
+		expect(abnormalSinceDawn(g, testCharacters)).toEqual([]);
 		expect(answerOf(g, seats[0], 'mathematician', characters)).toMatchObject({ value: 0 });
 	});
 

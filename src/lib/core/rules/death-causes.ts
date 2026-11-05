@@ -55,14 +55,14 @@ export interface DeathCauseOption {
 }
 
 /** A character's `deathCause` rule: its own (a custom character's) or our overlay file's. */
-function deathCauseRule(id: CharacterId, characters?: CharacterLookup): DeathCauseRule | undefined {
+function deathCauseRule(id: CharacterId, characters: CharacterLookup): DeathCauseRule | undefined {
 	return rulesOf(id, characters)?.deathCause;
 }
 
 /** The `deathCause` rule of a character that can cause a death, if any. */
 export function deathCauseEntry(
 	id: CharacterId,
-	characters?: CharacterLookup
+	characters: CharacterLookup
 ): DeathCauseEntry | undefined {
 	const rule = deathCauseRule(id, characters);
 	return rule && 'kind' in rule ? rule : undefined;
@@ -102,7 +102,7 @@ export function deathCauses(
  * Virgin's nominator, https://wiki.bloodontheclocktower.com/Virgin), which counts as an execution
  * for everything that asks (the Saint, https://wiki.bloodontheclocktower.com/Saint).
  */
-export function isExecution(cause: DeathCause | undefined, characters?: CharacterLookup): boolean {
+export function isExecution(cause: DeathCause | undefined, characters: CharacterLookup): boolean {
 	if (cause === 'execution') return true;
 	if (cause === undefined || (GENERAL_DEATH_CAUSES as readonly string[]).includes(cause))
 		return false;
@@ -261,7 +261,10 @@ export function validDeathCauses(
 				held = true;
 				const entry = deathCauseEntry(ability.characterId, characters);
 				if (!entry || entry.kind === 'gained-ability') continue;
-				if (!gainedFor.has(h) || holderFits(game, ruleOf(ability.characterId), h, seatId))
+				if (
+					!gainedFor.has(h) ||
+					holderFits(game, ruleOf(ability.characterId), h, seatId, characters)
+				)
 					gainedFor.set(h, ability.characterId);
 			}
 		}
@@ -274,7 +277,8 @@ export function validDeathCauses(
 				: deathCauseEntry(characterId, characters)?.victim;
 		};
 		const acting = holders.filter(
-			(h) => (!(from || held) || gainedFor.has(h)) && holderFits(game, ruleFor(h), h, seatId)
+			(h) =>
+				(!(from || held) || gainedFor.has(h)) && holderFits(game, ruleFor(h), h, seatId, characters)
 		);
 		if (holders.length > 0 && acting.length === 0) continue;
 		const gained = acting.length > 0 ? gainedFor.get(acting[0]) : undefined;
@@ -348,7 +352,8 @@ function holderFits(
 	game: Game,
 	rule: VictimRule | undefined,
 	holder: SeatId,
-	victim: SeatId
+	victim: SeatId,
+	characters: CharacterLookup
 ): boolean {
 	switch (rule?.who) {
 		case undefined:
@@ -364,7 +369,8 @@ function holderFits(
 			return aliveNeighbours(
 				game,
 				holder,
-				(s) => s !== victim && registersAsDead(game, s)
+				characters,
+				(s) => s !== victim && registersAsDead(game, s, characters)
 			).includes(victim);
 	}
 }
@@ -378,7 +384,7 @@ function holderFits(
 export function carriesDemonToken(
 	game: Game,
 	seatId: SeatId,
-	characters?: CharacterLookup
+	characters: CharacterLookup
 ): boolean {
 	return (getSeat(game, seatId)?.reminders ?? []).some((r) => {
 		const rules = rulesOf(r.characterId, characters);

@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { characterLookup, isKnownReminder, isOnScript, scriptCharacterIds } from './characters.ts';
 import type { Command } from '#lib/core/engine/commands.ts';
-import { newGame, run, testCharacters, testScript, gameData } from './fixtures.test-support.ts';
+import {
+	newGame,
+	run,
+	testCharacters,
+	testContext,
+	testScript,
+	gameData
+} from './fixtures.test-support.ts';
 import {
 	aliveNeighbours,
 	nearestOfType,
@@ -153,18 +160,37 @@ describe('registersAsDead and isAliveForWin', () => {
 			{ type: 'AddReminder', seatId: seats[2], reminder: { characterId: 'zombuul', label: 'Dead' } }
 		).game;
 		expect(getSeat(game, seats[2])?.dead).toBe(false);
-		expect(registersAsDead(game, seats[2])).toBe(true);
+		expect(registersAsDead(game, seats[2], testCharacters)).toBe(true);
 		expect(isAliveForWin(game, seats[2])).toBe(true);
+	});
+
+	it('reads the token from a custom character too (M58)', () => {
+		const zombie = {
+			...gameData.byId.get('zombuul')!,
+			id: 'gravewalker',
+			name: 'Gravewalker',
+			edition: undefined,
+			rules: { gameEnd: { aliveWhileDead: { untilToken: 'Dead' } } }
+		};
+		const characters = new Map([...testCharacters, ['gravewalker', zombie]]);
+		const { session, ctx, seats } = newGame(names, { ctx: testContext({ characters }) });
+		const game = run(session, ctx, {
+			type: 'AddReminder',
+			seatId: seats[2],
+			reminder: { characterId: 'gravewalker', label: 'Dead' }
+		}).game;
+		expect(registersAsDead(game, seats[2], characters)).toBe(true);
+		expect(registersAsDead(game, seats[2], testCharacters)).toBe(false);
 	});
 
 	it('uses the dead flag otherwise', () => {
 		const { session, ctx, seats } = newGame(names);
 		const game = run(session, ctx, { type: 'SetDead', seatId: seats[0], dead: true }).game;
-		expect(registersAsDead(game, seats[0])).toBe(true);
+		expect(registersAsDead(game, seats[0], testCharacters)).toBe(true);
 		expect(isAliveForWin(game, seats[0])).toBe(false);
-		expect(registersAsDead(game, seats[1])).toBe(false);
+		expect(registersAsDead(game, seats[1], testCharacters)).toBe(false);
 		expect(isAliveForWin(game, seats[1])).toBe(true);
-		expect(registersAsDead(game, 'nobody')).toBe(false);
+		expect(registersAsDead(game, 'nobody', testCharacters)).toBe(false);
 		expect(isAliveForWin(game, 'nobody')).toBe(false);
 	});
 
@@ -175,7 +201,7 @@ describe('registersAsDead and isAliveForWin', () => {
 			seatId: seats[0],
 			reminder: { characterId: 'legion', label: 'Dead' }
 		}).game;
-		expect(registersAsDead(game, seats[0])).toBe(false);
+		expect(registersAsDead(game, seats[0], testCharacters)).toBe(false);
 	});
 
 	it('lets a Storyteller override win either way', () => {
@@ -199,8 +225,8 @@ describe('registersAsDead and isAliveForWin', () => {
 				override: { field: 'registersAsDead', value: true }
 			}
 		).game;
-		expect(registersAsDead(game, seats[0])).toBe(false);
-		expect(registersAsDead(game, seats[1])).toBe(true);
+		expect(registersAsDead(game, seats[0], testCharacters)).toBe(false);
+		expect(registersAsDead(game, seats[1], testCharacters)).toBe(true);
 		// Overrides change what abilities see, not who is alive for the win.
 		expect(isAliveForWin(game, seats[1])).toBe(true);
 	});
@@ -234,8 +260,8 @@ describe('aliveNeighbours', () => {
 			{ type: 'AssignCharacter', seatId: cat, characterId: 'tealady' },
 			{ type: 'SetDead', seatId: dev, dead: true }
 		).game;
-		expect(aliveNeighbours(game, cat)).toEqual([ben, eve]);
-		expect(aliveNeighbours(game, ana)).toEqual([eve, ben]);
+		expect(aliveNeighbours(game, cat, testCharacters)).toEqual([ben, eve]);
+		expect(aliveNeighbours(game, ana, testCharacters)).toEqual([eve, ben]);
 	});
 
 	it('wraps around the circle and skips a Zombuul that registers as dead', () => {
@@ -247,10 +273,10 @@ describe('aliveNeighbours', () => {
 			{ type: 'SetDead', seatId: eve, dead: true },
 			{ type: 'AddReminder', seatId: ben, reminder: { characterId: 'zombuul', label: 'Dead' } }
 		).game;
-		expect(aliveNeighbours(game, ana)).toEqual([dev, cat]);
+		expect(aliveNeighbours(game, ana, testCharacters)).toEqual([dev, cat]);
 		// A caller can count only the dead flag instead.
 		const onlyDeadFlag = (id: string) => game.seats[id].dead;
-		expect(aliveNeighbours(game, ana, onlyDeadFlag)).toEqual([dev, ben]);
+		expect(aliveNeighbours(game, ana, testCharacters, onlyDeadFlag)).toEqual([dev, ben]);
 	});
 
 	it('returns one neighbour when only one other player is alive, none when nobody is', () => {
@@ -263,18 +289,18 @@ describe('aliveNeighbours', () => {
 			{ type: 'SetDead', seatId: dev, dead: true },
 			{ type: 'SetDead', seatId: eve, dead: true }
 		);
-		expect(aliveNeighbours(two.game, ana)).toEqual([cat]);
+		expect(aliveNeighbours(two.game, ana, testCharacters)).toEqual([cat]);
 		const none = run(two, ctx, { type: 'SetDead', seatId: cat, dead: true });
-		expect(aliveNeighbours(none.game, ana)).toEqual([]);
-		expect(aliveNeighbours(none.game, 'nobody')).toEqual([]);
+		expect(aliveNeighbours(none.game, ana, testCharacters)).toEqual([]);
+		expect(aliveNeighbours(none.game, 'nobody', testCharacters)).toEqual([]);
 	});
 
 	it('follows the seating after a Matron swap', () => {
 		const { session, ctx, seats } = newGame(names);
 		const [ana, ben, cat, dev, eve] = seats;
 		const game = run(session, ctx, { type: 'SwapSeats', seatA: ben, seatB: eve }).game;
-		expect(aliveNeighbours(game, ana)).toEqual([ben, eve]);
-		expect(aliveNeighbours(game, cat)).toEqual([eve, dev]);
+		expect(aliveNeighbours(game, ana, testCharacters)).toEqual([ben, eve]);
+		expect(aliveNeighbours(game, cat, testCharacters)).toEqual([eve, dev]);
 	});
 });
 

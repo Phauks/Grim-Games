@@ -601,7 +601,7 @@ export function neighbourBecoming(
 	if (effect?.player !== 'neighbour' || !jinxApplies(game, changer, created, effect, characters))
 		return undefined;
 	const type = effect.type;
-	const near = aliveNeighbours(game, seatId).filter((id) => id !== seatId);
+	const near = aliveNeighbours(game, seatId, characters).filter((id) => id !== seatId);
 	const of = near.filter((id) => typeOf(game, id, characters) === type);
 	const fits = of.length > 0;
 	const becomes = fits ? near.find((id) => !of.includes(id)) : undefined;

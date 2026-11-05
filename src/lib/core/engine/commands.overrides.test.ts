@@ -159,7 +159,12 @@ describe('day-reminder overrides', () => {
 				override: { kind: 'add', key: 'custom-1', group: 'announcement', text: 'House rule' }
 			}
 		);
-		const state = dayStateFromGame(s.game, (id) => testCharacters.get(id));
+		const state = dayStateFromGame(
+			s.game,
+			(id) => testCharacters.get(id),
+			undefined,
+			testCharacters
+		);
 		expect(state.overrides).toEqual(s.game.dayReminderOverrides);
 		expect(state.seats[0].deathCause).toBe('execution');
 		const lines = dayReminders(state).groups.flatMap((g) =>
@@ -167,7 +172,9 @@ describe('day-reminder overrides', () => {
 		);
 		expect(lines).toContain('House rule');
 		// An explicit list still wins over the stored one.
-		expect(dayStateFromGame(s.game, (id) => testCharacters.get(id), []).overrides).toEqual([]);
+		expect(
+			dayStateFromGame(s.game, (id) => testCharacters.get(id), [], testCharacters).overrides
+		).toEqual([]);
 	});
 
 	it('refuses unknown groups, seats and characters', () => {

@@ -25,7 +25,7 @@
  *
  * Two jinxes for the same pair on one script: the last one counts (`scriptJinxFor`).
  */
-import type { CharacterRules } from './character-rules.ts';
+import { readableRules, type CharacterRules } from './character-rules.ts';
 import { jinxPartnerIssues } from './jinx-needs.ts';
 import { jinxNoOps, type NoOpContext } from './jinx-no-ops.ts';
 import type { JinxRules } from './jinx-rules.ts';
@@ -192,4 +192,24 @@ export function withReadableJinxes(raw: unknown, where: string, warn: Warn): unk
 		}
 	const rest = without(raw, 'jinxes');
 	return Object.keys(kept).length > 0 ? { ...rest, jinxes: kept } : rest;
+}
+
+/**
+ * A custom character's raw `rules` with every rule the app can't read left out, never the whole
+ * character (M58): a jinx rule one partner at a time (`withReadableJinxes`), any other rule key
+ * by key. `reminders` are its raw reminder lists, whose labels a rule may name. Each dropped rule is a warning.
+ */
+export function withReadableRules(
+	raw: unknown,
+	reminders: readonly unknown[],
+	where: string,
+	warn: Warn
+): unknown {
+	const labels = reminders.flatMap((l) =>
+		Array.isArray(l) ? l.filter((r): r is string => typeof r === 'string') : []
+	);
+	const { rules, dropped } = readableRules(withReadableJinxes(raw, where, warn), labels);
+	for (const { key, problems } of dropped)
+		warn(where, `Ignored its rule "${key}", which this app can't use: ${problems.join('; ')}.`);
+	return rules;
 }

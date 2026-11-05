@@ -3,6 +3,7 @@
  * (https://wiki.bloodontheclocktower.com/Ojo) or players who each choose to live or die
  * (https://wiki.bloodontheclocktower.com/Al-Hadikhia).
  */
+import { testCharacters } from '#lib/core/model/fixtures.test-support.ts';
 import { describe, expect, it } from 'vitest';
 import { parseCharacterRules } from '#lib/core/data/character-rules.ts';
 import { Issues } from '#lib/core/data/validate.ts';
@@ -16,9 +17,9 @@ import {
 
 describe('killChoice', () => {
 	it('reads what the kill chooses from the rules block', () => {
-		expect(killChoice('ojo')).toBe('character');
-		expect(killChoice('alhadikhia')).toBe('live-or-die');
-		expect(killChoice('imp')).toBeUndefined();
+		expect(killChoice('ojo', testCharacters)).toBe('character');
+		expect(killChoice('alhadikhia', testCharacters)).toBe('live-or-die');
+		expect(killChoice('imp', testCharacters)).toBeUndefined();
 	});
 
 	it('refuses an unknown choice', () => {

@@ -6,7 +6,7 @@
  * the game and deleting secrets, so a new private field cannot leak by default.
  */
 import {
-	REGISTERS_AS_DEAD_REMINDERS,
+	registersAsDeadToken,
 	seatsInOrder,
 	type Game,
 	type Seat,
@@ -267,15 +267,8 @@ function boardLayout(layout: PublicSeatLayout): PublicSeatLayout | undefined {
 	};
 }
 
-function appearsDead(seat: Seat): boolean {
-	return (
-		seat.dead ||
-		seat.reminders.some((r) =>
-			REGISTERS_AS_DEAD_REMINDERS.some(
-				(d) => d.characterId === r.characterId && d.label === r.label
-			)
-		)
-	);
+function appearsDead(seat: Seat, characters: CharacterLookup | undefined): boolean {
+	return seat.dead || seat.reminders.some((r) => registersAsDeadToken(r, characters));
 }
 
 /**
@@ -325,7 +318,7 @@ export function publicProjection(
 			const view: PublicSeat = {
 				seatId: seat.seatId,
 				seatNumber: i + 1,
-				dead: appearsDead(seat)
+				dead: appearsDead(seat, characters)
 			};
 			if (seat.playerName !== undefined) view.playerName = seat.playerName;
 			if (seat.notInPlay) view.notInPlay = true;

@@ -22,7 +22,7 @@ import {
 	type InfoTokenCharacterRules,
 	type InfoTokenCharacters
 } from '#lib/core/data/info-token-rules.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
+import { rulesOfCharacter } from '#lib/core/data/rules/index.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
 import type { Game } from '#lib/core/model/types.ts';
@@ -73,8 +73,7 @@ export interface StepCard {
 export function infoTokenCharacterRulesOf(
 	character: Pick<Character, 'id' | 'edition' | 'rules'>
 ): InfoTokenCharacterRules | undefined {
-	if (character.edition === undefined) return character.rules?.infoTokenCharacters;
-	return rulesOf(character.id)?.infoTokenCharacters;
+	return rulesOfCharacter(character)?.infoTokenCharacters;
 }
 
 /**

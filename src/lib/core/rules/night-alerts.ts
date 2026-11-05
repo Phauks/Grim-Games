@@ -136,7 +136,7 @@ export interface NightKiller {
  */
 export function nightKiller(
 	characterId: CharacterId,
-	characters?: CharacterLookup
+	characters: CharacterLookup
 ): NightKiller | undefined {
 	const kills = rulesOf(characterId, characters)?.kills;
 	return (
@@ -151,7 +151,7 @@ export function nightKiller(
 /** The official characters whose night step can kill. */
 export const NIGHT_KILLERS: Readonly<Record<CharacterId, NightKiller>> = Object.fromEntries(
 	[...OFFICIAL_RULES.keys()].flatMap((id) => {
-		const killer = nightKiller(id);
+		const killer = nightKiller(id, new Map());
 		return killer ? [[id, killer]] : [];
 	})
 );
@@ -162,7 +162,7 @@ export const NIGHT_KILLERS: Readonly<Record<CharacterId, NightKiller>> = Object.
  */
 export function onDeathTrigger(
 	characterId: CharacterId,
-	characters?: CharacterLookup
+	characters: CharacterLookup
 ): { by: KillBy | 'any'; night?: true } | undefined {
 	return rulesOf(characterId, characters)?.onDeath;
 }

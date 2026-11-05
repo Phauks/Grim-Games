@@ -21,7 +21,7 @@ import type { Game, SeatId, StorytellerPair } from '#lib/core/model/types.ts';
 /** The rule character in play that makes two Storytellers, if any. */
 export function twoStorytellersBy(
 	game: Game,
-	characters?: CharacterLookup
+	characters: CharacterLookup
 ): CharacterId | undefined {
 	return game.ruleCharacters.find((id) => rulesOf(id, characters)?.twoStorytellers === true);
 }
@@ -40,7 +40,7 @@ export interface StorytellerVisit {
 export function storytellerVisit(
 	game: Game,
 	seatId: SeatId,
-	characters?: CharacterLookup
+	characters: CharacterLookup
 ): StorytellerVisit | undefined {
 	const by = twoStorytellersBy(game, characters);
 	const storyteller = game.today.visits?.[seatId];

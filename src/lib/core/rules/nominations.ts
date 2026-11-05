@@ -92,7 +92,7 @@ export function afterDeath(
 	seatId: SeatId,
 	characters: CharacterLookup
 ): AfterDeath | undefined {
-	if (!registersAsDead(game, seatId)) return undefined;
+	if (!registersAsDead(game, seatId, characters)) return undefined;
 	// Drunk or poisoned as they died: no power gained (https://wiki.bloodontheclocktower.com/Banshee).
 	if (game.seats[seatId]?.impairedAtDeath) return undefined;
 	// Their own character's, or one they hold without a token (the Banshee's the Boffin gave
@@ -117,7 +117,7 @@ export function afterDeath(
  */
 export function nominationsPerDay(game: Game, seatId: SeatId, characters: CharacterLookup): number {
 	const again = storytellerRenominations(game, seatId, characters);
-	if (!registersAsDead(game, seatId)) return 1 + again;
+	if (!registersAsDead(game, seatId, characters)) return 1 + again;
 	const own = afterDeath(game, seatId, characters)?.nominations ?? 0;
 	return Math.max(own, nomineeNominatesNow(game, seatId, characters) ? 1 : 0) + again;
 }

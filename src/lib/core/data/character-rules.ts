@@ -12,7 +12,7 @@
  */
 import * as PARTS from './parts/index.ts';
 import type { PartValue, Reminders } from './parts/part.ts';
-import { describe, isObject, type Issues } from './validate.ts';
+import { describe, isObject, Issues } from './validate.ts';
 
 export type { ReminderPrompt } from './parts/reminder-prompts.ts';
 export type { KilledBy } from './parts/on-death.ts';
@@ -80,4 +80,34 @@ export function parseCharacterRules(
 		}
 	}
 	return issues.list.length > before ? undefined : (rules as CharacterRules);
+}
+
+/** One rule a custom character's block can't use, and why. */
+export interface DroppedRule {
+	key: string;
+	problems: string[];
+}
+
+/**
+ * A custom character's raw `rules` with each rule this app can't read taken out (M58, P1): an
+ * unknown key, or a value its part rejects. One bad rule never stops the character from
+ * loading, so a script written for a newer build still opens in an older one (the app is an
+ * offline PWA). An optional rule is kept or left out whole.
+ */
+export function readableRules(
+	raw: unknown,
+	reminders?: Reminders
+): { rules: unknown; dropped: DroppedRule[] } {
+	if (!isObject(raw)) return { rules: raw, dropped: [] };
+	const kept: Record<string, unknown> = {};
+	const dropped: DroppedRule[] = [];
+	for (const [key, value] of Object.entries(raw)) {
+		const issues = new Issues();
+		if (key === 'optionalRule') parseCharacterRules(value, `rules.${key}`, issues, reminders);
+		else if (key in PARTS) PARTS[key as PartKey].read(raw, key, 'rules', issues, reminders);
+		else issues.add(`rules.${key}`, 'unknown rule');
+		if (issues.list.length === 0) kept[key] = value;
+		else dropped.push({ key, problems: [...issues.list] });
+	}
+	return { rules: kept, dropped };
 }

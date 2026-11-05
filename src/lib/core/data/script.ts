@@ -26,7 +26,7 @@ import {
 	type Special
 } from './types.ts';
 import { describe, Issues, isObject, type Json } from './validate.ts';
-import { checkScriptJinxRules, withReadableJinxes, type PendingJinx } from './script-jinx-rules.ts';
+import { checkScriptJinxRules, withReadableRules, type PendingJinx } from './script-jinx-rules.ts';
 
 export type ScriptProblemSeverity = 'error' | 'warning' | 'info';
 
@@ -367,6 +367,13 @@ export function loadScript(json: unknown, data: GameData): ScriptLoadResult {
 		}
 		const character = loadHomebrew(raw, index, where, problems, () => ++customCount);
 		if (!character) return;
+		// The official character written out word for word loads as the official one (M58).
+		const same = data.byId.get(character.id);
+		if (same && raw.rules === undefined && sameText(character, same)) {
+			add(same, where, false);
+			pendingJinxes.push(...readHomebrewJinxes(raw, same.id, where, problems));
+			return;
+		}
 		if (typeof raw.id === 'string' && raw.id !== character.id) renamedIds[raw.id] = character.id;
 		if (data.byId.has(character.id)) {
 			problems.push(
@@ -416,6 +423,8 @@ export function loadScript(json: unknown, data: GameData): ScriptLoadResult {
 }
 
 /** Text fields that should be strings, with the repair for numbers and the like. */
+const sameText = (a: Character, b: Character) => a.name === b.name && a.ability === b.ability;
+
 function coerceString(value: unknown): string | undefined {
 	if (typeof value === 'string') return value;
 	if (typeof value === 'number' || typeof value === 'boolean') return String(value);
@@ -578,11 +587,12 @@ function loadHomebrew(
 		fixed.special = specials.map((s) => ({ ...s }));
 	}
 
-	// A jinx rule the app can't read is left out, never the whole character.
-	if (raw.rules !== undefined)
-		fixed.rules = withReadableJinxes(raw.rules, where, (at, message) =>
+	if (raw.rules !== undefined) {
+		const reminders = [fixed.reminders, fixed.remindersGlobal];
+		fixed.rules = withReadableRules(raw.rules, reminders, where, (at, message) =>
 			problems.push(warn(at, message))
 		);
+	}
 
 	const issues = new Issues();
 	const character = parseCharacter(fixed, `[${index}]`, issues, {

@@ -31,7 +31,7 @@
 	const tokens = $derived(game.seats[seatId]?.voteTokens ?? 0);
 	const givers = $derived(
 		game.seating
-			.filter((id) => id !== seatId && registersAsDead(game, id))
+			.filter((id) => id !== seatId && registersAsDead(game, id, characters))
 			.sort((a, b) => Number(game.seats[a].ghostVoteUsed) - Number(game.seats[b].ghostVoteUsed))
 	);
 	let open = $state(false);

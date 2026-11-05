@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import type { Command } from '#lib/core/engine/commands.ts';
-import { newGame, run } from '#lib/core/model/fixtures.test-support.ts';
+import { newGame, run, testCharacters } from '#lib/core/model/fixtures.test-support.ts';
 import { undo } from '#lib/core/engine/log.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { OFFICIAL_RULES } from '#lib/core/data/rules/index.ts';
@@ -65,41 +65,61 @@ describe('coverage', () => {
 
 describe('isFixedReminder', () => {
 	it('keeps start-knowing tokens in place (https://wiki.bloodontheclocktower.com/Washerwoman)', () => {
-		expect(isFixedReminder({ characterId: 'washerwoman', label: 'Townsfolk' })).toBe(true);
-		expect(isFixedReminder({ characterId: 'washerwoman', label: 'Wrong' })).toBe(true);
+		expect(
+			isFixedReminder({ characterId: 'washerwoman', label: 'Townsfolk' }, testCharacters)
+		).toBe(true);
+		expect(isFixedReminder({ characterId: 'washerwoman', label: 'Wrong' }, testCharacters)).toBe(
+			true
+		);
 	});
 
 	it('keeps the red herring in place (https://wiki.bloodontheclocktower.com/Fortune_Teller)', () => {
-		expect(isFixedReminder({ characterId: 'fortuneteller', label: 'Red Herring' })).toBe(true);
+		expect(
+			isFixedReminder({ characterId: 'fortuneteller', label: 'Red Herring' }, testCharacters)
+		).toBe(true);
 	});
 
 	it('lets each-night choices move (https://wiki.bloodontheclocktower.com/Poisoner, /Monk, /Butler)', () => {
-		expect(isFixedReminder({ characterId: 'poisoner', label: 'Poisoned' })).toBe(false);
-		expect(isFixedReminder({ characterId: 'monk', label: 'Safe' })).toBe(false);
-		expect(isFixedReminder({ characterId: 'butler', label: 'Master' })).toBe(false);
+		expect(isFixedReminder({ characterId: 'poisoner', label: 'Poisoned' }, testCharacters)).toBe(
+			false
+		);
+		expect(isFixedReminder({ characterId: 'monk', label: 'Safe' }, testCharacters)).toBe(false);
+		expect(isFixedReminder({ characterId: 'butler', label: 'Master' }, testCharacters)).toBe(false);
 	});
 
 	it('lets the Town Crier’s daily tokens move (https://wiki.bloodontheclocktower.com/Town_Crier)', () => {
 		// Wiki: "Each dawn, mark the Town Crier with the MINIONS NOT NOMINATED reminder, and remove the MINION NOMINATED reminder, if any."
-		expect(isFixedReminder({ characterId: 'towncrier', label: 'Minions Not Nominated' })).toBe(
-			false
-		);
-		expect(isFixedReminder({ characterId: 'towncrier', label: 'Minion Nominated' })).toBe(false);
+		expect(
+			isFixedReminder({ characterId: 'towncrier', label: 'Minions Not Nominated' }, testCharacters)
+		).toBe(false);
+		expect(
+			isFixedReminder({ characterId: 'towncrier', label: 'Minion Nominated' }, testCharacters)
+		).toBe(false);
 	});
 
 	it('lets the Flowergirl’s daily tokens move (https://wiki.bloodontheclocktower.com/Flowergirl)', () => {
 		// Wiki: "Each dawn, mark the Flowergirl with the DEMON NOT VOTED reminder, and remove the DEMON VOTED reminder, if any."
-		expect(isFixedReminder({ characterId: 'flowergirl', label: 'Demon Not Voted' })).toBe(false);
-		expect(isFixedReminder({ characterId: 'flowergirl', label: 'Demon Voted' })).toBe(false);
+		expect(
+			isFixedReminder({ characterId: 'flowergirl', label: 'Demon Not Voted' }, testCharacters)
+		).toBe(false);
+		expect(
+			isFixedReminder({ characterId: 'flowergirl', label: 'Demon Voted' }, testCharacters)
+		).toBe(false);
 	});
 
 	it('lets a character’s other tokens move (https://wiki.bloodontheclocktower.com/Grandmother)', () => {
-		expect(isFixedReminder({ characterId: 'grandmother', label: 'Grandchild' })).toBe(true);
-		expect(isFixedReminder({ characterId: 'grandmother', label: 'Dead' })).toBe(false);
+		expect(
+			isFixedReminder({ characterId: 'grandmother', label: 'Grandchild' }, testCharacters)
+		).toBe(true);
+		expect(isFixedReminder({ characterId: 'grandmother', label: 'Dead' }, testCharacters)).toBe(
+			false
+		);
 	});
 
 	it('never fixes homebrew tokens without a rule', () => {
-		expect(isFixedReminder({ characterId: 'my-homebrew', label: 'Know' })).toBe(false);
+		expect(isFixedReminder({ characterId: 'my-homebrew', label: 'Know' }, testCharacters)).toBe(
+			false
+		);
 	});
 
 	// A custom character's own `reminderMovement` works as an official one's: the Fortune
@@ -140,8 +160,10 @@ describe('isFixedReminder', () => {
 
 describe('isFixedLabel', () => {
 	it('reads the same rule from the token’s own character (https://wiki.bloodontheclocktower.com/Fortune_Teller)', () => {
-		expect(isFixedLabel({ id: 'fortuneteller' }, 'Red Herring')).toBe(true);
-		expect(isFixedLabel({ id: 'monk' }, 'Safe')).toBe(false);
+		expect(isFixedLabel({ id: 'fortuneteller', edition: 'tb' }, 'Red Herring')).toBe(true);
+		expect(isFixedLabel({ id: 'monk', edition: 'tb' }, 'Safe')).toBe(false);
+		// A custom character has only its own rules, even with an official id (M58).
+		expect(isFixedLabel({ id: 'fortuneteller' }, 'Red Herring')).toBe(false);
 	});
 
 	it('reads a custom character’s own rules block', () => {
@@ -172,7 +194,7 @@ describe('fixedReminderMove', () => {
 				label: 'Red Herring'
 			}
 		);
-		expect(fixedReminderMove(s.game, reminderId, seats[3])).toMatchObject({
+		expect(fixedReminderMove(s.game, reminderId, seats[3], testCharacters)).toMatchObject({
 			reminder: { characterId: 'fortuneteller', label: 'Red Herring' },
 			fromSeatId: seats[1],
 			toSeatId: seats[3],
@@ -188,8 +210,8 @@ describe('fixedReminderMove', () => {
 			characterId: 'monk',
 			label: 'Safe'
 		});
-		expect(fixedReminderMove(s.game, reminderId, seats[3])).toBeUndefined();
-		expect(fixedReminderMove(s.game, 'missing', seats[3])).toBeUndefined();
+		expect(fixedReminderMove(s.game, reminderId, seats[3], testCharacters)).toBeUndefined();
+		expect(fixedReminderMove(s.game, 'missing', seats[3], testCharacters)).toBeUndefined();
 		const moved = run(s, ctx, { type: 'MoveReminder', reminderId, toSeatId: seats[3] });
 		expect(moved.warnings.map((w) => w.code)).not.toContain('reminder-fixed');
 	});
@@ -199,8 +221,8 @@ describe('fixedReminderMove', () => {
 			characterId: 'eviltwin',
 			label: 'Twin'
 		});
-		expect(fixedReminderMove(s.game, reminderId, seats[1])).toBeUndefined();
-		expect(fixedReminderMove(s.game, reminderId, seats[4])?.relocators).toEqual([
+		expect(fixedReminderMove(s.game, reminderId, seats[1], testCharacters)).toBeUndefined();
+		expect(fixedReminderMove(s.game, reminderId, seats[4], testCharacters)?.relocators).toEqual([
 			{ characterId: 'barber', does: REMINDER_RELOCATORS.barber }
 		]);
 	});

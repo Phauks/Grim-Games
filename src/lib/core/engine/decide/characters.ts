@@ -406,7 +406,7 @@ export const CHARACTERS_DECIDERS: Deciders<
 			warn('no-change', 'the ghost vote is already used');
 			return [];
 		}
-		if (!registersAsDead(game, seat.seatId)) {
+		if (!registersAsDead(game, seat.seatId, ctx.characters)) {
 			warn('ghost-vote-while-alive', 'living players do not use their ghost vote');
 		}
 		return [{ type: 'GhostVoteSpent', seatId: seat.seatId }];

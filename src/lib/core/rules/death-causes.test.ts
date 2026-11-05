@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import type { Character, Script } from '#lib/core/data/types.ts';
 import { characterLookup } from '#lib/core/model/characters.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import { newGame } from '#lib/core/model/fixtures.test-support.ts';
+import { newGame, testCharacters } from '#lib/core/model/fixtures.test-support.ts';
 import { OFFICIAL_RULES } from '#lib/core/data/rules/index.ts';
 import { parseCharacterRules } from '#lib/core/data/character-rules.ts';
 import { Issues } from '#lib/core/data/validate.ts';
@@ -22,11 +22,11 @@ import {
 const data = committedGameData();
 const official: Script = { entries: [] };
 const characters = characterLookup(data, official);
-const kindOf = (id: string) => deathCauseEntry(id)?.kind;
+const kindOf = (id: string) => deathCauseEntry(id, testCharacters)?.kind;
 /** Official characters whose ability can cause a death, by id. */
 const DEATH_CAUSE_ENTRIES = Object.fromEntries(
 	[...OFFICIAL_RULES].flatMap(([id]) => {
-		const entry = deathCauseEntry(id);
+		const entry = deathCauseEntry(id, testCharacters);
 		return entry ? [[id, entry]] : [];
 	})
 );
@@ -94,7 +94,7 @@ describe('kinds', () => {
 	// that night are its attacks (M32), so it kills only after changing a player into a Demon.
 	it('the Pit-Hag kills only once it has made a Demon', () => {
 		expect(kindOf('pithag')).toBe('kills');
-		expect(deathCauseEntry('pithag')?.afterChanging).toBe('demon');
+		expect(deathCauseEntry('pithag', testCharacters)?.afterChanging).toBe('demon');
 	});
 
 	// https://wiki.bloodontheclocktower.com/Barber: only swaps characters.
@@ -127,8 +127,8 @@ describe('Demons', () => {
 	it('every Demon but the Leviathan kills', () => {
 		expect(demons.length).toBeGreaterThan(15);
 		for (const id of demons.filter((d) => d !== 'leviathan')) {
-			expect(deathCauseEntry(id), id).toMatchObject({ kind: 'kills' });
-			expect(deathCauseEntry(id)?.onlyWith, id).toBeUndefined();
+			expect(deathCauseEntry(id, testCharacters), id).toMatchObject({ kind: 'kills' });
+			expect(deathCauseEntry(id, testCharacters)?.onlyWith, id).toBeUndefined();
 		}
 	});
 
@@ -312,11 +312,11 @@ describe('the cause a reminder gives a death', () => {
 // counts as an execution (the Saint, https://wiki.bloodontheclocktower.com/Saint).
 describe('isExecution', () => {
 	it('is an execution, plain or by an ability that executes', () => {
-		expect(isExecution('execution')).toBe(true);
-		expect(isExecution('virgin')).toBe(true);
-		expect(isExecution('demon')).toBe(false);
-		expect(isExecution('exile')).toBe(false);
-		expect(isExecution('slayer')).toBe(false);
-		expect(isExecution(undefined)).toBe(false);
+		expect(isExecution('execution', testCharacters)).toBe(true);
+		expect(isExecution('virgin', testCharacters)).toBe(true);
+		expect(isExecution('demon', testCharacters)).toBe(false);
+		expect(isExecution('exile', testCharacters)).toBe(false);
+		expect(isExecution('slayer', testCharacters)).toBe(false);
+		expect(isExecution(undefined, testCharacters)).toBe(false);
 	});
 });

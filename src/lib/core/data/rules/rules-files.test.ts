@@ -1,4 +1,5 @@
 import { readdirSync, readFileSync } from 'node:fs';
+import { testCharacters } from '#lib/core/model/fixtures.test-support.ts';
 import { describe, expect, it } from 'vitest';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { parseCharacterRules } from '../character-rules.ts';
@@ -260,9 +261,14 @@ describe('custom characters', () => {
 		]);
 	});
 
-	it('keep the official block when they reuse an official id without rules', () => {
-		expect(rulesOf('imp', new Map([['imp', {}]]))).toMatchObject({
-			reminderPrompts: { Dead: 'markDead' },
+	// One policy (M58): a custom character's text is its own, so it has only its own rules; an
+	// official character keeps our file.
+	it('have only their own block when they reuse an official id', () => {
+		expect(rulesOf('imp', new Map([['imp', {}]]))).toBeUndefined();
+		expect(rulesOf('imp', new Map([['imp', { rules: { kills: { by: 'other' } } }]]))).toEqual({
+			kills: { by: 'other' }
+		});
+		expect(rulesOf('imp', new Map([['imp', { edition: 'tb' }]]))).toMatchObject({
 			kills: { by: 'demon' }
 		});
 	});
@@ -310,6 +316,6 @@ describe('custom characters', () => {
 		expect(onDeathTrigger('lastwatch', new Map([[watcher!.id, watcher!]]))).toEqual({
 			by: 'demon'
 		});
-		expect(onDeathTrigger('lastwatch')).toBeUndefined();
+		expect(onDeathTrigger('lastwatch', testCharacters)).toBeUndefined();
 	});
 });

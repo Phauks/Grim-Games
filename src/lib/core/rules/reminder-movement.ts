@@ -6,7 +6,7 @@
 import type { CharacterId, ReminderLabel } from '#lib/core/data/types.ts';
 import type { CharacterRules } from '#lib/core/data/character-rules.ts';
 import type { ReminderMovementRules } from '#lib/core/data/reminder-movement-rules.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
+import { rulesOf, rulesOfCharacter } from '#lib/core/data/rules/index.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import type { Game, Reminder, ReminderId, SeatId } from '#lib/core/model/types.ts';
 import { charactersInPlay } from '#lib/core/model/selectors.ts';
@@ -17,7 +17,7 @@ export type { ReminderMovementRules };
 /** A character's `reminderMovement` rule: its own (a custom character's) or our overlay file's. */
 export function reminderMovementOf(
 	characterId: CharacterId,
-	characters?: CharacterLookup
+	characters: CharacterLookup
 ): ReminderMovementRules | undefined {
 	return rulesOf(characterId, characters)?.reminderMovement;
 }
@@ -25,7 +25,7 @@ export function reminderMovementOf(
 /** Why this reminder should stay where it was first placed, or undefined if it may move. */
 export function fixedReminderReason(
 	reminder: Pick<Reminder, 'characterId' | 'label'>,
-	characters?: CharacterLookup
+	characters: CharacterLookup
 ): string | undefined {
 	const rule = reminderMovementOf(reminder.characterId, characters);
 	return rule?.fixed?.includes(reminder.label) ? rule.why : undefined;
@@ -33,7 +33,7 @@ export function fixedReminderReason(
 
 export function isFixedReminder(
 	reminder: Pick<Reminder, 'characterId' | 'label'>,
-	characters?: CharacterLookup
+	characters: CharacterLookup
 ): boolean {
 	return fixedReminderReason(reminder, characters) !== undefined;
 }
@@ -44,10 +44,10 @@ export function isFixedReminder(
  * character carries its own rules block when it is a custom one.
  */
 export function isFixedLabel(
-	character: { id: CharacterId; rules?: CharacterRules },
+	character: { id: CharacterId; edition?: string; rules?: CharacterRules },
 	label: ReminderLabel
 ): boolean {
-	const rule = (character.rules ?? rulesOf(character.id))?.reminderMovement;
+	const rule = rulesOfCharacter(character)?.reminderMovement;
 	return rule?.fixed?.includes(label) ?? false;
 }
 
@@ -75,7 +75,7 @@ export function fixedReminderMove(
 	game: Game,
 	reminderId: ReminderId,
 	toSeatId: SeatId,
-	characters?: CharacterLookup
+	characters: CharacterLookup
 ): FixedReminderMove | undefined {
 	for (const seatId of game.seating) {
 		const reminder = game.seats[seatId].reminders.find((r) => r.reminderId === reminderId);
