@@ -102,7 +102,7 @@
 				value,
 				label: t(`settings.countingReminders.${value}`)
 			}))}
-			defaultValue="ask"
+			defaultValue="off"
 			onChange={(countingReminders) => preferences.update({ countingReminders })}
 		/>
 	{/if}

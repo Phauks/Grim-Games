@@ -153,10 +153,10 @@ describe('parsePreferences', () => {
 		expect(parsePreferences({}).reminderRemoval).toBe('off');
 		expect(parsePreferences({ reminderRemoval: 'auto' }).reminderRemoval).toBe('auto');
 		expect(parsePreferences({ reminderRemoval: 'sometimes' }).reminderRemoval).toBe('off');
-		// Move counting reminders (plan M53): Ask unless set.
-		expect(parsePreferences({}).countingReminders).toBe('ask');
-		expect(parsePreferences({ countingReminders: 'off' }).countingReminders).toBe('off');
-		expect(parsePreferences({ countingReminders: 'often' }).countingReminders).toBe('ask');
+		// Move counting reminders (plan M53): off unless set, like Remove reminders that run out.
+		expect(parsePreferences({}).countingReminders).toBe('off');
+		expect(parsePreferences({ countingReminders: 'ask' }).countingReminders).toBe('ask');
+		expect(parsePreferences({ countingReminders: 'often' }).countingReminders).toBe('off');
 	});
 
 	// Plan U1: one volume for every sound, silent to full, saved by older builds as nothing.

@@ -117,6 +117,19 @@ describe('number tokens that count up', () => {
 		expect(tokenOf(dusk(stopped)).symbol).toBe('#3');
 	});
 
+	it('moves only the number tokens when asked to', () => {
+		const cast = ['riot', 'chef', 'empath', 'monk', 'soldier'];
+		const s = scenario(cast, { script: script(cast) }).do((at) => ({
+			type: 'AddReminder',
+			seatId: at.seat('chef'),
+			reminder: { characterId: GENERIC_REMINDER_ID, label: '' },
+			look: { symbol: numberSymbol(1), countsUp: 'dawn' }
+		}));
+		const day = s.newDay().do({ type: 'AdvanceCounters', at: 'dawn', numbersOnly: true });
+		expect(labelsOf(day, 'riot')).toEqual([]);
+		expect(day.game.seats[day.seat('chef')].reminders[0].symbol).toBe('#2');
+	});
+
 	it('stops at the highest number', () => {
 		const s = numbered(20);
 		const counting = s.do({

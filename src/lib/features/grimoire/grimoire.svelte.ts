@@ -201,7 +201,14 @@ export class Grimoire {
 	 */
 	private moveCounters(at: CounterTime): void {
 		const mode = preferences.current.countingReminders;
-		if (mode === 'off' || counterMoves(this.game, this.open.characters, at).length === 0) return;
+		const moves = counterMoves(this.game, this.open.characters, at);
+		// Off still counts up the number tokens the Storyteller set to count up, one by one.
+		if (mode === 'off') {
+			if (moves.some((m) => m.kind === 'number'))
+				this.run({ type: 'AdvanceCounters', at, numbersOnly: true });
+			return;
+		}
+		if (moves.length === 0) return;
 		if (mode === 'auto') this.run({ type: 'AdvanceCounters', at });
 		else if (at === 'dawn' && this.dawnAsk.length > 0) this.#countersAfterReset = true;
 		else this.counterAsk = at;

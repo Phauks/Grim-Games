@@ -208,9 +208,10 @@ export type Command =
 	/**
 	 * Moves the counting reminders for a new day (`dawn`) or night (`dusk`) (plan M53): each
 	 * character's run of day or night tokens gains the next one, and number tokens set to count
-	 * up go up by one (`counterMoves`).
+	 * up go up by one (`counterMoves`). `numbersOnly`: only the number tokens (the Storyteller's
+	 * setting leaves the characters' runs alone, but each number token was set to count up).
 	 */
-	| { type: 'AdvanceCounters'; at: CounterTime }
+	| { type: 'AdvanceCounters'; at: CounterTime; numbersOnly?: true }
 	/**
 	 * The effect the Storyteller picked for a reminder whose rules let them pick one
 	 * (`pickedEffect`: the Angel's Something Bad); none clears it.

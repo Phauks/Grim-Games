@@ -1229,9 +1229,16 @@ test('a # token set to count up goes up at the new day, after asking (plan M53)'
 	await page.getByRole('option', { name: 'Each day', exact: true }).tap();
 	await page.keyboard.press('Escape');
 	await expect(countsUp).toBeHidden();
+	// Settings › Move counting reminders, off by default like Remove reminders that run out.
+	await boardSettings(page, 'Storyteller');
+	const settings = page.getByRole('dialog', { name: 'Settings' });
+	await settings.getByRole('combobox', { name: 'Move counting reminders' }).tap();
+	await page.getByRole('option', { name: 'Ask', exact: true }).tap();
+	await settings.getByRole('button', { name: 'Close' }).tap();
+	await expect(settings).toBeHidden();
 	await walkTo(page, 'Dusk');
 	await endNight(page);
-	// Settings' Move counting reminders is Ask by default: the token as it will be, by its seat.
+	// Ask: the token as it will be, by its seat.
 	const ask = page.getByRole('alertdialog', { name: 'Move counting reminders' });
 	await expect(ask.getByRole('listitem')).toHaveCount(1);
 	await expect(ask.getByRole('listitem')).toContainText('Seat 2');

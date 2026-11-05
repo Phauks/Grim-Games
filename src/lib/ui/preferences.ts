@@ -109,8 +109,9 @@ export interface Preferences {
 	/**
 	 * Whether the counting reminders move at each new day or night (plan M53, Trevor
 	 * 2026-11-04): a character's run of day or night tokens (the Leviathan's, the Riot's, the
-	 * Summoner's, the Xaan's) and number tokens set to count up. Off leaves them, Ask shows what
-	 * would move, Automatically moves them.
+	 * Summoner's, the Xaan's) and number tokens set to count up. Off (the default, as for
+	 * reminders that run out) leaves the runs but still counts up those number tokens; Ask shows
+	 * what would move; Automatically moves them.
 	 */
 	countingReminders: CountingReminders;
 	/**
@@ -278,7 +279,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
 	timerSound: 'bell',
 	timerMode: 'down',
 	reminderRemoval: 'off',
-	countingReminders: 'ask',
+	countingReminders: 'off',
 	timerVibrate: true,
 	callSound: 'clocktower',
 	ambienceOn: false,

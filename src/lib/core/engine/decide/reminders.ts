@@ -272,7 +272,9 @@ export const REMINDERS_DECIDERS: Deciders<
 
 	AdvanceCounters(game, command, ctx, warn) {
 		if (!COUNTER_TIMES.includes(command.at)) refuse('invalid-counts-up', `no time ${command.at}`);
-		const moves = counterMoves(game, ctx.characters, command.at);
+		const moves = counterMoves(game, ctx.characters, command.at).filter(
+			(m) => !command.numbersOnly || m.kind === 'number'
+		);
 		if (moves.length === 0) {
 			warn('no-change', 'no counting reminders move');
 			return [];
