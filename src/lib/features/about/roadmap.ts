@@ -141,7 +141,10 @@ export const ROADMAP: readonly RoadmapItem[] = [
 			'J41',
 			'J42',
 			'J43',
-			'M33'
+			'M33',
+			// M64 (Trevor, 2026-11-05): password managers leave room codes, PINs and Grim view
+			// passwords alone; only the account sign-in is a password.
+			'M64'
 		]
 	},
 	{
@@ -208,6 +211,13 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		area: 'storyteller',
 		parts: ['L1', 'L35', 'L36', 'L103', 'L104', 'L105', 'L106', 'L110', 'L111'],
 		prs: [322, 328]
+	},
+	{
+		// M43 (Trevor, 2026-11-03): tried in the background playground first; the Storyteller's
+		// is shared with every phone, which can hold it still (2026-11-05).
+		title: 'Moving board backgrounds: Vortex, Fire, Rain, Stars and Yin-yang',
+		area: 'storyteller',
+		parts: ['M43']
 	},
 	{
 		title: 'Savant information: generated, typed or shown to the player',

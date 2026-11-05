@@ -46,7 +46,7 @@ test("a table's tablet shows the players' grim live, with nothing to tap and no 
 	await expect(open).toBeDisabled();
 	await tablet.keyboard.press('Escape');
 	await expect(open).toHaveCount(0);
-	const field = tablet.getByRole('textbox', { name: 'Room code from the Storyteller' });
+	const field = tablet.getByRole('textbox', { name: 'Room Code' });
 	await field.tap();
 	await field.pressSequentially(code);
 	await expect(tablet.getByTestId('room-preview')).toContainText('Trouble Brewing');
@@ -358,6 +358,12 @@ test("every shared grim has the Storyteller's background, whatever the device's 
 		path
 	);
 	expect(refused).toBe(403);
+	// A moving background goes to the table by its id and settings (M43, Trevor 2026-11-05).
+	await settings
+		.getByRole('group', { name: 'Background', exact: true })
+		.getByRole('button', { name: 'Vortex' })
+		.tap();
+	await expect(town.getByTestId('preview-background')).toHaveAttribute('data-moving', 'vortex');
 	await tabletContext.close();
 });
 

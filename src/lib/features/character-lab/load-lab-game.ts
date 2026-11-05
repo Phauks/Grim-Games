@@ -17,13 +17,16 @@ export const LAB_SCRIPT_NAME = 'Character Lab';
  * the same"): the script, every seat's character (a Drunk or Marionette seat holds the token
  * its player thinks they are, with its "Is The ..." reminder), the Fabled and Loric, the
  * Demon's bluffs and the setup reminders. Then the first night begins as Start game begins it,
- * so the game opens on the first night. The last lab game, `previous`, is deleted first, so
- * the lab keeps only one on this device.
+ * so the game opens on the first night, or on day `startDay` when it is 1 or more (Trevor,
+ * 2026-11-05: "what day of the game to start on"), each night between ended as End night ends
+ * it. The last lab game, `previous`, is deleted first, so the lab keeps only one on this
+ * device.
  */
 export async function loadLabGame(
 	data: GameData,
 	setup: LabSetup,
-	previous: GameId | undefined
+	previous: GameId | undefined,
+	startDay = 0
 ): Promise<OpenGame> {
 	if (previous) await forgetGame(previous);
 	const built = labGame(data, setup);
@@ -59,11 +62,15 @@ export async function loadLabGame(
 			open.run({ type: 'AddReminder', seatId, reminder });
 			return open.game;
 		});
+	for (let day = 1; day <= startDay; day++) {
+		if (day > 1) open.run({ type: 'Dusk' });
+		open.run({ type: 'NewDay' });
+	}
 	await open.save();
 	// Start game: when it started, and tonight's walk-through from its first step.
 	const gameId = open.game.gameId;
 	gameStarts.start(gameId);
-	if (preferences.current.assistance.nightWalkthrough)
+	if (startDay === 0 && preferences.current.assistance.nightWalkthrough)
 		nightViews.write(gameId, { done: [], day: 0, walk: { night: 'first', index: 0 } });
 	return open;
 }

@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { movingDefaults } from '#lib/core/backgrounds/moving.ts';
+import { parsePublicLook } from '#lib/core/sync/public-projection.ts';
 import { DEFAULT_BOARD_LOOKS } from './board-looks.svelte.ts';
 import { drawnLook, lookOf } from './shared-look.ts';
 
@@ -34,6 +36,17 @@ describe('the look a board shares', () => {
 		expect(drawnLook({ background: 'script' })).toEqual({ script: true });
 		// An id this build doesn't know draws no background.
 		expect(drawnLook({ background: 'marble' })).toEqual({ script: false });
+	});
+
+	it('shares a moving background by its id and settings, cleaned up on arrival (M43)', () => {
+		const params = movingDefaults('fire');
+		const look = lookOf({ kind: 'moving', id: 'fire', params }, DEFAULT_BOARD_LOOKS);
+		expect(look).toMatchObject({ background: 'moving', moving: { id: 'fire', params } });
+		const arrived = parsePublicLook(JSON.parse(JSON.stringify(look)));
+		expect(drawnLook(arrived)).toMatchObject({ moving: { id: 'fire', params } });
+		// A scene this build doesn't know draws no background.
+		const unknown = parsePublicLook({ background: 'moving', moving: { id: 'lava', params: {} } });
+		expect(drawnLook(unknown)).toEqual({ script: false });
 	});
 
 	it('draws no background before the board shares one', () => {

@@ -335,6 +335,18 @@ export default defineConfig(
 		rules: { 'grim/text-field': 'error' }
 	},
 	{
+		// Only the account's own password fields are passwords (Trevor, 2026-11-05: "only real
+		// password screen should be the login"); room secrets, codes and PINs are not, so
+		// password managers don't offer to save them.
+		files: ['src/**/*.svelte'],
+		ignores: [
+			'src/lib/features/account/SignInForm.svelte',
+			'src/lib/features/account/PasswordDialog.svelte'
+		],
+		plugins: { grim },
+		rules: { 'grim/password-field': 'error' }
+	},
+	{
 		// Every delete, remove or clear is the red trash can (Trevor, 2026-10-17). Account
 		// settings is exempt (Trevor, 2026-10-18): signing out is a text button, and Delete account
 		// a labelled red button.

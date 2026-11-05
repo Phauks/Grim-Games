@@ -10,12 +10,12 @@
 	import { STORYTELLER_SCREENS } from '#lib/features/test-room/devices.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import Chip from '#lib/ui/primitives/Chip.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import { lab } from './lab-store.svelte.ts';
 	import type { LabSession } from './lab-session.svelte.ts';
-	import { LAB_SCRIPT_NAME } from './load-lab-game.ts';
 
 	/**
 	 * The Character Lab's game and setup on the Characters page (plans M45, M47). On a computer
@@ -47,11 +47,20 @@
 	}));
 	let width = $state(0);
 
+	/** First night, then each day: Day 1 to Day 3. */
+	const startOptions = [0, 1, 2, 3].map((day) => ({
+		value: String(day),
+		label: day === 0 ? t('lab.startOn.night') : t('lab.startOn.day', { day })
+	}));
+
 	/** The report form's title: the lab, then the pairing shown. */
 	const reportName = $derived(
 		[
 			t('lab.title'),
-			[...session.locked, ...(session.current ? [session.current.id] : [])].map(name).join(' + ')
+			[session.core, session.current?.id]
+				.filter((id): id is CharacterId => !!id)
+				.map(name)
+				.join(' + ')
 		]
 			.filter(Boolean)
 			.join(': ')
@@ -65,72 +74,23 @@
 <section class="lab" aria-label={t('lab.title')} bind:clientWidth={width} data-testid="lab-panel">
 	{#if frame}
 		{#key `${session.gamePath}:${session.loads}`}
+			<!-- No caption over it (Trevor, 2026-11-05: "remove text"). -->
 			<DeviceFrame
 				device={screen}
-				caption={t('lab.storyteller')}
 				title={t('lab.storyteller')}
 				src={session.gamePath ?? '/'}
 				zoom={1}
 				room={width}
 				square
 				testid="lab-frame"
-			>
-				{#snippet aside()}<span>{LAB_SCRIPT_NAME}</span>{/snippet}
-			</DeviceFrame>
+			/>
 		{/key}
 	{/if}
 
-	<!-- A solid box, so the page's background never shows through the controls (Trevor,
-	     2026-11-04). -->
-	<div class="box">
-		<!-- The characters in the rows on the left, one at a time, with the jinx text between
-		     them and the locked ones (Trevor, 2026-11-04: "rename pairings to jinxes"). -->
-		<section class="field" aria-label={t('lab.pairs')}>
-			<div class="head">
-				<h3>{t('lab.pairs')}</h3>
-				<ReportButton name={reportName} />
-			</div>
-			<div class="nav" data-testid="lab-opponent">
-				<IconButton
-					icon="back"
-					label={t('lab.previous')}
-					disabled={session.loading || session.at === 0}
-					onclick={() => step(-1)}
-				/>
-				<span class="position">
-					{#if session.current}<CharacterPiece
-							template="badge"
-							characterId={session.current.id}
-						/>{:else}{t('common.none')}{/if}
-					<span class="count" data-testid="lab-position"
-						>{session.opponents.length
-							? t('lab.position', { at: session.at + 1, total: session.opponents.length })
-							: t('common.none')}</span
-					>
-				</span>
-				<IconButton
-					icon="forward"
-					label={t('lab.next')}
-					disabled={session.loading || session.at >= session.opponents.length - 1}
-					onclick={() => step(1)}
-				/>
-			</div>
-			<Button
-				variant="accent"
-				disabled={session.loading || !session.data}
-				onclick={() => void session.load(session.at, !frame)}
-				>{session.loading ? t('lab.loading') : t('lab.load')}</Button
-			>
-			<!-- A set height that scrolls, so a pairing with more jinxes moves nothing below. -->
-			<div class="jinx-list" data-testid="lab-jinxes">
-				{#each session.pairJinxes as jinx (jinx.characters.join('+'))}
-					<JinxNote {jinx} />
-				{:else}
-					<p class="none">{t('common.none')}</p>
-				{/each}
-			</div>
-		</section>
-
+	<!-- The game's settings first, so they always sit in the same place (Trevor, 2026-11-05:
+	     "move all settings relate to the mock grim above"), on solid boxes so the page's
+	     background never shows through (Trevor, 2026-11-04). -->
+	<div class="box" data-testid="lab-settings">
 		{#if frame}
 			<Select
 				label={t('lab.screen')}
@@ -157,6 +117,75 @@
 			checked={setup.setupTokens}
 			onChange={(setupTokens) => lab.update({ setupTokens })}
 		/>
+		<!-- Where the game opens (Trevor, 2026-11-05: "what day of the game to start on"). -->
+		<Select
+			label={t('lab.startOn')}
+			value={String(setup.startDay)}
+			options={startOptions}
+			onChange={(day: string) => lab.update({ startDay: Number(day) })}
+		/>
+	</div>
+	<div class="box">
+		<!-- The core character's jinx partners, and only those (Trevor, 2026-11-05: "jinxed with
+		     locked should be on the right side with jinxed characters ... only show jinxed
+		     characters"), one at a time with the jinx text between them. -->
+		<section class="field" aria-label={t('lab.pairs')}>
+			<div class="head">
+				<h3>{t('lab.pairs')}</h3>
+				<ReportButton name={reportName} />
+			</div>
+			<!-- A set height that scrolls, so a character with more partners moves nothing below. -->
+			<div class="partners" data-testid="lab-partners">
+				{#each session.opponents as opponent, i (opponent.id)}
+					<Chip
+						pressed={i === session.at}
+						disabled={session.loading}
+						onclick={() => (frame ? void session.load(i) : session.show(i))}
+						><CharacterPiece template="badge" characterId={opponent.id} interactive={false} /></Chip
+					>
+				{:else}
+					<p class="none">{t('common.none')}</p>
+				{/each}
+			</div>
+			<div class="nav" data-testid="lab-opponent">
+				<IconButton
+					icon="back"
+					label={t('lab.previous')}
+					disabled={session.loading || session.at === 0}
+					onclick={() => step(-1)}
+				/>
+				<span class="position">
+					<!-- With no partner, the list above says None once (Trevor, 2026-11-05). -->
+					{#if session.current}<CharacterPiece
+							template="badge"
+							characterId={session.current.id}
+						/>{/if}
+					<span class="count" data-testid="lab-position"
+						>{session.opponents.length
+							? t('lab.position', { at: session.at + 1, total: session.opponents.length })
+							: ''}</span
+					>
+				</span>
+				<IconButton
+					icon="forward"
+					label={t('lab.next')}
+					disabled={session.loading || session.at >= session.opponents.length - 1}
+					onclick={() => step(1)}
+				/>
+			</div>
+			<Button
+				variant="accent"
+				disabled={session.loading || !session.data}
+				onclick={() => void session.load(session.at, !frame)}
+				>{session.loading ? t('lab.loading') : t('lab.load')}</Button
+			>
+			<!-- A set height that scrolls, so a pairing with more jinxes moves nothing below. -->
+			<div class="jinx-list" data-testid="lab-jinxes">
+				{#each session.pairJinxes as jinx (jinx.characters.join('+'))}
+					<JinxNote {jinx} />
+				{/each}
+			</div>
+		</section>
 	</div>
 </section>
 
@@ -213,6 +242,14 @@
 	.none {
 		margin: 0;
 		color: var(--on-surface-muted);
+	}
+	.partners {
+		display: flex;
+		flex-wrap: wrap;
+		align-content: start;
+		gap: var(--space-1);
+		height: calc(2 * var(--tap-target) + var(--space-1));
+		overflow-y: auto;
 	}
 	.jinx-list {
 		display: grid;

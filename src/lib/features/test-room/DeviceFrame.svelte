@@ -9,7 +9,8 @@
 	 */
 	interface Props {
 		device: Pick<Device, 'width' | 'height'>;
-		caption: string;
+		/** The line above the screen; none without it (the Character Lab, Trevor 2026-11-05). */
+		caption?: string;
 		/** The frame's accessible title. */
 		title: string;
 		src: string;
@@ -22,7 +23,10 @@
 		iframe?: HTMLIFrameElement;
 		/** Text or controls after the caption, on its line. */
 		aside?: Snippet;
-		/** Square corners (the Character Lab's game, Trevor 2026-11-04). */
+		/**
+		 * Square corners, filling the area's whole width (the Character Lab's game, Trevor
+		 * 2026-11-05: "does not go all the way across the area it lives in").
+		 */
 		square?: boolean;
 	}
 
@@ -46,9 +50,10 @@
 	style:--h={device.height}
 	style:--zoom={zoom}
 	style:--room={room || undefined}
+	style:--inset={square ? 6 : undefined}
 	data-testid={testid}
 >
-	<figcaption><span>{caption}</span>{@render aside?.()}</figcaption>
+	{#if caption}<figcaption><span>{caption}</span>{@render aside?.()}</figcaption>{/if}
 	<div class="screen" class:square>
 		<iframe {title} {name} bind:this={iframe} {src}></iframe>
 	</div>
@@ -59,7 +64,7 @@
 	   2026-10-31: a tablet screen at 50% ran off the side of the phone): the area's width less
 	   its padding and a frame's border, in CSS pixels. */
 	figure {
-		--fit: min(var(--zoom), (var(--room, 100000) - 80) / var(--w));
+		--fit: min(var(--zoom), (var(--room, 100000) - var(--inset, 80)) / var(--w));
 		margin: 0;
 		display: grid;
 		gap: var(--space-1);

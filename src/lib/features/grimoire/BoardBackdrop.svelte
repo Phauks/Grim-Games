@@ -1,5 +1,7 @@
 <script lang="ts">
+	import type { MovingChoice } from '#lib/core/backgrounds/moving.ts';
 	import { PRESETS, type PresetId } from './backgrounds.ts';
+	import MovingBackdrop from './moving/MovingBackdrop.svelte';
 
 	/**
 	 * The board's background and vignette, on the board behind everything and in the Board
@@ -10,13 +12,15 @@
 		url?: string;
 		/** A built-in background, when there is no image. */
 		preset?: PresetId;
+		/** A moving background (M43), when there is no image or built-in one. */
+		moving?: MovingChoice;
 		/** The vignette's strength, or undefined while it is off. */
 		vignette?: number;
 		/** Fills its positioned parent (the preview) instead of the whole screen. */
 		contained?: boolean;
 	}
 
-	let { url, preset, vignette, contained = false }: Props = $props();
+	let { url, preset, moving, vignette, contained = false }: Props = $props();
 </script>
 
 <!-- The whole screen, under the toolbar and the safe areas too (Trevor, 2026-10-18). -->
@@ -35,6 +39,8 @@
 		data-preset={preset}
 		style:background={PRESETS[preset].css}
 	></div>
+{:else if moving}
+	<MovingBackdrop choice={moving} {contained} />
 {/if}
 <!-- The vignette darkens the background towards the screen's edges, on every background
      (Trevor, 2026-10-17: its own switch and strength; 2026-10-18: noticeable, and over the

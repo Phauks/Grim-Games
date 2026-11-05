@@ -5,6 +5,7 @@
 	import { SHEET_BACKGROUNDS } from '#lib/ui/themes/sheet-backgrounds.ts';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
 	import ReminderLinesSetting from '#lib/features/grimoire/ReminderLinesSetting.svelte';
+	import { movingMotion } from '#lib/features/grimoire/moving/motion.svelte.ts';
 </script>
 
 <!-- Name, picture and laurel are in the Profile, from the button beside Settings' X (Trevor,
@@ -28,6 +29,14 @@
 	label={t('player.townMatchShape')}
 	checked={playerSettings.current.townMatchShape}
 	onChange={(townMatchShape) => playerSettings.update({ townMatchShape })}
+/>
+
+<!-- The Storyteller's moving background, held still on this phone (Trevor, 2026-11-05:
+     "Storyteller's, with a still switch"). -->
+<SettingToggle
+	label={t('player.holdMovingStill')}
+	checked={movingMotion.current.still}
+	onChange={(still) => movingMotion.update({ still })}
 />
 
 <!-- The Grim tab's own choice; the Storyteller's board has its own in Board (Trevor, 2026-10-29). -->
