@@ -372,7 +372,7 @@
 							: t('room.closedOrWrong')}
 		</p>
 	{/if}
-	<!-- Continue game: once there is room, the code on the left and the games to resume on the
+	<!-- Join game: once there is room, the code on the left and the games to resume on the
 	     right (Trevor, 2026-10-28). -->
 	<div class="continue">
 		<div class="columns" class:split={code === undefined}>

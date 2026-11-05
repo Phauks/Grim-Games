@@ -1,7 +1,7 @@
 <script lang="ts">
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	/**
-	 * Continue game's As Storyteller: the games still being played, newest first. With `view="previous"`, the
+	 * Join game's As Storyteller: the games still being played, newest first. With `view="previous"`, the
 	 * History page (Trevor, 2026-10-16): ended games, opened read-only to look around
 	 * (Trevor, 2026-10-17); the board can reopen one.
 	 */
@@ -123,7 +123,7 @@
 			data-testid="game-mode">{` · ${gameModeName(gameId)}`}</span
 		>{/if}{/snippet}
 
-<!-- Continue game's As Storyteller heading is SavedGamesSection's; History keeps its own "Games" heading. -->
+<!-- Join game's As Storyteller heading is SavedGamesSection's; History keeps its own "Games" heading. -->
 {#if view === 'active'}<section aria-label="Saved games">
 		{#if loaded && games.length === 0 && unreadable.length === 0}
 			<p class="none">None</p>
