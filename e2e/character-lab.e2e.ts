@@ -153,7 +153,10 @@ test('on a computer window the game opens on the right of the table', async ({ p
 	await expect(page.getByRole('navigation', { name: 'Character Lab' })).toHaveCount(0);
 	await lock(page, 'Philosopher');
 	await panel.getByRole('button', { name: 'Load game' }).tap();
-	const table = await page.getByTestId('character-table').boundingBox();
+	// Measured from the top of the lab, where nothing has scrolled under the pinned game.
+	await panel.evaluate((el) => el.closest('aside')?.scrollTo(0, 0));
+	await page.evaluate(() => window.scrollTo(0, 0));
+	const table = await page.getByTestId('lab-select').boundingBox();
 	const frame = await page.getByTestId('lab-frame').boundingBox();
 	const settings = await panel.getByTestId('lab-settings').boundingBox();
 	const partners = await panel.getByTestId('lab-partners').boundingBox();
@@ -261,4 +264,25 @@ test('the address matches the title, and an old Reference link still opens its c
 	await expect(
 		page.getByTestId('character-table').locator('tr[data-character]').nth(0)
 	).toHaveAttribute('data-character', 'witch');
+});
+
+// Trevor, 2026-11-05: "you can expand to use more space, also, pin mock game on the top right".
+test('a computer window uses its whole width, the game pinned while the lab scrolls', async ({
+	page
+}) => {
+	test.skip(test.info().project.name !== 'tablet', 'one window size is enough');
+	await page.setViewportSize({ width: 2400, height: 900 });
+	await page.goto('/character-analyzer');
+	await lock(page, 'Summoner');
+	const panel = page.getByTestId('lab-panel');
+	const box = (await panel.boundingBox())!;
+	expect(box.x + box.width).toBeGreaterThan(2400 - 100);
+	// Scrolled to the bottom of the lab, the game still sits at the top of the window.
+	const frame = page.getByTestId('lab-frame');
+	await panel.getByTestId('lab-jinxes').scrollIntoViewIfNeeded();
+	await expect(panel.getByTestId('lab-jinxes')).toBeInViewport();
+	const pinned = (await frame.boundingBox())!;
+	expect(pinned.y).toBeGreaterThanOrEqual(0);
+	expect(pinned.y).toBeLessThan(120);
+	await expect(frame).toBeInViewport({ ratio: 0.9 });
 });
