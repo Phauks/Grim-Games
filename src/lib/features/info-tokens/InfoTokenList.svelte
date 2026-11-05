@@ -177,7 +177,7 @@
 				(!activeCharacters || token.characterIds.some((id) => activeCharacters.has(id)))
 		)
 	);
-	/** Built-in cards of characters on this list (the Harlot's), with their character. */
+	/** Built-in cards of characters on this list (the Harlot's, the Cerenovus's), with their character. */
 	const owned = $derived(
 		STANDARD_INFO_TOKENS.flatMap((token) => {
 			const owner = token.characterId ? byId.get(token.characterId) : undefined;
