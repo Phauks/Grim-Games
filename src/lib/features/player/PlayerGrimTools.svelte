@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { Snippet } from 'svelte';
 	import type { ScriptMeta } from '#lib/core/data/index.ts';
 	import type { PublicGameState } from '#lib/core/sync/public-projection.ts';
 	import TownGameInfo from '#lib/features/modes/TownGameInfo.svelte';
@@ -31,6 +32,8 @@
 			table?: Pick<PublicGameState, 'storytellerName' | 'storyteller' | 'corner'>;
 			roomCode?: string;
 		};
+		/** A players-only game's seat count (plan M55), first in the row. */
+		seats?: Snippet;
 		/** Placed in the town's top right itself, for a town without Full screen's corner. */
 		placed?: boolean;
 		/** Placed, the row's size, measured, so the ring of seats keeps clear of it. */
@@ -44,6 +47,7 @@
 		showFinal,
 		onFinal,
 		info,
+		seats,
 		placed = false,
 		width = $bindable(0),
 		height = $bindable(0)
@@ -57,6 +61,7 @@
 	</div>{:else}{@render row()}{/if}
 
 {#snippet row()}<div class="grim-tools" data-testid="grim-tools">
+		{#if seats}<span class="corner-pill">{@render seats()}</span>{/if}
 		{#if final}<span class="corner-pill"
 				><Toggle label={t('room.finalGrimoire')} checked={showFinal} onChange={onFinal} /></span
 			>{/if}

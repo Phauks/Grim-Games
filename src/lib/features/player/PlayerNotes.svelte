@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { localGuessKey, localSeats } from './local-town.svelte.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
@@ -37,9 +38,15 @@
 	$effect(() => () => {
 		if (player) releaseRoom(player);
 	});
-	const seats = $derived(town?.seats ?? player?.view?.public?.seats ?? []);
+	/** No room and no Storyteller: the player's own town (plan M55), as the Grim tab draws it. */
+	const local = $derived(!town && !room && notesKey ? notesKey : undefined);
+	const seats = $derived(
+		town?.seats ?? player?.view?.public?.seats ?? (local ? localSeats(local) : [])
+	);
 	/** Where this game's seat notes and guesses are kept: per game (`gameKey`), as the Grim tab. */
-	const kept = $derived(town ? town.guessKey : room ? gameKey(room) : undefined);
+	const kept = $derived(
+		town ? town.guessKey : room ? gameKey(room) : local ? localGuessKey(local) : undefined
+	);
 	// Set in an effect, not a derived, so the derived below follows the notes it reads.
 	// eslint-disable-next-line svelte/prefer-writable-derived -- a store made inside a derived is not followed
 	let book = $state<ReturnType<typeof seatNotes>>();

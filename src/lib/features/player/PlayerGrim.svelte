@@ -76,6 +76,9 @@
 	import { wordsOf } from '#lib/core/sync/room-look.ts';
 	import FullScreenStage from '#lib/ui/layout/FullScreenStage.svelte';
 	import { fitInDialog } from '#lib/ui/fit-in-dialog.ts';
+	import { localGuessKey, localSeats } from './local-town.svelte.ts';
+	import LocalSeatCount from './LocalSeatCount.svelte';
+	import LocalSeatRows from './LocalSeatRows.svelte';
 
 	/**
 	 * /play's Grim tab (Trevor, 2026-10-19): the town as everyone at the table knows it, from
@@ -95,9 +98,14 @@
 		fullScreen?: boolean;
 		/** More of that corner, before Full screen; told whether the town fills the screen. */
 		corner?: Snippet<[boolean]>;
+		/**
+		 * The player screen's notebook key: with no room and no Storyteller's town, the player
+		 * keeps their own town under it (plan M55, a players-only game).
+		 */
+		localKey?: string;
 	}
 
-	let { script, town, display = false, fullScreen = false, corner }: Props = $props();
+	let { script, town, display = false, fullScreen = false, corner, localKey }: Props = $props();
 
 	// svelte-ignore state_referenced_locally
 	const code = town ? (town.roomCode ?? town.guessKey) : lastRoom();
@@ -107,11 +115,27 @@
 		if (player) releaseRoom(player);
 	});
 
-	const table = $derived(town ?? player?.view?.public);
+	/**
+	 * A players-only game (plan M55, Trevor 2026-11-05): no room and no Storyteller, so this
+	 * phone keeps its own seats, names, deaths and ghost votes, and the player marks them.
+	 */
+	const local = $derived(!town && !code && !display ? localKey : undefined);
+	const localTable = $derived<PlayerGrimTown | undefined>(
+		local ? { seats: localSeats(local) } : undefined
+	);
+	const table = $derived(town ?? player?.view?.public ?? localTable);
 	const seats = $derived(table?.seats ?? []);
 	/** Where this game's guesses and seat notes are kept: per game (`gameKey`). */
 	const kept = $derived(
-		display ? undefined : town ? town.guessKey : code ? gameKey(code) : undefined
+		display
+			? undefined
+			: town
+				? town.guessKey
+				: code
+					? gameKey(code)
+					: local
+						? localGuessKey(local)
+						: undefined
 	);
 	let guesses = $state<Guesses>({});
 	/** The reminder tokens this player put on seats (Trevor, 2026-10-26), kept as guesses are. */
@@ -247,6 +271,8 @@
 
 	let open = $state(false);
 	let chosen = $state<PublicSeat>();
+	/** The seat in the sheet as it is now, after the player renamed or marked it. */
+	const current = $derived(chosen && (seats.find((s) => s.seatId === chosen?.seatId) ?? chosen));
 	function choose(seat: PublicSeat, event?: MouseEvent) {
 		// A token tapped in the bin goes on the seat tapped next.
 		if (bin?.placeOn(seat) || seating?.claim(seat)) return;
@@ -283,14 +309,14 @@
 	function guess(characterId: CharacterId) {
 		if (!chosen) return;
 		save(
-			chosen.traveller
+			current?.traveller
 				? travellerGuess(guesses, chosen.seatId, characterId)
 				: toggleGuess(guesses, chosen.seatId, characterId, withAvatar(chosen))
 		);
 	}
 	/** Only Good or Evil for a Traveller's seat, whose character the town knows (Trevor, 2026-10-26). */
 	const guessChoices = $derived(
-		chosen?.traveller ? GENERIC_GUESSES.filter((g) => !g.type) : GENERIC_GUESSES
+		current?.traveller ? GENERIC_GUESSES.filter((g) => !g.type) : GENERIC_GUESSES
 	);
 	/**
 	 * A seat's avatar joins its guesses' cycle (Trevor, 2026-10-26), except on a Traveller's
@@ -362,8 +388,14 @@
 	<div class="final" data-testid="final-grimoire">
 		<SharedBoard shared={final.grimoire} {over} room={final.room} />
 	</div>
-{:else if !code || seats.length === 0}
-	<p class="none" data-testid="grim-none">{t('common.none')}</p>
+{:else if seats.length === 0 || (!code && !local)}
+	<!-- A players-only game starts here: the seat count, None until the player picks one. -->
+	{#if local}<div class="start"><LocalSeatCount notesKey={local} count={0} /></div>{:else}<p
+			class="none"
+			data-testid="grim-none"
+		>
+			{t('common.none')}
+		</p>{/if}
 {:else}
 	{#snippet townBoard()}
 		<div
@@ -539,8 +571,15 @@
 		>{:else}{@render townBoard()}{/if}
 {/if}
 
+<!-- On the town, among the round buttons: its name is read out, not shown. -->
+{#snippet townSeatCount()}{#if local}<LocalSeatCount
+			notesKey={local}
+			count={seats.length}
+			hideLabel
+		/>{/if}{/snippet}
 {#snippet grimTools(placed: boolean)}<PlayerGrimTools
 		{placed}
+		seats={local ? townSeatCount : undefined}
 		bind:width={toolsW}
 		bind:height={toolsH}
 		shaped={!!aspect}
@@ -568,13 +607,15 @@
 	/>{/snippet}
 <BottomSheet
 	bind:open
-	title={chosen ? `${t('common.seat', { number: chosen.seatNumber })} · ${nameOf(chosen)}` : ''}
+	title={current ? `${t('common.seat', { number: current.seatNumber })} · ${nameOf(current)}` : ''}
 	actions={player && chosen ? pictureMenu : undefined}
 	lead={chosen?.avatar ? seatAvatar : undefined}
 >
 	<!-- This seat's cycle, front first, at the top (Trevor, 2026-10-25): its guesses and, once
 	     it has one, the player's avatar (2026-10-26); a tap brings one to the front. Then the
 	     note, a row of its own, so the two never read as one. -->
+	<!-- A players-only game: what the town knows about this seat, marked by the player (plan M55). -->
+	{#if local && current}<LocalSeatRows notesKey={local} seat={current} {script} />{/if}
 	<div class="row" data-testid="seat-guesses">
 		<span class="row-label">{t('player.grim.guesses')}</span>
 		<SeatGuessChips
@@ -607,7 +648,7 @@
 		pressed={(key) => !!chosen && guessesOf(guesses, chosen.seatId).includes(key)}
 		onGuess={guess}
 	/>
-	{#if !chosen?.traveller}<CharacterPicker
+	{#if !current?.traveller}<CharacterPicker
 			characters={script.characters}
 			selected={chosen ? guessesOf(guesses, chosen.seatId) : []}
 			onSelect={(id) => guess(id)}
@@ -652,6 +693,9 @@
 	   Previous and Next inside its foot), so the tabs' bottom bar never covers them. */
 	.final {
 		position: relative;
+	}
+	.start {
+		display: flex;
 	}
 	.none {
 		margin: 0;
