@@ -12,7 +12,7 @@
 
 	/**
 	 * Ending and reopening the game (Trevor, 2026-10-16): End game moves it to History, Reopen
-	 * puts it back in Continue game, and the rules checked at dusk can offer End game themselves.
+	 * puts it back in Join game, and the rules checked at dusk can offer End game themselves.
 	 * The confirms say what the board shows, where the game is up to and Game over, not where
 	 * the save is filed (Trevor, 2026-11-01: the room stays open after End game).
 	 */

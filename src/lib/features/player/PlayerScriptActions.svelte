@@ -34,7 +34,7 @@
 		/** The game mode and special rules the table plays by, for Print. */
 		rules?: readonly PublicRule[];
 		/**
-		 * Continue game's code form, before this phone is in a room, shows no cog: the app's
+		 * Join game's code form, before this phone is in a room, shows no cog: the app's
 		 * sidebar already opens Settings there (Trevor, 2026-10-29).
 		 */
 		cog?: boolean;
