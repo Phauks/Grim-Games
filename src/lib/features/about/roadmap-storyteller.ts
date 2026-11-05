@@ -66,7 +66,10 @@ export const STORYTELLER_AND_PLAYER: readonly RoadmapItem[] = [
 			'J41',
 			'J42',
 			'J43',
-			'M33'
+			'M33',
+			// M64 (Trevor, 2026-11-05): password managers leave room codes, PINs and Grim view
+			// passwords alone; only the account sign-in is a password.
+			'M64'
 		]
 	},
 	{
