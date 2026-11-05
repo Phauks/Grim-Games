@@ -147,6 +147,12 @@
 		 */
 		moreRows?: number;
 		onend?: () => void;
+		/**
+		 * False: no sort, filter or column picker, and every column shown; a stacked table then
+		 * has no header row at all (the Character Lab's rows, Trevor 2026-11-04: "remove all
+		 * those useless table controls").
+		 */
+		controls?: boolean;
 	}
 
 	let {
@@ -177,16 +183,20 @@
 		columnFilters = $bindable({}),
 		oncount,
 		onrows,
-		hideKey
+		hideKey,
+		controls = true
 	}: Props = $props();
 
 	/** The row header, else the first column: it names the row, so it can't be hidden. */
 	const fixedColumn = $derived(allColumns.find((c) => c.rowHeader) ?? allColumns[0]);
 	const hidden = $derived(new HiddenColumns(hideKey ?? resizeKey ?? ''));
 	const keeps = (c: DataColumn<K, T>) => c === fixedColumn || !!c.alwaysShown;
-	const columns = $derived(allColumns.filter((c) => keeps(c) || !hidden.has(c.id)));
+	const columns = $derived(
+		controls ? allColumns.filter((c) => keeps(c) || !hidden.has(c.id)) : allColumns
+	);
 	const canFilter = (column: DataColumn<K, T>) =>
-		!!column.value || (!!column.filterable && !!filter);
+		controls && (!!column.value || (!!column.filterable && !!filter));
+	const canSort = (column: DataColumn<K, T>) => controls && !!column.sortable;
 	const isFiltered = (column: DataColumn<K, T>) =>
 		column.filterable ? !!column.filtered : isActive(columnFilters[column.id]);
 
@@ -205,7 +215,9 @@
 
 	const valueColumns = $derived(new Map(allColumns.map((c) => [c.id as string, c])));
 	const rows = $derived(
-		applyFilters(allRows, columnFilters, (row, id): Value => valueColumns.get(id)?.value?.(row))
+		applyFilters(allRows, controls ? columnFilters : {}, (row, id): Value =>
+			valueColumns.get(id)?.value?.(row)
+		)
 	);
 	$effect.pre(() => {
 		oncount?.(rows.length);
@@ -332,7 +344,7 @@
 	});
 
 	function ariaSort(column: DataColumn<K, T>) {
-		if (!column.sortable) return undefined;
+		if (!canSort(column)) return undefined;
 		return sort?.column === column.id ? sort.direction : 'none';
 	}
 </script>
@@ -385,6 +397,7 @@
 	class:frameless
 	class:fill
 	class:lazy
+	class:no-controls={!controls}
 	style:--columns={template}
 	style:--columns-medium={mediumTemplate}
 	style:--columns-narrow={narrowTemplate}
@@ -408,7 +421,9 @@
 							class:wide={column.wide}
 							class:wider={column.wider}
 							class:end={column.align === 'end'}
-							class:control={column.sortable || canFilter(column) || column === fixedColumn}
+							class:control={canSort(column) ||
+								canFilter(column) ||
+								(controls && column === fixedColumn)}
 							class:resizable={resizable(column)}
 							class:after-resizable={i > 0 && resizable(columns[i - 1])}
 							class:last={i === columns.length - 1}
@@ -418,7 +433,7 @@
 							aria-sort={ariaSort(column)}
 						>
 							<div class="head">
-								{#if column.sortable}
+								{#if canSort(column)}
 									<button type="button" class="sort" onclick={() => onSort?.(column.id)}>
 										<span class="label">{column.label}</span>
 										{#if sort?.column === column.id}
@@ -435,7 +450,7 @@
 								{#if canFilter(column)}
 									{@render filterButton(column)}
 								{/if}
-								{#if column === fixedColumn && allColumns.length > 1}
+								{#if controls && column === fixedColumn && allColumns.length > 1}
 									{@render columnsButton(narrow === 'hide')}
 								{/if}
 							</div>
@@ -463,7 +478,7 @@
 							{/if}
 						</th>
 					{/each}
-					{#if narrow === 'hide'}
+					{#if narrow === 'hide' && controls}
 						<!--
 							A narrow table's dropped columns keep their filters, with Columns, on one
 							wrapping row under the header (Trevor, 2026-10-18: they stacked up in Name).
@@ -990,6 +1005,9 @@
 		}
 		.stack thead {
 			background: none;
+		}
+		.stack.no-controls thead {
+			display: none;
 		}
 		.stack thead tr {
 			display: flex;

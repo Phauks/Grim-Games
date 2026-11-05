@@ -708,7 +708,7 @@
 	<AddCharactersDialog
 		bind:open={() => adding === type, (open) => (adding = open ? type : undefined)}
 		title={t(ADD_LABELS[type].title)}
-		{type}
+		types={[type]}
 		characters={allOf(type)}
 		selected={[...ids, ...inRule]}
 		marker={(c) => (listedIds.has(c.id) ? undefined : t('setup.offScript'))}

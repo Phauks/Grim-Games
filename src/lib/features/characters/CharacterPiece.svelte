@@ -10,7 +10,6 @@
 	import CharacterRow from './CharacterRow.svelte';
 	import CharacterBadge from './CharacterBadge.svelte';
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
-	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { loadOfficialData, officialData } from './game-data.svelte.ts';
 	import { contextCharacters } from './character-context.ts';
@@ -137,10 +136,9 @@
 </script>
 
 {#snippet endMarks()}
+	<!-- In words (Trevor, 2026-11-04: "say 1 jinx, 2 jinxes, etc"). -->
 	{#if jinxes > 0}<span class="jinx-count" data-testid="jinx-count"
-			><CountBadge count={jinxes} /><span class="visually-hidden"
-				>{t('characters.jinxCount', { count: jinxes })}</span
-			></span
+			>{t('characters.jinxCount', { count: jinxes })}</span
 		>{/if}{@render marks?.()}
 {/snippet}
 
@@ -239,6 +237,9 @@
 	.jinx-count {
 		display: inline-flex;
 		align-items: center;
+		color: var(--on-surface-muted);
+		font-size: 0.85em;
+		white-space: nowrap;
 	}
 	/* Fills the box its host gives it (or --character-icon-size), round on the token's face. */
 	.icon {

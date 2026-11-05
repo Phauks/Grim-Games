@@ -1,10 +1,10 @@
 /**
  * The Character Lab's choices, kept on this device (plans M37, M45): the setup, where in the
  * list of opponents it is and the game it last loaded. Stored with a version, so a newer build
- * reads what an older one saved; M37's Works and Problem marks are dropped (Trevor,
+ * reads what an older one saved; M37's Works and Problem marks, and M45's place for the opponent, are dropped (Trevor,
  * 2026-11-04: "remove works and error, just make the report button there").
  */
-import { OPPONENT_PLACES, type LabFiller, type OpponentPlace } from '#lib/core/lab/lab-game.ts';
+import type { LabFiller } from '#lib/core/lab/lab-game.ts';
 import { OFFICIAL_EDITIONS } from '#lib/core/data/index.ts';
 import type { CharacterId } from '#lib/core/data/index.ts';
 import type { GameId } from '#lib/core/model/index.ts';
@@ -25,7 +25,6 @@ export interface LabState {
 	/** Select character lists only characters with a jinx, or that change setup. */
 	pickJinxed: boolean;
 	pickSetup: boolean;
-	place: OpponentPlace;
 	filler: LabFiller;
 	/** The opponent shown, as a place in the list of opponents. */
 	index: number;
@@ -40,7 +39,6 @@ export const DEFAULT_LAB: LabState = {
 	setupTokens: true,
 	pickJinxed: false,
 	pickSetup: false,
-	place: 'in-play',
 	filler: 'all',
 	index: 0
 };
@@ -72,9 +70,6 @@ export function parseLab(raw: unknown): LabState {
 		setupTokens: typeof raw.setupTokens === 'boolean' ? raw.setupTokens : DEFAULT_LAB.setupTokens,
 		pickJinxed: raw.pickJinxed === true,
 		pickSetup: raw.pickSetup === true,
-		place: (OPPONENT_PLACES as readonly unknown[]).includes(raw.place)
-			? (raw.place as OpponentPlace)
-			: DEFAULT_LAB.place,
 		filler:
 			raw.filler === 'all' || OFFICIAL_EDITIONS.some((e) => e.id === raw.filler)
 				? (raw.filler as LabFiller)

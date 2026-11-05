@@ -134,9 +134,6 @@ function referenceTokens(character: Character): ReferenceToken[] {
 	return out;
 }
 
-/** Placed at setup or at the start of the first day. */
-export const atSetup = (token: ReferenceToken) => token.setup + token.firstDay > 0;
-
 export interface ReferenceEntry {
 	character: Character;
 	/** From the character type; Travellers get theirs when assigned. */
@@ -370,39 +367,6 @@ export function referenceText(
 							: `[player with “${s.token}”]`
 		)
 		.join(' ');
-}
-
-export interface ReferenceQuery {
-	/** Matched against name, id, ability, reminder tokens and jinx text. */
-	search?: string;
-	/** Character types to show; empty or absent shows every type. */
-	types?: readonly CharacterType[];
-	/** Every listed filter must hold. */
-	filters?: readonly ReferenceFilter[];
-}
-
-const fold = (s: string) =>
-	s.normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[’']/g, '').toLowerCase();
-
-export function matchesReference(entry: ReferenceEntry, query: ReferenceQuery): boolean {
-	const { character } = entry;
-	if (query.types?.length && !query.types.includes(character.type)) return false;
-	if (query.filters?.some((f) => !entry.filters.has(f))) return false;
-	const words = fold(query.search ?? '')
-		.split(/\s+/)
-		.filter(Boolean);
-	if (words.length === 0) return true;
-	const haystack = fold(
-		[
-			character.name,
-			character.id,
-			character.ability,
-			...character.reminders,
-			...character.remindersGlobal,
-			...entry.jinxes.map((j) => j.reason)
-		].join(' ')
-	);
-	return words.every((w) => haystack.includes(w));
 }
 
 /**
