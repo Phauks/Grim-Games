@@ -359,6 +359,30 @@ test('during the riot a player who nominated the Storyteller nominates again, wi
 	await expect(prompt.locator('[data-rule="storyteller-executed"]')).toContainText('Evil wins');
 });
 
+// An announcement shows its character as the night strip does, big icon and name with no
+// ability under it (Trevor, 2026-11-04), and what to announce in the row.
+test('the Vizier is announced on Day 1 as a named row without its ability', async ({ page }) => {
+	test.slow();
+	await startGame(page, 'Vizier Announced', ['vizier', 'imp', 'chef', 'empath', 'monk']);
+	await choose(page, 1, 'Vizier');
+	await choose(page, 3, 'Imp');
+	const first = await walkTo(page, 'Dusk');
+	await first.getByRole('button', { name: 'Next step' }).tap();
+	await bankNight(page, 'End night').tap();
+	await page
+		.getByRole('alertdialog', { name: 'End the night?' })
+		.getByRole('button', { name: 'Confirm', exact: true })
+		.tap();
+	const day = page.getByRole('dialog', { name: 'Day 1' });
+	const vizier = day.getByTestId('announcements').locator('[data-character="vizier"]');
+	await expect(vizier).toHaveCount(1);
+	await expect(vizier.locator('.ring-row')).toBeVisible();
+	await expect(vizier.locator('.ring-ability')).toHaveCount(0);
+	await expect(vizier).toContainText('Vizier');
+	// Nobody dies on the first night, so Day 1 doesn't say so (Trevor, 2026-11-04).
+	await expect(day.getByTestId('announcements')).not.toContainText('Nobody died');
+});
+
 // The Vizier's jinxes (L115): with the Investigator on the script the Vizier isn't declared, and
 // the Magician is immune to the Vizier's execute now, warned beside it, never locked
 // (https://wiki.bloodontheclocktower.com/Vizier#Related_Jinxes).
