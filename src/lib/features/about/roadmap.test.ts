@@ -1,12 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import {
-	idsIn,
-	PART_PRS,
-	ROADMAP,
-	roadmapByArea,
-	roadmapStatus,
-	type RoadmapItem
-} from './roadmap.ts';
+import { PART_PRS, ROADMAP } from './roadmap.ts';
+import { idsIn, roadmapByArea, roadmapStatus, type RoadmapItem } from './roadmap-status.ts';
 import type { Change } from './changelog.ts';
 
 const change = (sha: string, subject: string, pr?: number): Change => ({

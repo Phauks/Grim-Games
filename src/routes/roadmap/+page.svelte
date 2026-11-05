@@ -7,12 +7,12 @@
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import { REPOSITORY_URL } from '#lib/features/about/report-issue.ts';
 	import { changeHistory } from '#lib/features/about/changelog.ts';
+	import { ROADMAP } from '#lib/features/about/roadmap.ts';
 	import {
-		ROADMAP,
 		roadmapByArea,
 		roadmapStatus,
 		type RoadmapArea
-	} from '#lib/features/about/roadmap.ts';
+	} from '#lib/features/about/roadmap-status.ts';
 	import type { MessageKey } from '#lib/i18n/catalog.ts';
 	import type { BuildCommit } from '#lib/features/about/update-notes.ts';
 
