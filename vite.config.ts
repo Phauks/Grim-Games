@@ -147,7 +147,10 @@ const OCR_FILES: Record<string, string> = {
 		'node_modules/tesseract.js-core/tesseract-core-simd-lstm.wasm.js',
 	'tesseract-core-relaxedsimd-lstm.wasm.js':
 		'node_modules/tesseract.js-core/tesseract-core-relaxedsimd-lstm.wasm.js',
-	'eng.traineddata.gz': 'node_modules/@tesseract.js-data/eng/4.0.0_best_int/eng.traineddata.gz'
+	'eng.traineddata.gz': 'node_modules/@tesseract.js-data/eng/4.0.0_best_int/eng.traineddata.gz',
+	// pdf.js, for a script sheet given as a PDF (features/scripts/pdf-reader.ts).
+	'pdf.min.js': 'node_modules/pdfjs-dist/build/pdf.min.mjs',
+	'pdf.worker.min.js': 'node_modules/pdfjs-dist/build/pdf.worker.min.mjs'
 };
 
 function ocrFiles(): Plugin {
