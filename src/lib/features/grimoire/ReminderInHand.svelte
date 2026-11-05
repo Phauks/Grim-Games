@@ -21,6 +21,8 @@
 	interface Props {
 		/** The held token, drawn as the board draws it. */
 		token: Snippet;
+		/** Beside the token: a # token's number, picked there (plan M48). */
+		extra?: Snippet;
 		/** Its ⋯ rows; none, no ⋯. */
 		actions?: MenuItem[];
 		/** Its ⋯ open (a right-click on the token opens it too). */
@@ -30,7 +32,14 @@
 		onPutDown: () => void;
 	}
 
-	let { token, actions = [], menuOpen = $bindable(false), onAbout, onPutDown }: Props = $props();
+	let {
+		token,
+		extra,
+		actions = [],
+		menuOpen = $bindable(false),
+		onAbout,
+		onPutDown
+	}: Props = $props();
 </script>
 
 <div class="in-hand" role="status" data-testid="reminder-in-hand">
@@ -40,6 +49,7 @@
 			aria-label={t('common.aboutReminder')}
 			onclick={onAbout}>{@render token()}</button
 		>{:else}<span class="token">{@render token()}</span>{/if}
+	{@render extra?.()}
 	{#if actions.length > 0}
 		<Menu
 			label={t('common.moreReminderActions')}
