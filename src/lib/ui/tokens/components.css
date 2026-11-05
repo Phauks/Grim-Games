@@ -150,6 +150,15 @@
 	--sky-dusk: color-mix(in srgb, var(--sky-night), var(--evil) 45%);
 }
 
+/*
+ * A box that scrolls on its own (the sidebar, a details pane) pins caret headers at its own
+ * top, not under the status bar where the page's stop (Trevor, 2026-11-05: Play sat over
+ * New game, Townsfolk over the script's name). Mark the scrolling element data-own-scroll.
+ */
+[data-own-scroll] {
+	--pin-top: 0rem;
+}
+
 /* The paper a scratch pad (or a paper swatch) shows; render.ts reads the inks. */
 [data-scratch-paper] {
 	/* The eraser's ring: the pad's own paper, see through. */

@@ -10,7 +10,7 @@ import { openProfile, setPlayerName } from './player-name.ts';
 
 /** Types a room code into Join game's code boxes. */
 async function typeCode(phone: Page, code: string) {
-	const field = phone.getByRole('textbox', { name: 'Room code from the Storyteller' });
+	const field = phone.getByRole('textbox', { name: 'Room Code' });
 	await field.tap();
 	await field.pressSequentially(code);
 }
