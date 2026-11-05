@@ -4854,6 +4854,13 @@ test('Minion info and Demon info list every card they can show, with who it poin
 		await closeSheet(page);
 	}
 	const minionInfo = await openStep(page, 'Minion info');
+	// The step heads with the character row, its picture in the ring and its players after the
+	// name (Trevor, 2026-11-05: nowhere the old way).
+	const head = minionInfo.locator('.row-head .ring-row');
+	await expect(head).toHaveAttribute('data-team', 'evil');
+	await expect(head.locator('.band')).toContainText('Minion info');
+	await expect(head.locator('.ring [data-marker="minioninfo"]')).toBeVisible();
+	await expect(head.getByTestId('step-who')).toContainText('Seat 2');
 	const cards = minionInfo.getByTestId('evil-info-card');
 	// Every card, never one pick (Trevor, 2026-10-18).
 	await expect(cards).toHaveCount(2);

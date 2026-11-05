@@ -193,7 +193,7 @@ export function stepName(step: NightStep): string {
 	const again = step.again ? ' again' : '';
 	// A step the pretend evil team acts out says so (Trevor, 2026-11-02: "Fake").
 	const fake = step.pretend ? 'Fake ' : '';
-	// eslint-disable-next-line grim/names-as-badges -- a caption beside the step's own icon (StepIcon)
+	// eslint-disable-next-line grim/names-as-badges -- the step's own name, on its band (StepPiece)
 	return `${fake}${step.title ?? step.character?.name ?? step.id}${again}`;
 }
 

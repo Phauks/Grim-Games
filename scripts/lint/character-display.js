@@ -23,8 +23,8 @@ import { fileURLToPath } from 'node:url';
 
 const TYPES_FILE = fileURLToPath(new URL('../../src/lib/core/data/types.ts', import.meta.url));
 const ICON_FUNCTIONS = new Set(['iconUrl', 'fallbackIconUrl']);
-/** Components whose snippets may show a character's ability. */
-const ROW_OWNERS = new Set(['CharacterRow', 'CharacterPiece']);
+/** Components whose snippets may show a character's ability (StepPiece: a night step's piece). */
+const ROW_OWNERS = new Set(['CharacterRow', 'CharacterPiece', 'StepPiece']);
 
 /** True when a type, or one member of a union, is core's `Character`. */
 function isCharacter(type) {
