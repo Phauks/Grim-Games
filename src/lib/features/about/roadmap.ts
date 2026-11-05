@@ -565,6 +565,14 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['M34']
 	},
 	{
+		// Trevor, 2026-11-04: official characters run as custom ones (engine-audit/engine-parity-audit.md).
+		// M57 parity check, M58 quick fixes, M59 night position, M60 building blocks, M61 one vocabulary,
+		// M62 rules in the Character builder.
+		title: 'Custom characters can do everything official ones can',
+		area: 'engine',
+		parts: ['M57', 'M58', 'M59', 'M60', 'M61', 'M62']
+	},
+	{
 		// Trevor, 2026-11-03: the board shows what a player is mad as beside their seat, marked !,
 		// as it shows what they believe (?). M36: the Cerenovus's night step records the chosen
 		// character on its Mad token, and the Pixie is mad as the Townsfolk marked Mad.

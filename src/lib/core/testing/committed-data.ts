@@ -11,6 +11,7 @@ import {
 	type CharacterId,
 	type GameData
 } from '#lib/core/data/index.ts';
+import { HIDDEN_OFFICIAL_RULES } from './parity/official-rules.ts';
 
 const dataDir = new URL('../../../../static/data/', import.meta.url);
 
@@ -27,7 +28,34 @@ export function committedGameData(): GameData {
 		jinxes: readDataFile('jinxes.json'),
 		nightsheet: readDataFile('nightsheet.json')
 	});
+	if (process.env.GRIM_PARITY) cached = asCustom(cached);
 	return cached;
+}
+
+/**
+ * The parity run (M57, vitest.parity.config.ts): every official character as a custom one. No
+ * edition, its rules block carried on the character as a script's custom character carries
+ * `rules`, and no place on TPI's night sheet. TPI's jinx texts stay: a script's own jinxes
+ * carry the same words, and their rules are in the characters' blocks.
+ */
+function asCustom(data: GameData): GameData {
+	if (data.characters.every((c) => c.edition === undefined)) return data;
+	const characters = data.characters.map((c): Character => {
+		const custom: Character = { ...c };
+		delete custom.edition;
+		const rules = HIDDEN_OFFICIAL_RULES.get(c.id);
+		return rules ? { ...custom, rules } : custom;
+	});
+	const markers = (night: readonly string[]) => night.filter((id) => !data.byId.has(id));
+	return {
+		...data,
+		characters,
+		byId: new Map(characters.map((c) => [c.id, c])),
+		nightSheet: {
+			firstNight: markers(data.nightSheet.firstNight),
+			otherNight: markers(data.nightSheet.otherNight)
+		}
+	};
 }
 
 /** An official character by id; throws if roles.json has no such character. */
