@@ -7,11 +7,6 @@
  * 2026-10-30). Add a new plan ID to the feature it belongs to, or a new feature for it in its
  * area; bug fixes and polish need no item. Never tick anything by hand.
  */
-import type { BuildCommit } from './update-notes.ts';
-import type { Change } from './changelog.ts';
-import { PART_PRS } from './roadmap-prs.ts';
-
-export { PART_PRS };
 
 /**
  * The page's sections, in its order (Trevor, 2026-10-30: "delineate between storyteller,
@@ -46,6 +41,36 @@ export interface RoadmapItem {
 	/** Not planned for now. */
 	later?: true;
 }
+
+/** Parts whose PR titles didn't name them: the PR that finished each. */
+export const PART_PRS: Readonly<Record<string, number>> = {
+	L7: 323,
+	L19: 323,
+	L20: 323,
+	G4: 365,
+	R7: 318,
+	R2: 320,
+	L8: 321,
+	L18a: 321,
+	L12: 337,
+	L21: 344,
+	L13: 355,
+	L1: 314,
+	L6: 312,
+	L14: 326,
+	L23: 329,
+	L25: 345,
+	P1: 357,
+	L37: 368,
+	S4: 311,
+	S2: 313,
+	S6: 317,
+	S1: 320,
+	S7: 351,
+	R4: 330,
+	// The Hatter's same-type change (PR 891) was folded into the Engineer's PR, whose title names only L78.
+	L77: 892
+};
 
 const range = (prefix: string, from: number, to: number) =>
 	Array.from({ length: to - from + 1 }, (_, i) => `${prefix}${from + i}`);
@@ -217,9 +242,9 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	},
 	{
 		title:
-			'Characters page: the Character Lab for everyone, the selected characters on the left and their game on the right',
+			'Character Analyzer: test any character, your own included, against its jinxes in a ready game',
 		area: 'app',
-		parts: ['M37', 'M45', 'M47']
+		parts: ['M37', 'M45', 'M47', 'M63']
 	},
 	{
 		title: 'Admins see every account, and sign one out, free its username or delete it',
@@ -709,76 +734,3 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	{ title: 'Alternate art packs', area: 'app', parts: ['P2'], later: true },
 	{ title: 'A new app logo', area: 'app', parts: ['O1'], later: true }
 ];
-
-export interface RoadmapEntry extends RoadmapItem {
-	/** How many of its parts and PRs have merged. */
-	finished: number;
-	total: number;
-	/** The change that finished it, once every part has merged. */
-	doneBy?: BuildCommit;
-}
-
-export interface RoadmapAreaEntries {
-	area: RoadmapArea;
-	/** Unfinished first, then later, then done. */
-	items: RoadmapEntry[];
-	done: number;
-}
-
-export interface RoadmapStatus {
-	done: RoadmapEntry[];
-	next: RoadmapEntry[];
-	later: RoadmapEntry[];
-}
-
-/** The IDs a change's title names in brackets: "(L8, L18a)", "(L20 + L7)". */
-export function idsIn(subject: string): string[] {
-	return [...subject.matchAll(/\(([^)]*)\)/g)].flatMap(([, inside]) =>
-		inside.split(/[\s,+/&]+/).filter((word) => /^[A-Z]\d+[a-z]?$/.test(word))
-	);
-}
-
-/** Each item with how far along it is, split into done, next and later. */
-export function roadmapStatus(
-	items: readonly RoadmapItem[],
-	changes: readonly Change[],
-	partPrs: Readonly<Record<string, number>> = PART_PRS
-): RoadmapStatus {
-	// Each change's position, oldest first, so a finished item names its last piece.
-	const byId = new Map<string, number>();
-	const byPr = new Map<number, number>();
-	const commits = [...changes].reverse().map(({ sha, subject, pr }, at): BuildCommit => {
-		for (const id of idsIn(subject)) if (!byId.has(id)) byId.set(id, at);
-		if (pr !== undefined) byPr.set(pr, at);
-		return pr === undefined ? { sha, subject } : { sha, subject, pr };
-	});
-	const status: RoadmapStatus = { done: [], next: [], later: [] };
-	for (const item of items) {
-		const pieces = [
-			...(item.parts ?? []).map((id) => {
-				const pr = partPrs[id];
-				return byId.get(id) ?? (pr === undefined ? undefined : byPr.get(pr));
-			}),
-			...(item.prs ?? []).map((pr) => byPr.get(pr))
-		];
-		const merged = pieces.filter((at) => at !== undefined);
-		const entry: RoadmapEntry = { ...item, finished: merged.length, total: pieces.length };
-		if (pieces.length > 0 && merged.length === pieces.length) {
-			status.done.push({ ...entry, doneBy: commits[Math.max(...merged)] });
-		} else (item.later ? status.later : status.next).push(entry);
-	}
-	return status;
-}
-
-/** Each area that has features, in the page's order, with its unfinished features first. */
-export function roadmapByArea(status: RoadmapStatus): RoadmapAreaEntries[] {
-	return ROADMAP_AREAS.map((area) => {
-		const inArea = (entries: RoadmapEntry[]) => entries.filter((entry) => entry.area === area);
-		const done = inArea(status.done);
-		return {
-			area,
-			items: [...inArea(status.next), ...inArea(status.later), ...done],
-			done: done.length
-		};
-	}).filter(({ items }) => items.length > 0);
-}

@@ -2,7 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { BASE_DISTRIBUTION } from '#lib/core/rules/distribution.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
-import { labGame, labOpponents, stepCharacter, type LabSetup } from './lab-game.ts';
+import {
+	labGame,
+	labOpponents,
+	stepCharacter,
+	withCustomCharacters,
+	type LabSetup
+} from './lab-game.ts';
 
 // The Character Lab (M37): opponents come from the data, and a lab game seats the locked
 // characters first and fills the rest to the standard counts (src/lib/core/rules/distribution.ts).
@@ -282,5 +288,45 @@ describe('stepCharacter', () => {
 			id = stepCharacter(data, id, 1, [], true)!;
 			expect(data.jinxes.byCharacter.get(id)?.length).toBeGreaterThan(0);
 		}
+	});
+});
+
+// Plan M63 (Trevor, 2026-11-05: "functionality available to test custom characters").
+describe('withCustomCharacters', () => {
+	const custom = { ...data.byId.get('chef')!, id: 'lanternkeeper', name: 'Lantern Keeper' };
+	const jinx = { characters: ['lanternkeeper', 'philosopher'] as const, reason: 'Test jinx.' };
+	const lab = withCustomCharacters(data, [custom], [jinx]);
+
+	it('adds the custom character and its own jinx, so the lab tests it like any other', () => {
+		expect(lab.byId.get('lanternkeeper')?.name).toBe('Lantern Keeper');
+		expect(lab.custom?.has('lanternkeeper')).toBe(true);
+		expect(labOpponents(lab, ['lanternkeeper'], { kind: 'jinxes' }).map((o) => o.id)).toEqual([
+			'philosopher'
+		]);
+		expect(labOpponents(lab, ['philosopher'], { kind: 'jinxes' }).map((o) => o.id)).toContain(
+			'lanternkeeper'
+		);
+	});
+
+	it('seats the custom character when chosen, and never deals it to the other seats', () => {
+		for (let seed = 1; seed <= 20; seed++) {
+			const chosen = labGame(
+				lab,
+				{ playerCount: 10, locked: ['lanternkeeper'], place: 'in-play', filler: 'all' },
+				seeded(seed)
+			);
+			expect(chosen.seats[0]).toBe('lanternkeeper');
+			expect(chosen.script).toContain('lanternkeeper');
+			const other = labGame(
+				lab,
+				{ playerCount: 15, locked: ['philosopher'], place: 'in-play', filler: 'all' },
+				seeded(seed)
+			);
+			expect(other.seats).not.toContain('lanternkeeper');
+		}
+	});
+
+	it('leaves the official data as it is when there are none', () => {
+		expect(withCustomCharacters(data, [], [])).toBe(data);
 	});
 });

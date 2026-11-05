@@ -22,6 +22,13 @@
 	function scrub(text) {
 		return String(text).replace(/(\b(?:https?|wss?|blob):\/\/[^\s)'"?#]+)[?#][^\s)'"]*/g, '$1');
 	}
+	function sameOrigin(url) {
+		try {
+			return new URL(url, location.href).origin === location.origin;
+		} catch {
+			return true;
+		}
+	}
 	function remember(error, fallback) {
 		if (errors.length >= 5) return;
 		if (error instanceof Error) {
@@ -36,7 +43,11 @@
 			var target = event.target;
 			// A script or stylesheet that failed to load (capture phase sees those too).
 			if (target && target !== window && (target.src || target.href)) {
-				remember('Could not load ' + (target.src || target.href));
+				// The app is only our own files, so another site's script failing can't stop it.
+				// A host can add one to the page (Cloudflare's Web Analytics beacon) that the
+				// Content Security Policy then blocks.
+				if (sameOrigin(target.src || target.href))
+					remember('Could not load ' + (target.src || target.href));
 			} else if (!/ResizeObserver loop/.test(event.message || '')) {
 				// ResizeObserver loop warnings are harmless (isBenignBrowserError in app-error.ts).
 				remember(event.error, event.message);
@@ -128,6 +139,15 @@
 		if (storageBlocked) box.append(reload);
 		else box.append(reload, latest, report);
 		document.body.appendChild(box);
+		// A slow start isn't a failed one: once the app draws, it works, so take the screen down.
+		// Not for blocked storage, where the app can draw and then fail.
+		if (storageBlocked) return;
+		var watch = new MutationObserver(function () {
+			if (!booted()) return;
+			watch.disconnect();
+			box.remove();
+		});
+		watch.observe(document.body, { childList: true, subtree: true });
 	}
 	if (storageBlocked) addEventListener('DOMContentLoaded', show);
 	// Give the app time to load its chunks on a slow connection; sooner once it has failed.

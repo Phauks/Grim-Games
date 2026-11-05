@@ -10,7 +10,9 @@
 	import LabDock from '#lib/features/character-lab/LabDock.svelte';
 	import LabPanel from '#lib/features/character-lab/LabPanel.svelte';
 	import LabSelect from '#lib/features/character-lab/LabSelect.svelte';
+	import { labData } from '#lib/features/character-lab/lab-data.ts';
 	import { LabSession } from '#lib/features/character-lab/lab-session.svelte.ts';
+	import { provideCharacters } from '#lib/features/characters/character-context.ts';
 	import { MediaQuery } from 'svelte/reactivity';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import CharacterReference from './CharacterReference.svelte';
@@ -28,10 +30,13 @@
 	const session = new LabSession();
 	/** A computer window: the lab and its game on the right of the table. */
 	const computer = new MediaQuery('min-width: 75rem', false);
+	// Badges draw a custom character by its own name and icon.
+	provideCharacters(() => data?.byId);
 
 	onMount(async () => {
 		try {
-			data = await loadOfficialData();
+			// With this device's custom characters, to test as any other (plan M63).
+			data = labData(await loadOfficialData());
 			session.data = data;
 		} catch (e) {
 			// Shown in place below, so no corner card as well.
