@@ -7,6 +7,7 @@ import type { Character, CharacterId, ReminderLabel } from '#lib/core/data/index
 import {
 	GENERIC_REMINDER_ID,
 	NUMBER_TOKEN_LOOK,
+	numberSymbol,
 	scriptCharacterIds,
 	type CharacterLookup,
 	type Game,
@@ -67,10 +68,17 @@ export function bankFace(item: Pick<BankItem, 'token' | 'number'>): GenericLook 
 
 /**
  * The look a copy of a bank token starts with when no ∞ token gives it one (`tokenId`): the
- * # token's, showing 1 (plan M35).
+ * # token's, showing 1 (plan M35) or the number picked in its pill while held (plan M48).
  */
-export const bankLook = (item: Pick<BankItem, 'number'>): GenericLook | undefined =>
-	item.number ? NUMBER_TOKEN_LOOK : undefined;
+export const bankLook = (
+	item: Pick<BankItem, 'number'>,
+	number?: number
+): GenericLook | undefined =>
+	item.number
+		? number === undefined
+			? NUMBER_TOKEN_LOOK
+			: { symbol: numberSymbol(number) }
+		: undefined;
 
 export interface BankOptions {
 	/** The character whose night step is being walked through. */
