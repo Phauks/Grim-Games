@@ -240,6 +240,50 @@ test('a working app never shows the boot-failure screen', async ({ page }) => {
 	await expect(page.locator('#boot-failure')).toHaveCount(0);
 });
 
+/** Holds the app's page chunks back until `ms` after the page's load event, so it starts late. */
+function startLate(page: Page, ms: number) {
+	const loaded = new Promise<number>((done) => page.once('load', () => done(Date.now())));
+	return page.route('**/_app/immutable/nodes/**', async (route) => {
+		const at = await loaded;
+		await new Promise((done) => setTimeout(done, Math.max(0, at + ms - Date.now())));
+		await route.continue();
+	});
+}
+
+test("another site's script that the page blocks never shows the boot-failure screen", async ({
+	page
+}) => {
+	// What a host's injected script (Cloudflare's Web Analytics beacon) does: the Content
+	// Security Policy blocks it, and its error fires before the app has started.
+	await page.addInitScript(() => {
+		addEventListener('DOMContentLoaded', () => {
+			const beacon = document.createElement('script');
+			beacon.src = 'https://static.example.com/beacon.min.js';
+			document.head.append(beacon);
+		});
+	});
+	await startLate(page, 4500);
+	await page.goto('/');
+	await expect(page.getByRole('heading', { level: 1 })).toHaveText(APP_NAME, { timeout: 15_000 });
+	await expect(page.locator('#boot-failure')).toHaveCount(0);
+});
+
+test('the boot-failure screen goes away once a slow app starts', async ({ page }) => {
+	// One of our own files failing shows the screen 3 seconds after load; the app starts later.
+	await page.addInitScript(() => {
+		addEventListener('DOMContentLoaded', () => {
+			const missing = document.createElement('script');
+			missing.src = '/not-a-file.js';
+			document.head.append(missing);
+		});
+	});
+	await startLate(page, 6000);
+	await page.goto('/');
+	await expect(page.locator('#boot-failure')).toBeVisible({ timeout: 10_000 });
+	await expect(page.getByRole('heading', { level: 1 })).toHaveText(APP_NAME, { timeout: 15_000 });
+	await expect(page.locator('#boot-failure')).toHaveCount(0);
+});
+
 test('Diagnostics gathers build, device and problems on the device, without game data', async ({
 	page
 }) => {

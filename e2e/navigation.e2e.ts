@@ -27,8 +27,8 @@ test('on a phone, the header menu opens a drawer with every destination', async 
 		'Script builder',
 		'Character builder',
 		'Mode builder',
-		'Characters',
 		'Info tokens',
+		'Character Analyzer',
 		'Account'
 	]) {
 		await expect(drawer.getByRole('link', { name })).toBeVisible();
@@ -57,14 +57,14 @@ test('on a phone, the header menu opens a drawer with every destination', async 
 	);
 	await expect(drawer.getByRole('list', { name: 'Prepare' }).getByRole('link')).toHaveText([
 		'Search',
-		'Library',
-		'Info tokens',
-		'Characters'
+		'Library'
 	]);
 	await expect(drawer.getByRole('list', { name: 'Create' }).getByRole('link')).toHaveText([
 		'Script builder',
 		'Character builder',
-		'Mode builder'
+		'Mode builder',
+		'Info tokens',
+		'Character Analyzer'
 	]);
 	await drawer.getByRole('link', { name: 'Search' }).tap();
 	await expect(page).toHaveURL(/\/scripts$/);
@@ -92,9 +92,9 @@ test.describe('on a computer', () => {
 		await expect(nav).toBeVisible();
 		await expect(menu).toHaveAttribute('aria-expanded', 'true');
 
-		await nav.getByRole('link', { name: 'Characters' }).click();
-		await expect(page).toHaveURL(/\/reference$/);
-		await expect(nav.getByRole('link', { name: 'Characters' })).toHaveAttribute(
+		await nav.getByRole('link', { name: 'Character Analyzer' }).click();
+		await expect(page).toHaveURL(/\/character-analyzer$/);
+		await expect(nav.getByRole('link', { name: 'Character Analyzer' })).toHaveAttribute(
 			'aria-current',
 			'page'
 		);
@@ -121,7 +121,7 @@ test.describe('on a computer', () => {
 		await prepare.click();
 		await expect(prepare).toHaveAttribute('aria-expanded', 'false');
 		await expect(nav.getByRole('link', { name: 'Library' })).toBeHidden();
-		await expect(prepare.getByTestId('section-count')).toHaveText('4');
+		await expect(prepare.getByTestId('section-count')).toHaveText('2');
 		// The other sections stay as they were.
 		await expect(nav.getByRole('link', { name: 'New game' })).toBeVisible();
 		await page.reload();

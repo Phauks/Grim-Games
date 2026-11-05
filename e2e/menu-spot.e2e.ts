@@ -31,7 +31,7 @@ test('the hamburger is in one spot on every screen', async ({ page }) => {
 	expect(title.x).toBeGreaterThanOrEqual(home.x + home.width);
 	expect(Math.abs(title.y + title.height / 2 - (home.y + 22))).toBeLessThan(6);
 
-	for (const path of ['/', '/reference', '/account']) {
+	for (const path of ['/', '/character-analyzer', '/account']) {
 		await page.goto(path);
 		expect(await spot(page)).toEqual(home);
 	}
