@@ -90,7 +90,7 @@
 	import SeatProfileDialog from './SeatProfileDialog.svelte';
 	import NominationChooser from './NominationChooser.svelte';
 	import ReminderBank from './ReminderBank.svelte';
-	import { stepReminders } from './reminders.ts';
+	import { stepFocusOf } from './reminders.ts';
 	import { stepFocus } from './step-focus.svelte.ts';
 	import ReminderMoveConfirm from './ReminderMoveConfirm.svelte';
 	import BankReminderDialog from './BankReminderDialog.svelte';
@@ -893,9 +893,7 @@
 				{grimoire}
 				{board}
 				size={chip}
-				focus={nw.walk && nw.step?.character
-					? stepReminders(nw.step.character.id, nw.walk.night, nw.step.character)
-					: undefined}
+				focus={nw.walk && nw.step ? stepFocusOf(nw.step, nw.walk.night, characters) : undefined}
 				focusMode={stepFocus.current.mode}
 				seatAt={remDrag.seatAt}
 				ruleAt={remDrag.ruleAt}

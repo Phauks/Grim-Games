@@ -170,3 +170,19 @@ test('the Cerenovus step records whom the player is mad as, marked ! by their se
 	await expect(words).toBeHidden();
 	await expect(page.getByTestId('reminder-in-hand')).toBeVisible();
 });
+
+test("a gained ability brings its character's reminders into the bank (M50)", async ({ page }) => {
+	await setUp(page);
+	const bank = page.getByRole('list', { name: 'Reminder bank' });
+	// No Mathematician in play, so no Abnormal reminder yet.
+	await expect(bank.getByRole('button', { name: 'Abnormal reminder' })).toHaveCount(0);
+	const row = await philosopherStep(page);
+	await row.getByRole('button', { name: 'Choose' }).tap();
+	await page
+		.getByRole('dialog', { name: 'Gained ability' })
+		.getByRole('button', { name: 'Mathematician', exact: true })
+		.tap();
+	await expect(row).toContainText('Mathematician');
+	await page.keyboard.press('Escape');
+	await expect(bank.getByRole('button', { name: 'Abnormal reminder' }).first()).toBeVisible();
+});

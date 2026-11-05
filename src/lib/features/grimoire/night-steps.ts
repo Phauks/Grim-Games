@@ -46,6 +46,7 @@ import {
 } from '#lib/core/rules/index.ts';
 import { notDealtInPlay } from '#lib/core/rules/bag-characters.ts';
 import type { GameLog } from '#lib/core/engine/index.ts';
+import { rulesOf } from '#lib/core/data/rules/index.ts';
 import { seatHasAbility, type AbilitiesRule, type SpecialRule } from '#lib/core/modes/index.ts';
 import type { IconSlot } from '#lib/ui/icons/catalogue.ts';
 
@@ -266,12 +267,21 @@ export function stepWakes(
 		game.pastDays.length > 0 &&
 		onDeathTrigger(id, characters) !== undefined &&
 		!jinxedInPlay(game, id, characters);
+	// One whose death gives the Storyteller an ability (`givesAbility` to the Storyteller: the
+	// Plague Doctor, https://wiki.bloodontheclocktower.com/Plague_Doctor) wakes every night after
+	// that death until the ability is chosen, as TPI's night text asks ("if you haven't done this
+	// yet"): a death on the first night, or after its step, would otherwise never offer it.
+	const untilGiven =
+		onDeath &&
+		rulesOf(id, characters)?.givesAbility?.to === 'storyteller' &&
+		!game.storytellerAbilities?.some((a) => a.via === id);
 	return (
 		holders.length === 0 ||
 		holders.some(
 			(s) =>
 				(onDeath && id !== undefined
-					? tonight.diedTonight.has(s) && setOffByDeath(game, s, id, characters)
+					? (tonight.diedTonight.has(s) || (untilGiven && !!game.seats[s]?.dead)) &&
+						setOffByDeath(game, s, id, characters)
 					: seatHasAbility(tonight.abilitiesRule, game, s, characters) ||
 						keepsAbilityWhenDead(game, s, characters) ||
 						livesWhileDead(game, s, characters)) &&

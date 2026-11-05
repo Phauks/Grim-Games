@@ -344,3 +344,26 @@ describe('Dawn is the last night step', () => {
 		}
 	});
 });
+
+// https://wiki.bloodontheclocktower.com/Plague_Doctor : its death gives the Storyteller a
+// Minion ability, so its step keeps coming, night after night, until that ability is chosen.
+describe('stepWakes for a death that gives the Storyteller an ability', () => {
+	it('wakes the Plague Doctor every night after its death until the Storyteller gains one', () => {
+		// Wiki: "When the Plague Doctor dies, place a Minion character token in the center of the
+		// left side of the Grimoire and mark this with the Plague Doctor’s STORYTELLER ABILITY
+		// reminder."
+		const s = scenario(['plaguedoctor', 'imp', 'monk', 'empath', 'chef'])
+			.dies('plaguedoctor', 'imp')
+			.do({ type: 'NewDay' });
+		const stepOf = (g: Game) =>
+			boardNightSteps(g, s.characters, 'other', data).find((x) => x.id === 'plaguedoctor')!;
+		const earlier = { diedTonight: new Set<string>() };
+		expect(stepWakes(s.game, stepOf(s.game), s.characters, earlier)).toBe(true);
+		const given = s.do({
+			type: 'SetStorytellerAbility',
+			via: 'plaguedoctor',
+			characterId: 'poisoner'
+		});
+		expect(stepWakes(given.game, stepOf(given.game), s.characters, earlier)).toBe(false);
+	});
+});
