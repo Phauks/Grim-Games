@@ -147,6 +147,8 @@
 		 */
 		moreRows?: number;
 		onend?: () => void;
+		/** False: every column shown, with no column picker (the Character Lab's rows, plan M47). */
+		controls?: boolean;
 	}
 
 	let {
@@ -177,13 +179,14 @@
 		columnFilters = $bindable({}),
 		oncount,
 		onrows,
-		hideKey
+		hideKey,
+		controls = true
 	}: Props = $props();
 
 	/** The row header, else the first column: it names the row, so it can't be hidden. */
 	const fixedColumn = $derived(allColumns.find((c) => c.rowHeader) ?? allColumns[0]);
 	const hidden = $derived(new HiddenColumns(hideKey ?? resizeKey ?? ''));
-	const keeps = (c: DataColumn<K, T>) => c === fixedColumn || !!c.alwaysShown;
+	const keeps = (c: DataColumn<K, T>) => !controls || c === fixedColumn || !!c.alwaysShown;
 	const columns = $derived(allColumns.filter((c) => keeps(c) || !hidden.has(c.id)));
 	const canFilter = (column: DataColumn<K, T>) =>
 		!!column.value || (!!column.filterable && !!filter);
@@ -408,7 +411,9 @@
 							class:wide={column.wide}
 							class:wider={column.wider}
 							class:end={column.align === 'end'}
-							class:control={column.sortable || canFilter(column) || column === fixedColumn}
+							class:control={column.sortable ||
+								canFilter(column) ||
+								(controls && column === fixedColumn)}
 							class:resizable={resizable(column)}
 							class:after-resizable={i > 0 && resizable(columns[i - 1])}
 							class:last={i === columns.length - 1}
@@ -435,7 +440,7 @@
 								{#if canFilter(column)}
 									{@render filterButton(column)}
 								{/if}
-								{#if column === fixedColumn && allColumns.length > 1}
+								{#if controls && column === fixedColumn && allColumns.length > 1}
 									{@render columnsButton(narrow === 'hide')}
 								{/if}
 							</div>
@@ -475,7 +480,8 @@
 										>{@render filterButton(moved, true)}</span
 									>
 								{/each}
-								{#if allColumns.length > 1}<span class="narrow-only">{@render columnsButton()}</span
+								{#if controls && allColumns.length > 1}<span class="narrow-only"
+										>{@render columnsButton()}</span
 									>{/if}
 							</div>
 						</th>

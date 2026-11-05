@@ -9,24 +9,22 @@
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import LabDock from '#lib/features/character-lab/LabDock.svelte';
 	import LabPanel from '#lib/features/character-lab/LabPanel.svelte';
+	import LabSelect from '#lib/features/character-lab/LabSelect.svelte';
 	import { LabSession } from '#lib/features/character-lab/lab-session.svelte.ts';
 	import { MediaQuery } from 'svelte/reactivity';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import CharacterReference from './CharacterReference.svelte';
-	import { ReferenceQuery } from './query.svelte.ts';
-	import ReferenceControls from './ReferenceControls.svelte';
 
 	let data = $state<GameData>();
 	let error = $state<string>();
-	// One search and filter set per visit, shared by the title row's controls and the list.
-	const query = new ReferenceQuery();
 
 	// Built at runtime from the same data and rules code the app uses.
 	const entries = $derived(data ? characterReference(data) : []);
 
-	// The Character Lab is part of this page, for everyone (plan M45, Trevor 2026-11-04: "The
-	// only difference between reference and lab is seeing everything at the same time"): lock
-	// characters in the table, and its rows as shown are what they are tested against.
+	// The Character Lab is this page, for everyone (plans M45, M47): select characters with +,
+	// and their rows, with their jinx partners under them, are what they are tested against.
+	// Nothing is listed until one is selected (Trevor, 2026-11-04: "do not list all on the
+	// left side when none are selected").
 	const session = new LabSession();
 	/** A computer window: the lab and its game on the right of the table. */
 	const computer = new MediaQuery('min-width: 75rem', false);
@@ -45,9 +43,10 @@
 			reportError(e, { area: 'reference', notify: false });
 			return;
 		}
-		// A link to one character (#witch, from a bug report) scrolls to its card.
+		// A link to one character (#witch, from a bug report) selects it and scrolls to its row.
 		const id = decodeURIComponent(location.hash.slice(1));
-		if (id) {
+		if (id && data.byId.has(id)) {
+			if (!session.locked.includes(id)) session.setLocked(id, true);
 			await tick();
 			// After the frame that lays out the lab beside the table, so the row stays put.
 			requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView());
@@ -56,13 +55,6 @@
 </script>
 
 <Page title={t('reference.title')}>
-	<!-- The search and its controls sit in the title's row, to save a row (Trevor, 2026-10-18).
-		They show while the data loads too, so the row never changes height. -->
-	{#snippet actions()}
-		<ReferenceControls {entries} {query} />
-	{/snippet}
-	<!-- One view: the table's night columns sort by night order, so no Night order tab
-		(Trevor, 2026-10-18). -->
 	<ErrorBoundary area="reference">
 		{#if error}
 			<p role="alert">{t('reference.loadError', { error })}</p>
@@ -72,13 +64,15 @@
 		{:else}
 			<div class="characters" class:with-lab={computer.current}>
 				<div class="table-area">
-					<CharacterReference
-						{entries}
-						{query}
-						lab={tableLab}
-						only={session.jinxFilterOn ? session.jinxed : undefined}
-						onrows={(rows) => (session.listed = rows.map((e) => e.character.id))}
-					/>
+					<LabSelect {session} open={!computer.current} />
+					{#if session.locked.length}
+						<CharacterReference
+							{entries}
+							lab={tableLab}
+							only={session.jinxFilterOn ? session.jinxed : undefined}
+							onrows={(rows) => (session.listed = rows.map((e) => e.character.id))}
+						/>
+					{/if}
 				</div>
 				{#if computer.current}
 					<aside class="lab-side"><LabPanel {session} frame /></aside>
@@ -101,6 +95,9 @@
 		align-items: start;
 	}
 	.table-area {
+		display: grid;
+		align-content: start;
+		gap: var(--space-2);
 		min-width: 0;
 	}
 	.lab-side {

@@ -83,8 +83,7 @@ for (const size of SIZES) {
 
 	test(`the Glossary fits at the ${size.name} sizes`, async ({ page }) => {
 		await setSizes(page, size);
-		await page.goto('/reference');
-		await page.getByRole('searchbox', { name: 'Search characters' }).fill('Poisoner');
+		await page.goto('/reference#poisoner');
 		await page
 			.getByTestId('character-table')
 			.locator('tr[data-character="poisoner"]')
@@ -103,7 +102,7 @@ for (const size of SIZES) {
 test('a rules term’s tap area never reaches past the word sideways', async ({ page }) => {
 	// A wider hit area widened the line when a term ended it at the right edge, so the page
 	// scrolled sideways on some phones (2026-10-16).
-	await page.goto('/reference');
+	await page.goto('/reference#poisoner');
 	const terms = page.locator('.glossary-term');
 	await expect(terms.first()).toBeVisible();
 	const wide = await terms.evaluateAll(

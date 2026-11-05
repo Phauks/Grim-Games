@@ -1,5 +1,5 @@
 /**
- * The Character Lab on the Characters page (plan M45, Trevor 2026-11-04: "The only difference
+ * The Character Lab on the Characters page (plans M45, M47; Trevor 2026-11-04: "The only difference
  * between reference and lab is seeing everything at the same time"): the opponents are the
  * table's rows as shown, and this holds what the lab panel, the phone's bar and the table's
  * Lock column share: the opponent shown, its jinxes and loading a game.
@@ -26,8 +26,11 @@ export class LabSession {
 	readonly locked = $derived(this.setup.locked);
 	/** The first locked character, which Previous and Next character swap. */
 	readonly testing = $derived(this.setup.locked[0]);
+	/** Nothing is listed until a character is locked (plan M47). */
 	readonly opponents: LabOpponent[] = $derived(
-		this.data ? labOpponents(this.data, this.locked, { kind: 'listed', ids: this.listed }) : []
+		this.data && this.locked.length
+			? labOpponents(this.data, this.locked, { kind: 'listed', ids: this.listed })
+			: []
 	);
 	readonly at = $derived(Math.min(this.setup.index, Math.max(0, this.opponents.length - 1)));
 	readonly current: LabOpponent | undefined = $derived(this.opponents[this.at]);
@@ -81,7 +84,9 @@ export class LabSession {
 					playerCount: this.setup.playerCount,
 					locked: this.locked,
 					opponent: list[i]?.id,
-					place: this.setup.place,
+					// The opponent always plays (Trevor, 2026-11-04: "jinx partner is is a weird
+					// setting").
+					place: 'in-play',
 					filler: this.setup.filler,
 					setupTokens: this.setup.setupTokens
 				},

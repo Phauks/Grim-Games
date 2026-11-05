@@ -31,7 +31,6 @@ export * from './reminder-prompts.ts';
 export * from './gained-abilities.ts';
 export * from './holder-jinxes.ts';
 export * from './glossary.ts';
-export * from './reference-table.ts';
 export * from './bag-plan.ts';
 export * from './traveller-alignment.ts';
 export * from './setup-alignment.ts';

@@ -25,7 +25,7 @@ test('token sizes are for the board: tokens elsewhere keep their size, and the s
 }) => {
 	// Trevor (2026-10-19) picked "Board only": a large Character token size broke sheets and
 	// dialogs, so it sizes the grimoire board's seats (tested below) and nothing else.
-	await page.goto('/reference');
+	await page.goto('/reference#poisoner');
 	const token = page.getByTestId('character-table').locator('[data-field="token"] .token').first();
 	const reminder = page.getByTestId('reminder-token').first();
 	await expect(token).toBeVisible();

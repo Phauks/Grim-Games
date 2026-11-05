@@ -10,7 +10,6 @@ import {
 	characterReference,
 	fullNightOrder,
 	nightPositions,
-	matchesReference,
 	referenceText,
 	sheetPosition
 } from './reference.ts';
@@ -84,20 +83,6 @@ describe('nightPositions', () => {
 		expect(out.get('dusk')).toBe(1);
 		expect(out.get('b')).toBe(3);
 		expect(out.get('z')).toBeUndefined();
-	});
-});
-
-describe('matchesReference', () => {
-	it('searches names, ability text and tokens, and filters by type and flags', () => {
-		const ids = (q: Parameters<typeof matchesReference>[1]) =>
-			entries.filter((e) => matchesReference(e, q)).map((e) => e.character.id);
-		expect(ids({ search: 'witch' })).toContain('witch');
-		expect(ids({ search: 'cursed' })).toContain('witch');
-		expect(ids({ search: 'lil monsta' })).toContain('lilmonsta');
-		expect(ids({ types: ['demon'] }).every((id) => data.byId.get(id)!.type === 'demon')).toBe(true);
-		const jinxedDemons = ids({ types: ['demon'], filters: ['jinxes'] });
-		expect(jinxedDemons).toContain('leviathan');
-		expect(jinxedDemons).not.toContain('imp');
 	});
 });
 

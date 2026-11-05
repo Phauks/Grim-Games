@@ -51,7 +51,7 @@
 </nav>
 
 <Dialog bind:open title={t('lab.title')} size="full">
-	<LabPanel {session} titled={false} />
+	<LabPanel {session} />
 </Dialog>
 
 <style>

@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 // Every single-line text field has an X that clears it (Trevor, 2026-10-16); Esc clears
 // too, and the X keeps its place (disabled) while the field is empty.
 test('a text field clears with its X or Esc, keeping focus', async ({ page }) => {
-	await page.goto('/reference');
+	await page.goto('/scripts');
 	const search = page.getByRole('searchbox').first();
 	const clear = page.getByRole('button', { name: 'Clear', exact: true }).first();
 	await expect(clear).toBeDisabled();

@@ -1,9 +1,11 @@
 import { expect, test, type Page } from '@playwright/test';
 
 async function openTable(page: Page) {
-	await page.goto('/reference');
-	// The table is the page's only view (Trevor, 2026-10-19).
+	// Every character: one selected, with the jinx filter off (plan M47).
+	await page.goto('/reference#philosopher');
 	const table = page.getByTestId('character-table');
+	await expect(table.locator('tbody tr')).toHaveCount(2);
+	await page.getByText('Jinxed with locked', { exact: true }).tap();
 	await expect(table.locator('tbody tr')).toHaveCount(181);
 	return table;
 }
@@ -42,7 +44,7 @@ test('scrolled sideways, nothing from the scrolling columns shows over the pinne
 	await expect(table).toBeVisible();
 });
 
-test('each header keeps its label, sort and filter on one line', async ({ page }, testInfo) => {
+test('each header keeps its label on one line', async ({ page }, testInfo) => {
 	test.skip(testInfo.project.name === 'phone', 'phones stack the rows');
 	const table = await openTable(page);
 	// Trevor, 2026-10-18: Starting alignment took two lines.
@@ -56,62 +58,4 @@ test('each header keeps its label, sort and filter on one line', async ({ page }
 		.locator('thead .head')
 		.evaluateAll((heads) => heads.map((h) => h.getBoundingClientRect().height));
 	expect(Math.max(...heights) - Math.min(...heights)).toBeLessThan(2);
-});
-
-test('columns can be hidden and shown again, and stay that way', async ({ page }) => {
-	const table = await openTable(page);
-	const ability = table.locator('[data-col="ability"]');
-	await expect(ability.first()).toBeAttached();
-	await table.getByRole('button', { name: 'Columns', exact: true }).tap();
-	const list = page.getByRole('dialog', { name: 'Columns' });
-	// The name says which row is which, so it always stays.
-	await expect(list.getByRole('checkbox', { name: 'Name' })).toBeDisabled();
-	await list.getByRole('checkbox', { name: 'Ability' }).tap();
-	await expect(ability).toHaveCount(0);
-	await expect(table.getByRole('button', { name: 'Columns (some hidden)' })).toBeVisible();
-
-	await page.reload();
-	const again = await openTable(page);
-	await expect(again.locator('[data-col="ability"]')).toHaveCount(0);
-	await again.getByRole('button', { name: 'Columns (some hidden)' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Columns' })
-		.getByRole('checkbox', { name: 'Ability' })
-		.tap();
-	await expect(again.locator('thead [data-col="ability"]')).toHaveCount(1);
-});
-
-test('every column filters: a search for words, a list for a few values', async ({ page }) => {
-	const table = await openTable(page);
-	const count = page.getByTestId('table-count');
-	const rows = table.locator('tbody tr');
-
-	// Ability had no filter of its own: it gets a contains search.
-	await table.getByRole('button', { name: 'Filter Ability' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Filter Ability' })
-		.getByLabel('Search Ability')
-		.fill('Demon');
-	await expect(count).toContainText('1 filter');
-	const fewer = await rows.count();
-	expect(fewer).toBeLessThan(181);
-	await expect(count).toContainText(`${fewer} of 181`);
-	await page.keyboard.press('Enter');
-	await expect(table.getByRole('button', { name: 'Filter Ability (set)' })).toBeVisible();
-
-	// Clear empties it along with Reference's own filters.
-	await page.getByRole('button', { name: 'Clear filters' }).tap();
-	await expect(rows).toHaveCount(181);
-
-	// Edition has a few values: a list to tick.
-	await table.getByRole('button', { name: 'Filter Edition' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Filter Edition' })
-		.getByRole('checkbox', { name: 'Trouble Brewing' })
-		.tap();
-	await page.keyboard.press('Escape');
-	const editions = await table
-		.locator('tbody td[data-col="edition"]')
-		.evaluateAll((cells) => [...new Set(cells.map((c) => c.textContent?.trim()))]);
-	expect(editions).toEqual(['Trouble Brewing']);
 });

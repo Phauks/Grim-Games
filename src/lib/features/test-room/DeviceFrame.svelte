@@ -22,6 +22,8 @@
 		iframe?: HTMLIFrameElement;
 		/** Text or controls after the caption, on its line. */
 		aside?: Snippet;
+		/** Square corners (the Character Lab's game, Trevor 2026-11-04). */
+		square?: boolean;
 	}
 
 	let {
@@ -34,7 +36,8 @@
 		room,
 		testid,
 		iframe = $bindable(),
-		aside
+		aside,
+		square = false
 	}: Props = $props();
 </script>
 
@@ -46,7 +49,7 @@
 	data-testid={testid}
 >
 	<figcaption><span>{caption}</span>{@render aside?.()}</figcaption>
-	<div class="screen">
+	<div class="screen" class:square>
 		<iframe {title} {name} bind:this={iframe} {src}></iframe>
 	</div>
 </figure>
@@ -76,6 +79,9 @@
 		border: 0.15rem solid var(--border);
 		border-radius: 1rem;
 		background: var(--surface);
+	}
+	.screen.square {
+		border-radius: 0;
 	}
 	iframe {
 		width: calc(var(--w) * 1px); /* px-ok: a device's CSS viewport */

@@ -3,8 +3,9 @@ import { openSettingsDialog } from './shell.ts';
 
 /** The Poisoner's row in the Character reference table. */
 async function poisonerCard(page: Page) {
-	await page.goto('/reference');
-	await page.getByRole('searchbox', { name: 'Search characters' }).fill('Poisoner');
+	// A fresh load: the link selects the Poisoner when the page opens.
+	await page.goto('about:blank');
+	await page.goto('/reference#poisoner');
 	const card = page.getByTestId('character-table').locator('tr[data-character="poisoner"]');
 	await expect(card).toBeVisible();
 	return card;

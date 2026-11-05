@@ -3,7 +3,7 @@ import { DEFAULT_LAB, parseLab } from './lab-store.svelte.ts';
 
 // A newer build reads what an older one saved (src/service-worker.ts keeps old builds running).
 describe('parseLab', () => {
-	it('reads an M37 save: its Jinxes source is the jinx filter, its marks are dropped', () => {
+	it('reads an M37 save: its Jinxes source is the jinx filter, its marks and place are dropped', () => {
 		const old = {
 			playerCount: 9,
 			locked: ['philosopher'],
@@ -19,7 +19,6 @@ describe('parseLab', () => {
 			playerCount: 9,
 			locked: ['philosopher'],
 			jinxedOnly: true,
-			place: 'bluff',
 			filler: 'tb',
 			index: 2,
 			gameId: 'g1'

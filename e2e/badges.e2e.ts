@@ -68,8 +68,7 @@ test("a badge's icon fills the pill's rounded left end", async ({ page }) => {
 });
 
 test('a Traveller badge is half good, half evil until its alignment is set', async ({ page }) => {
-	await page.goto('/reference');
-	await page.getByRole('searchbox').fill('Beggar');
+	await page.goto('/reference#beggar');
 	const badge = page.locator('button.badge[data-character-id="beggar"]').first();
 	await expect(badge).toHaveAttribute('data-team', 'traveller');
 	await expect(badge).toHaveCSS('background-image', /linear-gradient/);
@@ -186,8 +185,7 @@ test('the Jinxes section lists every TPI jinx under the other character', async 
 	await page.route('https://wiki.bloodontheclocktower.com/api.php?**', (route) =>
 		route.fulfill({ json: { parse: { text: '<h2>Summary</h2><p>Sample.</p>' } } })
 	);
-	await page.goto('/reference');
-	await page.getByRole('searchbox').fill('Alchemist');
+	await page.goto('/reference#alchemist');
 	await page.getByRole('button', { name: 'About the Alchemist' }).tap();
 	const dialog = page.getByRole('dialog', { name: 'Alchemist' });
 	const sections = dialog.getByRole('navigation', { name: 'More from the wiki' });
@@ -212,8 +210,7 @@ test("a character's own badge inside its details brings them back into view", as
 			json: { parse: { text: '<h2>Summary</h2><p>The Alchemist is not the Boffin.</p>' } }
 		})
 	);
-	await page.goto('/reference');
-	await page.getByRole('searchbox').fill('Alchemist');
+	await page.goto('/reference#alchemist');
 	await page.getByRole('button', { name: 'About the Alchemist' }).tap();
 	const dialog = page.getByRole('dialog', { name: 'Alchemist' });
 	await expect(dialog).toContainText('is not the');
@@ -251,8 +248,7 @@ test('the sections list counts tips, examples and jinxes, with lines between', a
 			}
 		})
 	);
-	await page.goto('/reference');
-	await page.getByRole('searchbox').fill('Alchemist');
+	await page.goto('/reference#alchemist');
 	await page.getByRole('button', { name: 'About the Alchemist' }).tap();
 	const dialog = page.getByRole('dialog', { name: 'Alchemist' });
 	const sections = dialog.getByRole('navigation', { name: 'More from the wiki' });
@@ -297,8 +293,7 @@ test("a character's type and source open every character of that group", async (
 	await page.route('https://wiki.bloodontheclocktower.com/api.php?**', (route) =>
 		route.fulfill({ json: { parse: { text: '<h2>Summary</h2><p>Sample.</p>' } } })
 	);
-	await page.goto('/reference');
-	await page.getByRole('searchbox').fill('Witch');
+	await page.goto('/reference#witch');
 	await page.getByRole('button', { name: 'About the Witch' }).tap();
 	const witch = page.getByRole('dialog', { name: 'Witch' });
 	const line = witch.getByRole('button', { name: 'Minion · Sects & Violets' });

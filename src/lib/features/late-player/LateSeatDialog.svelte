@@ -534,7 +534,7 @@
 	<AddCharactersDialog
 		bind:open={() => adding === type, (o) => (adding = o ? type : undefined)}
 		title={t(type === 'fabled' ? 'setup.allFabled' : 'setup.allLoric')}
-		{type}
+		types={[type]}
 		characters={allOf(type)}
 		{selected}
 		marker={(c) => (onScript.has(c.id) ? undefined : t('setup.offScript'))}
