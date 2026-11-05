@@ -51,8 +51,8 @@
 			</li>
 			<li>
 				Your settings, settings profiles and screen choices, such as theme, fonts, text size,
-				language, column widths and how you last viewed the <a href={resolve('/reference')}
-					>Reference</a
+				language, column widths and how you last viewed the <a href={resolve('/character-analyzer')}
+					>Character Analyzer</a
 				> page; your Library tags and folders; a script you are building; the characters you make and
 				one you are building; your custom info tokens; the player names you have used; and setup in progress
 				(localStorage).
