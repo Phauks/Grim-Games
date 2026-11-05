@@ -558,7 +558,7 @@
 		class:picking={!!onpick}
 	>
 		{#if sided.current}
-			<div class="side">
+			<div class="side" data-own-scroll>
 				<LibrarySidebar
 					bind:current={currentFolder}
 					bind:kind={chosenKind}

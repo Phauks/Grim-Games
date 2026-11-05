@@ -19,7 +19,7 @@
      name and the hamburger that closes it head the sidebar, and Account and Settings end it. -->
 {#if !navDrawer.hidden}
 	<nav class="app-nav" aria-label={t('shell.navLabel')}>
-		<div class="nav-scroll">
+		<div class="nav-scroll" data-own-scroll>
 			<div class="brand-row">
 				<NavMenuButton />
 				<a class="brand" href={resolve('/')}><span class="name">{APP_NAME}</span></a>
@@ -52,13 +52,16 @@
 			gap: var(--space-2);
 			height: calc(100dvh - var(--app-top));
 			overflow-y: auto;
-			padding: var(--menu-inset) var(--menu-inset) var(--space-4);
+			/* No top padding: a pinned section heading stops at the very top, so no rows show
+			   in a strip above it (Trevor, 2026-11-05). The brand row holds that space instead. */
+			padding: 0 var(--menu-inset) var(--space-4);
 		}
 		/* The app's name beside the hamburger, where the header had them. */
 		.brand-row {
 			display: flex;
 			align-items: center;
 			gap: var(--space-1);
+			margin-top: var(--menu-inset);
 			margin-bottom: var(--space-2);
 		}
 		.brand {
