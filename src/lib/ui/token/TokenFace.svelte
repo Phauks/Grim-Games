@@ -55,9 +55,33 @@
 	const PETALS = [0, 72, 144, 216, 288];
 
 	const NAME_SIZE = 13;
+	/**
+	 * The name's own width in the token's font, measured once drawn: a guess from its letter
+	 * count left Boomdandy a letter too long for the edge, and the path cut off its last
+	 * letter (Trevor, 2026-11-04). The guess stands in until the measure is in.
+	 */
+	let natural = $state<{ name: string; width: number }>();
+	const nameWidth = $derived(
+		natural && natural.name === name ? natural.width : (name?.length ?? 0) * NAME_SIZE * 0.62
+	);
 	/** Squeezes a long name into `room`; short ones keep their natural width. */
-	const fit = (room: number, fontSize = NAME_SIZE) =>
-		name && name.length * fontSize * 0.62 > room ? room : undefined;
+	const fit = (room: number) => (name && nameWidth > room ? room : undefined);
+	/** Measures the name off the path, again when the fonts or the font setting change. */
+	function measureName(node: SVGTextElement) {
+		const measured = name;
+		void preferences.current;
+		const read = () => {
+			const width = node.getComputedTextLength();
+			if (measured && width > 0) natural = { name: measured, width };
+		};
+		read();
+		const frame = requestAnimationFrame(read);
+		document.fonts?.addEventListener('loadingdone', read);
+		return () => {
+			cancelAnimationFrame(frame);
+			document.fonts?.removeEventListener('loadingdone', read);
+		};
+	}
 
 	// Edge: along the bottom inside the rim, clear of the side leaves (at 180° and 0°). With
 	// the setup flower (at 45°) it stops short of the flower only when Settings > Tokens says so
@@ -119,6 +143,8 @@
 			</g>
 		{/if}
 		{#if name}
+			<!-- Never seen: only measures the name's width in the token's font. -->
+			<text class="name measure" font-size={NAME_SIZE} {@attach measureName}>{name}</text>
 			<path id="name-{pathId}" d={edgePath} fill="none" />
 			<text class="name" font-size={NAME_SIZE} text-anchor="middle" data-testid="token-name"
 				><textPath
@@ -212,5 +238,8 @@
 		fill: var(--on-token);
 		font-family: var(--font-character);
 		font-weight: 700;
+	}
+	.measure {
+		visibility: hidden;
 	}
 </style>
