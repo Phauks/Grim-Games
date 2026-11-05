@@ -187,7 +187,13 @@ function duskToDawn<T extends NightStep>(steps: readonly T[]): T[] {
 /** Tonight: the first night until a day has been played, then the other nights. */
 export const tonight = (game: Game): Night => (game.pastDays.length === 0 ? 'first' : 'other');
 
-export function stepName(step: NightStep): string {
+/** What a step's name needs: a player's night order passes its markers and characters too. */
+export type NamedStep = Pick<
+	NightStep,
+	'id' | 'kind' | 'character' | 'title' | 'again' | 'pretend'
+>;
+
+export function stepName(step: NamedStep): string {
 	if (step.kind === 'marker') return MARKER_TEXT[step.id as NightMarker].name;
 	// A second wake for a player who acts twice (`withActsTwiceSteps`) says "again".
 	const again = step.again ? ' again' : '';

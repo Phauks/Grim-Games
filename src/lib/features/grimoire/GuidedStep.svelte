@@ -328,7 +328,7 @@
 			<div class="row-head">
 				<StepPiece
 					{step}
-					template={step.character ? 'row' : 'name'}
+					template={step.character || step.reminder ? 'row' : 'name'}
 					info
 					alignment={one && step.character ? alignmentOf(game, one) : undefined}
 					playerName={one ? seatName(game, one) : undefined}
@@ -347,17 +347,15 @@
 						>{/if}
 					{#snippet abilityText()}{#if step.character}<span data-testid="step-ability"
 								><GlossaryText text={step.character.ability} names={[step.character.name]} /></span
-							>{/if}{/snippet}
+							>{:else}<span data-testid="step-text">{step.reminder}</span>{/if}{/snippet}
 				</StepPiece>
 			</div>
 			<!-- What to do comes before any information (Trevor, 2026-10-20). -->
-			{#if step.reminder}
+			<!-- A marker step's text is in its row, where a character's ability goes (Trevor,
+			     2026-11-05: "wake the minions should appear in the ability text area"). -->
+			{#if step.reminder && step.character}
 				<p class="text">
-					{#if step.character}
-						<NightText text={step.reminder} character={step.character} {night} />
-					{:else}
-						{step.reminder}
-					{/if}
+					<NightText text={step.reminder} character={step.character} {night} />
 				</p>
 			{/if}
 			<!-- The board itself, for as long as they need (Trevor, 2026-10-30); the step closes

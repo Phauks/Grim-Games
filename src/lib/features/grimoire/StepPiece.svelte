@@ -1,14 +1,13 @@
 <script lang="ts">
 	import type { ComponentProps } from 'svelte';
 	import { NIGHT_MARKERS, type NightMarker, type PlayerName } from '#lib/core/data/index.ts';
-	import type { NightStep } from '#lib/core/rules/index.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import type { RowMarker } from '#lib/features/characters/character-templates.ts';
 	import { glossaryDialog } from '#lib/features/glossary/glossary-dialog.svelte.ts';
 	import { glossaryKey } from '#lib/features/glossary/wiki-glossary.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import MarkerToken from '#lib/ui/token/MarkerToken.svelte';
-	import { MARKER_ICONS, stepName } from './night-steps.ts';
+	import { MARKER_ICONS, stepName, type NamedStep } from './night-steps.ts';
 
 	/**
 	 * A night step as the character piece draws it, wherever a step heads (the strip under the
@@ -20,7 +19,8 @@
 		ComponentProps<typeof CharacterPiece>,
 		'character' | 'marker' | 'playerName'
 	> & {
-		step: NightStep;
+		/** A board's night step, or a step of a player's night order. */
+		step: NamedStep;
 		/** The seat's player, the second half of the step's band. */
 		playerName?: PlayerName;
 	};

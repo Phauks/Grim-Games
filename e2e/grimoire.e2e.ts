@@ -4861,6 +4861,8 @@ test('Minion info and Demon info list every card they can show, with who it poin
 	await expect(head.locator('.band')).toContainText('Minion info');
 	await expect(head.locator('.ring [data-marker="minioninfo"]')).toBeVisible();
 	await expect(head.getByTestId('step-who')).toContainText('Seat 2');
+	// Its text is where a character's ability goes (Trevor, 2026-11-05).
+	await expect(head.locator('.ring-ability')).toContainText('Wake the Minions');
 	const cards = minionInfo.getByTestId('evil-info-card');
 	// Every card, never one pick (Trevor, 2026-10-18).
 	await expect(cards).toHaveCount(2);

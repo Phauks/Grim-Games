@@ -410,7 +410,7 @@ test('First night and Other nights each close from their header, remembered', as
 	await expect(first).toHaveAttribute('aria-expanded', 'true');
 	await expect(other).toHaveAttribute('aria-expanded', 'true');
 	// A closed section shows how many it holds (Trevor, 2026-10-19): here, who wakes.
-	const waking = await page.locator('section[data-night="first"] li:has(button.name)').count();
+	const waking = await page.locator('section[data-night="first"] li:has([data-type])').count();
 	expect(waking).toBeGreaterThan(0);
 	await expect(first.getByTestId('section-count')).toHaveCount(0);
 	await first.tap();
@@ -454,27 +454,28 @@ test('each heading stays pinned at the top while its section scrolls, then hands
 test("the night order shows who wakes, with TPI's night text", async ({ page }) => {
 	await page.getByRole('tab', { name: 'Night', exact: true }).tap();
 	const first = page.locator('section[data-night="first"]');
-	// Dusk, Minion info, Demon info and Dawn show their own icons (Trevor, 2026-10-16); Minion
-	// info and Demon info are a red M and D (Trevor, 2026-10-28).
+	// Every step is the character row, Dusk, Dawn and the info steps with their own picture
+	// in the ring (Trevor, 2026-11-05); Minion info and Demon info are a red M and D (Trevor,
+	// 2026-10-28).
 	const minionInfo = first.locator('li[data-step="minioninfo"]');
-	await expect(minionInfo).toContainText('Minion info');
-	await expect(minionInfo.locator('.token[data-marker="minioninfo"]')).toBeVisible();
-	await expect(minionInfo.locator('.token[data-marker="minioninfo"] text')).toHaveText('M');
-	await expect(first.locator('.token[data-marker="demoninfo"] text')).toHaveText('D');
-	// Each says what happens there, as the Storyteller's night step does (Trevor, 2026-10-28).
-	await expect(minionInfo.locator('.text')).toContainText('Wake the Minions');
-	await expect(first.locator('li[data-step="demoninfo"] .text')).toContainText('Wake the Demon');
+	await expect(minionInfo.locator('.band')).toContainText('Minion info');
+	await expect(minionInfo.locator('.ring .token[data-marker="minioninfo"] text')).toHaveText('M');
+	await expect(first.locator('.ring .token[data-marker="demoninfo"] text')).toHaveText('D');
+	// Each says what happens there, where a character's ability goes (Trevor, 2026-10-28;
+	// 2026-11-05).
+	await expect(minionInfo.locator('.ring-ability')).toContainText('Wake the Minions');
+	await expect(first.locator('li[data-step="demoninfo"] .ring-ability')).toContainText(
+		'Wake the Demon'
+	);
+	// No numbers (Trevor, 2026-11-05: "just don't include numbers"), and Dawn is last.
+	await expect(first.locator('.num')).toHaveCount(0);
+	await expect(first.locator('li').last()).toHaveAttribute('data-step', 'dawn');
 	const poisoner = first.locator('li[data-step="poisoner"]');
-	// Every step's number sits level with the middle of its icon, however long the text, and
-	// a line runs between steps (Trevor, 2026-10-19).
-	for (const step of [minionInfo, poisoner]) {
-		const num = (await step.locator(':scope > .num').boundingBox())!;
-		const icon = (await step.locator(':scope > .icon').boundingBox())!;
-		expect(Math.abs(num.y + num.height / 2 - (icon.y + icon.height / 2))).toBeLessThan(1);
-	}
+	await expect(poisoner.locator('.band')).toContainText('Poisoner');
+	// A line runs between steps (Trevor, 2026-10-19).
 	expect(await poisoner.evaluate((li) => getComputedStyle(li).borderTopStyle)).toBe('solid');
-	// Icon two lines tall, the name beside it, and tapping the name shows the ability.
-	await poisoner.locator('button.name').tap();
+	// The ring shows the character's page.
+	await poisoner.getByRole('button', { name: 'About the Poisoner' }).tap();
 	const dialog = page.getByRole('dialog', { name: 'Poisoner' });
 	await expect(dialog).toBeVisible();
 	await page.keyboard.press('Escape');
