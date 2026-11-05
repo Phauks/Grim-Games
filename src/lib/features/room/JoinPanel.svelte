@@ -28,6 +28,7 @@
 	import { fetchRoomPreview, type GamePreview } from './room-preview.ts';
 	import { rememberRoom } from './recent-rooms.ts';
 	import YourGames from './YourGames.svelte';
+	import PlayersOnlyGames from '#lib/features/player/PlayersOnlyGames.svelte';
 	import SavedGamesSection from '#lib/features/grimoire/SavedGamesSection.svelte';
 	import YourCharacter from './YourCharacter.svelte';
 	import PlayerCountOff from './PlayerCountOff.svelte';
@@ -461,6 +462,8 @@
 						onOpen={(c, town) =>
 							town ? void goto(resolve('/town/[code]', { code: c })) : openRoom(c)}
 					/>
+					<!-- Towns kept with no Storyteller (plan M55), between the two. -->
+					<PlayersOnlyGames />
 					<SavedGamesSection />
 				</div>{/if}
 		</div>
