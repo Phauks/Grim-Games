@@ -27,8 +27,8 @@ export const FIELD_IDS = [
 	'problems'
 ] as const;
 export type FieldId = (typeof FIELD_IDS)[number];
-/** A table column: a field, or the Character Lab's Lock (plan M45). */
-export type TableKey = FieldId | 'lock';
+/** A table column: one field. */
+export type TableKey = FieldId;
 
 export interface ReferenceField {
 	id: FieldId;
