@@ -3,10 +3,10 @@
 		clearBackground,
 		saveBackground,
 		shrinkImage,
-		PRESETS,
-		type BackgroundChoice,
-		type PresetId
+		type BackgroundChoice
 	} from '#lib/features/grimoire/backgrounds.ts';
+	import BackgroundTiles from '#lib/features/grimoire/BackgroundTiles.svelte';
+	import MovingCustomise from '#lib/features/grimoire/moving/MovingCustomise.svelte';
 	import { defaultBackground } from '#lib/features/grimoire/default-background.svelte.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -48,30 +48,13 @@
 
 <SettingRow layout="stacked" label={t('settings.background')}>
 	{#snippet control(labelId)}
-		<div class="presets" role="group" aria-labelledby={labelId}>
-			<!-- None first in the list, not a separate button (Trevor, 2026-10-18). -->
-			<button
-				type="button"
-				class="preset"
-				aria-pressed={!current || current.kind === 'none'}
-				onclick={() => choose(undefined)}
-			>
-				<span class="swatch none"></span>
-				<span>{t('settings.backgroundNone')}</span>
-			</button>
-			{#each Object.entries(PRESETS) as [id, preset] (id)}
-				<button
-					type="button"
-					class="preset"
-					aria-pressed={current?.kind === 'preset' && current.id === id}
-					onclick={() => choose({ kind: 'preset', id: id as PresetId })}
-				>
-					<span class="swatch" style:background={preset.css}></span>
-					<span>{preset.label}</span>
-				</button>
-			{/each}
-		</div>
+		<BackgroundTiles
+			{current}
+			labelledBy={labelId}
+			onChoose={(choice) => choose(choice.kind === 'none' ? undefined : choice)}
+		/>
 		<div class="choices">
+			<MovingCustomise {current} onSave={choose} />
 			<Button icon="add" aria-pressed={current?.kind === 'image'} onclick={() => input?.click()}>
 				{current?.kind === 'image'
 					? t('settings.backgroundYourImage')
@@ -91,36 +74,6 @@
 </SettingRow>
 
 <style>
-	.presets {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(calc(6 * var(--u)), 1fr));
-		gap: var(--space-2);
-	}
-	.preset {
-		display: grid;
-		justify-items: center;
-		gap: var(--space-1);
-		min-height: var(--tap-target);
-		padding: var(--space-1);
-		border: 0.1rem solid transparent;
-		border-radius: var(--radius-md);
-		background: none;
-		color: inherit;
-		font: 600 0.8rem var(--font-control);
-		cursor: pointer;
-	}
-	.preset[aria-pressed='true'] {
-		border-color: var(--accent);
-	}
-	.swatch {
-		width: 100%;
-		aspect-ratio: 3 / 2;
-		border-radius: var(--radius-md);
-		box-shadow: inset 0 0 0 0.06rem var(--border);
-	}
-	.swatch.none {
-		background: var(--surface);
-	}
 	.choices {
 		display: grid;
 		gap: var(--space-2);

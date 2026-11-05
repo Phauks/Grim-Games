@@ -1,3 +1,4 @@
+import type { MovingChoice } from '#lib/core/backgrounds/moving.ts';
 import type { PublicLook } from '#lib/core/sync/public-projection.ts';
 import { DEFAULT_BOARD_LOOKS, type BoardLooks } from './board-looks.svelte.ts';
 import { PRESETS, type BackgroundChoice, type PresetId } from './backgrounds.ts';
@@ -14,6 +15,9 @@ export function lookOf(choice: BackgroundChoice, looks: BoardLooks): PublicLook 
 		...(choice.kind === 'script' ? { background: 'script' } : {}),
 		...(choice.kind === 'preset' ? { background: choice.id } : {}),
 		...(choice.kind === 'image' ? { background: 'image' } : {}),
+		...(choice.kind === 'moving'
+			? { background: 'moving', moving: { id: choice.id, params: choice.params } }
+			: {}),
 		...(looks.vignette ? { vignette: looks.vignetteStrength } : {}),
 		...(looks.logo ? { logo: looks.logoOpacity } : {})
 	};
@@ -26,6 +30,8 @@ export interface DrawnLook {
 	script: boolean;
 	/** The room's picture, by its hash (core/sync/room-images.ts). */
 	image?: string;
+	/** The Storyteller's moving background (M43), which each phone may hold still. */
+	moving?: MovingChoice;
 	vignette?: number;
 	logo?: number;
 }
@@ -42,6 +48,7 @@ export function drawnLook(look: PublicLook | undefined): DrawnLook {
 		script: background === 'script',
 		...(background && background in PRESETS ? { preset: background as PresetId } : {}),
 		...(background === 'image' && look.image ? { image: look.image } : {}),
+		...(background === 'moving' && look.moving ? { moving: look.moving } : {}),
 		...(look.vignette !== undefined ? { vignette: look.vignette } : {}),
 		...(look.logo !== undefined ? { logo: look.logo } : {})
 	};

@@ -28,6 +28,7 @@ import type { AvatarId } from '#lib/core/avatars/index.ts';
 import type { FrameId } from '#lib/core/frames/index.ts';
 import type { ProfileWords } from '#lib/core/profile/index.ts';
 import { isImageHash } from './room-images.ts';
+import { parseMoving, type MovingChoice } from '#lib/core/backgrounds/moving.ts';
 
 export interface PublicSeat {
 	seatId: SeatId;
@@ -132,6 +133,8 @@ export interface PublicLook {
 	background?: string;
 	/** The picture the room holds (core/sync/room-images.ts), by its hash, with `image`. */
 	image?: string;
+	/** A moving background and its settings, with `moving` (M43). */
+	moving?: MovingChoice;
 	/** How dark the vignette is, 0 to 1, while it is on. */
 	vignette?: number;
 	/** How visible the script's logo is, 0 to 1, while it is shown. */
@@ -150,7 +153,7 @@ const share = (value: unknown) =>
  */
 export function parsePublicLook(raw: unknown): PublicLook | undefined {
 	if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
-	const { background, image, vignette, logo } = raw as Record<string, unknown>;
+	const { background, image, moving, vignette, logo } = raw as Record<string, unknown>;
 	const look: PublicLook = {};
 	if (
 		typeof background === 'string' &&
@@ -159,6 +162,8 @@ export function parsePublicLook(raw: unknown): PublicLook | undefined {
 	)
 		look.background = background;
 	if (isImageHash(image)) look.image = image;
+	const scene = parseMoving(moving);
+	if (scene) look.moving = scene;
 	const dark = share(vignette);
 	if (dark !== undefined) look.vignette = dark;
 	const faint = share(logo);
