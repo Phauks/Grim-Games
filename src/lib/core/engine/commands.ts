@@ -5,6 +5,7 @@
  */
 import type { Alignment, CharacterId, Script, PlayerName } from '#lib/core/data/index.ts';
 import type { DayMark } from '#lib/core/data/day-mark-rules.ts';
+import type { CounterTime } from '#lib/core/data/counter-rules.ts';
 import type {
 	DayReminderOverride,
 	ExecutionOutcome,
@@ -202,6 +203,14 @@ export type Command =
 	| { type: 'SetReminderSymbolColour'; reminderId: ReminderId; colour?: SymbolColour }
 	/** The generic reminder's icon symbol filled or as an outline. */
 	| { type: 'SetReminderSymbolFill'; reminderId: ReminderId; fill: boolean }
+	/** Whether a number token goes up by one each dawn or dusk (plan M53); none stops it. */
+	| { type: 'SetReminderCountsUp'; reminderId: ReminderId; countsUp?: CounterTime }
+	/**
+	 * Moves the counting reminders for a new day (`dawn`) or night (`dusk`) (plan M53): each
+	 * character's run of day or night tokens gains the next one, and number tokens set to count
+	 * up go up by one (`counterMoves`).
+	 */
+	| { type: 'AdvanceCounters'; at: CounterTime }
 	/**
 	 * The effect the Storyteller picked for a reminder whose rules let them pick one
 	 * (`pickedEffect`: the Angel's Something Bad); none clears it.

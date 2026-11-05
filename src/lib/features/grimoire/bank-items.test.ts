@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { editionScript, toScript } from '#lib/core/data/index.ts';
+import { editionScript, toScript, type Script } from '#lib/core/data/index.ts';
 import { createGame, dispatch, type EngineContext } from '#lib/core/engine/index.ts';
 import { characterLookup, GENERIC_REMINDER_ID } from '#lib/core/model/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
@@ -58,5 +58,49 @@ describe('bankItems', () => {
 		});
 		expect(items.every((i) => i.now || i.group === 'generic')).toBe(true);
 		expect(items.some((i) => i.characterId === 'poisoner')).toBe(false);
+	});
+});
+
+describe('counting runs in the bank (plan M53)', () => {
+	// Trevor (2026-11-04): "should we also bundle incrementing reminder tokens together in the
+	// bank?" Each run is one token, the next still off the board; the pulled-up bank has them all.
+	const levScript: Script = {
+		entries: ['leviathan', 'chef', 'empath', 'monk', 'soldier'].map((id) => ({
+			kind: 'official' as const,
+			id
+		}))
+	};
+	const lev = characterLookup(data, levScript);
+	const levCtx: EngineContext = { ...ctx, characters: lev };
+
+	function withLeviathan(...labels: string[]) {
+		let made = createGame({ type: 'CreateGame', script: levScript, playerCount: 5 }, levCtx);
+		if (!made.ok) throw new Error();
+		const seat = made.session.game.seating[0];
+		made = dispatch(
+			made.session,
+			{ type: 'AssignCharacter', seatId: seat, characterId: 'leviathan' },
+			levCtx
+		);
+		for (const label of labels) {
+			if (!made.ok) throw new Error();
+			made = dispatch(
+				made.session,
+				{ type: 'AddReminder', seatId: seat, reminder: { characterId: 'leviathan', label } },
+				levCtx
+			);
+		}
+		if (!made.ok) throw new Error();
+		return made.session.game;
+	}
+	const days = (items: ReturnType<typeof bankItems>) =>
+		items
+			.filter((i) => i.characterId === 'leviathan' && i.label.startsWith('Day'))
+			.map((i) => i.label);
+
+	it('shows only the next day token while bundled', () => {
+		const g = withLeviathan('Day 1');
+		expect(days(bankItems(g, lev, { ...options, bundleCounters: true }))).toEqual(['Day 2']);
+		expect(days(bankItems(g, lev, options))).toEqual(['Day 2', 'Day 3', 'Day 4', 'Day 5']);
 	});
 });

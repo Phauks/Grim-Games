@@ -7,6 +7,7 @@
  */
 import type { Alignment, CharacterId, Script, PlayerName } from '#lib/core/data/index.ts';
 import type { DayMark } from '#lib/core/data/day-mark-rules.ts';
+import type { CounterTime } from '#lib/core/data/counter-rules.ts';
 import type { DayReminderOverride, NightStepOverride } from '#lib/core/rules/index.ts';
 import type { AvatarId } from '#lib/core/avatars/index.ts';
 import type { FrameId } from '#lib/core/frames/index.ts';
@@ -112,6 +113,8 @@ export type GameEvent =
 	| { type: 'ReminderSymbolColourSet'; reminderId: ReminderId; colour?: SymbolColour }
 	/** Without `fill`, the symbol goes back to an outline. */
 	| { type: 'ReminderSymbolFillSet'; reminderId: ReminderId; fill?: true }
+	/** No `countsUp` stops it counting. */
+	| { type: 'ReminderCountsUpSet'; reminderId: ReminderId; countsUp?: CounterTime }
 	| { type: 'GenericTokenAdded'; token: GenericToken }
 	/** Replaces the bank ∞ token with the same `tokenId`. */
 	| { type: 'GenericTokenSet'; token: GenericToken }

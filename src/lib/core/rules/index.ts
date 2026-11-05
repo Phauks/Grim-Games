@@ -57,6 +57,7 @@ export * from './becomes.ts';
 export * from './mad-as.ts';
 export * from './madness.ts';
 export * from './countdown.ts';
+export * from './counters.ts';
 export * from './storytellers.ts';
 export * from './wishes.ts';
 export * from './executed-instead.ts';

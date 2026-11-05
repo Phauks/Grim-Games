@@ -6,7 +6,7 @@
 	import { canKeepAwake } from '#lib/features/day/timer-wake-lock.ts';
 	import TimerPerPlayerRow from '#lib/features/day/TimerPerPlayerRow.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
-	import { REMINDER_REMOVALS } from '#lib/ui/preferences.ts';
+	import { COUNTING_REMINDERS, REMINDER_REMOVALS } from '#lib/ui/preferences.ts';
 	import { gameSettings } from '#lib/features/game-settings/game-settings.svelte.ts';
 	import BagDrawRows from '#lib/features/game-settings/BagDrawRows.svelte';
 	import { SETUP_LOOKS } from '#lib/core/rules/index.ts';
@@ -92,6 +92,18 @@
 			}))}
 			defaultValue="off"
 			onChange={(reminderRemoval) => preferences.update({ reminderRemoval })}
+		/>
+		<!-- Day and night counters and number tokens that count up (plan M53, Trevor 2026-11-04). -->
+		<SettingSelect
+			label={t('settings.countingReminders')}
+			description={t('settings.countingRemindersHelp')}
+			value={preferences.current.countingReminders}
+			options={COUNTING_REMINDERS.map((value) => ({
+				value,
+				label: t(`settings.countingReminders.${value}`)
+			}))}
+			defaultValue="ask"
+			onChange={(countingReminders) => preferences.update({ countingReminders })}
 		/>
 	{/if}
 {/each}

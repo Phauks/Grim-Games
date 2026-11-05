@@ -15,6 +15,7 @@ import type {
 	Script,
 	PlayerName
 } from '#lib/core/data/index.ts';
+import type { CounterTime } from '#lib/core/data/counter-rules.ts';
 import type { DayMark } from '#lib/core/data/day-mark-rules.ts';
 import type { ReminderEffectKind } from '#lib/core/data/parts/picked-effect.ts';
 // Type-only: the Storyteller's night-order and day-reminder overrides are defined next to
@@ -76,6 +77,12 @@ export interface ReminderInstance extends Reminder {
 	 */
 	like?: Reminder;
 	/**
+	 * A number token that goes up by one each dusk (`dusk`, Each night) or dawn (`dawn`, Each
+	 * day) (plan M53, Trevor 2026-11-04: "make these automatically tick up"), as the Storyteller's
+	 * Move counting reminders setting says. None stays as it is.
+	 */
+	countsUp?: CounterTime;
+	/**
 	 * The effect the Storyteller picked for a reminder whose rules let them (`pickedEffect`: the
 	 * Angel's Something Bad, Trevor 2026-11-02). None until picked; their own words go in `note`.
 	 */
@@ -111,7 +118,7 @@ export interface ReminderEffect {
  */
 export type GenericLook = Pick<
 	ReminderInstance,
-	'note' | 'symbol' | 'symbolColour' | 'symbolFill' | 'like'
+	'note' | 'symbol' | 'symbolColour' | 'symbolFill' | 'like' | 'countsUp'
 >;
 
 /**

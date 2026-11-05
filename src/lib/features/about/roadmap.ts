@@ -298,6 +298,12 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['M35', 'M48']
 	},
 	{
+		title:
+			'Day and night counters that move on their own at each dawn or dusk, and number tokens that count up',
+		area: 'storyteller',
+		parts: ['M53']
+	},
+	{
 		title: 'Seats that keep their names when players rotate, and random name colours',
 		area: 'storyteller',
 		parts: ['L22', 'L27']

@@ -1205,6 +1205,47 @@ for (const mode of ['Off', 'Automatically remove', 'Ask at dawn to remove', 'Ask
 	});
 }
 
+test('a # token set to count up goes up at the new day, after asking (plan M53)', async ({
+	page
+}) => {
+	// Trevor (2026-11-04): "certain tokens stack on each other, they are relational. We should
+	// look into how we can make these automatically tick up, or offer that as an option."
+	await startGame(page);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Monk', exact: true })
+		.tap();
+	await closeSheet(page);
+	const bank = page.getByRole('list', { name: 'Reminder bank' });
+	await tapToSeat(page, bank.getByRole('button', { name: 'Number token' }), 2);
+	const onBoard = (name: string) =>
+		page.locator(`.chip-slot > [data-testid="board-reminder"][aria-label="${name}"]`);
+	await onBoard('Number 1').tap();
+	await heldAction(page, 'Edit token');
+	const countsUp = page.getByRole('combobox', { name: 'Counts up', exact: true });
+	await countsUp.tap();
+	await page.getByRole('option', { name: 'Each day', exact: true }).tap();
+	await page.keyboard.press('Escape');
+	await expect(countsUp).toBeHidden();
+	await walkTo(page, 'Dusk');
+	await endNight(page);
+	// Settings' Move counting reminders is Ask by default: the token as it will be, by its seat.
+	const ask = page.getByRole('alertdialog', { name: 'Move counting reminders' });
+	await expect(ask.getByRole('listitem')).toHaveCount(1);
+	await expect(ask.getByRole('listitem')).toContainText('Seat 2');
+	await expect(ask.getByTestId('board-reminder')).toHaveAttribute('aria-label', 'Number 2');
+	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(ask).toBeHidden();
+	// Then the day opens, as after Reset Reminders.
+	const day = page.getByRole('dialog', { name: 'Day 1' });
+	await expect(day).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(day).toBeHidden();
+	await expect(onBoard('Number 2')).toHaveCount(1);
+});
+
 test("the Demon's step says when the Exorcist's choice stops it waking", async ({ page }) => {
 	// https://wiki.bloodontheclocktower.com/Exorcist : a chosen Demon doesn't wake tonight
 	// (Trevor's Pukka flowchart, 2026-10-24).
