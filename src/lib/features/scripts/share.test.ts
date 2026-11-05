@@ -8,6 +8,8 @@ import {
 	offlineRoomFrom,
 	withOfflineRoom,
 	OFFLINE_SINGLE_MAX,
+	PRINT_LINK_MAX,
+	printedLink,
 	shareLink,
 	sharedRefFromHash,
 	sharedRefHash,
@@ -181,5 +183,36 @@ describe('offline codes', () => {
 	it('is not offline without the mark', () => {
 		expect(isOfflineHash('#s=1.abc')).toBe(false);
 		expect(isOfflineHash('#e=tb&o=1')).toBe(true);
+	});
+});
+
+describe('printed QR code links (M56)', () => {
+	const origin = 'https://grimbinder.com';
+	it('prints an edition or a BotC Scripts script as its short link', async () => {
+		expect(await printedLink(origin, { edition: 'tb', json: ['tb'] })).toBe(`${origin}/play#e=tb`);
+		expect(
+			await printedLink(origin, { botcscripts: { scriptId: 123, version: '1.0' }, json: [] })
+		).toBe(`${origin}/play#bs=123/1.0`);
+	});
+
+	it('prints a custom script whole, without flavour text, so it never expires', async () => {
+		const flavoured = [...script, { id: 'x', name: 'X', team: 'townsfolk', flavor: 'Long ago' }];
+		const url = await printedLink(origin, { json: flavoured });
+		expect(url).toMatch(/^https:\/\/grimbinder\.com\/play#s=1\./);
+		const ref = sharedRefFromHash(new URL(url!).hash);
+		expect(ref?.kind).toBe('inline');
+		const json = (await decodeSharedScript((ref as { payload: string }).payload)) as unknown[];
+		expect(json.at(-1)).toEqual({ id: 'x', name: 'X', team: 'townsfolk' });
+	});
+
+	it('gives no link for a script too long for a printed code', async () => {
+		const long = Array.from({ length: 40 }, (_, i) => ({
+			id: `homebrew${i}`,
+			name: `Homebrew ${i}`,
+			team: 'townsfolk',
+			ability: `Each night, choose a player (${i}): they learn something ${Math.random()}.`
+		}));
+		expect(await printedLink(origin, { json: long })).toBeUndefined();
+		expect(PRINT_LINK_MAX).toBeLessThan(OFFLINE_SINGLE_MAX);
 	});
 });

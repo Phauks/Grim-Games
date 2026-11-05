@@ -31,9 +31,11 @@
 		hasLogo?: boolean;
 		/** Printing from a game with a game mode or special rules; else their switches grey out. */
 		hasRules?: boolean;
+		/** The script has a link to print as a QR code (M56); else its switches grey out. */
+		hasQr?: boolean;
 	}
 
-	let { hasLogo = true, hasRules = true }: Props = $props();
+	let { hasLogo = true, hasRules = true, hasQr = true }: Props = $props();
 
 	const print = $derived(playerSettings.current.print);
 	const set = (patch: Partial<PrintSettings>) =>
@@ -128,6 +130,12 @@
 			onChange={(logo) => setFront({ logo })}
 		/>
 		<SettingToggle
+			label={t('player.printQr')}
+			checked={hasQr && print.front.qr}
+			disabled={!hasQr}
+			onChange={(qr) => setFront({ qr })}
+		/>
+		<SettingToggle
 			label={t('player.printNightStrips')}
 			checked={print.front.nightStrips}
 			onChange={(nightStrips) => setFront({ nightStrips })}
@@ -193,6 +201,12 @@
 			checked={print.back.counts}
 			disabled={!print.back.enabled}
 			onChange={(counts) => setBack({ counts })}
+		/>
+		<SettingToggle
+			label={t('player.printQr')}
+			checked={hasQr && print.back.qr}
+			disabled={!print.back.enabled || !hasQr}
+			onChange={(qr) => setBack({ qr })}
 		/>
 		<SettingToggle
 			label={t('player.jinxes')}

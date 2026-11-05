@@ -95,6 +95,11 @@ export interface PrintSide {
 	ruleCharacters: boolean;
 	/** The game mode and special rules, when printing from a game that has them. */
 	rules: boolean;
+	/**
+	 * The script's QR code, top right (M56, Trevor 2026-11-05: on either side, since sheets
+	 * aren't always printed double sided). Its space is kept when off.
+	 */
+	qr: boolean;
 	iconScale: number;
 }
 
@@ -143,6 +148,7 @@ export const PRINT_DEFAULTS: PrintSettings = {
 		jinxes: true,
 		ruleCharacters: true,
 		rules: false,
+		qr: false,
 		columns: 'auto',
 		density: 'auto',
 		iconScale: 1
@@ -154,6 +160,7 @@ export const PRINT_DEFAULTS: PrintSettings = {
 		jinxes: false,
 		ruleCharacters: false,
 		rules: true,
+		qr: false,
 		iconScale: 1
 	}
 };
@@ -198,6 +205,7 @@ export function readPrint(raw: unknown): PrintSettings {
 			jinxes: flag(f.jinxes, flag(r.jinxes, d.front.jinxes)),
 			ruleCharacters: flag(f.ruleCharacters, info ? false : d.front.ruleCharacters),
 			rules: flag(f.rules, d.front.rules),
+			qr: flag(f.qr, d.front.qr),
 			columns: PRINT_COLUMNS.find((c) => c === (f.columns ?? r.columns)) ?? d.front.columns,
 			density: PRINT_DENSITIES.find((x) => x === (f.density ?? r.density)) ?? d.front.density,
 			iconScale: iconScale(f.iconScale)
@@ -209,6 +217,7 @@ export function readPrint(raw: unknown): PrintSettings {
 			jinxes: flag(b.jinxes, info ? true : d.back.jinxes),
 			ruleCharacters: flag(b.ruleCharacters, info ? true : d.back.ruleCharacters),
 			rules: flag(b.rules, d.back.rules),
+			qr: flag(b.qr, d.back.qr),
 			iconScale: iconScale(b.iconScale)
 		}
 	};

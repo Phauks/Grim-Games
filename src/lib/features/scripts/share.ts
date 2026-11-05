@@ -203,7 +203,7 @@ export interface OfflineCode {
  * needs it to play and it is a sixth of a homebrew script (Trevor, 2026-10-27: "make this
  * faster"; Fall of Rome's flavour is 3.7 KB of 22 KB).
  */
-function offlineScriptJson(json: unknown): unknown {
+export function withoutFlavour(json: unknown): unknown {
 	if (!Array.isArray(json)) return json;
 	return json.map((entry) => {
 		if (typeof entry !== 'object' || entry === null || !('flavor' in entry)) return entry;
@@ -223,7 +223,7 @@ export async function offlineCode(
 	from: { edition?: string; json: unknown }
 ): Promise<OfflineCode> {
 	if (from.edition) return { url: `${origin}/play#e=${from.edition}&o=1` };
-	const bytes = await deflateScript(offlineScriptJson(from.json));
+	const bytes = await deflateScript(withoutFlavour(from.json));
 	const url = `${origin}/play${offlineHash(bytes)}`;
 	if (new TextEncoder().encode(url).length <= OFFLINE_SINGLE_MAX) return { url };
 	// Each frame is a link to Join game, so a phone's own camera app opens this app, which reads
@@ -244,4 +244,32 @@ export function withOfflineRoom(code: OfflineCode, room: string | undefined): Of
 		url: `${code.url}&r=${room}`,
 		frames: code.frames?.map((frame) => frame.replace('#q=', `#r=${room}&q=`))
 	};
+}
+
+/**
+ * The most bytes a printed QR code's link carries (M56): about a version 16 code at the lowest
+ * correction, whose squares stay a quarter of a millimetre on the sheet's code.
+ */
+export const PRINT_LINK_MAX = 600;
+
+/**
+ * The link a printed sheet's QR code holds (Trevor, 2026-11-05), the same kind as Share's so a
+ * phone camera and Take a Photo both open it: an edition or BotC Scripts link, else the whole
+ * script without its flavour text, never a share code (one goes after 30 days unopened).
+ * Undefined when the script is too long for a code small enough to print; `printLinkFor` in
+ * share-codes.ts then falls back to a share code.
+ */
+export async function printedLink(
+	origin: string,
+	from: { edition?: string; botcscripts?: { scriptId: number; version?: string }; json: unknown }
+): Promise<string | undefined> {
+	if (from.edition)
+		return `${origin}/play${sharedRefHash({ kind: 'edition', edition: from.edition })}`;
+	if (from.botcscripts) {
+		const ref = { kind: 'script' as const, ...from.botcscripts };
+		return `${origin}/play${sharedRefHash({ kind: 'botcscripts', ref })}`;
+	}
+	const payload = await encodeSharedScript(withoutFlavour(from.json));
+	const url = `${origin}/play${sharedRefHash({ kind: 'inline', payload })}`;
+	return new TextEncoder().encode(url).length <= PRINT_LINK_MAX ? url : undefined;
 }
