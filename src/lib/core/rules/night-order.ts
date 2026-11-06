@@ -194,15 +194,18 @@ export const MARKER_TEXT: Record<NightMarker, { name: string; first: string; oth
 		first: 'Everyone closes their eyes. Night begins.',
 		other: 'Everyone closes their eyes. Night begins.'
 	},
+	// One sentence per thing to do, each card on its own line (Trevor, 2026-11-06: "wake demon,
+	// show them minions, and three characters are the steps"; their cards go on those lines in EvilInfoCards).
 	minioninfo: {
 		name: 'Minion info',
-		first: 'Wake the Minions together: show them the Demon, and let them see each other.',
-		other: 'Wake the Minions together: show them the Demon, and let them see each other.'
+		first: 'Wake the Minions together. Show them the Demon. Show them the other Minions.',
+		other: 'Wake the Minions together. Show them the Demon. Show them the other Minions.'
 	},
 	demoninfo: {
 		name: 'Demon info',
-		first: 'Wake the Demon: show them their Minions, then 3 good characters not in play as bluffs.',
-		other: 'Wake the Demon: show them their Minions.'
+		first:
+			'Wake the Demon. Show them their Minions. Show them 3 good characters not in play as bluffs.',
+		other: 'Wake the Demon. Show them their Minions.'
 	},
 	dawn: {
 		name: 'Dawn',

@@ -31,6 +31,11 @@
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import StepLine from '#lib/features/reference/StepLine.svelte';
+	import NightTextLines from '#lib/features/reference/NightTextLines.svelte';
+	import type { NightTextSteps } from '#lib/core/rules/night-text.ts';
+	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
+	import SeatBadge from '#lib/features/grimoire/SeatBadge.svelte';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import StepLines from '#lib/features/reference/StepLines.svelte';
 	import ShowToPlayerButton from './ShowToPlayerButton.svelte';
 	import type { ShownInfoCard } from './shown.ts';
@@ -58,11 +63,14 @@
 		/** The believer's fake world changed. */
 		onFakeChange?: (info: FakeEvilInfo) => void;
 		/**
-		 * Only the cards' lines, for the step's own Steps list to number on from its text
-		 * (`NightTextLines` `after`, Trevor 2026-11-06: Minion info and Demon info as a
-		 * character's step). Otherwise the cards come with their heading and their own list.
+		 * The step's text as lines (`stepNightText`): the cards are drawn on the lines that say
+		 * to show them, as a character's step draws its info tokens (Trevor, 2026-11-06: "make
+		 * sure these conform totally with how a character would show up"). Without it, the cards
+		 * come with their heading and their own list (a believer's).
 		 */
-		inline?: boolean;
+		textLines?: NightTextSteps;
+		/** The step's name, never marked as a Glossary term in its own text. */
+		name?: string;
 	}
 
 	let {
@@ -74,7 +82,8 @@
 		onShow,
 		onChooseBluffs,
 		onFakeChange,
-		inline = false
+		textLines,
+		name
 	}: Props = $props();
 
 	/** The cards shown at this step, drawn as done; forgotten on another step. */
@@ -129,8 +138,10 @@
 		flagText?: string;
 		/** Players to add with one tap (the Magician as a fake Minion). */
 		adds?: readonly SeatId[];
-		/** Choose or Edit what the row shows. */
-		edit?: { label: string; action: () => void };
+		/** Choose or Edit what the row shows, as an icon. */
+		edit?: { label: string; icon: 'edit' | 'demon'; action: () => void };
+		/** Nothing to show yet (no bluffs chosen): only its `edit`. */
+		noShow?: boolean;
 		/** Shows only its characters: the bluffs, or "This player is" with the Lunatic's token. */
 		showCharacters?: readonly CharacterId[];
 	}
@@ -157,7 +168,7 @@
 					chose: fake.decoyChose ?? [],
 					characterIds: lunatic,
 					showCharacters: lunatic,
-					edit: { label: t('show.evil.choose'), action: () => pick('decoyChose') }
+					edit: { label: t('show.evil.choose'), icon: 'edit', action: () => pick('decoyChose') }
 				});
 			return out;
 		}
@@ -169,7 +180,7 @@
 				seats: fake.minions,
 				flag: hiddenFlag,
 				adds: info.shownAsMinions.filter((s) => s !== believer && !fake.minions.includes(s)),
-				edit: { label: t('show.evil.choose'), action: () => pick('minions') }
+				edit: { label: t('show.evil.choose'), icon: 'edit', action: () => pick('minions') }
 			},
 			{
 				key: 'bluffs',
@@ -177,7 +188,7 @@
 				set: bluffSetLabel(LUNATIC_SET, true, game.bluffNames?.[LUNATIC_SET]),
 				characterIds: bluffs,
 				showCharacters: bluffs,
-				edit: { label: t('show.evil.edit'), action: onChooseBluffs }
+				edit: { label: t('show.evil.edit'), icon: 'edit', action: onChooseBluffs }
 			},
 			{
 				key: 'decoy',
@@ -185,7 +196,7 @@
 				seats: fake.decoy ? [fake.decoy] : [],
 				characterIds: lunatic,
 				showCharacters: lunatic,
-				edit: { label: t('show.evil.choose'), action: () => pick('decoy') }
+				edit: { label: t('show.evil.choose'), icon: 'edit', action: () => pick('decoy') }
 			}
 		];
 	});
@@ -241,6 +252,45 @@
 		}
 		return out;
 	});
+
+	/** No bluffs yet: the bluffs' line offers to choose them. */
+	const allRows = $derived<Row[]>(
+		step === 'demoninfo' && bluffSets.length === 0
+			? [
+					...rows,
+					{
+						key: 'no-bluffs',
+						title: text('not-in-play'),
+						characterIds: [],
+						noShow: true,
+						edit: { label: t('show.evil.chooseBluffs'), icon: 'demon', action: onChooseBluffs }
+					}
+				]
+			: rows
+	);
+	/**
+	 * Which line of the step's text says to show each card (`MARKER_TEXT`): Minion info's
+	 * "Show them the Demon." and "Show them the other Minions.", Demon info's "Show them their
+	 * Minions." and "Show them 3 good characters not in play as bluffs."
+	 */
+	const LINE_OF: Record<string, Record<string, number>> = {
+		minioninfo: { demon: 1, minions: 2 },
+		demoninfo: { minions: 1, [`bluffs-${DEMON_SET}`]: 2, 'no-bluffs': 2 }
+	};
+	const lineCount = $derived(textLines?.lines.length ?? 0);
+	const lineOf = (row: Row) => {
+		const at = LINE_OF[step]?.[row.key];
+		return at !== undefined && at < lineCount ? at : undefined;
+	};
+	const byLine = $derived.by(() => {
+		const out = new Map<number, Row[]>();
+		for (const row of allRows) {
+			const at = lineOf(row);
+			if (at !== undefined) out.set(at, [...(out.get(at) ?? []), row]);
+		}
+		return out;
+	});
+	const offLine = $derived(allRows.filter((row) => lineOf(row) === undefined));
 
 	/** The card's accessible name: its words, or the tokens of a card with none (the Damsel). */
 	function cardName(row: Row): string {
@@ -304,108 +354,125 @@
 	);
 </script>
 
-<!-- A player as their name pill and their character's badge, as in the night suggestions. -->
-{#snippet player(seatId: SeatId)}{@const id = trueCharacter(game, seatId, characters)}<span
-		class="player"
-		><PlayerBadge name={seatName(game, seatId)} />{#if id}<CharacterPiece
-				template="badge"
-				characterId={id}
-				character={characters.get(id)}
-			/>{/if}</span
-	>{/snippet}
+<!-- A player as the badge with their player, as every Storyteller screen shows a seat. -->
+{#snippet player(seatId: SeatId)}<SeatBadge
+		{game}
+		{characters}
+		{seatId}
+		characterId={trueCharacter(game, seatId, characters)}
+	/>{/snippet}
 
-{#snippet cardLines()}
-	{#each rows as row (row.key)}
-		{@const empty =
-			row.showCharacters?.length === 0 || (step === 'believer' && row.seats?.length === 0)}
-		<StepLine data-testid="evil-info-card" data-row={row.key} marked={shownRows.includes(row.key)}>
-			<span class="what">
-				<span class="title"
-					>{row.title}{#if row.set}<span class="set">&nbsp;· {row.set}</span>{/if}</span
+<!-- What a card shows: the card, whom it points at, its characters and any warning. -->
+{#snippet detail(row: Row)}
+	<span class="what">
+		{#if row.title}<span class="card"
+				><ReminderToken
+					label={row.title}
+					variant="info"
+					title={t('reference.infoToken')}
+				/>{#if row.set}<span class="set">{row.set}</span>{/if}</span
+			>{/if}
+		{#if row.seats}
+			<span class="badges who"
+				>{#each row.seats as seatId (seatId)}{@render player(seatId)}{:else}{t(
+						'common.none'
+					)}{/each}</span
+			>
+			{#if row.chose}
+				<span class="badges who"
+					><span class="chose">{t('show.evil.chose')}</span
+					>{#each row.chose as seatId (seatId)}<PlayerBadge
+							name={seatName(game, seatId)}
+						/>{:else}{t('common.none')}{/each}</span
 				>
-				{#if row.seats}
-					<span class="who"
-						>{#each row.seats as seatId, n (seatId)}{n ? ', ' : ''}{@render player(
-								seatId
-							)}{:else}{t('common.none')}{/each}{#if row.chose}<span class="chose"
-								>{t('show.evil.chose')}</span
-							>{#each row.chose as seatId, n (seatId)}{n ? ', ' : ''}<PlayerBadge
-									name={seatName(game, seatId)}
-								/>{:else}{t('common.none')}{/each}{/if}</span
-					>
-				{/if}
-				{#if row.characterIds}
-					<span class="badges">
-						{#each row.characterIds as id (id)}
-							<CharacterPiece
-								template="badge"
-								characterId={id}
-								character={characters.get(id)}
-								interactive={false}
-							/>
-						{:else}{t('common.none')}{/each}
-					</span>
-				{/if}
-				{#if row.adds?.length}
-					<span class="badges">
-						{#each row.adds as seatId (seatId)}
-							<Button
-								variant="quiet"
-								icon="add"
-								aria-label={t('show.evil.add', { name: seatName(game, seatId) })}
-								onclick={() => change({ minions: [...fake.minions, seatId] })}
-								><PlayerBadge name={seatName(game, seatId)} /></Button
-							>
-						{/each}
-					</span>
-				{/if}
-				{#if row.blocked}
-					<span class="flag"><Icon name="warning" /> {t('show.evil.inPlay')}</span>
-				{/if}
-				{#if row.flag}
-					<span class="flag"
-						><Icon name="warning" /><CharacterPiece
-							template="badge"
-							characterId={row.flag}
-							character={characters.get(row.flag)}
-							interactive={false}
-						/>{row.flagText ?? t('show.evil.hidden')}</span
-					>
-				{/if}
+			{/if}
+		{/if}
+		{#if row.characterIds}
+			<span class="badges">
+				{#each row.characterIds as id (id)}
+					<CharacterPiece
+						template="badge"
+						characterId={id}
+						character={characters.get(id)}
+						interactive={false}
+					/>
+				{:else}{t('common.none')}{/each}
 			</span>
-			{#snippet end()}
-				{#if row.edit}
-					<Button variant="quiet" icon="edit" onclick={row.edit.action}>{row.edit.label}</Button>
-				{/if}
-				<!-- The same eye as every line of a character's step (Trevor, 2026-11-06). -->
-				<ShowToPlayerButton
-					disabled={empty}
-					aria-label={`${t('show.toPlayer')}: ${cardName(row)}`}
-					onclick={() => {
-						if (!shownRows.includes(row.key)) shownRows = [...shownRows, row.key];
-						onShow(shown(row));
-					}}
-				/>
-			{/snippet}
-		</StepLine>
-	{/each}
-	{#if step === 'demoninfo' && bluffSets.length === 0}
-		<StepLine data-testid="evil-info-card">
-			<span class="what">
-				<span class="title">{text('not-in-play')}</span>
-				<span class="who">{t('common.none')}</span>
+		{/if}
+		{#if row.adds?.length}
+			<span class="badges">
+				{#each row.adds as seatId (seatId)}
+					<Button
+						variant="quiet"
+						icon="add"
+						aria-label={t('show.evil.add', { name: seatName(game, seatId) })}
+						onclick={() => change({ minions: [...fake.minions, seatId] })}
+						><PlayerBadge name={seatName(game, seatId)} /></Button
+					>
+				{/each}
 			</span>
-			{#snippet end()}
-				<Button variant="quiet" icon="demon" onclick={onChooseBluffs}
-					>{t('show.evil.chooseBluffs')}</Button
-				>
-			{/snippet}
-		</StepLine>
-	{/if}
+		{/if}
+		{#if row.blocked}
+			<span class="flag"><Icon name="warning" /> {t('show.evil.inPlay')}</span>
+		{/if}
+		{#if row.flag}
+			<span class="flag"
+				><Icon name="warning" /><CharacterPiece
+					template="badge"
+					characterId={row.flag}
+					character={characters.get(row.flag)}
+					interactive={false}
+				/>{row.flagText ?? t('show.evil.hidden')}</span
+			>
+		{/if}
+	</span>
 {/snippet}
 
-{#if inline}
-	{@render cardLines()}
+<!-- A card's buttons, icons only as on a character's lines (Trevor, 2026-11-06). -->
+{#snippet buttons(row: Row)}
+	{@const empty =
+		row.showCharacters?.length === 0 || (step === 'believer' && row.seats?.length === 0)}
+	{#if row.edit}<IconButton
+			icon={row.edit.icon}
+			label={row.edit.label}
+			outlined
+			onclick={row.edit.action}
+		/>{/if}
+	{#if !row.noShow}<ShowToPlayerButton
+			disabled={empty}
+			aria-label={`${t('show.toPlayer')}: ${cardName(row)}`}
+			onclick={() => {
+				if (!shownRows.includes(row.key)) shownRows = [...shownRows, row.key];
+				onShow(shown(row));
+			}}
+		/>{/if}
+{/snippet}
+
+{#snippet cardLine(row: Row)}
+	<StepLine data-testid="evil-info-card" data-row={row.key} marked={shownRows.includes(row.key)}>
+		{@render detail(row)}
+		{#snippet end()}{@render buttons(row)}{/snippet}
+	</StepLine>
+{/snippet}
+
+{#if textLines}
+	<!-- The step's own lines, each card on the line that says to show it, as a character's
+	     info tokens sit on their lines; any other card is a line after them. -->
+	<NightTextLines
+		steps={textLines}
+		{name}
+		marked={(i) => (byLine.get(i) ?? []).some((row) => shownRows.includes(row.key))}
+	>
+		{#snippet lineExtra(i)}{#each byLine.get(i) ?? [] as row (row.key)}<span
+					class="on-line"
+					data-testid="evil-info-card"
+					data-row={row.key}>{@render detail(row)}</span
+				>{/each}{/snippet}
+		{#snippet lineEnd(i)}{#each byLine.get(i) ?? [] as row (row.key)}{@render buttons(
+					row
+				)}{/each}{/snippet}
+		{#snippet after()}{#each offLine as row (row.key)}{@render cardLine(row)}{/each}{/snippet}
+	</NightTextLines>
 {:else}
 	<section
 		class="cards"
@@ -426,7 +493,11 @@
 			</p>
 		{/if}
 		<h3>{step === 'believer' ? t('show.evil.believerTitle') : t('show.evil.title')}</h3>
-		<div class="list"><StepLines>{@render cardLines()}</StepLines></div>
+		<div class="list">
+			<StepLines
+				>{#each allRows as row (row.key)}{@render cardLine(row)}{/each}</StepLines
+			>
+		</div>
 	</section>
 {/if}
 
@@ -466,20 +537,24 @@
 	.list {
 		border-top: 0.0625rem solid var(--border);
 	}
+	.on-line {
+		display: block;
+		margin-block-start: var(--space-1);
+	}
+	.card {
+		display: inline-flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-1);
+	}
 	.what {
 		display: grid;
 		min-width: 0;
 		gap: var(--space-1);
 	}
-	.title {
-		font-family: var(--font-heading);
-	}
 	.set,
 	.chose {
 		color: var(--on-surface-muted);
-	}
-	.chose {
-		margin-inline: var(--space-1);
 	}
 	.badges {
 		display: flex;
@@ -495,10 +570,5 @@
 		gap: var(--space-1);
 		color: var(--accent);
 		font-size: 0.85rem;
-	}
-	.player {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--space-1);
 	}
 </style>

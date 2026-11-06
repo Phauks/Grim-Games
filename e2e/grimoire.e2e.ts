@@ -4982,8 +4982,14 @@ test('Minion info and Demon info list every card they can show, with who it poin
 	await expect(cards.nth(1)).toContainText('These are your Minions');
 	await expect(cards.nth(1)).toContainText('Seat 2');
 	await expect(cards.nth(1)).toContainText('Seat 3');
-	// Numbered on from the text: 1 is the text, 2 and 3 the cards.
-	await expect(cards.nth(0).locator('xpath=..')).toHaveCSS('counter-reset', 'line 1');
+	// Each card on the line that says to show it (Trevor, 2026-11-06: "wake demon, show them
+	// minions ... are the steps"), each player as the badge with their player.
+	const line = (n: number) => lines.locator('li').nth(n);
+	await expect(line(1)).toContainText('Show them the Demon.');
+	await expect(line(1).getByTestId('evil-info-card')).toContainText('This is the Demon');
+	await expect(line(2)).toContainText('Show them the other Minions.');
+	await expect(line(2).getByTestId('evil-info-card')).toContainText('These are your Minions');
+	await expect(line(2).locator('.who > *')).toHaveCount(2);
 	await minionInfo.getByRole('button', { name: 'Show to player: This is the Demon' }).tap();
 	const shown = page.locator('[data-testid="show-to-player"][open]');
 	await expect(shown.getByRole('heading')).toHaveText('This is the Demon');
@@ -4994,8 +5000,8 @@ test('Minion info and Demon info list every card they can show, with who it poin
 	await expect(minionInfo).toBeVisible();
 	expect(await gaps()).toEqual([]);
 	// The shown card's line gets the gold edge, as a character's line does.
-	await expect(cards.nth(0)).toHaveAttribute('data-marked-row', '');
-	await expect(cards.nth(1)).not.toHaveAttribute('data-marked-row');
+	await expect(line(1)).toHaveAttribute('data-marked-row', '');
+	await expect(line(2)).not.toHaveAttribute('data-marked-row');
 
 	// Demon info with no bluffs yet: its Minions, and a way to choose the bluffs.
 	await minionInfo.getByRole('button', { name: 'Next step' }).tap();
