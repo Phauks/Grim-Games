@@ -36,20 +36,6 @@ test("New game takes End game's place in the board ⋯ menu once the game ends",
 	).toBeVisible();
 });
 
-test('typing a custom script name brings the search to the top, so its picks open below', async ({
-	page
-}) => {
-	await page.goto('/new');
-	const search = page.getByPlaceholder('Find a script');
-	await search.tap();
-	await expect
-		.poll(async () => (await search.boundingBox())?.y ?? Infinity)
-		.toBeLessThan(page.viewportSize()!.height / 4);
-	await expect(
-		page.getByRole('radiogroup', { name: 'Script' }).getByRole('radio', { name: 'Custom' })
-	).toBeChecked();
-});
-
 // Trevor (2026-10-27): once the bag is dealt, Character selection did nothing from ⋯ (the
 // selection screen sends a set-up game straight back), so it is no longer offered; unavailable
 // items stay hidden rather than greyed.

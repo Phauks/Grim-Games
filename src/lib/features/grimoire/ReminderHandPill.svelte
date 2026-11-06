@@ -18,6 +18,8 @@
 	} from '#lib/core/model/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import NumberSelect from '#lib/ui/primitives/NumberSelect.svelte';
+	import Select from '#lib/ui/primitives/Select.svelte';
+	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import { bankView, type BankItem } from './bank-items.ts';
 	import BoardReminder from './BoardReminder.svelte';
 	import { placingAlignment } from './board.ts';
@@ -27,6 +29,8 @@
 	import ReminderInHand from './ReminderInHand.svelte';
 	import { dropOnTap, heldTokenActions, placedTokenActions } from './reminder-in-hand.ts';
 	import { onBoard, placedLook } from './reminders.ts';
+
+	import type { ReminderLabel } from '#lib/core/data/index.ts';
 
 	interface Props {
 		grimoire: Grimoire;
@@ -79,6 +83,17 @@
 				reminderId: placed.reminderId,
 				symbol: numberSymbol(n)
 			});
+	}
+
+	/**
+	 * A counting run stacked in the bank (plan M53, Trevor 2026-11-06: stacked in the bin): the
+	 * pill picks which of its tokens goes down, the next one first.
+	 */
+	const heldRun = $derived(
+		hand.held?.kind === 'bank' && (hand.held.item.run?.length ?? 0) > 1 ? hand.held.item : undefined
+	);
+	function pickRun(label: string) {
+		if (heldRun) hand.held = { kind: 'bank', item: { ...heldRun, label: label as ReminderLabel } };
 	}
 
 	const actions = $derived.by(() => {
@@ -135,7 +150,18 @@
 					max={REMINDER_NUMBER_MAX}
 					onchange={pickNumber}
 					testid="hand-number"
-				/>{/if}
+				/>{:else if heldRun}<!-- eslint-disable grim/names-as-badges -- each token shows as its badge (the snippets); its words are the options' accessible names --><Select
+					label={t('common.reminderRun')}
+					hideLabel
+					value={heldRun.label}
+					options={(heldRun.run ?? []).map((value) => ({ value, label: value }))}
+					onChange={pickRun}
+				>
+					{#snippet item(option)}<ReminderToken label={option.value as ReminderLabel} />{/snippet}
+					{#snippet selected(option)}<ReminderToken
+							label={option.value as ReminderLabel}
+						/>{/snippet}
+				</Select><!-- eslint-enable grim/names-as-badges -->{/if}
 		{/snippet}
 	</ReminderInHand>
 {/if}

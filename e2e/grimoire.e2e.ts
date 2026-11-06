@@ -26,6 +26,7 @@ import {
 	openBin,
 	moveOnBoard,
 	putReminder,
+	putRunReminder,
 	tapToSeat
 } from './reminder-bank.ts';
 import { pickNumber } from './number-select.ts';
@@ -8061,7 +8062,7 @@ test("the Summoner's Night 3 step makes the chosen player the Demon it points at
 	await picker.getByText('Include characters not on the script').tap();
 	await picker.getByRole('button', { name: 'Summoner', exact: true }).tap();
 	await closeSheet(page);
-	await putReminder(page, 'Night 3', 1);
+	await putRunReminder(page, 'Night 3', 1);
 
 	const step = await openStep(page, 'Summoner');
 	await expect(step.getByTestId('change-character')).toContainText('None');
