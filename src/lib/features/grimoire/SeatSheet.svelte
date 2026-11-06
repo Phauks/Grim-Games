@@ -7,7 +7,7 @@
 	import { allowedOffScriptIn } from '#lib/features/modes/game-mode.ts';
 	import NominationChooser from './NominationChooser.svelte';
 	import { seatCharacterLine } from '#lib/features/game/seat-label.ts';
-	import type { CharacterId } from '#lib/core/data/index.ts';
+	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import type { ReminderId, SeatId } from '#lib/core/model/index.ts';
 	import { trueCharacter } from '#lib/core/model/index.ts';
 	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
@@ -16,12 +16,17 @@
 	import {
 		abilityGivers,
 		abilityState,
+		borrowedAbilitiesOf,
+		madAsOf,
 		mayNominate,
 		seatNominations,
 		votesWithoutToken,
 		type ImpairmentReason
 	} from '#lib/core/rules/index.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
+	import MarkedCharacterRows, {
+		type Relation
+	} from '#lib/features/characters/MarkedCharacterRows.svelte';
 	import CharacterDialog from '#lib/features/characters/CharacterDialog.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
@@ -117,6 +122,25 @@
 			? characters.get(ability.characterId)
 			: undefined
 	);
+	/**
+	 * Who else this player is tied to, as character rows under their own, as day view shows
+	 * them (Trevor, 2026-11-06): who they really are, whom they are mad as, and the abilities
+	 * they have besides their own.
+	 */
+	const related = $derived.by(() => {
+		if (!seatId) return [];
+		const rows: { character: Character; relation: Relation; faded?: boolean }[] = [];
+		if (really) rows.push({ character: really, relation: 'is' });
+		for (const m of madAsOf(game, seatId, characters)) {
+			const mad = characters.get(m.characterId);
+			if (mad) rows.push({ character: mad, relation: 'mad' });
+		}
+		for (const b of borrowedAbilitiesOf(game, seatId, characters)) {
+			const held = characters.get(b.characterId);
+			if (held) rows.push({ character: held, relation: 'holds', faded: !b.works });
+		}
+		return rows;
+	});
 	const impairmentWords: Record<ImpairmentReason, string> = {
 		drunk: 'Drunk',
 		poisoned: 'Poisoned',
@@ -129,7 +153,6 @@
 		const parts: LinePart[] = [];
 		if (isOrphan(seat, game.script, characters, offScriptOk))
 			parts.push({ text: 'Not on the script' });
-		if (really) parts.push({ text: 'Is the ', characterId: really.id });
 		// Only what the sheet shows nowhere else (Trevor, 2026-10-18): a reminder on this seat
 		// is in Reminders below, and death is in Status.
 		const onSeat = new Set(seat.reminders.map((r) => r.reminderId));
@@ -328,7 +351,7 @@
 						>{#snippet abilityText()}<AbilityText
 								text={character.ability}
 								names={[character.name]}
-							/>{/snippet}</CharacterPiece
+							/>{/snippet}<MarkedCharacterRows rows={related} /></CharacterPiece
 					>
 				{:else}
 					<p class="none">No character</p>

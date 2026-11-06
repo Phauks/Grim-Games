@@ -21,15 +21,18 @@
 	 * The Character Lab's game and setup on the Characters page (plans M45, M47). On a computer
 	 * it sits on the right of the selected characters, the game at the top (Trevor, 2026-11-04:
 	 * "put the mock grim at the top of the right side"), its controls on a solid box under it;
-	 * on a phone it opens from the bar at the bottom, and Load game goes to the game.
+	 * on a phone it opens from the bar at the bottom, and Load game shows the game under the
+	 * table (Trevor, 2026-11-06: "only to show it beneath").
 	 */
 	interface Props {
 		session: LabSession;
 		/** Shows the loaded game in a Storyteller screen above the controls. */
 		frame?: boolean;
+		/** After Load game, when the game shows elsewhere (a phone's game under the table). */
+		onloaded?: () => void;
 	}
 
-	let { session, frame = false }: Props = $props();
+	let { session, frame = false, onloaded }: Props = $props();
 
 	const setup = $derived(session.setup);
 	const name = (id: CharacterId) => session.byId(id)?.name ?? id;
@@ -66,7 +69,7 @@
 			.join(': ')
 	);
 
-	/** A computer loads the game into the frame; a phone goes to it. */
+	/** A computer loads the game into the frame; a phone loads it with Load game. */
 	const step = (by: -1 | 1) =>
 		frame ? void session.load(session.at + by) : session.show(session.at + by);
 </script>
@@ -180,7 +183,7 @@
 			<Button
 				variant="accent"
 				disabled={session.loading || !session.data}
-				onclick={() => void session.load(session.at, !frame)}
+				onclick={() => void session.load(session.at).then(() => onloaded?.())}
 				>{session.loading ? t('lab.loading') : t('lab.load')}</Button
 			>
 			<!-- A set height that scrolls, so a pairing with more jinxes moves nothing below. -->
