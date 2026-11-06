@@ -1552,7 +1552,7 @@ test("the Dreamer's Valid Information shows a good and an evil token, never one 
 	)
 		.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong')
 		.tap();
-	const step = page.getByRole('dialog', { name: 'Dreamer' });
+	const step = nightStep(page, 'Dreamer');
 	// The Clockmaker's row: the picker opens with the Clockmaker in place and the evil token to
 	// pick, instead of showing the Clockmaker alone.
 	await step
