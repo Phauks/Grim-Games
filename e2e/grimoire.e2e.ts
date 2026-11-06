@@ -3352,14 +3352,15 @@ test('End game keeps the Storyteller on the board, says it is over, and can be r
 	await steps.getByRole('button', { name: 'Previous change' }).tap();
 	await expect(seatLabelled(page, 'Seat 1: Ana')).toHaveCount(0);
 	await expect(page.getByTestId('game-over')).toHaveText('Game over: Evil won');
-	// Read-only: nothing pops up in the middle (Trevor, 2026-10-18), and the game over line
-	// is a status above Game info, leaving History's strip its room (2026-10-25).
+	// Read-only: nothing pops up (Trevor, 2026-10-18). The game over line is out of
+	// History's strip, leaving it its room (2026-10-25), and sits in the middle of the seat
+	// ring, over the script's logo, where no seat ever is (2026-11-06).
 	await expect(page.getByRole('button', { name: 'Set up' })).toHaveCount(0);
-	const over = (await page.getByTestId('game-over').boundingBox())!;
-	const corner = (await page.getByTestId('script-title').boundingBox())!;
 	await expect(steps.getByTestId('game-over')).toHaveCount(0);
-	expect(over.y + over.height).toBeLessThanOrEqual(corner.y + 1);
-	expect(over.x).toBeLessThan(corner.x + corner.width);
+	const over = (await page.getByTestId('game-over').boundingBox())!;
+	const ring = (await page.getByTestId('game-over').locator('xpath=..').boundingBox())!;
+	expect(Math.abs(over.x + over.width / 2 - (ring.x + ring.width / 2))).toBeLessThan(2);
+	expect(Math.abs(over.y + over.height / 2 - (ring.y + ring.height / 2))).toBeLessThan(2);
 	await steps.getByRole('button', { name: 'Next change' }).tap();
 	await expect(seatLabelled(page, 'Seat 1: Ana')).toHaveCount(1);
 	await expect(steps.getByRole('button', { name: 'Next change' })).toBeDisabled();
@@ -6814,6 +6815,12 @@ test('an Alive reminder put on a dead player asks whether to revive them', async
 	await closeSheet(page);
 
 	await add(2, 'Alive');
+	// The Shabaloth's Alive follows its Dead, so the app first asks to take Dead off (M71).
+	// Keep it here, so the revive question below is the one under test.
+	await page
+		.getByRole('alertdialog', { name: 'Take Dead off?' })
+		.getByRole('button', { name: 'Cancel', exact: true })
+		.tap();
 	const ask = page.getByRole('alertdialog', { name: 'Revive Seat 2?' });
 	await expect(ask).toBeVisible();
 	await closeSettings(await aidInSettings(page, ask, 'Ask to revive'));
@@ -7411,7 +7418,8 @@ test('with Council of the Dead, night 4 starts with the dead waking together', a
 });
 
 // One format for game modes and special rules (Trevor, 2026-11-01): a game mode may set a
-// rule's parts, and the night plays its step as it plays Council of the Dead's.
+// rule's parts (M61e: its rules block), and the night plays its step as it plays Council of
+// the Dead's.
 test('a game mode that sets a night step adds it to the night, headed by the mode', async ({
 	page
 }) => {
@@ -7420,10 +7428,8 @@ test('a game mode that sets a night step adds it to the night, headed by the mod
 		id: 'dead-wake',
 		name: 'Dead Wake',
 		sources: [],
-		parts: {
-			assignment: { kind: 'bag' },
-			nightSteps: [{ kind: 'wake', when: 'one-night', night: 1, dead: true }]
-		}
+		parts: { assignment: { kind: 'bag' } },
+		rules: { nightWakes: [{ when: 'one-night', night: 1, dead: true }] }
 	};
 	await page.goto('/new');
 	await page.evaluate((m) => {

@@ -98,6 +98,8 @@ test('spectators and Grim view message the Storyteller, under Spectators, until 
 	await expect(players).toBeHidden();
 	const alex = await openPlayerSheet(page, 'Alex');
 	await expect(alex.getByTestId('inbox-item')).toContainText('Can I watch from here?');
+	// Every message says whether a consult was asked for (Trevor, 2026-11-06).
+	await expect(alex.getByTestId('inbox-no-consult')).toHaveText('No consult');
 	await page.keyboard.press('Escape');
 	const pat = await openPlayerSheet(page, 'Pat');
 	await expect(pat.getByTestId('room-player-where')).toHaveText('Grim view');

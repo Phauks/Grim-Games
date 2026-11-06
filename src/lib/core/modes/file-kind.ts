@@ -33,9 +33,9 @@ export function fileKind(file: unknown): FileKind {
 }
 
 /**
- * A game mode's rule parts as a special rule of its own (same id and name), for the screens
- * that read a game's rules list (night steps, nominations, abilities). Undefined when the mode
- * sets none of them.
+ * A game mode's rule parts and rules block as a special rule of its own (same id and name), for
+ * the screens that read a game's rules list (night wakes, nominations, abilities). Undefined
+ * when the mode sets none of them.
  */
 export function modeRule(mode: GameMode): SpecialRule | undefined {
 	const parts = Object.fromEntries(
@@ -43,13 +43,14 @@ export function modeRule(mode: GameMode): SpecialRule | undefined {
 			mode.parts[part] === undefined ? [] : [[part, mode.parts[part]]]
 		)
 	) as RuleOnlyParts;
-	if (Object.keys(parts).length === 0) return undefined;
+	if (Object.keys(parts).length === 0 && !mode.rules) return undefined;
 	return {
 		kind: 'special-rule',
 		format: mode.format,
 		id: mode.id,
 		name: mode.name,
 		sources: mode.sources,
-		parts
+		parts,
+		...(mode.rules ? { rules: mode.rules } : {})
 	};
 }

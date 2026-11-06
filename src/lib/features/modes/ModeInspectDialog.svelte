@@ -19,7 +19,7 @@
 	import { shownParts } from './approved-about.ts';
 	import ModeAbout from './ModeAbout.svelte';
 	import ModeValue from './ModeValue.svelte';
-	import { modeLabel } from './labels.ts';
+	import { modeLabel, rulesPartLabel } from './labels.ts';
 	import { showsOwnWording } from './own-wording.svelte.ts';
 
 	/**
@@ -68,6 +68,11 @@
 	const shown = $derived(
 		changedOnly ? partNames.filter((part) => status(part) !== 'standard') : partNames
 	);
+	/**
+	 * What the file does in play, its rules block (M61e): one card per part, by the part's own
+	 * name, each run by the app as a character's would be.
+	 */
+	const ruleParts = $derived(Object.entries(mode.rules ?? {}));
 </script>
 
 <Dialog bind:open title={mode.name} size="full">
@@ -103,9 +108,19 @@
 							<div class="value"><ModeValue field={part} value={parts[part]} /></div>
 						{/if}
 					</li>
-				{:else}
-					<li class="none">{t('common.none')}</li>
 				{/each}
+				{#each ruleParts as [key, value] (key)}
+					<li data-part="rules.{key}" data-status="runs">
+						<div class="head">
+							<span class="name">{rulesPartLabel(key)}</span>
+							<span class="status">{t(STATUS_LABEL.runs)}</span>
+						</div>
+						<div class="value"><ModeValue field={key} {value} /></div>
+					</li>
+				{/each}
+				{#if shown.length === 0 && ruleParts.length === 0}
+					<li class="none">{t('common.none')}</li>
+				{/if}
 			</ul>
 		</section>
 

@@ -69,6 +69,8 @@
 		entry?: boolean;
 		/** Above the code form, in its column (Home's last game and New game, plan M69). */
 		lead?: Snippet;
+		/** Above the games to resume, in their column (Home's player card, Trevor 2026-11-06). */
+		aside?: Snippet;
 	}
 
 	let {
@@ -79,7 +81,8 @@
 		onSeated,
 		onVoting,
 		entry = true,
-		lead
+		lead,
+		aside
 	}: Props = $props();
 
 	const valid = $derived(code === undefined ? null : normaliseRoomCode(code));
@@ -475,6 +478,7 @@
 			</div>
 			<!-- Joining and resuming on one page: games played above games hosted (Trevor, 2026-10-28). -->
 			{#if code === undefined}<div class="your-games">
+					{#if aside}{@render aside()}{/if}
 					<YourGames
 						onOpen={(c, town) =>
 							town ? void goto(resolve('/town/[code]', { code: c })) : openRoom(c)}

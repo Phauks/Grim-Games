@@ -22,12 +22,12 @@ export const WARRENS: SpecialRule = {
 		text: [
 			'While 5 or more players are alive, an evil player who nominates another living evil player (not a Traveller) immediately swaps characters with them.'
 		],
-		nominations: [{ kind: 'evil-swap', minAlive: 5 }],
 		ruleChanges: [
 			{
 				instructions:
 					'While 5 or more players are alive, when an evil player nominates another living evil player, and neither is a Traveller, swap their character tokens straight away. Each learns their new character when they next wake at night.'
 			}
 		]
-	}
+	},
+	rules: { onNominated: { effect: 'evil-swap', minAlive: 5 } }
 };

@@ -330,8 +330,18 @@ export class Grimoire {
 	 */
 	readonly atDawn = $derived.by(() => dawnGames(this.open.session.log).at(-1));
 
+	/**
+	 * Whether it is day on this device: a day has begun and tonight's night has not (a death
+	 * marked now is a daytime death, for the Godfather's and Zombuul's Died Today).
+	 */
+	get isDay(): boolean {
+		return this.game.pastDays.length > 0 && !this.nightRunning && !this.nightUnderway;
+	}
+
 	/** Runs a command; returns whether it was accepted. */
-	run(command: Command): boolean {
+	run(given: Command): boolean {
+		const command: Command =
+			given.type === 'SetDead' && given.dead && this.isDay ? { ...given, day: true } : given;
 		const misfit = this.misfit(command);
 		const before = this.open.game;
 		const result = this.open.run(command);

@@ -4,13 +4,17 @@
  * per game (`gameKey`), like the player's guesses; nothing here reaches the room.
  */
 import type { Character, CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
+import { COUNTER_TIMES, type CounterTime } from '#lib/core/data/counter-rules.ts';
 import {
 	GENERIC_REMINDER_ID,
+	REMINDER_NUMBER_MAX,
 	SYMBOL_COLOURS,
+	numberSymbol,
 	symbolNumber,
-	type GenericLook
+	type GenericLook,
+	type GenericToken
 } from '#lib/core/model/index.ts';
-import { byLabel } from '#lib/features/grimoire/reminders.ts';
+import type { PlayersPhase } from '#lib/core/rules/game-phase.ts';
 import { reminderTokenSize } from '#lib/ui/seating/seat-layout.ts';
 import { readStored, writeStored } from '#lib/ui/stored.ts';
 
@@ -53,6 +57,14 @@ function genericLook(r: Record<string, unknown>): GenericLook {
 	if (SYMBOL_COLOURS.includes(r.symbolColour as never))
 		look.symbolColour = r.symbolColour as GenericLook['symbolColour'];
 	if (r.symbolFill === true) look.symbolFill = true;
+	// A copy of a character's reminder, with its art (dragged onto "+ New token").
+	const like = r.like as Record<string, unknown> | undefined;
+	if (typeof like?.characterId === 'string' && like.characterId && typeof like.label === 'string')
+		look.like = {
+			characterId: like.characterId as CharacterId,
+			label: like.label as ReminderLabel
+		};
+	if (COUNTER_TIMES.includes(r.countsUp as CounterTime)) look.countsUp = r.countsUp as CounterTime;
 	return look;
 }
 
@@ -140,23 +152,6 @@ export function moveReminder(
 	return next;
 }
 
-export interface PlayerReminderGroup {
-	character: Character;
-	labels: ReminderLabel[];
-}
-
-/**
- * What the picker offers: every reminder of the script's characters, in script order. A
- * player can't see which characters are in play, so it is the whole script, not only those in
- * play as on the Storyteller's board (`reminderGroups`).
- */
-export function scriptReminderGroups(characters: readonly Character[]): PlayerReminderGroup[] {
-	return characters.flatMap((character) => {
-		const labels = [...new Set([...character.reminders, ...character.remindersGlobal])];
-		return labels.length ? [{ character, labels: labels.sort(byLabel) }] : [];
-	});
-}
-
 /**
  * A reminder's diameter on a player's grim, as on the board: half the token, kept between 30
  * and 48px and scaled by the Tokens setting, never under a finger's 44px tap target.
@@ -191,7 +186,8 @@ export const playerLook = (
 	symbol: r.symbol,
 	symbolColour: r.symbolColour,
 	symbolFill: r.symbolFill,
-	character: characterOf(r.characterId)
+	character: characterOf(r.characterId),
+	art: r.like ? characterOf(r.like.characterId) : undefined
 });
 
 /** Puts a new, blank generic token on a seat, last; `id` names it. */
@@ -207,6 +203,62 @@ export function addGenericReminder(
 	});
 }
 
+/**
+ * A player's own reusable ∞ tokens in their tray (plan B9 on the player's side, Trevor
+ * 2026-11-06: "the same components for parity"), made with "+ New token" as on the board,
+ * kept on this phone per game beside the player's reminders.
+ */
+export type PlayerTokens = GenericToken[];
+
+/** The most ∞ tokens a player's tray keeps. */
+const MAX_TOKENS = 20;
+const tokensKey = (room: string) => `grim-games:play:tokens:${room}`;
+
+/** Reads stored tokens, dropping anything malformed. */
+export function parsePlayerTokens(raw: unknown): PlayerTokens {
+	if (!Array.isArray(raw)) return [];
+	const tokens: PlayerTokens = [];
+	for (const t of raw) {
+		if (typeof t !== 'object' || t === null) continue;
+		const fields = t as Record<string, unknown>;
+		const { tokenId } = fields;
+		if (typeof tokenId !== 'string' || !tokenId || tokens.some((o) => o.tokenId === tokenId))
+			continue;
+		tokens.push({ tokenId, ...genericLook(fields) });
+	}
+	return tokens.slice(0, MAX_TOKENS);
+}
+
+export const readPlayerTokens = (room: string): PlayerTokens =>
+	parsePlayerTokens(readStored(tokensKey(room)));
+
+export function writePlayerTokens(room: string, tokens: PlayerTokens): void {
+	writeStored(tokensKey(room), tokens);
+}
+
+/** How many nights and days have begun by a phase: each is a dusk or a dawn passed. */
+export function phaseCount(now: PlayersPhase | undefined): { dusk: number; dawn: number } {
+	if (!now || now.kind === 'setup') return { dusk: 0, dawn: 0 };
+	return { dusk: now.number, dawn: now.kind === 'night' ? now.number - 1 : now.number };
+}
+
+/**
+ * Each # token set to count up (plan M53, `countsUp`) goes up by one for each dusk or dawn
+ * passed, as the board's do, stopping at the highest number.
+ */
+export function countUp(
+	reminders: PlayerReminders,
+	passed: { dusk: number; dawn: number }
+): PlayerReminders {
+	const up = (r: PlayerReminder): PlayerReminder => {
+		const n = symbolNumber(r.symbol);
+		const by = r.countsUp ? passed[r.countsUp] : 0;
+		if (n === undefined || by <= 0) return r;
+		return { ...r, symbol: numberSymbol(Math.min(REMINDER_NUMBER_MAX, n + by)) };
+	};
+	return Object.fromEntries(Object.entries(reminders).map(([seat, list]) => [seat, list.map(up)]));
+}
+
 /** Changes a generic token's look; empty fields go back to none. */
 export function setGenericLook(
 	reminders: PlayerReminders,
@@ -216,18 +268,4 @@ export function setGenericLook(
 ): PlayerReminders {
 	const list = remindersOn(reminders, seatId).map((r) => (r.id === id ? { ...r, ...look } : r));
 	return parsePlayerReminders({ ...reminders, [seatId]: list });
-}
-
-/**
- * The picker's two parts (Trevor, 2026-10-26: "search and guess"): the characters this player
- * guessed on any seat, or knows (a Traveller), first; then the rest, in script order.
- */
-export function guessesFirst<T extends { character: Character }>(
-	groups: readonly T[],
-	first: readonly CharacterId[]
-): { first: T[]; rest: T[] } {
-	return {
-		first: groups.filter((g) => first.includes(g.character.id)),
-		rest: groups.filter((g) => !first.includes(g.character.id))
-	};
 }

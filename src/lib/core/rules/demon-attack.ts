@@ -32,7 +32,7 @@ export function demonAttackRule(
 	}
 	for (const characterId of ids) {
 		const rule = rulesInPlay(game, characterId, characters)?.demonAttack;
-		if (rule)
+		if (rule?.maySkip)
 			return {
 				characterId,
 				...(rule.mustSkipOnce ? { mustSkipOnce: rule.mustSkipOnce } : {})

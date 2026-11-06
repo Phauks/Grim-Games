@@ -80,12 +80,12 @@ const DJINN: readonly RuleSwitch[] = [
 			const [first, ...rest] = rule.parts.ruleChanges ?? [];
 			return {
 				...rule,
+				// The prompt on a nomination is offered only while 4 or more live.
+				...(rule.rules?.onNominated
+					? { rules: { ...rule.rules, onNominated: { ...rule.rules.onNominated, minAlive: 4 } } }
+					: {}),
 				parts: {
 					...rule.parts,
-					// The prompt on a nomination is offered only while 4 or more live.
-					...(rule.parts.nominations
-						? { nominations: rule.parts.nominations.map((n) => ({ ...n, minAlive: 4 })) }
-						: {}),
 					ruleChanges: [
 						{ ...first, instructions: `${first?.instructions ?? ''} ${DJINN_THREE_ALIVE}`.trim() },
 						...rest

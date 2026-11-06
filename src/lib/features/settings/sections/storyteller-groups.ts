@@ -11,6 +11,7 @@ export const STORYTELLER_GROUPS = {
 		'deathReminderAsk',
 		'reviveReminderAsk',
 		'deadReminderAsk',
+		'flowReminderAsk',
 		'demonVotedButton',
 		'savantInfo',
 		'playerClaims',

@@ -72,5 +72,10 @@
 			"stage": "demon-kills",
 			"after": "imp"
 		}
+	},
+	"afterExecution": {
+		"on": "executed",
+		"token": "Died Today",
+		"when": "day"
 	}
 }

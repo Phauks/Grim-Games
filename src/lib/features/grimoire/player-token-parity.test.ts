@@ -1,24 +1,24 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { editionScript, toScript } from '#lib/core/data/index.ts';
+import { editionScript, toScript, type Script } from '#lib/core/data/index.ts';
 import { createGame, type EngineContext } from '#lib/core/engine/index.ts';
-import { characterLookup } from '#lib/core/model/index.ts';
+import { characterLookup, type GenericLook } from '#lib/core/model/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import { FIXED_GENERIC_ITEMS, bankItems } from './bank-items.ts';
+import { parsePlayerReminders, parsePlayerTokens } from '#lib/features/player/player-reminders.ts';
+import { bankItems, playerBankItems } from './bank-items.ts';
 
 // A player's reminder tray (player/PlayerReminderBin) and the Storyteller's bank
-// (grimoire/ReminderBank) offer the same tokens, drawn the same way (Trevor, 2026-11-06:
-// "Player view doesn't have number tokens? I'm gonna be annoyed if once again I am chasing
-// feature parity"). The player's tray had a token list of its own, so the bank's # token
-// never reached it. These fail when a token feature is added to one side only: each one is
-// either shared, Storyteller-only for a stated reason, or a listed gap.
+// (grimoire/ReminderBank) are built from the same pieces (Trevor, 2026-11-06: "Player view
+// doesn't have number tokens? I'm gonna be annoyed if once again I am chasing feature
+// parity"; then "I want them to use the same components for parity"). The player's tray had
+// a token list of its own, so the bank's # token never reached it. These fail when a token
+// feature reaches one side only: each is shared, or Storyteller-only for a stated reason.
 
 const source = (path: string) => readFileSync(`src/lib/${path}`, 'utf8');
-const bank = source('features/grimoire/bank-items.ts');
-const bankView = source('features/grimoire/ReminderBank.svelte');
+const bankItemsSource = source('features/grimoire/bank-items.ts');
+const bank = source('features/grimoire/ReminderBank.svelte');
 const pill = source('features/grimoire/ReminderHandPill.svelte');
 const tray = source('features/player/PlayerReminderBin.svelte');
-const playerReminders = source('features/player/player-reminders.ts');
 const model = source('core/model/types.ts');
 
 /** The fields of an interface, as written in its source. */
@@ -27,115 +27,111 @@ function fieldsOf(text: string, name: string): string[] {
 	return [...body.matchAll(/^\t(\w+)\??:/gm)].map((m) => m[1]);
 }
 
-type Side =
-	/** A player's tray has it too: `marker` is in its source. */
-	| { both: RegExp }
-	/** Only a Storyteller's game can know it. */
-	| { storyteller: string }
-	/** Not on the player's side yet: in PLAYER_TOKEN_GAPS_TODO. */
-	| { gap: string };
-
 /**
- * Every field of a bank token (`BankItem`). A new one fails the test until it is sorted here.
+ * The bank token fields (`BankItem`) only a Storyteller's game can give, and why. Every other
+ * field must turn up in a player's tray too. Only shrinks.
  */
-const BANK_ITEM: Record<string, Side> = {
-	key: { both: /\bkey\b/ },
-	characterId: { both: /\bcharacterId\b/ },
-	label: { both: /\blabel\b/ },
-	group: { both: /\bgroups\b/ },
-	number: { both: /FIXED_GENERIC_ITEMS/ },
-	count: { storyteller: "a player's tokens never run out, so none has a count" },
-	setup: { storyteller: "setup suggestions come from the Storyteller's game" },
-	ownerSeatId: { storyteller: 'a player cannot know which seat has the character' },
-	now: { storyteller: "the walked-through night step is the Storyteller's" },
-	extra: { storyteller: "a copy beyond what the game gives; a player's tokens never run out" },
-	token: { gap: "the game's own reusable ∞ tokens (plan B9)" },
-	makesToken: { gap: '"+ New token" (plan B9)' },
-	run: { gap: 'counting runs stacked as one token with its Token drop-down (PR 1310)' }
-};
-
-/** Every field of a generic token's look (`GenericLook`), kept by a player's tokens or not. */
-const LOOK: Record<string, Side> = {
-	note: { both: /r\.note\b/ },
-	symbol: { both: /r\.symbol\b/ },
-	symbolColour: { both: /r\.symbolColour\b/ },
-	symbolFill: { both: /r\.symbolFill\b/ },
-	like: { gap: 'a copy of a character reminder showing its art (needs "+ New token")' },
-	countsUp: { gap: 'a # token that counts up each night or day (plan M53)' }
+const STORYTELLER_ONLY: Record<string, string> = {
+	setup: "setup suggestions come from the Storyteller's game",
+	ownerSeatId: 'a player cannot know which seat has the character',
+	now: "the walked-through night step is the Storyteller's",
+	extra: "a copy beyond what the game gives; a player's tokens never run out"
 };
 
 /**
- * Token features the Storyteller has and a player doesn't yet. Only shrinks: fix one, take
- * it off here and sort its field as `both`.
+ * Token features the Storyteller has and a player doesn't yet (all closed, Trevor 2026-11-06).
+ * Only shrinks: a new one is never added here, it is built on both sides.
  */
-const PLAYER_TOKEN_GAPS_TODO = ['token', 'makesToken', 'run', 'like', 'countsUp'];
+const PLAYER_TOKEN_GAPS_TODO: string[] = [];
+
+const data = committedGameData();
+const levScript: Script = {
+	entries: ['leviathan', 'monk', 'washerwoman', 'imp'].map((id) => ({
+		kind: 'official' as const,
+		id
+	}))
+};
+const lev = characterLookup(data, levScript);
+const cast = [...lev.values()].filter((c) =>
+	levScript.entries.some((e) => 'id' in e && e.id === c.id)
+);
 
 describe("a player's reminder tray and the Storyteller's bank", () => {
-	it("draws the bank's own generic tokens, never a list of its own", () => {
-		const data = committedGameData();
+	it('builds both trays with the same item builders', () => {
+		// The generic stretch (∞, #, the grim's own ∞ tokens, "+ New token") and the stacked
+		// counting runs come from one place for both.
+		expect(bankItemsSource).toMatch(/\.\.\.genericStretch\(game\.genericTokens/);
+		expect(bankItemsSource).toMatch(/function playerBankItems[^]*genericStretch\(tokens\)/);
+		expect(bankItemsSource).toMatch(/function playerBankItems[^]*bundledCounters\(/);
+		expect(tray).toContain('playerBankItems(');
 		const script = toScript(editionScript('tb', data)!);
 		const characters = characterLookup(data, script);
 		const ctx: EngineContext = { characters, newId: () => 'id', now: () => 0, random: () => 0 };
 		const created = createGame({ type: 'CreateGame', script, playerCount: 5 }, ctx);
 		if (!created.ok) throw new Error('no game');
-		const items = bankItems(created.session.game, characters, {
+		const board = bankItems(created.session.game, characters, {
 			focus: undefined,
 			focusMode: 'front',
 			stack: false,
 			copies: new Set(),
 			bankCopies: new Map()
 		});
-		const fixed = items.filter((i) => i.group === 'generic' && !i.token && !i.makesToken);
-		expect(fixed.map((i) => i.key)).toEqual(FIXED_GENERIC_ITEMS.map((i) => i.key));
-		// Both include the # token (plan M35).
-		expect(FIXED_GENERIC_ITEMS.some((i) => i.number)).toBe(true);
-		expect(bank).toContain('...FIXED_GENERIC_ITEMS');
-		expect(tray).toContain('FIXED_GENERIC_ITEMS.map(');
-		// Drawn as the bank draws them, with the look a copy starts with.
-		expect(tray).toContain('bankView(item');
-		expect(tray).toContain('bankLook(item)');
-		expect(tray).not.toMatch(/: Token = \{/);
+		const phone = playerBankItems([...characters.values()], [], []);
+		const generic = (items: typeof board) =>
+			items.filter((i) => i.group === 'generic').map((i) => i.key);
+		expect(generic(phone)).toEqual(generic(board));
 	});
 
-	it("picks a held # token's number with the same control", () => {
-		for (const side of [pill, tray]) {
-			expect(side).toContain('<ReminderNumberPick');
-			expect(side).not.toContain('<NumberSelect');
+	it('draws, holds and edits tokens with the same components', () => {
+		for (const side of [bank, tray]) {
+			expect(side).toContain('<ReminderTray');
+			expect(side).toContain('<BankToken');
+			// Pulled up, the same search narrows both (searchBank).
+			expect(side).toContain('<SearchField');
+			// Never a token of its own: BankToken draws "+ New token" and a stack's count.
+			expect(side).not.toMatch(/<(NewTokenButton|ReminderCount)\b/);
 		}
-	});
-
-	it('holds, drags and edits tokens with the same pieces', () => {
-		for (const side of [bankView, tray]) expect(side).toContain('<ReminderTray');
-		for (const side of [pill, tray]) expect(side).toContain('<ReminderInHand');
+		for (const side of [pill, tray]) {
+			expect(side).toContain('<ReminderInHand');
+			expect(side).toContain('<HeldTokenPick');
+			expect(side).not.toMatch(/<(NumberSelect|Select)\b/);
+		}
 		expect(tray).toContain('<GenericLookDialog');
 	});
 
-	it('sorts every bank token feature as shared, Storyteller-only or a listed gap', () => {
-		const fields = fieldsOf(bank, 'BankItem');
+	it("gives a player's tray every bank token feature but the Storyteller's own", () => {
+		const fields = fieldsOf(bankItemsSource, 'BankItem');
 		expect(fields.length).toBeGreaterThan(5);
-		expect(Object.keys(BANK_ITEM).sort()).toEqual([...fields].sort());
-		for (const [field, side] of Object.entries(BANK_ITEM)) {
-			if ('both' in side) expect(tray, field).toMatch(side.both);
-			if ('gap' in side) expect(PLAYER_TOKEN_GAPS_TODO, field).toContain(field);
+		const phone = playerBankItems(cast, ['monk'], [{ tokenId: 't', note: 'Chose' }]);
+		const seen = new Set(phone.flatMap((i) => Object.keys(i)));
+		for (const field of fields) {
+			if (field in STORYTELLER_ONLY) expect(seen.has(field), field).toBe(false);
+			else expect(seen.has(field), `${field} never reaches a player's tray`).toBe(true);
 		}
 	});
 
-	it("sorts every generic look field as kept by a player's tokens or a listed gap", () => {
+	it("keeps every generic look field on a player's tokens", () => {
 		const block = /export type GenericLook = Pick<[^,]+,([^>]+)>/.exec(model)?.[1] ?? '';
 		const fields = [...block.matchAll(/'(\w+)'/g)].map((m) => m[1]);
 		expect(fields.length).toBeGreaterThan(3);
-		expect(Object.keys(LOOK).sort()).toEqual([...fields].sort());
-		for (const [field, side] of Object.entries(LOOK)) {
-			if ('both' in side) expect(playerReminders, field).toMatch(side.both);
-			if ('gap' in side) expect(PLAYER_TOKEN_GAPS_TODO, field).toContain(field);
-		}
+		// One of each, as the board can set it; a new field fails here until it has a value.
+		const look: Required<GenericLook> = {
+			note: 'Chose',
+			symbol: '#2',
+			symbolColour: 'red',
+			symbolFill: true,
+			like: { characterId: 'monk', label: 'Safe' } as GenericLook['like'] & object,
+			countsUp: 'dusk'
+		};
+		expect(Object.keys(look).sort()).toEqual([...fields].sort());
+		const placed = parsePlayerReminders({
+			s1: [{ characterId: 'generic', label: '', id: 'g', ...look }]
+		});
+		expect(placed.s1[0]).toMatchObject(look);
+		expect(parsePlayerTokens([{ tokenId: 't', ...look }])[0]).toMatchObject(look);
 	});
 
 	it('only shrinks its list of gaps', () => {
-		const gaps = [...Object.entries(BANK_ITEM), ...Object.entries(LOOK)]
-			.filter(([, side]) => 'gap' in side)
-			.map(([field]) => field);
-		expect([...PLAYER_TOKEN_GAPS_TODO].sort()).toEqual(gaps.sort());
-		expect(PLAYER_TOKEN_GAPS_TODO.length).toBeLessThanOrEqual(5);
+		expect(PLAYER_TOKEN_GAPS_TODO).toEqual([]);
 	});
 });

@@ -88,6 +88,15 @@
 		modeId?: string;
 		/** The special rules chosen, in order; New game sets them when the room votes on them. */
 		ruleIds?: string[];
+		/** Above Game mode, in the settings' column: New game's Host (Storyteller or Local Grim). */
+		top?: Snippet;
+		/**
+		 * A Local Grim game (plan M55): Create game opens the mode's script on the player
+		 * screen instead of the Storyteller's setup. Every setting stays (Trevor, 2026-11-06:
+		 * "There is no difference between setup for a storyteller or player on the first
+		 * screen"); a mode with no single script to open keeps Create game in place, but off.
+		 */
+		local?: (script: ScriptChoice) => void;
 	}
 
 	let {
@@ -95,7 +104,9 @@
 		standardScript,
 		standardPlayers,
 		modeId = $bindable(STANDARD.id),
-		ruleIds = $bindable([])
+		ruleIds = $bindable([]),
+		top,
+		local
 	}: Props = $props();
 	/**
 	 * Starts the game. The special rules are chosen on Character selection since 2026-10-29
@@ -411,6 +422,7 @@
 	<!-- Game mode, About, Game mode settings and Script each sit under the one PageSection
 	header (Trevor, 2026-10-19: "should all share the common header"). -->
 	<div class="modes">
+		{@render top?.()}
 		<PageSection title={t('modes.label')}>
 			<div class="pick">
 				<!-- One drop-down for the mode (Trevor, 2026-10-18: "a dropdown, not buttons"). -->
@@ -614,8 +626,8 @@
 			<Button
 				variant="accent"
 				icon="grimoire"
-				disabled={starting}
-				onclick={() => startKeepingDraft(start)}
+				disabled={starting || (!!local && scriptKind !== 'one')}
+				onclick={() => (local ? local(script as ScriptChoice) : startKeepingDraft(start))}
 			>
 				{t('modes.start')}
 			</Button>

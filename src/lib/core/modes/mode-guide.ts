@@ -92,6 +92,13 @@ export const GUIDE_TOP: GuideField[] = [
 		type: 'object',
 		required: true,
 		about: 'What the file changes, by part (below). Every part is optional.'
+	},
+	{
+		name: 'rules',
+		type: 'rules block',
+		required: false,
+		about:
+			'What the file does in play, written as a character’s rules block: the same parts, read the same way, so a mode or rule works like a Fabled or Loric. Count changes are setupModifier, whom the Demon attacks is demonAttack with a target, who keeps an ability when dead is deadKeepAbilities, extra night wakes are nightWakes, and what a nomination sets off is onNominated.'
 	}
 ];
 

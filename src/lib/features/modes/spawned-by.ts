@@ -6,17 +6,17 @@ import { readGameMode } from './game-mode-store.ts';
 /**
  * The game's mode and special rules that set a part, so a screen one of them opens can show
  * them at its top (Trevor, 2026-10-23: "always show the associated rule that spawned the
- * screen"). The mode counts only when it isn't Standard; rules keep the order chosen.
+ * screen"). Each is tested whole, by its parts or rules block. The mode counts only when it isn't Standard; rules keep the order chosen.
  */
 export function spawnedBy(
 	gameId: GameId,
-	has: (parts: GameMode['parts'] | SpecialRule['parts']) => boolean
+	has: (file: GameMode | SpecialRule) => boolean
 ): (GameMode | SpecialRule)[] {
 	const record = readGameMode(gameId);
 	if (!record) return [];
 	const mode = findMode(record.modeId);
 	return [
-		...(mode && mode.id !== STANDARD.id && has(mode.parts) ? [mode] : []),
-		...record.rules.filter((rule) => has(rule.parts))
+		...(mode && mode.id !== STANDARD.id && has(mode) ? [mode] : []),
+		...record.rules.filter((rule) => has(rule))
 	];
 }

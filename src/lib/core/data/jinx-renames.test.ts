@@ -59,7 +59,7 @@ const OLD_TO_NEW: [string, unknown, unknown][] = [
 	[
 		'neighbourBecomes',
 		{ neighbourBecomes: 'minion' },
-		{ alsoBecomes: { type: 'minion', player: 'neighbour' } }
+		{ alsoBecomes: { type: 'minion', players: 'neighbours' } }
 	],
 	[
 		'noKill executed-partner',
