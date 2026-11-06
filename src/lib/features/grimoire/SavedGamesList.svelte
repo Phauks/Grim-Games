@@ -20,21 +20,12 @@
 	import type { GameId } from '#lib/core/model/index.ts';
 	import { exportHref } from '#lib/features/history/export-hash.ts';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
-	import { gameStore } from '#lib/features/game/session.svelte.ts';
 	import { forgetGame } from './forget-game.ts';
-	import { labGameId } from '#lib/features/character-lab/lab-store.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import ScriptName from '#lib/features/scripts/ScriptName.svelte';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
-	import {
-		endedGames,
-		gameStarts,
-		nightUnderway,
-		nightViews,
-		type EndedGame
-	} from './device-notes.ts';
-	import { phaseText } from './phase-text.ts';
-	import { gamePhase } from '#lib/core/rules/index.ts';
+	import type { EndedGame } from './device-notes.ts';
+	import { gameStageText, storytellerGames } from './storyteller-games.ts';
 	import { gameModeName } from './game-mode-name.ts';
 	import AlignmentPill from './AlignmentPill.svelte';
 
@@ -56,11 +47,7 @@
 
 	async function refresh() {
 		try {
-			({ games: all, unreadable } = await gameStore().list());
-			// The Character Lab's own game is not one being played (plan M37).
-			const lab = labGameId();
-			all = all.filter((g) => g.gameId !== lab);
-			ended = endedGames.read();
+			({ all, unreadable, ended } = await storytellerGames());
 		} catch (e) {
 			reportError(e, { area: 'grimoire' });
 		}
@@ -100,14 +87,8 @@
 		await refresh();
 	}
 
-	/** Where a game is up to, for the list: the board's phase (gamePhase), so they agree. */
-	const stageText = (game: SavedGameSummary) => {
-		const phase = gamePhase(game.days, {
-			begun: gameStarts.read(game.gameId) !== undefined,
-			nightUnderway: nightUnderway(nightViews.read(game.gameId), game.days, !!ended[game.gameId])
-		});
-		return phase.kind === 'setup' ? 'Setting up' : phaseText(phase);
-	};
+	const stageText = (game: SavedGameSummary) =>
+		gameStageText(game.gameId, game.days, !!ended[game.gameId]);
 </script>
 
 <!-- The mode in its own colour after the script's name, as in the board's corner title. -->

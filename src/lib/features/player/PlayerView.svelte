@@ -67,6 +67,9 @@
 	import LeaveGuard from '#lib/features/setup/LeaveGuard.svelte';
 	import ScriptName from '#lib/features/scripts/ScriptName.svelte';
 	import { scriptLogo } from '#lib/core/data/script-logo.ts';
+	import { formatRoomCode } from '#lib/core/sync/room-code.ts';
+	import type { LeaveCard } from '#lib/features/room/LeaveGameDialog.svelte';
+	import { playersOnlyLine } from './players-only-games.svelte.ts';
 
 	// A reading page for players, not a grimoire (Trevor, 2026-10-16): no seats or controls.
 
@@ -245,6 +248,32 @@
 		});
 	});
 
+	/**
+	 * Leaving a game, not just a script: a room's, or a players-only town with seats, as Join
+	 * game lists it (Trevor, 2026-11-06). A script only being read keeps the plain question.
+	 */
+	function leaveCard(): { title: string; card: LeaveCard } | undefined {
+		if (!script) return undefined;
+		const logo = scriptLogo(script);
+		const named = { name: script.name, ...(logo ? { logo } : {}) };
+		const title = t('shell.leave.title');
+		if (inRoom) {
+			const code = formatRoomCode(inRoom);
+			const line =
+				inRoom === lastRoom() && roomTable.storyteller
+					? t('room.recentLine', { code, name: roomTable.storyteller })
+					: code;
+			return { title, card: { ...named, line, when: t('shell.leave.room') } };
+		}
+		const seats = key ? (keptLocalTown(key)?.seats ?? []) : [];
+		if (join || seats.length === 0) return undefined;
+		const dead = seats.filter((s) => s.dead).length;
+		return {
+			title,
+			card: { ...named, line: playersOnlyLine(seats.length, dead), when: t('shell.leave.town') }
+		};
+	}
+
 	/** The script came from an offline code and no room sent it: the game is offline. */
 	const offline = $derived(!!script && !inRoom && !join && offlineScript.key === scriptKey(script));
 
@@ -371,6 +400,7 @@
 	when={!!script}
 	title={t('player.leaveTitle')}
 	body={t('player.leaveBody')}
+	card={leaveCard}
 	within={(url) => url.pathname === resolve('/play') || url.pathname.startsWith(resolve('/join'))}
 	unload={false}
 />
