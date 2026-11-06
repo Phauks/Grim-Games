@@ -30,7 +30,6 @@
 	import { buildInfo } from '#lib/build-info.ts';
 	import { buildSwitch } from '#lib/features/about/build-switch.ts';
 	import { reportWithDiagnostics } from '#lib/features/errors/report-with-diagnostics.ts';
-	import LastGameRow from '#lib/features/game/LastGameRow.svelte';
 
 	interface Props {
 		/** Called after a choice, e.g. to close the drawer. */
@@ -109,8 +108,6 @@
 
 <!-- Plain links in labelled sections: a screen that must confirm leaving catches them in the root layout. -->
 <div class="nav-list">
-	<!-- The game left last, above Home (Trevor, 2026-11-06). -->
-	<LastGameRow {onChoose} />
 	<ul class="top">{@render link(HOME_ITEM)}</ul>
 	<div class="sections">
 		{#each NAV_SECTIONS as navSection (navSection.id)}
