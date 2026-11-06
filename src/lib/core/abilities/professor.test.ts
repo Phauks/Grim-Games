@@ -17,6 +17,7 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import {
 	committedCharacter,
 	committedGameData,
+	committedNightOrder,
 	nightSheetPresence
 } from '#lib/core/testing/committed-data.ts';
 import { abilityState } from '#lib/core/rules/ability.ts';
@@ -154,7 +155,7 @@ describe('Professor', () => {
 					(at) => ({ type: 'SetDead', seatId: at.seat('innkeeper'), dead: false }),
 					(at) => ({ type: 'SetDead', seatId: at.seat('empath'), dead: false })
 				);
-			const order = committedGameData().nightSheet.otherNight;
+			const order = committedNightOrder('otherNight');
 			const revived = new Set([s.seat('innkeeper'), s.seat('empath')]);
 			const skips = (seat: 'innkeeper' | 'empath') =>
 				revivedAfterStep(s.game, s.seat(seat), seat, order, s.characters, revived);
@@ -172,7 +173,13 @@ describe('Professor', () => {
 			expect(s.game.seats[s.seat('chef')].dead).toBe(false);
 			const data = committedGameData();
 			const inPlay = s.game.seating.map((id) => data.byId.get(s.game.seats[id].characterId!)!);
-			const order = nightOrder({ night: 'other', sheet: data.nightSheet, inPlay, players: 7 });
+			const order = nightOrder({
+				night: 'other',
+				sheet: data.nightSheet,
+				inPlay,
+				players: 7,
+				official: data.byId
+			});
 			const revived = [...revivedSinceNewDay(s.session.log.entries.flatMap((e) => e.events))];
 			const ids = withNightInfo(order.steps, s.game, s.characters, 'other', {
 				died: [],

@@ -44,5 +44,11 @@
 			}
 		]
 	},
-	"staysAsleep": "other"
+	"staysAsleep": "other",
+	"nightOrder": {
+		"other": {
+			"stage": "reacts",
+			"after": "farmer"
+		}
+	}
 }

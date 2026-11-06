@@ -58,5 +58,11 @@
 		"alhadikhia": {
 			"notSecondDemon": true
 		}
+	},
+	"nightOrder": {
+		"other": {
+			"stage": "minions",
+			"after": "mezepheles"
+		}
 	}
 }

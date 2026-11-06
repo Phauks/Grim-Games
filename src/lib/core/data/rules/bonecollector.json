@@ -48,5 +48,11 @@
 	},
 	"wakesWhen": {
 		"untilToken": "No Ability"
+	},
+	"nightOrder": {
+		"other": {
+			"stage": "travellers",
+			"after": "harlot"
+		}
 	}
 }

@@ -42,6 +42,7 @@ const boffinGives =
 import {
 	committedCharacter,
 	committedGameData,
+	committedNightOrder,
 	nightSheetPresence
 } from '#lib/core/testing/committed-data.ts';
 
@@ -158,9 +159,15 @@ describe('Boffin', () => {
 			const { game, seats } = castGame(['boffin', 'imp', 'monk', 'empath', 'saint'], giveChef);
 			const data = committedGameData();
 			const inPlay = game.seating.map((s) => data.byId.get(game.seats[s].characterId!)!);
-			const order = data.nightSheet.firstNight;
+			const order = committedNightOrder('firstNight');
 			const steps = withGainedSteps(
-				nightOrder({ night: 'first', sheet: data.nightSheet, inPlay, players: 5 }).steps,
+				nightOrder({
+					night: 'first',
+					sheet: data.nightSheet,
+					inPlay,
+					players: 5,
+					official: data.byId
+				}).steps,
 				game,
 				characters,
 				'first',

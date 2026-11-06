@@ -128,7 +128,13 @@ describe('Pixie', () => {
 			const data = committedGameData();
 			const inPlay = ['pixie', 'monk', 'chef', 'imp', 'poisoner'].map((id) => data.byId.get(id)!);
 			const steps = withGainedSteps(
-				nightOrder({ night: 'other', sheet: data.nightSheet, inPlay, players: 5 }).steps,
+				nightOrder({
+					night: 'other',
+					sheet: data.nightSheet,
+					inPlay,
+					players: 5,
+					official: data.byId
+				}).steps,
 				s.game,
 				s.characters,
 				'other'

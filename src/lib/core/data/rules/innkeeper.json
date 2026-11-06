@@ -69,5 +69,11 @@
 	"reminderEnds": {
 		"Safe": "dawn",
 		"Drunk": "dusk"
+	},
+	"nightOrder": {
+		"other": {
+			"stage": "impairs",
+			"after": "courtier"
+		}
 	}
 }

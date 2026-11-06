@@ -84,5 +84,11 @@
 	"madAs": {
 		"token": "Mad",
 		"mad": "self"
+	},
+	"nightOrder": {
+		"first": {
+			"stage": "minions",
+			"after": "pukka"
+		}
 	}
 }

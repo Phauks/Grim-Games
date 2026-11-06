@@ -51,5 +51,11 @@
 	"stopsKilling": {
 		"token": "Doesn't Kill",
 		"type": "demon"
+	},
+	"nightOrder": {
+		"other": {
+			"stage": "stops-kills",
+			"after": "lycanthrope"
+		}
 	}
 }

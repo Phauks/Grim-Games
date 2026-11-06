@@ -29,5 +29,11 @@
 		"marionette": {
 			"notShown": "partner-seat"
 		}
+	},
+	"nightOrder": {
+		"first": {
+			"stage": "changes",
+			"after": "yaggababble"
+		}
 	}
 }

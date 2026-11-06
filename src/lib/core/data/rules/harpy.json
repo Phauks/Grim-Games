@@ -98,5 +98,15 @@
 		"token": "Mad",
 		"breaking": "death",
 		"alsoDies": "2nd"
+	},
+	"nightOrder": {
+		"first": {
+			"stage": "minions",
+			"after": "fearmonger"
+		},
+		"other": {
+			"stage": "minions",
+			"after": "fearmonger"
+		}
 	}
 }

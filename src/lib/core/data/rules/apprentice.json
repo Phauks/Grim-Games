@@ -49,5 +49,11 @@
 			"characters": ["marked"],
 			"token": "Is The Apprentice"
 		}
+	},
+	"nightOrder": {
+		"first": {
+			"stage": "travellers",
+			"after": "kazali"
+		}
 	}
 }

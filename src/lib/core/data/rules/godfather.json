@@ -77,5 +77,15 @@
 	},
 	"reminderEnds": {
 		"Died Today": "dawn"
+	},
+	"nightOrder": {
+		"first": {
+			"stage": "impairs",
+			"after": "snakecharmer"
+		},
+		"other": {
+			"stage": "kills",
+			"after": "assassin"
+		}
 	}
 }

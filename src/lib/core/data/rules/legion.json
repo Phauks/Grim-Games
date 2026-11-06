@@ -87,5 +87,11 @@
 		"self": {
 			"types": ["minion"]
 		}
+	},
+	"nightOrder": {
+		"other": {
+			"stage": "demon-kills",
+			"after": "princess"
+		}
 	}
 }

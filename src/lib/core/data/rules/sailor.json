@@ -71,5 +71,15 @@
 				"reason": "Says who gets the Drunk token and when it comes off."
 			}
 		}
+	},
+	"nightOrder": {
+		"first": {
+			"stage": "demon-info",
+			"after": "king"
+		},
+		"other": {
+			"stage": "impairs",
+			"after": "poppygrower"
+		}
 	}
 }

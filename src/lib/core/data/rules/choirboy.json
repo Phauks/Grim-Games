@@ -19,5 +19,11 @@
 			"characters": ["king"],
 			"by": "demon"
 		}
+	},
+	"nightOrder": {
+		"other": {
+			"stage": "reacts",
+			"after": "professor"
+		}
 	}
 }

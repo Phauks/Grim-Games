@@ -3,7 +3,11 @@
 	"onDeath": {
 		"by": "demon"
 	},
-	"afterDeath": { "cause": ["demon"], "nominations": 2, "votes": 2 },
+	"afterDeath": {
+		"cause": ["demon"],
+		"nominations": 2,
+		"votes": 2
+	},
 	"reminderTargets": {
 		"Has Ability": {
 			"seat": "self",
@@ -53,5 +57,11 @@
 			}
 		]
 	},
-	"staysAsleep": "other"
+	"staysAsleep": "other",
+	"nightOrder": {
+		"other": {
+			"stage": "reacts",
+			"after": "sage"
+		}
+	}
 }

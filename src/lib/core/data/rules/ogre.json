@@ -48,8 +48,21 @@
 		"recluse": {
 			"learns": {
 				"what": "alignment",
-				"when": [{ "partnerMarked": "Friend" }, { "alignment": "evil" }]
+				"when": [
+					{
+						"partnerMarked": "Friend"
+					},
+					{
+						"alignment": "evil"
+					}
+				]
 			}
+		}
+	},
+	"nightOrder": {
+		"first": {
+			"stage": "learns",
+			"after": "spy"
 		}
 	}
 }

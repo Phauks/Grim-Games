@@ -84,5 +84,15 @@
 		"bountyhunter": {
 			"partnerSetup": true
 		}
+	},
+	"nightOrder": {
+		"first": {
+			"stage": "changes",
+			"after": "boffin"
+		},
+		"other": {
+			"stage": "changes",
+			"after": "bonecollector"
+		}
 	}
 }

@@ -53,5 +53,11 @@
 	"reminderMovement": {
 		"fixed": ["Minion", "Wrong"],
 		"why": "Marks the information the player started knowing."
+	},
+	"nightOrder": {
+		"first": {
+			"stage": "learns",
+			"after": "librarian"
+		}
 	}
 }

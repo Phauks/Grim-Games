@@ -77,5 +77,15 @@
 				"reason": "Says the new target is poisoned and last night’s target dies, then is healthy."
 			}
 		}
+	},
+	"nightOrder": {
+		"first": {
+			"stage": "minions",
+			"after": "mezepheles"
+		},
+		"other": {
+			"stage": "demon-kills",
+			"after": "zombuul"
+		}
 	}
 }

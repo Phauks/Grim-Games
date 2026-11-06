@@ -47,5 +47,11 @@
 		"you-are": {
 			"characters": ["self"]
 		}
+	},
+	"nightOrder": {
+		"other": {
+			"stage": "demon-kills",
+			"after": "legion"
+		}
 	}
 }
