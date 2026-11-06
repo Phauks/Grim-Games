@@ -36,6 +36,7 @@
 	"reminderEnds": {
 		"Evil Wakes": "dawn"
 	},
+	"optionalRuleText": "If the Poppy Grower becomes drunk, poisoned, or leaves play, the Minions and Demon learn who each other are that night.",
 	"optionalRule": {
 		"evilInfo": {
 			"notes": {

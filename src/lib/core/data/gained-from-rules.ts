@@ -12,6 +12,9 @@
  *   character's ability (the Philosopher's Is The Philosopher).
  * - `wakes`: the player then wakes when the gained character would, with its night text
  *   (the Pixie's How to Run).
+ * - `ifEvil`: their own reminder, placed on themselves when the player carrying `token` is evil:
+ *   they are impaired by it, and their step only reminds the Storyteller of that (the
+ *   Cannibal's Poisoned, https://wiki.bloodontheclocktower.com/Cannibal#How_to_Run).
  * - `choose`: the player chooses a character of these types whose ability they gain (the
  *   Philosopher's good character). Its night step offers the pick: a character in play puts
  *   `token` on its player; any other is held by the player (`Seat.abilities`, via this
@@ -33,6 +36,7 @@ export interface GainedFrom {
 	pending?: ReminderLabel;
 	swapped?: true;
 	wakes?: true;
+	ifEvil?: ReminderLabel;
 	choose?: readonly SeatedType[];
 }
 
@@ -47,12 +51,13 @@ export function readGainedFrom(
 		issues.add(path, `expected object, got ${describe(raw)}`);
 		return undefined;
 	}
-	checkKeys(raw, ['token', 'pending', 'swapped', 'wakes', 'choose'], path, issues);
+	checkKeys(raw, ['token', 'pending', 'swapped', 'wakes', 'ifEvil', 'choose'], path, issues);
 	if (raw.token === undefined) issues.add(`${path}.token`, 'required');
 	const token = readToken(raw, 'token', path, issues, reminders);
 	const pending = readToken(raw, 'pending', path, issues, reminders);
 	const swapped = readBoolean(raw, 'swapped', path, issues);
 	const wakes = readBoolean(raw, 'wakes', path, issues);
+	const ifEvil = readToken(raw, 'ifEvil', path, issues, reminders);
 	const choose = readStringArray(raw, 'choose', path, issues);
 	const bad = (choose ?? []).filter((t) => !(SEATED_TYPES as readonly string[]).includes(t));
 	if (bad.length > 0) issues.add(`${path}.choose`, `expected types, got ${bad.join(', ')}`);
@@ -62,6 +67,7 @@ export function readGainedFrom(
 		...(pending ? { pending } : {}),
 		...(swapped ? { swapped: true as const } : {}),
 		...(wakes ? { wakes: true as const } : {}),
+		...(ifEvil ? { ifEvil } : {}),
 		...(choose && choose.length > 0 && bad.length === 0
 			? { choose: choose as readonly SeatedType[] }
 			: {})
