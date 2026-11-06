@@ -78,6 +78,10 @@ export const resets = {
 				'qrModules',
 				'qrFinders'
 			),
-			assistance: assistanceWith([...STORYTELLER_GROUPS.night, ...STORYTELLER_GROUPS.day])
+			assistance: assistanceWith([
+				...STORYTELLER_GROUPS.night,
+				...STORYTELLER_GROUPS.day,
+				...STORYTELLER_GROUPS.reminders
+			])
 		})
 } satisfies Record<string, () => void>;

@@ -60,6 +60,23 @@
 <SettingHeading title={t('settings.groupNight')} first />
 {#each STORYTELLER_GROUPS.night as key (key)}{@render toggle(key)}{/each}
 
+<!-- Setup: what players' phones show while it runs, and how game modes are described (Trevor,
+     2026-11-06: moved out of Day and Bag draw). -->
+<SettingHeading title={t('settings.groupSetupPhase')} />
+<SettingSelect
+	label={t('day.setupForPlayers')}
+	value={gameSettings.current.setupForPlayers}
+	options={SETUP_LOOKS.map((value) => ({ value, label: t(`day.setupForPlayers.${value}`) }))}
+	defaultValue="candles"
+	onChange={(setupForPlayers) => gameSettings.setDefault({ setupForPlayers })}
+/>
+<SettingToggle
+	label={t('settings.ownWording')}
+	description={t('settings.ownWordingHelp')}
+	checked={preferences.current.ownWording}
+	onChange={(ownWording) => preferences.update({ ownWording })}
+/>
+
 <SettingHeading title={t('settings.groupSetup')} />
 <!-- What face-down bag tiles show (Trevor, 2026-10-16: a dropdown, not a switch). -->
 <SettingSelect
@@ -70,45 +87,42 @@
 	onChange={(tileFace) => preferences.update({ tileFace })}
 />
 <BagDrawRows values={gameSettings.current} onChange={(change) => gameSettings.setDefault(change)} />
-<SettingToggle
-	label={t('settings.ownWording')}
-	description={t('settings.ownWordingHelp')}
-	checked={preferences.current.ownWording}
-	onChange={(ownWording) => preferences.update({ ownWording })}
-/>
 
 <SettingHeading title={t('settings.groupDay')} />
-{#each STORYTELLER_GROUPS.day as key (key)}
-	{@render toggle(key)}
-	{#if key === 'dayAfterNight'}
-		<!-- Reminders that run out at dawn or dusk (Trevor, 2026-11-03: off by default). -->
-		<SettingSelect
-			label={t('settings.reminderRemoval')}
-			description={t('settings.reminderRemovalHelp')}
-			value={preferences.current.reminderRemoval}
-			options={REMINDER_REMOVALS.map((value) => ({
-				value,
-				label: t(`settings.reminderRemoval.${value}`)
-			}))}
-			defaultValue="off"
-			onChange={(reminderRemoval) => preferences.update({ reminderRemoval })}
-		/>
-		<!-- Day and night counters and number tokens that count up (plan M53, Trevor 2026-11-04). -->
-		<SettingSelect
-			label={t('settings.countingReminders')}
-			description={t('settings.countingRemindersHelp')}
-			value={preferences.current.countingReminders}
-			options={COUNTING_REMINDERS.map((value) => ({
-				value,
-				label: t(`settings.countingReminders.${value}`)
-			}))}
-			defaultValue="off"
-			onChange={(countingReminders) => preferences.update({ countingReminders })}
-		/>
-	{/if}
-{/each}
-<!-- The day timer's own choices, the same values as on the timer (Trevor, 2026-10-17); its
-     sound and vibration are in Settings > Sound (plan U1). -->
+{#each STORYTELLER_GROUPS.day as key (key)}{@render toggle(key)}{/each}
+
+<!-- Reminders going on and coming off the board, at any time of day (Trevor, 2026-11-06). -->
+<SettingHeading title={t('settings.groupReminders')} />
+<!-- Reminders that run out at dawn or dusk (Trevor, 2026-11-03: off by default). -->
+<SettingSelect
+	label={t('settings.reminderRemoval')}
+	description={t('settings.reminderRemovalHelp')}
+	value={preferences.current.reminderRemoval}
+	options={REMINDER_REMOVALS.map((value) => ({
+		value,
+		label: t(`settings.reminderRemoval.${value}`)
+	}))}
+	defaultValue="off"
+	onChange={(reminderRemoval) => preferences.update({ reminderRemoval })}
+/>
+<!-- Day and night counters and number tokens that count up (plan M53, Trevor 2026-11-04). -->
+<SettingSelect
+	label={t('settings.countingReminders')}
+	description={t('settings.countingRemindersHelp')}
+	value={preferences.current.countingReminders}
+	options={COUNTING_REMINDERS.map((value) => ({
+		value,
+		label: t(`settings.countingReminders.${value}`)
+	}))}
+	defaultValue="off"
+	onChange={(countingReminders) => preferences.update({ countingReminders })}
+/>
+{#each STORYTELLER_GROUPS.reminders as key (key)}{@render toggle(key)}{/each}
+
+<!-- The day timer's own choices, the same values as on the timer (Trevor, 2026-10-17), under
+     the heading Sound uses (Trevor, 2026-11-06); its sound and vibration are in Settings > Sound
+     (plan U1). Two states, so a switch: on counts up as a stopwatch. -->
+<SettingHeading title={t('day.timer')} />
 <SettingToggle
 	label={t('day.timerKeepAwake')}
 	description={canKeepAwake() ? undefined : t('day.timerKeepAwakeUnavailable')}
@@ -116,24 +130,12 @@
 	disabled={!canKeepAwake()}
 	onChange={(on) => liveDayTimer.setKeepAwake(on)}
 />
-<SettingSelect
-	label={t('day.timer')}
-	value={preferences.current.timerMode}
-	options={[
-		{ value: 'down', label: t('day.timerModeDown') },
-		{ value: 'up', label: t('day.timerModeUp') }
-	]}
-	defaultValue="down"
-	onChange={(timerMode) => preferences.update({ timerMode })}
+<SettingToggle
+	label={t('day.timerModeUp')}
+	checked={preferences.current.timerMode === 'up'}
+	onChange={(on) => preferences.update({ timerMode: on ? 'up' : 'down' })}
 />
 <TimerPerPlayerRow />
-<SettingSelect
-	label={t('day.setupForPlayers')}
-	value={gameSettings.current.setupForPlayers}
-	options={SETUP_LOOKS.map((value) => ({ value, label: t(`day.setupForPlayers.${value}`) }))}
-	defaultValue="candles"
-	onChange={(setupForPlayers) => gameSettings.setDefault({ setupForPlayers })}
-/>
 
 <!-- Every PIN and lock in one place (Trevor, 2026-10-27: "do we need better centralized PIN
      controls"): the cover's switch, also on the cover itself, and the game's Storyteller PIN,

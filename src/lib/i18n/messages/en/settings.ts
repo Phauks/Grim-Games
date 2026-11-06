@@ -13,6 +13,8 @@ export const settings = {
 	'settings.groupNight': 'Night',
 	'settings.groupSetup': 'Bag draw',
 	'settings.groupDay': 'Day',
+	'settings.groupSetupPhase': 'Setup',
+	'settings.groupReminders': 'Reminders',
 	'settings.icons': 'Icons',
 	'settings.storyteller': 'Storyteller',
 	'settings.reset': 'Reset settings',
@@ -136,14 +138,12 @@ export const settings = {
 	'settings.textSize': 'Text size',
 	'settings.textSizeHelp':
 		'Changes the size of text only; buttons, icons and spacing stay the same.',
-	'settings.textAlign': 'Text alignment',
+	'settings.textAlign': 'Justify text',
 	'settings.textAlignHelp':
 		'How paragraphs line up: ability text, night steps, notes and help text. Justified spreads each line to both edges. Headings, labels and buttons stay as they are.',
 	'settings.allowZoom': 'Pinch to zoom',
 	'settings.allowZoomHelp':
 		'Lets two fingers zoom in on the page. Leave it off so a pinch never zooms the app by accident; Text size makes text larger without zooming.',
-	'settings.alignLeft': 'Left aligned',
-	'settings.alignJustify': 'Justified',
 	// Named by the setting's label through aria-describedby, so it never matches the setting's name.
 	'settings.resetToDefault': 'Reset to default',
 	'settings.iconSize': 'Interface icon size',
