@@ -137,7 +137,8 @@
 <!-- Open while it has a stage; closing it forgets the stage. -->
 <BottomSheet
 	bind:open={() => sheetStage !== undefined, (open) => !open && (sheetStage = undefined)}
-	title={sheetStage ? stageName(sheetStage) : ''}>
+	title={sheetStage ? stageName(sheetStage) : ''}
+>
 	{#if sheetStage}
 		{@const stage = sheetStage}
 		<ol class="sheet-steps">
