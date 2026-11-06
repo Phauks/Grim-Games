@@ -246,7 +246,13 @@ test('Start on opens the game on a later day', async ({ page }) => {
 	await loadGame(page);
 	const frame = page.getByTestId('lab-frame');
 	const board = frame.locator('iframe').contentFrame();
-	await expect(board.getByRole('button', { name: 'Execution', exact: true })).toBeVisible();
+	const execution = board.getByRole('button', { name: 'Execution', exact: true });
+	// The partners are random: with a Vortox in play, a day with no execution yet already asks
+	// to end the game, as it should. Cancel it to see the day.
+	const endGame = board.getByRole('alertdialog', { name: 'End game?' });
+	await expect(execution.or(endGame)).toBeVisible();
+	if (await endGame.isVisible()) await endGame.getByRole('button', { name: 'Cancel' }).tap();
+	await expect(execution).toBeVisible();
 	await expect(board.getByText('Day 2', { exact: true }).first()).toBeVisible();
 	await expect(board.getByRole('button', { name: 'End night', exact: true })).toHaveCount(0);
 });
@@ -338,7 +344,8 @@ test("the lab's game stays on this device, out of the device's own room", async 
 	await loadGame(page);
 	await expect((await labSeats(page)).first()).toBeVisible();
 	const board = page.getByTestId('lab-frame').locator('iframe').contentFrame();
-	await expect(board.getByTestId('board-room-code')).toBeVisible();
+	// A phone-sized board may fold its corner away; its code is still there to read.
+	await expect(board.getByTestId('board-room-code')).toBeAttached();
 	await expect(board.getByTestId('board-room-code')).not.toContainText('482 913');
 	expect(sockets.filter((url) => url.includes('482913'))).toEqual([]);
 	// Share in the lab's game opens a room of its own, apart from the real game's.
@@ -346,4 +353,32 @@ test("the lab's game stays on this device, out of the device's own room", async 
 	await board.getByRole('button', { name: 'Share' }).tap();
 	await expect(board.getByTestId('board-room-code')).toContainText(/[0-9]{3} [0-9]{3}/);
 	await expect(board.getByTestId('board-room-code')).not.toContainText('482 913');
+});
+
+test('a phone or tablet shows the game as its own screen, upright and clear of the Lab bar', async ({
+	page
+}) => {
+	// Trevor, 2026-11-06: "Character lab is forcing a horizontal game for a phone, so it is hard
+	// to use. Should size coreectly".
+	await page.goto('/character-analyzer');
+	await lock(page, 'Philosopher');
+	await loadGame(page);
+	await labSeats(page);
+	const viewport = page.viewportSize()!;
+	const frame = page.getByTestId('lab-frame').locator('iframe');
+	await page.getByTestId('lab-frame').evaluate((el) => el.scrollIntoView({ block: 'start' }));
+	// The game lays out as this device does: as wide as the page, taller than it is wide.
+	const inner = await frame
+		.contentFrame()
+		.locator('body')
+		.evaluate(() => ({ width: innerWidth, height: innerHeight }));
+	expect(inner.width).toBeGreaterThan(viewport.width * 0.85);
+	expect(inner.width).toBeLessThanOrEqual(viewport.width);
+	expect(inner.height).toBeGreaterThan(inner.width);
+	// Whole in view, nothing over it: its bottom sits above the Lab bar.
+	const box = (await page.getByTestId('lab-frame').boundingBox())!;
+	const bar = (await page.getByRole('navigation', { name: 'Character Lab' }).boundingBox())!;
+	expect(box.x).toBeGreaterThanOrEqual(0);
+	expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
+	expect(box.y + box.height).toBeLessThanOrEqual(bar.y + 1);
 });

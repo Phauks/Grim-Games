@@ -14,13 +14,15 @@
 	 */
 	interface Props {
 		session: LabSession;
+		/** How tall the bar is, so the game above it can stay clear of it. */
+		height?: number;
 	}
 
-	let { session }: Props = $props();
+	let { session, height = $bindable(0) }: Props = $props();
 	let open = $state(false);
 </script>
 
-<nav class="lab-dock pinned-bottom" aria-label={t('lab.title')}>
+<nav class="lab-dock pinned-bottom" aria-label={t('lab.title')} bind:clientHeight={height}>
 	<div class="bar">
 		<Button onclick={() => (open = true)}>{t('lab.open')}</Button>
 		<div class="steps">

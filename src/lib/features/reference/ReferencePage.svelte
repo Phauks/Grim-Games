@@ -14,7 +14,6 @@
 	import { LabSession } from '#lib/features/character-lab/lab-session.svelte.ts';
 	import { provideCharacters } from '#lib/features/characters/character-context.ts';
 	import LabFrame from '#lib/features/character-lab/LabFrame.svelte';
-	import { STORYTELLER_SCREENS } from '#lib/features/test-room/devices.ts';
 	import { MediaQuery } from 'svelte/reactivity';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import CharacterReference from './CharacterReference.svelte';
@@ -30,9 +29,27 @@
 	// until one is picked (Trevor, 2026-11-05: "Just allow setting what the core one is on the
 	// left side, start empty").
 	const session = new LabSession();
+	/** CSS pixels: the frame's border (DeviceFrame's inset), its gap from the bar, and a floor. */
+	const FRAME_EDGE = 6;
+	const FRAME_GAP = 16;
+	const MIN_SIDE = 280;
 	/** A computer window: the lab and its game on the right of the table. */
 	const computer = new MediaQuery('min-width: 75rem', false);
 	let phoneWidth = $state(0);
+	let windowHeight = $state(0);
+	let dockHeight = $state(0);
+	/**
+	 * On a phone or tablet the game is this device's own screen, upright as it is held and as
+	 * wide as the page (Trevor, 2026-11-06: "forcing a horizontal game for a phone ... Should
+	 * size correctly"), and short enough to sit whole above the Lab bar. Less the frame's
+	 * border, so the game lays out at its true size.
+	 */
+	const thisScreen = $derived({
+		id: 'this-device',
+		name: t('lab.storyteller'),
+		width: Math.max(phoneWidth - FRAME_EDGE, MIN_SIDE),
+		height: Math.max(windowHeight - dockHeight - FRAME_GAP, MIN_SIDE)
+	});
 	// Badges draw a custom character by its own name and icon.
 	provideCharacters(() => data?.byId);
 
@@ -58,6 +75,8 @@
 	});
 </script>
 
+<svelte:window bind:innerHeight={windowHeight} />
+
 <!-- The whole window (Trevor, 2026-11-05: "you can expand to use more space"). -->
 <Page title={t('reference.title')} wide>
 	<ErrorBoundary area="reference">
@@ -75,7 +94,7 @@
 						<!-- A phone shows the game under the table, on this page (Trevor, 2026-11-06:
 						     "loads game on another page ... only to show it beneath"). -->
 						<div class="phone-game" bind:clientWidth={phoneWidth}>
-							<LabFrame {session} device={STORYTELLER_SCREENS[0]} room={phoneWidth} />
+							<LabFrame {session} device={thisScreen} room={phoneWidth} />
 						</div>
 					{/if}
 				</div>
@@ -83,7 +102,7 @@
 					<aside class="lab-side"><LabPanel {session} frame /></aside>
 				{/if}
 			</div>
-			{#if !computer.current}<LabDock {session} />{/if}
+			{#if !computer.current}<LabDock {session} bind:height={dockHeight} />{/if}
 		{/if}
 	</ErrorBoundary>
 </Page>
