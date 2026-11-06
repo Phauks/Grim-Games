@@ -181,3 +181,68 @@ test('the timer opened from the grim screen is the day view’s timer, Back to t
 	await dayTimer.getByRole('button', { name: /^Day timer, .*; open its controls$/ }).tap();
 	expect(await buttons(page.getByTestId('timer-sheet').getByTestId('day-timer'))).toEqual(fromGrim);
 });
+
+// Trevor, 2026-11-06: "Back to town button should have more controls on deciding which sound to
+// send" (option A: a Sound drop-down in the confirm sheet, kept for the next call). The pick
+// plays on every phone in place of its own Back to town sound.
+test('Back to town sends the sound the Storyteller picks, and keeps it for next time', async ({
+	page,
+	browser
+}, testInfo) => {
+	const board = await startGame(page);
+	await page.goto(`${board}/room`);
+	await expect(page.getByRole('status').filter({ hasText: 'Connected' })).toBeVisible();
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+
+	const phoneContext = await browser.newContext({ ...testInfo.project.use });
+	const phone = await phoneContext.newPage();
+	// This phone's own Back to town sound is None, so any sound it makes is the Storyteller's.
+	await phone.addInitScript(() => {
+		if (!localStorage.getItem('grim-games:preferences:v1'))
+			localStorage.setItem('grim-games:preferences:v1', JSON.stringify({ callSound: 'none' }));
+		const calls: string[] = [];
+		(window as unknown as { alerts: string[] }).alerts = calls;
+		navigator.vibrate = () => (calls.push('vibrate'), true);
+		const start = OscillatorNode.prototype.start;
+		OscillatorNode.prototype.start = function (when?: number) {
+			if (!calls.includes('sound')) calls.push('sound');
+			start.call(this, when);
+		};
+	});
+	await phone.goto(`/join/${code}`);
+	await expect(phone.getByTestId('join-status')).toHaveText('');
+	await phone.getByRole('tab', { name: 'Script' }).tap();
+
+	await page.goto(board);
+	const call = page.locator('.board-timer').getByRole('button', { name: 'Back to town' });
+	const confirm = page.getByRole('alertdialog', { name: 'Back to town?' });
+	await call.tap();
+	const sound = confirm.getByRole('combobox', { name: 'Sound' });
+	// Each phone's own sound until the Storyteller picks one.
+	await expect(sound).toContainText('Each phone’s own choice');
+	await sound.tap();
+	await expect(page.getByRole('option')).toHaveText([
+		'Each phone’s own choice',
+		'Bell',
+		'Chime',
+		'Clock tower chimes',
+		'Buzzer',
+		'None'
+	]);
+	await page.getByRole('option', { name: 'Bell', exact: true }).tap();
+	await expect(sound).toContainText('Bell');
+	await confirm.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(confirm).toBeHidden();
+	await expect(phone.getByText('Back to town', { exact: true })).toBeVisible();
+	await expect
+		.poll(() => phone.evaluate(() => (window as unknown as { alerts: string[] }).alerts))
+		.toEqual(['vibrate', 'sound']);
+
+	// Kept for the next call, on this device.
+	await page.reload();
+	await call.tap();
+	await expect(confirm.getByRole('combobox', { name: 'Sound' })).toContainText('Bell');
+	await confirm.getByRole('button', { name: 'Cancel' }).tap();
+	await phoneContext.close();
+});

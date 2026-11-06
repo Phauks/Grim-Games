@@ -1,4 +1,5 @@
 <script lang="ts">
+	import AbilityText from '#lib/features/characters/AbilityText.svelte';
 	import SeatBadge from './SeatBadge.svelte';
 	import StepPiece from './StepPiece.svelte';
 	import NightAlerts from './NightAlerts.svelte';
@@ -32,7 +33,6 @@
 	import type { InfoChoice, InfoPicker, Night, NightStep } from '#lib/core/rules/index.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import BoardReminder from './BoardReminder.svelte';
-	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import { TYPE_PLURALS } from '#lib/features/reference/labels.ts';
 	import NightText from '#lib/features/reference/NightText.svelte';
 	import EvilInfoCards from '#lib/features/show/EvilInfoCards.svelte';
@@ -42,6 +42,7 @@
 	import { infoTokensNamedIn, type InfoToken } from '#lib/core/data/info-tokens.ts';
 	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
 	import type { ShownInfoCard } from '#lib/features/show/shown.ts';
+	import ShowToPlayerButton from '#lib/features/show/ShowToPlayerButton.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
@@ -346,7 +347,7 @@
 							>{@render seats()}</span
 						>{/if}
 					{#snippet abilityText()}{#if step.character}<span data-testid="step-ability"
-								><GlossaryText text={step.character.ability} names={[step.character.name]} /></span
+								><AbilityText text={step.character.ability} names={[step.character.name]} /></span
 							>{:else}<span data-testid="step-text">{step.reminder}</span>{/if}{/snippet}
 				</StepPiece>
 			</div>
@@ -514,7 +515,7 @@
 						min={0}
 						max={Math.max(game.seating.length, 1)}
 					/>
-					<Button variant="quiet" onclick={() => showNumber(number)}>Show to player</Button>
+					<ShowToPlayerButton onclick={() => showNumber(number)} />
 				</div>
 			{/if}
 			<!-- Every card Minion info or Demon info can show (Trevor, 2026-10-18). -->

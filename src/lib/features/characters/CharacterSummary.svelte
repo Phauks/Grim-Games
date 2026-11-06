@@ -1,7 +1,7 @@
 <script lang="ts">
+	import AbilityText from './AbilityText.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Alignment, Character } from '#lib/core/data/index.ts';
-	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import { EDITION_LABELS } from '#lib/features/reference/labels.ts';
 	import CharacterPiece from './CharacterPiece.svelte';
 	import BoardReminder from '#lib/features/grimoire/BoardReminder.svelte';
@@ -57,7 +57,7 @@
 <header class="character">
 	<!-- No ring button: this is already the character's own page. -->
 	<CharacterPiece template="row" {character} alignment={seat?.alignment ?? alignment}>
-		{#snippet abilityText()}<GlossaryText
+		{#snippet abilityText()}<AbilityText
 				text={character.ability}
 				names={[character.name]}
 			/>{/snippet}
