@@ -321,7 +321,7 @@
 		left: var(--edge-left, var(--space-1));
 		/* Above a player's reminder tray, docked in the town (PlayerGrim `--foot-room`). */
 		bottom: calc(var(--edge-bottom, var(--space-1)) + var(--foot-room, 0rem));
-		z-index: 1;
+		z-index: var(--z-above);
 		display: grid;
 		/* Until the board is measured; then as wide as the corner's room (corner-room.ts). */
 		max-width: 32%;
