@@ -176,7 +176,7 @@ function nightFor(
 ): ReferenceNight {
 	const text = night === 'first' ? character.firstNightReminder : character.otherNightReminder;
 	const position = positions.get(character.id);
-	const ours = text !== undefined ? nightTextOverride(character.id, night) : undefined;
+	const ours = text !== undefined ? nightTextOverride(character, night) : undefined;
 	return {
 		...(position !== undefined ? { position } : {}),
 		...(text !== undefined ? { text } : {}),

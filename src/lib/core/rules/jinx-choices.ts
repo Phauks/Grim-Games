@@ -20,7 +20,7 @@ import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { alignmentOf, trueCharacter } from '#lib/core/model/selectors.ts';
 import type { DayEntry, DayEntryId, Game, SeatId } from '#lib/core/model/types.ts';
 import { ownJinxEffects } from './jinxes.ts';
-import type { Night, NightStep } from './night-order.ts';
+import { sheetWithOwnPlaces, type Night, type NightStep } from './night-order.ts';
 
 /** A character in play whose jinxes give it a night choice, with each partner's rule. */
 export interface NightChooser {
@@ -64,8 +64,8 @@ export function nightChoosers(game: Game, characters: CharacterLookup): NightCho
 
 /**
  * Adds a step for each jinx night choice on other nights: the chooser's own character, with
- * our text, before the first step the night sheet (`order`) puts at or after its earliest
- * partner, else before Dawn. A step already there (by id) is left alone.
+ * our text, before the first step the night sheet (`order`, with each character's own place
+ * added) puts at or after its earliest partner, else before Dawn. A step already there (by id) is left alone.
  */
 export function withJinxChoiceSteps<T extends NightStep>(
 	steps: readonly T[],
@@ -94,9 +94,19 @@ export function withJinxChoiceSteps<T extends NightStep>(
 				who: chooser.who
 			}
 		};
-		const sheet = chooser.partners.map((p) => order.indexOf(p.partner)).filter((i) => i >= 0);
+		// The sheet with each character's own place (`nightPlace` in its rules) added, so a
+		// partner off the official sheet, or read from data, still has a place.
+		const known = [
+			...out.flatMap((s) => (s.character ? [s.character] : [])),
+			...chooser.partners.flatMap((p) => {
+				const c = characters.get(p.partner);
+				return c ? [c] : [];
+			})
+		];
+		const places = sheetWithOwnPlaces(order, night, known);
+		const sheet = chooser.partners.map((p) => places.indexOf(p.partner)).filter((i) => i >= 0);
 		const first = sheet.length > 0 ? Math.min(...sheet) : -1;
-		const before = first < 0 ? -1 : out.findIndex((s) => order.indexOf(s.id) >= first);
+		const before = first < 0 ? -1 : out.findIndex((s) => places.indexOf(s.id) >= first);
 		const dawn = out.findIndex((s) => s.id === 'dawn');
 		out.splice(before >= 0 ? before : dawn >= 0 ? dawn : out.length, 0, step);
 	}

@@ -122,7 +122,7 @@ describe('Puzzlemaster', () => {
 
 	describe('the guess (https://wiki.bloodontheclocktower.com/Puzzlemaster)', () => {
 		it('asks whom they guessed, and marks it Guess Used', () => {
-			expect(dayUseOf('puzzlemaster')).toEqual({
+			expect(dayUseOf('puzzlemaster', committedCharacters())).toEqual({
 				who: 'guessed',
 				spentToken: 'Guess Used',
 				answer: 'demon-if-marked'
