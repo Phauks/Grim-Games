@@ -4,7 +4,8 @@
  * (seat-arranging.svelte.ts) with the room's seating beside it in the top bar (BoardToolbar;
  * Trevor, 2026-11-01: "all look similar"): entering it
  * with a room open lets phones move their seats ("switch starts on"), and Done locks seating,
- * finishes a count off, and goes back to Character selection when it was opened from there.
+ * finishes a count off, and goes back to Character selection or the bag draw when it was opened
+ * from there.
  * Open seating and Count off work before anyone has joined: they open the room first (Trevor,
  * 2026-11-02: "Even if no one is in the room yet").
  */
@@ -18,21 +19,29 @@ import { playersDialog } from '#lib/features/room/players-dialog.svelte.ts';
 import type { Grimoire } from './grimoire.svelte.ts';
 import type { SeatArranging } from './seat-arranging.svelte.ts';
 
-/** A game whose board should open in Seating, from its Character selection. */
-let fromSetup = $state<GameId>();
-let backToSetup: GameId | undefined;
+/** The setup screen Seating was opened from, which its Done goes back to. */
+export type SeatingFrom = 'setup' | 'draw';
 
-/** Opens the board of `gameId` in Seating; Done comes back to its Character selection. */
-export async function seatingFromSetup(gameId: GameId): Promise<void> {
-	fromSetup = gameId;
+/** A game whose board should open in Seating, and the setup screen it was opened from. */
+let requested = $state<{ gameId: GameId; from: SeatingFrom }>();
+let backTo: { gameId: GameId; from: SeatingFrom } | undefined;
+
+/** Opens the board of `gameId` in Seating; Done comes back to the screen `from`. */
+export async function seatingFromSetup(gameId: GameId, from: SeatingFrom): Promise<void> {
+	requested = { gameId, from };
 	await goto(resolve('/grimoire/[gameId]', { gameId }));
+}
+
+/** Whether `url` is the board that `gameId`'s Seating is about to open on (not leaving setup). */
+export function openingSeating(gameId: GameId, url: URL): boolean {
+	return requested?.gameId === gameId && url.pathname === resolve('/grimoire/[gameId]', { gameId });
 }
 
 /** Whether the board of `gameId` was asked to open in Seating, which this answers once. */
 export function seatingRequested(gameId: GameId): boolean {
-	if (fromSetup !== gameId) return false;
-	fromSetup = undefined;
-	backToSetup = gameId;
+	if (requested?.gameId !== gameId) return false;
+	backTo = requested;
+	requested = undefined;
 	return true;
 }
 
@@ -73,8 +82,13 @@ export function leaveSeating(seatArr: SeatArranging, grimoire: Grimoire): void {
 	if (host.countOff) finishCountOff(grimoire.open, (command) => grimoire.run(command));
 	if (host.seatingOpen) host.send({ type: 'seating', open: false });
 	seatArr.arranging = false;
-	const back = backToSetup;
-	backToSetup = undefined;
-	if (back === grimoire.game.gameId)
-		void goto(resolve('/grimoire/[gameId]/setup', { gameId: back }));
+	const back = backTo;
+	backTo = undefined;
+	if (back?.gameId !== grimoire.game.gameId) return;
+	const { gameId } = back;
+	void goto(
+		back.from === 'draw'
+			? resolve('/grimoire/[gameId]/draw', { gameId })
+			: resolve('/grimoire/[gameId]/setup', { gameId })
+	);
 }

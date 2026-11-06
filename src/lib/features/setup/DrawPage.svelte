@@ -26,6 +26,7 @@
 	import SetupNav from './SetupNav.svelte';
 	import LeaveGuard from './LeaveGuard.svelte';
 	import SetupActions from './SetupActions.svelte';
+	import { openingSeating } from '#lib/features/grimoire/seating-mode.svelte.ts';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import { remindersHref } from './setup-steps.ts';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
@@ -337,13 +338,15 @@
 
 <svelte:window onkeydown={onWindowKey} />
 
-<Page {title} iconActions>
+<!-- Six title buttons since Seating joined them (Trevor, 2026-11-06): "Draw" goes under them
+     when it can't sit beside them at full size, and room for all six is kept while locked. -->
+<Page {title} iconActions titleBelow actionSlots={6}>
 	{#snippet lead()}
 		{#if locked}<ScriptName name={script?.name} {logo} size="lead" />{/if}
 	{/snippet}
 	{#snippet actions()}
 		<!-- Locked: only the lock itself; Bag settings and Join can't be used (Trevor, 2026-10-19). -->
-		{#if !locked}<SetupActions {port} />{/if}
+		{#if !locked}<SetupActions {port} from="draw" />{/if}
 		<!-- Deal (Trevor, 2026-10-26): disabled once the bag is empty, so nothing moves. -->
 		{#if !locked && game}<IconButton
 				icon="deal"
@@ -388,6 +391,7 @@
 	{#if game}
 		<LeaveGuard
 			when={inBag > 0 && !locked}
+			within={(url) => openingSeating(game.gameId, url)}
 			title={t('setup.leave.title')}
 			body={t('setup.leave.body', { count: inBag, total: slots.length })}
 		/>

@@ -7,7 +7,8 @@ import {
 	type TestInfo
 } from '@playwright/test';
 import { openProfile, setPlayerName } from './player-name.ts';
-import { toBoard } from './new-game.ts';
+import { pickScript, toBoard } from './new-game.ts';
+import { pickNumber } from './number-select.ts';
 
 // Seating on the grim (plan J38; Trevor, 2026-10-29 22:36: "yes to drag circle, yes to claim",
 // with no left and right): while seating is open each phone drags its own disc onto the seat it
@@ -243,6 +244,48 @@ test('Character selection opens Seating, and Done comes back to it', async ({ pa
 	await expect(sheet).toBeHidden();
 	await leaveSeating(page);
 	await expect(page).toHaveURL(setup);
+});
+
+test('the bag draw opens Seating as Character selection does, and Done comes back to the draw', async ({
+	page
+}) => {
+	await page.goto('/new');
+	await pickScript(page, 'Trouble Brewing');
+	await page.getByRole('button', { name: 'Create game' }).tap();
+	await expect(page).toHaveURL(/\/setup$/);
+	await pickNumber(page, 'Players', 5);
+	for (const name of ['Washerwoman', 'Empath', 'Monk', 'Poisoner', 'Imp'])
+		await page.getByRole('button', { name, exact: true }).and(page.locator('[aria-pressed]')).tap();
+	await page.getByRole('button', { name: 'Build bag' }).tap();
+	await expect(page).toHaveURL(/\/draw$/);
+	const draw = page.url();
+	// The same button in the same place as Character selection's (Trevor, 2026-11-06), on screen
+	// with the draw's other title buttons and none covering another.
+	const seating = page.getByRole('button', { name: 'Seating', exact: true });
+	for (const name of ['Seating', 'Deal', 'Add late player', 'Lock the draw']) {
+		const button = page.getByRole('button', { name, exact: true });
+		await expect(button).toBeInViewport({ ratio: 1 });
+		const box = (await button.boundingBox())!;
+		const covered = await page.evaluate(
+			({ x, y }) => document.elementFromPoint(x, y)?.closest('button')?.getAttribute('aria-label'),
+			{ x: box.x + box.width / 2, y: box.y + box.height / 2 }
+		);
+		expect(covered).toBe(name);
+	}
+	// Six buttons never break "Draw" mid-word: it goes under them when it can't sit beside them.
+	const lines = await page.getByRole('heading', { level: 1 }).evaluate((h) => {
+		const range = document.createRange();
+		range.selectNodeContents(h);
+		return new Set([...range.getClientRects()].map((r) => Math.round(r.top))).size;
+	});
+	expect(lines).toBe(1);
+	await seating.tap();
+	// Arranging seats is not leaving the draw, so it doesn't ask.
+	await expect(page.getByRole('alertdialog')).toHaveCount(0);
+	await expect(page.getByRole('toolbar', { name: 'Grimoire' })).toContainText('Seating');
+	await leaveSeating(page);
+	await expect(page).toHaveURL(draw);
+	await expect(page.getByRole('button', { name: /^Tile \d+$/ })).toHaveCount(5);
 });
 
 test('the seat the room gives a phone has a ring on its Grim, with no way to mark another', async ({
