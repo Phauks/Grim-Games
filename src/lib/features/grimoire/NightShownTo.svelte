@@ -9,7 +9,7 @@
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import Button from '#lib/ui/primitives/Button.svelte';
+	import ShowToPlayerButton from '#lib/features/show/ShowToPlayerButton.svelte';
 	import SeatBadge from './SeatBadge.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 
@@ -85,9 +85,7 @@
 				interactive={false}
 			/>
 		</p>
-		<Button variant="quiet" icon="showToPlayer" onclick={() => onShow(step.character!.id)}
-			>{t('show.toPlayer')}</Button
-		>
+		<ShowToPlayerButton onclick={() => onShow(step.character!.id)} />
 	</section>
 {/if}
 
@@ -140,9 +138,7 @@
 				</Select>
 			{/if}
 		</p>
-		<Button variant="quiet" icon="showToPlayer" disabled={!shownId} onclick={showLearned}
-			>{t('show.toPlayer')}</Button
-		>
+		<ShowToPlayerButton disabled={!shownId} onclick={showLearned} />
 	</section>
 {/if}
 

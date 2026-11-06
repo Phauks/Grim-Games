@@ -6,11 +6,19 @@
  * tonight; the Script screen still lists every step.
  */
 import type { CharacterId, GameData } from '#lib/core/data/index.ts';
-import { seatNumber, type CharacterLookup, type Game } from '#lib/core/model/index.ts';
+import {
+	seatNumber,
+	type CharacterLookup,
+	type Game,
+	type Reminder,
+	type ReminderId,
+	type SeatId
+} from '#lib/core/model/index.ts';
 import { nextScriptOrderTarget, type SpecialRule } from '#lib/core/modes/index.ts';
 import { abilityState, type Night, type NightStep } from '#lib/core/rules/index.ts';
 import { preferences } from '#lib/ui/preferences.svelte.ts';
 import type { Grimoire } from './grimoire.svelte.ts';
+import type { ReminderHand } from './reminder-hand.svelte.ts';
 import { boardNightSteps, seatName, stepHolders, tonight } from './night-steps.ts';
 import { stepReminders, stepTokenCharacter } from './reminders.ts';
 
@@ -31,6 +39,15 @@ export interface NightWalkContext {
 	ended: boolean;
 	/** Seats are being arranged or a new seat placed: no night starts meanwhile. */
 	busy: boolean;
+	/** The token in hand, and the bank that hands over its tokens (ReminderBank's `hold`). */
+	hand: ReminderHand;
+	bank: { hold: (reminder: Pick<Reminder, 'characterId' | 'label'>) => boolean } | undefined;
+}
+
+/** A step's reminder already on the board, to move. */
+export interface PlacedAt {
+	reminderId: ReminderId;
+	seatId: SeatId;
 }
 
 export class NightWalk {
@@ -39,6 +56,8 @@ export class NightWalk {
 	/** The step open in its own dialog. */
 	guided = $state<{ step: NightStep; night: Night } | undefined>();
 	guideOpen = $state(false);
+	/** The step closed while one of its reminders is in hand, to open again once it is put down. */
+	#placing = $state(false);
 	/** The saved step dialog, until the night order can be worked out. */
 	#pending = $state<{ night: Night; stepId: string } | undefined>();
 	#context: () => NightWalkContext;
@@ -66,9 +85,40 @@ export class NightWalk {
 			this.#context().grimoire.saveNightView({
 				walk: walk ? { ...walk } : undefined,
 				guided:
-					this.guideOpen && guided ? { night: guided.night, stepId: guided.step.id } : this.#pending
+					(this.guideOpen || this.#placing) && guided
+						? { night: guided.night, stepId: guided.step.id }
+						: this.#pending
 			});
 		});
+		// Ending the game (often at the dusk an Execution starts) closes the night's walk-through:
+		// History's strip has the bottom of the board then (Trevor, 2026-10-24).
+		$effect(() => {
+			if (this.#context().ended) this.walk = undefined;
+		});
+		// The token in hand put down (on a seat, back in the bank or let go): the step again.
+		$effect(() => {
+			if (!this.#placing) return;
+			if (this.guideOpen) this.#placing = false;
+			else if (!this.#context().hand.held) {
+				this.#placing = false;
+				this.guideOpen = true;
+			}
+		});
+	}
+
+	/**
+	 * Puts one of the open step's reminders on the board (Trevor, 2026-11-06: "revert back to grim
+	 * view, not a tabled list"): the step closes with the token in hand, from the bank or, to move
+	 * it, from its seat, and the Storyteller taps the seat on the board. False when the bank has
+	 * no such token, for the step's list of players instead.
+	 */
+	placeOnBoard(reminder: Pick<Reminder, 'characterId' | 'label'>, at?: PlacedAt): boolean {
+		const { hand, bank } = this.#context();
+		if (at) hand.held = { kind: 'placed', reminderId: at.reminderId, from: at.seatId };
+		else if (!bank?.hold(reminder)) return false;
+		this.#placing = true;
+		this.guideOpen = false;
+		return true;
 	}
 
 	/** Every step of a night on this board, dead players' included. */

@@ -8,7 +8,7 @@
  * Hindu's optional rule (`demonTo`, chosen at the start): then the Demon is offered the
  * rebirth too, and a living Minion becomes that Demon.
  */
-import { rulesIn } from '#lib/core/data/rules/index.ts';
+import { rulesInPlay } from './rules-in-play.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
@@ -41,7 +41,7 @@ export function demonHeirs(
 	via: CharacterId,
 	characters: CharacterLookup
 ): SeatId[] {
-	const to = rulesIn(game, via, characters)?.reincarnates?.demonTo;
+	const to = rulesInPlay(game, via, characters)?.reincarnates?.demonTo;
 	if (to === undefined || !isDemon(game, seatId, characters)) return [];
 	return game.seating.filter(
 		(id) => id !== seatId && !game.seats[id].dead && typeOf(game, id, characters) === to
@@ -66,7 +66,7 @@ export function rebirthOf(
 		...game.seating.flatMap((id) => trueCharacter(game, id, characters) ?? [])
 	];
 	return inPlay.find((id) => {
-		const rule = rulesIn(game, id, characters)?.reincarnates;
+		const rule = rulesInPlay(game, id, characters)?.reincarnates;
 		return rule !== undefined && reborn < rule.first;
 	});
 }

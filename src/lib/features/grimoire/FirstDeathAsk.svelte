@@ -1,8 +1,8 @@
 <script lang="ts">
+	import AbilityText from '#lib/features/characters/AbilityText.svelte';
 	import SeatBadge from './SeatBadge.svelte';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import BoardReminder from './BoardReminder.svelte';
-	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 
@@ -55,7 +55,7 @@
 	{#if ask && character}
 		<div class="ability">
 			<CharacterPiece template="row" {character} info>
-				{#snippet abilityText()}<GlossaryText
+				{#snippet abilityText()}<AbilityText
 						text={character.ability}
 						names={[character.name]}
 					/>{/snippet}
