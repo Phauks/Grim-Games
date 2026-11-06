@@ -173,6 +173,11 @@ test('a Banshee the Demon killed nominates twice a day and votes twice with no t
 	await picker.getByRole('button', { name: 'Banshee', exact: true }).tap();
 	await seat.getByRole('combobox', { name: 'Status: Alive' }).tap();
 	await page.getByRole('listbox').getByRole('option', { name: 'The Demon' }).tap();
+	// Its death asks to place Has Ability; left off, the votes come from the death's cause.
+	await page
+		.getByRole('alertdialog', { name: 'Use the Banshee’s ability?' })
+		.getByRole('button', { name: 'Cancel', exact: true })
+		.tap();
 	// No ghost vote to spend: two votes on every nomination.
 	await expect(seat.getByRole('button', { name: 'Ghost vote' })).toBeDisabled();
 	await expect(seat.getByRole('button', { name: 'Ghost vote' })).toContainText('2 votes');

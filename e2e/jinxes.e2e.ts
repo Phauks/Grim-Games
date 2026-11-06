@@ -69,7 +69,7 @@ async function walkTo(page: Page, title: string) {
 }
 
 /** The first night ends, then the day, with seat `executed` executed. */
-async function toSecondNight(page: Page, executed: number) {
+async function toSecondNight(page: Page, executed: number, deathAsk?: string) {
 	const first = await walkTo(page, 'Dusk');
 	await first.getByRole('button', { name: 'Next step' }).tap();
 	await bankNight(page, 'End night').tap();
@@ -87,6 +87,12 @@ async function toSecondNight(page: Page, executed: number) {
 		.getByRole('alertdialog', { name: 'End the day?' })
 		.getByRole('button', { name: 'Confirm', exact: true })
 		.tap();
+	// A death that places its player's reminder asks first (`deathAsk`, the Hatter's).
+	if (deathAsk)
+		await page
+			.getByRole('alertdialog', { name: deathAsk })
+			.getByRole('button', { name: 'Confirm', exact: true })
+			.tap();
 }
 
 /** Opens a step from the walk-through by its name. */
@@ -681,7 +687,7 @@ test('the Hatter’s Demon who chooses Lil’ Monsta also chooses a Minion to be
 	await choose(page, 2, 'Chef');
 	await choose(page, 3, 'Poisoner');
 	await choose(page, 4, 'Imp');
-	await toSecondNight(page, 1);
+	await toSecondNight(page, 1, 'Use the Hatter’s ability?');
 
 	const step = await openStep(page, 'Hatter');
 	await expect(step.getByTestId('also-becomes')).toContainText('also chooses a Minion to become');

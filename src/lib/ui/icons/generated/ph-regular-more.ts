@@ -62,13 +62,12 @@ import ph_heart from '~icons/ph/heart';
 import ph_hexagon from '~icons/ph/hexagon';
 import ph_hourglass from '~icons/ph/hourglass';
 import ph_house_simple from '~icons/ph/house-simple';
-import ph_image from '~icons/ph/image';
+import ph_images from '~icons/ph/images';
 import ph_key from '~icons/ph/key';
 import ph_leaf from '~icons/ph/leaf';
 import ph_link_simple from '~icons/ph/link-simple';
 import ph_link_simple_break from '~icons/ph/link-simple-break';
 import ph_list_dashes from '~icons/ph/list-dashes';
-import ph_list_magnifying_glass from '~icons/ph/list-magnifying-glass';
 import ph_list_numbers from '~icons/ph/list-numbers';
 import ph_lock from '~icons/ph/lock';
 import ph_megaphone_simple from '~icons/ph/megaphone-simple';
@@ -178,13 +177,12 @@ const icons: IconMap = {
 	'ph:hexagon': ph_hexagon,
 	'ph:hourglass': ph_hourglass,
 	'ph:house-simple': ph_house_simple,
-	'ph:image': ph_image,
+	'ph:images': ph_images,
 	'ph:key': ph_key,
 	'ph:leaf': ph_leaf,
 	'ph:link-simple': ph_link_simple,
 	'ph:link-simple-break': ph_link_simple_break,
 	'ph:list-dashes': ph_list_dashes,
-	'ph:list-magnifying-glass': ph_list_magnifying_glass,
 	'ph:list-numbers': ph_list_numbers,
 	'ph:lock': ph_lock,
 	'ph:megaphone-simple': ph_megaphone_simple,

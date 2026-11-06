@@ -13,6 +13,7 @@
 	import {
 		knownScriptFor,
 		readScriptLines,
+		SAME_SCRIPT,
 		type KnownScript,
 		type PhotoLine
 	} from '#lib/core/photo/script-photo.ts';
@@ -35,6 +36,9 @@
 	import { PHOTO_ACCEPT } from './photo-accept.ts';
 	import { scannedScriptHash } from './share.ts';
 	import { reloadSavedScript } from './saved-scripts.ts';
+	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import ImportLogDialog from './ImportLogDialog.svelte';
+	import { describeFile, failureText, importLog, logLine } from './import-log.svelte.ts';
 
 	/**
 	 * A script read from photos of its printed sheet (plan M54, Trevor picked layout 3A on
@@ -60,6 +64,7 @@
 	/** The character picked for each unmatched name, by its place in the list. */
 	let picks = $state<Record<number, string>>({});
 	let fileInput: HTMLInputElement | undefined = $state();
+	let logOpen = $state(false);
 
 	const LEAVE_OUT = '';
 
@@ -125,16 +130,42 @@
 		reading = true;
 		failed = false;
 		progress = 0;
+		const pdf = isPdf(photo);
+		const received = `${pdf ? 'PDF' : 'Photo'} received: ${describeFile(photo)}`;
+		if (lines.length === 0) importLog.start(received);
+		else importLog.add(`Another ${received[0].toLowerCase()}${received.slice(1)}`);
 		try {
 			data ??= await loadOfficialData();
-			const pages: PdfPage[] = isPdf(photo)
+			const pages: PdfPage[] = pdf
 				? await readPdfPages(photo)
 				: [{ canvas: await photoCanvas(photo) }];
+			if (pdf) {
+				importLog.add(`PDF: ${pages.length} page(s) read`);
+				pages.forEach((p, i) =>
+					importLog.add(
+						p.lines
+							? `Page ${i + 1}: its own text, ${p.lines.length} lines`
+							: `Page ${i + 1}: no text of its own, read as a scan`
+					)
+				);
+			} else {
+				const { width, height } = pages[0].canvas;
+				importLog.add(`Photo drawn at ${width} by ${height} for reading`);
+			}
 			// A sheet carrying its script's QR code loads that exact script (plan M56's sheets).
-			for (const page of pages) {
-				const hash = (await readQrCodes(page.canvas).catch(() => []))
-					.map(scannedScriptHash)
-					.find((h) => h !== undefined);
+			for (const [i, page] of pages.entries()) {
+				const codes = await readQrCodes(page.canvas).catch((e: unknown) => {
+					importLog.add(`QR codes on page ${i + 1} could not be read: ${failureText(e)}`, 'failed');
+					return [];
+				});
+				const hash = codes.map(scannedScriptHash).find((h) => h !== undefined);
+				importLog.add(
+					hash
+						? `QR code on page ${i + 1} is a script link: loading it`
+						: codes.length
+							? `${codes.length} QR code(s) on page ${i + 1}, none a script link`
+							: `No QR code on page ${i + 1}`
+				);
 				if (!hash) continue;
 				open = false;
 				// The script travels in the hash, which never reaches the server; the path is resolved.
@@ -145,15 +176,41 @@
 			const read: PhotoLine[] = [];
 			for (const [i, page] of pages.entries()) {
 				const share = (s: number) => (progress = Math.max(progress, (i + s) / pages.length));
-				read.push(...(page.lines ?? (await readPhotoLines(page.canvas, share))));
+				const started = Date.now();
+				const pageLines =
+					page.lines ?? (await readPhotoLines(page.canvas, share, (t) => importLog.add(t)));
+				if (!page.lines) {
+					const took = ((Date.now() - started) / 1000).toFixed(1);
+					importLog.add(`Page ${i + 1}: ${pageLines.length} lines read in ${took}s`);
+				}
+				read.push(...pageLines);
 			}
 			lines = [...lines, ...read];
+			logReading();
 		} catch (e) {
 			failed = true;
+			importLog.add(`Failed: ${failureText(e)}`, 'failed');
 			reportError(e, { area: 'scripts', notify: false });
 		} finally {
 			reading = false;
 		}
+	}
+
+	/** Logs how every line read so far was matched, and the script the sheet looks like. */
+	function logReading(): void {
+		importLog.add(`Matching ${lines.length} lines against ${pool.length} characters`);
+		const reading = readScriptLines(lines, pool, (l) => logLine(l, lines[l.index]?.confidence));
+		const close = reading.found.filter((f) => f.kind === 'close').length;
+		importLog.add(
+			`Found ${reading.found.length} (${close} close), ${reading.unmatched.length} not matched, title "${reading.title}"`
+		);
+		const ids = reading.found.map((f) => f.character.id);
+		const same = knownScriptFor(ids, reading.title, known);
+		importLog.add(
+			same
+				? `Looks like ${same.name}`
+				: `No known script holds all of them with ${Math.round(SAME_SCRIPT * 100)}% read`
+		);
 	}
 
 	/** Starts again with no photos read. */
@@ -180,13 +237,20 @@
 		if (!data) return;
 		open = false;
 		if (match) {
+			importLog.add(`Confirmed: loading ${match.name}`);
 			onconfirm(match.key);
 			return;
 		}
 		const name = result.title;
 		const json = [{ id: '_meta', name }, ...chosen.map((c) => (c.edition ? c.id : c))];
-		const script = loadScript(json, data).script;
-		if (script) onconfirm(script);
+		const loaded = loadScript(json, data);
+		importLog.add(
+			`Confirmed: "${name}" with ${chosen.length} characters, ${loaded.problems.length} problem(s)`
+		);
+		for (const p of loaded.problems) {
+			importLog.add(`${p.where}: ${p.message}`, p.severity === 'error' ? 'failed' : 'step');
+		}
+		if (loaded.script) onconfirm(loaded.script);
 	}
 
 	const heading = $derived(
@@ -212,9 +276,18 @@
 		aria-label={t('scripts.photo.another')}
 		onchange={onFile}
 	/>
-	<div class="banner" data-testid="photo-banner" aria-live="polite">
-		<p class="name">{heading}</p>
-		<p class="summary">{summary}</p>
+	<div class="banner" data-testid="photo-banner">
+		<div class="said" aria-live="polite">
+			<p class="name">{heading}</p>
+			<p class="summary">{summary}</p>
+		</div>
+		<!-- What happened, step by step (Trevor, 2026-11-06), in a window of its own. -->
+		<IconButton
+			icon="importLog"
+			label={t('scripts.photo.log')}
+			disabled={importLog.entries.length === 0}
+			onclick={() => (logOpen = true)}
+		/>
 	</div>
 	{#each groups as group (group.type)}
 		<section>
@@ -279,6 +352,8 @@
 	{/snippet}
 </Dialog>
 
+<ImportLogDialog bind:open={logOpen} />
+
 <style>
 	.file {
 		position: absolute;
@@ -288,9 +363,16 @@
 		pointer-events: none;
 	}
 	.banner {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
 		padding: var(--space-2) var(--space-3);
 		border-radius: var(--radius-md);
 		background: var(--surface-raised);
+	}
+	.said {
+		flex: 1;
+		min-width: 0;
 	}
 	.banner p {
 		margin: 0;
