@@ -59,5 +59,11 @@
 		"banshee": {
 			"trueInfo": true
 		}
+	},
+	"nightOrder": {
+		"other": {
+			"stage": "demon-kills",
+			"after": "nodashii"
+		}
 	}
 }

@@ -46,5 +46,11 @@
 	"reminderMovement": {
 		"fixed": ["Know"],
 		"why": "Marks the information the player started knowing."
+	},
+	"nightOrder": {
+		"first": {
+			"stage": "learns",
+			"after": "steward"
+		}
 	}
 }

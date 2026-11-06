@@ -12,7 +12,9 @@ import {
 	characterProblems,
 	emptyCharacterFields,
 	fieldsFromEntry,
+	nightPlaceOf,
 	previewCharacter,
+	withNightPlace,
 	type CharacterFields
 } from './character-builder.ts';
 
@@ -122,5 +124,43 @@ describe('previewCharacter', () => {
 	});
 	it('has an id before it has a name', () => {
 		expect(previewCharacter(emptyCharacterFields()).id).toBe('custom');
+	});
+});
+
+describe('night place (M59)', () => {
+	const base: CharacterFields = { ...emptyCharacterFields(), name: 'Storm Warden', ability: 'x' };
+
+	it('saves the stage and the step it follows in its rules, keeping the other rules', () => {
+		const rules = withNightPlace(
+			{ ...base, rules: { nightOrder: { first: { stage: 'learns' } } } },
+			'other',
+			{ stage: 'impairs', after: 'monk' }
+		);
+		expect(rules).toEqual({
+			nightOrder: { first: { stage: 'learns' }, other: { stage: 'impairs', after: 'monk' } }
+		});
+		const fields = { ...base, rules };
+		expect(nightPlaceOf(fields, 'other')).toEqual({ stage: 'impairs', after: 'monk' });
+		expect(nightPlaceOf(fields, 'first')).toEqual({ stage: 'learns' });
+	});
+
+	it('clears the rules when the last place goes', () => {
+		const fields = { ...base, rules: { nightOrder: { first: { stage: 'learns' } } } };
+		expect(withNightPlace(fields, 'first', undefined)).toBeUndefined();
+	});
+
+	it('writes its place into the script entry and loads it back', () => {
+		const fields = {
+			...base,
+			otherNightReminder: 'Wake the Storm Warden.',
+			rules: { nightOrder: { other: { stage: 'impairs', after: 'monk' } } }
+		};
+		const entry = characterEntry(fields);
+		expect(entry.rules).toEqual(fields.rules);
+		expect(fieldsFromEntry(entry).rules).toEqual(fields.rules);
+		expect(previewCharacter(fields).rules?.nightOrder?.other).toEqual({
+			stage: 'impairs',
+			after: 'monk'
+		});
 	});
 });

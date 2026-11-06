@@ -52,5 +52,11 @@
 		"villageidiot": {
 			"spareToken": true
 		}
+	},
+	"nightOrder": {
+		"first": {
+			"stage": "travellers",
+			"after": "thief"
+		}
 	}
 }

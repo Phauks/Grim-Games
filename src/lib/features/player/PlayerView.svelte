@@ -33,7 +33,13 @@
 	import type { LoadedScript } from '#lib/core/data/index.ts';
 	import OfflineGame from './OfflineGame.svelte';
 	import { markOfflineScript, offlineScript } from './offline-script.svelte.ts';
-	import { openOnGrim, recordLocalVisit } from './local-town.svelte.ts';
+	import { startingTown } from '#lib/core/town/local-town.ts';
+	import {
+		keptLocalTown,
+		openOnGrim,
+		recordLocalVisit,
+		saveLocalTown
+	} from './local-town.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { scriptKey } from './notebook.ts';
@@ -78,7 +84,9 @@
 	let error = $state<string>();
 	// Joining lands on the script (Trevor, 2026-10-23); the room is the row above the tabs.
 	// A players-only game opened from New game or Join game starts on its town (plan M55).
-	let tab = $state(openOnGrim.take() ? 'grim' : 'script');
+	/** Opened as a players-only game, from New game or Join game. */
+	const startedLocal = openOnGrim.take();
+	let tab = $state(startedLocal ? 'grim' : 'script');
 	// The finished grimoire shows on the Grim tab (Share grim, R5): turn to it when it arrives.
 	$effect(() => {
 		if (!finalGrimoire.open) return;
@@ -214,7 +222,11 @@
 			...(saved && saved.scriptId !== 'unsaved' ? { scriptId: saved.scriptId } : {})
 		};
 		// Writes the list it reads, so not followed.
-		untrack(() => recordLocalVisit(visit));
+		untrack(() => {
+			recordLocalVisit(visit);
+			// A game started from New game is kept at once, so Join game lists it.
+			if (startedLocal && !keptLocalTown(visit.key)) saveLocalTown(visit.key, startingTown());
+		});
 	});
 
 	/** The script came from an offline code and no room sent it: the game is offline. */

@@ -7,5 +7,15 @@
 	},
 	"learns": {
 		"measure": "storyteller-pick"
+	},
+	"nightOrder": {
+		"first": {
+			"stage": "learns",
+			"after": "ogre"
+		},
+		"other": {
+			"stage": "learns",
+			"after": "spy"
+		}
 	}
 }

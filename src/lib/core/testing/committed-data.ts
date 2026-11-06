@@ -11,6 +11,7 @@ import {
 	type CharacterId,
 	type GameData
 } from '#lib/core/data/index.ts';
+import { sheetWithOwnPlaces } from '#lib/core/rules/night-order.ts';
 import { HIDDEN_OFFICIAL_RULES } from './parity/official-rules.ts';
 
 const dataDir = new URL('../../../../static/data/', import.meta.url);
@@ -72,4 +73,15 @@ export function nightSheetPresence(id: CharacterId): { firstNight: boolean; othe
 		firstNight: nightSheet.firstNight.includes(id),
 		otherNight: nightSheet.otherNight.includes(id)
 	};
+}
+
+/**
+ * One night's order as the engine sees it: TPI's sheet with each character placed by its own
+ * `nightOrder` where the sheet doesn't list it (M59), so a test of who wakes before whom holds
+ * for official characters run as custom ones too.
+ */
+export function committedNightOrder(night: 'firstNight' | 'otherNight'): string[] {
+	const data = committedGameData();
+	const list = data.nightSheet[night];
+	return sheetWithOwnPlaces(list, night === 'firstNight' ? 'first' : 'other', data.characters);
 }

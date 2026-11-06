@@ -37,5 +37,11 @@
 	"marksChoice": ["Safe"],
 	"reminderEnds": {
 		"Safe": "dawn"
+	},
+	"nightOrder": {
+		"other": {
+			"stage": "impairs",
+			"after": "snakecharmer"
+		}
 	}
 }

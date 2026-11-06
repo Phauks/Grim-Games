@@ -12,6 +12,8 @@
  *   Toymaker is in play (https://wiki.bloodontheclocktower.com/Toymaker).
  * - A script's `_meta.firstNight` / `_meta.otherNight` replaces the order (TPI
  *   `script-schema.json`); characters it leaves out keep their standard place.
+ * - A character the sheet doesn't list goes where its own `nightOrder` rule says, right after
+ *   another step (M59; every official character has one too, written from the sheet).
  * - Homebrew characters with no place on the sheet are placed by their ability text, beside
  *   the official characters most like them (`core/night-placement`, L74), with the reason as
  *   a note to check; without the official characters to compare, just before Dawn. A numeric
@@ -26,10 +28,14 @@ import {
 	type NightMarker,
 	type NightSheet
 } from '#lib/core/data/types.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
+import { rulesOf, rulesOfCharacter } from '#lib/core/data/rules/index.ts';
 import type { InfoTokenCharacterRules } from '#lib/core/data/info-token-rules.ts';
+import type { NightPlace } from '#lib/core/data/parts/night-order.ts';
 import {
+	BANDS,
+	MARKERS,
 	placementReason,
+	type Band,
 	recommendPlacement,
 	textSignature,
 	type Night as SheetNight
@@ -97,6 +103,7 @@ export type NightStepOverride =
 	  };
 
 /** Why a step is where it is. */
+/** `night-sheet`: TPI's sheet, or the character's own `nightOrder` place (M59). */
 export type Placement = 'night-sheet' | 'custom-order' | 'unplaced' | 'marker';
 
 export interface NightStep {
@@ -217,6 +224,109 @@ function numberFor(character: Character, night: Night): number | undefined {
 	return night === 'first' ? character.firstNight : character.otherNight;
 }
 
+/**
+ * TPI's sheet for one night with each character it doesn't list placed by its own `nightOrder`
+ * (M59): right after the step it names, following chains through characters that aren't in
+ * play; else, when that step is unknown, at the end of its stage of the night. `known` is every
+ * character that may be named. One with neither is left off. Several placed after the same
+ * step keep the order they come in.
+ */
+export function sheetWithOwnPlaces(
+	list: readonly string[],
+	night: Night,
+	known: Iterable<Character>
+): string[] {
+	const out = [...list];
+	const listed = new Set(list);
+	const stages = new Map<string, string>();
+	let waiting = [...known].flatMap((c) => {
+		const place = rulesOfCharacter(c)?.nightOrder?.[night];
+		if (place?.stage) stages.set(c.id, place.stage);
+		return listed.has(c.id) || !place ? [] : [{ id: c.id, ...place }];
+	});
+	const placedAfter = new Map<string, number>();
+	const insertAfter = (id: string, after: string) => {
+		const at = out.indexOf(after) + 1 + (placedAfter.get(after) ?? 0);
+		out.splice(at, 0, id);
+		placedAfter.set(after, (placedAfter.get(after) ?? 0) + 1);
+	};
+	for (;;) {
+		const left = waiting.filter(({ id, after }) => {
+			if (out.includes(id)) return false;
+			if (after === undefined || !out.includes(after)) return true;
+			insertAfter(id, after);
+			return false;
+		});
+		const stuck = left.length === waiting.length;
+		waiting = left;
+		if (!stuck) continue;
+		// Nothing more places by its neighbour: the first one with a stage goes at its end.
+		const next = waiting.find((w) => w.stage !== undefined);
+		if (!next) break;
+		const bands = BANDS[night === 'first' ? 'firstNight' : 'otherNight'];
+		const rank = bands.indexOf(next.stage!);
+		const later = out.findIndex((id) => {
+			const stage = MARKERS.includes(id) ? id : stages.get(id);
+			return stage !== undefined && bands.indexOf(stage) > rank;
+		});
+		out.splice(later < 0 ? out.length : later, 0, next.id);
+		waiting = waiting.filter((w) => w !== next);
+	}
+	return out;
+}
+
+/** One part of a night's order for picking a place in it: a marker step, or a stage's steps. */
+export type NightStagePart =
+	{ kind: 'marker'; id: NightMarker } | { kind: 'stage'; stage: Band; steps: CharacterId[] };
+
+/**
+ * A night's order by stage (`night-placement/bands.ts`), for the Character builder's "Wakes
+ * in" (M59): TPI's sheet with each character under the stage its own `nightOrder` gives it, and
+ * the marker steps where they fall. Every stage of the night is listed, even an empty one.
+ */
+export function nightStages(
+	list: readonly string[],
+	night: Night,
+	known: Iterable<Character>
+): NightStagePart[] {
+	const stageOf = new Map<string, string>();
+	for (const c of known) {
+		const stage = rulesOfCharacter(c)?.nightOrder?.[night]?.stage;
+		if (stage) stageOf.set(c.id, stage);
+	}
+	const parts: NightStagePart[] = BANDS[night === 'first' ? 'firstNight' : 'otherNight'].map(
+		(id) =>
+			MARKERS.includes(id)
+				? { kind: 'marker', id: id as NightMarker }
+				: { kind: 'stage', stage: id as Band, steps: [] }
+	);
+	for (const id of list) {
+		const part = parts.find((p) => p.kind === 'stage' && p.stage === stageOf.get(id));
+		if (part?.kind === 'stage') part.steps.push(id as CharacterId);
+	}
+	return parts;
+}
+
+/**
+ * Where a custom character with no night position of its own would wake on `night`, from its
+ * ability (`night-placement`): its stage, and the sheet step it goes right after.
+ */
+export function suggestedNightPlace(
+	character: Character,
+	night: Night,
+	sheet: NightSheet,
+	official: ReadonlyMap<CharacterId, Character>
+): NightPlace | undefined {
+	const placed = placeByAbility(
+		{ night, sheet, inPlay: [character], players: 0, official },
+		character
+	);
+	if (!placed) return undefined;
+	const list = night === 'first' ? sheet.firstNight : sheet.otherNight;
+	const after = list[placed.index - 1];
+	return { stage: placed.band, ...(after ? { after } : {}) };
+}
+
 /** A position for every step on TPI's sheet: its index, with Dusk always first. */
 function sheetPositions(list: readonly string[]): Map<string, number> {
 	return new Map(list.map((id, i) => [id, id === 'dusk' ? -Infinity : i]));
@@ -250,7 +360,7 @@ function signatureOf(character: Character, night: SheetNight): Set<string> {
 function placeByAbility(
 	input: NightOrderInput,
 	character: Character
-): { index: number; reason: string } | undefined {
+): { index: number; reason: string; band: Band } | undefined {
 	const { official } = input;
 	if (!official) return undefined;
 	const night: SheetNight = input.night === 'first' ? 'firstNight' : 'otherNight';
@@ -267,7 +377,7 @@ function placeByAbility(
 	);
 	if (!placed) return undefined;
 	const reason = placementReason(placed, (id) => official.get(id)?.name ?? id);
-	return { index: placed.index, reason };
+	return { index: placed.index, reason, band: placed.band };
 }
 
 /** The standard order (no custom `_meta` order) for the given steps. */
@@ -277,7 +387,9 @@ function standardOrder(
 	markers: NightMarker[]
 ) {
 	const { night, sheet } = input;
-	const positions = sheetPositions(night === 'first' ? sheet.firstNight : sheet.otherNight);
+	const list = night === 'first' ? sheet.firstNight : sheet.otherNight;
+	const known = [...(input.official?.values() ?? []), ...wanted];
+	const positions = sheetPositions(sheetWithOwnPlaces(list, night, known));
 	const dawnPos = positions.get('dawn') ?? Infinity;
 	const candidates: Candidate[] = [];
 	let seq = 0;
@@ -545,11 +657,19 @@ export const wakesTooNote = (name: string): string => `${name} wakes too.`;
 
 /**
  * The steps TPI's night sheet places after Dawn: announcements made as the day begins (the
- * Vizier and Leviathan on the first night, the Leviathan on other nights). Order as on the
- * sheet; filter by what is in play.
+ * Vizier and Leviathan on the first night, the Leviathan on other nights), with any of `known`
+ * whose own `nightOrder` puts it there (M59). Order as on the sheet; filter by what is in play.
  */
-export function afterDawn(sheet: NightSheet, night: Night): CharacterId[] {
-	const steps = night === 'first' ? sheet.firstNight : sheet.otherNight;
+export function afterDawn(
+	sheet: NightSheet,
+	night: Night,
+	known: Iterable<Character> = []
+): CharacterId[] {
+	const steps = sheetWithOwnPlaces(
+		night === 'first' ? sheet.firstNight : sheet.otherNight,
+		night,
+		known
+	);
 	const dawn = steps.indexOf('dawn');
 	return dawn < 0
 		? []

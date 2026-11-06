@@ -9,8 +9,8 @@
 	import { localTown, saveLocalTown } from './local-town.svelte.ts';
 
 	/**
-	 * A players-only game's seat count (plan M55): None until the player picks one, where the
-	 * town will be, then among the Grim tab's round buttons.
+	 * A players-only game's seat count (plan M55), among the Grim tab's round buttons: seven to
+	 * start, never None (Trevor, 2026-11-06).
 	 */
 	interface Props {
 		notesKey: string;
@@ -21,24 +21,21 @@
 
 	let { notesKey, count, hideLabel = false }: Props = $props();
 
-	/** None, or every seat count a game can have. */
-	const counts = [
-		0,
-		...Array.from(
-			{ length: LOCAL_TOWN_MAX_SEATS - LOCAL_TOWN_MIN_SEATS + 1 },
-			(_, i) => LOCAL_TOWN_MIN_SEATS + i
-		)
-	];
+	/** Every seat count a game can have. */
+	const counts = Array.from(
+		{ length: LOCAL_TOWN_MAX_SEATS - LOCAL_TOWN_MIN_SEATS + 1 },
+		(_, i) => LOCAL_TOWN_MIN_SEATS + i
+	);
 </script>
 
 <NumberSelect
 	label={t('player.grim.seats')}
 	{hideLabel}
 	value={count}
-	min={0}
+	min={LOCAL_TOWN_MIN_SEATS}
 	max={LOCAL_TOWN_MAX_SEATS}
 	values={counts}
-	format={(n) => (n === 0 ? t('common.none') : String(n))}
+	format={(n) => t('player.local.seats', { count: n })}
 	onchange={(n) => saveLocalTown(notesKey, withSeatCount(localTown(notesKey), n))}
 	testid="local-seat-count"
 />

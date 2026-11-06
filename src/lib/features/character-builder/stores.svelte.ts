@@ -38,8 +38,8 @@ export class CharacterBuilderDraft {
 		this.#set({ ...this.#draft, fields: { ...this.#draft.fields, ...change } });
 	}
 
-	/** Clears a field that can be absent (night positions, setup). */
-	unset(key: 'firstNight' | 'otherNight' | 'setup'): void {
+	/** Clears a field that can be absent (night positions, setup, rules). */
+	unset(key: 'firstNight' | 'otherNight' | 'setup' | 'rules'): void {
 		const fields = { ...this.#draft.fields };
 		delete fields[key];
 		this.#set({ ...this.#draft, fields });

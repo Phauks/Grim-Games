@@ -78,5 +78,11 @@
 				"reason": "Says when the Dead token is used (Trevor’s review: TPI’s text is not enough to use it)."
 			}
 		}
+	},
+	"nightOrder": {
+		"other": {
+			"stage": "stops-kills",
+			"after": "exorcist"
+		}
 	}
 }

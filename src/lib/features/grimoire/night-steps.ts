@@ -40,6 +40,7 @@ import {
 	withCharacterChangeSteps,
 	withNightInfo,
 	wakesMarked,
+	sheetWithOwnPlaces,
 	type AnswerValue,
 	type Night,
 	type NightStep
@@ -133,7 +134,11 @@ export function boardNightSteps(
 				characters,
 				night,
 				{ died: today.died ?? [], revived: today.revived ?? [] },
-				data.nightSheet[night === 'first' ? 'firstNight' : 'otherNight']
+				sheetWithOwnPlaces(
+					data.nightSheet[night === 'first' ? 'firstNight' : 'otherNight'],
+					night,
+					[...data.byId.values(), ...characters.values()]
+				)
 			),
 			game,
 			characters

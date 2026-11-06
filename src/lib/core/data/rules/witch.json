@@ -80,5 +80,15 @@
 	},
 	"reminderEnds": {
 		"Cursed": "dusk"
+	},
+	"nightOrder": {
+		"first": {
+			"stage": "minions",
+			"after": "eviltwin"
+		},
+		"other": {
+			"stage": "minions",
+			"after": "devilsadvocate"
+		}
 	}
 }

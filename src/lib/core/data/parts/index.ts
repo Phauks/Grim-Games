@@ -53,6 +53,7 @@ export { madAs } from './mad-as.ts';
 export { madness } from './madness.ts';
 export { makesExtraEvil } from './makes-extra-evil.ts';
 export { marksChoice } from './marks-choice.ts';
+export { nightOrder } from './night-order.ts';
 export { nightText } from './night-text.ts';
 export { nominating } from './nominating.ts';
 export { nominationsAfterExecution } from './nominations-after-execution.ts';

@@ -13,5 +13,11 @@
 	},
 	"deathCause": {
 		"none": "info when it dies"
+	},
+	"nightOrder": {
+		"other": {
+			"stage": "reacts",
+			"after": "tor"
+		}
 	}
 }

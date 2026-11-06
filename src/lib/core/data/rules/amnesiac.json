@@ -60,5 +60,15 @@
 		"to": "self",
 		"types": ["townsfolk", "outsider", "minion", "demon"]
 	},
-	"dayClaim": "ability-guess"
+	"dayClaim": "ability-guess",
+	"nightOrder": {
+		"first": {
+			"stage": "reacts",
+			"after": "damsel"
+		},
+		"other": {
+			"stage": "reacts",
+			"after": "damsel"
+		}
+	}
 }

@@ -121,5 +121,11 @@
 			"characters": ["marked"],
 			"token": "Is The Alchemist"
 		}
+	},
+	"nightOrder": {
+		"first": {
+			"stage": "changes",
+			"after": "philosopher"
+		}
 	}
 }

@@ -58,5 +58,11 @@
 		"you-are": {
 			"characters": ["changed"]
 		}
+	},
+	"nightOrder": {
+		"other": {
+			"stage": "minions",
+			"after": "cerenovus"
+		}
 	}
 }

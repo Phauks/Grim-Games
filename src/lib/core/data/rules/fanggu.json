@@ -70,5 +70,11 @@
 			"characters": ["self"]
 		}
 	},
-	"makesExtraEvil": true
+	"makesExtraEvil": true,
+	"nightOrder": {
+		"other": {
+			"stage": "demon-kills",
+			"after": "po"
+		}
+	}
 }

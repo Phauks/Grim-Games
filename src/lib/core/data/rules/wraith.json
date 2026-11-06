@@ -22,5 +22,15 @@
 				}
 			]
 		}
+	},
+	"nightOrder": {
+		"first": {
+			"stage": "watches",
+			"after": "stormcatcher"
+		},
+		"other": {
+			"stage": "watches",
+			"after": "toymaker"
+		}
 	}
 }

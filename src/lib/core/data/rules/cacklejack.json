@@ -42,5 +42,11 @@
 		"you-are": {
 			"characters": ["changed"]
 		}
+	},
+	"nightOrder": {
+		"other": {
+			"stage": "travellers",
+			"after": "wraith"
+		}
 	}
 }

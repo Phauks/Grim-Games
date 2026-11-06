@@ -93,5 +93,11 @@
 		"who": "marked",
 		"token": "Stormcaught",
 		"from": "not-execution"
+	},
+	"nightOrder": {
+		"first": {
+			"stage": "rules",
+			"after": "toymaker"
+		}
 	}
 }

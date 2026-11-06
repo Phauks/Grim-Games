@@ -111,6 +111,7 @@ describe('Vizier', () => {
 			const steps = nightOrder({
 				night: 'first',
 				sheet: data.nightSheet,
+				official: data.byId,
 				inPlay,
 				players: 5
 			}).steps;

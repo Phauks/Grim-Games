@@ -389,13 +389,7 @@
 		<SharedBoard shared={final.grimoire} {over} room={final.room} />
 	</div>
 {:else if seats.length === 0 || (!code && !local)}
-	<!-- A players-only game starts here: the seat count, None until the player picks one. -->
-	{#if local}<div class="start"><LocalSeatCount notesKey={local} count={0} /></div>{:else}<p
-			class="none"
-			data-testid="grim-none"
-		>
-			{t('common.none')}
-		</p>{/if}
+	<p class="none" data-testid="grim-none">{t('common.none')}</p>
 {:else}
 	{#snippet townBoard()}
 		<div
@@ -694,9 +688,6 @@
 	   Previous and Next inside its foot), so the tabs' bottom bar never covers them. */
 	.final {
 		position: relative;
-	}
-	.start {
-		display: flex;
 	}
 	.none {
 		margin: 0;

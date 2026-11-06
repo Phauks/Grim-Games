@@ -49,5 +49,11 @@
 	},
 	"reminderEnds": {
 		"Haircuts Tonight": "dawn"
+	},
+	"nightOrder": {
+		"other": {
+			"stage": "reacts",
+			"after": "hatter"
+		}
 	}
 }
