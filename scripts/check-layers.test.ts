@@ -35,4 +35,18 @@ describe('check-layers', () => {
 	it('ignores comments', () => {
 		expect(findLayerProblems('/* z-index: 3; top: calc(-1 * var(--x, 0)); */')).toEqual([]);
 	});
+
+	it('flags a negative top or bottom margin unless it says why', () => {
+		// The paper sheet pulled up over the Game over row (PlayerScriptTabs, 2026-11-06).
+		expect(findLayerProblems('.a { margin-top: calc(-1 * var(--space-3)); }')).toHaveLength(1);
+		expect(findLayerProblems('.a { margin-block: -0.3em; }')).toHaveLength(1);
+		expect(findLayerProblems('.a { margin: -1px 0 0; }')).toHaveLength(1);
+		expect(findLayerProblems('.a { margin: 0 0 calc(-1 * var(--x)); }')).toHaveLength(1);
+		expect(
+			findLayerProblems('.a { margin-top: -10%; /* overlap-ok: inside the token */ }')
+		).toEqual([]);
+		// Sideways only: a bleed into the gutter covers nothing above or below.
+		expect(findLayerProblems('.a { margin-inline: calc(-1 * var(--space-3)); }')).toEqual([]);
+		expect(findLayerProblems('.a { margin: 0 calc(-1 * var(--space-3)); }')).toEqual([]);
+	});
 });

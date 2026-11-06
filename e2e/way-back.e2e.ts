@@ -2,10 +2,13 @@ import { readdirSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
 import { expectWayBack } from './shell.ts';
+import { expectNothingCovered } from './occlusion.ts';
 
 // Every screen has a way back to where it came from (Trevor, 2026-10-26): the hamburger on the
 // app's screens, a game screen's own Back or the start flow's Back bar. Checked on the phone
 // and tablet, where no sidebar shows. A new route fails the first test until it is listed here.
+// Each screen is also checked for anything covered at rest (e2e/occlusion.ts, Trevor,
+// 2026-11-06: "stuff being covered up"), so a new screen is checked for that too.
 
 /** A route under src/routes with a page, as SvelteKit writes it, e.g. `/towns/[groupId]/draw`. */
 function routes(dir = 'src/routes'): string[] {
@@ -55,6 +58,18 @@ test('every route is checked for a way back', () => {
 	expect(unlisted, 'list each new route with parameters in way-back.e2e.ts').toEqual([]);
 });
 
+/**
+ * Found covered and not fixed yet, by route and then by the phone or tablet project, exactly
+ * as the check reports them. Fix one, take it off: the check fails until the list matches.
+ */
+const KNOWN_COVERED: Record<string, Record<string, string[]>> = {
+	// The reminder bank's handle sits over New token (also in nothing-covered.e2e.ts).
+	'/grimoire/[gameId]': {
+		phone: ['<button.new-token> "New token" covered by <button.handle> "Every reminder"']
+	}
+};
+const known = (route: string) => KNOWN_COVERED[route]?.[test.info().project.name] ?? [];
+
 /** Routes with no parameters, each opened as it is. */
 const plain = routes().filter((r) => !r.includes('[') && !NOT_SCREENS[r]);
 
@@ -62,6 +77,8 @@ for (const path of plain) {
 	test(`${path} has a way back`, async ({ page }) => {
 		await page.goto(path);
 		await expectWayBack(page);
+		// Spikes are throwaway experiments, not screens anyone uses.
+		if (!path.startsWith('/spikes/')) await expectNothingCovered(page, undefined, known(path));
 	});
 }
 
@@ -69,6 +86,7 @@ for (const [route, path] of Object.entries(ANY_ID)) {
 	test(`${route} has a way back`, async ({ page }) => {
 		await page.goto(path);
 		await expectWayBack(page);
+		await expectNothingCovered(page, undefined, known(route));
 	});
 }
 
@@ -87,5 +105,6 @@ test("a game's screens each have a way back", async ({ page }) => {
 	for (const path of GAME) {
 		await page.goto(game + path);
 		await expectWayBack(page);
+		await expectNothingCovered(page, undefined, known(`/grimoire/[gameId]${path}`));
 	}
 });

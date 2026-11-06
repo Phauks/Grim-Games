@@ -137,7 +137,7 @@
 		flex: none;
 		width: calc(1.5em * var(--inline-reminder-icon, 1));
 		height: calc(1.5em * var(--inline-reminder-icon, 1));
-		margin: -0.1em 0;
+		margin: -0.1em 0; /* overlap-ok: an inline token, kept inside the line height */
 	}
 	.reminder[data-type='townsfolk'],
 	.reminder[data-type='outsider'] {
