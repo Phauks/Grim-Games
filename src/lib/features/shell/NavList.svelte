@@ -182,7 +182,12 @@
 		flex-direction: column;
 		gap: var(--space-2);
 		margin-top: var(--space-2);
-		padding: 0 var(--space-3);
+	}
+	/* Icon and label at the start, where the links' are (Trevor, 2026-11-06). */
+	.actions :global(.button) {
+		justify-content: flex-start;
+		gap: var(--space-3);
+		padding-inline: var(--space-3);
 	}
 	a {
 		display: flex;
