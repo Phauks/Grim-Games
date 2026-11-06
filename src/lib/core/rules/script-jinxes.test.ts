@@ -35,6 +35,7 @@ import { madAsChoice } from './mad-as.ts';
 import { nightStepAlerts, type NightAlert } from './night-alerts.ts';
 import { nightKill } from './night-kill.ts';
 import { reminderTargetMisses } from './reminder-targets.ts';
+import { wakeConditionMet } from './wakes-when.ts';
 import {
 	barredAbilities,
 	createdTooLate,
@@ -1616,6 +1617,69 @@ describe('a script jinx that patches the Cerenovus’s madAs', () => {
 			const { game } = cast(['cerenovus', 'chef', 'empath', 'imp']);
 			expect(madAsPartners(game, 'cerenovus', characters)).toEqual(['baron']);
 			expect(madAsChoice(game, 'cerenovus', characters)?.partners).toEqual(['baron']);
+		}
+	});
+});
+
+// M61d: `wakesWhen.deadAtLeast`, and the verb `deadAtLeast` as a preset of a patch of it.
+describe('a custom character that wakes once enough players are dead', () => {
+	const dies =
+		(n: number) =>
+		(s: string[]): Command => ({ type: 'SetDead', seatId: s[n], dead: true });
+	const ids = ['lamplighter', 'chef', 'empath', 'imp', 'poisoner'];
+
+	it('wakes once its own dead count is met', () => {
+		const { script, warnings, characters } = load([
+			lamplighter({ rules: { wakesWhen: { deadAtLeast: 2 } } }),
+			'chef',
+			'empath',
+			'imp',
+			'poisoner'
+		]);
+		expect(warnings).toEqual([]);
+		const cast = castWith({ script, characters });
+		const one = cast(ids, dies(1));
+		expect(wakeConditionMet(one.game, 'lamplighter', one.seats[0], characters, new Set())).toBe(
+			false
+		);
+		const two = cast(ids, dies(1), dies(2));
+		expect(wakeConditionMet(two.game, 'lamplighter', two.seats[0], characters, new Set())).toBe(
+			true
+		);
+	});
+
+	it('wakes on one death while its jinx partner is in play, by patch or by the verb', () => {
+		const own = { wakesWhen: { deadAtLeastLiving: true } };
+		const patch = {
+			patch: {
+				when: ['partner-in-play'],
+				parts: { wakesWhen: { deadAtLeastLiving: true, deadAtLeast: 1 } }
+			}
+		};
+		const verb = { deadAtLeast: { dead: 1, when: ['partner-in-play'] } };
+		for (const rules of [patch, verb]) {
+			const { script, warnings, characters } = load([
+				lamplighter({
+					rules: own,
+					jinxes: [
+						{ id: 'imp', reason: 'With the Imp in play, one death wakes the Lamplighter.', rules }
+					]
+				}),
+				'chef',
+				'empath',
+				'imp',
+				'poisoner'
+			]);
+			expect(warnings).toEqual([]);
+			const cast = castWith({ script, characters });
+			const one = cast(ids, dies(1));
+			expect(wakeConditionMet(one.game, 'lamplighter', one.seats[0], characters, new Set())).toBe(
+				true
+			);
+			const noImp = cast(['lamplighter', 'chef', 'empath', 'poisoner', 'saint'], dies(1));
+			expect(
+				wakeConditionMet(noImp.game, 'lamplighter', noImp.seats[0], characters, new Set())
+			).toBe(false);
 		}
 	});
 });

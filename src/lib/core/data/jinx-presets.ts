@@ -5,7 +5,7 @@
  * jinx can say the same thing with `patch`.
  */
 import type { CharacterRules } from './character-rules.ts';
-import type { Impairs, JinxEffect, JinxPatch, JinxRules } from './jinx-rules.ts';
+import type { DeadAtLeast, Impairs, JinxEffect, JinxPatch, JinxRules } from './jinx-rules.ts';
 import type { CharacterId } from './types.ts';
 
 /**
@@ -36,6 +36,23 @@ function madAsPatch(
 }
 
 /**
+ * `deadAtLeast`: the subject's own `wakesWhen` with `deadAtLeast` (the King wakes once one
+ * player is dead with the Leviathan or Riot in play). Nothing without its own `wakesWhen`.
+ */
+function deadAtLeastPatch(
+	effect: DeadAtLeast | undefined,
+	own: CharacterRules | undefined
+): JinxPatch | undefined {
+	if (!effect || !own?.wakesWhen) return undefined;
+	const { dead, ...rest } = effect;
+	return {
+		...rest,
+		parts: { wakesWhen: { ...own.wakesWhen, deadAtLeast: dead } },
+		preset: 'deadAtLeast'
+	};
+}
+
+/**
  * A jinx entry's patches: its own `patch`, then each older verb read as one. `about` names the
  * partner and the subject's own rules, for a verb whose patch is built from them.
  */
@@ -44,7 +61,10 @@ export function jinxPatches(
 	about?: { partner: CharacterId; own?: CharacterRules }
 ): JinxPatch[] {
 	if (!rule) return [];
-	return [rule.patch, impairsPatch(rule.impairs), madAsPatch(rule.madAsPartner, about)].filter(
-		(p): p is JinxPatch => p !== undefined
-	);
+	return [
+		rule.patch,
+		impairsPatch(rule.impairs),
+		madAsPatch(rule.madAsPartner, about),
+		deadAtLeastPatch(rule.deadAtLeast, about?.own)
+	].filter((p): p is JinxPatch => p !== undefined);
 }

@@ -175,7 +175,8 @@
  *   default, or `self`), a `jinx-night` hold with no `winner`: the chooser's own ability
  *   decides (the Mastermind with the Al-Hadikhia);
  * - `deadAtLeast`: the subject's `wakesWhen` dead count is met once `dead` players are dead
- *   (with `partner-in-play`, the King with the Leviathan or Riot). Needs `wakesWhen`;
+ *   (with `partner-in-play`, the King with the Leviathan or Riot). Needs `wakesWhen`. A preset
+ *   of a `patch` of the part `wakesWhen` with `deadAtLeast` (`data/jinx-presets.ts`, M61d);
  * - `nightChoice`: each night but the first, the subject's player chooses an alive player
  *   not chosen before (`chooses: "good"`, a good one; `any`), and a chosen partner either uses
  *   its ability without dying (`partner: "acts"`) or dies and gains it (`dies`), worked out in
@@ -581,8 +582,9 @@ export interface JinxPatch extends JinxEffect {
 
 /**
  * The verbs read as a {@link JinxPatch} (M61b, M61c): `impairs` about the subject's own
- * player, `madAsPartner` (the part `madAs` with the partner among its `characters`).
+ * player, `madAsPartner` (the part `madAs` with the partner among its `characters`),
+ * `deadAtLeast` (the part `wakesWhen` with `deadAtLeast`).
  */
-export type JinxPresetVerb = 'impairs' | 'madAsPartner';
+export type JinxPresetVerb = 'impairs' | 'madAsPartner' | 'deadAtLeast';
 
 export type JinxRuleKey = keyof JinxRules;
