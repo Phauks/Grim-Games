@@ -37,9 +37,16 @@ describe('Pit-Hag + Village Idiot jinx', () => {
 		expect(jinxRulesBetween('pithag', 'villageidiot', committedCharacters())).toEqual({
 			spareToken: {}
 		});
-		expect(jinxedPartners('pithag', 'spareToken', ['pithag', 'villageidiot', 'chef'])).toEqual([
-			'villageidiot'
-		]);
-		expect(jinxedPartners('pithag', 'spareToken', ['pithag', 'chef'])).toEqual([]);
+		expect(
+			jinxedPartners(
+				'pithag',
+				'spareToken',
+				['pithag', 'villageidiot', 'chef'],
+				committedCharacters()
+			)
+		).toEqual(['villageidiot']);
+		expect(
+			jinxedPartners('pithag', 'spareToken', ['pithag', 'chef'], committedCharacters())
+		).toEqual([]);
 	});
 });

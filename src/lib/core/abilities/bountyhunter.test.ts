@@ -20,7 +20,11 @@ import { setupAlignmentTasks } from '#lib/core/rules/setup-alignment.ts';
 import { setupPrep } from '#lib/core/rules/setup-reminders.ts';
 import { wakeConditionMet } from '#lib/core/rules/wakes-when.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
-import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import {
+	committedCharacter,
+	nightSheetPresence,
+	committedCharacters
+} from '#lib/core/testing/committed-data.ts';
 
 describe('Bounty Hunter', () => {
 	const character = committedCharacter('bountyhunter');
@@ -116,7 +120,7 @@ describe('Bounty Hunter', () => {
 
 		it('prepares the Know reminder for an evil player only', () => {
 			// Wiki: "Mark one evil player with the KNOW reminder."
-			expect(setupPrep('bountyhunter', 'Bounty Hunter')[0]).toMatchObject({
+			expect(setupPrep('bountyhunter', 'Bounty Hunter', committedCharacters())[0]).toMatchObject({
 				tokens: ['Know'],
 				target: 'an evil player'
 			});

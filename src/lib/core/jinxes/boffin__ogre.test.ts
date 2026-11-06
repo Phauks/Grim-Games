@@ -52,8 +52,10 @@ describe('Boffin + Ogre jinx', () => {
 		});
 
 		it('leaves the Ogre out of the abilities the Boffin may give', () => {
-			expect(barredAbilities('boffin', scriptCharacterIds(script))).toEqual(['ogre']);
-			expect(barredAbilities('boffin', ['boffin', 'chef'])).toEqual([]);
+			expect(barredAbilities('boffin', scriptCharacterIds(script), committedCharacters())).toEqual([
+				'ogre'
+			]);
+			expect(barredAbilities('boffin', ['boffin', 'chef'], committedCharacters())).toEqual([]);
 		});
 
 		it('warns, but still lets the Storyteller give it', () => {

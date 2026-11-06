@@ -37,9 +37,16 @@ describe('Damsel + Pit-Hag jinx', () => {
 		expect(jinxRulesBetween('pithag', 'damsel', committedCharacters())).toEqual({
 			storytellerChooses: { what: 'player', creating: 'partner' }
 		});
-		expect(jinxedPartners('pithag', 'storytellerPicksPlayer', ['pithag', 'damsel', 'imp'])).toEqual(
-			['damsel']
-		);
-		expect(jinxedPartners('pithag', 'storytellerPicksPlayer', ['pithag', 'imp'])).toEqual([]);
+		expect(
+			jinxedPartners(
+				'pithag',
+				'storytellerPicksPlayer',
+				['pithag', 'damsel', 'imp'],
+				committedCharacters()
+			)
+		).toEqual(['damsel']);
+		expect(
+			jinxedPartners('pithag', 'storytellerPicksPlayer', ['pithag', 'imp'], committedCharacters())
+		).toEqual([]);
 	});
 });

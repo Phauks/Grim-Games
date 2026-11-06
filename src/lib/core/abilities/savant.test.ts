@@ -14,7 +14,11 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import {
+	committedCharacter,
+	nightSheetPresence,
+	committedCharacters
+} from '#lib/core/testing/committed-data.ts';
 import type { Script } from '#lib/core/data/index.ts';
 import {
 	pairFits,
@@ -182,7 +186,7 @@ describe('Savant', () => {
 			const s = scenario(cast, { script }).newDay();
 			expect(mayVisit(s)).toBe(true);
 			expect(mayVisit(s.newDay())).toBe(true);
-			expect(dayClaim('savant')).toBe('statements');
+			expect(dayClaim('savant', committedCharacters())).toBe('statements');
 		});
 
 		it('suggests two statements from the grimoire, one true and one false', () => {

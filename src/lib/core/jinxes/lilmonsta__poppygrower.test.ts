@@ -10,12 +10,23 @@
  */
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
-import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
+import {
+	committedCharacter,
+	committedGameData,
+	committedCharacters
+} from '#lib/core/testing/committed-data.ts';
 import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
 import { nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
 import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
+import { wikiUrl } from '#lib/core/data/wiki.ts';
 import { babysitter, scriptOf, withLilMonsta } from './lilmonsta.test-support.ts';
+
+/** The partner's Related Jinxes link; a homebrew partner (the parity run) has none. */
+const jinxesSection = (id: string) => {
+	const page = wikiUrl(committedCharacter(id));
+	return page ? { wiki: `${page}#Related_Jinxes` } : {};
+};
 
 describe("Lil' Monsta + Poppy Grower jinx", () => {
 	const data = committedGameData();
@@ -94,7 +105,7 @@ describe("Lil' Monsta + Poppy Grower jinx", () => {
 					source: { characterId: 'lilmonsta' },
 					partner: 'poppygrower',
 					type: 'minion',
-					wiki: 'https://wiki.bloodontheclocktower.com/Poppy_Grower#Related_Jinxes'
+					...jinxesSection('poppygrower')
 				})
 			]);
 		});

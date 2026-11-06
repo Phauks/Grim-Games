@@ -18,7 +18,11 @@ import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 import { setupPrep } from '#lib/core/rules/setup-reminders.ts';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
-import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import {
+	committedCharacter,
+	nightSheetPresence,
+	committedCharacters
+} from '#lib/core/testing/committed-data.ts';
 import { infoPicker, learnedRoles } from '#lib/core/rules/night-info.ts';
 import { shownToSeats } from '#lib/core/rules/shown-to.ts';
 
@@ -129,7 +133,9 @@ describe('Evil Twin', () => {
 		it('setup asks for a good player to mark Twin', () => {
 			// Wiki: "While setting up the game, choose a Good Twin by marking any good character with the
 			// TWIN reminder."
-			expect(setupPrep('eviltwin', 'Evil Twin')).toMatchObject([{ tokens: ['Twin'] }]);
+			expect(setupPrep('eviltwin', 'Evil Twin', committedCharacters())).toMatchObject([
+				{ tokens: ['Twin'] }
+			]);
 			const s = scenario(['oracle', 'chef', 'empath', 'eviltwin', 'nodashii']);
 			expect(reminderTargetMisses(s.game, twin, s.seat('oracle'), s.characters)).toEqual([]);
 			expect(reminderTargetMisses(s.game, twin, s.seat('nodashii'), s.characters)).toContain(

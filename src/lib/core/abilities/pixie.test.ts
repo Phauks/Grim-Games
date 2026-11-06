@@ -19,7 +19,8 @@ import { infoPicker, isAllowed, isTruthful, learnedRoles } from '#lib/core/rules
 import {
 	committedCharacter,
 	committedGameData,
-	nightSheetPresence
+	nightSheetPresence,
+	committedCharacters
 } from '#lib/core/testing/committed-data.ts';
 import { protection } from '#lib/core/rules/ability.ts';
 import { gainedAbilities, withGainedSteps } from '#lib/core/rules/gained-abilities.ts';
@@ -63,7 +64,9 @@ describe('Pixie', () => {
 		it('prepares Mad on an in-play Townsfolk other than the Pixie', () => {
 			// Wiki: "During the first night, mark a Townsfolk character token with the Pixie’s MAD
 			// reminder."
-			expect(setupPrep('pixie', 'Pixie').map((step) => step.tokens)).toEqual([['Mad']]);
+			expect(setupPrep('pixie', 'Pixie', committedCharacters()).map((step) => step.tokens)).toEqual(
+				[['Mad']]
+			);
 			const s = scenario(['pixie', 'washerwoman', 'butler', 'imp', 'monk']);
 			const mad = { characterId: 'pixie', label: 'Mad' };
 			expect(reminderTargetMisses(s.game, mad, s.seat('washerwoman'), s.characters)).toEqual([]);

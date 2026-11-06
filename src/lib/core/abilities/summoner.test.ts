@@ -26,7 +26,8 @@ import { scenario } from '#lib/core/testing/scenario.ts';
 import {
 	committedCharacter,
 	committedGameData,
-	nightSheetPresence
+	nightSheetPresence,
+	committedCharacters
 } from '#lib/core/testing/committed-data.ts';
 
 describe('Summoner', () => {
@@ -130,7 +131,7 @@ describe('Summoner', () => {
 			// Summoner. When preparing the second night, put the Summoner’s NIGHT 2 reminder by the
 			// Summoner. When preparing the third night, put the Summoner’s NIGHT 3 reminder by the
 			// Summoner."
-			expect(setupPrep('summoner', 'Summoner')[0]).toMatchObject({
+			expect(setupPrep('summoner', 'Summoner', committedCharacters())[0]).toMatchObject({
 				tokens: ['Night 1'],
 				target: 'the Summoner'
 			});
@@ -146,10 +147,10 @@ describe('Summoner', () => {
 
 		it('gives the Summoner the 3 bluffs on the first night', () => {
 			// Wiki: "During the first night, show the Summoner 3 not-in-play characters as bluffs."
-			expect(setupPrep('summoner', 'Summoner')[1]).toMatchObject({
+			expect(setupPrep('summoner', 'Summoner', committedCharacters())[1]).toMatchObject({
 				text: 'Choose 3 not-in-play good characters as the Summoner’s bluffs'
 			});
-			expect(rulesOf('summoner')?.evilInfo?.notes?.demoninfo).toBe(
+			expect(rulesOf('summoner', committedCharacters())?.evilInfo?.notes?.demoninfo).toBe(
 				'there is no Demon yet; the Summoner gets the bluffs.'
 			);
 		});
@@ -159,7 +160,7 @@ describe('Summoner', () => {
 			// point at a player, and to a Demon icon on the character sheet."
 			const night2 = scenario(cast).newDay().reminder('summoner', 'summoner', 'Night 2');
 			expect(characterChanger(night2.game, 'summoner', night2.characters)).toBeUndefined();
-			expect(rulesOf('summoner')?.changesCharacter).toMatchObject({
+			expect(rulesOf('summoner', committedCharacters())?.changesCharacter).toMatchObject({
 				types: ['demon'],
 				alignment: 'evil',
 				token: 'Night 3'

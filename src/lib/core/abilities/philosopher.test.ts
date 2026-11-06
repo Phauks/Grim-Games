@@ -26,7 +26,8 @@ import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 import {
 	committedCharacter,
 	committedGameData,
-	nightSheetPresence
+	nightSheetPresence,
+	committedCharacters
 } from '#lib/core/testing/committed-data.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
@@ -78,7 +79,7 @@ describe('Philosopher', () => {
 			s
 				.becomes('philosopher', characterId)
 				.reminder('philosopher', 'philosopher', 'Is The Philosopher');
-		const gainedFrom = rulesOf('philosopher')!.gainedFrom!;
+		const gainedFrom = rulesOf('philosopher', committedCharacters())!.gainedFrom!;
 
 		it('Example 1: Philosopher copies Dreamer on the first night', () => {
 			// Wiki: "During the first night, the Philosopher chooses to gain the Dreamer's ability. They

@@ -17,7 +17,11 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import { abilityState } from '#lib/core/rules/ability.ts';
 import { nightAnswer } from '#lib/core/rules/night-info.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
-import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import {
+	committedCharacter,
+	nightSheetPresence,
+	committedCharacters
+} from '#lib/core/testing/committed-data.ts';
 import { dayClaim } from '#lib/core/rules/day-claims.ts';
 import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
 import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
@@ -136,7 +140,7 @@ describe('Gossip', () => {
 			// Wiki: "Each day, if the Gossip makes a definite, true public statement, put the Gossip’s
 			// DEAD reminder in the center of the left side of the Grimoire as a reminder to yourself to
 			// place it tonight."
-			expect(dayClaim('gossip')).toBe('statement');
+			expect(dayClaim('gossip', committedCharacters())).toBe('statement');
 			const s = says(scenario(cast).newDay(), true);
 			expect(s.game.today.entries).toContainEqual(
 				expect.objectContaining({ characterId: 'gossip', seatId: s.seat('gossip'), holds: true })

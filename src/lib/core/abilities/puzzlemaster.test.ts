@@ -26,7 +26,11 @@ import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 import { setupPrep } from '#lib/core/rules/setup-reminders.ts';
 import { warned } from '#lib/core/model/fixtures.test-support.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
-import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import {
+	committedCharacter,
+	nightSheetPresence,
+	committedCharacters
+} from '#lib/core/testing/committed-data.ts';
 
 /**
  * Seats 0 to 4: the Puzzlemaster, Alex the Demon, an Empath, a Sailor and a Chef, with the
@@ -118,7 +122,7 @@ describe('Puzzlemaster', () => {
 
 	describe('the guess (https://wiki.bloodontheclocktower.com/Puzzlemaster)', () => {
 		it('asks whom they guessed, and marks it Guess Used', () => {
-			expect(dayUseOf('puzzlemaster')).toEqual({
+			expect(dayUseOf('puzzlemaster', committedCharacters())).toEqual({
 				who: 'guessed',
 				spentToken: 'Guess Used',
 				answer: 'demon-if-marked'
@@ -162,9 +166,9 @@ describe('Puzzlemaster', () => {
 		it('prepares Drunk on any one player, who is then drunk', () => {
 			// Wiki: "While preparing the first night, mark any player with the Puzzlemaster’s DRUNK
 			// reminder. This player is drunk."
-			expect(setupPrep('puzzlemaster', 'Puzzlemaster').map((step) => step.tokens)).toEqual([
-				['Drunk']
-			]);
+			expect(
+				setupPrep('puzzlemaster', 'Puzzlemaster', committedCharacters()).map((step) => step.tokens)
+			).toEqual([['Drunk']]);
 			const s = scenario(cast);
 			const drunk = { characterId: 'puzzlemaster', label: 'Drunk' };
 			for (const seat of s.seats)

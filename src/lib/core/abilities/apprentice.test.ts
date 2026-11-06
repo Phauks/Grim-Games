@@ -28,7 +28,11 @@ import { nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
 import { deathVerdict } from '#lib/core/rules/night-deaths.ts';
 import { infoPicker } from '#lib/core/rules/night-info/picker.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
-import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import {
+	committedCharacter,
+	nightSheetPresence,
+	committedCharacters
+} from '#lib/core/testing/committed-data.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import { hasAbilityOf } from '#lib/core/rules/gained-abilities.ts';
 import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
@@ -110,7 +114,7 @@ describe('Apprentice', () => {
 			// them the YOU ARE info token, then a Townsfolk or Minion token."
 			const tokens = stepInfoTokens(character, character.firstNightReminder);
 			expect(tokens.map((t) => t.id)).toContain('you-are');
-			expect(rulesOf('apprentice')?.swapsForAbility).toEqual({
+			expect(rulesOf('apprentice', committedCharacters())?.swapsForAbility).toEqual({
 				token: 'Is The Apprentice',
 				good: ['townsfolk'],
 				evil: ['minion']

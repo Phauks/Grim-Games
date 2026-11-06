@@ -37,9 +37,16 @@ describe('Boffin + Village Idiot jinx', () => {
 		expect(jinxRulesBetween('boffin', 'villageidiot', committedCharacters())).toEqual({
 			spareToken: {}
 		});
-		expect(jinxedPartners('boffin', 'spareToken', ['boffin', 'villageidiot', 'chef'])).toEqual([
-			'villageidiot'
-		]);
-		expect(jinxedPartners('boffin', 'spareToken', ['boffin', 'chef'])).toEqual([]);
+		expect(
+			jinxedPartners(
+				'boffin',
+				'spareToken',
+				['boffin', 'villageidiot', 'chef'],
+				committedCharacters()
+			)
+		).toEqual(['villageidiot']);
+		expect(
+			jinxedPartners('boffin', 'spareToken', ['boffin', 'chef'], committedCharacters())
+		).toEqual([]);
 	});
 });
