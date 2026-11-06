@@ -55,9 +55,12 @@ export function storytellerNominee(game: Game, characters: CharacterLookup): boo
 		const id = trueCharacter(game, seatId, characters);
 		if (id) ids.add(id);
 	}
-	return [...ids].some((id) =>
-		rulesOf(id, characters)?.gameEnd?.ends?.some((e) => e.kind === 'storyteller-executed')
-	);
+	return [...ids].some((id) => endsOnStorytellerExecution(id, characters));
+}
+
+/** Whether a character lets the Storyteller be executed (`storyteller-executed`, the Atheist). */
+function endsOnStorytellerExecution(id: CharacterId, characters: CharacterLookup): boolean {
+	return !!rulesOf(id, characters)?.gameEnd?.ends?.some((e) => e.kind === 'storyteller-executed');
 }
 
 /** The players who nominated the Storyteller today. */
@@ -161,7 +164,7 @@ function nomineeNominatesNow(game: Game, seatId: SeatId, characters: CharacterLo
 /**
  * How many times `seatId` nominated the Storyteller today while a character whose nominees
  * nominate straight away (`nomineesNominateNow`) has a `storytellerChooses` `own-execution`
- * jinx on the script.
+ * jinx on the script with a partner that lets the Storyteller be executed (M58).
  * The Storyteller is voted on instead, and is executed (`ExecuteStoryteller`, the game ends)
  * when the Storyteller judges them about to die; otherwise the nominator nominates again, so
  * each such nomination gives them one more today (the Riot with the Atheist, each page's
@@ -174,10 +177,14 @@ export function storytellerRenominations(
 ): number {
 	const made = storytellerNominators(game).filter((s) => s === seatId).length;
 	if (made === 0) return 0;
-	const voted = nomineesNominateNow(game, characters).some(
-		(id) =>
-			ownJinxEffects(game, id, 'storytellerChooses', characters, (e) => e.what === 'own-execution')
-				.length > 0
+	const voted = nomineesNominateNow(game, characters).some((id) =>
+		ownJinxEffects(
+			game,
+			id,
+			'storytellerChooses',
+			characters,
+			(e) => e.what === 'own-execution'
+		).some(({ partner }) => endsOnStorytellerExecution(partner, characters))
 	);
 	return voted ? made : 0;
 }

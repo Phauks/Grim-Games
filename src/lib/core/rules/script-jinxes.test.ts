@@ -1209,6 +1209,14 @@ describe('homebrew sentences, stage 5 (M46)', () => {
 			expect(nominated([vote])).toBe(2);
 			expect(nominated([])).toBe(1);
 		});
+
+		it('needs the jinx partner to be the one that lets the Storyteller be executed (M58)', () => {
+			// Wiki (Djinn): "There are many different Djinn special rules. Each is tailored to a specific pair of jinxed characters."
+			const vote = jinx('chef', 'During the riot, a nominated Storyteller is voted on.', {
+				storytellerChooses: { what: 'own-execution' }
+			});
+			expect(nominated([vote])).toBe(1);
+		});
 	});
 
 	it('storytellerHas changed: when the Tinkerer changes the living Poisoner, the Storyteller has it', () => {
