@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { Snippet } from 'svelte';
 	import type { CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
 	import type { GenericLook, Reminder, ReminderId, SeatId } from '#lib/core/model/index.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
@@ -82,11 +83,13 @@
 			/** Its accessible name, and the shorter words shown. */
 			label: string;
 			text: string;
-			icon: 'bag' | 'day' | 'night';
+			icon: 'bag' | 'day' | 'night' | 'check';
 			disabled: boolean;
 			onclick: () => void;
 			hint?: number;
 		};
+		/** Over the bank where the token in hand shows: the board's Execution bar. */
+		children?: Snippet;
 	}
 
 	let {
@@ -105,7 +108,8 @@
 		run: runButton,
 		disabled = false,
 		dropping = false,
-		dropOver = false
+		dropOver = false,
+		children
 	}: Props = $props();
 
 	const game = $derived(grimoire.game);
@@ -345,6 +349,7 @@
 		{onRemove}
 		{onHints}
 	/>
+	{@render children?.()}
 </ReminderTray>
 
 {#if drag}

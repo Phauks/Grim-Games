@@ -12,7 +12,7 @@
 			/** Its accessible name, and the shorter words shown. */
 			label: string;
 			text: string;
-			icon: 'bag' | 'day' | 'night';
+			icon: 'bag' | 'day' | 'night' | 'check';
 			disabled: boolean;
 			onclick: () => void;
 			hint?: number;
@@ -60,7 +60,7 @@
 		place-items: center;
 		align-content: center;
 		gap: var(--space-1);
-		width: 5.5rem;
+		width: var(--run-w, 5.5rem);
 		padding: 0 var(--space-1);
 		border: 0;
 		border-inline-start: 1px solid var(--border);

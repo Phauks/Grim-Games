@@ -1,3 +1,4 @@
+import { chooseExecution } from './execution.ts';
 import { readFileSync } from 'node:fs';
 import { tapStartGame } from './start-game.ts';
 import { expect, test, type Locator, type Page } from '@playwright/test';
@@ -133,17 +134,6 @@ const bankNight = (
 ) =>
 	// The bank's own box, which keeps its run button while Seating's bar takes its tokens' row.
 	page.locator('[data-tray]').getByRole('button', { name, exact: true });
-
-/**
- * Ending the day asks who was executed (Trevor, 2026-10-22); No execution unless a player
- * is named.
- */
-async function chooseExecution(page: Page, choice = 'No execution') {
-	const ask = page.getByRole('alertdialog', { name: 'End the day?' });
-	await ask.getByRole('combobox', { name: 'Execution' }).tap();
-	await page.getByRole('option', { name: choice, exact: true }).tap();
-	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
-}
 
 /**
  * The walk-through under the board, on this step: the night order left the board (Trevor,

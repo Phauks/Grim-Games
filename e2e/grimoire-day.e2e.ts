@@ -1,3 +1,4 @@
+import { chooseExecution } from './execution.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 import { pickNumber } from './number-select.ts';
@@ -110,11 +111,7 @@ async function chooseCharacter(page: Page, number: number, name: string) {
 /** A seat on the board by the start of its label, while a sheet hides the board. */
 /** Ending the day asks who was executed (Trevor, 2026-10-22). */
 async function endTheDay(page: Page, choice = 'No execution') {
-	const ask = page.getByRole('alertdialog', { name: 'End the day?' });
-	await ask.getByRole('combobox', { name: 'Execution' }).tap();
-	// A player's option goes on to their character and alive or dead (Trevor, 2026-10-23).
-	await page.getByRole('option', { name: new RegExp(`\\b${choice}(\\s|$)`) }).tap();
-	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await chooseExecution(page, choice);
 }
 
 const boardSeat = (page: Page, start: string) =>
@@ -762,9 +759,11 @@ test('before Start game the day view says Setup and Execution warns', async ({ p
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
 	const day = page.getByRole('dialog', { name: 'Day', exact: true });
 	await expect(day.getByTestId('day-name')).toHaveText('Day');
+	// Once started, Execution asks for the player on the board (Trevor, 2026-11-06), so no
+	// warning shows.
 	await day.getByRole('button', { name: 'Execution', exact: true }).tap();
-	await expect(ask.getByTestId('execution')).toBeVisible();
-	await expect(ask.getByTestId('execution-not-started')).toHaveCount(0);
+	await expect(page.getByTestId('execution-pick')).toBeVisible();
+	await expect(page.getByTestId('execution-not-started')).toHaveCount(0);
 });
 
 test('Execution sits as far from the bottom of the screen as from its side', async ({ page }) => {

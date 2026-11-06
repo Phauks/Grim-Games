@@ -125,6 +125,7 @@
 	import type { BoardPlayerSource } from './board-player-source.ts';
 	import { BoardStatus } from './board-status.svelte.ts';
 	import PhaseDialogs from './PhaseDialogs.svelte';
+	import ExecutionPickBar from './ExecutionPickBar.svelte';
 	import NominationAsk from './NominationAsk.svelte';
 
 	interface Props {
@@ -379,10 +380,6 @@
 	function editNote(seatId: SeatId) {
 		setTimeout(() => playersDialog.showSeat(seatId));
 	}
-	/**
-	 * A tapped reminder opens only its own dialog, not its seat's sheet (Trevor, 2026-10-18:
-	 * "they chose to open reminder, not character").
-	 */
 	/** A tap on a seat: its avatar opens the profile, its note and gavel their own asks. */
 	function tapSeat(seatId: SeatId, part?: 'note' | 'nominate' | 'avatar') {
 		if (part === 'avatar') openProfile(seatId);
@@ -565,6 +562,8 @@
 		busy: seatArr.arranging || !!placing,
 		setDayOpen: (open) => (dayOpen = open),
 		closeSeat: () => (sheetOpen = false),
+		notStarted: phaseNow.kind === 'setup',
+		hand,
 		started: () => status.started(),
 		offerSavant
 	}));
@@ -861,6 +860,7 @@
 			onSeat={tapSeat}
 			onReminder={(seatId, id) => holdReminder(id, seatId)}
 			onLooseReminder={(id) => holdReminder(id)}
+			executionPick={flow.picking ? flow : undefined}
 		/>
 		{#if nw.walk && !ended}
 			<NightStrip
@@ -903,7 +903,9 @@
 				disabled={watching}
 				{remDrag}
 				onRemove={(id) => moveConfirm?.requestReturn(id)}
-			/>
+			>
+				{#if flow.picking}<ExecutionPickBar {flow} {game} {characters} />{/if}
+			</ReminderBank>
 		{/if}
 
 		<!-- Measures the tap target, the height every reminder takes on the board. -->
@@ -1113,7 +1115,7 @@
 	{coverActions}
 	onSoundboard={watching ? undefined : () => (soundboardOpen = true)}
 	{town}
-	onEndDay={() => (flow.endDayOpen = true)}
+	onEndDay={() => flow.startExecution()}
 	onExecute={(seatId, cause) => flow.executeForMadness(seatId, cause)}
 	onSavant={(seatId) => {
 		savantSeat = seatId;

@@ -1,3 +1,4 @@
+import { chooseExecution } from './execution.ts';
 import { expect, test, type Browser, type Page, type TestInfo } from '@playwright/test';
 import { openProfile, setPlayerName } from './player-name.ts';
 import { toBoard } from './new-game.ts';
@@ -49,10 +50,7 @@ async function startNight(page: Page) {
 	const day = page.getByRole('dialog', { name: /^(Setup|Day( \d+)?)$/ });
 	await page.getByRole('button', { name: 'Day', exact: true }).tap();
 	await day.getByRole('button', { name: 'Execution' }).tap();
-	const confirm = page.getByRole('alertdialog', { name: 'End the day?' });
-	await confirm.getByRole('combobox', { name: 'Execution' }).tap();
-	await page.getByRole('option', { name: 'No execution', exact: true }).tap();
-	await confirm.getByRole('button', { name: 'Confirm' }).tap();
+	await chooseExecution(page);
 	await expect(day).toBeHidden();
 }
 

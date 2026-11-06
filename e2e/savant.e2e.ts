@@ -1,3 +1,4 @@
+import { chooseExecution } from './execution.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { tapStartGame } from './start-game.ts';
 import { pickScript, toBoard } from './new-game.ts';
@@ -274,10 +275,7 @@ test('earlier days’ Savant information sits beside today’s, which is edited 
 
 	await page.keyboard.press('Escape');
 	await bank.getByRole('button', { name: 'Execution', exact: true }).tap();
-	const ask = page.getByRole('alertdialog', { name: 'End the day?' });
-	await ask.getByRole('combobox', { name: 'Execution' }).tap();
-	await page.getByRole('option', { name: /^No execution(\s|$)/ }).tap();
-	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await chooseExecution(page);
 	await endNight();
 
 	// Day 2: Day 1's pair on the left, true or false as given; today's is a fresh pair.
