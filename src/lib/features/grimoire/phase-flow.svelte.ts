@@ -8,7 +8,9 @@ import { resolve } from '$app/paths';
 import type { CharacterId } from '#lib/core/data/index.ts';
 import type { CharacterLookup, Game, SeatId } from '#lib/core/model/index.ts';
 import {
+	executionAsks,
 	pendingSetupAlignments,
+	storytellerNominee,
 	type ExecutionOutcome,
 	type SetupAlignmentTask
 } from '#lib/core/rules/index.ts';
@@ -19,6 +21,7 @@ import { preferences } from '#lib/ui/preferences.svelte.ts';
 import { gameStarts } from '#lib/features/grimoire/device-notes.ts';
 import type { Grimoire } from '#lib/features/grimoire/grimoire.svelte.ts';
 import type { NightWalk } from '#lib/features/grimoire/night-walk.svelte.ts';
+import type { ReminderHand } from '#lib/features/grimoire/reminder-hand.svelte.ts';
 import { tonight } from '#lib/features/grimoire/night-steps.ts';
 import { pendingSetup, type TrayItem } from '#lib/features/grimoire/setup-tray.ts';
 
@@ -38,11 +41,19 @@ export interface PhaseFlowContext {
 	setDayOpen(open: boolean): void;
 	/** Closes the seat sheet, for an Execution chosen from a seat's status. */
 	closeSeat(): void;
+	/** Start game not yet tapped: the day's Execution opens its sheet, which warns. */
+	notStarted: boolean;
+	/** The reminder in hand: put down when Execution asks, and picking one up ends the ask. */
+	hand: ReminderHand;
 	/** The first night started (the board rereads when the game started). */
 	started(): void;
 	/** Offers the Savant's information after a night. */
 	offerSavant(): void;
 }
+
+/** The board's pick for no execution, and for the Storyteller executed (the Atheist). */
+export const NO_EXECUTION = 'none';
+export const STORYTELLER = 'storyteller';
 
 export class PhaseFlow {
 	endNightOpen = $state(false);
@@ -58,6 +69,13 @@ export class PhaseFlow {
 	executeChosen = $state<SeatId>();
 	/** A mad player broke madness: the character whose madness executes them (L84). */
 	executeCause = $state<CharacterId>();
+	/**
+	 * The executed player is being tapped on the board (Trevor, 2026-11-06, option B):
+	 * `picking` while the board's bar asks, and the pick so far: a seat, No execution, or the
+	 * Storyteller (the Atheist on the script).
+	 */
+	picking = $state(false);
+	picked = $state<SeatId | typeof NO_EXECUTION | typeof STORYTELLER>();
 	/** Counts Next taps past the walk-through's last step; each lights up End night. */
 	endHint = $state(0);
 	#context: () => PhaseFlowContext;
@@ -68,6 +86,12 @@ export class PhaseFlow {
 			if (this.endDayOpen) return;
 			this.executeChosen = undefined;
 			this.executeCause = undefined;
+		});
+		// A token picked up, or the game ending, ends the Execution pick.
+		$effect(() => {
+			if (!this.picking) return;
+			const { hand, ended } = this.#context();
+			if (hand.held || ended) this.cancelPick();
 		});
 	}
 
@@ -85,6 +109,78 @@ export class PhaseFlow {
 		if (!grimoire.isNightStepDone(night, { id: 'dusk' }))
 			grimoire.toggleNightStep(night, { id: 'dusk' });
 		if (preferences.current.assistance.nightWalkthrough) nw.run(true);
+	}
+
+	/**
+	 * Execution, from the bank or the day view: the board asks for the executed player, with an
+	 * execution already logged today picked to start with. Before Start game the sheet opens
+	 * instead, as it warns (Trevor, 2026-11-01).
+	 */
+	startExecution(): void {
+		const { game, notStarted, setDayOpen, hand } = this.#context();
+		if (notStarted) {
+			this.endDayOpen = true;
+			return;
+		}
+		setDayOpen(false);
+		hand.putDown();
+		const entry = game.today.entries.findLast(
+			(e) => e.kind === 'execution' || e.kind === 'storyteller-execution'
+		);
+		this.picked =
+			entry?.kind === 'execution'
+				? entry.seatId
+				: entry?.kind === 'storyteller-execution'
+					? STORYTELLER
+					: undefined;
+		this.picking = true;
+	}
+
+	/**
+	 * A seat tapped while the board asks: it is picked, or, when executing them has more to
+	 * decide (a save, the Scapegoat, the Judge: `executionAsks`), the Execution sheet opens with
+	 * them chosen.
+	 */
+	pick(seatId: SeatId | typeof NO_EXECUTION | typeof STORYTELLER): void {
+		const { game, characters } = this.#context();
+		const player = seatId !== NO_EXECUTION && seatId !== STORYTELLER;
+		const logged = game.today.entries.some((e) => e.kind === 'execution' && e.seatId === seatId);
+		if (player && !logged && executionAsks(game, seatId, characters)) {
+			this.picking = false;
+			this.executeChosen = seatId;
+			this.endDayOpen = true;
+			return;
+		}
+		this.picked = seatId;
+	}
+
+	/** The board's Confirm: the pick is executed and the day ends. */
+	confirmPick(): void {
+		const picked = this.picked;
+		if (picked === undefined) return;
+		this.picking = false;
+		this.picked = undefined;
+		if (picked === NO_EXECUTION) this.executeAndEndDay(undefined, undefined, false);
+		else this.executeAndEndDay(picked, undefined, false);
+	}
+
+	cancelPick(): void {
+		this.picking = false;
+		this.picked = undefined;
+	}
+
+	/** The seat picked so far, if a player is. */
+	get pickedSeat(): SeatId | undefined {
+		const picked = this.picked;
+		return picked === undefined || picked === NO_EXECUTION || picked === STORYTELLER
+			? undefined
+			: picked;
+	}
+
+	/** Whether the board's bar offers the Storyteller (the Atheist on the script). */
+	get storytellerPickable(): boolean {
+		const { game, characters } = this.#context();
+		return storytellerNominee(game, characters);
 	}
 
 	/** Executed from a seat's status: true when the day's Execution asks, with them chosen. */
@@ -242,9 +338,7 @@ export class PhaseFlow {
 			text: t('day.execution'),
 			icon: 'night' as const,
 			disabled: ended || grimoire.open.viewOnly || busy,
-			onclick: () => {
-				this.endDayOpen = true;
-			}
+			onclick: () => this.startExecution()
 		};
 	});
 }

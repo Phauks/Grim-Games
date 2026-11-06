@@ -62,6 +62,7 @@ export * from './storytellers.ts';
 export * from './wishes.ts';
 export * from './executed-instead.ts';
 export * from './execution-outcome.ts';
+export * from './execution-asks.ts';
 export * from './explosion.ts';
 export * from './chosen-kills.ts';
 export * from './character-changes.ts';

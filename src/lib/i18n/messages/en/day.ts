@@ -31,6 +31,11 @@ export const day = {
 	/** The day's Execution before Start game (Trevor, 2026-11-01): a warning, never a lock. */
 	'day.executionNotStarted': 'The game has not started yet.',
 	'day.noExecution': 'No execution',
+	/** The board's Execution bar (Trevor, 2026-11-06, option B): a seat is tapped, then Confirm. */
+	'day.executePickAsk': 'Tap the executed player',
+	'day.executePick': 'Execute {name}?',
+	'day.executePickNone': 'No execution today?',
+	'day.executePickStoryteller': 'Execute the Storyteller?',
 	'day.savedBy': 'Saved by',
 	'day.savedByNone': 'None',
 	'day.savedByOverride': 'Storyteller override',

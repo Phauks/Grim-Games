@@ -27,6 +27,7 @@
 	import type { ReminderDragging } from './reminder-drag.svelte.ts';
 	import type { SeatArranging } from './seat-arranging.svelte.ts';
 	import type { SeatHints } from './seat-hints.svelte.ts';
+	import type { PhaseFlow } from './phase-flow.svelte.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import SeatMarksSheet from './SeatMarksSheet.svelte';
 	import SeatToken from './SeatToken.svelte';
@@ -71,6 +72,11 @@
 		onSeat: (seatId: SeatId, part?: SeatPart) => void;
 		onReminder: (seatId: SeatId, reminderId: ReminderId) => void;
 		onLooseReminder: (reminderId: ReminderId) => void;
+		/**
+		 * The executed player being tapped (ExecutionPickBar): the seat picked so far is marked,
+		 * today's nominees glow, and a tap anywhere on a seat picks it.
+		 */
+		executionPick?: PhaseFlow;
 	}
 
 	let {
@@ -94,10 +100,15 @@
 		onPlace,
 		onSeat,
 		onReminder,
-		onLooseReminder
+		onLooseReminder,
+		executionPick
 	}: Props = $props();
 
 	const game = $derived(grimoire.game);
+	/** Today's nominees, who glow while the executed player is tapped. */
+	const nominees = $derived(
+		game.today.entries.flatMap((e) => (e.kind === 'nomination' ? [e.nominee] : []))
+	);
 	const characters = $derived(grimoire.open.characters);
 	const seats = $derived(game.seating.map((id) => game.seats[id]));
 	/**
@@ -220,12 +231,22 @@
 				(remDrag.drag !== undefined &&
 					remDrag.drag.target === seat.seatId &&
 					remDrag.drag.from !== seat.seatId) ||
-				hints.tray.target === seat.seatId}
+				hints.tray.target === seat.seatId ||
+				executionPick?.pickedSeat === seat.seatId}
 			dragFrom={remDrag.drag !== undefined && remDrag.drag.from === seat.seatId}
 			misfit={hints.misfits.has(seat.seatId)}
-			role={hints.role(seat.seatId)}
+			role={executionPick
+				? nominees.includes(seat.seatId)
+					? 'target'
+					: undefined
+				: hints.role(seat.seatId)}
 			onTap={(part) =>
-				!seatArr.arranging && (part === 'marks' ? (marksOf = i) : onSeat(seat.seatId, part))}
+				!seatArr.arranging &&
+				(executionPick
+					? executionPick.pick(seat.seatId)
+					: part === 'marks'
+						? (marksOf = i)
+						: onSeat(seat.seatId, part))}
 			onHold={seatArr.arranging || watching ? undefined : (on) => on && seatArr.held(seat.seatId)}
 			onGhostVote={() =>
 				!seatArr.arranging &&

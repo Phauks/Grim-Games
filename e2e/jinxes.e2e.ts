@@ -416,12 +416,13 @@ test("the Vizier isn't declared with the Investigator, and the Magician is out o
 		0
 	);
 
+	// The player is tapped on the board (Trevor, 2026-11-06); the Vizier's Executed at once
+	// opens the Execution sheet with them chosen.
 	await day.getByRole('button', { name: 'Execution', exact: true }).tap();
+	await page.locator('[data-testid="seat"][aria-label^="Seat 2:"]').tap();
 	const ask = page.getByRole('alertdialog', { name: 'End the day?' });
 	const now = ask.getByTestId('outcome-execute-now');
 	await expect(now).toBeVisible();
-	await ask.getByRole('combobox', { name: 'Execution' }).tap();
-	await page.getByRole('option', { name: /\bSeat 2\b/ }).tap();
 	await expect(now).toContainText('A jinx keeps it from this player');
 	await ask.getByRole('combobox', { name: 'Execution' }).tap();
 	await page.getByRole('option', { name: /\bSeat 4\b/ }).tap();
@@ -566,16 +567,17 @@ test('a Vizier babysitting Lil’ Monsta is no longer saved from execution', asy
 	const day = page.getByRole('dialog', { name: 'Day 1' });
 	const executeSeat1 = async () => {
 		await day.getByRole('button', { name: 'Execution', exact: true }).tap();
+		// Tapped on the board (Trevor, 2026-11-06); the Vizier's save opens the sheet.
+		await page.locator('[data-testid="seat"][aria-label^="Seat 1:"]').tap();
 		const ask = page.getByRole('alertdialog', { name: 'End the day?' });
-		await ask.getByRole('combobox', { name: 'Execution' }).tap();
-		await page.getByRole('option', { name: /\bSeat 1\b/ }).tap();
+		await expect(ask).toBeVisible();
 		return ask;
 	};
 	let ask = await executeSeat1();
 	await expect(ask.getByTestId('execution-saved')).toContainText('does not die');
 	await ask.getByRole('button', { name: 'Cancel' }).tap();
 	await expect(ask).toBeHidden();
-	await day.getByRole('button', { name: 'Close' }).tap();
+	// Execution closed the day view so the board could be tapped.
 	await expect(day).toBeHidden();
 
 	await putReminder(page, 'Is The Demon', 1);
