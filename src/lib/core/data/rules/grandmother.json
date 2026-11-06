@@ -73,5 +73,13 @@
 			}
 		}
 	},
-	"staysAsleep": "other"
+	"staysAsleep": "other",
+	"nightOrder": {
+		"first": {
+			"after": "butler"
+		},
+		"other": {
+			"after": "moonchild"
+		}
+	}
 }

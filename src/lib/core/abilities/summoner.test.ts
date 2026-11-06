@@ -103,6 +103,7 @@ describe('Summoner', () => {
 			const steps = nightOrder({
 				night: 'other',
 				sheet: committedGameData().nightSheet,
+				official: committedGameData().byId,
 				players: s.game.seating.length,
 				inPlay: ['summoner', 'leviathan', 'chef', 'empath', 'monk', 'mayor'].map((id) =>
 					s.characters.get(id)!

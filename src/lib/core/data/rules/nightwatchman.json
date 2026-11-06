@@ -47,5 +47,13 @@
 	},
 	"wakesWhen": {
 		"untilToken": "No Ability"
+	},
+	"nightOrder": {
+		"first": {
+			"after": "bountyhunter"
+		},
+		"other": {
+			"after": "bountyhunter"
+		}
 	}
 }

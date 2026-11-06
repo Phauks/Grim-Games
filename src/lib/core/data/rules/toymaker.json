@@ -39,5 +39,13 @@
 			"demoninfo": "evil gets this info at any player count."
 		},
 		"anyPlayerCount": true
+	},
+	"nightOrder": {
+		"first": {
+			"after": "buddhist"
+		},
+		"other": {
+			"after": "duchess"
+		}
 	}
 }

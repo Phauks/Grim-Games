@@ -84,5 +84,13 @@
 		"bountyhunter": {
 			"partnerSetup": true
 		}
+	},
+	"nightOrder": {
+		"first": {
+			"after": "boffin"
+		},
+		"other": {
+			"after": "bonecollector"
+		}
 	}
 }

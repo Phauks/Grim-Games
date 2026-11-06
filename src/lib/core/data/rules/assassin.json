@@ -58,5 +58,10 @@
 	"marksChoice": ["Dead"],
 	"wakesWhen": {
 		"untilToken": "No Ability"
+	},
+	"nightOrder": {
+		"other": {
+			"after": "kazali"
+		}
 	}
 }

@@ -50,5 +50,13 @@
 				"hides": "all"
 			}
 		}
+	},
+	"nightOrder": {
+		"first": {
+			"after": "cultleader"
+		},
+		"other": {
+			"after": "butler"
+		}
 	}
 }

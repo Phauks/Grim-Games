@@ -149,5 +149,13 @@
 	"counter": {
 		"tokens": ["Night 1", "Night 2", "Night 3"],
 		"at": "dusk"
+	},
+	"nightOrder": {
+		"first": {
+			"after": "lleech"
+		},
+		"other": {
+			"after": "preacher"
+		}
 	}
 }

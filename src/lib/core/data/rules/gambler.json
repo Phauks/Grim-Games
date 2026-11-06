@@ -44,5 +44,10 @@
 				"reason": "Says when the Dead token is used (Trevor’s review)."
 			}
 		}
+	},
+	"nightOrder": {
+		"other": {
+			"after": "wizard"
+		}
 	}
 }

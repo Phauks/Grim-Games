@@ -60,5 +60,10 @@
 	"reminderMovement": {
 		"fixed": ["Outsider", "Wrong"],
 		"why": "Marks the information the player started knowing."
+	},
+	"nightOrder": {
+		"first": {
+			"after": "washerwoman"
+		}
 	}
 }

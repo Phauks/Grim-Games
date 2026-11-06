@@ -12,6 +12,8 @@
  *   Toymaker is in play (https://wiki.bloodontheclocktower.com/Toymaker).
  * - A script's `_meta.firstNight` / `_meta.otherNight` replaces the order (TPI
  *   `script-schema.json`); characters it leaves out keep their standard place.
+ * - A character the sheet doesn't list goes where its own `nightOrder` rule says, right after
+ *   another step (M59; every official character has one too, written from the sheet).
  * - Homebrew characters with no place on the sheet are placed by their ability text, beside
  *   the official characters most like them (`core/night-placement`, L74), with the reason as
  *   a note to check; without the official characters to compare, just before Dawn. A numeric
@@ -26,7 +28,7 @@ import {
 	type NightMarker,
 	type NightSheet
 } from '#lib/core/data/types.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
+import { rulesOf, rulesOfCharacter } from '#lib/core/data/rules/index.ts';
 import type { InfoTokenCharacterRules } from '#lib/core/data/info-token-rules.ts';
 import {
 	placementReason,
@@ -97,6 +99,7 @@ export type NightStepOverride =
 	  };
 
 /** Why a step is where it is. */
+/** `night-sheet`: TPI's sheet, or the character's own `nightOrder` place (M59). */
 export type Placement = 'night-sheet' | 'custom-order' | 'unplaced' | 'marker';
 
 export interface NightStep {
@@ -217,6 +220,40 @@ function numberFor(character: Character, night: Night): number | undefined {
 	return night === 'first' ? character.firstNight : character.otherNight;
 }
 
+/**
+ * TPI's sheet for one night with each character it doesn't list placed right after the step its
+ * `nightOrder` names (M59), following chains through characters that aren't in play. `known` is
+ * every character that may be named; one whose step can't be traced back to the sheet is left
+ * off. Several placed after the same step keep the order they come in.
+ */
+export function sheetWithOwnPlaces(
+	list: readonly string[],
+	night: Night,
+	known: Iterable<Character>
+): string[] {
+	const out = [...list];
+	const listed = new Set(list);
+	let waiting = [...known].flatMap((c) => {
+		const after = listed.has(c.id) ? undefined : rulesOfCharacter(c)?.nightOrder?.[night]?.after;
+		return after === undefined ? [] : [{ id: c.id, after }];
+	});
+	const placedAfter = new Map<string, number>();
+	while (waiting.length > 0) {
+		const left = waiting.filter(({ id, after }) => {
+			if (out.includes(id)) return false;
+			const anchor = out.indexOf(after);
+			if (anchor < 0) return true;
+			const at = anchor + 1 + (placedAfter.get(after) ?? 0);
+			out.splice(at, 0, id);
+			placedAfter.set(after, (placedAfter.get(after) ?? 0) + 1);
+			return false;
+		});
+		if (left.length === waiting.length) break;
+		waiting = left;
+	}
+	return out;
+}
+
 /** A position for every step on TPI's sheet: its index, with Dusk always first. */
 function sheetPositions(list: readonly string[]): Map<string, number> {
 	return new Map(list.map((id, i) => [id, id === 'dusk' ? -Infinity : i]));
@@ -277,7 +314,9 @@ function standardOrder(
 	markers: NightMarker[]
 ) {
 	const { night, sheet } = input;
-	const positions = sheetPositions(night === 'first' ? sheet.firstNight : sheet.otherNight);
+	const list = night === 'first' ? sheet.firstNight : sheet.otherNight;
+	const known = [...(input.official?.values() ?? []), ...wanted];
+	const positions = sheetPositions(sheetWithOwnPlaces(list, night, known));
 	const dawnPos = positions.get('dawn') ?? Infinity;
 	const candidates: Candidate[] = [];
 	let seq = 0;
@@ -545,11 +584,19 @@ export const wakesTooNote = (name: string): string => `${name} wakes too.`;
 
 /**
  * The steps TPI's night sheet places after Dawn: announcements made as the day begins (the
- * Vizier and Leviathan on the first night, the Leviathan on other nights). Order as on the
- * sheet; filter by what is in play.
+ * Vizier and Leviathan on the first night, the Leviathan on other nights), with any of `known`
+ * whose own `nightOrder` puts it there (M59). Order as on the sheet; filter by what is in play.
  */
-export function afterDawn(sheet: NightSheet, night: Night): CharacterId[] {
-	const steps = night === 'first' ? sheet.firstNight : sheet.otherNight;
+export function afterDawn(
+	sheet: NightSheet,
+	night: Night,
+	known: Iterable<Character> = []
+): CharacterId[] {
+	const steps = sheetWithOwnPlaces(
+		night === 'first' ? sheet.firstNight : sheet.otherNight,
+		night,
+		known
+	);
 	const dawn = steps.indexOf('dawn');
 	return dawn < 0
 		? []

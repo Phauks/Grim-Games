@@ -61,5 +61,13 @@
 		"you-are": {
 			"characters": ["changed"]
 		}
+	},
+	"nightOrder": {
+		"first": {
+			"after": "pixie"
+		},
+		"other": {
+			"after": "choirboy"
+		}
 	}
 }

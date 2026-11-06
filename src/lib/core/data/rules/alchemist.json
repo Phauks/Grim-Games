@@ -121,5 +121,10 @@
 			"characters": ["marked"],
 			"token": "Is The Alchemist"
 		}
+	},
+	"nightOrder": {
+		"first": {
+			"after": "philosopher"
+		}
 	}
 }

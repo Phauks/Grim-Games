@@ -21,5 +21,10 @@
 	"passesOn": {
 		"alive": true,
 		"alignment": "good"
+	},
+	"nightOrder": {
+		"other": {
+			"after": "amnesiac"
+		}
 	}
 }

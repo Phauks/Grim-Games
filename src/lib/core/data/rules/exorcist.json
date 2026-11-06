@@ -49,5 +49,10 @@
 			"characters": ["self"]
 		}
 	},
-	"marksChoice": ["Chosen"]
+	"marksChoice": ["Chosen"],
+	"nightOrder": {
+		"other": {
+			"after": "lunatic"
+		}
+	}
 }

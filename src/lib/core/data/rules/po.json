@@ -81,5 +81,10 @@
 				"reason": "Says when the 3 Attacks token goes on and comes off."
 			}
 		}
+	},
+	"nightOrder": {
+		"other": {
+			"after": "shabaloth"
+		}
 	}
 }

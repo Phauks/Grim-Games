@@ -37,5 +37,13 @@
 		"marionette": {
 			"abnormalCounts": "self-caused"
 		}
+	},
+	"nightOrder": {
+		"first": {
+			"after": "chambermaid"
+		},
+		"other": {
+			"after": "chambermaid"
+		}
 	}
 }

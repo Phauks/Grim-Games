@@ -80,5 +80,13 @@
 				"characters": ["self"]
 			}
 		]
+	},
+	"nightOrder": {
+		"first": {
+			"after": "wizard"
+		},
+		"other": {
+			"after": "acrobat"
+		}
 	}
 }

@@ -92,5 +92,13 @@
 				"when": ["partner-alive"]
 			}
 		}
+	},
+	"nightOrder": {
+		"first": {
+			"after": "lilmonsta"
+		},
+		"other": {
+			"after": "alhadikhia"
+		}
 	}
 }

@@ -48,5 +48,10 @@
 	},
 	"wakesWhen": {
 		"untilToken": "No Ability"
+	},
+	"nightOrder": {
+		"other": {
+			"after": "harlot"
+		}
 	}
 }

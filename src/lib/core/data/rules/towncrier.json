@@ -40,5 +40,10 @@
 		"mark": "minion-nominated",
 		"yes": "Minion Nominated",
 		"no": "Minions Not Nominated"
+	},
+	"nightOrder": {
+		"other": {
+			"after": "flowergirl"
+		}
 	}
 }

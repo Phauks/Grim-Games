@@ -70,5 +70,13 @@
 				"when": ["partner-in-play"]
 			}
 		}
+	},
+	"nightOrder": {
+		"first": {
+			"after": "marionette"
+		},
+		"other": {
+			"after": "sailor"
+		}
 	}
 }

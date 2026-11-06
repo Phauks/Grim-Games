@@ -197,6 +197,7 @@ describe('Alchemist + Summoner jinx', () => {
 				const order = nightOrder({
 					night: 'first',
 					sheet: data.nightSheet,
+					official: data.byId,
 					inPlay,
 					players: 7,
 					noAbility: evilInfoNotesLeftOut(s.game, s.characters)

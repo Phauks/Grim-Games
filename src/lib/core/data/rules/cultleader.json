@@ -36,5 +36,13 @@
 			"characters": [],
 			"upTo": 0
 		}
+	},
+	"nightOrder": {
+		"first": {
+			"after": "nightwatchman"
+		},
+		"other": {
+			"after": "nightwatchman"
+		}
 	}
 }

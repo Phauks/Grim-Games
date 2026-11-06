@@ -32,5 +32,10 @@
 				]
 			}
 		]
+	},
+	"nightOrder": {
+		"other": {
+			"after": "vigormortis"
+		}
 	}
 }

@@ -46,5 +46,10 @@
 		"question": "evil-marked",
 		"wakes": "marked",
 		"falseToken": "False Info"
+	},
+	"nightOrder": {
+		"other": {
+			"after": "dusk"
+		}
 	}
 }

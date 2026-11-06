@@ -10,5 +10,10 @@
 	},
 	"infoKind": {
 		"number": true
+	},
+	"nightOrder": {
+		"first": {
+			"after": "grandmother"
+		}
 	}
 }

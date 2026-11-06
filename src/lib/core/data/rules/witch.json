@@ -80,5 +80,13 @@
 	},
 	"reminderEnds": {
 		"Cursed": "dusk"
+	},
+	"nightOrder": {
+		"first": {
+			"after": "eviltwin"
+		},
+		"other": {
+			"after": "devilsadvocate"
+		}
 	}
 }

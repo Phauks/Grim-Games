@@ -92,5 +92,10 @@
 				]
 			}
 		]
+	},
+	"nightOrder": {
+		"other": {
+			"after": "lordoftyphon"
+		}
 	}
 }

@@ -48,5 +48,13 @@
 	},
 	"wakesWhen": {
 		"untilToken": "No Ability"
+	},
+	"nightOrder": {
+		"first": {
+			"after": "dreamer"
+		},
+		"other": {
+			"after": "oracle"
+		}
 	}
 }

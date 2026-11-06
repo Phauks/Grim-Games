@@ -19,5 +19,10 @@
 			"characters": ["king"],
 			"by": "demon"
 		}
+	},
+	"nightOrder": {
+		"other": {
+			"after": "professor"
+		}
 	}
 }

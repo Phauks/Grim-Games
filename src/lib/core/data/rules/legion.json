@@ -87,5 +87,10 @@
 		"self": {
 			"types": ["minion"]
 		}
+	},
+	"nightOrder": {
+		"other": {
+			"after": "princess"
+		}
 	}
 }

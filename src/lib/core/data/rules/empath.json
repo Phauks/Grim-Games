@@ -10,5 +10,13 @@
 	},
 	"infoKind": {
 		"number": true
+	},
+	"nightOrder": {
+		"first": {
+			"after": "chef"
+		},
+		"other": {
+			"after": "ravenkeeper"
+		}
 	}
 }

@@ -74,5 +74,13 @@
 		"upTo": "minions",
 		"extraMinions": 1,
 		"outward": true
+	},
+	"nightOrder": {
+		"first": {
+			"after": "wraith"
+		},
+		"other": {
+			"after": "vortox"
+		}
 	}
 }

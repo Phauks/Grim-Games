@@ -22,5 +22,13 @@
 				}
 			]
 		}
+	},
+	"nightOrder": {
+		"first": {
+			"after": "stormcatcher"
+		},
+		"other": {
+			"after": "toymaker"
+		}
 	}
 }

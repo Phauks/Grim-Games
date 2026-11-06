@@ -17,5 +17,13 @@
 	"learns": {
 		"measure": "character-of",
 		"types": ["townsfolk", "outsider", "minion", "demon"]
+	},
+	"nightOrder": {
+		"first": {
+			"after": "clockmaker"
+		},
+		"other": {
+			"after": "undertaker"
+		}
 	}
 }

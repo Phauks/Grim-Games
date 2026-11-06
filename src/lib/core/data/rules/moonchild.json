@@ -61,5 +61,10 @@
 	"kills": {
 		"by": "other"
 	},
-	"staysAsleep": "other"
+	"staysAsleep": "other",
+	"nightOrder": {
+		"other": {
+			"after": "tinker"
+		}
+	}
 }

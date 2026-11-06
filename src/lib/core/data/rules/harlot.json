@@ -57,5 +57,10 @@
 	"learns": {
 		"measure": "character-of",
 		"alive": true
+	},
+	"nightOrder": {
+		"other": {
+			"after": "thief"
+		}
 	}
 }

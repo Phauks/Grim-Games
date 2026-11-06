@@ -7,5 +7,10 @@
 	},
 	"deathCause": {
 		"none": "info"
+	},
+	"nightOrder": {
+		"first": {
+			"after": "balloonist"
+		}
 	}
 }

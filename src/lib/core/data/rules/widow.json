@@ -85,5 +85,10 @@
 				"hides": "all"
 			}
 		}
+	},
+	"nightOrder": {
+		"first": {
+			"after": "poisoner"
+		}
 	}
 }

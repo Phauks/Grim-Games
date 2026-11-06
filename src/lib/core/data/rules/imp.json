@@ -47,5 +47,10 @@
 		"you-are": {
 			"characters": ["self"]
 		}
+	},
+	"nightOrder": {
+		"other": {
+			"after": "legion"
+		}
 	}
 }

@@ -32,5 +32,13 @@
 	"reminderMovement": {
 		"fixed": ["Red Herring"],
 		"why": "The red herring is chosen once at setup."
+	},
+	"nightOrder": {
+		"first": {
+			"after": "empath"
+		},
+		"other": {
+			"after": "empath"
+		}
 	}
 }

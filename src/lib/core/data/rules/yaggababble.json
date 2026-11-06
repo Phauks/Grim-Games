@@ -69,5 +69,13 @@
 		"exorcist": {
 			"noKill": "token"
 		}
+	},
+	"nightOrder": {
+		"first": {
+			"after": "poppygrower"
+		},
+		"other": {
+			"after": "lilmonsta"
+		}
 	}
 }

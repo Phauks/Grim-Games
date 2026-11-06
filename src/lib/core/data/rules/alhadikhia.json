@@ -125,5 +125,10 @@
 		"princess": {
 			"noKill": "token"
 		}
+	},
+	"nightOrder": {
+		"other": {
+			"after": "ojo"
+		}
 	}
 }

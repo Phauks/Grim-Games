@@ -67,5 +67,13 @@
 				]
 			}
 		]
+	},
+	"nightOrder": {
+		"first": {
+			"after": "noble"
+		},
+		"other": {
+			"after": "juggler"
+		}
 	}
 }

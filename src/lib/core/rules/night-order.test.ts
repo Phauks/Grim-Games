@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { editionScript } from '#lib/core/data/script.ts';
 import type { Character } from '#lib/core/data/types.ts';
-import { nightOrder, type NightOrderInput } from './night-order.ts';
+import { afterDawn, nightOrder, sheetWithOwnPlaces, type NightOrderInput } from './night-order.ts';
 
 const data = committedGameData();
 const get = (...ids: string[]) => ids.map((id) => data.byId.get(id)!);
@@ -265,6 +265,54 @@ describe('homebrew characters', () => {
 			'chef',
 			'dawn'
 		]);
+	});
+});
+
+// M59: a custom character says where it wakes with its own `nightOrder`: right after another
+// character's step or a night marker, even one not in play.
+describe('a custom character placed by its own night position', () => {
+	const warden = homebrew({
+		otherNightReminder: 'The Storm Warden chooses a player.',
+		rules: { nightOrder: { other: { after: 'monk' } } }
+	});
+
+	it('wakes right after the step it names, as a sheet step', () => {
+		const r = order({ night: 'other', inPlay: [warden, ...get('monk', 'imp', 'empath')] });
+		expect(r.steps.map((s) => s.id)).toEqual([
+			'dusk',
+			'monk',
+			'stormwarden',
+			'imp',
+			'empath',
+			'dawn'
+		]);
+		expect(r.steps[2]).toMatchObject({ placement: 'night-sheet', notes: [] });
+	});
+
+	it('follows a chain through characters that are not in play', () => {
+		const lantern = homebrew({
+			id: 'lantern',
+			name: 'Lantern',
+			otherNightReminder: 'x',
+			rules: { nightOrder: { other: { after: 'stormwarden' } } }
+		});
+		const list = sheetWithOwnPlaces(['dusk', 'monk', 'imp', 'dawn'], 'other', [lantern, warden]);
+		expect(list).toEqual(['dusk', 'monk', 'stormwarden', 'lantern', 'imp', 'dawn']);
+		// Not placed when nothing leads back to the sheet.
+		expect(sheetWithOwnPlaces(['dusk', 'dawn'], 'other', [lantern])).toEqual(['dusk', 'dawn']);
+	});
+
+	it('announces a character placed after Dawn as the day begins', () => {
+		const herald = homebrew({
+			id: 'herald',
+			firstNightReminder: 'Declare the Herald.',
+			rules: { nightOrder: { first: { after: 'dawn' } } }
+		});
+		expect(afterDawn({ firstNight: ['dusk', 'dawn'], otherNight: [] }, 'first', [herald])).toEqual([
+			'herald'
+		]);
+		const steps = order({ inPlay: [herald, ...get('chef')] }).steps;
+		expect(steps.at(-1)).toMatchObject({ id: 'herald', afterDawn: true });
 	});
 });
 

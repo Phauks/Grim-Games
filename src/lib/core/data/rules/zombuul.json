@@ -66,5 +66,10 @@
 	},
 	"reminderEnds": {
 		"Died Today": "dawn"
+	},
+	"nightOrder": {
+		"other": {
+			"after": "imp"
+		}
 	}
 }

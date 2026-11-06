@@ -75,5 +75,13 @@
 		"legion": {
 			"partnerKeepsAbility": true
 		}
+	},
+	"nightOrder": {
+		"first": {
+			"after": "engineer"
+		},
+		"other": {
+			"after": "engineer"
+		}
 	}
 }

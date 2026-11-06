@@ -74,5 +74,13 @@
 			}
 		}
 	},
-	"marksChoice": ["Survives Execution"]
+	"marksChoice": ["Survives Execution"],
+	"nightOrder": {
+		"first": {
+			"after": "organgrinder"
+		},
+		"other": {
+			"after": "organgrinder"
+		}
+	}
 }

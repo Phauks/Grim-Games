@@ -89,5 +89,13 @@
 	},
 	"wakesWhen": {
 		"untilToken": "No Ability"
+	},
+	"nightOrder": {
+		"first": {
+			"after": "harpy"
+		},
+		"other": {
+			"after": "harpy"
+		}
 	}
 }

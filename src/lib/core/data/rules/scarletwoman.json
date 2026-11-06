@@ -58,5 +58,10 @@
 		"alhadikhia": {
 			"notSecondDemon": true
 		}
+	},
+	"nightOrder": {
+		"other": {
+			"after": "mezepheles"
+		}
 	}
 }

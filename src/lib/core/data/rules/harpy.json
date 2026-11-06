@@ -98,5 +98,13 @@
 		"token": "Mad",
 		"breaking": "death",
 		"alsoDies": "2nd"
+	},
+	"nightOrder": {
+		"first": {
+			"after": "fearmonger"
+		},
+		"other": {
+			"after": "fearmonger"
+		}
 	}
 }

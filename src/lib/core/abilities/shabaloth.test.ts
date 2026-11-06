@@ -17,6 +17,7 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import {
 	committedCharacter,
 	committedGameData,
+	committedNightOrder,
 	nightSheetPresence
 } from '#lib/core/testing/committed-data.ts';
 import { protection } from '#lib/core/rules/ability.ts';
@@ -98,7 +99,7 @@ describe('Shabaloth', () => {
 				.do((at) => ({ type: 'SetDead', seatId: at.seat('exorcist'), dead: false }))
 				.reminder('exorcist', 'shabaloth', 'Alive');
 			const revived = revivedSinceNewDay(back.session.log.entries.flatMap((e) => e.events));
-			const order = committedGameData().nightSheet.otherNight;
+			const order = committedNightOrder('otherNight');
 			expect(order.indexOf('exorcist')).toBeLessThan(order.indexOf('shabaloth'));
 			expect(
 				revivedAfterStep(

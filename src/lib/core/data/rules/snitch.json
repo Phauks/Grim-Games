@@ -10,5 +10,10 @@
 			"demoninfo": "each Minion also gets 3 bluffs."
 		},
 		"lateNote": "each Minion learns 3 not-in-play characters tonight."
+	},
+	"nightOrder": {
+		"first": {
+			"after": "minioninfo"
+		}
 	}
 }

@@ -44,5 +44,13 @@
 	},
 	"choosesLikeDemon": "Chosen",
 	"believesOtherCharacter": true,
-	"believesType": "demon"
+	"believesType": "demon",
+	"nightOrder": {
+		"first": {
+			"after": "snitch"
+		},
+		"other": {
+			"after": "summoner"
+		}
+	}
 }

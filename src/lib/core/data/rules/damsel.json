@@ -52,5 +52,13 @@
 		"you-are": {
 			"characters": ["chosen"]
 		}
+	},
+	"nightOrder": {
+		"first": {
+			"after": "huntsman"
+		},
+		"other": {
+			"after": "huntsman"
+		}
 	}
 }

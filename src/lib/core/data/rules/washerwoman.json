@@ -53,5 +53,10 @@
 	"reminderMovement": {
 		"fixed": ["Townsfolk", "Wrong"],
 		"why": "Marks the information the player started knowing."
+	},
+	"nightOrder": {
+		"first": {
+			"after": "amnesiac"
+		}
 	}
 }

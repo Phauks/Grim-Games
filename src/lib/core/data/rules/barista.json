@@ -75,5 +75,13 @@
 	"reminderEnds": {
 		"Sober & Healthy": "dusk-after-dawn",
 		"Acts Twice": "dusk-after-dawn"
+	},
+	"nightOrder": {
+		"first": {
+			"after": "apprentice"
+		},
+		"other": {
+			"after": "cacklejack"
+		}
 	}
 }

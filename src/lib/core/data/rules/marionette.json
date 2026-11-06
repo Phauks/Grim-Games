@@ -73,5 +73,10 @@
 		"huntsman": {
 			"thinksPartnerSetup": true
 		}
+	},
+	"nightOrder": {
+		"first": {
+			"after": "sailor"
+		}
 	}
 }

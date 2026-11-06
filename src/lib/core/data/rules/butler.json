@@ -81,5 +81,13 @@
 				"countsOnlyWith": true
 			}
 		}
+	},
+	"nightOrder": {
+		"first": {
+			"after": "fortuneteller"
+		},
+		"other": {
+			"after": "cultleader"
+		}
 	}
 }

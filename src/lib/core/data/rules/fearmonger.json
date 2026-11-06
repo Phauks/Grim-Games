@@ -74,5 +74,13 @@
 			}
 		}
 	},
-	"marksChoice": ["Fear"]
+	"marksChoice": ["Fear"],
+	"nightOrder": {
+		"first": {
+			"after": "cerenovus"
+		},
+		"other": {
+			"after": "pithag"
+		}
+	}
 }

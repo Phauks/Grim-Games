@@ -45,5 +45,13 @@
 			"hidesMinions": true,
 			"whileWorking": true
 		}
+	},
+	"nightOrder": {
+		"first": {
+			"after": "alchemist"
+		},
+		"other": {
+			"after": "philosopher"
+		}
 	}
 }

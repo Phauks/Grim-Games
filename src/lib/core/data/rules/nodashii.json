@@ -60,5 +60,10 @@
 				]
 			}
 		]
+	},
+	"nightOrder": {
+		"other": {
+			"after": "fanggu"
+		}
 	}
 }

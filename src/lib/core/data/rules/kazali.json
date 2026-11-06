@@ -65,5 +65,13 @@
 		"you-are": {
 			"characters": ["changed"]
 		}
+	},
+	"nightOrder": {
+		"first": {
+			"after": "lordoftyphon"
+		},
+		"other": {
+			"after": "yaggababble"
+		}
 	}
 }

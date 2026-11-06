@@ -40,5 +40,10 @@
 		"mark": "demon-voted",
 		"yes": "Demon Voted",
 		"no": "Demon Not Voted"
+	},
+	"nightOrder": {
+		"other": {
+			"after": "dreamer"
+		}
 	}
 }

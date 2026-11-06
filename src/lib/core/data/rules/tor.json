@@ -33,5 +33,13 @@
 			"characters": ["chosen"]
 		}
 	},
-	"hidesRoles": true
+	"hidesRoles": true,
+	"nightOrder": {
+		"first": {
+			"after": "magician"
+		},
+		"other": {
+			"after": "grandmother"
+		}
+	}
 }

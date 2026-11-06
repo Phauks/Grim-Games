@@ -88,5 +88,13 @@
 	},
 	"wakesWhen": {
 		"untilToken": "No Ability"
+	},
+	"nightOrder": {
+		"first": {
+			"after": "widow"
+		},
+		"other": {
+			"after": "poisoner"
+		}
 	}
 }

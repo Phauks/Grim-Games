@@ -1,5 +1,8 @@
 {
-	"voteWeight": { "reminder": "3 Votes", "weight": 3 },
+	"voteWeight": {
+		"reminder": "3 Votes",
+		"weight": 3
+	},
 	"reminderTargets": {
 		"3 Votes": {
 			"seat": "other",
@@ -65,6 +68,14 @@
 				"text": "The Bureaucrat chooses a player: move *3 VOTES* to them.",
 				"reason": "Says last night’s 3 Votes token comes off."
 			}
+		}
+	},
+	"nightOrder": {
+		"first": {
+			"after": "barista"
+		},
+		"other": {
+			"after": "barista"
 		}
 	}
 }

@@ -42,5 +42,10 @@
 		"you-are": {
 			"characters": ["changed"]
 		}
+	},
+	"nightOrder": {
+		"other": {
+			"after": "wraith"
+		}
 	}
 }
