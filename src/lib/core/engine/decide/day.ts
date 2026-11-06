@@ -424,6 +424,7 @@ export const DAY_DECIDERS: Deciders<
 		if (guesses.length > 0) entry.guesses = guesses;
 		if (typeof command.holds === 'boolean') entry.holds = command.holds;
 		answerNote(entry, command);
+		if (command.forComingDay === true) entry.forComingDay = true;
 		checkClaimsPerDay(game, entry, ctx, warn);
 		return [{ type: 'DayEntryAdded', entry }];
 	},
@@ -574,6 +575,8 @@ function checkClaimsPerDay(
 			e.kind === 'note' &&
 			e.characterId === note.characterId &&
 			e.seatId === note.seatId &&
+			// A note for the coming day counts towards that day, not the one ending.
+			!e.forComingDay === !note.forComingDay &&
 			counts(e)
 	).length;
 	if (before < limit) return;

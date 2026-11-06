@@ -3,7 +3,7 @@
 	import { untrack } from 'svelte';
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import type { CharacterType } from '#lib/core/data/index.ts';
-	import { dawnGames } from '#lib/core/engine/index.ts';
+	import { dawnGames, dayAhead } from '#lib/core/engine/index.ts';
 	import {
 		holdsAsGiven,
 		partnerTruth,
@@ -48,18 +48,27 @@
 		open?: boolean;
 		grimoire: Grimoire;
 		seatId: SeatId | undefined;
+		/**
+		 * Set during the night for the day that Dawn begins (Trevor, 2026-11-06: before Dawn):
+		 * worked out from, and saved for, that coming day.
+		 */
+		ahead?: boolean;
 	}
 
-	let { open = $bindable(false), grimoire, seatId }: Props = $props();
+	let { open = $bindable(false), grimoire, seatId, ahead = false }: Props = $props();
 
-	const game = $derived(grimoire.game);
+	/** The game as the day these statements are for sees it: the coming day's, when ahead. */
+	const game = $derived(ahead ? dayAhead(grimoire.game) : grimoire.game);
+	/** The game as it stands, before and after each Dawn: what the sheet compares overnight. */
+	const dawns = $derived.by(() => {
+		const past = dawnGames(grimoire.open.session.log);
+		return ahead ? [...past, game] : past;
+	});
 	const characters = $derived(grimoire.open.characters);
 	/** The character whose statements these are: the seat's, as its rules ask for them. */
 	const holder = $derived(seatId === undefined ? undefined : game.seats[seatId]?.characterId);
 	const pool = $derived(
-		seatId === undefined
-			? []
-			: savantStatements(game, seatId, characters, dawnGames(grimoire.open.session.log))
+		seatId === undefined ? [] : savantStatements(game, seatId, characters, dawns)
 	);
 	const situation = $derived(
 		seatId === undefined ? undefined : savantSituation(game, seatId, characters)
@@ -342,7 +351,8 @@
 					type: 'DayNote',
 					characterId: holder,
 					seatId,
-					text: noteText('', given)
+					text: noteText('', given),
+					...(ahead ? { forComingDay: true } : {})
 				});
 		if (ok) open = false;
 	}
@@ -399,8 +409,9 @@
 		</section>{/snippet}
 	<div class="savant">
 		<h3 class="pane-title">{t('savant.today')}</h3>
-		<!-- Two Storytellers (the Knaves): whom the Savant went to sets the mode. -->
-		{#if seatId !== undefined}
+		<!-- Two Storytellers (the Knaves): whom the Savant went to sets the mode. Before Dawn they
+		     haven't been yet. -->
+		{#if seatId !== undefined && !ahead}
 			<StorytellerVisit
 				{game}
 				{characters}

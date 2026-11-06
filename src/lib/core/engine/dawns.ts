@@ -16,3 +16,12 @@ export function dawnGames(log: GameLog): Game[] {
 	}
 	return out;
 }
+
+/**
+ * The game as the coming New day will leave it, during the night: what the Savant's
+ * information, set before Dawn (Trevor, 2026-11-06), is worked out from and saved into.
+ * `at` stands in for the time the day will start.
+ */
+export function dayAhead(game: Game, at = 0): Game {
+	return applyEvents(game, [{ type: 'DayStarted', at }]) ?? game;
+}
