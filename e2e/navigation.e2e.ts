@@ -144,6 +144,10 @@ test.describe('on a computer', () => {
 		const you = nav.getByRole('list', { name: 'You', exact: true });
 		await expect(you.getByRole('link')).toHaveText(['Account', 'Friends', 'History']);
 		await expect(nav.getByTestId(/^nav-action-/)).toHaveText(['Settings', 'Report an issue']);
+		// A label that wraps (a larger text size) stays at the start, beside its icon (2026-11-06).
+		for (const action of await nav.getByTestId(/^nav-action-/).all()) {
+			await expect(action).toHaveCSS('text-align', 'start');
+		}
 		await nav.getByRole('button', { name: 'Report an issue' }).click();
 		await expect(page.getByRole('dialog', { name: 'Report' })).toBeVisible();
 	});
