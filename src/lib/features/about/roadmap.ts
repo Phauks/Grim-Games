@@ -615,6 +615,15 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['M50', 'M67', 'M68']
 	},
 	{
+		// Trevor, 2026-11-06: "placing has should request taking mad off. certain tokens follow a
+		// flow". M71: a token that takes the place of an earlier one on the same player (the
+		// Pixie's Has Ability after Mad, the Shabaloth's Alive after Dead, the Pukka's Dead after
+		// Poisoned) asks to take the earlier one off.
+		title: 'Tokens that replace each other ask to take the earlier one off',
+		area: 'storyteller',
+		parts: ['M71']
+	},
+	{
 		// The coordinator's ask of 2026-11-03 (ability-parts/jinx-format-audit.md): a jinx format a
 		// custom script can write. M39 general verbs with shared `when` conditions and `who`, so a
 		// rule may sit in either character's file; M40 rules on a script's own jinxes, which

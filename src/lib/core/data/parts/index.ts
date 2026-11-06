@@ -90,6 +90,7 @@ export { survivesFirstDeath } from './survives-first-death.ts';
 export { swapsCharacters } from './swaps-characters.ts';
 export { swapsForAbility } from './swaps-for-ability.ts';
 export { takesNeighbourAlignment } from './takes-neighbour-alignment.ts';
+export { tokenFlow } from './token-flow.ts';
 export { turnsPlayersInto } from './turns-players-into.ts';
 export { twoStorytellers } from './two-storytellers.ts';
 export { voteWeight } from './vote-weight.ts';

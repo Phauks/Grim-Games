@@ -6815,6 +6815,12 @@ test('an Alive reminder put on a dead player asks whether to revive them', async
 	await closeSheet(page);
 
 	await add(2, 'Alive');
+	// The Shabaloth's Alive follows its Dead, so the app first asks to take Dead off (M71).
+	// Keep it here, so the revive question below is the one under test.
+	await page
+		.getByRole('alertdialog', { name: 'Take Dead off?' })
+		.getByRole('button', { name: 'Cancel', exact: true })
+		.tap();
 	const ask = page.getByRole('alertdialog', { name: 'Revive Seat 2?' });
 	await expect(ask).toBeVisible();
 	await closeSettings(await aidInSettings(page, ask, 'Ask to revive'));

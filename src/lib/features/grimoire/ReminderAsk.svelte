@@ -13,6 +13,7 @@
 		deadOwner,
 		freshAsks,
 		type DeadAsk,
+		type FlowAsk,
 		type PromptAsk,
 		type ReminderLook
 	} from './reminder-ask.ts';
@@ -23,7 +24,9 @@
 	 * drag) whose words change a player's state asks first: "Dead" or "Died Today" on a living
 	 * player asks to mark them dead; "Alive" on a dead one asks to revive them. Which reminders
 	 * ask is data (REMINDER_PROMPTS); each kind of question has its words and setting below.
-	 * Moving one to another seat asks too. Reminders already where they were when the board
+	 * Moving one to another seat asks too. A token that takes the place of an earlier one in its
+	 * character's flow asks to take that one off (Trevor, 2026-11-06: "placing has should
+	 * request taking mad off"). Reminders already where they were when the board
 	 * opened never ask. Each one's switch is only in Settings; its ⋯ opens it there (Trevor,
 	 * 2026-10-30).
 	 */
@@ -67,33 +70,61 @@
 	let deadAsk = $state<DeadAsk>();
 	let deadAskOpen = $state(false);
 	let afterDeadAsk: PromptAsk | undefined;
+	/** A token that follows an earlier one on the same player asks to take that one off. */
+	let flowAsk = $state<FlowAsk>();
+	let flowAskOpen = $state(false);
+	let afterFlowAsk: PromptAsk | undefined;
 	$effect(() => {
 		const fresh = freshAsks(game, characters, look);
 		look = fresh.look;
 		if (grimoire.open.viewOnly) return;
 		const assistance = untrack(() => preferences.current.assistance);
 		const ask = fresh.asks.find(({ prompt }) => assistance[PROMPTS[prompt].setting]);
+		const flow = assistance.flowReminderAsk ? fresh.flow[0] : undefined;
 		if (assistance.deadReminderAsk && fresh.dead.length > 0) {
 			deadAsk = fresh.dead[0];
 			afterDeadAsk = ask;
+			pendingFlow = flow;
 			deadAskOpen = true;
+			return;
+		}
+		showFlow(flow, ask);
+	});
+
+	/** The flow question first, if any, then the state question. */
+	let pendingFlow: FlowAsk | undefined;
+	function showFlow(flow: FlowAsk | undefined, ask: PromptAsk | undefined) {
+		if (flow) {
+			flowAsk = flow;
+			afterFlowAsk = ask;
+			flowAskOpen = true;
 			return;
 		}
 		if (!ask) return;
 		promptAsk = ask;
 		promptAskOpen = true;
-	});
+	}
 
 	function keepDeadReminder() {
 		const next = afterDeadAsk;
+		const flow = pendingFlow;
 		afterDeadAsk = undefined;
-		if (!next) return;
-		promptAsk = next;
-		promptAskOpen = true;
+		pendingFlow = undefined;
+		showFlow(flow, next);
+	}
+
+	function afterFlow(takeOff: boolean) {
+		if (takeOff && flowAsk)
+			for (const r of flowAsk.earlier)
+				grimoire.run({ type: 'RemoveReminder', reminderId: r.reminderId });
+		const next = afterFlowAsk;
+		afterFlowAsk = undefined;
+		showFlow(undefined, next);
 	}
 
 	function undoDeadReminder() {
 		afterDeadAsk = undefined;
+		pendingFlow = undefined;
 		if (!deadAsk) return;
 		const { reminder, from } = deadAsk;
 		if (from) {
@@ -132,6 +163,25 @@
 				/>{:else}{name}{/if}{ui.after}
 		{/snippet}
 		{#snippet headActions()}<AidMenu aid={ui.setting} />{/snippet}
+	</ConfirmDialog>
+{/if}
+
+{#if flowAsk}
+	{@const earlier = flowAsk.earlier[0]}
+	<ConfirmDialog
+		bind:open={flowAskOpen}
+		title="Take token off?"
+		onConfirm={() => afterFlow(true)}
+		onCancel={() => afterFlow(false)}
+	>
+		{#snippet heading()}
+			Take <ReminderToken
+				label={tokenLabel(earlier)}
+				character={characters.get(earlier.characterId)}
+				{...reminderPlacing(game, earlier, characters)}
+			/> off?
+		{/snippet}
+		{#snippet headActions()}<AidMenu aid="flowReminderAsk" />{/snippet}
 	</ConfirmDialog>
 {/if}
 

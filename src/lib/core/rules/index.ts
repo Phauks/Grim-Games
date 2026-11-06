@@ -55,6 +55,7 @@ export * from './night-kill.ts';
 export * from './game-end.ts';
 export * from './becomes.ts';
 export * from './borrowed-abilities.ts';
+export * from './token-flow.ts';
 export * from './mad-as.ts';
 export * from './madness.ts';
 export * from './countdown.ts';
