@@ -386,6 +386,8 @@ export const room = {
 	'room.message.send': 'Send',
 	'room.message.consult': 'Request a Storyteller consult',
 	'room.inbox.consult': 'Consult requested',
+	'room.inbox.noConsult': 'No consult',
+	'room.inbox.noWords': 'No words, only the consult',
 	'room.inbox.message': 'Message',
 	'room.inbox.picture': 'Reported picture',
 	'room.inbox.markUnread': 'Mark as unread',
