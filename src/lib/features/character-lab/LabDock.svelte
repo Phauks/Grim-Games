@@ -10,8 +10,9 @@
 
 	/**
 	 * The Character Lab on a phone or tablet (plan M45): a bar pinned to the bottom of the
-	 * Characters page with the jinx partner's arrows and Load game, which goes to the game; Lab
-	 * opens every control. Always there, disabled while nothing can load, so nothing moves.
+	 * Character Analyzer with the jinx partner's arrows and Load game, which shows the game under
+	 * the table on the same page (Trevor, 2026-11-06: "only to show it beneath"); Lab opens
+	 * every control. Always there, disabled while nothing can load, so nothing moves.
 	 */
 	interface Props {
 		session: LabSession;
@@ -49,14 +50,14 @@
 		<Button
 			variant="accent"
 			disabled={session.loading || !session.data}
-			onclick={() => void session.load(session.at, true)}
+			onclick={() => void session.load(session.at)}
 			>{session.loading ? t('lab.loading') : t('lab.load')}</Button
 		>
 	</div>
 </nav>
 
 <Dialog bind:open title={t('lab.title')} size="full">
-	<LabPanel {session} />
+	<LabPanel {session} onloaded={() => (open = false)} />
 </Dialog>
 
 <style>
