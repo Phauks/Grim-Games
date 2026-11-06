@@ -182,13 +182,12 @@ export function playSound(sound: TimerSound, volume = preferences.current.soundV
 
 /**
  * The Storyteller called everyone back to town (plan U2): this phone vibrates, as its settings
- * say, and plays the sound the Storyteller picked (Trevor, 2026-11-06), or its own Back to town
- * sound when they left it to each phone or sent one this app doesn't know.
+ * say, and plays the sound the Storyteller picked (Trevor, 2026-11-06: phones have no choice of
+ * their own), or the clock tower when an older app sent none or one this app doesn't know.
  */
 export function hearCallTown(sound?: unknown): void {
 	if (preferences.current.timerVibrate) vibrate();
-	const picked = TIMER_SOUNDS.find((name) => name === sound);
-	playSound(picked ?? preferences.current.callSound);
+	playSound(TIMER_SOUNDS.find((name) => name === sound) ?? 'clocktower');
 }
 
 /**

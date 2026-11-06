@@ -14,7 +14,6 @@ export const room = {
 	'room.callTownFailed': 'Couldn’t reach the players’ phones.',
 	// The sound Back to town sends (Trevor, 2026-11-06), with the timer's sound names.
 	'room.callTownSound': 'Sound',
-	'room.callTownSound.own': 'Each phone’s own choice',
 	'room.back': 'Grimoire',
 	'room.openingRoom': 'Opening a room…',
 	'room.openFailed': 'Could not open a room. Check the connection and try again.',

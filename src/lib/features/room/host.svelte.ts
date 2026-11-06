@@ -463,8 +463,8 @@ export class RoomHost {
 	}
 
 	/**
-	 * Calls every player back to town (plan U2): each phone sounds `sound`, or its own when
-	 * none is given, and vibrates. False when the room can't be reached.
+	 * Calls every player back to town (plan U2): each phone sounds `sound`, the Storyteller's
+	 * pick, and vibrates. False when the room can't be reached.
 	 */
 	callTown(sound?: string): boolean {
 		const sent = this.#socket?.send({ type: 'call-town', ...(sound ? { sound } : {}) }) ?? false;

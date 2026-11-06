@@ -58,18 +58,9 @@
 	}}
 />
 
-<!-- What this phone plays when the Storyteller calls Back to town (plan U2). -->
+<!-- Back to town (plan U2): the Storyteller picks its sound for every phone (Trevor,
+     2026-11-06), so a phone only chooses whether it alerts while locked. -->
 <SettingHeading title={t('room.callTown')} />
-<SettingSelect
-	label={t('settings.callSound')}
-	value={preferences.current.callSound}
-	options={TIMER_SOUNDS.map((sound) => ({ value: sound, label: t(`day.timerSound.${sound}`) }))}
-	defaultValue="clocktower"
-	onChange={(callSound) => {
-		preferences.update({ callSound });
-		playSound(callSound);
-	}}
-/>
 <CallTownPushToggle />
 
 <AmbienceSettings />

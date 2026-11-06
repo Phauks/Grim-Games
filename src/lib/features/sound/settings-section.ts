@@ -15,7 +15,6 @@ registerSettingsSection({
 			soundVolume: DEFAULT_PREFERENCES.soundVolume,
 			timerSound: DEFAULT_PREFERENCES.timerSound,
 			timerVibrate: DEFAULT_PREFERENCES.timerVibrate,
-			callSound: DEFAULT_PREFERENCES.callSound,
 			ambienceOn: DEFAULT_PREFERENCES.ambienceOn,
 			ambienceLevel: DEFAULT_PREFERENCES.ambienceLevel,
 			nightAmbience: DEFAULT_PREFERENCES.nightAmbience,
