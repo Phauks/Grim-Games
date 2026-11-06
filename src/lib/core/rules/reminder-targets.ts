@@ -100,13 +100,16 @@ export function targetRule(
 /**
  * Whether the token exists in this game: one with `minOwners` only while that many seats hold
  * its character (the Village Idiot's Drunk, with 2 or more Village Idiots; Trevor,
- * 2026-10-23).
+ * 2026-10-23), and never a stand-in for a given ability's tokens (`givesAbility.standIns`,
+ * the Hermit's 1, 2 and 3: each holder has its own copies of the real ones, M68).
  */
 export function reminderOffered(
 	game: Game,
 	reminder: Reminder,
 	characters: CharacterLookup
 ): boolean {
+	const gives = rulesOf(reminder.characterId, characters)?.givesAbility;
+	if (gives?.standIns?.includes(reminder.label)) return false;
 	const min = targetRule(reminder, characters)?.minOwners;
 	return min === undefined || ownerSeats(game, reminder.characterId, characters).length >= min;
 }

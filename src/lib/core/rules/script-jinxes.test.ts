@@ -113,6 +113,28 @@ describe('a script jinx between two official characters', () => {
 		expect(abilityState(without.game, without.seats[0], without.ctx.characters).works).toBe(true);
 	});
 
+	// M61b: the verb `impairs` is a preset of a patch of the part `impairs`.
+	it('does the same when the jinx says it as a patch of the part `impairs`', () => {
+		const patch = {
+			patch: {
+				who: 'partner',
+				when: ['self-in-play'],
+				parts: { impairs: { self: { reason: 'drunk' } } }
+			}
+		};
+		const { script, warnings } = load(entries(patch));
+		expect(warnings).toEqual([]);
+		const cast = castWith({ script });
+		const { game, ctx, seats } = cast(['chef', 'monk', 'imp', 'empath', 'poisoner']);
+		const state = abilityState(game, seats[0], ctx.characters);
+		expect(state.works).toBe(false);
+		expect(state.impairments.map((i) => [i.reason, i.source])).toEqual([
+			['drunk', { characterId: 'monk', seatId: seats[1] }]
+		]);
+		const without = cast(['chef', 'saint', 'imp', 'empath', 'poisoner']);
+		expect(abilityState(without.game, without.seats[0], without.ctx.characters).works).toBe(true);
+	});
+
 	it('is text only with no rules, and reads the same from either side', () => {
 		const { script } = load(entries());
 		expect(rulesForJinx(script, 'chef', 'monk')).toBeUndefined();

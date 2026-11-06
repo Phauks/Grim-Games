@@ -6,7 +6,9 @@
 import type { Character, CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
 import {
 	borrowedAbilities,
+	borrowedCopyHolder,
 	gainedAbilities,
+	reminderHolders,
 	reminderOffered,
 	type Night,
 	type NightStep
@@ -104,7 +106,8 @@ export const byLabel = (a: string, b: string): number =>
 /**
  * How many of each reminder token the game has. A token can be on the board once, unless
  * the game gives more: a label listed more than once in TPI's data, or its character in
- * play more than once (two seats, or a seat and its true character). An extra copy the
+ * play more than once (two seats, a seat and its true character, or a player with its ability
+ * besides their own: M68). An extra copy the
  * Storyteller added (`canAddCopy`) counts while it is on the board, and so does one added to the
  * bank (`bank`). Keyed by `reminderKey`;
  * a reminder not in the map has one copy.
@@ -127,17 +130,11 @@ export function reminderCopies(
 
 /** The copies the game gives, before any extra the Storyteller added (`reminderCopies`). */
 function listedCopies(game: Game, characters: CharacterLookup): Map<string, number> {
-	const inPlay = new Map<string, number>();
-	const count = (id: string | undefined) => {
-		if (id !== undefined) inPlay.set(id, (inPlay.get(id) ?? 0) + 1);
-	};
-	for (const seatId of game.seating) {
-		const shown = game.seats[seatId].characterId;
-		const real = trueCharacter(game, seatId, characters);
-		count(shown);
-		if (real !== shown) count(real);
-	}
-	for (const id of game.ruleCharacters) count(id);
+	// Each seat holding the character, and each with its ability besides their own (M68).
+	const inPlay = new Map<string, number>(
+		[...reminderHolders(game, characters)].map(([id, seats]) => [id, seats.length])
+	);
+	for (const id of game.ruleCharacters) inPlay.set(id, (inPlay.get(id) ?? 0) + 1);
 
 	const total = new Map<string, number>();
 	for (const group of reminderGroups(game, characters)) {
@@ -384,21 +381,10 @@ export function bankReminders(
 }
 
 /**
- * The seats holding a character, in seating order: its token, or really being it (the
- * Drunk's seat for the Drunk).
- */
-function holdersOf(game: Game, characterId: CharacterId, characters: CharacterLookup): SeatId[] {
-	return game.seating.filter(
-		(s) =>
-			game.seats[s].characterId === characterId ||
-			trueCharacter(game, s, characters) === characterId
-	);
-}
-
-/**
  * Whose copies a reminder's tokens still in the bank are (Trevor, 2026-10-19: two Imps, one
- * good and one evil, each have their own tokens in their own colour). With the character on
- * one seat or none they belong to no one. Otherwise each seat holding it has the copies the
+ * good and one evil, each have their own tokens in their own colour), and each player who
+ * has its ability besides their own has theirs (M68, `reminderHolders`). With the character
+ * on one seat or none they belong to no one, unless that one seat borrows it. Otherwise each seat holding it has the copies the
  * character lists, less those it has on the board; a token placed before owners were kept
  * counts against the first seat with one left. Any more than that (a copy the Storyteller
  * added) go to the first seat, and any fewer come off the last.
@@ -408,11 +394,20 @@ export function bankOwners(
 	characters: CharacterLookup,
 	reminder: Reminder,
 	left: number,
-	copies: ReadonlySet<ReminderId> = NO_COPIES
+	copies: ReadonlySet<ReminderId> = NO_COPIES,
+	given?: ReadonlyMap<CharacterId, readonly SeatId[]>
 ): { ownerSeatId?: SeatId; count: number }[] {
-	const holders = holdersOf(game, reminder.characterId, characters);
+	const holders = (given ?? reminderHolders(game, characters)).get(reminder.characterId) ?? [];
 	const character = characters.get(reminder.characterId);
-	if (holders.length < 2 || !character) return [{ count: left }];
+	// One holder has its own copies only when it borrows the ability (M68): its icon marks them.
+	const borrows =
+		holders.length === 1 &&
+		borrowedCopyHolder(
+			game,
+			{ characterId: reminder.characterId, ownerSeatId: holders[0] },
+			characters
+		) !== undefined;
+	if ((holders.length < 2 && !borrows) || !character) return [{ count: left }];
 	const listed = [...character.reminders, ...character.remindersGlobal].filter(
 		(l) => l === reminder.label
 	).length;

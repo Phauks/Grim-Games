@@ -183,7 +183,13 @@ test("a gained ability brings its character's reminders into the bank (M50)", as
 		.tap();
 	await expect(row).toContainText('Mathematician');
 	await page.keyboard.press('Escape');
-	await expect(bank.getByRole('button', { name: 'Abnormal reminder' }).first()).toBeVisible();
+	const abnormal = bank.getByRole('button', { name: 'Abnormal reminder' }).first();
+	await expect(abnormal).toBeVisible();
+	// The Philosopher's own copy, its icon in the corner (M68, option A).
+	await expect(abnormal.getByTestId('reminder-holder')).toHaveAttribute(
+		'data-holder',
+		'philosopher'
+	);
 });
 
 test('day view lists an ability a player gained under their own character', async ({ page }) => {

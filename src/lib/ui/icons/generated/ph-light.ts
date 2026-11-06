@@ -38,6 +38,8 @@ import ph_bookmarks_simple_light from '~icons/ph/bookmarks-simple-light';
 import ph_books_light from '~icons/ph/books-light';
 import ph_bug_light from '~icons/ph/bug-light';
 import ph_calculator_light from '~icons/ph/calculator-light';
+import ph_calendar_check_light from '~icons/ph/calendar-check-light';
+import ph_calendar_star_light from '~icons/ph/calendar-star-light';
 import ph_camera_light from '~icons/ph/camera-light';
 import ph_camera_plus_light from '~icons/ph/camera-plus-light';
 import ph_cards_light from '~icons/ph/cards-light';
@@ -128,6 +130,7 @@ import ph_house_light from '~icons/ph/house-light';
 import ph_house_simple_light from '~icons/ph/house-simple-light';
 import ph_identification_card_light from '~icons/ph/identification-card-light';
 import ph_image_light from '~icons/ph/image-light';
+import ph_images_light from '~icons/ph/images-light';
 import ph_info_light from '~icons/ph/info-light';
 import ph_key_light from '~icons/ph/key-light';
 import ph_leaf_light from '~icons/ph/leaf-light';
@@ -283,6 +286,8 @@ const icons: IconMap = {
 	'ph:books-light': ph_books_light,
 	'ph:bug-light': ph_bug_light,
 	'ph:calculator-light': ph_calculator_light,
+	'ph:calendar-check-light': ph_calendar_check_light,
+	'ph:calendar-star-light': ph_calendar_star_light,
 	'ph:camera-light': ph_camera_light,
 	'ph:camera-plus-light': ph_camera_plus_light,
 	'ph:cards-light': ph_cards_light,
@@ -373,6 +378,7 @@ const icons: IconMap = {
 	'ph:house-simple-light': ph_house_simple_light,
 	'ph:identification-card-light': ph_identification_card_light,
 	'ph:image-light': ph_image_light,
+	'ph:images-light': ph_images_light,
 	'ph:info-light': ph_info_light,
 	'ph:key-light': ph_key_light,
 	'ph:leaf-light': ph_leaf_light,

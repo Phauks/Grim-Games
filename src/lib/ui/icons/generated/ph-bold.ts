@@ -38,6 +38,8 @@ import ph_bookmarks_simple_bold from '~icons/ph/bookmarks-simple-bold';
 import ph_books_bold from '~icons/ph/books-bold';
 import ph_bug_bold from '~icons/ph/bug-bold';
 import ph_calculator_bold from '~icons/ph/calculator-bold';
+import ph_calendar_check_bold from '~icons/ph/calendar-check-bold';
+import ph_calendar_star_bold from '~icons/ph/calendar-star-bold';
 import ph_camera_bold from '~icons/ph/camera-bold';
 import ph_camera_plus_bold from '~icons/ph/camera-plus-bold';
 import ph_cards_bold from '~icons/ph/cards-bold';
@@ -128,6 +130,7 @@ import ph_house_bold from '~icons/ph/house-bold';
 import ph_house_simple_bold from '~icons/ph/house-simple-bold';
 import ph_identification_card_bold from '~icons/ph/identification-card-bold';
 import ph_image_bold from '~icons/ph/image-bold';
+import ph_images_bold from '~icons/ph/images-bold';
 import ph_info_bold from '~icons/ph/info-bold';
 import ph_key_bold from '~icons/ph/key-bold';
 import ph_leaf_bold from '~icons/ph/leaf-bold';
@@ -283,6 +286,8 @@ const icons: IconMap = {
 	'ph:books-bold': ph_books_bold,
 	'ph:bug-bold': ph_bug_bold,
 	'ph:calculator-bold': ph_calculator_bold,
+	'ph:calendar-check-bold': ph_calendar_check_bold,
+	'ph:calendar-star-bold': ph_calendar_star_bold,
 	'ph:camera-bold': ph_camera_bold,
 	'ph:camera-plus-bold': ph_camera_plus_bold,
 	'ph:cards-bold': ph_cards_bold,
@@ -373,6 +378,7 @@ const icons: IconMap = {
 	'ph:house-simple-bold': ph_house_simple_bold,
 	'ph:identification-card-bold': ph_identification_card_bold,
 	'ph:image-bold': ph_image_bold,
+	'ph:images-bold': ph_images_bold,
 	'ph:info-bold': ph_info_bold,
 	'ph:key-bold': ph_key_bold,
 	'ph:leaf-bold': ph_leaf_bold,

@@ -15,6 +15,7 @@
 import type { CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
+import { trueCharacter } from '#lib/core/model/selectors.ts';
 import { abilitiesOfSeat, heldAbilitiesOf } from './gained-abilities.ts';
 
 export function borrowedAbilities(
@@ -53,4 +54,51 @@ export function borrowedAbilitiesOf(
 	for (const h of heldAbilitiesOf(game, seatId, characters))
 		if (h.characterId !== own) out.set(h.characterId, out.get(h.characterId) === true || h.works);
 	return [...out].map(([characterId, works]) => ({ characterId, works }));
+}
+
+/**
+ * The seats whose own copies of a character's reminders the game gives (M68, Trevor
+ * 2026-11-06: each holder gets its own copies, the holder's icon in the token's corner): the
+ * seats with its token or really being it (the Drunk's seat for the Drunk) first, then those
+ * who have its ability besides their own (`borrowedAbilitiesOf`: the Hermit's Butler, the
+ * Pixie's Monk once Has Ability is placed, the Boffin's Virgin on the Demon), each in seating
+ * order. The Storyteller's own abilities have no seat, so no copy of their own.
+ */
+export function reminderHolders(
+	game: Game,
+	characters: CharacterLookup
+): ReadonlyMap<CharacterId, readonly SeatId[]> {
+	const out = new Map<CharacterId, SeatId[]>();
+	const add = (id: CharacterId | undefined, seatId: SeatId) => {
+		if (id === undefined) return;
+		const list = out.get(id) ?? [];
+		if (!list.includes(seatId)) list.push(seatId);
+		out.set(id, list);
+	};
+	for (const seatId of game.seating) {
+		add(game.seats[seatId].characterId, seatId);
+		add(trueCharacter(game, seatId, characters), seatId);
+	}
+	for (const seatId of game.seating)
+		for (const b of borrowedAbilitiesOf(game, seatId, characters)) add(b.characterId, seatId);
+	return out;
+}
+
+/**
+ * The character whose player a reminder is a borrowed copy for (M68): the token on its owner's
+ * seat, when that seat has the reminder's character's ability besides its own (the Hermit's
+ * Master), so the token shows that holder's icon in its corner. None for a copy of the
+ * character's own player, or one with no owner.
+ */
+export function borrowedCopyHolder(
+	game: Game,
+	reminder: { characterId: CharacterId; ownerSeatId?: SeatId },
+	characters: CharacterLookup
+): CharacterId | undefined {
+	const owner = reminder.ownerSeatId;
+	const seat = owner === undefined ? undefined : game.seats[owner];
+	if (!seat || owner === undefined || seat.characterId === undefined) return undefined;
+	if (seat.characterId === reminder.characterId) return undefined;
+	if (trueCharacter(game, owner, characters) === reminder.characterId) return undefined;
+	return seat.characterId;
 }

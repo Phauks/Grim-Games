@@ -11,7 +11,7 @@
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
-	import { placingAlignment } from './board.ts';
+	import { reminderPlacing } from './board.ts';
 	import CharacterPicker from './CharacterPicker.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { placedLook } from './reminders.ts';
@@ -114,7 +114,7 @@
 				{#each ruleReminders(game, id) as reminder (reminder.reminderId)}
 					<BoardReminder
 						{...placedLook(reminder, characters)}
-						alignment={placingAlignment(game, reminder, characters)}
+						{...reminderPlacing(game, reminder, characters)}
 						ariaLabel={reminder.label}
 						disabled={watching}
 						onTap={() => onReminder(reminder.reminderId)}

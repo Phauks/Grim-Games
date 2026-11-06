@@ -13,6 +13,7 @@
  * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
+import { deathReminder } from '#lib/core/rules/first-death.ts';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import {
 	committedCharacter,
@@ -89,6 +90,18 @@ describe('Poppy Grower', () => {
 	});
 
 	describe('How to Run (https://wiki.bloodontheclocktower.com/Poppy_Grower#How_to_Run)', () => {
+		it('marking the player dead asks to place Evil Wakes on them', () => {
+			// Wiki: "If the Poppy Grower dies, mark them with the EVIL WAKES reminder."
+			const s = scenario(['poppygrower', 'chef', 'empath', 'imp', 'poisoner']);
+			for (const cause of ['execution', 'imp', 'poisoner'] as const) {
+				const dead = s.dies('poppygrower', cause);
+				expect(deathReminder(dead.game, dead.seat('poppygrower'), cause, dead.characters)).toEqual({
+					characterId: 'poppygrower',
+					label: 'Evil Wakes'
+				});
+			}
+		});
+
 		const cast = ['poppygrower', 'chef', 'imp', 'poisoner', 'witch', 'empath', 'monk'];
 		const steps = (s: Scenario, night: Night) => {
 			const data = committedGameData();

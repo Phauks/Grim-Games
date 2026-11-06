@@ -19,8 +19,9 @@ export const LAB_SCRIPT_NAME = 'Character Lab';
  * Demon's bluffs and the setup reminders. Then the first night begins as Start game begins it,
  * so the game opens on the first night, or on day `startDay` when it is 1 or more (Trevor,
  * 2026-11-05: "what day of the game to start on"), each night between ended as End night ends
- * it. The last lab game, `previous`, is deleted first, so the lab keeps only one on this
- * device.
+ * it. The last lab game, `previous`, is deleted once the new one is saved, so the lab keeps
+ * only one on this device and the new game is not held up by the delete (load timing,
+ * 2026-11-06).
  */
 export async function loadLabGame(
 	data: LabData,
@@ -28,7 +29,6 @@ export async function loadLabGame(
 	previous: GameId | undefined,
 	startDay = 0
 ): Promise<OpenGame> {
-	if (previous) await forgetGame(previous);
 	const built = labGame(data, setup);
 	// A custom character goes on the script whole, with its own jinxes, as on a homebrew script.
 	const custom = data.custom ?? new Set();
@@ -78,6 +78,7 @@ export async function loadLabGame(
 		open.run({ type: 'NewDay' });
 	}
 	await open.save();
+	if (previous) await forgetGame(previous);
 	// Start game: when it started, and tonight's walk-through from its first step.
 	const gameId = open.game.gameId;
 	gameStarts.start(gameId);

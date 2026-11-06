@@ -1,7 +1,8 @@
 {
 	"actsWhenDead": true,
 	"onDeath": {
-		"by": "any"
+		"by": "any",
+		"places": "Evil Wakes"
 	},
 	"reminderTargets": {
 		"Evil Wakes": {

@@ -55,6 +55,11 @@
 		onShowNumber?: (n: number) => void;
 		/** Show a yes or no answer as the Yes/No info token does (Trevor, 2026-11-02: Flowergirl). */
 		onShowAnswer?: (answer: string) => void;
+		/**
+		 * Show a player's character on the step's card that is filled from the player chosen
+		 * (the Dreamer's "This player is"), where the other token is picked too.
+		 */
+		onShowChosen?: (seatId: SeatId, characterId: CharacterId) => void;
 		/** A picker's row was shown to the player: record it (`record-shown.ts`). */
 		onRecord?: (picker: InfoPicker, choice: InfoChoice) => void;
 	}
@@ -67,6 +72,7 @@
 		onShowCharacters,
 		onShowNumber,
 		onShowAnswer,
+		onShowChosen,
 		onRecord
 	}: Props = $props();
 	const headingId = $props.id();
@@ -193,7 +199,8 @@
 	}
 	/** Shows a role and records it: whole once the second player of a pair is known. */
 	function showRole(p: InfoPicker, row: LearnedRole, key: string, id: CharacterId | undefined) {
-		showOrPick(key, id);
+		if (id && onShowChosen && !row.other) onShowChosen(row.target, id);
+		else showOrPick(key, id);
 		const seats = row.other ? [row.target, row.other] : [row.target];
 		if (id) onRecord?.(p, { seats, characterId: id });
 	}

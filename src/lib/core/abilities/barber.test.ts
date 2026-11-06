@@ -16,6 +16,7 @@ import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { gameEnds } from '#lib/core/rules/game-end.ts';
+import { deathReminder } from '#lib/core/rules/first-death.ts';
 import { swappableSeats } from '#lib/core/rules/becomes.ts';
 import { filledInfoToken, stepInfoCards } from '#lib/core/rules/info-token-characters.ts';
 import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
@@ -145,6 +146,25 @@ describe('Barber', () => {
 			expect(
 				reminderTargetMisses(executed.game, haircuts, executed.seat('barber'), executed.characters)
 			).toEqual([]);
+		});
+
+		it('marking the Barber dead, by any death, asks to place Haircuts Tonight on them', () => {
+			// Wiki: "If the Barber dies, mark them with the HAIRCUTS TONIGHT reminder."
+			const s = scenario(['barber', 'clockmaker', 'juggler', 'imp', 'poisoner']);
+			for (const cause of ['execution', 'imp', 'poisoner', undefined] as const) {
+				const dead = s.dies('barber', cause);
+				expect(deathReminder(dead.game, dead.seat('barber'), cause, dead.characters)).toEqual(
+					haircuts
+				);
+			}
+			const marked = s.dies('barber', 'execution').reminder('barber', 'barber', 'Haircuts Tonight');
+			expect(
+				deathReminder(marked.game, marked.seat('barber'), 'execution', marked.characters)
+			).toBeUndefined();
+			const poisoned = s.poisoned('barber').dies('barber', 'execution');
+			expect(
+				deathReminder(poisoned.game, poisoned.seat('barber'), 'execution', poisoned.characters)
+			).toBeUndefined();
 		});
 
 		it('the Demon is shown that the Barber selected them', () => {

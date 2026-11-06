@@ -30,7 +30,15 @@
 				node.style.setProperty('--fit', String(share));
 				return node.scrollWidth <= box.clientWidth && node.offsetHeight <= box.clientHeight;
 			};
+			// The box's size and whether the fonts had loaded when it was last fitted: the
+			// resize observer's first call and the fonts already being ready would each fit it
+			// again for nothing, and every fit lays the page out up to ten times (load timing,
+			// 2026-11-06).
+			let fitted = '';
 			const fit = () => {
+				const key = `${box.clientWidth}x${box.clientHeight}:${document.fonts?.status}`;
+				if (key === fitted) return;
+				fitted = key;
 				if (box.clientWidth === 0 || fits(1)) return;
 				let low = 0.1;
 				let high = 1;
