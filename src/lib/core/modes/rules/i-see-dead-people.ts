@@ -17,10 +17,10 @@ export const I_SEE_DEAD_PEOPLE: SpecialRule = {
 		'Characters die as normal, but the Storyteller doesn’t announce deaths. Dead players can still nominate, and poisoned players don’t wake.',
 	sources: [{ title: 'I See Dead People (Beardy on the Clocktower)', url: PAGE }],
 	parts: {
-		// The author's rule, quoted.
+		// Our wording of the author's rule, approved by Trevor 2026-11-06.
 		text: [
-			"Characters die as normal but the storyteller doesn't announce deaths.",
-			"Dead players can nominate. Poisoned players don't wake up."
+			'Characters die as normal, but the Storyteller does not announce deaths.',
+			'Dead players may still nominate. Poisoned players do not wake at night.'
 		],
 		deaths: {
 			kind: 'private',

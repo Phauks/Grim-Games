@@ -14,6 +14,8 @@ import type { Game } from '#lib/core/model/types.ts';
 export interface OptionalRuleChoice {
 	characterId: CharacterId;
 	on: boolean;
+	/** Our own wording of the rule (`optionalRuleText`), when the rules block has it. */
+	text?: string;
 }
 
 /**
@@ -26,10 +28,11 @@ export function optionalRuleChoices(game: Game, characters: CharacterLookup): Op
 		...game.ruleCharacters,
 		...game.seating.flatMap((id) => game.seats[id].characterId ?? [])
 	]);
-	return [...ids]
-		.filter((id) => rulesOf(id, characters)?.optionalRule !== undefined)
-		.map((characterId) => ({
-			characterId,
-			on: game.optionalRules?.includes(characterId) ?? false
-		}));
+	return [...ids].flatMap((characterId) => {
+		const rules = rulesOf(characterId, characters);
+		if (rules?.optionalRule === undefined) return [];
+		const on = game.optionalRules?.includes(characterId) ?? false;
+		const text = rules.optionalRuleText;
+		return [{ characterId, on, ...(text ? { text } : {}) }];
+	});
 }
