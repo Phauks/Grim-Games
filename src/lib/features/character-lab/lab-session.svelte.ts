@@ -6,16 +6,22 @@
  */
 import { goto } from '$app/navigation';
 import { resolve } from '$app/paths';
-import type { Character, CharacterId, GameData, Jinx } from '#lib/core/data/index.ts';
-import { labOpponents, stepCharacter, type LabOpponent } from '#lib/core/lab/lab-game.ts';
+import type { Character, CharacterId, Jinx } from '#lib/core/data/index.ts';
+import {
+	labOpponents,
+	stepCharacter,
+	type LabData,
+	type LabOpponent
+} from '#lib/core/lab/lab-game.ts';
 import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 import { reportError } from '#lib/features/errors/report.svelte.ts';
+import { labData } from './lab-data.ts';
 import { lab } from './lab-store.svelte.ts';
 import { loadLabGame } from './load-lab-game.ts';
 
 export class LabSession {
-	/** The official data, once loaded. */
-	data = $state<GameData>();
+	/** The official data and this device's custom characters, once loaded. */
+	data = $state<LabData>();
 	loading = $state(false);
 	/** Bumped on each load, so a frame opens the new game even at the same address. */
 	loads = $state(0);
@@ -58,7 +64,7 @@ export class LabSession {
 		if (this.loading) return;
 		this.loading = true;
 		try {
-			const data = this.data ?? (await loadOfficialData());
+			const data = this.data ?? labData(await loadOfficialData());
 			const kept = this.core ? [this.core] : [];
 			const list = this.core ? labOpponents(data, kept, { kind: 'jinxes' }) : [];
 			const i = Math.min(Math.max(0, index), Math.max(0, list.length - 1));
