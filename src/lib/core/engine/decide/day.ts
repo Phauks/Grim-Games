@@ -13,7 +13,8 @@ import {
 	type SeatId
 } from '#lib/core/model/index.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
-import { rulesIn, rulesOf } from '#lib/core/data/rules/index.ts';
+import { rulesOf } from '#lib/core/data/rules/index.ts';
+import { rulesInPlay } from '#lib/core/rules/rules-in-play.ts';
 import {
 	DAY_MARKS,
 	dayUsesAllowed,
@@ -562,7 +563,7 @@ function checkClaimsPerDay(
 	ctx: EngineContext,
 	warn: Warn
 ): void {
-	const rules = rulesIn(game, note.characterId, ctx.characters);
+	const rules = rulesInPlay(game, note.characterId, ctx.characters);
 	const limit = rules?.claimsPerDay;
 	if (limit === undefined) return;
 	const counts = (e: Extract<DayEntry, { kind: 'note' }>) =>

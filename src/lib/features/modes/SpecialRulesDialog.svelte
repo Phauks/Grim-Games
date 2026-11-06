@@ -1,4 +1,5 @@
 <script lang="ts">
+	import AbilityText from '#lib/features/characters/AbilityText.svelte';
 	import {
 		combineRules,
 		type GameMode,
@@ -9,7 +10,6 @@
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { optionalRuleText, prefetchWikiPage } from '#lib/features/characters/wiki-page.svelte.ts';
-	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
@@ -184,7 +184,7 @@
 						{#if rule.character}
 							{@const character = rule.character}
 							<CharacterPiece template="row" {character} info
-								>{#snippet abilityText()}<GlossaryText
+								>{#snippet abilityText()}<AbilityText
 										text={character.ability}
 										names={[character.name]}
 									/>{/snippet}</CharacterPiece

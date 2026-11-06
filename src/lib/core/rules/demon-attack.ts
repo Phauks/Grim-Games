@@ -7,7 +7,7 @@
  * reminded; on a night the Demon's attack could end the game, the Demon doesn't wake or attack.
  * Warns only: the Storyteller decides (`night-alerts.ts` shows these at the step).
  */
-import { rulesIn } from '#lib/core/data/rules/index.ts';
+import { rulesInPlay } from './rules-in-play.ts';
 import type { CharacterId, ReminderLabel } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
@@ -31,7 +31,7 @@ export function demonAttackRule(
 		if (id) ids.add(id);
 	}
 	for (const characterId of ids) {
-		const rule = rulesIn(game, characterId, characters)?.demonAttack;
+		const rule = rulesInPlay(game, characterId, characters)?.demonAttack;
 		if (rule)
 			return {
 				characterId,

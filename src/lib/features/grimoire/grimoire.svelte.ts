@@ -5,6 +5,7 @@ import {
 	followedAlignmentOffer,
 	reincarnatedBy,
 	survivesFirstDeath,
+	deathReminder,
 	explosionOf,
 	remindersRunOutByDawn,
 	counterMoves,
@@ -381,10 +382,12 @@ export class Grimoire {
 	/**
 	 * A player just marked dead whose ability stops their first death, unused and working (the
 	 * Fool, not by the Assassin): the board offers to keep them alive and spend the ability
-	 * (`survivesFirstDeath`; Trevor, 2026-10-22).
+	 * (`survivesFirstDeath`; Trevor, 2026-10-22). With `places`, the death sets off the ability
+	 * instead and the board offers to place its reminder, the player staying dead (the Barber's
+	 * "Haircuts Tonight", `deathReminder`; Trevor, 2026-11-06).
 	 */
 	firstDeathAsk = $state.raw<
-		{ seatId: SeatId; characterId: CharacterId; spentToken: ReminderLabel } | undefined
+		{ seatId: SeatId; characterId: CharacterId; token: ReminderLabel; places?: true } | undefined
 	>();
 
 	private askFirstDeath(command: Command): void {
@@ -405,7 +408,17 @@ export class Grimoire {
 			this.firstDeathAsk = {
 				seatId: death.seatId,
 				characterId: saver.source.characterId,
-				spentToken: saver.spentToken
+				token: saver.spentToken
+			};
+			return;
+		}
+		const placed = deathReminder(this.open.game, death.seatId, death.cause, this.open.characters);
+		if (placed) {
+			this.firstDeathAsk = {
+				seatId: death.seatId,
+				characterId: placed.characterId,
+				token: placed.label,
+				places: true
 			};
 			return;
 		}

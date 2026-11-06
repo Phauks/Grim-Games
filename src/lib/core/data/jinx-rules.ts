@@ -278,7 +278,13 @@
  *   info recorded as abnormal because of the partner's own ability (the Mathematician with the
  *   Drunk and the Marionette); `unlike-demon`, the partner's `choosesLikeDemon` reminder is on
  *   none of the players a Demon killed tonight (the Mathematician with the Lunatic; needs the
- *   partner's `choosesLikeDemon`).
+ *   partner's `choosesLikeDemon`);
+ * - `patch` (M61): `parts`, any parts of a character's rules block, used in place of the
+ *   subject's own while the jinx is in effect and its `when` holds. Each is read by its own
+ *   part reader, so a jinx can do whatever a character can: "while the Imp lives, the
+ *   Lamplighter's vote counts twice" is `{"patch": {"parts": {"voteWeight": {"self": true,
+ *   "weight": 2}}, "when": ["partner-alive"]}}`. Where the rules are read in the game
+ *   (`rulesInPlay`).
  *
  * The prerequisites are `JINX_NEEDS`: this character's side is checked as the block is read
  * (`readJinxRules`, `jinx-read.ts`), the partner's once both are known (`jinxPartnerIssues`).
@@ -289,6 +295,7 @@ import {
 	type CharacterType,
 	type ReminderLabel
 } from './types.ts';
+import type { CharacterRules } from './character-rules.ts';
 import type { JinxCondition } from './jinx-conditions.ts';
 import type { PROTECTS_FROM } from './parts/protects.ts';
 
@@ -557,6 +564,15 @@ export interface JinxRules {
 	thinksPartnerSetup?: JinxEffect;
 	voter?: VoterPatch;
 	abnormalCounts?: AbnormalCountsRule;
+	patch?: JinxPatch;
+}
+
+/**
+ * Parts of the subject's own rules block, in place of its own while the jinx is in effect and
+ * its `when` holds (M61, `rules/rules-in-play.ts`). Each is read by its part's own reader.
+ */
+export interface JinxPatch extends JinxEffect {
+	parts: CharacterRules;
 }
 
 export type JinxRuleKey = keyof JinxRules;

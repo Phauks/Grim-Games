@@ -26,6 +26,7 @@ import {
 	openBin,
 	moveOnBoard,
 	putReminder,
+	placeFromStep,
 	putRunReminder,
 	tapToSeat
 } from './reminder-bank.ts';
@@ -1142,10 +1143,12 @@ test('a night step offers the info tokens its text names', async ({ page }) => {
 		.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong')
 		.tap();
 	const step = page.getByRole('dialog', { name: 'Imp' });
-	const tiles = step.getByTestId('step-info-tokens');
-	await expect(tiles.getByRole('button')).toHaveCount(1);
+	// The card is on the line that names it (Trevor, 2026-11-06), with no list of cards below.
+	const lines = step.getByTestId('night-lines');
+	await expect(lines.getByRole('button', { name: /^Show to player/ })).toHaveCount(1);
+	await expect(step.getByTestId('step-info-tokens')).toHaveCount(0);
 	// The Imp's rules fill in its own token (Trevor, 2026-10-24), so the card shows at once.
-	await tiles.getByRole('button', { name: 'You are (Imp)', exact: true }).tap();
+	await lines.getByRole('button', { name: 'Show to player: You are (Imp)', exact: true }).tap();
 	const shown = page.locator('[data-testid="show-to-player"][open]');
 	await expect(shown.getByRole('img', { name: /Imp token/ })).toBeVisible();
 	// The step stays open under the card, for the rest of the Imp's turn: closing the card goes
@@ -1285,11 +1288,7 @@ test("the Demon's step says when the Exorcist's choice stops it waking", async (
 		.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong')
 		.tap();
 	const exorcist = page.getByRole('dialog', { name: 'Exorcist' });
-	await exorcist.getByRole('button', { name: 'Place' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Put Chosen on' })
-		.getByRole('button', { name: /Pukka Seat 1/ })
-		.tap();
+	await placeFromStep(page, exorcist, 1);
 	await expect(exorcist).toContainText(/On\s+(\S+\s+)?Seat 1\b/);
 	await exorcist.getByRole('button', { name: 'Close' }).tap();
 
@@ -1389,10 +1388,14 @@ test('the Cerenovus shows "This character selected you", then "You are mad as" t
 		.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong')
 		.tap();
 	const step = page.getByRole('dialog', { name: 'Cerenovus' });
-	const tiles = step.getByTestId('step-info-tokens');
+	// "This character selected you" is on the line naming it; the card the rules offer stays below.
 	await expect(
-		tiles.getByRole('button', { name: 'This character selected you (Cerenovus)', exact: true })
+		step.getByTestId('night-lines').getByRole('button', {
+			name: 'Show to player: This character selected you (Cerenovus)',
+			exact: true
+		})
 	).toBeVisible();
+	const tiles = step.getByTestId('step-info-tokens');
 	await tiles.getByRole('button', { name: 'You are mad as', exact: true }).tap();
 	// The Storyteller picks the madness character; both cards then show together.
 	const confirm = page.getByRole('button', { name: 'Confirm' });
@@ -1431,15 +1434,21 @@ test('the Snake Charmer step fills "You are" with the Demon, then with the Snake
 		.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong')
 		.tap();
 	const step = page.getByRole('dialog', { name: 'Snake Charmer' });
-	const tiles = step.getByTestId('step-info-tokens');
-	await expect(tiles.getByRole('button')).toHaveCount(2);
-	await expect(
-		tiles.getByRole('button', { name: 'You are (Vigormortis)', exact: true })
-	).toBeVisible();
-	await tiles.getByRole('button', { name: 'You are (Snake Charmer)', exact: true }).tap();
+	// Each "You are" line has its own card, in the text's order (Trevor, 2026-11-06).
+	const eyes = step.getByTestId('night-lines').getByRole('button', { name: /^Show to player/ });
+	await expect(eyes).toHaveCount(2);
+	await expect(eyes.nth(0)).toHaveAccessibleName('Show to player: You are (Vigormortis)');
+	await expect(eyes.nth(1)).toHaveAccessibleName('Show to player: You are (Snake Charmer)');
+	await expect(step.getByTestId('night-lines').locator('[data-marked-row]')).toHaveCount(0);
+	await eyes.nth(1).tap();
 	const shown = page.locator('[data-testid="show-to-player"][open]');
 	await expect(shown).toHaveAccessibleName('You are: Snake Charmer');
 	await expect(shown.getByRole('img', { name: /Snake Charmer token/ })).toBeVisible();
+	// Back at the step, the line whose card was shown is marked done.
+	await shown.getByRole('button', { name: 'Close' }).tap();
+	const marked = step.getByTestId('night-lines').locator('[data-marked-row]');
+	await expect(marked).toHaveCount(1);
+	await expect(marked).toContainText('give a thumbs up');
 });
 
 // Trevor (2026-11-01): "App does not show the token". The twins learn each other: the Evil
@@ -2456,11 +2465,12 @@ test('info tokens open from the toolbar and show player cards at once', async ({
 	await expect(page.getByTestId('bluff-set')).toHaveCount(1);
 });
 
-test("a night step's seat list greys out seats its token doesn't fit, still choosable", async ({
+test("a night step's token goes on a seat tapped on the board, unusual seats faded", async ({
 	page
 }) => {
 	// https://wiki.bloodontheclocktower.com/Butler : the Butler chooses a player other than
-	// themself as their Master (Trevor, 2026-10-27: only valid picks, greyed out, not removed).
+	// themself as their Master (Trevor, 2026-10-27: only valid picks, greyed out, not removed;
+	// 2026-11-06: picked on the board, not a list of players).
 	await startGame(page);
 	const sheet = await openSeat(page, 1);
 	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
@@ -2472,15 +2482,25 @@ test("a night step's seat list greys out seats its token doesn't fit, still choo
 
 	const guide = await openStep(page, 'Butler');
 	await guide.getByRole('button', { name: 'Place' }).tap();
-	const put = page.getByRole('dialog', { name: 'Put Master on' });
-	const own = put.getByRole('button', { name: /Butler Seat 1/ });
-	await expect(own).toHaveAttribute('data-misfit');
-	await expect(own).toContainText('Not a usual place');
-	await expect(put.getByRole('button', { name: /Seat 2/ })).not.toHaveAttribute('data-misfit');
-	// Every seat is still listed and can be chosen: the Storyteller overrides.
-	await expect(put.getByRole('listitem')).toHaveCount(8);
-	await own.tap();
+	await expect(guide).toBeHidden();
+	await expect(page.getByRole('dialog', { name: 'Put Master on' })).toHaveCount(0);
+	await expect(inHand(page)).toBeVisible();
+	await expect(boardSeat(page, 1)).toHaveAttribute('data-misfit');
+	await expect(boardSeat(page, 2)).not.toHaveAttribute('data-misfit');
+	await page.screenshot({ path: `test-results/step-place-${test.info().project.name}.png` });
+	// Still choosable: the Storyteller overrides. The step opens again with it placed.
+	await boardSeat(page, 1).tap();
+	await expect(guide).toBeVisible();
 	await expect(guide).toContainText(/On\s+(\S+\s+)?Seat 1\b/);
+	// Moved the same way, from its seat to the one tapped.
+	await placeFromStep(page, guide, 2, { button: 'Move' });
+	await expect(guide).toContainText(/On\s+(\S+\s+)?Seat 2\b/);
+	// Put down without a seat (Escape), the step comes back as it was.
+	await guide.getByRole('button', { name: 'Move' }).tap();
+	await expect(inHand(page)).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(guide).toBeVisible();
+	await expect(guide).toContainText(/On\s+(\S+\s+)?Seat 2\b/);
 });
 
 test('a night step is filled in with help, and the night can be walked through', async ({
@@ -2504,15 +2524,7 @@ test('a night step is filled in with help, and the night can be walked through',
 	const guide = await openStep(page, 'Poisoner');
 	await expect(guide).toContainText('Seat 1');
 	await expect(guide).toContainText('Not placed');
-	await guide.getByRole('button', { name: 'Place' }).tap();
-	// Each row: the seat's number, its character once (the in-line badge), then the player
-	// (Trevor, 2026-10-20).
-	const row = page
-		.getByRole('dialog', { name: 'Put Poisoned on' })
-		.getByRole('button', { name: /Empath Seat 2/ });
-	await expect(row).toHaveText(/^2\s*Empath\s*Seat 2$/);
-	await expect(row.locator('img')).toHaveCount(1);
-	await row.tap();
+	await placeFromStep(page, guide, 2);
 	await expect(guide).toContainText(/On\s+(\S+\s+)?Seat 2\b/);
 	// It can go back to the reminder bank from here (Trevor, 2026-10-17), then be placed again.
 	await guide.getByRole('button', { name: 'Return Poisoned to the reminder bank' }).tap();
@@ -2520,11 +2532,7 @@ test('a night step is filled in with help, and the night can be walked through',
 	await expect(
 		guide.getByRole('button', { name: 'Return Poisoned to the reminder bank' })
 	).toBeDisabled();
-	await guide.getByRole('button', { name: 'Place' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Put Poisoned on' })
-		.getByRole('button', { name: /Empath Seat 2/ })
-		.tap();
+	await placeFromStep(page, guide, 2);
 	await expect(guide).toContainText(/On\s+(\S+\s+)?Seat 2\b/);
 
 	// Info tokens and Show to player (an eye) sit beside the X, with no Done (Trevor,
@@ -3983,13 +3991,7 @@ test("a night step lists every copy of a character's reminder (the Mathematician
 	// https://wiki.bloodontheclocktower.com/Mathematician : five "Abnormal" tokens in TPI's data.
 	const place = guide.getByRole('button', { name: 'Place' });
 	await expect(place).toHaveCount(5);
-	for (const seat of [2, 3]) {
-		await place.first().tap();
-		await page
-			.getByRole('dialog', { name: 'Put Abnormal on' })
-			.getByRole('button', { name: new RegExp(`^${seat} .*Seat ${seat}$`) })
-			.tap();
-	}
+	for (const seat of [2, 3]) await placeFromStep(page, guide, seat);
 	await expect(place).toHaveCount(3);
 	await expect(guide).toContainText(/On\s+(\S+\s+)?Seat 2\b/);
 	await expect(guide).toContainText(/On\s+(\S+\s+)?Seat 3\b/);
@@ -4833,8 +4835,11 @@ test('the Storm Catcher named character is picked before the day and kept at its
 	// The step's own "not in play" card shows that character, never the Demon's bluffs
 	// (Trevor, 2026-11-01).
 	await step
-		.getByTestId('step-info-tokens')
-		.getByRole('button', { name: 'These characters are not in play (Washerwoman)', exact: true })
+		.getByTestId('night-lines')
+		.getByRole('button', {
+			name: 'Show to player: These characters are not in play (Washerwoman)',
+			exact: true
+		})
 		.tap();
 	const shown = page.locator('[data-testid="show-to-player"][open]');
 	await expect(shown.getByRole('img', { name: /Washerwoman token/ })).toBeVisible();
@@ -6420,11 +6425,7 @@ test('with I See Dead People, the walk-through says a poisoned player doesn’t 
 		await closeSheet(page);
 	}
 	const guide = await openStep(page, 'Poisoner');
-	await guide.getByRole('button', { name: 'Place' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Put Poisoned on' })
-		.getByRole('button', { name: /Empath Seat 2/ })
-		.tap();
+	await placeFromStep(page, guide, 2);
 	await guide.getByRole('button', { name: 'Close' }).tap();
 
 	const strip = await walkTo(page, 'Poisoner');
@@ -7041,6 +7042,35 @@ test('a Fool marked dead is offered to survive their first death', async ({ page
 		'aria-label',
 		/dead/
 	);
+});
+
+test('a Barber marked dead is offered Haircuts Tonight, staying dead', async ({ page }) => {
+	// Trevor (2026-11-06): "If the Barber dies, mark them with the HAIRCUTS TONIGHT reminder"
+	// (https://wiki.bloodontheclocktower.com/Barber), by any death.
+	await startGame(page, 'Sects & Violets');
+	for (const [number, name] of [
+		[1, 'Barber'],
+		[2, 'Vortox']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('combobox', { name: 'Status: Alive' }).tap();
+	await page.getByRole('listbox').getByRole('option', { name: 'The Demon' }).tap();
+	const ask = page.getByRole('alertdialog', { name: 'Use the Barber’s ability?' });
+	await expect(ask).toContainText('Haircuts Tonight');
+	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(ask).toBeHidden();
+	await closeSheet(page);
+	const barber = seatLabelled(page, 'Seat 1: no name, Barber');
+	await expect(barber).toHaveAttribute('aria-label', /dead/);
+	await expect(barber).toHaveAttribute('aria-label', /1 reminder/);
 });
 
 test('with the Hindu, a player who dies is reincarnated as a Traveller', async ({ page }) => {
@@ -7913,6 +7943,11 @@ test("the Barber's step swaps two players' characters, keeping alignments", asyn
 	const sheet = await openSeat(page, 1);
 	await sheet.getByRole('combobox', { name: 'Status: Alive' }).tap();
 	await page.getByRole('listbox').getByRole('option', { name: 'Executed' }).tap();
+	// Its death asks to place Haircuts Tonight (https://wiki.bloodontheclocktower.com/Barber).
+	await page
+		.getByRole('alertdialog', { name: 'Use the Barber’s ability?' })
+		.getByRole('button', { name: 'Confirm', exact: true })
+		.tap();
 	await closeSheet(page);
 
 	const strip = await walkTo(page, 'Barber');
@@ -7965,6 +8000,11 @@ test("the Hatter's step lets each Minion and Demon become another of their type"
 	const sheet = await openSeat(page, 1);
 	await sheet.getByRole('combobox', { name: 'Status: Alive' }).tap();
 	await page.getByRole('listbox').getByRole('option', { name: 'Executed' }).tap();
+	// Its death asks to place Tea Party Tonight (https://wiki.bloodontheclocktower.com/Hatter).
+	await page
+		.getByRole('alertdialog', { name: 'Use the Hatter’s ability?' })
+		.getByRole('button', { name: 'Confirm', exact: true })
+		.tap();
 	await closeSheet(page);
 
 	const strip = await walkTo(page, 'Hatter');

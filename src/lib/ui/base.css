@@ -292,3 +292,14 @@ select:focus-visible {
 	color: var(--on-surface-muted);
 	opacity: 1;
 }
+
+/*
+ * A row already marked or shown (a night step's Valid information row its reminders mark):
+ * a gold edge down its start on the selected surface (Trevor, 2026-11-06, option A).
+ */
+[data-marked-row] {
+	padding-inline-start: var(--space-3);
+	border-radius: var(--radius-sm);
+	background: var(--surface-selected);
+	box-shadow: inset 0.35rem 0 0 var(--heading);
+}

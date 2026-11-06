@@ -11,13 +11,15 @@
  * named by comparing the characters found with the scripts already known (the official
  * editions and the user's own), then by the sheet's title.
  */
-import type { Character, CharacterId } from '#lib/core/data/index.ts';
+import type { Character, CharacterId, CharacterName } from '#lib/core/data/index.ts';
 
 /** One line of text as the reader found it, top to bottom. */
 export interface PhotoLine {
 	text: string;
 	/** The line's height in the photo, in any unit: the tallest line near the top is the title. */
 	height?: number;
+	/** How sure the reader was of the line, 0 to 100, when it says (for the import log). */
+	confidence?: number;
 }
 
 export type PhotoMatchKind = 'matched' | 'close';
@@ -39,6 +41,24 @@ export interface PhotoReading {
 	/** The sheet's title as read; '' when none was found. */
 	title: string;
 }
+
+/** How one line was read, for the import log (Trevor, 2026-11-06: "more verbose logging"). */
+export type PhotoLineTrace =
+	| { index: number; text: string; outcome: 'empty' | 'tail' | 'title' | 'unnamed' }
+	| {
+			index: number;
+			text: string;
+			outcome: 'unmatched';
+			nearest?: { name: CharacterName; score: number };
+	  }
+	| {
+			index: number;
+			text: string;
+			outcome: 'name' | 'ability' | 'close';
+			name: CharacterName;
+			/** Name likeness (0 to 1) for a name or close match, the ability's share for an ability. */
+			score: number;
+	  };
 
 /** A name at least this alike (0 to 1) is found outright. */
 const MATCHED = 0.86;
@@ -143,6 +163,15 @@ function nameMatch(
 	line: string,
 	pool: readonly Candidate[]
 ): { candidate: Candidate; score: number; read: string } | undefined {
+	const best = nearestName(line, pool);
+	return best && best.score >= CLOSE ? best : undefined;
+}
+
+/** The most alike name among the first words of a line, however unalike. */
+function nearestName(
+	line: string,
+	pool: readonly Candidate[]
+): { candidate: Candidate; score: number; read: string } | undefined {
 	const words = plainText(line).split(' ').filter(Boolean);
 	// The icon beside a name reads as a stray letter or two ("B Empath", "3 Chef").
 	while (words.length > 1 && (words[0].length <= 2 || !/[a-z]/.test(words[0]))) words.shift();
@@ -155,11 +184,14 @@ function nameMatch(
 			if (!best || score > best.score) best = { candidate, score, read };
 		}
 	}
-	return best && best.score >= CLOSE ? best : undefined;
+	return best;
 }
 
-/** The character whose ability the line carries most of, if it carries enough. */
-function abilityMatch(line: string, pool: readonly Candidate[]): Candidate | undefined {
+/** The character whose ability the line carries most of, if it carries enough, and how much. */
+function abilityMatch(
+	line: string,
+	pool: readonly Candidate[]
+): { candidate: Candidate; share: number } | undefined {
 	const words = new Set(contentWords(line));
 	if (words.size < ABILITY_MIN_WORDS) return undefined;
 	let best: { candidate: Candidate; share: number } | undefined;
@@ -175,9 +207,11 @@ function abilityMatch(line: string, pool: readonly Candidate[]): Candidate | und
 		} else if (share > second) second = share;
 	}
 	// A near tie between two abilities names neither.
-	return best && best.share >= ABILITY_SHARE && best.share - second >= 0.15
-		? best.candidate
-		: undefined;
+	return best && best.share >= ABILITY_SHARE && best.share - second >= 0.15 ? best : undefined;
+}
+
+function named(candidate: Candidate, score: number) {
+	return { name: candidate.character.name, score };
 }
 
 /** A line that reads like a name the app doesn't know: one to three capitalised words. */
@@ -195,7 +229,9 @@ function looksLikeName(text: string): boolean {
  */
 export function readScriptLines(
 	lines: readonly PhotoLine[],
-	characters: readonly Character[]
+	characters: readonly Character[],
+	/** Hears how each line was read, in order (the import log). */
+	trace?: (line: PhotoLineTrace) => void
 ): PhotoReading {
 	const pool = candidates(characters);
 	const found = new Map<CharacterId, PhotoFound>();
@@ -208,27 +244,45 @@ export function readScriptLines(
 		else if (had.kind === 'close' && kind === 'matched') had.kind = 'matched';
 	};
 
+	const traces: PhotoLineTrace[] = [];
 	lines.forEach((line, index) => {
 		const text = line.text.trim();
-		if (!text) return;
+		if (!text) {
+			traces.push({ index, text, outcome: 'empty' });
+			return;
+		}
 		// The end of an ability that ran onto a line of its own ("poisoned.") names no one.
 		const tail = /[.)\]]$/.test(text) && text.split(/\s+/).length <= 2;
 		const name = tail ? undefined : nameMatch(text, pool);
 		const ability = abilityMatch(text, pool);
 		if (name && name.score >= MATCHED) {
 			add(name.candidate.character, 'matched', name.read);
+			traces.push({ index, text, outcome: 'name', ...named(name.candidate, name.score) });
 			return;
 		}
 		if (ability) {
 			// The ability confirms a close name, or names the character on its own.
-			add(ability.character, 'matched', name?.candidate === ability ? name.read : text);
+			const { candidate } = ability;
+			add(candidate.character, 'matched', name?.candidate === candidate ? name.read : text);
+			traces.push({ index, text, outcome: 'ability', ...named(candidate, ability.share) });
 			return;
 		}
 		if (name) {
 			add(name.candidate.character, 'close', name.read);
+			traces.push({ index, text, outcome: 'close', ...named(name.candidate, name.score) });
 			return;
 		}
-		if (looksLikeName(text)) unmatched.push(text);
+		if (tail) traces.push({ index, text, outcome: 'tail' });
+		else if (looksLikeName(text)) {
+			unmatched.push(text);
+			const near = nearestName(text, pool);
+			traces.push({
+				index,
+				text,
+				outcome: 'unmatched',
+				nearest: near && { name: near.candidate.character.name, score: near.score }
+			});
+		} else traces.push({ index, text, outcome: 'unnamed' });
 		unnamed.push({ text, height: line.height ?? 0, index });
 	});
 
@@ -241,6 +295,14 @@ export function readScriptLines(
 		undefined
 	);
 	const titleText = title?.text ?? '';
+	if (trace) {
+		for (const t of traces) {
+			// The title is told apart from the other lines that name no one.
+			trace(
+				title && t.index === title.index ? { index: t.index, text: t.text, outcome: 'title' } : t
+			);
+		}
+	}
 	return {
 		found: [...found.values()],
 		unmatched: unmatched.filter((u) => u !== titleText),

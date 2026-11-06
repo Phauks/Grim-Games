@@ -36,6 +36,7 @@
 	import type { ScriptSource } from './saved-scripts.ts';
 	import TakePhotoButton from './TakePhotoButton.svelte';
 	import { isPdf } from './pdf-reader.ts';
+	import { describeFile, failureText, importLog } from './import-log.svelte.ts';
 	import ScriptCheckDialog from './ScriptCheckDialog.svelte';
 	import { resolveLink } from './script-links.ts';
 
@@ -183,6 +184,7 @@
 	async function settleScript(fetched: FetchedScript) {
 		// Hand-edited JSON (comments, trailing commas) loads too.
 		const result = loadScriptText(relaxJson(fetched.text), await loadOfficialData());
+		logLoaded(result);
 		addOpen = false;
 		const needsCheck = !result.script || result.problems.some((p) => p.severity !== 'info');
 		if (needsCheck) {
@@ -190,6 +192,20 @@
 			checkOpen = true;
 		} else if (result.script) {
 			await save(result.script, fetched.source);
+		}
+	}
+
+	/** What a script's text loaded as, for the import log. */
+	function logLoaded(result: ReturnType<typeof loadScriptText>) {
+		const script = result.script;
+		importLog.add(
+			script
+				? `Loaded "${script.name}": ${script.characters.length} characters, ${script.homebrew.length} custom`
+				: 'Nothing could be loaded',
+			script ? 'found' : 'failed'
+		);
+		for (const p of result.problems) {
+			importLog.add(`${p.where}: ${p.message}`, p.severity === 'error' ? 'failed' : 'step');
 		}
 	}
 
@@ -201,6 +217,7 @@
 		} catch (e) {
 			// A refused link or a missing script is expected; anything else is a bug worth logging.
 			if (!(e instanceof ScriptFetchError)) reportError(e, { area: 'scripts', notify: false });
+			importLog.add(`Failed: ${failureText(e)}`, 'failed');
 			error = errorMessage(e);
 			errorLink = e instanceof ScriptFetchError ? e.openUrl : undefined;
 			// Outside a dialog the reason shows in a toast, so nothing on the page moves.
@@ -233,9 +250,12 @@
 		const input = event.currentTarget as HTMLInputElement;
 		const file = input.files?.[0];
 		input.value = '';
-		// A PDF of a script sheet is read like a photo of it (Trevor, 2026-11-05).
-		if (file && isPdf(file)) photo?.read(file);
-		else if (file) void run(() => readScriptFile(file));
+		// A PDF or a picture of a script sheet is read like a photo of it (Trevor, 2026-11-05).
+		if (file && (isPdf(file) || file.type.startsWith('image/'))) photo?.read(file);
+		else if (file) {
+			importLog.start(`File received: ${describeFile(file)}`);
+			void run(() => readScriptFile(file));
+		}
 	}
 
 	function openAdd() {
@@ -328,7 +348,7 @@
 	bind:this={fileInput}
 	class="file"
 	type="file"
-	accept=".json,application/json,text/plain,.pdf,application/pdf"
+	accept=".json,application/json,text/plain,.pdf,application/pdf,image/*"
 	aria-label={t('scripts.picker.fileLabel')}
 	onchange={onFile}
 />
@@ -382,12 +402,16 @@
 	</div>
 	<div class="field">
 		<!-- Choosing a file adds it straight away, as it always has; a photo opens what it read. -->
+		<!-- Upload File, Take a Photo and Choose a Photo apart (Trevor, 2026-11-06, picked A). -->
 		<div class="row">
 			<Button icon="uploadFile" disabled={busy} onclick={() => fileInput?.click()}
 				>{t('scripts.picker.file')}</Button
 			>
 			<Button icon="photo" disabled={busy} onclick={() => photo?.take()}
 				>{t('scripts.picker.photo')}</Button
+			>
+			<Button icon="choosePhoto" disabled={busy} onclick={() => photo?.choose()}
+				>{t('scripts.picker.choosePhoto')}</Button
 			>
 		</div>
 	</div>

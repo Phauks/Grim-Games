@@ -1,8 +1,8 @@
 <script lang="ts">
+	import AbilityText from '#lib/features/characters/AbilityText.svelte';
 	import SeatBadge from './SeatBadge.svelte';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import BoardReminder from './BoardReminder.svelte';
-	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 
@@ -12,6 +12,10 @@
 	 * (https://wiki.bloodontheclocktower.com/Fool), except to the Assassin. Confirm keeps them
 	 * alive and places the ability's spent token (the Fool's "No Ability"); Cancel leaves the
 	 * death as marked. Rules: `survivesFirstDeath` in core.
+	 *
+	 * A death that sets off the ability by placing its reminder (`places`, Trevor 2026-11-06):
+	 * the Barber's "Haircuts Tonight" (https://wiki.bloodontheclocktower.com/Barber). Confirm
+	 * places it on the dead player; Cancel leaves it off. Rules: `deathReminder` in core.
 	 */
 	interface Props {
 		grimoire: Grimoire;
@@ -33,14 +37,14 @@
 		if (!open) grimoire.firstDeathAsk = undefined;
 	});
 
-	function keepAlive() {
+	function useAbility() {
 		if (!ask) return;
-		const { seatId, characterId, spentToken } = ask;
-		if (grimoire.run({ type: 'SetDead', seatId, dead: false }))
+		const { seatId, characterId, token, places } = ask;
+		if (places || grimoire.run({ type: 'SetDead', seatId, dead: false }))
 			grimoire.run({
 				type: 'AddReminder',
 				seatId,
-				reminder: { characterId, label: spentToken }
+				reminder: { characterId, label: token }
 			});
 		grimoire.firstDeathAsk = undefined;
 	}
@@ -49,13 +53,13 @@
 <ConfirmDialog
 	bind:open
 	{title}
-	onConfirm={keepAlive}
+	onConfirm={useAbility}
 	onCancel={() => (grimoire.firstDeathAsk = undefined)}
 >
 	{#if ask && character}
 		<div class="ability">
 			<CharacterPiece template="row" {character} info>
-				{#snippet abilityText()}<GlossaryText
+				{#snippet abilityText()}<AbilityText
 						text={character.ability}
 						names={[character.name]}
 					/>{/snippet}
@@ -65,7 +69,7 @@
 			<dt>Player</dt>
 			<dd><SeatBadge game={grimoire.game} seatId={ask.seatId} /></dd>
 			<dt>Places</dt>
-			<dd><BoardReminder label={ask.spentToken} {character} /></dd>
+			<dd><BoardReminder label={ask.token} {character} /></dd>
 		</dl>
 	{/if}
 </ConfirmDialog>

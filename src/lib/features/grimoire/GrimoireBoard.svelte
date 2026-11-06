@@ -531,13 +531,10 @@
 		rules: gameRules,
 		wakes,
 		ended: !!ended,
-		busy: seatArr.arranging || !!placing
+		busy: seatArr.arranging || !!placing,
+		hand,
+		bank
 	}));
-	// Ending the game (often at the dusk an Execution starts) closes the night's walk-through:
-	// History's strip has the bottom of the board then (Trevor, 2026-10-24).
-	$effect(() => {
-		if (ended) nw.walk = undefined;
-	});
 	/** What a recorded nomination sets off under the game's rules (The Warrens, The Djinn's Bargain). */
 	let nominationAsks = $state<(NominationPrompt | CharacterNominationPrompt)[]>([]);
 	/** What a recorded nomination sets off: the game's special rules, then characters' abilities. */
@@ -1156,6 +1153,7 @@
 	}}
 	onChooseBluffs={() => (bluffsOpen = true)}
 	onShowGrimoire={() => (showingGrim = true)}
+	onPlace={(reminder, at) => nw.placeOnBoard(reminder, at)}
 	{onDraw}
 />
 

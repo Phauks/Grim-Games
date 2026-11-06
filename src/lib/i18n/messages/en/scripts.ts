@@ -86,6 +86,7 @@ export const scripts = {
 	'scripts.picker.add': 'Add script',
 	'scripts.picker.file': 'Upload File',
 	'scripts.picker.photo': 'Take a Photo',
+	'scripts.picker.choosePhoto': 'Choose a Photo',
 	'scripts.photo.title': 'Script from a photo',
 	'scripts.photo.reading': 'Reading the photo, {percent}%',
 	'scripts.photo.failed': 'The photo could not be read',
@@ -97,6 +98,10 @@ export const scripts = {
 	'scripts.photo.leaveOut': 'Leave out',
 	'scripts.photo.another': 'Add Another Photo',
 	'scripts.photo.load': 'Load {name}',
+	'scripts.photo.log': 'Read Log',
+	'scripts.photo.logTitle': 'Import Log',
+	'scripts.photo.copyLog': 'Copy Log',
+	'scripts.photo.copyLogFailed': 'Could not copy the log',
 	'scripts.picker.fileLabel': 'Script file',
 	'scripts.picker.save': 'Save',
 

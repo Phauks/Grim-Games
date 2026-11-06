@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { splitSetupNote } from '#lib/core/text/setup-note.ts';
+	import SetupNote from './SetupNote.svelte';
 	import type { Snippet } from 'svelte';
 	import {
 		defaultAlignment,
@@ -171,7 +173,9 @@
 	</span>
 	<!-- A marker step's own text takes the ability's place (Trevor, 2026-11-05). -->
 	{#if showAbility && (character || ability)}<span class="ring-ability">
-			{#if ability}{@render ability()}{:else}{character?.ability}{/if}
+			{#if ability}{@render ability()}{:else}{@const split = splitSetupNote(
+					character?.ability ?? ''
+				)}{split.text}{#if split.setup}<SetupNote>{split.setup}</SetupNote>{/if}{/if}
 		</span>{/if}
 	{#if children}<span class="ring-below">{@render children()}</span>{/if}
 {/snippet}

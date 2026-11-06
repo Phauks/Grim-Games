@@ -138,6 +138,7 @@ test('a player with no script yet starts from a photo on the play screen', async
 	await page.goto('/play');
 	const choose = page.getByRole('region', { name: 'Choose a script' });
 	await expect(choose.getByRole('button', { name: 'Take a Photo' })).toBeVisible();
+	await expect(choose.getByRole('button', { name: 'Choose a Photo' })).toBeVisible();
 	const dialog = await readPhoto(page, sheet);
 	await expect(dialog.getByTestId('photo-banner')).toContainText('Looks like Trouble Brewing', {
 		timeout: 90_000
@@ -169,4 +170,71 @@ test("a script sheet's PDF is read from its own text, through Upload File", asyn
 		timeout: 60_000
 	});
 	for (const r of tb) await expect(dialog.locator(`[data-character="${r.id}"]`)).toBeVisible();
+});
+
+test('Choose a Photo reads a saved picture, and Read Log tells each step', async ({
+	page,
+	browser
+}) => {
+	// Trevor, 2026-11-06: "take a photo means take a photo"; three buttons (A); and "We need
+	// more verbose logging of what is happening".
+	const sheet = await photo(
+		browser,
+		'Trouble Brewing',
+		tb.map((r) => ({ name: r.name, ability: r.ability ?? '' }))
+	);
+	const printed: string[] = [];
+	page.on('console', (m) => {
+		if (m.text().startsWith('[script-import]')) printed.push(m.text());
+	});
+	await page.goto('/library');
+	await page.getByRole('button', { name: 'Add script' }).tap();
+	const add = page.getByRole('dialog', { name: 'Add script' });
+	for (const name of ['Upload File', 'Take a Photo', 'Choose a Photo']) {
+		await expect(add.getByRole('button', { name, exact: true })).toBeVisible();
+	}
+	// Take a Photo goes straight to the camera; Choose a Photo to the photos.
+	await expect(page.getByTestId('photo-input')).toHaveAttribute('capture', 'environment');
+	await expect(page.getByTestId('photo-library-input')).not.toHaveAttribute('capture');
+	await page.getByTestId('photo-library-input').setInputFiles({
+		name: 'saved.jpg',
+		mimeType: 'image/jpeg',
+		buffer: sheet
+	});
+	const dialog = page.getByRole('dialog', { name: 'Script from a photo' });
+	await expect(dialog.getByTestId('photo-banner')).toContainText('Looks like Trouble Brewing', {
+		timeout: 90_000
+	});
+	await dialog.getByRole('button', { name: 'Read Log' }).tap();
+	const log = page.getByRole('dialog', { name: 'Import Log' }).getByTestId('import-log');
+	await expect(log).toContainText('Photo received: saved.jpg, image/jpeg');
+	await expect(log).toContainText('No QR code on page 1');
+	await expect(log).toContainText('Washerwoman by name');
+	await expect(log).toContainText('Looks like Trouble Brewing');
+	expect(printed.some((p) => p.includes('Photo received: saved.jpg'))).toBe(true);
+	await page
+		.getByRole('dialog', { name: 'Import Log' })
+		.getByRole('button', { name: 'Close' })
+		.tap();
+	await expect(dialog).toBeVisible();
+});
+
+test('a picture of a sheet given to Upload File is read like a photo', async ({
+	page,
+	browser
+}) => {
+	const sheet = await photo(
+		browser,
+		'Trouble Brewing',
+		tb.map((r) => ({ name: r.name, ability: r.ability ?? '' }))
+	);
+	await page.goto('/library');
+	await page.getByRole('button', { name: 'Add script' }).tap();
+	await page
+		.getByLabel('Script file', { exact: true })
+		.setInputFiles({ name: 'sheet.jpg', mimeType: 'image/jpeg', buffer: sheet });
+	const dialog = page.getByRole('dialog', { name: 'Script from a photo' });
+	await expect(dialog.getByTestId('photo-banner')).toContainText('Looks like Trouble Brewing', {
+		timeout: 90_000
+	});
 });

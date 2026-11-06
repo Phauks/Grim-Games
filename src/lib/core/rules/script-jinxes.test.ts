@@ -29,7 +29,8 @@ import { jinxStoppers } from './jinx-ends.ts';
 import { answerCauses, nightAnswer, reliability } from './night-info.ts';
 import { nominationsPerDay } from './nominations.ts';
 import { jinxSafeFrom, protection } from './protection.ts';
-import { uncountedVote } from './vote-weights.ts';
+import { uncountedVote, voteWorth } from './vote-weights.ts';
+import { rulesInPlay } from './rules-in-play.ts';
 import { nightStepAlerts, type NightAlert } from './night-alerts.ts';
 import { nightKill } from './night-kill.ts';
 import { reminderTargetMisses } from './reminder-targets.ts';
@@ -1525,5 +1526,47 @@ describe('homebrew sentences, stage 5 (M46)', () => {
 		);
 		expect(keeps([kept])).toBe(true);
 		expect(keeps([])).toBe(false);
+	});
+});
+
+// M61: a jinx `patch` lays parts of a rules block over the character's own while it holds.
+describe('a script jinx that patches its character’s rules', () => {
+	const PATCH = {
+		patch: {
+			parts: { voteWeight: { self: true, weight: 2 } },
+			when: ['partner-alive']
+		}
+	};
+	const entries = (rules: Json = PATCH) => [
+		lamplighter({
+			jinxes: [{ id: 'imp', reason: 'While the Imp lives, the Lamplighter votes twice.', rules }]
+		}),
+		'imp',
+		'chef',
+		'empath',
+		'poisoner'
+	];
+
+	it('counts the Lamplighter’s vote twice while the Imp lives, and once after', () => {
+		const { script, warnings, characters } = load(entries());
+		expect(warnings).toEqual([]);
+		const cast = castWith({ script, characters });
+		const { game, seats } = cast(['lamplighter', 'imp', 'chef', 'empath', 'poisoner']);
+		expect(rulesInPlay(game, 'lamplighter', characters)?.voteWeight).toEqual({
+			self: true,
+			weight: 2
+		});
+		expect(voteWorth(game, seats[0], characters)).toBe(2);
+		const after = cast(['lamplighter', 'imp', 'chef', 'empath', 'poisoner'], (s): Command => ({
+			type: 'SetDead',
+			seatId: s[1],
+			dead: true
+		}));
+		expect(voteWorth(after.game, after.seats[0], characters)).toBe(1);
+	});
+
+	it('rejects a patch part its reader rejects, or jinxes inside a patch', () => {
+		const bad = load(entries({ patch: { parts: { voteWeight: { weight: 1 }, jinxes: {} } } }));
+		expect(bad.warnings.map((w) => w.message).join(' ')).toMatch(/patch/);
 	});
 });
