@@ -10,18 +10,18 @@
  * became the Damsel since the day began. `diedTonight` is every seat that died since the most
  * recent New day (`diedSinceNewDay`); `became` is every seat whose character changed since
  * then (`changedCharacters`). Every condition given must hold;
- * a character without one always may wake. A jinx may lower the King's dead count while its
- * partner is in play (`deadAtLeast`: one dead player is enough with the Leviathan or Riot,
+ * a character without one always may wake. Its rules are read as they are in the game, so a
+ * jinx may lower the King's dead count while its partner is in play (the verb `deadAtLeast`, a
+ * patch of `wakesWhen.deadAtLeast`: one dead player is enough with the Leviathan or Riot,
  * https://wiki.bloodontheclocktower.com/King#Related_Jinxes).
  */
-import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { alignmentOf, trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 import { actsTwice } from './acts-twice.ts';
-import { ownJinxEffects } from './jinxes.ts';
 import { dayNumber } from './night-order.ts';
+import { rulesInPlay } from './rules-in-play.ts';
 
 export function wakeConditionMet(
 	game: Game,
@@ -31,14 +31,13 @@ export function wakeConditionMet(
 	diedTonight: ReadonlySet<SeatId>,
 	became: ReadonlySet<SeatId> = new Set()
 ): boolean {
-	const when = rulesOf(characterId, characters)?.wakesWhen;
+	const when = rulesInPlay(game, characterId, characters, { seatId: holder })?.wakesWhen;
 	if (!when) return true;
-	if (when.deadAtLeastLiving) {
+	if (when.deadAtLeastLiving || when.deadAtLeast !== undefined) {
 		const dead = game.seating.filter((s) => game.seats[s].dead).length;
-		const jinxed = ownJinxEffects(game, characterId, 'deadAtLeast', characters).some(
-			({ effect }) => dead >= effect.dead
-		);
-		if (dead < game.seating.length - dead && !jinxed) return false;
+		const living = when.deadAtLeastLiving === true && dead >= game.seating.length - dead;
+		const count = when.deadAtLeast !== undefined && dead >= when.deadAtLeast;
+		if (!living && !count) return false;
 	}
 	if (when.diedTonight) {
 		const { characters: ids, by } = when.diedTonight;

@@ -3,6 +3,8 @@
  * its player wakes, on top of having an ability (`features/grimoire/night-steps.ts`):
  * - `deadAtLeastLiving`: the dead equal or outnumber the living (the King,
  *   https://wiki.bloodontheclocktower.com/King);
+ * - `deadAtLeast`: at least this many players are dead; with `deadAtLeastLiving` too, either
+ *   is enough (with the Leviathan or Riot in play, one dead player wakes the King, M61d);
  * - `diedTonight`: a player who is one of `characters` died tonight, killed `by` the Demon
  *   when given (the Choirboy wakes when the Demon kills the King,
  *   https://wiki.bloodontheclocktower.com/Choirboy);
@@ -46,6 +48,7 @@ import { readToken } from './reminder-fields.ts';
 
 export interface WakesWhen {
 	deadAtLeastLiving?: true;
+	deadAtLeast?: number;
 	diedTonight?: { characters: CharacterId[]; by?: 'demon' };
 	diedToday?: { types: CharacterType[]; token?: ReminderLabel };
 	nobodyDiedToday?: true;
@@ -71,6 +74,7 @@ export function readWakesWhen(
 		raw,
 		[
 			'deadAtLeastLiving',
+			'deadAtLeast',
 			'diedTonight',
 			'diedToday',
 			'nobodyDiedToday',
@@ -93,6 +97,11 @@ export function readWakesWhen(
 	if (noneMarked) out.noneMarked = noneMarked;
 	const markedDied = readToken(raw, 'markedDied', path, issues, reminders);
 	if (markedDied) out.markedDied = markedDied;
+	const atLeast = readNumber(raw, 'deadAtLeast', path, issues);
+	if (atLeast !== undefined) {
+		if (Number.isInteger(atLeast) && atLeast >= 1) out.deadAtLeast = atLeast;
+		else issues.add(`${path}.deadAtLeast`, 'expected a whole number of at least 1');
+	}
 	const day = readNumber(raw, 'nightAfterDay', path, issues);
 	if (day !== undefined) {
 		if (Number.isInteger(day) && day >= 1) out.nightAfterDay = day;

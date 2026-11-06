@@ -40,4 +40,17 @@ describe('jinxPatches (M61b)', () => {
 		// Without its own madness about a chosen character, the verb patches nothing.
 		expect(jinxPatches({ madAsPartner: {} }, { partner: 'goblin', own: {} })).toEqual([]);
 	});
+
+	it('reads `deadAtLeast` as the subject’s own `wakesWhen` with `deadAtLeast` (M61d)', () => {
+		const own = { wakesWhen: { deadAtLeastLiving: true as const } };
+		const rule = { deadAtLeast: { dead: 1, when: ['partner-in-play' as const] } };
+		expect(jinxPatches(rule, { partner: 'leviathan', own })).toEqual([
+			{
+				when: ['partner-in-play'],
+				parts: { wakesWhen: { deadAtLeastLiving: true, deadAtLeast: 1 } },
+				preset: 'deadAtLeast'
+			}
+		]);
+		expect(jinxPatches(rule, { partner: 'leviathan', own: {} })).toEqual([]);
+	});
 });
