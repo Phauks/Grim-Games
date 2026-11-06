@@ -10,6 +10,21 @@ import { pickNumber } from './number-select.ts';
 const choice = (page: Page, name: string) =>
 	page.getByRole('button', { name, exact: true }).and(page.locator('[aria-pressed]'));
 
+/**
+ * A player with no phone opens the tile with their name and says they are that player before
+ * it shows (Trevor, 2026-11-06: "we should have some confirmation that they are that player").
+ */
+async function openAs(page: Page, name: string) {
+	await page.getByRole('button', { name: new RegExp(`^Tile ${name}, held by`) }).tap();
+	// The name is a badge in the heading, so a space can come before the "?".
+	const who = page.getByRole('alertdialog', { name: new RegExp(`^Are you ${name} ?\\?$`) });
+	await who.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(who).toBeHidden();
+}
+
+/** The name tiles for players with no phone, in the order they stand on the draw. */
+const namedTiles = (page: Page) => page.getByRole('button', { name: /^Tile .+, held by/ });
+
 /** Names seat `number` on the board: a phone with that name sits there (Trevor, 2026-10-26). */
 async function nameSeat(page: Page, board: string, number: number, name: string) {
 	await page.goto(board);
@@ -72,8 +87,21 @@ test('Deal gives every seat a character, and a seated phone holds to see its own
 		deal.getByRole('checkbox', { name: 'Players can see their character' })
 	).toBeChecked();
 	await deal.getByRole('button', { name: 'Confirm' }).tap();
-	await expect(page.getByRole('button', { name: /^Tile \d, drawn$/ })).toHaveCount(5);
 	await expect(page.getByRole('button', { name: 'Deal' })).toBeDisabled();
+	// Deal shows them as Show characters does (Trevor, 2026-11-06: "it does not open the board
+	// to showcase the tokens to non-phone players"): the draw holds a tile with each name of a
+	// player with no phone, by name, and Alex's phone sees theirs on the phone.
+	await expect(page).toHaveURL(`${board}/draw`);
+	const named = namedTiles(page);
+	await expect(named).toHaveCount(4);
+	const dealtNames = await named.evaluateAll((tiles) => tiles.map((t) => t.ariaLabel));
+	expect(dealtNames).toEqual([
+		'Tile Seat 1, held by Seat 1',
+		'Tile Seat 3, held by Seat 3',
+		'Tile Seat 4, held by Seat 4',
+		'Tile Seat 5, held by Seat 5'
+	]);
+	await expect(page.getByRole('button', { name: /^Tile \S+, drawn$/ })).toHaveCount(1);
 
 	// Your character covers the game's status in the same box, so nothing moves (the board
 	// open, as before the deal, so the status says where the game is up to).
@@ -157,10 +185,17 @@ test('Deal gives every seat a character, and a seated phone holds to see its own
 	// on it, for the usual reveal and Confirm on this device, in any order (Trevor, 2026-11-01:
 	// "it should use the normal draw area").
 	await expect(page).toHaveURL(`${board}/draw`);
-	const named = page.getByRole('button', { name: /^Tile Seat \d, held by/ });
 	await expect(named).toHaveCount(4);
-	await expect(named.nth(0)).toContainText('Seat');
-	await page.getByRole('button', { name: /^Tile Seat 4, held by/ }).tap();
+	// The same tiles in the same order as after Deal: one way to show them, so the two can't
+	// drift apart (Trevor, 2026-11-06).
+	expect(await named.evaluateAll((tiles) => tiles.map((t) => t.ariaLabel))).toEqual(dealtNames);
+	// Cancel on "Are you ...?" shows nothing.
+	await named.nth(2).tap();
+	const who = page.getByRole('alertdialog', { name: /^Are you Seat 4 ?\?$/ });
+	await who.getByRole('button', { name: 'Cancel' }).tap();
+	await expect(who).toBeHidden();
+	await expect(page.getByTestId('reveal')).toBeHidden();
+	await openAs(page, 'Seat 4');
 	const reveal = page.getByTestId('reveal');
 	await expect(reveal.getByTestId('reveal-name')).toHaveText(
 		/Washerwoman|Empath|Monk|Poisoner|Imp/
@@ -169,6 +204,10 @@ test('Deal gives every seat a character, and a seated phone holds to see its own
 	await expect(reveal).toBeHidden();
 	await expect(named).toHaveCount(3);
 	await expect(page.getByRole('button', { name: /^Tile \S+, drawn$/ })).toHaveCount(2);
+	// Seen, Seat 4's tile stays where it stood, so nothing moves.
+	const bag = page.getByRole('list', { name: 'Bag' }).getByRole('button');
+	await expect(bag.nth(2)).toHaveAccessibleName(/^Tile \d, drawn$/);
+	await expect(bag.nth(3)).toHaveAccessibleName('Tile Seat 5, held by Seat 5');
 	await page.goto(`${board}/players`);
 	// The page is ready (players can still look) before the tap that hides them.
 	await expect(toggle).toHaveAccessibleName(/^Hide characters/);
@@ -211,6 +250,11 @@ test('characters set on the board give players with no phone a name tile to see 
 		await expect(sheet).toBeHidden();
 	}
 
+	// Named out of order: the tiles stand by name, not seat (Trevor, 2026-11-06: "it should sort
+	// names alphabetically, not random").
+	await nameSeat(page, board, 1, 'Zoe');
+	await nameSeat(page, board, 2, 'Ben');
+
 	await page.goto(`${board}/room`);
 	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
 	await page.goto(`${board}/players`);
@@ -223,15 +267,17 @@ test('characters set on the board give players with no phone a name tile to see 
 	// No bag, yet the draw has a tile for each, held, with the player's name on it.
 	await expect(page).toHaveURL(`${board}/draw`);
 	await expect(page.getByTestId('no-bag')).toBeHidden();
-	const named = page.getByRole('button', { name: /^Tile Seat \d, held by/ });
+	const named = namedTiles(page);
 	await expect(named).toHaveCount(2);
-	await page.getByRole('button', { name: /^Tile Seat 1, held by/ }).tap();
+	await expect(named.nth(0)).toHaveAccessibleName(/^Tile Ben, held by/);
+	await expect(named.nth(1)).toHaveAccessibleName(/^Tile Zoe, held by/);
+	await openAs(page, 'Zoe');
 	const reveal = page.getByTestId('reveal');
 	await expect(reveal.getByTestId('reveal-name')).toHaveText(/^\s*Empath\b/);
 	await page.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(reveal).toBeHidden();
 	await expect(named).toHaveCount(1);
-	await page.getByRole('button', { name: /^Tile Seat 2, held by/ }).tap();
+	await openAs(page, 'Ben');
 	await expect(reveal.getByTestId('reveal-name')).toHaveText(/^\s*Imp\b/);
 	await page.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(named).toHaveCount(0);
