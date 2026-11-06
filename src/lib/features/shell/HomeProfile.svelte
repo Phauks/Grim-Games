@@ -86,7 +86,7 @@
 	}
 	.name {
 		overflow: hidden;
-		font-family: var(--font-display);
+		font-family: var(--font-player);
 		font-size: 1.1rem;
 		text-overflow: ellipsis;
 		white-space: nowrap;
