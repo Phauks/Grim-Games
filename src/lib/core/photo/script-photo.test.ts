@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
-import { editionScript, OFFICIAL_EDITIONS } from '#lib/core/data/script.ts';
+import { editionScript, loadScript, OFFICIAL_EDITIONS } from '#lib/core/data/script.ts';
 import {
 	knownScriptFor,
+	photoScriptJson,
 	likeness,
 	plainText,
 	readScriptLines,
@@ -150,5 +151,26 @@ describe('the import log', () => {
 		expect(traces[3]).toMatchObject({ name: 'Investigator' });
 		const missed = traces[4];
 		expect(missed.outcome === 'unmatched' && missed.nearest?.score).toBeLessThan(0.7);
+	});
+});
+
+describe('the script a review makes', () => {
+	it("keeps a custom character from the user's own scripts, with its ability", () => {
+		const own = loadScript(
+			[
+				{ id: '_meta', name: 'Mine' },
+				{ id: 'bard', name: 'Bard', team: 'townsfolk', ability: 'You start knowing a secret song.' }
+			],
+			data
+		).script!;
+		const bard = own.characters[0];
+		const chef = official.find((c) => c.id === 'chef')!;
+		const loaded = loadScript(photoScriptJson('Storm Front', [chef, bard]), data);
+		expect(loaded.problems.filter((p) => p.severity === 'error')).toEqual([]);
+		expect(loaded.script?.name).toBe('Storm Front');
+		expect(loaded.script?.characters.map((c) => [c.name, c.ability])).toEqual([
+			['Chef', chef.ability],
+			['Bard', 'You start knowing a secret song.']
+		]);
 	});
 });

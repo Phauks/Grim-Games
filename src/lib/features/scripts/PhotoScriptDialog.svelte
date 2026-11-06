@@ -12,6 +12,7 @@
 	import { typeTone } from '#lib/core/data/character-type.ts';
 	import {
 		knownScriptFor,
+		photoScriptJson,
 		readScriptLines,
 		SAME_SCRIPT,
 		type KnownScript,
@@ -242,7 +243,7 @@
 			return;
 		}
 		const name = result.title;
-		const json = [{ id: '_meta', name }, ...chosen.map((c) => (c.edition ? c.id : c))];
+		const json = photoScriptJson(name, chosen);
 		const loaded = loadScript(json, data);
 		importLog.add(
 			`Confirmed: "${name}" with ${chosen.length} characters, ${loaded.problems.length} problem(s)`

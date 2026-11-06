@@ -115,6 +115,9 @@ test('a custom sheet keeps only what is ticked and names it from its title', asy
 	await expect(opened).toBeVisible();
 	await expect(opened.getByText('Chef', { exact: true }).first()).toBeVisible();
 	await expect(opened.getByText('Monk', { exact: true })).toHaveCount(0);
+	// Each character comes with its ability (Trevor, 2026-11-06: they loaded without one).
+	const chef = tb.find((c) => c.id === 'chef')!;
+	await expect(opened.getByTestId('script-sheet')).toContainText(chef.ability ?? '');
 });
 
 test("a sheet with its script's QR code loads that exact script", async ({ page, browser }) => {
