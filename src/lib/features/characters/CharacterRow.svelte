@@ -169,8 +169,9 @@
 			>{/if}
 		{#if playerName}<PlayerHalf name={playerName} {team} />{/if}
 	</span>
-	{#if showAbility && character}<span class="ring-ability">
-			{#if ability}{@render ability()}{:else}{character.ability}{/if}
+	<!-- A marker step's own text takes the ability's place (Trevor, 2026-11-05). -->
+	{#if showAbility && (character || ability)}<span class="ring-ability">
+			{#if ability}{@render ability()}{:else}{character?.ability}{/if}
 		</span>{/if}
 	{#if children}<span class="ring-below">{@render children()}</span>{/if}
 {/snippet}
