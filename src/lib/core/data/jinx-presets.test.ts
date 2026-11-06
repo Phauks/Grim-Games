@@ -26,4 +26,18 @@ describe('jinxPatches (M61b)', () => {
 		const both = jinxPatches({ patch: own, impairs: { kind: 'drunk' } });
 		expect(both.map((p) => p.preset)).toEqual([undefined, 'impairs']);
 	});
+
+	it('reads `madAsPartner` as the subject’s own `madAs` with the partner among its characters', () => {
+		const own = {
+			madAs: { token: 'Mad', mad: 'carrier' as const, choose: ['townsfolk' as const] }
+		};
+		expect(jinxPatches({ madAsPartner: {} }, { partner: 'goblin', own })).toEqual([
+			{
+				parts: { madAs: { ...own.madAs, characters: ['goblin'] } },
+				preset: 'madAsPartner'
+			}
+		]);
+		// Without its own madness about a chosen character, the verb patches nothing.
+		expect(jinxPatches({ madAsPartner: {} }, { partner: 'goblin', own: {} })).toEqual([]);
+	});
 });

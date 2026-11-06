@@ -28,8 +28,10 @@ export function rulesInPlay(
 ): CharacterRules | undefined {
 	const own = rulesIn(game, characterId, characters);
 	if (!game.script) return own;
-	const patches = ownJinxes(game, characterId, (r) => jinxPatches(r).length > 0, characters)
-		.flatMap(({ partner, rule }) => jinxPatches(rule).map((patch) => ({ partner, patch })))
+	const patches = ownJinxes(game, characterId, () => true, characters)
+		.flatMap(({ partner, rule }) =>
+			jinxPatches(rule, { partner, own }).map((patch) => ({ partner, patch }))
+		)
 		.filter(
 			({ partner, patch }) =>
 				!aboutHolder(patch) && jinxApplies(game, characterId, partner, patch, characters, at)

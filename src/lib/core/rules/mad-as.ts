@@ -88,7 +88,7 @@ export function madAsChoice(
 				token = { reminderId: r.reminderId, seatId, ...(r.madAs ? { madAs: r.madAs } : {}) };
 	return {
 		types: rule.choose,
-		partners: madAsPartners(game, by, characters),
+		partners: [...new Set([...(rule.characters ?? []), ...madAsPartners(game, by, characters)])],
 		...(token ? { token } : {})
 	};
 }
