@@ -38,12 +38,11 @@
 	.setting-collapsible > :global(.collapsible > .body) {
 		border-top: 1px solid var(--border);
 	}
-	/* A faint wash of the text colour, so the card shows on a page and on a dialog alike. */
 	.setting-collapsible[data-card] {
 		padding-inline: var(--space-3);
 		border: var(--card-border);
 		border-radius: var(--card-radius);
-		background: color-mix(in srgb, currentColor 5%, transparent);
+		background: var(--setting-card-background);
 	}
 	/* Cards sit apart with a gap, not the line between settings. */
 	.setting-collapsible[data-card] + :global([data-setting]) {
