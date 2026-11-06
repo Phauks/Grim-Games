@@ -7,9 +7,9 @@ test('Home starts a game, takes a room code and links the Prepare and Create pag
 	await page.goto('/');
 	const main = page.getByRole('main');
 
-	// New game is a link; the daily puzzle's place is held, disabled, so nothing moves later.
+	// New game is a link, and no Daily puzzle button (Trevor, 2026-11-06).
 	await expect(main.getByRole('link', { name: 'New game' })).toHaveAttribute('href', /\/new$/);
-	await expect(main.getByRole('button', { name: 'Daily puzzle' })).toBeDisabled();
+	await expect(main.getByRole('button', { name: 'Daily puzzle' })).toHaveCount(0);
 
 	// Join game's own code form: a code is looked up before anyone joins, as on Join game.
 	const join = main.getByRole('button', { name: 'Join as player' });

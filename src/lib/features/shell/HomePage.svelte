@@ -29,14 +29,14 @@
 
 <Page title={APP_NAME}>
 	<div class="home">
-		<!-- The game this device had open last, the same row as the menu's top (plan M69). -->
-		<div class="last"><LastGameRow /></div>
-		<div class="start">
-			<Button icon="add" variant="accent" href={resolve('/new')}>{t('shell.navNewGame')}</Button>
-			<!-- Reserved for the daily puzzle, so nothing moves when one is built (no reflow). -->
-			<Button icon="dailyPuzzle" disabled>{t('shell.dailyPuzzle')}</Button>
-		</div>
-		<JoinPanel />
+		<!-- Above the room code, in its column; the games to resume stay on the right (Trevor,
+		     2026-11-06). The last game is the same row as the menu's top. -->
+		<JoinPanel>
+			{#snippet lead()}
+				<LastGameRow />
+				<Button icon="add" variant="accent" href={resolve('/new')}>{t('shell.navNewGame')}</Button>
+			{/snippet}
+		</JoinPanel>
 		<GroupGames onJoin={openRoom} />
 		<PageSection title={`${t('shell.navSectionPrepare')} · ${t('shell.navSectionCreate')}`}>
 			<ul class="places" data-testid="home-places">
@@ -56,24 +56,6 @@
 		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-5);
 	}
-	/* Side by side while both fit, one under the other with the largest text on a narrow phone. */
-	.start {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(min(100%, calc(11 * var(--u))), 1fr));
-		gap: var(--space-2);
-		width: 100%;
-		max-width: calc(28 * var(--u));
-		margin-inline: auto;
-	}
-	.last {
-		width: 100%;
-		max-width: calc(28 * var(--u));
-		margin-inline: auto;
-	}
-	/* No game to go back to: no row and no gap. */
-	.last:empty {
-		display: none;
-	}
 	.places {
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(calc(11 * var(--u)), 1fr));
@@ -82,8 +64,7 @@
 		padding: 0;
 		list-style: none;
 	}
-	.places :global(.button),
-	.start :global(.button) {
+	.places :global(.button) {
 		width: 100%;
 	}
 </style>
