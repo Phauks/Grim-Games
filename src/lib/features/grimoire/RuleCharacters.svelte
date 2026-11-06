@@ -1,10 +1,10 @@
 <script lang="ts">
+	import AbilityText from '#lib/features/characters/AbilityText.svelte';
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import { rulesOf } from '#lib/core/data/rules/index.ts';
 	import { ruleReminders, type ReminderId } from '#lib/core/model/index.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import CharacterDialog from '#lib/features/characters/CharacterDialog.svelte';
-	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import BoardReminder from './BoardReminder.svelte';
 	import ReminderTokenRow from './ReminderTokenRow.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -143,7 +143,7 @@
 	{#if ruleShownCharacter}
 		{@const shown = ruleShownCharacter}
 		<CharacterPiece template="row" character={shown} info={details}>
-			{#snippet abilityText()}<GlossaryText text={shown.ability} names={[shown.name]} />{/snippet}
+			{#snippet abilityText()}<AbilityText text={shown.ability} names={[shown.name]} />{/snippet}
 			{@render heldList(shown.id)}
 		</CharacterPiece>
 	{/if}
@@ -190,7 +190,7 @@
 	{#if abilityCharacter}
 		{@const held = abilityCharacter}
 		<CharacterPiece template="row" character={held} info={details}>
-			{#snippet abilityText()}<GlossaryText text={held.ability} names={[held.name]} />{/snippet}
+			{#snippet abilityText()}<AbilityText text={held.ability} names={[held.name]} />{/snippet}
 		</CharacterPiece>
 		<div class="actions">
 			<Button variant="quiet" disabled={watching} onclick={() => (abilityPickOpen = true)}

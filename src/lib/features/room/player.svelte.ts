@@ -245,7 +245,7 @@ export class RoomPlayer {
 				else if (m.type === 'reveal') {
 					this.revealed = { gameId: m.gameId, grimoire: m.grimoire };
 				} else if (m.type === 'call-town') {
-					hearCallTown();
+					hearCallTown(m.sound);
 					toast(t('room.callTownHeard'));
 				} else if (m.type === 'town-sound') {
 					const command = parseTownSound(m);

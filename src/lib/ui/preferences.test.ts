@@ -92,6 +92,7 @@ describe('parsePreferences', () => {
 			countingReminders: 'auto',
 			timerVibrate: false,
 			callSound: 'buzzer',
+			townCallSound: 'chime',
 			ambienceOn: true,
 			ambienceLevel: 0.3,
 			nightAmbience: 'night-loons',
@@ -169,6 +170,10 @@ describe('parsePreferences', () => {
 		// Plan U2: the Back to town sound, the clock tower by default.
 		expect(parsePreferences({}).callSound).toBe('clocktower');
 		expect(parsePreferences({ callSound: 'gong' }).callSound).toBe('clocktower');
+		// What Back to town sends (Trevor, 2026-11-06): each phone's own sound until picked.
+		expect(parsePreferences({}).townCallSound).toBe('own');
+		expect(parsePreferences({ townCallSound: 'bell' }).townCallSound).toBe('bell');
+		expect(parsePreferences({ townCallSound: 'gong' }).townCallSound).toBe('own');
 	});
 
 	// Plan U3: day and night sound is off until turned on, and older builds saved none.
