@@ -68,3 +68,49 @@ test('reminders that stay put get a filled word band', async ({ page }) => {
 	await herring.getByRole('button', { name: 'Red Herring reminder', exact: true }).tap();
 	await expect(inHand(page).locator('.reminder')).toHaveAttribute('data-fixed', '');
 });
+
+// Trevor (2026-11-06): a turned-evil Townsfolk's stay-put reminder had the red icon but a blue
+// rim and word band. The whole token follows its owner's alignment, as the icon does.
+test("a turned-evil Townsfolk's reminders are red all over", async ({ page }) => {
+	await page.goto('/new');
+	await pickScript(page, 'Trouble Brewing');
+	await page.getByRole('button', { name: 'Create game' }).tap();
+	await toBoard(page);
+	await setCharacter(page, 1, 'Fortune Teller');
+	await setCharacter(page, 2, 'Imp');
+	await putReminder(page, 'Red Herring', 3);
+	const token = onBoard(page, 'Red Herring').locator('.reminder');
+	const colours = () =>
+		token.evaluate((el) => ({
+			band: getComputedStyle(el.querySelector('.label')!).backgroundColor,
+			rim: getComputedStyle(el).borderTopColor
+		}));
+	const good = await colours();
+
+	// The Fortune Teller's player turns evil.
+	await page.getByRole('button', { name: /^Seat 1:/ }).tap();
+	const sheet = page.locator('[data-scope="drawer"][data-part="content"]');
+	await sheet.getByRole('button', { name: 'Seat actions' }).tap();
+	await page.getByRole('dialog').getByRole('button', { name: 'Change alignment' }).last().tap();
+	await page
+		.getByRole('dialog', { name: 'Alignment' })
+		.getByRole('button', { name: 'Confirm' })
+		.tap();
+	await page.keyboard.press('Escape');
+	await expect(sheet).toBeHidden();
+
+	await expect(token).toHaveAttribute('data-alignment', 'evil');
+	const evil = await colours();
+	expect(evil.rim).not.toBe(good.rim);
+	expect(evil.band).toBe(evil.rim);
+	// The same red as an evil character's own reminder rim.
+	const evilRim = await page.evaluate(() => {
+		const probe = document.createElement('span');
+		probe.style.color = 'var(--evil)';
+		document.body.append(probe);
+		const colour = getComputedStyle(probe).color;
+		probe.remove();
+		return colour;
+	});
+	expect(evil.rim).toBe(evilRim);
+});

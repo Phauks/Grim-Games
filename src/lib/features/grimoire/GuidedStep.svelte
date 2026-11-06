@@ -355,7 +355,12 @@
 			     2026-11-05: "wake the minions should appear in the ability text area"). -->
 			{#if step.reminder && step.character}
 				<p class="text">
-					<NightText text={step.reminder} character={step.character} {night} />
+					<NightText
+						text={step.reminder}
+						character={step.character}
+						{night}
+						alignment={one ? alignmentOf(game, one) : undefined}
+					/>
 				</p>
 			{/if}
 			<!-- The board itself, for as long as they need (Trevor, 2026-10-30); the step closes

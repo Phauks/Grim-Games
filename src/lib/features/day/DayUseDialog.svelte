@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { CharacterId } from '#lib/core/data/index.ts';
 	import type { DayUse } from '#lib/core/data/character-rules.ts';
-	import type { SeatId } from '#lib/core/model/index.ts';
+	import { alignmentOf, type SeatId } from '#lib/core/model/index.ts';
 	import {
 		dayUseAnswer,
 		dayUseDeath,
@@ -140,6 +140,7 @@
 		/>{:else if name === 'reminder'}<ReminderToken
 			label={spent}
 			character={game.characters.get(use.characterId)}
+			alignment={alignmentOf(game.game, use.seatId)}
 		/>{:else}<CharacterPiece
 			template="badge"
 			characterId={use.characterId}

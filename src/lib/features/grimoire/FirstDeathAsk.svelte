@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { alignmentOf } from '#lib/core/model/index.ts';
 	import SeatBadge from './SeatBadge.svelte';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import BoardReminder from './BoardReminder.svelte';
@@ -65,7 +66,13 @@
 			<dt>Player</dt>
 			<dd><SeatBadge game={grimoire.game} seatId={ask.seatId} /></dd>
 			<dt>Places</dt>
-			<dd><BoardReminder label={ask.spentToken} {character} /></dd>
+			<dd>
+				<BoardReminder
+					label={ask.spentToken}
+					{character}
+					alignment={alignmentOf(grimoire.game, ask.seatId)}
+				/>
+			</dd>
 		</dl>
 	{/if}
 </ConfirmDialog>

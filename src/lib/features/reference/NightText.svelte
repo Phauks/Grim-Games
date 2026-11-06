@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import type { Character } from '#lib/core/data/index.ts';
+	import type { Alignment, Character } from '#lib/core/data/index.ts';
 	import { nightTextFor, nightTextSegments } from '#lib/core/rules/night-text.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
@@ -15,9 +15,14 @@
 		 * mean (`reminderPlaceholders`), and Trevor's reviewed edits replace TPI's text.
 		 */
 		night?: 'first' | 'other';
+		/**
+		 * Alignment of the player who has the character, when one does: its tokens are drawn in
+		 * it, as on the board (a turned-evil Townsfolk's are red).
+		 */
+		alignment?: Alignment;
 	}
 
-	let { text, character, night }: Props = $props();
+	let { text, character, night, alignment }: Props = $props();
 	const resolved = $derived(night ? nightTextFor(character, night, { text }) : undefined);
 	const segments = $derived(
 		nightTextSegments(
@@ -49,12 +54,14 @@
 			/>{:else if s.kind === 'dead'}<ReminderToken
 				label={t('reference.dead')}
 				type={character.type}
+				{alignment}
 				title={s.action === 'remove'
 					? t('reference.removeDeathMarker')
 					: t('reference.deathMarker')}
 			/>{:else}<ReminderToken
 				label={s.label}
 				{character}
+				{alignment}
 				done={s.prep}
 				title={s.prep
 					? t('reference.alreadyPlaced')

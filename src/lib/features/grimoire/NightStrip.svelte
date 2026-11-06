@@ -5,6 +5,7 @@
 	import StepIfChosen from './StepIfChosen.svelte';
 	import NightSuggested from './NightSuggested.svelte';
 	import { stepNightNumbers, type Night, type NightStep } from '#lib/core/rules/index.ts';
+	import { alignmentOf } from '#lib/core/model/index.ts';
 	import NightText from '#lib/features/reference/NightText.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Popover from '#lib/ui/primitives/Popover.svelte';
@@ -111,12 +112,14 @@
 		     (Trevor, 2026-11-03): the ring opens its details, the band names it and its player,
 		     and the band opens the step. The count is the night's, so it sits beside the band,
 		     not on it. -->
+		{@const one = !step.storytellerAbility && holders.length === 1 ? holders[0] : undefined}
 		<span class="row" class:ticked>
 			<StepPiece
 				{step}
 				template="name"
 				info
-				playerName={holders.length === 1 ? seatName(game, holders[0]) : undefined}
+				alignment={one && step.character ? alignmentOf(game, one) : undefined}
+				playerName={one ? seatName(game, one) : undefined}
 				onclick={() => onOpen(step)}
 			>
 				{#snippet tags()}{#if step.again}<span class="again">again</span>{/if}{/snippet}
@@ -148,7 +151,12 @@
 				<span class="text">
 					{#if step.reminder}
 						{#if step.character}
-							<NightText text={step.reminder} character={step.character} {night} />
+							<NightText
+								text={step.reminder}
+								character={step.character}
+								{night}
+								alignment={one ? alignmentOf(game, one) : undefined}
+							/>
 						{:else}
 							{step.reminder}
 						{/if}

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
-	import type { SeatId } from '#lib/core/model/index.ts';
+	import { alignmentOf, type SeatId } from '#lib/core/model/index.ts';
 	import {
 		blockThreshold,
 		dayMarkOf,
@@ -629,6 +629,7 @@
 				? (pending?.tokens?.now ?? NO_ABILITY)
 				: (pending?.tokens?.[name] ?? NO_ABILITY)}
 			character={pending ? game.characters.get(pending.characterId) : undefined}
+			alignment={pending ? alignmentOf(game.game, pending.seatId) : undefined}
 		/>{:else}{@render badge(pending?.characterId)}{/if}{/snippet}
 
 <ConfirmDialog bind:open={pendingOpen} title={pending?.action ?? ''} onConfirm={confirmPending}>
