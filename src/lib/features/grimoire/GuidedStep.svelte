@@ -1,4 +1,5 @@
 <script lang="ts">
+	import AbilityText from '#lib/features/characters/AbilityText.svelte';
 	import SeatBadge from './SeatBadge.svelte';
 	import StepPiece from './StepPiece.svelte';
 	import NightAlerts from './NightAlerts.svelte';
@@ -32,7 +33,6 @@
 	import type { InfoChoice, InfoPicker, Night, NightStep } from '#lib/core/rules/index.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import BoardReminder from './BoardReminder.svelte';
-	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import { TYPE_PLURALS } from '#lib/features/reference/labels.ts';
 	import NightText from '#lib/features/reference/NightText.svelte';
 	import EvilInfoCards from '#lib/features/show/EvilInfoCards.svelte';
@@ -346,7 +346,7 @@
 							>{@render seats()}</span
 						>{/if}
 					{#snippet abilityText()}{#if step.character}<span data-testid="step-ability"
-								><GlossaryText text={step.character.ability} names={[step.character.name]} /></span
+								><AbilityText text={step.character.ability} names={[step.character.name]} /></span
 							>{:else}<span data-testid="step-text">{step.reminder}</span>{/if}{/snippet}
 				</StepPiece>
 			</div>

@@ -1,9 +1,9 @@
 <script lang="ts">
+	import AbilityText from '#lib/features/characters/AbilityText.svelte';
 	import type { SeatId } from '#lib/core/model/index.ts';
 	import { borrowedAbilitiesOf } from '#lib/core/rules/index.ts';
 	import type { DayPort } from './day-port.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
-	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 
 	/**
@@ -30,7 +30,7 @@
 				<li data-character={row.characterId}>
 					<CharacterPiece template="row" {character} info faded={!row.works}>
 						{#snippet tags()}<span class="has" aria-label={t('day.alsoHas')}>+</span>{/snippet}
-						{#snippet abilityText()}<GlossaryText text={character.ability} />{/snippet}
+						{#snippet abilityText()}<AbilityText text={character.ability} />{/snippet}
 					</CharacterPiece>
 				</li>
 			{/if}

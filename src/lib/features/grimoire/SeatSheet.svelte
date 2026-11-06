@@ -1,4 +1,5 @@
 <script lang="ts">
+	import AbilityText from '#lib/features/characters/AbilityText.svelte';
 	import { rulesOf } from '#lib/core/data/rules/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import CharacterHistoryDialog from './CharacterHistoryDialog.svelte';
@@ -22,7 +23,6 @@
 	} from '#lib/core/rules/index.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import CharacterDialog from '#lib/features/characters/CharacterDialog.svelte';
-	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
@@ -325,7 +325,7 @@
 						{character}
 						alignment={seat.alignment}
 						info={() => (detailsOpen = true)}
-						>{#snippet abilityText()}<GlossaryText
+						>{#snippet abilityText()}<AbilityText
 								text={character.ability}
 								names={[character.name]}
 							/>{/snippet}</CharacterPiece
