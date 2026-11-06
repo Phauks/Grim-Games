@@ -285,3 +285,10 @@ select:focus-visible {
 	--on-type-band: var(--heading);
 	--type-band-ring: inset 0 0 0 0.125rem var(--heading);
 }
+
+/* Placeholders in the theme's muted text, not the browser's grey (about 3.7:1 on the
+   raised surface; Impeccable scan of beta, 2026-11-05). Opacity 1: Firefox dims them too. */
+::placeholder {
+	color: var(--on-surface-muted);
+	opacity: 1;
+}

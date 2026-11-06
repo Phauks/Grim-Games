@@ -390,22 +390,24 @@
 		width: 1.6rem;
 		height: 1.6rem;
 	}
+	/* The small lines under the name: 0.75rem, 12px at the default text size, the least that
+	   stays readable on a phone (Impeccable scan of beta, 2026-11-05: 11.2px flagged). */
 	.corner-title .author {
-		font-size: 0.7rem;
+		font-size: 0.75rem;
 		color: var(--on-surface-muted);
 	}
 	.room-code {
 		display: block;
 		min-width: 0;
 		color: var(--on-surface-muted);
-		font-size: 0.7rem;
+		font-size: 0.75rem;
 	}
 	/* Read only, in the join code's look, one line. */
 	.game-clock {
 		display: block;
 		overflow: hidden;
 		color: var(--on-surface-muted);
-		font-size: 0.7rem;
+		font-size: 0.75rem;
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
