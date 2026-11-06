@@ -42,7 +42,13 @@
 	}}
 />
 
-<div class="pick" data-execution-pick role="group" aria-label={t('day.execution')} data-testid="execution-pick">
+<div
+	class="pick"
+	data-execution-pick
+	role="group"
+	aria-label={t('day.execution')}
+	data-testid="execution-pick"
+>
 	<p class="question" role="status" data-testid="execution-pick-question">
 		<Sentence text={question}
 			>{#snippet fill()}<SeatBadge
