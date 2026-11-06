@@ -460,6 +460,15 @@ test('the seat sheet names, assigns, shrouds and survives a reload', async ({ pa
 	// A good Imp: the token stays upright and takes the good colour (Trevor, 2026-10-18).
 	const impIcon = page.locator('[data-testid="seat"][aria-label^="Seat 1:"] .token img');
 	const evilSrc = await impIcon.getAttribute('src');
+	// The ⋯ menu heads with the standard badge with player, not a badge beside plain text
+	// (Trevor, 2026-11-06).
+	await sheet.getByRole('button', { name: 'Seat actions' }).tap();
+	const menuTitle = page
+		.getByRole('dialog')
+		.last()
+		.locator('[data-scope="dialog"][data-part="title"]');
+	await expect(menuTitle.locator('[data-character-id="imp"]')).toContainText(/Imp\s*Ana/);
+	await page.keyboard.press('Escape');
 	await seatMenu(page, sheet, 'Change alignment');
 	await page
 		.getByRole('dialog', { name: 'Alignment' })

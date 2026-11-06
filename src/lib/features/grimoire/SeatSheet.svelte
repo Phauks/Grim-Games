@@ -6,7 +6,7 @@
 	import GainAbilityDialog from './GainAbilityDialog.svelte';
 	import { allowedOffScriptIn } from '#lib/features/modes/game-mode.ts';
 	import NominationChooser from './NominationChooser.svelte';
-	import { seatCharacterLine } from '#lib/features/game/seat-label.ts';
+	import { seatCharacterLine, seatName } from '#lib/features/game/seat-label.ts';
 	import type { Character, CharacterId } from '#lib/core/data/index.ts';
 	import type { ReminderId, SeatId } from '#lib/core/model/index.ts';
 	import { trueCharacter } from '#lib/core/model/index.ts';
@@ -535,6 +535,7 @@
 <SeatMenu
 	bind:open={menuOpen}
 	{title}
+	playerName={seatId ? seatName(game, seatId) : undefined}
 	{number}
 	{seat}
 	{character}
