@@ -471,6 +471,24 @@ describe("a custom character's rules the app can't read (M58)", () => {
 			expect.stringContaining('Ignored its rule "kills"')
 		);
 	});
+
+	it("leaves out a rule that names a reminder the character doesn't have", () => {
+		const unmatched = {
+			voter: { onlyWith: 'Master' },
+			answers: { question: 'evil-marked', wakes: 'marked', falseToken: 'False Info' },
+			changesCharacter: { types: ['townsfolk'], notMarked: 'Not Me' }
+		};
+		const result = loadScript([{ ...homebrew, rules: { ...protects, ...unmatched } }, 'imp'], data);
+		expect(result.script?.characters[0].rules).toEqual(protects);
+		const messages = warnings(result).map((w) => w.message);
+		for (const key of ['voter', 'answers', 'changesCharacter'])
+			expect(messages).toContainEqual(expect.stringContaining(`Ignored its rule "${key}"`));
+		const reminders = [...homebrew.reminders, 'Master', 'False Info', 'Not Me'];
+		const matched = loadScript([{ ...homebrew, reminders, rules: unmatched }, 'imp'], data);
+		expect(Object.keys(matched.script?.characters[0].rules ?? {}).sort()).toEqual(
+			Object.keys(unmatched).sort()
+		);
+	});
 });
 
 describe('an official character written out in full (M58)', () => {
