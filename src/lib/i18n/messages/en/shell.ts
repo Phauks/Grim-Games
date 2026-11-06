@@ -15,7 +15,7 @@ export const shell = {
 	'shell.navNewGame': 'New game',
 	'shell.navJoinGame': 'Join game',
 	'shell.navHistory': 'History',
-	'shell.homeBlank': 'This page is intentionally blank',
+	'shell.dailyPuzzle': 'Daily puzzle',
 	'shell.navScripts': 'Search',
 	'shell.navLibrary': 'Library',
 	'shell.navBuildScript': 'Script builder',

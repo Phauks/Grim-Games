@@ -22,6 +22,7 @@ import ph_bookmark_simple from '~icons/ph/bookmark-simple';
 import ph_bookmarks_simple from '~icons/ph/bookmarks-simple';
 import ph_books from '~icons/ph/books';
 import ph_bug from '~icons/ph/bug';
+import ph_calendar_check from '~icons/ph/calendar-check';
 import ph_camera from '~icons/ph/camera';
 import ph_camera_plus from '~icons/ph/camera-plus';
 import ph_caret_down from '~icons/ph/caret-down';
@@ -153,6 +154,7 @@ const icons: IconMap = {
 	'ph:bookmarks-simple': ph_bookmarks_simple,
 	'ph:books': ph_books,
 	'ph:bug': ph_bug,
+	'ph:calendar-check': ph_calendar_check,
 	'ph:camera': ph_camera,
 	'ph:camera-plus': ph_camera_plus,
 	'ph:caret-down': ph_caret_down,
