@@ -21,11 +21,14 @@ describe('executionAsks', () => {
 		expect(executionAsks(s.game, s.seat('chef'), s.characters)).toBe(false);
 	});
 
-	it('asks Saved by while the script has a Sailor', () => {
+	it('asks Saved by while a Sailor is in play, not while it is only on the script', () => {
 		// Wiki: "Each night, choose an alive player: either you or they are drunk until dusk. You can't die."
 		const cast: CharacterId[] = ['chef', 'empath', 'monk', 'poisoner', 'imp'];
-		const s = scenario(cast, { script: scriptOf([...cast, 'sailor']) });
-		expect(executionAsks(s.game, s.seat('chef'), s.characters)).toBe(true);
+		const onScript = scenario(cast, { script: scriptOf([...cast, 'sailor']) });
+		expect(executionAsks(onScript.game, onScript.seat('chef'), onScript.characters)).toBe(false);
+		const withSailor: CharacterId[] = ['sailor', 'empath', 'monk', 'poisoner', 'imp'];
+		const inPlay = scenario(withSailor, { script: scriptOf(withSailor) });
+		expect(executionAsks(inPlay.game, inPlay.seat('empath'), inPlay.characters)).toBe(true);
 	});
 
 	it('asks while a Scapegoat might be executed instead', () => {

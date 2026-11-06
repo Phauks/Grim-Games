@@ -10,6 +10,7 @@ import { type CharacterLookup } from '#lib/core/model/characters.ts';
 import { alignmentOf, aliveNeighbours, getSeat, trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 import { abilityState, seatOfCharacter, type AbilitySource } from './ability.ts';
+import { abilityHolders } from './gained-abilities.ts';
 import { diesWhenExecutedBy, jinxEffect, ownJinxes } from './jinxes.ts';
 import { aboutHolder, jinxApplies } from './jinx-when.ts';
 
@@ -244,7 +245,12 @@ function savers(
 		if (!rule || !stops(rule, by)) continue;
 		const from = seatOfCharacter(game, characterId, characters);
 		const source = protectionFor(game, seatId, characterId, rule, characters);
-		const inPlay = from !== undefined || game.ruleCharacters.includes(characterId);
+		// In play in some way (Trevor, 2026-11-06): a player has it, by their character or
+		// borrowed (the Philosopher's, the Hermit's, the Boffin's), or it is a rule character.
+		const inPlay =
+			from !== undefined ||
+			game.ruleCharacters.includes(characterId) ||
+			abilityHolders(game, characterId, characters).length > 0;
 		const owner = source?.seatId ?? from;
 		const problem = !inPlay
 			? 'not-in-play'

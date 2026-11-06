@@ -106,12 +106,16 @@
 
 	/**
 	 * Saved by (Trevor, 2026-10-24: "a modifier slot to the execution area"): every character
-	 * on the script or in play that can stop an execution death, from its rules (`protects`),
+	 * in play that can stop an execution death, from its rules (`protects`),
 	 * starting on the one the grimoire applies. The Storyteller may pick one that does not
 	 * apply, or None, with the reason shown beside it (warn, never lock).
 	 */
 	const savers = $derived(
-		executionSavers(game, (player ? choice : game.seating[0]) as SeatId, characters)
+		executionSavers(game, (player ? choice : game.seating[0]) as SeatId, characters).filter(
+			// Only an ability in play in some way (Trevor, 2026-11-06: "We shouldn't offer if
+			// ability is not in some way in play"); with none, Saved by is left out.
+			(s) => s.problem !== 'not-in-play'
+		)
 	);
 	let save = $derived<string>(saved === 'override' ? OVERRIDE : (saved?.characterId ?? DIES));
 	/** No save for no execution, a dead player, or an execution already logged. */

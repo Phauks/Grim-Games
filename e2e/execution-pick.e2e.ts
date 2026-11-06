@@ -14,7 +14,7 @@ const boardSeat = (page: Page, start: string) =>
 test.describe.configure({ timeout: 90_000 });
 
 /** A started game: one Imp, so the bank offers Start game, and the first night under way. */
-async function startedGame(page: Page, script = 'Trouble Brewing', demon = 'Imp') {
+async function startedGame(page: Page, script = 'Trouble Brewing', demon = 'Imp', second?: string) {
 	await page.goto('/new');
 	await page.getByRole('radiogroup', { name: 'Script' }).getByText(script, { exact: true }).tap();
 	await page.getByRole('button', { name: 'Create game' }).tap();
@@ -28,6 +28,16 @@ async function startedGame(page: Page, script = 'Trouble Brewing', demon = 'Imp'
 		.tap();
 	await page.keyboard.press('Escape');
 	await expect(seatSheet(page)).toBeHidden();
+	if (second) {
+		await boardSeat(page, 'Seat 2:').tap();
+		await seatSheet(page).getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: 'Character for Seat 2' })
+			.getByRole('button', { name: new RegExp(`^${second}(, Recommended)?$`) })
+			.tap();
+		await page.keyboard.press('Escape');
+		await expect(seatSheet(page)).toBeHidden();
+	}
 	await page
 		.getByRole('list', { name: 'Reminder bank' })
 		.locator('..')
@@ -102,13 +112,26 @@ test('No execution and Cancel are on the bar', async ({ page }) => {
 	await expect(page.locator('[data-testid="seat"][data-dead]')).toHaveCount(0);
 });
 
-test('with a save on the script, the picked player opens the Execution sheet', async ({ page }) => {
-	// Bad Moon Rising has the Sailor, Tea Lady, Pacifist and Devil's Advocate: Saved by asks.
-	await startedGame(page, 'Bad Moon Rising', 'Po');
+test('with a save in play, the picked player opens the Execution sheet', async ({ page }) => {
+	// Bad Moon Rising's Sailor in play: Saved by asks, offering only abilities in play
+	// (Trevor, 2026-11-06: "We shouldn't offer if ability is not in some way in play").
+	await startedGame(page, 'Bad Moon Rising', 'Po', 'Sailor');
 	const bar = await startExecution(page);
 	await boardSeat(page, 'Seat 5:').tap();
 	await expect(bar).toBeHidden();
 	const ask = page.getByRole('alertdialog', { name: 'End the day?' });
 	await expect(ask.getByRole('combobox', { name: 'Execution' })).toContainText('Seat 5');
-	await expect(ask.getByRole('combobox', { name: 'Saved by' })).toBeVisible();
+	await ask.getByRole('combobox', { name: 'Saved by' }).tap();
+	const options = page.getByRole('listbox').getByRole('option');
+	await expect(options.filter({ hasText: 'Sailor' })).toHaveCount(1);
+	await expect(options.filter({ hasText: 'Tea Lady' })).toHaveCount(0);
+	await expect(options.filter({ hasText: 'Pacifist' })).toHaveCount(0);
+});
+
+test('with a save only on the script, Confirm stays on the board', async ({ page }) => {
+	await startedGame(page, 'Bad Moon Rising', 'Po');
+	const bar = await startExecution(page);
+	await boardSeat(page, 'Seat 5:').tap();
+	await expect(bar.getByTestId('execution-pick-question')).toContainText('Seat 5');
+	await expect(page.getByRole('alertdialog', { name: 'End the day?' })).toHaveCount(0);
 });
