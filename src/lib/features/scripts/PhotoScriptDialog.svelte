@@ -31,6 +31,8 @@
 	import { resolve } from '$app/paths';
 	import { readQrCodes } from '#lib/ui/share/qr-reader.ts';
 	import { photoCanvas, readPhotoLines } from './photo-reader.ts';
+	import { isPdf, readPdfPages, type PdfPage } from './pdf-reader.ts';
+	import { PHOTO_ACCEPT } from './photo-accept.ts';
 	import { scannedScriptHash } from './share.ts';
 	import { reloadSavedScript } from './saved-scripts.ts';
 
@@ -115,26 +117,36 @@
 			.map((c) => ({ value: c.id as string, label: c.name }))
 	]);
 
-	/** Reads one more photo and adds its lines to what was read. */
+	/**
+	 * Reads one more photo, or a PDF of the sheet, and adds its lines to what was read. A PDF's
+	 * own text is used as it is; a scanned page is read like a photo.
+	 */
 	export async function addPhoto(photo: Blob): Promise<void> {
 		reading = true;
 		failed = false;
 		progress = 0;
 		try {
 			data ??= await loadOfficialData();
-			const canvas = await photoCanvas(photo);
+			const pages: PdfPage[] = isPdf(photo)
+				? await readPdfPages(photo)
+				: [{ canvas: await photoCanvas(photo) }];
 			// A sheet carrying its script's QR code loads that exact script (plan M56's sheets).
-			const hash = (await readQrCodes(canvas).catch(() => []))
-				.map(scannedScriptHash)
-				.find((h) => h !== undefined);
-			if (hash) {
+			for (const page of pages) {
+				const hash = (await readQrCodes(page.canvas).catch(() => []))
+					.map(scannedScriptHash)
+					.find((h) => h !== undefined);
+				if (!hash) continue;
 				open = false;
 				// The script travels in the hash, which never reaches the server; the path is resolved.
 				// eslint-disable-next-line svelte/no-navigation-without-resolve
 				await goto(`${resolve('/play')}${hash}`);
 				return;
 			}
-			const read = await readPhotoLines(canvas, (share) => (progress = Math.max(progress, share)));
+			const read: PhotoLine[] = [];
+			for (const [i, page] of pages.entries()) {
+				const share = (s: number) => (progress = Math.max(progress, (i + s) / pages.length));
+				read.push(...(page.lines ?? (await readPhotoLines(page.canvas, share))));
+			}
 			lines = [...lines, ...read];
 		} catch (e) {
 			failed = true;
@@ -196,8 +208,7 @@
 		bind:this={fileInput}
 		class="file"
 		type="file"
-		accept="image/*"
-		capture="environment"
+		accept={PHOTO_ACCEPT}
 		aria-label={t('scripts.photo.another')}
 		onchange={onFile}
 	/>

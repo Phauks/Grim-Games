@@ -715,10 +715,8 @@
 		align-items: flex-end;
 		padding: 0;
 	}
-	/*
-	 * The drag handle straddles the header's end edge (inside it for the last column).
-	 * A faint line shows where it is.
-	 */
+	/* The drag handle straddles the header's end edge (inside it for the last column).
+	   A faint line shows where it is. */
 	@media (pointer: fine) {
 		.data-table {
 			--hit: calc(0.75 * var(--u));
@@ -866,6 +864,8 @@
 		letter-spacing: 0.05em;
 		text-transform: uppercase;
 		white-space: nowrap;
+		/* Words need 4.5:1: at the icons' 0.6 they were 3.2:1 on the raised surface. */
+		opacity: 0.85;
 	}
 	.filter:hover {
 		opacity: 1;
