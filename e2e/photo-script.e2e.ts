@@ -120,9 +120,9 @@ test('a custom sheet keeps only what is ticked and names it from its title', asy
 	// Each character comes with its ability (Trevor, 2026-11-06: they loaded without one).
 	const chef = tb.find((c) => c.id === 'chef')!;
 	await expect(opened.getByTestId('script-sheet')).toContainText(chef.ability ?? '');
-	await expect(
-		opened.getByTestId('script-details').getByRole('definition').first()
-	).toHaveText('Trevor');
+	await expect(opened.getByTestId('script-details').getByRole('definition').first()).toHaveText(
+		'Trevor'
+	);
 });
 
 test("a sheet with its script's QR code loads that exact script", async ({ page, browser }) => {
