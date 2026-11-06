@@ -17,7 +17,7 @@
 		type ReminderInstance
 	} from '#lib/core/model/index.ts';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
-	import { placingAlignment } from '#lib/features/grimoire/board.ts';
+	import { reminderPlacing } from '#lib/features/grimoire/board.ts';
 	import BoardReminder from '#lib/features/grimoire/BoardReminder.svelte';
 	import { isGeneric, reminderWords } from '#lib/features/grimoire/reminders.ts';
 	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
@@ -83,7 +83,7 @@
 					symbolFill={last.symbolFill}
 					art={artOf(last)}
 					character={characters.get(last.characterId)}
-					alignment={placingAlignment(game, last, characters)}
+					{...reminderPlacing(game, last, characters)}
 					size={Math.round(chip * 0.7)}
 					{disabled}
 					onTap={() => onHeldTap(last.reminderId)}

@@ -32,7 +32,7 @@
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import BottomSheet from '#lib/ui/primitives/BottomSheet.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
-	import { causeLabel, isOrphan, placingAlignment } from './board.ts';
+	import { causeLabel, isOrphan, reminderPlacing } from './board.ts';
 	import SeatStatus from './SeatStatus.svelte';
 	import SeatMenu from './SeatMenu.svelte';
 	import SeatCharacterFlow from './SeatCharacterFlow.svelte';
@@ -502,7 +502,7 @@
 						<li>
 							<BoardReminder
 								{...placedLook(reminder, characters)}
-								alignment={placingAlignment(game, reminder, characters)}
+								{...reminderPlacing(game, reminder, characters)}
 								ariaLabel={`Actions for ${tokenLabel(reminder)}`}
 								onTap={() => onReminder?.(reminder.reminderId)}
 							/>

@@ -7,7 +7,7 @@
 	import ReminderCount from './ReminderCount.svelte';
 	import NewTokenButton from './NewTokenButton.svelte';
 	import BankRunButton from './BankRunButton.svelte';
-	import { placingAlignment } from './board.ts';
+	import { reminderPlacing } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import type { StepFocus } from './step-focus.svelte.ts';
 	import { copiedLook, type StepReminders } from './reminders.ts';
@@ -269,7 +269,7 @@
 {#snippet still(item: BankItem)}
 	<BoardReminder
 		{...bankView(item, characters)}
-		alignment={placingAlignment(game, item, characters)}
+		{...reminderPlacing(game, item, characters)}
 		{size}
 	/>
 {/snippet}
@@ -281,7 +281,7 @@
 		{#if item.count > 1}<ReminderCount count={item.count} />{/if}
 		<BoardReminder
 			{...bankView(item, characters)}
-			alignment={placingAlignment(game, item, characters)}
+			{...reminderPlacing(game, item, characters)}
 			{size}
 			{disabled}
 			onTap={() => tap(item)}
