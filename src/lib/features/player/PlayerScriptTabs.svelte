@@ -123,14 +123,12 @@
 	/* The sheets' padding reaches out into the page's gutter, so their words line up with the
 	   tabs' edge rather than sitting inset from it (Trevor, 2026-10-27: "Player view feels
 	   slightly constrained"). Every page gutter is at least --space-4, so nothing scrolls
-	   sideways. */
+	   sideways. Only sideways: a sheet pulled up over the row above it covered the bottom of
+	   the Game over row (Trevor, 2026-11-06: "stuff being covered up"). */
 	.sheet,
 	.inset,
 	.bleed {
 		margin-inline: calc(-1 * var(--space-3));
-		/* With the tabs at the bottom, the sheet's words start where the panel does: its own
-		   padding gives way above, as it does at the sides. */
-		margin-top: calc(-1 * var(--space-3));
 	}
 	/* The colours themselves are the chosen background's (themes/sheet-backgrounds.ts), set on the element. */
 	.painted {
