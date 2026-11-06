@@ -51,8 +51,8 @@ test('leaving a players-only town says the town stays, and the menu opens it aga
 	page
 }) => {
 	await page.goto('/new');
-	await page.getByRole('combobox', { name: 'Run by' }).tap();
-	await page.getByRole('option', { name: 'Players', exact: true }).tap();
+	await page.getByRole('combobox', { name: 'Host' }).tap();
+	await page.getByRole('option', { name: 'Local Grim', exact: true }).tap();
 	await page.getByRole('button', { name: 'Create game' }).tap();
 	await expect(page).toHaveURL(/\/play$/);
 	await expect(page.getByTestId('grim-seat')).toHaveCount(7);
@@ -71,4 +71,43 @@ test('leaving a players-only town says the town stays, and the menu opens it aga
 	await last.tap();
 	await expect(page).toHaveURL(/\/play$/);
 	await expect(page.getByRole('tab', { name: 'Grim' })).toHaveAttribute('aria-selected', 'true');
+});
+
+async function newGame(page: Page) {
+	await page.goto('/new');
+	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
+	await expect(page).toHaveURL(/\/setup$/);
+	await page.goto('/library');
+}
+
+// Trevor, 2026-11-06: "menu in left sidebar for recent game, so that it can be closed,
+// removed".
+test("the menu's last game hides from its ⋯, and the game stays in Join game", async ({ page }) => {
+	await newGame(page);
+	const menu = await openMenu(page);
+	await expect(menu.getByTestId('last-game')).toBeVisible();
+	await menu.getByRole('button', { name: 'Last game options' }).tap();
+	await page.getByRole('menuitem', { name: 'Hide' }).tap();
+	await expect(menu.getByTestId('last-game')).toHaveCount(0);
+
+	await page.goto('/join');
+	await expect(page.getByRole('link', { name: /Trouble Brewing/ })).toBeVisible();
+	await expect((await openMenu(page)).getByTestId('last-game')).toHaveCount(0);
+});
+
+test("the menu's last game deletes the game from its ⋯ after asking", async ({ page }) => {
+	await newGame(page);
+	const menu = await openMenu(page);
+	const last = menu.getByTestId('last-game');
+	await menu.getByRole('button', { name: 'Last game options' }).tap();
+	await page.getByRole('menuitem', { name: 'Delete game' }).tap();
+	await page
+		.getByRole('alertdialog', { name: 'Delete this game?' })
+		.getByRole('button', { name: 'Confirm' })
+		.tap();
+	await expect(last).toHaveCount(0);
+
+	await page.goto('/join');
+	await expect(page.getByRole('link', { name: /Trouble Brewing/ })).toHaveCount(0);
 });

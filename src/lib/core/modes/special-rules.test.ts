@@ -94,7 +94,7 @@ describe('reading a special rule file', () => {
 		expect(parsed.ok ? [] : parsed.issues).toEqual([
 			'parts.assignment: deals the whole game, so the file is a game mode',
 			'parts.towns: adds towns, so the file is a game mode',
-			'parts.counts: sets up the whole game, so the file is a game mode (a rule changes counts with countChanges)',
+			'parts.counts: sets up the whole game, so the file is a game mode (a rule changes counts with rules.setupModifier)',
 			'parts.betweenGames: links games, so the file is a game mode',
 			'parts.pool.kind: replaces the script, so the file is a game mode'
 		]);
@@ -106,27 +106,67 @@ describe('reading a special rule file', () => {
 				...rule('x', {}),
 				parts: {
 					text: ['ok', 3],
-					countChanges: [
-						{ kind: 'delta', type: 'demon', values: [1] },
-						{ kind: 'delta', type: 'fabled', values: ['x'] }
-					],
 					travellers: { inBag: -1, announced: 'no' },
 					seats: { kind: 'storyteller-seat', count: 0, speaks: 'never' },
-					deaths: { kind: 'public' },
-					nightSteps: [{ kind: 'wake', when: 'each-night', characters: ['nobody'] }]
+					deaths: { kind: 'public' }
 				}
 			},
 			known
 		);
 		expect(parsed.ok ? [] : parsed.issues).toEqual([
 			'parts.text: must be a list of lines',
-			'parts.countChanges[1].type: must be one of townsfolk, outsider, minion, demon',
-			'parts.countChanges[1].values: must be a list of whole numbers',
 			'parts.travellers.inBag: must be a whole number',
 			'parts.travellers.announced: must be true or false',
 			'parts.seats.count: must be a whole number of at least 1',
-			'parts.deaths.kind: must be one of private',
-			'parts.nightSteps[0].characters[0]: unknown character nobody'
+			'parts.deaths.kind: must be one of private'
+		]);
+	});
+
+	// M61e: what a file does in play is a rules block, read by the character reader.
+	it('reads the rules block with the character parts’ own reader', () => {
+		const parsed = parseSpecialRule(
+			{
+				...rule('x', {}),
+				rules: {
+					setupModifier: { summary: '+1 Demon', ops: [{ kind: 'delta', type: 'fabled' }] },
+					nightWakes: [{ when: 'each-night', characters: ['nobody'] }],
+					demonAttack: { target: 'anyone' },
+					sleeps: true
+				}
+			},
+			known
+		);
+		expect(parsed.ok ? [] : parsed.issues).toEqual([
+			'rules.sleeps: unknown rule',
+			'rules.demonAttack.target: unknown value "anyone"',
+			'rules.demonAttack: expected maySkip or target',
+			'rules.setupModifier.ops[0].type: unknown value "fabled"',
+			'rules.nightWakes[0].characters[0]: unknown character nobody'
+		]);
+		const good = parseSpecialRule(
+			{ ...rule('x', {}), rules: { demonAttack: { target: 'script-order' } } },
+			known
+		);
+		expect(good.ok && good.rule.rules).toEqual({ demonAttack: { target: 'script-order' } });
+	});
+
+	it('says where each part that moved into the rules block went', () => {
+		const parsed = parseSpecialRule({
+			...rule('x', {}),
+			parts: {
+				countChanges: [],
+				demonAttacks: { kind: 'script-order' },
+				abilities: { kind: 'dead-keep' },
+				nightSteps: [],
+				nominations: []
+			}
+		});
+		expect(parsed.ok ? [] : parsed.issues).toEqual([
+			'parts.countChanges: moved to rules.setupModifier',
+			'parts.demonAttacks: moved to rules.demonAttack',
+			'parts.abilities: moved to rules.deadKeepAbilities',
+			'parts.nightSteps: moved to rules.nightWakes',
+			'parts.nominations: moved to rules.onNominated'
 		]);
 	});
 
@@ -175,23 +215,20 @@ describe('reading a special rule file', () => {
 });
 
 describe('combining a mode with special rules', () => {
-	it('joins lists and adds count changes in order', () => {
+	it('joins lists in order', () => {
 		const a = rule('a', {
 			text: ['A.'],
-			countChanges: [{ kind: 'delta', type: 'demon', values: [1] }],
 			restricted: { banned: ['pithag'] },
 			forced: { inPlay: [], ruleCharacters: ['ferryman'] }
 		});
 		const b = rule('b', {
 			text: ['B.'],
-			countChanges: [{ kind: 'delta', type: 'demon', values: [1] }],
 			restricted: { banned: ['pithag', 'engineer'] },
 			forced: { inPlay: ['witch'] }
 		});
 		const { parts, conflicts } = combineRules(STANDARD, [a, b]);
 		expect(conflicts).toEqual([]);
 		expect(parts.text).toEqual(['A.', 'B.']);
-		expect(parts.countChanges).toHaveLength(2);
 		expect(parts.restricted?.banned).toEqual(['pithag', 'engineer']);
 		expect(parts.forced).toEqual({ inPlay: ['witch'], ruleCharacters: ['ferryman'] });
 	});
@@ -255,7 +292,7 @@ describe("a script's own rule", () => {
 		});
 		expect(r?.id).toBe(SCRIPT_RULE_ID);
 		expect(r?.parts.text).toHaveLength(1);
-		expect(r?.parts.countChanges).toEqual([{ kind: 'delta', type: 'demon', values: [1] }]);
+		expect(r?.rules?.setupModifier?.ops).toEqual([{ kind: 'delta', type: 'demon', values: [1] }]);
 	});
 
 	it('is plain text without brackets, and absent without lines', () => {
@@ -344,7 +381,7 @@ describe('Binary Supernovae', () => {
 
 	it("adds a Demon through its line's bracket, as the game's Bootlegger reads it", () => {
 		const onBootlegger = scriptSpecialRule({ name: 'Any', bootlegger: supernovae.parts.text });
-		expect(onBootlegger?.parts.countChanges).toEqual([
+		expect(onBootlegger?.rules?.setupModifier?.ops).toEqual([
 			{ kind: 'delta', type: 'demon', values: [1] }
 		]);
 	});
@@ -358,15 +395,15 @@ describe('Binary Supernovae', () => {
 // https://beardytas.com/garden-of-djinn/the-djinns-bargain/: both happen on a nomination;
 // the board offers them when one is recorded (rule-effects.test.ts).
 describe.each([
-	['warrens', [{ kind: 'evil-swap', minAlive: 5 }]],
-	['djinns-bargain', [{ kind: 'nominator-may-die' }]]
-])('%s', (id, nominations) => {
+	['warrens', { effect: 'evil-swap', minAlive: 5 }],
+	['djinns-bargain', { effect: 'nominator-may-die' }]
+])('%s', (id, onNominated) => {
 	const found = SPECIAL_RULES.find((r) => r.id === id)!;
 
 	it('acts on a nomination and changes no counts', () => {
-		expect(found.parts.nominations).toEqual(nominations);
+		expect(found.rules?.onNominated).toEqual(onNominated);
 		expect(found.parts.ruleChanges?.[0].instructions?.trim()).toBeTruthy();
 		const onBootlegger = scriptSpecialRule({ name: 'Any', bootlegger: found.parts.text });
-		expect(onBootlegger?.parts.countChanges).toBeUndefined();
+		expect(onBootlegger?.rules).toBeUndefined();
 	});
 });

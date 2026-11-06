@@ -55,10 +55,10 @@ describe('a Bad Moon Rising game (M42)', () => {
 	// Night 1: the Pukka poisons the Fool.
 	const night1 = setup.reminder('fool', 'pukka', 'Poisoned');
 
-	// Day 1: the Moonchild is executed and marked Died Today.
+	// Day 1: the Moonchild is executed, which marks them Died Today by itself (M70).
 	const day1 = night1.newDay();
 	const executed = day1.execute('moonchild');
-	const dusk1 = executed.reminder('moonchild', 'godfather', 'Died Today').dusk();
+	const dusk1 = executed.dusk();
 
 	it('day 1: the Pukka’s poison stays on the Fool past dusk', () => {
 		expect(labels(dusk1, 'fool')).toContain('pukka:Poisoned');
@@ -68,8 +68,13 @@ describe('a Bad Moon Rising game (M42)', () => {
 		// Wiki (Godfather): "If an Outsider dies during the day, mark them with the '''DIED TODAY''' reminder. That night, wake the Godfather."
 		const ids = wakes(dusk1);
 		expect(ids).toEqual(expect.arrayContaining(['godfather', 'innkeeper', 'exorcist', 'gossip']));
-		// Without the token, the Outsider's death today still wakes the Godfather (warn, never lock).
-		const unmarked = executed.dusk();
+		expect(labels(dusk1, 'moonchild')).toContain('godfather:Died Today');
+		// With the token taken off, the Outsider's death today still wakes the Godfather (warn,
+		// never lock).
+		const token = dusk1.game.seats[dusk1.seat('moonchild')].reminders.find(
+			(r) => r.label === 'Died Today'
+		)!;
+		const unmarked = dusk1.do({ type: 'RemoveReminder', reminderId: token.reminderId });
 		expect(wakes(unmarked, [unmarked.seat('moonchild')])).toContain('godfather');
 		expect(wakes(unmarked)).not.toContain('godfather');
 	});

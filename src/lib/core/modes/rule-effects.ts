@@ -1,21 +1,81 @@
 /**
- * What special rules change on the board, worked out from the game: who has an ability under
- * The Phantom Detectives, who Trained Killer's Demon attacks next, and what a nomination sets
- * off. The board shows them; the Storyteller decides (warn, never lock).
+ * What a game's rule sources change on the board, worked out from the game. A rule source is a
+ * Fabled or Loric in play, or the game mode and special rules the game is played with: each has
+ * a rules block (M61e, the same parts a character's has, `data/parts/`), read here the same way
+ * for all of them, so a homebrew Fabled can do what a special rule does and the other way
+ * round. The board shows them; the Storyteller decides (warn, never lock).
  */
-import type { CharacterId, CharacterType } from '#lib/core/data/types.ts';
+import type {
+	CharacterRules,
+	DeadKeepAbilities,
+	NightWake
+} from '#lib/core/data/character-rules.ts';
+import type { CharacterId, CharacterName, CharacterType } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
-import { alignmentOf, isTraveller, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
+import { trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
-import type { AbilitiesRule, NominationEffect } from './types.ts';
+import { nominatedEffectHolds } from '#lib/core/rules/nominations.ts';
+import { rulesInPlay } from '#lib/core/rules/rules-in-play.ts';
+
+/** One rule source in a game: a Fabled or Loric in play, or a mode or special rule file. */
+export interface RuleSource {
+	/** The character's id, or the file's. */
+	id: string;
+	/** Shown at the top of whatever the source sets off: a character's name, or a file's. */
+	name: CharacterName | string;
+	/** Text the source shows with a step it adds (a rule's own lines). */
+	text?: readonly string[];
+	rules: CharacterRules;
+}
+
+/** A mode or special rule file with a rules block, as the game keeps it. */
+export interface RuleFile {
+	id: string;
+	name: string;
+	rules?: CharacterRules;
+	parts: { text?: string[] };
+}
 
 /**
- * Whether a player has their ability: alive, as usual; under `dead-keep`, dead players keep it
- * except `deadLose` types, and living `livingLose` types have none until they die
+ * The game's rule sources, in order: each Fabled and Loric in play with a rules block (as it
+ * is in the game, `rulesInPlay`), then each file with one, in the order given.
+ */
+export function ruleSources(
+	game: Game,
+	characters: CharacterLookup,
+	files: readonly RuleFile[]
+): RuleSource[] {
+	const characterSources = game.ruleCharacters.flatMap((id): RuleSource[] => {
+		const rules = rulesInPlay(game, id, characters);
+		return rules ? [{ id, name: characters.get(id)?.name ?? id, rules }] : [];
+	});
+	const fileSources = files.flatMap((file): RuleSource[] =>
+		file.rules
+			? [
+					{
+						id: file.id,
+						name: file.name,
+						...(file.parts.text?.length ? { text: file.parts.text } : {}),
+						rules: file.rules
+					}
+				]
+			: []
+	);
+	return [...characterSources, ...fileSources];
+}
+
+/** The first rule source's `deadKeepAbilities`, if any (The Phantom Detectives). */
+export function deadKeepRule(sources: readonly RuleSource[]): DeadKeepAbilities | undefined {
+	return sources.find((s) => s.rules.deadKeepAbilities)?.rules.deadKeepAbilities;
+}
+
+/**
+ * Whether a player has their ability: alive, as usual; under `deadKeepAbilities`, dead players
+ * keep it except `deadLose` types, and living `livingLose` types have none until they die
  * (https://schnauzerclub.neocities.org/scripts/thephantomdetectives).
  */
 export function hasAbilityUnder(
-	rule: AbilitiesRule | undefined,
+	rule: DeadKeepAbilities | undefined,
 	dead: boolean,
 	type: CharacterType | undefined
 ): boolean {
@@ -26,12 +86,17 @@ export function hasAbilityUnder(
 
 /** Whether this seat's player has their ability under the rule, by their true character. */
 export function seatHasAbility(
-	rule: AbilitiesRule | undefined,
+	rule: DeadKeepAbilities | undefined,
 	game: Game,
 	seatId: SeatId,
 	characters: CharacterLookup
 ): boolean {
 	return hasAbilityUnder(rule, !!game.seats[seatId]?.dead, typeOf(game, seatId, characters));
+}
+
+/** The first rule source whose Demon attacks in script order (`demonAttack.target`). */
+export function scriptOrderSource(sources: readonly RuleSource[]): RuleSource | undefined {
+	return sources.find((s) => s.rules.demonAttack?.target === 'script-order');
 }
 
 const scriptIds = (game: Game): CharacterId[] =>
@@ -62,43 +127,51 @@ export function nextScriptOrderTarget(game: Game, characters: CharacterLookup): 
 	return (living.find((s) => s.at > furthest) ?? living[0])?.seatId;
 }
 
-/** A nomination's effect the board offers the Storyteller, from the rule named `rule`. */
+/** Each rule source's night wakes for the dead on night `number` (Council of the Dead). */
+export function deadWakesOn(
+	sources: readonly RuleSource[],
+	number: number
+): { source: RuleSource; wake: NightWake; index: number }[] {
+	return sources.flatMap((source) =>
+		(source.rules.nightWakes ?? []).flatMap((wake, index) =>
+			wake.when === 'one-night' && wake.night === number && wake.dead
+				? [{ source, wake, index }]
+				: []
+		)
+	);
+}
+
+/** The rule source's effects a nomination sets off for every nomination. */
+const ANY_NOMINATION = ['evil-swap', 'nominator-may-die'] as const;
+type AnyNominationEffect = (typeof ANY_NOMINATION)[number];
+
+/** A nomination's effect the board offers the Storyteller, from the rule source named `rule`. */
 export interface NominationPrompt {
-	kind: NominationEffect['kind'];
-	rule: string;
+	kind: AnyNominationEffect;
+	/** The rule source's name: a Fabled's or Loric's, or a file's. */
+	rule: CharacterName | string;
 	nominator: SeatId;
 	nominee: SeatId;
 }
 
 /**
- * What this nomination sets off under the game's rules, each effect only while its conditions
- * hold, so a prompt never asks about something that can't happen:
- * - The Warrens (https://beardytas.com/garden-of-djinn/the-warrens/): `evil-swap` when both
- *   are alive and evil and neither is a Traveller. Travellers still count among the living, as
- *   the page's current text has it.
+ * What this nomination sets off under the game's rule sources (`onNominated`), each only while
+ * it can happen (`nominatedEffectHolds`), so a prompt never asks about something that can't:
+ * - The Warrens (https://beardytas.com/garden-of-djinn/the-warrens/): `evil-swap`.
  * - The Djinn's Bargain (https://beardytas.com/garden-of-djinn/the-djinns-bargain/):
- *   `nominator-may-die` while the nominator lives.
+ *   `nominator-may-die`.
+ * A rule source has no player of its own, so only these effects, about any nomination, apply.
  */
 export function nominationPrompts(
 	game: Game,
 	nomination: { nominator: SeatId; nominee: SeatId },
-	rules: readonly { name: string; parts: { nominations?: NominationEffect[] } }[],
+	sources: readonly RuleSource[],
 	characters: CharacterLookup
 ): NominationPrompt[] {
-	const { nominator, nominee } = nomination;
-	const alive = (seatId: SeatId) => !!game.seats[seatId] && !game.seats[seatId].dead;
-	const living = game.seating.filter(alive).length;
-	const evil = (seatId: SeatId) =>
-		alive(seatId) && alignmentOf(game, seatId) === 'evil' && !isTraveller(game, seatId, characters);
-	const holds = (effect: NominationEffect): boolean => {
-		if (living < (effect.minAlive ?? 0) || !alive(nominator)) return false;
-		if (effect.kind === 'evil-swap')
-			return nominator !== nominee && evil(nominator) && evil(nominee);
-		return true;
-	};
-	return rules.flatMap((rule) =>
-		(rule.parts.nominations ?? [])
-			.filter(holds)
-			.map((effect) => ({ kind: effect.kind, rule: rule.name, nominator, nominee }))
-	);
+	return sources.flatMap((source): NominationPrompt[] => {
+		const rule = source.rules.onNominated;
+		if (!rule || !(ANY_NOMINATION as readonly string[]).includes(rule.effect)) return [];
+		if (!nominatedEffectHolds(game, nomination, rule, characters)) return [];
+		return [{ kind: rule.effect as AnyNominationEffect, rule: source.name, ...nomination }];
+	});
 }

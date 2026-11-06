@@ -56,4 +56,32 @@ describe('afterExecution', () => {
 		expect(bad?.afterExecution).toBeUndefined();
 		expect(issues.list.length).toBeGreaterThan(0);
 	});
+
+	it('reads a token for the executed player, with moves and marksSelf only alongside it', () => {
+		const issues = new Issues();
+		const ok = parseCharacterRules(
+			{
+				afterExecution: {
+					on: 'executed',
+					token: 'Lunch',
+					moves: true,
+					marksSelf: { token: 'Poisoned', alignment: 'evil' }
+				}
+			},
+			'x',
+			issues,
+			['Lunch', 'Poisoned']
+		);
+		expect(ok?.afterExecution).toEqual({
+			on: 'executed',
+			token: 'Lunch',
+			moves: true,
+			marksSelf: { token: 'Poisoned', alignment: 'evil' }
+		});
+		expect(issues.list).toEqual([]);
+		parseCharacterRules({ afterExecution: { token: 'Lunch', moves: true } }, 'x', issues, [
+			'Lunch'
+		]);
+		expect(issues.list.join(' ')).toContain('only with');
+	});
 });

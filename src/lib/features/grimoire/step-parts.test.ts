@@ -13,10 +13,6 @@ import { describe, expect, it } from 'vitest';
  */
 const ONE_KIND_ONLY: Record<string, Record<string, string>> = {
 	'GuidedStep.svelte': {
-		'{:else if holders.length > 1 && step.character}':
-			"Several holders of a character are named in its band; Minion info's are under it.",
-		'{#if !step.character && holders.length > 1}':
-			"Minion info's players sit under its band, so the band keeps the step's name.",
 		'{#if step.character}':
 			'A character\'s own ability, and its abilities\' own parts (changing a character, a gained or Storyteller ability, "mad as", countdowns, chosen kills, No attack): a step with no character has no ability.',
 		'{#if evilStep}':

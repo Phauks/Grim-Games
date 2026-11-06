@@ -66,7 +66,6 @@ describe('Cannibal', () => {
 			// the Demon and Minion are two steps apart."
 			const s = scenario(['cannibal', 'clockmaker', 'imp', 'chef', 'poisoner'])
 				.execute('clockmaker')
-				.reminder('clockmaker', 'cannibal', 'Lunch')
 				.newDay();
 			const picker = infoPicker(s.game, s.seat('cannibal'), 'clockmaker', s.characters)!;
 			expect(picker.range?.truth).toBe(2);
@@ -80,10 +79,7 @@ describe('Cannibal', () => {
 			// learn a “no” after choosing the Demon because they don’t actually have the Fortune
 			// Teller's (or Widow’s) ability, because they are poisoned."
 			// The Widow was evil, so the Cannibal carries its own Poisoned reminder.
-			const s = scenario(['cannibal', 'widow', 'imp', 'chef', 'monk'])
-				.execute('widow')
-				.reminder('widow', 'cannibal', 'Lunch')
-				.reminder('cannibal', 'cannibal', 'Poisoned');
+			const s = scenario(['cannibal', 'widow', 'imp', 'chef', 'monk']).execute('widow');
 			expect(abilityState(s.game, s.seat('cannibal'), s.characters).works).toBe(false);
 			const picker = infoPicker(s.game, s.seat('cannibal'), 'fortuneteller', s.characters)!;
 			expect(picker.anyAllowed).toBe(true);
@@ -96,7 +92,6 @@ describe('Cannibal', () => {
 			// learn anything tonight, because a real Mutant would not wake."
 			const s = scenario(['cannibal', 'mutant', 'imp', 'chef', 'poisoner'])
 				.execute('mutant')
-				.reminder('mutant', 'cannibal', 'Lunch')
 				.newDay();
 			expect(nightSheetPresence('mutant')).toEqual({ firstNight: false, otherNight: false });
 			expect(infoPicker(s.game, s.seat('cannibal'), 'mutant', s.characters)).toBeUndefined();
@@ -121,7 +116,6 @@ describe('Cannibal', () => {
 			const data = committedGameData();
 			const s = scenario(['cannibal', 'empath', 'imp', 'chef', 'poisoner'])
 				.execute('empath')
-				.reminder('empath', 'cannibal', 'Lunch')
 				.newDay();
 			const inPlay = s.game.seating.map((id) => data.byId.get(s.game.seats[id].characterId!)!);
 			const steps = withGainedSteps(
@@ -139,10 +133,7 @@ describe('Cannibal', () => {
 		it('the Poisoned reminder goes on the Cannibal only, and poisons them', () => {
 			// Wiki: "If an evil player dies by execution, mark them with the LUNCH reminder and mark the
 			// Cannibal with the POISONED reminder. The Cannibal is poisoned."
-			const s = scenario(['cannibal', 'widow', 'imp', 'chef', 'monk'])
-				.execute('widow')
-				.reminder('widow', 'cannibal', 'Lunch')
-				.reminder('cannibal', 'cannibal', 'Poisoned');
+			const s = scenario(['cannibal', 'widow', 'imp', 'chef', 'monk']).execute('widow');
 			const poisoned = { characterId: 'cannibal', label: 'Poisoned' };
 			expect(reminderTargetMisses(s.game, poisoned, s.seat('cannibal'), s.characters)).toEqual([]);
 			expect(reminderTargetMisses(s.game, poisoned, s.seat('chef'), s.characters)).toEqual([
@@ -152,14 +143,60 @@ describe('Cannibal', () => {
 				{ reason: 'poisoned', source: { characterId: 'cannibal' } }
 			]);
 		});
+		it('after an evil lunch, the step reminds the Storyteller the Cannibal is poisoned', () => {
+			// Wiki: "If an evil player dies by execution, mark them with the LUNCH reminder and mark the
+			// Cannibal with the POISONED reminder. The Cannibal is poisoned."
+			const data = committedGameData();
+			for (const evil of ['widow', 'baron']) {
+				const s = scenario(['cannibal', evil, 'imp', 'chef', 'monk'])
+					.execute(evil)
+					.reminder('cannibal', 'cannibal', 'Poisoned')
+					.newDay();
+				const steps = withGainedSteps(
+					[],
+					s.game,
+					s.characters,
+					'other',
+					data.nightSheet.otherNight
+				);
+				expect(steps.map((step) => [step.reminder, step.gained?.ifEvil])).toEqual([
+					['The Cannibal is poisoned: the player whose ability they have is evil.', 'Poisoned']
+				]);
+				expect(nightStepAlerts(s.game, 'cannibal', s.characters).map((a) => a.kind)).not.toContain(
+					'missing-token'
+				);
+			}
+		});
+
+		it('warns at their step when the Cannibal is missing Poisoned after an evil lunch', () => {
+			// Wiki: "If an evil player dies by execution, mark them with the LUNCH reminder and mark the
+			// Cannibal with the POISONED reminder. The Cannibal is poisoned."
+			// The execution marks the Cannibal Poisoned by itself (M70); the warning is for when the
+			// Storyteller takes it off.
+			const ate = scenario(['cannibal', 'widow', 'imp', 'chef', 'monk']).execute('widow');
+			const token = ate.game.seats[ate.seat('cannibal')].reminders.find(
+				(r) => r.label === 'Poisoned'
+			)!;
+			const s = ate.do({ type: 'RemoveReminder', reminderId: token.reminderId }).newDay();
+			expect(nightStepAlerts(s.game, 'cannibal', s.characters)).toContainEqual(
+				expect.objectContaining({
+					kind: 'missing-token',
+					seatId: s.seat('cannibal'),
+					token: 'Poisoned'
+				})
+			);
+			const good = scenario(['cannibal', 'empath', 'imp', 'chef', 'monk'])
+				.execute('empath')
+				.newDay();
+			expect(
+				nightStepAlerts(good.game, 'cannibal', good.characters).map((a) => a.kind)
+			).not.toContain('missing-token');
+		});
 	});
 
 	describe('Summary (https://wiki.bloodontheclocktower.com/Cannibal#Summary)', () => {
 		const ate = (id: string) =>
-			scenario(['cannibal', id, 'imp', 'chef', 'poisoner'])
-				.execute(id)
-				.reminder(id, 'cannibal', 'Lunch')
-				.newDay();
+			scenario(['cannibal', id, 'imp', 'chef', 'poisoner']).execute(id).newDay();
 		const misregisters = (s: ReturnType<typeof ate>) =>
 			registrations(s.game, s.characters).some((r) => r.seatId === s.seat('cannibal'));
 
@@ -226,6 +263,39 @@ describe('Cannibal', () => {
 			expect(steps.filter((step) => step.gained).map((step) => step.gained)).toEqual([
 				expect.objectContaining({ seatId: s.seat('cannibal'), characterId: 'ravenkeeper' })
 			]);
+		});
+	});
+
+	describe('the execution marks the Lunch (M70)', () => {
+		const cast = ['cannibal', 'empath', 'imp', 'chef', 'poisoner'];
+		const tokens = (s: ReturnType<typeof scenario>, ref: string) =>
+			s.game.seats[s.seat(ref)].reminders
+				.filter((r) => r.characterId === 'cannibal')
+				.map((r) => r.label);
+
+		it('marks an executed good player Lunch, and the Cannibal stays healthy', () => {
+			// Wiki: "If a good player dies by execution, mark them with the LUNCH reminder, and remove the
+			// Cannibal’s POISONED reminder if necessary."
+			const s = scenario(cast).execute('empath');
+			expect(tokens(s, 'empath')).toEqual(['Lunch']);
+			expect(tokens(s, 'cannibal')).toEqual([]);
+		});
+
+		it('marks an executed evil player Lunch and the Cannibal Poisoned', () => {
+			// Wiki: "If an evil player dies by execution, mark them with the LUNCH reminder and mark the
+			// Cannibal with the POISONED reminder."
+			const s = scenario(cast).execute('poisoner');
+			expect(tokens(s, 'poisoner')).toEqual(['Lunch']);
+			expect(tokens(s, 'cannibal')).toEqual(['Poisoned']);
+		});
+
+		it('moves the Lunch to the next executed player and takes the Poisoned off for a good one', () => {
+			// Wiki: "If a good player dies by execution, mark them with the LUNCH reminder, and remove the
+			// Cannibal’s POISONED reminder if necessary."
+			const s = scenario(cast).execute('poisoner').newDay().execute('empath');
+			expect(tokens(s, 'poisoner')).toEqual([]);
+			expect(tokens(s, 'empath')).toEqual(['Lunch']);
+			expect(tokens(s, 'cannibal')).toEqual([]);
 		});
 	});
 });

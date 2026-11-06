@@ -186,7 +186,8 @@ export function decide(game: Game | undefined, command: Command, ctx: EngineCont
 		}
 		if (!game) refuse('no-game', 'create a game first');
 		const events = decideFor(game, command, ctx, warn);
-		return { ok: true, events: [...events, ...afterExecution(game, events, ctx)], warnings };
+		const day = command.type === 'SetDead' && command.day === true;
+		return { ok: true, events: [...events, ...afterExecution(game, events, ctx, day)], warnings };
 	} catch (e) {
 		if (e instanceof Refusal) return { ok: false, error: e.error };
 		throw e;
@@ -252,19 +253,34 @@ const DECIDERS: Deciders<CommandType> = {
 };
 
 /**
- * The tokens a death by execution puts on by itself (`afterExecutionTokens`: the Minstrel's
- * Everyone Is Drunk after a Minion's execution), whichever command logged it.
+ * The tokens a death by execution puts on, moves or takes off by itself (`afterExecutionTokens`:
+ * the Minstrel's Everyone Is Drunk after a Minion's execution, the Undertaker's Died Today on
+ * the executed player), whichever command logged it. `day`: the command was a death the board
+ * marked during the day, for abilities that mark any daytime death.
  */
-function afterExecution(game: Game, events: readonly GameEvent[], ctx: EngineContext): GameEvent[] {
+function afterExecution(
+	game: Game,
+	events: readonly GameEvent[],
+	ctx: EngineContext,
+	day: boolean
+): GameEvent[] {
 	const deaths = events.flatMap((e) =>
-		e.type === 'DeathSet' && e.dead ? [{ seatId: e.seatId, cause: e.cause }] : []
+		e.type === 'DeathSet' && e.dead
+			? [{ seatId: e.seatId, cause: e.cause, ...(day ? { day: true as const } : {}) }]
+			: []
 	);
 	if (deaths.length === 0) return [];
-	return afterExecutionTokens(game, deaths, ctx.characters).map((t): GameEvent => ({
-		type: 'ReminderAdded',
-		seatId: t.seatId,
-		reminder: { reminderId: ctx.newId(), characterId: t.characterId, label: t.label }
-	}));
+	return afterExecutionTokens(game, deaths, ctx.characters).map((t): GameEvent =>
+		'removeId' in t
+			? { type: 'ReminderRemoved', reminderId: t.removeId }
+			: t.moveId
+				? { type: 'ReminderMoved', reminderId: t.moveId, toSeatId: t.seatId }
+				: {
+						type: 'ReminderAdded',
+						seatId: t.seatId,
+						reminder: { reminderId: ctx.newId(), characterId: t.characterId, label: t.label }
+					}
+	);
 }
 
 function decideFor(game: Game, command: Command, ctx: EngineContext, warn: Warn): GameEvent[] {

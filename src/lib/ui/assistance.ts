@@ -13,6 +13,7 @@ export const ASSIST_KEYS = [
 	'deathReminderAsk',
 	'reviveReminderAsk',
 	'deadReminderAsk',
+	'flowReminderAsk',
 	'demonVotedButton',
 	'gameEndPrompts',
 	'savantInfo',
@@ -65,6 +66,11 @@ export const ASSIST_LABELS: Record<AssistKey, { label: string; description: stri
 		label: "Ask before a dead character's reminder",
 		description:
 			'When a reminder goes on the board for a character whose player is dead, confirm it first.'
+	},
+	flowReminderAsk: {
+		label: 'Ask to take the earlier token off',
+		description:
+			"When a token that follows another goes on the same player, such as the Pixie's Has Ability after Mad, offer to take the earlier one off."
 	},
 	demonVotedButton: {
 		label: 'Demon voted and Minion nominated buttons',

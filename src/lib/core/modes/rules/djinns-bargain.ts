@@ -21,18 +21,18 @@ export const DJINNS_BARGAIN: SpecialRule = {
 		'A player who nominates may choose to die. If they do, the player they nominated has their ability work twice until dusk the next day.',
 	sources: [{ title: 'The Djinn’s Bargain (Beardy on the Clocktower)', url: PAGE }],
 	parts: {
-		// The author's rule, quoted.
+		// Our wording of the author's rule, approved by Trevor 2026-11-06.
 		text: [
-			'Nominators may choose to die after making a nomination.',
+			'A player who nominates may choose to die.',
 			'If they do, their nominee’s ability works twice until dusk tomorrow.'
 		],
-		// The board asks whether the nominator chose to die when a nomination is recorded.
-		nominations: [{ kind: 'nominator-may-die' }],
 		ruleChanges: [
 			{
 				instructions:
 					'A player may say, as they nominate, that they choose to die. Don’t ask them; once the nomination is made, the chance has passed. If they do, they die at once, and you announce it. Until dusk the next day, the nominee’s ability works twice: each time it takes effect, resolve it twice, one choice at a time. A once per game ability that was already used stays used.'
 			}
 		]
-	}
+	},
+	// The board asks whether the nominator chose to die when a nomination is recorded.
+	rules: { onNominated: { effect: 'nominator-may-die' } }
 };

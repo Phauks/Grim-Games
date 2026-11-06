@@ -14,9 +14,6 @@
 		type ReminderId,
 		type SeatId
 	} from '#lib/core/model/index.ts';
-	import { t } from '#lib/i18n/locale.svelte.ts';
-	import Select from '#lib/ui/primitives/Select.svelte';
-	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import { bankView, type BankItem } from './bank-items.ts';
 	import BoardReminder from './BoardReminder.svelte';
 	import { reminderPlacing } from './board.ts';
@@ -24,7 +21,7 @@
 	import type { ReminderDragging } from './reminder-drag.svelte.ts';
 	import type { ReminderHand } from './reminder-hand.svelte.ts';
 	import ReminderInHand from './ReminderInHand.svelte';
-	import ReminderNumberPick from './ReminderNumberPick.svelte';
+	import HeldTokenPick from './HeldTokenPick.svelte';
 	import { dropOnTap, heldTokenActions, placedTokenActions } from './reminder-in-hand.ts';
 	import { onBoard, placedLook } from './reminders.ts';
 
@@ -139,22 +136,12 @@
 				/>{/if}
 		{/snippet}
 		{#snippet extra()}
-			{@const n = bankNumber ? hand.number : placedNumber}
-			{#if n !== undefined}<ReminderNumberPick
-					value={n}
-					onchange={pickNumber}
-				/>{:else if heldRun}<!-- eslint-disable grim/names-as-badges -- each token shows as its badge (the snippets); its words are the options' accessible names --><Select
-					label={t('common.reminderRun')}
-					hideLabel
-					value={heldRun.label}
-					options={(heldRun.run ?? []).map((value) => ({ value, label: value }))}
-					onChange={pickRun}
-				>
-					{#snippet item(option)}<ReminderToken label={option.value as ReminderLabel} />{/snippet}
-					{#snippet selected(option)}<ReminderToken
-							label={option.value as ReminderLabel}
-						/>{/snippet}
-				</Select><!-- eslint-enable grim/names-as-badges -->{/if}
+			<HeldTokenPick
+				number={bankNumber ? hand.number : placedNumber}
+				onNumber={pickNumber}
+				run={heldRun ? { labels: heldRun.run ?? [], label: heldRun.label } : undefined}
+				onRun={pickRun}
+			/>
 		{/snippet}
 	</ReminderInHand>
 {/if}

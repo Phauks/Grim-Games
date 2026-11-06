@@ -40,6 +40,7 @@
 		"sameType": true,
 		"afterDeath": true
 	},
+	"optionalRuleText": "If the Hatter dies, the Demon may become a Minion, and a Minion may become the Demon.",
 	"optionalRule": {
 		"changesCharacter": {
 			"types": ["minion", "demon"],

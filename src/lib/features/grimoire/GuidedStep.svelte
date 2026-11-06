@@ -360,12 +360,13 @@
 	}
 </script>
 
-{#snippet evilCards(id: 'minioninfo' | 'demoninfo', inline: boolean)}
+{#snippet evilCards(id: 'minioninfo' | 'demoninfo')}
 	<EvilInfoCards
 		{game}
 		{characters}
 		step={id}
-		{inline}
+		{textLines}
+		name={step ? stepName(step) : undefined}
 		onShow={(card) => {
 			// Over the open step, as with a suggestion's Show to player: closing it here showed
 			// the board for a moment when the player view closed (Trevor, 2026-10-26).
@@ -434,14 +435,13 @@
 					{#snippet tags()}
 						<!-- An ability the Storyteller holds wakes nobody: the Storyteller acts. -->
 						{#if step.storytellerAbility}<span class="who" data-testid="step-who">Storyteller</span
-							>{:else if holders.length > 1 && step.character}<span
-								class="who"
-								data-testid="step-who">{@render seats()}</span
 							>{/if}
 					{/snippet}
-					<!-- Minion info's players under its band, so the band keeps its name. -->
-					{#if !step.character && holders.length > 1}<span class="who" data-testid="step-who"
-							>{@render seats()}</span
+					<!-- Several players under the band, on every kind of step alike, so the band keeps
+					     its name (Trevor, 2026-11-06: Minion info "conform totally" with a character). -->
+					{#if !step.storytellerAbility && holders.length > 1}<span
+							class="who"
+							data-testid="step-who">{@render seats()}</span
 						>{/if}
 					{#snippet abilityText()}{#if step.character}<span data-testid="step-ability"
 								><AbilityText text={step.character.ability} names={[step.character.name]} /></span
@@ -454,22 +454,27 @@
 			     info's cards are its next lines, each with the same eye. -->
 			{#if textLines}
 				<h3>Steps</h3>
-				<NightTextLines
-					steps={textLines}
-					character={step.character}
-					name={stepName(step)}
-					alignment={one && step.character ? alignmentOf(game, one) : undefined}
-					marked={(i) => shownLines.includes(i)}
-				>
-					{#snippet after()}{#if evilStep}{@render evilCards(evilStep, true)}{/if}{/snippet}
-					{#snippet lineEnd(i)}{#each placedCards.onLine[i] ?? [] as card, c (c)}<ShowToPlayerButton
-								aria-label={cardLabel(card)}
-								onclick={() => {
-									if (!shownLines.includes(i)) shownLines = [...shownLines, i];
-									chooseCard(card.token, card.filled);
-								}}
-							/>{/each}{/snippet}
-				</NightTextLines>
+				<!-- Minion info's and Demon info's cards sit on the lines that say to show them, as a
+				     character's info tokens do (EvilInfoCards draws the same NightTextLines). -->
+				{#if evilStep}{@render evilCards(evilStep)}{:else}
+					<NightTextLines
+						steps={textLines}
+						character={step.character}
+						name={stepName(step)}
+						alignment={one && step.character ? alignmentOf(game, one) : undefined}
+						marked={(i) => shownLines.includes(i)}
+					>
+						{#snippet lineEnd(
+							i
+						)}{#each placedCards.onLine[i] ?? [] as card, c (c)}<ShowToPlayerButton
+									aria-label={cardLabel(card)}
+									onclick={() => {
+										if (!shownLines.includes(i)) shownLines = [...shownLines, i];
+										chooseCard(card.token, card.filled);
+									}}
+								/>{/each}{/snippet}
+					</NightTextLines>
+				{/if}
 			{/if}
 			<!-- The board itself, for as long as they need (Trevor, 2026-10-30); the step closes
 			     under it and comes back with its X. -->
@@ -633,7 +638,7 @@
 			{/if}
 			<!-- Every card Minion info or Demon info can show (Trevor, 2026-10-18), in its Steps;
 			     on its own only when the step has no text. -->
-			{#if evilStep && !textLines}{@render evilCards(evilStep, false)}{/if}
+			{#if evilStep && !textLines}{@render evilCards(evilStep)}{/if}
 			<!-- A player who believes they are the Demon is shown a fake world (Trevor, 2026-10-29). -->
 			{#each believers as seatId (seatId)}
 				<EvilInfoCards

@@ -97,18 +97,20 @@
 	let players = $state<number | undefined>();
 	let starting = $state(false);
 	/**
-	 * Who the game is for, at the very top (Trevor, 2026-11-06: "a switch between storyteller
-	 * and players"). Players is a game with no Storyteller in the app (plan M55): the script
-	 * opens on the player screen's Grim tab, where each phone keeps its own town.
+	 * Who runs the game, above Game mode (Trevor, 2026-11-06). Local Grim is a game with no
+	 * Storyteller in the app (plan M55): the script opens on the player screen's Grim tab,
+	 * where each phone keeps its own town. The screen is the same for both ("There is no
+	 * difference between setup for a storyteller or player on the first screen"); only where
+	 * Create game goes changes.
 	 */
-	let runBy = $state<'storyteller' | 'players'>('storyteller');
+	let host = $state<'storyteller' | 'local'>('storyteller');
 
-	async function startPlayersOnly() {
+	async function startPlayersOnly(choice: ScriptChoice = edition) {
 		starting = true;
 		saveDraft({ edition, players });
 		try {
-			const loaded = loadScriptChoice(edition, await loadOfficialData());
-			await openPlayersOnly(loaded, scriptChoiceSource(edition));
+			const loaded = loadScriptChoice(choice, await loadOfficialData());
+			await openPlayersOnly(loaded, scriptChoiceSource(choice));
 		} catch (e) {
 			reportError(e, { area: 'grimoire' });
 		} finally {
@@ -160,67 +162,57 @@
 
 <!-- The page's title is the route's (Page); this is its content. -->
 <section>
-	<!-- Not over a game's board: that sheet starts the Storyteller's next game. -->
-	<!-- A drop-down, as Game mode below it (Trevor, 2026-10-18: "a dropdown, not buttons"). -->
-	{#if !compact}<PageSection title={t('player.local.runBy')}>
-			<Select
-				label={t('player.local.runBy')}
-				hideLabel
-				value={runBy}
-				options={[
-					{ value: 'storyteller', label: t('player.local.storyteller') },
-					{ value: 'players', label: t('player.local.players') }
-				]}
-				onChange={(v) => (runBy = v)}
-			/>
-		</PageSection>{/if}
-	{#if runBy === 'players'}
-		<!-- No game mode, rules or room vote with no Storyteller: only the script. -->
-		{@render scriptSection(false)}
-		<Button
-			variant="accent"
-			icon="grimoire"
-			disabled={starting}
-			onclick={() => void startPlayersOnly()}>{t('modes.start')}</Button
-		>
-	{:else}
-		<!-- One screen: Standard or a game mode from one drop-down (Trevor, 2026-10-18). -->
-		<GameModesPanel
-			standardScript={edition}
-			standardPlayers={players ?? 8}
-			bind:modeId
-			bind:ruleIds
-		>
-			{#snippet standard(rules, begin)}
-				{@render scriptSection(true)}
-				<Button
-					variant="accent"
-					icon="grimoire"
-					disabled={starting}
-					onclick={() => begin(() => start(rules))}>{t('modes.start')}</Button
-				>
-			{/snippet}
-		</GameModesPanel>
-	{/if}
-</section>
-
-<!-- The base three, then any other script by search (Trevor, 2026-10-19). -->
-{#snippet scriptSection(vote: boolean)}
-	<PageSection title="Script">
-		{#snippet aside()}
-			<!-- Opens this device's room if it has none, so the table can gather and vote
-			     before any script is chosen (Trevor, 2026-10-23). -->
-			<!-- The vote is its own screen (Trevor, 2026-10-26: "Not a popup"). -->
-			{#if vote}<Button
-					variant="quiet"
-					icon="vote"
-					href={onRoomVote ? undefined : resolve('/vote')}
-					onclick={onRoomVote}>{t('room.scriptVote.button')}</Button
-				>{/if}
+	<!-- One screen: Standard or a game mode from one drop-down (Trevor, 2026-10-18). -->
+	<GameModesPanel
+		standardScript={edition}
+		standardPlayers={players ?? 8}
+		bind:modeId
+		bind:ruleIds
+		local={host === 'local' ? (choice) => void startPlayersOnly(choice) : undefined}
+	>
+		{#snippet top()}
+			<!-- Not over a game's board: that sheet starts the Storyteller's next game. A
+			     drop-down, as Game mode under it (Trevor, 2026-10-18: "a dropdown, not buttons"),
+			     in the settings' column (Trevor, 2026-11-06). -->
+			{#if !compact}<PageSection title={t('player.local.host')}>
+					<Select
+						label={t('player.local.host')}
+						hideLabel
+						value={host}
+						options={[
+							{ value: 'storyteller', label: t('player.local.storyteller') },
+							{ value: 'local', label: t('player.local.localGrim') }
+						]}
+						onChange={(v) => (host = v)}
+					/>
+				</PageSection>{/if}
 		{/snippet}
-		<ScriptPicker label="Script" hideLabel value={edition} onChange={(v) => (edition = v)} />
-	</PageSection>
-{/snippet}
+		{#snippet standard(rules, begin)}
+			<!-- The base three, then any other script by search (Trevor, 2026-10-19). -->
+			<PageSection title="Script">
+				{#snippet aside()}
+					<!-- Opens this device's room if it has none, so the table can gather and vote
+					     before any script is chosen (Trevor, 2026-10-23). -->
+					<!-- The vote is its own screen (Trevor, 2026-10-26: "Not a popup"). -->
+					<Button
+						variant="quiet"
+						icon="vote"
+						href={onRoomVote ? undefined : resolve('/vote')}
+						onclick={onRoomVote}>{t('room.scriptVote.button')}</Button
+					>
+				{/snippet}
+				<ScriptPicker label="Script" hideLabel value={edition} onChange={(v) => (edition = v)} />
+			</PageSection>
+			<Button
+				variant="accent"
+				icon="grimoire"
+				disabled={starting}
+				onclick={() => (host === 'local' ? void startPlayersOnly() : begin(() => start(rules)))}
+				>{t('modes.start')}</Button
+			>
+		{/snippet}
+	</GameModesPanel>
+</section>
 
 <style>
 	section {

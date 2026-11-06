@@ -18,16 +18,16 @@ export const WARRENS: SpecialRule = {
 		'While 5 or more players are alive, an evil player who nominates another living evil player swaps characters with them at once. Travellers are left out.',
 	sources: [{ title: 'The Warrens (Beardy on the Clocktower)', url: PAGE }],
 	parts: {
-		// The author's rule, quoted (its "charactes" spelt out).
+		// Our wording of the author's rule, approved by Trevor 2026-11-06.
 		text: [
-			'If 5 or more players live, evil players who nominate other living evil players (not Travellers) immediately swap characters'
+			'While 5 or more players are alive, an evil player who nominates another living evil player (not a Traveller) immediately swaps characters with them.'
 		],
-		nominations: [{ kind: 'evil-swap', minAlive: 5 }],
 		ruleChanges: [
 			{
 				instructions:
 					'While 5 or more players are alive, when an evil player nominates another living evil player, and neither is a Traveller, swap their character tokens straight away. Each learns their new character when they next wake at night.'
 			}
 		]
-	}
+	},
+	rules: { onNominated: { effect: 'evil-swap', minAlive: 5 } }
 };

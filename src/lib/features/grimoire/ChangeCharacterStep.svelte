@@ -146,7 +146,7 @@
 		if (!by || !rule) return [];
 		return script.flatMap((id) => {
 			const near = jinxEffect(game, by, id, 'alsoBecomes', characters);
-			const type = near?.player === 'neighbour' ? near.type : undefined;
+			const type = near?.players === 'neighbours' ? near.type : undefined;
 			return type ? [{ id, type }] : [];
 		});
 	});

@@ -14,7 +14,12 @@ import {
 	type ReminderId,
 	type SeatId
 } from '#lib/core/model/index.ts';
-import { nextScriptOrderTarget, type SpecialRule } from '#lib/core/modes/index.ts';
+import {
+	nextScriptOrderTarget,
+	ruleSources,
+	scriptOrderSource,
+	type SpecialRule
+} from '#lib/core/modes/index.ts';
 import { abilityState, type Night, type NightStep } from '#lib/core/rules/index.ts';
 import { preferences } from '#lib/ui/preferences.svelte.ts';
 import type { Grimoire } from './grimoire.svelte.ts';
@@ -199,11 +204,11 @@ export class NightWalk {
 	/**
 	 * Trained Killer (https://beardytas.com/garden-of-djinn/trained-killer/): on a Demon's step
 	 * after the first night, the next living in-play character in script order (`seat`) and
-	 * the rule's name (`by`).
+	 * the name of the rule source that says so (`by`, `demonAttack.target`).
 	 */
 	attack = $derived.by(() => {
 		const { game, characters, rules } = this.#context();
-		const rule = rules.find((r) => r.parts.demonAttacks)?.name;
+		const rule = scriptOrderSource(ruleSources(game, characters, rules))?.name;
 		const step = this.step;
 		if (!rule || !step || this.walk?.night !== 'other') return undefined;
 		if (step.character?.type !== 'demon') return undefined;

@@ -117,7 +117,7 @@
 		"lordoftyphon": {
 			"alsoBecomes": {
 				"type": "minion",
-				"player": "neighbour"
+				"players": "neighbours"
 			}
 		},
 		"poppygrower": {

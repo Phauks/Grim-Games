@@ -56,6 +56,8 @@ const CONTROLS: Record<string, (field: GuideField) => FieldControl> = {
  */
 export const JSON_TYPES: ReadonlySet<string> = new Set([
 	'object',
+	// The rules block is a character's (`data/parts/`); the builder's Rules section is M62.
+	'rules block',
 	'{ afterDay, together, winner }',
 	'list of { characterId, type }',
 	'list of lists of character ids'
@@ -137,7 +139,7 @@ export function newPartValue(part: GuidePart): unknown {
 
 export type Path = readonly (string | number)[];
 
-/** The path as validate.ts writes it in a problem: `parts.nightSteps[0].when`. */
+/** The path as validate.ts writes it in a problem: `parts.daySteps[0].kind`. */
 export function pathText(path: Path): string {
 	return path.reduce<string>(
 		(text, key) =>
