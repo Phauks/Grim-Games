@@ -7044,6 +7044,35 @@ test('a Fool marked dead is offered to survive their first death', async ({ page
 	);
 });
 
+test('a Barber marked dead is offered Haircuts Tonight, staying dead', async ({ page }) => {
+	// Trevor (2026-11-06): "If the Barber dies, mark them with the HAIRCUTS TONIGHT reminder"
+	// (https://wiki.bloodontheclocktower.com/Barber), by any death.
+	await startGame(page, 'Sects & Violets');
+	for (const [number, name] of [
+		[1, 'Barber'],
+		[2, 'Vortox']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('combobox', { name: 'Status: Alive' }).tap();
+	await page.getByRole('listbox').getByRole('option', { name: 'The Demon' }).tap();
+	const ask = page.getByRole('alertdialog', { name: 'Use the Barber’s ability?' });
+	await expect(ask).toContainText('Haircuts Tonight');
+	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await expect(ask).toBeHidden();
+	await closeSheet(page);
+	const barber = seatLabelled(page, 'Seat 1: no name, Barber');
+	await expect(barber).toHaveAttribute('aria-label', /dead/);
+	await expect(barber).toHaveAttribute('aria-label', /1 reminder/);
+});
+
 test('with the Hindu, a player who dies is reincarnated as a Traveller', async ({ page }) => {
 	// The first four to die come back as Travellers the Storyteller picks, same alignment
 	// (https://wiki.bloodontheclocktower.com/Hindu).
@@ -7914,6 +7943,11 @@ test("the Barber's step swaps two players' characters, keeping alignments", asyn
 	const sheet = await openSeat(page, 1);
 	await sheet.getByRole('combobox', { name: 'Status: Alive' }).tap();
 	await page.getByRole('listbox').getByRole('option', { name: 'Executed' }).tap();
+	// Its death asks to place Haircuts Tonight (https://wiki.bloodontheclocktower.com/Barber).
+	await page
+		.getByRole('alertdialog', { name: 'Use the Barber’s ability?' })
+		.getByRole('button', { name: 'Confirm', exact: true })
+		.tap();
 	await closeSheet(page);
 
 	const strip = await walkTo(page, 'Barber');
@@ -7966,6 +8000,11 @@ test("the Hatter's step lets each Minion and Demon become another of their type"
 	const sheet = await openSeat(page, 1);
 	await sheet.getByRole('combobox', { name: 'Status: Alive' }).tap();
 	await page.getByRole('listbox').getByRole('option', { name: 'Executed' }).tap();
+	// Its death asks to place Tea Party Tonight (https://wiki.bloodontheclocktower.com/Hatter).
+	await page
+		.getByRole('alertdialog', { name: 'Use the Hatter’s ability?' })
+		.getByRole('button', { name: 'Confirm', exact: true })
+		.tap();
 	await closeSheet(page);
 
 	const strip = await walkTo(page, 'Hatter');

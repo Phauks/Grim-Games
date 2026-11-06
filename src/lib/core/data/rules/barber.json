@@ -1,7 +1,8 @@
 {
 	"actsWhenDead": true,
 	"onDeath": {
-		"by": "any"
+		"by": "any",
+		"places": "Haircuts Tonight"
 	},
 	"reminderTargets": {
 		"Haircuts Tonight": {
