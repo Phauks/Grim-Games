@@ -11,6 +11,7 @@
  * named by comparing the characters found with the scripts already known (the official
  * editions and the user's own), then by the sheet's title.
  */
+import { scriptToJson } from '#lib/core/data/script.ts';
 import type { Character, CharacterId, CharacterName } from '#lib/core/data/index.ts';
 
 /** One line of text as the reader found it, top to bottom. */
@@ -343,4 +344,20 @@ export function knownScriptFor<K>(
 		if (!best || score > best.score) best = { script, score };
 	}
 	return best?.script;
+}
+
+/**
+ * The script JSON for what the review kept, to load as a new script: official characters by
+ * id, a custom one (from the user's own scripts) written out in full as script JSON, so the
+ * loader keeps it with its ability (Trevor, 2026-11-06: characters loaded without one).
+ */
+export function photoScriptJson(name: string, characters: readonly Character[]): unknown[] {
+	return scriptToJson({
+		name,
+		meta: { name },
+		characters: [...characters],
+		homebrew: characters.filter((c) => !c.edition).map((c) => c.id),
+		homebrewJinxes: [],
+		renamedIds: {}
+	});
 }
