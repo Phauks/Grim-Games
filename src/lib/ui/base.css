@@ -256,25 +256,31 @@ select:focus-visible {
 	(Collapsible's `tone`, the printed script's headings) and Character selection's counts boxes
 	fill with their tokens' colour, the same fills as a CharacterBadge, with its text colour on
 	top. Anything carrying `data-type-band` reads `--type-band` and `--on-type-band` from here.
-	Travellers split blue and red, as their badges do.
+	Travellers split blue and red, as their badges do. `--type-ink` is the type's one colour, for
+	an outlined band (the printer-friendly sheet), as a Traveller's row is outlined in blue.
 */
 [data-type-band='good'] {
+	--type-ink: var(--good);
 	--type-band: var(--good);
 	--on-type-band: var(--on-good);
 }
 [data-type-band='evil'] {
+	--type-ink: var(--evil);
 	--type-band: var(--evil);
 	--on-type-band: var(--on-evil);
 }
 [data-type-band='traveller'] {
+	--type-ink: var(--good);
 	--type-band: linear-gradient(to right, var(--good) 50%, var(--evil) 50%);
 	--on-type-band: var(--on-good);
 }
 [data-type-band='fabled'] {
+	--type-ink: var(--fabled);
 	--type-band: var(--fabled);
 	--on-type-band: var(--on-fabled);
 }
 [data-type-band='loric'] {
+	--type-ink: var(--loric);
 	--type-band: var(--loric);
 	--on-type-band: var(--on-loric);
 }
