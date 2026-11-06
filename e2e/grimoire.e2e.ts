@@ -30,6 +30,7 @@ import {
 } from './reminder-bank.ts';
 import { pickNumber } from './number-select.ts';
 import { addSeat } from './seating.ts';
+import { nightStep } from './night-step.ts';
 
 // The Storyteller's grimoire board: saved games, seats and the seat sheet (ROADMAP Phase 2).
 
@@ -189,7 +190,7 @@ async function openStep(page: Page, title: string) {
 	const strip = await walkTo(page, title);
 	// The character's band opens the step (its ring opens the character instead).
 	await strip.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong').tap();
-	const dialog = page.getByRole('dialog', { name: title });
+	const dialog = nightStep(page, title);
 	await expect(dialog).toBeVisible();
 	return dialog;
 }
@@ -215,7 +216,7 @@ async function watchStep(page: Page, title: string) {
 					// Opaque enough to hide the board: the last frame of a fade (0.999 on a slow
 					// runner) is not the board showing through; a fade from the start is.
 					Number(getComputedStyle(e).opacity) >= 0.95 &&
-					e.querySelector('[data-part="title"]')?.textContent?.trim() === title
+					e.querySelector('[data-step-name]')?.getAttribute('data-step-name') === title
 			);
 			const shown = document.querySelector<HTMLDialogElement>('[data-testid="show-to-player"]');
 			if (!step && !shown?.open) {
@@ -1140,7 +1141,7 @@ test('a night step offers the info tokens its text names', async ({ page }) => {
 	)
 		.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong')
 		.tap();
-	const step = page.getByRole('dialog', { name: 'Imp' });
+	const step = nightStep(page, 'Imp');
 	const tiles = step.getByTestId('step-info-tokens');
 	await expect(tiles.getByRole('button')).toHaveCount(1);
 	// The Imp's rules fill in its own token (Trevor, 2026-10-24), so the card shows at once.
@@ -1283,7 +1284,7 @@ test("the Demon's step says when the Exorcist's choice stops it waking", async (
 	)
 		.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong')
 		.tap();
-	const exorcist = page.getByRole('dialog', { name: 'Exorcist' });
+	const exorcist = nightStep(page, 'Exorcist');
 	await exorcist.getByRole('button', { name: 'Place' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Put Chosen on' })
@@ -1297,7 +1298,7 @@ test("the Demon's step says when the Exorcist's choice stops it waking", async (
 	)
 		.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong')
 		.tap();
-	const pukka = page.getByRole('dialog', { name: 'Pukka' });
+	const pukka = nightStep(page, 'Pukka');
 	await expect(pukka.getByTestId('night-alerts')).toContainText(
 		/Seat 1: chosen by\s*Exorcist\s*, doesn't\s+wake\s+tonight/
 	);
@@ -1327,7 +1328,7 @@ test("the Lord of Typhon's step warns when the evil players don't sit in one lin
 	)
 		.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong')
 		.tap();
-	const step = page.getByRole('dialog', { name: 'Lord of Typhon' });
+	const step = nightStep(page, 'Lord of Typhon');
 	await expect(step.getByTestId('night-alerts')).toContainText(
 		/Seat 1: the evil players don't sit in one line with\s*Lord of Typhon\s*inside it/
 	);
@@ -1363,7 +1364,7 @@ test("the Demon's step says when the Princess stops its kill tonight", async ({ 
 	)
 		.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong')
 		.tap();
-	const alerts = page.getByRole('dialog', { name: 'Imp' }).getByTestId('night-alerts');
+	const alerts = nightStep(page, 'Imp').getByTestId('night-alerts');
 	await expect(alerts).toContainText(/Seat 1:\s*Princess\s*, doesn't\s+kill\s+tonight/);
 	await expect(alerts).not.toContainText(/Soldier/);
 });
@@ -1387,7 +1388,7 @@ test('the Cerenovus shows "This character selected you", then "You are mad as" t
 	)
 		.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong')
 		.tap();
-	const step = page.getByRole('dialog', { name: 'Cerenovus' });
+	const step = nightStep(page, 'Cerenovus');
 	const tiles = step.getByTestId('step-info-tokens');
 	await expect(
 		tiles.getByRole('button', { name: 'This character selected you (Cerenovus)', exact: true })
@@ -1429,7 +1430,7 @@ test('the Snake Charmer step fills "You are" with the Demon, then with the Snake
 	)
 		.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong')
 		.tap();
-	const step = page.getByRole('dialog', { name: 'Snake Charmer' });
+	const step = nightStep(page, 'Snake Charmer');
 	const tiles = step.getByTestId('step-info-tokens');
 	await expect(tiles.getByRole('button')).toHaveCount(2);
 	await expect(
@@ -1495,7 +1496,7 @@ test("the Dreamer's card shows the chosen player's character and one of the othe
 	)
 		.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong')
 		.tap();
-	const step = page.getByRole('dialog', { name: 'Dreamer' });
+	const step = nightStep(page, 'Dreamer');
 	await step
 		.getByTestId('step-info-tokens')
 		.getByRole('button', { name: 'This player is', exact: true })
@@ -1726,7 +1727,7 @@ test("a Traveller's alignment can wait for the night order", async ({ page }) =>
 	await strip.getByRole('button', { name: 'Next step' }).tap();
 	await expect(strip.locator('.step .name strong')).toHaveText('Traveller alignment');
 	await strip.locator('button.step').tap();
-	const step = page.getByRole('dialog', { name: 'Traveller alignment' });
+	const step = nightStep(page, 'Traveller alignment');
 	await step.getByRole('button', { name: 'Evil' }).tap();
 	await page.keyboard.press('Escape');
 	await expect(page.getByRole('button', { name: /^Seat 9: no name, Thief/ })).toHaveAccessibleName(
@@ -2941,7 +2942,7 @@ test("with the Toymaker in play the Demon's step offers No attack", async ({ pag
 		.getByRole('button', { name: 'Final Night: No Attack reminder' });
 	await expect(banked).toHaveCount(0);
 	await strip.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong').tap();
-	const step = page.getByRole('dialog', { name: 'Imp' });
+	const step = nightStep(page, 'Imp');
 	await expect(step).toBeVisible();
 	await expect(step.getByTestId('night-alerts')).toContainText(
 		"hasn't chosen not to attack yet, must once this game"
@@ -2997,7 +2998,7 @@ test('a dead Plague Doctor gives the Storyteller a Minion ability, shown on the 
 	)
 		.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong')
 		.tap();
-	const step = page.getByRole('dialog', { name: 'Plague Doctor' });
+	const step = nightStep(page, 'Plague Doctor');
 	const row = step.getByTestId('storyteller-ability');
 	await expect(row).toContainText('None');
 	await row.getByRole('button', { name: 'Choose' }).tap();
@@ -4689,9 +4690,9 @@ test('an open night step moves to the step before or after without ticking it', 
 	const next = page
 		.getByRole('dialog')
 		.filter({ has: page.getByRole('button', { name: 'Previous step' }) });
-	await expect(next).not.toHaveAccessibleName('Poisoner');
+	await expect(next.locator('[data-step-name]')).not.toHaveAttribute('data-step-name', 'Poisoner');
 	await next.getByRole('button', { name: 'Previous step' }).tap();
-	await expect(page.getByRole('dialog', { name: 'Poisoner' })).toBeVisible();
+	await expect(nightStep(page, 'Poisoner')).toBeVisible();
 	await page.keyboard.press('Escape');
 	const strip = await walkTo(page, 'Poisoner');
 	await expect(strip.locator('button.step')).not.toHaveClass(/ticked/);
@@ -4730,7 +4731,7 @@ test('the Widow and Damsel steps say who is shown their token', async ({ page })
 	await expect(shown).toContainText('Damsel');
 	await shown.getByRole('button', { name: 'Close' }).tap();
 	// On through the night, step by step, to the Widow's.
-	const widow = page.getByRole('dialog', { name: 'Widow' });
+	const widow = nightStep(page, 'Widow');
 	for (let i = 0; i < 20 && !(await widow.isVisible()); i++) {
 		await page.getByRole('dialog').getByRole('button', { name: 'Next step' }).last().tap();
 		await page.waitForTimeout(300);
@@ -4892,7 +4893,7 @@ test('Minion info and Demon info list every card they can show, with who it poin
 
 	// Demon info with no bluffs yet: its Minions, and a way to choose the bluffs.
 	await minionInfo.getByRole('button', { name: 'Next step' }).tap();
-	const demonInfo = page.getByRole('dialog', { name: 'Demon info' });
+	const demonInfo = nightStep(page, 'Demon info');
 	await expect(demonInfo.getByTestId('evil-info-card').nth(0)).toContainText(
 		'These are your Minions'
 	);
@@ -5065,7 +5066,7 @@ test("the Fortune Teller's step answers for the two players picked", async ({ pa
 	// middle of the step on a phone: tap the step's name instead.
 	const strip = await walkTo(page, 'Fortune Teller');
 	await strip.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong').tap();
-	const step = page.getByRole('dialog', { name: 'Fortune Teller' });
+	const step = nightStep(page, 'Fortune Teller');
 	const section = step.getByTestId('night-yes-no');
 	const answers = section.getByRole('list', { name: 'Valid information' }).getByRole('listitem');
 	await expect(answers).toHaveCount(0);
@@ -5133,7 +5134,7 @@ test("the Godfather's first night step shows every Outsider in play", async ({ p
 	);
 	// Tapping the strip's text could open a glossary word's popover on phones.
 	await strip.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong').tap();
-	const step = page.getByRole('dialog', { name: 'Godfather' });
+	const step = nightStep(page, 'Godfather');
 	const suggested = step.getByTestId('night-suggested');
 	await expect(suggested.locator('.main > [data-character-id="tinker"]')).toBeVisible();
 	await expect(suggested.locator('.main > [data-character-id="moonchild"]')).toBeVisible();
@@ -5163,7 +5164,7 @@ test('the Godfather with no Outsiders in play is shown No Outsiders', async ({ p
 	const strip = await walkTo(page, 'Godfather');
 	await expect(strip.getByTestId('night-suggested')).toHaveText(/^Valid Information:\s*None\s*$/);
 	await strip.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong').tap();
-	const suggested = page.getByRole('dialog', { name: 'Godfather' }).getByTestId('night-suggested');
+	const suggested = nightStep(page, 'Godfather').getByTestId('night-suggested');
 	await suggested.getByRole('button', { name: 'Show to player' }).tap();
 	await expect(page.locator('[data-testid="show-to-player"][open]')).toContainText('No Outsiders');
 });
@@ -6080,7 +6081,7 @@ test('a step opened from the walk-through closes cleanly', async ({ page }) => {
 	await expect(strip.locator('.night-text')).not.toBeEmpty();
 	await expect(strip.locator('.glossary-term')).toHaveCount(0);
 	await strip.locator('.night-text').tap();
-	const step = page.getByRole('dialog', { name: 'Washerwoman' });
+	const step = nightStep(page, 'Washerwoman');
 	await expect(step).toBeVisible();
 	// Its words are explained in the step itself.
 	await expect(step.locator('.glossary-term').first()).toBeVisible();
@@ -7550,7 +7551,7 @@ test('the Harlot step asks the chosen player, then shows the Harlot their charac
 	)
 		.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong')
 		.tap();
-	const step = page.getByRole('dialog', { name: 'Harlot' });
+	const step = nightStep(page, 'Harlot');
 	const tiles = step.getByTestId('step-info-tokens');
 	const shown = page.locator('[data-testid="show-to-player"][open]');
 	await tiles.getByRole('button', { name: 'Sleep with the Harlot?', exact: true }).tap();
@@ -7810,7 +7811,7 @@ test("the Huntsman's step turns the Damsel into a not-in-play Townsfolk", async 
 	// character instead; its name opens the step.
 	const strip = await walkTo(page, 'Huntsman');
 	await strip.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong').tap();
-	const step = page.getByRole('dialog', { name: 'Huntsman' });
+	const step = nightStep(page, 'Huntsman');
 	await expect(step).toBeVisible();
 	await expect(step.getByTestId('change-character')).toContainText('None');
 	await step.getByTestId('change-character').getByRole('button', { name: 'Choose' }).tap();
@@ -7861,7 +7862,7 @@ test("the Cacklejack's step changes any player's character but the one marked No
 
 	const strip = await walkTo(page, 'Cacklejack');
 	await strip.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong').tap();
-	const step = page.getByRole('dialog', { name: 'Cacklejack' });
+	const step = nightStep(page, 'Cacklejack');
 	await step.getByTestId('change-character').getByRole('button', { name: 'Choose' }).tap();
 	const seats = page.getByRole('dialog', { name: 'Changes character' });
 	await expect(seats.getByRole('button', { name: /Seat 2/ })).toHaveCount(0);
@@ -7908,7 +7909,7 @@ test("the Barber's step swaps two players' characters, keeping alignments", asyn
 
 	const strip = await walkTo(page, 'Barber');
 	await strip.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong').tap();
-	const step = page.getByRole('dialog', { name: 'Barber' });
+	const step = nightStep(page, 'Barber');
 	await expect(step).toBeVisible();
 	const swap = step.getByTestId('swap-characters');
 	await expect(swap).toContainText('None');
@@ -7960,7 +7961,7 @@ test("the Hatter's step lets each Minion and Demon become another of their type"
 
 	const strip = await walkTo(page, 'Hatter');
 	await strip.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong').tap();
-	const step = page.getByRole('dialog', { name: 'Hatter' });
+	const step = nightStep(page, 'Hatter');
 	await expect(step).toBeVisible();
 	const change = step.getByTestId('change-character');
 	await expect(change).toContainText('None');
@@ -8002,7 +8003,7 @@ test("the Engineer's step changes a Minion into another Minion", async ({ page }
 	}
 	const strip = await walkTo(page, 'Engineer');
 	await strip.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong').tap();
-	const step = page.getByRole('dialog', { name: 'Engineer' });
+	const step = nightStep(page, 'Engineer');
 	const change = step.getByTestId('change-character');
 	await change.getByRole('button', { name: 'Choose' }).tap();
 	const seats = page.getByRole('dialog', { name: 'Changes character' });
@@ -8038,7 +8039,7 @@ test("the Cult Leader's step offers a living neighbour's alignment", async ({ pa
 	}
 	const strip = await walkTo(page, 'Cult Leader');
 	await strip.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong').tap();
-	const step = page.getByRole('dialog', { name: 'Cult Leader' });
+	const step = nightStep(page, 'Cult Leader');
 	const row = step.getByTestId('neighbour-alignment');
 	await expect(row).toContainText('Good');
 	await row.getByRole('button', { name: 'Make evil' }).tap();
@@ -8106,7 +8107,7 @@ test("the Kazali's first night step makes the usual number of Minions", async ({
 	}
 	const strip = await walkTo(page, 'Kazali');
 	await strip.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong').tap();
-	const step = page.getByRole('dialog', { name: 'Kazali' });
+	const step = nightStep(page, 'Kazali');
 	const change = step.getByTestId('change-character');
 	await expect(change).toContainText('None');
 	await change.getByRole('button', { name: 'Choose' }).tap();

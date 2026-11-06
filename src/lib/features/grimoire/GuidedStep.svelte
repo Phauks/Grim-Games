@@ -284,7 +284,8 @@
 	}
 </script>
 
-<Dialog bind:open title={step ? stepName(step) : 'Night step'} size="full">
+<!-- The night, not the step: the step's row beneath already names it (Trevor, 2026-11-06). -->
+<Dialog bind:open title={night === 'first' ? 'First night' : 'Other nights'} size="full">
 	{#snippet headActions()}
 		{#if steps.length > 0}
 			<IconButton icon="back" label="Previous step" disabled={index <= 0} onclick={() => go(-1)} />
@@ -314,6 +315,7 @@
 		class="scroll"
 		role="group"
 		aria-label="Night step"
+		data-step-name={step ? stepName(step) : undefined}
 		onpointerdown={swipeStart}
 		onpointerup={swipeEnd}
 		onpointercancel={() => (swipeFrom = undefined)}

@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 import { closeBin, putReminder } from './reminder-bank.ts';
+import { nightStep } from './night-step.ts';
 
 /**
  * Reminders and deaths that change a player's character or alignment offer the change (the
@@ -167,7 +168,7 @@ test("the Snake Charmer's step swaps with the Demon it chooses and poisons the o
 	await choose(page, 3, 'Clockmaker');
 	const strip = await walkTo(page, 'Snake Charmer');
 	await strip.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong').tap();
-	const step = page.getByRole('dialog', { name: 'Snake Charmer' });
+	const step = nightStep(page, 'Snake Charmer');
 	await expect(step).toBeVisible();
 	const swap = step.getByTestId('charm-swap');
 	await expect(swap).toContainText('None');

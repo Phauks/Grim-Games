@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
+import { nightStep } from './night-step.ts';
 
 // Every jinx shown where it matters (L107): when both characters of a jinx are in play, its own
 // text shows on each one's night step and as a mark on each one's row in the day view.
@@ -77,7 +78,7 @@ async function openStep(page: Page, title: string) {
 	}
 	await expect(name).toHaveText(title);
 	await strip.locator('button.step').tap();
-	const dialog = page.getByRole('dialog', { name: title });
+	const dialog = nightStep(page, title);
 	await expect(dialog).toBeVisible();
 	return dialog;
 }
