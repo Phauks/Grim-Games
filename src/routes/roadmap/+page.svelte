@@ -34,51 +34,60 @@
 </svelte:head>
 
 <Page title={t('shell.roadmap')}>
-	<!-- One caret section per area of the app (Trevor, 2026-10-30), its done count beside it. -->
-	<SectionStack edge>
-		{#each areas as { area, items, done } (area)}
-			<PageSection title={t(AREA_TITLES[area])} collapsible storageKey="roadmap-{area}">
-				{#snippet aside()}<CountBadge count={done} total={items.length} />{/snippet}
-				<ul data-testid="roadmap-{area}">
-					{#each items as item (item.title)}
-						<li
-							data-testid="roadmap-item"
-							data-done={item.doneBy ? '' : undefined}
-							data-later={item.later && !item.doneBy ? '' : undefined}
-						>
-							{#if item.doneBy}
-								<!-- External GitHub link, not an app route: the change that finished it. -->
-								<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-								<a href={link(item.doneBy)} target="_blank" rel="noopener">
-									<span class="mark"><Icon name="check" label={t('shell.roadmapDone')} /></span>
-									<span class="title">{item.title}</span>
-								</a>
-							{:else}
-								<div class="row">
-									<!-- The tick's place is kept, so finished items don't shift the text. -->
-									<span class="mark" role="img" aria-label={t('shell.roadmapPlanned')}></span>
-									<span class="title">{item.title}</span>
-									{#if item.later}
-										<span class="progress">{t('shell.roadmapLater')}</span>
-									{:else if item.total > 1}
-										<span class="progress"
-											>{t('shell.roadmapProgress', {
-												done: item.finished,
-												total: item.total
-											})}</span
-										>
-									{/if}
-								</div>
-							{/if}
-						</li>
-					{/each}
-				</ul>
-			</PageSection>
-		{/each}
-	</SectionStack>
+	<!-- None while the roadmap has no entries (Trevor, 2026-11-06); otherwise one caret section
+		per area of the app (Trevor, 2026-10-30), its done count beside it. -->
+	{#if areas.length === 0}
+		<p class="none" data-testid="roadmap-none">{t('common.none')}</p>
+	{:else}
+		<SectionStack edge>
+			{#each areas as { area, items, done } (area)}
+				<PageSection title={t(AREA_TITLES[area])} collapsible storageKey="roadmap-{area}">
+					{#snippet aside()}<CountBadge count={done} total={items.length} />{/snippet}
+					<ul data-testid="roadmap-{area}">
+						{#each items as item (item.title)}
+							<li
+								data-testid="roadmap-item"
+								data-done={item.doneBy ? '' : undefined}
+								data-later={item.later && !item.doneBy ? '' : undefined}
+							>
+								{#if item.doneBy}
+									<!-- External GitHub link, not an app route: the change that finished it. -->
+									<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+									<a href={link(item.doneBy)} target="_blank" rel="noopener">
+										<span class="mark"><Icon name="check" label={t('shell.roadmapDone')} /></span>
+										<span class="title">{item.title}</span>
+									</a>
+								{:else}
+									<div class="row">
+										<!-- The tick's place is kept, so finished items don't shift the text. -->
+										<span class="mark" role="img" aria-label={t('shell.roadmapPlanned')}></span>
+										<span class="title">{item.title}</span>
+										{#if item.later}
+											<span class="progress">{t('shell.roadmapLater')}</span>
+										{:else if item.total > 1}
+											<span class="progress"
+												>{t('shell.roadmapProgress', {
+													done: item.finished,
+													total: item.total
+												})}</span
+											>
+										{/if}
+									</div>
+								{/if}
+							</li>
+						{/each}
+					</ul>
+				</PageSection>
+			{/each}
+		</SectionStack>
+	{/if}
 </Page>
 
 <style>
+	.none {
+		margin: 0;
+		color: var(--on-surface-muted);
+	}
 	ul {
 		display: flex;
 		flex-direction: column;
