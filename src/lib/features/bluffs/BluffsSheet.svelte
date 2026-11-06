@@ -310,19 +310,6 @@
 									/>
 								</ClearableField>
 							</span>
-							<!--
-							A second set is nearly always the Lunatic's, so its name is one tap away
-							(Trevor, 2026-10-29); disabled, not hidden, once the set is already called that.
-						-->
-							{#if editing === LUNATIC_SET}
-								<Button
-									variant="quiet"
-									disabled={(pickedName.trim() || defaultLabel(editing)) ===
-										t('bluffs.set.lunatic')}
-									onclick={() => (pickedName = t('bluffs.set.lunatic'))}
-									>{t('bluffs.set.lunatic')}</Button
-								>
-							{/if}
 						</form>
 					{/if}{/snippet}
 			</CharacterPicker>
