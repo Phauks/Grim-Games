@@ -52,8 +52,10 @@ describe('Boffin + Heretic jinx', () => {
 		});
 
 		it('leaves the Heretic out of the abilities the Boffin may give', () => {
-			expect(barredAbilities('boffin', scriptCharacterIds(script))).toEqual(['heretic']);
-			expect(barredAbilities('boffin', ['boffin', 'chef'])).toEqual([]);
+			expect(barredAbilities('boffin', scriptCharacterIds(script), committedCharacters())).toEqual([
+				'heretic'
+			]);
+			expect(barredAbilities('boffin', ['boffin', 'chef'], committedCharacters())).toEqual([]);
 		});
 
 		it('warns, but still lets the Storyteller give it', () => {

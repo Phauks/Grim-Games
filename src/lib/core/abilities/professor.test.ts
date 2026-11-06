@@ -18,7 +18,8 @@ import {
 	committedCharacter,
 	committedGameData,
 	committedNightOrder,
-	nightSheetPresence
+	nightSheetPresence,
+	committedCharacters
 } from '#lib/core/testing/committed-data.ts';
 import { abilityState } from '#lib/core/rules/ability.ts';
 import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
@@ -143,7 +144,7 @@ describe('Professor', () => {
 			// Wiki: "If the Professor chose a dead Townsfolk, the chosen player becomes alive again—mark
 			// them with the Professor’s ALIVE reminder and remove their shroud. (They wake later
 			// tonight if they normally would."
-			expect(reminderPrompt('Alive', 'professor')).toBe('revive');
+			expect(reminderPrompt('Alive', 'professor', committedCharacters())).toBe('revive');
 			expect(promptApplies('revive', true)).toBe(true);
 			const s = scenario(cast)
 				.newDay()

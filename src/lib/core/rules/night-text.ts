@@ -105,13 +105,17 @@ export function placeholdersFor(
 	return placeholderRulesOf(character)?.[night];
 }
 
-/** Our text in use for this night: Trevor's reviewed edit, or (flag on) our fuller text. */
+/**
+ * The text in use for this night from the character's own `nightText` rules: a reviewed edit,
+ * or (flag on) the fuller text. A custom character's block carries its own, as an official
+ * character's does.
+ */
 export function nightTextOverride(
-	id: CharacterId,
+	character: Pick<Character, 'id' | 'edition' | 'rules'>,
 	night: NightName,
 	full: boolean = FULL_NIGHT_INSTRUCTIONS
 ): NightTextOverride | undefined {
-	const ours = OFFICIAL_RULES.get(id)?.nightText?.[night];
+	const ours = rulesOfCharacter(character)?.nightText?.[night];
 	return (full ? ours?.full : undefined) ?? ours?.reviewed;
 }
 
@@ -132,9 +136,8 @@ const placeholderCount = (text: string) => text.match(/:reminder:/g)?.length ?? 
  * The night text to show. `text` is the text the step carries; when it is not TPI's (a
  * Storyteller's edit), it is shown as it is. Otherwise our text in use replaces TPI's
  * (`nightTextOverride`). TPI's `:reminder:` mapping applies to TPI's text, and to a
- * reviewed edit that kept the same `:reminder:`s (the Preacher's). Homebrew characters
- * share no rules with an official id, so they always keep their own text, mapped by their
- * own `reminderPlaceholders`.
+ * reviewed edit that kept the same `:reminder:`s (the Preacher's). A homebrew character's
+ * own `nightText` and `reminderPlaceholders` apply to its own text in the same way.
  */
 export function nightTextFor(
 	character: Pick<
@@ -147,8 +150,7 @@ export function nightTextFor(
 	const source = night === 'first' ? character.firstNightReminder : character.otherNightReminder;
 	const given = options.text ?? source;
 	if (given === undefined) return undefined;
-	const official = character.edition !== undefined && given === source;
-	const ours = official ? nightTextOverride(character.id, night, options.full) : undefined;
+	const ours = given === source ? nightTextOverride(character, night, options.full) : undefined;
 	const text = ours?.text ?? given;
 	// A homebrew character's own mapping fits its own text, as TPI's fits TPI's.
 	const mapping = given === source ? placeholdersFor(character, night) : undefined;

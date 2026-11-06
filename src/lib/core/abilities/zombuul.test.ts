@@ -14,7 +14,11 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import {
+	committedCharacter,
+	nightSheetPresence,
+	committedCharacters
+} from '#lib/core/testing/committed-data.ts';
 import { gameEnds, livesWhileDead } from '#lib/core/rules/game-end.ts';
 import { diedSinceNewDay } from '#lib/core/rules/night-numbers.ts';
 import { wakeConditionMet } from '#lib/core/rules/wakes-when.ts';
@@ -120,7 +124,7 @@ describe('Zombuul', () => {
 			const diedToday = { characterId: 'zombuul', label: 'Died Today' };
 			expect(reminderTargetMisses(s.game, diedToday, s.seat('zombuul'), s.characters)).toEqual([]);
 			expect(reminderTargetMisses(s.game, diedToday, s.seat('chef'), s.characters)).toEqual([]);
-			expect(reminderPrompt('Died Today', 'zombuul')).toBe('markDead');
+			expect(reminderPrompt('Died Today', 'zombuul', committedCharacters())).toBe('markDead');
 		});
 
 		it('does not wake while any player is marked Died Today', () => {

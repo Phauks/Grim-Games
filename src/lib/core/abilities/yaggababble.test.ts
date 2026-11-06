@@ -15,7 +15,11 @@
 import { testCharacters } from '#lib/core/model/fixtures.test-support.ts';
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import {
+	committedCharacter,
+	nightSheetPresence,
+	committedCharacters
+} from '#lib/core/testing/committed-data.ts';
 import { dayReminders, dayStateFromGame, renderReminder } from '#lib/core/rules/day-reminders.ts';
 import { dayTallyOf, tallyKills } from '#lib/core/rules/day-tally.ts';
 import { decide } from '#lib/core/engine/index.ts';
@@ -148,14 +152,14 @@ describe('Yaggababble', () => {
 
 		it('asks for the secret phrase while preparing the game', () => {
 			// Wiki: "During setup, write a phrase on a piece of paper, or on a phone."
-			expect(setupPrep('yaggababble', 'Yaggababble')).toContainEqual(
+			expect(setupPrep('yaggababble', 'Yaggababble', committedCharacters())).toContainEqual(
 				expect.objectContaining({ value: { key: 'phrase', label: 'Secret phrase' } })
 			);
 		});
 
 		it('shows the Demon the phrase on a card on the first night', () => {
 			// Wiki: "During the first night, wake the Demon. Show this phrase, then put them to sleep."
-			expect(rulesOf('yaggababble')?.infoCard).toBe('secret-phrase');
+			expect(rulesOf('yaggababble', committedCharacters())?.infoCard).toBe('secret-phrase');
 		});
 
 		it('counts each time the Demon says the phrase as one death to mark tonight', () => {

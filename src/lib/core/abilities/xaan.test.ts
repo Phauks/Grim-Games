@@ -14,7 +14,11 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import {
+	committedCharacter,
+	nightSheetPresence,
+	committedCharacters
+} from '#lib/core/testing/committed-data.ts';
 import { abilityState } from '#lib/core/rules/ability.ts';
 import { setupPrep, setupReminders } from '#lib/core/rules/setup-reminders.ts';
 import { setupModifierFor } from '#lib/core/rules/setup-modifiers.ts';
@@ -142,7 +146,7 @@ describe('Xaan', () => {
 			// Wiki: "On the 1st night, add the NIGHT 1 Xaan reminder to the Grimoire. On the 2nd night,
 			// add the NIGHT 2 Xaan reminder to the Grimoire. On the 3rd night, add the NIGHT 3 Xaan
 			// reminder to the Grimoire."
-			expect(setupPrep('xaan', 'Xaan')[0]).toMatchObject({
+			expect(setupPrep('xaan', 'Xaan', committedCharacters())[0]).toMatchObject({
 				tokens: ['Night 1'],
 				target: 'the Xaan'
 			});

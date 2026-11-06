@@ -14,7 +14,11 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import {
+	committedCharacter,
+	committedNightOrder,
+	nightSheetPresence
+} from '#lib/core/testing/committed-data.ts';
 import { alignmentOf } from '#lib/core/model/selectors.ts';
 import { abilityState } from '#lib/core/rules/ability.ts';
 import { becomesOffer } from '#lib/core/rules/becomes.ts';
@@ -109,7 +113,7 @@ describe('Mezepheles', () => {
 				{ text: expect.stringContaining('secret word') }
 			]);
 			expect(rulesOf('mezepheles', s.characters)?.infoCard).toBe('secret-word');
-			expect(nightSheetPresence('mezepheles').firstNight).toBe(true);
+			expect(committedNightOrder('firstNight')).toContain('mezepheles');
 		});
 
 		it('puts Turns Evil only on a good player', () => {
