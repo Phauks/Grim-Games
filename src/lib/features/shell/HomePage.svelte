@@ -10,6 +10,7 @@
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import type { MessageKey } from '#lib/i18n/catalog.ts';
+	import HomeProfile from './HomeProfile.svelte';
 	import { NAV_SECTIONS } from './nav.ts';
 
 	/**
@@ -36,6 +37,7 @@
 				<LastGameRow />
 				<Button icon="add" variant="accent" href={resolve('/new')}>{t('shell.navNewGame')}</Button>
 			{/snippet}
+			{#snippet aside()}<HomeProfile />{/snippet}
 		</JoinPanel>
 		<GroupGames onJoin={openRoom} />
 		<PageSection title={`${t('shell.navSectionPrepare')} · ${t('shell.navSectionCreate')}`}>
