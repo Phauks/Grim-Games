@@ -1,13 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { movingDefaults } from '#lib/core/backgrounds/moving.ts';
+import { stillDefaults, stillPreset } from '#lib/core/backgrounds/still.ts';
 import { parsePublicLook } from '#lib/core/sync/public-projection.ts';
 import { DEFAULT_BOARD_LOOKS } from './board-looks.svelte.ts';
 import { drawnLook, lookOf } from './shared-look.ts';
 
 describe('the look a board shares', () => {
-	it('shares a preset or the script image, and the vignette and logo while they are on', () => {
-		expect(lookOf({ kind: 'preset', id: 'felt' }, DEFAULT_BOARD_LOOKS)).toEqual({
+	it('shares a still background or the script image, and the vignette and logo while they are on', () => {
+		const params = stillDefaults('felt');
+		expect(lookOf({ kind: 'preset', id: 'felt', params }, DEFAULT_BOARD_LOOKS)).toEqual({
 			background: 'felt',
+			still: { id: 'felt', params },
 			vignette: 0.55,
 			logo: 0.3
 		});
@@ -28,14 +31,23 @@ describe('the look a board shares', () => {
 	});
 
 	it('draws what was shared, the same on every device', () => {
-		expect(drawnLook({ background: 'night', vignette: 0.2 })).toEqual({
-			preset: 'night',
+		const slate = stillPreset('stone', 'Slate');
+		expect(drawnLook({ background: 'stone', still: { id: 'stone', params: slate } })).toEqual({
+			preset: { id: 'stone', params: slate },
+			script: false
+		});
+		// A look without settings draws the background at its defaults.
+		expect(drawnLook({ background: 'velvet', vignette: 0.2 })).toEqual({
+			preset: { id: 'velvet', params: stillDefaults('velvet') },
 			script: false,
 			vignette: 0.2
 		});
 		expect(drawnLook({ background: 'script' })).toEqual({ script: true });
 		// An id this build doesn't know draws no background.
 		expect(drawnLook({ background: 'marble' })).toEqual({ script: false });
+		// Dark wood and Night sky were removed (2026-11-06): an older board's look draws none.
+		expect(drawnLook({ background: 'wood' })).toEqual({ script: false });
+		expect(drawnLook({ background: 'night' })).toEqual({ script: false });
 	});
 
 	it('shares a moving background by its id and settings, cleaned up on arrival (M43)', () => {

@@ -1737,7 +1737,7 @@ test('a spectator watches the whole grimoire with Grim view, after promising', a
 		.tap();
 	await settings
 		.getByRole('group', { name: 'Background', exact: true })
-		.getByRole('button', { name: 'Green felt' })
+		.getByRole('button', { name: 'Felt', exact: true })
 		.tap();
 	await settings.getByRole('button', { name: 'Close' }).tap();
 	await expect(viewer.getByTestId('board-background')).toHaveAttribute('data-preset', 'felt');

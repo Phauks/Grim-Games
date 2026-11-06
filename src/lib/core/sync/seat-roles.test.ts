@@ -6,7 +6,7 @@ import {
 	testContext
 } from '#lib/core/model/fixtures.test-support.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
-import { parseSeatRole, roleGaps, roleKey, seatRoles } from './seat-roles.ts';
+import { noPhoneSeats, parseSeatRole, roleGaps, roleKey, seatRoles } from './seat-roles.ts';
 
 describe('the character each phone shows its player', () => {
 	it('is the seat’s character, with no alignment when it is the character’s own', () => {
@@ -192,5 +192,22 @@ describe('who won’t see a character when they are shown', () => {
 		expect(roleGaps(game, testCharacters, new Set(seats)).map((g) => g.gaps)).toEqual([
 			['no-character']
 		]);
+	});
+});
+
+describe('who sees their character on the Storyteller’s device', () => {
+	it('is every seat with a character to show and no phone, in seat order', () => {
+		const { session, ctx, seats } = newGame(4);
+		const game = run(
+			session,
+			ctx,
+			{ type: 'AssignCharacter', seatId: seats[0], characterId: 'chef' },
+			{ type: 'AssignCharacter', seatId: seats[1], characterId: 'imp' },
+			// https://wiki.bloodontheclocktower.com/Travellers: no alignment chosen, nothing to show.
+			{ type: 'AssignCharacter', seatId: seats[2], characterId: 'scapegoat' }
+		).game;
+		expect(noPhoneSeats(game, testCharacters, new Set([seats[1]]))).toEqual([seats[0]]);
+		expect(noPhoneSeats(game, testCharacters, new Set())).toEqual([seats[0], seats[1]]);
+		expect(noPhoneSeats(game, testCharacters, new Set(seats))).toEqual([]);
 	});
 });

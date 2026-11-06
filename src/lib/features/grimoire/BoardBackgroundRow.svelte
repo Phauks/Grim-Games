@@ -8,13 +8,13 @@
 		readBackground,
 		saveBackground,
 		shrinkImage,
-		PRESETS,
 		type BackgroundChoice
 	} from './backgrounds.ts';
 	import BackgroundTiles from './BackgroundTiles.svelte';
 	import type { BoardBackgroundContext } from './board-background.svelte.ts';
-	import MovingCustomise from './moving/MovingCustomise.svelte';
+	import BackgroundCustomise from './BackgroundCustomise.svelte';
 	import { MOVING_BACKGROUNDS } from '#lib/core/backgrounds/moving.ts';
+	import { STILL_BACKGROUNDS } from '#lib/core/backgrounds/still.ts';
 
 	/**
 	 * The open board's background in Board and tokens (Trevor, 2026-10-16 and 2026-10-18): an
@@ -42,7 +42,7 @@
 		current.kind === 'image'
 			? 'Your image'
 			: current.kind === 'preset'
-				? PRESETS[current.id].label
+				? STILL_BACKGROUNDS[current.id].label
 				: current.kind === 'moving'
 					? MOVING_BACKGROUNDS[current.id].label
 					: current.kind === 'script'
@@ -100,7 +100,7 @@
 			<BackgroundTiles {current} labelledBy={labelId} onChoose={choose} />
 		</div>
 		<div class="choices">
-			<MovingCustomise {current} onSave={choose} />
+			<BackgroundCustomise {current} onSave={choose} />
 			<Button icon="add" onclick={() => input?.click()}>{t('settings.backgroundImage')}</Button>
 			<Button
 				variant="quiet"

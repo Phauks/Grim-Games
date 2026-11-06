@@ -1,13 +1,13 @@
 <script lang="ts">
+	import { MOVING_BACKGROUNDS, type MovingChoice } from '#lib/core/backgrounds/moving.ts';
 	import {
-		MOVING_BACKGROUNDS,
 		formatParam,
-		movingDefaults,
-		movingPreset,
-		presetOf,
-		type MovingChoice,
-		type MovingParamValue
-	} from '#lib/core/backgrounds/moving.ts';
+		matchingPreset,
+		paramPreset,
+		type ParamValue,
+		type Params
+	} from '#lib/core/backgrounds/params.ts';
+	import { STILL_BACKGROUNDS, type StillChoice } from '#lib/core/backgrounds/still.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import ModalActions from '#lib/ui/primitives/ModalActions.svelte';
@@ -15,13 +15,14 @@
 	import SettingSelect from '#lib/ui/settings/SettingSelect.svelte';
 	import SettingSlider from '#lib/ui/settings/SettingSlider.svelte';
 	import SettingToggle from '#lib/ui/settings/SettingToggle.svelte';
-	import type { BackgroundChoice } from '../backgrounds.ts';
-	import MovingBackdrop from './MovingBackdrop.svelte';
+	import type { BackgroundChoice } from './backgrounds.ts';
+	import BoardBackdrop from './BoardBackdrop.svelte';
 
 	/**
-	 * "Customise" under the background tiles (M43): always there, so nothing moves, and only
-	 * usable while a moving background is chosen. It opens the scene's settings in a dialog
-	 * with its own preview; nothing changes on the board until Confirm.
+	 * "Customise" under the background tiles, for the still backgrounds (M72) and the animated
+	 * ones (M43): always there, so nothing moves, and only usable while one of them is chosen.
+	 * It opens that background's settings in a dialog with its own preview; nothing changes on
+	 * the board until Confirm.
 	 */
 	interface Props {
 		current: BackgroundChoice | undefined;
@@ -29,38 +30,48 @@
 	}
 	let { current, onSave }: Props = $props();
 
-	const moving = $derived(current?.kind === 'moving' ? current : undefined);
+	type Draft = ({ kind: 'preset' } & StillChoice) | ({ kind: 'moving' } & MovingChoice);
+	const editable = $derived(
+		current?.kind === 'preset' || current?.kind === 'moving' ? current : undefined
+	);
+	const setOf = (choice: Draft) =>
+		choice.kind === 'moving' ? MOVING_BACKGROUNDS[choice.id] : STILL_BACKGROUNDS[choice.id];
+
 	let open = $state(false);
-	let draft = $state<MovingChoice>({ id: 'vortex', params: movingDefaults('vortex') });
-	const background = $derived(MOVING_BACKGROUNDS[draft.id]);
+	let draft = $state<Draft>({ kind: 'preset', id: 'felt', params: {} });
+	const background = $derived(setOf(draft));
 	/** The preset the draft matches, or '' once a setting is the Storyteller's own. */
-	const preset = $derived(presetOf(draft.id, draft.params) ?? '');
+	const preset = $derived(matchingPreset(background, draft.params) ?? '');
 
 	function start() {
-		if (!moving) return;
-		draft = { id: moving.id, params: { ...moving.params } };
+		if (!editable) return;
+		draft = { ...editable, params: { ...editable.params } } as Draft;
 		open = true;
 	}
-	const set = (id: string, value: MovingParamValue) =>
-		(draft.params = { ...draft.params, [id]: value });
+	const set = (id: string, value: ParamValue) =>
+		(draft.params = { ...draft.params, [id]: value } as Params);
 
 	function confirm() {
-		onSave({ kind: 'moving', id: draft.id, params: $state.snapshot(draft.params) });
+		onSave({ ...draft, params: $state.snapshot(draft.params) } as BackgroundChoice);
 		open = false;
 	}
 </script>
 
-<Button variant="quiet" icon="edit" disabled={!moving} onclick={start}>
-	{moving ? `Customise ${MOVING_BACKGROUNDS[moving.id].label}` : 'Customise a moving background'}
+<Button variant="quiet" icon="edit" disabled={!editable} onclick={start}>
+	{editable ? `Customise ${setOf(editable).label}` : 'Customise a background'}
 </Button>
 
 <Dialog bind:open title={`Customise ${background.label}`} size="full">
 	{#snippet aside()}
-		<div class="preview" data-testid="moving-preview">
-			<MovingBackdrop choice={draft} contained />
+		<div class="preview" data-testid="background-preview">
+			<BoardBackdrop
+				contained
+				preset={draft.kind === 'preset' ? draft : undefined}
+				moving={draft.kind === 'moving' ? draft : undefined}
+			/>
 		</div>
 	{/snippet}
-	<div data-testid="moving-customise">
+	<div data-testid="background-customise">
 		<SettingSelect
 			label="Preset"
 			value={preset}
@@ -69,7 +80,7 @@
 				...(preset ? [] : [{ value: '', label: 'Your own' }])
 			]}
 			onChange={(name) => {
-				if (name) draft.params = movingPreset(draft.id, name);
+				if (name) draft.params = paramPreset(background, name);
 			}}
 		/>
 		{#each background.params as param (param.id)}
