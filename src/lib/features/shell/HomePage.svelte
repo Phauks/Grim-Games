@@ -4,6 +4,7 @@
 	import { APP_NAME } from '#lib/core/app-name.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import GroupGames from '#lib/features/friends/GroupGames.svelte';
+	import LastGameRow from '#lib/features/game/LastGameRow.svelte';
 	import JoinPanel from '#lib/features/room/JoinPanel.svelte';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
@@ -28,6 +29,8 @@
 
 <Page title={APP_NAME}>
 	<div class="home">
+		<!-- The game this device had open last, the same row as the menu's top (plan M69). -->
+		<div class="last"><LastGameRow /></div>
 		<div class="start">
 			<Button icon="add" variant="accent" href={resolve('/new')}>{t('shell.navNewGame')}</Button>
 			<!-- Reserved for the daily puzzle, so nothing moves when one is built (no reflow). -->
@@ -61,6 +64,15 @@
 		width: 100%;
 		max-width: calc(28 * var(--u));
 		margin-inline: auto;
+	}
+	.last {
+		width: 100%;
+		max-width: calc(28 * var(--u));
+		margin-inline: auto;
+	}
+	/* No game to go back to: no row and no gap. */
+	.last:empty {
+		display: none;
 	}
 	.places {
 		display: grid;
