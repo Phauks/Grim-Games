@@ -77,7 +77,10 @@ test('a player’s phone is sent and shown its own character only', async ({
 	await page.getByRole('button', { name: 'Deal' }).tap();
 	const deal = page.getByRole('alertdialog', { name: 'Deal at random?' });
 	await deal.getByRole('button', { name: 'Confirm' }).tap();
-	await expect(page.getByRole('button', { name: /^Tile \d, drawn$/ })).toHaveCount(5);
+	// The phone's tile is drawn; the four players with no phone have theirs held with their
+	// names on it, as after Show characters (Trevor, 2026-11-06).
+	await expect(page.getByRole('button', { name: /^Tile \d, drawn$/ })).toHaveCount(1);
+	await expect(page.getByRole('button', { name: /^Tile .+, held by/ })).toHaveCount(4);
 	await page.goto(board);
 
 	// The phone opens its own card straight away: no list of seats to pick from.

@@ -232,6 +232,7 @@ export const setup = {
 	'setup.draw.tile': 'Tile {number}',
 	'setup.draw.tileHeld': 'Tile {number}, held by {seat}',
 	'setup.draw.tileDrawn': 'Tile {number}, drawn',
+	'setup.draw.areYou': 'Are you {name}?',
 	'setup.draw.everySeat': 'Every seat has a character',
 	'setup.draw.everySeatHint': 'Add a seat on the grimoire to draw for it.',
 
