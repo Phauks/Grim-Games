@@ -1517,15 +1517,17 @@ test('New game shows each script’s author under its name, and its versions in 
 	);
 	await expect(version).toContainText('v2.1');
 	expect((await line.boundingBox())?.height).toBe(before?.height);
-	// In the script search's list too, on Standard and in a mode alike.
-	const option = page.getByRole('option').filter({ hasText: 'Byline Test' });
-	await page.getByRole('combobox', { name: 'Find a script' }).tap();
+	// In the Choose a script sheet's list too, on Standard and in a mode alike.
+	const sheet = page.getByTestId('script-sheet');
+	const option = sheet.getByRole('button').filter({ hasText: 'Byline Test' });
+	await page.getByTestId('custom-script').tap();
 	await expect(option).toContainText('by Test Author');
 	await expect(option).toContainText('2.1');
 	await page.keyboard.press('Escape');
+	await expect(sheet).toBeHidden();
 	await chooseMode(page, 'Flesh and Bone');
 	await custom.tap();
-	await page.getByRole('combobox', { name: 'Find a script' }).tap();
+	await page.getByTestId('custom-script').tap();
 	await expect(option).toContainText('by Test Author');
 });
 
@@ -1686,9 +1688,7 @@ test('a custom script without a version shows N/A as its version', async ({ page
 	const version = page.getByRole('combobox', { name: 'Script version' });
 	await expect(version).not.toContainText('N/A');
 	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Custom', { exact: true }).tap();
-	await expect(page.getByRole('combobox', { name: 'Find a script' })).toHaveValue(
-		'No Version Test'
-	);
+	await expect(page.getByTestId('custom-script')).toHaveText('No Version Test');
 	await expect(version).toHaveText('N/A');
 	await expect(version).toBeDisabled();
 	// A file has no page: the source button stays in place, disabled, naming the file.
@@ -1697,33 +1697,34 @@ test('a custom script without a version shows N/A as its version', async ({ page
 	).toBeDisabled();
 });
 
-test('any script beyond the base three is found by typing, or picked in the Library', async ({
-	page
-}) => {
-	// Trevor, 2026-10-19: easy to reach with 50 scripts.
+test('any script beyond the base three is found in the Choose a script sheet', async ({ page }) => {
+	// Trevor, 2026-10-19: easy to reach with 50 scripts; 2026-11-06, option B: one sheet with
+	// this device's scripts, online sources and Add script, never leaving New game.
 	await page.goto('/new');
 	const script = page.getByRole('radiogroup', { name: 'Script' });
-	// The base three and Custom; the search and Library are Custom's, and tapping either
-	// chooses Custom (Trevor, backlog L6).
+	// The base three and Custom; the field under them is Custom's, and tapping it chooses
+	// Custom (Trevor, backlog L6).
 	await expect(script.getByRole('radio')).toHaveCount(4);
 	const custom = script.getByRole('radio', { name: 'Custom' });
-	const search = page.getByRole('combobox', { name: 'Find a script' });
-	const library = page.getByRole('button', { name: 'Choose from the Library' });
+	const field = page.getByTestId('custom-script');
 	await expect(custom).not.toBeChecked();
-	await search.tap();
-	await expect(custom).toBeChecked();
-	await search.fill('no such script');
-	await expect(page.getByRole('listbox')).toContainText('None');
-	await page.getByRole('option', { name: 'Find more scripts online' }).tap();
-	await expect(page).toHaveURL(/\/scripts$/);
-	await page.goto('/new');
-	await expect(custom).not.toBeChecked();
-	await library.tap();
-	const browser = page.getByRole('dialog', { name: 'Choose from the Library' });
-	await expect(browser).toBeVisible();
+	await expect(field).toHaveText('None');
+	await field.tap();
+	const sheet = page.getByTestId('script-sheet');
+	await expect(sheet).toBeVisible();
+	await sheet.getByRole('searchbox', { name: 'Find a script' }).fill('no such script');
+	await expect(sheet).toContainText('None');
+	// Nothing in the list leaves New game.
+	await expect(sheet.getByRole('link')).toHaveCount(0);
+	await expect(
+		page
+			.getByRole('dialog', { name: 'Choose a script' })
+			.getByRole('button', { name: 'Add script' })
+	).toBeVisible();
 	await page.keyboard.press('Escape');
-	await expect(browser).toBeHidden();
+	await expect(sheet).toBeHidden();
 	await expect(custom).toBeChecked();
+	await expect(page).toHaveURL(/\/new$/);
 });
 
 test('special rules stack on a mode: two at once, a conflict warns, and the game starts anyway', async ({

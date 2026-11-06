@@ -1,42 +1,32 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import { goto } from '$app/navigation';
-	import { resolve } from '$app/paths';
 	import { editionWikiUrl, loadScript, OFFICIAL_EDITIONS } from '#lib/core/data/index.ts';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { reportError } from '#lib/features/errors/report.svelte.ts';
-	import LibraryBrowser, { type LibraryPick } from '#lib/features/library/LibraryBrowser.svelte';
-	import PreviewToggle from '#lib/features/library/PreviewToggle.svelte';
 	import ScriptByline from '#lib/features/player/ScriptByline.svelte';
 	import ScriptSourceButton from '#lib/features/scripts/ScriptSourceButton.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import Spinner from '#lib/ui/primitives/Spinner.svelte';
 	import { chooseScript, currentScript } from '#lib/features/scripts/current-script.svelte.ts';
-	import {
-		describeSource,
-		reloadSavedScript,
-		sourcePage
-	} from '#lib/features/scripts/saved-scripts.ts';
+	import { describeSource, sourcePage } from '#lib/features/scripts/saved-scripts.ts';
 	import { botcVersions } from '#lib/features/scripts/botc-versions.svelte.ts';
 	import { compareVersions } from '#lib/features/scripts/botcscripts-api.ts';
 	import { fetchLinkTarget } from '#lib/features/scripts/fetch-script.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
+	import Button from '#lib/ui/primitives/Button.svelte';
 	import ChoiceGroup from '#lib/ui/primitives/ChoiceGroup.svelte';
-	import Combobox from '#lib/ui/primitives/Combobox.svelte';
-	import Dialog from '#lib/ui/primitives/Dialog.svelte';
-	import IconButton from '#lib/ui/primitives/IconButton.svelte';
+	import ScriptChooser from './ScriptChooser.svelte';
 	import { searchableScripts, type ScriptChoice } from './script-choices.svelte.ts';
 	import { scriptVersions } from './script-versions.ts';
 
 	/**
 	 * Choosing the script on New game with any number of scripts (Trevor, 2026-10-19, mockup
-	 * "Script picker"): the base three stay one tap away, every other script is found by
-	 * typing its name or author, and the Library button opens the Library to pick from.
-	 * Choosing one kind of script unselects the other. The search and the Library button are
-	 * for Custom, beside the base three; tapping either chooses Custom (Trevor, backlog L6),
-	 * so they are never disabled. Under them, on a line kept in place, the
-	 * chosen script's versions are a drop-down (empty when it has none) beside its author
-	 * (Trevor, 2026-10-19).
+	 * "Script picker"): the base three stay one tap away beside Custom. Under them, Custom's
+	 * script is one field that opens the Choose a script sheet (Trevor, 2026-11-06, option B:
+	 * this device's scripts, online sources and Add script in one place, never leaving the
+	 * screen). Tapping the field chooses Custom (Trevor, backlog L6), so it is never disabled.
+	 * Under it, on a line kept in place, the chosen script's versions are a drop-down (empty
+	 * when it has none) beside its author (Trevor, 2026-10-19).
 	 */
 	interface Props {
 		label: string;
@@ -67,27 +57,6 @@
 		if (first) onChange(first.value);
 	}
 	const others = $derived(searchableScripts());
-	const GROUP = {
-		recent: 'modes.scriptSearch.recent',
-		library: 'modes.scriptSearch.library'
-	} as const;
-	const options = $derived(
-		others.map((o) => ({
-			value: o.value,
-			label: o.label,
-			...(o.author || o.version
-				? {
-						description: [
-							o.author ? t('player.byAuthor', { author: o.author }) : undefined,
-							o.version ? t('player.version', { version: o.version }) : undefined
-						]
-							.filter(Boolean)
-							.join(' · ')
-					}
-				: {}),
-			...(o.group ? { group: t(GROUP[o.group]) } : {})
-		}))
-	);
 	const chosen = $derived(others.find((o) => o.value === value));
 	const versioned = $derived(scriptVersions(others, chosen));
 	// Every version BotC Scripts publishes for a script saved from there, not only the saved
@@ -148,38 +117,16 @@
 	}
 	// The chosen script's source page opens from here (Trevor, 2026-10-22).
 	const shownSource = $derived(custom ? chosen?.source : undefined);
-	/** Tapping Custom's search or Library button chooses Custom first. */
-	function toCustom() {
+	/** The sheet's script: Custom with it, or a base script picked there. */
+	let sheetOpen = $state(false);
+	function openSheet() {
 		if (!custom) choose(CUSTOM);
+		sheetOpen = true;
 	}
-	/**
-	 * Typing a name brings the search to the top of the screen, so its picks open under it
-	 * and the keyboard pushes nothing up (Trevor, 2026-10-26).
-	 */
-	function raise(event: FocusEvent) {
-		toCustom();
-		if (!(event.target instanceof HTMLInputElement)) return;
-		const row = event.currentTarget as HTMLElement;
-		requestAnimationFrame(() => row.scrollIntoView({ block: 'start', behavior: 'smooth' }));
-	}
-	let browsing = $state(false);
-	let libraryBrowser = $state<LibraryBrowser>();
-
-	/** A script picked in the Library becomes a recent one, so New game can load it again. */
-	async function picked(pick: LibraryPick) {
-		if (pick.kind !== 'script') return;
-		browsing = false;
-		const { listing, shareable } = pick.script;
-		if (listing.saved) return onChange(`recent:${listing.saved.scriptId}`);
-		try {
-			const script = reloadSavedScript(shareable, await loadOfficialData());
-			if (!script) throw new Error('the picked script could not be loaded');
-			await chooseScript(script, shareable.source);
-			const saved = currentScript.saved;
-			if (saved) onChange(`recent:${saved.scriptId}`);
-		} catch (e) {
-			reportError(e, { area: 'scripts' });
-		}
+	function picked(choice: ScriptChoice) {
+		if (isEdition(choice)) return choose(choice);
+		customPicked = true;
+		onChange(choice);
 	}
 </script>
 
@@ -191,29 +138,10 @@
 		options={choices}
 		onChange={choose}
 	/>
-	<!-- A tap or focus on the search or Browse picks Custom; the controls inside take the keys. -->
-	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div class="search" onpointerdown={toCustom} onfocusin={raise}>
-		<Combobox
-			label={t('modes.scriptSearch.label')}
-			hideLabel
-			value={options.some((o) => o.value === value) ? value : undefined}
-			{options}
-			{onChange}
-			placeholder={t('modes.scriptSearch.placeholder')}
-			empty={t('modes.scriptSearch.none')}
-			action={() => ({
-				value: '__online__',
-				label: t('modes.scriptSearch.online'),
-				run: () => void goto(resolve('/scripts'))
-			})}
-			testid="script-search"
-		/>
-		<IconButton
-			icon="library"
-			label={t('modes.scriptSearch.browse')}
-			onclick={() => (browsing = true)}
-		/>
+	<div class="custom">
+		<Button variant="field" icon="search" data-testid="custom-script" onclick={openSheet}>
+			<span class="name">{(custom && chosen?.label) || t('common.none')}</span>
+		</Button>
 	</div>
 	<div class="chosen" data-testid="chosen-script">
 		<span class="version">
@@ -240,18 +168,7 @@
 	</div>
 </div>
 
-<!-- The Library's own file manager, scripts only, as the Script builder opens it. -->
-<Dialog bind:open={browsing} title={t('modes.scriptSearch.browse')} size="max">
-	{#snippet headActions()}<PreviewToggle browser={libraryBrowser} />{/snippet}
-	<div class="library">
-		<LibraryBrowser
-			bind:this={libraryBrowser}
-			kind="script"
-			pickLabel={t('modes.scriptSearch.pick')}
-			onpick={(pick) => void picked(pick)}
-		/>
-	</div>
-</Dialog>
+<ScriptChooser bind:open={sheetOpen} {value} onpick={picked} />
 
 <style>
 	.picker {
@@ -259,17 +176,20 @@
 		gap: var(--space-2);
 		min-width: 0;
 	}
-	.search {
-		/* Room above it when raised for typing. */
-		scroll-margin-top: var(--space-3);
-		display: flex;
-		align-items: center;
-		gap: var(--space-1);
+	/* The whole row, a long name cut short, so nothing beside or under it moves. */
+	.custom {
+		display: grid;
 		min-width: 0;
 	}
-	.search > :global(:first-child) {
-		flex: 1;
+	.custom :global(.button > span) {
 		min-width: 0;
+	}
+	.name {
+		display: block;
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 	.chosen {
 		display: flex;
@@ -295,9 +215,5 @@
 	}
 	.source {
 		margin-inline-start: auto;
-	}
-	.library {
-		display: grid;
-		min-height: 0;
 	}
 </style>
