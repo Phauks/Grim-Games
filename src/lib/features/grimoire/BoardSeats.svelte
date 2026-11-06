@@ -18,7 +18,7 @@
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import type { SeatPoint } from '#lib/ui/seating/seat-layout.ts';
 	import BoardReminderChip from './BoardReminderChip.svelte';
-	import { isOrphan, placingAlignment } from './board.ts';
+	import { isOrphan, reminderPlacing } from './board.ts';
 	import { placedLook } from './reminders.ts';
 	import ReminderTethers from './ReminderTethers.svelte';
 	import { boardLooks } from './board-looks.svelte.ts';
@@ -267,7 +267,7 @@
 			<BoardReminderChip
 				look={placedLook(reminder, characters)}
 				at={dragged ? remDrag.drag!.at : at[k]}
-				alignment={placingAlignment(game, reminder, characters)}
+				{...reminderPlacing(game, reminder, characters)}
 				size={chip}
 				disabled={seatArr.arranging || watching}
 				seatNumber={i + 1}
@@ -315,7 +315,7 @@
 		at={dragged
 			? remDrag.drag!.at
 			: (grimoire.reminderSpots[reminder.reminderId] ?? { x: 12 + 8 * (k % 4), y: 80 })}
-		alignment={placingAlignment(game, reminder, characters)}
+		{...reminderPlacing(game, reminder, characters)}
 		size={chip}
 		disabled={seatArr.arranging || watching}
 		loose

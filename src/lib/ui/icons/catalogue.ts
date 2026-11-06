@@ -127,6 +127,8 @@ export const ICON_SLOTS = {
 	changeKind: { label: 'Change kind', choices: ['ph:swap', 'ph:arrows-left-right'] },
 	unlink: { label: 'Unlink', choices: ['ph:link-break', 'ph:link-simple-break'] },
 	quickPlay: { label: 'Play script', choices: ['ph:play', 'ph:play-circle'] },
+	/** The daily puzzle on Home, reserved until one is built (plan M69). */
+	dailyPuzzle: { label: 'Daily puzzle', choices: ['ph:calendar-check', 'ph:calendar-star'] },
 	report: { label: 'Report a problem', choices: ['ph:bug', 'ph:flag'] },
 	switchBuild: { label: 'Switch build', choices: ['ph:arrows-left-right', 'ph:swap'] },
 	reference: { label: 'Character reference', choices: ['ph:books', 'ph:book-bookmark'] },

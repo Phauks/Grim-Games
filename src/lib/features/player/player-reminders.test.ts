@@ -76,6 +76,16 @@ describe("reminder tokens on a player's own grim", () => {
 		expect(toggleReminder(reminders, 's1', two).s1).toHaveLength(1);
 	});
 
+	it("keeps a # token's number and names it as the board does", () => {
+		// Trevor (2026-11-06): the player's tray has the bank's # token (plan M35) too.
+		let reminders = addGenericReminder({}, 's1', 'n1');
+		reminders = setGenericLook(reminders, 's1', 'n1', { symbol: '#3' });
+		expect(reminders.s1[0]).toMatchObject({ id: 'n1', symbol: '#3' });
+		expect(reminderWords(reminders.s1[0])).toBe('3');
+		reminders = setGenericLook(reminders, 's1', 'n1', { note: 'Votes' });
+		expect(reminderWords(reminders.s1[0])).toBe('3: Votes');
+	});
+
 	it('drops a generic token with no id or a look it does not know', () => {
 		expect(
 			parsePlayerReminders({

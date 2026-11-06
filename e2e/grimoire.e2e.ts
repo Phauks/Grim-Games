@@ -1517,6 +1517,50 @@ test("the Dreamer's card shows the chosen player's character and one of the othe
 	).toBeVisible();
 });
 
+test("the Dreamer's Valid Information shows a good and an evil token, never one alone", async ({
+	page
+}) => {
+	// https://wiki.bloodontheclocktower.com/Dreamer
+	// Wiki: "If the chosen player’s character is a Townsfolk or Outsider, show their character
+	// token and any Minion or Demon token to the Dreamer."
+	await startGame(page, 'Sects & Violets');
+	for (const [seat, name] of [
+		[1, 'Dreamer'],
+		[2, 'Clockmaker']
+	] as const) {
+		const sheet = await openSeat(page, seat);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${seat}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	await (
+		await walkTo(page, 'Dreamer')
+	)
+		.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong')
+		.tap();
+	const step = page.getByRole('dialog', { name: 'Dreamer' });
+	// The Clockmaker's row: the picker opens with the Clockmaker in place and the evil token to
+	// pick, instead of showing the Clockmaker alone.
+	await step
+		.getByRole('listitem')
+		.filter({ hasText: /Seat 2/ })
+		.getByRole('button', { name: 'Show to player' })
+		.tap();
+	await expect(page.getByRole('checkbox', { name: 'Evil only' })).toBeChecked();
+	await page.getByRole('searchbox', { name: 'Search characters' }).fill('No Dashii');
+	await page.getByRole('button', { name: /^No Dashii/ }).tap();
+	await page.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(
+		page.getByRole('dialog', {
+			name: 'This player is: Clockmaker: No Dashii',
+			exact: true
+		})
+	).toBeVisible();
+});
+
 test('Share in the toolbar shows the room code, QR and join link, never the game', async ({
 	page
 }) => {

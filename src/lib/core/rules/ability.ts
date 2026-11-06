@@ -37,7 +37,7 @@ import {
 } from '#lib/core/model/selectors.ts';
 import type { Game, ReminderId, SeatId } from '#lib/core/model/types.ts';
 import { keepsAbilityWhenDead } from './dead-characters.ts';
-import { heldAbilitiesOf } from './gained-abilities.ts';
+import { abilitiesOfSeat, hasAbilityOf } from './gained-abilities.ts';
 import { jinxImpairs, ownJinxRules, registeredTo } from './jinxes.ts';
 import { jinxApplies } from './jinx-when.ts';
 import { bothDrunkPair, gainedAbilityTaken, survivesCarrierBy } from './jinx-effects.ts';
@@ -290,10 +290,10 @@ function impairmentsOf(
 	// one that has been in play; the game keeps no record of a character that left play, so
 	// only one in play now counts. One about the ability they have from their token is below.
 	if (characterId) {
-		for (const { partner, effect } of jinxImpairs(game, characterId, characters)) {
+		for (const { partner, kind } of jinxImpairs(game, characterId, characters)) {
 			const source = seatOfCharacter(game, partner, characters, seatId);
 			const at = source ? { characterId: partner, seatId: source } : { characterId: partner };
-			out.push(sourced(effect.kind, at, characters));
+			out.push(sourced(kind, at, characters));
 		}
 	}
 
@@ -574,13 +574,17 @@ function ownRegistration(
 	const alignment = alignmentOf(game, seatId);
 	const type = typeOf(game, seatId, characters);
 	if (!alignment || !type) return undefined;
-	// Their own character's, else an ability they hold (the Hermit's Recluse).
+	// Their own character's, else another ability they have: held (the Hermit's Recluse) or
+	// gained (the Cannibal who ate the Recluse, https://wiki.bloodontheclocktower.com/Cannibal).
 	const mine = id ? rulesOf(id, characters)?.registersAs?.self : undefined;
 	const by =
 		id && mine && abilityState(game, seatId, characters).works
 			? id
-			: heldAbilitiesOf(game, seatId, characters).find(
-					(h) => h.works && rulesOf(h.characterId, characters)?.registersAs?.self
+			: abilitiesOfSeat(game, seatId, characters).find(
+					(a) =>
+						a.how !== 'own' &&
+						rulesOf(a.characterId, characters)?.registersAs?.self &&
+						hasAbilityOf(game, seatId, a.characterId, characters)
 				)?.characterId;
 	const self = by ? rulesOf(by, characters)?.registersAs?.self : undefined;
 	if (by && self) {

@@ -19,7 +19,10 @@
  * - `whileWorks`: the holder has it only while this character's ability works, so not while
  *   its player is dead, drunk or poisoned (the Boffin's Summary on the wiki);
  * - `setup`: the setup change in brackets on the given ability is made, as if its character
- *   were in play (the Boffin's How to Run: the Demon's two abilities change setup).
+ *   were in play (the Boffin's How to Run: the Demon's two abilities change setup);
+ * - `standIns`: this character's own reminders that stand in for the given abilities' tokens
+ *   (the Hermit's 1, 2 and 3). The app gives each holder its own copies of the real tokens
+ *   instead (M68, Trevor 2026-11-06), so it never offers these.
  */
 import { readToken } from './reminder-fields.ts';
 import { SEATED_TYPES, type ReminderLabel, type SeatedType } from './types.ts';
@@ -44,6 +47,7 @@ export interface GivesAbility {
 	token?: ReminderLabel;
 	whileWorks?: true;
 	setup?: true;
+	standIns?: readonly ReminderLabel[];
 }
 
 /** Reads a `givesAbility` block. */
@@ -59,7 +63,7 @@ export function readGivesAbility(
 	}
 	checkKeys(
 		raw,
-		['to', 'types', 'notInPlay', 'onScript', 'token', 'whileWorks', 'setup'],
+		['to', 'types', 'notInPlay', 'onScript', 'token', 'whileWorks', 'setup', 'standIns'],
 		path,
 		issues
 	);
@@ -76,6 +80,11 @@ export function readGivesAbility(
 	const whileWorks = readBoolean(raw, 'whileWorks', path, issues);
 	const setup = readBoolean(raw, 'setup', path, issues);
 	const token = readToken(raw, 'token', path, issues, reminders);
+	const standIns = readStringArray(raw, 'standIns', path, issues);
+	standIns?.forEach((label, i) => {
+		if (reminders && !reminders.includes(label))
+			issues.add(`${path}.standIns[${i}]`, 'not one of this character’s reminders');
+	});
 	if (!to || types.length === 0) return undefined;
 	return {
 		to,
@@ -84,6 +93,7 @@ export function readGivesAbility(
 		...(onScript ? { onScript: true as const } : {}),
 		...(token ? { token } : {}),
 		...(whileWorks ? { whileWorks: true as const } : {}),
-		...(setup ? { setup: true as const } : {})
+		...(setup ? { setup: true as const } : {}),
+		...(standIns && standIns.length > 0 ? { standIns } : {})
 	};
 }

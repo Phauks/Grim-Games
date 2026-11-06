@@ -14,8 +14,13 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { abilityState } from '#lib/core/rules/ability.ts';
-import { gainedAbilities, withGainedSteps } from '#lib/core/rules/gained-abilities.ts';
+import { abilityState, registrations } from '#lib/core/rules/ability.ts';
+import {
+	gainedAbilities,
+	hasAbilityOf,
+	withGainedSteps
+} from '#lib/core/rules/gained-abilities.ts';
+import { nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
 import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night-info.ts';
 import { nightOrder } from '#lib/core/rules/night-order.ts';
 import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
@@ -59,8 +64,6 @@ describe('Cannibal', () => {
 		it('Example 1: Ate Clockmaker: gets a distance number', () => {
 			// Wiki: "The Clockmaker is executed and dies. That night, the Cannibal learns a “2” because
 			// the Demon and Minion are two steps apart."
-			// Waits on the engine (M15k): the Cannibal's gained ability doesn't wake them (its gainedFrom
-			// rule has no wakes), so no Clockmaker step is added for them that night.
 			const s = scenario(['cannibal', 'clockmaker', 'imp', 'chef', 'poisoner'])
 				.execute('clockmaker')
 				.reminder('clockmaker', 'cannibal', 'Lunch')
@@ -147,6 +150,81 @@ describe('Cannibal', () => {
 			]);
 			expect(abilityState(s.game, s.seat('cannibal'), s.characters).impairments).toMatchObject([
 				{ reason: 'poisoned', source: { characterId: 'cannibal' } }
+			]);
+		});
+	});
+
+	describe('Summary (https://wiki.bloodontheclocktower.com/Cannibal#Summary)', () => {
+		const ate = (id: string) =>
+			scenario(['cannibal', id, 'imp', 'chef', 'poisoner'])
+				.execute(id)
+				.reminder(id, 'cannibal', 'Lunch')
+				.newDay();
+		const misregisters = (s: ReturnType<typeof ate>) =>
+			registrations(s.game, s.characters).some((r) => r.seatId === s.seat('cannibal'));
+
+		it("the Cannibal who ate the Recluse might register as evil, as the Recluse's ability does", () => {
+			// Wiki: "If a good player dies by execution, the Cannibal gains that player’s ability."
+			const s = ate('recluse');
+			expect(misregisters(s)).toBe(true);
+			expect(registrations(s.game, s.characters)).toContainEqual(
+				expect.objectContaining({
+					seatId: s.seat('cannibal'),
+					alignments: ['good', 'evil'],
+					source: { characterId: 'recluse', seatId: s.seat('cannibal') }
+				})
+			);
+		});
+
+		it('a dead Cannibal keeps the Recluse ability, but not their Cannibal ability', () => {
+			// Wiki: "If the Cannibal has an “even if dead” ability, such as the Recluse, or an ability
+			// that implies it works while dead, such as the Ravenkeeper or Sweetheart, the Cannibal
+			// keeps that ability when they die, but loses their Cannibal ability."
+			const s = ate('recluse').dies('cannibal');
+			expect(hasAbilityOf(s.game, s.seat('cannibal'), 'recluse', s.characters)).toBe(true);
+			expect(hasAbilityOf(s.game, s.seat('cannibal'), 'cannibal', s.characters)).toBe(false);
+			expect(misregisters(s)).toBe(true);
+		});
+
+		it('a dead Cannibal loses an ability that does not work while dead', () => {
+			// Wiki: "If the Cannibal has an “even if dead” ability, such as the Recluse, or an ability
+			// that implies it works while dead, such as the Ravenkeeper or Sweetheart, the Cannibal
+			// keeps that ability when they die, but loses their Cannibal ability."
+			const s = ate('empath').dies('cannibal');
+			expect(hasAbilityOf(s.game, s.seat('cannibal'), 'empath', s.characters)).toBe(false);
+			expect(gainedAbilities(s.game, s.characters)).toEqual([]);
+		});
+
+		it('the Demon attacking the Cannibal who ate the Ravenkeeper sets off the Ravenkeeper ability', () => {
+			// Wiki: "If the Cannibal has an “even if dead” ability, such as the Recluse, or an ability
+			// that implies it works while dead, such as the Ravenkeeper or Sweetheart, the Cannibal
+			// keeps that ability when they die, but loses their Cannibal ability."
+			const s = ate('ravenkeeper').dusk();
+			expect(nightStepAlerts(s.game, 'imp', s.characters)).toContainEqual(
+				expect.objectContaining({
+					kind: 'on-death',
+					seatId: s.seat('cannibal'),
+					source: { characterId: 'ravenkeeper', seatId: s.seat('cannibal') }
+				})
+			);
+		});
+
+		it('the Cannibal killed at night with the Ravenkeeper ability still wakes for it', () => {
+			// Wiki: "If the Cannibal has an “even if dead” ability, such as the Recluse, or an ability
+			// that implies it works while dead, such as the Ravenkeeper or Sweetheart, the Cannibal
+			// keeps that ability when they die, but loses their Cannibal ability."
+			const data = committedGameData();
+			const s = ate('ravenkeeper').dusk().dies('cannibal', 'imp');
+			const inPlay = s.game.seating.map((id) => data.byId.get(s.game.seats[id].characterId!)!);
+			const steps = withGainedSteps(
+				nightOrder({ night: 'other', sheet: data.nightSheet, inPlay, players: 5 }).steps,
+				s.game,
+				s.characters,
+				'other',
+				data.nightSheet.otherNight
+			);
+			expect(steps.filter((step) => step.gained).map((step) => step.gained)).toEqual([
+				expect.objectContaining({ seatId: s.seat('cannibal'), characterId: 'ravenkeeper' })
 			]);
 		});
 	});

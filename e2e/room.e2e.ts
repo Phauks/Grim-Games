@@ -2339,6 +2339,49 @@ test("a player puts generic tokens with numbers or notes on their own Grim's sea
 	await phoneContext.close();
 });
 
+test("a player's tray has the bank's # token, its number picked in hand", async ({
+	page,
+	browser
+}, testInfo) => {
+	// Trevor (2026-11-06): "Player view doesn't have number tokens?" The tray draws the
+	// bank's own generic tokens (FIXED_GENERIC_ITEMS), so the # token (plan M35) is there too.
+	const board = await startGame(page);
+	await page.goto(`${board}/room`);
+	await expect(page.getByTestId('share-code')).toHaveText(/^\d{3} \d{3}$/);
+	const code = (await page.getByTestId('share-code').textContent())!.replace(/\s/g, '');
+
+	const phoneContext = await browser.newContext({ ...testInfo.project.use });
+	const phone = await phoneContext.newPage();
+	await phone.goto(`/join/${code}`);
+	await phone.getByRole('tab', { name: 'Grim' }).tap();
+	const number = phone
+		.getByRole('list', { name: 'Reminder bank' })
+		.getByRole('button', { name: 'Number token' });
+	await number.scrollIntoViewIfNeeded();
+	await expect(number.locator('[data-symbol="#"]')).toHaveText('#');
+	// Tapped, it lands showing 1, as the bank's does; never used up.
+	const third = phone.getByTestId('grim-seat').nth(2);
+	await number.tap();
+	await third.tap();
+	await expect(third).toHaveAttribute('aria-label', /your reminders: 1$/);
+	await expect(number).toHaveCount(1);
+	// Held, its pill picks the number (plan M48) before it goes on.
+	await number.tap();
+	await pickNumber(phone.getByTestId('reminder-in-hand'), 'Number', 4);
+	const sixth = phone.getByTestId('grim-seat').nth(5);
+	await sixth.tap();
+	await expect(sixth).toHaveAttribute('aria-label', /your reminders: 4$/);
+	const placed = phone
+		.getByTestId('player-grim')
+		.locator('.chip-slot > [data-testid="board-reminder"][aria-label="Number 4"]');
+	await expect(placed.locator('[data-symbol="#4"]')).toHaveText('4');
+	// Picked up off its seat, its number changes in place.
+	await placed.tap();
+	await pickNumber(phone.getByTestId('reminder-in-hand'), 'Number', 7);
+	await expect(sixth).toHaveAttribute('aria-label', /your reminders: 7$/);
+	await phoneContext.close();
+});
+
 test("a seat's other guesses stay on the screen, on whichever side of the Grim it sits", async ({
 	page,
 	browser

@@ -17,7 +17,7 @@ import {
 	type SeatId
 } from '#lib/core/model/index.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
-import { borrowedAbilities, deadCharacters } from '#lib/core/rules/index.ts';
+import { borrowedAbilities, deadCharacters, reminderHolders } from '#lib/core/rules/index.ts';
 import { bankOwners, bankReminders, byLabel, isGeneric, type StepReminders } from './reminders.ts';
 import { pendingSetup, type TrayItem } from './setup-tray.ts';
 import type { StepFocus } from './step-focus.svelte.ts';
@@ -85,6 +85,24 @@ export const bankLook = (
 			? NUMBER_TOKEN_LOOK
 			: { symbol: numberSymbol(number) }
 		: undefined;
+
+/**
+ * The generic stretch's tokens every grim has, never used up: the plain ∞, as many as needed
+ * (Trevor, 2026-10-18), and the # token, only for numbers (plan M35, Trevor 2026-11-03). The
+ * Storyteller's bank and a player's tray (player/PlayerReminderBin) both draw this one list
+ * (Trevor, 2026-11-06: no more chasing feature parity), so a token added here reaches both.
+ */
+export const FIXED_GENERIC_ITEMS: readonly Readonly<BankItem>[] = [
+	{ key: 'generic', characterId: GENERIC_REMINDER_ID, label: '', count: 1, group: 'generic' },
+	{
+		key: 'number',
+		characterId: GENERIC_REMINDER_ID,
+		label: 'Number' as ReminderLabel,
+		count: 1,
+		group: 'generic',
+		number: true
+	}
+];
 
 export interface BankOptions {
 	/** The character whose night step is being walked through. */
@@ -190,6 +208,7 @@ export function bankItems(
 	// A character whose players are dead stays with the living while a living player (or the
 	// Storyteller) has its ability (M50).
 	const borrowed = borrowedAbilities(game, characters);
+	const holders = reminderHolders(game, characters);
 	const dead = new Set(
 		[...deadCharacters(game, characters)].filter((id) => borrowed.get(id) !== true)
 	);
@@ -206,7 +225,7 @@ export function bankItems(
 		if (n <= 0) return [];
 		const group: BankGroup = dead.has(characterId) ? 'dead' : 'reminders';
 		// Each seat's own copies, when the character is on more than one (Trevor, 2026-10-19).
-		const owners = bankOwners(game, characters, { characterId, label }, n, copies);
+		const owners = bankOwners(game, characters, { characterId, label }, n, copies, holders);
 		const list: BankItem[] = owners.flatMap(({ ownerSeatId, count }) => {
 			const k = ownerSeatId === undefined ? key : `${key}:${ownerSeatId}`;
 			// Prefixed: a setup suggestion's key has the same shape (setup-tray.ts).
@@ -230,23 +249,6 @@ export function bankItems(
 		return list;
 	});
 	const rest = bundledCounters(listed, characters);
-	// The generic ∞ reminder, as many as needed (Trevor, 2026-10-18), after the reminders.
-	const generic: BankItem = {
-		key: 'generic',
-		characterId: GENERIC_REMINDER_ID,
-		label: '',
-		count: 1,
-		group: 'generic'
-	};
-	// The # token, only for numbers (plan M35, Trevor 2026-11-03), never used up either.
-	const number: BankItem = {
-		key: 'number',
-		characterId: GENERIC_REMINDER_ID,
-		label: 'Number' as ReminderLabel,
-		count: 1,
-		group: 'generic',
-		number: true
-	};
 	// The game's own ∞ tokens, then "+ New token" (plan B9, Trevor 2026-10-23: "Tokens only").
 	const tokens: BankItem[] = (game.genericTokens ?? []).map((token) => ({
 		key: `token:${token.tokenId}`,
@@ -267,8 +269,7 @@ export function bankItems(
 	const all = [
 		...setup,
 		...rest.filter((i) => i.group === 'reminders'),
-		generic,
-		number,
+		...FIXED_GENERIC_ITEMS.map((item) => ({ ...item })),
 		...tokens,
 		makes,
 		...rest.filter((i) => i.group === 'dead')

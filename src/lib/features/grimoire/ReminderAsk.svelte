@@ -7,7 +7,7 @@
 	import type { AssistKey } from '#lib/ui/assistance.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
-	import { placingAlignment } from './board.ts';
+	import { reminderPlacing } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import {
 		deadOwner,
@@ -149,7 +149,7 @@
 			Place <ReminderToken
 				label={tokenLabel(reminder)}
 				character={characters.get(reminder.characterId)}
-				alignment={placingAlignment(game, reminder, characters)}
+				{...reminderPlacing(game, reminder, characters)}
 			/>?
 		{/snippet}
 		<p class="dead-owner">

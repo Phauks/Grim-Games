@@ -2,27 +2,28 @@
 	"reminderTargets": {
 		"1": {
 			"seat": "any",
-			"note": "Stands in for a reminder of an in-play Outsider whose ability the Hermit duplicates.",
+			"note": "Stands in for a reminder of an in-play Outsider whose ability the Hermit duplicates. Not offered: the Hermit has its own copies of the real tokens (standIns).",
 			"ambiguous": "The wiki says to use these instead of the duplicated Outsider's reminders but gives no placement rule."
 		},
 		"2": {
 			"seat": "any",
-			"note": "Stands in for a reminder of an in-play Outsider whose ability the Hermit duplicates.",
+			"note": "Stands in for a reminder of an in-play Outsider whose ability the Hermit duplicates. Not offered: the Hermit has its own copies of the real tokens (standIns).",
 			"ambiguous": "The wiki says to use these instead of the duplicated Outsider's reminders but gives no placement rule."
 		},
 		"3": {
 			"seat": "any",
-			"note": "Stands in for a reminder of an in-play Outsider whose ability the Hermit duplicates.",
+			"note": "Stands in for a reminder of an in-play Outsider whose ability the Hermit duplicates. Not offered: the Hermit has its own copies of the real tokens (standIns).",
 			"ambiguous": "The wiki says to use these instead of the duplicated Outsider's reminders but gives no placement rule."
 		}
 	},
 	"givesAbility": {
 		"to": "self",
 		"types": ["outsider"],
-		"onScript": true
+		"onScript": true,
+		"standIns": ["1", "2", "3"]
 	},
 	"setupPrep": {
-		"none": "the 1, 2, 3 tokens stand in for other Outsiders’ tokens when needed"
+		"none": "the Hermit has its own copies of the other Outsiders’ tokens"
 	},
 	"setupModifier": {
 		"summary": "−0 or −1 Outsider",

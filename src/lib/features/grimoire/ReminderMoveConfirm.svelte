@@ -13,7 +13,7 @@
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import BoardReminder from './BoardReminder.svelte';
-	import { placingAlignment } from './board.ts';
+	import { reminderPlacing } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { onBoard, placedLook } from './reminders.ts';
 
@@ -162,7 +162,7 @@
 				{...'reminderId' in pending.reminder
 					? placedLook(pending.reminder, characters)
 					: { label: pending.reminder.label, character: owner }}
-				alignment={placingAlignment(game, pending.reminder, characters)}
+				{...reminderPlacing(game, pending.reminder, characters)}
 			/>
 			<span
 				><CharacterPiece
