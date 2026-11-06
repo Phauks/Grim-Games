@@ -26,6 +26,7 @@ import { gameEnds } from '#lib/core/rules/game-end.ts';
 import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import { shownAtMinionInfo, shownToSeats } from '#lib/core/rules/index.ts';
+import { wakeConditionMet } from '#lib/core/rules/wakes-when.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 
 /** Seats with these characters, then the extra commands. */
@@ -125,6 +126,19 @@ describe('Damsel', () => {
 			expect(reminderTargetMisses(s.game, token, s.seat('chef'), s.characters)).toEqual([
 				'not-self'
 			]);
+		});
+
+		it('Minions learn at Minion info, so the Damsel step wakes only for a Damsel made since the day', () => {
+			// Wiki: "During the first night, wake each Minion. Show the Damsel token. Put each Minion
+			// to sleep."
+			const s = scenario(['damsel', 'witch', 'imp', 'chef', 'monk']);
+			const damsel = s.seat('damsel');
+			expect(shownAtMinionInfo(s.game, s.characters)).toEqual(['damsel']);
+			expect(wakeConditionMet(s.game, 'damsel', damsel, s.characters, new Set())).toBe(false);
+			// A player who became the Damsel since the day began (a Pit-Hag's): the Minions learn now.
+			expect(
+				wakeConditionMet(s.game, 'damsel', damsel, s.characters, new Set(), new Set([damsel]))
+			).toBe(true);
 		});
 
 		it("only a Minion's correct guess ends the game", () => {
