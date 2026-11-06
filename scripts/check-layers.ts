@@ -56,7 +56,10 @@ export function findLayerProblems(css: string, firstLine = 1): LayerProblem[] {
 		if (property === 'z-index' && /^-?\d+$/.test(value.replace(/\s*!important$/, ''))) {
 			found.push({ line: lineOf(at), problem: `z-index: ${value}  use a --z-* layer token` });
 		}
-		if (verticalMarginNegative(property, value) && !okLines.has(lineOf(at))) {
+		const said = Array.from({ length: lineOf(i) - lineOf(at) + 1 }, (_, k) => lineOf(at) + k).some(
+			(line) => okLines.has(line)
+		);
+		if (verticalMarginNegative(property, value) && !said) {
 			found.push({
 				line: lineOf(at),
 				problem: `${property}: ${value}  a negative top or bottom margin pulls one box over another; say why in an overlap-ok: comment`
