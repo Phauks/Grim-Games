@@ -10,7 +10,7 @@
 	let browser = $state<LibraryBrowser>();
 </script>
 
-<Page title={t('library.heading')}>
+<Page title={t('library.heading')} fill={browser?.fills()}>
 	{#snippet actions()}
 		<!-- Icon buttons, so the title row stays one row on a phone (Trevor: icon buttons). -->
 		<IconButton

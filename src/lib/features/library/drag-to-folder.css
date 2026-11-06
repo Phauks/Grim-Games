@@ -1,0 +1,28 @@
+/* The Library's drag to a folder (drag-to-folder.ts). */
+.library-drag-ghost {
+	position: fixed;
+	top: 0;
+	left: 0;
+	z-index: var(--z-popover);
+	max-width: calc(20 * var(--u));
+	margin: calc(-1 * var(--space-5)) 0 0 var(--space-2); /* overlap-ok: the drag ghost sits above the finger */
+	padding: var(--space-1) var(--space-3);
+	border-radius: var(--radius-full);
+	background: var(--accent);
+	color: var(--on-accent);
+	font-weight: 600;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	pointer-events: none;
+}
+[data-drop-over] {
+	outline: 2px dashed var(--accent);
+	outline-offset: -2px;
+	background: var(--surface-selected);
+}
+body.library-dragging {
+	cursor: grabbing;
+	user-select: none;
+	-webkit-user-select: none;
+}
