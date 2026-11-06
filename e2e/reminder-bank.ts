@@ -108,3 +108,22 @@ export async function putRunReminder(page: Page, label: string, seat: number | s
 	await boardSeat(page, seat).tap();
 	await expect(pill).toBeHidden();
 }
+
+/**
+ * Places (or moves) a night step's reminder from the step (Trevor, 2026-11-06: "revert back to
+ * grim view, not a tabled list"): the step closes with the token in hand, the seat is tapped on
+ * the board, and the step opens again.
+ */
+export async function placeFromStep(
+	page: Page,
+	step: Locator,
+	seat: number | string,
+	{ nth = 0, button = 'Place' }: { nth?: number; button?: 'Place' | 'Move' } = {}
+) {
+	await step.getByRole('button', { name: button, exact: true }).nth(nth).tap();
+	await expect(step).toBeHidden();
+	await expect(inHand(page)).toBeVisible();
+	await boardSeat(page, seat).tap();
+	await expect(inHand(page)).toBeHidden();
+	await expect(step).toBeVisible();
+}

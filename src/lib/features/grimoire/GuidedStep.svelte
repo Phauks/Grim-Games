@@ -85,6 +85,14 @@
 		onStep?: (step: NightStep) => void;
 		/** A player who looks at the Grimoire (the Spy, the Widow): the board, shown clean. */
 		onShowGrimoire?: () => void;
+		/**
+		 * A reminder put on, or moved to, a seat tapped on the board (Trevor, 2026-11-06), the
+		 * step closed meanwhile; false for the list of players instead.
+		 */
+		onPlace?: (
+			reminder: { characterId: CharacterId; label: string },
+			at?: { reminderId: string; seatId: SeatId }
+		) => boolean;
 	}
 
 	let {
@@ -97,7 +105,8 @@
 		onDraw,
 		steps = [],
 		onStep,
-		onShowGrimoire
+		onShowGrimoire,
+		onPlace
 	}: Props = $props();
 
 	const returnLabel = (label: string) => `Return ${label} to the reminder bank`;
@@ -217,7 +226,9 @@
 			grimoire.atDawn
 		);
 	});
-	function choose(label: string, at?: { reminderId: string }) {
+	function choose(label: string, at?: { reminderId: string; seatId: SeatId }) {
+		const id = tokensOf?.id;
+		if (id && onPlace?.({ characterId: id, label }, at)) return;
 		choosing = { label, at };
 		chooserOpen = true;
 	}
