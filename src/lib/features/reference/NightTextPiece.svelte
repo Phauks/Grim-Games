@@ -8,8 +8,8 @@
 	interface Props {
 		/** A night text segment other than plain text. */
 		segment: Exclude<NightTextSegment, { kind: 'text' }>;
-		/** The step's character, whose tokens the reminders are. */
-		character: Character;
+		/** The step's character, whose tokens the reminders are; none for Dusk, Dawn and the like. */
+		character?: Character;
 		/**
 		 * Alignment of the player who has the character, when one does: its tokens are drawn in
 		 * it, as on the board (a turned-evil Townsfolk's are red).
@@ -30,7 +30,7 @@
 		characterId={s.id}
 	/>{:else if s.kind === 'dead'}<ReminderToken
 		label={t('reference.dead')}
-		type={character.type}
+		type={character?.type}
 		{alignment}
 		title={s.action === 'remove' ? t('reference.removeDeathMarker') : t('reference.deathMarker')}
 	/>{:else}<ReminderToken

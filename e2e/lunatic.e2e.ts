@@ -92,7 +92,7 @@ test('the Lunatic is shown fake Minions and a decoy Lunatic, kept for later nigh
 	await expect(step.getByRole('heading', { name: 'Sell the Demon' })).toBeVisible();
 	// Nothing to show until players are chosen.
 	await expect(
-		row(step, 'minions').getByRole('button', { name: 'Show These are your Minions' })
+		row(step, 'minions').getByRole('button', { name: 'Show to player: These are your Minions' })
 	).toBeDisabled();
 	await row(step, 'minions').getByRole('button', { name: 'Choose' }).tap();
 	await pickSeats(page, 'These are your Minions', [4, 5], true);
@@ -103,7 +103,7 @@ test('the Lunatic is shown fake Minions and a decoy Lunatic, kept for later nigh
 	await row(step, 'decoy').getByRole('button', { name: 'Choose' }).tap();
 	await pickSeats(page, 'This player is', [6], false);
 	await expect(row(step, 'decoy')).toContainText('Seat 6');
-	await row(step, 'decoy').getByRole('button', { name: 'Show This player is' }).tap();
+	await row(step, 'decoy').getByRole('button', { name: 'Show to player: This player is' }).tap();
 	const shown = page.locator('[data-testid="show-to-player"][open]');
 	await expect(shown.getByRole('heading')).toHaveText('This player is');
 	await expect(shown).toContainText('Lunatic');

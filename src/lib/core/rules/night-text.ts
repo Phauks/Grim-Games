@@ -84,6 +84,8 @@ function sentenceCase(text: string): string {
 
 const same = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
 const isDead = (label: string) => same(label, 'dead');
+/** For a step with no character: no tokens of its own. */
+const NO_TOKENS = { reminders: [], remindersGlobal: [] };
 
 const placeholderKey = (id: CharacterId, night: NightName): PlaceholderKey => `${id}:${night}`;
 
@@ -238,25 +240,46 @@ export function nightTextSegments(
  * `text` as it is.
  */
 export function nightTextSegmentsFor(
-	character: Pick<
-		Character,
-		| 'id'
-		| 'edition'
-		| 'rules'
-		| 'firstNightReminder'
-		| 'otherNightReminder'
-		| 'reminders'
-		| 'remindersGlobal'
-	>,
+	character:
+		| Pick<
+				Character,
+				| 'id'
+				| 'edition'
+				| 'rules'
+				| 'firstNightReminder'
+				| 'otherNightReminder'
+				| 'reminders'
+				| 'remindersGlobal'
+		  >
+		| undefined,
 	text: string,
 	night?: NightName
 ): NightTextSegment[] {
+	// Dusk, Minion info, Demon info, Dawn and the Storyteller's own steps have no character:
+	// their text is drawn the same way, with no tokens of its own (Trevor, 2026-11-06).
+	if (!character) return nightTextSegments(text, NO_TOKENS);
 	const resolved = night ? nightTextFor(character, night, { text }) : undefined;
 	return nightTextSegments(
 		resolved?.text ?? text,
 		character,
 		resolved?.placeholders ? { placeholders: resolved.placeholders } : {}
 	);
+}
+
+/**
+ * A night step's text as numbered lines, for every kind of step alike (Trevor, 2026-11-06:
+ * Minion info, Demon info, Dawn and Dusk "treated like character"): a character's TPI text,
+ * or a marker's or the Storyteller's own. Undefined for a step with no text.
+ */
+export function stepNightText(
+	step: {
+		character?: Parameters<typeof nightTextSegmentsFor>[0];
+		reminder?: string;
+	},
+	night?: NightName
+): NightTextSteps | undefined {
+	if (!step.reminder) return undefined;
+	return nightTextSteps(nightTextSegmentsFor(step.character, step.reminder, night));
 }
 
 /** One numbered line of night text: one sentence, with the tokens that follow it. */

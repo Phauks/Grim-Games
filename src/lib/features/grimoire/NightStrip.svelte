@@ -149,17 +149,15 @@
 					>{/if}
 				<!-- What to do comes before any information (Trevor, 2026-10-20). -->
 				<span class="text">
+					<!-- Every step's text the same way, Dusk and Dawn too (Trevor, 2026-11-06). -->
 					{#if step.reminder}
-						{#if step.character}
-							<NightText
-								text={step.reminder}
-								character={step.character}
-								{night}
-								alignment={one ? alignmentOf(game, one) : undefined}
-							/>
-						{:else}
-							{step.reminder}
-						{/if}
+						<NightText
+							text={step.reminder}
+							character={step.character}
+							name={stepName(step)}
+							{night}
+							alignment={one && step.character ? alignmentOf(game, one) : undefined}
+						/>
 					{/if}
 				</span>
 				<NightAlerts {grimoire} {step} compact />

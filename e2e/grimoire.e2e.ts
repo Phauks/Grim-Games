@@ -4763,7 +4763,7 @@ test('the Widow and Damsel steps say who is shown their token', async ({ page })
 	const minionInfo = await openStep(page, 'Minion info');
 	const damsel = minionInfo.locator('[data-testid="evil-info-card"][data-row="shown-damsel"]');
 	await expect(damsel).toContainText('Damsel');
-	await minionInfo.getByRole('button', { name: 'Show Damsel' }).tap();
+	await minionInfo.getByRole('button', { name: 'Show to player: Damsel' }).tap();
 	const shown = page.locator('[data-testid="show-to-player"][open]');
 	await expect(shown).toContainText('Damsel');
 	await shown.getByRole('button', { name: 'Close' }).tap();
@@ -4881,6 +4881,62 @@ test('the Storm Catcher named character is picked before the day and kept at its
 	await expect(shown.getByRole('img', { name: /token/ })).toHaveCount(1);
 });
 
+test("Dusk, Minion info, Demon info and Dawn are drawn as a character's step is", async ({
+	page
+}) => {
+	// Trevor, 2026-11-06: "Minion and demon info need to be treated like character with the
+	// night order steps and eyes and the rest ... Similar to dawn and dusk". Every step opens with
+	// the same parts: its row, then its text as numbered Steps (`step-parts.test.ts` guards the
+	// code).
+	test.slow();
+	await startGame(page);
+	// Seven players, so the Minions and the Demon learn each other.
+	for (const [number, name] of [
+		[1, 'Imp'],
+		[2, 'Poisoner'],
+		[3, 'Empath'],
+		[4, 'Chef'],
+		[5, 'Monk'],
+		[6, 'Soldier'],
+		[7, 'Mayor']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	await openStep(page, 'Dusk');
+	const step = page.getByRole('dialog', { name: 'First night' });
+	const parts = () =>
+		step.evaluate((dialog) => ({
+			row: !!dialog.querySelector('.row-head .ring-row'),
+			steps: [...dialog.querySelectorAll('h3')].some((h) => h.textContent === 'Steps'),
+			lines: dialog.querySelectorAll('[data-testid="night-lines"] li').length > 0,
+			// Every Show to player in the step's lines is the same eye.
+			otherShow: [...dialog.querySelectorAll('[data-testid="night-lines"] button')].filter(
+				(b) =>
+					/^Show/.test(b.getAttribute('aria-label') ?? b.textContent ?? '') &&
+					!(b.getAttribute('aria-label') ?? '').startsWith('Show to player')
+			).length
+		}));
+	const same = { row: true, steps: true, lines: true, otherShow: 0 };
+	const seen: string[] = [];
+	for (let i = 0; i < 12; i++) {
+		const name =
+			(await step.getByRole('group', { name: 'Night step' }).getAttribute('data-step-name')) ?? '';
+		seen.push(name);
+		expect(await parts(), name).toEqual(same);
+		if (name === 'Dawn') break;
+		await step.getByRole('button', { name: 'Next step' }).tap();
+		await page.waitForTimeout(200);
+	}
+	for (const name of ['Dusk', 'Minion info', 'Demon info', 'Poisoner', 'Empath', 'Dawn'])
+		expect(seen).toContain(name);
+});
+
 test('Minion info and Demon info list every card they can show, with who it points at', async ({
 	page
 }) => {
@@ -4911,9 +4967,14 @@ test('Minion info and Demon info list every card they can show, with who it poin
 	await expect(head.locator('.band')).toContainText('Minion info');
 	await expect(head.locator('.ring [data-marker="minioninfo"]')).toBeVisible();
 	await expect(head.getByTestId('step-who')).toContainText('Seat 2');
-	// Its text is where a character's ability goes (Trevor, 2026-11-05).
-	await expect(head.locator('.ring-ability')).toContainText('Wake the Minions');
-	const cards = minionInfo.getByTestId('evil-info-card');
+	// Its text is its Steps, as a character's is, and its cards are the next lines with the
+	// same eye (Trevor, 2026-11-06: "treated like character with the night order steps and
+	// eyes").
+	await expect(head.locator('.ring-ability')).toHaveCount(0);
+	const lines = minionInfo.getByTestId('night-lines');
+	await expect(minionInfo.getByRole('heading', { name: 'Steps' })).toBeVisible();
+	await expect(lines.locator('li').first()).toContainText('Wake the Minions');
+	const cards = lines.getByTestId('evil-info-card');
 	// Every card, never one pick (Trevor, 2026-10-18).
 	await expect(cards).toHaveCount(2);
 	await expect(cards.nth(0)).toContainText('This is the Demon');
@@ -4921,7 +4982,9 @@ test('Minion info and Demon info list every card they can show, with who it poin
 	await expect(cards.nth(1)).toContainText('These are your Minions');
 	await expect(cards.nth(1)).toContainText('Seat 2');
 	await expect(cards.nth(1)).toContainText('Seat 3');
-	await minionInfo.getByRole('button', { name: 'Show This is the Demon' }).tap();
+	// Numbered on from the text: 1 is the text, 2 and 3 the cards.
+	await expect(cards.nth(0).locator('xpath=..')).toHaveCSS('counter-reset', 'line 1');
+	await minionInfo.getByRole('button', { name: 'Show to player: This is the Demon' }).tap();
 	const shown = page.locator('[data-testid="show-to-player"][open]');
 	await expect(shown.getByRole('heading')).toHaveText('This is the Demon');
 	// Closing the card goes straight back to the step, never the board in between (Trevor,
@@ -4930,6 +4993,9 @@ test('Minion info and Demon info list every card they can show, with who it poin
 	await shown.getByRole('button', { name: 'Close' }).tap();
 	await expect(minionInfo).toBeVisible();
 	expect(await gaps()).toEqual([]);
+	// The shown card's line gets the gold edge, as a character's line does.
+	await expect(cards.nth(0)).toHaveAttribute('data-marked-row', '');
+	await expect(cards.nth(1)).not.toHaveAttribute('data-marked-row');
 
 	// Demon info with no bluffs yet: its Minions, and a way to choose the bluffs.
 	await minionInfo.getByRole('button', { name: 'Next step' }).tap();
@@ -4950,7 +5016,7 @@ test('Minion info and Demon info list every card they can show, with who it poin
 	await openStep(page, 'Demon info');
 	await expect(demonInfo.getByTestId('evil-info-card')).toHaveCount(2);
 	await demonInfo
-		.getByRole('button', { name: 'Show These characters are not in play · Demon' })
+		.getByRole('button', { name: 'Show to player: These characters are not in play · Demon' })
 		.tap();
 	await expect(shown).toContainText('Fortune Teller');
 	await expect(shown).toContainText('Investigator');
@@ -4968,7 +5034,7 @@ test('Minion info and Demon info list every card they can show, with who it poin
 	await openStep(page, 'Demon info');
 	await expect(demonInfo.getByTestId('evil-info-card').nth(1)).toContainText('In play: replace');
 	await demonInfo
-		.getByRole('button', { name: 'Show These characters are not in play · Demon' })
+		.getByRole('button', { name: 'Show to player: These characters are not in play · Demon' })
 		.tap();
 	await expect(shown).toContainText('Fortune Teller');
 });

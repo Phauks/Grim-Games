@@ -26,10 +26,13 @@ import {
 	nightTextPlain,
 	nightTextSegments,
 	nightTextSteps,
+	nightTextStepLines,
 	placeholderProblems,
 	placeholdersFor,
+	stepNightText,
 	type PlaceholderKey
 } from './night-text.ts';
+import { MARKER_TEXT } from './night-order.ts';
 import { OFFICIAL_RULES } from '#lib/core/data/rules/index.ts';
 import { parseCharacterRules } from '#lib/core/data/character-rules.ts';
 import { Issues } from '#lib/core/data/validate.ts';
@@ -472,5 +475,31 @@ describe('nightTextSteps', () => {
 				for (const l of [...out.lines, ...out.branches.flatMap((b) => b.lines)])
 					expect(l.length, `${c.id}:${night}`).toBeGreaterThan(0);
 			}
+	});
+
+	it("lays out a marker step's text the same way as a character's", () => {
+		// Minion info, Demon info, Dusk and Dawn go through the same lines (Trevor, 2026-11-06:
+		// "treated like character with the night order steps").
+		for (const [id, text] of Object.entries(MARKER_TEXT))
+			for (const night of ['first', 'other'] as const) {
+				const out = stepNightText({ reminder: text[night] }, night);
+				expect(out, `${id}:${night}`).toBeDefined();
+				const joined = nightTextStepLines(out!)
+					.map((l) => nightTextPlain(l))
+					.join(' ');
+				expect(joined, `${id}:${night}`).toBe(text[night]);
+			}
+		expect(
+			stepNightText({ reminder: MARKER_TEXT.dawn.first })?.lines.map((l) => nightTextPlain(l))
+		).toEqual(['Night ends.', 'Wake everyone for the first day.']);
+	});
+
+	it("gives a character's step its TPI text as lines, and a step with no text none", () => {
+		const cerenovus = committedCharacter('cerenovus');
+		expect(
+			stepNightText({ character: cerenovus, reminder: cerenovus.firstNightReminder }, 'first')
+				?.lines.length
+		).toBe(4);
+		expect(stepNightText({ character: cerenovus })).toBeUndefined();
 	});
 });
