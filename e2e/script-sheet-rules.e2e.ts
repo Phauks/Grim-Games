@@ -3,8 +3,8 @@ import { chooseRulesOnSetup, pickScript, toBoard } from './new-game.ts';
 
 // The game mode and special rules sit under Jinxes on every copy of the script (Trevor,
 // 2026-10-24): the board's Script sheet and the players' phones. Stowed
-// Away's text is its author's rule (https://beardytas.com/garden-of-djinn/stowed-away/).
-const STOWED_AWAY = 'Up to 2 recommended travellers might be in the bag';
+// Away's text is our wording of its author's rule (https://beardytas.com/garden-of-djinn/stowed-away/).
+const STOWED_AWAY = 'Up to 2 Travellers may be in the bag';
 
 const section = (scope: Page | ReturnType<Page['getByRole']>) =>
 	scope.getByRole('button', { name: /^Game mode and special rules/ });

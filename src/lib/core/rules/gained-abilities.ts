@@ -24,7 +24,7 @@ import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { Character, CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { scriptCharacterIds } from '#lib/core/model/characters.ts';
-import { trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
+import { alignmentOf, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
 import type { Game, HeldAbility, SeatId } from '#lib/core/model/types.ts';
 import { abilityState, worksWhenDead } from './ability.ts';
 import { actsWhenDead } from './dead-characters.ts';
@@ -54,6 +54,12 @@ export interface GainedAbility {
 	 * (`learnsGainedTonight`: the Cannibal's Butler, Zealot and Juggler).
 	 */
 	learns?: LearnsGained;
+	/**
+	 * Set when the player whose ability it is is evil and the gaining character's rule has an
+	 * `ifEvil` reminder: its label. They should carry it, so their step only reminds the
+	 * Storyteller of that (the Cannibal's Poisoned, https://wiki.bloodontheclocktower.com/Cannibal).
+	 */
+	ifEvil?: string;
 }
 
 /**
@@ -215,7 +221,17 @@ export function gainedAbilities(game: Game, characters: CharacterLookup): Gained
 			gained.status === 'has-ability' && !dead
 				? learnsGainedTonight(game, { via, ...gained }, characters)
 				: undefined;
-		out.push({ seatId, via, ...gained, ...(learns ? { learns } : {}) });
+		const evil =
+			rule.ifEvil !== undefined &&
+			gained.fromSeat !== undefined &&
+			alignmentOf(game, gained.fromSeat) === 'evil';
+		out.push({
+			seatId,
+			via,
+			...gained,
+			...(learns ? { learns } : {}),
+			...(evil ? { ifEvil: rule.ifEvil } : {})
+		});
 	}
 	for (const seatId of game.seating) {
 		const seat = game.seats[seatId];
@@ -272,11 +288,24 @@ export function withGainedSteps<T extends NightStep>(
 			gained.learns === 'ability' && own === undefined && first === undefined
 				? `Wake the ${via.name}: they learn they have the ${as.name} ability.`
 				: undefined;
-		const reminder = own ?? first ?? learnsOnly;
+		// The ability of an evil player: their own `ifEvil` reminder impairs them, so the step only
+		// says so, wherever the evil character would wake or else before Dawn (Trevor, 2026-11-06:
+		// just remind the Storyteller, no bluff).
+		const impairedBy = gained.ifEvil;
+		const reason =
+			impairedBy === undefined
+				? undefined
+				: (rulesOf(via.id, characters)?.impairs?.tokens?.[impairedBy]?.reason ??
+					impairedBy.toLowerCase());
+		const evilNote =
+			reason === undefined
+				? undefined
+				: `The ${via.name} is ${reason}: the player whose ability they have is evil.`;
+		const reminder = evilNote ?? own ?? first ?? learnsOnly;
 		if (reminder === undefined) continue;
 		// A swapped token wakes at its own step when it has one tonight (the Philosopher as the
 		// Dreamer); only a "you start knowing" ability gained later needs a step of its own.
-		if (token === gained.characterId && own !== undefined) continue;
+		if (evilNote === undefined && token === gained.characterId && own !== undefined) continue;
 		const step: NightStep = {
 			// Given by hand (no `via`): named for the Storyteller's call.
 			id: `${gained.via ?? 'given'}@${gained.seatId}:${gained.characterId}`,
@@ -287,7 +316,9 @@ export function withGainedSteps<T extends NightStep>(
 			placement: 'night-sheet',
 			notes: [],
 			gained:
-				own === undefined && first !== undefined ? { ...gained, firstNightText: true } : gained
+				evilNote === undefined && own === undefined && first !== undefined
+					? { ...gained, firstNightText: true }
+					: gained
 		};
 		const anchor = out.findIndex((s) => s.id === gained.characterId);
 		const placed = anchor >= 0 ? anchor + 1 : bySheet(gained.characterId);

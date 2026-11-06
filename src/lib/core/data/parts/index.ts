@@ -57,6 +57,7 @@ export { marksChoice } from './marks-choice.ts';
 export { nightOrder } from './night-order.ts';
 export { nightText } from './night-text.ts';
 export { nightWakes } from './night-wakes.ts';
+export { optionalRuleText } from './optional-rule-text.ts';
 export { nominating } from './nominating.ts';
 export { nominationsAfterExecution } from './nominations-after-execution.ts';
 export { nomineesNominate } from './nominees-nominate.ts';

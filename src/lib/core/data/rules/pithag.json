@@ -15,6 +15,7 @@
 		"notInPlay": true,
 		"notTravellers": true
 	},
+	"optionalRuleText": "The Pit-Hag may change a Traveller. If a Traveller becomes a non-Traveller, their token in the Town Square changes.",
 	"optionalRule": {
 		"changesCharacter": {
 			"types": ["townsfolk", "outsider", "minion", "demon"],

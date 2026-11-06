@@ -62,6 +62,7 @@
 		'grimoire-hides': 'warning',
 		'jinx-chosen': 'warning',
 		'learns-gained': 'info',
+		'missing-token': 'warning',
 		'true-info': 'info',
 		seating: 'warning',
 		'wakes-with': 'night',
@@ -170,6 +171,11 @@
 						{@render badge(sourceId(alert))}{alert.learns === 'answer'
 							? ' would learn tonight'
 							: ' ability'}
+					{:else if alert.kind === 'missing-token'}
+						{@render player(alert.seatId)}: has an evil player's ability, so should carry the {@render badge(
+							sourceId(alert)
+						)}
+						{alert.token} reminder
 					{:else if alert.kind === 'true-info'}
 						{@render player(alert.seatId)}: given truly, {@render badge(sourceId(alert))} doesn't make
 						it false

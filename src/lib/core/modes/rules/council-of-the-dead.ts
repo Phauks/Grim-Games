@@ -18,9 +18,9 @@ export const COUNCIL_OF_THE_DEAD: SpecialRule = {
 		'On night 4 the dead wake together for 2 minutes, then secretly vote for a living player, who receives a boon.',
 	sources: [{ title: 'Council of the Dead (Beardy on the Clocktower)', url: PAGE }],
 	parts: {
-		// The author's rule, quoted, with "n4" written as Night 4 (Trevor, 2026-10-22).
+		// Our wording of the author's rule, approved by Trevor 2026-11-06.
 		text: [
-			'At the start of Night 4, dead wake together for 2 min, then secretly vote on a living player (if there’s no majority, the ST chooses). The chosen player gets a boon.'
+			'At the start of night 4, the dead players wake together for 2 minutes, then secretly vote for a living player. If no player has a majority, the Storyteller chooses. The chosen player receives a boon.'
 		],
 		ruleChanges: [
 			{
