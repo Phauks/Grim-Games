@@ -63,7 +63,7 @@ function findCovered(root: Element): string[] {
 			right = Math.min(right, box.right);
 		}
 		// Content scrolls under a bottom bar by design: only what is above its top counts.
-		for (const bar of document.querySelectorAll('[data-bottom-bar]')) {
+		for (const bar of bottomBars) {
 			if (bar.contains(el)) continue;
 			const box = bar.getBoundingClientRect();
 			if (box.height > 0 && box.top < bottom && box.top > top) bottom = box.top;
@@ -82,6 +82,20 @@ function findCovered(root: Element): string[] {
 		}
 		return undefined;
 	};
+	/**
+	 * Bars held along the bottom of the screen or of a scrolling box (the players' tabs, the
+	 * start flow's Back and Next): fixed or sticky, and reaching that bottom edge.
+	 */
+	const bottomBars = [...document.querySelectorAll('body *')].filter((bar) => {
+		if (bar.hasAttribute('data-bottom-bar')) return true;
+		const style = getComputedStyle(bar);
+		if (style.position !== 'fixed' && style.position !== 'sticky') return false;
+		if (style.position === 'sticky' && style.bottom === 'auto') return false;
+		const box = bar.getBoundingClientRect();
+		return (
+			box.height > 0 && box.height < window.innerHeight / 3 && box.bottom >= window.innerHeight - 2
+		);
+	});
 	const covered: string[] = [];
 	for (const el of root.querySelectorAll(SELECTOR)) {
 		if (!(el instanceof HTMLElement)) continue;
@@ -126,6 +140,9 @@ function findCovered(root: Element): string[] {
 			const hit = document.elementFromPoint(px, py);
 			if (!hit || hit === el || el.contains(hit) || own.contains(hit)) continue;
 			if (hit instanceof HTMLLabelElement && hit.control === el) continue;
+			// Parts of one control drawn to overlap on purpose, side by side in one box: a
+			// token's ring over the start of its name band, a tab's underline.
+			if (hit.parentElement === el.parentElement) continue;
 			// Hit only through a pseudo-element reaching past the element's own box, such as a
 			// rules term's larger tap target: a wider hit area, not something drawn on top.
 			const inOwnBox = [...hit.getClientRects()].some(
