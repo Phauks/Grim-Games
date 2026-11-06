@@ -28,6 +28,18 @@ describe('optional rules', () => {
 		});
 	});
 
+	// https://wiki.bloodontheclocktower.com/Pit-Hag: our own short wording shows beside the switch
+	// in place of the wiki's line (Trevor, 2026-11-06).
+	it('carries our own wording of the rule when its rules block has one', () => {
+		// Wiki: "It's an optional rule that your Storyteller may allow."
+		const { game } = castGame(['chef', 'empath', 'monk', 'pithag', 'imp']);
+		expect(optionalRuleChoices(game, characters)).toContainEqual({
+			characterId: 'pithag',
+			on: false,
+			text: 'The Pit-Hag may change a Traveller. If a Traveller becomes a non-Traveller, their token in the Town Square changes.'
+		});
+	});
+
 	it('replaces the rules it names in a game that turns it on', () => {
 		const { game } = castGame(cast, hindu);
 		expect(rulesIn(game, 'hindu', characters)?.reincarnates).toEqual({ first: 4 });
