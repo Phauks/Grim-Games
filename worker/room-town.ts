@@ -7,9 +7,20 @@ import { hearsSound, parseSoundOutput } from '../src/lib/core/sound/soundboard.t
 import { pushCallTown, type PushEnv } from './push.ts';
 import { sendText, type Attachment } from './room-sockets.ts';
 
-/** Calls every phone back to the town; those locked or with the app closed get a notification. */
-export function callTown(ctx: DurableObjectState, env: PushEnv): void {
-	const text = JSON.stringify({ type: 'call-town' } satisfies ServerMessage);
+/** A sound's name as the app sends it (TIMER_SOUNDS); the phones check it against their own list. */
+export function callTownSound(value: unknown): string | undefined {
+	return typeof value === 'string' && /^[a-z]{1,20}$/.test(value) ? value : undefined;
+}
+
+/**
+ * Calls every phone back to the town, with the Storyteller's sound when one was picked; those
+ * locked or with the app closed get a notification, whose sound is the phone's own.
+ */
+export function callTown(ctx: DurableObjectState, env: PushEnv, sound?: string): void {
+	const text = JSON.stringify({
+		type: 'call-town',
+		...(sound ? { sound } : {})
+	} satisfies ServerMessage);
 	const showing = new Set<string>();
 	for (const socket of ctx.getWebSockets()) {
 		const to = socket.deserializeAttachment() as Attachment | null;

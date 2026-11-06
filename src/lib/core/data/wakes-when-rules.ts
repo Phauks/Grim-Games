@@ -21,7 +21,10 @@
  *   marked Know dies, https://wiki.bloodontheclocktower.com/Bounty_Hunter);
  * - `nightAfterDay`: only on the night after this day, day 1 being the day after the first
  *   night (the Juggler learns on the night after the first day,
- *   https://wiki.bloodontheclocktower.com/Juggler).
+ *   https://wiki.bloodontheclocktower.com/Juggler);
+ * - `becameToday`: only when its player became this character since the most recent New day,
+ *   so never on the first night (the Damsel's step shows the Minions a Damsel made mid-game;
+ *   on the first night Minion info shows them, https://wiki.bloodontheclocktower.com/Damsel).
  */
 import {
 	CHARACTER_TYPES,
@@ -50,6 +53,7 @@ export interface WakesWhen {
 	noneMarked?: ReminderLabel;
 	markedDied?: ReminderLabel;
 	nightAfterDay?: number;
+	becameToday?: true;
 }
 
 /** Reads a `wakesWhen` block; `untilToken` must be one of the character's `reminders`. */
@@ -73,7 +77,8 @@ export function readWakesWhen(
 			'untilToken',
 			'noneMarked',
 			'markedDied',
-			'nightAfterDay'
+			'nightAfterDay',
+			'becameToday'
 		],
 		path,
 		issues
@@ -81,6 +86,7 @@ export function readWakesWhen(
 	const out: WakesWhen = {};
 	if (readBoolean(raw, 'deadAtLeastLiving', path, issues)) out.deadAtLeastLiving = true;
 	if (readBoolean(raw, 'nobodyDiedToday', path, issues)) out.nobodyDiedToday = true;
+	if (readBoolean(raw, 'becameToday', path, issues)) out.becameToday = true;
 	const until = readToken(raw, 'untilToken', path, issues, reminders);
 	if (until) out.untilToken = until;
 	const noneMarked = readToken(raw, 'noneMarked', path, issues, reminders);
