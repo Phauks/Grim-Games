@@ -626,9 +626,7 @@
 				game={game.game}
 				seatId={pending.seatId}
 			/>{/if}{:else if name === 'reminder' || name === 'now' || name === 'after'}<ReminderToken
-			label={name === 'reminder'
-				? (pending?.tokens?.now ?? NO_ABILITY)
-				: (pending?.tokens?.[name] ?? NO_ABILITY)}
+			label={pending?.tokens?.[name === 'reminder' ? 'now' : name] ?? NO_ABILITY}
 			character={pending ? game.characters.get(pending.characterId) : undefined}
 			alignment={pending ? alignmentOf(game.game, pending.seatId) : undefined}
 		/>{:else}{@render badge(pending?.characterId)}{/if}{/snippet}
