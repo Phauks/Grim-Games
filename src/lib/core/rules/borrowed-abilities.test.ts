@@ -6,14 +6,16 @@
  * that the character isn't in play.
  *
  * Wiki: https://wiki.bloodontheclocktower.com/Boffin,
+ * https://wiki.bloodontheclocktower.com/Hermit,
  * https://wiki.bloodontheclocktower.com/Philosopher,
  * https://wiki.bloodontheclocktower.com/Plague_Doctor
  */
 import { describe, expect, it } from 'vitest';
+import type { Script } from '#lib/core/data/index.ts';
 import type { Command } from '#lib/core/engine/index.ts';
 import { warned } from '#lib/core/model/fixtures.test-support.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
-import { borrowedAbilities } from './borrowed-abilities.ts';
+import { borrowedAbilities, borrowedAbilitiesOf } from './borrowed-abilities.ts';
 
 /** Placing `label` of `characterId` on `on`: the warnings it raises. */
 const placing = (s: Scenario, on: string, characterId: string, label: string) =>
@@ -71,5 +73,37 @@ describe('borrowedAbilities', () => {
 	it("never lists a seat's own character", () => {
 		const s = scenario(['monk', 'imp', 'chef', 'empath', 'poisoner']);
 		expect(borrowedAbilities(s.game, s.characters).size).toBe(0);
+	});
+});
+
+describe('borrowedAbilitiesOf', () => {
+	it("lists the Hermit's Outsider abilities, never the Hermit's own", () => {
+		// Wiki: "Marianna is the Hermit, and has the Klutz, Butler, and Recluse abilities. Each night,
+		// she chooses a player as her master due to the Butler ability. The Ravenkeeper dies and
+		// learns that she is the Lord of Typhon, due to the Recluse ability. Marianna is executed,
+		// and chooses a player due to the Klutz ability. She chooses the Wizard. Good loses."
+		const script: Script = {
+			entries: ['hermit', 'klutz', 'butler', 'recluse', 'ravenkeeper', 'imp', 'empath', 'monk'].map(
+				(id) => ({ kind: 'official', id })
+			)
+		};
+		const s = scenario(['hermit', 'ravenkeeper', 'imp', 'empath', 'monk'], { script });
+		const ids = borrowedAbilitiesOf(s.game, s.seat('hermit'), s.characters).map(
+			(a) => a.characterId
+		);
+		expect(ids.sort()).toEqual(['butler', 'klutz', 'recluse']);
+	});
+
+	it('lists an ability given by hand, and nothing for a player with none', () => {
+		const s = scenario(['chef', 'imp', 'empath', 'poisoner', 'saint']);
+		expect(borrowedAbilitiesOf(s.game, s.seat('chef'), s.characters)).toEqual([]);
+		const given = s.do((x) => ({
+			type: 'GiveAbility',
+			seatId: x.seat('chef'),
+			ability: { characterId: 'monk' }
+		}));
+		expect(borrowedAbilitiesOf(given.game, s.seat('chef'), s.characters)).toEqual([
+			{ characterId: 'monk', works: true }
+		]);
 	});
 });

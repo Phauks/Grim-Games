@@ -50,6 +50,7 @@ export const day = {
 	'day.markHas': '{who} has the {reminder} reminder.',
 	'day.markUnset': 'Not marked yet today.',
 	'day.abilities': 'Abilities',
+	'day.alsoHas': 'Also has',
 	'day.votesBadgeLabel': {
 		one: '{count} vote puts the first nominee on the block ({alive} alive)',
 		other: '{count} votes put the first nominee on the block ({alive} alive)'

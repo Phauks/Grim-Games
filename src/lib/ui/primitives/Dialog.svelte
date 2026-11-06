@@ -189,7 +189,7 @@
 						<div class="aside" data-testid="dialog-aside">{@render aside()}</div>
 						<div class="pane" data-testid="dialog-pane">{@render children()}</div>
 					</div>
-				{:else if size === 'full' || size === 'max' || size === 'screen'}
+				{:else if size === 'full' || size === 'max' || size === 'screen' || size === 'side'}
 					<div class="body" data-scroll={scroll || undefined}>{@render children()}</div>
 				{:else}
 					{@render children()}
@@ -314,7 +314,15 @@
 		place-items: stretch start;
 		padding: 0;
 	}
+	/*
+	 * The side drawer scrolls its body, not itself, so its top padding (the status bar and
+	 * --menu-inset) stays put and a pinned section heading stops under the header with no rows
+	 * showing above it (Trevor, 2026-11-06: Live games showed above a pinned Admin).
+	 */
 	:global([data-scope='dialog'][data-part='content'][data-size='side']) {
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
 		width: min(85vw, calc(18 * var(--u)));
 		max-height: none;
 		height: 100%;
