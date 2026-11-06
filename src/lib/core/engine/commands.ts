@@ -157,7 +157,11 @@ export type Command =
 	 * every death has one); without it the engine warns `no-cause`. Executions and exiles
 	 * use `Execute` and `Exile`, which log the day entry too.
 	 */
-	| { type: 'SetDead'; seatId: SeatId; dead: boolean; cause?: DeathCause }
+	/**
+	 * `day`: the death happened during the day (the board knows; the log does not), so an
+	 * ability that marks a player who dies during the day sees it (`afterExecution` `when: day`).
+	 */
+	| { type: 'SetDead'; seatId: SeatId; dead: boolean; cause?: DeathCause; day?: true }
 	/** Records how a dead player died; an undefined `cause` clears it. */
 	| { type: 'SetDeathCause'; seatId: SeatId; cause?: DeathCause }
 	| { type: 'SpendGhostVote'; seatId: SeatId }

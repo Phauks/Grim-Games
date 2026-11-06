@@ -488,9 +488,8 @@ test('the Cannibal who eats the Zealot is woken to learn the Zealot ability', as
 	await choose(page, 1, 'Cannibal');
 	await choose(page, 2, 'Zealot');
 	await choose(page, 3, 'Imp');
+	// The execution marks the eaten player Lunch by itself (M70).
 	await toSecondNight(page, 2);
-	await putReminder(page, 'Lunch', 2);
-	await closeBin(page);
 
 	const step = await openStep(page, 'Cannibal');
 	await expect(step).toContainText('they learn they have the Zealot ability');
@@ -538,9 +537,8 @@ test("the Cannibal who eats the Juggler learns the Juggler's number", async ({ p
 	await choose(page, 1, 'Cannibal');
 	await choose(page, 2, 'Juggler');
 	await choose(page, 3, 'Imp');
+	// The execution marks the eaten player Lunch by itself (M70).
 	await toSecondNight(page, 2);
-	await putReminder(page, 'Lunch', 2);
-	await closeBin(page);
 
 	const step = await openStep(page, 'Cannibal');
 	await expect(step.getByTestId('night-alerts')).toContainText(

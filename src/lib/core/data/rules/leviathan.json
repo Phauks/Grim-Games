@@ -212,5 +212,10 @@
 			"stage": "announces",
 			"after": "dawn"
 		}
+	},
+	"afterExecution": {
+		"alignment": "good",
+		"on": "executed",
+		"token": "Good Player Executed"
 	}
 }
