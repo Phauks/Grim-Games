@@ -128,6 +128,7 @@ import ph_house_duotone from '~icons/ph/house-duotone';
 import ph_house_simple_duotone from '~icons/ph/house-simple-duotone';
 import ph_identification_card_duotone from '~icons/ph/identification-card-duotone';
 import ph_image_duotone from '~icons/ph/image-duotone';
+import ph_images_duotone from '~icons/ph/images-duotone';
 import ph_info_duotone from '~icons/ph/info-duotone';
 import ph_key_duotone from '~icons/ph/key-duotone';
 import ph_leaf_duotone from '~icons/ph/leaf-duotone';
@@ -373,6 +374,7 @@ const icons: IconMap = {
 	'ph:house-simple-duotone': ph_house_simple_duotone,
 	'ph:identification-card-duotone': ph_identification_card_duotone,
 	'ph:image-duotone': ph_image_duotone,
+	'ph:images-duotone': ph_images_duotone,
 	'ph:info-duotone': ph_info_duotone,
 	'ph:key-duotone': ph_key_duotone,
 	'ph:leaf-duotone': ph_leaf_duotone,

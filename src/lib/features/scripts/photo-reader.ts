@@ -25,12 +25,16 @@ export async function photoCanvas(photo: Blob): Promise<HTMLCanvasElement> {
 
 /**
  * The photo's lines of text, top to bottom, with each line's height. `onProgress` hears how
- * far it has got, 0 to 1 (loading the reader, then reading).
+ * far it has got, 0 to 1 (loading the reader, then reading); `log` hears each step the
+ * reader takes, for the import log.
  */
 export async function readPhotoLines(
 	photo: HTMLCanvasElement,
-	onProgress?: (share: number) => void
+	onProgress?: (share: number) => void,
+	log?: (text: string) => void
 ): Promise<PhotoLine[]> {
+	let lastStatus = '';
+	let lastQuarter = -1;
 	const { createWorker } = await import('tesseract.js');
 	const base = new URL('/ocr', location.origin).href;
 	const worker = await createWorker('eng', LSTM_ONLY, {
@@ -41,17 +45,26 @@ export async function readPhotoLines(
 		// The service worker keeps the files; a second copy in IndexedDB would double the space.
 		cacheMethod: 'none',
 		logger: (m: { status: string; progress: number }) => {
+			// Each step once as it starts, then reading in quarters.
+			const quarter = Math.floor(m.progress * 4);
+			if (m.status !== lastStatus || (m.status === 'recognizing text' && quarter > lastQuarter)) {
+				log?.(`Text reader: ${m.status} ${Math.round(m.progress * 100)}%`);
+				lastStatus = m.status;
+				lastQuarter = quarter;
+			}
 			const loading = m.status !== 'recognizing text';
 			onProgress?.(loading ? m.progress * 0.3 : 0.3 + m.progress * 0.7);
 		}
 	});
 	try {
 		const { data } = await worker.recognize(photo, {}, { blocks: true });
+		log?.(`Text reader: done, ${Math.round(data.confidence)}% confident overall`);
 		return (data.blocks ?? []).flatMap((block) =>
 			block.paragraphs.flatMap((paragraph) =>
 				paragraph.lines.map((line) => ({
 					text: line.text.trim(),
-					height: line.bbox.y1 - line.bbox.y0
+					height: line.bbox.y1 - line.bbox.y0,
+					confidence: line.confidence
 				}))
 			)
 		);

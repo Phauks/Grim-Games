@@ -128,6 +128,7 @@ import ph_house_light from '~icons/ph/house-light';
 import ph_house_simple_light from '~icons/ph/house-simple-light';
 import ph_identification_card_light from '~icons/ph/identification-card-light';
 import ph_image_light from '~icons/ph/image-light';
+import ph_images_light from '~icons/ph/images-light';
 import ph_info_light from '~icons/ph/info-light';
 import ph_key_light from '~icons/ph/key-light';
 import ph_leaf_light from '~icons/ph/leaf-light';
@@ -373,6 +374,7 @@ const icons: IconMap = {
 	'ph:house-simple-light': ph_house_simple_light,
 	'ph:identification-card-light': ph_identification_card_light,
 	'ph:image-light': ph_image_light,
+	'ph:images-light': ph_images_light,
 	'ph:info-light': ph_info_light,
 	'ph:key-light': ph_key_light,
 	'ph:leaf-light': ph_leaf_light,
