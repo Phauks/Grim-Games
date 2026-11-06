@@ -50,11 +50,13 @@
 <style>
 	.home {
 		display: grid;
+		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-5);
 	}
+	/* Side by side while both fit, one under the other with the largest text on a narrow phone. */
 	.start {
 		display: grid;
-		grid-template-columns: 1fr 1fr;
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, calc(11 * var(--u))), 1fr));
 		gap: var(--space-2);
 		width: 100%;
 		max-width: calc(28 * var(--u));
