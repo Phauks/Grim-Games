@@ -18,7 +18,11 @@ import { nightAnswer, reminderTargets } from '#lib/core/rules/index.ts';
 import { dayClaim, guessLimit } from '#lib/core/rules/day-claims.ts';
 import { dayReminders, dayStateFromGame } from '#lib/core/rules/day-reminders.ts';
 import { wokeTonight } from '#lib/core/rules/woke-tonight.ts';
-import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import {
+	committedCharacter,
+	nightSheetPresence,
+	committedCharacters
+} from '#lib/core/testing/committed-data.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
 /** What the Storyteller gives the Juggler tonight. */
@@ -181,8 +185,8 @@ describe('Juggler', () => {
 			// each of any one player and any one character."
 			const s = scenario(cast).newDay();
 			expect(mayJuggle(s)).toBe(true);
-			expect(dayClaim('juggler')).toBe('guesses');
-			expect(guessLimit('juggler')).toBe(5);
+			expect(dayClaim('juggler', committedCharacters())).toBe('guesses');
+			expect(guessLimit('juggler', committedCharacters())).toBe(5);
 		});
 
 		it('is not offered guesses after the first day', () => {

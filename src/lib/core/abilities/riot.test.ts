@@ -14,7 +14,11 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import {
+	committedCharacter,
+	nightSheetPresence,
+	committedCharacters
+} from '#lib/core/testing/committed-data.ts';
 import { gameEnds, suggestedWinner } from '#lib/core/rules/game-end.ts';
 import { mayNominate } from '#lib/core/rules/nominations.ts';
 import { validDeathCauses } from '#lib/core/rules/death-causes.ts';
@@ -84,7 +88,7 @@ describe('Riot', () => {
 		it('counts the days with Day 1, Day 2 and Day 3 on the Riot', () => {
 			// Wiki: "On the 1st day, add the DAY 1 reminder to the Grimoire. On the 2nd day, add the DAY
 			// 2 reminder to the Grimoire. On the 3rd day, add the DAY 3 reminder to the Grimoire."
-			expect(setupPrep('riot', 'Riot')).toEqual([
+			expect(setupPrep('riot', 'Riot', committedCharacters())).toEqual([
 				expect.objectContaining({ tokens: ['Day 1'], target: 'the Riot' })
 			]);
 			const s = scenario(cast);

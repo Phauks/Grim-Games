@@ -17,7 +17,8 @@ import { defaultAlignment } from '#lib/core/data/index.ts';
 import {
 	committedCharacter,
 	committedNightOrder,
-	nightSheetPresence
+	nightSheetPresence,
+	committedCharacters
 } from '#lib/core/testing/committed-data.ts';
 import { protection } from '#lib/core/rules/ability.ts';
 import { preventedDeaths } from '#lib/core/rules/prevented-deaths.ts';
@@ -159,7 +160,7 @@ describe('Shabaloth', () => {
 				label: 'Alive',
 				action: 'place'
 			});
-			expect(reminderPrompt('Alive', 'shabaloth')).toBe('revive');
+			expect(reminderPrompt('Alive', 'shabaloth', committedCharacters())).toBe('revive');
 		});
 
 		it("replaces the regurgitated player's Dead with Alive", () => {

@@ -19,7 +19,11 @@ import { dayUseWho } from '#lib/core/rules/day-claims.ts';
 import { dayReminders, dayStateFromGame } from '#lib/core/rules/day-reminders.ts';
 import { endCharacters } from '#lib/core/rules/end-reason.ts';
 import { gameEnds } from '#lib/core/rules/game-end.ts';
-import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import {
+	committedCharacter,
+	nightSheetPresence,
+	committedCharacters
+} from '#lib/core/testing/committed-data.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Klutz', () => {
@@ -55,7 +59,7 @@ describe('Klutz', () => {
 		it('Example 1: Executed Klutz names a good player', () => {
 			// Wiki: "The Klutz dies by execution. After much yelling and confusion, the Klutz chooses a
 			// player—who is secretly the Seamstress. Night falls, and the game continues."
-			expect(dayUseWho('klutz', undefined)).toBe('chosen');
+			expect(dayUseWho('klutz', committedCharacters())).toBe('chosen');
 			const s = scenario(['klutz', 'seamstress', 'chef', 'witch', 'vortox'])
 				.execute('klutz')
 				.do((at) => ({

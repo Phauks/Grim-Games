@@ -14,7 +14,11 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import {
+	committedCharacter,
+	nightSheetPresence,
+	committedCharacters
+} from '#lib/core/testing/committed-data.ts';
 import { infoPicker, isAllowed } from '#lib/core/rules/night-info.ts';
 import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 import { analyseSetup } from '#lib/core/rules/setup.ts';
@@ -119,7 +123,7 @@ describe('Balloonist', () => {
 
 		it('prepares the Know reminder for any player before the first night', () => {
 			// Wiki: "When preparing the first night, mark any player with the KNOW reminder."
-			expect(setupPrep('balloonist', 'Balloonist')).toMatchObject([
+			expect(setupPrep('balloonist', 'Balloonist', committedCharacters())).toMatchObject([
 				{ tokens: ['Know'], target: 'any player' }
 			]);
 			const s = scenario(['balloonist', 'chef', 'imp', 'poisoner', 'butler']);
