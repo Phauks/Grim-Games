@@ -83,6 +83,7 @@
 	},
 	"nightOrder": {
 		"other": {
+			"stage": "reacts",
 			"after": "gossip"
 		}
 	}

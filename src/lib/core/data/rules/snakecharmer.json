@@ -83,9 +83,11 @@
 	},
 	"nightOrder": {
 		"first": {
+			"stage": "impairs",
 			"after": "wizard"
 		},
 		"other": {
+			"stage": "impairs",
 			"after": "acrobat"
 		}
 	}

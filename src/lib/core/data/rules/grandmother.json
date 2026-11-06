@@ -76,9 +76,11 @@
 	"staysAsleep": "other",
 	"nightOrder": {
 		"first": {
+			"stage": "learns",
 			"after": "butler"
 		},
 		"other": {
+			"stage": "reacts",
 			"after": "moonchild"
 		}
 	}

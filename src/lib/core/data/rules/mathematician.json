@@ -40,9 +40,11 @@
 	},
 	"nightOrder": {
 		"first": {
+			"stage": "learns",
 			"after": "chambermaid"
 		},
 		"other": {
+			"stage": "learns",
 			"after": "chambermaid"
 		}
 	}

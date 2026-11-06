@@ -78,9 +78,11 @@
 	},
 	"nightOrder": {
 		"first": {
+			"stage": "travellers",
 			"after": "apprentice"
 		},
 		"other": {
+			"stage": "travellers",
 			"after": "cacklejack"
 		}
 	}

@@ -13,6 +13,7 @@
 	},
 	"nightOrder": {
 		"first": {
+			"stage": "minion-info",
 			"after": "minioninfo"
 		}
 	}

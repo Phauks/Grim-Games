@@ -68,9 +68,11 @@
 	},
 	"nightOrder": {
 		"first": {
+			"stage": "learns",
 			"after": "shugenja"
 		},
 		"other": {
+			"stage": "learns",
 			"after": "balloonist"
 		}
 	}

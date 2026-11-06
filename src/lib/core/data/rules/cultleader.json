@@ -39,9 +39,11 @@
 	},
 	"nightOrder": {
 		"first": {
+			"stage": "learns",
 			"after": "nightwatchman"
 		},
 		"other": {
+			"stage": "learns",
 			"after": "nightwatchman"
 		}
 	}

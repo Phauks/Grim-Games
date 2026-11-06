@@ -43,6 +43,7 @@
 	},
 	"nightOrder": {
 		"other": {
+			"stage": "learns",
 			"after": "flowergirl"
 		}
 	}

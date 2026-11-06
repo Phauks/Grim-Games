@@ -55,6 +55,7 @@
 	},
 	"nightOrder": {
 		"first": {
+			"stage": "travellers",
 			"after": "thief"
 		}
 	}

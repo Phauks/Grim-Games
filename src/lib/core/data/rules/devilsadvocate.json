@@ -77,9 +77,11 @@
 	"marksChoice": ["Survives Execution"],
 	"nightOrder": {
 		"first": {
+			"stage": "impairs",
 			"after": "organgrinder"
 		},
 		"other": {
+			"stage": "impairs",
 			"after": "organgrinder"
 		}
 	}

@@ -101,9 +101,11 @@
 	},
 	"nightOrder": {
 		"first": {
+			"stage": "minions",
 			"after": "fearmonger"
 		},
 		"other": {
+			"stage": "minions",
 			"after": "fearmonger"
 		}
 	}

@@ -73,6 +73,7 @@
 	"makesExtraEvil": true,
 	"nightOrder": {
 		"other": {
+			"stage": "demon-kills",
 			"after": "po"
 		}
 	}

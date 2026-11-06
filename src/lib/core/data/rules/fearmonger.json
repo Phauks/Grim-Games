@@ -77,9 +77,11 @@
 	"marksChoice": ["Fear"],
 	"nightOrder": {
 		"first": {
+			"stage": "minions",
 			"after": "cerenovus"
 		},
 		"other": {
+			"stage": "minions",
 			"after": "pithag"
 		}
 	}

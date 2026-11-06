@@ -81,6 +81,7 @@
 	},
 	"nightOrder": {
 		"other": {
+			"stage": "stops-kills",
 			"after": "exorcist"
 		}
 	}

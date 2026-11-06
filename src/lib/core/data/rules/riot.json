@@ -160,6 +160,7 @@
 	},
 	"nightOrder": {
 		"other": {
+			"stage": "learns",
 			"after": "mathematician"
 		}
 	}

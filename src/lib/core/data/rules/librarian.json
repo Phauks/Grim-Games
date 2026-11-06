@@ -63,6 +63,7 @@
 	},
 	"nightOrder": {
 		"first": {
+			"stage": "learns",
 			"after": "washerwoman"
 		}
 	}

@@ -80,9 +80,11 @@
 	},
 	"nightOrder": {
 		"first": {
+			"stage": "impairs",
 			"after": "snakecharmer"
 		},
 		"other": {
+			"stage": "kills",
 			"after": "assassin"
 		}
 	}

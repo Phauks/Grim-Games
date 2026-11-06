@@ -75,6 +75,7 @@
 	},
 	"nightOrder": {
 		"first": {
+			"stage": "minions",
 			"after": "devilsadvocate"
 		}
 	}

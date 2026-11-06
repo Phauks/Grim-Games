@@ -61,6 +61,7 @@
 	},
 	"nightOrder": {
 		"other": {
+			"stage": "reacts",
 			"after": "banshee"
 		}
 	}

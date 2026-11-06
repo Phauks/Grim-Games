@@ -35,9 +35,11 @@
 	},
 	"nightOrder": {
 		"first": {
+			"stage": "learns",
 			"after": "empath"
 		},
 		"other": {
+			"stage": "learns",
 			"after": "empath"
 		}
 	}

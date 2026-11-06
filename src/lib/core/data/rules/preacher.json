@@ -78,9 +78,11 @@
 	},
 	"nightOrder": {
 		"first": {
+			"stage": "impairs",
 			"after": "engineer"
 		},
 		"other": {
+			"stage": "impairs",
 			"after": "engineer"
 		}
 	}

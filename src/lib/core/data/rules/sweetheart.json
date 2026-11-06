@@ -58,6 +58,7 @@
 	"staysAsleep": "other",
 	"nightOrder": {
 		"other": {
+			"stage": "reacts",
 			"after": "barber"
 		}
 	}

@@ -49,6 +49,7 @@
 	},
 	"nightOrder": {
 		"first": {
+			"stage": "learns",
 			"after": "steward"
 		}
 	}

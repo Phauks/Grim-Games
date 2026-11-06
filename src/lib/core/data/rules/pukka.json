@@ -80,9 +80,11 @@
 	},
 	"nightOrder": {
 		"first": {
+			"stage": "minions",
 			"after": "mezepheles"
 		},
 		"other": {
+			"stage": "demon-kills",
 			"after": "zombuul"
 		}
 	}

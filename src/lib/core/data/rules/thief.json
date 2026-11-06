@@ -72,9 +72,11 @@
 	},
 	"nightOrder": {
 		"first": {
+			"stage": "travellers",
 			"after": "bureaucrat"
 		},
 		"other": {
+			"stage": "travellers",
 			"after": "bureaucrat"
 		}
 	}

@@ -60,6 +60,7 @@
 	},
 	"nightOrder": {
 		"first": {
+			"stage": "learns",
 			"after": "knight"
 		}
 	}

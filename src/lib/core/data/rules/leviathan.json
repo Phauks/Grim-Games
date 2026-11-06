@@ -205,9 +205,11 @@
 	},
 	"nightOrder": {
 		"first": {
+			"stage": "announces",
 			"after": "dawn"
 		},
 		"other": {
+			"stage": "announces",
 			"after": "dawn"
 		}
 	}

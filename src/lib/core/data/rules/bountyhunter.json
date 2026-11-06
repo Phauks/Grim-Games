@@ -58,9 +58,11 @@
 	},
 	"nightOrder": {
 		"first": {
+			"stage": "learns",
 			"after": "villageidiot"
 		},
 		"other": {
+			"stage": "learns",
 			"after": "king"
 		}
 	}

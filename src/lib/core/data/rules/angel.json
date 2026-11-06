@@ -69,6 +69,7 @@
 	},
 	"nightOrder": {
 		"first": {
+			"stage": "rules",
 			"after": "dusk"
 		}
 	}

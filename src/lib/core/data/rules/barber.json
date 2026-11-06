@@ -52,6 +52,7 @@
 	},
 	"nightOrder": {
 		"other": {
+			"stage": "reacts",
 			"after": "hatter"
 		}
 	}

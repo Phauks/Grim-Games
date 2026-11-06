@@ -93,9 +93,11 @@
 	},
 	"nightOrder": {
 		"first": {
+			"stage": "minions",
 			"after": "witch"
 		},
 		"other": {
+			"stage": "minions",
 			"after": "witch"
 		}
 	}

@@ -52,6 +52,7 @@
 	},
 	"nightOrder": {
 		"first": {
+			"stage": "travellers",
 			"after": "kazali"
 		}
 	}

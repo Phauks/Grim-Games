@@ -73,9 +73,11 @@
 	},
 	"nightOrder": {
 		"first": {
+			"stage": "impairs",
 			"after": "marionette"
 		},
 		"other": {
+			"stage": "impairs",
 			"after": "sailor"
 		}
 	}

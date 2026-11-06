@@ -37,9 +37,11 @@
 	"wish": true,
 	"nightOrder": {
 		"first": {
+			"stage": "impairs",
 			"after": "courtier"
 		},
 		"other": {
+			"stage": "impairs",
 			"after": "innkeeper"
 		}
 	}

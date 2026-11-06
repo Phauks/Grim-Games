@@ -84,9 +84,11 @@
 	},
 	"nightOrder": {
 		"first": {
+			"stage": "learns",
 			"after": "fortuneteller"
 		},
 		"other": {
+			"stage": "learns",
 			"after": "cultleader"
 		}
 	}

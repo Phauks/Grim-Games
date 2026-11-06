@@ -51,9 +51,11 @@
 	},
 	"nightOrder": {
 		"first": {
+			"stage": "learns",
 			"after": "dreamer"
 		},
 		"other": {
+			"stage": "learns",
 			"after": "oracle"
 		}
 	}

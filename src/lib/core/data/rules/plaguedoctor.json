@@ -92,6 +92,7 @@
 	},
 	"nightOrder": {
 		"other": {
+			"stage": "reacts",
 			"after": "sweetheart"
 		}
 	}

@@ -30,8 +30,12 @@ import {
 } from '#lib/core/data/types.ts';
 import { rulesOf, rulesOfCharacter } from '#lib/core/data/rules/index.ts';
 import type { InfoTokenCharacterRules } from '#lib/core/data/info-token-rules.ts';
+import type { NightPlace } from '#lib/core/data/parts/night-order.ts';
 import {
+	BANDS,
+	MARKERS,
 	placementReason,
+	type Band,
 	recommendPlacement,
 	textSignature,
 	type Night as SheetNight
@@ -221,10 +225,11 @@ function numberFor(character: Character, night: Night): number | undefined {
 }
 
 /**
- * TPI's sheet for one night with each character it doesn't list placed right after the step its
- * `nightOrder` names (M59), following chains through characters that aren't in play. `known` is
- * every character that may be named; one whose step can't be traced back to the sheet is left
- * off. Several placed after the same step keep the order they come in.
+ * TPI's sheet for one night with each character it doesn't list placed by its own `nightOrder`
+ * (M59): right after the step it names, following chains through characters that aren't in
+ * play; else, when that step is unknown, at the end of its stage of the night. `known` is every
+ * character that may be named. One with neither is left off. Several placed after the same
+ * step keep the order they come in.
  */
 export function sheetWithOwnPlaces(
 	list: readonly string[],
@@ -233,25 +238,93 @@ export function sheetWithOwnPlaces(
 ): string[] {
 	const out = [...list];
 	const listed = new Set(list);
+	const stages = new Map<string, string>();
 	let waiting = [...known].flatMap((c) => {
-		const after = listed.has(c.id) ? undefined : rulesOfCharacter(c)?.nightOrder?.[night]?.after;
-		return after === undefined ? [] : [{ id: c.id, after }];
+		const place = rulesOfCharacter(c)?.nightOrder?.[night];
+		if (place?.stage) stages.set(c.id, place.stage);
+		return listed.has(c.id) || !place ? [] : [{ id: c.id, ...place }];
 	});
 	const placedAfter = new Map<string, number>();
-	while (waiting.length > 0) {
+	const insertAfter = (id: string, after: string) => {
+		const at = out.indexOf(after) + 1 + (placedAfter.get(after) ?? 0);
+		out.splice(at, 0, id);
+		placedAfter.set(after, (placedAfter.get(after) ?? 0) + 1);
+	};
+	for (;;) {
 		const left = waiting.filter(({ id, after }) => {
 			if (out.includes(id)) return false;
-			const anchor = out.indexOf(after);
-			if (anchor < 0) return true;
-			const at = anchor + 1 + (placedAfter.get(after) ?? 0);
-			out.splice(at, 0, id);
-			placedAfter.set(after, (placedAfter.get(after) ?? 0) + 1);
+			if (after === undefined || !out.includes(after)) return true;
+			insertAfter(id, after);
 			return false;
 		});
-		if (left.length === waiting.length) break;
+		const stuck = left.length === waiting.length;
 		waiting = left;
+		if (!stuck) continue;
+		// Nothing more places by its neighbour: the first one with a stage goes at its end.
+		const next = waiting.find((w) => w.stage !== undefined);
+		if (!next) break;
+		const bands = BANDS[night === 'first' ? 'firstNight' : 'otherNight'];
+		const rank = bands.indexOf(next.stage!);
+		const later = out.findIndex((id) => {
+			const stage = MARKERS.includes(id) ? id : stages.get(id);
+			return stage !== undefined && bands.indexOf(stage) > rank;
+		});
+		out.splice(later < 0 ? out.length : later, 0, next.id);
+		waiting = waiting.filter((w) => w !== next);
 	}
 	return out;
+}
+
+/** One part of a night's order for picking a place in it: a marker step, or a stage's steps. */
+export type NightStagePart =
+	{ kind: 'marker'; id: NightMarker } | { kind: 'stage'; stage: Band; steps: CharacterId[] };
+
+/**
+ * A night's order by stage (`night-placement/bands.ts`), for the Character builder's "Wakes
+ * in" (M59): TPI's sheet with each character under the stage its own `nightOrder` gives it, and
+ * the marker steps where they fall. Every stage of the night is listed, even an empty one.
+ */
+export function nightStages(
+	list: readonly string[],
+	night: Night,
+	known: Iterable<Character>
+): NightStagePart[] {
+	const stageOf = new Map<string, string>();
+	for (const c of known) {
+		const stage = rulesOfCharacter(c)?.nightOrder?.[night]?.stage;
+		if (stage) stageOf.set(c.id, stage);
+	}
+	const parts: NightStagePart[] = BANDS[night === 'first' ? 'firstNight' : 'otherNight'].map(
+		(id) =>
+			MARKERS.includes(id)
+				? { kind: 'marker', id: id as NightMarker }
+				: { kind: 'stage', stage: id as Band, steps: [] }
+	);
+	for (const id of list) {
+		const part = parts.find((p) => p.kind === 'stage' && p.stage === stageOf.get(id));
+		if (part?.kind === 'stage') part.steps.push(id as CharacterId);
+	}
+	return parts;
+}
+
+/**
+ * Where a custom character with no night position of its own would wake on `night`, from its
+ * ability (`night-placement`): its stage, and the sheet step it goes right after.
+ */
+export function suggestedNightPlace(
+	character: Character,
+	night: Night,
+	sheet: NightSheet,
+	official: ReadonlyMap<CharacterId, Character>
+): NightPlace | undefined {
+	const placed = placeByAbility(
+		{ night, sheet, inPlay: [character], players: 0, official },
+		character
+	);
+	if (!placed) return undefined;
+	const list = night === 'first' ? sheet.firstNight : sheet.otherNight;
+	const after = list[placed.index - 1];
+	return { stage: placed.band, ...(after ? { after } : {}) };
 }
 
 /** A position for every step on TPI's sheet: its index, with Dusk always first. */
@@ -287,7 +360,7 @@ function signatureOf(character: Character, night: SheetNight): Set<string> {
 function placeByAbility(
 	input: NightOrderInput,
 	character: Character
-): { index: number; reason: string } | undefined {
+): { index: number; reason: string; band: Band } | undefined {
 	const { official } = input;
 	if (!official) return undefined;
 	const night: SheetNight = input.night === 'first' ? 'firstNight' : 'otherNight';
@@ -304,7 +377,7 @@ function placeByAbility(
 	);
 	if (!placed) return undefined;
 	const reason = placementReason(placed, (id) => official.get(id)?.name ?? id);
-	return { index: placed.index, reason };
+	return { index: placed.index, reason, band: placed.band };
 }
 
 /** The standard order (no custom `_meta` order) for the given steps. */

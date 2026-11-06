@@ -48,9 +48,11 @@
 	},
 	"nightOrder": {
 		"first": {
+			"stage": "changes",
 			"after": "alchemist"
 		},
 		"other": {
+			"stage": "changes",
 			"after": "philosopher"
 		}
 	}

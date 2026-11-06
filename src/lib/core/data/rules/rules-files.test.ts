@@ -40,8 +40,9 @@ describe('official rules files (data/rules/<id>.json)', () => {
 			const list = data.nightSheet[night === 'first' ? 'firstNight' : 'otherNight'];
 			for (const id of files.map((f) => f.slice(0, -5))) {
 				const at = list.indexOf(id);
-				const expected = at > 0 ? { after: list[at - 1] } : undefined;
-				expect(OFFICIAL_RULES.get(id)?.nightOrder?.[night], id).toEqual(expected);
+				const place = OFFICIAL_RULES.get(id)?.nightOrder?.[night];
+				expect(place?.after, id).toBe(at > 0 ? list[at - 1] : undefined);
+				expect(place === undefined || place.stage !== undefined, id).toBe(true);
 			}
 		}
 	);
@@ -60,12 +61,16 @@ describe('parseCharacterRules', () => {
 		expect(parse({ onNominated: { ...onNominated, effect: 'swap' } }).issues).toHaveLength(1);
 	});
 
-	it('reads a night position, and rejects one with no step to follow (M59)', () => {
+	it('reads a night position, and rejects one with no stage or step to follow (M59)', () => {
 		const nightOrder = { first: { after: 'dusk' }, other: { after: 'monk' } };
 		expect(parse({ nightOrder }).rules).toEqual({ nightOrder });
 		expect(parse({ nightOrder: {} }).issues).toHaveLength(1);
 		expect(parse({ nightOrder: { first: { after: '' } } }).issues).toHaveLength(1);
 		expect(parse({ nightOrder: { first: 'dusk' } }).issues).toHaveLength(1);
+		expect(parse({ nightOrder: { other: { stage: 'impairs' } } }).issues).toEqual([]);
+		// Team setup is a first-night stage only, and Dawn is a step, not a stage.
+		expect(parse({ nightOrder: { other: { stage: 'team-setup' } } }).issues).toHaveLength(1);
+		expect(parse({ nightOrder: { first: { stage: 'dawn' } } }).issues).toHaveLength(1);
 	});
 
 	// https://wiki.bloodontheclocktower.com/Witch, /Riot

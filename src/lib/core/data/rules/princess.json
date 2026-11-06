@@ -54,6 +54,7 @@
 	},
 	"nightOrder": {
 		"other": {
+			"stage": "stops-kills",
 			"after": "lycanthrope"
 		}
 	}

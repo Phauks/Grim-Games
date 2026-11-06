@@ -80,9 +80,11 @@
 	},
 	"nightOrder": {
 		"first": {
+			"stage": "impairs",
 			"after": "godfather"
 		},
 		"other": {
+			"stage": "impairs",
 			"after": "monk"
 		}
 	}

@@ -80,6 +80,7 @@
 	},
 	"nightOrder": {
 		"first": {
+			"stage": "announces",
 			"after": "leviathan"
 		}
 	}

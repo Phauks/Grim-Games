@@ -52,6 +52,7 @@
 	"marksChoice": ["Chosen"],
 	"nightOrder": {
 		"other": {
+			"stage": "stops-kills",
 			"after": "lunatic"
 		}
 	}

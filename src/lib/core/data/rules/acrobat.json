@@ -51,6 +51,7 @@
 	},
 	"nightOrder": {
 		"other": {
+			"stage": "impairs",
 			"after": "gambler"
 		}
 	}

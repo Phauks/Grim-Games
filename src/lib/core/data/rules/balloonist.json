@@ -70,9 +70,11 @@
 	},
 	"nightOrder": {
 		"first": {
+			"stage": "learns",
 			"after": "noble"
 		},
 		"other": {
+			"stage": "learns",
 			"after": "juggler"
 		}
 	}

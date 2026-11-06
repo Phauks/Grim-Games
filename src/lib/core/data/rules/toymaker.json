@@ -42,9 +42,11 @@
 	},
 	"nightOrder": {
 		"first": {
+			"stage": "rules",
 			"after": "buddhist"
 		},
 		"other": {
+			"stage": "rules",
 			"after": "duchess"
 		}
 	}

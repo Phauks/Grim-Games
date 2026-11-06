@@ -92,9 +92,11 @@
 	},
 	"nightOrder": {
 		"first": {
+			"stage": "minions",
 			"after": "harpy"
 		},
 		"other": {
+			"stage": "minions",
 			"after": "harpy"
 		}
 	}

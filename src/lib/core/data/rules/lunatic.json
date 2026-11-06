@@ -47,9 +47,11 @@
 	"believesType": "demon",
 	"nightOrder": {
 		"first": {
+			"stage": "minion-info",
 			"after": "snitch"
 		},
 		"other": {
+			"stage": "minions",
 			"after": "summoner"
 		}
 	}

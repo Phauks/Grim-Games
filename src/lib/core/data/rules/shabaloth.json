@@ -73,6 +73,7 @@
 	},
 	"nightOrder": {
 		"other": {
+			"stage": "demon-kills",
 			"after": "pukka"
 		}
 	}

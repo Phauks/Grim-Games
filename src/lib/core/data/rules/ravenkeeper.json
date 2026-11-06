@@ -16,6 +16,7 @@
 	},
 	"nightOrder": {
 		"other": {
+			"stage": "reacts",
 			"after": "tor"
 		}
 	}

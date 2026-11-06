@@ -20,9 +20,11 @@
 	},
 	"nightOrder": {
 		"first": {
+			"stage": "learns",
 			"after": "clockmaker"
 		},
 		"other": {
+			"stage": "learns",
 			"after": "undertaker"
 		}
 	}

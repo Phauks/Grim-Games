@@ -152,9 +152,11 @@
 	},
 	"nightOrder": {
 		"first": {
+			"stage": "impairs",
 			"after": "lleech"
 		},
 		"other": {
+			"stage": "impairs",
 			"after": "preacher"
 		}
 	}

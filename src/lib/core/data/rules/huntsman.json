@@ -64,9 +64,11 @@
 	},
 	"nightOrder": {
 		"first": {
+			"stage": "reacts",
 			"after": "pixie"
 		},
 		"other": {
+			"stage": "reacts",
 			"after": "choirboy"
 		}
 	}

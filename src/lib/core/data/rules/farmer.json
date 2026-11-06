@@ -24,6 +24,7 @@
 	},
 	"nightOrder": {
 		"other": {
+			"stage": "reacts",
 			"after": "amnesiac"
 		}
 	}

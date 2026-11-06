@@ -49,6 +49,7 @@
 	},
 	"nightOrder": {
 		"other": {
+			"stage": "learns",
 			"after": "seamstress"
 		}
 	}

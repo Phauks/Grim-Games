@@ -63,9 +63,11 @@
 	"dayClaim": "ability-guess",
 	"nightOrder": {
 		"first": {
+			"stage": "reacts",
 			"after": "damsel"
 		},
 		"other": {
+			"stage": "reacts",
 			"after": "damsel"
 		}
 	}

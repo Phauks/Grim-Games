@@ -51,6 +51,7 @@
 	},
 	"nightOrder": {
 		"other": {
+			"stage": "travellers",
 			"after": "harlot"
 		}
 	}

@@ -22,6 +22,7 @@
 	},
 	"nightOrder": {
 		"other": {
+			"stage": "reacts",
 			"after": "professor"
 		}
 	}

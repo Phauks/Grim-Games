@@ -14,6 +14,7 @@
 	},
 	"nightOrder": {
 		"other": {
+			"stage": "reacts",
 			"after": "plaguedoctor"
 		}
 	}

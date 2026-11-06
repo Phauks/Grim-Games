@@ -88,6 +88,7 @@
 	},
 	"nightOrder": {
 		"first": {
+			"stage": "impairs",
 			"after": "poisoner"
 		}
 	}

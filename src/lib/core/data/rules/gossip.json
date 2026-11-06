@@ -63,6 +63,7 @@
 	"staysAsleep": "other",
 	"nightOrder": {
 		"other": {
+			"stage": "kills",
 			"after": "godfather"
 		}
 	}

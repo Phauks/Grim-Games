@@ -143,9 +143,11 @@
 	},
 	"nightOrder": {
 		"first": {
+			"stage": "minion-info",
 			"after": "lunatic"
 		},
 		"other": {
+			"stage": "minions",
 			"after": "scarletwoman"
 		}
 	}

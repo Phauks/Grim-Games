@@ -116,9 +116,11 @@
 	},
 	"nightOrder": {
 		"first": {
+			"stage": "impairs",
 			"after": "preacher"
 		},
 		"other": {
+			"stage": "demon-kills",
 			"after": "lleech"
 		}
 	}

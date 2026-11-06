@@ -96,6 +96,7 @@
 	},
 	"nightOrder": {
 		"first": {
+			"stage": "rules",
 			"after": "toymaker"
 		}
 	}

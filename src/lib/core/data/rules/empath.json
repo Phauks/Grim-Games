@@ -13,9 +13,11 @@
 	},
 	"nightOrder": {
 		"first": {
+			"stage": "learns",
 			"after": "chef"
 		},
 		"other": {
+			"stage": "learns",
 			"after": "ravenkeeper"
 		}
 	}

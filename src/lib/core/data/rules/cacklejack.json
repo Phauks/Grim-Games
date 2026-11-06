@@ -45,6 +45,7 @@
 	},
 	"nightOrder": {
 		"other": {
+			"stage": "travellers",
 			"after": "wraith"
 		}
 	}

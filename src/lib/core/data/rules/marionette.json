@@ -76,6 +76,7 @@
 	},
 	"nightOrder": {
 		"first": {
+			"stage": "demon-info",
 			"after": "sailor"
 		}
 	}

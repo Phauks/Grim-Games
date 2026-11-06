@@ -10,9 +10,11 @@
 	},
 	"nightOrder": {
 		"first": {
+			"stage": "learns",
 			"after": "highpriestess"
 		},
 		"other": {
+			"stage": "learns",
 			"after": "highpriestess"
 		}
 	}

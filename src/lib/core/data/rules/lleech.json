@@ -95,9 +95,11 @@
 	},
 	"nightOrder": {
 		"first": {
+			"stage": "impairs",
 			"after": "lilmonsta"
 		},
 		"other": {
+			"stage": "demon-kills",
 			"after": "alhadikhia"
 		}
 	}

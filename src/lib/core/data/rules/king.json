@@ -34,9 +34,11 @@
 	},
 	"nightOrder": {
 		"first": {
+			"stage": "demon-info",
 			"after": "demoninfo"
 		},
 		"other": {
+			"stage": "learns",
 			"after": "villageidiot"
 		}
 	}

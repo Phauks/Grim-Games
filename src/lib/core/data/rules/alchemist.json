@@ -124,6 +124,7 @@
 	},
 	"nightOrder": {
 		"first": {
+			"stage": "changes",
 			"after": "philosopher"
 		}
 	}
