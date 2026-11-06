@@ -63,7 +63,7 @@ export const player = {
 	'player.local.noneDead': 'None dead',
 	'player.local.runBy': 'Run by',
 	'player.local.storyteller': 'Storyteller',
-	'player.local.players': 'Players',
+	'player.local.localGrim': 'Local Grim',
 	'player.grim.seats': 'Seats',
 	'player.grim.playerName': 'Name',
 	'player.grim.markDead': 'Dead',
