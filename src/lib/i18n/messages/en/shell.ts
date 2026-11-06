@@ -21,7 +21,6 @@ export const shell = {
 	'shell.navNewGame': 'New game',
 	'shell.navJoinGame': 'Join game',
 	'shell.navHistory': 'History',
-	'shell.dailyPuzzle': 'Daily puzzle',
 	'shell.navScripts': 'Search',
 	'shell.navLibrary': 'Library',
 	'shell.navBuildScript': 'Script builder',

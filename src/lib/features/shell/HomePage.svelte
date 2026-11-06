@@ -33,8 +33,6 @@
 		<div class="last"><LastGameRow /></div>
 		<div class="start">
 			<Button icon="add" variant="accent" href={resolve('/new')}>{t('shell.navNewGame')}</Button>
-			<!-- Reserved for the daily puzzle, so nothing moves when one is built (no reflow). -->
-			<Button icon="dailyPuzzle" disabled>{t('shell.dailyPuzzle')}</Button>
 		</div>
 		<JoinPanel />
 		<GroupGames onJoin={openRoom} />
@@ -56,19 +54,10 @@
 		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-5);
 	}
-	/* Side by side while both fit, one under the other with the largest text on a narrow phone. */
+	/* The last game and New game span the page, edge to edge with the lists and buttons below
+	   (Trevor, 2026-11-06: the card was uneven with the rest of the screen on desktop). */
 	.start {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(min(100%, calc(11 * var(--u))), 1fr));
-		gap: var(--space-2);
-		width: 100%;
-		max-width: calc(28 * var(--u));
-		margin-inline: auto;
-	}
-	.last {
-		width: 100%;
-		max-width: calc(28 * var(--u));
-		margin-inline: auto;
 	}
 	/* No game to go back to: no row and no gap. */
 	.last:empty {

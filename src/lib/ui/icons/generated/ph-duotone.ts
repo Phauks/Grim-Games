@@ -38,8 +38,6 @@ import ph_bookmarks_simple_duotone from '~icons/ph/bookmarks-simple-duotone';
 import ph_books_duotone from '~icons/ph/books-duotone';
 import ph_bug_duotone from '~icons/ph/bug-duotone';
 import ph_calculator_duotone from '~icons/ph/calculator-duotone';
-import ph_calendar_check_duotone from '~icons/ph/calendar-check-duotone';
-import ph_calendar_star_duotone from '~icons/ph/calendar-star-duotone';
 import ph_camera_duotone from '~icons/ph/camera-duotone';
 import ph_camera_plus_duotone from '~icons/ph/camera-plus-duotone';
 import ph_cards_duotone from '~icons/ph/cards-duotone';
@@ -286,8 +284,6 @@ const icons: IconMap = {
 	'ph:books-duotone': ph_books_duotone,
 	'ph:bug-duotone': ph_bug_duotone,
 	'ph:calculator-duotone': ph_calculator_duotone,
-	'ph:calendar-check-duotone': ph_calendar_check_duotone,
-	'ph:calendar-star-duotone': ph_calendar_star_duotone,
 	'ph:camera-duotone': ph_camera_duotone,
 	'ph:camera-plus-duotone': ph_camera_plus_duotone,
 	'ph:cards-duotone': ph_cards_duotone,
