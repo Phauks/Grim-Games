@@ -563,7 +563,7 @@ test('history, add seat and remove', async ({ page }) => {
 	const added = history.getByRole('listitem').filter({ hasText: 'Added Seat 3' });
 	await added.getByRole('button', { name: 'Restore' }).tap();
 	const back = page.getByRole('alertdialog', { name: 'Restore?' });
-	await expect(back).toContainText('Undoes 1 change');
+	await expect(back).toContainText('Undo 1 change, back to just before');
 	await back.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByTestId('seat')).toHaveCount(8);
 	// The undone change stays, greyed out, and can be restored.
