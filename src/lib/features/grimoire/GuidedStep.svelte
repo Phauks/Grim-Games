@@ -34,10 +34,21 @@
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import BoardReminder from './BoardReminder.svelte';
 	import { TYPE_PLURALS } from '#lib/features/reference/labels.ts';
-	import NightText from '#lib/features/reference/NightText.svelte';
+	import NightTextLines from '#lib/features/reference/NightTextLines.svelte';
+	import {
+		nightTextSegmentsFor,
+		nightTextStepLines,
+		nightTextSteps
+	} from '#lib/core/rules/night-text.ts';
 	import EvilInfoCards from '#lib/features/show/EvilInfoCards.svelte';
 	import StepInfoTokens from '#lib/features/info-tokens/StepInfoTokens.svelte';
-	import { withChosen, type FilledInfoToken } from '#lib/core/rules/info-token-characters.ts';
+	import {
+		cardsOnLines,
+		stepInfoCards,
+		withChosen,
+		type FilledInfoToken,
+		type StepCard
+	} from '#lib/core/rules/info-token-characters.ts';
 	import { trueCharacter } from '#lib/core/model/index.ts';
 	import { infoTokensNamedIn, type InfoToken } from '#lib/core/data/info-tokens.ts';
 	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
@@ -254,6 +265,42 @@
 		void step?.id;
 		stepChanges = [];
 	});
+	/** The step's text as numbered lines (Trevor, 2026-11-06), a character's step only. */
+	const textLines = $derived(
+		step?.character && step.reminder
+			? nightTextSteps(nightTextSegmentsFor(step.character, step.reminder, night))
+			: undefined
+	);
+	/** The info token cards the step offers (`stepInfoCards`), each on the line naming it. */
+	const placedCards = $derived.by(() => {
+		const cards = step?.character
+			? stepInfoCards(
+					step.character,
+					step.reminder,
+					{ prepValues: game.prepValues, game, characters, changed: stepChanges },
+					step.infoTokenCharacters
+				)
+			: [];
+		return cardsOnLines(textLines ? nightTextStepLines(textLines) : [], cards);
+	});
+	/** A line's eye, named for its card as the card's tile is ("You are (Imp)"). */
+	function cardLabel(card: StepCard): string {
+		const owners = (card.filled?.characterIds ?? []).flatMap((id) => {
+			const c = characters.get(id);
+			return c ? [c.name] : [];
+		});
+		const name = owners.length
+			? // eslint-disable-next-line grim/names-as-badges -- the eye's spoken name, never shown
+				t('info-tokens.cardFor', { card: card.token.text, name: owners.join(', ') })
+			: card.token.text;
+		return `${t('show.toPlayer')}: ${name}`;
+	}
+	/** The lines whose card was shown at this step, drawn as marked; forgotten on a new step. */
+	let shownLines = $state<readonly number[]>([]);
+	$effect.pre(() => {
+		void step?.id;
+		shownLines = [];
+	});
 	/** "You are", when the step's text names it. */
 	const youAreCard = $derived(infoTokensNamedIn(step?.reminder).find((t) => t.id === 'you-are'));
 
@@ -365,10 +412,22 @@
 			<!-- What to do comes before any information (Trevor, 2026-10-20). -->
 			<!-- A marker step's text is in its row, where a character's ability goes (Trevor,
 			     2026-11-05: "wake the minions should appear in the ability text area"). -->
-			{#if step.reminder && step.character}
-				<p class="text">
-					<NightText text={step.reminder} character={step.character} {night} />
-				</p>
+			{#if textLines && step.character}
+				<h3>Steps</h3>
+				<NightTextLines
+					steps={textLines}
+					character={step.character}
+					marked={(i) => shownLines.includes(i)}
+				>
+					{#snippet lineEnd(i)}{#each placedCards.onLine[i] ?? [] as card, c (c)}<IconButton
+								icon="showToPlayer"
+								label={cardLabel(card)}
+								onclick={() => {
+									if (!shownLines.includes(i)) shownLines = [...shownLines, i];
+									chooseCard(card.token, card.filled);
+								}}
+							/>{/each}{/snippet}
+				</NightTextLines>
 			{/if}
 			<!-- The board itself, for as long as they need (Trevor, 2026-10-30); the step closes
 			     under it and comes back with its X. -->
@@ -571,15 +630,7 @@
 			<!-- The info tokens the text names, ready to show (Trevor, 2026-10-19). -->
 			{#if step.character}
 				<!-- Over the open step, which stays open under the sheet, as with onShow above. -->
-				<StepInfoTokens
-					text={step.reminder}
-					character={step.character}
-					{characters}
-					{game}
-					changed={stepChanges}
-					own={step.infoTokenCharacters}
-					onchoose={chooseCard}
-				/>
+				<StepInfoTokens cards={placedCards.rest} {characters} onchoose={chooseCard} />
 			{/if}
 			<!-- Who is drunk or poisoned, as its own section (Trevor, 2026-10-17). -->
 			{#if step.character}
@@ -680,10 +731,6 @@
 	}
 	.row-head {
 		margin-bottom: var(--space-1);
-	}
-	.text {
-		font-family: var(--font-ability);
-		line-height: 1.4;
 	}
 	h3 {
 		margin: var(--space-2) 0 var(--space-1);
