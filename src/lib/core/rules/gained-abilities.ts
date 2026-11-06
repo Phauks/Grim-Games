@@ -27,6 +27,7 @@ import { scriptCharacterIds } from '#lib/core/model/characters.ts';
 import { trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
 import type { Game, HeldAbility, SeatId } from '#lib/core/model/types.ts';
 import { abilityState, worksWhenDead } from './ability.ts';
+import { actsWhenDead } from './dead-characters.ts';
 import { givenInstead, jinxEffect } from './jinxes.ts';
 import { thinksPartnerSetup } from './jinx-effects.ts';
 import type { Night, NightStep } from './night-order.ts';
@@ -183,7 +184,18 @@ function gainingCharacter(
 }
 
 /**
- * Every living player's gained (or about to be gained) ability that wakes them. They wake by
+ * Whether a dead player keeps an ability they have from another character: one that works
+ * "even if dead" (the Recluse's) or that acts once its player is dead (the Ravenkeeper's, the
+ * Sweetheart's). The wiki's Cannibal summary: the Cannibal keeps such an ability when they die,
+ * but loses their Cannibal ability (https://wiki.bloodontheclocktower.com/Cannibal).
+ */
+export function keptWhenDead(characterId: CharacterId, characters: CharacterLookup): boolean {
+	return worksWhenDead(characterId, characters) || actsWhenDead(characterId, characters);
+}
+
+/**
+ * Every living player's gained (or about to be gained) ability that wakes them, and a dead
+ * player's gained ability they keep after death (`keptWhenDead`). They wake by
  * the token they hold (a Drunk who thinks they are the Pixie too), or by their true character
  * when their token was swapped for the character they chose (the Philosopher's). Abilities held without a
  * token (`Seat.abilities`) follow, while `holdsAbility`.
@@ -191,14 +203,16 @@ function gainingCharacter(
 export function gainedAbilities(game: Game, characters: CharacterLookup): GainedAbility[] {
 	const out: GainedAbility[] = [];
 	for (const seatId of game.seating) {
-		if (game.seats[seatId].dead) continue;
+		const dead = game.seats[seatId].dead;
 		const via = gainingCharacter(game, seatId, characters);
 		const rule = via === undefined ? undefined : rulesOf(via, characters)?.gainedFrom;
 		if (via === undefined || !rule?.wakes) continue;
 		const gained = gainedBy(game, seatId, via, rule, characters);
 		if (!gained) continue;
+		if (dead && (gained.status !== 'has-ability' || !keptWhenDead(gained.characterId, characters)))
+			continue;
 		const learns =
-			gained.status === 'has-ability'
+			gained.status === 'has-ability' && !dead
 				? learnsGainedTonight(game, { via, ...gained }, characters)
 				: undefined;
 		out.push({ seatId, via, ...gained, ...(learns ? { learns } : {}) });
@@ -463,8 +477,9 @@ export function abilityOf(
  * Whether `seatId` has `characterId`'s ability working now (`abilitiesOfSeat`): their own, by
  * their token (the Apprentice stays the Apprentice but "gains the ability of their character
  * token", https://wiki.bloodontheclocktower.com/Apprentice; the Alchemist's Minion) or gained
- * (the Pixie's), while their own ability works; or held (the Hermit's Mutant,
- * https://wiki.bloodontheclocktower.com/Hermit), while it is held.
+ * (the Pixie's), while their own ability works, or once they are dead and not drunk or
+ * poisoned, while it is one they keep (`keptWhenDead`: the dead Cannibal's Recluse); or held
+ * (the Hermit's Mutant, https://wiki.bloodontheclocktower.com/Hermit), while it is held.
  */
 export function hasAbilityOf(
 	game: Game,
@@ -474,7 +489,15 @@ export function hasAbilityOf(
 ): boolean {
 	const ability = abilityOf(game, seatId, characterId, characters);
 	if (!ability) return false;
-	return ability.how === 'held' || abilityState(game, seatId, characters).works;
+	if (ability.how === 'held') return true;
+	const state = abilityState(game, seatId, characters);
+	if (state.works) return true;
+	return (
+		ability.how !== 'own' &&
+		state.dead &&
+		state.impairments.length === 0 &&
+		keptWhenDead(characterId, characters)
+	);
 }
 
 /**

@@ -105,7 +105,7 @@ import {
 	storytellerHasAlerts
 } from './jinx-partner-alerts.ts';
 import type { LearnsGained, NightChoice } from '#lib/core/data/jinx-rules.ts';
-import { abilityHolders, gainedAbilities } from './gained-abilities.ts';
+import { abilitiesOfSeat, abilityHolders, gainedAbilities } from './gained-abilities.ts';
 import { falseInfoSource } from './night-info/reliability.ts';
 import {
 	abilityState,
@@ -685,6 +685,19 @@ function deathAlerts(
 	if (own && trigger && (trigger.by === 'any' || trigger.by === killer.by)) {
 		const character = characters.get(own);
 		alert('on-death', { characterId: own, seatId }, character && wikiUrl(character));
+	}
+	// Or an ability they have from another character that their death sets off (the Cannibal who
+	// ate the Ravenkeeper keeps it when they die, https://wiki.bloodontheclocktower.com/Cannibal).
+	for (const ability of abilitiesOfSeat(game, seatId, characters)) {
+		if (ability.how === 'own') continue;
+		const borrowed = onDeathTrigger(ability.characterId, characters);
+		if (!borrowed || (borrowed.by !== 'any' && borrowed.by !== killer.by)) continue;
+		const character = characters.get(ability.characterId);
+		alert(
+			'on-death',
+			{ characterId: ability.characterId, seatId },
+			character && wikiUrl(character)
+		);
 	}
 	// A player dies with the one their token marks when the Demon kills them (`deathCheck`
 	// `marked-killed-by-demon`: the Grandmother's Grandchild,
