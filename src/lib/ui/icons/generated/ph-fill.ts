@@ -38,8 +38,6 @@ import ph_bookmarks_simple_fill from '~icons/ph/bookmarks-simple-fill';
 import ph_books_fill from '~icons/ph/books-fill';
 import ph_bug_fill from '~icons/ph/bug-fill';
 import ph_calculator_fill from '~icons/ph/calculator-fill';
-import ph_calendar_check_fill from '~icons/ph/calendar-check-fill';
-import ph_calendar_star_fill from '~icons/ph/calendar-star-fill';
 import ph_camera_fill from '~icons/ph/camera-fill';
 import ph_camera_plus_fill from '~icons/ph/camera-plus-fill';
 import ph_cards_fill from '~icons/ph/cards-fill';
@@ -286,8 +284,6 @@ const icons: IconMap = {
 	'ph:books-fill': ph_books_fill,
 	'ph:bug-fill': ph_bug_fill,
 	'ph:calculator-fill': ph_calculator_fill,
-	'ph:calendar-check-fill': ph_calendar_check_fill,
-	'ph:calendar-star-fill': ph_calendar_star_fill,
 	'ph:camera-fill': ph_camera_fill,
 	'ph:camera-plus-fill': ph_camera_plus_fill,
 	'ph:cards-fill': ph_cards_fill,

@@ -114,3 +114,11 @@ export const openOnGrim = {
 		return asked;
 	}
 };
+
+/** Removes a players-only town from this phone: its seats and its place in Join game's list. */
+export function forgetLocalTown(notesKey: string): void {
+	delete changed[notesKey];
+	writeStored(storeKey(notesKey), undefined);
+	visits = localTownVisits().filter((v) => v.key !== notesKey);
+	writeStored(VISITS_KEY, visits);
+}
