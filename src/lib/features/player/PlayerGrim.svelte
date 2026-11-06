@@ -4,6 +4,7 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { CharacterId, LoadedScript } from '#lib/core/data/index.ts';
 	import { parsePublicLook, type PublicSeat } from '#lib/core/sync/public-projection.ts';
+	import { parsePlayersPhase } from '#lib/core/rules/game-phase.ts';
 	import { finalGrimoireOf, type PlayerGrimTown } from './player-grim-town.ts';
 	import CharacterPicker from '#lib/features/characters/CharacterPicker.svelte';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
@@ -524,9 +525,8 @@
 					{chip}
 					{characterOf}
 					disabled={hiding}
-					onPlace={(seat, r) => reminders.place(seat.seatId, r)}
-					onMove={(from, r, to) => reminders.move(from, r, to)}
-					onLook={(seatId, id, look) => reminders.setLook(seatId, id, look)}
+					{reminders}
+					now={parsePlayersPhase(player?.view?.public?.now)}
 				/>{/if}
 			{#if player}<PlayerSeating
 					bind:this={seating}

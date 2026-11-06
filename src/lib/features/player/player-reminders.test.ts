@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import type { Character } from '#lib/core/data/index.ts';
 import {
 	MAX_SEAT_REMINDERS,
 	addGenericReminder,
-	guessesFirst,
+	countUp,
 	hasReminder,
 	moveReminder,
 	parsePlayerReminders,
 	reminderWords,
-	scriptReminderGroups,
+	parsePlayerTokens,
+	phaseCount,
 	setGenericLook,
 	toggleReminder
 } from './player-reminders.ts';
@@ -97,24 +97,49 @@ describe("reminder tokens on a player's own grim", () => {
 		).toEqual({ s1: [{ characterId: 'generic', label: '', id: 'g' }] });
 	});
 
-	it('lists the characters a player guessed first, then the rest in script order', () => {
-		const at = (id: string) => ({ character: { id } as unknown as Character });
-		const { first, rest } = guessesFirst([at('a'), at('b'), at('c')], ['c', 'x']);
-		expect(first.map((g) => g.character.id)).toEqual(['c']);
-		expect(rest.map((g) => g.character.id)).toEqual(['a', 'b']);
+	it("keeps a copied reminder's art and a # token that counts up", () => {
+		const kept = parsePlayerReminders({
+			s1: [
+				{
+					characterId: 'generic',
+					label: '',
+					id: 'g',
+					note: 'Poisoned',
+					like: { characterId: 'poisoner', label: 'Poisoned' },
+					countsUp: 'dusk'
+				},
+				{ characterId: 'generic', label: '', id: 'h', countsUp: 'sometimes' }
+			]
+		});
+		expect(kept.s1[0]).toMatchObject({ like: poisoned, countsUp: 'dusk' });
+		expect(kept.s1[1]).not.toHaveProperty('countsUp');
 	});
 
-	it("offers every reminder of the script's characters, in script order", () => {
-		const character = (id: string, reminders: string[], remindersGlobal: string[] = []) =>
-			({ id, name: id, type: 'townsfolk', reminders, remindersGlobal }) as unknown as Character;
-		const groups = scriptReminderGroups([
-			character('washerwoman', ['Wrong', 'Townsfolk']),
-			character('chef', []),
-			character('drunk', [], ['Drunk'])
-		]);
-		expect(groups.map((g) => [g.character.id, g.labels])).toEqual([
-			['washerwoman', ['Townsfolk', 'Wrong']],
-			['drunk', ['Drunk']]
-		]);
+	it('counts # tokens up once for each dusk or dawn passed, to the highest number', () => {
+		// The board's Counts up (plan M53): Each night at dusk, Each day at dawn.
+		const reminders = parsePlayerReminders({
+			s1: [
+				{ characterId: 'generic', label: '', id: 'n', symbol: '#2', countsUp: 'dusk' },
+				{ characterId: 'generic', label: '', id: 'd', symbol: '#19', countsUp: 'dawn' },
+				{ characterId: 'generic', label: '', id: 'x', symbol: '#5' }
+			]
+		});
+		expect(phaseCount({ kind: 'night', number: 2 })).toEqual({ dusk: 2, dawn: 1 });
+		expect(phaseCount({ kind: 'day', number: 2 })).toEqual({ dusk: 2, dawn: 2 });
+		expect(phaseCount({ kind: 'setup' })).toEqual({ dusk: 0, dawn: 0 });
+		const up = countUp(reminders, { dusk: 1, dawn: 3 }).s1.map((r) => r.symbol);
+		expect(up).toEqual(['#3', '#20', '#5']);
+	});
+
+	it("reads a player's own ∞ tokens, dropping damaged ones", () => {
+		expect(
+			parsePlayerTokens([
+				{ tokenId: 't1', note: 'Chose', symbol: '#1' },
+				{ tokenId: 't1', note: 'twice' },
+				{ note: 'no id' },
+				'junk'
+			])
+		).toEqual([{ tokenId: 't1', note: 'Chose', symbol: '#1' }]);
+		expect(parsePlayerTokens({})).toEqual([]);
 	});
 });

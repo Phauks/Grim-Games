@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Character, ReminderLabel } from '#lib/core/data/index.ts';
+	import type { CounterTime } from '#lib/core/data/counter-rules.ts';
 	import type { GenericLook } from '#lib/core/model/index.ts';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
@@ -25,6 +26,8 @@
 		tokenKey?: string;
 		/** The character whose reminder it copies, whose art it shows (Trevor, 2026-10-27). */
 		art?: Character;
+		/** A # token's Counts up (GenericLookFields); left out, the row isn't offered. */
+		onCountsUp?: (countsUp: CounterTime | undefined) => void;
 	}
 
 	let {
@@ -34,7 +37,8 @@
 		onDelete,
 		deleteLabel,
 		tokenKey,
-		art
+		art,
+		onCountsUp
 	}: Props = $props();
 
 	$effect(() => {
@@ -84,6 +88,7 @@
 				onSymbol={(symbol) => onChange({ symbol: symbol || undefined })}
 				onColour={(symbolColour) => onChange({ symbolColour })}
 				onFill={(fill) => onChange({ symbolFill: fill || undefined })}
+				{onCountsUp}
 			/>
 		{/key}
 	{/if}
