@@ -33,6 +33,7 @@
 	} from '#lib/core/rules/index.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import AlignmentPill from './AlignmentPill.svelte';
+	import ShowToPlayerButton from '#lib/features/show/ShowToPlayerButton.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import CharacterPicker from './CharacterPicker.svelte';
 	import JinxedPick from './JinxedPick.svelte';
@@ -409,7 +410,7 @@
 			alignment={alignmentOf(game, seatId)}
 			playerName={playerName(seatId)}
 		/>
-		<Button variant="quiet" onclick={() => onShow(characterId)}>Show to player</Button>
+		<ShowToPlayerButton onclick={() => onShow(characterId)} />
 	{/if}
 {/snippet}
 
