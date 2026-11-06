@@ -1142,10 +1142,12 @@ test('a night step offers the info tokens its text names', async ({ page }) => {
 		.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong')
 		.tap();
 	const step = page.getByRole('dialog', { name: 'Imp' });
-	const tiles = step.getByTestId('step-info-tokens');
-	await expect(tiles.getByRole('button')).toHaveCount(1);
+	// The card is on the line that names it (Trevor, 2026-11-06), with no list of cards below.
+	const lines = step.getByTestId('night-lines');
+	await expect(lines.getByRole('button', { name: /^Show to player/ })).toHaveCount(1);
+	await expect(step.getByTestId('step-info-tokens')).toHaveCount(0);
 	// The Imp's rules fill in its own token (Trevor, 2026-10-24), so the card shows at once.
-	await tiles.getByRole('button', { name: 'You are (Imp)', exact: true }).tap();
+	await lines.getByRole('button', { name: 'Show to player: You are (Imp)', exact: true }).tap();
 	const shown = page.locator('[data-testid="show-to-player"][open]');
 	await expect(shown.getByRole('img', { name: /Imp token/ })).toBeVisible();
 	// The step stays open under the card, for the rest of the Imp's turn: closing the card goes
@@ -1389,10 +1391,14 @@ test('the Cerenovus shows "This character selected you", then "You are mad as" t
 		.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong')
 		.tap();
 	const step = page.getByRole('dialog', { name: 'Cerenovus' });
-	const tiles = step.getByTestId('step-info-tokens');
+	// "This character selected you" is on the line naming it; the card the rules offer stays below.
 	await expect(
-		tiles.getByRole('button', { name: 'This character selected you (Cerenovus)', exact: true })
+		step.getByTestId('night-lines').getByRole('button', {
+			name: 'Show to player: This character selected you (Cerenovus)',
+			exact: true
+		})
 	).toBeVisible();
+	const tiles = step.getByTestId('step-info-tokens');
 	await tiles.getByRole('button', { name: 'You are mad as', exact: true }).tap();
 	// The Storyteller picks the madness character; both cards then show together.
 	const confirm = page.getByRole('button', { name: 'Confirm' });
@@ -1431,15 +1437,21 @@ test('the Snake Charmer step fills "You are" with the Demon, then with the Snake
 		.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong')
 		.tap();
 	const step = page.getByRole('dialog', { name: 'Snake Charmer' });
-	const tiles = step.getByTestId('step-info-tokens');
-	await expect(tiles.getByRole('button')).toHaveCount(2);
-	await expect(
-		tiles.getByRole('button', { name: 'You are (Vigormortis)', exact: true })
-	).toBeVisible();
-	await tiles.getByRole('button', { name: 'You are (Snake Charmer)', exact: true }).tap();
+	// Each "You are" line has its own card, in the text's order (Trevor, 2026-11-06).
+	const eyes = step.getByTestId('night-lines').getByRole('button', { name: /^Show to player/ });
+	await expect(eyes).toHaveCount(2);
+	await expect(eyes.nth(0)).toHaveAccessibleName('Show to player: You are (Vigormortis)');
+	await expect(eyes.nth(1)).toHaveAccessibleName('Show to player: You are (Snake Charmer)');
+	await expect(step.getByTestId('night-lines').locator('[data-marked-row]')).toHaveCount(0);
+	await eyes.nth(1).tap();
 	const shown = page.locator('[data-testid="show-to-player"][open]');
 	await expect(shown).toHaveAccessibleName('You are: Snake Charmer');
 	await expect(shown.getByRole('img', { name: /Snake Charmer token/ })).toBeVisible();
+	// Back at the step, the line whose card was shown is marked done.
+	await shown.getByRole('button', { name: 'Close' }).tap();
+	const marked = step.getByTestId('night-lines').locator('[data-marked-row]');
+	await expect(marked).toHaveCount(1);
+	await expect(marked).toContainText('give a thumbs up');
 });
 
 // Trevor (2026-11-01): "App does not show the token". The twins learn each other: the Evil
@@ -4833,8 +4845,11 @@ test('the Storm Catcher named character is picked before the day and kept at its
 	// The step's own "not in play" card shows that character, never the Demon's bluffs
 	// (Trevor, 2026-11-01).
 	await step
-		.getByTestId('step-info-tokens')
-		.getByRole('button', { name: 'These characters are not in play (Washerwoman)', exact: true })
+		.getByTestId('night-lines')
+		.getByRole('button', {
+			name: 'Show to player: These characters are not in play (Washerwoman)',
+			exact: true
+		})
 		.tap();
 	const shown = page.locator('[data-testid="show-to-player"][open]');
 	await expect(shown.getByRole('img', { name: /Washerwoman token/ })).toBeVisible();
