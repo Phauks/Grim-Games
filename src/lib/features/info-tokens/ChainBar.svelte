@@ -108,7 +108,7 @@
 	.chain {
 		position: sticky;
 		bottom: calc(-1 * var(--space-1));
-		z-index: 2;
+		z-index: var(--z-pinned-bar);
 		margin-top: var(--space-3);
 		margin-bottom: calc(-1 * var(--space-1));
 		padding: var(--space-2) 0 var(--space-2);

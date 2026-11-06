@@ -163,7 +163,7 @@
 	.nav-top {
 		position: sticky;
 		top: 0;
-		z-index: 1;
+		z-index: var(--z-pinned);
 		padding-bottom: var(--space-2);
 		background: var(--dialog-background);
 	}

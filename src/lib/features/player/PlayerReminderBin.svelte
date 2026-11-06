@@ -372,7 +372,7 @@
 <style>
 	.floating {
 		position: absolute;
-		z-index: 4;
+		z-index: var(--z-held);
 		translate: -50% -50%;
 		scale: 1.15;
 		pointer-events: none;

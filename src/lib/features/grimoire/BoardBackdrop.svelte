@@ -59,7 +59,7 @@
 	.backdrop {
 		position: fixed;
 		inset: 0;
-		z-index: -1;
+		z-index: var(--z-backdrop);
 		background: center / cover no-repeat;
 		filter: brightness(0.45) saturate(0.85);
 		pointer-events: none;
@@ -76,7 +76,7 @@
 	.vignette {
 		position: fixed;
 		inset: 0;
-		z-index: -1;
+		z-index: var(--z-backdrop);
 		/* Clear in the middle, darkening to the strength at the corners. */
 		/* The two shades are darkness, not theme colours. */
 		--vignette-mid: rgb(0 0 0 / calc(var(--vignette) * 0.6)); /* colour-ok: shadow */

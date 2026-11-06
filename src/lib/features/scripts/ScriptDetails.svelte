@@ -142,7 +142,7 @@
 		position: sticky;
 		top: calc(-1 * var(--pinned-inset, 0rem));
 		/* Above the sheet's pinned type headings (z-index 1) as one leaves its section. */
-		z-index: 2;
+		z-index: var(--z-pinned-bar);
 		margin-top: calc(-1 * var(--pinned-inset, 0rem));
 		padding-top: var(--pinned-inset, 0);
 		padding-bottom: var(--space-2);

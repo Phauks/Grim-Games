@@ -198,7 +198,7 @@
 		right: 0;
 		/* Under the step's reminders tray (NightTray). */
 		top: calc(100% + 2 * var(--space-2) + var(--tray-h));
-		z-index: 2;
+		z-index: var(--z-above-2);
 		display: flex;
 		align-items: stretch;
 		gap: var(--space-1);
@@ -219,7 +219,7 @@
 		position: absolute;
 		top: 0;
 		right: 0;
-		z-index: 1;
+		z-index: var(--z-above);
 		display: flex;
 	}
 	.step {
@@ -307,7 +307,7 @@
 		top: var(--space-1);
 		left: var(--space-1);
 		right: calc(2 * var(--tap-target));
-		z-index: 1;
+		z-index: var(--z-above);
 		--character-ring: var(--tap-target);
 	}
 	.again {

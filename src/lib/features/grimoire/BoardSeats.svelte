@@ -394,10 +394,10 @@
 	}
 	/* Above the other seats, still under the reminders (later in the page). */
 	.slot.front {
-		z-index: 1;
+		z-index: var(--z-above);
 	}
 	.slot.dragging {
-		z-index: 2;
+		z-index: var(--z-above-2);
 		cursor: grabbing;
 	}
 	/* A held seat lifts and everything else on the board darkens (Trevor, 2026-10-26). */
@@ -411,7 +411,7 @@
 	}
 	.held-token {
 		position: absolute;
-		z-index: 1;
+		z-index: var(--z-above);
 		display: grid;
 		place-items: center;
 		min-width: var(--tap-target);
@@ -430,7 +430,7 @@
 	.held-token[data-off]::before {
 		content: '';
 		position: absolute;
-		z-index: 1;
+		z-index: var(--z-above);
 		width: 90%;
 		height: calc(0.15 * var(--u));
 		background: var(--on-surface);
@@ -441,7 +441,7 @@
 	}
 	.place-spot {
 		position: absolute;
-		z-index: 3;
+		z-index: var(--z-above-3);
 		display: grid;
 		place-items: center;
 		width: var(--tap-target);
@@ -456,7 +456,7 @@
 	/* Who already goes there, just under the spot, so another late player can sit beside them. */
 	.place-pending {
 		position: absolute;
-		z-index: 3;
+		z-index: var(--z-above-3);
 		display: flex;
 		flex-direction: column;
 		align-items: center;

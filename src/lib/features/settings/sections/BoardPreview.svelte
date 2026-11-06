@@ -357,7 +357,7 @@
 		position: absolute;
 		top: var(--space-1);
 		left: var(--space-1);
-		z-index: 2;
+		z-index: var(--z-above-2);
 	}
 	.preview-rules {
 		display: flex;
@@ -370,7 +370,7 @@
 		position: absolute;
 		left: var(--space-1);
 		bottom: calc(1.9 * var(--chip));
-		z-index: 1;
+		z-index: var(--z-above);
 		max-width: 40%;
 		margin: 0;
 		overflow: hidden;
@@ -418,7 +418,7 @@
 	.bank {
 		grid-row: 3;
 		position: relative;
-		z-index: 1;
+		z-index: var(--z-above);
 		display: flex;
 		align-items: center;
 		justify-content: center;

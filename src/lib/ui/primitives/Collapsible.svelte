@@ -270,7 +270,7 @@
 		position: sticky;
 		top: var(--pin-top, 0rem);
 		/* Over the rows passing under it, under any band, bar or heading pinned above it. */
-		z-index: 1;
+		z-index: var(--z-pinned);
 	}
 	/* Filled only while stuck, so at rest it is the box it sits in (no band behind it). */
 	/* data-stuck is set by watchPinned above, so Svelte cannot see it in the markup. */
@@ -324,7 +324,7 @@
 		content: '';
 		position: absolute;
 		inset: 0;
-		z-index: -1;
+		z-index: var(--z-under);
 		border-radius: var(--radius-full);
 		background: var(--type-band);
 		box-shadow: var(--type-band-ring, var(--button-ring));

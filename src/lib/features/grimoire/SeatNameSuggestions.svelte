@@ -26,7 +26,7 @@
 	.suggestions {
 		position: absolute;
 		inset: 0 0 auto;
-		z-index: 2;
+		z-index: var(--z-above-2);
 		display: flex;
 		gap: var(--space-1);
 		padding: var(--space-1) 0;

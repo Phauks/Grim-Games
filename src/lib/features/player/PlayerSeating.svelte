@@ -199,7 +199,7 @@
 	/* Over the player's own seat (or the middle), the size of a seat, taking the drag. */
 	.disc {
 		position: absolute;
-		z-index: 3;
+		z-index: var(--z-above-3);
 		width: var(--disc);
 		height: var(--disc);
 		padding: 0;
@@ -211,13 +211,13 @@
 		cursor: grab;
 	}
 	.disc.held {
-		z-index: 4;
+		z-index: var(--z-held);
 		cursor: grabbing;
 	}
 	/* The seat the held disc would take: a ring round it, under the disc. */
 	.target {
 		position: absolute;
-		z-index: 2;
+		z-index: var(--z-above-2);
 		width: calc(var(--disc) * 1.2);
 		height: calc(var(--disc) * 1.2);
 		transform: translate(-50%, -50%);
@@ -234,7 +234,7 @@
 		position: absolute;
 		left: 50%;
 		top: 50%;
-		z-index: 2;
+		z-index: var(--z-above-2);
 		max-width: 90%;
 		margin: 0;
 		padding: 0.25em 0.75em;
