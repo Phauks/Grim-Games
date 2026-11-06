@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { splitSetupNote } from '#lib/core/text/setup-note.ts';
+	import SetupNote from './SetupNote.svelte';
 	import { onMount, type Snippet } from 'svelte';
 	import type {
 		Alignment,
@@ -203,7 +205,9 @@
 		>
 		<div class="body">
 			{#if look.ability && character}<p class="ability" data-testid="ability">
-					{#if abilityText}{@render abilityText()}{:else}{character.ability}{/if}
+					{#if abilityText}{@render abilityText()}{:else}{@const split = splitSetupNote(
+							character.ability ?? ''
+						)}{split.text}{#if split.setup}<SetupNote>{split.setup}</SetupNote>{/if}{/if}
 				</p>{/if}
 			{#if children}{@render children()}{/if}
 		</div>

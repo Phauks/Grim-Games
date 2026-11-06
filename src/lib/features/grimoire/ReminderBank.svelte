@@ -233,6 +233,22 @@
 		else if (held) newTokenLike(held, hand.number);
 		else makeToken();
 	}
+	/**
+	 * A night step's reminder taken from the step (Trevor, 2026-11-06: back to the board, not a
+	 * list of players): its bank token in hand, as if tapped here. False when the bank has none.
+	 */
+	export function hold(reminder: Pick<Reminder, 'characterId' | 'label'>): boolean {
+		const mine = items.filter(
+			(i) => !i.token && !i.number && i.characterId === reminder.characterId
+		);
+		const item =
+			mine.find((i) => i.label === reminder.label) ??
+			mine.find((i) => i.run?.includes(reminder.label));
+		if (!item) return false;
+		binOpen = false;
+		hand.held = { kind: 'bank', item };
+		return true;
+	}
 	/** Marks the seats for the token in hand, as for one dragged; a board token's are the board's. */
 	$effect(() => {
 		if (drag || hand.held?.kind === 'placed') return;
