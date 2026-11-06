@@ -243,6 +243,11 @@
 		addOpen = true;
 	}
 
+	/** Opens Add script from a button the caller draws (the script sheet's +). */
+	export function open(): void {
+		openAdd();
+	}
+
 	const hasLink = $derived(linkText.trim() !== '');
 	const hasPaste = $derived(pasteText.trim() !== '');
 
