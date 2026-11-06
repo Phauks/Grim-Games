@@ -1,7 +1,8 @@
 {
 	"actsWhenDead": true,
 	"onDeath": {
-		"by": "demon"
+		"by": "demon",
+		"places": "Has Ability"
 	},
 	"afterDeath": {
 		"cause": ["demon"],
