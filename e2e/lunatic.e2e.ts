@@ -1,3 +1,4 @@
+import { chooseExecution } from './execution.ts';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 
@@ -48,12 +49,7 @@ async function openStep(page: Page, title: string) {
 			.getByRole('button', { name: /^(Start game|Run Night Order|Execution)$/ });
 		const day = (await start.getAttribute('aria-label')) === 'Execution';
 		await start.tap();
-		if (day) {
-			const ask = page.getByRole('alertdialog', { name: 'End the day?' });
-			await ask.getByRole('combobox', { name: 'Execution' }).tap();
-			await page.getByRole('option', { name: 'No execution', exact: true }).tap();
-			await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
-		}
+		if (day) await chooseExecution(page);
 		const ask = page.getByRole('alertdialog', { name: 'Start the game?' });
 		await expect(strip.or(ask)).toBeVisible();
 		if (await ask.isVisible())

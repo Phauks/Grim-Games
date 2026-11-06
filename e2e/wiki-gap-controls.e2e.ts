@@ -1,3 +1,4 @@
+import { chooseExecution } from './execution.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 import { pickNumber } from './number-select.ts';
@@ -79,10 +80,7 @@ const dayView = (page: Page) => page.getByRole('dialog', { name: /^Day \d+$/ });
 /** The day ended with no execution, from the day view, into the night. */
 async function endDay(page: Page) {
 	await dayView(page).getByRole('button', { name: 'Execution', exact: true }).tap();
-	const ask = page.getByRole('alertdialog', { name: 'End the day?' });
-	await ask.getByRole('combobox', { name: 'Execution' }).tap();
-	await page.getByRole('option', { name: /^No execution(\s|$)/ }).tap();
-	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await chooseExecution(page);
 	await expect(page.getByTestId('night-strip')).toBeVisible();
 }
 

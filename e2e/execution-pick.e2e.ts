@@ -64,7 +64,8 @@ async function startExecution(page: Page) {
 test('the executed player is tapped on the board and confirmed there', async ({ page }) => {
 	await startedGame(page);
 	const bar = await startExecution(page);
-	const confirm = bar.getByRole('button', { name: 'Confirm', exact: true });
+	// The bank's own button is Confirm while the bar shows.
+	const confirm = page.locator('[data-tray]').getByRole('button', { name: 'Confirm', exact: true });
 	await expect(confirm).toBeDisabled();
 	const question = bar.getByTestId('execution-pick-question');
 	const actions = await confirm.boundingBox();
@@ -80,6 +81,14 @@ test('the executed player is tapped on the board and confirmed there', async ({ 
 	await expect(boardSeat(page, 'Seat 3:')).not.toHaveAttribute('data-drop');
 	// The question never moves Confirm (no reflow).
 	expect(await confirm.boundingBox()).toEqual(actions);
+	// The bar covers no seat (Trevor, 2026-11-06: nothing may cover the board's content).
+	const barBox = (await bar.boundingBox())!;
+	for (const seat of await page.getByTestId('seat').all()) {
+		const box = (await seat.boundingBox())!;
+		expect(box.y + box.height, (await seat.getAttribute('aria-label')) ?? '').toBeLessThanOrEqual(
+			barBox.y - 1
+		);
+	}
 
 	await confirm.tap();
 	await expect(bar).toBeHidden();
@@ -107,7 +116,7 @@ test('No execution and Cancel are on the bar', async ({ page }) => {
 
 	bar = await startExecution(page);
 	await bar.getByRole('button', { name: 'No execution', exact: true }).tap();
-	await bar.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await page.locator('[data-tray]').getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(bar).toBeHidden();
 	await expect(page.locator('[data-testid="seat"][data-dead]')).toHaveCount(0);
 });

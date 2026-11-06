@@ -1,3 +1,4 @@
+import { chooseExecution } from './execution.ts';
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 import { putReminder } from './reminder-bank.ts';
@@ -85,10 +86,7 @@ async function toNightTwo(page: Page, executed: string) {
 		.locator('..')
 		.getByRole('button', { name: 'Execution', exact: true })
 		.tap();
-	const ask = page.getByRole('alertdialog', { name: 'End the day?' });
-	await ask.getByRole('combobox', { name: 'Execution' }).tap();
-	await page.getByRole('option', { name: executed }).tap();
-	await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await chooseExecution(page, executed);
 }
 
 async function openStep(page: Page, title: string) {

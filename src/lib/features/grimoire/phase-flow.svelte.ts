@@ -114,11 +114,13 @@ export class PhaseFlow {
 	/**
 	 * Execution, from the bank or the day view: the board asks for the executed player, with an
 	 * execution already logged today picked to start with. Before Start game the sheet opens
-	 * instead, as it warns (Trevor, 2026-11-01).
+	 * instead, as it warns (Trevor, 2026-11-01), and with the Atheist on the script, which
+	 * offers the Storyteller.
 	 */
 	startExecution(): void {
-		const { game, notStarted, setDayOpen, hand } = this.#context();
-		if (notStarted) {
+		const { game, characters, notStarted, setDayOpen, hand } = this.#context();
+		// The Atheist's Storyteller is chosen on the sheet, as the board has no seat for them.
+		if (notStarted || storytellerNominee(game, characters)) {
 			this.endDayOpen = true;
 			return;
 		}
@@ -175,12 +177,6 @@ export class PhaseFlow {
 		return picked === undefined || picked === NO_EXECUTION || picked === STORYTELLER
 			? undefined
 			: picked;
-	}
-
-	/** Whether the board's bar offers the Storyteller (the Atheist on the script). */
-	get storytellerPickable(): boolean {
-		const { game, characters } = this.#context();
-		return storytellerNominee(game, characters);
 	}
 
 	/** Executed from a seat's status: true when the day's Execution asks, with them chosen. */
@@ -294,6 +290,16 @@ export class PhaseFlow {
 	 */
 	readonly run = $derived.by(() => {
 		const { grimoire, game, nw, showSetup, ended, busy } = this.#context();
+		// While the board asks for the executed player, the bank's button is its Confirm, beside
+		// the bar's Cancel (Trevor, 2026-11-06).
+		if (this.picking)
+			return {
+				label: t('common.confirm'),
+				text: t('common.confirm'),
+				icon: 'check' as const,
+				disabled: this.picked === undefined,
+				onclick: () => this.confirmPick()
+			};
 		if (nw.nightOn)
 			return {
 				label: 'End night',

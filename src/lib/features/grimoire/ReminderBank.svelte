@@ -83,7 +83,7 @@
 			/** Its accessible name, and the shorter words shown. */
 			label: string;
 			text: string;
-			icon: 'bag' | 'day' | 'night';
+			icon: 'bag' | 'day' | 'night' | 'check';
 			disabled: boolean;
 			onclick: () => void;
 			hint?: number;
