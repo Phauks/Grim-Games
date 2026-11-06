@@ -14,6 +14,8 @@ test('Credits sits beneath About and holds the credits About used to', async ({ 
 	const main = page.getByRole('main');
 	await expect(main.getByRole('heading', { level: 1, name: 'Credits' })).toBeVisible();
 	await expect(main.locator('.official-notice')).toContainText('Community Created Content policy');
+	// Trevor (2026-11-06): "Credits page should include CCC logo".
+	await expect(main.locator('a.ccc img')).toBeVisible();
 	await expect(main.getByRole('heading', { name: 'Sound credits' })).toBeVisible();
 
 	// About no longer holds them.
