@@ -163,18 +163,22 @@ function layout(
 				if (ok(p) && !out.some((q) => overlaps(box(q), box(p)))) out.push(p);
 			}
 		};
+		// Each fallback below builds its places only while some reminder still has none: a full
+		// ring of places round a seat is thousands of points, so building them for a seat whose
+		// reminders are all placed made the board slow to open (load timing, 2026-11-06).
+		const short = () => out.length < input.count;
 		add(all, clear);
 		// Lines full: any clear spot round the seat, nearest the middle-facing side first.
-		if (out.length < input.count) add(around(input), clear);
-		if (out.length < input.count) fits = false;
+		if (short()) add(around(input), clear);
+		if (short()) fits = false;
 		// Still short: over the edge of its own token, before anything else's.
-		add(candidates({ ...input, size: input.size * 0.3 }), clear);
+		if (short()) add(candidates({ ...input, size: input.size * 0.3 }), clear);
 		// Then anywhere round its own token, up to half over it, before leaning towards another.
-		add(around({ ...input, size: 0 }), clear);
+		if (short()) add(around({ ...input, size: 0 }), clear);
 		// Still short: covering nothing is worth more than being nearest (Trevor, 2026-10-16:
 		// never over another player's reminders). The clear spot nearest its own seat, counting
 		// any lean towards another seat twice, so whose it is stays as plain as the room allows.
-		if (out.length < input.count) {
+		if (short()) {
 			const score = (p: { x: number; y: number }) => {
 				const mineAt = Math.sqrt(own2(p));
 				const nearest = Math.min(
@@ -192,14 +196,19 @@ function layout(
 			add(spots, () => true);
 		}
 		// No room left at all: beside its own seat, nearest first, even if it covers another.
-		const near = all.filter((p) => inside(p) && mine(p)).sort((a, b) => own2(a) - own2(b));
-		add(near, () => true);
+		if (short())
+			add(
+				all.filter((p) => inside(p) && mine(p)).sort((a, b) => own2(a) - own2(b)),
+				() => true
+			);
 		// Even that is full: stack on the nearest places beside its own seat.
-		const tightNear = candidates({ ...input, size: input.size * 0.3 })
-			.filter((p) => inside(p) && mine(p))
-			.sort((a, b) => own2(a) - own2(b));
-		const last = tightNear.length > 0 ? tightNear : [input.seat];
-		for (let k = 0; out.length < input.count; k++) out.push(last[k % last.length]);
+		if (short()) {
+			const tightNear = candidates({ ...input, size: input.size * 0.3 })
+				.filter((p) => inside(p) && mine(p))
+				.sort((a, b) => own2(a) - own2(b));
+			const last = tightNear.length > 0 ? tightNear : [input.seat];
+			for (let k = 0; short(); k++) out.push(last[k % last.length]);
+		}
 		placed[i] = out.map(box);
 		return out;
 	});

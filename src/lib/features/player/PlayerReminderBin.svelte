@@ -1,12 +1,19 @@
 <script lang="ts">
 	import type { Character, CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
-	import { GENERIC_REMINDER_ID, type GenericLook } from '#lib/core/model/index.ts';
+	import {
+		GENERIC_REMINDER_ID,
+		numberSymbol,
+		symbolNumber,
+		type GenericLook
+	} from '#lib/core/model/index.ts';
 	import type { PublicSeat } from '#lib/core/sync/public-projection.ts';
 	import { matchesReminderSearch } from '#lib/features/characters/character-search.ts';
 	import BoardReminder from '#lib/features/grimoire/BoardReminder.svelte';
+	import { FIXED_GENERIC_ITEMS, bankLook, bankView } from '#lib/features/grimoire/bank-items.ts';
 	import GenericLookDialog from '#lib/features/grimoire/GenericLookDialog.svelte';
 	import ReminderAbout from '#lib/features/grimoire/ReminderAbout.svelte';
 	import ReminderInHand from '#lib/features/grimoire/ReminderInHand.svelte';
+	import ReminderNumberPick from '#lib/features/grimoire/ReminderNumberPick.svelte';
 	import ReminderTray from '#lib/features/grimoire/ReminderTray.svelte';
 	import { dropOnTap } from '#lib/features/grimoire/reminder-in-hand.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
@@ -26,7 +33,8 @@
 	/**
 	 * A player's reminder tray (Trevor, 2026-10-31: the Storyteller's bank's own tray,
 	 * ReminderTray), docked at the town's foot: the characters this player guessed first, then
-	 * the rest of the script, then the generic ∞; pulled up, a search narrows them. Drag a token
+	 * the rest of the script, then the bank's own generic tokens (the ∞ and the # number token,
+	 * `FIXED_GENERIC_ITEMS`, drawn as the bank draws them); pulled up, a search narrows them. Drag a token
 	 * onto a seat, or tap it and then a seat. A player's tokens never run out: the same one may
 	 * go on several seats. A token on a seat is picked up by a tap too, as on the board: a seat
 	 * tapped next moves it there, the tray takes it back off.
@@ -70,13 +78,22 @@
 
 	interface Token {
 		key: string;
+		/** As it goes on a seat: a # token starts at 1, as the bank's does. */
 		reminder: PlayerReminder;
 		character?: Character;
+		/** A bank generic token's face (bankView), the # showing # until placed. */
+		view?: ReturnType<typeof bankView>;
 	}
-	const GENERIC: Token = {
-		key: 'generic',
-		reminder: { characterId: GENERIC_REMINDER_ID as CharacterId, label: '' as ReminderLabel }
-	};
+	/** The bank's generic tokens, never a list of the tray's own (Trevor, 2026-11-06). */
+	const GENERIC: Token[] = FIXED_GENERIC_ITEMS.map((item) => ({
+		key: item.key,
+		reminder: {
+			characterId: GENERIC_REMINDER_ID as CharacterId,
+			label: '' as ReminderLabel,
+			...bankLook(item)
+		},
+		view: bankView(item, new Map())
+	}));
 
 	let open = $state(false);
 	let query = $state('');
@@ -97,7 +114,7 @@
 		return [
 			{ key: 'guesses', caption: t('player.grim.yourGuesses'), items: tokens(parts.first) },
 			{ key: 'script', caption: t('player.grim.onTheScript'), items: tokens(parts.rest) },
-			{ key: 'generic', caption: '∞', items: query.trim() ? [] : [GENERIC] }
+			{ key: 'generic', caption: '∞', items: query.trim() ? [] : GENERIC }
 		];
 	});
 
@@ -192,7 +209,8 @@
 		if (!el || !from) return;
 		return dropOnTap(
 			el,
-			(target) => !!target.closest('.grab'),
+			// The pill's own controls (its number, ⋯ and ×) stay the pill's, as on the board.
+			(target) => !!target.closest('.grab, [data-testid="reminder-in-hand"]'),
 			() => {
 				held = undefined;
 				onMove(from.seatId, from.reminder);
@@ -231,6 +249,16 @@
 			? [{ value: 'edit', label: t('player.grim.editToken'), onSelect: () => (editOpen = true) }]
 			: []
 	);
+	/** A held # token's number (plan M48): picked in its pill, as on the board. */
+	const heldNumber = $derived(symbolNumber(heldReminder?.symbol));
+	function pickNumber(n: number) {
+		const symbol = numberSymbol(n);
+		if (held?.kind === 'tray') held = { ...held, look: { ...held.look, symbol } };
+		else if (held?.kind === 'placed' && held.reminder.id) {
+			onLook(held.seatId, held.reminder.id, { symbol });
+			held = { ...held, reminder: { ...held.reminder, symbol } };
+		}
+	}
 	/** The look being edited, kept on the token in hand or on its seat. */
 	function setLook(change: GenericLook) {
 		const now = subject;
@@ -254,9 +282,7 @@
 
 {#snippet tokenView(token: Token, inRow: boolean, floating = false)}
 	<BoardReminder
-		label={token.character ? token.reminder.label : ('' as ReminderLabel)}
-		character={token.character}
-		infinite={!token.character}
+		{...token.view ?? { label: token.reminder.label, character: token.character }}
 		size={chip}
 		disabled={floating || disabled}
 		onTap={() => tapToken(token)}
@@ -269,6 +295,9 @@
 
 {#snippet heldView()}
 	{#if heldReminder}<BoardReminder {...playerLook(heldReminder, characterOf)} />{/if}
+{/snippet}
+{#snippet numberPick()}
+	{#if heldNumber !== undefined}<ReminderNumberPick value={heldNumber} onchange={pickNumber} />{/if}
 {/snippet}
 {#snippet subjectView()}
 	{#if subject}<BoardReminder {...playerLook(subject.reminder, characterOf)} />{/if}
@@ -304,6 +333,7 @@
 		<ReminderInHand
 			token={heldView}
 			{actions}
+			extra={heldNumber === undefined ? undefined : numberPick}
 			onAbout={() => (aboutOpen = true)}
 			onPutDown={() => (held = undefined)}
 		/>

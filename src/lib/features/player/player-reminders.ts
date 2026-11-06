@@ -4,7 +4,12 @@
  * per game (`gameKey`), like the player's guesses; nothing here reaches the room.
  */
 import type { Character, CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
-import { GENERIC_REMINDER_ID, SYMBOL_COLOURS, type GenericLook } from '#lib/core/model/index.ts';
+import {
+	GENERIC_REMINDER_ID,
+	SYMBOL_COLOURS,
+	symbolNumber,
+	type GenericLook
+} from '#lib/core/model/index.ts';
 import { byLabel } from '#lib/features/grimoire/reminders.ts';
 import { reminderTokenSize } from '#lib/ui/seating/seat-layout.ts';
 import { readStored, writeStored } from '#lib/ui/stored.ts';
@@ -162,9 +167,16 @@ export const reminderChip = (size: number, scale: number): number =>
 /** A placed reminder's key in a list: one of each token per seat, or a generic one's id. */
 export const placedKey = (r: PlayerReminder): string => r.id ?? [r.characterId, r.label].join(':');
 
-/** The words a token shows: its label, or a generic one's text (∞ without). */
-export const reminderWords = (r: PlayerReminder): ReminderLabel =>
-	(isGenericReminder(r) ? r.note || '∞' : r.label) as ReminderLabel;
+/**
+ * The words a token shows: its label, or a generic one's text (∞ without), after a # token's
+ * number as the board names it (BoardReminder).
+ */
+export function reminderWords(r: PlayerReminder): ReminderLabel {
+	if (!isGenericReminder(r)) return r.label;
+	const n = symbolNumber(r.symbol);
+	if (n === undefined) return (r.note || '∞') as ReminderLabel;
+	return (r.note ? `${n}: ${r.note}` : String(n)) as ReminderLabel;
+}
 
 /**
  * A token's look for a `BoardReminder`, as on the player's grim: its words and, for a generic

@@ -35,3 +35,19 @@ test('Home starts a game, takes a room code and links the Prepare and Create pag
 	await places.filter({ hasText: 'Library' }).tap();
 	await expect(page).toHaveURL(/\/library$/);
 });
+
+test('Home leads with the last game, one tap back into it', async ({ page }) => {
+	await page.goto('/');
+	// No game yet: no row.
+	await expect(page.getByRole('main').getByTestId('last-game')).toHaveCount(0);
+	await page.goto('/new');
+	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
+	await page.getByRole('button', { name: 'Create game' }).tap();
+	await expect(page).toHaveURL(/\/grimoire\/[\w-]+\/setup$/);
+	const game = new URL(page.url()).pathname.replace(/\/setup$/, '');
+	await page.goto('/');
+	const last = page.getByRole('main').getByTestId('last-game');
+	await expect(last).toHaveAccessibleName('Last game: Trouble Brewing');
+	await last.tap();
+	await expect(page).toHaveURL(new RegExp(game));
+});
