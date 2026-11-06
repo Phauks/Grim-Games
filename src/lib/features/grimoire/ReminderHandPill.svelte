@@ -7,8 +7,6 @@
 -->
 <script lang="ts">
 	import {
-		REMINDER_NUMBER_MAX,
-		REMINDER_NUMBER_MIN,
 		isNumberSymbol,
 		numberSymbol,
 		symbolNumber,
@@ -17,7 +15,6 @@
 		type SeatId
 	} from '#lib/core/model/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import NumberSelect from '#lib/ui/primitives/NumberSelect.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import { bankView, type BankItem } from './bank-items.ts';
@@ -27,6 +24,7 @@
 	import type { ReminderDragging } from './reminder-drag.svelte.ts';
 	import type { ReminderHand } from './reminder-hand.svelte.ts';
 	import ReminderInHand from './ReminderInHand.svelte';
+	import ReminderNumberPick from './ReminderNumberPick.svelte';
 	import { dropOnTap, heldTokenActions, placedTokenActions } from './reminder-in-hand.ts';
 	import { onBoard, placedLook } from './reminders.ts';
 
@@ -142,14 +140,9 @@
 		{/snippet}
 		{#snippet extra()}
 			{@const n = bankNumber ? hand.number : placedNumber}
-			{#if n !== undefined}<NumberSelect
-					label={t('common.reminderNumber')}
-					hideLabel
+			{#if n !== undefined}<ReminderNumberPick
 					value={n}
-					min={REMINDER_NUMBER_MIN}
-					max={REMINDER_NUMBER_MAX}
 					onchange={pickNumber}
-					testid="hand-number"
 				/>{:else if heldRun}<!-- eslint-disable grim/names-as-badges -- each token shows as its badge (the snippets); its words are the options' accessible names --><Select
 					label={t('common.reminderRun')}
 					hideLabel

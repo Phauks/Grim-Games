@@ -86,6 +86,24 @@ export const bankLook = (
 			: { symbol: numberSymbol(number) }
 		: undefined;
 
+/**
+ * The generic stretch's tokens every grim has, never used up: the plain ∞, as many as needed
+ * (Trevor, 2026-10-18), and the # token, only for numbers (plan M35, Trevor 2026-11-03). The
+ * Storyteller's bank and a player's tray (player/PlayerReminderBin) both draw this one list
+ * (Trevor, 2026-11-06: no more chasing feature parity), so a token added here reaches both.
+ */
+export const FIXED_GENERIC_ITEMS: readonly Readonly<BankItem>[] = [
+	{ key: 'generic', characterId: GENERIC_REMINDER_ID, label: '', count: 1, group: 'generic' },
+	{
+		key: 'number',
+		characterId: GENERIC_REMINDER_ID,
+		label: 'Number' as ReminderLabel,
+		count: 1,
+		group: 'generic',
+		number: true
+	}
+];
+
 export interface BankOptions {
 	/** The character whose night step is being walked through. */
 	focus: StepReminders | undefined;
@@ -230,23 +248,6 @@ export function bankItems(
 		return list;
 	});
 	const rest = bundledCounters(listed, characters);
-	// The generic ∞ reminder, as many as needed (Trevor, 2026-10-18), after the reminders.
-	const generic: BankItem = {
-		key: 'generic',
-		characterId: GENERIC_REMINDER_ID,
-		label: '',
-		count: 1,
-		group: 'generic'
-	};
-	// The # token, only for numbers (plan M35, Trevor 2026-11-03), never used up either.
-	const number: BankItem = {
-		key: 'number',
-		characterId: GENERIC_REMINDER_ID,
-		label: 'Number' as ReminderLabel,
-		count: 1,
-		group: 'generic',
-		number: true
-	};
 	// The game's own ∞ tokens, then "+ New token" (plan B9, Trevor 2026-10-23: "Tokens only").
 	const tokens: BankItem[] = (game.genericTokens ?? []).map((token) => ({
 		key: `token:${token.tokenId}`,
@@ -267,8 +268,7 @@ export function bankItems(
 	const all = [
 		...setup,
 		...rest.filter((i) => i.group === 'reminders'),
-		generic,
-		number,
+		...FIXED_GENERIC_ITEMS.map((item) => ({ ...item })),
 		...tokens,
 		makes,
 		...rest.filter((i) => i.group === 'dead')
