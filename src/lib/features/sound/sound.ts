@@ -1,5 +1,5 @@
 import { preferences } from '#lib/ui/preferences.svelte.ts';
-import type { TimerSound } from '#lib/ui/preferences.ts';
+import { TIMER_SOUNDS, type TimerSound } from '#lib/ui/preferences.ts';
 
 /**
  * Every sound the app makes, in one place (plan U1, Trevor 2026-10-26: "consolidation of
@@ -181,12 +181,14 @@ export function playSound(sound: TimerSound, volume = preferences.current.soundV
 }
 
 /**
- * The Storyteller called everyone back to town (plan U2): this phone plays its Back to town
- * sound and vibrates, as its settings say.
+ * The Storyteller called everyone back to town (plan U2): this phone vibrates, as its settings
+ * say, and plays the sound the Storyteller picked (Trevor, 2026-11-06), or its own Back to town
+ * sound when they left it to each phone or sent one this app doesn't know.
  */
-export function hearCallTown(): void {
+export function hearCallTown(sound?: unknown): void {
 	if (preferences.current.timerVibrate) vibrate();
-	playSound(preferences.current.callSound);
+	const picked = TIMER_SOUNDS.find((name) => name === sound);
+	playSound(picked ?? preferences.current.callSound);
 }
 
 /**

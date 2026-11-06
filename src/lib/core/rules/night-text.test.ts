@@ -10,6 +10,9 @@
  * - https://wiki.bloodontheclocktower.com/Exorcist (info token)
  * - https://wiki.bloodontheclocktower.com/Grandmother (Grandchild, Dead)
  * - https://wiki.bloodontheclocktower.com/Fortune_Teller (Red Herring, placed in prep)
+ * - https://wiki.bloodontheclocktower.com/Snake_Charmer (night text with an "If ...:" branch)
+ * - https://wiki.bloodontheclocktower.com/Imp (a branch whose condition names a character)
+ * - https://wiki.bloodontheclocktower.com/Cerenovus (a token right after a sentence)
  */
 import { describe, expect, it } from 'vitest';
 import type { Character } from '#lib/core/data/types.ts';
@@ -22,6 +25,7 @@ import {
 	nightTextFor,
 	nightTextPlain,
 	nightTextSegments,
+	nightTextSteps,
 	placeholderProblems,
 	placeholdersFor,
 	type PlaceholderKey
@@ -376,5 +380,97 @@ describe('night text of ours', () => {
 			'rules.reminderPlaceholders.other[2].either',
 			'rules.reminderPlaceholders.other[2].tokens[0].label'
 		]);
+	});
+});
+
+/** TPI's text for a night as steps, each line plain. */
+const steps = (id: string, night: 'first' | 'other' = 'other') => {
+	const c = committedCharacter(id);
+	const text = night === 'first' ? c.firstNightReminder! : c.otherNightReminder!;
+	const placeholders = placeholdersFor(c, night);
+	const out = nightTextSteps(
+		nightTextSegments(text, c, { names, ...(placeholders ? { placeholders } : {}) })
+	);
+	const line = (l: Parameters<typeof nightTextPlain>[0]) => nightTextPlain(l, name);
+	return {
+		lines: out.lines.map(line),
+		branches: out.branches.map((b) => ({ condition: line(b.condition), lines: b.lines.map(line) }))
+	};
+};
+
+describe('nightTextSteps', () => {
+	it('puts each sentence on its own line, with the token that follows it', () => {
+		// TPI (botc-release roles.json), Cerenovus: "The Cerenovus chooses a player & a
+		// character. :reminder: Put the Cerenovus to sleep. ..."
+		expect(steps('cerenovus')).toEqual({
+			lines: [
+				'The {Cerenovus} chooses a player & a character. [+Mad]',
+				'Put the {Cerenovus} to sleep.',
+				'Wake the target.',
+				'Show the «This character selected you» token, the {Cerenovus} token, then the madness-character token.'
+			],
+			branches: []
+		});
+	});
+
+	it('opens a branch at an "If ...:" sentence, with the rest of the text in it', () => {
+		// TPI, Snake Charmer: "The Snake Charmer chooses a player. If they chose the Demon: Show
+		// the *YOU ARE* & Demon tokens. ..."
+		expect(steps('snakecharmer')).toEqual({
+			lines: ['The {Snake Charmer} chooses a player.'],
+			branches: [
+				{
+					condition: 'If they chose the Demon',
+					lines: [
+						'Show the «You are» & Demon tokens.',
+						'Give a thumbs down.',
+						'Swap the {Snake Charmer} & Demon tokens.',
+						'Put the old {Snake Charmer} to sleep.',
+						'Wake the old Demon.',
+						'Show the «You are» and {Snake Charmer} tokens & give a thumbs up. [+Poisoned]'
+					]
+				}
+			]
+		});
+	});
+
+	it('finds a condition that names a character', () => {
+		// TPI, Imp: "... If the Imp chose themselves: Replace 1 alive Minion token with a spare
+		// Imp token. ..."
+		const imp = steps('imp');
+		expect(imp.lines).toEqual(['The {Imp} chooses a player. [+Dead]']);
+		expect(imp.branches.map((b) => b.condition)).toEqual(['If the {Imp} chose themselves']);
+		expect(imp.branches[0].lines[0]).toBe('Replace 1 alive Minion token with a spare {Imp} token.');
+	});
+
+	it('keeps an "If" sentence without a colon as one line', () => {
+		// TPI, Philosopher: "If necessary, swap their character token. :reminder:"
+		expect(steps('philosopher').branches).toEqual([]);
+		expect(steps('philosopher').lines[1]).toMatch(/^If necessary, swap their character token\./);
+	});
+
+	it('never changes the words of any official night text', () => {
+		for (const c of data.characters)
+			for (const night of ['first', 'other'] as const) {
+				const text = night === 'first' ? c.firstNightReminder : c.otherNightReminder;
+				if (!text) continue;
+				const placeholders = placeholdersFor(c, night);
+				const segments = nightTextSegments(text, c, {
+					names,
+					...(placeholders ? { placeholders } : {})
+				});
+				const out = nightTextSteps(segments);
+				const words = (t: string) => t.replace(/[\s:]+/g, ' ').trim();
+				const joined = [
+					...out.lines.map((l) => nightTextPlain(l)),
+					...out.branches.flatMap((b) => [
+						nightTextPlain(b.condition),
+						...b.lines.map((l) => nightTextPlain(l))
+					])
+				].join(' ');
+				expect(words(joined), `${c.id}:${night}`).toBe(words(nightTextPlain(segments)));
+				for (const l of [...out.lines, ...out.branches.flatMap((b) => b.lines)])
+					expect(l.length, `${c.id}:${night}`).toBeGreaterThan(0);
+			}
 	});
 });
