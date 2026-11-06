@@ -273,38 +273,46 @@
 	</ul>
 </Dialog>
 
-<Dialog bind:open={setting} title={t('player.printSettings')} size="max">
-	<div class="settings">
+<!-- The settings and the preview each scroll in their own pane, side by side once there is
+     room, the settings above the preview on a phone (Trevor, 2026-11-06). -->
+<Dialog
+	bind:open={setting}
+	title={t('player.printSettings')}
+	size="max"
+	pinAside={false}
+	asideColumn="minmax(min(50%, calc(26 * var(--u))), 1fr)"
+>
+	{#snippet aside()}
 		<PrintSettingsFields
 			hasLogo={!!script && !!scriptLogo(script)}
 			hasRules={rules.length > 0}
 			hasQr={qrLink !== null}
 		/>
-		<section class="preview" aria-label={t('player.printPreview')} bind:clientWidth={previewWidth}>
-			{#if !laidOut}
-				<p class="laying-out"><Spinner testid="print-laying-out" />{t('player.printLayingOut')}</p>
-			{/if}
-			{#if setting && drawn && script}
-				<div
-					class="paper"
-					class:hidden={!laidOut}
-					bind:this={previewPage}
-					style:zoom={previewZoom}
-					data-testid="print-preview"
-				>
-					<ScriptPrintSheet
-						bind:this={preview}
-						{script}
-						{version}
-						{rules}
-						settings={printChoices}
-						{qr}
-						preview
-					/>
-				</div>
-			{/if}
-		</section>
-	</div>
+	{/snippet}
+	<section class="preview" aria-label={t('player.printPreview')} bind:clientWidth={previewWidth}>
+		{#if !laidOut}
+			<p class="laying-out"><Spinner testid="print-laying-out" />{t('player.printLayingOut')}</p>
+		{/if}
+		{#if setting && drawn && script}
+			<div
+				class="paper"
+				class:hidden={!laidOut}
+				bind:this={previewPage}
+				style:zoom={previewZoom}
+				data-testid="print-preview"
+			>
+				<ScriptPrintSheet
+					bind:this={preview}
+					{script}
+					{version}
+					{rules}
+					settings={printChoices}
+					{qr}
+					preview
+				/>
+			</div>
+		{/if}
+	</section>
 	{#snippet actions()}
 		{#snippet downloadAction()}
 			<Button icon="download" onclick={download} data-testid="print-download" disabled={printing}
@@ -328,13 +336,6 @@
 {/if}
 
 <style>
-	/* Settings beside the preview where there is room; above it on a phone. */
-	.settings {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(min(100%, calc(28 * var(--u))), 1fr));
-		gap: var(--space-4);
-		align-items: start;
-	}
 	.preview {
 		min-width: 0;
 		overflow: hidden;

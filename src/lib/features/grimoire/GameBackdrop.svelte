@@ -105,7 +105,7 @@
 {:else}
 	<BoardBackdrop
 		url={backgroundUrl}
-		preset={background.kind === 'preset' ? background.id : undefined}
+		preset={background.kind === 'preset' ? background : undefined}
 		moving={background.kind === 'moving' ? background : undefined}
 		vignette={boardLooks.current.vignette ? boardLooks.current.vignetteStrength : undefined}
 	/>

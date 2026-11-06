@@ -200,7 +200,7 @@
 	<BoardBackdrop
 		contained
 		{url}
-		preset={choice.kind === 'preset' ? choice.id : undefined}
+		preset={choice.kind === 'preset' ? choice : undefined}
 		moving={choice.kind === 'moving' ? choice : undefined}
 		vignette={boardLooks.current.vignette ? boardLooks.current.vignetteStrength : undefined}
 	/>
