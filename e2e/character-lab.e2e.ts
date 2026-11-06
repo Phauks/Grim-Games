@@ -23,12 +23,15 @@ async function labControls(page: Page) {
 	return page.getByRole('dialog', { name: 'Character Lab' });
 }
 
-/** The lab game's seats: in the frame beside the table, or the page Load game opened. */
+/**
+ * The lab game's seats, in its frame on this page: beside the table on a computer, under it
+ * on a phone (Trevor, 2026-11-06: "loads game on another page ... only to show it beneath").
+ */
 async function labSeats(page: Page) {
+	await expect(page).toHaveURL(/\/character-analyzer/);
 	const frame = page.getByTestId('lab-frame');
-	if (await frame.isVisible()) return frame.locator('iframe').contentFrame().getByTestId('seat');
-	await expect(page).toHaveURL(/\/grimoire\/[\w-]+$/);
-	return page.getByTestId('seat');
+	await frame.scrollIntoViewIfNeeded();
+	return frame.locator('iframe').contentFrame().getByTestId('seat');
 }
 
 /** Makes `name` the core character with +, searching for it as when adding one mid-game. */
@@ -183,7 +186,7 @@ test('loads a started game, the Marionette thinking they are a Townsfolk', async
 	const seats = await labSeats(page);
 	await expect(seats.nth(0)).toHaveAttribute('aria-label', /Marionette, believes they are the /);
 	const frame = page.getByTestId('lab-frame');
-	const board = (await frame.isVisible()) ? frame.locator('iframe').contentFrame() : page;
+	const board = frame.locator('iframe').contentFrame();
 	await expect(board.getByRole('button', { name: 'End night', exact: true })).toBeVisible();
 	await expect(board.getByRole('button', { name: 'Start game', exact: true })).toHaveCount(0);
 });
@@ -212,7 +215,7 @@ test('Start on opens the game on a later day', async ({ page }) => {
 	if (!computer) await page.keyboard.press('Escape');
 	await loadGame(page);
 	const frame = page.getByTestId('lab-frame');
-	const board = (await frame.isVisible()) ? frame.locator('iframe').contentFrame() : page;
+	const board = frame.locator('iframe').contentFrame();
 	await expect(board.getByRole('button', { name: 'Execution', exact: true })).toBeVisible();
 	await expect(board.getByText('Day 2', { exact: true }).first()).toBeVisible();
 	await expect(board.getByRole('button', { name: 'End night', exact: true })).toHaveCount(0);
