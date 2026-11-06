@@ -55,6 +55,7 @@ export { makesExtraEvil } from './makes-extra-evil.ts';
 export { marksChoice } from './marks-choice.ts';
 export { nightOrder } from './night-order.ts';
 export { nightText } from './night-text.ts';
+export { optionalRuleText } from './optional-rule-text.ts';
 export { nominating } from './nominating.ts';
 export { nominationsAfterExecution } from './nominations-after-execution.ts';
 export { nomineesNominate } from './nominees-nominate.ts';

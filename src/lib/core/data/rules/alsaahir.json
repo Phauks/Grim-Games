@@ -28,6 +28,7 @@
 	"deathCause": {
 		"none": "win condition"
 	},
+	"optionalRuleText": "The Storyteller may limit Alsaahir guesses to three players per day.",
 	"optionalRule": {
 		"dayReminders": {
 			"impairable": true,

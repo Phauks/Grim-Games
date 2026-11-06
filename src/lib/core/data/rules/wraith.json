@@ -6,6 +6,7 @@
 		"none": "wakes with evil"
 	},
 	"wakesWithEvil": true,
+	"optionalRuleText": "Once per game, a player who is mad that you are the Wraith dies.",
 	"optionalRule": {
 		"dayReminders": {
 			"reminders": [

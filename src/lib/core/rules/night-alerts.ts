@@ -30,6 +30,9 @@
  *   another character's ability (`learnsGained`, `learns`: the Cannibal learns it has the
  *   Butler or Zealot ability, or the executed Juggler's number,
  *   https://wiki.bloodontheclocktower.com/Cannibal#Related_Jinxes);
+ * - `missing-token`: the waking player has the ability of an evil player, so they should carry
+ *   their own `ifEvil` reminder, and don't (`gainedFrom`: the Cannibal without Poisoned after
+ *   an evil lunch, https://wiki.bloodontheclocktower.com/Cannibal#How_to_Run; warn, never lock);
  * - `true-info`: a jinx says a character's false information doesn't apply to the waking
  *   player's, so it is given truly (`trueInfo`: the Vortox's Banshee is announced,
  *   https://wiki.bloodontheclocktower.com/Vortox#Related_Jinxes);
@@ -206,6 +209,7 @@ export type NightAlertKind =
 	| 'grimoire-hides'
 	| 'jinx-chosen'
 	| 'learns-gained'
+	| 'missing-token'
 	| 'true-info'
 	| 'seating'
 	| 'wakes-with'
@@ -267,6 +271,8 @@ export interface NightAlert {
 	type?: CharacterType;
 	/** For `wakes-one-by-one`: the players wake to choose who carries its `carrierIsDemon` token. */
 	carrier?: true;
+	/** For `missing-token`: the label of the reminder the player should carry. */
+	token?: string;
 	/** For `learns-alignment`: the alignment the player learns. */
 	alignment?: Alignment;
 	/** For `learns-character`: the partner's player whose true character they learn. */
@@ -428,6 +434,7 @@ export function nightStepAlerts(
 	out.push(...grimoireAlerts(game, characterId, actors, characters));
 	out.push(...jinxChoiceAlerts(game, characterId, actors, characters));
 	out.push(...learnsGainedAlerts(game, characterId, actors, characters));
+	out.push(...missingTokenAlerts(game, characterId, actors, characters));
 	out.push(...trueInfoAlerts(game, characterId, actors, characters));
 
 	const killer = nightKiller(characterId, characters);
@@ -603,6 +610,40 @@ function learnsGainedAlerts(
 			const alert = sourceAlert(game, 'learns-gained', g.seatId, source, characters, undefined);
 			const wiki = wikiOf({ characterId }, characters);
 			return { ...alert, ...(wiki ? { wiki } : {}), learns: g.learns };
+		});
+}
+
+/**
+ * A waking player with the ability of an evil player who doesn't carry their own `ifEvil`
+ * reminder (`GainedAbility.ifEvil`), at the step of the character they gained it by: the
+ * Cannibal after an evil lunch without Poisoned (Trevor, 2026-11-06: warn on their step).
+ */
+function missingTokenAlerts(
+	game: Game,
+	characterId: CharacterId,
+	actors: readonly SeatId[],
+	characters: CharacterLookup
+): NightAlert[] {
+	return gainedAbilities(game, characters)
+		.filter((g) => g.ifEvil && g.via === characterId && actors.includes(g.seatId))
+		.filter(
+			(g) =>
+				!game.seats[g.seatId].reminders.some(
+					(r) => r.characterId === characterId && r.label === g.ifEvil
+				)
+		)
+		.map((g) => {
+			const source: AbilitySource = { characterId, seatId: g.seatId };
+			const wiki = wikiOf({ characterId }, characters);
+			return {
+				kind: 'missing-token' as const,
+				seatId: g.seatId,
+				source,
+				works: true,
+				impairments: [],
+				token: g.ifEvil!,
+				...(wiki ? { wiki } : {})
+			};
 		});
 }
 

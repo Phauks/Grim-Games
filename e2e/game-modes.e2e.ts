@@ -1806,11 +1806,11 @@ test('each special rule shows its description beside its switch, with a line bet
 	await expect(specters.locator('.toggle-description')).toHaveText(
 		'Spectators share one ability and vote during the game on how it is used.'
 	);
-	// A rule with its author's rule text shows that text (Trevor, 2026-10-22).
+	// A rule with its own rule text shows that text (Trevor, 2026-10-22; reworded 2026-11-06).
 	await expect(
 		rows.filter({ hasText: 'I See Dead People' }).locator('.toggle-description')
 	).toHaveText(
-		"Characters die as normal but the storyteller doesn't announce deaths. Dead players can nominate. Poisoned players don't wake up."
+		'Characters die as normal, but the Storyteller does not announce deaths. Dead players may still nominate. Poisoned players do not wake at night.'
 	);
 	// Trevor (2026-10-22): no text beneath a switch; the switch stays on the name's line.
 	const text = (await specters.locator('.toggle-description').boundingBox())!;
@@ -2189,7 +2189,7 @@ test('New game previews the script as it will play, beside the settings', async 
 	const preview = page.getByRole('complementary', { name: 'Script preview' });
 	await expect(preview.getByRole('heading', { name: 'Script preview' })).toBeVisible();
 	await expect(preview).toContainText('Washerwoman');
-	await expect(preview).not.toContainText('Seat 7 remains empty');
+	await expect(preview).not.toContainText('One seat is dealt a character but has no player');
 	await modesPanel(page)
 		.getByRole('radiogroup', { name: 'Script' })
 		.getByText('Bad Moon Rising', { exact: true })
