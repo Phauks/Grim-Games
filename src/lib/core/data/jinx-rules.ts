@@ -100,12 +100,14 @@
  *   one chooses to take it), a `wakes-one-by-one` night alert at its step (with
  *   `partner-alive`, the Poppy Grower's Lil' Monsta,
  *   https://wiki.bloodontheclocktower.com/Poppy_Grower#Related_Jinxes);
- * - `alsoBecomes`: when the subject's `changesCharacter` makes a player the partner, a player
- *   becomes a character of `type` too: with `player: "self"` (the default) that same player,
- *   as the partner is never dealt, chooses one and becomes it as well (the Hatter's Lil'
- *   Monsta, https://wiki.bloodontheclocktower.com/Hatter#Related_Jinxes); with `player:
- *   "neighbour"`, that player must neighbour one of `type`, and their other neighbour becomes
- *   an evil one of it (the Summoner's Lord of Typhon, a Minion). Needs `changesCharacter`;
+ * - `alsoBecomes`: when the subject's `changesCharacter` makes a player the partner, players
+ *   become a character of `type` too, named as `turnsPlayersInto` names them: with `players:
+ *   "drafter"` (the default) that same player, as the partner is never dealt, chooses one and
+ *   becomes it as well (the Hatter's Lil' Monsta,
+ *   https://wiki.bloodontheclocktower.com/Hatter#Related_Jinxes); with `players:
+ *   "neighbours"`, both their neighbours are of `type`: that player must neighbour one, and
+ *   their other neighbour becomes an evil one of it (the Summoner's Lord of Typhon, a Minion,
+ *   as the Lord of Typhon's own Minions sit). Needs `changesCharacter`;
  * - `carriedBy`: who may carry the subject's `carrierIsDemon` token: only a player of `type`
  *   (with `partner-alive`, the Magician's and the Poppy Grower's Lil' Monsta goes to a
  *   Minion), or, once a player carries the partner's reminder `marked`, only that player (the
@@ -296,7 +298,8 @@ import {
 	CHARACTER_TYPES,
 	type Alignment,
 	type CharacterType,
-	type ReminderLabel
+	type ReminderLabel,
+	type SeatedType
 } from './types.ts';
 import type { CharacterRules } from './character-rules.ts';
 import type { JinxCondition } from './jinx-conditions.ts';
@@ -359,11 +362,14 @@ export interface Wakes extends JinxEffect {
 	how: 'one-by-one';
 }
 
-/** An `alsoBecomes` entry: who else becomes a character of `type`. */
+/**
+ * An `alsoBecomes` entry: who else becomes a character of `type`, in the words of
+ * `turnsPlayersInto` (P12): the player made the partner (`drafter`, the default, left out), or
+ * with `players: "neighbours"` both their neighbours.
+ */
 export interface TypeEffect extends JinxEffect {
-	type: CharacterType;
-	/** `self` (the default): the player made the partner; `neighbour`: their other neighbour. */
-	player?: 'self' | 'neighbour';
+	type: SeatedType;
+	players?: 'neighbours';
 }
 
 export interface CarriedBy extends JinxEffect {

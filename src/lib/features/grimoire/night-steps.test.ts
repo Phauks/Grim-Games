@@ -105,10 +105,22 @@ describe('character change steps', () => {
 
 // https://beardytas.com/garden-of-djinn/council-of-the-dead/: night 4 starts with the dead.
 describe('ruleNightSteps', () => {
+	// Council of the Dead as a rule source (M61e): its rules block wakes the dead on night 4.
+	const council = {
+		id: COUNCIL_OF_THE_DEAD.id,
+		name: COUNCIL_OF_THE_DEAD.name,
+		text: COUNCIL_OF_THE_DEAD.parts.text,
+		rules: COUNCIL_OF_THE_DEAD.rules!
+	};
 	it('adds Council of the Dead on night 4 only, headed by the rule', () => {
-		expect(ruleNightSteps([COUNCIL_OF_THE_DEAD], 3)).toEqual([]);
-		expect(ruleNightSteps([COUNCIL_OF_THE_DEAD], 4)).toMatchObject([
-			{ kind: 'custom', title: 'Council of the Dead', afterDawn: false }
+		expect(ruleNightSteps([council], 3)).toEqual([]);
+		expect(ruleNightSteps([council], 4)).toMatchObject([
+			{
+				kind: 'custom',
+				title: 'Council of the Dead',
+				reminder: COUNCIL_OF_THE_DEAD.parts.text?.join(' '),
+				afterDawn: false
+			}
 		]);
 	});
 });

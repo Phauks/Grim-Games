@@ -16,22 +16,26 @@ const mode = (parts: GameMode['parts'], extra: Partial<GameMode> = {}): GameMode
 	parts,
 	...extra
 });
-const rule = (id: string, parts: SpecialRule['parts']): SpecialRule => ({
+const rule = (
+	id: string,
+	parts: SpecialRule['parts'],
+	extra: Partial<SpecialRule> = {}
+): SpecialRule => ({
 	kind: 'special-rule',
 	format: 1,
 	id,
 	name: id,
 	sources: [],
-	parts
+	parts,
+	...extra
 });
 
 describe('a game mode that sets rule parts', () => {
-	const wake = { kind: 'wake', when: 'each-night', dead: true } as const;
-	const own = mode({
-		assignment: { kind: 'bag' },
-		text: ['The dead wake.'],
-		nightSteps: [wake]
-	});
+	const wake = { when: 'each-night', dead: true } as const;
+	const own = mode(
+		{ assignment: { kind: 'bag' }, text: ['The dead wake.'] },
+		{ rules: { nightWakes: [wake] } }
+	);
 
 	it('gives them to the screens that read a rules list, as a rule of its own', () => {
 		expect(modeRule(own)).toEqual({
@@ -40,18 +44,21 @@ describe('a game mode that sets rule parts', () => {
 			id: 'mine',
 			name: 'Mine',
 			sources: [],
-			parts: { text: ['The dead wake.'], nightSteps: [wake] }
+			parts: { text: ['The dead wake.'] },
+			rules: { nightWakes: [wake] }
 		});
 		expect(modeRule(STANDARD)).toBe(undefined);
 		expect(modeRule(mode({ assignment: { kind: 'bag' } }))).toBe(undefined);
 	});
 
-	it('folds them in with the rules chosen on top', () => {
+	it('folds their parts in with the rules chosen on top; rules blocks stay each file’s own', () => {
 		const other = { ...wake, when: 'one-night', night: 1 } as const;
-		const { parts, conflicts } = combineRules(own, [rule('r', { nightSteps: [other] })]);
-		expect(parts.nightSteps).toEqual([wake, other]);
-		expect(parts.text).toEqual(['The dead wake.']);
-		expect(conflicts).toEqual([]);
+		const { parts, conflicts } = combineRules(own, [
+			rule('r', { text: ['More.'] }, { rules: { nightWakes: [other] } })
+		]);
+		expect(parts.text).toEqual(['The dead wake.', 'More.']);
+		// Two files that set one rules block part differently conflict, like a one-answer part.
+		expect(conflicts).toEqual([{ ids: ['mine', 'r'], part: 'rules.nightWakes' }]);
 	});
 
 	it('warns when the mode and a rule give one-answer parts different answers', () => {

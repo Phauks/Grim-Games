@@ -96,7 +96,7 @@ export function upgradeJinxRules(rules: unknown): unknown {
 				set('notShown', { what: 'partner-seat', ...keep(value) });
 				break;
 			case 'neighbourBecomes':
-				set('alsoBecomes', { ...asObject(value, 'type'), player: 'neighbour' });
+				set('alsoBecomes', { ...asObject(value, 'type'), players: 'neighbours' });
 				break;
 			case 'noKill': {
 				const obj = asObject(value, 'on');

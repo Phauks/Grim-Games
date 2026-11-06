@@ -93,7 +93,7 @@ describe('readJinxRules (M46)', () => {
 			{ keepsAbility: { afterDeath: true } },
 			{ voter: { countsOnlyWith: true } },
 			{ changesCharacter: { token: 'Night 2' } },
-			{ alsoBecomes: { type: 'minion', player: 'neighbour' } },
+			{ alsoBecomes: { type: 'minion', players: 'neighbours' } },
 			{ givenInstead: { instead: 'becomes', type: 'outsider', upTo: 2 } },
 			{ storytellerChooses: { what: 'player', via: 'carrierIsDemon' } },
 			{ noKill: { killer: 'demon', when: ['nominated-partner', 'partner-dead'] } },

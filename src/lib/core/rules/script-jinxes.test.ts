@@ -1386,7 +1386,7 @@ describe('homebrew sentences, stage 5 (M46)', () => {
 		const entries = [
 			official('summoner', [
 				jinx('gloom', 'A summoned Gloom sits by an Outsider; its other neighbour becomes one.', {
-					alsoBecomes: { type: 'outsider', player: 'neighbour' }
+					alsoBecomes: { type: 'outsider', players: 'neighbours' }
 				})
 			]),
 			gloom(),

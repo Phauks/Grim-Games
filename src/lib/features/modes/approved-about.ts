@@ -107,11 +107,11 @@ export const APPROVED_INSTRUCTIONS: Readonly<Record<string, string | readonly st
 		'Good wins as soon as any Demon dies by execution, unless an ability such as the Mastermind’s keeps the game going. A Demon killed by an ability doesn’t end it.',
 	'binary-supernovae:parts.ruleChanges[0]':
 		'The Summoner removes only 1 Demon at setup, so 1 Demon starts in play. Before the game, say whether the Summoner may make a second copy of that Demon.',
-	'trained-killer:parts.demonAttacks':
+	'trained-killer:parts.ruleChanges[0]':
 		'Each night after the first, the Demon attacks the next living in-play character in script order, carrying on from the last one it killed. You decide whether a survivor is attacked again or passed over.',
-	'phantom-detectives:parts.abilities':
+	'phantom-detectives:parts.ruleChanges[0]':
 		'Living Townsfolk don’t wake and have no ability; setup effects still happen. A Townsfolk who dies gains its ability and wakes at its usual place. Other dead players keep waking, except a dead Demon.',
-	'council-of-the-dead:parts.nightSteps[0]':
+	'council-of-the-dead:parts.ruleChanges[0]':
 		'At the start of night 4, wake the dead together for 2 minutes. Then each secretly votes for a living player. If no player has a majority, you choose. Give the chosen player a helpful effect of your choice.',
 	// Trevor's own two wordings (2026-10-22), one per setting of +1's switch (rule-switches.ts).
 	'plus-one:parts.information[0]': [

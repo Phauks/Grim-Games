@@ -46,7 +46,7 @@
 
 	/** The mode or rules that give the spectators a vote, shown at the top. */
 	const spawning = $derived(
-		spawnedBy(game.gameId, (p) => !!p.daySteps?.some((s) => s.kind === 'spectator-vote'))
+		spawnedBy(game.gameId, (f) => !!f.parts.daySteps?.some((s) => s.kind === 'spectator-vote'))
 	);
 
 	let data = $state.raw<GameData>();

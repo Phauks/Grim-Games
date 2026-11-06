@@ -3,9 +3,9 @@
  * every problem with its path, so a file can be fixed in one go. Character ids are checked
  * against `known` when it is given.
  */
-import { isObject } from '#lib/core/data/validate.ts';
+import { parseCharacterRules } from '#lib/core/data/character-rules.ts';
+import { isObject, Issues } from '#lib/core/data/validate.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
-import { SEATED_TYPES } from '#lib/core/rules/distribution.ts';
 import { fileKind } from './file-kind.ts';
 import { runsPart } from './pool.ts';
 import {
@@ -34,11 +34,19 @@ export const KINDS: Partial<Record<(typeof RULE_PARTS)[number] | ModePart, reado
 	winConditions: ['standard', 'demon-executed', 'all-towns'],
 	betweenGames: ['campaign'],
 	seats: ['storyteller-seat'],
-	deaths: ['private'],
-	nightSteps: ['wake'],
-	abilities: ['dead-keep'],
-	demonAttacks: ['script-order'],
-	nominations: ['evil-swap', 'nominator-may-die']
+	deaths: ['private']
+};
+
+/**
+ * Parts that moved into the file's rules block (M61e), with where each went, so a file written
+ * before says how to fix it.
+ */
+const MOVED: Readonly<Record<string, string>> = {
+	countChanges: 'rules.setupModifier',
+	demonAttacks: 'rules.demonAttack',
+	abilities: 'rules.deadKeepAbilities',
+	nightSteps: 'rules.nightWakes',
+	nominations: 'rules.onNominated'
 };
 
 const ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -64,10 +72,10 @@ export function parseGameMode(value: unknown, known?: ReadonlySet<CharacterId>):
 	if (value.format !== GAME_MODE_FORMAT) add('format', `must be ${GAME_MODE_FORMAT}`);
 	checkRuleParts(value, add);
 	checkFile(value, FILE_PARTS, add, known);
+	const rules = readRules(value, add, known);
 	if (issues.length > 0) return { ok: false, issues };
-	if (value.kind !== 'special-rule') return { ok: true, mode: value as unknown as GameMode };
-	const mode = { ...value };
-	delete mode.kind;
+	const mode: Record<string, unknown> = { ...value, ...(rules ? { rules } : {}) };
+	if (value.kind === 'special-rule') delete mode.kind;
 	return { ok: true, mode: mode as unknown as GameMode };
 }
 
@@ -76,7 +84,7 @@ export type ParsedRule = { ok: true; rule: SpecialRule } | { ok: false; issues: 
 /** Why a file that sets this part is a game mode, not a special rule (`fileKind`). */
 const MODE_ONLY: Partial<Record<ModePart, string>> = {
 	counts:
-		'sets up the whole game, so the file is a game mode (a rule changes counts with countChanges)',
+		'sets up the whole game, so the file is a game mode (a rule changes counts with rules.setupModifier)',
 	assignment: 'deals the whole game, so the file is a game mode',
 	towns: 'adds towns, so the file is a game mode',
 	betweenGames: 'links games, so the file is a game mode'
@@ -106,9 +114,17 @@ export function parseSpecialRule(value: unknown, known?: ReadonlySet<CharacterId
 		);
 	checkRuleParts(value, add);
 	checkFile(value, RULE_PARTS, add, known);
+	const rules = readRules(value, add, known);
 	return issues.length > 0
 		? { ok: false, issues }
-		: { ok: true, rule: { ...value, kind: 'special-rule' } as unknown as SpecialRule };
+		: {
+				ok: true,
+				rule: {
+					...value,
+					...(rules ? { rules } : {}),
+					kind: 'special-rule'
+				} as unknown as SpecialRule
+			};
 }
 
 /** Reads any file: a game mode or a special rule, as its parts say (`fileKind`). */
@@ -129,7 +145,6 @@ function checkRuleParts(
 	const parts = isObject(value.parts) ? value.parts : {};
 	if (parts.text !== undefined && !isTextList(parts.text))
 		add('parts.text', 'must be a list of lines');
-	if (parts.countChanges !== undefined) checkCountChanges(parts.countChanges, add);
 	if (isObject(parts.travellers)) {
 		if (!Number.isInteger(parts.travellers.inBag) || (parts.travellers.inBag as number) < 0)
 			add('parts.travellers.inBag', 'must be a whole number');
@@ -151,20 +166,27 @@ function checkRuleParts(
 const isTextList = (value: unknown): boolean =>
 	Array.isArray(value) && value.every((line) => typeof line === 'string');
 
-function checkCountChanges(value: unknown, add: (path: string, message: string) => void) {
-	if (!Array.isArray(value)) return add('parts.countChanges', 'must be a list of changes');
-	value.forEach((op, i) => {
-		const at = `parts.countChanges[${i}]`;
-		if (!isObject(op) || !['delta', 'set', 'any'].includes(op.kind as string))
-			return add(`${at}.kind`, 'must be one of delta, set, any');
-		if (!(SEATED_TYPES as readonly unknown[]).includes(op.type))
-			add(`${at}.type`, `must be one of ${SEATED_TYPES.join(', ')}`);
-		if (op.kind !== 'any' && op.values !== 'most') {
-			const values = op.values;
-			if (!Array.isArray(values) || !values.length || values.some((n) => !Number.isInteger(n)))
-				add(`${at}.values`, 'must be a list of whole numbers');
+/**
+ * The file's rules block (`FileRules`), read by the same reader as a character's
+ * (`parseCharacterRules`), with each problem added under `rules`. Undefined when it has none.
+ */
+function readRules(
+	value: Record<string, unknown>,
+	add: (path: string, message: string) => void,
+	known: ReadonlySet<CharacterId> | undefined
+) {
+	if (value.rules === undefined) return undefined;
+	const issues = new Issues();
+	const rules = parseCharacterRules(value.rules, 'rules', issues);
+	for (const issue of issues.list) {
+		const at = issue.indexOf(': ');
+		add(issue.slice(0, at), issue.slice(at + 2));
+	}
+	if (known)
+		for (const [p, id] of characterIds(value.rules, 'rules')) {
+			if (!known.has(id)) add(p, `unknown character ${id}`);
 		}
-	});
+	return rules;
 }
 
 /** The header and parts both kinds share; `allowed` is the parts this kind may set. */
@@ -213,14 +235,14 @@ function checkFile(
 		for (const [key, part] of Object.entries(parts)) {
 			const path = `parts.${key}`;
 			if (!allowed.includes(key)) {
-				if (!(key in MODE_ONLY)) add(path, 'unknown part');
+				if (key in MOVED) add(path, `moved to ${MOVED[key]}`);
+				else if (!(key in MODE_ONLY)) add(path, 'unknown part');
 				continue;
 			}
 			const kinds = KINDS[key as keyof typeof KINDS];
-			// Plain lists of lines and count changes are checked by their kind's parser. They need
-			// no instructions: a rule's lines are its instructions, and a count change ("+1
-			// Demon") says all it does.
-			if (key === 'text' || key === 'countChanges') continue;
+			// Plain lines are checked by their kind's parser. They need no instructions: a rule's
+			// lines are its instructions.
+			if (key === 'text') continue;
 			for (const [i, item] of (Array.isArray(part) ? part : [part]).entries()) {
 				const at = Array.isArray(part) ? `${path}[${i}]` : path;
 				if (!isObject(item)) {
@@ -245,12 +267,6 @@ function checkFile(
 						if (!(CAMPAIGN_ENDS as readonly unknown[]).includes(e))
 							add(`${at}.endConditions[${n}]`, `unknown end condition ${String(e)}`);
 					});
-				if (
-					key === 'nominations' &&
-					item.minAlive !== undefined &&
-					(!Number.isInteger(item.minAlive) || (item.minAlive as number) < 1)
-				)
-					add(`${at}.minAlive`, 'must be a whole number of at least 1');
 				if (key === 'assignment' && item.kind === 'draft') {
 					const offers = item.offers;
 					if (
@@ -293,6 +309,8 @@ function characterIds(item: unknown, path: string): [string, CharacterId][] {
 					found.push([`${path}.onlyFor[${i}].characterId`, o.characterId]);
 			});
 		else if (isObject(value)) found.push(...characterIds(value, `${path}.${key}`));
+		else if (Array.isArray(value))
+			value.forEach((v, i) => found.push(...characterIds(v, `${path}.${key}[${i}]`)));
 	}
 	return found;
 }

@@ -7411,7 +7411,8 @@ test('with Council of the Dead, night 4 starts with the dead waking together', a
 });
 
 // One format for game modes and special rules (Trevor, 2026-11-01): a game mode may set a
-// rule's parts, and the night plays its step as it plays Council of the Dead's.
+// rule's parts (M61e: its rules block), and the night plays its step as it plays Council of
+// the Dead's.
 test('a game mode that sets a night step adds it to the night, headed by the mode', async ({
 	page
 }) => {
@@ -7420,10 +7421,8 @@ test('a game mode that sets a night step adds it to the night, headed by the mod
 		id: 'dead-wake',
 		name: 'Dead Wake',
 		sources: [],
-		parts: {
-			assignment: { kind: 'bag' },
-			nightSteps: [{ kind: 'wake', when: 'one-night', night: 1, dead: true }]
-		}
+		parts: { assignment: { kind: 'bag' } },
+		rules: { nightWakes: [{ when: 'one-night', night: 1, dead: true }] }
 	};
 	await page.goto('/new');
 	await page.evaluate((m) => {

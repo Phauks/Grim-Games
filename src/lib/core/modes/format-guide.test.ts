@@ -35,7 +35,8 @@ const FORMAT_HASH: Record<number, string> = {
 	12: '938c20346573ab10',
 	13: 'fe15a2228e3e0b50',
 	14: '42776f8f462d4766',
-	15: 'bcba7e8955601c85'
+	15: 'bcba7e8955601c85',
+	16: '69b4100e630e5d8a'
 };
 
 function formatHash(): string {
@@ -46,12 +47,16 @@ function formatHash(): string {
 	return hash.digest('hex').slice(0, 16);
 }
 
+/**
+ * Every field name in a file, at any depth. A rules block (`rules`) is a character's, described
+ * by its parts (`data/parts/`) and read by their reader, so only its own name counts here.
+ */
 function keys(value: unknown, out: Set<string>) {
 	if (Array.isArray(value)) for (const v of value) keys(v, out);
 	else if (typeof value === 'object' && value !== null)
 		for (const [k, v] of Object.entries(value)) {
 			out.add(k);
-			keys(v, out);
+			if (k !== 'rules') keys(v, out);
 		}
 }
 
@@ -88,6 +93,15 @@ describe('the mode file guide', () => {
 		for (const r of SPECIAL_RULES) keys(r, used);
 		expect([...used].filter((k) => !documentedFields().has(k))).toEqual([]);
 		expect(parseSpecialRule(RULE_MINIMAL_EXAMPLE).ok).toBe(true);
+	});
+
+	it('reads every built-in rules block with the character reader, unchanged', () => {
+		for (const file of [...GAME_MODES, ...SPECIAL_RULES]) {
+			const parsed = file.kind === 'special-rule' ? parseSpecialRule(file) : parseGameMode(file);
+			expect(parsed.ok ? [] : parsed.issues, file.id).toEqual([]);
+			const read = parsed.ok ? ('rule' in parsed ? parsed.rule : parsed.mode) : undefined;
+			expect(read?.rules, file.id).toEqual(file.rules);
+		}
 	});
 
 	it('has a minimal example that is a valid mode', () => {

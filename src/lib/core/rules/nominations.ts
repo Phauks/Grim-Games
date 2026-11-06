@@ -6,11 +6,21 @@
  */
 import type { CharacterId } from '#lib/core/data/types.ts';
 import type { AfterDeath } from '#lib/core/data/after-death-rules.ts';
-import type { NominatedEffect, NominatingEffect } from '#lib/core/data/character-rules.ts';
+import type {
+	NominatedEffect,
+	NominatingEffect,
+	OnNominated
+} from '#lib/core/data/character-rules.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import { rulesInPlay } from './rules-in-play.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
-import { registersAsDead, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
+import {
+	alignmentOf,
+	isTraveller,
+	registersAsDead,
+	trueCharacter,
+	typeOf
+} from '#lib/core/model/selectors.ts';
 import type { DayEntry, Game, SeatId } from '#lib/core/model/types.ts';
 import { abilityState, registrations } from './ability.ts';
 import { heldAbilitiesOf } from './gained-abilities.ts';
@@ -351,6 +361,33 @@ export function nomineeChooses(game: Game, characters: CharacterLookup): Charact
 }
 
 /**
+ * Whether an `onNominated` effect can happen for this nomination, so a prompt never asks about
+ * something that can't: only while `minAlive` players live and the nominator is alive; an
+ * `evil-swap` only when both are alive and evil and neither is a Traveller (The Warrens,
+ * https://beardytas.com/garden-of-djinn/the-warrens/: Travellers still count among the living).
+ */
+export function nominatedEffectHolds(
+	game: Game,
+	nomination: { nominator: SeatId; nominee: SeatId },
+	rule: Pick<OnNominated, 'effect' | 'minAlive'>,
+	characters: CharacterLookup
+): boolean {
+	const { nominator, nominee } = nomination;
+	const alive = (seatId: SeatId) => !!game.seats[seatId] && !game.seats[seatId].dead;
+	const living = game.seating.filter(alive).length;
+	if (living < (rule.minAlive ?? 0)) return false;
+	if (rule.effect === 'evil-swap') {
+		const evil = (seatId: SeatId) =>
+			alive(seatId) &&
+			alignmentOf(game, seatId) === 'evil' &&
+			!isTraveller(game, seatId, characters);
+		return nominator !== nominee && evil(nominator) && evil(nominee);
+	}
+	if (rule.effect === 'nominator-may-die') return alive(nominator);
+	return true;
+}
+
+/**
  * The abilities a nomination sets off (`onNominated`): the nominee's own (the Virgin), and any
  * player's whose `carrier` reminder the nominee has (the Gnome's Amigo,
  * https://wiki.bloodontheclocktower.com/Gnome: the Gnome may kill whoever nominates them, any
@@ -386,7 +423,9 @@ function nomineeAbilityPrompts(
 					registrations(game, characters).some(
 						(r) => r.seatId === nominator && r.types.includes(by)
 					);
-				return registersAs ? [{ kind: rule.effect, characterId, nominator, nominee }] : [];
+				return registersAs && nominatedEffectHolds(game, nomination, rule, characters)
+					? [{ kind: rule.effect, characterId, nominator, nominee }]
+					: [];
 			}
 		)
 	);
