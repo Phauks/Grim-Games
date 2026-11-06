@@ -113,9 +113,15 @@
 	}
 	.table-area {
 		display: grid;
+		/* Its width comes from the page, never from the game frame under the table. */
+		grid-template-columns: minmax(0, 1fr);
 		align-content: start;
 		gap: var(--space-2);
 		min-width: 0;
+	}
+	.phone-game {
+		min-width: 0;
+		contain: inline-size;
 	}
 	.lab-side {
 		position: sticky;

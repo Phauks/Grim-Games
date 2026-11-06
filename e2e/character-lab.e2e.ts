@@ -29,9 +29,13 @@ async function labControls(page: Page) {
  */
 async function labSeats(page: Page) {
 	await expect(page).toHaveURL(/\/character-analyzer/);
-	const frame = page.getByTestId('lab-frame');
-	await frame.scrollIntoViewIfNeeded();
-	return frame.locator('iframe').contentFrame().getByTestId('seat');
+	const seats = page.getByTestId('lab-frame').locator('iframe').contentFrame().getByTestId('seat');
+	// The frame is made again for each load, so scroll once its new game is in it.
+	await expect(async () => {
+		await expect(seats.first()).toBeAttached({ timeout: 2_000 });
+		await page.getByTestId('lab-frame').scrollIntoViewIfNeeded({ timeout: 2_000 });
+	}).toPass();
+	return seats;
 }
 
 /** Makes `name` the core character with +, searching for it as when adding one mid-game. */
