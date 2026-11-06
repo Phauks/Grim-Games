@@ -16,7 +16,6 @@ import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import {
 	committedCharacter,
-	committedGameData,
 	committedNightOrder,
 	nightSheetPresence
 } from '#lib/core/testing/committed-data.ts';

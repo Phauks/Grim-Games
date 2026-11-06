@@ -20,7 +20,6 @@ import { preventedDeaths } from '#lib/core/rules/prevented-deaths.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import {
 	committedCharacter,
-	committedGameData,
 	committedNightOrder,
 	nightSheetPresence
 } from '#lib/core/testing/committed-data.ts';
