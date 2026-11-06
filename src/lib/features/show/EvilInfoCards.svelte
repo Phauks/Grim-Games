@@ -282,14 +282,8 @@
 		const at = LINE_OF[step]?.[row.key];
 		return at !== undefined && at < lineCount ? at : undefined;
 	};
-	const byLine = $derived.by(() => {
-		const out = new Map<number, Row[]>();
-		for (const row of allRows) {
-			const at = lineOf(row);
-			if (at !== undefined) out.set(at, [...(out.get(at) ?? []), row]);
-		}
-		return out;
-	});
+	/** The cards on each line, by its place in reading order. */
+	const onLine = (line: number) => allRows.filter((row) => lineOf(row) === line);
 	const offLine = $derived(allRows.filter((row) => lineOf(row) === undefined));
 
 	/** The card's accessible name: its words, or the tokens of a card with none (the Damsel). */
@@ -461,16 +455,14 @@
 	<NightTextLines
 		steps={textLines}
 		{name}
-		marked={(i) => (byLine.get(i) ?? []).some((row) => shownRows.includes(row.key))}
+		marked={(i) => onLine(i).some((row) => shownRows.includes(row.key))}
 	>
-		{#snippet lineExtra(i)}{#each byLine.get(i) ?? [] as row (row.key)}<span
+		{#snippet lineExtra(i)}{#each onLine(i) as row (row.key)}<span
 					class="on-line"
 					data-testid="evil-info-card"
 					data-row={row.key}>{@render detail(row)}</span
 				>{/each}{/snippet}
-		{#snippet lineEnd(i)}{#each byLine.get(i) ?? [] as row (row.key)}{@render buttons(
-					row
-				)}{/each}{/snippet}
+		{#snippet lineEnd(i)}{#each onLine(i) as row (row.key)}{@render buttons(row)}{/each}{/snippet}
 		{#snippet after()}{#each offLine as row (row.key)}{@render cardLine(row)}{/each}{/snippet}
 	</NightTextLines>
 {:else}
