@@ -6,8 +6,10 @@
  * Seamstress until its once-per-game ability is used (unless its player acts twice,
  * `acts-twice.ts`: a spent once-per-game ability may be used again), the Zombuul while no
  * player is marked Died Today, the Bounty Hunter on a later night once the player marked Know
- * died, the Juggler only on the night after the first day. `diedTonight` is every seat
- * that died since the most recent New day (`diedSinceNewDay`). Every condition given must hold;
+ * died, the Juggler only on the night after the first day, the Damsel only when a player
+ * became the Damsel since the day began. `diedTonight` is every seat that died since the most
+ * recent New day (`diedSinceNewDay`); `became` is every seat whose character changed since
+ * then (`changedCharacters`). Every condition given must hold;
  * a character without one always may wake. A jinx may lower the King's dead count while its
  * partner is in play (`deadAtLeast`: one dead player is enough with the Leviathan or Riot,
  * https://wiki.bloodontheclocktower.com/King#Related_Jinxes).
@@ -26,7 +28,8 @@ export function wakeConditionMet(
 	characterId: CharacterId,
 	holder: SeatId,
 	characters: CharacterLookup,
-	diedTonight: ReadonlySet<SeatId>
+	diedTonight: ReadonlySet<SeatId>,
+	became: ReadonlySet<SeatId> = new Set()
 ): boolean {
 	const when = rulesOf(characterId, characters)?.wakesWhen;
 	if (!when) return true;
@@ -93,5 +96,6 @@ export function wakeConditionMet(
 		if (!died) return false;
 	}
 	if (when.nightAfterDay !== undefined && dayNumber(game) !== when.nightAfterDay) return false;
+	if (when.becameToday && !became.has(holder)) return false;
 	return true;
 }
