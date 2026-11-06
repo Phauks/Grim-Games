@@ -3352,14 +3352,15 @@ test('End game keeps the Storyteller on the board, says it is over, and can be r
 	await steps.getByRole('button', { name: 'Previous change' }).tap();
 	await expect(seatLabelled(page, 'Seat 1: Ana')).toHaveCount(0);
 	await expect(page.getByTestId('game-over')).toHaveText('Game over: Evil won');
-	// Read-only: nothing pops up in the middle (Trevor, 2026-10-18), and the game over line
-	// is a status above Game info, leaving History's strip its room (2026-10-25).
+	// Read-only: nothing pops up (Trevor, 2026-10-18). The game over line is out of
+	// History's strip, leaving it its room (2026-10-25), and sits in the middle of the seat
+	// ring, over the script's logo, where no seat ever is (2026-11-06).
 	await expect(page.getByRole('button', { name: 'Set up' })).toHaveCount(0);
-	const over = (await page.getByTestId('game-over').boundingBox())!;
-	const corner = (await page.getByTestId('script-title').boundingBox())!;
 	await expect(steps.getByTestId('game-over')).toHaveCount(0);
-	expect(over.y + over.height).toBeLessThanOrEqual(corner.y + 1);
-	expect(over.x).toBeLessThan(corner.x + corner.width);
+	const over = (await page.getByTestId('game-over').boundingBox())!;
+	const ring = (await page.getByTestId('game-over').locator('xpath=..').boundingBox())!;
+	expect(Math.abs(over.x + over.width / 2 - (ring.x + ring.width / 2))).toBeLessThan(2);
+	expect(Math.abs(over.y + over.height / 2 - (ring.y + ring.height / 2))).toBeLessThan(2);
 	await steps.getByRole('button', { name: 'Next change' }).tap();
 	await expect(seatLabelled(page, 'Seat 1: Ana')).toHaveCount(1);
 	await expect(steps.getByRole('button', { name: 'Next change' })).toBeDisabled();
