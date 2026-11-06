@@ -52,7 +52,7 @@ test('a moving background is picked, customised and shown in the preview', async
 	await expect(editor).toBeHidden();
 });
 
-test('a moving background holds still with Reduce motion or the Player switch', async ({
+test('a moving background holds still with Reduce motion or its switch in Board', async ({
 	page
 }) => {
 	await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -66,13 +66,14 @@ test('a moving background holds still with Reduce motion or the Player switch', 
 	await page.getByRole('option', { name: 'Move as usual' }).tap();
 	await expect(preview).not.toHaveAttribute('data-still', '');
 
-	// Each phone's own switch holds it still whatever Reduce motion says.
+	// Each device's own switch holds it still whatever Reduce motion says, beside the other
+	// motion rows in Board (Trevor, 2026-11-06: moved from Player), which it greys out.
+	await dialog.getByText('Hold moving backgrounds still', { exact: true }).tap();
+	await expect(preview).toHaveAttribute('data-still', '');
+	await expect(
+		dialog.getByRole('combobox', { name: 'Moving background with Reduce motion' })
+	).toBeDisabled();
 	await page.getByRole('button', { name: 'Close' }).first().tap();
 	dialog = await openSection(page, 'Player');
-	await dialog.getByText('Hold moving backgrounds still', { exact: true }).tap();
-	await page.getByRole('button', { name: 'Close' }).first().tap();
-	dialog = await openSection(page, 'Board');
-	await expect(
-		dialog.getByTestId('board-preview').getByTestId('preview-background')
-	).toHaveAttribute('data-still', '');
+	await expect(dialog.getByText('Hold moving backgrounds still', { exact: true })).toHaveCount(0);
 });
