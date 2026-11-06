@@ -150,7 +150,6 @@ describe('Cannibal', () => {
 			for (const evil of ['widow', 'baron']) {
 				const s = scenario(['cannibal', evil, 'imp', 'chef', 'monk'])
 					.execute(evil)
-					.reminder(evil, 'cannibal', 'Lunch')
 					.reminder('cannibal', 'cannibal', 'Poisoned')
 					.newDay();
 				const steps = withGainedSteps(
@@ -172,10 +171,13 @@ describe('Cannibal', () => {
 		it('warns at their step when the Cannibal is missing Poisoned after an evil lunch', () => {
 			// Wiki: "If an evil player dies by execution, mark them with the LUNCH reminder and mark the
 			// Cannibal with the POISONED reminder. The Cannibal is poisoned."
-			const s = scenario(['cannibal', 'widow', 'imp', 'chef', 'monk'])
-				.execute('widow')
-				.reminder('widow', 'cannibal', 'Lunch')
-				.newDay();
+			// The execution marks the Cannibal Poisoned by itself (M70); the warning is for when the
+			// Storyteller takes it off.
+			const ate = scenario(['cannibal', 'widow', 'imp', 'chef', 'monk']).execute('widow');
+			const token = ate.game.seats[ate.seat('cannibal')].reminders.find(
+				(r) => r.label === 'Poisoned'
+			)!;
+			const s = ate.do({ type: 'RemoveReminder', reminderId: token.reminderId }).newDay();
 			expect(nightStepAlerts(s.game, 'cannibal', s.characters)).toContainEqual(
 				expect.objectContaining({
 					kind: 'missing-token',
@@ -185,7 +187,6 @@ describe('Cannibal', () => {
 			);
 			const good = scenario(['cannibal', 'empath', 'imp', 'chef', 'monk'])
 				.execute('empath')
-				.reminder('empath', 'cannibal', 'Lunch')
 				.newDay();
 			expect(
 				nightStepAlerts(good.game, 'cannibal', good.characters).map((a) => a.kind)
@@ -195,10 +196,7 @@ describe('Cannibal', () => {
 
 	describe('Summary (https://wiki.bloodontheclocktower.com/Cannibal#Summary)', () => {
 		const ate = (id: string) =>
-			scenario(['cannibal', id, 'imp', 'chef', 'poisoner'])
-				.execute(id)
-				.reminder(id, 'cannibal', 'Lunch')
-				.newDay();
+			scenario(['cannibal', id, 'imp', 'chef', 'poisoner']).execute(id).newDay();
 		const misregisters = (s: ReturnType<typeof ate>) =>
 			registrations(s.game, s.characters).some((r) => r.seatId === s.seat('cannibal'));
 
