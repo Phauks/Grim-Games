@@ -1,7 +1,8 @@
 import type { MovingChoice } from '#lib/core/backgrounds/moving.ts';
 import type { PublicLook } from '#lib/core/sync/public-projection.ts';
 import { DEFAULT_BOARD_LOOKS, type BoardLooks } from './board-looks.svelte.ts';
-import { PRESETS, type BackgroundChoice, type PresetId } from './backgrounds.ts';
+import { isStillId, stillDefaults, type StillChoice } from '#lib/core/backgrounds/still.ts';
+import type { BackgroundChoice } from './backgrounds.ts';
 
 /**
  * The look the Storyteller's board shares with every other grim of the game (Trevor,
@@ -13,7 +14,9 @@ import { PRESETS, type BackgroundChoice, type PresetId } from './backgrounds.ts'
 export function lookOf(choice: BackgroundChoice, looks: BoardLooks): PublicLook {
 	return {
 		...(choice.kind === 'script' ? { background: 'script' } : {}),
-		...(choice.kind === 'preset' ? { background: choice.id } : {}),
+		...(choice.kind === 'preset'
+			? { background: choice.id, still: { id: choice.id, params: choice.params } }
+			: {}),
 		...(choice.kind === 'image' ? { background: 'image' } : {}),
 		...(choice.kind === 'moving'
 			? { background: 'moving', moving: { id: choice.id, params: choice.params } }
@@ -25,7 +28,8 @@ export function lookOf(choice: BackgroundChoice, looks: BoardLooks): PublicLook 
 
 /** What another device draws for a shared look; before one arrives, the usual vignette and logo. */
 export interface DrawnLook {
-	preset?: PresetId;
+	/** A still background (M72) with the Storyteller's settings. */
+	preset?: StillChoice;
 	/** The script's own image, when it has one. */
 	script: boolean;
 	/** The room's picture, by its hash (core/sync/room-images.ts). */
@@ -46,7 +50,14 @@ export function drawnLook(look: PublicLook | undefined): DrawnLook {
 	const { background } = look;
 	return {
 		script: background === 'script',
-		...(background && background in PRESETS ? { preset: background as PresetId } : {}),
+		...(isStillId(background)
+			? {
+					preset:
+						look.still?.id === background
+							? look.still
+							: { id: background, params: stillDefaults(background) }
+				}
+			: {}),
 		...(background === 'image' && look.image ? { image: look.image } : {}),
 		...(background === 'moving' && look.moving ? { moving: look.moving } : {}),
 		...(look.vignette !== undefined ? { vignette: look.vignette } : {}),

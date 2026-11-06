@@ -18,6 +18,10 @@
 	import { tileMarks, type TileMark } from './tile-face.ts';
 	import { seatName } from '#lib/features/game/seat-label.ts';
 	import { noPhoneDraw } from '#lib/features/room/no-phone-draw.svelte.ts';
+	import { showCharacters } from '#lib/features/room/show-characters.ts';
+	import Sentence from '#lib/features/characters/Sentence.svelte';
+	import { slot as fillSlot } from '#lib/features/characters/slots.ts';
+	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import BagTiles from './BagTiles.svelte';
 	import SetupNav from './SetupNav.svelte';
 	import LeaveGuard from './LeaveGuard.svelte';
@@ -75,6 +79,15 @@
 			seatId
 		}))
 	]);
+	// While players with no phone see theirs, their tiles come first, in name order (Trevor,
+	// 2026-11-06: "it should sort names alphabetically, not random"); a seen one stays put.
+	const shownOrder = $derived(noPhoneDraw.order(game?.gameId));
+	const shownSlots = $derived.by(() => {
+		if (!shownOrder.length) return slots;
+		const at = (s: BagSlot) => (s.seatId ? shownOrder.indexOf(s.seatId) : -1);
+		const named = slots.filter((s) => at(s) >= 0).sort((a, b) => at(a) - at(b));
+		return [...named, ...slots.filter((s) => at(s) < 0)];
+	});
 	const next = $derived(game ? nextDrawSeat(game) : undefined);
 	// A stray tap mid-draw must not leave the draw (Trevor, 2026-10-16).
 	const inBag = $derived(drawSlots.filter((s) => s.state !== 'drawn').length);
@@ -223,7 +236,23 @@
 		return game && seatId ? seatLabel(game, seatId) : t('common.none');
 	}
 
+	// A player with no phone says they are who the tile names before it opens, so no one looks
+	// at another's character by mistake (Trevor, 2026-11-06: "we should have some confirmation
+	// that they are that player").
+	let whoTile = $state<TileId>();
+	let whoOpen = $state(false);
+	const whoSeat = $derived(slots.find((s) => s.tileId === whoTile)?.seatId);
+	const whoTitle = $derived(
+		// eslint-disable-next-line grim/names-as-badges -- the dialog's plain-text name; shown as a badge (heading)
+		game && whoSeat ? t('setup.draw.areYou', { name: seatName(game, whoSeat) }) : ''
+	);
 	function draw(tileId: TileId, state: string) {
+		const holder = slots.find((s) => s.tileId === tileId)?.seatId;
+		if (state === 'held' && holder && noPhone.has(holder)) {
+			whoTile = tileId;
+			whoOpen = true;
+			return;
+		}
 		if (state === 'held') {
 			revealing = tileId;
 			revealOpen = true;
@@ -276,15 +305,19 @@
 		const named = port.game;
 		if (!named) return;
 		const seats = named.seating.map((id) => named.seats[id]);
-		for (const { seatId, playerName } of seatsToName(roomHost().unseatedInGame, seats))
+		const phoneSeats: SeatId[] = [];
+		for (const { seatId, playerName } of seatsToName(roomHost().unseatedInGame, seats)) {
 			send({ type: 'RenameSeat', seatId, playerName });
+			phoneSeats.push(seatId);
+		}
 		const current = port.game;
 		if (!current) return;
 		for (const { seatId, tileId } of dealPairs(current, Math.random, choosing).pairs) {
 			if (!send({ type: 'DrawTile', seatId, tileId })) return;
 			if (!send({ type: 'ConfirmDraw', tileId })) return;
 		}
-		if (hasRoom && dealShow) roomHost().showRoles(current.gameId, true);
+		// The same showing as Show characters, players with no phone and all (Trevor, 2026-11-06).
+		if (hasRoom && dealShow && port.game && lookup) showCharacters(port.game, lookup, phoneSeats);
 	}
 
 	function confirm(details: { playerName: string; alignment?: Alignment }) {
@@ -339,7 +372,12 @@
 				No "Next: Seat 5" (Trevor, 2026-10-19): the real draw order is never known, and the
 				Storyteller may want to hide it.
 			-->
-			<BagTiles {slots} {marks} seatLabel={label} onpick={(s) => draw(s.tileId, s.state)} />
+			<BagTiles
+				slots={shownSlots}
+				{marks}
+				seatLabel={label}
+				onpick={(s) => draw(s.tileId, s.state)}
+			/>
 			<!-- Under the tiles, so nothing moves: the draw is done, back to the Storyteller. -->
 			{#if locked && inBag === 0}<p class="hand-back" data-testid="hand-back">
 					{t('setup.lock.handBack')}
@@ -397,6 +435,21 @@
 		onChange={(on) => (dealShow = on)}
 	/>
 </ConfirmDialog>
+
+{#if game && whoSeat}
+	<ConfirmDialog
+		bind:open={whoOpen}
+		title={whoTitle}
+		onConfirm={() => {
+			revealing = whoTile;
+			revealOpen = true;
+		}}
+	>
+		{#snippet heading()}<Sentence text={t('setup.draw.areYou', { name: fillSlot('name') })}
+				>{#snippet fill()}<PlayerBadge name={seatName(game, whoSeat)} />{/snippet}</Sentence
+			>{/snippet}
+	</ConfirmDialog>
+{/if}
 
 {#if game}
 	<PinDialog bind:open={pinOpen} gameId={game.gameId} mode={pinMode} onDone={pinDone} />

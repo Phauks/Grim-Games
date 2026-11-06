@@ -116,3 +116,18 @@ export function roleGaps(
 		return gaps.length ? [{ seatId, gaps }] : [];
 	});
 }
+
+/**
+ * The seats whose player sees their character on the Storyteller's device, as no phone sits
+ * there: every seat with a character to show and no phone, in seat order (Trevor,
+ * 2026-11-01: "it should use the normal draw area"). Both ways of showing characters, Show
+ * characters and Deal, hand these to the draw.
+ */
+export function noPhoneSeats(
+	game: Game,
+	characters: CharacterLookup,
+	phoneSeats: ReadonlySet<SeatId>
+): SeatId[] {
+	const roles = seatRoles(game, characters);
+	return game.seating.filter((seatId) => roles[seatId] && !phoneSeats.has(seatId));
+}

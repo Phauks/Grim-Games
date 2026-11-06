@@ -1,11 +1,8 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { OpenGame } from '#lib/features/game/session.svelte.ts';
-	import { roleGaps, seatRoles, type RoleGap } from '#lib/core/sync/seat-roles.ts';
-	import type { SeatId } from '#lib/core/model/index.ts';
-	import { goto } from '$app/navigation';
-	import { resolve } from '$app/paths';
-	import { noPhoneDraw } from './no-phone-draw.svelte.ts';
+	import { roleGaps, type RoleGap } from '#lib/core/sync/seat-roles.ts';
+	import { showCharacters } from './show-characters.ts';
 	import { seatName } from '#lib/features/game/seat-label.ts';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
@@ -44,16 +41,8 @@
 	let warning = $state<{ key: string; name: string; text: string }[]>([]);
 	let warn = $state(false);
 	// Players with no phone come to the Storyteller for theirs (Trevor, 2026-11-01: "it should
-	// use the normal draw area, not be this new modal"): once shown, the draw, where each one's
-	// tile carries their name and opens the usual reveal with its Confirm.
-	let noPhone = $state<SeatId[]>([]);
-	const roles = $derived(seatRoles(game.game, game.characters));
-	function confirmShow() {
-		host.showRoles(gameId, true);
-		if (!noPhone.length) return;
-		noPhoneDraw.start(gameId, noPhone);
-		void goto(resolve('/grimoire/[gameId]/draw', { gameId }));
-	}
+	// use the normal draw area, not be this new modal"): the same path as Deal's.
+	const confirmShow = () => showCharacters(game.game, game.characters);
 	function gapsNow() {
 		const phones = new Set(host.members.flatMap((m) => (m.seatId ? [m.seatId] : [])));
 		return [
@@ -70,10 +59,8 @@
 	function toggle() {
 		if (shown) return host.showRoles(gameId, false);
 		warning = gapsNow();
-		const phones = new Set(host.members.flatMap((m) => (m.seatId ? [m.seatId] : [])));
-		noPhone = game.game.seating.filter((seatId) => roles[seatId] && !phones.has(seatId));
 		if (warning.length) warn = true;
-		else host.showRoles(gameId, true);
+		else confirmShow();
 	}
 </script>
 
