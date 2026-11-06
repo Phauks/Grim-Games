@@ -115,7 +115,6 @@ import ph_hand_grabbing_bold from '~icons/ph/hand-grabbing-bold';
 import ph_hand_heart_bold from '~icons/ph/hand-heart-bold';
 import ph_hand_palm_bold from '~icons/ph/hand-palm-bold';
 import ph_hand_pointing_bold from '~icons/ph/hand-pointing-bold';
-import ph_hand_tap_bold from '~icons/ph/hand-tap-bold';
 import ph_handbag_bold from '~icons/ph/handbag-bold';
 import ph_handshake_bold from '~icons/ph/handshake-bold';
 import ph_hard_drives_bold from '~icons/ph/hard-drives-bold';
@@ -145,7 +144,9 @@ import ph_list_dashes_bold from '~icons/ph/list-dashes-bold';
 import ph_list_magnifying_glass_bold from '~icons/ph/list-magnifying-glass-bold';
 import ph_list_numbers_bold from '~icons/ph/list-numbers-bold';
 import ph_lock_bold from '~icons/ph/lock-bold';
+import ph_lock_open_bold from '~icons/ph/lock-open-bold';
 import ph_lock_simple_bold from '~icons/ph/lock-simple-bold';
+import ph_lock_simple_open_bold from '~icons/ph/lock-simple-open-bold';
 import ph_magnifying_glass_bold from '~icons/ph/magnifying-glass-bold';
 import ph_mask_happy_bold from '~icons/ph/mask-happy-bold';
 import ph_mask_sad_bold from '~icons/ph/mask-sad-bold';
@@ -361,7 +362,6 @@ const icons: IconMap = {
 	'ph:hand-heart-bold': ph_hand_heart_bold,
 	'ph:hand-palm-bold': ph_hand_palm_bold,
 	'ph:hand-pointing-bold': ph_hand_pointing_bold,
-	'ph:hand-tap-bold': ph_hand_tap_bold,
 	'ph:handbag-bold': ph_handbag_bold,
 	'ph:handshake-bold': ph_handshake_bold,
 	'ph:hard-drives-bold': ph_hard_drives_bold,
@@ -391,7 +391,9 @@ const icons: IconMap = {
 	'ph:list-magnifying-glass-bold': ph_list_magnifying_glass_bold,
 	'ph:list-numbers-bold': ph_list_numbers_bold,
 	'ph:lock-bold': ph_lock_bold,
+	'ph:lock-open-bold': ph_lock_open_bold,
 	'ph:lock-simple-bold': ph_lock_simple_bold,
+	'ph:lock-simple-open-bold': ph_lock_simple_open_bold,
 	'ph:magnifying-glass-bold': ph_magnifying_glass_bold,
 	'ph:mask-happy-bold': ph_mask_happy_bold,
 	'ph:mask-sad-bold': ph_mask_sad_bold,
