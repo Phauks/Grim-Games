@@ -315,8 +315,8 @@
 				{@attach iconFallback(character && fallbackIconUrl(character, alignment))}
 			/>{/if}
 		<!-- eslint-disable-next-line grim/names-as-badges -- this is the reminder token on the board -->
-		{#if label}<span class="label" {@attach fitWords}>{label}</span>{/if}
-		{#if holder && holderSrc}<span
+		{#if label}<span class="label" {@attach fitWords}>{label}</span
+			>{/if}{#if holder && holderSrc}<span
 				class="holder"
 				data-testid="reminder-holder"
 				data-holder={holder.id}
