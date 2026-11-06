@@ -115,7 +115,6 @@ import ph_hand_grabbing_light from '~icons/ph/hand-grabbing-light';
 import ph_hand_heart_light from '~icons/ph/hand-heart-light';
 import ph_hand_palm_light from '~icons/ph/hand-palm-light';
 import ph_hand_pointing_light from '~icons/ph/hand-pointing-light';
-import ph_hand_tap_light from '~icons/ph/hand-tap-light';
 import ph_handbag_light from '~icons/ph/handbag-light';
 import ph_handshake_light from '~icons/ph/handshake-light';
 import ph_hard_drives_light from '~icons/ph/hard-drives-light';
@@ -145,7 +144,9 @@ import ph_list_dashes_light from '~icons/ph/list-dashes-light';
 import ph_list_magnifying_glass_light from '~icons/ph/list-magnifying-glass-light';
 import ph_list_numbers_light from '~icons/ph/list-numbers-light';
 import ph_lock_light from '~icons/ph/lock-light';
+import ph_lock_open_light from '~icons/ph/lock-open-light';
 import ph_lock_simple_light from '~icons/ph/lock-simple-light';
+import ph_lock_simple_open_light from '~icons/ph/lock-simple-open-light';
 import ph_magnifying_glass_light from '~icons/ph/magnifying-glass-light';
 import ph_mask_happy_light from '~icons/ph/mask-happy-light';
 import ph_mask_sad_light from '~icons/ph/mask-sad-light';
@@ -361,7 +362,6 @@ const icons: IconMap = {
 	'ph:hand-heart-light': ph_hand_heart_light,
 	'ph:hand-palm-light': ph_hand_palm_light,
 	'ph:hand-pointing-light': ph_hand_pointing_light,
-	'ph:hand-tap-light': ph_hand_tap_light,
 	'ph:handbag-light': ph_handbag_light,
 	'ph:handshake-light': ph_handshake_light,
 	'ph:hard-drives-light': ph_hard_drives_light,
@@ -391,7 +391,9 @@ const icons: IconMap = {
 	'ph:list-magnifying-glass-light': ph_list_magnifying_glass_light,
 	'ph:list-numbers-light': ph_list_numbers_light,
 	'ph:lock-light': ph_lock_light,
+	'ph:lock-open-light': ph_lock_open_light,
 	'ph:lock-simple-light': ph_lock_simple_light,
+	'ph:lock-simple-open-light': ph_lock_simple_open_light,
 	'ph:magnifying-glass-light': ph_magnifying_glass_light,
 	'ph:mask-happy-light': ph_mask_happy_light,
 	'ph:mask-sad-light': ph_mask_sad_light,

@@ -13,7 +13,7 @@ import { toBoard } from './new-game.ts';
 // with no left and right): while seating is open each phone drags its own disc onto the seat it
 // wants, which lights up, and the drop takes that seat's place (Trevor, 2026-10-31: not between
 // seats), or into a space to move its seat there. Seating is one mode on the Storyteller's board
-// (Trevor, 2026-10-31), its "Open seating" switch on from the start; Done locks seating,
+// (Trevor, 2026-10-31), seating unlocked from the start; Done locks seating,
 // then a phone taps an open seat.
 
 async function openRoom(page: Page) {
@@ -56,7 +56,7 @@ async function enterSeating(page: Page) {
 async function leaveSeating(page: Page) {
 	const toolbar = page.getByRole('toolbar', { name: 'Grimoire' });
 	await toolbar.getByRole('button', { name: 'Done' }).tap();
-	await expect(toolbar.getByRole('button', { name: 'Open seating' })).toHaveCount(0);
+	await expect(toolbar.getByRole('button', { name: /^(Lock|Unlock) seating$/ })).toHaveCount(0);
 }
 
 async function joinAs(browser: Browser, testInfo: TestInfo, code: string, name: string) {
@@ -89,18 +89,33 @@ test('phones drag their own seat while seating is open, then claim an open seat 
 	await expect(phone.getByTestId('seating-disc')).toHaveCount(0);
 
 	await enterSeating(page);
-	// Every Seating control in the top bar, alike (Trevor, 2026-11-01); this one stays
-	// pressed while phones may move their seats.
-	const phones = page
-		.getByRole('toolbar', { name: 'Grimoire' })
-		.getByRole('button', { name: 'Open seating' });
-	await expect(phones).toHaveAttribute('aria-pressed', 'true');
+	// Every Seating control in the top bar, alike (Trevor, 2026-11-01). While phones may move
+	// their seats it offers Lock seating; an open padlock shows the state, never a colour
+	// (Trevor, 2026-11-06).
+	const tools = page.getByRole('toolbar', { name: 'Grimoire' });
+	const lock = tools.getByRole('button', { name: 'Lock seating' });
+	const unlock = tools.getByRole('button', { name: 'Unlock seating' });
+	await expect(lock).toBeVisible();
+	await expect(lock).not.toHaveAttribute('aria-pressed');
+	const fill = (button: Locator) =>
+		button.evaluate((el) => {
+			const style = getComputedStyle(el);
+			return [style.backgroundColor, style.boxShadow];
+		});
+	const countOff = tools.getByRole('button', { name: 'Count off' });
+	expect(await fill(lock)).toEqual(await fill(countOff));
+	// The rotate box has the same edge as its neighbours, drawn over its halves so a board
+	// background never hides it (Trevor, 2026-11-06: "missing outside border").
+	const rotateEdge = await tools
+		.getByRole('group', { name: 'Rotate players' })
+		.evaluate((el) => getComputedStyle(el, '::after').boxShadow);
+	expect(rotateEdge).toBe((await fill(countOff))[1]);
 	await expect(line).toHaveText('Seating is open');
 	await page.screenshot({ path: `test-results/seating-top-bar-${testInfo.project.name}.png` });
 	// Words beside the icons on a tablet, icons only on a phone (Trevor, 2026-11-01), and
 	// all seven tools fit across the bar either way.
 	const toolbar = page.getByRole('toolbar', { name: 'Grimoire' });
-	const words = toolbar.getByText('Open seating', { exact: true });
+	const words = toolbar.getByText('Lock seating', { exact: true });
 	if (testInfo.project.name === 'tablet') await expect(words).toBeVisible();
 	else await expect(words).toBeHidden();
 	const fits = await toolbar.evaluate((bar) => bar.scrollWidth <= bar.clientWidth);
@@ -180,10 +195,13 @@ test('phones drag their own seat while seating is open, then claim an open seat 
 		.toBeLessThan(town.width * 0.05);
 
 	// The switch off: no more dragging. Done leaves Seating with seating locked.
-	await phones.tap();
-	await expect(phones).toHaveAttribute('aria-pressed', 'false');
+	await lock.tap();
+	await expect(unlock).toBeVisible();
+	await page.mouse.move(0, 0);
+	expect(await fill(unlock)).toEqual(await fill(countOff));
 	await expect(line).toHaveCount(0);
-	await phones.tap();
+	await unlock.tap();
+	await expect(lock).toBeVisible();
 	await expect(line).toHaveText('Seating is open');
 	await leaveSeating(page);
 	await expect(line).toHaveCount(0);
@@ -212,11 +230,8 @@ test('Character selection opens Seating, and Done comes back to it', async ({ pa
 	await page.getByRole('button', { name: 'Seating' }).tap();
 	await expect(page.getByRole('toolbar', { name: 'Grimoire' })).toContainText('Seating');
 	const bar = page.getByRole('toolbar', { name: 'Grimoire' });
-	// No room open yet, so Open seating starts off.
-	await expect(bar.getByRole('button', { name: 'Open seating' })).toHaveAttribute(
-		'aria-pressed',
-		'false'
-	);
+	// No room open yet, so seating starts locked.
+	await expect(bar.getByRole('button', { name: 'Unlock seating' })).toBeVisible();
 	// Add seat is there too: it places a seat, then comes back to Seating (Trevor, 2026-11-01).
 	const seats = page.getByRole('button', { name: /^Seat \d+/ });
 	const before = await seats.count();
@@ -227,14 +242,14 @@ test('Character selection opens Seating, and Done comes back to it', async ({ pa
 		.getByRole('button', { name: /^Place between/ })
 		.first()
 		.tap();
-	await expect(bar.getByRole('button', { name: 'Open seating' })).toBeVisible();
+	await expect(bar.getByRole('button', { name: 'Unlock seating' })).toBeVisible();
 	await expect(seats).toHaveCount(before + 1);
-	// Open seating and Count off work before anyone joins: they open the room first (Trevor,
+	// Unlock seating and Count off work before anyone joins: they open the room first (Trevor,
 	// 2026-11-02: "Even if no one is in the room yet").
-	const open = bar.getByRole('button', { name: 'Open seating' });
+	const open = bar.getByRole('button', { name: 'Unlock seating' });
 	await expect(open).toBeEnabled();
 	await open.tap();
-	await expect(open).toHaveAttribute('aria-pressed', 'true');
+	await expect(bar.getByRole('button', { name: 'Lock seating' })).toBeVisible();
 	await bar.getByRole('button', { name: 'Count off' }).tap();
 	const sheet = page.getByRole('dialog', { name: 'Count off' });
 	await expect(sheet.getByTestId('count-off-host')).toBeVisible();

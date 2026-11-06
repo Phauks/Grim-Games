@@ -5407,7 +5407,7 @@ test('the board menu names its groups, in two columns beside a phone', async ({ 
 	);
 	expect((await names('Session')).join(' ')).toMatch(/^(Character selection )?End game$/);
 	const session = (await group('Session').boundingBox())!;
-	// Arranging seats, Open seating (plan J38) and Count off (J40) are one Seating mode
+	// Arranging seats, Lock seating (plan J38) and Count off (J40) are one Seating mode
 	// (Trevor, 2026-10-31), which works with no room open too. Travellers choose (L102) comes
 	// with Add seat, not as its own button (Trevor, 2026-11-01).
 	expect(await names('Seats')).toEqual(['Add Fabled or Loric', 'Seating']);

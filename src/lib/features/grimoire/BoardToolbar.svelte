@@ -60,6 +60,7 @@
 	/** Players' messages and reported pictures still to see (Trevor, 2026-10-27). */
 	const unread = $derived(host.code ? host.inbox.unread : 0);
 	const count = $derived(host.countOff);
+	const seatingAction = $derived(t(host.seatingOpen ? 'room.seating.lock' : 'room.seating.unlock'));
 </script>
 
 <!-- Left out of the board's picture (screenshot.ts): it is the app's, not the game's. -->
@@ -81,14 +82,14 @@
 		<Button variant="quiet" icon="add" aria-label="Add seat" onclick={onAddSeat}
 			><span class="tool-label">Add seat</span></Button
 		>
-		<!-- Phones move their seats while this is on (seating open); opens a room if none. -->
+		<!-- Unlocked, phones move their own seats; opens a room if none. The padlock shows which,
+		     never a colour, and the words say what a tap does (Trevor, 2026-11-06). -->
 		<Button
 			variant="quiet"
-			icon="phonesMove"
-			aria-label={t('room.seating.phones')}
-			aria-pressed={host.seatingOpen}
+			icon={host.seatingOpen ? 'unlock' : 'lock'}
+			aria-label={seatingAction}
 			onclick={() => letPhonesMove(!host.seatingOpen)}
-			><span class="tool-label">{t('room.seating.phones')}</span></Button
+			><span class="tool-label">{seatingAction}</span></Button
 		>
 		<Button variant="quiet" icon="countOff" aria-label={t('room.countOff.title')} onclick={countOff}
 			><span class="tool-label">{t('room.countOff.title')}</span>{#if count}<span class="count"
@@ -104,7 +105,7 @@
 			onclick={() => seatArr.spread()}><span class="tool-label">Distribute</span></Button
 		>
 		<!-- The two rotations as one box split down the middle, beside Done, so the tools with
-		     words sit together (Trevor, 2026-11-01). -->
+		     words sit together (Trevor, 2026-11-01), with the same edge as the buttons beside it. -->
 		<span class="rotate" role="group" aria-label="Rotate players">
 			<IconButton
 				icon="rotateAnticlockwise"
@@ -240,12 +241,22 @@
 		}
 	}
 	.rotate {
+		position: relative;
 		display: flex;
 		flex: none;
 		overflow: hidden;
 		border-radius: var(--button-radius);
-		box-shadow: var(--button-ring);
 		background: var(--surface);
+	}
+	/* The quiet Button's edge, drawn over the two halves: on a background their backing covered
+	   an edge drawn under them (Trevor, 2026-11-06: "missing outside border"). */
+	.rotate::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		border-radius: inherit;
+		box-shadow: var(--button-ring);
+		pointer-events: none;
 	}
 	.rotate :global(.icon-button) {
 		border-radius: 0;
