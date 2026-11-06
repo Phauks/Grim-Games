@@ -21,6 +21,7 @@ import {
 } from '#lib/features/player/players-only-games.svelte.ts';
 import { recentRooms } from '#lib/features/room/recent-rooms.ts';
 import { t } from '#lib/i18n/locale.svelte.ts';
+import { readStored, writeStored } from '#lib/ui/stored.ts';
 
 export type LastGame =
 	| {
@@ -81,13 +82,28 @@ async function localCandidate(): Promise<LastGame | undefined> {
 	return game && { kind: 'local', at: game.visit.at, game };
 }
 
+/** Which game it is, and when it was last played: hiding lasts until it is played again. */
+export function lastGameId(game: LastGame): string {
+	const id =
+		game.kind === 'storyteller'
+			? game.gameId
+			: game.kind === 'room'
+				? game.code
+				: game.game.visit.key;
+	return `${game.kind}:${id}:${game.at}`;
+}
+
+const HIDDEN_KEY = 'grim-games:last-game-hidden';
+
 let current = $state.raw<LastGame | undefined>();
 let running: Promise<void> | undefined;
 
 async function find(): Promise<void> {
 	try {
 		const [storyteller, local] = await Promise.all([storytellerCandidate(), localCandidate()]);
-		current = newestGame([storyteller, roomCandidate(), local]);
+		const newest = newestGame([storyteller, roomCandidate(), local]);
+		// Hidden from the menu (its ⋯ Hide): nothing shows until another game is played.
+		current = newest && readStored(HIDDEN_KEY) === lastGameId(newest) ? undefined : newest;
 	} catch (e) {
 		reportError(e, { area: 'grimoire', notify: false });
 	}
@@ -102,6 +118,11 @@ export const lastGame = {
 	refresh(): Promise<void> {
 		const run = (running ??= find().finally(() => (running = undefined)));
 		return run;
+	},
+	/** Takes it off the menu and Home until it, or another game, is played again. */
+	hide(game: LastGame): void {
+		writeStored(HIDDEN_KEY, lastGameId(game));
+		current = undefined;
 	}
 };
 
