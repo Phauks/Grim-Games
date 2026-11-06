@@ -61,7 +61,7 @@
 	</div>{:else}{@render row()}{/if}
 
 {#snippet row()}<div class="grim-tools" data-testid="grim-tools">
-		{#if seats}<span class="corner-pill">{@render seats()}</span>{/if}
+		{#if seats}<span class="corner-select">{@render seats()}</span>{/if}
 		{#if final}<span class="corner-pill"
 				><Toggle label={t('room.finalGrimoire')} checked={showFinal} onChange={onFinal} /></span
 			>{/if}
@@ -108,6 +108,18 @@
 	.corner-button {
 		border-radius: 50%;
 		background: var(--board-bar-background);
+	}
+	/* A drop-down that reads in words ("7 seats"): a pill as tall as the round buttons beside
+	   it, on their backing, with no box of its own (Trevor, 2026-11-06, option C). */
+	.corner-select {
+		border-radius: var(--radius-full);
+		background: var(--board-bar-background);
+	}
+	.corner-select :global([data-scope='select'][data-part='trigger']) {
+		height: var(--tap-target);
+		border: none;
+		border-radius: var(--radius-full);
+		background: transparent;
 	}
 	/* A switch with its words, on the same backing as the corner's round buttons. */
 	.corner-pill {

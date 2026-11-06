@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { localGuessKey, localSeats } from './local-town.svelte.ts';
+	import { keptLocalSeats, localGuessKey } from './local-town.svelte.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import ErrorBoundary from '#lib/features/errors/ErrorBoundary.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
@@ -41,7 +41,7 @@
 	/** No room and no Storyteller: the player's own town (plan M55), as the Grim tab draws it. */
 	const local = $derived(!town && !room && notesKey ? notesKey : undefined);
 	const seats = $derived(
-		town?.seats ?? player?.view?.public?.seats ?? (local ? localSeats(local) : [])
+		town?.seats ?? player?.view?.public?.seats ?? (local ? keptLocalSeats(local) : [])
 	);
 	/** Where this game's seat notes and guesses are kept: per game (`gameKey`), as the Grim tab. */
 	const kept = $derived(
@@ -113,7 +113,7 @@
 		onDeleteNote={(noteId) => notebook!.deleteNote(noteId)}
 		onAddScratch={() => scratch && openScratch(scratch.add())}
 		onOpenScratch={openScratch}
-		seats={room && seats.length
+		seats={kept && seats.length
 			? seats.map((s) => ({
 					seatId: s.seatId,
 					name: nameOf(s),

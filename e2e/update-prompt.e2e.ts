@@ -76,6 +76,24 @@ test('the update prompt lists the commits since the running build', async ({ pag
 	await expect(prompt.getByText('First new change')).toBeHidden();
 });
 
+// Trevor (2026-11-06): "What changed" sat on a dark band, the page's backdrop that a pinned
+// section header is filled with. A header is only filled while it is stuck over rows.
+test("the update card's What changed header shows the card behind it", async ({ page }) => {
+	await fakeWaitingUpdate(page);
+	await page.goto('/');
+	const prompt = page.getByTestId('update-banner');
+	const head = prompt.locator('.collapsible > .head');
+	await expect(prompt.getByRole('button', { name: 'What changed' })).toBeEnabled();
+	for (const open of [false, true]) {
+		if (open) await prompt.getByRole('button', { name: 'What changed' }).tap();
+		await expect(head).not.toHaveAttribute('data-stuck');
+		expect(await head.evaluate((el) => getComputedStyle(el).backgroundImage)).toBe('none');
+		expect(await head.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe(
+			'rgba(0, 0, 0, 0)'
+		);
+	}
+});
+
 // Trevor (2026-10-28): an update "had 0 changes". It was the running build deployed again, or an
 // older one deployed after it; that is no update, so nothing offers it.
 test('a waiting build that is the running one again is not offered', async ({ page, request }) => {

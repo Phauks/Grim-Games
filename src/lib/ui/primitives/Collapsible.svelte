@@ -18,6 +18,61 @@
 	export function rememberOpen(key: string): void {
 		writeStoredText(PREFIX + key, '0');
 	}
+
+	/*
+	 * A pinned header is only filled while it is stuck, with rows passing under it. At rest it
+	 * shows whatever box it sits in, so a section in a card, panel or banner never shows the
+	 * page's backdrop as a band behind its title (Trevor, 2026-11-06). One listener for every
+	 * pinned header; it is stuck when it has moved down from the top of its own section.
+	 */
+	// Not reactive state: only the scroll listener reads it.
+	// eslint-disable-next-line svelte/prefer-svelte-reactivity
+	const pinnedHeads = new Set<HTMLElement>();
+	let frame = 0;
+
+	function markStuck(head: HTMLElement): void {
+		const section = head.parentElement;
+		if (!section) return;
+		// Where it sits unstuck: under its section's top line and padding, plus its own margin.
+		const box = getComputedStyle(section);
+		const rest =
+			section.clientTop +
+			(parseFloat(box.paddingTop) || 0) +
+			(parseFloat(getComputedStyle(head).marginTop) || 0);
+		const moved = head.getBoundingClientRect().top - section.getBoundingClientRect().top - rest;
+		head.toggleAttribute('data-stuck', moved > 0.5);
+	}
+
+	function markAll(): void {
+		frame = 0;
+		for (const head of pinnedHeads) markStuck(head);
+	}
+
+	function schedule(): void {
+		if (!frame) frame = requestAnimationFrame(markAll);
+	}
+
+	function watchPinned(head: HTMLElement): () => void {
+		if (pinnedHeads.size === 0) {
+			// Capture: a dialog's or sheet's own scroll box scrolls without the page.
+			document.addEventListener('scroll', schedule, { capture: true, passive: true });
+			window.addEventListener('resize', schedule, { passive: true });
+		}
+		pinnedHeads.add(head);
+		markStuck(head);
+		// Opening, closing or rows changing above it moves it without a scroll.
+		const resized = new ResizeObserver(schedule);
+		if (head.parentElement) resized.observe(head.parentElement);
+		return () => {
+			resized.disconnect();
+			pinnedHeads.delete(head);
+			head.removeAttribute('data-stuck');
+			if (pinnedHeads.size === 0) {
+				document.removeEventListener('scroll', schedule, { capture: true });
+				window.removeEventListener('resize', schedule);
+			}
+		};
+	}
 </script>
 
 <script lang="ts">
@@ -131,6 +186,10 @@
 	});
 	const shown = $derived(!disabled && (forceOpen || (empty ? openWhileEmpty : open)));
 	const id = $props.id();
+	let head = $state<HTMLElement>();
+	$effect(() => {
+		if (pinned && head) return watchPinned(head);
+	});
 
 	function toggle() {
 		if (forceOpen || disabled) return;
@@ -155,6 +214,7 @@
 	data-pinned={pinned ? '' : undefined}
 >
 	<div
+		bind:this={head}
 		class="head"
 		data-type-band={tone ?? (outlined ? 'outline' : undefined)}
 		data-aside-by-title={asideByTitle ? '' : undefined}
@@ -211,6 +271,10 @@
 		top: var(--pin-top, 0rem);
 		/* Over the rows passing under it, under any band, bar or heading pinned above it. */
 		z-index: 1;
+	}
+	/* Filled only while stuck, so at rest it is the box it sits in (no band behind it). */
+	/* data-stuck is set by watchPinned above, so Svelte cannot see it in the markup. */
+	.collapsible[data-pinned] > .head:global([data-stuck]) {
 		background: var(--pin-background, var(--surface));
 		background-attachment: fixed;
 	}

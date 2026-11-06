@@ -75,5 +75,15 @@
 	"reminderEnds": {
 		"Sober & Healthy": "dusk-after-dawn",
 		"Acts Twice": "dusk-after-dawn"
+	},
+	"nightOrder": {
+		"first": {
+			"stage": "travellers",
+			"after": "apprentice"
+		},
+		"other": {
+			"stage": "travellers",
+			"after": "cacklejack"
+		}
 	}
 }

@@ -9,7 +9,14 @@ import { describe, expect, it } from 'vitest';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { editionScript } from '#lib/core/data/script.ts';
 import type { Character } from '#lib/core/data/types.ts';
-import { nightOrder, type NightOrderInput } from './night-order.ts';
+import {
+	afterDawn,
+	nightOrder,
+	nightStages,
+	sheetWithOwnPlaces,
+	suggestedNightPlace,
+	type NightOrderInput
+} from './night-order.ts';
 
 const data = committedGameData();
 const get = (...ids: string[]) => ids.map((id) => data.byId.get(id)!);
@@ -265,6 +272,104 @@ describe('homebrew characters', () => {
 			'chef',
 			'dawn'
 		]);
+	});
+});
+
+// M59: a custom character says where it wakes with its own `nightOrder`: right after another
+// character's step or a night marker, even one not in play.
+describe('a custom character placed by its own night position', () => {
+	const warden = homebrew({
+		otherNightReminder: 'The Storm Warden chooses a player.',
+		rules: { nightOrder: { other: { after: 'monk' } } }
+	});
+
+	it('wakes right after the step it names, as a sheet step', () => {
+		const r = order({ night: 'other', inPlay: [warden, ...get('monk', 'imp', 'empath')] });
+		expect(r.steps.map((s) => s.id)).toEqual([
+			'dusk',
+			'monk',
+			'stormwarden',
+			'imp',
+			'empath',
+			'dawn'
+		]);
+		expect(r.steps[2]).toMatchObject({ placement: 'night-sheet', notes: [] });
+	});
+
+	it('follows a chain through characters that are not in play', () => {
+		const lantern = homebrew({
+			id: 'lantern',
+			name: 'Lantern',
+			otherNightReminder: 'x',
+			rules: { nightOrder: { other: { after: 'stormwarden' } } }
+		});
+		const list = sheetWithOwnPlaces(['dusk', 'monk', 'imp', 'dawn'], 'other', [lantern, warden]);
+		expect(list).toEqual(['dusk', 'monk', 'stormwarden', 'lantern', 'imp', 'dawn']);
+		// Not placed when nothing leads back to the sheet.
+		expect(sheetWithOwnPlaces(['dusk', 'dawn'], 'other', [lantern])).toEqual(['dusk', 'dawn']);
+	});
+
+	it('goes at the end of its stage when the step it names is unknown', () => {
+		const lost = homebrew({
+			otherNightReminder: 'x',
+			rules: { nightOrder: { other: { stage: 'impairs', after: 'nosuchcharacter' } } }
+		});
+		// The Poisoner and Monk poison or protect; the Imp's stage, Demon kills, comes later.
+		const r = order({
+			night: 'other',
+			inPlay: [lost, ...get('poisoner', 'monk', 'imp')],
+			official: data.byId
+		});
+		const ids = r.steps.map((s) => s.id);
+		expect(ids.indexOf('stormwarden')).toBeGreaterThan(ids.indexOf('monk'));
+		expect(ids.indexOf('stormwarden')).toBeLessThan(ids.indexOf('imp'));
+		expect(r.steps[ids.indexOf('stormwarden')]).toMatchObject({ placement: 'night-sheet' });
+	});
+
+	it('announces a character placed after Dawn as the day begins', () => {
+		const herald = homebrew({
+			id: 'herald',
+			firstNightReminder: 'Declare the Herald.',
+			rules: { nightOrder: { first: { after: 'dawn' } } }
+		});
+		expect(afterDawn({ firstNight: ['dusk', 'dawn'], otherNight: [] }, 'first', [herald])).toEqual([
+			'herald'
+		]);
+		const steps = order({ inPlay: [herald, ...get('chef')] }).steps;
+		expect(steps.at(-1)).toMatchObject({ id: 'herald', afterDawn: true });
+	});
+});
+
+describe('night stages (the Character builder)', () => {
+	it('lists each stage in order with the marker steps where they fall', () => {
+		const parts = nightStages(data.nightSheet.firstNight, 'first', data.characters);
+		const names = parts.map((p) => (p.kind === 'marker' ? p.id : p.stage));
+		expect(names.slice(0, 3)).toEqual(['dusk', 'rules', 'watches']);
+		expect(names.indexOf('minioninfo')).toBeLessThan(names.indexOf('minion-info'));
+		expect(names.indexOf('demoninfo')).toBeLessThan(names.indexOf('demon-info'));
+		expect(names.at(-2)).toBe('dawn');
+		expect(names.at(-1)).toBe('announces');
+	});
+
+	it('puts every sheet character in its own stage, in sheet order', () => {
+		const list = data.nightSheet.otherNight;
+		const parts = nightStages(list, 'other', data.characters);
+		const impairs = parts.find((p) => p.kind === 'stage' && p.stage === 'impairs');
+		expect(impairs?.kind === 'stage' && impairs.steps).toContain('monk');
+		const steps = parts.flatMap((p) => (p.kind === 'stage' ? p.steps : []));
+		const sheetChars = list.filter((id) => data.byId.has(id));
+		expect(steps).toEqual(sheetChars);
+	});
+
+	it('suggests a stage from the ability for a character with no place of its own', () => {
+		// The Monk's own ability text, on a custom character with no night position.
+		const guard = homebrew({
+			id: 'guard',
+			ability: data.byId.get('monk')!.ability,
+			otherNightReminder: 'x'
+		});
+		const place = suggestedNightPlace(guard, 'other', data.nightSheet, data.byId);
+		expect(place?.stage).toBe('impairs');
 	});
 });
 

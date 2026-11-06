@@ -72,5 +72,11 @@
 		"reminders": {
 			"target": "Twin"
 		}
+	},
+	"nightOrder": {
+		"first": {
+			"stage": "minions",
+			"after": "devilsadvocate"
+		}
 	}
 }

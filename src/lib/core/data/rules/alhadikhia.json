@@ -125,5 +125,11 @@
 		"princess": {
 			"noKill": "token"
 		}
+	},
+	"nightOrder": {
+		"other": {
+			"stage": "demon-kills",
+			"after": "ojo"
+		}
 	}
 }

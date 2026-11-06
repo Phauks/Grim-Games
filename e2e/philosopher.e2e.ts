@@ -186,3 +186,41 @@ test("a gained ability brings its character's reminders into the bank (M50)", as
 	await page.keyboard.press('Escape');
 	await expect(bank.getByRole('button', { name: 'Abnormal reminder' }).first()).toBeVisible();
 });
+
+test('day view lists an ability a player gained under their own character', async ({ page }) => {
+	// The Artist, whose day button gives it a row in day view.
+	await setUp(page, 'Artist');
+	await seat(page, 1).tap();
+	const sheet = sheetOf(page);
+	await sheet.getByRole('button', { name: 'Seat actions' }).tap();
+	await page.getByRole('dialog').getByRole('button', { name: 'Gain ability…' }).tap();
+	const gain = page.getByRole('dialog', { name: 'Gain ability' });
+	await gain.getByRole('button', { name: 'Character ability' }).tap();
+	await page
+		.getByRole('dialog', { name: /^Ability / })
+		.getByRole('button', { name: 'Mathematician', exact: true })
+		.tap();
+	await expect(gain).toContainText('Mathematician');
+	await page.keyboard.press('Escape');
+	await expect(gain).toBeHidden();
+	await page.keyboard.press('Escape');
+	await expect(sheet).toBeHidden();
+	// Into Day 1: start the game and end the first night.
+	const tray = page.locator('[data-tray]');
+	await tray.getByRole('button', { name: /^(Start game|Run Night Order)$/ }).tap();
+	const ask = page.getByRole('alertdialog', { name: 'Start the game?' });
+	if (await ask.isVisible()) await ask.getByRole('button', { name: 'Confirm', exact: true }).tap();
+	await tray.getByRole('button', { name: 'End night', exact: true }).tap();
+	await page
+		.getByRole('alertdialog', { name: 'End the night?' })
+		.getByRole('button', { name: 'Confirm', exact: true })
+		.tap();
+	// Under the Artist's own row in day view, the Mathematician's, as the same character row.
+	const day = page.getByRole('dialog', { name: 'Day 1' });
+	await expect(day).toBeVisible();
+	const row = day.locator('li[data-character="artist"]');
+	await expect(row.getByTestId('borrowed-abilities')).toContainText('Mathematician');
+	await expect(
+		day.locator('li[data-character="witch"]').getByTestId('borrowed-abilities')
+	).toHaveCount(0);
+});

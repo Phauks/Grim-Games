@@ -73,5 +73,11 @@
 		"huntsman": {
 			"thinksPartnerSetup": true
 		}
+	},
+	"nightOrder": {
+		"first": {
+			"stage": "demon-info",
+			"after": "sailor"
+		}
 	}
 }

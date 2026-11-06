@@ -107,7 +107,7 @@
 		const sheet = officialData.current?.nightSheet;
 		if (day === 0 || !sheet) return [];
 		const night: Night = day === 1 ? 'first' : 'other';
-		return afterDawn(sheet, night).flatMap((characterId) => {
+		return afterDawn(sheet, night, game.characters.values()).flatMap((characterId) => {
 			const character = game.characters.get(characterId);
 			const text =
 				night === 'first' ? character?.firstNightReminder : character?.otherNightReminder;

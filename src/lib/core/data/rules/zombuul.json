@@ -66,5 +66,11 @@
 	},
 	"reminderEnds": {
 		"Died Today": "dawn"
+	},
+	"nightOrder": {
+		"other": {
+			"stage": "demon-kills",
+			"after": "imp"
+		}
 	}
 }

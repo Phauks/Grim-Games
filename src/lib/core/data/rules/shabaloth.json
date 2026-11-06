@@ -70,5 +70,11 @@
 				"reason": "Says which tokens go on and come off."
 			}
 		}
+	},
+	"nightOrder": {
+		"other": {
+			"stage": "demon-kills",
+			"after": "pukka"
+		}
 	}
 }

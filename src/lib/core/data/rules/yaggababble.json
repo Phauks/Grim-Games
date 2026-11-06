@@ -69,5 +69,15 @@
 		"exorcist": {
 			"noKill": "token"
 		}
+	},
+	"nightOrder": {
+		"first": {
+			"stage": "changes",
+			"after": "poppygrower"
+		},
+		"other": {
+			"stage": "demon-kills",
+			"after": "lilmonsta"
+		}
 	}
 }

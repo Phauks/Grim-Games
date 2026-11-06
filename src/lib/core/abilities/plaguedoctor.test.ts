@@ -26,6 +26,7 @@ import { scenario } from '#lib/core/testing/scenario.ts';
 import {
 	committedCharacter,
 	committedGameData,
+	committedNightOrder,
 	nightSheetPresence
 } from '#lib/core/testing/committed-data.ts';
 
@@ -33,12 +34,13 @@ function otherNight(game: CastGame['game']) {
 	const data = committedGameData();
 	const inPlay = game.seating.map((s) => data.byId.get(game.seats[s].characterId!)!);
 	return withNightInfo(
-		nightOrder({ night: 'other', sheet: data.nightSheet, inPlay, players: 5 }).steps,
+		nightOrder({ night: 'other', sheet: data.nightSheet, inPlay, players: 5, official: data.byId })
+			.steps,
 		game,
 		characters,
 		'other',
 		{ died: [] },
-		data.nightSheet.otherNight
+		committedNightOrder('otherNight')
 	);
 }
 

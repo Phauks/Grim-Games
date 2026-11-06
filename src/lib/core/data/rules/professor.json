@@ -58,5 +58,11 @@
 	},
 	"wakesWhen": {
 		"untilToken": "No Ability"
+	},
+	"nightOrder": {
+		"other": {
+			"stage": "reacts",
+			"after": "banshee"
+		}
 	}
 }

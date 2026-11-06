@@ -140,5 +140,15 @@
 	"counter": {
 		"tokens": ["Night 1", "Night 2", "Night 3"],
 		"at": "dusk"
+	},
+	"nightOrder": {
+		"first": {
+			"stage": "minion-info",
+			"after": "lunatic"
+		},
+		"other": {
+			"stage": "minions",
+			"after": "scarletwoman"
+		}
 	}
 }

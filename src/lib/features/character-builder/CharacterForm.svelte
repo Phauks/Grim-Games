@@ -1,11 +1,14 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { CHARACTER_TYPES, type CharacterType, type GameData } from '#lib/core/data/index.ts';
+	import type { NightPlace } from '#lib/core/data/parts/night-order.ts';
 	import {
 		changesSetup,
 		fieldsFromEntry,
 		fieldsId,
+		nightPlaceOf,
 		previewCharacter,
+		withNightPlace,
 		SEATED_TYPES
 	} from '#lib/core/rules/index.ts';
 	import { TYPE_LABELS } from '#lib/features/reference/labels.ts';
@@ -15,6 +18,7 @@
 	import TextListField from '#lib/ui/primitives/TextListField.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import AbilityField from './AbilityField.svelte';
+	import NightPlaceField from './NightPlaceField.svelte';
 	import type { SavedCharacter } from './saved-characters.ts';
 	import { savedCharacters, type CharacterBuilderDraft } from './stores.svelte.ts';
 
@@ -32,14 +36,13 @@
 	const f = $derived(draft.current.fields);
 	const id = $derived(fieldsId(f));
 
-	const position = (value: string) => {
-		const n = Number(value.trim());
-		return Number.isFinite(n) && n > 0 ? n : undefined;
-	};
-	function setPosition(key: 'firstNight' | 'otherNight', value: string) {
-		const n = position(value);
-		if (n === undefined) draft.unset(key);
-		else draft.update({ [key]: n });
+	const preview = $derived(previewCharacter(f));
+
+	/** Where it wakes, saved in its rules as a stage and the step it follows (M59). */
+	function setPlace(night: 'first' | 'other', place: NightPlace) {
+		const rules = withNightPlace(f, night, place);
+		if (rules) draft.update({ rules });
+		else draft.unset('rules');
 	}
 
 	const savedPreview = (saved: SavedCharacter) => previewCharacter(fieldsFromEntry(saved.entry));
@@ -125,7 +128,7 @@
 	</PageSection>
 
 	<PageSection title={t('character-builder.night')}>
-		<div class="fields night">
+		<div class="fields">
 			<TextField
 				label={t('character-builder.firstNightReminder')}
 				multiline
@@ -133,11 +136,14 @@
 				value={f.firstNightReminder}
 				oninput={(firstNightReminder) => draft.update({ firstNightReminder })}
 			/>
-			<TextField
-				label={t('character-builder.firstNight')}
-				inputmode="numeric"
-				value={f.firstNight?.toString() ?? ''}
-				oninput={(v) => setPosition('firstNight', v)}
+			<NightPlaceField
+				night="first"
+				label={t('character-builder.firstNightPlace')}
+				character={preview}
+				{data}
+				value={nightPlaceOf(f, 'first')}
+				disabled={!f.firstNightReminder.trim()}
+				onChange={(place) => setPlace('first', place)}
 			/>
 			<TextField
 				label={t('character-builder.otherNightReminder')}
@@ -146,11 +152,14 @@
 				value={f.otherNightReminder}
 				oninput={(otherNightReminder) => draft.update({ otherNightReminder })}
 			/>
-			<TextField
-				label={t('character-builder.otherNight')}
-				inputmode="numeric"
-				value={f.otherNight?.toString() ?? ''}
-				oninput={(v) => setPosition('otherNight', v)}
+			<NightPlaceField
+				night="other"
+				label={t('character-builder.otherNightPlace')}
+				character={preview}
+				{data}
+				value={nightPlaceOf(f, 'other')}
+				disabled={!f.otherNightReminder.trim()}
+				onChange={(place) => setPlace('other', place)}
 			/>
 		</div>
 	</PageSection>
@@ -165,12 +174,5 @@
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-3);
-	}
-	/* Night text and its position side by side once there is room. */
-	@media (min-width: 40rem) {
-		.night {
-			grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
-			align-items: start;
-		}
 	}
 </style>

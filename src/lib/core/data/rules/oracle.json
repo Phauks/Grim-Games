@@ -10,5 +10,11 @@
 	},
 	"infoKind": {
 		"number": true
+	},
+	"nightOrder": {
+		"other": {
+			"stage": "learns",
+			"after": "towncrier"
+		}
 	}
 }

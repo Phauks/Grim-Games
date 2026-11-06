@@ -10,5 +10,11 @@
 	},
 	"infoKind": {
 		"number": true
+	},
+	"nightOrder": {
+		"first": {
+			"stage": "learns",
+			"after": "investigator"
+		}
 	}
 }

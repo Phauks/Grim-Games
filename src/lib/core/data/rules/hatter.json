@@ -80,5 +80,11 @@
 		"you-are": {
 			"characters": ["changed"]
 		}
+	},
+	"nightOrder": {
+		"other": {
+			"stage": "reacts",
+			"after": "gossip"
+		}
 	}
 }

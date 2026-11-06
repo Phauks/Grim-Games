@@ -34,5 +34,15 @@
 	"reminderMovement": {
 		"why": "The Storyteller decides what these mean."
 	},
-	"wish": true
+	"wish": true,
+	"nightOrder": {
+		"first": {
+			"stage": "impairs",
+			"after": "courtier"
+		},
+		"other": {
+			"stage": "impairs",
+			"after": "innkeeper"
+		}
+	}
 }

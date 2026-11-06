@@ -25,7 +25,7 @@
 		type ScriptChoice
 	} from '#lib/features/modes/script-choices.svelte.ts';
 	import { openPlayersOnly } from '#lib/features/player/open-players-only.ts';
-	import Toggle from '#lib/ui/primitives/Toggle.svelte';
+	import Select from '#lib/ui/primitives/Select.svelte';
 	import { holdChoosing } from '#lib/features/room/choosing.ts';
 	import { takeVotePick, type VotePick } from '#lib/features/room/vote-pick.ts';
 	import { openedByBack, readDraft, saveDraft } from '#lib/features/modes/new-game-draft.ts';
@@ -97,11 +97,11 @@
 	let players = $state<number | undefined>();
 	let starting = $state(false);
 	/**
-	 * No Storyteller in the app (plan M55, Trevor 2026-11-05: "a toggle in new game would be
-	 * enough"): the script opens on the player screen's Grim tab, where each phone keeps its
-	 * own town.
+	 * Who the game is for, at the very top (Trevor, 2026-11-06: "a switch between storyteller
+	 * and players"). Players is a game with no Storyteller in the app (plan M55): the script
+	 * opens on the player screen's Grim tab, where each phone keeps its own town.
 	 */
-	let playersOnly = $state(false);
+	let runBy = $state<'storyteller' | 'players'>('storyteller');
 
 	async function startPlayersOnly() {
 		starting = true;
@@ -160,42 +160,67 @@
 
 <!-- The page's title is the route's (Page); this is its content. -->
 <section>
-	<!-- One screen: Standard or a game mode from one drop-down (Trevor, 2026-10-18). -->
-	<GameModesPanel standardScript={edition} standardPlayers={players ?? 8} bind:modeId bind:ruleIds>
-		{#snippet standard(rules, begin)}
-			<!-- Not over a game's board: that sheet starts the Storyteller's next game. -->
-			{#if !compact}<Toggle
-					label={t('player.local.switch')}
-					checked={playersOnly}
-					onChange={(on) => (playersOnly = on)}
-				/>{/if}
-			<!-- The base three, then any other script by search (Trevor, 2026-10-19). -->
-			<PageSection title="Script">
-				{#snippet aside()}
-					<!-- Opens this device's room if it has none, so the table can gather and vote
-					     before any script is chosen (Trevor, 2026-10-23). -->
-					<!-- The vote is its own screen (Trevor, 2026-10-26: "Not a popup"). -->
-					<!-- No room vote with no Storyteller: in place but off, so nothing moves. -->
-					<Button
-						variant="quiet"
-						icon="vote"
-						disabled={playersOnly}
-						href={onRoomVote || playersOnly ? undefined : resolve('/vote')}
-						onclick={onRoomVote}>{t('room.scriptVote.button')}</Button
-					>
-				{/snippet}
-				<ScriptPicker label="Script" hideLabel value={edition} onChange={(v) => (edition = v)} />
-			</PageSection>
-			<Button
-				variant="accent"
-				icon="grimoire"
-				disabled={starting}
-				onclick={() => (playersOnly ? void startPlayersOnly() : begin(() => start(rules)))}
-				>{t('modes.start')}</Button
-			>
-		{/snippet}
-	</GameModesPanel>
+	<!-- Not over a game's board: that sheet starts the Storyteller's next game. -->
+	<!-- A drop-down, as Game mode below it (Trevor, 2026-10-18: "a dropdown, not buttons"). -->
+	{#if !compact}<PageSection title={t('player.local.runBy')}>
+			<Select
+				label={t('player.local.runBy')}
+				hideLabel
+				value={runBy}
+				options={[
+					{ value: 'storyteller', label: t('player.local.storyteller') },
+					{ value: 'players', label: t('player.local.players') }
+				]}
+				onChange={(v) => (runBy = v)}
+			/>
+		</PageSection>{/if}
+	{#if runBy === 'players'}
+		<!-- No game mode, rules or room vote with no Storyteller: only the script. -->
+		{@render scriptSection(false)}
+		<Button
+			variant="accent"
+			icon="grimoire"
+			disabled={starting}
+			onclick={() => void startPlayersOnly()}>{t('modes.start')}</Button
+		>
+	{:else}
+		<!-- One screen: Standard or a game mode from one drop-down (Trevor, 2026-10-18). -->
+		<GameModesPanel
+			standardScript={edition}
+			standardPlayers={players ?? 8}
+			bind:modeId
+			bind:ruleIds
+		>
+			{#snippet standard(rules, begin)}
+				{@render scriptSection(true)}
+				<Button
+					variant="accent"
+					icon="grimoire"
+					disabled={starting}
+					onclick={() => begin(() => start(rules))}>{t('modes.start')}</Button
+				>
+			{/snippet}
+		</GameModesPanel>
+	{/if}
 </section>
+
+<!-- The base three, then any other script by search (Trevor, 2026-10-19). -->
+{#snippet scriptSection(vote: boolean)}
+	<PageSection title="Script">
+		{#snippet aside()}
+			<!-- Opens this device's room if it has none, so the table can gather and vote
+			     before any script is chosen (Trevor, 2026-10-23). -->
+			<!-- The vote is its own screen (Trevor, 2026-10-26: "Not a popup"). -->
+			{#if vote}<Button
+					variant="quiet"
+					icon="vote"
+					href={onRoomVote ? undefined : resolve('/vote')}
+					onclick={onRoomVote}>{t('room.scriptVote.button')}</Button
+				>{/if}
+		{/snippet}
+		<ScriptPicker label="Script" hideLabel value={edition} onChange={(v) => (edition = v)} />
+	</PageSection>
+{/snippet}
 
 <style>
 	section {

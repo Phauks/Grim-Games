@@ -31,6 +31,21 @@ describe('official rules files (data/rules/<id>.json)', () => {
 		]);
 		expect(issues.list).toEqual([]);
 	});
+
+	// M59: each character's night position is TPI's sheet, written as "right after" the step
+	// before it, so a copy of the character placed by its own rules wakes where the sheet says.
+	it.each(['first', 'other'] as const)(
+		'places each character as the %s night sheet does',
+		(night) => {
+			const list = data.nightSheet[night === 'first' ? 'firstNight' : 'otherNight'];
+			for (const id of files.map((f) => f.slice(0, -5))) {
+				const at = list.indexOf(id);
+				const place = OFFICIAL_RULES.get(id)?.nightOrder?.[night];
+				expect(place?.after, id).toBe(at > 0 ? list[at - 1] : undefined);
+				expect(place === undefined || place.stage !== undefined, id).toBe(true);
+			}
+		}
+	);
 });
 
 describe('parseCharacterRules', () => {
@@ -44,6 +59,18 @@ describe('parseCharacterRules', () => {
 		expect(parse({ onNominated }).rules).toEqual({ onNominated });
 		expect(parse({ onNominated: { ...onNominated, by: 'player' } }).issues).toHaveLength(1);
 		expect(parse({ onNominated: { ...onNominated, effect: 'swap' } }).issues).toHaveLength(1);
+	});
+
+	it('reads a night position, and rejects one with no stage or step to follow (M59)', () => {
+		const nightOrder = { first: { after: 'dusk' }, other: { after: 'monk' } };
+		expect(parse({ nightOrder }).rules).toEqual({ nightOrder });
+		expect(parse({ nightOrder: {} }).issues).toHaveLength(1);
+		expect(parse({ nightOrder: { first: { after: '' } } }).issues).toHaveLength(1);
+		expect(parse({ nightOrder: { first: 'dusk' } }).issues).toHaveLength(1);
+		expect(parse({ nightOrder: { other: { stage: 'impairs' } } }).issues).toEqual([]);
+		// Team setup is a first-night stage only, and Dawn is a step, not a stage.
+		expect(parse({ nightOrder: { other: { stage: 'team-setup' } } }).issues).toHaveLength(1);
+		expect(parse({ nightOrder: { first: { stage: 'dawn' } } }).issues).toHaveLength(1);
 	});
 
 	// https://wiki.bloodontheclocktower.com/Witch, /Riot

@@ -242,3 +242,44 @@ test('Save is in the header and Download shows the JSON first', async ({ page })
 	await dialog.getByRole('button', { name: 'Download character JSON' }).tap();
 	expect((await download).suggestedFilename()).toBe('wick-trimmer.json');
 });
+
+// Where a custom character wakes (M59, Trevor 2026-11-06: mockup C): the night's stages in
+// order; the open one shows its characters with this one in its place.
+test('picks where a character wakes from the night stages', async ({ page }) => {
+	await page.goto('/build-character');
+	await page.getByTestId('character-name').fill('Night Guard');
+	await page
+		.getByTestId('character-ability')
+		.fill('Each night*, choose a player (not yourself): they are safe from the Demon tonight.');
+	const other = page.getByTestId('night-place-other');
+	const stage = (name: string) => other.getByRole('button', { name: new RegExp(`^${name}`) });
+	// It doesn't wake without night text.
+	await expect(stage('Minions')).toBeDisabled();
+
+	await page.getByRole('textbox', { name: 'Other nights text' }).fill('Wake the Night Guard.');
+	// Placed from its ability until a place is picked.
+	await expect(stage('Poison and protection')).toHaveAttribute('aria-expanded', 'true');
+
+	// Another stage opens in a sheet.
+	await stage('Minions').tap();
+	const sheet = page.getByRole('dialog', { name: 'Minions' });
+	await sheet.getByRole('button', { name: 'Start of the stage' }).tap();
+	await expect(sheet).toBeHidden();
+	await expect(stage('Minions')).toHaveAttribute('aria-expanded', 'true');
+	await expect(stage('Poison and protection')).toHaveAttribute('aria-expanded', 'false');
+	const steps = other.locator('ol ol > li');
+	await expect(steps.first()).toContainText('Night Guard');
+
+	// Tapping a character in the open stage puts it right after that one.
+	const second = steps.nth(1);
+	const name = (await second.innerText()).trim();
+	await second.getByRole('button').tap();
+	await expect(steps.nth(1)).toContainText('Night Guard');
+	await expect(steps.first()).toContainText(name);
+
+	// It is saved with the character.
+	await page.reload();
+	await expect(stage('Minions')).toHaveAttribute('aria-expanded', 'true');
+	await page.getByRole('button', { name: 'Download character JSON' }).tap();
+	await expect(page.getByRole('dialog').getByTestId('builder-json')).toContainText('"minions"');
+});

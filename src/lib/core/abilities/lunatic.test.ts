@@ -20,7 +20,7 @@ import { preventedDeaths } from '#lib/core/rules/prevented-deaths.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 import {
 	committedCharacter,
-	committedGameData,
+	committedNightOrder,
 	nightSheetPresence
 } from '#lib/core/testing/committed-data.ts';
 import { stepInfoCards, stepInfoTokens } from '#lib/core/rules/info-token-characters.ts';
@@ -132,7 +132,7 @@ describe('Lunatic', () => {
 			const chosen = { characterId: 'lunatic', label: 'Chosen' };
 			for (const seat of ['lunatic', 'chef', 'shabaloth'] as const)
 				expect(reminderTargetMisses(s.game, chosen, s.seat(seat), s.characters), seat).toEqual([]);
-			const order = committedGameData().nightSheet.otherNight;
+			const order = committedNightOrder('otherNight');
 			for (const demon of ['zombuul', 'pukka', 'shabaloth', 'po'])
 				expect(order.indexOf('lunatic'), demon).toBeLessThan(order.indexOf(demon));
 			expect(character.otherNightReminder).toContain('Show the Lunatic token');
