@@ -19,9 +19,9 @@ export const SEAT_7: SpecialRule = {
 	aliases: ['Seat 7'],
 	sources: [{ title: 'The Ballad of Seat 7 (Beardy on the Clocktower)', url: PAGE }],
 	parts: {
-		// The author's rule, quoted.
+		// Our wording of the author's rule, approved by Trevor 2026-11-06.
 		text: [
-			'Seat 7 remains empty. Its choices are arbitrary. Once per game the storyteller may speak on its behalf.'
+			'One seat is dealt a character but has no player. Its choices are arbitrary. Once per game, the Storyteller may speak on its behalf.'
 		],
 		seats: {
 			kind: 'storyteller-seat',
