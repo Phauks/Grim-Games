@@ -260,6 +260,8 @@ export function stepWakes(
 	tonight: {
 		abilitiesRule?: AbilitiesRule;
 		diedTonight: ReadonlySet<SeatId>;
+		/** Seats whose character changed since the New day (`wakesWhen.becameToday`). */
+		became?: ReadonlySet<SeatId>;
 		revived?: ReadonlySet<SeatId>;
 		order?: readonly string[];
 	}
@@ -296,7 +298,8 @@ export function stepWakes(
 					: seatHasAbility(tonight.abilitiesRule, game, s, characters) ||
 						keepsAbilityWhenDead(game, s, characters) ||
 						livesWhileDead(game, s, characters)) &&
-				(id === undefined || wakeConditionMet(game, id, s, characters, tonight.diedTonight)) &&
+				(id === undefined ||
+					wakeConditionMet(game, id, s, characters, tonight.diedTonight, tonight.became)) &&
 				!(
 					tonight.revived &&
 					tonight.order &&
@@ -325,8 +328,8 @@ export function revivedToday(log: GameLog): SeatId[] {
 }
 
 /**
- * What `stepWakes` needs from the log for tonight: who died and who was revived since the
- * New day, and, when anyone was revived, tonight's step ids (`order`).
+ * What `stepWakes` needs from the log for tonight: who died, whose character changed and
+ * who was revived since the New day, and, when anyone was revived, tonight's step ids (`order`).
  */
 export function tonightFromLog(
 	log: GameLog,
@@ -335,14 +338,19 @@ export function tonightFromLog(
 	data: GameData | undefined,
 	today: Parameters<typeof boardNightSteps>[4],
 	rules: readonly SpecialRule[]
-): { diedTonight: Set<SeatId>; revived: Set<SeatId>; order?: string[] } {
+): { diedTonight: Set<SeatId>; became: Set<SeatId>; revived: Set<SeatId>; order?: string[] } {
 	const events = log.entries.slice(0, log.cursor).flatMap((e) => e.events);
 	const revived = revivedSinceNewDay(events);
 	const order =
 		data && revived.size > 0
 			? boardNightSteps(game, characters, tonight(game), data, today, rules).map((s) => s.id)
 			: undefined;
-	return { diedTonight: diedSinceNewDay(events), revived, ...(order ? { order } : {}) };
+	return {
+		diedTonight: diedSinceNewDay(events),
+		became: new Set(today?.changes?.map((c) => c.seatId)),
+		revived,
+		...(order ? { order } : {})
+	};
 }
 
 /** Whether `seatId`'s death, by its recorded cause, sets off `characterId`'s ability. */
