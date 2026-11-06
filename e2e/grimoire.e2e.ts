@@ -7942,6 +7942,11 @@ test("the Barber's step swaps two players' characters, keeping alignments", asyn
 	const sheet = await openSeat(page, 1);
 	await sheet.getByRole('combobox', { name: 'Status: Alive' }).tap();
 	await page.getByRole('listbox').getByRole('option', { name: 'Executed' }).tap();
+	// Its death asks to place Haircuts Tonight (https://wiki.bloodontheclocktower.com/Barber).
+	await page
+		.getByRole('alertdialog', { name: 'Use the Barber’s ability?' })
+		.getByRole('button', { name: 'Confirm', exact: true })
+		.tap();
 	await closeSheet(page);
 
 	const strip = await walkTo(page, 'Barber');
@@ -7994,6 +7999,11 @@ test("the Hatter's step lets each Minion and Demon become another of their type"
 	const sheet = await openSeat(page, 1);
 	await sheet.getByRole('combobox', { name: 'Status: Alive' }).tap();
 	await page.getByRole('listbox').getByRole('option', { name: 'Executed' }).tap();
+	// Its death asks to place Tea Party Tonight (https://wiki.bloodontheclocktower.com/Hatter).
+	await page
+		.getByRole('alertdialog', { name: 'Use the Hatter’s ability?' })
+		.getByRole('button', { name: 'Confirm', exact: true })
+		.tap();
 	await closeSheet(page);
 
 	const strip = await walkTo(page, 'Hatter');
