@@ -152,6 +152,54 @@ describe('Cannibal', () => {
 				{ reason: 'poisoned', source: { characterId: 'cannibal' } }
 			]);
 		});
+		it('after an evil lunch, the step reminds the Storyteller the Cannibal is poisoned', () => {
+			// Wiki: "If an evil player dies by execution, mark them with the LUNCH reminder and mark the
+			// Cannibal with the POISONED reminder. The Cannibal is poisoned."
+			const data = committedGameData();
+			for (const evil of ['widow', 'baron']) {
+				const s = scenario(['cannibal', evil, 'imp', 'chef', 'monk'])
+					.execute(evil)
+					.reminder(evil, 'cannibal', 'Lunch')
+					.reminder('cannibal', 'cannibal', 'Poisoned')
+					.newDay();
+				const steps = withGainedSteps(
+					[],
+					s.game,
+					s.characters,
+					'other',
+					data.nightSheet.otherNight
+				);
+				expect(steps.map((step) => [step.reminder, step.gained?.ifEvil])).toEqual([
+					['The Cannibal is poisoned: the player whose ability they have is evil.', 'Poisoned']
+				]);
+				expect(nightStepAlerts(s.game, 'cannibal', s.characters).map((a) => a.kind)).not.toContain(
+					'missing-token'
+				);
+			}
+		});
+
+		it('warns at their step when the Cannibal is missing Poisoned after an evil lunch', () => {
+			// Wiki: "If an evil player dies by execution, mark them with the LUNCH reminder and mark the
+			// Cannibal with the POISONED reminder. The Cannibal is poisoned."
+			const s = scenario(['cannibal', 'widow', 'imp', 'chef', 'monk'])
+				.execute('widow')
+				.reminder('widow', 'cannibal', 'Lunch')
+				.newDay();
+			expect(nightStepAlerts(s.game, 'cannibal', s.characters)).toContainEqual(
+				expect.objectContaining({
+					kind: 'missing-token',
+					seatId: s.seat('cannibal'),
+					token: 'Poisoned'
+				})
+			);
+			const good = scenario(['cannibal', 'empath', 'imp', 'chef', 'monk'])
+				.execute('empath')
+				.reminder('empath', 'cannibal', 'Lunch')
+				.newDay();
+			expect(
+				nightStepAlerts(good.game, 'cannibal', good.characters).map((a) => a.kind)
+			).not.toContain('missing-token');
+		});
 	});
 
 	describe('Summary (https://wiki.bloodontheclocktower.com/Cannibal#Summary)', () => {

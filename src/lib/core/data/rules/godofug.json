@@ -48,6 +48,7 @@
 		"fixed": ["Hat"],
 		"why": "The player with the hat is chosen at setup."
 	},
+	"optionalRuleText": "The Ug hat may be worn during the nomination phase only.",
 	"optionalRule": {
 		"dayReminders": {
 			"reminders": [

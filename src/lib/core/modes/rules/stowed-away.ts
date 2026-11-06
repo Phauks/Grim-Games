@@ -17,10 +17,10 @@ export const STOWED_AWAY: SpecialRule = {
 		'Up to 2 Travellers may be in the bag, with the other counts set for that many fewer players. No one is told who the Travellers are, and exiling one counts as an execution.',
 	sources: [{ title: 'Stowed Away (Beardy on the Clocktower)', url: PAGE }],
 	parts: {
-		// The author's rule, quoted.
+		// Our wording of the author's rule, approved by Trevor 2026-11-06.
 		text: [
-			'Up to 2 recommended travellers might be in the bag & the player count lowers accordingly.',
-			'Travellers are not announced, executions & exiles are equivalent.'
+			'Up to 2 Travellers may be in the bag, with the counts set for that many fewer players.',
+			'Travellers are not announced. Exiles count as executions.'
 		],
 		travellers: {
 			inBag: 2,

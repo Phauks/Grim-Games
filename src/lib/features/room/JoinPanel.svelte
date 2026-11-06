@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, tick, untrack } from 'svelte';
+	import { onMount, tick, untrack, type Snippet } from 'svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -67,9 +67,20 @@
 		 * own row for the last room shows nothing then.
 		 */
 		entry?: boolean;
+		/** Above the code form, in its column (Home's last game and New game, plan M69). */
+		lead?: Snippet;
 	}
 
-	let { code, onCode, onJoined, onStoryteller, onSeated, onVoting, entry = true }: Props = $props();
+	let {
+		code,
+		onCode,
+		onJoined,
+		onStoryteller,
+		onSeated,
+		onVoting,
+		entry = true,
+		lead
+	}: Props = $props();
 
 	const valid = $derived(code === undefined ? null : normaliseRoomCode(code));
 	let player = $state.raw<RoomPlayer>();
@@ -377,85 +388,91 @@
 	     right (Trevor, 2026-10-28). -->
 	<div class="continue">
 		<div class="columns" class:split={code === undefined}>
-			<form class="code-form" onsubmit={enterCode}>
-				<label for="room-code">{t('room.codeLabel')}</label>
-				<CodeField
-					id="room-code"
-					bind:value={typed}
-					length={ROOM_CODE_LENGTH}
-					group={3}
-					centred
-					large
-				/>
-				<!-- Always this size, so the game arriving moves nothing. -->
-				<section
-					class="game"
-					class:found={!!found}
-					aria-label={t('room.gameToJoin')}
-					aria-live="polite"
-					data-testid="room-preview"
-				>
-					<!-- Only a found game has a logo; until then the status line has the whole box,
-					     centred (Trevor, 2026-10-31). The box keeps its height, so nothing moves. -->
-					{#if found}
-						<ScriptName name={found.name} logo={found.logo} empty={t('room.noScriptYet')}>
-							{#snippet sub()}
-								<ScriptByline author={found.author} inline />
-								{#if found.storyteller}
-									<span data-testid="game-storyteller"
-										>{t('room.storytellerLine', { name: found.storyteller })}</span
-									>
-								{/if}
-								{#if found.seats !== undefined}
-									<span
-										>{t('room.tableSize', { seats: found.seats, seated: found.seated ?? 0 })}</span
-									>
-								{/if}
-							{/snippet}
-						</ScriptName>
-					{:else}
-						<p class="game-status" role="status">{lookupText}</p>
-					{/if}
-				</section>
-				<div class="entry">
-					<Button type="submit" variant="accent" disabled={!canJoin}>
-						{t('room.join')}
-					</Button>
-					<!-- A camera icon, not words (Trevor, 2026-10-23). -->
-					<IconButton icon="scan" label={t('share.scan')} onclick={() => (scanning = true)} />
-					<!-- Grim view and Public Town are for fewer people, so they wait behind ⋯ and Join as
-			     player stays the one big button (Trevor, 2026-10-26). -->
-					<Menu
-						label={t('room.moreWays')}
-						items={[
-							// Disabled until the room has a Grim view password.
-							{
-								value: 'grim-view',
-								label: t('room.grimView'),
-								disabled: !found?.grimView,
-								onSelect: () => (grimViewOpen = true)
-							},
-							// A tablet for the middle of the table shows the players' grim (Public Town,
-							// Trevor 2026-10-26).
-							{
-								value: 'town',
-								label: t('room.town.title'),
-								disabled: !canJoin,
-								onSelect: () => {
-									if (lookup) void goto(resolve('/town/[code]', { code: lookup.code }));
-								}
-							},
-							// Another Storyteller's device hands this one the room (Trevor, 2026-10-28).
-							{
-								value: 'transfer',
-								label: t('room.transfer.title'),
-								disabled: lookup?.state !== 'found',
-								onSelect: () => (transferOpen = true)
-							}
-						]}
+			<div class="entry-column">
+				{#if lead}<div class="lead">{@render lead()}</div>{/if}
+				<form class="code-form" onsubmit={enterCode}>
+					<label for="room-code">{t('room.codeLabel')}</label>
+					<CodeField
+						id="room-code"
+						bind:value={typed}
+						length={ROOM_CODE_LENGTH}
+						group={3}
+						centred
+						large
 					/>
-				</div>
-			</form>
+					<!-- Always this size, so the game arriving moves nothing. -->
+					<section
+						class="game"
+						class:found={!!found}
+						aria-label={t('room.gameToJoin')}
+						aria-live="polite"
+						data-testid="room-preview"
+					>
+						<!-- Only a found game has a logo; until then the status line has the whole box,
+					     centred (Trevor, 2026-10-31). The box keeps its height, so nothing moves. -->
+						{#if found}
+							<ScriptName name={found.name} logo={found.logo} empty={t('room.noScriptYet')}>
+								{#snippet sub()}
+									<ScriptByline author={found.author} inline />
+									{#if found.storyteller}
+										<span data-testid="game-storyteller"
+											>{t('room.storytellerLine', { name: found.storyteller })}</span
+										>
+									{/if}
+									{#if found.seats !== undefined}
+										<span
+											>{t('room.tableSize', {
+												seats: found.seats,
+												seated: found.seated ?? 0
+											})}</span
+										>
+									{/if}
+								{/snippet}
+							</ScriptName>
+						{:else}
+							<p class="game-status" role="status">{lookupText}</p>
+						{/if}
+					</section>
+					<div class="entry">
+						<Button type="submit" variant="accent" disabled={!canJoin}>
+							{t('room.join')}
+						</Button>
+						<!-- A camera icon, not words (Trevor, 2026-10-23). -->
+						<IconButton icon="scan" label={t('share.scan')} onclick={() => (scanning = true)} />
+						<!-- Grim view and Public Town are for fewer people, so they wait behind ⋯ and Join as
+			     player stays the one big button (Trevor, 2026-10-26). -->
+						<Menu
+							label={t('room.moreWays')}
+							items={[
+								// Disabled until the room has a Grim view password.
+								{
+									value: 'grim-view',
+									label: t('room.grimView'),
+									disabled: !found?.grimView,
+									onSelect: () => (grimViewOpen = true)
+								},
+								// A tablet for the middle of the table shows the players' grim (Public Town,
+								// Trevor 2026-10-26).
+								{
+									value: 'town',
+									label: t('room.town.title'),
+									disabled: !canJoin,
+									onSelect: () => {
+										if (lookup) void goto(resolve('/town/[code]', { code: lookup.code }));
+									}
+								},
+								// Another Storyteller's device hands this one the room (Trevor, 2026-10-28).
+								{
+									value: 'transfer',
+									label: t('room.transfer.title'),
+									disabled: lookup?.state !== 'found',
+									onSelect: () => (transferOpen = true)
+								}
+							]}
+						/>
+					</div>
+				</form>
+			</div>
 			<!-- Joining and resuming on one page: games played above games hosted (Trevor, 2026-10-28). -->
 			{#if code === undefined}<div class="your-games">
 					<YourGames
@@ -574,6 +591,20 @@
 	}
 	.code-form label {
 		font-size: 1.1rem;
+	}
+	.entry-column {
+		display: grid;
+		gap: var(--space-3);
+		align-content: start;
+		min-width: 0;
+	}
+	/* As wide as the code form under it, so their edges line up. */
+	.lead {
+		display: grid;
+		gap: var(--space-2);
+		width: 100%;
+		max-width: calc(28 * var(--u));
+		margin-inline: auto;
 	}
 	.game {
 		display: flex;
