@@ -443,6 +443,10 @@ test('each heading stays pinned at the top while its section scrolls, then hands
 		{ x: head!.x + head!.width / 2, y: head!.y + head!.height / 2 }
 	);
 	expect(hidden).toContain('First night');
+	// Filled only while stuck over rows; at rest the header shows the box it sits in.
+	const headOf = (l: typeof first) => l.locator('xpath=ancestor::div[contains(@class,"head")][1]');
+	await expect(headOf(first)).toHaveAttribute('data-stuck');
+	await expect(headOf(other)).not.toHaveAttribute('data-stuck');
 	// At the end, First night has been pushed up by Other nights, never over it.
 	await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
 	await expect
