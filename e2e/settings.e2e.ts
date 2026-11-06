@@ -442,10 +442,8 @@ test('Sound has one volume for every sound, saved on the device', async ({ page 
 	const slider = dialog.getByRole('slider', { name: 'Volume', exact: true });
 	await expect(slider).toHaveAttribute('aria-valuetext', '100%');
 	await expect(dialog.getByRole('checkbox', { name: 'Vibrate' })).toBeVisible();
-	// What this phone plays when the Storyteller calls Back to town (plan U2).
-	await expect(dialog.getByRole('combobox', { name: 'Back to town sound' })).toContainText(
-		'Clock tower chimes'
-	);
+	// No Back to town sound of the phone's own: the Storyteller picks it (Trevor, 2026-11-06).
+	await expect(dialog.getByRole('combobox', { name: 'Back to town sound' })).toHaveCount(0);
 	await slider.fill('0.4');
 	await expect(slider).toHaveAttribute('aria-valuetext', '40%');
 

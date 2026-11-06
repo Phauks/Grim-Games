@@ -21,7 +21,6 @@ export const settings = {
 	'settings.sectionSound': 'Sound',
 	'settings.sectionPrint': 'Print',
 	'settings.soundVolume': 'Volume',
-	'settings.callSound': 'Back to town sound',
 	// Back to town on a locked phone (plan U12): the switch, and why it is off where it can't be on.
 	'settings.callTownPush': 'Alert while locked or closed',
 	'settings.callTownPush.home-screen': 'Add the app to your Home Screen to turn this on.',

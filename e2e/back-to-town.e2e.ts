@@ -183,8 +183,8 @@ test('the timer opened from the grim screen is the day view’s timer, Back to t
 });
 
 // Trevor, 2026-11-06: "Back to town button should have more controls on deciding which sound to
-// send" (option A: a Sound drop-down in the confirm sheet, kept for the next call). The pick
-// plays on every phone in place of its own Back to town sound.
+// send" (option A: a Sound drop-down in the confirm sheet, kept for the next call), and
+// "Remove each phones own choice for back to town": every phone plays the Storyteller's pick.
 test('Back to town sends the sound the Storyteller picks, and keeps it for next time', async ({
 	page,
 	browser
@@ -197,10 +197,7 @@ test('Back to town sends the sound the Storyteller picks, and keeps it for next 
 
 	const phoneContext = await browser.newContext({ ...testInfo.project.use });
 	const phone = await phoneContext.newPage();
-	// This phone's own Back to town sound is None, so any sound it makes is the Storyteller's.
 	await phone.addInitScript(() => {
-		if (!localStorage.getItem('grim-games:preferences:v1'))
-			localStorage.setItem('grim-games:preferences:v1', JSON.stringify({ callSound: 'none' }));
 		const calls: string[] = [];
 		(window as unknown as { alerts: string[] }).alerts = calls;
 		navigator.vibrate = () => (calls.push('vibrate'), true);
@@ -219,30 +216,34 @@ test('Back to town sends the sound the Storyteller picks, and keeps it for next 
 	const confirm = page.getByRole('alertdialog', { name: 'Back to town?' });
 	await call.tap();
 	const sound = confirm.getByRole('combobox', { name: 'Sound' });
-	// Each phone's own sound until the Storyteller picks one.
-	await expect(sound).toContainText('Each phone’s own choice');
+	// The clock tower until the Storyteller picks another; no choice left to each phone.
+	await expect(sound).toContainText('Clock tower chimes');
 	await sound.tap();
 	await expect(page.getByRole('option')).toHaveText([
-		'Each phone’s own choice',
 		'Bell',
 		'Chime',
 		'Clock tower chimes',
 		'Buzzer',
 		'None'
 	]);
-	await page.getByRole('option', { name: 'Bell', exact: true }).tap();
-	await expect(sound).toContainText('Bell');
+	// None: the phone only vibrates, so what it plays is the Storyteller's pick, not its own.
+	await page.getByRole('option', { name: 'None', exact: true }).tap();
+	await expect(sound).toContainText('None');
 	await confirm.getByRole('button', { name: 'Confirm', exact: true }).tap();
 	await expect(confirm).toBeHidden();
 	await expect(phone.getByText('Back to town', { exact: true })).toBeVisible();
 	await expect
 		.poll(() => phone.evaluate(() => (window as unknown as { alerts: string[] }).alerts))
-		.toEqual(['vibrate', 'sound']);
+		.toEqual(['vibrate']);
+	await phone.waitForTimeout(500);
+	expect(await phone.evaluate(() => (window as unknown as { alerts: string[] }).alerts)).toEqual([
+		'vibrate'
+	]);
 
 	// Kept for the next call, on this device.
 	await page.reload();
 	await call.tap();
-	await expect(confirm.getByRole('combobox', { name: 'Sound' })).toContainText('Bell');
+	await expect(confirm.getByRole('combobox', { name: 'Sound' })).toContainText('None');
 	await confirm.getByRole('button', { name: 'Cancel' }).tap();
 	await phoneContext.close();
 });

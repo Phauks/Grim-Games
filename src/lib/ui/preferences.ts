@@ -119,13 +119,11 @@ export interface Preferences {
 	 * a Back to town call (plan U2).
 	 */
 	timerVibrate: boolean;
-	/** The sound a player's phone makes when the Storyteller calls Back to town (plan U2). */
-	callSound: TimerSound;
 	/**
-	 * The sound the Storyteller sends with Back to town, picked in its confirm sheet and kept
-	 * for the next call (Trevor, 2026-11-06); `own` leaves each phone its own `callSound`.
+	 * The sound every phone plays when the Storyteller calls Back to town, picked in its confirm
+	 * sheet and kept for the next call (Trevor, 2026-11-06); phones have no choice of their own.
 	 */
-	townCallSound: TownCallSound;
+	townCallSound: TimerSound;
 	/** Day and night sound plays in the room while a game runs (plan U3). */
 	ambienceOn: boolean;
 	/** How loud day and night sound plays, under the device's volume (plan U3). */
@@ -208,9 +206,6 @@ export type CountingReminders = (typeof COUNTING_REMINDERS)[number];
 /** The day timer's finishing sounds, made on the device (no audio files); or none. */
 export const TIMER_SOUNDS = ['bell', 'chime', 'clocktower', 'buzzer', 'none'] as const;
 export type TimerSound = (typeof TIMER_SOUNDS)[number];
-/** What Back to town sends: each phone's own sound, or one for every phone (Trevor, 2026-11-06). */
-export const TOWN_CALL_SOUNDS = ['own', ...TIMER_SOUNDS] as const;
-export type TownCallSound = (typeof TOWN_CALL_SOUNDS)[number];
 
 /**
  * Numbers or letters (Trevor, 2026-10-16). The random symbols this replaced read back as
@@ -289,8 +284,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
 	reminderRemoval: 'off',
 	countingReminders: 'off',
 	timerVibrate: true,
-	callSound: 'clocktower',
-	townCallSound: 'own',
+	townCallSound: 'clocktower',
 	ambienceOn: false,
 	ambienceLevel: 0.6,
 	nightAmbience: DEFAULT_AMBIENCE.night,
@@ -384,8 +378,7 @@ export function parsePreferences(raw: unknown): Preferences {
 		timerSound: (TIMER_SOUNDS as readonly unknown[]).includes(input.timerSound)
 			? (input.timerSound as TimerSound)
 			: DEFAULT_PREFERENCES.timerSound,
-		callSound: oneOf(TIMER_SOUNDS, input.callSound, DEFAULT_PREFERENCES.callSound),
-		townCallSound: oneOf(TOWN_CALL_SOUNDS, input.townCallSound, 'own'),
+		townCallSound: oneOf(TIMER_SOUNDS, input.townCallSound, DEFAULT_PREFERENCES.townCallSound),
 		ambienceOn: input.ambienceOn === true,
 		ambienceLevel: parseScale(
 			input.ambienceLevel,
