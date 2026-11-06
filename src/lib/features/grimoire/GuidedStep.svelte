@@ -42,6 +42,7 @@
 	import { infoTokensNamedIn, type InfoToken } from '#lib/core/data/info-tokens.ts';
 	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
 	import type { ShownInfoCard } from '#lib/features/show/shown.ts';
+	import ShowToPlayerButton from '#lib/features/show/ShowToPlayerButton.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
@@ -514,7 +515,7 @@
 						min={0}
 						max={Math.max(game.seating.length, 1)}
 					/>
-					<Button variant="quiet" onclick={() => showNumber(number)}>Show to player</Button>
+					<ShowToPlayerButton onclick={() => showNumber(number)} />
 				</div>
 			{/if}
 			<!-- Every card Minion info or Demon info can show (Trevor, 2026-10-18). -->

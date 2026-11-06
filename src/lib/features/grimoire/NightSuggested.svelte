@@ -25,7 +25,7 @@
 	} from '#lib/core/rules/index.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import Icon from '#lib/ui/icons/Icon.svelte';
-	import Button from '#lib/ui/primitives/Button.svelte';
+	import ShowToPlayerButton from '#lib/features/show/ShowToPlayerButton.svelte';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
@@ -405,15 +405,15 @@
 		<NightReasonTag {grimoire} reason={o.reason} source={a} />
 		{#if o.value.kind === 'number' && onShowNumber}
 			{@const n = o.value.value}
-			<Button variant="quiet" onclick={() => onShowNumber(n)}>Show to player</Button>
+			<ShowToPlayerButton onclick={() => onShowNumber(n)} />
 		{:else if o.value.kind === 'yes-no' && onShowAnswer}
 			{@const text = answerValueText(o.value)}
-			<Button variant="quiet" onclick={() => onShowAnswer(text)}>Show to player</Button>
+			<ShowToPlayerButton onclick={() => onShowAnswer(text)} />
 		{:else if o.value.kind === 'character' && onShow}
-			<Button variant="quiet" onclick={() => showOrPick(key, id)}>Show to player</Button>
+			<ShowToPlayerButton onclick={() => showOrPick(key, id)} />
 		{:else if o.value.kind === 'characters' && !o.anyOther && onShowCharacters}
 			{@const v = o.value}
-			<Button variant="quiet" onclick={() => onShowCharacters(v)}>Show to player</Button>
+			<ShowToPlayerButton onclick={() => onShowCharacters(v)} />
 		{/if}
 	</li>
 {/snippet}
@@ -436,15 +436,15 @@
 	{#if hasWhy(a.why)}<NightWhy {grimoire} why={a.why} />{/if}
 	{#if a.kind === 'character' && onShow}
 		{@const id = a.value}
-		<Button variant="quiet" onclick={() => onShow(id)}>Show to player</Button>
+		<ShowToPlayerButton onclick={() => onShow(id)} />
 	{:else if a.kind === 'characters' && onShowCharacters}
-		<Button variant="quiet" onclick={() => onShowCharacters(a)}>Show to player</Button>
+		<ShowToPlayerButton onclick={() => onShowCharacters(a)} />
 	{:else if a.kind === 'number' && onShowNumber}
 		{@const n = a.value}
-		<Button variant="quiet" onclick={() => onShowNumber(n)}>Show to player</Button>
+		<ShowToPlayerButton onclick={() => onShowNumber(n)} />
 	{:else if a.kind === 'yes-no' && onShowAnswer}
 		{@const text = answerValueText(a)}
-		<Button variant="quiet" onclick={() => onShowAnswer(text)}>Show to player</Button>
+		<ShowToPlayerButton onclick={() => onShowAnswer(text)} />
 	{:else if a.kind === 'none'}
 		<DayMarkAnswer {grimoire} {step} />
 	{/if}
@@ -514,13 +514,12 @@
 									/>
 									{#if v.number !== undefined && onShowNumber}
 										{@const n = v.number}
-										<Button
-											variant="quiet"
+										<ShowToPlayerButton
 											onclick={() => {
 												onShowNumber(n);
 												onRecord?.(p, { seats: [], number: n });
-											}}>Show to player</Button
-										>
+											}}
+										/>
 									{/if}
 								</li>
 							{/each}
@@ -610,7 +609,7 @@
 			<span class="main option"><strong>None</strong></span>
 			<NightReasonTag {grimoire} reason={roles.none} />
 			{#if onShowNumber}
-				<Button variant="quiet" onclick={() => onShowNumber(0)}>Show to player</Button>
+				<ShowToPlayerButton onclick={() => onShowNumber(0)} />
 			{/if}
 		</li>
 	{/if}
@@ -623,14 +622,18 @@
 {/snippet}
 
 {#snippet playerRow(row: ChosenPlayersRow)}
-	<li data-reason={row.reason} data-marked={row.marked ? '' : undefined}>
+	<li
+		data-reason={row.reason}
+		data-marked={row.marked ? '' : undefined}
+		data-marked-row={row.marked ? '' : undefined}
+	>
 		<span class="main option">
 			{#if row.exact}{@render players([row.target, ...row.seats])}{:else}{@render player(
 					row.target
 				)}{#if row.seats.length > 0}<span class="with">and two of</span>
 					{@render players(row.seats)}{/if}{/if}
 		</span>
-		{#if row.marked}<span class="tag marked"><Icon name="reminder" />Marked</span>{/if}
+		{#if row.marked}<span class="visually-hidden">Marked</span>{/if}
 		<NightReasonTag {grimoire} reason={row.reason} registered={row.registered} />
 	</li>
 {/snippet}
@@ -651,7 +654,11 @@
 {#snippet roleRow(p: InfoPicker, row: LearnedRole)}
 	{@const key = rowKey(p, row)}
 	{@const id = shownRole(p, row)}
-	<li data-reason={row.reason} data-marked={row.marked ? '' : undefined}>
+	<li
+		data-reason={row.reason}
+		data-marked={row.marked ? '' : undefined}
+		data-marked-row={row.marked ? '' : undefined}
+	>
 		<span class="main option">
 			{#if row.characterIds.length === 1}
 				{@render badge(row.characterIds[0])}
@@ -666,10 +673,10 @@
 					>{/if}
 			{/if}
 		</span>
-		{#if row.marked}<span class="tag marked"><Icon name="reminder" />Marked</span>{/if}
+		{#if row.marked}<span class="visually-hidden">Marked</span>{/if}
 		<NightReasonTag {grimoire} reason={row.reason} registered={row.registered} source={p} />
 		{#if onShow}
-			<Button variant="quiet" onclick={() => showRole(p, row, key, id)}>Show to player</Button>
+			<ShowToPlayerButton onclick={() => showRole(p, row, key, id)} />
 		{/if}
 	</li>
 {/snippet}
@@ -734,31 +741,21 @@
 		padding-top: var(--space-1);
 		border-top: 1px solid var(--border);
 	}
-	.with,
-	.tag {
+	.with {
 		color: var(--on-surface-muted);
-	}
-	.tag {
-		display: inline-flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: var(--space-1);
-		font-size: 0.85rem;
-		--icon-size: 1em;
 	}
 	/*
 	 * A row the character's reminders on the board mark: the one the Storyteller already
-	 * chose, emphasised above the other valid rows (Trevor, 2026-10-26).
+	 * chose, emphasised above the other valid rows (Trevor, 2026-10-26) with the shared
+	 * marked edge (base.css [data-marked-row]) and no word beside it.
 	 */
 	.valid > li[data-marked] {
-		padding: var(--space-1) var(--space-2);
-		border-radius: var(--radius-sm);
-		background: var(--surface-selected);
+		padding-block: var(--space-1);
+		padding-inline-end: var(--space-2);
 	}
 	.valid > li[data-marked] + li {
 		border-top: none;
 	}
-	.tag.marked,
 	.item.marked {
 		color: var(--heading);
 		font-weight: 600;
