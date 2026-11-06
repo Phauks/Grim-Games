@@ -13,6 +13,7 @@
  */
 import type { GameData } from './game-data.ts';
 import { findJinx } from './jinxes.ts';
+import { withSpecialParts } from './special-parts.ts';
 import { normaliseCharacterId, parseCharacter, parseSpecial } from './parse.ts';
 import {
 	CHARACTER_TYPES,
@@ -606,12 +607,11 @@ function loadHomebrew(
 		);
 		return undefined;
 	}
-	if (character.ability.length > 250 || character.name.length > 30) {
+	if (character.ability.length > 250 || character.name.length > 30)
 		problems.push(
 			info(where, `${character.name}: name or ability is longer than TPI's tools allow.`)
 		);
-	}
-	return character;
+	return withSpecialParts(character);
 }
 
 function readHomebrewJinxes(
