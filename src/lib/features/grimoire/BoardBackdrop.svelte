@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { MovingChoice } from '#lib/core/backgrounds/moving.ts';
-	import { PRESETS, type PresetId } from './backgrounds.ts';
+	import { STILL_BACKGROUNDS, stillCss, type StillChoice } from '#lib/core/backgrounds/still.ts';
 	import MovingBackdrop from './moving/MovingBackdrop.svelte';
 
 	/**
@@ -10,9 +10,9 @@
 	interface Props {
 		/** An image background: the device's image or the script's link. */
 		url?: string;
-		/** A built-in background, when there is no image. */
-		preset?: PresetId;
-		/** A moving background (M43), when there is no image or built-in one. */
+		/** A still background (M72), when there is no image. */
+		preset?: StillChoice;
+		/** An animated background (M43), when there is no image or still one. */
 		moving?: MovingChoice;
 		/** The vignette's strength, or undefined while it is off. */
 		vignette?: number;
@@ -36,8 +36,9 @@
 		class="backdrop preset"
 		class:contained
 		data-testid={contained ? 'preview-background' : 'board-background'}
-		data-preset={preset}
-		style:background={PRESETS[preset].css}
+		data-preset={preset.id}
+		style:background={stillCss(preset)}
+		style:--dim={STILL_BACKGROUNDS[preset.id].dim}
 	></div>
 {:else if moving}
 	<MovingBackdrop choice={moving} {contained} />
@@ -64,13 +65,10 @@
 		filter: brightness(0.45) saturate(0.85);
 		pointer-events: none;
 	}
-	/* Built-in backgrounds are drawn for the board already: only dimmed a little. */
+	/* Still backgrounds are drawn for the board already: only dimmed a little, and light
+	   parchment more, so it never washes out the seat names. */
 	.backdrop.preset {
-		filter: brightness(0.8);
-	}
-	/* Light parchment would wash out the seat names: dimmed like an image. */
-	.backdrop.preset[data-preset='parchment'] {
-		filter: brightness(0.5);
+		filter: brightness(var(--dim));
 	}
 	/* The vignette (Trevor, 2026-10-17: its own switch and strength), on every background. */
 	.vignette {

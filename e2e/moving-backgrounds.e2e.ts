@@ -22,7 +22,9 @@ test('a moving background is picked, customised and shown in the preview', async
 	const dialog = await openSection(page, 'Board');
 	const preview = dialog.getByTestId('board-preview').getByTestId('preview-background');
 	const customise = dialog.getByRole('button', { name: /^Customise/ });
-	const thirty = dialog.getByRole('checkbox', { name: 'Moving background at 30 frames a second' });
+	const thirty = dialog.getByRole('checkbox', {
+		name: 'Animated background at 30 frames a second'
+	});
 	// Held in place until a moving background is chosen, so nothing moves when one is.
 	await expect(customise).toBeDisabled();
 	await expect(thirty).toBeDisabled();
@@ -35,7 +37,7 @@ test('a moving background is picked, customised and shown in the preview', async
 	await customise.tap();
 	const editor = page.getByRole('dialog', { name: 'Customise Rain' });
 	await expect(
-		editor.getByTestId('moving-preview').getByTestId('preview-background')
+		editor.getByTestId('background-preview').getByTestId('preview-background')
 	).toHaveAttribute('data-moving', 'rain');
 	const lightning = editor.getByRole('slider', { name: 'Lightning a minute' });
 	await lightning.fill('0');
@@ -52,6 +54,37 @@ test('a moving background is picked, customised and shown in the preview', async
 	await expect(editor).toBeHidden();
 });
 
+test('a still background is customised: Stone made into slate (M72)', async ({ page }) => {
+	await page.goto('/');
+	const dialog = await openSection(page, 'Board');
+	const preview = dialog.getByTestId('board-preview').getByTestId('preview-background');
+	// Still and Animated are labelled groups (Trevor, 2026-11-06: option A).
+	const still = dialog.getByRole('group', { name: 'Still', exact: true });
+	await expect(dialog.getByRole('group', { name: 'Animated', exact: true })).toBeVisible();
+	await still.getByRole('button', { name: 'Stone' }).tap();
+	await expect(preview).toHaveAttribute('data-preset', 'stone');
+	const before = await preview.evaluate((el) => getComputedStyle(el).backgroundColor);
+
+	const customise = dialog.getByRole('button', { name: 'Customise Stone' });
+	await customise.tap();
+	const editor = page.getByRole('dialog', { name: 'Customise Stone' });
+	await expect(
+		editor.getByTestId('background-preview').getByTestId('preview-background')
+	).toHaveAttribute('data-preset', 'stone');
+	await editor.getByRole('combobox', { name: 'Preset' }).tap();
+	await page.getByRole('option', { name: 'Slate' }).tap();
+	await editor.getByRole('button', { name: 'Confirm' }).tap();
+	await expect(editor).toBeHidden();
+	await expect
+		.poll(() => preview.evaluate((el) => getComputedStyle(el).backgroundColor))
+		.not.toBe(before);
+
+	// Kept: opening it again shows the preset.
+	await customise.tap();
+	await expect(editor.getByRole('combobox', { name: 'Preset' })).toHaveText(/Slate/);
+	await editor.getByRole('button', { name: 'Cancel' }).tap();
+});
+
 test('a moving background holds still with Reduce motion or the Player switch', async ({
 	page
 }) => {
@@ -62,14 +95,14 @@ test('a moving background holds still with Reduce motion or the Player switch', 
 	await dialog.getByRole('button', { name: 'Stars' }).tap();
 	await expect(preview).toHaveAttribute('data-still', '');
 	// Told to ignore Reduce motion, it moves.
-	await dialog.getByRole('combobox', { name: 'Moving background with Reduce motion' }).tap();
+	await dialog.getByRole('combobox', { name: 'Animated background with Reduce motion' }).tap();
 	await page.getByRole('option', { name: 'Move as usual' }).tap();
 	await expect(preview).not.toHaveAttribute('data-still', '');
 
 	// Each phone's own switch holds it still whatever Reduce motion says.
 	await page.getByRole('button', { name: 'Close' }).first().tap();
 	dialog = await openSection(page, 'Player');
-	await dialog.getByText('Hold moving backgrounds still', { exact: true }).tap();
+	await dialog.getByText('Hold animated backgrounds still', { exact: true }).tap();
 	await page.getByRole('button', { name: 'Close' }).first().tap();
 	dialog = await openSection(page, 'Board');
 	await expect(

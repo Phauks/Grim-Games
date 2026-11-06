@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { stillDefaults } from '#lib/core/backgrounds/still.ts';
 import { DEFAULT_BOARD_LOOKS } from '#lib/features/grimoire/board-looks.svelte.ts';
 import { DEFAULT_PREFERENCES } from '#lib/ui/preferences.ts';
 import {
@@ -46,10 +47,12 @@ describe('settings profile values', () => {
 		expect(read.preferences.textScale).toBe(1.25);
 		expect(read.preferences).not.toHaveProperty('allowZoom');
 		expect(read.boardLooks.vignette).toBe(false);
-		expect(read.background).toEqual({ kind: 'preset', id: 'felt' });
-		expect(parseProfileValues({ background: { kind: 'preset', id: 'lava' } }).background).toEqual({
-			kind: 'none'
-		});
+		// Saved before still backgrounds had settings: the defaults.
+		expect(read.background).toEqual({ kind: 'preset', id: 'felt', params: stillDefaults('felt') });
+		for (const id of ['lava', 'wood', 'night'])
+			expect(parseProfileValues({ background: { kind: 'preset', id } }).background).toEqual({
+				kind: 'none'
+			});
 	});
 
 	it('mark a picture without keeping it', () => {
