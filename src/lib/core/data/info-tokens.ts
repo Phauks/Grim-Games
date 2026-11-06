@@ -147,7 +147,7 @@ export function infoTokens(
 }
 
 /** A card's words for matching: case, spaces and a closing "?" or "." don't count. */
-const cardWords = (text: string) =>
+export const cardWords = (text: string) =>
 	text
 		.toLowerCase()
 		.replace(/[?.!]+$/, '')

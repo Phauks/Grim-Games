@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
+import { placeFromStep } from './reminder-bank.ts';
 
 /**
  * The Philosopher's choice on its night step (https://wiki.bloodontheclocktower.com/Philosopher;
@@ -138,15 +139,12 @@ test('the Cerenovus step records whom the player is mad as, marked ! by their se
 }) => {
 	await setUp(page, 'Cerenovus');
 	await openStep(page, 'Cerenovus');
+	const step = page.getByRole('dialog', { name: 'Cerenovus' });
 	const row = page.getByTestId('mad-as');
 	// Nothing to record it on until Mad is placed: the row stays, its Choose disabled.
 	await expect(row).toContainText('None');
 	await expect(row.getByRole('button', { name: 'Choose' })).toBeDisabled();
-	await page.getByRole('dialog').getByRole('button', { name: 'Place' }).first().tap();
-	await page
-		.getByRole('dialog', { name: 'Put Mad on' })
-		.getByRole('button', { name: /Seamstress Seat 2/ })
-		.tap();
+	await placeFromStep(page, step, 2);
 	await row.getByRole('button', { name: 'Choose' }).tap();
 	await page
 		.getByRole('dialog', { name: 'Mad as' })
