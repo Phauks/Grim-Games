@@ -231,6 +231,136 @@ export function nightTextSegments(
 }
 
 /**
+ * The segments a step's night text is drawn from: with `night`, the text for that night
+ * (`nightTextFor`, so a reviewed edit replaces TPI's) and its `:reminder:` mapping; without,
+ * `text` as it is.
+ */
+export function nightTextSegmentsFor(
+	character: Pick<
+		Character,
+		| 'id'
+		| 'edition'
+		| 'rules'
+		| 'firstNightReminder'
+		| 'otherNightReminder'
+		| 'reminders'
+		| 'remindersGlobal'
+	>,
+	text: string,
+	night?: NightName
+): NightTextSegment[] {
+	const resolved = night ? nightTextFor(character, night, { text }) : undefined;
+	return nightTextSegments(
+		resolved?.text ?? text,
+		character,
+		resolved?.placeholders ? { placeholders: resolved.placeholders } : {}
+	);
+}
+
+/** One numbered line of night text: one sentence, with the tokens that follow it. */
+export type NightTextLine = readonly NightTextSegment[];
+
+/**
+ * Night text laid out as steps (Trevor, 2026-11-06, option B, "Ledger"): one line per
+ * sentence, and an "If ...:" sentence opens a branch whose lines are the rest of the text, up
+ * to the next "If ...:". The words are never changed, only split.
+ */
+export interface NightTextSteps {
+	/** The lines before any branch. */
+	lines: NightTextLine[];
+	/** Each "If ...:" branch: its condition (without the colon) and its lines. */
+	branches: { condition: NightTextLine; lines: NightTextLine[] }[];
+}
+
+const SENTENCE_END = /[.!?]["”)]?\s*$/;
+const STARTS_SENTENCE = /^\s*["“(]?[A-Z0-9]/;
+
+const lineText = (line: readonly NightTextSegment[]) =>
+	line.map((s) => (s.kind === 'text' ? s.text : '')).join('');
+
+/** Drops the spaces left at either end of a line. */
+function trimLine(line: NightTextSegment[]): NightTextSegment[] {
+	const out = line.map((s) => ({ ...s }));
+	const first = out[0];
+	if (first?.kind === 'text') first.text = first.text.trimStart();
+	const last = out[out.length - 1];
+	if (last?.kind === 'text') last.text = last.text.trimEnd();
+	return out.filter((s) => s.kind !== 'text' || s.text !== '');
+}
+
+/**
+ * An "If ...:" sentence's condition and the rest of it, or nothing when the sentence is not
+ * one. The condition may hold a character ("If the Imp chose themselves:").
+ */
+function conditionSplit(
+	sentence: NightTextSegment[]
+): NightTextSteps['branches'][number] | undefined {
+	const head = sentence[0];
+	if (head?.kind !== 'text' || !/^If\b/.test(head.text)) return undefined;
+	for (let i = 0; i < sentence.length; i++) {
+		const s = sentence[i];
+		if (s.kind !== 'text') continue;
+		const at = /:\s+(?=["\u201c(]?[A-Z])/.exec(s.text);
+		if (!at) continue;
+		if (/[.!?]/.test(lineText(sentence.slice(0, i)) + s.text.slice(0, at.index))) return undefined;
+		const condition = trimLine([
+			...sentence.slice(0, i),
+			{ kind: 'text', text: s.text.slice(0, at.index) }
+		]);
+		const rest = trimLine([
+			{ kind: 'text', text: s.text.slice(at.index + at[0].length) },
+			...sentence.slice(i + 1)
+		]);
+		return { condition, lines: rest.length > 0 ? [rest] : [] };
+	}
+	return undefined;
+}
+
+/**
+ * Splits night text segments into lines and branches (`NightTextSteps`). A line ends at a
+ * sentence's full stop; a token, the death marker or a character drawn right after one
+ * (TPI's `:reminder:` sits after its sentence) stays on that line. A character starting the
+ * next sentence starts the next line.
+ */
+export function nightTextSteps(segments: readonly NightTextSegment[]): NightTextSteps {
+	const sentences: NightTextSegment[][] = [[]];
+	const current = () => sentences[sentences.length - 1];
+	const ended = () => SENTENCE_END.test(lineText(current()));
+	for (const s of segments) {
+		if (s.kind !== 'text') {
+			if (s.kind === 'character' && ended() && lineText(current()).trim() !== '')
+				sentences.push([]);
+			current().push(s);
+			continue;
+		}
+		const pieces = s.text.split(/(?<=[.!?]["”)]?)\s+(?=["“(]?[A-Z0-9])/);
+		pieces.forEach((piece, i) => {
+			const breaks = i > 0 || (ended() && STARTS_SENTENCE.test(piece) && current().length > 0);
+			if (breaks) sentences.push([]);
+			current().push({ kind: 'text', text: (breaks ? ' ' : '') + piece });
+		});
+	}
+	const result: NightTextSteps = { lines: [], branches: [] };
+	for (const raw of sentences) {
+		const sentence = trimLine(raw);
+		if (sentence.length === 0) continue;
+		const split = conditionSplit(sentence);
+		if (split) {
+			result.branches.push(split);
+			continue;
+		}
+		const branch = result.branches[result.branches.length - 1];
+		(branch ? branch.lines : result.lines).push(sentence);
+	}
+	return result;
+}
+
+/** Every line of `steps` in reading order: the lines before any branch, then each branch's. */
+export function nightTextStepLines(steps: NightTextSteps): NightTextLine[] {
+	return [...steps.lines, ...steps.branches.flatMap((b) => b.lines)];
+}
+
+/**
  * Plain text for tests and search: tokens as [Cursed] (+ placed, - removed), the death
  * marker as [Dead], info tokens as «You are», characters as {King}.
  */

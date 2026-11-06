@@ -1,11 +1,9 @@
 <script lang="ts">
-	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Alignment, Character } from '#lib/core/data/index.ts';
-	import { nightTextFor, nightTextSegments } from '#lib/core/rules/night-text.ts';
-	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
-	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
+	import { nightTextSegmentsFor } from '#lib/core/rules/night-text.ts';
 	import { explainBlock } from '#lib/features/glossary/glossary.svelte.ts';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
+	import NightTextPiece from './NightTextPiece.svelte';
 
 	interface Props {
 		text: string;
@@ -23,14 +21,7 @@
 	}
 
 	let { text, character, night, alignment }: Props = $props();
-	const resolved = $derived(night ? nightTextFor(character, night, { text }) : undefined);
-	const segments = $derived(
-		nightTextSegments(
-			resolved?.text ?? text,
-			character,
-			resolved?.placeholders ? { placeholders: resolved.placeholders } : {}
-		)
-	);
+	const segments = $derived(nightTextSegmentsFor(character, text, night));
 	// Terms are marked in the text between tokens only, once per night text.
 	const explained = $derived(
 		explainBlock(
@@ -44,33 +35,7 @@
 <span class="night-text"
 	>{#each segments as s, i (i)}{#if s.kind === 'text'}<GlossaryText
 				segments={explained[i] ?? []}
-			/>{:else if s.kind === 'info'}<ReminderToken
-				label={s.label}
-				variant="info"
-				title={t('reference.infoToken')}
-			/>{:else if s.kind === 'character'}<CharacterPiece
-				template="badge"
-				characterId={s.id}
-			/>{:else if s.kind === 'dead'}<ReminderToken
-				label={t('reference.dead')}
-				type={character.type}
-				{alignment}
-				title={s.action === 'remove'
-					? t('reference.removeDeathMarker')
-					: t('reference.deathMarker')}
-			/>{:else}<ReminderToken
-				label={s.label}
-				{character}
-				{alignment}
-				done={s.prep}
-				title={s.prep
-					? t('reference.alreadyPlaced')
-					: s.label
-						? s.action === 'remove'
-							? t('reference.removeToken')
-							: undefined
-						: t('reference.oneOf', { options: s.options.join(', ') })}
-			/>{/if}{/each}</span
+			/>{:else}<NightTextPiece segment={s} {character} {alignment} />{/if}{/each}</span
 >
 
 <style>

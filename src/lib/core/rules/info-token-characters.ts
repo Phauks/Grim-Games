@@ -13,6 +13,7 @@ import {
 	type CharacterType
 } from '#lib/core/data/index.ts';
 import {
+	cardWords,
 	infoTokensNamedIn,
 	STANDARD_INFO_TOKENS,
 	type InfoToken
@@ -27,6 +28,7 @@ import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
 import type { Game } from '#lib/core/model/types.ts';
 import { prepValueKey } from './day-reminders.ts';
+import type { NightTextLine } from './night-text.ts';
 
 /** The characters filled in, and how many the card may show in all on this step. */
 export interface FilledInfoToken {
@@ -135,6 +137,28 @@ export function stepInfoCards(
 			};
 		});
 	});
+}
+
+/**
+ * A step's cards placed on the night text lines that name them (Trevor, 2026-11-06: "tie the
+ * show info tokens to those lines"): each info token a line names takes the first card for
+ * that token not yet placed, in reading order, so the Snake Charmer's two "You are" lines get
+ * its two cards in turn. `rest` holds the cards no line names (a card a rule offers, a second
+ * card for one mention).
+ */
+export function cardsOnLines(
+	lines: readonly NightTextLine[],
+	cards: readonly StepCard[]
+): { onLine: StepCard[][]; rest: StepCard[] } {
+	const left = [...cards];
+	const onLine = lines.map((line) =>
+		line.flatMap((s) => {
+			if (s.kind !== 'info') return [];
+			const at = left.findIndex((c) => cardWords(c.token.text) === cardWords(s.label));
+			return at < 0 ? [] : left.splice(at, 1);
+		})
+	);
+	return { onLine, rest: left };
 }
 
 /**

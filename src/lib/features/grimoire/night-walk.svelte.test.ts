@@ -4,6 +4,7 @@ import { createGame, type EngineContext } from '#lib/core/engine/index.ts';
 import type { Game } from '#lib/core/model/index.ts';
 import type { Grimoire } from './grimoire.svelte.ts';
 import { NightWalk, type NightWalkContext } from './night-walk.svelte.ts';
+import { ReminderHand } from './reminder-hand.svelte.ts';
 
 /** Runs in the browser project, which can't read the data files: no night order loaded. */
 const ctx: EngineContext = {
@@ -29,7 +30,7 @@ function game(withCharacter: boolean): Game {
 }
 
 /** A NightWalk on a board whose saved view is `saved`, with `over` in its context. */
-function setup(over: Partial<NightWalkContext> = {}, saved = {}) {
+function setup(over: Partial<NightWalkContext> = {}, saved = {}, hand = new ReminderHand()) {
 	const views: unknown[] = [];
 	const grimoire = {
 		open: { viewOnly: false },
@@ -49,6 +50,8 @@ function setup(over: Partial<NightWalkContext> = {}, saved = {}) {
 			wakes: () => true,
 			ended: false,
 			busy: false,
+			hand,
+			bank: undefined,
 			...over
 		}));
 	});
@@ -84,6 +87,49 @@ describe('NightWalk', () => {
 		expect(walk.walk).toBeUndefined();
 		expect(walk.steps).toEqual([]);
 		expect(walk.holders).toEqual([]);
+		stop();
+	});
+
+	// Trevor, 2026-11-06: "When placing a token in night order, we should revert back to grim
+	// view, not a tabled list".
+	it("closes the step while its reminder is in hand, and opens it again once it's put down", () => {
+		const hand = new ReminderHand();
+		const held: string[] = [];
+		const bank = {
+			hold: (r: { characterId: string; label: string }) => {
+				held.push(r.label);
+				hand.held = { kind: 'placed', reminderId: 'r1' };
+				return true;
+			}
+		};
+		const { walk, stop } = setup({ bank }, {}, hand);
+		walk.guideOpen = true;
+		expect(walk.placeOnBoard({ characterId: 'imp', label: 'Dead' })).toBe(true);
+		flushSync();
+		expect(held).toEqual(['Dead']);
+		expect(walk.guideOpen).toBe(false);
+		hand.putDown();
+		flushSync();
+		expect(walk.guideOpen).toBe(true);
+		stop();
+	});
+
+	it('moves a placed reminder by holding it from its seat', () => {
+		const hand = new ReminderHand();
+		const { walk, stop } = setup({}, {}, hand);
+		walk.guideOpen = true;
+		walk.placeOnBoard({ characterId: 'imp', label: 'Dead' }, { reminderId: 'r1', seatId: 's1' });
+		flushSync();
+		expect(hand.held).toEqual({ kind: 'placed', reminderId: 'r1', from: 's1' });
+		expect(walk.guideOpen).toBe(false);
+		stop();
+	});
+
+	it('keeps the step open when the bank has no such token, for the list of players', () => {
+		const { walk, stop } = setup({ bank: { hold: () => false } });
+		walk.guideOpen = true;
+		expect(walk.placeOnBoard({ characterId: 'imp', label: 'Dead' })).toBe(false);
+		expect(walk.guideOpen).toBe(true);
 		stop();
 	});
 });
