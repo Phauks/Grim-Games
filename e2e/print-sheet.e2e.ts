@@ -147,6 +147,8 @@ test('the sheet opens its settings beside a live preview of each numbered page',
 	await expect(pages).toHaveCount(2);
 	await expect(pages.nth(0)).toContainText('1Front');
 	await expect(pages.nth(1)).toContainText('2Back');
+	// TPI's Community Created Content logo on every printed front (Trevor, 2026-11-05).
+	await expect(pages.nth(0).getByRole('img', { name: /^Community Created Content/ })).toBeVisible();
 	await expect(screen.getByTestId('print-laying-out')).toBeHidden();
 	await expect(preview.locator('.front [data-night-strip]')).toHaveCount(2);
 	// Each choice shows in the preview straight away.

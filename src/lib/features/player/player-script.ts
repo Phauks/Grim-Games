@@ -84,7 +84,14 @@ export function playerNight(script: LoadedScript, data: GameData, night: Night):
 		customOrder: night === 'first' ? script.meta.firstNight : script.meta.otherNight
 	});
 	const entries: PlayerNightEntry[] = [];
-	for (const step of order.steps) {
+	// Dawn is always last (Trevor, 2026-11-04), so TPI's after-Dawn announcements (the
+	// Leviathan, the Vizier) come just before it, as on the Storyteller's board.
+	const steps = [
+		...order.steps.filter((s) => !s.afterDawn && s.id !== 'dawn'),
+		...order.steps.filter((s) => s.afterDawn),
+		...order.steps.filter((s) => s.id === 'dawn')
+	];
+	for (const step of steps) {
 		if (step.kind === 'marker' && isNightMarker(step.id))
 			entries.push({ kind: 'marker', id: step.id });
 		else if (step.kind === 'character' && step.character)

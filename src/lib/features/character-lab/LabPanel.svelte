@@ -73,18 +73,22 @@
 
 <section class="lab" aria-label={t('lab.title')} bind:clientWidth={width} data-testid="lab-panel">
 	{#if frame}
-		{#key `${session.gamePath}:${session.loads}`}
-			<!-- No caption over it (Trevor, 2026-11-05: "remove text"). -->
-			<DeviceFrame
-				device={screen}
-				title={t('lab.storyteller')}
-				src={session.gamePath ?? '/'}
-				zoom={1}
-				room={width}
-				square
-				testid="lab-frame"
-			/>
-		{/key}
+		<!-- Pinned at the top right while the settings and partners scroll under it (Trevor,
+		     2026-11-05: "pin mock game on the top right"). -->
+		<div class="pinned">
+			{#key `${session.gamePath}:${session.loads}`}
+				<!-- No caption over it (Trevor, 2026-11-05: "remove text"). -->
+				<DeviceFrame
+					device={screen}
+					title={t('lab.storyteller')}
+					src={session.gamePath ?? '/'}
+					zoom={1}
+					room={width}
+					square
+					testid="lab-frame"
+				/>
+			{/key}
+		</div>
 	{/if}
 
 	<!-- The game's settings first, so they always sit in the same place (Trevor, 2026-11-05:
@@ -197,7 +201,19 @@
 		gap: var(--space-2);
 		min-width: 0;
 	}
+	.pinned {
+		position: sticky;
+		top: 0;
+		z-index: 2;
+		padding-bottom: var(--space-2);
+		margin-bottom: calc(-1 * var(--space-2));
+		/* The page's own backdrop, held still, so the pinned frame shows no edge. */
+		background: var(--pin-background);
+		background-attachment: fixed;
+	}
 	.box {
+		/* A pinned section header inside (Setup sheet) fills with the box's own colour. */
+		--pin-background: var(--card-background);
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-2);

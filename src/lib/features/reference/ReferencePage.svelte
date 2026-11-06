@@ -55,7 +55,8 @@
 	});
 </script>
 
-<Page title={t('reference.title')}>
+<!-- The whole window (Trevor, 2026-11-05: "you can expand to use more space"). -->
+<Page title={t('reference.title')} wide>
 	<ErrorBoundary area="reference">
 		{#if error}
 			<p role="alert">{t('reference.loadError', { error })}</p>
@@ -85,7 +86,9 @@
 	}
 	/* The table on the left, the lab and its game on the right, in view while the table scrolls. */
 	.characters.with-lab {
-		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		/* The game square stays short enough to leave room under it for its settings, and the
+		   table takes the rest of a wide window (Trevor, 2026-11-05: "expand to use more space"). */
+		grid-template-columns: minmax(0, 1fr) min(50%, 60dvh);
 		align-items: start;
 	}
 	.table-area {

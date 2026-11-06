@@ -143,7 +143,7 @@ test("Your games shows each room's whole line on a phone, however long the Story
 	await expect(row).toContainText(String(new Date().getFullYear()));
 	// No line is cut short with an ellipsis.
 	const cut = await row
-		.locator('.recent-line')
+		.locator('.resume-line')
 		.evaluateAll((lines) => lines.filter((l) => l.scrollWidth > l.clientWidth).length);
 	expect(cut).toBe(0);
 	await phoneContext.close();

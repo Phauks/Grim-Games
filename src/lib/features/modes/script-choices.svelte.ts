@@ -163,6 +163,15 @@ export function loadScriptChoice(choice: ScriptChoice, data: GameData): LoadedSc
 	return loaded;
 }
 
+/** Where a choice's script came from: a saved script's own source, or an edition. */
+export function scriptChoiceSource(choice: ScriptChoice): ScriptSource {
+	return (
+		[...scriptChoices(), ...searchableScripts()].find((o) => o.value === choice)?.source ?? {
+			kind: 'edition'
+		}
+	);
+}
+
 /** A mode's own script, from its link (BotC Scripts through our Worker). */
 export async function loadLinkedScript(link: SourceLink, data: GameData): Promise<LoadedScript> {
 	const fetched = await fetchLinkTarget(resolveLink(link.url), link.url);

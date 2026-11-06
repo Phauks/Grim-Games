@@ -1,12 +1,6 @@
 <script lang="ts">
 	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import { rise } from '#lib/ui/motion.ts';
-	import Icon from '#lib/ui/icons/Icon.svelte';
-	import MarkerToken from '#lib/ui/token/MarkerToken.svelte';
-	import { NIGHT_MARKERS, type NightMarker } from '#lib/core/data/index.ts';
-	import { glossaryDialog } from '#lib/features/glossary/glossary-dialog.svelte.ts';
-	import { glossaryKey } from '#lib/features/glossary/wiki-glossary.ts';
-	import type { RowMarker } from '#lib/features/characters/character-templates.ts';
 	import NightAlerts from './NightAlerts.svelte';
 	import StepIfChosen from './StepIfChosen.svelte';
 	import NightSuggested from './NightSuggested.svelte';
@@ -17,9 +11,9 @@
 	import CountBadge from '#lib/ui/primitives/CountBadge.svelte';
 	import StepFocusSetting from './StepFocusSetting.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
-	import { MARKER_ICONS, seatName, stepHolders, stepName } from './night-steps.ts';
+	import { seatName, stepHolders, stepName } from './night-steps.ts';
 	import { setTermsPlain } from '#lib/features/glossary/term-handler.ts';
-	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
+	import StepPiece from './StepPiece.svelte';
 
 	/**
 	 * Walking through the night (Trevor, 2026-10-16): the current step under the board, with
@@ -68,23 +62,6 @@
 	const holders = $derived(step ? stepHolders(game, step, grimoire.open.characters) : []);
 	const ticked = $derived(step ? grimoire.isNightStepDone(night, step) : false);
 
-	const isMarker = (id: string): id is NightMarker =>
-		(NIGHT_MARKERS as readonly string[]).includes(id);
-	/** The steps the Glossary has an entry for, by the step's own name (Trevor, 2026-10-18). */
-	const GLOSSARY_STEPS = new Set(['dusk', 'dawn', 'minioninfo', 'demoninfo']);
-	/** A step that isn't a character's, as a character's row (Trevor, 2026-11-03). */
-	const stepMarker = $derived.by((): RowMarker | undefined => {
-		if (!step || step.character) return undefined;
-		const name = stepName(step);
-		return {
-			name,
-			team: step.id === 'minioninfo' || step.id === 'demoninfo' ? 'evil' : 'neutral',
-			picture: markerPicture,
-			info: GLOSSARY_STEPS.has(step.id) ? () => glossaryDialog.show(glossaryKey(name)) : undefined,
-			infoLabel: `About ${name}`
-		};
-	});
-
 	// The step's reminders in the bank: ringed, alone or first (Trevor, 2026-10-17).
 	let focusOpen = $state(false);
 	let focusButton = $state<HTMLElement>();
@@ -109,16 +86,6 @@
 		else onPastEnd?.();
 	}
 </script>
-
-{#snippet markerPicture()}
-	{#if step && isMarker(step.id)}<MarkerToken
-			marker={step.id}
-			size={40}
-			label=""
-		/>{:else if step}<span class="marker-icon"
-			><Icon name={MARKER_ICONS[step.id] ?? 'night'} /></span
-		>{/if}
-{/snippet}
 
 <!-- Rises into place under the board rather than appearing at once (Trevor, 2026-10-19); it is
      positioned over the space below, so nothing moves. `global`: it plays when the board's
@@ -145,10 +112,9 @@
 		     and the band opens the step. The count is the night's, so it sits beside the band,
 		     not on it. -->
 		<span class="row" class:ticked>
-			<CharacterPiece
+			<StepPiece
+				{step}
 				template="name"
-				character={step.character}
-				marker={step.character ? undefined : stepMarker}
 				info
 				playerName={holders.length === 1 ? seatName(game, holders[0]) : undefined}
 				onclick={() => onOpen(step)}
@@ -157,7 +123,7 @@
 				{#snippet aside()}{#if number !== undefined}<span class="count"
 							><CountBadge count={number} total={numbers.size} /></span
 						>{/if}{/snippet}
-			</CharacterPiece>
+			</StepPiece>
 		</span>
 		<button type="button" class="step" class:ticked onclick={() => onOpen(step)}>
 			<span class="body">
@@ -269,13 +235,6 @@
 	.step.ticked .body,
 	.row.ticked {
 		opacity: 0.6;
-	}
-	/* A step's icon in the ring, as a character's icon fills it. */
-	.marker-icon {
-		display: grid;
-		place-items: center;
-		--icon-size: 70%;
-		color: var(--heading);
 	}
 	.body {
 		display: grid;
