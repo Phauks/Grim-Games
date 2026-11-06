@@ -20,7 +20,7 @@
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import BoardReminder from './BoardReminder.svelte';
 	import ReminderAbout from './ReminderAbout.svelte';
-	import { placingAlignment } from './board.ts';
+	import { reminderPlacing } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import type { ReminderHand } from './reminder-hand.svelte.ts';
 	import ReminderMoreButton from './ReminderMoreButton.svelte';
@@ -75,10 +75,10 @@
 	{#snippet token()}
 		{#if placed}<BoardReminder
 				{...placedLook(placed, characters)}
-				alignment={placingAlignment(game, placed, characters)}
+				{...reminderPlacing(game, placed, characters)}
 			/>{:else if item}<BoardReminder
 				{...bankView(item, characters)}
-				alignment={placingAlignment(game, item, characters)}
+				{...reminderPlacing(game, item, characters)}
 			/>{:else}About this reminder{/if}
 	{/snippet}
 	<!-- No "From [Character]": the ability row below names it (Trevor, 2026-11-01). -->

@@ -143,3 +143,47 @@ describe('bankItems with borrowed abilities (M50)', () => {
 		expect(has(given.game)).toBe(true);
 	});
 });
+
+describe('each holder has its own copies (M68)', () => {
+	const owners = (
+		s: { game: Parameters<typeof bankItems>[0]; characters: Parameters<typeof bankItems>[1] },
+		characterId: string,
+		label: string
+	) =>
+		bankItems(s.game, s.characters, options)
+			.filter((i) => i.characterId === characterId && i.label === label)
+			.map((i) => i.ownerSeatId);
+
+	it("gives the Hermit its own Master beside the Butler's, and never the 1, 2 and 3", () => {
+		// Wiki (https://wiki.bloodontheclocktower.com/Hermit): "If the Hermit duplicates an in-play
+		// Outsider, use the Hermit’s 1, 2 and 3 reminders instead."
+		// Trevor (2026-11-06) replaced the 1, 2 and 3 with the Hermit's own copies.
+		const hermitScript: Script = {
+			entries: ['hermit', 'butler', 'imp', 'empath', 'monk'].map((id) => ({
+				kind: 'official' as const,
+				id
+			}))
+		};
+		const s = scenario(['hermit', 'butler', 'imp', 'empath', 'monk'], { script: hermitScript });
+		expect(owners(s, 'butler', 'Master')).toEqual([s.seat('butler'), s.seat('hermit')]);
+		expect(bankItems(s.game, s.characters, options).some((i) => i.characterId === 'hermit')).toBe(
+			false
+		);
+	});
+
+	it("marks the only copy of a Boffin's Virgin as the Demon's", () => {
+		// Wiki (https://wiki.bloodontheclocktower.com/Boffin): "The Imp has the Virgin ability."
+		const s = scenario(['boffin', 'imp', 'alsaahir', 'chef', 'empath']).do((x) => ({
+			type: 'SetHeldAbility',
+			seatId: x.seat('imp'),
+			via: 'boffin',
+			characterId: 'virgin'
+		}));
+		expect(owners(s, 'virgin', 'No Ability')).toEqual([s.seat('imp')]);
+	});
+
+	it("leaves a character's only player's copies no one's", () => {
+		const s = scenario(['monk', 'imp', 'chef', 'empath', 'poisoner']);
+		expect(owners(s, 'monk', 'Safe')).toEqual([undefined]);
+	});
+});

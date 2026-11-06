@@ -14,6 +14,7 @@ import type { EngineWarning } from '#lib/core/engine/index.ts';
 import { slot } from '#lib/features/characters/slots.ts';
 import {
 	analyseSetup,
+	borrowedCopyHolder,
 	gainedSetupAbilities,
 	reminderTargetMisses,
 	targetRule,
@@ -254,6 +255,22 @@ export function placingAlignment(
 		game.seating.find((s) => game.seats[s].characterId === characterId) ??
 		game.seating.find((s) => trueCharacter(game, s, characters) === characterId);
 	return holder ? game.seats[holder].alignment : undefined;
+}
+
+/**
+ * How a reminder is drawn for whose it is: `placingAlignment`'s colour, and, for a copy of a
+ * player who has its character's ability besides their own, that player's character
+ * (`borrowedCopyHolder`, M68), whose icon goes in the token's corner.
+ */
+export function reminderPlacing(
+	game: Game,
+	of: Pick<Reminder, 'characterId' | 'ownerSeatId'>,
+	characters: CharacterLookup
+): { alignment?: Alignment; holder?: Character } {
+	const alignment = placingAlignment(game, of, characters);
+	const holderId = borrowedCopyHolder(game, of, characters);
+	const holder = holderId === undefined ? undefined : characters.get(holderId);
+	return { ...(alignment ? { alignment } : {}), ...(holder ? { holder } : {}) };
 }
 
 export interface TableCheck {

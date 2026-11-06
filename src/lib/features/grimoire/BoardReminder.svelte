@@ -47,6 +47,12 @@
 		 * the token has no symbol of its own.
 		 */
 		art?: Character;
+		/**
+		 * The player's character whose own copy this is, when they have its ability besides
+		 * their own (M68, Trevor 2026-11-06, option A): their icon in the token's corner, as the
+		 * seat pill shows a held ability (`reminderPlacing`).
+		 */
+		holder?: Character;
 		disabled?: boolean;
 		/** What a screen reader says for it, when tapping it does something else (opens its actions). */
 		ariaLabel?: string;
@@ -83,6 +89,7 @@
 		symbolColour,
 		symbolFill = false,
 		art,
+		holder,
 		disabled = false,
 		ariaLabel,
 		onTap,
@@ -103,6 +110,7 @@
 	// The owner's icon, always in the owner's alignment (Trevor, 2026-10-23).
 	const src = $derived(character ? reminderIconUrl(character, alignment) : undefined);
 	const artSrc = $derived(art && !symbol ? reminderIconUrl(art, undefined) : undefined);
+	const holderSrc = $derived(holder ? reminderIconUrl(holder, alignment) : undefined);
 	// A number token's number (plan M35), or the bank's # token's #.
 	const shownNumber = $derived(symbol === '#' ? '#' : symbolNumber(symbol));
 	// Wrapped words as wide as their longest line (Trevor, 2026-10-23), measured again when
@@ -259,7 +267,9 @@
 					? `Number ${shownNumber}${label ? `: ${label}` : ''}`
 					: infinite
 						? `Generic reminder${label ? `: ${label}` : ''}`
-						: `${label} reminder`)}
+						: holder
+							? `${label} reminder, ${holder.name}'s copy`
+							: `${label} reminder`)}
 	disabled={onTap ? disabled : undefined}
 	onpointerdown={onTap && pointerdown}
 	onpointermove={onTap && pointermove}
@@ -305,7 +315,20 @@
 				{@attach iconFallback(character && fallbackIconUrl(character, alignment))}
 			/>{/if}
 		<!-- eslint-disable-next-line grim/names-as-badges -- this is the reminder token on the board -->
-		{#if label}<span class="label" {@attach fitWords}>{label}</span>{/if}
+		{#if label}<span class="label" {@attach fitWords}>{label}</span
+			>{/if}{#if holder && holderSrc}<span
+				class="holder"
+				data-testid="reminder-holder"
+				data-holder={holder.id}
+				data-alignment={alignment}
+				><img
+					src={holderSrc}
+					alt=""
+					draggable="false"
+					referrerpolicy="no-referrer"
+					{@attach iconFallback(fallbackIconUrl(holder, alignment))}
+				/></span
+			>{/if}
 	{/if}
 </svelte:element>
 
@@ -468,6 +491,30 @@
 	/* A Traveller's rim is half good, half evil, so its band is too. */
 	.reminder[data-fixed][data-type='traveller'] > .label {
 		background: linear-gradient(to right, var(--good) 50%, var(--evil) 50%);
+	}
+	/* Whose copy it is (M68, option A): the holder's icon on a small token in the top right
+	   corner, ringed in the holder's team colour. */
+	.holder {
+		position: absolute;
+		top: -6%;
+		right: -6%;
+		display: grid;
+		place-items: center;
+		width: 42%;
+		height: 42%;
+		overflow: hidden;
+		border: calc(var(--d) * 0.03) solid var(--good);
+		border-radius: 50%;
+		background: var(--reminder-face);
+		pointer-events: none;
+	}
+	.holder[data-alignment='evil'] {
+		border-color: var(--evil);
+	}
+	.holder img {
+		width: 100%;
+		height: 100%;
+		margin-top: 0;
 	}
 	.more {
 		font: 600 0.85rem / 1 var(--font-control);
