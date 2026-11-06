@@ -220,7 +220,13 @@ test('Start on opens the game on a later day', async ({ page }) => {
 	await loadGame(page);
 	const frame = page.getByTestId('lab-frame');
 	const board = frame.locator('iframe').contentFrame();
-	await expect(board.getByRole('button', { name: 'Execution', exact: true })).toBeVisible();
+	const execution = board.getByRole('button', { name: 'Execution', exact: true });
+	// The partners are random: with a Vortox in play, a day with no execution yet already asks
+	// to end the game, as it should. Cancel it to see the day.
+	const endGame = board.getByRole('alertdialog', { name: 'End game?' });
+	await expect(execution.or(endGame)).toBeVisible();
+	if (await endGame.isVisible()) await endGame.getByRole('button', { name: 'Cancel' }).tap();
+	await expect(execution).toBeVisible();
 	await expect(board.getByText('Day 2', { exact: true }).first()).toBeVisible();
 	await expect(board.getByRole('button', { name: 'End night', exact: true })).toHaveCount(0);
 });
