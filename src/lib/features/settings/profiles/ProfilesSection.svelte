@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { gameStore } from '#lib/features/game/session.svelte.ts';
-	import { PRESETS } from '#lib/features/grimoire/backgrounds.ts';
+	import { STILL_BACKGROUNDS, stillCss } from '#lib/core/backgrounds/still.ts';
 	import { intl, t } from '#lib/i18n/locale.svelte.ts';
 	import { resolveToken } from '#lib/ui/themes/contrast.ts';
 	import { getTheme } from '#lib/ui/themes/registry.ts';
@@ -50,7 +50,7 @@
 	}
 
 	function backgroundName({ background }: ProfileValues): string {
-		if (background.kind === 'preset') return PRESETS[background.id].label;
+		if (background.kind === 'preset') return STILL_BACKGROUNDS[background.id].label;
 		if (background.kind === 'script') return t('settings.profileBackgroundScript');
 		if (background.kind === 'image') return t('settings.profileBackgroundImage');
 		return t('settings.profileBackgroundNone');
@@ -117,7 +117,7 @@
 					class="swatch"
 					aria-hidden="true"
 					style:background={profile.values.background.kind === 'preset'
-						? PRESETS[profile.values.background.id].css
+						? stillCss(profile.values.background)
 						: undefined}
 				>
 					<span class="accent" style:background={accent(profile.values)}></span>

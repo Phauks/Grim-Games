@@ -9,62 +9,28 @@
  * background, with a switch on each phone to hold it still).
  */
 
-export type MovingParamValue = string | number | boolean;
-export type MovingParams = Record<string, MovingParamValue>;
+import {
+	cleanParams,
+	colour,
+	matchingPreset,
+	paramDefaults,
+	paramPreset,
+	range,
+	toggle,
+	type BackgroundParam,
+	type ParamSet,
+	type ParamValue,
+	type Params
+} from './params.ts';
 
-interface ParamBase {
-	id: string;
-	label: string;
-	/** A switch this setting only matters while on; it stays in place, disabled, while off. */
-	when?: string;
-}
-export interface ColourParam extends ParamBase {
-	type: 'colour';
-	/** As #rrggbb. */
-	value: string;
-}
-export interface RangeParam extends ParamBase {
-	type: 'range';
-	value: number;
-	min: number;
-	max: number;
-	step: number;
-	/** How the value reads beside its slider. */
-	unit?: 'times' | 'percent' | 'count' | 'perMinute';
-}
-export interface ToggleParam extends ParamBase {
-	type: 'toggle';
-	value: boolean;
-}
-export type MovingParam = ColourParam | RangeParam | ToggleParam;
+export { formatParam, type RangeParam } from './params.ts';
+export type MovingParamValue = ParamValue;
+export type MovingParams = Params;
+export type MovingParam = BackgroundParam;
 
-export interface MovingBackground {
+export interface MovingBackground extends ParamSet {
 	id: MovingId;
-	label: string;
-	params: readonly MovingParam[];
-	/** Named starting points; the first is the default. Each lists only what it changes. */
-	presets: Readonly<Record<string, Readonly<MovingParams>>>;
 }
-
-const colour = (id: string, label: string, value: string): ColourParam => ({
-	id,
-	label,
-	type: 'colour',
-	value
-});
-const range = (
-	id: string,
-	label: string,
-	value: number,
-	[min, max, step]: [number, number, number],
-	unit?: RangeParam['unit']
-): RangeParam => ({ id, label, type: 'range', value, min, max, step, ...(unit ? { unit } : {}) });
-const toggle = (id: string, label: string, value: boolean): ToggleParam => ({
-	id,
-	label,
-	type: 'toggle',
-	value
-});
 
 export const MOVING_IDS = ['vortex', 'fire', 'rain', 'stars', 'yinyang'] as const;
 export type MovingId = (typeof MOVING_IDS)[number];
@@ -244,37 +210,15 @@ export const isMovingId = (id: unknown): id is MovingId =>
 	typeof id === 'string' && (MOVING_IDS as readonly string[]).includes(id);
 
 /** A background's settings at their defaults. */
-export function movingDefaults(id: MovingId): MovingParams {
-	return Object.fromEntries(MOVING_BACKGROUNDS[id].params.map((p) => [p.id, p.value]));
-}
+export const movingDefaults = (id: MovingId): MovingParams => paramDefaults(MOVING_BACKGROUNDS[id]);
 
 /** A preset's settings in full; an unknown preset gives the defaults. */
-export function movingPreset(id: MovingId, name: string): MovingParams {
-	return { ...movingDefaults(id), ...(MOVING_BACKGROUNDS[id].presets[name] ?? {}) };
-}
+export const movingPreset = (id: MovingId, name: string): MovingParams =>
+	paramPreset(MOVING_BACKGROUNDS[id], name);
 
 /** The preset these settings match exactly, if any. */
-export function presetOf(id: MovingId, params: MovingParams): string | undefined {
-	return Object.keys(MOVING_BACKGROUNDS[id].presets).find((name) => {
-		const preset = movingPreset(id, name);
-		return Object.keys(preset).every((key) => preset[key] === params[key]);
-	});
-}
-
-const HEX_COLOUR = /^#[0-9a-f]{6}$/i;
-
-/** One setting kept within its limits, or the default when it can't be used. */
-function cleanParam(param: MovingParam, raw: unknown): MovingParamValue {
-	if (param.type === 'colour')
-		return typeof raw === 'string' && HEX_COLOUR.test(raw) ? raw.toLowerCase() : param.value;
-	if (param.type === 'toggle') return typeof raw === 'boolean' ? raw : param.value;
-	const n = typeof raw === 'number' ? raw : Number.NaN;
-	if (!Number.isFinite(n)) return param.value;
-	const stepped = Math.round((n - param.min) / param.step) * param.step + param.min;
-	// Rounded to the step's own decimals, so 0.1 + 0.2 never saves as 0.30000000000000004.
-	const decimals = (String(param.step).split('.')[1] ?? '').length;
-	return Number(Math.min(param.max, Math.max(param.min, stepped)).toFixed(decimals));
-}
+export const presetOf = (id: MovingId, params: MovingParams): string | undefined =>
+	matchingPreset(MOVING_BACKGROUNDS[id], params);
 
 export interface MovingChoice {
 	id: MovingId;
@@ -290,21 +234,7 @@ export function parseMoving(raw: unknown): MovingChoice | undefined {
 	if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
 	const { id, params } = raw as { id?: unknown; params?: unknown };
 	if (!isMovingId(id)) return undefined;
-	const given = (params && typeof params === 'object' ? params : {}) as Record<string, unknown>;
-	return {
-		id,
-		params: Object.fromEntries(
-			MOVING_BACKGROUNDS[id].params.map((p) => [p.id, cleanParam(p, given[p.id])])
-		)
-	};
-}
-
-/** How a slider's value reads beside it. */
-export function formatParam(param: RangeParam, value: number): string {
-	if (param.unit === 'percent') return `${Math.round(value * 100)}%`;
-	if (param.unit === 'count') return String(Math.round(value));
-	if (param.unit === 'perMinute') return value === 0 ? 'None' : String(Math.round(value));
-	return `${value.toFixed(2)}×`;
+	return { id, params: cleanParams(MOVING_BACKGROUNDS[id], params) };
 }
 
 /**

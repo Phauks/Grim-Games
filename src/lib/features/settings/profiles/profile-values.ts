@@ -7,11 +7,8 @@
  * picture stays on the device that added it (an account document is at most 1 MB).
  */
 import { parseMoving, type MovingChoice } from '#lib/core/backgrounds/moving.ts';
-import {
-	PRESETS,
-	type BackgroundChoice,
-	type PresetId
-} from '#lib/features/grimoire/backgrounds.ts';
+import { parseStill, type StillChoice } from '#lib/core/backgrounds/still.ts';
+import type { BackgroundChoice } from '#lib/features/grimoire/backgrounds.ts';
 import { parseBoardLooks, type BoardLooks } from '#lib/features/grimoire/board-looks.svelte.ts';
 import { parseStepFocus, type StepFocus } from '#lib/features/grimoire/step-focus.svelte.ts';
 import { parsePreferences, type Preferences } from '#lib/ui/preferences.ts';
@@ -28,9 +25,9 @@ type DevicePreference = (typeof DEVICE_PREFERENCES)[number];
 export type BackgroundRef =
 	| { kind: 'none' }
 	| { kind: 'script' }
-	| { kind: 'preset'; id: PresetId }
 	| { kind: 'image' }
-	/** A moving background travels whole: its settings are a few hundred bytes (M43). */
+	/** Still and animated backgrounds travel whole: their settings are a few hundred bytes. */
+	| ({ kind: 'preset' } & StillChoice)
 	| ({ kind: 'moving' } & MovingChoice);
 
 export interface ProfileValues {
@@ -75,7 +72,7 @@ export function withoutDevicePreferences(prefs: Preferences): ProfileValues['pre
 
 export function backgroundRef(choice: BackgroundChoice | undefined): BackgroundRef {
 	if (!choice || choice.kind === 'none') return { kind: 'none' };
-	if (choice.kind === 'preset') return { kind: 'preset', id: choice.id };
+	if (choice.kind === 'preset') return { kind: 'preset', id: choice.id, params: choice.params };
 	if (choice.kind === 'moving') return { kind: 'moving', id: choice.id, params: choice.params };
 	return { kind: choice.kind };
 }
@@ -83,8 +80,8 @@ export function backgroundRef(choice: BackgroundChoice | undefined): BackgroundR
 function parseBackgroundRef(raw: unknown): BackgroundRef {
 	const value = record(raw);
 	if (value.kind === 'script' || value.kind === 'image') return { kind: value.kind };
-	if (value.kind === 'preset' && typeof value.id === 'string' && value.id in PRESETS)
-		return { kind: 'preset', id: value.id as PresetId };
+	const still = value.kind === 'preset' ? parseStill(value) : undefined;
+	if (still) return { kind: 'preset', ...still };
 	const moving = value.kind === 'moving' ? parseMoving(value) : undefined;
 	return moving ? { kind: 'moving', ...moving } : { kind: 'none' };
 }
