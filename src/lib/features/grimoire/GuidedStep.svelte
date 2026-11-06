@@ -419,9 +419,8 @@
 					character={step.character}
 					marked={(i) => shownLines.includes(i)}
 				>
-					{#snippet lineEnd(i)}{#each placedCards.onLine[i] ?? [] as card, c (c)}<IconButton
-								icon="showToPlayer"
-								label={cardLabel(card)}
+					{#snippet lineEnd(i)}{#each placedCards.onLine[i] ?? [] as card, c (c)}<ShowToPlayerButton
+								aria-label={cardLabel(card)}
 								onclick={() => {
 									if (!shownLines.includes(i)) shownLines = [...shownLines, i];
 									chooseCard(card.token, card.filled);
