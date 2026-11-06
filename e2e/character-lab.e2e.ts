@@ -319,3 +319,31 @@ test('a computer window uses its whole width, the game pinned while the lab scro
 	expect(pinned.y).toBeLessThan(120);
 	await expect(frame).toBeInViewport({ ratio: 0.9 });
 });
+
+test("the lab's game stays on this device, out of the device's own room", async ({ page }) => {
+	// Trevor, 2026-11-06: "I could see potentially multiple people using character lab. I think
+	// this should be local, and not invoke a room code unless specifically asks for it with a
+	// button". This device already has a room for a real game.
+	await page.addInitScript(() => {
+		if (window === window.top)
+			localStorage.setItem(
+				'grim-games-room-host',
+				JSON.stringify({ code: '482913', key: 'real-game-host-key' })
+			);
+	});
+	const sockets: string[] = [];
+	page.on('websocket', (socket) => sockets.push(socket.url()));
+	await page.goto('/character-analyzer');
+	await lock(page, 'Philosopher');
+	await loadGame(page);
+	await expect((await labSeats(page)).first()).toBeVisible();
+	const board = page.getByTestId('lab-frame').locator('iframe').contentFrame();
+	await expect(board.getByTestId('board-room-code')).toBeVisible();
+	await expect(board.getByTestId('board-room-code')).not.toContainText('482 913');
+	expect(sockets.filter((url) => url.includes('482913'))).toEqual([]);
+	// Share in the lab's game opens a room of its own, apart from the real game's.
+	await expect(board.getByTestId('board-room-code')).not.toContainText(/[0-9]{3} [0-9]{3}/);
+	await board.getByRole('button', { name: 'Share' }).tap();
+	await expect(board.getByTestId('board-room-code')).toContainText(/[0-9]{3} [0-9]{3}/);
+	await expect(board.getByTestId('board-room-code')).not.toContainText('482 913');
+});

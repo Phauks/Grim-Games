@@ -8,12 +8,12 @@
 	import { characterReference } from '#lib/core/rules/reference.ts';
 	import { loadOfficialData } from '#lib/features/characters/game-data.svelte.ts';
 	import LabDock from '#lib/features/character-lab/LabDock.svelte';
-	import LabGameFrame from '#lib/features/character-lab/LabGameFrame.svelte';
 	import LabPanel from '#lib/features/character-lab/LabPanel.svelte';
 	import LabSelect from '#lib/features/character-lab/LabSelect.svelte';
 	import { labData } from '#lib/features/character-lab/lab-data.ts';
 	import { LabSession } from '#lib/features/character-lab/lab-session.svelte.ts';
 	import { provideCharacters } from '#lib/features/characters/character-context.ts';
+	import LabFrame from '#lib/features/character-lab/LabFrame.svelte';
 	import { STORYTELLER_SCREENS } from '#lib/features/test-room/devices.ts';
 	import { MediaQuery } from 'svelte/reactivity';
 	import Page from '#lib/ui/layout/Page.svelte';
@@ -75,7 +75,7 @@
 						<!-- A phone shows the game under the table, on this page (Trevor, 2026-11-06:
 						     "loads game on another page ... only to show it beneath"). -->
 						<div class="phone-game" bind:clientWidth={phoneWidth}>
-							<LabGameFrame {session} device={STORYTELLER_SCREENS[0]} room={phoneWidth} />
+							<LabFrame {session} device={STORYTELLER_SCREENS[0]} room={phoneWidth} />
 						</div>
 					{/if}
 				</div>

@@ -4,6 +4,7 @@
 	import type { LabFiller } from '#lib/core/lab/lab-game.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import JinxNote from '#lib/features/characters/JinxNote.svelte';
+	import LabFrame from './LabFrame.svelte';
 	import ReportButton from '#lib/features/reports/ReportButton.svelte';
 	import PlayerCountSheet from '#lib/features/setup/PlayerCountSheet.svelte';
 	import { STORYTELLER_SCREENS } from '#lib/features/test-room/devices.ts';
@@ -13,7 +14,6 @@
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
-	import LabGameFrame from './LabGameFrame.svelte';
 	import { lab } from './lab-store.svelte.ts';
 	import type { LabSession } from './lab-session.svelte.ts';
 
@@ -79,7 +79,7 @@
 		<!-- Pinned at the top right while the settings and partners scroll under it (Trevor,
 		     2026-11-05: "pin mock game on the top right"). -->
 		<div class="pinned">
-			<LabGameFrame {session} device={screen} room={width} />
+			<LabFrame {session} device={screen} room={width} />
 		</div>
 	{/if}
 
