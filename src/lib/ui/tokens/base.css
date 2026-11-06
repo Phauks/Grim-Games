@@ -50,7 +50,31 @@
 	--ease-out: cubic-bezier(0.32, 0.72, 0, 1);
 	--ease-in: cubic-bezier(0.4, 0, 1, 1);
 
+	/*
+	 * Layers, lowest first (Trevor, 2026-11-06: "stuff being covered up"). Every z-index names
+	 * one of these (npm run lint:layers), so what sits over what is decided here, once.
+	 */
+	/* The page's own background pictures, fixed behind everything. */
+	--z-backdrop: -1;
+	/* A decoration drawn behind its own box, such as a band's colour. */
+	--z-under: -1;
+	/* A piece raised over the pieces beside it inside one component (a token's ring, a board
+	   chip), then over those, then over those again. */
+	--z-above: 1;
+	--z-above-2: 2;
+	--z-above-3: 3;
+	/* A piece being dragged or held, over every other piece of its component. */
+	--z-held: 4;
+	/* Pinned while its section scrolls: a section heading, over every piece the section's
+	   rows lift; then a toolbar or search row pinned over the headings; then the outermost
+	   pinned row. */
+	--z-pinned: 5;
+	--z-pinned-bar: 6;
+	--z-pinned-top: 7;
+	/* Controls floating over a screen: the bottom tab bar, the board's pinned bands. */
 	--z-raised: 10;
+	/* The new-version banner, over the screen but under any dialog. */
+	--z-banner: 50;
 	/* Dialogs and sheets: the base, plus each overlay's place in the order opened (layers.ts). */
 	--z-overlay: 100;
 	/* Dropdown lists and Glossary popovers, which can open from inside any overlay. */

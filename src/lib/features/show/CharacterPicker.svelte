@@ -222,7 +222,7 @@
 		/* The sheet body's top padding, so nothing shows above it while scrolling. */
 		top: calc(-1 * var(--space-1));
 		/* Over the chosen places and every type's header scrolling up under it. */
-		z-index: 3;
+		z-index: var(--z-pinned-top);
 		display: flex;
 		align-items: center;
 		gap: var(--space-2);
@@ -254,7 +254,7 @@
 		top: calc(var(--top-height) - var(--space-1));
 		/* Over each type's header scrolling up past it, which pins just below (Trevor,
 		   2026-11-02: the Outsiders header slid over an empty place). */
-		z-index: 2;
+		z-index: var(--z-pinned-bar);
 		display: grid;
 		gap: var(--space-2);
 		padding-block: var(--space-1);

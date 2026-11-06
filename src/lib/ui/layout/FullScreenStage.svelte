@@ -81,7 +81,7 @@
 		position: absolute;
 		top: calc(var(--edge-top, 0rem) + var(--space-2));
 		right: var(--edge-right, var(--space-2));
-		z-index: 1;
+		z-index: var(--z-above);
 		display: flex;
 		align-items: center;
 		gap: var(--space-2);

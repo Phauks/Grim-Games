@@ -203,7 +203,7 @@
 		position: absolute;
 		top: 0;
 		right: 0;
-		z-index: 1;
+		z-index: var(--z-above);
 		display: flex;
 		align-items: flex-start;
 		transform: translate(35%, -25%);
@@ -211,7 +211,7 @@
 	/* The "+n" tucks behind the latest reminder, which stays whole to tap. */
 	.held-more {
 		position: relative;
-		z-index: -1;
+		z-index: var(--z-under);
 		margin-inline-start: -30%;
 	}
 	/* Its stand-in follows the finger; the place stays, so nothing moves. */

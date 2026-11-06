@@ -14,7 +14,7 @@
 		position: absolute;
 		top: 0;
 		right: 0;
-		z-index: 1;
+		z-index: var(--z-above);
 		display: flex;
 		font-size: 0.75rem;
 		pointer-events: none;

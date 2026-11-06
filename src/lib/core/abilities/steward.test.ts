@@ -14,7 +14,11 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import {
+	committedCharacter,
+	nightSheetPresence,
+	committedCharacters
+} from '#lib/core/testing/committed-data.ts';
 import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night-info.ts';
 import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 import { setupPrep } from '#lib/core/rules/setup-reminders.ts';
@@ -75,7 +79,7 @@ describe('Steward', () => {
 
 		it('prepares Know on a good player, never an evil one', () => {
 			// Wiki: "While preparing the first night, put the KNOW reminder by any good character token."
-			expect(setupPrep('steward', 'Steward')).toEqual([
+			expect(setupPrep('steward', 'Steward', committedCharacters())).toEqual([
 				expect.objectContaining({ tokens: ['Know'], target: 'a good player' })
 			]);
 			const s = scenario(cast);

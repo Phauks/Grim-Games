@@ -7,9 +7,8 @@
  *    number, the whole declaration is dropped, and a pinned heading slides under what is
  *    above it. Write the fallback with a unit: `var(--pinned-inset, 0rem)`.
  * 2. A raw number for z-index. Each file picking its own 1, 2, 3 or 1000 is how a sheet ends up
- *    over a heading it should sit under. Use the layer tokens (`--z-*`, src/lib/ui/tokens/
- *    base.css). Files that still have raw values are in Z_INDEX_TODO with how many; the
- *    counts only shrink.
+ *    over a heading it should sit under. Use the named layers (`--z-*`, src/lib/ui/tokens/
+ *    base.css), whose order is decided in one place.
  *
  * Scans .css files and Svelte <style> blocks under src. Run by `npm run lint`.
  */
@@ -23,50 +22,6 @@ const root = fileURLToPath(new URL('..', import.meta.url));
 /** Properties that take plain numbers, where a unitless fallback is right. */
 const NUMBER_PROPERTY =
 	/^(?:z-index|opacity|order|flex-grow|flex-shrink|line-height|scale|font-weight|--[\w-]+)$/;
-
-/** Raw z-index values per file, left from before this lint; each count may only go down. */
-export const Z_INDEX_TODO: Record<string, number> = {
-	'src/lib/features/about/UpdateBanner.svelte': 1,
-	'src/lib/features/character-lab/LabPanel.svelte': 1,
-	'src/lib/features/characters/CharacterRow.svelte': 2,
-	'src/lib/features/day/DayPanel.svelte': 2,
-	'src/lib/features/grimoire/BoardBackdrop.svelte': 2,
-	'src/lib/features/grimoire/BoardCorner.svelte': 1,
-	'src/lib/features/grimoire/BoardReminderChip.svelte': 2,
-	'src/lib/features/grimoire/BoardRules.svelte': 2,
-	'src/lib/features/grimoire/BoardSeats.svelte': 6,
-	'src/lib/features/grimoire/GrimoireBoard.svelte': 3,
-	'src/lib/features/grimoire/HistoryStrip.svelte': 1,
-	'src/lib/features/grimoire/NightStrip.svelte': 3,
-	'src/lib/features/grimoire/ReminderBank.svelte': 1,
-	'src/lib/features/grimoire/ReminderCount.svelte': 1,
-	'src/lib/features/grimoire/ReminderInHand.svelte': 1,
-	'src/lib/features/grimoire/ReminderTethers.svelte': 1,
-	'src/lib/features/grimoire/ReminderTray.svelte': 4,
-	'src/lib/features/grimoire/SeatNameSuggestions.svelte': 1,
-	'src/lib/features/grimoire/moving/MovingBackdrop.svelte': 1,
-	'src/lib/features/info-tokens/ChainBar.svelte': 1,
-	'src/lib/features/library/LibraryBrowser.svelte': 1,
-	'src/lib/features/player/GenericGuessToken.svelte': 1,
-	'src/lib/features/player/GuessMarks.svelte': 1,
-	'src/lib/features/player/PlayerGrimTools.svelte': 1,
-	'src/lib/features/player/PlayerReminderBin.svelte': 1,
-	'src/lib/features/player/PlayerSeating.svelte': 4,
-	'src/lib/features/scripts/ScriptDetails.svelte': 1,
-	'src/lib/features/scripts/ScriptPicker.svelte': 1,
-	'src/lib/features/settings/SettingsModal.svelte': 2,
-	'src/lib/features/settings/sections/BoardPreview.svelte': 3,
-	'src/lib/features/show/CharacterPicker.svelte': 2,
-	'src/lib/features/show/CoverButton.svelte': 1,
-	'src/lib/features/show/ShowToPlayer.svelte': 1,
-	'src/lib/ui/base.css': 1,
-	'src/lib/ui/layout/ContentsLayout.svelte': 1,
-	'src/lib/ui/layout/FullScreenStage.svelte': 1,
-	'src/lib/ui/primitives/Collapsible.svelte': 2,
-	'src/lib/ui/primitives/FileView.svelte': 1,
-	'src/lib/ui/settings/SettingGroup.svelte': 1,
-	'src/lib/ui/table/DataTable.svelte': 6
-};
 
 export type LayerProblem = { line: number; problem: string };
 
@@ -136,33 +91,15 @@ function* files(dir: string): Generator<string> {
 
 if (process.argv.includes('--run')) {
 	let problems = 0;
-	const rawZ = new Map<string, number>();
 	for (const path of files(join(root, 'src'))) {
 		const file = relative(root, path).split(sep).join('/');
 		const source = readFileSync(path, 'utf8');
 		const blocks = file.endsWith('.css') ? [{ css: source, firstLine: 1 }] : svelteStyles(source);
-		const zLines: string[] = [];
 		for (const { css, firstLine } of blocks) {
 			for (const { line, problem } of findLayerProblems(css, firstLine)) {
-				if (problem.startsWith('z-index')) {
-					zLines.push(`${file}:${line}  ${problem}`);
-					continue;
-				}
 				console.error(`${file}:${line}  ${problem}`);
 				problems++;
 			}
-		}
-		if (zLines.length) rawZ.set(file, zLines.length);
-		if (zLines.length > (Z_INDEX_TODO[file] ?? 0)) {
-			for (const z of zLines) console.error(z);
-			problems += zLines.length - (Z_INDEX_TODO[file] ?? 0);
-		}
-	}
-	for (const [file, allowed] of Object.entries(Z_INDEX_TODO)) {
-		const now = rawZ.get(file) ?? 0;
-		if (now < allowed) {
-			console.error(`${file}: ${now} raw z-index value(s) left; lower Z_INDEX_TODO to ${now}`);
-			problems++;
 		}
 	}
 	if (problems) {

@@ -13,7 +13,7 @@
 import type { JinxEffect, LearnsWhat } from '#lib/core/data/jinx-rules.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import { wikiUrl } from '#lib/core/data/wiki.ts';
-import type { CharacterId } from '#lib/core/data/types.ts';
+import type { Character, CharacterId } from '#lib/core/data/types.ts';
 import { scriptCharacterIds, type CharacterLookup } from '#lib/core/model/characters.ts';
 import { alignmentOf, trueCharacter } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
@@ -30,6 +30,12 @@ import {
 } from './jinx-effects.ts';
 import { unchoosablePartners } from './jinx-targets.ts';
 import type { NightAlert } from './night-alerts.ts';
+
+/** The Related Jinxes section of a character's wiki page; none for a homebrew character. */
+function jinxesSection(character: Character | undefined): { wiki?: string } {
+	const page = character && wikiUrl(character);
+	return page ? { wiki: `${page}#Related_Jinxes` } : {};
+}
 
 /** The `wakes-with` and `keeps-protection` alerts at the step of `partner`, in seating order. */
 export function jinxPartnerAlerts(
@@ -61,7 +67,7 @@ export function jinxPartnerAlerts(
 				source: { characterId: owner, seatId },
 				works: true,
 				impairments: [],
-				...(character ? { wiki: `${wikiUrl(character)}#Related_Jinxes` } : {})
+				...jinxesSection(character)
 			});
 	}
 	return out;
@@ -105,7 +111,7 @@ export function jinxLearnAlerts(
 			works: true,
 			impairments: [],
 			partner,
-			...(character ? { wiki: `${wikiUrl(character)}#Related_Jinxes` } : {})
+			...jinxesSection(character)
 		};
 	};
 	for (const seatId of game.seating) {
@@ -187,7 +193,7 @@ export function jinxChoiceRuleAlerts(
 				works: true,
 				impairments: [],
 				partner,
-				...(character ? { wiki: `${wikiUrl(character)}#Related_Jinxes` } : {})
+				...jinxesSection(character)
 			}))
 	);
 }
@@ -244,7 +250,7 @@ export function carrierChoiceAlerts(
 				partner,
 				...(type ? { type } : {}),
 				...(carrier ? { carrier: true as const } : {}),
-				...(character ? { wiki: `${wikiUrl(character)}#Related_Jinxes` } : {})
+				...jinxesSection(character)
 			}
 		];
 	});
@@ -304,7 +310,7 @@ export function storytellerHasAlerts(
 				works: true,
 				impairments: [],
 				partner,
-				...(character ? { wiki: `${wikiUrl(character)}#Related_Jinxes` } : {})
+				...jinxesSection(character)
 			}
 		];
 	});
@@ -352,7 +358,7 @@ export function jinxStepAlerts(
 			works: true,
 			impairments: [],
 			partner,
-			...(character ? { wiki: `${wikiUrl(character)}#Related_Jinxes` } : {})
+			...jinxesSection(character)
 		};
 	};
 	const out: NightAlert[] = [];

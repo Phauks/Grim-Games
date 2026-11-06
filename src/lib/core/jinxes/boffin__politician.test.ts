@@ -52,8 +52,10 @@ describe('Boffin + Politician jinx', () => {
 		});
 
 		it('leaves the Politician out of the abilities the Boffin may give', () => {
-			expect(barredAbilities('boffin', scriptCharacterIds(script))).toEqual(['politician']);
-			expect(barredAbilities('boffin', ['boffin', 'chef'])).toEqual([]);
+			expect(barredAbilities('boffin', scriptCharacterIds(script), committedCharacters())).toEqual([
+				'politician'
+			]);
+			expect(barredAbilities('boffin', ['boffin', 'chef'], committedCharacters())).toEqual([]);
 		});
 
 		it('warns, but still lets the Storyteller give it', () => {

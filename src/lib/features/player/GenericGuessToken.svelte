@@ -40,7 +40,7 @@
 	   so it is measured against the whole room. */
 	.room {
 		position: relative;
-		z-index: 1;
+		z-index: var(--z-above);
 		display: flex;
 		justify-content: safe center;
 		width: 84%;

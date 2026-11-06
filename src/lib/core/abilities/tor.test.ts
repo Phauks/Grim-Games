@@ -14,7 +14,11 @@
  */
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
-import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import {
+	committedCharacter,
+	committedNightOrder,
+	nightSheetPresence
+} from '#lib/core/testing/committed-data.ts';
 import { dayUseDeath } from '#lib/core/rules/day-claims.ts';
 import { setupModifierFor } from '#lib/core/rules/setup-modifiers.ts';
 import { evilTeamInfoRemovedBy } from '#lib/core/rules/teensyville.ts';
@@ -104,7 +108,7 @@ describe('Tor', () => {
 		it('wakes on other nights to show a player who died their character with You are', () => {
 			// Wiki: "If a player dies at night, wake them, show them the YOU ARE info token, their
 			// character token, the YOU ARE info token, and either a thumbs up or a thumbs down."
-			expect(nightSheetPresence('tor').otherNight).toBe(true);
+			expect(committedNightOrder('otherNight')).toContain('tor');
 			expect(stepInfoCards(character, character.otherNightReminder)).toMatchObject([
 				{ token: { id: 'you-are' }, filled: { upTo: 1 } }
 			]);

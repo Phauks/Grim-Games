@@ -87,7 +87,7 @@
 	.chip-slot {
 		position: absolute;
 		translate: -50% -50%;
-		z-index: 1;
+		z-index: var(--z-above);
 	}
 	/* A copy beyond what the game gives (Trevor, 2026-10-18): dashed and faded, like the
 	   reminder list's tokens that don't fit a seat. */
@@ -110,7 +110,7 @@
 		filter: var(--reminder-lit-glow, none);
 	}
 	.chip-slot.dragging {
-		z-index: 3;
+		z-index: var(--z-above-3);
 		scale: 1.15;
 	}
 </style>

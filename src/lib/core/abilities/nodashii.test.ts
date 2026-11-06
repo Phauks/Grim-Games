@@ -20,7 +20,11 @@ import { placeholdersFor } from '#lib/core/rules/night-text.ts';
 import { neighbourFollows } from '#lib/core/rules/reminder-movement.ts';
 import { neighbourSeats, reminderTargets } from '#lib/core/rules/reminder-targets.ts';
 import { setupPrep } from '#lib/core/rules/setup-reminders.ts';
-import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import {
+	committedCharacter,
+	nightSheetPresence,
+	committedCharacters
+} from '#lib/core/testing/committed-data.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 
 describe('No Dashii', () => {
@@ -128,7 +132,7 @@ describe('No Dashii', () => {
 		it('setup puts Poisoned on the nearest Townsfolk each way round', () => {
 			// Wiki: "While preparing the first night, the two Townsfolk neighboring the No Dashii become
 			// poisoned - mark them with POISONED reminders."
-			expect(setupPrep('nodashii', 'No Dashii')).toMatchObject([
+			expect(setupPrep('nodashii', 'No Dashii', committedCharacters())).toMatchObject([
 				{ tokens: ['Poisoned'], target: 'the nearest Townsfolk anticlockwise' },
 				{ tokens: ['Poisoned'], target: 'the nearest Townsfolk clockwise' }
 			]);

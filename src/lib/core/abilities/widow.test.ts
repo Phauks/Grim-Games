@@ -20,7 +20,11 @@ import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 import { seesGrimoire } from '#lib/core/rules/sees-grimoire.ts';
 import { setupPrep } from '#lib/core/rules/setup-reminders.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
-import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
+import {
+	committedCharacter,
+	nightSheetPresence,
+	committedCharacters
+} from '#lib/core/testing/committed-data.ts';
 
 describe('Widow', () => {
 	const character = committedCharacter('widow');
@@ -108,7 +112,7 @@ describe('Widow', () => {
 
 		it('prepares Know on a good player, never an evil one', () => {
 			// Wiki: "While preparing the first night, mark a good player with the KNOW reminder."
-			expect(setupPrep('widow', 'Widow')).toEqual([
+			expect(setupPrep('widow', 'Widow', committedCharacters())).toEqual([
 				expect.objectContaining({ tokens: ['Know'], target: 'a good player' })
 			]);
 			const s = scenario(cast);

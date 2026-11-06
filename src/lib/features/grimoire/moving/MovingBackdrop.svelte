@@ -89,7 +89,7 @@
 	.moving {
 		position: fixed;
 		inset: 0;
-		z-index: -1;
+		z-index: var(--z-backdrop);
 		overflow: hidden;
 		pointer-events: none;
 	}

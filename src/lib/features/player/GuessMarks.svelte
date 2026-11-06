@@ -79,7 +79,7 @@
 	/* Over the pill's own tap target (RimPill), with one of its own: it opens the seat's sheet. */
 	.more {
 		position: relative;
-		z-index: 1;
+		z-index: var(--z-above);
 		color: var(--on-surface);
 		font-family: var(--font-control);
 		font-size: calc(var(--slot) * 0.5);

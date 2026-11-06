@@ -262,7 +262,7 @@
 		position: absolute;
 		top: calc(var(--space-2) + env(safe-area-inset-top));
 		right: calc(var(--space-2) + env(safe-area-inset-right));
-		z-index: 1;
+		z-index: var(--z-above);
 		--icon-size: calc(1.5 * var(--u));
 	}
 	/* Raised so it shows over a card; the hover tint is the shared one, over this fill. */
