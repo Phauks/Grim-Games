@@ -91,44 +91,44 @@ export interface BankOptions {
 	/** Duplicate copies on the board and in the bank (Grimoire). */
 	copies: ReadonlySet<ReminderId>;
 	bankCopies: ReadonlyMap<string, number>;
-	/**
-	 * Each run of counting reminders (`counter` in a character's rules: the Leviathan's Day 1
-	 * to Day 5) as one token, the next still off the board (plan M53, Trevor 2026-11-04: "bundle
-	 * incrementing reminder tokens together in the bank"). Off in the pulled-up bank, which shows
-	 * every token.
-	 */
-	bundleCounters?: boolean;
 }
 
-/** `items` with each counting run cut to its first token still in the bank. */
+/**
+ * Each run of counting reminders (`counter` in a character's rules: the Leviathan's Day 1 to
+ * Day 5) stacked as one token, its next one still off the board on top, with the rest of the run
+ * under it as its count (plan M53, Trevor 2026-11-04: "bundle incrementing reminder tokens
+ * together in the bank"; 2026-11-06: stacked on each other in the bin too).
+ */
 function bundledCounters(items: BankItem[], characters: CharacterLookup): BankItem[] {
 	const run = (item: BankItem) => {
 		const tokens = rulesOf(item.characterId, characters)?.counter?.tokens;
 		return tokens?.includes(item.label) ? tokens : undefined;
 	};
-	// The run's earliest token still in the bank, by character.
+	// The run's earliest token still in the bank, and how many of the run are left, by character.
 	const next = new Map<CharacterId, number>();
+	const left = new Map<CharacterId, number>();
 	for (const item of items) {
 		const tokens = run(item);
 		if (!tokens) continue;
 		const i = tokens.indexOf(item.label);
 		next.set(item.characterId, Math.min(i, next.get(item.characterId) ?? i));
+		left.set(item.characterId, (left.get(item.characterId) ?? 0) + item.count);
 	}
 	const kept = new Set<CharacterId>();
-	return items.filter((item) => {
+	return items.flatMap((item) => {
 		const tokens = run(item);
-		if (!tokens) return true;
-		if (tokens.indexOf(item.label) !== next.get(item.characterId)) return false;
-		if (kept.has(item.characterId)) return false;
+		if (!tokens) return [item];
+		if (tokens.indexOf(item.label) !== next.get(item.characterId)) return [];
+		if (kept.has(item.characterId)) return [];
 		kept.add(item.characterId);
-		return true;
+		return [{ ...item, count: left.get(item.characterId) ?? item.count }];
 	});
 }
 
 export function bankItems(
 	game: Game,
 	characters: CharacterLookup,
-	{ focus, focusMode, stack, copies, bankCopies, bundleCounters }: BankOptions
+	{ focus, focusMode, stack, copies, bankCopies }: BankOptions
 ): BankItem[] {
 	// Script order, then reminder name (Trevor, 2026-10-16), like every reminder list; a
 	// setup token too important to miss (the Drunk's) first (Trevor, 2026-10-27).
@@ -215,7 +215,7 @@ export function bankItems(
 		}
 		return list;
 	});
-	const rest = bundleCounters ? bundledCounters(listed, characters) : listed;
+	const rest = bundledCounters(listed, characters);
 	// The generic ∞ reminder, as many as needed (Trevor, 2026-10-18), after the reminders.
 	const generic: BankItem = {
 		key: 'generic',
