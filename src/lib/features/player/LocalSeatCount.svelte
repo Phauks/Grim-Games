@@ -35,6 +35,7 @@
 	min={LOCAL_TOWN_MIN_SEATS}
 	max={LOCAL_TOWN_MAX_SEATS}
 	values={counts}
+	format={(n) => t('player.local.seats', { count: n })}
 	onchange={(n) => saveLocalTown(notesKey, withSeatCount(localTown(notesKey), n))}
 	testid="local-seat-count"
 />

@@ -42,7 +42,7 @@ test('a player sets up and marks their own town with no room', async ({ page }) 
 	await expect(seats.nth(2)).toHaveAttribute('aria-label', /Jo Ann, dead, ghost vote used/);
 
 	// Fewer seats drop the last ones.
-	await pickNumber(page.getByTestId('grim-tools'), 'Seats', 5);
+	await pickNumber(page.getByTestId('grim-tools'), 'Seats', '5 seats');
 	await expect(seats).toHaveCount(5);
 });
 
@@ -63,7 +63,7 @@ test('New game starts a players-only game, and Join game lists it apart', async 
 	// Straight to the player screen's Grim tab, where the town is set up.
 	await expect(page).toHaveURL(/\/play$/);
 	await expect(page.getByRole('tab', { name: 'Grim' })).toHaveAttribute('aria-selected', 'true');
-	await pickNumber(page.getByRole('tabpanel'), 'Seats', 6);
+	await pickNumber(page.getByRole('tabpanel'), 'Seats', '6 seats');
 	await page.getByTestId('grim-seat').nth(0).tap();
 	const sheet = page.getByRole('dialog', { name: /Seat 1/ });
 	await sheet.getByText('Dead', { exact: true }).tap();
