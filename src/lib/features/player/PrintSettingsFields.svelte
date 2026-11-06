@@ -62,7 +62,7 @@
 </script>
 
 <div class="fields" data-testid="print-settings">
-	<SettingCollapsible title={t('player.printPaper')} storageKey="print-paper">
+	<SettingCollapsible title={t('player.printPaper')} storageKey="print-paper" card>
 		<SettingSelect
 			label={t('player.printPageSize')}
 			value={print.pageSize}
@@ -122,7 +122,7 @@
 		/>
 	</SettingCollapsible>
 
-	<SettingCollapsible title={sideTitle('front', 1)} storageKey="print-front">
+	<SettingCollapsible title={sideTitle('front', 1)} storageKey="print-front" card>
 		<SettingToggle
 			label={t('player.printLogo')}
 			checked={hasLogo && print.front.logo}
@@ -183,7 +183,7 @@
 		/>
 	</SettingCollapsible>
 
-	<SettingCollapsible title={sideTitle('back', 2)} storageKey="print-back">
+	<SettingCollapsible title={sideTitle('back', 2)} storageKey="print-back" card>
 		<SettingToggle
 			label={t('player.printBackOn')}
 			checked={print.back.enabled}
@@ -239,8 +239,10 @@
 </div>
 
 <style>
+	/* Paper, Front and Back each on a card (Trevor, 2026-11-06). */
 	.fields {
 		display: grid;
+		gap: var(--space-3);
 	}
 	.margin {
 		display: flex;

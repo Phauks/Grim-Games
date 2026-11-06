@@ -370,24 +370,21 @@ test('clearing the Demon bluffs asks first, and the set buttons are evenly space
 	await expect(set.getByRole('button', { name: 'Clear the Demon bluffs' })).toBeDisabled();
 });
 
-test('a second bluff set can be named Lunatic in one tap', async ({ page }) => {
-	// Trevor, 2026-10-29: a second set is nearly always the Lunatic's.
+test('a second bluff set has no Lunatic name button, and can still be named', async ({ page }) => {
+	// Trevor, 2026-11-06: the Lunatic's set is already made while a Lunatic is in play, so the
+	// sheet no longer suggests the name; more sets can still be added and named.
 	await page.goto('/spikes/bluffs');
 	await page.getByRole('button', { name: 'Demon bluffs', exact: true }).tap();
 	await page.getByRole('button', { name: 'Add a set' }).tap();
 	const name = page.getByRole('textbox', { name: 'Set name' });
-	const lunatic = page.getByRole('button', { name: 'Lunatic', exact: true });
-	// On the name's own line, so it pushes nothing down.
-	const field = (await name.boundingBox())!;
-	const button = (await lunatic.boundingBox())!;
-	expect(button.y).toBeLessThan(field.y + field.height);
-	expect(button.y + button.height).toBeGreaterThan(field.y);
-	await lunatic.tap();
-	await expect(name).toHaveValue('Lunatic');
-	await expect(lunatic).toBeDisabled();
+	await expect(name).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Lunatic', exact: true })).toHaveCount(0);
+	await name.fill('Snake Charmer');
 	await choice(page, 'Monk').tap();
 	await page.getByRole('button', { name: 'Confirm' }).tap();
-	await expect(page.locator('[data-testid="bluff-set"][data-set="Lunatic"]')).toContainText('Monk');
+	await expect(page.locator('[data-testid="bluff-set"][data-set="Snake Charmer"]')).toContainText(
+		'Monk'
+	);
 });
 
 test('the set name and search share a pinned line, with the type being scrolled', async ({

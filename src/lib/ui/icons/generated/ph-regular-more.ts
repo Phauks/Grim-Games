@@ -56,7 +56,6 @@ import ph_hand_coins from '~icons/ph/hand-coins';
 import ph_hand_fist from '~icons/ph/hand-fist';
 import ph_hand_grabbing from '~icons/ph/hand-grabbing';
 import ph_hand_heart from '~icons/ph/hand-heart';
-import ph_hand_tap from '~icons/ph/hand-tap';
 import ph_hard_drives from '~icons/ph/hard-drives';
 import ph_heart from '~icons/ph/heart';
 import ph_hexagon from '~icons/ph/hexagon';
@@ -70,6 +69,7 @@ import ph_link_simple_break from '~icons/ph/link-simple-break';
 import ph_list_dashes from '~icons/ph/list-dashes';
 import ph_list_numbers from '~icons/ph/list-numbers';
 import ph_lock from '~icons/ph/lock';
+import ph_lock_open from '~icons/ph/lock-open';
 import ph_megaphone_simple from '~icons/ph/megaphone-simple';
 import ph_monitor from '~icons/ph/monitor';
 import ph_notepad from '~icons/ph/notepad';
@@ -171,7 +171,6 @@ const icons: IconMap = {
 	'ph:hand-fist': ph_hand_fist,
 	'ph:hand-grabbing': ph_hand_grabbing,
 	'ph:hand-heart': ph_hand_heart,
-	'ph:hand-tap': ph_hand_tap,
 	'ph:hard-drives': ph_hard_drives,
 	'ph:heart': ph_heart,
 	'ph:hexagon': ph_hexagon,
@@ -185,6 +184,7 @@ const icons: IconMap = {
 	'ph:list-dashes': ph_list_dashes,
 	'ph:list-numbers': ph_list_numbers,
 	'ph:lock': ph_lock,
+	'ph:lock-open': ph_lock_open,
 	'ph:megaphone-simple': ph_megaphone_simple,
 	'ph:monitor': ph_monitor,
 	'ph:notepad': ph_notepad,

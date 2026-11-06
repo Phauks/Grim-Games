@@ -115,7 +115,6 @@ import ph_hand_grabbing_duotone from '~icons/ph/hand-grabbing-duotone';
 import ph_hand_heart_duotone from '~icons/ph/hand-heart-duotone';
 import ph_hand_palm_duotone from '~icons/ph/hand-palm-duotone';
 import ph_hand_pointing_duotone from '~icons/ph/hand-pointing-duotone';
-import ph_hand_tap_duotone from '~icons/ph/hand-tap-duotone';
 import ph_handbag_duotone from '~icons/ph/handbag-duotone';
 import ph_handshake_duotone from '~icons/ph/handshake-duotone';
 import ph_hard_drives_duotone from '~icons/ph/hard-drives-duotone';
@@ -145,7 +144,9 @@ import ph_list_dashes_duotone from '~icons/ph/list-dashes-duotone';
 import ph_list_magnifying_glass_duotone from '~icons/ph/list-magnifying-glass-duotone';
 import ph_list_numbers_duotone from '~icons/ph/list-numbers-duotone';
 import ph_lock_duotone from '~icons/ph/lock-duotone';
+import ph_lock_open_duotone from '~icons/ph/lock-open-duotone';
 import ph_lock_simple_duotone from '~icons/ph/lock-simple-duotone';
+import ph_lock_simple_open_duotone from '~icons/ph/lock-simple-open-duotone';
 import ph_magnifying_glass_duotone from '~icons/ph/magnifying-glass-duotone';
 import ph_mask_happy_duotone from '~icons/ph/mask-happy-duotone';
 import ph_mask_sad_duotone from '~icons/ph/mask-sad-duotone';
@@ -361,7 +362,6 @@ const icons: IconMap = {
 	'ph:hand-heart-duotone': ph_hand_heart_duotone,
 	'ph:hand-palm-duotone': ph_hand_palm_duotone,
 	'ph:hand-pointing-duotone': ph_hand_pointing_duotone,
-	'ph:hand-tap-duotone': ph_hand_tap_duotone,
 	'ph:handbag-duotone': ph_handbag_duotone,
 	'ph:handshake-duotone': ph_handshake_duotone,
 	'ph:hard-drives-duotone': ph_hard_drives_duotone,
@@ -391,7 +391,9 @@ const icons: IconMap = {
 	'ph:list-magnifying-glass-duotone': ph_list_magnifying_glass_duotone,
 	'ph:list-numbers-duotone': ph_list_numbers_duotone,
 	'ph:lock-duotone': ph_lock_duotone,
+	'ph:lock-open-duotone': ph_lock_open_duotone,
 	'ph:lock-simple-duotone': ph_lock_simple_duotone,
+	'ph:lock-simple-open-duotone': ph_lock_simple_open_duotone,
 	'ph:magnifying-glass-duotone': ph_magnifying_glass_duotone,
 	'ph:mask-happy-duotone': ph_mask_happy_duotone,
 	'ph:mask-sad-duotone': ph_mask_sad_duotone,

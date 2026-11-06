@@ -115,7 +115,6 @@ import ph_hand_grabbing_thin from '~icons/ph/hand-grabbing-thin';
 import ph_hand_heart_thin from '~icons/ph/hand-heart-thin';
 import ph_hand_palm_thin from '~icons/ph/hand-palm-thin';
 import ph_hand_pointing_thin from '~icons/ph/hand-pointing-thin';
-import ph_hand_tap_thin from '~icons/ph/hand-tap-thin';
 import ph_handbag_thin from '~icons/ph/handbag-thin';
 import ph_handshake_thin from '~icons/ph/handshake-thin';
 import ph_hard_drives_thin from '~icons/ph/hard-drives-thin';
@@ -145,7 +144,9 @@ import ph_list_dashes_thin from '~icons/ph/list-dashes-thin';
 import ph_list_magnifying_glass_thin from '~icons/ph/list-magnifying-glass-thin';
 import ph_list_numbers_thin from '~icons/ph/list-numbers-thin';
 import ph_lock_thin from '~icons/ph/lock-thin';
+import ph_lock_open_thin from '~icons/ph/lock-open-thin';
 import ph_lock_simple_thin from '~icons/ph/lock-simple-thin';
+import ph_lock_simple_open_thin from '~icons/ph/lock-simple-open-thin';
 import ph_magnifying_glass_thin from '~icons/ph/magnifying-glass-thin';
 import ph_mask_happy_thin from '~icons/ph/mask-happy-thin';
 import ph_mask_sad_thin from '~icons/ph/mask-sad-thin';
@@ -361,7 +362,6 @@ const icons: IconMap = {
 	'ph:hand-heart-thin': ph_hand_heart_thin,
 	'ph:hand-palm-thin': ph_hand_palm_thin,
 	'ph:hand-pointing-thin': ph_hand_pointing_thin,
-	'ph:hand-tap-thin': ph_hand_tap_thin,
 	'ph:handbag-thin': ph_handbag_thin,
 	'ph:handshake-thin': ph_handshake_thin,
 	'ph:hard-drives-thin': ph_hard_drives_thin,
@@ -391,7 +391,9 @@ const icons: IconMap = {
 	'ph:list-magnifying-glass-thin': ph_list_magnifying_glass_thin,
 	'ph:list-numbers-thin': ph_list_numbers_thin,
 	'ph:lock-thin': ph_lock_thin,
+	'ph:lock-open-thin': ph_lock_open_thin,
 	'ph:lock-simple-thin': ph_lock_simple_thin,
+	'ph:lock-simple-open-thin': ph_lock_simple_open_thin,
 	'ph:magnifying-glass-thin': ph_magnifying_glass_thin,
 	'ph:mask-happy-thin': ph_mask_happy_thin,
 	'ph:mask-sad-thin': ph_mask_sad_thin,
