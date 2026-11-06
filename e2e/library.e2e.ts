@@ -751,6 +751,18 @@ test('a long script scrolls to its end in the Library', async ({ page }) => {
 		await scroller.evaluate((el) => el.scrollHeight > el.clientHeight),
 		'the script is longer than the dialog'
 	).toBe(true);
+	// Part way down, a pinned type heading stops right under the pinned script header, with
+	// no row showing between them (Trevor, 2026-11-06: Preacher sat above Townsfolk).
+	const townsfolk = script.getByRole('button', { name: /Townsfolk/ }).first();
+	const typeTop = await townsfolk.evaluate((el) => el.getBoundingClientRect().top);
+	await scroller.evaluate((el, by) => el.scrollBy(0, by), typeTop);
+	await expect
+		.poll(async () => {
+			const head = await script.getByTestId('script-details-top').boundingBox();
+			const band = await townsfolk.boundingBox();
+			return head && band ? Math.abs(band.y - (head.y + head.height)) : Infinity;
+		})
+		.toBeLessThan(24);
 	await scroller.hover();
 	await page.mouse.wheel(0, 20000);
 	await expect
