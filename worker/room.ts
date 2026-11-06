@@ -67,7 +67,7 @@ import { dropAvatarPicture, roomImage } from './room-image-store.ts';
 import { previewResponse } from './room-preview.ts';
 import { liveGameIndex, type LiveGameIndex } from './live-games.ts';
 import { setRoomPushAddress, type PushEnv } from './push.ts';
-import { callTown, playTownSound } from './room-town.ts';
+import { callTown, callTownSound, playTownSound } from './room-town.ts';
 import {
 	roomFriends,
 	roomFriendsView,
@@ -586,7 +586,7 @@ export class Room extends DurableObject<RoomEnv> {
 				const now = Date.now();
 				if (!canCallTown(this.lastCallTown, now)) return;
 				this.lastCallTown = now;
-				callTown(this.ctx, this.env);
+				callTown(this.ctx, this.env, callTownSound(message.sound));
 				return;
 			}
 			case 'town-sound':

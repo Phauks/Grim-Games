@@ -13,6 +13,7 @@
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { TYPE_LABELS, TYPE_PLURALS } from '#lib/features/reference/labels.ts';
 	import { seatName } from '#lib/features/game/seat-label.ts';
+	import ShowToPlayerButton from '#lib/features/show/ShowToPlayerButton.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import CharacterPicker from './CharacterPicker.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
@@ -233,9 +234,7 @@
 					playerName={seatName(game, change.seatId)}
 				/>
 				{#if onShow && !neighbourOnly}
-					<Button variant="quiet" onclick={() => onShow?.(change.characterId)}
-						>Show to player</Button
-					>
+					<ShowToPlayerButton onclick={() => onShow?.(change.characterId)} />
 				{/if}
 			{:else}
 				<span class="none">None</span>

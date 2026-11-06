@@ -4,7 +4,7 @@
 	import type { InfoChoice, InfoPicker, NightStep } from '#lib/core/rules/index.ts';
 	import { answerText, yesNoAnswers, yesNoSeats } from '#lib/core/rules/index.ts';
 	import { seatLabel } from '#lib/features/game/seat-label.ts';
-	import Button from '#lib/ui/primitives/Button.svelte';
+	import ShowToPlayerButton from '#lib/features/show/ShowToPlayerButton.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
@@ -108,13 +108,12 @@
 								<strong>{answerText(p.answer, a.yes)}</strong>
 								<NightReasonTag {grimoire} reason={a.reason} registered={a.registered} />
 								{#if onShowAnswer}
-									<Button
-										variant="quiet"
+									<ShowToPlayerButton
 										onclick={() => {
 											onShowAnswer(answerText(p.answer, a.yes));
 											onRecord?.(p, { seats: chosenOf(p), yes: a.yes });
-										}}>Show to player</Button
-									>
+										}}
+									/>
 								{/if}
 							</li>
 						{/each}

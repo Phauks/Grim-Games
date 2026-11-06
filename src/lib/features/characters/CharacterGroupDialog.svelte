@@ -1,4 +1,5 @@
 <script lang="ts">
+	import AbilityText from './AbilityText.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import {
 		CHARACTER_TYPES,
@@ -7,7 +8,6 @@
 		type CharacterType,
 		type GroupSource
 	} from '#lib/core/data/index.ts';
-	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import { EDITION_LABELS, TYPE_LABELS, TYPE_PLURALS } from '#lib/features/reference/labels.ts';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
@@ -70,7 +70,7 @@
 		{#each characters as character (character.id)}
 			<li>
 				<CharacterPiece template="row" {character} info>
-					{#snippet abilityText()}<GlossaryText
+					{#snippet abilityText()}<AbilityText
 							text={character.ability}
 							names={[character.name]}
 						/>{/snippet}

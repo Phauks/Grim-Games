@@ -1,4 +1,5 @@
 <script lang="ts">
+	import AbilityText from '#lib/features/characters/AbilityText.svelte';
 	import type { Snippet } from 'svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import {
@@ -31,7 +32,9 @@
 	<div class="token"><CharacterToken character={preview} /></div>
 	<!-- As it will read on a script: the standard row (Trevor, 2026-11-02). -->
 	<CharacterPiece template="row" character={preview}
-		>{#snippet abilityText()}{preview.ability || t('common.none')}{/snippet}</CharacterPiece
+		>{#snippet abilityText()}{#if preview.ability}<AbilityText text={preview.ability} />{:else}{t(
+					'common.none'
+				)}{/if}{/snippet}</CharacterPiece
 	>
 	<!-- Always there, a token high, so typing a reminder never moves the preview; the tokens
 	     themselves, as on the board (Trevor, 2026-10-30). -->

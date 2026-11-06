@@ -1,4 +1,5 @@
 <script lang="ts">
+	import AbilityText from '#lib/features/characters/AbilityText.svelte';
 	import Collapsible from '#lib/ui/primitives/Collapsible.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import {
@@ -216,7 +217,7 @@
 					><GlossaryText text={entry.setup.notes.join(' ')} /></span
 				>{/if}{:else}{t('common.none')}{/if}
 	{:else if field === 'ability'}
-		<span class="ability"><GlossaryText text={character.ability} names={[character.name]} /></span>
+		<span class="ability"><AbilityText text={character.ability} names={[character.name]} /></span>
 	{:else if field === 'flavor'}
 		{#if character.flavor}<q class="flavor">{character.flavor}</q>{:else}{t('common.none')}{/if}
 	{:else if field === 'tokens'}

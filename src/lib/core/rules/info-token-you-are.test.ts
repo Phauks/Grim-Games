@@ -130,17 +130,30 @@ describe('"You are" cards', () => {
 		]);
 	});
 
-	// The Storyteller taps the player woken: a Lord of Typhon neighbour, the Damsel the
-	// Huntsman found, the player the Tor shows (https://wiki.bloodontheclocktower.com/Lord_of_Typhon).
+	// The Storyteller taps the player woken: a Lord of Typhon neighbour, the player the Tor
+	// shows (https://wiki.bloodontheclocktower.com/Lord_of_Typhon).
 	it.each([
 		['lordoftyphon', 'first'],
-		['damsel', 'other'],
 		['tor', 'other']
 	] as const)('%s: "You are" asks which player first', (id, night) => {
 		const card = stepInfoCards(character(id), nightTextFor(character(id), night)?.text).find(
 			(c) => c.token.id === 'you-are'
 		);
 		expect(card?.filled).toEqual({ characterIds: [], upTo: 1, chosenAt: 0 });
+	});
+
+	// The Damsel's own step offers no "You are": the Huntsman's step shows the Damsel their new
+	// Townsfolk (https://wiki.bloodontheclocktower.com/Huntsman), and the Damsel stops being the
+	// Damsel, so no Damsel step follows.
+	it.each(['first', 'other'] as const)('damsel (%s): no "You are" card', (night) => {
+		// Wiki: "If they chose the Damsel, wake the Damsel, show the YOU ARE info token, then a
+		// not-in-play Townsfolk token, then put the Damsel to sleep."
+		expect(cards('damsel', night).map((c) => c.token)).not.toContain('you-are');
+		expect(cards('huntsman', night, { changed: ['washerwoman'] })).toContainEqual({
+			token: 'you-are',
+			ids: ['washerwoman'],
+			upTo: 1
+		});
 	});
 
 	// Only the alignment changes: the card shows alone, with a thumb signal

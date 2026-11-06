@@ -1,4 +1,5 @@
 <script lang="ts">
+	import AbilityText from '#lib/features/characters/AbilityText.svelte';
 	import { typeTone, type TypeTone } from '#lib/core/data/character-type.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
@@ -110,7 +111,7 @@
 						>{t('player.travellerInPlay', { names: who.join(', ') })}</span
 					>{/if}
 			{/snippet}
-			{#snippet abilityText()}<GlossaryText text={c.ability} {names} />{/snippet}
+			{#snippet abilityText()}<AbilityText text={c.ability} {names} />{/snippet}
 		</CharacterPiece>
 	</li>
 {/snippet}

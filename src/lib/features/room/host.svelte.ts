@@ -463,11 +463,11 @@ export class RoomHost {
 	}
 
 	/**
-	 * Calls every player back to town (plan U2): each phone in the room sounds and vibrates.
-	 * False when the room can't be reached.
+	 * Calls every player back to town (plan U2): each phone sounds `sound`, or its own when
+	 * none is given, and vibrates. False when the room can't be reached.
 	 */
-	callTown(): boolean {
-		const sent = this.#socket?.send({ type: 'call-town' }) ?? false;
+	callTown(sound?: string): boolean {
+		const sent = this.#socket?.send({ type: 'call-town', ...(sound ? { sound } : {}) }) ?? false;
 		// The rest of the day is Town on players' phones (Trevor, 2026-10-26).
 		const day = this.#phase?.phase;
 		if (sent && day?.kind === 'day')

@@ -6,7 +6,7 @@
 <script lang="ts">
 	import type { Character } from '#lib/core/data/index.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
+	import AbilityText from './AbilityText.svelte';
 	import CharacterPiece from './CharacterPiece.svelte';
 
 	/**
@@ -34,7 +34,7 @@
 							class="mark {row.relation}"
 							aria-label={t(`characters.relation.${row.relation}`)}>{MARK[row.relation]}</span
 						>{/snippet}
-					{#snippet abilityText()}<GlossaryText text={row.character.ability} />{/snippet}
+					{#snippet abilityText()}<AbilityText text={row.character.ability} />{/snippet}
 				</CharacterPiece>
 			</li>
 		{/each}
