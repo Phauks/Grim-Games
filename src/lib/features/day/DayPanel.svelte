@@ -661,7 +661,7 @@
 	.toolbar {
 		position: sticky;
 		top: 0;
-		z-index: 2;
+		z-index: var(--z-pinned-bar);
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
@@ -691,7 +691,7 @@
 		position: sticky;
 		/* Tucked 1px under the toolbar, so no scrolled content shows between them (Trevor). */
 		top: calc(var(--toolbar-height, 0px) - 1px); /* px-ok: hairline overlap */
-		z-index: 1;
+		z-index: var(--z-pinned);
 		background: var(--dialog-background, var(--surface));
 	}
 	.glued {

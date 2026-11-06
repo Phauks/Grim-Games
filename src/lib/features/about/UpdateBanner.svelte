@@ -128,7 +128,7 @@
 		right: max(var(--space-3), env(safe-area-inset-right));
 		bottom: calc(var(--space-3) + env(safe-area-inset-bottom));
 		left: auto;
-		z-index: 50;
+		z-index: var(--z-banner);
 		display: grid;
 		gap: var(--space-1);
 		width: min(calc(24 * var(--u)), calc(100vw - 2 * var(--space-3)));

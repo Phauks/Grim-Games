@@ -50,7 +50,7 @@
 		position: sticky;
 		/* Just under the Settings section's sticky heading row; only within this group. */
 		top: var(--settings-heading-height, 0);
-		z-index: 1;
+		z-index: var(--z-pinned);
 		align-self: start;
 		padding: var(--space-2) 0;
 		background: var(--dialog-background);

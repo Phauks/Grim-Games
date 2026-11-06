@@ -66,7 +66,7 @@
 		position: absolute;
 		left: 50%;
 		bottom: var(--hand-bottom, var(--space-2));
-		z-index: 4;
+		z-index: var(--z-held);
 		translate: -50% 0;
 		display: flex;
 		align-items: center;

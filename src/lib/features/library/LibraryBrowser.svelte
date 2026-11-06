@@ -771,7 +771,7 @@
 		position: fixed;
 		top: 0;
 		left: 0;
-		z-index: 1000;
+		z-index: var(--z-popover);
 		max-width: calc(20 * var(--u));
 		margin: calc(-1 * var(--space-5)) 0 0 var(--space-2);
 		padding: var(--space-1) var(--space-3);

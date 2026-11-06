@@ -267,7 +267,7 @@
 	.search {
 		position: sticky;
 		top: 0;
-		z-index: 1;
+		z-index: var(--z-pinned);
 		padding-bottom: var(--space-2);
 		background: var(--dialog-background);
 	}
@@ -315,7 +315,7 @@
 	.heading {
 		position: sticky;
 		top: 0;
-		z-index: 2;
+		z-index: var(--z-pinned-bar);
 		display: flex;
 		box-sizing: border-box;
 		height: var(--settings-heading-height);

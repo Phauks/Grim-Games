@@ -108,7 +108,7 @@
 		position: absolute;
 		top: calc(var(--space-2) + env(safe-area-inset-top));
 		left: calc(var(--space-2) + env(safe-area-inset-left));
-		z-index: 1;
+		z-index: var(--z-above);
 		--icon-size: calc(1.5 * var(--u));
 	}
 	.lock :global(.icon-button) {

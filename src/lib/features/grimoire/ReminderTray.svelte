@@ -357,7 +357,7 @@
 		right: 0;
 		/* Its foot fixed, so pulled up it grows over the board (Trevor, 2026-10-30). */
 		bottom: calc(-1 * (var(--tray-h) + var(--space-2)));
-		z-index: 2;
+		z-index: var(--z-above-2);
 		display: flex;
 		align-items: center;
 		height: var(--tray-h);
@@ -378,7 +378,7 @@
 	}
 	/* Pulled up: every token in rows above the run button, which keeps its place at the foot. */
 	.tray.tall {
-		z-index: 3;
+		z-index: var(--z-above-3);
 		align-items: stretch;
 		/* As tall as its tokens need, up to most of the board, so no empty space sits above the
 		   run button. */
@@ -430,7 +430,7 @@
 		top: 0;
 		left: 50%;
 		/* Under the captions, which let a press through to it. */
-		z-index: 2;
+		z-index: var(--z-above-2);
 		display: grid;
 		place-items: center;
 		translate: -50% -50%;
@@ -459,7 +459,7 @@
 	.caption {
 		position: absolute;
 		top: 0;
-		z-index: 3;
+		z-index: var(--z-above-3);
 		/* Every pill as tall as the ∞ one (Trevor, 2026-10-27), its words centred in it. */
 		display: flex;
 		align-items: center;

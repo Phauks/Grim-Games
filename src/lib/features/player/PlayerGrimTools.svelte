@@ -103,7 +103,7 @@
 		position: absolute;
 		top: var(--space-2);
 		right: var(--space-2);
-		z-index: 1;
+		z-index: var(--z-above);
 	}
 	.corner-button {
 		border-radius: 50%;

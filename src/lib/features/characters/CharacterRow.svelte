@@ -316,7 +316,7 @@
 		padding-inline-start: var(--space-2);
 	}
 	.ring {
-		z-index: 1;
+		z-index: var(--z-above);
 		display: grid;
 		grid-row: 1;
 		grid-column: 1;
@@ -459,7 +459,7 @@
 	 * width from the ability: the band runs over them (Trevor, 2026-10-28).
 	 */
 	.ring-row > .end {
-		z-index: 1;
+		z-index: var(--z-above);
 		flex-direction: column;
 		grid-row: 1;
 		grid-column: 3;

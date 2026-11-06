@@ -619,7 +619,7 @@
 	.fill thead {
 		position: sticky;
 		top: 0;
-		z-index: 3;
+		z-index: var(--z-above-3);
 	}
 	table,
 	thead,
@@ -643,13 +643,13 @@
 	.boxed thead {
 		position: sticky;
 		top: 0;
-		z-index: 3;
+		z-index: var(--z-above-3);
 	}
 	/* The row's name (and anything before it) stays in view while the rest scrolls sideways. */
 	.sticky {
 		position: sticky;
 		inset-inline-start: var(--sticky-start);
-		z-index: 1;
+		z-index: var(--z-above);
 		background: var(--card-background);
 	}
 	/* A line where the scrolling columns slide under. */
@@ -661,10 +661,10 @@
 	 * 2026-10-18: header lines showed over the pinned columns when scrolled sideways).
 	 */
 	thead .sticky {
-		z-index: 3;
+		z-index: var(--z-above-3);
 	}
 	tbody .sticky {
-		z-index: 2;
+		z-index: var(--z-above-2);
 	}
 	thead .sticky,
 	tr.selected > .sticky {
@@ -748,7 +748,7 @@
 		position: absolute;
 		inset-block: 0;
 		inset-inline-end: calc(-0.5 * var(--hit));
-		z-index: 2;
+		z-index: var(--z-above-2);
 		display: flex;
 		justify-content: center;
 		width: var(--hit);

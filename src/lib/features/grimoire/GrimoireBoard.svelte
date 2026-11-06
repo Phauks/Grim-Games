@@ -1190,7 +1190,7 @@
 		position: absolute;
 		right: var(--edge-right, var(--space-1));
 		bottom: var(--edge-bottom, var(--space-1));
-		z-index: 1;
+		z-index: var(--z-above);
 		max-width: 40%;
 		text-shadow: 0 0 0.3em var(--surface);
 		pointer-events: none;
@@ -1274,7 +1274,7 @@
 		position: absolute;
 		top: var(--space-1);
 		right: var(--space-1);
-		z-index: 2;
+		z-index: var(--z-above-2);
 		display: flex;
 		align-items: center;
 		gap: var(--space-1);
@@ -1293,6 +1293,6 @@
 		position: absolute;
 		top: var(--space-1);
 		left: var(--space-1);
-		z-index: 2;
+		z-index: var(--z-above-2);
 	}
 </style>

@@ -510,7 +510,7 @@
 	}
 	/* The list sets the height; the details scroll inside it. */
 	.pane {
-		z-index: 1;
+		z-index: var(--z-above);
 		position: absolute;
 		inset: 0;
 		border: var(--card-border);

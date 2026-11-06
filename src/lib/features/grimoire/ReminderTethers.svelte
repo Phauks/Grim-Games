@@ -66,7 +66,7 @@
 		pointer-events: none;
 	}
 	.under {
-		z-index: -1;
+		z-index: var(--z-under);
 	}
 	line {
 		stroke: var(--on-surface);

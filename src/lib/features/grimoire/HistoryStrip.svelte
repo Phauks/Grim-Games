@@ -55,7 +55,7 @@
 		left: 0;
 		right: 0;
 		top: calc(100% + var(--space-2));
-		z-index: 2;
+		z-index: var(--z-above-2);
 		display: flex;
 		align-items: center;
 		gap: var(--space-1);
