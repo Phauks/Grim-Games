@@ -65,6 +65,7 @@ import ph_hash from '~icons/ph/hash';
 import ph_heartbeat from '~icons/ph/heartbeat';
 import ph_house from '~icons/ph/house';
 import ph_identification_card from '~icons/ph/identification-card';
+import ph_image from '~icons/ph/image';
 import ph_info from '~icons/ph/info';
 import ph_lifebuoy from '~icons/ph/lifebuoy';
 import ph_lightning from '~icons/ph/lightning';
@@ -73,6 +74,7 @@ import ph_link_break from '~icons/ph/link-break';
 import ph_list from '~icons/ph/list';
 import ph_list_bullets from '~icons/ph/list-bullets';
 import ph_list_checks from '~icons/ph/list-checks';
+import ph_list_magnifying_glass from '~icons/ph/list-magnifying-glass';
 import ph_lock_simple from '~icons/ph/lock-simple';
 import ph_magnifying_glass from '~icons/ph/magnifying-glass';
 import ph_mask_happy from '~icons/ph/mask-happy';
@@ -196,6 +198,7 @@ const icons: IconMap = {
 	'ph:heartbeat': ph_heartbeat,
 	'ph:house': ph_house,
 	'ph:identification-card': ph_identification_card,
+	'ph:image': ph_image,
 	'ph:info': ph_info,
 	'ph:lifebuoy': ph_lifebuoy,
 	'ph:lightning': ph_lightning,
@@ -204,6 +207,7 @@ const icons: IconMap = {
 	'ph:list': ph_list,
 	'ph:list-bullets': ph_list_bullets,
 	'ph:list-checks': ph_list_checks,
+	'ph:list-magnifying-glass': ph_list_magnifying_glass,
 	'ph:lock-simple': ph_lock_simple,
 	'ph:magnifying-glass': ph_magnifying_glass,
 	'ph:mask-happy': ph_mask_happy,
