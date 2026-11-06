@@ -15,11 +15,9 @@
 	 */
 	interface Props {
 		session: LabSession;
-		/** The arrows go to the new game as well, for a screen with no room for its frame. */
-		open?: boolean;
 	}
 
-	let { session, open = false }: Props = $props();
+	let { session }: Props = $props();
 
 	const setup = $derived(session.setup);
 	let adding = $state(false);
@@ -32,7 +30,7 @@
 				icon="back"
 				label={t('lab.previousCharacter')}
 				disabled={session.loading || !session.core}
-				onclick={() => void session.stepCore(-1, open)}
+				onclick={() => void session.stepCore(-1)}
 			/>
 			<span class="testing" data-testid="lab-core">
 				{#if session.core}<CharacterPiece template="badge" characterId={session.core} />{:else}{t(
@@ -43,7 +41,7 @@
 				icon="forward"
 				label={t('lab.nextCharacter')}
 				disabled={session.loading || !session.core}
-				onclick={() => void session.stepCore(1, open)}
+				onclick={() => void session.stepCore(1)}
 			/>
 		</div>
 		<IconButton
