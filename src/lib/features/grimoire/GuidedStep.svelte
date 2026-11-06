@@ -37,7 +37,11 @@
 	import NightText from '#lib/features/reference/NightText.svelte';
 	import EvilInfoCards from '#lib/features/show/EvilInfoCards.svelte';
 	import StepInfoTokens from '#lib/features/info-tokens/StepInfoTokens.svelte';
-	import { withChosen, type FilledInfoToken } from '#lib/core/rules/info-token-characters.ts';
+	import {
+		stepInfoCards,
+		withChosen,
+		type FilledInfoToken
+	} from '#lib/core/rules/info-token-characters.ts';
 	import { trueCharacter } from '#lib/core/model/index.ts';
 	import { infoTokensNamedIn, type InfoToken } from '#lib/core/data/info-tokens.ts';
 	import ShowToPlayer from '#lib/features/show/ShowToPlayer.svelte';
@@ -189,10 +193,14 @@
 		asking = { token, filled };
 		askOpen = true;
 	}
-	function chosen(seatId: SeatId) {
+	/**
+	 * The player was chosen: the card opens with their character in its place. `shownAs` is the
+	 * character a Valid Information row shows them as (the Recluse as a Minion); else their own.
+	 */
+	function chosen(seatId: SeatId, shownAs?: CharacterId) {
 		askOpen = false;
 		const ask = asking;
-		const id = trueCharacter(game, seatId, characters);
+		const id = shownAs ?? trueCharacter(game, seatId, characters);
 		const character = id ? characters.get(id) : undefined;
 		if (!ask) return;
 		// Under the Vortox the waking Townsfolk's card must not show the true character.
@@ -245,6 +253,26 @@
 	/** "You are", when the step's text names it. */
 	const youAreCard = $derived(infoTokensNamedIn(step?.reminder).find((t) => t.id === 'you-are'));
 
+	/**
+	 * The step's card filled in from the player chosen, if it has one (the Dreamer's "This
+	 * player is"): a Valid Information row's Show to player opens it for that row's player, so
+	 * the other token is picked too, never the one character alone.
+	 */
+	const chosenCard = $derived(
+		step?.character
+			? stepInfoCards(
+					step.character,
+					step.reminder,
+					{ prepValues: game.prepValues, game, characters, changed: stepChanges },
+					step.infoTokenCharacters
+				).find((c) => c.filled?.chosenAt !== undefined)
+			: undefined
+	);
+	function showChosen(seatId: SeatId, shownAs: CharacterId) {
+		if (!chosenCard?.filled) return;
+		asking = { token: chosenCard.token, filled: chosenCard.filled };
+		chosen(seatId, shownAs);
+	}
 	let showOpen = $state(false);
 	/** Shown: the step's character, or a suggested answer's (the Undertaker's). */
 	let shownId = $state<CharacterId | undefined>();
@@ -424,6 +452,7 @@
 				onShowNumber={numberStep ? showNumber : undefined}
 				onShowAnswer={showAnswer}
 				onRecord={record}
+				onShowChosen={chosenCard ? showChosen : undefined}
 				onShow={(id) => {
 					// Over the open step: closing the step in the same update threw inside the
 					// dialog library (an effect scheduled outside a batch, from the Undertaker's
