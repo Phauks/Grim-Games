@@ -3,6 +3,7 @@
 	import { setupAlignmentTasks, type SetupAlignmentTask } from '#lib/core/rules/index.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import type { ShownInfoCard } from '#lib/features/show/shown.ts';
+	import ShowToPlayerButton from '#lib/features/show/ShowToPlayerButton.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { seatName } from './night-steps.ts';
@@ -72,9 +73,7 @@
 							/>
 						{/if}
 						<span class="spacer"></span>
-						<Button variant="quiet" icon="showToPlayer" onclick={() => show(seatId, task)}
-							>Show to player</Button
-						>
+						<ShowToPlayerButton onclick={() => show(seatId, task)} />
 					</li>
 				{/each}
 				{#if !task.done}
