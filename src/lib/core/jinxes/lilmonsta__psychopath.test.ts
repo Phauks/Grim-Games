@@ -10,7 +10,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { warned } from '#lib/core/model/fixtures.test-support.ts';
 import { executionSavers } from '#lib/core/rules/ability.ts';
 import { gameEnds } from '#lib/core/rules/game-end.ts';
@@ -46,7 +46,7 @@ describe("Lil' Monsta + Psychopath jinx", () => {
 			);
 
 		it("is data in the Psychopath's rules", () => {
-			expect(jinxRulesBetween('psychopath', 'lilmonsta')).toEqual({
+			expect(jinxRulesBetween('psychopath', 'lilmonsta', committedCharacters())).toEqual({
 				diesWhenExecuted: { when: [{ marked: 'Is The Demon' }] }
 			});
 		});

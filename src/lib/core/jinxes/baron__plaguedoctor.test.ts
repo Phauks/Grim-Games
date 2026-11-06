@@ -15,7 +15,7 @@ import { castWith, codes, run } from '#lib/core/model/fixtures.test-support.ts';
 import { scriptCharacterIds } from '#lib/core/model/characters.ts';
 import { givenInstead, jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 
 describe('Baron + Plague Doctor jinx', () => {
 	const data = committedGameData();
@@ -50,10 +50,10 @@ describe('Baron + Plague Doctor jinx', () => {
 		const cast = castWith({ script });
 
 		it("is data in the Plague Doctor's rules", () => {
-			expect(jinxRulesBetween('plaguedoctor', 'baron')).toEqual({
+			expect(jinxRulesBetween('plaguedoctor', 'baron', committedCharacters())).toEqual({
 				givenInstead: { instead: 'becomes', type: 'outsider', upTo: 2 }
 			});
-			expect(givenInstead('plaguedoctor', 'baron', ids)).toEqual({
+			expect(givenInstead('plaguedoctor', 'baron', ids, committedCharacters())).toEqual({
 				instead: 'becomes',
 				type: 'outsider',
 				upTo: 2

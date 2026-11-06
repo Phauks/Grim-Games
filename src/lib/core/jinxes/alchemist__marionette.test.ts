@@ -11,7 +11,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { analyseSelection, type BagSelection } from '#lib/core/rules/bag-plan.ts';
 import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
 
@@ -56,7 +56,7 @@ describe('Alchemist + Marionette jinx', () => {
 			'Alchemist with the Marionette ability: the Marionette is in play too, and the Alchemist has no ability.';
 
 		it("is data in the Alchemist's rules", () => {
-			expect(jinxRulesBetween('alchemist', 'marionette')).toEqual({
+			expect(jinxRulesBetween('alchemist', 'marionette', committedCharacters())).toEqual({
 				impairs: { kind: 'no-ability', when: ['has-partner-ability'] },
 				partnerInPlay: {}
 			});

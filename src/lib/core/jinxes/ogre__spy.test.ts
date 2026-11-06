@@ -11,7 +11,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong, type Script } from '#lib/core/data/index.ts';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { castWith } from '#lib/core/model/fixtures.test-support.ts';
 import { registrations } from '#lib/core/rules/ability.ts';
 import { becomesOffer } from '#lib/core/rules/becomes.ts';
@@ -45,7 +45,7 @@ describe('Ogre + Spy jinx', () => {
 		const cast = castWith({ script: scriptOf(['ogre', 'spy', 'imp', 'chef', 'empath']) });
 
 		it("is data in the Spy's rules", () => {
-			expect(jinxRulesBetween('spy', 'ogre')).toEqual({
+			expect(jinxRulesBetween('spy', 'ogre', committedCharacters())).toEqual({
 				registersTo: { alignments: ['evil'], always: true }
 			});
 		});

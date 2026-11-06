@@ -11,7 +11,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong, type Script } from '#lib/core/data/index.ts';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { castWith, run } from '#lib/core/model/fixtures.test-support.ts';
 import { nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
 import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
@@ -49,7 +49,7 @@ describe('Cannibal + Princess jinx', () => {
 			alerts.filter((a) => a.kind === 'no-kill');
 
 		it("is data in the Cannibal's rules", () => {
-			expect(jinxRulesBetween('cannibal', 'princess')).toEqual({
+			expect(jinxRulesBetween('cannibal', 'princess', committedCharacters())).toEqual({
 				noKill: {
 					killer: 'demon',
 					when: ['nominated-partner', 'partner-executed', 'partner-dead']

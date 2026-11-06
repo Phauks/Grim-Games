@@ -10,7 +10,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
 import { notShownGiven } from '#lib/core/rules/jinx-effects.ts';
 import { nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
@@ -41,7 +41,7 @@ describe('Alchemist + Boffin jinx', () => {
 
 		it("is data in the Alchemist's rules", () => {
 			// Wiki: "If the Alchemist has the Boffin ability, the Alchemist does not learn what ability the Demon has."
-			expect(jinxRulesBetween('alchemist', 'boffin')).toEqual({
+			expect(jinxRulesBetween('alchemist', 'boffin', committedCharacters())).toEqual({
 				notShown: { what: 'given-ability' }
 			});
 		});

@@ -59,6 +59,14 @@ function asCustom(data: GameData): GameData {
 	};
 }
 
+/**
+ * Every official character by id, to pass where a reader takes `characters`: in the parity run
+ * each carries its own rules block, so a test reads its data as a custom character's (M57).
+ */
+export function committedCharacters(): ReadonlyMap<CharacterId, Character> {
+	return committedGameData().byId;
+}
+
 /** An official character by id; throws if roles.json has no such character. */
 export function committedCharacter(id: CharacterId): Character {
 	const character = committedGameData().byId.get(id);

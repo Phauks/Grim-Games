@@ -10,7 +10,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong, type Script } from '#lib/core/data/index.ts';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 import { withGainedSteps } from '#lib/core/rules/gained-abilities.ts';
 import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
@@ -49,7 +49,9 @@ describe('Cannibal + Zealot jinx', () => {
 			.reminder('zealot', 'cannibal', 'Lunch');
 
 		it("is data in the Cannibal's rules", () => {
-			expect(jinxRulesBetween('cannibal', 'zealot')).toEqual({ learns: { what: 'ability' } });
+			expect(jinxRulesBetween('cannibal', 'zealot', committedCharacters())).toEqual({
+				learns: { what: 'ability' }
+			});
 		});
 
 		it('the Zealot has no night text, so a step of its own wakes the Cannibal to learn it', () => {

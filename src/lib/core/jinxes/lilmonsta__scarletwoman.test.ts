@@ -10,7 +10,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { becomesOffer } from '#lib/core/rules/becomes.ts';
 import { gameEnds } from '#lib/core/rules/game-end.ts';
 import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
@@ -45,7 +45,7 @@ describe("Lil' Monsta + Scarlet Woman jinx", () => {
 		const swToken = { characterId: 'scarletwoman', label: 'Is The Demon' };
 
 		it("is data in Lil' Monsta's rules", () => {
-			expect(jinxRulesBetween('lilmonsta', 'scarletwoman')).toEqual({
+			expect(jinxRulesBetween('lilmonsta', 'scarletwoman', committedCharacters())).toEqual({
 				carriedBy: { marked: 'Is The Demon' }
 			});
 		});

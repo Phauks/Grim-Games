@@ -11,7 +11,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong, type Script } from '#lib/core/data/index.ts';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import type { Command } from '#lib/core/engine/index.ts';
 import type { Game } from '#lib/core/model/types.ts';
 import { castWith, type CastGame } from '#lib/core/model/fixtures.test-support.ts';
@@ -57,7 +57,9 @@ describe('Leviathan + Mayor jinx', () => {
 			]);
 
 		it("is data in the Leviathan's rules", () => {
-			expect(ownJinxRules({ script: scriptOf(ids) }, 'leviathan', 'mayor')).toEqual({
+			expect(
+				ownJinxRules({ script: scriptOf(ids) }, 'leviathan', 'mayor', committedCharacters())
+			).toEqual({
 				endsGame: { kind: 'day-without-execution', winner: 'good', day: 5 }
 			});
 		});

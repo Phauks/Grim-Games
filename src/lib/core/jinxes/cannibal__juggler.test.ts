@@ -10,7 +10,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong, type Script } from '#lib/core/data/index.ts';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
 import { nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
@@ -63,7 +63,9 @@ describe('Cannibal + Juggler jinx', () => {
 		const eaten = guessed.execute('juggler').reminder('juggler', 'cannibal', 'Lunch');
 
 		it("is data in the Cannibal's rules", () => {
-			expect(jinxRulesBetween('cannibal', 'juggler')).toEqual({ learns: { what: 'answer' } });
+			expect(jinxRulesBetween('cannibal', 'juggler', committedCharacters())).toEqual({
+				learns: { what: 'answer' }
+			});
 		});
 
 		it("tonight the Cannibal's Juggler step answers with the Juggler's own guesses", () => {

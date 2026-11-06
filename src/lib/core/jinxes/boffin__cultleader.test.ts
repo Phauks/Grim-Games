@@ -16,7 +16,7 @@ import { cantTurnGood } from '#lib/core/rules/becomes.ts';
 import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
 import { scriptCharacterIds } from '#lib/core/model/characters.ts';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 
 describe('Boffin + Cult Leader jinx', () => {
 	const data = committedGameData();
@@ -56,7 +56,9 @@ describe('Boffin + Cult Leader jinx', () => {
 		});
 
 		it("is data in the Boffin's rules", () => {
-			expect(jinxRulesBetween('boffin', 'cultleader')).toEqual({ noTurnGood: {} });
+			expect(jinxRulesBetween('boffin', 'cultleader', committedCharacters())).toEqual({
+				noTurnGood: {}
+			});
 			expect(ids).toContain('cultleader');
 		});
 

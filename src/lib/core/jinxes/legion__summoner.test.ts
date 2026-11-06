@@ -10,7 +10,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
 import { allEvilBecomeTests } from './legion.test-support.ts';
 
@@ -33,7 +33,9 @@ describe('Legion + Summoner jinx', () => {
 
 	it("is data in the Summoner's rules", () => {
 		// Wiki: "If Legion is summoned, all evil players become Legion."
-		expect(jinxRulesBetween('summoner', 'legion')).toEqual({ allEvilBecome: {} });
+		expect(jinxRulesBetween('summoner', 'legion', committedCharacters())).toEqual({
+			allEvilBecome: {}
+		});
 	});
 
 	allEvilBecomeTests('summoner');

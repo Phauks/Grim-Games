@@ -11,7 +11,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong, type Script } from '#lib/core/data/index.ts';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import type { Command } from '#lib/core/engine/index.ts';
 import { castWith, type CastGame } from '#lib/core/model/fixtures.test-support.ts';
 import { ownJinxRules } from '#lib/core/rules/jinxes.ts';
@@ -55,7 +55,9 @@ describe('King + Leviathan jinx', () => {
 			wakeConditionMet(game, 'king', king, ctx.characters, new Set());
 
 		it("is data in the King's rules", () => {
-			expect(ownJinxRules({ script: scriptOf(ids) }, 'king', 'leviathan')).toEqual({
+			expect(
+				ownJinxRules({ script: scriptOf(ids) }, 'king', 'leviathan', committedCharacters())
+			).toEqual({
 				deadAtLeast: { dead: 1, when: ['partner-in-play'] }
 			});
 		});

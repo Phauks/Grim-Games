@@ -11,7 +11,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong, type Script } from '#lib/core/data/index.ts';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { castWith, run } from '#lib/core/model/fixtures.test-support.ts';
 import { nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
 import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
@@ -47,7 +47,9 @@ describe('Al-Hadikhia + Princess jinx', () => {
 		});
 
 		it("is data in the Al-Hadikhia's rules", () => {
-			expect(jinxRulesBetween('alhadikhia', 'princess')).toEqual({ noKill: { on: 'token' } });
+			expect(jinxRulesBetween('alhadikhia', 'princess', committedCharacters())).toEqual({
+				noKill: { on: 'token' }
+			});
 		});
 
 		it("shows no kill tonight while the Princess's token is on it", () => {

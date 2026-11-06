@@ -10,7 +10,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
 import { nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
 import { reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
@@ -45,7 +45,7 @@ describe("Lil' Monsta + Poppy Grower jinx", () => {
 			reminderTargetMisses(s.game, babysitter, s.seat(on), s.characters);
 
 		it("is data in Lil' Monsta's rules", () => {
-			expect(jinxRulesBetween('lilmonsta', 'poppygrower')).toEqual({
+			expect(jinxRulesBetween('lilmonsta', 'poppygrower', committedCharacters())).toEqual({
 				carriedBy: { type: 'minion', when: ['partner-alive'] },
 				wakes: { how: 'one-by-one', when: ['partner-alive'] }
 			});

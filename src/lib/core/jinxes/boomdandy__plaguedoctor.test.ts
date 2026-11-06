@@ -15,7 +15,7 @@ import { castWith, codes, run } from '#lib/core/model/fixtures.test-support.ts';
 import { scriptCharacterIds } from '#lib/core/model/characters.ts';
 import { givenInstead, jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 
 describe('Boomdandy + Plague Doctor jinx', () => {
 	const data = committedGameData();
@@ -50,10 +50,12 @@ describe('Boomdandy + Plague Doctor jinx', () => {
 		const cast = castWith({ script });
 
 		it("is data in the Plague Doctor's rules", () => {
-			expect(jinxRulesBetween('plaguedoctor', 'boomdandy')).toEqual({
+			expect(jinxRulesBetween('plaguedoctor', 'boomdandy', committedCharacters())).toEqual({
 				givenInstead: { instead: 'becomes' }
 			});
-			expect(givenInstead('plaguedoctor', 'boomdandy', ids)).toEqual({ instead: 'becomes' });
+			expect(givenInstead('plaguedoctor', 'boomdandy', ids, committedCharacters())).toEqual({
+				instead: 'becomes'
+			});
 		});
 
 		it('warns when the Storyteller takes it, and a player can become it', () => {

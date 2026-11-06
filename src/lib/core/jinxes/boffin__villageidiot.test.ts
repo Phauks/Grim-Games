@@ -12,7 +12,7 @@
 import { describe, expect, it } from 'vitest';
 import { jinxedPartners, jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 
 describe('Boffin + Village Idiot jinx', () => {
 	const data = committedGameData();
@@ -34,7 +34,9 @@ describe('Boffin + Village Idiot jinx', () => {
 	// Both pages' Related Jinxes: given a spare token, the Boffin may give the Demon the Village Idiot ability, though one
 	// is in play. Its picker keeps the in-play Village Idiot.
 	it("lets the Boffin's picker offer the Village Idiot while one is in play", () => {
-		expect(jinxRulesBetween('boffin', 'villageidiot')).toEqual({ spareToken: {} });
+		expect(jinxRulesBetween('boffin', 'villageidiot', committedCharacters())).toEqual({
+			spareToken: {}
+		});
 		expect(jinxedPartners('boffin', 'spareToken', ['boffin', 'villageidiot', 'chef'])).toEqual([
 			'villageidiot'
 		]);

@@ -10,7 +10,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import type { ReminderLabel } from '#lib/core/data/index.ts';
 import { warned } from '#lib/core/model/fixtures.test-support.ts';
 import { executionOutcomes } from '#lib/core/rules/execution-outcome.ts';
@@ -44,7 +44,7 @@ describe('Fearmonger + Vizier jinx', () => {
 		const feared = base.reminder('chef', 'fearmonger', 'Fear' as ReminderLabel);
 
 		it("is data in the Vizier's rules", () => {
-			expect(jinxRulesBetween('vizier', 'fearmonger')).toEqual({
+			expect(jinxRulesBetween('vizier', 'fearmonger', committedCharacters())).toEqual({
 				learns: { what: 'partner-choice' },
 				noExecuteNow: { player: 'marked', token: 'Fear' }
 			});

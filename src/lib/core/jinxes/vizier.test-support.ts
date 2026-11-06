@@ -5,6 +5,7 @@
  * - with the Courtier and the Preacher, a Vizier whose ability that partner took learns this
  *   and still can't die by day (`keepsProtection`).
  */
+import { committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { describe, expect, it } from 'vitest';
 import type { CharacterId, Script } from '#lib/core/data/index.ts';
 import { abilityState, executionSavers, protection } from '#lib/core/rules/ability.ts';
@@ -36,7 +37,9 @@ export function notDeclaredTests(partner: CharacterId) {
 
 	describe("the Storyteller doesn't declare the Vizier", () => {
 		it("is data in the Vizier's rules", () => {
-			expect(jinxRulesBetween('vizier', partner)).toEqual({ notDeclared: {} });
+			expect(jinxRulesBetween('vizier', partner, committedCharacters())).toEqual({
+				notDeclared: {}
+			});
 		});
 
 		it('holds while both are on the script, even with the partner not in play', () => {
@@ -71,7 +74,9 @@ export function keepsProtectionTests(
 
 	describe('a Vizier who lost their ability to the partner learns this and still cannot die by day', () => {
 		it("is data in the Vizier's rules", () => {
-			expect(jinxRulesBetween('vizier', partner)).toEqual({ keepsProtection: {} });
+			expect(jinxRulesBetween('vizier', partner, committedCharacters())).toEqual({
+				keepsProtection: {}
+			});
 		});
 
 		it("survives the town's execution with no ability", () => {

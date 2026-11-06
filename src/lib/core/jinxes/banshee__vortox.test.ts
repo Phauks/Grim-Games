@@ -10,7 +10,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong, type Script } from '#lib/core/data/index.ts';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { scenario, type Scenario } from '#lib/core/testing/scenario.ts';
 import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
 import { nightStepAlerts } from '#lib/core/rules/night-alerts.ts';
@@ -48,7 +48,9 @@ describe('Banshee + Vortox jinx', () => {
 		}).dies('banshee', 'vortox');
 
 		it("is data in the Vortox's rules", () => {
-			expect(jinxRulesBetween('vortox', 'banshee')).toEqual({ trueInfo: {} });
+			expect(jinxRulesBetween('vortox', 'banshee', committedCharacters())).toEqual({
+				trueInfo: {}
+			});
 		});
 
 		it("the Vortox doesn't make the Banshee's announcement false, only other Townsfolk's", () => {

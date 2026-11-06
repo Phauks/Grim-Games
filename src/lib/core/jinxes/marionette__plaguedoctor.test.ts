@@ -17,7 +17,7 @@ import { trueCharacter } from '#lib/core/model/selectors.ts';
 import { demonGoodNeighbours, replacingReminder } from '#lib/core/rules/becomes.ts';
 import { givenInstead, jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 
 describe('Marionette + Plague Doctor jinx', () => {
 	const data = committedGameData();
@@ -52,10 +52,10 @@ describe('Marionette + Plague Doctor jinx', () => {
 		const cast = castWith({ script });
 
 		it("is data in the Plague Doctor's rules", () => {
-			expect(jinxRulesBetween('plaguedoctor', 'marionette')).toEqual({
+			expect(jinxRulesBetween('plaguedoctor', 'marionette', committedCharacters())).toEqual({
 				givenInstead: { instead: 'becomes', where: 'demon-good-neighbour' }
 			});
-			expect(givenInstead('plaguedoctor', 'marionette', ids)).toEqual({
+			expect(givenInstead('plaguedoctor', 'marionette', ids, committedCharacters())).toEqual({
 				instead: 'becomes',
 				where: 'demon-good-neighbour'
 			});
