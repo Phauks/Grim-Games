@@ -421,6 +421,8 @@ export type Command =
 			holds?: boolean;
 			answer?: GuessAnswer;
 			customAnswer?: string;
+			/** Written during the night for the coming day: New day keeps it for that day. */
+			forComingDay?: boolean;
 	  }
 	/** Replaces a note's text, guesses, truth and answer (leaving one out clears it). */
 	| {

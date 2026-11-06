@@ -133,7 +133,7 @@ test('the day view recommends Savant information until it is set for today', asy
 	await expect(info).not.toHaveClass(/recommend/);
 });
 
-test('the end of the night offers to set the Savant’s information', async ({ page }) => {
+test('ending the night offers to set the Savant’s information before Dawn', async ({ page }) => {
 	// Eight character picks before the night: about 15s alone, past 30s on a loaded runner.
 	test.setTimeout(90_000);
 	await page.goto('/new');
@@ -156,8 +156,11 @@ test('the end of the night offers to set the Savant’s information', async ({ p
 		.getByRole('alertdialog', { name: 'End the night?' })
 		.getByRole('button', { name: 'Confirm' })
 		.tap();
-	// A question, never a block (Trevor, 2026-10-23: L46).
+	// A question, never a block (Trevor, 2026-10-23: L46), before Dawn (2026-11-06): the night
+	// is still on until it is answered.
 	const ask = page.getByRole('alertdialog', { name: 'Set the Savant’s information for today?' });
+	await expect(ask).toBeVisible();
+	await expect(page.getByText('End night', { exact: true }).first()).toBeAttached();
 	// Its switch is in Settings, through ⋯ (Trevor, 2026-10-30).
 	await ask.getByRole('button', { name: 'More', exact: true }).tap();
 	await page.getByRole('menuitem', { name: 'View in settings' }).tap();
@@ -172,6 +175,7 @@ test('the end of the night offers to set the Savant’s information', async ({ p
 	await expect(savant.getByTestId('savant-line')).toHaveCount(2);
 	await savant.getByRole('button', { name: 'Use these' }).tap();
 	await expect(savant).toBeHidden();
+	// Then Dawn: the day begins with the information already set for it.
 	await expect(page.getByTestId('savant-info')).toHaveAttribute('data-marked', 'true');
 });
 

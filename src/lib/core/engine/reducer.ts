@@ -16,6 +16,7 @@ import type {
 } from '#lib/core/model/index.ts';
 import { withGiven } from '#lib/core/model/given-abilities.ts';
 import type { GameEvent } from './events.ts';
+import { startDay } from './day-start.ts';
 
 function newSeat(seatId: SeatId, playerName?: PlayerName, notInPlay?: true): Seat {
 	const seat: Seat = { seatId, dead: false, ghostVoteUsed: false, overrides: [], reminders: [] };
@@ -739,11 +740,7 @@ export function applyEvent(game: Game | undefined, event: GameEvent): Game {
 			return { ...game, today };
 		}
 		case 'DayStarted':
-			return {
-				...game,
-				today: { entries: [] },
-				pastDays: [...game.pastDays, { ...game.today, closedAt: event.at }]
-			};
+			return startDay(game, event.at);
 		case 'DrawCancelled': {
 			const bag = game.bag;
 			if (!bag || !Object.hasOwn(bag.tiles, event.tileId)) return game;

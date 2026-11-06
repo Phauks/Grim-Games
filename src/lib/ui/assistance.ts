@@ -74,7 +74,7 @@ export const ASSIST_LABELS: Record<AssistKey, { label: string; description: stri
 	savantInfo: {
 		label: 'Suggest Savant information',
 		description:
-			"One true and one false statement for the Savant, worked out from the grimoire, in the Savant seat's ⋯ menu."
+			"One true and one false statement for the Savant, worked out from the grimoire, in the Savant seat's ⋯ menu, and offered before each Dawn."
 	},
 	playerClaims: {
 		label: 'Log player claims',

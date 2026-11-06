@@ -459,6 +459,11 @@ export type DayEntry =
 			 * Trevor, 2026-10-31, the answers are a range). Never set with `answer`.
 			 */
 			customAnswer?: string;
+			/**
+			 * Written during the night for the day it ends with (the Savant's information, set
+			 * before Dawn: Trevor, 2026-11-06). New day keeps it in that day's log.
+			 */
+			forComingDay?: true;
 	  }
 	| {
 			kind: 'info';

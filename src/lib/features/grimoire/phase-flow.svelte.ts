@@ -47,8 +47,8 @@ export interface PhaseFlowContext {
 	hand: ReminderHand;
 	/** The first night started (the board rereads when the game started). */
 	started(): void;
-	/** Offers the Savant's information after a night. */
-	offerSavant(): void;
+	/** Offers the Savant's information before Dawn, then runs `next` (the dawn). */
+	askSavant(next: () => void): void;
 }
 
 /** The board's pick for no execution, and for the Storyteller executed (the Atheist). */
@@ -271,14 +271,16 @@ export class PhaseFlow {
 	}
 
 	endNight(): void {
-		const { grimoire, nw, setDayOpen, offerSavant } = this.#context();
-		if (!grimoire.endNight()) return;
-		nw.walk = undefined;
-		// Dawn's Reset Reminders first, when it asks; then the day.
-		grimoire.afterDawnAsk(() => {
-			// Into the day, or stay on the grimoire (Trevor, 2026-10-18: a Storyteller setting).
-			if (preferences.current.assistance.dayAfterNight) setDayOpen(true);
-			offerSavant();
+		// The Savant's information is set before Dawn (Trevor, 2026-11-06), then the day starts.
+		this.#context().askSavant(() => {
+			const { grimoire, nw, setDayOpen } = this.#context();
+			if (!grimoire.endNight()) return;
+			nw.walk = undefined;
+			// Dawn's Reset Reminders first, when it asks; then the day.
+			grimoire.afterDawnAsk(() => {
+				// Into the day, or stay on the grimoire (Trevor, 2026-10-18: a Storyteller setting).
+				if (preferences.current.assistance.dayAfterNight) setDayOpen(true);
+			});
 		});
 	}
 

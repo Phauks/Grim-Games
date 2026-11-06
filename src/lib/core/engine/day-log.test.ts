@@ -11,6 +11,7 @@ import { newGame, refused, run, warned } from '#lib/core/model/fixtures.test-sup
 import type { Command } from './commands.ts';
 import { undo, type GameSession } from './log.ts';
 import { applyEvent } from './reducer.ts';
+import { dayAhead } from './dawns.ts';
 
 const names = ['Ana', 'Ben', 'Cat', 'Dev', 'Eve'];
 
@@ -726,6 +727,71 @@ describe('NewDay', () => {
 		expect(next.game.seats).toEqual(s.game.seats);
 		expect(undo(next).game.today).toEqual(day);
 		expect(undo(next).game.pastDays).toEqual([]);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Savant: the information is for the day, set before
+	// Dawn (Trevor, 2026-11-06), so New day keeps a note written overnight for that day.
+	it('keeps a note written overnight for the coming day in the new day’s log', () => {
+		// Wiki: "Each day, you may visit the Storyteller to learn 2 things in private: 1 is true & 1 is false."
+		const { session, ctx, seats } = setup();
+		const s = run(
+			session,
+			ctx,
+			{ type: 'AssignCharacter', seatId: seats[2], characterId: 'savant' },
+			{ type: 'DayNote', characterId: 'savant', seatId: seats[2], text: 'True: yesterday' },
+			{
+				type: 'DayNote',
+				characterId: 'savant',
+				seatId: seats[2],
+				text: 'True: for today',
+				forComingDay: true
+			}
+		);
+		const ahead = s.game.today.entries[1];
+		expect(ahead).toMatchObject({ kind: 'note', text: 'True: for today', forComingDay: true });
+		const next = run(s, ctx, { type: 'NewDay' });
+		expect(next.game.today.entries).toEqual([
+			{
+				kind: 'note',
+				entryId: ahead.entryId,
+				characterId: 'savant',
+				seatId: seats[2],
+				text: 'True: for today'
+			}
+		]);
+		expect(next.game.pastDays.at(-1)!.entries.map((e) => e.kind === 'note' && e.text)).toEqual([
+			'True: yesterday'
+		]);
+		expect(undo(next).game.today).toEqual(s.game.today);
+		// dayAhead is that same new day, worked out before Dawn.
+		expect(dayAhead(s.game).today).toEqual(next.game.today);
+		expect(dayAhead(s.game).pastDays.map((d) => d.entries)).toEqual(
+			next.game.pastDays.map((d) => d.entries)
+		);
+	});
+
+	// https://wiki.bloodontheclocktower.com/Alsaahir: one guess a day, so a guess written for the
+	// coming day doesn't count against the day ending.
+	it('counts a note for the coming day towards that day, not the one ending', () => {
+		// Wiki: "Each day, if you publicly guess which players are Minion(s) and which are Demon(s), good wins."
+		const { session, ctx, seats } = setup();
+		const s = run(session, ctx, {
+			type: 'AssignCharacter',
+			seatId: seats[2],
+			characterId: 'alsaahir'
+		});
+		const note = (forComingDay: boolean): Command => ({
+			type: 'DayNote',
+			characterId: 'alsaahir',
+			seatId: seats[2],
+			text: '',
+			guesses: [{ seatId: seats[0], characterId: 'imp' }],
+			forComingDay
+		});
+		const once = run(s, ctx, note(false));
+		expect(warned(once, ctx, note(false))).toEqual(['already-used']);
+		expect(warned(once, ctx, note(true))).toEqual([]);
+		expect(warned(run(once, ctx, note(true)), ctx, note(true))).toEqual(['already-used']);
 	});
 
 	it('warns, but goes ahead, when nothing was logged', () => {

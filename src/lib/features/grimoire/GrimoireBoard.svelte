@@ -20,7 +20,7 @@
 	import { boardLooks } from './board-looks.svelte.ts';
 	import BoardLogo from '#lib/features/scripts/BoardLogo.svelte';
 	import { goto, replaceState } from '$app/navigation';
-	import { onMount, tick, untrack, type Snippet } from 'svelte';
+	import { onMount, untrack, type Snippet } from 'svelte';
 	import { REMINDERS_HASH } from '#lib/features/setup/setup-steps.ts';
 	import LateSeatOnBoard from '#lib/features/late-player/LateSeatOnBoard.svelte';
 	import { resolve } from '$app/paths';
@@ -42,7 +42,6 @@
 		todaysNominations,
 		mayNominate,
 		characterNominationPrompts,
-		dayClaim,
 		type CharacterNominationPrompt
 	} from '#lib/core/rules/index.ts';
 	import { playedRules } from '#lib/features/modes/game-mode.ts';
@@ -53,7 +52,6 @@
 	import SoundboardDialog from '#lib/features/sound/SoundboardDialog.svelte';
 	import BluffsSheet from '#lib/features/bluffs/BluffsSheet.svelte';
 	import { showableBluffSets } from '#lib/features/bluffs/bluffs.ts';
-	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import {
@@ -82,8 +80,7 @@
 	import CoverButton from '#lib/features/show/CoverButton.svelte';
 	import FairPlayNotice from '#lib/features/show/FairPlayNotice.svelte';
 	import type { CoverDetails } from '#lib/features/show/CoverScreen.svelte';
-	import SavantSheet from '#lib/features/savant/SavantSheet.svelte';
-	import AidMenu from '#lib/features/settings/AidMenu.svelte';
+	import SavantAsk from '#lib/features/savant/SavantAsk.svelte';
 	import { playersDialog } from '#lib/features/room/players-dialog.svelte.ts';
 	import { DAY_HASH } from '#lib/features/day/day-hash.ts';
 	import SeatSheet from './SeatSheet.svelte';
@@ -495,28 +492,8 @@
 	let dayOpen = $state(false);
 	// End game asked for from the day sheet (the Fiddle contest) opens over the board.
 	$effect.pre(() => void (endGameRequest.pending && (dayOpen = false)));
-	/** The Savant sheet, from the day view's Savant info button (L5). */
-	let savantSeat = $state<SeatId | undefined>();
-	let savantOpen = $state(false);
-	/**
-	 * At the end of the night, a living Savant's information is offered (Trevor, 2026-10-23:
-	 * L46): a question, never a block.
-	 */
-	let savantAskOpen = $state(false);
-	function offerSavant() {
-		if (!preferences.current.assistance.savantInfo || grimoire.open.viewOnly) return;
-		const seatId = game.seating.find(
-			(id) =>
-				dayClaim(game.seats[id].characterId ?? '', characters) === 'statements' &&
-				!game.seats[id].dead
-		);
-		if (seatId === undefined) return;
-		savantSeat = seatId;
-		// After the day view has opened, if it opens too, so the question is above it.
-		void tick().then(() =>
-			requestAnimationFrame(() => requestAnimationFrame(() => (savantAskOpen = true)))
-		);
-	}
+	/** The Savant sheet and the question offering it before Dawn. */
+	let savant: SavantAsk;
 	// ── Assisted night order (Trevor, 2026-10-16): night-walk.svelte.ts ──
 	// Typed, as seat sizes depend on whether the walk-through is open.
 	const nw: NightWalk = new NightWalk((): NightWalkContext => ({
@@ -565,7 +542,7 @@
 		notStarted: phaseNow.kind === 'setup',
 		hand,
 		started: () => status.started(),
-		offerSavant
+		askSavant: (next) => savant.ask(next)
 	}));
 
 	// ── End game (Trevor, 2026-10-16): the game moves to History ──
@@ -1117,19 +1094,9 @@
 	{town}
 	onEndDay={() => flow.startExecution()}
 	onExecute={(seatId, cause) => flow.executeForMadness(seatId, cause)}
-	onSavant={(seatId) => {
-		savantSeat = seatId;
-		savantOpen = true;
-	}}
+	onSavant={(seatId) => savant.show(seatId)}
 />
-<SavantSheet bind:open={savantOpen} {grimoire} seatId={savantSeat} />
-<ConfirmDialog
-	bind:open={savantAskOpen}
-	title={t('day.savantAsk')}
-	onConfirm={() => (savantOpen = true)}
->
-	{#snippet headActions()}<AidMenu aid="savantInfo" />{/snippet}
-</ConfirmDialog>
+<SavantAsk bind:this={savant} {grimoire} />
 
 <GuidedStep
 	bind:open={nw.guideOpen}
