@@ -16,7 +16,7 @@ import { scriptCharacterIds } from '#lib/core/model/characters.ts';
 import { heldAbilitiesOf } from '#lib/core/rules/gained-abilities.ts';
 import { givenInstead, jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 
 describe('Plague Doctor + Scarlet Woman jinx', () => {
 	const data = committedGameData();
@@ -58,12 +58,16 @@ describe('Plague Doctor + Scarlet Woman jinx', () => {
 		const cast = castWith({ script });
 
 		it("is data in the Plague Doctor's rules", () => {
-			expect(jinxRulesBetween('plaguedoctor', 'scarletwoman')).toEqual({
+			expect(jinxRulesBetween('plaguedoctor', 'scarletwoman', committedCharacters())).toEqual({
 				givenInstead: { instead: 'a-minion' }
 			});
-			expect(givenInstead('plaguedoctor', 'scarletwoman', ids)).toEqual({ instead: 'a-minion' });
-			expect(givenInstead('plaguedoctor', 'scarletwoman', ['plaguedoctor', 'imp'])).toBeUndefined();
-			expect(givenInstead('plaguedoctor', 'poisoner', ids)).toBeUndefined();
+			expect(givenInstead('plaguedoctor', 'scarletwoman', ids, committedCharacters())).toEqual({
+				instead: 'a-minion'
+			});
+			expect(
+				givenInstead('plaguedoctor', 'scarletwoman', ['plaguedoctor', 'imp'], committedCharacters())
+			).toBeUndefined();
+			expect(givenInstead('plaguedoctor', 'poisoner', ids, committedCharacters())).toBeUndefined();
 		});
 
 		it('warns when the Storyteller takes it anyway', () => {

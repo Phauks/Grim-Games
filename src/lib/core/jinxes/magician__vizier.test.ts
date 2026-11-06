@@ -10,7 +10,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { GENERIC_REMINDER_ID } from '#lib/core/model/types.ts';
 import { abilityState } from '#lib/core/rules/ability.ts';
 import { demonInfo } from '#lib/core/rules/evil-info.ts';
@@ -47,7 +47,7 @@ describe('Magician + Vizier jinx', () => {
 		});
 
 		it("is data in the Vizier's rules", () => {
-			expect(jinxRulesBetween('vizier', 'magician')).toEqual({
+			expect(jinxRulesBetween('vizier', 'magician', committedCharacters())).toEqual({
 				noExecuteNow: { player: 'partner' }
 			});
 		});

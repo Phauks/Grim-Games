@@ -17,7 +17,7 @@ import { cantTurnGood } from '#lib/core/rules/becomes.ts';
 import { becomesOffer } from '#lib/core/rules/becomes.ts';
 import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 
 describe('Goon + Pit-Hag jinx', () => {
 	const data = committedGameData();
@@ -60,7 +60,7 @@ describe('Goon + Pit-Hag jinx', () => {
 		});
 
 		it("is data in the Pit-Hag's rules", () => {
-			expect(jinxRulesBetween('pithag', 'goon')).toEqual({ noTurnGood: {} });
+			expect(jinxRulesBetween('pithag', 'goon', committedCharacters())).toEqual({ noTurnGood: {} });
 			expect(ids).toContain('goon');
 		});
 

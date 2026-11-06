@@ -11,7 +11,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong, type Script } from '#lib/core/data/index.ts';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { gameEnds } from '#lib/core/rules/game-end.ts';
 import { jinxStoppers } from '#lib/core/rules/jinx-ends.ts';
 import { ownJinxRules } from '#lib/core/rules/jinxes.ts';
@@ -62,7 +62,9 @@ describe('Mayor + Riot jinx', () => {
 			gameEnds(s.game, s.characters).map((e) => [e.rule, e.winner, e.jinxedWith, e.holds.length]);
 
 		it("is data in the Riot's rules", () => {
-			expect(ownJinxRules({ script: scriptOf(ids) }, 'riot', 'mayor')).toEqual({
+			expect(
+				ownJinxRules({ script: scriptOf(ids) }, 'riot', 'mayor', committedCharacters())
+			).toEqual({
 				endsGame: { kind: 'ability-stopped', winner: 'good', alive: 1 }
 			});
 		});

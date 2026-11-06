@@ -11,7 +11,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong, type Script } from '#lib/core/data/index.ts';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { warned } from '#lib/core/model/fixtures.test-support.ts';
 import { gameEnds } from '#lib/core/rules/game-end.ts';
 import { ownJinxRules } from '#lib/core/rules/jinxes.ts';
@@ -52,7 +52,9 @@ describe('Atheist + Riot jinx', () => {
 			scenario(cast, { script }).newDay().newDay().reminder(1, 'riot', 'Day 3');
 
 		it("is data in the Riot's rules", () => {
-			expect(ownJinxRules({ script: scriptOf(ids) }, 'riot', 'atheist')).toEqual({
+			expect(
+				ownJinxRules({ script: scriptOf(ids) }, 'riot', 'atheist', committedCharacters())
+			).toEqual({
 				storytellerChooses: { what: 'own-execution' }
 			});
 		});

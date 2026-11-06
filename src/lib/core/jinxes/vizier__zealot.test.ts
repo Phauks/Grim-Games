@@ -11,7 +11,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong, type Script } from '#lib/core/data/index.ts';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { castWith } from '#lib/core/model/fixtures.test-support.ts';
 import { registrations } from '#lib/core/rules/ability.ts';
 import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
@@ -47,7 +47,7 @@ describe('Vizier + Zealot jinx', () => {
 		});
 
 		it("is data in the Zealot's rules", () => {
-			expect(jinxRulesBetween('zealot', 'vizier')).toEqual({
+			expect(jinxRulesBetween('zealot', 'vizier', committedCharacters())).toEqual({
 				registersTo: { alignments: ['evil'] }
 			});
 		});

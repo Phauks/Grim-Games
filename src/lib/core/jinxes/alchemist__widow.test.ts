@@ -10,7 +10,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { abilityState } from '#lib/core/rules/ability.ts';
 import { hasAbilityOf } from '#lib/core/rules/gained-abilities.ts';
 import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
@@ -37,7 +37,7 @@ describe('Alchemist + Widow jinx', () => {
 
 	it("is data in the Alchemist's rules", () => {
 		// Wiki: "An Alchemist-Widow has no Widow ability & a Widow is in play. After each execution, a living Alchemist-Widow may publicly guess a living player as the Widow. If correct, the Demon must choose the Widow tonight."
-		expect(jinxRulesBetween('alchemist', 'widow')).toEqual({
+		expect(jinxRulesBetween('alchemist', 'widow', committedCharacters())).toEqual({
 			impairs: { kind: 'no-ability', when: ['has-partner-ability'] },
 			partnerInPlay: {},
 			guessesPartner: { when: ['has-partner-ability', 'self-alive', 'after-execution'] }

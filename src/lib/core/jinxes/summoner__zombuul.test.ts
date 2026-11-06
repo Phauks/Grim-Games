@@ -10,7 +10,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import type { ReminderLabel } from '#lib/core/data/index.ts';
 import { changeableSeats } from '#lib/core/rules/becomes.ts';
 import { aliveForEnd, livesWhileDead } from '#lib/core/rules/game-end-helpers.ts';
@@ -52,7 +52,7 @@ describe('Summoner + Zombuul jinx', () => {
 	describe('a dead player summoned into the Zombuul has already died once', () => {
 		it('needs no jinx data', () => {
 			// Wiki: "If the Summoner summons a dead player into the Zombuul, the Zombuul has already "died once"."
-			expect(jinxRulesBetween('summoner', 'zombuul')).toBe(undefined);
+			expect(jinxRulesBetween('summoner', 'zombuul', committedCharacters())).toBe(undefined);
 		});
 
 		it('lets the Summoner choose a dead player', () => {

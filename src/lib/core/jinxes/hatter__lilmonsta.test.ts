@@ -10,7 +10,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { changeableSeats } from '#lib/core/rules/becomes.ts';
 import { gameEnds } from '#lib/core/rules/game-end.ts';
 import { alsoBecomes, jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
@@ -42,7 +42,9 @@ describe("Hatter + Lil' Monsta jinx", () => {
 		const base = withLilMonsta(cast).dies('hatter');
 
 		it("is data in the Hatter's rules", () => {
-			expect(jinxRulesBetween('hatter', 'lilmonsta')).toEqual({ alsoBecomes: { type: 'minion' } });
+			expect(jinxRulesBetween('hatter', 'lilmonsta', committedCharacters())).toEqual({
+				alsoBecomes: { type: 'minion' }
+			});
 		});
 
 		it('asks for a Minion when the Demon chooses Lil’ Monsta, and for nothing else', () => {

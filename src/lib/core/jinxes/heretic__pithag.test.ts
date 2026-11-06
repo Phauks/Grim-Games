@@ -11,7 +11,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { dispatch } from '#lib/core/engine/index.ts';
 import {
 	jinxForbidsBecoming,
@@ -40,8 +40,12 @@ describe('Heretic + Pit-Hag jinx', () => {
 
 	// The Heretic's Related Jinxes: only one of the Heretic and the Pit-Hag may be in play.
 	it('is data in the Heretic rules: only one of the two may be in play', () => {
-		expect(jinxRulesBetween('heretic', 'pithag')).toEqual({ exclusive: true });
-		expect(jinxRulesBetween('pithag', 'heretic')).toEqual({ exclusive: true });
+		expect(jinxRulesBetween('heretic', 'pithag', committedCharacters())).toEqual({
+			exclusive: true
+		});
+		expect(jinxRulesBetween('pithag', 'heretic', committedCharacters())).toEqual({
+			exclusive: true
+		});
 	});
 
 	it('warns at setup when both are chosen, and not when one is', () => {

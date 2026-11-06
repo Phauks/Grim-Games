@@ -16,7 +16,7 @@ import { scriptCharacterIds } from '#lib/core/model/characters.ts';
 import { cantTurnGood } from '#lib/core/rules/becomes.ts';
 import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 
 describe('Pit-Hag + Politician jinx', () => {
 	const data = committedGameData();
@@ -59,7 +59,9 @@ describe('Pit-Hag + Politician jinx', () => {
 		});
 
 		it("is data in the Pit-Hag's rules", () => {
-			expect(jinxRulesBetween('pithag', 'politician')).toEqual({ noTurnGood: {} });
+			expect(jinxRulesBetween('pithag', 'politician', committedCharacters())).toEqual({
+				noTurnGood: {}
+			});
 			expect(ids).toContain('politician');
 		});
 

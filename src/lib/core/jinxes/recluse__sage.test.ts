@@ -11,7 +11,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong, type Script } from '#lib/core/data/index.ts';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { castWith, run } from '#lib/core/model/fixtures.test-support.ts';
 import { infoPicker } from '#lib/core/rules/night-info.ts';
 import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
@@ -48,7 +48,7 @@ describe('Recluse + Sage jinx', () => {
 		});
 
 		it('needs no jinx data: the Recluse ability covers it', () => {
-			expect(jinxRulesBetween('recluse', 'sage')).toBeUndefined();
+			expect(jinxRulesBetween('recluse', 'sage', committedCharacters())).toBeUndefined();
 		});
 
 		it("offers the Recluse as the Demon in the Sage's pair, as a registration", () => {

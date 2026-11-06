@@ -11,7 +11,7 @@ import type { NightChoice } from '#lib/core/data/jinx-rules.ts';
 import type { CharacterId, Script } from '#lib/core/data/index.ts';
 import type { Command } from '#lib/core/engine/index.ts';
 import { castWith } from '#lib/core/model/fixtures.test-support.ts';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { ownJinxRules } from '#lib/core/rules/jinxes.ts';
 import {
 	jinxChoiceMisfits,
@@ -65,7 +65,9 @@ export function nightChoiceTests(demon: CharacterId, partner: CharacterId, choic
 
 	describe('the Demon chooses a player each night', () => {
 		it(`is data in the ${demon}'s rules`, () => {
-			expect(ownJinxRules({ script }, demon, partner)).toEqual({ nightChoice: choice });
+			expect(ownJinxRules({ script }, demon, partner, committedCharacters())).toEqual({
+				nightChoice: choice
+			});
 		});
 
 		it('adds a choice step on other nights, before the partner acts', () => {

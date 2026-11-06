@@ -10,7 +10,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { analyseSelection, randomSelection, type BagSelection } from '#lib/core/rules/bag-plan.ts';
 import { gameEnds } from '#lib/core/rules/game-end.ts';
 import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
@@ -63,7 +63,7 @@ describe('Alchemist + Summoner jinx', () => {
 
 		it("is data in the Alchemist's rules", () => {
 			// Wiki: "The Alchemist-Summoner does not get bluffs, and chooses which Demon but not which player. If they die before this happens, evil wins. [No Demon]"
-			expect(jinxRulesBetween('alchemist', 'summoner')).toEqual({
+			expect(jinxRulesBetween('alchemist', 'summoner', committedCharacters())).toEqual({
 				storytellerChooses: { what: 'player', when: ['has-partner-ability'] },
 				endsGame: { kind: 'gained-end', end: 'dead-without-demon', winner: 'evil' },
 				partnerSetup: {},

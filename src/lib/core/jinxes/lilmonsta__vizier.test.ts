@@ -10,7 +10,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { executionSavers, protection } from '#lib/core/rules/ability.ts';
 import { gameEnds } from '#lib/core/rules/game-end.ts';
 import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
@@ -41,7 +41,7 @@ describe("Lil' Monsta + Vizier jinx", () => {
 		const base = withLilMonsta(cast);
 
 		it("is data in the Vizier's rules", () => {
-			expect(jinxRulesBetween('vizier', 'lilmonsta')).toEqual({
+			expect(jinxRulesBetween('vizier', 'lilmonsta', committedCharacters())).toEqual({
 				diesWhenExecuted: { when: [{ marked: 'Is The Demon' }] }
 			});
 		});

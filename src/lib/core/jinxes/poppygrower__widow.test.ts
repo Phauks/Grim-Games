@@ -11,7 +11,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong, type Script } from '#lib/core/data/index.ts';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { castWith, run } from '#lib/core/model/fixtures.test-support.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import type { Game } from '#lib/core/model/types.ts';
@@ -50,7 +50,9 @@ describe('Poppy Grower + Widow jinx', () => {
 			nightStepAlerts(game, 'widow', ctx.characters).filter((a) => a.kind === 'no-grimoire');
 
 		it("is data in the Widow's rules", () => {
-			expect(jinxRulesBetween('widow', 'poppygrower')).toEqual({ grimoire: { hides: 'all' } });
+			expect(jinxRulesBetween('widow', 'poppygrower', committedCharacters())).toEqual({
+				grimoire: { hides: 'all' }
+			});
 		});
 
 		it('says so at its step while the Poppy Grower lives', () => {

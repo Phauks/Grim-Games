@@ -15,7 +15,7 @@ import { castWith, codes, run } from '#lib/core/model/fixtures.test-support.ts';
 import { scriptCharacterIds } from '#lib/core/model/characters.ts';
 import { barredAbilities, jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 
 describe('Boffin + Heretic jinx', () => {
 	const data = committedGameData();
@@ -46,7 +46,7 @@ describe('Boffin + Heretic jinx', () => {
 		const cast = castWith({ script });
 
 		it("is data in the Boffin's rules", () => {
-			expect(jinxRulesBetween('boffin', 'heretic')).toEqual({
+			expect(jinxRulesBetween('boffin', 'heretic', committedCharacters())).toEqual({
 				cannotCreate: { via: 'givesAbility' }
 			});
 		});

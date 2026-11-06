@@ -11,7 +11,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong, type Script } from '#lib/core/data/index.ts';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import type { Command } from '#lib/core/engine/index.ts';
 import { castWith } from '#lib/core/model/fixtures.test-support.ts';
 import { createdTooLate, ownJinxRules } from '#lib/core/rules/jinxes.ts';
@@ -48,7 +48,9 @@ describe('Hatter + Leviathan jinx', () => {
 		const newDay: Command = { type: 'NewDay' };
 
 		it("is data in the Hatter's rules", () => {
-			expect(ownJinxRules({ script: scriptOf(ids) }, 'hatter', 'leviathan')).toEqual({
+			expect(
+				ownJinxRules({ script: scriptOf(ids) }, 'hatter', 'leviathan', committedCharacters())
+			).toEqual({
 				cannotCreate: { via: 'changesCharacter', when: [{ afterDay: 5 }] }
 			});
 		});

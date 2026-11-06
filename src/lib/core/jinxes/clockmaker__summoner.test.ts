@@ -10,7 +10,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong, type Script } from '#lib/core/data/index.ts';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { castWith } from '#lib/core/model/fixtures.test-support.ts';
 import { registrations } from '#lib/core/rules/ability.ts';
 import { infoPicker } from '#lib/core/rules/night-info.ts';
@@ -47,7 +47,7 @@ describe('Clockmaker + Summoner jinx', () => {
 
 		it("is data in the Summoner's rules", () => {
 			// Wiki: "The Summoner registers as the Demon to the Clockmaker."
-			expect(jinxRulesBetween('summoner', 'clockmaker')).toEqual({
+			expect(jinxRulesBetween('summoner', 'clockmaker', committedCharacters())).toEqual({
 				registersTo: { types: ['demon'], always: true }
 			});
 		});

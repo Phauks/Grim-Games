@@ -10,7 +10,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { abilityState } from '#lib/core/rules/ability.ts';
 import { hasAbilityOf } from '#lib/core/rules/gained-abilities.ts';
 import { gameEnds } from '#lib/core/rules/game-end.ts';
@@ -39,7 +39,7 @@ describe('Alchemist + Mastermind jinx', () => {
 
 		it("is data in the Alchemist's rules", () => {
 			// Wiki: "An Alchemist-Mastermind has no Mastermind ability & the Mastermind is not-in-play."
-			expect(jinxRulesBetween('alchemist', 'mastermind')).toEqual({
+			expect(jinxRulesBetween('alchemist', 'mastermind', committedCharacters())).toEqual({
 				impairs: { kind: 'no-ability', when: ['has-partner-ability'] }
 			});
 		});

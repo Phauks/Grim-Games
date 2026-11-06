@@ -10,7 +10,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong, type Script } from '#lib/core/data/index.ts';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { castWith, run } from '#lib/core/model/fixtures.test-support.ts';
 import { becomesOffer } from '#lib/core/rules/becomes.ts';
 import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
@@ -49,7 +49,7 @@ describe('Ogre + Recluse jinx', () => {
 		const friend = { characterId: 'ogre', label: 'Friend' };
 
 		it('needs no jinx data for the Recluse: its own ability covers the registration', () => {
-			expect(jinxRulesBetween('recluse', 'ogre')).toBeUndefined();
+			expect(jinxRulesBetween('recluse', 'ogre', committedCharacters())).toBeUndefined();
 		});
 
 		it('offers to make the Ogre evil when its Friend is the Recluse', () => {
@@ -86,7 +86,7 @@ describe('Ogre + Recluse jinx', () => {
 			nightStepAlerts(s.game, 'ogre', s.characters).filter((a) => a.kind === 'learns-alignment');
 
 		it("is data in the Ogre's rules", () => {
-			expect(jinxRulesBetween('ogre', 'recluse')).toEqual({
+			expect(jinxRulesBetween('ogre', 'recluse', committedCharacters())).toEqual({
 				learns: {
 					what: 'alignment',
 					when: [{ partnerMarked: 'Friend' }, { alignment: 'evil' }]

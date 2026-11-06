@@ -10,7 +10,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedCharacters } from '#lib/core/testing/committed-data.ts';
 import { alignmentOf } from '#lib/core/model/selectors.ts';
 import { demonInfo } from '#lib/core/rules/evil-info.ts';
 import { jinxRulesBetween } from '#lib/core/rules/jinxes.ts';
@@ -41,7 +41,7 @@ describe('Legion + Magician jinx', () => {
 		});
 
 		it("is data in the Magician's rules", () => {
-			expect(jinxRulesBetween('legion', 'magician')).toEqual({
+			expect(jinxRulesBetween('legion', 'magician', committedCharacters())).toEqual({
 				learns: { what: 'good-players', when: ['partner-in-play', 'self-in-play'] }
 			});
 		});
