@@ -21,6 +21,7 @@
 		restoreScripts
 	} from '#lib/features/scripts/current-script.svelte.ts';
 	import ScriptCheckDialog from '#lib/features/scripts/ScriptCheckDialog.svelte';
+	import TakePhotoButton from '#lib/features/scripts/TakePhotoButton.svelte';
 	import type { FetchedScript } from '#lib/features/scripts/fetch-script.ts';
 	import type { ScriptSource } from '#lib/features/scripts/saved-scripts.ts';
 	import { fetchSharedRef, scriptShareable } from '#lib/features/scripts/share-codes.ts';
@@ -302,6 +303,11 @@
 						<Button onclick={() => chooseEdition(edition.id)}>{edition.name}</Button>
 					</li>
 				{/each}
+				<!-- A players-only game can start from a photo of the printed sheet (Trevor,
+				     2026-11-05: Take a Photo easy to see here, plan M54). -->
+				<li>
+					<TakePhotoButton onconfirm={(loaded, source) => void useScript(loaded, source)} />
+				</li>
 				<li>
 					<Button href={resolve('/scripts')} variant="quiet" icon="search"
 						>{t('player.findScript')}</Button

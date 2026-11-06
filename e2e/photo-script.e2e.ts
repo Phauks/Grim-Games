@@ -45,6 +45,10 @@ async function takePhoto(page: Page, buffer: Buffer) {
 	await page.goto('/library');
 	await page.getByRole('button', { name: 'Add script' }).tap();
 	await expect(page.getByRole('button', { name: 'Take a Photo' })).toBeVisible();
+	return readPhoto(page, buffer);
+}
+
+async function readPhoto(page: Page, buffer: Buffer) {
 	await page.getByTestId('photo-input').setInputFiles({
 		name: 'script.jpg',
 		mimeType: 'image/jpeg',
@@ -118,4 +122,50 @@ test("a sheet with its script's QR code loads that exact script", async ({ page,
 	await takePhoto(page, await photo(browser, 'Printed Sheet', rows, `${own}/play#e=bmr`));
 	await expect(page).toHaveURL(/\/play/, { timeout: 30_000 });
 	await expect(page.getByRole('heading', { name: 'Bad Moon Rising' }).first()).toBeVisible();
+});
+
+test('a player with no script yet starts from a photo on the play screen', async ({
+	page,
+	browser
+}) => {
+	// Trevor, 2026-11-05: Take a Photo easy to see where a players-only game starts.
+	const sheet = await photo(
+		browser,
+		'Trouble Brewing',
+		tb.map((r) => ({ name: r.name, ability: r.ability ?? '' }))
+	);
+	await page.goto('/play');
+	const choose = page.getByRole('region', { name: 'Choose a script' });
+	await expect(choose.getByRole('button', { name: 'Take a Photo' })).toBeVisible();
+	const dialog = await readPhoto(page, sheet);
+	await expect(dialog.getByTestId('photo-banner')).toContainText('Looks like Trouble Brewing', {
+		timeout: 90_000
+	});
+	await dialog.getByRole('button', { name: 'Load Trouble Brewing' }).tap();
+	await expect(dialog).toHaveCount(0);
+	await expect(page.getByRole('heading', { name: 'Trouble Brewing' }).first()).toBeVisible();
+	await expect(page.getByRole('tab', { name: 'Grim' })).toBeVisible();
+});
+
+test("a script sheet's PDF is read from its own text, through Upload File", async ({
+	page,
+	browser
+}) => {
+	// Trevor, 2026-11-05: a PDF given to the photo reader did nothing.
+	const context = await browser.newContext();
+	const maker = await context.newPage();
+	const rows = tb.map((r) => `<p><b>${r.name}</b> ${r.ability ?? ''}</p>`).join('');
+	await maker.setContent(`<h1 style="font-size:40px">Trouble Brewing</h1>${rows}`);
+	const pdf = await maker.pdf({ format: 'A4' });
+	await context.close();
+	await page.goto('/library');
+	await page.getByRole('button', { name: 'Add script' }).tap();
+	await page
+		.getByLabel('Script file', { exact: true })
+		.setInputFiles({ name: 'script.pdf', mimeType: 'application/pdf', buffer: pdf });
+	const dialog = page.getByRole('dialog', { name: 'Script from a photo' });
+	await expect(dialog.getByTestId('photo-banner')).toContainText('Looks like Trouble Brewing', {
+		timeout: 60_000
+	});
+	for (const r of tb) await expect(dialog.locator(`[data-character="${r.id}"]`)).toBeVisible();
 });

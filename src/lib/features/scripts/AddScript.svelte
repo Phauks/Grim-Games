@@ -34,7 +34,8 @@
 	} from './fetch-script.ts';
 	import { relaxJson } from './relaxed-json.ts';
 	import type { ScriptSource } from './saved-scripts.ts';
-	import PhotoScriptDialog from './PhotoScriptDialog.svelte';
+	import TakePhotoButton from './TakePhotoButton.svelte';
+	import { isPdf } from './pdf-reader.ts';
 	import ScriptCheckDialog from './ScriptCheckDialog.svelte';
 	import { resolveLink } from './script-links.ts';
 
@@ -73,9 +74,7 @@
 	let errorLink = $state<string | undefined>(undefined);
 	let checking = $state.raw<{ result: ScriptLoadResult; source: ScriptSource } | undefined>();
 	let fileInput: HTMLInputElement | undefined = $state();
-	let photoInput: HTMLInputElement | undefined = $state();
-	let photoOpen = $state(false);
-	let photoDialog: PhotoScriptDialog | undefined = $state();
+	let photo: TakePhotoButton | undefined = $state();
 
 	const canReadClipboard =
 		typeof navigator !== 'undefined' && typeof navigator.clipboard?.readText === 'function';
@@ -234,19 +233,9 @@
 		const input = event.currentTarget as HTMLInputElement;
 		const file = input.files?.[0];
 		input.value = '';
-		if (file) void run(() => readScriptFile(file));
-	}
-
-	/** A photo of a printed script: read on the device, then checked like any other (plan M54). */
-	function onPhoto(event: Event) {
-		const input = event.currentTarget as HTMLInputElement;
-		const file = input.files?.[0];
-		input.value = '';
-		if (!file || !photoDialog) return;
-		addOpen = false;
-		photoDialog.reset();
-		photoOpen = true;
-		void photoDialog.addPhoto(file);
+		// A PDF of a script sheet is read like a photo of it (Trevor, 2026-11-05).
+		if (file && isPdf(file)) photo?.read(file);
+		else if (file) void run(() => readScriptFile(file));
 	}
 
 	function openAdd() {
@@ -301,6 +290,10 @@
 		if (!button) return;
 		addOpen = false;
 		const file = data.files[0];
+		if (file && (isPdf(file) || file.type.startsWith('image/'))) {
+			photo?.read(file);
+			return;
+		}
 		if (file) {
 			void run(() => readScriptFile(file));
 			return;
@@ -330,19 +323,9 @@
 	bind:this={fileInput}
 	class="file"
 	type="file"
-	accept=".json,application/json,text/plain"
+	accept=".json,application/json,text/plain,.pdf,application/pdf"
 	aria-label={t('scripts.picker.fileLabel')}
 	onchange={onFile}
-/>
-<input
-	bind:this={photoInput}
-	class="file"
-	type="file"
-	accept="image/*"
-	capture="environment"
-	aria-label={t('scripts.picker.photo')}
-	data-testid="photo-input"
-	onchange={onPhoto}
 />
 
 {#snippet errorLine()}
@@ -398,7 +381,7 @@
 			<Button icon="uploadFile" disabled={busy} onclick={() => fileInput?.click()}
 				>{t('scripts.picker.file')}</Button
 			>
-			<Button icon="photo" disabled={busy} onclick={() => photoInput?.click()}
+			<Button icon="photo" disabled={busy} onclick={() => photo?.take()}
 				>{t('scripts.picker.photo')}</Button
 			>
 		</div>
@@ -438,11 +421,12 @@
 	{/snippet}
 </Dialog>
 
-<PhotoScriptDialog
-	bind:this={photoDialog}
-	bind:open={photoOpen}
-	onconfirm={(script) =>
-		void save(script, script.edition ? { kind: 'edition' } : { kind: 'photo' })}
+<!-- A photo of a printed script: read on the device, then reviewed (plan M54). -->
+<TakePhotoButton
+	bind:this={photo}
+	button={false}
+	onopen={() => (addOpen = false)}
+	onconfirm={(script, source) => void save(script, source)}
 />
 
 <ScriptCheckDialog
