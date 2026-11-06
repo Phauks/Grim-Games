@@ -61,7 +61,7 @@ export const player = {
 	'player.local.seats': { one: '{count} seat', other: '{count} seats' },
 	'player.local.dead': { one: '{count} dead', other: '{count} dead' },
 	'player.local.noneDead': 'None dead',
-	'player.local.runBy': 'Run by',
+	'player.local.host': 'Host',
 	'player.local.storyteller': 'Storyteller',
 	'player.local.localGrim': 'Local Grim',
 	'player.grim.seats': 'Seats',

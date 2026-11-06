@@ -103,7 +103,7 @@
 	 * difference between setup for a storyteller or player on the first screen"); only where
 	 * Create game goes changes.
 	 */
-	let runBy = $state<'storyteller' | 'local'>('storyteller');
+	let host = $state<'storyteller' | 'local'>('storyteller');
 
 	async function startPlayersOnly(choice: ScriptChoice = edition) {
 		starting = true;
@@ -168,22 +168,22 @@
 		standardPlayers={players ?? 8}
 		bind:modeId
 		bind:ruleIds
-		local={runBy === 'local' ? (choice) => void startPlayersOnly(choice) : undefined}
+		local={host === 'local' ? (choice) => void startPlayersOnly(choice) : undefined}
 	>
 		{#snippet top()}
 			<!-- Not over a game's board: that sheet starts the Storyteller's next game. A
 			     drop-down, as Game mode under it (Trevor, 2026-10-18: "a dropdown, not buttons"),
 			     in the settings' column (Trevor, 2026-11-06). -->
-			{#if !compact}<PageSection title={t('player.local.runBy')}>
+			{#if !compact}<PageSection title={t('player.local.host')}>
 					<Select
-						label={t('player.local.runBy')}
+						label={t('player.local.host')}
 						hideLabel
-						value={runBy}
+						value={host}
 						options={[
 							{ value: 'storyteller', label: t('player.local.storyteller') },
 							{ value: 'local', label: t('player.local.localGrim') }
 						]}
-						onChange={(v) => (runBy = v)}
+						onChange={(v) => (host = v)}
 					/>
 				</PageSection>{/if}
 		{/snippet}
@@ -207,7 +207,7 @@
 				variant="accent"
 				icon="grimoire"
 				disabled={starting}
-				onclick={() => (runBy === 'local' ? void startPlayersOnly() : begin(() => start(rules)))}
+				onclick={() => (host === 'local' ? void startPlayersOnly() : begin(() => start(rules)))}
 				>{t('modes.start')}</Button
 			>
 		{/snippet}

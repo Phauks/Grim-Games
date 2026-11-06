@@ -51,7 +51,7 @@ test('leaving a players-only town says the town stays, and the menu opens it aga
 	page
 }) => {
 	await page.goto('/new');
-	await page.getByRole('combobox', { name: 'Run by' }).tap();
+	await page.getByRole('combobox', { name: 'Host' }).tap();
 	await page.getByRole('option', { name: 'Local Grim', exact: true }).tap();
 	await page.getByRole('button', { name: 'Create game' }).tap();
 	await expect(page).toHaveURL(/\/play$/);

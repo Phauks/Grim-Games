@@ -51,9 +51,9 @@ test('New game starts a players-only game, and Join game lists it apart', async 
 	// the first screen. It just changes the options later", and players-only games "show up
 	// differently in the resume game area" (2026-11-05).
 	await page.goto('/new');
-	const runBy = page.getByRole('combobox', { name: 'Run by' });
-	await expect(runBy).toHaveText(/Storyteller/);
-	await runBy.tap();
+	const host = page.getByRole('combobox', { name: 'Host' });
+	await expect(host).toHaveText(/Storyteller/);
+	await host.tap();
 	await page.getByRole('option', { name: 'Local Grim', exact: true }).tap();
 	// The same screen: Game mode, Room vote and the script preview all stay.
 	await expect(page.getByRole('combobox', { name: 'Game mode' })).toBeVisible();

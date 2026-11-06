@@ -88,7 +88,7 @@
 		modeId?: string;
 		/** The special rules chosen, in order; New game sets them when the room votes on them. */
 		ruleIds?: string[];
-		/** Above Game mode, in the settings' column: New game's Run by. */
+		/** Above Game mode, in the settings' column: New game's Host (Storyteller or Local Grim). */
 		top?: Snippet;
 		/**
 		 * A Local Grim game (plan M55): Create game opens the mode's script on the player
