@@ -2,7 +2,7 @@
 	import { locale, t } from '#lib/i18n/locale.svelte.ts';
 	import { formatRoomCode } from '#lib/core/sync/room-code.ts';
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
-	import ScriptName from '#lib/features/scripts/ScriptName.svelte';
+	import ResumeGameRow from './ResumeGameRow.svelte';
 	import { forgetRoom } from './player.svelte.ts';
 	import { fetchRoomPreview, type GamePreview } from './room-preview.ts';
 	import { recentRooms } from './recent-rooms.ts';
@@ -58,26 +58,16 @@
 			{#each shown as room (room.code)}
 				{@const game = recentGames[room.code]}
 				<li>
-					<button type="button" class="recent-game" onclick={() => onOpen(room.code, !!room.town)}>
-						<ScriptName
-							name={game?.name ?? room.script}
-							logo={game?.logo}
-							empty={t('room.noScriptYet')}
-						>
-							{#snippet sub()}<span class="recent-line"
-									>{game?.storyteller
-										? t('room.recentLine', {
-												code: formatRoomCode(room.code),
-												name: game.storyteller
-											})
-										: formatRoomCode(room.code)}</span
-								>
-								<!-- Its own line, so a phone shows all of it (Trevor, 2026-10-26). -->
-								<span class="recent-line"
-									>{lastSeen.format(room.at)}{room.town ? ` · ${t('room.town.title')}` : ''}</span
-								>{/snippet}
-						</ScriptName>
-					</button>
+					<ResumeGameRow
+						name={game?.name ?? room.script}
+						logo={game?.logo}
+						empty={t('room.noScriptYet')}
+						line={game?.storyteller
+							? t('room.recentLine', { code: formatRoomCode(room.code), name: game.storyteller })
+							: formatRoomCode(room.code)}
+						when={`${lastSeen.format(room.at)}${room.town ? ` · ${t('room.town.title')}` : ''}`}
+						onclick={() => onOpen(room.code, !!room.town)}
+					/>
 				</li>
 			{/each}
 		</ul>
@@ -95,26 +85,5 @@
 		margin: 0;
 		padding: 0;
 		list-style: none;
-	}
-	/* Three lines always, so a room's details arriving move nothing. */
-	.recent-game {
-		display: flex;
-		align-items: center;
-		box-sizing: border-box;
-		width: 100%;
-		min-height: var(--tap-target);
-		padding: var(--space-2) var(--space-3);
-		border: 1px solid var(--border);
-		border-radius: var(--radius-md);
-		background: var(--surface-raised);
-		color: var(--on-surface);
-		font: inherit;
-		text-align: start;
-		cursor: pointer;
-	}
-	.recent-line {
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
 	}
 </style>

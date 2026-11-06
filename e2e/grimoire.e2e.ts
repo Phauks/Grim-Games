@@ -299,7 +299,12 @@ test('New game and Join game are screens of their own', async ({ page }) => {
 	// below the rooms joined as a player (Trevor, 2026-10-28).
 	await page.goto('/join');
 	await expect(page.getByRole('heading', { name: 'Join game', level: 1 })).toBeVisible();
-	await expect(page.getByRole('heading', { level: 2 })).toHaveText(['As player', 'As Storyteller']);
+	// Players only (plan M55) sits between them.
+	await expect(page.getByRole('heading', { level: 2 })).toHaveText([
+		'As player',
+		'Players only',
+		'As Storyteller'
+	]);
 	const saved = page.getByRole('link', { name: /Trouble Brewing.*Setting up · 8 seats/ });
 	await expect(saved).toBeVisible();
 	await saved.tap();
@@ -327,7 +332,8 @@ test('Join game folds As player and As Storyteller, and boxes the room code', as
 	const player = page.getByRole('button', { name: /As player/ });
 	await player.tap();
 	await expect(player).toHaveAttribute('aria-expanded', 'false');
-	await expect(page.getByText('None', { exact: true })).toBeHidden();
+	// Only Players only's None is left showing (plan M55).
+	await expect(page.getByText('None', { exact: true }).filter({ visible: true })).toHaveCount(1);
 
 	const form = page.locator('form.code-form');
 	await expect(form).toHaveCSS('border-top-style', 'solid');
