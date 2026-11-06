@@ -2426,7 +2426,7 @@ test('the board background can be an image from the device, kept after a reload'
 	await boardSettings(page, 'Board');
 	await dialog
 		.getByRole('group', { name: 'Background', exact: true })
-		.getByRole('button', { name: 'Green felt' })
+		.getByRole('button', { name: 'Felt', exact: true })
 		.tap();
 	await expect(page.getByTestId('board-background')).toHaveAttribute('data-preset', 'felt');
 	// The whole screen, under the toolbar too (Trevor, 2026-10-18).
