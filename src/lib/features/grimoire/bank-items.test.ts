@@ -64,7 +64,7 @@ describe('bankItems', () => {
 
 describe('counting runs in the bank (plan M53)', () => {
 	// Trevor (2026-11-04): "should we also bundle incrementing reminder tokens together in the
-	// bank?" Each run is one token, the next still off the board; the pulled-up bank has them all.
+	// bank?" Each run is one stacked token, the next still off the board on top.
 	const levScript: Script = {
 		entries: ['leviathan', 'chef', 'empath', 'monk', 'soldier'].map((id) => ({
 			kind: 'official' as const,
@@ -99,10 +99,14 @@ describe('counting runs in the bank (plan M53)', () => {
 			.filter((i) => i.characterId === 'leviathan' && i.label.startsWith('Day'))
 			.map((i) => i.label);
 
-	it('shows only the next day token while bundled', () => {
-		const g = withLeviathan('Day 1');
-		expect(days(bankItems(g, lev, { ...options, bundleCounters: true }))).toEqual(['Day 2']);
-		expect(days(bankItems(g, lev, options))).toEqual(['Day 2', 'Day 3', 'Day 4', 'Day 5']);
+	it('stacks the run as one token, the next day on top', () => {
+		// Trevor (2026-11-06): "Counting reminders also refers to stacking those reminders on top
+		// of each other in the bin".
+		const items = bankItems(withLeviathan('Day 1'), lev, options);
+		expect(days(items)).toEqual(['Day 2']);
+		expect(items.find((i) => i.label === 'Day 2')?.count).toBe(4);
+		const last = bankItems(withLeviathan('Day 1', 'Day 2', 'Day 3', 'Day 4'), lev, options);
+		expect(last.find((i) => i.label === 'Day 5')?.count).toBe(1);
 	});
 });
 

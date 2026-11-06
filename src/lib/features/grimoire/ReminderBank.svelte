@@ -126,8 +126,7 @@
 			focusMode,
 			stack: preferences.current.assistance.stackReminders,
 			copies: grimoire.copies,
-			bankCopies: grimoire.bankCopies,
-			bundleCounters: !binOpen
+			bankCopies: grimoire.bankCopies
 		})
 	);
 	/** Every stretch, empty ones too, so each caption is measured before it first shows. */

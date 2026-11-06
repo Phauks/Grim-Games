@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
-import { closeBin, putReminder } from './reminder-bank.ts';
+import { closeBin, putReminder, putRunReminder } from './reminder-bank.ts';
 
 // Jinxes on characters already built (L109): the Plague Doctor's ability that goes to a
 // Minion instead of the Storyteller, and the Pit-Hag's jinxes with the Goon, Damsel and Village
@@ -314,7 +314,7 @@ test('the Mayor stops the riot from the Riot’s day row, and good wins with one
 	await choose(page, 1, 'Riot');
 	await choose(page, 2, 'Mayor');
 	await choose(page, 3, 'Chef');
-	await putReminder(page, 'Day 3', 1);
+	await putRunReminder(page, 'Day 3', 1);
 	await closeBin(page);
 	const day = await openDay(page);
 	const row = day.locator('li[data-character="riot"]').first();
@@ -341,7 +341,7 @@ test('during the riot a player who nominated the Storyteller nominates again, wi
 	await startGame(page, 'Riot Atheist', ['riot', 'atheist', 'chef', 'empath', 'poisoner', 'monk']);
 	await choose(page, 1, 'Riot');
 	await choose(page, 3, 'Chef');
-	await putReminder(page, 'Day 3', 1);
+	await putRunReminder(page, 'Day 3', 1);
 	await closeBin(page);
 	await trackNominations(page);
 	await nominate(page, 3, 'Storyteller');
@@ -866,7 +866,7 @@ test('a summoned Lord of Typhon makes their other neighbour an evil Minion', asy
 	await choose(page, 2, 'Poisoner');
 	await choose(page, 3, 'Chef');
 	await choose(page, 4, 'Empath');
-	await putReminder(page, 'Night 3', 1);
+	await putRunReminder(page, 'Night 3', 1);
 	await closeBin(page);
 
 	const step = await openStep(page, 'Summoner');
@@ -908,7 +908,7 @@ test('the Summoner who makes a second living Demon is told deaths are arbitrary'
 	await choose(page, 1, 'Summoner');
 	await choose(page, 2, 'Imp');
 	await choose(page, 3, 'Chef');
-	await putReminder(page, 'Night 3', 1);
+	await putRunReminder(page, 'Night 3', 1);
 	await closeBin(page);
 
 	const step = await openStep(page, 'Summoner');
@@ -961,7 +961,7 @@ test('the Alchemist-Summoner chooses the Demon on Night 3, the Storyteller the p
 		.tap();
 	await expect(alchemist).toContainText(/Minion · Good · Seat 1[\s\S]*Summoner/);
 	await closeSheet(page);
-	await putReminder(page, 'Night 3', 1);
+	await putRunReminder(page, 'Night 3', 1);
 	await closeBin(page);
 
 	const step = await openStep(page, 'Summoner');
@@ -999,7 +999,7 @@ test('the Summoner may summon only a Pukka a night early', async ({ page }) => {
 	await choose(page, 1, 'Summoner');
 	await choose(page, 2, 'Poppy Grower');
 	await choose(page, 3, 'Chef');
-	await putReminder(page, 'Night 2', 1);
+	await putRunReminder(page, 'Night 2', 1);
 	await closeBin(page);
 
 	const step = await openStep(page, 'Summoner');
