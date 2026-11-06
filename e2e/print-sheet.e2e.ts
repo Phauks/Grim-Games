@@ -178,6 +178,48 @@ test('the sheet opens its settings beside a live preview of each numbered page',
 	);
 });
 
+// Trevor, 2026-11-06: "print settings should be separately scrollable from the print preview".
+test('the settings and the preview scroll on their own, each inside its own pane', async ({
+	page
+}) => {
+	const { screen } = await openSheet(page);
+	await expect(screen.getByTestId('print-laying-out')).toBeHidden();
+	const aside = screen.getByTestId('dialog-aside');
+	const pane = screen.getByTestId('dialog-pane');
+	const box = async (l: typeof aside) => (await l.boundingBox())!;
+	const scrollTop = (l: typeof aside) => l.evaluate((el) => el.scrollTop);
+	if ((await box(aside)).x + 1 < (await box(pane)).x) {
+		// Side by side: each pane is its own scroll box, so scrolling one leaves the other put.
+		for (const [mover, still] of [
+			[pane, aside],
+			[aside, pane]
+		] as const) {
+			const overflows = await mover.evaluate((el) => el.scrollHeight > el.clientHeight + 1);
+			if (!overflows) continue;
+			await mover.hover();
+			await page.mouse.wheel(0, 400);
+			await expect.poll(() => scrollTop(mover)).toBeGreaterThan(0);
+			expect(await scrollTop(still)).toBe(0);
+			await mover.evaluate((el) => el.scrollTo(0, 0));
+		}
+		// Each pane's scrollbar sits at its own edge, inside the dialog, not the window's.
+		const dialog = await box(screen);
+		expect((await box(aside)).x + (await box(aside)).width).toBeLessThanOrEqual(
+			(await box(pane)).x
+		);
+		expect((await box(pane)).x + (await box(pane)).width).toBeLessThanOrEqual(
+			dialog.x + dialog.width
+		);
+	} else {
+		// A phone: the settings above the preview, scrolled together.
+		expect((await box(aside)).y).toBeLessThan((await box(pane)).y);
+	}
+	// Nothing scrolls sideways.
+	expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+		true
+	);
+});
+
 // Trevor, 2026-10-29: "margin size should be choosable as inches or mm".
 test('margins are picked in eighths of an inch or in millimetres', async ({ page }) => {
 	const { fields } = await openSheet(page);
