@@ -69,7 +69,7 @@ export type PhotoLineTrace =
  * and the name it gives. Only a short line counts, so an ability that starts "By" never does.
  */
 export function bylineAuthor(text: string): string | undefined {
-	const match = /^by\s*[:.\-]?\s+(.+)$/i.exec(text.trim());
+	const match = /^by\s*[:.-]?\s+(.+)$/i.exec(text.trim());
 	const author = match?.[1].trim().replace(/[.,;]+$/, '');
 	return author && author.split(/\s+/).length <= 6 && /[a-z]/i.test(author) ? author : undefined;
 }
