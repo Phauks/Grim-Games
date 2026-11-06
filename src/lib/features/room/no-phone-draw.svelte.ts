@@ -9,10 +9,22 @@ import type { GameId, SeatId } from '#lib/core/model/index.ts';
 class NoPhoneDraw {
 	gameId = $state<GameId>();
 	seats = $state.raw<readonly SeatId[]>([]);
+	/** Every seat this showing started with, in the order its tiles stand, seen or not. */
+	#order = $state.raw<readonly SeatId[]>([]);
 
+	/** `seats` in the order their tiles stand (by name, see showCharacters). */
 	start(gameId: GameId, seats: readonly SeatId[]): void {
 		this.gameId = gameId;
 		this.seats = seats;
+		this.#order = seats;
+	}
+
+	/**
+	 * The seats of this game's showing, in tile order, the ones that have seen theirs too, so
+	 * a tile stays where it stood once seen.
+	 */
+	order(gameId: GameId | undefined): readonly SeatId[] {
+		return gameId && this.gameId === gameId ? this.#order : [];
 	}
 
 	/** The seats still to see theirs in this game. */
