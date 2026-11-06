@@ -27,6 +27,7 @@ import {
 	type JinxRuleKey,
 	type JinxRules
 } from './jinx-rules.ts';
+import { parseCharacterRules } from './character-rules.ts';
 import { readCondition, readPositive } from './jinx-conditions.ts';
 import { PROTECTS_FROM } from './parts/protects.ts';
 import { jinxNeedsOn } from './jinx-needs.ts';
@@ -342,8 +343,22 @@ const VERBS: Record<Exclude<JinxRuleKey, 'exclusive'>, Verb> = {
 	madAsPartner: plain,
 	thinksPartnerSetup: plain,
 	voter: flagVerb('countsOnlyWith'),
-	abnormalCounts: enumVerb('counts', ABNORMAL_COUNTS)
+	abnormalCounts: enumVerb('counts', ABNORMAL_COUNTS),
+	patch: { fields: ['parts'], read: readPatch }
 };
+
+/** A `patch`'s parts, each read by its own part reader; never jinxes or an optional rule. */
+function readPatch(raw: Json, path: string, issues: Issues): Json | undefined {
+	const at = `${path}.parts`;
+	if (!isObject(raw.parts) || Object.keys(raw.parts).length === 0) {
+		issues.add(at, `expected an object of parts, got ${describe(raw.parts)}`);
+		return undefined;
+	}
+	for (const key of ['jinxes', 'optionalRule'])
+		if (raw.parts[key] !== undefined) issues.add(`${at}.${key}`, 'not in a patch');
+	const parts = parseCharacterRules(raw.parts, at, issues);
+	return parts ? { parts: parts as Json } : undefined;
+}
 
 /** Every key a jinx entry may have: `exclusive`, then each verb. */
 export const JINX_RULE_KEYS: readonly JinxRuleKey[] = [
