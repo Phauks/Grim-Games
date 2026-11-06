@@ -22,16 +22,12 @@ export const COUNCIL_OF_THE_DEAD: SpecialRule = {
 		text: [
 			'At the start of Night 4, dead wake together for 2 min, then secretly vote on a living player (if there’s no majority, the ST chooses). The chosen player gets a boon.'
 		],
-		nightSteps: [
+		ruleChanges: [
 			{
-				kind: 'wake',
-				when: 'one-night',
-				night: 4,
-				dead: true,
-				minutes: 2,
 				instructions:
 					'At the start of night 4, wake the dead together for 2 minutes. Then each secretly votes for a living player. If no player has a majority, you choose. Give the chosen player a helpful effect of your choice.'
 			}
 		]
-	}
+	},
+	rules: { nightWakes: [{ when: 'one-night', night: 4, dead: true, minutes: 2 }] }
 };

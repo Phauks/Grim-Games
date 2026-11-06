@@ -258,7 +258,7 @@ export function alsoBecomes(
 	characters?: RulesLookup
 ): CharacterType | undefined {
 	const effect = ownJinxRules(game, changer, characterId, characters)?.alsoBecomes;
-	if (effect?.player === 'neighbour') return undefined;
+	if (effect?.players === 'neighbours') return undefined;
 	return jinxApplies(game, changer, characterId, effect) ? effect?.type : undefined;
 }
 
@@ -583,7 +583,7 @@ export function arbitraryDeathsTonight(
 	return livingDemon(seatId) && game.seating.some((id) => id !== seatId && livingDemon(id));
 }
 
-/** What an `alsoBecomes` jinx with `player: "neighbour"` asks of the player just made the partner. */
+/** What an `alsoBecomes` jinx with `players: "neighbours"` asks of the player just made the partner. */
 export interface NeighbourBecoming {
 	/** The type a neighbour must be, and the other neighbour becomes. */
 	type: CharacterType;
@@ -595,7 +595,7 @@ export interface NeighbourBecoming {
 
 /**
  * What a jinx asks of `seatId`'s neighbours when `changer`'s `changesCharacter` makes them
- * `created` (`alsoBecomes` with `player: "neighbour"`: a summoned Lord of Typhon must neighbour a Minion, and their
+ * `created` (`alsoBecomes` with `players: "neighbours"`: a summoned Lord of Typhon must neighbour a Minion, and their
  * other neighbour becomes an evil Minion,
  * https://wiki.bloodontheclocktower.com/Summoner#Related_Jinxes). Neighbours are the nearest
  * living players. Undefined when no jinx says so.
@@ -608,7 +608,7 @@ export function neighbourBecoming(
 	characters: CharacterLookup
 ): NeighbourBecoming | undefined {
 	const effect = ownJinxRules(game, changer, created, characters)?.alsoBecomes;
-	if (effect?.player !== 'neighbour' || !jinxApplies(game, changer, created, effect, characters))
+	if (effect?.players !== 'neighbours' || !jinxApplies(game, changer, created, effect, characters))
 		return undefined;
 	const type = effect.type;
 	const near = aliveNeighbours(game, seatId, characters).filter((id) => id !== seatId);

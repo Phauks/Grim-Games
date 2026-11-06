@@ -4,6 +4,7 @@
  * (`jinx-conditions.ts`), and the prerequisites on this character's side (`JINX_NEEDS`). Split
  * from the format so each file stays one concern.
  */
+import { readPlayersOfType } from './turns-players-rules.ts';
 import {
 	ABNORMAL_COUNTS,
 	CHOOSES_VIA,
@@ -54,6 +55,9 @@ interface Verb {
 }
 
 const plain: Verb = { fields: [], read: () => ({}) };
+
+/** Who else becomes one of the type, in `turnsPlayersInto`'s words. */
+const ALSO_BECOMES = ['drafter', 'neighbours'] as const;
 
 const enumVerb = (field: string, values: readonly string[]): Verb => ({
 	fields: [field],
@@ -205,13 +209,15 @@ const VERBS: Record<Exclude<JinxRuleKey, 'exclusive'>, Verb> = {
 		}
 	},
 	wakes: enumVerb('how', ['one-by-one']),
+	// The Lord of Typhon's `turnsPlayersInto` words and reader (P12): `drafter` is the player
+	// made the partner, `neighbours` makes both their neighbours of `type`.
 	alsoBecomes: {
-		fields: ['type', 'player'],
+		fields: ['type', 'players'],
 		main: 'type',
 		read: (raw, path, issues) => {
-			const type = readEnum(raw, 'type', CHARACTER_TYPES, path, issues, true);
-			const player = readEnum(raw, 'player', ['self', 'neighbour'], path, issues, false);
-			return type ? { type, ...(player ? { player } : {}) } : undefined;
+			const read = readPlayersOfType(raw, path, issues, ALSO_BECOMES, 'drafter');
+			if (!read) return undefined;
+			return read.players === 'drafter' ? { type: read.type } : read;
 		}
 	},
 	carriedBy: {

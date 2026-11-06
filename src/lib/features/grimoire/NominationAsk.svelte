@@ -47,7 +47,7 @@
 	/** The rule asking, shown at the top (Trevor, 2026-10-23). */
 	const spawning = $derived(
 		ask && 'rule' in ask
-			? spawnedBy(game.gameId, (p) => 'nominations' in p).filter((r) => r.name === ask.rule)
+			? spawnedBy(game.gameId, (f) => !!f.rules?.onNominated).filter((r) => r.name === ask.rule)
 			: []
 	);
 

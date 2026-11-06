@@ -46,7 +46,12 @@
 	} from '#lib/core/rules/index.ts';
 	import { playedRules } from '#lib/features/modes/game-mode.ts';
 	import { allowedOffScriptIn } from '#lib/features/modes/game-mode.ts';
-	import { nominationPrompts, type NominationPrompt } from '#lib/core/modes/index.ts';
+	import {
+		deadKeepRule,
+		nominationPrompts,
+		ruleSources,
+		type NominationPrompt
+	} from '#lib/core/modes/index.ts';
 	import DayTimer from '#lib/features/day/DayTimer.svelte';
 	import BoardActionSounds from '#lib/features/sound/BoardActionSounds.svelte';
 	import SoundboardDialog from '#lib/features/sound/SoundboardDialog.svelte';
@@ -269,11 +274,13 @@
 
 	/** The game's special rules, with its mode's own rule parts first (playedRules). */
 	const gameRules = $derived(playedRules(game.gameId));
+	/** The game's rule sources: its Fabled and Loric in play, then its mode and rules (M61e). */
+	const sources = $derived(ruleSources(game, characters, gameRules));
 	/**
-	 * Who has an ability under a special rule, when one changes it (The Phantom Detectives:
+	 * Who has an ability under a rule source, when one changes it (The Phantom Detectives:
 	 * the dead keep theirs, living Townsfolk have none).
 	 */
-	const abilitiesRule = $derived(gameRules.find((r) => r.parts.abilities)?.parts.abilities);
+	const abilitiesRule = $derived(deadKeepRule(sources));
 	/** Who died and who was revived since the New day (`tonightFromLog`). */
 	const sinceNewDay = $derived.by(() => {
 		const log = grimoire.open.session.log;
@@ -514,7 +521,12 @@
 	/** What a recorded nomination sets off: the game's special rules, then characters' abilities. */
 	function nominated(nomination: { nominator: SeatId; nominee: SeatId }) {
 		nominationAsks = [
-			...nominationPrompts(grimoire.game, nomination, gameRules, characters),
+			...nominationPrompts(
+				grimoire.game,
+				nomination,
+				ruleSources(grimoire.game, characters, gameRules),
+				characters
+			),
 			...characterNominationPrompts(grimoire.game, nomination, characters)
 		];
 	}

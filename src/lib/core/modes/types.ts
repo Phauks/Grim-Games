@@ -11,7 +11,7 @@
  */
 import type { CharacterId, CharacterType } from '#lib/core/data/types.ts';
 import type { SeatedType, TypeCounts } from '#lib/core/rules/distribution.ts';
-import type { CountOp } from '#lib/core/rules/setup-modifiers.ts';
+import type { CharacterRules } from '#lib/core/data/character-rules.ts';
 
 /** Bumped when the format changes incompatibly; `parseGameMode` reads older versions. */
 export const GAME_MODE_FORMAT = 1;
@@ -308,6 +308,8 @@ export interface GameMode {
 	/** Modes and rules this one can't sensibly be played with; choosing both warns. */
 	conflictsWith?: { modes?: string[]; rules?: string[] };
 	parts: ModeParts;
+	/** What the mode does in play, as a rules block (`FileRules`). */
+	rules?: FileRules;
 }
 
 /**
@@ -338,17 +340,7 @@ export const STACKING_PARTS = [
 export type StackingPart = (typeof STACKING_PARTS)[number];
 
 /** Parts only a special rule sets, in the order Inspect shows them. */
-export const RULE_ONLY_PARTS = [
-	'text',
-	'countChanges',
-	'travellers',
-	'seats',
-	'deaths',
-	'nightSteps',
-	'abilities',
-	'demonAttacks',
-	'nominations'
-] as const;
+export const RULE_ONLY_PARTS = ['text', 'travellers', 'seats', 'deaths'] as const;
 export type RuleOnlyPart = (typeof RULE_ONLY_PARTS)[number];
 
 /** Every part a special rule can set. */
@@ -391,63 +383,23 @@ export interface DeathsRule extends Cited {
 	kind: 'private';
 }
 
-/** A step added to each night, or to one night, for these characters, types or the dead. */
-export interface NightStep extends Cited {
-	kind: 'wake';
-	when: 'each-night' | 'each-night-except-first' | 'one-night';
-	/** The night, for `one-night` (1 is the first night). */
-	night?: number;
-	characters?: CharacterId[];
-	types?: SeatedType[];
-	/** Every dead player wakes, together (Council of the Dead). */
-	dead?: boolean;
-	/** How long they wake for, in minutes. */
-	minutes?: number;
-}
-
-/** Who has an ability, alive or dead (The Phantom Detectives). */
-export interface AbilitiesRule extends Cited {
-	kind: 'dead-keep';
-	/** Dead players keep their abilities, except these types. */
-	deadLose: SeatedType[];
-	/** Living players of these types have no ability until they die. */
-	livingLose: SeatedType[];
-}
-
-/** Who the Demon attacks each night (Trained Killer). */
-export interface DemonAttacksRule extends Cited {
-	/** The next living in-play character in script order, after the last one it killed. */
-	kind: 'script-order';
-}
-
-/**
- * What a nomination sets off (The Warrens, The Djinn's Bargain). The board offers it to the
- * Storyteller when a nomination is recorded; they decide.
- */
-export interface NominationEffect extends Cited {
-	/**
-	 * `evil-swap`: an evil nominator and a living evil nominee, neither a Traveller, swap
-	 * characters. `nominator-may-die`: the nominator may choose to die, and the nominee's
-	 * ability then works twice until the next dusk.
-	 */
-	kind: 'evil-swap' | 'nominator-may-die';
-	/** Only while at least this many players are alive. */
-	minAlive?: number;
-}
-
 export interface RuleOnlyParts {
 	/** The rule's own lines, shown on the Bootlegger (a script's `_meta.bootlegger`). */
 	text?: string[];
-	/** Changes to the type counts, added to the others' ("[+1 Demon]"). */
-	countChanges?: CountOp[];
 	travellers?: TravellersRule;
 	seats?: SeatsRule;
 	deaths?: DeathsRule;
-	nightSteps?: NightStep[];
-	abilities?: AbilitiesRule;
-	demonAttacks?: DemonAttacksRule;
-	nominations?: NominationEffect[];
 }
+
+/**
+ * What a file does in play, as a rules block (M61e, Trevor 2026-11-06: "build modes from rule
+ * parts"): the same parts a character's block has (`data/parts/`), read by the same reader, so
+ * a mode or rule is a rule source like a Fabled or Loric (`rule-effects.ts`). Count changes are
+ * `setupModifier`, who the Demon attacks `demonAttack.target`, who keeps an ability
+ * `deadKeepAbilities`, extra night wakes `nightWakes`, and what a nomination sets off
+ * `onNominated`.
+ */
+export type FileRules = CharacterRules;
 
 /** A special rule's pool can only add to the script. */
 export type RuleParts = Omit<Pick<ModeParts, StackingPart>, 'pool'> & {
@@ -473,4 +425,6 @@ export interface SpecialRule {
 	/** Modes and rules this one can't sensibly be played with; choosing both warns. */
 	conflictsWith?: { modes?: string[]; rules?: string[] };
 	parts: RuleParts;
+	/** What the rule does in play, as a rules block (`FileRules`). */
+	rules?: FileRules;
 }

@@ -24,12 +24,12 @@ export const PHANTOM_DETECTIVES: SpecialRule = {
 			'Dead players (not Demons) keep their abilities.',
 			'Each Townsfolk loses their ability at the start of night 1, then regains it on death.'
 		],
-		abilities: {
-			kind: 'dead-keep',
-			deadLose: ['demon'],
-			livingLose: ['townsfolk'],
-			instructions:
-				'Living Townsfolk don’t wake and have no ability; setup effects still happen. A Townsfolk who dies gains its ability and wakes at its usual place. Other dead players keep waking, except a dead Demon.'
-		}
-	}
+		ruleChanges: [
+			{
+				instructions:
+					'Living Townsfolk don’t wake and have no ability; setup effects still happen. A Townsfolk who dies gains its ability and wakes at its usual place. Other dead players keep waking, except a dead Demon.'
+			}
+		]
+	},
+	rules: { deadKeepAbilities: { deadLose: ['demon'], livingLose: ['townsfolk'] } }
 };

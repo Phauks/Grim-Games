@@ -8,16 +8,28 @@
  *   evil player nominating a living evil player (not Travellers) swaps characters with them.
  * - The Djinn's Bargain (https://beardytas.com/garden-of-djinn/the-djinns-bargain/): a
  *   nominator may choose to die; the page bars it while only 3 live (a switch here).
+ * Each rule is a rules block on a rule source (M61e), so a homebrew Fabled with the same block
+ * does the same.
  */
 import { describe, expect, it } from 'vitest';
 import type { Command } from '#lib/core/engine/index.ts';
 import { castGame, testCharacters as characters } from '#lib/core/model/fixtures.test-support.ts';
-import { hasAbilityUnder, nextScriptOrderTarget, nominationPrompts } from './rule-effects.ts';
+import type { Character } from '#lib/core/data/types.ts';
+import type { Game } from '#lib/core/model/types.ts';
+import {
+	deadKeepRule,
+	hasAbilityUnder,
+	nextScriptOrderTarget,
+	nominationPrompts,
+	ruleSources,
+	scriptOrderSource
+} from './rule-effects.ts';
+import { TRAINED_KILLER } from './rules/trained-killer.ts';
 import { DJINNS_BARGAIN } from './rules/djinns-bargain.ts';
 import { WARRENS } from './rules/warrens.ts';
 import { PHANTOM_DETECTIVES } from './rules/phantom-detectives.ts';
 
-const rule = PHANTOM_DETECTIVES.parts.abilities;
+const rule = PHANTOM_DETECTIVES.rules?.deadKeepAbilities;
 
 describe('The Phantom Detectives', () => {
 	it('living Townsfolk have no ability; other living players do', () => {
@@ -86,7 +98,7 @@ describe('nominations under The Warrens and The Djinn’s Bargain', () => {
 		return nominationPrompts(
 			session.game,
 			{ nominator: seats[nominator], nominee: seats[nominee] },
-			rules,
+			ruleSources(session.game, characters, rules),
 			characters
 		).map((p) => p.kind);
 	};
@@ -116,9 +128,57 @@ describe('nominations under The Warrens and The Djinn’s Bargain', () => {
 		expect(prompts(cast, 2, 3, [DJINNS_BARGAIN], dead(4), dead(3))).toEqual(['nominator-may-die']);
 		const limited = {
 			...DJINNS_BARGAIN,
-			parts: { nominations: [{ kind: 'nominator-may-die' as const, minAlive: 4 }] }
+			rules: { onNominated: { effect: 'nominator-may-die' as const, minAlive: 4 } }
 		};
 		expect(prompts(cast, 2, 0, [limited], dead(4), dead(3))).toEqual([]);
 		expect(prompts(cast, 2, 0, [limited], dead(4))).toEqual(['nominator-may-die']);
+	});
+});
+
+describe('rule sources', () => {
+	// A homebrew Fabled with a special rule's block (no edition: its rules are its own).
+	const fabled = (rules: Character['rules']): Character => ({
+		id: 'housefabled',
+		name: 'House Fabled',
+		type: 'fabled',
+		ability: 'A house rule.',
+		setup: false,
+		reminders: [],
+		remindersGlobal: [],
+		special: [],
+		rules
+	});
+	const withFabled = (game: Game, rules: Character['rules']) => ({
+		game: { ...game, ruleCharacters: ['housefabled'] },
+		lookup: new Map([...characters, ['housefabled', fabled(rules)]])
+	});
+	const cast = ['imp', 'poisoner', 'chef', 'empath', 'washerwoman'];
+
+	it('lists the Fabled and Loric in play first, then the files, each by name', () => {
+		const { session } = castGame(cast);
+		const { game, lookup } = withFabled(session.game, PHANTOM_DETECTIVES.rules);
+		const sources = ruleSources(game, lookup, [TRAINED_KILLER, WARRENS]);
+		expect(sources.map((s) => s.name)).toEqual(['House Fabled', 'Trained Killer', 'The Warrens']);
+		expect(deadKeepRule(sources)).toEqual({ deadLose: ['demon'], livingLose: ['townsfolk'] });
+		expect(scriptOrderSource(sources)?.name).toBe('Trained Killer');
+	});
+
+	it('a homebrew Fabled with The Warrens’ block swaps characters as the rule does', () => {
+		const { session, seats } = castGame(cast);
+		const { game, lookup } = withFabled(session.game, WARRENS.rules);
+		const asks = nominationPrompts(
+			game,
+			{ nominator: seats[1], nominee: seats[0] },
+			ruleSources(game, lookup, []),
+			lookup
+		);
+		expect(asks).toEqual([
+			{ kind: 'evil-swap', rule: 'House Fabled', nominator: seats[1], nominee: seats[0] }
+		]);
+	});
+
+	it('a file with no rules block is no rule source', () => {
+		const { session } = castGame(cast);
+		expect(ruleSources(session.game, characters, [{ ...WARRENS, rules: undefined }])).toEqual([]);
 	});
 });

@@ -1117,8 +1117,9 @@ test('a mode file someone wrote can be added, inspected and deleted', async ({ p
 	const sections = guide.getByRole('navigation', { name: 'Sections' });
 	if (!(await sections.isVisible()))
 		await guide.getByRole('button', { name: 'Sections', exact: true }).tap();
-	// Every part of the one format for game modes and special rules (2026-11-01).
-	await expect(sections.getByRole('button')).toHaveCount(27);
+	// Every part of the one format for game modes and special rules (2026-11-01), less the five
+	// that moved into the file's rules block (M61e).
+	await expect(sections.getByRole('button')).toHaveCount(22);
 	await sections.getByRole('button', { name: 'Character pool', exact: true }).tap();
 	await expect(guide.locator('section[data-part="pool"]')).toBeVisible();
 	if (!(await sections.isVisible()))

@@ -21,10 +21,12 @@ export const TRAINED_KILLER: SpecialRule = {
 	parts: {
 		// The author's rule, quoted.
 		text: ['Each night*, the Demon attacks the next living in-play character(s) in script order.'],
-		demonAttacks: {
-			kind: 'script-order',
-			instructions:
-				'Each night after the first, the Demon attacks the next living in-play character in script order, carrying on from the last one it killed. You decide whether a survivor is attacked again or passed over.'
-		}
-	}
+		ruleChanges: [
+			{
+				instructions:
+					'Each night after the first, the Demon attacks the next living in-play character in script order, carrying on from the last one it killed. You decide whether a survivor is attacked again or passed over.'
+			}
+		]
+	},
+	rules: { demonAttack: { target: 'script-order' } }
 };
