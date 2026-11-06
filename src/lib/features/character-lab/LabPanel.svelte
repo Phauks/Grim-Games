@@ -14,6 +14,8 @@
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
 	import Select from '#lib/ui/primitives/Select.svelte';
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
+	import { untrack } from 'svelte';
+	import { onLabFrameReady, openInLabFrame } from './lab-frame.ts';
 	import { lab } from './lab-store.svelte.ts';
 	import type { LabSession } from './lab-session.svelte.ts';
 
@@ -47,6 +49,35 @@
 	}));
 	let width = $state(0);
 
+	/**
+	 * One frame for every load: a new game opens inside the app already running in it, which
+	 * is about four times faster than loading the app again (load timing, 2026-11-06). Until
+	 * that app says it is listening (it is still starting), the frame loads the game afresh.
+	 */
+	let labFrame = $state<HTMLIFrameElement>();
+	let src = $state(untrack(() => session.gamePath ?? '/'));
+	let listening = false;
+	let shown = untrack(() => session.loads);
+	$effect(() =>
+		onLabFrameReady(
+			() => labFrame?.contentWindow,
+			() => (listening = true)
+		)
+	);
+	$effect(() => {
+		const loads = session.loads;
+		const gameId = session.setup.gameId;
+		const path = session.gamePath;
+		if (!frame || loads === shown || !gameId || !path) return;
+		shown = loads;
+		const inFrame = untrack(() => labFrame?.contentWindow);
+		if (listening && inFrame) openInLabFrame(inFrame, gameId);
+		else {
+			listening = false;
+			src = path;
+		}
+	});
+
 	/** First night, then each day: Day 1 to Day 3. */
 	const startOptions = [0, 1, 2, 3].map((day) => ({
 		value: String(day),
@@ -76,18 +107,17 @@
 		<!-- Pinned at the top right while the settings and partners scroll under it (Trevor,
 		     2026-11-05: "pin mock game on the top right"). -->
 		<div class="pinned">
-			{#key `${session.gamePath}:${session.loads}`}
-				<!-- No caption over it (Trevor, 2026-11-05: "remove text"). -->
-				<DeviceFrame
-					device={screen}
-					title={t('lab.storyteller')}
-					src={session.gamePath ?? '/'}
-					zoom={1}
-					room={width}
-					square
-					testid="lab-frame"
-				/>
-			{/key}
+			<!-- No caption over it (Trevor, 2026-11-05: "remove text"). -->
+			<DeviceFrame
+				bind:iframe={labFrame}
+				device={screen}
+				title={t('lab.storyteller')}
+				{src}
+				zoom={1}
+				room={width}
+				square
+				testid="lab-frame"
+			/>
 		</div>
 	{/if}
 

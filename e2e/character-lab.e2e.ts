@@ -172,6 +172,32 @@ test('on a computer window the game opens on the right of the table', async ({ p
 	await expect(seats.first()).toHaveAttribute('aria-label', /Philosopher/);
 });
 
+// A second Load game on a computer opens the new game inside the frame's app, which keeps
+// running, instead of loading the app again (load timing, 2026-11-06).
+test('a computer window opens each new game in the same frame', async ({ page }) => {
+	test.skip(test.info().project.name !== 'tablet', 'one window size is enough');
+	await page.setViewportSize({ width: 1600, height: 1000 });
+	await page.goto('/character-analyzer');
+	const panel = page.getByTestId('lab-panel');
+	await lock(page, 'Summoner');
+	const load = panel.getByRole('button', { name: 'Load game' });
+	await load.tap();
+	const inFrame = page.getByTestId('lab-frame').locator('iframe').contentFrame();
+	await expect(inFrame.getByTestId('seat').first()).toBeVisible();
+	// Marks the running app: a fresh load would forget it.
+	await inFrame.locator('body').evaluate(() => ((window as { labMark?: number }).labMark = 1));
+	const first = await inFrame.locator('body').evaluate(() => location.pathname);
+	await panel.getByRole('button', { name: 'Next jinx partner' }).tap();
+	await expect(page.getByTestId('lab-position').first()).toHaveText(/^2 of /);
+	await expect
+		.poll(() => inFrame.locator('body').evaluate(() => location.pathname))
+		.not.toBe(first);
+	await expect(inFrame.getByTestId('seat').first()).toBeVisible();
+	expect(
+		await inFrame.locator('body').evaluate(() => (window as { labMark?: number }).labMark)
+	).toBe(1);
+});
+
 // Load game sets the game up as after a real draw and starts it (Trevor, 2026-11-04: "load game
 // and start game should be the same"; the Marionette "thinks they are a player"): the
 // Marionette's seat holds a Townsfolk with the Is The Marionette reminder, and the first night

@@ -33,6 +33,7 @@
 		showsAppShell
 	} from '#lib/features/shell/shell.ts';
 	import { drawLock } from '#lib/features/setup/draw-lock.svelte.ts';
+	import { followLabFrame } from '#lib/features/character-lab/lab-frame.ts';
 	import { locale } from '#lib/i18n/locale.svelte.ts';
 	import { trackKeyboardInset } from '#lib/ui/keyboard-inset.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
@@ -112,6 +113,8 @@
 
 	// A downloaded build takes over by itself where that interrupts nothing (auto-update.svelte.ts).
 	$effect(() => watchAway(() => !showsAppShell(page.data)));
+	// Inside the Character Lab's game frame, each new lab game opens in this app (lab-frame.ts).
+	$effect(() => followLabFrame());
 	// A code file loaded later (a dialog, an icon set) is gone from this build: Vite reports it
 	// here, and the page moves onto the newest build instead of failing (auto-update.svelte.ts).
 	$effect(() => {
