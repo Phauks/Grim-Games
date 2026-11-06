@@ -38,6 +38,8 @@ import ph_bookmarks_simple_light from '~icons/ph/bookmarks-simple-light';
 import ph_books_light from '~icons/ph/books-light';
 import ph_bug_light from '~icons/ph/bug-light';
 import ph_calculator_light from '~icons/ph/calculator-light';
+import ph_calendar_check_light from '~icons/ph/calendar-check-light';
+import ph_calendar_star_light from '~icons/ph/calendar-star-light';
 import ph_camera_light from '~icons/ph/camera-light';
 import ph_camera_plus_light from '~icons/ph/camera-plus-light';
 import ph_cards_light from '~icons/ph/cards-light';
@@ -284,6 +286,8 @@ const icons: IconMap = {
 	'ph:books-light': ph_books_light,
 	'ph:bug-light': ph_bug_light,
 	'ph:calculator-light': ph_calculator_light,
+	'ph:calendar-check-light': ph_calendar_check_light,
+	'ph:calendar-star-light': ph_calendar_star_light,
 	'ph:camera-light': ph_camera_light,
 	'ph:camera-plus-light': ph_camera_plus_light,
 	'ph:cards-light': ph_cards_light,

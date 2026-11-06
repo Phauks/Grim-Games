@@ -260,6 +260,11 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	{ title: 'A Support page with a Ko-fi link', area: 'app', parts: ['S23'] },
 	{ title: 'A Credits page in the menu', area: 'app', parts: ['S25'] },
 	{
+		title: 'A Home page: New game, the room code, your games and every place to prepare',
+		area: 'app',
+		parts: ['M69']
+	},
+	{
 		title: 'Settings profiles: save your board and settings, and pick one for each game',
 		area: 'app',
 		parts: ['S18', 'S21']
