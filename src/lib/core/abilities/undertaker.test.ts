@@ -171,4 +171,30 @@ describe('Undertaker', () => {
 			]);
 		});
 	});
+
+	describe('the execution marks the executed player (M70)', () => {
+		const cast = ['undertaker', 'mayor', 'imp', 'monk', 'poisoner'];
+		const diedToday = (s: ReturnType<typeof scenario>, ref: string) =>
+			s.game.seats[s.seat(ref)].reminders.filter(
+				(r) => r.characterId === 'undertaker' && r.label === 'Died Today'
+			);
+
+		it('puts Died Today on the executed player by itself', () => {
+			// Wiki: "If a player dies by execution, put the Undertaker's DIED TODAY reminder token by
+			// the dead player's character token."
+			const s = scenario(cast).execute('mayor');
+			expect(diedToday(s, 'mayor')).toHaveLength(1);
+			// The Undertaker may be the one executed.
+			expect(diedToday(scenario(cast).execute('undertaker'), 'undertaker')).toHaveLength(1);
+		});
+
+		it('moves it to the next executed player, and places none while the Undertaker is dead', () => {
+			// Wiki: "If a player dies by execution, put the Undertaker's DIED TODAY reminder token by
+			// the dead player's character token."
+			const s = scenario(cast).execute('mayor').newDay().execute('monk');
+			expect(diedToday(s, 'mayor')).toEqual([]);
+			expect(diedToday(s, 'monk')).toHaveLength(1);
+			expect(diedToday(scenario(cast).dies('undertaker').execute('mayor'), 'mayor')).toEqual([]);
+		});
+	});
 });

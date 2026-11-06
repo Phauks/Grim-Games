@@ -87,5 +87,10 @@
 			"stage": "kills",
 			"after": "assassin"
 		}
+	},
+	"afterExecution": {
+		"of": "outsider",
+		"on": "executed",
+		"token": "Died Today"
 	}
 }

@@ -160,4 +160,27 @@ describe('Leviathan', () => {
 			expect(gameEnds(s.game, s.characters)).toEqual([]);
 		});
 	});
+
+	describe('the execution marks the first good player executed (M70)', () => {
+		const cast = ['chef', 'empath', 'monk', 'mayor', 'baron', 'leviathan'];
+		const marked = (s: ReturnType<typeof scenario>) =>
+			s.game.seating.filter((id) =>
+				s.game.seats[id].reminders.some(
+					(r) => r.characterId === 'leviathan' && r.label === 'Good Player Executed'
+				)
+			);
+
+		it('marks an executed good player Good Player Executed, and only the first', () => {
+			// Wiki: "If a good player is executed, mark them with the GOOD PLAYER EXECUTED reminder."
+			const first = scenario(cast).execute('chef');
+			expect(marked(first)).toEqual([first.seat('chef')]);
+			const second = first.newDay().execute('empath');
+			expect(marked(second)).toEqual([second.seat('chef')]);
+		});
+
+		it('marks no evil player', () => {
+			// Wiki: "If a good player is executed, mark them with the GOOD PLAYER EXECUTED reminder."
+			expect(marked(scenario(cast).execute('baron'))).toEqual([]);
+		});
+	});
 });

@@ -587,6 +587,15 @@ export const ROADMAP: readonly RoadmapItem[] = [
 		parts: ['M57', 'M58', 'M59', 'M60', 'M61', 'M62']
 	},
 	{
+		// Trevor, 2026-11-06: sweep every character for a death that should put a reminder on the
+		// board (the Barber's Haircuts Tonight was missed). M70: an execution marks the executed
+		// player by itself: the Undertaker's, Godfather's and Zombuul's Died Today, the Cannibal's
+		// Lunch (and Poisoned after an evil one) and the Leviathan's Good Player Executed.
+		title: 'Executions place their reminder tokens by themselves',
+		area: 'engine',
+		parts: ['M70']
+	},
+	{
 		// Trevor, 2026-11-03: the board shows what a player is mad as beside their seat, marked !,
 		// as it shows what they believe (?). M36: the Cerenovus's night step records the chosen
 		// character on its Mad token, and the Pixie is mad as the Townsfolk marked Mad.

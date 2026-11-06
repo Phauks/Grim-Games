@@ -150,4 +150,18 @@ describe('Godfather', () => {
 				expect(reminderTargetMisses(s.game, dead, s.seat(seat), s.characters), seat).toEqual([]);
 		});
 	});
+
+	describe('the execution marks an Outsider Died Today (M70)', () => {
+		const cast = ['godfather', 'saint', 'chef', 'empath', 'imp'];
+		const diedToday = (s: ReturnType<typeof scenario>, ref: string) =>
+			s.game.seats[s.seat(ref)].reminders.filter(
+				(r) => r.characterId === 'godfather' && r.label === 'Died Today'
+			);
+
+		it('marks an executed Outsider, and nobody else', () => {
+			// Wiki: "If an Outsider dies during the day, mark them with the DIED TODAY reminder."
+			expect(diedToday(scenario(cast).execute('saint'), 'saint')).toHaveLength(1);
+			expect(diedToday(scenario(cast).execute('chef'), 'chef')).toEqual([]);
+		});
+	});
 });
