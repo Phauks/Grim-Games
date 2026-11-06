@@ -73,7 +73,7 @@
 	.pick {
 		position: absolute;
 		inset: 0 var(--run-w, 5.5rem) 0 0;
-		z-index: 4;
+		z-index: var(--z-raised);
 		display: flex;
 		align-items: center;
 		gap: var(--space-2);
@@ -100,7 +100,7 @@
 		top: 0;
 		left: var(--space-2);
 		right: var(--space-2);
-		z-index: 1;
+		z-index: var(--z-raised);
 		display: flex;
 		align-items: center;
 		gap: var(--space-1);
