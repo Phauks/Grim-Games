@@ -7,7 +7,7 @@
 	import { reloadSavedScript } from '#lib/features/scripts/saved-scripts.ts';
 	import { locale, t } from '#lib/i18n/locale.svelte.ts';
 	import PageSection from '#lib/ui/layout/PageSection.svelte';
-	import { localTown, localTownVisits, type LocalTownVisit } from './local-town.svelte.ts';
+	import { keptLocalTown, localTownVisits, type LocalTownVisit } from './local-town.svelte.ts';
 	import { openPlayersOnly } from './open-players-only.ts';
 
 	/**
@@ -24,7 +24,7 @@
 		const data = officialData.current;
 		if (!data) return [];
 		return localTownVisits().flatMap((visit) => {
-			const seats = localTown(visit.key).seats;
+			const seats = keptLocalTown(visit.key)?.seats ?? [];
 			if (seats.length === 0) return [];
 			const saved = visit.scriptId
 				? recentScripts.list.find((s) => s.scriptId === visit.scriptId)

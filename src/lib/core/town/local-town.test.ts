@@ -8,6 +8,7 @@ import {
 	setDead,
 	setTraveller,
 	setVoteUsed,
+	startingTown,
 	withSeatCount
 } from './local-town.ts';
 
@@ -24,6 +25,19 @@ describe('local town', () => {
 		const gap = parseLocalTown({ v: 1, seats: [{ id: 's1' }, { id: 's3' }] });
 		expect(withSeatCount(gap, 3).seats.map((s) => s.id)).toEqual(['s1', 's3', 's4']);
 		expect(withSeatCount(five, 999).seats).toHaveLength(LOCAL_TOWN_MAX_SEATS);
+	});
+
+	it('starts a town at seven seats', () => {
+		// Trevor, 2026-11-06: "Seats should start at 7. No none setting".
+		expect(startingTown().seats.map((s) => s.id)).toEqual([
+			's1',
+			's2',
+			's3',
+			's4',
+			's5',
+			's6',
+			's7'
+		]);
 	});
 
 	it('gives only the dead a ghost vote, and gives it back on coming alive', () => {

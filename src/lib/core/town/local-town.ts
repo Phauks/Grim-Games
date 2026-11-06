@@ -12,6 +12,8 @@ import type { PublicSeat } from '#lib/core/sync/public-projection.ts';
 export const LOCAL_TOWN_VERSION = 1;
 /** The fewest seats a town starts with: the smallest game (https://wiki.bloodontheclocktower.com/Setup). */
 export const LOCAL_TOWN_MIN_SEATS = MIN_PLAYERS;
+/** The seats a new town opens with, before the player changes them (Trevor, 2026-11-06). */
+export const LOCAL_TOWN_START_SEATS = 7;
 /** The most seats, the same cap as the Storyteller's board. */
 export const LOCAL_TOWN_MAX_SEATS = MAX_SEATS;
 /** Longest name kept, as a room keeps. */
@@ -77,6 +79,9 @@ export function withSeatCount(town: LocalTown, count: number): LocalTown {
 	while (seats.length < target) seats.push({ id: nextId(seats) });
 	return { ...town, seats };
 }
+
+/** A new town: seven empty seats, with no None, since every game has seats. */
+export const startingTown = (): LocalTown => withSeatCount(emptyTown(), LOCAL_TOWN_START_SEATS);
 
 /** The town with one seat changed; unknown seats change nothing. */
 function changeSeat(town: LocalTown, id: string, change: (seat: LocalSeat) => LocalSeat) {
