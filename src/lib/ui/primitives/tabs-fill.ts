@@ -23,6 +23,11 @@ export function fillToBottom(root: HTMLElement) {
 	const observer = new ResizeObserver(fit);
 	observer.observe(box ?? document.documentElement);
 	if (root.parentElement) observer.observe(root.parentElement);
+	// The tabs themselves too: inside a dialog's scrolling box nothing else changes size when
+	// a long tab gives way to a short one, or its sections fold, and the bar was left halfway
+	// up the screen (Trevor, 2026-11-06: "Buttons are too high, should be like other pages").
+	// Setting the same height again reports no change, so this settles.
+	observer.observe(root);
 	window.addEventListener('resize', fit);
 	return () => {
 		observer.disconnect();

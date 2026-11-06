@@ -1,4 +1,5 @@
 <script lang="ts">
+	import AbilityText from '#lib/features/characters/AbilityText.svelte';
 	import { seatName } from '#lib/features/game/seat-label.ts';
 	import AlignmentPill from './AlignmentPill.svelte';
 	import { untrack } from 'svelte';
@@ -158,7 +159,7 @@
 		alignment={own ? game.seats[own]?.alignment : undefined}
 		playerName={own ? seatName(game, own) : undefined}
 	>
-		{#snippet abilityText()}{@const c = characters.get(id)}{#if c}<GlossaryText
+		{#snippet abilityText()}{@const c = characters.get(id)}{#if c}<AbilityText
 					text={c.ability}
 					names={[c.name]}
 				/>{/if}{/snippet}

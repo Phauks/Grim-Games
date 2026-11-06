@@ -4,7 +4,7 @@
  * (`data/becomes-rules.ts`). Placing or taking off such a reminder offers the change; the
  * Storyteller confirms it or leaves the player as they are.
  */
-import { rulesIn } from '#lib/core/data/rules/index.ts';
+import { rulesInPlay } from './rules-in-play.ts';
 import { abilityState } from './ability.ts';
 import { baseCounts } from './distribution.ts';
 import type { Alignment, CharacterId } from '#lib/core/data/types.ts';
@@ -103,7 +103,7 @@ export function becomesOffer(
 	characters: CharacterLookup,
 	when: 'placed' | 'removed' = 'placed'
 ): BecomesOffer | undefined {
-	const rule = rulesIn(game, reminder.characterId, characters)?.becomes;
+	const rule = rulesInPlay(game, reminder.characterId, characters)?.becomes;
 	if (rule?.token !== reminder.label || (rule.when ?? 'placed') !== when) return undefined;
 	if (!game.seats[seatId]) return undefined;
 	// Its player's ability must work, unless the rule says even if drunk or poisoned: anyone
@@ -196,7 +196,7 @@ export function swapChoice(
 	chosen: SeatId,
 	characters: CharacterLookup
 ): { seatId: SeatId; withSeatId: SeatId; mark: Reminder } | undefined {
-	const rule = rulesIn(game, characterId, characters)?.becomes;
+	const rule = rulesInPlay(game, characterId, characters)?.becomes;
 	if (rule?.into !== 'swap') return undefined;
 	if (typeOf(game, chosen, characters) !== 'demon') return undefined;
 	const withSeatId = swapPartner(game, characterId, characters, chosen);
@@ -216,7 +216,7 @@ export function followedAlignmentOffer(
 	characters: CharacterLookup
 ): BecomesOffer | undefined {
 	for (const reminder of game.seats[seatId]?.reminders ?? []) {
-		if (!rulesIn(game, reminder.characterId, characters)?.becomes?.follows) continue;
+		if (!rulesInPlay(game, reminder.characterId, characters)?.becomes?.follows) continue;
 		const offer = becomesOffer(game, seatId, reminder, characters);
 		if (offer) return offer;
 	}
@@ -239,7 +239,7 @@ export function characterChanger(
 	characterId: CharacterId,
 	characters: CharacterLookup
 ): SeatId | undefined {
-	const rules = rulesIn(game, characterId, characters);
+	const rules = rulesInPlay(game, characterId, characters);
 	const rule = rules?.changesCharacter;
 	if (!rule) return undefined;
 	const carries = (id: SeatId, label: string) =>
@@ -276,7 +276,7 @@ export function earlyOnly(
 	characterId: CharacterId,
 	characters: CharacterLookup
 ): CharacterId[] | undefined {
-	const token = rulesIn(game, characterId, characters)?.changesCharacter?.token;
+	const token = rulesInPlay(game, characterId, characters)?.changesCharacter?.token;
 	if (token === undefined) return undefined;
 	const changer = characterChanger(game, characterId, characters);
 	if (changer === undefined) return undefined;
@@ -314,7 +314,7 @@ export function changeableSeats(
 	characterId: CharacterId,
 	characters: CharacterLookup
 ): SeatId[] {
-	const rule = rulesIn(game, characterId, characters)?.changesCharacter;
+	const rule = rulesInPlay(game, characterId, characters)?.changesCharacter;
 	const nearest = rule?.outward
 		? outwardSeats(game, characterId, rule.types, characters)
 		: undefined;
@@ -388,7 +388,7 @@ export function swappableSeats(
 	characters: CharacterLookup,
 	first?: SeatId
 ): SeatId[] {
-	const rule = rulesIn(game, characterId, characters)?.swapsCharacters;
+	const rule = rulesInPlay(game, characterId, characters)?.swapsCharacters;
 	if (!rule) return [];
 	const barred = (rule.notTypes ?? []) as readonly string[];
 	const firstIsChooser = first !== undefined && typeOf(game, first, characters) === rule.chooser;
@@ -411,7 +411,7 @@ export function neighbourAlignments(
 	characterId: CharacterId,
 	characters: CharacterLookup
 ): { seatId: SeatId; alignments: Alignment[] } | undefined {
-	if (!rulesIn(game, characterId, characters)?.takesNeighbourAlignment) return undefined;
+	if (!rulesInPlay(game, characterId, characters)?.takesNeighbourAlignment) return undefined;
 	const seatId = abilityHolders(game, characterId, characters).find((id) => !game.seats[id].dead);
 	if (seatId === undefined) return undefined;
 	// A jinx may keep them from turning good by this ability (`cantTurnGood`).
@@ -437,7 +437,7 @@ export function passOnSeats(
 	characterId: CharacterId,
 	characters: CharacterLookup
 ): SeatId[] {
-	const rule = rulesIn(game, characterId, characters)?.passesOn;
+	const rule = rulesInPlay(game, characterId, characters)?.passesOn;
 	if (!rule) return [];
 	return game.seating.filter(
 		(id) =>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import AbilityText from '#lib/features/characters/AbilityText.svelte';
 	import type { CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
 	import { alignmentOf, type SeatId } from '#lib/core/model/index.ts';
 	import {
@@ -490,7 +491,7 @@
 										playerName={head?.ref.seatId ? game.seatName(head.ref.seatId) : undefined}
 									>
 										{#snippet tags()}{@render jinxMark(character.id)}{/snippet}
-										{#snippet abilityText()}<GlossaryText text={character.ability} />{/snippet}
+										{#snippet abilityText()}<AbilityText text={character.ability} />{/snippet}
 										<span class="state-line"
 											>{@render sentence()}{#if buttonRows[reminder.key]}{@render dayEnd(
 													reminder.characterId,
@@ -578,7 +579,7 @@
 									playerName={game.seatName(seat.seatId)}
 								>
 									{#snippet tags()}{@render jinxMark(character.id)}{/snippet}
-									{#snippet abilityText()}<GlossaryText text={character.ability} />{/snippet}
+									{#snippet abilityText()}<AbilityText text={character.ability} />{/snippet}
 									{#if hasDayButton(seat.characterId)}<span class="state-line"
 											>{@render dayEnd(seat.characterId, seat.seatId)}</span
 										>{/if}
