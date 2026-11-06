@@ -1,19 +1,22 @@
 <script lang="ts">
-	import type { Character } from '#lib/core/data/index.ts';
+	import type { Character, PlayerName } from '#lib/core/data/index.ts';
 	import type { Seat } from '#lib/core/model/index.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { seatCharacterLine } from '#lib/features/game/seat-label.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import { CLAIM_KEYS, type NoteClaim } from '#lib/features/day/day-port.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import PlayerBadge from '#lib/ui/seating/PlayerBadge.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 
 	/** A seat's less frequent actions (its ⋯), in an overlay so the seat sheet stays short. */
 	interface Props {
 		open: boolean;
-		/** The player's name, or "Seat N". */
+		/** The player's name, or "Seat N": the dialog's accessible name. */
 		title: string;
+		/** The same name as the board's pill, drawn as the second half of the character's badge. */
+		playerName: PlayerName | undefined;
 		number: number;
 		seat: Seat | undefined;
 		character: Character | undefined;
@@ -43,6 +46,7 @@
 	let {
 		open = $bindable(),
 		title,
+		playerName,
 		number,
 		seat,
 		character,
@@ -70,17 +74,18 @@
 	}
 </script>
 
-<!-- Type, alignment and seat, as under the name in the seat sheet (Trevor, 2026-10-30). -->
+<!-- Type, alignment and seat, as under the name in the seat sheet (Trevor, 2026-10-30). The
+     character and its player are the standard badge with player, not a badge beside plain text
+     (Trevor, 2026-11-06). -->
 <Dialog bind:open {title} description={seatCharacterLine(character?.type, seat?.alignment, number)}>
-	{#snippet lead()}
-		{#if seat?.characterId}
-			<CharacterPiece
+	{#snippet heading()}
+		{#if seat?.characterId && playerName}<CharacterPiece
 				template="badge"
 				characterId={seat.characterId}
 				{character}
-				alignment={seat.alignment}
-			/>
-		{/if}
+				alignment={seat?.alignment}
+				{playerName}
+			/>{:else if playerName}<PlayerBadge name={playerName} />{:else}{title}{/if}
 	{/snippet}
 	<div class="menu">
 		<Button variant="quiet" icon="swap" onclick={() => fromMenu(onChangeCharacter)}>
