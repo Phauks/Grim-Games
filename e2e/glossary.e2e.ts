@@ -5,7 +5,7 @@ import { openSettingsDialog } from './shell.ts';
 async function poisonerCard(page: Page) {
 	// A fresh load: the link selects the Poisoner when the page opens.
 	await page.goto('about:blank');
-	await page.goto('/reference#poisoner');
+	await page.goto('/character-analyzer#poisoner');
 	const card = page.getByTestId('character-table').locator('tr[data-character="poisoner"]');
 	await expect(card).toBeVisible();
 	return card;
@@ -62,7 +62,7 @@ test('tapping a rules term shows the wiki Glossary wording and button, without m
 });
 
 test('with rules term underlines off the terms are plain text', async ({ page }) => {
-	await page.goto('/reference');
+	await page.goto('/character-analyzer');
 	await openSettingsDialog(page);
 	const settings = page.getByRole('dialog', { name: 'Settings' });
 	await settings

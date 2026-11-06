@@ -2,7 +2,7 @@
 	import GroupGames from '#lib/features/friends/GroupGames.svelte';
 	import { offerScriptToReports } from '#lib/features/reports/report-script.svelte.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import {
@@ -33,6 +33,7 @@
 	import type { LoadedScript } from '#lib/core/data/index.ts';
 	import OfflineGame from './OfflineGame.svelte';
 	import { markOfflineScript, offlineScript } from './offline-script.svelte.ts';
+	import { openOnGrim, recordLocalVisit } from './local-town.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import { toast } from '#lib/ui/primitives/toaster.ts';
 	import { scriptKey } from './notebook.ts';
@@ -76,7 +77,8 @@
 	let joinedRoom = $state<string>();
 	let error = $state<string>();
 	// Joining lands on the script (Trevor, 2026-10-23); the room is the row above the tabs.
-	let tab = $state('script');
+	// A players-only game opened from New game or Join game starts on its town (plan M55).
+	let tab = $state(openOnGrim.take() ? 'grim' : 'script');
 	// The finished grimoire shows on the Grim tab (Share grim, R5): turn to it when it arrives.
 	$effect(() => {
 		if (!finalGrimoire.open) return;
@@ -197,6 +199,22 @@
 		return !script.edition && saved && saved.scriptId !== 'unsaved'
 			? `saved:${saved.scriptId}`
 			: scriptKey(script);
+	});
+
+	// With no room, the Grim tab is the player's own town (plan M55): Join game lists it, so it
+	// can be opened again.
+	$effect(() => {
+		if (!script || inRoom || join || !key) return;
+		const saved = currentScript.current === script ? currentScript.saved : undefined;
+		const visit = {
+			key,
+			name: script.name,
+			at: Date.now(),
+			...(script.edition ? { edition: script.edition } : {}),
+			...(saved && saved.scriptId !== 'unsaved' ? { scriptId: saved.scriptId } : {})
+		};
+		// Writes the list it reads, so not followed.
+		untrack(() => recordLocalVisit(visit));
 	});
 
 	/** The script came from an offline code and no room sent it: the game is offline. */

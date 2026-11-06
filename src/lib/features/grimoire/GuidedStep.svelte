@@ -1,6 +1,6 @@
 <script lang="ts">
 	import SeatBadge from './SeatBadge.svelte';
-	import StepIcon from './StepIcon.svelte';
+	import StepPiece from './StepPiece.svelte';
 	import NightAlerts from './NightAlerts.svelte';
 	import StepAfflictions from './StepAfflictions.svelte';
 	import StepIfChosen from './StepIfChosen.svelte';
@@ -319,56 +319,43 @@
 		onpointercancel={() => (swipeFrom = undefined)}
 	>
 		{#if step}
-			<!-- A character's step heads with the standard row, as every list of characters shows
-			     it (Trevor, 2026-11-02): icon in its ring, the name band with who wakes, the whole
-			     ability beneath. A step without a character keeps its marker and who wakes. -->
-			{#if step.character}
-				{@const one = !step.storytellerAbility && holders.length === 1 ? holders[0] : undefined}
-				<div class="row-head">
-					<CharacterPiece
-						template="row"
-						character={step.character}
-						info
-						alignment={one ? alignmentOf(game, one) : undefined}
-						playerName={one ? seatName(game, one) : undefined}
-					>
-						{#snippet tags()}
-							<!-- An ability the Storyteller holds wakes nobody: the Storyteller acts. -->
-							{#if step.storytellerAbility}<span class="who" data-testid="step-who"
-									>Storyteller</span
-								>{:else if holders.length > 1}<span class="who" data-testid="step-who"
-									>{#each holders as s (s)}<SeatBadge {game} seatId={s} />{/each}</span
-								>{/if}
-						{/snippet}
-						{#snippet abilityText()}<span data-testid="step-ability"
-								><GlossaryText
-									text={step.character!.ability}
-									names={[step.character!.name]}
-								/></span
-							>{/snippet}
-					</CharacterPiece>
-				</div>
-			{:else}
-				<div class="head">
-					<span class="icon">
-						<StepIcon {step} size={56} details />
-					</span>
-					<p class="who" data-testid="step-who">
-						{#each holders as s, i (s)}{i > 0 ? ', ' : ''}<SeatBadge
-								{game}
-								seatId={s}
-							/>{:else}None{/each}
-					</p>
-				</div>
-			{/if}
+			<!-- A step heads with the standard row, as every list of characters shows it (Trevor,
+			     2026-11-02): icon in its ring, the name band with who wakes, a character's whole
+			     ability beneath. Dusk, Dawn and the info steps are the same row with their picture
+			     (Trevor, 2026-11-05). -->
+			{@const one = !step.storytellerAbility && holders.length === 1 ? holders[0] : undefined}
+			{#snippet seats()}{#each holders as s (s)}<SeatBadge {game} seatId={s} />{/each}{/snippet}
+			<div class="row-head">
+				<StepPiece
+					{step}
+					template={step.character || step.reminder ? 'row' : 'name'}
+					info
+					alignment={one && step.character ? alignmentOf(game, one) : undefined}
+					playerName={one ? seatName(game, one) : undefined}
+				>
+					{#snippet tags()}
+						<!-- An ability the Storyteller holds wakes nobody: the Storyteller acts. -->
+						{#if step.storytellerAbility}<span class="who" data-testid="step-who">Storyteller</span
+							>{:else if holders.length > 1 && step.character}<span
+								class="who"
+								data-testid="step-who">{@render seats()}</span
+							>{/if}
+					{/snippet}
+					<!-- Minion info's players under its band, so the band keeps its name. -->
+					{#if !step.character && holders.length > 1}<span class="who" data-testid="step-who"
+							>{@render seats()}</span
+						>{/if}
+					{#snippet abilityText()}{#if step.character}<span data-testid="step-ability"
+								><GlossaryText text={step.character.ability} names={[step.character.name]} /></span
+							>{:else}<span data-testid="step-text">{step.reminder}</span>{/if}{/snippet}
+				</StepPiece>
+			</div>
 			<!-- What to do comes before any information (Trevor, 2026-10-20). -->
-			{#if step.reminder}
+			<!-- A marker step's text is in its row, where a character's ability goes (Trevor,
+			     2026-11-05: "wake the minions should appear in the ability text area"). -->
+			{#if step.reminder && step.character}
 				<p class="text">
-					{#if step.character}
-						<NightText text={step.reminder} character={step.character} {night} />
-					{:else}
-						{step.reminder}
-					{/if}
+					<NightText text={step.reminder} character={step.character} {night} />
 				</p>
 			{/if}
 			<!-- The board itself, for as long as they need (Trevor, 2026-10-30); the step closes
@@ -658,19 +645,6 @@
 		min-height: 0;
 		overflow-y: auto;
 		overscroll-behavior: contain;
-	}
-	.head {
-		display: flex;
-		align-items: center;
-		gap: var(--space-3);
-	}
-	.icon {
-		display: grid;
-		place-items: center;
-		width: calc(3.5 * var(--u));
-		height: calc(3.5 * var(--u));
-		--icon-size: calc(2.25 * var(--u));
-		color: var(--heading);
 	}
 	.number {
 		display: flex;

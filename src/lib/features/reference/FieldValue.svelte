@@ -21,6 +21,7 @@
 	import CharacterDialog from '#lib/features/characters/CharacterDialog.svelte';
 	import { prefetchWikiPage } from '#lib/features/characters/wiki-page.svelte.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
+	import JinxNote from '#lib/features/characters/JinxNote.svelte';
 	import { slot } from '#lib/features/characters/slots.ts';
 	import CharacterToken from '#lib/features/characters/CharacterToken.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
@@ -245,14 +246,22 @@
 	{:else if field === 'jinxes'}
 		{#if entry.jinxes.length}
 			<!-- Starts folded each time (Trevor, 2026-10-16), the count beside it. -->
-			<Collapsible title={t('characters.jinxes')} level={4} startClosed count={entry.jinxes.length}
+			<!-- Not pinned: a table cell has nothing scrolling under it, and a pinned header draws its
+			     own background (Trevor, 2026-11-05: "background of where it says jinx looks weird"). -->
+			<Collapsible
+				title={t('characters.jinxes')}
+				level={4}
+				startClosed
+				pinned={false}
+				count={entry.jinxes.length}
 				><ul class="list">
 					{#each entry.jinxes as jinx (jinx.with)}
-						<!-- The text-size badge as a bar across, the jinx indented under it (Trevor, 2026-10-16). -->
+						<!-- The jinx pair's own badge, as every screen shows a jinx (Trevor, 2026-11-05:
+						     "should show the jinx badge, not the character badge"). -->
 						<li class="jinx">
-							<CharacterPiece template="entry" characterId={jinx.with}
-								><span class="small"><GlossaryText text={jinx.reason} /></span></CharacterPiece
-							>
+							<JinxNote
+								jinx={{ characters: [entry.character.id, jinx.with], reason: jinx.reason }}
+							/>
 						</li>
 					{/each}
 				</ul></Collapsible
@@ -351,7 +360,8 @@
 	/* Stacked entries are told apart by a line, never by spacing alone (Trevor's delineation
 	   rule): a phone stacks them with nothing beside them. */
 	.token-row + .token-row,
-	.list li:not(.jinx) + li:not(.jinx) {
+	.list li:not(.jinx) + li:not(.jinx),
+	.list li.jinx + li.jinx {
 		padding-top: var(--space-2);
 		border-top: var(--card-border);
 	}

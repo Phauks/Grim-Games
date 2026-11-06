@@ -1,5 +1,5 @@
-import { defaultAlignment, type GameData, type Script } from '#lib/core/data/index.ts';
-import { labGame, type LabSetup } from '#lib/core/lab/lab-game.ts';
+import { defaultAlignment, type Script } from '#lib/core/data/index.ts';
+import { labGame, type LabData, type LabSetup } from '#lib/core/lab/lab-game.ts';
 import { placeLabSetup } from '#lib/core/lab/lab-setup.ts';
 import type { GameId } from '#lib/core/model/index.ts';
 import { replacementReminder } from '#lib/core/rules/bag-characters.ts';
@@ -23,16 +23,27 @@ export const LAB_SCRIPT_NAME = 'Character Lab';
  * device.
  */
 export async function loadLabGame(
-	data: GameData,
+	data: LabData,
 	setup: LabSetup,
 	previous: GameId | undefined,
 	startDay = 0
 ): Promise<OpenGame> {
 	if (previous) await forgetGame(previous);
 	const built = labGame(data, setup);
+	// A custom character goes on the script whole, with its own jinxes, as on a homebrew script.
+	const custom = data.custom ?? new Set();
+	const onScript = new Set(built.script);
+	const jinxes = data.jinxes.all.filter(
+		({ characters: [a, b] }) =>
+			(custom.has(a) || custom.has(b)) && onScript.has(a) && onScript.has(b)
+	);
 	const script: Script = {
 		meta: { name: LAB_SCRIPT_NAME },
-		entries: built.script.map((id) => ({ kind: 'official', id }))
+		entries: built.script.map((id) => {
+			const character = custom.has(id) ? data.byId.get(id) : undefined;
+			return character ? { kind: 'custom', character } : { kind: 'official', id };
+		}),
+		...(jinxes.length ? { jinxes } : {})
 	};
 	const open = await OpenGame.create(data, script, built.seats.length);
 	open.game.seating.forEach((seatId, i) => {

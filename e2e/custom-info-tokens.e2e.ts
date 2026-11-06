@@ -131,6 +131,17 @@ test("the Harlot's question sits under Character-Specific, not Enhanced", async 
 	).toHaveCount(0);
 });
 
+// Trevor (2026-11-05): "you are mad as could be cerenovus only".
+test('"You are mad as" sits under Character-Specific with the Cerenovus', async ({ page }) => {
+	await page.goto('/info-tokens');
+	const section = (name: string) =>
+		page.locator('section.collapsible').filter({ has: page.getByRole('heading', { name }) });
+	await expect(
+		section('Character-Specific').getByRole('button', { name: /^You are mad as/ })
+	).toContainText('Cerenovus');
+	await expect(section('Enhanced').getByRole('button', { name: /^You are mad as/ })).toHaveCount(0);
+});
+
 test('in a game, a character card is offered only while its character is in play', async ({
 	page
 }) => {

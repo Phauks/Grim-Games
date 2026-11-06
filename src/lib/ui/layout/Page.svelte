@@ -47,6 +47,8 @@
 		sideFlow?: boolean;
 		/** The content lays out in two columns on a wide computer window (Account). */
 		columns?: boolean;
+		/** Uses the whole window's width, with no page maximum (the Character Analyzer). */
+		wide?: boolean;
 		children: Snippet;
 	}
 
@@ -63,6 +65,7 @@
 		side,
 		sideFlow = false,
 		columns = false,
+		wide = false,
 		children
 	}: Props = $props();
 
@@ -84,7 +87,7 @@
 		{#if lead}{@render lead()}{/if}<span class="title-text" {@attach fitWords(title)}>{title}</span>
 	</h1>
 {/snippet}
-<main class="page">
+<main class="page" class:wide>
 	<PageMenuButton />
 	<header class="head" class:visually-hidden={hideTitle}>
 		{#if titleBelow}
@@ -145,6 +148,9 @@
 		margin: 0 auto;
 		/* The title row starts level with the hamburger and the sidebar's name row. */
 		padding: var(--menu-inset) var(--page-gutter) var(--space-6);
+	}
+	.page.wide {
+		max-width: none;
 	}
 	/* Keeps the title clear of the hamburger, one spacing step after it. */
 	.menu-room {

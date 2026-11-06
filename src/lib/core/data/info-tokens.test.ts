@@ -23,8 +23,7 @@ describe('info tokens', () => {
 			'Select a player',
 			'Select a character',
 			'Please choose again',
-			'Are you sure?',
-			'You are mad as'
+			'Are you sure?'
 		]);
 		const shared = STANDARD_INFO_TOKENS.filter((t) => !t.characterId);
 		const firstExtra = shared.findIndex((t) => t.extra);
@@ -36,6 +35,14 @@ describe('info tokens', () => {
 		const harlot = STANDARD_INFO_TOKENS.find((t) => t.id === 'sleep-with-harlot');
 		expect(harlot).toMatchObject({ text: 'Sleep with the Harlot?', characterId: 'harlot' });
 		expect(harlot?.extra).toBeUndefined();
+	});
+
+	it('lists "You are mad as" as the Cerenovus\'s own card, not an enhanced one', () => {
+		// Trevor (2026-11-05): "you are mad as could be cerenovus only, unless there are multiple
+		// characters you could be who use that". No other rules file offers it.
+		const madAs = STANDARD_INFO_TOKENS.find((t) => t.id === 'mad-as');
+		expect(madAs).toMatchObject({ text: 'You are mad as', characterId: 'cerenovus' });
+		expect(madAs?.extra).toBeUndefined();
 	});
 
 	it('lets the Storyteller hide standard cards and add custom ones', () => {

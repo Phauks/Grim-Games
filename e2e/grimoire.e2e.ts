@@ -299,7 +299,12 @@ test('New game and Join game are screens of their own', async ({ page }) => {
 	// below the rooms joined as a player (Trevor, 2026-10-28).
 	await page.goto('/join');
 	await expect(page.getByRole('heading', { name: 'Join game', level: 1 })).toBeVisible();
-	await expect(page.getByRole('heading', { level: 2 })).toHaveText(['As player', 'As Storyteller']);
+	// Players only (plan M55) sits between them.
+	await expect(page.getByRole('heading', { level: 2 })).toHaveText([
+		'As player',
+		'Players only',
+		'As Storyteller'
+	]);
 	const saved = page.getByRole('link', { name: /Trouble Brewing.*Setting up · 8 seats/ });
 	await expect(saved).toBeVisible();
 	await saved.tap();
@@ -327,7 +332,8 @@ test('Join game folds As player and As Storyteller, and boxes the room code', as
 	const player = page.getByRole('button', { name: /As player/ });
 	await player.tap();
 	await expect(player).toHaveAttribute('aria-expanded', 'false');
-	await expect(page.getByText('None', { exact: true })).toBeHidden();
+	// Only Players only's None is left showing (plan M55).
+	await expect(page.getByText('None', { exact: true }).filter({ visible: true })).toHaveCount(1);
 
 	const form = page.locator('form.code-form');
 	await expect(form).toHaveCSS('border-top-style', 'solid');
@@ -1633,9 +1639,16 @@ test('tokens keep their size when the night walk-through opens', async ({ page }
 	await expect
 		.poll(async () => Math.abs((await token.boundingBox())!.width - before))
 		.toBeLessThan(1);
-	const logoAfter = (await logo.boundingBox())!;
-	expect(Math.abs(logoAfter.width - logoBefore.width)).toBeLessThan(1);
-	expect(Math.abs(logoAfter.height - logoBefore.height)).toBeLessThan(1);
+	// Polled like the token: the board's new height reaches the logo a frame after the strip.
+	await expect
+		.poll(async () => {
+			const after = (await logo.boundingBox())!;
+			return Math.max(
+				Math.abs(after.width - logoBefore.width),
+				Math.abs(after.height - logoBefore.height)
+			);
+		})
+		.toBeLessThan(1);
 });
 
 // Trevor (2026-10-23): "change board look to board preview", and its bank looks like the board's.
@@ -4850,6 +4863,15 @@ test('Minion info and Demon info list every card they can show, with who it poin
 		await closeSheet(page);
 	}
 	const minionInfo = await openStep(page, 'Minion info');
+	// The step heads with the character row, its picture in the ring and its players after the
+	// name (Trevor, 2026-11-05: nowhere the old way).
+	const head = minionInfo.locator('.row-head .ring-row');
+	await expect(head).toHaveAttribute('data-team', 'evil');
+	await expect(head.locator('.band')).toContainText('Minion info');
+	await expect(head.locator('.ring [data-marker="minioninfo"]')).toBeVisible();
+	await expect(head.getByTestId('step-who')).toContainText('Seat 2');
+	// Its text is where a character's ability goes (Trevor, 2026-11-05).
+	await expect(head.locator('.ring-ability')).toContainText('Wake the Minions');
 	const cards = minionInfo.getByTestId('evil-info-card');
 	// Every card, never one pick (Trevor, 2026-10-18).
 	await expect(cards).toHaveCount(2);

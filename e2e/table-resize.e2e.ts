@@ -5,7 +5,7 @@ const width = (cell: Locator) => cell.evaluate((el) => el.getBoundingClientRect(
 
 async function openTable(page: Page) {
 	// The lab's core character, alone (plan M47).
-	await page.goto('/reference#witch');
+	await page.goto('/character-analyzer#witch');
 	const table = page.getByTestId('character-table');
 	await expect(table.locator('tbody tr')).toHaveCount(1);
 	return table;

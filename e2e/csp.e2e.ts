@@ -26,7 +26,14 @@ test('pages carry the Content Security Policy and nothing on them is blocked', a
 		.getAttribute('content');
 	expect(policy).toContain("script-src 'self' 'sha256-");
 	expect(policy).toContain("object-src 'none'");
-	for (const path of ['/new', '/play#e=tb', '/scripts', '/reference', '/library', '/about']) {
+	for (const path of [
+		'/new',
+		'/play#e=tb',
+		'/scripts',
+		'/character-analyzer',
+		'/library',
+		'/about'
+	]) {
 		await page.goto(path);
 		await expect(page.locator('main')).not.toBeEmpty();
 	}

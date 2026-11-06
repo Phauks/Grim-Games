@@ -1,7 +1,8 @@
 /**
  * Info tokens: the rectangular cards the Storyteller shows players at night ("This is the
  * Demon" and so on). They belong to the game, not to any character (Trevor, 2026-10-15),
- * except a character's own question listed with it (the Harlot's, Trevor 2026-11-05).
+ * except a card only one character shows, listed with it (the Harlot's and the Cerenovus's,
+ * Trevor 2026-11-05).
  *
  * Sources: the wiki Glossary names them "Info tokens" with "This is the Demon" as its
  * example (https://wiki.bloodontheclocktower.com/Glossary); the rulebook names "This is
@@ -116,15 +117,6 @@ export const STANDARD_INFO_TOKENS: readonly InfoToken[] = [
 	{ id: 'choose-again', text: 'Please choose again', source: 'standard', extra: true },
 	// Trevor's wording (2026-10-25).
 	{ id: 'are-you-sure', text: 'Are you sure?', source: 'standard', extra: true },
-	// The character a player must be mad about, after "This character selected you" for the
-	// Cerenovus (Trevor's wording, 2026-11-01; https://wiki.bloodontheclocktower.com/Cerenovus).
-	{
-		id: 'mad-as',
-		text: 'You are mad as',
-		source: 'standard',
-		asks: { characters: 1 },
-		extra: true
-	},
 	// Asked of the player the Harlot chose; with a yes, the Harlot learns their character
 	// (Trevor's wording, 2026-11-02; https://wiki.bloodontheclocktower.com/Harlot). The
 	// Harlot's own card, so Character-Specific, not Enhanced (Trevor, 2026-11-05).
@@ -133,6 +125,16 @@ export const STANDARD_INFO_TOKENS: readonly InfoToken[] = [
 		text: 'Sleep with the Harlot?',
 		source: 'standard',
 		characterId: 'harlot'
+	},
+	// The character a player must be mad about, after "This character selected you" for the
+	// Cerenovus (Trevor's wording, 2026-11-01; https://wiki.bloodontheclocktower.com/Cerenovus).
+	// Only the Cerenovus shows it, so it is the Cerenovus's own card (Trevor, 2026-11-05).
+	{
+		id: 'mad-as',
+		text: 'You are mad as',
+		source: 'standard',
+		asks: { characters: 1 },
+		characterId: 'cerenovus'
 	}
 ];
 

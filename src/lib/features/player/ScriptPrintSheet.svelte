@@ -195,6 +195,15 @@
 								<h1>{script.name}</h1>
 								<ScriptByline author={script.meta.author} {version} />
 							</div>
+							<!-- TPI asks for the Community Created Content logo on work using its assets
+							     (CccLogo.svelte), so every printed front carries it (Trevor, 2026-11-05). -->
+							<img
+								class="ccc"
+								src="/brand/ccc-parchment.webp"
+								width="120"
+								height="45"
+								alt={t('shell.cccAlt')}
+							/>
 							{@render qrSlot(front.qr)}
 						</header>
 						<ScriptSheet
@@ -408,6 +417,16 @@
 		justify-content: space-between;
 		align-items: start;
 		gap: var(--space-3);
+	}
+	/* Beside the QR code's corner, which keeps the right edge whether it shows or not. */
+	.ccc {
+		flex: none;
+		width: 6.5rem;
+		height: auto;
+		margin-inline-start: auto;
+	}
+	.ccc + .qr-slot {
+		margin-inline-start: 0;
 	}
 	/* About 23 mm across at full size: a quarter of a millimetre a square at the longest link. */
 	.qr-slot {

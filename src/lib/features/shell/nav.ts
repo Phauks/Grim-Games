@@ -17,7 +17,7 @@ export interface NavItem {
 		| '/build-script'
 		| '/build-character'
 		| '/build-mode'
-		| '/reference'
+		| '/character-analyzer'
 		| '/info-tokens'
 		| '/account'
 		| '/friends'
@@ -63,11 +63,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
 		items: [
 			{ id: 'scripts', path: '/scripts', label: 'shell.navScripts', icon: 'search' },
 			// Everything the user has saved or made (Trevor, 2026-10-16).
-			{ id: 'library', path: '/library', label: 'shell.navLibrary', icon: 'library' },
-			{ id: 'info-tokens', path: '/info-tokens', label: 'shell.navInfoTokens', icon: 'info' },
-			// The Character reference and the Character Lab in one page, for everyone (plan M45,
-			// Trevor 2026-11-04: "So not admin locked").
-			{ id: 'reference', path: '/reference', label: 'shell.navReference', icon: 'reference' }
+			{ id: 'library', path: '/library', label: 'shell.navLibrary', icon: 'library' }
 		]
 	},
 	{
@@ -94,6 +90,17 @@ export const NAV_SECTIONS: readonly NavSection[] = [
 				path: '/build-mode',
 				label: 'shell.navBuildMode',
 				icon: 'buildMode'
+			},
+			// Info tokens and the Character Analyzer are made or tested here too (plan M63, Trevor
+			// 2026-11-05: "characters should be moved to create", "info tokens are likely create
+			// too"). The Analyzer is open to everyone (plan M45, Trevor 2026-11-04: "So not admin
+			// locked").
+			{ id: 'info-tokens', path: '/info-tokens', label: 'shell.navInfoTokens', icon: 'info' },
+			{
+				id: 'reference',
+				path: '/character-analyzer',
+				label: 'shell.navReference',
+				icon: 'reference'
 			}
 		]
 	}
