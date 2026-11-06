@@ -1,3 +1,5 @@
+import type { ReminderLabel } from '../types.ts';
+import { readToken } from '../reminder-fields.ts';
 import { checkKeys, describe, isObject, readBoolean, readEnum } from '../validate.ts';
 import { objectPart } from './part.ts';
 
@@ -8,19 +10,27 @@ export type KilledBy = (typeof KILLED_BY)[number];
 /**
  * The ability is set off by its player's death, by `by` (the Ravenkeeper, the Sage); with
  * `night`, only a death at night, never an execution (the Ravenkeeper's "if you die at night").
+ * With `places`, one of its reminders, the death is when that reminder goes on its player (the
+ * Barber's "Haircuts Tonight"): the board asks to place it once the player is marked dead.
  */
 export const onDeath = objectPart(
 	'On death',
 	'The ability is set off by its player’s death.',
-	(raw, path, issues): { by: KilledBy; night?: true } | undefined => {
+	(
+		raw,
+		path,
+		issues,
+		reminders
+	): { by: KilledBy; night?: true; places?: ReminderLabel } | undefined => {
 		if (!isObject(raw)) {
 			issues.add(path, `expected object, got ${describe(raw)}`);
 			return undefined;
 		}
-		checkKeys(raw, ['by', 'night'], path, issues);
+		checkKeys(raw, ['by', 'night', 'places'], path, issues);
 		const by = readEnum(raw, 'by', KILLED_BY, path, issues, true);
 		const night = readBoolean(raw, 'night', path, issues);
+		const places = readToken(raw, 'places', path, issues, reminders);
 		if (!by) return undefined;
-		return night ? { by, night } : { by };
+		return { by, ...(night ? { night } : {}), ...(places ? { places } : {}) };
 	}
 );

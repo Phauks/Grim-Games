@@ -38,6 +38,8 @@ import ph_bookmarks_simple_duotone from '~icons/ph/bookmarks-simple-duotone';
 import ph_books_duotone from '~icons/ph/books-duotone';
 import ph_bug_duotone from '~icons/ph/bug-duotone';
 import ph_calculator_duotone from '~icons/ph/calculator-duotone';
+import ph_calendar_check_duotone from '~icons/ph/calendar-check-duotone';
+import ph_calendar_star_duotone from '~icons/ph/calendar-star-duotone';
 import ph_camera_duotone from '~icons/ph/camera-duotone';
 import ph_camera_plus_duotone from '~icons/ph/camera-plus-duotone';
 import ph_cards_duotone from '~icons/ph/cards-duotone';
@@ -128,6 +130,7 @@ import ph_house_duotone from '~icons/ph/house-duotone';
 import ph_house_simple_duotone from '~icons/ph/house-simple-duotone';
 import ph_identification_card_duotone from '~icons/ph/identification-card-duotone';
 import ph_image_duotone from '~icons/ph/image-duotone';
+import ph_images_duotone from '~icons/ph/images-duotone';
 import ph_info_duotone from '~icons/ph/info-duotone';
 import ph_key_duotone from '~icons/ph/key-duotone';
 import ph_leaf_duotone from '~icons/ph/leaf-duotone';
@@ -283,6 +286,8 @@ const icons: IconMap = {
 	'ph:books-duotone': ph_books_duotone,
 	'ph:bug-duotone': ph_bug_duotone,
 	'ph:calculator-duotone': ph_calculator_duotone,
+	'ph:calendar-check-duotone': ph_calendar_check_duotone,
+	'ph:calendar-star-duotone': ph_calendar_star_duotone,
 	'ph:camera-duotone': ph_camera_duotone,
 	'ph:camera-plus-duotone': ph_camera_plus_duotone,
 	'ph:cards-duotone': ph_cards_duotone,
@@ -373,6 +378,7 @@ const icons: IconMap = {
 	'ph:house-simple-duotone': ph_house_simple_duotone,
 	'ph:identification-card-duotone': ph_identification_card_duotone,
 	'ph:image-duotone': ph_image_duotone,
+	'ph:images-duotone': ph_images_duotone,
 	'ph:info-duotone': ph_info_duotone,
 	'ph:key-duotone': ph_key_duotone,
 	'ph:leaf-duotone': ph_leaf_duotone,

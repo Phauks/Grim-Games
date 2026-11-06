@@ -20,6 +20,8 @@
 		/** Where it sits, in % of the board. */
 		at: { x: number; y: number };
 		alignment?: Alignment;
+		/** Whose own copy it is, when they borrow its character's ability (M68). */
+		holder?: Character;
 		size: number;
 		disabled: boolean;
 		/** The seat it is on (1 is the first), for tests and the held-seat dimming. */
@@ -46,6 +48,7 @@
 		look,
 		at,
 		alignment,
+		holder,
 		size,
 		disabled,
 		seatNumber,
@@ -77,7 +80,7 @@
 	style:top="{at.y}%"
 	aria-hidden={ghost ? 'true' : undefined}
 >
-	<BoardReminder {...look} {alignment} {size} {disabled} {onTap} {onDrag} {onCancel} />
+	<BoardReminder {...look} {alignment} {holder} {size} {disabled} {onTap} {onDrag} {onCancel} />
 </div>
 
 <style>

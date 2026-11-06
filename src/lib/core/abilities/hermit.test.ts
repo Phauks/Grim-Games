@@ -24,6 +24,7 @@ import {
 } from '#lib/core/rules/gained-abilities.ts';
 import { nightOrder } from '#lib/core/rules/night-order.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
+import { borrowedCopyHolder, reminderHolders } from '#lib/core/rules/borrowed-abilities.ts';
 import { abilityState } from '#lib/core/rules/ability.ts';
 import { gameEnds } from '#lib/core/rules/game-end.ts';
 import { madnessOffer } from '#lib/core/rules/madness.ts';
@@ -33,7 +34,7 @@ import {
 	committedGameData,
 	nightSheetPresence
 } from '#lib/core/testing/committed-data.ts';
-import { reminderTargetMisses, reminderTargets } from '#lib/core/rules/reminder-targets.ts';
+import { reminderOffered, reminderTargetMisses } from '#lib/core/rules/reminder-targets.ts';
 import { analyseSetup } from '#lib/core/rules/setup.ts';
 
 // A script whose Outsiders are the Hermit, Klutz, Butler and Recluse (the wiki's first example).
@@ -103,7 +104,8 @@ describe('Hermit', () => {
 			expect(rulesOf('hermit', characters)?.givesAbility).toEqual({
 				to: 'self',
 				types: ['outsider'],
-				onScript: true
+				onScript: true,
+				standIns: ['1', '2', '3']
 			});
 			const { game, seats } = cast(PLAYERS);
 			expect(heldAbilitiesOf(game, seats[0], characters)).toEqual([
@@ -248,19 +250,24 @@ describe('Hermit', () => {
 			]);
 		});
 
-		it('still has an Outsider ability that is in play, and its 1, 2 and 3 reminders go anywhere', () => {
+		it('still has an Outsider ability that is in play, and has its own copy of its reminders', () => {
 			// Wiki: "If the Hermit duplicates an in-play Outsider, use the Hermit’s 1, 2 and 3
 			// reminders instead."
 			const s = scenario(['hermit', 'butler', 'imp', 'empath', 'monk'], { script, characters });
 			expect(
 				heldAbilitiesOf(s.game, s.seat('hermit'), characters).map((h) => h.characterId)
 			).toEqual(['klutz', 'butler', 'recluse']);
-			for (const label of ['1', '2', '3']) {
-				const reminder = { characterId: 'hermit', label };
-				expect(
-					reminderTargets(s.game, reminder, s.characters).every((t) => t.misses.length === 0)
-				).toBe(true);
-			}
+			// In place of the 1, 2 and 3, the Hermit has its own copy of the Butler's Master, with
+			// its icon in the corner (M68, Trevor 2026-11-06), so the 1, 2 and 3 are never offered.
+			for (const label of ['1', '2', '3'])
+				expect(reminderOffered(s.game, { characterId: 'hermit', label }, s.characters)).toBe(false);
+			expect(reminderHolders(s.game, s.characters).get('butler')).toEqual([
+				s.seat('butler'),
+				s.seat('hermit')
+			]);
+			const copy = (ownerSeatId: string) => ({ characterId: 'butler', ownerSeatId });
+			expect(borrowedCopyHolder(s.game, copy(s.seat('hermit')), s.characters)).toBe('hermit');
+			expect(borrowedCopyHolder(s.game, copy(s.seat('butler')), s.characters)).toBeUndefined();
 		});
 	});
 });

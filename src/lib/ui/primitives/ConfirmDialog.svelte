@@ -20,6 +20,8 @@
 		disabled?: boolean;
 		/** Icon buttons in the header, before Close (an aid prompt's ⋯). */
 		headActions?: Snippet;
+		/** False hides the ✕, where Cancel is the only way back (the leave dialog). */
+		closeButton?: boolean;
 		/** What happens, shown above the buttons. */
 		children?: Snippet;
 		/** Runs on Confirm; the dialog closes first. */
@@ -36,13 +38,14 @@
 		danger = false,
 		disabled = false,
 		headActions,
+		closeButton = true,
 		children,
 		onConfirm,
 		onCancel
 	}: Props = $props();
 </script>
 
-<Dialog bind:open {title} {heading} {description} {headActions} role="alertdialog">
+<Dialog bind:open {title} {heading} {description} {headActions} {closeButton} role="alertdialog">
 	{@render children?.()}
 	{#snippet actions()}
 		<ModalActions

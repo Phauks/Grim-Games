@@ -6,7 +6,8 @@ import {
 	likeness,
 	plainText,
 	readScriptLines,
-	type PhotoLine
+	type PhotoLine,
+	type PhotoLineTrace
 } from './script-photo.ts';
 
 const data = committedGameData();
@@ -120,5 +121,34 @@ describe('knownScriptFor', () => {
 	it('names none for a script that shares only some characters', () => {
 		const mixed = [...ids.slice(0, 12), ...known[1].characters.slice(0, 10)];
 		expect(knownScriptFor(mixed, 'Trouble Brewing', known)).toBeUndefined();
+	});
+});
+
+describe('the import log', () => {
+	it('tells how each line was read: by name, by ability, close, unmatched or the title', () => {
+		const chef = official.find((c) => c.id === 'chef')!;
+		const lines: PhotoLine[] = [
+			{ text: 'Storm Front', height: 40 },
+			{ text: 'Empath', height: 12 },
+			{ text: chef.ability, height: 12 },
+			{ text: 'Invstgatr', height: 12 },
+			{ text: 'Zorblax Quint', height: 12 },
+			{ text: '', height: 12 }
+		];
+		const traces: PhotoLineTrace[] = [];
+		readScriptLines(lines, official, (t) => traces.push(t));
+		expect(traces.map((t) => t.outcome)).toEqual([
+			'title',
+			'name',
+			'ability',
+			'close',
+			'unmatched',
+			'empty'
+		]);
+		expect(traces[1]).toMatchObject({ name: 'Empath', score: 1 });
+		expect(traces[2]).toMatchObject({ name: 'Chef' });
+		expect(traces[3]).toMatchObject({ name: 'Investigator' });
+		const missed = traces[4];
+		expect(missed.outcome === 'unmatched' && missed.nearest?.score).toBeLessThan(0.7);
 	});
 });

@@ -15,6 +15,7 @@ import { scriptLogo } from '#lib/core/data/script-logo.ts';
 import { scriptEdition } from '#lib/core/data/script.ts';
 import { upgradeScriptJinxes } from '#lib/core/data/jinx-renames.ts';
 import type { GameId } from '#lib/core/model/index.ts';
+import type { Script } from '#lib/core/data/index.ts';
 import type { GameLog, GameSession } from './log.ts';
 
 export const SAVED_GAME_VERSION = 31;
@@ -460,6 +461,14 @@ export function migrateSavedGame(
 	return checkCurrent(runMigrations(raw as SavedDocument, chain, target));
 }
 
+/** A game's script's logo (`scriptLogo`), as the saved games list shows it. */
+export function gameScriptLogo(script: Script): string | undefined {
+	return scriptLogo({
+		edition: scriptEdition(script)?.id,
+		meta: { ...script.meta, name: script.meta?.name ?? '' }
+	});
+}
+
 export function summariseSavedGame(saved: SavedGame): SavedGameSummary {
 	const created = saved.log.entries[0].events.find((e) => e.type === 'GameCreated');
 	const summary: SavedGameSummary = {
@@ -481,12 +490,7 @@ export function summariseSavedGame(saved: SavedGame): SavedGameSummary {
 		}
 	}
 	if (script?.meta?.name) summary.scriptName = script.meta.name;
-	const logo =
-		script &&
-		scriptLogo({
-			edition: scriptEdition(script)?.id,
-			meta: { ...script.meta, name: script.meta?.name ?? '' }
-		});
+	const logo = script && gameScriptLogo(script);
 	if (logo) summary.scriptLogo = logo;
 	summary.seatCount = seats;
 	return summary;

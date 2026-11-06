@@ -2453,6 +2453,11 @@ test("a Banshee the Demon killed shows two votes and no ghost vote on the player
 	await picker.getByRole('button', { name: 'Banshee', exact: true }).tap();
 	await sheet.getByRole('combobox', { name: 'Status: Alive' }).tap();
 	await page.getByRole('listbox').getByRole('option', { name: 'The Demon' }).tap();
+	// Its death asks to place Has Ability; left off, the votes come from the death's cause.
+	await page
+		.getByRole('alertdialog', { name: 'Use the Banshee’s ability?' })
+		.getByRole('button', { name: 'Cancel', exact: true })
+		.tap();
 	await expect(seat).toHaveAttribute('aria-label', 'Seat 1: Seat 1, dead, 2 votes per nomination');
 	// The skull, as on the board: no ghost to spend.
 	await expect(seat.getByTestId('dead-mark')).not.toHaveAttribute('data-vote');

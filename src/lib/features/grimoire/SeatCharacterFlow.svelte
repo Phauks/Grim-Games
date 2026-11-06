@@ -17,7 +17,7 @@
 	import SeatBadge from '#lib/features/grimoire/SeatBadge.svelte';
 	import TableCheck from '#lib/features/grimoire/TableCheck.svelte';
 	import {
-		placingAlignment,
+		reminderPlacing,
 		recommendedTravellers,
 		SEAT_TYPES
 	} from '#lib/features/grimoire/board.ts';
@@ -285,7 +285,7 @@
 						<!-- The token itself, as on the board (Trevor, 2026-10-30). -->
 						<BoardReminder
 							{...placedLook(reminder, characters)}
-							alignment={placingAlignment(game, reminder, characters)}
+							{...reminderPlacing(game, reminder, characters)}
 						/>
 						<span>on <SeatBadge {game} {characters} seatId={on} /></span>
 					</li>

@@ -5,7 +5,7 @@
 	import Toggle from '#lib/ui/primitives/Toggle.svelte';
 	import BoardReminder from './BoardReminder.svelte';
 	import SeatBadge from './SeatBadge.svelte';
-	import { placingAlignment } from './board.ts';
+	import { reminderPlacing } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 
 	/**
@@ -69,7 +69,7 @@
 				<BoardReminder
 					label={reminder.label}
 					character={characters.get(reminder.characterId)}
-					alignment={placingAlignment(game, reminder, characters)}
+					{...reminderPlacing(game, reminder, characters)}
 				/>
 				<span class="seat"><SeatBadge {game} {characters} {seatId} /></span>
 				<span class="switch">

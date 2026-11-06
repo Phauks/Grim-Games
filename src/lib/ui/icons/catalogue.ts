@@ -118,11 +118,17 @@ export const ICON_SLOTS = {
 	pasteJson: { label: 'Paste JSON', choices: ['ph:clipboard-text', 'ph:clipboard'] },
 	uploadFile: { label: 'Upload file', choices: ['ph:upload-simple', 'ph:file-arrow-up'] },
 	/** Reads a script from a photo of its printed sheet (plan M54). */
-	photo: { label: 'Take a photo', choices: ['ph:camera-plus', 'ph:image'] },
+	photo: { label: 'Take a photo', choices: ['ph:camera-plus', 'ph:camera'] },
+	/** Reads a script from a photo already on the device (Trevor, 2026-11-06). */
+	choosePhoto: { label: 'Choose a photo', choices: ['ph:image', 'ph:images'] },
+	/** The step-by-step log of a script read from a photo or file (Trevor, 2026-11-06). */
+	importLog: { label: 'Read log', choices: ['ph:list-magnifying-glass', 'ph:scroll'] },
 	pasteLink: { label: 'Paste link', choices: ['ph:link', 'ph:link-simple'] },
 	changeKind: { label: 'Change kind', choices: ['ph:swap', 'ph:arrows-left-right'] },
 	unlink: { label: 'Unlink', choices: ['ph:link-break', 'ph:link-simple-break'] },
 	quickPlay: { label: 'Play script', choices: ['ph:play', 'ph:play-circle'] },
+	/** The daily puzzle on Home, reserved until one is built (plan M69). */
+	dailyPuzzle: { label: 'Daily puzzle', choices: ['ph:calendar-check', 'ph:calendar-star'] },
 	report: { label: 'Report a problem', choices: ['ph:bug', 'ph:flag'] },
 	switchBuild: { label: 'Switch build', choices: ['ph:arrows-left-right', 'ph:swap'] },
 	reference: { label: 'Character reference', choices: ['ph:books', 'ph:book-bookmark'] },

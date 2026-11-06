@@ -22,7 +22,7 @@
 	import ReminderToken from '#lib/features/characters/ReminderToken.svelte';
 	import { bankView, type BankItem } from './bank-items.ts';
 	import BoardReminder from './BoardReminder.svelte';
-	import { placingAlignment } from './board.ts';
+	import { reminderPlacing } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import type { ReminderDragging } from './reminder-drag.svelte.ts';
 	import type { ReminderHand } from './reminder-hand.svelte.ts';
@@ -134,10 +134,10 @@
 			{#if held.kind === 'bank'}<BoardReminder
 					{...bankView(held.item, characters)}
 					{...bankNumber && { symbol: numberSymbol(hand.number) }}
-					alignment={placingAlignment(game, held.item, characters)}
+					{...reminderPlacing(game, held.item, characters)}
 				/>{:else if placed}<BoardReminder
 					{...placedLook(placed, characters)}
-					alignment={placingAlignment(game, placed, characters)}
+					{...reminderPlacing(game, placed, characters)}
 				/>{/if}
 		{/snippet}
 		{#snippet extra()}

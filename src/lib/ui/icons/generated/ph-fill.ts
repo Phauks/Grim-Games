@@ -38,6 +38,8 @@ import ph_bookmarks_simple_fill from '~icons/ph/bookmarks-simple-fill';
 import ph_books_fill from '~icons/ph/books-fill';
 import ph_bug_fill from '~icons/ph/bug-fill';
 import ph_calculator_fill from '~icons/ph/calculator-fill';
+import ph_calendar_check_fill from '~icons/ph/calendar-check-fill';
+import ph_calendar_star_fill from '~icons/ph/calendar-star-fill';
 import ph_camera_fill from '~icons/ph/camera-fill';
 import ph_camera_plus_fill from '~icons/ph/camera-plus-fill';
 import ph_cards_fill from '~icons/ph/cards-fill';
@@ -128,6 +130,7 @@ import ph_house_fill from '~icons/ph/house-fill';
 import ph_house_simple_fill from '~icons/ph/house-simple-fill';
 import ph_identification_card_fill from '~icons/ph/identification-card-fill';
 import ph_image_fill from '~icons/ph/image-fill';
+import ph_images_fill from '~icons/ph/images-fill';
 import ph_info_fill from '~icons/ph/info-fill';
 import ph_key_fill from '~icons/ph/key-fill';
 import ph_leaf_fill from '~icons/ph/leaf-fill';
@@ -283,6 +286,8 @@ const icons: IconMap = {
 	'ph:books-fill': ph_books_fill,
 	'ph:bug-fill': ph_bug_fill,
 	'ph:calculator-fill': ph_calculator_fill,
+	'ph:calendar-check-fill': ph_calendar_check_fill,
+	'ph:calendar-star-fill': ph_calendar_star_fill,
 	'ph:camera-fill': ph_camera_fill,
 	'ph:camera-plus-fill': ph_camera_plus_fill,
 	'ph:cards-fill': ph_cards_fill,
@@ -373,6 +378,7 @@ const icons: IconMap = {
 	'ph:house-simple-fill': ph_house_simple_fill,
 	'ph:identification-card-fill': ph_identification_card_fill,
 	'ph:image-fill': ph_image_fill,
+	'ph:images-fill': ph_images_fill,
 	'ph:info-fill': ph_info_fill,
 	'ph:key-fill': ph_key_fill,
 	'ph:leaf-fill': ph_leaf_fill,
