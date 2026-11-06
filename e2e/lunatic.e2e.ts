@@ -1,5 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
+import { nightStep } from './night-step.ts';
 
 /**
  * The Lunatic's night step sells the Demon they believe they are (Trevor, 2026-10-29): fake
@@ -66,7 +67,7 @@ async function openStep(page: Page, title: string) {
 	await expect(name).toHaveText(title);
 	// At its count: the step's name opens the character on a tablet.
 	await strip.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong').tap();
-	const dialog = page.getByRole('dialog', { name: title });
+	const dialog = nightStep(page, title);
 	await expect(dialog).toBeVisible();
 	return dialog;
 }

@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 import { putReminder } from './reminder-bank.ts';
+import { nightStep } from './night-step.ts';
 
 // A killing step's "If chosen" rows (Trevor, 2026-11-03, option B): each player the kill could
 // hit, their badge once and the outcome in words, no icons.
@@ -127,7 +128,7 @@ test("the Demon's step lists who can't die or sets something off, once each, in 
 	const strip = await walkTo(page, 'Vigormortis');
 	await expect(strip.getByTestId('step-if-chosen')).toContainText(/Soldier\s*Seat 4\s*Can't die/);
 	await strip.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong').tap();
-	const step = page.getByRole('dialog', { name: 'Vigormortis' });
+	const step = nightStep(page, 'Vigormortis');
 	const rows = step.getByTestId('step-if-chosen').getByRole('listitem');
 	await expect(step.getByRole('heading', { name: 'If chosen', level: 3 })).toBeVisible();
 	await expect(rows.filter({ hasText: 'Soldier' })).toHaveText(

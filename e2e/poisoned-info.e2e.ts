@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 import { putReminder } from './reminder-bank.ts';
+import { nightStep } from './night-step.ts';
 
 /**
  * A drunk or poisoned player may be given any information, true or false
@@ -94,7 +95,7 @@ async function toNightTwo(page: Page, executed: string) {
 async function openStep(page: Page, title: string) {
 	const strip = await walkTo(page, title);
 	await strip.locator('button.step').tap();
-	const dialog = page.getByRole('dialog', { name: title });
+	const dialog = nightStep(page, title);
 	await expect(dialog).toBeVisible();
 	return dialog;
 }

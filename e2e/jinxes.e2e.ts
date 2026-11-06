@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 import { closeBin, putReminder, putRunReminder } from './reminder-bank.ts';
+import { nightStep } from './night-step.ts';
 
 // Jinxes on characters already built (L109): the Plague Doctor's ability that goes to a
 // Minion instead of the Storyteller, and the Pit-Hag's jinxes with the Goon, Damsel and Village
@@ -103,7 +104,7 @@ async function openStep(page: Page, title: string) {
 	)
 		.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong')
 		.tap();
-	const step = page.getByRole('dialog', { name: title });
+	const step = nightStep(page, title);
 	await expect(step).toBeVisible();
 	return step;
 }
@@ -1065,7 +1066,7 @@ test('the Engineer who removes the Summoner gives the Storyteller its ability', 
 	for (let i = 0; i < 10 && (await name.textContent()) !== 'Summoner'; i++) await back.tap();
 	await expect(name).toHaveText('Summoner');
 	await strip.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong').tap();
-	const summoner = page.getByRole('dialog', { name: 'Summoner' });
+	const summoner = nightStep(page, 'Summoner');
 	await expect(summoner.getByTestId('step-who')).toHaveText('Storyteller');
 });
 

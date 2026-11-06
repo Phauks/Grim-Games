@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
+import { nightStep } from './night-step.ts';
 
 /**
  * The Spy sees the Grimoire each night (https://wiki.bloodontheclocktower.com/Spy), so its night
@@ -42,7 +43,7 @@ async function openStep(page: Page, title: string) {
 	for (let i = 0; i < 30 && (await name.textContent()) !== title; i++) await next.tap();
 	await expect(name).toHaveText(title);
 	await strip.locator('button.step').tap();
-	const dialog = page.getByRole('dialog', { name: title });
+	const dialog = nightStep(page, title);
 	await expect(dialog).toBeVisible();
 	return dialog;
 }
@@ -68,7 +69,7 @@ test('the Spy is shown the Grimoire with nothing but the X over it', async ({ pa
 	await expect.poll(() => seat.boundingBox()).toEqual(usual);
 
 	await toolbar.getByRole('button', { name: 'Close' }).tap();
-	await expect(page.getByRole('dialog', { name: 'Spy' })).toBeVisible();
+	await expect(nightStep(page, 'Spy')).toBeVisible();
 	// The bar has its controls back, under the step (which hides them from the accessibility tree).
 	await expect(page.locator('[role="toolbar"] button[aria-label="More"]')).toBeAttached();
 });

@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
+import { nightStep } from './night-step.ts';
 
 /**
  * The Bounty Hunter's "[1 Townsfolk is evil]" (M22,
@@ -59,7 +60,7 @@ test('the Bounty Hunter asks for an evil Townsfolk and tells them', async ({ pag
 		await next.tap();
 	await expect(name).toHaveText('Starting alignment');
 	await strip.locator('button.step').tap();
-	const step = page.getByRole('dialog', { name: 'Starting alignment' });
+	const step = nightStep(page, 'Starting alignment');
 	const tasks = step.getByTestId('setup-alignment');
 	await expect(tasks).toContainText('None');
 

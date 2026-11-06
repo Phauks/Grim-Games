@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { pickScript, toBoard } from './new-game.ts';
 import { pickNumber } from './number-select.ts';
 import { boardSeat, inHand, putReminder } from './reminder-bank.ts';
+import { nightStep } from './night-step.ts';
 
 // The controls for wiki examples the engine now runs (M17a-g): the Wizard's wish, the
 // Yaggababble's phrase count, the Angel's Something Bad, the Ojo's named character, the
@@ -105,7 +106,7 @@ async function openStep(page: Page, title: string) {
 	// By its name (the character's band): a tap on the step's text could land on a character
 	// named in it.
 	await strip.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong').tap();
-	const dialog = page.getByRole('dialog', { name: title });
+	const dialog = nightStep(page, title);
 	await expect(dialog).toBeVisible();
 	return dialog;
 }
