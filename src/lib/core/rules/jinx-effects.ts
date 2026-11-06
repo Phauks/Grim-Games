@@ -8,6 +8,7 @@
  * hidden at Demon info, and a gained ability's end.
  */
 import type { ImpairKind, Impairs, JinxRules } from '#lib/core/data/jinx-rules.ts';
+import { jinxPatches } from '#lib/core/data/jinx-presets.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type { CharacterRules } from '#lib/core/data/character-rules.ts';
 import type { Alignment, CharacterId } from '#lib/core/data/types.ts';
@@ -303,16 +304,29 @@ export function killsMarkedBy(
 }
 
 /**
- * The partners `owner`'s madness may be about by a jinx, though they are not good
- * (`madAsPartner`: the Cerenovus may make a player mad that they are the Goblin,
- * https://wiki.bloodontheclocktower.com/Cerenovus#Related_Jinxes).
+ * The characters `owner`'s madness may be about by a jinx in effect, whatever their type: a
+ * `patch` of the part `madAs` adding them to its `characters` (the older verb `madAsPartner`
+ * is read as one: the Cerenovus may make a player mad that they are the Goblin,
+ * https://wiki.bloodontheclocktower.com/Cerenovus#Related_Jinxes). Not those its own `madAs`
+ * already names.
  */
 export function madAsPartners(
 	game: Pick<Game, 'script'>,
 	owner: CharacterId,
 	characters?: RulesLookup
 ): CharacterId[] {
-	return ownJinxEffects(game, owner, 'madAsPartner', characters).map((j) => j.partner);
+	const own = rulesOf(owner, characters);
+	const mine = own?.madAs?.characters ?? [];
+	const lookup = characters as CharacterLookup | undefined;
+	const out = ownJinxes(game, owner, () => true, characters).flatMap(({ partner, rule }) =>
+		jinxPatches(rule, { partner, own }).flatMap((patch) => {
+			const also = patch.parts.madAs?.characters ?? [];
+			if (also.length === 0 || aboutHolder(patch)) return [];
+			if (!jinxApplies(game, owner, partner, patch, lookup)) return [];
+			return also.filter((id) => !mine.includes(id));
+		})
+	);
+	return [...new Set(out)];
 }
 
 /**

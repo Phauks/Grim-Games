@@ -24,13 +24,14 @@ import { keepsAbilityWhenDead } from './dead-characters.ts';
 import { demonInfo } from './evil-info.ts';
 import { gameEnds } from './game-end.ts';
 import { evilInfoNotesLeftOut } from './holder-jinxes.ts';
-import { gainedEnd, notShownGiven, survivesCarrierBy } from './jinx-effects.ts';
+import { gainedEnd, madAsPartners, notShownGiven, survivesCarrierBy } from './jinx-effects.ts';
 import { jinxStoppers } from './jinx-ends.ts';
 import { answerCauses, nightAnswer, reliability } from './night-info.ts';
 import { nominationsPerDay } from './nominations.ts';
 import { jinxSafeFrom, protection } from './protection.ts';
 import { uncountedVote, voteWorth } from './vote-weights.ts';
 import { rulesInPlay } from './rules-in-play.ts';
+import { madAsChoice } from './mad-as.ts';
 import { nightStepAlerts, type NightAlert } from './night-alerts.ts';
 import { nightKill } from './night-kill.ts';
 import { reminderTargetMisses } from './reminder-targets.ts';
@@ -1590,5 +1591,31 @@ describe('a script jinx that patches its character’s rules', () => {
 	it('rejects a patch part its reader rejects, or jinxes inside a patch', () => {
 		const bad = load(entries({ patch: { parts: { voteWeight: { weight: 1 }, jinxes: {} } } }));
 		expect(bad.warnings.map((w) => w.message).join(' ')).toMatch(/patch/);
+	});
+});
+
+// M61c: the verb `madAsPartner` is a preset of a patch of the part `madAs`.
+describe('a script jinx that patches the Cerenovus’s madAs', () => {
+	const MAD_AS = { token: 'Mad', mad: 'carrier', choose: ['townsfolk', 'outsider'] };
+	const entries = (rules: Json) => [
+		official('cerenovus', [
+			{ id: 'baron', reason: 'The Cerenovus may make a player mad as the Baron.', rules }
+		]),
+		'baron',
+		'chef',
+		'empath',
+		'imp'
+	];
+
+	it('lets the Cerenovus choose the Baron, as the verb would', () => {
+		const patch = { patch: { parts: { madAs: { ...MAD_AS, characters: ['baron'] } } } };
+		for (const rules of [patch, { madAsPartner: true }]) {
+			const { script, warnings, characters } = load(entries(rules));
+			expect(warnings).toEqual([]);
+			const cast = castWith({ script, characters });
+			const { game } = cast(['cerenovus', 'chef', 'empath', 'imp']);
+			expect(madAsPartners(game, 'cerenovus', characters)).toEqual(['baron']);
+			expect(madAsChoice(game, 'cerenovus', characters)?.partners).toEqual(['baron']);
+		}
 	});
 });

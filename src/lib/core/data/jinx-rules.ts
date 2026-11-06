@@ -263,7 +263,8 @@
  *   partner's reminder `token` (the Slayer shooting the Lleech's host, "Poisoned");
  * - `madAsPartner`: the subject's `madness` may be about the partner, though the partner is
  *   not good: a `may-mad-as` night alert at its step (the Cerenovus with the Goblin). Needs
- *   `madness`;
+ *   `madness`. A preset of a `patch` of the part `madAs`, the partner among its `characters`
+ *   (`data/jinx-presets.ts`, M61c);
  * - `thinksPartnerSetup`: while the subject's player thinks they are the partner (their seat
  *   shows the partner's token), the partner's own setup change applies as if it were in play
  *   (the Marionette who thinks they are the Balloonist or the Huntsman). Needs the partner's
@@ -578,7 +579,10 @@ export interface JinxPatch extends JinxEffect {
 	preset?: JinxPresetVerb;
 }
 
-/** The verbs read as a {@link JinxPatch} (M61b): `impairs` about the subject's own player. */
-export type JinxPresetVerb = 'impairs';
+/**
+ * The verbs read as a {@link JinxPatch} (M61b, M61c): `impairs` about the subject's own
+ * player, `madAsPartner` (the part `madAs` with the partner among its `characters`).
+ */
+export type JinxPresetVerb = 'impairs' | 'madAsPartner';
 
 export type JinxRuleKey = keyof JinxRules;
