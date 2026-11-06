@@ -10,11 +10,7 @@ const SHEET = `Print ${APP_NAME} Sheet`;
 test.beforeEach(async ({ page }) => {
 	await page.goto('/play');
 	// The first load fetches the character data, slow on a busy machine.
-	await expect(page.getByRole('link', { name: 'Find a script' })).toHaveAttribute(
-		'href',
-		'/scripts',
-		{ timeout: 15_000 }
-	);
+	await expect(page.getByRole('button', { name: 'Custom' })).toBeVisible({ timeout: 15_000 });
 	await page.getByRole('button', { name: 'Trouble Brewing' }).tap();
 	await expect(page.getByRole('heading', { name: 'Trouble Brewing', level: 1 })).toBeVisible();
 });

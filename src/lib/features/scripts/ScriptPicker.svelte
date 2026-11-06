@@ -25,7 +25,6 @@
 	import DataTable, { type DataColumn, type DataSort } from '#lib/ui/table/DataTable.svelte';
 	import { MAX_FILTER_CHARACTERS } from './botcscripts-api.ts';
 	import BotcFilter from './BotcFilter.svelte';
-	import { fetchRemote } from './remote-previews.svelte.ts';
 	import {
 		chooseScript,
 		currentScript,
@@ -39,6 +38,7 @@
 	import { relaxJson } from './relaxed-json.ts';
 	import { reloadSavedScript, type ScriptSource } from './saved-scripts.ts';
 	import ScriptView from './ScriptView.svelte';
+	import { targetText } from './target-text.ts';
 	import { ScriptSearch } from './script-search.svelte.ts';
 	import { storedSources, type PageSource } from './search-sources.ts';
 	import {
@@ -304,15 +304,8 @@
 				if (script) await use(script, target.saved.source);
 				return;
 			}
-			case 'json':
-				return run(
-					() => Promise.resolve({ text: JSON.stringify(target.json), source: target.source }),
-					options
-				);
-			case 'botcscripts':
-			case 'homebrew':
-			case 'bloodstar':
-				return run(() => fetchRemote(target), options);
+			default:
+				return run(() => targetText(target), options);
 		}
 	}
 
