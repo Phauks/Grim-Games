@@ -49,6 +49,12 @@
 		columns?: boolean;
 		/** Uses the whole window's width, with no page maximum (the Character Analyzer). */
 		wide?: boolean;
+		/**
+		 * The content fills the rest of the window and scrolls inside itself, so the window
+		 * never scrolls and no scrollbar runs down the screen's edge (Trevor, 2026-11-06: the
+		 * Library's scrollbar belongs inside the Library).
+		 */
+		fill?: boolean;
 		children: Snippet;
 	}
 
@@ -66,6 +72,7 @@
 		sideFlow = false,
 		columns = false,
 		wide = false,
+		fill = false,
 		children
 	}: Props = $props();
 
@@ -87,7 +94,7 @@
 		{#if lead}{@render lead()}{/if}<span class="title-text" {@attach fitWords(title)}>{title}</span>
 	</h1>
 {/snippet}
-<main class="page" class:wide>
+<main class="page" class:wide class:fill>
 	<PageMenuButton />
 	<header class="head" class:visually-hidden={hideTitle}>
 		{#if titleBelow}
@@ -151,6 +158,19 @@
 	}
 	.page.wide {
 		max-width: none;
+	}
+	/* The window's height under the status bar, the content taking what the title leaves. */
+	.page.fill {
+		display: flex;
+		flex-direction: column;
+		height: calc(100dvh - var(--app-top) - env(safe-area-inset-bottom));
+		padding-bottom: var(--space-4);
+	}
+	.page.fill > .content {
+		flex: 1;
+		min-height: 0;
+		grid-template-rows: minmax(0, 1fr);
+		align-content: stretch;
 	}
 	/* Keeps the title clear of the hamburger, one spacing step after it. */
 	.menu-room {

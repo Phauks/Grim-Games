@@ -62,6 +62,11 @@
 		 */
 		pinAside?: boolean;
 		/**
+		 * The aside's column once the panes sit side by side (a grid track); a third of the width
+		 * by default. A form of settings beside its preview asks for room to read (Print).
+		 */
+		asideColumn?: string;
+		/**
 		 * Asked when ✕, Escape or a tap outside would close it; false keeps it open (a form
 		 * with unsaved changes asks first).
 		 */
@@ -91,6 +96,7 @@
 		scroll = true,
 		aside,
 		pinAside = true,
+		asideColumn,
 		beforeClose,
 		shownToPlayers = false
 	}: Props = $props();
@@ -185,7 +191,7 @@
 				{#if subtitle && !titleBelow}<Dialog.Description>{@render subtitle()}</Dialog.Description
 					>{:else if description}<Dialog.Description>{description}</Dialog.Description>{/if}
 				{#if aside}
-					<div class="panes" data-pin={pinAside || undefined}>
+					<div class="panes" data-pin={pinAside || undefined} style:--aside-column={asideColumn}>
 						<div class="aside" data-testid="dialog-aside">{@render aside()}</div>
 						<div class="pane" data-testid="dialog-pane">{@render children()}</div>
 					</div>
@@ -498,7 +504,7 @@
 	@container dialog-panes (min-width: 36rem) {
 		.panes,
 		.panes[data-pin] {
-			grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+			grid-template-columns: var(--aside-column, minmax(0, 1fr)) minmax(0, 2fr);
 			grid-template-rows: minmax(0, 1fr);
 			gap: var(--space-4);
 			overflow: hidden;

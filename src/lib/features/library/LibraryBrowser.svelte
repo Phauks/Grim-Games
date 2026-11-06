@@ -437,6 +437,11 @@
 		}
 		return json === undefined ? undefined : { json, fileName: fileNameFor(row.name, row.kind) };
 	});
+	/** The Library page's window beside its sidebar fills the page (Page's `fill`). */
+	const framed = $derived(sided.current && !onpick);
+	export function fills() {
+		return framed;
+	}
 	/** Whether the selected row can be saved as a file (the page's Download button). */
 	export function canDownload() {
 		return !!download;
@@ -556,6 +561,7 @@
 		class:sided={sided.current}
 		class:roomy={previewing}
 		class:picking={!!onpick}
+		class:framed
 	>
 		{#if sided.current}
 			<div class="side" data-own-scroll>
@@ -600,11 +606,11 @@
 			/>
 		</div>
 
-		<div class="files">
+		<div class="files" data-own-scroll={framed ? '' : undefined}>
 			{#if place === 'campaigns'}
 				<CampaignScripts {data} {term} frameless={sided.current} />
 			{:else}
-				<div data-testid="library-table">
+				<div class="table" data-testid="library-table">
 					<DataTable
 						label={t('library.table')}
 						{columns}
@@ -619,6 +625,7 @@
 						hideKey="library"
 						empty={t('common.none')}
 						frameless={sided.current}
+						fill={framed}
 					/>
 				</div>
 			{/if}
@@ -766,32 +773,28 @@
 		gap: var(--space-3);
 		min-width: 0;
 	}
-	/* Dragging: the row's name follows the finger, and the folder under it is outlined. */
-	:global(.library-drag-ghost) {
-		position: fixed;
-		top: 0;
-		left: 0;
-		z-index: var(--z-popover);
-		max-width: calc(20 * var(--u));
-		margin: calc(-1 * var(--space-5)) 0 0 var(--space-2); /* overlap-ok: the drag ghost sits above the finger */
-		padding: var(--space-1) var(--space-3);
-		border-radius: var(--radius-full);
-		background: var(--accent);
-		color: var(--on-accent);
-		font-weight: 600;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-		pointer-events: none;
+	/* The scrollbar inside the Library, not down the screen's edge (Trevor, 2026-11-06): the
+	   sidebar, list and pane each scroll in their own column under the toolbar. */
+	.manager.framed {
+		height: 100%;
+		min-height: 0;
+		grid-template-rows: auto minmax(0, 1fr);
 	}
-	:global([data-drop-over]) {
-		outline: 2px dashed var(--accent);
-		outline-offset: -2px;
-		background: var(--surface-selected);
+	.manager.framed .side,
+	.manager.framed .pane {
+		position: static;
+		height: auto;
+		max-height: none;
+		min-height: 0;
+		align-self: stretch;
 	}
-	:global(body.library-dragging) {
-		cursor: grabbing;
-		user-select: none;
-		-webkit-user-select: none;
+	.framed .files {
+		grid-template-rows: minmax(0, 1fr);
+		min-height: 0;
+		overflow-y: auto;
+		overscroll-behavior: contain;
+	}
+	.framed .table {
+		height: 100%;
 	}
 </style>

@@ -19,7 +19,7 @@ longest cell, so two PRs that each added a row used to conflict over the whole t
 
 ## The shared pieces
 
-- A page reached from the sidebar: `ui/layout/Page.svelte` (title, actions, subtitle, toolbar, side; puts the hamburger before the title while no sidebar shows) (enforced by review)
+- A page reached from the sidebar: `ui/layout/Page.svelte` (title, actions, subtitle, toolbar, side; `fill` makes the content the rest of the window's height and scroll inside itself, as the Library does; puts the hamburger before the title while no sidebar shows) (enforced by review)
 - A title whose words must not break in the middle: `fitWords` from `ui/fit-words.ts` (shrinks the text until its longest word fits; Page's title uses it) (enforced by `e2e/play.e2e.ts`)
 - A board drawn inside a dialog that must fit the room left under what sits above it: `fitInDialog` from `ui/fit-in-dialog.ts` (sets `--fit-height` in a wide box; the player grim uses it in the Storyteller's player view) (enforced by `e2e/player-view-parity.e2e.ts`)
 - The menu (You, App, build line, CCC logo): `features/shell/NavList.svelte`, its sections each a `Collapsible`, rows only for places (links); what opens a modal or acts (Settings, Report an issue, the build switch) is a `NavAction` drawn as a `Button` under the sections (Trevor, 2026-10-29; enforced by `e2e/navigation.e2e.ts`), in the sidebar (`AppNav`) and the drawer (`NavDrawer`) alike; there is no app header or footer (enforced by `e2e/navigation.e2e.ts`)

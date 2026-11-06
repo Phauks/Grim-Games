@@ -328,6 +328,12 @@
 		color: var(--team);
 		box-shadow: inset 0 0 0 1px var(--team);
 	}
+	/* The type headings match the rows: their colour as outline and text (Trevor, 2026-11-06). */
+	.print-sheet[data-friendly] :global(h2[data-type-band]:not([data-type-band='outline'])) {
+		background: none;
+		color: var(--type-ink);
+		box-shadow: inset 0 0 0 1px var(--type-ink);
+	}
 	.print-sheet[data-friendly] :global(.ring) {
 		background: var(--print-paper);
 	}
