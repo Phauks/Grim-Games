@@ -91,6 +91,7 @@ export const scripts = {
 	'scripts.photo.reading': 'Reading the photo, {percent}%',
 	'scripts.photo.failed': 'The photo could not be read',
 	'scripts.photo.looksLike': 'Looks like {name}',
+	'scripts.photo.titleBy': '{title} by {author}',
 	'scripts.photo.summary': '{found} found, {check} to check',
 	'scripts.photo.closeMark': 'Read as a close match: check it',
 	'scripts.photo.unmatched': 'Not matched',

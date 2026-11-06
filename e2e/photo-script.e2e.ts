@@ -100,8 +100,10 @@ test('a custom sheet keeps only what is ticked and names it from its title', asy
 		return { name: r.name, ability: r.ability ?? '' };
 	});
 	rows.splice(3, 0, { name: 'Lamplighter', ability: '' });
+	// The byline names the author (Trevor, 2026-11-06: "By: XXX should recognize as the author").
+	rows.unshift({ name: 'By: Trevor', ability: '' });
 	const dialog = await takePhoto(page, await photo(browser, 'Storm Front', rows));
-	await expect(dialog.getByTestId('photo-banner')).toContainText('Storm Front', {
+	await expect(dialog.getByTestId('photo-banner')).toContainText('Storm Front by Trevor', {
 		timeout: 90_000
 	});
 	await expect(dialog.getByTestId('photo-pick')).toBeVisible();
@@ -118,6 +120,9 @@ test('a custom sheet keeps only what is ticked and names it from its title', asy
 	// Each character comes with its ability (Trevor, 2026-11-06: they loaded without one).
 	const chef = tb.find((c) => c.id === 'chef')!;
 	await expect(opened.getByTestId('script-sheet')).toContainText(chef.ability ?? '');
+	await expect(
+		opened.getByTestId('script-details').getByRole('definition').first()
+	).toHaveText('Trevor');
 });
 
 test("a sheet with its script's QR code loads that exact script", async ({ page, browser }) => {

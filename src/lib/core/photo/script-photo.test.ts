@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { editionScript, loadScript, OFFICIAL_EDITIONS } from '#lib/core/data/script.ts';
 import {
+	bylineAuthor,
 	knownScriptFor,
 	photoScriptJson,
 	likeness,
@@ -172,5 +173,46 @@ describe('the script a review makes', () => {
 			['Chef', chef.ability],
 			['Bard', 'You start knowing a secret song.']
 		]);
+	});
+});
+
+describe('the author', () => {
+	it('is read from a "By:" line under the title, which is never the title or a character', () => {
+		// Trevor, 2026-11-06: "By: XXX should recognize as the author".
+		const lines: PhotoLine[] = [
+			{ text: 'Storm Front', height: 40 },
+			{ text: 'By: Trevor Goldsmith', height: 14 },
+			{ text: 'Empath', height: 12 },
+			{ text: 'Chef', height: 12 }
+		];
+		const traces: PhotoLineTrace[] = [];
+		const reading = readScriptLines(lines, official, (t) => traces.push(t));
+		expect(reading.author).toBe('Trevor Goldsmith');
+		expect(reading.title).toBe('Storm Front');
+		expect(reading.unmatched).toEqual([]);
+		expect(traces[1]).toMatchObject({ outcome: 'author', author: 'Trevor Goldsmith' });
+		const script = loadScript(
+			photoScriptJson(
+				reading.title,
+				reading.found.map((f) => f.character),
+				reading.author
+			),
+			data
+		).script;
+		expect(script?.meta.author).toBe('Trevor Goldsmith');
+	});
+
+	it('reads "By name" and "by: name." but not an ability that starts with "By"', () => {
+		expect(bylineAuthor('By Steven Medway')).toBe('Steven Medway');
+		expect(bylineAuthor('by: Jams.')).toBe('Jams');
+		expect(bylineAuthor('BY - Lau')).toBe('Lau');
+		expect(
+			bylineAuthor('By day, you may choose a player to learn whether they are good or evil')
+		).toBe(undefined);
+		expect(bylineAuthor('Bystander')).toBe(undefined);
+	});
+
+	it('is empty when the sheet has no byline', () => {
+		expect(readScriptLines([{ text: 'Empath' }], official).author).toBe('');
 	});
 });

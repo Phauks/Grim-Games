@@ -203,7 +203,7 @@
 		const reading = readScriptLines(lines, pool, (l) => logLine(l, lines[l.index]?.confidence));
 		const close = reading.found.filter((f) => f.kind === 'close').length;
 		importLog.add(
-			`Found ${reading.found.length} (${close} close), ${reading.unmatched.length} not matched, title "${reading.title}"`
+			`Found ${reading.found.length} (${close} close), ${reading.unmatched.length} not matched, title "${reading.title}", author "${reading.author}"`
 		);
 		const ids = reading.found.map((f) => f.character.id);
 		const same = knownScriptFor(ids, reading.title, known);
@@ -243,7 +243,7 @@
 			return;
 		}
 		const name = result.title;
-		const json = photoScriptJson(name, chosen);
+		const json = photoScriptJson(name, chosen, result.author);
 		const loaded = loadScript(json, data);
 		importLog.add(
 			`Confirmed: "${name}" with ${chosen.length} characters, ${loaded.problems.length} problem(s)`
@@ -261,7 +261,12 @@
 				? t('scripts.photo.failed')
 				: match
 					? t('scripts.photo.looksLike', { name: match.name })
-					: result.title || t('common.none')
+					: result.author
+						? t('scripts.photo.titleBy', {
+								title: result.title || t('common.none'),
+								author: result.author
+							})
+						: result.title || t('common.none')
 	);
 	const summary = $derived(
 		t('scripts.photo.summary', { found: result.found.length, check: closeCount })

@@ -41,11 +41,14 @@ export interface PhotoReading {
 	unmatched: string[];
 	/** The sheet's title as read; '' when none was found. */
 	title: string;
+	/** The script's author, from a "By: name" line (Trevor, 2026-11-06); '' when there is none. */
+	author: string;
 }
 
 /** How one line was read, for the import log (Trevor, 2026-11-06: "more verbose logging"). */
 export type PhotoLineTrace =
 	| { index: number; text: string; outcome: 'empty' | 'tail' | 'title' | 'unnamed' }
+	| { index: number; text: string; outcome: 'author'; author: string }
 	| {
 			index: number;
 			text: string;
@@ -60,6 +63,16 @@ export type PhotoLineTrace =
 			/** Name likeness (0 to 1) for a name or close match, the ability's share for an ability. */
 			score: number;
 	  };
+
+/**
+ * A sheet's byline, "By: name" or "By name" (script makers print one under the title),
+ * and the name it gives. Only a short line counts, so an ability that starts "By" never does.
+ */
+export function bylineAuthor(text: string): string | undefined {
+	const match = /^by\s*[:.\-]?\s+(.+)$/i.exec(text.trim());
+	const author = match?.[1].trim().replace(/[.,;]+$/, '');
+	return author && author.split(/\s+/).length <= 6 && /[a-z]/i.test(author) ? author : undefined;
+}
 
 /** A name at least this alike (0 to 1) is found outright. */
 const MATCHED = 0.86;
@@ -246,10 +259,18 @@ export function readScriptLines(
 	};
 
 	const traces: PhotoLineTrace[] = [];
+	let author = '';
 	lines.forEach((line, index) => {
 		const text = line.text.trim();
 		if (!text) {
 			traces.push({ index, text, outcome: 'empty' });
+			return;
+		}
+		// The first byline names the author; it is never the title or a character.
+		const by = author ? undefined : bylineAuthor(text);
+		if (by) {
+			author = by;
+			traces.push({ index, text, outcome: 'author', author: by });
 			return;
 		}
 		// The end of an ability that ran onto a line of its own ("poisoned.") names no one.
@@ -307,7 +328,8 @@ export function readScriptLines(
 	return {
 		found: [...found.values()],
 		unmatched: unmatched.filter((u) => u !== titleText),
-		title: titleText
+		title: titleText,
+		author
 	};
 }
 
@@ -351,10 +373,14 @@ export function knownScriptFor<K>(
  * id, a custom one (from the user's own scripts) written out in full as script JSON, so the
  * loader keeps it with its ability (Trevor, 2026-11-06: characters loaded without one).
  */
-export function photoScriptJson(name: string, characters: readonly Character[]): unknown[] {
+export function photoScriptJson(
+	name: string,
+	characters: readonly Character[],
+	author = ''
+): unknown[] {
 	return scriptToJson({
 		name,
-		meta: { name },
+		meta: author ? { name, author } : { name },
 		characters: [...characters],
 		homebrew: characters.filter((c) => !c.edition).map((c) => c.id),
 		homebrewJinxes: [],
