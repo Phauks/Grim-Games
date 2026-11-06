@@ -592,10 +592,11 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	{
 		// Trevor, 2026-11-04: "if a character also has the ability of a character, we need to make
 		// sure we have the reminder tokens to facilitate that ability". M50: every borrowed ability
-		// (gained, held, given by hand, the Storyteller's) brings its character's reminders.
+		// (gained, held, given by hand, the Storyteller's) brings its character's reminders. M67
+		// (Trevor, 2026-11-06): day view lists them as character rows under the player's own.
 		title: 'Borrowed abilities bring their reminder tokens',
 		area: 'storyteller',
-		parts: ['M50']
+		parts: ['M50', 'M67']
 	},
 	{
 		// The coordinator's ask of 2026-11-03 (ability-parts/jinx-format-audit.md): a jinx format a

@@ -54,6 +54,7 @@
 	import { atDayStart } from './day-start.ts';
 	import RuleCharacterUse from './RuleCharacterUse.svelte';
 	import JinxStopChips, { jinxStopRows } from './JinxStopChips.svelte';
+	import BorrowedAbilityRows from './BorrowedAbilityRows.svelte';
 
 	interface Props {
 		game: DayPort;
@@ -354,13 +355,9 @@
 	);
 </script>
 
-<!--
-	A player's day button sits on their ability row, on the same line as their character and
-	name (Trevor, 2026-10-19, option B; the Players section is gone, Trevor 2026-10-20): Used
-	for a once-per-game day ability, and Guesses for the Juggler, whose guesses feed his night
-	answer.
--->
-<!-- The day's button at a row's end, centred like character selection's lock. -->
+<!-- A player's day button at their ability row's end, centred like character selection's lock
+     (Trevor, 2026-10-19, option B; 2026-10-20): Used for a once-per-game day ability, and
+     Guesses for the Juggler, whose guesses feed his night answer. -->
 {#snippet dayEnd(characterId: CharacterId | undefined, seatId: SeatId)}
 	{#if hasDayButton(characterId)}
 		<span class="day-end">{@render dayButton(characterId, seatId)}</span>
@@ -510,6 +507,7 @@
 													/></span
 												>{/if}</span
 										>
+										<BorrowedAbilityRows {game} seatId={head?.ref.seatId} />
 									</CharacterPiece>
 								{:else}
 									<CharacterPiece template="entry" characterId={head?.ref.characterId}>
@@ -584,6 +582,7 @@
 									{#if hasDayButton(seat.characterId)}<span class="state-line"
 											>{@render dayEnd(seat.characterId, seat.seatId)}</span
 										>{/if}
+									<BorrowedAbilityRows {game} seatId={seat.seatId} />
 								</CharacterPiece>
 							{/if}
 						</li>
