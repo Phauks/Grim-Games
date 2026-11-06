@@ -13,6 +13,8 @@
 	import { labData } from '#lib/features/character-lab/lab-data.ts';
 	import { LabSession } from '#lib/features/character-lab/lab-session.svelte.ts';
 	import { provideCharacters } from '#lib/features/characters/character-context.ts';
+	import DeviceFrame from '#lib/features/test-room/DeviceFrame.svelte';
+	import { STORYTELLER_SCREENS } from '#lib/features/test-room/devices.ts';
 	import { MediaQuery } from 'svelte/reactivity';
 	import Page from '#lib/ui/layout/Page.svelte';
 	import CharacterReference from './CharacterReference.svelte';
@@ -30,6 +32,7 @@
 	const session = new LabSession();
 	/** A computer window: the lab and its game on the right of the table. */
 	const computer = new MediaQuery('min-width: 75rem', false);
+	let phoneWidth = $state(0);
 	// Badges draw a custom character by its own name and icon.
 	provideCharacters(() => data?.byId);
 
@@ -66,8 +69,25 @@
 		{:else}
 			<div class="characters" class:with-lab={computer.current}>
 				<div class="table-area">
-					<LabSelect {session} open={!computer.current} />
+					<LabSelect {session} />
 					{#if session.core}<CharacterReference {entries} core={session.core} />{/if}
+					{#if !computer.current}
+						<!-- A phone shows the game under the table, on this page (Trevor, 2026-11-06:
+						     "loads game on another page ... only to show it beneath"). -->
+						<div class="phone-game" bind:clientWidth={phoneWidth}>
+							{#key `${session.gamePath}:${session.loads}`}
+								<DeviceFrame
+									device={STORYTELLER_SCREENS[0]}
+									title={t('lab.storyteller')}
+									src={session.gamePath ?? '/'}
+									zoom={1}
+									room={phoneWidth}
+									square
+									testid="lab-frame"
+								/>
+							{/key}
+						</div>
+					{/if}
 				</div>
 				{#if computer.current}
 					<aside class="lab-side"><LabPanel {session} frame /></aside>
@@ -93,9 +113,15 @@
 	}
 	.table-area {
 		display: grid;
+		/* Its width comes from the page, never from the game frame under the table. */
+		grid-template-columns: minmax(0, 1fr);
 		align-content: start;
 		gap: var(--space-2);
 		min-width: 0;
+	}
+	.phone-game {
+		min-width: 0;
+		contain: inline-size;
 	}
 	.lab-side {
 		position: sticky;
