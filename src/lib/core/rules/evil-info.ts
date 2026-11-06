@@ -7,7 +7,8 @@
  * https://wiki.bloodontheclocktower.com/Magician).
  */
 import type { CharacterId } from '#lib/core/data/index.ts';
-import { rulesIn, rulesOf } from '#lib/core/data/rules/index.ts';
+import { rulesOf } from '#lib/core/data/rules/index.ts';
+import { rulesInPlay } from './rules-in-play.ts';
 import { abilityState } from './ability.ts';
 import { ownJinxEffects } from './jinxes.ts';
 import { hiddenPartnersOf } from './jinx-effects.ts';
@@ -78,7 +79,7 @@ export function demonInfo(game: Game, characters: CharacterLookup): DemonInfo {
 	const out: DemonInfo = { shownAsMinions: [], shownAsDemon: [] };
 	for (const seatId of game.seating) {
 		const id = trueCharacter(game, seatId, characters);
-		const evilInfo = id === undefined ? undefined : rulesIn(game, id, characters)?.evilInfo;
+		const evilInfo = id === undefined ? undefined : rulesInPlay(game, id, characters)?.evilInfo;
 		// With its optional rule (`whileWorking`), a drunk or poisoned Poppy Grower hides nothing.
 		const hides =
 			evilInfo?.hidesMinions &&
