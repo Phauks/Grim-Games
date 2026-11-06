@@ -102,7 +102,7 @@
 <style>
 	/*
 	 * Sits over the bottom of the list, so adding cards never moves the cards above. Drawn
-	 * above the pinned section headers (z-index 1), which used to slide over it, and flush
+	 * above the pinned section headers, which used to slide over it, and flush
 	 * with the scroller's bottom edge, so nothing peeks out under it (Trevor, 2026-11-01).
 	 */
 	.chain {
@@ -110,7 +110,7 @@
 		bottom: calc(-1 * var(--space-1));
 		z-index: var(--z-pinned-bar);
 		margin-top: var(--space-3);
-		margin-bottom: calc(-1 * var(--space-1));
+		margin-bottom: calc(-1 * var(--space-1)); /* overlap-ok: gives back the inset that lets the pinned bar meet the edge */
 		padding: var(--space-2) 0 var(--space-2);
 		/* A sheet's colour by default; the page passes its own (`--chain-background`). */
 		background: var(--chain-background, var(--sheet-background));

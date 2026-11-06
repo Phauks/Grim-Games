@@ -436,7 +436,7 @@
 		place-items: center;
 		width: 46%;
 		height: 46%;
-		margin-top: -10%;
+		margin-top: -10%; /* overlap-ok: places the symbol inside the token */
 		color: var(--on-reminder);
 		line-height: 1;
 		--icon-size: 100%;
@@ -448,7 +448,7 @@
 	/* A number token's number (plan M35): big, in the reminder tokens font, as the symbol sits. */
 	.number {
 		width: auto;
-		margin-top: -14%;
+		margin-top: -14%; /* overlap-ok: places the number inside the token */
 		font-family: var(--font-reminder);
 		font-size: calc(var(--d) * 0.5);
 		font-weight: 700;
@@ -458,7 +458,7 @@
 	img {
 		width: calc(84% * var(--reminder-icon, 1));
 		height: calc(84% * var(--reminder-icon, 1));
-		margin-top: -16%;
+		margin-top: -16%; /* overlap-ok: places the number inside the token */
 		object-fit: contain;
 		pointer-events: none;
 	}

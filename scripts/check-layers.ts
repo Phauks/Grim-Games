@@ -9,6 +9,9 @@
  * 2. A raw number for z-index. Each file picking its own 1, 2, 3 or 1000 is how a sheet ends up
  *    over a heading it should sit under. Use the named layers (`--z-*`, src/lib/ui/tokens/
  *    base.css), whose order is decided in one place.
+ * 3. A negative top or bottom margin, which pulls a box up over the one before it or the one
+ *    after it up under it (the paper sheet over the Game over row, 2026-11-06). One that is
+ *    meant says why in an `overlap-ok:` comment on the same line.
  *
  * Scans .css files and Svelte <style> blocks under src. Run by `npm run lint`.
  */
@@ -27,6 +30,10 @@ export type LayerProblem = { line: number; problem: string };
 
 /** Problems in a stylesheet. `firstLine` is the line the CSS starts on in its file. */
 export function findLayerProblems(css: string, firstLine = 1): LayerProblem[] {
+	const okLines = new Set<number>();
+	css.split('\n').forEach((text, index) => {
+		if (/\/\*[^]*?overlap-ok:/.test(text)) okLines.add(firstLine + index);
+	});
 	// Blank out comments (keeping newlines) so prose never matches.
 	const code = css.replace(/\/\*[^]*?\*\//g, (comment) => comment.replace(/[^\n]/g, ' '));
 	const found: LayerProblem[] = [];
@@ -49,6 +56,12 @@ export function findLayerProblems(css: string, firstLine = 1): LayerProblem[] {
 		if (property === 'z-index' && /^-?\d+$/.test(value.replace(/\s*!important$/, ''))) {
 			found.push({ line: lineOf(at), problem: `z-index: ${value}  use a --z-* layer token` });
 		}
+		if (verticalMarginNegative(property, value) && !okLines.has(lineOf(at))) {
+			found.push({
+				line: lineOf(at),
+				problem: `${property}: ${value}  a negative top or bottom margin pulls one box over another; say why in an overlap-ok: comment`
+			});
+		}
 		if (NUMBER_PROPERTY.test(property)) continue;
 		for (const calc of chunk.matchAll(/calc\(/g)) {
 			const body = calcBody(chunk, calc.index + calc[0].length);
@@ -69,6 +82,37 @@ export function findLayerProblems(css: string, firstLine = 1): LayerProblem[] {
 		}
 	}
 	return found;
+}
+
+/** A value that is negative: `-0.3em`, `-10%` or `calc(-1 * …)`. */
+const NEGATIVE = /^(?:-[\d.]|calc\(\s*-)/;
+
+/** Whether a margin declaration moves a box up or down by a negative amount. */
+function verticalMarginNegative(property: string, value: string): boolean {
+	if (/^margin-(?:top|bottom|block(?:-start|-end)?)$/.test(property))
+		return splitTop(value).some((part) => NEGATIVE.test(part));
+	if (property !== 'margin') return false;
+	const parts = splitTop(value);
+	// Top, then bottom (the third value, or the first again when there are one or two).
+	const vertical = parts.length >= 3 ? [parts[0], parts[2]] : [parts[0]];
+	return vertical.some((part) => part !== undefined && NEGATIVE.test(part));
+}
+
+/** A value's space-separated parts, keeping each calc( … ) whole. */
+function splitTop(value: string): string[] {
+	const parts: string[] = [];
+	let depth = 0;
+	let current = '';
+	for (const char of value) {
+		if (char === '(') depth++;
+		if (char === ')') depth--;
+		if (/\s/.test(char) && depth === 0) {
+			if (current) parts.push(current);
+			current = '';
+		} else current += char;
+	}
+	if (current) parts.push(current);
+	return parts;
 }
 
 /** The text inside a calc( … ), from just after its opening bracket to its matching close. */

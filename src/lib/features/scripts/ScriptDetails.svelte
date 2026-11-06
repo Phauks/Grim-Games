@@ -141,9 +141,9 @@
 	.top.pinned {
 		position: sticky;
 		top: calc(-1 * var(--pinned-inset, 0rem));
-		/* Above the sheet's pinned type headings (z-index 1) as one leaves its section. */
+		/* Above the sheet's pinned type headings as one leaves its section. */
 		z-index: var(--z-pinned-bar);
-		margin-top: calc(-1 * var(--pinned-inset, 0rem));
+		margin-top: calc(-1 * var(--pinned-inset, 0rem)); /* overlap-ok: gives back the padding the pinned header covers */
 		padding-top: var(--pinned-inset, 0);
 		padding-bottom: var(--space-2);
 		border-bottom: var(--card-border);

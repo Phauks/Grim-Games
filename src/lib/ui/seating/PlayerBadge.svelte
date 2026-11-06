@@ -52,6 +52,6 @@
 		white-space: nowrap;
 		text-box: trim-both cap alphabetic;
 		padding-block: 0.3em;
-		margin-block: -0.3em;
+		margin-block: -0.3em; /* overlap-ok: an inline badge, kept inside the line height */
 	}
 </style>

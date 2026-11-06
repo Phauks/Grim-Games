@@ -773,7 +773,7 @@
 		left: 0;
 		z-index: var(--z-popover);
 		max-width: calc(20 * var(--u));
-		margin: calc(-1 * var(--space-5)) 0 0 var(--space-2);
+		margin: calc(-1 * var(--space-5)) 0 0 var(--space-2); /* overlap-ok: the drag ghost sits above the finger */
 		padding: var(--space-1) var(--space-3);
 		border-radius: var(--radius-full);
 		background: var(--accent);

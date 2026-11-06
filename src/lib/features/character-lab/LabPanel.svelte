@@ -198,7 +198,7 @@
 		top: 0;
 		z-index: var(--z-pinned-bar);
 		padding-bottom: var(--space-2);
-		margin-bottom: calc(-1 * var(--space-2));
+		margin-bottom: calc(-1 * var(--space-2)); /* overlap-ok: cancels the grid gap its own padding paints */
 		/* The page's own backdrop, held still, so the pinned frame shows no edge. */
 		background: var(--pin-background);
 		background-attachment: fixed;
