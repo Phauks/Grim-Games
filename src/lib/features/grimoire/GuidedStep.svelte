@@ -437,6 +437,7 @@
 				<NightTextLines
 					steps={textLines}
 					character={step.character}
+					alignment={one ? alignmentOf(game, one) : undefined}
 					marked={(i) => shownLines.includes(i)}
 				>
 					{#snippet lineEnd(i)}{#each placedCards.onLine[i] ?? [] as card, c (c)}<ShowToPlayerButton

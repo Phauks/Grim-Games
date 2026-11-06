@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import type { Character } from '#lib/core/data/index.ts';
+	import type { Alignment, Character } from '#lib/core/data/index.ts';
 	import type { NightTextLine, NightTextSteps } from '#lib/core/rules/night-text.ts';
 	import { explainBlock } from '#lib/features/glossary/glossary.svelte.ts';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
@@ -12,6 +12,11 @@
 		/** The step's character, whose tokens the reminders are. */
 		character: Character;
 		/**
+		 * Alignment of the player who has the character, when one does: its tokens are drawn in
+		 * it, as on the board (a turned-evil Townsfolk's are red).
+		 */
+		alignment?: Alignment;
+		/**
 		 * After a line, by its place in reading order (`nightTextStepLines`): the step's eye
 		 * for the info token the line names.
 		 */
@@ -20,7 +25,7 @@
 		marked?: (index: number) => boolean;
 	}
 
-	let { steps, character, lineEnd, marked }: Props = $props();
+	let { steps, character, alignment, lineEnd, marked }: Props = $props();
 
 	// Every line and condition in reading order, so terms are marked once across the text.
 	const pieces = $derived([
@@ -46,7 +51,7 @@
 {#snippet text(line: NightTextLine)}{@const marks =
 		explained[at(line)] ?? []}{#each line as s, i (i)}{#if s.kind === 'text'}<GlossaryText
 				segments={marks[i] ?? []}
-			/>{:else}<NightTextPiece segment={s} {character} />{/if}{/each}{/snippet}
+			/>{:else}<NightTextPiece segment={s} {character} {alignment} />{/if}{/each}{/snippet}
 
 {#snippet list(lines: readonly NightTextLine[], first: number, lettered: boolean)}
 	<ol class="lines" class:lettered>

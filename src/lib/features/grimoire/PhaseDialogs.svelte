@@ -13,6 +13,7 @@
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import SeatBadge from './SeatBadge.svelte';
+	import { placingAlignment } from './board.ts';
 
 	interface Props {
 		flow: PhaseFlow;
@@ -48,6 +49,7 @@
 					<BoardReminder
 						label={suggestion.label}
 						character={characters.get(suggestion.characterId)}
+						alignment={placingAlignment(game, suggestion.characterId, characters)}
 					/>
 				</li>
 			{/each}

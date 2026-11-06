@@ -17,6 +17,7 @@
 	import { impairmentOfLabel } from '#lib/core/rules/index.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
 	import BoardReminder from './BoardReminder.svelte';
+	import { placingAlignment } from './board.ts';
 	import ReminderTokenRow from './ReminderTokenRow.svelte';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
@@ -188,6 +189,7 @@
 								label={reminderWords(r)}
 								infinite={isGeneric(r)}
 								character={characters.get(r.characterId)}
+								alignment={placingAlignment(game, r, characters)}
 							/>
 						{/each}
 					</ReminderTokenRow>

@@ -11,6 +11,7 @@
 	import BoardReminder from './BoardReminder.svelte';
 	import SeatBadge from './SeatBadge.svelte';
 	import { placedLook } from './reminders.ts';
+	import { placingAlignment } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 
 	/**
@@ -71,10 +72,18 @@
 			<li>
 				{#if move.kind === 'number'}
 					{#if token}
-						<BoardReminder {...placedLook(token, characters)} symbol={numberSymbol(move.to)} />
+						<BoardReminder
+							{...placedLook(token, characters)}
+							symbol={numberSymbol(move.to)}
+							alignment={placingAlignment(game, token, characters)}
+						/>
 					{/if}
 				{:else}
-					<BoardReminder label={move.label} character={characters.get(move.characterId)} />
+					<BoardReminder
+						label={move.label}
+						character={characters.get(move.characterId)}
+						alignment={placingAlignment(game, move.characterId, characters)}
+					/>
 				{/if}
 				{#if seatId !== undefined}
 					<span class="seat"><SeatBadge {game} {characters} {seatId} /></span>

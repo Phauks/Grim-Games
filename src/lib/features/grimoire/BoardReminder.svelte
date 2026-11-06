@@ -128,6 +128,11 @@
 	// its word band filled in its team colour (Trevor, 2026-11-02), wherever it is drawn: on the
 	// board, in the bank, held, in a dialog (Trevor, 2026-11-03: one framework).
 	const fixed = $derived(!infinite && !more && !!character && isFixedLabel(character, label));
+	// The rim and word band follow the owner's alignment too, as the icon does, so a turned-evil
+	// Townsfolk's token is red all over (Trevor, 2026-11-06). Fabled and Loric keep their own.
+	const team = $derived(
+		character && character.type !== 'fabled' && character.type !== 'loric' ? alignment : undefined
+	);
 	const set = $derived(resolveIconSet(preferences.current, preferences.theme));
 	const weight = $derived(ICON_SETS.find((s) => s.id === set)?.weight ?? 'regular');
 
@@ -251,6 +256,7 @@
 	role={onTap ? undefined : 'img'}
 	class="reminder"
 	data-type={character?.type}
+	data-alignment={team}
 	data-testid="board-reminder"
 	data-fixed={fixed ? '' : undefined}
 	data-generic={infinite || undefined}
@@ -396,7 +402,7 @@
 		--rim: var(--evil);
 	}
 	/* A Traveller's reminder: half good blue, half evil red, like its token (Trevor, 2026-10-18). */
-	.reminder[data-type='traveller'] {
+	.reminder[data-type='traveller']:not([data-alignment]) {
 		border-color: transparent;
 		background:
 			linear-gradient(var(--reminder-face) 0 0) padding-box,
@@ -407,6 +413,13 @@
 	}
 	.reminder[data-type='loric'] {
 		--rim: var(--loric);
+	}
+	/* The owner's alignment, when known, wins over the type's (a Traveller's too, once set). */
+	.reminder[data-alignment='good'] {
+		--rim: var(--good);
+	}
+	.reminder[data-alignment='evil'] {
+		--rim: var(--evil);
 	}
 	/* Look C (Trevor, 2026-10-19): a dashed ring inside the rim marks the generic reminder,
 	   only while it is empty; once it carries a symbol the rim's colour says enough. */
@@ -489,7 +502,7 @@
 		box-shadow: none;
 	}
 	/* A Traveller's rim is half good, half evil, so its band is too. */
-	.reminder[data-fixed][data-type='traveller'] > .label {
+	.reminder[data-fixed][data-type='traveller']:not([data-alignment]) > .label {
 		background: linear-gradient(to right, var(--good) 50%, var(--evil) 50%);
 	}
 	/* Whose copy it is (M68, option A): the holder's icon on a small token in the top right
