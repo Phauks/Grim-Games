@@ -6,7 +6,10 @@
 	import { withinModeSession } from '#lib/features/modes/mode-screens.ts';
 	import { setLeaveGuard } from '#lib/features/shell/shell.ts';
 	import { wasReplaced } from '#lib/features/game/next-game.ts';
-	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
+	import { gameScriptLogo } from '#lib/core/engine/index.ts';
+	import LeaveGameDialog, { type LeaveCard } from '#lib/features/room/LeaveGameDialog.svelte';
+	import { t } from '#lib/i18n/locale.svelte.ts';
+	import { storytellerGameLine } from './storyteller-games.ts';
 
 	/**
 	 * Leaving the board asks first, whether through the app's navigation or Back; the game stays
@@ -21,6 +24,18 @@
 
 	// ── Leaving: the navigation menu (or Back) asks first; the game stays saved ──
 	let exitOpen = $state(false);
+	let card = $state<LeaveCard>({ name: undefined, line: '', when: '' });
+	/** Asks, with the game as Join game's As Storyteller will list it. */
+	function askToLeave() {
+		const logo = gameScriptLogo(game.script);
+		card = {
+			name: game.script.meta?.name,
+			...(logo ? { logo } : {}),
+			line: storytellerGameLine(game.gameId, game.pastDays.length, game.seating.length),
+			when: t('shell.leave.saved')
+		};
+		exitOpen = true;
+	}
 	let pendingLeave: (() => void) | undefined;
 	let releaseGuard: (() => void) | undefined;
 	$effect(() => {
@@ -29,7 +44,7 @@
 		const release = setLeaveGuard(
 			(leave) => {
 				pendingLeave = leave;
-				exitOpen = true;
+				askToLeave();
 			},
 			// This board's screens, the other boards and pages of its mode, and the game that
 			// Game info's New game just started in its place.
@@ -83,7 +98,7 @@
 			trapped = true;
 			// Past the board's own entry and the page under it, to wherever the game was opened from.
 			pendingLeave = () => history.go(-2);
-			exitOpen = true;
+			askToLeave();
 		});
 	});
 	/**
@@ -112,27 +127,9 @@
 	}
 </script>
 
-<ConfirmDialog bind:open={exitOpen} title="Leave the game?" onConfirm={confirmLeave}>
-	<dl class="change">
-		<dt>Now</dt>
-		<dd>In the grimoire for {game.script.meta?.name ?? 'this game'}</dd>
-		<dt>Becomes</dt>
-		<dd>The game stays saved and opens again from Join game.</dd>
-	</dl>
-</ConfirmDialog>
-
-<style>
-	.change {
-		display: grid;
-		grid-template-columns: auto 1fr;
-		gap: var(--space-1) var(--space-3);
-		margin: 0;
-	}
-	.change dt {
-		color: var(--on-surface-muted);
-		font-size: 0.85rem;
-	}
-	.change dd {
-		margin: 0;
-	}
-</style>
+<LeaveGameDialog
+	bind:open={exitOpen}
+	title={t('shell.leave.title')}
+	{card}
+	onConfirm={confirmLeave}
+/>

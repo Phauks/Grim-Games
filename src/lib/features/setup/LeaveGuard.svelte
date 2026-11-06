@@ -1,13 +1,19 @@
 <script lang="ts">
 	import { setLeaveGuard } from '#lib/features/shell/shell.ts';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
+	import LeaveGameDialog, { type LeaveCard } from '#lib/features/room/LeaveGameDialog.svelte';
 
 	interface Props {
 		/** Ask before leaving while this is true. */
 		when: boolean;
 		title: string;
 		/** What is left behind, stated plainly. */
-		body: string;
+		body?: string;
+		/**
+		 * A game being left, read as it asks: shown as Join game's card for it instead of `body`
+		 * and `title`'s question is the card's own.
+		 */
+		card?: () => { title: string; card: LeaveCard } | undefined;
 		/** URLs that are still this screen, so going there doesn't ask (setLeaveGuard). */
 		within?: (url: URL) => boolean;
 		/**
@@ -17,9 +23,11 @@
 		unload?: boolean;
 	}
 
-	let { when, title, body, within, unload = true }: Props = $props();
+	let { when, title, body, card, within, unload = true }: Props = $props();
 
 	let open = $state(false);
+	/** The game being left, as it was when the dialog opened. */
+	let shown = $state<{ title: string; card: LeaveCard }>();
 	/** The way out the Storyteller asked for, run on Confirm. */
 	let pending: (() => void) | undefined;
 
@@ -29,6 +37,7 @@
 		if (!when) return;
 		return setLeaveGuard((leave) => {
 			pending = leave;
+			shown = card?.();
 			open = true;
 		}, within);
 	});
@@ -50,6 +59,11 @@
 	Asks before leaving a page whose work a stray tap would interrupt (Trevor, 2026-10-16: the
 	bag draw).
 -->
-<ConfirmDialog bind:open {title} onConfirm={leave}>
-	<p>{body}</p>
-</ConfirmDialog>
+{#if shown}<LeaveGameDialog
+		bind:open
+		title={shown.title}
+		card={shown.card}
+		onConfirm={leave}
+	/>{:else}<ConfirmDialog bind:open {title} onConfirm={leave}>
+		<p>{body}</p>
+	</ConfirmDialog>{/if}
