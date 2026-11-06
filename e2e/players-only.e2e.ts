@@ -47,17 +47,18 @@ test('a player sets up and marks their own town with no room', async ({ page }) 
 });
 
 test('New game starts a players-only game, and Join game lists it apart', async ({ page }) => {
-	// Trevor, 2026-11-06: "At the very top above the settings, it should be a switch between
-	// storyteller and players", and players-only games "show up differently in the resume game
-	// area" (2026-11-05).
+	// Trevor, 2026-11-06: "There is no difference between setup for a storyteller or player on
+	// the first screen. It just changes the options later", and players-only games "show up
+	// differently in the resume game area" (2026-11-05).
 	await page.goto('/new');
-	const runBy = page.getByRole('combobox', { name: 'Run by' });
-	await expect(runBy).toHaveText(/Storyteller/);
-	await runBy.tap();
-	await page.getByRole('option', { name: 'Players', exact: true }).tap();
-	// No game mode or room vote with no Storyteller: only the script.
-	await expect(page.getByRole('combobox', { name: 'Game mode' })).toHaveCount(0);
-	await expect(page.getByRole('button', { name: 'Room vote' })).toHaveCount(0);
+	const host = page.getByRole('combobox', { name: 'Host' });
+	await expect(host).toHaveText(/Storyteller/);
+	await host.tap();
+	await page.getByRole('option', { name: 'Local Grim', exact: true }).tap();
+	// The same screen: Game mode, Room vote and the script preview all stay.
+	await expect(page.getByRole('combobox', { name: 'Game mode' })).toBeVisible();
+	await expect(page.getByRole('link', { name: 'Room vote' })).toBeVisible();
+	await expect(page.getByTestId('script-preview')).toBeVisible();
 	await page.getByRole('button', { name: 'Create game' }).tap();
 
 	// Straight to the player screen's Grim tab, where the town is set up.
