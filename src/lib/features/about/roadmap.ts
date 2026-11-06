@@ -142,7 +142,10 @@ export const ROADMAP: readonly RoadmapItem[] = [
 			'M33',
 			// M64 (Trevor, 2026-11-05): password managers leave room codes, PINs and Grim view
 			// passwords alone; only the account sign-in is a password.
-			'M64'
+			'M64',
+			// M73 (Trevor, 2026-11-06, option A): Give a seat on a spectator in Players seats them
+			// in an open seat, or a player's after asking, and lets only them see their character.
+			'M73'
 		]
 	},
 	{

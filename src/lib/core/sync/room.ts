@@ -17,7 +17,7 @@ import { feedbackView, type MemberFeedback } from './room-feedback.ts';
 import type { ScriptVote } from './script-vote.ts';
 import type { ClientMessage, HostView, PlayerView, TownView, VoteTally } from './room-protocol.ts';
 import { closeScriptVote, scriptVoteCount } from './room-script-vote.ts';
-import { memberRole, seatsSeen, type RoomRoles } from './room-roles.ts';
+import { memberRole, seatsSeen, seatTaken, type RoomRoles } from './room-roles.ts';
 import { lookOf, seatWords } from './room-look.ts';
 import {
 	pictureReports,
@@ -425,7 +425,8 @@ export function seat(room: RoomState, memberId: string, seatId: unknown): RoomSt
 	if (!member?.name || typeof seatId !== 'string' || !seatExists(room, seatId as SeatId)) {
 		return room;
 	}
-	return setMember(room, memberId, { seatId: seatId as SeatId });
+	if (member.seatId === seatId) return room;
+	return setMember(seatTaken(room, seatId as SeatId), memberId, { seatId: seatId as SeatId });
 }
 
 /** Rooms saved while players still asked: each request's name becomes the member's name. */
