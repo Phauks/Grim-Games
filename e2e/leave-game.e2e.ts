@@ -5,7 +5,10 @@ import { APP_NAME } from '../src/lib/core/app-name.ts';
 // mockup D), and the menu keeps the last game at its top so it is one tap away again.
 
 async function openMenu(page: Page) {
-	await page.getByRole('button', { name: /^(Open menu|Menu)$/ }).first().tap();
+	await page
+		.getByRole('button', { name: /^(Open menu|Menu)$/ })
+		.first()
+		.tap();
 	const drawer = page.getByRole('dialog', { name: APP_NAME });
 	// Wide screens show the sidebar instead of the drawer.
 	return (await drawer.isVisible()) ? drawer : page.getByRole('navigation', { name: 'Menu' });
