@@ -13,6 +13,7 @@
  * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
+import { deathReminder } from '#lib/core/rules/first-death.ts';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { decide, type Command } from '#lib/core/engine/index.ts';
@@ -131,6 +132,18 @@ describe('Hatter', () => {
 	});
 
 	describe('How to Run (https://wiki.bloodontheclocktower.com/Hatter#How_to_Run)', () => {
+		it('marking the player dead asks to place Tea Party Tonight on them', () => {
+			// Wiki: "If the Hatter dies, mark them with the TEA PARTY TONIGHT reminder."
+			const s = scenario(['hatter', 'chef', 'empath', 'imp', 'poisoner']);
+			for (const cause of ['execution', 'imp', 'poisoner'] as const) {
+				const dead = s.dies('hatter', cause);
+				expect(deathReminder(dead.game, dead.seat('hatter'), cause, dead.characters)).toEqual({
+					characterId: 'hatter',
+					label: 'Tea Party Tonight'
+				});
+			}
+		});
+
 		const cast = ['hatter', 'chef', 'empath', 'monk', 'poisoner', 'imp'];
 
 		it('puts Tea Party Tonight only on the Hatter', () => {

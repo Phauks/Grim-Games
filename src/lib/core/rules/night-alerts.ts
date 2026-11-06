@@ -82,7 +82,7 @@
  * Day-only effects (the Pacifist, the Devil's Advocate) are not night alerts.
  */
 import { OFFICIAL_RULES, rulesOf } from '#lib/core/data/rules/index.ts';
-import type { Alignment, CharacterId, CharacterType } from '#lib/core/data/types.ts';
+import type { Alignment, CharacterId, CharacterType, ReminderLabel } from '#lib/core/data/types.ts';
 import { wikiUrl } from '#lib/core/data/wiki.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
 import { alignmentOf, getSeat, trueCharacter, typeOf } from '#lib/core/model/selectors.ts';
@@ -163,7 +163,7 @@ export const NIGHT_KILLERS: Readonly<Record<CharacterId, NightKiller>> = Object.
 export function onDeathTrigger(
 	characterId: CharacterId,
 	characters: CharacterLookup
-): { by: KillBy | 'any'; night?: true } | undefined {
+): { by: KillBy | 'any'; night?: true; places?: ReminderLabel } | undefined {
 	return rulesOf(characterId, characters)?.onDeath;
 }
 

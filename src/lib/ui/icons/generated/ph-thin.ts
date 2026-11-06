@@ -128,6 +128,7 @@ import ph_house_thin from '~icons/ph/house-thin';
 import ph_house_simple_thin from '~icons/ph/house-simple-thin';
 import ph_identification_card_thin from '~icons/ph/identification-card-thin';
 import ph_image_thin from '~icons/ph/image-thin';
+import ph_images_thin from '~icons/ph/images-thin';
 import ph_info_thin from '~icons/ph/info-thin';
 import ph_key_thin from '~icons/ph/key-thin';
 import ph_leaf_thin from '~icons/ph/leaf-thin';
@@ -373,6 +374,7 @@ const icons: IconMap = {
 	'ph:house-simple-thin': ph_house_simple_thin,
 	'ph:identification-card-thin': ph_identification_card_thin,
 	'ph:image-thin': ph_image_thin,
+	'ph:images-thin': ph_images_thin,
 	'ph:info-thin': ph_info_thin,
 	'ph:key-thin': ph_key_thin,
 	'ph:leaf-thin': ph_leaf_thin,

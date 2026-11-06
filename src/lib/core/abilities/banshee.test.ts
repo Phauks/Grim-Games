@@ -13,6 +13,7 @@
  * write it anyway as `it.fails` and say which gap it waits on.
  */
 import { describe, expect, it } from 'vitest';
+import { deathReminder } from '#lib/core/rules/first-death.ts';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
 import { afterDeath, nominationsPerDay } from '#lib/core/rules/nominations.ts';
@@ -94,6 +95,31 @@ describe('Banshee', () => {
 	});
 
 	describe('How to Run (https://wiki.bloodontheclocktower.com/Banshee#How_to_Run)', () => {
+		it('marking the player dead asks to place Has Ability on them', () => {
+			// Wiki: "If the Banshee is killed by the Demon, place the HAS ABILITY reminder token next to the Banshee"
+			const s = scenario(['banshee', 'chef', 'empath', 'imp', 'poisoner']);
+			for (const cause of ['imp'] as const) {
+				const dead = s.dies('banshee', cause);
+				expect(deathReminder(dead.game, dead.seat('banshee'), cause, dead.characters)).toEqual({
+					characterId: 'banshee',
+					label: 'Has Ability'
+				});
+			}
+			// Wiki: "If the Banshee is killed by the Demon but does not have their ability at that time or is
+			// killed by a non-Demon ability, then do not tell the group that the Banshee ability has been
+			// triggered."
+			for (const cause of ['execution', 'poisoner'] as const) {
+				const dead = s.dies('banshee', cause);
+				expect(
+					deathReminder(dead.game, dead.seat('banshee'), cause, dead.characters)
+				).toBeUndefined();
+			}
+			const poisoned = s.poisoned('banshee').dies('banshee', 'imp');
+			expect(
+				deathReminder(poisoned.game, poisoned.seat('banshee'), 'imp', poisoned.characters)
+			).toBeUndefined();
+		});
+
 		const cast = ['banshee', 'chef', 'imp', 'monk', 'poisoner'];
 		const linesOf = (at: Scenario) =>
 			dayReminders(
