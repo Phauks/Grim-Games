@@ -6386,18 +6386,23 @@ test('a big name badge beside a dialog title shrinks instead of squeezing the ti
 		.getByRole('button', { name: 'Fortune Teller', exact: true })
 		.tap();
 	await sheet.getByRole('button', { name: 'Seat actions' }).tap();
-	const menu = page.getByRole('dialog', { name: 'Seat 1', exact: true });
+	// The title is the character's badge with its player (Trevor, 2026-11-06).
+	const menu = page.getByRole('dialog').last();
 	const title = menu.locator('[data-part="title"]');
-	await expect(title).toHaveText('Seat 1');
-	// One line: no word is broken across lines, so the title is no taller than its line.
-	const { height, line } = await title.evaluate((el) => ({
-		height: el.getBoundingClientRect().height,
-		line: parseFloat(getComputedStyle(el).fontSize) * 1.6
-	}));
+	await expect(title.locator('[data-character-id="fortuneteller"]')).toContainText(
+		/Fortune Teller\s*Seat 1/
+	);
+	// One line: the badge is not broken across lines, so the title is no taller than the badge's
+	// own line.
+	const { height, line } = await title.evaluate((el) => {
+		const badge = el.querySelector('[data-character-id]')!;
+		const first = badge.getClientRects()[0];
+		return { height: el.getBoundingClientRect().height, line: first.height * 1.5 };
+	});
 	expect(height).toBeLessThanOrEqual(line);
-	// The badge stays in the header, beside the title and the ✕, not over them.
+	// The badge stays in the header, beside the ✕, not over it.
 	const head = await menu.locator('.head').boundingBox();
-	const badge = await menu.locator('.lead').boundingBox();
+	const badge = await title.boundingBox();
 	const close = await menu.getByRole('button', { name: 'Close' }).boundingBox();
 	expect(badge!.x).toBeGreaterThanOrEqual(head!.x - 1);
 	expect(badge!.x + badge!.width).toBeLessThanOrEqual(close!.x);
