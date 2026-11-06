@@ -19,8 +19,6 @@ export const show = {
 	'show.byAuthor': 'by {author}',
 	'show.playerView': 'Player view',
 	'show.evil.title': 'Cards to show',
-	'show.evil.show': 'Show',
-	'show.evil.showNamed': 'Show {card}',
 	'show.evil.chooseBluffs': 'Choose bluffs',
 	'show.evil.inPlay': 'In play: replace',
 	// A player who believes they are the Demon (the Lunatic), from the mockup Trevor approved

@@ -30,6 +30,9 @@
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
+	import StepLine from '#lib/features/reference/StepLine.svelte';
+	import StepLines from '#lib/features/reference/StepLines.svelte';
+	import ShowToPlayerButton from './ShowToPlayerButton.svelte';
 	import type { ShownInfoCard } from './shown.ts';
 
 	/**
@@ -54,6 +57,12 @@
 		onChooseBluffs: () => void;
 		/** The believer's fake world changed. */
 		onFakeChange?: (info: FakeEvilInfo) => void;
+		/**
+		 * Only the cards' lines, for the step's own Steps list to number on from its text
+		 * (`NightTextLines` `after`, Trevor 2026-11-06: Minion info and Demon info as a
+		 * character's step). Otherwise the cards come with their heading and their own list.
+		 */
+		inline?: boolean;
 	}
 
 	let {
@@ -64,8 +73,17 @@
 		night = 'first',
 		onShow,
 		onChooseBluffs,
-		onFakeChange
+		onFakeChange,
+		inline = false
 	}: Props = $props();
+
+	/** The cards shown at this step, drawn as done; forgotten on another step. */
+	let shownRows = $state<readonly string[]>([]);
+	$effect.pre(() => {
+		void step;
+		void believer;
+		shownRows = [];
+	});
 
 	const text = (id: string) => STANDARD_INFO_TOKENS.find((t) => t.id === id)?.text ?? '';
 	const seatsOf = (type: 'minion' | 'demon') =>
@@ -296,109 +314,121 @@
 			/>{/if}</span
 	>{/snippet}
 
-<section
-	class="cards"
-	aria-label={step === 'believer' ? t('show.evil.believerTitle') : t('show.evil.title')}
->
-	{#if step === 'believer' && believedText && believed}
-		<h3 class="as">
-			{t('show.evil.as')}
-			<CharacterPiece
-				template="badge"
-				characterId={believed.id}
-				character={believed}
-				interactive={false}
-			/>
-		</h3>
-		<p class="text" data-testid="believed-demon-text">
-			<NightText text={believedText} character={believed} night="other" />
-		</p>
-	{/if}
-	<h3>{step === 'believer' ? t('show.evil.believerTitle') : t('show.evil.title')}</h3>
-	<ul>
-		{#each rows as row (row.key)}
-			{@const empty =
-				row.showCharacters?.length === 0 || (step === 'believer' && row.seats?.length === 0)}
-			<li data-testid="evil-info-card" data-row={row.key}>
-				<div class="what">
-					<span class="title"
-						>{row.title}{#if row.set}<span class="set">&nbsp;· {row.set}</span>{/if}</span
+{#snippet cardLines()}
+	{#each rows as row (row.key)}
+		{@const empty =
+			row.showCharacters?.length === 0 || (step === 'believer' && row.seats?.length === 0)}
+		<StepLine data-testid="evil-info-card" data-row={row.key} marked={shownRows.includes(row.key)}>
+			<span class="what">
+				<span class="title"
+					>{row.title}{#if row.set}<span class="set">&nbsp;· {row.set}</span>{/if}</span
+				>
+				{#if row.seats}
+					<span class="who"
+						>{#each row.seats as seatId, n (seatId)}{n ? ', ' : ''}{@render player(
+								seatId
+							)}{:else}{t('common.none')}{/each}{#if row.chose}<span class="chose"
+								>{t('show.evil.chose')}</span
+							>{#each row.chose as seatId, n (seatId)}{n ? ', ' : ''}<PlayerBadge
+									name={seatName(game, seatId)}
+								/>{:else}{t('common.none')}{/each}{/if}</span
 					>
-					{#if row.seats}
-						<span class="who"
-							>{#each row.seats as seatId, n (seatId)}{n ? ', ' : ''}{@render player(
-									seatId
-								)}{:else}{t('common.none')}{/each}{#if row.chose}<span class="chose"
-									>{t('show.evil.chose')}</span
-								>{#each row.chose as seatId, n (seatId)}{n ? ', ' : ''}<PlayerBadge
-										name={seatName(game, seatId)}
-									/>{:else}{t('common.none')}{/each}{/if}</span
-						>
-					{/if}
-					{#if row.characterIds}
-						<span class="badges">
-							{#each row.characterIds as id (id)}
-								<CharacterPiece
-									template="badge"
-									characterId={id}
-									character={characters.get(id)}
-									interactive={false}
-								/>
-							{:else}{t('common.none')}{/each}
-						</span>
-					{/if}
-					{#if row.adds?.length}
-						<span class="badges">
-							{#each row.adds as seatId (seatId)}
-								<Button
-									variant="quiet"
-									icon="add"
-									aria-label={t('show.evil.add', { name: seatName(game, seatId) })}
-									onclick={() => change({ minions: [...fake.minions, seatId] })}
-									><PlayerBadge name={seatName(game, seatId)} /></Button
-								>
-							{/each}
-						</span>
-					{/if}
-					{#if row.blocked}
-						<span class="flag"><Icon name="warning" /> {t('show.evil.inPlay')}</span>
-					{/if}
-					{#if row.flag}
-						<span class="flag"
-							><Icon name="warning" /><CharacterPiece
+				{/if}
+				{#if row.characterIds}
+					<span class="badges">
+						{#each row.characterIds as id (id)}
+							<CharacterPiece
 								template="badge"
-								characterId={row.flag}
-								character={characters.get(row.flag)}
+								characterId={id}
+								character={characters.get(id)}
 								interactive={false}
-							/>{row.flagText ?? t('show.evil.hidden')}</span
-						>
-					{/if}
-				</div>
+							/>
+						{:else}{t('common.none')}{/each}
+					</span>
+				{/if}
+				{#if row.adds?.length}
+					<span class="badges">
+						{#each row.adds as seatId (seatId)}
+							<Button
+								variant="quiet"
+								icon="add"
+								aria-label={t('show.evil.add', { name: seatName(game, seatId) })}
+								onclick={() => change({ minions: [...fake.minions, seatId] })}
+								><PlayerBadge name={seatName(game, seatId)} /></Button
+							>
+						{/each}
+					</span>
+				{/if}
+				{#if row.blocked}
+					<span class="flag"><Icon name="warning" /> {t('show.evil.inPlay')}</span>
+				{/if}
+				{#if row.flag}
+					<span class="flag"
+						><Icon name="warning" /><CharacterPiece
+							template="badge"
+							characterId={row.flag}
+							character={characters.get(row.flag)}
+							interactive={false}
+						/>{row.flagText ?? t('show.evil.hidden')}</span
+					>
+				{/if}
+			</span>
+			{#snippet end()}
 				{#if row.edit}
 					<Button variant="quiet" icon="edit" onclick={row.edit.action}>{row.edit.label}</Button>
 				{/if}
-				<Button
-					variant="quiet"
-					icon="forward"
+				<!-- The same eye as every line of a character's step (Trevor, 2026-11-06). -->
+				<ShowToPlayerButton
 					disabled={empty}
-					aria-label={t('show.evil.showNamed', { card: cardName(row) })}
-					onclick={() => onShow(shown(row))}>{t('show.evil.show')}</Button
-				>
-			</li>
-		{/each}
-		{#if step === 'demoninfo' && bluffSets.length === 0}
-			<li data-testid="evil-info-card">
-				<div class="what">
-					<span class="title">{text('not-in-play')}</span>
-					<span class="who">{t('common.none')}</span>
-				</div>
+					aria-label={`${t('show.toPlayer')}: ${cardName(row)}`}
+					onclick={() => {
+						if (!shownRows.includes(row.key)) shownRows = [...shownRows, row.key];
+						onShow(shown(row));
+					}}
+				/>
+			{/snippet}
+		</StepLine>
+	{/each}
+	{#if step === 'demoninfo' && bluffSets.length === 0}
+		<StepLine data-testid="evil-info-card">
+			<span class="what">
+				<span class="title">{text('not-in-play')}</span>
+				<span class="who">{t('common.none')}</span>
+			</span>
+			{#snippet end()}
 				<Button variant="quiet" icon="demon" onclick={onChooseBluffs}
 					>{t('show.evil.chooseBluffs')}</Button
 				>
-			</li>
+			{/snippet}
+		</StepLine>
+	{/if}
+{/snippet}
+
+{#if inline}
+	{@render cardLines()}
+{:else}
+	<section
+		class="cards"
+		aria-label={step === 'believer' ? t('show.evil.believerTitle') : t('show.evil.title')}
+	>
+		{#if step === 'believer' && believedText && believed}
+			<h3 class="as">
+				{t('show.evil.as')}
+				<CharacterPiece
+					template="badge"
+					characterId={believed.id}
+					character={believed}
+					interactive={false}
+				/>
+			</h3>
+			<p class="text" data-testid="believed-demon-text">
+				<NightText text={believedText} character={believed} night="other" />
+			</p>
 		{/if}
-	</ul>
-</section>
+		<h3>{step === 'believer' ? t('show.evil.believerTitle') : t('show.evil.title')}</h3>
+		<div class="list"><StepLines>{@render cardLines()}</StepLines></div>
+	</section>
+{/if}
 
 {#if step === 'believer'}
 	<SeatChooser
@@ -433,23 +463,11 @@
 	.text {
 		margin: 0;
 	}
-	ul {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr);
-		gap: var(--space-2);
-		margin: 0;
-		padding: 0;
-		list-style: none;
-	}
-	li {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2);
-		min-height: var(--tap-target);
+	.list {
+		border-top: 0.0625rem solid var(--border);
 	}
 	.what {
 		display: grid;
-		flex: 1;
 		min-width: 0;
 		gap: var(--space-1);
 	}

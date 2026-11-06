@@ -5,12 +5,16 @@
 	import { explainBlock } from '#lib/features/glossary/glossary.svelte.ts';
 	import GlossaryText from '#lib/features/glossary/GlossaryText.svelte';
 	import NightTextPiece from './NightTextPiece.svelte';
+	import StepLine from './StepLine.svelte';
+	import StepLines from './StepLines.svelte';
 
 	interface Props {
 		/** The night text split into lines and branches (`nightTextSteps`). */
 		steps: NightTextSteps;
-		/** The step's character, whose tokens the reminders are. */
-		character: Character;
+		/** The step's character, whose tokens the reminders are; none for Dusk, Dawn and the like. */
+		character?: Character;
+		/** The step's own name, never marked as a Glossary term in its own text. */
+		name?: string;
 		/**
 		 * Alignment of the player who has the character, when one does: its tokens are drawn in
 		 * it, as on the board (a turned-evil Townsfolk's are red).
@@ -23,9 +27,14 @@
 		lineEnd?: Snippet<[index: number]>;
 		/** A line drawn as done (`data-marked-row`): its card has been shown. */
 		marked?: (index: number) => boolean;
+		/**
+		 * More `StepLine`s after the text's own lines, numbered on from them: the cards Minion
+		 * info and Demon info show (`EvilInfoCards`).
+		 */
+		after?: Snippet<[start: number]>;
 	}
 
-	let { steps, character, alignment, lineEnd, marked }: Props = $props();
+	let { steps, character, name, alignment, lineEnd, marked, after }: Props = $props();
 
 	// Every line and condition in reading order, so terms are marked once across the text.
 	const pieces = $derived([
@@ -36,7 +45,7 @@
 		const flat = pieces.flat();
 		const marks = explainBlock(
 			flat.map((s) => (s.kind === 'text' ? s.text : '')),
-			[character.name]
+			[name ?? character?.name ?? '']
 		);
 		let at = 0;
 		return pieces.map((line) => line.map(() => marks[at++] ?? []));
@@ -54,14 +63,14 @@
 			/>{:else}<NightTextPiece segment={s} {character} {alignment} />{/if}{/each}{/snippet}
 
 {#snippet list(lines: readonly NightTextLine[], first: number, lettered: boolean)}
-	<ol class="lines" class:lettered>
+	<StepLines {lettered}>
 		{#each lines as line, i (i)}
-			<li data-marked-row={marked?.(first + i) ? '' : undefined}>
-				<span class="line">{@render text(line)}</span>
-				{#if lineEnd}<span class="end">{@render lineEnd(first + i)}</span>{/if}
-			</li>
+			<StepLine marked={marked?.(first + i) ?? false}>
+				{@render text(line)}
+				{#snippet end()}{@render lineEnd?.(first + i)}{/snippet}
+			</StepLine>
 		{/each}
-	</ol>
+	</StepLines>
 {/snippet}
 
 <!--
@@ -70,6 +79,8 @@
 -->
 <div class="night-lines" data-testid="night-lines">
 	{#if steps.lines.length > 0}{@render list(steps.lines, 0, false)}{/if}
+	{#if after}<StepLines start={steps.lines.length}>{@render after(steps.lines.length)}</StepLines
+		>{/if}
 	{#each steps.branches as branch, b (b)}
 		<div class="branch">
 			<p class="condition">{@render text(branch.condition)}</p>
@@ -83,38 +94,6 @@
 		font-family: var(--font-ability);
 		line-height: 1.35;
 		border-top: 0.0625rem solid var(--border);
-	}
-	.lines {
-		margin: 0;
-		padding: 0;
-		list-style: none;
-		counter-reset: line;
-	}
-	.lines li {
-		counter-increment: line;
-		display: grid;
-		grid-template-columns: 1.6em minmax(0, 1fr) auto;
-		align-items: baseline;
-		column-gap: var(--space-2);
-		min-height: var(--tap-target);
-		padding-block: var(--space-1);
-		border-bottom: 0.0625rem solid var(--border);
-	}
-	.lines li::before {
-		content: counter(line);
-		color: var(--heading);
-		font-weight: 700;
-		font-variant-numeric: tabular-nums;
-	}
-	.lettered li::before {
-		content: counter(line, lower-alpha);
-	}
-	.line {
-		grid-column: 2;
-	}
-	.end {
-		grid-column: 3;
-		align-self: center;
 	}
 	.branch {
 		padding-inline-start: 1.6em;

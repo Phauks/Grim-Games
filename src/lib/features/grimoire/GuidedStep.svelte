@@ -35,11 +35,7 @@
 	import BoardReminder from './BoardReminder.svelte';
 	import { TYPE_PLURALS } from '#lib/features/reference/labels.ts';
 	import NightTextLines from '#lib/features/reference/NightTextLines.svelte';
-	import {
-		nightTextSegmentsFor,
-		nightTextStepLines,
-		nightTextSteps
-	} from '#lib/core/rules/night-text.ts';
+	import { nightTextStepLines, stepNightText } from '#lib/core/rules/night-text.ts';
 	import EvilInfoCards from '#lib/features/show/EvilInfoCards.svelte';
 	import StepInfoTokens from '#lib/features/info-tokens/StepInfoTokens.svelte';
 	import {
@@ -269,11 +265,14 @@
 		void step?.id;
 		stepChanges = [];
 	});
-	/** The step's text as numbered lines (Trevor, 2026-11-06), a character's step only. */
-	const textLines = $derived(
-		step?.character && step.reminder
-			? nightTextSteps(nightTextSegmentsFor(step.character, step.reminder, night))
-			: undefined
+	/**
+	 * The step's text as numbered lines (Trevor, 2026-11-06), every step alike: Minion info,
+	 * Demon info, Dusk and Dawn are "treated like character" (`step-parts.test.ts`).
+	 */
+	const textLines = $derived(step ? stepNightText(step, night) : undefined);
+	/** Minion info and Demon info: their cards are the lines after their text. */
+	const evilStep = $derived(
+		step?.id === 'minioninfo' || step?.id === 'demoninfo' ? step.id : undefined
 	);
 	/** The info token cards the step offers (`stepInfoCards`). */
 	const stepCards = $derived(
@@ -361,6 +360,26 @@
 	}
 </script>
 
+{#snippet evilCards(id: 'minioninfo' | 'demoninfo', inline: boolean)}
+	<EvilInfoCards
+		{game}
+		{characters}
+		step={id}
+		{inline}
+		onShow={(card) => {
+			// Over the open step, as with a suggestion's Show to player: closing it here showed
+			// the board for a moment when the player view closed (Trevor, 2026-10-26).
+			shownId = undefined;
+			shownCard = card;
+			showOpen = true;
+		}}
+		onChooseBluffs={() => {
+			open = false;
+			onChooseBluffs?.();
+		}}
+	/>
+{/snippet}
+
 <!-- The night, not the step: the step's row beneath already names it (Trevor, 2026-11-06). -->
 <Dialog bind:open title={night === 'first' ? 'First night' : 'Other nights'} size="full">
 	{#snippet headActions()}
@@ -407,7 +426,7 @@
 			<div class="row-head">
 				<StepPiece
 					{step}
-					template={step.character || step.reminder ? 'row' : 'name'}
+					template={step.character ? 'row' : 'name'}
 					info
 					alignment={one && step.character ? alignmentOf(game, one) : undefined}
 					playerName={one ? seatName(game, one) : undefined}
@@ -426,20 +445,23 @@
 						>{/if}
 					{#snippet abilityText()}{#if step.character}<span data-testid="step-ability"
 								><AbilityText text={step.character.ability} names={[step.character.name]} /></span
-							>{:else}<span data-testid="step-text">{step.reminder}</span>{/if}{/snippet}
+							>{/if}{/snippet}
 				</StepPiece>
 			</div>
-			<!-- What to do comes before any information (Trevor, 2026-10-20). -->
-			<!-- A marker step's text is in its row, where a character's ability goes (Trevor,
-			     2026-11-05: "wake the minions should appear in the ability text area"). -->
-			{#if textLines && step.character}
+			<!-- What to do comes before any information (Trevor, 2026-10-20). Every step's text
+			     is its Steps, Dusk, Dawn and the info steps too (Trevor, 2026-11-06: "treated
+			     like character with the night order steps and eyes"); Minion info's and Demon
+			     info's cards are its next lines, each with the same eye. -->
+			{#if textLines}
 				<h3>Steps</h3>
 				<NightTextLines
 					steps={textLines}
 					character={step.character}
-					alignment={one ? alignmentOf(game, one) : undefined}
+					name={stepName(step)}
+					alignment={one && step.character ? alignmentOf(game, one) : undefined}
 					marked={(i) => shownLines.includes(i)}
 				>
+					{#snippet after()}{#if evilStep}{@render evilCards(evilStep, true)}{/if}{/snippet}
 					{#snippet lineEnd(i)}{#each placedCards.onLine[i] ?? [] as card, c (c)}<ShowToPlayerButton
 								aria-label={cardLabel(card)}
 								onclick={() => {
@@ -609,25 +631,9 @@
 					<ShowToPlayerButton onclick={() => showNumber(number)} />
 				</div>
 			{/if}
-			<!-- Every card Minion info or Demon info can show (Trevor, 2026-10-18). -->
-			{#if step.id === 'minioninfo' || step.id === 'demoninfo'}
-				<EvilInfoCards
-					{game}
-					{characters}
-					step={step.id}
-					onShow={(card) => {
-						// Over the open step, as with a suggestion's Show to player: closing it here showed
-						// the board for a moment when the player view closed (Trevor, 2026-10-26).
-						shownId = undefined;
-						shownCard = card;
-						showOpen = true;
-					}}
-					onChooseBluffs={() => {
-						open = false;
-						onChooseBluffs?.();
-					}}
-				/>
-			{/if}
+			<!-- Every card Minion info or Demon info can show (Trevor, 2026-10-18), in its Steps;
+			     on its own only when the step has no text. -->
+			{#if evilStep && !textLines}{@render evilCards(evilStep, false)}{/if}
 			<!-- A player who believes they are the Demon is shown a fake world (Trevor, 2026-10-29). -->
 			{#each believers as seatId (seatId)}
 				<EvilInfoCards
@@ -648,15 +654,11 @@
 					onFakeChange={(info) => grimoire.run({ type: 'SetFakeEvilInfo', seatId, info })}
 				/>
 			{/each}
-			<!-- The info tokens the text names, ready to show (Trevor, 2026-10-19). -->
-			{#if step.character}
-				<!-- Over the open step, which stays open under the sheet, as with onShow above. -->
-				<StepInfoTokens cards={placedCards.rest} {characters} onchoose={chooseCard} />
-			{/if}
+			<!-- The info tokens the text names, ready to show (Trevor, 2026-10-19). Over the open
+			     step, which stays open under the sheet, as with onShow above. -->
+			<StepInfoTokens cards={placedCards.rest} {characters} onchoose={chooseCard} />
 			<!-- Who is drunk or poisoned, as its own section (Trevor, 2026-10-17). -->
-			{#if step.character}
-				<StepAfflictions {grimoire} {step} />
-			{/if}
+			<StepAfflictions {grimoire} {step} />
 			{#if rows.length > 0}
 				<h3>Reminders</h3>
 				<ul class="reminders">

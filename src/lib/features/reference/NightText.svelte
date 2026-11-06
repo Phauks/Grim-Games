@@ -7,7 +7,10 @@
 
 	interface Props {
 		text: string;
-		character: Character;
+		/** The step's character; none for Dusk, Dawn and the like, whose text has no tokens. */
+		character?: Character;
+		/** The step's own name, never marked as a Glossary term in its own text. */
+		name?: string;
 		/**
 		 * Which night the text is for: TPI's `:reminder:`s are then drawn as the tokens they
 		 * mean (`reminderPlaceholders`), and Trevor's reviewed edits replace TPI's text.
@@ -20,13 +23,13 @@
 		alignment?: Alignment;
 	}
 
-	let { text, character, night, alignment }: Props = $props();
+	let { text, character, name, night, alignment }: Props = $props();
 	const segments = $derived(nightTextSegmentsFor(character, text, night));
 	// Terms are marked in the text between tokens only, once per night text.
 	const explained = $derived(
 		explainBlock(
 			segments.map((s) => (s.kind === 'text' ? s.text : '')),
-			[character.name]
+			[name ?? character?.name ?? '']
 		)
 	);
 </script>
