@@ -76,6 +76,12 @@
 	.still {
 		cursor: default;
 	}
+	/* As the menu's rows do (Trevor, 2026-11-06: "should have hover effect"). */
+	@media (hover: hover) and (pointer: fine) {
+		.resume-game:not(.still):hover {
+			background: var(--surface-hover);
+		}
+	}
 	.resume-line {
 		overflow: hidden;
 		text-overflow: ellipsis;
