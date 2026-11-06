@@ -5,7 +5,7 @@
  * is the table's choice, so the Storyteller can put a seat in play or take it out at will.
  */
 import { describe, expect, it } from 'vitest';
-import { newGame, run, warned } from '#lib/core/model/fixtures.test-support.ts';
+import { newGame, run, warned, testCharacters } from '#lib/core/model/fixtures.test-support.ts';
 import { inPlay } from '#lib/core/model/index.ts';
 import {
 	blockThreshold,
@@ -46,7 +46,7 @@ describe('seats not in play', () => {
 	it('leaves the seat out of the alive count, the votes needed and the exile count', () => {
 		const { session, ctx, fay } = withArrival();
 		expect(inPlay(session.game).seating).not.toContain(fay);
-		expect(blockThreshold(session.game)).toEqual({ alive: 5, needed: 3 });
+		expect(blockThreshold(session.game, testCharacters)).toEqual({ alive: 5, needed: 3 });
 		// The day timer's time per living player follows this count too.
 		expect(livingByTeam(session.game).alive).toBe(5);
 		const traveller = run(session, ctx, {
@@ -58,7 +58,7 @@ describe('seats not in play', () => {
 		// Not in play: no living Traveller yet, so nobody can be exiled.
 		expect(exileThreshold(traveller.game, ctx.characters)).toBeUndefined();
 		const joined = run(traveller, ctx, { type: 'SetInPlay', seatIds: [fay], inPlay: true });
-		expect(blockThreshold(joined.game)).toEqual({ alive: 6, needed: 3 });
+		expect(blockThreshold(joined.game, testCharacters)).toEqual({ alive: 6, needed: 3 });
 		expect(exileThreshold(joined.game, ctx.characters)).toBe(3);
 	});
 

@@ -2,6 +2,7 @@
  * Wishes (`wish`): https://wiki.bloodontheclocktower.com/Wizard. Granted or declined, with an
  * optional price and clue, and a standard effect the app acts on.
  */
+import { testCharacters } from '#lib/core/model/fixtures.test-support.ts';
 import { describe, expect, it } from 'vitest';
 import { abilityState } from './ability.ts';
 import { grantedWish, grantedWishSeats, makesWish, wishWithEffect, wishes } from './wishes.ts';
@@ -22,8 +23,8 @@ const wish =
 
 describe('wishes', () => {
 	it('knows which characters make a wish', () => {
-		expect(makesWish('wizard')).toBe(true);
-		expect(makesWish('chef')).toBe(false);
+		expect(makesWish('wizard', testCharacters)).toBe(true);
+		expect(makesWish('chef', testCharacters)).toBe(false);
 	});
 
 	it('keeps every wish across days, and only a granted one counts', () => {

@@ -278,7 +278,7 @@ function whyOf(
 		if (types.has(type)) facts.push(seatsFact(f, [{ type }], typed(f, w0, type)));
 	if (/\byou(r)?\b/i.test(words)) {
 		const near = /living/i.test(words)
-			? aliveNeighbours(f.game, f.savant)
+			? aliveNeighbours(f.game, f.savant, f.characters)
 			: sideBySide(f, f.savant);
 		facts.push(seatsFact(f, [text('Beside you')], near));
 	}

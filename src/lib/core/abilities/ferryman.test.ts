@@ -12,6 +12,7 @@
  * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
  * write it anyway as `it.fails` and say which gap it waits on.
  */
+import { testCharacters } from '#lib/core/model/fixtures.test-support.ts';
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
@@ -60,7 +61,7 @@ describe('Ferryman', () => {
 			s = s.do((at) => ({ type: 'RestoreGhostVote', seatId: at.seat('monk') }));
 			// Amy (the Chef) and Doug (the Empath) forgot they were dead and voted.
 			const ferried = s.rule('ferryman');
-			expect(blockThreshold(ferried.game).alive).toBe(3);
+			expect(blockThreshold(ferried.game, testCharacters).alive).toBe(3);
 			expect(ghostVotesRestored(ferried.game, ferried.characters, true)).toEqual([
 				s.seat('chef'),
 				s.seat('empath')

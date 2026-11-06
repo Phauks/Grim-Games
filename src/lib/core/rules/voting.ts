@@ -29,7 +29,7 @@ export interface BlockThreshold {
  * The living count and the votes needed. With `characters`, a working `noMajority` rule (the
  * Voudon, https://wiki.bloodontheclocktower.com/Voudon) makes it one vote.
  */
-export function blockThreshold(full: Game, characters?: CharacterLookup): BlockThreshold {
+export function blockThreshold(full: Game, characters: CharacterLookup): BlockThreshold {
 	const game = inPlay(full);
 	const alive = game.seating.filter((s) => !game.seats[s].dead).length;
 	const mostVotes = characters && mostVotesWins(full, characters);
@@ -146,7 +146,7 @@ export function livingByTeam(game: Game): LivingByTeam {
  * (`votesWithoutToken`) adds their votes on a nomination.
  */
 export function ghostVotesLeft(game: Game, characters: CharacterLookup): number {
-	return seatsBehind(game, 'ghostVotes').reduce(
+	return seatsBehind(game, 'ghostVotes', characters).reduce(
 		(sum, seatId) => sum + counts(game, 'ghostVotes', seatId, characters),
 		0
 	);
@@ -165,7 +165,9 @@ export function votesWithoutToken(
 ): number | undefined {
 	const own = afterDeath(game, seatId, characters)?.votes;
 	if (own !== undefined) return own;
-	return registersAsDead(game, seatId) && deadVoteFree(game, characters) ? 1 : undefined;
+	return registersAsDead(game, seatId, characters) && deadVoteFree(game, characters)
+		? 1
+		: undefined;
 }
 
 /**
@@ -193,10 +195,10 @@ export type DayCount = 'alive' | 'good' | 'evil' | 'ghostVotes';
  * who registers as dead for `ghostVotes` (spent votes included). Each count above is the
  * sum of what `counts` gives these seats.
  */
-export function seatsBehind(game: Game, count: DayCount): SeatId[] {
+export function seatsBehind(game: Game, count: DayCount, characters: CharacterLookup): SeatId[] {
 	return game.seating.filter((s) => {
 		if (count === 'alive') return true;
-		if (count === 'ghostVotes') return registersAsDead(game, s);
+		if (count === 'ghostVotes') return registersAsDead(game, s, characters);
 		return !game.seats[s].dead && alignmentOf(game, s) === count;
 	});
 }

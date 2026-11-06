@@ -92,7 +92,7 @@ export interface TargetFit {
 /** The rule for a token, or undefined for a token whose character's rules give none. */
 export function targetRule(
 	reminder: Reminder,
-	characters?: CharacterLookup
+	characters: CharacterLookup
 ): TargetRule | undefined {
 	return rulesOf(reminder.characterId, characters)?.reminderTargets?.[reminder.label];
 }
@@ -191,10 +191,10 @@ function neighbours(
 	characters: CharacterLookup
 ): SeatId[] {
 	const skip = (id: SeatId) =>
-		(rule.alive === true && registersAsDead(game, id)) ||
+		(rule.alive === true && registersAsDead(game, id, characters)) ||
 		(rule.type !== undefined && typeOf(game, id, characters) !== rule.type) ||
 		(rule.alignment !== undefined && alignmentOf(game, id) !== rule.alignment);
-	return aliveNeighbours(game, from, skip);
+	return aliveNeighbours(game, from, characters, skip);
 }
 
 /**

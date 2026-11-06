@@ -171,12 +171,12 @@ export const SAVANT_TEMPLATES: readonly Template[] = [
 	count(
 		'evil-neighbours',
 		'alignment',
-		(f, w) => aliveNeighbours(f.game, f.savant).filter((s) => isEvil(w, s)).length,
+		(f, w) => aliveNeighbours(f.game, f.savant, f.characters).filter((s) => isEvil(w, s)).length,
 		(n) => [
 			{ number: n },
 			text(n === 1 ? ' of your living neighbours is evil.' : ' of your living neighbours are evil.')
 		],
-		(f) => aliveNeighbours(f.game, f.savant).length
+		(f) => aliveNeighbours(f.game, f.savant, f.characters).length
 	),
 	count(
 		'evil-pairs',
@@ -512,7 +512,7 @@ export const SAVANT_TEMPLATES: readonly Template[] = [
 	count(
 		'impaired-neighbours',
 		'counts',
-		(f) => aliveNeighbours(f.game, f.savant).filter(f.impaired).length,
+		(f) => aliveNeighbours(f.game, f.savant, f.characters).filter(f.impaired).length,
 		(n) => [
 			{ number: n },
 			text(
@@ -521,7 +521,7 @@ export const SAVANT_TEMPLATES: readonly Template[] = [
 					: ' of your living neighbours are drunk or poisoned.'
 			)
 		],
-		(f) => aliveNeighbours(f.game, f.savant).length
+		(f) => aliveNeighbours(f.game, f.savant, f.characters).length
 	),
 	{
 		id: 'sit-together',
@@ -564,7 +564,7 @@ export const SAVANT_TEMPLATES: readonly Template[] = [
 		id: 'neighbours-alignment',
 		group: 'alignment',
 		instances(f) {
-			const [a, b] = aliveNeighbours(f.game, f.savant);
+			const [a, b] = aliveNeighbours(f.game, f.savant, f.characters);
 			if (a === undefined || b === undefined) return [];
 			const same = (w: RegistrationWorld) =>
 				w.alignment(a) !== undefined && w.alignment(a) === w.alignment(b);
@@ -647,7 +647,7 @@ export const SAVANT_TEMPLATES: readonly Template[] = [
 		'neighbours-reminded',
 		'today',
 		(f) =>
-			aliveNeighbours(f.game, f.savant).filter((s) =>
+			aliveNeighbours(f.game, f.savant, f.characters).filter((s) =>
 				f.game.seats[s].reminders.some(
 					(r) =>
 						r.characterId !== trueCharacter(f.game, s, f.characters) &&
@@ -662,7 +662,7 @@ export const SAVANT_TEMPLATES: readonly Template[] = [
 					: " of your living neighbours carry another character's reminder."
 			)
 		],
-		(f) => aliveNeighbours(f.game, f.savant).length
+		(f) => aliveNeighbours(f.game, f.savant, f.characters).length
 	),
 	{
 		id: 'one-of-three-evil',

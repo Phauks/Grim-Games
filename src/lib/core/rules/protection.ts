@@ -76,7 +76,7 @@ function protectionFor(
 	if (!seat) return undefined;
 	const from = seatOfCharacter(game, characterId, characters);
 	if (rule.whileNeighboursGood) {
-		const near = from === undefined ? [] : aliveNeighbours(game, from);
+		const near = from === undefined ? [] : aliveNeighbours(game, from, characters);
 		if (near.length === 0 || near.some((id) => alignmentOf(game, id) !== 'good')) return undefined;
 	}
 	// Only while a player carrying its token lives (the Lleech's host: M15h).

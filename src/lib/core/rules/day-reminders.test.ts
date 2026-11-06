@@ -298,9 +298,10 @@ describe('Big Wig', () => {
 		let s = runCommands(session, ctx, { type: 'Nominate', nominator: seats[0], nominee: seats[1] });
 		const entryId = s.game.today.entries[0].entryId;
 		s = runCommands(s, ctx, { type: 'ChooseForNomination', entryId, chosen: seats[2] });
-		expect(dayStateFromGame(s.game, data.byId.get.bind(data.byId)).nominationChoices).toEqual([
-			{ nominee: seats[1], chosen: seats[2] }
-		]);
+		expect(
+			dayStateFromGame(s.game, data.byId.get.bind(data.byId), undefined, data.byId)
+				.nominationChoices
+		).toEqual([{ nominee: seats[1], chosen: seats[2] }]);
 	});
 
 	it('needs nomineeChose for a nominee segment', () => {

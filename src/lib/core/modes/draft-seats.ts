@@ -23,14 +23,14 @@
  * (`draftedTurned` lists such characters, which a draft offers too).
  */
 import type { Character, CharacterId } from '#lib/core/data/types.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
+import { rulesOfCharacter } from '#lib/core/data/rules/index.ts';
 import { SEATED_TYPES, type SeatedType } from '#lib/core/rules/distribution.ts';
 import { isReplacedAfterDraw, replacementReminder } from '#lib/core/rules/bag-characters.ts';
 import type { TurnsPlayersInto } from '#lib/core/data/turns-players-rules.ts';
 import type { DraftState, PendingChange } from './draft.ts';
 
 /** Its own rules (a custom character's) or our rules file's. */
-export const rulesFor = (c: Character) => (c.edition === undefined ? c.rules : rulesOf(c.id));
+export const rulesFor = (c: Character) => rulesOfCharacter(c);
 
 export const isSeated = (type: string): type is SeatedType =>
 	(SEATED_TYPES as readonly string[]).includes(type);

@@ -87,8 +87,6 @@ export function setupPrepOf(
 	characterId: CharacterId,
 	lookup?: CharacterLookup
 ): SetupPrepRules | undefined {
-	const character = lookup?.get(characterId);
-	if (character && character.edition === undefined) return character.rules?.setupPrep;
 	return rulesOf(characterId, lookup)?.setupPrep;
 }
 

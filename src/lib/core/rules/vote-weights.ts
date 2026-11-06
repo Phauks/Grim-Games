@@ -80,7 +80,7 @@ export function weightSources(
 
 /** The votes one raised hand casts before any weight: 1, or a dead player's token-free votes. */
 function baseVotes(game: Game, seatId: SeatId, characters: CharacterLookup): number {
-	if (!registersAsDead(game, seatId)) return 1;
+	if (!registersAsDead(game, seatId, characters)) return 1;
 	return votesWithoutToken(game, seatId, characters) ?? 1;
 }
 
@@ -166,8 +166,8 @@ export function carriersOf(game: Game, characterId: CharacterId, label: Reminder
 }
 
 /** Whether a `must` voter rule applies today: enough players are alive. */
-export function mustVoteNow(game: Game, rule: VoterRule): boolean {
-	return !!rule.must && blockThreshold(game).alive >= (rule.minAlive ?? 0);
+export function mustVoteNow(game: Game, rule: VoterRule, characters: CharacterLookup): boolean {
+	return !!rule.must && blockThreshold(game, characters).alive >= (rule.minAlive ?? 0);
 }
 
 /** One seat's voting facts, for a vote sheet to show (M9e); data, never text. */
@@ -212,7 +212,7 @@ export function voteHints(game: Game, characters: CharacterLookup): VoteHint[] {
 				worth: voteWorth(game, seatId, characters),
 				worthFrom: sources.map((s) => s.characterId)
 			};
-			const dead = registersAsDead(game, seatId);
+			const dead = registersAsDead(game, seatId, characters);
 			if (dead) {
 				const free = votesWithoutToken(game, seatId, characters) !== undefined;
 				hint.ghostVote = free ? 'free' : seat.ghostVoteUsed ? 'used' : 'unused';
@@ -232,7 +232,7 @@ export function voteHints(game: Game, characters: CharacterLookup): VoteHint[] {
 					...(uncounted ? { uncounted } : {})
 				};
 			}
-			if (voter && mustVoteNow(game, voter.rule))
+			if (voter && mustVoteNow(game, voter.rule, characters))
 				hint.mustVote = { characterId: voter.characterId };
 			// A dead player votes with their ghost vote, as anyone does; given tokens are lost.
 			if (voter?.rule.needsToken && !dead)

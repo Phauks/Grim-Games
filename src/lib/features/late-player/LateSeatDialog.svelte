@@ -11,7 +11,7 @@
 	 */
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import type { Character, CharacterId, PlayerName } from '#lib/core/data/index.ts';
-	import { rulesOf } from '#lib/core/data/rules/index.ts';
+	import { rulesOfCharacter } from '#lib/core/data/rules/index.ts';
 	import type { Command, TileSpec } from '#lib/core/engine/index.ts';
 	import type { Game, SeatId } from '#lib/core/model/index.ts';
 	import {
@@ -117,7 +117,7 @@
 			(c) =>
 				(c.type === 'fabled' || c.type === 'loric') &&
 				!game.ruleCharacters.includes(c.id) &&
-				rulesOf(c.id)?.setupModifier?.ops.some((op) => op.kind === 'delta')
+				rulesOfCharacter(c)?.setupModifier?.ops.some((op) => op.kind === 'delta')
 		)
 	);
 

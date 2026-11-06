@@ -59,8 +59,9 @@ export function cantTurnGood(
  */
 export function demonGoodNeighbours(game: Game, characters: CharacterLookup): SeatId[] {
 	const demons = game.seating.filter((id) => typeOf(game, id, characters) === 'demon');
-	const skip = (id: SeatId) => registersAsDead(game, id) || alignmentOf(game, id) !== 'good';
-	return [...new Set(demons.flatMap((id) => aliveNeighbours(game, id, skip)))];
+	const skip = (id: SeatId) =>
+		registersAsDead(game, id, characters) || alignmentOf(game, id) !== 'good';
+	return [...new Set(demons.flatMap((id) => aliveNeighbours(game, id, characters, skip)))];
 }
 
 /**
@@ -416,7 +417,9 @@ export function neighbourAlignments(
 	// A jinx may keep them from turning good by this ability (`cantTurnGood`).
 	const noGood = cantTurnGood(game, seatId, characters) !== undefined;
 	const alignments = [
-		...new Set(aliveNeighbours(game, seatId).flatMap((id) => alignmentOf(game, id) ?? []))
+		...new Set(
+			aliveNeighbours(game, seatId, characters).flatMap((id) => alignmentOf(game, id) ?? [])
+		)
 	]
 		.filter((a) => !noGood || a !== 'good')
 		.sort();

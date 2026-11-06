@@ -32,7 +32,7 @@ export function actsWhenDead(characterId: CharacterId, characters?: RulesLookup)
 export function keepsAbilityWhenDead(
 	game: Game,
 	seatId: SeatId,
-	characters?: CharacterLookup,
+	characters: CharacterLookup,
 	sourceWorks?: (sourceSeat: SeatId) => boolean
 ): boolean {
 	const seat = game.seats[seatId];
@@ -60,7 +60,7 @@ export function keepsAbilityWhenDead(
  * Characters in play whose every player is dead and whose ability ends with them: their
  * reminders still off the board go in the bank's dead players section (Trevor, 2026-10-19).
  */
-export function deadCharacters(game: Game, characters?: CharacterLookup): Set<CharacterId> {
+export function deadCharacters(game: Game, characters: CharacterLookup): Set<CharacterId> {
 	const alive = new Set<CharacterId>();
 	const dead = new Set<CharacterId>();
 	for (const [seatId, seat] of Object.entries(game.seats)) {
@@ -83,7 +83,7 @@ export function deadCharacters(game: Game, characters?: CharacterLookup): Set<Ch
 export function reminderOwnerDead(
 	game: Game,
 	reminder: { characterId: CharacterId; ownerSeatId?: string },
-	characters?: CharacterLookup
+	characters: CharacterLookup
 ): boolean {
 	if (actsWhenDead(reminder.characterId, characters)) return false;
 	const ownerId = reminder.ownerSeatId;

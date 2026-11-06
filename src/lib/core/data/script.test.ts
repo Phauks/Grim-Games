@@ -444,3 +444,43 @@ describe('toScript and fromScript (08-script-loading.md §5.2)', () => {
 		expect(back.script.name).toBe('Old');
 	});
 });
+
+describe("a custom character's rules the app can't read (M58)", () => {
+	const protects = { protects: { who: 'marked', token: 'Safe', from: 'demon' } };
+
+	it('keeps the character and its readable rules, leaving out an unknown rule', () => {
+		const result = loadScript(
+			[{ ...homebrew, rules: { ...protects, fromANewerBuild: true } }, 'imp'],
+			data
+		);
+		expect(ids(result)).toEqual(['stormwarden', 'imp']);
+		expect(result.script?.characters[0].rules).toEqual(protects);
+		expect(warnings(result).map((w) => w.message)).toContainEqual(
+			expect.stringContaining('Ignored its rule "fromANewerBuild"')
+		);
+		expect(errors(result)).toEqual([]);
+	});
+
+	it('leaves out a rule whose value the app rejects, and only that rule', () => {
+		const result = loadScript(
+			[{ ...homebrew, rules: { ...protects, kills: { by: 'nobody' } } }, 'imp'],
+			data
+		);
+		expect(result.script?.characters[0].rules).toEqual(protects);
+		expect(warnings(result).map((w) => w.message)).toContainEqual(
+			expect.stringContaining('Ignored its rule "kills"')
+		);
+	});
+});
+
+describe('an official character written out in full (M58)', () => {
+	it('loads as the official character when its name and ability are the same', () => {
+		const monk = data.byId.get('monk')!;
+		const result = loadScript(
+			[{ id: 'monk', name: monk.name, team: monk.type, ability: monk.ability }, 'imp'],
+			data
+		);
+		expect(result.script?.homebrew).toEqual([]);
+		expect(result.script?.characters[0].edition).toBe(monk.edition);
+	});
+});

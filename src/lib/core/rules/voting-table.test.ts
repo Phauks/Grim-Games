@@ -49,8 +49,6 @@ describe('Voudon', () => {
 			needed: 1,
 			mostVotes: 'voudon'
 		});
-		// Without the characters, the plain count: half the living.
-		expect(blockThreshold(s.game)).toEqual({ alive: 6, needed: 3 });
 	});
 
 	it('lets only the Voudon and the dead vote', () => {

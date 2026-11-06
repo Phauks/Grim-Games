@@ -4,7 +4,8 @@ import type { Game } from '#lib/core/model/index.ts';
 import {
 	newGame,
 	run,
-	testCharacters as characters
+	testCharacters as characters,
+	testCharacters
 } from '#lib/core/model/fixtures.test-support.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { abilityState } from './ability.ts';
@@ -82,7 +83,8 @@ describe('deadCharacters', () => {
 					['sweetheart', true],
 					['imp', true],
 					['imp', false]
-				])
+				]),
+				testCharacters
 			)
 		).toEqual(new Set(['poisoner']));
 	});
@@ -101,16 +103,22 @@ describe('reminderOwnerDead', () => {
 	const [poisoner, , deadImp, liveImp] = Object.keys(g.seats);
 
 	it("asks for a dead character's reminder, never one that acts when dead", () => {
-		expect(reminderOwnerDead(g, { characterId: 'poisoner' })).toBe(true);
-		expect(reminderOwnerDead(g, { characterId: 'sweetheart' })).toBe(false);
-		expect(reminderOwnerDead(g, { characterId: 'monk' })).toBe(false);
-		expect(reminderOwnerDead(g, { characterId: 'poisoner', ownerSeatId: poisoner })).toBe(true);
+		expect(reminderOwnerDead(g, { characterId: 'poisoner' }, testCharacters)).toBe(true);
+		expect(reminderOwnerDead(g, { characterId: 'sweetheart' }, testCharacters)).toBe(false);
+		expect(reminderOwnerDead(g, { characterId: 'monk' }, testCharacters)).toBe(false);
+		expect(
+			reminderOwnerDead(g, { characterId: 'poisoner', ownerSeatId: poisoner }, testCharacters)
+		).toBe(true);
 	});
 
 	it("follows the copy's owner when two players share the character", () => {
-		expect(reminderOwnerDead(g, { characterId: 'imp' })).toBe(false);
-		expect(reminderOwnerDead(g, { characterId: 'imp', ownerSeatId: deadImp })).toBe(true);
-		expect(reminderOwnerDead(g, { characterId: 'imp', ownerSeatId: liveImp })).toBe(false);
+		expect(reminderOwnerDead(g, { characterId: 'imp' }, testCharacters)).toBe(false);
+		expect(reminderOwnerDead(g, { characterId: 'imp', ownerSeatId: deadImp }, testCharacters)).toBe(
+			true
+		);
+		expect(reminderOwnerDead(g, { characterId: 'imp', ownerSeatId: liveImp }, testCharacters)).toBe(
+			false
+		);
 	});
 });
 

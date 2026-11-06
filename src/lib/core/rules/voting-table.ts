@@ -77,7 +77,7 @@ export function mayVote(
 	seatId: SeatId,
 	characters: CharacterLookup
 ): { ok: true } | { ok: false; by: CharacterId } {
-	if (registersAsDead(game, seatId)) return { ok: true };
+	if (registersAsDead(game, seatId, characters)) return { ok: true };
 	const limits = tableVoting(game, characters).filter((t) => t.rule.voters === 'self-and-dead');
 	if (limits.length === 0 || limits.some((t) => t.seatId === seatId)) return { ok: true };
 	return { ok: false, by: limits[0].characterId };
@@ -124,7 +124,10 @@ export function ghostVotesRestored(
 ): SeatId[] {
 	if (!finalDay || !tableRule(game, characters, 'deadRegainToken')) return [];
 	return game.seating.filter(
-		(s) => !game.seats[s].notInPlay && registersAsDead(game, s) && game.seats[s].ghostVoteUsed
+		(s) =>
+			!game.seats[s].notInPlay &&
+			registersAsDead(game, s, characters) &&
+			game.seats[s].ghostVoteUsed
 	);
 }
 

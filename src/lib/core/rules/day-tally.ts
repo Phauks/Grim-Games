@@ -18,7 +18,7 @@ export type { DayTally };
 /** A character's `dayTally` rule, if it has one. */
 export function dayTallyOf(
 	characterId: CharacterId | undefined,
-	characters?: CharacterLookup
+	characters: CharacterLookup
 ): DayTally | undefined {
 	return characterId === undefined ? undefined : rulesOf(characterId, characters)?.dayTally;
 }
@@ -46,7 +46,7 @@ export interface TallyKills {
 export function tallyKills(
 	game: Game,
 	characterId: CharacterId,
-	characters?: CharacterLookup
+	characters: CharacterLookup
 ): TallyKills | undefined {
 	if (!dayTallyOf(characterId, characters)?.kills) return undefined;
 	const count = tallyCount(game.today, characterId);
@@ -67,7 +67,7 @@ export function tallyKills(
  */
 export function tallyKiller(
 	cause: string | undefined,
-	characters?: CharacterLookup
+	characters: CharacterLookup
 ): CharacterId | undefined {
 	return cause !== undefined && dayTallyOf(cause, characters)?.kills ? cause : undefined;
 }

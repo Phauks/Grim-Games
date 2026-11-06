@@ -4,7 +4,7 @@
  * cite the pages they encode.
  */
 import { describe, expect, it } from 'vitest';
-import { newGame, run } from '#lib/core/model/fixtures.test-support.ts';
+import { newGame, run, testCharacters } from '#lib/core/model/fixtures.test-support.ts';
 import type { Command } from '#lib/core/engine/commands.ts';
 import type { GameSession } from '#lib/core/engine/log.ts';
 import { dawnGames } from '#lib/core/engine/dawns.ts';
@@ -323,7 +323,7 @@ describe('reminder targets', () => {
 	it('judges nothing it cannot: homebrew tokens, and owner rules with the owner out of play', () => {
 		const { session } = grimoire(['chef', 'imp']);
 		expect(fitting(session, { characterId: 'homebrew', label: 'Anything' })).toEqual([0, 1]);
-		expect(targetRule({ characterId: 'chef', label: 'Nope' })).toBeUndefined();
+		expect(targetRule({ characterId: 'chef', label: 'Nope' }, testCharacters)).toBeUndefined();
 		expect(fitting(session, { characterId: 'slayer', label: 'No Ability' })).toEqual([0, 1]);
 	});
 });
@@ -362,7 +362,9 @@ describe('placement corrections (Trevor, 2026-10-23)', () => {
 	// Minion, so it never fits anyway.
 	it('Investigator: Minion fits only Minions, with no rule about self', () => {
 		const { session } = grimoire(['investigator', 'poisoner', 'imp']);
-		expect(targetRule({ characterId: 'investigator', label: 'Minion' })?.seat).toBe('any');
+		expect(targetRule({ characterId: 'investigator', label: 'Minion' }, testCharacters)?.seat).toBe(
+			'any'
+		);
 		expect(fitting(session, { characterId: 'investigator', label: 'Minion' })).toEqual([1]);
 	});
 

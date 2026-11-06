@@ -6,7 +6,8 @@ import type { Command } from '#lib/core/engine/index.ts';
 import {
 	castGame,
 	castWith,
-	testCharacters as characters
+	testCharacters as characters,
+	testCharacters
 } from '#lib/core/model/fixtures.test-support.ts';
 import { parseCharacter } from '#lib/core/data/parse.ts';
 import { Issues } from '#lib/core/data/validate.ts';
@@ -215,7 +216,7 @@ describe('custom characters', () => {
 			targets: 'any',
 			ignoresProtection: false
 		});
-		expect(nightKiller('nightcrow')).toBeUndefined();
+		expect(nightKiller('nightcrow', testCharacters)).toBeUndefined();
 		const { game: g, seats } = castGame(['soldier', 'chef']);
 		expect(short(nightStepAlerts(g, 'nightcrow', all), seats)).toEqual(['protected soldier→0']);
 	});
@@ -239,7 +240,7 @@ describe('Moonchild (https://wiki.bloodontheclocktower.com/Moonchild)', () => {
 			// The Moonchild died today; tonight its chosen good player dies.
 			(s) => ({ type: 'SetDead', seatId: s[0], dead: true, cause: 'execution' })
 		);
-		expect(nightKiller('moonchild')).toEqual({
+		expect(nightKiller('moonchild', testCharacters)).toEqual({
 			by: 'other',
 			targets: 'any',
 			ignoresProtection: false

@@ -8,7 +8,7 @@
  * Characters without one fall back to reading the bracket text, flagged as auto-detected.
  * The reminder text is our own words.
  */
-import { rulesOf } from '#lib/core/data/rules/index.ts';
+import { rulesOfCharacter } from '#lib/core/data/rules/index.ts';
 import type {
 	AlignmentOp,
 	CountOp,
@@ -58,14 +58,9 @@ export function setupModifierFor(
 	character: Character,
 	findByName?: (name: string) => CharacterId | undefined
 ): SetupModifier | undefined {
-	const own = character.rules?.setupModifier;
-	const official = rulesOf(character.id)?.setupModifier;
-	// A homebrew character that reuses an official id but changes the text is read from text.
-	const entry =
-		own ??
-		(official && (character.edition !== undefined || !bracketText(character.ability))
-			? official
-			: undefined);
+	// A custom character has only its own rules (`rulesOf`), so one that reuses an official id
+	// with no setupModifier is read from its text.
+	const entry = rulesOfCharacter(character)?.setupModifier;
 	if (!entry) return modifierFromText(character, findByName);
 	// A character carrying the script's own rules (the Bootlegger, script-rules.ts): a bracket
 	// there, such as Binary Supernovae's "[+1 Demon]", changes setup as a homebrew one's does.

@@ -12,6 +12,7 @@
  * comment at the top of the test (Trevor, 2026-11-01). When the engine can't pass it yet,
  * write it anyway as `it.fails` and say which gap it waits on.
  */
+import { testCharacters } from '#lib/core/model/fixtures.test-support.ts';
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
@@ -113,7 +114,7 @@ describe('Thief', () => {
 				'slayer'
 			);
 			expect(total(s)).toBe(4);
-			expect(blockThreshold(s.game)).toEqual({ alive: 10, needed: 5 });
+			expect(blockThreshold(s.game, testCharacters)).toEqual({ alive: 10, needed: 5 });
 		});
 	});
 	describe('How to Run (https://wiki.bloodontheclocktower.com/Thief#How_to_Run)', () => {

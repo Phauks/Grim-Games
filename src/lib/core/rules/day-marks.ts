@@ -17,11 +17,9 @@ export { DAY_MARKS, type DayMark, type DayMarkRule };
 /** A character's `dayMark` rule: its own (a custom character's) or our overlay file's. */
 export function dayMarkOf(
 	characterId: CharacterId | undefined,
-	characters?: CharacterLookup
+	characters: CharacterLookup
 ): DayMarkRule | undefined {
 	if (characterId === undefined) return undefined;
-	const character = characters?.get(characterId);
-	if (character && character.edition === undefined) return character.rules?.dayMark;
 	return rulesOf(characterId, characters)?.dayMark;
 }
 
@@ -40,7 +38,7 @@ export interface DayMarkSeat {
  */
 export function dayMarkSeats(
 	game: Game,
-	characters?: CharacterLookup,
+	characters: CharacterLookup,
 	mark?: DayMark
 ): DayMarkSeat[] {
 	return game.seating.flatMap((seatId) => {
@@ -58,7 +56,7 @@ export function dayMarkSeats(
 }
 
 /** The marks some character in play learns, in `DAY_MARKS` order. */
-export function marksInPlay(game: Game, characters?: CharacterLookup): DayMark[] {
+export function marksInPlay(game: Game, characters: CharacterLookup): DayMark[] {
 	const marks = new Set(dayMarkSeats(game, characters).map((s) => s.rule.mark));
 	return DAY_MARKS.filter((m) => marks.has(m));
 }
@@ -81,7 +79,7 @@ export function markTokenSwap(
 	game: Game,
 	mark: DayMark,
 	value: boolean | undefined,
-	characters?: CharacterLookup
+	characters: CharacterLookup
 ): {
 	remove: ReminderId[];
 	add: { seatId: SeatId; characterId: CharacterId; label: ReminderLabel }[];

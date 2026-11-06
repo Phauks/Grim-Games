@@ -392,14 +392,27 @@ function load(): ReadonlyMap<CharacterId, CharacterRules> {
 export const OFFICIAL_RULES: ReadonlyMap<CharacterId, CharacterRules> = load();
 
 /**
- * A character's rules block: a custom character's own `rules`, else our overlay file. A custom
- * character that reuses an official id without `rules` keeps the official block.
+ * A character's rules block (one policy, M58): a custom character (no edition) has only its
+ * own `rules`, even when it reuses an official id, because its text is its own; an official
+ * character has our overlay file. A script entry that is the official character word for word
+ * loads as the official one (`script.ts`), so it keeps the file.
  */
 export function rulesOf(
 	characterId: CharacterId,
-	characters?: ReadonlyMap<CharacterId, { rules?: CharacterRules }>
+	characters?: ReadonlyMap<CharacterId, { rules?: CharacterRules; edition?: string }>
 ): CharacterRules | undefined {
-	return characters?.get(characterId)?.rules ?? OFFICIAL_RULES.get(characterId);
+	const character = characters?.get(characterId);
+	if (character && character.edition === undefined) return character.rules;
+	return character?.rules ?? OFFICIAL_RULES.get(characterId);
+}
+
+/** A character's rules block, by the same policy as `rulesOf`, from the character itself. */
+export function rulesOfCharacter(character: {
+	id: CharacterId;
+	edition?: string;
+	rules?: CharacterRules;
+}): CharacterRules | undefined {
+	return rulesOf(character.id, new Map([[character.id, character]]));
 }
 
 /**
@@ -409,7 +422,7 @@ export function rulesOf(
 export function rulesIn(
 	game: { readonly optionalRules?: readonly CharacterId[] },
 	characterId: CharacterId,
-	characters?: ReadonlyMap<CharacterId, { rules?: CharacterRules }>
+	characters?: ReadonlyMap<CharacterId, { rules?: CharacterRules; edition?: string }>
 ): CharacterRules | undefined {
 	const rules = rulesOf(characterId, characters);
 	if (!rules?.optionalRule || !game.optionalRules?.includes(characterId)) return rules;

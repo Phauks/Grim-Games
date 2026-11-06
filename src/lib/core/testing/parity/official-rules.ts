@@ -39,5 +39,14 @@ export function rulesIn(
 	return { ...rules, ...rules.optionalRule };
 }
 
+/** @public As `rulesOfCharacter`, with no official fallback. */
+export function rulesOfCharacter(character: {
+	id: CharacterId;
+	edition?: string;
+	rules?: CharacterRules;
+}): CharacterRules | undefined {
+	return rulesOf(character.id, new Map([[character.id, character]]));
+}
+
 /** @public Showing a rules file is not behaviour, so the Reference keeps the real one. */
 export const rulesFileOf = realRulesFileOf;

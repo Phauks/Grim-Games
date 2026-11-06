@@ -17,7 +17,7 @@ function countedPartners(
 	game: Game,
 	counter: CharacterId | undefined,
 	how: AbnormalCounts,
-	characters?: CharacterLookup
+	characters: CharacterLookup
 ): CharacterId[] {
 	if (counter === undefined) return [];
 	return ownJinxEffects(game, counter, 'abnormalCounts', characters, (e) => e.counts === how).map(
@@ -37,7 +37,7 @@ function countedPartners(
  */
 export function abnormalSinceDawn(
 	game: Game,
-	characters?: CharacterLookup,
+	characters: CharacterLookup,
 	counter?: CharacterId
 ): AbnormalUse[] {
 	const out: AbnormalUse[] = [];

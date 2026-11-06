@@ -188,11 +188,6 @@ function rulesFor(
 	character: Character | undefined,
 	optionalRules: readonly CharacterId[] = []
 ): DayReminderRules | undefined {
-	if (character && character.edition === undefined) {
-		const own = character.rules;
-		const on = optionalRules.includes(characterId) ? own?.optionalRule : undefined;
-		return (on ? { ...own, ...on } : own)?.dayReminders;
-	}
 	const lookup = character ? new Map([[characterId, character]]) : undefined;
 	return rulesIn({ optionalRules }, characterId, lookup)?.dayReminders;
 }
@@ -259,7 +254,7 @@ export function dayStateFromGame(
 	game: Game,
 	character: (id: CharacterId) => Character | undefined,
 	overrides: readonly DayReminderOverride[] | undefined = game.dayReminderOverrides,
-	characters?: CharacterLookup
+	characters: CharacterLookup
 ): DayState {
 	return {
 		seats: game.seating.flatMap((id) => {

@@ -255,7 +255,7 @@ function optionsIn(
 			];
 		case 'evil-alive-neighbours': {
 			// https://wiki.bloodontheclocktower.com/Empath: evil among the alive neighbours.
-			const neighbours = aliveNeighbours(game, seatId);
+			const neighbours = aliveNeighbours(game, seatId, characters);
 			return [{ seats: [], number: neighbours.filter(evil).length }];
 		}
 		case 'demon-minion-steps': {
@@ -308,7 +308,7 @@ function optionsIn(
 			// /King (an alive character), /Pixie (an in-play Townsfolk), /Grandmother (a good
 			// Townsfolk or Outsider). A player registering as another type (the Recluse as a
 			// Minion) may be shown as any character of that type.
-			return characterOfSeats(game, seatId, spec, world).map((s) => ({
+			return characterOfSeats(game, seatId, spec, world, characters).map((s) => ({
 				seats: [s],
 				...shownAs(game, s, characters, world)
 			}));
@@ -376,13 +376,14 @@ function characterOfSeats(
 	game: Game,
 	seatId: SeatId,
 	spec: PickerSpec,
-	world: RegistrationWorld
+	world: RegistrationWorld,
+	characters: CharacterLookup
 ): SeatId[] {
 	return game.seating.filter((s) => {
 		const type = world.type(s);
 		return (
 			(spec.self || s !== seatId) &&
-			(!spec.alive || !registersAsDead(game, s)) &&
+			(!spec.alive || !registersAsDead(game, s, characters)) &&
 			(!spec.types || (type !== undefined && spec.types.includes(type))) &&
 			(!spec.alignment || world.alignment(s) === spec.alignment)
 		);
@@ -467,7 +468,7 @@ function pickerFacts(
 		case 'evil-pairs':
 			return game.seating.filter(evil).map(f);
 		case 'evil-alive-neighbours':
-			return aliveNeighbours(game, seatId).map(f);
+			return aliveNeighbours(game, seatId, characters).map(f);
 		case 'demon-minion-steps':
 			return game.seating
 				.filter((s) => world.type(s) === 'demon' || world.type(s) === 'minion')

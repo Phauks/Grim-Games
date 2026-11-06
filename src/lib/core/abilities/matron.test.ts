@@ -64,7 +64,7 @@ describe('Matron', () => {
 			const swapped = s
 				.newDay()
 				.do((at) => ({ type: 'SwapSeats', seatA: at.seat('matron'), seatB: at.seat('chef') }));
-			expect(aliveNeighbours(swapped.game, swapped.seat('tealady'))).toContain(
+			expect(aliveNeighbours(swapped.game, swapped.seat('tealady'), swapped.characters)).toContain(
 				swapped.seat('matron')
 			);
 			// An evil neighbour: the Tea Lady protects nobody.
@@ -81,11 +81,11 @@ describe('Matron', () => {
 				'matron',
 				'good'
 			);
-			expect(aliveNeighbours(s.game, s.seat('imp'))).toContain(s.seat('poisoner'));
+			expect(aliveNeighbours(s.game, s.seat('imp'), s.characters)).toContain(s.seat('poisoner'));
 			const swapped = s
 				.newDay()
 				.do((at) => ({ type: 'SwapSeats', seatA: at.seat('imp'), seatB: at.seat('empath') }));
-			expect(aliveNeighbours(swapped.game, swapped.seat('imp'))).not.toContain(
+			expect(aliveNeighbours(swapped.game, swapped.seat('imp'), swapped.characters)).not.toContain(
 				swapped.seat('poisoner')
 			);
 		});

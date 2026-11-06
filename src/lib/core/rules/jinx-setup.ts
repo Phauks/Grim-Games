@@ -13,7 +13,7 @@
  */
 import type { Character, CharacterId, Jinx } from '#lib/core/data/types.ts';
 import type { JinxRules } from '#lib/core/data/jinx-rules.ts';
-import { rulesOf } from '#lib/core/data/rules/index.ts';
+import { rulesOf, rulesOfCharacter } from '#lib/core/data/rules/index.ts';
 import { rulesForJinx, scriptJinxPartners } from './jinx-pairs.ts';
 import { aboutHolder } from './jinx-when.ts';
 
@@ -44,7 +44,8 @@ export function abilityJinxSetup(
 	lookup: (id: CharacterId) => Character | undefined,
 	homebrewJinxes: readonly Jinx[] = []
 ): AbilityJinxSetup {
-	const jinxesOf = (c: Character | undefined, id: CharacterId) => (c?.rules ?? rulesOf(id))?.jinxes;
+	const jinxesOf = (c: Character | undefined, id: CharacterId) =>
+		(c ? rulesOfCharacter(c) : rulesOf(id))?.jinxes;
 	const scope = { jinxes: homebrewJinxes };
 	const custom = new Map(
 		[...new Set([...chosen, ...scriptIds])].flatMap((id) => {
