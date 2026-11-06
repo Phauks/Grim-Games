@@ -87,3 +87,24 @@ export async function moveOnBoard(page: Page, label: string, from: number, to: n
 	await expect(inHand(page)).toBeVisible();
 	await boardSeat(page, to).tap();
 }
+
+/**
+ * Puts a later token of a counting run on a seat (plan M53, Trevor 2026-11-06: a run is
+ * stacked as one token in the bin, its next token on top): the stack held from the bin, the
+ * token picked in its pill, then the seat tapped.
+ */
+export async function putRunReminder(page: Page, label: string, seat: number | string) {
+	const bin = await openBin(page);
+	const word = label.split(' ')[0];
+	await bin
+		.getByRole('button', { name: new RegExp(`^${word} \\d+ reminder$`) })
+		// The stack, after any of the run's tokens still waiting in Setup.
+		.last()
+		.tap();
+	const pill = inHand(page);
+	await expect(pill).toBeVisible();
+	await pill.getByRole('combobox', { name: 'Token', exact: true }).tap();
+	await page.getByRole('option', { name: label, exact: true }).tap();
+	await boardSeat(page, seat).tap();
+	await expect(pill).toBeHidden();
+}

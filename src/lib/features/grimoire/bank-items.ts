@@ -58,6 +58,11 @@ export interface BankItem {
 	makesToken?: boolean;
 	/** The # token beside the ∞ (plan M35): its copies show a number, starting at 1. */
 	number?: boolean;
+	/**
+	 * A counting run stacked as this one token (plan M53): its labels still in the bank, in
+	 * order, `label` the one on top. Held, its pill picks which goes down.
+	 */
+	run?: ReminderLabel[];
 }
 
 /** How a bank token is drawn: an ∞ token's symbol, or the # token's #. */
@@ -107,12 +112,14 @@ function bundledCounters(items: BankItem[], characters: CharacterLookup): BankIt
 	// The run's earliest token still in the bank, and how many of the run are left, by character.
 	const next = new Map<CharacterId, number>();
 	const left = new Map<CharacterId, number>();
+	const labels = new Map<CharacterId, Set<ReminderLabel>>();
 	for (const item of items) {
 		const tokens = run(item);
 		if (!tokens) continue;
 		const i = tokens.indexOf(item.label);
 		next.set(item.characterId, Math.min(i, next.get(item.characterId) ?? i));
 		left.set(item.characterId, (left.get(item.characterId) ?? 0) + item.count);
+		labels.set(item.characterId, (labels.get(item.characterId) ?? new Set()).add(item.label));
 	}
 	const kept = new Set<CharacterId>();
 	return items.flatMap((item) => {
@@ -121,7 +128,14 @@ function bundledCounters(items: BankItem[], characters: CharacterLookup): BankIt
 		if (tokens.indexOf(item.label) !== next.get(item.characterId)) return [];
 		if (kept.has(item.characterId)) return [];
 		kept.add(item.characterId);
-		return [{ ...item, count: left.get(item.characterId) ?? item.count }];
+		const inBank = labels.get(item.characterId) ?? new Set();
+		return [
+			{
+				...item,
+				count: left.get(item.characterId) ?? item.count,
+				run: tokens.filter((label) => inBank.has(label))
+			}
+		];
 	});
 }
 

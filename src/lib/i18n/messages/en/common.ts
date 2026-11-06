@@ -14,6 +14,7 @@ export const common = {
 	'common.aboutReminder': 'About this reminder',
 	'common.moreReminderActions': 'More reminder actions',
 	'common.reminderNumber': 'Number',
+	'common.reminderRun': 'Token',
 	'common.hideContents': 'Hide contents',
 	'common.showPassword': 'Show password',
 	'common.seat': 'Seat {number}',
