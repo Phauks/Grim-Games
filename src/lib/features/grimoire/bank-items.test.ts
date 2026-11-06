@@ -4,7 +4,15 @@ import { createGame, dispatch, type EngineContext } from '#lib/core/engine/index
 import { characterLookup, GENERIC_REMINDER_ID } from '#lib/core/model/index.ts';
 import { committedGameData } from '#lib/core/testing/committed-data.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
-import { bankFace, bankItems, bankLook, type BankOptions } from './bank-items.ts';
+import {
+	FIXED_GENERIC_ITEMS,
+	bankFace,
+	bankItems,
+	bankLabel,
+	bankLook,
+	playerBankItems,
+	type BankOptions
+} from './bank-items.ts';
 
 const data = committedGameData();
 const script = toScript(editionScript('tb', data)!);
@@ -185,5 +193,50 @@ describe('each holder has its own copies (M68)', () => {
 	it("leaves a character's only player's copies no one's", () => {
 		const s = scenario(['monk', 'imp', 'chef', 'empath', 'poisoner']);
 		expect(owners(s, 'monk', 'Safe')).toEqual([undefined]);
+	});
+});
+
+describe("a player's tray, built as the bank is", () => {
+	// Trevor (2026-11-06): "I want them to use the same components for parity". The player's
+	// tray is `playerBankItems`: the bank's own counting stacks and generic stretch.
+	const levScript: Script = {
+		entries: ['leviathan', 'chef', 'empath', 'monk', 'washerwoman'].map((id) => ({
+			kind: 'official' as const,
+			id
+		}))
+	};
+	const cast = [...characterLookup(data, levScript).values()].filter((c) =>
+		levScript.entries.some((e) => 'id' in e && e.id === c.id)
+	);
+	const token = { tokenId: 't1', note: 'Chose' };
+
+	it('lists guesses first, the rest of the script, then the generic stretch', () => {
+		const items = playerBankItems(cast, ['monk'], [token]);
+		expect([...new Set(items.map((i) => i.group))]).toEqual(['guesses', 'reminders', 'generic']);
+		expect(items.filter((i) => i.group === 'guesses').map((i) => i.characterId)).toEqual(['monk']);
+		// The ∞, the #, the phone's own ∞ token, then "+ New token", as in the bank.
+		expect(items.filter((i) => i.group === 'generic').map((i) => i.key)).toEqual([
+			...FIXED_GENERIC_ITEMS.map((i) => i.key),
+			'token:t1',
+			'new-token'
+		]);
+	});
+
+	it('stacks a counting run as one token, every day of it under the first', () => {
+		const items = playerBankItems(cast, [], []);
+		const days = items.filter((i) => i.characterId === 'leviathan' && i.label.startsWith('Day'));
+		expect(days.map((i) => i.label)).toEqual(['Day 1']);
+		expect(days[0].count).toBe(5);
+		expect(days[0].run).toEqual(['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5']);
+	});
+
+	it('narrows to a search, without the generic stretch', () => {
+		const items = playerBankItems(cast, [], [token], 'washer');
+		expect(new Set(items.map((i) => i.characterId))).toEqual(new Set(['washerwoman']));
+	});
+
+	it('gives a copy no label for an ∞ or # token', () => {
+		expect(bankLabel({ label: 'Number' as never, number: true })).toBe('');
+		expect(bankLabel({ label: 'Safe' as never })).toBe('Safe');
 	});
 });

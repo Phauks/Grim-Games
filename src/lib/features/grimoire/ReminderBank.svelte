@@ -1,12 +1,13 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import type { CharacterId, ReminderLabel } from '#lib/core/data/index.ts';
+	import type { CharacterId } from '#lib/core/data/index.ts';
 	import type { GenericLook, Reminder, ReminderId, SeatId } from '#lib/core/model/index.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
 	import type { SeatPoint } from '#lib/ui/seating/seat-layout.ts';
 	import BoardReminder from './BoardReminder.svelte';
-	import ReminderCount from './ReminderCount.svelte';
-	import NewTokenButton from './NewTokenButton.svelte';
+	import BankToken from './BankToken.svelte';
+	import { t } from '#lib/i18n/locale.svelte.ts';
+	import SearchField from '#lib/ui/primitives/SearchField.svelte';
 	import BankRunButton from './BankRunButton.svelte';
 	import { reminderPlacing } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
@@ -20,6 +21,8 @@
 	import { traySeats } from './setup-tray.ts';
 	import {
 		BANK_CAPTIONS,
+		bankLabel,
+		searchBank,
 		bankItems,
 		bankLook,
 		bankView,
@@ -120,7 +123,9 @@
 	 * one area, not a caret and a second sheet): every token at once (ReminderTray).
 	 */
 	let binOpen = $state(false);
-	const items = $derived(
+	/** Pulled up, a search narrows it, as a player's tray (Trevor, 2026-11-06: one tray). */
+	let query = $state('');
+	const all = $derived(
 		bankItems(game, characters, {
 			focus,
 			focusMode,
@@ -129,6 +134,7 @@
 			bankCopies: grimoire.bankCopies
 		})
 	);
+	const items = $derived(searchBank(all, characters, query));
 	/** Every stretch, empty ones too, so each caption is measured before it first shows. */
 	const groups = $derived(
 		[
@@ -165,7 +171,7 @@
 	) {
 		const { characterId, ownerSeatId, token } = item;
 		// A copy of an ∞ or # token takes its words from its look, not as a label.
-		const label = token || item.number ? ('' as ReminderLabel) : item.label;
+		const label = bankLabel(item);
 		return grimoire.run({
 			type: 'AddReminder',
 			seatId,
@@ -201,7 +207,7 @@
 		const tokenId = item.token?.tokenId;
 		const reminder = {
 			characterId: item.characterId,
-			label: tokenId || item.number ? ('' as ReminderLabel) : item.label,
+			label: bankLabel(item),
 			ownerSeatId: item.ownerSeatId
 		};
 		// On a Fabled or Loric: it holds the reminder (Trevor, 2026-10-17).
@@ -238,9 +244,7 @@
 	 * list of players): its bank token in hand, as if tapped here. False when the bank has none.
 	 */
 	export function hold(reminder: Pick<Reminder, 'characterId' | 'label'>): boolean {
-		const mine = items.filter(
-			(i) => !i.token && !i.number && i.characterId === reminder.characterId
-		);
+		const mine = all.filter((i) => !i.token && !i.number && i.characterId === reminder.characterId);
 		const item =
 			mine.find((i) => i.label === reminder.label) ??
 			mine.find((i) => i.run?.includes(reminder.label));
@@ -256,7 +260,7 @@
 	});
 	// A held token that leaves the bank (dragged out, removed, the game moved on) is let go.
 	$effect(() => {
-		if (held && !items.some((i) => i.key === held.key)) hand.putDown();
+		if (held && !all.some((i) => i.key === held.key)) hand.putDown();
 	});
 	/** A held bank token dropped where the board was tapped, as a drag let go there. */
 	function dropAt(item: BankItem, x: number, y: number) {
@@ -295,22 +299,20 @@
 {/snippet}
 
 {#snippet token(item: BankItem, panX: boolean)}
-	{#if item.makesToken}
-		<NewTokenButton glow={newGlow} {size} {disabled} onclick={makeToken} />
-	{:else}
-		{#if item.count > 1}<ReminderCount count={item.count} />{/if}
-		<BoardReminder
-			{...bankView(item, characters)}
-			{...reminderPlacing(game, item, characters)}
-			{size}
-			{disabled}
-			onTap={() => tap(item)}
-			onMenu={() => menuFor(item)}
-			onDrag={(x, y, end) => dragItem(item, x, y, end)}
-			onCancel={cancelDrag}
-			{panX}
-		/>
-	{/if}
+	<BankToken
+		{item}
+		{characters}
+		placing={item.makesToken ? undefined : reminderPlacing(game, item, characters)}
+		{size}
+		{disabled}
+		glow={newGlow}
+		onNew={makeToken}
+		onTap={() => tap(item)}
+		onMenu={() => menuFor(item)}
+		onDrag={(x, y, end) => dragItem(item, x, y, end)}
+		onCancel={cancelDrag}
+		{panX}
+	/>
 {/snippet}
 
 <ReminderTray
@@ -338,6 +340,10 @@
 		return true;
 	}}
 >
+	{#snippet header()}<SearchField
+			label={t('common.searchReminders')}
+			bind:value={query}
+		/>{/snippet}
 	{#snippet run()}{#if runButton}<BankRunButton run={runButton} />{/if}{/snippet}
 	<ReminderHandPill
 		{grimoire}
