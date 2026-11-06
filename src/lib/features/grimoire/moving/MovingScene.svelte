@@ -57,6 +57,8 @@
 	let level = 0;
 	let goodWindows = 0;
 	let accum = 0;
+	let patience = 4;
+	let raisedAt = 0;
 	useTask((delta) => {
 		if (still || paused) {
 			lastNow = 0;
@@ -70,8 +72,11 @@
 		accum += delta;
 		// A small slack keeps a 30 cap at 30 on a 60 Hz screen.
 		if (fps !== 'screen' && accum < period * 0.92) return;
-		const step = Math.min(fps === 'screen' ? delta : accum, 0.1) * speed;
-		accum = fps === 'screen' ? 0 : Math.max(0, Math.min(accum - period, period));
+		// What is left over waits for the next frame, so it is not also counted in this one:
+		// counting it twice made capped frames uneven.
+		const left = fps === 'screen' ? 0 : Math.max(0, Math.min(accum - period, period));
+		const step = Math.min(accum - left, 0.1) * speed;
+		accum = left;
 		clock.t = (clock.t + step) % LOOP;
 		drawn++;
 		invalidate();
@@ -79,13 +84,18 @@
 		if (!windowStart) windowStart = now;
 		if (now - windowStart < 1000) return;
 		const measured = (drawn * 1000) / (now - windowStart);
+		// Each change resizes the smoky buffer, a hitch of its own, so a sharper buffer that
+		// then misses frames waits twice as long before it is tried again (up to a minute).
 		if (measured < target * 0.9 && level < SCALES.length - 1) {
+			if (raisedAt && now - raisedAt < 3000) patience = Math.min(patience * 2, 60);
 			level++;
 			goodWindows = 0;
+			raisedAt = 0;
 		} else if (measured >= target * 0.97) {
-			if (++goodWindows >= 4 && level > 0) {
+			if (++goodWindows >= patience && level > 0) {
 				level--;
 				goodWindows = 0;
+				raisedAt = now;
 			}
 		} else goodWindows = 0;
 		clock.bgScale = SCALES[level];

@@ -7,5 +7,15 @@
 	},
 	"answers": {
 		"question": "winning-alignment"
+	},
+	"nightOrder": {
+		"first": {
+			"stage": "learns",
+			"after": "highpriestess"
+		},
+		"other": {
+			"stage": "learns",
+			"after": "highpriestess"
+		}
 	}
 }

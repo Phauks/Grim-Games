@@ -23,5 +23,11 @@
 	},
 	"deathCause": {
 		"none": "talking rule"
+	},
+	"nightOrder": {
+		"first": {
+			"stage": "rules",
+			"after": "angel"
+		}
 	}
 }

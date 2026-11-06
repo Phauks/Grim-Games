@@ -55,5 +55,15 @@
 	"makesExtraEvil": true,
 	"wakesWhen": {
 		"markedDied": "Know"
+	},
+	"nightOrder": {
+		"first": {
+			"stage": "learns",
+			"after": "villageidiot"
+		},
+		"other": {
+			"stage": "learns",
+			"after": "king"
+		}
 	}
 }

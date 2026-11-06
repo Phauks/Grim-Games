@@ -65,5 +65,15 @@
 				"reason": "The Drunk token is named once, not again as an unnamed reminder (Trevor’s review)."
 			}
 		}
+	},
+	"nightOrder": {
+		"first": {
+			"stage": "learns",
+			"after": "shugenja"
+		},
+		"other": {
+			"stage": "learns",
+			"after": "balloonist"
+		}
 	}
 }

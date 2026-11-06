@@ -90,5 +90,15 @@
 		"token": "Mad",
 		"mad": "carrier",
 		"choose": ["townsfolk", "outsider"]
+	},
+	"nightOrder": {
+		"first": {
+			"stage": "minions",
+			"after": "witch"
+		},
+		"other": {
+			"stage": "minions",
+			"after": "witch"
+		}
 	}
 }

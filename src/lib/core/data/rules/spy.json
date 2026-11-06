@@ -50,5 +50,15 @@
 				"hides": "all"
 			}
 		}
+	},
+	"nightOrder": {
+		"first": {
+			"stage": "learns",
+			"after": "cultleader"
+		},
+		"other": {
+			"stage": "learns",
+			"after": "butler"
+		}
 	}
 }

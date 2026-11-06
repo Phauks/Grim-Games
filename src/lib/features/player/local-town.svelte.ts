@@ -4,7 +4,12 @@
  * (the script, or a saved script), kept in localStorage beside the guesses.
  */
 import type { PublicSeat } from '#lib/core/sync/public-projection.ts';
-import { localPublicSeats, parseLocalTown, type LocalTown } from '#lib/core/town/local-town.ts';
+import {
+	localPublicSeats,
+	parseLocalTown,
+	startingTown,
+	type LocalTown
+} from '#lib/core/town/local-town.ts';
 import { readStored, writeStored } from '#lib/ui/stored.ts';
 
 const storeKey = (key: string) => `grim-games:play:town:${key}`;
@@ -15,8 +20,20 @@ const changed: Record<string, LocalTown> = $state({});
 /** Where a players-only game's guesses, reminders and seat notes are kept. */
 export const localGuessKey = (notesKey: string) => `local:${notesKey}`;
 
+/** The town this phone keeps for `notesKey`, or none before the player opened or changed it. */
+export function keptLocalTown(notesKey: string): LocalTown | undefined {
+	if (changed[notesKey]) return changed[notesKey];
+	const stored = readStored(storeKey(notesKey));
+	return stored === undefined ? undefined : parseLocalTown(stored);
+}
+
+/**
+ * The town as the Grim tab shows it: the kept one, or seven empty seats to start (also for a
+ * town an older build kept with None).
+ */
 export function localTown(notesKey: string): LocalTown {
-	return changed[notesKey] ?? parseLocalTown(readStored(storeKey(notesKey)));
+	const kept = keptLocalTown(notesKey);
+	return kept?.seats.length ? kept : startingTown();
 }
 
 export function saveLocalTown(notesKey: string, town: LocalTown): void {
@@ -25,6 +42,15 @@ export function saveLocalTown(notesKey: string, town: LocalTown): void {
 }
 
 export const localSeats = (notesKey: string): PublicSeat[] => localPublicSeats(localTown(notesKey));
+
+/**
+ * The seats of a town this phone keeps, for Notes: none while /play only shows a script, so
+ * reading one adds no seats to its notes until a players-only game starts or a seat changes.
+ */
+export const keptLocalSeats = (notesKey: string): PublicSeat[] => {
+	const kept = keptLocalTown(notesKey);
+	return kept ? localPublicSeats(kept) : [];
+};
 
 /**
  * Where each players-only town came from, so Join game can list it and open it again (Trevor,

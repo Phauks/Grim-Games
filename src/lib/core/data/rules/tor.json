@@ -33,5 +33,15 @@
 			"characters": ["chosen"]
 		}
 	},
-	"hidesRoles": true
+	"hidesRoles": true,
+	"nightOrder": {
+		"first": {
+			"stage": "changes",
+			"after": "magician"
+		},
+		"other": {
+			"stage": "reacts",
+			"after": "grandmother"
+		}
+	}
 }

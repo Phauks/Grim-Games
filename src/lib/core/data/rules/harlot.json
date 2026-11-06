@@ -57,5 +57,11 @@
 	"learns": {
 		"measure": "character-of",
 		"alive": true
+	},
+	"nightOrder": {
+		"other": {
+			"stage": "travellers",
+			"after": "thief"
+		}
 	}
 }

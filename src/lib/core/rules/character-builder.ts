@@ -13,8 +13,12 @@ import {
 	type GameData,
 	type ReminderLabel
 } from '#lib/core/data/index.ts';
+import { parseCharacterRules, readableRules } from '#lib/core/data/character-rules.ts';
+import { Issues } from '#lib/core/data/validate.ts';
 import { bracketText } from './setup-modifiers.ts';
 import type { HomebrewEntry } from './script-builder.ts';
+import type { NightPlace } from '#lib/core/data/parts/night-order.ts';
+import type { Night } from './night-order.ts';
 
 /** What the builder's form holds; text fields are kept as typed until the entry is made. */
 export interface CharacterFields {
@@ -35,6 +39,11 @@ export interface CharacterFields {
 	otherNight?: number;
 	/** Absent: follows the ability, which changes setup when it has [bracketed] text. */
 	setup?: boolean;
+	/**
+	 * The character's `rules` block as written, kept whole so editing never drops a rule the
+	 * form has no field for (P4); the form changes only its night position (M59).
+	 */
+	rules?: Record<string, unknown>;
 }
 
 export function emptyCharacterFields(): CharacterFields {
@@ -101,7 +110,37 @@ export function characterEntry(fields: CharacterFields): HomebrewEntry {
 	// Without a position it acts at an unplaced spot the Storyteller sees in the night order.
 	if (otherAt) entry.otherNight = otherAt;
 	if (other) entry.otherNightReminder = other;
+	if (fields.rules && Object.keys(fields.rules).length) entry.rules = fields.rules;
 	return entry;
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+	typeof value === 'object' && value !== null && !Array.isArray(value);
+
+/** Where the character wakes on `night`, as its rules say; undefined when they don't. */
+export function nightPlaceOf(fields: CharacterFields, night: Night): NightPlace | undefined {
+	const order = fields.rules?.nightOrder;
+	const place = isRecord(order) ? order[night] : undefined;
+	if (!isRecord(place)) return undefined;
+	const out: NightPlace = {};
+	if (typeof place.stage === 'string') out.stage = place.stage as NightPlace['stage'];
+	if (typeof place.after === 'string') out.after = place.after;
+	return out.stage || out.after ? out : undefined;
+}
+
+/** The rules with the character's place on `night` set (or cleared), the rest kept. */
+export function withNightPlace(
+	fields: CharacterFields,
+	night: Night,
+	place: NightPlace | undefined
+): Record<string, unknown> | undefined {
+	const rules = { ...fields.rules };
+	const order = isRecord(rules.nightOrder) ? { ...rules.nightOrder } : {};
+	if (place) order[night] = place;
+	else delete order[night];
+	if (Object.keys(order).length) rules.nightOrder = order;
+	else delete rules.nightOrder;
+	return Object.keys(rules).length ? rules : undefined;
 }
 
 const text = (value: unknown) => (typeof value === 'string' ? value : '');
@@ -129,6 +168,7 @@ export function fieldsFromEntry(entry: HomebrewEntry): CharacterFields {
 	if (firstNight !== undefined) fields.firstNight = firstNight;
 	const otherNight = num(entry.otherNight);
 	if (otherNight !== undefined) fields.otherNight = otherNight;
+	if (isRecord(entry.rules)) fields.rules = { ...entry.rules };
 	// Only kept when it differs from what the ability says, so editing the text still updates it.
 	const setup = entry.setup === true;
 	if (setup !== (bracketText(fields.ability) !== undefined)) fields.setup = setup;
@@ -187,5 +227,11 @@ export function previewCharacter(fields: CharacterFields): Character {
 	}
 	if (typeof entry.firstNight === 'number') character.firstNight = entry.firstNight;
 	if (typeof entry.otherNight === 'number') character.otherNight = entry.otherNight;
+	// Only the rules it can read, as a script would load it (M58, P1).
+	if (fields.rules) {
+		const { rules } = readableRules(fields.rules, character.reminders);
+		const parsed = parseCharacterRules(rules, 'rules', new Issues(), character.reminders);
+		if (parsed && Object.keys(parsed).length) character.rules = parsed;
+	}
 	return character;
 }

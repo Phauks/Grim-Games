@@ -36,5 +36,15 @@
 			"characters": [],
 			"upTo": 0
 		}
+	},
+	"nightOrder": {
+		"first": {
+			"stage": "learns",
+			"after": "nightwatchman"
+		},
+		"other": {
+			"stage": "learns",
+			"after": "nightwatchman"
+		}
 	}
 }

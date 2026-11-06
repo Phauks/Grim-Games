@@ -48,5 +48,11 @@
 				"reason": "Says when the Dead token is used (Trevor’s review)."
 			}
 		}
+	},
+	"nightOrder": {
+		"other": {
+			"stage": "impairs",
+			"after": "gambler"
+		}
 	}
 }

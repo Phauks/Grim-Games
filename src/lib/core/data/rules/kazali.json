@@ -65,5 +65,15 @@
 		"you-are": {
 			"characters": ["changed"]
 		}
+	},
+	"nightOrder": {
+		"first": {
+			"stage": "team-setup",
+			"after": "lordoftyphon"
+		},
+		"other": {
+			"stage": "demon-kills",
+			"after": "yaggababble"
+		}
 	}
 }

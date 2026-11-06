@@ -7,5 +7,11 @@
 	},
 	"deathCause": {
 		"none": "info"
+	},
+	"nightOrder": {
+		"first": {
+			"stage": "learns",
+			"after": "balloonist"
+		}
 	}
 }

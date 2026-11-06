@@ -60,5 +60,11 @@
 				]
 			}
 		]
+	},
+	"nightOrder": {
+		"other": {
+			"stage": "demon-kills",
+			"after": "fanggu"
+		}
 	}
 }

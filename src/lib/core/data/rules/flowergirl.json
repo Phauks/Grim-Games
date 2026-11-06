@@ -40,5 +40,11 @@
 		"mark": "demon-voted",
 		"yes": "Demon Voted",
 		"no": "Demon Not Voted"
+	},
+	"nightOrder": {
+		"other": {
+			"stage": "learns",
+			"after": "dreamer"
+		}
 	}
 }

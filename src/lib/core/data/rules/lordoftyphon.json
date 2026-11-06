@@ -74,5 +74,15 @@
 		"upTo": "minions",
 		"extraMinions": 1,
 		"outward": true
+	},
+	"nightOrder": {
+		"first": {
+			"stage": "team-setup",
+			"after": "wraith"
+		},
+		"other": {
+			"stage": "demon-kills",
+			"after": "vortox"
+		}
 	}
 }

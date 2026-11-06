@@ -14,7 +14,7 @@
  */
 import type { CharacterId } from '#lib/core/data/types.ts';
 import type { CharacterLookup } from '#lib/core/model/characters.ts';
-import type { Game } from '#lib/core/model/types.ts';
+import type { Game, SeatId } from '#lib/core/model/types.ts';
 import { abilitiesOfSeat, heldAbilitiesOf } from './gained-abilities.ts';
 
 export function borrowedAbilities(
@@ -31,4 +31,26 @@ export function borrowedAbilities(
 	}
 	for (const held of game.storytellerAbilities ?? []) add(held.characterId, true);
 	return out;
+}
+
+/**
+ * The characters whose ability one player has besides their own, each once, in the order the
+ * engine lists them: a token's, a gained one, then the held ones (the Hermit's every Outsider,
+ * the Philosopher's choice, Gain ability), each with whether it works just now (a held ability
+ * does not while its giver is drunk or poisoned). Day view lists them under the player's own
+ * character (Trevor, 2026-11-06: "Should apply to anything that has an ability but isnt that
+ * character").
+ */
+export function borrowedAbilitiesOf(
+	game: Game,
+	seatId: SeatId,
+	characters: CharacterLookup
+): { characterId: CharacterId; works: boolean }[] {
+	const own = game.seats[seatId]?.characterId;
+	const out = new Map<CharacterId, boolean>();
+	for (const a of abilitiesOfSeat(game, seatId, characters))
+		if (a.how !== 'own' && a.characterId !== own) out.set(a.characterId, true);
+	for (const h of heldAbilitiesOf(game, seatId, characters))
+		if (h.characterId !== own) out.set(h.characterId, out.get(h.characterId) === true || h.works);
+	return [...out].map(([characterId, works]) => ({ characterId, works }));
 }

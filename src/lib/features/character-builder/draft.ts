@@ -52,6 +52,7 @@ export function parseCharacterDraft(raw: unknown): CharacterDraft {
 	const otherNight = position(f.otherNight);
 	if (otherNight !== undefined) fields.otherNight = otherNight;
 	if (typeof f.setup === 'boolean') fields.setup = f.setup;
+	if (isObject(f.rules)) fields.rules = { ...f.rules };
 	return {
 		version: CHARACTER_DRAFT_VERSION,
 		fields,

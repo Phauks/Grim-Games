@@ -51,5 +51,15 @@
 	"marksChoice": ["Poisoned"],
 	"reminderEnds": {
 		"Poisoned": "dusk"
+	},
+	"nightOrder": {
+		"first": {
+			"stage": "impairs",
+			"after": "xaan"
+		},
+		"other": {
+			"stage": "impairs",
+			"after": "xaan"
+		}
 	}
 }

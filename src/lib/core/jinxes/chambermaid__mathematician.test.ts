@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { findJinx, jinxesAmong } from '#lib/core/data/index.ts';
-import { committedGameData } from '#lib/core/testing/committed-data.ts';
+import { committedGameData, committedNightOrder } from '#lib/core/testing/committed-data.ts';
 import type { SeatId } from '#lib/core/model/types.ts';
 import { infoPicker } from '#lib/core/rules/night-info.ts';
 import type { Night } from '#lib/core/rules/night-order.ts';
@@ -45,7 +45,7 @@ describe('Chambermaid + Mathematician jinx', () => {
 		it('the Mathematician wakes later in the night than the Chambermaid', () => {
 			// Wiki: "The Chambermaid can detect if the Mathematician will wake tonight."
 			for (const night of ['firstNight', 'otherNight'] as const) {
-				const order = data.nightSheet[night];
+				const order = committedNightOrder(night);
 				expect(order.indexOf('mathematician'), night).toBeGreaterThan(order.indexOf('chambermaid'));
 			}
 		});

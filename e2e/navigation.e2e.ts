@@ -170,3 +170,33 @@ test.describe('on a short computer screen', () => {
 			.toBeLessThan(1);
 	});
 });
+
+// Trevor, 2026-11-06: in the phone drawer, rows showed above a pinned section heading, in
+// the drawer's top padding. The drawer's body scrolls now, so the heading stops right under
+// the drawer's header and nothing shows above it.
+test.describe('on a short phone', () => {
+	test.use({ viewport: { width: 390, height: 480 } });
+
+	test("the drawer's section headings pin right under its header", async ({ page }) => {
+		test.skip(test.info().project.name !== 'phone', 'phone layout');
+		await page.goto('/privacy');
+		await menuButton(page).tap();
+		const drawer = page.getByRole('dialog', { name: APP_NAME });
+		await expect(drawer.getByRole('button', { name: 'Prepare', exact: true })).toBeVisible();
+		const body = drawer.locator('.body[data-scroll]').first();
+		await body.evaluate((box) => (box.scrollTop = 400));
+		// The highest heading still in view sits on the body's top edge.
+		await expect
+			.poll(() =>
+				body.evaluate((box) => {
+					const top = box.getBoundingClientRect().top;
+					const heads = [...box.querySelectorAll('.collapsible[data-pinned] > .head')]
+						.map((head) => head.getBoundingClientRect())
+						.filter((r) => r.bottom > top + 1)
+						.map((r) => r.top - top);
+					return Math.abs(Math.min(...heads));
+				})
+			)
+			.toBeLessThan(1);
+	});
+});

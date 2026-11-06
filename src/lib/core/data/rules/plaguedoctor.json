@@ -89,5 +89,11 @@
 		"wraith": {
 			"givenInstead": "a-minion"
 		}
+	},
+	"nightOrder": {
+		"other": {
+			"stage": "reacts",
+			"after": "sweetheart"
+		}
 	}
 }

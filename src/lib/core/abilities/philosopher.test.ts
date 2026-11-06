@@ -64,7 +64,13 @@ describe('Philosopher', () => {
 		const stepsTonight = (s: Scenario, night: Night) => {
 			const data = committedGameData();
 			const inPlay = s.game.seating.map((id) => data.byId.get(s.game.seats[id].characterId!)!);
-			const order = nightOrder({ night, sheet: data.nightSheet, inPlay, players: inPlay.length });
+			const order = nightOrder({
+				night,
+				sheet: data.nightSheet,
+				inPlay,
+				players: inPlay.length,
+				official: data.byId
+			});
 			return withNightInfo(order.steps, s.game, s.characters, night);
 		};
 		/** The Philosopher's token swapped for a good character not in play. */

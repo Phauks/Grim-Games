@@ -210,6 +210,7 @@ describe('Lord of Typhon', () => {
 			const { steps } = nightOrder({
 				night: 'first',
 				sheet: data.nightSheet,
+				official: data.byId,
 				inPlay: get(...cast),
 				players: 7
 			});
