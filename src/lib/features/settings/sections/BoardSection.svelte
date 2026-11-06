@@ -15,6 +15,7 @@
 	import BoardBackgroundRow from '#lib/features/grimoire/BoardBackgroundRow.svelte';
 	import { boardBackground } from '#lib/features/grimoire/board-background.svelte.ts';
 	import { defaultBackground } from '#lib/features/grimoire/default-background.svelte.ts';
+	import { movingMotion } from '#lib/features/grimoire/moving/motion.svelte.ts';
 	import MovingMotionRows from '#lib/features/grimoire/moving/MovingMotionRows.svelte';
 	import { STORYTELLER_GROUPS } from './storyteller-groups.ts';
 	import CornerLineToggle from '#lib/features/modes/CornerLineToggle.svelte';
@@ -36,7 +37,7 @@
 	{#if boardBackground.context}<BoardBackgroundRow
 			board={boardBackground.context}
 		/>{:else}<DefaultBackgroundRow />{/if}
-	<MovingMotionRows enabled={shown?.kind === 'moving'} />
+	<MovingMotionRows enabled={shown?.kind === 'moving' && !movingMotion.current.still} />
 	<BoardLooksRows />
 	{#each STORYTELLER_GROUPS.board as key (key)}
 		<SettingToggle
@@ -54,6 +55,17 @@
 	<SettingHeading title={t('settings.groupCorner')} />
 	{#each CORNER_LINES as line (line)}<CornerLineToggle {line} />{/each}
 </SettingGroup>
+
+<!-- Holds every moving background on this device still, the Storyteller's board and the
+     Storyteller's background on a player's phone alike (Trevor, 2026-11-06: moved from Player
+     into Board). Outside the preview, as a player's preview shows only
+     their own background, so the switch works whatever the preview shows; while it is on, the
+     motion rows in the preview are off. -->
+<SettingToggle
+	label={t('player.holdMovingStill')}
+	checked={movingMotion.current.still}
+	onChange={(still) => movingMotion.update({ still })}
+/>
 
 <!-- Pinch to zoom: a touch gesture, not text (Trevor, 2026-10-27: moved from Text). It zooms
      every screen, but the board is where two hands rest on the screen. Outside the preview,

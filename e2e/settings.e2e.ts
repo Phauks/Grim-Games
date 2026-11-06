@@ -239,17 +239,17 @@ test('the day timer sound is in Sound settings and its mode in Storyteller', asy
 	await page.reload();
 	const dialog = await openSettings(page, 'Storyteller');
 	await expect(dialog.getByRole('combobox', { name: 'Timer sound' })).toHaveCount(0);
-	await dialog.getByRole('combobox', { name: 'Day timer', exact: true }).tap();
-	await page.getByRole('option', { name: 'Stopwatch' }).tap();
+	// Two states, so a switch under the Day timer heading (Trevor, 2026-11-06).
+	await dialog.getByText('Stopwatch', { exact: true }).tap();
 	// Players' phones always show a sun (Trevor, 2026-10-29), so there is no choice of it.
 	await expect(dialog.getByRole('combobox', { name: 'Day timer on players’ phones' })).toHaveCount(
 		0
 	);
 	await page.reload();
 	const again = await openSettings(page, 'Storyteller');
-	await expect(again.getByRole('combobox', { name: 'Day timer', exact: true })).toContainText(
-		'Stopwatch'
-	);
+	await expect(
+		again.getByRole('checkbox', { name: 'Stopwatch', includeHidden: true })
+	).toBeChecked();
 	// The time per living player too (Trevor, 2026-10-19), from a drop-down (2026-10-30).
 	const seconds = again.getByTestId('timer-per-player');
 	await expect(seconds).toHaveText('30 seconds');
@@ -373,9 +373,13 @@ test('settings are one list by topic, with no audience groups or Applies to line
 	await nav.getByRole('button', { name: 'Storyteller', exact: true }).tap();
 	await expect(dialog).not.toContainText('Applies to');
 	await expect(dialog.getByRole('heading', { level: 3 })).toHaveText([
+		// Setup, Reminders and Day timer have their own headings (Trevor, 2026-11-06).
 		'Night',
+		'Setup',
 		'Bag draw',
 		'Day',
+		'Reminders',
+		'Day timer',
 		'PIN and locks',
 		'Share',
 		'QR codes'
@@ -389,8 +393,8 @@ test('text alignment switches body text between left aligned and justified', asy
 	expect(await align()).toBe('start');
 
 	const dialog = await openSettings(page, 'Text');
-	await dialog.getByRole('combobox', { name: 'Text alignment' }).tap();
-	await page.getByRole('option', { name: 'Justified', exact: true }).tap();
+	// Two states, so a switch (Trevor, 2026-11-06).
+	await dialog.getByText('Justify text', { exact: true }).tap();
 	await dialog.getByRole('button', { name: 'Close' }).tap();
 	expect(await align()).toBe('justify');
 
@@ -487,9 +491,7 @@ test('every theme, text and icon size setting has a reset icon beside its name',
 		.getByRole('button', { name: 'Text', exact: true })
 		.tap();
 	const dialog = theme;
-	for (const name of ['Text size', 'Text alignment']) {
-		await expect(await resetButton(dialog, name)).toBeDisabled();
-	}
+	await expect(await resetButton(dialog, 'Text size')).toBeDisabled();
 	const back = dialog.getByRole('button', { name: 'All settings' });
 	if (await back.isVisible()) await back.tap();
 	await dialog.getByRole('button', { name: 'Icons' }).tap();

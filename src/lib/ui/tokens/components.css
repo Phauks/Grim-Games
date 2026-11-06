@@ -47,6 +47,9 @@
 	--card-background: var(--surface-raised);
 	--card-border: 1px solid var(--border);
 	--card-radius: var(--radius-md);
+	/* A group of settings on its own card: a faint wash of the text colour, so it shows on a
+	   page and on a dialog alike (Trevor, 2026-11-06: print settings as cards). */
+	--setting-card-background: color-mix(in srgb, currentColor 5%, transparent);
 
 	/*
 	 * The player view keeps the page's own colours wherever it opens, even from inside a

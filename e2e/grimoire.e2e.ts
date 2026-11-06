@@ -460,6 +460,15 @@ test('the seat sheet names, assigns, shrouds and survives a reload', async ({ pa
 	// A good Imp: the token stays upright and takes the good colour (Trevor, 2026-10-18).
 	const impIcon = page.locator('[data-testid="seat"][aria-label^="Seat 1:"] .token img');
 	const evilSrc = await impIcon.getAttribute('src');
+	// The ⋯ menu heads with the standard badge with player, not a badge beside plain text
+	// (Trevor, 2026-11-06).
+	await sheet.getByRole('button', { name: 'Seat actions' }).tap();
+	const menuTitle = page
+		.getByRole('dialog')
+		.last()
+		.locator('[data-scope="dialog"][data-part="title"]');
+	await expect(menuTitle.locator('[data-character-id="imp"]')).toContainText(/Imp\s*Ana/);
+	await page.keyboard.press('Escape');
 	await seatMenu(page, sheet, 'Change alignment');
 	await page
 		.getByRole('dialog', { name: 'Alignment' })
@@ -554,7 +563,7 @@ test('history, add seat and remove', async ({ page }) => {
 	const added = history.getByRole('listitem').filter({ hasText: 'Added Seat 3' });
 	await added.getByRole('button', { name: 'Restore' }).tap();
 	const back = page.getByRole('alertdialog', { name: 'Restore?' });
-	await expect(back).toContainText('Undoes 1 change');
+	await expect(back).toContainText('Undo 1 change, back to just before');
 	await back.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page.getByTestId('seat')).toHaveCount(8);
 	// The undone change stays, greyed out, and can be restored.
@@ -5407,7 +5416,7 @@ test('the board menu names its groups, in two columns beside a phone', async ({ 
 	);
 	expect((await names('Session')).join(' ')).toMatch(/^(Character selection )?End game$/);
 	const session = (await group('Session').boundingBox())!;
-	// Arranging seats, Open seating (plan J38) and Count off (J40) are one Seating mode
+	// Arranging seats, Lock seating (plan J38) and Count off (J40) are one Seating mode
 	// (Trevor, 2026-10-31), which works with no room open too. Travellers choose (L102) comes
 	// with Add seat, not as its own button (Trevor, 2026-11-01).
 	expect(await names('Seats')).toEqual(['Add Fabled or Loric', 'Seating']);
@@ -6377,18 +6386,23 @@ test('a big name badge beside a dialog title shrinks instead of squeezing the ti
 		.getByRole('button', { name: 'Fortune Teller', exact: true })
 		.tap();
 	await sheet.getByRole('button', { name: 'Seat actions' }).tap();
-	const menu = page.getByRole('dialog', { name: 'Seat 1', exact: true });
+	// The title is the character's badge with its player (Trevor, 2026-11-06).
+	const menu = page.getByRole('dialog').last();
 	const title = menu.locator('[data-part="title"]');
-	await expect(title).toHaveText('Seat 1');
-	// One line: no word is broken across lines, so the title is no taller than its line.
-	const { height, line } = await title.evaluate((el) => ({
-		height: el.getBoundingClientRect().height,
-		line: parseFloat(getComputedStyle(el).fontSize) * 1.6
-	}));
+	await expect(title.locator('[data-character-id="fortuneteller"]')).toContainText(
+		/Fortune Teller\s*Seat 1/
+	);
+	// One line: the badge is not broken across lines, so the title is no taller than the badge's
+	// own line.
+	const { height, line } = await title.evaluate((el) => {
+		const badge = el.querySelector('[data-character-id]')!;
+		const first = badge.getClientRects()[0];
+		return { height: el.getBoundingClientRect().height, line: first.height * 1.5 };
+	});
 	expect(height).toBeLessThanOrEqual(line);
-	// The badge stays in the header, beside the title and the ✕, not over them.
+	// The badge stays in the header, beside the ✕, not over it.
 	const head = await menu.locator('.head').boundingBox();
-	const badge = await menu.locator('.lead').boundingBox();
+	const badge = await title.boundingBox();
 	const close = await menu.getByRole('button', { name: 'Close' }).boundingBox();
 	expect(badge!.x).toBeGreaterThanOrEqual(head!.x - 1);
 	expect(badge!.x + badge!.width).toBeLessThanOrEqual(close!.x);

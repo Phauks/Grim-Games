@@ -23,10 +23,15 @@
 		 * button on page").
 		 */
 		variant?: 'solid' | 'quiet' | 'accent' | 'danger' | 'field';
+		/**
+		 * `start` puts the icon and label at the start, as a column of menu buttons needs; a label
+		 * that wraps stays at the start too (Trevor, 2026-11-06).
+		 */
+		align?: 'center' | 'start';
 		children: Snippet;
 	}
 
-	let { icon, href, variant = 'solid', children, ...rest }: Props = $props();
+	let { icon, href, variant = 'solid', align = 'center', children, ...rest }: Props = $props();
 	// A link keeps only the data attributes (test ids, data-way-back): button attributes such as
 	// `disabled` mean nothing on it.
 	const linkData = $derived(
@@ -39,6 +44,7 @@
 	<a
 		class="button"
 		data-variant={variant}
+		data-align={align}
 		{href}
 		target={href.startsWith('https://') ? '_blank' : undefined}
 		rel={href.startsWith('https://') ? 'noopener noreferrer' : undefined}
@@ -49,7 +55,7 @@
 	</a>
 	<!-- eslint-enable svelte/no-navigation-without-resolve -->
 {:else}
-	<button class="button" data-variant={variant} type="button" {...rest}>
+	<button class="button" data-variant={variant} data-align={align} type="button" {...rest}>
 		{#if icon}<Icon name={icon} />{/if}
 		<span>{@render children()}</span>
 	</button>
@@ -73,6 +79,11 @@
 		letter-spacing: 0.04em;
 		text-decoration: none;
 		cursor: pointer;
+	}
+	/* A <button> centres its text, so a wrapped label would sit apart from its icon. */
+	.button[data-align='start'] {
+		justify-content: flex-start;
+		text-align: start;
 	}
 	.button[data-variant='quiet'] {
 		background: transparent;

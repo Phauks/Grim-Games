@@ -2,7 +2,8 @@ import { expect, test, type Page } from '@playwright/test';
 import { APP_NAME } from '../src/lib/core/app-name.ts';
 
 // Leaving a game in progress shows the game as Join game lists it (Trevor, 2026-11-06,
-// mockup D), and the menu keeps the last game at its top so it is one tap away again.
+// mockup D), and Home keeps the last game at its top so it is one tap away again. The menu
+// doesn't (Trevor, 2026-11-06: "there is already enough ways to access that").
 
 async function openMenu(page: Page) {
 	await page
@@ -14,9 +15,10 @@ async function openMenu(page: Page) {
 	return (await drawer.isVisible()) ? drawer : page.getByRole('navigation', { name: 'Menu' });
 }
 
-test('a Storyteller leaving the board sees the game, then finds it at the top of the menu', async ({
-	page
-}) => {
+/** Home's last game row. */
+const homeLast = (page: Page) => page.getByRole('main').getByTestId('last-game');
+
+test('a Storyteller leaving the board sees the game, then finds it on Home', async ({ page }) => {
 	await page.goto('/new');
 	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
 	await page.getByRole('button', { name: 'Create game' }).tap();
@@ -25,10 +27,7 @@ test('a Storyteller leaving the board sees the game, then finds it at the top of
 	await page.goto(board);
 
 	const menu = await openMenu(page);
-	// On the game itself, the menu's last game is this one.
-	const last = menu.getByTestId('last-game');
-	await expect(last).toHaveAccessibleName('Last game: Trouble Brewing');
-	await expect(last).toHaveAttribute('aria-current', 'page');
+	await expect(menu.getByTestId('last-game')).toHaveCount(0);
 	await menu.getByRole('link', { name: 'Search' }).tap();
 
 	const leave = page.getByRole('alertdialog', { name: 'Leave the game?' });
@@ -41,13 +40,12 @@ test('a Storyteller leaving the board sees the game, then finds it at the top of
 	await leave.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page).not.toHaveURL(new RegExp(board));
 
-	const again = (await openMenu(page)).getByTestId('last-game');
-	await expect(again).not.toHaveAttribute('aria-current', 'page');
-	await again.tap();
+	await page.goto('/');
+	await homeLast(page).tap();
 	await expect(page).toHaveURL(new RegExp(`${board}$`));
 });
 
-test('leaving a players-only town says the town stays, and the menu opens it again', async ({
+test('leaving a players-only town says the town stays, and Home opens it again', async ({
 	page
 }) => {
 	await page.goto('/new');
@@ -66,7 +64,8 @@ test('leaving a players-only town says the town stays, and the menu opens it aga
 	await leave.getByRole('button', { name: 'Confirm' }).tap();
 	await expect(page).toHaveURL(/\/library$/);
 
-	const last = (await openMenu(page)).getByTestId('last-game');
+	await page.goto('/');
+	const last = homeLast(page);
 	await expect(last).toHaveAccessibleName('Last game: Trouble Brewing');
 	await last.tap();
 	await expect(page).toHaveURL(/\/play$/);
@@ -78,29 +77,28 @@ async function newGame(page: Page) {
 	await page.getByRole('radiogroup', { name: 'Script' }).getByText('Trouble Brewing').tap();
 	await page.getByRole('button', { name: 'Create game' }).tap();
 	await expect(page).toHaveURL(/\/setup$/);
-	await page.goto('/library');
+	await page.goto('/');
 }
 
-// Trevor, 2026-11-06: "menu in left sidebar for recent game, so that it can be closed,
-// removed".
-test("the menu's last game hides from its ⋯, and the game stays in Join game", async ({ page }) => {
+// Trevor, 2026-11-06: "menu ... for recent game, so that it can be closed, removed".
+test("Home's last game hides from its ⋯, and the game stays in Join game", async ({ page }) => {
 	await newGame(page);
-	const menu = await openMenu(page);
-	await expect(menu.getByTestId('last-game')).toBeVisible();
-	await menu.getByRole('button', { name: 'Last game options' }).tap();
+	const main = page.getByRole('main');
+	await expect(homeLast(page)).toBeVisible();
+	await main.getByRole('button', { name: 'Last game options' }).tap();
 	await page.getByRole('menuitem', { name: 'Hide' }).tap();
-	await expect(menu.getByTestId('last-game')).toHaveCount(0);
+	await expect(homeLast(page)).toHaveCount(0);
 
 	await page.goto('/join');
 	await expect(page.getByRole('link', { name: /Trouble Brewing/ })).toBeVisible();
-	await expect((await openMenu(page)).getByTestId('last-game')).toHaveCount(0);
+	await page.goto('/');
+	await expect(homeLast(page)).toHaveCount(0);
 });
 
-test("the menu's last game deletes the game from its ⋯ after asking", async ({ page }) => {
+test("Home's last game deletes the game from its ⋯ after asking", async ({ page }) => {
 	await newGame(page);
-	const menu = await openMenu(page);
-	const last = menu.getByTestId('last-game');
-	await menu.getByRole('button', { name: 'Last game options' }).tap();
+	const last = homeLast(page);
+	await page.getByRole('main').getByRole('button', { name: 'Last game options' }).tap();
 	await page.getByRole('menuitem', { name: 'Delete game' }).tap();
 	await page
 		.getByRole('alertdialog', { name: 'Delete this game?' })

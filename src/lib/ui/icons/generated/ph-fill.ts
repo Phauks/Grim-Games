@@ -115,7 +115,6 @@ import ph_hand_grabbing_fill from '~icons/ph/hand-grabbing-fill';
 import ph_hand_heart_fill from '~icons/ph/hand-heart-fill';
 import ph_hand_palm_fill from '~icons/ph/hand-palm-fill';
 import ph_hand_pointing_fill from '~icons/ph/hand-pointing-fill';
-import ph_hand_tap_fill from '~icons/ph/hand-tap-fill';
 import ph_handbag_fill from '~icons/ph/handbag-fill';
 import ph_handshake_fill from '~icons/ph/handshake-fill';
 import ph_hard_drives_fill from '~icons/ph/hard-drives-fill';
@@ -145,7 +144,9 @@ import ph_list_dashes_fill from '~icons/ph/list-dashes-fill';
 import ph_list_magnifying_glass_fill from '~icons/ph/list-magnifying-glass-fill';
 import ph_list_numbers_fill from '~icons/ph/list-numbers-fill';
 import ph_lock_fill from '~icons/ph/lock-fill';
+import ph_lock_open_fill from '~icons/ph/lock-open-fill';
 import ph_lock_simple_fill from '~icons/ph/lock-simple-fill';
+import ph_lock_simple_open_fill from '~icons/ph/lock-simple-open-fill';
 import ph_magnifying_glass_fill from '~icons/ph/magnifying-glass-fill';
 import ph_mask_happy_fill from '~icons/ph/mask-happy-fill';
 import ph_mask_sad_fill from '~icons/ph/mask-sad-fill';
@@ -361,7 +362,6 @@ const icons: IconMap = {
 	'ph:hand-heart-fill': ph_hand_heart_fill,
 	'ph:hand-palm-fill': ph_hand_palm_fill,
 	'ph:hand-pointing-fill': ph_hand_pointing_fill,
-	'ph:hand-tap-fill': ph_hand_tap_fill,
 	'ph:handbag-fill': ph_handbag_fill,
 	'ph:handshake-fill': ph_handshake_fill,
 	'ph:hard-drives-fill': ph_hard_drives_fill,
@@ -391,7 +391,9 @@ const icons: IconMap = {
 	'ph:list-magnifying-glass-fill': ph_list_magnifying_glass_fill,
 	'ph:list-numbers-fill': ph_list_numbers_fill,
 	'ph:lock-fill': ph_lock_fill,
+	'ph:lock-open-fill': ph_lock_open_fill,
 	'ph:lock-simple-fill': ph_lock_simple_fill,
+	'ph:lock-simple-open-fill': ph_lock_simple_open_fill,
 	'ph:magnifying-glass-fill': ph_magnifying_glass_fill,
 	'ph:mask-happy-fill': ph_mask_happy_fill,
 	'ph:mask-sad-fill': ph_mask_sad_fill,

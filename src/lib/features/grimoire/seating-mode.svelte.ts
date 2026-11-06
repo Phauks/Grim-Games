@@ -6,7 +6,7 @@
  * with a room open lets phones move their seats ("switch starts on"), and Done locks seating,
  * finishes a count off, and goes back to Character selection or the bag draw when it was opened
  * from there.
- * Open seating and Count off work before anyone has joined: they open the room first (Trevor,
+ * Unlock seating and Count off work before anyone has joined: they open the room first (Trevor,
  * 2026-11-02: "Even if no one is in the room yet").
  */
 import { goto } from '$app/navigation';
