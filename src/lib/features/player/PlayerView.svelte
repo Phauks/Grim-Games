@@ -22,6 +22,12 @@
 	} from '#lib/features/scripts/current-script.svelte.ts';
 	import ScriptCheckDialog from '#lib/features/scripts/ScriptCheckDialog.svelte';
 	import TakePhotoButton from '#lib/features/scripts/TakePhotoButton.svelte';
+	import ScriptChooser from '#lib/features/modes/ScriptChooser.svelte';
+	import {
+		loadScriptChoice,
+		scriptChoiceSource,
+		type ScriptChoice
+	} from '#lib/features/modes/script-choices.svelte.ts';
 	import type { FetchedScript } from '#lib/features/scripts/fetch-script.ts';
 	import type { ScriptSource } from '#lib/features/scripts/saved-scripts.ts';
 	import { fetchSharedRef, scriptShareable } from '#lib/features/scripts/share-codes.ts';
@@ -174,6 +180,16 @@
 		const chosen = data && editionScript(id, data);
 		if (chosen) void chooseScript(chosen, { kind: 'edition' });
 	}
+	let sheetOpen = $state(false);
+	/** A script picked in the Choose a script sheet is played at once, as the base three are. */
+	function chooseFromSheet(choice: ScriptChoice) {
+		if (!data) return;
+		try {
+			void useScript(loadScriptChoice(choice, data), scriptChoiceSource(choice));
+		} catch (e) {
+			reportError(e, { area: 'play' });
+		}
+	}
 
 	/** What Share links to: the saved script, or the edition or script itself. */
 	const shareable = $derived.by(() => {
@@ -308,13 +324,16 @@
 				<li>
 					<TakePhotoButton onconfirm={(loaded, source) => void useScript(loaded, source)} />
 				</li>
+				<!-- Every other script from the same sheet as New game's Custom (Trevor, 2026-11-06). -->
 				<li>
-					<Button href={resolve('/scripts')} variant="quiet" icon="search"
-						>{t('player.findScript')}</Button
+					<Button variant="quiet" icon="search" onclick={() => (sheetOpen = true)}
+						>{t('modes.scriptSearch.custom')}</Button
 					>
 				</li>
 			</ul>
 		</PageSection>
+		<!-- Only while choosing: it goes once a script plays. -->
+		<ScriptChooser bind:open={sheetOpen} onpick={chooseFromSheet} />
 	{:else if !script}
 		<p class="muted">{t('player.loading')}</p>
 	{:else}

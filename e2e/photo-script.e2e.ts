@@ -49,7 +49,8 @@ async function takePhoto(page: Page, buffer: Buffer) {
 }
 
 async function readPhoto(page: Page, buffer: Buffer) {
-	await page.getByTestId('photo-input').setInputFiles({
+	// The first: the screen's own Take a Photo (the script sheet's Add script holds another).
+	await page.getByTestId('photo-input').first().setInputFiles({
 		name: 'script.jpg',
 		mimeType: 'image/jpeg',
 		buffer
