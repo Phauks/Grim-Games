@@ -15,13 +15,14 @@
 import {
 	choosesChanged,
 	type GivenInstead,
-	type Impairs,
+	type ImpairKind,
 	type JinxEffect,
 	type JinxRuleKey,
 	type JinxRules,
 	type RegistersTo
 } from '#lib/core/data/jinx-rules.ts';
 import type { JinxIndex } from '#lib/core/data/jinxes.ts';
+import { jinxPatches } from '#lib/core/data/jinx-presets.ts';
 import { pairKey } from '#lib/core/data/parse.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
 import type {
@@ -162,21 +163,30 @@ export function ownJinxEffects<K extends Exclude<JinxRuleKey, 'exclusive'>>(
 }
 
 /**
- * The jinxes that impair `characterId`'s players now, by partner, in script order (`impairs`
- * whose `when` holds: the Spy or the Widow in play poisons the Damsel,
- * https://wiki.bloodontheclocktower.com/Damsel#Related_Jinxes). Not those about the ability a
- * player has from their token (`has-partner-ability`) nor about both players (`who: "both"`),
- * which `jinx-effects.ts` reads for that player.
+ * The jinxes that impair `characterId`'s players now, by partner, in script order: a `patch`
+ * of the part `impairs` with `self`, whose `when` holds (the older verb `impairs` is read as
+ * one: the Spy or the Widow in play poisons the Damsel,
+ * https://wiki.bloodontheclocktower.com/Damsel#Related_Jinxes). Its `aliveAtMost` counts as
+ * for the character's own. Not those about the ability a player has from their token
+ * (`has-partner-ability`) nor about both players (`who: "both"`), which `jinx-effects.ts`
+ * reads for that player.
  */
 export function jinxImpairs(
 	game: Game,
 	characterId: CharacterId,
 	characters: CharacterLookup
-): { partner: CharacterId; effect: Impairs }[] {
+): { partner: CharacterId; kind: ImpairKind }[] {
+	const alive = game.seating.filter((s) => !game.seats[s]?.dead).length;
 	return scriptCharacterIds(game.script).flatMap((partner) => {
-		const effect = ownJinxRules(game, characterId, partner, characters)?.impairs;
-		if (!effect || effect.who === 'both' || aboutHolder(effect)) return [];
-		return jinxApplies(game, characterId, partner, effect, characters) ? [{ partner, effect }] : [];
+		const patches = jinxPatches(ownJinxRules(game, characterId, partner, characters));
+		return patches.flatMap((patch) => {
+			const self = patch.parts.impairs?.self;
+			if (!self || aboutHolder(patch)) return [];
+			if (self.aliveAtMost !== undefined && alive > self.aliveAtMost) return [];
+			return jinxApplies(game, characterId, partner, patch, characters)
+				? [{ partner, kind: self.reason }]
+				: [];
+		});
 	});
 }
 

@@ -448,8 +448,8 @@ function jinxReminders(
 	for (const f of seats) {
 		const partner = f.truly;
 		if (partner === undefined) continue;
-		for (const { partner: by, effect } of jinxImpairs(game, partner, lookup)) {
-			const { label, is } = JINX_IMPAIRED[effect.kind];
+		for (const { partner: by, kind } of jinxImpairs(game, partner, lookup)) {
+			const { label, is } = JINX_IMPAIRED[kind];
 			const said = (r: ReminderInstance) =>
 				[r.label, r.note].some((w) => w?.toLowerCase() === label.toLowerCase());
 			if (f.seat.reminders.some(said)) continue;
