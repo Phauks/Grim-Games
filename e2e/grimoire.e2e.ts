@@ -26,6 +26,7 @@ import {
 	openBin,
 	moveOnBoard,
 	putReminder,
+	putRunReminder,
 	tapToSeat
 } from './reminder-bank.ts';
 import { pickNumber } from './number-select.ts';
@@ -7810,6 +7811,14 @@ test("the Huntsman's step turns the Damsel into a not-in-play Townsfolk", async 
 	// The step's middle is a character badge in its night text on a phone, which opens that
 	// character instead; its name opens the step.
 	const strip = await walkTo(page, 'Huntsman');
+	// https://wiki.bloodontheclocktower.com/Damsel: the Minions learn of the Damsel at Minion
+	// info, so the Damsel's own step doesn't follow (it wakes only for a Damsel made mid-game).
+	const name = strip.locator('.step .name strong');
+	await strip.getByRole('button', { name: 'Next step' }).tap();
+	await expect(name).not.toHaveText('Huntsman');
+	await expect(name).not.toHaveText('Damsel');
+	await strip.getByRole('button', { name: 'Previous step' }).tap();
+	await expect(name).toHaveText('Huntsman');
 	await strip.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong').tap();
 	const step = nightStep(page, 'Huntsman');
 	await expect(step).toBeVisible();
@@ -8062,7 +8071,7 @@ test("the Summoner's Night 3 step makes the chosen player the Demon it points at
 	await picker.getByText('Include characters not on the script').tap();
 	await picker.getByRole('button', { name: 'Summoner', exact: true }).tap();
 	await closeSheet(page);
-	await putReminder(page, 'Night 3', 1);
+	await putRunReminder(page, 'Night 3', 1);
 
 	const step = await openStep(page, 'Summoner');
 	await expect(step.getByTestId('change-character')).toContainText('None');

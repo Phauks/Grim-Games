@@ -4,7 +4,6 @@
  * "the whole lock system is weird ... Just allow setting what the core one is on the left
  * side, start empty"). This holds what the page, the lab panel and the phone's bar share.
  */
-import { goto } from '$app/navigation';
 import { resolve } from '$app/paths';
 import type { Character, CharacterId, Jinx } from '#lib/core/data/index.ts';
 import {
@@ -57,10 +56,10 @@ export class LabSession {
 	}
 
 	/**
-	 * Saves a fresh game for the opponent at `index` (the one shown by default). `open` goes to
-	 * it as well, for a screen with no room for the Storyteller frame.
+	 * Saves a fresh game for the opponent at `index` (the one shown by default), shown in the
+	 * page's Storyteller frame on every screen (Trevor, 2026-11-06: "only to show it beneath").
 	 */
-	async load(index = this.at, open = false): Promise<void> {
+	async load(index = this.at): Promise<void> {
 		if (this.loading) return;
 		this.loading = true;
 		try {
@@ -85,7 +84,6 @@ export class LabSession {
 			);
 			lab.update({ index: i, gameId: game.game.gameId });
 			this.loads++;
-			if (open) await goto(resolve('/grimoire/[gameId]', { gameId: game.game.gameId }));
 		} catch (e) {
 			reportError(e, { area: 'grimoire' });
 		} finally {
@@ -98,11 +96,11 @@ export class LabSession {
 	 * loads that game (Trevor, 2026-11-03: "so that you don't have to go into the character
 	 * selector each time").
 	 */
-	async stepCore(step: -1 | 1, open = false): Promise<void> {
+	async stepCore(step: -1 | 1): Promise<void> {
 		if (!this.data || !this.core) return;
 		const next = stepCharacter(this.data, this.core, step, [], true);
 		if (!next) return;
 		this.setCore(next);
-		await this.load(0, open);
+		await this.load(0);
 	}
 }

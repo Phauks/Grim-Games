@@ -50,8 +50,12 @@
 	},
 	"infoTokenCharacters": {
 		"you-are": {
-			"characters": ["chosen"]
+			"characters": [],
+			"omit": true
 		}
+	},
+	"wakesWhen": {
+		"becameToday": true
 	},
 	"nightOrder": {
 		"first": {
