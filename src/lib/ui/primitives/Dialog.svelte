@@ -521,7 +521,9 @@
 		gap: var(--space-2);
 		margin-top: var(--space-4);
 		padding-bottom: var(--space-4);
-		margin-bottom: calc(-1 * var(--space-4)); /* overlap-ok: gives back the padding that lets the pinned actions meet the edge */
+		margin-bottom: calc(
+			-1 * var(--space-4)
+		); /* overlap-ok: gives back the padding that lets the pinned actions meet the edge */
 		background: var(--dialog-background);
 	}
 	.actions :global(.modal-actions) {

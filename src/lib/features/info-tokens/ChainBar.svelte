@@ -110,7 +110,9 @@
 		bottom: calc(-1 * var(--space-1));
 		z-index: var(--z-pinned-bar);
 		margin-top: var(--space-3);
-		margin-bottom: calc(-1 * var(--space-1)); /* overlap-ok: gives back the inset that lets the pinned bar meet the edge */
+		margin-bottom: calc(
+			-1 * var(--space-1)
+		); /* overlap-ok: gives back the inset that lets the pinned bar meet the edge */
 		padding: var(--space-2) 0 var(--space-2);
 		/* A sheet's colour by default; the page passes its own (`--chain-background`). */
 		background: var(--chain-background, var(--sheet-background));
