@@ -201,6 +201,10 @@ test('day view lists an ability a player gained under their own character', asyn
 	await expect(gain).toContainText('Mathematician');
 	await page.keyboard.press('Escape');
 	await expect(gain).toBeHidden();
+	// The seat sheet shows it the same way, under the Artist's row (Trevor, 2026-11-06).
+	await expect(
+		sheet.locator('[data-testid="marked-characters"] [data-relation="holds"]')
+	).toContainText('Mathematician');
 	await page.keyboard.press('Escape');
 	await expect(sheet).toBeHidden();
 	// Into Day 1: start the game and end the first night.
@@ -217,8 +221,8 @@ test('day view lists an ability a player gained under their own character', asyn
 	const day = page.getByRole('dialog', { name: 'Day 1' });
 	await expect(day).toBeVisible();
 	const row = day.locator('li[data-character="artist"]');
-	await expect(row.getByTestId('borrowed-abilities')).toContainText('Mathematician');
+	await expect(row.getByTestId('marked-characters')).toContainText('Mathematician');
 	await expect(
-		day.locator('li[data-character="witch"]').getByTestId('borrowed-abilities')
+		day.locator('li[data-character="witch"]').getByTestId('marked-characters')
 	).toHaveCount(0);
 });
