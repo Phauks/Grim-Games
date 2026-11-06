@@ -26,6 +26,7 @@ import {
 	openBin,
 	moveOnBoard,
 	putReminder,
+	placeFromStep,
 	putRunReminder,
 	tapToSeat
 } from './reminder-bank.ts';
@@ -1285,11 +1286,7 @@ test("the Demon's step says when the Exorcist's choice stops it waking", async (
 		.locator('.row .ring-main, button.step .name:not(.visually-hidden) strong')
 		.tap();
 	const exorcist = page.getByRole('dialog', { name: 'Exorcist' });
-	await exorcist.getByRole('button', { name: 'Place' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Put Chosen on' })
-		.getByRole('button', { name: /Pukka Seat 1/ })
-		.tap();
+	await placeFromStep(page, exorcist, 1);
 	await expect(exorcist).toContainText(/On\s+(\S+\s+)?Seat 1\b/);
 	await exorcist.getByRole('button', { name: 'Close' }).tap();
 
@@ -2456,11 +2453,12 @@ test('info tokens open from the toolbar and show player cards at once', async ({
 	await expect(page.getByTestId('bluff-set')).toHaveCount(1);
 });
 
-test("a night step's seat list greys out seats its token doesn't fit, still choosable", async ({
+test("a night step's token goes on a seat tapped on the board, unusual seats faded", async ({
 	page
 }) => {
 	// https://wiki.bloodontheclocktower.com/Butler : the Butler chooses a player other than
-	// themself as their Master (Trevor, 2026-10-27: only valid picks, greyed out, not removed).
+	// themself as their Master (Trevor, 2026-10-27: only valid picks, greyed out, not removed;
+	// 2026-11-06: picked on the board, not a list of players).
 	await startGame(page);
 	const sheet = await openSeat(page, 1);
 	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
@@ -2472,15 +2470,25 @@ test("a night step's seat list greys out seats its token doesn't fit, still choo
 
 	const guide = await openStep(page, 'Butler');
 	await guide.getByRole('button', { name: 'Place' }).tap();
-	const put = page.getByRole('dialog', { name: 'Put Master on' });
-	const own = put.getByRole('button', { name: /Butler Seat 1/ });
-	await expect(own).toHaveAttribute('data-misfit');
-	await expect(own).toContainText('Not a usual place');
-	await expect(put.getByRole('button', { name: /Seat 2/ })).not.toHaveAttribute('data-misfit');
-	// Every seat is still listed and can be chosen: the Storyteller overrides.
-	await expect(put.getByRole('listitem')).toHaveCount(8);
-	await own.tap();
+	await expect(guide).toBeHidden();
+	await expect(page.getByRole('dialog', { name: 'Put Master on' })).toHaveCount(0);
+	await expect(inHand(page)).toBeVisible();
+	await expect(boardSeat(page, 1)).toHaveAttribute('data-misfit');
+	await expect(boardSeat(page, 2)).not.toHaveAttribute('data-misfit');
+	await page.screenshot({ path: `test-results/step-place-${test.info().project.name}.png` });
+	// Still choosable: the Storyteller overrides. The step opens again with it placed.
+	await boardSeat(page, 1).tap();
+	await expect(guide).toBeVisible();
 	await expect(guide).toContainText(/On\s+(\S+\s+)?Seat 1\b/);
+	// Moved the same way, from its seat to the one tapped.
+	await placeFromStep(page, guide, 2, { button: 'Move' });
+	await expect(guide).toContainText(/On\s+(\S+\s+)?Seat 2\b/);
+	// Put down without a seat (Escape), the step comes back as it was.
+	await guide.getByRole('button', { name: 'Move' }).tap();
+	await expect(inHand(page)).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(guide).toBeVisible();
+	await expect(guide).toContainText(/On\s+(\S+\s+)?Seat 2\b/);
 });
 
 test('a night step is filled in with help, and the night can be walked through', async ({
@@ -2504,15 +2512,7 @@ test('a night step is filled in with help, and the night can be walked through',
 	const guide = await openStep(page, 'Poisoner');
 	await expect(guide).toContainText('Seat 1');
 	await expect(guide).toContainText('Not placed');
-	await guide.getByRole('button', { name: 'Place' }).tap();
-	// Each row: the seat's number, its character once (the in-line badge), then the player
-	// (Trevor, 2026-10-20).
-	const row = page
-		.getByRole('dialog', { name: 'Put Poisoned on' })
-		.getByRole('button', { name: /Empath Seat 2/ });
-	await expect(row).toHaveText(/^2\s*Empath\s*Seat 2$/);
-	await expect(row.locator('img')).toHaveCount(1);
-	await row.tap();
+	await placeFromStep(page, guide, 2);
 	await expect(guide).toContainText(/On\s+(\S+\s+)?Seat 2\b/);
 	// It can go back to the reminder bank from here (Trevor, 2026-10-17), then be placed again.
 	await guide.getByRole('button', { name: 'Return Poisoned to the reminder bank' }).tap();
@@ -2520,11 +2520,7 @@ test('a night step is filled in with help, and the night can be walked through',
 	await expect(
 		guide.getByRole('button', { name: 'Return Poisoned to the reminder bank' })
 	).toBeDisabled();
-	await guide.getByRole('button', { name: 'Place' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Put Poisoned on' })
-		.getByRole('button', { name: /Empath Seat 2/ })
-		.tap();
+	await placeFromStep(page, guide, 2);
 	await expect(guide).toContainText(/On\s+(\S+\s+)?Seat 2\b/);
 
 	// Info tokens and Show to player (an eye) sit beside the X, with no Done (Trevor,
@@ -3983,13 +3979,7 @@ test("a night step lists every copy of a character's reminder (the Mathematician
 	// https://wiki.bloodontheclocktower.com/Mathematician : five "Abnormal" tokens in TPI's data.
 	const place = guide.getByRole('button', { name: 'Place' });
 	await expect(place).toHaveCount(5);
-	for (const seat of [2, 3]) {
-		await place.first().tap();
-		await page
-			.getByRole('dialog', { name: 'Put Abnormal on' })
-			.getByRole('button', { name: new RegExp(`^${seat} .*Seat ${seat}$`) })
-			.tap();
-	}
+	for (const seat of [2, 3]) await placeFromStep(page, guide, seat);
 	await expect(place).toHaveCount(3);
 	await expect(guide).toContainText(/On\s+(\S+\s+)?Seat 2\b/);
 	await expect(guide).toContainText(/On\s+(\S+\s+)?Seat 3\b/);
@@ -6420,11 +6410,7 @@ test('with I See Dead People, the walk-through says a poisoned player doesn’t 
 		await closeSheet(page);
 	}
 	const guide = await openStep(page, 'Poisoner');
-	await guide.getByRole('button', { name: 'Place' }).tap();
-	await page
-		.getByRole('dialog', { name: 'Put Poisoned on' })
-		.getByRole('button', { name: /Empath Seat 2/ })
-		.tap();
+	await placeFromStep(page, guide, 2);
 	await guide.getByRole('button', { name: 'Close' }).tap();
 
 	const strip = await walkTo(page, 'Poisoner');
