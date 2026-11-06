@@ -90,5 +90,8 @@
 			"stage": "minions",
 			"after": "pukka"
 		}
+	},
+	"tokenFlow": {
+		"tokens": ["Mad", "Has Ability"]
 	}
 }

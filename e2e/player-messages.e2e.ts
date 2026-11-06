@@ -86,10 +86,18 @@ test('a player messages the Storyteller, who reads it on Players; the cover show
 	await expect(item).toContainText('Can I swap seats with Sam?');
 	await expect(item.getByTestId('inbox-consult')).toHaveText('Consult requested');
 	await expect(item).toContainText('New');
+	// When it was sent, in the game and by the clock, in a band apart from the words (Trevor,
+	// 2026-11-06, "A"), the same opened on its own.
+	const band = item.getByTestId('inbox-meta');
+	await expect(band.getByTestId('inbox-when')).not.toBeEmpty();
+	await expect(band.getByTestId('inbox-time')).toHaveText(/\d{1,2}[:.]\d{2}/);
+	await expect(band).not.toContainText('swap');
+	await page.screenshot({ path: `test-results/inbox-band-${testInfo.project.name}.png` });
 	await item.tap();
 	const opened = page.getByRole('dialog', { name: 'Message', exact: true });
 	await expect(opened.getByTestId('inbox-opened')).toContainText('Can I swap seats with Sam?');
 	await expect(opened.getByTestId('inbox-consult')).toBeVisible();
+	await expect(opened.getByTestId('inbox-time')).toHaveText(/\d{1,2}[:.]\d{2}/);
 	await page.keyboard.press('Escape');
 	await expect(opened).toBeHidden();
 	await expect(item).not.toContainText('New');

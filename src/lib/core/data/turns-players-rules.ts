@@ -4,7 +4,7 @@
  * a behaviour and its type, never a character.
  */
 import { SEATED_TYPES, type SeatedType } from './types.ts';
-import { checkKeys, describe, isObject, readEnum, type Issues } from './validate.ts';
+import { checkKeys, describe, isObject, readEnum, type Issues, type Json } from './validate.ts';
 
 /**
  * Which players:
@@ -15,11 +15,31 @@ import { checkKeys, describe, isObject, readEnum, type Issues } from './validate
  * - `drafter`: the player who drafts it, as the character itself is not dealt (Lil' Monsta's
  *   Minions, https://wiki.bloodontheclocktower.com/Lil%27_Monsta).
  */
-const TURNS_PLAYERS = ['chosen', 'neighbours', 'drafter'] as const;
+export const TURNS_PLAYERS = ['chosen', 'neighbours', 'drafter'] as const;
+export type TurnsPlayers = (typeof TURNS_PLAYERS)[number];
 
 export interface TurnsPlayersInto {
 	type: SeatedType;
-	players: (typeof TURNS_PLAYERS)[number];
+	players: TurnsPlayers;
+}
+
+/**
+ * Reads `type` and `players` from the object `raw` at `path`, `players` one of `allowed` and
+ * `fallback` when left out (a jinx's `alsoBecomes` reads this too, P12). Other keys are the
+ * caller's to check.
+ */
+export function readPlayersOfType<P extends TurnsPlayers>(
+	raw: Json,
+	path: string,
+	issues: Issues,
+	allowed: readonly P[],
+	fallback?: P
+): { type: SeatedType; players: P } | undefined {
+	const type = readEnum(raw, 'type', SEATED_TYPES, path, issues, true);
+	const players =
+		readEnum(raw, 'players', allowed, path, issues, fallback === undefined) ??
+		(raw.players === undefined ? fallback : undefined);
+	return type && players ? { type, players } : undefined;
 }
 
 /** Reads `raw`, the `turnsPlayersInto` of the rules block at `path`; left out, undefined. */
@@ -35,7 +55,5 @@ export function readTurnsPlayersInto(
 		return undefined;
 	}
 	checkKeys(raw, ['type', 'players'], path, issues);
-	const type = readEnum(raw, 'type', SEATED_TYPES, path, issues, true);
-	const players = readEnum(raw, 'players', TURNS_PLAYERS, path, issues, true);
-	return type && players ? { type, players } : undefined;
+	return readPlayersOfType(raw, path, issues, TURNS_PLAYERS);
 }

@@ -48,7 +48,14 @@ import {
 import { notDealtInPlay } from '#lib/core/rules/bag-characters.ts';
 import type { GameLog } from '#lib/core/engine/index.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
-import { seatHasAbility, type AbilitiesRule, type SpecialRule } from '#lib/core/modes/index.ts';
+import {
+	deadWakesOn,
+	ruleSources,
+	seatHasAbility,
+	type RuleSource,
+	type SpecialRule
+} from '#lib/core/modes/index.ts';
+import type { DeadKeepAbilities } from '#lib/core/data/character-rules.ts';
 import type { IconSlot } from '#lib/ui/icons/catalogue.ts';
 
 export function boardNightSteps(
@@ -65,7 +72,7 @@ export function boardNightSteps(
 		died?: readonly SeatId[];
 		revived?: readonly SeatId[];
 	} = {},
-	/** The game's special rules, for the steps they add to a night (Council of the Dead). */
+	/** The game's mode and special rules, for the steps they add to a night (Council of the Dead). */
 	rules: readonly SpecialRule[] = []
 ): NightStep[] {
 	// Players wake by the token they hold (a Drunk wakes as their Townsfolk).
@@ -126,7 +133,7 @@ export function boardNightSteps(
 	const number = night === 'first' ? 1 : game.pastDays.length + 1;
 	// A player whose ability works twice tonight wakes again straight after each of their steps.
 	return duskToDawn([
-		...ruleNightSteps(rules, number),
+		...ruleNightSteps(ruleSources(game, characters, rules), number),
 		...withActsTwiceSteps(
 			withNightInfo(
 				woken,
@@ -147,28 +154,21 @@ export function boardNightSteps(
 }
 
 /**
- * The steps special rules add to night `number`, right after Dusk: a rule's one-night step
- * for the dead (Council of the Dead, https://beardytas.com/garden-of-djinn/council-of-the-dead/),
- * headed by the rule's name, with the rule's own lines as its text.
+ * The steps rule sources add to night `number`, right after Dusk: a one-night wake for the dead
+ * (`nightWakes`, Council of the Dead, https://beardytas.com/garden-of-djinn/council-of-the-dead/),
+ * headed by the source's name, with a rule's own lines as its text. A Fabled or Loric with one
+ * adds it the same way.
  */
-export function ruleNightSteps(rules: readonly SpecialRule[], number: number): NightStep[] {
-	return rules.flatMap((rule) =>
-		(rule.parts.nightSteps ?? []).flatMap((step, i) =>
-			step.when === 'one-night' && step.night === number && step.dead
-				? [
-						{
-							id: `rule:${rule.id}:${i}`,
-							kind: 'custom' as const,
-							title: rule.name,
-							reminder: (rule.parts.text ?? []).join(' ') || undefined,
-							afterDawn: false,
-							placement: 'marker' as const,
-							notes: []
-						}
-					]
-				: []
-		)
-	);
+export function ruleNightSteps(sources: readonly RuleSource[], number: number): NightStep[] {
+	return deadWakesOn(sources, number).map(({ source, index }) => ({
+		id: `rule:${source.id}:${index}`,
+		kind: 'custom' as const,
+		title: source.name,
+		reminder: (source.text ?? []).join(' ') || undefined,
+		afterDawn: false,
+		placement: 'marker' as const,
+		notes: []
+	}));
 }
 
 /**
@@ -258,7 +258,7 @@ export function stepWakes(
 	step: NightStep,
 	characters: CharacterLookup,
 	tonight: {
-		abilitiesRule?: AbilitiesRule;
+		abilitiesRule?: DeadKeepAbilities;
 		diedTonight: ReadonlySet<SeatId>;
 		/** Seats whose character changed since the New day (`wakesWhen.becameToday`). */
 		became?: ReadonlySet<SeatId>;

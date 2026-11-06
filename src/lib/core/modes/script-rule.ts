@@ -2,9 +2,9 @@
  * A script's own rule as a special rule: its Bootlegger lines (`_meta.bootlegger`), always on
  * when the script is played. A bracket in a line, such as Binary Supernovae's "[+1 Demon]"
  * (https://beardytas.com/garden-of-djinn/binary-supernovae/), is read into a count change the
- * same way as a homebrew character's brackets (`setup-modifiers.ts`). Setup applies that change
- * through the Bootlegger in play (`setupModifierFor`), not from these `countChanges`, so a game
- * never counts it twice.
+ * same way as a homebrew character's brackets (`setup-modifiers.ts`), as the rule's
+ * `setupModifier`. Setup applies that change through the Bootlegger in play
+ * (`setupModifierFor`), not from the rule's own block, so a game never counts it twice.
  */
 import type { CharacterId, ScriptMeta } from '#lib/core/data/types.ts';
 import { modifierFromText } from '#lib/core/rules/setup-modifiers.ts';
@@ -39,6 +39,9 @@ export function scriptSpecialRule(
 		id: SCRIPT_RULE_ID,
 		name: meta?.name?.trim() || 'Script',
 		sources: [],
-		parts: { text, ...(modifier?.ops.length ? { countChanges: [...modifier.ops] } : {}) }
+		parts: { text },
+		...(modifier?.ops.length
+			? { rules: { setupModifier: { summary: modifier.summary, ops: [...modifier.ops] } } }
+			: {})
 	};
 }

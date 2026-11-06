@@ -45,5 +45,10 @@
 			"stage": "learns",
 			"after": "fortuneteller"
 		}
+	},
+	"afterExecution": {
+		"on": "executed",
+		"token": "Died Today",
+		"moves": true
 	}
 }

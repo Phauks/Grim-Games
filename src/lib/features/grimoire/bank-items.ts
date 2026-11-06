@@ -17,6 +17,7 @@ import {
 	type SeatId
 } from '#lib/core/model/index.ts';
 import { rulesOf } from '#lib/core/data/rules/index.ts';
+import { matchesReminderSearch } from '#lib/features/characters/character-search.ts';
 import { borrowedAbilities, deadCharacters, reminderHolders } from '#lib/core/rules/index.ts';
 import { bankOwners, bankReminders, byLabel, isGeneric, type StepReminders } from './reminders.ts';
 import { pendingSetup, type TrayItem } from './setup-tray.ts';
@@ -27,7 +28,7 @@ import type { StepFocus } from './step-focus.svelte.ts';
  * sees first), Reminders, the generic ∞ in a cell of its own, then the reminders of
  * characters whose players are all dead and whose ability ended with them.
  */
-export type BankGroup = 'setup' | 'reminders' | 'generic' | 'dead';
+export type BankGroup = 'setup' | 'guesses' | 'reminders' | 'generic' | 'dead';
 export const BANK_CAPTIONS: Partial<Record<BankGroup, string>> = {
 	setup: 'Setup',
 	reminders: 'Reminders',
@@ -104,6 +105,88 @@ export const FIXED_GENERIC_ITEMS: readonly Readonly<BankItem>[] = [
 	}
 ];
 
+/**
+ * The bank's generic stretch: the ∞ and # every grim has, then the grim's own reusable ∞
+ * tokens and "+ New token" (plan B9, Trevor 2026-10-23: "Tokens only"). The Storyteller's
+ * bank (the game's tokens) and a player's tray (the phone's own) alike.
+ */
+export function genericStretch(tokens: readonly GenericToken[]): BankItem[] {
+	return [
+		...FIXED_GENERIC_ITEMS.map((item) => ({ ...item })),
+		...tokens.map((token): BankItem => ({
+			key: `token:${token.tokenId}`,
+			characterId: GENERIC_REMINDER_ID,
+			label: (token.note ?? '') as ReminderLabel,
+			count: 1,
+			group: 'generic',
+			token
+		})),
+		{
+			key: 'new-token',
+			characterId: GENERIC_REMINDER_ID,
+			label: '',
+			count: 1,
+			group: 'generic',
+			makesToken: true
+		}
+	];
+}
+
+/** What a copy of a bank token says: none for an ∞ or # token, whose words are its look. */
+export const bankLabel = (item: Pick<BankItem, 'label' | 'token' | 'number'>): ReminderLabel =>
+	item.token || item.number ? ('' as ReminderLabel) : item.label;
+
+/**
+ * A player's tray (player/PlayerReminderBin), built as the bank is (Trevor, 2026-11-06: "the
+ * same components for parity"): the script's reminders, the characters they guessed first
+ * (`guesses`), every counting run stacked as one token as in the bank, then the generic
+ * stretch with the phone's own ∞ tokens. A player can't know who is in play, so it is the
+ * whole script, and nothing is ever used up.
+ */
+export function playerBankItems(
+	characters: readonly Character[],
+	guessed: readonly CharacterId[],
+	tokens: readonly GenericToken[],
+	query = ''
+): BankItem[] {
+	const lookup: CharacterLookup = new Map(characters.map((c) => [c.id, c]));
+	const reminders = characters.flatMap((character) => {
+		const labels = [...new Set([...character.reminders, ...character.remindersGlobal])];
+		const group: BankGroup = guessed.includes(character.id) ? 'guesses' : 'reminders';
+		return labels.sort(byLabel).map((label): BankItem => ({
+			// eslint-disable-next-line grim/names-as-badges -- an identity key, never shown
+			key: `bank:${character.id}:${label}`,
+			characterId: character.id,
+			label,
+			count: 1,
+			group
+		}));
+	});
+	const stacked = bundledCounters(reminders, lookup);
+	return searchBank(
+		[
+			...stacked.filter((i) => i.group === 'guesses'),
+			...stacked.filter((i) => i.group === 'reminders'),
+			...genericStretch(tokens)
+		],
+		lookup,
+		query
+	);
+}
+
+/**
+ * The tokens a search in the pulled-up tray leaves (both trays' search field): the reminders
+ * whose character or words match, never the generic stretch.
+ */
+export function searchBank(items: BankItem[], characters: CharacterLookup, query: string) {
+	if (!query.trim()) return items;
+	return items.filter((item) => {
+		const character = characters.get(item.characterId);
+		if (!character || isGeneric(item)) return false;
+		return matchesReminderSearch({ character, labels: [item.label, ...(item.run ?? [])] }, query);
+	});
+}
+
 export interface BankOptions {
 	/** The character whose night step is being walked through. */
 	focus: StepReminders | undefined;
@@ -122,7 +205,7 @@ export interface BankOptions {
  * under it as its count (plan M53, Trevor 2026-11-04: "bundle incrementing reminder tokens
  * together in the bank"; 2026-11-06: stacked on each other in the bin too).
  */
-function bundledCounters(items: BankItem[], characters: CharacterLookup): BankItem[] {
+export function bundledCounters(items: BankItem[], characters: CharacterLookup): BankItem[] {
 	const run = (item: BankItem) => {
 		const tokens = rulesOf(item.characterId, characters)?.counter?.tokens;
 		return tokens?.includes(item.label) ? tokens : undefined;
@@ -249,29 +332,10 @@ export function bankItems(
 		return list;
 	});
 	const rest = bundledCounters(listed, characters);
-	// The game's own ∞ tokens, then "+ New token" (plan B9, Trevor 2026-10-23: "Tokens only").
-	const tokens: BankItem[] = (game.genericTokens ?? []).map((token) => ({
-		key: `token:${token.tokenId}`,
-		characterId: GENERIC_REMINDER_ID,
-		label: (token.note ?? '') as ReminderLabel,
-		count: 1,
-		group: 'generic',
-		token
-	}));
-	const makes: BankItem = {
-		key: 'new-token',
-		characterId: GENERIC_REMINDER_ID,
-		label: '',
-		count: 1,
-		group: 'generic',
-		makesToken: true
-	};
 	const all = [
 		...setup,
 		...rest.filter((i) => i.group === 'reminders'),
-		...FIXED_GENERIC_ITEMS.map((item) => ({ ...item })),
-		...tokens,
-		makes,
+		...genericStretch(game.genericTokens ?? []),
 		...rest.filter((i) => i.group === 'dead')
 	];
 	// "Only this character": the step's reminders, while a step is walked through, then the

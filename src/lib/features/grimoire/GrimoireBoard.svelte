@@ -46,7 +46,12 @@
 	} from '#lib/core/rules/index.ts';
 	import { playedRules } from '#lib/features/modes/game-mode.ts';
 	import { allowedOffScriptIn } from '#lib/features/modes/game-mode.ts';
-	import { nominationPrompts, type NominationPrompt } from '#lib/core/modes/index.ts';
+	import {
+		deadKeepRule,
+		nominationPrompts,
+		ruleSources,
+		type NominationPrompt
+	} from '#lib/core/modes/index.ts';
 	import DayTimer from '#lib/features/day/DayTimer.svelte';
 	import BoardActionSounds from '#lib/features/sound/BoardActionSounds.svelte';
 	import SoundboardDialog from '#lib/features/sound/SoundboardDialog.svelte';
@@ -269,11 +274,13 @@
 
 	/** The game's special rules, with its mode's own rule parts first (playedRules). */
 	const gameRules = $derived(playedRules(game.gameId));
+	/** The game's rule sources: its Fabled and Loric in play, then its mode and rules (M61e). */
+	const sources = $derived(ruleSources(game, characters, gameRules));
 	/**
-	 * Who has an ability under a special rule, when one changes it (The Phantom Detectives:
+	 * Who has an ability under a rule source, when one changes it (The Phantom Detectives:
 	 * the dead keep theirs, living Townsfolk have none).
 	 */
-	const abilitiesRule = $derived(gameRules.find((r) => r.parts.abilities)?.parts.abilities);
+	const abilitiesRule = $derived(deadKeepRule(sources));
 	/** Who died and who was revived since the New day (`tonightFromLog`). */
 	const sinceNewDay = $derived.by(() => {
 		const log = grimoire.open.session.log;
@@ -514,7 +521,12 @@
 	/** What a recorded nomination sets off: the game's special rules, then characters' abilities. */
 	function nominated(nomination: { nominator: SeatId; nominee: SeatId }) {
 		nominationAsks = [
-			...nominationPrompts(grimoire.game, nomination, gameRules, characters),
+			...nominationPrompts(
+				grimoire.game,
+				nomination,
+				ruleSources(grimoire.game, characters, gameRules),
+				characters
+			),
 			...characterNominationPrompts(grimoire.game, nomination, characters)
 		];
 	}
@@ -815,6 +827,16 @@
 				height={sizing.sizingHeight > 0 ? `${Math.round(0.42 * sizing.sizingHeight)}px` : undefined}
 			/>
 		{/if}
+		{#if ended}
+			<!-- In the middle of the seat ring, over the script's logo: the ring's middle never
+			     holds a seat, so ending the game moves nothing and covers nothing (Trevor,
+			     2026-11-06, after it sat over the bottom seats in the corner). Out of History's
+			     strip so the strip keeps its room (2026-10-25). Only a label: Reopen game is in ⋯
+			     (2026-11-01). It says the same while History steps back (2026-11-02). -->
+			<span class="game-over" role="status" data-testid="game-over" data-team={ended.winner}>
+				Game over: {endedText}
+			</span>
+		{/if}
 		<BoardSeats
 			{grimoire}
 			{shown}
@@ -908,20 +930,7 @@
 			bind:titleW={sizing.titleW}
 			bind:titleH={sizing.titleH}
 			bind:room={corner}
-		>
-			{#snippet status()}
-				{#if ended}
-					<!-- Above Game info (the corner), out of History's strip so the strip keeps
-					     its room for the change shown (Trevor, 2026-10-25); held off the corner's
-					     size, so ending the game moves nothing. Only a label: Reopen game is in ⋯
-					     (Trevor, 2026-11-01: "do not allow reopen game from there"). It says the same
-					     while History steps back; the strip says which change shows (Trevor, 2026-11-02). -->
-					<span class="game-over" role="status" data-testid="game-over" data-team={ended.winner}>
-						Game over: {endedText}
-					</span>
-				{/if}
-			{/snippet}
-		</BoardCorner>
+		></BoardCorner>
 		<!-- A spectator is reminded the whole time they watch (Trevor, 2026-10-28). -->
 		{#if watching}<div class="fair-play"><FairPlayNotice kind="secret" short /></div>{/if}
 		<!-- The day timer (Trevor, 2026-10-17), with Back to town at its front (2026-11-01), left
@@ -1205,8 +1214,11 @@
 	}
 	/* Dimmed so seats and reminders stay clear over any image. */
 	.game-over {
-		flex: none;
-		max-width: 100%;
+		position: absolute;
+		left: 50%;
+		top: 50%;
+		translate: -50% -50%;
+		max-width: 42%;
 		min-height: var(--tap-target);
 		overflow: hidden;
 		text-overflow: ellipsis;

@@ -18,8 +18,11 @@ import type {
 export interface RuleConflict {
 	/** The mode's or rule's ids, the earlier one first. */
 	ids: [string, string];
-	/** The part both set differently; absent when a rule lists the other in `conflictsWith`. */
-	part?: keyof CombinedParts;
+	/**
+	 * The part both set differently, or `rules.<part>` for a part of both rules blocks; absent
+	 * when a rule lists the other in `conflictsWith`.
+	 */
+	part?: keyof CombinedParts | `rules.${string}`;
 }
 
 export interface Combined {
@@ -44,9 +47,7 @@ const SINGLE = [
 	'participants',
 	'travellers',
 	'seats',
-	'deaths',
-	'abilities',
-	'demonAttacks'
+	'deaths'
 ] as const satisfies readonly (keyof CombinedParts)[];
 
 /** Parts that are lists: every file's items, in order. */
@@ -54,10 +55,7 @@ const LISTS = [
 	'ruleChanges',
 	'information',
 	'daySteps',
-	'nightSteps',
-	'text',
-	'countChanges',
-	'nominations'
+	'text'
 ] as const satisfies readonly (keyof CombinedParts)[];
 
 export function combineRules(mode: GameMode, rules: readonly SpecialRule[]): Combined {
@@ -90,6 +88,17 @@ export function combineRules(mode: GameMode, rules: readonly SpecialRule[]): Com
 		if (add.restricted) parts.restricted = joinRestrictions(parts.restricted, add.restricted);
 		if (add.forced) parts.forced = joinForced(parts.forced, add.forced);
 	}
+
+	// Rules blocks stay each file's own (a rule source each, `rule-effects.ts`), but two that set
+	// one part differently can't both have their way.
+	const ruleSetBy = new Map<string, { id: string; value: unknown }>();
+	for (const file of [mode, ...rules])
+		for (const [key, value] of Object.entries(file.rules ?? {})) {
+			const earlier = ruleSetBy.get(key);
+			if (!earlier) ruleSetBy.set(key, { id: file.id, value });
+			else if (!same(earlier.value, value))
+				conflicts.push({ ids: [earlier.id, file.id], part: `rules.${key}` });
+		}
 
 	const chosen = [mode, ...rules];
 	for (const file of chosen) {

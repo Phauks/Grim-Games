@@ -27,6 +27,8 @@
 		lineEnd?: Snippet<[index: number]>;
 		/** A line drawn as done (`data-marked-row`): its card has been shown. */
 		marked?: (index: number) => boolean;
+		/** Under a line's words, by its place in reading order: what its card points at. */
+		lineExtra?: Snippet<[index: number]>;
 		/**
 		 * More `StepLine`s after the text's own lines, numbered on from them: the cards Minion
 		 * info and Demon info show (`EvilInfoCards`).
@@ -34,7 +36,7 @@
 		after?: Snippet<[start: number]>;
 	}
 
-	let { steps, character, name, alignment, lineEnd, marked, after }: Props = $props();
+	let { steps, character, name, alignment, lineEnd, lineExtra, marked, after }: Props = $props();
 
 	// Every line and condition in reading order, so terms are marked once across the text.
 	const pieces = $derived([
@@ -66,7 +68,7 @@
 	<StepLines {lettered}>
 		{#each lines as line, i (i)}
 			<StepLine marked={marked?.(first + i) ?? false}>
-				{@render text(line)}
+				{@render text(line)}{@render lineExtra?.(first + i)}
 				{#snippet end()}{@render lineEnd?.(first + i)}{/snippet}
 			</StepLine>
 		{/each}

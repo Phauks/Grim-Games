@@ -10,18 +10,14 @@ import { toBoard } from './new-game.ts';
 const PLAYER_SETTINGS = 'grim-games:player-settings:v1';
 
 /**
- * Found by this check on the board and not fixed yet: the Game over pill sits over the bottom
- * seats (it is held off the corner's size so ending the game moves nothing), and on a phone the
- * reminder bank's handle sits over New token. Fix one, take it off: the check fails until the
+ * Found by this check on the board and not fixed yet: on a phone the reminder bank's handle
+ * sits over New token. Fix one, take it off: the check fails until the
  * list matches exactly what it finds.
  */
 const BOARD_KNOWN: Record<string, { rest: string[]; ended: string[] }> = {
 	phone: {
 		rest: ['<button.new-token> "New token" covered by <button.handle> "Every reminder"'],
-		ended: [
-			'<button.seat> "Seat 5: no name, no character" covered by <span.game-over> "game-over"',
-			'<button.seat> "Seat 6: no name, no character" covered by <span.game-over> "game-over"'
-		]
+		ended: []
 	},
 	tablet: {
 		rest: [],

@@ -87,5 +87,8 @@
 			"stage": "demon-kills",
 			"after": "zombuul"
 		}
+	},
+	"tokenFlow": {
+		"tokens": ["Poisoned", "Dead"]
 	}
 }

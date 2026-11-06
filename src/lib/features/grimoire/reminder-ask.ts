@@ -4,7 +4,9 @@
  * dead, "Alive" on a dead one asks to revive them (reminderPrompt). A reminder of a character
  * whose player is dead asks before it is placed (Trevor, 2026-10-20). An ∞ token asks by the
  * words on it, as the reminder it copies when it is a copy (a Vortox "Dead" dropped on
- * "+ New token"), so a token that reads "Dead" always asks (M21, Trevor 2026-11-02).
+ * "+ New token"), so a token that reads "Dead" always asks (M21, Trevor 2026-11-02). A token
+ * that takes the place of an earlier one in its character's flow asks to take that one off
+ * (`replacedByFlow`: the Pixie's Has Ability after Mad; Trevor, 2026-11-06).
  */
 import type { CharacterId } from '#lib/core/data/index.ts';
 import type {
@@ -19,6 +21,7 @@ import {
 	promptApplies,
 	reminderOwnerDead,
 	reminderPrompt,
+	replacedByFlow,
 	type ReminderPrompt
 } from '#lib/core/rules/index.ts';
 import { reminderWords } from './reminders.ts';
@@ -37,6 +40,13 @@ export interface DeadAsk {
 	from?: SeatId;
 }
 
+/** Asks to take off the tokens a newly placed one takes the place of (`replacedByFlow`). */
+export interface FlowAsk {
+	seatId: SeatId;
+	reminder: ReminderInstance;
+	earlier: ReminderInstance[];
+}
+
 /** What the board looked like at the last look: each reminder at its seat. */
 export interface ReminderLook {
 	/** `reminderId@seatId` for every reminder on a seat. */
@@ -53,9 +63,10 @@ export function freshAsks(
 	game: Game,
 	characters: CharacterLookup,
 	before: ReminderLook | undefined
-): { asks: PromptAsk[]; dead: DeadAsk[]; look: ReminderLook } {
+): { asks: PromptAsk[]; dead: DeadAsk[]; flow: FlowAsk[]; look: ReminderLook } {
 	const asks: PromptAsk[] = [];
 	const dead: DeadAsk[] = [];
+	const flow: FlowAsk[] = [];
 	const look: ReminderLook = { seen: new Set(), where: {} };
 	for (const seatId of game.seating) {
 		const seat = game.seats[seatId];
@@ -66,6 +77,8 @@ export function freshAsks(
 			if (!before || before.seen.has(key)) continue;
 			if (reminderOwnerDead(game, reminder, characters))
 				dead.push({ reminder, seatId, from: before.where[reminder.reminderId] });
+			const earlier = replacedByFlow(game, seatId, reminder, characters);
+			if (earlier.length > 0) flow.push({ seatId, reminder, earlier });
 			const characterId = reminder.like?.characterId ?? reminder.characterId;
 			const prompt = reminderPrompt(reminderWords(reminder), characterId, characters);
 			// The Fang Gu's "Dead" names the Fang Gu as the cause (Trevor, 2026-10-23).
@@ -77,7 +90,7 @@ export function freshAsks(
 				});
 		}
 	}
-	return { asks, dead, look };
+	return { asks, dead, flow, look };
 }
 
 /** The dead seat a reminder belongs to, for the question's words. */

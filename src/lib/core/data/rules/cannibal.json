@@ -62,5 +62,14 @@
 		"zealot": {
 			"learns": "ability"
 		}
+	},
+	"afterExecution": {
+		"on": "executed",
+		"token": "Lunch",
+		"moves": true,
+		"marksSelf": {
+			"token": "Poisoned",
+			"alignment": "evil"
+		}
 	}
 }

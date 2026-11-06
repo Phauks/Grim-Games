@@ -3,7 +3,7 @@
 	import { roomImagePath } from '#lib/core/sync/room-images.ts';
 	import type { PlayersPhase } from '#lib/core/rules/game-phase.ts';
 	import { phaseText } from '#lib/features/grimoire/phase-text.ts';
-	import { t } from '#lib/i18n/locale.svelte.ts';
+	import { locale, t } from '#lib/i18n/locale.svelte.ts';
 	import Icon from '#lib/ui/icons/Icon.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
@@ -59,10 +59,14 @@
 		return item.kind === 'picture' || !item.read;
 	}
 
-	/** When it was sent: "Day 2", or nothing for a reported picture. */
+	/** When in the game it was sent: "Day 2", or "Message" from a room that didn't say. */
 	function when(item: InboxItem): string {
-		return item.kind === 'message' && item.phase ? phaseName(item.phase) : '';
+		if (item.kind === 'picture') return t('room.inbox.picture');
+		return item.phase ? phaseName(item.phase) : t('room.inbox.message');
 	}
+
+	/** The clock time it was sent (Trevor, 2026-11-06), in the device's own 12 or 24 hours. */
+	const clock = $derived(new Intl.DateTimeFormat(locale.current, { timeStyle: 'short' }));
 
 	function phaseName(phase: PlayersPhase): string {
 		if (phase.kind === 'setup') return phaseText(phase);
@@ -70,17 +74,30 @@
 	}
 </script>
 
-{#snippet who(item: InboxItem)}
-	<span class="who">
-		<span>{item.kind === 'picture' ? t('room.inbox.picture') : t('room.inbox.message')}</span>
-		{#if when(item)}<span class="when">{when(item)}</span>{/if}
+<!-- When it was sent and whether a consult was asked for, in a shaded band above the words
+     (Trevor, 2026-11-06, "A"): the same in the list and opened on its own. -->
+{#snippet meta(item: InboxItem, dot: boolean)}
+	<span class="meta" data-testid="inbox-meta">
+		{#if dot}
+			<!-- The dot's place is kept when it is off, so nothing shifts as boxes are read. -->
+			<span class="dot" class:on={isNew(item)}>
+				{#if isNew(item)}<span class="visually-hidden">{t('room.inbox.new')}</span>{/if}
+			</span>
+		{/if}
+		<span class="when" data-testid="inbox-when">{when(item)}</span>
+		{#if item.at !== undefined}<time
+				class="clock"
+				data-testid="inbox-time"
+				datetime={new Date(item.at).toISOString()}>{clock.format(item.at)}</time
+			>{/if}
+		{#if item.kind === 'message'}
+			<!-- Always said, either way (Trevor, 2026-11-06: "if they requested a consult or not"). -->
+			{#if item.consult}<span class="pill asked" data-testid="inbox-consult"
+					><Icon name="messages" />{t('room.inbox.consult')}</span
+				>{:else}<span class="pill" data-testid="inbox-no-consult">{t('room.inbox.noConsult')}</span
+				>{/if}
+		{/if}
 	</span>
-{/snippet}
-
-{#snippet consultLine()}
-	<span class="consult" data-testid="inbox-consult"
-		><Icon name="messages" />{t('room.inbox.consult')}</span
-	>
 {/snippet}
 
 {#if shown.length === 0}
@@ -97,16 +114,11 @@
 					data-testid="inbox-item"
 					onclick={() => open(item)}
 				>
-					<span class="top">
-						<!-- The dot's place is kept when it is off, so nothing shifts as boxes are read. -->
-						<span class="dot" class:on={isNew(item)}>
-							{#if isNew(item)}<span class="visually-hidden">{t('room.inbox.new')}</span>{/if}
-						</span>
-						{@render who(item)}
-					</span>
+					{@render meta(item, true)}
 					{#if item.kind === 'message'}
-						{#if item.consult}{@render consultLine()}{/if}
-						{#if item.text}<span class="preview">{item.text}</span>{/if}
+						{#if item.text}<span class="preview">{item.text}</span>{:else}<span
+								class="preview empty">{t('room.inbox.noWords')}</span
+							>{/if}
 					{:else}
 						<span class="preview">{t('room.inbox.reported', { count: item.count })}</span>
 					{/if}
@@ -124,20 +136,23 @@
 >
 	{#if opened}
 		<div class="opened" data-testid="inbox-opened">
-			{@render who(opened)}
-			{#if opened.kind === 'message'}
-				{#if opened.consult}{@render consultLine()}{/if}
-				{#if opened.text}<p class="text">{opened.text}</p>{/if}
-			{:else}
-				{#if host.code}
-					<img
-						class="picture"
-						src={roomImagePath(host.code, opened.hash)}
-						alt={t('room.pictureReport.picture', { name })}
-					/>
+			{@render meta(opened, false)}
+			<div class="body">
+				{#if opened.kind === 'message'}
+					{#if opened.text}<p class="text">{opened.text}</p>{:else}<p class="text empty">
+							{t('room.inbox.noWords')}
+						</p>{/if}
+				{:else}
+					{#if host.code}
+						<img
+							class="picture"
+							src={roomImagePath(host.code, opened.hash)}
+							alt={t('room.pictureReport.picture', { name })}
+						/>
+					{/if}
+					<p class="text">{t('room.inbox.reported', { count: opened.count })}</p>
 				{/if}
-				<p class="text">{t('room.inbox.reported', { count: opened.count })}</p>
-			{/if}
+			</div>
 		</div>
 	{/if}
 	{#snippet headActions()}
@@ -182,17 +197,21 @@
 	li {
 		display: grid;
 	}
-	/* Each message its own box (Trevor, 2026-10-28), as the notes' cards. */
-	.item {
+	/* Each message its own box (Trevor, 2026-10-28), as the notes' cards: when it was sent in a
+	   shaded band, the words below (Trevor, 2026-11-06, "A"). */
+	.item,
+	.opened {
 		display: grid;
-		gap: var(--space-1);
-		width: 100%;
-		min-height: var(--tap-target);
-		padding: var(--space-2) var(--space-3);
+		overflow: hidden;
 		border: 0.0625rem solid var(--border);
 		border-radius: var(--radius-md);
 		background: var(--surface-raised);
 		color: var(--on-surface);
+	}
+	.item {
+		width: 100%;
+		min-height: var(--tap-target);
+		padding: 0;
 		font: inherit;
 		text-align: left;
 		cursor: pointer;
@@ -204,11 +223,14 @@
 	.item[data-new] {
 		border-color: var(--accent);
 	}
-	.top {
+	.meta {
 		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
-		gap: var(--space-2);
-		min-width: 0;
+		gap: var(--space-1) var(--space-2);
+		padding: var(--space-2) var(--space-3);
+		border-bottom: 0.0625rem solid var(--border);
+		background: var(--surface);
 	}
 	.dot {
 		flex: none;
@@ -219,18 +241,33 @@
 	.dot.on {
 		background: var(--accent);
 	}
-	.who {
-		display: flex;
-		flex: 1;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-2);
-		min-width: 0;
-	}
 	.when {
-		flex: none;
-		font-size: 0.9rem;
+		font-weight: 700;
+		letter-spacing: 0.03em;
+	}
+	.clock {
 		color: var(--on-surface-muted);
+		font-variant-numeric: tabular-nums;
+	}
+	/* Consult, asked or not, at the band's end. */
+	.pill {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-1);
+		margin-left: auto;
+		padding: 0.1em 0.6em;
+		border: 0.0625rem solid var(--border);
+		border-radius: 999em;
+		color: var(--on-surface-muted);
+		font-size: 0.85rem;
+		white-space: nowrap;
+	}
+	/* A request to talk in private stands out from the words of the message. */
+	.pill.asked {
+		border-color: var(--accent);
+		background: var(--accent);
+		color: var(--on-accent);
+		font-weight: 600;
 	}
 	/* Two lines at most in the list; the whole message shows when it is opened. */
 	.preview {
@@ -240,19 +277,16 @@
 		line-clamp: 2;
 		overflow: hidden;
 		overflow-wrap: anywhere;
+		padding: var(--space-2) var(--space-3);
+	}
+	.empty {
 		color: var(--on-surface-muted);
+		font-style: italic;
 	}
-	/* A request to talk in private stands out from the words of the message. */
-	.consult {
-		display: flex;
-		align-items: center;
-		gap: var(--space-1);
-		font-weight: 600;
-		color: var(--accent);
-	}
-	.opened {
+	.body {
 		display: grid;
 		gap: var(--space-2);
+		padding: var(--space-3);
 	}
 	.text {
 		margin: 0;
