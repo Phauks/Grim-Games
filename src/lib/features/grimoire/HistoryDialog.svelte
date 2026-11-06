@@ -133,11 +133,11 @@
 <ConfirmDialog bind:open={confirmOpen} title="Restore?" onConfirm={confirm}>
 	{#if chosen}
 		<p>
-			{chosen.item.undone ? 'Restores' : 'Undoes'}
+			{chosen.item.undone ? 'Restore' : 'Undo'}
 			{changes}
-			{changes === 1 ? 'change' : 'changes'}, up to {chosen.item.undone
-				? 'and including'
-				: 'just before'}:
+			{changes === 1 ? 'change' : 'changes'}, {chosen.item.undone
+				? 'up to and including'
+				: 'back to just before'}:
 		</p>
 		<p class="target"><HistoryLine parts={chosen.item.parts} {characters} /></p>
 		<p class="note">

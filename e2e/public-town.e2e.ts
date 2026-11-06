@@ -278,7 +278,7 @@ test("every shared grim has the Storyteller's background, whatever the device's 
 		.tap();
 	await settings
 		.getByRole('group', { name: 'Background', exact: true })
-		.getByRole('button', { name: 'Green felt' })
+		.getByRole('button', { name: 'Felt', exact: true })
 		.tap();
 	await settings.getByRole('button', { name: 'Close' }).tap();
 	await expect(page.getByTestId('board-background')).toHaveAttribute('data-preset', 'felt');
@@ -321,9 +321,9 @@ test("every shared grim has the Storyteller's background, whatever the device's 
 		.tap();
 	await settings
 		.getByRole('group', { name: 'Background', exact: true })
-		.getByRole('button', { name: 'Night sky' })
+		.getByRole('button', { name: 'Velvet' })
 		.tap();
-	await expect(town.getByTestId('preview-background')).toHaveAttribute('data-preset', 'night');
+	await expect(town.getByTestId('preview-background')).toHaveAttribute('data-preset', 'velvet');
 
 	// A picture of the Storyteller's own goes up to the room for the table (Trevor, 2026-10-26:
 	// "Images should be uploaded and shared for background"). A 2×2 PNG, as if from the library.

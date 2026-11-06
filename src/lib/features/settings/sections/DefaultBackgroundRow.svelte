@@ -6,7 +6,7 @@
 		type BackgroundChoice
 	} from '#lib/features/grimoire/backgrounds.ts';
 	import BackgroundTiles from '#lib/features/grimoire/BackgroundTiles.svelte';
-	import MovingCustomise from '#lib/features/grimoire/moving/MovingCustomise.svelte';
+	import BackgroundCustomise from '#lib/features/grimoire/BackgroundCustomise.svelte';
 	import { defaultBackground } from '#lib/features/grimoire/default-background.svelte.ts';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
@@ -54,7 +54,7 @@
 			onChoose={(choice) => choose(choice.kind === 'none' ? undefined : choice)}
 		/>
 		<div class="choices">
-			<MovingCustomise {current} onSave={choose} />
+			<BackgroundCustomise {current} onSave={choose} />
 			<Button icon="add" aria-pressed={current?.kind === 'image'} onclick={() => input?.click()}>
 				{current?.kind === 'image'
 					? t('settings.backgroundYourImage')

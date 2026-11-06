@@ -289,7 +289,7 @@ test("the grim cover's Player view is the board's Script, seat for seat", async 
 		.tap();
 	await settings
 		.getByRole('group', { name: 'Background', exact: true })
-		.getByRole('button', { name: 'Green felt' })
+		.getByRole('button', { name: 'Felt', exact: true })
 		.tap();
 	await settings.getByRole('button', { name: 'Close' }).first().tap();
 	await expect(settings).toBeHidden();

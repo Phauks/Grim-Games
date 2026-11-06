@@ -216,9 +216,16 @@ export const ROADMAP: readonly RoadmapItem[] = [
 	{
 		// M43 (Trevor, 2026-11-03): tried in the background playground first; the Storyteller's
 		// is shared with every phone, which can hold it still (2026-11-05).
-		title: 'Moving board backgrounds: Vortex, Fire, Rain, Stars and Yin-yang',
+		title: 'Animated board backgrounds: Vortex, Fire, Rain, Stars and Yin-yang',
 		area: 'storyteller',
 		parts: ['M43']
+	},
+	{
+		// M72 (Trevor, 2026-11-06): Felt, Parchment, Stone and Velvet, each with its own
+		// colour, light and texture, shown apart from the animated ones.
+		title: 'Still board backgrounds you can customise: Felt, Parchment, Stone and Velvet',
+		area: 'storyteller',
+		parts: ['M72']
 	},
 	{
 		title: 'Savant information: generated, typed or shown to the player',

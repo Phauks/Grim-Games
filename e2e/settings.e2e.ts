@@ -181,7 +181,7 @@ test('Storyteller settings is a list of switches, saved on the device', async ({
 test('the board looks and background are in Board, saved with the board', async ({ page }) => {
 	await page.goto('/');
 	const dialog = await openSettings(page, 'Board');
-	const felt = dialog.getByRole('button', { name: 'Green felt' });
+	const felt = dialog.getByRole('button', { name: 'Felt', exact: true });
 	await expect(felt).toHaveAttribute('aria-pressed', 'false');
 	await felt.tap();
 	await expect(felt).toHaveAttribute('aria-pressed', 'true');
@@ -223,7 +223,7 @@ test('the board looks and background are in Board, saved with the board', async 
 
 	await page.reload();
 	const again = await openSettings(page, 'Board');
-	await expect(again.getByRole('button', { name: 'Green felt' })).toHaveAttribute(
+	await expect(again.getByRole('button', { name: 'Felt', exact: true })).toHaveAttribute(
 		'aria-pressed',
 		'true'
 	);
@@ -665,7 +665,7 @@ test('Board settings show their looks in a live preview', async ({ page }) => {
 	const preview = dialog.getByTestId('board-preview');
 	await expect(preview.getByTestId('token-player-name')).toHaveCount(2);
 	await expect(preview.getByTestId('preview-background')).toHaveCount(0);
-	await dialog.getByRole('button', { name: 'Green felt' }).tap();
+	await dialog.getByRole('button', { name: 'Felt', exact: true }).tap();
 	await expect(preview.getByTestId('preview-background')).toHaveAttribute('data-preset', 'felt');
 	const vignette = preview.getByTestId('preview-vignette');
 	await expect(vignette).toBeAttached();
