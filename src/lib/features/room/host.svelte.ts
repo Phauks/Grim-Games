@@ -62,6 +62,7 @@ import { applyTravellerPicks } from './host-traveller-pick.ts';
 import { STORAGE_KEY, type StoredRoom } from './host-storage.ts';
 import { RolesShown } from './roles-shown.svelte.ts';
 import { boardPlaces, grantSit } from './host-seating.ts';
+import type { TimerSound } from '#lib/ui/preferences.ts';
 
 /** Changes are gathered for this long before the grimoire is sent to viewers again. */
 const GRIMOIRE_DELAY_MS = 300;
@@ -466,8 +467,9 @@ export class RoomHost {
 	 * Calls every player back to town (plan U2): each phone in the room sounds and vibrates.
 	 * False when the room can't be reached.
 	 */
-	callTown(): boolean {
-		const sent = this.#socket?.send({ type: 'call-town' }) ?? false;
+	/** `sound`: the Storyteller's pick for every phone; none leaves each phone its own. */
+	callTown(sound?: TimerSound): boolean {
+		const sent = this.#socket?.send({ type: 'call-town', ...(sound ? { sound } : {}) }) ?? false;
 		// The rest of the day is Town on players' phones (Trevor, 2026-10-26).
 		const day = this.#phase?.phase;
 		if (sent && day?.kind === 'day')

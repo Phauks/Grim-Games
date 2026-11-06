@@ -170,8 +170,11 @@ export type ClientMessage =
 	| { type: 'close-script-vote' }
 	/** Each seat's own character while players may see them; `show: false` takes them back. */
 	| { type: 'roles'; gameId: string; show: boolean; roles?: Record<SeatId, SeatRole> }
-	/** Calls every player back to town: their phones sound and vibrate (plan U2). */
-	| { type: 'call-town' }
+	/**
+	 * Calls every player back to town: their phones sound and vibrate (plan U2). `sound` is the
+	 * Storyteller's pick (Trevor, 2026-11-06); without one each phone plays its own.
+	 */
+	| { type: 'call-town'; sound?: string }
 	/**
 	 * Soundboard sounds for the room's devices to play (plan U10): `to` names them, and older
 	 * apps, which send none, reach the Public Town alone.
@@ -354,9 +357,10 @@ export type ServerMessage =
 	| { type: 'watchers'; count: number }
 	/**
 	 * To the players: the Storyteller calls everyone back to town (plan U2). Sent once, never
-	 * kept, so a phone that joins later doesn't sound; older apps ignore it.
+	 * kept, so a phone that joins later doesn't sound; older apps ignore it. `sound`, when the
+	 * Storyteller picked one, is played in place of the phone's own Back to town sound.
 	 */
-	| { type: 'call-town' }
+	| { type: 'call-town'; sound?: string }
 	/** To the Public Town or phones: play, stop, pause or resume soundboard sounds (plan U10). */
 	| ({ type: 'town-sound' } & TownSoundCommand)
 	/**
