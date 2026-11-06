@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { preloadCode } from '$app/navigation';
 	import { t } from '#lib/i18n/locale.svelte.ts';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
@@ -20,9 +18,6 @@
 
 	let { session }: Props = $props();
 	let open = $state(false);
-	// Load game goes to the board: its code is fetched now, so the tap doesn't wait for it
-	// (load timing, 2026-11-06: about 0.4 s on a slow phone). A failed fetch is tried again then.
-	onMount(() => void preloadCode('/grimoire/[gameId]').catch(() => {}));
 </script>
 
 <nav class="lab-dock pinned-bottom" aria-label={t('lab.title')}>
