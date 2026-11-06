@@ -17,6 +17,7 @@
 	import type { BotcScriptsEntry } from './botcscripts-api.ts';
 	import { botcCard } from './botcscripts-cards.ts';
 	import ScriptName from './ScriptName.svelte';
+	import { pinnedRow } from '#lib/ui/layout/pinned.ts';
 
 	/**
 	 * One script's details beside the list on the Scripts page (Trevor, 2026-10-16: script info
@@ -55,20 +56,13 @@
 		$props();
 
 	const card = $derived(data ? botcCard(entries, data) : undefined);
-
-	/**
-	 * The sheet's pinned type headings stop under the pinned header, not over the title, and
-	 * are filled with the card's colour (Trevor, 2026-11-05: Townsfolk covered the name).
-	 */
-	let topHeight = $state(0);
 </script>
 
-<div
-	class="details"
-	data-testid="script-details"
-	style:--top-height={topHeight > 0 ? `${topHeight}px` : undefined}
->
-	<div class="top pinned" data-testid="script-details-top" bind:offsetHeight={topHeight}>
+<!-- The sheet's pinned type headings stop under the pinned header, not over the title
+     (pinnedRow), and are filled with the card's colour (Trevor, 2026-11-05: Townsfolk covered
+     the name). -->
+<div class="details" data-testid="script-details">
+	<div class="top pinned" data-testid="script-details-top" {@attach pinnedRow}>
 		{@render lead?.()}
 		<div class="titles">
 			<h2>{heading}</h2>
@@ -126,7 +120,6 @@
 
 <style>
 	.details {
-		--pin-top: calc(var(--top-height, 0rem) - var(--pinned-inset, 0rem));
 		--pin-background: var(--card-background);
 		display: grid;
 		gap: var(--space-2);
@@ -143,7 +136,9 @@
 		top: calc(-1 * var(--pinned-inset, 0rem));
 		/* Above the sheet's pinned type headings as one leaves its section. */
 		z-index: var(--z-pinned-bar);
-		margin-top: calc(-1 * var(--pinned-inset, 0rem)); /* overlap-ok: gives back the padding the pinned header covers */
+		margin-top: calc(
+			-1 * var(--pinned-inset, 0rem)
+		); /* overlap-ok: gives back the padding the pinned header covers */
 		padding-top: var(--pinned-inset, 0);
 		padding-bottom: var(--space-2);
 		border-bottom: var(--card-border);

@@ -56,6 +56,7 @@
 	import RuleCharacterUse from './RuleCharacterUse.svelte';
 	import JinxStopChips, { jinxStopRows } from './JinxStopChips.svelte';
 	import BorrowedAbilityRows from './BorrowedAbilityRows.svelte';
+	import { pinnedRow } from '#lib/ui/layout/pinned.ts';
 
 	interface Props {
 		game: DayPort;
@@ -267,10 +268,6 @@
 	}
 	/** Votes for the first nominee, from who is alive now (core `blockThreshold`). */
 	const block = $derived(blockThreshold(g, game.characters));
-	/** Section headers stick just under the toolbar (Trevor, 2026-10-17). */
-	let toolbarSize = $state<ResizeObserverSize[]>();
-	// The exact (fractional) height: a rounded one leaves a sliver between toolbar and header.
-	const toolbarHeight = $derived(toolbarSize?.[0]?.blockSize ?? 0);
 	// ── A player's day button, on their ability row ──
 	/** The claim a character's player makes in town, from its rules block (L56). */
 	const claimOf = (characterId: CharacterId | undefined) =>
@@ -434,9 +431,10 @@
 	{/if}
 {/snippet}
 
-<div class="panel" style:--toolbar-height={`${toolbarHeight}px`}>
-	<!-- Stays in view while the day scrolls (Trevor, 2026-10-17). -->
-	<div class="toolbar" data-testid="day-toolbar" bind:borderBoxSize={toolbarSize}>
+<div class="panel">
+	<!-- Stays in view while the day scrolls (Trevor, 2026-10-17); the section headers pin
+	     under it (pinnedRow). -->
+	<div class="toolbar" data-testid="day-toolbar" {@attach pinnedRow}>
 		<DayTimer alive={block.alive} {quiet} {town} />
 		{#if onOpenNight}
 			<Button icon="night" onclick={onOpenNight}>{t('day.nightOrder')}</Button>
@@ -690,7 +688,7 @@
 	.sections > :global(.collapsible > .head) {
 		position: sticky;
 		/* Tucked 1px under the toolbar, so no scrolled content shows between them (Trevor). */
-		top: calc(var(--toolbar-height, 0px) - 1px); /* px-ok: hairline overlap */
+		top: calc(var(--pin-top, 0rem) - 1px); /* px-ok: hairline overlap */
 		z-index: var(--z-pinned);
 		background: var(--dialog-background, var(--surface));
 	}
@@ -781,9 +779,6 @@
 	@container day (min-width: 60rem) {
 		.panel {
 			grid-template-columns: minmax(22rem, 1fr) minmax(0, 2fr);
-		}
-		.sections {
-			--toolbar-height: 0px; /* px-ok: nothing above the section headers here */
 		}
 	}
 	/* Reads as the sentence's own words, underlined as something to tap. */
