@@ -53,6 +53,26 @@ test.describe('on a laptop with a scrollbar beside the page', () => {
 		await page.mouse.wheel(0, 400);
 		expect(await page.evaluate(() => window.scrollY)).toBe(0);
 	});
+
+	test('the Library scrolls inside its own window, never the page', async ({ page }) => {
+		// Trevor (2026-11-06): "the scrollbar should be within the library".
+		test.skip(test.info().project.name !== 'tablet', 'one laptop run is enough');
+		await page.goto('/library');
+		const newFolder = page.getByRole('button', { name: 'New folder', exact: true });
+		for (let i = 0; i < 20; i++) await newFolder.click();
+		const list = page.getByTestId('library-table').locator('.scroll');
+		await expect.poll(() => list.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
+		// No page scrollbar takes room at the screen's edge, and the wheel moves the list.
+		expect(await scrolls(page)).toBe(false);
+		expect(await page.evaluate(() => document.documentElement.clientWidth)).toBe(1366);
+		await list.hover();
+		await page.mouse.wheel(0, 2000);
+		await expect.poll(() => list.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+		expect(await page.evaluate(() => window.scrollY)).toBe(0);
+		// The window ends on the screen: its bottom edge is in view.
+		const frame = await page.getByTestId('library-table').boundingBox();
+		expect((frame?.y ?? 0) + (frame?.height ?? 0)).toBeLessThanOrEqual(768);
+	});
 });
 
 /** Whether the page is taller than the window. */

@@ -6,6 +6,9 @@
  * is always possible too: the Folder drop-down and Move.
  */
 
+// Dragging: the row's name follows the finger, and the folder under it is outlined.
+import '#lib/features/library/drag-to-folder.css';
+
 /** The top level, as a drop target's `data-drop-folder`. */
 export const TOP_FOLDER = 'top';
 
