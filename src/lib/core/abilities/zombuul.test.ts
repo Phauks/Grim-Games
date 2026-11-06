@@ -163,6 +163,20 @@ describe('Zombuul', () => {
 			expect(diedToday(scenario(cast).newDay().execute('chef'), 'chef')).toHaveLength(1);
 		});
 
+		it('marks whoever dies another way during the day', () => {
+			// Wiki: "Each day, if a player dies, mark them with the DIED TODAY reminder."
+			const s = scenario(cast)
+				.newDay()
+				.do((at) => ({
+					type: 'SetDead',
+					seatId: at.seat('chef'),
+					dead: true,
+					cause: 'other',
+					day: true
+				}));
+			expect(diedToday(s, 'chef')).toHaveLength(1);
+		});
+
 		it('marks the Zombuul when the Zombuul is executed', () => {
 			// Wiki: "If the Zombuul “dies” by execution, they register as dead, so mark the Zombuul with
 			// the DIED TODAY reminder."

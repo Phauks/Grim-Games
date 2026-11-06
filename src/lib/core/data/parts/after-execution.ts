@@ -22,6 +22,8 @@ import { objectPart } from './part.ts';
  * - `moves`: with `on: executed`, a token already out moves to the new executed player (the
  *   Cannibal's Lunch); without it, a token already out stays and none is added (the
  *   Leviathan's first Good Player Executed).
+ * - `when: day`: any death during the day counts, not only an execution (the Godfather's
+ *   Outsider who dies during the day, the Zombuul's Died Today).
  * - `marksSelf`: with `on: executed`, its own `token` also goes on its own player when the
  *   executed player has this `alignment`, and comes off when they don't (the Cannibal's
  *   Poisoned after an evil lunch).
@@ -33,6 +35,7 @@ export interface AfterExecution {
 	on?: 'executed';
 	moves?: true;
 	marksSelf?: { token: ReminderLabel; alignment: Alignment };
+	when?: 'day';
 }
 
 /** Its token goes on the board when a player dies by execution. */
@@ -44,11 +47,12 @@ export const afterExecution = objectPart(
 			issues.add(path, `expected object, got ${describe(raw)}`);
 			return undefined;
 		}
-		checkKeys(raw, ['of', 'alignment', 'token', 'on', 'moves', 'marksSelf'], path, issues);
+		checkKeys(raw, ['of', 'alignment', 'token', 'on', 'moves', 'marksSelf', 'when'], path, issues);
 		const of = readEnum(raw, 'of', CHARACTER_TYPES, path, issues, false);
 		const alignment = readEnum(raw, 'alignment', ALIGNMENTS, path, issues, false);
 		const on = readEnum(raw, 'on', ['executed'] as const, path, issues, false);
 		const moves = readBoolean(raw, 'moves', path, issues);
+		const when = readEnum(raw, 'when', ['day'] as const, path, issues, false);
 		const token = readToken(raw, 'token', path, issues, reminders);
 		if (raw.token === undefined) issues.add(`${path}.token`, 'missing');
 		if (moves && !on) issues.add(`${path}.moves`, 'only with "on": "executed"');
@@ -61,7 +65,8 @@ export const afterExecution = objectPart(
 			token,
 			...(on ? { on } : {}),
 			...(moves && on ? { moves } : {}),
-			...(marksSelf && on ? { marksSelf } : {})
+			...(marksSelf && on ? { marksSelf } : {}),
+			...(when ? { when } : {})
 		};
 	}
 );

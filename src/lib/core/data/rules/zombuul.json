@@ -75,6 +75,7 @@
 	},
 	"afterExecution": {
 		"on": "executed",
-		"token": "Died Today"
+		"token": "Died Today",
+		"when": "day"
 	}
 }

@@ -91,6 +91,7 @@
 	"afterExecution": {
 		"of": "outsider",
 		"on": "executed",
-		"token": "Died Today"
+		"token": "Died Today",
+		"when": "day"
 	}
 }

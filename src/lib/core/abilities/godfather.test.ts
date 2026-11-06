@@ -163,5 +163,30 @@ describe('Godfather', () => {
 			expect(diedToday(scenario(cast).execute('saint'), 'saint')).toHaveLength(1);
 			expect(diedToday(scenario(cast).execute('chef'), 'chef')).toEqual([]);
 		});
+
+		it('marks an Outsider who dies another way during the day, but not at night', () => {
+			// Wiki: "If an Outsider dies during the day, mark them with the DIED TODAY reminder."
+			const day = (s: ReturnType<typeof scenario>, dayTime: boolean) =>
+				s.newDay().do((at) => ({
+					type: 'SetDead',
+					seatId: at.seat('saint'),
+					dead: true,
+					cause: 'other',
+					...(dayTime ? { day: true as const } : {})
+				}));
+			expect(diedToday(day(scenario(cast), true), 'saint')).toHaveLength(1);
+			expect(diedToday(day(scenario(cast), false), 'saint')).toEqual([]);
+			// The Demon's kill is never a daytime death.
+			const killed = scenario(cast)
+				.newDay()
+				.do((at) => ({
+					type: 'SetDead',
+					seatId: at.seat('saint'),
+					dead: true,
+					cause: 'demon',
+					day: true
+				}));
+			expect(diedToday(killed, 'saint')).toEqual([]);
+		});
 	});
 });
