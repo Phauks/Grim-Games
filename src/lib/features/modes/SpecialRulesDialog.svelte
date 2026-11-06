@@ -53,7 +53,12 @@
 		/** Add mode, which also takes a rule file. */
 		onadd: () => void;
 		/** The characters with an optional rule, each on or off for this game. */
-		optionalRules?: readonly { characterId: CharacterId; character?: Character; on: boolean }[];
+		optionalRules?: readonly {
+			characterId: CharacterId;
+			character?: Character;
+			on: boolean;
+			text?: string;
+		}[];
 		onOptionalRule?: (characterId: CharacterId, on: boolean) => void;
 	}
 
@@ -194,7 +199,9 @@
 						{/if}
 						<div class="row own">
 							<p class="rule">
-								{(rule.character && optionalRuleText(rule.character)) ?? t('modes.optionalRule')}
+								{rule.text ??
+									(rule.character && optionalRuleText(rule.character)) ??
+									t('modes.optionalRule')}
 							</p>
 							<Toggle
 								label={t('modes.optionalRuleOf', { name })}
