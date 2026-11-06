@@ -272,13 +272,21 @@ test('the bag draw opens Seating as Character selection does, and Done comes bac
 		);
 		expect(covered).toBe(name);
 	}
-	// Six buttons never break "Draw" mid-word: it goes under them when it can't sit beside them.
-	const lines = await page.getByRole('heading', { level: 1 }).evaluate((h) => {
+	// Six buttons still leave "Draw" its line beside them, never broken mid-word.
+	const lines = await page.getByRole('heading', { level: 1, name: 'Draw' }).evaluate((h) => {
+		const walker = document.createTreeWalker(h, NodeFilter.SHOW_TEXT);
+		let text = walker.nextNode();
+		while (text && !text.textContent?.trim()) text = walker.nextNode();
 		const range = document.createRange();
-		range.selectNodeContents(h);
-		return new Set([...range.getClientRects()].map((r) => Math.round(r.top))).size;
+		range.selectNodeContents(text!);
+		return range.getClientRects().length;
 	});
 	expect(lines).toBe(1);
+	// And on the line of the buttons (setup.e2e: "Draw keeps its cog and Share on the heading line").
+	const title = (await page.getByRole('heading', { level: 1, name: 'Draw' }).boundingBox())!;
+	const seatingBox = (await seating.boundingBox())!;
+	expect(seatingBox.y + seatingBox.height / 2).toBeGreaterThan(title.y);
+	expect(seatingBox.y + seatingBox.height / 2).toBeLessThan(title.y + title.height);
 	await seating.tap();
 	// Arranging seats is not leaving the draw, so it doesn't ask.
 	await expect(page.getByRole('alertdialog')).toHaveCount(0);

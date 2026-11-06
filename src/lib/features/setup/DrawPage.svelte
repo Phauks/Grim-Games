@@ -338,9 +338,7 @@
 
 <svelte:window onkeydown={onWindowKey} />
 
-<!-- Six title buttons since Seating joined them (Trevor, 2026-11-06): "Draw" goes under them
-     when it can't sit beside them at full size, and room for all six is kept while locked. -->
-<Page {title} iconActions titleBelow actionSlots={6}>
+<Page {title} iconActions>
 	{#snippet lead()}
 		{#if locked}<ScriptName name={script?.name} {logo} size="lead" />{/if}
 	{/snippet}
