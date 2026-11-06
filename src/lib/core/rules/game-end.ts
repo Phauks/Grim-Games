@@ -33,6 +33,7 @@ import type { Game, SeatId } from '#lib/core/model/types.ts';
 import { abilityState, type AbilitySource } from './ability.ts';
 import { isExecution } from './death-causes.ts';
 import { jinxEnds } from './jinx-ends.ts';
+import { conditionEnds } from './game-end-conditions.ts';
 import { deadWithoutDemon } from './dead-without-demon.ts';
 import { jinxEffect } from './jinxes.ts';
 import { rebirthOf } from './reincarnation.ts';
@@ -333,24 +334,6 @@ function twoAlive(game: Game, characters: CharacterLookup): GameEnd[] {
 	];
 }
 
-/** Its player died by execution, so their team loses (the Saint). */
-function executedLoses(game: Game, characters: CharacterLookup): GameEnd[] {
-	return endsOf(game, characters, 'executed-loses')
-		.filter(
-			({ seatId }) =>
-				game.seats[seatId].dead && isExecution(game.seats[seatId].deathCause, characters)
-		)
-		.map(({ seatId, characterId }) => ({
-			key: `executed-loses:${seatId}`,
-			rule: 'executed-loses',
-			winner: losesFor(game, seatId),
-			characterId,
-			seats: [seatId],
-			wiki: wikiOf(characterId, characters),
-			holds: impaired(game, seatId, characterId, characters)
-		}));
-}
-
 /**
  * Of its player and the player with its token, the one not on the winning team was executed
  * while the other lives: the good twin, who is whichever twin is good, even a good-aligned Evil
@@ -380,131 +363,6 @@ function markedExecuted(game: Game, characters: CharacterLookup): GameEnd[] {
 				wiki: wikiOf(characterId, characters),
 				holds: impaired(game, seatId, characterId, characters)
 			});
-		}
-	}
-	return out;
-}
-
-/** While its player lives, a day ended with no execution (the Vortox; exile doesn't count). */
-function dayWithoutExecution(
-	game: Game,
-	characters: CharacterLookup,
-	options: GameEndOptions
-): GameEnd[] {
-	const found = endsOf(game, characters, 'day-without-execution').find(({ seatId }) =>
-		aliveForEnd(game, seatId, characters)
-	);
-	if (found === undefined) return [];
-	const logs = days(game);
-	const day = endedDays(game, options).find((d) => executedOn(logs[d]).length === 0);
-	if (day === undefined) return [];
-	const { seatId, characterId, rule } = found;
-	return [
-		{
-			key: `day-without-execution:${day}`,
-			rule: 'day-without-execution',
-			winner: rule.winner!,
-			characterId,
-			seats: [seatId],
-			day,
-			wiki: wikiOf(characterId, characters),
-			holds: impaired(game, seatId, characterId, characters)
-		}
-	];
-}
-
-/**
- * At dusk with exactly so many alive (Travellers count) and no execution today, its living
- * player's team wins (the Mayor with 3; a drunk Mayor is the Drunk, so it doesn't apply:
- * https://wiki.bloodontheclocktower.com/Mayor).
- */
-function aliveAtDusk(game: Game, characters: CharacterLookup, options: GameEndOptions): GameEnd[] {
-	if (!options.dayEnded || game.pastDays.length < 1) return [];
-	if (executedOn(game.today).length > 0) return [];
-	const alive = game.seating.filter((id) => aliveForEnd(game, id, characters));
-	return endsOf(game, characters, 'alive-at-dusk')
-		.filter(({ seatId, rule }) => alive.length === rule.alive && alive.includes(seatId))
-		.map(({ seatId, characterId }) => ({
-			key: `alive-at-dusk:${game.pastDays.length}`,
-			rule: 'alive-at-dusk',
-			winner: alignmentOf(game, seatId) ?? 'good',
-			characterId,
-			seats: [seatId],
-			day: game.pastDays.length,
-			wiki: wikiOf(characterId, characters),
-			holds: impaired(game, seatId, characterId, characters)
-		}));
-}
-
-/**
- * While its player lives: enough players of an alignment executed, or the player alive at the
- * end of a day, wins (the Leviathan's second good execution and day 5,
- * https://wiki.bloodontheclocktower.com/Leviathan). The alignment is the one the rules use now.
- */
-function whileAlive(game: Game, characters: CharacterLookup, options: GameEndOptions): GameEnd[] {
-	const out: GameEnd[] = [];
-	for (const { seatId, characterId, rule } of endsOf(game, characters, 'executions-of-alignment')) {
-		if (!aliveForEnd(game, seatId, characters)) continue;
-		const executed = days(game)
-			.flatMap(executedOn)
-			.filter((id) => alignmentOf(game, id) === rule.alignment)
-			.slice(0, rule.count);
-		if (executed.length < rule.count!) continue;
-		out.push({
-			key: `executions-of-alignment:${executed.join(',')}`,
-			rule: 'executions-of-alignment',
-			winner: rule.winner!,
-			characterId,
-			seats: executed,
-			wiki: wikiOf(characterId, characters),
-			holds: impaired(game, seatId, characterId, characters)
-		});
-	}
-	for (const { seatId, characterId, rule } of endsOf(game, characters, 'survives-day')) {
-		if (!aliveForEnd(game, seatId, characters)) continue;
-		if (!endedDays(game, options).includes(rule.day!)) continue;
-		out.push({
-			key: `survives-day:${rule.day}`,
-			rule: 'survives-day',
-			winner: rule.winner!,
-			characterId,
-			seats: [seatId],
-			day: rule.day,
-			wiki: wikiOf(characterId, characters),
-			holds: impaired(game, seatId, characterId, characters)
-		});
-	}
-	return out;
-}
-
-/**
- * Its player nominated and executed the player with its token, whose team loses (the
- * Fearmonger's "Fear": https://wiki.bloodontheclocktower.com/Fearmonger).
- */
-function nominatedMarkedExecuted(game: Game, characters: CharacterLookup): GameEnd[] {
-	const out: GameEnd[] = [];
-	for (const { seatId, characterId, rule } of endsOf(
-		game,
-		characters,
-		'nominated-marked-executed'
-	)) {
-		const marked = carrying(game, characterId, rule.token!);
-		for (const log of days(game)) {
-			const executed = executedOn(log);
-			for (const entry of log.entries) {
-				if (entry.kind !== 'nomination' || entry.nominator !== seatId) continue;
-				const target = entry.nominee;
-				if (!marked.includes(target) || !executed.includes(target)) continue;
-				out.push({
-					key: `nominated-marked-executed:${target}`,
-					rule: 'nominated-marked-executed',
-					winner: losesFor(game, target),
-					characterId,
-					seats: [target, seatId],
-					wiki: wikiOf(characterId, characters),
-					holds: impaired(game, seatId, characterId, characters)
-				});
-			}
 		}
 	}
 	return out;
@@ -578,59 +436,6 @@ function usedOnLoses(game: Game, characters: CharacterLookup): GameEnd[] {
 		}
 	}
 	return out;
-}
-
-/**
- * Its player carries its own token and was executed, so their team wins (the Goblin who
- * claimed when nominated, marked "Claimed": https://wiki.bloodontheclocktower.com/Goblin).
- * Another player with the token (a false claim) wins nothing.
- */
-function executedWithToken(game: Game, characters: CharacterLookup): GameEnd[] {
-	return endsOf(game, characters, 'executed-with-token')
-		.filter(
-			({ seatId, characterId, rule }) =>
-				game.seats[seatId].dead &&
-				isExecution(game.seats[seatId].deathCause, characters) &&
-				carrying(game, characterId, rule.token!).includes(seatId)
-		)
-		.map(({ seatId, characterId }) => ({
-			key: `executed-with-token:${seatId}`,
-			rule: 'executed-with-token',
-			winner: alignmentOf(game, seatId) ?? 'good',
-			characterId,
-			seats: [seatId],
-			wiki: wikiOf(characterId, characters),
-			holds: impaired(game, seatId, characterId, characters)
-		}));
-}
-
-/**
- * While its player lives, at most so many players of an alignment live, Travellers not
- * counted: Legion with one good player left, when the Storyteller may declare evil the winner
- * (https://wiki.bloodontheclocktower.com/Legion). Offered, never forced.
- */
-function alignmentAlive(game: Game, characters: CharacterLookup): GameEnd[] {
-	const found = endsOf(game, characters, 'alignment-alive').find(({ seatId }) =>
-		aliveForEnd(game, seatId, characters)
-	);
-	if (found === undefined) return [];
-	const { seatId, characterId, rule } = found;
-	const alive = aliveNonTravellers(game, characters);
-	// A living seat with no alignment yet (no character) is unknown, so this can't be judged.
-	if (alive.some((id) => alignmentOf(game, id) === undefined)) return [];
-	const left = alive.filter((id) => alignmentOf(game, id) === rule.alignment);
-	if (left.length > rule.alive!) return [];
-	return [
-		{
-			key: `alignment-alive:${left.join(',')}`,
-			rule: 'alignment-alive',
-			winner: rule.winner!,
-			characterId,
-			seats: left,
-			wiki: wikiOf(characterId, characters),
-			holds: impaired(game, seatId, characterId, characters)
-		}
-	];
 }
 
 /**
@@ -712,24 +517,27 @@ export function gameEnds(
 		carrying: (characterId, label) => carrying(game, characterId, label),
 		wiki: (characterId) => wikiOf(characterId, characters)
 	});
+	const condition = (...kinds: string[]) =>
+		conditionEnds(game, characters, options, (r) => kinds.includes(r.preset ?? 'condition'));
 	out.push(
-		...executedLoses(game, characters),
+		...condition('executed-loses'),
 		...markedExecuted(game, characters),
-		...nominatedMarkedExecuted(game, characters),
+		...condition('nominated-marked-executed'),
 		...jinxed.ends,
 		// A jinx end on a day replaces the character's own end that day (the Leviathan's day 5
 		// with the Mayor alive and no execution).
-		...whileAlive(game, characters, options).filter(
+		...condition('executions-of-alignment', 'survives-day').filter(
 			(e) => !jinxed.replaced.has(`${e.characterId}:${e.day}`)
 		),
-		...dayWithoutExecution(game, characters, options),
-		...aliveAtDusk(game, characters, options),
+		...condition('day-without-execution'),
+		...condition('alive-at-dusk'),
 		...deadWithoutDemon(game, characters),
 		...usedOnLoses(game, characters),
-		...executedWithToken(game, characters),
-		...alignmentAlive(game, characters),
+		...condition('executed-with-token'),
+		...condition('alignment-alive'),
 		...guessesEvilTeam(game, characters),
-		...cultJoined(game, characters)
+		...cultJoined(game, characters),
+		...condition('condition')
 	);
 	// A dead Demon wins it for good before "just 2 alive" can.
 	if (demon.length === 0) out.push(...twoAlive(game, characters));

@@ -15,7 +15,9 @@ test("a page whose build's files are gone loads afresh instead of failing", asyn
 	let gone = true;
 	let freshLoads = 0;
 	page.on('request', (request) => {
-		if (request.isNavigationRequest() && request.resourceType() === 'document') {
+		// The page's own load; the Character Analyzer's game frame loads a document of its own.
+		const own = request.frame() === page.mainFrame();
+		if (own && request.isNavigationRequest() && request.resourceType() === 'document') {
 			gone = false;
 			freshLoads++;
 		}

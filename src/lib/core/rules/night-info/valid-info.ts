@@ -2,7 +2,6 @@
  * Night information: every valid piece of information for an info picker, grouped for
  * display. Part of `picker.ts`.
  */
-import type { Learns } from '#lib/core/data/character-rules.ts';
 import type { CharacterId } from '#lib/core/data/types.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 import type { InfoOption, InfoPicker } from './picker.ts';
@@ -56,10 +55,10 @@ export interface ValidInfo {
 }
 
 /** The highest number a number picker could show, for listing every valid one. */
-function highestNumber(game: Game, measure: Learns['measure']): number {
+function highestNumber(game: Game, picker: InfoPicker): number {
 	const n = game.seating.length;
-	if (measure === 'evil-alive-neighbours' || measure === 'woke-tonight') return 2;
-	if (measure === 'demon-minion-steps') return Math.max(1, Math.floor(n / 2));
+	if (picker.highest !== undefined) return picker.highest;
+	if (picker.measure === 'demon-minion-steps') return Math.max(1, Math.floor(n / 2));
 	return n;
 }
 
@@ -92,7 +91,7 @@ export function validInformation(game: Game, picker: InfoPicker): ValidInfo[] {
 			const notTrue = new Set(picker.options.map((o) => o.number));
 			for (
 				let n = picker.measure === 'demon-minion-steps' ? 1 : 0;
-				n <= highestNumber(game, picker.measure);
+				n <= highestNumber(game, picker);
 				n++
 			) {
 				if (taken.has(n)) continue;

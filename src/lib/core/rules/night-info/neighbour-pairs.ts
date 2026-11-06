@@ -14,7 +14,7 @@ export function neighbourPairs(game: Game): [SeatId, SeatId][] {
 }
 
 /**
- * For a measure that counts pairs of neighbours (`evil-pairs`), the counts that are only
+ * For a `count` of pairs of neighbours (`evil-pairs`), the counts that are only
  * true when a misregistering player registers differently in each pair they are part of:
  * https://wiki.bloodontheclocktower.com/Chef (Example 4: a Recluse between the Imp and the
  * Poisoner registers evil for one pair and good for the other, so the Chef may learn 1).
@@ -24,11 +24,14 @@ export function neighbourPairs(game: Game): [SeatId, SeatId][] {
  */
 export function perPairOptions(
 	game: Game,
-	measure: Learns['measure'],
+	learns: Learns,
 	regs: readonly Registration[],
 	world: RegistrationWorld
 ): { option: InfoOption; registered: SeatId[] }[] {
-	if (measure !== 'evil-pairs') return [];
+	// Only alignment is detected pair by pair here.
+	const wanted = learns.alignment;
+	if (learns.scope !== 'neighbour-pairs' || !wanted || learns.types || learns.woke || learns.token)
+		return [];
 	const regOf = new Map(regs.map((r) => [r.seatId, r]));
 	const allowed = (s: SeatId) => regOf.get(s)?.alignments ?? [world.alignment(s)];
 	const usual = (s: SeatId) => (regOf.has(s) ? regOf.get(s)!.alignments[0] : world.alignment(s));
@@ -39,7 +42,7 @@ export function perPairOptions(
 		for (const [count, mis] of reach) {
 			for (const ca of allowed(a)) {
 				for (const cb of allowed(b)) {
-					const total = count + (ca === 'evil' && cb === 'evil' ? 1 : 0);
+					const total = count + (ca === wanted && cb === wanted ? 1 : 0);
 					const now = new Set(mis);
 					if (ca !== usual(a)) now.add(a);
 					if (cb !== usual(b)) now.add(b);

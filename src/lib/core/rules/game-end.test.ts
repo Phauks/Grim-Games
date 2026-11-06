@@ -685,6 +685,88 @@ describe('custom characters', () => {
 		]);
 	});
 
+	// The building block (M60): a homebrew whose execution wins for its own team, the Saint's
+	// event with the other winner (https://wiki.bloodontheclocktower.com/Saint).
+	it('end the game through a condition of their own', () => {
+		const zealot = {
+			id: 'zealotx',
+			name: 'Zealot',
+			team: 'townsfolk',
+			ability: 'If you die by execution, your team wins.',
+			rules: {
+				gameEnd: { ends: [{ kind: 'condition', event: 'executed', subject: 'self', wins: 'own' }] }
+			}
+		};
+		const { game, seats, all } = custom(zealot, ['zealotx', 'chef', 'empath', 'imp'], execute(0));
+		expect(gameEnds(game, all)).toMatchObject([
+			{ rule: 'condition', characterId: 'zealotx', winner: 'good', seats: [seats[0]] }
+		]);
+	});
+
+	// A day ending with exactly 4 alive wins it for evil while its player lives, the Mayor's
+	// dusk with the Vortox's winner (https://wiki.bloodontheclocktower.com/Mayor).
+	it('end the game at dusk through a condition of their own', () => {
+		const sundial = {
+			id: 'sundial',
+			name: 'Sundial',
+			team: 'minion',
+			ability: 'If 4 players are alive at dusk, evil wins.',
+			rules: {
+				gameEnd: {
+					ends: [
+						{ kind: 'condition', event: 'dusk', whileAlive: true, aliveTotal: 4, winner: 'evil' }
+					]
+				}
+			}
+		};
+		const cast = ['sundial', 'chef', 'empath', 'imp', 'monk'];
+		const { game, all } = custom(sundial, cast, newDay, dead(4));
+		expect(gameEnds(game, all, { dayEnded: true })).toMatchObject([
+			{ rule: 'condition', characterId: 'sundial', winner: 'evil', day: 1 }
+		]);
+		expect(gameEnds(game, all)).toEqual([]);
+	});
+
+	it('read the official kinds as presets of a condition, and check a condition', () => {
+		const issues = new Issues();
+		const mayor = parseCharacter(
+			{
+				id: 'mayorx',
+				name: 'Mayor X',
+				team: 'townsfolk',
+				ability: 'x',
+				rules: { gameEnd: { ends: [{ kind: 'alive-at-dusk', alive: 3 }] } }
+			},
+			'[0]',
+			issues,
+			{ strict: false, scriptFields: true }
+		);
+		expect(mayor?.rules?.gameEnd?.ends?.[0]).toMatchObject({
+			kind: 'condition',
+			preset: 'alive-at-dusk',
+			event: 'dusk',
+			whileAlive: true,
+			noExecution: true,
+			aliveTotal: 3,
+			wins: 'own'
+		});
+		parseCharacter(
+			{
+				id: 'broken',
+				name: 'Broken',
+				team: 'townsfolk',
+				ability: 'x',
+				rules: { gameEnd: { ends: [{ kind: 'condition', event: 'dusk', wins: 'opposing' }] } }
+			},
+			'[0]',
+			issues,
+			{ strict: false, scriptFields: true }
+		);
+		expect(issues.list).toEqual([
+			'[0].rules.gameEnd.ends[0].wins: `opposing` is about who was executed'
+		]);
+	});
+
 	// A homebrew Townsfolk that turns the result round, as the Heretic does
 	// (https://wiki.bloodontheclocktower.com/Heretic).
 	it('invert the winner through their rules block', () => {
