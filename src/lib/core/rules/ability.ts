@@ -290,10 +290,10 @@ function impairmentsOf(
 	// one that has been in play; the game keeps no record of a character that left play, so
 	// only one in play now counts. One about the ability they have from their token is below.
 	if (characterId) {
-		for (const { partner, effect } of jinxImpairs(game, characterId, characters)) {
+		for (const { partner, kind } of jinxImpairs(game, characterId, characters)) {
 			const source = seatOfCharacter(game, partner, characters, seatId);
 			const at = source ? { characterId: partner, seatId: source } : { characterId: partner };
-			out.push(sourced(effect.kind, at, characters));
+			out.push(sourced(kind, at, characters));
 		}
 	}
 

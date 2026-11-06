@@ -126,7 +126,8 @@
  *   partner's ability (the Alchemist-Mastermind has no ability; needs `gainsAbilityOf` or
  *   `gainedFrom`). `who: "both"` with `unlessImpaired` is that player and the partner's, while
  *   neither is otherwise drunk or poisoned (the Alchemist-Organ Grinder: both drunk while both
- *   are sober);
+ *   are sober). One about the subject's own player is a preset of a `patch` of the part
+ *   `impairs` (`self.reason`, `data/jinx-presets.ts`, M61b);
  * - `noKill`: no kill from the subject tonight `on`: `token`, while the partner's own
  *   `stopsWaking` or `stopsKilling` token is on its player (the Exorcist's Chosen on the
  *   Yaggababble, the Princess's Doesn't Kill on the Al-Hadikhia; needs the partner's
@@ -573,6 +574,11 @@ export interface JinxRules {
  */
 export interface JinxPatch extends JinxEffect {
 	parts: CharacterRules;
+	/** The older verb this patch was read from (`impairs`), when it was one (M61b). */
+	preset?: JinxPresetVerb;
 }
+
+/** The verbs read as a {@link JinxPatch} (M61b): `impairs` about the subject's own player. */
+export type JinxPresetVerb = 'impairs';
 
 export type JinxRuleKey = keyof JinxRules;
