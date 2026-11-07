@@ -60,4 +60,8 @@ describe('roadmap', () => {
 		for (const id of [...ids, ...Object.keys(PART_PRS)]) expect(idsIn(`(${id})`)).toEqual([id]);
 		for (const id of Object.keys(PART_PRS)) expect(ids).toContain(id);
 	});
+
+	it('has no areas to show while the roadmap is empty', () => {
+		expect(roadmapByArea(roadmapStatus([], [change('a', 'Savant (L2)', 1)], {}))).toEqual([]);
+	});
 });
