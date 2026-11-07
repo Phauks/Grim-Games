@@ -226,7 +226,10 @@
 		grid-template-columns: minmax(0, 1fr) auto;
 		align-items: center;
 	}
+	/* Icon buttons side by side, their tap targets touching: the icons keep the space between
+	   them, so six still leave the title its line on a phone (the draw, Trevor 2026-11-06). */
 	.title-row[data-icon-actions] .actions {
+		gap: 0;
 		flex-wrap: nowrap;
 		justify-content: flex-end;
 	}

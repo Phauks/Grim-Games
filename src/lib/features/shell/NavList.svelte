@@ -143,6 +143,7 @@
 		{#each actions as action (action.id)}
 			<Button
 				icon={action.icon}
+				align="start"
 				title={action.title}
 				data-testid="nav-action-{action.id}"
 				onclick={() => {
@@ -185,7 +186,6 @@
 	}
 	/* Icon and label at the start, where the links' are (Trevor, 2026-11-06). */
 	.actions :global(.button) {
-		justify-content: flex-start;
 		gap: var(--space-3);
 		padding-inline: var(--space-3);
 	}

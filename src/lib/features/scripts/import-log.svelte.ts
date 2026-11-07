@@ -94,6 +94,9 @@ export function logLine(line: PhotoLineTrace, confidence?: number): void {
 		case 'title':
 			importLog.add(`${at}: the title`);
 			return;
+		case 'author':
+			importLog.add(`${at}: the author, ${line.author}`, 'found');
+			return;
 		case 'tail':
 			importLog.add(`${at}: the end of an ability`);
 			return;
