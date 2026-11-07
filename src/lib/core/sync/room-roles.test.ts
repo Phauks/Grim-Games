@@ -83,4 +83,24 @@ describe('players’ own characters in the room', () => {
 		// The new game's roles start with nobody having looked.
 		expect(hostView(setRoles(r, 'g2', true, roles)).rolesSeen).toEqual([]);
 	});
+
+	// Give a seat (Trevor, 2026-11-06): the new player sees theirs, and nobody else's opens.
+	it('lets only the open seats see theirs while the rest are hidden', () => {
+		const r = setRoles(room(), 'g1', false, roles, ['a', 'nowhere']);
+		expect(playerView(r, 'alex').role).toEqual({ characterId: 'chef' });
+		expect(playerView(r, 'sam').role).toBeUndefined();
+		expect(r.roles?.seats).toEqual({ a: { characterId: 'chef' } });
+		expect(r.roles?.open).toEqual(['a']);
+	});
+
+	it('forgets who looked when a different phone takes the seat', () => {
+		let r = setRoles(room(), 'g1', true, roles);
+		r = roleSeen(r, 'alex');
+		expect(hostView(r).rolesSeen).toEqual(['a']);
+		r = seat(r, 'alex', 'a');
+		expect(hostView(r).rolesSeen).toEqual(['a']);
+		r = seat(setName(join(r, 'kim')!, 'kim', { name: 'Kim' }), 'kim', 'a');
+		expect(hostView(r).rolesSeen).toEqual([]);
+		expect(playerView(r, 'kim').role).toEqual({ characterId: 'chef' });
+	});
 });

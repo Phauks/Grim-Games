@@ -169,7 +169,14 @@ export type ClientMessage =
 	| { type: 'end-script-vote' }
 	| { type: 'close-script-vote' }
 	/** Each seat's own character while players may see them; `show: false` takes them back. */
-	| { type: 'roles'; gameId: string; show: boolean; roles?: Record<SeatId, SeatRole> }
+	| {
+			type: 'roles';
+			gameId: string;
+			show: boolean;
+			roles?: Record<SeatId, SeatRole>;
+			/** Seats whose player may see theirs while `show` is off (room-roles.ts). */
+			open?: SeatId[];
+	  }
 	/**
 	 * Calls every player back to town: their phones sound and vibrate (plan U2). `sound` is the
 	 * Storyteller's pick (Trevor, 2026-11-06); without one each phone plays its own.

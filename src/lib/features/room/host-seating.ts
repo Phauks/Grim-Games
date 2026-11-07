@@ -69,3 +69,34 @@ export function removeFromRoom(
 	if (seatId && game.game.seats[seatId]?.playerName) game.run({ type: 'RenameSeat', seatId });
 	return true;
 }
+
+/**
+ * Puts each seated player's name, avatar and frame on their seat (plan R6). Only a change is
+ * applied: a seat the Storyteller has since changed back (by renaming or undoing) stays as it
+ * is until the player changes it again or moves seat.
+ */
+export function applySeats(
+	game: OpenGame,
+	before: readonly RoomMember[],
+	after: readonly RoomMember[]
+): void {
+	const look = (m: RoomMember) => `${m.seatId}|${m.avatar ?? ''}|${m.frame ?? ''}`;
+	const was: Record<string, RoomMember> = Object.fromEntries(before.map((m) => [m.memberId, m]));
+	for (const member of after) {
+		const seat = member.seatId && game.game.seats[member.seatId];
+		if (!seat) continue;
+		const old = was[member.memberId] as RoomMember | undefined;
+		const renamed = !!old && old.seatId === member.seatId && old.name !== member.name;
+		if (renamed && member.name && seat.playerName !== member.name) {
+			game.run({ type: 'RenameSeat', seatId: seat.seatId, playerName: member.name });
+		}
+		if (old && look(old) === look(member)) continue;
+		if (seat.avatar === member.avatar && seat.frame === member.frame) continue;
+		game.run({
+			type: 'SetSeatLook',
+			seatId: seat.seatId,
+			...(member.avatar ? { avatar: member.avatar } : {}),
+			...(member.frame ? { frame: member.frame } : {})
+		});
+	}
+}

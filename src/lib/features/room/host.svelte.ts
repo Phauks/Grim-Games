@@ -61,7 +61,8 @@ import { newGrimViewPassword } from '#lib/core/sync/grim-view-password.ts';
 import { applyTravellerPicks } from './host-traveller-pick.ts';
 import { STORAGE_KEY, type StoredRoom } from './host-storage.ts';
 import { RolesShown } from './roles-shown.svelte.ts';
-import { boardPlaces, grantSit } from './host-seating.ts';
+import { SeatLooks } from './seat-looks.svelte.ts';
+import { applySeats, boardPlaces, grantSit } from './host-seating.ts';
 
 /** Changes are gathered for this long before the grimoire is sent to viewers again. */
 const GRIMOIRE_DELAY_MS = 300;
@@ -100,7 +101,9 @@ export class RoomHost {
 	onMessage: ((message: ServerMessage) => void) | undefined; // Hears the room first (transfer).
 	/** Players' messages and reported pictures, for the Storyteller's Messages. */
 	readonly inbox = new RoomInbox((m) => this.#socket?.send(m) ?? false);
-	#roles: { gameId: string; show: boolean; roles: Record<SeatId, SeatRole> } | undefined;
+	#roles:
+		{ gameId: string; show: boolean; roles: Record<SeatId, SeatRole>; open: SeatId[] } | undefined;
+	readonly seatLooks = new SeatLooks(); // A seat given to a spectator: its own character.
 	/**
 	 * An admin is watching from Live games (plan J31): the whole grimoire goes to the room as
 	 * for the view-only link, but nothing on this device says so, and the room keeps no copy.
@@ -319,8 +322,13 @@ export class RoomHost {
 			$effect(() => {
 				const gameId = game.game.gameId;
 				const show = this.rolesShown.gameId === gameId;
-				const roles = show ? seatRoles(game.game, game.characters) : {};
-				const next = { gameId, show, roles };
+				const seatOf = (id: string) => this.members.find((m) => m.memberId === id)?.seatId;
+				const open = show ? [] : this.seatLooks.open(gameId, seatOf);
+				const all = show || open.length ? seatRoles(game.game, game.characters) : {};
+				const roles = show
+					? all
+					: Object.fromEntries(open.flatMap((id) => (all[id] ? [[id, all[id]]] : [])));
+				const next = { gameId, show, roles, open };
 				if (JSON.stringify(next) === JSON.stringify(this.#roles)) return;
 				this.#roles = next;
 				this.#sendRoles();
@@ -421,7 +429,8 @@ export class RoomHost {
 			type: 'roles',
 			gameId: roles.gameId,
 			show: roles.show,
-			...(roles.show ? { roles: roles.roles } : {})
+			...(roles.show || roles.open.length ? { roles: roles.roles } : {}),
+			...(roles.open.length ? { open: roles.open } : {})
 		});
 	}
 
@@ -643,7 +652,7 @@ export class RoomHost {
 		this.onMessage?.(message);
 		if (message.type === 'host-view') {
 			this.transfer = message.transfer;
-			this.#applySeats(this.members, message.members);
+			if (this.#game) applySeats(this.#game, this.members, message.members);
 			this.members = message.members;
 			this.present = message.present;
 			this.away = message.away ?? [];
@@ -673,35 +682,6 @@ export class RoomHost {
 		} else if (['refused', 'closed', 'handed-over'].includes(message.type)) {
 			// The room expired, or this device no longer owns it (another took it over).
 			this.#forget();
-		}
-	}
-
-	/**
-	 * Puts each seated player's name, avatar and frame on their seat (plan R6). Only a change is
-	 * applied: a seat the Storyteller has since changed back (by renaming or undoing) stays as it
-	 * is until the player changes it again or moves seat.
-	 */
-	#applySeats(before: RoomMember[], after: RoomMember[]): void {
-		const game = this.#game;
-		if (!game) return;
-		const look = (m: RoomMember) => `${m.seatId}|${m.avatar ?? ''}|${m.frame ?? ''}`;
-		const was: Record<string, RoomMember> = Object.fromEntries(before.map((m) => [m.memberId, m]));
-		for (const member of after) {
-			const seat = member.seatId && game.game.seats[member.seatId];
-			if (!seat) continue;
-			const old = was[member.memberId] as RoomMember | undefined;
-			const renamed = !!old && old.seatId === member.seatId && old.name !== member.name;
-			if (renamed && member.name && seat.playerName !== member.name) {
-				game.run({ type: 'RenameSeat', seatId: seat.seatId, playerName: member.name });
-			}
-			if (old && look(old) === look(member)) continue;
-			if (seat.avatar === member.avatar && seat.frame === member.frame) continue;
-			game.run({
-				type: 'SetSeatLook',
-				seatId: seat.seatId,
-				...(member.avatar ? { avatar: member.avatar } : {}),
-				...(member.frame ? { frame: member.frame } : {})
-			});
 		}
 	}
 
@@ -774,6 +754,7 @@ export class RoomHost {
 		this.sendingGame = false;
 		this.inbox.clear();
 		this.#roles = undefined;
+		this.seatLooks.clear();
 		this.#viewerKeyHash = undefined;
 		this.#grimoire = undefined;
 		clearTimeout(this.#grimoireTimer);

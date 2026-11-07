@@ -21,28 +21,58 @@ export interface RoomRoles {
 	 * the Storyteller still sees who has looked. A changed role is not seen until looked at.
 	 */
 	seen: Record<SeatId, string>;
+	/**
+	 * Seats whose player may see their own character while the rest may not: a spectator the
+	 * Storyteller has just given a seat (Trevor, 2026-11-06, "Give a seat"), so nobody else's
+	 * character opens with theirs.
+	 */
+	open?: SeatId[];
 }
 
 /** The most seats a roles message carries: one per member. */
 const MAX_ROLE_SEATS = 40;
 
 /**
- * The Storyteller's roles for game `gameId`, or `show: false` to hide them all. Only the
- * game on the table counts; a malformed message changes nothing.
+ * The Storyteller's roles for game `gameId`, or `show: false` to hide them all but those of
+ * the `open` seats. Only the game on the table counts; a malformed message changes nothing.
  */
-export function setRoles(room: RoomState, gameId: unknown, show: unknown, raw: unknown): RoomState {
+export function setRoles(
+	room: RoomState,
+	gameId: unknown,
+	show: unknown,
+	raw: unknown,
+	rawOpen?: unknown
+): RoomState {
 	if (typeof gameId !== 'string' || gameId !== room.gameId || typeof show !== 'boolean')
 		return room;
+	const known = new Set(room.public?.seats.map((s) => s.seatId));
+	const open = Array.isArray(rawOpen)
+		? rawOpen
+				.slice(0, MAX_ROLE_SEATS)
+				.filter((id): id is SeatId => typeof id === 'string' && known.has(id as SeatId))
+		: [];
 	const seats: Record<SeatId, SeatRole> = {};
-	if (show && typeof raw === 'object' && raw !== null) {
-		const known = new Set(room.public?.seats.map((s) => s.seatId));
+	if ((show || open.length) && typeof raw === 'object' && raw !== null) {
 		for (const [seatId, value] of Object.entries(raw).slice(0, MAX_ROLE_SEATS)) {
 			const role = parseSeatRole(value);
-			if (role && known.has(seatId as SeatId)) seats[seatId as SeatId] = role;
+			const kept = show || open.includes(seatId as SeatId);
+			if (role && kept && known.has(seatId as SeatId)) seats[seatId as SeatId] = role;
 		}
 	}
 	const seen = room.roles?.gameId === gameId ? room.roles.seen : {};
-	return { ...room, roles: { gameId, show, seats, seen } };
+	return { ...room, roles: { gameId, show, seats, seen, ...(open.length ? { open } : {}) } };
+}
+
+/**
+ * A phone took seat `seatId`: what the seat's last player looked at is no longer seen, so the
+ * Storyteller doesn't read a new player as having seen their character.
+ */
+export function seatTaken(room: RoomState, seatId: SeatId): RoomState {
+	const roles = room.roles;
+	if (!roles || !(seatId in roles.seen)) return room;
+	const { [seatId]: _gone, ...seen } = roles.seen;
+	void _gone;
+	return { ...room, roles: { ...roles, seen } };
 }
 
 /** The roles of the game on the table, if the room has any. */
@@ -54,7 +84,8 @@ function current(room: RoomState): RoomRoles | undefined {
 export function memberRole(room: RoomState, memberId: string): SeatRole | undefined {
 	const roles = current(room);
 	const seatId = room.members.find((m) => m.memberId === memberId)?.seatId;
-	return roles?.show && seatId ? roles.seats[seatId] : undefined;
+	if (!roles || !seatId) return undefined;
+	return roles.show || roles.open?.includes(seatId) ? roles.seats[seatId] : undefined;
 }
 
 /** A player looked at their role; nothing changes if they have none to see. */

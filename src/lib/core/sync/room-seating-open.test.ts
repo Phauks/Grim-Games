@@ -3,6 +3,8 @@ import type { SeatId } from '#lib/core/model/index.ts';
 import type { PublicGameState } from './public-projection.ts';
 import {
 	dropOnto,
+	giveSeat,
+	seatOffers,
 	placedSeat,
 	hostView,
 	join,
@@ -250,5 +252,32 @@ describe('moving a seat to a place', () => {
 		).toEqual({ seatId: 'b', commands: [{ type: 'RenameSeat', seatId: 'b', playerName: 'Bo' }] });
 		const full = { a: { playerName: 'Ana' }, b: { playerName: 'Cy' }, c: { playerName: 'Di' } };
 		expect(placedSeat(seating, full, 'Bo')).toBeUndefined();
+	});
+});
+
+// Give a seat (Trevor, 2026-11-06, option A): the Storyteller seats a spectator from Players.
+describe('seats a spectator could be given', () => {
+	const seats = {
+		[s('a')]: { playerName: 'Bea' },
+		[s('b')]: {},
+		[s('c')]: { playerName: 'Seat 3' },
+		[s('d')]: { playerName: 'Cal' }
+	};
+
+	it('lists open seats first, then the seats with a player and who they would replace', () => {
+		expect(seatOffers([s('a'), s('b'), s('c'), s('d')], seats)).toEqual([
+			{ seatId: s('b'), seatNumber: 2 },
+			{ seatId: s('c'), seatNumber: 3 },
+			{ seatId: s('a'), seatNumber: 1, replaces: 'Bea' },
+			{ seatId: s('d'), seatNumber: 4, replaces: 'Cal' }
+		]);
+	});
+
+	it('gives a seat by naming it after the spectator', () => {
+		expect(giveSeat(s('a'), 'Alex')).toEqual({
+			type: 'RenameSeat',
+			seatId: s('a'),
+			playerName: 'Alex'
+		});
 	});
 });

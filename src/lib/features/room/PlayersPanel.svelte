@@ -25,6 +25,8 @@
 	import RemovedPlayers from './RemovedPlayers.svelte';
 	import ConfirmDialog from '#lib/ui/primitives/ConfirmDialog.svelte';
 	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
+	import Button from '#lib/ui/primitives/Button.svelte';
+	import GiveSeatDialog from './GiveSeatDialog.svelte';
 
 	/**
 	 * Players (Trevor, 2026-10-29: "player management shouldn't be under share"): every seat,
@@ -141,6 +143,9 @@
 			)
 		);
 	});
+
+	// ── Give a seat: the spectator being seated, while its seat list is open ──
+	let giving = $state<{ member: RoomMember; name: PlayerName }>();
 
 	// ── Block (plan J37): this game only, and the Blocked list can let them back ──
 	let removing = $state<{ memberId: string; name: PlayerName }>();
@@ -302,6 +307,14 @@
 					/>
 				{/if}
 			</header>
+			<!-- A spectator is seated from here, in any phase (Trevor, 2026-11-06, "Give a seat"). -->
+			{#if entry.member && !entry.seatId && host.code && !viewOnly}
+				{@const member = entry.member}
+				{@const name = entry.name}
+				<Button icon="arrange" data-testid="give-seat" onclick={() => (giving = { member, name })}
+					>{t('room.giveSeat')}</Button
+				>
+			{/if}
 			{#if entry.inboxId}
 				{@const count = inboxCount(entry.inboxId)}
 				<Collapsible
@@ -336,6 +349,19 @@
 		</div>
 	{/key}
 {/snippet}
+
+{#if giving}<GiveSeatDialog
+		bind:open={
+			() => !!giving,
+			(on) => {
+				if (!on) giving = undefined;
+			}
+		}
+		{game}
+		member={giving.member}
+		name={giving.name}
+		{run}
+	/>{/if}
 
 <ConfirmDialog
 	bind:open={confirmRemove}

@@ -36,6 +36,12 @@ export const room = {
 	'room.spectators.mayMessage': 'Spectators can message',
 	'room.spectators.grimView': 'Grim view',
 	'room.spectators.unnamed': 'Someone on Grim view',
+	'room.giveSeat': 'Give a seat',
+	'room.giveSeat.open': 'Open',
+	'room.giveSeat.taken': 'Has a player',
+	'room.giveSeat.replace': 'Replace this player?',
+	'room.giveSeat.replaceBody':
+		'The spectator takes this seat and its character. The player there now loses it.',
 	'room.players.title': 'Players',
 	'room.players.here': 'Here',
 	'room.players.away': 'Away',

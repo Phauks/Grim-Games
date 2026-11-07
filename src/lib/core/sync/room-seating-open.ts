@@ -211,3 +211,35 @@ export function dropOnto(
 	});
 	return best;
 }
+
+/** A seat the Storyteller can give a spectator, and who sits there now. */
+export interface SeatOffer {
+	seatId: SeatId;
+	/** 1-based, in seat order. */
+	seatNumber: number;
+	/** The player the spectator would replace: missing for an open seat. */
+	replaces?: string;
+}
+
+/**
+ * Every seat a spectator could be given (Trevor, 2026-11-06, "Give a seat"), open seats first
+ * and then the seats with a player, each in seat order. A seat is given by naming it after the
+ * spectator, so the player there (phone or not) loses it.
+ */
+export function seatOffers(
+	seating: readonly SeatId[],
+	seats: Readonly<Record<SeatId, { playerName?: string }>>
+): SeatOffer[] {
+	const all = seating.map((seatId, i): SeatOffer => {
+		const name = seats[seatId]?.playerName;
+		return isOpenSeat(seats[seatId]) || !name
+			? { seatId, seatNumber: i + 1 }
+			: { seatId, seatNumber: i + 1, replaces: name };
+	});
+	return [...all.filter((o) => !o.replaces), ...all.filter((o) => o.replaces)];
+}
+
+/** The command that gives seat `seatId` to the spectator named `name`. */
+export function giveSeat(seatId: SeatId, name: string): SeatCommand {
+	return { type: 'RenameSeat', seatId, playerName: name as PlayerName };
+}
