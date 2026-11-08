@@ -32,10 +32,10 @@
 	import { alignmentOf, type SeatId } from '#lib/core/model/index.ts';
 	import type { InfoChoice, InfoPicker, Night, NightStep } from '#lib/core/rules/index.ts';
 	import CharacterPiece from '#lib/features/characters/CharacterPiece.svelte';
-	import BoardReminder from './BoardReminder.svelte';
+	import StepReminderRow from './StepReminderRow.svelte';
 	import { TYPE_PLURALS } from '#lib/features/reference/labels.ts';
 	import NightTextLines from '#lib/features/reference/NightTextLines.svelte';
-	import { nightTextStepLines, stepNightText } from '#lib/core/rules/night-text.ts';
+	import { nightTextStepLines, rowsOnLines, stepNightText } from '#lib/core/rules/night-text.ts';
 	import EvilInfoCards from '#lib/features/show/EvilInfoCards.svelte';
 	import StepInfoTokens from '#lib/features/info-tokens/StepInfoTokens.svelte';
 	import {
@@ -52,10 +52,9 @@
 	import ShowToPlayerButton from '#lib/features/show/ShowToPlayerButton.svelte';
 	import Button from '#lib/ui/primitives/Button.svelte';
 	import IconButton from '#lib/ui/primitives/IconButton.svelte';
-	import DeleteButton from '#lib/ui/primitives/DeleteButton.svelte';
 	import Dialog from '#lib/ui/primitives/Dialog.svelte';
 	import NumberSelect from '#lib/ui/primitives/NumberSelect.svelte';
-	import { placingAlignment, seatMisfits } from './board.ts';
+	import { seatMisfits } from './board.ts';
 	import type { Grimoire } from './grimoire.svelte.ts';
 	import { givesNumber, seatName, stepHolders, stepName } from './night-steps.ts';
 	import { reminderCopies, reminderKey, stepTokenCharacter } from './reminders.ts';
@@ -116,8 +115,6 @@
 		onShowGrimoire,
 		onPlace
 	}: Props = $props();
-
-	const returnLabel = (label: string) => `Return ${label} to the reminder bank`;
 
 	// Previous and Next inside the step, by icon or a sideways swipe (Trevor, 2026-10-17).
 	const index = $derived(step ? steps.findIndex((s) => s.id === step.id) : -1);
@@ -289,6 +286,8 @@
 	const placedCards = $derived(
 		cardsOnLines(textLines ? nightTextStepLines(textLines) : [], stepCards)
 	);
+	/** Each row under the line naming its token; the rest under Reminders (M75). */
+	const rowsPlaced = $derived(rowsOnLines(textLines ? nightTextStepLines(textLines) : [], rows));
 	/** A line's eye, named for its card as the card's tile is ("You are (Imp)"). */
 	function cardLabel(card: StepCard): string {
 		const owners = (card.filled?.characterIds ?? []).flatMap((id) => {
@@ -382,6 +381,16 @@
 {/snippet}
 
 <!-- The night, not the step: the step's row beneath already names it (Trevor, 2026-11-06). -->
+{#snippet reminderRow({ label, at }: (typeof rows)[number])}<StepReminderRow
+		{game}
+		{characters}
+		character={tokensOf}
+		{label}
+		{at}
+		onchoose={() => choose(label, at)}
+		onreturn={(id) => moveConfirm?.requestReturn(id)}
+	/>{/snippet}
+
 <Dialog bind:open title={night === 'first' ? 'First night' : 'Other nights'} size="full">
 	{#snippet headActions()}
 		{#if steps.length > 0}
@@ -464,6 +473,13 @@
 						alignment={one && step.character ? alignmentOf(game, one) : undefined}
 						marked={(i) => shownLines.includes(i)}
 					>
+						{#snippet lineExtra(i)}{#if rowsPlaced.onLine[i]}<span
+									class="line-reminders"
+									data-testid="line-reminders"
+									>{#each rowsPlaced.onLine[i] as row (row.key)}{@render reminderRow(
+											row
+										)}{/each}</span
+								>{/if}{/snippet}
 						{#snippet lineEnd(
 							i
 						)}{#each placedCards.onLine[i] ?? [] as card, c (c)}<ShowToPlayerButton
@@ -664,33 +680,11 @@
 			<StepInfoTokens cards={placedCards.rest} {characters} onchoose={chooseCard} />
 			<!-- Who is drunk or poisoned, as its own section (Trevor, 2026-10-17). -->
 			<StepAfflictions {grimoire} {step} />
-			{#if rows.length > 0}
+			{#if rowsPlaced.rest.length > 0}
 				<h3>Reminders</h3>
 				<ul class="reminders">
-					{#each rows as { label, at, key } (key)}
-						<li>
-							<!-- The token itself, as on the board (Trevor, 2026-10-30). -->
-							<BoardReminder
-								{label}
-								character={tokensOf}
-								alignment={tokensOf ? placingAlignment(game, tokensOf.id, characters) : undefined}
-							/>
-							<!-- The seat and its character (Trevor, 2026-10-18), on one line: the badge with
-							     its player. -->
-							<span class="where"
-								>{#if at}On <SeatBadge {game} {characters} seatId={at.seatId} />{:else}Not placed{/if}</span
-							>
-							<Button variant="quiet" onclick={() => choose(label, at)}
-								>{at ? 'Move' : 'Place'}</Button
-							>
-							<!-- Off the board and back to the reminder bank, from the step (Trevor,
-							     2026-10-17); there but unusable while not placed. -->
-							<DeleteButton
-								label={returnLabel(label)}
-								disabled={!at}
-								onclick={() => at && moveConfirm?.requestReturn(at.reminderId)}
-							/>
-						</li>
+					{#each rowsPlaced.rest as row (row.key)}
+						<li>{@render reminderRow(row)}</li>
 					{/each}
 				</ul>
 			{/if}
@@ -782,18 +776,12 @@
 		list-style: none;
 	}
 	.reminders li {
-		display: flex;
-		align-items: center;
-		gap: var(--space-3);
 		padding: 0 0 var(--space-2) var(--space-2);
 	}
-	.where {
-		flex: 1;
-		min-width: 0;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-		color: var(--on-surface-muted);
-		font-size: 0.9rem;
+	/* Under the line that names the token, in the step's own words' column (M75). */
+	.line-reminders {
+		display: grid;
+		gap: var(--space-2);
+		padding-top: var(--space-2);
 	}
 </style>

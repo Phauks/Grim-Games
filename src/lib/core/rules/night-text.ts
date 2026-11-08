@@ -381,6 +381,28 @@ export function nightTextSteps(segments: readonly NightTextSegment[]): NightText
 }
 
 /** Every line of `steps` in reading order: the lines before any branch, then each branch's. */
+/**
+ * Each reminder row under the first line that names its token (`kind: 'reminder'`), so the
+ * Storyteller places it from the line it is about (Trevor, 2026-11-08, M75). Rows for a token
+ * no line names are `rest`.
+ */
+export function rowsOnLines<T extends { label: string }>(
+	lines: readonly NightTextLine[],
+	rows: readonly T[]
+): { onLine: Record<number, T[]>; rest: T[] } {
+	const same = (a: string | undefined, b: string) => a?.toLowerCase() === b.toLowerCase();
+	const onLine: Record<number, T[]> = {};
+	const rest: T[] = [];
+	for (const row of rows) {
+		const i = lines.findIndex((l) =>
+			l.some((s) => s.kind === 'reminder' && same(s.label, row.label))
+		);
+		if (i < 0) rest.push(row);
+		else (onLine[i] ??= []).push(row);
+	}
+	return { onLine, rest };
+}
+
 export function nightTextStepLines(steps: NightTextSteps): NightTextLine[] {
 	return [...steps.lines, ...steps.branches.flatMap((b) => b.lines)];
 }
