@@ -53,8 +53,18 @@ test('New game starts a players-only game, and Join game lists it apart', async 
 	await page.goto('/new');
 	const host = page.getByRole('combobox', { name: 'Host' });
 	await expect(host).toHaveText(/Storyteller/);
+	// A line under Host says when to use each (Trevor, 2026-11-06), and nothing moves with it.
+	const hint = page.getByTestId('host-hint');
+	await expect(hint).toHaveText(/You run the game on this device/);
+	const modeTop = (await page.getByRole('combobox', { name: 'Game mode' }).boundingBox())!.y;
 	await host.tap();
-	await page.getByRole('option', { name: 'Local Grim', exact: true }).tap();
+	await page.getByRole('option', { name: /^Local Grim/ }).tap();
+	await expect(hint).toHaveText(/The Storyteller runs the game outside the app/);
+	// Within a pixel: the line box rounds differently with other words in it.
+	expect((await page.getByRole('combobox', { name: 'Game mode' }).boundingBox())!.y).toBeCloseTo(
+		modeTop,
+		0
+	);
 	// The same screen: Game mode, Room vote and the script preview all stay.
 	await expect(page.getByRole('combobox', { name: 'Game mode' })).toBeVisible();
 	await expect(page.getByRole('link', { name: 'Room vote' })).toBeVisible();
