@@ -86,6 +86,7 @@
 		onChange={(id) => (choice = id)}
 		emphasized={reason ? preferred : undefined}
 	>
+		<!-- The whole option picks the player: its badge opens nothing (Trevor, 2026-11-08). -->
 		{#snippet item(option)}
 			{@const s = game.seats[option.value]}
 			{#if s?.characterId}<CharacterPiece
@@ -94,6 +95,7 @@
 					character={characters.get(s.characterId)}
 					alignment={s.alignment}
 					playerName={option.label}
+					interactive={false}
 				/>{:else}{option.label}{/if}
 		{/snippet}
 	</ChoiceGroup>

@@ -6709,10 +6709,11 @@ test('with several living Minions, the Scarlet Woman stands out as the new Imp',
 	await expect(ask.locator('.ring-row[data-character-id="scarletwoman"]')).toBeVisible();
 	if (process.env.SHOT_DIR) await ask.screenshot({ path: `${process.env.SHOT_DIR}/chosen.png` });
 	// Choosing another Minion is allowed, with a warning on her.
-	// Its badge opens the character's page, so tap the card beside it.
+	// Tapping the badge itself picks the player, never opens the character (Trevor,
+	// 2026-11-08: "impossible to select a different minion, it opens the glossary").
 	const poisoner = ask.locator('[data-part="item"]', { hasText: 'Seat 4' });
-	const box = (await poisoner.boundingBox())!;
-	await poisoner.tap({ position: { x: box.width - 4, y: box.height / 2 } });
+	await poisoner.locator('.ring-row, [data-character-id]').first().tap();
+	await expect(page.getByRole('dialog', { name: /Poisoner/ })).toHaveCount(0);
 	await expect(scarlet).toHaveAttribute('data-emphasized', 'passed-over');
 	await expect(scarlet.getByRole('img', { name: 'Warning' })).toBeVisible();
 	if (process.env.SHOT_DIR)
@@ -8298,4 +8299,23 @@ test("the Kazali's first night step makes the usual number of Minions", async ({
 	await expect(change.getByRole('button', { name: 'Choose' })).toHaveCount(0);
 	await step.getByRole('button', { name: 'Close' }).first().tap();
 	await expect(await openSeat(page, 2)).toContainText(/Minion · Evil · Seat 2[\s\S]*Poisoner/);
+});
+
+test("the night strip's text scrolls below the step's row, never behind it", async ({ page }) => {
+	// Trevor, 2026-11-08: "Can read text behind this when we shouldnt" (the Imp's long text
+	// scrolled up under its band).
+	await startGame(page);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Poisoner', exact: true })
+		.tap();
+	await closeSheet(page);
+	const strip = await walkTo(page, 'Poisoner');
+	const [row, body] = await Promise.all([
+		strip.locator('.row').boundingBox(),
+		strip.locator('.body').boundingBox()
+	]);
+	expect(body!.y).toBeGreaterThanOrEqual(row!.y + row!.height - 1);
 });
