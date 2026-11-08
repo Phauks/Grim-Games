@@ -2547,6 +2547,31 @@ test("a night step's token goes on a seat tapped on the board, unusual seats fad
 	await expect(guide).toContainText(/On\s+(\S+\s+)?Seat 2\b/);
 });
 
+test("a step's reminder token sits beneath the line that names it", async ({ page }) => {
+	// Trevor, 2026-11-08 (M75): "Why not place the reminder token we currently have beneath the
+	// line it is about? Then text won't reflow and we still keep icon of reminder goken". The
+	// line's words stay as they are; a token no line names stays under Reminders.
+	await startGame(page);
+	const sheet = await openSeat(page, 1);
+	await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+	await page
+		.getByRole('dialog', { name: 'Character for Seat 1' })
+		.getByRole('button', { name: 'Poisoner', exact: true })
+		.tap();
+	await closeSheet(page);
+	const guide = await openStep(page, 'Poisoner');
+	const line = guide.locator('[data-testid="night-lines"] li', {
+		has: page.getByTestId('line-reminders')
+	});
+	await expect(line).toHaveCount(1);
+	await expect(line).toContainText('Poisoned');
+	await expect(line.getByTestId('line-reminders')).toContainText('Not placed');
+	await expect(line.getByRole('button', { name: 'Place' })).toBeVisible();
+	await expect(guide.getByRole('heading', { name: 'Reminders', exact: true })).toHaveCount(0);
+	await placeFromStep(page, guide, 2);
+	await expect(line.getByTestId('line-reminders')).toContainText(/On\s+(\S+\s+)?Seat 2\b/);
+});
+
 test('a night step is filled in with help, and the night can be walked through', async ({
 	page
 }) => {

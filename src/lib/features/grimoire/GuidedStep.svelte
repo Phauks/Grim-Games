@@ -180,6 +180,27 @@
 			}));
 		});
 	});
+	/**
+	 * Each reminder row under the first line that names its token, so the line and its token
+	 * are placed together (Trevor, 2026-11-08, M75: "place the reminder token we currently have
+	 * beneath the line it is about"); the line's own words never change. A token no line names
+	 * stays under Reminders.
+	 */
+	const rowsPlaced = $derived.by(() => {
+		const lines = textLines ? nightTextStepLines(textLines) : [];
+		const lineOf = (label: string) =>
+			lines.findIndex((line) =>
+				line.some((s) => s.kind === 'reminder' && s.label?.toLowerCase() === label.toLowerCase())
+			);
+		const onLine: Record<number, typeof rows> = {};
+		const rest: typeof rows = [];
+		for (const row of rows) {
+			const i = lineOf(row.label);
+			if (i < 0) rest.push(row);
+			else (onLine[i] ??= []).push(row);
+		}
+		return { onLine, rest };
+	});
 	/** Where each copy of a label is on the board, in seating order. */
 	function placedAll(label: string) {
 		return game.seating.flatMap((seatId) =>
@@ -382,6 +403,28 @@
 {/snippet}
 
 <!-- The night, not the step: the step's row beneath already names it (Trevor, 2026-11-06). -->
+{#snippet reminderRow({ label, at }: (typeof rows)[number])}
+	<!-- The token itself, as on the board (Trevor, 2026-10-30). -->
+	<BoardReminder
+		{label}
+		character={tokensOf}
+		alignment={tokensOf ? placingAlignment(game, tokensOf.id, characters) : undefined}
+	/>
+	<!-- The seat and its character (Trevor, 2026-10-18), on one line: the badge with
+					     its player. -->
+	<span class="where"
+		>{#if at}On <SeatBadge {game} {characters} seatId={at.seatId} />{:else}Not placed{/if}</span
+	>
+	<Button variant="quiet" onclick={() => choose(label, at)}>{at ? 'Move' : 'Place'}</Button>
+	<!-- Off the board and back to the reminder bank, from the step (Trevor,
+					     2026-10-17); there but unusable while not placed. -->
+	<DeleteButton
+		label={returnLabel(label)}
+		disabled={!at}
+		onclick={() => at && moveConfirm?.requestReturn(at.reminderId)}
+	/>
+{/snippet}
+
 <Dialog bind:open title={night === 'first' ? 'First night' : 'Other nights'} size="full">
 	{#snippet headActions()}
 		{#if steps.length > 0}
@@ -464,6 +507,13 @@
 						alignment={one && step.character ? alignmentOf(game, one) : undefined}
 						marked={(i) => shownLines.includes(i)}
 					>
+						{#snippet lineExtra(i)}{#if rowsPlaced.onLine[i]}<span
+									class="line-reminders"
+									data-testid="line-reminders"
+									>{#each rowsPlaced.onLine[i] as row (row.key)}<span class="reminder-row"
+											>{@render reminderRow(row)}</span
+										>{/each}</span
+								>{/if}{/snippet}
 						{#snippet lineEnd(
 							i
 						)}{#each placedCards.onLine[i] ?? [] as card, c (c)}<ShowToPlayerButton
@@ -664,33 +714,11 @@
 			<StepInfoTokens cards={placedCards.rest} {characters} onchoose={chooseCard} />
 			<!-- Who is drunk or poisoned, as its own section (Trevor, 2026-10-17). -->
 			<StepAfflictions {grimoire} {step} />
-			{#if rows.length > 0}
+			{#if rowsPlaced.rest.length > 0}
 				<h3>Reminders</h3>
 				<ul class="reminders">
-					{#each rows as { label, at, key } (key)}
-						<li>
-							<!-- The token itself, as on the board (Trevor, 2026-10-30). -->
-							<BoardReminder
-								{label}
-								character={tokensOf}
-								alignment={tokensOf ? placingAlignment(game, tokensOf.id, characters) : undefined}
-							/>
-							<!-- The seat and its character (Trevor, 2026-10-18), on one line: the badge with
-							     its player. -->
-							<span class="where"
-								>{#if at}On <SeatBadge {game} {characters} seatId={at.seatId} />{:else}Not placed{/if}</span
-							>
-							<Button variant="quiet" onclick={() => choose(label, at)}
-								>{at ? 'Move' : 'Place'}</Button
-							>
-							<!-- Off the board and back to the reminder bank, from the step (Trevor,
-							     2026-10-17); there but unusable while not placed. -->
-							<DeleteButton
-								label={returnLabel(label)}
-								disabled={!at}
-								onclick={() => at && moveConfirm?.requestReturn(at.reminderId)}
-							/>
-						</li>
+					{#each rowsPlaced.rest as row (row.key)}
+						<li class="reminder-row">{@render reminderRow(row)}</li>
 					{/each}
 				</ul>
 			{/if}
@@ -779,11 +807,21 @@
 		padding: 0;
 		list-style: none;
 	}
-	.reminders li {
+	.reminder-row {
 		display: flex;
 		align-items: center;
 		gap: var(--space-3);
 		padding: 0 0 var(--space-2) var(--space-2);
+	}
+	/* Under the line that names the token, in the step's own words' column (M75). */
+	.line-reminders {
+		display: grid;
+		gap: var(--space-2);
+		padding-top: var(--space-2);
+		font-family: var(--font-body);
+	}
+	.line-reminders .reminder-row {
+		padding: 0;
 	}
 	.where {
 		flex: 1;
