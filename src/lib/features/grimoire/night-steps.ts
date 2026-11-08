@@ -68,7 +68,7 @@ export function boardNightSteps(
 	 * (`changedCharacters`), each woken tonight, and who died (`diedToday`), for the Godfather.
 	 */
 	today: {
-		changes?: readonly { seatId: SeatId; characterId: CharacterId }[];
+		changes?: readonly { seatId: SeatId; characterId: CharacterId; by?: CharacterId }[];
 		died?: readonly SeatId[];
 		revived?: readonly SeatId[];
 	} = {},
