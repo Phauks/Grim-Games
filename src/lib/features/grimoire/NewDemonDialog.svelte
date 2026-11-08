@@ -26,6 +26,11 @@
 		 * the Demon's, and that player's option stands out (Trevor, 2026-11-02).
 		 */
 		preferredBy?: CharacterId;
+		/**
+		 * The character whose ability passes it on (the Imp's star pass): its night step wakes
+		 * the new Demon, so the night order adds no second wake at the end of the night.
+		 */
+		by?: CharacterId;
 	}
 
 	let {
@@ -34,7 +39,8 @@
 		characterId,
 		heirs,
 		preferred,
-		preferredBy
+		preferredBy,
+		by
 	}: Props = $props();
 
 	const game = $derived(grimoire.game);
@@ -55,7 +61,13 @@
 
 	function confirm() {
 		if (choice && heirs.includes(choice))
-			grimoire.run({ type: 'AssignCharacter', seatId: choice, characterId, alignment: 'evil' });
+			grimoire.run({
+				type: 'AssignCharacter',
+				seatId: choice,
+				characterId,
+				alignment: 'evil',
+				...(by ? { by } : {})
+			});
 	}
 </script>
 

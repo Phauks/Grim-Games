@@ -101,6 +101,22 @@ describe('character change steps', () => {
 		const first = boardNightSteps(g, characters, 'first', data, { changes });
 		expect(first.some((s) => s.changed)).toBe(false);
 	});
+
+	// Wiki: "Wake the new Imp, show them the '''YOU ARE''' info token, then show them the Imp token."
+	it("adds no wake when the step of the ability that made the change shows YOU ARE (the Imp's star pass)", () => {
+		const g = game(['poisoner', 'imp', 'empath']);
+		const changes = [{ seatId: g.seating[0], characterId: 'imp', by: 'imp' }];
+		const other = boardNightSteps(g, characters, 'other', data, { changes });
+		expect(other.some((s) => s.changed)).toBe(false);
+	});
+
+	it('wakes the player right after the step of the ability that made the change', () => {
+		const g = game(['poisoner', 'imp', 'empath']);
+		const changes = [{ seatId: g.seating[2], characterId: 'imp', by: 'poisoner' }];
+		const other = boardNightSteps(g, characters, 'other', data, { changes });
+		const at = other.findIndex((s) => s.changed);
+		expect(other[at - 1]?.character?.id).toBe('poisoner');
+	});
 });
 
 // https://beardytas.com/garden-of-djinn/council-of-the-dead/: night 4 starts with the dead.

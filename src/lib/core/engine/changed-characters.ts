@@ -20,6 +20,11 @@ export interface CharacterChange {
 	from: CharacterId;
 	/** The character it holds now. */
 	characterId: CharacterId;
+	/**
+	 * The character whose ability made the last change (`AssignCharacter.by`), when one did:
+	 * its own night step may already wake the player to learn it (the Imp's star pass).
+	 */
+	by?: CharacterId;
 }
 
 /** The game at the most recent New day, or undefined before the first one. */
@@ -33,10 +38,18 @@ function atDawn(log: GameLog): Game | undefined {
 export function changedCharacters(log: GameLog, game: Game): CharacterChange[] {
 	const before = atDawn(log);
 	if (!before) return [];
+	const since = log.entries.slice(0, log.cursor);
+	const dawn = since.findLastIndex((e) => e.events.some((ev) => ev.type === 'DayStarted'));
 	return game.seating.flatMap((seatId) => {
 		const from = before.seats[seatId]?.characterId;
 		const now = game.seats[seatId]?.characterId;
-		return from && now && from !== now ? [{ seatId, from, characterId: now }] : [];
+		if (!from || !now || from === now) return [];
+		const assigned = since
+			.slice(dawn + 1)
+			.flatMap((e) => e.events)
+			.findLast((ev) => ev.type === 'CharacterAssigned' && ev.seatId === seatId);
+		const by = assigned?.type === 'CharacterAssigned' ? assigned.by : undefined;
+		return [{ seatId, from, characterId: now, ...(by ? { by } : {}) }];
 	});
 }
 
