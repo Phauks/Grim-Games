@@ -10,7 +10,7 @@ import { aliveNeighbours } from '#lib/core/model/selectors.ts';
 import type { Game, SeatId } from '#lib/core/model/types.ts';
 import type { RegistrationWorld } from '../ability.ts';
 import { carries } from './token-carriers.ts';
-import { neighbourPairs } from './neighbour-pairs.ts';
+import { mostPairs, neighbourPairs } from './neighbour-pairs.ts';
 import type { InfoOption } from './picker.ts';
 
 /** A building block as the picker reads it. */
@@ -108,4 +108,17 @@ export function blockFacts(spec: BlockSpec, ctx: BlockContext): SeatId[] {
 export function blockHighest(spec: BlockSpec, game: Game): number {
 	if (spec.scope === 'alive-neighbours') return 2;
 	return spec.choose || game.seating.length;
+}
+
+/**
+ * The highest number a `count` block could truly be, when it is lower than `blockHighest`:
+ * for pairs of neighbours, the most pairs the players who match in any registration world
+ * (`matchable`) can make.
+ */
+export function blockMostTrue(
+	spec: BlockSpec,
+	game: Game,
+	matchable: () => number
+): number | undefined {
+	return spec.scope === 'neighbour-pairs' ? mostPairs(game, matchable()) : undefined;
 }
