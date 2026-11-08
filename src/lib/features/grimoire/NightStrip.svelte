@@ -311,8 +311,12 @@
 	.again {
 		font-size: 0.75em;
 	}
-	.step .body {
-		padding-top: calc(var(--tap-target) - var(--space-1));
+	/*
+	 * The text scrolls below the row, never behind it (Trevor, 2026-11-08: "can read text
+	 * behind this"): the space is on the button, outside the scrolling body.
+	 */
+	.step {
+		padding-top: calc(var(--tap-target) + var(--space-2));
 	}
 	.none {
 		display: grid;
