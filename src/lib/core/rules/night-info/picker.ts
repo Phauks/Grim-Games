@@ -20,7 +20,14 @@ import type { Night } from '../night-order.ts';
 import { wokeTonight } from '../woke-tonight.ts';
 import { carries, lastShown } from './token-carriers.ts';
 import { perPairOptions } from './neighbour-pairs.ts';
-import { blockFacts, blockHighest, blockOptions, choose, type BlockSpec } from './blocks.ts';
+import {
+	blockFacts,
+	blockHighest,
+	blockMostTrue,
+	blockOptions,
+	choose,
+	type BlockSpec
+} from './blocks.ts';
 import {
 	type AnswerValue,
 	type Reliability,
@@ -95,6 +102,13 @@ export interface InfoPicker extends Reliability {
 	measure: Learns['measure'];
 	/** For `number`: the highest number it can show. */
 	highest?: number;
+	/**
+	 * For `number`, when lower than `highest`: the highest number that could be true (the most
+	 * pairs the evil players can make). Information that may be false (drunk, poisoned) stays
+	 * within it; information that must be false may go beyond it (the lying Storyteller gives
+	 * the Chef more pairs than there are, https://wiki.bloodontheclocktower.com/Knaves Example 1).
+	 */
+	mostTrue?: number;
 	characterId: CharacterId;
 	/** The waking player. */
 	seatId: SeatId;
@@ -486,6 +500,15 @@ export function infoPicker(
 	const pretend = fake
 		? truthfulOptions(fake, seatId, characterId, spec, characters, registrations(fake, characters))
 		: undefined;
+	// Players who match in some registration world (a Recluse may register evil).
+	const matchable = (block: BlockSpec) =>
+		new Set(
+			worlds.flatMap((world) => blockFacts(block, { game, seatId, characterId, characters, world }))
+		).size;
+	const mostTrue =
+		isBlock(spec) && spec.kind === 'number'
+			? blockMostTrue(spec, game, () => matchable(spec))
+			: undefined;
 	const truth = options.find((o) => !o.registered && o.number !== undefined)?.number;
 	const range: NumberRange | undefined =
 		spec.kind === 'number' && truth !== undefined
@@ -499,6 +522,7 @@ export function infoPicker(
 		kind: spec.kind,
 		measure: spec.preset ?? spec.measure,
 		...(isBlock(spec) && spec.kind === 'number' ? { highest: blockHighest(spec, game) } : {}),
+		...(mostTrue !== undefined ? { mostTrue } : {}),
 		characterId,
 		seatId,
 		seatCount: spec.seatCount,

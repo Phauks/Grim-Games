@@ -1073,7 +1073,7 @@ describe('every valid piece of information', () => {
 		expect(slayer.seats).not.toContain(seats[1]);
 	});
 
-	it('a poisoned Chef: the true number, then every other number, marked', () => {
+	it('a poisoned Chef: the true number, then every other number the evil players could make, marked', () => {
 		const { game: g, seats } = castGame(
 			['poisoner', 'chef', 'baron', 'imp', 'scarletwoman'],
 			(s) => ({
@@ -1087,9 +1087,7 @@ describe('every valid piece of information', () => {
 		expect(valid.slice(1).map((v) => [v.reason, v.number])).toEqual([
 			['unreliable', 0],
 			['unreliable', 1],
-			['unreliable', 2],
-			['unreliable', 4],
-			['unreliable', 5]
+			['unreliable', 2]
 		]);
 	});
 

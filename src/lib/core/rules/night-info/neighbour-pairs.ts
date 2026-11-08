@@ -14,6 +14,17 @@ export function neighbourPairs(game: Game): [SeatId, SeatId][] {
 }
 
 /**
+ * The most pairs of neighbours that `players` of the circle can make among themselves: every
+ * pair when it is everyone, else one fewer than them, all sitting in a row. A Chef can't
+ * learn more pairs of evil players than the evil players can make
+ * (https://wiki.bloodontheclocktower.com/Chef).
+ */
+export function mostPairs(game: Game, players: number): number {
+	if (players >= game.seating.length) return neighbourPairs(game).length;
+	return Math.max(0, players - 1);
+}
+
+/**
  * For a `count` of pairs of neighbours (`evil-pairs`), the counts that are only
  * true when a misregistering player registers differently in each pair they are part of:
  * https://wiki.bloodontheclocktower.com/Chef (Example 4: a Recluse between the Imp and the
