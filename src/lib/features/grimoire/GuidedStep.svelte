@@ -751,9 +751,11 @@
 		margin: 0;
 		color: var(--on-surface-muted);
 	}
-	/* Several waking players, after the name on the band. */
+	/* Several waking players, under the band: they wrap onto more lines rather than run off
+	   the right edge (Trevor, 2026-11-08), as the Minions card in the Steps does. */
 	span.who {
-		display: inline-flex;
+		display: flex;
+		flex-wrap: wrap;
 		gap: var(--space-1);
 		min-width: 0;
 	}

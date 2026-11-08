@@ -4947,6 +4947,41 @@ test("Dusk, Minion info, Demon info and Dawn are drawn as a character's step is"
 		expect(seen).toContain(name);
 });
 
+// Three Minions on a phone: their badges wrap under the band and none runs off the step's
+// right edge (Trevor, 2026-11-08: "The players running to the right doesn't look good").
+test('Minion info wraps its players under the band, none cut off', async ({ page }) => {
+	test.slow();
+	await startGame(page);
+	for (const [number, name] of [
+		[1, 'Imp'],
+		[3, 'Baron'],
+		[5, 'Poisoner'],
+		[7, 'Spy'],
+		[2, 'Chef'],
+		[4, 'Empath'],
+		[6, 'Monk'],
+		[8, 'Soldier']
+	] as const) {
+		const sheet = await openSeat(page, number);
+		await sheet.getByRole('button', { name: 'Choose' }).first().tap();
+		await page
+			.getByRole('dialog', { name: `Character for Seat ${number}` })
+			.getByRole('button', { name, exact: true })
+			.tap();
+		await closeSheet(page);
+	}
+	const minionInfo = await openStep(page, 'Minion info');
+	const who = minionInfo.locator('.row-head').getByTestId('step-who');
+	const badges = who.locator('[data-character-id]');
+	await expect(badges).toHaveCount(3);
+	const band = await minionInfo.locator('.row-head .band').boundingBox();
+	for (const badge of await badges.all()) {
+		await expect(badge).toBeInViewport({ ratio: 1 });
+		const box = await badge.boundingBox();
+		expect(box!.x + box!.width).toBeLessThanOrEqual(band!.x + band!.width + 1);
+	}
+});
+
 test('Minion info and Demon info list every card they can show, with who it points at', async ({
 	page
 }) => {
