@@ -10,11 +10,18 @@ export interface SplitAbility {
 	setup?: string;
 }
 
-/** Splits a trailing "[...]" setup note off an ability. Brackets elsewhere stay in the text. */
+/**
+ * Splits a trailing "[...]" setup note off an ability. Brackets elsewhere stay in the text. A
+ * note that only adds a character the ability already names ("+the King") is dropped.
+ */
 export function splitSetupNote(ability: string): SplitAbility {
 	const match = /\s*\[([^[\]]+)\]\s*$/.exec(ability);
 	if (!match) return { text: ability };
 	const text = ability.slice(0, match.index);
 	const setup = match[1]?.trim();
-	return setup && text ? { text, setup } : { text: ability };
+	if (!setup || !text) return { text: ability };
+	// "+the Damsel" when the ability already names the Damsel adds nothing (Trevor, 2026-11-08).
+	const needs = /^\+\s*(the\s+.+)$/i.exec(setup)?.[1];
+	if (needs && text.toLowerCase().includes(needs.toLowerCase())) return { text };
+	return { text, setup };
 }
