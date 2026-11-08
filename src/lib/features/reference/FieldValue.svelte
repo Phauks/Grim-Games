@@ -15,6 +15,7 @@
 		ReferenceToken
 	} from '#lib/core/rules/reference.ts';
 	import { prepTextSegments, setupPrep } from '#lib/core/rules/setup-reminders.ts';
+	import { onlyNeedsCharacter } from '#lib/core/rules/setup-modifiers.ts';
 	import { officialData } from '#lib/features/characters/game-data.svelte.ts';
 	import { sheetNumbersFor } from '#lib/features/characters/sheet-night-numbers.ts';
 	import { preferences } from '#lib/ui/preferences.svelte.ts';
@@ -211,10 +212,16 @@
 	{:else if field === 'alignment'}
 		{entry.alignmentNote}
 	{:else if field === 'setup'}
-		{#if entry.setup}<CharacterPiece template="badge" characterId={character.id} {character} />: <GlossaryText
-				text={entry.setup.summary}
-			/>{#if entry.setup.notes.length}<span class="small block"
-					><GlossaryText text={entry.setup.notes.join(' ')} /></span
+		{#if entry.setup && onlyNeedsCharacter(entry.setup)}<CharacterPiece
+				template="badge"
+				characterId={character.id}
+				{character}
+			/>: <GlossaryText text={entry.setup.notes.join(' ')} />{:else if entry.setup}<CharacterPiece
+				template="badge"
+				characterId={character.id}
+				{character}
+			/>: <GlossaryText text={entry.setup.summary} />{#if entry.setup.notes.length}<span
+					class="small block"><GlossaryText text={entry.setup.notes.join(' ')} /></span
 				>{/if}{:else}{t('common.none')}{/if}
 	{:else if field === 'ability'}
 		<span class="ability"><AbilityText text={character.ability} names={[character.name]} /></span>

@@ -87,6 +87,20 @@ function fromRules(character: Character, entry: SetupModifierRules): SetupModifi
 	};
 }
 
+/**
+ * True when a setup change only needs another character in play ("+the Damsel"): its summary
+ * then says nothing the linked character does not, so it is not shown (Trevor, 2026-11-08).
+ */
+export function onlyNeedsCharacter(modifier: SetupModifier): boolean {
+	return (
+		!!modifier.requires &&
+		modifier.ops.length === 0 &&
+		!modifier.alignments?.length &&
+		!modifier.copies?.length &&
+		!modifier.duplicates?.length
+	);
+}
+
 /** The [bracketed] parts of an ability, joined. */
 export function bracketText(ability: string): string | undefined {
 	const parts = [...ability.matchAll(/\[([^\]]+)\]/g)].map((m) => m[1].trim());
