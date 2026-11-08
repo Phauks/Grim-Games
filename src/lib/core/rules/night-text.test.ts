@@ -20,6 +20,7 @@ import type { ReminderPlaceholder } from '#lib/core/data/reminder-placeholder-ru
 import { committedCharacter, committedGameData } from '#lib/core/testing/committed-data.ts';
 import { characterNames } from './character-names.ts';
 import {
+	rowsOnLines,
 	FULL_NIGHT_INSTRUCTIONS,
 	SHOW_DIFFERS_FROM_SOURCE,
 	nightTextFor,
@@ -501,5 +502,22 @@ describe('nightTextSteps', () => {
 				?.lines.length
 		).toBe(4);
 		expect(stepNightText({ character: cerenovus })).toBeUndefined();
+	});
+});
+
+// Trevor, 2026-11-08 (M75): a reminder row sits beneath the line that names its token.
+describe('rowsOnLines', () => {
+	const poisoned = { kind: 'reminder' as const, label: 'Poisoned', options: ['Poisoned'] };
+	it('puts each row under the first line naming its token, and the rest aside', () => {
+		const lines = [[{ kind: 'text' as const, text: 'Wake.' }], [poisoned], [poisoned]];
+		const rows = [
+			{ label: 'Poisoned', key: 'a' },
+			{ label: 'poisoned', key: 'b' },
+			{ label: 'Other', key: 'c' }
+		];
+		expect(rowsOnLines(lines, rows)).toEqual({
+			onLine: { 1: [rows[0], rows[1]] },
+			rest: [rows[2]]
+		});
 	});
 });
