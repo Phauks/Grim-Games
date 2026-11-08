@@ -15,7 +15,7 @@
 import { describe, expect, it } from 'vitest';
 import { defaultAlignment } from '#lib/core/data/index.ts';
 import { committedCharacter, nightSheetPresence } from '#lib/core/testing/committed-data.ts';
-import { infoPicker, isAllowed, isTruthful } from '#lib/core/rules/night-info.ts';
+import { infoPicker, isAllowed, isTruthful, validInformation } from '#lib/core/rules/night-info.ts';
 import { scenario } from '#lib/core/testing/scenario.ts';
 
 describe('Chef', () => {
@@ -119,6 +119,67 @@ describe('Chef', () => {
 			const s = scenario(['chef', 'imp', 'poisoner', 'baron', 'monk', 'empath', 'soldier']);
 			const picker = infoPicker(s.game, s.seat('chef'), 'chef', s.characters, 'first')!;
 			expect(picker.range?.truth).toBe(2);
+		});
+	});
+
+	describe('the most pairs there can be (https://wiki.bloodontheclocktower.com/Chef)', () => {
+		const fifteen = [
+			'chef',
+			'imp',
+			'poisoner',
+			'empath',
+			'baron',
+			'monk',
+			'scarletwoman',
+			'soldier',
+			'mayor',
+			'virgin',
+			'slayer',
+			'ravenkeeper',
+			'undertaker',
+			'washerwoman',
+			'librarian'
+		];
+		const numbers = (s: ReturnType<typeof scenario>) =>
+			validInformation(s.game, infoPicker(s.game, s.seat('chef'), 'chef', s.characters)!).map(
+				(v) => v.number
+			);
+
+		it('a poisoned Chef with four evil players is offered no more than three pairs', () => {
+			// Wiki: "You start knowing how many pairs of evil players there are."
+			// Four evil players make at most three pairs, all four in a row, so in a game of
+			// fifteen no higher number is offered.
+			const s = scenario(fifteen).do((at) => ({
+				type: 'AddReminder',
+				seatId: at.seat('chef'),
+				reminder: { characterId: 'poisoner', label: 'Poisoned' }
+			}));
+			expect(numbers(s)).toEqual([1, 0, 2, 3]);
+		});
+
+		it('a Recluse who may register as evil can make one more pair', () => {
+			// Wiki: "The Recluse is sitting between the Imp and the Poisoner. The Chef learns a '1'. Here,
+			// the Recluse is registering as evil for the Imp-Recluse pair, but as good for the
+			// Poisoner-Recluse pair."
+			// With a Recluse, five players may register as evil, who make at most four pairs.
+			const s = scenario(fifteen.map((id) => (id === 'soldier' ? 'recluse' : id))).do((at) => ({
+				type: 'AddReminder',
+				seatId: at.seat('chef'),
+				reminder: { characterId: 'poisoner', label: 'Poisoned' }
+			}));
+			expect(Math.max(...numbers(s).map((n) => n ?? 0))).toBe(4);
+		});
+
+		it('every pair when everyone is evil', () => {
+			// Wiki: "You start knowing how many pairs of evil players there are."
+			const s = scenario(['chef', 'imp', 'poisoner', 'baron']).do((at) => ({
+				type: 'SetAlignment',
+				seatId: at.seat('chef'),
+				alignment: 'evil'
+			}));
+			const picker = infoPicker(s.game, s.seat('chef'), 'chef', s.characters)!;
+			expect(picker.range?.truth).toBe(4);
+			expect(picker.mostTrue).toBe(4);
 		});
 	});
 });

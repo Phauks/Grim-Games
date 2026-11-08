@@ -54,8 +54,13 @@ export interface ValidInfo {
 	anyOther?: boolean;
 }
 
-/** The highest number a number picker could show, for listing every valid one. */
-function highestNumber(game: Game, picker: InfoPicker): number {
+/**
+ * The highest number a number picker could show, for listing every valid one. Information
+ * that may be false stays within what could be true (`mostTrue`); information that must be
+ * false may not.
+ */
+function highestNumber(game: Game, picker: InfoPicker, loose: ValidReason): number {
+	if (loose !== 'vortox' && picker.mostTrue !== undefined) return picker.mostTrue;
 	const n = game.seating.length;
 	if (picker.highest !== undefined) return picker.highest;
 	if (picker.measure === 'demon-minion-steps') return Math.max(1, Math.floor(n / 2));
@@ -91,7 +96,7 @@ export function validInformation(game: Game, picker: InfoPicker): ValidInfo[] {
 			const notTrue = new Set(picker.options.map((o) => o.number));
 			for (
 				let n = picker.measure === 'demon-minion-steps' ? 1 : 0;
-				n <= highestNumber(game, picker);
+				n <= highestNumber(game, picker, loose);
 				n++
 			) {
 				if (taken.has(n)) continue;

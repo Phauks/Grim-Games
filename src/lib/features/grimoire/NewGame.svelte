@@ -104,6 +104,19 @@
 	 * Create game goes changes.
 	 */
 	let host = $state<'storyteller' | 'local'>('storyteller');
+	/** Each choice with the line that says when to use it, under Host and in its list. */
+	const hostOptions = $derived([
+		{
+			value: 'storyteller' as const,
+			label: t('player.local.storyteller'),
+			description: t('player.local.storytellerHint')
+		},
+		{
+			value: 'local' as const,
+			label: t('player.local.localGrim'),
+			description: t('player.local.localGrimHint')
+		}
+	]);
 
 	async function startPlayersOnly(choice: ScriptChoice = edition) {
 		starting = true;
@@ -179,12 +192,14 @@
 						label={t('player.local.host')}
 						hideLabel
 						value={host}
-						options={[
-							{ value: 'storyteller', label: t('player.local.storyteller') },
-							{ value: 'local', label: t('player.local.localGrim') }
-						]}
+						options={hostOptions}
 						onChange={(v) => (host = v)}
 					/>
+					<!-- When to use each (Trevor, 2026-11-06, wording A picked 2026-11-08); its two
+					     lines are kept, so nothing below moves when the choice changes. -->
+					<p class="host-hint" data-testid="host-hint">
+						{hostOptions.find((o) => o.value === host)?.description}
+					</p>
 				</PageSection>{/if}
 		{/snippet}
 		{#snippet standard(rules, begin)}
@@ -215,6 +230,12 @@
 </section>
 
 <style>
+	.host-hint {
+		margin: var(--space-1) 0 0;
+		min-height: 2lh;
+		color: var(--on-surface-muted);
+		font-size: 0.9em;
+	}
 	section {
 		display: grid;
 		gap: var(--space-3);

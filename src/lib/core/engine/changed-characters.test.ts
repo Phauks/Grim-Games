@@ -33,6 +33,20 @@ describe('changedCharacters', () => {
 		]);
 	});
 
+	// Wiki: "Wake the new Imp, show them the '''YOU ARE''' info token, then show them the Imp token."
+	it("names the ability that made the change, so the Imp's own step can wake the new Imp", () => {
+		const { session, ctx, seats } = castGame(TB, { type: 'NewDay' });
+		const s = run(session, ctx, {
+			type: 'AssignCharacter',
+			seatId: seats[4],
+			characterId: 'imp',
+			by: 'imp'
+		});
+		expect(changedCharacters(s.log, s.game)).toEqual([
+			{ seatId: seats[4], from: 'poisoner', characterId: 'imp', by: 'imp' }
+		]);
+	});
+
 	it('forgets a change made before dawn, changed back, or undone', () => {
 		const { session, ctx, seats } = castGame(TB, become(0, 'monk'), { type: 'NewDay' });
 		expect(changedCharacters(session.log, session.game)).toEqual([]);
