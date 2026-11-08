@@ -45,7 +45,7 @@
 </script>
 
 {#snippet picture()}
-	{#if isMarker(step.id)}<MarkerToken marker={step.id} size={40} label="" />{:else}<span
+	{#if isMarker(step.id)}<MarkerToken marker={step.id} fill label="" />{:else}<span
 			class="marker-icon"><Icon name={MARKER_ICONS[step.id] ?? 'night'} /></span
 		>{/if}
 {/snippet}
